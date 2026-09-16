@@ -354,7 +354,7 @@ __weak void BOOT_Image1(void)
 
 	_memset((void *)__image1_bss_start__, 0, (__image1_bss_end__ - __image1_bss_start__));
 
-#ifdef CONFIG_WHC_INTF_SDIO
+#ifdef CONFIG_WHC_INTF_SPDIO
 	Boot_SDIO_Pinmux_init();
 #endif
 
@@ -402,13 +402,12 @@ __weak void BOOT_Image1(void)
 		LDO_MemSetInSleep(MLDO_SLEEP);
 	}
 
-	u32 Temp = SYSCFG_OTP_BOOTSEL();
-	if ((Temp == BOOT_FROM_FLASH) || (Temp == BOOT_FROM_FLASH1)) {
-		BOOT_Data_Flash_Init();
+#ifndef CONFIG_WHC_DEV_HCI_BOOT
+	BOOT_Data_Flash_Init();
 
-		flash_highspeed_setup();
-		BOOT_LoadImages();
-	}
+	flash_highspeed_setup();
+	BOOT_LoadImages();
+#endif
 
 	/* it will switch shell control to NP, disable loguart interrupt to avoid loguart irq not assigned in non-secure world.
 	 it should switch before BOOT_RAM_TZCfg to avoid crash when loguart intr occur but it has been set to ns intr. */
@@ -429,10 +428,7 @@ __weak void BOOT_Image1(void)
 	BOOT_Enable_NP();
 #else
 	BOOT_Share_Cache_To_TCM();
-	Temp = SYSCFG_OTP_BOOTSEL();
-	if ((Temp != BOOT_FROM_FLASH) && (Temp != BOOT_FROM_FLASH1)) {
-		Boot_Fullmac_LoadIMGAll();
-	}
+	Boot_Fullmac_LoadIMGAll();
 #endif
 
 	// vector_table = (u32 *)Image2EntryFun->VectorNS;

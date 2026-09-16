@@ -5,21 +5,53 @@
  */
 
 /* Includes ------------------------------------------------------------------*/
-
 #include "usbd.h"
 #include "usbd_uvc.h"
 #include "usbd_video.h"
 #include "usb_ch9.h"
-#include <stdio.h>
-#include <ctype.h>
+#include "os_wrapper.h"
+
+/* Private defines -----------------------------------------------------------*/
+/* VC entity type IDs */
+#define UVC_VC_ITT_CAMERA       0x01
+#define UVC_VC_PROCESS_UNIT     0x02
+#define UVC_VC_EXTENSION_UNIT   0x03
+
+/* Processing Unit (Brightness) control default values */
+#define USBD_UVC_PU_BRIGHTNESS_CUR  100
+#define USBD_UVC_PU_BRIGHTNESS_MAX  0xFF
+#define USBD_UVC_PU_BRIGHTNESS_DEF  0x80
+#define USBD_UVC_PU_BRIGHTNESS_INFO 0x0F
+#define USBD_UVC_PU_BRIGHTNESS_LEN  2
+
+/* Extension Unit control default values */
+#define USBD_UVC_XU_DATA_CUR    0x1F00FF00
+#define USBD_UVC_XU_DATA_MAX    0x1FFFFFFF
+#define USBD_UVC_XU_DATA_INFO   0x03
+#define USBD_UVC_XU_DATA_LEN    0x40
+
+/* Private types -------------------------------------------------------------*/
+
+/* Private macros ------------------------------------------------------------*/
+
+/* Private function prototypes -----------------------------------------------*/
+static int usbd_uvc_send_response(usbd_uvc_dev_t *uvc, usbd_uvc_request_data_t *data);
+static int usbd_uvc_receive_response(usbd_uvc_dev_t *uvc, usbd_uvc_req_data_t *uvc_event);
+static void usbd_uvc_events_process_standard(usbd_uvc_dev_t *dev, usb_setup_req_t *ctrl, usbd_uvc_request_data_t *resp);
+static void usbd_uvc_events_process_control(usbd_uvc_dev_t *dev, usb_setup_req_t *ctrl, usbd_uvc_request_data_t *resp);
+static void usbd_uvc_dump_uvc_format(void);
+static void usbd_uvc_fill_streaming_control(usbd_uvc_dev_t *dev, usbd_uvc_streaming_control_t *ctrl, int iframe, int iformat);
+static void usbd_uvc_events_process_streaming(usbd_uvc_dev_t *dev, usb_setup_req_t *ctrl, usbd_uvc_request_data_t *resp);
+static void usbd_uvc_events_process_class(usbd_uvc_dev_t *dev, usb_setup_req_t *ctrl, usbd_uvc_request_data_t *resp);
+static void usbd_uvc_events_process_setup(usbd_uvc_dev_t *dev, usb_setup_req_t *ctrl, usbd_uvc_request_data_t *resp);
+static void usbd_uvc_control_process_data(usbd_uvc_dev_t *dev, usbd_uvc_request_data_t *data);
+static void usbd_uvc_streaming_process_data(usbd_uvc_dev_t *dev, usbd_uvc_request_data_t *data);
+static void usbd_uvc_events_process_data(usbd_uvc_dev_t *dev, usbd_uvc_request_data_t *data);
+
 usbd_uvc_process_unit_t p_data;
 usbd_uvc_process_unit_t x_data;
-static int uvc_format = 0;
+static const char *const TAG = "UVC";
 
-#define ITT_CAMERA      0x01
-#define PROCESS_UNIT    0X02
-#define EXTENSION_UNIT  0X03
-static const char *const TAG = "UVCD_EVENT";
 /**
   * @brief  Initialize UVC control parameters
   *         Initialize default/min/max/current values for
@@ -28,22 +60,22 @@ static const char *const TAG = "UVCD_EVENT";
   */
 int usbd_uvc_parameter_init(void)
 {
-	p_data.cur = 100;
+	p_data.cur = USBD_UVC_PU_BRIGHTNESS_CUR;
 	p_data.min = 0;
-	p_data.max = 0xff;
+	p_data.max = USBD_UVC_PU_BRIGHTNESS_MAX;
 	p_data.res = 1;
-	p_data.def = 0x80;
-	p_data.info = 0x0F;
-	p_data.len = 0x02;
+	p_data.def = USBD_UVC_PU_BRIGHTNESS_DEF;
+	p_data.info = USBD_UVC_PU_BRIGHTNESS_INFO;
+	p_data.len = USBD_UVC_PU_BRIGHTNESS_LEN;
 
-	x_data.cur = 0x1f00ff00;
+	x_data.cur = USBD_UVC_XU_DATA_CUR;
 	x_data.min = 0;
-	x_data.max = 0x1fffffff;
+	x_data.max = USBD_UVC_XU_DATA_MAX;
 	x_data.res = 1;
-	x_data.def = 0x1f00ff00;
-	x_data.info = 0x03; //0:SET 1:GET 2:Disalbe due to automatic 3:Autoupdate
-	x_data.len = 0X40; //40
-	return 0;
+	x_data.def = USBD_UVC_XU_DATA_CUR;
+	x_data.info = USBD_UVC_XU_DATA_INFO;
+	x_data.len = USBD_UVC_XU_DATA_LEN;
+	return HAL_OK;
 }
 
 /**
@@ -91,7 +123,7 @@ static void
 usbd_uvc_events_process_standard(usbd_uvc_dev_t *dev, usb_setup_req_t *
 								 ctrl, usbd_uvc_request_data_t *resp)
 {
-	RTK_LOGS(TAG, RTK_LOG_INFO, "standard requestd\r\n");
+	RTK_LOGS(TAG, RTK_LOG_DEBUG, "Standard request\n");
 	(void)dev;
 	(void)ctrl;
 	(void)resp;
@@ -105,7 +137,7 @@ usbd_uvc_events_process_standard(usbd_uvc_dev_t *dev, usb_setup_req_t *
   */
 void usbd_uvc_get_command_process_unit(usbd_uvc_dev_t *dev, usb_setup_req_t *ctrl, usbd_uvc_request_data_t *resp)
 {
-	if (dev->command_entity == PROCESS_UNIT) {
+	if (dev->command_entity == UVC_VC_PROCESS_UNIT) {
 		switch (ctrl->bRequest) {
 		case USBD_UVC_SET_CUR:
 			break;
@@ -136,7 +168,7 @@ void usbd_uvc_get_command_process_unit(usbd_uvc_dev_t *dev, usb_setup_req_t *ctr
 			usb_os_memcpy((void *)resp->data, (const void *)&p_data.info, ctrl->wLength);
 			break;
 		}
-	} else if (dev->command_entity == EXTENSION_UNIT) {
+	} else if (dev->command_entity == UVC_VC_EXTENSION_UNIT) {
 		switch (ctrl->bRequest) {
 		case USBD_UVC_SET_CUR:
 			break;
@@ -245,13 +277,16 @@ usbd_uvc_events_process_control(usbd_uvc_dev_t *dev, usb_setup_req_t *ctrl,
 	dev->control = ctrl->wValue >> 8; //stream 0:control 1:stream ,control for selector ex:brightness
 	dev->command_interface = ctrl->wIndex & 0xff; //0 for ocntrol 1 for streaming
 	dev->command_entity = (ctrl->wIndex >> 8) & 0xff; //2 process unit 3 for extension unit
-	if (dev->command_entity == PROCESS_UNIT) {
+	if (dev->command_entity == UVC_VC_PROCESS_UNIT) {
 		usbd_uvc_get_command_process_unit(dev, ctrl, resp);
-	} else if (dev->command_entity == ITT_CAMERA) {
+	} else if (dev->command_entity == UVC_VC_ITT_CAMERA) {
 		//get_command_camera(dev, ctrl, resp);
-	} else if (dev->command_entity == EXTENSION_UNIT) {
+	}
+#if USBD_UVC_USE_EXTENSION_UNIT
+	else if (dev->command_entity == UVC_VC_EXTENSION_UNIT) {
 		get_command_extension_unit(dev, ctrl, resp);
 	}
+#endif
 }
 /**
   * @brief  Dump supported UVC frame intervals for debug
@@ -259,11 +294,14 @@ usbd_uvc_events_process_control(usbd_uvc_dev_t *dev, usb_setup_req_t *ctrl,
   */
 static void usbd_uvc_dump_uvc_format(void)
 {
-	const usbd_uvc_format_info_t *format;
-	format = &uvcd_formats[0];
+	const usbd_uvc_format_info_t *format = &uvcd_formats[0];
 	int i = 0;
-	for (i = 0; i < 4; i++) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "FPS %d\r\n", format->frames->intervals[i]);
+
+	for (i = 0; i < (int)USBD_UVC_FRAME_INTERVAL_CNT; i++) {
+		if (format->frames->intervals[i] == 0U) {
+			break;  /* 0 is the end-of-list sentinel, not a real interval */
+		}
+		RTK_LOGS(TAG, RTK_LOG_INFO, "FPS %d\n", format->frames->intervals[i]);
 	}
 }
 /**
@@ -301,18 +339,22 @@ usbd_uvc_fill_streaming_control(usbd_uvc_dev_t *dev,
 	}
 	frame = &format->frames[iframe];
 
-	memset(ctrl, 0, sizeof * ctrl);
+	usb_os_memset(ctrl, 0U, (u32)sizeof(*ctrl));
 
-	ctrl->bmHint = 3;
+	/* memset cleared dwClockFrequency; restore the real 48 MHz device clock so
+	   GET_MIN/MAX/DEF report it (UVC 1.5 4.3.1.1). GET_CUR is unaffected as it
+	   returns dev->probe/commit, which already carry USBD_UVC_CLOCK_FREQUENCY. */
+	ctrl->dwClockFrequency = USBD_UVC_CLOCK_FREQUENCY;
+	ctrl->bmHint = USBD_UVC_PROBE_BMHINT;
 	ctrl->bFormatIndex = iformat + 1;
 	ctrl->bFrameIndex = iframe + 1;
 	ctrl->dwFrameInterval = frame->intervals[0];
 	switch (format->fcc) {
 	case USBD_UVC_FORMAT_TYPE_YUY2:
-		ctrl->dwMaxVideoFrameSize = frame->width * frame->height * 2;
+		ctrl->dwMaxVideoFrameSize = frame->width * frame->height * USBD_UVC_YUY2_BPP;
 		break;
 	case USBD_UVC_FORMAT_TYPE_NV12:
-		ctrl->dwMaxVideoFrameSize = (frame->width * frame->height * 3) / 2;
+		ctrl->dwMaxVideoFrameSize = (frame->width * frame->height * USBD_UVC_NV12_SIZE_NUM) / USBD_UVC_NV12_SIZE_DEN;
 		break;
 	case USBD_UVC_FORMAT_TYPE_MJPEG:
 		ctrl->dwMaxVideoFrameSize = frame->width * frame->height;
@@ -324,7 +366,8 @@ usbd_uvc_fill_streaming_control(usbd_uvc_dev_t *dev,
 		ctrl->dwMaxVideoFrameSize = frame->width * frame->height;
 		break;
 	}
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Type %d\r\n", format->fcc);
+	ctrl->dwMaxPayloadTransferSize = USBD_UVC_IN_BUF_SIZE; /* FIX UVC1.5 4.3.1.1: GET_MIN/MAX/DEF path must also report valid max payload (=isoc mps 1024), not 0 */
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Type %d\n", format->fcc);
 }
 /**
   * @brief  Handle UVC streaming interface requests
@@ -342,10 +385,10 @@ usbd_uvc_events_process_streaming(usbd_uvc_dev_t *dev, usb_setup_req_t *ctrl,
 	u32 cs = ctrl->wValue >> 8;
 	u32 req = ctrl->bRequest;
 
-	RTK_LOGS(TAG, RTK_LOG_INFO, "streaming request (req %02x cs %02x)\n", req, cs);
+	RTK_LOGS(TAG, RTK_LOG_DEBUG, "Streaming request req 0x%08x cs 0x%08x\n", req, cs);
 
 	if (cs != USBD_UVC_VS_PROBE_CONTROL && cs != USBD_UVC_VS_COMMIT_CONTROL) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "cs = %x ctrl%x\r\n", cs, ctrl->wValue);
+		RTK_LOGS(TAG, RTK_LOG_WARN, "Unknown cs 0x%08x wValue 0x%08x\n", cs, ctrl->wValue);
 		return;
 	}
 
@@ -370,22 +413,27 @@ usbd_uvc_events_process_streaming(usbd_uvc_dev_t *dev, usb_setup_req_t *ctrl,
 	case USBD_UVC_GET_MIN:
 	case USBD_UVC_GET_MAX:
 	case USBD_UVC_GET_DEF:
-		usbd_uvc_fill_streaming_control(dev, ctrl_stream, 0, 0); //Devin
-		RTK_LOGS(TAG, RTK_LOG_INFO, "uvc_fill_streaming_control\r\n");
+		/* Report the format/frame currently being negotiated (dev->probe), not a
+		   hardcoded format 0. bFormatIndex/bFrameIndex are 1-based and already
+		   range-validated in the SET_CUR path; fill takes 0-based indices. */
+		usbd_uvc_fill_streaming_control(dev, ctrl_stream,
+										(int)dev->probe.bFrameIndex - 1,
+										(int)dev->probe.bFormatIndex - 1);
 		break;
 
 	case USBD_UVC_GET_RES:
-		memset(ctrl, 0, sizeof * ctrl);
+		usb_os_memset(ctrl_stream, 0U, (u32)sizeof(*ctrl_stream));
 		break;
 
 	case USBD_UVC_GET_LEN:
-		resp->data[0] = 0x00;
-		resp->data[1] = ctrl->wLength;
-		resp->length = 2;
+		/* UVC 1.5 Table 4-51: GET_LEN returns the data length of the control (=sizeof control struct), not the host-requested wLength */
+		resp->data[0] = (u8)(sizeof(usbd_uvc_streaming_control_t) & 0xFFU);
+		resp->data[1] = (u8)((sizeof(usbd_uvc_streaming_control_t) >> 8) & 0xFFU);
+		resp->length = USBD_UVC_GET_LEN_RESP_SIZE;
 		break;
 
 	case USBD_UVC_GET_INFO:
-		resp->data[0] = 0x03;
+		resp->data[0] = USBD_UVC_GET_INFO_CAPS;
 		resp->length = 1;
 		break;
 	}
@@ -448,10 +496,6 @@ usbd_uvc_events_process_setup(usbd_uvc_dev_t *dev, usb_setup_req_t *ctrl,
 	}
 }
 
-
-#define UVC_VC_ITT_CAMERA       0x01
-#define UVC_VC_PROCESS_UNIT     0x02
-#define UVC_VC_EXTENSION_UNIT   0x03
 /**
   * @brief  Handle SET_CUR request for Processing Unit
   * @param  dev   UVC device context
@@ -463,6 +507,7 @@ void usbd_uvc_set_command_process_unit(usbd_uvc_dev_t *dev, usbd_uvc_request_dat
 	(void)dev;
 	(void)data;
 }
+
 /**
   * @brief  Process control interface data stage
   * @param  dev   UVC device context
@@ -479,11 +524,13 @@ usbd_uvc_control_process_data(usbd_uvc_dev_t *dev, usbd_uvc_request_data_t *data
 	case UVC_VC_PROCESS_UNIT:
 		usbd_uvc_set_command_process_unit(dev, data);
 		break;
+#if USBD_UVC_USE_EXTENSION_UNIT
 	case UVC_VC_EXTENSION_UNIT:
 		set_command_extension_unit(dev, data);
 		break;
+#endif
 	default:
-		RTK_LOGS(TAG, RTK_LOG_INFO, "setting unknown control, length = %d\n", data->length);
+		RTK_LOGS(TAG, RTK_LOG_INFO, "Setting unknown control, length = %d\n", data->length);
 		return;
 	}
 }
@@ -501,27 +548,34 @@ usbd_uvc_streaming_process_data(usbd_uvc_dev_t *dev, usbd_uvc_request_data_t *da
 	usbd_uvc_streaming_control_t *ctrl;
 	const usbd_uvc_format_info_t *format;
 	const usbd_uvc_frame_info_t *frame;
+	usbd_uvc_format_t *fmt = dev->uvc_format_ptr;
+	usbd_uvc_video_t *video = &dev->video;
 	const u32 *interval;
-	u32 iformat, iframe;
+	u32 iformat;
+	u32 iframe;
 	u32 nframes;
 
 	switch (dev->control) {
 	case USBD_UVC_VS_PROBE_CONTROL:
-		RTK_LOGS(TAG, RTK_LOG_INFO, "setting probe control, length = %d\r\n", data->length);
+		RTK_LOGS(TAG, RTK_LOG_DEBUG, "Setting probe control, length = %d\n", data->length);
 		target = &dev->probe;
 		break;
 
 	case USBD_UVC_VS_COMMIT_CONTROL:
-		RTK_LOGS(TAG, RTK_LOG_INFO, "setting commit control, length = %d\r\n", data->length);
+		RTK_LOGS(TAG, RTK_LOG_DEBUG, "Setting commit control, length = %d\n", data->length);
 		target = &dev->commit;
 		break;
 	default:
-		RTK_LOGS(TAG, RTK_LOG_INFO, "setting unknown control, length = %d\n", data->length);
+		RTK_LOGS(TAG, RTK_LOG_DEBUG, "Setting unknown control, length = %d\n", data->length);
 		return;
 	}
 
 	ctrl = (usbd_uvc_streaming_control_t *)&data->data;
 	iformat = ctrl->bFormatIndex;
+	if (iformat < 1U || iformat > uvcd_nformats) {
+		RTK_LOGS(TAG, RTK_LOG_WARN, "Invalid bFormatIndex %d\n", iformat);
+		return;
+	}
 
 	format = &uvcd_formats[iformat - 1];
 	nframes = 0;
@@ -530,11 +584,13 @@ usbd_uvc_streaming_process_data(usbd_uvc_dev_t *dev, usbd_uvc_request_data_t *da
 	}
 
 	iframe = ctrl->bFrameIndex;
+	if (iframe < 1U || iframe > nframes) {
+		RTK_LOGS(TAG, RTK_LOG_WARN, "Invalid bFrameIndex %d\n", iframe);
+		return;
+	}
 	frame = &format->frames[iframe - 1];
 	interval = frame->intervals;
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Interval[0] = %d\r\n", interval[0]);
-	while (interval[0] < ctrl->dwFrameInterval && interval[1]) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "interval %u\r\n", ctrl->dwFrameInterval);
+	while (*(interval + 1U) != 0U && *interval < ctrl->dwFrameInterval) {
 		++interval;
 	}
 
@@ -543,35 +599,40 @@ usbd_uvc_streaming_process_data(usbd_uvc_dev_t *dev, usbd_uvc_request_data_t *da
 	switch (format->fcc) {
 
 	case USBD_UVC_FORMAT_TYPE_YUY2:
-		target->dwMaxVideoFrameSize = frame->width * frame->height * 2;
+		target->dwMaxVideoFrameSize = frame->width * frame->height * USBD_UVC_YUY2_BPP;
 		break;
 	case USBD_UVC_FORMAT_TYPE_NV12:
-		target->dwMaxVideoFrameSize = (frame->width * frame->height * 3) / 2;
+		target->dwMaxVideoFrameSize = (frame->width * frame->height * USBD_UVC_NV12_SIZE_NUM) / USBD_UVC_NV12_SIZE_DEN;
 		break;
 	case USBD_UVC_FORMAT_TYPE_MJPEG:
 		target->dwMaxVideoFrameSize = frame->width * frame->height;
 		break;
 	case USBD_UVC_FORMAT_TYPE_H264:
-		ctrl->dwMaxVideoFrameSize = frame->width * frame->height;
+		target->dwMaxVideoFrameSize = frame->width *
+									  frame->height;  /* FIX: was ctrl-> (host input buf); must write target(dev->probe/commit), else committed H264/H265 dwMaxVideoFrameSize stays 0 */
 		break;
 	case USBD_UVC_FORMAT_TYPE_H265:
-		ctrl->dwMaxVideoFrameSize = frame->width * frame->height;
+		target->dwMaxVideoFrameSize = frame->width *
+									  frame->height;  /* FIX: was ctrl-> (host input buf); must write target(dev->probe/commit), else committed H264/H265 dwMaxVideoFrameSize stays 0 */
 		break;
 	}
-	uvc_format = format->fcc;
-	RTK_LOGS(TAG, RTK_LOG_INFO, "format = %d w = %d h = %d fps = %d\r\n", format->fcc, frame->width, frame->height, *interval);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Format = %d w = %d h = %d fps = %d\n", format->fcc, frame->width, frame->height, *interval);
 
-	dev->uvc_format_ptr->format = format->fcc;
-	dev->uvc_format_ptr->width = frame->width;
-	dev->uvc_format_ptr->height = frame->height;
-	dev->uvc_format_ptr->fps = 10000000 / (*interval);
+	fmt->format = format->fcc;
+	fmt->width = frame->width;
+	fmt->height = frame->height;
+	fmt->fps = USBD_UVC_FRAME_INTERVAL_UNIT / (*interval);
 
 	target->dwFrameInterval = *interval;
+	/* HS high-bandwidth ISOC IN sends up to 3 x 1024 per microframe = one payload.
+	   Must match the committed transfer size the device actually emits (was 1024,
+	   inconsistent with the GET_MIN/MAX/DEF path which reports USBD_UVC_IN_BUF_SIZE). */
+	target->dwMaxPayloadTransferSize = USBD_UVC_IN_BUF_SIZE;
 
 	if (dev->control == USBD_UVC_VS_COMMIT_CONTROL) {
-		dev->video.fcc = format->fcc;
-		dev->video.width = frame->width;
-		dev->video.height = frame->height;
+		video->fcc = format->fcc;
+		video->width = frame->width;
+		video->height = frame->height;
 	}
 }
 /**
@@ -589,11 +650,10 @@ usbd_uvc_events_process_data(usbd_uvc_dev_t *dev, usbd_uvc_request_data_t *data)
 		break;
 
 	case USBD_UVC_INTF_STREAMING:
-		RTK_LOGS(TAG, RTK_LOG_INFO, "setting commit control, length = %d\r\n", data->length);
 		usbd_uvc_streaming_process_data(dev, data);
 		break;
 	default:
-		RTK_LOGS(TAG, RTK_LOG_INFO, "setting unknown control, length = %d\n", data->length);
+		RTK_LOGS(TAG, RTK_LOG_INFO, "Setting unknown control, length = %d\n", data->length);
 		return;
 	}
 }
@@ -608,8 +668,8 @@ void usbd_uvc_events_process(usbd_uvc_dev_t *dev, usbd_uvc_req_data_t *uvc_event
 {
 	usbd_uvc_request_data_t resp;
 	int ret;
-	memset(&resp, 0, sizeof resp);
 
+	usb_os_memset(&resp, 0U, (u32)sizeof(resp));
 
 	switch (uvc_event->type) {
 	case USBD_UVC_EVENT_CONNECT:
@@ -631,13 +691,13 @@ void usbd_uvc_events_process(usbd_uvc_dev_t *dev, usbd_uvc_req_data_t *uvc_event
 		break;
 	}
 
-	if (uvc_event->req.bmRequestType & 0x80U) {
+	if ((uvc_event->req.bmRequestType & USBD_UVC_BMREQTYPE_DIR_IN) != 0U) {
 		ret = usbd_uvc_send_response(dev, &resp);
 	} else {
 		ret = usbd_uvc_receive_response(dev, uvc_event);
 	}
 	if (ret < 0) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "UVCIOC_S_EVENT failed:\r\n");
+		RTK_LOGS(TAG, RTK_LOG_INFO, "UVCIOC_S_EVENT failed\n");
 		return;
 	}
 }

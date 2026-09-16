@@ -60,10 +60,6 @@ ameba_list_append(private_includes
     ${c_COMPONENT_DIR}/sdn/config
 )
 
-ameba_list_append(private_compile_options
-    -DCONFIG_SDN_ROM
-)
-
 # Component private part, user config end
 #------------------------------#
 

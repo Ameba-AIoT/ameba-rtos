@@ -119,7 +119,6 @@ struct rtw_event_sta_info {
 	struct rtw_event_bcnupdate_info bcnupd_info;
 
 	u8 stainfo_macid;
-	u8 tx_ampdu_density;
 	u8 htc_rx;
 
 	u8 sgi_20m;

@@ -32,6 +32,13 @@ extern "C" {
 int  realfs_erasedev_lbm_open(struct realfs_erasedev *dev);
 void realfs_erasedev_lbm_close(struct realfs_erasedev *dev);
 
+#if defined(CONFIG_REALFS_SECOND_FLASH_NAND)
+/* Same as above but for an external SPI NAND on the SPI-master bus (whole chip,
+ * driven by lbm_second_nand_ops). Probes the device first. */
+int  realfs_erasedev_lbm_second_open(struct realfs_erasedev *dev);
+void realfs_erasedev_lbm_second_close(struct realfs_erasedev *dev);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

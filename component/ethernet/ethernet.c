@@ -7,8 +7,8 @@
 
 static const char *const TAG = "ETH";
 
-#define ETH_TX_DESC_CNT         8
-#define ETH_RX_DESC_CNT         16
+#define ETH_TX_DESC_CNT         CONFIG_ETH_TX_DESC_CNT
+#define ETH_RX_DESC_CNT         CONFIG_ETH_RX_DESC_CNT
 
 /* Configuration Flags */
 volatile int eth_link_is_up = 0;

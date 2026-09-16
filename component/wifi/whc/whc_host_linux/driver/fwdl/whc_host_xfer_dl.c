@@ -30,6 +30,47 @@
 #define WHC_XFER_DBG(fmt, arg...)
 #define WHC_XFER_LOG(fmt, arg...) pr_info("[WHC] " fmt, ##arg)
 
+/* Signature lookup table — indexed by enum whc_sig_t */
+const u32 whc_signatures[][2] = {
+	[WHC_SIG_LOADER] = {0x96969999U, 0xFC66CC3FU},
+	[WHC_SIG_APP]    = {0x35393138U, 0x31313738U},
+};
+
+static inline bool whc_image_has_manifest(const struct whc_image_t *image)
+{
+	return image->manifest_target_addr != WHC_MANIFEST_NONE;
+}
+
+static inline int whc_image_manifest_pos(const struct whc_image_t *image)
+{
+	u32 v = image->manifest_target_addr;
+
+	return (v == WHC_MANIFEST_HEAD_AFTER || v == WHC_MANIFEST_HEAD_BEFORE || (v > WHC_MANIFEST_TAIL_BEFORE && (v & 1U))) ?
+		   WHC_XFER_MANIFEST_POS_HEAD : WHC_XFER_MANIFEST_POS_TAIL;
+}
+
+/* Returns explicit write address, or 0 for auto-computed (sentinels 1-4) */
+static inline u32 whc_manifest_write_addr(const struct whc_image_t *image)
+{
+	u32 v = image->manifest_target_addr;
+
+	return (v > WHC_MANIFEST_TAIL_BEFORE) ? (v & ~1U) : 0U;
+}
+
+static inline bool whc_manifest_after_content(const struct whc_image_t *image)
+{
+	u32 v = image->manifest_target_addr;
+
+	return v == WHC_MANIFEST_HEAD_AFTER || v == WHC_MANIFEST_TAIL_AFTER;
+}
+
+static inline bool whc_manifest_before_content(const struct whc_image_t *image)
+{
+	u32 v = image->manifest_target_addr;
+
+	return v == WHC_MANIFEST_HEAD_BEFORE || v == WHC_MANIFEST_TAIL_BEFORE;
+}
+
 static int whc_xfer_get_region_index(struct whc_xfer_adapter_t *adapter, u32 addr)
 {
 	int result = -1;
@@ -126,14 +167,11 @@ static int whc_xfer_check_hash(struct whc_xfer_adapter_t *adapter, struct file *
 		goto exit_free_desc;
 	}
 
-	/* Compare hashes */
 	if (memcmp(file_hash, hash, adapter->hash_size) == 0) {
-		WHC_XFER_LOG("Hash match, skip download\n");
 		*offset = file_offset;  /* Update offset for caller */
-		ret = 0;  /* Hash match - skip download */
+		ret = 0;
 	} else {
-		WHC_XFER_LOG("Hash mismatch, need download\n");
-		ret = -1;  /* Hash mismatch - need download */
+		ret = -1;
 	}
 
 exit_free_desc:
@@ -200,11 +238,11 @@ static int whc_xfer_check_image(struct whc_xfer_adapter_t *adapter, struct whc_i
 	image_file_size = ret;
 	ret = 0;
 
-	if (adapter->manifest_pos == WHC_XFER_MANIFEST_POS_HEAD) {
+	if (whc_image_manifest_pos(image) == WHC_XFER_MANIFEST_POS_HEAD) {
 		offset = WHC_XFER_MANIFEST_SIZE;
 	}
 
-	remain_image_size = image_file_size - WHC_XFER_MANIFEST_SIZE;
+	remain_image_size = image_file_size - (whc_image_has_manifest(image) ? WHC_XFER_MANIFEST_SIZE : 0);
 
 	while (remain_image_size >= WHC_XFER_IMAGE_HEADER_SIZE) {
 		ret = whc_xfer_read_file(fp, adapter->read_buf, WHC_XFER_IMAGE_HEADER_SIZE, &offset);
@@ -215,7 +253,7 @@ static int whc_xfer_check_image(struct whc_xfer_adapter_t *adapter, struct whc_i
 		}
 		ret = 0;
 		header = (struct whc_image_header_t *)adapter->read_buf;
-		if ((header->signature.d32[0] == image->signature[0]) && (header->signature.d32[1] == image->signature[1])) {
+		if ((header->signature.d32[0] == whc_signatures[image->sig][0]) && (header->signature.d32[1] == whc_signatures[image->sig][1])) {
 			sub_image_cnt++;
 			sub_image_size = header->image_size + WHC_XFER_IMAGE_HEADER_SIZE;
 			if (header->image_size == 0) {
@@ -284,21 +322,26 @@ exit_free_path:
  */
 static int whc_xfer_check_images(struct whc_xfer_adapter_t *adapter)
 {
-	int ret = -1;
+	int ret = 0;
 	int i = 0;
 	struct whc_image_t *image;
 
 	while (true) {
 		image = adapter->images + i;
-		if (image->image_name != NULL) {
-			ret = whc_xfer_check_image(adapter, image);
-			if (ret < 0) {
-				break;
-			}
-			i++;
-		} else {
+		if (image->image_name == NULL) {
 			break;
 		}
+
+		if (image->post_process == WHC_POST_PROCESS_NONE) {
+			i++;
+			continue;
+		}
+
+		ret = whc_xfer_check_image(adapter, image);
+		if (ret < 0) {
+			break;
+		}
+		i++;
 	}
 
 	return ret;
@@ -344,10 +387,9 @@ static int whc_xfer_check_protocol_version(struct whc_xfer_adapter_t *adapter, u
  * 			0: OK
  * 			<0: Error
  */
-static int whc_xfer_check_device(struct whc_xfer_adapter_t *adapter, int image_type)
+static int whc_xfer_check_device(struct whc_xfer_adapter_t *adapter, struct whc_image_t *image)
 {
 	char *image_path;
-	struct whc_image_t *image;
 	struct whc_mem_region_t *region;
 	struct whc_image_header_t *header;
 	struct whc_dev_info_t *device_info = &adapter->device_info;
@@ -383,7 +425,6 @@ static int whc_xfer_check_device(struct whc_xfer_adapter_t *adapter, int image_t
 		goto exit;
 	}
 
-	image = &adapter->images[image_type];
 	image_path = whc_xfer_join_path(adapter->image_dir, image->image_name);
 
 	ret = whc_xfer_check_file_exists(image_path);
@@ -413,11 +454,11 @@ static int whc_xfer_check_device(struct whc_xfer_adapter_t *adapter, int image_t
 	image_file_size = ret;
 	ret = 0;
 
-	if (adapter->manifest_pos == WHC_XFER_MANIFEST_POS_HEAD) {
+	if (whc_image_manifest_pos(image) == WHC_XFER_MANIFEST_POS_HEAD) {
 		offset = WHC_XFER_MANIFEST_SIZE;
 	}
 
-	remain_image_size = image_file_size - WHC_XFER_MANIFEST_SIZE;
+	remain_image_size = image_file_size - (whc_image_has_manifest(image) ? WHC_XFER_MANIFEST_SIZE : 0);
 
 	while (remain_image_size >= WHC_XFER_IMAGE_HEADER_SIZE) {
 		WHC_XFER_DBG("Remain size %d\n", remain_image_size);
@@ -429,7 +470,7 @@ static int whc_xfer_check_device(struct whc_xfer_adapter_t *adapter, int image_t
 		}
 		ret = 0;
 		header = (struct whc_image_header_t *)adapter->read_buf;
-		if ((header->signature.d32[0] == image->signature[0]) && (header->signature.d32[1] == image->signature[1])) {
+		if ((header->signature.d32[0] == whc_signatures[image->sig][0]) && (header->signature.d32[1] == whc_signatures[image->sig][1])) {
 			sub_image_size = header->image_size + WHC_XFER_IMAGE_HEADER_SIZE;
 			sub_image_start_addr = header->image_addr - WHC_XFER_IMAGE_HEADER_SIZE;
 			sub_image_end_addr = sub_image_start_addr + sub_image_size - 1;
@@ -1005,14 +1046,13 @@ static int whc_xfer_download_sub_image_data(struct whc_xfer_adapter_t *adapter,
  * @param	image_file_size: Total image file size
  * @retval	Result: 0 on success, <0 on error
  */
-static int whc_xfer_download_manifest(struct whc_xfer_adapter_t *adapter,
-									  struct file *fp, u32 manifest_target_addr, int image_file_size)
+static int whc_xfer_download_manifest(struct whc_xfer_adapter_t *adapter, struct file *fp, u32 manifest_target_addr, int image_file_size, int manifest_pos)
 {
 	struct whc_xfer_ops_t *ops = adapter->ops;
 	loff_t offset;
 	int ret;
 
-	if (adapter->manifest_pos == WHC_XFER_MANIFEST_POS_HEAD) {
+	if (manifest_pos == WHC_XFER_MANIFEST_POS_HEAD) {
 		offset = 0;
 	} else {
 		offset = image_file_size - WHC_XFER_MANIFEST_SIZE;
@@ -1036,9 +1076,8 @@ static int whc_xfer_download_manifest(struct whc_xfer_adapter_t *adapter,
 	}
 }
 
-int whc_xfer_download_image(struct whc_xfer_adapter_t *adapter, int image_type)
+static int whc_xfer_download_image_entry(struct whc_xfer_adapter_t *adapter, struct whc_image_t *image)
 {
-	struct whc_image_t *image;
 	struct whc_mem_region_t *region;
 	struct whc_image_header_t *header;
 	struct file *fp;
@@ -1049,40 +1088,15 @@ int whc_xfer_download_image(struct whc_xfer_adapter_t *adapter, int image_type)
 	int remain_image_size;
 	int region_index = 0;
 	int ret = -1;
+
 	u32 start_time;
 	u32 sub_image_start_addr;
 	u32 manifest_target_addr = 0;
 	u32 sub_image_size;
 	bool need_padding = false;
 	bool skip_download = false;
-	u32 current_flash_addr = 0;  /* initialized after image is assigned */
+	u32 current_flash_addr;
 	struct whc_xfer_ops_t *ops = adapter->ops;
-
-	if (image_type == WHC_IMAGE_TYPE_BOOTLOADER) {
-		/* Do pre-check only at rom phase */
-		ret = whc_xfer_check_images(adapter);
-		if (ret < 0) {
-			WHC_XFER_LOG("Invalid images (%d)\n", ret);
-			return ret;
-		}
-	} else if (image_type == WHC_IMAGE_TYPE_APPLICATION) {
-		/* Do query only at bootloader */
-		ret = whc_xfer_query(adapter);
-		if (ret == 0) {
-			/* Do post-check only at bootloader */
-			ret = whc_xfer_check_device(adapter, image_type);
-			if (ret < 0) {
-				WHC_XFER_LOG("Device validate error (%d)\n", ret);
-				return ret;
-			}
-		} else {
-			WHC_XFER_LOG("Fail to query device info (%d)\n", ret);
-			return ret;
-		}
-	} else {
-		WHC_XFER_LOG("Invalid image type (%d)\n", image_type);
-		return -1;
-	}
 
 	start_time = whc_xfer_get_time();
 
@@ -1092,7 +1106,6 @@ int whc_xfer_download_image(struct whc_xfer_adapter_t *adapter, int image_type)
 		goto exit;
 	}
 
-	image = &adapter->images[image_type];
 	/* Flash sub-images are laid out sequentially starting at flash_target_addr.
 	 * Each sub-image occupies align_up(size, PAGE_SIZE_4K) bytes. */
 	current_flash_addr = image->flash_target_addr;
@@ -1119,11 +1132,11 @@ int whc_xfer_download_image(struct whc_xfer_adapter_t *adapter, int image_type)
 
 	WHC_XFER_DBG("Image size: %d\n", image_file_size);
 
-	if (adapter->manifest_pos == WHC_XFER_MANIFEST_POS_HEAD) {
+	if (whc_image_manifest_pos(image) == WHC_XFER_MANIFEST_POS_HEAD) {
 		offset = WHC_XFER_MANIFEST_SIZE;
 	}
 
-	remain_image_size = image_file_size - WHC_XFER_MANIFEST_SIZE;
+	remain_image_size = image_file_size - (whc_image_has_manifest(image) ? WHC_XFER_MANIFEST_SIZE : 0);
 
 	while (remain_image_size >= WHC_XFER_IMAGE_HEADER_SIZE) {
 		ret = whc_xfer_read_file(fp, adapter->read_buf, WHC_XFER_IMAGE_HEADER_SIZE, &offset);
@@ -1134,7 +1147,7 @@ int whc_xfer_download_image(struct whc_xfer_adapter_t *adapter, int image_type)
 		}
 		ret = 0;
 		header = (struct whc_image_header_t *)adapter->read_buf;
-		if ((header->signature.d32[0] == image->signature[0]) && (header->signature.d32[1] == image->signature[1])) {
+		if ((header->signature.d32[0] == whc_signatures[image->sig][0]) && (header->signature.d32[1] == whc_signatures[image->sig][1])) {
 			sub_image_size = header->image_size + WHC_XFER_IMAGE_HEADER_SIZE;
 			sub_image_start_addr = header->image_addr - WHC_XFER_IMAGE_HEADER_SIZE;
 
@@ -1155,20 +1168,19 @@ int whc_xfer_download_image(struct whc_xfer_adapter_t *adapter, int image_type)
 				sub_image_start_addr = current_flash_addr;
 				ret = whc_xfer_calculate_hash(adapter, sub_image_start_addr, sub_image_size, hash);
 				if (ret < 0) {
-					WHC_XFER_LOG("Fail to get flash hash (%d)\n", ret);
+					WHC_XFER_LOG("Hash command failed (0x%08X, %d), SDIO may be unstable\n", sub_image_start_addr, ret);
 					break;
 				}
 
-				/* Check if flash content matches file content */
 				ret = whc_xfer_check_hash(adapter, fp, &offset, sub_image_size, hash);
 				if (ret == 0) {
-					/* Hash match, skip download but still advance flash address */
+					/* Hash match: skip download but still advance flash address */
 					WHC_XFER_LOG("Flash hash match, skip download (0x%08X)\n", sub_image_start_addr);
 					current_flash_addr += (sub_image_size + PAGE_SIZE_4K - 1) & ~(PAGE_SIZE_4K - 1);
 					remain_image_size -= sub_image_size;
 					continue;
 				}
-				WHC_XFER_LOG("Flash hash mismatch, download sub image (0x%08X)\n", sub_image_start_addr);
+				WHC_XFER_LOG("Flash hash mismatch (content differs), download sub image (0x%08X)\n", sub_image_start_addr);
 
 				/* sub_image_size will be aligned to 4KB at device side */
 				ret = whc_xfer_erase(adapter, sub_image_start_addr, sub_image_size);
@@ -1178,8 +1190,7 @@ int whc_xfer_download_image(struct whc_xfer_adapter_t *adapter, int image_type)
 				}
 			} else if (region->mem_type == WHC_MEM_TYPE_SRAM) {
 				WHC_XFER_DBG("Sub-image type: SRAM\n");
-				if ((image_type == WHC_IMAGE_TYPE_BOOTLOADER) && (image->manifest_target_addr == 0U)) {
-					/* Only Floader and fullmac loader put manifest after sram.bin */
+				if (whc_manifest_after_content(image)) {
 					manifest_target_addr = sub_image_start_addr + sub_image_size;
 				}
 			} else if (region->mem_type == WHC_MEM_TYPE_PSRAM) {
@@ -1214,18 +1225,24 @@ int whc_xfer_download_image(struct whc_xfer_adapter_t *adapter, int image_type)
 		goto exit_close_file;
 	}
 
-	if (image->manifest_target_addr != 0U) {
-		manifest_target_addr = image->manifest_target_addr;
+	if (whc_manifest_before_content(image)) {
+		manifest_target_addr = image->flash_target_addr;
+	} else {
+		u32 explicit_addr = whc_manifest_write_addr(image);
+
+		if (explicit_addr != 0U) {
+			manifest_target_addr = explicit_addr;
+		}
 	}
 
 	if (manifest_target_addr != 0) {
-		ret = whc_xfer_download_manifest(adapter, fp, manifest_target_addr, image_file_size);
+		ret = whc_xfer_download_manifest(adapter, fp, manifest_target_addr, image_file_size, whc_image_manifest_pos(image));
 		if (ret != 0) {
 			goto exit_close_file;
 		}
 	}
 
-	WHC_XFER_LOG("Image download success, %u bytes costs %dms\n", image_file_size, whc_xfer_get_elapsed_ms(start_time));
+	WHC_XFER_LOG("Image download success: %s, %u bytes costs %dms\n", image->image_name, image_file_size, whc_xfer_get_elapsed_ms(start_time));
 
 	if (image->post_process == WHC_POST_PROCESS_BOOT) {
 		ret = ops->boot(adapter);
@@ -1246,4 +1263,206 @@ exit:
 	whc_xfer_mfree(hash);
 
 	return ret;
+}
+
+/* Write entire image file verbatim to flash; hash-check first to skip unnecessary writes */
+static int whc_xfer_download_image_raw(struct whc_xfer_adapter_t *adapter, struct whc_image_t *image)
+{
+	struct whc_xfer_ops_t *ops = adapter->ops;
+	struct file *fp;
+	char *image_path;
+	u8 *hash;
+	loff_t offset = 0;
+	int image_file_size;
+	int remain;
+	int read_size;
+	u32 write_addr;
+	int ret = -1;
+	u32 start_time;
+
+	image_path = whc_xfer_join_path(adapter->image_dir, image->image_name);
+
+	WHC_XFER_LOG("Raw flash download: %s -> 0x%08X\n", image_path, image->flash_target_addr);
+
+	fp = whc_xfer_open_file(image_path);
+	if (fp == NULL) {
+		ret = -1;
+		WHC_XFER_LOG("Fail to open image file\n");
+		goto exit_free_path;
+	}
+
+	ret = whc_xfer_get_file_size(fp);
+	if (ret <= 0) {
+		ret = -1;
+		WHC_XFER_LOG("Fail to get file size (%d)\n", ret);
+		goto exit_close_file;
+	}
+	image_file_size = ret;
+	start_time = whc_xfer_get_time();
+
+	{
+		u32 file_sig[2];
+		loff_t sig_offset = 0;
+
+		ret = whc_xfer_read_file(fp, (u8 *)file_sig, sizeof(file_sig), &sig_offset);
+		if (ret < (int)sizeof(file_sig) || file_sig[0] != whc_signatures[image->sig][0] || file_sig[1] != whc_signatures[image->sig][1]) {
+			WHC_XFER_LOG("Wrong file: signature mismatch for %s (expected 0x%08X/0x%08X, got 0x%08X/0x%08X)\n",
+						 image->image_name, whc_signatures[image->sig][0], whc_signatures[image->sig][1],
+						 (ret >= 8) ? file_sig[0] : 0, (ret >= 8) ? file_sig[1] : 0);
+			ret = -EINVAL;
+			goto exit_close_file;
+		}
+	}
+
+	/* Hash check: skip write if flash content already matches file */
+	hash = (u8 *)whc_xfer_zmalloc(adapter->hash_size);
+	if (hash == NULL) {
+		ret = -1;
+		WHC_XFER_LOG("Fail to malloc hash buffer\n");
+		goto exit_close_file;
+	}
+
+	ret = whc_xfer_calculate_hash(adapter, image->flash_target_addr, image_file_size, hash);
+	if (ret == 0) {
+		ret = whc_xfer_check_hash(adapter, fp, &offset, image_file_size, hash);
+		if (ret == 0) {
+			WHC_XFER_LOG("Hash match, skip raw download (0x%08X)\n", image->flash_target_addr);
+			goto exit_boot;
+		}
+		WHC_XFER_LOG("Hash mismatch (content differs), re-flash %s\n", image->image_name);
+	} else {
+		WHC_XFER_LOG("Hash command failed (%d), SDIO may be unstable\n", ret);
+		goto exit_free_hash;
+	}
+	offset = 0;
+
+	ret = whc_xfer_erase(adapter, image->flash_target_addr, image_file_size);
+	if (ret < 0) {
+		WHC_XFER_LOG("Fail to erase flash (%d)\n", ret);
+		goto exit_free_hash;
+	}
+
+	remain = image_file_size;
+	write_addr = image->flash_target_addr;
+
+	while (remain > 0) {
+		read_size = (remain < adapter->read_buf_size) ? remain : adapter->read_buf_size;
+		ret = whc_xfer_read_file(fp, adapter->read_buf, read_size, &offset);
+		if (ret < read_size) {
+			WHC_XFER_LOG("Fail to read file (%d)\n", ret);
+			ret = -1;
+			goto exit_free_hash;
+		}
+		ret = ops->write(adapter, adapter->read_buf, write_addr, read_size, true);
+		if (ret < 0) {
+			WHC_XFER_LOG("Fail to write raw data at 0x%08X (%d)\n", write_addr, ret);
+			goto exit_free_hash;
+		}
+		write_addr += read_size;
+		remain -= read_size;
+	}
+
+	WHC_XFER_LOG("Raw download success: %s, %d bytes costs %dms\n", image->image_name, image_file_size, whc_xfer_get_elapsed_ms(start_time));
+
+exit_boot:
+	if (image->post_process == WHC_POST_PROCESS_BOOT) {
+		ret = ops->boot(adapter);
+		if (ret == 0) {
+			WHC_XFER_LOG("Boot from firmware...\n");
+		} else {
+			WHC_XFER_LOG("Fail to boot from firmware (%d)\n", ret);
+		}
+	} else {
+		ret = 0;
+	}
+
+exit_free_hash:
+	whc_xfer_mfree(hash);
+
+exit_close_file:
+	whc_xfer_close_file(fp);
+
+exit_free_path:
+	whc_xfer_mfree(image_path);
+
+	return ret;
+}
+
+static int whc_xfer_download_all_application(struct whc_xfer_adapter_t *adapter)
+{
+	struct whc_image_t *image;
+	char *image_path;
+	int ret = 0;
+	int i = 0;
+
+	/* Query device info once before any download */
+	ret = whc_xfer_query(adapter);
+	if (ret < 0) {
+		WHC_XFER_LOG("Fail to query device info (%d)\n", ret);
+		return ret;
+	}
+
+	while (true) {
+		image = &adapter->images[i];
+		if (image->image_name == NULL) {
+			break;
+		}
+
+		if (image->image_type == WHC_IMAGE_TYPE_BOOTLOADER) {
+			i++;
+			continue;
+		}
+
+		if (image->post_process == WHC_POST_PROCESS_NONE) {
+			image_path = whc_xfer_join_path(adapter->image_dir, image->image_name);
+			ret = whc_xfer_check_file_exists(image_path);
+			whc_xfer_mfree(image_path);
+			if (ret <= 0) {
+				WHC_XFER_LOG("Optional image not found (ret=%d), skip: %s\n", ret, image->image_name);
+				i++;
+				ret = 0;
+				continue;
+			}
+			ret = 0;
+		}
+
+		if (image->image_type == WHC_IMAGE_TYPE_APPLICATION) {
+			ret = whc_xfer_check_device(adapter, image);
+			if (ret < 0) {
+				WHC_XFER_LOG("Device validate error for %s (%d)\n", image->image_name, ret);
+				return ret;
+			}
+		}
+
+		if (image->image_type == WHC_IMAGE_TYPE_RAW) {
+			ret = whc_xfer_download_image_raw(adapter, image);
+		} else {
+			ret = whc_xfer_download_image_entry(adapter, image);
+		}
+
+		if (ret < 0) {
+			WHC_XFER_LOG("Download %s failed (%d)\n", image->image_name, ret);
+			return ret;
+		}
+
+		i++;
+	}
+
+	return ret;
+}
+
+int whc_xfer_download_image(struct whc_xfer_adapter_t *adapter, int image_type)
+{
+	int ret;
+
+	if (image_type == WHC_IMAGE_TYPE_BOOTLOADER) {
+		ret = whc_xfer_check_images(adapter);
+		if (ret < 0) {
+			WHC_XFER_LOG("Invalid images (%d)\n", ret);
+			return ret;
+		}
+		return whc_xfer_download_image_entry(adapter, &adapter->images[image_type]);
+	}
+
+	return whc_xfer_download_all_application(adapter);
 }

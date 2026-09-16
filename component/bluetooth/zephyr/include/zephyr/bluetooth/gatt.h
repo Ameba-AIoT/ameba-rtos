@@ -1639,6 +1639,10 @@ struct bt_gatt_read_params {
 			uint16_t end_handle;
 			/** 2 or 16 octet UUID. */
 			const struct bt_uuid *uuid;
+#if ZEPHYR_RTK_PATCH
+			/** read_by_type request send times count */
+			uint16_t req_cnt;
+#endif
 		} by_uuid;
 	};
 #if defined(CONFIG_BT_EATT)

@@ -78,57 +78,9 @@ void os_init(void)
 	rtos_mem_init();
 }
 
-#ifdef CONFIG_SOLO
-
-static void BOOT_ROM_InitDebugFlg(void)
-{
-	/* to initial ROM code using global variable */
-	if (SYSCFG_OTP_DisBootLog() == FALSE) {
-		/* Set log level for diaplaying*/
-		rtk_log_level_set("*", RTK_LOG_INFO);
-	} else {
-		rtk_log_level_set("*", RTK_LOG_ERROR);
-	}
-}
-
-static void BOOT_CleanupSection(void)
-{
-	/* Important: Cleaning up the BSS section must be done before Heap init. */
-	/* Clear ROM bss*/
-	_memset((void *) __rom_bss_start__, 0, (__rom_bss_end__ - __rom_bss_start__));
-	/* Clear application bss */
-	_memset((void *) __bss_start__, 0, (__bss_end__ - __bss_start__));
-}
-
-void app_init_solo(void)
-{
-	u32 CpuClk;
-
-	BOOT_CleanupSection();
-
-	/* init necessary rom bss */
-	PutChar = (void (*)(char)) LOGUART_PutChar;
-	Crashmain_register(crash_Main);
-
-	/* Initial Global Variable */
-	BOOT_ROM_InitDebugFlg();
-
-	SCB->VTOR = (u32)RomVectorTable;
-
-	CpuClk = CPU_ClkGet();
-	DelayClkUpdate(CpuClk);
-
-	/* Set the crash dump stack depth for debugging */
-	crash_SetExStackDepth(MIN_DUMP_DEPTH);
-}
-#endif
-
 // The Main App entry point
 void app_start(void)
 {
-#ifdef CONFIG_SOLO
-	app_init_solo();
-#endif
 	SystemCoreClockUpdate();
 	RTK_LOGI(TAG, "NP CPU CLK: %lu Hz \n", SystemCoreClock);
 

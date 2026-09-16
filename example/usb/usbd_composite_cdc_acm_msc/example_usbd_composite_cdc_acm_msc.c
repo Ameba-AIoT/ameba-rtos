@@ -58,7 +58,7 @@ static int composite_cdc_acm_cb_deinit(void);
 static int composite_cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf);
 static int composite_cdc_acm_cb_received(u8 *buf, u32 len);
 
-static int comp_init_stack(void);
+static int composite_init_stack(void);
 #if COMP_HOTPLUG
 static void composite_cb_status_changed(u8 old_status, u8 status);
 #endif
@@ -70,11 +70,13 @@ static const char *const TAG = "COMP";
 static const usbd_config_t composite_cfg = {
 	.speed = COMP_USB_SPEED,
 	.isr_priority = INT_PRI_MIDDLE,
+	/* Enlarge this value if composite configuration descriptor is larger than 512B */
+	/* .ctrl_xfer_buf_len = 512U, */
 #if defined(CONFIG_AMEBASMART)
 	.nptx_max_epmis_cnt = 100U,
 #elif defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RLE1509)
-	.rx_fifo_depth = 420U,
-	.ptx_fifo_depth = {16U, 256U, 32U, 256U, },
+	.rx_fifo_depth = 436U,
+	.ptx_fifo_depth = {0U, 256U, 32U, 256U, },
 #elif defined(CONFIG_AMEBAPRO3)
 	/*DFIFO total 2232 DWORD, resv 8 DWORD for DMA addr and EP0 fixed 256 DWORD*/
 	.rx_fifo_depth = 1424U,
@@ -119,9 +121,9 @@ static const usbd_cdc_acm_cb_t composite_cdc_acm_usr_cb = {
 static usb_cdc_acm_line_coding_t composite_cdc_acm_line_coding;
 
 #if COMP_HOTPLUG
-static rtos_task_t comp_hotplug_task;
-static rtos_sema_t comp_attach_status_changed_sema;
-static u8 comp_attach_status;
+static rtos_task_t composite_hotplug_task;
+static rtos_sema_t composite_attach_status_changed_sema;
+static u8 composite_attach_status;
 
 /* Composite-level callback: forwarded the aggregated attach status by the
    composite framework, used to drive the hotplug thread. */
@@ -241,7 +243,7 @@ static int composite_cdc_acm_cb_received(u8 *buf, u32 len)
   *         The storage disk must be initialised before usbd_init.
   * @retval HAL_OK on success, other HAL_Status code on failure (all partial resources rolled back)
   */
-static int comp_init_stack(void)
+static int composite_init_stack(void)
 {
 	int ret;
 
@@ -294,39 +296,48 @@ exit_disk_init:
 
 #if COMP_HOTPLUG
 /**
+  * @brief  Tear down the whole composite stack, in the reverse order of composite_init_stack():
+  *         framework -> classes -> core -> disk.
+  * @note   No return value: a teardown failure has no recoverable path, so the
+  *         only sequence of release calls in this example lives here.
+  * @retval None
+  */
+static void composite_deinit_stack(void)
+{
+	usbd_composite_deinit();
+	usbd_msc_deinit();
+	usbd_cdc_acm_deinit();
+	usbd_deinit();
+	usbd_msc_disk_deinit();
+}
+
+/**
   * @brief  Composite attach-status change notification (ISR context).
   * @note   time-consuming operations are not permitted here.
   */
 static void composite_cb_status_changed(u8 old_status, u8 status)
 {
 	UNUSED(old_status);
-	comp_attach_status = status;
-	rtos_sema_give(comp_attach_status_changed_sema);
+	composite_attach_status = status;
+	rtos_sema_give(composite_attach_status_changed_sema);
 }
 
 /* Tear down and re-init the whole composite stack on cable detach, to avoid
-   memory leak across repeated plug/unplug. Deinit order is the reverse of
-   init: framework -> classes -> core -> disk. */
+   memory leak across repeated plug/unplug. */
 static void example_usbd_composite_hotplug_thread(void *param)
 {
 	UNUSED(param);
 
 	for (;;) {
-		if (rtos_sema_take(comp_attach_status_changed_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
-			if (comp_attach_status == USBD_ATTACH_STATUS_DETACHED) {
+		if (rtos_sema_take(composite_attach_status_changed_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
+			if (composite_attach_status == USBD_ATTACH_STATUS_DETACHED) {
 				RTK_LOGS(TAG, RTK_LOG_INFO, "DETACHED\r\n");
-				usbd_composite_deinit();
-				usbd_msc_deinit();
-				usbd_cdc_acm_deinit();
-				if (usbd_deinit() != HAL_OK) {
-					break;
-				}
-				usbd_msc_disk_deinit();
+				composite_deinit_stack();
 				RTK_LOGS(TAG, RTK_LOG_INFO, "Free heap: 0x%x\n", rtos_mem_get_free_heap_size());
-				if (comp_init_stack() != HAL_OK) {
+				if (composite_init_stack() != HAL_OK) {
 					break;
 				}
-			} else if (comp_attach_status == USBD_ATTACH_STATUS_ATTACHED) {
+			} else if (composite_attach_status == USBD_ATTACH_STATUS_ATTACHED) {
 				RTK_LOGS(TAG, RTK_LOG_INFO, "ATTACHED\r\n");
 			} else {
 				RTK_LOGS(TAG, RTK_LOG_INFO, "INIT\r\n");
@@ -343,29 +354,45 @@ static void example_usbd_composite_hotplug_thread(void *param)
 
 void example_usbd_composite(void)
 {
+	int ret;
+
 	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD COMP demo start\r\n");
 
 #if COMP_HOTPLUG
-	if (rtos_sema_create(&comp_attach_status_changed_sema, 0U, 1U) != RTK_SUCCESS) {
+	ret = rtos_sema_create(&composite_attach_status_changed_sema, 0U, 1U);
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create sema failed\r\n");
 		return;
 	}
 #endif
 
-	if (comp_init_stack() != HAL_OK) {
-#if COMP_HOTPLUG
-		rtos_sema_delete(comp_attach_status_changed_sema);
-#endif
-		return;
+	ret = composite_init_stack();
+	if (ret != HAL_OK) {
+		goto exit_release_sema;
 	}
 
 #if COMP_HOTPLUG
-	if (rtos_task_create(&comp_hotplug_task, "usbd_comp_hotplug_thread",
-						 example_usbd_composite_hotplug_thread, NULL,
-						 COMP_HOTPLUG_THREAD_STACK_SIZE, COMP_HOTPLUG_THREAD_PRIORITY) != RTK_SUCCESS) {
+	ret = rtos_task_create(&composite_hotplug_task, "usbd_composite_hotplug_thread",
+						   example_usbd_composite_hotplug_thread, NULL,
+						   COMP_HOTPLUG_THREAD_STACK_SIZE, COMP_HOTPLUG_THREAD_PRIORITY);
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create hotplug thread fail\r\n");
+		goto exit_deinit_stack;
 	}
 #endif
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD COMP demo ready\r\n");
+	return;
+
+#if COMP_HOTPLUG
+exit_deinit_stack:
+	composite_deinit_stack();
+#endif
+
+exit_release_sema:
+#if COMP_HOTPLUG
+	rtos_sema_delete(composite_attach_status_changed_sema);
+	composite_attach_status_changed_sema = NULL;
+#endif
+	return;
 }

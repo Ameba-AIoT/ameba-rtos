@@ -83,7 +83,7 @@
 /* Private function prototypes -----------------------------------------------*/
 
 static int usbd_inic_set_config(usb_dev_t *dev, u8 config);
-static int usbd_inic_clear_config(usb_dev_t *dev, u8 config);
+static void usbd_inic_clear_config(usb_dev_t *dev, u8 config);
 static int usbd_inic_set_wifi_config(usb_dev_t *dev, u8 config);
 static int usbd_inic_clear_wifi_config(usb_dev_t *dev, u8 config);
 static int usbd_inic_set_bt_config(usb_dev_t *dev, u8 config);
@@ -93,7 +93,7 @@ static int usbd_inic_set_eth_config(usb_dev_t *dev, u8 config);
 static int usbd_inic_clear_eth_config(usb_dev_t *dev, u8 config);
 #endif
 static int usbd_inic_setup(usb_dev_t *dev, usb_setup_req_t *req);
-static u16 usbd_inic_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf);
+static u16 usbd_inic_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16 buf_len);
 static int usbd_inic_handle_ep0_data_out(usb_dev_t *dev);
 static int usbd_inic_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status);
 static int usbd_inic_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len);
@@ -1345,11 +1345,10 @@ static int usbd_inic_clear_bt_config(usb_dev_t *dev, u8 config)
   *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  dev: USB device instance
   * @param  config: USB configuration index
-  * @retval Status
+  * @retval None
   */
-static int usbd_inic_clear_config(usb_dev_t *dev, u8 config)
+static void usbd_inic_clear_config(usb_dev_t *dev, u8 config)
 {
-	int ret = 0U;
 	usbd_inic_dev_t *idev = &usbd_inic_dev;
 	usbd_otp_t *otp = &idev->otp;
 
@@ -1368,8 +1367,6 @@ static int usbd_inic_clear_config(usb_dev_t *dev, u8 config)
 	if (idev->cb->clear_config != NULL) {
 		idev->cb->clear_config();
 	}
-
-	return ret;
 }
 
 /**
@@ -1659,143 +1656,116 @@ static int usbd_inic_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len)
   * @param  len: Descriptor length
   * @retval Status
   */
-static u16 usbd_inic_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf)
+static u16 usbd_inic_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16 buf_len)
 {
 	usb_speed_type_t speed = dev->dev_speed;
 	usbd_inic_dev_t *idev = &usbd_inic_dev;
 	usbd_otp_t *otp = &idev->otp;
-	u8 *desc = NULL;
+	const u8 *desc = NULL;
 	u32 len = 0;
+	u8 type = USB_HIGH_BYTE(req->wValue);
+	u8 is_cfg = 0;
+	u8 is_dev = 0;
 
 	dev->self_powered = otp->self_powered;
 	dev->remote_wakeup_en = otp->remote_wakeup_en;
 
-	switch (USB_HIGH_BYTE(req->wValue)) {
+	switch (type) {
 
 	case USB_DESC_TYPE_DEVICE:
 		if (otp->bt_en) {
-			desc = (u8 *)usbd_inic_dev_desc;
+			desc = usbd_inic_dev_desc;
 		} else {
-			desc = (u8 *)usbd_inic_wifi_only_mode_dev_desc;
+			desc = usbd_inic_wifi_only_mode_dev_desc;
 		}
 
 		len = USB_LEN_DEV_DESC;
-
-		usb_os_memcpy((void *)buf, (const void *)desc, len);
-
-		if (otp->otp_param) {
-			buf[USB_DEV_DESC_OFFSET_VID] = USB_LOW_BYTE(otp->vid);
-			buf[USB_DEV_DESC_OFFSET_VID + 1] = USB_HIGH_BYTE(otp->vid);
-			buf[USB_DEV_DESC_OFFSET_PID] = USB_LOW_BYTE(otp->pid);
-			buf[USB_DEV_DESC_OFFSET_PID + 1] = USB_HIGH_BYTE(otp->pid);
-		} else if (SYSCFG_OTP_BOOTSEL() == BOOT_FROM_USB) {
-			buf[USB_DEV_DESC_OFFSET_PID] = USB_LOW_BYTE(USBD_NIC_VID);
-			buf[USB_DEV_DESC_OFFSET_PID + 1] = USB_HIGH_BYTE(USBD_NIC_VID);
-		}
+		is_dev = 1;
 		break;
 
 	case USB_DESC_TYPE_CONFIGURATION:
 		if (otp->bt_en) {
 			if (speed == USB_SPEED_HIGH) {
-				desc = (u8 *)usbd_inic_config_desc;
+				desc = usbd_inic_config_desc;
 				len = sizeof(usbd_inic_config_desc);
 			} else {
-				desc = (u8 *)usbd_inic_full_speed_config_desc;
+				desc = usbd_inic_full_speed_config_desc;
 				len = sizeof(usbd_inic_full_speed_config_desc);
 			}
 		} else {
 			if (speed == USB_SPEED_HIGH) {
-				desc = (u8 *)usbd_inic_single_wifi_mode_config_desc;
+				desc = usbd_inic_single_wifi_mode_config_desc;
 				len = sizeof(usbd_inic_single_wifi_mode_config_desc);
 			} else {
-				desc = (u8 *)usbd_inic_wifi_only_mode_full_speed_config_desc;
+				desc = usbd_inic_wifi_only_mode_full_speed_config_desc;
 				len = sizeof(usbd_inic_wifi_only_mode_full_speed_config_desc);
 			}
 		}
-		usb_os_memcpy((void *)buf, (const void *)desc, len);
-		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN] = USB_LOW_BYTE(len);
-		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN + 1] = USB_HIGH_BYTE(len);
-		buf[USB_CFG_DESC_OFFSET_ATTR] &= ~(USB_CFG_DESC_OFFSET_ATTR_BIT_SELF_POWERED | USB_CFG_DESC_OFFSET_ATTR_BIT_REMOTE_WAKEUP);
-		if (otp->self_powered) {
-			buf[USB_CFG_DESC_OFFSET_ATTR] |= USB_CFG_DESC_OFFSET_ATTR_BIT_SELF_POWERED;
-		}
-		if (otp->remote_wakeup_en) {
-			buf[USB_CFG_DESC_OFFSET_ATTR] |= USB_CFG_DESC_OFFSET_ATTR_BIT_REMOTE_WAKEUP;
-		}
+		is_cfg = 1;
 		break;
 
 	case USB_DESC_TYPE_DEVICE_QUALIFIER:
+		desc = usbd_inic_dev_qualifier_desc;
 		len = USB_LEN_DEV_QUALIFIER_DESC;
-		usb_os_memcpy((void *)buf, (const void *)usbd_inic_dev_qualifier_desc, len);
 		break;
 
 	case USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION:
 		if (otp->bt_en) {
 			if (speed == USB_SPEED_HIGH) {
-				desc = (u8 *)usbd_inic_full_speed_config_desc;
+				desc = usbd_inic_full_speed_config_desc;
 				len = sizeof(usbd_inic_full_speed_config_desc);
 			} else {
-				desc = (u8 *)usbd_inic_config_desc;
+				desc = usbd_inic_config_desc;
 				len = sizeof(usbd_inic_config_desc);
 			}
 		} else {
 			if (speed == USB_SPEED_HIGH) {
-				desc = (u8 *)usbd_inic_wifi_only_mode_full_speed_config_desc;
+				desc = usbd_inic_wifi_only_mode_full_speed_config_desc;
 				len = sizeof(usbd_inic_wifi_only_mode_full_speed_config_desc);
 			} else {
-				desc = (u8 *)usbd_inic_single_wifi_mode_config_desc;
+				desc = usbd_inic_single_wifi_mode_config_desc;
 				len = sizeof(usbd_inic_single_wifi_mode_config_desc);
 			}
 		}
-		usb_os_memcpy((void *)buf, (const void *)desc, len);
-		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN] = USB_LOW_BYTE(len);
-		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN + 1] = USB_HIGH_BYTE(len);
-		buf[USB_CFG_DESC_OFFSET_TYPE] = USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION;
-		buf[USB_CFG_DESC_OFFSET_ATTR] &= ~(USB_CFG_DESC_OFFSET_ATTR_BIT_SELF_POWERED | USB_CFG_DESC_OFFSET_ATTR_BIT_REMOTE_WAKEUP);
-		if (otp->self_powered) {
-			buf[USB_CFG_DESC_OFFSET_ATTR] |= USB_CFG_DESC_OFFSET_ATTR_BIT_SELF_POWERED;
-		}
-		if (otp->remote_wakeup_en) {
-			buf[USB_CFG_DESC_OFFSET_ATTR] |= USB_CFG_DESC_OFFSET_ATTR_BIT_REMOTE_WAKEUP;
-		}
+		is_cfg = 1;
 		break;
 
 	case USB_DESC_TYPE_STRING:
 		switch (USB_LOW_BYTE(req->wValue)) {
 		case USBD_IDX_LANGID_STR:
+			desc = usbd_inic_lang_id_desc;
 			len = USB_LEN_LANGID_STR_DESC;
-			usb_os_memcpy((void *)buf, (const void *)usbd_inic_lang_id_desc, len);
 			break;
 		case USBD_IDX_MFC_STR:
 			if (otp->otp_param) {
+				desc = otp->mfg_str;
 				len = otp->mfg_str_len;
-				usb_os_memcpy((void *)buf, (const void *)otp->mfg_str, len);
 			} else {
-				len = usbd_get_str_desc(USBD_INIC_MFG_STRING, buf);
+				len = usbd_get_str_descriptor(USBD_INIC_MFG_STRING, buf, buf_len);
 			}
 			break;
 		case USBD_IDX_PRODUCT_STR:
 			if (otp->otp_param) {
+				desc = otp->prod_str;
 				len = otp->prod_str_len;
-				usb_os_memcpy((void *)buf, (const void *)otp->prod_str, len);
 			} else {
-				len = usbd_get_str_desc(USBD_INIC_PROD_STRING, buf);
+				len = usbd_get_str_descriptor(USBD_INIC_PROD_STRING, buf, buf_len);
 			}
 			break;
 		case USBD_IDX_SERIAL_STR:
 			if (otp->otp_sn) {
+				desc = otp->sn_str;
 				len = otp->sn_str_len;
-				usb_os_memcpy((void *)buf, (const void *)otp->sn_str, len);
 			} else {
-				len = usbd_get_str_desc(USBD_INIC_SN_STRING, buf);
+				len = usbd_get_str_descriptor(USBD_INIC_SN_STRING, buf, buf_len);
 			}
 			break;
 		case USBD_INIC_IDX_BT_STR:
-			len = usbd_get_str_desc(USBD_INIC_BT_STRING, buf);
+			len = usbd_get_str_descriptor(USBD_INIC_BT_STRING, buf, buf_len);
 			break;
 #ifdef CONFIG_WHC_ETH
 		case USBD_INIC_IDX_ETH_STR:
-			len = usbd_get_str_desc(USBD_INIC_ETH_STRING, buf);
+			len = usbd_get_str_descriptor(USBD_INIC_ETH_STRING, buf, buf_len);
 			break;
 #endif
 		case USBD_IDX_MS_OS_STR:
@@ -1809,6 +1779,41 @@ static u16 usbd_inic_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *bu
 
 	default:
 		break;
+	}
+
+	if (desc != NULL) {
+		/* Truncation is not allowed: a short descriptor is illegal, so stall instead */
+		if (len > buf_len) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Desc %d OVSZ %d > %d\n", type, len, buf_len);
+			return 0;
+		}
+
+		usb_os_memcpy((void *)buf, (const void *)desc, len);
+	}
+
+	if (is_dev != 0) {
+		if (otp->otp_param) {
+			buf[USB_DEV_DESC_OFFSET_VID] = USB_LOW_BYTE(otp->vid);
+			buf[USB_DEV_DESC_OFFSET_VID + 1] = USB_HIGH_BYTE(otp->vid);
+			buf[USB_DEV_DESC_OFFSET_PID] = USB_LOW_BYTE(otp->pid);
+			buf[USB_DEV_DESC_OFFSET_PID + 1] = USB_HIGH_BYTE(otp->pid);
+		} else if (SYSCFG_OTP_BOOTSEL() == BOOT_FROM_USB) {
+			buf[USB_DEV_DESC_OFFSET_PID] = USB_LOW_BYTE(USBD_NIC_VID);
+			buf[USB_DEV_DESC_OFFSET_PID + 1] = USB_HIGH_BYTE(USBD_NIC_VID);
+		}
+	}
+
+	if (is_cfg != 0) {
+		buf[USB_CFG_DESC_OFFSET_TYPE] = type;
+		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN] = USB_LOW_BYTE(len);
+		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN + 1] = USB_HIGH_BYTE(len);
+		buf[USB_CFG_DESC_OFFSET_ATTR] &= ~(USB_CFG_DESC_OFFSET_ATTR_BIT_SELF_POWERED | USB_CFG_DESC_OFFSET_ATTR_BIT_REMOTE_WAKEUP);
+		if (otp->self_powered) {
+			buf[USB_CFG_DESC_OFFSET_ATTR] |= USB_CFG_DESC_OFFSET_ATTR_BIT_SELF_POWERED;
+		}
+		if (otp->remote_wakeup_en) {
+			buf[USB_CFG_DESC_OFFSET_ATTR] |= USB_CFG_DESC_OFFSET_ATTR_BIT_REMOTE_WAKEUP;
+		}
 	}
 
 	return len;
@@ -2144,7 +2149,9 @@ int usbd_inic_receive_data(u8 ep_addr, u8 *buf, u32 len, void *userdata)
 
 	if ((ep->skip_dcache_pre_clean) && (buf != NULL) && (len != 0)) {
 		if (USB_IS_MEM_DMA_ALIGNED(buf)) {
-			DCache_Clean((u32)buf, len);
+			/* Clean the whole DMA window rather than the requested length, so that no dirty
+			 * line inside the window can be written back over the received data. */
+			DCache_Clean((u32)buf, usb_get_dma_len(len, ep->info.mps));
 		} else {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "EP RX buf align err\n");
 			return HAL_ERR_MEM;

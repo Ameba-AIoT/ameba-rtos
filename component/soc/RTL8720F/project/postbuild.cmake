@@ -16,7 +16,7 @@ ameba_modify_file_path(${app_ns_full_path} app_ns_tmp_full_path p_SUFFIX _tmp)
 ameba_modify_file_path(${app_full_path} app_compress p_SUFFIX _compress)
 ameba_modify_file_path(${app_ns_full_path} app_compress_ns p_SUFFIX _compress)
 
-if (CONFIG_WHC_INTF_SDIO)
+if (CONFIG_WHC_INTF_SPDIO)
     ameba_execute_process(COMMAND ${CMAKE_COMMAND} -E rename ${FINAL_IMAGE_DIR}/km4tz_fullmac_img_1.bin ${FINAL_IMAGE_DIR}/RTL8720F_FW_1.bin)
     ameba_execute_process(
         COMMAND ${CMAKE_COMMAND} -E cat ${c_IMAGE2_ALL_FILES}
@@ -80,7 +80,7 @@ if(CONFIG_FATFS_WITHIN_APP_IMG)
 endif()
 
 if(CONFIG_SOLO)
-    set(ota_image ${c_IMAGE_OUTPUT_DIR}/mcu_ota.bin)
+    set(ota_image ${c_IMAGE_OUTPUT_DIR}/mcu_app_ota.bin)
 else()
     set(ota_image ${c_IMAGE_OUTPUT_DIR}/ota_all.bin)
 endif()

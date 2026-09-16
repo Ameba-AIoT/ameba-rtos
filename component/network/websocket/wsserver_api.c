@@ -284,6 +284,11 @@ static void ws_server_poll(ws_conn *conn)
 				do {
 					ret = ws_server_write(conn, conn->txbuf + (conn->tx_len - remain_len), (remain_len > 1500 ? 1500 : remain_len));
 					if (ret == 0) {
+						/* No progress (WANT_READ/WANT_WRITE on a full TCP window). The socket is
+						 * non-blocking, so sleep before retrying instead of spinning, otherwise
+						 * this loop starves the lwIP thread that has to advance the window. */
+						rtos_time_delay_ms(WS_SERVER_WRITE_RETRY_MS);
+						continue;
 					} else if (ret < 0) {
 						ws_server_log("ERROR: Send data failed!\n");
 						ws_server_set_close_reason(conn, WSS_SEND_DATA_FAIL);

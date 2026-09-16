@@ -447,7 +447,7 @@ static int usbh_uac_cb_process(usb_host_t *host, u8 msg)
   * @param  param: Unused.
   * @retval None
   */
-static void example_usbh_comp_play_thread(void *param)
+static void example_usbh_composite_play_thread(void *param)
 {
 	const unsigned char *usbh_uac_audio_data_2ch_handle = usbh_uac_audio_data_2ch;
 	const usbh_uac_audio_fmt_t *fmt_info = NULL;
@@ -656,7 +656,7 @@ play_stop:
   * @param  param: Unused.
   * @retval None
   */
-static void example_usbh_comp_record_thread(void *param)
+static void example_usbh_composite_record_thread(void *param)
 {
 	const usbh_uac_audio_fmt_t *fmt_info = NULL;
 	const usbh_uac_audio_fmt_t *audio_fmt = NULL;
@@ -868,7 +868,62 @@ record_stop:
 	rtos_task_delete(NULL);
 }
 
+/**
+  * @brief  Bring up the USB host stack: core -> each class -> TRX.
+  * @note   Reused by both the initial start-up and the hotplug re-init path.
+  *         usbh_start() is issued only after every class driver is registered,
+  *         so the Phase-1 match sees both drivers and enumeration can proceed.
+  * @retval HAL_OK on success, other HAL_Status code on failure (all partial resources rolled back)
+  */
+static int usbh_composite_init_stack(void)
+{
+	int ret;
+
+	ret = usbh_init(&usbh_cfg, &usbh_usr_cb);
+	if (ret != HAL_OK) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "USBH init failed: %d\n", ret);
+		return ret;
+	}
+
+	ret = usbh_hid_init(&usbh_hid_cfg);
+	if (ret != HAL_OK) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "HID init failed: %d\n", ret);
+		goto exit_usbh_init;
+	}
+
+	ret = usbh_uac_init(&usbh_uac_cfg);
+	if (ret != HAL_OK) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "UAC init failed: %d\n", ret);
+		goto exit_hid_init;
+	}
+
+	usbh_start();
+
+	return HAL_OK;
+
+exit_hid_init:
+	usbh_hid_deinit();
+exit_usbh_init:
+	usbh_deinit();
+	return ret;
+}
+
 #if CONFIG_USBH_COMP_HID_UAC_HOTPLUG
+/**
+  * @brief  Tear down the USB host stack, in the reverse order of
+  *         usbh_composite_init_stack(): TRX -> classes -> core.
+  * @note   No return value: a teardown failure has no recoverable path, so the
+  *         only sequence of release calls in this example lives here.
+  * @retval None
+  */
+static void usbh_composite_deinit_stack(void)
+{
+	usbh_stop();
+	usbh_uac_deinit();
+	usbh_hid_deinit();
+	usbh_deinit();
+}
+
 /**
   * @brief  Hot-plug worker thread, used for memory-leak / re-enumeration
   *         soak testing.
@@ -881,9 +936,8 @@ record_stop:
   * @param  param: Unused.
   * @retval None
   */
-static void example_usbh_comp_hotplug_thread(void *param)
+static void example_usbh_composite_hotplug_thread(void *param)
 {
-	int ret = 0;
 	u32 hotplug_count = 0;
 
 	UNUSED(param);
@@ -897,10 +951,7 @@ static void example_usbh_comp_hotplug_thread(void *param)
 			rtos_time_delay_ms(200);
 
 			/* Cleanup USB resources */
-			usbh_stop();
-			usbh_hid_deinit();
-			usbh_uac_deinit();
-			usbh_deinit();
+			usbh_composite_deinit_stack();
 
 			rtos_time_delay_ms(100);
 			RTK_LOGS(TAG, RTK_LOG_INFO, "Free heap: 0x%x\n", rtos_mem_get_free_heap_size());
@@ -909,32 +960,12 @@ static void example_usbh_comp_hotplug_thread(void *param)
 			while (rtos_sema_take(usbh_uac_ctx.play_start_sema, 0) == RTK_SUCCESS);
 			while (rtos_sema_take(usbh_uac_ctx.record_start_sema, 0) == RTK_SUCCESS);
 
-			/* Reinitialize USB stack */
+			/* Reinitialize USB stack (usbh_composite_init_stack() re-arms USB TRX) */
 			RTK_LOGS(TAG, RTK_LOG_INFO, "Re-init USB host...\n");
 
-			ret = usbh_init(&usbh_cfg, &usbh_usr_cb);
-			if (ret != HAL_OK) {
-				RTK_LOGS(TAG, RTK_LOG_ERROR, "USB init failed: %d\n", ret);
+			if (usbh_composite_init_stack() != HAL_OK) {
 				break;
 			}
-
-			ret = usbh_hid_init(&usbh_hid_cfg);
-			if (ret != HAL_OK) {
-				RTK_LOGS(TAG, RTK_LOG_ERROR, "HID init failed: %d\n", ret);
-				usbh_deinit();
-				break;
-			}
-
-			ret = usbh_uac_init(&usbh_uac_cfg);
-			if (ret != HAL_OK) {
-				RTK_LOGS(TAG, RTK_LOG_ERROR, "UAC init failed: %d\n", ret);
-				usbh_hid_deinit();
-				usbh_deinit();
-				break;
-			}
-
-			/* Re-arm USB TRX after the re-init. */
-			usbh_start();
 
 			RTK_LOGS(TAG, RTK_LOG_INFO, "Re-init complete\n");
 		}
@@ -958,7 +989,7 @@ static void example_usbh_comp_hotplug_thread(void *param)
   * @param  param: Unused.
   * @retval None
   */
-static void example_usbh_comp_init_thread(void *param)
+static void example_usbh_composite_init_thread(void *param)
 {
 	int ret;
 
@@ -966,25 +997,27 @@ static void example_usbh_comp_init_thread(void *param)
 
 	/* Create synchronization primitives. On failure, delete only the
 	   semaphores already created (handles are still NULL otherwise). */
-	if (rtos_sema_create(&usbh_uac_ctx.detach_sema, 0U, 1U) != RTK_SUCCESS) {
+	ret = rtos_sema_create(&usbh_uac_ctx.detach_sema, 0U, 1U);
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create detach sema fail\n");
-		goto example_exit;
+		goto free_sema_exit;
 	}
-	if (rtos_sema_create(&usbh_uac_ctx.play_start_sema, 0U, 1U) != RTK_SUCCESS) {
+
+	ret = rtos_sema_create(&usbh_uac_ctx.play_start_sema, 0U, 1U);
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create play sema fail\n");
-		rtos_sema_delete(usbh_uac_ctx.detach_sema);
-		goto example_exit;
+		goto free_sema_exit;
 	}
-	if (rtos_sema_create(&usbh_uac_ctx.record_start_sema, 0U, 1U) != RTK_SUCCESS) {
+
+	ret = rtos_sema_create(&usbh_uac_ctx.record_start_sema, 0U, 1U);
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create record sema fail\n");
-		rtos_sema_delete(usbh_uac_ctx.detach_sema);
-		rtos_sema_delete(usbh_uac_ctx.play_start_sema);
-		goto example_exit;
+		goto free_sema_exit;
 	}
 
 	/* Create resident playback thread */
-	ret = rtos_task_create(&usbh_uac_ctx.play.task, "usbh_comp_uac_play_thread",
-						   example_usbh_comp_play_thread, NULL,
+	ret = rtos_task_create(&usbh_uac_ctx.play.task, "usbh_composite_uac_play_thread",
+						   example_usbh_composite_play_thread, NULL,
 						   CONFIG_USBH_COMP_HID_UAC_PLAY_THREAD_STACK_SIZE, CONFIG_USBH_COMP_HID_UAC_PLAY_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create play thread fail\n");
@@ -992,8 +1025,8 @@ static void example_usbh_comp_init_thread(void *param)
 	}
 
 	/* Create resident record thread */
-	ret = rtos_task_create(&usbh_uac_ctx.record.task, "usbh_comp_uac_record_thread",
-						   example_usbh_comp_record_thread, NULL,
+	ret = rtos_task_create(&usbh_uac_ctx.record.task, "usbh_composite_uac_record_thread",
+						   example_usbh_composite_record_thread, NULL,
 						   CONFIG_USBH_COMP_HID_UAC_RECORD_THREAD_STACK_SIZE, CONFIG_USBH_COMP_HID_UAC_RECORD_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create record thread fail\n");
@@ -1003,51 +1036,28 @@ static void example_usbh_comp_init_thread(void *param)
 	rtos_time_delay_ms(1000);
 
 	/* Initialize USB host stack */
-	ret = usbh_init(&usbh_cfg, &usbh_usr_cb);
+	ret = usbh_composite_init_stack();
 	if (ret != HAL_OK) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "USBH init failed: %d\n", ret);
 		goto delete_record_task_exit;
 	}
 
-	ret = usbh_hid_init(&usbh_hid_cfg);
-	if (ret != HAL_OK) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "HID init failed: %d\n", ret);
-		goto usb_deinit_exit;
-	}
-
-	ret = usbh_uac_init(&usbh_uac_cfg);
-	if (ret != HAL_OK) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "UAC init failed: %d\n", ret);
-		usbh_hid_deinit();
-		goto usb_deinit_exit;
-	}
-
-	/* All class drivers (HID + UAC) registered; start USB TRX so Phase-1
-	 * match sees both drivers and enumeration can proceed. */
-	usbh_start();
-
 	/* Create hot-plug monitor thread */
 #if CONFIG_USBH_COMP_HID_UAC_HOTPLUG
-	ret = rtos_task_create(&usbh_uac_ctx.hotplug_task, "usbh_comp_hotplug_thread",
-						   example_usbh_comp_hotplug_thread, NULL,
+	ret = rtos_task_create(&usbh_uac_ctx.hotplug_task, "usbh_composite_hotplug_thread",
+						   example_usbh_composite_hotplug_thread, NULL,
 						   CONFIG_USBH_COMP_HID_UAC_HOTPLUG_THREAD_STACK_SIZE, CONFIG_USBH_COMP_HID_UAC_HOTPLUG_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create hotplug thread fail\n");
-		goto usbh_uac_deinit_exit;
+		goto deinit_stack_exit;
 	}
 #endif
 
 	goto example_exit;
 
 #if CONFIG_USBH_COMP_HID_UAC_HOTPLUG
-usbh_uac_deinit_exit:
-	usbh_stop();
+deinit_stack_exit:
+	usbh_composite_deinit_stack();
 #endif
-	usbh_uac_deinit();
-	usbh_hid_deinit();
-
-usb_deinit_exit:
-	usbh_deinit();
 
 delete_record_task_exit:
 	usbh_uac_ctx.play.thread_exit = 1;
@@ -1090,7 +1100,7 @@ example_exit:
   * @param  expect:  Output pointer for the computed dB value.
   * @retval void
   */
-static void usbh_comp_compute_expected_db(s16 vol_min, s16 vol_max, u8 percent, s16 *expect)
+static void usbh_composite_compute_expected_db(s16 vol_min, s16 vol_max, u8 percent, s16 *expect)
 {
 	s32 range;
 	s32 raw;
@@ -1125,7 +1135,7 @@ static void usbh_comp_compute_expected_db(s16 vol_min, s16 vol_max, u8 percent, 
   * @param  expected_mute: Mute byte the caller wrote (0 or 1).
   * @retval void
   */
-static void usbh_comp_verify_mute(u8 dir, u8 expected_mute)
+static void usbh_composite_verify_mute(u8 dir, u8 expected_mute)
 {
 	const usbh_uac_fu_info_t *info;
 	u8 verified = 0;
@@ -1188,7 +1198,7 @@ static void usbh_comp_verify_mute(u8 dir, u8 expected_mute)
   * @param  expected_percent: Volume percentage the caller wrote.
   * @retval void
   */
-static void usbh_comp_verify_volume(u8 dir, u8 expected_percent)
+static void usbh_composite_verify_volume(u8 dir, u8 expected_percent)
 {
 	const usbh_uac_fu_info_t *info;
 	u8 verified = 0;
@@ -1224,7 +1234,7 @@ static void usbh_comp_verify_volume(u8 dir, u8 expected_percent)
 			continue;
 		}
 
-		usbh_comp_compute_expected_db(vol_min, vol_max, expected_percent, &expect_db);
+		usbh_composite_compute_expected_db(vol_min, vol_max, expected_percent, &expect_db);
 
 		if (read_vol == expect_db) {
 			RTK_LOGS(TAG, RTK_LOG_INFO, "Verify vol(%d) ch=%d ok %d%% db=0x%04x\n",
@@ -1250,7 +1260,7 @@ static void usbh_comp_verify_volume(u8 dir, u8 expected_percent)
   * @param  vol: Pointer to the current volume value; updated in place.
   * @retval HAL_OK on success, HAL_ERR_PARA if vol is NULL.
   */
-static u32 usbh_comp_volup(u8 *vol)
+static u32 usbh_composite_volup(u8 *vol)
 {
 	u8 cur_vol;
 
@@ -1275,7 +1285,7 @@ static u32 usbh_comp_volup(u8 *vol)
   * @param  vol: Pointer to the current volume value; updated in place.
   * @retval HAL_OK on success, HAL_ERR_PARA if vol is NULL.
   */
-static u32 usbh_comp_voldown(u8 *vol)
+static u32 usbh_composite_voldown(u8 *vol)
 {
 	u8 cur_vol;
 
@@ -1317,7 +1327,7 @@ static u32 usbh_hotplug_test(void)
 	return HAL_OK;
 }
 
-static u32 usbh_comp_hid_cmd(u16 argc, u8 *argv[])
+static u32 usbh_composite_hid_cmd(u16 argc, u8 *argv[])
 {
 	const char *cmd;
 	u8 *cur_vol;
@@ -1347,17 +1357,17 @@ static u32 usbh_comp_hid_cmd(u16 argc, u8 *argv[])
 		usbh_uac_set_mute(mute, usbh_uac_ctx.ctrl_dir);
 		RTK_LOGS(TAG, RTK_LOG_INFO, "%s\n", ((mute) ? ("Mute") : ("UnMute")));
 
-		usbh_comp_verify_mute(usbh_uac_ctx.ctrl_dir, mute);
+		usbh_composite_verify_mute(usbh_uac_ctx.ctrl_dir, mute);
 	} else if (_stricmp(cmd, "vol") == 0) {
 		cur_vol = (usbh_uac_ctx.ctrl_dir == USBH_UAC_ISOC_IN_DIR) ? &usbh_uac_ctx.record.cur_volume : &usbh_uac_ctx.play.cur_volume;
 
 		if ((argv[1] != NULL) && (_stricmp((const char *)argv[1], "down") == 0)) {
-			usbh_comp_voldown(cur_vol);
+			usbh_composite_voldown(cur_vol);
 		} else {
-			usbh_comp_volup(cur_vol);
+			usbh_composite_volup(cur_vol);
 		}
 
-		usbh_comp_verify_volume(usbh_uac_ctx.ctrl_dir, *cur_vol);
+		usbh_composite_verify_volume(usbh_uac_ctx.ctrl_dir, *cur_vol);
 	} else if (_stricmp(cmd, "hotplug") == 0) {
 		usbh_hotplug_test();
 	} else {
@@ -1384,8 +1394,8 @@ void example_usbh_composite_hid_uac(void)
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "USBH UAC&HID composite demo start\n");
 
-	ret = rtos_task_create(&task, "usbh_comp_init_thread",
-						   example_usbh_comp_init_thread, NULL,
+	ret = rtos_task_create(&task, "usbh_composite_init_thread",
+						   example_usbh_composite_init_thread, NULL,
 						   CONFIG_USBH_COMP_HID_UAC_INIT_THREAD_STACK_SIZE, CONFIG_USBH_COMP_HID_UAC_INIT_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Failed to create main thread\n");
@@ -1404,5 +1414,5 @@ uach vol down/up  # adjust volume, then sync GET_CUR(VOLUME) to verify
  */
 CMD_TABLE_DATA_SECTION
 const COMMAND_TABLE usbh_uac_test_cmd_table[] = {
-	{"usbh_comp_hid", usbh_comp_hid_cmd},
+	{"usbh_comp_hid", usbh_composite_hid_cmd},
 };

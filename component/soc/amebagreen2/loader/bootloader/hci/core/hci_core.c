@@ -12,7 +12,7 @@
 #include "ameba_nor_ftl.h"
 #if defined(CONFIG_WHC_INTF_USB)
 #include "usbd_intf.h"
-#elif defined(CONFIG_WHC_INTF_SDIO)
+#elif defined(CONFIG_WHC_INTF_SPDIO)
 #include "sdio_intf.h"
 #endif
 /* Private defines -----------------------------------------------------------*/
@@ -375,7 +375,7 @@ int HCI_Init(void)
 
 #if defined(CONFIG_WHC_INTF_USB)
 	adapter->Interface = &USBD_Interface;
-#elif defined(CONFIG_WHC_INTF_SDIO)
+#elif defined(CONFIG_WHC_INTF_SPDIO)
 	adapter->Interface = &SDIO_Interface;
 #else
 	RTK_LOGE(TAG, "Invalid WHC interface\n");

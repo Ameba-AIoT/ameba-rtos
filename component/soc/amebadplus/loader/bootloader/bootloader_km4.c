@@ -490,7 +490,7 @@ __weak void BOOT_Image1(void)
 
 	_memset((void *) __image1_bss_start__, 0, (__image1_bss_end__ - __image1_bss_start__));
 
-#if defined(CONFIG_WHC_INTF_SDIO)
+#if defined(CONFIG_WHC_INTF_SPDIO)
 	/*Sdio pinmux pre init advanced to bootloader. If done too late, it may cause host side SDIO card recognition timeout, resulting in sdio power supply failure. */
 	SDIO_Pinmux_pre_init();
 #endif

@@ -68,10 +68,18 @@ int lfs_nand_erase(const struct lfs_config *c, lfs_block_t block);
 #endif
 
 #ifdef CONFIG_LITTLEFS_SECOND_FLASH
+#ifdef CONFIG_VFS_SECOND_FLASH_NAND
+/* external SPI NAND: routed through LBM, same as the on-chip NAND path */
+extern struct lfs_config g_second_nand_lfs_cfg;
+int lfs_second_nand_read(const struct lfs_config *c, lfs_block_t block, lfs_off_t off, void *buffer, lfs_size_t size);
+int lfs_second_nand_prog(const struct lfs_config *c, lfs_block_t block, lfs_off_t off, const void *buffer, lfs_size_t size);
+int lfs_second_nand_erase(const struct lfs_config *c, lfs_block_t block);
+#else
 extern struct lfs_config g_second_nor_lfs_cfg;
 int lfs_second_nor_read(const struct lfs_config *c, lfs_block_t block, lfs_off_t off, void *buffer, lfs_size_t size);
 int lfs_second_nor_prog(const struct lfs_config *c, lfs_block_t block, lfs_off_t off, const void *buffer, lfs_size_t size);
 int lfs_second_nor_erase(const struct lfs_config *c, lfs_block_t block);
+#endif
 #endif
 
 int lfs_diskio_sync(const struct lfs_config *c);

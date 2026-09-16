@@ -19,14 +19,28 @@ void whc_spi_host_send_data(u8 *buf, u32 len, struct sk_buff *skb)
 
 	(void) skb;
 
-	mutex_lock(&priv->lock);
-
-	while (atomic_read(&priv->dev_state) == DEV_BUSY) {
-		/* wait for sema*/
-		if (down_timeout(&priv->dev_rdy_sema, msecs_to_jiffies(500))) {
-			dev_err(global_idev.pwhc_dev, "%s: wait dev busy(%d) timeout, can't send data\n\r", __func__, gpio_get_value(DEV_READY_PIN));
-			goto exit;
+	/* wait for dev ready while NOT holding priv->lock, so the RX thread
+	 * (TX_REQ IRQ -> whc_spi_host_recv_data) can still take the lock and drain the
+	 * SPI bus; otherwise a dev that keeps READY low would block RX for the full
+	 * 500ms timeout each send. */
+	for (;;) {
+		mutex_lock(&priv->lock);
+		if (atomic_read(&priv->dev_state) != DEV_BUSY) {
+			break;	/* dev ready, proceed with lock held */
 		}
+		mutex_unlock(&priv->lock);
+
+		if (down_timeout(&priv->dev_rdy_sema, msecs_to_jiffies(500))) {
+			/* timeout: re-lock and give pin one last check before giving up */
+			mutex_lock(&priv->lock);
+			if (gpio_get_value(DEV_READY_PIN)) {
+				break;	/* dev went ready while we slept; edge was missed */
+			}
+			dev_err(global_idev.pwhc_dev, "%s: wait dev busy(%d) timeout, can't send data\n\r",
+					__func__, gpio_get_value(DEV_READY_PIN));
+			goto exit;	/* lock held */
+		}
+		/* loop: re-lock, re-check dev_state */
 	}
 
 	if (len > SPI_BUFSZ) {
@@ -89,14 +103,6 @@ void whc_spi_host_recv_data(void *intf_priv)
 
 	mutex_lock(&priv->lock);
 
-	while (atomic_read(&priv->dev_state) == DEV_BUSY) {
-		/* wait for sema*/
-		if (down_timeout(&priv->dev_rdy_sema, msecs_to_jiffies(500))) {
-			dev_err(global_idev.pwhc_dev, "%s: wait dev busy(%d) timeout, can't send data\n\r", __func__, gpio_get_value(DEV_READY_PIN));
-			goto exit;
-		}
-	}
-
 	/* check RX_REQ level */
 	if (gpio_get_value(DEV_TX_REQ_PIN)) {
 
@@ -114,20 +120,27 @@ void whc_spi_host_recv_data(void *intf_priv)
 			goto exit;
 		}
 
-		/* set dev busy if to start to send data, for case device can't drive ready pin. */
-		atomic_set(&priv->dev_state, DEV_BUSY);
-
 		tr = list_first_entry(&spimsg->transfers, struct spi_transfer, transfer_list);
 		tr->rx_buf = pskb->data;
 		tr->len = SPI_BUFSZ;
 
-		if (!global_idev.xmit_priv.flowctrl_en) {
+		while (atomic_read(&priv->dev_state) == DEV_BUSY) {
+			/* wait 3us timeout */
+			if (down_timeout(&priv->dev_rdy_sema, usecs_to_jiffies(3))) {
+				break;
+			}
+		}
+
+		if (atomic_read(&priv->dev_state) == DEV_READY) {
 			p_node = whc_host_dequeue_tx_packet(&global_idev.xmit_priv);
 			if (p_node != NULL) {
 				tx_skb = p_node->msg;
 				tr->tx_buf = tx_skb->data;
 			}
 		}
+
+		/* set dev busy if start to send data, for case device can't drive ready pin. */
+		atomic_set(&priv->dev_state, DEV_BUSY);
 
 		rc = spi_sync(spidev, spimsg);
 		if (rc) {

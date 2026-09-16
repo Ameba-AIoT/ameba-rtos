@@ -512,6 +512,15 @@ typedef struct {
 uint16_t rtk_bt_gatts_register_service(struct rtk_bt_gatt_service *param);
 
 /**
+ * @brief     Unregister GATT service.
+ * @param[in] param: The service app registered before, same as the param used in @ref rtk_bt_gatts_register_service.
+ * @return
+ *            - 0  : Succeed
+ *            - Others: Error code
+ */
+uint16_t rtk_bt_gatts_unregister_service(struct rtk_bt_gatt_service *param);
+
+/**
  * @brief      Notify action initiated by server, will cause event @ref RTK_BT_GATTS_EVT_NOTIFY_COMPLETE_IND.
  *             If attribute value is longer than ATT_MTU-3 octects, it will fail.
  * @param[in]  param: The parameters for notification.

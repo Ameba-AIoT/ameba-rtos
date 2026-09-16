@@ -51,6 +51,12 @@ extern "C" {
 #define USBD_MSC_BLK_BITS              9                        /**< Number of bits per block (log2(512)). */
 #define USBD_MSC_BLK_SIZE              (1 << USBD_MSC_BLK_BITS) /**< Block size in bytes (512). */
 #define USBD_MSC_BUFLEN                (16 * 1024)              /**< Default size of the internal data buffer. */
+/**
+  * @brief Size of the CBW buffer.
+  * @note  The BULK OUT DMA window is always a multiple of the endpoint max packet size, so the
+  *        buffer used to receive the 31-byte CBW shall be able to hold a full max packet.
+  */
+#define USBD_MSC_CBW_BUF_LEN           USBD_MSC_HS_MAX_PACKET_SIZE
 
 /* RAM disk configurations */
 #ifdef CONFIG_USBD_MSC_RAM_DISK

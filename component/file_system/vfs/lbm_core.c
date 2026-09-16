@@ -20,17 +20,19 @@
 
 #include "platform_autoconf.h"
 #include <string.h>
-#include "littlefs_adapter.h"   /* LFS_FLASH_BASE_ADDR / _SIZE, NAND_ADDR_TO_PAGE_ADDR */
-#include "vfs_nand_ftl.h"       /* NAND_FTL_* , UERR_* , HAL_OK */
+#include "ameba_soc.h"          /* HAL_OK */
+#include "vfs.h"                /* VFS_DBG */
+#include "vfs_nand_err.h"       /* UERR_* - device agnostic, see ctx->ops */
 #include "os_wrapper_memory.h"  /* rtos_mem_zmalloc / rtos_mem_free */
 #include "lbm.h"
 
-/* page-size/pages-per-block published by NAND_FTL_Init() */
-extern u32 vfs_nand_flash_pagesize;
-extern u32 vfs_nand_flash_pagenum;
-
-#define LBM_WRITEPAGE(ctxp, page, buf, e) NAND_FTL_WritePage((page), (buf), (e))
-#define LBM_ERASEBLOCK(ctxp, page, e)     NAND_FTL_EraseBlock((page), (e))
+/* The NAND back-end is supplied by the caller through ctx->ops, so one code base
+ * serves both the on-chip SPIC NAND and an external SPI-master NAND. */
+#define LBM_READPAGE(ctxp, page, buf)     ((ctxp)->ops->read_page((page), (buf)))
+#define LBM_READPAGEFAST(ctxp, page, buf) ((ctxp)->ops->read_page_fast((page), (buf)))
+#define LBM_WRITEPAGE(ctxp, page, buf, e) ((ctxp)->ops->write_page((page), (buf), (e)))
+#define LBM_ERASEBLOCK(ctxp, page, e)     ((ctxp)->ops->erase_block((page), (e)))
+#define LBM_MARKBAD(ctxp, page)           ((ctxp)->ops->mark_bad((page)))
 
 /* ---- small helpers ---------------------------------------------------- */
 
@@ -111,7 +113,7 @@ static int lbm_write_blk_hdr(lbm_ctx_t *ctx, uint32_t pblk, uint32_t lblk)
 /* Retire a physical block: mark its OOB bad and drop it from the usable pool. */
 static void lbm_retire_block(lbm_ctx_t *ctx, uint32_t pblk)
 {
-	NAND_FTL_MarkBad(lbm_block_page0(ctx, pblk));
+	LBM_MARKBAD(ctx, lbm_block_page0(ctx, pblk));
 	ctx->state[pblk] = LBM_BLK_BAD;
 	ctx->bad_count++;
 }
@@ -125,7 +127,7 @@ static int lbm_make_free(lbm_ctx_t *ctx, uint32_t pblk, uint32_t new_ec)
 	if (er != HAL_OK) {
 		/* HAL auto-marks bad on UERR_NAND_WORN_BLOCK; mark explicitly otherwise. */
 		if (er != UERR_NAND_WORN_BLOCK) {
-			NAND_FTL_MarkBad(lbm_block_page0(ctx, pblk));
+			LBM_MARKBAD(ctx, lbm_block_page0(ctx, pblk));
 		}
 		ctx->state[pblk] = LBM_BLK_BAD;
 		ctx->bad_count++;
@@ -195,16 +197,22 @@ int lbm_init(lbm_ctx_t *ctx)
 		return LBM_OK;   /* idempotent: tables persist across remount */
 	}
 
-	ctx->page_size = vfs_nand_flash_pagesize;
-	ctx->block_pages = vfs_nand_flash_pagenum;
+	if ((ctx->ops == NULL) || (ctx->ops->read_page == NULL) || (ctx->ops->read_page_fast == NULL) ||
+		(ctx->ops->write_page == NULL) || (ctx->ops->erase_block == NULL) || (ctx->ops->mark_bad == NULL)) {
+		VFS_DBG(VFS_ERROR, "lbm: back-end ops not set");
+		return LBM_ERR_INIT;
+	}
+
+	ctx->page_size = ctx->cfg_page_size;
+	ctx->block_pages = ctx->cfg_block_pages;
 	if ((ctx->page_size == 0) || (ctx->block_pages < 3)) {
 		VFS_DBG(VFS_ERROR, "lbm: bad geometry page=%u pages=%u", ctx->page_size, ctx->block_pages);
 		return LBM_ERR_INIT;
 	}
 
 	ctx->lblk_size = (ctx->block_pages - 2) * ctx->page_size;
-	ctx->part_base_page = NAND_ADDR_TO_PAGE_ADDR(LFS_FLASH_BASE_ADDR);
-	ctx->total_blocks = LFS_FLASH_SIZE / (ctx->page_size * ctx->block_pages);
+	ctx->part_base_page = ctx->cfg_base_addr / ctx->page_size;
+	ctx->total_blocks = ctx->cfg_size / (ctx->page_size * ctx->block_pages);
 	if (ctx->total_blocks == 0) {
 		VFS_DBG(VFS_ERROR, "lbm: VFS partition smaller than one block");
 		return LBM_ERR_INIT;
@@ -245,7 +253,7 @@ int lbm_init(lbm_ctx_t *ctx)
 	ctx->alloc_cursor = 0;
 
 	for (pblk = 0; pblk < ctx->total_blocks; pblk++) {
-		u8 r = NAND_FTL_ReadPage(lbm_block_page0(ctx, pblk), ctx->pagebuf);
+		u8 r = LBM_READPAGE(ctx, lbm_block_page0(ctx, pblk), ctx->pagebuf);
 		lbm_meta_hdr_t *mh;
 		lbm_blk_hdr_t *bh;
 
@@ -269,7 +277,7 @@ int lbm_init(lbm_ctx_t *ctx)
 		}
 		ctx->ec[pblk] = (uint32_t)mh->ec;
 
-		r = NAND_FTL_ReadPage(lbm_block_page0(ctx, pblk) + 1, ctx->pagebuf);
+		r = LBM_READPAGE(ctx, lbm_block_page0(ctx, pblk) + 1, ctx->pagebuf);
 		if (!lbm_read_ok(r)) {
 			ctx->state[pblk] = LBM_BLK_DIRTY;
 			ctx->avail_count++;
@@ -345,8 +353,8 @@ int lbm_init(lbm_ctx_t *ctx)
 	}
 
 	ctx->inited = 1;
-	VFS_DBG(VFS_INFO, "lbm: part LFS_BASE=0x%08x LFS_SIZE=0x%08x base_page=0x%08x",
-			(unsigned int)LFS_FLASH_BASE_ADDR, (unsigned int)LFS_FLASH_SIZE, ctx->part_base_page);
+	VFS_DBG(VFS_INFO, "lbm: part base=0x%08x size=0x%08x base_page=0x%08x",
+			(unsigned int)ctx->cfg_base_addr, (unsigned int)ctx->cfg_size, ctx->part_base_page);
 	VFS_DBG(VFS_INFO, "lbm: geom total_blocks=%u block_pages=%u page_size=%u lblk_size=%u",
 			ctx->total_blocks, ctx->block_pages, ctx->page_size, ctx->lblk_size);
 	VFS_DBG(VFS_INFO, "lbm: pool reserved=%u bad=%u avail=%u usable=%u seq=%u",
@@ -408,12 +416,12 @@ int lbm_block_read(lbm_ctx_t *ctx, int lblk, void *buf, uint32_t off, uint32_t l
 		 * (mapped in ctx->state); the per-read marker check in NAND_FTL is
 		 * redundant here and doubles read latency.  ECC is still checked. */
 		if ((page_off == 0) && (chunk == ctx->page_size)) {
-			r = NAND_FTL_ReadPageFast(page, (uint8_t *)buf + done);
+			r = LBM_READPAGEFAST(ctx, page, (uint8_t *)buf + done);
 			if (!lbm_read_ok(r)) {
 				return LBM_ERR_IO;
 			}
 		} else {
-			r = NAND_FTL_ReadPageFast(page, ctx->pagebuf);
+			r = LBM_READPAGEFAST(ctx, page, ctx->pagebuf);
 			if (!lbm_read_ok(r)) {
 				return LBM_ERR_IO;
 			}

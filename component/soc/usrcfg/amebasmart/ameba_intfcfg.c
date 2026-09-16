@@ -20,5 +20,5 @@ const u8 SDIO_PAD[2][6] = {
 	{_PB_17, _PB_16, _PB_18, _PB_19, _PB_14, _PB_15}  // Group1
 };
 
-/* sdio pinmux group: 0x0-0x1 */
-u8 SDH_Pin_Grp = 0x0;
+/* sdio pinmux group: 0x0-0x1, configured by CONFIG_SDH_PIN_GRP */
+u8 SDH_Pin_Grp = CONFIG_SDH_PIN_GRP;

@@ -11,6 +11,8 @@
 #include <zephyr_config.h>
 #include <rtk_bt_mesh_def.h>
 
+#if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT
+
 #if defined(CONFIG_BT_MESH_PROVISIONER_SUPPORT) && CONFIG_BT_MESH_PROVISIONER_SUPPORT
 #endif
 
@@ -25,9 +27,12 @@
 #define CONFIG_BT_MESH_PB_GATT_COMMON    1
 
 /* ------------------------ Advertiser menu ---------------------------------*/
-#define CONFIG_BT_MESH_ADV_LEGACY    1  // if enabled, use legacy adv for mesh message
-#if defined(CONFIG_BT_EXT_ADV) && CONFIG_BT_EXT_ADV
-#define CONFIG_BT_MESH_ADV_EXT    0  // if enabled, use extended adv for mesh message
+#define CONFIG_BT_MESH_ADV_LEGACY    0  // if enabled, use legacy adv for mesh message
+#define CONFIG_BT_MESH_ADV_EXT    1  // if enabled, use extended adv for mesh message
+
+#if (defined(CONFIG_BT_MESH_ADV_EXT) && CONFIG_BT_MESH_ADV_EXT) && \
+	!(defined(RTK_BLE_5_0_USE_EXTENDED_ADV) && RTK_BLE_5_0_USE_EXTENDED_ADV)
+#error "CONFIG_BT_MESH_ADV_EXT needs RTK_BLE_5_0_USE_EXTENDED_ADV to be enabled"
 #endif
 
 #if (defined(CONFIG_BT_MESH_ADV_LEGACY) && CONFIG_BT_MESH_ADV_LEGACY) && (defined(CONFIG_BT_MESH_ADV_EXT) && CONFIG_BT_MESH_ADV_EXT)
@@ -152,7 +157,7 @@
 /* ------------------------ end Transport SAR configuration menu ---------------------------------*/
 #define CONFIG_BT_MESH_DEFAULT_TTL    BT_MESH_CONFIG_MSG_TTL
 /*------------------------ Replay Protection List menu --------------------------*/
-#define CONFIG_BT_MESH_CRPL    10
+#define CONFIG_BT_MESH_CRPL    20
 #define CONFIG_BT_MESH_RPL_STORAGE_MODE_SETTINGS    1
 /* ------------------------ end Replay Protection List menu ---------------------------------*/
 /* ------------------------ end Transport layer menu ---------------------------------*/
@@ -384,5 +389,7 @@
 #define CONFIG_BT_MESH_RX_SEG_MAX    25  // Maximum number of segments in incoming messages, default is 6
 #define CONFIG_BT_MESH_TX_SEG_MAX    25  // Maximum number of segments in outgoing messages, default is 6
 #endif
+
+#endif  // RTK_BLE_MESH_SUPPORT
 
 #endif  // __ZEPHYR_CONFIG_BT_MESH_H__

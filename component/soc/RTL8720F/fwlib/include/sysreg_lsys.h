@@ -1489,8 +1489,9 @@ typedef struct {
 	__IO u8 AP_WAKEUP_STATUS;
 	u8 GBSS_ALIGN_RSVD[2];/* fill gap to 4B-align OTA_IMG_REMAP */
 	__IO u32 OTA_IMG_REMAP[2];
+	__IO u8 OTA_NP_IMG_IDX;/* SOLO: active iot(km4ns) OTA slot index; OTA_IMG_REMAP[] has no NP entry */
 
-	u8 GBSS_SYS_RSVD[12];/* resvd for system */
+	u8 GBSS_SYS_RSVD[11];/* resvd for system */
 
 	u8 GBSS_USER_RSVD[64];/* resvd for user */
 } GBSS_TypeDef;

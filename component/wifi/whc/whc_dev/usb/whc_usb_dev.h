@@ -7,7 +7,6 @@
 #define whc_dev_intf_init             whc_usb_dev_init
 #define whc_dev_trigger_rx_handle()   whc_usb_dev_trigger_rx_handle()
 #define whc_dev_bus_is_idle           whc_usb_dev_bus_is_idle
-#define whc_dev_flowctrl(a, b)
 
 #ifdef WHCH_TXAGG
 #define WHCH_USB_RXBUF_NUM	(WIFI_WHC_USB_BULKOUT_EP_NUM + 12)

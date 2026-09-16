@@ -44,8 +44,8 @@ extern "C" {
 #define USBD_VENDOR_HS_ISOC_MPS          1024U  /**< High speed ISOC IN & OUT maximum packet size */
 #define USBD_VENDOR_FS_ISOC_MPS          1023U  /**< Full speed ISOC IN & OUT maximum packet size */
 
-#define USBD_VENDOR_HS_INTR_IN_INTERVAL  1U    /**< High speed INTR IN interval */
-#define USBD_VENDOR_HS_INTR_OUT_INTERVAL 1U    /**< High speed INTR OUT interval */
+#define USBD_VENDOR_HS_INTR_IN_INTERVAL  2U    /**< High speed INTR IN interval */
+#define USBD_VENDOR_HS_INTR_OUT_INTERVAL 2U    /**< High speed INTR OUT interval */
 #define USBD_VENDOR_FS_INTR_IN_INTERVAL  2U    /**< Full speed INTR IN interval */
 #define USBD_VENDOR_FS_INTR_OUT_INTERVAL 2U    /**< Full speed INTR OUT interval */
 

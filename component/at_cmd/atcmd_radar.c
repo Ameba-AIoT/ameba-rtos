@@ -27,10 +27,10 @@ static void at_rad_help(void)
 {
 	RTK_LOGI(NOTAG, "\r\n");
 	RTK_LOGI(NOTAG, "AT+RAD=[<type>,<value>,<type>,<value>......]\r\n");
-	RTK_LOGI(NOTAG, "\t<type>:\tA string as \"mode\",\"channel\",\"chrip_bw\",\"trig_period\",\"enable\"\r\n");
+	RTK_LOGI(NOTAG, "\t<type>:\tA string as \"mode\",\"channel\",\"chirp_bw\",\"trig_period\",\"enable\"\r\n");
 	RTK_LOGI(NOTAG, "\t<mode>:\t0-single;1-normal, mandatory\r\n");
 	RTK_LOGI(NOTAG, "\t<channel>:\tFMCW center freq channel (recommended: 7)\r\n");
-	RTK_LOGI(NOTAG, "\t<chrip_bw>:\t0-70M;1-40M;2-20M\r\n");
+	RTK_LOGI(NOTAG, "\t<chirp_bw>:\t0-70M;1-40M;2-20M\r\n");
 	RTK_LOGI(NOTAG, "\t<trig_period>:\tFMCW interval in ms (recommended: 15)\r\n");
 	RTK_LOGI(NOTAG, "\t<enable>:\t0-disable;1-enable, mandatory\r\n");
 }
@@ -50,7 +50,7 @@ void at_rad(u16 argc, char **argv)
 	struct rtw_radar_action_parm act_param = {
 		.mode        = RTW_RADAR_NORMAL_MODE,
 		.channel     = 7,
-		.chrip_bw    = 1,   /* 40M */
+		.chirp_bw    = 1,   /* 40M */
 		.trig_period = 15,  /* 15ms */
 	};
 
@@ -79,9 +79,9 @@ void at_rad(u16 argc, char **argv)
 				act_param.channel = (u8)atoi(argv[j]);
 				channel_is_set = 1;
 			}
-		} else if (0 == strcmp("chrip_bw", argv[i])) {
+		} else if (0 == strcmp("chirp_bw", argv[i])) {
 			if ((argc > j) && (strlen(argv[j]) != 0)) {
-				act_param.chrip_bw = (u8)atoi(argv[j]);
+				act_param.chirp_bw = (u8)atoi(argv[j]);
 			}
 		} else if (0 == strcmp("trig_period", argv[i])) {
 			if ((argc > j) && (strlen(argv[j]) != 0)) {
@@ -101,13 +101,13 @@ void at_rad(u16 argc, char **argv)
 	/* ACS: when enabling radar and the user did not explicitly set a channel,
 	 * scan the valid channels for the configured BW and pick the least busy one.
 	 * BW=70M has only one valid channel (7), so ACS is skipped. */
-	if (act_param.enable && !channel_is_set && act_param.chrip_bw != 0) {
+	if (act_param.enable && !channel_is_set && act_param.chirp_bw != 0) {
 		static const u8 ch_40m[] = {5, 6, 7, 8, 9};
 		static const u8 ch_20m[] = {3, 4, 5, 6, 7, 8, 9, 10, 11};
 		struct rtw_acs_config acs_cfg = {.band = RTW_SUPPORT_BAND_2_4G};
 		u8 best_ch = act_param.channel;
 
-		if (act_param.chrip_bw == 1) {
+		if (act_param.chirp_bw == 1) {
 			acs_cfg.ch_list = (u8 *)ch_40m;
 			acs_cfg.ch_num = sizeof(ch_40m);
 		} else {
@@ -122,7 +122,7 @@ void at_rad(u16 argc, char **argv)
 
 	RTK_LOGI(NOTAG, "radar act params: mode = %d [0-single;1-normal]\r\n", act_param.mode);
 	RTK_LOGI(NOTAG, "radar act params: channel = %d\r\n", act_param.channel);
-	RTK_LOGI(NOTAG, "radar act params: chrip_bw = %d [0-70M;1-40M;2-20M]\r\n", act_param.chrip_bw);
+	RTK_LOGI(NOTAG, "radar act params: chirp_bw = %d [0-70M;1-40M;2-20M]\r\n", act_param.chirp_bw);
 	RTK_LOGI(NOTAG, "radar act params: trig_period = %d [unit:ms]\r\n", act_param.trig_period);
 	RTK_LOGI(NOTAG, "radar act params: enable = %d [0-dis;1-en]\r\n", act_param.enable);
 

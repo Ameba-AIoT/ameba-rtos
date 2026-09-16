@@ -10,6 +10,10 @@
 #include "vfs_nand_ftl.h"
 #endif
 
+#ifdef CONFIG_VFS_SECOND_FLASH_NAND
+#include "vfs_second_nand_ftl.h"
+#endif
+
 vfs_drv  vfs = {0};
 rtos_mutex_t vfs_mutex = NULL;
 
@@ -115,7 +119,7 @@ int vfs_check_mount_flag(int vfs_type, int vfs_interface_type, char region, char
 		break;
 #ifdef CONFIG_VFS_REALFS_INCLUDED
 	case VFS_REALFS:
-		if (vfs_interface_type == VFS_INF_SD) {
+		if (vfs_interface_type == VFS_INF_SD || vfs_interface_type == VFS_INF_SECOND_FLASH) {
 			check_flag = &realfs_mount_flag;
 		}
 		if (check_flag != NULL && *check_flag != 1) {
@@ -295,6 +299,14 @@ void vfs_assign_region(int vfs_type, char region, int interface)
 				LFS_SECOND_FLASH_BASE_ADDR = 0x0;
 #ifdef CONFIG_SECOND_FLASH_NOR
 				LFS_SECOND_FLASH_SIZE = DATA_FLASH_SIZE / 8 * 1024 * 1024;
+#elif defined(CONFIG_VFS_SECOND_FLASH_NAND)
+				/* Probe the external NAND here (idempotent) so the whole-chip
+				 * capacity is known before LBM is handed the geometry. */
+				if (SECOND_NAND_FTL_Init() != HAL_OK) {
+					VFS_DBG(VFS_ERROR, "second nand init fail\r\n");
+					return;
+				}
+				LFS_SECOND_FLASH_SIZE = vfs_second_nand_capacity;
 #else
 				LFS_SECOND_FLASH_SIZE = current_flash_model.flash_size;
 #endif
@@ -353,6 +365,11 @@ void vfs_assign_region(int vfs_type, char region, int interface)
 #ifdef CONFIG_FATFS_SECOND_FLASH
 #ifdef CONFIG_SECOND_FLASH_NOR
 				SECOND_FLASH_SECTOR_COUNT = DATA_FLASH_SIZE / 8 * 1024 * 1024 / 512;
+#elif defined(CONFIG_VFS_SECOND_FLASH_NAND)
+				/* FATFS needs 512-byte random-writable sectors; raw NAND only
+				 * offers page-program + block-erase, so it would need a
+				 * sector-level FTL that does not exist here.  Use LITTLEFS. */
+#error "FATFS on a second NAND flash is not supported, select LITTLEFS instead"
 #else
 				SECOND_FLASH_SECTOR_COUNT = current_flash_model.flash_size / 512;
 #endif
@@ -461,7 +478,8 @@ int vfs_user_register(const char *prefix, int vfs_type, int interface, char regi
 	} else if (vfs_type == VFS_LITTLEFS && interface > VFS_INF_SECOND_FLASH) {
 		VFS_DBG(VFS_ERROR, "interface type not supported by littlefs");
 		goto EXIT;
-	} else if (vfs_type == VFS_REALFS && interface != VFS_INF_SD && interface != VFS_INF_FLASH) {
+	} else if (vfs_type == VFS_REALFS && interface != VFS_INF_SD && interface != VFS_INF_FLASH
+			   && interface != VFS_INF_SECOND_FLASH) {
 		VFS_DBG(VFS_ERROR, "interface type not supported by realfs");
 		goto EXIT;
 	} else {

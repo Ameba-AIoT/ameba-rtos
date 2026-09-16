@@ -1343,6 +1343,9 @@ uint16_t bt_stack_gatts_act_handle(rtk_bt_cmd_t *p_cmd)
 	case RTK_BT_GATTS_ACT_REGISTER_SERVICE:
 		ret = bt_stack_gatts_register_service(p_cmd->param);
 		break;
+	case RTK_BT_GATTS_ACT_UNREGISTER_SERVICE:
+		ret = RTK_BT_ERR_UNSUPPORTED;
+		break;
 	case RTK_BT_GATTS_ACT_READ_RSP:
 		ret = bt_stack_gatts_read_rsp(p_cmd->param);
 		break;

@@ -48,10 +48,10 @@
 #endif
 #endif
 
-#if defined(CONFIG_WHC_INTF_SDIO)
+#if defined(CONFIG_WHC_INTF_SPDIO)
 #include "ameba_inic.h"
 #include "spdio_api.h"
-#include "whc_sdio_dev.h"
+#include "whc_spdio_dev.h"
 #elif defined (CONFIG_WHC_INTF_SPI)
 #include "whc_spi_dev.h"
 #elif defined (CONFIG_WHC_INTF_USB)

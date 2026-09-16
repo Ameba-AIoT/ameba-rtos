@@ -163,3 +163,4 @@ ChangeLog:
                   (4) Resolved the issue where setting DTR/RTS took too long
                   (5) Resolved the protocol error during floader download
                   (6) Add support for RTL8735C
+		  (7) Fix device receive frame package timeout issue

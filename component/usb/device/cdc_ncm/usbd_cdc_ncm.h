@@ -239,8 +239,12 @@ typedef struct {
 	u8 trace_task_running;          /**< State-trace thread loop guard; cleared to request exit. */
 #endif
 
-	u16 ntb_in_max_size;            /**< Max NTB input size (host->device), negotiated via SET_NTB_INPUT_SIZE. */
-	u16 ntb_out_max_size;           /**< Max NTB output size (device->host). */
+	/* dwNtbInMaxSize / dwNtbOutMaxSize are 32-bit fields in GET_NTB_PARAMETERS
+	 * (Ref NCM 1.0 Table 6-3), so they must be stored as u32.  A u16 would also
+	 * silently truncate the value carried in the SET_NTB_INPUT_SIZE data stage. */
+	u32 ntb_in_max_size;            /**< Max NTB the device may send to the host (IN),
+	                                     negotiated via SET_NTB_INPUT_SIZE.  Also caps the TX aggregation length. */
+	u32 ntb_out_max_size;           /**< Max NTB the host may send to the device (OUT). */
 	u16 sequence;                   /**< NTB sequence number, incremented per transmitted NTB. */
 
 	u8 mac[USBD_CDC_NCM_MAC_STR_LEN];    /**< Device MAC address (6 bytes). */
@@ -251,7 +255,21 @@ typedef struct {
 	__IO u8 notify_state;                /**< Active notification type.
 	                                          ISR writes (send_notification/SOF/setup) and
 	                                          task writes (set_link_status).  Must be volatile. */
-	u8 alt_setting;                 /**< Currently selected data alternate setting. */
+	__IO u8 data_alt_setting;       /**< Alternate setting currently selected for the DATA interface:
+	                                     0 = default setting, no endpoints; 1 = BULK IN/OUT initialised.
+	                                     Ref NCM 1.0 3.1 / USB 2.0 9.4.10: alt 0 has bNumEndpoints = 0, so the
+	                                     BULK pipes exist only in alt 1.  Written only by
+	                                     usbd_cdc_ncm_data_alt_start()/_stop(), which keep it in lockstep with
+	                                     the real endpoint state.  It therefore serves both purposes at once:
+	                                     the value GET_INTERFACE reports, and the "BULK endpoints are alive"
+	                                     predicate guarding every TX/RX submission.
+	                                     Deliberately distinct from connect_status, which is the (upper-layer
+	                                     owned) network link state and can be forced back to 1 at any time by
+	                                     usbd_cdc_ncm_set_link_status().
+	                                     The communication interface has alt 0 only, so it needs no field -
+	                                     GET_INTERFACE answers it with a literal 0.
+	                                     ISR writes (setup/clear_config/status_changed); the lwIP and TX
+	                                     aggregation tasks read it, hence volatile. */
 	__IO u8 notify_retry;                /**< 1 when a notification send failed or is queued;
 	                                          SOF handler (ISR) retries it.  Must be volatile. */
 	u8 rx_xfer_idx;                 /**< Index of the buffer currently armed for USB OUT (0 or 1). */

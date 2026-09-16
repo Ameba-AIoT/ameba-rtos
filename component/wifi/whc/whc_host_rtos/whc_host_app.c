@@ -30,7 +30,7 @@ void whc_host_send_cmd_data_to_dev(u8 *buf, u32 len)
 
 	whc_host_send_data(txbuf, txsize, txbuf, 0);
 
-#ifdef CONFIG_WHC_INTF_SDIO
+#ifdef CONFIG_WHC_INTF_SPDIO
 	rtos_mem_free(txbuf);
 #endif
 }
@@ -107,6 +107,7 @@ static void whc_host_cmd_rx_to_user_task(void)
 					lwip_set_ip(NETIF_WLAN_STA_INDEX, ipaddr, netmask, gw);
 					lwip_netif_set_link_up(NETIF_WLAN_STA_INDEX);
 					lwip_netif_set_up(NETIF_WLAN_STA_INDEX);
+					RTK_LOGI(TAG_WLAN_INIC, "wifi got ip:\"%d.%d.%d.%d\"\r\n", ptr[0], ptr[1], ptr[2], ptr[3]);
 					break;
 
 				case WHC_WIFI_TEST_SCAN_RESULT:

@@ -147,6 +147,7 @@ ameba_add_internal_library(${TARGET_LIB_OPEN}
 # ported-from-Linux code stays isolated here; the -Wno-error relaxations cover
 # legacy style only (unused vars, K&R prototypes, char/uint8 signedness,
 # debug-print formats); revisit for a cleanup pass.
+if(CONFIG_WHC_HOST OR CONFIG_WHC_NONE)
 if(CONFIG_WIFI_NAN_HOST_APP)
     ameba_add_external_app_library(nan
         p_SOURCES
@@ -166,6 +167,7 @@ if(CONFIG_WIFI_NAN_HOST_APP)
             -Wno-error=format
             -Wno-error=address
     )
+endif()
 endif()
 ##########################################################################################
 

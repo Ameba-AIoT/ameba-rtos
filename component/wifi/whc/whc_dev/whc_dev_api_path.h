@@ -73,7 +73,7 @@ void whc_event_war_set_mdns_para(u32 api_id, u32 *param_buf);
 void whc_event_wifi_driver_is_mp(u32 api_id, u32 *param_buf);
 
 
-#ifdef CONFIG_NAN
+#ifdef CONFIG_WIFI_NAN_ENABLE
 void whc_event_nan_init(u32 api_id, u32 *param_buf);
 void whc_event_nan_deinit(u32 api_id, u32 *param_buf);
 void whc_event_nan_start(u32 api_id, u32 *param_buf);
@@ -88,7 +88,7 @@ void whc_event_wtn_cmd(u32 api_id, u32 *param_buf);
 #endif
 
 
-#ifdef CONFIG_P2P
+#ifdef CONFIG_WIFI_P2P_ENABLE
 void whc_event_p2p_role(u32 api_id, u32 *param_buf);
 void whc_event_p2p_remain_on_ch(u32 api_id, u32 *param_buf);
 #endif

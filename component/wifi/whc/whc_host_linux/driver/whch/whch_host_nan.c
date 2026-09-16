@@ -155,7 +155,6 @@ static void whch_host_nan_update_stainfo(struct rtw_event_nan_ndp_status_info *i
 	psta_htpriv = &psta->sta_htpriv;
 
 	psta_mlmepriv->stainfo_macid = info->stainfo.stainfo_macid;
-	psta_mlmepriv->tx_ampdu_density = info->stainfo.tx_ampdu_density;
 	psta_mlmepriv->asoc_cap.htc_rx = info->stainfo.htc_rx;
 	psta_mlmepriv->b_erp_protection = info->stainfo.bcnupd_info.erp_protection;
 

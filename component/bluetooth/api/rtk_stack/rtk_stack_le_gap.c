@@ -4609,11 +4609,11 @@ static uint16_t bt_stack_le_gap_get_conn_handle_by_addr(void *param)
 {
 	rtk_bt_le_get_conn_handle_by_addr_param_t *p_conn_addr =
 		(rtk_bt_le_get_conn_handle_by_addr_param_t *)param;
-	rtk_bt_le_addr_t addr = p_conn_addr->addr;
+	rtk_bt_le_addr_t *addr = p_conn_addr->p_addr;
 	uint16_t *p_conn_handle = p_conn_addr->p_conn_handle;
 	uint8_t conn_id = 0;
 
-	if (true != le_get_conn_id(addr.addr_val, addr.type, &conn_id)) {
+	if (true != le_get_conn_id(addr->addr_val, addr->type, &conn_id)) {
 		return RTK_BT_ERR_NO_ENTRY;
 	}
 
@@ -5660,7 +5660,6 @@ static uint16_t bt_stack_le_gap_get_tx_pending_num(void *param)
 	BT_LOGD("%s:gatts_tx_pending_num=%d,gattc_tx_pending_num=%d,tx_pending_num=%d\r\n", __func__, gatts_tx_pending_num, gattc_tx_pending_num,
 			*get_tx_pending_num_param->p_tx_pending_num);
 
-
 	return 0;
 }
 
@@ -5870,8 +5869,6 @@ static uint16_t bt_stack_le_gap_conn_cte_rx_start(void *param)
 		BT_LOGD("[LE GAP] Connection cte rx start conn_id %u, slot_durations %u, num_ant_ids 2, ant_ids[0] %u, ant_ids[1] %u \r\n",
 				conn_id, p_start->p_rx_param->slot_durations,
 				ant_ids[0], ant_ids[1]);
-
-
 	} else {
 		cause = le_aox_set_conn_cte_receive_params(conn_id,
 												   GAP_AOX_SAMPLING_ENABLE,

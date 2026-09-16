@@ -228,7 +228,7 @@ menu "CONFIG WIFI"
         config WHC_DEV_MENU
             bool
             depends on WHC_DEV
-            select WHC_INTF_SDIO if SDIO_WHC
+            select WHC_INTF_SPDIO if SDIO_WHC
             select WHC_INTF_SPI if SPI_WHC
             select WHC_INTF_USB if USB_WHC
             select WLAN
@@ -238,7 +238,7 @@ menu "CONFIG WIFI"
             bool
             depends on WHC_NONE
             select WLAN
-            select WHC_INTF_SDIO
+            select WHC_INTF_SPDIO
             select LWIP_LAYER
 
         config SPI_WHC_HOST
@@ -271,7 +271,7 @@ menu "CONFIG WIFI"
         bool
     config LWIP_LAYER
         bool
-    config WHC_INTF_SDIO
+    config WHC_INTF_SPDIO
         bool
     config WHC_INTF_SPI
         bool

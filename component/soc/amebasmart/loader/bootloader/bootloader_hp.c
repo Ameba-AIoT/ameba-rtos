@@ -263,7 +263,6 @@ void BOOT_DDR_Init(void)
 	DDR_PHY_AutoGating();
 
 	/* The DIW switch dynamically method is the same as before. Setting 0 means off.*/
-	//DDRC_DEV->DDRC_DPERF0 = (DDRC_DEV->DDRC_DPERF0 & ~DDRC_MASK_DIW) | DDRC_DIW(diw);
 #ifdef CONFIG_LINUX_FW_EN
 	rxi316_DynSre_init(0x700, ENABLE);		//for linux lcdc, set the max count, set max to 1800 After ECO
 #else
@@ -810,6 +809,42 @@ void Peripheral_Reset(void)
 				0UL);
 }
 
+/* RAE/WAE are the ULL memory read/write assist enables, i.e. memory interface timing. In every
+ * FTC_ULL_1 register below the 1.0V pair resets to 0 while the 0.9V pair resets to 1, and 0 is the
+ * wrong value for this IC. Align 1P0 with 0P9 during init, before the core voltage is raised. */
+BOOT_RAM_TEXT_SECTION
+static void BOOT_Mem_AssistSet(void)
+{
+	/* Each domain pairs its own offset with its own bit macros, so a future bit move in one of
+	 * them only changes this table. The bits happen to be identical today. */
+	static const struct {
+		u16 reg;
+		u32 bits;
+	} tbl[] = {
+		{REG_CTRL_LSYS_E0_FTC_ULL_1,				CTRL_BIT_LSYS_E0_RAE_1P0			| CTRL_BIT_LSYS_E0_WAE_1P0},
+		{REG_CTRL_HSYS_E0_FTC_ULL_1,				CTRL_BIT_HSYS_E0_RAE_1P0			| CTRL_BIT_HSYS_E0_WAE_1P0},
+		{REG_CTRL_WLK4_E0_FTC_ULL_1,				CTRL_BIT_WLK4_E0_RAE_1P0			| CTRL_BIT_WLK4_E0_WAE_1P0},
+		{REG_CTRL_WPOFF_E0_FTC_ULL_1,				CTRL_BIT_WPOFF_E0_RAE_1P0			| CTRL_BIT_WPOFF_E0_WAE_1P0},
+		{REG_CTRL_WPON_E0_FTC_ULL_1,				CTRL_BIT_WPON_E0_RAE_1P0			| CTRL_BIT_WPON_E0_WAE_1P0},
+		{REG_CTRL_BTONK4_E0_FTC_ULL_1,				CTRL_BIT_BTONK4_E0_RAE_1P0			| CTRL_BIT_BTONK4_E0_WAE_1P0},
+		{REG_CTRL_BTONK4_E1_FTC_ULL_1,				CTRL_BIT_BTONK4_E1_RAE_1P0			| CTRL_BIT_BTONK4_E1_WAE_1P0},
+		{REG_CTRL_BTOFFK4_E0_FTC_ULL_1,				CTRL_BIT_BTOFFK4_E0_RAE_1P0			| CTRL_BIT_BTOFFK4_E0_WAE_1P0},
+		{REG_CTRL_BTOFFK4_E1_FTC_ULL_1,				CTRL_BIT_BTOFFK4_E1_RAE_1P0			| CTRL_BIT_BTOFFK4_E1_WAE_1P0},
+		{REG_CTRL_KM0_DCACHE_DATA_FTC_ULL_SPRAM_1,	CTRL_BIT_KM0_DCACHE_DATA_RAE_1P0	| CTRL_BIT_KM0_DCACHE_DATA_WAE_1P0},
+		{REG_CTRL_KM0_DCACHE_TAG_FTC_ULL_SPRAM_1,	CTRL_BIT_KM0_DCACHE_TAG_RAE_1P0		| CTRL_BIT_KM0_DCACHE_TAG_WAE_1P0},
+		{REG_CTRL_KM0_ICACHE_DATA_FTC_ULL_SPRAM_1,	CTRL_BIT_KM0_ICACHE_DATA_RAE_1P0	| CTRL_BIT_KM0_ICACHE_DATA_WAE_1P0},
+		{REG_CTRL_KM0_ICACHE_TAG_FTC_ULL_SPRAM_1,	CTRL_BIT_KM0_ICACHE_TAG_RAE_1P0		| CTRL_BIT_KM0_ICACHE_TAG_WAE_1P0},
+	};
+	u32 i;
+
+	for (i = 0; i < sizeof(tbl) / sizeof(tbl[0]); i++) {
+		HAL_WRITE32(SYSTEM_MEM_CTRL_BASE, tbl[i].reg,
+					HAL_READ32(SYSTEM_MEM_CTRL_BASE, tbl[i].reg) | tbl[i].bits);
+	}
+
+	__DSB();
+}
+
 /* To avoid RRAM holding incorrect data, incorporate a MAGIC_NUMBER for verification. */
 /* Non-static: also called by the Zephyr KM4 MCUboot boot_prepare.c */
 bool BOOT_RRAM_InfoValid(void)
@@ -830,6 +865,8 @@ __weak void BOOT_Image1(void)
 	PRAM_START_FUNCTION Image2EntryFun = BOOT_SectionInit();
 	STDLIB_ENTRY_TABLE *prom_stdlib_export_func = (STDLIB_ENTRY_TABLE *)__rom_stdlib_text_start__;
 	RRAM_TypeDef *rram = RRAM;
+
+	BOOT_Mem_AssistSet();
 
 	_memset((void *) __image1_bss_start__, 0, (__image1_bss_end__ - __image1_bss_start__)); /*clear bss first*/
 

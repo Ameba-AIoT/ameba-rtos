@@ -25,20 +25,13 @@ void whc_spi_host_rx_req_task(void)
 	for (;;) {
 		rtos_sema_take(spi_host_priv.host_recv_wake, MUTEX_WAIT_TIMEOUT);
 
-		/* TODO: check if this flow is ok?? 1) acquire dev_lock, 2) check dev ready, 3) remove SSI_Busy check*/
-retry:
-		while (GPIO_ReadDataBit(DEV_READY_PIN) == DEV_BUSY) {
-			/* wait for dev ready */
-			if (rtos_sema_take(spi_host_priv.dev_rdy_sema, 1000) == RTK_FAIL) {
-				RTK_LOGD(TAG_WLAN_INIC, "wait dev ready TO\n\r");
-			}
-		}
-
-		if (SSI_Busy(WHC_SPI_DEV)) {
-			goto retry;
-		}
 		rtos_mutex_take(spi_host_priv.dev_lock, MUTEX_WAIT_TIMEOUT);
 
+		/* the TX GDMA channel is shared with the TX path, and its disable/free
+		 * is deferred to whc_spi_host_dma_tx_done_cb (txdma_irq_task). Wait for
+		 * txbuf_info == NULL (previous TX fully retired) before reusing that channel
+		 * with dummy_tx_buf; otherwise a late dma_tx_done_cb disables this RX
+		 * transfer's TX DMA mid-flight. */
 		while ((GPIO_ReadDataBit(SPIM_SW_CS) == CS_LOW) || (spi_host_priv.txbuf_info != NULL)) {
 			rtos_time_delay_ms(1);
 		}
@@ -49,6 +42,8 @@ retry:
 			spi_host_priv.host_dma_waiting_status = HOST_RX_DMA_CB_DONE | HOST_TX_DMA_CB_DONE;
 
 			set_sw_cs_pin(CS_LOW);
+
+			spi_host_priv.dev_state = DEV_BUSY;
 
 			whc_spi_host_flush_rx_fifo();
 			spi_host_priv.host_rx_state = 1;
@@ -68,15 +63,11 @@ retry:
 static int whc_spi_host_dev_rdy_handler(int irq, void *context)
 {
 	(void)irq;
-
 	(void)context;
 
-	if (GPIO_ReadDataBit(DEV_READY_PIN)) {
-		spi_host_priv.dev_state = DEV_READY;
-		rtos_sema_give(spi_host_priv.dev_rdy_sema);
-	} else {
-		spi_host_priv.dev_state = DEV_BUSY;
-	}
+	spi_host_priv.dev_state = DEV_READY;
+	rtos_sema_give(spi_host_priv.dev_rdy_sema);
+
 	return 1;
 }
 
@@ -384,16 +375,29 @@ void whc_spi_host_send(u8 *buf, u16 len, void *buf_alloc, u8 is_skb)
 
 	DCache_CleanInvalidate((u32)buf, SPI_BUFSZ);
 
-	/* TODO: check if this flow is ok?? 1) acquire dev_lock, 2) check dev ready, 3) remove SSI_Busy check*/
+	/* wait for dev ready while NOT holding dev_lock, so the RX task
+	 * (TX_REQ IRQ -> whc_spi_host_recv_data) can still take dev_lock and drain the
+	 * SPI bus; otherwise a dev stuck BUSY would block RX for the whole 500ms timeout. */
 retry:
-	while (GPIO_ReadDataBit(DEV_READY_PIN) == DEV_BUSY) {
-		/* wait for dev ready */
-		if (rtos_sema_take(spi_host_priv.dev_rdy_sema, 1000) == RTK_FAIL) {
-			RTK_LOGD(TAG_WLAN_INIC, "wait dev ready TO\n\r");
+	for (;;) {
+		rtos_mutex_take(spi_host_priv.dev_lock, MUTEX_WAIT_TIMEOUT);
+		if (spi_host_priv.dev_state != DEV_BUSY) {
+			break;	/* dev ready, proceed with dev_lock held */
 		}
-	}
+		rtos_mutex_give(spi_host_priv.dev_lock);
 
-	rtos_mutex_take(spi_host_priv.dev_lock, MUTEX_WAIT_TIMEOUT);
+		if (rtos_sema_take(spi_host_priv.dev_rdy_sema, 500) == RTK_FAIL) {
+			/* timeout: re-lock and give the pin one last check before giving up */
+			rtos_mutex_take(spi_host_priv.dev_lock, MUTEX_WAIT_TIMEOUT);
+			if (GPIO_ReadDataBit(DEV_READY_PIN) != DEV_BUSY) {
+				break;	/* dev went ready while we slept; edge was missed */
+			}
+			RTK_LOGE(TAG_WLAN_INIC, "%s: wait dev busy timeout, drop tx\n\r", __func__);
+			rtos_mutex_give(spi_host_priv.dev_lock);
+			goto drop;
+		}
+		/* loop: re-lock, re-check dev_state */
+	}
 
 	if (SSI_Busy(WHC_SPI_DEV)) {
 		rtos_mutex_give(spi_host_priv.dev_lock);
@@ -405,6 +409,10 @@ retry:
 	}
 
 	set_sw_cs_pin(CS_LOW);
+
+	/* set dev busy before starting the transfer, for the case the device
+	 * can't drive the ready pin. */
+	spi_host_priv.dev_state = DEV_BUSY;
 
 	/* initiate spi transaction */
 	if (!spi_host_priv.txdma_initialized) {
@@ -497,7 +505,8 @@ static void whc_spi_host_setup_gpio(void)
 	GPIO_InitStruct.GPIO_Pin = DEV_READY_PIN;
 	GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_DOWN;
 	GPIO_InitStruct.GPIO_Mode = GPIO_Mode_INT;
-	GPIO_InitStruct.GPIO_ITTrigger = GPIO_INT_Trigger_BOTHEDGE;
+	GPIO_InitStruct.GPIO_ITTrigger = GPIO_INT_Trigger_EDGE;
+	GPIO_InitStruct.GPIO_ITPolarity = GPIO_INT_POLARITY_ACTIVE_HIGH;
 	GPIO_Init(&GPIO_InitStruct);
 	GPIO_UserRegIrq(GPIO_InitStruct.GPIO_Pin, whc_spi_host_dev_rdy_handler, &GPIO_InitStruct);
 	GPIO_INTConfig(GPIO_InitStruct.GPIO_Pin, ENABLE);
@@ -508,13 +517,13 @@ static void whc_spi_host_setup_gpio(void)
 	GPIO_Init(&GPIO_InitStruct);
 	set_sw_cs_pin(CS_HIGH);
 
-#ifdef SPI_DEBUG
-	GPIO_InitStruct.GPIO_Pin = _PB_20;
+#ifdef WHC_SPI_DEBUG
+	GPIO_InitStruct.GPIO_Pin = _PA_13;
 	GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_DOWN;
 	GPIO_InitStruct.GPIO_Mode = GPIO_Mode_OUT;
 	GPIO_Init(&GPIO_InitStruct);
 
-	GPIO_InitStruct.GPIO_Pin = _PB_6;
+	GPIO_InitStruct.GPIO_Pin = _PA_14;
 	GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_DOWN;
 	GPIO_InitStruct.GPIO_Mode = GPIO_Mode_OUT;
 	GPIO_Init(&GPIO_InitStruct);

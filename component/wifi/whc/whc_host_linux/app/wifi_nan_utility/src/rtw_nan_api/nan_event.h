@@ -66,6 +66,7 @@ enum rtw_vendor_event {
 	RTW_VENDOR_EVT_NAN_PASN_UPD_PMKID,
 	RTW_VENDOR_EVT_NAN_BSTRAP_RESULT,
 	RTW_VENDOR_EVT_NAN_PASN_RESULT,
+	RTW_VENDOR_EVT_NAN_NIK_CACHE,
 	RTW_VENDOR_EVT_MAX
 };
 
@@ -155,6 +156,26 @@ struct vendor_evt_pasn_upd_pmkid {
 	uint8_t peer_nmi[ETH_ALEN];
 	uint8_t peer_pmkid[MAX_PMKID_LEN];
 	uint8_t auth_method;
+};
+
+#define NIK_CACHE_MAX_NUM       8
+struct nan_pairing_identity {
+	uint32_t  key_lifetime;
+	uint32_t  key_start_ms;
+	uint8_t   pairing_role;
+	uint8_t   auth_method;
+	uint8_t   peer_inst_id;
+	uint8_t   nik[16];
+	uint8_t   pmk_id[16];
+	uint8_t   password_len;
+	char      password[16];
+};
+
+struct nan_nik_cache_data {
+	uint8_t   version;
+	uint8_t   reserved[3];
+	uint8_t   own_nik[16];
+	struct nan_pairing_identity entries[NIK_CACHE_MAX_NUM];
 };
 
 int rtw_nan_evt_init();

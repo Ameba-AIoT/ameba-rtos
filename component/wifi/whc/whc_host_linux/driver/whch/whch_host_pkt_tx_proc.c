@@ -899,8 +899,6 @@ int whc_host_xmit_update_attrib(u8 iface_type, struct sk_buff *pkt, struct pkt_a
 			goto exit;
 		}
 		pattrib->mac_id = psta_mlmepriv->stainfo_macid;
-		pattrib->agg_num = psta_mlmepriv->tx_agg_num;
-		pattrib->ampdu_density = psta_mlmepriv->tx_ampdu_density;
 	} else {
 		// if we cannot get psta => drop the pkt
 		dev_warn(global_idev.pwhc_dev, "NULL psta_mlmepriv ra=[%x:%x:%x:%x:%x:%x]\n",

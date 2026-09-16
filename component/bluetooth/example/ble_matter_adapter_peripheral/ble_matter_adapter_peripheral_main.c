@@ -44,7 +44,7 @@ static uint8_t ble_matter_addr[RTK_BD_ADDR_LEN] = {0};          /* Matter addres
 
 #if defined(CONFIG_BLE_MATTER_MULTI_ADV_ON) && CONFIG_BLE_MATTER_MULTI_ADV_ON
 static MULTI_ADV_INFO ble_matter_adv_info = {0};                /* BLE Info */
-#if defined(RTK_BLE_5_0_AE_ADV_SUPPORT) && RTK_BLE_5_0_AE_ADV_SUPPORT
+#if defined(RTK_BLE_5_0_USE_EXTENDED_ADV) && RTK_BLE_5_0_USE_EXTENDED_ADV
 static rtk_bt_le_ext_adv_param_t ext_adv_param = {
 	.adv_event_prop = RTK_BT_LE_EXT_ADV_LEGACY_ADV_CONN_SCAN_UNDIRECTED,
 	.primary_adv_interval_min = 0x20,
@@ -59,8 +59,8 @@ static rtk_bt_le_ext_adv_param_t ext_adv_param = {
 	.secondary_adv_phy = RTK_BT_LE_PHYS_1M,
 };
 #else
-#error "Please enable RTK_BLE_5_0_AE_ADV_SUPPORT in bt_api_config.h"
-#endif // RTK_BLE_5_0_AE_ADV_SUPPORT
+#error "Please enable RTK_BLE_5_0_AE_ADV_SUPPORT in bt_api_config.h, RTK_BLE_5_0_USE_EXTENDED_ADV will be enabled automatically."
+#endif // RTK_BLE_5_0_USE_EXTENDED_ADV
 
 static uint8_t def_adv_data[] = {
 	0x02, //AD len
@@ -94,7 +94,7 @@ static rtk_bt_le_adv_param_t adv_param = {
 	.channel_map = RTK_BT_LE_ADV_CHNL_ALL,
 	.filter_policy = RTK_BT_LE_ADV_FILTER_ALLOW_SCAN_ANY_CON_ANY,
 };
-#endif // RTK_BLE_5_0_AE_ADV_SUPPORT
+#endif // RTK_BLE_5_0_USE_EXTENDED_ADV
 
 static rtk_bt_le_security_param_t sec_param = {
 	.io_cap = RTK_IO_CAP_NO_IN_NO_OUT,

@@ -21,6 +21,9 @@ int whc_host_init(void)
 #elif defined(CONFIG_WHC_HCI_USB)
 	idev->intf_priv = &whc_usb_host_priv;
 	idev->intf_ops = &whc_usb_host_intf_ops;
+#elif defined(CONFIG_WHC_HCI_GSPI)
+	idev->intf_priv = &whc_gspi_priv;
+	idev->intf_ops = &whc_gspi_host_intf_ops;
 #else
 #error Not support other interfaces!
 #endif

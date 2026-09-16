@@ -44,7 +44,6 @@ bool whc_sdio_check_dl_mode(struct whc_sdio *priv)
 
 	reg8 = rtw_read8(priv, SDIO_REG_FW_DL_CTRL);
 	if (!(reg8 & SD_FW_DL_MODE)) {
-		dev_info(&priv->func->dev, "%s: No need to update firmware!\n", __FUNCTION__);
 		return false;
 	}
 
@@ -191,23 +190,19 @@ static int whc_sdio_check_firmware(struct whc_xfer_adapter_t *adapter)
 
 	for (i = 0; i < 200; i++) {
 		reg16 = rtw_read16(priv, SDIO_REG_HCPWM2);
-
-		if (priv->dev_state == WHC_XFER_FW_TYPE_ROM) {
-			if (reg16 & HCPWM2_IMG1_BIT) {
-				priv->dev_state = WHC_XFER_FW_TYPE_BOOTLOADER;
-				return WHC_XFER_FW_TYPE_BOOTLOADER;
-			}
-		} else if (priv->dev_state == WHC_XFER_FW_TYPE_BOOTLOADER) {
-			if (reg16 & HCPWM2_ACT_BIT) {
-				priv->dev_state = WHC_XFER_FW_TYPE_APPLICATION;
-				return WHC_XFER_FW_TYPE_APPLICATION;
-			}
+		if (reg16 & HCPWM2_IMG1_BIT) {
+			priv->dev_state = WHC_XFER_FW_TYPE_BOOTLOADER;
+			return WHC_XFER_FW_TYPE_BOOTLOADER;
+		} else if (reg16 & HCPWM2_ACT_BIT) {
+			priv->dev_state = WHC_XFER_FW_TYPE_APPLICATION;
+			return WHC_XFER_FW_TYPE_APPLICATION;
 		} else {
-			dev_err(&priv->func->dev, "%s: Not Support dev_state (%d)\n", __FUNCTION__, priv->dev_state);
-			return -1;
+			if ((priv->dev_state != WHC_XFER_FW_TYPE_ROM) && (priv->dev_state != WHC_XFER_FW_TYPE_BOOTLOADER)) {
+				dev_err(&priv->func->dev, "%s: Not Support dev_state (%d)\n", __FUNCTION__, priv->dev_state);
+				return -1;
+			}
+			msleep(1);
 		}
-
-		msleep(1);
 	}
 
 	dev_err(&priv->func->dev, "%s: Wait SDIO_REG_HCPWM2 Timeout!!\n", __FUNCTION__);

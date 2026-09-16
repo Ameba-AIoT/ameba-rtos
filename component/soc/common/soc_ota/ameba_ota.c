@@ -31,6 +31,17 @@ u8 ota_get_cur_index(u8 img_id)
 		AddrStart = RRAM->OTA_APP_REMAP;
 	}
 #elif (defined(CONFIG_RTL8720F) || defined(CONFIG_RLE1509))
+#ifdef CONFIG_SOLO
+	/* SOLO: the km4tz bootloader records the running OTA slots in GBSS retention RAM
+	 * (OTA_NP_IMG_IDX for iot/km4ns, OTA_IMG_REMAP[] for mcu/AP) and km4ns reads them
+	 * here. app_mpu_nocache_init() maps GBSS non-cacheable in this app, so the read
+	 * comes straight from SRAM and needs no cache maintenance. The cross-core coherency
+	 * is handled entirely on the writer side: the bootloader runs with the MPU disabled
+	 * (GBSS cacheable there) so it DCache_Clean()s GBSS after each write. */
+	if (img_id == OTA_IMGID_NP) {
+		return GBSS_DEV->OTA_NP_IMG_IDX;
+	}
+#endif
 	AddrStart = GBSS_DEV->OTA_IMG_REMAP[img_id];
 #elif defined(CONFIG_AMEBAPRO3)
 	{

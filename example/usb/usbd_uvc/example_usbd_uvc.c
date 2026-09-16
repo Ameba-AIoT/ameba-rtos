@@ -10,12 +10,9 @@
 #include "usbd.h"
 #include "usbd_uvc.h"
 #include "os_wrapper.h"
-#include "sample_h264.h"
+#include "example_usbd_uvc_sample_h264.h"
 
 /* Private defines -----------------------------------------------------------*/
-
-// Endpoint address
-#define USBD_UVC_ISO_IN_EP                       0x83U
 
 // USB speed
 #ifdef CONFIG_SUPPORT_USB_FS_ONLY
@@ -38,12 +35,12 @@
 /* Private types -------------------------------------------------------------*/
 
 typedef struct video_array_s {
-	const unsigned char *data;
-	uint32_t data_len;
-	uint32_t data_offset;
-	uint32_t fps;
-	uint32_t h264_nal_size;
-	uint32_t size;
+	const u8 *data;
+	u32 data_len;
+	u32 data_offset;
+	u32 fps;
+	u32 h264_nal_size;
+	u32 size;
 } video_array_t;
 
 /* Private macros ------------------------------------------------------------*/
@@ -67,40 +64,50 @@ static const usbd_uvc_ep_cfg_t uvc_ep = {
 static usbd_config_t uvc_cfg = {
 	.speed = UVC_USB_SPEED,
 	.isr_priority = INT_PRI_MIDDLE,
+	/* Enable SOF interrupt: drives ISOC IN arming/recovery and the SCR SOF counter. */
+	.ext_intr_enable = USBD_SOF_INTR,
 #if defined (CONFIG_AMEBAPRO3)
 	//DFIFO total 2232 DWORD, resv 8 DWORD for DMA addr and EP0 fixed 256 DWORD
 	.rx_fifo_depth = 1168U,
-	.ptx_fifo_depth = {256U, 256U, 256U, },
+	.ptx_fifo_depth = {16U, 768U, 16U, },
+#endif
+#if defined (CONFIG_AMEBAGREEN2)
+	.rx_fifo_depth = 420U,
+	.ptx_fifo_depth = {16U, 256U, 32U, 256U, },
+	/* RTL8721F TxFIFO is not deep enough to hold a whole HB ISOC IN packet; enable the
+	   Periodic IN TX threshold so the core streams it out in chunks. */
+	.isoc_use_ptx_threshold = 1U,
 #endif
 };
 
-static uint32_t array_get_h264_frame_size(const unsigned char *ptr_start, const unsigned char *ptr_end, uint8_t nal_len)
+static u32 array_get_h264_frame_size(const u8 *ptr_start, const u8 *ptr_end, u8 nal_len)
 {
+	const u8 *ptr = ptr_start;
+	u8 skip_flag = 1U;
+
 	if ((ptr_start >= ptr_end) || ((nal_len != 3U) && (nal_len != 4U))) {
-		return 0;
+		return 0U;
 	}
 
-	int skip_flag = 1;
-	const unsigned char *ptr = ptr_start;
 	while ((ptr + nal_len) < ptr_end) {
 		if ((ptr[0] == 0U) && (ptr[1] == 0U)) {
 			if (((nal_len == 4U) && (ptr[2] == 0U) && (ptr[3] == 1U))
 				|| ((nal_len == 3U) && (ptr[2] == 1U))) {
 				if (((ptr[nal_len] & 0x1fU) != 0x07U) && ((ptr[nal_len] & 0x1fU) != 0x08U)) {
-					if (skip_flag == 0) {
-						return (uint32_t)(ptr - ptr_start);
+					if (skip_flag == 0U) {
+						return (u32)(ptr - ptr_start);
 					} else {
-						skip_flag = 0;
+						skip_flag = 0U;
 					}
 				} else if ((ptr[nal_len] & 0x1fU) == 0x08U) {
-					skip_flag = 1;
+					skip_flag = 1U;
 				}
 			}
 		}
 		ptr++;
 	}
 
-	return (uint32_t)(ptr_end - ptr_start);
+	return (u32)(ptr_end - ptr_start);
 }
 
 static void example_usbd_uvc_video_thread(void *param)
@@ -144,8 +151,9 @@ static void example_usbd_uvc_video_thread(void *param)
 
 static void example_usbd_uvc_thread(void *param)
 {
-	int ret = 0;
+	int ret = HAL_OK;
 	rtos_task_t task;
+	u32 i = 0U;
 
 	UNUSED(param);
 
@@ -162,12 +170,12 @@ static void example_usbd_uvc_thread(void *param)
 	}
 
 	video.data = h264_sample;
-	video.data_len = (uint32_t)h264_sample_len;
+	video.data_len = (u32)h264_sample_len;
 	video.data_offset = 0;
 	video.fps = USBD_UVC_VIDEO_FPS;
 	video.h264_nal_size = USBD_UVC_H264_NAL_SIZE;
 
-	for (uint32_t i = 0; i < USBD_UVC_VIDEO_BUF_NUM; i++) {
+	for (i = 0U; i < USBD_UVC_VIDEO_BUF_NUM; i++) {
 		usbd_uvc_video_put_out_stream_queue(&uvc_payload[i]);
 	}
 

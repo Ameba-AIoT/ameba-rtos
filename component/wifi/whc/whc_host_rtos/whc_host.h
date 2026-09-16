@@ -17,7 +17,7 @@
 #ifdef CONFIG_WHC_INTF_SPI
 #include "whc_spi_host.h"
 #include "whc_spi_host_trx.h"
-#elif defined(CONFIG_WHC_INTF_SDIO)
+#elif defined(CONFIG_WHC_INTF_SPDIO)
 #include "whc_sdio_host.h"
 #include "whc_sdio_host_trx.h"
 #include "rtw_sdio_drvio.h"

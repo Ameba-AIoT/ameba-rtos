@@ -43,15 +43,15 @@
 
 static int hid_setup(usb_dev_t *dev, usb_setup_req_t *req);
 static int hid_set_config(usb_dev_t *dev, u8 config);
-static int hid_clear_config(usb_dev_t *dev, u8 config);
+static void hid_clear_config(usb_dev_t *dev, u8 config);
 static int hid_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status);
-static u16 hid_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf);
+static u16 hid_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16 buf_len);
 #if defined(CONFIG_USBD_HID_KEYBOARD) || defined(CONFIG_USBD_HID_BIDIR)
 static int hid_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len);
 static int hid_handle_ep0_data_out(usb_dev_t *dev);
 #endif
 #ifdef CONFIG_USBD_HID_BIDIR
-static int hid_sof(usb_dev_t *dev);
+static void hid_sof(usb_dev_t *dev);
 static int usbd_hid_ring_buf_ctrl_init(usbd_hid_buf_ctrl_t *pbuf_ctrl);
 static void usbd_hid_ring_buf_ctrl_deinit(usbd_hid_buf_ctrl_t *pbuf_ctrl);
 static u32 usbd_hid_ring_buf_is_full_internal(const usbd_hid_buf_ctrl_t *pdata_ctrl);
@@ -599,11 +599,11 @@ static void usbd_hid_ring_buf_ctrl_deinit(usbd_hid_buf_ctrl_t *pbuf_ctrl)
 			/* Release any thread blocked in usbd_hid_read(). */
 			rtos_sema_give(pbuf_ctrl->rx_sema);
 		}
-		/* Wait for usbd_hid_read() to observe hid_sema_valid == 0 and stop
-		 * touching rx_sema before deleting it, so it never takes a deleted
-		 * semaphore. */
+		/* Wait for usbd_hid_read() to observe hid_sema_valid == 0 before deleting
+		 * rx_sema. Yield instead of busy-wait: a lower-priority reader would
+		 * otherwise get starved of the CPU it needs to release the semaphore. */
 		do {
-			usb_os_delay_us(100U);
+			usb_os_sleep_ms(1U);
 		} while (pbuf_ctrl->read_wait_sema);
 		rtos_sema_delete(pbuf_ctrl->rx_sema);
 	}
@@ -650,7 +650,6 @@ static int usbd_hid_receive(void)
   */
 static int hid_handle_ep0_data_out(usb_dev_t *dev)
 {
-	int ret = HAL_ERR_HW;
 	usbd_hid_t *hid = &hid_device;
 
 	UNUSED(dev);
@@ -663,10 +662,12 @@ static int hid_handle_ep0_data_out(usb_dev_t *dev)
 			hid->cb->received(dev->ep0_out.xfer_buf, hid->ctrl_req.wLength);
 		}
 		hid->ctrl_req.bRequest = 0xFFU;
-		ret = HAL_OK;
 	}
 
-	return ret;
+	/* No pending request means this data stage does not belong to HID, the composite dispatcher
+	   already routed it by active_func. Ref USB 2.0 8.5.3.1: a non-zero value here makes the core
+	   stall the status stage, so do not report a failure the host cannot act on. */
+	return HAL_OK;
 }
 
 /**
@@ -815,11 +816,21 @@ static int hid_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			if (USB_HIGH_BYTE(req->wValue) == USBD_HID_REPORT_DESC) {
 				/* HID Report Descriptor */
 				ep0_in->xfer_len = MIN(report_len, req->wLength);
+				if (ep0_in->xfer_len > ep0_in->xfer_buf_len) {
+					RTK_LOGS(TAG, RTK_LOG_ERROR, "Rpt desc OVSZ %d > %d\n", ep0_in->xfer_len, ep0_in->xfer_buf_len);
+					ret = HAL_ERR_PARA;
+					break;
+				}
 				usb_os_memcpy((void *)ep0_in->xfer_buf, (const void *)buf, ep0_in->xfer_len);
 			} else if (USB_HIGH_BYTE(req->wValue) == USBD_HID_DESC) {
 				/* HID Descriptor */
 				len = USBD_HID_DESC_SIZE;
 				buf = ep0_in->xfer_buf;
+				if (len > ep0_in->xfer_buf_len) {
+					RTK_LOGS(TAG, RTK_LOG_ERROR, "HID desc OVSZ %d > %d\n", len, ep0_in->xfer_buf_len);
+					ret = HAL_ERR_PARA;
+					break;
+				}
 				usb_os_memcpy((void *)buf, (const void *)usbd_hid_desc, len);
 				buf[USBD_HID_DESC_ITEM_LENGTH_OFFSET] = USB_LOW_BYTE(report_len);
 				buf[USBD_HID_DESC_ITEM_LENGTH_OFFSET + 1] = USB_HIGH_BYTE(report_len);
@@ -982,11 +993,10 @@ static int hid_set_config(usb_dev_t *dev, u8 config)
   *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  dev: USB device instance
   * @param  config: USB configuration index
-  * @retval Status
+  * @retval None
   */
-static int hid_clear_config(usb_dev_t *dev, u8 config)
+static void hid_clear_config(usb_dev_t *dev, u8 config)
 {
-	int ret = HAL_OK;
 	usbd_hid_t *hid = &hid_device;
 	usbd_ep_t *ep_intr_in = &hid->ep_intr_in;
 #if defined(CONFIG_USBD_HID_KEYBOARD) || defined(CONFIG_USBD_HID_BIDIR)
@@ -1007,7 +1017,6 @@ static int hid_clear_config(usb_dev_t *dev, u8 config)
 #ifdef CONFIG_USBD_HID_BIDIR
 	usbd_ep_deinit(dev, ep_consumer_intr_in);
 #endif
-	return ret;
 }
 
 /**
@@ -1115,13 +1124,15 @@ static void usbd_hid_patch_ep_addresses(u8 *desc, u16 len, const usbd_hid_ep_cfg
   * @retval Descriptor length
   * @retval Status
   */
-static u16 hid_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf)
+static u16 hid_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16 buf_len)
 {
 	usbd_hid_t *hid = &hid_device;
-	u8 *desc = NULL;
+	const u8 *desc = NULL;
 	usb_speed_type_t speed = dev->dev_speed;
 	u16 len = 0;
 	u16 report_len;
+	u8 type = USB_HIGH_BYTE(req->wValue);
+	u8 is_cfg = 0;
 	u8 attr = 0x80U;
 #ifdef CONFIG_USBD_HID_BIDIR
 	u16 vend_report_len = sizeof(hid_vend_report_desc);
@@ -1144,90 +1155,63 @@ static u16 hid_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf)
 #endif
 	}
 
-	switch (USB_HIGH_BYTE(req->wValue)) {
+	switch (type) {
 
 	case USB_DESC_TYPE_DEVICE:
+		desc = usbd_hid_dev_desc;
 		len = sizeof(usbd_hid_dev_desc);
-		usb_os_memcpy((void *)buf, (const void *)usbd_hid_dev_desc, len);
 		break;
 
 	case USB_DESC_TYPE_CONFIGURATION:
 #ifndef CONFIG_USB_FS
 		if (speed == USB_SPEED_HIGH) {
-			desc = (u8 *)usbd_hid_hs_config_desc;
+			desc = usbd_hid_hs_config_desc;
 			len = sizeof(usbd_hid_hs_config_desc);
 		} else
 #endif
 		{
-			desc = (u8 *)usbd_hid_fs_config_desc;
+			desc = usbd_hid_fs_config_desc;
 			len = sizeof(usbd_hid_fs_config_desc);
 		}
-		usb_os_memcpy((void *)buf, (const void *)desc, len);
-
-		if (!hid->from_composite) {
-			buf[USB_CFG_DESC_OFFSET_ATTR] = attr;
-		}
-		usbd_hid_patch_ep_addresses(buf + USB_LEN_CFG_DESC, len - USB_LEN_CFG_DESC, hid->ep_cfg);
-		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN] = USB_LOW_BYTE(len);
-		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN + 1] = USB_HIGH_BYTE(len);
-		buf[USBD_HID_CFG_DESC_ITEM_LENGTH_OFFSET] = USB_LOW_BYTE(report_len);
-		buf[USBD_HID_CFG_DESC_ITEM_LENGTH_OFFSET + 1] = USB_HIGH_BYTE(report_len);
-#ifdef CONFIG_USBD_HID_BIDIR
-		buf[USBD_HID_CFG_VEND_DESC_ITEM_LENGTH_OFFSET] = USB_LOW_BYTE(vend_report_len);
-		buf[USBD_HID_CFG_VEND_DESC_ITEM_LENGTH_OFFSET + 1] = USB_HIGH_BYTE(vend_report_len);
-#endif
+		is_cfg = 1;
 		break;
 
 #ifndef CONFIG_USB_FS
 	case USB_DESC_TYPE_DEVICE_QUALIFIER:
+		desc = usbd_hid_device_qualifier_desc;
 		len = sizeof(usbd_hid_device_qualifier_desc);
-		usb_os_memcpy((void *)buf, (const void *)usbd_hid_device_qualifier_desc, len);
 		break;
 
 	case USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION:
 		if (speed == USB_SPEED_HIGH) {
-			desc = (u8 *)usbd_hid_fs_config_desc;
+			desc = usbd_hid_fs_config_desc;
 			len = sizeof(usbd_hid_fs_config_desc);
 		} else {
-			desc = (u8 *)usbd_hid_hs_config_desc;
+			desc = usbd_hid_hs_config_desc;
 			len = sizeof(usbd_hid_hs_config_desc);
 		}
-		usb_os_memcpy((void *)buf, (const void *)desc, len);
-
-		if (!hid->from_composite) {
-			buf[USB_CFG_DESC_OFFSET_ATTR] = attr;
-		}
-		usbd_hid_patch_ep_addresses(buf + USB_LEN_CFG_DESC, len - USB_LEN_CFG_DESC, hid->ep_cfg);
-		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN] = USB_LOW_BYTE(len);
-		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN + 1] = USB_HIGH_BYTE(len);
-		buf[USB_CFG_DESC_OFFSET_TYPE] = USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION;
-		buf[USBD_HID_CFG_DESC_ITEM_LENGTH_OFFSET] = USB_LOW_BYTE(report_len);
-		buf[USBD_HID_CFG_DESC_ITEM_LENGTH_OFFSET + 1] = USB_HIGH_BYTE(report_len);
-#ifdef CONFIG_USBD_HID_BIDIR
-		buf[USBD_HID_CFG_VEND_DESC_ITEM_LENGTH_OFFSET] = USB_LOW_BYTE(vend_report_len);
-		buf[USBD_HID_CFG_VEND_DESC_ITEM_LENGTH_OFFSET + 1] = USB_HIGH_BYTE(vend_report_len);
-#endif
+		is_cfg = 1;
 		break;
 #endif
 
 	case USB_DESC_TYPE_STRING:
 		switch (USB_LOW_BYTE(req->wValue)) {
 		case USBD_IDX_LANGID_STR:
+			desc = usbd_hid_lang_id_desc;
 			len = sizeof(usbd_hid_lang_id_desc);
-			usb_os_memcpy((void *)buf, (const void *)usbd_hid_lang_id_desc, len);
 			break;
 		case USBD_IDX_MFC_STR:
-			len = usbd_get_str_desc(USBD_HID_MFG_STRING, buf);
+			len = usbd_get_str_descriptor(USBD_HID_MFG_STRING, buf, buf_len);
 			break;
 		case USBD_IDX_PRODUCT_STR:
 			if (speed == USB_SPEED_HIGH) {
-				len = usbd_get_str_desc(USBD_HID_PROD_HS_STRING, buf);
+				len = usbd_get_str_descriptor(USBD_HID_PROD_HS_STRING, buf, buf_len);
 			} else {
-				len = usbd_get_str_desc(USBD_HID_PROD_FS_STRING, buf);
+				len = usbd_get_str_descriptor(USBD_HID_PROD_FS_STRING, buf, buf_len);
 			}
 			break;
 		case USBD_IDX_SERIAL_STR:
-			len = usbd_get_str_desc(USBD_HID_SN_STRING, buf);
+			len = usbd_get_str_descriptor(USBD_HID_SN_STRING, buf, buf_len);
 			break;
 		case USBD_IDX_MS_OS_STR:
 			break;
@@ -1240,6 +1224,34 @@ static u16 hid_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf)
 
 	default:
 		break;
+	}
+
+	if (desc != NULL) {
+		/* Truncation is not allowed: a short descriptor is illegal, so stall instead */
+		if (len > buf_len) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Desc %d OVSZ %d > %d\n", type, len, buf_len);
+			return 0;
+		}
+
+		usb_os_memcpy((void *)buf, (const void *)desc, len);
+	}
+
+	if (is_cfg != 0) {
+		buf[USB_CFG_DESC_OFFSET_TYPE] = type;
+		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN] = USB_LOW_BYTE(len);
+		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN + 1] = USB_HIGH_BYTE(len);
+		buf[USBD_HID_CFG_DESC_ITEM_LENGTH_OFFSET] = USB_LOW_BYTE(report_len);
+		buf[USBD_HID_CFG_DESC_ITEM_LENGTH_OFFSET + 1] = USB_HIGH_BYTE(report_len);
+#ifdef CONFIG_USBD_HID_BIDIR
+		buf[USBD_HID_CFG_VEND_DESC_ITEM_LENGTH_OFFSET] = USB_LOW_BYTE(vend_report_len);
+		buf[USBD_HID_CFG_VEND_DESC_ITEM_LENGTH_OFFSET + 1] = USB_HIGH_BYTE(vend_report_len);
+#endif
+
+		if (!hid->from_composite) {
+			buf[USB_CFG_DESC_OFFSET_ATTR] = attr;
+		}
+
+		usbd_hid_patch_ep_addresses(buf + USB_LEN_CFG_DESC, len - USB_LEN_CFG_DESC, hid->ep_cfg);
 	}
 
 	return len;
@@ -1273,7 +1285,7 @@ static void hid_status_changed(usb_dev_t *dev, u8 old_status, u8 status)
   *         Also forward SOF to the user callback (e.g. for periodic reports).
   * @note   Called in ISR context; keep it short.
   */
-static int hid_sof(usb_dev_t *dev)
+static void hid_sof(usb_dev_t *dev)
 {
 	usbd_hid_t *hid = &hid_device;
 	usbd_hid_buf_ctrl_t *ctrl = &hid->rx_ctrl;
@@ -1291,8 +1303,6 @@ static int hid_sof(usb_dev_t *dev)
 	if (hid->cb->sof) {
 		hid->cb->sof();
 	}
-
-	return HAL_OK;
 }
 #endif
 

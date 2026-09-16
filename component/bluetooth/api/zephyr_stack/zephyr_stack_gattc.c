@@ -299,8 +299,16 @@ static uint8_t read_cb(struct bt_conn *conn, uint8_t err, struct bt_gatt_read_pa
 
 	p_ind->profile_id = profile_id;
 	p_ind->conn_handle = conn->handle;
+	p_ind->err_code = RTK_BT_ATT_ERR(err);
+	p_ind->status = err ? RTK_BT_STATUS_FAIL : (data ? RTK_BT_STATUS_CONTINUE : RTK_BT_STATUS_DONE);
 	if (params->handle_count == 0) {
 		p_ind->type = RTK_BT_GATT_CHAR_READ_BY_UUID;
+		/* When read_by_uuid first time read a value success, it will read again from the next handle,
+		and it may response 0xa(attribute_not_found), we don't regard this as an error. */
+		if (params->by_uuid.req_cnt > 1 && err == BT_ATT_ERR_ATTRIBUTE_NOT_FOUND) {
+			p_ind->err_code = 0;
+			p_ind->status = RTK_BT_STATUS_DONE;
+		}
 	} else if (params->handle_count == 1) {
 		p_ind->type = RTK_BT_GATT_CHAR_READ_BY_HANDLE;
 	} else {
@@ -310,9 +318,6 @@ static uint8_t read_cb(struct bt_conn *conn, uint8_t err, struct bt_gatt_read_pa
 			p_ind->type = RTK_BT_GATT_CHAR_READ_MULTIPLE;
 		}
 	}
-
-	p_ind->err_code = RTK_BT_ATT_ERR(err);
-	p_ind->status = err ? RTK_BT_STATUS_FAIL : (data ? RTK_BT_STATUS_CONTINUE : RTK_BT_STATUS_DONE);
 
 	if (!data || (err != 0)) {
 		osif_mem_free(req);

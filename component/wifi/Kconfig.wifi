@@ -72,6 +72,18 @@ if RMESH_SOCKET_EN
         default n
 endif
 
+if !RNAT_EN
+    config WIFI_RMESH_MAX_REFUGEE_NUM
+        int "Rmesh maximum refugee number"
+        depends on AMEBAGREEN2 || AMEBADPLUS || RTL8720F
+        default 32 if AMEBAGREEN2
+        default 14 if RTL8720F
+        default 4 if AMEBADPLUS
+        range 1 32 if AMEBAGREEN2
+        range 1 14 if RTL8720F
+        range 1 4 if AMEBADPLUS
+endif
+
 endif
 
 if LINUX_FW_EN
@@ -131,5 +143,6 @@ config WIFI_AP_STA_NUM
     int "SoftAP maximum station number"
     default 12 if AMEBASMART
     default 5
-    range 1 26 if AMEBAGREEN2 || AMEBADPLUS || AMEBALITE || AMEBASMART
+    range 1 25 if AMEBAGREEN2 || AMEBADPLUS || AMEBALITE || AMEBASMART
+    range 1 26 if RTL8720F
     range 1 5

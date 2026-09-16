@@ -161,6 +161,33 @@ static int atcmd_ble_mesh_set_tx_phy(int argc, char **argv)
 #endif
 }
 
+static int atcmd_ble_mesh_set_service_adv(int argc, char **argv)
+{
+	(void)argc;
+#if defined(RTK_BLE_MESH_DEVICE_SUPPORT) && RTK_BLE_MESH_DEVICE_SUPPORT
+	uint16_t ret = 0;
+	rtk_bt_mesh_stack_act_set_service_adv_t param = {0};
+
+	param.enable = (uint8_t)str_to_int(argv[0]);
+	if (param.enable > 1) {
+		BT_LOGE("[%s] Wrong value (%d), should be 0 or 1.\r\n", __func__, param.enable);
+		return -1;
+	}
+
+	ret = rtk_bt_mesh_stack_set_service_adv(&param);
+	if (ret) {
+		BT_LOGE("[%s] Call mesh API failed! reason: 0x%x\r\n", __func__, ret);
+		return -1;
+	} else {
+		return 0;
+	}
+#else
+	(void)argv;
+	BT_LOGE("[%s] Only mesh device support this feature, fail.\r\n", __func__);
+	return -2;
+#endif
+}
+
 static int atcmd_ble_mesh_fn_init(int argc, char **argv)
 {
 	(void)argc;
@@ -627,6 +654,7 @@ static const cmd_table_t mesh_stack_cmd_table[] = {
 	{"model_sub",   atcmd_ble_mesh_set_model_subscribe,       4, 4},
 	{"retran_set",  atcmd_ble_mesh_set_retrans_param,         5, 5},
 	{"set_txphy",   atcmd_ble_mesh_set_tx_phy,                2, 2},
+	{"srv_adv",     atcmd_ble_mesh_set_service_adv,           2, 2},
 	{"fn_init",     atcmd_ble_mesh_fn_init,                   4, 4},
 	{"fn_deinit",   atcmd_ble_mesh_fn_deinit,                 1, 1},
 	{"pbadvcon",    atcmd_ble_mesh_pbadvcon,                  2, 2},

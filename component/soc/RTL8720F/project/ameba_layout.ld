@@ -43,18 +43,19 @@
 #define KM4TZ_IMG1_SIZE              KBYTES(0)
 #elif defined(CONFIG_IMG1_FLASH)
 #define KM4TZ_IMG1_SIZE              KBYTES(4)
+#elif defined(CONFIG_SOLO)
+#define KM4TZ_IMG1_SIZE              KBYTES(28)
 #else
 #define KM4TZ_IMG1_SIZE              KBYTES(24)
 #endif
 
 #define KM4NS_IPC_RAM_SIZE           512              /* 512B */
 
-#if defined (CONFIG_SOLO)
-#define RAM_KM4NS_BOOT_SIZE          KBYTES(8)
+#if defined(CONFIG_WIFI_AP_STA_NUM) && (CONFIG_WIFI_AP_STA_NUM > 5)
+#define RAM_KM4NS_IMG2_SIZE          KBYTES(CONFIG_SRAM_KM4NS_IMG2_KB + 2 * (CONFIG_WIFI_AP_STA_NUM - 5))
 #else
-#define RAM_KM4NS_BOOT_SIZE          KBYTES(0)
-#endif
 #define RAM_KM4NS_IMG2_SIZE          KBYTES(CONFIG_SRAM_KM4NS_IMG2_KB)
+#endif
 
 /*
                   RTL8720F SRAM Layout (512K)
@@ -94,13 +95,12 @@ IMG3 size is 0.    │  │                      │    │
 #define KM4TZ_RAM_TZ_START            (KM4TZ_IMG1_RAM_SATRT + KM4TZ_IMG1_SIZE)              /* 0x20003000 | unavailable when TZ off */
 #define KM4TZ_MSP_RAM_NS_START        (KM4TZ_RAM_TZ_START + KM4TZ_RAM_TZ_SIZE)              /* 0x20013000 ~ 0x20013800 | unavailable */
 #define KM4TZ_IMG2_RAM_START          (KM4TZ_MSP_RAM_NS_START + KM4TZ_MSP_RAM_NS_SIZE)      /* 0x20013800 ~ 0x20064000 | 0x20003000 ~ 0x20064000 */
-#define KM4NS_BOOT_RAM_START          (SRAM_END - RAM_KM4NS_BOOT_SIZE)                      /* 0x20064000 ~ 0x20064000 | 0x20064000 ~ 0x20064000 */
 #if defined(CONFIG_WHC_DEV_HCI_BOOT)
 /* HCI_BOOT: KM4NS sits at the bottom of SRAM, right after the fixed 8 KB area. KM4TZ takes [KM4NS_end .. KM4TZ_HCI_BD_RAM_END]. */
 #define KM4NS_IMG2_RAM_START          (SRAM_BASE + KM4TZ_KM4NS_RAM_SIZE)                    /* 0x20002000 */
 #define KM4TZ_HCI_BD_RAM_END          (0x20070000)
 #else
-#define KM4NS_IMG2_RAM_START          (KM4NS_BOOT_RAM_START - RAM_KM4NS_IMG2_SIZE)          /* 0x20064000 ~ 0x20080000 | 0x20064000 ~ 0x20080000 */
+#define KM4NS_IMG2_RAM_START          (SRAM_END - RAM_KM4NS_IMG2_SIZE)                      /* 0x20064000 ~ 0x20080000 | 0x20064000 ~ 0x20080000 */
 #endif
 
 /*
@@ -189,8 +189,6 @@ MEMORY
     KM4NS_IPC_RAM (rwx) :                     ORIGIN = KM4NS_IMG2_RAM_START, LENGTH = KM4NS_IPC_RAM_SIZE                                                                          /* KM4NS IPC RAM: 512B */
     KM4NS_BD_RAM (rwx) :                      ORIGIN = KM4NS_IMG2_RAM_START + KM4NS_IPC_RAM_SIZE + IMAGE_HEADER_LEN,   LENGTH = RAM_KM4NS_IMG2_SIZE - KM4NS_IPC_RAM_SIZE - IMAGE_HEADER_LEN    /* KM4NS BD RAM */
 
-    KM4NS_BOOTLOADER_RAM (rwx) :              ORIGIN = KM4NS_BOOT_RAM_START + IMAGE_HEADER_LEN,   LENGTH = RAM_KM4NS_BOOT_SIZE - IMAGE_HEADER_LEN                                   /* KM4NS BOOT RAM */
-
     KM4TZ_BD_PSRAM_TZ (rwx) :                 ORIGIN = KM4TZ_PSRAM_TZ_START + IMAGE_HEADER_LEN,   LENGTH = KM4TZ_PSRAM_TZ_SIZE - IMAGE_HEADER_LEN                                   /* KM4TZ BD PSRAM TZ: CONFIG_TZ_S_SIZE KB */
     /* KM4TZ Non-secure PSRAM */
     KM4NS_BD_PSRAM (rwx) :                    ORIGIN = KM4NS_IMG2_PSRAM_START + IMAGE_HEADER_LEN,                    LENGTH = KM4NS_BD_PSRAM_LENGTH                                                    /* KM4NS BD PSRAM: CONFIG_PSRAM_KM4NS_IMG2_KB (default 876K), or 0 when NP uses no PSRAM */
@@ -200,7 +198,6 @@ MEMORY
     RETENTION_RAM (rwx) :                     ORIGIN = 0x4080AA00, LENGTH = 0x4080AC00 - 0x4080AA00    /* KM4NS Retention SRAM: 512B */
 
     /* Flash */
-    KM4NS_BOOT_XIP (rx) :                     ORIGIN = 0x00200020, LENGTH = 0x00400000 - 0x00200020    /* KM4NS IMG1 Virtual address: 2M */
     KM4TZ_BOOT_XIP (rx) :                     ORIGIN = 0x10400020, LENGTH = 0x10C00000 - 0x10400020    /* KM4TZ IMG1 Virtual address: 8M */
     KM4TZ_IMG3_XIP (rx) :                     ORIGIN = 0x00C00020, LENGTH = 0x01000000 - 0x00C00020    /* KM4TZ IMG3 Virtual address: 4M */
     KM4NS_IMG2_XIP (rx) :                     ORIGIN = 0x02000020, LENGTH = 0x04000000 - 0x02000020    /* KM4TZ IMG2 Virtual address: 32M */
@@ -211,14 +208,11 @@ MEMORY
 }
 
 __ipc_memory_start__ = ORIGIN(KM4NS_IPC_RAM);
-#if defined (CONFIG_SOLO)
-__km4ns_flash_text_start__ = ORIGIN(KM4NS_BOOT_XIP);
-__km4ns_flash_text_end__ = ORIGIN(KM4NS_BOOT_XIP) + LENGTH(KM4NS_BOOT_XIP);
-__km4ns_app_flash_text_start__ = ORIGIN(KM4NS_IMG2_XIP);
-__km4ns_app_flash_text_end__ = ORIGIN(KM4NS_IMG2_XIP) + LENGTH(KM4NS_IMG2_XIP);
-#else
 __km4ns_flash_text_start__ = ORIGIN(KM4NS_IMG2_XIP);
 __km4ns_flash_text_end__ = ORIGIN(KM4NS_IMG2_XIP) + LENGTH(KM4NS_IMG2_XIP);
+#if defined (CONFIG_SOLO)
+__km4ns_app_flash_text_start__ = ORIGIN(KM4NS_IMG2_XIP);
+__km4ns_app_flash_text_end__ = ORIGIN(KM4NS_IMG2_XIP) + LENGTH(KM4NS_IMG2_XIP);
 #endif
 __km4tz_flash_text_start__ = ORIGIN(KM4TZ_IMG2_XIP);
 __km4tz_flash_text_end__ = ORIGIN(KM4TZ_IMG2_XIP) + LENGTH(KM4TZ_IMG2_XIP);

@@ -489,28 +489,32 @@ static void at_tickps_help(void)
 	RTK_LOGS(NOTAG, RTK_LOG_WARN, "\n");
 	RTK_LOGS(TAG, RTK_LOG_INFO, "AT+TICKPS=<type>[,<parameters>]\r\n"
 			 "\tTypes:\r\n"
-			 "\t\t<type1>: R, A, GET\r\n"
+			 "\t\t<type1>: R, A\r\n"
+			 "\t\t\tParameters: (none) or [lock_id|ALL]\r\n"
+			 "\t\t<type2>: GET\r\n"
 			 "\t\t\tParameters: (none)\r\n"
-			 "\t\t<type2>: TYPE\r\n"
+			 "\t\t<type3>: TYPE\r\n"
 			 "\t\t\tParameters: <CG|PG>\r\n"
-			 "\t\t<type3>: DSLP, TIMER\r\n"
+			 "\t\t<type4>: DSLP, TIMER\r\n"
 			 "\t\t\tParameters: (none) or [max] or [min,max] (in ms)\r\n\n"
 
 			 "\tCommands Descriptions:\r\n"
-			 "\t\tR\t: Release lock\r\n"
-			 "\t\tA\t: Acquire lock\r\n"
+			 "\t\tR\t: Release wakelock, default lock_id 0(PMU_OS)\r\n"
+			 "\t\tA\t: Acquire wakelock, default lock_id 0(PMU_OS)\r\n"
 			 "\t\tGET\t: Get wakelock and deepwakelock status\r\n"
 			 "\t\tTYPE\t: Set sleep type\r\n"
 			 "\t\tDSLP\t: Enter deep-sleep mode\r\n"
 			 "\t\tTIMER\t: Enter sleep mode\r\n\n"
-			 "\t\tNote: For DSLP and TIMER, optional [max] or [min,max] set wake time\r\n");
+			 "\t\tNote: For DSLP and TIMER, optional [max] or [min,max] set wake time\r\n"
+			 "\t\tNote: lock_id is PMU_DEVICE(0~31) in ameba_pmu.h, id >= PMU_MAX is free for test\r\n"
+			 "\t\tNote: ALL covers every lock bit and ignores lock owner, test only\r\n");
 }
 
 /****************************************************************
 AT command process:
     AT+TICKPS
-    R: release os wakelock
-    A: acquire os wakelock
+    R[,lock_id|ALL]: release wakelock, default PMU_OS
+    A[,lock_id|ALL]: acquire wakelock, default PMU_OS
     TYPE: GC OR PG
 ****************************************************************/
 void at_tickps(u16 argc, char **argv)
@@ -523,12 +527,39 @@ void at_tickps(u16 argc, char **argv)
 		goto exit;
 	}
 
-	if (_strcmp((const char *)argv[1], "R") == 0) {
-		pmu_release_wakelock(PMU_OS);
-	}
+	if ((_strcmp((const char *)argv[1], "R") == 0) || (_strcmp((const char *)argv[1], "A") == 0)) {
+		/* wakelock is a 32bit bitmap, ALL covers every bit so no lock id is needed */
+		u32 lock_id, first = PMU_OS, last = PMU_OS;
 
-	if (_strcmp((const char *)argv[1], "A") == 0) {
-		pmu_acquire_wakelock(PMU_OS);
+		if (argc >= 3) {
+			if (_strcmp((const char *)argv[2], "ALL") == 0) {
+				/* Test only, there is no lock owner tracking: A,ALL overwrites which bits
+				   were held, and R,ALL also drops the bits held by wifi/bt/other core, so
+				   this core may sleep earlier than those owners expect. */
+				first = 0;
+				last = 31;
+			} else {
+				char *endptr;
+				first = _strtoul((const char *)(argv[2]), &endptr, 10);
+				/* reject empty and non-numeric input, they would silently mean lock id 0 */
+				if (endptr == argv[2] || *endptr != '\0' || first > 31) {
+					RTK_LOGS(NOTAG, RTK_LOG_WARN, "[TICKPS] lock_id 0~31 or ALL\r\n");
+					err = RTK_FAIL;
+					goto exit;
+				}
+				last = first;
+			}
+		}
+
+		for (lock_id = first; lock_id <= last; lock_id++) {
+			if (argv[1][0] == 'A') {
+				pmu_acquire_wakelock(lock_id);
+			} else {
+				pmu_release_wakelock(lock_id);
+			}
+		}
+
+		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "lockbit:%x \r\n", pmu_get_wakelock_status());
 	}
 
 	if (_strcmp((const char *)argv[1], "DSLP") == 0) {

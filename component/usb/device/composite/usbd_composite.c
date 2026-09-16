@@ -93,11 +93,11 @@ static const u8 usbd_composite_langid_desc[USB_LEN_LANGID_STR_DESC] = {
 
 /* Private function prototypes -----------------------------------------------*/
 
-static u16 usbd_composite_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf);
+static u16 usbd_composite_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16 buf_len);
 static int usbd_composite_set_config(usb_dev_t *dev, u8 config);
-static int usbd_composite_clear_config(usb_dev_t *dev, u8 config);
+static void usbd_composite_clear_config(usb_dev_t *dev, u8 config);
 static int usbd_composite_setup(usb_dev_t *dev, usb_setup_req_t *req);
-static int usbd_composite_sof(usb_dev_t *dev);
+static void usbd_composite_sof(usb_dev_t *dev);
 static int usbd_composite_ep0_data_in(usb_dev_t *dev, u8 status);
 static int usbd_composite_ep0_data_out(usb_dev_t *dev);
 static int usbd_composite_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status);
@@ -220,6 +220,7 @@ static void usbd_composite_patch_if_numbers(u8 *desc, u16 len, u8 offset)
  * @param  dev: USB device instance.
  * @param  req: Setup request.
  * @param  dest: Destination buffer for full configuration descriptor.
+ * @param  dest_len: Capacity of dest in bytes.
  * @param  dest_off: Current offset in destination buffer.
  * @param  driver: Class driver pointer.
  * @param  if_base: Interface number base for this function.
@@ -227,7 +228,7 @@ static void usbd_composite_patch_if_numbers(u8 *desc, u16 len, u8 offset)
  * @retval Number of bytes appended, or 0 on error.
  */
 static u16 usbd_composite_append_func_desc(usb_dev_t *dev, usb_setup_req_t *req,
-		u8 *dest, u16 dest_off, const usbd_class_driver_t *driver,
+		u8 *dest, u16 dest_len, u16 dest_off, const usbd_class_driver_t *driver,
 		u8 if_base, u8 if_count)
 {
 	usbd_composite_dev_t *cdev = &usbd_composite_dev;
@@ -241,7 +242,7 @@ static u16 usbd_composite_append_func_desc(usb_dev_t *dev, usb_setup_req_t *req,
 	u8 dtype;
 	u8 iad_found = 0;
 
-	total = driver->get_descriptor(dev, req, temp);
+	total = driver->get_descriptor(dev, req, temp, (u16)cdev->desc_buf_size);
 	if (total <= USB_LEN_CFG_DESC) {
 		//RTK_LOGS(TAG, RTK_LOG_ERROR, "Func get_desc fail\n");
 		return 0;
@@ -274,7 +275,7 @@ static u16 usbd_composite_append_func_desc(usb_dev_t *dev, usb_setup_req_t *req,
 		usbd_composite_patch_if_numbers(src, src_len, if_base - orig_first);
 	}
 
-	if ((u32)(dest_off + src_len) > cdev->desc_buf_size) {
+	if ((u32)dest_off + (u32)src_len > (u32)dest_len) {
 		//RTK_LOGS(TAG, RTK_LOG_ERROR, "Desc buf overflow\n");
 		return 0;
 	}
@@ -301,7 +302,7 @@ static u8 usbd_composite_total_if_count(void)
 /**
  * @brief  Build the full configuration descriptor by calling each sub-function.
  */
-static u16 usbd_composite_build_config_desc(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf)
+static u16 usbd_composite_build_config_desc(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16 buf_len)
 {
 	usbd_composite_dev_t *cdev = &usbd_composite_dev;
 	const usbd_class_driver_t *driver;
@@ -312,6 +313,12 @@ static u16 usbd_composite_build_config_desc(usb_dev_t *dev, usb_setup_req_t *req
 	u8 if_cnt;
 	u8 attr;
 	u8 i;
+
+	/* Truncation is not allowed: a short descriptor is illegal, so stall instead */
+	if (USB_LEN_CFG_DESC > buf_len) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Cfg desc OVSZ %d > %d\n", USB_LEN_CFG_DESC, buf_len);
+		return 0;
+	}
 
 	usb_os_memcpy((void *)buf, (const void *)usbd_composite_config_desc, USB_LEN_CFG_DESC);
 
@@ -335,7 +342,7 @@ static u16 usbd_composite_build_config_desc(usb_dev_t *dev, usb_setup_req_t *req
 	 * start appending descriptor blocks.
 	 */
 	for (i = 0; i < cdev->func_count; i++) {
-		desc_len = cdev->drivers[i]->get_descriptor(dev, req, cdev->desc_buf);
+		desc_len = cdev->drivers[i]->get_descriptor(dev, req, cdev->desc_buf, (u16)cdev->desc_buf_size);
 		if (desc_len < USB_LEN_CFG_DESC) {
 			cdev->if_counts[i] = 0;
 		} else {
@@ -351,7 +358,7 @@ static u16 usbd_composite_build_config_desc(usb_dev_t *dev, usb_setup_req_t *req
 		if_cnt = cdev->if_counts[i];
 
 		added = usbd_composite_append_func_desc(dev, req,
-												buf, total_len, driver, if_base, if_cnt);
+												buf, buf_len, total_len, driver, if_base, if_cnt);
 		if (added == 0) {
 			return 0;
 		}
@@ -416,9 +423,10 @@ static void usbd_composite_assign_class_str_bases(void)
  * @param  dev: USB device instance.
  * @param  req: Setup request; wValue low byte carries the string index.
  * @param  buf: Output buffer.
+ * @param  buf_len: Capacity of buf in bytes.
  * @retval Actual string descriptor length, or 0 if not found.
  */
-static u16 usbd_composite_get_string_desc(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf)
+static u16 usbd_composite_get_string_desc(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16 buf_len)
 {
 	usbd_composite_dev_t *cdev = &usbd_composite_dev;
 	const usbd_class_driver_t *driver;
@@ -428,12 +436,19 @@ static u16 usbd_composite_get_string_desc(usb_dev_t *dev, usb_setup_req_t *req, 
 	u8 i;
 
 	if (str_idx == USBD_IDX_LANGID_STR) {
+		/* Truncation is not allowed: a short descriptor is illegal, so stall instead */
+		if (USB_LEN_LANGID_STR_DESC > buf_len) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Str desc OVSZ %d > %d\n", USB_LEN_LANGID_STR_DESC, buf_len);
+			return 0;
+		}
+
 		usb_os_memcpy((void *)buf, (const void *)usbd_composite_langid_desc, USB_LEN_LANGID_STR_DESC);
+
 		return USB_LEN_LANGID_STR_DESC;
 	}
 
 	if (str_idx < USBD_COMP_CLASS_STR_IDX_BASE) {
-		return usbd_get_str_desc(usbd_composite_strings[str_idx - 1], buf);
+		return usbd_get_str_descriptor(usbd_composite_strings[str_idx - 1], buf, buf_len);
 	}
 
 	/* Class-specific range: hand the request to the owning sub-function. wValue already
@@ -443,7 +458,7 @@ static u16 usbd_composite_get_string_desc(usb_dev_t *dev, usb_setup_req_t *req, 
 		cnt = cdev->cls_str_counts[i];
 		if ((cnt != 0U) && (str_idx >= base) && (str_idx < (u8)(base + cnt))) {
 			driver = cdev->drivers[i];
-			return driver->get_descriptor(dev, req, buf);
+			return driver->get_descriptor(dev, req, buf, buf_len);
 		}
 		base += cnt;
 	}
@@ -455,29 +470,45 @@ static u16 usbd_composite_get_string_desc(usb_dev_t *dev, usb_setup_req_t *req, 
  * @brief  Class driver get_descriptor callback.
  *         Called within ISR context; time-consuming operations not permitted.
  */
-static u16 usbd_composite_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf)
+static u16 usbd_composite_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16 buf_len)
 {
-	switch (USB_HIGH_BYTE(req->wValue)) {
+	const u8 *desc = NULL;
+	u16 len = 0;
+	u8 type = USB_HIGH_BYTE(req->wValue);
+
+	switch (type) {
 	case USB_DESC_TYPE_DEVICE:
-		usb_os_memcpy((void *)buf, (const void *)usbd_composite_dev_desc, USB_LEN_DEV_DESC);
-		return USB_LEN_DEV_DESC;
+		desc = usbd_composite_dev_desc;
+		len = USB_LEN_DEV_DESC;
+		break;
 
 	case USB_DESC_TYPE_CONFIGURATION:
 	case USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION:
-		return usbd_composite_build_config_desc(dev, req, buf);
+		return usbd_composite_build_config_desc(dev, req, buf, buf_len);
 
 	case USB_DESC_TYPE_DEVICE_QUALIFIER:
-		usb_os_memcpy((void *)buf, (const void *)usbd_composite_dev_qualifier_desc, USB_LEN_DEV_QUALIFIER_DESC);
-		return USB_LEN_DEV_QUALIFIER_DESC;
+		desc = usbd_composite_dev_qualifier_desc;
+		len = USB_LEN_DEV_QUALIFIER_DESC;
+		break;
 
 	case USB_DESC_TYPE_STRING:
-		return usbd_composite_get_string_desc(dev, req, buf);
+		return usbd_composite_get_string_desc(dev, req, buf, buf_len);
 
 	default:
 		break;
 	}
 
-	return 0;
+	if (desc != NULL) {
+		/* Truncation is not allowed: a short descriptor is illegal, so stall instead */
+		if (len > buf_len) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Desc %d OVSZ %d > %d\n", type, len, buf_len);
+			return 0;
+		}
+
+		usb_os_memcpy((void *)buf, (const void *)desc, len);
+	}
+
+	return len;
 }
 
 /**
@@ -520,7 +551,7 @@ static int usbd_composite_set_config(usb_dev_t *dev, u8 config)
 		if (driver->set_config) {
 			status = driver->set_config(dev, config);
 			if (status != HAL_OK) {
-				//RTK_LOGS(TAG, RTK_LOG_ERROR, "Func %d set_config fail\n", i);
+				RTK_LOGS(TAG, RTK_LOG_ERROR, "Func %d set_config fail\n", i);
 				ret = status;
 			}
 		}
@@ -539,7 +570,7 @@ static int usbd_composite_set_config(usb_dev_t *dev, u8 config)
  * @brief  Class driver clear_config callback.
  *         Called within ISR context; time-consuming operations not permitted.
  */
-static int usbd_composite_clear_config(usb_dev_t *dev, u8 config)
+static void usbd_composite_clear_config(usb_dev_t *dev, u8 config)
 {
 	usbd_composite_dev_t *cdev = &usbd_composite_dev;
 	const usbd_class_driver_t *driver;
@@ -557,8 +588,6 @@ static int usbd_composite_clear_config(usb_dev_t *dev, u8 config)
 			driver->clear_config(dev, config);
 		}
 	}
-
-	return HAL_OK;
 }
 
 /**
@@ -779,7 +808,7 @@ static void usbd_composite_status_changed(usb_dev_t *dev, u8 old_status, u8 stat
  *         handler must receive it (e.g. UAC needs SOF for clock synchronisation).
  *         Do NOT stop on the first HAL_OK.
  */
-static int usbd_composite_sof(usb_dev_t *dev)
+static void usbd_composite_sof(usb_dev_t *dev)
 {
 	usbd_composite_dev_t *cdev = &usbd_composite_dev;
 	const usbd_class_driver_t *driver;
@@ -791,8 +820,6 @@ static int usbd_composite_sof(usb_dev_t *dev)
 			driver->sof(dev);
 		}
 	}
-
-	return HAL_OK;
 }
 
 /**

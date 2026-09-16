@@ -837,15 +837,21 @@ struct bt_hci_cp_le_create_conn {
 
 #define BT_HCI_OP_LE_CREATE_CONN_CANCEL         BT_OP(BT_OGF_LE, 0x000e) /* 0x200e */
 
-#define BT_HCI_OP_LE_CLEAR_ALL_FAL              BT_OP(BT_OGF_LE, 0x0010) /* 0x2010 */
+#define BT_HCI_OP_LE_READ_FAL_SIZE              BT_OP(BT_OGF_LE, 0x000f) /* 0x200f */
+struct bt_hci_rp_le_read_fal_size {
+	uint8_t status;
+	uint8_t fal_size;
+} __packed;
 
-#define BT_HCI_OP_LE_ADD_DEV_TO_FAL              BT_OP(BT_OGF_LE, 0x0011) /* 0x2011 */
+#define BT_HCI_OP_LE_CLEAR_FAL                  BT_OP(BT_OGF_LE, 0x0010) /* 0x2010 */
+
+#define BT_HCI_OP_LE_ADD_DEV_TO_FAL             BT_OP(BT_OGF_LE, 0x0011) /* 0x2011 */
 struct bt_hci_cp_le_add_dev_to_fal {
 	uint8_t addr_type;
 	uint8_t addr[BT_ADDR_SIZE];
 } __attribute__((packed));
 
-#define BT_HCI_OP_LE_REM_DEV_FROM_FAL            BT_OP(BT_OGF_LE, 0x0012) /* 0x2012 */
+#define BT_HCI_OP_LE_REM_DEV_FROM_FAL           BT_OP(BT_OGF_LE, 0x0012) /* 0x2012 */
 struct bt_hci_cp_le_rem_dev_from_fal {
 	uint8_t addr_type;
 	uint8_t addr[BT_ADDR_SIZE];

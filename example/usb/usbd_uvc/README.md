@@ -43,4 +43,6 @@ None.
 
 # Supported IC
 
-- RTL8735C
+RTL8730E
+RTL8721F
+RTL8735C

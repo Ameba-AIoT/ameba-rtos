@@ -135,8 +135,8 @@ static const usbd_config_t cdc_ncm_cfg = {
 	.nptx_max_epmis_cnt = 1U,
 	.ext_intr_enable = USBD_SOF_INTR,
 #elif defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RLE1509)
-	.rx_fifo_depth = 644U,
-	.ptx_fifo_depth = {16U, 256U, 32U, 16U, 16U, },
+	.rx_fifo_depth = 692U,
+	.ptx_fifo_depth = {0U, 256U, 32U, 0U, 0U, },
 	.ext_intr_enable = USBD_SOF_INTR,
 #elif defined (CONFIG_AMEBAL2)
 	.rx_fifo_depth = 661U,
@@ -311,18 +311,28 @@ static int usbd_cdc_ncm_cb_setup(usb_setup_req_t *req, u8 *buf)
 
 	if (req_type == USB_REQ_TYPE_CLASS) {
 		switch (req_code) {
-		case 0x43: /* SET_ETHERNET_PACKET_FILTER (standard CDC Ethernet request) */
+		case USB_CDC_SET_ETHERNET_PACKET_FILTER:
+			/* CDC Ethernet subclass request (Ref CDC 1.2 Table 13), mandatory for
+			 * NCM and carrying no data stage.  Accepted and ignored - this device
+			 * does no packet filtering. */
 			break;
-		case 0x40: /* SET_ETHERNET_MULTICAST_FILTERS */
-			break;
-		case 0x44: /* GET_ETHERNET_STATISTIC */
+		case USB_CDC_SET_ETHERNET_MULTICAST_FILTERS:
+			/* Accepted and ignored: no multicast filter table on this device. */
 			break;
 		default:
 			/*
-			 * NCM-specific requests (GET/SET NTB_PARAMETERS, SET_NTB_FORMAT, etc.)
-			 * are handled by the class driver. Unrecognized requests return HAL_OK
-			 * to avoid stalling the control endpoint.
+			 * NCM-specific requests (GET/SET NTB_PARAMETERS, SET_NTB_FORMAT, ...)
+			 * never reach this callback: the class driver answers them itself and
+			 * only forwards what it does not recognise.
+			 *
+			 * Anything left here is unsupported and must be answered with a request
+			 * error so the core STALLs EP0 (Ref USB 2.0 9.2.7).  Returning HAL_OK
+			 * used to be actively harmful for a device-to-host request such as
+			 * GET_ETHERNET_STATISTIC: the class driver would then transmit
+			 * req->wLength bytes of whatever the EP0 buffer happened to hold,
+			 * leaking stale buffer content to the host instead of stalling.
 			 */
+			ret = HAL_ERR_PARA;
 			break;
 		}
 	}

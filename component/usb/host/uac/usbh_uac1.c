@@ -2036,6 +2036,11 @@ static u32 usbh_uac_next_packet_size(usbh_uac_buf_ctrl_t *pdata_ctrl, u8 dir)
 		as_itf = uac->isoc_in.as_itf;
 	}
 
+	/* as_itf may be freed/NULLed by a concurrent usbh_uac_detach(); fall back to mps. */
+	if (as_itf == NULL) {
+		return pdata_ctrl->mps;
+	}
+
 	sample_accum = pdata_ctrl->sample_accum + pdata_ctrl->sample_rem;
 	if (sample_accum >= pdata_ctrl->packet_rate) {
 		sample_accum -= pdata_ctrl->packet_rate;

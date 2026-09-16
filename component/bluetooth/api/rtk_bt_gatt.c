@@ -25,11 +25,25 @@ uint16_t rtk_bt_gatts_register_service(struct rtk_bt_gatt_service *param)
 		return RTK_BT_ERR_PARAM_INVALID;
 	}
 
-	if (param->attr_count == 0) {
+	if (!param->attr_count || !param->attrs) {
 		return RTK_BT_ERR_PARAM_INVALID;
 	}
 
 	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_GATTS, RTK_BT_GATTS_ACT_REGISTER_SERVICE,
+						  (void *)param, sizeof(struct rtk_bt_gatt_service));
+
+	return ret;
+}
+
+uint16_t rtk_bt_gatts_unregister_service(struct rtk_bt_gatt_service *param)
+{
+	uint16_t ret = RTK_BT_OK;
+
+	if (!param) {
+		return RTK_BT_ERR_POINTER_INVALID;
+	}
+
+	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_GATTS, RTK_BT_GATTS_ACT_UNREGISTER_SERVICE,
 						  (void *)param, sizeof(struct rtk_bt_gatt_service));
 
 	return ret;
@@ -40,6 +54,10 @@ uint16_t rtk_bt_gatts_notify(rtk_bt_gatts_ntf_and_ind_param_t *param)
 	uint16_t ret = RTK_BT_OK;
 
 	if (!param) {
+		return RTK_BT_ERR_POINTER_INVALID;
+	}
+
+	if (param->len && !param->data) {
 		return RTK_BT_ERR_POINTER_INVALID;
 	}
 
@@ -57,6 +75,10 @@ uint16_t rtk_bt_gatts_indicate(rtk_bt_gatts_ntf_and_ind_param_t *param)
 		return RTK_BT_ERR_POINTER_INVALID;
 	}
 
+	if (param->len && !param->data) {
+		return RTK_BT_ERR_POINTER_INVALID;
+	}
+
 	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_GATTS, RTK_BT_GATTS_ACT_INDICATE,
 						  (void *)param, sizeof(rtk_bt_gatts_ntf_and_ind_param_t));
 
@@ -68,6 +90,10 @@ uint16_t rtk_bt_gatts_read_resp(rtk_bt_gatts_read_resp_param_t *param)
 	uint16_t ret = RTK_BT_OK;
 
 	if (!param) {
+		return RTK_BT_ERR_POINTER_INVALID;
+	}
+
+	if (!param->err_code && param->len && !param->data) {
 		return RTK_BT_ERR_POINTER_INVALID;
 	}
 
@@ -158,6 +184,10 @@ uint16_t rtk_bt_gattc_find(rtk_bt_gattc_find_param_t *p_find_param)
 {
 	uint16_t ret = RTK_BT_OK;
 
+	if (!p_find_param) {
+		return RTK_BT_ERR_POINTER_INVALID;
+	}
+
 	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_GATTC, RTK_BT_GATTC_ACT_FIND,
 						  (void *)p_find_param, sizeof(rtk_bt_gattc_find_param_t));
 
@@ -222,6 +252,10 @@ uint16_t rtk_bt_gattc_write(rtk_bt_gattc_write_param_t *p_write_param)
 	uint16_t ret = RTK_BT_OK;
 
 	if (!p_write_param) {
+		return RTK_BT_ERR_POINTER_INVALID;
+	}
+
+	if (p_write_param->length && !p_write_param->data) {
 		return RTK_BT_ERR_POINTER_INVALID;
 	}
 

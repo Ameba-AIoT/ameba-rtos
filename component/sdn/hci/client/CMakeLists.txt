@@ -60,10 +60,6 @@ ameba_list_append(private_includes
     ${c_CMPT_BLUETOOTH_DIR}/api/include
 )
 
-ameba_list_append(private_compile_options
-    -DCONFIG_SDN_ROM
-)
-
 # Component private part, user config end
 #------------------------------#
 

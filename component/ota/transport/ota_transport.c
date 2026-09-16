@@ -48,11 +48,10 @@ int ota_transport_read(ota_context_t *ctx, u8 *buf, int len)
 	case OTA_HTTP:
 		bytes_read = ota_http_read(ctx, buf, len);
 		break;
-
+#endif
 	case OTA_VFS:
 		bytes_read = ota_vfs_read(ctx, buf, len);
 		break;
-#endif
 	case OTA_USER:
 		if (ctx->user_read_func) {
 			bytes_read = ctx->user_read_func(buf, len);

@@ -275,11 +275,16 @@ extern unsigned int sys_now(void);
 #if defined(CONFIG_WHC_DEV)
 #define TCP_LOCAL_PORT_RANGE_START        0xc000
 #define TCP_LOCAL_PORT_RANGE_END          0xdfff
+#define UDP_LOCAL_PORT_RANGE_START        0xc000
+#define UDP_LOCAL_PORT_RANGE_END          0xdfff
 #elif defined(CONFIG_WHC_HOST)
 #define TCP_LOCAL_PORT_RANGE_START        0xe000
 #define TCP_LOCAL_PORT_RANGE_END          0xffff
+#define UDP_LOCAL_PORT_RANGE_START        0xe000
+#define UDP_LOCAL_PORT_RANGE_END          0xffff
 #endif
 #define TCP_ENSURE_LOCAL_PORT_RANGE(port) ((u16_t)(TCP_LOCAL_PORT_RANGE_START + ((port) % (TCP_LOCAL_PORT_RANGE_END - TCP_LOCAL_PORT_RANGE_START))))
+#define UDP_ENSURE_LOCAL_PORT_RANGE(port) ((u16_t)(UDP_LOCAL_PORT_RANGE_START + ((port) % (UDP_LOCAL_PORT_RANGE_END - UDP_LOCAL_PORT_RANGE_START))))
 #endif
 
 #endif /* LWIP_HDR_LWIPOPTS_H */

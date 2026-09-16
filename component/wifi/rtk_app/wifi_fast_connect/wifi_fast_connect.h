@@ -28,6 +28,7 @@
 
 struct wlan_fast_reconnect {
 	unsigned char version;
+	unsigned char sae_force_hnp;
 	unsigned char psk_essid[RTW_ESSID_MAX_SIZE + 1];
 	unsigned char psk_passphrase[RTW_MAX_PSK_LEN + 1];
 	unsigned char wpa_global_PSK[A_SHA_DIGEST_LEN * 2];

@@ -39,6 +39,12 @@ set(private_compile_options)         #private compile_options
 
 ameba_list_append(private_sources main.c)
 
+# SOLO: km4ns owns the filesystem (app_filesystem_init); the vfs.h global include
+# from file_system is registered after this target, so add it explicitly.
+if (CONFIG_VFS_ENABLED)
+    ameba_list_append(private_includes ${c_CMPT_FILE_SYSTEM_DIR}/vfs)
+endif()
+
 # Component private part, user config end
 #------------------------------#
 

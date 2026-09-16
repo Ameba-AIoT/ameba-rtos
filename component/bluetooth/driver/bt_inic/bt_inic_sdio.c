@@ -12,8 +12,8 @@
 #endif
 
 #define BT_INIC_SDIO_HOST_TX_BD_NUM          5
-#define BT_INIC_SDIO_HOST_RX_BD_NUM          20
-#define BT_INIC_SDIO_DEV_RX_BUFSZ            (1024 + 64) /* it shall be 64 bytes aligned */
+#define BT_INIC_SDIO_HOST_RX_BD_NUM          10  /* Must be even | at least > 6. */
+#define BT_INIC_SDIO_DEV_RX_BUFSZ            320 /* Max HCI packet + SDIO header, 64-byte aligned. */
 #define BT_INIC_SDIO_DEV_TX_BUFSZ            292   /* shall be 4 byte aligned */
 
 #define HCI_SDIO_PKT_LEN_FIELD          3

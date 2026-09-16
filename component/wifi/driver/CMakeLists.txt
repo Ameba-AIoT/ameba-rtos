@@ -37,8 +37,8 @@ ameba_list_append(public_includes
     ${c_CMPT_WIFI_DIR}/wifi_fw/${c_SOC_TYPE}/include
 )
 
-ameba_list_append_if(CONFIG_WHC_INTF_SDIO public_includes
-    ${c_CMPT_WIFI_DIR}/whc/whc_dev/sdio
+ameba_list_append_if(CONFIG_WHC_INTF_SPDIO public_includes
+    ${c_CMPT_WIFI_DIR}/whc/whc_dev/spdio
     ${c_CMPT_WIFI_DIR}/whc/whc_host_rtos/sdio
 )
 

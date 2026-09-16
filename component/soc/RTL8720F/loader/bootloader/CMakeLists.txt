@@ -47,6 +47,11 @@ if("${c_MCU_PROJECT_NAME}" STREQUAL "km4tz")
         bootloader_clk.c
         bootloader_hci.c
     )
+    if(CONFIG_SOLO)
+        ameba_list_append(private_sources
+            ameba_solo.c
+        )
+    endif()
 endif()
 
 if ((NOT CONFIG_WHC_INTF_IPC) AND CONFIG_WHC_DEV)
@@ -66,7 +71,7 @@ if("${c_MCU_PROJECT_NAME}" STREQUAL "km4tz" AND loader_condition)
         hci/usb
     )
 
-    ameba_list_append_if(CONFIG_WHC_INTF_SDIO private_includes
+    ameba_list_append_if(CONFIG_WHC_INTF_SPDIO private_includes
         hci/sdio
     )
 
@@ -83,7 +88,7 @@ if("${c_MCU_PROJECT_NAME}" STREQUAL "km4tz" AND loader_condition)
         hci/usb/usbd_intf.c
     )
 
-    ameba_list_append_if(CONFIG_WHC_INTF_SDIO private_sources
+    ameba_list_append_if(CONFIG_WHC_INTF_SPDIO private_sources
         hci/sdio/sdio_intf.c
         hci/sdio/sdio_hal.c
     )

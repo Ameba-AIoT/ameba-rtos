@@ -293,6 +293,29 @@ typedef struct {
 
 /* Exported variables --------------------------------------------------------*/
 
+/* Exported inline functions -------------------------------------------------*/
+
+/**
+  * @brief  Get the DMA window length of an OUT transfer
+  * @note   The controller receives whole packets only, so it is programmed with
+  *         XFRSIZ = MPS * PKTCNT, refer to usbd_hal_ep_start_transfer. The RX
+  *         buffer shall be able to hold this length, and the cache maintenance
+  *         before the transfer shall cover it.
+  * @param  xfer_len: Requested transfer length, in bytes
+  * @param  mps: Max packet size of the endpoint, in bytes
+  * @retval DMA window length in bytes, xfer_len if mps is invalid
+  */
+static inline u32 usb_get_dma_len(u32 xfer_len, u32 mps)
+{
+	u32 len = xfer_len;
+
+	if (mps != 0U) {
+		len = (xfer_len == 0U) ? mps : (((xfer_len + mps - 1U) / mps) * mps);
+	}
+
+	return len;
+}
+
 /* Exported functions --------------------------------------------------------*/
 
 #endif /* USB_CH9_H */

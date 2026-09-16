@@ -174,7 +174,13 @@ u8 rtw_sdio_query_txbd_status(struct whc_sdio *priv);
 int rtw_sdio_alloc_irq(struct whc_sdio *priv);
 #elif defined (CONFIG_WHC_HCI_SPI)
 
-
+#elif defined(CONFIG_WHC_HCI_GSPI)
+u32 rtw_gspi_init(struct whc_gspi *priv);
+void rtw_gspi_deinit(struct whc_gspi *priv);
+int whc_gspi_host_suspend(struct device *dev);
+int whc_gspi_host_resume(struct device *dev);
+int whc_gspi_host_resume_common(struct whc_gspi *priv);
+u8 rtw_gspi_query_txbd_status(struct whc_gspi *priv);
 #endif
 
 #endif

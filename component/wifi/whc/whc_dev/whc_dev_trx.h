@@ -24,7 +24,6 @@ extern struct xmit_priv_t dev_xmit_priv;
 void whc_dev_xmit_init(void);
 void whc_dev_netif_rx(int idx);
 void whc_dev_trigger_rx(void);
-void whc_dev_send_flowctrl_cmd(u8 fc_state);
 struct whc_txbuf_info_t *whc_dev_alloc_buf_info(u8 *buf, u16 len, void *alloc_buf, u8 is_skb);
 void whc_dev_free_txbuf(struct whc_txbuf_info_t *buf_info);
 void whc_dev_dispatch_event_copy(const u8 *src, u32 size);
@@ -32,5 +31,4 @@ void whc_dev_event_int_hdl(u8 *rxbuf, struct sk_buff *skb);
 #ifdef WHCH_TXAGG
 void whch_dev_txagg_dispatch(struct whch_buff *buff, u32 buffidx, u8 *msg_hdr, u32 rx_len, u8 agg_num);
 #endif
-void whc_dev_update_flowctrl(u8 *buf);
 #endif /* __WHC_DEV_TRX_H__ */
