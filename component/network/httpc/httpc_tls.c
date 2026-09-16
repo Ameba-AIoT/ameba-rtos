@@ -193,8 +193,18 @@ int httpc_tls_read(void *tls_in, uint8_t *buf, size_t buf_len)
 int httpc_tls_write(void *tls_in, uint8_t *buf, size_t buf_len)
 {
 	struct httpc_tls *tls = (struct httpc_tls *) tls_in;
+	int ret;
 
-	return mbedtls_ssl_write(&tls->ctx, buf, buf_len);
+	/* mbedtls_ssl_write() sends at most one TLS record (MBEDTLS_SSL_OUT_CONTENT_LEN, 4KB by
+	 * default), so a caller with a larger buffer must keep writing the remainder. Report 0
+	 * when the write made no progress (WANT_READ/WANT_WRITE, e.g. a full TCP window) and let
+	 * the caller decide when to retry, so the policy stays independent of the socket config. */
+	ret = mbedtls_ssl_write(&tls->ctx, buf, buf_len);
+	if (ret == MBEDTLS_ERR_SSL_WANT_READ || ret == MBEDTLS_ERR_SSL_WANT_WRITE) {
+		ret = 0;
+	}
+
+	return ret;
 }
 
 int httpc_base64_encode(uint8_t *data, size_t data_len, char *base64_buf, size_t buf_len)

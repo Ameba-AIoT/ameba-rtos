@@ -263,7 +263,7 @@ struct wifi_user_conf {
 		BIT0: Main switch, BIT1: Enable tsf interrupt, BIT2: Enable audio tsf. */
 	u8 wifi_speaker_feature;
 
-	/*! STA mode will periodically send null packet to AP to keepalive, unit: second. */
+	/*! STA mode will periodically send nulldata when system active or arp response when system tickless as keepalive packet to AP, unit: second. */
 	u8 keepalive_interval;
 
 	/*! Configure Wi-Fi minimum receivable signal strength, unit: dBm.
@@ -294,6 +294,9 @@ struct wifi_user_conf {
 
 	/*! Max node number in R-mesh network, this is used for decide each node's beacon window.*/
 	u16 wtn_max_node_num;
+
+	/*! Max refugee number this node can accept in R-mesh network, valid only when R-mesh is enabled and R-NAT is disabled. */
+	u8 wtn_max_refugee_num;
 };
 
 /** @} End of WIFI_Exported_Structure_Types group*/
