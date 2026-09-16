@@ -8,6 +8,30 @@ extern uint8_t httpc_http_1_0_request_used;
 
 size_t httpc_tmp_buf_size = 2048;
 
+/* Delay between retries when a write makes no progress, aligned with the websocket client. */
+#define HTTPC_WRITE_RETRY_MS 25
+
+/* Send the whole buffer, retrying while httpc_write() reports no progress. Used for buffers
+ * owned by httpc itself, which the caller cannot resume once this function returns. */
+static int httpc_write_all(struct httpc_conn *conn, uint8_t *data, size_t data_len)
+{
+	size_t written = 0;
+
+	while (written < data_len) {
+		int ret = httpc_write(conn, data + written, data_len - written);
+		if (ret < 0) {
+			return ret;
+		}
+		if (ret == 0) {
+			rtos_time_delay_ms(HTTPC_WRITE_RETRY_MS);
+			continue;
+		}
+		written += (size_t)ret;
+	}
+
+	return (int)written;
+}
+
 static size_t atoh(char *str)
 {
 	size_t i;
@@ -195,7 +219,7 @@ int httpc_request_write_header_finish(struct httpc_conn *conn)
 			memset(request_header, 0, header_len + 1);
 			snprintf(request_header, header_len + 1, "%s", conn->request_header);
 			snprintf(request_header + strlen(request_header), header_len + 1 - strlen(request_header), "%s", HTTP_CRLF);
-			ret = httpc_write(conn, (uint8_t *)request_header, strlen(request_header));
+			ret = httpc_write_all(conn, (uint8_t *)request_header, strlen(request_header));
 			httpc_free(request_header);
 			httpc_free(conn->request_header);
 			conn->request_header = NULL;

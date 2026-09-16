@@ -28,6 +28,9 @@ void ws_server_response_too_many_requests(ws_conn *conn, char *msg);
 
 void ws_server_response_bad_request(ws_conn *conn, char *msg);
 
+/* Delay before retrying a write that made no progress, as done by the websocket client. */
+#define WS_SERVER_WRITE_RETRY_MS	25
+
 int ws_server_handshake_read_header(ws_conn *conn);
 
 int ws_server_handshake_response(ws_conn *conn);

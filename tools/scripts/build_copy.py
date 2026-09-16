@@ -86,7 +86,7 @@ def create_empty_app(target_dir):
 
 }
     """
-    with open(file_path, 'w', encoding='utf-8') as f:
+    with open(file_path, 'w', encoding='utf-8', newline='') as f:
         f.write(c_code_content)
 
     cmake_file = os.path.join(app_dir, 'CMakeLists.txt')
@@ -98,41 +98,42 @@ ameba_add_internal_library(app_example
 	    ${private_sources}
 )
     """
-    with open(cmake_file, 'w', encoding='utf-8') as f:
+    with open(cmake_file, 'w', encoding='utf-8', newline='') as f:
         f.writelines(cmake_content)
 
 def create_cmake_file(target_dir, subdirectory_name=None):
     if subdirectory_name:
-        cmake_content = f"ameba_add_subdirectory({subdirectory_name})\r\n"
+        cmake_content = f"ameba_add_subdirectory({subdirectory_name})\n"
     else:
-        cmake_content="\r\n"
+        cmake_content="\n"
     cmake_path = os.path.join(target_dir, 'CMakeLists.txt')
-    with open(cmake_path, 'w') as cmake_file:
+    with open(cmake_path, 'w', newline='') as cmake_file:
         cmake_file.write(cmake_content)
 
 def creat_ameba_script(target_dir, ameba_path):
     env_sh = 'env.sh'
     env_bat = 'env.bat'
-    ameba_sh = f"source {ameba_path}/{env_sh} \r\n"
+    ameba_sh = f"source {ameba_path}/{env_sh} \n"
     ameba_sh = ameba_sh.replace("\\", "/")
-    with open(os.path.join(target_dir, env_sh), 'w') as file:
+    with open(os.path.join(target_dir, env_sh), 'w', newline='') as file:
         file.write(ameba_sh)
 
+    # env.bat is a Windows batch file, keep CRLF intentionally
     ameba_bat = f"call {ameba_path}\\{env_bat} \r\n"
     ameba_bat = ameba_bat.replace("/", "\\")
-    with open(os.path.join(target_dir, env_bat), 'w') as file:
+    with open(os.path.join(target_dir, env_bat), 'w', newline='') as file:
         file.write(ameba_bat)
 
 def creat_Kconfig_file(target_dir):
     Kconfig_name = os.path.join(target_dir, 'Kconfig')
 
-    with open(Kconfig_name, 'w') as file:
-        file.write("# Please refer to https://aiot.realmcu.com/en/latest/rtos/sdk/sdk_config/index.html\r\n")
+    with open(Kconfig_name, 'w', newline='') as file:
+        file.write("# Please refer to https://aiot.realmcu.com/en/latest/rtos/sdk/sdk_config/index.html\n")
 
     conf_name = os.path.join(target_dir, 'prj.conf')
     if not os.path.exists(conf_name):
-        with open(conf_name, 'w') as file:
-            file.write("\r\n")
+        with open(conf_name, 'w', newline='') as file:
+            file.write("\n")
 
 def list_available_apps(submodule_info_path: str):
     app_names = ["example/*/example_<app_name>.c"]
