@@ -10,7 +10,7 @@
 
 #define SIZE_TX_DESC    (sizeof(INIC_TX_DESC))
 
-#if !(defined(CONFIG_WHC_INTF_SDIO) && CONFIG_WHC_INTF_SDIO)
+#if !(defined(CONFIG_WHC_INTF_SPDIO) && CONFIG_WHC_INTF_SPDIO)
 struct bt_inic_sdio_priv_t {
 	struct spdio_t dev;
 	void *tx_lock;
@@ -35,8 +35,8 @@ struct bt_inic_sdio_hdr {
 #define HCI_SDIO_PKT_SERVICE_ID_FIELD   1
 #define HCI_SDIO_PKT_HDR_LEN            (HCI_SDIO_PKT_EVENT_FIELD + HCI_SDIO_PKT_LEN_FIELD + HCI_SDIO_PKT_SERVICE_ID_FIELD)
 
-#if defined(CONFIG_WHC_INTF_SDIO) && CONFIG_WHC_INTF_SDIO
-void whc_sdio_dev_send_data(u8 *data, u32 len);
+#if defined(CONFIG_WHC_INTF_SPDIO) && CONFIG_WHC_INTF_SPDIO
+void whc_spdio_dev_send(u8 *buf, u16 len, void *buf_alloc, u8 is_skb);
 extern void (*bt_inic_sdio_recv_ptr)(uint8_t *buffer, uint16_t len);
 void bt_inic_sdio_recv_from_host(u8 *pdata, uint16_t len);
 
@@ -69,7 +69,7 @@ void bt_inic_send_to_host(u8 type, u8 *pbuf, u32 len)
 
 	// BT_LOGD("BT dev send type %d len %d\n", type, sdiolen);
 	// BT_DUMPA("Share TX:\r\n", buf, sdiolen);
-	whc_sdio_dev_send_data((u8 *)hdr, sdiolen);
+	whc_spdio_dev_send((u8 *)hdr, sdiolen, buf, 0);
 	osif_mem_free(buf);
 
 	return;
@@ -111,7 +111,7 @@ void bt_inic_sdio_recv_from_host(u8 *pdata, uint16_t len)
 	return;
 }
 
-#else /* #if defined(CONFIG_WHC_INTF_SDIO) && CONFIG_WHC_INTF_SDIO */
+#else /* #if defined(CONFIG_WHC_INTF_SPDIO) && CONFIG_WHC_INTF_SPDIO */
 struct bt_inic_sdio_priv_t sdio_priv = {0};
 static char inic_sdio_dev_rpwm_cb(void *priv, u16 value)
 {
@@ -269,4 +269,4 @@ void bt_inic_sdio_init(void)
 
 }
 
-#endif /* #if defined(CONFIG_WHC_INTF_SDIO) && CONFIG_WHC_INTF_SDIO */
+#endif /* #if defined(CONFIG_WHC_INTF_SPDIO) && CONFIG_WHC_INTF_SPDIO */

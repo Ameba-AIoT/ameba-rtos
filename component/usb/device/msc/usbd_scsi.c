@@ -494,7 +494,7 @@ static int usbd_scsi_write(usbd_msc_dev_t *cdev, u8 *params)
 
 		/* Prepare EP to receive first data packet */
 		cdev->bot_state = USBD_MSC_DATA_OUT;
-		usbd_msc_bulk_receive(cdev->dev, cdev->data, len);
+		usbd_msc_bulk_receive(cdev->dev, cdev->data, len, USBD_MSC_BUFLEN);
 	} else { /* Write Process ongoing */
 		return usbd_scsi_process_write(cdev);
 	}
@@ -638,7 +638,7 @@ static int usbd_scsi_process_write(usbd_msc_dev_t *cdev)
 	} else {
 		len = MIN((cdev->blklen * USBD_MSC_BLK_SIZE), USBD_MSC_BUFLEN);
 		/* Prepare EP to Receive next packet */
-		usbd_msc_bulk_receive(cdev->dev, cdev->data, len);
+		usbd_msc_bulk_receive(cdev->dev, cdev->data, len, USBD_MSC_BUFLEN);
 	}
 
 	return HAL_OK;

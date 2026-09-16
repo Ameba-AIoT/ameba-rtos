@@ -1130,6 +1130,8 @@ typedef enum _FLASH_REGION_TYPE_ {
 	VFS1  =   	5,
 	VFS2  =   	6,
 	USER  =   	7,
+	IMG_NP_OTA1 =	8,	/* SOLO: km4ns (NP) app OTA slot A (independent of the mcu_app slot) */
+	IMG_NP_OTA2 =	9,	/* SOLO: km4ns (NP) app OTA slot B */
 } FLASH_REGION_TYPE;
 /** @} */
 

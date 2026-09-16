@@ -35,6 +35,9 @@ config WHC_HCI_SPI
 config WHC_HCI_USB
 	bool "USB"
 
+config WHC_HCI_GSPI
+	bool "GSPI"
+
 endchoice
 
 choice

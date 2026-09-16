@@ -52,13 +52,28 @@ ameba_list_append(private_sources
 ameba_list_append_if(CONFIG_SUPPORT_NAND_FLASH private_sources
     vfs_nand_ftl.c
     vfs_nand_ftl_mfg.c
-    lbm_core.c
 )
 
-if(CONFIG_FATFS_SECOND_FLASH OR CONFIG_LITTLEFS_SECOND_FLASH)
-	ameba_list_append( private_sources
-		vfs_second_nor_flash.c
-	)
+# external SPI NAND raw driver + FTL, shared by the littlefs (VFS_SECOND_FLASH_NAND)
+# and the realfs (REALFS_SECOND_FLASH_NAND) second-flash paths
+if(CONFIG_VFS_SECOND_FLASH_NAND OR CONFIG_REALFS_SECOND_FLASH_NAND)
+    ameba_list_append(private_sources
+        vfs_second_nand_spi.c
+        vfs_second_nand_ftl.c
+        vfs_second_nand_ftl_mfg.c
+        vfs_nand_common.c
+    )
+elseif(CONFIG_FATFS_SECOND_FLASH OR CONFIG_LITTLEFS_SECOND_FLASH)
+    ameba_list_append(private_sources
+        vfs_second_nor_flash.c
+    )
+endif()
+
+# LBM (logical block mapping) is shared by the on-chip and the external NAND
+if(CONFIG_SUPPORT_NAND_FLASH OR CONFIG_VFS_SECOND_FLASH_NAND OR CONFIG_REALFS_SECOND_FLASH_NAND)
+    ameba_list_append(private_sources
+        lbm_core.c
+    )
 endif()
 
 if(CONFIG_VFS_FATFS_INCLUDED)
@@ -88,6 +103,14 @@ if(CONFIG_VFS_REALFS_INCLUDED)
                 ${c_CMPT_FILE_SYSTEM_DIR}/realfs/port/realfs_erasedev_nor.c
             )
         endif()
+    endif()
+    # external SPI NAND edev backend (realfs_erasedev_lbm_second_*) lives in the
+    # LBM edev file; compile it for the realfs-on-second-NAND path too (which does
+    # not set CONFIG_REALFS_FLASH / CONFIG_REALFS_FLASH_NAND_LBM)
+    if(CONFIG_REALFS_SECOND_FLASH_NAND AND NOT CONFIG_REALFS_FLASH_NAND_LBM)
+        ameba_list_append(private_sources
+            ${c_CMPT_FILE_SYSTEM_DIR}/realfs/port/realfs_erasedev_lbm.c
+        )
     endif()
     ameba_list_append(private_includes
         ${c_CMPT_FILE_SYSTEM_DIR}/realfs/port

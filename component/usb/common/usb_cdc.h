@@ -48,6 +48,19 @@ extern "C" {
 #define USB_CDC_FUNC_DESC_UNION                         0x06U /**< Union Functional Descriptor */
 #define USB_CDC_FUNC_DESC_ETHERNET_NETWORKING           0x0FU /**< Ethernet Networking Functional Descriptor */
 
+/* CDC Ethernet subclass class-specific request codes.
+ *
+ * Ref CDC 1.2 Table 13: these belong to the Ethernet subclass as a whole, not to
+ * one model, so every Ethernet-carrying CDC model shares them - ECM (subclass
+ * 0x06) and NCM (subclass 0x0D) alike.  They live here, next to the Ethernet
+ * Networking functional descriptor and the network notification codes above,
+ * so that neither model has to include the other model's header. */
+#define USB_CDC_SET_ETHERNET_MULTICAST_FILTERS          0x40U /**< Set Ethernet multicast address filters */
+#define USB_CDC_SET_ETHERNET_POWER_MANAGEMENT           0x41U /**< Set device power management pattern filter */
+#define USB_CDC_GET_ETHERNET_POWER_MANAGEMENT           0x42U /**< Get device power management pattern filter */
+#define USB_CDC_SET_ETHERNET_PACKET_FILTER              0x43U /**< Set Ethernet packet filter bitmap */
+#define USB_CDC_GET_ETHERNET_STATISTIC                  0x44U /**< Retrieve Ethernet device statistics */
+
 /* CDC Notification Codes */
 #define USB_CDC_NOTIFY_NETWORK_CONNECTION               0x00U /**< Network Connection Notification */
 #define USB_CDC_NOTIFY_RESPONSE_AVAILABLE               0x01U /**< Response Available Notification */

@@ -208,9 +208,9 @@ menu "CONFIG WHC INTF"
     if !WHC_INTF_IPC_MENU
         choice
            prompt "HW INTERFACE"
-           config WHC_INTF_SDIO
+           config WHC_INTF_SPDIO
                 depends on !WHC_HOST_MENU
-                bool "WHC_INTF_SDIO"
+                bool "WHC_INTF_SPDIO"
             config WHC_INTF_USB
                 depends on !WHC_HOST_MENU
                 bool "WHC_INTF_USB"
@@ -370,7 +370,7 @@ menu "CONFIG WIFI"
         bool
     config FW_DRIVER_COEXIST
         bool
-    config WHC_INTF_SDIO
+    config WHC_INTF_SPDIO
         bool
     config WHC_INTF_SPI
         bool

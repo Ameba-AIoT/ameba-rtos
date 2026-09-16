@@ -61,8 +61,13 @@ extern "C" {
 
 /* NCM Default Values */
 #define USB_CDC_NCM_DEFAULT_NTB_INPUT_SIZE              4096U /**< Default NTB input size */
+#define USB_CDC_NCM_MIN_NTB_INPUT_SIZE                  2048U /**< Minimum dwNtbInMaxSize the host may negotiate for NTB-16.
+                                                                   Ref NCM 1.0 Table 6-3: a device shall accept any value
+                                                                   down to 2048 bytes for the 16-bit NTB format. */
 #define USB_CDC_NCM_MAX_NTB_INPUT_SIZE                  65535U /**< Maximum NTB input size (16-bit limit) */
 #define USB_CDC_NCM_NTH16_LENGTH                        12U   /**< NTH16 header length */
+#define USB_CDC_NCM_NDP16_HEADER_LENGTH                 8U    /**< NDP16 header length, i.e. offset of aEntry[0]
+                                                                   (dwSignature + wLength + wNextFpIndex) */
 #define USB_CDC_NCM_NDP16_MIN_LENGTH                    16U   /**< Minimum NDP16 length (2 datagram entries + terminator) */
 #define USB_CDC_NCM_NDP16_ENTRY_LENGTH                  4U    /**< Each NDP16 datagram entry length */
 #define USB_CDC_NCM_DATAGRAM_ALIGN                      4U    /**< Default datagram alignment */

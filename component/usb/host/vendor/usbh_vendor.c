@@ -398,6 +398,40 @@ static void usbh_vendor_next_transfer(usb_host_t *host, usbh_vendor_xfer_t *xfer
 }
 
 /**
+  * @brief  Pace an INTR pipe from the SOF ISR.
+  * @note   An INTR pipe has no wake source once it is NAKed: the first NAK masks
+  *         the NAK interrupt (usbh_hcd_isr.c) and holds the pipe in XFER_BUSY, so
+  *         .process is never re-entered and the transfer wedges (observed on the
+  *         RLE1509 FPGA: first INTR IN NAK then stop). Mirror usbh_verify_sof:
+  *         re-notify the owning pipe so usbh_transfer_process() keeps running.
+  * @param  host: Host handle
+  * @param  xfer: INTR transfer structure
+  * @retval None
+  */
+static void usbh_vendor_sof_pace_intr(usb_host_t *host, usbh_vendor_xfer_t *xfer)
+{
+	usbh_pipe_t *pipe = &xfer->pipe;
+
+	if ((pipe->pipe_num == 0) || (pipe->ep_type != USB_CH_EP_TYPE_INTR)) {
+		return;
+	}
+
+	if (pipe->xfer_state == USBH_EP_XFER_BUSY) {
+		/* NAK masked the NAK interrupt: poke the main task once the BUSY dwell
+		 * exceeds max_timeout_tick so usbh_transfer_process() can run the
+		 * timeout -> retry (BUSY -> START) that resubmits the token. */
+		if ((pipe->tick != 0U) && (usbh_get_elapsed_ticks(host, pipe->tick) > pipe->max_timeout_tick)) {
+			usbh_notify(host, pipe->pipe_num, &usbh_vendor_driver);
+		}
+	} else if (pipe->xfer_state == USBH_EP_XFER_START) {
+		/* Re-arm at the bInterval deadline (or the very first submit, tick == 0). */
+		if ((pipe->tick == 0U) || (usbh_get_elapsed_ticks(host, pipe->tick) >= pipe->ep_interval)) {
+			usbh_notify(host, pipe->pipe_num, &usbh_vendor_driver);
+		}
+	}
+}
+
+/**
   * @brief  SOF callback function.
   * @note   This function is called within an interrupt service routine (ISR) context;
   *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
@@ -424,6 +458,10 @@ static int usbh_vendor_sof(usb_host_t *host)
 			out_xfer->cur_frame = cur_frame;
 		}
 	}
+
+	/* INTR IN/OUT have no completion-driven wake source while NAKed; re-poll them here. */
+	usbh_vendor_sof_pace_intr(host, &vendor->intr_in_xfer);
+	usbh_vendor_sof_pace_intr(host, &vendor->intr_out_xfer);
 
 	return ret;
 }

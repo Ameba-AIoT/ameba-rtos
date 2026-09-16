@@ -179,7 +179,7 @@ void whc_ipc_host_init_priv(void)
 
 	rtos_timer_create_static(&g_inic_host_priv.whc_stats_timer,
 							 "whc_stats_timer",	// Just a text name, not used by the RTOS kernel.
-							 NULL,	// Uniq id used to identify which timer expire..
+							 0,	// Uniq id used to identify which timer expire..
 							 RTOS_MAX_DELAY, // Timer Period, not 0
 							 FALSE, // Whether timer will auto-load themselves when expires
 							 whc_ipc_host_statistics);

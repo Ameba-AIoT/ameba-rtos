@@ -143,6 +143,13 @@ if(${c_CURRENT_IMAGE_TYPE} STREQUAL "image2")
 
             stdlib/sscanf_minimal.c
         )
+
+        # SOLO only: km4ns owns a direct flash driver. 
+        if(CONFIG_SOLO)
+            ameba_list_append(private_sources
+                rom_common/ameba_flash_rom.c
+            )
+        endif()
     endif()
 endif()
 # Component private part, user config end

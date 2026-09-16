@@ -36,9 +36,9 @@
 /* Private function prototypes -----------------------------------------------*/
 
 static int usbd_msc_set_config(usb_dev_t *dev, u8 config);
-static int usbd_msc_clear_config(usb_dev_t *dev, u8 config);
+static void usbd_msc_clear_config(usb_dev_t *dev, u8 config);
 static int usbd_msc_setup(usb_dev_t *dev, usb_setup_req_t *req);
-static u16 usbd_msc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf);
+static u16 usbd_msc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16 buf_len);
 static int usbd_msc_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status);
 static int usbd_msc_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len);
 static void usbd_msc_status_changed(usb_dev_t *dev, u8 old_status, u8 status);
@@ -334,7 +334,7 @@ static void usbd_msc_abort(usb_dev_t *dev)
 		 * STALL until the host clears the halt, then this transfer picks up the next
 		 * CBW. Without it the EP is neither stalled nor listening once the halt is
 		 * cleared by CLEAR_FEATURE or SET_CONFIGURATION. */
-		usbd_msc_bulk_receive(dev, (u8 *)cbw, USB_MSC_CBW_LEN);
+		usbd_msc_bulk_receive(dev, (u8 *)cbw, USB_MSC_CBW_LEN, USBD_MSC_CBW_BUF_LEN);
 	}
 
 	usbd_ep_set_stall(dev, &cdev->ep_bulk_in);
@@ -396,7 +396,7 @@ static int usbd_msc_set_config(usb_dev_t *dev, u8 config)
 	cdev->bot_reset_pending = 0U;
 
 	/* Prepare to receive next BULK OUT packet */
-	usbd_msc_bulk_receive(dev, (u8 *)cdev->cbw, USB_MSC_CBW_LEN);
+	usbd_msc_bulk_receive(dev, (u8 *)cdev->cbw, USB_MSC_CBW_LEN, USBD_MSC_CBW_BUF_LEN);
 
 	return ret;
 }
@@ -407,11 +407,10 @@ static int usbd_msc_set_config(usb_dev_t *dev, u8 config)
   *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  dev: USB device instance
   * @param  config: USB configuration index
-  * @retval Status
+  * @retval None
   */
-static int usbd_msc_clear_config(usb_dev_t *dev, u8 config)
+static void usbd_msc_clear_config(usb_dev_t *dev, u8 config)
 {
-	int ret = HAL_OK;
 	usbd_msc_dev_t *cdev = &usbd_msc_dev;
 	usbd_ep_t *ep_bulk_in = &cdev->ep_bulk_in;
 	usbd_ep_t *ep_bulk_out = &cdev->ep_bulk_out;
@@ -427,8 +426,6 @@ static int usbd_msc_clear_config(usb_dev_t *dev, u8 config)
 	cdev->bot_state  = USBD_MSC_IDLE;
 	cdev->is_open = 0;
 	cdev->phase_error = 0;
-
-	return ret;
 }
 
 /**
@@ -524,7 +521,7 @@ static int usbd_msc_setup(usb_dev_t *dev, usb_setup_req_t *req)
 				cdev->bot_status = USBD_MSC_STATUS_RECOVERY;
 				cdev->bot_reset_pending = 1U;
 				/* Prepare to receive BOT cmd */
-				usbd_msc_bulk_receive(dev, (u8 *)cdev->cbw, USB_MSC_CBW_LEN);
+				usbd_msc_bulk_receive(dev, (u8 *)cdev->cbw, USB_MSC_CBW_LEN, USBD_MSC_CBW_BUF_LEN);
 			} else {
 				ret = HAL_ERR_PARA;
 			}
@@ -782,12 +779,14 @@ static void usbd_msc_patch_ep_addresses(u8 *desc, u16 len,
   * @param  buf: Poniter to Buffer
   * @retval Descriptor length
   */
-static u16 usbd_msc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf)
+static u16 usbd_msc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16 buf_len)
 {
 	usbd_msc_dev_t *cdev = &usbd_msc_dev;
 	usb_speed_type_t speed = dev->dev_speed;
-	u8 *desc = NULL;
+	const u8 *desc = NULL;
 	u16 len = 0;
+	u8 type = USB_HIGH_BYTE(req->wValue);
+	u8 is_cfg = 0;
 	u8 attr = 0x80U;
 
 	if (!cdev->from_composite) {
@@ -799,82 +798,63 @@ static u16 usbd_msc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 #endif
 	}
 
-	switch (USB_HIGH_BYTE(req->wValue)) {
+	switch (type) {
 
 	case USB_DESC_TYPE_DEVICE:
+		desc = usbd_msc_dev_desc;
 		len = sizeof(usbd_msc_dev_desc);
-		usb_os_memcpy((void *)buf, (const void *)usbd_msc_dev_desc, len);
 		break;
 
 	case USB_DESC_TYPE_CONFIGURATION:
 #ifndef CONFIG_USB_FS
 		if (speed == USB_SPEED_HIGH) {
-			desc = (u8 *)usbd_msc_hs_config_desc;
+			desc = usbd_msc_hs_config_desc;
 			len = sizeof(usbd_msc_hs_config_desc);
 		} else
 #endif
 		{
-			desc = (u8 *)usbd_msc_fs_config_desc;
+			desc = usbd_msc_fs_config_desc;
 			len = sizeof(usbd_msc_fs_config_desc);
 		}
-		usb_os_memcpy((void *)buf, (const void *)desc, len);
-		if (!cdev->from_composite) {
-			buf[USB_CFG_DESC_OFFSET_ATTR] = attr;
-		}
-		/* Patch EP addresses from placeholder to actual values */
-		usbd_msc_patch_ep_addresses(buf + USB_LEN_CFG_DESC,
-									len - USB_LEN_CFG_DESC,
-									cdev->ep_cfg);
-		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN] = USB_LOW_BYTE(len);
-		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN + 1] = USB_HIGH_BYTE(len);
+		is_cfg = 1;
 		break;
 
 #ifndef CONFIG_USB_FS
 	case USB_DESC_TYPE_DEVICE_QUALIFIER:
+		desc = usbd_msc_device_qualifier_desc;
 		len = sizeof(usbd_msc_device_qualifier_desc);
-		usb_os_memcpy((void *)buf, (const void *)usbd_msc_device_qualifier_desc, len);
 		break;
 
 	case USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION:
 		if (speed == USB_SPEED_HIGH) {
-			desc = (u8 *)usbd_msc_fs_config_desc;
+			desc = usbd_msc_fs_config_desc;
 			len = sizeof(usbd_msc_fs_config_desc);
 		} else {
-			desc = (u8 *)usbd_msc_hs_config_desc;
+			desc = usbd_msc_hs_config_desc;
 			len = sizeof(usbd_msc_hs_config_desc);
 		}
-		usb_os_memcpy((void *)buf, (const void *)desc, len);
-		if (!cdev->from_composite) {
-			buf[USB_CFG_DESC_OFFSET_ATTR] = attr;
-		}
-		/* Patch EP addresses from placeholder to actual values */
-		usbd_msc_patch_ep_addresses(buf + USB_LEN_CFG_DESC,
-									len - USB_LEN_CFG_DESC,
-									cdev->ep_cfg);
-		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN] = USB_LOW_BYTE(len);
-		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN + 1] = USB_HIGH_BYTE(len);
-		buf[USB_CFG_DESC_OFFSET_TYPE] = USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION;
+		is_cfg = 1;
 		break;
 #endif
 
 	case USB_DESC_TYPE_STRING:
 		switch (USB_LOW_BYTE(req->wValue)) {
 		case USBD_IDX_LANGID_STR:
+			desc = usbd_msc_lang_id_desc;
 			len = sizeof(usbd_msc_lang_id_desc);
-			usb_os_memcpy((void *)buf, (const void *)usbd_msc_lang_id_desc, len);
 			break;
 		case USBD_IDX_MFC_STR:
-			len = usbd_get_str_desc(USBD_MSC_MFG_STRING, buf);
+			len = usbd_get_str_descriptor(USBD_MSC_MFG_STRING, buf, buf_len);
 			break;
 		case USBD_IDX_PRODUCT_STR:
 			if (speed == USB_SPEED_HIGH) {
-				len = usbd_get_str_desc(USBD_MSC_PROD_HS_STRING, buf);
+				len = usbd_get_str_descriptor(USBD_MSC_PROD_HS_STRING, buf, buf_len);
 			} else {
-				len = usbd_get_str_desc(USBD_MSC_PROD_FS_STRING, buf);
+				len = usbd_get_str_descriptor(USBD_MSC_PROD_FS_STRING, buf, buf_len);
 			}
 			break;
 		case USBD_IDX_SERIAL_STR:
-			len = usbd_get_str_desc(USBD_MSC_SN_STRING, buf);
+			len = usbd_get_str_descriptor(USBD_MSC_SN_STRING, buf, buf_len);
 			break;
 		case USBD_IDX_MS_OS_STR:
 			/*Not support*/
@@ -888,6 +868,31 @@ static u16 usbd_msc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 
 	default:
 		break;
+	}
+
+	if (desc != NULL) {
+		/* Truncation is not allowed: a short descriptor is illegal, so stall instead */
+		if (len > buf_len) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Desc %d OVSZ %d > %d\n", type, len, buf_len);
+			return 0;
+		}
+
+		usb_os_memcpy((void *)buf, (const void *)desc, len);
+	}
+
+	if (is_cfg != 0) {
+		buf[USB_CFG_DESC_OFFSET_TYPE] = type;
+		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN] = USB_LOW_BYTE(len);
+		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN + 1] = USB_HIGH_BYTE(len);
+
+		if (!cdev->from_composite) {
+			buf[USB_CFG_DESC_OFFSET_ATTR] = attr;
+		}
+
+		/* Patch EP addresses from placeholder to actual values */
+		usbd_msc_patch_ep_addresses(buf + USB_LEN_CFG_DESC,
+									len - USB_LEN_CFG_DESC,
+									cdev->ep_cfg);
 	}
 
 	return len;
@@ -989,7 +994,7 @@ static int usbd_msc_private_init(const usbd_msc_cb_t *cb, const usbd_msc_ep_cfg_
 		goto data_buf_fail;
 	}
 
-	cdev->cbw = (usb_msc_bot_cbw_t *)usb_os_malloc(USB_MSC_CBW_LEN);
+	cdev->cbw = (usb_msc_bot_cbw_t *)usb_os_malloc(USBD_MSC_CBW_BUF_LEN);
 	if (cdev->cbw == NULL) {
 		ret = HAL_ERR_MEM;
 		goto cbw_fail;
@@ -1185,9 +1190,10 @@ int usbd_msc_bulk_transmit(usb_dev_t *dev, u8 *buf, u32 len)
 * @param  dev: device instance
 * @param  buf: data buffer
 * @param  len: data length
+* @param  buf_len: data buffer capacity, shall cover the DMA window, refer to usbd_ep_receive
 * @retval status
 */
-int usbd_msc_bulk_receive(usb_dev_t *dev, u8 *buf, u32 len)
+int usbd_msc_bulk_receive(usb_dev_t *dev, u8 *buf, u32 len, u32 buf_len)
 {
 	int ret = HAL_ERR_HW;
 	usbd_msc_dev_t *cdev = &usbd_msc_dev;
@@ -1196,6 +1202,7 @@ int usbd_msc_bulk_receive(usb_dev_t *dev, u8 *buf, u32 len)
 	if (dev->is_ready) {
 		ep_bulk_out->xfer_buf = buf;
 		ep_bulk_out->xfer_len = len;
+		ep_bulk_out->xfer_buf_len = buf_len;
 		ret = usbd_ep_receive(dev, ep_bulk_out);
 	}
 
@@ -1234,5 +1241,5 @@ void usbd_msc_send_csw(usb_dev_t *dev, u8 status)
 #endif
 
 	/* Prepare EP to Receive next Cmd */
-	usbd_msc_bulk_receive(dev, (u8 *)cbw, USB_MSC_CBW_LEN);
+	usbd_msc_bulk_receive(dev, (u8 *)cbw, USB_MSC_CBW_LEN, USBD_MSC_CBW_BUF_LEN);
 }

@@ -451,11 +451,32 @@ int bt_id_delete(uint8_t id);
  * advertising data. Used to form arrays that are passed to the
  * bt_le_adv_start() function.
  */
+#if ZEPHYR_RTK_PATCH
+struct bt_data {
+	uint8_t type;
+	union {
+		uint8_t data_len;
+		uint16_t raw_data_len;
+	};
+	const uint8_t *data;
+};
+
+static inline void bt_data_set_raw(struct bt_data *data,
+									const uint8_t *raw_data,
+									uint16_t len)
+{
+	data->type = BT_DATA_RAW;
+	data->raw_data_len = len;
+	data->data = raw_data;
+}
+
+#else
 struct bt_data {
 	uint8_t type;
 	uint8_t data_len;
 	const uint8_t *data;
 };
+#endif
 
 /**
  * @brief Helper to declare elements of bt_data arrays

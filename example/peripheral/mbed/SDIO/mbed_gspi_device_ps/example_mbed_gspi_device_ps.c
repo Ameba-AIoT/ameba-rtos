@@ -423,7 +423,7 @@ static void ps_init_thread(void *param)
 
 #if PS_ENABLE_SLEEP
 	/* SDIO is not a wake source by default: ameba_sleepcfg.c only enables it for
-	 * CONFIG_WHC_INTF_SDIO builds. The AP core is where this example is linked.
+	 * CONFIG_WHC_INTF_SPDIO builds. The AP core is where this example is linked.
 	 * Also override the default sleep type, which is PG for non-WHC builds. */
 	SOCPS_SetAPWakeEvent(WAKE_SRC_SDIO_WIFI, ENABLE);
 	pmu_register_sleep_callback(PMU_DEV_USER_BASE, (PSM_HOOK_FUN)ps_peripheral_suspend, NULL,

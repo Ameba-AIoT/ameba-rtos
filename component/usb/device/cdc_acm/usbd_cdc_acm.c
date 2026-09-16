@@ -24,9 +24,9 @@
 /* Private function prototypes -----------------------------------------------*/
 
 static int cdc_acm_set_config(usb_dev_t *dev, u8 config);
-static int cdc_acm_clear_config(usb_dev_t *dev, u8 config);
+static void cdc_acm_clear_config(usb_dev_t *dev, u8 config);
 static int cdc_acm_setup(usb_dev_t *dev, usb_setup_req_t *req);
-static u16 cdc_acm_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf);
+static u16 cdc_acm_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16 buf_len);
 static int cdc_acm_handle_ep0_data_out(usb_dev_t *dev);
 static int cdc_acm_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status);
 static int cdc_acm_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len);
@@ -360,7 +360,9 @@ static int cdc_acm_set_config(usb_dev_t *dev, u8 config)
 
 	if ((ep_bulk_out->skip_dcache_pre_clean) && (ep_bulk_out->xfer_buf != NULL) && (ep_bulk_out->xfer_len != 0)) {
 		if (USB_IS_MEM_DMA_ALIGNED(ep_bulk_out->xfer_buf)) {
-			DCache_Clean((u32)ep_bulk_out->xfer_buf, ep_bulk_out->xfer_len);
+			/* Clean the whole DMA window rather than the requested length, so that no dirty
+			 * line inside the window can be written back over the received data. */
+			DCache_Clean((u32)ep_bulk_out->xfer_buf, usb_get_dma_len(ep_bulk_out->xfer_len, ep_bulk_out->info.mps));
 		} else {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "RX buf align err\n");
 			ret = HAL_ERR_MEM;
@@ -388,11 +390,10 @@ exit_clear_config:
   *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  dev: USB device instance
   * @param  config: USB configuration index
-  * @retval Status
+  * @retval None
   */
-static int cdc_acm_clear_config(usb_dev_t *dev, u8 config)
+static void cdc_acm_clear_config(usb_dev_t *dev, u8 config)
 {
-	int ret = HAL_OK;
 	usbd_cdc_acm_dev_t *cdev = &usbd_cdc_acm_dev;
 	usbd_ep_t *ep_bulk_in = &cdev->ep_bulk_in;
 	usbd_ep_t *ep_bulk_out = &cdev->ep_bulk_out;
@@ -412,8 +413,6 @@ static int cdc_acm_clear_config(usb_dev_t *dev, u8 config)
 	/* DeInit INTR IN EP */
 	usbd_ep_deinit(dev, ep_intr_in);
 #endif
-
-	return ret;
 }
 
 /**
@@ -616,7 +615,9 @@ static int cdc_acm_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len)
 
 	if ((ep_bulk_out->skip_dcache_pre_clean) && (ep_bulk_out->xfer_buf != NULL) && (ep_bulk_out->xfer_len != 0)) {
 		if (USB_IS_MEM_DMA_ALIGNED(ep_bulk_out->xfer_buf)) {
-			DCache_Clean((u32)ep_bulk_out->xfer_buf, ep_bulk_out->xfer_len);
+			/* Clean the whole DMA window rather than the requested length, so that no dirty
+			 * line inside the window can be written back over the received data. */
+			DCache_Clean((u32)ep_bulk_out->xfer_buf, usb_get_dma_len(ep_bulk_out->xfer_len, ep_bulk_out->info.mps));
 		} else {
 			USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_XFER, cdev->ep_cfg->bulk_out_addr);
 			return HAL_ERR_MEM;
@@ -636,7 +637,6 @@ static int cdc_acm_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len)
   */
 static int cdc_acm_handle_ep0_data_out(usb_dev_t *dev)
 {
-	int ret = HAL_ERR_HW;
 	usbd_cdc_acm_dev_t *cdev = &usbd_cdc_acm_dev;
 	usbd_ep_t *ep0_out = &dev->ep0_out;
 
@@ -647,11 +647,12 @@ static int cdc_acm_handle_ep0_data_out(usb_dev_t *dev)
 			cdev->cb->setup(&cdev->ctrl_req, ep0_out->xfer_buf);
 		}
 		cdev->ctrl_req.bRequest = 0xFFU;
-
-		ret = HAL_OK;
 	}
 
-	return ret;
+	/* No pending request means this data stage does not belong to CDC ACM, the composite
+	   dispatcher already routed it by active_func. Ref USB 2.0 8.5.3.1: a non-zero value here
+	   makes the core stall the status stage, so do not report a failure the host cannot act on. */
+	return HAL_OK;
 }
 
 /**
@@ -696,14 +697,17 @@ static void usbd_cdc_acm_patch_ep_addresses(u8 *desc, u16 len,
   *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  dev: USB device instance
   * @param  req: Setup request handle
-  * @param  buf: Poniter to Buffer
-  * @retval Descriptor length
+  * @param  buf: Pointer to descriptor buffer
+  * @param  buf_len: Capacity of buf in bytes
+  * @retval Descriptor length, or 0 on error
   */
-static u16 cdc_acm_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf)
+static u16 cdc_acm_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16 buf_len)
 {
 	usbd_cdc_acm_dev_t *cdev = &usbd_cdc_acm_dev;
-	u8 *desc = NULL;
+	const u8 *desc = NULL;
 	u16 len = 0;
+	u8 type = USB_HIGH_BYTE(req->wValue);
+	u8 is_cfg = 0;
 	usb_speed_type_t speed = dev->dev_speed;
 	u8 attr = 0x80U;
 
@@ -716,91 +720,63 @@ static u16 cdc_acm_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf)
 #endif
 	}
 
-	switch (USB_HIGH_BYTE(req->wValue)) {
+	switch (type) {
 
 	case USB_DESC_TYPE_DEVICE:
+		desc = usbd_cdc_acm_dev_desc;
 		len = sizeof(usbd_cdc_acm_dev_desc);
-		usb_os_memcpy((void *)buf, (const void *)usbd_cdc_acm_dev_desc, len);
 		break;
 
 	case USB_DESC_TYPE_CONFIGURATION:
 #ifndef CONFIG_USB_FS
 		if (speed == USB_SPEED_HIGH) {
-			desc = (u8 *)usbd_cdc_acm_hs_config_desc;
+			desc = usbd_cdc_acm_hs_config_desc;
 			len = sizeof(usbd_cdc_acm_hs_config_desc);
 		} else
 #endif
 		{
-			desc = (u8 *)usbd_cdc_acm_fs_config_desc;
+			desc = usbd_cdc_acm_fs_config_desc;
 			len = sizeof(usbd_cdc_acm_fs_config_desc);
 		}
-
-		usb_os_memcpy((void *)buf, (const void *)desc, len);
-
-		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN] = USB_LOW_BYTE(len);
-		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN + 1] = USB_HIGH_BYTE(len);
-
-		if (!cdev->from_composite) {
-			buf[USB_CFG_DESC_OFFSET_ATTR] = attr;
-		}
-
-		/* Patch EP addresses from placeholder to actual values */
-		usbd_cdc_acm_patch_ep_addresses(buf + USB_LEN_CFG_DESC,
-										len - USB_LEN_CFG_DESC,
-										cdev->ep_cfg);
+		is_cfg = 1;
 		break;
 
 #ifndef CONFIG_USB_FS
 	case USB_DESC_TYPE_DEVICE_QUALIFIER:
+		desc = usbd_cdc_acm_device_qualifier_desc;
 		len = sizeof(usbd_cdc_acm_device_qualifier_desc);
-		usb_os_memcpy((void *)buf, (const void *)usbd_cdc_acm_device_qualifier_desc, len);
 		break;
 
 	case USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION:
 		if (speed == USB_SPEED_HIGH) {
-			desc = (u8 *)usbd_cdc_acm_fs_config_desc;
+			desc = usbd_cdc_acm_fs_config_desc;
 			len = sizeof(usbd_cdc_acm_fs_config_desc);
 		} else {
-			desc = (u8 *)usbd_cdc_acm_hs_config_desc;
+			desc = usbd_cdc_acm_hs_config_desc;
 			len = sizeof(usbd_cdc_acm_hs_config_desc);
 		}
-
-		usb_os_memcpy((void *)buf, (const void *)desc, len);
-
-		buf[USB_CFG_DESC_OFFSET_TYPE] = USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION;
-		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN] = USB_LOW_BYTE(len);
-		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN + 1] = USB_HIGH_BYTE(len);
-
-		if (!cdev->from_composite) {
-			buf[USB_CFG_DESC_OFFSET_ATTR] = attr;
-		}
-
-		/* Patch EP addresses from placeholder to actual values */
-		usbd_cdc_acm_patch_ep_addresses(buf + USB_LEN_CFG_DESC,
-										len - USB_LEN_CFG_DESC,
-										cdev->ep_cfg);
-
+		is_cfg = 1;
 		break;
 #endif
 
 	case USB_DESC_TYPE_STRING:
 		switch (USB_LOW_BYTE(req->wValue)) {
 		case USBD_IDX_LANGID_STR:
+			desc = usbd_cdc_acm_lang_id_desc;
 			len = sizeof(usbd_cdc_acm_lang_id_desc);
-			usb_os_memcpy((void *)buf, (const void *)usbd_cdc_acm_lang_id_desc, len);
 			break;
 		case USBD_IDX_MFC_STR:
-			len = usbd_get_str_desc(USBD_CDC_ACM_MFG_STRING, buf);
+			len = usbd_get_str_descriptor(USBD_CDC_ACM_MFG_STRING, buf, buf_len);
 			break;
 		case USBD_IDX_PRODUCT_STR:
 			if (speed == USB_SPEED_HIGH) {
-				len = usbd_get_str_desc(USBD_CDC_ACM_PROD_HS_STRING, buf);
+				len = usbd_get_str_descriptor(USBD_CDC_ACM_PROD_HS_STRING, buf, buf_len);
 			} else {
-				len = usbd_get_str_desc(USBD_CDC_ACM_PROD_FS_STRING, buf);
+				len = usbd_get_str_descriptor(USBD_CDC_ACM_PROD_FS_STRING, buf, buf_len);
 			}
 			break;
 		case USBD_IDX_SERIAL_STR:
-			len = usbd_get_str_desc(USBD_CDC_ACM_SN_STRING, buf);
+			len = usbd_get_str_descriptor(USBD_CDC_ACM_SN_STRING, buf, buf_len);
 			break;
 		case USBD_IDX_MS_OS_STR:
 			break;
@@ -813,6 +789,31 @@ static u16 cdc_acm_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf)
 
 	default:
 		break;
+	}
+
+	if (desc != NULL) {
+		/* Truncation is not allowed: a short descriptor is illegal, so stall instead */
+		if (len > buf_len) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Desc %d OVSZ %d > %d\n", type, len, buf_len);
+			return 0;
+		}
+
+		usb_os_memcpy((void *)buf, (const void *)desc, len);
+	}
+
+	if (is_cfg != 0) {
+		buf[USB_CFG_DESC_OFFSET_TYPE] = type;
+		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN] = USB_LOW_BYTE(len);
+		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN + 1] = USB_HIGH_BYTE(len);
+
+		if (!cdev->from_composite) {
+			buf[USB_CFG_DESC_OFFSET_ATTR] = attr;
+		}
+
+		/* Patch EP addresses from placeholder to actual values */
+		usbd_cdc_acm_patch_ep_addresses(buf + USB_LEN_CFG_DESC,
+										len - USB_LEN_CFG_DESC,
+										cdev->ep_cfg);
 	}
 
 	return len;

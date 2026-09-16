@@ -39,12 +39,15 @@ set(private_compile_options)         #private compile_options
 # You may use if-else condition to set these predefined variable
 ameba_list_append(private_sources gcc_wrap.c)
 
-ameba_list_append_if(CONFIG_TLSF_HEAP private_sources
-    port_tlsf.c
-    tlsf.c
-)
+# image3 uses secure_heap.c instead
+if(CONFIG_TLSF_HEAP AND ${c_CURRENT_IMAGE_TYPE} STREQUAL "image2")
+    ameba_list_append(private_sources
+        port_tlsf.c
+        tlsf.c
+    )
+endif()
 
-if(CONFIG_TLSF_HEAP AND CONFIG_HEAP_TRACE)
+if(CONFIG_TLSF_HEAP AND CONFIG_HEAP_TRACE AND ${c_CURRENT_IMAGE_TYPE} STREQUAL "image2")
     ameba_list_append(private_includes
         ${CMAKE_CURRENT_SOURCE_DIR}/../../../os/freertos/heap_trace
     )

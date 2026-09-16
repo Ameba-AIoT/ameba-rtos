@@ -206,10 +206,10 @@
 
 /* Private function prototypes -----------------------------------------------*/
 static int usbd_uac_set_config(usb_dev_t *dev, u8 config);
-static int usbd_uac_clear_config(usb_dev_t *dev, u8 config);
+static void usbd_uac_clear_config(usb_dev_t *dev, u8 config);
 static int usbd_uac_setup(usb_dev_t *dev, usb_setup_req_t *req);
-static u16 usbd_uac_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf);
-static int usbd_uac_handle_sof(usb_dev_t *dev);
+static u16 usbd_uac_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16 buf_len);
+static void usbd_uac_handle_sof(usb_dev_t *dev);
 static void usbd_uac_append_data(usbd_uac_buf_ctrl_t *pdata_ctrl);
 static int usbd_uac_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status);
 static int usbd_uac_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len);
@@ -1889,9 +1889,9 @@ static int usbd_uac_set_config(usb_dev_t *dev, u8 config)
   *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  dev: USB device instance
   * @param  config: USB configuration index
-  * @retval Status
+  * @retval None
   */
-static int usbd_uac_clear_config(usb_dev_t *dev, u8 config)
+static void usbd_uac_clear_config(usb_dev_t *dev, u8 config)
 {
 	usbd_uac_dev_t *cdev = &usbd_uac_dev;
 	usbd_ep_t *ep_isoc_in = &cdev->ep_isoc_in;
@@ -1901,7 +1901,7 @@ static int usbd_uac_clear_config(usb_dev_t *dev, u8 config)
 	UNUSED(config);
 
 	if (dev == NULL || cdev == NULL) {
-		return HAL_OK;
+		return;
 	}
 
 	/* DeInit ISOC IN EP */
@@ -1915,8 +1915,6 @@ static int usbd_uac_clear_config(usb_dev_t *dev, u8 config)
 	if ((cdev->cb != NULL) && (usbd_uac_ep_enable(&(cdev->cb->out)) != 0) && info->addr != 0) {
 		usbd_ep_deinit(dev, ep_isoc_out);
 	}
-
-	return HAL_OK;
 }
 
 /**
@@ -2383,9 +2381,9 @@ static int usbd_uac_setup(usb_dev_t *dev, usb_setup_req_t *req)
   * @note   This function is called within an interrupt service routine (ISR) context;
   *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  dev: USB device instance
-  * @retval Status
+  * @retval None
   */
-static int usbd_uac_handle_sof(usb_dev_t *dev)
+static void usbd_uac_handle_sof(usb_dev_t *dev)
 {
 	usbd_uac_dev_t *cdev = &usbd_uac_dev;
 	const usbd_uac_cb_t *cb = cdev->cb;
@@ -2408,8 +2406,6 @@ static int usbd_uac_handle_sof(usb_dev_t *dev)
 	if (cb->sof != NULL) {
 		cb->sof();
 	}
-
-	return HAL_OK;
 }
 
 /**
@@ -2488,7 +2484,9 @@ static int usbd_uac_handle_ep0_data_out(usb_dev_t *dev)
 						usbd_ep_init(dev, ep_isoc_in);
 					}
 
-					if (usbd_uac_ep_enable(&(cdev->cb->out)) != 0) {
+					/* Skip if SET_INTERFACE(alt=1) hasn't seeded ch_cnt/byte_width yet, else mps=0.
+					 * IN branch above uses USBD_UAC_IN_DEFAULT_* and isn't exposed to this. */
+					if ((usbd_uac_ep_enable(&(cdev->cb->out)) != 0) && (ch_cnt != 0) && (byte_width != 0)) {
 						/* DeInit ISOC OUT EP */
 						usbd_ep_deinit(dev, ep_isoc_out);
 						/* Init ISO OUT EP */
@@ -2545,7 +2543,10 @@ static void usbd_uac_isoc_in_process_xfer(usb_dev_t *dev)
 	ep_isoc_in->xfer_state = 1U;
 	ep_isoc_in->xfer_buf = usbd_uac_tx_buf;
 	ep_isoc_in->xfer_len = (u16)len;
-	usbd_ep_transmit(dev, ep_isoc_in);
+	/* On failure no completion IRQ fires to clear xfer_state; clear it here. */
+	if (usbd_ep_transmit(dev, ep_isoc_in) != HAL_OK) {
+		ep_isoc_in->xfer_state = 0U;
+	}
 }
 
 /**
@@ -2732,12 +2733,13 @@ static void usbd_uac_patch_ep_addresses(u8 *desc, u16 len, const usbd_uac_ep_cfg
   *         standalone mode when the app enabled the IN endpoint (cb->in). A standalone
   *         playback-only build (IN disabled) still reports the pre-rework OUT-only baseline.
   * @param  buf: Output buffer
+  * @param  buf_len: Capacity of buf in bytes
   * @param  desc: Source static config descriptor (full duplex, mic entities included)
   * @param  full_len: sizeof of desc
   * @param  keep_mic: whether to keep the mic entities/interface in the reported descriptor
-  * @retval Actual descriptor length written to buf
+  * @retval Actual descriptor length written to buf, or 0 if it does not fit
   */
-static u16 usbd_uac_build_config_desc(u8 *buf, const u8 *desc, u16 full_len, u8 keep_mic)
+static u16 usbd_uac_build_config_desc(u8 *buf, u16 buf_len, const u8 *desc, u16 full_len, u8 keep_mic)
 {
 	u16 ac_mic_off;
 	u16 ac_mic_end;
@@ -2746,13 +2748,26 @@ static u16 usbd_uac_build_config_desc(u8 *buf, const u8 *desc, u16 full_len, u8 
 	u16 ac_tot;
 
 	if (keep_mic) {
-		usb_os_memcpy((void *)buf, (void *)desc, full_len);
+		/* Truncation is not allowed: a short descriptor is illegal, so stall instead */
+		if (full_len > buf_len) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Cfg desc OVSZ %d > %d\n", full_len, buf_len);
+			return 0;
+		}
+
+		usb_os_memcpy((void *)buf, (const void *)desc, full_len);
+
 		return full_len;
 	}
 
 	ac_mic_off = USB_LEN_CFG_DESC + USB_LEN_IAD_DESC + USBD_UAC_AC_IF_LEN(USBD_UAC_DEFAULT_CH_CNT) - USBD_UAC_AC_MIC_IF_LEN;
 	ac_mic_end = ac_mic_off + USBD_UAC_AC_MIC_IF_LEN;
 	as_len = full_len - ac_mic_end - USBD_UAC_AS_TIF_LEN(USBD_UAC_MIC_AS_ALT_SETTING_NUM);
+
+	/* The stripped descriptor is shorter than the source, but bound it explicitly */
+	if ((u32)ac_mic_off + (u32)as_len > (u32)buf_len) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Cfg desc OVSZ %d > %d\n", ac_mic_off + as_len, buf_len);
+		return 0;
+	}
 
 	usb_os_memcpy((void *)buf, (void *)desc, ac_mic_off);
 	usb_os_memcpy((void *)(buf + ac_mic_off), (void *)(desc + ac_mic_end), as_len);
@@ -2779,12 +2794,14 @@ static u16 usbd_uac_build_config_desc(u8 *buf, const u8 *desc, u16 full_len, u8 
   * @param  buf: Poniter to Buffer
   * @retval Descriptor length
   */
-static u16 usbd_uac_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf)
+static u16 usbd_uac_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16 buf_len)
 {
 	usb_speed_type_t speed = dev->dev_speed;
 	usbd_uac_dev_t *cdev = &usbd_uac_dev;
-	u8 *desc = NULL;
+	const u8 *desc = NULL;
+	const u8 *cfg_desc = NULL;
 	u16 len = 0;
+	u8 type = USB_HIGH_BYTE(req->wValue);
 	u8 attr = 0x80U;
 
 	/* Keep the mic entities/interface in the reported descriptor for composite mode
@@ -2801,11 +2818,11 @@ static u16 usbd_uac_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 #endif
 	}
 
-	switch (USB_HIGH_BYTE(req->wValue)) {
+	switch (type) {
 
 	case USB_DESC_TYPE_DEVICE:
+		desc = usbd_uac_dev_desc;
 		len = sizeof(usbd_uac_dev_desc);
-		usb_os_memcpy((void *)buf, (const void *)usbd_uac_dev_desc, len);
 		break;
 
 	case USB_DESC_TYPE_CONFIGURATION:
@@ -2818,69 +2835,51 @@ static u16 usbd_uac_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 
 #ifndef CONFIG_USB_FS
 		if (speed == USB_SPEED_HIGH) {
+			cfg_desc = usbd_uac_hs_config_desc;
 			len = sizeof(usbd_uac_hs_config_desc);
-			desc = (u8 *)&usbd_uac_hs_config_desc;
 		} else
 #endif
 		{
+			cfg_desc = usbd_uac_fs_config_desc;
 			len = sizeof(usbd_uac_fs_config_desc);
-			desc = (u8 *)&usbd_uac_fs_config_desc;
 		}
-
-		len = usbd_uac_build_config_desc(buf, desc, len, keep_mic);
-
-		if (!cdev->from_composite) {
-			buf[USB_CFG_DESC_OFFSET_ATTR] = attr;
-		}
-		usbd_uac_patch_ep_addresses(buf + USB_LEN_CFG_DESC, len - USB_LEN_CFG_DESC, cdev->ep_cfg);
-		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN] = USB_LOW_BYTE(len);
-		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN + 1] = USB_HIGH_BYTE(len);
 		break;
 
 #ifndef CONFIG_USB_FS
 	case USB_DESC_TYPE_DEVICE_QUALIFIER:
+		desc = usbd_uac_device_qualifier_desc;
 		len = sizeof(usbd_uac_device_qualifier_desc);
-		usb_os_memcpy((void *)buf, (const void *)usbd_uac_device_qualifier_desc, len);
 		break;
 
 	case USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION:
 		if (speed == USB_SPEED_HIGH) {
+			cfg_desc = usbd_uac_fs_config_desc;
 			len = sizeof(usbd_uac_fs_config_desc);
-			desc = (u8 *)&usbd_uac_fs_config_desc;
 		} else {
+			cfg_desc = usbd_uac_hs_config_desc;
 			len = sizeof(usbd_uac_hs_config_desc);
-			desc = (u8 *)&usbd_uac_hs_config_desc;
 		}
-		len = usbd_uac_build_config_desc(buf, desc, len, keep_mic);
-
-		if (!cdev->from_composite) {
-			buf[USB_CFG_DESC_OFFSET_ATTR] = attr;
-		}
-		usbd_uac_patch_ep_addresses(buf + USB_LEN_CFG_DESC, len - USB_LEN_CFG_DESC, cdev->ep_cfg);
-		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN] = USB_LOW_BYTE(len);
-		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN + 1] = USB_HIGH_BYTE(len);
-		buf[USB_CFG_DESC_OFFSET_TYPE] = USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION;
 		break;
 #endif
 
 	case USB_DESC_TYPE_STRING:
 		switch (USB_LOW_BYTE(req->wValue)) {
 		case USBD_IDX_LANGID_STR:
+			desc = usbd_uac_lang_id_desc;
 			len = sizeof(usbd_uac_lang_id_desc);
-			usb_os_memcpy((void *)buf, (const void *)usbd_uac_lang_id_desc, len);
 			break;
 		case USBD_IDX_MFC_STR:
-			len = usbd_get_str_desc(USBD_UAC_MFG_STRING, buf);
+			len = usbd_get_str_descriptor(USBD_UAC_MFG_STRING, buf, buf_len);
 			break;
 		case USBD_IDX_PRODUCT_STR:
 			if (speed == USB_SPEED_HIGH) {
-				len = usbd_get_str_desc(USBD_UAC_PROD_HS_STRING, buf);
+				len = usbd_get_str_descriptor(USBD_UAC_PROD_HS_STRING, buf, buf_len);
 			} else {
-				len = usbd_get_str_desc(USBD_UAC_PROD_FS_STRING, buf);
+				len = usbd_get_str_descriptor(USBD_UAC_PROD_FS_STRING, buf, buf_len);
 			}
 			break;
 		case USBD_IDX_SERIAL_STR:
-			len = usbd_get_str_desc(USBD_UAC_SN_STRING, buf);
+			len = usbd_get_str_descriptor(USBD_UAC_SN_STRING, buf, buf_len);
 			break;
 		case USBD_IDX_MS_OS_STR:
 			/*Not support*/
@@ -2894,6 +2893,34 @@ static u16 usbd_uac_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 
 	default:
 		break;
+	}
+
+	if (desc != NULL) {
+		/* Truncation is not allowed: a short descriptor is illegal, so stall instead */
+		if (len > buf_len) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Desc %d OVSZ %d > %d\n", type, len, buf_len);
+			return 0;
+		}
+
+		usb_os_memcpy((void *)buf, (const void *)desc, len);
+	}
+
+	if (cfg_desc != NULL) {
+		/* The builder strips the mic entities when needed and bounds buf itself */
+		len = usbd_uac_build_config_desc(buf, buf_len, cfg_desc, len, keep_mic);
+		if (len == 0U) {
+			return 0;
+		}
+
+		buf[USB_CFG_DESC_OFFSET_TYPE] = type;
+		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN] = USB_LOW_BYTE(len);
+		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN + 1] = USB_HIGH_BYTE(len);
+
+		if (!cdev->from_composite) {
+			buf[USB_CFG_DESC_OFFSET_ATTR] = attr;
+		}
+
+		usbd_uac_patch_ep_addresses(buf + USB_LEN_CFG_DESC, len - USB_LEN_CFG_DESC, cdev->ep_cfg);
 	}
 
 	return len;
@@ -3063,6 +3090,7 @@ static int usbd_uac_private_init(const usbd_uac_cb_t *cb, const usbd_uac_ep_cfg_
 	info->type = USB_CH_EP_TYPE_ISOC;
 	info->binterval = (cdev->dev != NULL && cdev->dev->dev_speed == USB_SPEED_HIGH)
 					  ? USBD_UAC_HS_DEFAULT_BINTERVAL : USBD_UAC_FS_DEFAULT_BINTERVAL;
+	ep_isoc_out->xfer_buf_len = (u32)sizeof(usbd_uac_rx_buf);
 	info = &ep_isoc_in->info;
 	info->addr = cdev->ep_cfg->isoc_in_addr;
 	info->type = USB_CH_EP_TYPE_ISOC;

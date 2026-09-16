@@ -98,8 +98,8 @@ static const usbd_config_t cdc_acm_cfg = {
 #if defined(CONFIG_AMEBASMART)
 	.nptx_max_epmis_cnt = 1U,
 #elif defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RLE1509)
-	.rx_fifo_depth = 644U,
-	.ptx_fifo_depth = {16U, 256U, 32U, 16U, 16U, },
+	.rx_fifo_depth = 692U,
+	.ptx_fifo_depth = {0U, 256U, 32U, 0U, 0U, },
 #elif defined (CONFIG_AMEBAL2)
 	.rx_fifo_depth = 661U,
 	.ptx_fifo_depth = {256U, 16U, 32U, 16U, },

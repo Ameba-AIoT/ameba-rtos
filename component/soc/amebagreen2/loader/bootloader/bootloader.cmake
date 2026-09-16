@@ -69,7 +69,7 @@ if("${c_MCU_PROJECT_NAME}" STREQUAL "km4tz" AND loader_condition)
         hci/usb
     )
 
-    ameba_list_append_if(CONFIG_WHC_INTF_SDIO private_includes
+    ameba_list_append_if(CONFIG_WHC_INTF_SPDIO private_includes
         hci/sdio
     )
 
@@ -77,7 +77,7 @@ if("${c_MCU_PROJECT_NAME}" STREQUAL "km4tz" AND loader_condition)
         hci/core/hci_core.c
     )
 
-    ameba_list_append_if(CONFIG_WHC_INTF_SDIO private_sources
+    ameba_list_append_if(CONFIG_WHC_INTF_SPDIO private_sources
         hci/sdio/sdio_intf.c
         hci/sdio/sdio_hal.c
     )

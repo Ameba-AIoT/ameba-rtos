@@ -38,7 +38,7 @@ config BT_INIC_SPI
     def_bool (BT_INIC_SHARE && WHC_INTF_SPI) || BT_INIC_SPI_D
 
 config BT_INIC_SDIO
-    def_bool (BT_INIC_SHARE && WHC_INTF_SDIO) || BT_INIC_SDIO_D
+    def_bool (BT_INIC_SHARE && WHC_INTF_SPDIO) || BT_INIC_SDIO_D
 
 config BT_INIC_USB
     def_bool (BT_INIC_SHARE && WHC_INTF_USB) || BT_INIC_USB_D

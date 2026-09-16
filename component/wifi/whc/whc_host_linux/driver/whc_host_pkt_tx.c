@@ -122,7 +122,6 @@ int whc_host_xmit_thread(void *data)
 #else
 		/* dequeue msg node */
 		while ((!global_idev.mlme_priv.b_in_scan) &&
-			   (!global_idev.xmit_priv.flowctrl_en) &&
 			   ((p_node = whc_host_dequeue_tx_packet(xmit_priv)) != NULL)) {
 
 #ifdef WHCH_TXAGG

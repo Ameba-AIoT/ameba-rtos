@@ -10,7 +10,7 @@
 #include "atcmd_service.h"
 #endif
 
-#ifdef CONFIG_NAN
+#ifdef CONFIG_WIFI_NAN_ENABLE
 extern u8 NAN_IPv6Parm[16];
 #endif
 
@@ -328,13 +328,11 @@ void whc_dev_mp_cmd(char *cmd, int show_msg)
 /* here in sdio rx done callback */
 __weak void whc_dev_cmd_rx_to_user(u8 *rxbuf)
 {
-	while (whc_cmdpath_data.whc_rx_msg) {
-		/* waiting last msg done */
-		rtos_time_delay_ms(1);
+	/* enqueue msg for cmd path user task, never block trx flow, set never wait now */
+	if (rtos_queue_send(whc_cmdpath_data.whc_rx_queue, &rxbuf, 0) != RTK_SUCCESS) {
+		RTK_LOGE(TAG_WLAN_INIC, "%s, rx queue full, drop msg!\n", __func__);
+		rtos_mem_free(rxbuf);
 	}
-
-	whc_cmdpath_data.whc_rx_msg = rxbuf;
-	rtos_sema_give(whc_cmdpath_data.whc_user_rx_sema);
 }
 
 /* ---------- Handler implementations ---------- */
@@ -503,7 +501,7 @@ static void whc_dev_handle_network_info_update(u8 *ptr)
 	if (idx == 0) {
 		memcpy(whc_ipc_ip_addr, ptr + 2, 4);
 	}
-#ifdef CONFIG_NAN
+#ifdef CONFIG_WIFI_NAN_ENABLE
 	memcpy(NAN_IPv6Parm, ptr + 14, 16);
 #endif
 }
@@ -583,15 +581,15 @@ static const struct whc_dev_subcmd_entry whc_dev_subcmd_entries[] = {
 
 __weak void whc_dev_cmd_rx_to_user_task(void)
 {
+	u8 *rxbuf;
 	u8 *ptr;
 	u32 event;
 	u32 i;
 
 	while (1) {
-		rtos_sema_take(whc_cmdpath_data.whc_user_rx_sema, RTOS_MAX_TIMEOUT);
-
-		if (whc_cmdpath_data.whc_rx_msg) {
-			ptr = whc_cmdpath_data.whc_rx_msg + sizeof(struct whc_cmd_path_hdr);
+		/* block on the queue; each recv returns one rxbuf to handle */
+		if (rtos_queue_receive(whc_cmdpath_data.whc_rx_queue, &rxbuf, RTOS_MAX_TIMEOUT) == RTK_SUCCESS) {
+			ptr = rxbuf + sizeof(struct whc_cmd_path_hdr);
 			event = *(u32 *)(ptr);
 			ptr += 4;
 
@@ -605,8 +603,7 @@ __weak void whc_dev_cmd_rx_to_user_task(void)
 					}
 				}
 			}
-			rtos_mem_free(whc_cmdpath_data.whc_rx_msg);
-			whc_cmdpath_data.whc_rx_msg = NULL;
+			rtos_mem_free(rxbuf);
 		}
 	}
 }
@@ -616,9 +613,14 @@ __weak void whc_dev_init_cmd_path(void)
 	memset(&whc_cmdpath_data, 0, sizeof(struct whc_cmd_path_priv));
 
 	/* initialize the semaphores */
-	rtos_sema_create(&(whc_cmdpath_data.whc_user_rx_sema), 0, 0xFFFFFFFF);
 	rtos_sema_create(&(whc_cmdpath_data.whc_user_blocksend_sema), 0, 0xFFFFFFFF);
 	rtos_mutex_create(&whc_cmdpath_data.whc_user_blocksend_mutex);
+
+	/* queue carrying rxbuf pointers from bus rx context to the cmd task */
+	if (RTK_SUCCESS != rtos_queue_create(&whc_cmdpath_data.whc_rx_queue, WHC_CMD_RX_QUEUE_SIZE, sizeof(u8 *))) {
+		RTK_LOGE(TAG_WLAN_INIC, "Create whc_rx_queue Err!!\n");
+		return;
+	}
 
 	/* Initialize the event task */
 	if (RTK_SUCCESS != rtos_task_create(NULL, (const char *const)"whc_dev_cmd_rx_to_user_task", (rtos_task_function_t)whc_dev_cmd_rx_to_user_task,

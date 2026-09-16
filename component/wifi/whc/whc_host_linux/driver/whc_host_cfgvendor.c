@@ -118,6 +118,14 @@ static int whc_host_cfgvendor_nan_pasn_setkeys(struct wiphy *wiphy,
 
 	return 0;
 }
+
+static int whc_host_cfgvendor_nan_set_nik_cache(struct wiphy *wiphy,
+		struct wireless_dev *wdev, const void *data, int len)
+{
+	whc_host_nan_cfgvendor_cmd(NAN_SUBCMD_SET_NIK_CACHE, data, len);
+
+	return 0;
+}
 #endif /* CONFIG_NAN_PAIRING */
 
 #ifdef NAN_CUSTOMER_NANDOW
@@ -167,6 +175,7 @@ static const struct  nl80211_vendor_cmd_info whc_host_vendor_events[] = {
 	{ OUI_REALTEK, NAN_EVENT_PASN_UPD_PMKID},
 	{ OUI_REALTEK, NAN_EVENT_BSTRAP_RESULT},
 	{ OUI_REALTEK, NAN_EVENT_PASN_RESULT},
+	{ OUI_REALTEK, NAN_EVENT_NIK_CACHE},
 };
 
 
@@ -256,6 +265,15 @@ static const struct wiphy_vendor_command whc_host_vendor_cmds[] = {
 		.flags = WIPHY_VENDOR_CMD_NEED_WDEV | WIPHY_VENDOR_CMD_NEED_NETDEV,
 		.policy = VENDOR_CMD_RAW_DATA,
 		.doit = whc_host_cfgvendor_nan_pasn_setkeys
+	},
+	{
+		{
+			.vendor_id = OUI_REALTEK,
+			.subcmd = NAN_SUBCMD_SET_NIK_CACHE
+		},
+		.flags = WIPHY_VENDOR_CMD_NEED_WDEV | WIPHY_VENDOR_CMD_NEED_NETDEV,
+		.policy = VENDOR_CMD_RAW_DATA,
+		.doit = whc_host_cfgvendor_nan_set_nik_cache
 	}
 #endif /* CONFIG_NAN_PAIRING */
 };

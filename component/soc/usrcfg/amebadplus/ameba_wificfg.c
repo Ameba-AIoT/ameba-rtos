@@ -24,7 +24,7 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.auto_reconnect_interval = 5;
 	wifi_user_config.no_beacon_disconnect_time = 9;  /* unit 2s, default 18s */
 
-#if (defined(CONFIG_WHC_INTF_SDIO) || defined(CONFIG_WHC_INTF_USB))
+#if (defined(CONFIG_WHC_INTF_SPDIO) || defined(CONFIG_WHC_INTF_USB))
 	skb_num_np_rsvd = 10; /*4 for rx_ring_buffer + 2 for mgnt trx + 4 for spido rx_ring_buffer */
 	wifi_user_config.skb_num_np = 20;  /* skb_num_np should >= rx_ampdu_num + skb_num_np_rsvd */
 	wifi_user_config.skb_num_ap = 0;
@@ -87,7 +87,11 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.wowlan_rx_bcmc_dis = 0;
 
 	/* Softap related */
+#if defined(CONFIG_WIFI_AP_STA_NUM)
 	wifi_user_config.ap_sta_num = CONFIG_WIFI_AP_STA_NUM;
+#else
+	wifi_user_config.ap_sta_num = 5;	/*should not exceed 25 */
+#endif
 	wifi_user_config.ap_polling_sta = 0;
 	wifi_user_config.ap_bypass_forwarding = 0;
 
@@ -129,6 +133,9 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.wtn_fixed_rnat_node = 0;
 	wifi_user_config.wtn_connect_only_to_rnat = 0;
 	wifi_user_config.wtn_max_node_num = 15;
+#if defined(CONFIG_RMESH_EN) && !defined(CONFIG_RNAT_EN)
+	wifi_user_config.wtn_max_refugee_num = CONFIG_WIFI_RMESH_MAX_REFUGEE_NUM;
+#endif
 	if (wifi_user_config.wtn_en) {
 		skb_num_np_rsvd = 16; /*4 for rx_ring_buffer + 2 for mgnt trx + 10 for tunnel tx */
 		wifi_user_config.skb_num_np = 20; /* skb_num_np should >= rx_ampdu_num + skb_num_np_rsvd */
@@ -140,10 +147,9 @@ _WEAK void wifi_set_user_config(void)
 		RTK_LOGW(TAG_WLAN_DRV, "change skb_num_np to %d\n", wifi_user_config.skb_num_np);
 	}
 
-	/* ensure ap_sta_num not exceed 26 (AID 1~26 supported by the combined sleep/TIM bitmap) */
-	if (wifi_user_config.ap_sta_num > 26) {
-		wifi_user_config.ap_sta_num = 26;
-		RTK_LOGW(TAG_WLAN_DRV, "change ap_sta_num to 26\n");
+	if (wifi_user_config.ap_sta_num > 25) {
+		wifi_user_config.ap_sta_num = 25;
+		RTK_LOGW(TAG_WLAN_DRV, "change ap_sta_num to 25\n");
 	}
 }
 

@@ -24,15 +24,17 @@
 #include "realfs.h"
 #include "realfs_bdev_sd.h"
 #include "realfs_bdev_flash.h"
-#if defined(CONFIG_REALFS_FLASH_NAND_LBM)
+#if defined(CONFIG_REALFS_FLASH_NAND_LBM) || defined(CONFIG_REALFS_SECOND_FLASH_NAND)
 #include "realfs_erasedev_lbm.h"
 #endif
 #if defined(CONFIG_REALFS_FLASH_NOR_MAP)
 #include "realfs_erasedev_nor.h"
 #endif
 
-/* Erase-aware (route-B) mode is used by raw NAND (via LBM) and NOR@512B map. */
-#if defined(CONFIG_REALFS_FLASH_NAND_LBM) || defined(CONFIG_REALFS_FLASH_NOR_MAP)
+/* Erase-aware (route-B) mode is used by raw NAND (via LBM, on-chip or external)
+ * and the NOR@512B map. */
+#if defined(CONFIG_REALFS_FLASH_NAND_LBM) || defined(CONFIG_REALFS_FLASH_NOR_MAP) \
+	|| defined(CONFIG_REALFS_SECOND_FLASH_NAND)
 #define REALFS_EDEV_MODE   1
 #endif
 
@@ -651,6 +653,18 @@ static int realfs_open_bdev(int interface, struct realfs_bdev *bdev, int for_for
 		return realfs_bdev_sd_open(bdev, RFS_BLOCK_SIZE);
 	}
 #endif
+#if defined(CONFIG_REALFS_SECOND_FLASH_NAND)
+	if (interface == VFS_INF_SECOND_FLASH) {
+		/* external SPI NAND, erase-aware (edev) path over its own LBM context */
+		if (realfs_erasedev_lbm_second_open(&g_edev) != 0) {
+			VFS_DBG(VFS_ERROR, "REALFS: second nand LBM init failed");
+			return -1;
+		}
+		(void)bdev;
+		(void)for_format;
+		return 0;
+	}
+#endif
 #if defined(CONFIG_REALFS_FLASH)
 	if (interface == VFS_INF_FLASH) {
 #if defined(CONFIG_REALFS_FLASH_NAND_LBM)
@@ -702,6 +716,11 @@ static int realfs_open_bdev(int interface, struct realfs_bdev *bdev, int for_for
  * SD card) does not trip -Werror=unused-function. */
 static int realfs_is_edev(int interface)
 {
+#if defined(CONFIG_REALFS_SECOND_FLASH_NAND)
+	if (interface == VFS_INF_SECOND_FLASH) {
+		return 1;   /* external SPI NAND always uses the erase-aware path */
+	}
+#endif
 	if (interface != VFS_INF_FLASH) {
 		return 0;
 	}
@@ -718,9 +737,16 @@ static int realfs_is_edev(int interface)
 #endif  /* REALFS_EDEV_MODE */
 
 #if defined(REALFS_EDEV_MODE)
-/* Tear down whichever erase-device backend realfs_open_bdev opened. */
-static void realfs_edev_close(void)
+/* Tear down whichever erase-device backend realfs_open_bdev opened for `interface`. */
+static void realfs_edev_close(int interface)
 {
+	(void)interface;
+#if defined(CONFIG_REALFS_SECOND_FLASH_NAND)
+	if (interface == VFS_INF_SECOND_FLASH) {
+		realfs_erasedev_lbm_second_close(&g_edev);
+		return;
+	}
+#endif
 #if defined(CONFIG_REALFS_FLASH_NAND_LBM)
 	if (SHOULD_USE_NAND()) {
 		realfs_erasedev_lbm_close(&g_edev);
@@ -735,6 +761,10 @@ static void realfs_edev_close(void)
 
 static void realfs_close_bdev(int interface, struct realfs_bdev *bdev)
 {
+	/* Not called for the external-NAND edev path (see realfs_edev_close); in a
+	 * second-NAND-only build no branch below is compiled, so mark params used. */
+	(void)interface;
+	(void)bdev;
 #if defined(CONFIG_REALFS_SD_MODE)
 	if (interface == VFS_INF_SD) {
 		realfs_bdev_sd_close(bdev);
@@ -745,7 +775,7 @@ static void realfs_close_bdev(int interface, struct realfs_bdev *bdev)
 	if (interface == VFS_INF_FLASH) {
 #if defined(REALFS_EDEV_MODE)
 		if (realfs_is_edev(interface)) {
-			realfs_edev_close();
+			realfs_edev_close(interface);
 			return;
 		}
 #endif
@@ -788,7 +818,7 @@ static int realfs_vfs_mount(int interface)
 		}
 		if (rc) {
 			VFS_DBG(VFS_ERROR, "realfs edev mount failed (%d)", rc);
-			realfs_edev_close();
+			realfs_edev_close(interface);
 			rfs_unlock();
 			return -1;
 		}
@@ -827,7 +857,7 @@ static int realfs_vfs_unmount(int interface)
 #if defined(REALFS_EDEV_MODE)
 		if (realfs_is_edev(g_bdev_inf)) {
 			realfs_ea_unmount(&g_rfs);
-			realfs_edev_close();
+			realfs_edev_close(g_bdev_inf);
 			g_bdev_inf = -1;
 			realfs_mount_flag = 0;
 			rfs_unlock();
@@ -860,7 +890,7 @@ static int realfs_format_inf(int interface, unsigned int hash_buckets)
 #if defined(REALFS_EDEV_MODE)
 	if (realfs_is_edev(interface)) {
 		int rc = realfs_ea_format(&g_edev, (uint32_t)hash_buckets);
-		realfs_edev_close();
+		realfs_edev_close(interface);
 		rfs_unlock();
 		return rc ? -1 : 0;
 	}

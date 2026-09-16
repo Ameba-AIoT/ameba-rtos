@@ -26,7 +26,7 @@ ameba_list_append(public_includes
     whc_dev
     whc_host_rtos
     whc_dev/spi
-    whc_dev/sdio
+    whc_dev/spdio
     whc_dev/usb
     whc_dev/ipc
     whc_host_rtos/spi
@@ -135,11 +135,11 @@ if(CONFIG_WHC_DEV)
             whc_dev/spi/whc_spi_dev.c
         )
         set(target_name wifi_whc_spi_dev)
-    elseif(CONFIG_WHC_INTF_SDIO)
+    elseif(CONFIG_WHC_INTF_SPDIO)
         ameba_list_append(private_sources
-            whc_dev/sdio/whc_sdio_dev.c
+            whc_dev/spdio/whc_spdio_dev.c
         )
-        set(target_name wifi_whc_sdio_dev)
+        set(target_name wifi_whc_spdio_dev)
     elseif(CONFIG_WHC_INTF_USB)
         ameba_list_append(private_sources
             whc_dev/usb/whc_usb_dev.c
@@ -149,7 +149,7 @@ if(CONFIG_WHC_DEV)
         ameba_list_append(private_sources
             whc_dev/uart/whc_uart_dev.c
         )
-        set(target_name wifi_whc_sdio_dev)
+        set(target_name wifi_whc_spdio_dev)
     endif()
 elseif(CONFIG_WHC_HOST)
     if(CONFIG_WHC_INTF_SPI)
@@ -160,7 +160,7 @@ elseif(CONFIG_WHC_HOST)
         )
 
         set(target_name wifi_whc_spi_host)
-    elseif(CONFIG_WHC_INTF_SDIO)
+    elseif(CONFIG_WHC_INTF_SPDIO)
         ameba_list_append(private_sources
             whc_host_rtos/whc_host_init.c
             whc_host_rtos/sdio/rtw_sdio_drvio.c
@@ -277,17 +277,32 @@ endif()
 
 #WARNING: Select right API based on your component's release/not-release/standalone
 if(private_sources)
-    ###NOTE: For open-source component, always build from source
-    ameba_add_internal_library(${target_name}
-        p_SOURCES
+    if(CONFIG_PLATFORM_ZEPHYR)
+        ameba_add_external_app_library(${target_name}
+            p_SOURCES
             ${private_sources}
-        p_INCLUDES
-            ${private_includes}
-        p_DEFINITIONS
-            ${private_definitions}
-        p_COMPILE_OPTIONS
-            ${private_compile_options}
-    )
+            p_INCLUDES
+                ${private_includes}
+            p_DEFINITIONS
+                ${private_definitions}
+            p_COMPILE_OPTIONS
+                ${private_compile_options}
+        )
+        ameba_global_library(${c_SDK_LIB_APPLICATION_DIR}/lib_${target_name}.a)
+    else()
+    ###NOTE: For open-source component, always build from source
+        ameba_add_internal_library(${target_name}
+            p_SOURCES
+            ${private_sources}
+            p_INCLUDES
+                ${private_includes}
+            p_DEFINITIONS
+                ${private_definitions}
+            p_COMPILE_OPTIONS
+                ${private_compile_options}
+        )
+    endif()
+
 endif()
 
 if(release_sources)

@@ -20,9 +20,9 @@
 /* Private function prototypes -----------------------------------------------*/
 
 static int usbd_dfu_set_config(usb_dev_t *dev, u8 config);
-static int usbd_dfu_clear_config(usb_dev_t *dev, u8 config);
+static void usbd_dfu_clear_config(usb_dev_t *dev, u8 config);
 static int usbd_dfu_setup(usb_dev_t *dev, usb_setup_req_t *req);
-static u16 usbd_dfu_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf);
+static u16 usbd_dfu_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16 buf_len);
 static int usbd_dfu_ep0_data_in(usb_dev_t *dev, u8 status);
 static int usbd_dfu_ep0_data_out(usb_dev_t *dev);
 static void usbd_dfu_status_changed(usb_dev_t *dev, u8 old_status, u8 status);
@@ -199,7 +199,7 @@ static int usbd_dfu_set_config(usb_dev_t *dev, u8 config)
 /**
  * @brief  Clear DFU configuration (called from ISR on USB disconnect/reset).
  */
-static int usbd_dfu_clear_config(usb_dev_t *dev, u8 config)
+static void usbd_dfu_clear_config(usb_dev_t *dev, u8 config)
 {
 	usbd_dfu_dev_t *dfu = &usbd_dfu_dev;
 
@@ -218,8 +218,6 @@ static int usbd_dfu_clear_config(usb_dev_t *dev, u8 config)
 		rtos_timer_stop(dfu->detach_timer, 0U);
 	}
 #endif
-
-	return HAL_OK;
 }
 
 /**
@@ -800,11 +798,13 @@ static void usbd_dfu_cleanup_write(usbd_dfu_dev_t *dfu)
 /**
  * @brief  Get descriptor callback (called from ISR).
  */
-static u16 usbd_dfu_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf)
+static u16 usbd_dfu_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16 buf_len)
 {
 	usbd_dfu_dev_t *dfu = &usbd_dfu_dev;
+	const u8 *desc = NULL;
 	u16 len = 0U;
-	UNUSED(dev);
+	u8 type = USB_HIGH_BYTE(req->wValue);
+	u8 is_cfg = 0;
 	u8 attr = 0x80U;
 
 	UNUSED(dev);
@@ -818,76 +818,53 @@ static u16 usbd_dfu_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 #endif
 	}
 
-	switch (USB_HIGH_BYTE(req->wValue)) {
+	switch (type) {
 
 	case USB_DESC_TYPE_DEVICE:
+		desc = usbd_dfu_dev_desc;
 		len = sizeof(usbd_dfu_dev_desc);
-		usb_os_memcpy((void *)buf, (const void *)usbd_dfu_dev_desc, len);
 		break;
 
 	case USB_DESC_TYPE_CONFIGURATION:
+		desc = usbd_dfu_config_desc;
 		len = sizeof(usbd_dfu_config_desc);
-		usb_os_memcpy((void *)buf, (const void *)usbd_dfu_config_desc, len);
-
-		if (!dfu->from_composite) {
-			buf[USB_CFG_DESC_OFFSET_ATTR] = attr;
-		}
-		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN]     = USB_LOW_BYTE(len);
-		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN + 1] = USB_HIGH_BYTE(len);
-		/* Static array carries the DFU-mode protocol (0x02); rewrite it to the
-		 * run-time protocol (0x01) until the device has switched to DFU mode. */
-		if (usbd_dfu_dev.mode == USB_DFU_PROTOCOL_RUNTIME) {
-			buf[USBD_DFU_CFG_IF_PROTOCOL_OFFSET] = USB_DFU_PROTOCOL_RUNTIME;
-		}
-		/* Static array carries the standalone default; rewrite it in case the
-		 * composite framework rebased the class string window. */
-		buf[USBD_DFU_CFG_IF_ISTR_OFFSET] = (u8)(dfu->cls_str_base + USBD_DFU_STR_IDX_IFACE);
+		is_cfg = 1;
 		break;
 
 #ifndef CONFIG_USB_FS
 	case USB_DESC_TYPE_DEVICE_QUALIFIER:
+		desc = usbd_dfu_device_qualifier_desc;
 		len = sizeof(usbd_dfu_device_qualifier_desc);
-		usb_os_memcpy((void *)buf, (const void *)usbd_dfu_device_qualifier_desc, len);
 		break;
 
 	case USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION:
 		/* DFU has no endpoints, so the other-speed config is identical */
+		desc = usbd_dfu_config_desc;
 		len = sizeof(usbd_dfu_config_desc);
-		usb_os_memcpy((void *)buf, (const void *)usbd_dfu_config_desc, len);
-
-		if (!dfu->from_composite) {
-			buf[USB_CFG_DESC_OFFSET_ATTR] = attr;
-		}
-		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN]     = USB_LOW_BYTE(len);
-		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN + 1] = USB_HIGH_BYTE(len);
-		buf[USB_CFG_DESC_OFFSET_TYPE]          = USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION;
-		if (usbd_dfu_dev.mode == USB_DFU_PROTOCOL_RUNTIME) {
-			buf[USBD_DFU_CFG_IF_PROTOCOL_OFFSET] = USB_DFU_PROTOCOL_RUNTIME;
-		}
-		buf[USBD_DFU_CFG_IF_ISTR_OFFSET] = (u8)(dfu->cls_str_base + USBD_DFU_STR_IDX_IFACE);
+		is_cfg = 1;
 		break;
 #endif
 	case USB_DESC_TYPE_STRING:
 		switch (USB_LOW_BYTE(req->wValue)) {
 		case USBD_IDX_LANGID_STR:
+			desc = usbd_dfu_lang_id_desc;
 			len = sizeof(usbd_dfu_lang_id_desc);
-			usb_os_memcpy((void *)buf, (const void *)usbd_dfu_lang_id_desc, len);
 			break;
 		case USBD_IDX_MFC_STR:
-			len = usbd_get_str_desc(USBD_DFU_MFR_STRING, buf);
+			len = usbd_get_str_descriptor(USBD_DFU_MFR_STRING, buf, buf_len);
 			break;
 		case USBD_IDX_PRODUCT_STR:
-			len = usbd_get_str_desc(USBD_DFU_PRODUCT_STRING, buf);
+			len = usbd_get_str_descriptor(USBD_DFU_PRODUCT_STRING, buf, buf_len);
 			break;
 		case USBD_IDX_SERIAL_STR:
-			len = usbd_get_str_desc("00000000001", buf);
+			len = usbd_get_str_descriptor("00000000001", buf, buf_len);
 			break;
 		default:
 			/* Class-specific indices are decided at runtime (rebased by the composite
 			 * framework), so they cannot be case labels. Comparing them here also makes
 			 * it impossible to shadow the device-global indices above. */
 			if (USB_LOW_BYTE(req->wValue) == (u8)(dfu->cls_str_base + USBD_DFU_STR_IDX_IFACE)) {
-				len = usbd_get_str_desc(USBD_DFU_IFACE_STRING, buf);
+				len = usbd_get_str_descriptor(USBD_DFU_IFACE_STRING, buf, buf_len);
 			}
 			break;
 		}
@@ -895,6 +872,36 @@ static u16 usbd_dfu_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 
 	default:
 		break;
+	}
+
+	if (desc != NULL) {
+		/* Truncation is not allowed: a short descriptor is illegal, so stall instead */
+		if (len > buf_len) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Desc %d OVSZ %d > %d\n", type, len, buf_len);
+			return 0;
+		}
+
+		usb_os_memcpy((void *)buf, (const void *)desc, len);
+	}
+
+	if (is_cfg != 0) {
+		buf[USB_CFG_DESC_OFFSET_TYPE]          = type;
+		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN]     = USB_LOW_BYTE(len);
+		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN + 1] = USB_HIGH_BYTE(len);
+
+		if (!dfu->from_composite) {
+			buf[USB_CFG_DESC_OFFSET_ATTR] = attr;
+		}
+
+		/* Static array carries the DFU-mode protocol (0x02); rewrite it to the
+		 * run-time protocol (0x01) until the device has switched to DFU mode. */
+		if (usbd_dfu_dev.mode == USB_DFU_PROTOCOL_RUNTIME) {
+			buf[USBD_DFU_CFG_IF_PROTOCOL_OFFSET] = USB_DFU_PROTOCOL_RUNTIME;
+		}
+
+		/* Static array carries the standalone default; rewrite it in case the
+		 * composite framework rebased the class string window. */
+		buf[USBD_DFU_CFG_IF_ISTR_OFFSET] = (u8)(dfu->cls_str_base + USBD_DFU_STR_IDX_IFACE);
 	}
 
 	return len;

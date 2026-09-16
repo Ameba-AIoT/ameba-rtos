@@ -2024,7 +2024,7 @@ typedef struct {
 } rtk_bt_le_get_conn_info_param_t;
 
 typedef struct {
-	rtk_bt_le_addr_t addr;
+	rtk_bt_le_addr_t *p_addr;
 	uint16_t *p_conn_handle;
 } rtk_bt_le_get_conn_handle_by_addr_param_t;
 

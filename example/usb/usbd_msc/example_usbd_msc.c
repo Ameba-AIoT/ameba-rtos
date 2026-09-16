@@ -80,8 +80,8 @@ static const usbd_config_t msc_cfg = {
 #if defined(CONFIG_AMEBASMART)
 	.nptx_max_epmis_cnt = 100U,
 #elif defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RLE1509)
-	.rx_fifo_depth = 660U,
-	.ptx_fifo_depth = {16U, 256U, 16U, 16U, 16U},
+	.rx_fifo_depth = 724U,
+	.ptx_fifo_depth = {0U, 256U, 0U, 0U, 0U},
 #elif defined (CONFIG_AMEBAL2)
 	.rx_fifo_depth = 677U,
 	.ptx_fifo_depth = {256U, 16U, 16U, 16U},

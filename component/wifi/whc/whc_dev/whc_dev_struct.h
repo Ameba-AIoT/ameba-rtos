@@ -10,7 +10,7 @@
 #ifndef __WHC_DEV_STRUCT_H__
 #define __WHC_DEV_STRUCT_H__
 
-#if defined(CONFIG_WHC_INTF_SDIO)
+#if defined(CONFIG_WHC_INTF_SPDIO)
 #include "spdio_api.h"
 #endif
 
@@ -24,7 +24,7 @@ struct whc_buf_info {
 };
 
 struct whc_txbuf_info_t {
-#if defined(CONFIG_WHC_INTF_SDIO)
+#if defined(CONFIG_WHC_INTF_SPDIO)
 	struct spdio_buf_t txbuf_info;
 #else
 	struct whc_buf_info txbuf_info;

@@ -85,6 +85,13 @@ struct bt_mesh_adv *bt_mesh_adv_get_by_tag(enum bt_mesh_adv_tag_bit tags, k_time
 
 void bt_mesh_adv_gatt_update(void);
 
+#if ZEPHYR_RTK_PATCH
+#if defined(CONFIG_BT_MESH_GATT_SERVER) && CONFIG_BT_MESH_GATT_SERVER
+void bt_mesh_adv_gatt_disable(void);
+void bt_mesh_adv_gatt_enable(void);
+#endif  // CONFIG_BT_MESH_GATT_SERVER
+#endif  // ZEPHYR_RTK_PATCH
+
 void bt_mesh_adv_get_cancel(void);
 
 void bt_mesh_adv_init(void);

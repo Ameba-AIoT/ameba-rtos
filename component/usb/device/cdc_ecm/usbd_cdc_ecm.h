@@ -194,7 +194,21 @@ typedef struct {
 	__IO u8 notify_state;                   /**< Active notification type.
 	                                                   ISR writes (send_notification/SOF/setup) and
 	                                                   task writes (set_link_status).  Must be volatile. */
-	u8 alt_setting;                         /**< Currently selected data alternate setting. */
+	__IO u8 data_alt_setting;               /**< Alternate setting currently selected for the DATA interface:
+	                                             0 = default setting, no endpoints; 1 = BULK IN/OUT initialised.
+	                                             Ref CDC ECM 1.2 3.2.2 / USB 2.0 9.4.10: alt 0 has bNumEndpoints = 0,
+	                                             so the BULK pipes exist only in alt 1.  Written only by
+	                                             usbd_ecm_data_alt_start()/_stop(), which keep it in lockstep with the
+	                                             real endpoint state.  It therefore serves both purposes at once: the
+	                                             value GET_INTERFACE reports, and the "BULK endpoints are alive"
+	                                             predicate guarding every TX/RX submission.
+	                                             Deliberately distinct from connect_status, which is the (upper-layer
+	                                             owned) network link state and can be forced back to 1 at any time by
+	                                             usbd_cdc_ecm_set_link_status().
+	                                             The communication interface has alt 0 only, so it needs no field -
+	                                             GET_INTERFACE answers it with a literal 0.
+	                                             ISR writes (setup/clear_config/status_changed); task reads (transmit),
+	                                             hence volatile. */
 	u8 mac_valid;                           /**< 1 when mac[] holds a valid address. */
 	__IO u8 notify_retry;                   /**< 1 when a notification send failed or is queued;
 	                                               SOF handler (ISR) retries it.  Must be volatile. */

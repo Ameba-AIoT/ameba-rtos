@@ -35,11 +35,11 @@ const u8 ETHERNET_PAD[4][11] = {
 	{_PB_17, _PC_5, _PC_2, _PC_3,  _PC_4, _PB_18, _PC_6, _PC_7, _PA_25, _PA_26, _PB_19 },
 };
 
-/* sdio pinmux group: 0x0-0x6 */
-u8 SDIO_Pin_Grp = 0x1;
+/* sdio pinmux group: 0x0-0x6, configured by CONFIG_SDIO_PIN_GRP */
+u8 SDIO_Pin_Grp = CONFIG_SDIO_PIN_GRP;
 
-/* sd host pinmux group: 0x0-0x6 */
-u8 SDH_Pin_Grp = 0x4;
+/* sd host pinmux group: 0x0-0x6, configured by CONFIG_SDH_PIN_GRP */
+u8 SDH_Pin_Grp = CONFIG_SDH_PIN_GRP;
 
-/* ethernet pinmux group: 0x0-0x3 */
-u8 ETHERNET_Pin_Grp = 0x0;
+/* ethernet pinmux group: 0x0-0x3, configured by CONFIG_ETHERNET_PIN_GRP */
+u8 ETHERNET_Pin_Grp = CONFIG_ETHERNET_PIN_GRP;

@@ -27,7 +27,7 @@ void bt_inic_spi_deinit(void);
 
 #if defined(CONFIG_BT_INIC_SPI) && CONFIG_BT_INIC_SPI
 #define bt_inic_init bt_inic_spi_init
-#elif defined(CONFIG_BT_INIC_SDIO) && CONFIG_BT_INIC_SDIO
+#elif defined(CONFIG_BT_INIC_SPDIO) && CONFIG_BT_INIC_SPDIO
 #define bt_inic_init bt_inic_sdio_init
 #elif defined(CONFIG_BT_INIC_H4) && CONFIG_BT_INIC_H4
 #define bt_inic_init bt_inic_h4_init

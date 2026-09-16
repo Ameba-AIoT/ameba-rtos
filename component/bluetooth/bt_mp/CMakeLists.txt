@@ -69,6 +69,12 @@ ameba_list_append_if(CONFIG_RTL8720F private_sources
 	bt_eqc/vhci_if_eqc_sdn.c
 )
 
+ameba_list_append_if(CONFIG_AMEBASMART private_sources
+	bt_olt/bt_olt_api.c
+	bt_olt/bt_olt_common.c
+	bt_olt/hci_if_rtk_olt.c
+)
+
 ameba_list_append(private_includes
 	${c_CMPT_BLUETOOTH_DIR}/driver/platform/${c_SOC_TYPE}/inc
 	${c_CMPT_BLUETOOTH_DIR}/driver/inc/hci
@@ -89,6 +95,10 @@ ameba_list_append_if(CONFIG_AMEBAGREEN2 private_includes
 
 ameba_list_append_if(CONFIG_RTL8720F private_includes
 	bt_eqc
+)
+
+ameba_list_append_if(CONFIG_AMEBASMART private_includes
+	bt_olt
 )
 
 # Component private part, user config end

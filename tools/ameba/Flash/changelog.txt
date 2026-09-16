@@ -51,3 +51,6 @@ ChangeLog:
                   (6) Reorganize Settings.json into General/GUIRunTime sections (backward compatible)
                   (7) Add support for RTL8735C
                   (8) Fix serial port not released when initialization or download fails
+                  (9) Add support for image combination
+                  (10) Remove the short option for log file output
+                  (11) Fix device receive frame package timeout issue

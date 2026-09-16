@@ -15,17 +15,11 @@ if(CONFIG_TOOLCHAIN_PICOLIBC)
     ameba_list_append(c_GLOBAL_COMMON_LINK_OPTIONS
         "SHELL:-specs picolibc.specs"
         "SHELL:--oslib=nosys"
+        -Wl,--no-warn-rwx-segments # GNU ld 2.42 (GCC 14 toolchain) warns on any RWX LOAD segment.
     )
 else()
     ameba_list_append(c_GLOBAL_COMMON_LINK_OPTIONS
         "SHELL:-specs nosys.specs"
-    )
-endif()
-
-# GNU ld 2.42 warns on RWX LOAD segments (picolibc TLS mixed into .data); suppress until fixed.
-if(CONFIG_TOOLCHAIN_PICOLIBC)
-    ameba_list_append(c_GLOBAL_COMMON_LINK_OPTIONS
-        -Wl,--no-warn-rwx-segments
     )
 endif()
 

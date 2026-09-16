@@ -228,7 +228,6 @@ enum WHC_WIFI_CTRL_TYPE {
 	WHC_WIFI_EVT_API_CALL,
 	WHC_WIFI_EVT_API_RETURN,
 	WHC_WIFI_EVT_CMD,
-	WHC_WIFI_EVT_FLOWCTRL,
 	WHC_WIFI_EVT_MAX,
 
 	WHC_BT_EVT_BASE = WHC_BT_ID_BASE,
@@ -273,8 +272,7 @@ enum WHC_TICKPS_CMD_SUBTYPE {
 struct whc_msg_info {
 	uint32_t	event;
 	uint8_t		wlan_idx: 2;
-	uint8_t		flow_ctrl_en: 1;
-	uint8_t		rsvd1 : 5;
+	uint8_t		rsvd1 : 6;
 	uint8_t		agg_num;
 	uint16_t	agg_stride;	/* WHCH_RXAGG: fixed byte stride between aggregated RX units (0 when unused) */
 	uint32_t	data_len;

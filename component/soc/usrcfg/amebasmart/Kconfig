@@ -96,4 +96,16 @@ config TZ_S_SIZE
 
 endmenu
 
+menu "Pinmux Group Configuration"
+
+config SDH_PIN_GRP
+    int "SD host pinmux group"
+    range 0 1
+    default 0
+    help
+        Index into SDIO_PAD[] in ameba_intfcfg.c, assigned to SDH_Pin_Grp.
+        Each group and its CLK/CMD/D0-D3 pins are listed in that table.
+
+endmenu
+
 endmenu

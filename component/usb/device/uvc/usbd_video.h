@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Realtek Semiconductor Corp.
+ * Copyright (c) 2026 Realtek Semiconductor Corp.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -178,8 +178,8 @@
 
 //#define UVC_SINGLE_STREAM //Mark the marco for tuning tool
 
-#define USBD_UVC_FRAME_WIDTH                               2688
-#define USBD_UVC_FRAME_HEIGHT                              1520
+#define USBD_UVC_FRAME_WIDTH  1920
+#define USBD_UVC_FRAME_HEIGHT 1080
 
 #define USBD_UVC_JPEG_FRAME_WIDTH                          1920
 #define USBD_UVC_JPEG_FRAME_HEIGHT                         1080
@@ -194,8 +194,8 @@
  */
 typedef struct {
 	u16 bmHint;
-	u8  bFormatIndex;
-	u8  bFrameIndex;
+	u8 bFormatIndex;
+	u8 bFrameIndex;
 	u32 dwFrameInterval;
 	u16 wKeyFrameRate;
 	u16 wPFrameRate;
@@ -205,10 +205,10 @@ typedef struct {
 	u32 dwMaxVideoFrameSize;
 	u32 dwMaxPayloadTransferSize;
 	u32 dwClockFrequency;
-	u8  bmFramingInfo;
-	u8  bPreferedVersion;
-	u8  bMinVersion;
-	u8  bMaxVersion;
+	u8 bmFramingInfo;
+	u8 bPreferedVersion;
+	u8 bMinVersion;
+	u8 bMaxVersion;
 } __PACKED usbd_uvc_streaming_control_t;
 
 /**
@@ -222,17 +222,17 @@ typedef struct {
  * The structure is typically updated during UVC negotiation or runtime
  * reconfiguration, and is accessed by both control and streaming paths.
  */
-typedef  struct {
+typedef struct {
 	u32 width;
 	u32 height;
 	u32 format;
 	u32 fps;
 	u32 state;
-	u32 isp_format;/* 1:YUV420 2:YUV422 3:Bayer */
-	u32 ldc;/* 0:Disable 1:Enable */
 	u32 bayer_type;
 	usb_os_sema_t uvcd_change_sema;
-	u32 init;/* It only support whether the uvc is first init 0:Not initialized 1: Initialized */
+	u8 isp_format;/* 1:YUV420 2:YUV422 3:Bayer */
+	u8 ldc;/* 0:Disable 1:Enable */
+	u8 init;/* It only support whether the uvc is first init 0:Not initialized 1: Initialized */
 } usbd_uvc_format_t;
 
 /* Exported variables --------------------------------------------------------*/

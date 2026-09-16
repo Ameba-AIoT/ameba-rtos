@@ -52,7 +52,6 @@
 #define whc_dev_bus_is_idle					whc_uart_dev_bus_is_idle
 #define whc_dev_trigger_rx_handle()			whc_uart_dev_trigger_rx_handle()
 #define whc_dev_send						whc_uart_dev_send
-#define whc_dev_flowctrl(a, b)
 
 enum WHC_UART_HANDSHAKE_TYPE {
 	WHC_UART_HDR = 1,

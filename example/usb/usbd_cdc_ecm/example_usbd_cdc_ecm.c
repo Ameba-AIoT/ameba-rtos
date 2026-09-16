@@ -137,8 +137,8 @@ static const usbd_config_t usbd_ecm_cfg = {
 	.nptx_max_epmis_cnt = 1U,
 	.ext_intr_enable = USBD_SOF_INTR,
 #elif defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RLE1509)
-	.rx_fifo_depth = 644U,
-	.ptx_fifo_depth = {16U, 256U, 32U, 16U, 16U, },
+	.rx_fifo_depth = 692U,
+	.ptx_fifo_depth = {0U, 256U, 32U, 0U, 0U, },
 	.ext_intr_enable = USBD_SOF_INTR,
 #elif defined (CONFIG_AMEBAL2)
 	.rx_fifo_depth = 661U,
@@ -396,22 +396,35 @@ static int usbd_ecm_cb_setup(usb_setup_req_t *req, u8 *buf)
 		u16 alt_setting = req->wValue;
 		u16 interface = req->wIndex;
 
-		// When data interface alternate setting 1 is selected, send DHCP offer
+		// When data interface alternate setting 1 is selected, send DHCP offer.
+		// block = 0: this callback runs in ISR context, so it must never wait on
+		// a ring buffer slot.
 		if ((alt_setting == 1) && (interface == USBD_CDC_ECM_DATA_INTERFACE_NUM)) {
-			ret = usb_ethernet_transmit((u8 *)usb_cdc_ecm_dhcp_offer_pkt, sizeof(usb_cdc_ecm_dhcp_offer_pkt), 1);
+			ret = usb_ethernet_transmit((u8 *)usb_cdc_ecm_dhcp_offer_pkt, sizeof(usb_cdc_ecm_dhcp_offer_pkt), 0);
 		}
 #endif
 	} else if (req_type == USB_REQ_TYPE_CLASS) {
 		switch (req_code) {
-		case USB_CDC_ECM_SET_ETHERNET_PACKET_FILTER:
+		case USB_CDC_SET_ETHERNET_PACKET_FILTER:
+			/* CDC Ethernet subclass request (Ref CDC 1.2 Table 13), mandatory for
+			 * ECM and carrying no data stage.  Accepted and ignored - this device
+			 * does no packet filtering. */
 			break;
-		case USB_CDC_ECM_SET_ETHERNET_MULTICAST_FILTERS:
-			break;
-		case USB_CDC_ECM_GET_ETHERNET_STATISTIC:
-			ret = HAL_ERR_UNKNOWN;
+		case USB_CDC_SET_ETHERNET_MULTICAST_FILTERS:
+			/* Accepted and ignored: no multicast filter table on this device. */
 			break;
 		default:
-			ret = HAL_ERR_UNKNOWN;
+			/*
+			 * Anything left here is unsupported and must be answered with a
+			 * request error so the core STALLs EP0 (Ref USB 2.0 9.2.7).
+			 * HAL_ERR_PARA matches the ECM class driver's own convention
+			 * (every unsupported branch in usbd_cdc_ecm.c returns it) and the
+			 * NCM example.  Returning HAL_OK would be actively harmful for a
+			 * device-to-host request such as GET_ETHERNET_STATISTIC: the class
+			 * driver would transmit req->wLength bytes of whatever the EP0
+			 * buffer happened to hold, leaking stale buffer content.
+			 */
+			ret = HAL_ERR_PARA;
 			break;
 		}
 	}

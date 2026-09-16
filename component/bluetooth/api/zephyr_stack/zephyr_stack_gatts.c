@@ -25,16 +25,22 @@
 #define BT_TIMEOUT_WAIT_RSP_CNT           20
 
 typedef struct {
+	uint8_t type;
 	uint16_t app_id;
 	uint16_t conn_handle;
 	uint16_t index;
 	uint8_t *data;
 	uint16_t len;
 	uint8_t flags;
+	uint8_t rsp_err_code;
 } zephyr_gatts_received_req_t;
 
 #define RECV_REQ_FLAG_DONE          BIT(0)
 #define RECV_REQ_FLAG_SUCCEESS      BIT(1)
+#define RECV_REQ_FLAG_WAITING       BIT(2)
+
+#define GATT_REQ_TYPE_READ    1
+#define GATT_REQ_TYPE_WRITE   2
 
 static struct list_head svc_list;
 
@@ -43,8 +49,6 @@ static zephyr_gatts_received_req_t received_req[CONFIG_BT_MAX_CONN];
 static void *wait_rsp_sem[CONFIG_BT_MAX_CONN] = {NULL};
 static void service_node_free(zephyr_svc_node *node);
 static zephyr_svc_node *service_node_alloc(struct rtk_bt_gatt_service *svc);
-static uint8_t write_rsp_err_code = 0;
-static uint8_t read_rsp_err_code = 0;
 
 void bt_zephyr_gatts_mtu_udpated(struct bt_conn *conn, uint16_t tx, uint16_t rx);
 static struct bt_gatt_cb bt_zephyr_gatts_cb = {
@@ -147,9 +151,11 @@ static ssize_t bt_stack_gatts_read_cb(struct bt_conn *conn, const struct bt_gatt
 		return -1;
 	}
 
+	req->type = GATT_REQ_TYPE_READ;
 	req->app_id = app_id;
 	req->conn_handle = conn->handle;
 	req->index = index;
+	req->flags |= RECV_REQ_FLAG_WAITING;
 
 	p_read_ind = (rtk_bt_gatts_read_ind_t *)p_evt->data;
 	p_read_ind->app_id = app_id;
@@ -165,9 +171,9 @@ static ssize_t bt_stack_gatts_read_cb(struct bt_conn *conn, const struct bt_gatt
 		if ((req->flags & RECV_REQ_FLAG_DONE) && (req->flags & RECV_REQ_FLAG_SUCCEESS)) {
 			ret = bt_gatt_attr_read(conn, attr, buf, len, 0, req->data, req->len);
 		} else if (cnt > BT_TIMEOUT_WAIT_RSP_CNT) {
-			ret = - 1;
+			ret = -BT_ATT_ERR_UNLIKELY;
 		} else {
-			ret = - read_rsp_err_code;
+			ret = -req->rsp_err_code;
 		}
 	}
 
@@ -194,6 +200,7 @@ static bool _copy_write_buf(zephyr_gatts_received_req_t *req, const void *buf, u
 
 		memcpy((uint8_t *)data + req->len, buf, len);
 	}
+	req->type = GATT_REQ_TYPE_WRITE;
 	req->data = data;
 	req->len += len;
 	req->conn_handle = handle;
@@ -257,6 +264,7 @@ static ssize_t bt_stack_gatts_write_cb(struct bt_conn *conn, const struct bt_gat
 		p_ind->value = (uint8_t *)p_evt->data + sizeof(rtk_bt_gatts_write_ind_t);
 		memcpy(p_ind->value, req->data, req->len);
 	}
+	req->flags |= RECV_REQ_FLAG_WAITING;
 
 	if (RTK_BT_OK == rtk_bt_evt_indicate(p_evt, NULL)) {
 		if (p_ind->type == RTK_BT_GATTS_WRITE_REQ) {
@@ -267,9 +275,9 @@ static ssize_t bt_stack_gatts_write_cb(struct bt_conn *conn, const struct bt_gat
 			if ((req->flags & RECV_REQ_FLAG_DONE) && (req->flags & RECV_REQ_FLAG_SUCCEESS)) {
 				ret = len;
 			} else if (cnt > BT_TIMEOUT_WAIT_RSP_CNT) {
-				ret = - 1;
+				ret = -BT_ATT_ERR_UNLIKELY;
 			} else {
-				ret = - write_rsp_err_code;
+				ret = -req->rsp_err_code;
 			}
 		} else {
 			ret = len;
@@ -674,6 +682,37 @@ static uint16_t bt_stack_gatts_register_service(void *p_gatts_srv)
 	return 0;
 }
 
+static uint16_t bt_stack_gatts_unregister_service(void *p_gatts_srv)
+{
+	struct rtk_bt_gatt_service *svc = (struct rtk_bt_gatt_service *)p_gatts_srv;
+	zephyr_svc_node *node = NULL;
+
+	node = bt_stack_gatts_find_register_srv(svc->app_id);
+	if (!node) {
+		return RTK_BT_ERR_NO_ENTRY;
+	}
+
+	if (!node->registered) {
+		/* Node pre-allocated as include service, but has not registered */
+		return RTK_BT_ERR_STATE_INVALID;
+	}
+
+	if (node->include_ref) {
+		/* Still referenced by other registered service(s) as include service, unregister is not allowed,
+		 * otherwise the referencing service's include attr would hold a dangling pointer to freed node->svc.attrs. */
+		return RTK_BT_ERR_STATE_INVALID;
+	}
+
+	if (bt_gatt_service_unregister(&node->svc)) {
+		return RTK_BT_ERR_LOWER_STACK_API;
+	}
+
+	/* Only when unregister success in stack, we can free the node. */
+	service_node_free(node);
+
+	return 0;
+}
+
 static uint16_t bt_stack_gatts_notify(void *p_param)
 {
 	rtk_bt_gatts_ntf_and_ind_param_t *param = (rtk_bt_gatts_ntf_and_ind_param_t *)p_param;
@@ -786,6 +825,9 @@ static uint16_t bt_stack_gatts_read_rsp(void *param)
 	bt_conn_unref(conn);
 
 	req = &received_req[conn_id];
+	if (req->type != GATT_REQ_TYPE_READ || !(req->flags & RECV_REQ_FLAG_WAITING)) {
+		return RTK_BT_ERR_STATE_INVALID;
+	}
 	if ((rsp->app_id != req->app_id) || (rsp->conn_handle != req->conn_handle) || (rsp->index != req->index)) {
 		return RTK_BT_ERR_PARAM_INVALID;
 	}
@@ -803,9 +845,10 @@ static uint16_t bt_stack_gatts_read_rsp(void *param)
 		}
 		req->flags |= RECV_REQ_FLAG_SUCCEESS;
 	} else {
-		read_rsp_err_code = rsp->err_code;
+		req->rsp_err_code = rsp->err_code;
 	}
 
+	req->flags &= ~RECV_REQ_FLAG_WAITING;
 	req->flags |= RECV_REQ_FLAG_DONE;
 	osif_sem_give(wait_rsp_sem[conn_id]);
 	return 0;
@@ -825,6 +868,9 @@ static uint16_t bt_stack_gatts_write_rsp(void *param)
 	bt_conn_unref(conn);
 
 	req = &received_req[conn_id];
+	if (req->type != GATT_REQ_TYPE_WRITE || !(req->flags & RECV_REQ_FLAG_WAITING)) {
+		return RTK_BT_ERR_STATE_INVALID;
+	}
 	if ((rsp->app_id != req->app_id) || (rsp->conn_handle != req->conn_handle) || (rsp->index != req->index)) {
 		return RTK_BT_ERR_PARAM_INVALID;
 	}
@@ -832,9 +878,10 @@ static uint16_t bt_stack_gatts_write_rsp(void *param)
 	if (rsp->err_code == 0) {
 		req->flags |= RECV_REQ_FLAG_SUCCEESS;
 	} else {
-		write_rsp_err_code = rsp->err_code;
+		req->rsp_err_code = rsp->err_code;
 	}
 
+	req->flags &= ~RECV_REQ_FLAG_WAITING;
 	req->flags |= RECV_REQ_FLAG_DONE;
 	osif_sem_give(wait_rsp_sem[conn_id]);
 	return 0;
@@ -852,6 +899,9 @@ uint16_t bt_stack_gatts_act_handle(rtk_bt_cmd_t *p_cmd)
 	switch (p_cmd->act) {
 	case RTK_BT_GATTS_ACT_REGISTER_SERVICE:
 		ret = bt_stack_gatts_register_service(p_cmd->param);
+		break;
+	case RTK_BT_GATTS_ACT_UNREGISTER_SERVICE:
+		ret = bt_stack_gatts_unregister_service(p_cmd->param);
 		break;
 	case RTK_BT_GATTS_ACT_READ_RSP:
 		ret = bt_stack_gatts_read_rsp(p_cmd->param);

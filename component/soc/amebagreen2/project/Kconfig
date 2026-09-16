@@ -198,8 +198,8 @@ menu "CONFIG WHC INTF"
     if !WHC_INTF_IPC_MENU && !WIFI_SINGLE_CORE_MENU
         choice
            prompt "HW INTERFACE"
-           config WHC_INTF_SDIO
-                bool "WHC_INTF_SDIO"
+           config WHC_INTF_SPDIO
+                bool "WHC_INTF_SPDIO"
             config WHC_INTF_USB
                 depends on !WHC_HOST_MENU
                 bool "WHC_INTF_USB"
@@ -372,7 +372,7 @@ menu "CONFIG WIFI"
         bool
     config FW_DRIVER_COEXIST
         bool
-    config WHC_INTF_SDIO
+    config WHC_INTF_SPDIO
         bool
     config WHC_INTF_SPI
         bool
@@ -445,6 +445,16 @@ menu "CONFIG ETHERNET"
 			config PHY_INT_XTAL
 				bool "PHY xtal"
 		endchoice
+
+		config ETH_TX_DESC_CNT
+			int "Number of ETH TX descriptors"
+			default 8
+			range 2 64
+
+		config ETH_RX_DESC_CNT
+			int "Number of ETH RX descriptors"
+			default 16
+			range 2 64
 	endif
 endmenu
 

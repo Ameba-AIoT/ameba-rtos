@@ -64,6 +64,8 @@ if (CONFIG_BT_MESH_PROVISIONER_SUPPORT OR CONFIG_BT_MESH_DEVICE_SUPPORT)
         zephyr_stack_mesh_health_model.c
         zephyr_stack_mesh_remote_provision_model.c
         zephyr_stack_mesh_private_beacon_model.c
+        zephyr_stack_mesh_directed_forwarding_model.c
+        zephyr_stack_mesh_subnet_bridge_model.c
     )
 endif()
 

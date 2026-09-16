@@ -65,6 +65,7 @@ enum rtw_vendor_subcmd {
 	NAN_SUBCMD_PAIRING_SET_PW,          /* 0x1907 */
 	NAN_SUBCMD_PASN_START,              /* 0x1908 */
 	NAN_SUBCMD_PASN_SET_KEY,            /* 0x1909 */
+	NAN_SUBCMD_SET_NIK_CACHE,           /* 0x190A */
 
 	VENDOR_SUBCMD_MAX
 };
@@ -81,6 +82,7 @@ enum rtw_vendor_event {
 	NAN_EVENT_PASN_UPD_PMKID,
 	NAN_EVENT_BSTRAP_RESULT,
 	NAN_EVENT_PASN_RESULT,
+	NAN_EVENT_NIK_CACHE,
 };
 
 #ifdef NAN_CUSTOMER_NANDOW

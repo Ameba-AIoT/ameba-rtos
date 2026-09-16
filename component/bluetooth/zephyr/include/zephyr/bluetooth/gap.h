@@ -39,6 +39,9 @@ extern "C" {
  * @name EIR/AD data type definitions
  * @{
  */
+#if ZEPHYR_RTK_PATCH
+#define BT_DATA_RAW                     0x00 /**< Raw AD data, only for internal use */
+#endif
 #define BT_DATA_FLAGS                   0x01 /**< AD flags */
 #define BT_DATA_UUID16_SOME             0x02 /**< 16-bit UUID, more available */
 #define BT_DATA_UUID16_ALL              0x03 /**< 16-bit UUID, all listed */

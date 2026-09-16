@@ -13,6 +13,9 @@
 
 static const char *const AT_SOCKET_TAG = "AT_SKT";
 
+/* Delay between retries when a TLS send makes no progress, aligned with the websocket client. */
+#define ATCMD_TLS_WRITE_RETRY_MS 25
+
 static struct _node node_pool[MEMP_NUM_NETCONN];
 
 // Socket global configuration
@@ -2016,6 +2019,21 @@ end:
 }
 
 
+/* Single mbedtls_ssl_write() attempt. Returns bytes written, 0 when the write made no
+ * progress (WANT_READ/WANT_WRITE, e.g. a full TCP window), or a negative mbedtls error.
+ * Retry policy is left to the caller so it stays independent of the socket configuration. */
+static int atcmd_tls_write_once(mbedtls_ssl_context *ssl, const u8 *data, size_t data_sz)
+{
+	int ret = mbedtls_ssl_write(ssl, (const unsigned char *)data, data_sz);
+
+	if (ret == MBEDTLS_ERR_SSL_WANT_READ || ret == MBEDTLS_ERR_SSL_WANT_WRITE) {
+		ret = 0;
+	}
+
+	return ret;
+}
+
+
 int atcmd_lwip_send_data(struct _node *curnode, u8 *data, int data_sz, struct sockaddr_in dst_addr)
 {
 	int ret = 0, error_no = 0;
@@ -2041,11 +2059,22 @@ int atcmd_lwip_send_data(struct _node *curnode, u8 *data, int data_sz, struct so
 	}
 	// TLS
 	else {
-		ret = mbedtls_ssl_write(curnode->ssl, (unsigned char *)data, (size_t)data_sz);
-		if (ret < 0) {
-			RTK_LOGI(AT_SOCKET_TAG, "[atcmd_lwip_send_data] TLS/SSL send failed in mbedtls_ssl_write() = -0x%04x for protocol = %d\r\n", -ret, curnode->protocol);
-			error_no = 2;
-			goto end;
+		/* atcmd_tls_write_once() sends at most one TLS record and reports 0 when it made no
+		 * progress, so loop until data_sz is fully sent; otherwise bytes beyond one record
+		 * are silently dropped. Retry until the peer accepts the data or the link breaks. */
+		size_t written = 0;
+		while (written < (size_t)data_sz) {
+			ret = atcmd_tls_write_once(curnode->ssl, data + written, (size_t)data_sz - written);
+			if (ret < 0) {
+				RTK_LOGI(AT_SOCKET_TAG, "[atcmd_lwip_send_data] TLS/SSL send failed in mbedtls_ssl_write() = -0x%04x for protocol = %d\r\n", -ret, curnode->protocol);
+				error_no = 2;
+				goto end;
+			}
+			if (ret == 0) {
+				rtos_time_delay_ms(ATCMD_TLS_WRITE_RETRY_MS);
+				continue;
+			}
+			written += (size_t)ret;
 		}
 	}
 

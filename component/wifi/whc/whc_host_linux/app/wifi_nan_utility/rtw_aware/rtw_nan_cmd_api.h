@@ -45,5 +45,6 @@ extern RTW_RET_STATUS rtw_nan_api_send_datapath_end(uint8_t datapath_id);
 extern RTW_RET_STATUS rtw_nan_api_send_follow_up(struct tx_followup_info *tx_flwup_data);
 extern RTW_RET_STATUS rtw_nan_api_pasn_setpw(uint8_t *pairing_peer_nmi, char *pw, uint8_t pw_len);
 extern RTW_RET_STATUS rtw_nan_api_pasn_start(struct pairing_info *pairing_info);
-
+extern RTW_RET_STATUS rtw_nan_api_restore_pairing_info();
+extern RTW_RET_STATUS rtw_nan_api_clear_pairing_info();
 #endif

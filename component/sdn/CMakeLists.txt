@@ -122,7 +122,6 @@ ameba_list_append(private_sources
 
 ameba_list_append(private_compile_options
     -Wno-address-of-packed-member
-    -DCONFIG_SDN_ROM
 )
 
 # Component private part, user config end

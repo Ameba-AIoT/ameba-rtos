@@ -193,7 +193,7 @@ void whc_host_api_message_send(u32 id, u8 *param, u32 param_len, u8 *ret, u32 re
 		RTK_LOGE(TAG_WLAN_INIC, "Linux API return value is NULL!\n");
 	}
 
-#ifdef CONFIG_WHC_INTF_SDIO
+#ifdef CONFIG_WHC_INTF_SPDIO
 	rtos_mem_free(buf);
 #endif
 

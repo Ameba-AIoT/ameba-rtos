@@ -355,7 +355,7 @@ menu "CONFIG WIFI"
         bool
     config FW_DRIVER_COEXIST
         bool
-    config WHC_INTF_SDIO
+    config WHC_INTF_SPDIO
         bool
     config WHC_INTF_SPI
         bool

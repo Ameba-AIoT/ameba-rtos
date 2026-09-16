@@ -259,8 +259,12 @@ void ap_wakeup_timer_init(uint32_t sleep_ms)
 {
 	RCC_PeriphClockCmd(APBPeriph_ATIM, APBPeriph_ATIM_CLOCK, ENABLE);
 	SOCPS_SetAPWakeEvent(WAKE_SRC_AON_TIM, ENABLE);
-	AONTimer_INT(ENABLE);
+	/* Clear the stale pending from the previous cycle before programming, and only
+	 * enable the interrupt afterwards, as the NP path does. Otherwise the interrupt
+	 * fires as soon as it is enabled, before the AP has finished gating. */
+	AONTimer_ClearINT();
 	AONTimer_Setting(sleep_ms);
+	AONTimer_INT(ENABLE);
 	InterruptRegister(ap_aontimer_wake_int_hdl, AON_TIM_IRQ, (u32)PMC_BASE, INT_PRI3);
 	InterruptEn(AON_TIM_IRQ, INT_PRI3);
 }

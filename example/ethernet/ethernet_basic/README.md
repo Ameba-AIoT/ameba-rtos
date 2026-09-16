@@ -12,13 +12,22 @@ The callback function is invoked when the Ethernet link status changes (UP or DO
 
 1. Enable Ethernet Feature:
 
-   Use menuconfig and select `CONFIG ETHERNET`->`PHY SOURCE CLK (external 25M)` to enable Ethernet support.
+   Use menuconfig and enable `CONFIG ETHERNET`, then select `PHY SOURCE CLK` according to how the PHY on your board is clocked:
+   * `50M from Ameba` - Ameba outputs a 50MHz clock to the PHY
+   * `25M from Ameba` - Ameba outputs a 25MHz clock to the PHY
+   * `PHY xtal` - PHY is clocked by its own crystal
 
-2. IP Configuration:
+   See [ETH PHY CLK](https://aiot.realmcu.com/zh/latest/rtos/peripherals/ethernet/index.html#eth-phy-clk) for more details.
+
+2. Select the RMII Pin Group:
+
+   Set `ETHERNET_Pin_Grp` in `component/soc/usrcfg/amebagreen2/ameba_intfcfg.c` to the group (`0x0`-`0x3`) that matches the RMII pins actually wired on your board. The pin mapping of each group is listed in `ETHERNET_PAD[]` in the same file.
+
+3. IP Configuration:
 
    The example obtain an IP address automatically from the network via DHCP.
 
-3. Build and Download:
+4. Build and Download:
    * Refer to the SDK Examples section of the online documentation to generate images.
    * `Download` images to board by Ameba Image Tool.
 

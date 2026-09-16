@@ -115,5 +115,4 @@ config USBD_DFU_MENU
 
 config USBD_UVC_MENU
     bool "UVC"
-    depends on SUPPORT_USBD_UVC
     select USBD_UVC if WHC_HOST || WHC_NONE

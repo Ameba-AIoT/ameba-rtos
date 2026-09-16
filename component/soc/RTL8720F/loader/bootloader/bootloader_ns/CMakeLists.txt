@@ -44,13 +44,6 @@ if("${c_MCU_PROJECT_NAME}" STREQUAL "km4ns")
     ameba_list_append(private_sources
         bootloader_km4ns.c
     )
-
-    if(CONFIG_SOLO)
-        ameba_list_append(private_sources
-            boot_ota_km4ns_solo.c
-            boot_security_km4ns_solo.c
-        )
-    endif()
 endif()
 # Component private part, user config end
 #------------------------------#

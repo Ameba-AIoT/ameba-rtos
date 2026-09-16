@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <sys/stat.h>
 #include "sha256.h"
 #include "rtw_nan_cmd_api.h"
 #include "rtw_nan_cmd.h"
@@ -30,6 +31,7 @@ enum rtw_nan_vendor_subcmd {
 	NAN_SUBCMD_PAIRING_SET_PW,                      	/* 0x1907 */
 	NAN_SUBCMD_PASN_START,                          	/* 0x1908 */
 	NAN_SUBCMD_PASN_SET_KEY,                          	/* 0x1909 */
+	NAN_SUBCMD_SET_NIK_CACHE,                          	/* 0x190A */
 };
 
 union nandow_para {
@@ -252,8 +254,8 @@ void nandow_parse_cmd_reply(struct nan_customer_nandow *nandow_test, char *cmdre
 	sprintf(cmd, "sed -e \"s/vendor response://g\" -i %s", cmdreply_file);
 	system(cmd);
 
-	sprintf(cmd, "cat %s", cmdreply_file);
-	system(cmd);
+	// sprintf(cmd, "cat %s", cmdreply_file);
+	// system(cmd);
 
 	/* read as hex and fill in nandow_test */
 	rawfile = fopen(cmdreply_file, "r");
@@ -426,6 +428,48 @@ bool _nan_check_phy(uint32_t phy_num)
 	return ret;
 }
 
+RTW_RET_STATUS rtw_nan_api_restore_pairing_info()
+{
+	struct nan_nik_cache_data nik_cache_data = {0};
+	uint32_t input_len = 0;
+	unsigned int cmd_id = 0;
+	void *input = NULL;
+	FILE *f = NULL;
+
+	INFO_PRINT("[rtw_cmd] %s \n", __func__);
+
+	/* restore NIK cache from file */
+	mkdir("/var/lib/nan", 0700);
+	f = fopen("/var/lib/nan/nik_cache", "rb");
+	if (f) {
+		if (fread(&nik_cache_data, sizeof(nik_cache_data), 1, f) == 1 &&
+			nik_cache_data.version == 1) {
+			cmd_id = NAN_SUBCMD_SET_NIK_CACHE;
+			/* send rtw vendor command */
+			input = &nik_cache_data;
+			input_len = sizeof(struct nan_nik_cache_data);
+			send_vendor_cmd(cmd_id, input, input_len, tmp_file, nan_intf, rtw_iw);
+		} else {
+			INFO_PRINT("[rtw_cmd] nik cache err! \n");
+			return RTW_RET_STATUS_INVALID_INPUT;
+		}
+		fclose(f);
+	}
+	return RTW_RET_STATUS_SUCCESS;
+}
+
+RTW_RET_STATUS rtw_nan_api_clear_pairing_info()
+{
+	struct nan_nik_cache_data nik_cache_data = {0};
+	system("rm -r /var/lib/nan");
+	/* Push a zeroed NIK cache to the NP to also drop its in-RAM copy. */
+	send_vendor_cmd(NAN_SUBCMD_SET_NIK_CACHE, &nik_cache_data,
+					sizeof(struct nan_nik_cache_data),
+					tmp_file, nan_intf, rtw_iw);
+	return RTW_RET_STATUS_SUCCESS;
+}
+
+
 RTW_RET_STATUS rtw_nan_api_get_capability(char *intf, uint16_t *nan_cap)
 {
 	struct nan_customer_nandow nandow_cmd = {0};
@@ -498,6 +542,9 @@ RTW_RET_STATUS rtw_nan_api_init(uint16_t phy_num, char *intf)
 	}
 
 	DEBUG_PRINT("[rtw_cmd] %s<=\n", __func__);
+
+	/* restore NIK cache from file */
+	rtw_nan_api_restore_pairing_info();
 
 	return RTW_RET_STATUS_SUCCESS;
 }

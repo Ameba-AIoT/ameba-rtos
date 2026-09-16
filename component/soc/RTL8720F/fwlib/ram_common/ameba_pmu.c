@@ -10,7 +10,7 @@ uint32_t cur_device_id = 0;
 
 static uint32_t wakelock     = DEFAULT_WAKELOCK;
 /* WHC_DEV and WHC_HOST need CG, while SPI INTF need PG */
-#if defined (CONFIG_WHC_INTF_SDIO)
+#if defined (CONFIG_WHC_INTF_SPDIO)
 static uint8_t sleep_type = SLEEP_CG; /* 0 is power gate, 1 is clock gate */
 #else
 static uint8_t sleep_type = SLEEP_PG; /* 0 is power gate, 1 is clock gate */

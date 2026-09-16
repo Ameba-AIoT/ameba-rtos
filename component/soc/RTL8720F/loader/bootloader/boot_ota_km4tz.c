@@ -218,9 +218,12 @@ fih_ret BOOT_OTA_LoadIMGAll(u8 ImgIndex)
 	/* set IMG2 IV */
 	BOOT_RSIPIvSet(&Manifest[ImgIndex], RSIP_IV1);
 
-	/* remap NP XIP image */
 	u32 manifest_size = SBOOT_GetManifestSize(&Manifest[ImgIndex]);
 	PhyAddr += manifest_size;
+
+#ifndef CONFIG_SOLO
+	/* remap NP XIP image. SOLO has no NP portion in this combined image: the
+	 * km4ns(iot) app is an independent image loaded by BOOT_OTA_LoadNP. */
 	LogAddr = (u32)__km4ns_flash_text_start__ - IMAGE_HEADER_LEN;
 
 	/* If RSIP GCM mode enabled, skip MP image GCM Tag bin length */
@@ -251,6 +254,10 @@ fih_ret BOOT_OTA_LoadIMGAll(u8 ImgIndex)
 		TotalLen += SubImgInfo[Index + i].Len;
 	}
 	Index += Cnt;
+#else
+	(void)NpLabel;
+	(void)NP_GCM_TagBase;
+#endif
 
 	/* remap AP XIP image */
 	PhyAddr += TotalLen;
@@ -389,7 +396,18 @@ u8 BOOT_Extract_SlotSelect(void)
 }
 
 #ifdef CONFIG_COMPRESS_OTA_IMG
-void BOOT_OTA_Extract(void)
+/**
+  * @brief  Shared extract: if one of the two slots holds a COMPRESSED image
+  *         (manifest Pattern == CompressFlag), decompress it into the other
+  *         (override) slot and clear its CompressFlag so it is not re-extracted.
+  *         Assumes OTA_Region[IMG_CERT][0/1] already point at the two slot starts
+  *         and BOOT_Extract_SlotSelect() has populated Manifest[]/Ver[].
+  * @param  ota1_layout_id  layout region id of slot A: IMG_APP_OTA1 (mcu/AP) or
+  *                         IMG_NP_OTA1 (SOLO iot); slot B is +1 (enum is contiguous).
+  * @param  lzma_scratch    >=32KB RAM (16KB output_buf + ~16KB LZMA probs, colocated
+  *                         by bootLzma). MUST NOT be live memory during extraction.
+  */
+static void BOOT_OTA_ExtractSlot(u32 ota1_layout_id, u8 *lzma_scratch)
 {
 	u8 ExtractIdx = BOOT_Extract_SlotSelect();
 	u8 OverrideIdx = (ExtractIdx + 1) % 2;
@@ -422,10 +440,10 @@ void BOOT_OTA_Extract(void)
 			RTK_LOGI(TAG, "Extract from 0x%x to Override 0x%x, Compress Len is 0x%x\n", SubImgInfo[0].Addr, OverrideAddr, SubImgInfo[0].Len);
 
 			/* OverrideIdx is 0 or 1 */
-			flash_get_layout_info(IMG_APP_OTA1 + OverrideIdx, &OverrideStart, &OverrideEnd);
+			flash_get_layout_info(ota1_layout_id + OverrideIdx, &OverrideStart, &OverrideEnd);
 			assert_param(OverrideStart == OverrideAddr);
 
-			bootLzma_buffer_set(__km4tz_bd_ram_start__);
+			bootLzma_buffer_set(lzma_scratch);
 			bootLzma_main_function(SubImgInfo[0].Addr, OverrideStart, OverrideEnd);
 		}
 
@@ -434,6 +452,32 @@ void BOOT_OTA_Extract(void)
 		DCache_Invalidate(ExtractAddr, sizeof(EmpSig));
 	}
 }
+
+void BOOT_OTA_Extract(void)
+{
+	/* AP/mcu path: runs at cold boot from BOOT_OTA_IMG (km4tz app image2 not yet
+	 * loaded), so the km4tz image2 BD RAM is free scratch. OTA_Region was set by
+	 * the preceding BOOT_OTA_Region_Init(). */
+	BOOT_OTA_ExtractSlot(IMG_APP_OTA1, __km4tz_bd_ram_start__);
+}
+
+#ifdef CONFIG_SOLO
+/**
+  * @brief  SOLO iot(NP) extract. Called from BOOT_OTA_LoadNP(), which runs BOTH at
+  *         cold boot AND from the plfm1-reset NMI. In the plfm1 case the km4tz app
+  *         is RUNNING out of the km4tz image2 BD RAM (0x20003000..), so that region
+  *         (used by BOOT_OTA_Extract for AP) MUST NOT be scratch here. km4ns is
+  *         halted at this point and its whole SRAM is reloaded by BOOT_OTA_LoadNP
+  *         immediately after, so __km4ns_bd_ram_start__ is a safe transient LZMA
+  *         scratch that never touches live km4tz memory.
+  */
+static void BOOT_OTA_ExtractNP(void)
+{
+	flash_get_layout_info(IMG_NP_OTA1, &OTA_Region[IMG_CERT][0], NULL);
+	flash_get_layout_info(IMG_NP_OTA2, &OTA_Region[IMG_CERT][1], NULL);
+	BOOT_OTA_ExtractSlot(IMG_NP_OTA1, __km4ns_bd_ram_start__);
+}
+#endif
 #endif
 
 u8 BOOT_OTA_IMG(void)
@@ -508,9 +552,13 @@ u8 BOOT_OTA_IMG(void)
 	RTK_LOGI(TAG, "IMG2 BOOT from OTA %d, Version: %x.%x \n", ImgIndex + 1, ((version >> 16) & 0xFFFF), (version & 0xFFFF));
 
 	/* Save RSIP remap regs to retention RAM so the app can query the running OTA index
-	 * (ota_get_cur_index) without accessing RSIP registers. Index by OTA_IMGID_x. */
+	 * (ota_get_cur_index) without accessing RSIP registers. Index by OTA_IMGID_x.
+	 * Same reason as OTA_NP_IMG_IDX in BOOT_OTA_LoadNP: the bootloader runs with the MPU
+	 * disabled (GBSS cacheable) but D-cache on, so clean the write to SRAM — under SOLO
+	 * km4ns reads OTA_IMG_REMAP[] (non-cacheable) and would otherwise get a stale value. */
 	GBSS_DEV->OTA_IMG_REMAP[0] = RSIP_BASE->FLASH_MMU[0].RSIP_REMAP_x_OFFSET;
 	GBSS_DEV->OTA_IMG_REMAP[1] = RSIP_BASE->FLASH_MMU[1].RSIP_REMAP_x_OFFSET;
+	DCache_Clean((u32)GBSS_DEV, sizeof(GBSS_TypeDef));
 
 	return ImgIndex;
 
@@ -523,3 +571,167 @@ Fail:
 	return RTK_FAIL;
 }
 
+#ifdef CONFIG_SOLO
+/**
+  * @brief  SOLO: load & verify the independent iot(km4ns) application image2 from
+  *         its own IMG_NP_OTA1/2 slots, configure RSIP (MMU_ID1/RSIP_REGION1, freed
+  *         from the mcu image's empty NP stub), and point the km4ns boot address at
+  *         the iot image2 entry. Runs on km4tz AFTER the mcu(AP) image is loaded (so
+  *         the AP globals Cert/Manifest/Ver/OTA_Region are free to reuse) and BEFORE
+  *         BOOT_Enable_NP() releases CPU1.
+  *
+  *         Anti-rollback: BOOT_OTA_ValidIMGNum() (called below) applies the OTP
+  *         SEC_BOOT_VER counter (BOOT_OTA_GetCertRollbackVer) against the NP cert
+  *         key version, same as the AP path. With the SOLO single-key design (mcu &
+  *         iot share the key version) the shared counter gates NP downgrades too.
+  *
+  *         NOTE: secure-boot / RSIP-OTF paths here are compile-verified only
+  *         (OTP-dependent, not board-verified). The MMU_ID1 remap of
+  *         __km4ns_app_flash_text_start__ -> selected IMG_NP physical slot is the
+  *         part required for the non-secure boot of km4ns.
+  * @retval selected NP OTA index, or RTK_FAIL if no valid iot image.
+  */
+u8 BOOT_OTA_LoadNP(void)
+{
+	SubImgInfo_TypeDef SubImgInfo[13];
+	u32 LogAddr, PhyAddr, ImgAddr, manifest_size, NP_GCM_TagBase = 0;
+	u32 Vertemp, Index;
+	u8 Cnt, i, ImgIndex = 0;
+	FIH_DECLARE(fih_rc, FIH_FAILURE);
+	char *NpLabel[] = {"NP XIP IMG", "NP SRAM", "NP PSRAM"};
+
+#ifdef CONFIG_COMPRESS_OTA_IMG
+	/* step0: if an iot OTA committed a COMPRESSED image to one NP slot, decompress
+	 * it into the other NP slot (and clear its CompressFlag) before the version
+	 * select/load below. No-op when neither slot carries the CompressFlag. */
+	BOOT_OTA_ExtractNP();
+#endif
+
+	/* step1: NP OTA region (cert at slot start, img2 after 4K/8K cert) */
+	flash_get_layout_info(IMG_NP_OTA1, &OTA_Region[IMG_CERT][0], NULL);
+	flash_get_layout_info(IMG_NP_OTA2, &OTA_Region[IMG_CERT][1], NULL);
+	OTA_Region[IMG_IMG2][0] = OTA_Region[IMG_CERT][0] + CERT_SIZE_4K_ALIGN;
+	OTA_Region[IMG_IMG2][1] = OTA_Region[IMG_CERT][1] + CERT_SIZE_4K_ALIGN;
+
+	/* step2: load NP certificate(Slot A & B), get version, select slot */
+	for (i = 0; i < 2; i++) {
+		BOOT_ImgCopy((void *)&Cert[i], (void *)OTA_Region[IMG_CERT][i], sizeof(Certificate_TypeDef));
+		if (_memcmp(Cert[i].Pattern, ImagePattern, sizeof(ImagePattern)) == 0) {
+			if (Cert[i].Ver >= CERT_VERSION_8KB) {
+				OTA_Region[IMG_IMG2][i] = OTA_Region[IMG_CERT][i] + CERT_SIZE_8K_ALIGN;
+			}
+			BOOT_ImgCopy((void *)&Signature[i], (void *)(OTA_Region[IMG_CERT][i] + Cert[i].TableSize), SIGN_MAX_LEN);
+			BOOT_ImgCopy((void *)&Manifest[i], (void *)OTA_Region[IMG_IMG2][i], sizeof(Manifest_TypeDef));
+			Vertemp = ((u16)Cert[i].MajorKeyVer << 16) | (u16)Cert[i].MinorKeyVer;
+			Ver[i] = (s64)Vertemp;
+		} else {
+			Ver[i] = -1;
+		}
+	}
+	BOOT_OTA_ValidIMGNum();
+	if (ValidIMGNum == NONEVALIDIMG) {
+		goto Fail;
+	}
+	ImgIndex = (Ver[0] >= Ver[1]) ? BOOT_FROM_OTA1 : BOOT_FROM_OTA2;
+
+	/* step3: for the selected slot, cert check -> RSIP -> load -> signature */
+	for (i = 0; i < ValidIMGNum; i++) {
+		FIH_CALL(BOOT_CertificateCheck, fih_rc, &Cert[ImgIndex], ImgIndex);
+		if (FIH_NOT_EQ(fih_rc, FIH_SUCCESS)) {
+			RTK_LOGE(TAG, "IOT OTA %u Cert ECC fail, try %u\n", ImgIndex + 1, ((ImgIndex + 1) % 2) + 1);
+			ImgIndex = (ImgIndex + 1) % 2;
+			continue;
+		}
+		FIH_CALL(BOOT_CertificateCheck_PQC, fih_rc, &Cert[ImgIndex], ImgIndex);
+		if (FIH_NOT_EQ(fih_rc, FIH_SUCCESS)) {
+			ImgIndex = (ImgIndex + 1) % 2;
+			continue;
+		}
+
+		Index = 0;
+		PhyAddr = OTA_Region[IMG_IMG2][ImgIndex];
+		BOOT_RSIPIvSet(&Manifest[ImgIndex], RSIP_IV2);
+
+		manifest_size = SBOOT_GetManifestSize(&Manifest[ImgIndex]);
+		PhyAddr += manifest_size;
+		LogAddr = (u32)__km4ns_app_flash_text_start__ - IMAGE_HEADER_LEN;
+
+		BOOT_ROM_CheckGCM(&Manifest[ImgIndex], &SubImgInfo[Index], PhyAddr, MANIFEST_AP_NP_IMG2_ID);
+		if (SubImgInfo[Index].Len) {
+			NP_GCM_TagBase = PhyAddr + IMAGE_HEADER_LEN;
+			PhyAddr += SubImgInfo[Index].Len;
+		}
+		Index ++;
+
+		/* SOLO region allocation: BOOT_OTA_LoadIMGAll maps the mcu combined image's
+		 * NP-XIP portion on MMU_ID1/RSIP_REGION1, but in SOLO that portion is an
+		 * empty stub (the real km4ns moved to this separate iot image). So reuse
+		 * ID1/REGION1 for the iot XIP (harmlessly overriding the stub mapping),
+		 * which frees MMU_ID3/RSIP_REGION3 for the km4tz secure image
+		 * (IMG3/TrustZone also uses ID3/REGION3 - see boot_security_km4tz.c). iot
+		 * keeps its own IV (RSIP_IV2) and shares the app key (RSIP_KEY_NUM1) with
+		 * the mcu(AP) image, per the SOLO single-key design. */
+		RSIP_MMU_Config(MMU_ID1, LogAddr, (u32)__km4ns_app_flash_text_end__, PhyAddr);
+		RSIP_MMU_Cmd(MMU_ID1, ENABLE);
+		RSIP_MMU_Cache_Clean();
+
+		FIH_CALL(BOOT_ROM_OTFCheck, fih_rc, LogAddr, (u32)__km4ns_app_flash_text_end__, RSIP_IV2, RSIP_REGION1, RSIP_KEY_NUM1,
+				 NP_GCM_TagBase, Manifest[ImgIndex].RSIPConfig, MANIFEST_AP_NP_IMG2_ID);
+
+		Cnt = sizeof(NpLabel) / sizeof(char *);
+		ImgAddr = LogAddr;
+		/* BOOT_LoadSubImage writes REG_LSYS_BOOT_ADDR_KM4NS when it sees the
+		 * NP_BOOT_INDEX header, i.e. points km4ns at this iot image2 entry. */
+		FIH_CALL(BOOT_LoadSubImage, fih_rc, &SubImgInfo[Index], ImgAddr, Cnt, NpLabel, TRUE);
+		if (FIH_NOT_EQ(fih_rc, FIH_SUCCESS)) {
+			/* OTA1/OTA2 share MMU virtual addr; invalidate all D-cache to avoid corner case */
+			DCache_CleanInvalidate(0xFFFFFFFF, 0xFFFFFFFF);
+			ImgIndex = (ImgIndex + 1) % 2;
+			continue;
+		}
+		Index += Cnt;
+
+		FIH_CALL(BOOT_SignatureCheck, fih_rc, &Manifest[ImgIndex], &Cert[ImgIndex], KEYID_NSPE);
+		if (FIH_NOT_EQ(fih_rc, FIH_SUCCESS)) {
+			ImgIndex = (ImgIndex + 1) % 2;
+			continue;
+		}
+		FIH_CALL(BOOT_SignatureCheck_PQC, fih_rc, &Manifest[ImgIndex], &Cert[ImgIndex], ImgIndex, KEYID_NSPE_PQC);
+		if (FIH_NOT_EQ(fih_rc, FIH_SUCCESS)) {
+			ImgIndex = (ImgIndex + 1) % 2;
+			continue;
+		}
+
+		if (FIH_EQ(DISABLE, SecureBootEn) && FIH_EQ(DISABLE, SecureBootEn_PQC)) {
+			break;
+		}
+		FIH_CALL(SBOOT_Validate_ImgHash, fih_rc, Manifest[ImgIndex].HashAlg, Manifest[ImgIndex].ImgHash, SubImgInfo, Index);
+		if (FIH_NOT_EQ(fih_rc, FIH_SUCCESS)) {
+			ImgIndex = (ImgIndex + 1) % 2;
+			continue;
+		}
+		break;
+	}
+
+	if (FIH_EQ(ValidIMGNum, i)) {
+		goto Fail;
+	}
+
+	/* Record the active iot slot for the running iot_app (read by ota_get_cur_index
+	 * on km4ns). This runs in the km4tz bootloader, where the MPU is DISABLED (verified
+	 * on board: MPU->CTRL==0) while the D-cache is ENABLED — so the default memory map
+	 * applies and GBSS (0x20001380) is CACHEABLE here, unlike in the app where
+	 * app_mpu_nocache_init() maps it non-cacheable. Without the clean the write stays in
+	 * the km4tz D-cache and never reaches SRAM, so km4ns (which reads GBSS non-cacheable,
+	 * straight from SRAM) sees a STALE index -> a later OTA targets the RUNNING slot and
+	 * erases it -> hard fault. Clean the line to SRAM here. */
+	GBSS_DEV->OTA_NP_IMG_IDX = ImgIndex;
+	DCache_Clean((u32)GBSS_DEV, sizeof(GBSS_TypeDef));
+	RTK_LOGI(TAG, "IOT(NP) IMG2 BOOT from OTA %d\n", ImgIndex + 1);
+	return ImgIndex;
+
+Fail:
+	RTK_LOGE(TAG, "IOT(NP) image invalid, km4ns will not boot\n");
+	return RTK_FAIL;
+}
+#endif

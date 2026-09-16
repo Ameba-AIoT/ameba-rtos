@@ -137,6 +137,12 @@
 #elif defined(CONFIG_WHC_HCI_USB)
 #include <linux/usb.h>
 #include "whc_usb_host.h"
+#elif defined(CONFIG_WHC_HCI_GSPI)
+#include <linux/spi/spi.h>
+#include "whc_gspi_host.h"
+#ifdef CONFIG_BT_INIC
+#include "rtb_gspi.h"
+#endif
 #endif
 #endif
 

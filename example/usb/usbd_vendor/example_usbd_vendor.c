@@ -51,10 +51,8 @@
 
 // Loopback ISOC data in an async thread
 #define VENDOR_ISOC_ASYNC_XFER                  0
-
 // Loopback INTR data in an async thread
 #define VENDOR_INTR_ASYNC_XFER                  0
-
 // Loopback BULK data in an async thread
 #define VENDOR_BULK_ASYNC_XFER                  0
 
@@ -96,8 +94,8 @@ static const usbd_config_t vendor_cfg = {
 	.intr_use_ptx_fifo = 0U,
 #elif defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RLE1509)
 	/*DFIFO total 1024 DWORD, resv 12 DWORD for DMA addr and EP0 fixed 32 DWORD*/
-	.rx_fifo_depth = 292U,
-	.ptx_fifo_depth = {16U, 256U, 32U, 256U, 128U, },
+	.rx_fifo_depth = 340U,
+	.ptx_fifo_depth = {0U, 256U, 0U, 256U, 128U, },
 #elif defined (CONFIG_AMEBAL2)
 	/*DFIFO total 1024 DWORD, resv 11 DWORD for DMA addr and EP0 fixed 32 DWORD*/
 	.rx_fifo_depth = 405U,
@@ -234,6 +232,7 @@ static int vendor_cb_intr_received(u8 *buf, u32 len)
 	vendor_intr_tx_buf = buf;
 	vendor_intr_tx_len = len;
 	rtos_sema_give(vendor_intr_async_xfer_sema);
+	return HAL_OK;
 #else
 	return usbd_vendor_transmit_intr_data(buf, len);
 #endif // VENDOR_INTR_ASYNC_XFER
@@ -270,6 +269,7 @@ static int vendor_cb_isoc_received(u8 *buf, u32 len)
 	vendor_isoc_tx_buf = buf;
 	vendor_isoc_tx_len = len;
 	rtos_sema_give(vendor_isoc_async_xfer_sema);
+	return HAL_OK;
 #else
 	return usbd_vendor_transmit_isoc_data(buf, len);
 #endif // VENDOR_ISOC_ASYNC_XFER
@@ -305,6 +305,7 @@ static int vendor_cb_bulk_received(u8 *buf, u32 len)
 	vendor_bulk_tx_buf = buf;
 	vendor_bulk_tx_len = len;
 	rtos_sema_give(vendor_bulk_async_xfer_sema);
+	return HAL_OK;
 #else
 	return usbd_vendor_transmit_bulk_data(buf, len);
 #endif // VENDOR_BULK_ASYNC_XFER
