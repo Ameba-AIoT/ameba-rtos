@@ -55,7 +55,7 @@ macro(ameba_soc_project_create name)
     #NOTICE: Cache variable TOOLCHAIN_DIR will be deleted at the end.
     set(TOOLCHAIN_DIR ${TOOLCHAIN_DIR} CACHE PATH "Toolchain installation path. If TOOLCHAIN_DIR is specified\
     by user, cross-compile toolchain will be searched in <TOOLCHAIN_DIR>. Default toolchain installation path is\
-    '/opt/rtk-toolchain' in linux and 'C:/rtk-toolchain' in windows.")
+    '/home/user_name/rtk-toolchain' in linux and 'C:/rtk-toolchain' in windows.")
 
     #NOTICE: Cache variable FINAL_IMAGE_DIR will be deleted at the end.
     set(FINAL_IMAGE_DIR ${FINAL_IMAGE_DIR} CACHE PATH "Final images path, i.e., boot.bin, ota_all.bin \

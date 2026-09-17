@@ -572,7 +572,9 @@ int whc_host_event_init(struct whc_device *idev)
 	/* initialize the mutex to send event_priv message. */
 	mutex_init(&(event_priv->send_mutex));
 	init_completion(&event_priv->api_ret_sema);
+	spin_lock_init(&event_priv->api_ret_lock);
 	event_priv->b_waiting_for_ret = 0;
+	event_priv->rx_api_ret_msg = NULL;
 
 	/* initialize event tasklet */
 	INIT_WORK(&(event_priv->api_work), whc_host_event_task);
@@ -588,6 +590,12 @@ void whc_host_event_deinit(void)
 	mutex_destroy(&(event_priv->send_mutex));
 
 	complete_release(&event_priv->api_ret_sema);
+
+	/* free a ret msg left in the slot by a timed-out call */
+	if (event_priv->rx_api_ret_msg) {
+		kfree_skb(event_priv->rx_api_ret_msg);
+		event_priv->rx_api_ret_msg = NULL;
+	}
 
 	return;
 }

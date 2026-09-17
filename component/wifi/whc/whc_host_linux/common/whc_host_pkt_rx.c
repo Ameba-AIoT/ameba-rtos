@@ -74,12 +74,20 @@ int whc_host_recv_process(struct sk_buff *pskb)
 		schedule_work(&(event_priv->api_work));
 		break;
 	case WHC_WIFI_EVT_API_RETURN:
-		if (event_priv->b_waiting_for_ret) {
+		/* overwriting an occupied slot would drop that msg and still raise a
+		 * second completion, leaving a count with no msg behind it */
+		spin_lock(&event_priv->api_ret_lock);
+		if (event_priv->b_waiting_for_ret && !event_priv->rx_api_ret_msg) {
 			event_priv->rx_api_ret_msg = pskb;
 
-			/* unblock API calling func */
+			/* unblock API calling func. Must stay inside the lock: releasing it
+			 * first lets the caller claim the msg and reinit the completion
+			 * before this runs, putting the count out of step again */
 			complete(&event_priv->api_ret_sema);
+			spin_unlock(&event_priv->api_ret_lock);
 		} else {
+			spin_unlock(&event_priv->api_ret_lock);
+
 			ret_msg = (struct whc_api_info *)(pskb->data + SIZE_RX_DESC);
 			dev_warn(global_idev.pwhc_dev, "too late to receive API ret, ID: 0x%x!\n", ret_msg->api_id);
 

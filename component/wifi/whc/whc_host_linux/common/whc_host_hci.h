@@ -27,6 +27,8 @@ struct event_priv_t {
 
 	struct completion			api_ret_sema; /* sema to wait for API calling done */
 
+	spinlock_t				api_ret_lock; /* pairs b_waiting_for_ret with rx_api_ret_msg */
+
 	u8					b_waiting_for_ret: 1;
 };
 
