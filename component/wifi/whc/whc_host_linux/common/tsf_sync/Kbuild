@@ -1,0 +1,12 @@
+# Kbuild for WHC TSF sync module (COMMON LIBRARY)
+
+ifeq ($(CONFIG_WHC_TSF_SYNC), y)
+# Feature switch
+ccflags-y += -DCONFIG_WHC_TSF_SYNC
+
+# Include paths
+ccflags-y += -I$(src)/../tsf_sync -I$(src)/../netdev
+
+# Common TSF sync files
+TSF_SYNC_OBJS := whc_host_tsf_sync.o
+endif

@@ -144,6 +144,10 @@
 
 #define CONFIG_P2P
 
+#ifdef CONFIG_WIFI_P2P_ENABLE
+#define CONFIG_WPS_P2PGO 1
+#endif
+
 /*************************** Config for Gen TxPower Tool *******************************/
 /** https://wiki.realtek.com/pages/viewpage.action?pageId=1150516670
   * VERSION 0: only support extending one EXT PWR_LIMIT table

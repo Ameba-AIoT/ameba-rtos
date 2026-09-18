@@ -7,6 +7,7 @@ void whc_host_send_event(u32 id, u8 *param, u32 param_len, u8 *ret, u32 ret_len)
 	struct event_priv_t *event_priv = &global_idev.event_priv;
 	struct whc_api_info *ret_msg;
 	struct whc_api_info *api_info;
+	struct sk_buff *pskb_ret;
 	unsigned long wait_ret;
 	u8 *buf;
 	u32 buf_len;
@@ -17,14 +18,14 @@ void whc_host_send_event(u32 id, u8 *param, u32 param_len, u8 *ret, u32 ret_len)
 		return;
 	}
 
-	dev_dbg(global_idev.pwhc_dev, "-----HOST CALLING API %x START\n", id);
-
 #ifdef CONFIG_WHC_HCI_USB
 	if (whc_usb_host_send_event_check(id) < 0) {
 		return;
 	}
 #endif
 	mutex_lock(&(event_priv->send_mutex));
+
+	dev_dbg(global_idev.pwhc_dev, "-----HOST CALLING API %x START\n", id);
 
 	/* send TX_DESC + info + data(param, param_len) */
 	buf_len = SIZE_TX_DESC + sizeof(struct whc_api_info) + param_len;
@@ -41,13 +42,22 @@ void whc_host_send_event(u32 id, u8 *param, u32 param_len, u8 *ret, u32 ret_len)
 		}
 
 		/* send */
+		spin_lock(&event_priv->api_ret_lock);
 		event_priv->b_waiting_for_ret = 1;
+		spin_unlock(&event_priv->api_ret_lock);
 		whc_host_send_data(buf, buf_len, NULL);
 #ifndef CONFIG_INIC_USB_ASYNC_SEND
 		kfree(buf);
 #endif
 	} else {
 		dev_err(global_idev.pwhc_dev, "%s can't alloc buffer!\n", __func__);
+		/* nothing was sent, but drop a stale count so it cannot leak into the
+		 * next call */
+		spin_lock(&event_priv->api_ret_lock);
+		pskb_ret = event_priv->rx_api_ret_msg;
+		event_priv->rx_api_ret_msg = NULL;
+		reinit_completion(&event_priv->api_ret_sema);
+		spin_unlock(&event_priv->api_ret_lock);
 		goto exit;
 	}
 
@@ -55,33 +65,48 @@ void whc_host_send_event(u32 id, u8 *param, u32 param_len, u8 *ret, u32 ret_len)
 
 	/* wait for API calling done */
 	wait_ret = wait_for_completion_timeout(&event_priv->api_ret_sema, msecs_to_jiffies(timeout));
+
+	/* stop waiting and claim the msg as one step, else a msg landing in between
+	 * leaves a completion count with no msg behind it */
+	spin_lock(&event_priv->api_ret_lock);
 	event_priv->b_waiting_for_ret = 0;
+	pskb_ret = event_priv->rx_api_ret_msg;
+	event_priv->rx_api_ret_msg = NULL;
+	reinit_completion(&event_priv->api_ret_sema);
+	spin_unlock(&event_priv->api_ret_lock);
 
 	if (wait_ret == 0) {
 		dev_err(global_idev.pwhc_dev, "wait ret value timeout!!\n");
 		goto exit;
 	}
 
-	ret_msg = (struct whc_api_info *)(event_priv->rx_api_ret_msg->data + SIZE_RX_DESC);
-	if (ret_msg != NULL) {
-		/* check api_id of return msg */
-		if (ret_msg->api_id != id) {
-			dev_err(global_idev.pwhc_dev, "Host API return value id not match!\n");
-		}
+	if (pskb_ret == NULL) {
+		dev_err(global_idev.pwhc_dev, "Host API return value is NULL!\n");
+		goto exit;
+	}
 
-		/* copy return value*/
-		if (ret != NULL && ret_len != 0) {
+	ret_msg = (struct whc_api_info *)(pskb_ret->data + SIZE_RX_DESC);
+
+	/* on mismatch the payload belongs to another API, so zero the caller's
+	 * buffer instead of copying it: some callers never initialise it */
+	if (ret != NULL && ret_len != 0) {
+		if (ret_msg->api_id != id) {
+			memset(ret, 0, ret_len);
+		} else {
 			memcpy(ret, (u8 *)(ret_msg + 1), ret_len);
 		}
+	}
 
-		/* free rx buffer */
-		kfree_skb(event_priv->rx_api_ret_msg);
-		event_priv->rx_api_ret_msg = NULL;
-	} else {
-		dev_err(global_idev.pwhc_dev, "Host API return value is NULL!\n");
+	if (ret_msg->api_id != id) {
+		dev_err(global_idev.pwhc_dev, "Host API return value id not match!\n");
 	}
 
 exit:
+	/* the msg was claimed out of the slot, so this covers every path above */
+	if (pskb_ret) {
+		kfree_skb(pskb_ret);
+	}
+
 	mutex_unlock(&(event_priv->send_mutex));
 
 	dev_dbg(global_idev.pwhc_dev, "-----HOST API %x CALLING DONE\n", id);

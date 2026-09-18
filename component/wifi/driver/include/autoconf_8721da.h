@@ -30,6 +30,10 @@
 #define CONFIG_NAN
 #endif
 
+#ifdef CONFIG_WIFI_P2P_ENABLE
+#define CONFIG_WPS_P2PGO 1
+#endif
+
 #if defined(CONFIG_PLATFORM_ZEPHYR)
 #undef CONFIG_WIFI_TUNNEL
 #undef CONFIG_WTN_SOCKET_APP

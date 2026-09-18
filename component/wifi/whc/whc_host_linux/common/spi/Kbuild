@@ -49,4 +49,7 @@ ifeq ($(CONFIG_WHC_CMD_PATH), y)
             ../whc_host_cmd_path_tx.o
 endif
 
+include $(src)/../tsf_sync/Kbuild
+whc_spi-$(CONFIG_WHC_TSF_SYNC) += $(addprefix ../tsf_sync/, $(TSF_SYNC_OBJS))
+
 obj-m += whc_spi.o
