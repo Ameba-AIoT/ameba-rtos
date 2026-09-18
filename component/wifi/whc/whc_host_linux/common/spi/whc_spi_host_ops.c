@@ -1,5 +1,10 @@
 #include <whc_host_linux.h>
 #include <whc_host_cmd_path_api.h>
+/* Guarded include: with the feature off, common/tsf_sync/Kbuild adds no -I path.
+ * Also pulls in whc_host_netlink.h for WHC_WIFI_TEST / the TSF subtypes. */
+#if defined(CONFIG_WHC_TSF_SYNC)
+#include "whc_host_tsf_sync.h"
+#endif
 
 struct whc_msg_node *whc_host_dequeue_tx_packet(struct xmit_priv_t *xmit_priv);
 
@@ -200,6 +205,15 @@ int whc_host_cmd_data_process(struct sk_buff *pskb)
 		hdr = (struct whc_cmd_path_hdr *)(pskb->data + SIZE_RX_DESC);
 		size = hdr->len;
 		rxbuf = (u8 *)pskb->data + SIZE_RX_DESC + sizeof(struct whc_cmd_path_hdr);
+#if defined(CONFIG_WHC_TSF_SYNC)
+		if (size >= TSF_HDR_LEN + sizeof(struct tsf_sync_sample) &&
+			*(u32 *)rxbuf == WHC_WIFI_TEST &&
+			rxbuf[4] == WHC_WIFI_TEST_TSF_SAMPLE) {
+			/* handled entirely in kernel; never forwarded to user space */
+			whc_host_tsf_sync_push(rxbuf + TSF_HDR_LEN, sizeof(struct tsf_sync_sample));
+			break;
+		}
+#endif
 		whc_host_buf_rx_to_user(rxbuf, size);
 		break;
 	default:

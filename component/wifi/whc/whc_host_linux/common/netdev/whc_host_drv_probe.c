@@ -9,6 +9,9 @@
 */
 
 #include <whc_host_linux.h>
+#if defined(CONFIG_WHC_TSF_SYNC)
+#include "whc_host_tsf_sync.h"
+#endif
 
 /* Match table for of_platform binding */
 static const struct of_device_id rtw_axi_of_match[] = {
@@ -170,6 +173,10 @@ int rtw_netdev_probe(struct device *pdev)
 	whc_host_register_genl_family();
 #endif
 
+#if defined(CONFIG_WHC_TSF_SYNC)
+	whc_host_tsf_sync_register();
+#endif
+
 	return 0; /* probe success */
 
 os_ndevs_deinit:
@@ -202,6 +209,11 @@ int rtw_netdev_remove(struct device *pdev)
 	dev_dbg(global_idev.pwhc_dev, "remove llhw done.");
 
 	pr_info("%s done\n", __func__);
+
+#if defined(CONFIG_WHC_TSF_SYNC)
+	whc_host_tsf_sync_unregister();
+#endif
+
 	memset(&global_idev, 0, sizeof(struct whc_device));
 #if defined(CONFIG_WHC_CMD_PATH)
 	whc_host_unregister_genl_family();

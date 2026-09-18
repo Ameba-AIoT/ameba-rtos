@@ -78,4 +78,7 @@ whc_sdio-$(CONFIG_BT_INIC) += rtb_sdio.o
 include $(src)/../fwdl/Kbuild
 whc_sdio-$(CONFIG_FW_DOWNLOAD) += $(addprefix ../fwdl/, $(FWDL_OBJS))
 
+include $(src)/../tsf_sync/Kbuild
+whc_sdio-$(CONFIG_WHC_TSF_SYNC) += $(addprefix ../tsf_sync/, $(TSF_SYNC_OBJS))
+
 obj-m += whc_sdio.o

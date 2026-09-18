@@ -38,6 +38,18 @@ static void whc_dev_log_fwd_send_ack(u8 op)
 }
 #endif
 
+#ifdef CONFIG_WHC_DEV_TSF_SYNC
+__weak void whc_dev_tsf_ack_hdl(u8 *buf, u32 len)
+{
+	(void) buf;
+	(void) len;
+
+	/* implemented by customer */
+
+	return;
+}
+#endif
+
 #ifdef CONFIG_SUPPORT_ATCMD
 static void whc_at_output(char *buf, int len)
 {
@@ -434,6 +446,11 @@ __weak void whc_dev_pkt_rx_to_user_task(void)
 #ifdef CONFIG_MP_INCLUDED
 				if (*ptr == WHC_WIFI_TEST_MP) {
 					whc_dev_mp_cmd((char *)(ptr + 2), *(ptr + 1));
+				}
+#endif
+#ifdef CONFIG_WHC_DEV_TSF_SYNC
+				if (*ptr == WHC_WIFI_TEST_TSF_ACK && whc_cmdpath_data.rx_msg_size > 5) {
+					whc_dev_tsf_ack_hdl(ptr + 1, (u32)whc_cmdpath_data.rx_msg_size - 5);
 				}
 #endif
 				rtos_mem_free(buf);

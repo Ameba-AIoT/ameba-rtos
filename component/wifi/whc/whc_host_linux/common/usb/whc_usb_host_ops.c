@@ -4,6 +4,10 @@
 #ifdef CONFIG_WHC_HOST_LOG_FWD
 #include "whc_host_log_fwd.h"
 #endif
+/* Guarded include: with the feature off, common/tsf_sync/Kbuild adds no -I path. */
+#if defined(CONFIG_WHC_TSF_SYNC)
+#include "whc_host_tsf_sync.h"
+#endif
 
 struct rtw_usbreq *whc_usb_host_dequeue(struct list_head *q, int *counter)
 {
@@ -297,6 +301,13 @@ int whc_host_cmd_data_process(struct sk_buff *pskb)
 				   *(u32 *)rxbuf == WHC_WIFI_TEST &&
 				   rxbuf[4] == WHC_WIFI_TEST_LOG_ACK) {
 			whc_host_log_forward_ack(rxbuf[5]);
+#endif
+#if defined(CONFIG_WHC_TSF_SYNC)
+		} else if (size >= TSF_HDR_LEN + sizeof(struct tsf_sync_sample) &&
+				   *(u32 *)rxbuf == WHC_WIFI_TEST &&
+				   rxbuf[4] == WHC_WIFI_TEST_TSF_SAMPLE) {
+			/* handled entirely in kernel; never forwarded to user space */
+			whc_host_tsf_sync_push(rxbuf + TSF_HDR_LEN, sizeof(struct tsf_sync_sample));
 #endif
 		} else {
 			whc_host_buf_rx_to_user(rxbuf, size);

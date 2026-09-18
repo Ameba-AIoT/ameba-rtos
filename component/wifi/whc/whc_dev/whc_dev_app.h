@@ -33,6 +33,10 @@
 #define WHC_WIFI_TEST_AT_RESP        0x19
 /* device→host: ACK for LOG_ENABLE/DISABLE; payload = WHC_WIFI_TEST(4B) | LOG_ACK(1B) | op(1B) */
 #define WHC_WIFI_TEST_LOG_ACK        0x1B
+/* device→host: TSF sync sample; payload = WHC_WIFI_TEST(4B) | TSF_SAMPLE(1B) | struct tsf_sync_sample */
+#define WHC_WIFI_TEST_TSF_SAMPLE     0x1C
+/* host→device: TSF sync ACK;    payload = WHC_WIFI_TEST(4B) | TSF_ACK(1B)    | struct tsf_ack */
+#define WHC_WIFI_TEST_TSF_ACK        0x1D
 /* for rtos host only */
 #define WHC_WIFI_TEST_SET_HOST_RTOS  0xFF
 
@@ -70,6 +74,10 @@ extern struct whc_cmd_path_priv whc_cmdpath_data;
 
 #ifdef CONFIG_LOG_FWD
 void whc_dev_log_forward_init(void);
+#endif
+
+#ifdef CONFIG_WHC_DEV_TSF_SYNC
+void whc_dev_tsf_ack_hdl(u8 *buf, u32 len);
 #endif
 
 #endif
