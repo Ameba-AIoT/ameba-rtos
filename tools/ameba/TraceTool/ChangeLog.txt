@@ -85,3 +85,7 @@ ChangeLog:
 20260629  v2.1.43 Fix DIAG issues
 20260713  v2.1.44 (1) Optimize runtime CPU usage
                   (2) Support Ctrl+C interruption
+20260914  v2.1.45 (1) Fix full core CPU usage while a serial port is open
+                  (2) Fix crash when the COM port list query is throttled
+                  (3) Fix crash parsing some serial port names
+                  (4) Fix high WMI service CPU usage from device polling
