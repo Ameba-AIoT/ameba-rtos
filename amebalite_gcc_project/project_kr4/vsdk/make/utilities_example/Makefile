@@ -4,7 +4,6 @@ MODULE_IFLAGS               += -I$(BASEDIR)/component/network/cJSON
 MODULE_IFLAGS               += -I$(BASEDIR)/component/network/coap/include
 #MODULE_IFLAGS               += -I$(BASEDIR)/component/network/libcoap/include
 MODULE_IFLAGS               += -I$(BASEDIR)/component/network/mqtt/MQTTClient
-MODULE_IFLAGS               += -I$(BASEDIR)/component/network/http2/nghttp2-1.31.0/includes
 MODULE_IFLAGS               += -I$(BASEDIR)/component/network/httplite
 MODULE_IFLAGS               += -I$(BASEDIR)/component/network/xml
 MODULE_IFLAGS               += -I$(BASEDIR)/component/bluetooth
