@@ -37,9 +37,13 @@ static const usbd_config_t dfu_cfg = {
 	.diag_enable = 1,
 #if defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBAD) || defined(CONFIG_AMEBADPLUS)
 	.nptx_max_epmis_cnt = 1U,
-#elif defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RLE1509)
+#elif defined(CONFIG_AMEBAGREEN2)
 	/* DFIFO total 1024 DWORD, resv 12 DWORD for DMA addr, EP0 fixed 32 DWORD */
 	.rx_fifo_depth  = 980U,
+	.ptx_fifo_depth = {0U, 0U, 0U, 0U, 0U,},
+#elif defined(CONFIG_RLE1509)
+	/*DFIFO total 1024 DWORD, resv 48 DWORD and EP0 fixed 32 DWORD*/
+	.rx_fifo_depth  = 944U,
 	.ptx_fifo_depth = {0U, 0U, 0U, 0U, 0U,},
 #elif defined(CONFIG_AMEBAL2)
 	.rx_fifo_depth  = 661U,

@@ -2276,6 +2276,14 @@ struct eth_mdio_ops;
 #define ETH_PKT_MAX_SIZE            (ETH_HEADER_LEN + ETH_VLAN_TAG_LEN + ETH_PAYLOAD_MAX_LEN + ETH_CRC_LEN) /*!< Maximum total Ethernet frame size including header, VLAN, payload, and CRC. */
 
 #define ETH_MAX_BUF_SIZE            ((ETH_PKT_MAX_SIZE + CACHE_LINE_SIZE) & ~(CACHE_LINE_SIZE - 1)) /*!< Maximum aligned buffer size for one Ethernet frame. */
+
+/* The GMAC inserts IPv4/TCP/UDP checksums on TX and validates them on RX, so
+ * lwIP can skip both passes on the ethernet netif. Deliberately not a Kconfig
+ * symbol: the hardware either has the engine or it does not, so this is not a
+ * customer knob and the control stays inside the driver. Set to 0 to fall back
+ * to software checksums if a hardware problem ever turns up -- the lwIP port
+ * reads the same macro, so both sides fall back together. */
+#define ETH_CSUM_OFFLOAD            1 /*!< Enable the MAC's TX insertion and RX validation of IPv4/TCP/UDP checksums. */
 /* VLAN Headers */
 #define ETH_C_VLAN_HDR              0x8100279F /*!< C-VLAN (802.1Q) header template value with TPID 0x8100. */
 #define ETH_S_VLAN_HDR              0x88A8279F /*!< S-VLAN (QinQ) header template value. */

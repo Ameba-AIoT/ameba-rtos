@@ -121,7 +121,6 @@
     BIN_MAP: [
       ['app', 'FlashFileSize'],
       ['boot', 'XIPBootSize'],
-      ['km4tz_image3_all', 'Img3FileSize'],
     ],
     FLASH_PARAMS: {
       PC: '0x00020020',
@@ -153,7 +152,6 @@
     BIN_MAP: [
       ['app', 'FlashFileSize'],
       ['boot', 'XIPBootSize'],
-      ['km4tz_image3_all', 'Img3FileSize'],
     ],
     FLASH_PARAMS: {
       PC: '0x00020020',

@@ -179,10 +179,6 @@ int main(void)
 	wififw_task_create();
 #endif
 
-#ifdef CONFIG_ETHERNET
-	ethernet_mii_init();
-#endif
-
 #ifdef CONFIG_WLAN
 	wifi_init();
 #endif
@@ -206,6 +202,10 @@ int main(void)
 	/* Register CPU1_WDG_RST_IRQ Callback function */
 	InterruptRegister((IRQ_FUN) CPU1_WDG_RST_Handler, KM4TZ_NS_WDG_IRQ, (u32)NULL, INT_PRI_LOWEST);//KM4TZ_S_WDG_IRQ
 	InterruptEn(KM4TZ_NS_WDG_IRQ, INT_PRI_LOWEST);//KM4TZ_S_WDG_IRQ
+
+#ifdef CONFIG_SOLO
+	app_IWDG_init();
+#endif
 
 	rtk_diag_init(RTK_DIAG_HEAP_SIZE, RTK_DIAG_SEND_BUFFER_SIZE);
 

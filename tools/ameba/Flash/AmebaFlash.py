@@ -73,8 +73,12 @@ def flash_process_entry(profile_info, serial_port, serial_baudrate, image_dir, s
                         log_level, log_f,
                         read_wifimac=False,
                         key_prog_specs=None,
-                        remote_server=None, remote_port=None, remote_password=None):
-    logger = create_logger(serial_port, log_level=log_level, file=log_f)
+                        remote_server=None, remote_port=None, remote_password=None, output_log_file=None):
+    logger = create_logger(
+        serial_port, log_level=log_level, file=log_f,
+        additional_files=[output_log_file]
+        if output_log_file and os.path.abspath(output_log_file) != os.path.abspath(log_f)
+        else None)
 
     ameba = Ameba(profile_info, serial_port, serial_baudrate, image_dir, settings, logger,
                   download_img_info=images_info,
@@ -279,7 +283,8 @@ def main(argc, argv):
 
     parser.add_argument('--chip-erase', action='store_true', help='chip erase')
     parser.add_argument('--log-level', default='info', help='log level')
-    parser.add_argument('--log-file', type=str, help='output log file with path')
+    parser.add_argument('--log-file', type=str,
+                        help='also write live log output to the specified file')
     parser.add_argument('--partition-table', help="layout info, list")
     parser.add_argument('--read-wifimac', action='store_true', help="read wifi mac")
     parser.add_argument('--combine', action='store_true', help='combine images according to profile layout')
@@ -350,19 +355,30 @@ def main(argc, argv):
     else:
         memory_type = None
 
+    output_log_file = None
     if log_file is not None:
-        log_path = os.path.dirname(log_file)
-        if log_path:
-            if not os.path.exists(log_path):
-                os.makedirs(log_path, exist_ok=True)
-            log_f = log_file
-        else:
-            log_f = os.path.join(os.getcwd(), log_file)
+        try:
+            output_log_file = prepare_output_log_file(log_file)
+        except OSError as err:
+            print(f"Invalid --log-file: {err}", file=sys.stderr)
+            sys.exit(1)
+
+    try:
+        log_f = create_default_log_file(serial_ports)
+    except OSError as err:
+        if output_log_file is None:
+            print(f"Create default log file failed: {err}", file=sys.stderr)
+            sys.exit(1)
+        log_f = output_log_file
+        logger = create_logger("main", log_level=log_level, file=log_f)
+        logger.warning(f"Create default log file failed: {err}")
     else:
-        log_f = None
-    logger = create_logger("main", log_level=log_level, file=log_f)
-    if log_file is not None:
-        logger.info(f"Log file: {log_file}")
+        logger = create_logger(
+            "main", log_level=log_level, file=log_f,
+            additional_files=[output_log_file] if output_log_file else None)
+
+    if output_log_file is not None:
+        logger.info(f"Log file: {output_log_file}")
 
     logger.info(f"AmebaFlash Version: {version_info.version}")
 
@@ -707,7 +723,7 @@ def main(argc, argv):
             entry_args = (
                 profile_info, sp, serial_baudrate, image_dir, settings, deepcopy(images_info), chip_erase,
                 memory_type, memory_info, download, log_level, log_f, read_wifimac,
-                key_prog_specs, remote_server, remote_port, remote_password)
+                key_prog_specs, remote_server, remote_port, remote_password, output_log_file)
             flash_thread = threading.Thread(target=flash_thread_runner,
                                             args=(thread_results, idx, sp, logger, entry_args))
             threads_list.append(flash_thread)

@@ -90,7 +90,7 @@ _Static_assert(USBD_CDC_NCM_NTB_IN_MAX_DATAGRAMS <= 255U,
 
 /* Class-specific string descriptors: indices above USBD_IDX_SERIAL_STR, laid out as a
  * window whose base is the standalone default below, or the one assigned by the composite
- * framework via set_class_str_base(). */
+ * framework via set_str_base(). */
 #define USBD_CDC_NCM_STR_IDX_MAC                      0U                         /**< Ordinal of the MAC string inside the class string window */
 #define USBD_CDC_NCM_CLASS_STR_COUNT                  1U                         /**< Class-specific string count: iMACAddress only */
 #define USBD_CDC_NCM_CLASS_STR_BASE_DEFAULT           (USBD_IDX_SERIAL_STR + 1U) /**< Standalone base, right above the device-global strings */
@@ -178,7 +178,8 @@ static int usbd_cdc_ncm_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len);
 static void usbd_cdc_ncm_sof(usb_dev_t *dev);
 static void usbd_cdc_ncm_status_changed(usb_dev_t *dev, u8 old_status, u8 status);
 #ifdef CONFIG_USBD_COMPOSITE
-static u8 usbd_cdc_ncm_set_class_str_base(u8 base);
+static u8 usbd_cdc_ncm_set_str_base(u8 base);
+static void usbd_cdc_ncm_set_interface_base(u8 base);
 #endif
 static int usbd_cdc_ncm_intr_in_send(void *data, u16 len);
 static int usbd_cdc_ncm_send_notification(void);
@@ -494,7 +495,8 @@ static const usbd_class_driver_t usbd_cdc_ncm_driver = {
 	.sof = usbd_cdc_ncm_sof,
 	.status_changed = usbd_cdc_ncm_status_changed,
 #ifdef CONFIG_USBD_COMPOSITE
-	.set_class_str_base = usbd_cdc_ncm_set_class_str_base,
+	.set_str_base = usbd_cdc_ncm_set_str_base,
+	.set_interface_base = usbd_cdc_ncm_set_interface_base,
 #endif
 };
 
@@ -1237,7 +1239,7 @@ static int usbd_cdc_ncm_send_notification(void)
 	event.bmRequestType = 0xA1;
 	/* Class notifications are emitted on the communication (control) interface's
 	 * notification endpoint, so wIndex carries the communication interface number. */
-	event.wIndex = USBD_CDC_NCM_COMM_INTERFACE_NUM;
+	event.wIndex = (u16)(ncm->if_base + USBD_CDC_NCM_COMM_INTERFACE_NUM);
 
 	switch (ncm->notify_state) {
 	case NCM_NOTIFY_CONNECT:
@@ -1622,23 +1624,19 @@ static int usbd_cdc_ncm_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			ret = HAL_ERR_PARA;
 			break;
 		}
+		/* Ref NCM 1.0 6.2: every NCM class request is addressed to the communication
+		 * interface, so a wrong wIndex cannot make the device answer a GET or apply a SET
+		 * the host should not have sent.
+		 *
+		 * In composite mode this is already guaranteed by the framework, which routes
+		 * interface-recipient requests only to the owning function and rebases wIndex to the
+		 * local interface number - the value here is the local 0 either way, so the check is
+		 * a no-op there.  Standalone mode (the example) is the one this actually protects. */
+		if (req->wIndex != USBD_CDC_NCM_COMM_INTERFACE_NUM) {
+			ret = HAL_ERR_PARA;
+			break;
+		}
 		if ((req->bmRequestType & USB_REQ_DIR_MASK) == USB_D2H) {
-			/* Ref NCM 1.0 6.2: every NCM class request is addressed to the
-			 * communication interface.  The H2D side already rejects a wrong
-			 * interface on SET_NTB_INPUT_SIZE; this keeps the device-to-host
-			 * GET requests symmetric with it, so a wrong wIndex cannot make the
-			 * device answer a GET the host should not have sent.
-			 *
-			 * In composite mode this is already guaranteed by the framework, which
-			 * routes interface-recipient requests only to the owning function and
-			 * rebases wIndex to the local interface number - the value here is the
-			 * local 0 either way, so the check is a no-op there.  Standalone mode
-			 * (the example) is the one this actually protects. */
-			if (req->wIndex != USBD_CDC_NCM_COMM_INTERFACE_NUM) {
-				ret = HAL_ERR_PARA;
-				break;
-			}
-
 			/* Device-to-Host: prepare response data in EP0 buffer */
 			switch (req->bRequest) {
 			case USB_CDC_NCM_GET_NTB_PARAMETERS:
@@ -1734,6 +1732,7 @@ static int usbd_cdc_ncm_setup(usb_dev_t *dev, usb_setup_req_t *req)
 					/* Stash the request and arm EP0 OUT; the payload is validated and
 					 * applied in usbd_cdc_ncm_handle_ep0_data_out(). */
 					usb_os_memcpy((void *)&ncm->ctrl_req, (const void *)req, sizeof(usb_setup_req_t));
+					ncm->ctrl_req_pending = 1U;
 					ep0_out->xfer_len = req->wLength;
 					ret = usbd_ep_receive(dev, ep0_out);
 					if (ret != HAL_OK) {
@@ -1741,7 +1740,7 @@ static int usbd_cdc_ncm_setup(usb_dev_t *dev, usb_setup_req_t *req)
 						 * arrive to consume the stashed request.  Invalidate it, else
 						 * the next unrelated request's data stage would be applied as
 						 * this one's payload. */
-						ncm->ctrl_req.bRequest = 0xFFU;
+						ncm->ctrl_req_pending = 0U;
 					}
 				}
 				break;
@@ -1779,12 +1778,13 @@ static int usbd_cdc_ncm_setup(usb_dev_t *dev, usb_setup_req_t *req)
 				/* Forward to upper layer with data stage if needed */
 				if (req->wLength > 0U) {
 					usb_os_memcpy((void *)&ncm->ctrl_req, (const void *)req, sizeof(usb_setup_req_t));
+					ncm->ctrl_req_pending = 1U;
 					ep0_out->xfer_len = req->wLength;
 					ret = usbd_ep_receive(dev, ep0_out);
 					if (ret != HAL_OK) {
 						/* No data stage means no EP0 OUT completion: drop the stashed
 						 * request so it cannot be applied to a later transfer. */
-						ncm->ctrl_req.bRequest = 0xFFU;
+						ncm->ctrl_req_pending = 0U;
 					}
 				} else {
 					if ((ncm->cb != NULL) && (ncm->cb->setup != NULL)) {
@@ -2050,7 +2050,11 @@ static int usbd_cdc_ncm_handle_ep0_data_out(usb_dev_t *dev)
 	   dispatcher already routed it by active_func). The genuine rejections below stay. */
 	int ret = HAL_OK;
 
-	if (ncm->ctrl_req.bRequest != 0xFFU) {
+	if (ncm->ctrl_req_pending != 0U) {
+		/* Consume the pending request first: a single data stage belongs to exactly one setup
+		   packet, so the saved request must not be replayed by a later EP0 OUT event. */
+		ncm->ctrl_req_pending = 0U;
+
 		if (ncm->ctrl_req.bRequest == USB_CDC_NCM_SET_NTB_INPUT_SIZE) {
 			/* dwNtbInMaxSize: 4-byte little-endian payload from the DATA stage.
 			 *
@@ -2092,12 +2096,13 @@ static int usbd_cdc_ncm_handle_ep0_data_out(usb_dev_t *dev)
 				}
 			}
 		} else if ((ncm->cb != NULL) && (ncm->cb->setup != NULL)) {
+			/* cb is released by usbd_cdc_ncm_deinit(), which may run between the setup and the
+			   data stage of an H2D request, so both the structure and the handler are checked. */
 			ret = ncm->cb->setup(&ncm->ctrl_req, ep0_out->xfer_buf);
 		}
 		/* An application without a setup handler simply ignores class-specific requests and the
 		   data stage itself was received correctly, so ret stays HAL_OK: stalling would make the
 		   host give up on the interface. */
-		ncm->ctrl_req.bRequest = 0xFFU; /* Mark as processed */
 	}
 
 	return ret;
@@ -2107,7 +2112,9 @@ static int usbd_cdc_ncm_handle_ep0_data_out(usb_dev_t *dev)
  * @brief Patch the runtime-assigned fields in a configuration descriptor block
  * @note   Replaces direction-only EP placeholders (USB_D2H/USB_H2D) with actual
  *         EP addresses from the EP configuration structure, and rewrites the
- *         iMACAddress string index with the current class string base.
+ *         iMACAddress string index with the current class string base, and rebases the
+ *         Union FD interface cross-references with the current interface base. Both bases
+ *         are the standalone defaults unless the composite framework rebased them.
  * @param  desc: Pointer to config descriptor body (starting after config header)
  * @param  len: Length of the descriptor block
  * @param  ep_cfg: EP configuration with actual endpoint addresses
@@ -2143,6 +2150,13 @@ static void usbd_cdc_ncm_patch_desc(u8 *desc, u16 len,
 			 * default (same as the static template) unless the composite framework
 			 * rebased the class string window. */
 			desc[i + 3] = (u8)(ncm->cls_str_base + USBD_CDC_NCM_STR_IDX_MAC);
+		} else if ((dtype == USB_CDC_CS_INTERFACE) && (dlen >= 5) &&
+				   (desc[i + 2] == USB_CDC_FUNC_DESC_UNION)) {
+			/* Union FD: bControlInterface at offset 3, bSubordinateInterface0 at offset 4
+			 * (Ref CDC 1.2 5.2.3.8). The composite framework only rebases the standard
+			 * Interface and IAD descriptors, so this cross-reference is ours to fix up. */
+			desc[i + 3] = (u8)(ncm->if_base + USBD_CDC_NCM_COMM_INTERFACE_NUM);
+			desc[i + 4] = (u8)(ncm->if_base + USBD_CDC_NCM_DATA_INTERFACE_NUM);
 		}
 		i += dlen;
 	}
@@ -2280,11 +2294,22 @@ static u16 usbd_cdc_ncm_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 
  * @param base: First class-specific string index for this class
  * @retval Number of class-specific string indices consumed
  */
-static u8 usbd_cdc_ncm_set_class_str_base(u8 base)
+static u8 usbd_cdc_ncm_set_str_base(u8 base)
 {
 	usbd_cdc_ncm_dev.cls_str_base = base;
 
 	return USBD_CDC_NCM_CLASS_STR_COUNT;
+}
+
+/**
+ * @brief Store the first interface number assigned to this class by the composite framework
+ * @note  This function is called within an interrupt service routine (ISR) context;
+ *        time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+ * @param base: First interface number of this class
+ */
+static void usbd_cdc_ncm_set_interface_base(u8 base)
+{
+	usbd_cdc_ncm_dev.if_base = base;
 }
 #endif
 
@@ -2444,9 +2469,13 @@ static int usbd_cdc_ncm_private_init(const usbd_cdc_ncm_cb_t *cb, const usbd_cdc
 		return HAL_ERR_PARA;
 	}
 
-	ncm->ctrl_req.bRequest = 0xFFU;
-	/* Standalone default; the composite framework rebases it via set_class_str_base() */
+	/* No H2D class request is waiting for its data stage yet. The device context is a static
+	   object, so a re-init after deinit must not inherit a stale pending flag. */
+	ncm->ctrl_req_pending = 0U;
+	/* Standalone default; the composite framework rebases it via set_str_base() */
 	ncm->cls_str_base = USBD_CDC_NCM_CLASS_STR_BASE_DEFAULT;
+	/* Standalone default; the composite framework rebases it via set_interface_base() */
+	ncm->if_base = 0;
 
 	/* Allocate per-slot DMA-aligned NTB buffers for the ping-pong TX path.
 	 * Each slot keeps its buffer for the lifetime of the class instance;
@@ -2771,6 +2800,10 @@ int usbd_cdc_ncm_deinit(void)
 		usb_os_sema_delete(ncm->rx_data_ready_sema);
 		ncm->rx_data_ready_sema = NULL;
 	}
+	/* Unregistered above: no class callback can run afterwards, so dropping the pending
+	 * control request here cannot race an EP0 OUT completion in ISR context. */
+	ncm->ctrl_req_pending = 0U;
+
 	/* Call user deinit */
 	if (ncm->cb && ncm->cb->deinit) {
 		ncm->cb->deinit();

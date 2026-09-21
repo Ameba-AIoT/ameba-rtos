@@ -251,15 +251,16 @@ class Ameba(object):
                                 return ErrType.SYS_IO
                             ret = ErrType.OK
                             break
-                        except:
+                        except Exception as err:
                             ret = ErrType.SYS_IO
+                            self.logger.error(f"Exception occurs when try to close port: {str(err)}")
                         time.sleep(0.1)
                     if ret != ErrType.OK:
                         self.logger.warning(f"Close serial port failed")
 
                 if self.serial_port.baudrate != baud:
                     self.serial_port.baudrate = baud
-                    time.sleep(delay_s)
+                time.sleep(delay_s)
 
                 if self.is_usb:
                     for rty in range(10):
@@ -267,11 +268,12 @@ class Ameba(object):
                             self.serial_port.open()
                             ret = ErrType.OK
                             break
-                        except:
+                        except Exception as err:
                             ret = ErrType.SYS_IO
+                            self.logger.error(f"Exception occurs when try to reopen port: {str(err)}")
                         time.sleep(0.1)
-        except Exception as e:
-            self.logger.error(f"An exception occurs when switching baudrate: {str(e)}")
+        except Exception as err:
+            self.logger.error(f"An exception occurs when switching baudrate: {str(err)}")
             ret = ErrType.SYS_IO
 
         if ret == ErrType.OK:
@@ -327,73 +329,6 @@ class Ameba(object):
                     return True
         else:
             return False
-
-    def switch_baudrate_old(self, baud, delay_s, force=False):
-        ret = ErrType.OK
-
-        if (baud == self.serial_port.baudrate) and (not force):
-            self.logger.debug(f"Reactive port {self.serial_port.port} ignored, baudrate no change")
-            return ret
-
-        if baud != self.serial_port.baudrate:
-            self.logger.debug(
-                f"Reactive port {self.serial_port.port} with baudrate from {self.serial_port.baudrate} to {baud}")
-        else:
-            self.logger.debug(
-                f"Reactive port {self.serial_port.port} with baudrate {baud}")
-
-        # if uart dtr/rts enable, should skip close/reopen operation
-        # if USB port, should close/reopen port when switch baudrate
-        if self.is_usb:
-            # check if already activated
-            for retry in range(10):
-                try:
-                    if self.serial_port.is_open:
-                        self.serial_port.close()
-
-                    deadline = time.monotonic() + 3.0
-                    while self.serial_port.is_open and time.monotonic() < deadline:
-                        time.sleep(0.01)
-                    if self.serial_port.is_open:
-                        self.logger.error(f"{self.serial_port.port} close timeout")
-                        return ErrType.SYS_IO
-                    ret = ErrType.OK
-                except:
-                    ret = ErrType.SYS_IO
-
-                if ret == ErrType.OK:
-                    break
-
-                time.sleep(0.1)
-
-            if ret != ErrType.OK:
-                self.logger.warning(f"Failed to close {self.serial_port.port} when reactive it.")
-
-            time.sleep(delay_s)
-
-        if self.serial_port.baudrate != baud:
-            self.serial_port.baudrate = baud
-
-        if self.is_usb:
-            ret = ErrType.OK
-            for rty in range(10):
-                try:
-                    self.serial_port.open()
-                    ret = ErrType.OK
-                except:
-                    ret = ErrType.SYS_IO
-
-                if ret == ErrType.OK:
-                    break
-
-                time.sleep(0.1)
-
-        if ret == ErrType.OK:
-            self.logger.debug(f"Reactive port {self.serial_port.port} ok")
-        else:
-            self.logger.debug(f"Reactive port {self.serial_port.port} fail")
-
-        return ret
 
     def check_download_mode(self):
         ret = ErrType.SYS_IO
@@ -501,6 +436,7 @@ class Ameba(object):
             self.logger.info(f'* FlashPageSize: {self.device_info.flash_page_size}B')
 
         self.logger.info(f'* WiFiMAC: {self.device_info.get_wifi_mac_text()}')
+        self.logger.info(f'* UUID: 0x{self.device_info.uuid:08X}')
 
         if (self.device_info.did != self.profile_info.device_id) and (self.device_info.did != 0xFFFF):
             self.logger.error("Device ID mismatch:")
@@ -632,17 +568,16 @@ class Ameba(object):
                 self.logger.info(f"1: Try operation with block protected(may fail)")
                 self.logger.info(f"2: Remove the protection and restore the protection after operation")
                 self.logger.info(f"3: Abort the operation")
-                retry = 0
-                while retry < 3:
+                for _ in range(3):
                     try:
                         follow_up_action = int(input("Please Input the selected action index: ").strip())
-                        if RtSettings.FLASH_PROTECTION_PROCESS_PROMPT < follow_up_action <= RtSettings.FLASH_PROTECTION_PROCESS_ABORT:
-                            break
-                        else:
-                            self.logger.info(f"{follow_up_action} is invalid")
                     except Exception as err:
                         self.logger.error(f"Input is invalid: {err}")
                         continue
+
+                    if RtSettings.FLASH_PROTECTION_PROCESS_PROMPT < follow_up_action <= RtSettings.FLASH_PROTECTION_PROCESS_ABORT:
+                        break
+                    self.logger.info(f"{follow_up_action} is invalid")
                 else:
                     return ErrType.SYS_PARAMETER
 
@@ -1734,7 +1669,7 @@ class Ameba(object):
                             self.logger.debug(f"Readback diagnostic error: {e}")
                 else:
                     self.logger.info(
-                        f"Checksum OK: {hex(checksum)}")
+                        f"Checksum OK: tool={hex(checksum)}, device={hex(cal_checksum)}")
             else:
                 self.logger.info(f"Checksum read fail: {ret}")
 

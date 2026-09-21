@@ -11,6 +11,7 @@
 
 #include "usb_os.h"
 #include "usb_ch9.h"
+#include "usb_def.h"
 #include "usb_diag.h"
 
 #ifdef __cplusplus
@@ -187,7 +188,7 @@ typedef struct {
 #endif
 	usbd_ep_t ep0_in;                        /**< Control endpoint 0 IN. */
 	usbd_ep_t ep0_out;                       /**< Control endpoint 0 OUT. */
-	struct _usbd_class_driver_t *driver;     /**< Pointer to the active class driver. */
+	const struct _usbd_class_driver_t *driver; /**< Pointer to the active class driver. */
 	void *pcd;                               /**< Pointer to the low-level PCD (Platform Controller Driver) handle. */
 	__IO u8 is_ready;                        /**< Device ready or not, 0-disabled, 1-enabled */
 	__IO u8 is_connected;                    /**< Device connected or not,0-disabled, 1-enabled */
@@ -414,7 +415,30 @@ typedef struct _usbd_class_driver_t {
 	 * @return Number of class-specific string indices consumed, starting at base. 0 means
 	 *         the class owns none.
 	 */
-	u8(*set_class_str_base)(u8 base);
+	u8(*set_str_base)(u8 base);
+
+	/**
+	 * @brief Callback to inform the class of its interface number base.
+	 * @note
+	 *    Optional, used by the composite framework only; never called in standalone mode,
+	 *    where the base is implicitly 0.
+	 *    The composite framework renumbers every sub-function's interfaces to
+	 *    base..base+bNumInterfaces-1. A class implementing this callback shall add base to
+	 *    every interface number it emits OUTSIDE the standard Interface and IAD descriptors,
+	 *    which the framework rebases itself, namely:
+	 *      - class-specific descriptor fields cross-referencing its own interfaces
+	 *        (CDC Union bMasterInterface/bSlaveInterface0, CDC Call Management
+	 *        bDataInterface, UAC1 AC Header baInterfaceNr[], UVC VC Header baInterfaceNr[]);
+	 *      - interface numbers carried in class notification payloads (Ref CDC 1.2 6.3).
+	 *    A class shall NOT add base to wIndex of an incoming setup request: the framework
+	 *    already rebases interface-recipient requests to the class-local interface number.
+	 *    A class whose descriptors carry no cross-interface reference and which sends no
+	 *    notification naming an interface leaves this callback NULL.
+	 *    Called before every configuration descriptor build and on set_config, always with
+	 *    the same base, so the class only has to store it.
+	 * @param[in] base: First interface number assigned to this class.
+	 */
+	void (*set_interface_base)(u8 base);
 } usbd_class_driver_t;
 /** @} End of Device_Core_Types group */
 /** @} End of USB_Device_Types group */

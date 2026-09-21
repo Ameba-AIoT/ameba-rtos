@@ -204,6 +204,7 @@ typedef struct {
 	usbd_ep_t ep_intr_in;		/**< INTR IN endpoint structure */
 	usbd_ep_t ep_intr_out;		/**< INTR OUT endpoint structure */
 	u8 alt_setting;				/**< Alternate setting number of the current interface */
+	u8 ctrl_req_pending;		/**< 1 if ctrl_req is waiting for its EP0 OUT data stage */
 	u8 from_composite;			/**< Flag indicating if part of a composite device. */
 } usbd_vendor_dev_t;
 /** @} End of Device_Vendor_Types group */

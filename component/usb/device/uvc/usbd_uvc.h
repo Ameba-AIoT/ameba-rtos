@@ -345,7 +345,10 @@ typedef struct {
 	u8 config;
 	u8 ctrl_req;
 	u8 ctrl_data_len;
+	u8 ctrl_req_pending;    /**< 1 if ctrl_req is waiting for its EP0 OUT data stage. */
 	u8 from_composite;      /**< Flag indicating if part of a composite device. */
+	u8 if_base;             /**< First interface number of this class; 0 in standalone mode unless
+	                             the composite framework rebases it via set_interface_base(). */
 } usbd_uvc_dev_t;
 
 /* Exported variables --------------------------------------------------------*/

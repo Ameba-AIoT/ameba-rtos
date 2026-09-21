@@ -11,6 +11,7 @@
 
 #include "usb_os.h"
 #include "usb_ch9.h"
+#include "usb_def.h"
 #include "usb_diag.h"
 
 #ifdef __cplusplus

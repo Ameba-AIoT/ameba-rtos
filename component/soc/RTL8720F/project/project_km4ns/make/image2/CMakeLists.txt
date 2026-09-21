@@ -53,7 +53,7 @@ endif()
 ###############################  ADD COMPONENT  ###################################
 # OS minimum set: always built regardless of WHC mode so km4ns can run
 # its own FreeRTOS instance even when it has no NP/WiFi role.
-ameba_add_subdirectory(${c_CMPT_BOOTLOADER_DIR}/bootloader_ns)
+ameba_add_subdirectory(${c_CMPT_BOOTLOADER_DIR})
 ameba_add_subdirectory(${c_CMPT_BOOTLOADER_NS_LIB_DIR} lib_bootloader_ns)
 ameba_add_subdirectory_if_exist(${c_CMPT_ROM_DIR})
 ameba_add_subdirectory(${c_CMPT_CHIPINFO_DIR})

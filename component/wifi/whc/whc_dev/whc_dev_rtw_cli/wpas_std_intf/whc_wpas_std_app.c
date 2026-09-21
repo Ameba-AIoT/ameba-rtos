@@ -50,11 +50,6 @@ int whc_wpa_ops_get_macaddr(u8 *ptr, u8 *buf)
 	u8 idx = 0;
 
 	idx = *ptr;
-	if (!wifi_is_running(idx)) {
-		RTK_LOGE(TAG_WLAN_INIC, "%s, port %d is not running!\n", __func__, idx);
-		rtos_mem_free(buf);
-		return 0;
-	}
 
 	wifi_get_mac_address(idx, &dev_mac, 0);
 	ptr = buf;
@@ -72,7 +67,7 @@ int whc_wpa_ops_get_macaddr(u8 *ptr, u8 *buf)
 
 }
 
-void whc_dev_rtw_cli_wpas_reply_info_hdl(u8 idx, char *reply, size_t reply_len)
+void whc_dev_rtw_cli_wpas_reply_info_hdl(u8 idx, const char *reply, size_t reply_len)
 {
 
 	whc_rtw_cli_send_to_host(idx, WHC_WPA_OPS_UTIL, WHC_WPA_OPS_UTIL_OFLD_RESULT,

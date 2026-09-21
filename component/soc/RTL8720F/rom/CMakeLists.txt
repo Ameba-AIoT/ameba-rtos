@@ -18,6 +18,11 @@ if(${c_MCU_PROJECT_NAME} STREQUAL "km4tz" AND CONFIG_TRUSTZONE)
     ameba_list_append(public_libraries
         ${c_SDK_LIB_SOC_DIR}/lib_rom_tz.a
     )
+elseif(${c_MCU_PROJECT_NAME} STREQUAL "km4ns" AND CONFIG_SOLO)
+    # SOLO: km4ns owns a direct flash driver, so its rom lib is a distinct variant.
+    ameba_list_append(public_libraries
+        ${c_SDK_LIB_SOC_DIR}/lib_rom_solo.a
+    )
 else()
     ameba_list_append(public_libraries
         ${c_SDK_LIB_SOC_DIR}/lib_rom.a
@@ -160,6 +165,17 @@ endif()
 ###NOTE: For closed-source component, only build before release and libs are packaged into lib/soc
 if((${c_MCU_PROJECT_NAME} STREQUAL "km4tz") AND CONFIG_TRUSTZONE)
     ameba_add_external_soc_library(rom_tz
+        p_SOURCES
+            ${private_sources}
+        p_INCLUDES
+            ${private_includes}
+        p_DEFINITIONS
+            ${private_definitions}
+        p_COMPILE_OPTIONS
+            ${private_compile_options}
+    )
+elseif((${c_MCU_PROJECT_NAME} STREQUAL "km4ns") AND CONFIG_SOLO)
+    ameba_add_external_soc_library(rom_solo
         p_SOURCES
             ${private_sources}
         p_INCLUDES

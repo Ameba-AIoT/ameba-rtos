@@ -473,7 +473,7 @@ static int usbd_msc_setup(usb_dev_t *dev, usb_setup_req_t *req)
 		case USB_REQ_SET_INTERFACE:
 			if (dev->dev_state != USBD_STATE_CONFIGURED) {
 				ret = HAL_ERR_PARA;
-			} else if (req->wIndex == USBD_MSC_ITF_NUM) {
+			} else if ((req->wIndex == USBD_MSC_ITF_NUM) && (USB_LOW_BYTE(req->wValue) == 0U)) {
 				/* Ref USB 2.0 9.4.10: the endpoints of the selected interface return to
 				   their default state, not halted and data toggle DATA0. This holds even
 				   for an interface with the default setting only, hosts do send the
@@ -486,7 +486,10 @@ static int usbd_msc_setup(usb_dev_t *dev, usb_setup_req_t *req)
 				usbd_ep_clear_stall(dev, &cdev->ep_bulk_in);
 				usbd_ep_clear_stall(dev, &cdev->ep_bulk_out);
 			} else {
-				/* Foreign interface */
+				/* Ref USB 2.0 9.4.9: this function declares alternate setting 0 only, so any
+				   other bAlternateSetting is a request error; likewise a foreign interface
+				   number, which must be rejected for composite dispatch to continue. */
+				ret = HAL_ERR_PARA;
 			}
 			break;
 
@@ -499,6 +502,12 @@ static int usbd_msc_setup(usb_dev_t *dev, usb_setup_req_t *req)
 	/* Class request */
 	case USB_REQ_TYPE_CLASS:
 		if ((req->bmRequestType & USB_REQ_RECIPIENT_MASK) != USB_REQ_RECIPIENT_INTERFACE) {
+			ret = HAL_ERR_PARA;
+			break;
+		}
+		/* Ref MSC BOT 1.0 3.1 and 3.2: wIndex of both class requests is the interface number.
+		   A foreign interface must be rejected so that composite dispatch can continue. */
+		if (req->wIndex != USBD_MSC_ITF_NUM) {
 			ret = HAL_ERR_PARA;
 			break;
 		}
@@ -669,6 +678,13 @@ static void usbd_msc_rx_process(void)
 			cdev->bot_status = USBD_MSC_STATUS_NORMAL;
 			if (usbd_scsi_process_cmd(cdev, cbwcb) != HAL_OK) {
 				if (cdev->phase_error == 1) {
+					if ((cbw_data_len != 0U) && ((cbw->field.bmCBWFlags & 0x80U) == 0U)) {
+						/* Case 13: Ho < Do — the host still owns an OUT data stage that the
+						 * device will not consume. STALL Bulk-Out so those bytes are not
+						 * mis-read as the next CBW; the Phase Error CSW flows on the
+						 * un-stalled Bulk-In pipe and the host then performs reset recovery. */
+						usbd_ep_set_stall(dev, &cdev->ep_bulk_out);
+					}
 					usbd_msc_send_csw(dev, BOT_CSW_PHASE_ERROR);
 					cdev->phase_error = 0;
 				} else if (cbw_data_len == 0U) {
@@ -1229,7 +1245,9 @@ void usbd_msc_send_csw(usb_dev_t *dev, u8 status)
 	cdev->bot_state = USBD_MSC_IDLE;
 	cdev->bot_status = USBD_MSC_STATUS_NORMAL;
 
-	usbd_msc_bulk_transmit(dev, (u8 *)csw, USB_MSC_CSW_LEN);
+	if (usbd_msc_bulk_transmit(dev, (u8 *)csw, USB_MSC_CSW_LEN) != HAL_OK) {
+		USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_XFER, cdev->ep_cfg->bulk_in_addr);
+	}
 
 #if USBD_MSC_FIX_CV_TEST_ISSUE
 	/* After BOT Reset, do a one-time OUT endpoint reinit for CV test compliance. */
@@ -1240,6 +1258,12 @@ void usbd_msc_send_csw(usb_dev_t *dev, u8 status)
 	}
 #endif
 
-	/* Prepare EP to Receive next Cmd */
-	usbd_msc_bulk_receive(dev, (u8 *)cbw, USB_MSC_CBW_LEN, USBD_MSC_CBW_BUF_LEN);
+	/* Prepare EP to Receive next Cmd. A failure here means the device is no longer ready
+	 * (suspend/disconnect); the endpoint is left un-armed and the controller NAKs, which is
+	 * the correct flow control, ref USB 2.0 8.4.6. Keep bot_status in RECOVERY so the next
+	 * Bulk-Only Mass Storage Reset re-arms Bulk-Out instead of resuming a lost BOT phase. */
+	if (usbd_msc_bulk_receive(dev, (u8 *)cbw, USB_MSC_CBW_LEN, USBD_MSC_CBW_BUF_LEN) != HAL_OK) {
+		cdev->bot_status = USBD_MSC_STATUS_RECOVERY;
+		USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_XFER, cdev->ep_cfg->bulk_out_addr);
+	}
 }

@@ -215,10 +215,14 @@ typedef struct {
 	u8 rx_xfer_idx;                         /**< Index of the buffer currently armed for USB OUT (0 or 1). */
 	__IO u8 rx_buf_free;                    /**< thread->ISR: 1=buffer available, 0=held by RX thread. */
 	__IO u8 rx_thread_running;              /**< RX thread loop guard; cleared to 0 to request exit. */
+	u8 ctrl_req_pending;                    /**< 1 if ctrl_req is waiting for its EP0 OUT data stage. */
 	u8 from_composite;                      /**< Flag indicating if part of a composite device. */
 	u8 cls_str_base;                        /**< First class-specific string index; the standalone default
 	                                             (right above USBD_IDX_SERIAL_STR) unless the composite
-	                                             framework rebases it via set_class_str_base(). */
+	                                             framework rebases it via set_str_base(). */
+	u8 if_base;                             /**< First interface number of this class; 0 in standalone
+	                                             mode unless the composite framework rebases it via
+	                                             set_interface_base(). */
 } usbd_cdc_ecm_dev_t;
 
 /** @} End of Device_CDC_ECM_Types group */

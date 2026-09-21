@@ -1,6 +1,6 @@
 #include <platform_autoconf.h>
 #include "usbd.h"
-#include "usbd_inic.h"
+#include "usbd_whc.h"
 #include "osif.h"
 #include "bt_inic.h"
 #include "bt_debug.h"
@@ -23,8 +23,8 @@ static int inic_cb_deinit(void);
 static int inic_cb_setup(usb_setup_req_t *req, u8 *buf);
 static int inic_cb_set_config(void);
 static int inic_cb_clear_config(void);
-static int inic_cb_received(usbd_inic_ep_t *ep, u16 len);
-static void inic_cb_transmitted(usbd_inic_ep_t *ep, u8 status);
+static int inic_cb_received(usbd_whc_ep_t *ep, u16 len);
+static void inic_cb_transmitted(usbd_whc_ep_t *ep, u8 status);
 static void inic_cb_status_changed(u8 old_status, u8 status);
 
 /* Private variables ---------------------------------------------------------*/
@@ -38,7 +38,7 @@ static const usbd_config_t inic_cfg = {
 #endif
 };
 
-static const usbd_inic_cb_t inic_cb = {
+static const usbd_whc_cb_t inic_cb = {
 	.init = inic_cb_init,
 	.deinit = inic_cb_deinit,
 	.setup = inic_cb_setup,
@@ -67,10 +67,11 @@ static int inic_cb_setup(usb_setup_req_t *req, u8 *buf)
 {
 	int ret = HAL_ERR_PARA;
 	switch (req->bRequest) {
-	case USBD_INIC_VENDOR_REQ_BT_HCI_CMD:
+	case USBD_WHC_VENDOR_REQ_BT_HCI_CMD:
 		ret = bt_inic_usb_hci_cmd_hdl(buf, req->wLength);
 		break;
 	default:
+		/* Unsupported request, let the core stall EP0 as per USB 2.0 9.2.7 */
 		break;
 	}
 
@@ -86,7 +87,7 @@ static int inic_cb_init(void)
 {
 	int ret = HAL_OK;
 
-	if (usbd_inic_is_bt_en()) {
+	if (usbd_whc_is_bt_en()) {
 		ret = bt_inic_usb_init();
 	}
 
@@ -101,7 +102,7 @@ static int inic_cb_init(void)
   */
 static int inic_cb_deinit(void)
 {
-	if (usbd_inic_is_bt_en()) {
+	if (usbd_whc_is_bt_en()) {
 		bt_inic_usb_deinit();
 	}
 	return HAL_OK;
@@ -136,26 +137,25 @@ static int inic_cb_clear_config(void)
   * @param  len: RX data length (in bytes)
   * @retval Status
   */
-static int inic_cb_received(usbd_inic_ep_t *out_ep, u16 len)
+static int inic_cb_received(usbd_whc_ep_t *out_ep, u16 len)
 {
 	usbd_ep_t *ep = &out_ep->ep;
 
-	bt_inic_usb_hci_acl_hdl(ep->xfer_buf, len);
-	return HAL_OK;
+	return bt_inic_usb_hci_acl_hdl(ep->xfer_buf, len);
 }
 
-static void inic_cb_transmitted(usbd_inic_ep_t *in_ep, u8 status)
+static void inic_cb_transmitted(usbd_whc_ep_t *in_ep, u8 status)
 {
 	(void)status;
 	usbd_ep_t *ep = &in_ep->ep;
 	usb_ep_info_t *info = &ep->info;
 
 	switch (info->addr) {
-	case USBD_INIC_BT_EP1_INTR_IN:
+	case USBD_WHC_BT_EP_INTR_IN:
 		// TBD
 		bt_inic_usb_evt_txdone_cb(ep->xfer_buf);
 		break;
-	case USBD_INIC_BT_EP2_BULK_IN:
+	case USBD_WHC_BT_EP_BULK_IN:
 		bt_inic_usb_acl_txdone_cb(ep->xfer_buf);
 		// TBD
 		break;
@@ -185,7 +185,7 @@ static void inic_hotplug_thread(void *param)
 	while (osif_sem_take(inic_attach_status_changed_sema, BT_TIMEOUT_FOREVER)) {
 		if (inic_attach_status == USBD_ATTACH_STATUS_DETACHED) {
 			BT_LOGA("DETACHED\n");
-			usbd_inic_deinit();
+			usbd_whc_deinit();
 			ret = usbd_deinit();
 			if (ret != 0) {
 				break;
@@ -196,7 +196,7 @@ static void inic_hotplug_thread(void *param)
 			if (ret != 0) {
 				break;
 			}
-			ret = usbd_inic_init(&inic_cb);
+			ret = usbd_whc_init(&inic_cb);
 			if (ret != 0) {
 				usbd_deinit();
 				break;
@@ -230,7 +230,7 @@ static void bt_usbd_inic_thread(void *param)
 		goto exit;
 	}
 
-	ret = usbd_inic_init(&inic_cb);
+	ret = usbd_whc_init(&inic_cb);
 	if (ret != HAL_OK) {
 		goto clear_usb_driver_exit;
 	}
@@ -252,7 +252,7 @@ static void bt_usbd_inic_thread(void *param)
 
 #if CONFIG_USBD_INIC_HOTPLUG
 clear_class_exit:
-	usbd_inic_deinit();
+	usbd_whc_deinit();
 #endif
 
 clear_usb_driver_exit:

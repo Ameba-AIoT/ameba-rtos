@@ -168,6 +168,10 @@ static u32 bt_inic_sdio_dev_resume(u32 expected_idle_time, void *param)
 
 	BT_LOGD("Enter %s \r\n", __func__);
 
+#ifdef CONFIG_BT_SDN
+	pmu_set_sysactive_time(5000);
+#endif
+
 	SDIO_SetReady(SDIO_BT, ENABLE);
 
 	return TRUE;

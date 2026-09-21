@@ -415,7 +415,7 @@ void wifi_indication(u32 event, u8 *evt_info, s32 evt_len)
 	(void)evt_len;
 
 	/* 1. ipc dev 2. WPAoH */
-#if defined(CONFIG_WHC_DEV) && !defined(CONFIG_WHC_WPA_SUPPLICANT_OFFLOAD)
+#if defined(CONFIG_WHC_DEV) && !defined(CONFIG_WHC_WPA_SUPPLICANT_OFFLOAD) && defined(CONFIG_WHC_WIFI_API_PATH)
 	extern void whc_dev_wifi_event_indicate(u32 event_cmd, u8 * evt_info, s32 evt_len);
 	whc_dev_wifi_event_indicate(event, evt_info, evt_len);
 #endif

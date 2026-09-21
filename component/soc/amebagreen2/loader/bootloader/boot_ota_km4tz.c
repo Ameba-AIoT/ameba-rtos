@@ -196,34 +196,31 @@ void BOOT_OTF_GCM_Set(u32 start_addr, u32 tag_addr, u8 tag_len)
 #endif
 }
 
-/* start addr --> logical addr */
-fih_ret BOOT_OTFCheck(u32 start_addr, u32 end_addr, u32 IV_index, u32 OTF_index)
+/* start addr --> logical addr.
+ * IMG2 RSIP mode is taken from the manifest (per-image), so image2 can use a
+ * different mode than image1 (whose mode comes from OTP, read by ROM). */
+fih_ret BOOT_OTFCheck(u32 start_addr, u32 end_addr, u32 IV_index, u32 OTF_index, u8 RSIP_KEY_ID, u8 RSIPConfig, u8 img_index)
 {
-	u32 mode = SYSCFG_OTP_RSIPMode();
+	u32 manifest_value, mode;
 
 	/* 1. check if RSIP enable */
 	if (FIH_EQ(FALSE, SYSCFG_OTP_RSIPEn())) {
 		FIH_RET(FIH_SUCCESS);
 	}
 
-	switch (mode) {
-	case RSIP_CTR_MODE:
+	/* 2. prefer per-image manifest mode, fall back to OTP if not CTR/XTS */
+	manifest_value = MANIFEST_RSIP_GET_IMG_MODE(img_index, RSIPConfig);
+	if (manifest_value == MANIFEST_RSIP_CTR_MODE) {
 		mode = OTF_CTR_MODE;
-		break;
-#ifndef AMEBAGREEN2_TODO //Cannot get GCM mode from OTP
-	case RSIP_GCM_MODE:
-		mode = OTF_GCM_MODE;
-		break;
-#endif
-	case RSIP_XTS_MODE:
-	default:
+	} else if (manifest_value == MANIFEST_RSIP_XTS_MODE) {
 		mode = OTF_XTS_MODE;
-		break;
+	} else {
+		mode = (SYSCFG_OTP_RSIPMode() == RSIP_CTR_MODE) ? OTF_CTR_MODE : OTF_XTS_MODE;
 	}
 
-	RSIP_OTF_Enable(OTF_index, start_addr, end_addr, ENABLE, IV_index, RSIP_KEY_NUM1, mode);
+	RSIP_OTF_Enable(OTF_index, start_addr, end_addr, ENABLE, IV_index, RSIP_KEY_ID, mode);
 	RSIP_OTF_Cmd(ENABLE);
-	RTK_LOGI(TAG, "IMG2 OTF EN\n");
+	RTK_LOGI(TAG, "IMG%d OTF EN\n", img_index);
 
 	FIH_RET(FIH_SUCCESS);
 }
@@ -236,6 +233,8 @@ fih_ret BOOT_OTA_LoadIMGAll(u8 ImgIndex)
 	u8 Cnt, i;
 	u32 Index = 0;
 	FIH_DECLARE(fih_rc, FIH_FAILURE);
+	/* IMG2 (NP & AP) RSIP key group is selected by the manifest, defaults to Key Group 1 */
+	u8 Img2KeyGrp = MANIFEST_RSIP_IMG2_KEY_GROUP(&Manifest[ImgIndex]);
 
 	char *NpLabel[] = {"NP XIP IMG", "NP SRAM", "NP PSRAM"};
 	char *ApLabel[] = {"AP XIP IMG", "AP SRAM", "AP PSRAM"};
@@ -257,7 +256,8 @@ fih_ret BOOT_OTA_LoadIMGAll(u8 ImgIndex)
 	BOOT_OTF_GCM_Set((u32)__km4tz_flash_text_start__ - IMAGE_HEADER_LEN, SPI_FLASH_BASE + 0x100000, 4);
 
 	/*NP IMG2 RSIP configurations*/
-	FIH_CALL(BOOT_OTFCheck, fih_rc, LogAddr, (u32)__km4ns_flash_text_end__, RSIP_IV1, RSIP_REGION1);
+	FIH_CALL(BOOT_OTFCheck, fih_rc, LogAddr, (u32)__km4ns_flash_text_end__, RSIP_IV1, RSIP_REGION1, Img2KeyGrp,
+			 Manifest[ImgIndex].RSIPConfig, MANIFEST_AP_NP_IMG2_ID);
 
 	/* NP XIP & SRAM, read with virtual addr in case of encryption */
 	Cnt = sizeof(NpLabel) / sizeof(char *);
@@ -281,7 +281,8 @@ fih_ret BOOT_OTA_LoadIMGAll(u8 ImgIndex)
 	RSIP_MMU_Cmd(MMU_ID2, ENABLE);
 	RSIP_MMU_Cache_Clean();
 
-	FIH_CALL(BOOT_OTFCheck, fih_rc, LogAddr, (u32)__km4tz_flash_text_end__, RSIP_IV1, RSIP_REGION2);
+	FIH_CALL(BOOT_OTFCheck, fih_rc, LogAddr, (u32)__km4tz_flash_text_end__, RSIP_IV1, RSIP_REGION2, Img2KeyGrp,
+			 Manifest[ImgIndex].RSIPConfig, MANIFEST_AP_NP_IMG2_ID);
 
 	/* AP XIP & SRAM, read with virtual addr in case of encryption */
 	Cnt = sizeof(ApLabel) / sizeof(char *);
@@ -492,4 +493,3 @@ Fail:
 
 	return RTK_FAIL;
 }
-

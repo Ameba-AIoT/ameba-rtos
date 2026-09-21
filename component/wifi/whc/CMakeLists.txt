@@ -250,9 +250,9 @@ if(CONFIG_WHC_INTF_USB)
         ${c_CMPT_USB_DIR}/device/core
     )
     if(CONFIG_AMEBADPLUS)
-        ameba_list_append(private_includes ${c_CMPT_USB_DIR}/device/inic_dplus)
+        ameba_list_append(private_includes ${c_CMPT_USB_DIR}/device/whc_dplus)
     elseif(CONFIG_AMEBAGREEN2)
-        ameba_list_append(private_includes ${c_CMPT_USB_DIR}/device/inic)
+        ameba_list_append(private_includes ${c_CMPT_USB_DIR}/device/whc)
     endif()
 endif()
 

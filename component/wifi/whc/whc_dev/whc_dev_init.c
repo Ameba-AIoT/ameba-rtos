@@ -31,6 +31,9 @@ void whc_dev_init(void)
 #endif
 
 	wifi_set_user_config();
+	/* sync usrcfg to rom2flash mirror unconditionally (wpaoD or wpaoH), otherwise
+	 * bw_40_enable etc. stay at compile-time zero (RSWLANDIOT-16608) */
+	wifi_set_rom2flash_user_config();
 
 	/* init skb pool early(before wifi_on) to ensure the intf path is ready, because whc uses skb as rxbuf */
 	init_skb_pool(wifi_user_config.skb_num_np, wifi_user_config.skb_buf_size, SKB_CACHE_SZ);

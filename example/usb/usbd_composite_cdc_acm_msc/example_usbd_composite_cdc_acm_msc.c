@@ -74,8 +74,11 @@ static const usbd_config_t composite_cfg = {
 	/* .ctrl_xfer_buf_len = 512U, */
 #if defined(CONFIG_AMEBASMART)
 	.nptx_max_epmis_cnt = 100U,
-#elif defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RLE1509)
+#elif defined(CONFIG_AMEBAGREEN2)
 	.rx_fifo_depth = 436U,
+	.ptx_fifo_depth = {0U, 256U, 32U, 256U, },
+#elif defined(CONFIG_RLE1509)
+	.rx_fifo_depth = 400U,
 	.ptx_fifo_depth = {0U, 256U, 32U, 256U, },
 #elif defined(CONFIG_AMEBAPRO3)
 	/*DFIFO total 2232 DWORD, resv 8 DWORD for DMA addr and EP0 fixed 256 DWORD*/

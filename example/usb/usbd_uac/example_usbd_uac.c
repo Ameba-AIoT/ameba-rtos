@@ -153,8 +153,11 @@ static u8 recv_buf[USB_AUDIO_BUF_SIZE * 2];
 static const usbd_config_t uac_cfg = {
 	.speed = USBD_UAC_USB_SPEED,
 	.isr_priority = INT_PRI_MIDDLE,
-#if defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RLE1509)
+#if defined(CONFIG_AMEBAGREEN2)
 	.rx_fifo_depth = 724U,
+	.ptx_fifo_depth = {0U, 0U, 0U, 256U, },
+#elif defined(CONFIG_RLE1509)
+	.rx_fifo_depth = 688U,
 	.ptx_fifo_depth = {0U, 0U, 0U, 256U, },
 #elif defined (CONFIG_AMEBAPRO3)
 	/*DFIFO total 2232 DWORD, resv 8 DWORD for DMA addr and EP0 fixed 256 DWORD*/
@@ -226,7 +229,9 @@ static int uac_cb_setup(usb_setup_req_t *req, u8 *buf)
 	UNUSED(req);
 	UNUSED(buf);
 
-	return HAL_OK;
+	/* No vendor request is implemented by this example, reject so that the class
+	   driver makes the core STALL EP0 instead of ACKing an unsupported request */
+	return HAL_ERR_PARA;
 }
 
 /**

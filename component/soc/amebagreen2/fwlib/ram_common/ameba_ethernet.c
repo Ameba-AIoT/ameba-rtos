@@ -458,9 +458,13 @@ void Ethernet_UpdateTXDESCAndSend(ETH_InitTypeDef *ETH_InitStruct, ETH_PktMetaDe
 	DCache_Clean((u32)ETH_InitStruct->ETH_TxDesc[tx_idx].addr, size);
 
 	/* 3. Prepare Command/Status (DW1) */
-	/* Enable HW Checksum (IP/L4) and CRC append. Set as First & Last Segment. */
-	cmd_sts = FEMAC_TX_DSC_BIT_IPCS | FEMAC_TX_DSC_BIT_L4CS | FEMAC_TX_DSC_BIT_CRC |
+	/* Request CRC append. Set as First & Last Segment. */
+	cmd_sts = FEMAC_TX_DSC_BIT_CRC |
 			  FEMAC_TX_DSC_BIT_FS | FEMAC_TX_DSC_BIT_LS | FEMAC_TX_DSC_VAL_SIZE(size);
+#if ETH_CSUM_OFFLOAD
+	/* Let the MAC fill in the IP/L4 checksums; the stack skips them for this netif. */
+	cmd_sts |= FEMAC_TX_DSC_BIT_IPCS | FEMAC_TX_DSC_BIT_L4CS;
+#endif
 
 	/* 4. Prepare Ext Config (DW2) based on Meta Data */
 	if (meta->vlan_valid) {
@@ -573,6 +577,16 @@ u8 *Ethernet_GetRXPktInfo(ETH_InitTypeDef *ETH_InitStruct, ETH_PktMetaDef *meta)
 			if (dw1_status & FEMAC_RX_DSC_BIT_CRCERR) {
 				meta->rx_crc_err = 1;
 			}
+#if ETH_CSUM_OFFLOAD
+			/* Checksum verdict from the MAC (RXCHKSUM enabled in Ethernet_Init) */
+			meta->rx_pkt_type = (u8)((dw1_status & FEMAC_RX_DSC_MASK_PKTTYPE) >> FEMAC_RX_DSC_SHIFT_PKTTYPE);
+			if (dw1_status & FEMAC_RX_DSC_BIT_IPV4CSF) {
+				meta->csum_ip = 1;
+			}
+			if (dw1_status & FEMAC_RX_DSC_BIT_L4CSF) {
+				meta->csum_l4 = 1;
+			}
+#endif
 			break;
 		}
 
@@ -822,8 +836,10 @@ void Ethernet_StructInit(ETH_InitTypeDef *ETH_InitStruct, struct eth_phy_dev *PH
 	ETH_InitStruct->ETH_TxDescNum = 8;
 
 	/* Default Buffer Sizes */
-	ETH_InitStruct->ETH_TxBufSize = ETH_PKT_MAX_SIZE;
-	ETH_InitStruct->ETH_RxBufSize = ETH_PKT_MAX_SIZE;
+	/* Slot stride, must match how the caller carves up the pool. The unaligned
+	 * frame size would misalign every slot and let a full frame overrun it. */
+	ETH_InitStruct->ETH_TxBufSize = ETH_MAX_BUF_SIZE;
+	ETH_InitStruct->ETH_RxBufSize = ETH_MAX_BUF_SIZE;
 
 	/* Interrupts */
 	ETH_InitStruct->ETH_IntMaskAndStatus = BIT_IMR_LINKCHG | BIT_IMR_TOK_TI |
@@ -962,6 +978,12 @@ int Ethernet_Init(ETH_InitTypeDef *ETH_InitStruct)
 
 	/* Rx settings */
 	Ethernet_SetMacAddr(ETH_InitStruct->ETH_MacAddr);
+
+#if ETH_CSUM_OFFLOAD
+	/* MAC verify IPv4/TCP/UDP checksums. Results land in the RX
+	 * descriptor as IPV4CSF/L4CSF, read back by Ethernet_GetRXPktInfo(). */
+	ETHx->ETH_CR |= BIT_RXCHKSUM;
+#endif
 
 	/* VLAN Configuration */
 	/* Configure Rx VLAN Stripping in ETH_CR */
