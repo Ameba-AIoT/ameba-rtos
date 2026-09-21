@@ -1614,7 +1614,7 @@ int bt_hfp_main(uint8_t role, uint8_t enable)
 		}
 		bt_app_conf.mtu_size = 180;
 		bt_app_conf.max_tx_octets = 0x40;
-		bt_app_conf.max_tx_time = 0x200;
+		bt_app_conf.max_tx_time = 0x270;
 		bt_app_conf.hfp_role = role;
 
 		rtk_bt_br_gap_default_param_t dft_param;
