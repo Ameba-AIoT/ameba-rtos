@@ -119,6 +119,12 @@ void rtw_mcc_init(void)
 {
 
 }
+
+int rtw_mcc_check_softap_can_tx(void)
+{
+	return TRUE;
+}
+
 /* P2P Related */
 void rtw_p2p_go_noa_update(u8 type, u32 p1_tbtt_before, u32 ap_active_dur)
 {

@@ -57,21 +57,21 @@ if(CONFIG_USBD_MSC)
     )
 endif()
 
-if(CONFIG_USBD_INIC)
+if(CONFIG_USBD_WHC)
     if(CONFIG_AMEBADPLUS)
         ameba_list_append(private_includes
-            ${USBD_CLASS_DIR}/inic_dplus
+            ${USBD_CLASS_DIR}/whc_dplus
         )
         ameba_list_append(private_sources
-            ${USBD_CLASS_DIR}/inic_dplus/usbd_inic.c
+            ${USBD_CLASS_DIR}/whc_dplus/usbd_whc.c
         )
     else()
         ameba_list_append(private_includes
-            ${USBD_CLASS_DIR}/inic
+            ${USBD_CLASS_DIR}/whc
         )
         ameba_list_append(private_sources
-            ${USBD_CLASS_DIR}/inic/usbd_inic.c
-            ${USBD_CLASS_DIR}/inic/usbd_inic_otp.c
+            ${USBD_CLASS_DIR}/whc/usbd_whc.c
+            ${USBD_CLASS_DIR}/whc/usbd_whc_otp.c
         )
     endif()
 endif()

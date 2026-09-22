@@ -227,11 +227,7 @@ static void usb_eth_hotplug_thread(void *param)
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "ECM deinit fail %d\n", ret);
 			}
 
-			ret = usbd_deinit();
-			if (ret != HAL_OK) {
-				RTK_LOGS(TAG, RTK_LOG_ERROR, "Core deinit fail %d\n", ret);
-				break;
-			}
+			usbd_deinit();
 
 			rtos_time_delay_ms(100);
 

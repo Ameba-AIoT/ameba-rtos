@@ -92,6 +92,9 @@
 #define USBD_UAC_CTRL_ENTITYID_INPUTTERMINAL_FEATUREUNIT           0x08U /**< Define microphone feature unit id. */
 #define USBD_UAC_CTRL_ENTITYID_OUTPUTTERMINAL_HEADSET_MICROPHONE   0x10U /**< Define microphone output terminal id. */
 
+/* The mic AS interface descriptor only defines alt setting 0 (zero-bandwidth) and 1 (streaming) */
+#define USBD_UAC_AS_MIC_ALT_SETTING_MAX                            0x01U
+
 /* UAC channel config */
 #define USBD_UAC_GET_CH_CONFIG(ch_cnt) \
     ((ch_cnt) == 2 ? 0x03 : \
@@ -1733,6 +1736,19 @@ static inline u8 usbd_uac_ep_enable(const usbd_audio_cfg_t *ep)
 }
 
 /**
+  * @brief  Check whether the microphone AS interface is exposed to the host
+  * @note   Composite mode is always duplex, standalone mode only reports the mic AS
+  *         interface when the app enabled the IN endpoint. Requests targeting an
+  *         interface that is not in the reported config descriptor must be stalled.
+  * @param  cdev: UAC device instance
+  * @retval 1 if the mic AS interface exists, 0 otherwise
+  */
+static inline u8 usbd_uac_mic_present(const usbd_uac_dev_t *cdev)
+{
+	return (u8)((cdev->from_composite != 0) || ((cdev->cb != NULL) && (usbd_uac_ep_enable(&(cdev->cb->in)) != 0)));
+}
+
+/**
   * @brief  Handle UAC clock validity request
   * @param  dev: USB device instance
   * @param  flag: Clock validity flag
@@ -1867,6 +1883,7 @@ static int usbd_uac_set_config(usb_dev_t *dev, u8 config)
 	}
 
 	cdev->alt_setting = 0U;
+	cdev->alt_setting_in = 0U;
 
 	/* Invalidate the cached stream format on each SET_CONFIGURATION so the first
 	 * SET_INTERFACE(alt=1) of the new session re-fires format_changed(). Without
@@ -2018,54 +2035,77 @@ static int usbd_uac_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			   nothing has to be reset here. */
 			if (dev->dev_state == USBD_STATE_CONFIGURED) {
 				alt_setting = USB_LOW_BYTE(req->wValue);
-				/* Ref USB 2.0 Table 9-10: the whole wIndex is the interface number */
-				if (req->wIndex == USB_UAC2_IF_IDX_AS_HEADSET_MICROPHONE) {
-					cdev->alt_setting_in = alt_setting;
-				} else if ((alt_setting != cdev->alt_setting) && alt_setting) {
-					cdev->alt_setting = alt_setting;
-					switch (cdev->alt_setting) {
-					case 1:
-						byte_width = 2;
-						ch_cnt = 2;
-						break;
+				/* Ref USB 2.0 Table 9-10: the whole wIndex is the interface number. Requests for
+				   a foreign interface must be rejected so that composite dispatch is not broken
+				   and a malformed wIndex cannot touch the streaming state. */
+				if (req->wIndex == USB_UAC2_IF_IDX_AC_HEADSET) {
+					/* The Audio Control interface owns alternate setting 0 only */
+					if (alt_setting != 0U) {
+						ret = HAL_ERR_PARA;
+					}
+				} else if (req->wIndex == USB_UAC2_IF_IDX_AS_HEADSET_HEADPHONES) {
+					/* Ref USB 2.0 9.4.5: alt setting 0 is the zero-bandwidth setting, it stops the
+					   stream and leaves the negotiated format untouched */
+					if (alt_setting == 0U) {
+						cdev->alt_setting = 0U;
+					} else if (alt_setting != cdev->alt_setting) {
+						switch (alt_setting) {
+						case 1:
+							byte_width = 2;
+							ch_cnt = 2;
+							break;
 #if USBD_UAC_DEFAULT_CH_CNT == USBD_UAC_CH_CNT_4 || USBD_UAC_DEFAULT_CH_CNT == USBD_UAC_CH_CNT_6 || USBD_UAC_DEFAULT_CH_CNT == USBD_UAC_CH_CNT_8
-					case 2:
-						byte_width = 2;
-						ch_cnt = 4;
-						break;
+						case 2:
+							byte_width = 2;
+							ch_cnt = 4;
+							break;
 #endif
 #if USBD_UAC_DEFAULT_CH_CNT == USBD_UAC_CH_CNT_6 || USBD_UAC_DEFAULT_CH_CNT == USBD_UAC_CH_CNT_8
-					case 3:
-						byte_width = 2;
-						ch_cnt = 6;
-						break;
+						case 3:
+							byte_width = 2;
+							ch_cnt = 6;
+							break;
 #endif
 #if USBD_UAC_DEFAULT_CH_CNT == USBD_UAC_CH_CNT_8
-					case 4:
-						byte_width = 2;
-						ch_cnt = 8;
-						break;
+						case 4:
+							byte_width = 2;
+							ch_cnt = 8;
+							break;
 #endif
-					default:
-						ret = HAL_ERR_PARA;
-						break;
-					}
+						default:
+							/* Ref USB 2.0 9.4.5: an alt setting that does not exist is a request error,
+							   the streaming state must stay on the previous setting */
+							ret = HAL_ERR_PARA;
+							break;
+						}
 
-					if (ret == HAL_OK) {
-						if ((cdev->cur_byte_width != byte_width) && byte_width) {
-							cdev->cur_byte_width = byte_width;
-							fmt_change = 1;
-						}
-						if ((cdev->cur_ch_cnt != ch_cnt) && ch_cnt) {
-							cdev->cur_ch_cnt = ch_cnt;
-							fmt_change = 1;
-						}
-						if (fmt_change != 0) {
-							if (cb->format_changed != NULL) {
-								cb->format_changed(cdev->cur_sampling_freq, cdev->cur_ch_cnt, cdev->cur_byte_width);
+						if (ret == HAL_OK) {
+							cdev->alt_setting = alt_setting;
+							if ((cdev->cur_byte_width != byte_width) && byte_width) {
+								cdev->cur_byte_width = byte_width;
+								fmt_change = 1;
+							}
+							if ((cdev->cur_ch_cnt != ch_cnt) && ch_cnt) {
+								cdev->cur_ch_cnt = ch_cnt;
+								fmt_change = 1;
+							}
+							if (fmt_change != 0) {
+								if (cb->format_changed != NULL) {
+									cb->format_changed(cdev->cur_sampling_freq, cdev->cur_ch_cnt, cdev->cur_byte_width);
+								}
 							}
 						}
 					}
+				} else if (req->wIndex == USB_UAC2_IF_IDX_AS_HEADSET_MICROPHONE) {
+					/* The mic AS interface owns alt setting 0 and 1 only, and it is not reported
+					   at all when the IN endpoint is disabled */
+					if ((usbd_uac_mic_present(cdev) == 0U) || (alt_setting > USBD_UAC_AS_MIC_ALT_SETTING_MAX)) {
+						ret = HAL_ERR_PARA;
+					} else {
+						cdev->alt_setting_in = alt_setting;
+					}
+				} else {
+					ret = HAL_ERR_PARA;
 				}
 			} else {
 				ret = HAL_ERR_PARA;
@@ -2074,8 +2114,18 @@ static int usbd_uac_setup(usb_dev_t *dev, usb_setup_req_t *req)
 
 		case USB_REQ_GET_INTERFACE:
 			if (dev->dev_state == USBD_STATE_CONFIGURED) {
-				/* Ref USB 2.0 Table 9-11: the whole wIndex is the interface number */
-				ep0_in->xfer_buf[0] = (req->wIndex == USB_UAC2_IF_IDX_AS_HEADSET_MICROPHONE) ? cdev->alt_setting_in : cdev->alt_setting;
+				/* Ref USB 2.0 Table 9-11: the whole wIndex is the interface number, and 9.4.4
+				   requires a request error for an interface that does not exist */
+				if (req->wIndex == USB_UAC2_IF_IDX_AC_HEADSET) {
+					ep0_in->xfer_buf[0] = 0U;
+				} else if (req->wIndex == USB_UAC2_IF_IDX_AS_HEADSET_HEADPHONES) {
+					ep0_in->xfer_buf[0] = cdev->alt_setting;
+				} else if ((req->wIndex == USB_UAC2_IF_IDX_AS_HEADSET_MICROPHONE) && (usbd_uac_mic_present(cdev) != 0U)) {
+					ep0_in->xfer_buf[0] = cdev->alt_setting_in;
+				} else {
+					ret = HAL_ERR_PARA;
+					break;
+				}
 				ep0_in->xfer_len = 1U;
 				usbd_ep_transmit(dev, ep0_in);
 			} else {
@@ -2102,6 +2152,12 @@ static int usbd_uac_setup(usb_dev_t *dev, usb_setup_req_t *req)
 
 	case USB_REQ_TYPE_CLASS :
 		if ((req->bmRequestType & USB_REQ_RECIPIENT_MASK) != USB_REQ_RECIPIENT_INTERFACE) {
+			ret = HAL_ERR_PARA;
+			break;
+		}
+		/* Ref UAC 2.0 5.2.2: the low byte of wIndex is the interface number and the high byte
+		   is the entity ID. All the audio controls of this class live on the AC interface. */
+		if (USB_LOW_BYTE(req->wIndex) != USB_UAC2_IF_IDX_AC_HEADSET) {
 			ret = HAL_ERR_PARA;
 			break;
 		}
@@ -2261,10 +2317,21 @@ static int usbd_uac_setup(usb_dev_t *dev, usb_setup_req_t *req)
 				if (controlSelector == USB_UAC_CS_SAM_FREQ_CONTROL) {
 					if (req->bRequest == USB_UAC_REQ_CUR) {
 						usb_os_memcpy((void *)&cdev->ctrl_req, (const void *)req, sizeof(usb_setup_req_t));
+						cdev->ctrl_req_pending = 1U;
 						ep0_out->xfer_len = req->wLength;
-						usbd_ep_receive(dev, ep0_out);
+						/* Propagate a submit failure so that the core stalls EP0 instead of
+						   leaving the host waiting out the data stage, ref USB 2.0 8.5.3.4 */
+						ret = usbd_ep_receive(dev, ep0_out);
+						if (ret != HAL_OK) {
+							/* The data stage never started, so no EP0 OUT completion will arrive
+							   to consume the stashed request. Drop it, else the next unrelated
+							   request's data stage would be applied as this one's payload. */
+							cdev->ctrl_req_pending = 0U;
+						}
 					} else if (req->bRequest == USB_UAC_REQ_RANGE) {
-						// Do nothing
+						/* Ref UAC 2.0 5.2.1: RANGE is defined for the D2H direction only */
+						USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_SETUP, 26);
+						ret = HAL_ERR_PARA;
 					} else {
 						/* Set freq err */
 						USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_SETUP, 13);
@@ -2281,10 +2348,21 @@ static int usbd_uac_setup(usb_dev_t *dev, usb_setup_req_t *req)
 				if (controlSelector == USB_UAC_FU_MUTE) { //mute
 					if (req->bRequest == USB_UAC_REQ_CUR) {
 						usb_os_memcpy((void *)&cdev->ctrl_req, (const void *)req, sizeof(usb_setup_req_t));
+						cdev->ctrl_req_pending = 1U;
 						ep0_out->xfer_len = req->wLength;
-						usbd_ep_receive(dev, ep0_out);
+						/* Propagate a submit failure so that the core stalls EP0 instead of
+						   leaving the host waiting out the data stage, ref USB 2.0 8.5.3.4 */
+						ret = usbd_ep_receive(dev, ep0_out);
+						if (ret != HAL_OK) {
+							/* The data stage never started, so no EP0 OUT completion will arrive
+							   to consume the stashed request. Drop it, else the next unrelated
+							   request's data stage would be applied as this one's payload. */
+							cdev->ctrl_req_pending = 0U;
+						}
 					} else if (req->bRequest == USB_UAC_REQ_RANGE) {
-						// Do nothing
+						/* Ref UAC 2.0 5.2.1: RANGE is defined for the D2H direction only */
+						USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_SETUP, 27);
+						ret = HAL_ERR_PARA;
 					} else {
 						/* Set cur mute err */
 						USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_SETUP, 15);
@@ -2293,10 +2371,21 @@ static int usbd_uac_setup(usb_dev_t *dev, usb_setup_req_t *req)
 				} else if (controlSelector == USB_UAC_FU_VOLUME) { //volume
 					if (req->bRequest == USB_UAC_REQ_CUR) {
 						usb_os_memcpy((void *)&cdev->ctrl_req, (const void *)req, sizeof(usb_setup_req_t));
+						cdev->ctrl_req_pending = 1U;
 						ep0_out->xfer_len = req->wLength;
-						usbd_ep_receive(dev, ep0_out);
+						/* Propagate a submit failure so that the core stalls EP0 instead of
+						   leaving the host waiting out the data stage, ref USB 2.0 8.5.3.4 */
+						ret = usbd_ep_receive(dev, ep0_out);
+						if (ret != HAL_OK) {
+							/* The data stage never started, so no EP0 OUT completion will arrive
+							   to consume the stashed request. Drop it, else the next unrelated
+							   request's data stage would be applied as this one's payload. */
+							cdev->ctrl_req_pending = 0U;
+						}
 					} else if (req->bRequest == USB_UAC_REQ_RANGE) {
-						// Do nothing
+						/* Ref UAC 2.0 5.2.1: RANGE is defined for the D2H direction only */
+						USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_SETUP, 28);
+						ret = HAL_ERR_PARA;
 					} else {
 						/* Set cur volume range err */
 						USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_SETUP, 16);
@@ -2313,10 +2402,21 @@ static int usbd_uac_setup(usb_dev_t *dev, usb_setup_req_t *req)
 				if (controlSelector == USB_UAC_FU_MUTE) { //mute
 					if (req->bRequest == USB_UAC_REQ_CUR) {
 						usb_os_memcpy((void *)&cdev->ctrl_req, (void *)req, sizeof(usb_setup_req_t));
+						cdev->ctrl_req_pending = 1U;
 						ep0_out->xfer_len = req->wLength;
-						usbd_ep_receive(dev, ep0_out);
+						/* Propagate a submit failure so that the core stalls EP0 instead of
+						   leaving the host waiting out the data stage, ref USB 2.0 8.5.3.4 */
+						ret = usbd_ep_receive(dev, ep0_out);
+						if (ret != HAL_OK) {
+							/* The data stage never started, so no EP0 OUT completion will arrive
+							   to consume the stashed request. Drop it, else the next unrelated
+							   request's data stage would be applied as this one's payload. */
+							cdev->ctrl_req_pending = 0U;
+						}
 					} else if (req->bRequest == USB_UAC_REQ_RANGE) {
-						// Do nothing
+						/* Ref UAC 2.0 5.2.1: RANGE is defined for the D2H direction only */
+						USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_SETUP, 29);
+						ret = HAL_ERR_PARA;
 					} else {
 						/* Set cur mute err */
 						USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_SETUP, 23);
@@ -2325,10 +2425,21 @@ static int usbd_uac_setup(usb_dev_t *dev, usb_setup_req_t *req)
 				} else if (controlSelector == USB_UAC_FU_VOLUME) { //volume
 					if (req->bRequest == USB_UAC_REQ_CUR) {
 						usb_os_memcpy((void *)&cdev->ctrl_req, (void *)req, sizeof(usb_setup_req_t));
+						cdev->ctrl_req_pending = 1U;
 						ep0_out->xfer_len = req->wLength;
-						usbd_ep_receive(dev, ep0_out);
+						/* Propagate a submit failure so that the core stalls EP0 instead of
+						   leaving the host waiting out the data stage, ref USB 2.0 8.5.3.4 */
+						ret = usbd_ep_receive(dev, ep0_out);
+						if (ret != HAL_OK) {
+							/* The data stage never started, so no EP0 OUT completion will arrive
+							   to consume the stashed request. Drop it, else the next unrelated
+							   request's data stage would be applied as this one's payload. */
+							cdev->ctrl_req_pending = 0U;
+						}
 					} else if (req->bRequest == USB_UAC_REQ_RANGE) {
-						// Do nothing
+						/* Ref UAC 2.0 5.2.1: RANGE is defined for the D2H direction only */
+						USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_SETUP, 30);
+						ret = HAL_ERR_PARA;
 					} else {
 						/* Set cur volume range err */
 						USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_SETUP, 24);
@@ -2350,20 +2461,47 @@ static int usbd_uac_setup(usb_dev_t *dev, usb_setup_req_t *req)
 		break;/* case USB_REQ_TYPE_CLASS */
 
 	case USB_REQ_TYPE_VENDOR:
-		if (req->wLength != 0) {
-			if (((req->bmRequestType & 0x80U) != 0) && (cdev->cb->setup != NULL)) {
+		if (cdev->cb->setup == NULL) {
+			/* No handler for vendor requests, STALL so that the host recovers promptly
+			   instead of waiting out the data stage */
+			ret = HAL_ERR_PARA;
+		} else if (req->wLength != 0U) {
+			if ((req->bmRequestType & USB_REQ_DIR_MASK) == USB_D2H) {
+				u16 rsp_len = req->wLength;
+
+				/* Ref USB 2.0 9.3.4: wLength is the maximum the host accepts, never trust it
+				   as a buffer size. Clamp to the EP0 buffer to avoid an over-write. */
+				if (rsp_len > ep0_in->xfer_buf_len) {
+					rsp_len = (u16)ep0_in->xfer_buf_len;
+				}
+
+				/* EP0 buffer is shared with descriptor and OUT traffic, clear the response
+				   window so a callback writing fewer bytes cannot leak stale data. */
+				usb_os_memset((void *)ep0_in->xfer_buf, 0, rsp_len);
 				ret = cdev->cb->setup(req, ep0_in->xfer_buf);
 				if (ret == HAL_OK) {
-					ep0_in->xfer_len = req->wLength;
-					usbd_ep_transmit(dev, ep0_in);
+					ep0_in->xfer_len = rsp_len;
+					/* Propagate a submit failure so that the core stalls EP0 instead of
+					   leaving the host waiting out the data stage, ref USB 2.0 8.5.3.4 */
+					ret = usbd_ep_transmit(dev, ep0_in);
 				}
 			} else {
+				/* Ref USB 2.0 8.5.3: an H2D request with wLength > 0 carries the payload in a
+				   following data stage, the request cannot be dispatched yet. */
 				usb_os_memcpy((void *)&cdev->ctrl_req, (const void *)req, sizeof(usb_setup_req_t));
+				cdev->ctrl_req_pending = 1U;
 				ep0_out->xfer_len = req->wLength;
-				usbd_ep_receive(dev, ep0_out);
+				ret = usbd_ep_receive(dev, ep0_out);
+				if (ret != HAL_OK) {
+					/* The data stage never started, so no EP0 OUT completion will arrive to
+					   consume the stashed request. Drop it, else the next unrelated request's
+					   data stage would be applied as this one's payload. */
+					cdev->ctrl_req_pending = 0U;
+				}
 			}
 		} else {
-			cdev->cb->setup(req, NULL);
+			/* No data stage, the setup packet is self-contained, dispatch it right away */
+			ret = cdev->cb->setup(req, NULL);
 		}
 		break;
 
@@ -2432,6 +2570,17 @@ static int usbd_uac_handle_ep0_data_out(usb_dev_t *dev)
 	u8 byte_width;
 	u8 num_points;
 	u8 target_volume;
+
+	/* No pending request means this data stage does not belong to UAC, the composite dispatcher
+	   already routed it by active_func. cb is released by usbd_uac_deinit(), which may run between
+	   the setup and the data stage of an H2D request, so it is checked here as well. */
+	if ((cdev->ctrl_req_pending == 0U) || (cb == NULL)) {
+		return HAL_OK;
+	}
+
+	/* Consume the pending request: a single data stage belongs to exactly one setup packet, so
+	   the saved request must not be replayed by a later EP0 OUT event. */
+	cdev->ctrl_req_pending = 0U;
 
 	if ((((p_ctrl_req->bmRequestType & USB_REQ_TYPE_MASK) == USB_REQ_TYPE_CLASS) && ((p_ctrl_req->bmRequestType & 0x1FU) == USB_REQ_RECIPIENT_INTERFACE))
 		&& (p_ctrl_req->bRequest == USB_UAC_REQ_CUR)) {
@@ -2806,8 +2955,7 @@ static u16 usbd_uac_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 
 	/* Keep the mic entities/interface in the reported descriptor for composite mode
 	 * (always duplex) or when the standalone app enabled the IN endpoint. */
-	u8 keep_mic = (cdev->from_composite != 0) ||
-				  ((cdev->cb != NULL) && (usbd_uac_ep_enable(&(cdev->cb->in)) != 0));
+	u8 keep_mic = usbd_uac_mic_present(cdev);
 
 	if (!cdev->from_composite) {
 #ifdef CONFIG_USBD_SELF_POWERED
@@ -3074,6 +3222,9 @@ static int usbd_uac_private_init(const usbd_uac_cb_t *cb, const usbd_uac_ep_cfg_
 	}
 
 	cdev->ep_cfg = ep_cfg;
+	/* No H2D request is waiting for its data stage yet. The device context is a static object,
+	   so a re-init after deinit must not inherit a stale pending flag. */
+	cdev->ctrl_req_pending = 0U;
 	cdev->cur_volume = 0x001F;
 	cdev->cur_mute = 0;
 	cdev->cur_clk_valid = 1;
@@ -3179,6 +3330,10 @@ int usbd_uac_deinit(void)
 
 	usbd_uac_ep_buf_ctrl_deinit(&(cdev->uac_isoc_in));
 	usbd_uac_ep_buf_ctrl_deinit(&(cdev->uac_isoc_out));
+
+	/* Unregistered above: no class callback can run afterwards, so dropping the pending
+	   control request here cannot race an EP0 OUT completion in ISR context. */
+	cdev->ctrl_req_pending = 0U;
 
 	if (cdev->cb != NULL) {
 		if (cdev->cb->deinit != NULL) {

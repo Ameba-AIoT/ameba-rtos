@@ -14,6 +14,7 @@ class DeviceInfo(object):
         self.image_type = 0
         self.cmd_set_version = 0
         self.wifi_mac = None
+        self.uuid = 0
         self.memory_type = None
         self.flash_mid = None
         self.flash_did = None

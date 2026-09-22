@@ -168,16 +168,13 @@ void at_test(u16 argc, char **argv)
 	} else if (mode == 2) {
 		u32 at_len = (u32)atoi(argv[2]);
 		u32 send_len = 0;
-		u32 malloc_size = 256;
 #ifdef CONFIG_ATCMD_HOST_CONTROL
-		if (g_host_control_mode == AT_HOST_CONTROL_SPI) {
-			malloc_size = ATCMD_SPI_DMA_SIZE - 8;
-		} else if (g_host_control_mode == AT_HOST_CONTROL_SDIO) {
-			malloc_size = ATCMD_SDIO_MAX_SIZE;
-		} else if (g_host_control_mode == AT_HOST_CONTROL_USB) {
-			malloc_size = ATCMD_USBD_MAX_SIZE;
-		}
+		/* Same buffer for every transport: at_intf_*.c fragment as needed. */
+		u32 malloc_size = ATCMD_DATA_REPORT_CHUNK;
+#else
+		u32 malloc_size = 256;
 #endif
+
 		buffer = (u8 *)rtos_mem_malloc(malloc_size);
 		memset(buffer, 1, malloc_size);
 		at_printf(ATCMD_DOWNSTREAM_TEST_START_STR);

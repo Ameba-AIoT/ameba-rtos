@@ -281,6 +281,9 @@ UBaseType_t xPortGetCriticalState( void );
 	#define portSUPPRESS_TICKS_AND_SLEEP( xExpectedIdleTime ) vPortSuppressTicksAndSleep( xExpectedIdleTime )
 #endif
 
+extern void vPortCleanUpTCB( uint32_t * pxTCB );
+#define portCLEAN_UP_TCB( pxTCB )					vPortCleanUpTCB( ( uint32_t * ) pxTCB )
+
 /*-----------------------------------------------------------*/
 
 /* Task function macros as described on the FreeRTOS.org WEB site.  These are

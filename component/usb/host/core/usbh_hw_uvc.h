@@ -59,7 +59,7 @@ typedef struct {
 	__IO u8  buf_locked[USBH_HW_UVC_MAX_BUF_NUM]; /**< 1: buffer held by the app between get_frame() and put_frame(); ISR must not recycle it. */
 
 	/* cmd reg related */
-	rtos_sema_t dec_sema;
+	usb_os_sema_t dec_sema;
 
 	u8 dev_addr;
 	u8 ch;

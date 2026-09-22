@@ -61,6 +61,10 @@ static int usbd_uvc_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status);
 static int usbd_uvc_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len);
 static void usbd_uvc_handle_sof(usb_dev_t *dev);
 static u8 usbd_uvc_set_interface(usb_dev_t *dev, u8 interface, u8 alt);
+static void usbd_uvc_patch_desc(u8 *desc, u16 len);
+#ifdef CONFIG_USBD_COMPOSITE
+static void usbd_uvc_set_interface_base(u8 base);
+#endif
 static void usbd_uvc_video_try_arm(usb_dev_t *dev);
 static usbd_uvc_buffer_t *usbd_uvc_video_in_stream_queue(usbd_uvc_dev_t *uvc_ctx);
 static void usbd_uvc_get_frame_handler(void *parm);
@@ -130,6 +134,9 @@ static const usbd_class_driver_t usbd_uvc_driver = {
 	.ep_data_in = usbd_uvc_handle_ep_data_in,
 	.ep_data_out = usbd_uvc_handle_ep_data_out,
 	.sof = usbd_uvc_handle_sof,
+#ifdef CONFIG_USBD_COMPOSITE
+	.set_interface_base = usbd_uvc_set_interface_base,
+#endif
 };
 
 /* Private functions ---------------------------------------------------------*/
@@ -537,6 +544,18 @@ static int usbd_uvc_handle_ep0_data_out(usb_dev_t *dev)
 	usbd_uvc_dev_t *cdev = &usbd_uvc_dev;
 	usbd_ep_t *ep0_out = &dev->ep0_out;
 	int ret = HAL_OK;
+
+	/* No pending request means this data stage does not belong to UVC, the composite dispatcher
+	   already routed it by active_func. Ref USB 2.0 8.5.3.1: a non-zero return makes the core
+	   stall the status stage, so do not report a failure the host cannot act on. */
+	if (cdev->ctrl_req_pending == 0U) {
+		return HAL_OK;
+	}
+
+	/* Consume the pending request: a single data stage belongs to exactly one setup packet, so
+	   the saved request must not be replayed by a later EP0 OUT event. */
+	cdev->ctrl_req_pending = 0U;
+
 	req_data.type = USBD_UVC_EVENT_DATA;
 	DCache_Invalidate((u32)ep0_out->xfer_buf, cdev->ctrl_data_len);
 	usb_os_memcpy((void *)req_data.uvc_data.data, (const void *)ep0_out->xfer_buf, (u32)cdev->ctrl_data_len);
@@ -661,6 +680,64 @@ static int usbd_uvc_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len)
 	return ret;
 }
 /**
+  * @brief  Rebase the class-specific interface cross-references of a config descriptor block
+  * @note   The VC Header baInterfaceNr[] entries name this function's own streaming
+  *         interfaces and are rebased with the current interface base, which is 0 unless
+  *         the composite framework rebased it; the framework itself only rebases the
+  *         standard Interface and IAD descriptors. Each entry keeps its own class-local
+  *         interface number, hence the base is added rather than assigned.
+  *         Ref UVC 1.5 3.7.2 Tbl 3-3: bInCollection at offset 11, baInterfaceNr[j] at 12+j.
+  * @param  desc  Pointer to the descriptor block (after the configuration descriptor header)
+  * @param  len   Length of the descriptor block
+  * @retval None
+  */
+static void usbd_uvc_patch_desc(u8 *desc, u16 len)
+{
+	usbd_uvc_dev_t *cdev = &usbd_uvc_dev;
+	u16 i;
+
+	if (cdev->if_base == 0U) {
+		return;
+	}
+
+	for (i = 0; i < len;) {
+		u8 dlen = desc[i];
+		u8 dtype = desc[i + 1];
+
+		if (dlen == 0U) {
+			break;
+		}
+
+		if ((dtype == USB_DESC_TYPE_CS_INTERFACE) && (dlen >= 13U) && (desc[i + 2] == USBD_UVC_VC_HEADER)) {
+			u8 n = desc[i + 11];
+			u8 j;
+
+			if ((u16)(12U + n) > (u16)dlen) { /* malformed bInCollection: do not run off the descriptor */
+				n = (u8)(dlen - 12U);
+			}
+			for (j = 0; j < n; j++) {
+				desc[i + 12U + j] = (u8)(desc[i + 12U + j] + cdev->if_base);
+			}
+		}
+		i += dlen;
+	}
+}
+
+#ifdef CONFIG_USBD_COMPOSITE
+/**
+  * @brief  Store the first interface number assigned to this class by the composite framework
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `usb_os_malloc`, `rtos_sema_take`) are not permitted.
+  * @param  base  First interface number of this class
+  * @retval None
+  */
+static void usbd_uvc_set_interface_base(u8 base)
+{
+	usbd_uvc_dev.if_base = base;
+}
+#endif
+
+/**
   * @brief  Get USB descriptor callback for UVC device
   * @note   This function is called within an interrupt service routine (ISR) context;
   *         time-consuming operations (e.g., `usb_os_malloc`, `rtos_sema_take`) are not permitted.
@@ -773,8 +850,13 @@ static u16 usbd_uvc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 		usb_os_memcpy((void *)buf, (const void *)desc, len);
 	}
 
-	if ((is_cfg != 0) && (cdev->from_composite == 0U)) {
-		buf[USB_CFG_DESC_OFFSET_ATTR] = attr;
+	if (is_cfg != 0) {
+		if (cdev->from_composite == 0U) {
+			buf[USB_CFG_DESC_OFFSET_ATTR] = attr;
+		}
+		/* Patch the copy in buf, never the source template: get_descriptor() is invoked
+		 * repeatedly and the source must stay pristine. */
+		usbd_uvc_patch_desc(buf + USB_LEN_CFG_DESC, (u16)(len - USB_LEN_CFG_DESC));
 	}
 
 	return len;
@@ -870,14 +952,29 @@ static int usbd_uvc_setup(usb_dev_t *dev, usb_setup_req_t *req)
 		case USB_REQ_SET_INTERFACE:
 			if (dev->dev_state != USBD_STATE_CONFIGURED) {
 				ret = HAL_ERR_PARA;
+			} else if ((req->wIndex != USBD_UVC_INTF_CONTROL) && (req->wIndex != USBD_UVC_INTF_STREAMING)) {
+				/* Ref USB 2.0 Table 9-10: the whole wIndex is the interface number, and a
+				   foreign interface must be rejected so composite dispatch is not broken */
+				ret = HAL_ERR_PARA;
+			} else if (usbd_uvc_set_interface(dev, (u8)req->wIndex, USB_LOW_BYTE(req->wValue)) != 0U) {
+				ret = HAL_ERR_PARA;
 			} else {
-				usbd_uvc_set_interface(dev, req->wIndex, req->wValue);
+				/* SET_INTERFACE accepted */
 			}
 			RTK_LOGS(TAG, RTK_LOG_DEBUG, "USB_REQ_SET_INTERFACE\n");
 			break;
 		case USB_REQ_GET_INTERFACE:
-			if (dev->dev_state == USBD_STATE_CONFIGURED) {
+			if (dev->dev_state != USBD_STATE_CONFIGURED) {
+				ret = HAL_ERR_PARA;
+			} else if (req->wIndex == USBD_UVC_INTF_CONTROL) {
+				/* Ref USB 2.0 9.4.4: the VC interface has one alternate setting only */
 				ep0_in->xfer_buf[0] = 0U;
+				ep0_in->xfer_len = 1U;
+				usbd_ep_transmit(dev, ep0_in);
+			} else if (req->wIndex == USBD_UVC_INTF_STREAMING) {
+				/* Report the alternate setting actually in use, else the host may believe the
+				   stream is stopped while the ISOC IN endpoint is still active */
+				ep0_in->xfer_buf[0] = (cdev->running != 0U) ? 1U : 0U;
 				ep0_in->xfer_len = 1U;
 				usbd_ep_transmit(dev, ep0_in);
 			} else {
@@ -900,16 +997,37 @@ static int usbd_uvc_setup(usb_dev_t *dev, usb_setup_req_t *req)
 		break;
 	case USB_REQ_TYPE_CLASS :
 		RTK_LOGS(TAG, RTK_LOG_DEBUG, "USB_REQ_TYPE_CLASS\n");
+		/* Ref UVC 1.5 Table 4-1: the low byte of wIndex is the interface number and the high
+		   byte is the entity ID. Only the VC and VS interfaces of this function are handled;
+		   anything else must be stalled instead of leaving the data stage unanswered. */
+		if (((req->bmRequestType & USB_REQ_RECIPIENT_MASK) != USB_REQ_RECIPIENT_INTERFACE)
+			|| ((USB_LOW_BYTE(req->wIndex) != USBD_UVC_INTF_CONTROL) && (USB_LOW_BYTE(req->wIndex) != USBD_UVC_INTF_STREAMING))) {
+			ret = HAL_ERR_PARA;
+			break;
+		}
 		req_data.type = USBD_UVC_EVENT_SETUP;
 		usb_os_memcpy((void *)&req_data.req, (const void *)req, (u32)sizeof(req_data.req));
-		if ((req->bmRequestType & USBD_UVC_BMREQTYPE_DIR_IN) == 0U) {
+		if ((req->bmRequestType == USBD_UVC_BMREQTYPE_CLASS_INTF_OUT) && (req->wLength > 0U)) {
+			/* Ref USB 2.0 8.5.3: an H2D class request with a data stage cannot be dispatched
+			   until the payload arrives. ctrl_data_len bounds the copy done by
+			   usbd_uvc_handle_ep0_data_out(), whose destination holds 64 bytes, so a larger
+			   wLength is rejected here instead of overflowing it. */
+			if (req->wLength > sizeof(req_data.uvc_data.data)) {
+				ret = HAL_ERR_PARA;
+				break;
+			}
 			cdev->ctrl_req = req->bRequest;
-			cdev->ctrl_data_len = req->wLength;
-		}
-
-		if (req->bmRequestType == USBD_UVC_BMREQTYPE_CLASS_INTF_OUT) {
+			cdev->ctrl_data_len = (u8)req->wLength;
+			cdev->ctrl_req_pending = 1U;
 			ep0_out->xfer_len = req->wLength;
-			usbd_ep_receive(dev, ep0_out);
+			if (usbd_ep_receive(dev, ep0_out) != HAL_OK) {
+				/* The data stage never started, so no EP0 OUT completion will arrive to
+				   consume the pending request. Drop it, else the next unrelated request's
+				   data stage would be delivered as this one's payload. */
+				cdev->ctrl_req_pending = 0U;
+				ret = HAL_ERR_HW;
+				break;
+			}
 		} else {
 			//usbd_uvc_events_process(cdev, &req_data);
 			//rtos_queue_send(cdev->uvc_cmd_queue, &req_data, 0);
@@ -941,6 +1059,13 @@ static u8 usbd_uvc_set_interface(usb_dev_t *dev, u8 interface, u8 alt)
 
 	if (cdev->init_done == 0U) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Set_interface: UVC not initialized! init_done=%d\n", cdev->init_done);
+		return 1U;
+	}
+
+	/* Ref USB 2.0 9.4.10: the VC interface has alt 0 only, the VS interface has alt 0 and 1.
+	   Any other combination is a request error. */
+	if (((interface == USBD_UVC_INTF_CONTROL) && (alt != 0U)) || (alt > 1U)) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Set_interface: bad if %d alt %d\n", interface, alt);
 		return 1U;
 	}
 
@@ -1172,6 +1297,8 @@ static int usbd_uvc_private_init(const usbd_uvc_ep_cfg_t *ep_cfg)
 	usbd_uvc_parameter_init();
 	usbd_ext_init();
 	usb_os_memset(dev, 0U, (u32)sizeof(usbd_uvc_dev_t));
+	/* Standalone default; the composite framework rebases it via set_interface_base() */
+	dev->if_base = 0;
 	dev->probe = usbd_uvc_probe;
 	dev->commit = usbd_uvc_commit;
 
@@ -1310,6 +1437,10 @@ int usbd_composite_uvc_init(const usbd_uvc_ep_cfg_t *ep_cfg)
   */
 void usbd_uvc_deinit(void)
 {
+	/* Drop any request still waiting for its data stage, so a re-init cannot inherit it and
+	   dispatch a stale payload. The unregister below stops all further class callbacks. */
+	usbd_uvc_dev.ctrl_req_pending = 0U;
+
 #ifdef CONFIG_USBD_COMPOSITE
 	if (usbd_uvc_dev.from_composite != 0U) {
 		usbd_composite_unregister_driver(&usbd_uvc_driver);

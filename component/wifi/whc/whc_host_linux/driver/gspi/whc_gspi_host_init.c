@@ -178,11 +178,13 @@ u32 rtw_gspi_init_common(struct whc_gspi *priv)
 	priv->GspiTxMaxSZ = CONFIG_MAX_TXAGG_SZ;
 
 #ifdef WHC_TX_AGG
-	/* coalescing buffer for tx aggregation, sized to one bus transfer */
-	priv->agg_buf = kmalloc(priv->GspiTxMaxSZ, GFP_KERNEL);
+	/* coalescing buffer for tx aggregation; guard against re-entry (e.g. fwdl → normal init) */
 	if (priv->agg_buf == NULL) {
-		dev_err(&priv->spi_dev->dev, "%s: alloc tx-agg buf FAIL!\n", __func__);
-		return false;
+		priv->agg_buf = kmalloc(priv->GspiTxMaxSZ, GFP_KERNEL);
+		if (priv->agg_buf == NULL) {
+			dev_err(&priv->spi_dev->dev, "%s: alloc tx-agg buf FAIL!\n", __func__);
+			return false;
+		}
 	}
 #endif
 	rtw_gspi_init_interrupt(priv);
@@ -198,6 +200,12 @@ u32 rtw_gspi_init(struct whc_gspi *priv)
 		return false;
 	}
 
+#ifdef CONFIG_FW_DOWNLOAD
+	if (whc_gspi_xfer_download(priv) != 0) {
+		return false;
+	}
+#endif
+
 	priv->rx_recv_notify = whc_host_recv_notify;
 	priv->dev_state = PWR_STATE_ACTIVE;
 
@@ -209,4 +217,9 @@ void rtw_gspi_deinit(struct whc_gspi *priv)
 	/* mask all interrupts */
 	priv->gspi_himr = GSPI_HIMR_DISABLED;
 	gspi_write32(priv, GSPI_REG_HIMR, priv->gspi_himr);
+
+#ifdef WHC_TX_AGG
+	kfree(priv->agg_buf);
+	priv->agg_buf = NULL;
+#endif
 }

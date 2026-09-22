@@ -306,11 +306,7 @@ bool demo_usb_deinit(void)
 		DiagPrintf("USB UAC deinit failed\r\n");
 		return false;
 	}
-	ret = usbd_deinit();
-	if (ret) {
-		DiagPrintf("USB device deinit failed\r\n");
-		return false;
-	}
+	usbd_deinit();
 
 	write_pos = 0;
 	read_pos = 0;

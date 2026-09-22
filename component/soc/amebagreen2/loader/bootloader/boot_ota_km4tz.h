@@ -37,7 +37,7 @@ u8 BOOT_OTA_IMG(void);
 
 u32 Boot_Fullmac_XipEn(void);
 void Boot_Fullmac_LoadImage(void);
-fih_ret BOOT_OTFCheck(u32 start_addr, u32 end_addr, u32 IV_index, u32 OTF_index);
+fih_ret BOOT_OTFCheck(u32 start_addr, u32 end_addr, u32 IV_index, u32 OTF_index, u8 RSIP_KEY_ID, u8 RSIPConfig, u8 img_index);
 
 #ifdef __cplusplus
 }

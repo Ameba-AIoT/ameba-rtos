@@ -79,8 +79,11 @@ static const usbd_config_t msc_cfg = {
 	.isr_priority = INT_PRI_MIDDLE,
 #if defined(CONFIG_AMEBASMART)
 	.nptx_max_epmis_cnt = 100U,
-#elif defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RLE1509)
+#elif defined(CONFIG_AMEBAGREEN2)
 	.rx_fifo_depth = 724U,
+	.ptx_fifo_depth = {0U, 256U, 0U, 0U, 0U},
+#elif defined(CONFIG_RLE1509)
+	.rx_fifo_depth = 688U,
 	.ptx_fifo_depth = {0U, 256U, 0U, 0U, 0U},
 #elif defined (CONFIG_AMEBAL2)
 	.rx_fifo_depth = 677U,
@@ -152,10 +155,7 @@ static void example_usbd_msc_usb_hotplug_thread(void *param)
 				msc_hotplug_ongoing_type = USBD_MSC_USB_HOTPLUG;
 				RTK_LOGS(TAG, RTK_LOG_INFO, "DETACHED\n");
 				usbd_msc_deinit();
-				ret = usbd_deinit();
-				if (ret != 0) {
-					break;
-				}
+				usbd_deinit();
 				usbd_msc_disk_deinit();
 				RTK_LOGS(TAG, RTK_LOG_INFO, "Free heap: 0x%x\n", rtos_mem_get_free_heap_size());
 				usbd_msc_disk_init();
@@ -194,10 +194,7 @@ static void example_usbd_msc_sd_hotplug_thread(void *param)
 				msc_hotplug_ongoing_type = USBD_MSC_SD_HOTPLUG;
 				RTK_LOGS(TAG, RTK_LOG_INFO, "SD card removed\n");
 				usbd_msc_deinit();
-				ret = usbd_deinit();
-				if (ret != 0) {
-					break;
-				}
+				usbd_deinit();
 				RTK_LOGS(TAG, RTK_LOG_INFO, "Free heap: 0x%x\n", rtos_mem_get_free_heap_size());
 			} else {
 				RTK_LOGS(TAG, RTK_LOG_INFO, "SD card insert, re-init USB\n");

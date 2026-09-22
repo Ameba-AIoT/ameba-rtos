@@ -1435,12 +1435,12 @@ int usbh_uvc_stream_open(usbh_uvc_stream_t *stream)
 	stream->uvc_dec->err_cb = uvc->hw_error;
 	usbh_hw_uvc_init(stream->uvc_dec);	/* create dec_sema once; prepare+start deferred to stream_start */
 
-	rtos_critical_enter(RTOS_CRITICAL_USB);
+	usb_os_enter_critical(0U);
 	if (uvc->hw_irq_ref_cnt == 0U) {
 		usbh_hw_uvc_irq_en(uvc->hw_isr_pri);
 	}
 	uvc->hw_irq_ref_cnt++;
-	rtos_critical_exit(RTOS_CRITICAL_USB);
+	usb_os_exit_critical(0U);
 
 #endif
 
@@ -1501,14 +1501,14 @@ void usbh_uvc_stream_close(usbh_uvc_stream_t *stream)
 	uvc = &uvc_host;
 	dec = stream->uvc_dec;
 	if (dec != NULL) {
-		rtos_critical_enter(RTOS_CRITICAL_USB);
+		usb_os_enter_critical(0U);
 		if (uvc->hw_irq_ref_cnt > 0U) {
 			uvc->hw_irq_ref_cnt--;
 			if (uvc->hw_irq_ref_cnt == 0U) {
 				usbh_hw_uvc_irq_dis();
 			}
 		}
-		rtos_critical_exit(RTOS_CRITICAL_USB);
+		usb_os_exit_critical(0U);
 
 		usbh_hw_uvc_stop(dec);
 		usbh_hw_uvc_deinit(dec);

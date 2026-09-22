@@ -2131,7 +2131,8 @@ typedef struct {
 	__IO uint32_t RSVD0[2]                             ;  /*!< Reserved,  Address offset:0x02C-0x033 */
 	__I  uint32_t ETH_TRSR                             ;  /*!< Register,  Address offset:0x034 */
 	__IO uint32_t ETH_CR                               ;  /*!< Register,  Address offset:0x038 */
-	__IO uint32_t ETH_ISR_AND_IMR                      ;  /*!< Register,  Address offset:0x03C */
+	__IO uint16_t ETH_ISR                              ;  /*!< Register,  Address offset:0x03C, low half: write-1-to-clear status */
+	__IO uint16_t ETH_IMR                              ;  /*!< Register,  Address offset:0x03E, high half: interrupt mask */
 	__IO uint32_t ETH_TCR                              ;  /*!< Register,  Address offset:0x040 */
 	__IO uint32_t ETH_RCR                              ;  /*!< Register,  Address offset:0x044 */
 	__IO uint32_t ETH_CPUTAG                           ;  /*!< Register,  Address offset:0x048 */
@@ -2276,6 +2277,14 @@ struct eth_mdio_ops;
 #define ETH_PKT_MAX_SIZE            (ETH_HEADER_LEN + ETH_VLAN_TAG_LEN + ETH_PAYLOAD_MAX_LEN + ETH_CRC_LEN) /*!< Maximum total Ethernet frame size including header, VLAN, payload, and CRC. */
 
 #define ETH_MAX_BUF_SIZE            ((ETH_PKT_MAX_SIZE + CACHE_LINE_SIZE) & ~(CACHE_LINE_SIZE - 1)) /*!< Maximum aligned buffer size for one Ethernet frame. */
+
+/* The GMAC inserts IPv4/TCP/UDP checksums on TX and validates them on RX, so
+ * lwIP can skip both passes on the ethernet netif. Deliberately not a Kconfig
+ * symbol: the hardware either has the engine or it does not, so this is not a
+ * customer knob and the control stays inside the driver. Set to 0 to fall back
+ * to software checksums if a hardware problem ever turns up -- the lwIP port
+ * reads the same macro, so both sides fall back together. */
+#define ETH_CSUM_OFFLOAD            1 /*!< Enable the MAC's TX insertion and RX validation of IPv4/TCP/UDP checksums. */
 /* VLAN Headers */
 #define ETH_C_VLAN_HDR              0x8100279F /*!< C-VLAN (802.1Q) header template value with TPID 0x8100. */
 #define ETH_S_VLAN_HDR              0x88A8279F /*!< S-VLAN (QinQ) header template value. */
@@ -2625,7 +2634,7 @@ enum eth_link_event {
 	ETH_EVT_RDU_RING4    = (1 << 8),  /*!< RX descriptor unavailable for Ring4. */
 	ETH_EVT_RDU_RING5    = (1 << 9),  /*!< RX descriptor unavailable for Ring5. */
 	ETH_EVT_RDU_RING6    = (1 << 10), /*!< RX descriptor unavailable for Ring6. */
-
+	ETH_EVT_TDU_RING     = (1 << 11), /*!< TX descriptor unavailable. */
 	/* Alias for backward compatibility (Ring 1 default) */
 	ETH_EVT_RX_NO_DESC   = ETH_EVT_RDU_RING1 /*!< Alias for Ring1 RDU event. */
 };
@@ -3206,7 +3215,7 @@ typedef struct {
 	uint8_t DMA_TxTriggerLevel;    /*!< TX interrupt trigger packet count (see @ref eth_trigger_level). */
 	uint8_t DMA_RxTriggerLevel;    /*!< RX interrupt trigger packet count (see @ref eth_trigger_level). */
 	/* Hardware Resources */
-	uint32_t ETH_IntMaskAndStatus; /*!< Interrupt mask and status register value. */
+	uint16_t ETH_IntMask;          /*!< Interrupt mask, written to ETH_IMR. */
 	uint8_t  ETH_MacAddr[6];       /*!< Local MAC address (6 bytes). */
 
 	/* Descriptor */

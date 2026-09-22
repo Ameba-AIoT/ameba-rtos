@@ -13,11 +13,6 @@
 
 /* Private defines -----------------------------------------------------------*/
 
-/* Sentinel stored in usbd_vendor_dev_t::ctrl_req.bRequest when no H2D class/vendor
- * request is waiting for its data stage. 0xFF is reserved: it is neither a standard
- * request code nor used by this class, so it can never collide with a real bRequest. */
-#define USBD_VENDOR_CTRL_REQ_IDLE			0xFFU
-
 /* Private types -------------------------------------------------------------*/
 
 /* Private macros ------------------------------------------------------------*/
@@ -260,24 +255,27 @@ static usbd_vendor_dev_t usbd_vendor_dev;
 
 /**
   * @brief  Clamp the transfer length of an OUT endpoint to whole packets fitting in its buffer
-  * @note   The controller always receives whole packets, so the DMA window is the requested
-  *         length rounded up to the endpoint MPS. As the transfer buffer is allocated from the
-  *         application configuration, which may not be a multiple of the MPS in use (e.g. the
-  *         full speed ISOC MPS is 1023), the length is clamped here so that the window never
-  *         exceeds the buffer, refer to @ref usbd_ep_receive.
+  * @note   The controller always receives whole packets and each packet occupies a DWORD
+  *         aligned slot in memory, so the DMA window is a multiple of the aligned MPS. As the
+  *         transfer buffer is allocated from the application configuration, which may not be a
+  *         multiple of the per-packet stride in use (e.g. the full speed ISOC MPS is 1023, whose
+  *         stride is 1024), the length is clamped to @ref usb_get_max_payload_len so that the
+  *         window never exceeds the buffer, refer to @ref usbd_ep_receive.
+  *         Shall be called after usbd_ep_init(), which fills info.mps for the negotiated speed.
   * @param  ep: OUT endpoint
   * @retval Status
   */
 static int usbd_vendor_config_out_xfer_len(usbd_ep_t *ep)
 {
-	u32 mps = ep->info.mps;
+	u32 xfer_len = usb_get_max_payload_len(ep->xfer_buf_len, ep->info.mps);
 
-	if ((mps == 0U) || (ep->xfer_buf_len < mps)) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "EP%02x buf_len %u < mps %u\n", ep->info.addr, ep->xfer_buf_len, mps);
+	/* A buffer too small for a single padded packet leaves nothing to request */
+	if ((ep->info.mps == 0U) || (xfer_len == 0U)) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "EP%02x buf_len %u < mps %u\n", ep->info.addr, ep->xfer_buf_len, ep->info.mps);
 		return HAL_ERR_PARA;
 	}
 
-	ep->xfer_len = (ep->xfer_buf_len / mps) * mps;
+	ep->xfer_len = xfer_len;
 
 	return HAL_OK;
 }
@@ -460,8 +458,11 @@ static int usbd_vendor_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			if (dev->dev_state == USBD_STATE_CONFIGURED) {
 				/* Ref USB 2.0 Table 9-10: the whole wIndex is the interface number, this
 				   class owns the single interface 0 only */
-				if (req->wIndex == 0U) {
-					cdev->alt_setting = USB_LOW_BYTE(req->wValue);
+				/* Ref USB 2.0 9.4.10: only the alternate settings described for the
+				   interface are valid, interface 0 describes bAlternateSetting 0 only,
+				   so any other wValue is a request error */
+				if ((req->wIndex == 0U) && (req->wValue == 0U)) {
+					cdev->alt_setting = 0U;
 
 					/* Ref USB 2.0 9.4.10: the endpoints of the selected interface return
 					   to their default state, not halted and data toggle DATA0. This holds
@@ -483,7 +484,7 @@ static int usbd_vendor_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			if (dev->dev_state == USBD_STATE_CONFIGURED) {
 				ep0_in->xfer_buf[0] = cdev->alt_setting;
 				ep0_in->xfer_len = 1U;
-				usbd_ep_transmit(dev, ep0_in);
+				ret = usbd_ep_transmit(dev, ep0_in);
 			} else {
 				ret = HAL_ERR_HW;
 			}
@@ -493,7 +494,7 @@ static int usbd_vendor_setup(usb_dev_t *dev, usb_setup_req_t *req)
 				ep0_in->xfer_buf[0] = 0U;
 				ep0_in->xfer_buf[1] = 0U;
 				ep0_in->xfer_len = 2U;
-				usbd_ep_transmit(dev, ep0_in);
+				ret = usbd_ep_transmit(dev, ep0_in);
 			} else {
 				ret = HAL_ERR_HW;
 			}
@@ -527,7 +528,9 @@ static int usbd_vendor_setup(usb_dev_t *dev, usb_setup_req_t *req)
 				ret = cdev->cb->setup(req, ep0_in->xfer_buf);
 				if (ret == HAL_OK) {
 					ep0_in->xfer_len = rsp_len;
-					usbd_ep_transmit(dev, ep0_in);
+					/* Propagate a submit failure so that the core stalls EP0 instead of
+					   leaving the host waiting out the data stage, ref USB 2.0 8.5.3.4 */
+					ret = usbd_ep_transmit(dev, ep0_in);
 				}
 			} else {
 				/* Ref USB 2.0 8.5.3: an H2D control transfer with wLength > 0 carries the
@@ -536,6 +539,7 @@ static int usbd_vendor_setup(usb_dev_t *dev, usb_setup_req_t *req)
 				   delivered to cdev->cb->setup() from usbd_vendor_handle_ep0_data_out() once
 				   the whole data stage has been received. */
 				usb_os_memcpy((void *)&cdev->ctrl_req, (const void *)req, sizeof(usb_setup_req_t));
+				cdev->ctrl_req_pending = 1U;
 				ep0_out->xfer_len = req->wLength;
 				ret = usbd_ep_receive(dev, ep0_out);
 				if (ret != HAL_OK) {
@@ -543,7 +547,7 @@ static int usbd_vendor_setup(usb_dev_t *dev, usb_setup_req_t *req)
 					   stage completion will ever arrive. Drop the pending request to keep the
 					   next transfer clean and report the failure so that the core stalls EP0
 					   instead of silently acknowledging a request that is never processed. */
-					cdev->ctrl_req.bRequest = USBD_VENDOR_CTRL_REQ_IDLE;
+					cdev->ctrl_req_pending = 0U;
 				}
 			}
 		} else {
@@ -576,6 +580,13 @@ static int usbd_vendor_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status)
 	usbd_ep_t *ep_intr_in = &cdev->ep_intr_in;
 	usbd_ep_t *ep_bulk_in = &cdev->ep_bulk_in;
 	UNUSED(dev);
+
+	/* Ref USB 2.0 5.3.2: an endpoint is owned by exactly one function. Reject a foreign
+	   address so that the composite dispatcher keeps iterating to the real owner. */
+	if ((ep_addr != cdev->ep_cfg->intr_in_addr) && (ep_addr != cdev->ep_cfg->bulk_in_addr)
+		&& (ep_addr != cdev->ep_cfg->isoc_in_addr)) {
+		return HAL_ERR_PARA;
+	}
 
 	if (status != HAL_OK) {
 		USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_XFER, ep_addr);
@@ -615,15 +626,24 @@ static int usbd_vendor_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status)
 static int usbd_vendor_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len)
 {
 	usbd_vendor_dev_t *cdev = &usbd_vendor_dev;
+	const usbd_vendor_cb_t *cb = cdev->cb;
 	usbd_ep_t *ep_isoc_out = &cdev->ep_isoc_out;
 	usbd_ep_t *ep_bulk_out = &cdev->ep_bulk_out;
 	usbd_ep_t *ep_intr_out = &cdev->ep_intr_out;
 	UNUSED(dev);
 	int ret = HAL_OK;
 
+	/* Ref USB 2.0 5.3.2: an endpoint is owned by exactly one function. Reject a foreign
+	   address so that the composite dispatcher keeps iterating to the real owner, which
+	   also re-arms its own OUT endpoint. */
+	if ((ep_addr != cdev->ep_cfg->intr_out_addr) && (ep_addr != cdev->ep_cfg->bulk_out_addr)
+		&& (ep_addr != cdev->ep_cfg->isoc_out_addr)) {
+		return HAL_ERR_PARA;
+	}
+
 	if (ep_addr == cdev->ep_cfg->intr_out_addr) {
-		if (len > 0) {
-			cdev->cb->intr_received(ep_intr_out->xfer_buf, len);
+		if ((len > 0) && (cb != NULL) && (cb->intr_received != NULL)) {
+			cb->intr_received(ep_intr_out->xfer_buf, len);
 		}
 		ret = usbd_ep_receive(cdev->dev, ep_intr_out);
 		if (ret != HAL_OK) {
@@ -632,8 +652,8 @@ static int usbd_vendor_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len)
 	}
 
 	if (ep_addr == cdev->ep_cfg->bulk_out_addr) {
-		if (len > 0) {
-			cdev->cb->bulk_received(ep_bulk_out->xfer_buf, len);
+		if ((len > 0) && (cb != NULL) && (cb->bulk_received != NULL)) {
+			cb->bulk_received(ep_bulk_out->xfer_buf, len);
 		}
 		ret = usbd_ep_receive(cdev->dev, ep_bulk_out);
 		if (ret != HAL_OK) {
@@ -642,8 +662,8 @@ static int usbd_vendor_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len)
 	}
 
 	if (ep_addr == cdev->ep_cfg->isoc_out_addr) {
-		if (len > 0) {
-			cdev->cb->isoc_received(ep_isoc_out->xfer_buf, len);
+		if ((len > 0) && (cb != NULL) && (cb->isoc_received != NULL)) {
+			cb->isoc_received(ep_isoc_out->xfer_buf, len);
 		}
 		ret = usbd_ep_receive(cdev->dev, ep_isoc_out);
 		if (ret != HAL_OK) {
@@ -679,14 +699,16 @@ static int usbd_vendor_handle_ep0_data_out(usb_dev_t *dev)
 	usbd_vendor_dev_t *cdev = &usbd_vendor_dev;
 	usbd_ep_t *ep0_out = &dev->ep0_out;
 
-	if (cdev->ctrl_req.bRequest != USBD_VENDOR_CTRL_REQ_IDLE) {
-		if (cdev->cb->setup != NULL) {
+	if (cdev->ctrl_req_pending != 0U) {
+		/* Consume the pending request first: a single data stage belongs to exactly one setup
+		   packet, so the saved request must not be replayed by a later EP0 OUT event. */
+		cdev->ctrl_req_pending = 0U;
+
+		/* cb is released by usbd_vendor_deinit(), which may run between the setup and the
+		   data stage of an H2D request, so both the structure and the handler are checked. */
+		if ((cdev->cb != NULL) && (cdev->cb->setup != NULL)) {
 			ret = cdev->cb->setup(&cdev->ctrl_req, ep0_out->xfer_buf);
 		}
-
-		/* Consume the pending request: a single data stage belongs to exactly one setup
-		   packet, so the saved request must not be replayed by a later EP0 OUT event. */
-		cdev->ctrl_req.bRequest = USBD_VENDOR_CTRL_REQ_IDLE;
 	}
 
 	return ret;
@@ -911,10 +933,8 @@ static int usbd_vendor_private_init(const usbd_vendor_cb_t *cb, const usbd_vendo
 
 	cdev->ep_cfg = ep_cfg;
 
-	/* Mark the control request slot as empty. The device context is a static object, so
-	   bRequest would otherwise start at 0x00, which usbd_vendor_handle_ep0_data_out() would
-	   mistake for a pending request and dispatch to the application. */
-	cdev->ctrl_req.bRequest = USBD_VENDOR_CTRL_REQ_IDLE;
+	/* No H2D class/vendor request is waiting for its data stage yet. */
+	cdev->ctrl_req_pending = 0U;
 
 	info = &ep_bulk_out->info;
 	info->addr = cdev->ep_cfg->bulk_out_addr;
@@ -1083,13 +1103,8 @@ int usbd_vendor_deinit(void)
 		usb_os_delay_us(100);
 	}
 
-	if (cdev->cb != NULL) {
-		if (cdev->cb->deinit != NULL) {
-			cdev->cb->deinit();
-		}
-		cdev->cb = NULL;
-	}
-
+	/* Unregister first: no class callback can run afterwards, so releasing cb and the pending
+	   control request below cannot race an EP0 OUT completion in ISR context. */
 #ifdef CONFIG_USBD_COMPOSITE
 	if (cdev->from_composite) {
 		usbd_composite_unregister_driver(&usbd_vendor_driver);
@@ -1097,6 +1112,15 @@ int usbd_vendor_deinit(void)
 #endif
 	{
 		usbd_unregister_class();
+	}
+
+	cdev->ctrl_req_pending = 0U;
+
+	if (cdev->cb != NULL) {
+		if (cdev->cb->deinit != NULL) {
+			cdev->cb->deinit();
+		}
+		cdev->cb = NULL;
 	}
 
 	usb_os_mfree((void *)ep_bulk_in->xfer_buf);

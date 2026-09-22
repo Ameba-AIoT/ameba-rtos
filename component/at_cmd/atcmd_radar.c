@@ -10,7 +10,6 @@
 #include "atcmd_service.h"
 #include "atcmd_wifi.h"
 #include "wifi_intf_drv_to_upper.h"
-#include "wifi_radar.h"
 #ifdef CONFIG_WHC_HOST
 #ifdef CONFIG_WHC_INTF_IPC
 #include "whc_ipc_host_api.h"
@@ -22,6 +21,7 @@
 #include <stdlib.h>
 
 static void (*g_at_radarstart_cb)(u16 argc, char **argv) = NULL;
+extern int wifi_radar_dbg(u16 argc, char **argv);
 
 static void at_rad_help(void)
 {

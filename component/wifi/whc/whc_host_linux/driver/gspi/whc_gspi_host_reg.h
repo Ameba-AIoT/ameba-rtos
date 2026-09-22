@@ -179,6 +179,7 @@
 
 // Register GSPI_REG_HCPWM2 (halfword view at 0x3A)
 #define GSPI_HCPWM2_ACT_BIT					(BIT(0))
+#define GSPI_HCPWM2_IMG1_BIT				(BIT(2))	/* bootloader ready */
 #define GSPI_HCPWM2_TOGGLING				(BIT(15))
 
 // Register GSPI_REG_CPU_INDICATION, read as 32-bit at 0x84
