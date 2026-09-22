@@ -3009,7 +3009,7 @@ int bt_pbp_main(uint8_t role, uint8_t enable, uint32_t sound_channel)
 #endif
 #if defined(RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT) && RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT
 				bt_app_conf.max_tx_octets = 0x40;
-				bt_app_conf.max_tx_time = 0x200;
+				bt_app_conf.max_tx_time = 0x270;
 #endif
 				memcpy((void *)&bt_app_conf.le_audio_app_conf, (void *)p_lea_app_conf, sizeof(rtk_bt_le_audio_app_conf_t));
 			}
@@ -3108,7 +3108,7 @@ int bt_pbp_main(uint8_t role, uint8_t enable, uint32_t sound_channel)
 #endif
 #if defined(RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT) && RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT
 				bt_app_conf.max_tx_octets = 0x40;
-				bt_app_conf.max_tx_time = 0x200;
+				bt_app_conf.max_tx_time = 0x270;
 #endif
 				memcpy((void *)&bt_app_conf.le_audio_app_conf, (void *)p_lea_app_conf, sizeof(rtk_bt_le_audio_app_conf_t));
 			}
@@ -3183,7 +3183,7 @@ int bt_pbp_main(uint8_t role, uint8_t enable, uint32_t sound_channel)
 #endif
 #if defined(RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT) && RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT
 				bt_app_conf.max_tx_octets = 0x40;
-				bt_app_conf.max_tx_time = 0x200;
+				bt_app_conf.max_tx_time = 0x270;
 #endif
 				memcpy((void *)&bt_app_conf.le_audio_app_conf, (void *)p_lea_app_conf, sizeof(rtk_bt_le_audio_app_conf_t));
 			}
