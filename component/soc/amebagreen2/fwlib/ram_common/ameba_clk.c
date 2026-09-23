@@ -492,6 +492,16 @@ void XTAL_AACK(void)
 	}
 }
 
+void XTAL_ARB_Delay_Set(u32 value)
+{
+	XTAL_TypeDef *xtal = XTAL_BASE;
+
+	u32 temp = xtal->XTAL_ANAPAR_POW_XTAL_0;
+	temp &= ~XTAL_MASK_BG2HPMOD_CYC;
+	temp |= XTAL_BG2HPMOD_CYC(value);
+	xtal->XTAL_ANAPAR_POW_XTAL_0 = temp;
+}
+
 SRAMDRAM_ONLY_TEXT_SECTION
 static u32 _PERI_ClkGet(u8 peri_ckd)
 {

@@ -17,6 +17,7 @@ extern "C" {
 
 /* usbd uac */
 #define USB_UAC1_IF_IDX_AC_HEADSET                          0x00U
+#define USB_UAC1_IF_IDX_AS_HEADSET_HEADPHONES               0x01U
 
 /*  4.3.2.5 Feature Unit Descriptor  bmaControls */
 #define USB_UAC1_CONTROL_MUTE                               BIT0

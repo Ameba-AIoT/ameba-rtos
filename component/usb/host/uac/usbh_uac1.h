@@ -39,6 +39,9 @@ extern "C" {
 #define USBH_UAC_TERM_MAX_CNT           8U      /**< Maximum number of Audio Terminals supported */
 #define USBH_UAC_FU_MAX_CNT             4U      /**< Maximum number of Feature Units supported */
 #define USBH_UAC_MAX_CHANNEL            8U      /**< Maximum number of audio channels supported (e.g., 8 for 7.1 audio) */
+#define USBH_UAC_UNIT_MAX_CNT           8U      /**< Maximum number of intermediate Units (Mixer/Selector/Processing/Extension) tracked for topology walks */
+#define USBH_UAC_UNIT_SRC_MAX_CNT       4U      /**< Maximum number of bSourceID entries tracked per intermediate Unit */
+#define USBH_UAC_TOPO_DEPTH_MAX         8U      /**< Maximum topology hops walked from an Output Terminal back to a Feature Unit */
 
 #define USBH_UAC_ALT_SETTING_MAX        10      /**< Maximum number of Alternate Settings per interface */
 #define USBH_UAC_FREQ_FORMAT_MAX        6       /**< Maximum number of discrete sampling frequencies per format */
@@ -73,6 +76,17 @@ typedef struct {
 } usbh_uac_term_info_t;
 
 /**
+  * @brief  UAC 1.0 intermediate Unit (Mixer/Selector/Processing/Extension) link information.
+  *         Only the ID and the bSourceID list are kept: enough to walk an Output Terminal's
+  *         chain back to the Feature Unit that feeds it (UAC1 4.3.2).
+  */
+typedef struct {
+	u8 unit_id;                                 /**< bUnitID of this Unit */
+	u8 source_cnt;                              /**< Number of valid entries in source_ids[] */
+	u8 source_ids[USBH_UAC_UNIT_SRC_MAX_CNT];   /**< bSourceID list of the entities feeding this Unit */
+} usbh_uac_unit_info_t;
+
+/**
   * @brief  UAC 1.0 Feature Unit (Volume Control) Information structure.
   *         match to the bmaControls layout from UAC1 spec: index 0 is the
   *         Master Channel (logical channel 0); indices 1..num_channels are
@@ -95,9 +109,11 @@ typedef struct {
 typedef struct {
 	usbh_uac_fu_info_t fu_controls[USBH_UAC_FU_MAX_CNT];  /**< Parsed Feature Units, indexed 0..volume_ctrl_count-1 */
 	usbh_uac_term_info_t terminals[USBH_UAC_TERM_MAX_CNT];   /**< Parsed Terminals, indexed 0..terminal_count-1 */
+	usbh_uac_unit_info_t units[USBH_UAC_UNIT_MAX_CNT];       /**< Parsed intermediate Units, indexed 0..unit_count-1 */
 
 	u8 volume_ctrl_count; /**< Number of valid entries in fu_controls[] */
 	u8 terminal_count;    /**< Number of valid entries in terminals[] */
+	u8 unit_count;        /**< Number of valid entries in units[] */
 
 	u8 in_best_idx;      /**< Index into fu_controls[] for the best IN/Record Feature Unit; (u8)-1 if none */
 	u8 out_best_idx;     /**< Index into fu_controls[] for the best OUT/Playback Feature Unit; (u8)-1 if none */
@@ -157,6 +173,7 @@ typedef struct {
 	u8 bit_width; /**< Bit resolution per sample (e.g., 16, 24, 32) */
 	u8 channels;  /**< Number of audio channels */
 	u8 freq_cnt;  /**< Number of valid entries in freq[] */
+	u8 freq_continuous; /**< 1 when bSamFreqType==0: freq[0]/freq[1] are the lower/upper bounds of a continuous range */
 } usbh_uac_format_cfg_t;
 
 /**

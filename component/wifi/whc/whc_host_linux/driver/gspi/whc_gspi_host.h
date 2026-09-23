@@ -58,12 +58,27 @@ struct whc_gspi;
 /* Largest single TX transfer accepted (payload + descriptor). */
 #define GSPI_TX_MAX_SZ			SPI_BUFSZ
 
+#define WHC_TX_AGG
+#define WHC_RX_AGG
+
 /* HW rx aggregation fires when either threshold is hit, whichever comes first */
 #define GSPI_RX_AGG_TO			0	/* timeout = (0+1)*32us? */
 #define GSPI_RX_AGG_BD_CNT_TH	4	/* aggregate up to 4 RXBDs per transfer */
 
 /* Wake the TX waiter from the TXBD-available interrupt instead of polling. */
 #define CONFIG_GSPI_TX_ENABLE_AVAL_INT
+
+#define GSPI_PM_TEST	0
+
+/*
+ * Full-duplex transfer buffer strategy:
+ *   1 = shared:   tx_buf == rx_buf, MISO overwrites the frame in place. Saves an
+ *                 allocation and a copy. Requires the SPI controller to support
+ *                 in-place full-duplex (bcm2835 / Raspberry Pi does).
+ *   0 = separate: rx goes into its own buffer, then the result is copied back.
+ *                 Most portable; use if a controller/DMA engine rejects tx==rx.
+ */
+#define GSPI_INPLACE_XFER	1
 
 /* for txbd should <= 4, 1.6K every pkt， about 6.4K， roundup to 8K*/
 #define CONFIG_MAX_TXAGG_SZ		8192
@@ -104,11 +119,27 @@ extern struct hci_ops_t whc_gspi_host_intf_ops;
 
 /* whc_gspi_host_init.c */
 u32  rtw_gspi_init(struct whc_gspi *priv);
+u32  rtw_gspi_init_common(struct whc_gspi *priv);
 void rtw_gspi_deinit(struct whc_gspi *priv);
 u32  rtw_gspi_get_rx_len(struct whc_gspi *priv);
 u32  rtw_gspi_get_free_txbd(struct whc_gspi *priv);
+u8   rtw_gspi_query_txbd_status(struct whc_gspi *priv);
+#ifdef WHC_RX_AGG
+void rtw_gspi_enable_rx_agg(struct whc_gspi *priv);
+#endif
+
+/* whc_gspi_host_probe.c (power management) */
+u8   whc_gspi_host_rpwm_notify(struct whc_gspi *priv, enum RPWM2_EVENT event);
+int  whc_gspi_host_resume_common(struct whc_gspi *priv);
+int whc_gspi_host_suspend(struct device *dev);
+int whc_gspi_host_resume(struct device *dev);
 
 /* whc_gspi_host_ops.c */
 void whc_gspi_host_send_data(u8 *buf, u32 len, struct sk_buff *pskb);
+
+/* whc_gspi_host_fwdl.c */
+int  whc_gspi_xfer_download(struct whc_gspi *priv);
+
+extern const struct whc_xfer_ops_t whc_gspi_xfer_ops;
 
 #endif  /* _WHC_GSPI_HOST_H_ */

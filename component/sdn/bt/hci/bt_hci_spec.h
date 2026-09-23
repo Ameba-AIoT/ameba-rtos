@@ -1317,6 +1317,64 @@ struct bt_hci_cp_le_set_per_adv_recv_enable {
 	uint8_t  enable;
 } __attribute__((packed));
 
+/* Periodic Advertising Sync Transfer (Core Spec 6.3 Vol 4, Part E, 7.8.89-7.8.92) */
+#define BT_HCI_OP_LE_PA_SYNC_TRANSFER     BT_OP(BT_OGF_LE, 0x005A) /* 0x205A */
+struct bt_hci_cp_le_pa_sync_transfer {
+	uint16_t conn_handle;
+	uint16_t service_data;
+	uint16_t sync_handle;
+} __attribute__((packed));
+
+struct bt_hci_rp_le_pa_sync_transfer {
+	uint8_t  status;
+	uint16_t conn_handle;
+} __attribute__((packed));
+
+#define BT_HCI_OP_LE_PA_SET_INFO_TRANSFER  BT_OP(BT_OGF_LE, 0x005B) /* 0x205B */
+struct bt_hci_cp_le_pa_set_info_transfer {
+	uint16_t conn_handle;
+	uint16_t service_data;
+	uint8_t  adv_handle;
+} __attribute__((packed));
+
+struct bt_hci_rp_le_pa_set_info_transfer {
+	uint8_t  status;
+	uint16_t conn_handle;
+} __attribute__((packed));
+
+#define BT_HCI_LE_PAST_MODE_NO_SYNC                 0x00
+#define BT_HCI_LE_PAST_MODE_NO_REPORTS              0x01
+#define BT_HCI_LE_PAST_MODE_SYNC                    0x02
+#define BT_HCI_LE_PAST_MODE_SYNC_FILTER_DUPLICATES  0x03
+
+#define BT_HCI_LE_PAST_CTE_TYPE_NO_AOA               BIT(0)
+#define BT_HCI_LE_PAST_CTE_TYPE_NO_AOD_1US           BIT(1)
+#define BT_HCI_LE_PAST_CTE_TYPE_NO_AOD_2US           BIT(2)
+#define BT_HCI_LE_PAST_CTE_TYPE_NO_CTE               BIT(3)
+#define BT_HCI_LE_PAST_CTE_TYPE_ONLY_CTE             BIT(4)
+
+#define BT_HCI_OP_LE_SET_PA_SYNC_TRANSFER_PARAM  BT_OP(BT_OGF_LE, 0x005C) /* 0x205C */
+struct bt_hci_cp_le_set_pa_sync_transfer_param {
+	uint16_t conn_handle;
+	uint8_t  mode;
+	uint16_t skip;
+	uint16_t sync_timeout;
+	uint8_t  cte_type;
+} __attribute__((packed));
+
+struct bt_hci_rp_le_set_pa_sync_transfer_param {
+	uint8_t  status;
+	uint16_t conn_handle;
+} __attribute__((packed));
+
+#define BT_HCI_OP_LE_SET_DEFAULT_PA_SYNC_TRANSFER_PARAM  BT_OP(BT_OGF_LE, 0x005D) /* 0x205D */
+struct bt_hci_cp_le_set_default_pa_sync_transfer_param {
+	uint8_t  mode;
+	uint16_t skip;
+	uint16_t sync_timeout;
+	uint8_t  cte_type;
+} __attribute__((packed));
+
 /* Periodic Advertiser List management (Core Spec v5.4 Vol 4, Part E, 7.8.68-7.8.71) */
 #define BT_HCI_OP_LE_ADD_PERIODIC_ADV_LIST         BT_OP(BT_OGF_LE, 0x0047) /* 0x2047 */
 #define BT_HCI_OP_LE_REMOVE_PERIODIC_ADV_LIST      BT_OP(BT_OGF_LE, 0x0048) /* 0x2048 */
@@ -1953,6 +2011,21 @@ struct bt_hci_evt_le_adv_set_terminated {
 	uint8_t num_cmpl_ext_adv_evts;
 } __attribute__((packed));
 
+/* Core Spec 6.3 Vol 4, Part E, 7.7.65.24 */
+#define BT_HCI_EVT_LE_PA_SYNC_TRANSFER_RECEIVED_V1  0x18
+struct bt_hci_evt_le_pa_sync_transfer_received_v1 {
+	uint8_t  subevent;
+	uint8_t  status;
+	uint16_t conn_handle;
+	uint16_t service_data;
+	uint16_t sync_handle;
+	uint8_t  sid;
+	struct bt_le_addr_t adv_addr;
+	uint8_t  adv_phy;
+	uint16_t pa_interval;
+	uint8_t  adv_clk_accuracy;
+} __attribute__((packed));
+
 #define BT_HCI_AUX_PHY_TO_HCI_PHY(aux_phy) ((aux_phy) + 1)
 
 #define BT_HCI_LE_ADV_EVT_TYPE_CONN                 BIT(0)
@@ -1967,13 +2040,9 @@ struct bt_hci_evt_le_adv_set_terminated {
 #define BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_INCOMPLETE 2
 #define BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_RX_FAILED  0xFF
 
-/* Advertising Coding Selection extended advertising report PHY values.
- * Only used when Kconfig BT_EXT_ADV_CODING_SELECTION is enabled.
- */
-#define BT_HCI_LE_ADV_EVT_PHY_1M                0x01
-#define BT_HCI_LE_ADV_EVT_PHY_2M                0x02
-#define BT_HCI_LE_ADV_EVT_PHY_CODED_S8          0x03
-#define BT_HCI_LE_ADV_EVT_PHY_CODED_S2          0x04
+#define LE_PHY_1M                				0x00
+#define LE_PHY_2M                				0x01
+#define LE_PHY_CODED          	 				0x02
 
 #define BT_HCI_LE_ADV_TX_POWER_NO_PREF          0x7F
 #define BT_HCI_EXT_ADV_REPORT_DATA_MAX_SIZE     229U

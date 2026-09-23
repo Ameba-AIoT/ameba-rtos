@@ -368,6 +368,7 @@ typedef struct {
 	u32 frame_buffer_size;                  /* Size of one frame buffer */
 	u8 *frame_buf;                          /* Raw memory block allocated for all frames */
 	usb_os_sema_t frame_sema;               /* Semaphore to notify App: "Frame Ready" */
+	u8 trunc_warned;                        /* Truncation already reported this round: throttles the ISR-context warning */
 
 #if USBH_UVC_USE_HW
 	usbh_hw_uvc_dec_t *uvc_dec;                    /* Handle for UVC hardware combiner */
@@ -409,6 +410,7 @@ typedef struct {
 #if USBH_UVC_DEBUG
 	u32 rx_frame_cnt;                       /* Counters of valid frames successfully pushed to App queue */
 	u32 err_frame_cnt;                      /* Counters of frames dropped due to UVC payloadheader error bit */
+	u32 trunc_frame_cnt;                    /* Counters of frames dropped because they exceeded frame_buffer_size */
 	u32 drop_frame_cnt;                     /* Counters of ready frames forcibly discarded (App is too slow) */
 	u32 dec_no_buf_cnt;                     /* Counters of drops due to no buffer available at combine start */
 	u32 foi_no_buf_cnt;                     /* Counters of drops due to no buffer available at FID toggle */

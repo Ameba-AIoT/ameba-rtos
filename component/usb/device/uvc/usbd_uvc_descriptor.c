@@ -119,6 +119,11 @@ u8 usbd_uvc_descriptors[] = {
 	0x03,                   // bSourceID (Extension Unit)
 	0x00,                   // iTerminal
 
+	/* NOTE (DK-22): this UVC_SINGLE_STREAM branch is currently unreachable (the macro
+	 * is commented out below) and still declares the same dead EP1 IN interrupt
+	 * endpoint removed from the active (#else) descriptor table below. Left unchanged
+	 * for this fix — apply the same removal here if UVC_SINGLE_STREAM is ever
+	 * re-enabled. */
 	/* =========================
 	 * VC Interrupt Endpoint
 	 * ========================= */
@@ -280,8 +285,8 @@ u8 usbd_uvc_descriptors[] = {
 	/* ===== USB Configuration Descriptor (9 bytes) [USB2.0 9.6.3] ===== */
 	0x09,                                           /* bLength */
 	USB_DESC_TYPE_CONFIGURATION,                    /* bDescriptorType: CONFIGURATION */
-	USB_LOW_BYTE(450 + USBD_UVC_XU_DESC_LEN),       /* wTotalLength (LSB): 450 (+28 if XU enabled) */
-	USB_HIGH_BYTE(450 + USBD_UVC_XU_DESC_LEN),      /* wTotalLength (MSB) */
+	USB_LOW_BYTE(450 - USBD_UVC_VC_INTR_EP_DESC_LEN + USBD_UVC_XU_DESC_LEN),   /* wTotalLength (LSB) */
+	USB_HIGH_BYTE(450 - USBD_UVC_VC_INTR_EP_DESC_LEN + USBD_UVC_XU_DESC_LEN),  /* wTotalLength (MSB) */
 	0x02,                                           /* bNumInterfaces: VideoControl + VideoStreaming */
 	0x01,                                           /* bConfigurationValue */
 	0x01,                                           /* iConfiguration */
@@ -303,7 +308,7 @@ u8 usbd_uvc_descriptors[] = {
 	USB_DESC_TYPE_INTERFACE,                        /* bDescriptorType: INTERFACE */
 	0x00,                                           /* bInterfaceNumber: 0 */
 	0x00,                                           /* bAlternateSetting */
-	0x01,                                           /* bNumEndpoints: 1 (status interrupt) */
+	0x00,                                           /* bNumEndpoints: 0 (status interrupt endpoint removed, DK-22) */
 	0x0E,                                           /* bInterfaceClass: CC_VIDEO */
 	0x01,                                           /* bInterfaceSubClass: SC_VIDEOCONTROL */
 	0x00,                                           /* bInterfaceProtocol */
@@ -376,20 +381,6 @@ u8 usbd_uvc_descriptors[] = {
 	0x00,                                           /* bAssocTerminal */
 	USBD_UVC_OT_SOURCE_ID,                          /* bSourceID: PU(2) or XU(3) per USBD_UVC_USE_EXTENSION_UNIT */
 	0x00,                                           /* iTerminal */
-
-	/* ===== VC Status Interrupt Endpoint (7 bytes) ===== */
-	0x07,                                           /* bLength */
-	USB_DESC_TYPE_ENDPOINT,                         /* bDescriptorType: ENDPOINT */
-	0x81,                                           /* bEndpointAddress: EP1 IN */
-	0x03,                                           /* bmAttributes: Interrupt */
-	0x40, 0x00,                                     /* wMaxPacketSize: 64 */
-	0x08,                                           /* bInterval */
-
-	/* ===== Class-specific VC Interrupt Endpoint (5 bytes) ===== */
-	0x05,                                           /* bLength */
-	0x25,                                           /* bDescriptorType: CS_ENDPOINT */
-	0x03,                                           /* bDescriptorSubtype: EP_INTERRUPT */
-	0x40, 0x00,                                     /* wMaxTransferSize: 64 */
 
 	/* ===== VideoStreaming Interface, Alt 0 (zero-bandwidth, 9 bytes) ===== */
 	0x09,                                           /* bLength */

@@ -9,7 +9,6 @@ extern void hci_platform_set_tx_power_gain_index(uint32_t index);
 void olt_bt_inquiry_loop(void)
 {
 	while (1) {
-		BT_LOGA("olt_bt_inquiry_loop\n\r");
 		rtk_bt_olt_enable_inquiry();
 		osif_delay(20000);
 	}

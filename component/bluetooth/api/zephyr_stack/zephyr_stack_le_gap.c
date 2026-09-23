@@ -992,6 +992,7 @@ static uint16_t bt_stack_le_gap_set_scan_rsp_data(void *param, uint32_t param_le
 	return 0;
 }
 
+#if defined(CONFIG_BT_EXT_ADV)
 static void legacy_adv_connected(struct bt_le_ext_adv *adv, struct bt_le_ext_adv_connected_info *info)
 {
 	(void)adv;
@@ -1003,6 +1004,7 @@ static void legacy_adv_connected(struct bt_le_ext_adv *adv, struct bt_le_ext_adv
 static struct bt_le_ext_adv_cb bt_zephyr_legacy_adv_cb = {
 	.connected = legacy_adv_connected,
 };
+#endif
 
 extern struct bt_le_ext_adv *adv_get_legacy(void);
 static uint16_t bt_stack_le_gap_start_adv(void *param)
@@ -1119,7 +1121,9 @@ static uint16_t bt_stack_le_gap_start_adv(void *param)
 
 	if (IS_ENABLED(CONFIG_BT_EXT_ADV) && BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
 		struct bt_le_ext_adv *adv = adv_get_legacy();
+#if defined(CONFIG_BT_EXT_ADV)
 		adv->cb = &bt_zephyr_legacy_adv_cb;
+#endif
 
 		if (padv_param->own_addr_type != RTK_BT_LE_ADDR_TYPE_PUBLIC &&
 			!bt_addr_le_eq(&bt_dev.random_addr, BT_ADDR_LE_ANY)) {

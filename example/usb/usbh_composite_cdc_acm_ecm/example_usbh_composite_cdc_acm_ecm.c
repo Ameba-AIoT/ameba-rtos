@@ -263,9 +263,14 @@ static const usbh_config_t usbh_cfg = {
 	.main_task_priority = CONFIG_USBH_COMP_INIT_THREAD_PRIORITY,
 	.tick_source = USBH_SOF_TICK,
 	.class_num = 2U,   /* CDC-ACM + CDC-ECM */
-#if defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RLE1509)
-	/*FIFO total depth is 1024, reserve 12 for DMA addr*/
+#if defined(CONFIG_AMEBAGREEN2)
+	/*FIFO total 1024 DWORD, resv 12 DWORD for DMA*/
 	.rx_fifo_depth = 500,
+	.nptx_fifo_depth = 256,
+	.ptx_fifo_depth = 256,
+#elif defined(CONFIG_RLE1509)
+	/*FIFO total 1024 DWORD, resv 48 DWORD */
+	.rx_fifo_depth = 464,
 	.nptx_fifo_depth = 256,
 	.ptx_fifo_depth = 256,
 #elif defined (CONFIG_AMEBAL2)

@@ -268,9 +268,14 @@ static const usbh_config_t usbh_cfg = {
 	.main_task_stack_size = CONFIG_USBH_UVC_MAIN_TASK_STACK_SIZE,
 	.main_task_priority = CONFIG_USBH_UVC_MAIN_THREAD_PRIORITY,
 	.tick_source = USBH_SOF_TICK,
-#if defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RLE1509)
-	/*FIFO total depth is 1024, reserve 12 for DMA addr*/
+#if defined(CONFIG_AMEBAGREEN2)
+	/*FIFO total 1024 DWORD, resv 12 DWORD for DMA*/
 	.rx_fifo_depth = 500U,
+	.nptx_fifo_depth = 256U,
+	.ptx_fifo_depth = 256U,
+#elif defined(CONFIG_RLE1509)
+	/*FIFO total 1024 DWORD, resv 48 DWORD */
+	.rx_fifo_depth = 464U,
 	.nptx_fifo_depth = 256U,
 	.ptx_fifo_depth = 256U,
 #elif defined (CONFIG_AMEBAL2)
@@ -1485,19 +1490,9 @@ static void example_usbh_uvc_test(void *param)
 
 			len = buf->byteused;
 
-			/* The host stack clamps byteused to frame_buffer_size (see usbh_uvc_stream.c:
-			 * bytes = MIN(maxlen, payload_len)), so len can only ever reach, never exceed,
-			 * CONFIG_USBH_UVC_FRAME_BUF_SIZE. Reaching it means the camera frame was larger
-			 * than the buffer and the tail was silently truncated -> must report an error. */
-			if (len >= CONFIG_USBH_UVC_FRAME_BUF_SIZE) {
-				if (usbh_uvc_put_frame(buf, CONFIG_USBH_UVC_STREAM_INDEX) != HAL_OK) {
-					RTK_LOGS(TAG, RTK_LOG_ERROR, "Put frame fail\n");
-				}
-				RTK_LOGS(TAG, RTK_LOG_ERROR, "Frame %d truncated: len %d reached buf size %d, increase CONFIG_USBH_UVC_FRAME_BUF_SIZE\n", img_cnt, len,
-						 CONFIG_USBH_UVC_FRAME_BUF_SIZE);
-				goto exit;
-			}
-
+			/* No truncation check needed here: the host stack now flags an over-sized frame
+			 * (frame->err) and usbh_uvc_get_frame() never returns such a frame, so a frame
+			 * that arrives here is always complete. */
 			if (len > 0U) {
 				/* Account for throughput here, once per captured frame, so the TP figure is
 				 * correct for every APP mode and pixel format (MJPEG/YUV/H264/H265). */

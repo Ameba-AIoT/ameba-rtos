@@ -160,6 +160,19 @@ static const struct bt_hci_cmd_func_hdl g_bt_hci_cmd_func_tbl[] = {
 	{BT_HCI_OP_LE_CLEAR_PERIODIC_ADV_LIST, bt_hci_cmd_ogf_le_ocf_clear_pa_list},
 	{BT_HCI_OP_LE_READ_PERIODIC_ADV_LIST_SIZE, bt_hci_cmd_ogf_le_ocf_read_pa_list_size},
 #endif
+#if defined(CONFIG_BLE_LL_PAST_SENDER) && BT_LL_FEATURE_BT51_PAST_SENDER
+#if defined(CONFIG_BLE_LL_PA_SYNC_ENABLE) && BT_LL_FEATURE_BT50_LE_PA_SYNC
+	{BT_HCI_OP_LE_PA_SYNC_TRANSFER, bt_hci_cmd_ogf_le_ocf_pa_sync_transfer},
+#endif
+#if defined(CONFIG_BLE_LL_PA_ADV_ENABLE) && BT_LL_FEATURE_BT50_LE_PA_ADV
+	{BT_HCI_OP_LE_PA_SET_INFO_TRANSFER, bt_hci_cmd_ogf_le_ocf_pa_set_info_transfer},
+#endif
+#endif
+
+#if defined(CONFIG_BLE_LL_PAST_RECEIVER) && BT_LL_FEATURE_BT51_PAST_RECEIVER
+	{BT_HCI_OP_LE_SET_PA_SYNC_TRANSFER_PARAM, bt_hci_cmd_ogf_le_ocf_set_pa_sync_transfer_param},
+	{BT_HCI_OP_LE_SET_DEFAULT_PA_SYNC_TRANSFER_PARAM, bt_hci_cmd_ogf_le_ocf_set_default_pa_sync_transfer_param},
+#endif
 
 	//BT_OGF_VENDOR
 	{BT_HCI_OP_VENDOR_READ_RTK_CHIP_ID,  bt_hci_cmd_ogf_vendor_ocf_read_rtk_chip_id},
@@ -307,6 +320,13 @@ void ble_ll_init_feature(uint64_t *pfeature)
 #endif
 
 	*pfeature |= BT_LL_LE_FEATURE_LE_CHANNEL_SEL_2;
+
+#if defined(CONFIG_BLE_LL_PAST_SENDER) && BT_LL_FEATURE_BT51_PAST_SENDER
+	*pfeature |= BT_LL_LE_FEATURE_PAST_SENDER;
+#endif
+#if defined(CONFIG_BLE_LL_PAST_RECEIVER) && BT_LL_FEATURE_BT51_PAST_RECEIVER
+	*pfeature |= BT_LL_LE_FEATURE_PAST_RECEIVER;
+#endif
 }
 
 void bt_hci_cmd_handler(uint8_t *pbuf)

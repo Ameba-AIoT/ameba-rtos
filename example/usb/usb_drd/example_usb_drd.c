@@ -61,8 +61,11 @@ static const char *const TAG = "DRD";
 static const usbd_config_t usbd_msc_cfg = {
 	.speed = MSC_USB_SPEED,
 	.isr_priority = INT_PRI_MIDDLE,
-#if defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RLE1509)
+#if defined(CONFIG_AMEBAGREEN2)
 	.rx_fifo_depth = 708U,
+	.ptx_fifo_depth = {16U, 256U, },
+#elif defined(CONFIG_RLE1509)
+	.rx_fifo_depth = 672U,
 	.ptx_fifo_depth = {16U, 256U, },
 #elif defined (CONFIG_AMEBAPRO3)
 	/*DFIFO total 2232 DWORD, resv 8 DWORD for DMA addr and EP0 fixed 256 DWORD*/
@@ -94,9 +97,12 @@ static const usbh_config_t usbh_cfg = {
 	.isr_priority = INT_PRI_MIDDLE,
 	.main_task_priority = MSC_MAIN_TASK_PRIORITY,
 	.tick_source = USBH_SOF_TICK,
-#if defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RLE1509)
-	/*FIFO total depth is 1024, reserve 12 for DMA addr*/
+#if defined(CONFIG_AMEBAGREEN2)
 	.rx_fifo_depth = 500,
+	.nptx_fifo_depth = 256,
+	.ptx_fifo_depth = 256,
+#elif defined(CONFIG_RLE1509)
+	.rx_fifo_depth = 464,
 	.nptx_fifo_depth = 256,
 	.ptx_fifo_depth = 256,
 #elif defined (CONFIG_AMEBAL2)
@@ -227,16 +233,8 @@ static void usbd_msc_cmd_test(u16 argc, char **argv)
 		}
 		usbd_msc_inited = 0;
 		usbd_msc_deinit();
-		ret = usbd_deinit();
-		if (ret != HAL_OK) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to deinit USBD\n");
-			error_no = ret;
-		}
-		ret = usbd_msc_disk_deinit();
-		if (ret != HAL_OK) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to deinit disk\n");
-			error_no = ret;
-		}
+		usbd_deinit();
+		usbd_msc_disk_deinit();
 	} else {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Input cmd err\n");
 		error_no = HAL_ERR_PARA;
@@ -309,8 +307,10 @@ void example_usb_drd_msc_trx_test(void *param)
 		rtos_time_delay_ms(10);
 	}
 
-	if (f_mount(&fs, logical_drv, 1) != FR_OK) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to mount logical drive\n");
+	res = f_mount(&fs, logical_drv, 1);
+	if (res != FR_OK) {
+		/* rc: 1 FR_DISK_ERR, 3 FR_NOT_READY, 13 FR_NO_FILESYSTEM */
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to mount logical drive, rc=%d\n", res);
 		goto exit_unregister;
 	}
 

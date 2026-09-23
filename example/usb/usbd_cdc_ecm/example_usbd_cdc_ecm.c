@@ -133,22 +133,22 @@ static const usbd_cdc_ecm_ep_cfg_t usbd_ecm_ep_cfg = {
 static const usbd_config_t usbd_ecm_cfg = {
 	.speed = CDC_ECM_USB_SPEED,
 	.isr_priority = INT_PRI_MIDDLE,
+	.ext_intr_enable = USBD_SOF_INTR,
 #if defined(CONFIG_AMEBASMART)
 	.nptx_max_epmis_cnt = 1U,
-	.ext_intr_enable = USBD_SOF_INTR,
-#elif defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RLE1509)
+#elif defined(CONFIG_AMEBAGREEN2)
 	.rx_fifo_depth = 692U,
 	.ptx_fifo_depth = {0U, 256U, 32U, 0U, 0U, },
-	.ext_intr_enable = USBD_SOF_INTR,
+#elif defined(CONFIG_RLE1509)
+	.rx_fifo_depth = 656U,
+	.ptx_fifo_depth = {0U, 256U, 32U, 0U, 0U, },
 #elif defined (CONFIG_AMEBAL2)
 	.rx_fifo_depth = 661U,
 	.ptx_fifo_depth = {256U, 16U, 32U, 16U, },
-	.ext_intr_enable = USBD_SOF_INTR,
 #elif defined (CONFIG_AMEBAPRO3)
 	/*DFIFO total 2232 DWORD, resv 8 DWORD for DMA addr and EP0 fixed 256 DWORD*/
 	.rx_fifo_depth = 1664U,
 	.ptx_fifo_depth = {256U, 32U, 16U, },
-	.ext_intr_enable = USBD_SOF_INTR,
 #endif
 };
 
@@ -493,17 +493,10 @@ static void usbd_ecm_hotplug_thread(void *param)
 			RTK_LOGS(TAG, RTK_LOG_INFO, "DETACHED\n");
 
 			// Deinitialize CDC ECM
-			ret = usbd_cdc_ecm_deinit();
-			if (ret != HAL_OK) {
-				RTK_LOGS(TAG, RTK_LOG_ERROR, "Deinit fail %d\n", ret);
-			}
+			usbd_cdc_ecm_deinit();
 
 			// Deinitialize USB device
-			ret = usbd_deinit();
-			if (ret != HAL_OK) {
-				RTK_LOGS(TAG, RTK_LOG_ERROR, "Deinit core fail %d\n", ret);
-				break;
-			}
+			usbd_deinit();
 
 			// Small delay to ensure proper cleanup
 			rtos_time_delay_ms(100);

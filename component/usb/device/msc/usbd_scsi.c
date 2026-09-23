@@ -487,6 +487,11 @@ static int usbd_scsi_write(usbd_msc_dev_t *cdev, u8 *params)
 		/* case 11,13 : Ho <> Do */
 		if (cbw->field.dCBWDataTransferLength != len) {
 			usbd_scsi_sense_code(cdev, SCSI_SENSE_KEY_ILLEGAL_REQUEST, SCSI_ASC_INVALID_COMMAND_OPERATION_CODE);
+			if (cbw->field.dCBWDataTransferLength < len) {
+				/* case 13 : Ho < Do — BOT §6.7.3 mandates bCSWStatus = Phase Error.
+				 * case 11 (Ho > Do) stays a Failed CSW with residue, which BOT allows. */
+				cdev->phase_error = 1;
+			}
 			return HAL_ERR_PARA;
 		}
 
@@ -565,6 +570,19 @@ static int usbd_scsi_check_cdb_length(usbd_msc_dev_t *cdev, u8 opcode)
 */
 static int usbd_scsi_check_address_range(usbd_msc_dev_t *cdev, u32 blk_offset, u32 blk_nbr)
 {
+	/* num_sectors is otherwise only refreshed by READ CAPACITY(10)/READ FORMAT CAPACITIES,
+	 * which SBC-4 does not require an initiator to issue before its first READ/WRITE. Query
+	 * the medium once so the LBA validity check below uses the real capacity whatever the
+	 * command order, instead of rejecting every transfer against a zero capacity. */
+	if (cdev->num_sectors == 0U) {
+		if ((cdev->disk_ops.disk_getcapacity == NULL) ||
+			(cdev->disk_ops.disk_getcapacity(&cdev->num_sectors) != 0)) {
+			cdev->num_sectors = 0U;
+			usbd_scsi_sense_code(cdev, SCSI_SENSE_KEY_NOT_READY, SCSI_ASC_MEDIUM_NOT_PRESENT);
+			return HAL_ERR_PARA;
+		}
+	}
+
 	/* Overflow-safe: blk_offset + blk_nbr can wrap on host-controlled
 	 * READ(12)/WRITE(12) values and pass a naive sum comparison */
 	if ((blk_offset > cdev->num_sectors) || (blk_nbr > (cdev->num_sectors - blk_offset))) {

@@ -552,6 +552,14 @@ static int usbh_uvc_process_ctrl(usb_host_t *host, usbh_event_t *event)
 	case STREAM_STATE_COMMIT:
 		ret = usbh_uvc_stream_ctrl_set_video(stream, 0U);
 		if (ret == HAL_OK) {
+			/* The frame buffers were sized at usbh_uvc_init() time, long before the device
+			 * reported dwMaxVideoFrameSize in PROBE/COMMIT, so they can no longer grow here.
+			 * Warn only: many cameras over-report dwMaxVideoFrameSize and still stream fine,
+			 * so failing the commit would reject working devices. */
+			if (stream->stream_ctrl.dwMaxVideoFrameSize > stream->frame_buffer_size) {
+				RTK_LOGS(TAG, RTK_LOG_WARN, "Dev frm size %d > buf %d, frames may be dropped\n",
+						 stream->stream_ctrl.dwMaxVideoFrameSize, stream->frame_buffer_size);
+			}
 			if (stream->set_alt == 1U) {
 				stream->state = STREAM_STATE_FIND_ALT;
 			} else {

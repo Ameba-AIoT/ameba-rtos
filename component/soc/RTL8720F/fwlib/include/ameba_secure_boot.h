@@ -142,9 +142,14 @@ extern "C" {
 #define MANIFEST_RSIP_GCM_INVALID_TAG              3  /* invalid gcm tag length */
 #define MANIFEST_RSIP_CFG_GET_GCM_TAG_LEN(x)       ((u32)(((x >> 0) & 0x00000003)))  /* Manifest_TypeDef.RSIPConfig bit[1:0]: gcm tag length. 2b`00: 4 byte length; 2b`01: 8 byte length; 2b`10: 16 byte length; default is 2b`11: invalid */
 
+/* Manifest_TypeDef.RsipKeyGrp: IMG2 RSIP key-group selector (covered by the manifest signature).
+ * 1 -> RSIP Key Group 0; any other value -> RSIP Key Group 1, legacy-compatible */
+#define MANIFEST_RSIP_IMG2_KEY_GROUP(Manifest)     (((Manifest)->RsipKeyGrp == 0x01) ? RSIP_KEY_NUM0 : RSIP_KEY_NUM1)
+
 typedef struct {
 	u32 Pattern[2];
-	u8 Rsvd1[7];
+	u8 Rsvd1[6];
+	u8 RsipKeyGrp;
 	u8 RSIPConfig;
 	u8 Ver;
 	u8 ImgID;
@@ -212,4 +217,3 @@ __NO_RETURN void SBOOT_Validate_Fail_Stuck(u32 wdg_fresh);
 #endif
 
 #endif
-

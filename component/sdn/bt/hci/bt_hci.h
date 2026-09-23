@@ -114,6 +114,10 @@ uint8_t bt_hci_cmd_ogf_le_ocf_add_pa_list(void *phci_cmd_param, uint8_t *rsp);
 uint8_t bt_hci_cmd_ogf_le_ocf_remove_pa_list(void *phci_cmd_param, uint8_t *rsp);
 uint8_t bt_hci_cmd_ogf_le_ocf_clear_pa_list(void *phci_cmd_param, uint8_t *rsp);
 uint8_t bt_hci_cmd_ogf_le_ocf_read_pa_list_size(void *phci_cmd_param, uint8_t *rsp);
+uint8_t bt_hci_cmd_ogf_le_ocf_pa_sync_transfer(void *phci_cmd_param, uint8_t *rsp);
+uint8_t bt_hci_cmd_ogf_le_ocf_pa_set_info_transfer(void *phci_cmd_param, uint8_t *rsp);
+uint8_t bt_hci_cmd_ogf_le_ocf_set_pa_sync_transfer_param(void *phci_cmd_param, uint8_t *rsp);
+uint8_t bt_hci_cmd_ogf_le_ocf_set_default_pa_sync_transfer_param(void *phci_cmd_param, uint8_t *rsp);
 //OGF:BT_OGF_VENDOR
 uint8_t bt_hci_cmd_ogf_vendor_ocf_read_rtk_chip_id(void *phci_cmd_param, uint8_t *rsp);
 uint8_t bt_hci_cmd_ogf_vendor_ocf_read_vendor_reg(void *phci_cmd_param, uint8_t *rsp);
@@ -167,4 +171,8 @@ void bt_hci_evt_le_pa_report(uint16_t sync_handle, void *aux_sync_ind,
 							 uint8_t chain_num, void *chain_ind_list);
 
 void bt_hci_evt_le_pa_sync_lost(uint16_t sync_handle);
+
+void bt_hci_evt_le_past_received(uint8_t status, uint16_t conn_handle, uint16_t service_data,
+								 uint16_t sync_handle, uint8_t sid, uint8_t adv_addr_type, uint8_t *adv_addr,
+								 uint8_t adv_phy, uint16_t pa_interval, uint8_t adv_clk_accuracy);
 #endif

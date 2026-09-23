@@ -7,6 +7,7 @@
 #ifndef _AMEBA_SOLO_H_
 #define _AMEBA_SOLO_H_
 
+#include "ameba_solo_cfg.h"
 
 #ifdef __cplusplus
 extern "C" {

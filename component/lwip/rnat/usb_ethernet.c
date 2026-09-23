@@ -222,16 +222,9 @@ static void usb_eth_hotplug_thread(void *param)
 		if (current_status == USBD_ATTACH_STATUS_DETACHED) {
 			RTK_LOGS(TAG, RTK_LOG_INFO, "DETACHED\n");
 
-			ret = usbd_cdc_ecm_deinit();
-			if (ret != HAL_OK) {
-				RTK_LOGS(TAG, RTK_LOG_ERROR, "ECM deinit fail %d\n", ret);
-			}
+			usbd_cdc_ecm_deinit();
 
-			ret = usbd_deinit();
-			if (ret != HAL_OK) {
-				RTK_LOGS(TAG, RTK_LOG_ERROR, "Core deinit fail %d\n", ret);
-				break;
-			}
+			usbd_deinit();
 
 			rtos_time_delay_ms(100);
 

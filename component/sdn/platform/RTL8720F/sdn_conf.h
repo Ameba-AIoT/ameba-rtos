@@ -37,6 +37,12 @@
 
 #define BT_LL_FEATURE_BT50_LE_PA_SYNC                               0
 
+//BT 5.1
+#define BT_LL_FEATURE_BT51_PAST                                     0
+
+#define BT_LL_FEATURE_BT51_PAST_SENDER                              (BT_LL_FEATURE_BT51_PAST && (BT_LL_FEATURE_BT50_LE_PA_SYNC || BT_LL_FEATURE_BT50_LE_PA_ADV))
+#define BT_LL_FEATURE_BT51_PAST_RECEIVER                            (BT_LL_FEATURE_BT51_PAST && BT_LL_FEATURE_BT50_LE_PA_SYNC)
+
 //BLE Role
 #define BT_LL_LE_CENTRAL                                            1
 #define BT_LL_LE_SCAN                                               1

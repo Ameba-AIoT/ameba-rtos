@@ -96,7 +96,7 @@ static inline char z_log_minimal_level_to_char(int level)
 
 #define Z_LOG(_level, ...) \
 	do {					\
-		if (!(_level > zlog_level_get())) {				\
+		if (!(_level > ZLOG_MAX_LEVEL)) {				\
 			Z_LOG_PRINT_DETAIL(_level, __VA_ARGS__);	\
 		}	\
 	} while(0)
@@ -104,7 +104,7 @@ static inline char z_log_minimal_level_to_char(int level)
 
 #define Z_LOG_HEXDUMP(_level, _data, _length, ...) \
 	do {					\
-		if (!(_level > zlog_level_get())) {				\
+		if (!(_level > ZLOG_MAX_LEVEL)) {				\
 			Z_LOG_PRINT_DETAIL(_level, __VA_ARGS__);	\
 			Z_LOG_PRINT_HEXDUMP(_data, _length);	\
 		}	\

@@ -20,6 +20,11 @@ FWDL_OBJS-$(CONFIG_WHC_HCI_USB) += \
 	whc_usb_host_xfer.o \
 	whc_usb_host_fwdl.o
 
+# GSPI interface specific files
+FWDL_OBJS-$(CONFIG_WHC_HCI_GSPI) += \
+	whc_gspi_host_xfer.o \
+	whc_gspi_host_fwdl.o
+
 ifeq ($(CONFIG_AMEBAGREEN2), y)
 FWDL_OBJS += whc_hal_rtl8721f.o
 else ifeq ($(CONFIG_AMEBAX), y)
