@@ -251,6 +251,7 @@ void SOCPS_ClockSourceConfig(u8 regu_state, u8 xtal_mode, u8 osc_option)
 		HAL_WRITE32(PMC_BASE, SYSPMC_OPT, reg_temp);
 		RTK_LOGI(TAG, "The voltage of XTAL Normal/HP mode in sleep state is 0.9V\n");
 	}
+	XTAL_ARB_Delay_Set(0);
 
 }
 

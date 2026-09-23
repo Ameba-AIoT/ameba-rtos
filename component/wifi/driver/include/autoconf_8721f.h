@@ -144,6 +144,7 @@
 #endif
 
 //#define CONFIG_DFS_TEST  // add for dfs test
+#define CONFIG_DFS
 
 /* enable csi function */
 #define CONFIG_CSI

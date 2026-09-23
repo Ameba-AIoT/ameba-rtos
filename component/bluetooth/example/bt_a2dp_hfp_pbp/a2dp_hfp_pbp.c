@@ -4869,7 +4869,7 @@ int bt_a2dp_hfp_pbp_main(uint8_t enable)
 #endif
 #if defined(RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT) && RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT
 			bt_app_conf.max_tx_octets = 0x40;
-			bt_app_conf.max_tx_time = 0x200;
+			bt_app_conf.max_tx_time = 0x270;
 #endif
 			bt_app_conf.a2dp_role = RTK_BT_A2DP_ROLE_SNK;
 			bt_app_conf.hfp_role = RTK_BT_AUDIO_HFP_ROLE_HF;
