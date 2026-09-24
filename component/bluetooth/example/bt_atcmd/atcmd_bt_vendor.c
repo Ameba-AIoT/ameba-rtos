@@ -78,7 +78,7 @@ rtk_bt_app_conf_t app_conf = {
 #endif
 #if defined(RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT) && RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT
 	.max_tx_octets = 0x40,
-	.max_tx_time = 0x200,
+	.max_tx_time = 0x270,
 #endif
 };
 
