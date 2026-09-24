@@ -14,7 +14,6 @@
 /* Private defines -----------------------------------------------------------*/
 #define USBH_UVC_PAYLOAD_HEADER_MIN_LEN     (2U)   /**< Minimum valid UVC payload header length in bytes. */
 #define USBH_UVC_DEBUG_LOOP_TIME_MS         (2000U)
-#define USB_OTG_HFNUM_FRNUM_MAX             (0x3FFFUL)
 #define USBH_UVC_URB_FLUSH_TIMEOUT_MS       (1U)   /* ms: flush residual URBs below watermark */
 /* Private types -------------------------------------------------------------*/
 
@@ -109,8 +108,8 @@ static void usbh_uvc_sw_status_dump(void)
 						 uvc->max_memcpy_cost_us, uvc->max_publish_cost_us,
 						 uvc->max_hold_frame_ms);
 				RTK_LOGS(NOTAG, RTK_LOG_INFO,
-						 "frm rx=%d err=%d drop=%d nobuf[dec=%d foi=%d eof=%d next=%d]\n",
-						 stream->rx_frame_cnt, stream->err_frame_cnt, stream->drop_frame_cnt,
+						 "frm rx=%d err=%d trunc=%d drop=%d nobuf[dec=%d foi=%d eof=%d next=%d]\n",
+						 stream->rx_frame_cnt, stream->err_frame_cnt, stream->trunc_frame_cnt, stream->drop_frame_cnt,
 						 stream->dec_no_buf_cnt, stream->foi_no_buf_cnt,
 						 stream->eof_no_buf_cnt, stream->next_no_buf_cnt);
 				RTK_LOGS(NOTAG, RTK_LOG_INFO,
@@ -738,8 +737,11 @@ static void usbh_uvc_combine_urb(usbh_uvc_stream_t *stream, usbh_uvc_urb_t *urb)
 		/* A: check FID */
 		if (fid != stream->last_fid) {
 			if (frame_buffer->byteused != 0U) {
-				/* Previous frame had data, submit it now */
-				frame_buffer->err = err ? 1U : 0U;
+				/* Previous frame had data, submit it now. Only ever set the flag: an error
+				 * recorded by an earlier URB of the same frame must not be cleared here. */
+				if (err != 0U) {
+					frame_buffer->err = 1U;
+				}
 				frame_buffer = usbh_uvc_next_frame_buffer(stream, frame_buffer);
 				if (frame_buffer == NULL) {
 					stream->cur_frame_buf = NULL;
@@ -770,6 +772,27 @@ static void usbh_uvc_combine_urb(usbh_uvc_stream_t *stream, usbh_uvc_urb_t *urb)
 			maxlen = stream->frame_buffer_size - frame_buffer->byteused;
 			bytes = MIN(maxlen, payload_len);
 
+			if (bytes < payload_len) {
+				/* The frame outgrew the application-supplied frame_buf_size, so its tail is
+				 * being dropped. UVC 1.1 frame reassembly only allows a frame to be delivered
+				 * once every payload of that FID has been collected; flag it as bad (same
+				 * lifetime as the payload-header error bit, cleared on every frame change) so
+				 * usbh_uvc_next_frame_buffer() discards it instead of handing the consumer a
+				 * truncated bitstream that looks complete. Marked on the frame, not only on
+				 * the per-URB local, because the EOF payload may arrive in a later URB. */
+				err = 1U;
+				frame_buffer->err = 1U;
+#if USBH_UVC_DEBUG
+				stream->trunc_frame_cnt ++;
+#endif
+				/* Warn once per streaming round: this runs in the ISR callback, and an
+				 * oversized frame repeats on every frame until the app enlarges the buffer. */
+				if (stream->trunc_warned == 0U) {
+					stream->trunc_warned = 1U;
+					RTK_LOGS(TAG, RTK_LOG_WARN, "Frm > buf %d, truncated, enlarge frame_buf_size\n", stream->frame_buffer_size);
+				}
+			}
+
 			usb_os_memcpy((void *)(frame_buffer->buf + frame_buffer->byteused), (const void *)(data + header_len), bytes);
 			frame_buffer->byteused += bytes;
 		}
@@ -777,7 +800,10 @@ static void usbh_uvc_combine_urb(usbh_uvc_stream_t *stream, usbh_uvc_urb_t *urb)
 		/* B: check EOF */
 		if (header->bmHeaderInfo.b.eof != 0U) {
 			if (frame_buffer->byteused > 0U) {
-				frame_buffer->err = err ? 1U : 0U;
+				/* Only ever set: preserve an error already recorded for this frame. */
+				if (err != 0U) {
+					frame_buffer->err = 1U;
+				}
 				/* Submit current frame and prepare a fresh one for the next frame */
 				frame_buffer = usbh_uvc_next_frame_buffer(stream, frame_buffer);
 				if (frame_buffer == NULL) {
@@ -803,19 +829,19 @@ static inline u32 usbh_uvc_frame_num_dec(u32 cur_num, u32 start_num)
 	if (cur_num >= start_num) {
 		return cur_num - start_num;
 	} else {
-		return (USB_OTG_HFNUM_FRNUM_MAX - start_num + 1U + cur_num);
+		return (USB_FRAME_NUM_MAX - start_num + 1U + cur_num);
 	}
 }
 
 /*
  * Increments frame by the amount specified by inc. The addition is done
- * modulo USB_OTG_HFNUM_FRNUM_MAX. Returns the incremented value.
+ * modulo USB_FRAME_NUM_MAX. Returns the incremented value.
  *
  * send the token in next frame
  */
 static inline u32 usbh_uvc_frame_num_inc(u32 cur_num, u32 inc_num)
 {
-	return (cur_num + inc_num) & USB_OTG_HFNUM_FRNUM_MAX;
+	return (cur_num + inc_num) & USB_FRAME_NUM_MASK;
 }
 
 static void usbh_uvc_isoc_in_process_xfer(usbh_uvc_stream_t *stream, u32 cur_frame)
@@ -837,8 +863,11 @@ static void usbh_uvc_isoc_in_process_xfer(usbh_uvc_stream_t *stream, u32 cur_fra
 		pipe->frame_num = usbh_uvc_frame_num_inc(cur_frame, 1U);
 		pipe->xfer_buf = stream->urb[urb_index]->addr + stream->urb[urb_index]->packet_info[packet_index].offset;
 
-		usbh_transfer_data(uvc->host, pipe);
-		pipe->xfer_state = USBH_EP_XFER_BUSY;
+		if (usbh_transfer_data(uvc->host, pipe) == HAL_OK) {
+			pipe->xfer_state = USBH_EP_XFER_BUSY;
+		} else {
+			pipe->xfer_state = USBH_EP_XFER_START;
+		}
 	} else {
 		// stop
 #if USBH_UVC_DEBUG
@@ -1030,7 +1059,9 @@ void usbh_uvc_stream_free_urb_buffer(usbh_uvc_stream_t *stream)
 {
 	/* stop ISOC submission + combine-thread data path */
 	stream->is_resource_safe = 0U;
-	usb_os_delay_us(2000U);        /* let in-flight ISOC + combine thread drain */
+	/* Sleep rather than spin: usb_os_delay_us() is a non-yielding busy-wait, and the
+	 * combine thread this is waiting on cannot run while we hold the CPU. */
+	usb_os_sleep_ms(2U);           /* let in-flight ISOC + combine thread drain */
 
 	usbh_uvc_reset_urb(stream);   /* free urb[i] + urb_buffer */
 
@@ -1364,10 +1395,8 @@ int usbh_uvc_stream_open(usbh_uvc_stream_t *stream)
 {
 	usbh_uvc_frame_t *frame = NULL;
 	u32 frame_buf_size = CACHE_LINE_ALIGNMENT(stream->frame_buffer_size);
-	u8 i;
-#if (USBH_UVC_USE_HW == 0)
 	int status;
-#endif
+	u8 i;
 #if (USBH_UVC_USE_HW == 1)
 	usbh_uvc_host_t *uvc;
 	usbh_hw_uvc_dec_t *uvc_dec;
@@ -1401,6 +1430,7 @@ int usbh_uvc_stream_open(usbh_uvc_stream_t *stream)
 #if (USBH_UVC_USE_HW == 0)
 	stream->cur_frame_buf = NULL;
 	stream->last_fid = 0xFFU;
+	stream->trunc_warned = 0U;
 
 	/* init combine thread */
 	status = usbh_uvc_combine_thread_init(stream);
@@ -1433,14 +1463,18 @@ int usbh_uvc_stream_open(usbh_uvc_stream_t *stream)
 
 	uvc->hw_error = usbh_uvc_err_record;
 	stream->uvc_dec->err_cb = uvc->hw_error;
-	usbh_hw_uvc_init(stream->uvc_dec);	/* create dec_sema once; prepare+start deferred to stream_start */
+	status = usbh_hw_uvc_init(stream->uvc_dec);	/* create dec_sema once; prepare+start deferred to stream_start */
+	if (status != HAL_OK) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Dec init fail\n");
+		goto exit;
+	}
 
-	rtos_critical_enter(RTOS_CRITICAL_USB);
+	usb_os_enter_critical(0U);
 	if (uvc->hw_irq_ref_cnt == 0U) {
 		usbh_hw_uvc_irq_en(uvc->hw_isr_pri);
 	}
 	uvc->hw_irq_ref_cnt++;
-	rtos_critical_exit(RTOS_CRITICAL_USB);
+	usb_os_exit_critical(0U);
 
 #endif
 
@@ -1501,14 +1535,14 @@ void usbh_uvc_stream_close(usbh_uvc_stream_t *stream)
 	uvc = &uvc_host;
 	dec = stream->uvc_dec;
 	if (dec != NULL) {
-		rtos_critical_enter(RTOS_CRITICAL_USB);
+		usb_os_enter_critical(0U);
 		if (uvc->hw_irq_ref_cnt > 0U) {
 			uvc->hw_irq_ref_cnt--;
 			if (uvc->hw_irq_ref_cnt == 0U) {
 				usbh_hw_uvc_irq_dis();
 			}
 		}
-		rtos_critical_exit(RTOS_CRITICAL_USB);
+		usb_os_exit_critical(0U);
 
 		usbh_hw_uvc_stop(dec);
 		usbh_hw_uvc_deinit(dec);
@@ -1530,7 +1564,9 @@ void usbh_uvc_stream_close(usbh_uvc_stream_t *stream)
 
 	/* delete combine task */
 	usbh_uvc_combine_thread_deinit(stream);
-	usb_os_delay_us(2000);
+	/* Sleep rather than spin: usb_os_delay_us() never yields, so the thread being
+	 * torn down could not make progress during the wait. */
+	usb_os_sleep_ms(2U);
 
 	usbh_uvc_free_combine_resources(stream);
 
@@ -1581,7 +1617,9 @@ void usbh_uvc_stream_flush(usbh_uvc_stream_t *stream)
 	u8 i;
 
 	stream->is_resource_safe = 0;
-	usb_os_delay_us(2000); /* let in-flight ISR callbacks and combine_urb drain */
+	/* Sleep rather than spin: usb_os_delay_us() never yields, so combine_urb could not
+	 * drain while we spin. */
+	usb_os_sleep_ms(2U);   /* let in-flight ISR callbacks and combine_urb drain */
 
 	/* Drain stale notification tokens */
 	while (usb_os_sema_take(stream->frame_sema, 0) == HAL_OK) {
@@ -1608,6 +1646,9 @@ void usbh_uvc_stream_flush(usbh_uvc_stream_t *stream)
 	stream->cur_urb = 0;
 	stream->cur_packet = 0;
 	stream->last_fid = 0xFFU;
+	/* Re-arm the once-per-round truncation warning: a new round may use a different
+	 * resolution/format, so a previous round's warning must not silence this one. */
+	stream->trunc_warned = 0U;
 
 	stream->is_resource_safe = 1;
 #else

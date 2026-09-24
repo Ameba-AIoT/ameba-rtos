@@ -6,10 +6,13 @@
 
 import os
 import sys
+import signal
 import argparse
 import base64
 import json
 import re
+import time
+import logging
 import threading
 from copy import deepcopy
 
@@ -19,6 +22,84 @@ import version_info
 MinSupportedDeviceProfileMajorVersion = 1
 MinSupportedDeviceProfileMinorVersion = 1
 setting_file = "Settings.json"
+_crash_logger = None
+_cancel_requested = threading.Event()
+
+
+def _handle_interrupt_signal(signum, frame):
+    _cancel_requested.set()
+
+
+class FlashWatchdog:
+    class HeartbeatFilter(logging.Filter):
+        def __init__(self, watchdog, port_name):
+            super().__init__()
+            self.watchdog = watchdog
+            self.port_name = port_name
+
+        def filter(self, record):
+            if record.thread == threading.get_ident():
+                self.watchdog.heartbeat(self.port_name)
+            return True
+
+    def __init__(self, logger, ports, timeout_seconds):
+        self.logger = logger
+        self.timeout_seconds = timeout_seconds
+        self.stop_event = threading.Event()
+        self.timed_out_ports = set()
+        self._thread = None
+        self._lock = threading.Lock()
+        now = time.monotonic()
+        self._last_progress = {str(port): now for port in ports}
+        self._active_ports = set(self._last_progress)
+        self._filters = []
+
+    def attach_logger(self, logger, port_name):
+        heartbeat_filter = self.HeartbeatFilter(self, str(port_name))
+        logger.addFilter(heartbeat_filter)
+        self._filters.append((logger, heartbeat_filter))
+
+    def heartbeat(self, port_name):
+        port_name = str(port_name)
+        with self._lock:
+            if port_name in self._active_ports:
+                self._last_progress[port_name] = time.monotonic()
+                self.timed_out_ports.discard(port_name)
+
+    def finish(self, port_name):
+        with self._lock:
+            self._active_ports.discard(str(port_name))
+
+    def start(self):
+        self._thread = threading.Thread(
+            target=self._run, name="flash-watchdog", daemon=True)
+        self._thread.start()
+
+    def stop(self):
+        self.stop_event.set()
+        if self._thread is not None:
+            self._thread.join(timeout=2)
+        for logger, heartbeat_filter in self._filters:
+            logger.removeFilter(heartbeat_filter)
+        self._filters.clear()
+
+    def _run(self):
+        poll_interval = min(1.0, self.timeout_seconds)
+        while not self.stop_event.wait(poll_interval):
+            now = time.monotonic()
+            timed_out = []
+            with self._lock:
+                for port_name in self._active_ports:
+                    elapsed = now - self._last_progress[port_name]
+                    if (elapsed >= self.timeout_seconds
+                            and port_name not in self.timed_out_ports):
+                        self.timed_out_ports.add(port_name)
+                        timed_out.append((port_name, elapsed))
+
+            for port_name, elapsed in timed_out:
+                dump_all_thread_tracebacks(
+                    self.logger,
+                    f"[{port_name}] no log activity for {elapsed:.1f}s")
 
 
 def convert_mingw_path_to_windows(mingw_path):
@@ -73,17 +154,29 @@ def flash_process_entry(profile_info, serial_port, serial_baudrate, image_dir, s
                         log_level, log_f,
                         read_wifimac=False,
                         key_prog_specs=None,
-                        remote_server=None, remote_port=None, remote_password=None):
+                        remote_server=None, remote_port=None, remote_password=None,
+                        cancel_event=None, active_handlers=None, active_handlers_lock=None):
     logger = create_logger(serial_port, log_level=log_level, file=log_f)
 
-    ameba = Ameba(profile_info, serial_port, serial_baudrate, image_dir, settings, logger,
-                  download_img_info=images_info,
-                  chip_erase=chip_erase,
-                  memory_type=memory_type,
-                  erase_info=memory_info,
-                  remote_server=remote_server,
-                  remote_port=remote_port,
-                  remote_password=remote_password)
+    try:
+        ameba = Ameba(profile_info, serial_port, serial_baudrate, image_dir, settings, logger,
+                      download_img_info=images_info,
+                      chip_erase=chip_erase,
+                      memory_type=memory_type,
+                      erase_info=memory_info,
+                      remote_server=remote_server,
+                      remote_port=remote_port,
+                      remote_password=remote_password,
+                      cancel_event=cancel_event)
+    except SystemExit:
+        raise
+    except Exception:
+        if cancel_event is not None and cancel_event.is_set():
+            sys_exit(logger, False, ErrType.SYS_CANCEL)
+        raise
+    if active_handlers is not None:
+        with active_handlers_lock:
+            active_handlers[str(serial_port)] = ameba
     if download:
         # download
         if not ameba.check_protocol_for_download():
@@ -106,7 +199,11 @@ def flash_process_entry(profile_info, serial_port, serial_baudrate, image_dir, s
                               erase_info=memory_info,
                               remote_server=remote_server,
                               remote_port=remote_port,
-                              remote_password=remote_password)
+                              remote_password=remote_password,
+                              cancel_event=cancel_event)
+                if active_handlers is not None:
+                    with active_handlers_lock:
+                        active_handlers[str(serial_port)] = ameba
 
                 logger.info(f"Re-prepare for reburn...")
                 ret = ameba.prepare()
@@ -234,10 +331,15 @@ def flash_process_entry(profile_info, serial_port, serial_baudrate, image_dir, s
 
     ameba.clean_up()
 
+    if cancel_event is not None and cancel_event.is_set():
+        logger.warning("Flash operation cancelled")
+        sys.exit(130)
+
     sys_exit(logger, True, ret)
 
 
-def flash_thread_runner(result_holder, index, port_name, logger, entry_args):
+def flash_thread_runner(result_holder, index, port_name, logger, entry_args,
+                        watchdog=None, active_handlers=None, active_handlers_lock=None):
     """Run flash_process_entry in a worker thread and record its exit status.
 
     flash_process_entry signals its result by calling sys.exit() (via sys_exit()
@@ -256,9 +358,15 @@ def flash_thread_runner(result_holder, index, port_name, logger, entry_args):
             result_holder[index] = code
         else:
             result_holder[index] = 1
-    except Exception as err:
-        logger.error(f"[{port_name}] flash thread exception: {err}")
+    except Exception:
+        logger.exception(f"[{port_name}] flash thread exception")
         result_holder[index] = 1
+    finally:
+        if active_handlers is not None:
+            with active_handlers_lock:
+                active_handlers.pop(str(port_name), None)
+        if watchdog is not None:
+            watchdog.finish(port_name)
 
 
 def main(argc, argv):
@@ -279,7 +387,8 @@ def main(argc, argv):
 
     parser.add_argument('--chip-erase', action='store_true', help='chip erase')
     parser.add_argument('--log-level', default='info', help='log level')
-    parser.add_argument('--log-file', type=str, help='output log file with path')
+    parser.add_argument('--log-file', type=str,
+                        help='append the default log to the specified file when the process exits')
     parser.add_argument('--partition-table', help="layout info, list")
     parser.add_argument('--read-wifimac', action='store_true', help="read wifi mac")
     parser.add_argument('--combine', action='store_true', help='combine images according to profile layout')
@@ -312,6 +421,8 @@ def main(argc, argv):
     parser.add_argument('--remote-server', type=str, help='remote serial server IP address')
     parser.add_argument('--remote-password', type=str, help='remote serial server validation password')
     parser.add_argument('--no-reset', action='store_true', help='do not reset after flashing finished')
+    parser.add_argument('--watchdog-timeout', type=float, default=None, metavar='SECONDS',
+                        help='override Settings.json WatchdogTimeoutInSeconds; 0 disables it')
 
     args = parser.parse_args()
     download = args.download
@@ -339,6 +450,7 @@ def main(argc, argv):
     remote_port = 58916
     remote_password = args.remote_password
     no_reset = args.no_reset
+    watchdog_timeout_override = args.watchdog_timeout
 
     if mem_t is not None:
         if mem_t == "nand":
@@ -350,19 +462,29 @@ def main(argc, argv):
     else:
         memory_type = None
 
+    try:
+        log_f = create_default_log_file(serial_ports)
+        logger = create_logger("main", log_level=log_level, file=log_f)
+    except OSError as err:
+        print(f"Create default log file failed: {err}", file=sys.stderr)
+        sys.exit(1)
+
+    global _crash_logger
+    _crash_logger = logger
+    register_crash_handlers(logger, log_f)
+
+    if watchdog_timeout_override is not None and watchdog_timeout_override < 0:
+        logger.error("--watchdog-timeout must be greater than or equal to 0")
+        sys.exit(1)
+
     if log_file is not None:
-        log_path = os.path.dirname(log_file)
-        if log_path:
-            if not os.path.exists(log_path):
-                os.makedirs(log_path, exist_ok=True)
-            log_f = log_file
-        else:
-            log_f = os.path.join(os.getcwd(), log_file)
-    else:
-        log_f = None
-    logger = create_logger("main", log_level=log_level, file=log_f)
-    if log_file is not None:
-        logger.info(f"Log file: {log_file}")
+        try:
+            output_log_file = prepare_output_log_file(log_file)
+        except OSError as err:
+            logger.error(f"Invalid --log-file: {err}")
+            sys.exit(1)
+        register_log_file_append(log_f, output_log_file)
+        logger.info(f"Log file: {output_log_file}")
 
     logger.info(f"AmebaFlash Version: {version_info.version}")
 
@@ -432,6 +554,13 @@ def main(argc, argv):
     except Exception as err:
         logger.error(f"Load settings exception: {err}")
         settings = RtSettings(**{})
+
+    watchdog_timeout = (settings.watchdog_timeout_in_second
+                        if watchdog_timeout_override is None
+                        else watchdog_timeout_override)
+    if watchdog_timeout < 0:
+        logger.error("WatchdogTimeoutInSeconds must be greater than or equal to 0")
+        sys.exit(1)
 
     # CLI arguments are runtime-only — do not load defaults from Settings.json
     # to avoid stale state from a previous GUI or CLI run leaking into this one.
@@ -698,23 +827,76 @@ def main(argc, argv):
             settings.post_process = "NONE"
 
         threads_list = []
+        cancel_event = threading.Event()
+        active_handlers = {}
+        active_handlers_lock = threading.Lock()
         # Default each port to failure (1); flash_thread_runner overwrites with the
         # real exit status so a thread that dies unexpectedly is still treated as a
         # failure for the process exit code.
         thread_results = [1] * len(serial_ports)
+        watchdog = None
+        if watchdog_timeout > 0:
+            watchdog = FlashWatchdog(logger, serial_ports, watchdog_timeout)
+            watchdog.start()
+            logger.info(f"Flash watchdog inactivity timeout: {watchdog_timeout:g}s")
 
         for idx, sp in enumerate(serial_ports):
             entry_args = (
                 profile_info, sp, serial_baudrate, image_dir, settings, deepcopy(images_info), chip_erase,
                 memory_type, memory_info, download, log_level, log_f, read_wifimac,
-                key_prog_specs, remote_server, remote_port, remote_password)
-            flash_thread = threading.Thread(target=flash_thread_runner,
-                                            args=(thread_results, idx, sp, logger, entry_args))
+                key_prog_specs, remote_server, remote_port, remote_password,
+                cancel_event, active_handlers, active_handlers_lock)
+            port_logger = logging.getLogger(str(sp))
+            if watchdog is not None:
+                watchdog.attach_logger(port_logger, sp)
+            flash_thread = threading.Thread(
+                target=flash_thread_runner,
+                args=(thread_results, idx, sp, logger, entry_args, watchdog,
+                      active_handlers, active_handlers_lock),
+                name=f"flash-{sp}", daemon=True)
             threads_list.append(flash_thread)
             flash_thread.start()
 
-        for thred in threads_list:
-            thred.join()
+        cancelled_by_user = False
+        try:
+            while any(thread.is_alive() for thread in threads_list):
+                if _cancel_requested.is_set():
+                    raise KeyboardInterrupt
+                for thread in threads_list:
+                    thread.join(timeout=0.1)
+        except KeyboardInterrupt:
+            cancelled_by_user = True
+            _cancel_requested.set()
+            cancel_event.set()
+            logger.error("Cancellation requested by user")
+            flush_logger(logger, sync=True)
+            with active_handlers_lock:
+                handlers = list(active_handlers.values())
+            for handler in handlers:
+                handler.cancel_io()
+            cancel_deadline = time.monotonic() + 5.0
+            while (any(thread.is_alive() for thread in threads_list)
+                   and time.monotonic() < cancel_deadline):
+                for thread in threads_list:
+                    thread.join(timeout=0.1)
+            alive_ports = [serial_ports[i] for i, thread in enumerate(threads_list)
+                           if thread.is_alive()]
+            if alive_ports:
+                logger.error(
+                    f"Flash thread(s) did not stop after cancellation: "
+                    f"{', '.join(str(port) for port in alive_ports)}")
+                logger.error("Force process exit after cancellation")
+                flush_logger(logger, sync=True)
+                close_crash_handlers()
+                logging.shutdown()
+                os._exit(130)
+        finally:
+            if watchdog is not None:
+                watchdog.stop()
+
+        if cancelled_by_user:
+            logger.error("Flash operation cancelled by user")
+            raise SystemExit(130)
 
         logger.info(f"All flash threads have completed")
 
@@ -726,9 +908,37 @@ def main(argc, argv):
             sys.exit(1)
         sys.exit(0)
     except Exception as err:
-        logger.error(f"Main process exception: {err}")
+        logger.exception("Main process exception")
         sys_exit(logger, False, err)
 
 
+def run_main():
+    _cancel_requested.clear()
+    previous_sigint_handler = signal.getsignal(signal.SIGINT)
+    signal.signal(signal.SIGINT, _handle_interrupt_signal)
+    try:
+        main(len(sys.argv), sys.argv[1:])
+    except SystemExit:
+        raise
+    except KeyboardInterrupt:
+        if _crash_logger is not None:
+            _crash_logger.error("Interrupted by user")
+            flush_logger(_crash_logger, sync=True)
+        else:
+            print("Interrupted by user", file=sys.stderr)
+        raise SystemExit(130)
+    except BaseException:
+        if _crash_logger is not None:
+            _crash_logger.critical(
+                "Unhandled exception in process entry", exc_info=True)
+            flush_logger(_crash_logger, sync=True)
+        else:
+            sys.excepthook(*sys.exc_info())
+        raise SystemExit(1)
+    finally:
+        signal.signal(signal.SIGINT, previous_sigint_handler)
+        close_crash_handlers()
+
+
 if __name__ == "__main__":
-    main(len(sys.argv), sys.argv[1:])
+    run_main()

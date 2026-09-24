@@ -23,12 +23,12 @@
 extern usbh_uvc_host_t uvc_host;
 
 static int usbh_uvc_attach(usb_host_t *host);
-static int usbh_uvc_detach(usb_host_t *host);
-static int usbh_uvc_process(usb_host_t *host, usbh_event_t *event);
+static void usbh_uvc_detach(usb_host_t *host);
+static void usbh_uvc_process(usb_host_t *host, usbh_event_t *event);
 static int usbh_uvc_setup(usb_host_t *host);
 #if (USBH_UVC_USE_HW == 0)
-static int usbh_uvc_sof(usb_host_t *host);
-static int usbh_uvc_completed(usb_host_t *host, u8 pipe_num);
+static void usbh_uvc_sof(usb_host_t *host);
+static void usbh_uvc_completed(usb_host_t *host, u8 pipe_num);
 #endif
 
 /* Private variables ---------------------------------------------------------*/
@@ -148,8 +148,8 @@ static int usbh_uvc_attach(usb_host_t *host)
 #endif
 	}
 
-	if ((uvc->cb != NULL) && (uvc->cb->attach != NULL)) {
-		uvc->cb->attach();
+	if ((uvc->cb != NULL) && (uvc->cb->attached != NULL)) {
+		uvc->cb->attached();
 	}
 
 	return status;
@@ -158,9 +158,9 @@ static int usbh_uvc_attach(usb_host_t *host)
 /**
   * @brief  Detach callback.
   * @param  host: Host handle
-  * @retval Status
+  * @retval None
   */
-static int usbh_uvc_detach(usb_host_t *host)
+static void usbh_uvc_detach(usb_host_t *host)
 {
 	usbh_uvc_host_t *uvc = &uvc_host;
 	usbh_uvc_stream_t *stream;
@@ -200,10 +200,9 @@ static int usbh_uvc_detach(usb_host_t *host)
 
 	uvc->host = NULL;
 
-	if ((uvc->cb != NULL) && (uvc->cb->detach != NULL)) {
-		uvc->cb->detach();
+	if ((uvc->cb != NULL) && (uvc->cb->detached != NULL)) {
+		uvc->cb->detached();
 	}
-	return HAL_OK;
 }
 
 /**
@@ -552,6 +551,14 @@ static int usbh_uvc_process_ctrl(usb_host_t *host, usbh_event_t *event)
 	case STREAM_STATE_COMMIT:
 		ret = usbh_uvc_stream_ctrl_set_video(stream, 0U);
 		if (ret == HAL_OK) {
+			/* The frame buffers were sized at usbh_uvc_init() time, long before the device
+			 * reported dwMaxVideoFrameSize in PROBE/COMMIT, so they can no longer grow here.
+			 * Warn only: many cameras over-report dwMaxVideoFrameSize and still stream fine,
+			 * so failing the commit would reject working devices. */
+			if (stream->stream_ctrl.dwMaxVideoFrameSize > stream->frame_buffer_size) {
+				RTK_LOGS(TAG, RTK_LOG_WARN, "Dev frm size %d > buf %d, frames may be dropped\n",
+						 stream->stream_ctrl.dwMaxVideoFrameSize, stream->frame_buffer_size);
+			}
 			if (stream->set_alt == 1U) {
 				stream->state = STREAM_STATE_FIND_ALT;
 			} else {
@@ -628,9 +635,9 @@ static int usbh_uvc_process_ctrl(usb_host_t *host, usbh_event_t *event)
 /**
   * @brief  UVC Process function (State Machine)
   */
-static int usbh_uvc_process(usb_host_t *host, usbh_event_t *event)
+static void usbh_uvc_process(usb_host_t *host, usbh_event_t *event)
 {
-	int ret = HAL_OK;
+	int ret;
 	usbh_uvc_host_t *uvc = &uvc_host;
 
 	switch (uvc->state) {
@@ -638,7 +645,7 @@ static int usbh_uvc_process(usb_host_t *host, usbh_event_t *event)
 	case UVC_STATE_CTRL:
 		if (event != NULL) {
 			if (event->pipe_num == 0x00U) {
-				ret = usbh_uvc_process_ctrl(host, event);
+				(void)usbh_uvc_process_ctrl(host, event);
 			} else {
 				usbh_notify(host, 0, &usbh_uvc_driver);
 			}
@@ -677,8 +684,6 @@ static int usbh_uvc_process(usb_host_t *host, usbh_event_t *event)
 		usb_os_sleep_ms(1);
 		break;
 	}
-
-	return ret;
 }
 
 #if (USBH_UVC_USE_HW == 0)
@@ -687,12 +692,11 @@ static int usbh_uvc_process(usb_host_t *host, usbh_event_t *event)
   * @note   This function is called within an interrupt service routine (ISR) context;
   *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  host: Host handle
-  * @retval Status
+  * @retval None
   */
-static int usbh_uvc_sof(usb_host_t *host)
+static void usbh_uvc_sof(usb_host_t *host)
 {
 	usbh_uvc_stream_process_sof(host);
-	return HAL_OK;
 }
 
 /**
@@ -701,12 +705,11 @@ static int usbh_uvc_sof(usb_host_t *host)
   *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  host: Host handle
   * @param  pipe_num: Pipe number whose transfer completed
-  * @retval Status
+  * @retval None
   */
-static int usbh_uvc_completed(usb_host_t *host, u8 pipe_num)
+static void usbh_uvc_completed(usb_host_t *host, u8 pipe_num)
 {
 	usbh_uvc_stream_process_completed(host, pipe_num);
-	return HAL_OK;
 }
 #endif
 

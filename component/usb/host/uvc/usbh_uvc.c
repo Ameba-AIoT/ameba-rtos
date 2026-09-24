@@ -633,6 +633,7 @@ void usbh_uvc_clear_stats(u8 stream_index)
 	/* stream-level debug counters */
 	stream->rx_frame_cnt = 1;//this app should be called after get frame access first frame
 	stream->err_frame_cnt = 0;
+	stream->trunc_frame_cnt = 0;
 	stream->drop_frame_cnt = 0;
 	stream->dec_no_buf_cnt = 0;
 	stream->foi_no_buf_cnt = 0;
@@ -667,8 +668,8 @@ void usbh_uvc_print_stats(u8 stream_index)
 	stream = &uvc->stream[stream_index];
 
 	RTK_LOGS(TAG, RTK_LOG_INFO,
-			 "class: rx=%d err=%d drop=%d reuse=%d\n",
-			 stream->rx_frame_cnt, stream->err_frame_cnt,
+			 "class: rx=%d err=%d trunc=%d drop=%d reuse=%d\n",
+			 stream->rx_frame_cnt, stream->err_frame_cnt, stream->trunc_frame_cnt,
 			 stream->drop_frame_cnt, stream->reuse_cnt);
 	RTK_LOGS(TAG, RTK_LOG_INFO,
 			 "nobuf: dec=%d foi=%d eof=%d next=%d\n",

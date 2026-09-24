@@ -1,5 +1,5 @@
 // #include "usbd.h"
-#include "usbd_inic.h"
+#include "usbd_whc.h"
 #include "osif.h"
 #include "bt_inic.h"
 #include "hci_if_inic.h"
@@ -75,7 +75,7 @@ void bt_inic_usb_tx_data(u8 type, u8 *data, u32 len)
 		osif_mutex_take(usb_priv.evt_tx_lock, BT_TIMEOUT_FOREVER);
 		osif_sem_take(usb_priv.evt_tx_done_sema, BT_TIMEOUT_FOREVER);
 
-		usbd_inic_transmit_data(USBD_INIC_BT_EP1_INTR_IN, data, len, NULL);
+		usbd_whc_transmit_data(USBD_WHC_BT_EP_INTR_IN, data, len, NULL);
 		osif_mutex_give(usb_priv.evt_tx_lock);
 		break;
 	case HCI_ACL:
@@ -83,7 +83,7 @@ void bt_inic_usb_tx_data(u8 type, u8 *data, u32 len)
 		osif_mutex_take(usb_priv.acl_tx_lock, BT_TIMEOUT_FOREVER);
 		osif_sem_take(usb_priv.acl_tx_done_sema, BT_TIMEOUT_FOREVER);
 
-		usbd_inic_transmit_data(USBD_INIC_BT_EP2_BULK_IN, data, len, NULL);
+		usbd_whc_transmit_data(USBD_WHC_BT_EP_BULK_IN, data, len, NULL);
 		osif_mutex_give(usb_priv.acl_tx_lock);
 		break;
 	default:
@@ -108,15 +108,20 @@ void bt_inic_send_to_host(u8 type, u8 *pdata, u32 len)
 	return;
 }
 
-u8 bt_inic_usb_hci_cmd_hdl(u8 *buf, u16 len)
+int bt_inic_usb_hci_cmd_hdl(u8 *buf, u16 len)
 {
-	BT_DUMPA("HOST TX CMD: ", buf, len);
 	u8 *rx_cmd;
+
+	if (buf == NULL) {
+		return HAL_ERR_PARA;
+	}
+
+	BT_DUMPA("HOST TX CMD: ", buf, len);
 
 	rx_cmd = (u8 *)osif_mem_alloc(RAM_TYPE_DATA_ON, len + 3);
 	if (!rx_cmd) {
 		BT_LOGE("Alloc memory failed\n");
-		return 0;
+		return HAL_ERR_MEM;
 	}
 
 	rx_cmd[0] = len & 0xff; /* Packet Length */
@@ -125,18 +130,24 @@ u8 bt_inic_usb_hci_cmd_hdl(u8 *buf, u16 len)
 
 	memcpy(rx_cmd + 3, buf, len);
 	osif_msg_send(usb_priv.rx_queue, &rx_cmd, BT_TIMEOUT_NONE);
-	return 1;
+
+	return HAL_OK;
 }
 
-u8 bt_inic_usb_hci_acl_hdl(u8 *buf, u16 len)
+int bt_inic_usb_hci_acl_hdl(u8 *buf, u16 len)
 {
-	BT_DUMPA("HOST TX ACL: ", buf, len);
 	u8 *rx_acl;
+
+	if (buf == NULL) {
+		return HAL_ERR_PARA;
+	}
+
+	BT_DUMPA("HOST TX ACL: ", buf, len);
 
 	rx_acl = (u8 *)osif_mem_alloc(RAM_TYPE_DATA_ON, len + 3);
 	if (!rx_acl) {
 		BT_LOGE("Alloc memory failed\n");
-		return 0;
+		return HAL_ERR_MEM;
 	}
 
 	rx_acl[0] = len & 0xff; /* Packet Length */
@@ -145,7 +156,8 @@ u8 bt_inic_usb_hci_acl_hdl(u8 *buf, u16 len)
 
 	memcpy(rx_acl + 3, buf, len);
 	osif_msg_send(usb_priv.rx_queue, &rx_acl, BT_TIMEOUT_NONE);
-	return 1;
+
+	return HAL_OK;
 }
 
 
@@ -219,7 +231,7 @@ static int _usb_trx_buf_init(void)
 	usbd_inic_app_ep_t *ep;
 	u8 ep_num;
 
-	ep_num = USB_EP_NUM(USBD_INIC_BT_EP1_INTR_IN);
+	ep_num = USB_EP_NUM(USBD_WHC_BT_EP_INTR_IN);
 	ep = &iapp->in_ep[ep_num];
 	ep->buf_len = USBD_INIC_BT_EP1_INTR_IN_BUF_SIZE;
 	ep->buf = (u8 *)usb_os_malloc(ep->buf_len);
@@ -228,7 +240,7 @@ static int _usb_trx_buf_init(void)
 		goto bt_init_exit;
 	}
 
-	ep_num = USB_EP_NUM(USBD_INIC_BT_EP2_BULK_IN);
+	ep_num = USB_EP_NUM(USBD_WHC_BT_EP_BULK_IN);
 	ep = &iapp->in_ep[ep_num];
 	ep->buf_len = USBD_INIC_BT_EP2_BULK_IN_BUF_SIZE;
 	ep->buf = (u8 *)usb_os_malloc(ep->buf_len);
@@ -237,7 +249,7 @@ static int _usb_trx_buf_init(void)
 		goto bt_init_clean_ep1_intr_in_buf_exit;
 	}
 
-	ep_num = USB_EP_NUM(USBD_INIC_BT_EP2_BULK_OUT);
+	ep_num = USB_EP_NUM(USBD_WHC_BT_EP_BULK_OUT);
 	ep = &iapp->out_ep[ep_num];
 	ep->buf_len = USBD_INIC_BT_EP2_BULK_OUT_BUF_SIZE;
 	ep->buf = (u8 *)usb_os_malloc(ep->buf_len);
@@ -249,12 +261,12 @@ static int _usb_trx_buf_init(void)
 	return HAL_OK;
 
 bt_init_clean_ep2_bulk_in_buf_exit:
-	ep = &iapp->in_ep[USB_EP_NUM(USBD_INIC_BT_EP2_BULK_IN)];
+	ep = &iapp->in_ep[USB_EP_NUM(USBD_WHC_BT_EP_BULK_IN)];
 	usb_os_mfree(ep->buf);
 	ep->buf = NULL;
 
 bt_init_clean_ep1_intr_in_buf_exit:
-	ep = &iapp->in_ep[USB_EP_NUM(USBD_INIC_BT_EP1_INTR_IN)];
+	ep = &iapp->in_ep[USB_EP_NUM(USBD_WHC_BT_EP_INTR_IN)];
 	usb_os_mfree(ep->buf);
 	ep->buf = NULL;
 
@@ -267,19 +279,19 @@ static void _usb_trx_buf_deinit(void)
 	usbd_inic_app_t *iapp = &usbd_inic_app;
 	usbd_inic_app_ep_t *ep;
 
-	ep = &iapp->in_ep[USB_EP_NUM(USBD_INIC_BT_EP1_INTR_IN)];
+	ep = &iapp->in_ep[USB_EP_NUM(USBD_WHC_BT_EP_INTR_IN)];
 	if (ep->buf != NULL) {
 		usb_os_mfree(ep->buf);
 		ep->buf = NULL;
 	}
 
-	ep = &iapp->in_ep[USB_EP_NUM(USBD_INIC_BT_EP2_BULK_IN)];
+	ep = &iapp->in_ep[USB_EP_NUM(USBD_WHC_BT_EP_BULK_IN)];
 	if (ep->buf != NULL) {
 		usb_os_mfree(ep->buf);
 		ep->buf = NULL;
 	}
 
-	ep = &iapp->out_ep[USB_EP_NUM(USBD_INIC_BT_EP2_BULK_OUT)];
+	ep = &iapp->out_ep[USB_EP_NUM(USBD_WHC_BT_EP_BULK_OUT)];
 	if (ep->buf != NULL) {
 		usb_os_mfree(ep->buf);
 		ep->buf = NULL;
@@ -340,8 +352,8 @@ void bt_inic_set_config(void)
 	usbd_inic_app_ep_t *ep;
 	// Prepare to RX
 
-	if (usbd_inic_is_bt_en()) {
-		ep = &iapp->out_ep[USB_EP_NUM(USBD_INIC_BT_EP2_BULK_OUT)];
-		usbd_inic_receive_data(USBD_INIC_BT_EP2_BULK_OUT, ep->buf, ep->buf_len, NULL);
+	if (usbd_whc_is_bt_en()) {
+		ep = &iapp->out_ep[USB_EP_NUM(USBD_WHC_BT_EP_BULK_OUT)];
+		usbd_whc_receive_data(USBD_WHC_BT_EP_BULK_OUT, ep->buf, ep->buf_len, NULL);
 	}
 }

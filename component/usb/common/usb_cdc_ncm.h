@@ -43,6 +43,13 @@ extern "C" {
 #define USB_CDC_NCM_GET_CRC_MODE                        0x89U /**< Get CRC mode */
 #define USB_CDC_NCM_SET_CRC_MODE                        0x8AU /**< Set CRC mode */
 
+/* Response sizes of the NCM Device-to-Host requests handled by the application.
+ * Both lengths are defined by the request, not by the host.
+ * Ref NCM 1.0 6.2.2: GET_NET_ADDRESS returns the 6-byte EUI-48 address.
+ * Ref NCM 1.0 6.2.10: GET_CRC_MODE returns a 16-bit bmCrcMode. */
+#define USB_CDC_NCM_NET_ADDRESS_RSP_LEN                 6U    /**< GET_NET_ADDRESS response size */
+#define USB_CDC_NCM_CRC_MODE_RSP_LEN                    2U    /**< GET_CRC_MODE response size */
+
 /* NCM NTB Format Signatures */
 #define USB_CDC_NCM_NTH16_SIGNATURE                     0x484D434EU /**< "NCMH" - NTB16 header signature */
 #define USB_CDC_NCM_NDP16_NOCRC_SIGNATURE               0x304D434EU /**< "NCM0" - NTB16 datagram pointer signature (no CRC) */

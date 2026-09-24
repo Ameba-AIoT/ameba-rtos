@@ -11,6 +11,7 @@
 
 #include "usb_os.h"
 #include "usb_ch9.h"
+#include "usb_def.h"
 #include "usb_diag.h"
 
 #ifdef __cplusplus
@@ -395,9 +396,8 @@ typedef struct {
 	/**
 	* @brief Called when a supported device is detached.
 	* @param[in] host: USB host.
-	* @return 0 on success, non-zero on failure.
 	*/
-	int(*detach)(struct _usb_host_t *host);
+	void (*detach)(struct _usb_host_t *host);
 
 	/**
 	* @brief Called after attach to handle class-specific standard control requests.
@@ -408,30 +408,33 @@ typedef struct {
 
 	/**
 	* @brief Main processing loop for the class driver after class setup to process class-specific transfers.
+	* @details The core dispatches each event to exactly one class driver (by class slot for
+	*          @ref USBH_CLASS_EVENT, by the pipe's owning driver otherwise), so a driver never
+	*          sees a foreign event and has no result to report back to the core.
 	* @param[in] host: USB host.
 	* @param[in] event: @ref usbh_event_t.
-	* @return 0 on success, non-zero on failure.
 	*/
-	int(*process)(struct _usb_host_t *host, usbh_event_t *event);
+	void (*process)(struct _usb_host_t *host, usbh_event_t *event);
 
 	/**
 	* @brief Called at each Start-of-Frame (SOF) interrupt for class-specific timing process.
 	* @note  This callback is called within an interrupt service routine (ISR) context;
 	*        time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	* @param[in] host: USB host.
-	* @return 0 on success, non-zero on failure.
 	*/
-	int(*sof)(struct _usb_host_t *host);
+	void (*sof)(struct _usb_host_t *host);
 
 	/**
 	* @brief Called when a transfer on a specific pipe completes.
 	* @note  This callback is called within an interrupt service routine (ISR) context;
 	*        time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+	* @note  The core routes the completion to the pipe's owning driver only (recorded from the
+	*        `owner` passed to @ref usbh_open_pipe), so this callback is never invoked for a
+	*        foreign pipe and has no result to report back to the core.
 	* @param[in] host: USB host.
 	* @param[in] pipe: Pipe number.
-	* @return 0 on success, non-zero on failure.
 	*/
-	int(*completed)(struct _usb_host_t *host, u8 pipe);
+	void (*completed)(struct _usb_host_t *host, u8 pipe);
 } usbh_class_driver_t;
 
 /**
@@ -440,11 +443,12 @@ typedef struct {
 typedef struct {
 	/**
 	* @brief Callback to handle class-independent events in the application.
+	* @details Pure notification: the core ignores any result, so the application cannot
+	*          influence the host state machine from here.
 	* @param[in] host: USB host.
 	* @param[in] msg: @ref usbh_msg_t.
-	* @return 0 on success, non-zero on failure.
 	*/
-	int(*process)(struct _usb_host_t *host, u8 msg);
+	void (*process)(struct _usb_host_t *host, u8 msg);
 
 	/**
 	 * @brief Callback to validate a device when multiple devices are connected to a hub.
@@ -512,11 +516,53 @@ int usbh_init(const usbh_config_t *cfg, const usbh_user_cb_t *cb);
 
 /**
  * @brief Deinitialize USB host core driver.
+ */
+void usbh_deinit(void);
+
+/**
+ * @brief Force the attached device through a fresh enumeration.
+ * @details Restarts the port without tearing down the core: VBUS is dropped and
+ *          global interrupts are disabled, both EP0 pipes are freed, the bus is
+ *          left quiesced for 200 ms, the enumeration/control state machines and
+ *          the cached device info (address, speed, descriptor buffer) are reset
+ *          to their power-on values, and the host is started again with the port
+ *          state machine back at idle. A device that is still plugged in is then
+ *          re-enumerated from scratch, exactly as on a fresh hot-plug.
+ *
+ *          Registered class drivers are NOT unregistered and the core is NOT
+ *          deinitialized, so the same drivers re-bind by matching the freshly
+ *          read descriptors. Typical uses are recovering from a wedged device
+ *          and picking up a device that changed its descriptors on the fly
+ *          (e.g. a DFU run-time -> DFU-mode switch on a device that does not
+ *          detach itself).
+ * @note  Runs the 200 ms quiesce delay inline, so call it from task context
+ *        only - never from an ISR or an ISR-context class callback
+ *        (@ref usbh_class_driver_t::sof, @ref usbh_class_driver_t::completed).
+ * @note  Every pipe a class opened is invalidated. A class whose device is
+ *        currently attached gets its @ref usbh_class_driver_t::detach called by
+ *        the resulting disconnect handling; do not keep using cached pipe
+ *        handles across this call.
+ * @warning Requires an initialized core: call only after a successful
+ *          @ref usbh_init(), and never after @ref usbh_deinit().
  * @return 0 on success, non-zero on failure.
  */
-int usbh_deinit(void);
+int usbh_reenumerate(void);
 
-/* Usbh CTS test operations. */
+/**
+ * @brief Get the USB address currently assigned to the attached device.
+ * @details Returns the address the host handed out with SET_ADDRESS during
+ *          enumeration, i.e. the value carried in the token of every subsequent
+ *          transfer. Mainly useful for diagnostics, bus-trace correlation, and
+ *          compliance/verification tooling; normal class code never needs it
+ *          because the core fills the address into each transfer itself.
+ * @note  Returns 0 when no device is enumerated yet, when enumeration has not
+ *        reached SET_ADDRESS, and when the core is not initialized - 0 is the
+ *        USB default address, so it can never be a live device's address and
+ *        needs no separate error code.
+ * @return Device address (1..127), or 0 if no device is addressed.
+ */
+u32 usbh_get_dev_address(void);
+
 /**
  * @brief  USB Host enter suspend.
  */
@@ -543,11 +589,12 @@ void usbh_cg_register(void);
 void usbh_cg_unregister(void);
 
 /**
- * @brief  USB Host Port Test Control.
+ * @brief  USB Host Port Test Control, for CTS test.
  * @param[in] mode: Test mode.
  * @return 0 on success, non-zero on failure.
  */
 int usbh_select_test_mode(u8 mode);
+
 /** @} End of Host_Core_Functions_For_Applications group */
 
 /** @addtogroup Host_Core_Functions_For_Classes Host Core Functions For Classes
@@ -566,10 +613,10 @@ int usbh_register_class(const usbh_class_driver_t *driver);
  * @brief Un-register a class, called in class de-initialization function.
  *        Removes ONLY the matching driver from class_driver[]; does not stop
  *        hardware (usbh_stop()) or release core resources (usbh_deinit()).
+ *        A driver that was never registered is silently ignored.
  * @param[in] driver: USB class driver.
- * @return 0 on success, non-zero on failure.
  */
-int usbh_unregister_class(const usbh_class_driver_t *driver);
+void usbh_unregister_class(const usbh_class_driver_t *driver);
 
 /**
  * @brief Start USB host TRX: drive VBUS and enable global interrupts.
@@ -590,10 +637,10 @@ int usbh_start(void);
  * @details Symmetric counterpart of usbh_start() - the interrupt half it
  *          enabled. Halts USB ISR-driven TRX. VBUS is not dropped here; that
  *          is done by usbh_deinit(). Does not remove class drivers
- *          (usbh_unregister_class()). Safe to call when already stopped.
- * @return 0 on success, non-zero on failure.
+ *          (usbh_unregister_class()). Safe to call when already stopped or
+ *          when the core was never initialized.
  */
-int usbh_stop(void);
+void usbh_stop(void);
 
 /* Pipe operations */
 /**
@@ -609,9 +656,8 @@ int usbh_open_pipe(usb_host_t *host, usbh_pipe_t *pipe, usbh_ep_desc_t *ep_desc,
  * @brief  Close a pipe.
  * @param[in] host: Host Handle.
  * @param[in] pipe: Pipe struct handle.
- * @return 0 on success, non-zero on failure.
  */
-int usbh_close_pipe(usb_host_t *host, usbh_pipe_t *pipe);
+void usbh_close_pipe(usb_host_t *host, usbh_pipe_t *pipe);
 
 /* Config operations, choose the config index while bNumConfigurations > 1 */
 /**
@@ -706,9 +752,10 @@ usbh_urb_state_t usbh_get_urb_state(usb_host_t *host, usbh_pipe_t *pipe);
  *                      Not used for routing.
  * @param[in] owner: Originating class driver. Required for routing. NULL falls
  *                   back defensively to slot 0.
- * @return 0 on success, non-zero on failure.
+ * @note The only failure mode is a full event queue, which the core logs on the
+ *       spot and the caller cannot recover from, so no status is returned.
  */
-int usbh_notify(usb_host_t *host, u8 pipe_num, const usbh_class_driver_t *owner);
+void usbh_notify(usb_host_t *host, u8 pipe_num, const usbh_class_driver_t *owner);
 
 /* Transfer operations */
 /**

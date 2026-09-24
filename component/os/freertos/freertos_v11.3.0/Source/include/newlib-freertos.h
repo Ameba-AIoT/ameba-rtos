@@ -56,13 +56,12 @@
 #endif
 
 /* When using __DYNAMIC_REENT__, newlib obtains the reent structure by calling
- * __getreent() (provided by locks.c) on every C-library entry point.
- * configDEINIT_TLS_BLOCK is set to no-op because _reclaim_reent must not be
- * called when newlib manages the reent lifetime through __getreent().
- * configSET_TLS_BLOCK still writes _impure_ptr (harmless but consistent with
- * v11.1.0 behaviour — newlib ignores it when __DYNAMIC_REENT__ is active). */
+ * __getreent() (provided by locks.c) on every C-library entry point, instead
+ * of dereferencing the global _impure_ptr.  configSET_TLS_BLOCK therefore only
+ * needs to be a no-op: there is no global pointer to keep in sync on a context
+ * switch (and on SMP that global write would be a needless cross-core race). */
 #ifdef __DYNAMIC_REENT__
-    #define configDEINIT_TLS_BLOCK( xTLSBlock )
+    #define configSET_TLS_BLOCK( xTLSBlock )
 #endif
 
 #ifndef configSET_TLS_BLOCK

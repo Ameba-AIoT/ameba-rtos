@@ -886,8 +886,10 @@ void _evt_handler(int evt_id)
 		f = fopen("/var/lib/nan/nik_cache", "wb");
 		if (f) {
 			fwrite(&nik_cache_data, sizeof(nik_cache_data), 1, f);
-			INFO_PRINT("[rtw_event] save nik cache data\n");
+			fflush(f);
+			fsync(fileno(f));
 			fclose(f);
+			INFO_PRINT("[rtw_event] save nik cache data\n");
 		}
 		break;
 	}

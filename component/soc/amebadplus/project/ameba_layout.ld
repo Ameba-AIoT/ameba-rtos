@@ -39,6 +39,9 @@
 #else
 #define RAM_KM0_IMG2_SIZE				KBYTES(CONFIG_SRAM_KM0_IMG2_KB)
 #endif
+#if defined(CONFIG_WIFI_NAN_HOST_APP)
+ASSERT(CONFIG_SRAM_KM0_IMG2_KB >= 128, "WIFI_NAN_ENABLE needs CONFIG_SRAM_KM0_IMG2_KB >= 128 (see WHY comment above).")
+#endif
 /*
                   amebadplus SRAM Layout (512K)
 0x20000000 ──────────►┌──────────────────────┐

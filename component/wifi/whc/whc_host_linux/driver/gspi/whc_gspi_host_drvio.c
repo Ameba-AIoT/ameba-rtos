@@ -28,19 +28,6 @@
  * host priv->swap ends up 0 and no swap is done -- see gspi_activate().
  */
 #include <whc_host_linux.h>
-
-/*
- * Full-duplex transfer buffer strategy:
- *   1 = shared:   tx_buf == rx_buf, MISO overwrites the frame in place. Saves an
- *                 allocation and a copy. Requires the SPI controller to support
- *                 in-place full-duplex (bcm2835 / Raspberry Pi does).
- *   0 = separate: rx goes into its own buffer, then the result is copied back.
- *                 Most portable; use if a controller/DMA engine rejects tx==rx.
- */
-#ifndef GSPI_INPLACE_XFER
-#define GSPI_INPLACE_XFER	1
-#endif
-
 struct gspi_status {
 	u32 word0;
 	u32 word1;

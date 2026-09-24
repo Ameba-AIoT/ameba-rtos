@@ -37,7 +37,12 @@ static const u8 *usbh_hid_fetch_item(const u8 *start, const u8 *end, usbh_hid_it
 static void usbh_hid_process_global_item(usbh_hid_parse_state *state, const usbh_hid_item_t *item);
 static void usbh_hid_process_usage(usbh_hid_parse_state *state, u32 usage);
 static void usbh_hid_process_local_item(usbh_hid_parse_state *state, const usbh_hid_item_t *item);
+static void usbh_hid_settle_input_field(usbh_hid_parse_state *state, const usbh_hid_item_t *item);
+static void usbh_hid_reset_local_state(usbh_hid_parse_state *state);
 static void usbh_hid_process_main_item(usbh_hid_parse_state *state, const usbh_hid_item_t *item);
+static u32 usbh_hid_extract_bits(const u8 *data, u32 data_len, u32 bit_offset, u8 nbits);
+static usbh_hid_event_type_t usbh_hid_usage_to_event(u32 usage);
+static bool usbh_hid_test_ctrl_bit(const u8 *data, u32 data_len, u16 bit);
 static void usbh_hid_parse_hid_report_descriptor(const u8 *data, u16 length, usbh_hid_ctrl_caps_t *device_info);
 static int usbh_hid_parse_hid_report(const u8 *report_data, u8 report_len, const usbh_hid_ctrl_caps_t *device_info);
 static int usbh_hid_parse_hid_report_desc(u8 *pbuf, u16 buf_length);
@@ -48,11 +53,10 @@ static int usbh_hid_process_get_hid_report_desc(usb_host_t *host);
 static int usbh_hid_handle_report_desc(usb_host_t *host);
 static void usbh_hid_in_process(usb_host_t *host);
 static int usbh_hid_attach(usb_host_t *host);
-static int usbh_hid_detach(usb_host_t *host);
+static void usbh_hid_detach(usb_host_t *host);
 static int usbh_hid_setup(usb_host_t *host);
-static int usbh_hid_process(usb_host_t *host, usbh_event_t *event);
-static int usbh_hid_sof(usb_host_t *host);
-
+static void usbh_hid_process(usb_host_t *host, usbh_event_t *event);
+static void usbh_hid_sof(usb_host_t *host);
 /* Private variables ---------------------------------------------------------*/
 static const char *const TAG = "HID";
 
@@ -77,6 +81,15 @@ static const usbh_class_driver_t usbh_hid_driver = {
 };
 
 static usbh_hid_t usbh_hid;
+
+/* Consumer usages this driver reports, indexed by USBH_HID_TRACK_xxx */
+static const u16 usbh_hid_track_usages[USBH_HID_TRACK_USAGE_CNT] = {
+	USBH_HID_CONSUMER_VOLUME_UP,
+	USBH_HID_CONSUMER_VOLUME_DOWN,
+	USBH_HID_CONSUMER_MUTE,
+	USBH_HID_CONSUMER_PLAY_PAUSE,
+	USBH_HID_CONSUMER_STOP,
+};
 
 #if USBH_HID_DEBUG
 void usbh_hid_status_dump(void)
@@ -168,12 +181,16 @@ static const u8 *usbh_hid_fetch_item(const u8 *start, const u8 *end, usbh_hid_it
 		item->size = 4;
 	}
 
+	/* Ref HID 1.11 6.2.2.2: item data is little endian. Cast to u32 before the
+	 * shift: a u8 operand would be promoted to signed int, and shifting the top
+	 * byte of a 4-byte item left by 24 would overflow the sign bit. */
 	item->data = 0;
-	for (int i = 0; i < item->size; i++) {
+	for (u32 i = 0; i < (u32)item->size; i++) {
 		if (start >= end) {
 			return NULL;
 		}
-		item->data |= (*start++) << (8 * i);
+		item->data |= ((u32)(*start)) << (8U * i);
+		start++;
 	}
 
 	return start;
@@ -183,7 +200,7 @@ static void usbh_hid_process_global_item(usbh_hid_parse_state *state, const usbh
 {
 	switch (item->tag) {
 	case USBH_HID_GLOBAL_ITEM_TAG_USAGE_PAGE:
-		state->usage_page = item->data;
+		state->usage_page = (u16)item->data;
 #if USBH_HID_REPORT_DESC_PARSE_DEBUG
 		RTK_LOGS(NOTAG, RTK_LOG_INFO, "Usage Page: 0x%x(%s)\n", item->data, usbh_hid_get_usage_page_name(item->data));
 #endif
@@ -201,22 +218,25 @@ static void usbh_hid_process_global_item(usbh_hid_parse_state *state, const usbh
 #endif
 		break;
 	case USBH_HID_GLOBAL_ITEM_TAG_REPORT_SIZE:
-		state->report_size = item->data;
+		state->report_size = (u16)item->data;
 #if USBH_HID_REPORT_DESC_PARSE_DEBUG
 		RTK_LOGS(NOTAG, RTK_LOG_INFO, "Report Size: %d bits\n", state->report_size);
 #endif
 		break;
 	case USBH_HID_GLOBAL_ITEM_TAG_REPORT_COUNT:
-		state->report_count = item->data;
+		state->report_count = (u16)item->data;
 #if USBH_HID_REPORT_DESC_PARSE_DEBUG
 		RTK_LOGS(NOTAG, RTK_LOG_INFO, "Report Count: %d\n", state->report_count);
 #endif
 		break;
 	case USBH_HID_GLOBAL_ITEM_TAG_REPORT_ID:
-		state->usage_stack_ptr = 0;
-		state->bit_offset = 0;
+		/* Ref HID 1.11 5.6: each Report ID starts a new report, so every bit
+		 * cursor restarts at the first bit after the 1-byte ID prefix. */
+		state->in_bit_offset = 0;
+		state->out_bit_offset = 0;
+		state->feat_bit_offset = 0;
 		state->device_info->report_id_count++;
-		state->report_id = item->data;
+		state->report_id = (u8)item->data;
 #if USBH_HID_REPORT_DESC_PARSE_DEBUG
 		RTK_LOGS(NOTAG, RTK_LOG_INFO, "Report ID: %d\n", state->report_id);
 #endif
@@ -227,50 +247,92 @@ static void usbh_hid_process_global_item(usbh_hid_parse_state *state, const usbh
 	}
 }
 
+/**
+  * @brief  Record that a tracked Consumer usage appears at ordinal usage_cnt of
+  *         the Main item currently being declared.
+  * @note   HID 1.11 6.2.2.8: Local items apply to the *next* Main item, so the
+  *         report position of a usage cannot be known until that Main item
+  *         arrives and tells us whether the field is a bitmap or an array of
+  *         usage codes. Only the ordinal is remembered here.
+  * @param  state: Parser state
+  * @param  usage: Usage value just declared
+  */
 static void usbh_hid_process_usage(usbh_hid_parse_state *state, u32 usage)
 {
-	/* usage_stack_ptr counts usages within the current Main item field (resets
-	 * after each Input/Output). bit_offset accumulates bits consumed by all
-	 * previous Input fields in this report. The absolute bit position of this
-	 * usage in the report is (bit_offset + usage_stack_ptr). */
-	u8 abs_bit = state->bit_offset + state->usage_stack_ptr;
-	state->usage_stack_ptr++;
+	u8 idx;
 
-	//consumer
-	if (state->usage_page == USBH_HID_UP_CONSUMER) {///always
-		if ((usage == USBH_HID_CONSUMER_VOLUME_UP) || (usage == USBH_HID_CONSUMER_VOLUME_DOWN) || (usage == USBH_HID_CONSUMER_MUTE)) {
-			state->device_info->volume.supported = true;
-			state->device_info->volume.report_id = state->report_id;
-
-			if (usage == USBH_HID_CONSUMER_VOLUME_UP) {
-				state->device_info->volume.up_bit = abs_bit;
-			} else if (usage == USBH_HID_CONSUMER_VOLUME_DOWN) {
-				state->device_info->volume.down_bit = abs_bit;
-			} else if (usage == USBH_HID_CONSUMER_MUTE) {
-				state->device_info->volume.mute_bit = abs_bit;
-			}
+	if (state->usage_page == USBH_HID_UP_CONSUMER) {
+		switch (usage) {
+		case USBH_HID_CONSUMER_VOLUME_UP:
+			idx = USBH_HID_TRACK_VOLUME_UP;
+			break;
+		case USBH_HID_CONSUMER_VOLUME_DOWN:
+			idx = USBH_HID_TRACK_VOLUME_DOWN;
+			break;
+		case USBH_HID_CONSUMER_MUTE:
+			idx = USBH_HID_TRACK_MUTE;
+			break;
+		case USBH_HID_CONSUMER_PLAY_PAUSE:
+			idx = USBH_HID_TRACK_PLAY_PAUSE;
+			break;
+		case USBH_HID_CONSUMER_STOP:
+			idx = USBH_HID_TRACK_STOP;
+			break;
+		default:
+			idx = USBH_HID_TRACK_USAGE_CNT;
+			break;
 		}
 
-		if ((usage == USBH_HID_CONSUMER_PLAY_PAUSE) || (usage == USBH_HID_CONSUMER_STOP)) {
-			state->device_info->media.supported = true;
-			state->device_info->media.report_id = state->report_id;
-
-			if (usage == USBH_HID_CONSUMER_PLAY_PAUSE) {
-				state->device_info->media.play_pause_bit = abs_bit;
-			} else if (usage == USBH_HID_CONSUMER_STOP) {
-				state->device_info->media.stop_bit = abs_bit;
-			}
+		if ((idx < USBH_HID_TRACK_USAGE_CNT) && (state->usage_cnt <= 0xFFFFU)) {
+			state->track_ord[idx] = (u16)state->usage_cnt;
+			state->track_mask |= (u8)(1U << idx);
 		}
 	}
+
+	state->usage_cnt++;
 }
 
 static void usbh_hid_process_local_item(usbh_hid_parse_state *state, const usbh_hid_item_t *item)
 {
+	u32 usage;
+
 	switch (item->tag) {
 	case USBH_HID_LOCAL_ITEM_TAG_USAGE:
 		usbh_hid_process_usage(state, item->data);
 #if USBH_HID_REPORT_DESC_PARSE_DEBUG
 		RTK_LOGS(NOTAG, RTK_LOG_INFO, "Usage: 0x%03x (%s)\n", item->data, usbh_hid_get_usage_name(state->usage_page, item->data));
+#endif
+		break;
+
+	case USBH_HID_LOCAL_ITEM_TAG_USAGE_MIN:
+		/* Ref HID 1.11 6.2.2.8: Usage Minimum/Maximum declare an inclusive
+		 * range of usages, equivalent to listing each one in ascending order. */
+		state->usage_min = item->data;
+		state->usage_min_valid = 1;
+#if USBH_HID_REPORT_DESC_PARSE_DEBUG
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "Usage Min: 0x%03x\n", item->data);
+#endif
+		break;
+
+	case USBH_HID_LOCAL_ITEM_TAG_USAGE_MAX:
+		if ((state->usage_min_valid != 0U) && (item->data >= state->usage_min)) {
+			/* A range may span hundreds of usages, but only the tracked ones can
+			 * change the outcome. Place each tracked usage that falls inside the
+			 * range at its own ordinal, then skip the whole range at once. */
+			u32 base_cnt = state->usage_cnt;
+
+			for (u32 i = 0; i < USBH_HID_TRACK_USAGE_CNT; i++) {
+				usage = usbh_hid_track_usages[i];
+				if ((usage >= state->usage_min) && (usage <= item->data)) {
+					state->usage_cnt = base_cnt + (usage - state->usage_min);
+					usbh_hid_process_usage(state, usage);
+				}
+			}
+			state->usage_cnt = base_cnt + (item->data - state->usage_min) + 1U;
+		}
+		state->usage_min_valid = 0;
+#if USBH_HID_REPORT_DESC_PARSE_DEBUG
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "Usage Max: 0x%03x\n", item->data);
 #endif
 		break;
 
@@ -280,52 +342,159 @@ static void usbh_hid_process_local_item(usbh_hid_parse_state *state, const usbh_
 	}
 }
 
+/**
+  * @brief  Turn the usages collected for an Input field into report positions.
+  * @note   Ref HID 1.11 6.2.2.5/6.2.2.7. A field occupies
+  *         (Report Size * Report Count) bits and comes in two flavours:
+  *         - Variable with Report Size 1: a bitmap, where the n-th declared
+  *           usage owns the n-th bit of the field;
+  *         - Array: the field carries Report Count usage *codes* of Report Size
+  *           bits each, not one bit per usage, so no per-usage bit exists.
+  *         Anything else (e.g. Variable with Report Size > 1, a multi-bit value
+  *         per control) carries no on/off bit this driver can use, so it is only
+  *         skipped over.
+  * @param  state: Parser state
+  * @param  item: The Input Main item being closed
+  */
+static void usbh_hid_settle_input_field(usbh_hid_parse_state *state, const usbh_hid_item_t *item)
+{
+	usbh_hid_ctrl_caps_t *info = state->device_info;
+	u32 abs_bit;
+
+	if ((item->data & USBH_HID_ITEM_DATA_CONSTANT) != 0U) {
+		return;    /* padding, never carries a usage */
+	}
+
+	if ((item->data & USBH_HID_ITEM_DATA_VARIABLE) != 0U) {
+		if ((state->report_size != 1U) || (state->track_mask == 0U)) {
+			return;
+		}
+
+		for (u32 i = 0; i < USBH_HID_TRACK_USAGE_CNT; i++) {
+			if ((state->track_mask & (u8)(1U << i)) == 0U) {
+				continue;
+			}
+			/* A usage declared beyond Report Count has no bit in this field. */
+			if (state->track_ord[i] >= state->report_count) {
+				continue;
+			}
+			abs_bit = state->in_bit_offset + state->track_ord[i];
+			if (abs_bit >= USBH_HID_BIT_NONE) {
+				continue;
+			}
+
+			switch (i) {
+			case USBH_HID_TRACK_VOLUME_UP:
+				info->volume.up_bit = (u16)abs_bit;
+				info->volume.report_id = state->report_id;
+				info->volume.supported = true;
+				break;
+			case USBH_HID_TRACK_VOLUME_DOWN:
+				info->volume.down_bit = (u16)abs_bit;
+				info->volume.report_id = state->report_id;
+				info->volume.supported = true;
+				break;
+			case USBH_HID_TRACK_MUTE:
+				info->volume.mute_bit = (u16)abs_bit;
+				info->volume.report_id = state->report_id;
+				info->volume.supported = true;
+				break;
+			case USBH_HID_TRACK_PLAY_PAUSE:
+				info->media.play_pause_bit = (u16)abs_bit;
+				info->media.report_id = state->report_id;
+				info->media.supported = true;
+				break;
+			default:
+				info->media.stop_bit = (u16)abs_bit;
+				info->media.report_id = state->report_id;
+				info->media.supported = true;
+				break;
+			}
+		}
+	} else if ((state->usage_page == USBH_HID_UP_CONSUMER) && (state->report_size >= 8U)
+			   && (state->report_size <= 32U) && (state->report_count > 0U)
+			   && (state->in_bit_offset < USBH_HID_BIT_NONE) && (info->consumer_array.supported == false)) {
+		/* Array of Consumer usage codes: remember where the elements are and let
+		 * the report path match the received code against the tracked usages. */
+		info->consumer_array.report_id = state->report_id;
+		info->consumer_array.bit_offset = (u16)state->in_bit_offset;
+		info->consumer_array.elem_bits = (u8)state->report_size;
+		info->consumer_array.elem_cnt = (state->report_count < USBH_HID_ARRAY_ELEM_CNT)
+										? (u8)state->report_count : (u8)USBH_HID_ARRAY_ELEM_CNT;
+		info->consumer_array.supported = true;
+	} else {
+		/* no usable on/off information in this field */
+	}
+}
+
+/**
+  * @brief  Clear the Local item state consumed by a Main item.
+  * @note   Ref HID 1.11 6.2.2.8: Local items apply only to the Main item that
+  *         follows them and are reset afterwards.
+  * @param  state: Parser state
+  */
+static void usbh_hid_reset_local_state(usbh_hid_parse_state *state)
+{
+	state->usage_cnt = 0;
+	state->track_mask = 0;
+	state->usage_min_valid = 0;
+}
+
 static void usbh_hid_process_main_item(usbh_hid_parse_state *state, const usbh_hid_item_t *item)
 {
+	/* Ref HID 1.11 6.2.2.7: a field occupies Report Size * Report Count bits. */
+	u32 field_bits = (u32)state->report_size * (u32)state->report_count;
 #if USBH_HID_REPORT_DESC_PARSE_DEBUG
-	u32 total_bits;
 	u32 total_bytes;
 #endif
 
 	switch (item->tag) {
 	case USBH_HID_MAIN_ITEM_TAG_INPUT:
-		/* HID spec ��6.2.2.8: Local items are consumed after each Main item.
-		 * Accumulate the bits used by this field into bit_offset so the next
-		 * field's usages get correct absolute bit positions, then reset the
-		 * per-field usage counter. */
-		state->bit_offset += state->report_count;
-		state->usage_stack_ptr = 0;
+		usbh_hid_settle_input_field(state, item);
+		state->in_bit_offset += field_bits;
+		usbh_hid_reset_local_state(state);
 #if USBH_HID_REPORT_DESC_PARSE_DEBUG
 		RTK_LOGS(NOTAG, RTK_LOG_INFO, "Input - ");
 		usbh_hid_decode_data_attributes(item->data);
-		total_bits = state->report_size * state->report_count;
-		total_bytes = (total_bits + 7) / 8;
+		total_bytes = (field_bits + 7U) / 8U;
 		if (state->report_id > 0) {
 			total_bytes++;
 		}
-		RTK_LOGS(NOTAG, RTK_LOG_INFO, "  Total bits: %d, Total bytes: %d\n", total_bits, total_bytes);
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "  Total bits: %d, Total bytes: %d\n", field_bits, total_bytes);
 #endif
 		break;
 
 	case USBH_HID_MAIN_ITEM_TAG_OUTPUT:
-		/* Reset local state after Output field too. */
-		state->bit_offset += state->report_count;
-		state->usage_stack_ptr = 0;
+		/* Output lives in its own report, so it must not shift Input positions. */
+		state->out_bit_offset += field_bits;
+		usbh_hid_reset_local_state(state);
 #if USBH_HID_REPORT_DESC_PARSE_DEBUG
 		RTK_LOGS(NOTAG, RTK_LOG_INFO, "Output\n");
 #endif
 		break;
 
+	case USBH_HID_MAIN_ITEM_TAG_FEATURE:
+		/* Feature reports are fetched over EP0, never on the INTR IN pipe. */
+		state->feat_bit_offset += field_bits;
+		usbh_hid_reset_local_state(state);
+#if USBH_HID_REPORT_DESC_PARSE_DEBUG
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "Feature\n");
+#endif
+		break;
+
 	case USBH_HID_MAIN_ITEM_TAG_COLLECTION:
 		state->collection_depth++;
-		state->usage_stack_ptr = 0;
+		usbh_hid_reset_local_state(state);
 #if USBH_HID_REPORT_DESC_PARSE_DEBUG
 		RTK_LOGS(NOTAG, RTK_LOG_INFO, "Collection - Type: %d\n", item->data);
 #endif
 		break;
 
 	case USBH_HID_MAIN_ITEM_TAG_END_COLLECTION:
-		state->collection_depth--;
+		if (state->collection_depth > 0U) {
+			state->collection_depth--;
+		}
+		usbh_hid_reset_local_state(state);
 #if USBH_HID_REPORT_DESC_PARSE_DEBUG
 		RTK_LOGS(NOTAG, RTK_LOG_INFO, "End Collection\n");
 #endif
@@ -347,8 +516,14 @@ static void usbh_hid_parse_hid_report_descriptor(const u8 *data, u16 length, usb
 	int item_cnt = 0;
 #endif
 
-	state.device_info = device_info;
 	usb_os_memset((void *)device_info, 0, sizeof(usbh_hid_ctrl_caps_t));
+	/* Bit 0 is a legal position, so "not declared" needs its own value. */
+	device_info->volume.up_bit = USBH_HID_BIT_NONE;
+	device_info->volume.down_bit = USBH_HID_BIT_NONE;
+	device_info->volume.mute_bit = USBH_HID_BIT_NONE;
+	device_info->media.play_pause_bit = USBH_HID_BIT_NONE;
+	device_info->media.stop_bit = USBH_HID_BIT_NONE;
+	state.device_info = device_info;
 
 	while ((ptr = usbh_hid_fetch_item(ptr, end, &item)) != NULL) {
 #if USBH_HID_REPORT_DESC_PARSE_DEBUG
@@ -391,7 +566,95 @@ static void usbh_hid_parse_hid_report_descriptor(const u8 *data, u16 length, usb
 		RTK_LOGS(NOTAG, RTK_LOG_INFO, "\tPlay/Pause: bit %d\n", device_info->media.play_pause_bit);
 		RTK_LOGS(NOTAG, RTK_LOG_INFO, "\tStop: bit %d\n", device_info->media.stop_bit);
 	}
+
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "Consumer array: %s\n", device_info->consumer_array.supported ? "Yes" : "No");
+	if (device_info->consumer_array.supported) {
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "\tReport ID %d, bit %d, %d bits x %d\n", device_info->consumer_array.report_id,
+				 device_info->consumer_array.bit_offset, device_info->consumer_array.elem_bits, device_info->consumer_array.elem_cnt);
+	}
 #endif
+}
+
+/**
+  * @brief  Extract nbits starting at bit_offset from a HID report.
+  * @note   Ref HID 1.11 section 8: report data is packed least significant bit
+  *         first, so a field may straddle byte boundaries.
+  * @param  data: Report data, report ID prefix already removed
+  * @param  data_len: Length of data in bytes
+  * @param  bit_offset: Absolute bit position of the field
+  * @param  nbits: Field width in bits, 1..32
+  * @retval Field value, or 0 if the field does not fit inside data
+  */
+static u32 usbh_hid_extract_bits(const u8 *data, u32 data_len, u32 bit_offset, u8 nbits)
+{
+	u32 val = 0;
+	u32 bit;
+
+	if ((nbits == 0U) || (nbits > 32U)) {
+		return 0;
+	}
+	/* Reject before reading: the whole field must lie within the report. */
+	if ((bit_offset + (u32)nbits) > (data_len * 8U)) {
+		return 0;
+	}
+
+	for (u32 i = 0; i < (u32)nbits; i++) {
+		bit = bit_offset + i;
+		if (((data[bit / 8U] >> (bit % 8U)) & 0x01U) != 0U) {
+			val |= (u32)1U << i;
+		}
+	}
+
+	return val;
+}
+
+/**
+  * @brief  Map a Consumer page usage code to the event this driver reports.
+  * @param  usage: Consumer usage code
+  * @retval Event type, VOLUME_EVENT_NONE if the usage is not tracked
+  */
+static usbh_hid_event_type_t usbh_hid_usage_to_event(u32 usage)
+{
+	usbh_hid_event_type_t type;
+
+	switch (usage) {
+	case USBH_HID_CONSUMER_VOLUME_UP:
+		type = VOLUME_EVENT_CONSUMER_UP;
+		break;
+	case USBH_HID_CONSUMER_VOLUME_DOWN:
+		type = VOLUME_EVENT_CONSUMER_DOWN;
+		break;
+	case USBH_HID_CONSUMER_MUTE:
+		type = VOLUME_EVENT_CONSUMER_MUTE;
+		break;
+	case USBH_HID_CONSUMER_PLAY_PAUSE:
+		type = VOLUME_EVENT_CONSUMER_PLAY_PAUSE;
+		break;
+	case USBH_HID_CONSUMER_STOP:
+		type = VOLUME_EVENT_CONSUMER_STOP;
+		break;
+	default:
+		type = VOLUME_EVENT_NONE;
+		break;
+	}
+
+	return type;
+}
+
+/**
+  * @brief  Test a single control bit of a bitmap Input field.
+  * @param  data: Report data, report ID prefix already removed
+  * @param  data_len: Length of data in bytes
+  * @param  bit: Absolute bit position, or USBH_HID_BIT_NONE if not declared
+  * @retval true if the control is declared and currently set
+  */
+static bool usbh_hid_test_ctrl_bit(const u8 *data, u32 data_len, u16 bit)
+{
+	if (bit == USBH_HID_BIT_NONE) {
+		return false;
+	}
+
+	return (usbh_hid_extract_bits(data, data_len, bit, 1U) != 0U);
 }
 
 static int usbh_hid_parse_hid_report(const u8 *report_data, u8 report_len,
@@ -401,6 +664,7 @@ static int usbh_hid_parse_hid_report(const u8 *report_data, u8 report_len,
 	usbh_hid_event_t *event = &(hid->report_event);
 	const u8 *data_start;
 	u32 data_len;
+	u32 usage;
 	u8 report_id = 0;
 
 	event->type = VOLUME_EVENT_NONE;
@@ -414,53 +678,53 @@ static int usbh_hid_parse_hid_report(const u8 *report_data, u8 report_len,
 	data_start = report_data;
 	data_len = report_len;
 
-	/* check report id */
-	if (report_len > 1 &&
-		(device_info->volume.report_id > 0 || device_info->media.report_id > 0)) {
+	/* Ref HID 1.11 5.6/8: when the descriptor declares a non-zero Report ID,
+	 * every report is prefixed by that 1-byte ID. */
+	if ((report_len > 1U) && ((device_info->volume.report_id > 0U) || (device_info->media.report_id > 0U)
+							  || (device_info->consumer_array.report_id > 0U))) {
 		report_id = report_data[0];
-		data_start = report_data + 1;
-		data_len = report_len - 1;
+		data_start = &report_data[1];
+		data_len = (u32)report_len - 1U;
 	}
 
-	if (device_info->volume.supported && report_id == device_info->volume.report_id) {
-		// volumme up
-		u8 byte_idx = device_info->volume.up_bit / 8;
-		u8 bit_idx = device_info->volume.up_bit % 8;
-		if (byte_idx < data_len && ((data_start[byte_idx] >> bit_idx) & 0x01)) {
+	/* Array field: the report carries the usage code of the key being pressed,
+	 * not one bit per key. A code of 0 means "no key pressed". */
+	if (device_info->consumer_array.supported && (report_id == device_info->consumer_array.report_id)) {
+		for (u8 i = 0; i < device_info->consumer_array.elem_cnt; i++) {
+			usage = usbh_hid_extract_bits(data_start, data_len,
+										  (u32)device_info->consumer_array.bit_offset + ((u32)i * device_info->consumer_array.elem_bits),
+										  device_info->consumer_array.elem_bits);
+			event->type = usbh_hid_usage_to_event(usage);
+			if (event->type != VOLUME_EVENT_NONE) {
+				return HAL_OK;
+			}
+		}
+	}
+
+	if (device_info->volume.supported && (report_id == device_info->volume.report_id)) {
+		if (usbh_hid_test_ctrl_bit(data_start, data_len, device_info->volume.up_bit)) {
 			event->type = VOLUME_EVENT_CONSUMER_UP;
 			return HAL_OK;
 		}
 
-		// volume down
-		byte_idx = device_info->volume.down_bit / 8;
-		bit_idx = device_info->volume.down_bit % 8;
-		if (byte_idx < data_len && ((data_start[byte_idx] >> bit_idx) & 0x01)) {
+		if (usbh_hid_test_ctrl_bit(data_start, data_len, device_info->volume.down_bit)) {
 			event->type = VOLUME_EVENT_CONSUMER_DOWN;
 			return HAL_OK;
 		}
 
-		// volume mute
-		byte_idx = device_info->volume.mute_bit / 8;
-		bit_idx = device_info->volume.mute_bit % 8;
-		if (byte_idx < data_len && ((data_start[byte_idx] >> bit_idx) & 0x01)) {
+		if (usbh_hid_test_ctrl_bit(data_start, data_len, device_info->volume.mute_bit)) {
 			event->type = VOLUME_EVENT_CONSUMER_MUTE;
 			return HAL_OK;
 		}
 	}
 
-	if (device_info->media.supported && report_id == device_info->media.report_id) {
-		// pause play
-		u8 byte_idx = device_info->media.play_pause_bit / 8;
-		u8 bit_idx = device_info->media.play_pause_bit % 8;
-		if (byte_idx < data_len && ((data_start[byte_idx] >> bit_idx) & 0x01)) {
+	if (device_info->media.supported && (report_id == device_info->media.report_id)) {
+		if (usbh_hid_test_ctrl_bit(data_start, data_len, device_info->media.play_pause_bit)) {
 			event->type = VOLUME_EVENT_CONSUMER_PLAY_PAUSE;
 			return HAL_OK;
 		}
 
-		//stop
-		byte_idx = device_info->media.stop_bit / 8;
-		bit_idx = device_info->media.stop_bit % 8;
-		if (byte_idx < data_len && ((data_start[byte_idx] >> bit_idx) & 0x01)) {
+		if (usbh_hid_test_ctrl_bit(data_start, data_len, device_info->media.stop_bit)) {
 			event->type = VOLUME_EVENT_CONSUMER_STOP;
 			return HAL_OK;
 		}
@@ -550,20 +814,21 @@ static int usbh_hid_parse_details(usbh_itf_data_t *itf_data)
 	 * of re-counting INTERFACE descriptors here. */
 	hid->alt_setting_count = itf_data->alt_setting_cnt;
 
-	while (1) {
-		if (desc == NULL || itf_total_len >= itf_data->raw_data_len) {
-			break;
+	while (desc != NULL) {
+		/* Validate the descriptor at the *current* offset before dereferencing
+		 * its header, otherwise the last iteration would read bLength and
+		 * bDescriptorType from beyond the end of the raw_data window. */
+		if ((u32)itf_total_len + sizeof(usbh_desc_header_t) > (u32)itf_data->raw_data_len) {
+			break;    /* not even a descriptor header left */
 		}
 
 		len = ((usbh_desc_header_t *) desc)->bLength;
 		if (len == 0U) {
 			break;    /* malformed: bLength==0 would spin forever */
 		}
-		if ((u16)(itf_total_len + len) > itf_data->raw_data_len) {
+		if ((u32)itf_total_len + (u32)len > (u32)itf_data->raw_data_len) {
 			break;    /* bLength overshoots the raw_data window */
 		}
-		desc += len;
-		itf_total_len += len;
 
 		switch (((usbh_desc_header_t *) desc)->bDescriptorType) {
 		case USB_DESC_TYPE_INTERFACE:
@@ -591,6 +856,9 @@ static int usbh_hid_parse_details(usbh_itf_data_t *itf_data)
 		default:
 			break;
 		}
+
+		desc += len;
+		itf_total_len += len;
 	}
 	return HAL_OK;
 }
@@ -706,9 +974,10 @@ static void usbh_hid_in_process(usb_host_t *host)
 	case USBH_EP_XFER_START:
 		if (usbh_get_elapsed_ticks(host, pipe->tick) > pipe->ep_interval) {
 			pipe->tick = usbh_get_tick(host);
-			pipe->xfer_state = USBH_EP_XFER_BUSY;
 			pipe->xfer_len = pipe->ep_mps;
-			usbh_transfer_data(host, pipe);
+			if (usbh_transfer_data(host, pipe) == HAL_OK) {
+				pipe->xfer_state = USBH_EP_XFER_BUSY;
+			}
 		}
 		break;
 
@@ -782,8 +1051,8 @@ static int usbh_hid_attach(usb_host_t *host)
 		}
 	}
 
-	if ((hid->cb != NULL) && (hid->cb->attach != NULL)) {
-		hid->cb->attach();
+	if ((hid->cb != NULL) && (hid->cb->attached != NULL)) {
+		hid->cb->attached();
 	}
 
 	return HAL_OK;
@@ -792,9 +1061,9 @@ static int usbh_hid_attach(usb_host_t *host)
 /**
   * @brief  Detach callback.
   * @param  host: Host handle
-  * @retval Status
+  * @retval None
   */
-static int usbh_hid_detach(usb_host_t *host)
+static void usbh_hid_detach(usb_host_t *host)
 {
 	usbh_hid_t *hid = &usbh_hid;
 
@@ -817,11 +1086,9 @@ static int usbh_hid_detach(usb_host_t *host)
 	hid->alt_setting_count = 0;
 	usb_ringbuf_reset(&(hid->report_msg));
 
-	if ((hid->cb != NULL) && (hid->cb->detach != NULL)) {
-		hid->cb->detach();
+	if ((hid->cb != NULL) && (hid->cb->detached != NULL)) {
+		hid->cb->detached();
 	}
-
-	return HAL_OK;
 }
 
 /**
@@ -878,22 +1145,20 @@ static void usbh_hid_out_process(usb_host_t *host)
   * @brief  State machine handling callback
   * @param  host: Host handle
   * @param  event: USB host event
-  * @retval Status
+  * @retval None
   */
-static int usbh_hid_process(usb_host_t *host, usbh_event_t *event)
+static void usbh_hid_process(usb_host_t *host, usbh_event_t *event)
 {
 	usbh_hid_t *hid = &usbh_hid;
 	usbh_pipe_t *pipe = &(hid->pipe_in);
 
+	/* The core routes an event to the pipe's owning driver only, so the pipe
+	 * checks are defensive guards against a stale/closed pipe. */
 	if (event && (hid->hid_ctrl_buf) && (pipe->pipe_num != 0) && (event->pipe_num == pipe->pipe_num)) {
 		usbh_hid_in_process(host);
-		return HAL_OK;
 	} else if (event && (hid->pipe_out.pipe_num != 0) && (event->pipe_num == hid->pipe_out.pipe_num)) {
 		usbh_hid_out_process(host);
-		return HAL_OK;
 	}
-
-	return HAL_BUSY;
 }
 
 /**
@@ -901,9 +1166,9 @@ static int usbh_hid_process(usb_host_t *host, usbh_event_t *event)
   * @note   This function is called within an interrupt service routine (ISR) context;
   *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  host: Host handle
-  * @retval Status
+  * @retval None
   */
-static int usbh_hid_sof(usb_host_t *host)
+static void usbh_hid_sof(usb_host_t *host)
 {
 	usbh_hid_t *hid = &usbh_hid;
 	usbh_pipe_t *pipe = &(hid->pipe_in);
@@ -912,8 +1177,6 @@ static int usbh_hid_sof(usb_host_t *host)
 		(usbh_get_elapsed_ticks(host, pipe->tick) > USBH_HID_TRIGGER_MAX_CNT)) {
 		usbh_notify(host, pipe->pipe_num, &usbh_hid_driver);
 	}
-
-	return HAL_OK;
 }
 
 static void usbh_hid_msg_parse_thread(void *param)
@@ -1020,9 +1283,8 @@ int usbh_hid_init(const usbh_hid_usr_cb_t *cb)
 
 /**
   * @brief  Deinit hid class
-  * @retval Status
   */
-int usbh_hid_deinit(void)
+void usbh_hid_deinit(void)
 {
 	usbh_hid_t *hid = &usbh_hid;
 
@@ -1051,8 +1313,6 @@ int usbh_hid_deinit(void)
 	hid->hid_ctrl_buf = NULL;
 
 	usb_ringbuf_manager_deinit(&(hid->report_msg));
-
-	return HAL_OK;
 }
 
 /**

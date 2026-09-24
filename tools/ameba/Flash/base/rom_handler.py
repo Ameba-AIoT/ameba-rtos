@@ -95,6 +95,8 @@ class RomHandler(object):
 
         try:
             for retry in range(2):
+                if self.ameba.is_cancelled():
+                    return ErrType.SYS_CANCEL
                 if retry > 0:
                     self.logger.debug(f"Request retry {retry}#: len={length}, payload={request.hex()}")
                 else:
@@ -137,7 +139,7 @@ class RomHandler(object):
                     time.sleep(self.setting.request_retry_interval_second)
         except Exception as err:
             self.logger.error(f"Send request exception: {err}")
-            ret = ErrType.SYS_IO
+            ret = ErrType.SYS_CANCEL if self.ameba.is_cancelled() else ErrType.SYS_IO
 
         return ret
 

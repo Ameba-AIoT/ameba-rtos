@@ -53,7 +53,7 @@ int bt_dev_probe(struct device *pdev);
 void bt_dev_remove(struct device *pdev);
 
 #ifndef CONFIG_BT_INIC
-#define WHC_BT_ID_BASE 0xa5a5a5b0
+#define WHC_BT_ID_BASE 0xa5a5a540
 enum INIC_BT_ID_TYPE {
 	INIC_BT_HOST_TX = WHC_BT_ID_BASE,
 	INIC_BT_HOST_RX,

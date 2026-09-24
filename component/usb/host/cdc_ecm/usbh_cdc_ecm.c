@@ -107,10 +107,10 @@ typedef struct {
 
 /* Private function prototypes -----------------------------------------------*/
 static int usbh_cdc_ecm_attach(usb_host_t *host);
-static int usbh_cdc_ecm_detach(usb_host_t *host);
-static int usbh_cdc_ecm_process(usb_host_t *host, usbh_event_t *event);
+static void usbh_cdc_ecm_detach(usb_host_t *host);
+static void usbh_cdc_ecm_process(usb_host_t *host, usbh_event_t *event);
 static int usbh_cdc_ecm_setup(usb_host_t *host);
-static int usbh_cdc_ecm_sof(usb_host_t *host);
+static void usbh_cdc_ecm_sof(usb_host_t *host);
 static void usbh_cdc_ecm_process_bulk_out(usb_host_t *host);
 static void usbh_cdc_ecm_process_bulk_in(usb_host_t *host);
 static void usbh_cdc_ecm_process_intr_in(usb_host_t *host);
@@ -1132,8 +1132,8 @@ static int usbh_cdc_ecm_attach(usb_host_t *host) //parse all ep info
 
 	cdc->state = CDC_ECM_STATE_IDLE;
 
-	if ((cdc->cb != NULL) && (cdc->cb->attach != NULL)) {
-		cdc->cb->attach();
+	if ((cdc->cb != NULL) && (cdc->cb->attached != NULL)) {
+		cdc->cb->attached();
 	}
 
 	return HAL_OK;
@@ -1142,9 +1142,9 @@ static int usbh_cdc_ecm_attach(usb_host_t *host) //parse all ep info
 /**
   * @brief  Usb Detach callback function.
   * @param  host: Host handle
-  * @retval HAL_OK
+  * @retval None
   */
-static int usbh_cdc_ecm_detach(usb_host_t *host)
+static void usbh_cdc_ecm_detach(usb_host_t *host)
 {
 	UNUSED(host);
 	usbh_cdc_ecm_host_t *cdc = &usbh_cdc_ecm_host;
@@ -1155,11 +1155,9 @@ static int usbh_cdc_ecm_detach(usb_host_t *host)
 	usbh_cdc_ecm_deinit_all_pipe();
 	cdc->host = NULL;
 
-	if ((cdc->cb != NULL) && (cdc->cb->detach != NULL)) {
-		cdc->cb->detach();
+	if ((cdc->cb != NULL) && (cdc->cb->detached != NULL)) {
+		cdc->cb->detached();
 	}
-
-	return HAL_OK;
 }
 
 /**
@@ -1200,9 +1198,9 @@ static int usbh_cdc_ecm_setup(usb_host_t *host)
 /**
   * @brief  Usb State Machine handling callback
   * @param  host: Host handle
-  * @retval Status
+  * @retval None
   */
-static int usbh_cdc_ecm_process(usb_host_t *host, usbh_event_t *event)
+static void usbh_cdc_ecm_process(usb_host_t *host, usbh_event_t *event)
 {
 	u8 req_status = HAL_OK;
 	usbh_cdc_ecm_host_t *cdc = &usbh_cdc_ecm_host;
@@ -1235,8 +1233,6 @@ static int usbh_cdc_ecm_process(usb_host_t *host, usbh_event_t *event)
 		usb_os_sleep_ms(1);
 		break;
 	}
-
-	return req_status;
 }
 
 /**
@@ -1244,9 +1240,9 @@ static int usbh_cdc_ecm_process(usb_host_t *host, usbh_event_t *event)
   * @note   This function is called within an interrupt service routine (ISR) context;
   *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param[in] host: USB host handle.
-  * @return 0 on success, non-zero on failure.
+  * @retval None
   */
-static int usbh_cdc_ecm_sof(usb_host_t *host)
+static void usbh_cdc_ecm_sof(usb_host_t *host)
 {
 	usbh_cdc_ecm_host_t *cdc = &usbh_cdc_ecm_host;
 	UNUSED(host);
@@ -1267,8 +1263,6 @@ static int usbh_cdc_ecm_sof(usb_host_t *host)
 			}
 		}
 	}
-
-	return HAL_OK;
 }
 
 /**
@@ -1327,14 +1321,14 @@ static int usbh_cdc_ecm_cb_bulk_receive(u8 *buf, u32 length)
 	}
 #endif
 
-	if ((cdc->cb != NULL) && (cdc->cb->bulk_received != NULL)) {
+	if ((cdc->cb != NULL) && (cdc->cb->received != NULL)) {
 #if 0
 		for (u32 i = 0; i < length; i++) {
 			RTK_LOGS(NOTAG, RTK_LOG_INFO, "%02x ", (u8)buf[i]);
 		}
 		RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n");
 #endif
-		cdc->cb->bulk_received(buf, length);
+		cdc->cb->received(buf, length);
 	}
 
 	return HAL_OK;
@@ -1840,7 +1834,13 @@ int usbh_cdc_ecm_init(const usbh_cdc_ecm_state_cb_t *cb, const usbh_cdc_ecm_priv
 	}
 
 	cdc->cb = cb;
-	usbh_register_class(&usbh_cdc_ecm_driver);
+
+	ret = usbh_register_class(&usbh_cdc_ecm_driver);
+	if (ret != HAL_OK) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Register class fail %d\n", ret);
+		cdc->cb = NULL;
+		goto user_deinit;
+	}
 
 #if USBH_CDC_ECM_STATE_TRACE_ENABLE
 	usbh_cdc_ecm_trace_task_init();
@@ -1848,6 +1848,10 @@ int usbh_cdc_ecm_init(const usbh_cdc_ecm_state_cb_t *cb, const usbh_cdc_ecm_priv
 
 	return ret;
 
+user_deinit:
+	if (cb->deinit != NULL) {
+		cb->deinit();
+	}
 user_init_fail:
 	USBH_CDC_ECM_FREE_MEM(cdc->dongle_ctrl_buf);
 	USBH_CDC_ECM_FREE_MEM(cdc->led_array);
@@ -1859,9 +1863,8 @@ ctrl_buf_fail:
 
 /**
   * @brief  Deinitialize the USB ECM Class
-  * @retval Status
   */
-int usbh_cdc_ecm_deinit(void)
+void usbh_cdc_ecm_deinit(void)
 {
 	usbh_cdc_ecm_host_t *cdc = &usbh_cdc_ecm_host;
 	cdc->eth_hw_connect = 0;
@@ -1888,8 +1891,6 @@ int usbh_cdc_ecm_deinit(void)
 	}
 
 	cdc->cb = NULL;
-
-	return HAL_OK;
 }
 
 /**
@@ -1958,12 +1959,10 @@ u8 usbh_cdc_ecm_usb_is_ready(void)
 /**
   * @brief  Signal upper-layer preparation is complete; allow SOF to schedule
   *         Ethernet data transfer (bulk/intr). See usbh_cdc_ecm_sof().
-  * @retval HAL_OK
   */
-u8 usbh_cdc_ecm_prepare_done(void)
+void usbh_cdc_ecm_prepare_done(void)
 {
 	usbh_cdc_ecm_host.ready_to_xfer = 1;
-	return HAL_OK;
 }
 
 /**

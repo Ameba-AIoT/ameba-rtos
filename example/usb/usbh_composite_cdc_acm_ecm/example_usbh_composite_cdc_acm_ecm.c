@@ -199,12 +199,12 @@ typedef struct {
 extern void rltk_usb_eth_init(void);
 extern void rltk_usb_eth_deinit(void);
 
-static int usbh_composite_detach(void);
-static int usbh_composite_ecm_rxdata(u8 *buf, u32 len);
-static int usbh_composite_acm_rxdata(u8 *buf, u32 len, u8 status);
-static int usbh_composite_acm_transmit_cb(u8 status);
+static void usbh_composite_detached(void);
+static void usbh_composite_ecm_received(u8 *buf, u32 len);
+static void usbh_composite_acm_received(u8 *buf, u32 len, u8 status);
+static void usbh_composite_acm_transmitted(u8 status);
 static void usbh_composite_acm_rx_thread(void *param);
-static int usbh_composite_cb_process(usb_host_t *host, u8 msg);
+static void usbh_composite_cb_process(usb_host_t *host, u8 msg);
 static int usbh_composite_cb_device_check(usb_host_t *host, u8 cfg_max);
 
 /* Private variables ---------------------------------------------------------*/
@@ -263,9 +263,14 @@ static const usbh_config_t usbh_cfg = {
 	.main_task_priority = CONFIG_USBH_COMP_INIT_THREAD_PRIORITY,
 	.tick_source = USBH_SOF_TICK,
 	.class_num = 2U,   /* CDC-ACM + CDC-ECM */
-#if defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RLE1509)
-	/*FIFO total depth is 1024, reserve 12 for DMA addr*/
+#if defined(CONFIG_AMEBAGREEN2)
+	/*FIFO total 1024 DWORD, resv 12 DWORD for DMA*/
 	.rx_fifo_depth = 500,
+	.nptx_fifo_depth = 256,
+	.ptx_fifo_depth = 256,
+#elif defined(CONFIG_RLE1509)
+	/*FIFO total 1024 DWORD, resv 48 DWORD */
+	.rx_fifo_depth = 464,
 	.nptx_fifo_depth = 256,
 	.ptx_fifo_depth = 256,
 #elif defined (CONFIG_AMEBAL2)
@@ -282,14 +287,14 @@ static const usbh_config_t usbh_cfg = {
 };
 
 static const usbh_cdc_acm_cb_t usbh_composite_acm_cfg = {
-	.receive = usbh_composite_acm_rxdata,
-	.transmit = usbh_composite_acm_transmit_cb,
+	.received = usbh_composite_acm_received,
+	.transmitted = usbh_composite_acm_transmitted,
 	.priv = usbh_composite_dongle_array,
 };
 
 static const usbh_cdc_ecm_state_cb_t usbh_composite_ecm_cfg = {
-	.bulk_received = usbh_composite_ecm_rxdata,
-	.detach = usbh_composite_detach,
+	.received = usbh_composite_ecm_received,
+	.detached = usbh_composite_detached,
 };
 
 static const usbh_user_cb_t usbh_composite_usr_cb = {
@@ -383,7 +388,7 @@ static u8 *usbh_composite_dongle_get_netinfo(u8 *name)
   * @param  msg: @ref usbh_msg_t
   * @retval Status
   */
-static int usbh_composite_cb_process(usb_host_t *host, u8 msg)
+static void usbh_composite_cb_process(usb_host_t *host, u8 msg)
 {
 	switch (msg) {
 	case USBH_MSG_USER_SET_CONFIG:
@@ -394,8 +399,6 @@ static int usbh_composite_cb_process(usb_host_t *host, u8 msg)
 	default:
 		break;
 	}
-
-	return HAL_OK;
 }
 
 /**
@@ -424,9 +427,8 @@ static int usbh_composite_cb_device_check(usb_host_t *host, u8 cfg_max)
   * sequence twice, triggering a double-free assert in FreeRTOS heap_5.c.
   * Latch on the first fire and drop subsequent ones until the hot-plug thread
   * clears the flag in usbh_composite_init_stack() after re-enumeration.
-  * @retval Status
   */
-static int usbh_composite_detach(void)
+static void usbh_composite_detached(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "DETACH\n");
 #if CONFIG_USBH_COMP_HOT_PLUG_TEST
@@ -436,7 +438,6 @@ static int usbh_composite_detach(void)
 		rtos_sema_give(usbh_composite_detach_sema);
 	}
 #endif
-	return HAL_OK;
 }
 
 /**
@@ -444,7 +445,7 @@ static int usbh_composite_detach(void)
   * @details Gives usbh_composite_acm_send_sema so usbh_composite_acm_transmit() can wait for the
   *          bulk OUT transfer to finish before the caller reuses usbh_composite_acm_tx_buf.
   */
-static int usbh_composite_acm_transmit_cb(u8 status)
+static void usbh_composite_acm_transmitted(u8 status)
 {
 	if (status == HAL_OK) {
 		if (usbh_composite_acm_send_sema != NULL) {
@@ -453,7 +454,6 @@ static int usbh_composite_acm_transmit_cb(u8 status)
 	} else {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "ACM TX fail: %d\n", status);
 	}
-	return HAL_OK;
 }
 
 /**
@@ -462,7 +462,7 @@ static int usbh_composite_acm_transmit_cb(u8 status)
   * @param  len: number of bytes to send
   * @retval HAL_OK on success (TX issued and completed), error otherwise.
   * @note   Waiting for completion (via usbh_composite_acm_send_sema, given by
-  *         usbh_composite_acm_transmit_cb) prevents the caller from overwriting buf
+  *         usbh_composite_acm_transmitted) prevents the caller from overwriting buf
   *         while the previous transfer is still in flight.
   */
 static int usbh_composite_acm_transmit(u8 *buf, u32 len)
@@ -481,9 +481,8 @@ static int usbh_composite_acm_transmit(u8 *buf, u32 len)
   * @brief  Composite ACM bulk receive callback
   * @param  pbuf: RX buffer
   * @param  len: RX data length (in bytes)
-  * @retval Status
   */
-static int usbh_composite_acm_rxdata(u8 *pbuf, u32 len, u8 status)  /* type is usb transfer type */
+static void usbh_composite_acm_received(u8 *pbuf, u32 len, u8 status)  /* type is usb transfer type */
 {
 	UNUSED(status);
 	u32 i;
@@ -493,7 +492,7 @@ static int usbh_composite_acm_rxdata(u8 *pbuf, u32 len, u8 status)  /* type is u
 
 	if (pbuf == NULL || len == 0) {
 		RTK_LOGS(TAG, RTK_LOG_INFO, "ACM data received NULL or len=0\n");
-		return HAL_OK;
+		return;
 	}
 
 	/* The bulk IN transfer delivers raw stream bytes with no NUL terminator, but the
@@ -773,8 +772,6 @@ static int usbh_composite_acm_rxdata(u8 *pbuf, u32 len, u8 status)  /* type is u
 	if (usbh_composite_acm_rx_done_sema != NULL) {
 		rtos_sema_give(usbh_composite_acm_rx_done_sema);
 	}
-
-	return HAL_OK;
 }
 
 /*
@@ -1703,12 +1700,10 @@ static int usbh_composite_dongle_diag_cmd(void)
   * @brief  Composite ECM bulk receive callback
   * @param  buf: RX buffer
   * @param  len: RX data length (in bytes)
-  * @retval Status
   */
-static int usbh_composite_ecm_rxdata(u8 *buf, u32 len)
+static void usbh_composite_ecm_received(u8 *buf, u32 len)
 {
 	netif_adapter_usb_eth_recv(buf, len);
-	return HAL_OK;
 }
 
 #if CONFIG_USBH_COMP_GPIO_POWER_CTRL
@@ -1787,7 +1782,7 @@ static u32 usbh_composite_hotplug_test(void)
   *          application calls usbh_cdc_acm_receive(). This task keeps one
   *          receive armed at all times so AT-command responses are pulled in
   *          continuously; each completion is delivered via
-  *          usbh_composite_acm_rxdata(), which then wakes this task to re-arm.
+  *          usbh_composite_acm_received(), which then wakes this task to re-arm.
   *
   *          The outer loop waits for a device to be enumerated (in_detach == 0);
   *          during detach it polls until the next attach clears in_detach to 0
@@ -1851,8 +1846,17 @@ static int usbh_composite_init_stack(void)
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "USB init fail\n");
 		return HAL_ERR_UNKNOWN;
 	}
-	usbh_cdc_acm_init(&usbh_composite_acm_cfg);
-	usbh_cdc_ecm_init(&usbh_composite_ecm_cfg, &usbh_composite_ecm_priv);
+	if (usbh_cdc_acm_init(&usbh_composite_acm_cfg) != HAL_OK) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "ACM init fail\n");
+		usbh_deinit();
+		return HAL_ERR_UNKNOWN;
+	}
+	if (usbh_cdc_ecm_init(&usbh_composite_ecm_cfg, &usbh_composite_ecm_priv) != HAL_OK) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "ECM init fail\n");
+		usbh_cdc_acm_deinit();
+		usbh_deinit();
+		return HAL_ERR_UNKNOWN;
+	}
 	usbh_start();
 
 	/* Wait for ECM enumeration. No timeout: the dongle may be inserted at any
@@ -2379,7 +2383,7 @@ void example_usbh_composite_cdc_acm_ecm(void)
 	 *   1. acm_rx_done_sema     - used by acm_rx_thread (no NULL guard)
 	 *   2. acm_send_sema        - used by acm_transmit (has NULL guard)
 	 *   3. acm_rx_task          - pumps AT-command responses
-	 *   4. detach_sema          - cb_detach() gives, hotplug_thread takes
+	 *   4. detach_sema          - cb_detached() gives, hotplug_thread takes
 	 *                             (only needed when HOT_PLUG_TEST is enabled)
 	 *   5. hot_plug_task / mem_check_task (mutually exclusive)
 	 *   6. usbh_composite_start_workers()     - starts link/init worker threads

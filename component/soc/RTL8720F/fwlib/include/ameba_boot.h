@@ -62,6 +62,9 @@ extern u8 __km4ns_flash_text_start__[];
 extern u8 __km4ns_flash_text_end__[];
 extern u8 __km4ns_app_flash_text_start__[];
 extern u8 __km4ns_app_flash_text_end__[];
+extern u8 __km4ns_sram_start__[];
+extern u8 __km4ns_sram_end__[];
+extern u8 __solo_share_ram_end__[];
 extern u8 __km4tz_img3_text_start__[];
 extern u8 __km4tz_img3_text_end__[];
 
@@ -84,6 +87,7 @@ extern u8 __km4ns_bd_ram_start__[];
 extern u8 __km4ns_bd_ram_end__[];
 
 extern u8 __km4ns_bd_psram_start__[];
+extern u8 __km4ns_bd_psram_end__[];
 extern u8 __km4tz_bd_psram_start__[];
 extern u8 __km4tz_bd_psram_end__[];
 extern u8 __non_secure_psram_start__[]; /* start of non-secure PSRAM (first segment after TZ) */

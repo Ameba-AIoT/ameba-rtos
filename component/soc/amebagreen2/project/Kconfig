@@ -34,7 +34,7 @@ config SUPPORT_SD_CARD
 config SUPPORT_USB
     def_bool y
 
-config SUPPORT_USBD_INIC
+config SUPPORT_USBD_WHC
     def_bool y
 
 config SUPPORT_USBD_UAC
@@ -205,9 +205,9 @@ menu "CONFIG WHC INTF"
                 bool "WHC_INTF_USB"
                 select USB_HAL_LIB
                 select USB_DEVICE_EN
-                select USBD_INIC
+                select USBD_WHC
                 select USB_OTG_EN_MENU
-                select USBD_INIC_MENU if SUPPORT_USBD_INIC
+                select USBD_WHC_MENU if SUPPORT_USBD_WHC
             config WHC_INTF_SPI
                 bool "WHC_INTF_SPI"
             config WHC_INTF_UART
@@ -448,13 +448,18 @@ menu "CONFIG ETHERNET"
 
 		config ETH_TX_DESC_CNT
 			int "Number of ETH TX descriptors"
-			default 8
+			default 16
 			range 2 64
+			help
+			  Costs about 1.5KB of heap per entry. 8 drops frames on line-rate
+			  bursts because eth_send() has no back-pressure.
 
 		config ETH_RX_DESC_CNT
 			int "Number of ETH RX descriptors"
 			default 16
 			range 2 64
+			help
+			  Costs about 1.5KB of heap per entry.
 	endif
 endmenu
 

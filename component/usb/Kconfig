@@ -67,7 +67,7 @@ menu "CONFIG USB"
         bool
     config USBD_HID
         bool
-    config USBD_INIC
+    config USBD_WHC
         bool
     config USBD_MSC
         bool

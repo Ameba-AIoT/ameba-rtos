@@ -489,22 +489,23 @@ s32 wifi_dev_dhcp(u8 idx, u32 *ipinfo)
 {
 	s32 ret;
 	u32 param_buf[2];
-	u32 *buf = (u32 *)rtos_mem_zmalloc(3 * sizeof(u32));
+	u32 *buf = (u32 *)rtos_mem_zmalloc(4 * sizeof(u32));
 
 	if (buf == NULL) {
 		return -1;
 	}
-	DCache_CleanInvalidate((u32)buf, 3 * sizeof(u32));
+	DCache_CleanInvalidate((u32)buf, 4 * sizeof(u32));
 
 	param_buf[0] = (u32)idx;
 	param_buf[1] = (u32)buf;
 	ret = whc_ipc_host_api_message_send(WHC_API_WIFI_DEV_DHCP, param_buf, 2);
 
-	DCache_Invalidate((u32)buf, 3 * sizeof(u32));
+	DCache_Invalidate((u32)buf, 4 * sizeof(u32));
 	if (ret == DHCP_ADDRESS_ASSIGNED && ipinfo != NULL) {
 		ipinfo[0] = buf[0];
 		ipinfo[1] = buf[1];
 		ipinfo[2] = buf[2];
+		ipinfo[3] = buf[3];
 	}
 
 	rtos_mem_free((u8 *)buf);
@@ -1197,6 +1198,16 @@ int wifi_sae_status_indicate(u8 wlan_idx, u16 status, u8 *mac_addr)
 	if (mac_addr_temp) {
 		rtos_mem_free(mac_addr_temp);
 	}
+	return 0;
+}
+
+int wifi_external_auth_start(u8 wlan_idx)
+{
+	u32 param_buf[1] = {0};
+
+	param_buf[0] = (u32)wlan_idx;
+
+	whc_ipc_host_api_message_send(WHC_API_WIFI_EXTERNAL_AUTH_START, param_buf, 1);
 	return 0;
 }
 

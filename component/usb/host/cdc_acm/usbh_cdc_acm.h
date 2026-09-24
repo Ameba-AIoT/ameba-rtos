@@ -107,59 +107,51 @@ typedef struct {
 
 	/**
 	 * @brief Called when the CDC ACM host driver de-initialization.
-	 * @return 0 on success, non-zero on failure.
 	 */
-	int(* deinit)(void);
+	void (* deinit)(void);
 
 	/**
 	 * @brief Called when a CDC ACM device is attached.
-	 * @return 0 on success, non-zero on failure.
 	 */
-	int(* attach)(void);
+	void (* attached)(void);
 
 	/**
 	 * @brief Called when a CDC ACM device is detached.
-	 * @return 0 on success, non-zero on failure.
 	 */
-	int(* detach)(void);
+	void (* detached)(void);
 
 	/**
 	 * @brief Called to handle class-specific SETUP requests completion.
-	 * @return 0 on success, non-zero on failure.
 	 */
-	int(* setup)(void);
+	void (* setup)(void);
 
 	/**
 	 * @brief Called when interrupt data is received from the device (e.g. Serial State).
 	 * @param[in] buf: Pointer to the received data buffer.
 	 * @param[in] len: Length of the received data in bytes.
 	 * @param[in] status: The status of the transfer.
-	 * @return 0 on success, non-zero on failure.
 	 */
-	int(* notify)(u8 *buf, u32 len, u8 status);
+	void (* notify)(u8 *buf, u32 len, u8 status);
 
 	/**
 	 * @brief Called when data is received from the device on the BULK IN pipe.
 	 * @param[in] buf: Pointer to the received data buffer.
 	 * @param[in] len: Length of the received data in bytes.
 	 * @param[in] status: The status of the transfer.
-	 * @return 0 on success, non-zero on failure.
 	 */
-	int(* receive)(u8 *buf, u32 len, u8 status);
+	void (* received)(u8 *buf, u32 len, u8 status);
 
 	/**
 	 * @brief Called when a data transmission to the device on the BULK OUT pipe is complete.
 	 * @param[in] status: The status of the transmission.
-	 * @return 0 on success, non-zero on failure.
 	 */
-	int(* transmit)(u8 status);
+	void (* transmitted)(u8 status);
 
 	/**
 	 * @brief Called when the line coding parameters have changed.
 	 * @param[in] line_coding: Pointer to the new line coding structure.
-	 * @return 0 on success, non-zero on failure.
 	 */
-	int(* line_coding_changed)(usb_cdc_acm_line_coding_t *line_coding);
+	void (* line_coding_changed)(usb_cdc_acm_line_coding_t *line_coding);
 #if CONFIG_USBH_CDC_ACM_4G_DONGLE
 	/**
 	 * @brief Optional 4G-dongle VID/PID parameter table (NULL-terminated,
@@ -218,9 +210,8 @@ int usbh_cdc_acm_init(const usbh_cdc_acm_cb_t *cb);
 
 /**
  * @brief De-initializes the CDC ACM host class driver.
- * @return 0 on success, non-zero on failure.
  */
-int usbh_cdc_acm_deinit(void);
+void usbh_cdc_acm_deinit(void);
 
 /**
  * @brief Sets the line coding parameters for the device.

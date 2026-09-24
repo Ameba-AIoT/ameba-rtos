@@ -112,7 +112,7 @@ typedef struct {
 	uac_chan_ctx_t record;
 
 	/* ---- Synchronisation ---- */
-	rtos_sema_t detach_sema;        /*!< Given by cb_detach; taken by hotplug thread */
+	rtos_sema_t detach_sema;        /*!< Given by cb_detached; taken by hotplug thread */
 	rtos_sema_t play_start_sema;    /*!< Given when setup completes; wakes play thread */
 	rtos_sema_t record_start_sema;  /*!< Given when setup completes; wakes record thread */
 
@@ -127,12 +127,12 @@ typedef struct {
 
 /* Private function prototypes -----------------------------------------------*/
 static int usbh_uac_cb_init(void);
-static int usbh_uac_cb_deinit(void);
-static int usbh_uac_cb_attach(void);
-static int usbh_uac_cb_detach(void);
-static int usbh_uac_cb_setup(void);
-static int usbh_uac_cb_isoc_transmitted(usbh_urb_state_t state);
-static int usbh_uac_cb_process(usb_host_t *host, u8 msg);
+static void usbh_uac_cb_deinit(void);
+static void usbh_uac_cb_attached(void);
+static void usbh_uac_cb_detached(void);
+static void usbh_uac_cb_setup(void);
+static void usbh_uac_cb_transmitted(usbh_urb_state_t state);
+static void usbh_uac_cb_process(usb_host_t *host, u8 msg);
 
 /* Private variables ---------------------------------------------------------*/
 static const char *const TAG = "UAC";
@@ -150,9 +150,14 @@ static const usbh_config_t usbh_cfg = {
 	.main_task_stack_size = USBH_UAC_MAIN_TASK_STACK_SIZE,
 	.main_task_priority = USBH_UAC_MAIN_TASK_PRIORITY,
 	.tick_source = USBH_SOF_TICK,
-#if defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RLE1509)
-	/*FIFO total depth is 1024, reserve 12 for DMA addr*/
+#if defined(CONFIG_AMEBAGREEN2)
+	/*FIFO total 1024 DWORD, resv 12 DWORD for DMA*/
 	.rx_fifo_depth = 500,
+	.nptx_fifo_depth = 256,
+	.ptx_fifo_depth = 256,
+#elif defined(CONFIG_RLE1509)
+	/*FIFO total 1024 DWORD, resv 48 DWORD */
+	.rx_fifo_depth = 464,
 	.nptx_fifo_depth = 256,
 	.ptx_fifo_depth = 256,
 #elif defined (CONFIG_AMEBAL2)
@@ -171,10 +176,10 @@ static const usbh_config_t usbh_cfg = {
 static const usbh_uac_cb_t usbh_uac_cfg = {
 	.init             = usbh_uac_cb_init,
 	.deinit           = usbh_uac_cb_deinit,
-	.attach           = usbh_uac_cb_attach,
-	.detach           = usbh_uac_cb_detach,
+	.attached           = usbh_uac_cb_attached,
+	.detached           = usbh_uac_cb_detached,
 	.setup            = usbh_uac_cb_setup,
-	.isoc_transmitted = usbh_uac_cb_isoc_transmitted,
+	.transmitted = usbh_uac_cb_transmitted,
 
 	/* Ring-buffer depth (frames) for OUT playback and IN record paths.
 	 * usbh_uac_init() rejects the cb when both are 0. */
@@ -200,30 +205,25 @@ static int usbh_uac_cb_init(void)
 
 /**
   * @brief  UAC class deinit callback - invoked when the driver is unregistered.
-  * @retval HAL_OK
   */
-static int usbh_uac_cb_deinit(void)
+static void usbh_uac_cb_deinit(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "DEINIT\n");
-	return HAL_OK;
 }
 
 /**
   * @brief  UAC attach callback - device plugged in and enumerated.
-  * @retval HAL_OK
   */
-static int usbh_uac_cb_attach(void)
+static void usbh_uac_cb_attached(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "ATTACH\n");
-	return HAL_OK;
 }
 
 /**
   * @brief  UAC detach callback - device removed.
   *         Clears is_ready, stops audio pipelines, signals hotplug thread.
-  * @retval HAL_OK
   */
-static int usbh_uac_cb_detach(void)
+static void usbh_uac_cb_detached(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "DETACH play=%u rec=%u\n",
 			 usbh_uac_ctx.play.count, usbh_uac_ctx.record.count);
@@ -235,29 +235,25 @@ static int usbh_uac_cb_detach(void)
 #if USBH_UAC_HOT_PLUG_TEST
 	rtos_sema_give(usbh_uac_ctx.detach_sema);
 #endif
-	return HAL_OK;
 }
 
 /**
   * @brief  UAC setup callback - device fully configured and ready.
   *         Marks is_ready and wakes play + record worker threads.
-  * @retval HAL_OK
   */
-static int usbh_uac_cb_setup(void)
+static void usbh_uac_cb_setup(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "SETUP\n");
 	usbh_uac_ctx.is_ready = 1;
 	rtos_sema_give(usbh_uac_ctx.play_start_sema);
 	rtos_sema_give(usbh_uac_ctx.record_start_sema);
-	return HAL_OK;
 }
 
 /**
   * @brief  ISOC OUT (playback) transfer complete callback.
   * @param  state: URB completion state
-  * @retval HAL_OK
   */
-static int usbh_uac_cb_isoc_transmitted(usbh_urb_state_t state)
+static void usbh_uac_cb_transmitted(usbh_urb_state_t state)
 {
 	if (state == USBH_URB_DONE) {
 		/* TX ok */
@@ -266,7 +262,6 @@ static int usbh_uac_cb_isoc_transmitted(usbh_urb_state_t state)
 	} else {
 		usbh_uac_ctx.play.err_count++;
 	}
-	return HAL_OK;
 }
 
 /**
@@ -275,7 +270,7 @@ static int usbh_uac_cb_isoc_transmitted(usbh_urb_state_t state)
   * @param  msg:  Event identifier
   * @retval HAL_OK
   */
-static int usbh_uac_cb_process(usb_host_t *host, u8 msg)
+static void usbh_uac_cb_process(usb_host_t *host, u8 msg)
 {
 	UNUSED(host);
 
@@ -292,7 +287,6 @@ static int usbh_uac_cb_process(usb_host_t *host, u8 msg)
 	default:
 		break;
 	}
-	return HAL_OK;
 }
 
 /**

@@ -37,6 +37,9 @@
 #include <string.h>
 
 #include "mbedtls/platform.h"
+#if defined(RTK_PKE_RSA_EXP_MOD)
+#include "rtk_pke_bignum.h"
+#endif
 
 
 
@@ -1646,6 +1649,18 @@ static int mbedtls_mpi_exp_mod_optionally_safe(mbedtls_mpi *X, const mbedtls_mpi
         ret = mbedtls_mpi_lset(X, 1);
         return ret;
     }
+
+    /* RTK: hand RSA-sized exponentiations to the PKE engine, which returns
+     * MBEDTLS_ERR_MPI_NOT_ACCEPTABLE when the operands are out of its range so
+     * that the software path below still runs. The engine is not constant time
+     * in the exponent; the secret-exponent callers in rsa.c blind the exponent
+     * beforehand, which is the same trade-off the 3.6.5 rsa_alt.c port made. */
+#if defined(RTK_PKE_RSA_EXP_MOD)
+    ret = rtk_pke_mpi_exp_mod(X, A, E, N);
+    if (ret != MBEDTLS_ERR_MPI_NOT_ACCEPTABLE) {
+        return ret;
+    }
+#endif /* RTK_PKE_RSA_EXP_MOD */
 
     /*
      * Allocate working memory for mbedtls_mpi_core_exp_mod()

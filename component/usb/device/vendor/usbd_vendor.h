@@ -204,6 +204,7 @@ typedef struct {
 	usbd_ep_t ep_intr_in;		/**< INTR IN endpoint structure */
 	usbd_ep_t ep_intr_out;		/**< INTR OUT endpoint structure */
 	u8 alt_setting;				/**< Alternate setting number of the current interface */
+	u8 ctrl_req_pending;		/**< 1 if ctrl_req is waiting for its EP0 OUT data stage */
 	u8 from_composite;			/**< Flag indicating if part of a composite device. */
 } usbd_vendor_dev_t;
 /** @} End of Device_Vendor_Types group */
@@ -241,9 +242,10 @@ int usbd_composite_vendor_init(const usbd_vendor_cb_t *cb, const usbd_vendor_ep_
 
 /**
  * @brief De-initializes the Vendor class driver.
- * @return 0 on success, non-zero on failure.
+ * @return None. This is a teardown path: the class is always unregistered and every resource it
+ *         owns released, so there is nothing for the caller to recover from.
  */
-int usbd_vendor_deinit(void);
+void usbd_vendor_deinit(void);
 
 /**
  * @brief Transmits data to the host over the BULK IN endpoint.
@@ -254,24 +256,12 @@ int usbd_vendor_deinit(void);
 int usbd_vendor_transmit_bulk_data(u8 *buf, u32 len);
 
 /**
- * @brief Receives data to the host over the BULK OUT endpoint.
- * @return 0 on success, non-zero on failure.
- */
-int usbd_vendor_receive_bulk_data(void);
-
-/**
  * @brief Transmits data to the host over the INTR IN endpoint.
  * @param[in] buf: Pointer to the data buffer to be transmitted.
  * @param[in] len: Length of the data in bytes.
  * @return 0 on success, non-zero on failure.
  */
 int usbd_vendor_transmit_intr_data(u8 *buf, u32 len);
-
-/**
- * @brief Receives data to the host over the INTR OUT endpoint.
- * @return 0 on success, non-zero on failure.
- */
-int usbd_vendor_receive_intr_data(void);
 
 /**
  * @brief Transmits data to the host over the ISOC IN endpoint.
@@ -281,11 +271,6 @@ int usbd_vendor_receive_intr_data(void);
  */
 int usbd_vendor_transmit_isoc_data(u8 *buf, u32 len);
 
-/**
- * @brief Receives data to the host over the ISOC OUT endpoint.
- * @return 0 on success, non-zero on failure.
- */
-int usbd_vendor_receive_isoc_data(void);
 /** @} End of Device_Vendor_Functions group */
 /** @} End of USB_Device_Functions group */
 /** @} End of USB_Device_API group */
