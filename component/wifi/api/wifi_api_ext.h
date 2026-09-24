@@ -673,6 +673,16 @@ s32 wifi_acs_find_ideal_channel(struct rtw_acs_config *acs_config, u8 *ideal_ch)
  */
 s32 wifi_set_tx_advanced_config(struct rtw_tx_advanced_cfg *tx_setting);
 
+/**
+ * @brief  Configure TSF offset of port1 and port0.
+ * @param[in]  offset: tsf offset, unit us.
+ * @return
+ *    - @ref RTK_SUCCESS : The API executed successfully.
+ *    - -@ref RTK_ERR_WIFI_POWEROFF : Wi-Fi is powered off in IPS(Inactive Power Save) mode,
+ *                      unable to access Wi-Fi registers.
+ */
+s32 wifi_set_p1_to_p0_tsf_offset(u32 offset_us);
+
 /** @} End of Extended_Functions group */
 /** @} End of WIFI_Exported_Functions group*/
 /** @} End of WIFI_API group*/
