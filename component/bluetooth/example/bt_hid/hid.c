@@ -397,7 +397,7 @@ int bt_hid_main(uint8_t role, uint8_t enable)
 		bt_app_conf.prefer_tx_phy = 1 | 1 << 1 | 1 << 2;
 		bt_app_conf.prefer_rx_phy = 1 | 1 << 1 | 1 << 2;
 		bt_app_conf.max_tx_octets = 0x40;
-		bt_app_conf.max_tx_time = 0x200;
+		bt_app_conf.max_tx_time = 0x270;
 		bt_app_conf.hid_role = role;
 
 		rtk_bt_br_gap_default_param_t dft_param;
