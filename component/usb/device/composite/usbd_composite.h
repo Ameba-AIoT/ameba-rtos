@@ -71,13 +71,13 @@ typedef struct {
 typedef struct {
 	const usbd_class_driver_t *drivers[USBD_COMP_MAX_FUNCS]; /**< Registered class driver array. */
 	const usbd_composite_cb_t *cb;          /**< User callback. */
-	usb_dev_t *dev;                         /**< USB device instance. */
 	u8 *desc_buf;                           /**< Dynamically allocated scratch buffer for descriptor assembly. */
 	u32 desc_buf_size;                      /**< Size of desc_buf in bytes. */
 	u8 func_count;                          /**< Number of registered sub-functions. */
 	u8 if_counts[USBD_COMP_MAX_FUNCS]; /**< Interface count for each sub-function (parsed from desc). */
-	u8 cls_str_counts[USBD_COMP_MAX_FUNCS]; /**< Class-specific string count of each sub-function, from set_class_str_base(). */
+	u8 cls_str_counts[USBD_COMP_MAX_FUNCS]; /**< Class-specific string count of each sub-function, from set_str_base(). */
 	u8 active_func;                         /**< Index of sub-function handling the current setup with data OUT, 0xFF if none. */
+	u8 active_func_in;                      /**< Index of sub-function handling the current setup with data IN, 0xFF if none. */
 } usbd_composite_dev_t;
 
 /** @} End of Device_Composite_Types group */

@@ -54,3 +54,7 @@ ChangeLog:
                   (9) Add support for image combination
                   (10) Remove the short option for log file output
                   (11) Fix device receive frame package timeout issue
+20260917  v1.1.9  (1) Generate a default log file when --log-file is not specified
+                  (2) Include the device UUID in download logs
+                  (3) Optimize download logs for debug
+                  (4) Add crash diagnostics and a configurable flash inactivity watchdog

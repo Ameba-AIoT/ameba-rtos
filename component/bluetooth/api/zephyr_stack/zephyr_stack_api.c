@@ -14,10 +14,7 @@
 #include <stack/host/conn_internal.h>
 #include <stack/host/l2cap_internal.h>
 #include <zephyr/settings/settings.h>
-#include <settings_nvs.h>
 #include <settings.h>
-#include <ameba.h> /* to get ftl flash location */
-
 
 #include <zephyr_msg.h>
 #include <rtk_bt_gatts.h>
@@ -582,7 +579,7 @@ static void bt_zephyr_set_host_config(void *app_config)
 	bt_host.prefer_tx_phy = RTK_BT_LE_PHYS_PREFER_1M | RTK_BT_LE_PHYS_PREFER_2M | RTK_BT_LE_PHYS_PREFER_CODED;
 	bt_host.prefer_rx_phy = RTK_BT_LE_PHYS_PREFER_1M | RTK_BT_LE_PHYS_PREFER_2M | RTK_BT_LE_PHYS_PREFER_CODED;
 	bt_host.max_tx_octets = 0x40;
-	bt_host.max_tx_time = 0x200;
+	bt_host.max_tx_time = 0x270;
 	bt_host.cccd_not_check = false;
 	bt_host.master_init_mtu_req = true;
 	bt_host.slave_init_mtu_req = false;
@@ -763,15 +760,6 @@ uint16_t bt_stack_api_send(void *pcmd)
 bool is_stack_never_enabled(void)
 {
 	return stack_never_enabled;
-}
-
-void zephyr_get_flash_info(uint32_t *offset, uint16_t *sec_cnt)
-{
-	u32 ftl_start_addr, ftl_end_addr;
-
-	flash_get_layout_info(FTL, &ftl_start_addr, &ftl_end_addr);
-	*offset = (uint32_t)(ftl_start_addr - SPI_FLASH_BASE);
-	*sec_cnt = (uint16_t)((ftl_end_addr - ftl_start_addr + 1) / PAGE_SIZE_4K);
 }
 
 uint16_t zephyr_err_to_rtk(int err)

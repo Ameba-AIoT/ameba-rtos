@@ -1198,7 +1198,7 @@ class MPFlashToolMain(QMainWindow):
         self.chip_erase_checkbox.setText("全片擦除" if cn_mode else "Chip Erase")
         self.usb_download_checkbox.setText("USB 下载" if cn_mode else "USB Download")
         self.scan_button.setText("扫描设备" if cn_mode else "Scan Devices")
-        self.detect_layout_button.setText("检测布局" if cn_mode else "Detect Layout")
+        self.detect_layout_button.setText("端口映射排序" if cn_mode else "Reorder Port Mapping")
         self.download_button.setText("下载" if cn_mode else "Download")
 
         self._lbl_check.setText("选择：" if cn_mode else "Check :")
@@ -1342,7 +1342,7 @@ class MPFlashToolMain(QMainWindow):
             return
         log_dir = os.path.join(self._app_root_dir(), "log")
         os.makedirs(log_dir, exist_ok=True)
-        ts = time.strftime("%Y_%m_%d_%H_%M_%S")
+        ts = time.strftime("%Y%m%d_%H%M%S")
         self._log_file = os.path.join(log_dir, f"{ts}.log")
         if self._version_logged_file == self._log_file:
             return

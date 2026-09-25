@@ -9,7 +9,10 @@
 
 #if defined(MBEDTLS_NET_C)
 
-#if !defined(MBEDTLS_PLATFORM_IS_UNIXLIKE) && !defined(_WIN32)
+/* RTK: lwIP provides a BSD-compatible socket API, so the Unix/Windows-only
+ * guard does not apply. */
+#if !defined(MBEDTLS_PLATFORM_IS_UNIXLIKE) && !defined(_WIN32) && \
+	!defined(__ICCARM__) && !defined(__CC_ARM) && !defined(__GNUC__)
 #error "This module only works on Unix and Windows, see MBEDTLS_NET_C in mbedtls_config.h"
 #endif
 
@@ -46,6 +49,21 @@
 #define close(fd)               closesocket(fd)
 
 static int wsa_init_done = 0;
+
+#elif defined(__ICCARM__) || defined(__CC_ARM) || defined(__GNUC__)
+
+#include "lwip/sockets.h"
+#include "lwip/inet.h"
+#if LWIP_DNS
+#include "lwip/netdb.h"
+#endif
+#include <errno.h>
+
+#define net_htons(n) htons(n)
+#define net_htonl(n) htonl(n)
+
+#define IS_EINTR(ret) ((ret) == EINTR)
+#define SOCKET int
 
 #else /* ( _WIN32 || _WIN32_WCE ) && !EFIX64 && !EFI32 */
 
@@ -98,7 +116,8 @@ static int net_prepare(void)
         wsa_init_done = 1;
     }
 #else
-#if !defined(EFIX64) && !defined(EFI32)
+#if !defined(EFIX64) && !defined(EFI32) && !defined(__ICCARM__) && \
+	!defined(__CC_ARM) && !defined(__GNUC__)
     signal(SIGPIPE, SIG_IGN);
 #endif
 #endif
@@ -124,7 +143,13 @@ static int check_fd(int fd, int for_select)
      * that are strictly less than FD_SETSIZE. This is a limitation of the
      * fd_set type. Error out early, because attempting to call FD_SET on a
      * large file descriptor is a buffer overflow on typical platforms. */
+    /* RTK: lwIP indexes fd_set by (fd - LWIP_SOCKET_OFFSET), so the usable
+     * upper bound is LWIP_SELECT_MAXNFDS rather than FD_SETSIZE. */
+#if defined(LWIP_SELECT_MAXNFDS)
+    if (for_select && fd >= LWIP_SELECT_MAXNFDS) {
+#else
     if (for_select && fd >= FD_SETSIZE) {
+#endif
         return MBEDTLS_ERR_NET_POLL_FAILED;
     }
 #endif
@@ -146,6 +171,7 @@ void mbedtls_net_init(mbedtls_net_context *ctx)
 int mbedtls_net_connect(mbedtls_net_context *ctx, const char *host,
                         const char *port, int proto)
 {
+#if defined(MBEDTLS_HAVE_IPV6)
     int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
     struct addrinfo hints, *addr_list, *cur;
 
@@ -185,6 +211,53 @@ int mbedtls_net_connect(mbedtls_net_context *ctx, const char *host,
     freeaddrinfo(addr_list);
 
     return ret;
+#else
+    /* Legacy IPv4-only version */
+
+    int ret;
+    int type, protocol;
+    struct sockaddr_in server_addr;
+#if LWIP_DNS
+    struct hostent *server_host;
+#endif
+
+    if ((ret = net_prepare()) != 0) {
+        return ret;
+    }
+
+    type = (proto == MBEDTLS_NET_PROTO_UDP) ? SOCK_DGRAM : SOCK_STREAM;
+    protocol = (proto == MBEDTLS_NET_PROTO_UDP) ? IPPROTO_UDP : IPPROTO_TCP;
+
+#if LWIP_DNS
+    if ((server_host = gethostbyname(host)) == NULL) {
+        return MBEDTLS_ERR_NET_UNKNOWN_HOST;
+    }
+
+    if ((ctx->fd = (int) socket(AF_INET, type, protocol)) < 0) {
+        return MBEDTLS_ERR_NET_SOCKET_FAILED;
+    }
+
+    memcpy((void *) &server_addr.sin_addr, (void *) server_host->h_addr, 4);
+#else
+    if ((ctx->fd = (int) socket(AF_INET, type, protocol)) < 0) {
+        return MBEDTLS_ERR_NET_SOCKET_FAILED;
+    }
+
+    server_addr.sin_len = sizeof(server_addr);
+    server_addr.sin_addr.s_addr = inet_addr(host);
+#endif
+
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_port = net_htons(atoi(port));
+
+    if (connect(ctx->fd, (struct sockaddr *) &server_addr,
+                sizeof(server_addr)) < 0) {
+        mbedtls_net_close(ctx);
+        return MBEDTLS_ERR_NET_CONNECT_FAILED;
+    }
+
+    return 0;
+#endif /* MBEDTLS_HAVE_IPV6 */
 }
 
 /*
@@ -192,6 +265,7 @@ int mbedtls_net_connect(mbedtls_net_context *ctx, const char *host,
  */
 int mbedtls_net_bind(mbedtls_net_context *ctx, const char *bind_ip, const char *port, int proto)
 {
+#if defined(MBEDTLS_HAVE_IPV6)
     int n, ret;
     struct addrinfo hints, *addr_list, *cur;
 
@@ -253,7 +327,56 @@ int mbedtls_net_bind(mbedtls_net_context *ctx, const char *bind_ip, const char *
     freeaddrinfo(addr_list);
 
     return ret;
+#else
+    /* Legacy IPv4-only version */
 
+    int ret, n;
+    int type, protocol;
+    struct sockaddr_in server_addr;
+
+    if ((ret = net_prepare()) != 0) {
+        return ret;
+    }
+
+    type = (proto == MBEDTLS_NET_PROTO_UDP) ? SOCK_DGRAM : SOCK_STREAM;
+    protocol = (proto == MBEDTLS_NET_PROTO_UDP) ? IPPROTO_UDP : IPPROTO_TCP;
+
+    if ((ctx->fd = (int) socket(AF_INET, type, protocol)) < 0) {
+        return MBEDTLS_ERR_NET_SOCKET_FAILED;
+    }
+
+    n = 1;
+    setsockopt(ctx->fd, SOL_SOCKET, SO_REUSEADDR, (const char *) &n, sizeof(n));
+
+    server_addr.sin_addr.s_addr = net_htonl(INADDR_ANY);
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_port = net_htons(atoi(port));
+
+    /* RTK: inet_addr() replaces the sscanf() of the 3.6.5 port; same result for
+     * valid input, and a malformed address still falls back to INADDR_ANY. */
+    if (bind_ip != NULL) {
+        in_addr_t addr = inet_addr(bind_ip);
+        if (addr != INADDR_NONE) {
+            server_addr.sin_addr.s_addr = addr;
+        }
+    }
+
+    if (bind(ctx->fd, (struct sockaddr *) &server_addr,
+             sizeof(server_addr)) < 0) {
+        mbedtls_net_close(ctx);
+        return MBEDTLS_ERR_NET_BIND_FAILED;
+    }
+
+    /* Listen only makes sense for TCP */
+    if (proto == MBEDTLS_NET_PROTO_TCP) {
+        if (listen(ctx->fd, MBEDTLS_NET_LISTEN_BACKLOG) != 0) {
+            mbedtls_net_close(ctx);
+            return MBEDTLS_ERR_NET_LISTEN_FAILED;
+        }
+    }
+
+    return 0;
+#endif /* MBEDTLS_HAVE_IPV6 */
 }
 
 #if (defined(_WIN32) || defined(_WIN32_WCE)) && !defined(EFIX64) && \
@@ -276,15 +399,10 @@ static int net_would_block(const mbedtls_net_context *ctx)
  */
 static int net_would_block(const mbedtls_net_context *ctx)
 {
+    /* RTK: lwIP's fcntl(F_GETFL) does not reliably report O_NONBLOCK, so the
+     * blocking-socket short circuit is dropped and errno is trusted instead. */
+    (void) ctx;
     int err = errno;
-
-    /*
-     * Never return 'WOULD BLOCK' on a blocking socket
-     */
-    if ((fcntl(ctx->fd, F_GETFL) & O_NONBLOCK) != O_NONBLOCK) {
-        errno = err;
-        return 0;
-    }
 
     switch (errno = err) {
 #if defined EAGAIN
@@ -309,9 +427,17 @@ int mbedtls_net_accept(mbedtls_net_context *bind_ctx,
     int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
     int type;
 
+#if defined(MBEDTLS_HAVE_IPV6)
     struct sockaddr_storage client_addr;
+#else
+    struct sockaddr_in client_addr;
+#endif
 
-#if defined(__socklen_t_defined) || defined(_SOCKLEN_T) ||  \
+/* RTK: lwIP typedefs socklen_t (u32_t) without defining any of the probe
+ * macros below, so select it explicitly. This replaces the (u32_t *) argument
+ * casts the 3.6.5 port needed. */
+#if defined(__ICCARM__) || defined(__CC_ARM) || defined(__GNUC__) || \
+    defined(__socklen_t_defined) || defined(_SOCKLEN_T) ||  \
     defined(_SOCKLEN_T_DECLARED) || defined(__DEFINED_socklen_t) || \
     defined(socklen_t) || (defined(_POSIX_VERSION) && _POSIX_VERSION >= 200112L)
     socklen_t n = (socklen_t) sizeof(client_addr);
@@ -359,7 +485,11 @@ int mbedtls_net_accept(mbedtls_net_context *bind_ctx,
     /* UDP: hijack the listening socket to communicate with the client,
      * then bind a new socket to accept new connections */
     if (type != SOCK_STREAM) {
+#if defined(MBEDTLS_HAVE_IPV6)
         struct sockaddr_storage local_addr;
+#else
+        struct sockaddr_in local_addr;
+#endif
         int one = 1;
 
         if (connect(bind_ctx->fd, (struct sockaddr *) &client_addr, n) != 0) {
@@ -369,6 +499,7 @@ int mbedtls_net_accept(mbedtls_net_context *bind_ctx,
         client_ctx->fd = bind_ctx->fd;
         bind_ctx->fd   = -1; /* In case we exit early */
 
+#if defined(MBEDTLS_HAVE_IPV6)
         n = sizeof(struct sockaddr_storage);
         if (getsockname(client_ctx->fd,
                         (struct sockaddr *) &local_addr, &n) != 0 ||
@@ -378,6 +509,17 @@ int mbedtls_net_accept(mbedtls_net_context *bind_ctx,
                        (const char *) &one, sizeof(one)) != 0) {
             return MBEDTLS_ERR_NET_SOCKET_FAILED;
         }
+#else
+        n = sizeof(struct sockaddr_in);
+        if (getsockname(client_ctx->fd,
+                        (struct sockaddr *) &local_addr, &n) != 0 ||
+            (bind_ctx->fd = (int) socket(local_addr.sin_family,
+                                         SOCK_DGRAM, IPPROTO_UDP)) < 0 ||
+            setsockopt(bind_ctx->fd, SOL_SOCKET, SO_REUSEADDR,
+                       (const char *) &one, sizeof(one)) != 0) {
+            return MBEDTLS_ERR_NET_SOCKET_FAILED;
+        }
+#endif
 
         if (bind(bind_ctx->fd, (struct sockaddr *) &local_addr, n) != 0) {
             return MBEDTLS_ERR_NET_BIND_FAILED;
@@ -385,6 +527,7 @@ int mbedtls_net_accept(mbedtls_net_context *bind_ctx,
     }
 
     if (client_ip != NULL) {
+#if defined(MBEDTLS_HAVE_IPV6)
         if (client_addr.ss_family == AF_INET) {
             struct sockaddr_in *addr4 = (struct sockaddr_in *) &client_addr;
             *cip_len = sizeof(addr4->sin_addr.s_addr);
@@ -404,6 +547,15 @@ int mbedtls_net_accept(mbedtls_net_context *bind_ctx,
 
             memcpy(client_ip, &addr6->sin6_addr.s6_addr, *cip_len);
         }
+#else
+        *cip_len = sizeof(client_addr.sin_addr.s_addr);
+
+        if (buf_size < *cip_len) {
+            return MBEDTLS_ERR_NET_BUFFER_TOO_SMALL;
+        }
+
+        memcpy(client_ip, &client_addr.sin_addr.s_addr, *cip_len);
+#endif /* MBEDTLS_HAVE_IPV6 */
     }
 
     return 0;
@@ -414,9 +566,11 @@ int mbedtls_net_accept(mbedtls_net_context *bind_ctx,
  */
 int mbedtls_net_set_block(mbedtls_net_context *ctx)
 {
-#if (defined(_WIN32) || defined(_WIN32_WCE)) && !defined(EFIX64) && \
+/* RTK: lwIP's fcntl() does not support F_SETFL reliably; use ioctlsocket(). */
+#if (defined(_WIN32) || defined(_WIN32_WCE) || defined(__ICCARM__) || \
+    defined(__CC_ARM) || defined(__GNUC__)) && !defined(EFIX64) && \
     !defined(EFI32)
-    u_long n = 0;
+    unsigned long n = 0;
     return ioctlsocket(ctx->fd, FIONBIO, &n);
 #else
     return fcntl(ctx->fd, F_SETFL, fcntl(ctx->fd, F_GETFL) & ~O_NONBLOCK);
@@ -425,9 +579,11 @@ int mbedtls_net_set_block(mbedtls_net_context *ctx)
 
 int mbedtls_net_set_nonblock(mbedtls_net_context *ctx)
 {
-#if (defined(_WIN32) || defined(_WIN32_WCE)) && !defined(EFIX64) && \
+/* RTK: lwIP's fcntl() does not support F_SETFL reliably; use ioctlsocket(). */
+#if (defined(_WIN32) || defined(_WIN32_WCE) || defined(__ICCARM__) || \
+    defined(__CC_ARM) || defined(__GNUC__)) && !defined(EFIX64) && \
     !defined(EFI32)
-    u_long n = 1;
+    unsigned long n = 1;
     return ioctlsocket(ctx->fd, FIONBIO, &n);
 #else
     return fcntl(ctx->fd, F_SETFL, fcntl(ctx->fd, F_GETFL) | O_NONBLOCK);

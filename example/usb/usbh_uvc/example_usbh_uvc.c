@@ -168,11 +168,11 @@
 /* Private function prototypes -----------------------------------------------*/
 
 static int uvc_cb_init(void);
-static int uvc_cb_deinit(void);
-static int uvc_cb_attach(void);
-static int uvc_cb_detach(void);
-static int uvc_cb_setup(void);
-static int uvc_cb_setparam(int status);
+static void uvc_cb_deinit(void);
+static void uvc_cb_attached(void);
+static void uvc_cb_detached(void);
+static void uvc_cb_setup(void);
+static void uvc_cb_setparam(int status);
 
 /* Private variables ---------------------------------------------------------*/
 static const char *const TAG = "UVC";
@@ -268,9 +268,14 @@ static const usbh_config_t usbh_cfg = {
 	.main_task_stack_size = CONFIG_USBH_UVC_MAIN_TASK_STACK_SIZE,
 	.main_task_priority = CONFIG_USBH_UVC_MAIN_THREAD_PRIORITY,
 	.tick_source = USBH_SOF_TICK,
-#if defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RLE1509)
-	/*FIFO total depth is 1024, reserve 12 for DMA addr*/
+#if defined(CONFIG_AMEBAGREEN2)
+	/*FIFO total 1024 DWORD, resv 12 DWORD for DMA*/
 	.rx_fifo_depth = 500U,
+	.nptx_fifo_depth = 256U,
+	.ptx_fifo_depth = 256U,
+#elif defined(CONFIG_RLE1509)
+	/*FIFO total 1024 DWORD, resv 48 DWORD */
+	.rx_fifo_depth = 464U,
 	.nptx_fifo_depth = 256U,
 	.ptx_fifo_depth = 256U,
 #elif defined (CONFIG_AMEBAL2)
@@ -296,8 +301,8 @@ static const usbh_uvc_ctx_t uvc_cfg = {
 static const usbh_uvc_cb_t uvc_cb = {
 	.init = uvc_cb_init,
 	.deinit = uvc_cb_deinit,
-	.attach = uvc_cb_attach,
-	.detach = uvc_cb_detach,
+	.attached = uvc_cb_attached,
+	.detached = uvc_cb_detached,
 	.setup = uvc_cb_setup,
 	.set_param = uvc_cb_setparam,
 };
@@ -309,37 +314,31 @@ static int uvc_cb_init(void)
 	return HAL_OK;
 }
 
-static int uvc_cb_deinit(void)
+static void uvc_cb_deinit(void)
 {
-	return HAL_OK;
 }
 
-static int uvc_cb_attach(void)
+static void uvc_cb_attached(void)
 {
 	rtos_sema_give(uvc_attach_sema);
-	return HAL_OK;
 }
 
-static int uvc_cb_detach(void)
+static void uvc_cb_detached(void)
 {
 #if CONFIG_USBH_UVC_HOT_PLUG
 	rtos_sema_give(uvc_detach_sema);
 #endif
-
-	return HAL_OK;
 }
 
-static int uvc_cb_setup(void)
+static void uvc_cb_setup(void)
 {
 	rtos_sema_give(uvc_start_sema);
-	return HAL_OK;
 }
 
-static int uvc_cb_setparam(int status)
+static void uvc_cb_setparam(int status)
 {
 	uvc_setparam_status = status;
 	rtos_sema_give(uvc_setparam_sema);
-	return HAL_OK;
 }
 
 static void uvc_calculate_tp(u32 loop)
@@ -458,7 +457,6 @@ static void usbh_uvc_img_prepare(usbh_uvc_frame_t *frame)
 #endif
 	}
 #endif
-
 }
 
 #if (CONFIG_USBH_UVC_APP == USBH_UVC_APP_VFS)
@@ -1273,14 +1271,20 @@ static void example_usbh_uvc_hotplug_thread(void *param)
 			}
 
 			ret = usbh_uvc_init(&uvc_cfg, &uvc_cb);
-			if (ret < 0) {
+			if (ret != HAL_OK) {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "Init UVC fail\n");
 				usbh_deinit();
 				break;
 			}
 
 			/* Re-arm USB TRX after the re-init. */
-			usbh_start();
+			ret = usbh_start();
+			if (ret != HAL_OK) {
+				RTK_LOGS(TAG, RTK_LOG_ERROR, "Start USBH fail\n");
+				usbh_uvc_deinit();
+				usbh_deinit();
+				break;
+			}
 		}
 	}
 
@@ -1319,7 +1323,7 @@ static void example_usbh_uvc_test(void *param)
 
 	UNUSED(param);
 
-	/* Re-runs each attach; uvc_start_sema is given by cb_attach after device enumeration. */
+	/* Re-runs each attach; uvc_start_sema is given by cb_attached after device enumeration. */
 	while (uvc_task_exiting == 0U) {
 		if (rtos_sema_take(uvc_start_sema, RTOS_SEMA_MAX_COUNT) != RTK_SUCCESS) {
 			continue;
@@ -1485,19 +1489,9 @@ static void example_usbh_uvc_test(void *param)
 
 			len = buf->byteused;
 
-			/* The host stack clamps byteused to frame_buffer_size (see usbh_uvc_stream.c:
-			 * bytes = MIN(maxlen, payload_len)), so len can only ever reach, never exceed,
-			 * CONFIG_USBH_UVC_FRAME_BUF_SIZE. Reaching it means the camera frame was larger
-			 * than the buffer and the tail was silently truncated -> must report an error. */
-			if (len >= CONFIG_USBH_UVC_FRAME_BUF_SIZE) {
-				if (usbh_uvc_put_frame(buf, CONFIG_USBH_UVC_STREAM_INDEX) != HAL_OK) {
-					RTK_LOGS(TAG, RTK_LOG_ERROR, "Put frame fail\n");
-				}
-				RTK_LOGS(TAG, RTK_LOG_ERROR, "Frame %d truncated: len %d reached buf size %d, increase CONFIG_USBH_UVC_FRAME_BUF_SIZE\n", img_cnt, len,
-						 CONFIG_USBH_UVC_FRAME_BUF_SIZE);
-				goto exit;
-			}
-
+			/* No truncation check needed here: the host stack now flags an over-sized frame
+			 * (frame->err) and usbh_uvc_get_frame() never returns such a frame, so a frame
+			 * that arrives here is always complete. */
 			if (len > 0U) {
 				/* Account for throughput here, once per captured frame, so the TP figure is
 				 * correct for every APP mode and pixel format (MJPEG/YUV/H264/H265). */

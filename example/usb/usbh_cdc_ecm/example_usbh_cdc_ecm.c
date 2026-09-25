@@ -88,12 +88,12 @@ typedef enum {
 
 /* Private function prototypes -----------------------------------------------*/
 static int cdc_ecm_cb_init(void);
-static int cdc_ecm_cb_deinit(void);
-static int cdc_ecm_cb_attach(void);
-static int cdc_ecm_cb_detach(void);
-static int cdc_ecm_cb_setup(void);
-static int cdc_ecm_cb_process(usb_host_t *host, u8 msg);
-static int cdc_ecm_cb_bulk_receive(u8 *pbuf, u32 Len);
+static void cdc_ecm_cb_deinit(void);
+static void cdc_ecm_cb_attached(void);
+static void cdc_ecm_cb_detached(void);
+static void cdc_ecm_cb_setup(void);
+static void cdc_ecm_cb_process(usb_host_t *host, u8 msg);
+static void cdc_ecm_cb_received(u8 *pbuf, u32 Len);
 static int cdc_ecm_cb_device_check(usb_host_t *host, u8 cfg_max);
 
 static const usbh_config_t usbh_ecm_cfg = {
@@ -104,9 +104,14 @@ static const usbh_config_t usbh_ecm_cfg = {
 	.main_task_priority = CONFIG_USBH_CDC_ECM_MAIN_THREAD_PRIORITY,
 	.tick_source = USBH_SOF_TICK,
 	.hub_support = 1U,
-#if defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RLE1509)
-	/*FIFO total depth is 1024, reserve 12 for DMA addr*/
+#if defined(CONFIG_AMEBAGREEN2)
+	/*FIFO total 1024 DWORD, resv 12 DWORD for DMA*/
 	.rx_fifo_depth = 500,
+	.nptx_fifo_depth = 256,
+	.ptx_fifo_depth = 256,
+#elif defined(CONFIG_RLE1509)
+	/*FIFO total 1024 DWORD, resv 48 DWORD */
+	.rx_fifo_depth = 464,
 	.nptx_fifo_depth = 256,
 	.ptx_fifo_depth = 256,
 #elif defined (CONFIG_AMEBAL2)
@@ -125,10 +130,10 @@ static const usbh_config_t usbh_ecm_cfg = {
 static const usbh_cdc_ecm_state_cb_t cdc_ecm_usb_cb = {
 	.init   = cdc_ecm_cb_init,
 	.deinit = cdc_ecm_cb_deinit,
-	.attach = cdc_ecm_cb_attach,
-	.detach = cdc_ecm_cb_detach,
+	.attached = cdc_ecm_cb_attached,
+	.detached = cdc_ecm_cb_detached,
 	.setup  = cdc_ecm_cb_setup,
-	.bulk_received = cdc_ecm_cb_bulk_receive,
+	.received = cdc_ecm_cb_received,
 };
 
 static const usbh_user_cb_t usbh_ecm_usr_cb = {
@@ -166,29 +171,24 @@ static int cdc_ecm_cb_init(void)
 
 /**
   * @brief  CDC ECM deinit callback
-  * @retval Status
   */
-static int cdc_ecm_cb_deinit(void)
+static void cdc_ecm_cb_deinit(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "DEINIT\n");
-	return HAL_OK;
 }
 
 /**
   * @brief  CDC ECM attach callback
-  * @retval Status
   */
-static int cdc_ecm_cb_attach(void)
+static void cdc_ecm_cb_attached(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "ATTACH\n");
-	return HAL_OK;
 }
 
 /**
   * @brief  CDC ECM detach callback
-  * @retval Status
   */
-static int cdc_ecm_cb_detach(void)
+static void cdc_ecm_cb_detached(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "DETACH\n");
 
@@ -196,35 +196,29 @@ static int cdc_ecm_cb_detach(void)
 #if CONFIG_USBH_CDC_ECM_HOT_PLUG
 	usb_os_sema_give(cdc_ecm_detach_sema);
 #endif
-	return HAL_OK;
 }
 
 /**
   * @brief  CDC ECM setup callback
-  * @retval Status
   */
-static int cdc_ecm_cb_setup(void)
+static void cdc_ecm_cb_setup(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "SETUP\n");
-	return HAL_OK;
 }
 
 /**
   * @brief  CDC ECM bulk receive callback
   * @param  buf: RX buffer
   * @param  length: RX data length (in bytes)
-  * @retval Status
   */
-static int cdc_ecm_cb_bulk_receive(u8 *buf, u32 length)
+static void cdc_ecm_cb_received(u8 *buf, u32 length)
 {
 	if (length > 0) {
 		netif_adapter_usb_eth_recv(buf, length);
 	}
-
-	return HAL_OK;
 }
 
-static int cdc_ecm_cb_process(usb_host_t *host, u8 msg)
+static void cdc_ecm_cb_process(usb_host_t *host, u8 msg)
 {
 	UNUSED(host);
 	switch (msg) {
@@ -241,8 +235,6 @@ static int cdc_ecm_cb_process(usb_host_t *host, u8 msg)
 	default:
 		break;
 	}
-
-	return HAL_OK;
 }
 
 static int cdc_ecm_do_init(void)
@@ -256,7 +248,7 @@ static int cdc_ecm_do_init(void)
 	}
 
 	ret = usbh_cdc_ecm_init(&cdc_ecm_usb_cb, &ecm_priv);
-	if (ret < 0) {
+	if (ret != HAL_OK) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Init CDC ECM fail\n");
 		usbh_deinit();
 		return 0;

@@ -13,7 +13,6 @@ bool rtk_bt_olt_power_on(void)
 
 bool rtk_bt_olt_enable_inquiry(void)
 {
-	BT_LOGA("rtk_bt_olt_enbale_inquiry\n\r");
 	uint8_t buf[8 + 3] = {0};
 
 	buf[2] = 5;

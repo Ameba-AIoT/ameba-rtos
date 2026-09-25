@@ -255,7 +255,7 @@ struct bt_le_per_adv_sync {
 	uint8_t cte_types;
 #endif /* CONFIG_BT_DF_CONNECTIONLESS_CTE_RX */
 
-#if CONFIG_BT_PER_ADV_SYNC_BUF_SIZE > 0
+#if defined(CONFIG_BT_PER_ADV_SYNC_BUF_SIZE) && (CONFIG_BT_PER_ADV_SYNC_BUF_SIZE > 0)
 	/** Reassembly buffer for advertising reports */
 	struct net_buf_simple reassembly;
 

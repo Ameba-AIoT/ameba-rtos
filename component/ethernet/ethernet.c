@@ -163,48 +163,65 @@ int eth_send(struct pbuf *p)
 u32 eth_isr_handler(void *data)
 {
 	UNUSED(data);
-	u32 int_event = Ethernet_GetPendingINT();
+	/* Read the status once, turn it into events, and clear all interrupts. */
+	u32 int_event = Ethernet_GetAndClearINT();
+
 	RTK_LOGD(TAG, "int status = %x\n", int_event);
-	/* 1. RX Done */
-	if (int_event & ETH_EVT_RX_DONE) {
-		/* Notify RX task to process data */
+
+	/* 1. RX done, or the RX ring ran dry: both mean the RX task should drain and
+	 * recycle descriptors. */
+	if (int_event & (ETH_EVT_RX_DONE | ETH_EVT_RDU_RING1)) {
 		rtos_sema_give(eth_rx_sema);
-		Ethernet_ClearINT(ETH_EVT_RX_DONE);
 	}
 
-	/* 2. RX Errors (Overflow/Runt) */
-	if (int_event & ETH_EVT_RX_ERROR) {
-		Ethernet_ClearINT(ETH_EVT_RX_ERROR);
-	}
-
-	/* 3. TX Done */
-	if (int_event & ETH_EVT_TX_DONE) {
-		Ethernet_ClearINT(ETH_EVT_TX_DONE);
-	}
-
-	/* 4. Link Change */
+	/* 2. Link change */
 	if (int_event & ETH_EVT_LINK_CHG) {
-		/* Check physical link status using HAL API */
-		if (Ethernet_GetLinkStatus()) {
-			eth_link_is_up = 1;
-		} else {
-			eth_link_is_up = 0;
-		}
-
-		/* Notify Link Monitor task */
+		eth_link_is_up = Ethernet_GetLinkStatus() ? 1 : 0;
 		rtos_sema_give(eth_link_sema);
-		Ethernet_ClearINT(ETH_EVT_LINK_CHG);
 	}
 
-	/* 5. RX Descriptor Unavailable (Optional) */
-	if (int_event & ETH_EVT_RDU_RING1) {
-		/* Wake up RX task to potentially free up descriptors */
-		rtos_sema_give(eth_rx_sema);
-		Ethernet_ClearINT(ETH_EVT_RDU_RING1);
-	}
+	/* RX/TX errors and TX done need no action beyond the acknowledge above. */
 
 	return 0;
 }
+#if ETH_CSUM_OFFLOAD
+/**
+  * @brief  Report whether the MAC failed a frame's IPv4/L4 checksum.
+  * @param  meta: RX metadata filled by Ethernet_GetRXPktInfo().
+  * @retval 1 if verification failed and the frame must be discarded, 0 to accept.
+  * @note   csum_ip/csum_l4 hold the IPV4CSF/L4CSF fail bits, only meaningful for
+  *         the packet types the classifier parsed, hence the rx_pkt_type switch.
+  */
+static u8 eth_rx_cksum_failed(const ETH_PktMetaDef *meta)
+{
+	switch (meta->rx_pkt_type) {
+	case ETH_PKT_IPV4:
+	case ETH_PKT_IPV4_PPTP:
+	case ETH_PKT_IPV4_ICMP:
+	case ETH_PKT_IPV4_IGMP:
+		/* IPv4 header checksum only. */
+		return meta->csum_ip;
+
+	case ETH_PKT_IPV4_TCP:
+	case ETH_PKT_IPV4_UDP:
+		/* A UDP sender may leave the checksum field at 0 to mean "not computed"
+		 * (RFC 768); the engine ignores those frames rather than failing them, so
+		 * no software exemption is needed here. TCP has no such escape, and a
+		 * zero there is a genuine failure. */
+		return (meta->csum_ip || meta->csum_l4);
+
+	case ETH_PKT_IPV6_TCP:
+	case ETH_PKT_IPV6_UDP:
+		/* IPv6 has no header checksum, so only the L4 verdict applies. */
+		return meta->csum_l4;
+
+	default:
+		/* Plain ethernet, IPv6 without L4, ICMPv6: nothing was verified. */
+		return 0;
+	}
+}
+#endif /* ETH_CSUM_OFFLOAD */
+
 void eth_rx_thread(void *param)
 {
 	(void)param;
@@ -227,28 +244,39 @@ void eth_rx_thread(void *param)
 				break;
 			}
 
+			/* Nothing left to hand up once the MAC's 2-byte header is removed.
+			 * The default filter drops runt frames, but ETH_FILTER_DIAGNOSTIC_ALL
+			 * lets them through. Must still fall through to release the descriptor,
+			 * or the ring index parks here and the loop spins forever. */
 			if (meta.pkt_len > 2) {
-				/* Optional: Custom Pre-processing for test*/
-				if (eth_rx_preprocess_cb) {
-					ret = eth_rx_preprocess_cb(&p, buf, meta.pkt_len);
-					if (ret == UPLOAD_TO_LWIP && p != NULL) {
-						netif_adapter_eth_recv(p);
-					} else if (p != NULL) {
-						pbuf_free(p);
-						p = NULL;
-					}
-				} else {
-					/* Standard Path: Copy to pbuf and send to LwIP */
-					/* Note: meta.pkt_len-2 excludes CRC usually, depending on HW setting */
-					p = netif_adapter_eth_buf_copy(meta.pkt_len - 2, buf);
-					if (p != NULL) {
-						netif_adapter_eth_recv(p);
+#if ETH_CSUM_OFFLOAD
+				/* The MAC verified the checksums, so a bad frame must be dropped
+				 * here: lwIP no longer re-checks them on this netif. */
+				if (!eth_rx_cksum_failed(&meta))
+#endif
+				{
+					/* Optional: Custom Pre-processing for test*/
+					if (eth_rx_preprocess_cb) {
+						ret = eth_rx_preprocess_cb(&p, buf, meta.pkt_len);
+						if (ret == UPLOAD_TO_LWIP && p != NULL) {
+							netif_adapter_eth_recv(p);
+						} else if (p != NULL) {
+							pbuf_free(p);
+							p = NULL;
+						}
+					} else {
+						/* buf already points past the MAC's 2-byte header, so drop
+						 * those 2 from the length too. */
+						p = netif_adapter_eth_buf_copy(meta.pkt_len - 2, buf);
+						if (p != NULL) {
+							netif_adapter_eth_recv(p);
+						}
 					}
 				}
-
-				/* Return descriptor to hardware */
-				Ethernet_UpdateRXDESC(&eth_handle);
 			}
+
+			/* Return descriptor to hardware; this is what advances the ring index. */
+			Ethernet_UpdateRXDESC(&eth_handle);
 		}
 	}
 

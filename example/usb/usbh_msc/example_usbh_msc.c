@@ -48,10 +48,10 @@ static const char *const TAG = "MSC";
 
 /* Private function prototypes -----------------------------------------------*/
 
-static int msc_cb_attach(void);
-static int msc_cb_detach(void);
-static int msc_cb_setup(void);
-static int msc_cb_process(usb_host_t *host, u8 msg);
+static void msc_cb_attached(void);
+static void msc_cb_detached(void);
+static void msc_cb_setup(void);
+static void msc_cb_process(usb_host_t *host, u8 msg);
 
 /* Private variables ---------------------------------------------------------*/
 
@@ -73,9 +73,14 @@ static const usbh_config_t usbh_cfg = {
 	.main_task_stack_size = USBH_MSC_MAIN_TASK_STACK_SIZE,
 	.main_task_priority = USBH_MSC_MAIN_TASK_PRIORITY,
 	.tick_source = USBH_SOF_TICK,
-#if defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RLE1509)
-	/*FIFO total depth is 1024, reserve 12 for DMA addr*/
+#if defined(CONFIG_AMEBAGREEN2)
+	/*FIFO total 1024 DWORD, resv 12 DWORD for DMA*/
 	.rx_fifo_depth = 500,
+	.nptx_fifo_depth = 256,
+	.ptx_fifo_depth = 256,
+#elif defined(CONFIG_RLE1509)
+	/*FIFO total 1024 DWORD, resv 48 DWORD */
+	.rx_fifo_depth = 464,
 	.nptx_fifo_depth = 256,
 	.ptx_fifo_depth = 256,
 #elif defined (CONFIG_AMEBAL2)
@@ -92,8 +97,8 @@ static const usbh_config_t usbh_cfg = {
 };
 
 static const usbh_msc_cb_t msc_usr_cb = {
-	.attach = msc_cb_attach,
-	.detach = msc_cb_detach,
+	.attached = msc_cb_attached,
+	.detached = msc_cb_detached,
 	.setup = msc_cb_setup,
 };
 
@@ -103,31 +108,28 @@ static const usbh_user_cb_t usbh_usr_cb = {
 
 /* Private functions ---------------------------------------------------------*/
 
-static int msc_cb_attach(void)
+static void msc_cb_attached(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "ATTACH\n");
 	msc_is_connected = 1;
 	rtos_sema_give(msc_attach_sema);
-	return HAL_OK;
 }
 
-static int msc_cb_detach(void)
+static void msc_cb_detached(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "DETACH\n");
 #if CONFIG_USBH_MSC_HOTPLUG
 	rtos_sema_give(msc_detach_sema);
 #endif
-	return HAL_OK;
 }
 
-static int msc_cb_setup(void)
+static void msc_cb_setup(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "SETUP\n");
 	msc_is_ready = 1;
-	return HAL_OK;
 }
 
-static int msc_cb_process(usb_host_t *host, u8 msg)
+static void msc_cb_process(usb_host_t *host, u8 msg)
 {
 	UNUSED(host);
 
@@ -141,8 +143,52 @@ static int msc_cb_process(usb_host_t *host, u8 msg)
 	default:
 		break;
 	}
+}
 
-	return HAL_OK;
+/* TEMP DIAG: dump what FatFs sees at sector 0 and at the first MBR partition.
+ * check_fs() rejects a sector unless win[510:511] == 0x55AA plus a valid
+ * JmpBoot/BPB, so these bytes tell FAT32-vs-garbage apart. Remove once the
+ * mount failure is understood. */
+static void usbh_msc_dump_boot_sector(void)
+{
+	u8 *sec;
+	u32 lba;
+	u32 i;
+
+	sec = (u8 *)usb_os_malloc(512);
+	if (sec == NULL) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Diag: alloc fail\n");
+		return;
+	}
+
+	for (i = 0; i < 2U; i++) {
+		lba = 0U;
+		if (i == 1U) {
+			/* MBR partition 1 start LBA: little-endian at offset 0x1C6 */
+			lba = ((u32)sec[0x1C9] << 24) | ((u32)sec[0x1C8] << 16) | ((u32)sec[0x1C7] << 8) | (u32)sec[0x1C6];
+			RTK_LOGS(TAG, RTK_LOG_INFO, "Diag: PTE1 type %02x lba %d\n", sec[0x1C2], lba);
+			if (lba == 0U) {
+				break;
+			}
+		}
+
+		if (USB_disk_Driver.disk_read(sec, lba, 1) != RES_OK) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Diag: read lba %d fail\n", lba);
+			break;
+		}
+
+		RTK_LOGS(TAG, RTK_LOG_INFO, "Diag: lba %d sig %02x%02x jmp %02x fstype %c%c%c%c%c%c%c%c\n",
+				 lba, sec[510], sec[511], sec[0],
+				 sec[82], sec[83], sec[84], sec[85], sec[86], sec[87], sec[88], sec[89]);
+		RTK_LOGS(TAG, RTK_LOG_INFO, "Diag: bps %02x%02x spc %02x rsvd %02x%02x nfat %02x\n",
+				 sec[12], sec[11], sec[13], sec[15], sec[14], sec[16]);
+		/* First 16 bytes: tells a zeroed/garbage buffer from a real boot sector */
+		RTK_LOGS(TAG, RTK_LOG_INFO, "Diag: %02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x\n",
+				 sec[0], sec[1], sec[2], sec[3], sec[4], sec[5], sec[6], sec[7],
+				 sec[8], sec[9], sec[10], sec[11], sec[12], sec[13], sec[14], sec[15]);
+	}
+
+	usb_os_mfree((void *)sec);
 }
 
 /*  I/O test routine (10 files, each with W/R of multiple sizes) */
@@ -195,8 +241,11 @@ static int usbh_msc_file_test(void)
 	logical_drv[3] = 0;
 	strcpy(path, logical_drv);
 
-	if (f_mount(&fs, logical_drv, 1) != FR_OK) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to mount logical drive\n");
+	res = f_mount(&fs, logical_drv, 1);
+	if (res != FR_OK) {
+		/* rc: 1 FR_DISK_ERR, 3 FR_NOT_READY, 13 FR_NO_FILESYSTEM */
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to mount logical drive, rc=%d\n", res);
+		usbh_msc_dump_boot_sector();
 		FATFS_UnRegisterDiskDriver(drv_num);
 		return HAL_ERR_UNKNOWN;
 	}
@@ -466,7 +515,7 @@ void example_usbh_msc_thread(void *param)
 #else
 	/* Replug loop: test 10 files, then wait for the next physical replug
 	 * event before running again.  usbh_msc_file_test() blocks at
-	 * rtos_sema_take(msc_attach_sema) until msc_cb_attach fires. */
+	 * rtos_sema_take(msc_attach_sema) until msc_cb_attached fires. */
 	for (;;) {
 		ret = usbh_msc_file_test();
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Test %s, unplug and replug to repeat\n",

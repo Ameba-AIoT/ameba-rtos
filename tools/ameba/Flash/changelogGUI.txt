@@ -124,7 +124,7 @@ ChangeLog:
                   (2) Remove useless serial port from scan device list
 20241119  v2.5.27 (1) Tune log message
                   (2) Move floaders to devices/floaders for better maintainability
-                  (3) Remove unused files from repository and vs project 
+                  (3) Remove unused files from repository and vs project
 20250311  v2.5.28 (1) Modify Chinese UI
                   (2) Fix Chinese UI progress bar missing issue
 20250528  v2.5.29 (1) Support program OTP and reload OTP settings before download
@@ -138,3 +138,5 @@ ChangeLog:
                   (3) Display session flash totals, successes, and pass rate
                   (4) Fix serial port not released after initialization or download failure
                   (5) Show detailed failure information in the port progress tooltip
+                  (6) Include the device UUID in download logs
+                  (7) Optimize download logs for debug

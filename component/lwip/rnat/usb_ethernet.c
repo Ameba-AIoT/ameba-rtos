@@ -222,16 +222,9 @@ static void usb_eth_hotplug_thread(void *param)
 		if (current_status == USBD_ATTACH_STATUS_DETACHED) {
 			RTK_LOGS(TAG, RTK_LOG_INFO, "DETACHED\n");
 
-			ret = usbd_cdc_ecm_deinit();
-			if (ret != HAL_OK) {
-				RTK_LOGS(TAG, RTK_LOG_ERROR, "ECM deinit fail %d\n", ret);
-			}
+			usbd_cdc_ecm_deinit();
 
-			ret = usbd_deinit();
-			if (ret != HAL_OK) {
-				RTK_LOGS(TAG, RTK_LOG_ERROR, "Core deinit fail %d\n", ret);
-				break;
-			}
+			usbd_deinit();
 
 			rtos_time_delay_ms(100);
 
@@ -298,21 +291,21 @@ static const u16 led_color[1] = {0x1122};
 static const u8 mac_valid[6] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55};
 
 static int cdc_ecm_cb_init(void);
-static int cdc_ecm_cb_deinit(void);
-static int cdc_ecm_cb_attach(void);
-static int cdc_ecm_cb_detach(void);
-static int cdc_ecm_cb_setup(void);
-static int cdc_ecm_cb_bulk_receive(u8 *buf, u32 length);
-static int cdc_ecm_cb_process(usb_host_t *host, u8 msg);
+static void cdc_ecm_cb_deinit(void);
+static void cdc_ecm_cb_attached(void);
+static void cdc_ecm_cb_detached(void);
+static void cdc_ecm_cb_setup(void);
+static void cdc_ecm_cb_received(u8 *buf, u32 length);
+static void cdc_ecm_cb_process(usb_host_t *host, u8 msg);
 static int cdc_ecm_cb_device_check(usb_host_t *host, u8 cfg_max);
 
 static const usbh_cdc_ecm_state_cb_t cdc_ecm_usb_cb = {
 	.init   = cdc_ecm_cb_init,
 	.deinit = cdc_ecm_cb_deinit,
-	.attach = cdc_ecm_cb_attach,
-	.detach = cdc_ecm_cb_detach,
+	.attached = cdc_ecm_cb_attached,
+	.detached = cdc_ecm_cb_detached,
 	.setup  = cdc_ecm_cb_setup,
-	.bulk_received = cdc_ecm_cb_bulk_receive,
+	.received = cdc_ecm_cb_received,
 };
 
 static const usbh_user_cb_t usbh_ecm_usr_cb = {
@@ -363,38 +356,32 @@ static int cdc_ecm_cb_init(void)
 	return HAL_OK;
 }
 
-static int cdc_ecm_cb_deinit(void)
+static void cdc_ecm_cb_deinit(void)
 {
-	return HAL_OK;
 }
 
-static int cdc_ecm_cb_attach(void)
+static void cdc_ecm_cb_attached(void)
 {
-	return HAL_OK;
 }
 
-static int cdc_ecm_cb_detach(void)
+static void cdc_ecm_cb_detached(void)
 {
 	cdc_ecm_detach_pending = 1;
 	usb_os_sema_give(cdc_ecm_detach_sema);
-	return HAL_OK;
 }
 
-static int cdc_ecm_cb_setup(void)
+static void cdc_ecm_cb_setup(void)
 {
-	return HAL_OK;
 }
 
-static int cdc_ecm_cb_bulk_receive(u8 *buf, u32 length)
+static void cdc_ecm_cb_received(u8 *buf, u32 length)
 {
 	if (length > 0) {
 		netif_adapter_usb_eth_recv(buf, length);
 	}
-
-	return HAL_OK;
 }
 
-static int cdc_ecm_cb_process(usb_host_t *host, u8 msg)
+static void cdc_ecm_cb_process(usb_host_t *host, u8 msg)
 {
 	UNUSED(host);
 	switch (msg) {
@@ -407,8 +394,6 @@ static int cdc_ecm_cb_process(usb_host_t *host, u8 msg)
 	default:
 		break;
 	}
-
-	return HAL_OK;
 }
 
 static int usb_eth_do_usb_init(void)
@@ -422,7 +407,7 @@ static int usb_eth_do_usb_init(void)
 	}
 
 	ret = usbh_cdc_ecm_init(&cdc_ecm_usb_cb, &ecm_priv);
-	if (ret < 0) {
+	if (ret != HAL_OK) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Init CDC ECM fail\n");
 		usbh_deinit();
 		return -1;
@@ -460,7 +445,7 @@ static void usb_eth_hotplug_thread(void *param)
 		}
 
 		ret = usbh_cdc_ecm_init(&cdc_ecm_usb_cb, &ecm_priv);
-		if (ret < 0) {
+		if (ret != HAL_OK) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Init CDC ECM fail\n");
 			usbh_deinit();
 			break;
@@ -503,7 +488,7 @@ static void usb_eth_link_change_thread(void *param)
 			link_is_up = 0;
 		}
 #elif defined(CONFIG_USBH_CDC_ECM)
-		link_is_up = usbh_cdc_ecm_get_connect_status();
+		link_is_up = usbh_cdc_ecm_get_link_status();
 		mac = (u8 *)usbh_cdc_ecm_process_mac_str();
 		if (cdc_ecm_detach_pending) {
 			cdc_ecm_detach_pending = 0;

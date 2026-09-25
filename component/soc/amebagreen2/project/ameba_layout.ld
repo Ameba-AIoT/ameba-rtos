@@ -48,7 +48,7 @@
 #else
 #define RAM_KM4NS_IMG2_SIZE          KBYTES(CONFIG_SRAM_KM4NS_IMG2_KB)
 #endif
-#if defined(CONFIG_WIFI_NAN_ENABLE)
+#if defined(CONFIG_WIFI_NAN_HOST_APP)
 ASSERT(CONFIG_SRAM_KM4NS_IMG2_KB >= 128, "WIFI_NAN_ENABLE needs CONFIG_SRAM_KM4NS_IMG2_KB >= 128 (see WHY comment above).")
 #endif
 /*

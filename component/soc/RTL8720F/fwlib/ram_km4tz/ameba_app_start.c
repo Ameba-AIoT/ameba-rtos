@@ -89,6 +89,37 @@ u32 app_mpu_nocache_init(void)
 	return 0;
 }
 
+#ifdef CONFIG_SOLO
+/* KM4TZ implements 6 secure MPU regions (index 0~5; MPU_TYPE.DREGION==6). The dynamic
+ * app_mpu_nocache_init() takes the lower ones (0~3 with IMG2_FLASH), so SOLO uses the
+ * top two directly (bypassing mpu_entry_alloc). */
+#define APP_SOLO_MPU_ENTRY_BASE		4
+
+static void app_solo_mpu_init(void)
+{
+	mpu_region_config mpu_cfg;
+	u32 i, size;
+
+	for (i = 0; i < SOLO_MPU_ENTRY_NUM; i++) {
+		if (solo_km4tz_ro_sram[i].start == 0xFFFFFFFF) {
+			continue;
+		}
+		/* Convert inclusive {start, end} to base/size (32-byte aligned). */
+		size = (solo_km4tz_ro_sram[i].end - solo_km4tz_ro_sram[i].start + 1) & ~0x1FU;
+		if (size < 32) {
+			continue;
+		}
+		mpu_cfg.region_base = solo_km4tz_ro_sram[i].start;
+		mpu_cfg.region_size = size;
+		mpu_cfg.xn = MPU_EXEC_NEVER;
+		mpu_cfg.ap = MPU_PRIV_RO;
+		mpu_cfg.sh = MPU_NON_SHAREABLE;
+		mpu_cfg.attr_idx = MPU_MEM_ATTR_IDX_NC;
+		mpu_region_cfg(APP_SOLO_MPU_ENTRY_BASE + i, &mpu_cfg);
+	}
+}
+#endif
+
 #if defined (__GNUC__)
 /* Add This for C++ support to avoid compile error */
 void _init(void) {}
@@ -169,6 +200,11 @@ void app_start(void)
 
 	mpu_init();
 	app_mpu_nocache_init();
+
+#ifdef CONFIG_SOLO
+	/* SOLO: apply the "KM4TZ must not write" SRAM regions from ameba_solocfg.c. */
+	app_solo_mpu_init();
+#endif
 
 	PostFaultPatch_register(backtrace_post_patch_ameba);
 

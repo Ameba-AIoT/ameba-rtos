@@ -77,38 +77,33 @@ typedef struct {
 	/**
 	 * @brief Callback invoked during CDC ECM class driver de-initialization.
 	 *        Used for application-specific resource cleanup.
-	 * @return 0 on success, non-zero on failure.
 	 */
-	int(* deinit)(void);
+	void (* deinit)(void);
 
 	/**
 	 * @brief Callback invoked when a device is attached.
 	 *        Used to report the device connection status to the application.
-	 * @return 0 on success, non-zero on failure.
 	 */
-	int(* attach)(void);
+	void (* attached)(void);
 
 	/**
 	 * @brief Callback invoked when a device is detached.
 	 *        Used to report the device disconnection status to the application.
-	 * @return 0 on success, non-zero on failure.
 	 */
-	int(* detach)(void);
+	void (* detached)(void);
 
 	/**
 	 * @brief Callback invoked when the device setup phase is complete.
 	 *        Indicates that the device is ready for data transfer.
-	 * @return 0 on success, non-zero on failure.
 	 */
-	int(* setup)(void);
+	void (* setup)(void);
 
 	/**
 	* @brief Callback invoked when a bulk IN data transfer (Receive) is complete.
 	* @param[in] buf: Pointer to the buffer containing received data.
 	* @param[in] len: Length of the valid received data in bytes.
-	* @return 0 on success, non-zero on failure.
 	*/
-	int(* bulk_received)(u8 *buf, u32 len);
+	void (* received)(u8 *buf, u32 len);
 } usbh_cdc_ecm_state_cb_t;
 
 typedef struct {
@@ -184,9 +179,8 @@ int usbh_cdc_ecm_init(const usbh_cdc_ecm_state_cb_t *cb, const usbh_cdc_ecm_priv
 
 /**
  * @brief  De-initializes the CDC ECM host class driver and releases resources.
- * @return 0 (HAL_OK) on success, non-zero on failure.
  */
-int usbh_cdc_ecm_deinit(void);
+void usbh_cdc_ecm_deinit(void);
 
 /**
  * @brief  Selects the appropriate configuration index for the device.
@@ -213,9 +207,8 @@ u8 usbh_cdc_ecm_usb_is_ready(void);
  * @brief  Signal that the upper layer has finished all pre-transfer preparation
  *         (e.g. 4G dongle AT configuration) and Ethernet data transfer may start.
  *         Until this is called, SOF withholds bulk/intr transfer scheduling.
- * @return HAL_OK.
  */
-u8 usbh_cdc_ecm_prepare_done(void);
+void usbh_cdc_ecm_prepare_done(void);
 
 /**
  * @brief  Transmits an Ethernet packet to the device via the Bulk OUT endpoint.

@@ -12,6 +12,7 @@ const struct WakeEvent_TypeDef sleep_wevent_config[] = {
 	{WAKE_SRC_WIFI_FISR_FESR_IRQ,			WAKEUP_NP},		/* For WiFi wakeup, do not change it*/
 	{WAKE_SRC_AP_WAKE_IRQ,					WAKEUP_NP},
 	{WAKE_SRC_GPIOA,						WAKEUP_AP},
+	{WAKE_SRC_SDIO_BT,                      WAKEUP_NULL},
 	{WAKE_SRC_BT_CTRL_HIGH,					WAKEUP_NULL},
 	{WAKE_SRC_BT_CTRL_LOW,					WAKEUP_NULL},
 	{0xFFFFFFFF,							WAKEUP_NULL},	/* Table end */

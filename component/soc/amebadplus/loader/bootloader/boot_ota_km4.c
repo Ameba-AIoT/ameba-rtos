@@ -309,20 +309,16 @@ u8 BOOT_OTA_LoadIMGAll(u8 ImgIndex)
 		return FALSE;
 	}
 
-	/* Calculate and validate image hash AFTER both signature verifications pass */
-	if ((SecureBootEn == DISABLE) && (SecureBootEn_PQC == DISABLE)) {
-		/* No secure boot enabled, skip hash validation */
-		return TRUE;
-	} else {
-		/* At least one secure boot method enabled, validate hash */
-		ret = SBOOT_Validate_ImgHash(Manifest[ImgIndex].HashAlg, Manifest[ImgIndex].ImgHash, SubImgInfo, Index);
-		if (ret != 0) {
-			goto SBOOT_FAIL;
-		}
-
-		RTK_LOGI(TAG, "IMG2 VERIFY PASS\n");
-		return TRUE;
+	/* Calculate and validate image hash AFTER both signature verifications pass.*/
+	CRYPTO_SHA_Init(NULL);
+	ret = SBOOT_Validate_ImgHash(Manifest[ImgIndex].HashAlg, Manifest[ImgIndex].ImgHash, SubImgInfo, Index);
+	if (ret != 0) {
+		goto SBOOT_FAIL;
 	}
+
+	RTK_LOGI(TAG, "IMG2 VERIFY PASS%s\n", ((SecureBootEn != DISABLE) || (SecureBootEn_PQC != DISABLE)) ? " with Secure Boot" : "");
+
+	return TRUE;
 
 SBOOT_FAIL:
 	RTK_LOGE(TAG, "IMG2 VERIFY FAIL, ret = %d\n", ret);

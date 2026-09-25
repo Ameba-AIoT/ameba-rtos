@@ -67,7 +67,7 @@ class OtaPrependHeader(OperationBase):
 
         for img_type, img_id in self.image_list.items():
             for img in self.images[img_type]:
-                self.update_header(img, img_id)
+                self.update_header(img, self.resolve_img_id(img, img_id))
 
         full_images = []
         for t in self.image_list.keys():
@@ -88,6 +88,17 @@ class OtaPrependHeader(OperationBase):
 
     def post_process(self) -> Error:
         return Error.success()
+
+    def resolve_img_id(self, image_file:str, default_id:int) -> int:
+        # SOLO: the km4ns "iot_app.bin" ends with "_app" so it classifies as
+        # APP_ALL (ImgID 1), but it is an independent NP image and must be
+        # stamped as OTA_IMGID_NP (2) to route to the NP OTA slot. Detect it by
+        # the "iot" filename prefix (no other SoC produces such an image).
+        # NOTE: this relies on the km4ns product being named "iot_app.bin".
+        name = os.path.splitext(os.path.basename(image_file))[0]
+        if name.startswith('iot'):
+            return 2
+        return default_id
 
     def update_header(self, image_file:str, image_id:int) -> None:
         image_size = os.path.getsize(image_file)

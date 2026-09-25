@@ -15,10 +15,6 @@ ameba_list_append(public_includes
     port
 )
 
-ameba_list_append(public_libraries
-    ${c_SDK_LIB_APPLICATION_DIR}/lib_bt_stack.a
-)
-
 # Component public part, user config end
 #----------------------------------------#
 
@@ -45,29 +41,15 @@ set(private_compile_options)         #private compile_options
 #------------------------------#
 # Component private part, user config begin
 
-if (NOT CONFIG_AMEBA_RLS)  # Only do this when build stack lib (before release)
-    execute_process(
-        COMMAND git log -1 --format=%H
-        WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
-        OUTPUT_VARIABLE GIT_REPO_HASH
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-
-    set(VERSION_HEADER "${CMAKE_CURRENT_LIST_DIR}/stack/common/stack_version.h")
-
-    configure_file(
-        "${CMAKE_CURRENT_LIST_DIR}/stack/common/stack_version.h.in"
-        "${VERSION_HEADER}"
-        @ONLY
-    )
-endif()
-
 ameba_list_append(private_sources
     hci_driver/buf.c
 
     stack/common/addr.c
     stack/common/rpa.c
     stack/common/bt_str.c
+
+    stack/crypto/bt_crypto.c
+    stack/crypto/bt_crypto_tc.c
 
     stack/host/addr.c
     stack/host/buf.c
@@ -89,26 +71,6 @@ ameba_list_append(private_sources
     stack/host/settings.c
     stack/host/aes_ccm.c
     stack/host/direction.c
-)
-ameba_list_append_if(CONFIG_BT_DUAL_MODE private_sources
-    stack/host/classic/br.c
-    stack/host/classic/sco.c
-    stack/host/classic/sdp.c
-    stack/host/classic/ssp.c
-    stack/host/classic/a2dp.c
-    stack/host/classic/avdtp.c
-    stack/host/classic/keys_br.c
-    stack/host/classic/l2cap_br.c
-    stack/host/classic/rfcomm.c
-    stack/host/classic/hfp_hf.c
-    stack/host/classic/hfp_ag.c
-    stack/host/classic/at.c
-    stack_ext/avctp.c
-    stack_ext/avrcp.c
-    stack_ext/spp.c
-    stack_ext/goep.c
-    stack_ext/opp.c
-    stack_ext/pbap.c
 )
 
 if (CONFIG_BT_MESH_PROVISIONER_SUPPORT OR CONFIG_BT_MESH_DEVICE_SUPPORT)
@@ -160,15 +122,13 @@ if (CONFIG_BT_MESH_PROVISIONER_SUPPORT OR CONFIG_BT_MESH_DEVICE_SUPPORT)
         stack/mesh/priv_beacon_srv.c
     )
 endif()
+
 ameba_list_append_if(CONFIG_BT_MESH_DEVICE_SUPPORT private_sources
     stack/mesh/lpn.c
 )
 
 ameba_list_append(private_sources
-    stack/crypto/bt_crypto.c
-    stack/crypto/bt_crypto_tc.c
-
-#    port/zephyr_log.c
+    port/zephyr_log.c
     port/zephyr_queue.c
     port/zephyr_time.c
     port/zephyr_thread.c
@@ -182,15 +142,17 @@ ameba_list_append(private_sources
 
     settings/settings.c
     settings/settings_store.c
-    settings/settings_line.c
     settings/settings_init.c
     settings/settings_kv.c
+
     util/dec.c
     util/hex.c
     util/crc8_sw.c
 )
 
-ameba_list_append_if(CONFIG_BT_SDN private_sources hci_driver/hci_h4.c)
+ameba_list_append_if(CONFIG_BT_SDN private_sources
+    hci_driver/hci_h4.c
+)
 
 ameba_list_append(private_includes
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -202,9 +164,6 @@ ameba_list_append(private_includes
     stack
     stack/host
     ${c_CMPT_BLUETOOTH_DIR}/driver/hci
-)
-
-ameba_list_append_if(CONFIG_BT_DUAL_MODE private_includes
 )
 
 ameba_list_append(private_compile_options
@@ -225,7 +184,7 @@ endforeach()
 #WARNING: Select right API based on your component's release/not-release/standalone
 
 ###NOTE: For open-source component, always build from source
-ameba_add_external_app_library(bt_stack
+ameba_add_internal_library(zephyr_stack
     p_SOURCES
         ${private_sources}
     p_INCLUDES
@@ -236,16 +195,5 @@ ameba_add_external_app_library(bt_stack
         ${private_compile_options}
     p_REMOVE_INCLUDES_RECURSIVE
         ${c_BASEDIR}/component/lwip
-)
-
-ameba_add_internal_library(zephyr_log
-    p_SOURCES
-        zephyr_log.c
-    p_INCLUDES
-        ${private_includes}
-    p_DEFINITIONS
-        ${private_definitions}
-    p_COMPILE_OPTIONS
-        ${private_compile_options}
 )
 ##########################################################################################

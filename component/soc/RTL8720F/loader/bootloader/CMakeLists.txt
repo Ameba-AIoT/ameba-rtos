@@ -49,9 +49,15 @@ if("${c_MCU_PROJECT_NAME}" STREQUAL "km4tz")
     )
     if(CONFIG_SOLO)
         ameba_list_append(private_sources
-            ameba_solo.c
+            boot_solo.c
         )
     endif()
+endif()
+
+if("${c_MCU_PROJECT_NAME}" STREQUAL "km4ns")
+    ameba_list_append(private_sources
+        bootloader_km4ns.c
+    )
 endif()
 
 if ((NOT CONFIG_WHC_INTF_IPC) AND CONFIG_WHC_DEV)
