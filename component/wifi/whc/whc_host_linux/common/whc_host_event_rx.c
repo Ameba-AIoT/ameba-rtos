@@ -125,9 +125,14 @@ static void whc_host_event_join_status_indicate(struct event_priv_t *event_priv,
 				wdev = global_idev.pwdev_global[1];
 			}
 		} else {
-			if (global_idev.p2p_global.pd_pwdev && memcmp((rx_mgnt_info->frame + 4), global_idev.p2p_global.pd_pwdev->address, 6) == 0) {
-				wdev =	global_idev.p2p_global.pd_pwdev;
-			} else if (global_idev.p2p_global.p2p_role == P2P_ROLE_CLIENT) { /* port0 is used by GC */
+			/* AUTH (incl. SAE) and other mgmt frames must go to the station
+			 * netdev, not the P2P device wdev (pd_pwdev has no netdev).
+			 * pd_pwdev->address==port0 MAC, so DA match would wrongly pick it.
+			 */
+			if (global_idev.pwdev_global[1] && global_idev.pndev[1] &&
+				(rtw_netdev_priv_is_on(global_idev.pndev[1]) ||
+				 global_idev.p2p_global.p2p_role == P2P_ROLE_CLIENT)) {
+				/* wlan1 is the active station/GC port */
 				wdev = global_idev.pwdev_global[1];
 			} else {
 				wdev = global_idev.pwdev_global[0];							/* port0 is used by STA */

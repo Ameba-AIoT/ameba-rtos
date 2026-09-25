@@ -262,7 +262,7 @@ static uint16_t bt_stack_init(void *app_config)
 #endif
 #if defined(RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT) && RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT
 		default_conf.max_tx_octets = 0x40;
-		default_conf.max_tx_time = 0x200;
+		default_conf.max_tx_time = 0x270;
 #endif
 		default_conf.key_convert_le_to_bredr = false;
 #if defined(RTK_BLE_SET_TX_QUEUE_NUM) && RTK_BLE_SET_TX_QUEUE_NUM
