@@ -858,7 +858,6 @@ void whc_event_wifi_set_usr_config(u32 api_id, u32 *param_buf)
 	u8 *pwifi_usrcfg = rtos_mem_zmalloc(sizeof(struct wifi_user_conf));
 
 	memcpy(pwifi_usrcfg, &wifi_user_config, sizeof(struct wifi_user_conf));
-	wifi_set_rom2flash_user_config();
 	whc_send_api_ret_value(api_id, pwifi_usrcfg, sizeof(struct wifi_user_conf));
 	rtos_mem_free(pwifi_usrcfg);
 }

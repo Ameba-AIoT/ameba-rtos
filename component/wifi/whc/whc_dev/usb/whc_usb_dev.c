@@ -302,6 +302,9 @@ void whc_usb_dev_init(void)
 	rtk_log_level_set(TAG_WLAN_INIC, RTK_LOG_DEBUG);
 
 	wifi_set_user_config();
+	/* sync usrcfg to rom2flash mirror unconditionally (wpaoD or wpaoH), otherwise
+	 * bw_40_enable etc. stay at compile-time zero (RSWLANDIOT-16608) */
+	wifi_set_rom2flash_user_config();
 	init_skb_pool(wifi_user_config.skb_num_np, wifi_user_config.skb_buf_size ? wifi_user_config.skb_buf_size : MAX_SKB_BUF_SIZE, SKB_CACHE_SZ);
 
 	whc_usb_dev_device_init();
