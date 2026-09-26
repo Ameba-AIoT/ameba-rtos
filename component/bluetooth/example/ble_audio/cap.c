@@ -3793,7 +3793,7 @@ int bt_cap_main(uint8_t role, uint8_t enable)
 			bt_app_conf.prefer_tx_phy = 1 | 1 << 1 | 1 << 2;
 			bt_app_conf.prefer_rx_phy = 1 | 1 << 1 | 1 << 2;
 			bt_app_conf.max_tx_octets = 0x40;
-			bt_app_conf.max_tx_time = 0x200;
+			bt_app_conf.max_tx_time = 0x270;
 			bt_app_conf.le_audio_app_conf = p_acceptor_info->lea_app_conf;
 			/* Enable BT */
 			BT_APP_PROCESS(rtk_bt_enable(&bt_app_conf));
@@ -3883,7 +3883,7 @@ int bt_cap_main(uint8_t role, uint8_t enable)
 			bt_app_conf.prefer_tx_phy = 1 | 1 << 1 | 1 << 2;
 			bt_app_conf.prefer_rx_phy = 1 | 1 << 1 | 1 << 2;
 			bt_app_conf.max_tx_octets = 0x40;
-			bt_app_conf.max_tx_time = 0x200;
+			bt_app_conf.max_tx_time = 0x270;
 			bt_app_conf.le_audio_app_conf = p_initiator_info->lea_app_conf;
 			/* Enable BT */
 			BT_APP_PROCESS(rtk_bt_enable(&bt_app_conf));
@@ -3945,7 +3945,7 @@ int bt_cap_main(uint8_t role, uint8_t enable)
 			bt_app_conf.prefer_tx_phy = 1 | 1 << 1 | 1 << 2;
 			bt_app_conf.prefer_rx_phy = 1 | 1 << 1 | 1 << 2;
 			bt_app_conf.max_tx_octets = 0x40;
-			bt_app_conf.max_tx_time = 0x200;
+			bt_app_conf.max_tx_time = 0x270;
 			bt_app_conf.le_audio_app_conf = p_commander_info->lea_app_conf;
 			/* Enable BT */
 			BT_APP_PROCESS(rtk_bt_enable(&bt_app_conf));
