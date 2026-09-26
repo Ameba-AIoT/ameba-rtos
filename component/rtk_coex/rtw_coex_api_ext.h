@@ -27,14 +27,14 @@ static inline struct port_pin_t get_port_pin_from_name(char *pin_name)
 		port = PAD_PORT_F; //PORT_F
 
 	} else {
-		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "[COEX][EXT] !!!!!!!!!! error pin name, SHOULD be like PA_3 !!!!!!!!!!!");
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "ext:error pin name,SHOULD be like PA_3");
 		return pad_port;
 	}
 	underline = strchr(pin_name, '_');
 	pin = strtoul(underline + 1, (char **)NULL, 10);
 
 	if (pin >= 32) {
-		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "[COEX][EXT] !!!!!!!!!! error pin name, SHOULD less than 32 !!!!!!!!!!!");
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "ext:error pin name,SHOULD < 32");
 		return pad_port;
 	}
 

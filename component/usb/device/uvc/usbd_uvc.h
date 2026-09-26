@@ -132,6 +132,13 @@ extern "C" {
 #define USBD_UVC_OT_SOURCE_ID                    0x02U  /* Output Terminal sourced from PU (unit id 2) */
 #endif
 
+/* Removed VC status-interrupt endpoint (DK-22): EP1 IN 0x81 was declared in the
+   descriptor but never opened by usbd_uvc_set_config()/clear_config() — a dead,
+   unusable endpoint that could also collide with another composite function's own
+   EP1 IN. Both the standard ENDPOINT (7B) and its CS_ENDPOINT (5B) descriptor were
+   removed; every wTotalLength that counted them must subtract this. */
+#define USBD_UVC_VC_INTR_EP_DESC_LEN              12U
+
 /* Exported macros -----------------------------------------------------------*/
 
 /* Exported types ------------------------------------------------------------*/
@@ -283,8 +290,6 @@ typedef struct {
 	usb_os_lock_t output_lock;
 	usb_os_sema_t output_queue_sema;
 	usb_os_sema_t output_frame_sema;
-	usb_os_queue_t complete_bf_req;
-	void *complete_bf_task;
 	__IO u16 sof_count;              /**< Software SOF counter (11-bit) maintained in .sof; used as SCR SOF token. */
 	__IO u8 armed;                   /**< 1 = an ISOC IN xfer is in flight (set/cleared only in ISR). */
 	__IO u8 stall_sof;               /**< SOF count since arm; watchdog for incompISOIN recovery. */
@@ -326,10 +331,8 @@ typedef struct {
 	usb_os_lock_t bod_mutex;
 	usb_os_lock_t lock;
 	usbd_ep_t ep_isoc_in;
-	rtos_queue_t uvc_cmd_queue;
 	usbd_uvc_format_t *uvc_format_ptr;
 	const usbd_uvc_ep_cfg_t *ep_cfg;
-	u8 *uvc_in_buf;
 	u16 event_length;
 	u16 interface_number;
 	u8 uvc_cmd_blocked;
@@ -339,13 +342,15 @@ typedef struct {
 #endif
 	u8 running;
 	u8 init_done;        /* 0: not initialized, 1: fully initialized */
-	u8 cmd_task_alive;   /* 1 while usbd_uvc_cmd_handler runs; deinit joins on it */
 	u8 frame_task_alive; /* 1 while usbd_uvc_get_frame_handler runs; deinit joins on it */
 	u8 frame_done;
 	u8 config;
 	u8 ctrl_req;
 	u8 ctrl_data_len;
+	u8 ctrl_req_pending;    /**< 1 if ctrl_req is waiting for its EP0 OUT data stage. */
 	u8 from_composite;      /**< Flag indicating if part of a composite device. */
+	u8 if_base;             /**< First interface number of this class; 0 in standalone mode unless
+	                             the composite framework rebases it via set_interface_base(). */
 } usbd_uvc_dev_t;
 
 /* Exported variables --------------------------------------------------------*/

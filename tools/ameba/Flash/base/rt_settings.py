@@ -56,6 +56,7 @@ class RtSettings():
         self.auto_reset_device_with_dtr_rts_file = _c("AutoResetDeviceWithDtrRtsTimingFile", "Reset.cfg")
         self.serial_initial_read_timeout_in_second = round(_c("SerialInitialReadTimeoutInMillisecond", 20) / 1000, 2)
         self.rom_check_alive_timeout_in_second = round(_c("RomCheckAliveTimeoutMilliSeconds", 1000) / 1000, 2)
+        self.watchdog_timeout_in_second = float(_c("WatchdogTimeoutInSeconds", 1200))
 
         # PostProcess is shared: CLI writes "NONE"/"RESET", GUI uses "NONE"/"INDICATION"/"RESET"/"BOOT"
         self.post_process = _c("PostProcess", "RESET")
@@ -106,6 +107,7 @@ class RtSettings():
                 "WriteResponseTimeoutInMillisecond": int(self.write_response_timeout_in_second * 1000),
                 "FloaderBootDelayInMillisecond": int(self.floader_boot_delay_in_second * 1000),
                 "RomCheckAliveTimeoutMilliSeconds": int(self.rom_check_alive_timeout_in_second * 1000),
+                "WatchdogTimeoutInSeconds": self.watchdog_timeout_in_second,
                 "AutoSwitchToDownloadModeWithDtrRts": self.auto_switch_to_download_mode_with_dtr_rts,
                 "AutoSwitchToDownloadModeWithDtrRtsFirst": self.auto_switch_to_download_mode_with_dtr_rts_first,
                 "AutoResetDeviceWithDtrRts": self.auto_reset_device_with_dtr_rts,

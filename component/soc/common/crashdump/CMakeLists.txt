@@ -35,6 +35,8 @@ set(private_sources)                 #private source files, NOTE: relative path 
 set(private_includes)                #private include directories, NOTE: relative path is OK
 set(private_definitions)             #private definitions
 set(private_compile_options)         #private compile_options
+set(open_sources)                    #source files of the open-source part
+set(open_definitions)                #definitions of the open-source part
 
 #------------------------------#
 # Component private part, user config begin
@@ -50,6 +52,17 @@ if(${c_ISA_TYPE} STREQUAL "ARM")
             arm/ameba_v8m_fault_diagnosis.c
         )
     endif()
+    # IMAGE_DIR carries the part number selected for the build(e.g. build_RTL8726E), so it
+    # must not be baked into lib_crashdump.a: the lib is released built for one part number
+    # of the IC, and every other part number would then print that one. Same for the
+    # toolchain path, which belongs to the machine doing the build.
+    ameba_list_append(open_sources
+        ameba_crashdump_env.c
+    )
+    ameba_list_append(open_definitions
+        SDK_TOOLCHAIN="${SDK_TOOLCHAIN}"
+        IMAGE_DIR="${c_SDK_IMAGE_TARGET_DIR}"
+    )
 elseif(${c_ISA_TYPE} STREQUAL "RISC-V")
     ameba_list_append(private_sources
         ameba_freertos_backtrace.c
@@ -60,10 +73,6 @@ else()
     ameba_fatal("crashdump's CMakeLists.txt is not ready for current isa type: ${c_ISA_TYPE}")
 endif()
 
-ameba_list_append(private_definitions
-    SDK_TOOLCHAIN="${SDK_TOOLCHAIN}"
-    IMAGE_DIR="${c_SDK_IMAGE_TARGET_DIR}"
-)
 # Component private part, user config end
 #------------------------------#
 
@@ -82,4 +91,14 @@ ameba_add_external_soc_library(crashdump
     p_DEPENDENCIES
         ${c_BUILD_INFO}
 )
+
+###NOTE: For open-source part, always build from source, even in a released SDK
+if(open_sources)
+    ameba_add_internal_library(crashdump_env
+        p_SOURCES
+            ${open_sources}
+        p_DEFINITIONS
+            ${open_definitions}
+    )
+endif()
 ##########################################################################################

@@ -119,10 +119,10 @@ typedef struct {
 
 /* Private function prototypes -----------------------------------------------*/
 static int usbh_cdc_ncm_attach(usb_host_t *host);
-static int usbh_cdc_ncm_detach(usb_host_t *host);
-static int usbh_cdc_ncm_process(usb_host_t *host, usbh_event_t *event);
+static void usbh_cdc_ncm_detach(usb_host_t *host);
+static void usbh_cdc_ncm_process(usb_host_t *host, usbh_event_t *event);
 static int usbh_cdc_ncm_setup(usb_host_t *host);
-static int usbh_cdc_ncm_sof(usb_host_t *host);
+static void usbh_cdc_ncm_sof(usb_host_t *host);
 static void usbh_cdc_ncm_process_bulk_out(usb_host_t *host);
 static void usbh_cdc_ncm_process_bulk_in(usb_host_t *host);
 static void usbh_cdc_ncm_process_intr_in(usb_host_t *host);
@@ -566,7 +566,10 @@ static void usbh_cdc_ncm_config_dongle_mac(usb_host_t *host)
 static int usbh_cdc_ncm_ctrl_setting(usb_host_t *host)
 {
 	usbh_cdc_ncm_host_t *cdc = &usbh_cdc_ncm_host;
-	u8 ret_state = HAL_ERR_UNKNOWN;
+	/* HAL_BUSY = sequence still running; only the default case (sub_status past
+	 * the last step) reports HAL_OK. Must not be an error code: the core treats
+	 * any non-OK, non-BUSY setup() status as terminal and drops the class. */
+	u8 ret_state = HAL_BUSY;
 	u8 state = HAL_OK;
 
 	switch (cdc->sub_status) {
@@ -1025,8 +1028,8 @@ static int usbh_cdc_ncm_parse_ntb16_block(u8 *ntb_buf, u32 ntb_len)
 				break;
 			}
 
-			if ((cdc->cb != NULL) && (cdc->cb->bulk_received != NULL)) {
-				cdc->cb->bulk_received(ntb_buf + dg_index, dg_len);
+			if ((cdc->cb != NULL) && (cdc->cb->received != NULL)) {
+				cdc->cb->received(ntb_buf + dg_index, dg_len);
 			}
 			delivered++;
 		}
@@ -1112,8 +1115,8 @@ static int usbh_cdc_ncm_attach(usb_host_t *host)
 
 	cdc->state = CDC_NCM_STATE_IDLE;
 
-	if ((cdc->cb != NULL) && (cdc->cb->attach != NULL)) {
-		cdc->cb->attach();
+	if ((cdc->cb != NULL) && (cdc->cb->attached != NULL)) {
+		cdc->cb->attached();
 	}
 
 	return HAL_OK;
@@ -1122,9 +1125,9 @@ static int usbh_cdc_ncm_attach(usb_host_t *host)
 /**
   * @brief  Usb Detach callback function.
   * @param  host: Host handle
-  * @retval HAL_OK
+  * @retval None
   */
-static int usbh_cdc_ncm_detach(usb_host_t *host)
+static void usbh_cdc_ncm_detach(usb_host_t *host)
 {
 	UNUSED(host);
 	usbh_cdc_ncm_host_t *cdc = &usbh_cdc_ncm_host;
@@ -1139,11 +1142,9 @@ static int usbh_cdc_ncm_detach(usb_host_t *host)
 
 	usbh_cdc_ncm_deinit_all_pipe();
 
-	if ((cdc->cb != NULL) && (cdc->cb->detach != NULL)) {
-		cdc->cb->detach();
+	if ((cdc->cb != NULL) && (cdc->cb->detached != NULL)) {
+		cdc->cb->detached();
 	}
-
-	return HAL_OK;
 }
 
 /**
@@ -1191,9 +1192,9 @@ static int usbh_cdc_ncm_setup(usb_host_t *host)
 /**
   * @brief  Usb State Machine handling callback
   * @param  host: Host handle
-  * @retval Status
+  * @retval None
   */
-static int usbh_cdc_ncm_process(usb_host_t *host, usbh_event_t *event)
+static void usbh_cdc_ncm_process(usb_host_t *host, usbh_event_t *event)
 {
 	u8 req_status = HAL_OK;
 	usbh_cdc_ncm_host_t *cdc = &usbh_cdc_ncm_host;
@@ -1226,8 +1227,6 @@ static int usbh_cdc_ncm_process(usb_host_t *host, usbh_event_t *event)
 		usb_os_sleep_ms(1);
 		break;
 	}
-
-	return req_status;
 }
 
 /**
@@ -1235,9 +1234,9 @@ static int usbh_cdc_ncm_process(usb_host_t *host, usbh_event_t *event)
   * @note   This function is called within an interrupt service routine (ISR) context;
   *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param[in] host: USB host handle.
-  * @return 0 on success, non-zero on failure.
+  * @retval None
   */
-static int usbh_cdc_ncm_sof(usb_host_t *host)
+static void usbh_cdc_ncm_sof(usb_host_t *host)
 {
 	UNUSED(host);
 
@@ -1247,8 +1246,6 @@ static int usbh_cdc_ncm_sof(usb_host_t *host)
 		usbh_cdc_ncm_bulk_receive();
 		usbh_cdc_ncm_bulk_tx();
 	}
-
-	return HAL_OK;
 }
 
 /**
@@ -1995,7 +1992,11 @@ int usbh_cdc_ncm_init(const usbh_cdc_ncm_state_cb_t *cb, const usbh_cdc_ncm_priv
 		}
 	}
 
-	usbh_register_class(&usbh_cdc_ncm_driver);
+	ret = usbh_register_class(&usbh_cdc_ncm_driver);
+	if (ret != HAL_OK) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Register class fail %d\n", ret);
+		goto user_deinit;
+	}
 
 #if USBH_CDC_NCM_STATE_TRACE_ENABLE
 	usbh_cdc_ncm_trace_task_init();
@@ -2003,6 +2004,10 @@ int usbh_cdc_ncm_init(const usbh_cdc_ncm_state_cb_t *cb, const usbh_cdc_ncm_priv
 
 	return ret;
 
+user_deinit:
+	if (cb->deinit != NULL) {
+		cb->deinit();
+	}
 user_init_fail:
 	cdc->cb = NULL;
 	USBH_CDC_NCM_FREE_MEM(cdc->dongle_ctrl_buf);
@@ -2025,9 +2030,8 @@ tx_agg_buf_fail:
 
 /**
   * @brief  Deinitialize the USB NCM Class
-  * @retval Status
   */
-int usbh_cdc_ncm_deinit(void)
+void usbh_cdc_ncm_deinit(void)
 {
 	usbh_cdc_ncm_host_t *cdc = &usbh_cdc_ncm_host;
 #if defined(CONFIG_USBH_CDC_NCM_TX_AGGREGATION)
@@ -2062,8 +2066,6 @@ int usbh_cdc_ncm_deinit(void)
 	if ((cdc->cb != NULL) && (cdc->cb->deinit != NULL)) {
 		cdc->cb->deinit();
 	}
-
-	return HAL_OK;
 }
 
 /**

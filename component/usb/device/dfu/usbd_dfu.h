@@ -210,7 +210,7 @@ typedef struct {
 
 /* Class-specific string descriptors: indices above USBD_IDX_SERIAL_STR, laid out as a
  * window whose base is the standalone default below, or the one assigned by the composite
- * framework via set_class_str_base(). */
+ * framework via set_str_base(). */
 #define USBD_DFU_STR_IDX_IFACE            0U                         /* Ordinal of the interface string inside the class string window */
 #define USBD_DFU_CLASS_STR_COUNT          1U                         /* Class-specific string count: iInterface only */
 #define USBD_DFU_CLASS_STR_BASE_DEFAULT   (USBD_IDX_SERIAL_STR + 1U) /* Standalone base, right above the device-global strings */
@@ -231,6 +231,7 @@ typedef struct {
 #if USBD_DFU_CAN_UPLOAD
 	u8                 upload_last;     /* 1 = last UPLOAD block was transmitted */
 #endif
+	u8                 ep0_in_owned;    /* 1 = the in-flight EP0 IN data stage was armed by DFU */
 	u8                 alt_setting;
 	/* Async write support */
 	usb_os_sema_t      write_sema;      /* ISR signals write_task when a block is ready */
@@ -258,7 +259,7 @@ typedef struct {
 	u8                from_composite;   /**< Flag indicating if part of a composite device. */
 	u8                cls_str_base;     /**< First class-specific string index; the standalone default
 	                                         (right above USBD_IDX_SERIAL_STR) unless the composite
-	                                         framework rebases it via set_class_str_base(). */
+	                                         framework rebases it via set_str_base(). */
 } usbd_dfu_dev_t;
 
 /* Exported variables --------------------------------------------------------*/
@@ -284,9 +285,10 @@ int usbd_composite_dfu_init(usbd_dfu_cb_t *cb);
 
 /**
  * @brief  Unregister the DFU device class driver and release resources.
- * @retval 0 on success, non-zero on failure.
+ * @retval None. This is a teardown path: the class is always unregistered and every resource it
+ *         owns released, so there is nothing for the caller to recover from.
  */
-int usbd_dfu_deinit(void);
+void usbd_dfu_deinit(void);
 
 /**
  * @brief  Set the poll timeout reported to the host in bwPollTimeout while

@@ -31,6 +31,16 @@
 /* Include the context structure definitions for those drivers that were
  * declared during the autogeneration process. */
 
+/* RTK: hardware SHA-2 transparent driver context. */
+#if defined(RTK_PSA_HASH_DRIVER)
+#include "rtk_psa_hash_context.h"
+#endif
+
+/* RTK: hardware AES multipart cipher driver context. */
+#if defined(RTK_PSA_CIPHER_DRIVER)
+#include "rtk_psa_cipher_context.h"
+#endif
+
 #if defined(MBEDTLS_TEST_LIBTESTDRIVER1)
 #if defined(TF_PSA_CRYPTO_TEST_LIBTESTDRIVER1)
 #include "mbedtls/private/libtestdriver1-crypto_builtin_primitives.h"
@@ -112,6 +122,9 @@ typedef union {
 #if defined(PSA_CRYPTO_DRIVER_TEST)
     mbedtls_transparent_test_driver_hash_operation_t test_driver_ctx;
 #endif
+#if defined(RTK_PSA_HASH_DRIVER)
+    rtk_psa_hash_operation_t rtk_ctx;
+#endif
 } psa_driver_hash_context_t;
 
 typedef union {
@@ -128,6 +141,9 @@ typedef union {
 #if defined(PSA_CRYPTO_DRIVER_TEST)
     mbedtls_transparent_test_driver_cipher_operation_t transparent_test_driver_ctx;
     mbedtls_opaque_test_driver_cipher_operation_t opaque_test_driver_ctx;
+#endif
+#if defined(RTK_PSA_CIPHER_DRIVER)
+    rtk_psa_cipher_operation_t rtk_ctx;
 #endif
 } psa_driver_cipher_context_t;
 

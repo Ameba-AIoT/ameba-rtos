@@ -155,6 +155,17 @@ SECTIONS
 		__bss_end__ = .;
 	} > IMG2_DATA_LMA_REGION
 
+#if defined(CONFIG_SOLO)
+	/* SOLO: KM4TZ<->KM4NS shared SRAM (own region, outside km4ns private .bss).
+	 * KM4TZ must be able to write these even when km4ns SRAM is isolated. */
+	.solo_share_ram (NOLOAD):
+	{
+		. = ALIGN (32);
+		KEEP(*(.solo_share*))
+		. = ALIGN (32);
+	} > KM4NS_SHARE_RAM
+#endif
+
 	.ram_image2.nocache.data (NOLOAD):
 	{
 		. = ALIGN (32);

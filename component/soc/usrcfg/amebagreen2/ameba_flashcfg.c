@@ -39,9 +39,9 @@ const FlashInfo_TypeDef Flash_AVL[] = {
 	{0xC8,			0x000000FF,		FlashClass2,		0x000043FC,		NULL},	/* GD normal: MANUFACTURER_ID_GD */
 	{0x28C2,		0x0000FFFF,		FlashClass6,		0x000200FC,		NULL},	/* MXIC wide-range VCC: MANUFACTURER_ID_MXIC */
 	{0xC2,			0x000000FF,		FlashClass3,		0x000000FC,		NULL},	/* MXIC normal: MANUFACTURER_ID_BOHONG */
-	{0x68,			0x000000FF,		FlashClass3,		0x000000FC,		NULL},	/* Hua Hong */
+	{0x68,			0x000000FF,		FlashClass2,		0x000043FC,		NULL},	/* Hua Hong */
 	{0x51,			0x000000FF,		FlashClass3,		0x000000FC,		NULL},	/* GD MD serial */
-	{0x1C,			0x000000FF,		FlashClass4,		0x000000FC,		NULL},	/* ESMT: MANUFACTURER_ID_EON */
+	{0x1C,			0x000000FF,		FlashClass2,		0x000043FC,		NULL},	/* ESMT: MANUFACTURER_ID_EON */
 	{0x20,			0x000000FF,		FlashClass1,		0x000043FC,		NULL},	/* XMC: MANUFACTURER_ID_WINBOND */
 	{0x85,			0x000000FF,		FlashClass1,		0x000043FC,		NULL},  /* PUYA */
 	//{0x20,			0x000000FF,		FlashClass5,		0x000000FC,		NULL},	/* Micron: MANUFACTURER_ID_MICRON */

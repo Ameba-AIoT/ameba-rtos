@@ -13,6 +13,10 @@
 
 /* Private defines -----------------------------------------------------------*/
 
+/* Interface number of the only interface of this function, local to it: the composite
+   framework rebases wIndex to the function-local value before dispatching. */
+#define USBD_DFU_ITF_NUM                                0x00U
+
 /* Private types -------------------------------------------------------------*/
 
 /* Private macros ------------------------------------------------------------*/
@@ -27,7 +31,7 @@ static int usbd_dfu_ep0_data_in(usb_dev_t *dev, u8 status);
 static int usbd_dfu_ep0_data_out(usb_dev_t *dev);
 static void usbd_dfu_status_changed(usb_dev_t *dev, u8 old_status, u8 status);
 #ifdef CONFIG_USBD_COMPOSITE
-static u8 usbd_dfu_set_class_str_base(u8 base);
+static u8 usbd_dfu_set_str_base(u8 base);
 #endif
 static void usbd_dfu_reconf_task(void *param);
 
@@ -146,7 +150,7 @@ static const usbd_class_driver_t usbd_dfu_driver = {
 	.ep0_data_out   = usbd_dfu_ep0_data_out,
 	.status_changed = usbd_dfu_status_changed,
 #ifdef CONFIG_USBD_COMPOSITE
-	.set_class_str_base = usbd_dfu_set_class_str_base,
+	.set_str_base = usbd_dfu_set_str_base,
 #endif
 };
 
@@ -203,8 +207,26 @@ static void usbd_dfu_clear_config(usb_dev_t *dev, u8 config)
 {
 	usbd_dfu_dev_t *dfu = &usbd_dfu_dev;
 
-	UNUSED(dev);
 	UNUSED(config);
+
+	/* Ref USB 2.0 9.1.1.5: a bus reset or disconnect voids every control transfer in
+	 * progress, so the EP0 completion that would put a redirected buffer back never
+	 * arrives.  Restore both EP0 endpoints here, otherwise the next enumeration keeps
+	 * writing standard and DFU control responses into the DNLOAD/UPLOAD block buffer. */
+	if ((dfu->xfer_buf != NULL) && (dfu->ep0_default_buf != NULL)) {
+		if (dev->ep0_in.xfer_buf == dfu->xfer_buf) {
+			dev->ep0_in.xfer_buf     = dfu->ep0_default_buf;
+			dev->ep0_in.xfer_buf_len = dfu->ep0_default_buf_len;
+		}
+		if (dev->ep0_out.xfer_buf == dfu->xfer_buf) {
+			dev->ep0_out.xfer_buf     = dfu->ep0_default_buf;
+			dev->ep0_out.xfer_buf_len = dfu->ep0_default_buf_len;
+		}
+	}
+#if USBD_DFU_CAN_UPLOAD
+	dfu->upload_last = 0U;
+#endif
+	dfu->ep0_in_owned = 0U;
 
 	/* Idle state of whichever descriptor set is currently active.  During the
 	 * intentional detach/attach the mode is already DFU, so the re-enumeration
@@ -252,6 +274,41 @@ static int usbd_dfu_stall_error(usb_dev_t *dev, usbd_dfu_dev_t *dfu, usbd_dfu_st
 }
 
 /**
+ * @brief  Validate bmRequestType direction and wLength of a DFU class request.
+ *         Ref DFU 1.1 Table 3.2: every request has a fixed direction, and DETACH,
+ *         CLRSTATUS and ABORT carry no data stage (wLength = 0).
+ * @retval 1 if the request is well formed, 0 otherwise.
+ */
+static u8 usbd_dfu_req_is_valid(const usb_setup_req_t *req)
+{
+	u8 dir = req->bmRequestType & USB_REQ_DIR_MASK;
+	u8 valid;
+
+	switch (req->bRequest) {
+	case USB_DFU_REQ_DETACH:
+	case USB_DFU_REQ_CLRSTATUS:
+	case USB_DFU_REQ_ABORT:
+		/* No data stage: a non-zero wLength would leave EP0 unanswered because the
+		 * core only auto-completes the status stage when wLength is 0. */
+		valid = ((dir == USB_H2D) && (req->wLength == 0U)) ? 1U : 0U;
+		break;
+	case USB_DFU_REQ_DNLOAD:
+		valid = (dir == USB_H2D) ? 1U : 0U;
+		break;
+	case USB_DFU_REQ_UPLOAD:
+	case USB_DFU_REQ_GETSTATUS:
+	case USB_DFU_REQ_GETSTATE:
+		valid = (dir == USB_D2H) ? 1U : 0U;
+		break;
+	default:
+		valid = 0U;
+		break;
+	}
+
+	return valid;
+}
+
+/**
  * @brief  Handle DFU class SETUP requests (called from ISR).
  */
 static int usbd_dfu_setup(usb_dev_t *dev, usb_setup_req_t *req)
@@ -266,19 +323,27 @@ static int usbd_dfu_setup(usb_dev_t *dev, usb_setup_req_t *req)
 	case USB_REQ_TYPE_STANDARD:
 		switch (req->bRequest) {
 		case USB_REQ_SET_INTERFACE:
-			if (dev->dev_state == USBD_STATE_CONFIGURED) {
-				dfu->alt_setting = USB_LOW_BYTE(req->wValue);
-			} else {
+			/* Ref USB 2.0 Table 9-10: the whole wIndex is the interface number. This function
+			   owns one interface with alternate setting 0 only, anything else is a request
+			   error, ref DFU 1.1 4.2.3. */
+			if (dev->dev_state != USBD_STATE_CONFIGURED) {
 				ret = HAL_ERR_HW;
+			} else if ((req->wIndex != USBD_DFU_ITF_NUM) || (USB_LOW_BYTE(req->wValue) != 0U)) {
+				ret = HAL_ERR_HW;
+			} else {
+				dfu->alt_setting = 0U;
 			}
 			break;
 		case USB_REQ_GET_INTERFACE:
-			if (dev->dev_state == USBD_STATE_CONFIGURED) {
+			/* Ref USB 2.0 9.4.4: request error for an interface that does not exist */
+			if (dev->dev_state != USBD_STATE_CONFIGURED) {
+				ret = HAL_ERR_HW;
+			} else if (req->wIndex != USBD_DFU_ITF_NUM) {
+				ret = HAL_ERR_HW;
+			} else {
 				ep0_in->xfer_buf[0] = dfu->alt_setting;
 				ep0_in->xfer_len = 1U;
 				usbd_ep_transmit(dev, ep0_in);
-			} else {
-				ret = HAL_ERR_HW;
 			}
 			break;
 		case USB_REQ_GET_STATUS:
@@ -299,6 +364,20 @@ static int usbd_dfu_setup(usb_dev_t *dev, usb_setup_req_t *req)
 
 	case USB_REQ_TYPE_CLASS:
 		if ((req->bmRequestType & USB_REQ_RECIPIENT_MASK) != USB_REQ_RECIPIENT_INTERFACE) {
+			ret = HAL_ERR_HW;
+			break;
+		}
+		/* Ref DFU 1.1 3.1: wIndex of every DFU class request is the DFU interface number.
+		   Reject a foreign interface so composite dispatch can continue to its owner. */
+		if (req->wIndex != USBD_DFU_ITF_NUM) {
+			ret = HAL_ERR_HW;
+			break;
+		}
+		/* Ref DFU 1.1 Table 3.2 / USB 2.0 9.3.1: reject an unknown bRequest and any
+		   request whose direction or wLength does not match its definition, before it
+		   can arm the wrong EP0 direction or leave the control transfer unanswered.
+		   A request error stalls and leaves the DFU state untouched (USB 2.0 9.2.7). */
+		if (usbd_dfu_req_is_valid(req) == 0U) {
 			ret = HAL_ERR_HW;
 			break;
 		}
@@ -423,10 +502,14 @@ static int usbd_dfu_setup(usb_dev_t *dev, usb_setup_req_t *req)
 					ep0_in->xfer_buf     = dfu->xfer_buf;
 					ep0_in->xfer_buf_len = USBD_DFU_XFER_SIZE;
 					ep0_in->xfer_len     = MIN(len, req->wLength);
+					/* This EP0 IN data stage belongs to DFU: only its completion may
+					 * restore the buffer and advance the UPLOAD state machine. */
+					dfu->ep0_in_owned = 1U;
 					if (usbd_ep_transmit(dev, ep0_in) != HAL_OK) {
 						/* ARM failed — ep0_data_in will never fire; restore buffer now */
 						ep0_in->xfer_buf     = dfu->ep0_default_buf;
 						ep0_in->xfer_buf_len = dfu->ep0_default_buf_len;
+						dfu->ep0_in_owned = 0U;
 						ret = usbd_dfu_stall_error(dev, dfu, USBD_DFU_STATUS_ERR_STALLEDPKT);
 						break;
 					}
@@ -590,6 +673,15 @@ static int usbd_dfu_setup(usb_dev_t *dev, usb_setup_req_t *req)
 static int usbd_dfu_ep0_data_in(usb_dev_t *dev, u8 status)
 {
 	usbd_dfu_dev_t *dfu = &usbd_dfu_dev;
+
+	/* Ref USB 2.0 8.5.3: a control data stage belongs to exactly one request. Only the
+	 * UPLOAD data stage armed by this class is ours; report non-success for anything
+	 * else so the caller keeps looking for the owning function and DFU neither rewrites
+	 * dev->ep0_in nor enters dfuERROR on a foreign transfer's error. */
+	if (dfu->ep0_in_owned == 0U) {
+		return HAL_ERR_PARA;
+	}
+	dfu->ep0_in_owned = 0U;
 
 	/* Restore the EP0 IN buffer and its capacity to the core-allocated default */
 	dev->ep0_in.xfer_buf     = dfu->ep0_default_buf;
@@ -914,7 +1006,7 @@ static u16 usbd_dfu_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
  * @param  base: First class-specific string index for this class
  * @retval Number of class-specific string indices consumed
  */
-static u8 usbd_dfu_set_class_str_base(u8 base)
+static u8 usbd_dfu_set_str_base(u8 base)
 {
 	usbd_dfu_dev.cls_str_base = base;
 
@@ -1030,7 +1122,7 @@ static int usbd_dfu_private_init(usbd_dfu_cb_t *cb)
 	u8 saved_mode = dfu->mode;
 	usb_os_memset((void *)dfu, 0, sizeof(usbd_dfu_dev_t));
 
-	/* Standalone default; the composite framework rebases it via set_class_str_base() */
+	/* Standalone default; the composite framework rebases it via set_str_base() */
 	dfu->cls_str_base = USBD_DFU_CLASS_STR_BASE_DEFAULT;
 
 	dfu->xfer_buf = (u8 *)usb_os_malloc(USBD_DFU_XFER_SIZE);
@@ -1234,6 +1326,11 @@ int usbd_composite_dfu_init(usbd_dfu_cb_t *cb)
 	if (ret == HAL_OK) {
 		dfu->from_composite = 1;
 		ret = usbd_composite_register_driver(&usbd_dfu_driver);
+		if (ret != HAL_OK) {
+			/* private_init completed, so deinit is its exact reverse. from_composite is
+			   already 1, so the unregister inside is a no-op for an unregistered driver. */
+			usbd_dfu_deinit();
+		}
 	}
 	return ret;
 }
@@ -1242,17 +1339,13 @@ int usbd_composite_dfu_init(usbd_dfu_cb_t *cb)
 /**
  * @brief  Deinitialize the DFU device class driver.
  */
-int usbd_dfu_deinit(void)
+void usbd_dfu_deinit(void)
 {
 	usbd_dfu_dev_t *dfu = &usbd_dfu_dev;
 
-	if (dfu->cb != NULL) {
-		if (dfu->cb->deinit != NULL) {
-			dfu->cb->deinit();
-		}
-		dfu->cb = NULL;
-	}
-
+	/* Unregister first: no setup()/ep0 callback can run afterwards, so the GETSTATUS
+	 * branch that dereferences cb->get_write_poll_ms in ISR context cannot race the
+	 * teardown below. */
 #ifdef CONFIG_USBD_COMPOSITE
 	if (dfu->from_composite) {
 		usbd_composite_unregister_driver(&usbd_dfu_driver);
@@ -1285,6 +1378,16 @@ int usbd_dfu_deinit(void)
 	usbd_dfu_cleanup_manifest(dfu);
 	usbd_dfu_cleanup_write(dfu);
 
+	/* write_task/manifest_task are gone and the class is unregistered, so this is the
+	 * only remaining user of cb: releasing it here cannot be observed as a NULL
+	 * dereference by another context (MISRA-C:2012 Rule 1.3). */
+	if (dfu->cb != NULL) {
+		if (dfu->cb->deinit != NULL) {
+			dfu->cb->deinit();
+		}
+		dfu->cb = NULL;
+	}
+
 	if (dfu->xfer_buf != NULL) {
 		/* ep0_data_in/out restore pointers on normal completion, but a disconnect
 		 * or error can leave ep0_in/out.xfer_buf dangling into xfer_buf.
@@ -1300,6 +1403,4 @@ int usbd_dfu_deinit(void)
 		usb_os_mfree((void *)dfu->xfer_buf);
 		dfu->xfer_buf = NULL;
 	}
-
-	return HAL_OK;
 }

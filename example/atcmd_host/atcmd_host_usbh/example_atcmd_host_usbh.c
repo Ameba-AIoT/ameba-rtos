@@ -39,15 +39,15 @@
 /* Private function prototypes -----------------------------------------------*/
 
 static int cdc_acm_cb_init(void);
-static int cdc_acm_cb_deinit(void);
-static int cdc_acm_cb_attach(void);
-static int cdc_acm_cb_detach(void);
-static int cdc_acm_cb_setup(void);
-static int cdc_acm_cb_transmit(usbh_urb_state_t state);
-static int cdc_acm_cb_receive(u8 *pbuf, u32 Len, u8 status);
-static int cdc_acm_cb_notify(u8 *pbuf, u32 Len, u8 status);
-static int cdc_acm_cb_line_coding_changed(usb_cdc_acm_line_coding_t *line_coding);
-static int cdc_acm_cb_process(usb_host_t *host, u8 id);
+static void cdc_acm_cb_deinit(void);
+static void cdc_acm_cb_attached(void);
+static void cdc_acm_cb_detached(void);
+static void cdc_acm_cb_setup(void);
+static void cdc_acm_cb_transmitted(usbh_urb_state_t state);
+static void cdc_acm_cb_received(u8 *pbuf, u32 Len, u8 status);
+static void cdc_acm_cb_notify(u8 *pbuf, u32 Len, u8 status);
+static void cdc_acm_cb_line_coding_changed(usb_cdc_acm_line_coding_t *line_coding);
+static void cdc_acm_cb_process(usb_host_t *host, u8 id);
 
 static void uart_send_string(serial_t *sobj, char *pstr, u32 len);
 static void uart_format_string_output(const char *fmt, ...);
@@ -113,11 +113,11 @@ static const usbh_config_t usbh_cfg = {
 static const usbh_cdc_acm_cb_t cdc_acm_usr_cb = {
 	.init   = cdc_acm_cb_init,
 	.deinit = cdc_acm_cb_deinit,
-	.attach = cdc_acm_cb_attach,
-	.detach = cdc_acm_cb_detach,
+	.attached = cdc_acm_cb_attached,
+	.detached = cdc_acm_cb_detached,
 	.setup  = cdc_acm_cb_setup,
-	.transmit = cdc_acm_cb_transmit,
-	.receive  = cdc_acm_cb_receive,
+	.transmitted = cdc_acm_cb_transmitted,
+	.received  = cdc_acm_cb_received,
 	.notify   = cdc_acm_cb_notify,
 	.line_coding_changed = cdc_acm_cb_line_coding_changed
 };
@@ -134,36 +134,30 @@ static int cdc_acm_cb_init(void)
 	return HAL_OK;
 }
 
-static int cdc_acm_cb_deinit(void)
+static void cdc_acm_cb_deinit(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "DEINIT\n");
-	return HAL_OK;
 }
 
-static int cdc_acm_cb_attach(void)
+static void cdc_acm_cb_attached(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "ATTACH\n");
 	xSemaphoreGive(cdc_acm_attach_sema);
-
-	return HAL_OK;
 }
 
-static int cdc_acm_cb_detach(void)
+static void cdc_acm_cb_detached(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "DETACH\n");
 	xSemaphoreGive(cdc_acm_detach_sema);
-
-	return HAL_OK;
 }
 
-static int cdc_acm_cb_setup(void)
+static void cdc_acm_cb_setup(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "SETUP\n");
 	cdc_acm_is_ready = 1;
-	return HAL_OK;
 }
 
-static int cdc_acm_cb_receive(u8 *buf, u32 len, u8 status)
+static void cdc_acm_cb_received(u8 *buf, u32 len, u8 status)
 {
 	UNUSED(buf);
 
@@ -181,11 +175,9 @@ static int cdc_acm_cb_receive(u8 *buf, u32 len, u8 status)
 	} else {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "RX fail: %d\n", status);
 	}
-
-	return HAL_OK;
 }
 
-static int cdc_acm_cb_transmit(u8 state)
+static void cdc_acm_cb_transmitted(u8 state)
 {
 	if (state == HAL_OK) {
 		/*TX done*/
@@ -193,10 +185,9 @@ static int cdc_acm_cb_transmit(u8 state)
 	} else {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "TX fail: %d\n", state);
 	}
-	return HAL_OK;
 }
 
-static int cdc_acm_cb_notify(u8 *buf, u32 length, u8 status)
+static void cdc_acm_cb_notify(u8 *buf, u32 length, u8 status)
 {
 	UNUSED(buf);
 
@@ -209,17 +200,14 @@ static int cdc_acm_cb_notify(u8 *buf, u32 length, u8 status)
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "cdc_acm_cb_notify fail: %d\n", status);
 	}
 
-
-	return HAL_OK;
 }
 
-static int cdc_acm_cb_line_coding_changed(usb_cdc_acm_line_coding_t *line_coding)
+static void cdc_acm_cb_line_coding_changed(usb_cdc_acm_line_coding_t *line_coding)
 {
 	UNUSED(line_coding);
-	return HAL_OK;
 }
 
-static int cdc_acm_cb_process(usb_host_t *host, u8 id)
+static void cdc_acm_cb_process(usb_host_t *host, u8 id)
 {
 	UNUSED(host);
 
@@ -234,8 +222,6 @@ static int cdc_acm_cb_process(usb_host_t *host, u8 id)
 	default:
 		break;
 	}
-
-	return HAL_OK;
 }
 
 static void tt_mode_test_task(void *param)

@@ -74,8 +74,11 @@ static const usbd_config_t composite_cfg = {
 	/* .ctrl_xfer_buf_len = 512U, */
 #if defined(CONFIG_AMEBASMART)
 	.nptx_max_epmis_cnt = 100U,
-#elif defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RLE1509)
+#elif defined(CONFIG_AMEBAGREEN2)
 	.rx_fifo_depth = 436U,
+	.ptx_fifo_depth = {0U, 256U, 32U, 256U, },
+#elif defined(CONFIG_RLE1509)
+	.rx_fifo_depth = 400U,
 	.ptx_fifo_depth = {0U, 256U, 32U, 256U, },
 #elif defined(CONFIG_AMEBAPRO3)
 	/*DFIFO total 2232 DWORD, resv 8 DWORD for DMA addr and EP0 fixed 256 DWORD*/
@@ -175,14 +178,20 @@ static int composite_cdc_acm_cb_deinit(void)
 static int composite_cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 {
 	usb_cdc_acm_line_coding_t *lc = &composite_cdc_acm_line_coding;
+	/* Ref USB 2.0 9.2.7: anything not explicitly accepted below is a request error, so
+	   the default status makes the core STALL EP0 instead of ACKing the status stage. */
+	int ret = HAL_ERR_PARA;
 
 	switch (req->bRequest) {
 	case USB_CDC_ACM_SET_LINE_CODING:
+		/* Ref CDC PSTN 1.2 Table 17: the Line Coding structure is exactly 7 bytes, any
+		   other wLength must not update the cached line coding. */
 		if (req->wLength == USB_CDC_ACM_LINE_CODING_SIZE) {
 			lc->b.dwDteRate = (u32)(buf[0] | (buf[1] << 8) | (buf[2] << 16) | (buf[3] << 24));
 			lc->b.bCharFormat = buf[4];
 			lc->b.bParityType = buf[5];
 			lc->b.bDataBits = buf[6];
+			ret = HAL_OK;
 		}
 		break;
 
@@ -194,6 +203,7 @@ static int composite_cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 		buf[4] = lc->b.bCharFormat;
 		buf[5] = lc->b.bParityType;
 		buf[6] = lc->b.bDataBits;
+		ret = HAL_OK;
 		break;
 
 	case USB_CDC_ACM_SET_CONTROL_LINE_STATE:
@@ -208,17 +218,20 @@ static int composite_cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 			USB_DIAG(USB_LAYER_APP, USB_EVT_LINK, 0);
 			usbd_cdc_acm_notify_serial_state(USB_CDC_ACM_CTRL_DSR | USB_CDC_ACM_CTRL_DCD);
 		}
+		ret = HAL_OK;
 		break;
 
 	case USB_CDC_ACM_SEND_BREAK:
 		/* Do nothing */
+		ret = HAL_OK;
 		break;
 
 	default:
+		/* Request error, keep the default status */
 		break;
 	}
 
-	return 0;
+	return ret;
 }
 
 /**
@@ -344,6 +357,12 @@ static void example_usbd_composite_hotplug_thread(void *param)
 			}
 		}
 	}
+
+	/* composite_init_stack() rolled back everything it had brought up, so the
+	   stack is fully deinited and no ISR callback can give the sema any more.
+	   This thread is the only sema user left: free it as the last owner. */
+	rtos_sema_delete(composite_attach_status_changed_sema);
+	composite_attach_status_changed_sema = NULL;
 
 	RTK_LOGS(TAG, RTK_LOG_ERROR, "Hotplug thread fail\r\n");
 	rtos_task_delete(NULL);

@@ -72,6 +72,7 @@ QUERY_DATA_OFFSET_FLASH_REQ_HOST_ECC_LEVEL = 59
 QUERY_DATA_OFFSET_FLASH_TARGETS = 60
 QUERY_DATA_OFFSET_FLASH_CAPACITY = 61
 QUERY_DATA_OFFSET_WIFI_MAC = 71
+QUERY_DATA_OFFSET_UUID = 77
 
 # Read otp logical map time:26ms, physical map time: 170ms
 # Program otp logical map time: 7ms
@@ -108,6 +109,8 @@ class FloaderHandler(object):
         try:
             retry = 0
             while retry < self.setting.request_retry_count:
+                if self.ameba.is_cancelled():
+                    return ErrType.SYS_CANCEL, response_bytes
                 retry += 1
 
                 self.serial_port.flushInput()
@@ -192,7 +195,7 @@ class FloaderHandler(object):
                     time.sleep(self.setting.request_retry_interval_second)
         except Exception as err:
             self.logger.debug(f"Response exception: {err}")
-            ret = ErrType.SYS_IO
+            ret = ErrType.SYS_CANCEL if self.ameba.is_cancelled() else ErrType.SYS_IO
         return ret, response_bytes
 
     def sense(self, timeout, op_code=None, data=None):
@@ -291,6 +294,10 @@ class FloaderHandler(object):
                 device_info.cmd_set_version = resp[QUERY_DATA_OFFSET_CMD_SET_VERSION + 1] + (
                             resp[QUERY_DATA_OFFSET_CMD_SET_VERSION + 2] << 8)
                 device_info.wifi_mac = resp[QUERY_DATA_OFFSET_WIFI_MAC + 1: QUERY_DATA_OFFSET_WIFI_MAC + 1 + 6]
+                device_info.uuid = (resp[QUERY_DATA_OFFSET_UUID + 1]
+                                    + (resp[QUERY_DATA_OFFSET_UUID + 2] << 8)
+                                    + (resp[QUERY_DATA_OFFSET_UUID + 3] << 16)
+                                    + (resp[QUERY_DATA_OFFSET_UUID + 4] << 24))
                 device_info.memory_type = resp[QUERY_DATA_OFFSET_MEMORY_TYPE + 1]
                 device_info.flash_mid = resp[QUERY_DATA_OFFSET_FLASH_MID + 1]
                 device_info.flash_did = resp[QUERY_DATA_OFFSET_FLASH_DID + 1] + (

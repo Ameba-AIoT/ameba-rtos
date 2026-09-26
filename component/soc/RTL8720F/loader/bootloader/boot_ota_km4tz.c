@@ -208,6 +208,8 @@ fih_ret BOOT_OTA_LoadIMGAll(u8 ImgIndex)
 	FIH_DECLARE(fih_rc, FIH_FAILURE);
 	u32 AP_GCM_TagBase = 0;
 	u32 NP_GCM_TagBase = 0;
+	/* IMG2 (NP & AP) RSIP key group is selected by the manifest, defaults to Key Group 1 */
+	u8 Img2KeyGrp = MANIFEST_RSIP_IMG2_KEY_GROUP(&Manifest[ImgIndex]);
 
 	char *NpLabel[] = {"NP XIP IMG", "NP SRAM", "NP PSRAM"};
 	char *ApLabel[] = {"AP XIP IMG", "AP SRAM", "AP PSRAM"};
@@ -239,7 +241,7 @@ fih_ret BOOT_OTA_LoadIMGAll(u8 ImgIndex)
 	RSIP_MMU_Cache_Clean();
 
 	/*NP IMG2 OTF configurations*/
-	FIH_CALL(BOOT_ROM_OTFCheck, fih_rc, LogAddr, (u32)__km4ns_flash_text_end__, RSIP_IV1, RSIP_REGION1, RSIP_KEY_NUM1,
+	FIH_CALL(BOOT_ROM_OTFCheck, fih_rc, LogAddr, (u32)__km4ns_flash_text_end__, RSIP_IV1, RSIP_REGION1, Img2KeyGrp,
 			 NP_GCM_TagBase, Manifest[ImgIndex].RSIPConfig, MANIFEST_AP_NP_IMG2_ID);
 
 	/* NP XIP & SRAM, read with virtual addr in case of encryption */
@@ -276,7 +278,7 @@ fih_ret BOOT_OTA_LoadIMGAll(u8 ImgIndex)
 	RSIP_MMU_Cache_Clean();
 
 	/*AP IMG2 OTF configurations*/
-	FIH_CALL(BOOT_ROM_OTFCheck, fih_rc, LogAddr, (u32)__km4tz_flash_text_end__, RSIP_IV1, RSIP_REGION2, RSIP_KEY_NUM1,
+	FIH_CALL(BOOT_ROM_OTFCheck, fih_rc, LogAddr, (u32)__km4tz_flash_text_end__, RSIP_IV1, RSIP_REGION2, Img2KeyGrp,
 			 AP_GCM_TagBase, Manifest[ImgIndex].RSIPConfig, MANIFEST_AP_NP_IMG2_ID);
 
 	/* AP XIP & SRAM, read with virtual addr in case of encryption */

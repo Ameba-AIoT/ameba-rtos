@@ -107,8 +107,12 @@ typedef enum {
 typedef struct {
 	usb_msc_bot_cbw_t *cbw;         /**< Pointer to the Command Block Wrapper. */
 	usb_msc_bot_csw_t *csw;         /**< Pointer to the Command Status Wrapper. */
-	u32 origin_rx_pbuf_len;         /**< Original length of the user's receive buffer. */
-	u8 *origin_rx_pbuf;             /**< Pointer to the original user receive buffer. */
+	u32 origin_rx_buf_len;          /**< Original length of the user's receive buffer. */
+	u8 *origin_rx_buf;              /**< Pointer to the original user receive buffer. */
+	u32 rx_data_len;                /**< Bytes actually sent by the device in the Data-In phase (BOT §6.7 case 5). */
+	u32 cmd_address;                /**< LBA of the in-flight READ/WRITE, re-used to re-issue the same CBW (BOT §6.3.3). */
+	u32 cmd_block_count;            /**< Block count of the in-flight READ/WRITE, re-used on the retry path. */
+	u8 *cmd_buf;                    /**< User buffer of the in-flight READ/WRITE, re-used on the retry path. */
 	u8 *pbuf;                       /**< Internal pointer to the current data buffer for transfer. */
 	u8 *data;                       /**< A general-purpose data buffer. */
 	u32 tag_counter;                /**< Per-CBW tag; incremented before each CBW send (BOT §6.3.1). */
@@ -131,9 +135,9 @@ typedef struct {
 	u8 vendor_id[8];
 	u8 product_id[16];
 	u8 revision_id[4];
-	u8 PeripheralQualifier;
-	u8 DeviceType;
-	u8 RemovableMedia;
+	u8 peripheral_qualifier;
+	u8 device_type;
+	u8 removable_media;
 } usbh_scsi_inquiry_t;
 
 /* Structure for LUN */
@@ -161,19 +165,16 @@ typedef struct {
 typedef struct {
 	/**
 	 * @brief Called when device attached, used to report device connection status.
-	 * @return 0 on success, non-zero on failure.
 	 */
-	int (*attach)(void);
+	void (*attached)(void);
 	/**
 	 * @brief Called when device detached, used to report device disconnection status.
-	 * @return 0 on success, non-zero on failure.
 	 */
-	int (*detach)(void);
+	void (*detached)(void);
 	/**
 	 * @brief Called when device setup done, used to indicate that device is ready for bulk transfer.
-	 * @return 0 on success, non-zero on failure.
 	 */
-	int (*setup)(void);
+	void (*setup)(void);
 } usbh_msc_cb_t;
 /** @} End of Host_MSC_Types group */
 /** @} End of USB_Host_Types group */
@@ -220,9 +221,8 @@ int usbh_msc_init(const usbh_msc_cb_t *cb);
 
 /**
  * @brief De-initializes the MSC class driver.
- * @return 0 on success, non-zero on failure.
  */
-int usbh_msc_deinit(void);
+void usbh_msc_deinit(void);
 /** @} End of Host_MSC_Functions group */
 /** @} End of USB_Host_Functions group */
 /** @} End of USB_Host_API group */

@@ -130,6 +130,15 @@ int wifi_start_join_cmd(void)
 
 	return ret;
 }
+
+int wifi_external_auth_start(u8 wlan_idx)
+{
+	int ret = 0;
+	u32 param_buf[1] = {(u32)wlan_idx};
+
+	whc_host_api_message_send(WHC_API_WIFI_EXTERNAL_AUTH_START, (u8 *)param_buf, sizeof(param_buf), NULL, 0);
+	return ret;
+}
 //----------------------------------------------------------------------------//
 
 _OPTIMIZE_NONE_

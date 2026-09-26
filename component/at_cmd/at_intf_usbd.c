@@ -241,34 +241,30 @@ void atcmd_usbd_transmitted(u8 status)
 static int atcmd_usbd_setup(usb_setup_req_t *req, u8 *buf)
 {
 	usb_cdc_acm_line_coding_t *lc = &atcmd_usbd_line_coding;
+	/* Ref USB 2.0 9.2.7: anything not explicitly accepted below is a request error, so
+	   the default status makes the core STALL EP0 instead of ACKing the status stage. */
+	int ret = HAL_ERR_PARA;
 
 	switch (req->bRequest) {
 	case USB_CDC_ACM_SEND_ENCAPSULATED_COMMAND:
-		/* Do nothing */
-		break;
-
 	case USB_CDC_ACM_GET_ENCAPSULATED_RESPONSE:
-		/* Do nothing */
-		break;
-
 	case USB_CDC_ACM_SET_COMM_FEATURE:
-		/* Do nothing */
-		break;
-
 	case USB_CDC_ACM_GET_COMM_FEATURE:
-		/* Do nothing */
-		break;
-
 	case USB_CDC_ACM_CLEAR_COMM_FEATURE:
+	case USB_CDC_ACM_SEND_BREAK:
 		/* Do nothing */
+		ret = HAL_OK;
 		break;
 
 	case USB_CDC_ACM_SET_LINE_CODING:
+		/* Ref CDC PSTN 1.2 Table 17: the Line Coding structure is exactly 7 bytes, any
+		   other wLength must not update the cached line coding. */
 		if (req->wLength == USB_CDC_ACM_LINE_CODING_SIZE) {
 			lc->b.dwDteRate = (u32)(buf[0] | (buf[1] << 8) | (buf[2] << 16) | (buf[3] << 24));
 			lc->b.bCharFormat = buf[4];
 			lc->b.bParityType = buf[5];
 			lc->b.bDataBits = buf[6];
+			ret = HAL_OK;
 		}
 		break;
 
@@ -280,6 +276,7 @@ static int atcmd_usbd_setup(usb_setup_req_t *req, u8 *buf)
 		buf[4] = lc->b.bCharFormat;
 		buf[5] = lc->b.bParityType;
 		buf[6] = lc->b.bDataBits;
+		ret = HAL_OK;
 		break;
 
 	case USB_CDC_ACM_SET_CONTROL_LINE_STATE:
@@ -296,17 +293,15 @@ static int atcmd_usbd_setup(usb_setup_req_t *req, u8 *buf)
 			usbd_cdc_acm_notify_serial_state(USB_CDC_ACM_CTRL_DSR | USB_CDC_ACM_CTRL_DCD);
 #endif
 		}
-		break;
-
-	case USB_CDC_ACM_SEND_BREAK:
-		/* Do nothing */
+		ret = HAL_OK;
 		break;
 
 	default:
+		/* Request error, keep the default status */
 		break;
 	}
 
-	return HAL_OK;
+	return ret;
 }
 
 static void atcmd_usbd_status_changed(u8 old_status, u8 status)

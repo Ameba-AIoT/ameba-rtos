@@ -32,6 +32,9 @@ static int cdc_acm_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status);
 static int cdc_acm_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len);
 static void cdc_acm_status_changed(usb_dev_t *dev, u8 old_status, u8 status);
 static void cdc_acm_wakeup(usb_dev_t *dev);
+#ifdef CONFIG_USBD_COMPOSITE
+static void cdc_acm_set_interface_base(u8 base);
+#endif
 /* Private variables ---------------------------------------------------------*/
 
 static const char *const TAG = "ACM";
@@ -293,6 +296,9 @@ static const usbd_class_driver_t usbd_cdc_acm_driver = {
 	.ep_data_out = cdc_acm_handle_ep_data_out,
 	.status_changed = cdc_acm_status_changed,
 	.wakeup = cdc_acm_wakeup,
+#ifdef CONFIG_USBD_COMPOSITE
+	.set_interface_base = cdc_acm_set_interface_base,
+#endif
 };
 
 /* CDC ACM Device */
@@ -413,6 +419,11 @@ static void cdc_acm_clear_config(usb_dev_t *dev, u8 config)
 	/* DeInit INTR IN EP */
 	usbd_ep_deinit(dev, ep_intr_in);
 #endif
+
+	/* The configuration is gone: drop the device handle so a task-context TX/notify
+	   arriving after a disconnect cannot submit on a de-initialized endpoint. It is
+	   re-assigned by the next set_config(). */
+	cdev->dev = NULL;
 }
 
 /**
@@ -434,44 +445,71 @@ static int cdc_acm_setup(usb_dev_t *dev, usb_setup_req_t *req)
 	case USB_REQ_TYPE_STANDARD:
 		switch (req->bRequest) {
 		case USB_REQ_SET_INTERFACE:
+			/* Ref USB 2.0 9.4.10: the endpoints of the selected interface return to
+			   their default state, not halted and data toggle DATA0. This holds even
+			   for an interface with the default setting only, hosts do send the
+			   request in that case. Only the endpoints of the interface addressed by
+			   wIndex are touched, so the other interface keeps its data toggle.
+			   Ref USB 2.0 Table 9-10: the whole wIndex is the interface number, and the
+			   whole wValue is the alternate setting number.
+
+			   Ref USB 2.0 9.4.10 request error: an alternate setting that is not defined
+			   in the configuration descriptor - or an interface this function does not
+			   own - must be answered with a request error, which the device core turns
+			   into an EP0 STALL on a non-HAL_OK return. Both ACM interfaces declare
+			   bAlternateSetting 0 only, so any non-zero wValue is a request error. It is
+			   validated before any state is modified, so a rejected request leaves the
+			   interface exactly as it was. */
 			if (dev->dev_state != USBD_STATE_CONFIGURED) {
 				ret = HAL_ERR_PARA;
+			} else if (req->wValue != 0U) {
+				ret = HAL_ERR_PARA;
+			} else if (req->wIndex == USBD_CDC_ACM_DATA_ITF_NUM) {
+				usbd_ep_clear_stall(dev, &cdev->ep_bulk_in);
+				usbd_ep_clear_stall(dev, &cdev->ep_bulk_out);
+			} else if (req->wIndex == USBD_CDC_ACM_COMM_ITF_NUM) {
+				usbd_ep_clear_stall(dev, &cdev->ep_intr_in);
 			} else {
-				/* Ref USB 2.0 9.4.10: the endpoints of the selected interface return to
-				   their default state, not halted and data toggle DATA0. This holds even
-				   for an interface with the default setting only, hosts do send the
-				   request in that case. Only the endpoints of the interface addressed by
-				   wIndex are touched, so the other interface keeps its data toggle. */
-				if (req->wIndex == USBD_CDC_ACM_DATA_ITF_NUM) {
-					usbd_ep_clear_stall(dev, &cdev->ep_bulk_in);
-					usbd_ep_clear_stall(dev, &cdev->ep_bulk_out);
-				} else if (req->wIndex == USBD_CDC_ACM_COMM_ITF_NUM) {
-					usbd_ep_clear_stall(dev, &cdev->ep_intr_in);
-				} else {
-					/* Ref USB 2.0 Table 9-10: the whole wIndex is the interface number, so a
-					   foreign interface or a non-zero high byte leaves the endpoints untouched */
-				}
+				/* Foreign interface: not ours to configure */
+				ret = HAL_ERR_PARA;
 			}
 			break;
 
 		case USB_REQ_GET_INTERFACE:
-			if (dev->dev_state == USBD_STATE_CONFIGURED) {
+			/* Ref USB 2.0 9.4.4: report the alternate setting of the interface addressed
+			   by wIndex; if the interface does not exist the device responds with a
+			   request error. Ref USB 2.0 Table 9-3: wLength is one. Both ACM interfaces
+			   have alternate setting 0 only. */
+			if (dev->dev_state != USBD_STATE_CONFIGURED) {
+				ret = HAL_ERR_PARA;
+			} else if (req->wLength != 1U) {
+				ret = HAL_ERR_PARA;
+			} else if ((req->wIndex == USBD_CDC_ACM_DATA_ITF_NUM) || (req->wIndex == USBD_CDC_ACM_COMM_ITF_NUM)) {
 				ep0_in->xfer_buf[0] = 0U;
 				ep0_in->xfer_len = 1U;
 				usbd_ep_transmit(dev, ep0_in);
 			} else {
+				/* Foreign interface: request error */
 				ret = HAL_ERR_PARA;
 			}
 
 			break;
 
 		case USB_REQ_GET_STATUS:
-			if (dev->dev_state == USBD_STATE_CONFIGURED) {
+			/* Ref USB 2.0 9.4.5 and Table 9-3: an interface-recipient GET_STATUS returns
+			   two reserved zero bytes, and a request for a non-existent interface is a
+			   request error. */
+			if (dev->dev_state != USBD_STATE_CONFIGURED) {
+				ret = HAL_ERR_PARA;
+			} else if (req->wLength != 2U) {
+				ret = HAL_ERR_PARA;
+			} else if ((req->wIndex == USBD_CDC_ACM_DATA_ITF_NUM) || (req->wIndex == USBD_CDC_ACM_COMM_ITF_NUM)) {
 				ep0_in->xfer_buf[0] = 0U;
 				ep0_in->xfer_buf[1] = 0U;
 				ep0_in->xfer_len = 2U;
 				usbd_ep_transmit(dev, ep0_in);
 			} else {
+				/* Foreign interface: request error */
 				ret = HAL_ERR_PARA;
 			}
 			break;
@@ -483,6 +521,12 @@ static int cdc_acm_setup(usb_dev_t *dev, usb_setup_req_t *req)
 		break;
 	case USB_REQ_TYPE_CLASS:
 		if ((req->bmRequestType & USB_REQ_RECIPIENT_MASK) != USB_REQ_RECIPIENT_INTERFACE) {
+			ret = HAL_ERR_PARA;
+			break;
+		}
+		/* Ref CDC 1.2 6.2: every management element request is addressed to the Communication
+		   Class interface. Reject any other interface so composite dispatch can continue. */
+		if (req->wIndex != USBD_CDC_ACM_COMM_ITF_NUM) {
 			ret = HAL_ERR_PARA;
 			break;
 		}
@@ -525,9 +569,18 @@ static int cdc_acm_setup(usb_dev_t *dev, usb_setup_req_t *req)
 					}
 				}
 			} else {
+				/* Ref USB 2.0 8.5.3: an H2D control transfer with wLength > 0 carries the
+				   payload in a following data stage, the request cannot be dispatched yet. */
 				usb_os_memcpy((void *)&cdev->ctrl_req, (const void *)req, sizeof(usb_setup_req_t));
+				cdev->ctrl_req_pending = 1U;
 				ep0_out->xfer_len = req->wLength;
 				ret = usbd_ep_receive(dev, ep0_out);
+				if (ret != HAL_OK) {
+					/* The data stage never started, so no EP0 OUT completion will arrive to
+					   consume the stashed request. Drop it, else the next unrelated request's
+					   data stage would be dispatched as this one's payload. */
+					cdev->ctrl_req_pending = 0U;
+				}
 			}
 		} else {
 			/* Propagate the class callback status so an unsupported no-data
@@ -639,34 +692,48 @@ static int cdc_acm_handle_ep0_data_out(usb_dev_t *dev)
 {
 	usbd_cdc_acm_dev_t *cdev = &usbd_cdc_acm_dev;
 	usbd_ep_t *ep0_out = &dev->ep0_out;
+	int ret = HAL_OK;
 
 	UNUSED(dev);
 
-	if (cdev->ctrl_req.bRequest != 0xFFU) {
-		if (cdev->cb->setup != NULL) {
-			cdev->cb->setup(&cdev->ctrl_req, ep0_out->xfer_buf);
+	if (cdev->ctrl_req_pending != 0U) {
+		/* Consume the pending request first: a single data stage belongs to exactly one setup
+		   packet, so the saved request must not be replayed by a later EP0 OUT event. */
+		cdev->ctrl_req_pending = 0U;
+
+		/* cb is released by usbd_cdc_acm_deinit(), which may run between the setup and the
+		   data stage of an H2D request, so both the structure and the handler are checked. */
+		if ((cdev->cb != NULL) && (cdev->cb->setup != NULL)) {
+			/* Ref USB 2.0 8.5.3.1: the status stage of a control write reports whether the
+			   command was carried out, so an application rejecting the payload (malformed
+			   or unsupported request) must stall it instead of being ACKed. */
+			ret = cdev->cb->setup(&cdev->ctrl_req, ep0_out->xfer_buf);
 		}
-		cdev->ctrl_req.bRequest = 0xFFU;
 	}
 
 	/* No pending request means this data stage does not belong to CDC ACM, the composite
-	   dispatcher already routed it by active_func. Ref USB 2.0 8.5.3.1: a non-zero value here
-	   makes the core stall the status stage, so do not report a failure the host cannot act on. */
-	return HAL_OK;
+	   dispatcher already routed it by active_func, so HAL_OK is kept: do not report a
+	   failure the host cannot act on. */
+	return ret;
 }
 
 /**
-  * @brief  Patch EP addresses in a configuration descriptor block
+  * @brief  Patch EP addresses and interface cross-references in a configuration descriptor block
   * @note   Replaces direction-only placeholders (USB_D2H/USB_H2D) with actual
-  *         EP addresses from the EP configuration structure.
+  *         EP addresses from the EP configuration structure, and rebases the interface
+  *         numbers named by the CDC functional descriptors with the current interface
+  *         base (0 unless the composite framework rebased it), which the framework does
+  *         not touch: it only rebases the standard Interface and IAD descriptors.
   * @param  desc: Pointer to config descriptor body (starting after config header)
   * @param  len: Length of the descriptor block
   * @param  ep_cfg: EP configuration with actual endpoint addresses
   * @retval None
   */
-static void usbd_cdc_acm_patch_ep_addresses(u8 *desc, u16 len,
-		const usbd_cdc_acm_ep_cfg_t *ep_cfg)
+static void usbd_cdc_acm_patch_desc(u8 *desc, u16 len,
+									const usbd_cdc_acm_ep_cfg_t *ep_cfg)
 {
+	usbd_cdc_acm_dev_t *cdev = &usbd_cdc_acm_dev;
+
 	for (u16 i = 0; i < len;) {
 		u8 dlen = desc[i];
 		u8 dtype = desc[i + 1];
@@ -685,6 +752,16 @@ static void usbd_cdc_acm_patch_ep_addresses(u8 *desc, u16 len,
 				desc[i + 2] = ep_cfg->bulk_out_addr;
 			} else if ((dir == USB_D2H) && (type == USB_CH_EP_TYPE_INTR)) {
 				desc[i + 2] = ep_cfg->intr_in_addr;
+			}
+		} else if (dtype == USB_CDC_CS_INTERFACE) {
+			if ((dlen >= 5U) && (desc[i + 2] == USB_CDC_FUNC_DESC_CALL_MGMT)) {
+				/* Call Management FD: bDataInterface at offset 4 (Ref CDC 1.2 5.2.3.2) */
+				desc[i + 4] = (u8)(cdev->if_base + USBD_CDC_ACM_DATA_ITF_NUM);
+			} else if ((dlen >= 5U) && (desc[i + 2] == USB_CDC_FUNC_DESC_UNION)) {
+				/* Union FD: bMasterInterface at offset 3, bSlaveInterface0 at offset 4
+				   (Ref CDC 1.2 5.2.3.8) */
+				desc[i + 3] = (u8)(cdev->if_base + USBD_CDC_ACM_COMM_ITF_NUM);
+				desc[i + 4] = (u8)(cdev->if_base + USBD_CDC_ACM_DATA_ITF_NUM);
 			}
 		}
 		i += dlen;
@@ -811,9 +888,9 @@ static u16 cdc_acm_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf,
 		}
 
 		/* Patch EP addresses from placeholder to actual values */
-		usbd_cdc_acm_patch_ep_addresses(buf + USB_LEN_CFG_DESC,
-										len - USB_LEN_CFG_DESC,
-										cdev->ep_cfg);
+		usbd_cdc_acm_patch_desc(buf + USB_LEN_CFG_DESC,
+								len - USB_LEN_CFG_DESC,
+								cdev->ep_cfg);
 	}
 
 	return len;
@@ -855,6 +932,20 @@ static void cdc_acm_wakeup(usb_dev_t *dev)
 	}
 }
 
+#ifdef CONFIG_USBD_COMPOSITE
+/**
+  * @brief  Store the first interface number assigned to this class by the composite framework
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @param  base: First interface number of this class
+  * @retval None
+  */
+static void cdc_acm_set_interface_base(u8 base)
+{
+	usbd_cdc_acm_dev.if_base = base;
+}
+#endif
+
 #if USBD_CDC_ACM_NOTIFY
 
 /**
@@ -867,13 +958,15 @@ static void cdc_acm_wakeup(usb_dev_t *dev)
   */
 static int usbd_acm_cdc_notify(u8 type, u16 value, void *data, u16 len)
 {
-	u8 ret = HAL_ERR_HW;
+	int ret = HAL_ERR_HW;
 	usbd_cdc_acm_dev_t *cdev = &usbd_cdc_acm_dev;
 	usb_dev_t *dev = cdev->dev;
 	usbd_ep_t *ep_intr_in = &cdev->ep_intr_in;
 	usbd_cdc_acm_ntf_t *ntf = (usbd_cdc_acm_ntf_t *)ep_intr_in->xfer_buf;
 
-	if (!dev->is_ready) {
+	/* cdev->dev is assigned in set_config, so it is NULL until the host has
+	   configured the device. */
+	if ((dev == NULL) || (!dev->is_ready)) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "EP%02x TX not ready\n", cdev->ep_cfg->intr_in_addr);
 		return ret;
 	}
@@ -890,7 +983,10 @@ static int usbd_acm_cdc_notify(u8 type, u16 value, void *data, u16 len)
 			ntf->bmRequestType = USB_D2H | USB_REQ_TYPE_CLASS | USB_REQ_RECIPIENT_INTERFACE;
 			ntf->bNotificationType = type;
 			ntf->wValue = value;
-			ntf->wIndex = USBD_CDC_ACM_COMM_ITF_NUM;
+			/* Ref CDC 1.2 6.3: wIndex names the communication interface the notification
+			   is emitted on, so it must carry the composite-assigned interface number.
+			   if_base is 0 in standalone mode. */
+			ntf->wIndex = (u16)(cdev->if_base + USBD_CDC_ACM_COMM_ITF_NUM);
 			ntf->wLength = len;
 
 			usb_os_memcpy((void *)ntf->buf, (const void *)data, len);
@@ -946,6 +1042,13 @@ static int usbd_cdc_acm_private_init(const usbd_cdc_acm_cb_t *cb,
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid EP cfg\n");
 		return HAL_ERR_PARA;
 	}
+
+	/* No H2D class request is waiting for its data stage yet. The device context is a static
+	   object, so a re-init after deinit must not inherit a stale pending flag. */
+	cdc->ctrl_req_pending = 0U;
+
+	/* Standalone default; the composite framework rebases it via set_interface_base() */
+	cdc->if_base = 0;
 
 	info = &ep_bulk_out->info;
 	info->addr = ep_cfg->bulk_out_addr;
@@ -1052,6 +1155,11 @@ int usbd_composite_cdc_acm_init(const usbd_cdc_acm_cb_t *cb, const usbd_cdc_acm_
 	if (ret == HAL_OK) {
 		cdc->from_composite = 1;
 		ret = usbd_composite_register_driver(&usbd_cdc_acm_driver);
+		if (ret != HAL_OK) {
+			/* private_init completed, so deinit is its exact reverse. from_composite is
+			   already 1, so the unregister inside is a no-op for an unregistered driver. */
+			usbd_cdc_acm_deinit();
+		}
 	}
 	return ret;
 }
@@ -1059,27 +1167,35 @@ int usbd_composite_cdc_acm_init(const usbd_cdc_acm_cb_t *cb, const usbd_cdc_acm_
 
 /**
  * @brief De-initializes the CDC ACM class driver.
- * @return 0 on success, non-zero on failure.
+ * @return None.
  */
-int usbd_cdc_acm_deinit(void)
+void usbd_cdc_acm_deinit(void)
 {
 	usbd_cdc_acm_dev_t *cdev = &usbd_cdc_acm_dev;
 	usbd_ep_t *ep_bulk_in = &cdev->ep_bulk_in;
 	usbd_ep_t *ep_bulk_out = &cdev->ep_bulk_out;
+	u32 wait;
 
 #if USBD_CDC_ACM_NOTIFY
 	usbd_ep_t *ep_intr_in = &cdev->ep_intr_in;
 #endif
 
+	/* Wait for in-flight transfers to actually complete (xfer_state is cleared in the
+	 * completion ISR) before the endpoints are released and the DMA buffers freed, so
+	 * the controller never DMAs from freed memory on hot-unplug.
+	 * Bounded (~100 ms): a TX armed just before a disconnect or suspend never gets a
+	 * completion callback, because the core leaves USBD_STATE_CONFIGURED, so an
+	 * unbounded loop would hang the calling task forever. */
+	wait = 0U;
+	while ((wait < 1000U) &&
+		   (ep_bulk_in->xfer_state
 #if USBD_CDC_ACM_NOTIFY
-	while (ep_bulk_in->xfer_state || ep_intr_in->xfer_state) {
-		usb_os_delay_us(100);
-	}
-#else
-	while (ep_bulk_in->xfer_state) {
-		usb_os_delay_us(100);
-	}
+			|| ep_intr_in->xfer_state
 #endif
+		   )) {
+		usb_os_delay_us(100);
+		wait++;
+	}
 
 #ifdef CONFIG_USBD_COMPOSITE
 	if (cdev->from_composite) {
@@ -1089,6 +1205,10 @@ int usbd_cdc_acm_deinit(void)
 	{
 		usbd_unregister_class();
 	}
+
+	/* Unregistered above: no class callback can run afterwards, so dropping the pending
+	   control request here cannot race an EP0 OUT completion in ISR context. */
+	cdev->ctrl_req_pending = 0U;
 
 	if ((cdev->cb != NULL) && (cdev->cb->deinit != NULL)) {
 		cdev->cb->deinit();
@@ -1108,8 +1228,6 @@ int usbd_cdc_acm_deinit(void)
 
 	usb_os_mfree((void *)ep_bulk_out->xfer_buf);
 	ep_bulk_out->xfer_buf = NULL;
-
-	return HAL_OK;
 }
 
 /**
@@ -1125,7 +1243,9 @@ int usbd_cdc_acm_transmit(u8 *buf, u32 len)
 	usb_dev_t *dev = cdev->dev;
 	usbd_ep_t *ep_bulk_in = &cdev->ep_bulk_in;
 
-	if (!dev->is_ready) {
+	/* cdev->dev is assigned in set_config, so it is NULL until the host has
+	   configured the device. */
+	if ((dev == NULL) || (!dev->is_ready)) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "EP%02x TX not ready\n", cdev->ep_cfg->bulk_in_addr);
 		return ret;
 	}
@@ -1186,7 +1306,9 @@ int usbd_cdc_acm_notify_serial_state(u16 serial_state)
 	usbd_cdc_acm_dev_t *cdev = &usbd_cdc_acm_dev;
 	usb_dev_t *dev = cdev->dev;
 
-	if (dev->is_ready) {
+	/* cdev->dev is assigned in set_config, so it is NULL until the host has
+	   configured the device. */
+	if ((dev != NULL) && (dev->is_ready)) {
 		ret = usbd_acm_cdc_notify(USB_CDC_ACM_NOTIFY_SERIAL_STATE, 0, &serial_state, sizeof(serial_state));
 	}
 

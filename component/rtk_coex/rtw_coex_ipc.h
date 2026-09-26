@@ -95,7 +95,6 @@ static inline void coex_ipc_entry(void)
 #if defined(CONFIG_COEXIST_DEV)
 	extern struct extchip_para_t g_extchip_para;
 	extern void rtk_coex_extc_set_enable(bool enable);
-	//RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "[COEX][Dev] Ext paras init.\r\n");
 	coex_extc_paras_config(&g_extchip_para, true);
 	rtk_coex_extc_set_enable(true);
 #endif
@@ -105,7 +104,6 @@ static inline void coex_ipc_entry(void)
 #if defined(CONFIG_WHC_INTF_IPC)
 #if defined(CONFIG_COEXIST_HOST)
 	extern struct extchip_para_t g_extchip_para_ap;
-	//RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "[COEX][Host] Ext paras init.\r\n");
 #if defined(CONFIG_COEX_EXT_CHIP_SUPPORT)
 	coex_extc_paras_config(&g_extchip_para_ap, true);
 #else
@@ -114,7 +112,6 @@ static inline void coex_ipc_entry(void)
 #endif
 #if defined(CONFIG_COEXIST_DEV)
 	// #1. case ap/np: whole bin@np, get paras start np from ap later
-	//RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "[COEX][Dev][Zephyr] Ext paras init.\r\n");
 	extern void rtk_coex_extc_set_enable(bool enable);
 #if defined(CONFIG_WHC_NONE)
 	// #2. case singlecore: ext-paras init start from np

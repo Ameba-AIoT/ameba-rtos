@@ -123,17 +123,17 @@ static void usbh_uac_record_thread(void *param);
 static void usbh_uvc_uac_hotplug_thread(void *param);
 #endif
 static int usbh_uvc_cb_init(void);
-static int usbh_uvc_cb_deinit(void);
-static int usbh_uvc_cb_attach(void);
-static int usbh_uvc_cb_detach(void);
-static int usbh_uvc_cb_setup(void);
-static int usbh_uvc_cb_setparam(int status);
+static void usbh_uvc_cb_deinit(void);
+static void usbh_uvc_cb_attached(void);
+static void usbh_uvc_cb_detached(void);
+static void usbh_uvc_cb_setup(void);
+static void usbh_uvc_cb_setparam(int status);
 static int usbh_uac_cb_init(void);
-static int usbh_uac_cb_deinit(void);
-static int usbh_uac_cb_attach(void);
-static int usbh_uac_cb_detach(void);
-static int usbh_uac_cb_setup(void);
-static int usbh_uac_cb_process(usb_host_t *host, u8 msg);
+static void usbh_uac_cb_deinit(void);
+static void usbh_uac_cb_attached(void);
+static void usbh_uac_cb_detached(void);
+static void usbh_uac_cb_setup(void);
+static void usbh_uac_cb_process(usb_host_t *host, u8 msg);
 
 /* Private variables ---------------------------------------------------------*/
 static const char *const TAG = "COMP_UVC_UAC";
@@ -289,9 +289,14 @@ static const usbh_config_t usbh_cfg = {
 	.main_task_priority = USBH_UVC_UAC_MAIN_THREAD_PRIORITY,
 	.tick_source = USBH_SOF_TICK,
 	.class_num = 2U,   /* UVC + UAC */
-#if defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RLE1509)
-	/*FIFO total depth is 1024, reserve 12 for DMA addr*/
+#if defined(CONFIG_AMEBAGREEN2)
+	/*FIFO total 1024 DWORD, resv 12 DWORD for DMA*/
 	.rx_fifo_depth = 500,
+	.nptx_fifo_depth = 256,
+	.ptx_fifo_depth = 256,
+#elif defined(CONFIG_RLE1509)
+	/*FIFO total 1024 DWORD, resv 48 DWORD */
+	.rx_fifo_depth = 464,
 	.nptx_fifo_depth = 256,
 	.ptx_fifo_depth = 256,
 #elif defined (CONFIG_AMEBAL2)
@@ -323,8 +328,8 @@ static const usbh_uvc_ctx_t usbh_uvc_cfg_ctx = {
 static const usbh_uvc_cb_t usbh_uvc_cb = {
 	.init = usbh_uvc_cb_init,
 	.deinit = usbh_uvc_cb_deinit,
-	.attach = usbh_uvc_cb_attach,
-	.detach = usbh_uvc_cb_detach,
+	.attached = usbh_uvc_cb_attached,
+	.detached = usbh_uvc_cb_detached,
 	.setup = usbh_uvc_cb_setup,
 	.set_param = usbh_uvc_cb_setparam,
 };
@@ -335,8 +340,8 @@ static const usbh_uvc_cb_t usbh_uvc_cb = {
 static const usbh_uac_cb_t usbh_uac_cb = {
 	.init = usbh_uac_cb_init,
 	.deinit = usbh_uac_cb_deinit,
-	.attach = usbh_uac_cb_attach,
-	.detach = usbh_uac_cb_detach,
+	.attached = usbh_uac_cb_attached,
+	.detached = usbh_uac_cb_detached,
 	.setup = usbh_uac_cb_setup,
 
 	.isoc_in_frm_cnt = USBH_UAC_FRAME_CNT,
@@ -365,49 +370,41 @@ static int usbh_uvc_cb_init(void)
 
 /**
   * @brief  UVC class deinit callback.
-  * @retval Status
   */
-static int usbh_uvc_cb_deinit(void)
+static void usbh_uvc_cb_deinit(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "UVC Deinit\n");
-	return HAL_OK;
 }
 
 /**
   * @brief  UVC attach callback, fired when a UVC-capable device is plugged in.
-  * @retval Status
   */
-static int usbh_uvc_cb_attach(void)
+static void usbh_uvc_cb_attached(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "UVC Attach\n");
 	usbh_uvc_frame_count = 0;
-	return HAL_OK;
 }
 
 /**
   * @brief  UVC detach callback, fired when the device is unplugged.
-  * @retval Status
   */
-static int usbh_uvc_cb_detach(void)
+static void usbh_uvc_cb_detached(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "UVC Detach, frames: %d\n", usbh_uvc_frame_count);
 	usbh_uvc_uac_is_ready = 0;
 	/* Halt ISOC; frame buffers remain (freed only by usbh_uvc_deinit). */
 	usbh_uvc_stop(USBH_UVC_STREAM_INDEX);
-	return HAL_OK;
 }
 
 /**
   * @brief  UVC setup callback, fired after device enumeration and class
   *         setup completes. Marks the device ready and wakes the stream thread.
-  * @retval Status
   */
-static int usbh_uvc_cb_setup(void)
+static void usbh_uvc_cb_setup(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "UVC SETUP\n");
 	usbh_uvc_uac_is_ready = 1;
 	rtos_sema_give(usbh_uvc_stream_start_sema);
-	return HAL_OK;
 }
 
 /**
@@ -416,12 +413,11 @@ static int usbh_uvc_cb_setup(void)
   * @param  status: HAL_OK on success, HAL_ERR_HW on failure.
   * @retval Status
   */
-static int usbh_uvc_cb_setparam(int status)
+static void usbh_uvc_cb_setparam(int status)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "UVC setparam status=%d\n", status);
 	usbh_uvc_setparam_status = (u8)status;
 	rtos_sema_give(usbh_uvc_setparam_sema);
-	return HAL_OK;
 }
 
 /**
@@ -436,31 +432,26 @@ static int usbh_uac_cb_init(void)
 
 /**
   * @brief  UAC class deinit callback.
-  * @retval Status
   */
-static int usbh_uac_cb_deinit(void)
+static void usbh_uac_cb_deinit(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "UAC Deinit\n");
-	return HAL_OK;
 }
 
 /**
   * @brief  UAC attach callback.
-  * @retval Status
   */
-static int usbh_uac_cb_attach(void)
+static void usbh_uac_cb_attached(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "UAC Attach\n");
 	usbh_uac_play_count = 0;
 	usbh_uac_record_count = 0;
-	return HAL_OK;
 }
 
 /**
   * @brief  UAC detach callback.
-  * @retval Status
   */
-static int usbh_uac_cb_detach(void)
+static void usbh_uac_cb_detached(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "UAC Detached, played: %d, recorded: %d\n",
 			 usbh_uac_play_count, usbh_uac_record_count);
@@ -477,15 +468,12 @@ static int usbh_uac_cb_detach(void)
 #if USBH_UVC_UAC_HOT_PLUG_TEST
 	rtos_sema_give(usbh_uvc_uac_detach_sema);
 #endif
-
-	return HAL_OK;
 }
 
 /**
   * @brief  UAC setup callback, fired after device enumeration.
-  * @retval Status
   */
-static int usbh_uac_cb_setup(void)
+static void usbh_uac_cb_setup(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "UAC SETUP\n");
 
@@ -493,8 +481,6 @@ static int usbh_uac_cb_setup(void)
 
 	/* Signal the UVC stream thread that UAC CLASS_REQUEST setup is done. */
 	rtos_sema_give(usbh_uac_ready_sema);
-
-	return HAL_OK;
 }
 
 /**
@@ -503,7 +489,7 @@ static int usbh_uac_cb_setup(void)
   * @param  msg:  Event identifier dispatched by the host core.
   * @retval Status
   */
-static int usbh_uac_cb_process(usb_host_t *host, u8 msg)
+static void usbh_uac_cb_process(usb_host_t *host, u8 msg)
 {
 	UNUSED(host);
 
@@ -523,8 +509,6 @@ static int usbh_uac_cb_process(usb_host_t *host, u8 msg)
 	default:
 		break;
 	}
-
-	return HAL_OK;
 }
 
 /**

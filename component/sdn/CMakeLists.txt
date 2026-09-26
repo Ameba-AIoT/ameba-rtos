@@ -90,6 +90,7 @@ ameba_list_append(private_sources
     bt/le/ble_llcp_remote.c
     bt/le/ble_llcp_local.c
     bt/le/ble_llcp_common.c
+    bt/le/ble_llcp_subrate.c
     bt/le/ble_llcp_chnlmap_update.c
     bt/le/ble_llcp_phy_update.c
     bt/le/ble_llcp_conn_update.c
@@ -102,6 +103,7 @@ ameba_list_append(private_sources
     bt/le/ble_ll_security.c
     bt/le/ble_psd.c
     bt/le/ble_ll_pa_sync.c
+    bt/le/ble_llcp_past.c
 )
 
 ameba_list_append(private_includes

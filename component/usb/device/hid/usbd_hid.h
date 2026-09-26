@@ -47,7 +47,12 @@ extern "C" {
 
 #define USBD_HID_DESC_SIZE                   9       /**< HID descriptor size. */
 #define USBD_HID_DESC_ITEM_LENGTH_OFFSET     7       /**< Offset of report desc wItemLength in the HID descriptor. */
+#ifdef CONFIG_USBD_HID_BIDIR
+/* cfg header (9) + IAD (8) + priv-if (9) + priv-hid header (7) = 33 */
+#define USBD_HID_CFG_DESC_ITEM_LENGTH_OFFSET 33      /**< Offset of report desc wItemLength in the config descriptor. */
+#else
 #define USBD_HID_CFG_DESC_ITEM_LENGTH_OFFSET 25      /**< Offset of report desc wItemLength in the config descriptor. */
+#endif
 
 #ifdef CONFIG_USBD_HID_BIDIR
 /* Bidirectional HID variant: 2 interfaces (Vendor raw + Consumer Control),
@@ -59,9 +64,9 @@ extern "C" {
 #define USBD_HID_RX_PKT_SIZE                 ((USBD_HID_MAX_BUF_SIZE) - 1) /**< OUT payload size (Report ID prepended). */
 #define USBD_HID_BUF_MAX_CNT                 10U     /**< OUT ring buffer slot count. */
 /* wItemLength offset for the Vendor (Consumer Control) HID descriptor in the config descriptor:
- *   cfg header (9) + priv-if (9) + priv-hid (9) + priv-EP IN (7) + priv-EP OUT (7)
- *   + vend-if (9) + vend-hid header (7) = 57 */
-#define USBD_HID_CFG_VEND_DESC_ITEM_LENGTH_OFFSET  57
+ *   cfg header (9) + IAD (8) + priv-if (9) + priv-hid (9) + priv-EP IN (7) + priv-EP OUT (7)
+ *   + vend-if (9) + vend-hid header (7) = 65 */
+#define USBD_HID_CFG_VEND_DESC_ITEM_LENGTH_OFFSET  65
 #endif
 
 
@@ -219,6 +224,7 @@ typedef struct {
 #endif
 	u8 protocol;                  /**< Store the device protocol value. */
 	u8 idle_rate;                 /**< Store the device idle rate. */
+	u8 ctrl_req_pending;          /**< 1 if ctrl_req is waiting for its EP0 OUT data stage. */
 	u8 from_composite;			/**< Flag indicating if part of a composite device. */
 } usbd_hid_t;
 
@@ -253,9 +259,10 @@ int usbd_composite_hid_init(const usbd_hid_usr_cb_t *cb, const usbd_hid_ep_cfg_t
 
 /**
   * @brief  DeInitialize HID device
-  * @return 0 on success, non-zero on failure.
+  * @return None. This is a teardown path: the class is always unregistered and every resource it
+  *         owns released, so there is nothing for the caller to recover from.
   */
-int usbd_hid_deinit(void);
+void usbd_hid_deinit(void);
 
 /**
  * @brief Transmits data to the host over the INTR IN endpoint.

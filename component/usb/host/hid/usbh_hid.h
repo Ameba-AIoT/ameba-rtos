@@ -46,7 +46,12 @@ extern "C" {
 #define USBH_HID_MAIN_ITEM_TAG_INPUT           0x8  /**< Input Tag */
 #define USBH_HID_MAIN_ITEM_TAG_OUTPUT          0x9  /**< Output Tag */
 #define USBH_HID_MAIN_ITEM_TAG_COLLECTION      0xA  /**< Collection Tag */
+#define USBH_HID_MAIN_ITEM_TAG_FEATURE         0xB  /**< Feature Tag */
 #define USBH_HID_MAIN_ITEM_TAG_END_COLLECTION  0xC  /**< End Collection Tag */
+
+/* HID Main Item data bits, Ref HID 1.11 6.2.2.5 */
+#define USBH_HID_ITEM_DATA_CONSTANT            0x1U /**< 0: Data, 1: Constant(padding) */
+#define USBH_HID_ITEM_DATA_VARIABLE            0x2U /**< 0: Array, 1: Variable */
 
 /* HID Global Item Tags */
 #define USBH_HID_GLOBAL_ITEM_TAG_USAGE_PAGE    0x0  /**< Usage Page Tag */
@@ -58,6 +63,8 @@ extern "C" {
 
 /* HID Local Item Tags */
 #define USBH_HID_LOCAL_ITEM_TAG_USAGE          0x0  /**< Usage Tag */
+#define USBH_HID_LOCAL_ITEM_TAG_USAGE_MIN      0x1  /**< Usage Minimum Tag */
+#define USBH_HID_LOCAL_ITEM_TAG_USAGE_MAX      0x2  /**< Usage Maximum Tag */
 
 /* Usage Consumer Pages */
 #define USBH_HID_UP_CONSUMER                   0x0C /**< Consumer Usage Page */
@@ -68,6 +75,16 @@ extern "C" {
 #define USBH_HID_CONSUMER_MUTE                 0xE2 /**< Mute */
 #define USBH_HID_CONSUMER_PLAY_PAUSE           0xCD /**< Play/Pause */
 #define USBH_HID_CONSUMER_STOP                 0xB7 /**< Stop */
+
+/* Report descriptor parser limits */
+#define USBH_HID_BIT_NONE                      0xFFFFU /**< Control is not declared in the report descriptor */
+#define USBH_HID_TRACK_VOLUME_UP               0U   /**< Tracked usage slot: Volume Up */
+#define USBH_HID_TRACK_VOLUME_DOWN             1U   /**< Tracked usage slot: Volume Down */
+#define USBH_HID_TRACK_MUTE                    2U   /**< Tracked usage slot: Mute */
+#define USBH_HID_TRACK_PLAY_PAUSE              3U   /**< Tracked usage slot: Play/Pause */
+#define USBH_HID_TRACK_STOP                    4U   /**< Tracked usage slot: Stop */
+#define USBH_HID_TRACK_USAGE_CNT               5U   /**< Tracked usages: volume up/down/mute, play-pause, stop */
+#define USBH_HID_ARRAY_ELEM_CNT                4U   /**< Max usage codes decoded from one Array field */
 /** @} End of Host_HID_Constants group */
 /** @} End of USB_Host_Constants group */
 
@@ -137,42 +154,63 @@ typedef struct {
 /**
  * @brief HID Control Capabilities structure.
  * Stores supported features found during parsing (Volume, Media).
+ * @note  A control declared by a Variable field of Report Size 1 is located by
+ *        its absolute bit position (bitmap form). A control declared by an Array
+ *        field is not a bit at all: the field carries usage codes, so it is
+ *        described by consumer_array instead. Ref HID 1.11 6.2.2.5.
  */
 typedef struct {
 	u8 report_id_count;         /**< Number of report IDs found */
 
-	/* Volume controls */
+	/* Volume controls, bitmap form */
 	struct {
 		u8 report_id;           /**< Report ID for volume */
-		u8 up_bit;              /**< Bit position/usage for Volume Up */
-		u8 down_bit;            /**< Bit position/usage for Volume Down */
-		u8 mute_bit;            /**< Bit position/usage for Mute */
-		bool supported;         /**< Is volume control supported */
+		u16 up_bit;             /**< Absolute bit of Volume Up, USBH_HID_BIT_NONE if not declared */
+		u16 down_bit;           /**< Absolute bit of Volume Down, USBH_HID_BIT_NONE if not declared */
+		u16 mute_bit;           /**< Absolute bit of Mute, USBH_HID_BIT_NONE if not declared */
+		bool supported;         /**< Is volume control declared as a bitmap */
 	} volume;
 
-	/* Media controls */
+	/* Media controls, bitmap form */
 	struct {
 		u8 report_id;           /**< Report ID for media */
-		u8 play_pause_bit;      /**< Bit position/usage for Play/Pause */
-		u8 stop_bit;            /**< Bit position/usage for Stop */
-		bool supported;         /**< Is media control supported */
+		u16 play_pause_bit;     /**< Absolute bit of Play/Pause, USBH_HID_BIT_NONE if not declared */
+		u16 stop_bit;           /**< Absolute bit of Stop, USBH_HID_BIT_NONE if not declared */
+		bool supported;         /**< Is media control declared as a bitmap */
 	} media;
+
+	/* Consumer controls declared by an Array field carrying usage codes */
+	struct {
+		u8 report_id;           /**< Report ID holding the array field */
+		u16 bit_offset;         /**< Absolute bit of the first array element */
+		u8 elem_bits;           /**< Bits per element, i.e. Report Size */
+		u8 elem_cnt;            /**< Elements to decode, clamped to USBH_HID_ARRAY_ELEM_CNT */
+		bool supported;         /**< Is a consumer array field present */
+	} consumer_array;
 } usbh_hid_ctrl_caps_t;
 
 /**
  * @brief HID Parser State structure.
  * Maintains the context while parsing the HID Report Descriptor.
+ * @note  Input, Output and Feature fields live in separate reports, so each one
+ *        needs its own bit cursor. Ref HID 1.11 5.6 / 8.
  */
 typedef struct {
 	usbh_hid_ctrl_caps_t *device_info; /**< Pointer to capabilities struct to populate */
 	int logical_min;            /**< Current Logical Minimum */
 	int logical_max;            /**< Current Logical Maximum */
+	u32 in_bit_offset;          /**< Bits consumed by previous Input fields of the current report */
+	u32 out_bit_offset;         /**< Bits consumed by previous Output fields of the current report */
+	u32 feat_bit_offset;        /**< Bits consumed by previous Feature fields of the current report */
+	u32 usage_cnt;              /**< Usages declared so far for the pending Main item */
+	u32 usage_min;              /**< Pending Usage Minimum */
+	u16 track_ord[USBH_HID_TRACK_USAGE_CNT]; /**< Ordinal of each tracked usage in the pending field */
 	u16 usage_page;             /**< Current Usage Page */
 	u16 report_size;            /**< Current Report Size (bits) */
 	u16 report_count;           /**< Current Report Count */
+	u8 track_mask;              /**< Bitmask of tracked usages declared in the pending field */
 	u8 report_id;               /**< Current Report ID */
-	u8 usage_stack_ptr;         /**< Local usage counter within current Main item field */
-	u8 bit_offset;              /**< Cumulative bit offset within current report (resets on Report ID) */
+	u8 usage_min_valid;         /**< A Usage Minimum is pending a Usage Maximum */
 	u8 collection_depth;        /**< Current depth of Collection nesting */
 } usbh_hid_parse_state;
 
@@ -181,11 +219,11 @@ typedef struct {
  */
 typedef struct {
 	int(* init)(void);          /**< Called on initialization */
-	int(* deinit)(void);        /**< Called on de-initialization */
-	int(* attach)(void);        /**< Called when device is attached */
-	int(* detach)(void);        /**< Called when device is detached */
-	int(* setup)(void);         /**< Called during setup phase */
-	int(* report)(usbh_hid_event_t *event); /**< Called when a HID event occurs */
+	void (* deinit)(void);      /**< Called on de-initialization */
+	void (* attached)(void);    /**< Called when device is attached */
+	void (* detached)(void);    /**< Called when device is detached */
+	void (* setup)(void);       /**< Called during setup phase */
+	void (* report)(usbh_hid_event_t *event); /**< Called when a HID event occurs */
 } usbh_hid_usr_cb_t;
 
 typedef struct {
@@ -235,9 +273,8 @@ int usbh_hid_init(const usbh_hid_usr_cb_t *cb);
 
 /**
  * @brief  De-Initialize the HID host class.
- * @return 0 on success, non-zero on failure.
  */
-int usbh_hid_deinit(void);
+void usbh_hid_deinit(void);
 
 /**
  * @brief  Send an output report to the HID device via the Interrupt OUT pipe.
