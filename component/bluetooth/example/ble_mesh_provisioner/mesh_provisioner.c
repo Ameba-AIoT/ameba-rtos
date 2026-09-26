@@ -2927,7 +2927,7 @@ int ble_mesh_provisioner_main(uint8_t enable)
 #endif
 #if defined(RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT) && RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT
 		bt_app_conf.max_tx_octets = 0x40;
-		bt_app_conf.max_tx_time = 0x200;
+		bt_app_conf.max_tx_time = 0x270;
 #endif
 		BT_LOGA("Before Enable BT\r\n");
 		/* Enable BT */
