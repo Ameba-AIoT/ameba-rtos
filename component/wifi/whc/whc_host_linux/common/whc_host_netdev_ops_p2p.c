@@ -253,7 +253,11 @@ void whc_host_p2p_iface_free(struct wiphy *wiphy, struct wireless_dev *wdev)
 		}
 
 		if (global_idev.pndev[1]) {
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0))
+			cfg80211_unregister_netdevice(global_idev.pndev[1]);
+#else
 			unregister_netdevice(global_idev.pndev[1]);
+#endif
 			if (global_idev.pwdev_global[1]) { //wdev
 				kfree((u8 *)global_idev.pwdev_global[1]);
 				global_idev.pwdev_global[1] = NULL;

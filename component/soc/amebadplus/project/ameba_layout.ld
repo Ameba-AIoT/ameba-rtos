@@ -51,7 +51,11 @@
 #define KM4_IMG1_SIZE 				KBYTES(32)
 #endif
 
+#if defined(CONFIG_WIFI_NAN_HOST_APP)
+#define RAM_KM0_IMG2_SIZE				KBYTES(128)
+#else
 #define RAM_KM0_IMG2_SIZE				KBYTES(96)
+#endif
 /*
                   amebadplus SRAM Layout (512K)
 0x20000000 ──────────►┌──────────────────────┐

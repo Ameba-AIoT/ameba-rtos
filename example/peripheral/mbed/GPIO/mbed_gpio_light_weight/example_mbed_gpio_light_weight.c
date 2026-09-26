@@ -14,7 +14,7 @@
 #include "os_wrapper.h"
 #include <stdio.h>
 
-#if defined (CONFIG_AMEBAGREEN2)
+#if defined (CONFIG_AMEBAGREEN2) || defined(CONFIG_AMEBASMART)
 extern GPIO_TypeDef *GPIO_PORTx[3];
 #else
 extern GPIO_TypeDef *GPIO_PORTx[2];
