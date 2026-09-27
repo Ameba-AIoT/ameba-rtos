@@ -79,8 +79,11 @@ static const usbd_config_t msc_cfg = {
 	.isr_priority = INT_PRI_MIDDLE,
 #if defined(CONFIG_AMEBASMART)
 	.nptx_max_epmis_cnt = 100U,
-#elif defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RLE1509)
+#elif defined(CONFIG_AMEBAGREEN2)
 	.rx_fifo_depth = 724U,
+	.ptx_fifo_depth = {0U, 256U, 0U, 0U, 0U},
+#elif defined(CONFIG_RLE1509)
+	.rx_fifo_depth = 688U,
 	.ptx_fifo_depth = {0U, 256U, 0U, 0U, 0U},
 #elif defined (CONFIG_AMEBAL2)
 	.rx_fifo_depth = 677U,
@@ -113,9 +116,62 @@ static rtos_sema_t msc_sd_status_changed_sema;
 
 #if (MSC_SD_HOTPLUG == 1) || (MSC_USB_HOTPLUG == 1)
 static usbd_msc_hotplug_type_t msc_hotplug_ongoing_type;
+/* Set by whichever hotplug thread hits an unrecoverable error, tells the other
+   one to quit so that the last thread standing frees the shared objects. */
+static volatile u8 msc_stack_fatal;
 #endif
 
 /* Private functions ---------------------------------------------------------*/
+
+#if (MSC_SD_HOTPLUG == 1) || (MSC_USB_HOTPLUG == 1)
+/**
+  * @brief  Free the objects shared by the example threads
+  * @note   Only called by the last running thread, after the USB stack is fully
+  *         deinited, so that no ISR callback can touch these objects any more
+  * @retval None
+  */
+static void msc_free_resource(void)
+{
+#if MSC_SD_HOTPLUG
+	/* Unhook the card-detect callback before its semaphore goes away. */
+	SD_SetCdCallback(NULL);
+	rtos_sema_delete(msc_sd_status_changed_sema);
+	msc_sd_status_changed_sema = NULL;
+#endif
+#if MSC_USB_HOTPLUG
+	rtos_sema_delete(msc_usb_status_changed_sema);
+	msc_usb_status_changed_sema = NULL;
+#endif
+}
+
+/**
+  * @brief  Leave the example: the first thread to fail tears the stack down and
+  *         wakes its peer, the last one out frees the shared objects
+  * @note   The stack is already deinited by the caller, so no ISR callback can
+  *         give a semaphore any more
+  * @retval None
+  */
+static void msc_hotplug_thread_exit(void)
+{
+	u8 first = (msc_stack_fatal == 0U) ? 1U : 0U;
+
+	msc_stack_fatal = 1U;
+
+#if (MSC_SD_HOTPLUG == 1) && (MSC_USB_HOTPLUG == 1)
+	if (first != 0U) {
+		/* Wake the peer thread so it can observe the flag and quit; it frees the
+		   shared objects as the last thread standing. */
+		rtos_sema_give(msc_usb_status_changed_sema);
+		rtos_sema_give(msc_sd_status_changed_sema);
+	} else {
+		msc_free_resource();
+	}
+#else
+	UNUSED(first);
+	msc_free_resource();
+#endif
+}
+#endif // (MSC_SD_HOTPLUG == 1) || (MSC_USB_HOTPLUG == 1)
 
 /**
   * @brief  Handle MSC attach status change notifications from the USB stack
@@ -148,14 +204,14 @@ static void example_usbd_msc_usb_hotplug_thread(void *param)
 
 	for (;;) {
 		if (rtos_sema_take(msc_usb_status_changed_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
+			if (msc_stack_fatal != 0U) {
+				break;
+			}
 			if (msc_usb_attach_status == USBD_ATTACH_STATUS_DETACHED) {
 				msc_hotplug_ongoing_type = USBD_MSC_USB_HOTPLUG;
 				RTK_LOGS(TAG, RTK_LOG_INFO, "DETACHED\n");
 				usbd_msc_deinit();
-				ret = usbd_deinit();
-				if (ret != 0) {
-					break;
-				}
+				usbd_deinit();
 				usbd_msc_disk_deinit();
 				RTK_LOGS(TAG, RTK_LOG_INFO, "Free heap: 0x%x\n", rtos_mem_get_free_heap_size());
 				usbd_msc_disk_init();
@@ -177,6 +233,7 @@ static void example_usbd_msc_usb_hotplug_thread(void *param)
 		}
 	}
 	RTK_LOGS(TAG, RTK_LOG_ERROR, "Hotplug thread fail\n");
+	msc_hotplug_thread_exit();
 	rtos_task_delete(NULL);
 }
 #endif // MSC_USB_HOTPLUG
@@ -190,14 +247,14 @@ static void example_usbd_msc_sd_hotplug_thread(void *param)
 
 	for (;;) {
 		if (rtos_sema_take(msc_sd_status_changed_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
+			if (msc_stack_fatal != 0U) {
+				break;
+			}
 			if (msc_sd_status == SD_NODISK) {
 				msc_hotplug_ongoing_type = USBD_MSC_SD_HOTPLUG;
 				RTK_LOGS(TAG, RTK_LOG_INFO, "SD card removed\n");
 				usbd_msc_deinit();
-				ret = usbd_deinit();
-				if (ret != 0) {
-					break;
-				}
+				usbd_deinit();
 				RTK_LOGS(TAG, RTK_LOG_INFO, "Free heap: 0x%x\n", rtos_mem_get_free_heap_size());
 			} else {
 				RTK_LOGS(TAG, RTK_LOG_INFO, "SD card insert, re-init USB\n");
@@ -217,6 +274,7 @@ static void example_usbd_msc_sd_hotplug_thread(void *param)
 	}
 
 	RTK_LOGS(TAG, RTK_LOG_ERROR, "SD card hotplug thread fail\n");
+	msc_hotplug_thread_exit();
 	rtos_task_delete(NULL);
 }
 
@@ -327,11 +385,8 @@ exit_usbd_init_fail:
 	usbd_msc_disk_deinit();
 
 exit_usbd_msc_disk_init_fail:
-#if MSC_SD_HOTPLUG
-	rtos_sema_delete(msc_sd_status_changed_sema);
-#endif
-#if MSC_USB_HOTPLUG
-	rtos_sema_delete(msc_usb_status_changed_sema);
+#if (MSC_SD_HOTPLUG == 1) || (MSC_USB_HOTPLUG == 1)
+	msc_free_resource();
 #endif
 
 	rtos_task_delete(NULL);

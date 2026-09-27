@@ -222,9 +222,10 @@ int usbd_msc_disk_init(void);
 
 /**
  * @brief De-initializes the underlying storage disk.
- * @return 0 on success, non-zero on failure.
+ * @return None. This is a teardown path: a backend that cannot unmount cleanly is reported through
+ *         the log, and the caller has no way to recover from it anyway.
  */
-int usbd_msc_disk_deinit(void);
+void usbd_msc_disk_deinit(void);
 /** @} End of Device_MSC_Functions group */
 /** @} End of USB_Device_Functions group */
 /** @} End of USB_Device_API group */

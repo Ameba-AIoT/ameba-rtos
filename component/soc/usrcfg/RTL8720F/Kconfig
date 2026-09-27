@@ -18,10 +18,24 @@ config FLASH_OTA1_OFFSET
     hex "APP OTA1 Offset"
     default 0x08014000
 
-config FLASH_OTA1_SIZE
-    hex "APP OTA1 Size"
+# APP OTA1 size follows the "auto-default + optional override" 
+config FLASH_OTA1_SIZE_DEFAULT
+    hex
     default 0x40000 if SOLO
     default 0x1EC000
+
+config FLASH_OTA1_SIZE_OVERRIDE
+    bool "Override APP OTA1 Size"
+
+config FLASH_OTA1_SIZE_CUSTOM
+    hex "APP OTA1 Size"
+    depends on FLASH_OTA1_SIZE_OVERRIDE
+    default FLASH_OTA1_SIZE_DEFAULT
+
+config FLASH_OTA1_SIZE
+    hex
+    default FLASH_OTA1_SIZE_CUSTOM if FLASH_OTA1_SIZE_OVERRIDE
+    default FLASH_OTA1_SIZE_DEFAULT
 
 # Boot Manifest(4K) + KM4 Bootloader(76K) OTA
 config FLASH_BOOT_OTA2_OFFSET
@@ -37,10 +51,24 @@ config FLASH_OTA2_OFFSET
     hex "APP OTA2 Offset"
     default 0x08214000
 
-config FLASH_OTA2_SIZE
-    hex "APP OTA2 Size"
+# See FLASH_OTA1_SIZE above for the auto-default + optional override pattern.
+config FLASH_OTA2_SIZE_DEFAULT
+    hex
     default 0x40000 if SOLO
     default 0x1C9000
+
+config FLASH_OTA2_SIZE_OVERRIDE
+    bool "Override APP OTA2 Size"
+
+config FLASH_OTA2_SIZE_CUSTOM
+    hex "APP OTA2 Size"
+    depends on FLASH_OTA2_SIZE_OVERRIDE
+    default FLASH_OTA2_SIZE_DEFAULT
+
+config FLASH_OTA2_SIZE
+    hex
+    default FLASH_OTA2_SIZE_CUSTOM if FLASH_OTA2_SIZE_OVERRIDE
+    default FLASH_OTA2_SIZE_DEFAULT
 
 if SOLO
 config FLASH_NP_OTA1_OFFSET
@@ -60,13 +88,44 @@ config FLASH_NP_OTA2_SIZE
     default 0x18C000
 endif # SOLO
 
-config FLASH_VFS1_OFFSET
-    hex "VFS1 Offset"
+# SOLO: VFS1 holds the OTA image (needs ~1M), sits right after IOT_OTA2
+# (0x081CA000+0x136000 = 0x08300000) and fills to the 4M flash end.
+# See FLASH_OTA1_SIZE above for the auto-default + optional override pattern.
+config FLASH_VFS1_OFFSET_DEFAULT
+    hex
+    default 0x08300000 if SOLO
     default 0x083E0000
 
-config FLASH_VFS1_SIZE
-    hex "VFS1 Size"
+config FLASH_VFS1_OFFSET_OVERRIDE
+    bool "Override VFS1 Offset"
+
+config FLASH_VFS1_OFFSET_CUSTOM
+    hex "VFS1 Offset"
+    depends on FLASH_VFS1_OFFSET_OVERRIDE
+    default FLASH_VFS1_OFFSET_DEFAULT
+
+config FLASH_VFS1_OFFSET
+    hex
+    default FLASH_VFS1_OFFSET_CUSTOM if FLASH_VFS1_OFFSET_OVERRIDE
+    default FLASH_VFS1_OFFSET_DEFAULT
+
+config FLASH_VFS1_SIZE_DEFAULT
+    hex
+    default 0x100000 if SOLO
     default 0x20000
+
+config FLASH_VFS1_SIZE_OVERRIDE
+    bool "Override VFS1 Size"
+
+config FLASH_VFS1_SIZE_CUSTOM
+    hex "VFS1 Size"
+    depends on FLASH_VFS1_SIZE_OVERRIDE
+    default FLASH_VFS1_SIZE_DEFAULT
+
+config FLASH_VFS1_SIZE
+    hex
+    default FLASH_VFS1_SIZE_CUSTOM if FLASH_VFS1_SIZE_OVERRIDE
+    default FLASH_VFS1_SIZE_DEFAULT
 
 # VFS region 2
 config FLASH_VFS2_OFFSET
@@ -141,19 +200,33 @@ endmenu
 
 menu "RAM Layout Configuration"
 
-config SRAM_KM4NS_IMG2_KB
-    int "KM4NS(NP) SRAM image2 size (KB)"
-    range 32 428
+# KM4NS SRAM image2 size follows the auto-default + optional override pattern 
+config SRAM_KM4NS_IMG2_KB_DEFAULT
+    int
     default 412 if SOLO
     default 48 if WHC_DEV_FOR_KM4TZ
     default 200 if BT_MENU && WIFI_RADAR_ENABLE
     default 168 if BT_MENU
     default 156 if WIFI_RADAR_ENABLE
     default 124
+
+config SRAM_KM4NS_IMG2_KB_OVERRIDE
+    bool "Override KM4NS(NP) SRAM image2 size"
+
+config SRAM_KM4NS_IMG2_KB_CUSTOM
+    int "KM4NS(NP) SRAM image2 size (KB)"
+    depends on SRAM_KM4NS_IMG2_KB_OVERRIDE
+    range 32 428
+    default SRAM_KM4NS_IMG2_KB_DEFAULT
     help
         Size of the NP(KM4NS) SRAM image2 region, pinned at the SRAM_END side; the
         AP(KM4TZ) region takes the remainder below it, so growing NP shrinks AP.
         KM4NS_BD_RAM is this size minus the 512B IPC RAM and the image header.
+
+config SRAM_KM4NS_IMG2_KB
+    int
+    default SRAM_KM4NS_IMG2_KB_CUSTOM if SRAM_KM4NS_IMG2_KB_OVERRIDE
+    default SRAM_KM4NS_IMG2_KB_DEFAULT
 
 # TrustZone secure image (Image3) size. For SoCs without PSRAM this region may
 # live in SRAM, so it is a general RAM-layout parameter, configured per IC.

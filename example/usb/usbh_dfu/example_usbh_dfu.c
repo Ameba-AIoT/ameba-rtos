@@ -33,9 +33,14 @@ static const usbh_config_t usbh_cfg = {
 	.main_task_stack_size = USBH_DFU_MAIN_TASK_STACK_SIZE,
 	.main_task_priority   = USBH_DFU_MAIN_TASK_PRIORITY,
 	.tick_source          = USBH_SOF_TICK,
-#if defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RLE1509)
-	/* FIFO total depth is 1024, reserve 12 for DMA addr */
+#if defined(CONFIG_AMEBAGREEN2)
+	/* FIFO total 1024 DWORD, resv 12 DWORD for DMA */
 	.rx_fifo_depth   = 500,
+	.nptx_fifo_depth = 256,
+	.ptx_fifo_depth  = 256,
+#elif defined(CONFIG_RLE1509)
+	/* FIFO total 1024 DWORD, resv 48 DWORD */
+	.rx_fifo_depth   = 464,
 	.nptx_fifo_depth = 256,
 	.ptx_fifo_depth  = 256,
 #elif defined(CONFIG_AMEBAL2)
@@ -62,18 +67,16 @@ static int         dfu_download_result;
 static int         dfu_upload_result;
 
 /* Private functions ---------------------------------------------------------*/
-static int dfu_cb_attach(void)
+static void dfu_cb_attached(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "DFU device attached\n");
 	rtos_sema_give(dfu_attach_sema);
-	return HAL_OK;
 }
 
-static int dfu_cb_detach(void)
+static void dfu_cb_detached(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "DFU device detached\n");
 	rtos_sema_give(dfu_detach_sema);
-	return HAL_OK;
 }
 
 static int dfu_cb_get_block(u16 block_num, u8 *buf, u32 max_len)
@@ -133,15 +136,15 @@ static void dfu_cb_upload_done(int status)
 }
 
 static const usbh_dfu_cb_t dfu_cb = {
-	.attach        = dfu_cb_attach,
-	.detach        = dfu_cb_detach,
+	.attached        = dfu_cb_attached,
+	.detached        = dfu_cb_detached,
 	.get_block     = dfu_cb_get_block,
 	.download_done = dfu_cb_download_done,
 	.recv_block    = dfu_cb_recv_block,
 	.upload_done   = dfu_cb_upload_done,
 };
 
-static int dfu_cb_process(usb_host_t *host, u8 msg)
+static void dfu_cb_process(usb_host_t *host, u8 msg)
 {
 	UNUSED(host);
 
@@ -153,8 +156,6 @@ static int dfu_cb_process(usb_host_t *host, u8 msg)
 	default:
 		break;
 	}
-
-	return HAL_OK;
 }
 
 static const usbh_user_cb_t usbh_usr_cb = {

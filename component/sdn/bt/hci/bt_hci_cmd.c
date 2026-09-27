@@ -101,9 +101,9 @@ static const struct bt_hci_cmd_func_hdl g_bt_hci_cmd_func_tbl[] = {
 #endif
 #if defined(CONFIG_BLE_LL_DATA_LEN_EXT_ENABLE) && BT_LL_FEATURE_BT42_LE_DATA_LENGTH_EXTENSION
 	{BT_HCI_OP_LE_SET_DATA_LENGTH, bt_hci_cmd_ogf_le_ocf_set_data_length},
-#endif
 	{BT_HCI_OP_LE_READ_SUGGESTED_DATALEN, bt_hci_cmd_ogf_le_ocf_read_suggested_datalen},
 	{BT_HCI_OP_LE_WRITE_SUGGESTED_DATALEN, bt_hci_cmd_ogf_le_ocf_write_suggested_datalen},
+#endif
 #if defined(CONFIG_BLE_LL_PRIVACY_ENABLE) && BT_LL_FEATURE_BT42_LE_PRIVACY
 	{BT_HCI_OP_LE_READ_PEER_RPA, bt_hci_cmd_ogf_le_ocf_read_peer_rpa},
 	{BT_HCI_OP_LE_READ_LOCAL_RPA, bt_hci_cmd_ogf_le_ocf_read_local_rpa},
@@ -114,6 +114,12 @@ static const struct bt_hci_cmd_func_hdl g_bt_hci_cmd_func_tbl[] = {
 	{BT_HCI_OP_LE_SET_RPA_TIMEOUT, bt_hci_cmd_ogf_le_ocf_set_rpa_timeout},
 	{BT_HCI_OP_LE_SET_ADDR_RES_ENABLE, bt_hci_cmd_ogf_le_ocf_set_addr_res_enable},
 	{BT_HCI_OP_LE_SET_PRIVACY_MODE, bt_hci_cmd_ogf_le_ocf_set_privacy_mode},
+#endif
+#if BT_LL_FEATURE_BT53_LE_SUBRATE
+#if BT_LL_LE_CENTRAL
+	{BT_HCI_OP_LE_SET_DEFAULT_SUBRATE, bt_hci_cmd_ogf_le_ocf_set_default_subrate},
+#endif
+	{BT_HCI_OP_LE_SUBRATE_REQUEST, bt_hci_cmd_ogf_le_ocf_set_subrate_request},
 #endif
 	{BT_HCI_OP_LE_READ_MAX_DATALEN, bt_hci_cmd_ogf_le_ocf_read_max_datalen},
 #if defined(CONFIG_BLE_LL_SET_PHY_ENABLE) && (BT_LL_FEATURE_BT50_LE_2M_PHY || BT_LL_FEATURE_BT50_LE_CODED_PHY)
@@ -159,6 +165,19 @@ static const struct bt_hci_cmd_func_hdl g_bt_hci_cmd_func_tbl[] = {
 	{BT_HCI_OP_LE_REMOVE_PERIODIC_ADV_LIST, bt_hci_cmd_ogf_le_ocf_remove_pa_list},
 	{BT_HCI_OP_LE_CLEAR_PERIODIC_ADV_LIST, bt_hci_cmd_ogf_le_ocf_clear_pa_list},
 	{BT_HCI_OP_LE_READ_PERIODIC_ADV_LIST_SIZE, bt_hci_cmd_ogf_le_ocf_read_pa_list_size},
+#endif
+#if defined(CONFIG_BLE_LL_PAST_SENDER) && BT_LL_FEATURE_BT51_PAST_SENDER
+#if defined(CONFIG_BLE_LL_PA_SYNC_ENABLE) && BT_LL_FEATURE_BT50_LE_PA_SYNC
+	{BT_HCI_OP_LE_PA_SYNC_TRANSFER, bt_hci_cmd_ogf_le_ocf_pa_sync_transfer},
+#endif
+#if defined(CONFIG_BLE_LL_PA_ADV_ENABLE) && BT_LL_FEATURE_BT50_LE_PA_ADV
+	{BT_HCI_OP_LE_PA_SET_INFO_TRANSFER, bt_hci_cmd_ogf_le_ocf_pa_set_info_transfer},
+#endif
+#endif
+
+#if defined(CONFIG_BLE_LL_PAST_RECEIVER) && BT_LL_FEATURE_BT51_PAST_RECEIVER
+	{BT_HCI_OP_LE_SET_PA_SYNC_TRANSFER_PARAM, bt_hci_cmd_ogf_le_ocf_set_pa_sync_transfer_param},
+	{BT_HCI_OP_LE_SET_DEFAULT_PA_SYNC_TRANSFER_PARAM, bt_hci_cmd_ogf_le_ocf_set_default_pa_sync_transfer_param},
 #endif
 
 	//BT_OGF_VENDOR
@@ -306,7 +325,18 @@ void ble_ll_init_feature(uint64_t *pfeature)
 	*pfeature |= BT_LL_LE_FEATURE_LE_PA_ADI_SUPPORT;
 #endif
 
+#if BT_LL_FEATURE_BT53_LE_SUBRATE
+	*pfeature |= BT_LL_LE_FEATURE_CONNECTION_SUBRATING;
+	*pfeature |= BT_LL_LE_FEATURE_CONNECTION_SUBRATING_HOST_SUPPORT;
+#endif
 	*pfeature |= BT_LL_LE_FEATURE_LE_CHANNEL_SEL_2;
+
+#if defined(CONFIG_BLE_LL_PAST_SENDER) && BT_LL_FEATURE_BT51_PAST_SENDER
+	*pfeature |= BT_LL_LE_FEATURE_PAST_SENDER;
+#endif
+#if defined(CONFIG_BLE_LL_PAST_RECEIVER) && BT_LL_FEATURE_BT51_PAST_RECEIVER
+	*pfeature |= BT_LL_LE_FEATURE_PAST_RECEIVER;
+#endif
 }
 
 void bt_hci_cmd_handler(uint8_t *pbuf)

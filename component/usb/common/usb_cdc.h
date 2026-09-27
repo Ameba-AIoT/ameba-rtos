@@ -61,6 +61,13 @@ extern "C" {
 #define USB_CDC_SET_ETHERNET_PACKET_FILTER              0x43U /**< Set Ethernet packet filter bitmap */
 #define USB_CDC_GET_ETHERNET_STATISTIC                  0x44U /**< Retrieve Ethernet device statistics */
 
+/* Response sizes of the Ethernet subclass Device-to-Host requests.
+ * Ref CDC 1.2 6.2.6: GET_ETHERNET_STATISTIC returns one 32-bit counter.
+ * Ref CDC 1.2 6.2.4: GET_ETHERNET_POWER_MANAGEMENT_PATTERN_FILTER returns a
+ * 16-bit boolean.  Both lengths are defined by the request, not by the host. */
+#define USB_CDC_ETHERNET_STATISTIC_RESPONSE_LEN         4U /**< GET_ETHERNET_STATISTIC response size */
+#define USB_CDC_ETHERNET_POWER_MANAGEMENT_RESPONSE_LEN  2U /**< GET_ETHERNET_POWER_MANAGEMENT response size */
+
 /* CDC Notification Codes */
 #define USB_CDC_NOTIFY_NETWORK_CONNECTION               0x00U /**< Network Connection Notification */
 #define USB_CDC_NOTIFY_RESPONSE_AVAILABLE               0x01U /**< Response Available Notification */
@@ -68,6 +75,13 @@ extern "C" {
 
 /* CDC Notification Header length (CDC spec §6.3): bmRequestType+bCode+wValue+wIndex+wLength */
 #define USB_CDC_NOTIFY_HDR_LEN                          8U
+
+/* Connection bit rates reported by CONNECTION_SPEED_CHANGE (Ref CDC 1.2 6.3.3:
+ * DLBitRate/ULBitRate are the actual connection bit rates in bits/s).  The USB bus
+ * is the connection an Ethernet-carrying CDC function rides on, so its raw signalling
+ * rate is what these fields describe. */
+#define USB_CDC_CONNECTION_BITRATE_HS                   480000000U /**< High Speed: 480 Mbit/s */
+#define USB_CDC_CONNECTION_BITRATE_FS                   12000000U  /**< Full Speed: 12 Mbit/s */
 
 /** @} End of USB_Common_Constants group */
 /** @} End of USB_Common_API group */

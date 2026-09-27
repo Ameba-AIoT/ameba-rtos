@@ -44,7 +44,9 @@ ameba_list_append_if(need_external_lib public_libraries ${c_SDK_LIB_APPLICATION_
 
 # NAN host control app is shipped closed-source: link the prebuilt lib_nan.a
 # (built from source before release by ameba_add_external_app_library below).
+if(CONFIG_WHC_HOST OR CONFIG_WHC_NONE)
 ameba_list_append_if(CONFIG_WIFI_NAN_HOST_APP public_libraries ${c_SDK_LIB_APPLICATION_DIR}/lib_nan.a)
+endif()
 
 # Component public part, user config end
 #----------------------------------------#

@@ -146,12 +146,12 @@ extern struct netif *pnetif_usb_eth;
 extern void rltk_usb_eth_init(void);
 extern void netif_adapter_usb_eth_recv(u8 *buf, u32 len);
 
-static int usbh_comp_detach(void);
-static int usbh_comp_ecm_rxdata(u8 *buf, u32 len);
-static int usbh_comp_acm_rxdata(u8 *buf, u32 len, u8 status);
-static int usbh_comp_acm_transmit_cb(u8 status);
+static void usbh_comp_detached(void);
+static void usbh_comp_ecm_received(u8 *buf, u32 len);
+static void usbh_comp_acm_received(u8 *buf, u32 len, u8 status);
+static void usbh_comp_acm_transmitted(u8 status);
 static void usbh_comp_acm_rx_thread(void *param);
-static int usbh_comp_cb_process(usb_host_t *host, u8 msg);
+static void usbh_comp_cb_process(usb_host_t *host, u8 msg);
 static int usbh_comp_cb_device_check(usb_host_t *host, u8 cfg_max);
 
 /* ========================================================================== */
@@ -208,14 +208,14 @@ static const usbh_config_t usbh_cfg = {
 };
 
 static const usbh_cdc_acm_cb_t usbh_comp_acm_cfg = {
-	.receive  = usbh_comp_acm_rxdata,
-	.transmit = usbh_comp_acm_transmit_cb,
+	.received  = usbh_comp_acm_received,
+	.transmitted = usbh_comp_acm_transmitted,
 	.priv     = usbh_comp_dongle_array,
 };
 
 static const usbh_cdc_ecm_state_cb_t usbh_comp_ecm_cfg = {
-	.bulk_received = usbh_comp_ecm_rxdata,
-	.detach        = usbh_comp_detach,
+	.received = usbh_comp_ecm_received,
+	.detached        = usbh_comp_detached,
 };
 
 static const usbh_user_cb_t usbh_comp_usr_cb = {
@@ -309,7 +309,7 @@ static u8 *usbh_comp_dongle_get_netinfo(u8 *name)
 /*                          USB Callbacks                                     */
 /* ========================================================================== */
 
-static int usbh_comp_cb_process(usb_host_t *host, u8 msg)
+static void usbh_comp_cb_process(usb_host_t *host, u8 msg)
 {
 	switch (msg) {
 	case USBH_MSG_USER_SET_CONFIG:
@@ -320,7 +320,6 @@ static int usbh_comp_cb_process(usb_host_t *host, u8 msg)
 	default:
 		break;
 	}
-	return HAL_OK;
 }
 
 static int usbh_comp_cb_device_check(usb_host_t *host, u8 cfg_max)
@@ -329,23 +328,21 @@ static int usbh_comp_cb_device_check(usb_host_t *host, u8 cfg_max)
 	return usbh_cdc_ecm_check_config_desc(host);
 }
 
-static int usbh_comp_detach(void)
+static void usbh_comp_detached(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "DETACH\n");
 	if (usbh_dongle_ctx.in_detach == 0U) {
 		usbh_dongle_ctx.in_detach = 1U;
 		rtos_sema_give(usbh_comp_detach_sema);
 	}
-	return HAL_OK;
 }
 
-static int usbh_comp_ecm_rxdata(u8 *buf, u32 len)
+static void usbh_comp_ecm_received(u8 *buf, u32 len)
 {
 	netif_adapter_usb_eth_recv(buf, len);
-	return HAL_OK;
 }
 
-static int usbh_comp_acm_transmit_cb(u8 status)
+static void usbh_comp_acm_transmitted(u8 status)
 {
 	if (status == HAL_OK) {
 		if (usbh_comp_acm_send_sema != NULL) {
@@ -354,7 +351,6 @@ static int usbh_comp_acm_transmit_cb(u8 status)
 	} else {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "ACM TX fail: %d\n", status);
 	}
-	return HAL_OK;
 }
 
 static int usbh_comp_acm_transmit(u8 *buf, u32 len)
@@ -368,7 +364,7 @@ static int usbh_comp_acm_transmit(u8 *buf, u32 len)
 	return ret;
 }
 
-static int usbh_comp_acm_rxdata(u8 *pbuf, u32 len, u8 status)
+static void usbh_comp_acm_received(u8 *pbuf, u32 len, u8 status)
 {
 	u32 i;
 	u16 vid = usbh_dongle_ctx.vid;
@@ -602,7 +598,6 @@ done:
 	if (usbh_comp_acm_rx_done_sema != NULL) {
 		rtos_sema_give(usbh_comp_acm_rx_done_sema);
 	}
-	return HAL_OK;
 }
 
 static void usbh_comp_acm_rx_thread(void *param)
@@ -1342,8 +1337,17 @@ static int usbh_comp_do_init(void)
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "USB init fail\n");
 		return HAL_ERR_UNKNOWN;
 	}
-	usbh_cdc_acm_init(&usbh_comp_acm_cfg);
-	usbh_cdc_ecm_init(&usbh_comp_ecm_cfg, &usbh_comp_ecm_priv);
+	if (usbh_cdc_acm_init(&usbh_comp_acm_cfg) != HAL_OK) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "ACM init fail\n");
+		usbh_deinit();
+		return HAL_ERR_UNKNOWN;
+	}
+	if (usbh_cdc_ecm_init(&usbh_comp_ecm_cfg, &usbh_comp_ecm_priv) != HAL_OK) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "ECM init fail\n");
+		usbh_cdc_acm_deinit();
+		usbh_deinit();
+		return HAL_ERR_UNKNOWN;
+	}
 	usbh_start();
 
 	while (!usbh_cdc_ecm_usb_is_ready()) {

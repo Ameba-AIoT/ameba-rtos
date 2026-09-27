@@ -37,9 +37,13 @@ static const usbd_config_t dfu_cfg = {
 	.diag_enable = 1,
 #if defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBAD) || defined(CONFIG_AMEBADPLUS)
 	.nptx_max_epmis_cnt = 1U,
-#elif defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RLE1509)
+#elif defined(CONFIG_AMEBAGREEN2)
 	/* DFIFO total 1024 DWORD, resv 12 DWORD for DMA addr, EP0 fixed 32 DWORD */
 	.rx_fifo_depth  = 980U,
+	.ptx_fifo_depth = {0U, 0U, 0U, 0U, 0U,},
+#elif defined(CONFIG_RLE1509)
+	/*DFIFO total 1024 DWORD, resv 48 DWORD and EP0 fixed 32 DWORD*/
+	.rx_fifo_depth  = 944U,
 	.ptx_fifo_depth = {0U, 0U, 0U, 0U, 0U,},
 #elif defined(CONFIG_AMEBAL2)
 	.rx_fifo_depth  = 661U,
@@ -171,10 +175,7 @@ static void usbd_dfu_reconf_thread(void *param)
 		}
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Reconf: re-enumerating\n");
 		usbd_dfu_deinit();
-		ret = usbd_deinit();
-		if (ret != HAL_OK) {
-			break;
-		}
+		usbd_deinit();
 		//RTK_LOGS(TAG, RTK_LOG_INFO, "Free heap: 0x%x\n", rtos_mem_get_free_heap_size());
 		ret = usbd_init(&dfu_cfg);
 		if (ret != HAL_OK) {
@@ -189,7 +190,10 @@ static void usbd_dfu_reconf_thread(void *param)
 	}
 
 	RTK_LOGS(TAG, RTK_LOG_ERROR, "Reconf thread fail\n");
+	/* The stack is fully deinited here, no reconf() can give the sema any more.
+	   This thread is its only user left: free it as the last owner. */
 	rtos_sema_delete(dfu_reconf_sema);
+	dfu_reconf_sema = NULL;
 	rtos_task_delete(NULL);
 }
 #endif /* USBD_DFU_WILL_DETACH */
@@ -241,6 +245,7 @@ exit:
 	RTK_LOGS(TAG, RTK_LOG_ERROR, "USBD DFU demo fail\n");
 #if USBD_DFU_WILL_DETACH
 	rtos_sema_delete(dfu_reconf_sema);
+	dfu_reconf_sema = NULL;
 #endif
 	rtos_task_delete(NULL);
 }

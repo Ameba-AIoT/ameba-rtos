@@ -173,7 +173,11 @@ typedef struct {
 #if defined(USBD_CDC_ACM_NOTIFY_LOOP_TEST) && (USBD_CDC_ACM_NOTIFY_LOOP_TEST == 1)
 	u16 intr_notify_idx;        /**< Index for managing interrupt notifications. */
 #endif
+	u8 ctrl_req_pending;        /**< 1 if ctrl_req is waiting for its EP0 OUT data stage. */
 	u8 from_composite;          /**< Flag indicating if part of a composite device. */
+	u8 if_base;                 /**< First interface number of this class; 0 in standalone mode
+	                                 unless the composite framework rebases it via
+	                                 set_interface_base(). */
 } usbd_cdc_acm_dev_t;
 
 /** @} End of Device_CDC_ACM_Types group */
@@ -210,9 +214,10 @@ int usbd_composite_cdc_acm_init(const usbd_cdc_acm_cb_t *cb, const usbd_cdc_acm_
 
 /**
  * @brief De-initializes the CDC ACM class driver.
- * @return 0 on success, non-zero on failure.
+ * @return None. This is a teardown path: the class is always unregistered and every resource it
+ *         owns released, so there is nothing for the caller to recover from.
  */
-int usbd_cdc_acm_deinit(void);
+void usbd_cdc_acm_deinit(void);
 
 /**
  * @brief Transmits data to the host over the BULK IN endpoint.

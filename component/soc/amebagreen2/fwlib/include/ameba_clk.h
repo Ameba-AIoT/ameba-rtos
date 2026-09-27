@@ -351,7 +351,7 @@ void OSC131_R_Set(u32 setbit, u32 clearbit);
 u32 OSC_CalResult_Get(u8 cal_clk);
 void XTAL_INIT(void);
 void XTAL_AACK(void);
-
+void XTAL_ARB_Delay_Set(u32 value);
 #ifdef __cplusplus
 }
 #endif

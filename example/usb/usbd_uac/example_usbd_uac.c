@@ -128,6 +128,9 @@ static const char *const TAG = "UAC";
 static rtos_task_t check_status_task;
 static rtos_sema_t uac_attach_status_changed_sema;
 static u8 uac_attach_status;
+/* Raised by the hotplug thread when the stack can not be recovered: the workers
+   leave their loops and the hotplug thread frees the shared objects. */
+static __IO u8 uac_stack_fatal = 0;
 #endif
 static rtos_task_t uac_player_task;
 static rtos_sema_t uac_ready_sema;
@@ -153,8 +156,11 @@ static u8 recv_buf[USB_AUDIO_BUF_SIZE * 2];
 static const usbd_config_t uac_cfg = {
 	.speed = USBD_UAC_USB_SPEED,
 	.isr_priority = INT_PRI_MIDDLE,
-#if defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RLE1509)
+#if defined(CONFIG_AMEBAGREEN2)
 	.rx_fifo_depth = 724U,
+	.ptx_fifo_depth = {0U, 0U, 0U, 256U, },
+#elif defined(CONFIG_RLE1509)
+	.rx_fifo_depth = 688U,
 	.ptx_fifo_depth = {0U, 0U, 0U, 256U, },
 #elif defined (CONFIG_AMEBAPRO3)
 	/*DFIFO total 2232 DWORD, resv 8 DWORD for DMA addr and EP0 fixed 256 DWORD*/
@@ -201,6 +207,7 @@ static const usbd_audio_cfg_t uac_record_cfg = {
 	.enable = 1,
 };
 static rtos_sema_t uac_record_start_sema;
+static rtos_task_t uac_record_task;
 /* 16-point sine LUT (one period), amplitude ~10000; drives a 1 kHz tone at 16 kHz */
 static const s16 uac_record_sine16[16] = {
 	0, 3827, 7071, 9239, 10000, 9239, 7071, 3827,
@@ -210,6 +217,26 @@ static u8 uac_record_chunk[USBD_UAC_RECORD_CHUNK_LEN] USB_DMA_ALIGNED;
 #endif
 
 /* Private functions ---------------------------------------------------------*/
+
+/**
+  * @brief  Free the objects shared by the example threads
+  * @note   Only called by the last running thread, after the USB stack is fully
+  *         deinited, so that no ISR callback can touch these objects any more
+  * @retval None
+  */
+static void uac_free_resource(void)
+{
+	rtos_sema_delete(uac_ready_sema);
+	uac_ready_sema = NULL;
+#if USBD_UAC_ENABLE_RECORD
+	rtos_sema_delete(uac_record_start_sema);
+	uac_record_start_sema = NULL;
+#endif
+#if USBD_UAC_HOTPLUG
+	rtos_sema_delete(uac_attach_status_changed_sema);
+	uac_attach_status_changed_sema = NULL;
+#endif
+}
 
 /**
   * @brief  Handle the uac class control requests
@@ -226,7 +253,9 @@ static int uac_cb_setup(usb_setup_req_t *req, u8 *buf)
 	UNUSED(req);
 	UNUSED(buf);
 
-	return HAL_OK;
+	/* No vendor request is implemented by this example, reject so that the class
+	   driver makes the core STALL EP0 instead of ACKing an unsupported request */
+	return HAL_ERR_PARA;
 }
 
 /**
@@ -307,10 +336,7 @@ static void example_usbd_uac_hotplug_thread(void *param)
 				}
 
 				usbd_uac_deinit();
-				ret = usbd_deinit();
-				if (ret != 0) {
-					break;
-				}
+				usbd_deinit();
 				uac_task_exiting = 0;
 				RTK_LOGS(TAG, RTK_LOG_INFO, "Free heap: 0x%x\n", rtos_mem_get_free_heap_size());
 				ret = usbd_init(&uac_cfg);
@@ -330,6 +356,45 @@ static void example_usbd_uac_hotplug_thread(void *param)
 		}
 	}
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Hotplug thread fail\n");
+
+	/* The stack is fully deinited here, no more ISR callback: stop the workers
+	   blocked on the semaphores, then free them as the last thread standing. */
+	uac_stack_fatal = 1;
+	uac_task_exiting = 1;
+	usbd_uac_stop_play();
+	rtos_sema_give(uac_ready_sema);
+#if USBD_UAC_ENABLE_RECORD
+	rtos_sema_give(uac_record_start_sema);
+#endif
+
+	/* Wait for the workers to unwind. The playback loop needs the longest:
+	   usbd_uac_read() has a 500ms timeout and the AudioTrack teardown follows. */
+	for (wait_cnt = 0; wait_cnt < 100; wait_cnt++) { /* max wait 2s */
+		if ((uac_player_task == NULL)
+#if USBD_UAC_ENABLE_RECORD
+			&& (uac_record_task == NULL)
+#endif
+		   ) {
+			break;
+		}
+		rtos_time_delay_ms(20);
+	}
+
+	/* Last resort for a worker stuck outside its polling point. */
+	if (uac_player_task != NULL) {
+		RTK_LOGS(TAG, RTK_LOG_WARN, "Force delete player thread\n");
+		rtos_task_delete(uac_player_task);
+		uac_player_task = NULL;
+	}
+#if USBD_UAC_ENABLE_RECORD
+	if (uac_record_task != NULL) {
+		RTK_LOGS(TAG, RTK_LOG_WARN, "Force delete record thread\n");
+		rtos_task_delete(uac_record_task);
+		uac_record_task = NULL;
+	}
+#endif
+
+	uac_free_resource();
 	rtos_task_delete(NULL);
 }
 #endif // USBD_UAC_HOTPLUG
@@ -553,6 +618,11 @@ static void example_usbd_uac_audio_track_thread(void *param)
 		if (rtos_sema_take(uac_ready_sema, RTOS_SEMA_MAX_COUNT) != RTK_SUCCESS) {
 			break;
 		}
+#if USBD_UAC_HOTPLUG
+		if (uac_stack_fatal != 0) {
+			break;
+		}
+#endif
 		if (uac_task_exiting != 0) {
 			break;
 		}
@@ -560,6 +630,9 @@ static void example_usbd_uac_audio_track_thread(void *param)
 		example_audio_track_play();
 	} while (1);
 
+	/* Clear the handle last: the hotplug thread polls it to know this worker is
+	   gone before it frees the semaphores. */
+	uac_player_task = NULL;
 	rtos_task_delete(NULL);
 }
 
@@ -584,6 +657,11 @@ static void example_usbd_uac_record_thread(void *param)
 		if (rtos_sema_take(uac_record_start_sema, RTOS_SEMA_MAX_COUNT) != RTK_SUCCESS) {
 			break;
 		}
+#if USBD_UAC_HOTPLUG
+		if (uac_stack_fatal != 0) {
+			break;
+		}
+#endif
 
 		usbd_uac_config(&uac_record_cfg, 1, 0);
 		if (usbd_uac_start_record() != HAL_OK) {
@@ -601,6 +679,9 @@ static void example_usbd_uac_record_thread(void *param)
 		usbd_uac_stop_record();
 	}
 
+	/* Clear the handle last: the hotplug thread polls it to know this worker is
+	   gone before it frees the semaphores. */
+	uac_record_task = NULL;
 	rtos_task_delete(NULL);
 }
 
@@ -608,6 +689,11 @@ static u32 uac_cmd_record(u16 argc, u8 *argv[])
 {
 	UNUSED(argc);
 	UNUSED(argv);
+
+	/* The semaphore is freed once the stack is gone for good, do not touch it. */
+	if (uac_record_start_sema == NULL) {
+		return HAL_ERR_HW;
+	}
 
 	rtos_sema_give(uac_record_start_sema);
 	return HAL_OK;
@@ -678,7 +764,7 @@ static void example_usbd_uac_thread(void *param)
 #endif // USBD_UAC_HOTPLUG
 
 #if USBD_UAC_ENABLE_RECORD
-	ret = rtos_task_create(NULL, "usbd_uac_record_thread",
+	ret = rtos_task_create(&uac_record_task, "usbd_uac_record_thread",
 						   example_usbd_uac_record_thread, NULL,
 						   USBD_UAC_RECORD_THREAD_STACK_SIZE, USBD_UAC_RECORD_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
@@ -717,13 +803,7 @@ clear_usb_driver_exit:
 
 exit:
 	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD UAC demo stop\n");
-	rtos_sema_delete(uac_ready_sema);
-#if USBD_UAC_ENABLE_RECORD
-	rtos_sema_delete(uac_record_start_sema);
-#endif
-#if USBD_UAC_HOTPLUG
-	rtos_sema_delete(uac_attach_status_changed_sema);
-#endif
+	uac_free_resource();
 
 example_exit:
 	rtos_task_delete(NULL);

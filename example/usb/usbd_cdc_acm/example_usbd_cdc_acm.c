@@ -97,8 +97,11 @@ static const usbd_config_t cdc_acm_cfg = {
 	.isr_priority = INT_PRI_MIDDLE,
 #if defined(CONFIG_AMEBASMART)
 	.nptx_max_epmis_cnt = 1U,
-#elif defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RLE1509)
+#elif defined(CONFIG_AMEBAGREEN2)
 	.rx_fifo_depth = 692U,
+	.ptx_fifo_depth = {0U, 256U, 32U, 0U, 0U, },
+#elif defined(CONFIG_RLE1509)
+	.rx_fifo_depth = 656U,
 	.ptx_fifo_depth = {0U, 256U, 32U, 0U, 0U, },
 #elif defined (CONFIG_AMEBAL2)
 	.rx_fifo_depth = 661U,
@@ -121,9 +124,30 @@ static rtos_sema_t cdc_acm_async_xfer_sema;
 #if CDC_ACM_HOTPLUG
 static u8 cdc_acm_attach_status;
 static rtos_sema_t cdc_acm_attach_status_changed_sema;
+/* Set by the hotplug thread when the stack can not be recovered, tells the xfer
+   thread to quit so that the last thread standing frees the shared objects. */
+static volatile u8 cdc_acm_stack_fatal;
 #endif
 
 /* Private functions ---------------------------------------------------------*/
+
+/**
+  * @brief  Free the objects shared by the example threads
+  * @note   Only called by the last running thread, after the USB stack is fully
+  *         deinited, so that no ISR callback can touch these objects any more
+  * @retval None
+  */
+static void cdc_acm_free_resource(void)
+{
+#if CDC_ACM_HOTPLUG
+	rtos_sema_delete(cdc_acm_attach_status_changed_sema);
+	cdc_acm_attach_status_changed_sema = NULL;
+#endif
+#if CDC_ACM_ASYNC_XFER
+	rtos_sema_delete(cdc_acm_async_xfer_sema);
+	cdc_acm_async_xfer_sema = NULL;
+#endif
+}
 
 /**
   * @brief  Initializes the CDC media layer
@@ -207,34 +231,30 @@ static int cdc_acm_cb_received(u8 *buf, u32 len)
 static int cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 {
 	usb_cdc_acm_line_coding_t *lc = &cdc_acm_line_coding;
+	/* Ref USB 2.0 9.2.7: anything not explicitly accepted below is a request error, so
+	   the default status makes the core STALL EP0 instead of ACKing the status stage. */
+	int ret = HAL_ERR_PARA;
 
 	switch (req->bRequest) {
 	case USB_CDC_ACM_SEND_ENCAPSULATED_COMMAND:
-		/* Do nothing */
-		break;
-
 	case USB_CDC_ACM_GET_ENCAPSULATED_RESPONSE:
-		/* Do nothing */
-		break;
-
 	case USB_CDC_ACM_SET_COMM_FEATURE:
-		/* Do nothing */
-		break;
-
 	case USB_CDC_ACM_GET_COMM_FEATURE:
-		/* Do nothing */
-		break;
-
 	case USB_CDC_ACM_CLEAR_COMM_FEATURE:
+	case USB_CDC_ACM_SEND_BREAK:
 		/* Do nothing */
+		ret = HAL_OK;
 		break;
 
 	case USB_CDC_ACM_SET_LINE_CODING:
+		/* Ref CDC PSTN 1.2 Table 17: the Line Coding structure is exactly 7 bytes, any
+		   other wLength must not update the cached line coding. */
 		if (req->wLength == USB_CDC_ACM_LINE_CODING_SIZE) {
 			lc->b.dwDteRate = (u32)(buf[0] | (buf[1] << 8) | (buf[2] << 16) | (buf[3] << 24));
 			lc->b.bCharFormat = buf[4];
 			lc->b.bParityType = buf[5];
 			lc->b.bDataBits = buf[6];
+			ret = HAL_OK;
 		}
 		break;
 
@@ -246,6 +266,7 @@ static int cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 		buf[4] = lc->b.bCharFormat;
 		buf[5] = lc->b.bParityType;
 		buf[6] = lc->b.bDataBits;
+		ret = HAL_OK;
 		break;
 
 	case USB_CDC_ACM_SET_CONTROL_LINE_STATE:
@@ -263,17 +284,15 @@ static int cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 			usbd_cdc_acm_notify_serial_state(USB_CDC_ACM_CTRL_DSR | USB_CDC_ACM_CTRL_DCD);
 #endif
 		}
-		break;
-
-	case USB_CDC_ACM_SEND_BREAK:
-		/* Do nothing */
+		ret = HAL_OK;
 		break;
 
 	default:
+		/* Request error, keep the default status */
 		break;
 	}
 
-	return HAL_OK;
+	return ret;
 }
 
 /**
@@ -317,10 +336,7 @@ static void example_usbd_cdc_acm_hotplug_thread(void *param)
 			if (cdc_acm_attach_status == USBD_ATTACH_STATUS_DETACHED) {
 				RTK_LOGS(TAG, RTK_LOG_INFO, "DETACHED\n");
 				usbd_cdc_acm_deinit();
-				ret = usbd_deinit();
-				if (ret != 0) {
-					break;
-				}
+				usbd_deinit();
 				RTK_LOGS(TAG, RTK_LOG_INFO, "Free heap: 0x%x\n", rtos_mem_get_free_heap_size());
 				ret = usbd_init(&cdc_acm_cfg);
 				if (ret != 0) {
@@ -339,6 +355,16 @@ static void example_usbd_cdc_acm_hotplug_thread(void *param)
 		}
 	}
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Hotplug thread exit\n");
+
+	/* The stack is fully deinited here, no more ISR callback. */
+#if CDC_ACM_ASYNC_XFER
+	/* Notify the xfer thread to quit, it frees the shared objects as the last
+	   thread standing. */
+	cdc_acm_stack_fatal = 1U;
+	rtos_sema_give(cdc_acm_async_xfer_sema);
+#else
+	cdc_acm_free_resource();
+#endif
 	rtos_task_delete(NULL);
 }
 #endif // CONFIG_USBD_MSC_CHECK_USB_STATUS
@@ -354,6 +380,11 @@ static void example_usbd_cdc_acm_xfer_thread(void *param)
 
 	for (;;) {
 		if (rtos_sema_take(cdc_acm_async_xfer_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
+#if CDC_ACM_HOTPLUG
+			if (cdc_acm_stack_fatal != 0U) {
+				break;
+			}
+#endif
 			xfer_len = CDC_ACM_ASYNC_BUF_SIZE;
 			xfer_buf = cdc_acm_async_xfer_buf;
 			cdc_acm_async_xfer_busy = 1;
@@ -385,6 +416,12 @@ static void example_usbd_cdc_acm_xfer_thread(void *param)
 		}
 	}
 
+#if CDC_ACM_HOTPLUG
+	/* The hotplug thread already deinited the stack and quit, free the shared
+	   objects here as the last thread standing. */
+	cdc_acm_free_resource();
+	RTK_LOGS(TAG, RTK_LOG_ERROR, "Xfer thread abort\n");
+#endif
 	rtos_task_delete(NULL);
 }
 #endif
@@ -470,12 +507,7 @@ exit_usbd_cdc_acm_init_fail:
 
 exit_usbd_init_fail:
 	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD CDC ACM demo aborted\n");
-#if CDC_ACM_HOTPLUG
-	rtos_sema_delete(cdc_acm_attach_status_changed_sema);
-#endif
-#if CDC_ACM_ASYNC_XFER
-	rtos_sema_delete(cdc_acm_async_xfer_sema);
-#endif
+	cdc_acm_free_resource();
 
 	rtos_task_delete(NULL);
 }

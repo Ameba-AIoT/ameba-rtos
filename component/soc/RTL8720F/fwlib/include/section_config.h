@@ -24,6 +24,8 @@ extern "C" {
 #define IPC_TABLE_DATA_SECTION				SECTION(".ipc.table.data")
 #define UNITY_TABLE_DATA_SECTION			SECTION(".unity.table.rodata")
 
+#define SOLO_SHARE_SECTION					SECTION(".solo_share." _SEC_STR(__LINE__))
+
 /* ATCMD section type 1: used by all cores */
 #ifdef CONFIG_SUPPORT_ATCMD
 #define ATCMD_TABLE_DATA_SECTION			CMD_TABLE_DATA_SECTION

@@ -11,6 +11,7 @@
 
 #include "usb_os.h"
 #include "usb_ch9.h"
+#include "usb_def.h"
 #include "usb_diag.h"
 
 #ifdef __cplusplus
@@ -187,7 +188,7 @@ typedef struct {
 #endif
 	usbd_ep_t ep0_in;                        /**< Control endpoint 0 IN. */
 	usbd_ep_t ep0_out;                       /**< Control endpoint 0 OUT. */
-	struct _usbd_class_driver_t *driver;     /**< Pointer to the active class driver. */
+	const struct _usbd_class_driver_t *driver; /**< Pointer to the active class driver. */
 	void *pcd;                               /**< Pointer to the low-level PCD (Platform Controller Driver) handle. */
 	__IO u8 is_ready;                        /**< Device ready or not, 0-disabled, 1-enabled */
 	__IO u8 is_connected;                    /**< Device connected or not,0-disabled, 1-enabled */
@@ -414,7 +415,30 @@ typedef struct _usbd_class_driver_t {
 	 * @return Number of class-specific string indices consumed, starting at base. 0 means
 	 *         the class owns none.
 	 */
-	u8(*set_class_str_base)(u8 base);
+	u8(*set_str_base)(u8 base);
+
+	/**
+	 * @brief Callback to inform the class of its interface number base.
+	 * @note
+	 *    Optional, used by the composite framework only; never called in standalone mode,
+	 *    where the base is implicitly 0.
+	 *    The composite framework renumbers every sub-function's interfaces to
+	 *    base..base+bNumInterfaces-1. A class implementing this callback shall add base to
+	 *    every interface number it emits OUTSIDE the standard Interface and IAD descriptors,
+	 *    which the framework rebases itself, namely:
+	 *      - class-specific descriptor fields cross-referencing its own interfaces
+	 *        (CDC Union bMasterInterface/bSlaveInterface0, CDC Call Management
+	 *        bDataInterface, UAC1 AC Header baInterfaceNr[], UVC VC Header baInterfaceNr[]);
+	 *      - interface numbers carried in class notification payloads (Ref CDC 1.2 6.3).
+	 *    A class shall NOT add base to wIndex of an incoming setup request: the framework
+	 *    already rebases interface-recipient requests to the class-local interface number.
+	 *    A class whose descriptors carry no cross-interface reference and which sends no
+	 *    notification naming an interface leaves this callback NULL.
+	 *    Called before every configuration descriptor build and on set_config, always with
+	 *    the same base, so the class only has to store it.
+	 * @param[in] base: First interface number assigned to this class.
+	 */
+	void (*set_interface_base)(u8 base);
 } usbd_class_driver_t;
 /** @} End of Device_Core_Types group */
 /** @} End of USB_Device_Types group */
@@ -438,9 +462,13 @@ int usbd_init(const usbd_config_t *cfg);
 
 /**
  * @brief Deinitialize USB device core driver.
- * @return 0 on success, non-zero on failure.
+ * @note  Teardown always completes: every software resource owned by the core (EP0 transfer
+ *        buffer, PCD context, diag task, interrupt registration) is released even when the
+ *        controller refuses to stop, which is reported through the log only. The device can
+ *        therefore always be re-initialized with @ref usbd_init afterwards.
+ * @return None. Nothing is left for the caller to recover from, so no status is reported.
  */
-int usbd_deinit(void);
+void usbd_deinit(void);
 
 /**
  * @brief Get USB device attach status.
@@ -494,9 +522,10 @@ int usbd_register_class(const usbd_class_driver_t *driver);
 
 /**
  * @brief Un-register a class, called in class de-initialization function.
- * @return 0 on success, non-zero on failure.
+ * @return None. This is a teardown path: the class is always detached and the device driven
+ *         to the detached state, so there is nothing for the caller to recover from.
  */
-int usbd_unregister_class(void);
+void usbd_unregister_class(void);
 
 /**
  * @brief Initialize an endpoint.
@@ -518,11 +547,14 @@ int usbd_ep_init(usb_dev_t *dev, usbd_ep_t *ep);
  *     - In the clear_config callback function of the @ref usbd_class_driver_t.
  *     - In the setup callback function of the @ref usbd_class_driver_t, when receiving specific
  *       requests (such as `SET_INTERFACE`) that require endpoint deinitialization.
+ *    Tolerates an endpoint that was never initialized, so a class may release its whole
+ *    endpoint set unconditionally.
  * @param[in] dev: USB device.
  * @param[in] ep: USB endpoint.
- * @return 0 on success, non-zero on failure.
+ * @return None. This is a teardown path: the endpoint state is always released and an
+ *         invalid endpoint address is reported through the log.
  */
-int usbd_ep_deinit(usb_dev_t *dev, usbd_ep_t *ep);
+void usbd_ep_deinit(usb_dev_t *dev, usbd_ep_t *ep);
 
 /**
  * @brief Initiates an IN transfer to the USB host through a specified endpoint.
@@ -556,17 +588,19 @@ int usbd_ep_receive(usb_dev_t *dev, usbd_ep_t *ep);
  * @brief Sets the specified endpoint to STALL state.
  * @param[in] dev: USB device.
  * @param[in] ep: USB endpoint.
- * @return 0 on success, non-zero on failure.
+ * @return None. A stall is unconditional on an endpoint opened by the current configuration.
+ *         An invalid or unopened endpoint is a class programming error and is reported
+ *         through the log.
  */
-int usbd_ep_set_stall(usb_dev_t *dev, usbd_ep_t *ep);
+void usbd_ep_set_stall(usb_dev_t *dev, usbd_ep_t *ep);
 
 /**
  * @brief Clears the STALL state of the specified endpoint.
  * @param[in] dev: USB device.
  * @param[in] ep: USB endpoint.
- * @return 0 on success, non-zero on failure.
+ * @return None. See @ref usbd_ep_set_stall.
  */
-int usbd_ep_clear_stall(usb_dev_t *dev, usbd_ep_t *ep);
+void usbd_ep_clear_stall(usb_dev_t *dev, usbd_ep_t *ep);
 
 /**
  * @brief Checks whether the specified endpoint is in STALL state.

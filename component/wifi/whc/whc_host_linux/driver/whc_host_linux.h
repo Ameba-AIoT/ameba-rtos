@@ -89,6 +89,8 @@
 #else
 #include <asm/unaligned.h>
 #endif
+#include <linux/gpio.h>
+#include <linux/device.h>
 
 /* whc headers. */
 #include "whc_host_wiphy.h"

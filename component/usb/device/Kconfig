@@ -62,10 +62,10 @@ config USBD_HID_MENU
         endchoice
     endif
 
-config USBD_INIC_MENU
-    bool "INIC"
-    depends on SUPPORT_USBD_INIC
-    select USBD_INIC if WHC_HOST || WHC_NONE
+config USBD_WHC_MENU
+    bool "WHC"
+    depends on SUPPORT_USBD_WHC
+    select USBD_WHC if WHC_HOST || WHC_NONE
 
 config USBD_MSC_MENU
     bool "MSC"

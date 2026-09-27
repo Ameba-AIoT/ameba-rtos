@@ -9,6 +9,9 @@
 #include "ameba_dump_stack.h"
 #include "ameba_secure_boot.h"
 #include "boot_ota_km4tz.h"
+#ifdef CONFIG_SOLO
+#include "ameba_solo_cfg.h"
+#endif
 
 static const char *const TAG = "BOOT";
 
@@ -435,13 +438,19 @@ void BOOT_Image1(void)
 	This function should be called before NP startup to avoid secure issue
 	Also should be called after psram init, to avoid secure function block psram init
 	*/
+#ifdef CONFIG_SOLO
+	FIH_CALL(BOOT_RAM_SoloCfg, fih_rc);
+#else
 	FIH_CALL(BOOT_RAM_TZCfg, fih_rc);
+#endif
 	if (FIH_NOT_EQ(fih_rc, FIH_SUCCESS)) {
 		goto exit;
 	}
 
 #ifdef CONFIG_SOLO
 	BOOT_SOLO_Enable();
+	extern FLASH_InitTypeDef flash_init_para;
+	DCache_Clean((u32)&flash_init_para, sizeof(FLASH_InitTypeDef));
 #endif
 
 #ifdef CONFIG_WHC_DEV_HCI_BOOT

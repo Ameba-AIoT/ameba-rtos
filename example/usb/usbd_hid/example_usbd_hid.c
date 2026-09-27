@@ -176,8 +176,11 @@ const COMMAND_TABLE usbd_hid_mouse_data_cmd[] = {
 static const usbd_config_t hid_cfg = {
 	.speed = HID_USB_SPEED,
 	.isr_priority = INT_PRI_MIDDLE,
-#if defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RLE1509)
+#if defined(CONFIG_AMEBAGREEN2)
 	.rx_fifo_depth = 724U,
+	.ptx_fifo_depth = {0U, 256U, 0U, 0U, 0U},
+#elif defined(CONFIG_RLE1509)
+	.rx_fifo_depth = 688U,
 	.ptx_fifo_depth = {0U, 256U, 0U, 0U, 0U},
 #elif defined (CONFIG_AMEBAL2)
 	.rx_fifo_depth = 677U,

@@ -80,35 +80,30 @@ typedef struct {
 
 	/**
 	 * @brief Callback invoked during NCM class driver de-initialization.
-	 * @return 0 on success, non-zero on failure.
 	 */
-	int(* deinit)(void);
+	void (* deinit)(void);
 
 	/**
 	 * @brief Callback invoked when a device is attached.
-	 * @return 0 on success, non-zero on failure.
 	 */
-	int(* attach)(void);
+	void (* attached)(void);
 
 	/**
 	 * @brief Callback invoked when a device is detached.
-	 * @return 0 on success, non-zero on failure.
 	 */
-	int(* detach)(void);
+	void (* detached)(void);
 
 	/**
 	 * @brief Callback invoked when the device setup phase is complete.
-	 * @return 0 on success, non-zero on failure.
 	 */
-	int(* setup)(void);
+	void (* setup)(void);
 
 	/**
 	 * @brief Callback invoked when a bulk IN data transfer (Receive) is complete.
 	 * @param[in] buf: Pointer to the buffer containing received data.
 	 * @param[in] len: Length of the valid received data in bytes.
-	 * @return 0 on success, non-zero on failure.
 	 */
-	int(* bulk_received)(u8 *buf, u32 len);
+	void (* received)(u8 *buf, u32 len);
 } usbh_cdc_ncm_state_cb_t;
 
 typedef struct {
@@ -267,9 +262,8 @@ int usbh_cdc_ncm_init(const usbh_cdc_ncm_state_cb_t *cb, const usbh_cdc_ncm_priv
 
 /**
  * @brief  De-initializes the CDC NCM host class driver and releases resources.
- * @return 0 (HAL_OK) on success, non-zero on failure.
  */
-int usbh_cdc_ncm_deinit(void);
+void usbh_cdc_ncm_deinit(void);
 
 /**
  * @brief  Selects the appropriate configuration index for the device.

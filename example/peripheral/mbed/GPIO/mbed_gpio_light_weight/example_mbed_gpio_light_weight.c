@@ -14,7 +14,7 @@
 #include "os_wrapper.h"
 #include <stdio.h>
 
-#if defined (CONFIG_AMEBAGREEN2)
+#if defined (CONFIG_AMEBAGREEN2) || defined(CONFIG_AMEBASMART)
 extern GPIO_TypeDef *GPIO_PORTx[3];
 #elif defined (CONFIG_RTL8720F)
 extern GPIO_TypeDef *GPIO_PORTx[1];

@@ -23,6 +23,7 @@
  *********************************************************************************************/
 #define EAP_UNBLK_API_SIZE	                      0
 #define WPS_UNBLK_API_SIZE	                      0
+#define NAN_PASN_UNBLK_API_SIZE                   0
 #define MCC_LITTE_TASK_SIZE	                      0
 #define NAN_LITTE_TASK_SIZE                       0
 #define NAN_SINGLE_TASK_SIZE                      0
@@ -36,6 +37,10 @@
 #undef  WPS_UNBLK_API_SIZE
 #define WPS_UNBLK_API_SIZE                        748  /* enable WPS need 748 */
 #endif
+#if defined(CONFIG_WIFI_NAN_HOST_APP)
+#undef  NAN_PASN_UNBLK_API_SIZE
+#define NAN_PASN_UNBLK_API_SIZE                   4096 /* enable rtos NAN need 4096 */
+#endif
 #if defined(CONFIG_WIFI_MCC_ENABLE)
 #undef  MCC_LITTE_TASK_SIZE
 #define MCC_LITTE_TASK_SIZE                       432  /* enable MCC need 432 */
@@ -45,7 +50,7 @@
 #undef  NAN_LITTE_TASK_SIZE
 #define NAN_LITTE_TASK_SIZE	                    720 /* enable NAN need 720 */
 #undef  NAN_SINGLE_TASK_SIZE
-#define NAN_SINGLE_TASK_SIZE	                  480 /* enable NAN need 480 */
+#define NAN_SINGLE_TASK_SIZE	                  688 /* enable NAN need 688 */
 #endif
 
 #if defined(CONFIG_RMESH_EN)
@@ -77,7 +82,7 @@
 #define COEX_IPC_DEV_API_BASIC_SIZE               564
 
 #define WIFI_WHC_IPC_HST_API_TASK_SIZE            (376 + CONTEXT_SAVE_SIZE_WITH_MARGIN)	// for psp overflow when update group key: jira: https://jira.realtek.com/browse/RSWLANQC-1027
-#define WIFI_WHC_IPC_HST_EVT_API_TASK_SIZE        (2192 + EAP_UNBLK_API_SIZE + WPS_UNBLK_API_SIZE + CONTEXT_SAVE_SIZE_WITH_MARGIN)
+#define WIFI_WHC_IPC_HST_EVT_API_TASK_SIZE        (2192 + EAP_UNBLK_API_SIZE + WPS_UNBLK_API_SIZE + NAN_PASN_UNBLK_API_SIZE + CONTEXT_SAVE_SIZE_WITH_MARGIN)
 
 #if defined(CONFIG_WHC_HOST)
 #define WIFI_WHC_IPC_MSG_Q_TASK_SIZE	            (512 + CONTEXT_SAVE_SIZE_WITH_MARGIN)
@@ -88,7 +93,7 @@
 #if defined(CONFIG_MP_INCLUDED) || defined(CONFIG_PHYDM_CMD) /*halbb debug cmd need bigger stack size, for sscanf format float*/
 #define WIFI_WHC_IPC_DEV_API_TASK_SIZE            (1024*4)
 #elif defined(CONFIG_WIFI_NAN_ENABLE)
-#define WIFI_WHC_IPC_DEV_API_TASK_SIZE            (256*11)
+#define WIFI_WHC_IPC_DEV_API_TASK_SIZE            (1024*4)	/* NANDOW path is deep */
 #elif defined(CONFIG_PLATFORM_ZEPHYR)
 #define WIFI_WHC_IPC_DEV_API_TASK_SIZE            (1024*4)
 #else

@@ -77,10 +77,10 @@ config WHC_CMD_PATH
 
 config FW_DOWNLOAD
 	bool "Firmware download over the host interface"
-	depends on (WHC_HCI_SDIO && (AMEBAGREEN2 || AMEBAX)) || (WHC_HCI_USB && AMEBAGREEN2)
+	depends on (WHC_HCI_SDIO && (AMEBAGREEN2 || AMEBAX)) || (WHC_HCI_USB && AMEBAGREEN2) || (WHC_HCI_GSPI && AMEBAGREEN2)
 	help
 	  Download device firmware from the host over the data interface.
-	  Only supported on AmebaGreen2/AmebaX (SDIO) and AmebaGreen2 (USB).
+	  Only supported on AmebaGreen2/AmebaX (SDIO), AmebaGreen2 (USB) and AmebaGreen2 (GSPI).
 
 comment "Features"
 

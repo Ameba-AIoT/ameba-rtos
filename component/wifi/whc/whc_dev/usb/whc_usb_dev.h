@@ -32,18 +32,21 @@
 #define WIFI_WHC_USB_WAKE_HOST_MAX_WAIT_CNT              10
 #define WIFI_WHC_USB_WAKE_HOST_UNIT                      10
 
+/* EP addresses come from the class header, which is the per-SoC one.
+ * WIFI_WHC_USB_BULKOUT_EP_NUM is kept as a literal here (not derived from the
+ * class header) because this header, and the struct array sizes below, are
+ * parsed by translation units that don't otherwise pull in the class header.
+ */
+#define WIFI_WHC_USB_BULKIN_EP  USBD_WHC_WIFI_EP_BULK_IN
+#define WIFI_WHC_USB_BULKOUT_1  USBD_WHC_WIFI_EP_BULK_OUT_1
+#define WIFI_WHC_USB_BULKOUT_2  USBD_WHC_WIFI_EP_BULK_OUT_2
+
 #if defined (CONFIG_AMEBADPLUS)
-#define WIFI_WHC_USB_BULKIN_EP  USBD_WHC_WIFI_EP3_BULK_IN
-#define WIFI_WHC_USB_BULKOUT_1  USBD_WHC_WIFI_EP2_BULK_OUT
-#define WIFI_WHC_USB_BULKOUT_2  USBD_WHC_WIFI_EP4_BULK_OUT
-#define WIFI_WHC_USB_BULKOUT_3  0xFF /*invalid*/
+#define WIFI_WHC_USB_BULKOUT_3      0xFF /*invalid*/
 #define WIFI_WHC_USB_BULKOUT_EP_NUM 2
 #define WIFI_WHC_USB_SPEED      USB_SPEED_FULL
 #elif defined(CONFIG_AMEBAGREEN2)
-#define WIFI_WHC_USB_BULKIN_EP  USBD_WHC_WIFI_EP4_BULK_IN
-#define WIFI_WHC_USB_BULKOUT_1  USBD_WHC_WIFI_EP5_BULK_OUT
-#define WIFI_WHC_USB_BULKOUT_2  USBD_WHC_WIFI_EP6_BULK_OUT
-#define WIFI_WHC_USB_BULKOUT_3  USBD_WHC_WIFI_EP7_BULK_OUT
+#define WIFI_WHC_USB_BULKOUT_3      USBD_WHC_WIFI_EP_BULK_OUT_3
 #define WIFI_WHC_USB_BULKOUT_EP_NUM 3
 #define WIFI_WHC_USB_SPEED      USB_SPEED_HIGH
 #endif
@@ -87,7 +90,7 @@ struct whc_usb_priv_t {
 #else
 	/* host->device, store skb addr.
 	Implements USB endpoint num to rx_skb_addr list idx mapping through the macro EPNUM_TO_IDX, e.g,
-	for endpoint WIFI_WHC_USB_BULKOUT_1: ep_num = 0x05U, idx = EPNUM_TO_IDX(ep_num) = 0, skb = rx_skb_addr[idx] */
+	for endpoint WIFI_WHC_USB_BULKOUT_1: ep_num = WIFI_WHC_USB_BULKOUT_1, idx = EPNUM_TO_IDX(ep_num) = 0, skb = rx_skb_addr[idx] */
 	u8 *rx_skb_addr[WIFI_WHC_USB_BULKOUT_EP_NUM];
 #endif
 	rtos_mutex_t tx_lock;

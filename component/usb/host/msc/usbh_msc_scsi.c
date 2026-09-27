@@ -19,6 +19,8 @@
 
 /* Private variables ---------------------------------------------------------*/
 
+static const char *const TAG = "MSC";
+
 /* Private functions ---------------------------------------------------------*/
 
 /**
@@ -164,13 +166,13 @@ int usbh_scsi_inquiry(usbh_msc_host_t *msc, u8 lun, usbh_scsi_inquiry_t *inquiry
 		if (status == HAL_OK) {
 			usb_os_memset((void *)inquiry, 0, sizeof(usbh_scsi_inquiry_t));
 			/*assign Inquiry Data */
-			inquiry->DeviceType = msc->hbot.pbuf[0] & 0x1FU;
-			inquiry->PeripheralQualifier = msc->hbot.pbuf[0] >> 5U;
+			inquiry->device_type = msc->hbot.pbuf[0] & 0x1FU;
+			inquiry->peripheral_qualifier = msc->hbot.pbuf[0] >> 5U;
 
 			if (((u32)msc->hbot.pbuf[1] & 0x80U) == 0x80U) {
-				inquiry->RemovableMedia = 1U;
+				inquiry->removable_media = 1U;
 			} else {
-				inquiry->RemovableMedia = 0U;
+				inquiry->removable_media = 0U;
 			}
 
 			usb_os_memcpy((void *)inquiry->vendor_id, (const void *)&msc->hbot.pbuf[8], 8U);
@@ -350,8 +352,9 @@ int usbh_scsi_read(usbh_msc_host_t *msc, u8 lun, u32 address, u8 *pbuf, u32 leng
 		cbw->field.CBWCB[7] = (((u8 *)&length)[1]);
 		cbw->field.CBWCB[8] = (((u8 *)&length)[0]);
 
-		msc->hbot.origin_rx_pbuf = pbuf;
-		msc->hbot.origin_rx_pbuf_len = cbw->field.dCBWDataTransferLength;
+		msc->hbot.origin_rx_buf = pbuf;
+		msc->hbot.origin_rx_buf_len = cbw->field.dCBWDataTransferLength;
+		msc->hbot.rx_data_len = 0U;
 		if ((msc->hbot.pbuf != NULL) && (msc->hbot.pbuf != msc->hbot.data)) {
 			usb_os_mfree((void *)msc->hbot.pbuf);
 		}
@@ -368,9 +371,21 @@ int usbh_scsi_read(usbh_msc_host_t *msc, u8 lun, u32 address, u8 *pbuf, u32 leng
 	case BOT_CMD_BUSY:
 		status = usbh_msc_bot_process(msc->host, lun);
 		if (status == HAL_OK) {
-			usb_os_memcpy((void *)msc->hbot.origin_rx_pbuf, (const void *)msc->hbot.pbuf, msc->hbot.origin_rx_pbuf_len);
+			/* BOT §5.2/§6.7 case 5: only the bytes the device really transferred are valid data.
+			   The tail of the zero-initialized bounce buffer is not medium content, so it must
+			   never be handed to the caller as if it were. */
+			u32 valid_len = (msc->hbot.rx_data_len < msc->hbot.origin_rx_buf_len) ? msc->hbot.rx_data_len : msc->hbot.origin_rx_buf_len;
+
+			usb_os_memcpy((void *)msc->hbot.origin_rx_buf, (const void *)msc->hbot.pbuf, valid_len);
 			usb_os_mfree((void *)msc->hbot.pbuf);
 			msc->hbot.pbuf = NULL;
+
+			if (valid_len < msc->hbot.origin_rx_buf_len) {
+				/* Short read: the block request is not fully satisfied, report it instead of
+				   silently returning partially filled sectors. */
+				RTK_LOGS(TAG, RTK_LOG_WARN, "Short rd %d/%d\n", valid_len, msc->hbot.origin_rx_buf_len);
+				status = HAL_ERR_UNKNOWN;
+			}
 		}
 		break;
 
