@@ -64,7 +64,7 @@
  * NAN on without re-measuring (AT+WLDBG=heap min-ever-free). */
 #if defined(CONFIG_RMESH_EN) && !defined(CONFIG_RNAT_EN) && (CONFIG_WIFI_RMESH_MAX_REFUGEE_NUM > 4)
 #define RAM_KM4NS_IMG2_SIZE          KBYTES(96 + 2 * (CONFIG_WIFI_RMESH_MAX_REFUGEE_NUM - 4))
-#elif defined(CONFIG_WIFI_NAN_ENABLE)
+#elif defined(CONFIG_WIFI_NAN_HOST_APP)
 #define RAM_KM4NS_IMG2_SIZE          KBYTES(128)
 #else
 #define RAM_KM4NS_IMG2_SIZE          KBYTES(96)

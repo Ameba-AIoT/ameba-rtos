@@ -1576,8 +1576,14 @@ static int whc_host_mgmt_tx(struct wiphy *wiphy, struct wireless_dev *wdev, stru
 	frame_styp = le16_to_cpu(((struct rtw_ieee80211_hdr_3addr *)buf)->frame_ctl) & IEEE80211_FCTL_STYPE;
 
 	if (frame_styp == IEEE80211_STYPE_AUTH) {
+		struct ieee80211_mgmt *auth = (struct ieee80211_mgmt *)buf;
+		u16 auth_alg = le16_to_cpu(auth->u.auth.auth_alg);
+
 		dev_dbg(global_idev.pwhc_dev, "wpa_s tx auth\n");
 		//dev_dbg(global_idev.pwhc_dev, "tx_ch=%d, no_cck=%u, da="MAC_FMT"\n", tx_ch, no_cck, MAC_ARG(GetAddr1Ptr(buf)));
+		if (auth_alg == WLAN_AUTH_SAE && le16_to_cpu(auth->u.auth.auth_transaction) == 1) {
+			whc_host_external_auth_start(wlan_idx);
+		}
 		goto dump;
 	} else if (frame_styp == IEEE80211_STYPE_ACTION) {
 		dev_dbg(global_idev.pwhc_dev, "issue action.\n");
