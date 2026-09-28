@@ -629,6 +629,18 @@ int whc_host_sae_status_indicate(u8 wlan_idx, u16 status, u8 *mac_addr)
 	return ret;
 }
 
+int whc_host_external_auth_start(u8 wlan_idx)
+{
+	int ret = 0;
+	u32 param_buf[1];
+
+	param_buf[0] = (u32)wlan_idx;
+
+	whc_host_send_event(WHC_API_WIFI_EXTERNAL_AUTH_START, (u8 *)param_buf, sizeof(param_buf), (u8 *)&ret, sizeof(int));
+
+	return ret;
+}
+
 u32 whc_host_update_ip_addr(void)
 {
 	u32 ret = 0;

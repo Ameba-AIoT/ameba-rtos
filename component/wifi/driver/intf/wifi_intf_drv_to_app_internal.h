@@ -487,6 +487,14 @@ int wifi_start_join_cmd(void);
 int wifi_sae_status_indicate(u8 wlan_idx, u16 status, u8 *mac_addr);
 
 /**
+ * @brief  notify NP that external auth (SAE) is starting.
+ * @param[in] wlan_idx: STA_WLAN_INDEX.
+ * @return  RTK_SUCCESS if setting is successful.
+ * @return  RTK_FAIL otherwise.
+ */
+int wifi_external_auth_start(u8 wlan_idx);
+
+/**
  * @brief  send raw frame
  * @param[in]  raw_data_desc: the pointer of struct _raw_data_desc_t,
  * 	which describe related information, include the pointer of raw frame and so on.

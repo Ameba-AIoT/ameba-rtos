@@ -38,6 +38,7 @@ const struct event_func_t whc_dev_api_handlers[] = {
 	{WHC_API_WIFI_SET_PMF_MODE,	whc_event_wifi_set_pmf_mode},
 	{WHC_API_WIFI_SET_LPS_EN,	whc_event_wifi_set_lps_enable},
 	{WHC_API_WIFI_SAE_STATUS,	whc_event_wifi_set_sae_status},
+	{WHC_API_WIFI_EXTERNAL_AUTH_START,	whc_event_wifi_external_auth_start},
 	{WHC_API_WIFI_GET_PHY_STATS,	whc_event_wifi_fetch_phy_stats},
 	{WHC_API_WIFI_SEND_MGNT,	whc_event_wifi_send_mgnt},
 	{WHC_API_WIFI_SET_EDCA_PARAM,	whc_event_wifi_set_EDCA_param},
@@ -648,6 +649,15 @@ void whc_event_wifi_set_sae_status(u32 api_id, u32 *param_buf)
 	whc_send_api_ret_value(api_id, (u8 *)&ret, sizeof(ret));
 }
 
+void whc_event_wifi_external_auth_start(u32 api_id, u32 *param_buf)
+{
+	int ret;
+	u8 wlan_idx = (u8)param_buf[0];
+
+	ret = wifi_external_auth_start(wlan_idx);
+	whc_send_api_ret_value(api_id, (u8 *)&ret, sizeof(ret));
+}
+
 void whc_event_wifi_fetch_phy_stats(u32 api_id, u32 *param_buf)
 {
 	u8 wlan_idx = (u8)param_buf[0];
@@ -1011,7 +1021,6 @@ void whc_event_wifi_set_usr_config(u32 api_id, u32 *param_buf)
 	u8 *pwifi_usrcfg = rtos_mem_zmalloc(sizeof(struct wifi_user_conf));
 
 	memcpy(pwifi_usrcfg, &wifi_user_config, sizeof(struct wifi_user_conf));
-	wifi_set_rom2flash_user_config();
 	whc_send_api_ret_value(api_id, pwifi_usrcfg, sizeof(struct wifi_user_conf));
 	rtos_mem_free(pwifi_usrcfg);
 }
