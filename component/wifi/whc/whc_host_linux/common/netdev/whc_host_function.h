@@ -35,6 +35,7 @@ int whc_fullmac_host_wpa_4way_status_indicate(struct rtw_wpa_4way_status *rpt_4w
 int whc_fullmac_host_set_EDCA_params(struct rtw_edca_param *pedca_param);
 int whc_fullmac_host_tx_mgnt(u8 wlan_idx, const u8 *buf, size_t buf_len, u8 need_wait_ack);
 int whc_fullmac_host_sae_status_indicate(u8 wlan_idx, u16 status, u8 *mac_addr);
+int whc_fullmac_host_external_auth_start(u8 wlan_idx);
 int whc_fullmac_host_pmksa_ops(dma_addr_t pmksa_ops_addr);
 int whc_fullmac_host_channel_switch(dma_addr_t csa_param_addr);
 u32 whc_fullmac_host_update_ip_addr(void);

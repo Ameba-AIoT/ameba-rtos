@@ -540,6 +540,15 @@ int whc_fullmac_host_sae_status_indicate(u8 wlan_idx, u16 status, u8 *mac_addr)
 	return ret;
 }
 
+int whc_fullmac_host_external_auth_start(u8 wlan_idx)
+{
+	u32 param_buf[1];
+
+	param_buf[0] = (u32)wlan_idx;
+
+	return whc_fullmac_ipc_host_send_msg(WHC_API_WIFI_EXTERNAL_AUTH_START, param_buf, 1);
+}
+
 u32 whc_fullmac_host_update_ip_addr(void)
 {
 	int ret = 0;
