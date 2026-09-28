@@ -34,11 +34,11 @@
 #define USBH_HID_HOTPLUG_THREAD_STACK_SIZE          768U
 
 /* Private function prototypes -----------------------------------------------*/
-static int usbh_hid_cb_report(usbh_hid_event_t *event);
-static int usbh_hid_cb_attach(void);
-static int usbh_hid_cb_detach(void);
-static int usbh_hid_cb_setup(void);
-static int usbh_hid_cb_process(usb_host_t *host, u8 msg);
+static void usbh_hid_cb_report(usbh_hid_event_t *event);
+static void usbh_hid_cb_attached(void);
+static void usbh_hid_cb_detached(void);
+static void usbh_hid_cb_setup(void);
+static void usbh_hid_cb_process(usb_host_t *host, u8 msg);
 
 /* Private variables ---------------------------------------------------------*/
 static const char *const TAG = "HID";
@@ -63,8 +63,14 @@ static const usbh_config_t usbh_cfg = {
 	.main_task_stack_size = USBH_HID_MAIN_TASK_STACK_SIZE,
 	.main_task_priority = USBH_HID_MAIN_THREAD_PRIORITY,
 	.tick_source = USBH_SOF_TICK,
-#if defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RLE1509)
+#if defined(CONFIG_AMEBAGREEN2)
+	/*FIFO total 1024 DWORD, resv 12 DWORD for DMA*/
 	.rx_fifo_depth = 500,
+	.nptx_fifo_depth = 256,
+	.ptx_fifo_depth = 256,
+#elif defined(CONFIG_RLE1509)
+	/*FIFO total 1024 DWORD, resv 48 DWORD */
+	.rx_fifo_depth = 464,
 	.nptx_fifo_depth = 256,
 	.ptx_fifo_depth = 256,
 #elif defined (CONFIG_AMEBAL2)
@@ -80,8 +86,8 @@ static const usbh_config_t usbh_cfg = {
 
 /* HID user callback configuration */
 static const usbh_hid_usr_cb_t usbh_hid_cfg = {
-	.attach = usbh_hid_cb_attach,
-	.detach = usbh_hid_cb_detach,
+	.attached = usbh_hid_cb_attached,
+	.detached = usbh_hid_cb_detached,
 	.setup  = usbh_hid_cb_setup,
 	.report = usbh_hid_cb_report,
 };
@@ -97,12 +103,11 @@ static const usbh_user_cb_t usbh_usr_cb = {
   * @brief  HID report event callback. Invoked by the HID class driver when a
   *         parsed HID (consumer control) event is reported.
   * @param  event: Pointer to the HID event descriptor.
-  * @retval Status
   */
-static int usbh_hid_cb_report(usbh_hid_event_t *event)
+static void usbh_hid_cb_report(usbh_hid_event_t *event)
 {
 	if (!event) {
-		return HAL_OK;
+		return;
 	}
 
 	switch (event->type) {
@@ -124,44 +129,35 @@ static int usbh_hid_cb_report(usbh_hid_event_t *event)
 	default:
 		break;
 	}
-
-	return HAL_OK;
 }
 
 /**
   * @brief  HID attach callback, invoked when a HID device is enumerated.
-  * @retval Status
   */
-static int usbh_hid_cb_attach(void)
+static void usbh_hid_cb_attached(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "HID attach\n");
-	return HAL_OK;
 }
 
 /**
   * @brief  HID detach callback, invoked when the HID device is removed.
   *         In hot-plug mode, signals the hotplug thread to reinitialize.
-  * @retval Status
   */
-static int usbh_hid_cb_detach(void)
+static void usbh_hid_cb_detached(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "HID detach\n");
 
 #if CONFIG_USBH_HID_HOTPLUG
 	rtos_sema_give(usbh_hid_ctx.detach_sema);
 #endif
-
-	return HAL_OK;
 }
 
 /**
   * @brief  HID setup-stage callback, invoked after class setup completes.
-  * @retval Status
   */
-static int usbh_hid_cb_setup(void)
+static void usbh_hid_cb_setup(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "HID setup\n");
-	return HAL_OK;
 }
 
 /**
@@ -170,7 +166,7 @@ static int usbh_hid_cb_setup(void)
   * @param  msg:  Host state message
   * @retval Status
   */
-static int usbh_hid_cb_process(usb_host_t *host, u8 msg)
+static void usbh_hid_cb_process(usb_host_t *host, u8 msg)
 {
 	UNUSED(host);
 
@@ -184,8 +180,6 @@ static int usbh_hid_cb_process(usb_host_t *host, u8 msg)
 	default:
 		break;
 	}
-
-	return HAL_OK;
 }
 
 #if CONFIG_USBH_HID_HOTPLUG

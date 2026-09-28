@@ -59,7 +59,7 @@ typedef struct {
 	__IO u8  buf_locked[USBH_HW_UVC_MAX_BUF_NUM]; /**< 1: buffer held by the app between get_frame() and put_frame(); ISR must not recycle it. */
 
 	/* cmd reg related */
-	rtos_sema_t dec_sema;
+	usb_os_sema_t dec_sema;
 
 	u8 dev_addr;
 	u8 ch;
@@ -70,7 +70,7 @@ typedef struct {
 
 /* Exported functions --------------------------------------------------------*/
 
-void usbh_hw_uvc_init(usbh_hw_uvc_dec_t *uvc_dec);
+int usbh_hw_uvc_init(usbh_hw_uvc_dec_t *uvc_dec);
 void usbh_hw_uvc_prepare(usbh_hw_uvc_dec_t *uvc_dec, usbh_pipe_t *pipe);
 void usbh_hw_uvc_deinit(usbh_hw_uvc_dec_t *uvc_dec);
 usbh_hw_uvc_dec_t *usbh_hw_uvc_alloc_channel(void);

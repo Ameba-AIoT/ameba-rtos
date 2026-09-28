@@ -77,6 +77,9 @@ SECTIONS
 	{
 		__image1_bss_start__ = .;
 		*(.bss*)
+#if defined(CONFIG_SOLO)
+		*(.solo_share*)
+#endif
 		__image1_bss_end__ = .;
 	} > IMG1_LMA_REGION
 

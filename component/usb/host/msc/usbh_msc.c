@@ -19,8 +19,8 @@
 /* Private function prototypes -----------------------------------------------*/
 
 static int usbh_msc_attach(usb_host_t *host);
-static int usbh_msc_detach(usb_host_t *host);
-static int usbh_msc_process(usb_host_t *host, usbh_event_t *event);
+static void usbh_msc_detach(usb_host_t *host);
+static void usbh_msc_process(usb_host_t *host, usbh_event_t *event);
 static int usbh_msc_setup(usb_host_t *host);
 static int usbh_msc_process_rw(usb_host_t *host, u8 lun);
 /* Private variables ---------------------------------------------------------*/
@@ -121,8 +121,8 @@ static int usbh_msc_attach(usb_host_t *host)
 		/* De-Initialize LUNs information */
 		usb_os_memset((void *)msc->unit, 0, sizeof(msc->unit));
 
-		if ((msc->cb != NULL) && (msc->cb->attach != NULL)) {
-			msc->cb->attach();
+		if ((msc->cb != NULL) && (msc->cb->attached != NULL)) {
+			msc->cb->attached();
 		}
 
 		status = HAL_OK;
@@ -143,16 +143,16 @@ open_fail:
 /**
   * @brief  Detach callback.
   * @param  host: Host handle
-  * @retval Status
+  * @retval None
   */
-static int usbh_msc_detach(usb_host_t *host)
+static void usbh_msc_detach(usb_host_t *host)
 {
 	usbh_msc_host_t *msc = &usbh_msc_host;
 	usbh_pipe_t *bulk_out = &msc->bulk_out;
 	usbh_pipe_t *bulk_in = &msc->bulk_in;
 
-	if ((msc->cb != NULL) && (msc->cb->detach != NULL)) {
-		msc->cb->detach();
+	if ((msc->cb != NULL) && (msc->cb->detached != NULL)) {
+		msc->cb->detached();
 	}
 
 	if (bulk_in->pipe_num) {
@@ -164,7 +164,6 @@ static int usbh_msc_detach(usb_host_t *host)
 	}
 
 	msc->host = NULL;
-	return HAL_OK;
 }
 
 /**
@@ -232,14 +231,13 @@ static int usbh_msc_setup(usb_host_t *host)
   * @brief  State machine handling callback
   * @param  host: Host handle
   * @param  event: USB host event
-  * @retval Status
+  * @retval None
   */
-static int usbh_msc_process(usb_host_t *host, usbh_event_t *event)
+static void usbh_msc_process(usb_host_t *host, usbh_event_t *event)
 {
 	UNUSED(event);
 
 	usbh_msc_host_t *msc = &usbh_msc_host;
-	int status = HAL_BUSY;
 	int scsi_status = HAL_BUSY;
 
 	switch (msc->state) {
@@ -388,14 +386,11 @@ static int usbh_msc_process(usb_host_t *host, usbh_event_t *event)
 		break;
 
 	case MSC_IDLE:
-		status = HAL_OK;
 		break;
 
 	default:
 		break;
 	}
-
-	return status;
 }
 
 /**
@@ -415,7 +410,10 @@ static int usbh_msc_process_rw(usb_host_t *host, u8 lun)
 	switch (unit->state) {
 
 	case MSC_READ:
-		scsi_status = usbh_scsi_read(msc, lun, 0U, NULL, 0U);
+		/* BOT §6.3.3: Reset Recovery rewinds the BOT FSM to BOT_CMD_SEND, so this call may have
+		   to rebuild the very same CBW. Always pass the parameters of the in-flight command so
+		   the command is re-issued unchanged instead of degenerating into a zero-length one. */
+		scsi_status = usbh_scsi_read(msc, lun, msc->hbot.cmd_address, msc->hbot.cmd_buf, msc->hbot.cmd_block_count);
 
 		if (scsi_status == HAL_OK) {
 			unit->state = MSC_IDLE;
@@ -439,7 +437,8 @@ static int usbh_msc_process_rw(usb_host_t *host, u8 lun)
 		break;
 
 	case MSC_WRITE:
-		scsi_status = usbh_scsi_write(msc, lun, 0U, NULL, 0U);
+		/* Same Reset Recovery retry path as MSC_READ, see the comment above. */
+		scsi_status = usbh_scsi_write(msc, lun, msc->hbot.cmd_address, msc->hbot.cmd_buf, msc->hbot.cmd_block_count);
 
 		if (scsi_status == HAL_OK) {
 			unit->state = MSC_IDLE;
@@ -672,6 +671,10 @@ int usbh_msc_bot_process(usb_host_t *host, u8 lun)
 			ret = usbh_transfer_process(host, bulk_in);
 
 			if ((ret == HAL_OK) && (bulk_in->xfer_state == USBH_EP_XFER_IDLE)) {
+				/* Capture the real Data-In size here: the CSW transfer reuses this pipe and
+				   overwrites the channel RX length. BOT §6.7 case 5 (Hi > Di) is legal, so the
+				   device may have sent less than dCBWDataTransferLength. */
+				msc->hbot.rx_data_len = usbh_get_last_transfer_size(host, bulk_in);
 				msc->hbot.state  = BOT_RECEIVE_CSW;
 				bulk_in->xfer_state = USBH_EP_XFER_START;
 				usbh_notify(host, 0, &usbh_msc_driver);
@@ -920,6 +923,11 @@ int usbh_msc_read(u8 lun, u32 address, u8 *pbuf, u32 length)
 	msc->state = MSC_READ;
 	unit->state = MSC_READ;
 
+	/* Remember the command parameters so a Reset Recovery retry re-issues it unchanged (BOT §6.3.3). */
+	msc->hbot.cmd_address = address;
+	msc->hbot.cmd_buf = pbuf;
+	msc->hbot.cmd_block_count = length;
+
 	/* Kick off the transfer; the bounce buffer is allocated here. Catch an
 	   allocation failure now and fail fast (avoid entering the loop with the
 	   command stuck in BOT_CMD_SEND and a length=0 retry). */
@@ -992,6 +1000,11 @@ int usbh_msc_write(u8 lun, u32 address, u8 *pbuf, u32 length)
 
 	msc->state = MSC_WRITE;
 	unit->state = MSC_WRITE;
+
+	/* Remember the command parameters so a Reset Recovery retry re-issues it unchanged (BOT §6.3.3). */
+	msc->hbot.cmd_address = address;
+	msc->hbot.cmd_buf = pbuf;
+	msc->hbot.cmd_block_count = length;
 
 	/* Kick off the transfer; the bounce buffer is allocated here. Catch an
 	   allocation failure now and fail fast (avoid entering the loop with the
@@ -1092,11 +1105,9 @@ exit_free:
 
 /**
   * @brief  Deinit MSC class
-  * @retval Status
   */
-int usbh_msc_deinit(void)
+void usbh_msc_deinit(void)
 {
-	int ret = HAL_OK;
 	usbh_msc_host_t *msc = &usbh_msc_host;
 	usb_host_t *host = msc->host;
 	usbh_pipe_t *bulk_out = &msc->bulk_out;
@@ -1130,7 +1141,5 @@ int usbh_msc_deinit(void)
 	usb_os_mfree((void *)msc->hbot.cbw);
 	msc->hbot.cbw = NULL;
 
-	ret = usbh_unregister_class(&usbh_msc_driver);
-
-	return ret;
+	usbh_unregister_class(&usbh_msc_driver);
 }

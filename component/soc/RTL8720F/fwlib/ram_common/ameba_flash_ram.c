@@ -97,6 +97,8 @@ const IPC_INIT_TABLE ipc_flashpg_table[] = {
  *           Only then does KM4NS enter SPIC user mode and write.
  *   UNLOCK: KM4NS sets flag=UNLOCK directly (KM4TZ is spin-polling it, no 2nd IPC),
  *           waits until KM4TZ finishes tick compensation and sets flag=CLEAR. */
+
+SOLO_SHARE_SECTION
 ALIGNMTO(CACHE_LINE_SIZE) static u8 Flash_Sync_Flag[CACHE_LINE_SIZE];
 
 static void Flash_Write_Lock_IPC(u8 sync_type)
@@ -132,7 +134,13 @@ static void Flash_Write_Lock_IPC(u8 sync_type)
 #endif
 #else
 /* CONFIG_ARM_CORE_CM4_KM4TZ */
+#ifdef CONFIG_SOLO
+/* SOLO: SRAM is isolation so put it into share sram. */
+SOLO_SHARE_SECTION
 ALIGNMTO(CACHE_LINE_SIZE) static u8 Flash_Sync_Flag[CACHE_LINE_SIZE];
+#else
+ALIGNMTO(CACHE_LINE_SIZE) static u8 Flash_Sync_Flag[CACHE_LINE_SIZE];
+#endif
 
 static void Flash_Write_Lock_IPC(u8 sync_type)
 {

@@ -21,11 +21,11 @@
 /* Private function prototypes -----------------------------------------------*/
 
 static int usbh_cdc_acm_attach(usb_host_t *host);
-static int usbh_cdc_acm_detach(usb_host_t *host);
-static int usbh_cdc_acm_process(usb_host_t *host, usbh_event_t *event);
+static void usbh_cdc_acm_detach(usb_host_t *host);
+static void usbh_cdc_acm_process(usb_host_t *host, usbh_event_t *event);
 #if CONFIG_USBH_CDC_ACM_NOTIFY
-static int usbh_cdc_acm_sof(usb_host_t *host);
-static int usbh_cdc_acm_completed(usb_host_t *host, u8 pipe_num);
+static void usbh_cdc_acm_sof(usb_host_t *host);
+static void usbh_cdc_acm_completed(usb_host_t *host, u8 pipe_num);
 static void usbh_cdc_acm_process_intr_rx(usb_host_t *host);
 #endif
 static int usbh_cdc_acm_setup(usb_host_t *host);
@@ -39,6 +39,10 @@ static void usbh_cdc_acm_process_rx(usb_host_t *host);
 /* Private variables ---------------------------------------------------------*/
 
 static const char *const TAG = "ACMH";
+
+/* Line coding assumed when the device does not report its own: 115200 8N1. */
+#define USBH_CDC_ACM_DEFAULT_DTE_RATE               115200U
+#define USBH_CDC_ACM_DEFAULT_DATA_BITS              8U
 
 #if CONFIG_USBH_CDC_ACM_4G_DONGLE
 
@@ -367,7 +371,11 @@ static int usbh_cdc_acm_attach_quectel(usb_host_t *host, usbh_cdc_acm_host_t *cd
 static int usbh_cdc_acm_ctrl_setting(usb_host_t *host)
 {
 	usbh_cdc_acm_host_t *cdc = &usbh_cdc_acm_host;
-	int ret_state = HAL_ERR_UNKNOWN;
+	/* HAL_BUSY = sequence still running. Every state below either advances
+	 * sub_status or leaves the control transfer in flight, so "not finished"
+	 * must be reported as BUSY: the core treats any other non-OK status as a
+	 * terminal failure and drops the class. */
+	int ret_state = HAL_BUSY;
 	int state = HAL_OK;
 
 	switch (cdc->sub_status) {
@@ -588,8 +596,8 @@ static int usbh_cdc_acm_attach(usb_host_t *host)
 
 	usbh_cdc_acm_dump_desc();
 
-	if ((cdc->cb != NULL) && (cdc->cb->attach != NULL)) {
-		cdc->cb->attach();
+	if ((cdc->cb != NULL) && (cdc->cb->attached != NULL)) {
+		cdc->cb->attached();
 	}
 
 	return HAL_OK;
@@ -617,9 +625,9 @@ open_fail:
 /**
   * @brief  Detach callback.
   * @param  host: Host handle
-  * @retval Status
+  * @retval None
   */
-static int usbh_cdc_acm_detach(usb_host_t *host)
+static void usbh_cdc_acm_detach(usb_host_t *host)
 {
 	usbh_cdc_acm_host_t *cdc = &usbh_cdc_acm_host;
 	usbh_pipe_t *bulk_out = &cdc->bulk_out;
@@ -628,8 +636,8 @@ static int usbh_cdc_acm_detach(usb_host_t *host)
 	usbh_pipe_t *intr_in = &cdc->intr_in;
 #endif
 
-	if ((cdc->cb != NULL) && (cdc->cb->detach != NULL)) {
-		cdc->cb->detach();
+	if ((cdc->cb != NULL) && (cdc->cb->detached != NULL)) {
+		cdc->cb->detached();
 	}
 #if CONFIG_USBH_CDC_ACM_NOTIFY
 	if (intr_in->pipe_num) {
@@ -656,8 +664,6 @@ static int usbh_cdc_acm_detach(usb_host_t *host)
 	cdc->param_item = NULL;
 	cdc->sub_status = 0U;
 #endif
-
-	return HAL_OK;
 }
 
 /**
@@ -685,12 +691,30 @@ static int usbh_cdc_acm_setup(usb_host_t *host)
 
 	/*Issue the get line coding request*/
 	status = usbh_cdc_acm_process_get_line_coding(host, cdc->line_coding);
-	if (status == HAL_OK) {
-		if ((cdc->cb != NULL) && (cdc->cb->setup != NULL)) {
-			cdc->cb->setup();
-		}
+	if (status == HAL_BUSY) {
+		/* Control transfer still running; the core re-invokes setup(). */
+		return status;
 	}
-	return status;
+
+	if (status != HAL_OK) {
+		/* GET_LINE_CODING is only required of a device that actually manages a
+		 * serial line (CDC PSTN 1.2 6.3.11); ACM-like interfaces commonly STALL
+		 * it. Retrying cannot make an unsupported request supported, so keep the
+		 * defaults already in line_coding and report the class ready - the same
+		 * "optional request refused means use a default" handling that MSC
+		 * applies to GET_MAX_LUN. */
+		RTK_LOGS(TAG, RTK_LOG_WARN, "Get line coding err %d, use default\n", status);
+		cdc->line_coding->b.dwDteRate = USBH_CDC_ACM_DEFAULT_DTE_RATE;
+		cdc->line_coding->b.bCharFormat = LINE_CODING_CHAR_FORMAT_1_STOP_BITS;
+		cdc->line_coding->b.bParityType = LINE_CODING_PARITY_NO;
+		cdc->line_coding->b.bDataBits = USBH_CDC_ACM_DEFAULT_DATA_BITS;
+	}
+
+	if ((cdc->cb != NULL) && (cdc->cb->setup != NULL)) {
+		cdc->cb->setup();
+	}
+
+	return HAL_OK;
 }
 
 #if CONFIG_USBH_CDC_ACM_NOTIFY
@@ -698,7 +722,7 @@ static int usbh_cdc_acm_setup(usb_host_t *host)
   * @brief  SOF callback for CDC ACM. Runs in ISR context every microframe;
   *         time-consuming operations (e.g. `malloc`, `rtos_sema_take`) are not permitted.
   * @param  host: Host handle
-  * @retval Status
+  * @retval None
   * @note   INTR IN watchdog + retry: when a notification transfer is in flight
   *         and its polling interval has elapsed, re-arm it (up to
   *         USB_INTR_RETRY_MAX_CNT retries, then mark error). Only relevant when
@@ -707,7 +731,7 @@ static int usbh_cdc_acm_setup(usb_host_t *host)
   *         usbh_cdc_acm_receive() in a loop (re-arming buf/len each time), so
   *         the SOF does not drive bulk IN.
   */
-static int usbh_cdc_acm_sof(usb_host_t *host)
+static void usbh_cdc_acm_sof(usb_host_t *host)
 {
 	usbh_cdc_acm_host_t *cdc = &usbh_cdc_acm_host;
 	usbh_pipe_t *intr_in = &cdc->intr_in;
@@ -739,8 +763,6 @@ static int usbh_cdc_acm_sof(usb_host_t *host)
 			/* If URB is DONE, wait for process_intr_rx to handle complete */
 		}
 	}
-
-	return HAL_OK;
 }
 
 /**
@@ -749,24 +771,20 @@ static int usbh_cdc_acm_sof(usb_host_t *host)
   *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param[in] host: Pointer to the USB host handle.
   * @param[in] pipe_num: Pipe number of the completed transfer.
-  * @return 0 on success, non-zero on failure.
+  * @retval None
   */
-static int usbh_cdc_acm_completed(usb_host_t *host, u8 pipe_num)
+static void usbh_cdc_acm_completed(usb_host_t *host, u8 pipe_num)
 {
 	usbh_cdc_acm_host_t *cdc = &usbh_cdc_acm_host;
 	usbh_pipe_t *intr_in = &cdc->intr_in;
 
-	/* Only consume the completion if it targets a pipe this driver owns.
-	 * Returning HAL_BUSY for a foreign pipe lets the core offer the event to
-	 * the next attached class driver (composite support). */
+	/* The core routes a completion to the pipe's owning driver only, so the
+	 * pipe check is a defensive guard against a stale/closed INTR pipe. */
 	if (intr_in->pipe_num && (pipe_num == intr_in->pipe_num)) {
 		if (intr_in->xfer_state == USBH_EP_XFER_BUSY) {
 			usbh_notify(host, intr_in->pipe_num, &usbh_cdc_acm_driver);
 		}
-		return HAL_OK;
 	}
-
-	return HAL_BUSY;
 }
 #endif
 
@@ -774,18 +792,16 @@ static int usbh_cdc_acm_completed(usb_host_t *host, u8 pipe_num)
 * @brief  State machine handling callback
 * @param  host:Host handle
 * @param  event: USB host event
-* @retval Status
+* @retval None
 */
-static int usbh_cdc_acm_process(usb_host_t *host, usbh_event_t *event)
+static void usbh_cdc_acm_process(usb_host_t *host, usbh_event_t *event)
 {
-	int status = HAL_BUSY;
 	u8 req_status = HAL_OK;
 	usbh_cdc_acm_host_t *cdc = &usbh_cdc_acm_host;
 
 	switch (cdc->state) {
 
 	case USBH_CDC_ACM_STATE_IDLE:
-		status = HAL_OK;
 		break;
 
 	case USBH_CDC_ACM_STATE_SET_CONTROL_LINE_STATE:
@@ -853,18 +869,18 @@ static int usbh_cdc_acm_process(usb_host_t *host, usbh_event_t *event)
 		break;
 
 	case USBH_CDC_ACM_STATE_ERROR:
-		req_status = usbh_ctrl_clear_feature(host, 0x00U);
-		if (req_status == HAL_OK) {
-			cdc->state = USBH_CDC_ACM_STATE_IDLE;
-		}
+		/* EP0 needs no recovery request: a control pipe clears a protocol STALL by accepting
+		 * the next SETUP (USB 2.0 §8.5.3.4) and has no ENDPOINT_HALT feature to clear
+		 * (§9.4.5). The failed request above already released EP0 in the host core, so
+		 * returning to IDLE is the whole recovery and always completes in one pass. */
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "ACM ctrl err\n");
+		cdc->state = USBH_CDC_ACM_STATE_IDLE;
 		break;
 
 	default:
 		break;
 
 	}
-
-	return status;
 }
 
 /**
@@ -970,16 +986,16 @@ static void usbh_cdc_acm_process_tx(usb_host_t *host)
 	int status = usbh_transfer_process(host, bulk_out);
 
 	if ((status == HAL_OK) && (bulk_out->xfer_state == USBH_EP_XFER_IDLE)) {
-		if ((cdc->cb != NULL) && (cdc->cb->transmit != NULL)) {
-			cdc->cb->transmit(status);
+		if ((cdc->cb != NULL) && (cdc->cb->transmitted != NULL)) {
+			cdc->cb->transmitted(status);
 		}
 	} else if (bulk_out->xfer_state == USBH_EP_XFER_START) {
 		usbh_notify(host, bulk_out->pipe_num, &usbh_cdc_acm_driver);
 	} else if (bulk_out->xfer_state == USBH_EP_XFER_ERROR) {
 		bulk_out->xfer_state = USBH_EP_XFER_IDLE;
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "BULK TX fail: %d\n", usbh_get_urb_state(host, bulk_out));
-		if ((cdc->cb != NULL) && (cdc->cb->transmit != NULL)) {
-			cdc->cb->transmit(status);
+		if ((cdc->cb != NULL) && (cdc->cb->transmitted != NULL)) {
+			cdc->cb->transmitted(status);
 		}
 	}
 }
@@ -1000,20 +1016,20 @@ static void usbh_cdc_acm_process_rx(usb_host_t *host)
 
 	if ((status == HAL_OK) && (bulk_in->xfer_state == USBH_EP_XFER_IDLE)) {
 		len = usbh_get_last_transfer_size(host, bulk_in);
-		if ((cdc->cb != NULL) && (cdc->cb->receive != NULL)) {
-			cdc->cb->receive(bulk_in->xfer_buf, len, status);
+		if ((cdc->cb != NULL) && (cdc->cb->received != NULL)) {
+			cdc->cb->received(bulk_in->xfer_buf, len, status);
 		}
 	} else if (bulk_in->xfer_state == USBH_EP_XFER_START) {
 		len = usbh_get_last_transfer_size(host, bulk_in);
-		if ((bulk_in->xfer_len == 0) && (cdc->cb != NULL) && (cdc->cb->receive != NULL)) {
-			cdc->cb->receive(bulk_in->xfer_buf, len, status);
+		if ((bulk_in->xfer_len == 0) && (cdc->cb != NULL) && (cdc->cb->received != NULL)) {
+			cdc->cb->received(bulk_in->xfer_buf, len, status);
 		}
 		usbh_notify(host, bulk_in->pipe_num, &usbh_cdc_acm_driver);
 	} else if (bulk_in->xfer_state == USBH_EP_XFER_ERROR) {
 		bulk_in->xfer_state = USBH_EP_XFER_IDLE;
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "BULK RX fail: %d\n", usbh_get_urb_state(host, bulk_in));
-		if ((cdc->cb != NULL) && (cdc->cb->receive != NULL)) {
-			cdc->cb->receive(NULL, 0, status);
+		if ((cdc->cb != NULL) && (cdc->cb->received != NULL)) {
+			cdc->cb->received(NULL, 0, status);
 		}
 	}
 }
@@ -1117,10 +1133,10 @@ int usbh_cdc_acm_init(const usbh_cdc_acm_cb_t *cb)
 	}
 
 	/* init user_line_coding */
-	cdc->user_line_coding->b.dwDteRate = 115200;
+	cdc->user_line_coding->b.dwDteRate = USBH_CDC_ACM_DEFAULT_DTE_RATE;
 	cdc->user_line_coding->b.bCharFormat = LINE_CODING_CHAR_FORMAT_1_STOP_BITS;
 	cdc->user_line_coding->b.bParityType = LINE_CODING_PARITY_NO;
-	cdc->user_line_coding->b.bDataBits = 8;
+	cdc->user_line_coding->b.bDataBits = USBH_CDC_ACM_DEFAULT_DATA_BITS;
 
 	ret = usbh_register_class(&usbh_cdc_acm_driver);
 	if (ret != HAL_OK) {
@@ -1145,11 +1161,9 @@ int usbh_cdc_acm_init(const usbh_cdc_acm_cb_t *cb)
 
 /**
   * @brief  Deinit CDC ACM class
-  * @retval Status
   */
-int usbh_cdc_acm_deinit(void)
+void usbh_cdc_acm_deinit(void)
 {
-	int ret = HAL_OK;
 	usbh_cdc_acm_host_t *cdc = &usbh_cdc_acm_host;
 	usb_host_t *host = cdc->host;
 
@@ -1185,8 +1199,6 @@ int usbh_cdc_acm_deinit(void)
 	   handle so post-deinit transmit/receive calls are rejected. The detach
 	   path already cleared it. */
 	cdc->host = NULL;
-
-	return ret;
 }
 
 /**

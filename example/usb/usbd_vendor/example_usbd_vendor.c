@@ -154,9 +154,118 @@ static rtos_sema_t vendor_bulk_async_xfer_sema;
 #if VENDOR_HOTPLUG
 static u8 vendor_attach_status;
 static rtos_sema_t vendor_attach_status_changed_sema;
+/* Raised by the hotplug thread when the stack can not be recovered: the async
+   xfer threads leave their loops so the semaphores can be freed safely. */
+static volatile u8 vendor_stack_fatal;
+#endif
+
+/* Async xfer thread handles. Each worker clears its own handle as its last
+   action, so the hotplug thread can tell when it is gone. */
+#if VENDOR_INTR_ASYNC_XFER
+static rtos_task_t vendor_intr_async_xfer_task;
+#endif
+#if VENDOR_ISOC_ASYNC_XFER
+static rtos_task_t vendor_isoc_async_xfer_task;
+#endif
+#if VENDOR_BULK_ASYNC_XFER
+static rtos_task_t vendor_bulk_async_xfer_task;
 #endif
 
 /* Private functions ---------------------------------------------------------*/
+
+/**
+  * @brief  Free the objects shared by the example threads
+  * @note   Only called by the last running thread, after the USB stack is fully
+  *         deinited, so that no ISR callback can touch these objects any more
+  * @retval None
+  */
+static void vendor_free_resource(void)
+{
+#if VENDOR_HOTPLUG
+	rtos_sema_delete(vendor_attach_status_changed_sema);
+	vendor_attach_status_changed_sema = NULL;
+#endif
+#if VENDOR_INTR_ASYNC_XFER
+	rtos_sema_delete(vendor_intr_async_xfer_sema);
+	vendor_intr_async_xfer_sema = NULL;
+#endif
+#if VENDOR_ISOC_ASYNC_XFER
+	rtos_sema_delete(vendor_isoc_async_xfer_sema);
+	vendor_isoc_async_xfer_sema = NULL;
+#endif
+#if VENDOR_BULK_ASYNC_XFER
+	rtos_sema_delete(vendor_bulk_async_xfer_sema);
+	vendor_bulk_async_xfer_sema = NULL;
+#endif
+}
+
+#if VENDOR_HOTPLUG
+/**
+  * @brief  Ask the async xfer threads to leave their loops, then wait for them to
+  *         delete themselves (each one clears its own handle as its last action)
+  * @note   Must run before vendor_free_resource(): those threads block on the
+  *         semaphores it frees. A thread that misses its polling window within
+  *         the grace period is force-deleted as a last resort.
+  * @retval None
+  */
+static void vendor_stop_xfer_threads(void)
+{
+#if VENDOR_INTR_ASYNC_XFER || VENDOR_ISOC_ASYNC_XFER || VENDOR_BULK_ASYNC_XFER
+	int wait_cnt;
+
+	vendor_stack_fatal = 1U;
+
+#if VENDOR_INTR_ASYNC_XFER
+	rtos_sema_give(vendor_intr_async_xfer_sema);
+#endif
+#if VENDOR_ISOC_ASYNC_XFER
+	rtos_sema_give(vendor_isoc_async_xfer_sema);
+#endif
+#if VENDOR_BULK_ASYNC_XFER
+	rtos_sema_give(vendor_bulk_async_xfer_sema);
+#endif
+
+	for (wait_cnt = 0; wait_cnt < 50; wait_cnt++) { /* max wait 1s */
+		if (1
+#if VENDOR_INTR_ASYNC_XFER
+			&& (vendor_intr_async_xfer_task == NULL)
+#endif
+#if VENDOR_ISOC_ASYNC_XFER
+			&& (vendor_isoc_async_xfer_task == NULL)
+#endif
+#if VENDOR_BULK_ASYNC_XFER
+			&& (vendor_bulk_async_xfer_task == NULL)
+#endif
+		   ) {
+			return;
+		}
+		rtos_time_delay_ms(20);
+	}
+
+	RTK_LOGS(TAG, RTK_LOG_WARN, "Force delete xfer thread\n");
+#if VENDOR_INTR_ASYNC_XFER
+	if (vendor_intr_async_xfer_task != NULL) {
+		rtos_task_delete(vendor_intr_async_xfer_task);
+		vendor_intr_async_xfer_task = NULL;
+	}
+#endif
+#if VENDOR_ISOC_ASYNC_XFER
+	if (vendor_isoc_async_xfer_task != NULL) {
+		rtos_task_delete(vendor_isoc_async_xfer_task);
+		vendor_isoc_async_xfer_task = NULL;
+	}
+#endif
+#if VENDOR_BULK_ASYNC_XFER
+	if (vendor_bulk_async_xfer_task != NULL) {
+		rtos_task_delete(vendor_bulk_async_xfer_task);
+		vendor_bulk_async_xfer_task = NULL;
+	}
+#endif
+#else
+	vendor_stack_fatal = 1U;
+#endif
+}
+#endif // VENDOR_HOTPLUG
 
 /**
   * @brief  Handle the vendor class control requests
@@ -245,11 +354,17 @@ static void example_usbd_vendor_intr_xfer_thread(void *param)
 
 	for (;;) {
 		if (rtos_sema_take(vendor_intr_async_xfer_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
+#if VENDOR_HOTPLUG
+			if (vendor_stack_fatal != 0U) {
+				break;
+			}
+#endif
 			if ((vendor_intr_tx_buf != NULL) && (vendor_intr_tx_len != 0)) {
 				usbd_vendor_transmit_intr_data(vendor_intr_tx_buf, vendor_intr_tx_len);
 			}
 		}
 	}
+	vendor_intr_async_xfer_task = NULL;
 	rtos_task_delete(NULL);
 }
 #endif // VENDOR_INTR_ASYNC_XFER
@@ -282,11 +397,17 @@ static void example_usbd_vendor_isoc_xfer_thread(void *param)
 
 	for (;;) {
 		if (rtos_sema_take(vendor_isoc_async_xfer_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
+#if VENDOR_HOTPLUG
+			if (vendor_stack_fatal != 0U) {
+				break;
+			}
+#endif
 			if ((vendor_isoc_tx_buf != NULL) && (vendor_isoc_tx_len != 0)) {
 				usbd_vendor_transmit_isoc_data(vendor_isoc_tx_buf, vendor_isoc_tx_len);
 			}
 		}
 	}
+	vendor_isoc_async_xfer_task = NULL;
 	rtos_task_delete(NULL);
 }
 #endif // VENDOR_ISOC_ASYNC_XFER
@@ -318,11 +439,17 @@ static void example_usbd_vendor_bulk_xfer_thread(void *param)
 
 	for (;;) {
 		if (rtos_sema_take(vendor_bulk_async_xfer_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
+#if VENDOR_HOTPLUG
+			if (vendor_stack_fatal != 0U) {
+				break;
+			}
+#endif
 			if ((vendor_bulk_tx_buf != NULL) && (vendor_bulk_tx_len != 0)) {
 				usbd_vendor_transmit_bulk_data(vendor_bulk_tx_buf, vendor_bulk_tx_len);
 			}
 		}
 	}
+	vendor_bulk_async_xfer_task = NULL;
 	rtos_task_delete(NULL);
 }
 #endif // VENDOR_BULK_ASYNC_XFER
@@ -359,10 +486,7 @@ static void example_usbd_vendor_hotplug_thread(void *param)
 			if (vendor_attach_status == USBD_ATTACH_STATUS_DETACHED) {
 				RTK_LOGS(TAG, RTK_LOG_INFO, "DETACHED\n");
 				usbd_vendor_deinit();
-				ret = usbd_deinit();
-				if (ret != 0) {
-					break;
-				}
+				usbd_deinit();
 				RTK_LOGS(TAG, RTK_LOG_INFO, "Free heap: 0x%x\n", rtos_mem_get_free_heap_size());
 				ret = usbd_init(&vendor_cfg);
 				if (ret != 0) {
@@ -381,6 +505,11 @@ static void example_usbd_vendor_hotplug_thread(void *param)
 		}
 	}
 	RTK_LOGS(TAG, RTK_LOG_ERROR, "Hotplug thread fail\n");
+
+	/* The stack is fully deinited here, no more ISR callback: stop the async xfer
+	   threads blocked on the semaphores, then free them as the last thread standing. */
+	vendor_stop_xfer_threads();
+	vendor_free_resource();
 	rtos_task_delete(NULL);
 }
 #endif // VENDOR_HOTPLUG
@@ -390,15 +519,6 @@ static void example_usbd_vendor_thread(void *param)
 	int ret = 0;
 #if VENDOR_HOTPLUG
 	rtos_task_t check_status_task;
-#endif
-#if VENDOR_INTR_ASYNC_XFER
-	rtos_task_t intr_async_xfer_task;
-#endif
-#if VENDOR_ISOC_ASYNC_XFER
-	rtos_task_t isoc_async_xfer_task;
-#endif
-#if VENDOR_BULK_ASYNC_XFER
-	rtos_task_t bulk_async_xfer_task;
 #endif
 
 	UNUSED(param);
@@ -452,10 +572,18 @@ static void example_usbd_vendor_thread(void *param)
 	if (ret != RTK_SUCCESS) {
 		goto clear_usb_class_exit;
 	}
+#if defined(CONFIG_SMP)
+	/* C-2: the USB OTG ISR is delivered on CPU0 (GIC ITARGETSR pins every SPI to core 0).
+	   Pinning the hotplug/deinit thread to CPU0 puts it on the same core as the ISR,
+	   so deinit's local interrupt disable is meaningful again under SMP. The async
+	   xfer threads stay unaffined: vendor_stop_xfer_threads() gates them out of a
+	   pending teardown, so they do not need to share the ISR's core. */
+	rtos_task_set_affinity(check_status_task, 0);
+#endif
 #endif // VENDOR_HOTPLUG
 #if VENDOR_INTR_ASYNC_XFER
 	// The priority of transfer thread shall be lower than USB isr priority
-	ret = rtos_task_create(&intr_async_xfer_task, "usbd_vendor_intr_xfer_thread",
+	ret = rtos_task_create(&vendor_intr_async_xfer_task, "usbd_vendor_intr_xfer_thread",
 						   example_usbd_vendor_intr_xfer_thread, NULL,
 						   VENDOR_XFER_THREAD_STACK_SIZE, VENDOR_XFER_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
@@ -464,7 +592,7 @@ static void example_usbd_vendor_thread(void *param)
 #endif // VENDOR_INTR_ASYNC_XFER
 #if VENDOR_ISOC_ASYNC_XFER
 	// The priority of transfer thread shall be lower than USB isr priority
-	ret = rtos_task_create(&isoc_async_xfer_task, "usbd_vendor_isoc_xfer_thread",
+	ret = rtos_task_create(&vendor_isoc_async_xfer_task, "usbd_vendor_isoc_xfer_thread",
 						   example_usbd_vendor_isoc_xfer_thread, NULL,
 						   VENDOR_XFER_THREAD_STACK_SIZE, VENDOR_XFER_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
@@ -473,7 +601,7 @@ static void example_usbd_vendor_thread(void *param)
 #endif // VENDOR_ISOC_ASYNC_XFER
 #if VENDOR_BULK_ASYNC_XFER
 	// The priority of transfer thread shall be lower than USB isr priority
-	ret = rtos_task_create(&bulk_async_xfer_task, "usbd_vendor_bulk_xfer_thread",
+	ret = rtos_task_create(&vendor_bulk_async_xfer_task, "usbd_vendor_bulk_xfer_thread",
 						   example_usbd_vendor_bulk_xfer_thread, NULL,
 						   VENDOR_XFER_THREAD_STACK_SIZE, VENDOR_XFER_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
@@ -494,12 +622,14 @@ clear_isoc_async_task:
 #endif
 
 #if VENDOR_ISOC_ASYNC_XFER
-	rtos_task_delete(isoc_async_xfer_task);
+	rtos_task_delete(vendor_isoc_async_xfer_task);
+	vendor_isoc_async_xfer_task = NULL;
 clear_intr_async_task:
 #endif
 
 #if VENDOR_INTR_ASYNC_XFER
-	rtos_task_delete(intr_async_xfer_task);
+	rtos_task_delete(vendor_intr_async_xfer_task);
+	vendor_intr_async_xfer_task = NULL;
 clear_check_status_task:
 #endif
 
@@ -515,18 +645,7 @@ clear_usb_driver_exit:
 
 exit:
 	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD vendor demo stop\n");
-#if VENDOR_HOTPLUG
-	rtos_sema_delete(vendor_attach_status_changed_sema);
-#endif
-#if VENDOR_INTR_ASYNC_XFER
-	rtos_sema_delete(vendor_intr_async_xfer_sema);
-#endif
-#if VENDOR_ISOC_ASYNC_XFER
-	rtos_sema_delete(vendor_isoc_async_xfer_sema);
-#endif
-#if VENDOR_BULK_ASYNC_XFER
-	rtos_sema_delete(vendor_bulk_async_xfer_sema);
-#endif
+	vendor_free_resource();
 	rtos_task_delete(NULL);
 }
 

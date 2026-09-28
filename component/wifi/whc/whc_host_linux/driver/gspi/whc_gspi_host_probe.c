@@ -11,10 +11,27 @@
  */
 #include <whc_host_linux.h>
 
-#include <linux/gpio.h>
-#include <linux/interrupt.h>
-#include <linux/of_gpio.h>
-#include <linux/slab.h>
+#if GSPI_PM_TEST
+static ssize_t gspi_pm_store(struct device *dev, struct device_attribute *attr,
+							 const char *buf, size_t count)
+{
+	int rc;
+
+	if (count && (buf[0] == '1')) {
+		dev_info(dev, "gspi_pm: manual SUSPEND\n");
+		rc = whc_gspi_host_suspend(dev);
+	} else if (count && (buf[0] == '0')) {
+		dev_info(dev, "gspi_pm: manual RESUME\n");
+		rc = whc_gspi_host_resume(dev);
+	} else {
+		return -EINVAL;
+	}
+
+	dev_info(dev, "gspi_pm: flow returned %d\n", rc);
+	return count;
+}
+static DEVICE_ATTR_WO(gspi_pm);
+#endif /* GSPI_PM_TEST */
 
 struct whc_gspi whc_gspi_priv = {0};
 
@@ -146,6 +163,12 @@ static int whc_gspi_host_probe(struct spi_device *spi)
 	bt_dev_probe(&spi->dev);
 #endif
 
+#if GSPI_PM_TEST
+	if (device_create_file(&spi->dev, &dev_attr_gspi_pm)) {
+		dev_warn(&spi->dev, "%s: create gspi_pm sysfs FAIL\n", __func__);
+	}
+#endif
+
 	return 0;
 
 err_init:
@@ -169,6 +192,9 @@ static int whc_gspi_host_remove(struct spi_device *spi)
 
 	dev_dbg(&spi->dev, "%s\n", __func__);
 
+#if GSPI_PM_TEST
+	device_remove_file(&spi->dev, &dev_attr_gspi_pm);
+#endif
 #ifdef CONFIG_BT_INIC
 	bt_dev_remove(&spi->dev);
 #endif
@@ -191,6 +217,146 @@ static int whc_gspi_host_remove(struct spi_device *spi)
 #endif
 }
 
+u8 whc_gspi_host_rpwm_notify(struct whc_gspi *priv, enum RPWM2_EVENT event)
+{
+	u32 i;
+	u8 payload;
+	u8 target_cpu_rdy;
+	u8 old_state = priv->dev_state;
+	u8 ret = true;
+	u32 cpu_ind;
+	u32 hrpwm;
+
+	switch (event) {
+	case RPWM2_PWR_SUSPEND:
+		if (priv->dev_state == PWR_STATE_SLEEP) {
+			goto exit;
+		}
+		payload = GSPI_HRPWM2_CG_BIT;
+		priv->dev_state = PWR_STATE_SLEEP;
+		target_cpu_rdy = 0;
+		break;
+
+	case RPWM2_PWR_RESUME:
+		if (priv->dev_state == PWR_STATE_ACTIVE) {
+			goto exit;
+		}
+		payload = GSPI_HRPWM2_ACT_BIT;
+		priv->dev_state = PWR_STATE_ACTIVE;
+		target_cpu_rdy = 1;	/* expect CPU_RDY to be set again */
+		break;
+
+	default:
+		dev_err(&priv->spi_dev->dev, "unknown rpwm event: %d\n", event);
+		return false;
+	}
+
+	/* build the 32-bit HRPWM word: ACT/CG payload + a trigger edge on the toggle */
+	hrpwm = ((u32)payload & GSPI_HRPWM2_PAYLOAD_MSK) << GSPI_HRPWM2_PAYLOAD_SHIFT;
+#ifdef CONFIG_AMEBADPLUS
+	/* DP: invert the current toggle bit to produce an edge */
+	if ((rtw_read32(priv, GSPI_REG_HRPWM) & GSPI_HRPWM2_TOGGLE_W32) == 0) {
+		hrpwm |= GSPI_HRPWM2_TOGGLE_W32;
+	}
+#else
+	/* green2 and later: write 1 to trigger, device clears it */
+	hrpwm |= GSPI_HRPWM2_TOGGLE_W32;
+#endif
+
+	gspi_write32(priv, GSPI_REG_HRPWM, hrpwm);
+
+	/* wait for device response via CPU_RDY indication */
+	for (i = 0; i < 1000; i++) {
+		cpu_ind = (rtw_read32(priv, GSPI_REG_CPU_INDICATION) & GSPI_CPU_RDY_IND) ? 1 : 0;
+		if (cpu_ind == target_cpu_rdy) {
+			break;
+		}
+		msleep(1);
+	}
+	if (i == 1000) {
+		priv->dev_state = old_state;
+		dev_err(&priv->spi_dev->dev, "rpwm: wait device timeout, restore state %s\n",
+				old_state ? "SLEEP" : "ACTIVE");
+		ret = false;
+	}
+
+exit:
+	return ret;
+}
+
+int whc_gspi_host_resume_common(struct whc_gspi *priv)
+{
+	/* wakeup device */
+	if (!whc_gspi_host_rpwm_notify(priv, RPWM2_PWR_RESUME)) {
+		dev_err(&priv->spi_dev->dev, "%s: wakeup device FAIL!\n", __func__);
+		return -EPERM;
+	}
+
+	netif_tx_start_all_queues(global_idev.pndev[0]);
+	netif_tx_wake_all_queues(global_idev.pndev[0]);
+
+	global_idev.wowlan_state = 0;
+
+	return 0;
+}
+
+int whc_gspi_host_suspend_common(struct whc_gspi *priv)
+{
+	/* stop scheduling tx, mark wowlan */
+	global_idev.wowlan_state = 1;
+	netif_tx_stop_all_queues(global_idev.pndev[0]);
+
+	/* suspend (clock-gate) the device */
+	if (!whc_gspi_host_rpwm_notify(priv, RPWM2_PWR_SUSPEND)) {
+		return -EPERM;
+	}
+
+	return 0;
+}
+
+int whc_gspi_host_suspend(struct device *dev)
+{
+	struct whc_gspi *priv = &whc_gspi_priv;
+
+	dev_dbg(dev, "%s\n", __func__);
+
+	if (global_idev.pndev[1] && rtw_netdev_priv_is_on(global_idev.pndev[1])) {
+		/* AP is up, refuse to suspend */
+		return -EPERM;
+	}
+
+	if (whc_gspi_host_suspend_common(priv)) {
+		goto FAIL;
+	}
+
+	return 0;
+
+FAIL:
+	netif_tx_start_all_queues(global_idev.pndev[0]);
+	netif_tx_wake_all_queues(global_idev.pndev[0]);
+	global_idev.wowlan_state = 0;
+	return -EPERM;
+}
+
+int whc_gspi_host_resume(struct device *dev)
+{
+	struct whc_gspi *priv = &whc_gspi_priv;
+
+	dev_dbg(dev, "%s\n", __func__);
+
+	/* wakeup device + restart queues */
+	if (whc_gspi_host_resume_common(priv)) {
+		return -EPERM;
+	}
+
+	return 0;
+}
+
+static struct dev_pm_ops whc_gspi_host_pm_ops = {
+	.suspend = whc_gspi_host_suspend,
+	.resume = whc_gspi_host_resume,
+};
+
 static const struct of_device_id whc_gspi_of_ids[] = {
 	{ .compatible = "realtek,inic", .data = NULL },
 	{},
@@ -207,6 +373,7 @@ static struct spi_driver whc_gspi_host_driver = {
 	.driver = {
 		.name = "WHC_GSPI",
 		.of_match_table = of_match_ptr(whc_gspi_of_ids),
+		.pm = &whc_gspi_host_pm_ops,
 	},
 	.id_table = whc_gspi_ids,
 	.probe = whc_gspi_host_probe,

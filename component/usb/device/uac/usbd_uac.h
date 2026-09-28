@@ -255,7 +255,11 @@ typedef struct {
 	u32 copy_data_len;                 /**< Audio xfer total data length. */
 	__IO u8  isoc_dump_thread;         /**< Audio dump thread running flag. */
 #endif
+	u8 ctrl_req_pending;               /**< 1 if ctrl_req is waiting for its EP0 OUT data stage. */
 	u8 from_composite;			/**< Flag indicating if part of a composite device. */
+	u8 if_base;                        /**< First interface number of this class; 0 in standalone mode
+	                                        unless the composite framework rebases it via
+	                                        set_interface_base(). */
 } usbd_uac_dev_t;
 
 /* Exported macros -----------------------------------------------------------*/
@@ -290,9 +294,10 @@ int usbd_composite_uac_init(const usbd_uac_cb_t *cb, const usbd_uac_ep_cfg_t *ep
 
 /**
   * @brief  DeInitialize UAC device
-  * @return 0 on success, non-zero on failure.
+  * @return None. This is a teardown path: the class is always unregistered and every resource it
+  *         owns released, so there is nothing for the caller to recover from.
   */
-int usbd_uac_deinit(void);
+void usbd_uac_deinit(void);
 
 /**
   * @brief  Set audio configuration to the UAC class

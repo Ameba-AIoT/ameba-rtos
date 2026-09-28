@@ -88,9 +88,12 @@ fih_ret BOOT_SignatureCheck(Manifest_TypeDef *Manifest, SubImgInfo_TypeDef *SubI
 		}
 	}
 
-	/* 1. check if secure boot enable. */
+	/* 1. Always validate the image hash, even when secure boot is disabled, so a
+	 * flash-corrupted app image is rejected. When sboot is off, skip the signature
+	 * steps and use Manifest->HashAlg directly (OTP has no algorithm constraint). */
 	if (FIH_EQ(DISABLE, SecureBootEn)) {
-		FIH_RET(FIH_SUCCESS);
+		HashAlg = Manifest->HashAlg;
+		goto IMG_HASH;
 	}
 
 	/* 2. verify signature */
@@ -119,6 +122,7 @@ fih_ret BOOT_SignatureCheck(Manifest_TypeDef *Manifest, SubImgInfo_TypeDef *SubI
 		goto SBOOT_FAIL;
 	}
 
+IMG_HASH:
 	/* 2.5 calculate and validate image hash */
 	FIH_CALL(SBOOT_Validate_ImgHash, fih_rc, HashAlg, Manifest->ImgHash, SubImgInfo, SubImgNum);
 	if (FIH_NOT_EQ(fih_rc, FIH_SUCCESS)) {
@@ -220,10 +224,12 @@ fih_ret BOOT_Extract_SignatureCheck(Manifest_TypeDef *Manifest, SubImgInfo_TypeD
 	FIH_DECLARE(fih_rc, FIH_FAILURE);
 	u8 AuthAlg, HashAlg;
 
-	/* 1. check if secure boot enable. */
-	/* 2. read public key hash from OTP if sboot en. Start with a random index to avoid side channel attack. */
+	/* Always validate the compressed image hash, even when secure boot is disabled,
+	 * so a flash-corrupted image is rejected before it is extracted. When sboot is
+	 * off, skip the signature steps and use Manifest->HashAlg directly. */
 	if (FIH_EQ(DISABLE, BOOT_SbootEn_Check(PubKeyHash))) {
-		FIH_RET(FIH_SUCCESS);
+		HashAlg = Manifest->HashAlg;
+		goto IMG_HASH;
 	}
 
 	/* 3. verify signature */
@@ -248,6 +254,7 @@ fih_ret BOOT_Extract_SignatureCheck(Manifest_TypeDef *Manifest, SubImgInfo_TypeD
 		goto SBOOT_FAIL;
 	}
 
+IMG_HASH:
 	/* 3.5 calculate and validate image hash */
 	FIH_CALL(SBOOT_Validate_ImgHash, fih_rc, HashAlg, Manifest->ImgHash, SubImgInfo, SubImgNum);
 	if (FIH_NOT_EQ(fih_rc, FIH_SUCCESS)) {

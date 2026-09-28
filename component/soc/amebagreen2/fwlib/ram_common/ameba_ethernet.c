@@ -198,63 +198,88 @@ static const char *const TAG = "ETH";
 void Ethernet_ClearAllINT(void)
 {
 	ETHERNET_TypeDef *ETHx = ((ETHERNET_TypeDef *) RMII_REG_BASE);
-
-	/* Construct mask of all possible ISR status bits */
-	u32 all_isr_mask = BIT_ISR_ROK | BIT_ISR_RER_OVF | BIT_ISR_RER_RUNT |
-					   BIT_ISR_TOK_TI | BIT_ISR_TER | BIT_ISR_LINKCHG |
-					   BIT_ISR_CNT_WRAP | BIT_ISR_SWINT | BIT_ISR_TDU |
-					   BIT_ISR_RDU1 | BIT_ISR_RDU2 | BIT_ISR_RDU3 |
-					   BIT_ISR_RDU4 | BIT_ISR_RDU5 | BIT_ISR_RDU6;
-
-	/* Write 1 to clear status bits */
-	ETHx->ETH_ISR_AND_IMR |= all_isr_mask;
+	/* Write 1 to clear. A bare 16-bit write to the status half: no read, so a bit
+	 * that arrives between read and write cannot be clobbered, and the mask half
+	 * is not touched. */
+	ETHx->ETH_ISR = (u16)0xFFFF;
 }
 
 /**
- * @brief  Get currently pending and enabled interrupt events.
- *         Converts hardware register bits to logical software events.
+ * @brief  Map a raw interrupt status word to logical events.
+ * @param  status ETH_ISR contents.
+ * @return Bitmask of events (@ref eth_link_event).
+ * @note   The IMR is deliberately not consulted: it only gates whether a bit
+ *         raises the interrupt line, and this IP latches several of them either
+ *         way, so masking here would hide work that still has to be done.
+ */
+static u16 Ethernet_StatusToEvent(u16 status)
+{
+	u16 int_event = ETH_EVT_NO_EVENT;
+
+	if (status & (u16)BIT_ISR_ROK) {
+		int_event |= ETH_EVT_RX_DONE;
+	}
+
+	if (status & (u16)BIT_ISR_TOK_TI) {
+		int_event |= ETH_EVT_TX_DONE;
+	}
+
+	if (status & (u16)BIT_ISR_LINKCHG) {
+		int_event |= ETH_EVT_LINK_CHG;
+	}
+
+	if (status & (u16)(BIT_ISR_RER_OVF | BIT_ISR_RER_RUNT)) {
+		int_event |= ETH_EVT_RX_ERROR;
+	}
+
+	if (status & (u16)BIT_ISR_TER) {
+		int_event |= ETH_EVT_TX_ERROR;
+	}
+
+	if (status & (u16)BIT_ISR_RDU1) {
+		int_event |= ETH_EVT_RDU_RING1;
+	}
+
+	return int_event;
+}
+
+/**
+ * @brief  Get currently pending interrupt events, without clearing them.
  * @return Bitmask of pending events (@ref eth_link_event).
  */
-u32 Ethernet_GetPendingINT(void)
+u16 Ethernet_GetPendingINT(void)
 {
 	ETHERNET_TypeDef *ETHx = ((ETHERNET_TypeDef *) RMII_REG_BASE);
 
-	/* Read the combined ISR (Status) and IMR (Mask) register */
-	volatile u32 raw_reg = ETHx->ETH_ISR_AND_IMR;
-	u32 int_status = ETH_EVT_NO_EVENT;
+	return ETHx->ETH_ISR;
+}
 
-	/*
-	 * Logic: An interrupt is valid only if both the Status bit (ISR)
-	 * and the Mask bit (IMR) are set.
-	 */
+/**
+ * @brief  Read the pending interrupt status, map it to events, and clear every
+ *         status bit that was read, in one pass.
+ * @return Bitmask of pending events (@ref eth_link_event).
+ * @note   Use this from the ISR instead of Ethernet_GetPendingINT() followed by
+ *         Ethernet_ClearINT(). Clearing by event cannot reach a status bit that
+ *         no event maps to, so bits like TDU and RDU1 latch forever and the DMA
+ *         stops polling descriptors. Clearing exactly the bits just read also
+ *         cannot lose an interrupt that arrives after the read, unlike a
+ *         read-modify-write or a blanket 0xFFFF.
+ */
+u16 Ethernet_GetAndClearINT(void)
+{
+	ETHERNET_TypeDef *ETHx = ((ETHERNET_TypeDef *) RMII_REG_BASE);
+	u16 status = ETHx->ETH_ISR;
+	u16 int_event = Ethernet_StatusToEvent(status);
 
-	/* 1. Check RX OK */
-	if ((raw_reg & BIT_ISR_ROK) && (raw_reg & BIT_IMR_ROK)) {
-		int_status |= ETH_EVT_RX_DONE;
+	/* Write back exactly what was read: every pending bit is acknowledged,
+	 * including the ones no event maps to. Plain assignment, not |=: this is a
+	 * write-1-to-clear register, so a read-modify-write would pick up bits that
+	 * arrived after the read above and clear them without ever reporting them. */
+	if (status != 0) {
+		ETHx->ETH_ISR = status;
 	}
 
-	/* 2. Check TX OK */
-	if ((raw_reg & BIT_ISR_TOK_TI) && (raw_reg & BIT_IMR_TOK_TI)) {
-		int_status |= ETH_EVT_TX_DONE;
-	}
-
-	/* 3. Check Link Change */
-	if ((raw_reg & BIT_ISR_LINKCHG) && (raw_reg & BIT_IMR_LINKCHG)) {
-		int_status |= ETH_EVT_LINK_CHG;
-	}
-
-	/* 4. Check RX Errors (Overflow or Runt) */
-	if (((raw_reg & BIT_ISR_RER_OVF) && (raw_reg & BIT_IMR_RER_OVF)) ||
-		((raw_reg & BIT_ISR_RER_RUNT) && (raw_reg & BIT_IMR_RER_RUNT))) {
-		int_status |= ETH_EVT_RX_ERROR;
-	}
-
-	/* 5. Check TX Errors */
-	if ((raw_reg & BIT_ISR_TER) && (raw_reg & BIT_IMR_TER)) {
-		int_status |= ETH_EVT_TX_ERROR;
-	}
-
-	return int_status;
+	return int_event;
 }
 
 /**
@@ -287,9 +312,15 @@ void Ethernet_ClearINT(uint32_t int_events)
 		clear_mask |= BIT_ISR_TER;
 	}
 
-	/* Write 1 to clear the interrupt status bits */
+	if (int_events & ETH_EVT_RDU_RING1) {
+		clear_mask |= BIT_ISR_RDU1;
+	}
+
+	/* Write 1 to clear. A bare 16-bit write: no read-modify-write, so a status bit
+	 * that arrives between the read and the write cannot be clobbered, and the mask
+	 * half at 0x03E is left alone. */
 	if (clear_mask != 0) {
-		ETHx->ETH_ISR_AND_IMR |= clear_mask;
+		ETHx->ETH_ISR = (u16)clear_mask;
 	}
 }
 
@@ -421,7 +452,7 @@ u8 *Ethernet_GetTXPktInfo(ETH_InitTypeDef *ETH_InitStruct)
 		buf = (u8 *)ETH_InitStruct->ETH_TxDesc[tx_idx].addr;
 	} else {
 		/* Trigger TX interrupt to wake DMA */
-		ETHx->ETH_ISR_AND_IMR |= BIT_ISR_TOK_TI;
+		ETHx->ETH_ISR |= BIT_ISR_TOK_TI;
 	}
 
 	return buf;
@@ -458,9 +489,13 @@ void Ethernet_UpdateTXDESCAndSend(ETH_InitTypeDef *ETH_InitStruct, ETH_PktMetaDe
 	DCache_Clean((u32)ETH_InitStruct->ETH_TxDesc[tx_idx].addr, size);
 
 	/* 3. Prepare Command/Status (DW1) */
-	/* Enable HW Checksum (IP/L4) and CRC append. Set as First & Last Segment. */
-	cmd_sts = FEMAC_TX_DSC_BIT_IPCS | FEMAC_TX_DSC_BIT_L4CS | FEMAC_TX_DSC_BIT_CRC |
+	/* Request CRC append. Set as First & Last Segment. */
+	cmd_sts = FEMAC_TX_DSC_BIT_CRC |
 			  FEMAC_TX_DSC_BIT_FS | FEMAC_TX_DSC_BIT_LS | FEMAC_TX_DSC_VAL_SIZE(size);
+#if ETH_CSUM_OFFLOAD
+	/* Let the MAC fill in the IP/L4 checksums; the stack skips them for this netif. */
+	cmd_sts |= FEMAC_TX_DSC_BIT_IPCS | FEMAC_TX_DSC_BIT_L4CS;
+#endif
 
 	/* 4. Prepare Ext Config (DW2) based on Meta Data */
 	if (meta->vlan_valid) {
@@ -493,7 +528,7 @@ void Ethernet_UpdateTXDESCAndSend(ETH_InitTypeDef *ETH_InitStruct, ETH_PktMetaDe
 	ETH_InitStruct->ETH_TxDescCurrentNum = tx_idx;
 
 	/* 9. Trigger DMA to poll TX descriptor */
-	ETHx->ETH_ISR_AND_IMR |= BIT_ISR_TOK_TI;
+	ETHx->ETH_ISR |= BIT_ISR_TOK_TI;
 	ETHx->ETH_ETHER_IO_CMD |= BIT_TXFN1ST;
 }
 
@@ -540,7 +575,7 @@ u8 *Ethernet_GetRXPktInfo(ETH_InitTypeDef *ETH_InitStruct, ETH_PktMetaDef *meta)
 		/* Check Ownership */
 		if ((dw1_status & FEMAC_RX_DSC_BIT_OWN) != 0) {
 			/* Trigger RX interrupt to ensure DMA keeps working */
-			ETHx->ETH_ISR_AND_IMR |= BIT_ISR_ROK;
+			ETHx->ETH_ISR |= BIT_ISR_ROK;
 			return NULL;
 		}
 
@@ -573,6 +608,16 @@ u8 *Ethernet_GetRXPktInfo(ETH_InitTypeDef *ETH_InitStruct, ETH_PktMetaDef *meta)
 			if (dw1_status & FEMAC_RX_DSC_BIT_CRCERR) {
 				meta->rx_crc_err = 1;
 			}
+#if ETH_CSUM_OFFLOAD
+			/* Checksum verdict from the MAC (RXCHKSUM enabled in Ethernet_Init) */
+			meta->rx_pkt_type = (u8)((dw1_status & FEMAC_RX_DSC_MASK_PKTTYPE) >> FEMAC_RX_DSC_SHIFT_PKTTYPE);
+			if (dw1_status & FEMAC_RX_DSC_BIT_IPV4CSF) {
+				meta->csum_ip = 1;
+			}
+			if (dw1_status & FEMAC_RX_DSC_BIT_L4CSF) {
+				meta->csum_l4 = 1;
+			}
+#endif
 			break;
 		}
 
@@ -652,7 +697,7 @@ void Ethernet_UpdateRXDESC(ETH_InitTypeDef *ETH_InitStruct)
 	ETH_InitStruct->ETH_RxDescCurrentNum = curr_idx;
 
 	/* Trigger RX interrupt to wake DMA */
-	ETHx->ETH_ISR_AND_IMR |= BIT_ISR_ROK;
+	ETHx->ETH_ISR |= BIT_ISR_ROK;
 }
 
 /**
@@ -822,12 +867,15 @@ void Ethernet_StructInit(ETH_InitTypeDef *ETH_InitStruct, struct eth_phy_dev *PH
 	ETH_InitStruct->ETH_TxDescNum = 8;
 
 	/* Default Buffer Sizes */
-	ETH_InitStruct->ETH_TxBufSize = ETH_PKT_MAX_SIZE;
-	ETH_InitStruct->ETH_RxBufSize = ETH_PKT_MAX_SIZE;
+	/* Slot stride, must match how the caller carves up the pool. The unaligned
+	 * frame size would misalign every slot and let a full frame overrun it. */
+	ETH_InitStruct->ETH_TxBufSize = ETH_MAX_BUF_SIZE;
+	ETH_InitStruct->ETH_RxBufSize = ETH_MAX_BUF_SIZE;
 
 	/* Interrupts */
-	ETH_InitStruct->ETH_IntMaskAndStatus = BIT_IMR_LINKCHG | BIT_IMR_TOK_TI |
-										   BIT_IMR_RER_OVF | BIT_IMR_ROK | 0xFFFF;
+	/* BIT_IMR_* sit at bit16..31 of the combined word, shift down for ETH_IMR. */
+	ETH_InitStruct->ETH_IntMask = (u16)((BIT_IMR_LINKCHG | BIT_IMR_TOK_TI |
+										 BIT_IMR_RER_OVF | BIT_IMR_ROK) >> 16);
 }
 
 /**
@@ -963,6 +1011,12 @@ int Ethernet_Init(ETH_InitTypeDef *ETH_InitStruct)
 	/* Rx settings */
 	Ethernet_SetMacAddr(ETH_InitStruct->ETH_MacAddr);
 
+#if ETH_CSUM_OFFLOAD
+	/* MAC verify IPv4/TCP/UDP checksums. Results land in the RX
+	 * descriptor as IPV4CSF/L4CSF, read back by Ethernet_GetRXPktInfo(). */
+	ETHx->ETH_CR |= BIT_RXCHKSUM;
+#endif
+
 	/* VLAN Configuration */
 	/* Configure Rx VLAN Stripping in ETH_CR */
 	if (ETH_InitStruct->VlanConfig.Bits.RxStrip) {
@@ -1048,10 +1102,21 @@ int Ethernet_Init(ETH_InitTypeDef *ETH_InitStruct)
 									 RX_PSE_DES_THRES_ON_1_11_8((ETH_InitStruct->ETH_RxDescNum - 2) >> 8) | RX_PSE_DES_THRES_ON_1_7_0(ETH_InitStruct->ETH_RxDescNum - 2) | \
 									 ETHRNTRXCPU_DES_NUM_1_11_8((ETH_InitStruct->ETH_RxDescNum - 1) >> 8) | ETHRNTRXCPU_DES_NUM_1_7_0(ETH_InitStruct->ETH_RxDescNum - 1);
 	ETHx->ETH_RX_RINGSIZE1 |= RXRINGSIZE_1_LOW(ETH_InitStruct->ETH_RxDescNum - 1);
-	/* I/O command: short desc. format = 1, Tx & Rx FIFO threshold = 256 bytes */
-	ETHx->ETH_IO_CMD1 = DSC_FORMAT_EXTRA(0x3) | BIT_EN_4GB;
+
+	ETHx->ETH_IO_CMD1 = DSC_FORMAT_EXTRA(0x3) | BIT_EN_4GB | BIT_RXOKINT_MSK_128B;
+	/* RX interrupt mitigation: raise RxOK once per 4 frames instead of once per
+	 * frame. The timer is the escape hatch for when fewer than 4 arrive, and it
+	 * has to cover the time 4 full frames take, or it expires first and the
+	 * batching never happens. At 100M a 1518B frame plus preamble and IFG
+	 * occupies 123.04us, so 4 frames need 492us. The timeout is
+	 * RXPKTTIMER x 4 x TU, and TU is 40.96us at 100M for TIMER_SEL=2, giving
+	 * 3 x 4 x 40.96 = 491.5us.
+	 * Two hardware details this relies on: the timer restarts when RxOK asserts
+	 * rather than on every frame, and it does not apply below 128 bytes, so bare
+	 * TCP ACKs still raise RxOK immediately and TX is unaffected. */
 	ETHx->ETH_ETHER_IO_CMD = RXFTH(ETH_InitStruct->DMA_RxThreshold) | TSH(ETH_InitStruct->DMA_TxThreshold) |
-							 BIT_SHORTDESFORMAT;
+							 BIT_SHORTDESFORMAT | RXINTMITIGATION_2_0(1) |
+							 REG_INT_TIMER_SEL(2) | RXPKTTIMER_2_0(3);
 
 	ETHx->ETH_TXFDP1 = (u32)ETH_InitStruct->ETH_TxDesc;
 	ETHx->ETH_RX_FDP1 = (u32)ETH_InitStruct->ETH_RxDesc;
@@ -1081,7 +1146,9 @@ int Ethernet_Init(ETH_InitTypeDef *ETH_InitStruct)
 	ETHx->ETH_ETHER_IO_CMD |= BIT_TE | BIT_RE;
 
 	/* isr & imr */
-	ETHx->ETH_ISR_AND_IMR =  ETH_InitStruct->ETH_IntMaskAndStatus;
+	/* Drop status left over from before init, then unmask. */
+	ETHx->ETH_ISR = 0xFFFF;
+	ETHx->ETH_IMR = ETH_InitStruct->ETH_IntMask;
 
 	/* enable auto-polling */
 	Ethernet_AutoPolling(ENABLE);

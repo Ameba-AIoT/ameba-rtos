@@ -15,6 +15,7 @@ target_sources(${c_CURRENT_IMAGE} PRIVATE
     ${c_CMPT_FWLIB_DIR}/ram_common/ameba_reset.c
     ${c_CMPT_FWLIB_DIR}/ram_common/ameba_tim.c
     ${c_CMPT_FWLIB_DIR}/ram_km4tz/ameba_flashclk.c
+    ${c_CMPT_FWLIB_DIR}/ram_km4tz/ameba_nor_flash.c
     ${c_CMPT_USRCFG_DIR}/ameba_bootcfg.c
 )
 

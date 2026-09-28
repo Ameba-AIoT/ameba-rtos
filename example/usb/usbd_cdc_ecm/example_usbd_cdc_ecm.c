@@ -133,22 +133,22 @@ static const usbd_cdc_ecm_ep_cfg_t usbd_ecm_ep_cfg = {
 static const usbd_config_t usbd_ecm_cfg = {
 	.speed = CDC_ECM_USB_SPEED,
 	.isr_priority = INT_PRI_MIDDLE,
+	.ext_intr_enable = USBD_SOF_INTR,
 #if defined(CONFIG_AMEBASMART)
 	.nptx_max_epmis_cnt = 1U,
-	.ext_intr_enable = USBD_SOF_INTR,
-#elif defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RLE1509)
+#elif defined(CONFIG_AMEBAGREEN2)
 	.rx_fifo_depth = 692U,
 	.ptx_fifo_depth = {0U, 256U, 32U, 0U, 0U, },
-	.ext_intr_enable = USBD_SOF_INTR,
+#elif defined(CONFIG_RLE1509)
+	.rx_fifo_depth = 656U,
+	.ptx_fifo_depth = {0U, 256U, 32U, 0U, 0U, },
 #elif defined (CONFIG_AMEBAL2)
 	.rx_fifo_depth = 661U,
 	.ptx_fifo_depth = {256U, 16U, 32U, 16U, },
-	.ext_intr_enable = USBD_SOF_INTR,
 #elif defined (CONFIG_AMEBAPRO3)
 	/*DFIFO total 2232 DWORD, resv 8 DWORD for DMA addr and EP0 fixed 256 DWORD*/
 	.rx_fifo_depth = 1664U,
 	.ptx_fifo_depth = {256U, 32U, 16U, },
-	.ext_intr_enable = USBD_SOF_INTR,
 #endif
 };
 
@@ -493,17 +493,10 @@ static void usbd_ecm_hotplug_thread(void *param)
 			RTK_LOGS(TAG, RTK_LOG_INFO, "DETACHED\n");
 
 			// Deinitialize CDC ECM
-			ret = usbd_cdc_ecm_deinit();
-			if (ret != HAL_OK) {
-				RTK_LOGS(TAG, RTK_LOG_ERROR, "Deinit fail %d\n", ret);
-			}
+			usbd_cdc_ecm_deinit();
 
 			// Deinitialize USB device
-			ret = usbd_deinit();
-			if (ret != HAL_OK) {
-				RTK_LOGS(TAG, RTK_LOG_ERROR, "Deinit core fail %d\n", ret);
-				break;
-			}
+			usbd_deinit();
 
 			// Small delay to ensure proper cleanup
 			rtos_time_delay_ms(100);
@@ -534,6 +527,12 @@ static void usbd_ecm_hotplug_thread(void *param)
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Thread exit\n");
 	usbd_ecm_hotplug_thread_running = 0;
+
+	/* The stack is fully deinited here, no ISR callback can give the sema any more.
+	   This thread is its only user left: free it as the last owner. */
+	rtos_sema_delete(usbd_ecm_attach_status_changed_sema);
+	usbd_ecm_attach_status_changed_sema = NULL;
+
 	rtos_task_delete(NULL);
 }
 #endif // CDC_ECM_HOTPLUG
@@ -587,6 +586,12 @@ static void usbd_ecm_init_thread(void *param)
 	if (ret != RTK_SUCCESS) {
 		goto exit_create_hotplug_task_fail;
 	}
+#if defined(CONFIG_SMP)
+	/* C-2: the USB OTG ISR is delivered on CPU0 (GIC ITARGETSR pins every SPI to
+	   core 0). Pinning the hotplug thread to CPU0 makes its deinit/reinit single-core
+	   against the ISR, so deinit's local interrupt disable is meaningful under SMP. */
+	rtos_task_set_affinity(hotplug_task, 0);
+#endif
 #endif
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "ECM demo start\n");

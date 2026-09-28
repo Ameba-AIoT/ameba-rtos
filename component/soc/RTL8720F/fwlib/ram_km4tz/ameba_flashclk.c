@@ -6,13 +6,7 @@
 
 #include "ameba_soc.h"
 
-#define FLASH_CALIBRATION_DEBUG		0
-
 static const char *const TAG = "FLASH";
-static FlashInfo_TypeDef *current_IC;
-
-/* Flag to check configuration register or not. Necessary for wide-range VCC MXIC flash */
-static u8 check_config_reg = 0;
 
 static u32 FLASH_PLLGet_ClockDiv(void)
 {
@@ -86,136 +80,23 @@ int flash_handshake_highspeed(void)
 	return Ret;
 }
 
-static void flash_get_vendor(void)
-{
-	u8 flash_ID[4];
-	u32 flash_capacity = 0;
-	FLASH_InitTypeDef *FLASH_InitStruct = &flash_init_para;
-
-	/* Read flash ID */
-	FLASH_RxCmd(FLASH_InitStruct->FLASH_cmd_rd_id, 3, flash_ID);
-	/* Byte -> Mbits: 10 + 10 - 3 = 17 (0x11) */
-	flash_capacity = (1 << (flash_ID[2] - 0x11));
-	RTK_LOGI(TAG, "Flash ID: %x-%x-%x (Capacity: %dM-bit)\n", flash_ID[0], flash_ID[1], flash_ID[2], flash_capacity);
-
-	/* Get flash chip information */
-	current_IC = flash_get_chip_info((flash_ID[2] << 16) | (flash_ID[1] << 8) | flash_ID[0]);
-	if (current_IC == NULL) {
-		RTK_LOGW(TAG, "This flash type is not supported!\n");
-		assert_param(0);
-	}
-
-	/* Re-initialize flash init structure according to classification */
-	switch (current_IC->flash_class) {
-	case FlashClass1:
-		FLASH_StructInit(FLASH_InitStruct);
-		break;
-	case FlashClass2:
-		FLASH_StructInit_GD(FLASH_InitStruct);
-		/* GD flash */
-		if (flash_ID[0] == 0xC8) {
-			/* 3.3v flash_id[1] = 40h or 1.8v ~ 3.3v flash_id[1] = 65h */
-			if ((flash_ID[1] == 0x40) || (flash_ID[1] == 0x65)) {
-				/* GD capacity more than 2MB, need 31h cmd to write SR2 */
-				if (flash_ID[2] >= 0x16) {
-					FLASH_InitStruct->FLASH_cmd_wr_status2 = 0x31;
-				}
-			}
-		} else {
-			FLASH_InitStruct->FLASH_cmd_wr_status2 = 0x31;
-		}
-		break;
-	case FlashClass3:
-		FLASH_StructInit_MXIC(FLASH_InitStruct);
-		break;
-	case FlashClass4:	/* EON without QE bit */
-		FLASH_StructInit_MXIC(FLASH_InitStruct);
-		FLASH_InitStruct->FLASH_QuadEn_bit = 0;
-		break;
-	case FlashClass5:
-		FLASH_StructInit_Micron(FLASH_InitStruct);
-		break;
-	case FlashClass6:	/* MXIC wide-range VCC chip */
-		FLASH_StructInit_MXIC(FLASH_InitStruct);
-		check_config_reg = 1;
-		break;
-	case FlashClassUser:
-		assert_param(current_IC->FlashInitHandler != NULL);
-		current_IC->FlashInitHandler();
-		break;
-	default:
-		break;
-	}
-
-	if (SYSCFG_OTP_SPICAddr4ByteEn()) {
-		FLASH_InitStruct->FLASH_addr_phase_len = ADDR_4_BYTE;
-	}
-
-}
-
-static void flash_set_status_register(void)
-{
-	u8 StatusLen = 1;
-	u32 data = 0;
-	u32 status = 0;
-	u32 mask = current_IC->sta_mask;
-	FLASH_InitTypeDef *FLASH_InitStruct = &flash_init_para;
-
-	if (FLASH_InitStruct->FLASH_QuadEn_bit != 0) {
-		data |= FLASH_InitStruct->FLASH_QuadEn_bit;
-	}
-
-	/* read status1 register */
-	FLASH_RxCmd(FLASH_InitStruct->FLASH_cmd_rd_status, 1, (u8 *)&status);
-
-	/* check if status2 exist */
-	if (FLASH_InitStruct->FLASH_Status2_exist) {
-		StatusLen = 2;
-		FLASH_RxCmd(FLASH_InitStruct->FLASH_cmd_rd_status2, 1, ((u8 *)&status) + 1);
-
-	} else if (check_config_reg) {	/* for MXIC wide-range flash, 1 status register + 2 config register */
-		/* Read configuration register */
-		FLASH_RxCmd(0x15, 2, ((u8 *)&status) + 1);
-		StatusLen = 3;
-
-		/* L/H Switch */
-		data |= (BIT(9) << 8);
-	}
-
-	status &= mask;
-	if (_memcmp((void *)&status, (void *)&data, StatusLen)) {
-		if (!FLASH_InitStruct->FLASH_cmd_wr_status2) {
-			FLASH_SetStatus(FLASH_InitStruct->FLASH_cmd_wr_status, StatusLen, (u8 *)&data);
-		} else {
-			FLASH_SetStatus(FLASH_InitStruct->FLASH_cmd_wr_status, 1, (u8 *)&data);
-			FLASH_SetStatus(FLASH_InitStruct->FLASH_cmd_wr_status2, 1, ((u8 *)&data) + 1);
-		}
-		RTK_LOGI(TAG, "Flash status register changed:0x%x -> 0x%x\n", status, data);
-	}
-}
-
+/**
+  * @brief  Switch the flash read bitmode, falling back until the data reads back correctly.
+  * @param  spic_mode: the bitmode to try first, degraded down to Spic1IOBitMode on failure.
+  * @param  flash_clk: the flash clock in Hz spic_mode will run at, 0 if the flash still
+  *                    runs on the boot clock. Passed on to flash_nor_set_hpm_mode().
+  * @retval RTK_SUCCESS or RTK_FAIL
+  */
 SRAMDRAM_ONLY_TEXT_SECTION
-int flash_rx_mode_switch(u32 spic_mode)
+int flash_rx_mode_switch(u32 spic_mode, u32 flash_clk)
 {
 	int Ret = RTK_SUCCESS;
-	u8 status = 0;
 	char *str[] = {"1IO", "2O", "2IO", "4O", "4IO"};
-	FLASH_InitTypeDef *FLASH_InitStruct = &flash_init_para;
 
 	/* Try sequentially: 4IO, 4O, 2IO, 2O, 1bit */
 	while (1) {
-		if (FLASH_InitStruct->FLASH_Id == FLASH_ID_MICRON) {
-			FLASH_RxCmd(0x85, 1, &status);
-			status = (status & 0x0f) | (FLASH_InitStruct->FLASH_rd_dummy_cycle[spic_mode] << 4);
-			FLASH_SetStatus(0x81, 1, &status);
-		} else if (current_IC->flash_id == 0x85) { // PUYA FLASH
-			if (FLASH_InitStruct->FLASH_rd_dummy_cycle[Spic4IOBitMode] > FLASH_DM_CYCLE_4IO) {
-				/* set FLASH DC bit in configuration register */
-				FLASH_RxCmd(FLASH_CMD_RDCR, 1, &status);
-				status |= BIT1; // DC bit of PY25Q32H
-				FLASH_SetStatus(FLASH_CMD_WRCR, 1, &status);
-			}
-		}
+		/* Apply the vendor setting this bitmode & clock needs before probing it */
+		flash_nor_set_hpm_mode(spic_mode, flash_clk);
 
 		FLASH_Init(spic_mode);
 
@@ -236,12 +117,13 @@ int flash_rx_mode_switch(u32 spic_mode)
 	return Ret;
 }
 
+
 SRAMDRAM_ONLY_TEXT_SECTION
 void flash_highspeed_setup(void)
 {
 	uint32_t irq_status;
 	u32 read_mode, Temp;
-	FLASH_InitTypeDef *FLASH_InitStruct = &flash_init_para;
+	u32 flash_clk = 0;
 	read_mode = flash_get_readmode(Flash_ReadMode);
 
 	irq_status = irq_disable_save();
@@ -252,23 +134,19 @@ void flash_highspeed_setup(void)
 	SPIC->CTRLR0 |= BIT_SPI_DREIR_R_DIS;
 
 	/* Get flash ID to reinitialize FLASH_InitTypeDef structure */
-	flash_get_vendor();
+	flash_nor_get_vendor();
 
 	/* Set flash status register: set QE, clear protection bits */
-	flash_set_status_register();
+	flash_nor_set_status_register();
 
 	if (SYSCFG_CHIPType_Get() != CHIP_TYPE_FPGA) {
-		/* Calculate flash actual freq according to CLK_LIMIT_SPIC */
-		/* Set FLASH DC bit and change SPIC dummy cycle if flash clk is over 104MHz */
-		if (FLASH_PLLGet_ClockDiv() > (104 * MHZ_TICK_CNT)) {
-			/* Change SPIC calibration data */
-			/* TODO: other bit modes & other flash */
-			FLASH_InitStruct->FLASH_rd_dummy_cycle[Spic4IOBitMode] = 0xA; // 4IO dummy cycle
-		}
+		/* Calculate flash actual freq according to CLK_LIMIT_SPIC. The dummy cycle and
+		   the flash side setting it implies are handled by flash_nor_set_hpm_mode() */
+		flash_clk = FLASH_PLLGet_ClockDiv();
 	}
 
 	/* Set flash I/O mode and high-speed calibration */
-	flash_rx_mode_switch(read_mode);
+	flash_rx_mode_switch(read_mode, flash_clk);
 
 	/* Two SPIC in Dplus, SPIC0(Boot) Can connect to S0 or S1, when SPIC0 select one, SPIC1(Combo) use another one */
 	Temp = HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_PSRAMC_FLASH_CTRL);

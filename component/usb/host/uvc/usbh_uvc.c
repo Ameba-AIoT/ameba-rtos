@@ -67,7 +67,17 @@ int usbh_uvc_init(const usbh_uvc_ctx_t *cfg, const usbh_uvc_cb_t *cb)
 	uvc->hw_irq_ref_cnt = 0U;
 #endif
 
-	usbh_uvc_class_init();
+	/* Registration may fail when the host's class_num budget is already full. Bail
+	 * out before publishing cb / running user init / allocating stream resources,
+	 * otherwise the app would see HAL_OK while no UVC driver takes part in
+	 * enumeration and would wait forever for an attach that never arrives. */
+	ret = usbh_uvc_class_init();
+	if (ret != HAL_OK) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Reg class fail %d\n", ret);
+		usb_os_mfree((void *)uvc->request_buf);
+		uvc->request_buf = NULL;
+		return ret;
+	}
 
 	uvc->cb = cb;
 	if (cb->init != NULL) {
@@ -633,6 +643,7 @@ void usbh_uvc_clear_stats(u8 stream_index)
 	/* stream-level debug counters */
 	stream->rx_frame_cnt = 1;//this app should be called after get frame access first frame
 	stream->err_frame_cnt = 0;
+	stream->trunc_frame_cnt = 0;
 	stream->drop_frame_cnt = 0;
 	stream->dec_no_buf_cnt = 0;
 	stream->foi_no_buf_cnt = 0;
@@ -667,8 +678,8 @@ void usbh_uvc_print_stats(u8 stream_index)
 	stream = &uvc->stream[stream_index];
 
 	RTK_LOGS(TAG, RTK_LOG_INFO,
-			 "class: rx=%d err=%d drop=%d reuse=%d\n",
-			 stream->rx_frame_cnt, stream->err_frame_cnt,
+			 "class: rx=%d err=%d trunc=%d drop=%d reuse=%d\n",
+			 stream->rx_frame_cnt, stream->err_frame_cnt, stream->trunc_frame_cnt,
 			 stream->drop_frame_cnt, stream->reuse_cnt);
 	RTK_LOGS(TAG, RTK_LOG_INFO,
 			 "nobuf: dec=%d foi=%d eof=%d next=%d\n",

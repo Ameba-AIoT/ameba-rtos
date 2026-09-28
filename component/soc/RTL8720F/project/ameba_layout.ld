@@ -51,6 +51,13 @@
 
 #define KM4NS_IPC_RAM_SIZE           512              /* 512B */
 
+#if defined(CONFIG_SOLO)
+#define KM4NS_SHARE_RAM_SIZE         KBYTES(2)
+#else
+#define KM4NS_SHARE_RAM_SIZE         0
+#endif
+
+
 #if defined(CONFIG_WIFI_AP_STA_NUM) && (CONFIG_WIFI_AP_STA_NUM > 5)
 #define RAM_KM4NS_IMG2_SIZE          KBYTES(CONFIG_SRAM_KM4NS_IMG2_KB + 2 * (CONFIG_WIFI_AP_STA_NUM - 5))
 #else
@@ -187,7 +194,8 @@ MEMORY
 #endif
 
     KM4NS_IPC_RAM (rwx) :                     ORIGIN = KM4NS_IMG2_RAM_START, LENGTH = KM4NS_IPC_RAM_SIZE                                                                          /* KM4NS IPC RAM: 512B */
-    KM4NS_BD_RAM (rwx) :                      ORIGIN = KM4NS_IMG2_RAM_START + KM4NS_IPC_RAM_SIZE + IMAGE_HEADER_LEN,   LENGTH = RAM_KM4NS_IMG2_SIZE - KM4NS_IPC_RAM_SIZE - IMAGE_HEADER_LEN    /* KM4NS BD RAM */
+    KM4NS_SHARE_RAM (rwx) :                   ORIGIN = KM4NS_IMG2_RAM_START + KM4NS_IPC_RAM_SIZE, LENGTH = KM4NS_SHARE_RAM_SIZE                                                    /* SOLO KM4TZ<->KM4NS shared SRAM: 2K (with the IPC RAM above = 2.5K shared) */
+    KM4NS_BD_RAM (rwx) :                      ORIGIN = KM4NS_IMG2_RAM_START + KM4NS_IPC_RAM_SIZE + KM4NS_SHARE_RAM_SIZE + IMAGE_HEADER_LEN,   LENGTH = RAM_KM4NS_IMG2_SIZE - KM4NS_IPC_RAM_SIZE - KM4NS_SHARE_RAM_SIZE - IMAGE_HEADER_LEN    /* KM4NS BD RAM */
 
     KM4TZ_BD_PSRAM_TZ (rwx) :                 ORIGIN = KM4TZ_PSRAM_TZ_START + IMAGE_HEADER_LEN,   LENGTH = KM4TZ_PSRAM_TZ_SIZE - IMAGE_HEADER_LEN                                   /* KM4TZ BD PSRAM TZ: CONFIG_TZ_S_SIZE KB */
     /* KM4TZ Non-secure PSRAM */
@@ -213,6 +221,10 @@ __km4ns_flash_text_end__ = ORIGIN(KM4NS_IMG2_XIP) + LENGTH(KM4NS_IMG2_XIP);
 #if defined (CONFIG_SOLO)
 __km4ns_app_flash_text_start__ = ORIGIN(KM4NS_IMG2_XIP);
 __km4ns_app_flash_text_end__ = ORIGIN(KM4NS_IMG2_XIP) + LENGTH(KM4NS_IMG2_XIP);
+/* SOLO isolation: the KM4NS SRAM span (IPC mailbox + img2 app/data) the non-secure
+ * KM4NS core is allowed to access; consumed by solo_km4ns_sram[] in ameba_solocfg.c. */
+__km4ns_sram_start__ = KM4NS_IMG2_RAM_START;
+__km4ns_sram_end__ = SRAM_END;
 #endif
 __km4tz_flash_text_start__ = ORIGIN(KM4TZ_IMG2_XIP);
 __km4tz_flash_text_end__ = ORIGIN(KM4TZ_IMG2_XIP) + LENGTH(KM4TZ_IMG2_XIP);
@@ -252,6 +264,10 @@ __km4tz_bd_ram_start__ = ORIGIN(KM4TZ_BD_RAM) - IMAGE_HEADER_LEN;
 __km4tz_bd_ram_end__ = ORIGIN(KM4TZ_BD_RAM) + LENGTH(KM4TZ_BD_RAM);
 __km4ns_bd_ram_start__ = ORIGIN(KM4NS_BD_RAM) - IMAGE_HEADER_LEN;
 __km4ns_bd_ram_end__ = ORIGIN(KM4NS_BD_RAM) + LENGTH(KM4NS_BD_RAM);
+/* SOLO KM4TZ<->KM4NS shared SRAM block: 512B IPC table + 2K share region, one
+ * contiguous 2.5K span at the KM4NS SRAM base (consumed by the isolation config). */
+__solo_share_ram_start__ = ORIGIN(KM4NS_IPC_RAM);
+__solo_share_ram_end__ = ORIGIN(KM4NS_SHARE_RAM) + LENGTH(KM4NS_SHARE_RAM);
 
 /*PSRAM Layout boundary*/
 __km4tz_bd_psram_start__ = ORIGIN(KM4TZ_BD_PSRAM) - IMAGE_HEADER_LEN;

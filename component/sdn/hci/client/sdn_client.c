@@ -181,6 +181,8 @@ uint32_t sdn_h2c(uint8_t protocol, uint8_t type, void *data, uint16_t len)
 		if (!list_empty(&g_sdn_client_intf.rx.bt_cmd_list)) {
 			pdata_buf = (struct sdn_data_buf *)g_sdn_client_intf.rx.bt_cmd_list.next;
 			list_del(&pdata_buf->list);
+		} else {
+			RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "sdn cmd %x drop\r\n", *((uint16_t *)data));
 		}
 		break;
 #endif
@@ -256,11 +258,11 @@ void bt_hci_c2h_flowctrl_host_completed(uint8_t count)
 	rtos_sema_give(g_sdn_client_intf.tx.task.sema);
 }
 
+/* This is only called during critical text in _tx_task_hdl within . */
 static bool bt_hci_c2h_flowctrl_acl_avail(void)
 {
 	bool ret = true;
 
-	rtos_critical_enter(RTOS_CRITICAL_BT);
 	if (gbt_c2h_flowctrl.enable) {
 		if (gbt_c2h_flowctrl.acl_avail) {
 			gbt_c2h_flowctrl.acl_avail--;
@@ -268,7 +270,6 @@ static bool bt_hci_c2h_flowctrl_acl_avail(void)
 			ret = false;
 		}
 	}
-	rtos_critical_exit(RTOS_CRITICAL_BT);
 
 	return ret;
 }

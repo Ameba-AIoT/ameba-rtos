@@ -16,7 +16,7 @@ ameba_modify_file_path(${app_ns_full_path} app_ns_tmp_full_path p_SUFFIX _tmp)
 ameba_modify_file_path(${app_full_path} app_compress p_SUFFIX _compress)
 ameba_modify_file_path(${app_ns_full_path} app_compress_ns p_SUFFIX _compress)
 
-if (CONFIG_WHC_INTF_SPDIO)
+if (CONFIG_WHC_INTF_SPDIO AND CONFIG_WHC_DEV_MENU)
     ameba_execute_process(COMMAND ${CMAKE_COMMAND} -E rename ${FINAL_IMAGE_DIR}/km4tz_fullmac_img_1.bin ${FINAL_IMAGE_DIR}/RTL8720F_FW_1.bin)
     ameba_execute_process(
         COMMAND ${CMAKE_COMMAND} -E cat ${c_IMAGE2_ALL_FILES}

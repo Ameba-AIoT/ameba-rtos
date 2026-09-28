@@ -43,12 +43,17 @@ extern "C" {
  *
  *   1 — Host matches both Run-Time (Protocol=0x01) and DFU (Protocol=0x02) devices.
  *       When a Run-Time device connects, the host issues DFU_DETACH and waits for the
- *       device to re-enumerate in DFU mode before calling cb->attach().
+ *       device to re-enumerate in DFU mode before calling cb->attached().
  *   0 — Legacy behaviour: host only matches DFU mode devices (Protocol=0x02).
  */
 
 /* Maximum consecutive write-block retries (CLRSTATUS path) before aborting */
 #define USBH_DFU_MAX_RETRY                  3U
+/* Upper bound (ms) applied to the device-reported bwPollTimeout. DFU 1.1 6.1.2 makes
+ * bwPollTimeout a 24-bit hint (up to ~4.6 h); waiting it verbatim would block the USB
+ * host task and every other class. Waiting less is protocol-legal: the host simply
+ * re-issues GETSTATUS. */
+#define USBH_DFU_MAX_POLL_TIMEOUT           5000U
 /* Maximum GETSTATUS polls while device reports dfuMANIFEST; each poll waits
  * bwPollTimeout ms.  100 × 100 ms = 10 s max for a slow flash operation. */
 #define USBH_DFU_MAX_MANIFEST_RETRY         100U
@@ -96,23 +101,20 @@ typedef struct {
 
 	/**
 	 * @brief Called during usbh_dfu_deinit() for application-side cleanup.
-	 * @return HAL_OK on success, non-zero on failure.
 	 */
-	int (*deinit)(void);
+	void (*deinit)(void);
 
 	/**
 	 * @brief Called when a DFU device is attached and enumerated.
 	 * @details Typically used to give a semaphore so the application thread can proceed.
-	 * @return HAL_OK on success, non-zero on failure.
 	 */
-	int (*attach)(void);
+	void (*attached)(void);
 
 	/**
 	 * @brief Called when the DFU device is detached.
 	 * @details Typically used to give a semaphore so the application thread can react.
-	 * @return HAL_OK on success, non-zero on failure.
 	 */
-	int (*detach)(void);
+	void (*detached)(void);
 
 	/**
 	 * @brief Called once per DFU_DNLOAD block to obtain firmware data.
@@ -204,9 +206,8 @@ int usbh_dfu_init(const usbh_dfu_cb_t *cb);
 
 /**
  * @brief De-initializes the DFU host class driver and frees all resources.
- * @return HAL_OK on success.
  */
-int usbh_dfu_deinit(void);
+void usbh_dfu_deinit(void);
 
 /**
  * @brief Starts a DFU firmware download (host → device).

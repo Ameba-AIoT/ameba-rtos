@@ -40,6 +40,7 @@ ameba_list_append(private_sources
     ameba_data_flash.c
     ameba_data_flashclk.c
     ameba_flashclk.c
+    ameba_nor_flash.c
     ameba_npcap.c
     ameba_pinmap.c
 )

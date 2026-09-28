@@ -26,6 +26,14 @@ extern "C" {
 /** @addtogroup Host_Vendor_Constants Host Vendor Constants
  * @{
  */
+/**
+ * @brief  Enable the ISOC test finish log and buffer dump.
+ * @note   Set to 1 for manual debugging only: the dump is test_cnt/10 UART lines, which costs
+ *         tens of ms at 115200 baud. It is emitted from usbh_vendor_process (task context),
+ *         never from the SOF ISR, but it still delays the host task while it runs.
+ */
+#define USBH_VENDOR_DEBUG            0
+
 #define VENDOR_CLASS_CODE            0xFFU  /**< Vendor Specific Class Code */
 #define VENDOR_SUBCLASS_CODE         0x00U  /**< Vendor Specific SubClass Code */
 #define VENDOR_PROTOCOL              0x00U  /**< Vendor Specific Protocol Code */
@@ -80,27 +88,23 @@ typedef struct {
 
 	/**
 	 * @brief Called when the host driver de-initialization.
-	 * @return 0 on success, non-zero on failure.
 	 */
-	int(* deinit)(void);
+	void (* deinit)(void);
 
 	/**
 	 * @brief Called when device attached, used to report device connection status.
-	 * @return 0 on success, non-zero on failure.
 	 */
-	int (*attach)(void);
+	void (*attached)(void);
 
 	/**
-	 * @brief CCalled when device detached, used to report device disconnection status.
-	 * @return 0 on success, non-zero on failure.
+	 * @brief Called when device detached, used to report device disconnection status.
 	 */
-	int (*detach)(void);
+	void (*detached)(void);
 
 	/**
 	 * @brief Called when device setup done, used to indicate that device is ready for data transfer.
-	 * @return 0 on success, non-zero on failure.
 	 */
-	int (*setup)(void);
+	void (*setup)(void);
 
 	/**
 	 * @brief Called when IN transfer is completed, used for application to handle the received IN data.
@@ -110,18 +114,16 @@ typedef struct {
 	 * @param  buf: Pointer to the received data buffer.
 	 * @param  len: Length of received data in bytes.
 	 * @param[in] status: The status of the transfer(0 for success)..
-	 * @return 0 on success, non-zero on failure.
 	 */
-	int (*receive)(u8 ep_type, u8 *buf, u32 len, int status);
+	void (*received)(u8 ep_type, u8 *buf, u32 len, int status);
 
 	/**
 	 * @brief Called when OUT transfer is completed, used to report OUT transfer completion status.
 	 * @note   This function may be called within an interrupt service routine (ISR) context
 	 *         (e.g., on the SOF path); time-consuming operations (e.g., `RTK_LOG`,`rtos_sema_take`) are not permitted.
 	 * @param ep_type: Endpoint type(BULK/INTR/ISOC)..
-	 * @return 0 on success, non-zero on failure.
 	 */
-	int (*transmit)(u8 ep_type);
+	void (*transmitted)(u8 ep_type);
 } usbh_vendor_cb_t;
 
 /**
@@ -132,10 +134,13 @@ typedef struct {
 	u8 *xfer_bk_buf;           /**< Backup pointer to the original user buffer */
 	u8 *test_buf;              /**< Buffer for verification/testing */
 	u32 xfer_max_len;          /**< Max length of a single transfer */
-	u16 cur_frame;             /**< Current frame number (for ISOC synchronization) */
-	u8 xfer_cnt;               /**< Current transfer count (for test loops) */
-	u8 xfer_max_cnt;           /**< Target transfer count (for test loops) */
+	u32 xfer_cnt;              /**< Current transfer count (for test loops), same width as the test_cnt API argument */
+	u32 xfer_max_cnt;          /**< Target transfer count (for test loops), same width as the test_cnt API argument */
+	u16 cur_frame;             /**< Current frame number (for ISOC synchronization), 14-bit HFNUM value */
 	u8 test_mask;              /**< Single-bit mask identifying which endpoint this transfer belongs to (one of @ref USBH_VENDOR_MASK_BULK_IN etc.) */
+#if USBH_VENDOR_DEBUG
+	u8 xfer_done;              /**< Test loop finished, latched in ISR context and reported by the class task */
+#endif
 } usbh_vendor_xfer_t;
 
 /**
@@ -178,9 +183,8 @@ int usbh_vendor_init(const usbh_vendor_cb_t *cb);
 
 /**
  * @brief  De-Initialize the Vendor Class driver.
- * @return 0 on success, non-zero on failure.
  */
-int usbh_vendor_deinit(void);
+void usbh_vendor_deinit(void);
 
 /**
  * @brief  Start a BULK transmission.

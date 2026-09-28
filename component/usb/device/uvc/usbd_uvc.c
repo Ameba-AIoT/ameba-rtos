@@ -17,18 +17,12 @@
 /* Private defines -----------------------------------------------------------*/
 
 /* Task configuration */
-#define USBD_UVC_CMD_TASK_STACK_SIZE         1024U
-#define USBD_UVC_CMD_TASK_PRIO               5U
 #define USBD_UVC_FRAME_TASK_STACK_SIZE       1024U
 #define USBD_UVC_FRAME_TASK_PRIO             5U
 #if USBD_UVC_DEBUG
 #define USBD_UVC_DUMP_TASK_STACK_SIZE        512U
 #define USBD_UVC_DUMP_TASK_PRIO              6U
 #endif
-
-/* Queue depths */
-#define USBD_UVC_CMD_QUEUE_DEPTH             8U
-#define USBD_UVC_COMPLETE_QUEUE_DEPTH        10U
 
 /* SOF counter mask (11-bit USB SOF counter) */
 #define USBD_UVC_SOF_COUNT_MASK              0x07FFU
@@ -46,13 +40,11 @@
 /* Private types -------------------------------------------------------------*/
 
 /* Private macros ------------------------------------------------------------*/
-#ifndef min
-#define min(x, y) ((x) < (y) ? (x) : (y))
-#endif
 
 /* Private function prototypes -----------------------------------------------*/
 static u16 usbd_uvc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16 buf_len);
 static int usbd_uvc_set_config(usb_dev_t *dev, u8 config);
+static void usbd_uvc_stop_streaming(usbd_uvc_dev_t *cdev);
 static void usbd_uvc_clear_config(usb_dev_t *dev, u8 config);
 static int usbd_uvc_setup(usb_dev_t *dev, usb_setup_req_t *req);
 static int usbd_uvc_handle_ep0_data_out(usb_dev_t *dev);
@@ -61,6 +53,10 @@ static int usbd_uvc_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status);
 static int usbd_uvc_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len);
 static void usbd_uvc_handle_sof(usb_dev_t *dev);
 static u8 usbd_uvc_set_interface(usb_dev_t *dev, u8 interface, u8 alt);
+static void usbd_uvc_patch_desc(u8 *desc, u16 len);
+#ifdef CONFIG_USBD_COMPOSITE
+static void usbd_uvc_set_interface_base(u8 base);
+#endif
 static void usbd_uvc_video_try_arm(usb_dev_t *dev);
 static usbd_uvc_buffer_t *usbd_uvc_video_in_stream_queue(usbd_uvc_dev_t *uvc_ctx);
 static void usbd_uvc_get_frame_handler(void *parm);
@@ -130,47 +126,12 @@ static const usbd_class_driver_t usbd_uvc_driver = {
 	.ep_data_in = usbd_uvc_handle_ep_data_in,
 	.ep_data_out = usbd_uvc_handle_ep_data_out,
 	.sof = usbd_uvc_handle_sof,
+#ifdef CONFIG_USBD_COMPOSITE
+	.set_interface_base = usbd_uvc_set_interface_base,
+#endif
 };
 
 /* Private functions ---------------------------------------------------------*/
-/**
-  * @brief  Initialize UVC command queue
-  * @retval None
-  */
-void usbd_uvc_cmd_queue_init(void)
-{
-	usbd_uvc_dev_t *cdev = &usbd_uvc_dev;
-	if (rtos_queue_create(&cdev->uvc_cmd_queue, USBD_UVC_CMD_QUEUE_DEPTH, sizeof(usbd_uvc_req_data_t)) != RTK_SUCCESS) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Queue create failed\n");
-		return;
-	}
-}
-/**
-  * @brief  UVC command handler task
-  *         Process UVC control and event messages from queue
-  * @param  parm Task parameter (unused)
-  * @retval None
-  */
-void usbd_uvc_cmd_handler(void *parm)
-{
-	usbd_uvc_dev_t *cdev = &usbd_uvc_dev;
-	usbd_uvc_req_data_t req_data;
-	(void)parm;
-
-	while (cdev->init_done != 0U) {
-		if (rtos_queue_receive(cdev->uvc_cmd_queue, &req_data, RTOS_MAX_DELAY) == RTK_SUCCESS) {
-			/* deinit() clears init_done then sends a dummy item to unblock this
-			   receive; bail out before processing it so the task self-deletes. */
-			if (cdev->init_done == 0U) {
-				break;
-			}
-			RTK_LOGS(TAG, RTK_LOG_DEBUG, "Receive type=%d len=%d\n", req_data.type, req_data.uvc_data.length);
-			usbd_uvc_events_process(cdev, &req_data);
-		}
-	}
-	cdev->cmd_task_alive = 0U;
-	rtos_task_delete(NULL);
-}
 
 /* --- Payload ring helpers (single-producer task / single-consumer ISR) -----
    The shared usb_ringbuf copies data in/out; here we access node->buf directly
@@ -327,7 +288,7 @@ usbd_uvc_video_produce_frame(usb_dev_t *dev, const u8 *mem, u32 len)
 			continue;
 		}
 
-		data_len = min(data_cap, len - sent);
+		data_len = MIN(data_cap, len - sent);
 		eof = (u8)((sent + data_len) >= len);
 
 		hdr = usbd_uvc_video_encode_header(video, node->buf, frame_start, eof);
@@ -537,6 +498,18 @@ static int usbd_uvc_handle_ep0_data_out(usb_dev_t *dev)
 	usbd_uvc_dev_t *cdev = &usbd_uvc_dev;
 	usbd_ep_t *ep0_out = &dev->ep0_out;
 	int ret = HAL_OK;
+
+	/* No pending request means this data stage does not belong to UVC, the composite dispatcher
+	   already routed it by active_func. Ref USB 2.0 8.5.3.1: a non-zero return makes the core
+	   stall the status stage, so do not report a failure the host cannot act on. */
+	if (cdev->ctrl_req_pending == 0U) {
+		return HAL_OK;
+	}
+
+	/* Consume the pending request: a single data stage belongs to exactly one setup packet, so
+	   the saved request must not be replayed by a later EP0 OUT event. */
+	cdev->ctrl_req_pending = 0U;
+
 	req_data.type = USBD_UVC_EVENT_DATA;
 	DCache_Invalidate((u32)ep0_out->xfer_buf, cdev->ctrl_data_len);
 	usb_os_memcpy((void *)req_data.uvc_data.data, (const void *)ep0_out->xfer_buf, (u32)cdev->ctrl_data_len);
@@ -574,8 +547,14 @@ static int usbd_uvc_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status)
 	usbd_uvc_dev_t *cdev = &usbd_uvc_dev;
 	usbd_uvc_video_t *video = &cdev->video;
 
-	UNUSED(ep_addr);
 	UNUSED(status);
+
+	/* Return non-HAL_OK for a foreign endpoint so composite dispatch can continue to
+	   the owning function (Ref component/usb/CLAUDE.md rule 7; mirrors
+	   usbd_msc_handle_ep_data_in()). */
+	if (ep_addr != cdev->ep_isoc_in.info.addr) {
+		return HAL_ERR_PARA;
+	}
 
 	if (cdev->init_done == 0U) {
 		return HAL_OK;
@@ -654,12 +633,73 @@ static void usbd_uvc_handle_sof(usb_dev_t *dev)
   */
 static int usbd_uvc_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len)
 {
-	int ret = HAL_OK;
+	/* UVC owns no OUT endpoint (control transfers use EP0, handled by
+	   usbd_uvc_handle_ep0_data_out()); unconditionally reject so composite dispatch
+	   continues to the function that actually owns ep_addr (Ref component/usb/CLAUDE.md
+	   rule 7). */
+	(void)dev;
 	(void)ep_addr;
 	(void)len;
-	(void)dev;
-	return ret;
+	return HAL_ERR_PARA;
 }
+/**
+  * @brief  Rebase the class-specific interface cross-references of a config descriptor block
+  * @note   The VC Header baInterfaceNr[] entries name this function's own streaming
+  *         interfaces and are rebased with the current interface base, which is 0 unless
+  *         the composite framework rebased it; the framework itself only rebases the
+  *         standard Interface and IAD descriptors. Each entry keeps its own class-local
+  *         interface number, hence the base is added rather than assigned.
+  *         Ref UVC 1.5 3.7.2 Tbl 3-3: bInCollection at offset 11, baInterfaceNr[j] at 12+j.
+  * @param  desc  Pointer to the descriptor block (after the configuration descriptor header)
+  * @param  len   Length of the descriptor block
+  * @retval None
+  */
+static void usbd_uvc_patch_desc(u8 *desc, u16 len)
+{
+	usbd_uvc_dev_t *cdev = &usbd_uvc_dev;
+	u16 i;
+
+	if (cdev->if_base == 0U) {
+		return;
+	}
+
+	for (i = 0; i < len;) {
+		u8 dlen = desc[i];
+		u8 dtype = desc[i + 1];
+
+		if (dlen == 0U) {
+			break;
+		}
+
+		if ((dtype == USB_DESC_TYPE_CS_INTERFACE) && (dlen >= 13U) && (desc[i + 2] == USBD_UVC_VC_HEADER)) {
+			u8 n = desc[i + 11];
+			u8 j;
+
+			if ((u16)(12U + n) > (u16)dlen) { /* malformed bInCollection: do not run off the descriptor */
+				n = (u8)(dlen - 12U);
+			}
+			for (j = 0; j < n; j++) {
+				desc[i + 12U + j] = (u8)(desc[i + 12U + j] + cdev->if_base);
+			}
+		}
+		i += dlen;
+	}
+}
+
+#ifdef CONFIG_USBD_COMPOSITE
+/**
+  * @brief  Store the first interface number assigned to this class by the composite framework
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `usb_os_malloc`, `rtos_sema_take`) are not permitted.
+  * @param  base  First interface number of this class
+  * @retval None
+  */
+static void usbd_uvc_set_interface_base(u8 base)
+{
+	usbd_uvc_dev.if_base = base;
+}
+#endif
+
 /**
   * @brief  Get USB descriptor callback for UVC device
   * @note   This function is called within an interrupt service routine (ISR) context;
@@ -773,8 +813,17 @@ static u16 usbd_uvc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 		usb_os_memcpy((void *)buf, (const void *)desc, len);
 	}
 
-	if ((is_cfg != 0) && (cdev->from_composite == 0U)) {
-		buf[USB_CFG_DESC_OFFSET_ATTR] = attr;
+	if (is_cfg != 0) {
+		/* Ref USB 2.0 9.6.4: bDescriptorType must reflect which descriptor was actually
+		   requested (CONFIGURATION vs OTHER_SPEED_CONFIGURATION); both cases share the
+		   same template array, so the copy in buf must be patched to match `type`. */
+		buf[USB_CFG_DESC_OFFSET_TYPE] = type;
+		if (cdev->from_composite == 0U) {
+			buf[USB_CFG_DESC_OFFSET_ATTR] = attr;
+		}
+		/* Patch the copy in buf, never the source template: get_descriptor() is invoked
+		 * repeatedly and the source must stay pristine. */
+		usbd_uvc_patch_desc(buf + USB_LEN_CFG_DESC, (u16)(len - USB_LEN_CFG_DESC));
 	}
 
 	return len;
@@ -825,6 +874,44 @@ static int usbd_uvc_set_config(usb_dev_t *dev, u8 config)
 }
 
 /**
+  * @brief  Reset UVC video streaming state (ring, flags, buffered frame bookkeeping)
+  * @note   Shared by usbd_uvc_clear_config() and usbd_uvc_set_interface(alt=0): both
+  *         must leave the video/ring state identically stopped so a subsequent
+  *         SET_INTERFACE(1,1) can restart cleanly. Endpoint init/deinit is NOT done
+  *         here; each caller owns its own usbd_ep_init()/usbd_ep_deinit() timing.
+  *         ISR-safe: no blocking calls.
+  * @param  cdev  UVC device context
+  * @retval None
+  */
+static void usbd_uvc_stop_streaming(usbd_uvc_dev_t *cdev)
+{
+	usbd_uvc_video_t *video = &cdev->video;
+	u8 output_q_empty;
+
+	cdev->running = 0U;
+
+	output_q_empty = (u8)list_empty(&video->output_queue);
+
+	/* Stop the payload ring and wake the producer if it is blocked on ring space. */
+	video->armed = 0U;
+	video->stall_sof = 0U;
+	usb_ringbuf_reset(&video->in_rb);
+	usb_os_sema_give(video->in_rb_space_sema);
+
+	video->uvc_buffer.bytesused = 0U; /* reset for next frame */
+	video->buf_used = 0U; /* reset buffer offset */
+
+	/* Only rescue output_frame_sema if the buffer is actually missing from
+	   output_queue (see usbd_uvc_set_interface() for the full race explanation);
+	   giving it unconditionally would hand out a spurious credit and desync the
+	   single-buffer handoff on the next stream restart. */
+	if (output_q_empty != 0U) {
+		usb_os_sema_give(video->output_frame_sema);
+	}
+	cdev->frame_done = 0U;
+}
+
+/**
   * @brief  Clear UVC device configuration
   * @note   This function is called within an interrupt service routine (ISR) context;
   *         time-consuming operations (e.g., `usb_os_malloc`, `rtos_sema_take`) are not permitted.
@@ -837,6 +924,13 @@ static void usbd_uvc_clear_config(usb_dev_t *dev, u8 config)
 {
 	usbd_uvc_dev_t *cdev = &usbd_uvc_dev;
 	usbd_ep_t *ep_bulk_in = &cdev->ep_isoc_in;
+
+	/* Bus reset/disconnect calls this without a prior SET_INTERFACE(1,0); without
+	   resetting running/armed/ring here, a later SET_INTERFACE(1,1)'s
+	   `if (running == 0U)` startup guard in usbd_uvc_set_interface() is skipped and
+	   the stream never restarts cleanly. Mirror the same stop-streaming state reset
+	   used there. */
+	usbd_uvc_stop_streaming(cdev);
 	usbd_ep_deinit(dev, ep_bulk_in);
 	RTK_LOGS(TAG, RTK_LOG_DEBUG, "Clear config %d\n", config);
 }
@@ -870,14 +964,29 @@ static int usbd_uvc_setup(usb_dev_t *dev, usb_setup_req_t *req)
 		case USB_REQ_SET_INTERFACE:
 			if (dev->dev_state != USBD_STATE_CONFIGURED) {
 				ret = HAL_ERR_PARA;
+			} else if ((req->wIndex != USBD_UVC_INTF_CONTROL) && (req->wIndex != USBD_UVC_INTF_STREAMING)) {
+				/* Ref USB 2.0 Table 9-10: the whole wIndex is the interface number, and a
+				   foreign interface must be rejected so composite dispatch is not broken */
+				ret = HAL_ERR_PARA;
+			} else if (usbd_uvc_set_interface(dev, (u8)req->wIndex, USB_LOW_BYTE(req->wValue)) != 0U) {
+				ret = HAL_ERR_PARA;
 			} else {
-				usbd_uvc_set_interface(dev, req->wIndex, req->wValue);
+				/* SET_INTERFACE accepted */
 			}
 			RTK_LOGS(TAG, RTK_LOG_DEBUG, "USB_REQ_SET_INTERFACE\n");
 			break;
 		case USB_REQ_GET_INTERFACE:
-			if (dev->dev_state == USBD_STATE_CONFIGURED) {
+			if (dev->dev_state != USBD_STATE_CONFIGURED) {
+				ret = HAL_ERR_PARA;
+			} else if (req->wIndex == USBD_UVC_INTF_CONTROL) {
+				/* Ref USB 2.0 9.4.4: the VC interface has one alternate setting only */
 				ep0_in->xfer_buf[0] = 0U;
+				ep0_in->xfer_len = 1U;
+				usbd_ep_transmit(dev, ep0_in);
+			} else if (req->wIndex == USBD_UVC_INTF_STREAMING) {
+				/* Report the alternate setting actually in use, else the host may believe the
+				   stream is stopped while the ISOC IN endpoint is still active */
+				ep0_in->xfer_buf[0] = (cdev->running != 0U) ? 1U : 0U;
 				ep0_in->xfer_len = 1U;
 				usbd_ep_transmit(dev, ep0_in);
 			} else {
@@ -896,23 +1005,47 @@ static int usbd_uvc_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			}
 			RTK_LOGS(TAG, RTK_LOG_DEBUG, "USB_REQ_GET_STATUS\n");
 			break;
+		default:
+			/* Never use success as the default branch: an unrecognized standard
+			   interface request must stall instead of silently returning HAL_OK
+			   with nothing transmitted (Ref component/usb/CLAUDE.md rule 6). */
+			ret = HAL_ERR_PARA;
+			break;
 		}
 		break;
 	case USB_REQ_TYPE_CLASS :
 		RTK_LOGS(TAG, RTK_LOG_DEBUG, "USB_REQ_TYPE_CLASS\n");
+		/* Ref UVC 1.5 Table 4-1: the low byte of wIndex is the interface number and the high
+		   byte is the entity ID. Only the VC and VS interfaces of this function are handled;
+		   anything else must be stalled instead of leaving the data stage unanswered. */
+		if (((req->bmRequestType & USB_REQ_RECIPIENT_MASK) != USB_REQ_RECIPIENT_INTERFACE)
+			|| ((USB_LOW_BYTE(req->wIndex) != USBD_UVC_INTF_CONTROL) && (USB_LOW_BYTE(req->wIndex) != USBD_UVC_INTF_STREAMING))) {
+			ret = HAL_ERR_PARA;
+			break;
+		}
 		req_data.type = USBD_UVC_EVENT_SETUP;
 		usb_os_memcpy((void *)&req_data.req, (const void *)req, (u32)sizeof(req_data.req));
-		if ((req->bmRequestType & USBD_UVC_BMREQTYPE_DIR_IN) == 0U) {
+		if ((req->bmRequestType == USBD_UVC_BMREQTYPE_CLASS_INTF_OUT) && (req->wLength > 0U)) {
+			/* Ref USB 2.0 8.5.3: an H2D class request with a data stage cannot be dispatched
+			   until the payload arrives. ctrl_data_len bounds the copy done by
+			   usbd_uvc_handle_ep0_data_out(), whose destination holds 64 bytes, so a larger
+			   wLength is rejected here instead of overflowing it. */
+			if (req->wLength > sizeof(req_data.uvc_data.data)) {
+				ret = HAL_ERR_PARA;
+				break;
+			}
 			cdev->ctrl_req = req->bRequest;
-			cdev->ctrl_data_len = req->wLength;
-		}
-
-		if (req->bmRequestType == USBD_UVC_BMREQTYPE_CLASS_INTF_OUT) {
+			cdev->ctrl_data_len = (u8)req->wLength;
+			cdev->ctrl_req_pending = 1U;
 			ep0_out->xfer_len = req->wLength;
-			usbd_ep_receive(dev, ep0_out);
-		} else {
-			//usbd_uvc_events_process(cdev, &req_data);
-			//rtos_queue_send(cdev->uvc_cmd_queue, &req_data, 0);
+			if (usbd_ep_receive(dev, ep0_out) != HAL_OK) {
+				/* The data stage never started, so no EP0 OUT completion will arrive to
+				   consume the pending request. Drop it, else the next unrelated request's
+				   data stage would be delivered as this one's payload. */
+				cdev->ctrl_req_pending = 0U;
+				ret = HAL_ERR_HW;
+				break;
+			}
 		}
 		usbd_uvc_events_process(cdev, &req_data);
 		break;
@@ -944,6 +1077,13 @@ static u8 usbd_uvc_set_interface(usb_dev_t *dev, u8 interface, u8 alt)
 		return 1U;
 	}
 
+	/* Ref USB 2.0 9.4.10: the VC interface has alt 0 only, the VS interface has alt 0 and 1.
+	   Any other combination is a request error. */
+	if (((interface == USBD_UVC_INTF_CONTROL) && (alt != 0U)) || (alt > 1U)) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Set_interface: bad if %d alt %d\n", interface, alt);
+		return 1U;
+	}
+
 	if (interface == 1 && alt == 1) {
 		if (cdev->running == 0U) {
 			cdev->frame_done = 0U;
@@ -965,11 +1105,9 @@ static u8 usbd_uvc_set_interface(usb_dev_t *dev, u8 interface, u8 alt)
 		}
 	} else if (interface == 1 && alt == 0) {
 		if (cdev->running != 0U) {
-			cdev->running = 0U;
 			usbd_ep_deinit(dev, ep_isoc_in);
 
 			output_q_empty = (u8)list_empty(&video->output_queue);
-
 			if (output_q_empty != 0U) {
 				RTK_LOGS(TAG, RTK_LOG_INFO, "Output queue empty\n");
 			} else {
@@ -981,11 +1119,6 @@ static u8 usbd_uvc_set_interface(usb_dev_t *dev, u8 interface, u8 alt)
 			} else {
 				RTK_LOGS(TAG, RTK_LOG_INFO, "Input queue full\n");
 			}
-			/* Stop the payload ring and wake the producer if it is blocked on ring space. */
-			video->armed = 0U;
-			video->stall_sof = 0U;
-			usb_ringbuf_reset(&video->in_rb);
-			usb_os_sema_give(video->in_rb_space_sema);
 
 			/* Do NOT call usbd_uvc_free_uvcd_list_buffer() here: this runs in ISR
 			   context, but that helper takes output_lock via rtos_mutex_take(),
@@ -993,23 +1126,10 @@ static u8 usbd_uvc_set_interface(usb_dev_t *dev, u8 interface, u8 alt)
 			   usbd_uvc_video_out_stream_queue() forever after a stop/restart.
 			   The buffer already flows back via usbd_uvc_wait_frame_down() in
 			   task context regardless of cdev->running. */
-			video->uvc_buffer.bytesused = 0U; /* reset for next frame */
-			video->buf_used = 0U; /* reset buffer offset */
-
-			/* Only rescue output_frame_sema if the buffer is actually missing
-			   from output_queue (i.e. a producer may be blocked in
-			   usbd_uvc_wait_frame_down() waiting for it). Giving it
-			   unconditionally, when the buffer is already sitting idle in
-			   output_queue, hands out a spurious credit that the next cycle's
-			   wait_frame_down() consumes prematurely - it returns before its
-			   own frame is actually queued, which desyncs the single-buffer
-			   handoff and wedges the pipeline on the following stream restart. */
-			if (output_q_empty != 0U) {
-				usb_os_sema_give(video->output_frame_sema);
-			}
-			cdev->frame_done = 0U;
+			usbd_uvc_stop_streaming(cdev);
+		} else {
+			cdev->running = 0U;
 		}
-		cdev->running = 0U;
 	}
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Interface %d alt %d\n", interface, alt);
 	return 0U;
@@ -1172,6 +1292,8 @@ static int usbd_uvc_private_init(const usbd_uvc_ep_cfg_t *ep_cfg)
 	usbd_uvc_parameter_init();
 	usbd_ext_init();
 	usb_os_memset(dev, 0U, (u32)sizeof(usbd_uvc_dev_t));
+	/* Standalone default; the composite framework rebases it via set_interface_base() */
+	dev->if_base = 0;
 	dev->probe = usbd_uvc_probe;
 	dev->commit = usbd_uvc_commit;
 
@@ -1183,8 +1305,6 @@ static int usbd_uvc_private_init(const usbd_uvc_ep_cfg_t *ep_cfg)
 	dev->ep_cfg = ep_cfg;
 
 	usbd_uvc_patch_ep_addresses(USBD_UVC_ISO_IN_EP, dev->ep_cfg->iso_in_addr);
-
-	usbd_uvc_cmd_queue_init();
 
 	INIT_LIST_HEAD(&video->input_queue);
 	INIT_LIST_HEAD(&video->output_queue);
@@ -1213,8 +1333,6 @@ static int usbd_uvc_private_init(const usbd_uvc_ep_cfg_t *ep_cfg)
 	video->stall_sof = 0U;
 	video->sof_count = 0U;
 
-	usb_os_queue_create(&video->complete_bf_req, USBD_UVC_COMPLETE_QUEUE_DEPTH, sizeof(int));
-
 	info->addr = dev->ep_cfg->iso_in_addr;
 	info->type = USB_CH_EP_TYPE_ISOC;
 	info->binterval = USBD_UVC_ISOC_EP_BINTERVAL;
@@ -1226,17 +1344,6 @@ static int usbd_uvc_private_init(const usbd_uvc_ep_cfg_t *ep_cfg)
 	/* Mark as initialized before creating tasks so tasks can run properly */
 	dev->init_done = 1U;
 
-	/* Set the alive flag before creating the task (not inside it) so a very
-	   early deinit() cannot race past the join while the task is still starting. */
-	dev->cmd_task_alive = 1U;
-	ret = rtos_task_create(NULL, "usbd_uvc_cmd_handler", usbd_uvc_cmd_handler, NULL, USBD_UVC_CMD_TASK_STACK_SIZE, USBD_UVC_CMD_TASK_PRIO);
-	if (ret != RTK_SUCCESS) {
-		dev->cmd_task_alive = 0U;
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create USBD UVC CMD thread fail\n");
-		ret = -1;
-		goto exit;
-	}
-
 	dev->frame_task_alive = 1U;
 	ret = rtos_task_create(NULL, "usbd_uvc_get_frame_handler", usbd_uvc_get_frame_handler, NULL, USBD_UVC_FRAME_TASK_STACK_SIZE, USBD_UVC_FRAME_TASK_PRIO);
 	if (ret != RTK_SUCCESS) {
@@ -1245,8 +1352,6 @@ static int usbd_uvc_private_init(const usbd_uvc_ep_cfg_t *ep_cfg)
 		ret = -1;
 		goto exit;
 	}
-
-	dev->uvc_in_buf = usb_os_malloc(dev->ep_cfg->iso_in_xfer_size ? dev->ep_cfg->iso_in_xfer_size : USBD_UVC_IN_BUF_SIZE);
 
 #if USBD_UVC_DEBUG
 	dev->dump_task_exit = 0U;
@@ -1274,9 +1379,10 @@ int usbd_uvc_init(const usbd_uvc_ep_cfg_t *ep_cfg)
 	usbd_uvc_dev_t *dev = &usbd_uvc_dev;
 	int ret;
 
-	dev->from_composite = 0;
+	/* private_init memsets the whole singleton, so the mode must be stored after it. */
 	ret = usbd_uvc_private_init(ep_cfg);
 	if (ret == HAL_OK) {
+		dev->from_composite = 0;
 		usbd_register_class(&usbd_uvc_driver);
 	}
 	return ret;
@@ -1292,9 +1398,10 @@ int usbd_composite_uvc_init(const usbd_uvc_ep_cfg_t *ep_cfg)
 	usbd_uvc_dev_t *dev = &usbd_uvc_dev;
 	int ret;
 
-	dev->from_composite = 1;
+	/* private_init memsets the whole singleton, so the mode must be stored after it. */
 	ret = usbd_uvc_private_init(ep_cfg);
 	if (ret == HAL_OK) {
+		dev->from_composite = 1;
 		ret = usbd_composite_register_driver(&usbd_uvc_driver);
 	}
 	return ret;
@@ -1310,6 +1417,10 @@ int usbd_composite_uvc_init(const usbd_uvc_ep_cfg_t *ep_cfg)
   */
 void usbd_uvc_deinit(void)
 {
+	/* Drop any request still waiting for its data stage, so a re-init cannot inherit it and
+	   dispatch a stale payload. The unregister below stops all further class callbacks. */
+	usbd_uvc_dev.ctrl_req_pending = 0U;
+
 #ifdef CONFIG_USBD_COMPOSITE
 	if (usbd_uvc_dev.from_composite != 0U) {
 		usbd_composite_unregister_driver(&usbd_uvc_driver);
@@ -1318,27 +1429,22 @@ void usbd_uvc_deinit(void)
 	{
 		usbd_uvc_dev_t *cdev = &usbd_uvc_dev;
 		usbd_uvc_video_t *video = &cdev->video;
-		usbd_uvc_req_data_t wakeup = { 0U };
 		u8 wait_cnt = 0U;
 
 		usbd_unregister_class();
 		cdev->init_done = 0U;
 		cdev->running = 0U;
 
-		/* Wake the worker tasks so they observe init_done == 0 and self-delete
-		BEFORE we usb_os_mfree the queue/semaphores they block on (delete-under-blocked-
-		receiver would corrupt the object / crash). Order: wake -> join -> usb_os_mfree. */
-		if (cdev->uvc_cmd_queue != NULL) {
-			/* cmd_handler is parked in rtos_queue_receive(RTOS_MAX_DELAY). */
-			rtos_queue_send(cdev->uvc_cmd_queue, &wakeup, 0);
-		}
-		/* get_frame_handler is parked on output_queue_sema; the producer may also be
+		/* Wake the frame worker task so it observes init_done == 0 and self-deletes
+		BEFORE we usb_os_mfree the semaphores it blocks on (delete-under-blocked-
+		receiver would corrupt the object / crash). Order: wake -> join -> usb_os_mfree.
+		get_frame_handler is parked on output_queue_sema; the producer may also be
 		parked on in_rb_space_sema inside usbd_uvc_video_produce_frame(). */
 		usb_os_sema_give(video->output_queue_sema);
 		usb_os_sema_give(video->in_rb_space_sema);
 
-		/* Join: wait (bounded) for both tasks to clear their alive flags. */
-		while (((cdev->cmd_task_alive != 0U) || (cdev->frame_task_alive != 0U)) && (wait_cnt < 100U)) {
+		/* Join: wait (bounded) for the frame task to clear its alive flag. */
+		while ((cdev->frame_task_alive != 0U) && (wait_cnt < 100U)) {
 			rtos_time_delay_ms(10U);
 			wait_cnt++;
 		}
@@ -1357,13 +1463,6 @@ void usbd_uvc_deinit(void)
 		usb_os_sema_delete(video->output_queue_sema);
 		usb_os_sema_delete(video->output_frame_sema);
 		usb_os_sema_delete(video->in_rb_space_sema);
-		usb_os_queue_delete(video->complete_bf_req);
-		/* uvc_cmd_queue was created via rtos_queue_create() and was previously
-		leaked on deinit; usb_os_mfree it (matching API) now that no task waits on it. */
-		if (cdev->uvc_cmd_queue != NULL) {
-			rtos_queue_delete(cdev->uvc_cmd_queue);
-			cdev->uvc_cmd_queue = NULL;
-		}
 		usb_os_lock_delete(cdev->bod_mutex);
 		usb_os_lock_delete(video->input_lock);
 		usb_os_lock_delete(video->output_lock);
@@ -1371,11 +1470,6 @@ void usbd_uvc_deinit(void)
 		INIT_LIST_HEAD(&video->input_queue);
 		INIT_LIST_HEAD(&video->output_queue);
 		INIT_LIST_HEAD(&cdev->bod_list);
-
-		if (usbd_uvc_dev.uvc_in_buf) {
-			usb_os_mfree(usbd_uvc_dev.uvc_in_buf);
-			usbd_uvc_dev.uvc_in_buf = NULL;
-		}
 	}
 }
 /**

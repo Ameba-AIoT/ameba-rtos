@@ -47,6 +47,26 @@
 
 #endif
 
+/* Headers for RTK hardware transparent drivers */
+#if defined(RTK_PSA_HASH_DRIVER)
+#include "rtk_psa_hash.h"
+#endif
+#if defined(RTK_PSA_AEAD_DRIVER)
+#include "rtk_psa_aead.h"
+#endif
+#if defined(RTK_PSA_ECDSA_DRIVER)
+#include "rtk_psa_ecdsa.h"
+#endif
+#if defined(RTK_PSA_ECDH_DRIVER)
+#include "rtk_psa_ecdh.h"
+#endif
+#if defined(RTK_PSA_CIPHER_DRIVER)
+#include "rtk_psa_cipher.h"
+#endif
+#if defined(RTK_PSA_MAC_DRIVER)
+#include "rtk_psa_mac.h"
+#endif
+
 /* END-driver headers */
 
 /* Auto-generated values depending on which drivers are registered.
@@ -57,6 +77,7 @@
 #define MBEDTLS_TEST_OPAQUE_DRIVER_ID (2)
 #define MBEDTLS_TEST_TRANSPARENT_DRIVER_ID (3)
 #define P256_TRANSPARENT_DRIVER_ID (4)
+#define RTK_TRANSPARENT_DRIVER_ID (5)
 
 /* END-driver id */
 
@@ -253,6 +274,19 @@ static inline psa_status_t psa_driver_wrapper_sign_hash(
             /* Key is stored in the slot in export representation, so
              * cycle through all known transparent accelerators */
 #if defined(PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT)
+#if defined(RTK_PSA_ECDSA_DRIVER)
+            status = rtk_transparent_sign_hash( attributes,
+                                                key_buffer,
+                                                key_buffer_size,
+                                                alg,
+                                                hash,
+                                                hash_length,
+                                                signature,
+                                                signature_size,
+                                                signature_length );
+            if( status != PSA_ERROR_NOT_SUPPORTED )
+                return( status );
+#endif /* RTK_PSA_ECDSA_DRIVER */
 #if defined(PSA_CRYPTO_DRIVER_TEST)
             status = mbedtls_test_transparent_signature_sign_hash( attributes,
                                                            key_buffer,
@@ -336,6 +370,18 @@ static inline psa_status_t psa_driver_wrapper_verify_hash(
             /* Key is stored in the slot in export representation, so
              * cycle through all known transparent accelerators */
 #if defined(PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT)
+#if defined(RTK_PSA_ECDSA_DRIVER)
+            status = rtk_transparent_verify_hash( attributes,
+                                                  key_buffer,
+                                                  key_buffer_size,
+                                                  alg,
+                                                  hash,
+                                                  hash_length,
+                                                  signature,
+                                                  signature_length );
+            if( status != PSA_ERROR_NOT_SUPPORTED )
+                return( status );
+#endif /* RTK_PSA_ECDSA_DRIVER */
 #if defined(PSA_CRYPTO_DRIVER_TEST)
             status = mbedtls_test_transparent_signature_verify_hash(
                          attributes,
@@ -704,6 +750,14 @@ static inline psa_status_t psa_driver_wrapper_generate_key(
                 is_default_production )
             {
             /* Cycle through all known transparent accelerators */
+#if defined(RTK_PSA_ECDSA_DRIVER)
+                status = rtk_transparent_generate_key( attributes,
+                                                       key_buffer,
+                                                       key_buffer_size,
+                                                       key_buffer_length );
+                if( status != PSA_ERROR_NOT_SUPPORTED )
+                    break;
+#endif /* RTK_PSA_ECDSA_DRIVER */
 #if defined(PSA_CRYPTO_DRIVER_TEST)
                 status = mbedtls_test_transparent_generate_key(
                     attributes, key_buffer, key_buffer_size,
@@ -950,6 +1004,21 @@ static inline psa_status_t psa_driver_wrapper_cipher_encrypt(
             /* Key is stored in the slot in export representation, so
              * cycle through all known transparent accelerators */
 #if defined(PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT)
+#if defined(RTK_PSA_CIPHER_DRIVER)
+            status = rtk_transparent_cipher_encrypt( attributes,
+                                                     key_buffer,
+                                                     key_buffer_size,
+                                                     alg,
+                                                     iv,
+                                                     iv_length,
+                                                     input,
+                                                     input_length,
+                                                     output,
+                                                     output_size,
+                                                     output_length );
+            if( status != PSA_ERROR_NOT_SUPPORTED )
+                return( status );
+#endif /* RTK_PSA_CIPHER_DRIVER */
 #if defined(PSA_CRYPTO_DRIVER_TEST)
             status = mbedtls_test_transparent_cipher_encrypt( attributes,
                                                               key_buffer,
@@ -1040,6 +1109,19 @@ static inline psa_status_t psa_driver_wrapper_cipher_decrypt(
             /* Key is stored in the slot in export representation, so
              * cycle through all known transparent accelerators */
 #if defined(PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT)
+#if defined(RTK_PSA_CIPHER_DRIVER)
+            status = rtk_transparent_cipher_decrypt( attributes,
+                                                     key_buffer,
+                                                     key_buffer_size,
+                                                     alg,
+                                                     input,
+                                                     input_length,
+                                                     output,
+                                                     output_size,
+                                                     output_length );
+            if( status != PSA_ERROR_NOT_SUPPORTED )
+                return( status );
+#endif /* RTK_PSA_CIPHER_DRIVER */
 #if defined(PSA_CRYPTO_DRIVER_TEST)
             status = mbedtls_test_transparent_cipher_decrypt( attributes,
                                                               key_buffer,
@@ -1117,6 +1199,19 @@ static inline psa_status_t psa_driver_wrapper_cipher_encrypt_setup(
             /* Key is stored in the slot in export representation, so
              * cycle through all known transparent accelerators */
 #if defined(PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT)
+#if defined(RTK_PSA_CIPHER_DRIVER)
+            status = rtk_transparent_cipher_encrypt_setup(
+                &operation->ctx.rtk_ctx,
+                attributes,
+                key_buffer,
+                key_buffer_size,
+                alg );
+            if( status == PSA_SUCCESS )
+                operation->id = RTK_TRANSPARENT_DRIVER_ID;
+
+            if( status != PSA_ERROR_NOT_SUPPORTED )
+                return( status );
+#endif /* RTK_PSA_CIPHER_DRIVER */
 #if defined(PSA_CRYPTO_DRIVER_TEST)
             status = mbedtls_test_transparent_cipher_encrypt_setup(
                 &operation->ctx.transparent_test_driver_ctx,
@@ -1190,6 +1285,19 @@ static inline psa_status_t psa_driver_wrapper_cipher_decrypt_setup(
             /* Key is stored in the slot in export representation, so
              * cycle through all known transparent accelerators */
 #if defined(PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT)
+#if defined(RTK_PSA_CIPHER_DRIVER)
+            status = rtk_transparent_cipher_decrypt_setup(
+                &operation->ctx.rtk_ctx,
+                attributes,
+                key_buffer,
+                key_buffer_size,
+                alg );
+            if( status == PSA_SUCCESS )
+                operation->id = RTK_TRANSPARENT_DRIVER_ID;
+
+            if( status != PSA_ERROR_NOT_SUPPORTED )
+                return( status );
+#endif /* RTK_PSA_CIPHER_DRIVER */
 #if defined(PSA_CRYPTO_DRIVER_TEST)
             status = mbedtls_test_transparent_cipher_decrypt_setup(
                 &operation->ctx.transparent_test_driver_ctx,
@@ -1262,6 +1370,11 @@ static inline psa_status_t psa_driver_wrapper_cipher_set_iv(
 #endif /* MBEDTLS_PSA_BUILTIN_CIPHER */
 
 #if defined(PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT)
+#if defined(RTK_PSA_CIPHER_DRIVER)
+        case RTK_TRANSPARENT_DRIVER_ID:
+            return( rtk_transparent_cipher_set_iv( &operation->ctx.rtk_ctx,
+                                                   iv, iv_length ) );
+#endif /* RTK_PSA_CIPHER_DRIVER */
 #if defined(PSA_CRYPTO_DRIVER_TEST)
         case MBEDTLS_TEST_TRANSPARENT_DRIVER_ID:
             return( mbedtls_test_transparent_cipher_set_iv(
@@ -1303,6 +1416,12 @@ static inline psa_status_t psa_driver_wrapper_cipher_update(
 #endif /* MBEDTLS_PSA_BUILTIN_CIPHER */
 
 #if defined(PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT)
+#if defined(RTK_PSA_CIPHER_DRIVER)
+        case RTK_TRANSPARENT_DRIVER_ID:
+            return( rtk_transparent_cipher_update( &operation->ctx.rtk_ctx,
+                                                   input, input_length,
+                                                   output, output_size, output_length ) );
+#endif /* RTK_PSA_CIPHER_DRIVER */
 #if defined(PSA_CRYPTO_DRIVER_TEST)
         case MBEDTLS_TEST_TRANSPARENT_DRIVER_ID:
             return( mbedtls_test_transparent_cipher_update(
@@ -1345,6 +1464,11 @@ static inline psa_status_t psa_driver_wrapper_cipher_finish(
 #endif /* MBEDTLS_PSA_BUILTIN_CIPHER */
 
 #if defined(PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT)
+#if defined(RTK_PSA_CIPHER_DRIVER)
+        case RTK_TRANSPARENT_DRIVER_ID:
+            return( rtk_transparent_cipher_finish( &operation->ctx.rtk_ctx,
+                                                   output, output_size, output_length ) );
+#endif /* RTK_PSA_CIPHER_DRIVER */
 #if defined(PSA_CRYPTO_DRIVER_TEST)
         case MBEDTLS_TEST_TRANSPARENT_DRIVER_ID:
             return( mbedtls_test_transparent_cipher_finish(
@@ -1379,6 +1503,13 @@ static inline psa_status_t psa_driver_wrapper_cipher_abort(
 #endif /* MBEDTLS_PSA_BUILTIN_CIPHER */
 
 #if defined(PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT)
+#if defined(RTK_PSA_CIPHER_DRIVER)
+        case RTK_TRANSPARENT_DRIVER_ID:
+            status = rtk_transparent_cipher_abort( &operation->ctx.rtk_ctx );
+            mbedtls_platform_zeroize( &operation->ctx.rtk_ctx,
+                                      sizeof( operation->ctx.rtk_ctx ) );
+            return( status );
+#endif /* RTK_PSA_CIPHER_DRIVER */
 #if defined(PSA_CRYPTO_DRIVER_TEST)
         case MBEDTLS_TEST_TRANSPARENT_DRIVER_ID:
             status = mbedtls_test_transparent_cipher_abort(
@@ -1417,6 +1548,12 @@ static inline psa_status_t psa_driver_wrapper_hash_compute(
     psa_status_t status = PSA_ERROR_CORRUPTION_DETECTED;
 
     /* Try accelerators first */
+#if defined(RTK_PSA_HASH_DRIVER)
+    status = rtk_transparent_hash_compute(
+                alg, input, input_length, hash, hash_size, hash_length );
+    if( status != PSA_ERROR_NOT_SUPPORTED )
+        return( status );
+#endif
 #if defined(PSA_CRYPTO_DRIVER_TEST)
     status = mbedtls_test_transparent_hash_compute(
                 alg, input, input_length, hash, hash_size, hash_length );
@@ -1449,6 +1586,14 @@ static inline psa_status_t psa_driver_wrapper_hash_setup(
     psa_status_t status = PSA_ERROR_CORRUPTION_DETECTED;
 
     /* Try setup on accelerators first */
+#if defined(RTK_PSA_HASH_DRIVER)
+    status = rtk_transparent_hash_setup( &operation->ctx.rtk_ctx, alg );
+    if( status == PSA_SUCCESS )
+        operation->id = RTK_TRANSPARENT_DRIVER_ID;
+
+    if( status != PSA_ERROR_NOT_SUPPORTED )
+        return( status );
+#endif
 #if defined(PSA_CRYPTO_DRIVER_TEST)
     status = mbedtls_test_transparent_hash_setup(
                 &operation->ctx.test_driver_ctx, alg );
@@ -1487,6 +1632,12 @@ static inline psa_status_t psa_driver_wrapper_hash_clone(
             return( mbedtls_psa_hash_clone( &source_operation->ctx.mbedtls_ctx,
                                             &target_operation->ctx.mbedtls_ctx ) );
 #endif
+#if defined(RTK_PSA_HASH_DRIVER)
+        case RTK_TRANSPARENT_DRIVER_ID:
+            target_operation->id = RTK_TRANSPARENT_DRIVER_ID;
+            return( rtk_transparent_hash_clone( &source_operation->ctx.rtk_ctx,
+                                                &target_operation->ctx.rtk_ctx ) );
+#endif
 #if defined(PSA_CRYPTO_DRIVER_TEST)
         case MBEDTLS_TEST_TRANSPARENT_DRIVER_ID:
             target_operation->id = MBEDTLS_TEST_TRANSPARENT_DRIVER_ID;
@@ -1511,6 +1662,11 @@ static inline psa_status_t psa_driver_wrapper_hash_update(
         case PSA_CRYPTO_MBED_TLS_DRIVER_ID:
             return( mbedtls_psa_hash_update( &operation->ctx.mbedtls_ctx,
                                              input, input_length ) );
+#endif
+#if defined(RTK_PSA_HASH_DRIVER)
+        case RTK_TRANSPARENT_DRIVER_ID:
+            return( rtk_transparent_hash_update( &operation->ctx.rtk_ctx,
+                                                 input, input_length ) );
 #endif
 #if defined(PSA_CRYPTO_DRIVER_TEST)
         case MBEDTLS_TEST_TRANSPARENT_DRIVER_ID:
@@ -1538,6 +1694,11 @@ static inline psa_status_t psa_driver_wrapper_hash_finish(
             return( mbedtls_psa_hash_finish( &operation->ctx.mbedtls_ctx,
                                              hash, hash_size, hash_length ) );
 #endif
+#if defined(RTK_PSA_HASH_DRIVER)
+        case RTK_TRANSPARENT_DRIVER_ID:
+            return( rtk_transparent_hash_finish( &operation->ctx.rtk_ctx,
+                                                 hash, hash_size, hash_length ) );
+#endif
 #if defined(PSA_CRYPTO_DRIVER_TEST)
         case MBEDTLS_TEST_TRANSPARENT_DRIVER_ID:
             return( mbedtls_test_transparent_hash_finish(
@@ -1560,6 +1721,10 @@ static inline psa_status_t psa_driver_wrapper_hash_abort(
 #if defined(MBEDTLS_PSA_BUILTIN_HASH)
         case PSA_CRYPTO_MBED_TLS_DRIVER_ID:
             return( mbedtls_psa_hash_abort( &operation->ctx.mbedtls_ctx ) );
+#endif
+#if defined(RTK_PSA_HASH_DRIVER)
+        case RTK_TRANSPARENT_DRIVER_ID:
+            return( rtk_transparent_hash_abort( &operation->ctx.rtk_ctx ) );
 #endif
 #if defined(PSA_CRYPTO_DRIVER_TEST)
         case MBEDTLS_TEST_TRANSPARENT_DRIVER_ID:
@@ -1723,6 +1888,18 @@ static inline psa_status_t psa_driver_wrapper_aead_encrypt(
             /* Key is stored in the slot in export representation, so
              * cycle through all known transparent accelerators */
 
+#if defined(RTK_PSA_AEAD_DRIVER)
+            status = rtk_transparent_aead_encrypt(
+                         attributes, key_buffer, key_buffer_size,
+                         alg,
+                         nonce, nonce_length,
+                         additional_data, additional_data_length,
+                         plaintext, plaintext_length,
+                         ciphertext, ciphertext_size, ciphertext_length );
+            if( status != PSA_ERROR_NOT_SUPPORTED )
+                return( status );
+#endif /* RTK_PSA_AEAD_DRIVER */
+
 #if defined(PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT)
 #if defined(PSA_CRYPTO_DRIVER_TEST)
             status = mbedtls_test_transparent_aead_encrypt(
@@ -1785,6 +1962,18 @@ static inline psa_status_t psa_driver_wrapper_aead_decrypt(
             /* Key is stored in the slot in export representation, so
              * cycle through all known transparent accelerators */
 
+#if defined(RTK_PSA_AEAD_DRIVER)
+            status = rtk_transparent_aead_decrypt(
+                        attributes, key_buffer, key_buffer_size,
+                        alg,
+                        nonce, nonce_length,
+                        additional_data, additional_data_length,
+                        ciphertext, ciphertext_length,
+                        plaintext, plaintext_size, plaintext_length );
+            if( status != PSA_ERROR_NOT_SUPPORTED )
+                return( status );
+#endif /* RTK_PSA_AEAD_DRIVER */
+
 #if defined(PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT)
 #if defined(PSA_CRYPTO_DRIVER_TEST)
             status = mbedtls_test_transparent_aead_decrypt(
@@ -1844,6 +2033,15 @@ static inline psa_status_t psa_driver_wrapper_aead_encrypt_setup(
             /* Key is stored in the slot in export representation, so
              * cycle through all known transparent accelerators */
 
+#if defined(RTK_PSA_AEAD_DRIVER)
+            operation->id = RTK_TRANSPARENT_DRIVER_ID;
+            status = rtk_transparent_aead_encrypt_setup(
+                        &operation->ctx.rtk_ctx, attributes,
+                        key_buffer, key_buffer_size, alg );
+            if( status != PSA_ERROR_NOT_SUPPORTED )
+                return( status );
+#endif /* RTK_PSA_AEAD_DRIVER */
+
 #if defined(PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT)
 #if defined(PSA_CRYPTO_DRIVER_TEST)
             operation->id = MBEDTLS_TEST_TRANSPARENT_DRIVER_ID;
@@ -1897,6 +2095,15 @@ static inline psa_status_t psa_driver_wrapper_aead_decrypt_setup(
         case PSA_KEY_LOCATION_LOCAL_STORAGE:
             /* Key is stored in the slot in export representation, so
              * cycle through all known transparent accelerators */
+
+#if defined(RTK_PSA_AEAD_DRIVER)
+            operation->id = RTK_TRANSPARENT_DRIVER_ID;
+            status = rtk_transparent_aead_decrypt_setup(
+                        &operation->ctx.rtk_ctx, attributes,
+                        key_buffer, key_buffer_size, alg );
+            if( status != PSA_ERROR_NOT_SUPPORTED )
+                return( status );
+#endif /* RTK_PSA_AEAD_DRIVER */
 
 #if defined(PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT)
 #if defined(PSA_CRYPTO_DRIVER_TEST)
@@ -1952,6 +2159,12 @@ static inline psa_status_t psa_driver_wrapper_aead_set_nonce(
 
 #endif /* MBEDTLS_PSA_BUILTIN_AEAD */
 
+#if defined(RTK_PSA_AEAD_DRIVER)
+        case RTK_TRANSPARENT_DRIVER_ID:
+            return( rtk_transparent_aead_set_nonce(
+                        &operation->ctx.rtk_ctx, nonce, nonce_length ) );
+#endif /* RTK_PSA_AEAD_DRIVER */
+
 #if defined(PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT)
 #if defined(PSA_CRYPTO_DRIVER_TEST)
         case MBEDTLS_TEST_TRANSPARENT_DRIVER_ID:
@@ -1986,6 +2199,12 @@ static inline psa_status_t psa_driver_wrapper_aead_set_lengths(
 
 #endif /* MBEDTLS_PSA_BUILTIN_AEAD */
 
+#if defined(RTK_PSA_AEAD_DRIVER)
+        case RTK_TRANSPARENT_DRIVER_ID:
+            return( rtk_transparent_aead_set_lengths(
+                        &operation->ctx.rtk_ctx, ad_length, plaintext_length ) );
+#endif /* RTK_PSA_AEAD_DRIVER */
+
 #if defined(PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT)
 #if defined(PSA_CRYPTO_DRIVER_TEST)
         case MBEDTLS_TEST_TRANSPARENT_DRIVER_ID:
@@ -2019,6 +2238,12 @@ static inline psa_status_t psa_driver_wrapper_aead_update_ad(
                                                 input_length ) );
 
 #endif /* MBEDTLS_PSA_BUILTIN_AEAD */
+
+#if defined(RTK_PSA_AEAD_DRIVER)
+        case RTK_TRANSPARENT_DRIVER_ID:
+            return( rtk_transparent_aead_update_ad(
+                        &operation->ctx.rtk_ctx, input, input_length ) );
+#endif /* RTK_PSA_AEAD_DRIVER */
 
 #if defined(PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT)
 #if defined(PSA_CRYPTO_DRIVER_TEST)
@@ -2057,6 +2282,13 @@ static inline psa_status_t psa_driver_wrapper_aead_update(
                                              output_length ) );
 
 #endif /* MBEDTLS_PSA_BUILTIN_AEAD */
+
+#if defined(RTK_PSA_AEAD_DRIVER)
+        case RTK_TRANSPARENT_DRIVER_ID:
+            return( rtk_transparent_aead_update(
+                        &operation->ctx.rtk_ctx, input, input_length,
+                        output, output_size, output_length ) );
+#endif /* RTK_PSA_AEAD_DRIVER */
 
 #if defined(PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT)
 #if defined(PSA_CRYPTO_DRIVER_TEST)
@@ -2101,6 +2333,13 @@ static inline psa_status_t psa_driver_wrapper_aead_finish(
                                              tag_size, tag_length ) );
 
 #endif /* MBEDTLS_PSA_BUILTIN_AEAD */
+
+#if defined(RTK_PSA_AEAD_DRIVER)
+        case RTK_TRANSPARENT_DRIVER_ID:
+            return( rtk_transparent_aead_finish(
+                        &operation->ctx.rtk_ctx, ciphertext, ciphertext_size,
+                        ciphertext_length, tag, tag_size, tag_length ) );
+#endif /* RTK_PSA_AEAD_DRIVER */
 
 #if defined(PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT)
 #if defined(PSA_CRYPTO_DRIVER_TEST)
@@ -2166,6 +2405,13 @@ static inline psa_status_t psa_driver_wrapper_aead_verify(
 
 #endif /* MBEDTLS_PSA_BUILTIN_AEAD */
 
+#if defined(RTK_PSA_AEAD_DRIVER)
+        case RTK_TRANSPARENT_DRIVER_ID:
+            return( rtk_transparent_aead_verify(
+                        &operation->ctx.rtk_ctx, plaintext, plaintext_size,
+                        plaintext_length, tag, tag_length ) );
+#endif /* RTK_PSA_AEAD_DRIVER */
+
 #if defined(PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT)
 #if defined(PSA_CRYPTO_DRIVER_TEST)
         case MBEDTLS_TEST_TRANSPARENT_DRIVER_ID:
@@ -2199,6 +2445,11 @@ static inline psa_status_t psa_driver_wrapper_aead_abort(
             return( mbedtls_psa_aead_abort( &operation->ctx.mbedtls_ctx ) );
 
 #endif /* MBEDTLS_PSA_BUILTIN_AEAD */
+
+#if defined(RTK_PSA_AEAD_DRIVER)
+        case RTK_TRANSPARENT_DRIVER_ID:
+            return( rtk_transparent_aead_abort( &operation->ctx.rtk_ctx ) );
+#endif /* RTK_PSA_AEAD_DRIVER */
 
 #if defined(PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT)
 #if defined(PSA_CRYPTO_DRIVER_TEST)
@@ -2239,6 +2490,14 @@ static inline psa_status_t psa_driver_wrapper_mac_compute(
             /* Key is stored in the slot in export representation, so
              * cycle through all known transparent accelerators */
 #if defined(PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT)
+#if defined(RTK_PSA_MAC_DRIVER)
+            status = rtk_transparent_mac_compute(
+                attributes, key_buffer, key_buffer_size, alg,
+                input, input_length,
+                mac, mac_size, mac_length );
+            if( status != PSA_ERROR_NOT_SUPPORTED )
+                return( status );
+#endif /* RTK_PSA_MAC_DRIVER */
 #if defined(PSA_CRYPTO_DRIVER_TEST)
             status = mbedtls_test_transparent_mac_compute(
                 attributes, key_buffer, key_buffer_size, alg,
@@ -2697,6 +2956,14 @@ static inline psa_status_t psa_driver_wrapper_key_agreement(
             /* Key is stored in the slot in export representation, so
              * cycle through all known transparent accelerators */
 #if defined(PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT)
+#if defined(RTK_PSA_ECDH_DRIVER)
+            status = rtk_transparent_key_agreement( attributes,
+                        key_buffer, key_buffer_size, alg, peer_key,
+                        peer_key_length, shared_secret, shared_secret_size,
+                        shared_secret_length );
+            if( status != PSA_ERROR_NOT_SUPPORTED )
+                return( status );
+#endif /* RTK_PSA_ECDH_DRIVER */
 #if defined(PSA_CRYPTO_DRIVER_TEST)
             status =
                 mbedtls_test_transparent_key_agreement( attributes,

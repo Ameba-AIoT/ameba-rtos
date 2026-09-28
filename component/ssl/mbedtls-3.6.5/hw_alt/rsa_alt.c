@@ -177,16 +177,19 @@ static int mbedtls_mpi_gen_prime_pke(mbedtls_mpi *X, size_t nbits, int flags,
 		return MBEDTLS_ERR_MPI_BAD_INPUT_DATA;
 	}
 
-	uint8_t *num_buf = malloc(nbits / 8);
+	uint8_t *num_buf = mbedtls_calloc(nbits / 8, 1);
+	if (num_buf == NULL) {
+		return MBEDTLS_ERR_MPI_ALLOC_FAILED;
+	}
 	if (RTK_SUCCESS != pke_rsa_prime_generate(nbits, num_buf, flags)) {
-		ret = RTK_FAIL;
+		ret = MBEDTLS_ERR_MPI_NOT_ACCEPTABLE;
 		goto cleanup;
 	}
 	mbedtls_mpi_read_binary_le(X, num_buf, nbits / 8);
 	// t1 = rtos_time_get_current_system_time_ms();
 	// printf("mbedtls_mpi_gen_prime_pke time:%d ms\n", t1 - t0);
 cleanup:
-	free(num_buf);
+	mbedtls_free(num_buf);
 	return ret;
 }
 
@@ -313,12 +316,19 @@ static int mbedtls_mpi_exp_mod_prime_n(mbedtls_mpi *X, const mbedtls_mpi *A,
 	UNUSED(prec_RR);
 	size_t N_size = mbedtls_mpi_size(N);
 	uint8_t *X_mpi_le = mbedtls_calloc(N_size, 1);
+	if (X_mpi_le == NULL) {
+		return MBEDTLS_ERR_MPI_ALLOC_FAILED;
+	}
 
-	pke_rsa_exp_mod(X_mpi_le, N_size, (uint8_t *)A->p, mbedtls_mpi_size(A), (uint8_t *)E->p, mbedtls_mpi_size(E), (uint8_t *)N->p, N_size);
+	int ret = pke_rsa_exp_mod(X_mpi_le, N_size, (uint8_t *)A->p, mbedtls_mpi_size(A), (uint8_t *)E->p, mbedtls_mpi_size(E), (uint8_t *)N->p, N_size);
+	if (ret != RTK_SUCCESS) {
+		mbedtls_free(X_mpi_le);
+		return MBEDTLS_ERR_PLATFORM_HW_ACCEL_FAILED;
+	}
 	mbedtls_mpi_read_binary_le(X, X_mpi_le, N_size);
 
 	mbedtls_free(X_mpi_le);
-	return RTK_SUCCESS;
+	return 0;
 }
 
 int mbedtls_rsa_public(mbedtls_rsa_context *ctx, const unsigned char *input, unsigned char *output)

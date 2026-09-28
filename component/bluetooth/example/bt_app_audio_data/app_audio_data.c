@@ -286,7 +286,6 @@ clear_usb_driver_exit:
 
 bool demo_usb_deinit(void)
 {
-	int ret = 0;
 	// demo_usb_task deinit
 	demo_usb_task_run = 0;
 	if (uac_ready_sem) {
@@ -301,16 +300,8 @@ bool demo_usb_deinit(void)
 		osif_sem_delete(uac_ready_sem);
 		uac_ready_sem = NULL;
 	}
-	ret = usbd_uac_deinit();
-	if (ret) {
-		DiagPrintf("USB UAC deinit failed\r\n");
-		return false;
-	}
-	ret = usbd_deinit();
-	if (ret) {
-		DiagPrintf("USB device deinit failed\r\n");
-		return false;
-	}
+	usbd_uac_deinit();
+	usbd_deinit();
 
 	write_pos = 0;
 	read_pos = 0;

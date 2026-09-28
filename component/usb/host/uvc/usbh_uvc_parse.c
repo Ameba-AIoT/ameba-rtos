@@ -23,6 +23,17 @@
 #define USBH_UVC_PARSE_FRAME_DESC_HEADER_LEN     (26U)
 #define USBH_UVC_PARSE_FRAME_BASED_FMT_MIN_LEN   (21U)
 #define USBH_UVC_PARSE_INTERVAL_ENTRY_SIZE       (4U)
+/* Smallest bLength that lets the parser read the bytes it uses from each
+ * class-specific descriptor (a spec-conformant descriptor is always larger). */
+#define USBH_UVC_PARSE_HDR_MIN_LEN               (3U)   /* bLength..bDescriptorSubtype */
+#define USBH_UVC_PARSE_VCHDR_MIN_LEN             (5U)   /* VC_HEADER, through bcdUVC */
+#define USBH_UVC_PARSE_IT_MIN_LEN                (4U)   /* INPUT_TERMINAL, through bTerminalID */
+#define USBH_UVC_PARSE_OT_MIN_LEN                (8U)   /* OUTPUT_TERMINAL, through bSourceID */
+#define USBH_UVC_PARSE_UNIT_MIN_LEN              (5U)   /* PU/EncU/SU, through bSourceID / bNrInPins */
+#define USBH_UVC_PARSE_FMT_MIN_LEN               (4U)   /* VS_FORMAT_xxx, through bFormatIndex */
+/* Offset of bFrameIntervalType inside the VS FRAME descriptors */
+#define USBH_UVC_PARSE_INTV_TYPE_OFF             (25U)  /* MJPEG / uncompressed */
+#define USBH_UVC_PARSE_FB_INTV_TYPE_OFF          (21U)  /* frame based */
 #define USBH_UVC_PARSE_CONTINUOUS_INTV_COUNT     (3U)
 #define USBH_UVC_PARSE_4BYTE_ALIGN_MASK          (3U)
 /* Frame-based guidFormat FourCC discriminator byte (desc[8]): H.264 and H.265
@@ -72,15 +83,91 @@ static void usbh_uvc_entity_free(usbh_uvc_entity_t *entity)
 }
 
 /**
+  * @brief	Check that a class-specific VC descriptor is long enough to be parsed
+  * @param	desc: given descriptor buffer
+  * @param	remain: bytes still available in the interface block from desc on
+  * @param	need: number of bytes the parser reads from this descriptor
+  * @retval 1 if the descriptor may be parsed, 0 otherwise
+  * @note	UVC 1.1/1.5 3.7 fixes the layout of every VC descriptor; a bLength
+  *			shorter than the fields the parser reads, or a bLength reaching past
+  *			the interface block, means the descriptor is malformed and must be
+  *			skipped instead of read out of bounds.
+  */
+static u8 usbh_uvc_desc_len_ok(const u8 *desc, u16 remain, u32 need)
+{
+	if ((remain < need) || ((u32)desc[0] < need)) {
+		return 0U;
+	}
+	if ((u32)desc[0] > (u32)remain) {
+		return 0U;
+	}
+
+	return 1U;
+}
+
+/**
   * @brief	Parse entity from given descriptor
   * @param	desc: given descriptor buffer
+  * @param	remain: bytes still available in the interface block from desc on
   * @retval Status
   */
-static int usbh_uvc_parse_entity(u8 *desc)
+static int usbh_uvc_parse_entity(u8 *desc, u16 remain)
 {
 	usbh_uvc_host_t *uvc = &uvc_host;
 	usbh_uvc_vc_t *vc_intf = &uvc->uvc_desc.vc_intf;
 	usbh_uvc_entity_t *entity = NULL;
+	u32 need;
+
+	if (usbh_uvc_desc_len_ok(desc, remain, USBH_UVC_PARSE_HDR_MIN_LEN) == 0U) {
+		RTK_LOGS(TAG, RTK_LOG_WARN, "Short VC desc\n");
+		return HAL_OK;
+	}
+
+	/* Per-subtype minimum bLength for the fields read below. SU/XU carry a
+	 * variable baSourceID[bNrInPins], so their need is computed from bNrInPins
+	 * only after the fixed part is known to be present. */
+	switch (desc[2]) {
+	case USBH_UVC_VC_HEADER:
+		need = USBH_UVC_PARSE_VCHDR_MIN_LEN;
+		break;
+	case USBH_UVC_VC_INPUT_TERMINAL:
+		need = USBH_UVC_PARSE_IT_MIN_LEN;
+		break;
+	case USBH_UVC_VC_OUTPUT_TERMINAL:
+		need = USBH_UVC_PARSE_OT_MIN_LEN;
+		break;
+	case USBH_UVC_VC_SELECTOR_UNIT:
+		need = USBH_UVC_PARSE_SU_FIXED_LEN;
+		break;
+	case USBH_UVC_VC_PROCESSING_UNIT:
+	case USBH_UVC_VC_ENCODING_UNIT:
+		need = USBH_UVC_PARSE_UNIT_MIN_LEN;
+		break;
+	case USBH_UVC_VC_EXTENSION_UNIT:
+		need = USBH_UVC_PARSE_XU_FIXED_LEN;
+		break;
+	default:
+		need = USBH_UVC_PARSE_HDR_MIN_LEN;
+		break;
+	}
+
+	if (usbh_uvc_desc_len_ok(desc, remain, need) == 0U) {
+		RTK_LOGS(TAG, RTK_LOG_WARN, "Bad VC len %d s%d\n", desc[0], desc[2]);
+		return HAL_OK;
+	}
+
+	/* baSourceID[] must also fit inside bLength before it is copied. */
+	if (desc[2] == USBH_UVC_VC_SELECTOR_UNIT) {
+		need = USBH_UVC_PARSE_SU_FIXED_LEN + (u32)desc[4];
+	} else if (desc[2] == USBH_UVC_VC_EXTENSION_UNIT) {
+		need = USBH_UVC_PARSE_XU_FIXED_LEN + (u32)desc[21];
+	} else {
+		/* no variable-length field used */
+	}
+	if (usbh_uvc_desc_len_ok(desc, remain, need) == 0U) {
+		RTK_LOGS(TAG, RTK_LOG_WARN, "Bad VC pins %d\n", desc[0]);
+		return HAL_OK;
+	}
 
 	switch (desc[2]) {
 	case USBH_UVC_VC_HEADER:
@@ -218,7 +305,7 @@ static int usbh_uvc_parse_vc(usbh_itf_data_t *itf_data)
 		type = ((usbh_desc_header_t *)desc)->bDescriptorType;
 		switch (type) {
 		case USBH_UVC_DESC_TYPE_CS_INTERFACE:
-			ret = usbh_uvc_parse_entity((u8 *)desc);
+			ret = usbh_uvc_parse_entity((u8 *)desc, (u16)(itf_data->raw_data_len - itf_total_len));
 			if (ret != HAL_OK) {
 				//RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to parse entity\n");
 				return ret;
@@ -271,10 +358,45 @@ static u8 usbh_uvc_frame_based_fmt_type(const u8 *desc)
 }
 
 /**
+  * @brief  Get the number of dwFrameInterval entries of a VS FRAME descriptor
+  * @param  desc: pointer to the VS_FRAME_xxx descriptor
+  * @param  remain: bytes still available in the interface block from desc on
+  * @param  intv_type_off: offset of bFrameIntervalType in this frame descriptor
+  * @param  count: resulting number of 4-byte interval entries (output)
+  * @retval 1 if the descriptor is usable, 0 if it must be skipped
+  * @note   UVC 1.1/1.5 3.9.2.x: dwFrameInterval[] follows bFrameIntervalType and
+  *         holds 3 entries when the type is 0 (continuous) or bFrameIntervalType
+  *         entries otherwise. Both the type byte and the array must lie inside
+  *         bLength, so a truncated frame descriptor is skipped rather than read
+  *         past its end. Used identically by both scans so the counted and the
+  *         stored interval totals can never diverge.
+  */
+static u8 usbh_uvc_frame_intv_count(const u8 *desc, u16 remain, u32 intv_type_off, u32 *count)
+{
+	u32 num;
+
+	if (usbh_uvc_desc_len_ok(desc, remain, intv_type_off + 1U) == 0U) {
+		return 0U;
+	}
+
+	num = (desc[intv_type_off] == 0U) ? USBH_UVC_PARSE_CONTINUOUS_INTV_COUNT : (u32)desc[intv_type_off];
+
+	/* dwFrameInterval[] always starts at offset 26 in both frame layouts */
+	if (usbh_uvc_desc_len_ok(desc, remain, USBH_UVC_PARSE_FRAME_DESC_HEADER_LEN +
+							 (num * USBH_UVC_PARSE_INTERVAL_ENTRY_SIZE)) == 0U) {
+		return 0U;
+	}
+
+	*count = num;
+	return 1U;
+}
+
+/**
   * @brief	Parse video format
   * @param	vs_intf: pointer of video streaming interface
   * @param  desc: given descriptor buffer
-  * @param  length: length of given buffer
+  * @param  length: in: bytes remaining in the interface block from pbuf on;
+  *                 out: length of the parsed class-specific block
   * @retval Status
   */
 static int usbh_uvc_parse_format(usbh_uvc_vs_t *vs_intf, u8 *pbuf, u16 *length)
@@ -296,15 +418,16 @@ static int usbh_uvc_parse_format(usbh_uvc_vs_t *vs_intf, u8 *pbuf, u16 *length)
 	u16 real_len = 0;
 	u16 len = 0;
 	u16 totallen = 0;
+	u16 remain;
 
-
-	if (desc[2] != USBH_UVC_VS_INPUT_HEADER) {
-		//RTK_LOGS(TAG, RTK_LOG_DEBUG, "Header is no vs input\n");
-		return HAL_ERR_PARA;
-	}
 
 	if (*length < 6U) {
 		//RTK_LOGS(TAG, RTK_LOG_DEBUG, "Desc too short\n");
+		return HAL_ERR_PARA;
+	}
+
+	if (desc[2] != USBH_UVC_VS_INPUT_HEADER) {
+		//RTK_LOGS(TAG, RTK_LOG_DEBUG, "Header is no vs input\n");
 		return HAL_ERR_PARA;
 	}
 
@@ -312,13 +435,15 @@ static int usbh_uvc_parse_format(usbh_uvc_vs_t *vs_intf, u8 *pbuf, u16 *length)
 	totallen = (u16)(desc[4] | (desc[5] << 8));
 
 	/*first scan to get total number of format and frame*/
-	while (1) {
-		if (desc[1] != USBH_UVC_DESC_TYPE_CS_INTERFACE) {
+	while (real_len < *length) {
+		remain = (u16)(*length - real_len);
+		/* A descriptor must at least expose bLength/bDescriptorType/bSubtype and
+		 * must not claim to extend past the end of this interface block. */
+		if (usbh_uvc_desc_len_ok(desc, remain, USBH_UVC_PARSE_HDR_MIN_LEN) == 0U) {
+			/* Covers bLength == 0 (which would stall real_len) as well. */
 			break;
 		}
-		if (desc[0] == 0U) {
-			/* Zero-length descriptor: malformed; stop to avoid an infinite loop
-			 * (real_len would never advance). Mirrors the guard in parse_vs. */
+		if (desc[1] != USBH_UVC_DESC_TYPE_CS_INTERFACE) {
 			break;
 		}
 		switch (desc[2]) {
@@ -328,34 +453,40 @@ static int usbh_uvc_parse_format(usbh_uvc_vs_t *vs_intf, u8 *pbuf, u16 *length)
 			break;
 
 		case USBH_UVC_VS_FORMAT_UNCOMPRESSED:
-			format_num++;
-			break;
-
 		case USBH_UVC_VS_FORMAT_MJPEG:
-			format_num++;
+			if (usbh_uvc_desc_len_ok(desc, remain, USBH_UVC_PARSE_FMT_MIN_LEN) != 0U) {
+				format_num++;
+			}
 			break;
 
 		case USBH_UVC_VS_FORMAT_FRAME_BASED:
 			/* H.264/H.265 both use frame-based; counted here and told apart
 			 * by guidFormat when stored (see usbh_uvc_frame_based_fmt_type). */
-			format_num++;
+			if (usbh_uvc_desc_len_ok(desc, remain, USBH_UVC_PARSE_FRAME_BASED_FMT_MIN_LEN) != 0U) {
+				format_num++;
+			}
 			break;
 
 		case USBH_UVC_VS_FRAME_MJPEG:
-			mjpeg_frame_num ++;
-			/* bFrameIntervalType == 0 means continuous (3 entries); else discrete */
-			total_interval_num += (desc[25] == 0U) ? USBH_UVC_PARSE_CONTINUOUS_INTV_COUNT : desc[25];
+			if (usbh_uvc_frame_intv_count(desc, remain, USBH_UVC_PARSE_INTV_TYPE_OFF, &interval_num) != 0U) {
+				mjpeg_frame_num ++;
+				total_interval_num += interval_num;
+			}
 			break;
 
 		case USBH_UVC_VS_FRAME_UNCOMPRESSED:
-			uncomp_frame_num ++;
-			total_interval_num += (desc[25] == 0U) ? USBH_UVC_PARSE_CONTINUOUS_INTV_COUNT : desc[25];
+			if (usbh_uvc_frame_intv_count(desc, remain, USBH_UVC_PARSE_INTV_TYPE_OFF, &interval_num) != 0U) {
+				uncomp_frame_num ++;
+				total_interval_num += interval_num;
+			}
 			break;
 
 		case USBH_UVC_VS_FRAME_FRAME_BASED:
-			framebased_frame_num ++;
 			/* frame-based: bFrameIntervalType at offset 21 */
-			total_interval_num += (desc[21] == 0U) ? USBH_UVC_PARSE_CONTINUOUS_INTV_COUNT : desc[21];
+			if (usbh_uvc_frame_intv_count(desc, remain, USBH_UVC_PARSE_FB_INTV_TYPE_OFF, &interval_num) != 0U) {
+				framebased_frame_num ++;
+				total_interval_num += interval_num;
+			}
 			break;
 
 		default:
@@ -365,6 +496,12 @@ static int usbh_uvc_parse_format(usbh_uvc_vs_t *vs_intf, u8 *pbuf, u16 *length)
 		/*find next descriptor*/
 		real_len += desc[0];
 		desc = pbuf + real_len;
+	}
+
+	/* Nothing was consumed (bLength below the 3-byte class header): report an
+	 * error rather than returning 0, which would stall the caller's walk. */
+	if (real_len == 0U) {
+		return HAL_ERR_PARA;
 	}
 
 	desc = pbuf;
@@ -386,7 +523,11 @@ static int usbh_uvc_parse_format(usbh_uvc_vs_t *vs_intf, u8 *pbuf, u16 *length)
 	interval_store = (u32 *)((u8 *)tmp_frame + frame_array_size);
 
 	while (len < real_len) {
-		if (desc[0] == 0U) {
+		remain = (u16)(real_len - len);
+		/* real_len was accumulated by the first scan from the same bLength chain,
+		 * so this repeats that scan's checks to keep both passes in lock-step:
+		 * every descriptor counted above is stored here and vice versa. */
+		if (usbh_uvc_desc_len_ok(desc, remain, USBH_UVC_PARSE_HDR_MIN_LEN) == 0U) {
 			break;
 		}
 		if (desc[1] != USBH_UVC_DESC_TYPE_CS_INTERFACE) {
@@ -401,6 +542,9 @@ static int usbh_uvc_parse_format(usbh_uvc_vs_t *vs_intf, u8 *pbuf, u16 *length)
 
 		case USBH_UVC_VS_FORMAT_MJPEG:
 		case USBH_UVC_VS_FORMAT_UNCOMPRESSED:
+			if (usbh_uvc_desc_len_ok(desc, remain, USBH_UVC_PARSE_FMT_MIN_LEN) == 0U) {
+				break;
+			}
 			vs_intf->format[format_idx].frame = &tmp_frame[parsed_frame_num];
 			vs_intf->format[format_idx].type = desc[2];
 			vs_intf->format[format_idx].index = desc[3];
@@ -409,6 +553,9 @@ static int usbh_uvc_parse_format(usbh_uvc_vs_t *vs_intf, u8 *pbuf, u16 *length)
 			break;
 
 		case USBH_UVC_VS_FORMAT_FRAME_BASED:
+			if (usbh_uvc_desc_len_ok(desc, remain, USBH_UVC_PARSE_FRAME_BASED_FMT_MIN_LEN) == 0U) {
+				break;
+			}
 			vs_intf->format[format_idx].frame = &tmp_frame[parsed_frame_num];
 			/* Frame-based carries H.264 or H.265; map guidFormat to the matching
 			 * selector so find_format_frame() picks the correct bFormatIndex. */
@@ -419,6 +566,9 @@ static int usbh_uvc_parse_format(usbh_uvc_vs_t *vs_intf, u8 *pbuf, u16 *length)
 
 		case USBH_UVC_VS_FRAME_UNCOMPRESSED:
 		case USBH_UVC_VS_FRAME_MJPEG:
+			if (usbh_uvc_frame_intv_count(desc, remain, USBH_UVC_PARSE_INTV_TYPE_OFF, &interval_num) == 0U) {
+				break;
+			}
 			if (format_idx == 0U) {
 				break;
 			}
@@ -433,7 +583,6 @@ static int usbh_uvc_parse_format(usbh_uvc_vs_t *vs_intf, u8 *pbuf, u16 *length)
 			frame->dwMaxVideoFrameBufferSize = ReadEF4Byte(desc + 17);
 			frame->dwDefaultFrameInterval = ReadEF4Byte(desc + 21);
 			frame->bFrameIntervalType = desc[25];
-			interval_num = (desc[25] == 0U) ? USBH_UVC_PARSE_CONTINUOUS_INTV_COUNT : desc[25];
 			frame->dwFrameInterval = interval_store;
 			usb_os_memcpy((void *)interval_store, (const void *)&desc[26], interval_num * sizeof(u32));
 			interval_store += interval_num;
@@ -441,6 +590,9 @@ static int usbh_uvc_parse_format(usbh_uvc_vs_t *vs_intf, u8 *pbuf, u16 *length)
 			break;
 
 		case USBH_UVC_VS_FRAME_FRAME_BASED:
+			if (usbh_uvc_frame_intv_count(desc, remain, USBH_UVC_PARSE_FB_INTV_TYPE_OFF, &interval_num) == 0U) {
+				break;
+			}
 			if (format_idx == 0U) {
 				break;
 			}
@@ -455,7 +607,6 @@ static int usbh_uvc_parse_format(usbh_uvc_vs_t *vs_intf, u8 *pbuf, u16 *length)
 			frame->dwDefaultFrameInterval = ReadEF4Byte(desc + 17);
 			frame->bFrameIntervalType = desc[21];
 			frame->dwBytesPerLine = ReadEF4Byte(desc + 22);
-			interval_num = (desc[21] == 0U) ? USBH_UVC_PARSE_CONTINUOUS_INTV_COUNT : desc[21];
 			frame->dwFrameInterval = interval_store;
 			usb_os_memcpy((void *)interval_store, (const void *)&desc[26], interval_num * sizeof(u32));
 			interval_store += interval_num;
@@ -550,6 +701,10 @@ static int usbh_uvc_parse_vs(usbh_itf_data_t *itf_data)
 
 		switch (type) {
 		case USBH_UVC_DESC_TYPE_CS_INTERFACE:
+			/* Hand over the bytes still left in this interface block so the
+			 * class-specific scan cannot walk past it; parse_format returns the
+			 * length it actually consumed in the same argument. */
+			len = (u16)(itf_data->raw_data_len - itf_total_len);
 			ret = usbh_uvc_parse_format(vs_intf, desc, &len);
 			if (ret != HAL_OK) {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "Parse format err: %d\n", ret);

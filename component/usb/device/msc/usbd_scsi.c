@@ -197,6 +197,14 @@ static int usbd_scsi_read_capacity10(usbd_msc_dev_t *cdev, u8 *params)
 			usbd_scsi_sense_code(cdev, SCSI_SENSE_KEY_NOT_READY, SCSI_ASC_MEDIUM_NOT_PRESENT);
 			return HAL_ERR_PARA;
 		} else {
+			/* num_sectors - 1 wraps to a huge LBA if the medium reports 0
+			 * blocks; report the absent medium instead (SBC-4 last-LBA is
+			 * block_count - 1, and 0 blocks is not a valid capacity). */
+			if (cdev->num_sectors == 0U) {
+				usbd_scsi_sense_code(cdev, SCSI_SENSE_KEY_NOT_READY, SCSI_ASC_MEDIUM_NOT_PRESENT);
+				return HAL_ERR_PARA;
+			}
+
 			cdev->data[0] = (u8)((cdev->num_sectors - 1U) >> 24);
 			cdev->data[1] = (u8)((cdev->num_sectors - 1U) >> 16);
 			cdev->data[2] = (u8)((cdev->num_sectors - 1U) >>  8);
@@ -331,18 +339,21 @@ static int usbd_scsi_request_sense(usbd_msc_dev_t *cdev, u8 *params)
 */
 static int usbd_scsi_start_stop_unit(usbd_msc_dev_t *cdev, u8 *params)
 {
-	int     loej, start;
+	u8      loej, start;
 
 	cdev->data_length = 0U;
 
-	loej  = params[4] & 0x02;
-	start = params[4] & 0x01;
+	/* SPC-4 START STOP: bit 1 = LOEJ, bit 0 = START. Keep the extracted
+	 * flags essentially unsigned so their bit values are not assigned to a
+	 * signed int (MISRA Rule 10.3/10.4). */
+	loej  = (u8)(params[4] & 0x02U);
+	start = (u8)(params[4] & 0x01U);
 
 	/*
 	 * Our emulation doesn't support mounting; the medium is
 	 * available for use as soon as it is loaded.
 	 */
-	if (start) {
+	if (start != 0U) {
 		if (cdev->is_open != 1) {
 			usbd_scsi_sense_code(cdev, SCSI_SENSE_KEY_NOT_READY, SCSI_ASC_MEDIUM_NOT_PRESENT);
 			return HAL_ERR_PARA;
@@ -351,7 +362,7 @@ static int usbd_scsi_start_stop_unit(usbd_msc_dev_t *cdev, u8 *params)
 		return HAL_OK;
 	}
 
-	if (!loej) {
+	if (loej == 0U) {
 		return HAL_OK;
 	}
 	cdev->is_open = 0;
@@ -394,6 +405,16 @@ static int usbd_scsi_read(usbd_msc_dev_t *cdev, u8 *params)
 
 		/* case 10 : Ho <> Di */
 		if ((cbw->field.bmCBWFlags & 0x80U) != 0x80U) {
+			usbd_scsi_sense_code(cdev, SCSI_SENSE_KEY_ILLEGAL_REQUEST, SCSI_ASC_INVALID_COMMAND_OPERATION_CODE);
+			cdev->phase_error = 1;
+			return HAL_ERR_PARA;
+		}
+
+		/* A non-whole-block dCBWDataTransferLength cannot be satisfied: the
+		 * net is larger than the whole blocks we would actually read, and
+		 * process_read would transmit uninitialized bytes beyond them. A
+		 * fractional length is therefore a phase error (BOT 6.7.3). */
+		if ((cbw->field.dCBWDataTransferLength & (USBD_MSC_BLK_SIZE - 1U)) != 0U) {
 			usbd_scsi_sense_code(cdev, SCSI_SENSE_KEY_ILLEGAL_REQUEST, SCSI_ASC_INVALID_COMMAND_OPERATION_CODE);
 			cdev->phase_error = 1;
 			return HAL_ERR_PARA;
@@ -487,6 +508,11 @@ static int usbd_scsi_write(usbd_msc_dev_t *cdev, u8 *params)
 		/* case 11,13 : Ho <> Do */
 		if (cbw->field.dCBWDataTransferLength != len) {
 			usbd_scsi_sense_code(cdev, SCSI_SENSE_KEY_ILLEGAL_REQUEST, SCSI_ASC_INVALID_COMMAND_OPERATION_CODE);
+			if (cbw->field.dCBWDataTransferLength < len) {
+				/* case 13 : Ho < Do — BOT §6.7.3 mandates bCSWStatus = Phase Error.
+				 * case 11 (Ho > Do) stays a Failed CSW with residue, which BOT allows. */
+				cdev->phase_error = 1;
+			}
 			return HAL_ERR_PARA;
 		}
 
@@ -565,6 +591,19 @@ static int usbd_scsi_check_cdb_length(usbd_msc_dev_t *cdev, u8 opcode)
 */
 static int usbd_scsi_check_address_range(usbd_msc_dev_t *cdev, u32 blk_offset, u32 blk_nbr)
 {
+	/* num_sectors is otherwise only refreshed by READ CAPACITY(10)/READ FORMAT CAPACITIES,
+	 * which SBC-4 does not require an initiator to issue before its first READ/WRITE. Query
+	 * the medium once so the LBA validity check below uses the real capacity whatever the
+	 * command order, instead of rejecting every transfer against a zero capacity. */
+	if (cdev->num_sectors == 0U) {
+		if ((cdev->disk_ops.disk_getcapacity == NULL) ||
+			(cdev->disk_ops.disk_getcapacity(&cdev->num_sectors) != 0)) {
+			cdev->num_sectors = 0U;
+			usbd_scsi_sense_code(cdev, SCSI_SENSE_KEY_NOT_READY, SCSI_ASC_MEDIUM_NOT_PRESENT);
+			return HAL_ERR_PARA;
+		}
+	}
+
 	/* Overflow-safe: blk_offset + blk_nbr can wrap on host-controlled
 	 * READ(12)/WRITE(12) values and pass a naive sum comparison */
 	if ((blk_offset > cdev->num_sectors) || (blk_nbr > (cdev->num_sectors - blk_offset))) {

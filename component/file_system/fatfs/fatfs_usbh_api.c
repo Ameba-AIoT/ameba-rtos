@@ -7,9 +7,9 @@
 
 extern ll_diskio_drv USB_disk_Driver;
 
-static int fatfs_msc_cb_attach(void);
-static int fatfs_msc_cb_setup(void);
-static int fatfs_usbh_cb_process(usb_host_t *host, u8 msg);
+static void fatfs_msc_cb_attached(void);
+static void fatfs_msc_cb_setup(void);
+static void fatfs_usbh_cb_process(usb_host_t *host, u8 msg);
 
 static __IO int fatfs_msc_is_ready = 0;
 
@@ -38,7 +38,7 @@ static const usbh_config_t fatfs_usbh_cfg = {
 };
 
 static const usbh_msc_cb_t fatfs_msc_usr_cb = {
-	.attach = fatfs_msc_cb_attach,
+	.attached = fatfs_msc_cb_attached,
 	.setup = fatfs_msc_cb_setup,
 };
 
@@ -46,13 +46,12 @@ static const usbh_user_cb_t fatfs_usbh_usr_cb = {
 	.process = fatfs_usbh_cb_process
 };
 
-static int fatfs_msc_cb_attach(void)
+static void fatfs_msc_cb_attached(void)
 {
 	VFS_DBG(VFS_INFO, "ATTACH\n");
-	return HAL_OK;
 }
 
-static int fatfs_msc_cb_setup(void)
+static void fatfs_msc_cb_setup(void)
 {
 	fatfs_msc_is_ready = 1;
 	if (fatfs_hostplug_usr_cb) {
@@ -60,10 +59,9 @@ static int fatfs_msc_cb_setup(void)
 	}
 
 	VFS_DBG(VFS_INFO, "SETUP\n");
-	return HAL_OK;
 }
 
-static int fatfs_usbh_cb_process(usb_host_t *host, u8 msg)
+static void fatfs_usbh_cb_process(usb_host_t *host, u8 msg)
 {
 	UNUSED(host);
 
@@ -79,8 +77,6 @@ static int fatfs_usbh_cb_process(usb_host_t *host, u8 msg)
 	default:
 		break;
 	}
-
-	return HAL_OK;
 }
 
 int fatfs_usbh_close(void)

@@ -28,6 +28,7 @@
 #define UABD_UAC_VOL_ERR_VAL       255U
 
 #define USBD_UAC_FS_ISOC_MPS                        1023U   /* Full speed ISOC IN & OUT max packet size */
+#define USBD_UAC_FS_ISOC_MPS_ALIGNED                1024U   /* USBD_UAC_FS_ISOC_MPS adjusted to the DWORD boundary, refer to usb_get_dword_aligned_mps */
 
 #define USBD_UAC_LANGID_STRING                      0x0409U
 #define USBD_UAC_MFG_STRING                         "Realtek"
@@ -137,6 +138,9 @@ static int usbd_uac_set_config(usb_dev_t *dev, u8 config);
 static void usbd_uac_clear_config(usb_dev_t *dev, u8 config);
 static int usbd_uac_setup(usb_dev_t *dev, usb_setup_req_t *req);
 static u16 usbd_uac_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16 buf_len);
+#ifdef CONFIG_USBD_COMPOSITE
+static void usbd_uac_set_interface_base(u8 base);
+#endif
 static int usbd_uac_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status);
 static int usbd_uac_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len);
 static int usbd_uac_handle_ep0_data_out(usb_dev_t *dev);
@@ -161,8 +165,9 @@ static const char *const TAG = "UAC";
 
 static u32 usbd_uac_sampling_rates[USBD_UAC_SAMPLING_FREQ_MAX_COUNT] = {USBD_UAC_SAMPLING_FREQ_44K, USBD_UAC_SAMPLING_FREQ_48K};
 
-/* Cache-line-aligned scratch buffer used by the ISOC OUT engine as the destination for each usbd_ep_receive() before the payload is copied into the ring buffer. */
-static u8 usbd_uac_rx_buf[USBD_UAC_FS_ISOC_MPS] USB_DMA_ALIGNED;
+/* Cache-line-aligned scratch buffer used by the ISOC OUT engine as the destination for each usbd_ep_receive() before the payload is copied into the ring buffer.
+   Sized to the DWORD aligned MPS: the controller pads every received packet up to the DWORD boundary, so a 1023 byte MPS occupies 1024 bytes in memory. */
+static u8 usbd_uac_rx_buf[USBD_UAC_FS_ISOC_MPS_ALIGNED] USB_DMA_ALIGNED;
 /* USB Standard Device Descriptor */
 static const u8 usbd_uac_dev_desc[USB_LEN_DEV_DESC] = {
 	USB_LEN_DEV_DESC,            /* bLength */
@@ -580,6 +585,9 @@ static const usbd_class_driver_t usbd_uac_driver = {
 	.ep_data_out = usbd_uac_handle_ep_data_out,
 	.status_changed = usbd_uac_status_changed,
 	.sof = usbd_uac_handle_sof,
+#ifdef CONFIG_USBD_COMPOSITE
+	.set_interface_base = usbd_uac_set_interface_base,
+#endif
 };
 
 /* UAC Device */
@@ -743,6 +751,31 @@ static inline u8 usbd_uac_ep_enable(const usbd_audio_cfg_t *ep)
 	}
 
 	return HAL_OK;
+}
+
+/**
+  * @brief  Check whether an endpoint address belongs to this class
+  * @param  cdev: UAC device instance
+  * @param  ep_addr: Endpoint address taken from the low byte of wIndex
+  * @retval 1 if owned, 0 otherwise
+  */
+static u8 usbd_uac_is_own_ep(const usbd_uac_dev_t *cdev, u8 ep_addr)
+{
+	const usbd_uac_ep_cfg_t *ep_cfg = cdev->ep_cfg;
+
+	if ((ep_cfg == NULL) || (cdev->cb == NULL) || (ep_addr == 0U)) {
+		return 0U;
+	}
+
+	if ((usbd_uac_ep_enable(&(cdev->cb->out)) != 0) && (ep_addr == ep_cfg->isoc_out_addr)) {
+		return 1U;
+	}
+
+	if ((usbd_uac_ep_enable(&(cdev->cb->in)) != 0) && (ep_addr == ep_cfg->isoc_in_addr)) {
+		return 1U;
+	}
+
+	return 0U;
 }
 
 /**
@@ -933,9 +966,21 @@ static int usbd_uac_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			   nothing has to be reset here. */
 			if (dev->dev_state == USBD_STATE_CONFIGURED) {
 				alt_setting = USB_LOW_BYTE(req->wValue);
-				if ((alt_setting != cdev->alt_setting) && (alt_setting != 0)) {
-					cdev->alt_setting = alt_setting;/* Set new altsetting */
-					switch (cdev->alt_setting) {
+				/* Ref USB 2.0 Table 9-10: the whole wIndex is the interface number. The AC
+				   interface owns alternate setting 0 only and must not change the streaming
+				   format, any other interface belongs to another function. */
+				if (req->wIndex == USB_UAC1_IF_IDX_AC_HEADSET) {
+					if (alt_setting != 0U) {
+						ret = HAL_ERR_PARA;
+					}
+				} else if (req->wIndex != USB_UAC1_IF_IDX_AS_HEADSET_HEADPHONES) {
+					ret = HAL_ERR_PARA;
+				} else if (alt_setting == 0U) {
+					/* Ref USB 2.0 9.4.5: alt setting 0 is the zero-bandwidth setting, it stops the
+					   stream and leaves the negotiated format untouched */
+					cdev->alt_setting = 0U;
+				} else if (alt_setting != cdev->alt_setting) {
+					switch (alt_setting) {
 					case 1:
 						byte_width = 2;
 						ch_cnt = 2;
@@ -959,11 +1004,14 @@ static int usbd_uac_setup(usb_dev_t *dev, usb_setup_req_t *req)
 						break;
 #endif
 					default:
+						/* Ref USB 2.0 9.4.5: an alt setting that does not exist is a request error,
+						   the streaming state must stay on the previous setting */
 						ret = HAL_ERR_PARA;
 						break;
 					}
 
 					if (ret == HAL_OK) {
+						cdev->alt_setting = alt_setting;/* Set new altsetting */
 						if ((cdev->cur_byte_width != byte_width) && (byte_width != 0)) {
 							cdev->cur_byte_width = byte_width;
 							fmt_change = 1;
@@ -986,11 +1034,15 @@ static int usbd_uac_setup(usb_dev_t *dev, usb_setup_req_t *req)
 
 		case USB_REQ_GET_INTERFACE:
 			if (dev->dev_state == USBD_STATE_CONFIGURED) {
-				/* Ref USB 2.0 Table 9-11: the whole wIndex is the interface number */
+				/* Ref USB 2.0 Table 9-11: the whole wIndex is the interface number, and 9.4.4
+				   requires a request error for an interface that does not exist */
 				if (req->wIndex == USB_UAC1_IF_IDX_AC_HEADSET) {
 					ep0_in->xfer_buf[0] = 0U;
-				} else {
+				} else if (req->wIndex == USB_UAC1_IF_IDX_AS_HEADSET_HEADPHONES) {
 					ep0_in->xfer_buf[0] = cdev->alt_setting;
+				} else {
+					ret = HAL_ERR_PARA;
+					break;
 				}
 				ep0_in->xfer_len = 1U;
 				usbd_ep_transmit(dev, ep0_in);
@@ -1017,6 +1069,24 @@ static int usbd_uac_setup(usb_dev_t *dev, usb_setup_req_t *req)
 		break;/* case USB_REQ_TYPE_STANDARD */
 
 	case USB_REQ_TYPE_CLASS :
+		/* Ref UAC 1.0 5.2.1: the low byte of wIndex addresses the interface or the endpoint the
+		   control belongs to. Reject anything owned by another function, otherwise a composite
+		   device may route a foreign request here, ref USB 2.0 Table 9-2. */
+		if ((req->bmRequestType & USB_REQ_RECIPIENT_MASK) == USB_REQ_RECIPIENT_INTERFACE) {
+			if (USB_LOW_BYTE(req->wIndex) != USB_UAC1_IF_IDX_AC_HEADSET) {
+				ret = HAL_ERR_PARA;
+				break;
+			}
+		} else if ((req->bmRequestType & USB_REQ_RECIPIENT_MASK) == USB_REQ_RECIPIENT_ENDPOINT) {
+			if (usbd_uac_is_own_ep(cdev, USB_LOW_BYTE(req->wIndex)) == 0U) {
+				ret = HAL_ERR_PARA;
+				break;
+			}
+		} else {
+			ret = HAL_ERR_PARA;
+			break;
+		}
+
 		entityId = USB_HIGH_BYTE(req->wIndex);
 		controlSelector = USB_HIGH_BYTE(req->wValue);
 
@@ -1070,9 +1140,15 @@ static int usbd_uac_setup(usb_dev_t *dev, usb_setup_req_t *req)
 						USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_SETUP, 3);
 						ret = HAL_ERR_PARA;
 					}
+				} else {
+					/* Ref UAC 1.0 5.2.3: no other endpoint control is supported, STALL instead
+					   of leaving the data stage unanswered */
+					USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_SETUP, 11);
+					ret = HAL_ERR_PARA;
 				}
 			} else {
 				USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_SETUP, 10);
+				ret = HAL_ERR_PARA;
 			}
 		} else {
 			/* USB_H2D */
@@ -1080,8 +1156,17 @@ static int usbd_uac_setup(usb_dev_t *dev, usb_setup_req_t *req)
 				if (controlSelector == USB_UAC_CS_SAM_FREQ_CONTROL) {
 					if (req->bRequest == USB_UAC1_SET_CUR) {
 						usb_os_memcpy((void *)&cdev->ctrl_req, (const void *)req, sizeof(usb_setup_req_t));
+						cdev->ctrl_req_pending = 1U;
 						ep0_out->xfer_len = req->wLength;
-						usbd_ep_receive(dev, ep0_out);
+						/* Propagate a submit failure so that the core stalls EP0 instead of
+						   leaving the host waiting out the data stage, ref USB 2.0 8.5.3.4 */
+						ret = usbd_ep_receive(dev, ep0_out);
+						if (ret != HAL_OK) {
+							/* The data stage never started, so no EP0 OUT completion will arrive
+							   to consume the stashed request. Drop it, else the next unrelated
+							   request's data stage would be applied as this one's payload. */
+							cdev->ctrl_req_pending = 0U;
+						}
 					} else {
 						USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_SETUP, 4);
 						ret = HAL_ERR_PARA;
@@ -1090,14 +1175,21 @@ static int usbd_uac_setup(usb_dev_t *dev, usb_setup_req_t *req)
 					USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_SETUP, 5);
 					ret = HAL_ERR_PARA;
 				}
-			}
-
-			if (entityId == USBD_UAC_CTRL_ENTITYID_OUTPUTTERMINAL_FEATUREUNIT) { //0x05 FU
+			} else if (entityId == USBD_UAC_CTRL_ENTITYID_OUTPUTTERMINAL_FEATUREUNIT) { //0x05 FU
 				if (controlSelector == USB_UAC_FU_MUTE) { //mute
 					if (req->bRequest == USB_UAC1_SET_CUR) {
 						usb_os_memcpy((void *)&cdev->ctrl_req, (const void *)req, sizeof(usb_setup_req_t));
+						cdev->ctrl_req_pending = 1U;
 						ep0_out->xfer_len = req->wLength;
-						usbd_ep_receive(dev, ep0_out);
+						/* Propagate a submit failure so that the core stalls EP0 instead of
+						   leaving the host waiting out the data stage, ref USB 2.0 8.5.3.4 */
+						ret = usbd_ep_receive(dev, ep0_out);
+						if (ret != HAL_OK) {
+							/* The data stage never started, so no EP0 OUT completion will arrive
+							   to consume the stashed request. Drop it, else the next unrelated
+							   request's data stage would be applied as this one's payload. */
+							cdev->ctrl_req_pending = 0U;
+						}
 					} else {
 						USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_SETUP, 6);
 						ret = HAL_ERR_PARA;
@@ -1105,8 +1197,17 @@ static int usbd_uac_setup(usb_dev_t *dev, usb_setup_req_t *req)
 				} else if (controlSelector == USB_UAC_FU_VOLUME) { //volume
 					if (req->bRequest == USB_UAC1_SET_CUR) {
 						usb_os_memcpy((void *)&cdev->ctrl_req, (const void *)req, sizeof(usb_setup_req_t));
+						cdev->ctrl_req_pending = 1U;
 						ep0_out->xfer_len = req->wLength;
-						usbd_ep_receive(dev, ep0_out);
+						/* Propagate a submit failure so that the core stalls EP0 instead of
+						   leaving the host waiting out the data stage, ref USB 2.0 8.5.3.4 */
+						ret = usbd_ep_receive(dev, ep0_out);
+						if (ret != HAL_OK) {
+							/* The data stage never started, so no EP0 OUT completion will arrive
+							   to consume the stashed request. Drop it, else the next unrelated
+							   request's data stage would be applied as this one's payload. */
+							cdev->ctrl_req_pending = 0U;
+						}
 					} else {
 						/* Set cur volume range err */
 						USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_SETUP, 7);
@@ -1117,26 +1218,56 @@ static int usbd_uac_setup(usb_dev_t *dev, usb_setup_req_t *req)
 					USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_SETUP, 8);
 					ret = HAL_ERR_HW;
 				}
-			}/* case USBD_UAC_CTRL_ENTITYID_OUTPUTTERMINAL_FEATUREUNIT */
-
+			} else {
+				/* Unknown entity or recipient, STALL instead of leaving the data stage unarmed */
+				USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_SETUP, 12);
+				ret = HAL_ERR_PARA;
+			}
 		}
 		break;/* case USB_REQ_TYPE_CLASS */
 
 	case USB_REQ_TYPE_VENDOR:
-		if (req->wLength != 0) {
-			if (((req->bmRequestType & 0x80U) != 0) && (cdev->cb->setup != NULL)) {
+		if (cdev->cb->setup == NULL) {
+			/* No handler for vendor requests, STALL so that the host recovers promptly
+			   instead of waiting out the data stage */
+			ret = HAL_ERR_PARA;
+		} else if (req->wLength != 0U) {
+			if ((req->bmRequestType & USB_REQ_DIR_MASK) == USB_D2H) {
+				u16 rsp_len = req->wLength;
+
+				/* Ref USB 2.0 9.3.4: wLength is the maximum the host accepts, never trust it
+				   as a buffer size. Clamp to the EP0 buffer to avoid an over-write. */
+				if (rsp_len > ep0_in->xfer_buf_len) {
+					rsp_len = (u16)ep0_in->xfer_buf_len;
+				}
+
+				/* EP0 buffer is shared with descriptor and OUT traffic, clear the response
+				   window so a callback writing fewer bytes cannot leak stale data. */
+				usb_os_memset((void *)ep0_in->xfer_buf, 0, rsp_len);
 				ret = cdev->cb->setup(req, ep0_in->xfer_buf);
 				if (ret == HAL_OK) {
-					ep0_in->xfer_len = req->wLength;
-					usbd_ep_transmit(dev, ep0_in);
+					ep0_in->xfer_len = rsp_len;
+					/* Propagate a submit failure so that the core stalls EP0 instead of
+					   leaving the host waiting out the data stage, ref USB 2.0 8.5.3.4 */
+					ret = usbd_ep_transmit(dev, ep0_in);
 				}
 			} else {
+				/* Ref USB 2.0 8.5.3: an H2D request with wLength > 0 carries the payload in a
+				   following data stage, the request cannot be dispatched yet. */
 				usb_os_memcpy((void *)&cdev->ctrl_req, (const void *)req, sizeof(usb_setup_req_t));
+				cdev->ctrl_req_pending = 1U;
 				ep0_out->xfer_len = req->wLength;
-				usbd_ep_receive(dev, ep0_out);
+				ret = usbd_ep_receive(dev, ep0_out);
+				if (ret != HAL_OK) {
+					/* The data stage never started, so no EP0 OUT completion will arrive to
+					   consume the stashed request. Drop it, else the next unrelated request's
+					   data stage would be applied as this one's payload. */
+					cdev->ctrl_req_pending = 0U;
+				}
 			}
 		} else {
-			cdev->cb->setup(req, NULL);
+			/* No data stage, the setup packet is self-contained, dispatch it right away */
+			ret = cdev->cb->setup(req, NULL);
 		}
 		break;
 
@@ -1210,6 +1341,17 @@ static int usbd_uac_handle_ep0_data_out(usb_dev_t *dev)
 	u8 byte_width;
 	u8 num_points;
 	u8 target_volume = UABD_UAC_VOL_ERR_VAL;
+
+	/* No pending request means this data stage does not belong to UAC, the composite dispatcher
+	   already routed it by active_func. cb is released by usbd_uac_deinit(), which may run between
+	   the setup and the data stage of an H2D request, so it is checked here as well. */
+	if ((cdev->ctrl_req_pending == 0U) || (cb == NULL)) {
+		return HAL_OK;
+	}
+
+	/* Consume the pending request: a single data stage belongs to exactly one setup packet, so
+	   the saved request must not be replayed by a later EP0 OUT event. */
+	cdev->ctrl_req_pending = 0U;
 
 	if (((p_ctrl_req->bmRequestType & USB_REQ_TYPE_MASK) == USB_REQ_TYPE_CLASS) && (p_ctrl_req->bRequest == USB_UAC1_SET_CUR)) {
 		if ((USB_HIGH_BYTE(p_ctrl_req->wIndex) == USBD_UAC_CTRL_ENTITYID_OUTPUTTERMINAL_FEATUREUNIT &&
@@ -1426,15 +1568,21 @@ static int usbd_uac_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len)
 }
 
 /**
-  * @brief  Patch endpoint addresses in the configuration descriptor with actual addresses from ep_cfg
+  * @brief  Patch the runtime-assigned fields in a configuration descriptor block
+  * @note   Replaces direction-only EP placeholders (USB_D2H/USB_H2D) with the actual
+  *         EP addresses from ep_cfg, and rebases the AC Header baInterfaceNr[]
+  *         cross-references with the current interface base (0 unless the composite
+  *         framework rebased it), which the framework does not touch: it only rebases
+  *         the standard Interface and IAD descriptors.
   * @param  desc: Pointer to the descriptor buffer (after configuration descriptor header)
   * @param  len: Total length of descriptor data
   * @param  ep_cfg: Endpoint configuration with actual addresses to patch in
   * @retval void
   */
-static void usbd_uac_patch_ep_addresses(u8 *desc, u16 len, const usbd_uac_ep_cfg_t *ep_cfg)
+static void usbd_uac_patch_desc(u8 *desc, u16 len, const usbd_uac_ep_cfg_t *ep_cfg)
 {
 	u16 i;
+	usbd_uac_dev_t *cdev = &usbd_uac_dev;
 
 	for (i = 0; i < len;) {
 		u8 dlen = desc[i];
@@ -1450,6 +1598,19 @@ static void usbd_uac_patch_ep_addresses(u8 *desc, u16 len, const usbd_uac_ep_cfg
 				desc[i + 2] = ep_cfg->isoc_in_addr;
 			} else if ((dir == USB_H2D) && (type == USB_CH_EP_TYPE_ISOC)) {
 				desc[i + 2] = ep_cfg->isoc_out_addr;
+			}
+		} else if ((dtype == USB_UAC_CS_INTERFACE) && (dlen >= USB_UAC1_AC_IF_HEADER_LEN) && (desc[i + 2] == USB_UAC_AC_HEADER)) {
+			/* AC Header: bInCollection at offset 7, baInterfaceNr[j] at offset 8+j
+			 * (Ref UAC 1.0 4.7.2). Each entry keeps its own class-local interface
+			 * number, so add the base rather than overwrite. */
+			u8 n = desc[i + 7];
+			u8 j;
+
+			if ((u16)(8U + n) > (u16)dlen) { /* malformed bInCollection: do not run off the descriptor */
+				n = (u8)(dlen - 8U);
+			}
+			for (j = 0; j < n; j++) {
+				desc[i + 8U + j] = (u8)(desc[i + 8U + j] + cdev->if_base);
 			}
 		}
 		i += dlen;
@@ -1565,7 +1726,7 @@ static u16 usbd_uac_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 			buf[USB_CFG_DESC_OFFSET_ATTR] = attr;
 		}
 
-		usbd_uac_patch_ep_addresses(buf + USB_LEN_CFG_DESC, len - USB_LEN_CFG_DESC, cdev->ep_cfg);
+		usbd_uac_patch_desc(buf + USB_LEN_CFG_DESC, len - USB_LEN_CFG_DESC, cdev->ep_cfg);
 	}
 
 	return len;
@@ -1599,6 +1760,20 @@ static void usbd_uac_status_changed(usb_dev_t *dev, u8 old_status, u8 status)
 		cdev->cb->status_changed(old_status, status);
 	}
 }
+
+#ifdef CONFIG_USBD_COMPOSITE
+/**
+  * @brief  Store the first interface number assigned to this class by the composite framework
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @param  base: First interface number of this class
+  * @retval void
+  */
+static void usbd_uac_set_interface_base(u8 base)
+{
+	usbd_uac_dev.if_base = base;
+}
+#endif
 
 #if USBD_UAC_DEBUG
 /**
@@ -1722,6 +1897,8 @@ static int usbd_uac_private_init(const usbd_uac_cb_t *cb, const usbd_uac_ep_cfg_
 	 * be delivered as (0, ch, bw) and the app-level (uac_ready_sema) never
 	 * fires, so playback stays silent even though the device enumerates. */
 	cdev->cur_sampling_freq = USBD_UAC_SAMPLING_FREQ_48K;
+	/* Standalone default; the composite framework rebases it via set_interface_base() */
+	cdev->if_base = 0;
 
 	if (ep_cfg == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid ep cfg\n");
@@ -1730,6 +1907,10 @@ static int usbd_uac_private_init(const usbd_uac_cb_t *cb, const usbd_uac_ep_cfg_
 
 	usbd_uac_ep_buf_ctrl_deinit(&(cdev->uac_isoc_in));
 	usbd_uac_ep_buf_ctrl_deinit(&(cdev->uac_isoc_out));
+
+	/* No H2D request is waiting for its data stage yet. The device context is a static object,
+	   so a re-init after deinit must not inherit a stale pending flag. */
+	cdev->ctrl_req_pending = 0U;
 
 	cdev->ep_cfg = ep_cfg;
 
@@ -1796,6 +1977,11 @@ int usbd_composite_uac_init(const usbd_uac_cb_t *cb, const usbd_uac_ep_cfg_t *ep
 	if (ret == HAL_OK) {
 		cdev->from_composite = 1;
 		ret = usbd_composite_register_driver(&usbd_uac_driver);
+		if (ret != HAL_OK) {
+			/* private_init completed, so deinit is its exact reverse. from_composite is
+			   already 1, so the unregister inside is a no-op for an unregistered driver. */
+			usbd_uac_deinit();
+		}
 	}
 	return ret;
 }
@@ -1804,9 +1990,9 @@ int usbd_composite_uac_init(const usbd_uac_cb_t *cb, const usbd_uac_ep_cfg_t *ep
 /**
   * @brief  DeInitialize UAC device
   * @param  void
-  * @retval Status
+  * @retval None
   */
-int usbd_uac_deinit(void)
+void usbd_uac_deinit(void)
 {
 	usbd_uac_dev_t *cdev = &usbd_uac_dev;
 
@@ -1825,14 +2011,16 @@ int usbd_uac_deinit(void)
 	usbd_uac_ep_buf_ctrl_deinit(&(cdev->uac_isoc_in));
 	usbd_uac_ep_buf_ctrl_deinit(&(cdev->uac_isoc_out));
 
+	/* Unregistered above: no class callback can run afterwards, so dropping the pending
+	   control request here cannot race an EP0 OUT completion in ISR context. */
+	cdev->ctrl_req_pending = 0U;
+
 	if (cdev->cb != NULL) {
 		if (cdev->cb->deinit != NULL) {
 			cdev->cb->deinit();
 		}
 		cdev->cb = NULL;
 	}
-
-	return HAL_OK;
 }
 
 /**
@@ -1916,6 +2104,14 @@ int usbd_uac_config(const usbd_audio_cfg_t *uac_cfg, u8 is_record, u32 flag)
 	int ret = HAL_OK;
 
 	UNUSED(flag);
+
+	/* cdev->dev is assigned in set_config, so it is NULL until the host has enumerated
+	   us. The MPS / ring buffer sizing below needs dev_speed, which is only known after
+	   the speed negotiation, so reject the call instead of dereferencing NULL: the app
+	   is expected to re-issue usbd_uac_config() once attached. */
+	if (cdev->dev == NULL) {
+		return HAL_ERR_HW;
+	}
 
 	/* all the transfer should finish */
 	/* TODO: re initiation the isoc buffer[usbd_uac_buf_ctrl_t] */
