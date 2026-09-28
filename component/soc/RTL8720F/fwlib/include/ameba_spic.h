@@ -8,6 +8,7 @@
 #define _AMEBA_SPIC_H_
 
 #include "ameba_flashclk.h"
+#include "ameba_nor_flash.h"
 
 /** @addtogroup Ameba_Periph_Driver
   * @{

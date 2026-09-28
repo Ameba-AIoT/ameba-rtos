@@ -76,12 +76,12 @@ typedef enum {
 
 /* Private function prototypes -----------------------------------------------*/
 static int usbh_cdc_ncm_cb_init(void);
-static int usbh_cdc_ncm_cb_deinit(void);
-static int usbh_cdc_ncm_cb_attach(void);
-static int usbh_cdc_ncm_cb_detach(void);
-static int usbh_cdc_ncm_cb_setup(void);
-static int usbh_cdc_ncm_cb_process(usb_host_t *host, u8 msg);
-static int usbh_cdc_ncm_cb_bulk_receive(u8 *pbuf, u32 Len);
+static void usbh_cdc_ncm_cb_deinit(void);
+static void usbh_cdc_ncm_cb_attached(void);
+static void usbh_cdc_ncm_cb_detached(void);
+static void usbh_cdc_ncm_cb_setup(void);
+static void usbh_cdc_ncm_cb_process(usb_host_t *host, u8 msg);
+static void usbh_cdc_ncm_cb_received(u8 *pbuf, u32 Len);
 static int usbh_cdc_ncm_cb_device_check(usb_host_t *host, u8 cfg_max);
 
 static const usbh_config_t usbh_ncm_cfg = {
@@ -92,9 +92,14 @@ static const usbh_config_t usbh_ncm_cfg = {
 	.main_task_priority = CONFIG_USBH_CDC_NCM_MAIN_THREAD_PRIORITY,
 	.tick_source = USBH_SOF_TICK,
 	.hub_support = 1U,
-#if defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RLE1509)
-	/*FIFO total depth is 1024, reserve 12 for DMA addr*/
+#if defined(CONFIG_AMEBAGREEN2)
+	/*FIFO total 1024 DWORD, resv 12 DWORD for DMA*/
 	.rx_fifo_depth = 500,
+	.nptx_fifo_depth = 256,
+	.ptx_fifo_depth = 256,
+#elif defined(CONFIG_RLE1509)
+	/*FIFO total 1024 DWORD, resv 48 DWORD */
+	.rx_fifo_depth = 464,
 	.nptx_fifo_depth = 256,
 	.ptx_fifo_depth = 256,
 #elif defined (CONFIG_AMEBAL2)
@@ -113,10 +118,10 @@ static const usbh_config_t usbh_ncm_cfg = {
 static const usbh_cdc_ncm_state_cb_t cdc_ncm_usb_cb = {
 	.init   = usbh_cdc_ncm_cb_init,
 	.deinit = usbh_cdc_ncm_cb_deinit,
-	.attach = usbh_cdc_ncm_cb_attach,
-	.detach = usbh_cdc_ncm_cb_detach,
+	.attached = usbh_cdc_ncm_cb_attached,
+	.detached = usbh_cdc_ncm_cb_detached,
 	.setup  = usbh_cdc_ncm_cb_setup,
-	.bulk_received = usbh_cdc_ncm_cb_bulk_receive,
+	.received = usbh_cdc_ncm_cb_received,
 };
 
 static const usbh_user_cb_t usbh_ncm_usr_cb = {
@@ -164,29 +169,24 @@ static int usbh_cdc_ncm_cb_init(void)
 
 /**
   * @brief  CDC NCM deinit callback
-  * @retval Status
   */
-static int usbh_cdc_ncm_cb_deinit(void)
+static void usbh_cdc_ncm_cb_deinit(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "DEINIT\n");
-	return HAL_OK;
 }
 
 /**
   * @brief  CDC NCM attach callback
-  * @retval Status
   */
-static int usbh_cdc_ncm_cb_attach(void)
+static void usbh_cdc_ncm_cb_attached(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "ATTACH\n");
-	return HAL_OK;
 }
 
 /**
   * @brief  CDC NCM detach callback
-  * @retval Status
   */
-static int usbh_cdc_ncm_cb_detach(void)
+static void usbh_cdc_ncm_cb_detached(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "DETACH\n");
 
@@ -194,35 +194,29 @@ static int usbh_cdc_ncm_cb_detach(void)
 #if CONFIG_USBH_CDC_NCM_HOTPLUG
 	usb_os_sema_give(cdc_ncm_detach_sema);
 #endif
-	return HAL_OK;
 }
 
 /**
   * @brief  CDC NCM setup callback
-  * @retval Status
   */
-static int usbh_cdc_ncm_cb_setup(void)
+static void usbh_cdc_ncm_cb_setup(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "SETUP\n");
-	return HAL_OK;
 }
 
 /**
   * @brief  CDC NCM bulk receive callback
   * @param  buf: RX buffer
   * @param  length: RX data length (in bytes)
-  * @retval Status
   */
-static int usbh_cdc_ncm_cb_bulk_receive(u8 *buf, u32 length)
+static void usbh_cdc_ncm_cb_received(u8 *buf, u32 length)
 {
 	if (length > 0) {
 		netif_adapter_usb_eth_recv(buf, length);
 	}
-
-	return HAL_OK;
 }
 
-static int usbh_cdc_ncm_cb_process(usb_host_t *host, u8 msg)
+static void usbh_cdc_ncm_cb_process(usb_host_t *host, u8 msg)
 {
 	UNUSED(host);
 	switch (msg) {
@@ -238,8 +232,6 @@ static int usbh_cdc_ncm_cb_process(usb_host_t *host, u8 msg)
 	default:
 		break;
 	}
-
-	return HAL_OK;
 }
 
 static int usbh_cdc_ncm_do_init(void)

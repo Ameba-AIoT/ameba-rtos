@@ -68,7 +68,8 @@ class AuthAlg(Enum):
 
 class Manifest_TypeDef(Structure):
     _fields_=[('Pattern',c_uint32 * 2),
-              ('Rsvd1',c_uint8 * 7),
+              ('Rsvd1',c_uint8 * 6),
+              ('RsipKeyGrp',c_uint8),
               ('RsipCfg',c_uint8),
               ('Ver',c_uint8),
               ('ImgID',c_uint8),
@@ -166,8 +167,13 @@ class ManifestImageConfig:
                 self.rsip_gcm_tag_len:int = config.get("rsip_gcm_tag_len", 0xFF)
                 self.rsip_iv:str = config.get("rsip_iv", "")
                 self.rsip_key:List[str] = []
+                # rsip_key_grp_override goes into Manifest.RsipKeyGrp so the bootloader can pick
+                # the RSIP key group at runtime. Stored inverted: 0 -> group1 (legacy default),
+                # 1 -> group0, so images built before this field existed keep using group1.
+                self.rsip_key_grp_override:int = 0
                 if "rsip_key_group" in config:
                     self.rsip_key = [config[v] for v in config[config["rsip_key_group"]]]
+                    self.rsip_key_grp_override = 1 if config["rsip_key_group"].strip().lower().endswith("_g0") else 0
                 else:
                     if self.rsip_mode == 0 or self.rsip_mode == 2:
                         self.rsip_key = [config["ctr_key"] if isinstance(config["ctr_key"], str) else config["ctr_key"][config["rsip_key_id"]]]
@@ -723,6 +729,9 @@ class ManifestManager(ABC):
 
             memmove(addressof(basic_manifest_part.RsipIV), bytes.fromhex(image_config.rsip_iv), 8)
             basic_manifest_part.RsipCfg = basic_manifest_part.RsipCfg & (((image_config.rsip_gcm_tag_len // 4) >> 1) | ~0x03)
+            # Record the RSIP key group so the bootloader can select group0/group1 at runtime
+            # (see MANIFEST_RSIP_IMG2_KEY_GROUP in ameba_secure_boot.h).
+            basic_manifest_part.RsipKeyGrp = getattr(image_config, "rsip_key_grp_override", 0) & 0x01
         if ImgID.IMGID_APP.value == basic_manifest_part.ImgID:
             # Check image3's rdp_enable configuration instead of current image's config
             rdp_enable = False
@@ -768,6 +777,23 @@ class ManifestManager(ABC):
             ret = self.sboot.gen_signature(basic_manifest_part.AuthAlg, private_key, basic_manifest_part.SBPubKey, basic_manifest_part, sizeof(Manifest_TypeDef) - SIGN_MAX_LEN, basic_manifest_part.Signature)
             if ret != 0:
                 return Error(ErrorType.UNKNOWN_ERROR, f"self.sboot gen signature failed: {ret}")
+        elif image_type in ([ImageType.IMAGE1, ImageType.IMAGE2, ImageType.APP_ALL]
+                             if self.context.soc_project == 'RLE1509'
+                             else [ImageType.IMAGE2, ImageType.APP_ALL]):
+            # Always populate the image hash (plain SHA-256) even when secure boot
+            # is disabled, so a boot stage that checks it can reject a flash-corrupted
+            # image. IMAGE2(app) is validated by the bootloader on every SoC that
+            # adopts the always-on hash. IMAGE1(bootloader) is validated by the ROM
+            # only on RLE1509 (ROM still in development), so limit IMG1 hashing to it:
+            # other SoCs run a production mask ROM that would misbehave on a non-0xFF
+            # IMG1 HashAlg when secure boot is off.
+            self.sboot.IsHMAC = 0
+            if self.sboot.gen_hash_id(basic_manifest_part, "sha256") != 0:
+                return Error(ErrorType.UNKNOWN_ERROR, "self.sboot gen hash id failed")
+            hash_file = hash_input_file if hash_input_file else input_file
+            ret = self.sboot.gen_image_hash(hash_file, basic_manifest_part.ImgHash, hash_skip_bytes)
+            if ret != 0:
+                return Error(ErrorType.UNKNOWN_ERROR, f"self.sboot gen image hash failed: {ret}")
 
         # Handle PQC fields for extended manifest
         if use_extended_manifest:

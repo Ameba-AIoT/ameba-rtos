@@ -110,13 +110,19 @@ static int hid_send_device_data(const void *data);
 static const char *const TAG = "HID";
 
 /* Serializes the USB stack bring up/tear down against the TX path, taken by
- * the hotplug thread, the xfer thread and the mouse command */
+ * the hotplug thread, the xfer thread and the mouse command.
+ * Created once and never deleted: the mouse command runs on the shell thread,
+ * which lives as long as the firmware and can not be joined by the example, so
+ * there is no point in time at which this mutex is provably unreferenced.
+ * hid_stack_ready is the gate that keeps callers off the stack instead. */
 static rtos_mutex_t hid_state_mutex;
-/* 1: usbd_init() and usbd_hid_init() both done, TX allowed */
+/* 1: usbd_init() and usbd_hid_init() both done, TX allowed. Cleared before any
+ * tear down, so a non-zero value also implies hid_state_mutex is valid */
 static volatile u8 hid_stack_ready;
 
 #if HID_HOTPLUG
-static u8 hid_attach_status;
+/* Written by the ISR, read by the hotplug thread, possibly on another core */
+static volatile u8 hid_attach_status;
 static rtos_sema_t hid_attach_status_changed_sema;
 /* 1: hotplug re-init failed, all example threads shall quit */
 static volatile u8 hid_stack_fatal;
@@ -176,8 +182,11 @@ const COMMAND_TABLE usbd_hid_mouse_data_cmd[] = {
 static const usbd_config_t hid_cfg = {
 	.speed = HID_USB_SPEED,
 	.isr_priority = INT_PRI_MIDDLE,
-#if defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RLE1509)
+#if defined(CONFIG_AMEBAGREEN2)
 	.rx_fifo_depth = 724U,
+	.ptx_fifo_depth = {0U, 256U, 0U, 0U, 0U},
+#elif defined(CONFIG_RLE1509)
+	.rx_fifo_depth = 688U,
 	.ptx_fifo_depth = {0U, 256U, 0U, 0U, 0U},
 #elif defined (CONFIG_AMEBAL2)
 	.rx_fifo_depth = 677U,
@@ -210,7 +219,7 @@ static const usbd_hid_usr_cb_t hid_usr_cb = {
 
 /* Private functions ---------------------------------------------------------*/
 
-#if HID_TX_EN || HID_CONSTANT_DATA
+#if HID_CONSTANT_DATA
 /**
   * @brief  Check whether the example shall abort
   * @retval 1 if the USB stack can not be recovered any more else 0
@@ -245,7 +254,9 @@ static u8 hid_session_changed(u32 session)
 /**
   * @brief  Free the objects shared by the example threads
   * @note   Only called by the last running thread, after the USB stack is fully
-  *         deinited, so that no ISR callback can touch these objects any more
+  *         deinited, so that no ISR callback can touch these objects any more.
+  *         hid_state_mutex is deliberately kept: the shell thread may be holding
+  *         it inside hid_send_device_data(), and deleting a held mutex is UB
   * @retval None
   */
 static void hid_free_resource(void)
@@ -260,8 +271,6 @@ static void hid_free_resource(void)
 	rtos_sema_delete(hid_attach_status_changed_sema);
 	hid_attach_status_changed_sema = NULL;
 #endif
-	rtos_mutex_delete(hid_state_mutex);
-	hid_state_mutex = NULL;
 }
 
 static void hid_cb_init(void)
@@ -392,6 +401,8 @@ static u32 hid_cmd_mouse_data(u16 argc, u8  *argv[])
   * @note   The stack status check and the transfer share one critical section,
   *         otherwise the hotplug thread could free the endpoint buffers between
   *         the check and the transfer
+  * @note   Also reachable from the shell thread through the mouse command, i.e.
+  *         before the example is started and after it has aborted
   * @param  pdata: Mouse or keyboard data to send
   * @retval Result of the operation: HAL_OK if success else fail
   */
@@ -434,14 +445,19 @@ static int hid_send_device_data(const void *pdata)
 	const usbd_hid_keyboard_data_t *data = (const usbd_hid_keyboard_data_t *)pdata;
 #endif
 
-	/* The stack is gone and hid_state_mutex is freed, refuse to touch it */
-	if (hid_stack_broken() != 0U) {
+	/* Gate on hid_stack_ready BEFORE touching the mutex: it is still NULL if the
+	 * example was never started, and already cleared if the init failed or the
+	 * stack is gone for good. A hotplug right after this check is harmless, the
+	 * mutex stays valid and the re-check below skips the TX */
+	if (hid_stack_ready == 0U) {
+		RTK_LOGS(TAG, RTK_LOG_WARN, "Stack not ready, skip TX\n");
 		return HAL_ERR_HW;
 	}
 
 	rtos_mutex_take(hid_state_mutex, RTOS_MAX_TIMEOUT);
 	if (hid_stack_ready == 0U) {
-		RTK_LOGS(TAG, RTK_LOG_WARN, "Stack not ready, skip TX\n");
+		/* Lost the race against a hotplug tear down */
+		RTK_LOGS(TAG, RTK_LOG_WARN, "Stack torn down, skip TX\n");
 		ret = HAL_ERR_HW;
 	} else {
 #ifdef CONFIG_USBD_HID_MOUSE
@@ -683,6 +699,14 @@ static void example_usbd_hid_thread(void *param)
 	if (ret != RTK_SUCCESS) {
 		goto exit_usbd_hid_init_fail;
 	}
+#if defined(CONFIG_SMP)
+	/* C-2: the USB OTG ISR is delivered on CPU0 (GIC ITARGETSR pins every SPI to
+	   core 0). Pinning the hotplug/deinit thread to CPU0 puts it on the same core
+	   as the ISR, so deinit's local interrupt disable is meaningful again under
+	   SMP. The xfer thread stays unaffined: hid_state_mutex already excludes TX
+	   from a pending deinit, so it does not need to share the ISR's core. */
+	rtos_task_set_affinity(hotplug_task, 0);
+#endif
 #endif // HID_HOTPLUG
 
 #if HID_CONSTANT_DATA

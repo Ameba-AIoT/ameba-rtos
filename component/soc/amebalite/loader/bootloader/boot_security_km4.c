@@ -110,14 +110,17 @@ u8 BOOT_SignatureCheck(Manifest_TypeDef *Manifest, SubImgInfo_TypeDef *SubImgInf
 	char *Name[] = {"IMG1", "IMG2", "IMG3", "DSP"};
 	u8 AuthAlg, HashAlg;
 
-	/* 1. check if secure boot enable. */
-	if (SecureBootEn == DISABLE) {
-		return TRUE;
-	}
-
 	/* 2. verify signature */
 	/* 2.1 Initialize hash engine */
 	CRYPTO_SHA_Init(NULL);
+
+	/* 1. Always validate the image hash, even when secure boot is disabled, so a
+	 * flash-corrupted app image is rejected. When sboot is off, skip the signature
+	 * steps and use Manifest->HashAlg directly (OTP has no algorithm constraint). */
+	if (SecureBootEn == DISABLE) {
+		HashAlg = Manifest->HashAlg;
+		goto IMG_HASH;
+	}
 
 	/* 2.2 Check algorithm from manifest against OTP configuration if need. */
 	ret = SBOOT_Validate_Algorithm(&AuthAlg, &HashAlg, Manifest->AuthAlg, Manifest->HashAlg);
@@ -143,6 +146,7 @@ u8 BOOT_SignatureCheck(Manifest_TypeDef *Manifest, SubImgInfo_TypeDef *SubImgInf
 		goto SBOOT_FAIL;
 	}
 
+IMG_HASH:
 	/* 2.5 calculate and validate image hash */
 	ret = SBOOT_Validate_ImgHash(HashAlg, Manifest->ImgHash, SubImgInfo, SubImgNum);
 	if (ret != 0) {
@@ -238,15 +242,17 @@ u8 BOOT_Extract_SignatureCheck(Manifest_TypeDef *Manifest, SubImgInfo_TypeDef *S
 	int ret;
 	u8 AuthAlg, HashAlg;
 
-	/* 1. check if secure boot enable. */
-	/* 2. read public key hash from OTP if sboot en. Start with a random index to avoid side channel attack. */
-	if (BOOT_SbootEn_Check(PubKeyHash) == DISABLE) {
-		return TRUE;
-	}
-
 	/* 3. verify signature */
 	/* 3.1 Initialize hash engine */
 	CRYPTO_SHA_Init(NULL);
+
+	/* Always validate the compressed image hash, even when secure boot is disabled,
+	 * so a flash-corrupted image is rejected before it is extracted. When sboot is
+	 * off, skip the signature steps and use Manifest->HashAlg directly. */
+	if (BOOT_SbootEn_Check(PubKeyHash) == DISABLE) {
+		HashAlg = Manifest->HashAlg;
+		goto IMG_HASH;
+	}
 
 	/* 3.2 Check algorithm from flash against OTP configuration if need. */
 	ret = SBOOT_Validate_Algorithm(&AuthAlg, &HashAlg, Manifest->AuthAlg, Manifest->HashAlg);
@@ -267,6 +273,7 @@ u8 BOOT_Extract_SignatureCheck(Manifest_TypeDef *Manifest, SubImgInfo_TypeDef *S
 		goto SBOOT_FAIL;
 	}
 
+IMG_HASH:
 	/* 3.5 calculate and validate image hash */
 	ret = SBOOT_Validate_ImgHash(HashAlg, Manifest->ImgHash, SubImgInfo, SubImgNum);
 	if (ret != 0) {

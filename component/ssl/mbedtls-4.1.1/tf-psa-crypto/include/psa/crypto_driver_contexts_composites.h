@@ -32,6 +32,11 @@
 /* Include the context structure definitions for those drivers that were
  * declared during the autogeneration process. */
 
+/* RTK: hardware AES-GCM/CCM transparent driver context. */
+#if defined(RTK_PSA_AEAD_DRIVER)
+#include "rtk_psa_aead_context.h"
+#endif
+
 #if defined(MBEDTLS_TEST_LIBTESTDRIVER1)
 #if defined(TF_PSA_CRYPTO_TEST_LIBTESTDRIVER1)
 #include "mbedtls/private/libtestdriver1-crypto_builtin_composites.h"
@@ -131,6 +136,9 @@ typedef union {
     mbedtls_psa_aead_operation_t mbedtls_ctx;
 #if defined(PSA_CRYPTO_DRIVER_TEST)
     mbedtls_transparent_test_driver_aead_operation_t transparent_test_driver_ctx;
+#endif
+#if defined(RTK_PSA_AEAD_DRIVER)
+    rtk_psa_aead_operation_t rtk_ctx;
 #endif
 } psa_driver_aead_context_t;
 

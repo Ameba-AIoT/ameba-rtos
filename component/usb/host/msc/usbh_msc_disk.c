@@ -215,20 +215,20 @@ DRESULT USB_disk_ioctl(BYTE cmd, void *buff)
 		res = RES_OK;
 		break;
 
-	/* Get total number of sectors on the disk (DWORD) */
+	/* Get total number of sectors on the disk (LBA_t, 64-bit when FF_LBA64) */
 	case GET_SECTOR_COUNT :
 		if (usbh_msc_get_lun_info(0U, &info) == HAL_OK) {
-			*(DWORD *)buff = info.capacity.block_nbr;
+			*(LBA_t *)buff = (LBA_t)info.capacity.block_nbr;
 			res = RES_OK;
 		} else {
 			res = RES_ERROR;
 		}
 		break;
 
-	/* Get R/W sector size (WORD) */
+	/* Get R/W sector size (WORD): ff.c passes &FATFS.ssize, a 16-bit field */
 	case GET_SECTOR_SIZE :
 		if (usbh_msc_get_lun_info(0U, &info) == HAL_OK) {
-			*(DWORD *)buff = info.capacity.block_size;
+			*(WORD *)buff = (WORD)info.capacity.block_size;
 			res = RES_OK;
 		} else {
 			res = RES_ERROR;

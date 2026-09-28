@@ -273,7 +273,6 @@ ex_list.append(fmt_gdb_arg('GDB_PORT',   gdb_port))
 ex_list.append(fmt_gdb_arg('HOST_IP',   host_ip))
 ex_list.append(fmt_gdb_arg('FlashFileSize', BIN_SIZES.get("FlashFileSize", 0)))
 ex_list.append(fmt_gdb_arg('XIPBootSize',   BIN_SIZES.get("XIPBootSize", 0)))
-ex_list.append(fmt_gdb_arg('Img3FileSize',  BIN_SIZES.get("Img3FileSize", 0)))
 ex_list.append(fmt_gdb_arg('DSPFlashSize',  BIN_SIZES.get("DSPFlashSize", 0)))
 
 reg_vars = CONFIG.get('REG_VARS', {})
@@ -288,8 +287,6 @@ if BIN_PATHS.get('FlashFileSize'):
     ex_list.append(fmt_gdb_arg('BIN_IMG2_ALL', BIN_PATHS["FlashFileSize"]))
 if BIN_PATHS.get('XIPBootSize'):
     ex_list.append(fmt_gdb_arg('BIN_IMG1_BOOT', BIN_PATHS["XIPBootSize"]))
-if BIN_PATHS.get('Img3FileSize'):
-    ex_list.append(fmt_gdb_arg('BIN_KM4_IMG3', BIN_PATHS["Img3FileSize"]))
 if BIN_PATHS.get('DSPFlashSize'):
     ex_list.append(fmt_gdb_arg('BIN_DSP_ALL', BIN_PATHS["DSPFlashSize"]))
 

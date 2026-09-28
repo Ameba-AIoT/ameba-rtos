@@ -16,13 +16,16 @@
  */
 
 #include "entropy_poll.h"
+#include "mbedtls/entropy.h"
 #include "ameba_soc.h"
 
 int mbedtls_hardware_poll(void *data, unsigned char *output, size_t len, size_t *olen)
 {
     UNUSED(data);
 
-    TRNG_get_random_bytes(output, len);
+    if (TRNG_get_random_bytes(output, len) != 0) {
+        return MBEDTLS_ERR_ENTROPY_SOURCE_FAILED;
+    }
 
     *olen = len;
     return 0;

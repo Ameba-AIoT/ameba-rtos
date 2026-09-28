@@ -1,11 +1,12 @@
 #ifndef __SDN_MEM_CONF_H__
 #define __SDN_MEM_CONF_H__
 
-/* Number of hci cmd */
-#define SDN_BT_HCI_CMD_RX_NUM                        2
+/* Number of hci cmd
+ * When C2H flow control is enabled, 4 is suggested, because there will be lots of cmd 0xc35. Otherwise 2 is enough. */
+#define SDN_BT_HCI_CMD_RX_NUM                        4
 
 /* Number of hci event
- * When PA sync is enable, 6 is suggested. Otherwise 4 is enough. */
+ * When PA sync is enabled, 6 is suggested. Otherwise 4 is enough. */
 #define SDN_BT_HCI_EVT_RX_NUM                        6
 
 /* TRX packet number for each ble link */

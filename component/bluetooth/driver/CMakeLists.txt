@@ -76,7 +76,7 @@ if(CONFIG_BT_INIC)
 	ameba_list_append_if(CONFIG_BT_INIC_USB private_includes
 		${c_CMPT_USB_DIR}/common
 	 	${c_CMPT_USB_DIR}/device/core
-	 	${c_CMPT_USB_DIR}/device/inic
+	 	${c_CMPT_USB_DIR}/device/whc
 	)
 	if(CONFIG_AMEBADPLUS)
 		ameba_list_append_if(CONFIG_BT_INIC_SDIO private_sources bt_inic/bt_inic_sdio_dplus.c)

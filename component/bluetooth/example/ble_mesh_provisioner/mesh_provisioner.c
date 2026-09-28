@@ -2927,7 +2927,7 @@ int ble_mesh_provisioner_main(uint8_t enable)
 #endif
 #if defined(RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT) && RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT
 		bt_app_conf.max_tx_octets = 0x40;
-		bt_app_conf.max_tx_time = 0x200;
+		bt_app_conf.max_tx_time = 0x270;
 #endif
 
 		BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_LE_GP_MESH_STACK, ble_mesh_stack_app_callback));

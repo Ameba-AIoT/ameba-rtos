@@ -151,13 +151,13 @@ typedef struct {
 /* Private macros ------------------------------------------------------------*/
 
 /* Private function prototypes -----------------------------------------------*/
-static int usbh_hid_cb_report(usbh_hid_event_t *event);
+static void usbh_hid_cb_report(usbh_hid_event_t *event);
 static int usbh_uac_cb_init(void);
-static int usbh_uac_cb_deinit(void);
-static int usbh_uac_cb_attach(void);
-static int usbh_uac_cb_detach(void);
-static int usbh_uac_cb_setup(void);
-static int usbh_uac_cb_process(usb_host_t *host, u8 msg);
+static void usbh_uac_cb_deinit(void);
+static void usbh_uac_cb_attached(void);
+static void usbh_uac_cb_detached(void);
+static void usbh_uac_cb_setup(void);
+static void usbh_uac_cb_process(usb_host_t *host, u8 msg);
 
 /* Private variables ---------------------------------------------------------*/
 static const char *const TAG = "COMP";
@@ -184,9 +184,14 @@ static const usbh_config_t usbh_cfg = {
 	.main_task_priority = CONFIG_USBH_COMP_HID_UAC_MAIN_THREAD_PRIORITY,
 	.tick_source = USBH_SOF_TICK,
 	.class_num = 2U,   /* HID + UAC */
-#if defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RLE1509)
-	/*FIFO total depth is 1024, reserve 12 for DMA addr*/
+#if defined(CONFIG_AMEBAGREEN2)
+	/*FIFO total 1024 DWORD, resv 12 DWORD for DMA*/
 	.rx_fifo_depth = 500,
+	.nptx_fifo_depth = 256,
+	.ptx_fifo_depth = 256,
+#elif defined(CONFIG_RLE1509)
+	/*FIFO total 1024 DWORD, resv 48 DWORD */
+	.rx_fifo_depth = 464,
 	.nptx_fifo_depth = 256,
 	.ptx_fifo_depth = 256,
 #elif defined (CONFIG_AMEBAL2)
@@ -208,8 +213,8 @@ static const usbh_config_t usbh_cfg = {
 static const usbh_uac_cb_t usbh_uac_cfg = {
 	.init = usbh_uac_cb_init,
 	.deinit = usbh_uac_cb_deinit,
-	.attach = usbh_uac_cb_attach,
-	.detach = usbh_uac_cb_detach,
+	.attached = usbh_uac_cb_attached,
+	.detached = usbh_uac_cb_detached,
 	.setup = usbh_uac_cb_setup,
 
 	.isoc_in_frm_cnt = CONFIG_USBH_COMP_HID_UAC_FRAME_CNT,
@@ -286,12 +291,11 @@ static void gpio_init(void)
   * @brief  HID report callback, dispatched on each consumer-control event
   *         received from the composite HID interface (volume / mute / play).
   * @param  event: Pointer to the HID event descriptor reported by the stack.
-  * @retval Status
   */
-static int usbh_hid_cb_report(usbh_hid_event_t *event)
+static void usbh_hid_cb_report(usbh_hid_event_t *event)
 {
 	if (event == NULL) {
-		return HAL_OK;
+		return;
 	}
 
 	switch (event->type) {
@@ -313,8 +317,6 @@ static int usbh_hid_cb_report(usbh_hid_event_t *event)
 	default:
 		break;
 	}
-
-	return HAL_OK;
 }
 
 /**
@@ -331,20 +333,17 @@ static int usbh_uac_cb_init(void)
 /**
   * @brief  UAC class deinit callback, invoked when the class driver is
   *         unregistered (typically on `usbh_composite_deinit`).
-  * @retval Status
   */
-static int usbh_uac_cb_deinit(void)
+static void usbh_uac_cb_deinit(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Deinit\n");
-	return HAL_OK;
 }
 
 /**
   * @brief  UAC attach callback, fired when a UAC-capable device is plugged
   *         in. Resets the per-connection statistics counters.
-  * @retval Status
   */
-static int usbh_uac_cb_attach(void)
+static void usbh_uac_cb_attached(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Attach\n");
 
@@ -353,17 +352,14 @@ static int usbh_uac_cb_attach(void)
 	usbh_uac_ctx.record.count = 0;
 	usbh_uac_ctx.play.err_count = 0;
 	usbh_uac_ctx.record.err_count = 0;
-
-	return HAL_OK;
 }
 
 /**
   * @brief  UAC detach callback, fired when the device is unplugged. Stops
   *         playback / capture pipelines and (in hot-plug test mode) signals
   *         the hot-plug worker to re-initialize the host stack.
-  * @retval Status
   */
-static int usbh_uac_cb_detach(void)
+static void usbh_uac_cb_detached(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Detached, played: %d, recorded: %d\n",
 			 usbh_uac_ctx.play.count, usbh_uac_ctx.record.count);
@@ -379,17 +375,14 @@ static int usbh_uac_cb_detach(void)
 	/* Signal hot-plug thread to reinitialize */
 	rtos_sema_give(usbh_uac_ctx.detach_sema);
 #endif
-
-	return HAL_OK;
 }
 
 /**
   * @brief  UAC setup callback, fired after device enumeration and class
   *         setup completes. Marks the device ready and wakes the playback
   *         and record worker threads.
-  * @retval Status
   */
-static int usbh_uac_cb_setup(void)
+static void usbh_uac_cb_setup(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "SETUP\n");
 
@@ -399,8 +392,6 @@ static int usbh_uac_cb_setup(void)
 	/* Signal playback thread that setup is complete */
 	rtos_sema_give(usbh_uac_ctx.play_start_sema);
 	rtos_sema_give(usbh_uac_ctx.record_start_sema);
-
-	return HAL_OK;
 }
 
 /**
@@ -410,7 +401,7 @@ static int usbh_uac_cb_setup(void)
   * @param  msg:  Event identifier dispatched by the host core.
   * @retval Status
   */
-static int usbh_uac_cb_process(usb_host_t *host, u8 msg)
+static void usbh_uac_cb_process(usb_host_t *host, u8 msg)
 {
 	UNUSED(host);
 
@@ -430,8 +421,6 @@ static int usbh_uac_cb_process(usb_host_t *host, u8 msg)
 	default:
 		break;
 	}
-
-	return HAL_OK;
 }
 
 /**
@@ -793,16 +782,18 @@ static void example_usbh_composite_record_thread(void *param)
 			is_recording = 1;
 			record_loop_count = 0;
 			total_read = 0;
+			usbh_uac_ctx.record.err_count = 0;
 		}
 
 		while (usbh_uac_ctx.is_ready && !usbh_uac_ctx.record.thread_exit) {
 			read_len = CONFIG_USBH_COMP_HID_UAC_RECORD_BUFFER_SIZE;
 			ret = usbh_uac_read(usbh_uac_record_buffer, read_len, 1000);
 
-			if (ret > 0) {
+			if (ret > 0U) {
 				record_loop_count++;
 				usbh_uac_ctx.record.count++;
 				total_read += ret;
+				usbh_uac_ctx.record.err_count = 0;
 
 #ifdef CONFIG_SUPPORT_AUDIO_FOR_USB
 				if (audio_track != NULL) {
@@ -816,18 +807,15 @@ static void example_usbh_composite_record_thread(void *param)
 					RTK_LOGS(TAG, RTK_LOG_INFO, "Rec status loop=%d bytes=%d err=%d\n",
 							 record_loop_count, total_read, usbh_uac_ctx.record.err_count);
 				}
-			} else if (ret == 0) {
-				/* timeout / no data, nothing to report */
 			} else {
 				usbh_uac_ctx.record.err_count++;
 				if (usbh_uac_ctx.record.err_count > 100) {
 					RTK_LOGS(TAG, RTK_LOG_ERROR, "Rec err %d\n", usbh_uac_ctx.record.err_count);
-					goto record_stop;
+					break;
 				}
 			}
 		}
 
-record_stop:
 		if (is_recording != 0) {
 			RTK_LOGS(TAG, RTK_LOG_INFO, "Rec stop, loops=%d bytes=%d\n",
 					 record_loop_count, total_read);

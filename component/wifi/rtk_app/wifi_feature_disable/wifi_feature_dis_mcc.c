@@ -81,10 +81,10 @@ int rtw_mcc_parse_vendor_ie(u8 *pframe, u32 pkt_len)
 	return RTK_FAIL;
 }
 
-u8 rtw_mcc_filter_mgnt_rx_by_port(u8 iface_type, u8 subtype)
+u8 rtw_mcc_filter_mgnt_rx_by_port(u8 iface_type, u8 *pframe)
 {
 	UNUSED(iface_type);
-	UNUSED(subtype);
+	UNUSED(pframe);
 	return FALSE;
 }
 
@@ -119,6 +119,12 @@ void rtw_mcc_init(void)
 {
 
 }
+
+int rtw_mcc_check_softap_can_tx(void)
+{
+	return TRUE;
+}
+
 /* P2P Related */
 void rtw_p2p_go_noa_update(u8 type, u32 p1_tbtt_before, u32 ap_active_dur)
 {

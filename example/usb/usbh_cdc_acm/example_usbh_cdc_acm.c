@@ -53,16 +53,16 @@
 /* Private function prototypes -----------------------------------------------*/
 
 static int cdc_acm_cb_init(void);
-static int cdc_acm_cb_deinit(void);
-static int cdc_acm_cb_attach(void);
-static int cdc_acm_cb_detach(void);
-static int cdc_acm_cb_setup(void);
-static int cdc_acm_cb_transmit(u8 status);
-static int cdc_acm_cb_receive(u8 *buf, u32 len, u8 status);
-static int cdc_acm_cb_line_coding_changed(usb_cdc_acm_line_coding_t *line_coding);
-static int cdc_acm_cb_process(usb_host_t *host, u8 msg);
+static void cdc_acm_cb_deinit(void);
+static void cdc_acm_cb_attached(void);
+static void cdc_acm_cb_detached(void);
+static void cdc_acm_cb_setup(void);
+static void cdc_acm_cb_transmitted(u8 status);
+static void cdc_acm_cb_received(u8 *buf, u32 len, u8 status);
+static void cdc_acm_cb_line_coding_changed(usb_cdc_acm_line_coding_t *line_coding);
+static void cdc_acm_cb_process(usb_host_t *host, u8 msg);
 #if CONFIG_USBH_CDC_ACM_NOTIFY
-static int cdc_acm_cb_notify(u8 *buf, u32 len, u8 status);
+static void cdc_acm_cb_notify(u8 *buf, u32 len, u8 status);
 static void cdc_acm_notify_test(void);
 static void example_usbh_cdc_acm_notify_thread(void *param);
 #endif
@@ -99,9 +99,14 @@ static const usbh_config_t usbh_cfg = {
 	.main_task_stack_size = CONFIG_USBH_CDC_ACM_MAIN_TASK_STACK_SIZE,
 	.main_task_priority = CONFIG_USBH_CDC_ACM_MAIN_TASK_PRIORITY,
 	.tick_source = USBH_SOF_TICK,
-#if defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RLE1509)
-	/*FIFO total depth is 1024, reserve 12 for DMA addr*/
+#if defined(CONFIG_AMEBAGREEN2)
+	/*FIFO total 1024 DWORD, resv 12 DWORD for DMA*/
 	.rx_fifo_depth = 500,
+	.nptx_fifo_depth = 256,
+	.ptx_fifo_depth = 256,
+#elif defined(CONFIG_RLE1509)
+	/*FIFO total 1024 DWORD, resv 48 DWORD */
+	.rx_fifo_depth = 464,
 	.nptx_fifo_depth = 256,
 	.ptx_fifo_depth = 256,
 #elif defined (CONFIG_AMEBAL2)
@@ -120,11 +125,11 @@ static const usbh_config_t usbh_cfg = {
 static const usbh_cdc_acm_cb_t cdc_acm_usr_cb = {
 	.init   = cdc_acm_cb_init,
 	.deinit = cdc_acm_cb_deinit,
-	.attach = cdc_acm_cb_attach,
-	.detach = cdc_acm_cb_detach,
+	.attached = cdc_acm_cb_attached,
+	.detached = cdc_acm_cb_detached,
 	.setup  = cdc_acm_cb_setup,
-	.transmit = cdc_acm_cb_transmit,
-	.receive  = cdc_acm_cb_receive,
+	.transmitted = cdc_acm_cb_transmitted,
+	.received  = cdc_acm_cb_received,
 #if CONFIG_USBH_CDC_ACM_NOTIFY
 	.notify   = cdc_acm_cb_notify,
 #endif
@@ -143,37 +148,33 @@ static int cdc_acm_cb_init(void)
 	return HAL_OK;
 }
 
-static int cdc_acm_cb_deinit(void)
+static void cdc_acm_cb_deinit(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "DEINIT\n");
-	return HAL_OK;
 }
 
-static int cdc_acm_cb_attach(void)
+static void cdc_acm_cb_attached(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "ATTACH\n");
 	rtos_sema_give(cdc_acm_attach_sema);
-	return HAL_OK;
 }
 
-static int cdc_acm_cb_detach(void)
+static void cdc_acm_cb_detached(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "DETACH\n");
 #if CONFIG_USBH_CDC_ACM_HOT_PLUG_TEST
 	rtos_sema_give(cdc_acm_detach_sema);
 #endif
-	return HAL_OK;
 }
 
-static int cdc_acm_cb_setup(void)
+static void cdc_acm_cb_setup(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "SETUP\n");
 	cdc_acm_is_ready = 1;
-	return HAL_OK;
 }
 
 #if CONFIG_USBH_CDC_ACM_NOTIFY
-static int cdc_acm_cb_notify(u8 *buf, u32 len, u8 status)
+static void cdc_acm_cb_notify(u8 *buf, u32 len, u8 status)
 {
 	UNUSED(buf);
 	UNUSED(len);
@@ -183,11 +184,10 @@ static int cdc_acm_cb_notify(u8 *buf, u32 len, u8 status)
 	}
 	cdc_acm_notify_status = status;
 	rtos_sema_give(cdc_acm_notify_sema);
-	return HAL_OK;
 }
 #endif
 
-static int cdc_acm_cb_receive(u8 *buf, u32 len, u8 status)
+static void cdc_acm_cb_received(u8 *buf, u32 len, u8 status)
 {
 	UNUSED(buf);
 	if (status == HAL_OK) {
@@ -206,10 +206,9 @@ static int cdc_acm_cb_receive(u8 *buf, u32 len, u8 status)
 	} else {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "RX fail: %d\n", status);
 	}
-	return HAL_OK;
 }
 
-static int cdc_acm_cb_transmit(u8 status)
+static void cdc_acm_cb_transmitted(u8 status)
 {
 	if (status == HAL_OK) {
 		/*TX done*/
@@ -217,17 +216,14 @@ static int cdc_acm_cb_transmit(u8 status)
 	} else {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "TX fail: %d\n", status);
 	}
-
-	return HAL_OK;
 }
 
-static int cdc_acm_cb_line_coding_changed(usb_cdc_acm_line_coding_t *line_coding)
+static void cdc_acm_cb_line_coding_changed(usb_cdc_acm_line_coding_t *line_coding)
 {
 	UNUSED(line_coding);
-	return HAL_OK;
 }
 
-static int cdc_acm_cb_process(usb_host_t *host, u8 msg)
+static void cdc_acm_cb_process(usb_host_t *host, u8 msg)
 {
 	UNUSED(host);
 
@@ -242,8 +238,6 @@ static int cdc_acm_cb_process(usb_host_t *host, u8 msg)
 	default:
 		break;
 	}
-
-	return HAL_OK;
 }
 
 #if CONFIG_USBH_CDC_ACM_SPEED_TEST

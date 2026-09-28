@@ -35,6 +35,7 @@
 #define USB_LEN_OTG_DESC                              0x03U  /**< Length of OTG descriptor. */
 #define USB_LEN_LANGID_STR_DESC                       0x04U  /**< Length of Language ID String descriptor. */
 #define USB_LEN_OTHER_SPEED_DESC_SIZ                  0x09U  /**< Length of Other Speed Configuration descriptor. */
+#define USB_LEN_DESC_HEADER                           0x02U  /**< Length of the common descriptor header (bLength + bDescriptorType). Ref USB 2.0 9.6. */
 /** @} */
 
 /**
@@ -255,28 +256,6 @@ typedef enum {
 } usb_ch_ep_type_t;
 
 /**
- * @brief Defines the operational speeds for the USB controller.
- */
-typedef enum {
-	USB_SPEED_HIGH = 0,                 /**< High Speed (480 Mbps). */
-	USB_SPEED_HIGH_IN_FULL,             /**< High Speed core running in Full Speed mode. */
-	USB_SPEED_LOW,                      /**< Low Speed (1.5 Mbps). */
-	USB_SPEED_FULL                      /**< Full Speed (12 Mbps). */
-} usb_speed_type_t;
-
-/**
- * @brief USB endpoint information structure.
- * @details Contains basic endpoint configuration: interval, address, max packet size, and type.
- */
-typedef struct {
-	u16 interval;                       /**< Endpoint polling interval in ticks, High-speed means 2^(binterval-1). */
-	u16 mps : 11;                       /**< Maximum Packet Size for this endpoint (0-1024). */
-	u16 type : 2;                       /**< Endpoint type (Control, Bulk, Isochronous, Interrupt). */
-	u8 binterval;                       /**< Polling interval for the endpoint. Full Speed: 1-255, High Speed: 1-16 */
-	u8 addr;                            /**< Endpoint address (includes direction). */
-} usb_ep_info_t;
-
-/**
  * @brief Standard USB setup request packet structure.
  * @details This structure represents the 8-byte setup packet sent
  *          during the setup phase of a control transfer. (USB Spec 2.0, Table 9-2)
@@ -292,29 +271,6 @@ typedef struct {
 /** @} End of USB_Common_API group */
 
 /* Exported variables --------------------------------------------------------*/
-
-/* Exported inline functions -------------------------------------------------*/
-
-/**
-  * @brief  Get the DMA window length of an OUT transfer
-  * @note   The controller receives whole packets only, so it is programmed with
-  *         XFRSIZ = MPS * PKTCNT, refer to usbd_hal_ep_start_transfer. The RX
-  *         buffer shall be able to hold this length, and the cache maintenance
-  *         before the transfer shall cover it.
-  * @param  xfer_len: Requested transfer length, in bytes
-  * @param  mps: Max packet size of the endpoint, in bytes
-  * @retval DMA window length in bytes, xfer_len if mps is invalid
-  */
-static inline u32 usb_get_dma_len(u32 xfer_len, u32 mps)
-{
-	u32 len = xfer_len;
-
-	if (mps != 0U) {
-		len = (xfer_len == 0U) ? mps : (((xfer_len + mps - 1U) / mps) * mps);
-	}
-
-	return len;
-}
 
 /* Exported functions --------------------------------------------------------*/
 

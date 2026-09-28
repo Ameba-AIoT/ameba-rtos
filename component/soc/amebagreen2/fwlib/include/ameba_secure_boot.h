@@ -73,13 +73,31 @@
 
 #define MANIFEST_SIZE_4K_ALIGN		0x1000
 
+/* Manifest RSIP per-image mode (Manifest_TypeDef.RSIPConfig) */
+#define MANIFEST_BOOTLOADER_IMG1_ID                1
+#define MANIFEST_AP_NP_IMG2_ID                     2
+#define MANIFEST_SECURE_IMG3_ID                    3
+/* per-image RSIP mode: bit[3:2]=IMG1, bit[5:4]=IMG2, bit[7:6]=IMG3 */
+#define MANIFEST_RSIP_GET_IMG_MODE(id, cfg)        ((u32)(((cfg) >> 2 * (id)) & 0x00000003))
+/* mode values keep same with manifest.json */
+#define MANIFEST_RSIP_CTR_MODE                     0
+#define MANIFEST_RSIP_XTS_MODE                     1
+#define MANIFEST_RSIP_GCM_MODE                     2
+#define MANIFEST_RSIP_INVALID_MODE                 3
+
+/* Manifest_TypeDef.RsipKeyGrp: IMG2 RSIP key-group selector (covered by the manifest signature).
+ * 1 -> RSIP Key Group 0; any other value -> RSIP Key Group 1, legacy-compatible */
+#define MANIFEST_RSIP_IMG2_KEY_GROUP(Manifest)     (((Manifest)->RsipKeyGrp == 0x01) ? RSIP_KEY_NUM0 : RSIP_KEY_NUM1)
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 typedef struct {
 	u32 Pattern[2];
-	u8 Rsvd1[8];
+	u8 Rsvd1[6];
+	u8 RsipKeyGrp;
+	u8 RSIPConfig;
 	u8 Ver;
 	u8 ImgID;
 	u8 AuthAlg;

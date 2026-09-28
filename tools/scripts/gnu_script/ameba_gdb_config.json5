@@ -12,7 +12,6 @@
     BIN_MAP: [
       ['app', 'FlashFileSize'],
       ['boot', 'XIPBootSize'],
-      ['km4_image3_all', 'Img3FileSize'],
     ],
     FLASH_PARAMS: {
       PC: '0x9000',
@@ -20,7 +19,6 @@
       FLOADER_ADDR: '0x3000A020',
       WR_CHECK_EN: 0,
       IMG2_ADDR: '0x14000',
-      IMG3_ADDR: '0x1E0000',
       TZ_SETUP_EN: 0,
     },
   },
@@ -37,7 +35,6 @@
     BIN_MAP: [
       ['app', 'FlashFileSize'],
       ['boot', 'XIPBootSize'],
-      ['km4_image3_all', 'Img3FileSize'],
       ['dsp', 'DSPFlashSize'],
     ],
     FLASH_PARAMS: {
@@ -46,7 +43,6 @@
       FLOADER_ADDR: '0x3000A020',
       WR_CHECK_EN: 0,
       IMG2_ADDR: '0x14000',
-      IMG3_ADDR: '0x1E0000',
       DSP_ADDR: '0x100000',
       TZ_SETUP_EN: 0,
     },
@@ -72,7 +68,6 @@
       FLOADER_ADDR: '0x30003020',
       WR_CHECK_EN: 1,
       IMG2_ADDR: '0x20000',
-      IMG3_ADDR: '0x1E0000',
       TZ_SETUP_EN: 0,
     },
   },
@@ -89,7 +84,6 @@
     BIN_MAP: [
       ['app', 'FlashFileSize'],
       ['boot', 'XIPBootSize'],
-      ['km4tz_image3_all', 'Img3FileSize'],
     ],
     FLASH_PARAMS: {
       PC: '0x00000020',
@@ -97,7 +91,6 @@
       FLOADER_ADDR: '0x30070020',
       WR_CHECK_EN: 0,
       IMG2_ADDR: '0x14000',
-      IMG3_ADDR: '0x0',
       TZ_SETUP_EN: 1,
       REG_LSYS_BOOT_ADDR_TZ: '0x02F0',
     },
@@ -121,7 +114,6 @@
     BIN_MAP: [
       ['app', 'FlashFileSize'],
       ['boot', 'XIPBootSize'],
-      ['km4tz_image3_all', 'Img3FileSize'],
     ],
     FLASH_PARAMS: {
       PC: '0x00020020',
@@ -129,7 +121,6 @@
       FLOADER_ADDR: '0x30070020',
       WR_CHECK_EN: 0,
       IMG2_ADDR: '0x14000',
-      IMG3_ADDR: '0x0',
       TZ_SETUP_EN: 1,
       REG_LSYS_BOOT_ADDR_TZ: '0x02F0',
     },
@@ -153,7 +144,6 @@
     BIN_MAP: [
       ['app', 'FlashFileSize'],
       ['boot', 'XIPBootSize'],
-      ['km4tz_image3_all', 'Img3FileSize'],
     ],
     FLASH_PARAMS: {
       PC: '0x00020020',
@@ -161,7 +151,6 @@
       FLOADER_ADDR: '0x300B0020',
       WR_CHECK_EN: 0,
       IMG2_ADDR: '0x14000',
-      IMG3_ADDR: '0x0',
       TZ_SETUP_EN: 1,
       REG_LSYS_BOOT_ADDR_TZ: '0x02F0',
     },

@@ -253,20 +253,19 @@ SBOOT_FAIL:
 
 fih_ret BOOT_Extract_SignatureCheck(Manifest_TypeDef *Manifest, SubImgInfo_TypeDef *SubImgInfo, u8 SubImgNum)
 {
-#ifdef RTL8720F_TODO
 	u8 PubKeyHash[32];
 	FIH_DECLARE(fih_rc, FIH_FAILURE);
 	u8 AuthAlg, HashAlg;
 
-	/* 1. check if secure boot enable. */
-	/* 2. read public key hash from OTP if sboot en. Start with a random index to avoid side channel attack. */
+	/* Always validate the compressed image hash, even when secure boot is disabled,
+	 * so a flash-corrupted image is rejected before it is extracted. When sboot is
+	 * off, skip the signature steps and use Manifest->HashAlg directly. */
 	if (FIH_EQ(DISABLE, BOOT_SbootEn_Check(PubKeyHash))) {
-		FIH_RET(FIH_SUCCESS);
+		HashAlg = Manifest->HashAlg;
+		goto IMG_HASH;
 	}
 
 	/* 3. verify signature */
-	/* 3.1 Initialize hash engine */
-
 	/* 3.2 Check algorithm from flash against OTP configuration if need. */
 	FIH_CALL(SBOOT_Validate_Algorithm, fih_rc, &AuthAlg, &HashAlg, Manifest->AuthAlg, Manifest->HashAlg);
 	if (FIH_NOT_EQ(fih_rc, FIH_SUCCESS)) {
@@ -286,6 +285,7 @@ fih_ret BOOT_Extract_SignatureCheck(Manifest_TypeDef *Manifest, SubImgInfo_TypeD
 		goto SBOOT_FAIL;
 	}
 
+IMG_HASH:
 	/* 3.5 calculate and validate image hash */
 	FIH_CALL(SBOOT_Validate_ImgHash, fih_rc, HashAlg, Manifest->ImgHash, SubImgInfo, SubImgNum);
 	if (FIH_NOT_EQ(fih_rc, FIH_SUCCESS)) {
@@ -298,16 +298,6 @@ fih_ret BOOT_Extract_SignatureCheck(Manifest_TypeDef *Manifest, SubImgInfo_TypeD
 SBOOT_FAIL:
 	RTK_LOGE(TAG, "Compressed Img VERIFY FAIL, ret = %d\n", fih_rc);
 	FIH_RET(fih_rc);
-#else
-	UNUSED(Manifest);
-	UNUSED(SubImgInfo);
-	UNUSED(SubImgNum);
-
-	RTK_LOGE(TAG, "Fullmac PQC sboot cannot be verified at this time (PQC stack conflict). "
-			 "The image2 load method needs to be adjusted.\n");
-
-	FIH_RET(FIH_SUCCESS);
-#endif
 }
 
 static u8 BOOT_SbootEn_Check_PQC(u8 *pk_hash)

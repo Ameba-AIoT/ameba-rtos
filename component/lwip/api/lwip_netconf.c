@@ -672,13 +672,20 @@ uint8_t lwip_request_ip(uint8_t idx)
 #if defined(CONFIG_WHC_HOST) && defined(CONFIG_WHC_DEV_TCPIP_KEEPALIVE)
 	/* dev runs the real dhcp client on its own netif; here host just mirrors the
 	 * returned lease onto its netif so host sockets share the same address. */
-	u32 ipinfo[3] = {0};
+	u32 ipinfo[4] = {0};
 	if (idx == NETIF_WLAN_STA_INDEX) {
 		lwip_clear_ip(idx);  /* mirror lwip_dhcp(DHCP_START): drop the previous lease before asking, so a timeout can't leave a stale addr on the netif */
 		ret = (uint8_t)wifi_dev_dhcp(idx, ipinfo);
 		if (ret == DHCP_ADDRESS_ASSIGNED) {
 			lwip_netif_set_up(idx);
 			lwip_set_ip(idx, PP_HTONL(ipinfo[0]), PP_HTONL(ipinfo[2]), PP_HTONL(ipinfo[1]));
+#if LWIP_DNS
+			if (ipinfo[3] != 0) {
+				struct ip_addr dns;
+				ip_addr_set_ip4_u32(&dns, ipinfo[3]);
+				lwip_set_dns(&dns);
+			}
+#endif
 			/* Detect and handle subnet conflict after DHCP success */
 			lwip_manage_subnet_conflict(idx);
 		}

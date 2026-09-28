@@ -2916,7 +2916,7 @@ int ble_mesh_device_main(uint8_t enable)
 #endif
 #if defined(RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT) && RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT
 		bt_app_conf.max_tx_octets = 0x40;
-		bt_app_conf.max_tx_time = 0x200;
+		bt_app_conf.max_tx_time = 0x270;
 #endif
 
 		// Mesh stack will report a event when stack is ready, so should regist callback before bt enable

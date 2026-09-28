@@ -175,8 +175,8 @@ struct whc_xfer_adapter_t {
 	u16 min_protocol_version;
 	u16 max_protocol_version;
 
-#ifdef CONFIG_WHC_HCI_SDIO
-	/* SDIO XFER specific fields for interrupt-driven RX */
+#if defined(CONFIG_WHC_HCI_SDIO) || defined(CONFIG_WHC_HCI_GSPI)
+	/* Interrupt-driven RX synchronisation (SDIO and GSPI) */
 	wait_queue_head_t sdio_rx_wq;
 	u8 sdio_rx_ready;
 #endif

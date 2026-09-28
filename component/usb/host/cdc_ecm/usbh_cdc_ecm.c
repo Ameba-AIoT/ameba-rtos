@@ -107,10 +107,10 @@ typedef struct {
 
 /* Private function prototypes -----------------------------------------------*/
 static int usbh_cdc_ecm_attach(usb_host_t *host);
-static int usbh_cdc_ecm_detach(usb_host_t *host);
-static int usbh_cdc_ecm_process(usb_host_t *host, usbh_event_t *event);
+static void usbh_cdc_ecm_detach(usb_host_t *host);
+static void usbh_cdc_ecm_process(usb_host_t *host, usbh_event_t *event);
 static int usbh_cdc_ecm_setup(usb_host_t *host);
-static int usbh_cdc_ecm_sof(usb_host_t *host);
+static void usbh_cdc_ecm_sof(usb_host_t *host);
 static void usbh_cdc_ecm_process_bulk_out(usb_host_t *host);
 static void usbh_cdc_ecm_process_bulk_in(usb_host_t *host);
 static void usbh_cdc_ecm_process_intr_in(usb_host_t *host);
@@ -698,7 +698,10 @@ static void usbh_cdc_ecm_config_dongle_mac(usb_host_t *host, u16 vid, u16 pid)
 static int usbh_cdc_ecm_ctrl_setting(usb_host_t *host)
 {
 	usbh_cdc_ecm_host_t *cdc = &usbh_cdc_ecm_host;
-	u8 ret_state = HAL_ERR_UNKNOWN;
+	/* HAL_BUSY = sequence still running; only the default case (sub_status past
+	 * the last step) reports HAL_OK. Must not be an error code: the core treats
+	 * any non-OK, non-BUSY setup() status as terminal and drops the class. */
+	u8 ret_state = HAL_BUSY;
 	u8 state = HAL_OK;
 	u16 vid = cdc->vid;
 	u16 pid = cdc->pid;
@@ -947,24 +950,41 @@ static int usbh_cdc_ecm_parse_ctrl(usbh_itf_data_t *itf_data)
 	/* Scan raw_data for the Union Functional Descriptor (identifies the exact
 	 * subordinate data interface) and the ECM Ethernet Networking CS functional
 	 * descriptor (carries iMACAddress); neither is parsed by the generic framework. */
+	/* The buffer comes straight from the device, so every field is bounds-checked
+	 * before it is dereferenced. */
 	cdc->union_data_itf_id = 0xFF;
 	desc = itf_data->raw_data;
 	total = 0;
-	while (total < itf_data->raw_data_len) {
+	while ((u32)total + USB_LEN_DESC_HEADER <= itf_data->raw_data_len) {
 		len = ((usbh_desc_header_t *)desc)->bLength;
-		if (len == 0) {
+		if ((len < USB_LEN_DESC_HEADER) || (((u32)total + len) > itf_data->raw_data_len)) {
+			/* bLength is the only way to locate the next descriptor, so a value below
+			 * the header size or one running past the end leaves no resync point: the
+			 * remaining bytes cannot be framed, so stop instead of skipping. */
+			RTK_LOGS(TAG, RTK_LOG_WARN, "Bad desc len %d at %d\n", len, total);
 			break;
 		}
-		if (((usbh_desc_header_t *)desc)->bDescriptorType == USB_CDC_CS_INTERFACE) {
-			eth_desc = (usb_cdc_ecm_ethernet_function_desc_t *)desc;
-			if (eth_desc->bDescriptorSubtype == USB_CDC_FUNC_DESC_UNION) {
-				union_desc = (usb_cdc_ecm_union_func_desc_t *)desc;
-				cdc->union_data_itf_id = union_desc->bSubordinateInterface0;
-				RTK_LOGS(TAG, RTK_LOG_INFO, "Union data if(%d)\n", cdc->union_data_itf_id);
-			} else if (eth_desc->bDescriptorSubtype == USB_CDC_FUNC_DESC_ETHERNET_NETWORKING) {
-				cdc->iMACAddressStringId = eth_desc->iMACAddress;
-				RTK_LOGS(TAG, RTK_LOG_INFO, "Mac string id(%d)\n", cdc->iMACAddressStringId);
-				cdc->sub_status = CDC_ECM_STATE_GET_MAC_STR;
+		/* bDescriptorSubtype follows the header, so it needs more than a bare header */
+		if ((((usbh_desc_header_t *)desc)->bDescriptorType == USB_CDC_CS_INTERFACE) && (len > USB_LEN_DESC_HEADER)) {
+			if (desc[2] == USB_CDC_FUNC_DESC_UNION) {
+				/* A truncated functional descriptor only costs us that descriptor: the
+				 * block is still framed, so warn and keep scanning the rest. */
+				if (len >= sizeof(usb_cdc_ecm_union_func_desc_t)) {
+					union_desc = (usb_cdc_ecm_union_func_desc_t *)desc;
+					cdc->union_data_itf_id = union_desc->bSubordinateInterface0;
+					RTK_LOGS(TAG, RTK_LOG_INFO, "Union data if(%d)\n", cdc->union_data_itf_id);
+				} else {
+					RTK_LOGS(TAG, RTK_LOG_WARN, "Short union desc %d\n", len);
+				}
+			} else if (desc[2] == USB_CDC_FUNC_DESC_ETHERNET_NETWORKING) {
+				if (len >= sizeof(usb_cdc_ecm_ethernet_function_desc_t)) {
+					eth_desc = (usb_cdc_ecm_ethernet_function_desc_t *)desc;
+					cdc->iMACAddressStringId = eth_desc->iMACAddress;
+					RTK_LOGS(TAG, RTK_LOG_INFO, "Mac string id(%d)\n", cdc->iMACAddressStringId);
+					cdc->sub_status = CDC_ECM_STATE_GET_MAC_STR;
+				} else {
+					RTK_LOGS(TAG, RTK_LOG_WARN, "Short eth desc %d\n", len);
+				}
 			}
 		}
 		desc += len;
@@ -1132,8 +1152,8 @@ static int usbh_cdc_ecm_attach(usb_host_t *host) //parse all ep info
 
 	cdc->state = CDC_ECM_STATE_IDLE;
 
-	if ((cdc->cb != NULL) && (cdc->cb->attach != NULL)) {
-		cdc->cb->attach();
+	if ((cdc->cb != NULL) && (cdc->cb->attached != NULL)) {
+		cdc->cb->attached();
 	}
 
 	return HAL_OK;
@@ -1142,9 +1162,9 @@ static int usbh_cdc_ecm_attach(usb_host_t *host) //parse all ep info
 /**
   * @brief  Usb Detach callback function.
   * @param  host: Host handle
-  * @retval HAL_OK
+  * @retval None
   */
-static int usbh_cdc_ecm_detach(usb_host_t *host)
+static void usbh_cdc_ecm_detach(usb_host_t *host)
 {
 	UNUSED(host);
 	usbh_cdc_ecm_host_t *cdc = &usbh_cdc_ecm_host;
@@ -1155,11 +1175,9 @@ static int usbh_cdc_ecm_detach(usb_host_t *host)
 	usbh_cdc_ecm_deinit_all_pipe();
 	cdc->host = NULL;
 
-	if ((cdc->cb != NULL) && (cdc->cb->detach != NULL)) {
-		cdc->cb->detach();
+	if ((cdc->cb != NULL) && (cdc->cb->detached != NULL)) {
+		cdc->cb->detached();
 	}
-
-	return HAL_OK;
 }
 
 /**
@@ -1200,9 +1218,9 @@ static int usbh_cdc_ecm_setup(usb_host_t *host)
 /**
   * @brief  Usb State Machine handling callback
   * @param  host: Host handle
-  * @retval Status
+  * @retval None
   */
-static int usbh_cdc_ecm_process(usb_host_t *host, usbh_event_t *event)
+static void usbh_cdc_ecm_process(usb_host_t *host, usbh_event_t *event)
 {
 	u8 req_status = HAL_OK;
 	usbh_cdc_ecm_host_t *cdc = &usbh_cdc_ecm_host;
@@ -1235,8 +1253,6 @@ static int usbh_cdc_ecm_process(usb_host_t *host, usbh_event_t *event)
 		usb_os_sleep_ms(1);
 		break;
 	}
-
-	return req_status;
 }
 
 /**
@@ -1244,9 +1260,9 @@ static int usbh_cdc_ecm_process(usb_host_t *host, usbh_event_t *event)
   * @note   This function is called within an interrupt service routine (ISR) context;
   *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param[in] host: USB host handle.
-  * @return 0 on success, non-zero on failure.
+  * @retval None
   */
-static int usbh_cdc_ecm_sof(usb_host_t *host)
+static void usbh_cdc_ecm_sof(usb_host_t *host)
 {
 	usbh_cdc_ecm_host_t *cdc = &usbh_cdc_ecm_host;
 	UNUSED(host);
@@ -1267,8 +1283,6 @@ static int usbh_cdc_ecm_sof(usb_host_t *host)
 			}
 		}
 	}
-
-	return HAL_OK;
 }
 
 /**
@@ -1327,14 +1341,14 @@ static int usbh_cdc_ecm_cb_bulk_receive(u8 *buf, u32 length)
 	}
 #endif
 
-	if ((cdc->cb != NULL) && (cdc->cb->bulk_received != NULL)) {
+	if ((cdc->cb != NULL) && (cdc->cb->received != NULL)) {
 #if 0
 		for (u32 i = 0; i < length; i++) {
 			RTK_LOGS(NOTAG, RTK_LOG_INFO, "%02x ", (u8)buf[i]);
 		}
 		RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n");
 #endif
-		cdc->cb->bulk_received(buf, length);
+		cdc->cb->received(buf, length);
 	}
 
 	return HAL_OK;
@@ -1840,7 +1854,13 @@ int usbh_cdc_ecm_init(const usbh_cdc_ecm_state_cb_t *cb, const usbh_cdc_ecm_priv
 	}
 
 	cdc->cb = cb;
-	usbh_register_class(&usbh_cdc_ecm_driver);
+
+	ret = usbh_register_class(&usbh_cdc_ecm_driver);
+	if (ret != HAL_OK) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Register class fail %d\n", ret);
+		cdc->cb = NULL;
+		goto user_deinit;
+	}
 
 #if USBH_CDC_ECM_STATE_TRACE_ENABLE
 	usbh_cdc_ecm_trace_task_init();
@@ -1848,6 +1868,10 @@ int usbh_cdc_ecm_init(const usbh_cdc_ecm_state_cb_t *cb, const usbh_cdc_ecm_priv
 
 	return ret;
 
+user_deinit:
+	if (cb->deinit != NULL) {
+		cb->deinit();
+	}
 user_init_fail:
 	USBH_CDC_ECM_FREE_MEM(cdc->dongle_ctrl_buf);
 	USBH_CDC_ECM_FREE_MEM(cdc->led_array);
@@ -1859,9 +1883,8 @@ ctrl_buf_fail:
 
 /**
   * @brief  Deinitialize the USB ECM Class
-  * @retval Status
   */
-int usbh_cdc_ecm_deinit(void)
+void usbh_cdc_ecm_deinit(void)
 {
 	usbh_cdc_ecm_host_t *cdc = &usbh_cdc_ecm_host;
 	cdc->eth_hw_connect = 0;
@@ -1888,8 +1911,6 @@ int usbh_cdc_ecm_deinit(void)
 	}
 
 	cdc->cb = NULL;
-
-	return HAL_OK;
 }
 
 /**
@@ -1958,12 +1979,10 @@ u8 usbh_cdc_ecm_usb_is_ready(void)
 /**
   * @brief  Signal upper-layer preparation is complete; allow SOF to schedule
   *         Ethernet data transfer (bulk/intr). See usbh_cdc_ecm_sof().
-  * @retval HAL_OK
   */
-u8 usbh_cdc_ecm_prepare_done(void)
+void usbh_cdc_ecm_prepare_done(void)
 {
 	usbh_cdc_ecm_host.ready_to_xfer = 1;
-	return HAL_OK;
 }
 
 /**

@@ -213,12 +213,10 @@ static int RAM_init(void)
 	return result;
 }
 
-static int RAM_deinit(void)
+static void RAM_deinit(void)
 {
 	usb_os_mfree((void *)usbd_msc_ram_disk_buf);
 	usbd_msc_ram_disk_buf = NULL;
-
-	return HAL_OK;
 }
 
 static int RAM_GetCapacity(u32 *sector_count)
@@ -264,28 +262,48 @@ static int usbd_msc_sd_init(void)
 #endif
 }
 
-static int usbd_msc_sd_deinit(void)
+static void usbd_msc_sd_deinit(void)
 {
+	DSTATUS status;
+
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Disk deinit\n");
 
 #ifdef CONFIG_USBD_MSC_SECOND_FLASH
-	return FLASH_second_disk_Driver.disk_deinitialize();
+	status = FLASH_second_disk_Driver.disk_deinitialize();
 #elif defined CONFIG_USBD_MSC_SD_MODE
-	return SD_disk_Driver.disk_deinitialize();
+	status = SD_disk_Driver.disk_deinitialize();
 #else
-	return SD_disk_spi_Driver.disk_deinitialize();
+	status = SD_disk_spi_Driver.disk_deinitialize();
 #endif
+
+	/* Best effort: a backend that cannot unmount cleanly is reported here. Nothing can be done
+	   about it on a teardown path, and the returned DSTATUS also carries plain status bits such
+	   as STA_NODISK/STA_PROTECT, which are not failures in this context. */
+	if (status != 0) {
+		RTK_LOGS(TAG, RTK_LOG_WARN, "Disk deinit status 0x%02x\n", status);
+	}
 }
 
 static int usbd_msc_sd_getcapacity(u32 *sector_count)
 {
+	int ret;
+	/* GET_SECTOR_COUNT writes an LBA_t, which is 64-bit when FF_LBA64 is set
+	   (CONFIG_FATFS_SUPPORT_EXFAT). Bounce through LBA_t so a 64-bit store
+	   cannot overrun the caller's u32. */
+	LBA_t count = 0;
+
 #ifdef CONFIG_USBD_MSC_SECOND_FLASH
-	return FLASH_second_disk_Driver.disk_ioctl(GET_SECTOR_COUNT, sector_count);
+	ret = FLASH_second_disk_Driver.disk_ioctl(GET_SECTOR_COUNT, &count);
 #elif defined CONFIG_USBD_MSC_SD_MODE
-	return SD_disk_Driver.disk_ioctl(GET_SECTOR_COUNT, sector_count);
+	ret = SD_disk_Driver.disk_ioctl(GET_SECTOR_COUNT, &count);
 #else
-	return SD_disk_spi_Driver.disk_ioctl(GET_SECTOR_COUNT, sector_count);
+	ret = SD_disk_spi_Driver.disk_ioctl(GET_SECTOR_COUNT, &count);
 #endif
+	if (ret == 0) {
+		*sector_count = (u32)count;
+	}
+
+	return ret;
 }
 
 static int usbd_msc_sd_readblocks(u32 sector, u8 *data, u32 count)
@@ -473,7 +491,7 @@ static int usbd_msc_setup(usb_dev_t *dev, usb_setup_req_t *req)
 		case USB_REQ_SET_INTERFACE:
 			if (dev->dev_state != USBD_STATE_CONFIGURED) {
 				ret = HAL_ERR_PARA;
-			} else if (req->wIndex == USBD_MSC_ITF_NUM) {
+			} else if ((req->wIndex == USBD_MSC_ITF_NUM) && (USB_LOW_BYTE(req->wValue) == 0U)) {
 				/* Ref USB 2.0 9.4.10: the endpoints of the selected interface return to
 				   their default state, not halted and data toggle DATA0. This holds even
 				   for an interface with the default setting only, hosts do send the
@@ -486,7 +504,10 @@ static int usbd_msc_setup(usb_dev_t *dev, usb_setup_req_t *req)
 				usbd_ep_clear_stall(dev, &cdev->ep_bulk_in);
 				usbd_ep_clear_stall(dev, &cdev->ep_bulk_out);
 			} else {
-				/* Foreign interface */
+				/* Ref USB 2.0 9.4.9: this function declares alternate setting 0 only, so any
+				   other bAlternateSetting is a request error; likewise a foreign interface
+				   number, which must be rejected for composite dispatch to continue. */
+				ret = HAL_ERR_PARA;
 			}
 			break;
 
@@ -499,6 +520,12 @@ static int usbd_msc_setup(usb_dev_t *dev, usb_setup_req_t *req)
 	/* Class request */
 	case USB_REQ_TYPE_CLASS:
 		if ((req->bmRequestType & USB_REQ_RECIPIENT_MASK) != USB_REQ_RECIPIENT_INTERFACE) {
+			ret = HAL_ERR_PARA;
+			break;
+		}
+		/* Ref MSC BOT 1.0 3.1 and 3.2: wIndex of both class requests is the interface number.
+		   A foreign interface must be rejected so that composite dispatch can continue. */
+		if (req->wIndex != USBD_MSC_ITF_NUM) {
 			ret = HAL_ERR_PARA;
 			break;
 		}
@@ -669,6 +696,13 @@ static void usbd_msc_rx_process(void)
 			cdev->bot_status = USBD_MSC_STATUS_NORMAL;
 			if (usbd_scsi_process_cmd(cdev, cbwcb) != HAL_OK) {
 				if (cdev->phase_error == 1) {
+					if ((cbw_data_len != 0U) && ((cbw->field.bmCBWFlags & 0x80U) == 0U)) {
+						/* Case 13: Ho < Do — the host still owns an OUT data stage that the
+						 * device will not consume. STALL Bulk-Out so those bytes are not
+						 * mis-read as the next CBW; the Phase Error CSW flows on the
+						 * un-stalled Bulk-In pipe and the host then performs reset recovery. */
+						usbd_ep_set_stall(dev, &cdev->ep_bulk_out);
+					}
 					usbd_msc_send_csw(dev, BOT_CSW_PHASE_ERROR);
 					cdev->phase_error = 0;
 				} else if (cbw_data_len == 0U) {
@@ -1082,17 +1116,13 @@ int usbd_msc_disk_init(void)
 	return ret;
 }
 
-int usbd_msc_disk_deinit(void)
+void usbd_msc_disk_deinit(void)
 {
-	int ret;
-
 #ifdef CONFIG_USBD_MSC_RAM_DISK
-	ret = RAM_deinit();
+	RAM_deinit();
 #else
-	ret = usbd_msc_sd_deinit();
+	usbd_msc_sd_deinit();
 #endif
-
-	return ret;
 }
 
 int usbd_msc_init(const usbd_msc_cb_t *cb, const usbd_msc_ep_cfg_t *ep_cfg)
@@ -1118,6 +1148,11 @@ int usbd_composite_msc_init(const usbd_msc_cb_t *cb, const usbd_msc_ep_cfg_t *ep
 	if (ret == HAL_OK) {
 		cdev->from_composite = 1;
 		ret = usbd_composite_register_driver(&usbd_msc_driver);
+		if (ret != HAL_OK) {
+			/* private_init completed, so deinit is its exact reverse. from_composite is
+			   already 1, so the unregister inside is a no-op for an unregistered driver. */
+			usbd_msc_deinit();
+		}
 	}
 	return ret;
 }
@@ -1229,7 +1264,9 @@ void usbd_msc_send_csw(usb_dev_t *dev, u8 status)
 	cdev->bot_state = USBD_MSC_IDLE;
 	cdev->bot_status = USBD_MSC_STATUS_NORMAL;
 
-	usbd_msc_bulk_transmit(dev, (u8 *)csw, USB_MSC_CSW_LEN);
+	if (usbd_msc_bulk_transmit(dev, (u8 *)csw, USB_MSC_CSW_LEN) != HAL_OK) {
+		USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_XFER, cdev->ep_cfg->bulk_in_addr);
+	}
 
 #if USBD_MSC_FIX_CV_TEST_ISSUE
 	/* After BOT Reset, do a one-time OUT endpoint reinit for CV test compliance. */
@@ -1240,6 +1277,12 @@ void usbd_msc_send_csw(usb_dev_t *dev, u8 status)
 	}
 #endif
 
-	/* Prepare EP to Receive next Cmd */
-	usbd_msc_bulk_receive(dev, (u8 *)cbw, USB_MSC_CBW_LEN, USBD_MSC_CBW_BUF_LEN);
+	/* Prepare EP to Receive next Cmd. A failure here means the device is no longer ready
+	 * (suspend/disconnect); the endpoint is left un-armed and the controller NAKs, which is
+	 * the correct flow control, ref USB 2.0 8.4.6. Keep bot_status in RECOVERY so the next
+	 * Bulk-Only Mass Storage Reset re-arms Bulk-Out instead of resuming a lost BOT phase. */
+	if (usbd_msc_bulk_receive(dev, (u8 *)cbw, USB_MSC_CBW_LEN, USBD_MSC_CBW_BUF_LEN) != HAL_OK) {
+		cdev->bot_status = USBD_MSC_STATUS_RECOVERY;
+		USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_XFER, cdev->ep_cfg->bulk_out_addr);
+	}
 }

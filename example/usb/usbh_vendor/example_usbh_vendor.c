@@ -39,12 +39,12 @@
 
 /* Private function prototypes -----------------------------------------------*/
 
-static int vendor_cb_attach(void);
-static int vendor_cb_detach(void);
-static int vendor_cb_setup(void);
-static int vendor_cb_process(usb_host_t *host, u8 msg);
-static int vendor_cb_transmit(u8 ep_type);
-static int vendor_cb_receive(u8 ep_type, u8 *buf, u32 len, int status);
+static void vendor_cb_attached(void);
+static void vendor_cb_detached(void);
+static void vendor_cb_setup(void);
+static void vendor_cb_process(usb_host_t *host, u8 msg);
+static void vendor_cb_transmitted(u8 ep_type);
+static void vendor_cb_received(u8 ep_type, u8 *buf, u32 len, int status);
 /* Private variables ---------------------------------------------------------*/
 static const char *const TAG = "VND";
 
@@ -76,9 +76,14 @@ static const usbh_config_t usbh_cfg = {
 	.main_task_stack_size = CONFIG_USBH_VENDOR_MAIN_TASK_STACK_SIZE,
 	.main_task_priority = CONFIG_USBH_VENDOR_MAIN_TASK_PRIORITY,
 	.tick_source = USBH_SOF_TICK,
-#if defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RLE1509)
-	/*FIFO total depth is 1024, reserve 12 for DMA addr*/
+#if defined(CONFIG_AMEBAGREEN2)
+	/*FIFO total 1024 DWORD, resv 12 DWORD for DMA*/
 	.rx_fifo_depth = 500,
+	.nptx_fifo_depth = 256,
+	.ptx_fifo_depth = 256,
+#elif defined(CONFIG_RLE1509)
+	/*FIFO total 1024 DWORD, resv 48 DWORD */
+	.rx_fifo_depth = 464,
 	.nptx_fifo_depth = 256,
 	.ptx_fifo_depth = 256,
 #elif defined (CONFIG_AMEBAL2)
@@ -95,11 +100,11 @@ static const usbh_config_t usbh_cfg = {
 };
 
 static const usbh_vendor_cb_t vendor_usr_cb = {
-	.attach = vendor_cb_attach,
-	.detach = vendor_cb_detach,
+	.attached = vendor_cb_attached,
+	.detached = vendor_cb_detached,
 	.setup = vendor_cb_setup,
-	.transmit = vendor_cb_transmit,
-	.receive  = vendor_cb_receive,
+	.transmitted = vendor_cb_transmitted,
+	.received  = vendor_cb_received,
 };
 
 static const usbh_user_cb_t usbh_usr_cb = {
@@ -110,37 +115,31 @@ static const usbh_user_cb_t usbh_usr_cb = {
 
 /**
   * @brief  Vendor attach callback
-  * @retval Status
   */
-static int vendor_cb_attach(void)
+static void vendor_cb_attached(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "ATTACH\n");
 	rtos_sema_give(vendor_attach_sema);
-	return HAL_OK;
 }
 
 /**
   * @brief  Vendor detach callback
-  * @retval Status
   */
-static int vendor_cb_detach(void)
+static void vendor_cb_detached(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "DETACH\n");
 #if CONFIG_USBH_VENDOR_HOT_PLUG_TEST
 	rtos_sema_give(vendor_detach_sema);
 #endif
-	return HAL_OK;
 }
 
 /**
   * @brief  Vendor setup callback
-  * @retval Status
   */
-static int vendor_cb_setup(void)
+static void vendor_cb_setup(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "SETUP\n");
 	vendor_is_ready = 1;
-	return HAL_OK;
 }
 
 /**
@@ -151,9 +150,8 @@ static int vendor_cb_setup(void)
   * @param  buf: RX buffer
   * @param  len: RX data length (in bytes)
   * @param  status: Transfer status
-  * @retval Status
   */
-static int vendor_cb_receive(u8 ep_type, u8 *buf, u32 len, int status)
+static void vendor_cb_received(u8 ep_type, u8 *buf, u32 len, int status)
 {
 	UNUSED(buf);
 	u16 vendor_bulk_in_mps = usbh_vendor_get_bulk_ep_mps();
@@ -205,7 +203,6 @@ static int vendor_cb_receive(u8 ep_type, u8 *buf, u32 len, int status)
 	default:
 		break;
 	}
-	return HAL_OK;
 }
 
 /**
@@ -213,9 +210,8 @@ static int vendor_cb_receive(u8 ep_type, u8 *buf, u32 len, int status)
   * @note   This function is called within an interrupt service routine (ISR) context;
   *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  ep_type: Endpoint type
-  * @retval Status
   */
-static int vendor_cb_transmit(u8 ep_type)
+static void vendor_cb_transmitted(u8 ep_type)
 {
 	switch (ep_type) {
 	case USB_CH_EP_TYPE_BULK:
@@ -230,8 +226,6 @@ static int vendor_cb_transmit(u8 ep_type)
 	default:
 		break;
 	}
-
-	return HAL_OK;
 }
 
 static void vendor_intr_loopback_test(void)
@@ -349,7 +343,7 @@ static void vendor_isoc_test(void)
 	RTK_LOGS(TAG, RTK_LOG_INFO, "ISOC test PASS\n");
 }
 
-static int vendor_cb_process(usb_host_t *host, u8 msg)
+static void vendor_cb_process(usb_host_t *host, u8 msg)
 {
 	UNUSED(host);
 
@@ -364,8 +358,6 @@ static int vendor_cb_process(usb_host_t *host, u8 msg)
 	default:
 		break;
 	}
-
-	return HAL_OK;
 }
 
 #if CONFIG_USBH_VENDOR_HOT_PLUG_TEST

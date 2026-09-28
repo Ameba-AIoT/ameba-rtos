@@ -89,12 +89,12 @@ typedef struct wifi_cast_node {
  * @brief Wifi cast frame send parameters.
  */
 typedef struct wifi_cast_frame_info {
-	u32 wait_ms;                    /* total ACK wait budget (ms) when ack=1; spread evenly across retransmit_count attempts */
+	u32 wait_ms;                    /* total ACK wait budget (ms) when ack=1; spread across (1 + retransmit_count) attempts */
 	u16 magic_num;                  /* magic number */
 	u16 duration_id;                /* duration/id field in 802.11 MAC header (unit: us), 0 means not set */
 	u8 ack;                         /* set enable or disable ACK, set to true if need rx node response with ack */
 	u8 retry_limit;                 /* tx packet retry times (hardware retry limit times) */
-	u8 retransmit_count;            /* tx packet retransmit count by software */
+	u8 retransmit_count;            /* extra TX attempts after the first send; 0 = send once, N = send N+1 times total */
 	u8 channel;                     /* tx packet channel, set to WIFI_CAST_CHANNEL_CURRENT or WIFI_CAST_CHANNEL_ALL */
 	u8 tx_rate;                     /* tx packet rate, val: RTW_RATE_1M, RTW_RATE_2M...*/
 	wifi_cast_ac_t ac_queue;        /* tx AC queue, see wifi_cast_ac_t */
@@ -105,7 +105,7 @@ typedef struct wifi_cast_frame_info {
     { \
         .wait_ms = 3000, \
         .retry_limit = 4, \
-        .retransmit_count = 6, \
+        .retransmit_count = 1, \
         .tx_rate = RTW_RATE_54M, \
         .ac_queue = WIFI_CAST_AC_VO, \
     }

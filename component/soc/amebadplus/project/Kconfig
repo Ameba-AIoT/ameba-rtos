@@ -40,7 +40,7 @@ config SUPPORT_USB_SHARED_DFIFO
     def_bool y
 
 # USB INIC device
-config SUPPORT_USBD_INIC
+config SUPPORT_USBD_WHC
     def_bool y
 
 # USB UAC device
@@ -216,9 +216,9 @@ menu "CONFIG WHC INTF"
                 bool "WHC_INTF_USB"
                 select USB_HAL_LIB
                 select USB_DEVICE_EN
-                select USBD_INIC
+                select USBD_WHC
                 select USB_OTG_EN_MENU
-                select USBD_INIC_MENU if SUPPORT_USBD_INIC
+                select USBD_WHC_MENU if SUPPORT_USBD_WHC
             config WHC_INTF_SPI
                 bool "WHC_INTF_SPI"
             config WHC_INTF_UART

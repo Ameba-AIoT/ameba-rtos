@@ -35,6 +35,7 @@
 /* Private macros ------------------------------------------------------------*/
 
 /* Private function prototypes -----------------------------------------------*/
+static void usbd_uvc_copy_int_response(usbd_uvc_request_data_t *resp, const int *value, u16 wlength);
 static int usbd_uvc_send_response(usbd_uvc_dev_t *uvc, usbd_uvc_request_data_t *data);
 static int usbd_uvc_receive_response(usbd_uvc_dev_t *uvc, usbd_uvc_req_data_t *uvc_event);
 static void usbd_uvc_events_process_standard(usbd_uvc_dev_t *dev, usb_setup_req_t *ctrl, usbd_uvc_request_data_t *resp);
@@ -79,6 +80,25 @@ int usbd_uvc_parameter_init(void)
 }
 
 /**
+  * @brief  Copy a single control value (always sizeof(int) bytes) into resp->data
+  *         and set resp->length to the number of bytes actually copied.
+  * @note   Bounds the copy by the source size, the resp->data capacity, and wlength
+  *         so a malformed/short wLength is honored instead of over-reading resp->data
+  *         (Ref UVC GET_CUR/MIN/MAX/DEF/RES/LEN/INFO, all of which carry a 4-byte value).
+  * @param  resp     Response buffer
+  * @param  value    Pointer to the 4-byte source value
+  * @param  wlength  Host-requested wLength for this control request
+  * @retval None
+  */
+static void usbd_uvc_copy_int_response(usbd_uvc_request_data_t *resp, const int *value, u16 wlength)
+{
+	u32 len = MIN((u32)sizeof(*value), (u32)sizeof(resp->data));
+	len = MIN(len, (u32)wlength);
+	usb_os_memcpy((void *)resp->data, (const void *)value, len);
+	resp->length = (int)len;
+}
+
+/**
   * @brief  Send control response data to host via EP0 IN
   * @param  uvc   UVC device context
   * @param  data  Response data to be sent
@@ -88,10 +108,26 @@ static int usbd_uvc_send_response(usbd_uvc_dev_t *uvc, usbd_uvc_request_data_t *
 {
 	int ret = 0;
 	usbd_ep_t *ep0_in = &uvc->dev->ep0_in;
+	u32 len;
+
 	if (data->length > 0) {
-		usb_os_memcpy((void *)ep0_in->xfer_buf, (const void *)data->data, data->length);
-		ep0_in->xfer_len = data->length;
+		/* Final bounds check: cap by resp->data capacity regardless of what the
+		   process_* handlers computed, and by the EP0 IN transfer buffer capacity
+		   so a caller-side mistake can never overflow ep0_in->xfer_buf (Ref USB 2.0
+		   8.5.3). */
+		len = (u32)data->length;
+		len = MIN(len, (u32)sizeof(data->data));
+		if (ep0_in->xfer_buf_len != 0U) {
+			len = MIN(len, ep0_in->xfer_buf_len);
+		}
+		usb_os_memcpy((void *)ep0_in->xfer_buf, (const void *)data->data, len);
+		ep0_in->xfer_len = len;
 		usbd_ep_transmit(uvc->dev, ep0_in);
+	} else {
+		/* No handler produced a response (unknown entity/selector) — stall instead of
+		   leaving the host waiting on the data/status stage until EP0 timeout. */
+		usbd_ep_set_stall(uvc->dev, ep0_in);
+		ret = -1;
 	}
 	return ret;
 }
@@ -143,55 +179,59 @@ void usbd_uvc_get_command_process_unit(usbd_uvc_dev_t *dev, usb_setup_req_t *ctr
 			break;
 
 		case USBD_UVC_GET_CUR:
-			usb_os_memcpy((void *)resp->data, (const void *)&p_data.cur, ctrl->wLength);
+			usbd_uvc_copy_int_response(resp, &p_data.cur, ctrl->wLength);
 			break;
 
 		case USBD_UVC_GET_MIN:
-			usb_os_memcpy((void *)resp->data, (const void *)&p_data.min, ctrl->wLength);
+			usbd_uvc_copy_int_response(resp, &p_data.min, ctrl->wLength);
 			break;
 		case USBD_UVC_GET_MAX:
-			usb_os_memcpy((void *)resp->data, (const void *)&p_data.max, ctrl->wLength);
+			usbd_uvc_copy_int_response(resp, &p_data.max, ctrl->wLength);
 			break;
 		case USBD_UVC_GET_DEF:
-			usb_os_memcpy((void *)resp->data, (const void *)&p_data.def, ctrl->wLength);
+			usbd_uvc_copy_int_response(resp, &p_data.def, ctrl->wLength);
 			break;
 
 		case USBD_UVC_GET_RES:
-			usb_os_memcpy((void *)resp->data, (const void *)&p_data.res, ctrl->wLength);
+			usbd_uvc_copy_int_response(resp, &p_data.res, ctrl->wLength);
 			break;
 
 		case USBD_UVC_GET_LEN:
-			usb_os_memcpy((void *)resp->data, (const void *)&p_data.len, ctrl->wLength);
+			usbd_uvc_copy_int_response(resp, &p_data.len, ctrl->wLength);
 			break;
 
 		case USBD_UVC_GET_INFO:
-			usb_os_memcpy((void *)resp->data, (const void *)&p_data.info, ctrl->wLength);
+			usbd_uvc_copy_int_response(resp, &p_data.info, ctrl->wLength);
 			break;
 		}
 	} else if (dev->command_entity == UVC_VC_EXTENSION_UNIT) {
+		/* NOTE: dead code today — usbd_uvc_events_process_control() only calls this
+		   function when command_entity == UVC_VC_PROCESS_UNIT; the real Extension Unit
+		   GET path is get_command_extension_unit() below. Kept bounded so it stays safe
+		   if this branch is ever wired up. */
 		switch (ctrl->bRequest) {
 		case USBD_UVC_SET_CUR:
 			break;
 		case USBD_UVC_GET_CUR:
-			usb_os_memcpy((void *)resp->data, (const void *)&x_data.cur, ctrl->wLength);
+			usbd_uvc_copy_int_response(resp, &x_data.cur, ctrl->wLength);
 			break;
 		case USBD_UVC_GET_MIN:
-			usb_os_memcpy((void *)resp->data, (const void *)&x_data.min, ctrl->wLength);
+			usbd_uvc_copy_int_response(resp, &x_data.min, ctrl->wLength);
 			break;
 		case USBD_UVC_GET_MAX:
-			usb_os_memcpy((void *)resp->data, (const void *)&x_data.max, ctrl->wLength);
+			usbd_uvc_copy_int_response(resp, &x_data.max, ctrl->wLength);
 			break;
 		case USBD_UVC_GET_DEF:
-			usb_os_memcpy((void *)resp->data, (const void *)&x_data.def, ctrl->wLength);
+			usbd_uvc_copy_int_response(resp, &x_data.def, ctrl->wLength);
 			break;
 		case USBD_UVC_GET_RES:
-			usb_os_memcpy((void *)resp->data, (const void *)&x_data.res, ctrl->wLength);
+			usbd_uvc_copy_int_response(resp, &x_data.res, ctrl->wLength);
 			break;
 		case USBD_UVC_GET_LEN:
-			usb_os_memcpy((void *)resp->data, (const void *)&x_data.len, ctrl->wLength);
+			usbd_uvc_copy_int_response(resp, &x_data.len, ctrl->wLength);
 			break;
 		case USBD_UVC_GET_INFO:
-			usb_os_memcpy((void *)resp->data, (const void *)&x_data.info, ctrl->wLength);
+			usbd_uvc_copy_int_response(resp, &x_data.info, ctrl->wLength);
 			break;
 		}
 	}
@@ -218,25 +258,25 @@ __weak void get_command_extension_unit(usbd_uvc_dev_t *dev, usb_setup_req_t *ctr
 	case USBD_UVC_SET_CUR:
 		break;
 	case USBD_UVC_GET_CUR:
-		usb_os_memcpy((void *)resp->data, (const void *)&x_data.cur, sizeof(int));
+		usbd_uvc_copy_int_response(resp, &x_data.cur, ctrl->wLength);
 		break;
 	case USBD_UVC_GET_MIN:
-		usb_os_memcpy((void *)resp->data, (const void *)&x_data.min, sizeof(int));
+		usbd_uvc_copy_int_response(resp, &x_data.min, ctrl->wLength);
 		break;
 	case USBD_UVC_GET_MAX:
-		usb_os_memcpy((void *)resp->data, (const void *)&x_data.max, sizeof(int));
+		usbd_uvc_copy_int_response(resp, &x_data.max, ctrl->wLength);
 		break;
 	case USBD_UVC_GET_DEF:
-		usb_os_memcpy((void *)resp->data, (const void *)&x_data.def, sizeof(int));
+		usbd_uvc_copy_int_response(resp, &x_data.def, ctrl->wLength);
 		break;
 	case USBD_UVC_GET_RES:
-		usb_os_memcpy((void *)resp->data, (const void *)&x_data.res, sizeof(int));
+		usbd_uvc_copy_int_response(resp, &x_data.res, ctrl->wLength);
 		break;
 	case USBD_UVC_GET_LEN:
-		usb_os_memcpy((void *)resp->data, (const void *)&x_data.len, sizeof(int));
+		usbd_uvc_copy_int_response(resp, &x_data.len, ctrl->wLength);
 		break;
 	case USBD_UVC_GET_INFO:
-		usb_os_memcpy((void *)resp->data, (const void *)&x_data.info, sizeof(int));
+		usbd_uvc_copy_int_response(resp, &x_data.info, ctrl->wLength);
 		break;
 	}
 }
@@ -273,7 +313,6 @@ static void
 usbd_uvc_events_process_control(usbd_uvc_dev_t *dev, usb_setup_req_t *ctrl,
 								usbd_uvc_request_data_t *resp)
 {
-	resp->length = ctrl->wLength;
 	dev->control = ctrl->wValue >> 8; //stream 0:control 1:stream ,control for selector ex:brightness
 	dev->command_interface = ctrl->wIndex & 0xff; //0 for ocntrol 1 for streaming
 	dev->command_entity = (ctrl->wIndex >> 8) & 0xff; //2 process unit 3 for extension unit
@@ -393,11 +432,13 @@ usbd_uvc_events_process_streaming(usbd_uvc_dev_t *dev, usb_setup_req_t *ctrl,
 	}
 
 	ctrl_stream = (usbd_uvc_streaming_control_t *)&resp->data;
+	/* Default for GET_CUR/MIN/MAX/DEF/RES below, which fill the whole struct;
+	   GET_LEN/GET_INFO override this with their own fixed response length. */
 	resp->length = sizeof * ctrl_stream;
-	resp->length = ctrl->wLength;
 	switch (req) {
 	case USBD_UVC_SET_CUR:
 		dev->control = cs;
+		resp->length = 0; /* SET_CUR is H2D; usbd_uvc_send_response() is never called for it */
 		break;
 
 	case USBD_UVC_GET_CUR:

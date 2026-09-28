@@ -46,13 +46,13 @@ static const struct whc_mem_region_t rtl8721f_mem_regions[] = {
 	{0}  /* Terminator */
 };
 
-#ifdef CONFIG_WHC_HCI_SDIO
+#if defined(CONFIG_WHC_HCI_SDIO) || defined(CONFIG_WHC_HCI_GSPI)
 #define WHC_FW_1_BASE "RTL8851FS_FW_1"
 #define WHC_FW_2_BASE "RTL8851FS_FW_2"
 #else /* USB */
 #define WHC_FW_1_BASE "RTL8851FU_FW_1"
 #define WHC_FW_2_BASE "RTL8851FU_FW_2"
-#endif /* CONFIG_WHC_HCI_SDIO */
+#endif /* CONFIG_WHC_HCI_SDIO || CONFIG_WHC_HCI_GSPI */
 
 #define WHC_FW_1_NAME WHC_FW_1_BASE ".bin"
 #define WHC_FW_2_NAME WHC_FW_2_BASE ".bin"

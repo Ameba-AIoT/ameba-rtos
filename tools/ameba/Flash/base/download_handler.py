@@ -82,7 +82,8 @@ class Ameba(object):
                  remote_server: Optional[str] = None,
                  remote_port: Optional[int] = None,
                  remote_password: Optional[str] = None,
-                 close_tcp_on_cleanup: bool = False):
+                 close_tcp_on_cleanup: bool = False,
+                 cancel_event=None):
         self.logger = logger
         self.setting = setting
         self.profile_info = profile
@@ -92,6 +93,7 @@ class Ameba(object):
         self.remote_port = remote_port
         self.remote_password = remote_password
         self.close_tcp_on_cleanup = close_tcp_on_cleanup
+        self.cancel_event = cancel_event
         self.is_usb = self.is_realtek_usb() if not remote_server else False
         self.initial_serial_port()
         self.baudrate = baudrate
@@ -129,6 +131,30 @@ class Ameba(object):
             if start <= partition_offset < end:
                 return True
         return False
+
+    def is_cancelled(self):
+        return self.cancel_event is not None and self.cancel_event.is_set()
+
+    def cancel_io(self):
+        if self.serial_port is None:
+            return
+
+        for method_name in ("cancel_read", "cancel_write"):
+            method = getattr(self.serial_port, method_name, None)
+            if callable(method):
+                try:
+                    method()
+                except Exception as err:
+                    self.logger.debug(f"{method_name} failed during cancellation: {err}")
+
+        try:
+            if self.is_open():
+                if RemoteSerial and isinstance(self.serial_port, RemoteSerial):
+                    self.serial_port.close(close_tcp=self.close_tcp_on_cleanup)
+                else:
+                    self.serial_port.close()
+        except Exception as err:
+            self.logger.debug(f"Close serial port during cancellation failed: {err}")
 
     def clean_up(self):
         if self.serial_port:
@@ -251,15 +277,16 @@ class Ameba(object):
                                 return ErrType.SYS_IO
                             ret = ErrType.OK
                             break
-                        except:
+                        except Exception as err:
                             ret = ErrType.SYS_IO
+                            self.logger.error(f"Exception occurs when try to close port: {str(err)}")
                         time.sleep(0.1)
                     if ret != ErrType.OK:
                         self.logger.warning(f"Close serial port failed")
 
                 if self.serial_port.baudrate != baud:
                     self.serial_port.baudrate = baud
-                    time.sleep(delay_s)
+                time.sleep(delay_s)
 
                 if self.is_usb:
                     for rty in range(10):
@@ -267,11 +294,12 @@ class Ameba(object):
                             self.serial_port.open()
                             ret = ErrType.OK
                             break
-                        except:
+                        except Exception as err:
                             ret = ErrType.SYS_IO
+                            self.logger.error(f"Exception occurs when try to reopen port: {str(err)}")
                         time.sleep(0.1)
-        except Exception as e:
-            self.logger.error(f"An exception occurs when switching baudrate: {str(e)}")
+        except Exception as err:
+            self.logger.error(f"An exception occurs when switching baudrate: {str(err)}")
             ret = ErrType.SYS_IO
 
         if ret == ErrType.OK:
@@ -290,6 +318,8 @@ class Ameba(object):
             data_buffer = bytearray()
 
             while len(data_buffer) < size:
+                if self.is_cancelled():
+                    return ErrType.SYS_CANCEL, bytes(data_buffer) if data_buffer else None
                 if (time.monotonic() - start_time) > timeout_seconds:
                     return ErrType.DEV_TIMEOUT, bytes(data_buffer) if data_buffer else None
 
@@ -310,9 +340,13 @@ class Ameba(object):
         return ret, read_ch
 
     def write_bytes(self, data_bytes):
+        if self.is_cancelled():
+            raise InterruptedError("Flash operation cancelled")
         self.serial_port.write(data_bytes)
 
     def write_string(self, string):
+        if self.is_cancelled():
+            raise InterruptedError("Flash operation cancelled")
         bytes_array = string.encode("utf-8")
         self.serial_port.write(bytes_array)
 
@@ -327,73 +361,6 @@ class Ameba(object):
                     return True
         else:
             return False
-
-    def switch_baudrate_old(self, baud, delay_s, force=False):
-        ret = ErrType.OK
-
-        if (baud == self.serial_port.baudrate) and (not force):
-            self.logger.debug(f"Reactive port {self.serial_port.port} ignored, baudrate no change")
-            return ret
-
-        if baud != self.serial_port.baudrate:
-            self.logger.debug(
-                f"Reactive port {self.serial_port.port} with baudrate from {self.serial_port.baudrate} to {baud}")
-        else:
-            self.logger.debug(
-                f"Reactive port {self.serial_port.port} with baudrate {baud}")
-
-        # if uart dtr/rts enable, should skip close/reopen operation
-        # if USB port, should close/reopen port when switch baudrate
-        if self.is_usb:
-            # check if already activated
-            for retry in range(10):
-                try:
-                    if self.serial_port.is_open:
-                        self.serial_port.close()
-
-                    deadline = time.monotonic() + 3.0
-                    while self.serial_port.is_open and time.monotonic() < deadline:
-                        time.sleep(0.01)
-                    if self.serial_port.is_open:
-                        self.logger.error(f"{self.serial_port.port} close timeout")
-                        return ErrType.SYS_IO
-                    ret = ErrType.OK
-                except:
-                    ret = ErrType.SYS_IO
-
-                if ret == ErrType.OK:
-                    break
-
-                time.sleep(0.1)
-
-            if ret != ErrType.OK:
-                self.logger.warning(f"Failed to close {self.serial_port.port} when reactive it.")
-
-            time.sleep(delay_s)
-
-        if self.serial_port.baudrate != baud:
-            self.serial_port.baudrate = baud
-
-        if self.is_usb:
-            ret = ErrType.OK
-            for rty in range(10):
-                try:
-                    self.serial_port.open()
-                    ret = ErrType.OK
-                except:
-                    ret = ErrType.SYS_IO
-
-                if ret == ErrType.OK:
-                    break
-
-                time.sleep(0.1)
-
-        if ret == ErrType.OK:
-            self.logger.debug(f"Reactive port {self.serial_port.port} ok")
-        else:
-            self.logger.debug(f"Reactive port {self.serial_port.port} fail")
-
-        return ret
 
     def check_download_mode(self):
         ret = ErrType.SYS_IO
@@ -501,6 +468,7 @@ class Ameba(object):
             self.logger.info(f'* FlashPageSize: {self.device_info.flash_page_size}B')
 
         self.logger.info(f'* WiFiMAC: {self.device_info.get_wifi_mac_text()}')
+        self.logger.info(f'* UUID: 0x{self.device_info.uuid:08X}')
 
         if (self.device_info.did != self.profile_info.device_id) and (self.device_info.did != 0xFFFF):
             self.logger.error("Device ID mismatch:")
@@ -632,17 +600,16 @@ class Ameba(object):
                 self.logger.info(f"1: Try operation with block protected(may fail)")
                 self.logger.info(f"2: Remove the protection and restore the protection after operation")
                 self.logger.info(f"3: Abort the operation")
-                retry = 0
-                while retry < 3:
+                for _ in range(3):
                     try:
                         follow_up_action = int(input("Please Input the selected action index: ").strip())
-                        if RtSettings.FLASH_PROTECTION_PROCESS_PROMPT < follow_up_action <= RtSettings.FLASH_PROTECTION_PROCESS_ABORT:
-                            break
-                        else:
-                            self.logger.info(f"{follow_up_action} is invalid")
                     except Exception as err:
                         self.logger.error(f"Input is invalid: {err}")
                         continue
+
+                    if RtSettings.FLASH_PROTECTION_PROCESS_PROMPT < follow_up_action <= RtSettings.FLASH_PROTECTION_PROCESS_ABORT:
+                        break
+                    self.logger.info(f"{follow_up_action} is invalid")
                 else:
                     return ErrType.SYS_PARAMETER
 
@@ -1078,6 +1045,8 @@ class Ameba(object):
         total_capacity = self.device_info.flash_capacity
         addr = 0  # NAND physical addresses start at 0
         while addr < total_capacity:
+            if self.is_cancelled():
+                return ErrType.SYS_CANCEL
             ret = self.floader_handler.erase_flash(
                 MemoryInfo.MEMORY_TYPE_NAND,
                 addr,
@@ -1432,6 +1401,9 @@ class Ameba(object):
                 progress_int = 0
 
                 while not is_last_page:
+                    if self.is_cancelled():
+                        ret = ErrType.SYS_CANCEL
+                        break
                     if addr >= image_info.end_address:
                         self.logger.debug(f"Overrange target={hex(addr)}, end={hex(image_info.end_address)}")
                         ret = ErrType.SYS_OVERRANGE
@@ -1453,6 +1425,9 @@ class Ameba(object):
 
                     i = 0
                     while i < pages_per_block:
+                        if self.is_cancelled():
+                            ret = ErrType.SYS_CANCEL
+                            break
                         chunk_data = read_chunk()
                         read_len = len(chunk_data)
 
@@ -1547,6 +1522,9 @@ class Ameba(object):
                     chunk_data += padding_char * (page_size - read_len)
 
                 while read_len > 0:
+                    if self.is_cancelled():
+                        ret = ErrType.SYS_CANCEL
+                        break
                     if write_pages == 0:
                         if (addr % (64 * FlashUtils.NorDefaultPageSize.value)) == 0 and \
                                 ((aligned_img_length - tx_sum >= 64 * FlashUtils.NorDefaultPageSize.value)):
@@ -1734,7 +1712,7 @@ class Ameba(object):
                             self.logger.debug(f"Readback diagnostic error: {e}")
                 else:
                     self.logger.info(
-                        f"Checksum OK: {hex(checksum)}")
+                        f"Checksum OK: tool={hex(checksum)}, device={hex(cal_checksum)}")
             else:
                 self.logger.info(f"Checksum read fail: {ret}")
 
@@ -1748,6 +1726,8 @@ class Ameba(object):
             erase_size = 0
             addr = self.erase_info.start_address
             while addr < self.erase_info.end_address:
+                if self.is_cancelled():
+                    return ErrType.SYS_CANCEL
                 ret = self.floader_handler.erase_flash(self.erase_info.memory_type,
                                                        addr,
                                                        addr + self.device_info.flash_block_size(),
@@ -1782,6 +1762,8 @@ class Ameba(object):
                 addr = self.erase_info.start_address
                 size_erased = 0
                 while size_erased < self.erase_info.size_in_byte():
+                    if self.is_cancelled():
+                        return ErrType.SYS_CANCEL
                     if ((addr % (64 * FlashUtils.NorDefaultPageSize.value)) == 0) and \
                             ((
                                      self.erase_info.size_in_byte() - size_erased) >= 64 * FlashUtils.NorDefaultPageSize.value):

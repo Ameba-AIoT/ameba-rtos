@@ -37,9 +37,13 @@ static const usbd_config_t dfu_cfg = {
 	.diag_enable = 1,
 #if defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBAD) || defined(CONFIG_AMEBADPLUS)
 	.nptx_max_epmis_cnt = 1U,
-#elif defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RLE1509)
+#elif defined(CONFIG_AMEBAGREEN2)
 	/* DFIFO total 1024 DWORD, resv 12 DWORD for DMA addr, EP0 fixed 32 DWORD */
 	.rx_fifo_depth  = 980U,
+	.ptx_fifo_depth = {0U, 0U, 0U, 0U, 0U,},
+#elif defined(CONFIG_RLE1509)
+	/*DFIFO total 1024 DWORD, resv 48 DWORD and EP0 fixed 32 DWORD*/
+	.rx_fifo_depth  = 944U,
 	.ptx_fifo_depth = {0U, 0U, 0U, 0U, 0U,},
 #elif defined(CONFIG_AMEBAL2)
 	.rx_fifo_depth  = 661U,
@@ -51,7 +55,9 @@ static const usbd_config_t dfu_cfg = {
 };
 
 static u8  dfu_demo_fw_buf[USBD_DFU_DEMO_BUF_SIZE];
-static u32 dfu_demo_fw_len;
+/* Written by write() (write_task context), read by read() (ISR context), i.e.
+ * two different cores under SMP: never cache it across the two reads below */
+static volatile u32 dfu_demo_fw_len;
 
 #if USBD_DFU_WILL_DETACH
 static rtos_sema_t dfu_reconf_sema;
@@ -102,11 +108,15 @@ static int dfu_cb_read(u16 block_num, u8 *buf, u32 max_len)
 {
 	u32 offset = (u32)block_num * USBD_DFU_XFER_SIZE;
 	u32 remaining;
+	/* Snapshot the length once: write() may extend it concurrently on another
+	 * core, and re-reading it between the bound check and the subtraction below
+	 * could underflow remaining into a huge memcpy */
+	u32 len = dfu_demo_fw_len;
 
-	if (offset >= dfu_demo_fw_len) {
+	if (offset >= len) {
 		return 0;  /* EOF */
 	}
-	remaining = dfu_demo_fw_len - offset;
+	remaining = len - offset;
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Read blk %u offset %u max %u (remain %u B)\n",
 			 block_num, offset, max_len, remaining);
 	if (remaining > max_len) {
@@ -167,14 +177,15 @@ static void usbd_dfu_reconf_thread(void *param)
 	for (;;) {
 		ret = rtos_sema_take(dfu_reconf_sema, RTOS_SEMA_MAX_COUNT);
 		if (ret != RTK_SUCCESS) {
+			/* Unexpected: tear the stack down here as well, so that the sema has
+			   no producer left when it is freed below */
+			usbd_dfu_deinit();
+			usbd_deinit();
 			break;
 		}
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Reconf: re-enumerating\n");
 		usbd_dfu_deinit();
-		ret = usbd_deinit();
-		if (ret != HAL_OK) {
-			break;
-		}
+		usbd_deinit();
 		//RTK_LOGS(TAG, RTK_LOG_INFO, "Free heap: 0x%x\n", rtos_mem_get_free_heap_size());
 		ret = usbd_init(&dfu_cfg);
 		if (ret != HAL_OK) {
@@ -189,7 +200,10 @@ static void usbd_dfu_reconf_thread(void *param)
 	}
 
 	RTK_LOGS(TAG, RTK_LOG_ERROR, "Reconf thread fail\n");
+	/* The stack is fully deinited here, no reconf() can give the sema any more.
+	   This thread is its only user left: free it as the last owner. */
 	rtos_sema_delete(dfu_reconf_sema);
+	dfu_reconf_sema = NULL;
 	rtos_task_delete(NULL);
 }
 #endif /* USBD_DFU_WILL_DETACH */
@@ -231,6 +245,13 @@ static void example_usbd_dfu_thread(void *param)
 		usbd_deinit();
 		goto exit;
 	}
+#if defined(CONFIG_SMP)
+	/* C-2: the USB OTG ISR is delivered on CPU0 (GIC ITARGETSR pins every SPI to
+	   core 0). Pinning the thread that deinits/reinits the stack to CPU0 puts it on
+	   the same core as the ISR, so deinit's local interrupt disable is meaningful
+	   again under SMP. */
+	rtos_task_set_affinity(reconf_task, 0);
+#endif
 #endif
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD DFU demo start\n");
@@ -241,6 +262,7 @@ exit:
 	RTK_LOGS(TAG, RTK_LOG_ERROR, "USBD DFU demo fail\n");
 #if USBD_DFU_WILL_DETACH
 	rtos_sema_delete(dfu_reconf_sema);
+	dfu_reconf_sema = NULL;
 #endif
 	rtos_task_delete(NULL);
 }

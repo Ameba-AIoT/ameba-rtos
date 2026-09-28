@@ -47,6 +47,7 @@ void whc_event_wifi_set_mac_address(u32 api_id, u32 *param_buf);
 void whc_event_wifi_set_pmf_mode(u32 api_id, u32 *param_buf);
 void whc_event_wifi_set_lps_enable(u32 api_id, u32 *param_buf);
 void whc_event_wifi_set_sae_status(u32 api_id, u32 *param_buf);
+void whc_event_wifi_external_auth_start(u32 api_id, u32 *param_buf);
 void whc_event_wifi_fetch_phy_stats(u32 api_id, u32 *param_buf);
 void whc_event_wifi_send_mgnt(u32 api_id, u32 *param_buf);
 void whc_event_wifi_set_EDCA_param(u32 api_id, u32 *param_buf);

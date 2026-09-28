@@ -119,10 +119,10 @@ typedef struct {
 
 /* Private function prototypes -----------------------------------------------*/
 static int usbh_cdc_ncm_attach(usb_host_t *host);
-static int usbh_cdc_ncm_detach(usb_host_t *host);
-static int usbh_cdc_ncm_process(usb_host_t *host, usbh_event_t *event);
+static void usbh_cdc_ncm_detach(usb_host_t *host);
+static void usbh_cdc_ncm_process(usb_host_t *host, usbh_event_t *event);
 static int usbh_cdc_ncm_setup(usb_host_t *host);
-static int usbh_cdc_ncm_sof(usb_host_t *host);
+static void usbh_cdc_ncm_sof(usb_host_t *host);
 static void usbh_cdc_ncm_process_bulk_out(usb_host_t *host);
 static void usbh_cdc_ncm_process_bulk_in(usb_host_t *host);
 static void usbh_cdc_ncm_process_intr_in(usb_host_t *host);
@@ -566,11 +566,17 @@ static void usbh_cdc_ncm_config_dongle_mac(usb_host_t *host)
 static int usbh_cdc_ncm_ctrl_setting(usb_host_t *host)
 {
 	usbh_cdc_ncm_host_t *cdc = &usbh_cdc_ncm_host;
-	u8 ret_state = HAL_ERR_UNKNOWN;
+	/* HAL_BUSY = sequence still running; only the default case (sub_status past
+	 * the last step) reports HAL_OK. Must not be an error code: the core treats
+	 * any non-OK, non-BUSY setup() status as terminal and drops the class. */
+	u8 ret_state = HAL_BUSY;
 	u8 state = HAL_OK;
 
 	switch (cdc->sub_status) {
 	case CDC_NCM_STATE_AT_SETTING_IDLE:
+		/* Descriptor parsing always leaves sub_status at GET_MAC_STR or further;
+		 * self-advance anyway so the sequence can never stall here. */
+		cdc->sub_status = CDC_NCM_STATE_CTRL_ALT_SETTING;
 		break;
 
 	case CDC_NCM_STATE_GET_MAC_STR:
@@ -602,12 +608,13 @@ static int usbh_cdc_ncm_ctrl_setting(usb_host_t *host)
 			cdc->ntb_in_max_size = params->dwNtbInMaxSize;
 			cdc->ntb_out_max_size = params->dwNtbOutMaxSize;
 
-			/* Clamp to reasonable limits */
+			/* IN direction: we must never let the device send more than our RX buffer,
+			 * so clamp before SET_NTB_INPUT_SIZE echoes the value back to the device.
+			 * OUT direction: dwNtbOutMaxSize is the device's own limit and is only
+			 * used to cap what we build, so keep it verbatim (the TX helpers clamp it
+			 * against the local TX buffer). */
 			if (cdc->ntb_in_max_size > USBH_CDC_NCM_RX_NTB_BUF_SIZE) {
 				cdc->ntb_in_max_size = USBH_CDC_NCM_RX_NTB_BUF_SIZE;
-			}
-			if (cdc->ntb_out_max_size > USBH_CDC_NCM_RX_NTB_BUF_SIZE) {
-				cdc->ntb_out_max_size = USBH_CDC_NCM_RX_NTB_BUF_SIZE;
 			}
 
 			RTK_LOGS(TAG, RTK_LOG_INFO, "NCM NTB: InMax=%d OutMax=%d\n",
@@ -747,38 +754,76 @@ static int usbh_cdc_ncm_parse_ctrl(usbh_itf_data_t *itf_data)
 	usb_os_memcpy((void *)&ctrl_ep->ep_desc, (const void *)&itf_desc->ep_desc_array[0], sizeof(usbh_ep_desc_t));
 	ctrl_ep->valid = 1;
 
-	/* Scan raw_data for the NCM functional descriptor */
+	/* Scan raw_data for the NCM functional descriptors.
+	 * The buffer comes straight from the device, so every field is bounds-checked
+	 * before it is dereferenced. */
 	cdc->union_data_itf_id = 0xFF;
+	cdc->iMACAddressStringId = 0U;
 	desc = itf_data->raw_data;
 	total = 0;
-	while (total < itf_data->raw_data_len) {
+	while ((u32)total + USB_LEN_DESC_HEADER <= itf_data->raw_data_len) {
 		len = ((usbh_desc_header_t *)desc)->bLength;
-		if (len == 0) {
+		if ((len < USB_LEN_DESC_HEADER) || (((u32)total + len) > itf_data->raw_data_len)) {
+			/* bLength is the only way to locate the next descriptor, so a value below
+			 * the header size or one running past the end leaves no resync point: the
+			 * remaining bytes cannot be framed, so stop instead of skipping. */
+			RTK_LOGS(TAG, RTK_LOG_WARN, "Bad desc len %d at %d\n", len, total);
 			break;
 		}
-		if (((usbh_desc_header_t *)desc)->bDescriptorType == USB_CDC_CS_INTERFACE) {
+		/* bDescriptorSubType follows the header, so it needs more than a bare header */
+		if ((((usbh_desc_header_t *)desc)->bDescriptorType == USB_CDC_CS_INTERFACE) && (len > USB_LEN_DESC_HEADER)) {
+			/* A truncated functional descriptor only costs us that descriptor: the block
+			 * is still framed, so warn and keep scanning the rest. */
 			/* First look for Ethernet Networking Functional Descriptor for MAC address */
-			if (len >= 13 && desc[2] == USB_CDC_FUNC_DESC_ETHERNET_NETWORKING) {
-				usb_cdc_ncm_ethernet_function_desc_t *eth_desc = (usb_cdc_ncm_ethernet_function_desc_t *)desc;
-				cdc->iMACAddressStringId = eth_desc->iMACAddress;
-				RTK_LOGS(TAG, RTK_LOG_INFO, "NCM Mac string id(%d)\n", cdc->iMACAddressStringId);
-				cdc->sub_status = CDC_NCM_STATE_GET_MAC_STR;
+			if (desc[2] == USB_CDC_FUNC_DESC_ETHERNET_NETWORKING) {
+				if (len >= sizeof(usb_cdc_ncm_ethernet_function_desc_t)) {
+					usb_cdc_ncm_ethernet_function_desc_t *eth_desc = (usb_cdc_ncm_ethernet_function_desc_t *)desc;
+					cdc->iMACAddressStringId = eth_desc->iMACAddress;
+					RTK_LOGS(TAG, RTK_LOG_INFO, "NCM Mac string id(%d)\n", cdc->iMACAddressStringId);
+					cdc->sub_status = CDC_NCM_STATE_GET_MAC_STR;
+				} else {
+					RTK_LOGS(TAG, RTK_LOG_WARN, "Short eth desc %d\n", len);
+				}
 			}
 			/* Look for NCM Functional Descriptor */
-			else if (len >= 6 && desc[2] == USB_CDC_NCM_FUNC_DESC) {
-				ncm_desc = (usb_cdc_ncm_function_desc_t *)desc;
-				RTK_LOGS(TAG, RTK_LOG_INFO, "NCM version 0x%04x caps 0x%02x\n",
-						 ncm_desc->bcdNcmVersion, ncm_desc->bmNetworkCapabilities);
-				/* Could parse capabilities here if needed */
+			else if (desc[2] == USB_CDC_NCM_FUNC_DESC) {
+				if (len >= sizeof(usb_cdc_ncm_function_desc_t)) {
+					ncm_desc = (usb_cdc_ncm_function_desc_t *)desc;
+					RTK_LOGS(TAG, RTK_LOG_INFO, "NCM version 0x%04x caps 0x%02x\n",
+							 ncm_desc->bcdNcmVersion, ncm_desc->bmNetworkCapabilities);
+					/* Could parse capabilities here if needed */
+				} else {
+					RTK_LOGS(TAG, RTK_LOG_WARN, "Short ncm desc %d\n", len);
+				}
 			}
 			/* Look for Union Functional Descriptor to identify the exact subordinate data interface */
-			else if (len >= 5 && desc[2] == USB_CDC_FUNC_DESC_UNION) {
-				cdc->union_data_itf_id = desc[4];
-				RTK_LOGS(TAG, RTK_LOG_INFO, "NCM Union data if(%d)\n", cdc->union_data_itf_id);
+			else if (desc[2] == USB_CDC_FUNC_DESC_UNION) {
+				if (len >= USB_CDC_UNION_FUNC_DESC_MIN_SIZE) {
+					cdc->union_data_itf_id = desc[4];
+					RTK_LOGS(TAG, RTK_LOG_INFO, "NCM Union data if(%d)\n", cdc->union_data_itf_id);
+				} else {
+					RTK_LOGS(TAG, RTK_LOG_WARN, "Short union desc %d\n", len);
+				}
 			}
 		}
 		desc += len;
 		total += len;
+	}
+
+	if (cdc->iMACAddressStringId == 0U) {
+		/* No Ethernet Functional Descriptor (or no MAC string index): there is
+		 * nothing to read, so skip the GET_MAC_STR step instead of leaving the
+		 * setup FSM parked in AT_SETTING_IDLE waiting for a state it can never
+		 * reach. Fall back to a random MAC unless the app already supplied one. */
+		if (cdc->mac_src_type != CDC_NCM_MAC_UPPER_LAYER_SET) {
+			TRNG_get_random_bytes(cdc->mac, CDC_NCM_MAC_STR_LEN);
+			cdc->mac[0] = (u8)((cdc->mac[0] & 0xFEU) | 0x02U); /* locally administered unicast */
+			cdc->mac_src_type = CDC_NCM_MAC_RANDOM_SET;
+		}
+		cdc->mac_valid = 1;
+		RTK_LOGS(TAG, RTK_LOG_WARN, "No MAC str, mac[%02x %02x %02x %02x %02x %02x]\n",
+				 cdc->mac[0], cdc->mac[1], cdc->mac[2], cdc->mac[3], cdc->mac[4], cdc->mac[5]);
+		cdc->sub_status = CDC_NCM_STATE_CTRL_ALT_SETTING;
 	}
 
 	return HAL_OK;
@@ -867,6 +912,55 @@ static int usbh_cdc_ncm_parse_interface_desc(usb_host_t *host)
 	return HAL_OK;
 }
 
+/* Datagram alignment constraints for the NTBs the host sends (OUT direction).
+ * NCM 1.0 Table 6-3 keeps separate In/Out sets and the device validates an OUT
+ * NTB against the Out fields, so the TX path must never use the In ones. Each
+ * helper falls back to the spec default only when the device reports 0. */
+static u16 usbh_cdc_ncm_tx_divisor(void)
+{
+	u16 d = usbh_cdc_ncm_host.ntb_params.wNdbOutDivisor;
+	return (d == 0U) ? USB_CDC_NCM_DATAGRAM_ALIGN : d;
+}
+
+/* Required residue of a datagram offset modulo the divisor (NCM 1.0 3.3.1) */
+static u16 usbh_cdc_ncm_tx_remainder(void)
+{
+	u16 div = usbh_cdc_ncm_tx_divisor();
+	u16 rem = usbh_cdc_ncm_host.ntb_params.wNdbOutPayloadRemainder;
+	return (rem < div) ? rem : 0U;
+}
+
+/* NDP alignment required by the device (host-to-device), default 4 */
+static u16 usbh_cdc_ncm_tx_ndp_align(void)
+{
+	u16 a = usbh_cdc_ncm_host.ntb_params.wNdbOutAlignment;
+	return (a == 0U) ? USB_CDC_NCM_DATAGRAM_ALIGN : a;
+}
+
+/* Smallest offset >= off that satisfies (offset % divisor) == payload remainder */
+static u32 usbh_cdc_ncm_tx_align_dg(u32 off)
+{
+	u16 div = usbh_cdc_ncm_tx_divisor();
+	u16 rem = usbh_cdc_ncm_tx_remainder();
+	u32 cur = off % div;
+
+	if (cur == rem) {
+		return off;
+	}
+	return (cur < rem) ? (off + (rem - cur)) : (off + div - (cur - rem));
+}
+
+/* Usable NTB size: never exceed the local buffer nor the device's dwNtbOutMaxSize */
+static u32 usbh_cdc_ncm_tx_max_ntb(u32 buf_size)
+{
+	u32 limit = usbh_cdc_ncm_host.ntb_out_max_size;
+
+	if ((limit == 0U) || (limit > buf_size)) {
+		limit = buf_size;
+	}
+	return limit;
+}
+
 #if !defined(CONFIG_USBH_CDC_NCM_TX_AGGREGATION)
 /**
   * @brief  Build an NTB16 frame for transmission
@@ -882,6 +976,7 @@ static int usbh_cdc_ncm_build_ntb16_frame(u8 *eth_buf, u16 eth_len, u8 *ntb_buf,
 	usbh_cdc_ncm_host_t *cdc = &usbh_cdc_ncm_host;
 	usb_cdc_ncm_nth16_t *nth;
 	usb_cdc_ncm_ndp16_t *ndp;
+	u16 ndp_align;
 	u16 ndp_offset;
 	u16 datagram_offset;
 
@@ -902,10 +997,9 @@ static int usbh_cdc_ncm_build_ntb16_frame(u8 *eth_buf, u16 eth_len, u8 *ntb_buf,
 	nth->wSequence = cdc->ntb_sequence;
 	cdc->ntb_sequence++;
 
-	/* Calculate NDP offset (after NTH, aligned) */
-	ndp_offset = USB_CDC_NCM_NTH16_LENGTH;
-	/* Align to 4 bytes */
-	ndp_offset = (ndp_offset + 3) & ~3;
+	/* NDP offset: right after the NTH16, aligned as the device requires */
+	ndp_align = usbh_cdc_ncm_tx_ndp_align();
+	ndp_offset = (u16)((USB_CDC_NCM_NTH16_LENGTH + (ndp_align - 1U)) & ~((u32)ndp_align - 1U));
 
 	/* NDP16 at ndp_offset */
 	ndp = (usb_cdc_ncm_ndp16_t *)(ntb_buf + ndp_offset);
@@ -913,13 +1007,13 @@ static int usbh_cdc_ncm_build_ntb16_frame(u8 *eth_buf, u16 eth_len, u8 *ntb_buf,
 	ndp->wLength = USB_CDC_NCM_NDP16_MIN_LENGTH; /* 4 entries * 4 bytes = 16 */
 	ndp->wNextFpIndex = 0; /* Last NDP */
 
-	/* Calculate datagram offset (after NDP, aligned) */
-	datagram_offset = ndp_offset + USB_CDC_NCM_NDP16_MIN_LENGTH;
-	datagram_offset = (datagram_offset + 3) & ~3;
+	/* Datagram offset: after the NDP, honoring wNdbOutDivisor / wNdbOutPayloadRemainder */
+	datagram_offset = (u16)usbh_cdc_ncm_tx_align_dg((u32)ndp_offset + USB_CDC_NCM_NDP16_MIN_LENGTH);
 
-	/* Final guard: ensure the framed NTB fits the static tx buffer. */
-	if (((u32)datagram_offset + eth_len) > USBH_CDC_NCM_TX_BUF_SIZE) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "NTB exceeds tx buf: %d\n", (u32)datagram_offset + eth_len);
+	/* Final guard: the framed NTB must fit both the static tx buffer and the
+	 * device's dwNtbOutMaxSize, otherwise the device may drop the whole NTB. */
+	if (((u32)datagram_offset + eth_len) > usbh_cdc_ncm_tx_max_ntb(USBH_CDC_NCM_TX_BUF_SIZE)) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "NTB too big: %d\n", (u32)datagram_offset + eth_len);
 		return HAL_ERR_PARA;
 	}
 
@@ -960,6 +1054,7 @@ static int usbh_cdc_ncm_parse_ntb16_block(u8 *ntb_buf, u32 ntb_len)
 	usb_cdc_ncm_nth16_t *nth;
 	usb_cdc_ncm_ndp16_t *ndp;
 	u16 ndp_offset;
+	u16 prev_offset;
 	u16 entry_cnt;
 	u16 i;
 	u32 block_len;
@@ -983,12 +1078,22 @@ static int usbh_cdc_ncm_parse_ntb16_block(u8 *ntb_buf, u32 ntb_len)
 		block_len = ntb_len;
 	}
 
-	/* Walk the NDP chain (wFpIndex -> wNextFpIndex, 0 terminates) */
+	/* Walk the NDP chain (wFpIndex -> wNextFpIndex, 0 terminates).
+	 * The chain must strictly move forward: a device (or a corrupted NTB) pointing
+	 * wNextFpIndex back at the current or an earlier NDP passes every bounds and
+	 * signature check below, so without the progress test the same datagrams would
+	 * be delivered forever and the host task would never return. */
 	ndp_offset = nth->wFpIndex;
+	prev_offset = 0;
 	while (ndp_offset != 0) {
 		if (((u32)ndp_offset + USB_CDC_NCM_NDP16_MIN_LENGTH) > block_len) {
 			break;
 		}
+		if (ndp_offset <= prev_offset) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "NDP chain loop: off=%d prev=%d\n", ndp_offset, prev_offset);
+			break;
+		}
+		prev_offset = ndp_offset;
 
 		ndp = (usb_cdc_ncm_ndp16_t *)(ntb_buf + ndp_offset);
 
@@ -1025,8 +1130,8 @@ static int usbh_cdc_ncm_parse_ntb16_block(u8 *ntb_buf, u32 ntb_len)
 				break;
 			}
 
-			if ((cdc->cb != NULL) && (cdc->cb->bulk_received != NULL)) {
-				cdc->cb->bulk_received(ntb_buf + dg_index, dg_len);
+			if ((cdc->cb != NULL) && (cdc->cb->received != NULL)) {
+				cdc->cb->received(ntb_buf + dg_index, dg_len);
 			}
 			delivered++;
 		}
@@ -1112,8 +1217,8 @@ static int usbh_cdc_ncm_attach(usb_host_t *host)
 
 	cdc->state = CDC_NCM_STATE_IDLE;
 
-	if ((cdc->cb != NULL) && (cdc->cb->attach != NULL)) {
-		cdc->cb->attach();
+	if ((cdc->cb != NULL) && (cdc->cb->attached != NULL)) {
+		cdc->cb->attached();
 	}
 
 	return HAL_OK;
@@ -1122,9 +1227,9 @@ static int usbh_cdc_ncm_attach(usb_host_t *host)
 /**
   * @brief  Usb Detach callback function.
   * @param  host: Host handle
-  * @retval HAL_OK
+  * @retval None
   */
-static int usbh_cdc_ncm_detach(usb_host_t *host)
+static void usbh_cdc_ncm_detach(usb_host_t *host)
 {
 	UNUSED(host);
 	usbh_cdc_ncm_host_t *cdc = &usbh_cdc_ncm_host;
@@ -1139,11 +1244,9 @@ static int usbh_cdc_ncm_detach(usb_host_t *host)
 
 	usbh_cdc_ncm_deinit_all_pipe();
 
-	if ((cdc->cb != NULL) && (cdc->cb->detach != NULL)) {
-		cdc->cb->detach();
+	if ((cdc->cb != NULL) && (cdc->cb->detached != NULL)) {
+		cdc->cb->detached();
 	}
-
-	return HAL_OK;
 }
 
 /**
@@ -1191,9 +1294,9 @@ static int usbh_cdc_ncm_setup(usb_host_t *host)
 /**
   * @brief  Usb State Machine handling callback
   * @param  host: Host handle
-  * @retval Status
+  * @retval None
   */
-static int usbh_cdc_ncm_process(usb_host_t *host, usbh_event_t *event)
+static void usbh_cdc_ncm_process(usb_host_t *host, usbh_event_t *event)
 {
 	u8 req_status = HAL_OK;
 	usbh_cdc_ncm_host_t *cdc = &usbh_cdc_ncm_host;
@@ -1226,8 +1329,6 @@ static int usbh_cdc_ncm_process(usb_host_t *host, usbh_event_t *event)
 		usb_os_sleep_ms(1);
 		break;
 	}
-
-	return req_status;
 }
 
 /**
@@ -1235,9 +1336,9 @@ static int usbh_cdc_ncm_process(usb_host_t *host, usbh_event_t *event)
   * @note   This function is called within an interrupt service routine (ISR) context;
   *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param[in] host: USB host handle.
-  * @return 0 on success, non-zero on failure.
+  * @retval None
   */
-static int usbh_cdc_ncm_sof(usb_host_t *host)
+static void usbh_cdc_ncm_sof(usb_host_t *host)
 {
 	UNUSED(host);
 
@@ -1247,8 +1348,6 @@ static int usbh_cdc_ncm_sof(usb_host_t *host)
 		usbh_cdc_ncm_bulk_receive();
 		usbh_cdc_ncm_bulk_tx();
 	}
-
-	return HAL_OK;
 }
 
 /**
@@ -1566,26 +1665,22 @@ static int usbh_cdc_ncm_intr_receive(void)
 
 #if defined(CONFIG_USBH_CDC_NCM_TX_AGGREGATION)
 
-/* Datagram alignment divisor required by the device (host-to-device), default 4 */
-static u16 usbh_cdc_ncm_agg_divisor(void)
+/* Datagram budget: local array size, further capped by wNtbOutMaxDatagrams (0 = no limit) */
+static u16 usbh_cdc_ncm_agg_max_datagrams(void)
 {
-	u16 d = usbh_cdc_ncm_host.ntb_params.wNdbInDivisor;
-	return (d == 0U) ? USB_CDC_NCM_DATAGRAM_ALIGN : d;
-}
+	u16 limit = usbh_cdc_ncm_host.ntb_params.wNtbOutMaxDatagrams;
 
-/* NDP alignment required by the device (host-to-device), default 4 */
-static u16 usbh_cdc_ncm_agg_ndp_align(void)
-{
-	u16 a = usbh_cdc_ncm_host.ntb_params.wNdbInAlignment;
-	return (a == 0U) ? USB_CDC_NCM_DATAGRAM_ALIGN : a;
+	if ((limit == 0U) || (limit > USBH_CDC_NCM_TX_AGG_MAX_DATAGRAMS)) {
+		limit = USBH_CDC_NCM_TX_AGG_MAX_DATAGRAMS;
+	}
+	return limit;
 }
 
 /* Reset a fill buffer: first datagram starts right after the NTH16, aligned */
 static void usbh_cdc_ncm_agg_reset_buf(u8 b)
 {
 	usbh_cdc_ncm_host_t *cdc = &usbh_cdc_ncm_host;
-	u16 div = usbh_cdc_ncm_agg_divisor();
-	cdc->tx_agg_write_off[b] = (USB_CDC_NCM_NTH16_LENGTH + (div - 1U)) & ~(div - 1U);
+	cdc->tx_agg_write_off[b] = (u16)usbh_cdc_ncm_tx_align_dg(USB_CDC_NCM_NTH16_LENGTH);
 	cdc->tx_agg_pkt_cnt[b] = 0U;
 }
 
@@ -1593,21 +1688,20 @@ static void usbh_cdc_ncm_agg_reset_buf(u8 b)
 static int usbh_cdc_ncm_agg_has_room(u8 b, u16 eth_len)
 {
 	usbh_cdc_ncm_host_t *cdc = &usbh_cdc_ncm_host;
-	u16 div = usbh_cdc_ncm_agg_divisor();
-	u16 ndp_align = usbh_cdc_ncm_agg_ndp_align();
+	u16 ndp_align = usbh_cdc_ncm_tx_ndp_align();
 	u32 dg_index, ndp_off, ndp_len, total;
 
-	if (cdc->tx_agg_pkt_cnt[b] >= USBH_CDC_NCM_TX_AGG_MAX_DATAGRAMS) {
+	if (cdc->tx_agg_pkt_cnt[b] >= usbh_cdc_ncm_agg_max_datagrams()) {
 		return 0;
 	}
 
-	dg_index = (cdc->tx_agg_write_off[b] + (div - 1U)) & ~(div - 1U);
-	ndp_off = (dg_index + eth_len + (ndp_align - 1U)) & ~(ndp_align - 1U);
+	dg_index = usbh_cdc_ncm_tx_align_dg(cdc->tx_agg_write_off[b]);
+	ndp_off = (dg_index + eth_len + (ndp_align - 1U)) & ~((u32)ndp_align - 1U);
 	/* NDP = 8B header + (current + this + terminator) * 4B entries */
 	ndp_len = 8U + ((u32)cdc->tx_agg_pkt_cnt[b] + 2U) * USB_CDC_NCM_NDP16_ENTRY_LENGTH;
 	total = ndp_off + ndp_len;
 
-	return (total <= USBH_CDC_NCM_TX_AGG_BUF_SIZE) ? 1 : 0;
+	return (total <= usbh_cdc_ncm_tx_max_ntb(USBH_CDC_NCM_TX_AGG_BUF_SIZE)) ? 1 : 0;
 }
 
 /* Append one Ethernet frame to the fill buffer (room already verified) */
@@ -1615,8 +1709,7 @@ static void usbh_cdc_ncm_agg_append(u8 *eth_buf, u16 eth_len)
 {
 	usbh_cdc_ncm_host_t *cdc = &usbh_cdc_ncm_host;
 	u8 b = cdc->tx_agg_fill_idx;
-	u16 div = usbh_cdc_ncm_agg_divisor();
-	u16 dg_index = (cdc->tx_agg_write_off[b] + (div - 1U)) & ~(div - 1U);
+	u16 dg_index = (u16)usbh_cdc_ncm_tx_align_dg(cdc->tx_agg_write_off[b]);
 
 	usb_os_memcpy((void *)(cdc->tx_agg_buf[b] + dg_index), (const void *)eth_buf, eth_len);
 	cdc->tx_agg_data_pos_idx[b][cdc->tx_agg_pkt_cnt[b]] = dg_index;
@@ -1631,7 +1724,7 @@ static u16 usbh_cdc_ncm_agg_finalize(u8 b)
 	usbh_cdc_ncm_host_t *cdc = &usbh_cdc_ncm_host;
 	usb_cdc_ncm_nth16_t *nth;
 	usb_cdc_ncm_ndp16_t *ndp;
-	u16 ndp_align = usbh_cdc_ncm_agg_ndp_align();
+	u16 ndp_align = usbh_cdc_ncm_tx_ndp_align();
 	u16 ndp_off;
 	u16 i;
 	u16 cnt = cdc->tx_agg_pkt_cnt[b];
@@ -1716,6 +1809,13 @@ static int usbh_cdc_ncm_agg_send(u8 *buf, u32 len)
 	while (!usbh_cdc_ncm_agg_has_room(cdc->tx_agg_fill_idx, eth_len)) {
 		/* Fill buffer full: launch it if the wire is free, otherwise wait for
 		   the in-flight transfer to complete so a buffer is freed. */
+		if (cdc->tx_agg_pkt_cnt[cdc->tx_agg_fill_idx] == 0U) {
+			/* Empty buffer with no room: the frame exceeds what the device accepts
+			 * in one NTB (dwNtbOutMaxSize), so waiting or flushing cannot help. */
+			usb_os_unlock(cdc->tx_agg_lock);
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "TX agg too big(%d)\n", eth_len);
+			return HAL_ERR_PARA;
+		}
 		if (!cdc->tx_agg_xfer_busy) {
 			usbh_cdc_ncm_agg_launch();
 		} else {
@@ -1995,7 +2095,11 @@ int usbh_cdc_ncm_init(const usbh_cdc_ncm_state_cb_t *cb, const usbh_cdc_ncm_priv
 		}
 	}
 
-	usbh_register_class(&usbh_cdc_ncm_driver);
+	ret = usbh_register_class(&usbh_cdc_ncm_driver);
+	if (ret != HAL_OK) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Register class fail %d\n", ret);
+		goto user_deinit;
+	}
 
 #if USBH_CDC_NCM_STATE_TRACE_ENABLE
 	usbh_cdc_ncm_trace_task_init();
@@ -2003,6 +2107,10 @@ int usbh_cdc_ncm_init(const usbh_cdc_ncm_state_cb_t *cb, const usbh_cdc_ncm_priv
 
 	return ret;
 
+user_deinit:
+	if (cb->deinit != NULL) {
+		cb->deinit();
+	}
 user_init_fail:
 	cdc->cb = NULL;
 	USBH_CDC_NCM_FREE_MEM(cdc->dongle_ctrl_buf);
@@ -2025,9 +2133,8 @@ tx_agg_buf_fail:
 
 /**
   * @brief  Deinitialize the USB NCM Class
-  * @retval Status
   */
-int usbh_cdc_ncm_deinit(void)
+void usbh_cdc_ncm_deinit(void)
 {
 	usbh_cdc_ncm_host_t *cdc = &usbh_cdc_ncm_host;
 #if defined(CONFIG_USBH_CDC_NCM_TX_AGGREGATION)
@@ -2062,8 +2169,6 @@ int usbh_cdc_ncm_deinit(void)
 	if ((cdc->cb != NULL) && (cdc->cb->deinit != NULL)) {
 		cdc->cb->deinit();
 	}
-
-	return HAL_OK;
 }
 
 /**
