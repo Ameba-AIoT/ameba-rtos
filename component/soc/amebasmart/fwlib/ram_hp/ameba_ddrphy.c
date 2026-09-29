@@ -715,7 +715,6 @@ void DDR_PHY_AutoGating(void)
 	Rtemp &= ~(0x3c);
 	Rtemp |= DDRPHY_DPI_RW_PWROFF_MODE(0x1) | DDRPHY_DPI_CA_PWROFF_MODE(0x1);
 	ddr_phy->DDRPHY_PLL_CTL5 = Rtemp;
-	DelayUs(50);
 
 	Rtemp = HAL_READ32(SYSTEM_CTRL_BASE_HP, REG_HSYS_DUMMY_1E0);
 	Rtemp |= HSYS_BIT_PWDPAD_DQ_EN | HSYS_BIT_PI_PWROFF_EN ; //don't write 1 if user mode  HSYS_BIT_PWDPAD_DQ_EN HSYS_BIT_PI_PWROFF_EN
