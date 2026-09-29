@@ -19,7 +19,7 @@
 static int usbh_dfu_attach(usb_host_t *host);
 static void usbh_dfu_detach(usb_host_t *host);
 static int usbh_dfu_setup(usb_host_t *host);
-static void usbh_dfu_process(usb_host_t *host, usbh_event_t *event);
+static void usbh_dfu_process(usb_host_t *host, usbh_drv_msg_t *msg);
 static int usbh_dfu_process_getstatus(usb_host_t *host);
 static int usbh_dfu_process_clrstatus(usb_host_t *host);
 static int usbh_dfu_process_dnload(usb_host_t *host, u16 block_num, u8 *buf, u16 len);
@@ -368,10 +368,10 @@ static int usbh_dfu_process_detach(usb_host_t *host, u16 timeout)
 /**
   * @brief  State machine handling callback — drives the DFU protocol.
   * @param  host:  Host handle
-  * @param  event: USB host event (unused — DFU uses EP0 only)
+  * @param  msg: USB host driver message (unused — DFU uses EP0 only)
   * @retval None
   */
-static void usbh_dfu_process(usb_host_t *host, usbh_event_t *event)
+static void usbh_dfu_process(usb_host_t *host, usbh_drv_msg_t *msg)
 {
 	int req_status = HAL_OK;
 	usbh_dfu_host_t *dfu = &usbh_dfu_host;
@@ -379,7 +379,7 @@ static void usbh_dfu_process(usb_host_t *host, usbh_event_t *event)
 	u8 *buf = dfu->xfer_buf;
 	int block_len;
 
-	UNUSED(event);
+	UNUSED(msg);
 
 	switch (dfu->state) {
 
@@ -407,7 +407,7 @@ static void usbh_dfu_process(usb_host_t *host, usbh_event_t *event)
 				RTK_LOGS(TAG, RTK_LOG_WARN,
 						 "bitWillDetach=0: USB reset required — trigger externally or power cycle\n");
 			}
-			/* Mark that the next detach event is part of reconfiguration so
+			/* Mark that the next detach is part of reconfiguration so
 			 * usbh_dfu_detach() can suppress the spurious cb->detached() call. */
 			dfu->reconf_pending = 1U;
 			dfu->state = USBH_DFU_STATE_IDLE;
@@ -435,7 +435,7 @@ static void usbh_dfu_process(usb_host_t *host, usbh_event_t *event)
 		 * initiated) and again on each intermediate call while the control
 		 * transfer is progressing through its SETUP/DATA/STATUS phases.
 		 * Only when all phases complete does it return HAL_OK.
-		 * Do not treat HAL_BUSY as an error — the CTRL_EVENT and URB_EVENT
+		 * Do not treat HAL_BUSY as an error — the CTRL and URB driver messages
 		 * interrupts will keep re-invoking process() until the transfer
 		 * finishes; no extra notify is needed in the BUSY case.
 		 */
@@ -508,7 +508,7 @@ static void usbh_dfu_process(usb_host_t *host, usbh_event_t *event)
 			dfu->state = USBH_DFU_STATE_ERROR;
 			usbh_notify(host, 0, &usbh_dfu_driver);
 		}
-		/* HAL_BUSY: ctrl transfer in flight — CTRL/URB event re-triggers process() */
+		/* HAL_BUSY: ctrl transfer in flight — CTRL/URB msg re-triggers process() */
 		break;
 
 	case USBH_DFU_STATE_CLR_STATUS:
@@ -583,7 +583,7 @@ static void usbh_dfu_process(usb_host_t *host, usbh_event_t *event)
 			usbh_notify(host, 0, &usbh_dfu_driver);
 		} else if (req_status == HAL_BUSY) {
 			dfu->xfer_pending = 1U;
-			/* ctrl transfer in flight — CTRL/URB event re-triggers process() */
+			/* ctrl transfer in flight — CTRL/URB msg re-triggers process() */
 		} else {
 			dfu->xfer_pending = 0U;
 			RTK_LOGS(TAG, RTK_LOG_ERROR,
@@ -694,7 +694,7 @@ static void usbh_dfu_process(usb_host_t *host, usbh_event_t *event)
 		 *   phase 1 — DFU_GETSTATUS (D2H, checks device state for EOF)
 		 * upload_phase tracks which ctrl transfer is currently in flight.
 		 * When a transfer returns HAL_BUSY the field is left unchanged and
-		 * subsequent CTRL/URB events will re-invoke process() to advance
+		 * subsequent CTRL/URB messages will re-invoke process() to advance
 		 * the ctrl state machine until HAL_OK is returned.
 		 */
 		if (dfu->upload_phase == 0U) {

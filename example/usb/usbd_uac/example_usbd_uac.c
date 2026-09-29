@@ -479,7 +479,17 @@ static void example_audio_track_play(void)
 	u32 read_dat_len = 0;
 
 	usbd_uac_config(&(uac_cb.out), 0, 0);
+	/* isoc_mps is cleared on deinit, so start_play() keeps failing once the stack is
+	   torn down: leave on any stop request instead of retrying forever. Nothing to
+	   unwind here, uac_playing is still 0 and no AudioTrack has been created yet. */
 	while (usbd_uac_start_play() != HAL_OK) {
+		if ((uac_task_exiting != 0) || (uac_player_stop != 0)
+#if USBD_UAC_HOTPLUG
+			|| (uac_stack_fatal != 0)
+#endif
+		   ) {
+			return;
+		}
 		rtos_time_delay_ms(5);
 	}
 

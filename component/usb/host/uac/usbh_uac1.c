@@ -80,7 +80,7 @@ typedef enum {
 /* Private function prototypes -----------------------------------------------*/
 static int usbh_uac_attach(usb_host_t *host);
 static void usbh_uac_detach(usb_host_t *host);
-static void usbh_uac_process(usb_host_t *host, usbh_event_t *event);
+static void usbh_uac_process(usb_host_t *host, usbh_drv_msg_t *msg);
 static int usbh_uac_ctrl_setting(usb_host_t *host, u32 msg);
 static int usbh_uac_setup(usb_host_t *host);
 static void usbh_uac_sof(usb_host_t *host);
@@ -2150,14 +2150,14 @@ static int usbh_uac_ctrl_setting(usb_host_t *host, u32 msg)
 }
 
 /**
-  * @brief  Main UAC class process callback called by the USB host core on each event.
-  *         In TRANSFER state, delegates pipe-0 events to the control state machine.
+  * @brief  Main UAC class process callback called by the USB host core on each driver message.
+  *         In TRANSFER state, delegates pipe-0 messages to the control state machine.
   *         In ERROR state, issues a ClearFeature to recover.
   * @param  host:  Pointer to the USB host handle.
-  * @param  event: Pointer to the event descriptor (contains pipe_num and event type).
+  * @param  msg: Pointer to the driver message (contains pipe_num and message type).
   * @retval None
   */
-static void usbh_uac_process(usb_host_t *host, usbh_event_t *event)
+static void usbh_uac_process(usb_host_t *host, usbh_drv_msg_t *msg)
 {
 	usbh_uac_t *uac = &usbh_uac;
 	int ret;
@@ -2166,7 +2166,7 @@ static void usbh_uac_process(usb_host_t *host, usbh_event_t *event)
 	case UAC_STATE_TRANSFER:
 		/* UAC only drives the control endpoint (pipe 0) here; ISOC pipes are
 		   serviced in the completed callback. */
-		if ((event) && (event->pipe_num == 0x00)) {
+		if ((msg) && (msg->pipe_num == 0x00)) {
 			(void)usbh_uac_ctrl_setting(host, 0);
 		}
 		break;

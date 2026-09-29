@@ -24,7 +24,7 @@ extern usbh_uvc_host_t uvc_host;
 
 static int usbh_uvc_attach(usb_host_t *host);
 static void usbh_uvc_detach(usb_host_t *host);
-static void usbh_uvc_process(usb_host_t *host, usbh_event_t *event);
+static void usbh_uvc_process(usb_host_t *host, usbh_drv_msg_t *msg);
 static int usbh_uvc_setup(usb_host_t *host);
 #if (USBH_UVC_USE_HW == 0)
 static void usbh_uvc_sof(usb_host_t *host);
@@ -400,7 +400,7 @@ static void usbh_uvc_ctrl_set_alt_error(usbh_uvc_host_t *uvc, usbh_uvc_stream_t 
   * @param  host: Host handle
   * @retval Status
   */
-static int usbh_uvc_process_ctrl(usb_host_t *host, usbh_event_t *event)
+static int usbh_uvc_process_ctrl(usb_host_t *host, usbh_drv_msg_t *msg)
 {
 	int ret = HAL_OK;
 	int ret_status = HAL_BUSY;
@@ -410,7 +410,7 @@ static int usbh_uvc_process_ctrl(usb_host_t *host, usbh_event_t *event)
 	u8 stream_idx = uvc->stream_ctrl_idx;
 	u8 size;
 
-	UNUSED(event);
+	UNUSED(msg);
 
 	if (stream_idx >= uvc->uvc_desc.vs_num) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Err S[%d]\n", stream_idx);
@@ -635,16 +635,16 @@ static int usbh_uvc_process_ctrl(usb_host_t *host, usbh_event_t *event)
 /**
   * @brief  UVC Process function (State Machine)
   */
-static void usbh_uvc_process(usb_host_t *host, usbh_event_t *event)
+static void usbh_uvc_process(usb_host_t *host, usbh_drv_msg_t *msg)
 {
 	usbh_uvc_host_t *uvc = &uvc_host;
 
 	switch (uvc->state) {
 	case UVC_STATE_STOP:  /* Intentional fallthrough: same handler as CTRL */
 	case UVC_STATE_CTRL:
-		if (event != NULL) {
-			if (event->pipe_num == 0x00U) {
-				(void)usbh_uvc_process_ctrl(host, event);
+		if (msg != NULL) {
+			if (msg->pipe_num == 0x00U) {
+				(void)usbh_uvc_process_ctrl(host, msg);
 			} else {
 				usbh_notify(host, 0, &usbh_uvc_driver);
 			}

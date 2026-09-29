@@ -160,7 +160,7 @@ typedef struct {
 /**
  * @brief MSC user callback structure.
  * @details This structure allows the user application to register callbacks for
- *          key MSC events like device attachment and detachment.
+ *          key MSC notifications like device attachment and detachment.
  */
 typedef struct {
 	/**

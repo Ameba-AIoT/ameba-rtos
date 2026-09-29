@@ -657,6 +657,11 @@ static u32 composite_uac_cmd_record(u16 argc, u8 *argv[])
 	UNUSED(argc);
 	UNUSED(argv);
 
+	/* The semaphore is freed once the stack is gone for good, do not touch it. */
+	if (uac_record_start_sema == NULL) {
+		return HAL_ERR_HW;
+	}
+
 	rtos_sema_give(uac_record_start_sema);
 	return HAL_OK;
 }

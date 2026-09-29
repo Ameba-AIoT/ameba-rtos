@@ -334,6 +334,21 @@ static void composite_hid_send_device_data(composite_hid_mouse_data_t *data)
 	usbd_hid_send_data(byte, 4);
 }
 
+/* The mouse report declares LOGICAL_MINIMUM(-127)/LOGICAL_MAXIMUM(127) (Ref HID 1.11 6.2.2.7),
+   so clamp explicitly: narrowing the unsigned parse result to char would silently wrap */
+static char composite_hid_mouse_axis(const u8 *str)
+{
+	s32 val = (s32)_strtoul((const char *)str, (char **)NULL, 10);
+
+	if (val > 127) {
+		val = 127;
+	} else if (val < -127) {
+		val = -127;
+	}
+
+	return (char)val;
+}
+
 static u32 composite_cmd_mouse_data(u16 argc, u8 *argv[])
 {
 	composite_hid_mouse_data_t data;
@@ -356,13 +371,13 @@ static u32 composite_cmd_mouse_data(u16 argc, u8 *argv[])
 		data.middle = _strtoul((const char *)argv[2], (char **)NULL, 10);
 	}
 	if (argc > 3) {
-		data.x_axis = _strtoul((const char *)argv[3], (char **)NULL, 10);
+		data.x_axis = composite_hid_mouse_axis(argv[3]);
 	}
 	if (argc > 4) {
-		data.y_axis = _strtoul((const char *)argv[4], (char **)NULL, 10);
+		data.y_axis = composite_hid_mouse_axis(argv[4]);
 	}
 	if (argc > 5) {
-		data.wheel = _strtoul((const char *)argv[5], (char **)NULL, 10);
+		data.wheel = composite_hid_mouse_axis(argv[5]);
 	}
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Send mouse data\n");

@@ -20,7 +20,7 @@
 
 static int usbh_msc_attach(usb_host_t *host);
 static void usbh_msc_detach(usb_host_t *host);
-static void usbh_msc_process(usb_host_t *host, usbh_event_t *event);
+static void usbh_msc_process(usb_host_t *host, usbh_drv_msg_t *msg);
 static int usbh_msc_setup(usb_host_t *host);
 static int usbh_msc_process_rw(usb_host_t *host, u8 lun);
 /* Private variables ---------------------------------------------------------*/
@@ -230,12 +230,12 @@ static int usbh_msc_setup(usb_host_t *host)
 /**
   * @brief  State machine handling callback
   * @param  host: Host handle
-  * @param  event: USB host event
+  * @param  msg: USB host driver message
   * @retval None
   */
-static void usbh_msc_process(usb_host_t *host, usbh_event_t *event)
+static void usbh_msc_process(usb_host_t *host, usbh_drv_msg_t *msg)
 {
-	UNUSED(event);
+	UNUSED(msg);
 
 	usbh_msc_host_t *msc = &usbh_msc_host;
 	int scsi_status = HAL_BUSY;
