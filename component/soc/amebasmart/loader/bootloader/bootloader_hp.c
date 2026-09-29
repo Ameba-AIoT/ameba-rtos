@@ -873,7 +873,9 @@ void BOOT_Image1(void)
 		RRAM->MAGIC_NUMBER = 0x6969A5A5;
 	}
 
+#ifndef CONFIG_LINUX_FW_EN
 	BOOT_VerCheck();
+#endif
 
 	if (!SYSCFG_OTP_DisBootLog()) {
 		LOG_MASK_MODULE(MODULE_BOOT, LEVEL_INFO, ENABLE);
