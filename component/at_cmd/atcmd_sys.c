@@ -352,13 +352,13 @@ void at_gmr(u16 argc, char **argv)
 	UNUSED(argv);
 	u32 chip_info = 0;
 
-	at_printf("AMEBA-RTOS SDK VERSION: %d.%d.%d\n", AMEBA_RTOS_VERSION_MAJOR, AMEBA_RTOS_VERSION_MINOR, AMEBA_RTOS_VERSION_PATCH);
+	at_printf("AMEBA-RTOS SDK VERSION: %d.%d.%d\r\n", AMEBA_RTOS_VERSION_MAJOR, AMEBA_RTOS_VERSION_MINOR, AMEBA_RTOS_VERSION_PATCH);
 	at_printf("ATCMD VERSION: %d.%d.%d\r\n", ATCMD_VERSION, ATCMD_SUBVERSION, ATCMD_REVISION);
 
 #ifndef CONFIG_AMEBAD
 	u8 image_id = at_get_ota_version();
 	u32 version = (u32)(ver[image_id] & 0xFFFFFFFF);
-	at_printf("IMAGE VERSION: %x.%x\r\n", ((version >> 16) & 0xFFFF), (version & 0xFFFF));
+	at_printf("IMAGE VERSION: %d.%d\r\n", ((version >> 16) & 0xFFFF), (version & 0xFFFF));
 #endif
 
 	chip_info = ChipInfo_GetSocName_ToBuf();
