@@ -109,7 +109,21 @@ int usbh_scsi_read_capacity(usbh_msc_host_t *msc, u8 lun, usbh_scsi_capacity_t *
 			/* Block length is a 4-byte big-endian field (bytes 4-7) */
 			u32 blk_len = ((u32)msc->hbot.pbuf[4] << 24U) | ((u32)msc->hbot.pbuf[5] << 16U) |
 						  ((u32)msc->hbot.pbuf[6] << 8U) | (u32)msc->hbot.pbuf[7];
-			capacity->block_size = blk_len;
+
+			/* Validate the geometry at its source: every later transfer derives
+			   dCBWDataTransferLength from block_size, so a bogus value would build an
+			   illegal CBW (BOT 6.7 presumes a self-consistent one). Accept only a power
+			   of two inside the range the block layer can handle, else clear the geometry
+			   and report HAL_ERR_PARA so the caller can mark the LUN unusable. */
+			if ((blk_len < USBH_MSC_MIN_BLOCK_SIZE) || (blk_len > USBH_MSC_MAX_BLOCK_SIZE) ||
+				((blk_len & (blk_len - 1U)) != 0U)) {
+				RTK_LOGS(TAG, RTK_LOG_ERROR, "Bad blk size %d\n", blk_len);
+				capacity->block_nbr = 0U;
+				capacity->block_size = 0U;
+				status = HAL_ERR_PARA;
+			} else {
+				capacity->block_size = blk_len;
+			}
 		}
 		break;
 

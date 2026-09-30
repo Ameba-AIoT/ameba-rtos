@@ -18,6 +18,7 @@
 #define USBH_VENDOR_BULK_LOOPBACK_CNT              100
 #define USBH_VENDOR_INTR_LOOPBACK_CNT              100
 #define USBH_VENDOR_ISOC_TEST_CNT                  100
+#define USBH_VENDOR_ISOC_DONE_TIMEOUT_MS           2000U
 
 #define USBH_VENDOR_BULK_LOOPBACK_BUF_SIZE         512
 #define USBH_VENDOR_INTR_LOOPBACK_BUF_SIZE         1024
@@ -315,6 +316,8 @@ static void vendor_bulk_loopback_test(void)
 
 static void vendor_isoc_test(void)
 {
+	int ret;
+
 	while (1) {
 		if (vendor_is_ready) {
 			rtos_time_delay_ms(10);
@@ -325,22 +328,43 @@ static void vendor_isoc_test(void)
 
 	if (!vendor_is_ready) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Device disconnect\n");
-		return;
+		goto isoc_exit;
 	}
 
-	// handle isoc trx flow in class process cb
-	usbh_vendor_isoc_transmit(vendor_isoc_tx_buf, USBH_VENDOR_ISOC_TEST_BUF_SIZE, USBH_VENDOR_ISOC_TEST_CNT);
-
-	usbh_vendor_isoc_receive(vendor_isoc_rx_buf, USBH_VENDOR_ISOC_TEST_BUF_SIZE, USBH_VENDOR_ISOC_TEST_CNT);
-
-	if (rtos_sema_take(vendor_isoc_txdone_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
+	/* handle isoc trx flow in class process cb.
+	 * ISOC has no handshake or retry, so the done signal only arrives once the
+	 * SOF-paced loop count is exhausted. A device without an ISOC endpoint leaves
+	 * the pipe at XFER_IDLE and still reports HAL_OK, so a bounded wait - not just
+	 * the return code - is what keeps this from blocking forever and stopping the
+	 * bulk/intr tests from ever starting. */
+	ret = usbh_vendor_isoc_transmit(vendor_isoc_tx_buf, USBH_VENDOR_ISOC_TEST_BUF_SIZE, USBH_VENDOR_ISOC_TEST_CNT);
+	if (ret != HAL_OK) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "ISOC TX start fail: %d\n", ret);
+		goto isoc_exit;
 	}
 
-	if (rtos_sema_take(vendor_isoc_rxdone_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
+	ret = usbh_vendor_isoc_receive(vendor_isoc_rx_buf, USBH_VENDOR_ISOC_TEST_BUF_SIZE, USBH_VENDOR_ISOC_TEST_CNT);
+	if (ret != HAL_OK) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "ISOC RX start fail: %d\n", ret);
+		goto isoc_exit;
 	}
 
-	rtos_sema_give(vendor_done_sema);
+	if (rtos_sema_take(vendor_isoc_txdone_sema, USBH_VENDOR_ISOC_DONE_TIMEOUT_MS) != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "ISOC TX timeout\n");
+		goto isoc_exit;
+	}
+
+	if (rtos_sema_take(vendor_isoc_rxdone_sema, USBH_VENDOR_ISOC_DONE_TIMEOUT_MS) != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "ISOC RX timeout\n");
+		goto isoc_exit;
+	}
+
 	RTK_LOGS(TAG, RTK_LOG_INFO, "ISOC test PASS\n");
+
+isoc_exit:
+	/* Every exit must release the counter: example_usbh_vendor_thread() waits for
+	 * exactly USBH_VENDOR_TEST_TASK_CNT gives and would otherwise never finish. */
+	rtos_sema_give(vendor_done_sema);
 }
 
 static void vendor_cb_process(usb_host_t *host, u8 msg)

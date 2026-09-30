@@ -36,13 +36,34 @@ if (CONFIG_WHC_HOST OR CONFIG_WHC_NONE OR (CONFIG_WHC_INTF_IPC AND CONFIG_WHC_DE
 endif()
 ###############################  GENERATE IMAGE  ###################################
 #---------------- PRE LINK -------------------#
+# TRX code placement remap for ameba_sections_rename.py:
+#   IMG2 on FLASH : off -> group all TRX into .flash.only.text (flash);
+#                   All -> .sram.only.text (SRAM); Partial -> no remap
+#   IMG2 on PSRAM/SRAM: force all TRX back to .text (default region), clearing any
+#                   .flash.only/.sram.only baked into the shipped libs (otherwise
+#                   functions stay stuck in flash after switching from FLASH mode)
+if(CONFIG_IMG2_FLASH)
+  set(c_TRX_REMAP
+    "$<$<NOT:$<BOOL:${CONFIG_WIFI_MOVE_TRX_CODE_TO_SRAM}>>:--remap=.sram.only.text=.flash.only.text>"
+    "$<$<BOOL:${CONFIG_WIFI_TRX_SRAM_ALL}>:--remap=.flash.only.text=.sram.only.text>")
+else()
+  set(c_TRX_REMAP --remap=.flash.only.text=.text,.sram.only.text=.text)
+endif()
+
 add_custom_command(
   TARGET ${c_CURRENT_IMAGE} PRE_LINK
   COMMAND ${CMAKE_C_COMPILER} -E -P -xc -c ${c_IMG2_LD} -o ${CMAKE_CURRENT_BINARY_DIR}/rlx8721d.ld -I ${c_MENUCONFIG_DIR}
   COMMAND ${CMAKE_COMMAND} -E cat ${c_LINK_ROM_SYMBOL} >> ${CMAKE_CURRENT_BINARY_DIR}/rlx8721d.ld
   COMMAND ${CMAKE_COMMAND} -E cat ${c_LINK_ROM_SYMBOL_WIFI} >> ${CMAKE_CURRENT_BINARY_DIR}/rlx8721d.ld
   COMMAND ${CMAKE_COMMAND} -E cat ${c_LINK_ROM_SYMBOL_OS} >> ${CMAKE_CURRENT_BINARY_DIR}/rlx8721d.ld
-  COMMENT "build img2 linkerscript rlx8721d.ld"
+  COMMAND ${Python3_EXECUTABLE} ${c_BASEDIR}/tools/image_scripts/ameba_sections_rename.py
+          --config ${c_SOC_PROJECT_DIR}/section_placement.json5
+          --build-dir ${CMAKE_CURRENT_BINARY_DIR}
+          --build-dir ${c_SDK_LIB_APPLICATION_DIR}
+          --core ${c_MCU_PROJECT_NAME}
+          --cross ${CROSS_COMPILE}
+          ${c_TRX_REMAP}
+  COMMENT "build img2 linkerscript + apply section placements"
 )
 
 #----------------- LINKING -------------------#

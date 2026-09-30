@@ -649,6 +649,7 @@ static int usbh_uvc_parse_vs(usbh_itf_data_t *itf_data)
 {
 	usbh_uvc_host_t *uvc = &uvc_host;
 	usbh_uvc_vs_t *vs_intf = NULL;
+	usbh_uvc_alt_t *alt = NULL;
 	u8 *desc = NULL;
 	u8 *next_desc = NULL;
 	int ret;
@@ -720,14 +721,19 @@ static int usbh_uvc_parse_vs(usbh_itf_data_t *itf_data)
 			}
 			bAlternateSetting = ((usbh_itf_desc_t *)desc)->bAlternateSetting;
 			if (bAlternateSetting != 0U) {
-				if (bAlternateSetting <= USBH_UVC_VS_ALTS_MAX_NUM) {
-					vs_intf->altsetting[bAlternateSetting - 1].p = desc;
+				/* Store compactly in discovery order: USB 2.0 §9.6.5 lets bAlternateSetting take any
+				 * value, so it must not be used as an array index. altsetting[0..alt_num-1] therefore
+				 * always maps 1:1 to the alts actually present, and the consumers (find_alt / attach)
+				 * read the real alt number back out of the stored descriptor. */
+				if (vs_intf->alt_num < USBH_UVC_VS_ALTS_MAX_NUM) {
+					alt = &vs_intf->altsetting[vs_intf->alt_num];
+					alt->p = desc;
 					vs_intf->alt_num++;
 
 					next_desc = desc + len;
 					if ((itf_total_len + len) < itf_data->raw_data_len) {
 						if (((usbh_desc_header_t *)next_desc)->bDescriptorType == USB_DESC_TYPE_ENDPOINT) {
-							vs_intf->altsetting[bAlternateSetting - 1].endpoint = (usbh_ep_desc_t *)next_desc;
+							alt->endpoint = (usbh_ep_desc_t *)next_desc;
 						}
 					}
 				} else {

@@ -132,7 +132,9 @@ typedef struct {
 typedef struct {
 	usbh_pipe_t pipe;          /**< USB Host pipe handle */
 	u8 *xfer_bk_buf;           /**< Backup pointer to the original user buffer */
-	u8 *test_buf;              /**< Buffer for verification/testing */
+#if USBH_VENDOR_DEBUG
+	u8 *test_buf;              /**< Buffer for verification/testing, one byte per ISOC test loop */
+#endif
 	u32 xfer_max_len;          /**< Max length of a single transfer */
 	u32 xfer_cnt;              /**< Current transfer count (for test loops), same width as the test_cnt API argument */
 	u32 xfer_max_cnt;          /**< Target transfer count (for test loops), same width as the test_cnt API argument */
