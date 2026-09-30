@@ -188,7 +188,8 @@ struct rtw_event_csi_report_info {
 	u8 n_rx;                    /**< Reserved. */
 	u8 n_sts;                   /**< Reserved. */
 	u8 trig_flag;               /**< CSI trigger source indicator (valid only in METHOD4, 0 if `trig_addr` valid) */
-	u8 rsvd[6];                 /**< Ensure the total sizes of struct is 4-byte alignment */
+	u8 agc_index;               /**< Receiver gain setting index in dB (Reserved). */
+	u8 rsvd[5];                 /**< Ensure the total sizes of struct is 4-byte alignment */
 	u32 csi_data_length;        /**< CSI raw data length, unit: byte. */
 	u8 csi_data[];              /**< CSI raw data head address */
 };
