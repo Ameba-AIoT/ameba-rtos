@@ -20,9 +20,10 @@
 
 static int usbh_msc_attach(usb_host_t *host);
 static void usbh_msc_detach(usb_host_t *host);
-static void usbh_msc_process(usb_host_t *host, usbh_event_t *event);
+static void usbh_msc_process(usb_host_t *host, usbh_drv_msg_t *msg);
 static int usbh_msc_setup(usb_host_t *host);
 static int usbh_msc_process_rw(usb_host_t *host, u8 lun);
+static void usbh_msc_free_bounce_buf(usbh_msc_host_t *msc);
 /* Private variables ---------------------------------------------------------*/
 
 static const char *const TAG = "MSC";
@@ -163,6 +164,10 @@ static void usbh_msc_detach(usb_host_t *host)
 		usbh_close_pipe(host, bulk_out);
 	}
 
+	/* A hot-unplug makes usbh_msc_read()/write() return from their wait loop without
+	   completing the BOT transfer, so no later command will reclaim the bounce buffer. */
+	usbh_msc_free_bounce_buf(msc);
+
 	msc->host = NULL;
 }
 
@@ -230,12 +235,12 @@ static int usbh_msc_setup(usb_host_t *host)
 /**
   * @brief  State machine handling callback
   * @param  host: Host handle
-  * @param  event: USB host event
+  * @param  msg: USB host driver message
   * @retval None
   */
-static void usbh_msc_process(usb_host_t *host, usbh_event_t *event)
+static void usbh_msc_process(usb_host_t *host, usbh_drv_msg_t *msg)
 {
-	UNUSED(event);
+	UNUSED(msg);
 
 	usbh_msc_host_t *msc = &usbh_msc_host;
 	int scsi_status = HAL_BUSY;
@@ -325,6 +330,12 @@ static void usbh_msc_process(usb_host_t *host, usbh_event_t *event)
 					msc->current_lun++;
 				} else if (scsi_status == HAL_ERR_UNKNOWN) {
 					unit->state = MSC_REQUEST_SENSE;
+				} else if (scsi_status == HAL_ERR_PARA) {
+					/* The medium geometry is unusable, so no legal READ10/WRITE10 CBW can ever
+					   be built for this LUN. Retire it here, which keeps it out of
+					   usbh_msc_unit_is_ready(), instead of re-issuing the same command. */
+					unit->error = MSC_ERROR;
+					unit->state = MSC_UNRECOVERED_ERROR;
 				} else {
 					if (scsi_status == HAL_ERR_HW) {
 						unit->state = MSC_IDLE;
@@ -394,6 +405,21 @@ static void usbh_msc_process(usb_host_t *host, usbh_event_t *event)
 }
 
 /**
+  * @brief  Release the READ10/WRITE10 bounce buffer
+  * @param  msc: Msc host handle
+  * @retval None
+*/
+static void usbh_msc_free_bounce_buf(usbh_msc_host_t *msc)
+{
+	/* hbot.pbuf may alias the shared hbot.data, which READ CAPACITY / INQUIRY /
+	   REQUEST SENSE reuse, so only a privately allocated buffer may be freed. */
+	if ((msc->hbot.pbuf != NULL) && (msc->hbot.pbuf != msc->hbot.data)) {
+		usb_os_mfree((void *)msc->hbot.pbuf);
+		msc->hbot.pbuf = NULL;
+	}
+}
+
+/**
   * @brief  Transfer state machine handling
   * @param  host: Host handle  for MSC I/O Process
   * @param  lun: logical Unit Number
@@ -426,9 +452,19 @@ static int usbh_msc_process_rw(usb_host_t *host, u8 lun)
 			unit->state = MSC_IDLE;
 			unit->error = MSC_ERROR;
 			status = HAL_ERR_UNKNOWN;
+		} else if (scsi_status == HAL_ERR_PARA) {
+			/* Unusable block size, so dCBWDataTransferLength cannot be computed and no
+			   CBW was ever sent. BOT 6.7 has no case for a zero-length READ10, hence the
+			   host must reject it locally. Report the error instead of returning HAL_BUSY
+			   forever, which would only stall the caller until its own timeout. */
+			unit->state = MSC_IDLE;
+			unit->error = MSC_ERROR;
+			usbh_msc_free_bounce_buf(msc);
+			status = HAL_ERR_UNKNOWN;
 		} else {
 			if (scsi_status == HAL_ERR_HW) {
 				unit->state = MSC_UNRECOVERED_ERROR;
+				usbh_msc_free_bounce_buf(msc);
 				status = HAL_ERR_UNKNOWN;
 			}
 		}
@@ -451,9 +487,19 @@ static int usbh_msc_process_rw(usb_host_t *host, u8 lun)
 			unit->state = MSC_IDLE;
 			unit->error = MSC_ERROR;
 			status = HAL_ERR_UNKNOWN;
+		} else if (scsi_status == HAL_ERR_PARA) {
+			/* Unusable block size, so dCBWDataTransferLength cannot be computed and no
+			   CBW was ever sent. BOT 6.7 has no case for a zero-length WRITE10, hence the
+			   host must reject it locally. Report the error instead of returning HAL_BUSY
+			   forever, which would only stall the caller until its own timeout. */
+			unit->state = MSC_IDLE;
+			unit->error = MSC_ERROR;
+			usbh_msc_free_bounce_buf(msc);
+			status = HAL_ERR_UNKNOWN;
 		} else {
 			if (scsi_status == HAL_ERR_HW) {
 				unit->state = MSC_UNRECOVERED_ERROR;
+				usbh_msc_free_bounce_buf(msc);
 				status = HAL_ERR_UNKNOWN;
 			}
 		}
@@ -952,10 +998,10 @@ int usbh_msc_read(u8 lun, u32 address, u8 *pbuf, u32 length)
 		if (rw_status != HAL_BUSY) {
 			break;
 		}
-#if defined(CONFIG_ARM_CORE_CA32) && CONFIG_ARM_CORE_CA32
-		//FIXME, remove this in AP
+		/* The BOT FSM is driven by this poll, so pause between attempts on every core:
+		   a 200us step still checks far faster than a 512B sector needs to move, while
+		   dropping the register polling rate from full speed to about 5kHz. */
 		usb_os_delay_us(200);
-#endif
 		if (usbh_get_elapsed_ticks(msc->host, timeout) > ((u64)10000U * length)) {
 			msc->unit[lun].state = MSC_IDLE;
 			msc->state = MSC_IDLE;
@@ -1030,10 +1076,10 @@ int usbh_msc_write(u8 lun, u32 address, u8 *pbuf, u32 length)
 		if (rw_status != HAL_BUSY) {
 			break;
 		}
-#if defined(CONFIG_ARM_CORE_CA32) && CONFIG_ARM_CORE_CA32
-		//FIXME, remove this in AP
+		/* The BOT FSM is driven by this poll, so pause between attempts on every core:
+		   a 200us step still checks far faster than a 512B sector needs to move, while
+		   dropping the register polling rate from full speed to about 5kHz. */
 		usb_os_delay_us(200);
-#endif
 		if (usbh_get_elapsed_ticks(msc->host, timeout) > ((u64)10000U * length)) {
 			msc->unit[lun].state = MSC_IDLE;
 			msc->state = MSC_IDLE;

@@ -24,7 +24,7 @@ extern usbh_uvc_host_t uvc_host;
 
 static int usbh_uvc_attach(usb_host_t *host);
 static void usbh_uvc_detach(usb_host_t *host);
-static void usbh_uvc_process(usb_host_t *host, usbh_event_t *event);
+static void usbh_uvc_process(usb_host_t *host, usbh_drv_msg_t *msg);
 static int usbh_uvc_setup(usb_host_t *host);
 #if (USBH_UVC_USE_HW == 0)
 static void usbh_uvc_sof(usb_host_t *host);
@@ -175,6 +175,8 @@ static void usbh_uvc_detach(usb_host_t *host)
 	for (i = 0U; i < vs_num; i ++) {
 		stream = &uvc->stream[i];
 		stream->state = STREAM_STATE_CTRL_IDLE;
+		stream->alt_active = 0U;
+		stream->start_pending = 0U;
 		stream->cur_setting.pipe.pipe_num = 0U;  /* clear stale pipe_num: next find_alt must not close a recycled channel */
 		if (stream->stream_state == UVC_STREAM_ACTIVE) {
 			usbh_uvc_stream_stop(stream);
@@ -336,6 +338,13 @@ static int usbh_uvc_setup(usb_host_t *host)
 static void usbh_uvc_ctrl_set_alt_done(usbh_uvc_host_t *uvc, usbh_uvc_stream_t *stream)
 {
 	usbh_uvc_setting_t *cur_set = &stream->cur_setting;
+	/* A restart driven by usbh_uvc_start() must not report through the set_param callback:
+	 * the application waits on that callback for its next usbh_uvc_set_param(), and an extra
+	 * notification would make the following wait succeed before the negotiation is done. */
+	u8 restart = stream->start_pending;
+
+	stream->start_pending = 0U;
+
 	if (cur_set->valid == 1U) {
 		/* Open pipe */
 		stream->state = STREAM_STATE_CTRL_IDLE;
@@ -343,8 +352,9 @@ static void usbh_uvc_ctrl_set_alt_done(usbh_uvc_host_t *uvc, usbh_uvc_stream_t *
 		stream->set_alt_retry = 0;
 		if (usbh_open_pipe(uvc->host, &cur_set->pipe, cur_set->altsetting->endpoint, &usbh_uvc_driver) != HAL_OK) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Open isoc pipe fail\n");
+			stream->alt_active = 0U;
 			uvc->state = UVC_STATE_IDLE;
-			if ((uvc->cb != NULL) && (uvc->cb->set_param != NULL)) {
+			if ((uvc->cb != NULL) && (uvc->cb->set_param != NULL) && (restart == 0U)) {
 				uvc->cb->set_param(HAL_ERR_HW);
 			}
 			return;
@@ -359,15 +369,23 @@ static void usbh_uvc_ctrl_set_alt_done(usbh_uvc_host_t *uvc, usbh_uvc_stream_t *
 				 cur_set->pipe.ep_type,
 				 cur_set->pipe.xfer_len);
 #endif
+		stream->alt_active = 1U;
 		uvc->state = UVC_STATE_TRANSFER;
-		if ((uvc->cb != NULL) && (uvc->cb->set_param != NULL)) {
+		if (restart != 0U) {
+			/* Interface is back on its streaming alt: resume the data path that
+			 * usbh_uvc_stop() halted. Resources were kept, so this only re-arms it. */
+			(void)usbh_uvc_stream_start(stream);
+		} else if ((uvc->cb != NULL) && (uvc->cb->set_param != NULL)) {
 			uvc->cb->set_param(HAL_OK);
+		} else {
+			/* no consumer for the result */
 		}
 	} else {
 		/* Don't need clear feature , just stop all statemachine */
+		stream->alt_active = 0U;
 		uvc->state = UVC_STATE_IDLE;
 		stream->state = STREAM_STATE_CTRL_IDLE;
-		if ((uvc->cb != NULL) && (uvc->cb->set_param != NULL)) {
+		if ((uvc->cb != NULL) && (uvc->cb->set_param != NULL) && (restart == 0U)) {
 			uvc->cb->set_param(HAL_ERR_HW);
 		}
 	}
@@ -388,11 +406,13 @@ static void usbh_uvc_ctrl_set_alt_error(usbh_uvc_host_t *uvc, usbh_uvc_stream_t 
 		(void)usbh_ctrl_set_interface(uvc->host, stream->cur_setting.bInterfaceNumber, 0);
 	}
 
+	stream->alt_active = 0U;
 	stream->state = STREAM_STATE_CTRL_IDLE;
 	uvc->state = UVC_STATE_ERROR;
-	if ((uvc->cb != NULL) && (uvc->cb->set_param != NULL)) {
+	if ((uvc->cb != NULL) && (uvc->cb->set_param != NULL) && (stream->start_pending == 0U)) {
 		uvc->cb->set_param(HAL_ERR_HW);
 	}
+	stream->start_pending = 0U;
 }
 
 /**
@@ -400,7 +420,7 @@ static void usbh_uvc_ctrl_set_alt_error(usbh_uvc_host_t *uvc, usbh_uvc_stream_t 
   * @param  host: Host handle
   * @retval Status
   */
-static int usbh_uvc_process_ctrl(usb_host_t *host, usbh_event_t *event)
+static int usbh_uvc_process_ctrl(usb_host_t *host, usbh_drv_msg_t *msg)
 {
 	int ret = HAL_OK;
 	int ret_status = HAL_BUSY;
@@ -410,7 +430,7 @@ static int usbh_uvc_process_ctrl(usb_host_t *host, usbh_event_t *event)
 	u8 stream_idx = uvc->stream_ctrl_idx;
 	u8 size;
 
-	UNUSED(event);
+	UNUSED(msg);
 
 	if (stream_idx >= uvc->uvc_desc.vs_num) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Err S[%d]\n", stream_idx);
@@ -596,7 +616,11 @@ static int usbh_uvc_process_ctrl(usb_host_t *host, usbh_event_t *event)
 			stream->set_alt = 0;
 			stream->set_alt_retry = 0;
 #if (USBH_UVC_USE_HW == 0)
-			usbh_uvc_stream_alloc_urb_buffer(stream);
+			/* A start() restart keeps the URBs allocated (stop() frees nothing), and the alt -
+			 * hence pipe->xfer_len - is unchanged, so they must not be allocated a second time. */
+			if (stream->start_pending == 0U) {
+				usbh_uvc_stream_alloc_urb_buffer(stream);
+			}
 #endif
 			/* ctrl_set_alt_done is the sole pipe-open point for all paths */
 			usbh_uvc_ctrl_set_alt_done(uvc, stream);
@@ -635,16 +659,16 @@ static int usbh_uvc_process_ctrl(usb_host_t *host, usbh_event_t *event)
 /**
   * @brief  UVC Process function (State Machine)
   */
-static void usbh_uvc_process(usb_host_t *host, usbh_event_t *event)
+static void usbh_uvc_process(usb_host_t *host, usbh_drv_msg_t *msg)
 {
 	usbh_uvc_host_t *uvc = &uvc_host;
 
 	switch (uvc->state) {
 	case UVC_STATE_STOP:  /* Intentional fallthrough: same handler as CTRL */
 	case UVC_STATE_CTRL:
-		if (event != NULL) {
-			if (event->pipe_num == 0x00U) {
-				(void)usbh_uvc_process_ctrl(host, event);
+		if (msg != NULL) {
+			if (msg->pipe_num == 0x00U) {
+				(void)usbh_uvc_process_ctrl(host, msg);
 			} else {
 				usbh_notify(host, 0, &usbh_uvc_driver);
 			}

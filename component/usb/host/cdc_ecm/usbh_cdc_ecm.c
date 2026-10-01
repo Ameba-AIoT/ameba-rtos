@@ -108,7 +108,7 @@ typedef struct {
 /* Private function prototypes -----------------------------------------------*/
 static int usbh_cdc_ecm_attach(usb_host_t *host);
 static void usbh_cdc_ecm_detach(usb_host_t *host);
-static void usbh_cdc_ecm_process(usb_host_t *host, usbh_event_t *event);
+static void usbh_cdc_ecm_process(usb_host_t *host, usbh_drv_msg_t *msg);
 static int usbh_cdc_ecm_setup(usb_host_t *host);
 static void usbh_cdc_ecm_sof(usb_host_t *host);
 static void usbh_cdc_ecm_process_bulk_out(usb_host_t *host);
@@ -1220,7 +1220,7 @@ static int usbh_cdc_ecm_setup(usb_host_t *host)
   * @param  host: Host handle
   * @retval None
   */
-static void usbh_cdc_ecm_process(usb_host_t *host, usbh_event_t *event)
+static void usbh_cdc_ecm_process(usb_host_t *host, usbh_drv_msg_t *msg)
 {
 	u8 req_status = HAL_OK;
 	usbh_cdc_ecm_host_t *cdc = &usbh_cdc_ecm_host;
@@ -1228,8 +1228,8 @@ static void usbh_cdc_ecm_process(usb_host_t *host, usbh_event_t *event)
 
 	switch (cdc->state) {
 	case CDC_ECM_STATE_TRANSFER:
-		if (event) {
-			pipe_num = event->pipe_num;
+		if (msg) {
+			pipe_num = msg->pipe_num;
 			if (pipe_num == cdc->bulk_tx.pipe.pipe_num) {
 				usbh_cdc_ecm_process_bulk_out(host);
 			} else if (pipe_num == cdc->bulk_rx.pipe.pipe_num) {
@@ -1506,7 +1506,7 @@ static int usbh_cdc_ecm_intr_rx_time_check(void)
 }
 
 /**
-  * @brief  Send event to transmit BULK data.
+  * @brief  Trigger transmission of BULK data.
   * @note   This function is called within an interrupt service routine (ISR) context;
   *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @return 0 on success, non-zero on failure.
@@ -1534,7 +1534,7 @@ static int usbh_cdc_ecm_bulk_tx(void)
 }
 
 /**
-  * @brief  Send event to receive BULK data.
+  * @brief  Trigger reception of BULK data.
   * @note   This function is called within an interrupt service routine (ISR) context;
   *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @return 0 on success, non-zero on failure.
@@ -1565,7 +1565,7 @@ static int usbh_cdc_ecm_bulk_receive(void)
 }
 
 /**
-  * @brief  Send event to receive INTR data.
+  * @brief  Trigger reception of INTR data.
   * @note   This function is called within an interrupt service routine (ISR) context;
   *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @return 0 on success, non-zero on failure.
