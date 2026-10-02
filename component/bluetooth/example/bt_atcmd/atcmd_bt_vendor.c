@@ -75,7 +75,7 @@ rtk_bt_app_conf_t app_conf = {
 	.prefer_tx_phy = 1 | 1 << 1 | 1 << 2,
 						   .prefer_rx_phy = 1 | 1 << 1 | 1 << 2,
 						   .max_tx_octets = 0x40,
-						   .max_tx_time = 0x200,
+						   .max_tx_time = 0x270,
 };
 
 int atcmd_bt_enable(int argc, char *argv[])
