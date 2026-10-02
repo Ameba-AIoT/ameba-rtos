@@ -103,11 +103,25 @@ _Static_assert(USBD_CDC_NCM_NTB_IN_MAX_DATAGRAMS <= 255U,
 
 /* TX NTB slot depth: see USBD_CDC_NCM_TX_DEPTH in usbd_cdc_ncm.h. */
 
-/* Maximum time (ms) usbd_cdc_ncm_transmit() will block waiting for a free
- * TX NTB buffer when called with block != 0.  Set to USB_OS_SEMA_TIMEOUT
- * (wait forever) by default: the caller asked for backpressure, so the
- * upper layer prefers to stall rather than drop a frame. */
-#define USBD_CDC_NCM_BULK_TX_TIMEOUT_MS               USB_OS_SEMA_TIMEOUT
+/* Maximum time (ms) usbd_cdc_ncm_transmit() will block waiting for TX room when
+ * called with block != 0.
+ *
+ * Ref USB 2.0 5.7.2 / 8.5: BULK has no guaranteed service interval, the host alone
+ * decides when - or whether - it polls BULK IN.  A wait-forever here would let a host
+ * that stops polling (S3 sleep, ifdown without SET_INTERFACE alt 0, wedged host
+ * driver, dead hub with VBUS still present) freeze the single lwIP tcpip task
+ * permanently, taking every other netif down with it, because none of those cases
+ * produces the teardown that releases the semaphore.  Backpressure must therefore be
+ * bounded: on timeout the frame is dropped (HAL_BUSY) and TCP retransmits, which is
+ * the correct best-effort Ethernet semantics.
+ *
+ * Sized from the drain time of both TX stages at peak throughput.  NCM buffers
+ * TX_RB_DEPTH raw frames plus TX_DEPTH NTBs of NTB_IN_MAX_DATAGRAMS frames each:
+ *   USB HS (480 Mbps bus, ~40 MB/s BULK effective): ~12 * 1514 B / 40  MB/s -> 0.5 ms
+ *   USB FS ( 12 Mbps bus, ~1.5 MB/s BULK effective): ~12 * 1514 B / 1.5 MB/s ->  12 ms
+ * 20 ms covers the full-pipe FS drain with headroom, so a normal burst never loses a
+ * frame, while still bounding the stall a stuck host can impose. */
+#define USBD_CDC_NCM_BULK_TX_TIMEOUT_MS               20U
 
 /* NCM Functional Descriptor size (6 bytes) */
 #define USBD_CDC_NCM_FUNC_DESC_SIZE                   6U
@@ -704,10 +718,6 @@ static void usbd_cdc_ncm_tx_kick(usbd_cdc_ncm_dev_t *ncm)
 		 * fire.  Drop this NTB, advance rd, clear inflight, and wake the
 		 * producer in case the ring was full. */
 		ncm->tx_inflight = 0U;
-#ifndef CONFIG_USBD_CDC_NCM_TX_AGGREGATION
-		ncm->tx_filling_busy = 0U;
-		ncm->tx_wd_tick = 0U;
-#endif
 		ncm->tx_rd = (u8)((ncm->tx_rd + 1U) % USBD_CDC_NCM_TX_DEPTH);
 		__sync_synchronize();
 		usb_os_sema_give(ncm->tx_buf_free_sema);
@@ -735,10 +745,6 @@ static void usbd_cdc_ncm_tx_reset(usbd_cdc_ncm_dev_t *ncm)
 	ncm->tx_wd = 0;
 	ncm->tx_rd = 0;
 	ncm->tx_inflight = 0;
-#ifndef CONFIG_USBD_CDC_NCM_TX_AGGREGATION
-	ncm->tx_filling_busy = 0U;
-	ncm->tx_wd_tick = 0U;
-#endif
 	__sync_synchronize();
 	ncm->ep_bulk_in.xfer_state = 0U;
 
@@ -1612,12 +1618,23 @@ static int usbd_cdc_ncm_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			break;
 
 		case USB_REQ_GET_STATUS:
-			if (dev->dev_state == USBD_STATE_CONFIGURED) {
+			/* Ref USB 2.0 9.4.5 and Table 9-3: an interface-recipient GET_STATUS returns
+			   two reserved zero bytes and wLength is two.  A request naming an interface
+			   this function does not own is a request error (9.2.7), which the device core
+			   turns into an EP0 STALL on a non-HAL_OK return.  The core only range-checks
+			   wIndex against USBD_MAX_NUM_INTERFACES, so ownership is the class's own job,
+			   exactly as for SET_INTERFACE / GET_INTERFACE above. */
+			if (dev->dev_state != USBD_STATE_CONFIGURED) {
+				ret = HAL_ERR_PARA;
+			} else if (req->wLength != 2U) {
+				ret = HAL_ERR_PARA;
+			} else if ((req->wIndex == USBD_CDC_NCM_COMM_INTERFACE_NUM) || (req->wIndex == USBD_CDC_NCM_DATA_INTERFACE_NUM)) {
 				ep0_in->xfer_buf[0] = 0U;
 				ep0_in->xfer_buf[1] = 0U;
 				ep0_in->xfer_len = 2U;
 				usbd_ep_transmit(dev, ep0_in);
 			} else {
+				/* Foreign interface: request error */
 				ret = HAL_ERR_PARA;
 			}
 			break;
@@ -2035,6 +2052,11 @@ static int usbd_cdc_ncm_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len)
  * @brief   SOF interrupt handler
  * @note    This function is called within an interrupt service routine (ISR) context;
  *          time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+ * @note    SOF never flushes a half-filled NTB, because neither TX path can leave
+ *          one: the non-aggregation producer finalizes and advances tx_wd before
+ *          returning (NTB_IN_MAX_DATAGRAMS=1), and the aggregation TX task stops
+ *          appending as soon as the raw ring runs empty.  slot[tx_wd] is therefore
+ *          always empty when SOF fires, and SOF only kicks the consumer.
  */
 static void usbd_cdc_ncm_sof(usb_dev_t *dev)
 {
@@ -2050,12 +2072,6 @@ static void usbd_cdc_ncm_sof(usb_dev_t *dev)
 			ncm->notify_retry = 0U;
 		}
 	}
-
-#ifndef CONFIG_USBD_CDC_NCM_TX_AGGREGATION
-	/* Non-aggregation: transmit() always finalizes and advances wd before
-	 * returning (NTB_IN_MAX_DATAGRAMS=1), so slot[wd].frame_count is always
-	 * 0 when SOF fires.  No SOF flush needed -- SOF only kicks the consumer. */
-#endif /* !CONFIG_USBD_CDC_NCM_TX_AGGREGATION */
 
 	/* The BULK endpoints only exist while data-interface alt 1 is selected, so
 	 * neither the TX consumer nor the RX re-arm may run outside of it. */
@@ -2562,10 +2578,6 @@ static int usbd_cdc_ncm_private_init(const usbd_cdc_ncm_cb_t *cb, const usbd_cdc
 		ncm->tx_wd = 0;
 		ncm->tx_rd = 0;
 		ncm->tx_inflight = 0;
-#ifndef CONFIG_USBD_CDC_NCM_TX_AGGREGATION
-		ncm->tx_filling_busy = 0U;
-		ncm->tx_wd_tick = 0U;
-#endif
 	}
 
 	/* Initialize NTB parameters */
@@ -2853,10 +2865,6 @@ void usbd_cdc_ncm_deinit(void)
 		ncm->tx_wd = 0;
 		ncm->tx_rd = 0;
 		ncm->tx_inflight = 0;
-#ifndef CONFIG_USBD_CDC_NCM_TX_AGGREGATION
-		ncm->tx_filling_busy = 0U;
-		ncm->tx_wd_tick = 0U;
-#endif
 	}
 	/* Unblock any transmit() still waiting for a free slot, then free the sema. */
 	if (ncm->tx_buf_free_sema != NULL) {
@@ -2960,9 +2968,10 @@ int usbd_cdc_ncm_transmit(u8 *buf, u32 len, u8 block)
 	 * touches only slot[tx_rd].  wd/rd index isolation is the primary
 	 * mutual-exclusion mechanism.
 	 *
-	 * Aggregation: multiple frames are appended into slot[tx_wd] until
-	 * MAX_DATAGRAMS is reached (size trigger) or the SOF timeout fires.
-	 * tx_filling_busy=1 while the producer holds the slot so SOF backs off.
+	 * Aggregation: the TX task appends frames into slot[tx_wd] until
+	 * MAX_DATAGRAMS is reached or the raw ring runs empty, then finalizes and
+	 * publishes immediately -- a partially filled NTB is never left pending,
+	 * so no flush timeout is involved.
 	 *
 	 * The block parameter:
 	 *   - block != 0: wait on tx_buf_free_sema for a slot to free up.
@@ -3011,31 +3020,39 @@ int usbd_cdc_ncm_transmit(u8 *buf, u32 len, u8 block)
 	 * wd/rd index isolation is the sole mutual-exclusion mechanism:
 	 * producer touches only slot[tx_wd], consumer only slot[tx_rd].
 	 * NTB_IN_MAX_DATAGRAMS=1 means transmit() always finalize+advances wd
-	 * before returning, so SOF never sees frame_count>0 on slot[wd] and
+	 * before returning, so SOF never sees a partially filled slot[wd] and
 	 * never writes slot[wd] -- no critical section needed. */
 	{
 		ncm_tx_ntb_t *slot = &ncm->tx_slot[ncm->tx_wd];
 
-		if (slot->frame_count == 0U) {
-			while (usbd_cdc_ncm_tx_ring_full(ncm)) {
-				if (block == 0U) {
-					RTK_LOGS(TAG, RTK_LOG_WARN, "TX drop(%u): ring full\n", len);
-					return HAL_BUSY;
-				}
-				if (usb_os_sema_take(ncm->tx_buf_free_sema,
-									 USBD_CDC_NCM_BULK_TX_TIMEOUT_MS) != HAL_OK) {
-					RTK_LOGS(TAG, RTK_LOG_WARN, "TX timeout drop(%u)\n", len);
-					return HAL_BUSY;
-				}
-				/* The sema may have been fired by a teardown rather than by a real
-				 * XFRC - see the aggregation path above for why this tests
-				 * data_alt_setting instead of connect_status. */
-				if (ncm->data_alt_setting == 0U) {
-					return HAL_BUSY;
-				}
+		while (usbd_cdc_ncm_tx_ring_full(ncm)) {
+			if (block == 0U) {
+				RTK_LOGS(TAG, RTK_LOG_WARN, "TX drop(%u): ring full\n", len);
+				return HAL_BUSY;
 			}
-			usbd_cdc_ncm_agg_begin(slot, ncm->sequence);
+			if (usb_os_sema_take(ncm->tx_buf_free_sema,
+								 USBD_CDC_NCM_BULK_TX_TIMEOUT_MS) != HAL_OK) {
+				RTK_LOGS(TAG, RTK_LOG_WARN, "TX timeout drop(%u)\n", len);
+				return HAL_BUSY;
+			}
+			/* The sema may have been fired by a teardown rather than by a real
+			 * XFRC - see the aggregation path above for why this tests
+			 * data_alt_setting instead of connect_status. */
+			if (ncm->data_alt_setting == 0U) {
+				return HAL_BUSY;
+			}
 		}
+		/* Unconditionally start a fresh NTB.  With MAX_DATAGRAMS=1 slot[tx_wd] is
+		 * never partially filled on entry -- every path out of transmit() either
+		 * publishes the slot or leaves it untouched, and agg_begin() resets
+		 * frame_count/data_offset itself.  A "frame_count == 0" guard here would
+		 * therefore always be taken, while adding an unsynchronised read of a field
+		 * the USB ISR clears on the other SMP core: on a stale non-zero value it
+		 * would skip agg_begin(), agg_append() would then reject the frame, and
+		 * nothing would ever clear frame_count again (only a completed transfer
+		 * does) -- permanently retiring this slot from the ring. */
+		usbd_cdc_ncm_agg_begin(slot, ncm->sequence);
+
 		/* Re-check for the non-wait path: if the ring was not full the while-loop
 		 * above was skipped entirely.  Without this, a clear_config /
 		 * SET_INTERFACE alt 0 / status_changed ISR that fires after the loop but

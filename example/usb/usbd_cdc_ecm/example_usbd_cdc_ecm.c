@@ -244,6 +244,21 @@ static rtos_sema_t usbd_ecm_attach_status_changed_sema = NULL;
 static __IO u8 usbd_ecm_hotplug_thread_running = 0;
 #endif
 
+/* Serializes the USB stack bring up/tear down against the TX path, taken by the
+ * hotplug thread and by usb_ethernet_transmit().
+ * Created once and never deleted: TX is driven by the lwIP thread, which lives as
+ * long as the firmware and can not be joined by the example, so there is no point
+ * in time at which this mutex is provably unreferenced. usbd_ecm_stack_ready is
+ * the gate that keeps callers off the stack instead. */
+static rtos_mutex_t usbd_ecm_state_mutex = NULL;
+/* 1: usbd_init() and usbd_cdc_ecm_init() both done, TX allowed. Cleared before any
+ * tear down, so a non-zero value also implies usbd_ecm_state_mutex is valid.
+ * usbd_cdc_ecm_deinit() frees the TX ring buffer, the BULK IN DMA buffer and the
+ * TX slot sema, all of which usbd_cdc_ecm_transmit() dereferences; its internal
+ * data_alt_setting check only guards the entry and retry points, so under SMP the
+ * lwIP thread must be excluded from the whole teardown, not just narrowed. */
+static volatile u8 usbd_ecm_stack_ready = 0;
+
 /* Private functions ---------------------------------------------------------*/
 static void usbd_ecm_link_change_thread(void *param)
 {
@@ -492,20 +507,30 @@ static void usbd_ecm_hotplug_thread(void *param)
 		if (current_status == USBD_ATTACH_STATUS_DETACHED) {
 			RTK_LOGS(TAG, RTK_LOG_INFO, "DETACHED\n");
 
+			/* Close the gate before tearing down. usb_ethernet_transmit() contends
+			 * for the same mutex, so no TX is in flight here and any later one sees
+			 * usbd_ecm_stack_ready == 0 and gives up. */
+			rtos_mutex_take(usbd_ecm_state_mutex, RTOS_MAX_TIMEOUT);
+			usbd_ecm_stack_ready = 0;
+
 			// Deinitialize CDC ECM
 			usbd_cdc_ecm_deinit();
 
 			// Deinitialize USB device
 			usbd_deinit();
+			rtos_mutex_give(usbd_ecm_state_mutex);
 
 			// Small delay to ensure proper cleanup
 			rtos_time_delay_ms(100);
 
 			RTK_LOGS(TAG, RTK_LOG_INFO, "Free heap 0x%x\n", rtos_mem_get_free_heap_size());
 
+			rtos_mutex_take(usbd_ecm_state_mutex, RTOS_MAX_TIMEOUT);
+
 			// Re-initialize USB device
 			ret = usbd_init(&usbd_ecm_cfg);
 			if (ret != HAL_OK) {
+				rtos_mutex_give(usbd_ecm_state_mutex);
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "Init fail %d\n", ret);
 				break;
 			}
@@ -513,10 +538,16 @@ static void usbd_ecm_hotplug_thread(void *param)
 			// Re-initialize CDC ECM
 			ret = usbd_cdc_ecm_init(&usbd_ecm_cb, &usbd_ecm_ep_cfg);
 			if (ret != HAL_OK) {
-				RTK_LOGS(TAG, RTK_LOG_ERROR, "Init ECM fail %d\n", ret);
 				usbd_deinit();
+				rtos_mutex_give(usbd_ecm_state_mutex);
+				RTK_LOGS(TAG, RTK_LOG_ERROR, "Init ECM fail %d\n", ret);
 				break;
 			}
+
+			/* Open the gate at the very last step, so that no TX runs before the
+			 * re-init is fully done. */
+			usbd_ecm_stack_ready = 1;
+			rtos_mutex_give(usbd_ecm_state_mutex);
 
 			RTK_LOGS(TAG, RTK_LOG_INFO, "Reinit done\n");
 
@@ -527,6 +558,9 @@ static void usbd_ecm_hotplug_thread(void *param)
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Thread exit\n");
 	usbd_ecm_hotplug_thread_running = 0;
+	/* Either the loop was asked to stop or a re-init failed; in both cases the
+	 * stack must be treated as gone, so keep TX out for good. */
+	usbd_ecm_stack_ready = 0;
 
 	/* The stack is fully deinited here, no ISR callback can give the sema any more.
 	   This thread is its only user left: free it as the last owner. */
@@ -552,6 +586,15 @@ static void usbd_ecm_init_thread(void *param)
 
 	rltk_usb_eth_init();
 
+	/* Created before the stack comes up and never deleted, see the declaration */
+	if (usbd_ecm_state_mutex == NULL) {
+		ret = rtos_mutex_create(&usbd_ecm_state_mutex);
+		if (ret != RTK_SUCCESS) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Create state mutex fail\n");
+			goto exit_cleanup;
+		}
+	}
+
 #if CDC_ECM_HOTPLUG
 	// Create semaphore for hotplug detection
 	ret = rtos_sema_create(&usbd_ecm_attach_status_changed_sema, 0U, 1U);
@@ -574,6 +617,9 @@ static void usbd_ecm_init_thread(void *param)
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Init ECM fail %d\n", ret);
 		goto exit_usbd_cdc_ecm_init_fail;
 	}
+
+	/* The stack is fully up: allow TX */
+	usbd_ecm_stack_ready = 1;
 
 #if CDC_ECM_HOTPLUG
 	// Create hotplug detection thread
@@ -603,7 +649,13 @@ static void usbd_ecm_init_thread(void *param)
 
 #if CDC_ECM_HOTPLUG
 exit_create_hotplug_task_fail:
+	/* The gate was already opened above, so the lwIP thread may be inside
+	 * usbd_cdc_ecm_transmit() right now: take the lock here too, exactly as the
+	 * hotplug thread does, instead of only closing the gate. */
+	rtos_mutex_take(usbd_ecm_state_mutex, RTOS_MAX_TIMEOUT);
+	usbd_ecm_stack_ready = 0;
 	usbd_cdc_ecm_deinit();
+	rtos_mutex_give(usbd_ecm_state_mutex);
 #endif
 
 exit_usbd_cdc_ecm_init_fail:
@@ -615,8 +667,9 @@ exit_usbd_init_fail:
 		rtos_sema_delete(usbd_ecm_attach_status_changed_sema);
 		usbd_ecm_attach_status_changed_sema = NULL;
 	}
-exit_cleanup:
 #endif
+	/* usbd_ecm_state_mutex is deliberately kept, see its declaration */
+exit_cleanup:
 	RTK_LOGS(TAG, RTK_LOG_ERROR, "Init fail\n");
 	rtos_task_delete(NULL);
 }
@@ -625,7 +678,26 @@ exit_cleanup:
 
 int usb_ethernet_transmit(u8 *buf, u32 len, u8 block)
 {
-	return usbd_cdc_ecm_transmit(buf, len, block);
+	int ret;
+
+	/* Gate on usbd_ecm_stack_ready BEFORE touching the mutex: it is still NULL if
+	 * the example was never started, and already cleared if the init failed or the
+	 * stack is gone for good. A hotplug right after this check is harmless, the
+	 * mutex stays valid and the re-check below skips the TX. */
+	if (usbd_ecm_stack_ready == 0U) {
+		return HAL_ERR_HW;
+	}
+
+	rtos_mutex_take(usbd_ecm_state_mutex, RTOS_MAX_TIMEOUT);
+	if (usbd_ecm_stack_ready == 0U) {
+		/* Lost the race against a hotplug tear down */
+		ret = HAL_ERR_HW;
+	} else {
+		ret = usbd_cdc_ecm_transmit(buf, len, block);
+	}
+	rtos_mutex_give(usbd_ecm_state_mutex);
+
+	return ret;
 }
 
 /**

@@ -193,6 +193,11 @@ typedef struct {
 
 	usb_setup_req_t ctrl_req;       /**< Saved control request for EP0 OUT data phase. */
 
+	/* An NTB slot is always finalised and published before the producer returns:
+	 * the non-aggregation path builds one-frame NTBs in the lwIP task, and the
+	 * aggregation TX task stops appending as soon as the raw ring runs empty.
+	 * No slot is therefore ever left partially filled, so the TX path needs no
+	 * flush timeout or fill-in-progress state. */
 	ncm_tx_ntb_t tx_slot[USBD_CDC_NCM_TX_DEPTH]; /**< SPSC TX NTB ring slots. */
 	usb_os_sema_t tx_buf_free_sema; /**< ISR -> producer: given each XFRC when a slot is freed. */
 	__IO u8 tx_wd;                  /**< Producer write index (TX task / lwIP task only advances this). */
@@ -202,16 +207,13 @@ typedef struct {
 #ifdef CONFIG_USBD_CDC_NCM_TX_AGGREGATION
 	/* Aggregation path: dedicated TX task reads raw frames from tx_raw_rb,
 	 * aggregates them into NTB slots, and advances tx_wd.
-	 * lwIP only calls usb_ringbuf_add_tail() and returns immediately. */
+	 * lwIP only calls usb_ringbuf_add_tail() and returns immediately.
+	 * Without this option the lwIP task builds one-frame NTBs itself, so none
+	 * of the fields below exist: no extra task, no ringbuf, minimal latency. */
 	usb_ringbuf_manager_t tx_raw_rb;    /**< Raw ethernet frame ring buffer (lwIP -> TX task). */
 	usb_os_sema_t tx_raw_sema;          /**< lwIP -> TX task: given when a frame is enqueued. */
 	usb_os_task_t tx_task;              /**< TX aggregation task handle. */
 	__IO u8 tx_task_running;            /**< TX task loop guard; cleared to 0 to request exit. */
-#else
-	/* Non-aggregation path: lwIP task directly builds one-frame NTBs and
-	 * advances tx_wd.  No extra task, no ringbuf, minimal latency. */
-	__IO u8 tx_filling_busy;        /**< 1 = producer is mid-append on slot[tx_wd]; SOF backs off. */
-	__IO u8 tx_wd_tick;             /**< SOF ticks since first frame appended to slot[tx_wd]. */
 #endif
 
 	usb_os_sema_t rx_data_ready_sema; /**< ISR -> thread: signals a buffer holds data. */
@@ -330,7 +332,8 @@ void usbd_cdc_ncm_deinit(void);
  * @brief Transmits an ethernet frame to the host wrapped in an NTB16.
  * @param[in] buf: Pointer to the ethernet frame buffer to be transmitted.
  * @param[in] len: Length of the ethernet frame in bytes.
- * @param[in] block: Blocking mode flag (e.g., 0 for non-blocking, else for blocking).
+ * @param[in] block: When non-zero, block for a bounded time waiting for TX room, then
+ *                   drop the frame and return HAL_BUSY.  When zero, drop immediately.
  * @return 0 on success, non-zero on failure.
  */
 int usbd_cdc_ncm_transmit(u8 *buf, u32 len, u8 block);

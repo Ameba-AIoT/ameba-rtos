@@ -183,6 +183,39 @@
 /** @} */
 
 /**
+ * @brief Legal bInterval ranges of an endpoint descriptor (USB 2.0 9.6.6).
+ * @details bInterval is the period of a periodic endpoint, and the spec encodes it in two
+ *          different ways depending on speed and transfer type. Mixing them up misreads the
+ *          service interval by up to 2^15, so pick the pair matching the endpoint:
+ *          - Isochronous, full and high speed, and Interrupt at high speed: a *exponent*, where
+ *            the period is 2^(bInterval-1) frames (full speed) or microframes (high speed).
+ *            Range 1..16; a value above 16 is malformed and, used as a shift count, would be
+ *            undefined behaviour.
+ *          - Interrupt at full/low speed: a *linear* count of frames, range 1..255.
+ *          Bulk and Control endpoints have no period; bInterval is reserved and must be ignored.
+ *
+ *          Note that these bounds only make a descriptor well formed, not usable: the longest
+ *          legal exponent (16, i.e. 2^15 frames/microframes) is a period of several seconds,
+ *          which many derived rate computations cannot represent. Range-check with these macros,
+ *          then still validate whatever rate or size is computed from the value.
+ * @{
+ */
+#define USB_EP_BINTERVAL_EXP_MIN                       1U    /**< Min bInterval where the period is 2^(bInterval-1). */
+#define USB_EP_BINTERVAL_EXP_MAX                       16U   /**< Max bInterval where the period is 2^(bInterval-1). */
+#define USB_EP_BINTERVAL_LINEAR_MIN                    1U    /**< Min bInterval where the period is bInterval frames. */
+#define USB_EP_BINTERVAL_LINEAR_MAX                    255U  /**< Max bInterval where the period is bInterval frames. */
+
+#define USB_ISOC_FS_BINTERVAL_MIN                      USB_EP_BINTERVAL_EXP_MIN    /**< FS Isochronous: 2^(n-1) frames. */
+#define USB_ISOC_FS_BINTERVAL_MAX                      USB_EP_BINTERVAL_EXP_MAX    /**< FS Isochronous: 2^(n-1) frames. */
+#define USB_ISOC_HS_BINTERVAL_MIN                      USB_EP_BINTERVAL_EXP_MIN    /**< HS Isochronous: 2^(n-1) microframes. */
+#define USB_ISOC_HS_BINTERVAL_MAX                      USB_EP_BINTERVAL_EXP_MAX    /**< HS Isochronous: 2^(n-1) microframes. */
+#define USB_INTR_FS_BINTERVAL_MIN                      USB_EP_BINTERVAL_LINEAR_MIN /**< FS Interrupt: bInterval frames. */
+#define USB_INTR_FS_BINTERVAL_MAX                      USB_EP_BINTERVAL_LINEAR_MAX /**< FS Interrupt: bInterval frames. */
+#define USB_INTR_HS_BINTERVAL_MIN                      USB_EP_BINTERVAL_EXP_MIN    /**< HS Interrupt: 2^(n-1) microframes. */
+#define USB_INTR_HS_BINTERVAL_MAX                      USB_EP_BINTERVAL_EXP_MAX    /**< HS Interrupt: 2^(n-1) microframes. */
+/** @} */
+
+/**
  * @brief Defines related to the USB Hub Class specification.
  * @{
  */

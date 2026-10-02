@@ -126,7 +126,8 @@ static usb_cdc_acm_line_coding_t composite_cdc_acm_line_coding;
 #if COMP_HOTPLUG
 static rtos_task_t composite_hotplug_task;
 static rtos_sema_t composite_attach_status_changed_sema;
-static u8 composite_attach_status;
+/* Written by the ISR, read by the hotplug thread, possibly on another core */
+static volatile u8 composite_attach_status;
 
 /* Composite-level callback: forwarded the aggregated attach status by the
    composite framework, used to drive the hotplug thread. */

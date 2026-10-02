@@ -55,6 +55,8 @@
 #define VENDOR_INTR_ASYNC_XFER                  0
 // Loopback BULK data in an async thread
 #define VENDOR_BULK_ASYNC_XFER                  0
+// Any loopback runs in a thread of its own, i.e. outside the USB ISR
+#define VENDOR_ASYNC_XFER                       (VENDOR_ISOC_ASYNC_XFER || VENDOR_INTR_ASYNC_XFER || VENDOR_BULK_ASYNC_XFER)
 
 // Thread priorities
 #define VENDOR_INIT_THREAD_PRIORITY             5
@@ -134,29 +136,52 @@ static const usbd_vendor_cb_t vendor_cb = {
 };
 
 #if VENDOR_ISOC_ASYNC_XFER
-static u8 *vendor_isoc_tx_buf = NULL;
-static u32 vendor_isoc_tx_len = 0;
+/* Written by the ISR, read by the xfer thread, possibly on another core */
+static u8 *volatile vendor_isoc_tx_buf = NULL;
+static volatile u32 vendor_isoc_tx_len = 0;
 static rtos_sema_t vendor_isoc_async_xfer_sema;
 #endif
 
 #if VENDOR_INTR_ASYNC_XFER
-static u8 *vendor_intr_tx_buf = NULL;
-static u32 vendor_intr_tx_len = 0;
+/* Written by the ISR, read by the xfer thread, possibly on another core */
+static u8 *volatile vendor_intr_tx_buf = NULL;
+static volatile u32 vendor_intr_tx_len = 0;
 static rtos_sema_t vendor_intr_async_xfer_sema;
 #endif
 
 #if VENDOR_BULK_ASYNC_XFER
-static u8 *vendor_bulk_tx_buf = NULL;
-static u32 vendor_bulk_tx_len = 0;
+/* Written by the ISR, read by the xfer thread, possibly on another core */
+static u8 *volatile vendor_bulk_tx_buf = NULL;
+static volatile u32 vendor_bulk_tx_len = 0;
 static rtos_sema_t vendor_bulk_async_xfer_sema;
 #endif
 
 #if VENDOR_HOTPLUG
-static u8 vendor_attach_status;
+/* Written by the ISR, read by the hotplug thread, possibly on another core */
+static volatile u8 vendor_attach_status;
 static rtos_sema_t vendor_attach_status_changed_sema;
 /* Raised by the hotplug thread when the stack can not be recovered: the async
    xfer threads leave their loops so the semaphores can be freed safely. */
 static volatile u8 vendor_stack_fatal;
+#endif
+
+#if VENDOR_ASYNC_XFER
+/* Serialize the USB stack bring up/tear down against the async xfer threads: each
+   of them holds vendor_xfer_lock while it is inside a class API, and the hotplug
+   thread takes the lock before it deinits the stack. One lock for all three
+   directions: a transmit only arms an EP, so the hold time is short.
+   Created once and never deleted: an xfer thread that misses its polling window is
+   force deleted by vendor_stop_xfer_threads(), so there is no point in time at
+   which this mutex is provably unreferenced. vendor_stack_ready is the gate that
+   keeps callers off the stack instead. */
+static rtos_mutex_t vendor_xfer_lock = NULL;
+/* 1: usbd_init() and usbd_vendor_init() both done, the class APIs may be called.
+   Cleared before any tear down, so a non-zero value also implies the lock is valid.
+   usbd_vendor_deinit() frees the EP xfer buffers that usbd_vendor_transmit_xxx_data()
+   memcpy into, and the class internal is_ready check only guards the entry; under SMP
+   an xfer thread on the other core can already be past it while the hotplug thread
+   deinits, so the threads must be excluded from the whole teardown. */
+static volatile u8 vendor_stack_ready;
 #endif
 
 /* Async xfer thread handles. Each worker clears its own handle as its last
@@ -359,9 +384,17 @@ static void example_usbd_vendor_intr_xfer_thread(void *param)
 				break;
 			}
 #endif
-			if ((vendor_intr_tx_buf != NULL) && (vendor_intr_tx_len != 0)) {
+			/* Gate on vendor_stack_ready BEFORE touching the mutex: it is still NULL if
+			   the loopback got a request before init finished. Then recheck under the
+			   lock, the stack may have gone down while waiting for it. */
+			if (vendor_stack_ready == 0U) {
+				continue;
+			}
+			rtos_mutex_take(vendor_xfer_lock, RTOS_MAX_TIMEOUT);
+			if ((vendor_stack_ready != 0U) && (vendor_intr_tx_buf != NULL) && (vendor_intr_tx_len != 0)) {
 				usbd_vendor_transmit_intr_data(vendor_intr_tx_buf, vendor_intr_tx_len);
 			}
+			rtos_mutex_give(vendor_xfer_lock);
 		}
 	}
 	vendor_intr_async_xfer_task = NULL;
@@ -402,9 +435,15 @@ static void example_usbd_vendor_isoc_xfer_thread(void *param)
 				break;
 			}
 #endif
-			if ((vendor_isoc_tx_buf != NULL) && (vendor_isoc_tx_len != 0)) {
+			/* See the INTR thread for why the gate comes before the mutex. */
+			if (vendor_stack_ready == 0U) {
+				continue;
+			}
+			rtos_mutex_take(vendor_xfer_lock, RTOS_MAX_TIMEOUT);
+			if ((vendor_stack_ready != 0U) && (vendor_isoc_tx_buf != NULL) && (vendor_isoc_tx_len != 0)) {
 				usbd_vendor_transmit_isoc_data(vendor_isoc_tx_buf, vendor_isoc_tx_len);
 			}
+			rtos_mutex_give(vendor_xfer_lock);
 		}
 	}
 	vendor_isoc_async_xfer_task = NULL;
@@ -444,9 +483,15 @@ static void example_usbd_vendor_bulk_xfer_thread(void *param)
 				break;
 			}
 #endif
-			if ((vendor_bulk_tx_buf != NULL) && (vendor_bulk_tx_len != 0)) {
+			/* See the INTR thread for why the gate comes before the mutex. */
+			if (vendor_stack_ready == 0U) {
+				continue;
+			}
+			rtos_mutex_take(vendor_xfer_lock, RTOS_MAX_TIMEOUT);
+			if ((vendor_stack_ready != 0U) && (vendor_bulk_tx_buf != NULL) && (vendor_bulk_tx_len != 0)) {
 				usbd_vendor_transmit_bulk_data(vendor_bulk_tx_buf, vendor_bulk_tx_len);
 			}
+			rtos_mutex_give(vendor_xfer_lock);
 		}
 	}
 	vendor_bulk_async_xfer_task = NULL;
@@ -475,6 +520,31 @@ static void vendor_cb_status_changed(u8 old_status, u8 status)
 }
 
 #if VENDOR_HOTPLUG
+/**
+  * @brief  Keep the async xfer threads out of the stack while it is torn down and
+  *         brought back up, see vendor_xfer_lock. No-op if no loopback runs in a
+  *         thread of its own, the ISR callbacks are already serialized against
+  *         deinit by its local interrupt disable.
+  * @retval None
+  */
+static void vendor_xfer_lock_acquire(void)
+{
+#if VENDOR_ASYNC_XFER
+	rtos_mutex_take(vendor_xfer_lock, RTOS_MAX_TIMEOUT);
+	vendor_stack_ready = 0;
+#endif
+}
+
+static void vendor_xfer_lock_release(u8 ready)
+{
+#if VENDOR_ASYNC_XFER
+	vendor_stack_ready = ready;
+	rtos_mutex_give(vendor_xfer_lock);
+#else
+	UNUSED(ready);
+#endif
+}
+
 static void example_usbd_vendor_hotplug_thread(void *param)
 {
 	int ret = 0;
@@ -485,18 +555,22 @@ static void example_usbd_vendor_hotplug_thread(void *param)
 		if (rtos_sema_take(vendor_attach_status_changed_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
 			if (vendor_attach_status == USBD_ATTACH_STATUS_DETACHED) {
 				RTK_LOGS(TAG, RTK_LOG_INFO, "DETACHED\n");
+				vendor_xfer_lock_acquire();
 				usbd_vendor_deinit();
 				usbd_deinit();
 				RTK_LOGS(TAG, RTK_LOG_INFO, "Free heap: 0x%x\n", rtos_mem_get_free_heap_size());
 				ret = usbd_init(&vendor_cfg);
 				if (ret != 0) {
+					vendor_xfer_lock_release(0);
 					break;
 				}
 				ret = usbd_vendor_init(&vendor_cb, &vendor_ep);
 				if (ret != 0) {
 					usbd_deinit();
+					vendor_xfer_lock_release(0);
 					break;
 				}
+				vendor_xfer_lock_release(1);
 			} else if (vendor_attach_status == USBD_ATTACH_STATUS_ATTACHED) {
 				RTK_LOGS(TAG, RTK_LOG_INFO, "ATTACHED\n");
 			} else {
@@ -522,6 +596,16 @@ static void example_usbd_vendor_thread(void *param)
 #endif
 
 	UNUSED(param);
+
+#if VENDOR_ASYNC_XFER
+	/* Created once and never deleted, see its declaration. */
+	if (vendor_xfer_lock == NULL) {
+		ret = rtos_mutex_create(&vendor_xfer_lock);
+		if (ret != RTK_SUCCESS) {
+			goto exit;
+		}
+	}
+#endif
 
 #if VENDOR_HOTPLUG
 	ret = rtos_sema_create(&vendor_attach_status_changed_sema, 0U, 1U);
@@ -564,6 +648,9 @@ static void example_usbd_vendor_thread(void *param)
 	if (ret != HAL_OK) {
 		goto clear_usb_driver_exit;
 	}
+#if VENDOR_ASYNC_XFER
+	vendor_stack_ready = 1;
+#endif
 
 #if VENDOR_HOTPLUG
 	ret = rtos_task_create(&check_status_task, "usbd_vendor_hotplug_thread",
@@ -576,8 +663,8 @@ static void example_usbd_vendor_thread(void *param)
 	/* C-2: the USB OTG ISR is delivered on CPU0 (GIC ITARGETSR pins every SPI to core 0).
 	   Pinning the hotplug/deinit thread to CPU0 puts it on the same core as the ISR,
 	   so deinit's local interrupt disable is meaningful again under SMP. The async
-	   xfer threads stay unaffined: vendor_stop_xfer_threads() gates them out of a
-	   pending teardown, so they do not need to share the ISR's core. */
+	   xfer threads stay unaffined: a pending deinit is excluded from them by
+	   vendor_xfer_lock, not by core. */
 	rtos_task_set_affinity(check_status_task, 0);
 #endif
 #endif // VENDOR_HOTPLUG
@@ -637,6 +724,10 @@ clear_check_status_task:
 	rtos_task_delete(check_status_task);
 
 clear_usb_class_exit:
+#endif
+#if VENDOR_ASYNC_XFER
+	/* The xfer threads are already gone here, but keep the gate consistent. */
+	vendor_stack_ready = 0;
 #endif
 	usbd_vendor_deinit();
 

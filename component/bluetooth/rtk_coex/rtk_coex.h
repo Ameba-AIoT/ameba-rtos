@@ -349,6 +349,7 @@ struct rtk_bt_coex_monitor_node_t {
 
 struct rtk_bt_coex_priv_t {
 	struct list_head conn_list;
+	void *conn_mutex;
 #if defined(HCI_BT_COEX_BR_EDR_SUPPORT) && HCI_BT_COEX_BR_EDR_SUPPORT
 	struct list_head monitor_list;
 	void *monitor_mutex;
