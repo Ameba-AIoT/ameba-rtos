@@ -69,14 +69,6 @@ static const u8 usbd_msc_dev_desc[USB_LEN_DEV_DESC] = {
 	0x01                                            /* bNumConfigurations */
 };  /* usbd_msc_dev_desc */
 
-/* USB Standard String Descriptor 0 */
-static const u8 usbd_msc_lang_id_desc[USB_LEN_LANGID_STR_DESC] = {
-	USB_LEN_LANGID_STR_DESC,                        /* bLength */
-	USB_DESC_TYPE_STRING,                           /* bDescriptorType */
-	USB_LOW_BYTE(USBD_MSC_LANGID_STRING),           /* wLANGID */
-	USB_HIGH_BYTE(USBD_MSC_LANGID_STRING),
-};  /* usbd_msc_lang_id_desc */
-
 #ifndef CONFIG_USB_FS
 /* USB Standard Device Qualifier Descriptor */
 static const u8 usbd_msc_device_qualifier_desc[USB_LEN_DEV_QUALIFIER_DESC] = {
@@ -380,19 +372,6 @@ static int usbd_msc_set_config(usb_dev_t *dev, u8 config)
 	}
 
 	cdev->dev = dev;
-
-	if (!cdev->from_composite) {
-#ifdef CONFIG_USBD_SELF_POWERED
-		dev->self_powered = 1;
-#else
-		dev->self_powered = 0;
-#endif
-#ifdef CONFIG_USBD_REMOTE_WAKEUP_EN
-		dev->remote_wakeup_en = 1;
-#else
-		dev->remote_wakeup_en = 0;
-#endif
-	}
 
 	/* Init BULK IN EP */
 	info = &ep_bulk_in->info;
@@ -821,16 +800,6 @@ static u16 usbd_msc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 	u16 len = 0;
 	u8 type = USB_HIGH_BYTE(req->wValue);
 	u8 is_cfg = 0;
-	u8 attr = 0x80U;
-
-	if (!cdev->from_composite) {
-#ifdef CONFIG_USBD_SELF_POWERED
-		attr |= USB_CFG_DESC_OFFSET_ATTR_BIT_SELF_POWERED;
-#endif
-#ifdef CONFIG_USBD_REMOTE_WAKEUP_EN
-		attr |= USB_CFG_DESC_OFFSET_ATTR_BIT_REMOTE_WAKEUP;
-#endif
-	}
 
 	switch (type) {
 
@@ -872,32 +841,9 @@ static u16 usbd_msc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 #endif
 
 	case USB_DESC_TYPE_STRING:
-		switch (USB_LOW_BYTE(req->wValue)) {
-		case USBD_IDX_LANGID_STR:
-			desc = usbd_msc_lang_id_desc;
-			len = sizeof(usbd_msc_lang_id_desc);
-			break;
-		case USBD_IDX_MFC_STR:
-			len = usbd_get_str_descriptor(USBD_MSC_MFG_STRING, buf, buf_len);
-			break;
-		case USBD_IDX_PRODUCT_STR:
-			if (speed == USB_SPEED_HIGH) {
-				len = usbd_get_str_descriptor(USBD_MSC_PROD_HS_STRING, buf, buf_len);
-			} else {
-				len = usbd_get_str_descriptor(USBD_MSC_PROD_FS_STRING, buf, buf_len);
-			}
-			break;
-		case USBD_IDX_SERIAL_STR:
-			len = usbd_get_str_descriptor(USBD_MSC_SN_STRING, buf, buf_len);
-			break;
-		case USBD_IDX_MS_OS_STR:
-			/*Not support*/
-			break;
-		/* Add customer string here */
-		default:
-			USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_GET_DESC, 0);
-			break;
-		}
+		/* Every string this class owns is registered with usbd_add_string() and answered by
+		   the core, which only forwards an index it does not know, e.g. the MS OS string */
+		USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_GET_DESC, 0);
 		break;
 
 	default:
@@ -918,10 +864,6 @@ static u16 usbd_msc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 		buf[USB_CFG_DESC_OFFSET_TYPE] = type;
 		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN] = USB_LOW_BYTE(len);
 		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN + 1] = USB_HIGH_BYTE(len);
-
-		if (!cdev->from_composite) {
-			buf[USB_CFG_DESC_OFFSET_ATTR] = attr;
-		}
 
 		/* Patch EP addresses from placeholder to actual values */
 		usbd_msc_patch_ep_addresses(buf + USB_LEN_CFG_DESC,

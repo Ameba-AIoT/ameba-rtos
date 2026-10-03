@@ -35,11 +35,6 @@ extern "C" {
 /* Defines basic device parameters like VID, PID, and string descriptors. */
 #define USBD_CDC_ECM_VID                              USB_VID               /**< Vendor ID. */
 #define USBD_CDC_ECM_PID                              USB_PID               /**< Product ID. */
-#define USBD_CDC_ECM_LANGID_STRING                    0x0409U               /**< Language ID for string descriptors (0x0409 = English) */
-#define USBD_CDC_ECM_MFG_STRING                       "Realtek"             /**< Manufacturer string. */
-#define USBD_CDC_ECM_PROD_HS_STRING                   "Realtek CDC ECM (HS)"/**< Product string for High-Speed mode. */
-#define USBD_CDC_ECM_PROD_FS_STRING                   "Realtek CDC ECM (FS)"/**< Product string for Full-Speed mode. */
-#define USBD_CDC_ECM_SN_STRING                        "1234567890"          /**< Serial number string. */
 
 /* Set to 1 to enable the periodic state-trace thread (default off).
  * When enabled, a low-priority thread prints link/endpoint/TX-ring-buffer state,
@@ -218,9 +213,13 @@ typedef struct {
 	__IO u8 rx_thread_running;              /**< RX thread loop guard; cleared to 0 to request exit. */
 	u8 ctrl_req_pending;                    /**< 1 if ctrl_req is waiting for its EP0 OUT data stage. */
 	u8 from_composite;                      /**< Flag indicating if part of a composite device. */
-	u8 cls_str_base;                        /**< First class-specific string index; the standalone default
-	                                             (right above USBD_IDX_SERIAL_STR) unless the composite
-	                                             framework rebases it via set_str_base(). */
+	u8 mac_str_idx;                         /**< iMACAddress string index from usbd_add_string(), 0 for none. */
+	/**
+	 * @brief MAC address as the 12 uppercase hex characters the iMACAddress string reports.
+	 * @details Registered with the core by pointer, so it has to outlive enumeration rather
+	 *          than being formatted into a local buffer on each request.
+	 */
+	char mac_str[(USBD_CDC_ECM_MAC_STR_LEN * 2U) + 1U];
 	u8 if_base;                             /**< First interface number of this class; 0 in standalone
 	                                             mode unless the composite framework rebases it via
 	                                             set_interface_base(). */

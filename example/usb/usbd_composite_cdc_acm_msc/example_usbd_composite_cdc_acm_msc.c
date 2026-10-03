@@ -37,12 +37,6 @@
 #define CDC_BULK_IN_XFER_SIZE                         2048U
 #define CDC_BULK_OUT_XFER_SIZE                        2048U
 
-#ifdef CONFIG_SUPPORT_USB_FS_ONLY
-#define COMP_USB_SPEED                                USB_SPEED_FULL
-#else
-#define COMP_USB_SPEED                                USB_SPEED_HIGH
-#endif
-
 // This configuration is used to enable a thread to check hotplug event
 // and reset USB stack to avoid memory leak, only for example.
 #define COMP_HOTPLUG                                  1
@@ -68,7 +62,9 @@ static void composite_cb_status_changed(u8 old_status, u8 status);
 static const char *const TAG = "COMP";
 
 static const usbd_config_t composite_cfg = {
-	.speed = COMP_USB_SPEED,
+	.info = {
+		.prod_str = "Realtek ACM+MSC Composite Device",
+	},
 	.isr_priority = INT_PRI_MIDDLE,
 	/* Enlarge this value if composite configuration descriptor is larger than 512B */
 	/* .ctrl_xfer_buf_len = 512U, */
@@ -88,12 +84,14 @@ static const usbd_config_t composite_cfg = {
 };
 
 /* CDC ACM endpoint configuration */
-static const usbd_cdc_acm_ep_cfg_t cdc_acm_ep = {
+static const usbd_cdc_acm_config_t cdc_acm_ep = {
 	.bulk_in_addr  = COMP_CDC_BULK_IN_EP,
 	.bulk_out_addr = COMP_CDC_BULK_OUT_EP,
 	.intr_in_addr  = COMP_CDC_INTR_IN_EP,
 	.bulk_in_xfer_size  = CDC_BULK_IN_XFER_SIZE,
 	.bulk_out_xfer_size = CDC_BULK_OUT_XFER_SIZE,
+	.notify_en = 1,
+	.bulk_in_zero_copy = 1,
 };
 
 /* MSC endpoint configuration */
@@ -126,7 +124,8 @@ static usb_cdc_acm_line_coding_t composite_cdc_acm_line_coding;
 #if COMP_HOTPLUG
 static rtos_task_t composite_hotplug_task;
 static rtos_sema_t composite_attach_status_changed_sema;
-static u8 composite_attach_status;
+/* Written by the ISR, read by the hotplug thread, possibly on another core */
+static volatile u8 composite_attach_status;
 
 /* Composite-level callback: forwarded the aggregated attach status by the
    composite framework, used to drive the hotplug thread. */
@@ -375,7 +374,7 @@ void example_usbd_composite(void)
 {
 	int ret;
 
-	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD COMP demo start\r\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD ACM+MSC comp demo start\r\n");
 
 #if COMP_HOTPLUG
 	ret = rtos_sema_create(&composite_attach_status_changed_sema, 0U, 1U);
@@ -407,7 +406,7 @@ void example_usbd_composite(void)
 #endif
 #endif
 
-	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD COMP demo ready\r\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD ACM+MSC comp demo ready\r\n");
 	return;
 
 #if COMP_HOTPLUG

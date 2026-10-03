@@ -27,13 +27,6 @@
 // while test suspend/resume, hotplug should be disabled
 #define HID_HOTPLUG                              1
 
-// USB speed
-#ifdef CONFIG_SUPPORT_USB_FS_ONLY
-#define HID_USB_SPEED                            USB_SPEED_FULL
-#else
-#define HID_USB_SPEED                            USB_SPEED_HIGH
-#endif
-
 // Send mouse data through monitor
 #define HID_MOUSE_CMD                            1
 
@@ -180,7 +173,9 @@ const COMMAND_TABLE usbd_hid_mouse_data_cmd[] = {
 #endif  //HID_MOUSE_CMD
 
 static const usbd_config_t hid_cfg = {
-	.speed = HID_USB_SPEED,
+	.info = {
+		.prod_str = "Realtek HID Device",
+	},
 	.isr_priority = INT_PRI_MIDDLE,
 #if defined(CONFIG_AMEBAGREEN2)
 	.rx_fifo_depth = 724U,
@@ -352,6 +347,21 @@ static void hid_cb_status_changed(u8 old_status, u8 status)
 
 #if HID_MOUSE_CMD
 #ifdef CONFIG_USBD_HID_MOUSE
+/* The mouse report declares LOGICAL_MINIMUM(-127)/LOGICAL_MAXIMUM(127) (Ref HID 1.11 6.2.2.7),
+   so clamp explicitly: narrowing the unsigned parse result to char would silently wrap */
+static char hid_mouse_axis(const u8 *str)
+{
+	s32 val = (s32)strtoul((const char *)str, (char **)NULL, 10);
+
+	if (val > 127) {
+		val = 127;
+	} else if (val < -127) {
+		val = -127;
+	}
+
+	return (char)val;
+}
+
 static u32 hid_cmd_mouse_data(u16 argc, u8  *argv[])
 {
 	usbd_hid_mouse_data_t data;
@@ -377,15 +387,15 @@ static u32 hid_cmd_mouse_data(u16 argc, u8  *argv[])
 	}
 
 	if (argc > 3) {
-		data.x_axis = strtoul((const char *)(argv[3]), (char **)NULL, 10);
+		data.x_axis = hid_mouse_axis(argv[3]);
 	}
 
 	if (argc > 4) {
-		data.y_axis = strtoul((const char *)(argv[4]), (char **)NULL, 10);
+		data.y_axis = hid_mouse_axis(argv[4]);
 	}
 
 	if (argc > 5) {
-		data.wheel = strtoul((const char *)(argv[5]), (char **)NULL, 10);
+		data.wheel = hid_mouse_axis(argv[5]);
 	}
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Send mouse data\n");

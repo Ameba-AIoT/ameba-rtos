@@ -48,12 +48,9 @@ extern "C" {
 #define USBD_UVC_WEBCAM_VENDOR_ID       USB_VID
 #define USBD_UVC_WEBCAM_PRODUCT_ID      USB_PID
 #define USBD_UVC_WEBCAM_DEVICE_BCD      0x0010
-#define USBD_UVC_LANGID_STRING          0x0409U
 
-#define USBD_UVC_MFG_STRING             "Realtek"
 #define USBD_UVC_MFG_HS_STRING          "USB UVC CLASS"
 #define USBD_UVC_MFG_FS_STRING          "USB UVC CLASS"
-#define USBD_UVC_SN_STRING              "1234567890"
 
 #define USBD_UVC_MAKE_SUBCMD(data,dir,subcmd) ((u8)(data)<<7|(u8)(dir)<<6|subcmd)
 

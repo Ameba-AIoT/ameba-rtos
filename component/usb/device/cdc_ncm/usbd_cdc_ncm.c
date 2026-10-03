@@ -88,13 +88,6 @@ _Static_assert(USBD_CDC_NCM_NTB_IN_MAX_DATAGRAMS <= 255U,
 
 /* Private defines -----------------------------------------------------------*/
 
-/* Class-specific string descriptors: indices above USBD_IDX_SERIAL_STR, laid out as a
- * window whose base is the standalone default below, or the one assigned by the composite
- * framework via set_str_base(). */
-#define USBD_CDC_NCM_STR_IDX_MAC                      0U                         /**< Ordinal of the MAC string inside the class string window */
-#define USBD_CDC_NCM_CLASS_STR_COUNT                  1U                         /**< Class-specific string count: iMACAddress only */
-#define USBD_CDC_NCM_CLASS_STR_BASE_DEFAULT           (USBD_IDX_SERIAL_STR + 1U) /**< Standalone base, right above the device-global strings */
-
 /* Interface numbers */
 #define USBD_CDC_NCM_COMM_INTERFACE_NUM 0x00U  /**< Communication interface */
 #define USBD_CDC_NCM_DATA_INTERFACE_NUM 0x01U  /**< Data interface */
@@ -103,11 +96,25 @@ _Static_assert(USBD_CDC_NCM_NTB_IN_MAX_DATAGRAMS <= 255U,
 
 /* TX NTB slot depth: see USBD_CDC_NCM_TX_DEPTH in usbd_cdc_ncm.h. */
 
-/* Maximum time (ms) usbd_cdc_ncm_transmit() will block waiting for a free
- * TX NTB buffer when called with block != 0.  Set to USB_OS_SEMA_TIMEOUT
- * (wait forever) by default: the caller asked for backpressure, so the
- * upper layer prefers to stall rather than drop a frame. */
-#define USBD_CDC_NCM_BULK_TX_TIMEOUT_MS               USB_OS_SEMA_TIMEOUT
+/* Maximum time (ms) usbd_cdc_ncm_transmit() will block waiting for TX room when
+ * called with block != 0.
+ *
+ * Ref USB 2.0 5.7.2 / 8.5: BULK has no guaranteed service interval, the host alone
+ * decides when - or whether - it polls BULK IN.  A wait-forever here would let a host
+ * that stops polling (S3 sleep, ifdown without SET_INTERFACE alt 0, wedged host
+ * driver, dead hub with VBUS still present) freeze the single lwIP tcpip task
+ * permanently, taking every other netif down with it, because none of those cases
+ * produces the teardown that releases the semaphore.  Backpressure must therefore be
+ * bounded: on timeout the frame is dropped (HAL_BUSY) and TCP retransmits, which is
+ * the correct best-effort Ethernet semantics.
+ *
+ * Sized from the drain time of both TX stages at peak throughput.  NCM buffers
+ * TX_RB_DEPTH raw frames plus TX_DEPTH NTBs of NTB_IN_MAX_DATAGRAMS frames each:
+ *   USB HS (480 Mbps bus, ~40 MB/s BULK effective): ~12 * 1514 B / 40  MB/s -> 0.5 ms
+ *   USB FS ( 12 Mbps bus, ~1.5 MB/s BULK effective): ~12 * 1514 B / 1.5 MB/s ->  12 ms
+ * 20 ms covers the full-pipe FS drain with headroom, so a normal burst never loses a
+ * frame, while still bounding the stall a stuck host can impose. */
+#define USBD_CDC_NCM_BULK_TX_TIMEOUT_MS               20U
 
 /* NCM Functional Descriptor size (6 bytes) */
 #define USBD_CDC_NCM_FUNC_DESC_SIZE                   6U
@@ -178,7 +185,6 @@ static int usbd_cdc_ncm_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len);
 static void usbd_cdc_ncm_sof(usb_dev_t *dev);
 static void usbd_cdc_ncm_status_changed(usb_dev_t *dev, u8 old_status, u8 status);
 #ifdef CONFIG_USBD_COMPOSITE
-static u8 usbd_cdc_ncm_set_str_base(u8 base);
 static void usbd_cdc_ncm_set_interface_base(u8 base);
 #endif
 static int usbd_cdc_ncm_intr_in_send(void *data, u16 len);
@@ -228,14 +234,6 @@ static const u8 usbd_cdc_ncm_dev_desc[USB_LEN_DEV_DESC] = {
 	USBD_IDX_PRODUCT_STR,                           /* iProduct */
 	USBD_IDX_SERIAL_STR,                            /* iSerialNumber */
 	0x01                                            /* bNumConfigurations */
-};
-
-/* USB Standard String Descriptor 0 (Language ID) */
-static const u8 usbd_cdc_ncm_lang_id_desc[USB_LEN_LANGID_STR_DESC] = {
-	USB_LEN_LANGID_STR_DESC,                        /* bLength */
-	USB_DESC_TYPE_STRING,                           /* bDescriptorType */
-	USB_LOW_BYTE(USBD_CDC_NCM_LANGID_STRING),       /* wLANGID */
-	USB_HIGH_BYTE(USBD_CDC_NCM_LANGID_STRING),
 };
 
 #ifndef CONFIG_USB_FS
@@ -302,8 +300,7 @@ static const u8 usbd_cdc_ncm_hs_config_desc[] = {
 	USBD_CDC_NCM_ETHERNET_FUNC_DESC_SIZE,           /* bFunctionLength */
 	USB_CDC_CS_INTERFACE,                           /* bDescriptorType */
 	USB_CDC_FUNC_DESC_ETHERNET_NETWORKING,          /* bDescriptorSubtype */
-	USBD_CDC_NCM_CLASS_STR_BASE_DEFAULT +
-	USBD_CDC_NCM_STR_IDX_MAC,                       /* iMACAddress, runtime patched */
+	0x00,                                           /* iMACAddress, runtime patched */
 	0x00, 0x00, 0x00, 0x00,                         /* bmEthernetStatistics */
 	USB_LOW_BYTE(USB_CDC_NCM_MAX_ETHERNET_FRAME_SIZE), /* wMaxSegmentSize */
 	USB_HIGH_BYTE(USB_CDC_NCM_MAX_ETHERNET_FRAME_SIZE),
@@ -418,8 +415,7 @@ static const u8 usbd_cdc_ncm_fs_config_desc[] = {
 	USBD_CDC_NCM_ETHERNET_FUNC_DESC_SIZE,           /* bFunctionLength */
 	USB_CDC_CS_INTERFACE,                           /* bDescriptorType */
 	USB_CDC_FUNC_DESC_ETHERNET_NETWORKING,          /* bDescriptorSubtype */
-	USBD_CDC_NCM_CLASS_STR_BASE_DEFAULT +
-	USBD_CDC_NCM_STR_IDX_MAC,                       /* iMACAddress, runtime patched */
+	0x00,                                           /* iMACAddress, runtime patched */
 	0x00, 0x00, 0x00, 0x00,                         /* bmEthernetStatistics */
 	USB_LOW_BYTE(USB_CDC_NCM_MAX_ETHERNET_FRAME_SIZE), /* wMaxSegmentSize */
 	USB_HIGH_BYTE(USB_CDC_NCM_MAX_ETHERNET_FRAME_SIZE),
@@ -495,7 +491,6 @@ static const usbd_class_driver_t usbd_cdc_ncm_driver = {
 	.sof = usbd_cdc_ncm_sof,
 	.status_changed = usbd_cdc_ncm_status_changed,
 #ifdef CONFIG_USBD_COMPOSITE
-	.set_str_base = usbd_cdc_ncm_set_str_base,
 	.set_interface_base = usbd_cdc_ncm_set_interface_base,
 #endif
 };
@@ -704,10 +699,6 @@ static void usbd_cdc_ncm_tx_kick(usbd_cdc_ncm_dev_t *ncm)
 		 * fire.  Drop this NTB, advance rd, clear inflight, and wake the
 		 * producer in case the ring was full. */
 		ncm->tx_inflight = 0U;
-#ifndef CONFIG_USBD_CDC_NCM_TX_AGGREGATION
-		ncm->tx_filling_busy = 0U;
-		ncm->tx_wd_tick = 0U;
-#endif
 		ncm->tx_rd = (u8)((ncm->tx_rd + 1U) % USBD_CDC_NCM_TX_DEPTH);
 		__sync_synchronize();
 		usb_os_sema_give(ncm->tx_buf_free_sema);
@@ -735,10 +726,6 @@ static void usbd_cdc_ncm_tx_reset(usbd_cdc_ncm_dev_t *ncm)
 	ncm->tx_wd = 0;
 	ncm->tx_rd = 0;
 	ncm->tx_inflight = 0;
-#ifndef CONFIG_USBD_CDC_NCM_TX_AGGREGATION
-	ncm->tx_filling_busy = 0U;
-	ncm->tx_wd_tick = 0U;
-#endif
 	__sync_synchronize();
 	ncm->ep_bulk_in.xfer_state = 0U;
 
@@ -1040,6 +1027,10 @@ static void usbd_cdc_ncm_set_mac(const u8 *mac)
 	}
 
 	usb_os_memcpy((void *) & (ncm->mac[0]), (const void *)mac, USBD_CDC_NCM_MAC_STR_LEN);
+
+	/* Keep the string form in step: the core holds it by pointer for the iMACAddress
+	   string descriptor, so it is formatted here rather than on each request */
+	usbd_cdc_ncm_mac_to_string(ncm->mac, ncm->mac_str);
 }
 
 /**
@@ -1405,19 +1396,6 @@ static int usbd_cdc_ncm_set_config(usb_dev_t *dev, u8 config)
 
 	ncm->dev = dev;
 
-	if (!ncm->from_composite) {
-#ifdef CONFIG_USBD_SELF_POWERED
-		dev->self_powered = 1;
-#else
-		dev->self_powered = 0;
-#endif
-#ifdef CONFIG_USBD_REMOTE_WAKEUP_EN
-		dev->remote_wakeup_en = 1;
-#else
-		dev->remote_wakeup_en = 0;
-#endif
-	}
-
 	/* Initialize INTR IN endpoint.  It is the only endpoint that belongs to the
 	 * configuration itself: the communication interface has a single alternate
 	 * setting (alt 0), so its notification endpoint exists as soon as the device
@@ -1612,12 +1590,23 @@ static int usbd_cdc_ncm_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			break;
 
 		case USB_REQ_GET_STATUS:
-			if (dev->dev_state == USBD_STATE_CONFIGURED) {
+			/* Ref USB 2.0 9.4.5 and Table 9-3: an interface-recipient GET_STATUS returns
+			   two reserved zero bytes and wLength is two.  A request naming an interface
+			   this function does not own is a request error (9.2.7), which the device core
+			   turns into an EP0 STALL on a non-HAL_OK return.  The core only range-checks
+			   wIndex against USBD_MAX_NUM_INTERFACES, so ownership is the class's own job,
+			   exactly as for SET_INTERFACE / GET_INTERFACE above. */
+			if (dev->dev_state != USBD_STATE_CONFIGURED) {
+				ret = HAL_ERR_PARA;
+			} else if (req->wLength != 2U) {
+				ret = HAL_ERR_PARA;
+			} else if ((req->wIndex == USBD_CDC_NCM_COMM_INTERFACE_NUM) || (req->wIndex == USBD_CDC_NCM_DATA_INTERFACE_NUM)) {
 				ep0_in->xfer_buf[0] = 0U;
 				ep0_in->xfer_buf[1] = 0U;
 				ep0_in->xfer_len = 2U;
 				usbd_ep_transmit(dev, ep0_in);
 			} else {
+				/* Foreign interface: request error */
 				ret = HAL_ERR_PARA;
 			}
 			break;
@@ -2035,6 +2024,11 @@ static int usbd_cdc_ncm_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len)
  * @brief   SOF interrupt handler
  * @note    This function is called within an interrupt service routine (ISR) context;
  *          time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+ * @note    SOF never flushes a half-filled NTB, because neither TX path can leave
+ *          one: the non-aggregation producer finalizes and advances tx_wd before
+ *          returning (NTB_IN_MAX_DATAGRAMS=1), and the aggregation TX task stops
+ *          appending as soon as the raw ring runs empty.  slot[tx_wd] is therefore
+ *          always empty when SOF fires, and SOF only kicks the consumer.
  */
 static void usbd_cdc_ncm_sof(usb_dev_t *dev)
 {
@@ -2050,12 +2044,6 @@ static void usbd_cdc_ncm_sof(usb_dev_t *dev)
 			ncm->notify_retry = 0U;
 		}
 	}
-
-#ifndef CONFIG_USBD_CDC_NCM_TX_AGGREGATION
-	/* Non-aggregation: transmit() always finalizes and advances wd before
-	 * returning (NTB_IN_MAX_DATAGRAMS=1), so slot[wd].frame_count is always
-	 * 0 when SOF fires.  No SOF flush needed -- SOF only kicks the consumer. */
-#endif /* !CONFIG_USBD_CDC_NCM_TX_AGGREGATION */
 
 	/* The BULK endpoints only exist while data-interface alt 1 is selected, so
 	 * neither the TX consumer nor the RX re-arm may run outside of it. */
@@ -2211,7 +2199,7 @@ static void usbd_cdc_ncm_patch_desc(u8 *desc, u16 len,
 			/* Ethernet Networking FD: iMACAddress at offset 3. Writes the standalone
 			 * default (same as the static template) unless the composite framework
 			 * rebased the class string window. */
-			desc[i + 3] = (u8)(ncm->cls_str_base + USBD_CDC_NCM_STR_IDX_MAC);
+			desc[i + 3] = ncm->mac_str_idx;
 		} else if ((dtype == USB_CDC_CS_INTERFACE) && (dlen >= 5) &&
 				   (desc[i + 2] == USB_CDC_FUNC_DESC_UNION)) {
 			/* Union FD: bControlInterface at offset 3, bSubordinateInterface0 at offset 4
@@ -2238,21 +2226,9 @@ static u16 usbd_cdc_ncm_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 
 	usbd_cdc_ncm_dev_t *ncm = &usbd_cdc_ncm_dev;
 	usb_speed_type_t speed = dev->dev_speed;
 	u8 desc_type = USB_HIGH_BYTE(req->wValue);
-	u8 desc_idx = USB_LOW_BYTE(req->wValue);
-	char mac_buf[32] = {0,};
 	const u8 *desc = NULL;
 	u16 len = 0;
 	u8 is_cfg = 0;
-	u8 attr = 0x80U;
-
-	if (!ncm->from_composite) {
-#ifdef CONFIG_USBD_SELF_POWERED
-		attr |= USB_CFG_DESC_OFFSET_ATTR_BIT_SELF_POWERED;
-#endif
-#ifdef CONFIG_USBD_REMOTE_WAKEUP_EN
-		attr |= USB_CFG_DESC_OFFSET_ATTR_BIT_REMOTE_WAKEUP;
-#endif
-	}
 
 	switch (desc_type) {
 	case USB_DESC_TYPE_DEVICE:
@@ -2290,31 +2266,9 @@ static u16 usbd_cdc_ncm_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 
 #endif
 
 	case USB_DESC_TYPE_STRING:
-		switch (desc_idx) {
-		case USBD_IDX_LANGID_STR:
-			desc = usbd_cdc_ncm_lang_id_desc;
-			len = sizeof(usbd_cdc_ncm_lang_id_desc);
-			break;
-		case USBD_IDX_MFC_STR:
-			len = usbd_get_str_descriptor(USBD_CDC_NCM_MFG_STRING, buf, buf_len);
-			break;
-		case USBD_IDX_PRODUCT_STR:
-			len = usbd_get_str_descriptor((speed == USB_SPEED_HIGH) ?
-										  USBD_CDC_NCM_PROD_HS_STRING : USBD_CDC_NCM_PROD_FS_STRING, buf, buf_len);
-			break;
-		case USBD_IDX_SERIAL_STR:
-			len = usbd_get_str_descriptor(USBD_CDC_NCM_SN_STRING, buf, buf_len);
-			break;
-		default:
-			/* Class-specific indices are decided at runtime (rebased by the composite
-			 * framework), so they cannot be case labels. Comparing them here also makes
-			 * it impossible to shadow the device-global indices above. */
-			if (desc_idx == (u8)(ncm->cls_str_base + USBD_CDC_NCM_STR_IDX_MAC)) {
-				usbd_cdc_ncm_mac_to_string((const u8 *)(ncm->mac), mac_buf);
-				len = usbd_get_str_descriptor(mac_buf, buf, buf_len);
-			}
-			break;
-		}
+		/* Every string this class owns is registered with usbd_add_string() and answered by
+		   the core, which only forwards an index it does not know, e.g. the MS OS string */
+		USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_GET_DESC, 0);
 		break;
 
 	default:
@@ -2336,10 +2290,6 @@ static u16 usbd_cdc_ncm_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 
 		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN] = USB_LOW_BYTE(len);
 		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN + 1] = USB_HIGH_BYTE(len);
 
-		if (!ncm->from_composite) {
-			buf[USB_CFG_DESC_OFFSET_ATTR] = attr;
-		}
-
 		/* Patch EP addresses and the class string index to actual values */
 		usbd_cdc_ncm_patch_desc(buf + USB_LEN_CFG_DESC,
 								len - USB_LEN_CFG_DESC,
@@ -2350,19 +2300,6 @@ static u16 usbd_cdc_ncm_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 
 }
 
 #ifdef CONFIG_USBD_COMPOSITE
-/**
- * @brief Assign the first class-specific string index of this class (composite mode only)
- * @note  This function is called by the composite framework before enumeration.
- * @param base: First class-specific string index for this class
- * @retval Number of class-specific string indices consumed
- */
-static u8 usbd_cdc_ncm_set_str_base(u8 base)
-{
-	usbd_cdc_ncm_dev.cls_str_base = base;
-
-	return USBD_CDC_NCM_CLASS_STR_COUNT;
-}
-
 /**
  * @brief Store the first interface number assigned to this class by the composite framework
  * @note  This function is called within an interrupt service routine (ISR) context;
@@ -2534,8 +2471,9 @@ static int usbd_cdc_ncm_private_init(const usbd_cdc_ncm_cb_t *cb, const usbd_cdc
 	/* No H2D class request is waiting for its data stage yet. The device context is a static
 	   object, so a re-init after deinit must not inherit a stale pending flag. */
 	ncm->ctrl_req_pending = 0U;
-	/* Standalone default; the composite framework rebases it via set_str_base() */
-	ncm->cls_str_base = USBD_CDC_NCM_CLASS_STR_BASE_DEFAULT;
+	/* The core owns the string table, so the same call works in standalone and composite
+	   mode. Registered after set_mac() has formatted mac_str. */
+	ncm->mac_str_idx = usbd_add_string(ncm->mac_str);
 	/* Standalone default; the composite framework rebases it via set_interface_base() */
 	ncm->if_base = 0;
 
@@ -2562,10 +2500,6 @@ static int usbd_cdc_ncm_private_init(const usbd_cdc_ncm_cb_t *cb, const usbd_cdc
 		ncm->tx_wd = 0;
 		ncm->tx_rd = 0;
 		ncm->tx_inflight = 0;
-#ifndef CONFIG_USBD_CDC_NCM_TX_AGGREGATION
-		ncm->tx_filling_busy = 0U;
-		ncm->tx_wd_tick = 0U;
-#endif
 	}
 
 	/* Initialize NTB parameters */
@@ -2853,10 +2787,6 @@ void usbd_cdc_ncm_deinit(void)
 		ncm->tx_wd = 0;
 		ncm->tx_rd = 0;
 		ncm->tx_inflight = 0;
-#ifndef CONFIG_USBD_CDC_NCM_TX_AGGREGATION
-		ncm->tx_filling_busy = 0U;
-		ncm->tx_wd_tick = 0U;
-#endif
 	}
 	/* Unblock any transmit() still waiting for a free slot, then free the sema. */
 	if (ncm->tx_buf_free_sema != NULL) {
@@ -2960,9 +2890,10 @@ int usbd_cdc_ncm_transmit(u8 *buf, u32 len, u8 block)
 	 * touches only slot[tx_rd].  wd/rd index isolation is the primary
 	 * mutual-exclusion mechanism.
 	 *
-	 * Aggregation: multiple frames are appended into slot[tx_wd] until
-	 * MAX_DATAGRAMS is reached (size trigger) or the SOF timeout fires.
-	 * tx_filling_busy=1 while the producer holds the slot so SOF backs off.
+	 * Aggregation: the TX task appends frames into slot[tx_wd] until
+	 * MAX_DATAGRAMS is reached or the raw ring runs empty, then finalizes and
+	 * publishes immediately -- a partially filled NTB is never left pending,
+	 * so no flush timeout is involved.
 	 *
 	 * The block parameter:
 	 *   - block != 0: wait on tx_buf_free_sema for a slot to free up.
@@ -3011,31 +2942,39 @@ int usbd_cdc_ncm_transmit(u8 *buf, u32 len, u8 block)
 	 * wd/rd index isolation is the sole mutual-exclusion mechanism:
 	 * producer touches only slot[tx_wd], consumer only slot[tx_rd].
 	 * NTB_IN_MAX_DATAGRAMS=1 means transmit() always finalize+advances wd
-	 * before returning, so SOF never sees frame_count>0 on slot[wd] and
+	 * before returning, so SOF never sees a partially filled slot[wd] and
 	 * never writes slot[wd] -- no critical section needed. */
 	{
 		ncm_tx_ntb_t *slot = &ncm->tx_slot[ncm->tx_wd];
 
-		if (slot->frame_count == 0U) {
-			while (usbd_cdc_ncm_tx_ring_full(ncm)) {
-				if (block == 0U) {
-					RTK_LOGS(TAG, RTK_LOG_WARN, "TX drop(%u): ring full\n", len);
-					return HAL_BUSY;
-				}
-				if (usb_os_sema_take(ncm->tx_buf_free_sema,
-									 USBD_CDC_NCM_BULK_TX_TIMEOUT_MS) != HAL_OK) {
-					RTK_LOGS(TAG, RTK_LOG_WARN, "TX timeout drop(%u)\n", len);
-					return HAL_BUSY;
-				}
-				/* The sema may have been fired by a teardown rather than by a real
-				 * XFRC - see the aggregation path above for why this tests
-				 * data_alt_setting instead of connect_status. */
-				if (ncm->data_alt_setting == 0U) {
-					return HAL_BUSY;
-				}
+		while (usbd_cdc_ncm_tx_ring_full(ncm)) {
+			if (block == 0U) {
+				RTK_LOGS(TAG, RTK_LOG_WARN, "TX drop(%u): ring full\n", len);
+				return HAL_BUSY;
 			}
-			usbd_cdc_ncm_agg_begin(slot, ncm->sequence);
+			if (usb_os_sema_take(ncm->tx_buf_free_sema,
+								 USBD_CDC_NCM_BULK_TX_TIMEOUT_MS) != HAL_OK) {
+				RTK_LOGS(TAG, RTK_LOG_WARN, "TX timeout drop(%u)\n", len);
+				return HAL_BUSY;
+			}
+			/* The sema may have been fired by a teardown rather than by a real
+			 * XFRC - see the aggregation path above for why this tests
+			 * data_alt_setting instead of connect_status. */
+			if (ncm->data_alt_setting == 0U) {
+				return HAL_BUSY;
+			}
 		}
+		/* Unconditionally start a fresh NTB.  With MAX_DATAGRAMS=1 slot[tx_wd] is
+		 * never partially filled on entry -- every path out of transmit() either
+		 * publishes the slot or leaves it untouched, and agg_begin() resets
+		 * frame_count/data_offset itself.  A "frame_count == 0" guard here would
+		 * therefore always be taken, while adding an unsynchronised read of a field
+		 * the USB ISR clears on the other SMP core: on a stale non-zero value it
+		 * would skip agg_begin(), agg_append() would then reject the frame, and
+		 * nothing would ever clear frame_count again (only a completed transfer
+		 * does) -- permanently retiring this slot from the ring. */
+		usbd_cdc_ncm_agg_begin(slot, ncm->sequence);
+
 		/* Re-check for the non-wait path: if the ring was not full the while-loop
 		 * above was skipped entirely.  Without this, a clear_config /
 		 * SET_INTERFACE alt 0 / status_changed ISR that fires after the loop but

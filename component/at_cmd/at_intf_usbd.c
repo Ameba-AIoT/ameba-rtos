@@ -30,13 +30,6 @@
 // while test suspend/resume, hotplug should be disabled
 #define CDC_ACM_HOTPLUG                          0
 
-// USB speed
-#ifdef CONFIG_SUPPORT_USB_FS_ONLY
-#define CDC_ACM_USB_SPEED                        USB_SPEED_FULL
-#else
-#define CDC_ACM_USB_SPEED                        USB_SPEED_HIGH
-#endif
-
 // Transfer size
 #define CDC_ACM_BULK_IN_XFER_SIZE                2048U
 #define CDC_ACM_BULK_OUT_XFER_SIZE               2048U
@@ -80,7 +73,9 @@ static usb_cdc_acm_line_coding_t atcmd_usbd_line_coding;
 static u16 atcmd_usbd_ctrl_line_state;
 
 static const usbd_config_t atcmd_usbd_cfg = {
-	.speed = CDC_ACM_USB_SPEED,
+	.info = {
+		.prod_str = "Realtek CDC ACM",
+	},
 	.isr_priority = INT_PRI_MIDDLE,
 #if defined(CONFIG_AMEBASMART)
 	.nptx_max_epmis_cnt = 1U,
@@ -93,12 +88,14 @@ static const usbd_config_t atcmd_usbd_cfg = {
 #endif
 };
 
-static const usbd_cdc_acm_ep_cfg_t cdc_acm_ep = {
+static const usbd_cdc_acm_config_t cdc_acm_ep = {
 	.bulk_in_addr  = CDC_ACM_BULK_IN_EP,
 	.bulk_out_addr = CDC_ACM_BULK_OUT_EP,
 	.intr_in_addr  = CDC_ACM_INTR_IN_EP,
 	.bulk_in_xfer_size  = CDC_ACM_BULK_IN_XFER_SIZE,
 	.bulk_out_xfer_size = CDC_ACM_BULK_OUT_XFER_SIZE,
+	.notify_en = 1,
+	.bulk_in_zero_copy = 1,
 };
 
 static u8 usbd_tx_buf[ATCMD_USBD_MAX_SIZE] __attribute__((aligned(CACHE_LINE_SIZE)));
@@ -289,9 +286,7 @@ static int atcmd_usbd_setup(usb_setup_req_t *req, u8 *buf)
 		atcmd_usbd_ctrl_line_state = req->wValue;
 		if (atcmd_usbd_ctrl_line_state & 0x01) {
 			RTK_LOGS(TAG, RTK_LOG_INFO, "VCOM port activate\n");
-#if USBD_CDC_ACM_NOTIFY
 			usbd_cdc_acm_notify_serial_state(USB_CDC_ACM_CTRL_DSR | USB_CDC_ACM_CTRL_DCD);
-#endif
 		}
 		ret = HAL_OK;
 		break;

@@ -68,7 +68,6 @@ static void whc_cb_status_changed(u8 old_status, u8 status);
 static const char *const TAG = "WHC";
 
 static const usbd_config_t whc_cfg = {
-	.speed = USB_SPEED_HIGH,
 	.isr_priority = INT_PRI_MIDDLE,
 #if defined(CONFIG_AMEBAGREEN2)
 #ifdef CONFIG_WHC_ETH

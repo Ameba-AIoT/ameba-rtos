@@ -43,13 +43,6 @@ enum usbd_cdc_ecm_notify_state {
  * tcpip-task freeze when the host stops polling BULK IN (stuck-TX scenario). */
 #define USBD_CDC_ECM_BULK_TX_TIMEOUT_MS               10U
 
-/* Class-specific string descriptors: indices above USBD_IDX_SERIAL_STR, laid out as a
- * window whose base is the standalone default below, or the one assigned by the composite
- * framework via set_str_base(). */
-#define USBD_CDC_ECM_STR_IDX_MAC                      0U                         /**< Ordinal of the MAC string inside the class string window */
-#define USBD_CDC_ECM_CLASS_STR_COUNT                  1U                         /**< Class-specific string count: iMACAddress only */
-#define USBD_CDC_ECM_CLASS_STR_BASE_DEFAULT           (USBD_IDX_SERIAL_STR + 1U) /**< Standalone base, right above the device-global strings */
-
 /* Buffer sizes */
 #define USBD_CDC_ECM_BULK_BUF_MAX_SIZE                ((USB_CDC_ECM_MAX_SEGMENT_SIZE + USB_BULK_HS_MAX_MPS - 1) / USB_BULK_HS_MAX_MPS * USB_BULK_HS_MAX_MPS)
 
@@ -91,7 +84,6 @@ static int usbd_ecm_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len);
 static void usbd_ecm_sof(usb_dev_t *dev);
 static void usbd_ecm_status_changed(usb_dev_t *dev, u8 old_status, u8 status);
 #ifdef CONFIG_USBD_COMPOSITE
-static u8 usbd_ecm_set_str_base(u8 base);
 static void usbd_ecm_set_interface_base(u8 base);
 #endif
 static void usbd_ecm_bulk_tx_start_from_rb(void);
@@ -131,14 +123,6 @@ static const u8 usbd_cdc_ecm_dev_desc[USB_LEN_DEV_DESC] = {
 	USBD_IDX_PRODUCT_STR,                           /* iProduct */
 	USBD_IDX_SERIAL_STR,                            /* iSerialNumber */
 	0x01                                            /* bNumConfigurations */
-};
-
-/* USB Standard String Descriptor 0 (Language ID) */
-static const u8 usbd_cdc_ecm_lang_id_desc[USB_LEN_LANGID_STR_DESC] = {
-	USB_LEN_LANGID_STR_DESC,                        /* bLength */
-	USB_DESC_TYPE_STRING,                           /* bDescriptorType */
-	USB_LOW_BYTE(USBD_CDC_ECM_LANGID_STRING),       /* wLANGID */
-	USB_HIGH_BYTE(USBD_CDC_ECM_LANGID_STRING),
 };
 
 #ifndef CONFIG_USB_FS
@@ -205,8 +189,7 @@ static const u8 usbd_cdc_ecm_hs_config_desc[] = {
 	USB_CDC_ECM_ETHERNET_FUNC_DESC_SIZE,            /* bFunctionLength */
 	USB_CDC_CS_INTERFACE,                           /* bDescriptorType */
 	USB_CDC_FUNC_DESC_ETHERNET_NETWORKING,          /* bDescriptorSubtype */
-	USBD_CDC_ECM_CLASS_STR_BASE_DEFAULT +
-	USBD_CDC_ECM_STR_IDX_MAC,                       /* iMACAddress, runtime patched */
+	0x00,                                           /* iMACAddress, runtime patched */
 	0x00, 0x00, 0x00, 0x00,                         /* bmEthernetStatistics */
 	USB_LOW_BYTE(USB_CDC_ECM_MAX_SEGMENT_SIZE),     /* wMaxSegmentSize */
 	USB_HIGH_BYTE(USB_CDC_ECM_MAX_SEGMENT_SIZE),
@@ -314,8 +297,7 @@ static const u8 usbd_cdc_ecm_fs_config_desc[] = {
 	USB_CDC_ECM_ETHERNET_FUNC_DESC_SIZE,            /* bFunctionLength */
 	USB_CDC_CS_INTERFACE,                           /* bDescriptorType */
 	USB_CDC_FUNC_DESC_ETHERNET_NETWORKING,          /* bDescriptorSubtype */
-	USBD_CDC_ECM_CLASS_STR_BASE_DEFAULT +
-	USBD_CDC_ECM_STR_IDX_MAC,                       /* iMACAddress, runtime patched */
+	0x00,                                           /* iMACAddress, runtime patched */
 	0x00, 0x00, 0x00, 0x00,                         /* bmEthernetStatistics */
 	USB_LOW_BYTE(USB_CDC_ECM_MAX_SEGMENT_SIZE),     /* wMaxSegmentSize */
 	USB_HIGH_BYTE(USB_CDC_ECM_MAX_SEGMENT_SIZE),
@@ -384,7 +366,6 @@ static const usbd_class_driver_t usbd_cdc_ecm_driver = {
 	.sof = usbd_ecm_sof,
 	.status_changed = usbd_ecm_status_changed,
 #ifdef CONFIG_USBD_COMPOSITE
-	.set_str_base = usbd_ecm_set_str_base,
 	.set_interface_base = usbd_ecm_set_interface_base,
 #endif
 };
@@ -444,6 +425,10 @@ static void usbd_ecm_set_mac(const u8 *mac)
 	}
 
 	usb_os_memcpy((void *) & (ecm->mac[0]), (const void *)mac, USBD_CDC_ECM_MAC_STR_LEN);
+
+	/* Keep the string form in step: the core holds it by pointer for the iMACAddress
+	   string descriptor, so it is formatted here rather than on each request */
+	usbd_ecm_mac_to_string(ecm->mac, ecm->mac_str);
 
 	ecm->mac_valid = 1;
 }
@@ -800,19 +785,6 @@ static int usbd_ecm_set_config(usb_dev_t *dev, u8 config)
 	}
 
 	ecm->dev = dev;
-
-	if (!ecm->from_composite) {
-#ifdef CONFIG_USBD_SELF_POWERED
-		dev->self_powered = 1;
-#else
-		dev->self_powered = 0;
-#endif
-#ifdef CONFIG_USBD_REMOTE_WAKEUP_EN
-		dev->remote_wakeup_en = 1;
-#else
-		dev->remote_wakeup_en = 0;
-#endif
-	}
 
 	/* Initialize INTR IN endpoint.  It is the only endpoint that belongs to the
 	 * configuration itself: the communication interface has a single alternate
@@ -1382,7 +1354,7 @@ static void usbd_cdc_ecm_patch_desc(u8 *desc, u16 len,
 			/* Ethernet Networking FD: iMACAddress at offset 3. Writes the standalone
 			 * default (same as the static template) unless the composite framework
 			 * rebased the class string window. */
-			desc[i + 3] = (u8)(ecm->cls_str_base + USBD_CDC_ECM_STR_IDX_MAC);
+			desc[i + 3] = ecm->mac_str_idx;
 		} else if ((dtype == USB_CDC_CS_INTERFACE) && (dlen >= 5) &&
 				   (desc[i + 2] == USB_CDC_FUNC_DESC_UNION)) {
 			/* Union FD: bControlInterface at offset 3, bSubordinateInterface0 at offset 4
@@ -1403,21 +1375,9 @@ static u16 usbd_ecm_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 	usbd_cdc_ecm_dev_t *ecm = &usbd_cdc_ecm_dev;
 	usb_speed_type_t speed = dev->dev_speed;
 	u8 desc_type = USB_HIGH_BYTE(req->wValue);
-	u8 desc_idx = USB_LOW_BYTE(req->wValue);
-	char mac_buf[32] = {0,};
 	const u8 *desc = NULL;
 	u16 len = 0;
 	u8 is_cfg = 0;
-	u8 attr = 0x80U;
-
-	if (!ecm->from_composite) {
-#ifdef CONFIG_USBD_SELF_POWERED
-		attr |= USB_CFG_DESC_OFFSET_ATTR_BIT_SELF_POWERED;
-#endif
-#ifdef CONFIG_USBD_REMOTE_WAKEUP_EN
-		attr |= USB_CFG_DESC_OFFSET_ATTR_BIT_REMOTE_WAKEUP;
-#endif
-	}
 
 	switch (desc_type) {
 	case USB_DESC_TYPE_DEVICE:
@@ -1455,31 +1415,9 @@ static u16 usbd_ecm_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 #endif
 
 	case USB_DESC_TYPE_STRING:
-		switch (desc_idx) {
-		case USBD_IDX_LANGID_STR:
-			desc = usbd_cdc_ecm_lang_id_desc;
-			len = sizeof(usbd_cdc_ecm_lang_id_desc);
-			break;
-		case USBD_IDX_MFC_STR:
-			len = usbd_get_str_descriptor(USBD_CDC_ECM_MFG_STRING, buf, buf_len);
-			break;
-		case USBD_IDX_PRODUCT_STR:
-			len = usbd_get_str_descriptor((speed == USB_SPEED_HIGH) ?
-										  USBD_CDC_ECM_PROD_HS_STRING : USBD_CDC_ECM_PROD_FS_STRING, buf, buf_len);
-			break;
-		case USBD_IDX_SERIAL_STR:
-			len = usbd_get_str_descriptor(USBD_CDC_ECM_SN_STRING, buf, buf_len);
-			break;
-		default:
-			/* Class-specific indices are decided at runtime (rebased by the composite
-			 * framework), so they cannot be case labels. Comparing them here also makes
-			 * it impossible to shadow the device-global indices above. */
-			if (desc_idx == (u8)(ecm->cls_str_base + USBD_CDC_ECM_STR_IDX_MAC)) {
-				usbd_ecm_mac_to_string((u8 *)(ecm->mac), mac_buf);
-				len = usbd_get_str_descriptor(mac_buf, buf, buf_len);
-			}
-			break;
-		}
+		/* Every string this class owns is registered with usbd_add_string() and answered by
+		   the core, which only forwards an index it does not know, e.g. the MS OS string */
+		USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_GET_DESC, 0);
 		break;
 
 	default:
@@ -1501,10 +1439,6 @@ static u16 usbd_ecm_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN] = USB_LOW_BYTE(len);
 		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN + 1] = USB_HIGH_BYTE(len);
 
-		if (!ecm->from_composite) {
-			buf[USB_CFG_DESC_OFFSET_ATTR] = attr;
-		}
-
 		/* Patch EP addresses and the class string index to actual values */
 		usbd_cdc_ecm_patch_desc(buf + USB_LEN_CFG_DESC,
 								len - USB_LEN_CFG_DESC,
@@ -1515,19 +1449,6 @@ static u16 usbd_ecm_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 }
 
 #ifdef CONFIG_USBD_COMPOSITE
-/**
- * @brief Assign the first class-specific string index of this class (composite mode only)
- * @note  This function is called by the composite framework before enumeration.
- * @param base: First class-specific string index for this class
- * @retval Number of class-specific string indices consumed
- */
-static u8 usbd_ecm_set_str_base(u8 base)
-{
-	usbd_cdc_ecm_dev.cls_str_base = base;
-
-	return USBD_CDC_ECM_CLASS_STR_COUNT;
-}
-
 /**
  * @brief Store the first interface number assigned to this class by the composite framework
  * @note  This function is called within an interrupt service routine (ISR) context;
@@ -1702,8 +1623,9 @@ static int usbd_cdc_ecm_private_init(const usbd_cdc_ecm_cb_t *cb, const usbd_cdc
 	/* No H2D class request is waiting for its data stage yet (the memset above already
 	   cleared it; kept explicit so the invariant is visible at init). */
 	ecm->ctrl_req_pending = 0U;
-	/* Standalone default; the composite framework rebases it via set_str_base() */
-	ecm->cls_str_base = USBD_CDC_ECM_CLASS_STR_BASE_DEFAULT;
+	/* The core owns the string table, so the same call works in standalone and composite
+	   mode. Registered after set_mac() has formatted mac_str. */
+	ecm->mac_str_idx = usbd_add_string(ecm->mac_str);
 	/* Standalone default; the composite framework rebases it via set_interface_base() */
 	ecm->if_base = 0;
 

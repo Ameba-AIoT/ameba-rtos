@@ -322,40 +322,6 @@ static u32 usbh_composite_strlen(u8 *pbuf)
 	return strlen((char *)pbuf);
 }
 
-static void usbh_composite_dongle_set_netinfo(u8 *pbuf, u8 *name)
-{
-	const char *pname = (const char *)name;
-	u8 len = 0;
-
-	/* A fragmented/short AT response can yield a NULL token from strsep(); reject it
-	   here instead of dereferencing pbuf below. */
-	if (pbuf == NULL) {
-		return;
-	}
-
-	if (pbuf[0] == '"') {
-		pbuf ++;
-	}
-	len = usbh_composite_strlen(pbuf);
-	if ((len > 0) && (pbuf[len - 1] == '"')) {
-		pbuf[len - 1] = 0;
-	}
-	len = usbh_composite_strlen(pbuf);
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Type(%s)=[%s(%d)]\n", name, pbuf, len);
-
-	/* whether support netinfo */
-	if (_strcmp(pname, "gw") == 0) {
-		usb_os_memcpy((void *)usbh_dongle_ctx.quectel.network.gw, (const void *)pbuf, len);
-	} else if (_strcmp(pname, "ip") == 0) {
-		usb_os_memcpy((void *)usbh_dongle_ctx.quectel.network.ip, (const void *)pbuf, len);
-	} else if (_strcmp(pname, "mask") == 0) {
-		usb_os_memcpy((void *)usbh_dongle_ctx.quectel.network.mask, (const void *)pbuf, len);
-	} else if (_strcmp(pname, "dns") == 0) {
-		usb_os_memcpy((void *)usbh_dongle_ctx.quectel.network.dns, (const void *)pbuf, len);
-	} else {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "Unknown name(%s)\n", name);
-	}
-}
 static u8 *usbh_composite_dongle_get_netinfo(u8 *name)
 {
 	const char *pname = (const char *)name;
@@ -376,6 +342,47 @@ static u8 *usbh_composite_dongle_get_netinfo(u8 *name)
 	return NULL;
 }
 
+static void usbh_composite_dongle_set_netinfo(u8 *pbuf, u8 *name)
+{
+	u8 *pdst;
+	u32 len;
+
+	/* A fragmented/short AT response can yield a NULL token from strsep(); reject it
+	   here instead of dereferencing pbuf below. */
+	if (pbuf == NULL) {
+		return;
+	}
+
+	pdst = usbh_composite_dongle_get_netinfo(name);
+	if (pdst == NULL) {  /* unknown name, already logged by get_netinfo() */
+		return;
+	}
+
+	if (pbuf[0] == '"') {
+		pbuf ++;
+	}
+	len = usbh_composite_strlen(pbuf);
+	if ((len > 0U) && (pbuf[len - 1U] == '"')) {
+		len--;
+		pbuf[len] = 0;
+	}
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Type(%s)=[%s(%u)]\n", name, pbuf, len);
+
+	/* The token points into the device-supplied AT response, so len is bounded only by
+	   CONFIG_USBH_COMP_PBUF_MAX_LEN-1 while the destination is a fixed
+	   CONFIG_USBH_COMP_NETWORK_INFO_MAX_STR array. A dotted-quad address never exceeds
+	   15 chars, so an over-long token is a malformed response: drop it rather than store
+	   a truncated value that inet_aton() would silently misread. */
+	if (len >= CONFIG_USBH_COMP_NETWORK_INFO_MAX_STR) {
+		RTK_LOGS(TAG, RTK_LOG_WARN, "Type(%s) len %u too long\n", name, len);
+		pdst[0] = 0;
+		return;
+	}
+
+	usb_os_memcpy((void *)pdst, (const void *)pbuf, len);
+	pdst[len] = 0;  /* keep the field a valid C string for inet_aton() */
+}
+
 /**
   * @brief  Class-independent user process callback.
   * @details For a multi-config 4G dongle the host FSM raises
@@ -385,7 +392,7 @@ static u8 *usbh_composite_dongle_get_netinfo(u8 *name)
   *          config that carries ECM also brings up ACM. Reuse the ECM helper
   *          usbh_cdc_ecm_choose_config() to locate and set that config.
   * @param  host: USB host handle
-  * @param  msg: @ref usbh_msg_t
+  * @param  msg: @ref usbh_msg_type_t
   * @retval Status
   */
 static void usbh_composite_cb_process(usb_host_t *host, u8 msg)
@@ -1936,8 +1943,14 @@ static void example_usbh_composite_link_change_thread(void *param)
 
 		if (USB_VID == vid) {  /* rtk */
 			if (1 == link_is_up && (ethernet_unplug < ETH_STATUS_INIT)) {  /* unlink -> link */
-				RTK_LOGS(TAG, RTK_LOG_INFO, "Do DHCP\n");
 				mac = (u8 *)usbh_cdc_ecm_process_mac_str();
+				if (mac == NULL) {
+					/* iMACAddress string descriptor not readable yet; retry next round. */
+					RTK_LOGS(TAG, RTK_LOG_WARN, "MAC not ready\n");
+					rtos_time_delay_ms(1000);
+					continue;
+				}
+				RTK_LOGS(TAG, RTK_LOG_INFO, "Do DHCP\n");
 				usb_os_memcpy((void *)pnetif_usb_eth->hwaddr, (const void *)mac, 6);
 				RTK_LOGS(TAG, RTK_LOG_INFO, "MAC[%02x %02x %02x %02x %02x %02x]\r\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 				netif_set_link_up(pnetif_usb_eth);
@@ -1988,6 +2001,12 @@ static void example_usbh_composite_link_change_thread(void *param)
 			if (1 == link_is_up && (ethernet_unplug < ETH_STATUS_INIT)) {
 				RTK_LOGS(TAG, RTK_LOG_INFO, "Pid 0x%x/Vid 0x%x, EG915 mac\n", vid, pid);
 				mac = (u8 *)usbh_cdc_ecm_process_mac_str();
+				if (mac == NULL) {
+					/* iMACAddress string descriptor not readable yet; retry next round. */
+					RTK_LOGS(TAG, RTK_LOG_WARN, "MAC not ready\n");
+					rtos_time_delay_ms(1000);
+					continue;
+				}
 				RTK_LOGS(TAG, RTK_LOG_INFO, "MAC:%02x:%02x:%02x:%02x:%02x:%02x\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 				usb_os_memcpy((void *)xnetif[NET_IF_NUM - 1].hwaddr, (const void *)mac, 6);
 				if (usbh_composite_dongle_netif_init() == 0) {
@@ -2012,9 +2031,16 @@ static void example_usbh_composite_link_change_thread(void *param)
 			 * (mode=0, 192.168.x.x range). usbh_composite_simcom_ctrl() ensures mode=0 is active
 			 * before returning (AT+USBNETIP=0 if needed). */
 			if (1 == link_is_up && (ethernet_unplug < ETH_STATUS_INIT)) {
+				mac = (u8 *)usbh_cdc_ecm_process_mac_str();
+				if (mac == NULL) {
+					/* iMACAddress string descriptor not readable yet; retry next round.
+					   ethernet_unplug stays below ETH_STATUS_INIT so this branch is re-entered. */
+					RTK_LOGS(TAG, RTK_LOG_WARN, "MAC not ready\n");
+					rtos_time_delay_ms(1000);
+					continue;
+				}
 				RTK_LOGS(TAG, RTK_LOG_INFO, "Do DHCP\n");
 				ethernet_unplug = ETH_STATUS_INIT;
-				mac = (u8 *)usbh_cdc_ecm_process_mac_str();
 				usb_os_memcpy((void *)pnetif_usb_eth->hwaddr, (const void *)mac, 6);
 				RTK_LOGS(TAG, RTK_LOG_INFO, "MAC[%02x %02x %02x %02x %02x %02x]\r\n",
 						 mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);

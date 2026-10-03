@@ -30,16 +30,13 @@
 #define USBD_UAC_ISOC_OUT_EP                      0x02U
 #endif
 
-// USB speed
+// USB speed. UAC runs Full Speed, so an HS-capable PHY is driven in Full-Speed mode; the
+// core clamps this to USB_SPEED_FULL by itself on an FS-only SoC.
 /*
      USB_SPEED_FULL: pcm data will be callback in every 1/8 ms, which will increase the CPU load
      USB_SPEED_HIGH_IN_FULL: pcm data will be callback every 1 ms
 */
-#ifdef CONFIG_SUPPORT_USB_FS_ONLY
-#define USBD_UAC_USB_SPEED                        USB_SPEED_FULL
-#else
 #define USBD_UAC_USB_SPEED                        USB_SPEED_HIGH_IN_FULL
-#endif
 
 // PCM data parameters
 #define AUDIO_SAMPLING_RATE_KHZ                   48U
@@ -87,7 +84,14 @@ static u8 usb_task_stop;
 static uint8_t demo_usb_task_run;
 
 static const usbd_config_t uac_cfg = {
-	.speed = USBD_UAC_USB_SPEED,
+	.info = {
+#ifdef CONFIG_USBD_UAC1
+		.prod_str = "Realtek UAC1.0",
+#else
+		.prod_str = "Realtek UAC2.0",
+#endif
+		.speed = USBD_UAC_USB_SPEED,
+	},
 	.isr_priority = INT_PRI_MIDDLE,
 	.ext_intr_enable = 0,
 };

@@ -23,8 +23,7 @@
 /**
 * @brief Test the CDC ACM Notify(INTR IN transfer)
 * @note set CONFIG_USBH_CDC_ACM_NOTIFY=1 in usbh_cdc_acm.h to enable the host support the notify
-*       set CONFIG_USBD_CDC_ACM_NOTIFY=1 in usbd_cdc_acm.h to enable the device report the notify
-*       and set CONFIG_USBD_CDC_ACM_NOTIFY_LOOP_TEST=1 to enable the notify loop many times
+*       set notify_en in the device side usbd_cdc_acm_config_t to enable the device report the notify
 */
 #if CONFIG_USBH_CDC_ACM_NOTIFY
 #define USBH_CDC_ACM_NOTIFY_BUF_SIZE      256    /* Buffer size for notify test*/

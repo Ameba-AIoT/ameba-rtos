@@ -59,7 +59,9 @@ static void usbh_msc_cmd_test(u16 argc, char **argv);
 static const char *const TAG = "DRD";
 
 static const usbd_config_t usbd_msc_cfg = {
-	.speed = MSC_USB_SPEED,
+	.info = {
+		.prod_str = "Realtek MSC",
+	},
 	.isr_priority = INT_PRI_MIDDLE,
 #if defined(CONFIG_AMEBAGREEN2)
 	.rx_fifo_depth = 708U,

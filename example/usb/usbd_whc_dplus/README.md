@@ -23,14 +23,29 @@ None
 
 # Expect result
 
-1. Plugin Reset the board, following log shall be printed on the LOGUART console, make sure there is no USB related error reported:
+1. Reset the board, following log shall be printed on the LOGUART console. The test PASSes only if the lines below show up and no error level log (`-E`) is reported:
 	```
+	[USBD-A] INIT
 	[WHC-I] USBD WHC demo start
+	[WHC-I] ATTACHED
 	```
+	Notes:
+	* `[USBD-A] INIT` comes from the USB device core, not from the example.
+	* `[WHC-I] ATTACHED` is printed once the USB host has enumerated the device, so it only shows up after the cable is connected.
 
 2. Connect the USB port of Ameba board to USB host (with USB WHC driver installed) with USB cable.
 
-3. USB host will then recognize Ameba board as WHC device and communicate as required.
+3. USB host will then recognize Ameba board as WHC device and communicate as required. The data path prints no log.
+
+4. Hotplug check: the example tears down and re-inits the USB stack on every detach, so unplug and re-plug the cable, following log shall be printed for each cycle:
+	```
+	[WHC-I] DETACHED
+	[USBD-A] DEINIT
+	[WHC-I] Free heap: 0x<value>
+	[USBD-A] INIT
+	[WHC-I] ATTACHED
+	```
+	The `Free heap` value shall stay stable across cycles, a value that keeps dropping indicates a memory leak.
 
 # Note
 

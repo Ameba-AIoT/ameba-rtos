@@ -18,7 +18,6 @@ extern "C" {
 /* Exported defines ----------------------------------------------------------*/
 
 #define USBD_OTP_MAX_STR_LEN  58U
-#define USBD_WHC_MAX_STR_LEN (USBD_OTP_MAX_STR_LEN * 2 + 2)
 
 /* Exported types ------------------------------------------------------------*/
 
@@ -31,9 +30,6 @@ typedef struct {
 	u16 pid;
 	u8 otp_sn;
 	u8 otp_param;
-	u8 mfg_str_len;
-	u8 prod_str_len;
-	u8 sn_str_len;
 	u8 self_powered : 1;
 	u8 remote_wakeup_en : 1;
 	u8 bt_en : 1;

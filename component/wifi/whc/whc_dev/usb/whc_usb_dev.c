@@ -10,7 +10,6 @@ struct whc_usb_priv_t whc_usb_priv = {0};
 u8 wifi_whc_usb_status = WIFI_WHC_USB_STATUS_ACTIVE;
 
 static const usbd_config_t whc_usb_wifi_cfg = {
-	.speed = WIFI_WHC_USB_SPEED,
 	.isr_priority = 4,
 #if defined (CONFIG_AMEBAGREEN2)
 	.rx_fifo_depth = 292U,

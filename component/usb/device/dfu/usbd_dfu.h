@@ -31,12 +31,7 @@ extern "C" {
 #define USBD_DFU_PID                      USB_PID               /**< Product ID. */
 
 /* String descriptor content */
-#define USBD_DFU_LANGID_STRING            0x0409U
-#define USBD_DFU_MFR_STRING               "Realtek"
-#define USBD_DFU_PRODUCT_STRING           "Realtek DFU"
 #define USBD_DFU_IFACE_STRING             "DFU Interface"
-
-
 
 /* Async write task configuration */
 #define USBD_DFU_WRITE_TASK_STACK         768U
@@ -208,13 +203,6 @@ typedef struct {
 	void (*status_changed)(u8 old_status, u8 status);
 } usbd_dfu_cb_t;
 
-/* Class-specific string descriptors: indices above USBD_IDX_SERIAL_STR, laid out as a
- * window whose base is the standalone default below, or the one assigned by the composite
- * framework via set_str_base(). */
-#define USBD_DFU_STR_IDX_IFACE            0U                         /* Ordinal of the interface string inside the class string window */
-#define USBD_DFU_CLASS_STR_COUNT          1U                         /* Class-specific string count: iInterface only */
-#define USBD_DFU_CLASS_STR_BASE_DEFAULT   (USBD_IDX_SERIAL_STR + 1U) /* Standalone base, right above the device-global strings */
-
 /**
  * @brief Internal DFU device instance (opaque to application).
  */
@@ -257,9 +245,7 @@ typedef struct {
 	rtos_timer_t       detach_timer;    /* One-shot timer: fires if host doesn't Reset within wDetachTimeOut */
 #endif
 	u8                from_composite;   /**< Flag indicating if part of a composite device. */
-	u8                cls_str_base;     /**< First class-specific string index; the standalone default
-	                                         (right above USBD_IDX_SERIAL_STR) unless the composite
-	                                         framework rebases it via set_str_base(). */
+	u8                itf_str_idx;      /**< iInterface string index from usbd_add_string(), 0 for none. */
 } usbd_dfu_dev_t;
 
 /* Exported variables --------------------------------------------------------*/

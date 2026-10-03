@@ -1496,7 +1496,7 @@ static void example_usbh_uvc_test(void *param)
 				/* Account for throughput here, once per captured frame, so the TP figure is
 				 * correct for every APP mode and pixel format (MJPEG/YUV/H264/H265). */
 				rx_total_bytes += len;
-				RTK_LOGS(TAG, RTK_LOG_INFO, "Captured frame %d, len=%d\n", img_cnt, len);
+				RTK_LOGS(TAG, RTK_LOG_INFO, "Captured frame %d, len=%d\n", img_cnt + 1, len);
 				usbh_uvc_img_prepare(buf);
 			}
 

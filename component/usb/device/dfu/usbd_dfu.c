@@ -30,9 +30,6 @@ static u16 usbd_dfu_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 static int usbd_dfu_ep0_data_in(usb_dev_t *dev, u8 status);
 static int usbd_dfu_ep0_data_out(usb_dev_t *dev);
 static void usbd_dfu_status_changed(usb_dev_t *dev, u8 old_status, u8 status);
-#ifdef CONFIG_USBD_COMPOSITE
-static u8 usbd_dfu_set_str_base(u8 base);
-#endif
 static void usbd_dfu_reconf_task(void *param);
 
 static void usbd_dfu_manifest_task(void *param);
@@ -63,14 +60,6 @@ static const u8 usbd_dfu_dev_desc[USB_LEN_DEV_DESC] = {
 	USBD_IDX_PRODUCT_STR,                           /* iProduct */
 	USBD_IDX_SERIAL_STR,                            /* iSerialNumber */
 	0x01,                                           /* bNumConfigurations */
-};
-
-/* USB Standard String Descriptor 0 */
-static const u8 usbd_dfu_lang_id_desc[USB_LEN_LANGID_STR_DESC] = {
-	USB_LEN_LANGID_STR_DESC,                        /* bLength */
-	USB_DESC_TYPE_STRING,                           /* bDescriptorType */
-	USB_LOW_BYTE(USBD_DFU_LANGID_STRING),            /* wLANGID: English */
-	USB_HIGH_BYTE(USBD_DFU_LANGID_STRING),
 };
 
 #ifndef CONFIG_USB_FS
@@ -115,8 +104,7 @@ static const u8 usbd_dfu_config_desc[] = {
 	USB_DFU_PROTOCOL_DFU,                          /* bInterfaceProtocol: 0x02 (DFU mode); patched
 	                                                   to 0x01 in get_descriptor while in Run-Time
 	                                                   mode */
-	USBD_DFU_CLASS_STR_BASE_DEFAULT +
-	USBD_DFU_STR_IDX_IFACE,                         /* iInterface, runtime patched */
+	0x00,                                           /* iInterface, runtime patched */
 
 	/* DFU Functional Descriptor */
 	0x09,                                           /* bLength */
@@ -149,9 +137,6 @@ static const usbd_class_driver_t usbd_dfu_driver = {
 	.ep0_data_in    = usbd_dfu_ep0_data_in,
 	.ep0_data_out   = usbd_dfu_ep0_data_out,
 	.status_changed = usbd_dfu_status_changed,
-#ifdef CONFIG_USBD_COMPOSITE
-	.set_str_base = usbd_dfu_set_str_base,
-#endif
 };
 
 /* DFU Device */
@@ -173,19 +158,6 @@ static int usbd_dfu_set_config(usb_dev_t *dev, u8 config)
 	}
 
 	dfu->dev = dev;
-
-	if (!dfu->from_composite) {
-#ifdef CONFIG_USBD_SELF_POWERED
-		dev->self_powered = 1;
-#else
-		dev->self_powered = 0;
-#endif
-#ifdef CONFIG_USBD_REMOTE_WAKEUP_EN
-		dev->remote_wakeup_en = 1;
-#else
-		dev->remote_wakeup_en = 0;
-#endif
-	}
 
 	dfu->alt_setting = 0U;
 	/* Save the default EP0 buffer and its capacity (shared by IN/OUT endpoints). */
@@ -897,18 +869,8 @@ static u16 usbd_dfu_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 	u16 len = 0U;
 	u8 type = USB_HIGH_BYTE(req->wValue);
 	u8 is_cfg = 0;
-	u8 attr = 0x80U;
 
 	UNUSED(dev);
-
-	if (!dfu->from_composite) {
-#ifdef CONFIG_USBD_SELF_POWERED
-		attr |= USB_CFG_DESC_OFFSET_ATTR_BIT_SELF_POWERED;
-#endif
-#ifdef CONFIG_USBD_REMOTE_WAKEUP_EN
-		attr |= USB_CFG_DESC_OFFSET_ATTR_BIT_REMOTE_WAKEUP;
-#endif
-	}
 
 	switch (type) {
 
@@ -937,29 +899,9 @@ static u16 usbd_dfu_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 		break;
 #endif
 	case USB_DESC_TYPE_STRING:
-		switch (USB_LOW_BYTE(req->wValue)) {
-		case USBD_IDX_LANGID_STR:
-			desc = usbd_dfu_lang_id_desc;
-			len = sizeof(usbd_dfu_lang_id_desc);
-			break;
-		case USBD_IDX_MFC_STR:
-			len = usbd_get_str_descriptor(USBD_DFU_MFR_STRING, buf, buf_len);
-			break;
-		case USBD_IDX_PRODUCT_STR:
-			len = usbd_get_str_descriptor(USBD_DFU_PRODUCT_STRING, buf, buf_len);
-			break;
-		case USBD_IDX_SERIAL_STR:
-			len = usbd_get_str_descriptor("00000000001", buf, buf_len);
-			break;
-		default:
-			/* Class-specific indices are decided at runtime (rebased by the composite
-			 * framework), so they cannot be case labels. Comparing them here also makes
-			 * it impossible to shadow the device-global indices above. */
-			if (USB_LOW_BYTE(req->wValue) == (u8)(dfu->cls_str_base + USBD_DFU_STR_IDX_IFACE)) {
-				len = usbd_get_str_descriptor(USBD_DFU_IFACE_STRING, buf, buf_len);
-			}
-			break;
-		}
+		/* Every string this class owns is registered with usbd_add_string() and answered by
+		   the core, which only forwards an index it does not know, e.g. the MS OS string */
+		USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_GET_DESC, 0);
 		break;
 
 	default:
@@ -981,38 +923,18 @@ static u16 usbd_dfu_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN]     = USB_LOW_BYTE(len);
 		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN + 1] = USB_HIGH_BYTE(len);
 
-		if (!dfu->from_composite) {
-			buf[USB_CFG_DESC_OFFSET_ATTR] = attr;
-		}
-
 		/* Static array carries the DFU-mode protocol (0x02); rewrite it to the
 		 * run-time protocol (0x01) until the device has switched to DFU mode. */
 		if (usbd_dfu_dev.mode == USB_DFU_PROTOCOL_RUNTIME) {
 			buf[USBD_DFU_CFG_IF_PROTOCOL_OFFSET] = USB_DFU_PROTOCOL_RUNTIME;
 		}
 
-		/* Static array carries the standalone default; rewrite it in case the
-		 * composite framework rebased the class string window. */
-		buf[USBD_DFU_CFG_IF_ISTR_OFFSET] = (u8)(dfu->cls_str_base + USBD_DFU_STR_IDX_IFACE);
+		/* Emit the runtime index the core assigned to the interface string */
+		buf[USBD_DFU_CFG_IF_ISTR_OFFSET] = dfu->itf_str_idx;
 	}
 
 	return len;
 }
-
-#ifdef CONFIG_USBD_COMPOSITE
-/**
- * @brief  Assign the first class-specific string index of this class (composite mode only)
- * @note   This function is called by the composite framework before enumeration.
- * @param  base: First class-specific string index for this class
- * @retval Number of class-specific string indices consumed
- */
-static u8 usbd_dfu_set_str_base(u8 base)
-{
-	usbd_dfu_dev.cls_str_base = base;
-
-	return USBD_DFU_CLASS_STR_COUNT;
-}
-#endif
 
 /**
  * @brief  USB attach/detach status change (called from ISR).
@@ -1122,8 +1044,9 @@ static int usbd_dfu_private_init(usbd_dfu_cb_t *cb)
 	u8 saved_mode = dfu->mode;
 	usb_os_memset((void *)dfu, 0, sizeof(usbd_dfu_dev_t));
 
-	/* Standalone default; the composite framework rebases it via set_str_base() */
-	dfu->cls_str_base = USBD_DFU_CLASS_STR_BASE_DEFAULT;
+	/* The core owns the string table, so the same call works in standalone and composite
+	   mode. 0 means no iInterface string. */
+	dfu->itf_str_idx = usbd_add_string(USBD_DFU_IFACE_STRING);
 
 	dfu->xfer_buf = (u8 *)usb_os_malloc(USBD_DFU_XFER_SIZE);
 	if (dfu->xfer_buf == NULL) {

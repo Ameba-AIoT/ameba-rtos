@@ -41,14 +41,14 @@
 #define WIFI_WHC_USB_BULKOUT_1  USBD_WHC_WIFI_EP_BULK_OUT_1
 #define WIFI_WHC_USB_BULKOUT_2  USBD_WHC_WIFI_EP_BULK_OUT_2
 
+/* The device speed is left to the USB device core, which clamps a High-Speed request down to
+ * Full Speed by itself on an FS-only SoC such as AmebaDplus. */
 #if defined (CONFIG_AMEBADPLUS)
 #define WIFI_WHC_USB_BULKOUT_3      0xFF /*invalid*/
 #define WIFI_WHC_USB_BULKOUT_EP_NUM 2
-#define WIFI_WHC_USB_SPEED      USB_SPEED_FULL
 #elif defined(CONFIG_AMEBAGREEN2)
 #define WIFI_WHC_USB_BULKOUT_3      USBD_WHC_WIFI_EP_BULK_OUT_3
 #define WIFI_WHC_USB_BULKOUT_EP_NUM 3
-#define WIFI_WHC_USB_SPEED      USB_SPEED_HIGH
 #endif
 
 #define EPNUM_TO_IDX(ep_num)\

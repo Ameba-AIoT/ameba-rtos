@@ -52,6 +52,25 @@ extern "C" {
 #define USBD_IDX_MS_OS_STR				0xEEU
 /** @} */
 
+/** @brief Number of class/application string descriptors held by the core string table.
+ *  @details The table covers the strings registered through @ref usbd_add_string only, whose
+ *           indices start right above @ref USBD_IDX_SERIAL_STR. The device-global strings
+ *           (LANGID, manufacturer, product, serial number) occupy the fixed indices below and
+ *           are answered straight from @ref usbd_dev_info_t, so they consume no slot.
+ */
+#define USBD_MAX_STR_NUM				8U
+
+/** @brief First string index handed out by @ref usbd_add_string. */
+#define USBD_CLASS_STR_IDX_BASE			(USBD_IDX_SERIAL_STR + 1U)
+
+/** @brief Length in characters of the serial number @ref usbd_get_uuid_sn builds, without the
+ *         terminator.
+ *  @note  This sizes the buffer for that helper only. A serial number assigned to
+ *         @ref usbd_dev_info_t::sn_str is referenced by pointer, so it may be of any length
+ *         that still fits a string descriptor, refer to @ref usbd_get_str_descriptor.
+ */
+#define USBD_SN_STR_LEN					16U
+
 /**
  * @brief USB device interrupt enable flag.
  * @{
@@ -113,9 +132,56 @@ typedef struct {
 } usbd_ep_t;
 
 /**
+ * @brief Defines the device-global descriptor parameters shared by every class.
+ * @details The core rewrites the fields below into the device and configuration descriptors
+ *          returned by the class driver, so a class never has to know them. Every field is
+ *          optional: a zero value keeps the class template default, which makes the whole
+ *          structure omissible for an application happy with the defaults.
+ *          String pointers are stored, not copied, so they shall remain valid until
+ *          @ref usbd_deinit.
+ * @note  @ref usbd_init copies this structure into @ref usb_dev_t::info and resolves every
+ *        default there, and the descriptor paths read that copy on each request rather than
+ *        snapshotting it. A class holding values latched in hardware may therefore overwrite
+ *        any field of `dev->info` after @ref usbd_init and before enumeration, and the core
+ *        reports the overwritten value. `usbd_whc` does so with its OTP parameters.
+ */
+typedef struct {
+	const char *mfg_str;                      /**< iManufacturer string, NULL uses "Realtek". */
+	const char *prod_str;                     /**< iProduct string, NULL uses "Realtek USB Device". */
+	/**
+	 * @brief iSerialNumber string, NULL or empty reports no serial number.
+	 * @note  There is deliberately no default: reading the chip UUID costs several kilobytes
+	 *        of stack on some SoCs, which @ref usbd_init cannot impose on its caller. An
+	 *        application wanting a UUID-derived serial number calls @ref usbd_get_uuid_sn from
+	 *        a context with enough stack and assigns the result here.
+	 */
+	const char *sn_str;
+	u16 vid;                                  /**< idVendor, 0 uses `USB_VID`. */
+	u16 pid;                                  /**< idProduct, 0 uses `USB_PID`. */
+	u16 bcd_device;                           /**< bcdDevice, 0 keeps the class template value. */
+	u16 lang_id;                              /**< wLANGID of the LANGID string descriptor, 0 uses 0x0409 (English US). */
+	u8 max_power;                             /**< bMaxPower in 2mA units, 0 keeps the class template value. */
+	/**
+	 * @brief USB device speed mode. See @ref usb_speed_type_t.
+	 * - `USB_SPEED_HIGH`: USB 2.0 High-Speed PHY, the default (value 0).
+	 * - `USB_SPEED_HIGH_IN_FULL`: USB 2.0 PHY driven in Full-Speed mode, for a low bandwidth
+	 *   application such as UAC 1.0 that has to run Full Speed on an HS-capable SoC.
+	 * - `USB_SPEED_FULL`: USB 1.1 Full-Speed transceiver.
+	 * @note  An application normally leaves this 0 and lets the core pick: on an FS-only SoC
+	 *        (`CONFIG_SUPPORT_USB_FS_ONLY`) @ref usbd_init clamps any High-Speed request down
+	 *        to `USB_SPEED_FULL`, so only a class that must down-shift a capable PHY by itself
+	 *        needs to set it.
+	 */
+	u8 speed : 2;
+	u8 self_powered : 1;                      /**< Power source: 0 for bus-powered, 1 for self-powered. */
+	u8 remote_wakeup_en : 1;                  /**< Advertise remote wakeup capability (0: Disable, 1: Enable). */
+} usbd_dev_info_t;
+
+/**
  * @brief Defines the core driver configuration parameters for the USB device.
  */
 typedef struct {
+	usbd_dev_info_t info;                     /**< Device-global descriptor parameters. See @ref usbd_dev_info_t. */
 #ifdef CONFIG_SUPPORT_USB_SHARED_DFIFO
 	/**
 	 * @brief Threshold count of EPMis interrupts for non-periodic IN transfers.
@@ -155,13 +221,6 @@ typedef struct {
 	u16 diag_depth;                           /**< Diag ring buffer depth in entries; 0 uses @ref USB_DIAG_DEFAULT_DEPTH. Requires `diag_enable`. */
 	u16 diag_poll_ms;                         /**< Diag task polling interval in ms; 0 uses @ref USB_DIAG_DEFAULT_POLL_MS. Requires `diag_enable`. */
 	u8 isr_priority;                          /**< Priority of the USB interrupt. */
-	/**
-	 * @brief USB device speed mode. See @ref usb_speed_type_t.
-	 * - `USB_SPEED_HIGH`: USB 2.0 High-Speed PHY (for HS-capable SoCs).
-	 * - `USB_SPEED_HIGH_IN_FULL`: USB 2.0 PHY operating in Full-Speed mode (for HS-capable SoCs with low bandwidth applications like UAC).
-	 * - `USB_SPEED_FULL`: USB 1.1 Full-Speed transceiver (for FS-only SoCs).
-	 */
-	u8 speed : 2;
 	u8 isr_in_critical : 1;                       /**< Flag to process USB ISR within a critical section. */
 #ifdef CONFIG_SUPPORT_USB_SHARED_DFIFO
 	u8 intr_use_ptx_fifo : 1;                     /**< Use Periodic TxFIFO for Interrupt IN transfers (Shared TxFIFO mode only). */
@@ -190,6 +249,22 @@ typedef struct {
 	usbd_ep_t ep0_out;                       /**< Control endpoint 0 OUT. */
 	const struct _usbd_class_driver_t *driver; /**< Pointer to the active class driver. */
 	void *pcd;                               /**< Pointer to the low-level PCD (Platform Controller Driver) handle. */
+	/**
+	 * @brief Device-global descriptor parameters, with every default already resolved.
+	 * @details Copied from @ref usbd_config_t::info by @ref usbd_init, which substitutes the
+	 *          defaults once so that the descriptor and string paths, both running in ISR
+	 *          context, never have to test for one.
+	 */
+	usbd_dev_info_t info;
+	/**
+	 * @brief Class/application string table, string index n is held by slot
+	 *        n - @ref USBD_CLASS_STR_IDX_BASE.
+	 * @details Holds the strings registered through @ref usbd_add_string, which stores
+	 *          pointers only. The device-global indices below @ref USBD_CLASS_STR_IDX_BASE are
+	 *          answered from `info` instead and take no slot here.
+	 */
+	const char *str_tbl[USBD_MAX_STR_NUM];
+	u8 str_cnt;                              /**< Number of entries used in `str_tbl`. */
 	__IO u8 is_ready;                        /**< Device ready or not, 0-disabled, 1-enabled */
 	__IO u8 is_connected;                    /**< Device connected or not,0-disabled, 1-enabled */
 	u8 dev_config;                           /**< Current device configuration index. */
@@ -199,9 +274,13 @@ typedef struct {
 	u8 dev_attach_status;                    /**< Current device attach status. See @ref usbd_attach_status_t. */
 	u8 dev_old_attach_status;                /**< Previous device attach status. See @ref usbd_attach_status_t. */
 	u8 dev_speed : 2;                        /**< Current device speed. See @ref usb_speed_type_t. */
-	u8 self_powered : 1;                     /**< Power source status: 0 for bus-powered, 1 for self-powered. */
-	u8 remote_wakeup_en : 1;                 /**< Remote wakeup enable or not, 0-disabled, 1-enabled */
-	u8 remote_wakeup : 1;                    /**< Remote wakeup flag. */
+	/**
+	 * @brief Remote wakeup authorized by the host (0: not authorized, 1: authorized).
+	 * @details Distinct from @ref usbd_dev_info_t::remote_wakeup_en, which only advertises the
+	 *          capability: this one tracks whether the host has actually enabled it through
+	 *          `SET_FEATURE(DEVICE_REMOTE_WAKEUP)`.
+	 */
+	u8 remote_wakeup : 1;
 } usb_dev_t;
 
 /**
@@ -393,29 +472,6 @@ typedef struct _usbd_class_driver_t {
 	 * @param[in] dev: USB device.
 	 */
 	void (*wakeup)(usb_dev_t *dev);
-
-	/**
-	 * @brief Callback to assign the first class-specific string index of this class.
-	 * @note
-	 *    Optional, used by the composite framework only; never called in standalone mode.
-	 *    Class-specific strings are those with an index above @ref USBD_IDX_SERIAL_STR:
-	 *    indices 0..USBD_IDX_SERIAL_STR (LANGID/MFG/PRODUCT/SERIAL) are device-global and
-	 *    owned by the top-level driver, never by a class. Several classes in one composite
-	 *    device would otherwise all claim the index right above USBD_IDX_SERIAL_STR, so the
-	 *    composite framework hands out a private window to each class and relies on the
-	 *    returned count to route GET_DESCRIPTOR(String) to the owning class.
-	 *    A class implementing this callback shall:
-	 *      - emit `base + n` (n = 0..count-1) in every descriptor field referencing one of
-	 *        its own strings, e.g. the CDC ECM iMACAddress field, and
-	 *      - answer GET_DESCRIPTOR(String, base + n) with the matching string.
-	 *    Called once before enumeration; calling it again with the same base is harmless.
-	 *    A class owning no class-specific string leaves this callback NULL, in which case
-	 *    the framework assigns it no window.
-	 * @param[in] base: First class-specific string index assigned to this class.
-	 * @return Number of class-specific string indices consumed, starting at base. 0 means
-	 *         the class owns none.
-	 */
-	u8(*set_str_base)(u8 base);
 
 	/**
 	 * @brief Callback to inform the class of its interface number base.
@@ -613,13 +669,62 @@ void usbd_ep_clear_stall(usb_dev_t *dev, usbd_ep_t *ep);
 int usbd_ep_is_stall(usb_dev_t *dev, usbd_ep_t *ep);
 
 /**
- * @brief Converts ASCII strings to UNICODE16-encoded USB string descriptors.
- * @param[in] str: Pointer to the null-terminated source ASCII string.
+ * @brief Register a string descriptor and get the index naming it.
+ * @details Lets a class or an application publish a string without knowing which indices the
+ *          other functions of the device already use, which is what the composite framework
+ *          needs. The returned index shall be emitted in the descriptor field naming the string
+ *          (`iInterface`, CDC ECM/NCM `iMACAddress`, ...); the core answers
+ *          `GET_DESCRIPTOR(String, index)` itself, so the class has nothing more to do.
+ *          The table holds @ref USBD_MAX_STR_NUM entries, all available to the classes and the
+ *          application: the device-global strings are answered from @ref usbd_dev_info_t and
+ *          take no slot.
+ * @note  The string is stored by pointer, not copied, so it shall remain valid until
+ *        @ref usbd_deinit. Registering the same pointer twice returns the same index and
+ *        consumes no extra slot. Shall be called from task context, after @ref usbd_init.
+ * @param[in] str: Pointer to the null-terminated UTF-8 string.
+ * @return The string index on success, 0 when `str` is NULL or the table is full. Index 0 is
+ *         reserved for the LANGID string descriptor and therefore doubles as the error value.
+ */
+u8 usbd_add_string(const char *str);
+
+/**
+ * @brief Get the device-global descriptor parameters, for a class that has to override them.
+ * @details Returns the resolved copy the core answers descriptor requests from, so a class
+ *          holding values latched in hardware may overwrite any field. `usbd_whc` does so with
+ *          its OTP parameters. An application configures these through
+ *          @ref usbd_config_t::info instead and has no need for this.
+ * @note  Shall be called from task context, after @ref usbd_init and before the device is
+ *        enumerated. String pointers are stored, not copied, so a string assigned here shall
+ *        remain valid until @ref usbd_deinit.
+ * @return Pointer to the device-global parameters, never NULL.
+ */
+usbd_dev_info_t *usbd_get_dev_info(void);
+
+/**
+ * @brief Build a serial number string from the chip UUID.
+ * @details Writes @ref USBD_SN_STR_LEN uppercase hex characters plus a terminator: UUID[0] in
+ *          the first 8, UUID[1] in the last 8. An unprogrammed OTP falls back to a fixed value
+ *          and logs a warning, so the result is always a valid string.
+ * @note  Reading the chip UUID costs several kilobytes of stack on some SoCs, which is why the
+ *        core does not do it by itself. Call this from task context with enough stack, e.g. the
+ *        application init thread, and assign the buffer to @ref usbd_dev_info_t::sn_str. The
+ *        buffer is referenced by pointer, so it shall remain valid until @ref usbd_deinit.
+ * @param[out] sn: Destination buffer.
+ * @param[in] len: Capacity of `sn` in bytes, shall be greater than @ref USBD_SN_STR_LEN.
+ * @return Number of characters written, 0 when `sn` is NULL or `len` is too small.
+ */
+u8 usbd_get_uuid_sn(char *sn, u8 len);
+
+/**
+ * @brief Converts UTF-8 strings to UNICODE16-encoded USB string descriptors.
+ * @param[in] str: Pointer to the null-terminated source UTF-8 string.
  * @param[out] desc: Formatted unicode string descriptor buffer where the USB descriptor will be written.
  * @param[in] desc_len: Capacity of `desc` in bytes.
  * @note  The destination buffer must accommodate twice the source length plus 2 bytes
  *        (for the length, and type fields of string descriptor). Nothing is written when the
  *        descriptor does not fit, or when its length would exceed the 255-byte `bLength` field.
+ *        Only the Basic Multilingual Plane is supported: a code point above U+FFFF, which
+ *        UTF-16 would have to encode as a surrogate pair, is rejected.
  * @return The total length of the generated descriptor in bytes, or 0 on error.
  */
 u16 usbd_get_str_descriptor(const char *str, u8 *desc, u16 desc_len);
