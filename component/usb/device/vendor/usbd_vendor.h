@@ -31,11 +31,6 @@ extern "C" {
 #define USBD_VENDOR_CLASS_CODE           0xFFU					/**< Device class code (0xFF = Vendor Specific) */
 #define USBD_VENDOR_SUBCLASS_CODE        0x00U					/**< Device subclass code (0x00 = No specific subclass) */
 #define USBD_VENDOR_PROTOCOL             0x00U					/**< Device protocol code (0x00 = No specific protocol) */
-#define USBD_VENDOR_LANGID_STRING        0x0409U					/**< Language ID for string descriptors (0x0409 = English) */
-#define USBD_VENDOR_MFG_STRING           "Realtek"				/**< Manufacturer string */
-#define USBD_VENDOR_PROD_HS_STRING       "Realtek Vendor (HS)"	/**< Product string for High-Speed mode */
-#define USBD_VENDOR_PROD_FS_STRING       "Realtek Vendor (FS)"	/**< Product string for Full-Speed mode */
-#define USBD_VENDOR_SN_STRING            "1234567890"			/**< Serial number string */
 
 #define USBD_VENDOR_HS_BULK_MPS          512U   /**< High speed BULK IN & OUT maximum packet size */
 #define USBD_VENDOR_FS_BULK_MPS          64U    /**< Full speed BULK IN & OUT maximum packet size */

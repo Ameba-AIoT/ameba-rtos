@@ -22,7 +22,7 @@
 
 static int usbh_cdc_acm_attach(usb_host_t *host);
 static void usbh_cdc_acm_detach(usb_host_t *host);
-static void usbh_cdc_acm_process(usb_host_t *host, usbh_event_t *event);
+static void usbh_cdc_acm_process(usb_host_t *host, usbh_drv_msg_t *msg);
 #if CONFIG_USBH_CDC_ACM_NOTIFY
 static void usbh_cdc_acm_sof(usb_host_t *host);
 static void usbh_cdc_acm_completed(usb_host_t *host, u8 pipe_num);
@@ -791,10 +791,10 @@ static void usbh_cdc_acm_completed(usb_host_t *host, u8 pipe_num)
 /**
 * @brief  State machine handling callback
 * @param  host:Host handle
-* @param  event: USB host event
+* @param  msg: USB host driver message
 * @retval None
 */
-static void usbh_cdc_acm_process(usb_host_t *host, usbh_event_t *event)
+static void usbh_cdc_acm_process(usb_host_t *host, usbh_drv_msg_t *msg)
 {
 	u8 req_status = HAL_OK;
 	usbh_cdc_acm_host_t *cdc = &usbh_cdc_acm_host;
@@ -855,13 +855,13 @@ static void usbh_cdc_acm_process(usb_host_t *host, usbh_event_t *event)
 		break;
 
 	case USBH_CDC_ACM_STATE_TRANSFER:
-		if (event) {
-			if (event->pipe_num == cdc->bulk_out.pipe_num) {
+		if (msg) {
+			if (msg->pipe_num == cdc->bulk_out.pipe_num) {
 				usbh_cdc_acm_process_tx(host);
-			} else if (event->pipe_num == cdc->bulk_in.pipe_num) {
+			} else if (msg->pipe_num == cdc->bulk_in.pipe_num) {
 				usbh_cdc_acm_process_rx(host);
 #if CONFIG_USBH_CDC_ACM_NOTIFY
-			} else if (event->pipe_num == cdc->intr_in.pipe_num) {
+			} else if (msg->pipe_num == cdc->intr_in.pipe_num) {
 				usbh_cdc_acm_process_intr_rx(host);
 #endif
 			}

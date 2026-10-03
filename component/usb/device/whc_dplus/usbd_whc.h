@@ -20,10 +20,6 @@ extern "C" {
 #define USBD_WHC_VID               USB_VID
 #define USBD_WHC_PID               USB_PID
 
-#define USBD_WHC_LANGID_STRING     0x409
-#define USBD_WHC_MFG_STRING        "Realtek"               /**< Manufacturer string. */
-#define USBD_WHC_PROD_STRING       "802.11n WLAN Adapter"  /**< Product string. */
-#define USBD_WHC_SN_STRING         "123456789ABC"          /**< Serial number string. */
 
 #define USBD_WHC_FS_BULK_MPS       64U   /* Full speed BULK IN & OUT maximum packet size */
 

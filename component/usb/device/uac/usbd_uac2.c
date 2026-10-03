@@ -30,11 +30,6 @@
 #define USBD_UAC_HS_ISOC_MPS                        1024U   /**< High speed ISOC IN & OUT maximum packet size */
 #define USBD_UAC_FS_ISOC_MPS                        1023U   /**< Full speed ISOC IN & OUT maximum packet size */
 
-#define USBD_UAC_LANGID_STRING                      0x0409U               /**< Language ID for string descriptors (0x0409 = English). */
-#define USBD_UAC_MFG_STRING                         "Realtek"             /**< Manufacturer string. */
-#define USBD_UAC_PROD_HS_STRING                     "Realtek UAC2.0 (HS)" /**< Product string for High-Speed mode. */
-#define USBD_UAC_PROD_FS_STRING                     "Realtek UAC2.0 (FS)" /**< Product string for Full-Speed mode. */
-#define USBD_UAC_SN_STRING                          "1234567890"          /**< Serial number string. */
 
 /**
  * Defines Audio trx buffer MAX count.
@@ -269,14 +264,6 @@ static const u8 usbd_uac_dev_desc[USB_LEN_DEV_DESC] = {
 	USBD_IDX_SERIAL_STR,         /* iSerialNumber */
 	0x01                         /* bNumConfigurations */
 }; /* usbd_uac_dev_desc */
-
-/* USB Standard String Descriptor 0 */
-static const u8 usbd_uac_lang_id_desc[USB_LEN_LANGID_STR_DESC] = {
-	USB_LEN_LANGID_STR_DESC,              /* bLength */
-	USB_DESC_TYPE_STRING,                 /* bDescriptorType */
-	USB_LOW_BYTE(USBD_UAC_LANGID_STRING), /* wLANGID */
-	USB_HIGH_BYTE(USBD_UAC_LANGID_STRING),
-}; /* usbd_uac_lang_id_desc */
 
 #ifndef CONFIG_USB_FS
 /* USB Standard Device Qualifier Descriptor */
@@ -1867,19 +1854,6 @@ static int usbd_uac_set_config(usb_dev_t *dev, u8 config)
 
 	cdev->dev = dev;
 
-	if (!cdev->from_composite) {
-#ifdef CONFIG_USBD_SELF_POWERED
-		dev->self_powered = 1;
-#else
-		dev->self_powered = 0;
-#endif
-#ifdef CONFIG_USBD_REMOTE_WAKEUP_EN
-		dev->remote_wakeup_en = 1;
-#else
-		dev->remote_wakeup_en = 0;
-#endif
-	}
-
 	cdev->alt_setting = 0U;
 	cdev->alt_setting_in = 0U;
 
@@ -2949,20 +2923,10 @@ static u16 usbd_uac_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 	const u8 *cfg_desc = NULL;
 	u16 len = 0;
 	u8 type = USB_HIGH_BYTE(req->wValue);
-	u8 attr = 0x80U;
 
 	/* Keep the mic entities/interface in the reported descriptor for composite mode
 	 * (always duplex) or when the standalone app enabled the IN endpoint. */
 	u8 keep_mic = usbd_uac_mic_present(cdev);
-
-	if (!cdev->from_composite) {
-#ifdef CONFIG_USBD_SELF_POWERED
-		attr |= USB_CFG_DESC_OFFSET_ATTR_BIT_SELF_POWERED;
-#endif
-#ifdef CONFIG_USBD_REMOTE_WAKEUP_EN
-		attr |= USB_CFG_DESC_OFFSET_ATTR_BIT_REMOTE_WAKEUP;
-#endif
-	}
 
 	switch (type) {
 
@@ -3009,32 +2973,9 @@ static u16 usbd_uac_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 #endif
 
 	case USB_DESC_TYPE_STRING:
-		switch (USB_LOW_BYTE(req->wValue)) {
-		case USBD_IDX_LANGID_STR:
-			desc = usbd_uac_lang_id_desc;
-			len = sizeof(usbd_uac_lang_id_desc);
-			break;
-		case USBD_IDX_MFC_STR:
-			len = usbd_get_str_descriptor(USBD_UAC_MFG_STRING, buf, buf_len);
-			break;
-		case USBD_IDX_PRODUCT_STR:
-			if (speed == USB_SPEED_HIGH) {
-				len = usbd_get_str_descriptor(USBD_UAC_PROD_HS_STRING, buf, buf_len);
-			} else {
-				len = usbd_get_str_descriptor(USBD_UAC_PROD_FS_STRING, buf, buf_len);
-			}
-			break;
-		case USBD_IDX_SERIAL_STR:
-			len = usbd_get_str_descriptor(USBD_UAC_SN_STRING, buf, buf_len);
-			break;
-		case USBD_IDX_MS_OS_STR:
-			/*Not support*/
-			break;
-		/* Add customer string here */
-		default:
-			USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_GET_DESC, 0);
-			break;
-		}
+		/* Every string this class owns is registered with usbd_add_string() and answered by
+		   the core, which only forwards an index it does not know, e.g. the MS OS string */
+		USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_GET_DESC, 0);
 		break;
 
 	default:
@@ -3061,10 +3002,6 @@ static u16 usbd_uac_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 		buf[USB_CFG_DESC_OFFSET_TYPE] = type;
 		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN] = USB_LOW_BYTE(len);
 		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN + 1] = USB_HIGH_BYTE(len);
-
-		if (!cdev->from_composite) {
-			buf[USB_CFG_DESC_OFFSET_ATTR] = attr;
-		}
 
 		usbd_uac_patch_ep_addresses(buf + USB_LEN_CFG_DESC, len - USB_LEN_CFG_DESC, cdev->ep_cfg);
 	}

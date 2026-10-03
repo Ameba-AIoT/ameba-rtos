@@ -17,9 +17,6 @@
 #define USBD_DFU_DEMO_BUF_SIZE      (USBD_DFU_XFER_SIZE * 4U)  /* 4 KB */
 #define USBD_DFU_DEMO_WRITE_POLL_MS 1U  /* write_task needs a scheduler tick even for RAM memcpy */
 
-// USB speed
-#define DFU_USB_SPEED                             USB_SPEED_HIGH
-
 // Thread priorities
 #define DFU_INIT_THREAD_PRIORITY                  5
 #define DFU_RECONF_THREAD_PRIORITY                4
@@ -32,9 +29,11 @@
 static const char *const TAG = "DFU";
 
 static const usbd_config_t dfu_cfg = {
-	.speed = DFU_USB_SPEED,
 	.isr_priority = INT_PRI_MIDDLE,
 	.diag_enable = 1,
+	.info = {
+		.prod_str = "Realtek DFU Device",
+	},
 #if defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBAD) || defined(CONFIG_AMEBADPLUS)
 	.nptx_max_epmis_cnt = 1U,
 #elif defined(CONFIG_AMEBAGREEN2)

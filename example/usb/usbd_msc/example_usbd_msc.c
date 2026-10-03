@@ -39,13 +39,6 @@
 #error "SD hotplug is not supported"
 #endif
 
-// USB speed
-#ifdef CONFIG_SUPPORT_USB_FS_ONLY
-#define MSC_USB_SPEED                            USB_SPEED_FULL
-#else
-#define MSC_USB_SPEED                            USB_SPEED_HIGH
-#endif
-
 // Thread priorities
 #define MSC_INIT_THREAD_PRIORITY                  5
 #define MSC_USB_HOTPLUG_THREAD_PRIORITY           8
@@ -85,7 +78,9 @@ static void msc_cb_status_changed(u8 old_status, u8 status);
 static const char *const TAG = "MSC";
 
 static const usbd_config_t msc_cfg = {
-	.speed = MSC_USB_SPEED,
+	.info = {
+		.prod_str = "Realtek MSC Device",
+	},
 	.isr_priority = INT_PRI_MIDDLE,
 #if defined(CONFIG_AMEBASMART)
 	.nptx_max_epmis_cnt = 100U,
@@ -115,12 +110,14 @@ static const usbd_msc_cb_t msc_cb = {
 };
 
 #if MSC_USB_HOTPLUG
-static u8 msc_usb_attach_status;
+/* Written by the ISR, read by the hotplug thread, possibly on another core */
+static volatile u8 msc_usb_attach_status;
 static rtos_sema_t msc_usb_status_changed_sema;
 #endif
 
 #if MSC_SD_HOTPLUG
-static u8 msc_sd_status;
+/* Written by the SD card-detect callback, read by the SD thread, possibly on another core */
+static volatile u8 msc_sd_status;
 static rtos_sema_t msc_sd_status_changed_sema;
 #endif
 

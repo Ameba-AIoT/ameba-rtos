@@ -7,22 +7,6 @@ config USBD_COMPOSITE_MENU
       Composite Device — combine multiple class functions into one USB device.
       Select one or more class options below to build together.
 
-config USBD_SELF_POWERED
-    bool "Self-powered device"
-    default n
-    help
-      Set bmAttributes bit 6 (Self-powered) in Configuration Descriptor
-      and GET_STATUS response.
-
-      If not selected, the device defaults to bus-powered mode.
-
-config USBD_REMOTE_WAKEUP_EN
-    bool "Remote wakeup enable"
-    default n
-    help
-      Set bmAttributes bit 5 (Remote Wakeup) in Configuration Descriptor.
-      When enabled, the device can signal remote wakeup to the host.
-
 comment "USB Device Class Selection"
 
 config USBD_CDC_ACM_MENU

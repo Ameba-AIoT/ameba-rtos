@@ -29,41 +29,6 @@ static const char *const TAG = "WHC";
 
 /* Private functions ---------------------------------------------------------*/
 
-static u8 usbd_otp_get_strlen(u8 *buf)
-{
-	u8 len = 0U;
-
-	while (*buf != '\0') {
-		len++;
-		buf++;
-	}
-
-	return len;
-}
-
-/**
-  * @brief  Get string descriptor from ASCII string buffer
-  * @param  desc - String descriptor in UNICODE
-  * @param  buf - String buffer in ASCII
-  * @param  len - String descriptor length
-  * @retval void
-  */
-static void usbd_otp_get_str_desc(u8 *desc, u8 *buf, u8 *len)
-{
-	u8 idx = 0U;
-
-	if (buf != NULL) {
-		*len = usbd_otp_get_strlen(buf) * 2U + 2U;
-		desc[idx++] = *len;
-		desc[idx++] = USB_DESC_TYPE_STRING;
-
-		while (*buf != '\0') {
-			desc[idx++] = *buf++;
-			desc[idx++] =  0U;
-		}
-	}
-}
-
 /* Exported functions --------------------------------------------------------*/
 
 int usbd_otp_init(usbd_otp_t *otp)
@@ -81,19 +46,19 @@ int usbd_otp_init(usbd_otp_t *otp)
 
 	otp->bt_en = ((HAL_READ32(OTPC_REG_BASE, SEC_OTP_SYSCFG0) & SEC_BIT_BT_FUNCTION_EN) == 0U) ? 0U : 1U;
 
-	otp->mfg_str = (u8 *)usb_os_malloc(USBD_WHC_MAX_STR_LEN);
+	otp->mfg_str = (u8 *)usb_os_malloc(USBD_OTP_MAX_STR_LEN + 1U);
 	if (otp->mfg_str == NULL) {
 		return HAL_ERR_MEM;
 	}
 
-	otp->prod_str = (u8 *)usb_os_malloc(USBD_WHC_MAX_STR_LEN);
+	otp->prod_str = (u8 *)usb_os_malloc(USBD_OTP_MAX_STR_LEN + 1U);
 	if (otp->prod_str == NULL) {
 		usb_os_mfree((void *)otp->mfg_str);
 		otp->mfg_str = NULL;
 		return HAL_ERR_MEM;
 	}
 
-	otp->sn_str = (u8 *)usb_os_malloc(USBD_WHC_MAX_STR_LEN);
+	otp->sn_str = (u8 *)usb_os_malloc(USBD_OTP_MAX_STR_LEN + 1U);
 	if (otp->sn_str == NULL) {
 		usb_os_mfree((void *)otp->mfg_str);
 		otp->mfg_str = NULL;
@@ -147,7 +112,7 @@ int usbd_otp_init(usbd_otp_t *otp)
 			}
 			usb_os_memcpy((void *)buf, (const void *)&otp->otp_map[off + 2U], sn_len - 2U);
 			buf[sn_len - 2U] = '\0';
-			usbd_otp_get_str_desc(otp->sn_str, buf, &otp->sn_str_len);
+			usb_os_memcpy((void *)otp->sn_str, (const void *)buf, (size_t)(sn_len - 1U));
 			RTK_LOGS(TAG, RTK_LOG_DEBUG, "Get OTP SN str:%s\n", buf);
 			otp->otp_sn = 1U;
 		}
@@ -167,18 +132,18 @@ int usbd_otp_init(usbd_otp_t *otp)
 			}
 			usb_os_memcpy((void *)buf, (const void *)&otp->otp_map[off + 2U], mfg_len - 2U);
 			buf[mfg_len - 2U] = '\0';
-			usbd_otp_get_str_desc(otp->mfg_str, buf, &otp->mfg_str_len);
+			usb_os_memcpy((void *)otp->mfg_str, (const void *)buf, (size_t)(mfg_len - 1U));
 			RTK_LOGS(TAG, RTK_LOG_DEBUG, "Get OTP MFG str:%s\n", buf);
 			off = (u16)(off + mfg_len);
 			// Product string
 			prod_len = otp->otp_map[off];
-			/* Bound by the raw ASCII length, mfg_str_len already holds the UNICODE descriptor length */
+			/* Bound by the raw ASCII length */
 			if ((prod_len < 2U) || ((off + prod_len) > USB_OTP_LEN)) {
 				return HAL_ERR_PARA;
 			}
 			usb_os_memcpy((void *)buf, (const void *)&otp->otp_map[off + 2U], prod_len - 2U);
 			buf[prod_len - 2U] = '\0';
-			usbd_otp_get_str_desc(otp->prod_str, buf, &otp->prod_str_len);
+			usb_os_memcpy((void *)otp->prod_str, (const void *)buf, (size_t)(prod_len - 1U));
 			RTK_LOGS(TAG, RTK_LOG_DEBUG, "Get OTP PROD str:%s\n", buf);
 			otp->otp_param = 1U;
 		}

@@ -30,21 +30,6 @@ extern "C" {
 /** Maximum number of sub-functions in one composite device. */
 #define USBD_COMP_MAX_FUNCS     4U
 
-#define USBD_COMP_VID              USB_VID
-#define USBD_COMP_PID              USB_PID
-#define USBD_COMP_LANGID           0x0409U
-
-#define USBD_COMP_STRING_COUNT     3U
-#define USBD_COMP_MFG_STRING       "Realtek"
-#define USBD_COMP_PROD_STRING      "Realtek Composite Device"
-#define USBD_COMP_SN_STRING        "1234567890"
-
-/** First string index available to sub-functions: everything above the device-global
- *  LANGID/MFG/PRODUCT/SERIAL block that the composite driver answers itself. */
-#define USBD_COMP_CLASS_STR_IDX_BASE   (USBD_IDX_SERIAL_STR + 1U)
-/** Highest usable class-specific string index; 0xEE is reserved for the MS OS string. */
-#define USBD_COMP_CLASS_STR_IDX_MAX    0xEDU
-
 /** @} End of Device_Composite_Constants group */
 /** @} End of USB_Device_Constants group */
 /** @} End of USB_Device_API group */
@@ -75,7 +60,6 @@ typedef struct {
 	u32 desc_buf_size;                      /**< Size of desc_buf in bytes. */
 	u8 func_count;                          /**< Number of registered sub-functions. */
 	u8 if_counts[USBD_COMP_MAX_FUNCS]; /**< Interface count for each sub-function (parsed from desc). */
-	u8 cls_str_counts[USBD_COMP_MAX_FUNCS]; /**< Class-specific string count of each sub-function, from set_str_base(). */
 	u8 active_func;                         /**< Index of sub-function handling the current setup with data OUT, 0xFF if none. */
 	u8 active_func_in;                      /**< Index of sub-function handling the current setup with data IN, 0xFF if none. */
 } usbd_composite_dev_t;

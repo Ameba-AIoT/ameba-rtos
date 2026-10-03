@@ -47,11 +47,10 @@
 // while enable this configuration,choose the first ch to play
 #define USBD_UAC_DEMUX_CH_DEBUG                   1
 
-// USB speed
-#ifdef CONFIG_SUPPORT_USB_FS_ONLY
-#define USBD_UAC_USB_SPEED                        USB_SPEED_FULL
-#elif defined(CONFIG_USBD_UAC1)
-// UAC 1.0 spec supports only Full Speed.
+// USB speed. Only UAC 1.0 needs to ask: its spec supports Full Speed only, so an
+// HS-capable PHY has to be driven in Full-Speed mode. UAC 2.0 leaves the speed to
+// the core, which clamps to Full Speed by itself on an FS-only SoC.
+#ifdef CONFIG_USBD_UAC1
 #define USBD_UAC_USB_SPEED                        USB_SPEED_HIGH_IN_FULL
 #else
 #define USBD_UAC_USB_SPEED                        USB_SPEED_HIGH
@@ -127,7 +126,8 @@ static const char *const TAG = "UAC";
 #if USBD_UAC_HOTPLUG
 static rtos_task_t check_status_task;
 static rtos_sema_t uac_attach_status_changed_sema;
-static u8 uac_attach_status;
+/* Written by the ISR, read by the hotplug thread, possibly on another core */
+static __IO u8 uac_attach_status;
 /* Raised by the hotplug thread when the stack can not be recovered: the workers
    leave their loops and the hotplug thread frees the shared objects. */
 static __IO u8 uac_stack_fatal = 0;
@@ -135,8 +135,28 @@ static __IO u8 uac_stack_fatal = 0;
 static rtos_task_t uac_player_task;
 static rtos_sema_t uac_ready_sema;
 static __IO u8 uac_task_exiting = 0;
-static __IO u8 uac_playing = 0;
 static __IO u8 uac_player_stop = 0;
+
+/* Serialize the USB stack bring up/tear down against the worker threads: the player
+ * thread holds uac_play_lock for a playback session, the record thread holds
+ * uac_record_lock for a record session, and the hotplug thread takes both before it
+ * touches the stack. One lock per direction rather than a single one, so that
+ * playback and record still run at the same time.
+ * Created once and never deleted: a worker that misses its polling window is force
+ * deleted by the hotplug thread, so there is no point in time at which these mutexes
+ * are provably unreferenced. uac_stack_ready is the gate that keeps callers off the
+ * stack instead. */
+static rtos_mutex_t uac_play_lock = NULL;
+#if USBD_UAC_ENABLE_RECORD
+static rtos_mutex_t uac_record_lock = NULL;
+#endif
+/* 1: usbd_init() and usbd_uac_init() both done, the class APIs may be called. Cleared
+ * before any tear down, so a non-zero value also implies the locks are valid.
+ * usbd_uac_deinit() frees the isoc ring buffers and their semaphores, which
+ * usbd_uac_read()/usbd_uac_transmit_data() dereference; the bounded wait this replaces
+ * could time out and deinit under a worker still inside the stack, so under SMP the
+ * workers must be excluded from the whole teardown, not just raced against. */
+static __IO u8 uac_stack_ready = 0;
 
 #ifdef CONFIG_SUPPORT_AUDIO_FOR_USB
 /*
@@ -154,7 +174,14 @@ static u8 play_buf[USB_AUDIO_BUF_SIZE];
 static u8 recv_buf[USB_AUDIO_BUF_SIZE * 2];
 
 static const usbd_config_t uac_cfg = {
-	.speed = USBD_UAC_USB_SPEED,
+	.info = {
+#ifdef CONFIG_USBD_UAC1
+		.prod_str = "Realtek UAC1.0 Device",
+#else
+		.prod_str = "Realtek UAC2.0 Device",
+#endif
+		.speed = USBD_UAC_USB_SPEED,
+	},
 	.isr_priority = INT_PRI_MIDDLE,
 #if defined(CONFIG_AMEBAGREEN2)
 	.rx_fifo_depth = 724U,
@@ -217,6 +244,20 @@ static u8 uac_record_chunk[USBD_UAC_RECORD_CHUNK_LEN] USB_DMA_ALIGNED;
 #endif
 
 /* Private functions ---------------------------------------------------------*/
+
+#if USBD_UAC_HOTPLUG
+/**
+  * @brief  Release the locks taken around the stack tear down/bring up
+  * @retval None
+  */
+static void uac_state_unlock(void)
+{
+#if USBD_UAC_ENABLE_RECORD
+	rtos_mutex_give(uac_record_lock);
+#endif
+	rtos_mutex_give(uac_play_lock);
+}
+#endif
 
 /**
   * @brief  Free the objects shared by the example threads
@@ -323,17 +364,25 @@ static void example_usbd_uac_hotplug_thread(void *param)
 		if (rtos_sema_take(uac_attach_status_changed_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
 			if (uac_attach_status == USBD_ATTACH_STATUS_DETACHED) {
 				RTK_LOGS(TAG, RTK_LOG_INFO, "DETACHED\n");
+				/* Ask the workers to leave their loops first: stop_play()/stop_record()
+				   unblock a pending usbd_uac_read(), uac_task_exiting ends the loops.
+				   Both must run while the stack is still up, so before the lock. */
 				usbd_uac_stop_play();
+#if USBD_UAC_ENABLE_RECORD
+				usbd_uac_stop_record();
+#endif
 				uac_task_exiting = 1;
 
-				rtos_time_delay_ms(200);
-
-				wait_cnt = 0;
-
-				while ((uac_playing != 0) && (wait_cnt < 25)) { /* max wait 500ms */
-					rtos_time_delay_ms(20);
-					wait_cnt++;
-				}
+				/* Each worker holds its lock for as long as it is inside the class
+				   APIs, so taking both here waits until neither of them is: unlike a
+				   bounded wait, this can not time out and deinit under a worker that is
+				   still running, which matters on SMP where a worker keeps running on
+				   the other core. */
+				rtos_mutex_take(uac_play_lock, RTOS_MAX_TIMEOUT);
+#if USBD_UAC_ENABLE_RECORD
+				rtos_mutex_take(uac_record_lock, RTOS_MAX_TIMEOUT);
+#endif
+				uac_stack_ready = 0;
 
 				usbd_uac_deinit();
 				usbd_deinit();
@@ -341,13 +390,17 @@ static void example_usbd_uac_hotplug_thread(void *param)
 				RTK_LOGS(TAG, RTK_LOG_INFO, "Free heap: 0x%x\n", rtos_mem_get_free_heap_size());
 				ret = usbd_init(&uac_cfg);
 				if (ret != 0) {
+					uac_state_unlock();
 					break;
 				}
 				ret = usbd_uac_init(&uac_cb, &uac_ep);
 				if (ret != 0) {
 					usbd_deinit();
+					uac_state_unlock();
 					break;
 				}
+				uac_stack_ready = 1;
+				uac_state_unlock();
 			} else if (uac_attach_status == USBD_ATTACH_STATUS_ATTACHED) {
 				RTK_LOGS(TAG, RTK_LOG_INFO, "ATTACHED\n");
 			} else {
@@ -360,6 +413,7 @@ static void example_usbd_uac_hotplug_thread(void *param)
 	/* The stack is fully deinited here, no more ISR callback: stop the workers
 	   blocked on the semaphores, then free them as the last thread standing. */
 	uac_stack_fatal = 1;
+	uac_stack_ready = 0;
 	uac_task_exiting = 1;
 	usbd_uac_stop_play();
 	rtos_sema_give(uac_ready_sema);
@@ -479,7 +533,17 @@ static void example_audio_track_play(void)
 	u32 read_dat_len = 0;
 
 	usbd_uac_config(&(uac_cb.out), 0, 0);
+	/* isoc_mps is cleared on deinit, so start_play() keeps failing once the stack is
+	   torn down: leave on any stop request instead of retrying forever. Nothing to
+	   unwind here, no AudioTrack has been created yet. */
 	while (usbd_uac_start_play() != HAL_OK) {
+		if ((uac_task_exiting != 0) || (uac_player_stop != 0)
+#if USBD_UAC_HOTPLUG
+			|| (uac_stack_fatal != 0)
+#endif
+		   ) {
+			return;
+		}
 		rtos_time_delay_ms(5);
 	}
 
@@ -553,7 +617,6 @@ static void example_audio_track_play(void)
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "UAC stop %d\n", uac_player_stop);
 
-	uac_playing = 1;
 	while ((uac_task_exiting != 1) && (uac_player_stop != 1)) {
 		read_dat_len = usbd_uac_read(recv_buf, USB_AUDIO_BUF_SIZE * 2, 500, NULL);
 		if (read_dat_len > 0) {
@@ -583,11 +646,9 @@ static void example_audio_track_play(void)
 	AudioTrack_Destroy(audio_track);
 
 	audio_track = NULL;
-	uac_playing = 0;
 #else
 	total_len = 0;
 	read_cnt = 0;
-	uac_playing = 1;
 	while ((uac_task_exiting != 1) && (uac_player_stop != 1)) {
 		read_dat_len = usbd_uac_read(recv_buf, USB_AUDIO_BUF_SIZE * 2, 500, NULL);
 		read_cnt ++;
@@ -603,7 +664,6 @@ static void example_audio_track_play(void)
 	}
 
 	usbd_uac_stop_play();
-	uac_playing = 0;
 #endif
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Audio track demo stop\n\n\n");
@@ -627,7 +687,15 @@ static void example_usbd_uac_audio_track_thread(void *param)
 			break;
 		}
 		uac_player_stop = 0;
-		example_audio_track_play();
+		/* Hold the lock for the whole playback session: it keeps a pending teardown
+		   out of the class APIs this thread is inside. The hotplug thread sets
+		   uac_task_exiting before it asks for the lock, so the loop below always
+		   leaves and the wait is bounded. */
+		rtos_mutex_take(uac_play_lock, RTOS_MAX_TIMEOUT);
+		if (uac_stack_ready != 0U) {
+			example_audio_track_play();
+		}
+		rtos_mutex_give(uac_play_lock);
 	} while (1);
 
 	/* Clear the handle last: the hotplug thread polls it to know this worker is
@@ -663,9 +731,20 @@ static void example_usbd_uac_record_thread(void *param)
 		}
 #endif
 
+		/* Hold the lock for the whole record session: it keeps a pending teardown out
+		   of the class APIs this thread is inside. The hotplug thread sets
+		   uac_task_exiting before it asks for the lock, so the loop below always
+		   leaves and the wait is bounded. */
+		rtos_mutex_take(uac_record_lock, RTOS_MAX_TIMEOUT);
+		if (uac_stack_ready == 0U) {
+			rtos_mutex_give(uac_record_lock);
+			continue;
+		}
+
 		usbd_uac_config(&uac_record_cfg, 1, 0);
 		if (usbd_uac_start_record() != HAL_OK) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "UAC start record fail\n");
+			rtos_mutex_give(uac_record_lock);
 			continue;
 		}
 
@@ -677,6 +756,7 @@ static void example_usbd_uac_record_thread(void *param)
 			rtos_time_delay_ms(USBD_UAC_RECORD_CHUNK_DELAY_MS);
 		}
 		usbd_uac_stop_record();
+		rtos_mutex_give(uac_record_lock);
 	}
 
 	/* Clear the handle last: the hotplug thread polls it to know this worker is
@@ -709,6 +789,24 @@ static void example_usbd_uac_thread(void *param)
 {
 	UNUSED(param);
 	int ret = 0;
+
+	/* Created before anything else and never deleted, see their declaration. */
+	if (uac_play_lock == NULL) {
+		ret = rtos_mutex_create(&uac_play_lock);
+		if (ret != RTK_SUCCESS) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Create play lock fail\n");
+			goto example_exit;
+		}
+	}
+#if USBD_UAC_ENABLE_RECORD
+	if (uac_record_lock == NULL) {
+		ret = rtos_mutex_create(&uac_record_lock);
+		if (ret != RTK_SUCCESS) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Create record lock fail\n");
+			goto example_exit;
+		}
+	}
+#endif
 
 	ret = rtos_sema_create(&uac_ready_sema, 0U, 1U);
 	if (ret != RTK_SUCCESS) {
@@ -743,6 +841,7 @@ static void example_usbd_uac_thread(void *param)
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "UAC init fail\n");
 		goto clear_usb_driver_exit;
 	}
+	uac_stack_ready = 1;
 
 	ret = rtos_task_create(&uac_player_task, "usbd_uac_audio_track_thread",
 						   example_usbd_uac_audio_track_thread, NULL,
@@ -765,8 +864,8 @@ static void example_usbd_uac_thread(void *param)
 	/* C-2: the USB OTG ISR is delivered on CPU0 (GIC ITARGETSR pins every SPI to core 0).
 	   Pinning the hotplug/deinit thread to CPU0 puts it on the same core as the ISR,
 	   so deinit's local interrupt disable is meaningful again under SMP. The player /
-	   record data threads stay unaffined: uac_stack_fatal + stop logic gates them out
-	   of a pending teardown, so they do not need to share the ISR's core. */
+	   record data threads stay unaffined: a pending deinit is excluded from them by
+	   uac_play_lock / uac_record_lock, not by core. */
 	rtos_task_set_affinity(check_status_task, 0);
 #endif
 #endif // USBD_UAC_HOTPLUG
@@ -789,6 +888,7 @@ static void example_usbd_uac_thread(void *param)
 
 #if USBD_UAC_ENABLE_RECORD
 clear_hotplug_task_exit:
+	uac_stack_ready = 0;
 	/* Stop the worker threads before the semaphores they wait on are freed. */
 #if USBD_UAC_HOTPLUG
 	rtos_task_delete(check_status_task);
@@ -801,6 +901,7 @@ clear_hotplug_task_exit:
 
 #if USBD_UAC_HOTPLUG
 clear_usb_class_exit:
+	uac_stack_ready = 0;
 	rtos_task_delete(uac_player_task);
 	usbd_uac_stop_play();
 	usbd_uac_deinit();

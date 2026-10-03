@@ -92,14 +92,6 @@ static const u8 usbd_hid_dev_desc[USB_LEN_DEV_DESC] = {
 	0x01											/* bNumConfigurations */
 };
 
-/* USB Standard String Descriptor 0 */
-static const u8 usbd_hid_lang_id_desc[USB_LEN_LANGID_STR_DESC] = {
-	USB_LEN_LANGID_STR_DESC,                        /* bLength */
-	USB_DESC_TYPE_STRING,                           /* bDescriptorType */
-	USB_LOW_BYTE(USBD_HID_LANGID_STRING),           /* wLANGID */
-	USB_HIGH_BYTE(USBD_HID_LANGID_STRING),
-};
-
 #ifndef CONFIG_USB_FS
 /* USB Standard Device Qualifier Descriptor */
 static const u8 usbd_hid_device_qualifier_desc[USB_LEN_DEV_QUALIFIER_DESC] = {
@@ -1022,19 +1014,6 @@ static int hid_set_config(usb_dev_t *dev, u8 config)
 
 	hid->dev = dev;
 
-	if (!hid->from_composite) {
-#ifdef CONFIG_USBD_SELF_POWERED
-		dev->self_powered = 1;
-#else
-		dev->self_powered = 0;
-#endif
-#ifdef CONFIG_USBD_REMOTE_WAKEUP_EN
-		dev->remote_wakeup_en = 1;
-#else
-		dev->remote_wakeup_en = 0;
-#endif
-	}
-
 	/* Init INTR IN EP */
 	info = &ep_intr_in->info;
 	ep_intr_in->xfer_state = 0;
@@ -1214,7 +1193,6 @@ static u16 hid_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16
 	u16 report_len;
 	u8 type = USB_HIGH_BYTE(req->wValue);
 	u8 is_cfg = 0;
-	u8 attr = 0x80U;
 #ifdef CONFIG_USBD_HID_BIDIR
 	u16 vend_report_len = sizeof(hid_vend_report_desc);
 #endif
@@ -1226,15 +1204,6 @@ static u16 hid_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16
 #else
 	report_len = sizeof(hid_keyboard_report_desc);
 #endif
-
-	if (!hid->from_composite) {
-#ifdef CONFIG_USBD_SELF_POWERED
-		attr |= USB_CFG_DESC_OFFSET_ATTR_BIT_SELF_POWERED;
-#endif
-#ifdef CONFIG_USBD_REMOTE_WAKEUP_EN
-		attr |= USB_CFG_DESC_OFFSET_ATTR_BIT_REMOTE_WAKEUP;
-#endif
-	}
 
 	switch (type) {
 
@@ -1276,31 +1245,9 @@ static u16 hid_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16
 #endif
 
 	case USB_DESC_TYPE_STRING:
-		switch (USB_LOW_BYTE(req->wValue)) {
-		case USBD_IDX_LANGID_STR:
-			desc = usbd_hid_lang_id_desc;
-			len = sizeof(usbd_hid_lang_id_desc);
-			break;
-		case USBD_IDX_MFC_STR:
-			len = usbd_get_str_descriptor(USBD_HID_MFG_STRING, buf, buf_len);
-			break;
-		case USBD_IDX_PRODUCT_STR:
-			if (speed == USB_SPEED_HIGH) {
-				len = usbd_get_str_descriptor(USBD_HID_PROD_HS_STRING, buf, buf_len);
-			} else {
-				len = usbd_get_str_descriptor(USBD_HID_PROD_FS_STRING, buf, buf_len);
-			}
-			break;
-		case USBD_IDX_SERIAL_STR:
-			len = usbd_get_str_descriptor(USBD_HID_SN_STRING, buf, buf_len);
-			break;
-		case USBD_IDX_MS_OS_STR:
-			break;
-		/* Add customer string here */
-		default:
-			USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_GET_DESC, 0);
-			break;
-		}
+		/* Every string this class owns is registered with usbd_add_string() and answered by
+		   the core, which only forwards an index it does not know, e.g. the MS OS string */
+		USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_GET_DESC, 0);
 		break;
 
 	default:
@@ -1327,10 +1274,6 @@ static u16 hid_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16
 		buf[USBD_HID_CFG_VEND_DESC_ITEM_LENGTH_OFFSET] = USB_LOW_BYTE(vend_report_len);
 		buf[USBD_HID_CFG_VEND_DESC_ITEM_LENGTH_OFFSET + 1] = USB_HIGH_BYTE(vend_report_len);
 #endif
-
-		if (!hid->from_composite) {
-			buf[USB_CFG_DESC_OFFSET_ATTR] = attr;
-		}
 
 		usbd_hid_patch_ep_addresses(buf + USB_LEN_CFG_DESC, len - USB_LEN_CFG_DESC, hid->ep_cfg);
 	}

@@ -42,12 +42,6 @@
 #define CDC_BULK_OUT_XFER_SIZE                        2048U
 #define HID_INTR_IN_XFER_SIZE                         512U
 
-#ifdef CONFIG_SUPPORT_USB_FS_ONLY
-#define COMP_USB_SPEED                                USB_SPEED_FULL
-#else
-#define COMP_USB_SPEED                                USB_SPEED_HIGH
-#endif
-
 // This configuration is used to enable a thread to check hotplug event
 // and reset USB stack to avoid memory leak, only for example.
 #define COMP_HOTPLUG                                  1
@@ -98,7 +92,9 @@ static void composite_cb_status_changed(u8 old_status, u8 status);
 static const char *const TAG = "COMP";
 
 static const usbd_config_t composite_cfg = {
-	.speed = COMP_USB_SPEED,
+	.info = {
+		.prod_str = "Realtek ACM+HID Composite Device",
+	},
 	.isr_priority = INT_PRI_MIDDLE,
 	/* Enlarge this value if composite configuration descriptor is larger than 512B */
 	/* .ctrl_xfer_buf_len = 512U, */
@@ -121,12 +117,14 @@ static const usbd_config_t composite_cfg = {
 };
 
 /* CDC ACM endpoint configuration */
-static const usbd_cdc_acm_ep_cfg_t cdc_acm_ep = {
+static const usbd_cdc_acm_config_t cdc_acm_ep = {
 	.bulk_in_addr  = COMP_CDC_BULK_IN_EP,
 	.bulk_out_addr = COMP_CDC_BULK_OUT_EP,
 	.intr_in_addr  = COMP_CDC_INTR_IN_EP,
 	.bulk_in_xfer_size  = CDC_BULK_IN_XFER_SIZE,
 	.bulk_out_xfer_size = CDC_BULK_OUT_XFER_SIZE,
+	.notify_en = 1,
+	.bulk_in_zero_copy = 1,
 };
 
 /* HID endpoint configuration */
@@ -159,10 +157,26 @@ static const usbd_hid_usr_cb_t composite_hid_usr_cb = {
 
 static usb_cdc_acm_line_coding_t composite_cdc_acm_line_coding;
 
+/* Serialize the USB stack bring up/tear down against the shell thread: the "mouse"
+   command holds composite_state_lock while it is inside usbd_hid_send_data(), and
+   the hotplug thread takes it before it deinits the stack.
+   Created once and never deleted: the shell thread can not be joined, so there is no
+   point in time at which this mutex is provably unreferenced. composite_stack_ready
+   is the gate that keeps callers off the stack instead. */
+static rtos_mutex_t composite_state_lock = NULL;
+/* 1: the whole composite stack is up, the class APIs may be called. Cleared before any
+   tear down, so a non-zero value also implies the lock is valid.
+   usbd_hid_deinit() frees the EP xfer buffer that usbd_hid_send_data() memcpy into, and
+   the class internal ready check only guards the entry; under SMP the shell thread on
+   the other core can already be past it while the hotplug thread deinits, so it must be
+   excluded from the whole teardown, not just raced against. */
+static volatile u8 composite_stack_ready;
+
 #if COMP_HOTPLUG
 static rtos_task_t composite_hotplug_task;
 static rtos_sema_t composite_attach_status_changed_sema;
-static u8 composite_attach_status;
+/* Written by the ISR, read by the hotplug thread, possibly on another core */
+static volatile u8 composite_attach_status;
 
 /* Composite-level callback: forwarded the aggregated attach status by the
    composite framework, used to drive the hotplug thread. */
@@ -331,7 +345,32 @@ static void composite_hid_send_device_data(composite_hid_mouse_data_t *data)
 	byte[2] = data->y_axis;
 	byte[3] = data->wheel;
 
-	usbd_hid_send_data(byte, 4);
+	/* Gate on composite_stack_ready BEFORE touching the mutex: it is still NULL if the
+	   command runs before init finished. Then recheck under the lock, the stack may have
+	   gone down while waiting for it. */
+	if (composite_stack_ready == 0U) {
+		return;
+	}
+	rtos_mutex_take(composite_state_lock, RTOS_MAX_TIMEOUT);
+	if (composite_stack_ready != 0U) {
+		usbd_hid_send_data(byte, 4);
+	}
+	rtos_mutex_give(composite_state_lock);
+}
+
+/* The mouse report declares LOGICAL_MINIMUM(-127)/LOGICAL_MAXIMUM(127) (Ref HID 1.11 6.2.2.7),
+   so clamp explicitly: narrowing the unsigned parse result to char would silently wrap */
+static char composite_hid_mouse_axis(const u8 *str)
+{
+	s32 val = (s32)_strtoul((const char *)str, (char **)NULL, 10);
+
+	if (val > 127) {
+		val = 127;
+	} else if (val < -127) {
+		val = -127;
+	}
+
+	return (char)val;
 }
 
 static u32 composite_cmd_mouse_data(u16 argc, u8 *argv[])
@@ -356,13 +395,13 @@ static u32 composite_cmd_mouse_data(u16 argc, u8 *argv[])
 		data.middle = _strtoul((const char *)argv[2], (char **)NULL, 10);
 	}
 	if (argc > 3) {
-		data.x_axis = _strtoul((const char *)argv[3], (char **)NULL, 10);
+		data.x_axis = composite_hid_mouse_axis(argv[3]);
 	}
 	if (argc > 4) {
-		data.y_axis = _strtoul((const char *)argv[4], (char **)NULL, 10);
+		data.y_axis = composite_hid_mouse_axis(argv[4]);
 	}
 	if (argc > 5) {
-		data.wheel = _strtoul((const char *)argv[5], (char **)NULL, 10);
+		data.wheel = composite_hid_mouse_axis(argv[5]);
 	}
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Send mouse data\n");
@@ -460,11 +499,18 @@ static void example_usbd_composite_hotplug_thread(void *param)
 		if (rtos_sema_take(composite_attach_status_changed_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
 			if (composite_attach_status == USBD_ATTACH_STATUS_DETACHED) {
 				RTK_LOGS(TAG, RTK_LOG_INFO, "DETACHED\r\n");
+				/* Wait for the shell thread to leave the class API, then keep it out
+				   until the stack is back up, see composite_state_lock. */
+				rtos_mutex_take(composite_state_lock, RTOS_MAX_TIMEOUT);
+				composite_stack_ready = 0;
 				composite_deinit_stack();
 				RTK_LOGS(TAG, RTK_LOG_INFO, "Free heap: 0x%x\n", rtos_mem_get_free_heap_size());
 				if (composite_init_stack() != HAL_OK) {
+					rtos_mutex_give(composite_state_lock);
 					break;
 				}
+				composite_stack_ready = 1;
+				rtos_mutex_give(composite_state_lock);
 			} else if (composite_attach_status == USBD_ATTACH_STATUS_ATTACHED) {
 				RTK_LOGS(TAG, RTK_LOG_INFO, "ATTACHED\r\n");
 			} else {
@@ -490,7 +536,16 @@ void example_usbd_composite(void)
 {
 	int ret;
 
-	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD COMP demo start\r\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD ACM+HID comp demo start\r\n");
+
+	/* Created once and never deleted, see its declaration. */
+	if (composite_state_lock == NULL) {
+		ret = rtos_mutex_create(&composite_state_lock);
+		if (ret != RTK_SUCCESS) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Create lock failed\r\n");
+			return;
+		}
+	}
 
 #if COMP_HOTPLUG
 	ret = rtos_sema_create(&composite_attach_status_changed_sema, 0U, 1U);
@@ -504,6 +559,7 @@ void example_usbd_composite(void)
 	if (ret != HAL_OK) {
 		goto exit_release_sema;
 	}
+	composite_stack_ready = 1;
 
 #if COMP_HOTPLUG
 	ret = rtos_task_create(&composite_hotplug_task, "usbd_composite_hotplug_thread",
@@ -517,17 +573,23 @@ void example_usbd_composite(void)
 	/* C-2: the USB OTG ISR is delivered on CPU0 (GIC ITARGETSR pins every SPI to
 	   core 0). Pinning the hotplug thread to CPU0 makes its deinit/reinit
 	   single-core against the ISR, so deinit's local interrupt disable is
-	   meaningful under SMP. */
+	   meaningful under SMP. The shell thread stays unaffined: a pending deinit is
+	   excluded from it by composite_state_lock, not by core. */
 	rtos_task_set_affinity(composite_hotplug_task, 0);
 #endif
 #endif
 
-	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD COMP demo ready\r\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD ACM+HID comp demo ready\r\n");
 	return;
 
 #if COMP_HOTPLUG
 exit_deinit_stack:
+	/* The gate was already opened above, so the shell thread may be inside the class
+	   API right now: take the lock here too, exactly as the hotplug thread does. */
+	rtos_mutex_take(composite_state_lock, RTOS_MAX_TIMEOUT);
+	composite_stack_ready = 0;
 	composite_deinit_stack();
+	rtos_mutex_give(composite_state_lock);
 #endif
 
 exit_release_sema:

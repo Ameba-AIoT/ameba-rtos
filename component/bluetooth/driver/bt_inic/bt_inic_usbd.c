@@ -30,7 +30,6 @@ static void inic_cb_status_changed(u8 old_status, u8 status);
 /* Private variables ---------------------------------------------------------*/
 
 static const usbd_config_t inic_cfg = {
-	.speed = USB_SPEED_HIGH,
 	.isr_priority = INT_PRI_MIDDLE,
 #if defined(CONFIG_AMEBAGREEN2)
 	.rx_fifo_depth = 292U,

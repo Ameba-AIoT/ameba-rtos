@@ -13,30 +13,10 @@
 
 /* Private defines -----------------------------------------------------------*/
 
-// Endpoint address
-#if defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RLE1509)
-#define CDC_ACM_BULK_IN_EP                       0x82U
-#else
-#define CDC_ACM_BULK_IN_EP                       0x81U
-#endif
-#define CDC_ACM_BULK_OUT_EP                      0x02U
-#define CDC_ACM_INTR_IN_EP                       0x83U
-
-// Transfer size
-#define CDC_ACM_BULK_IN_XFER_SIZE                2048U
-#define CDC_ACM_BULK_OUT_XFER_SIZE               2048U
-
 // This configuration is used to enable a thread to check hotplug event
 // and reset USB stack to avoid memory leak, only for example.
 // while test suspend/resume, hotplug should be disabled
 #define CDC_ACM_HOTPLUG                          1
-
-// USB speed
-#ifdef CONFIG_SUPPORT_USB_FS_ONLY
-#define CDC_ACM_USB_SPEED                        USB_SPEED_FULL
-#else
-#define CDC_ACM_USB_SPEED                        USB_SPEED_HIGH
-#endif
 
 // Echo asynchronously, for transfer size larger than packet size. While fpr
 // transfer size less than packet size, the synchronous way is preferred.
@@ -83,18 +63,28 @@ static usb_cdc_acm_line_coding_t cdc_acm_line_coding;
 
 static u16 cdc_acm_ctrl_line_state;
 
-/* EP configuration for CDC ACM */
-static const usbd_cdc_acm_ep_cfg_t cdc_acm_ep_cfg = {
-	.bulk_in_addr  = CDC_ACM_BULK_IN_EP,
-	.bulk_out_addr = CDC_ACM_BULK_OUT_EP,
-	.intr_in_addr  = CDC_ACM_INTR_IN_EP,
-	.bulk_in_xfer_size  = CDC_ACM_BULK_IN_XFER_SIZE,
-	.bulk_out_xfer_size = CDC_ACM_BULK_OUT_XFER_SIZE,
+/* Class configuration for CDC ACM */
+static const usbd_cdc_acm_config_t cdc_acm_class_cfg = {
+#if defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RLE1509)
+	.bulk_in_addr  = 0x82U,
+#else
+	.bulk_in_addr  = 0x81U,
+#endif
+	.bulk_out_addr = 0x02U,
+	.intr_in_addr  = 0x83U,
+	.bulk_in_xfer_size  = 2048U,
+	.bulk_out_xfer_size = 2048U,
+	/* Expose the INTR IN endpoint, needed to report SERIAL_STATE */
+	.notify_en = 1,
+	/* Transmit straight from the application buffer, which must be USB_DMA_ALIGNED */
+	.bulk_in_zero_copy = 1,
 };
 
 static const usbd_config_t cdc_acm_cfg = {
-	.speed = CDC_ACM_USB_SPEED,
 	.isr_priority = INT_PRI_MIDDLE,
+	.info = {
+		.prod_str = "Realtek CDC ACM Device",
+	},
 #if defined(CONFIG_AMEBASMART)
 	.nptx_max_epmis_cnt = 1U,
 #elif defined(CONFIG_AMEBAGREEN2)
@@ -293,11 +283,9 @@ static int cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 		*/
 		cdc_acm_ctrl_line_state = req->wValue;
 		if (cdc_acm_ctrl_line_state & 0x01) {
-			/* VCOM port activate */
+			/* VCOM port activate. A no-op when notify_en is clear, the class rejects it. */
 			USB_DIAG(USB_LAYER_APP, USB_EVT_LINK, 0);
-#if USBD_CDC_ACM_NOTIFY
 			usbd_cdc_acm_notify_serial_state(USB_CDC_ACM_CTRL_DSR | USB_CDC_ACM_CTRL_DCD);
-#endif
 		}
 		ret = HAL_OK;
 		break;
@@ -363,7 +351,7 @@ static void example_usbd_cdc_acm_hotplug_thread(void *param)
 				if (ret != 0) {
 					break;
 				}
-				ret = usbd_cdc_acm_init(&cdc_acm_cb, &cdc_acm_ep_cfg);
+				ret = usbd_cdc_acm_init(&cdc_acm_cb, &cdc_acm_class_cfg);
 				if (ret != 0) {
 					usbd_deinit();
 					break;
@@ -455,11 +443,11 @@ static void example_usbd_cdc_acm_xfer_thread(void *param)
 					break;
 				}
 #endif
-				if (xfer_len > CDC_ACM_BULK_IN_XFER_SIZE) {
-					ret = usbd_cdc_acm_transmit(xfer_buf, CDC_ACM_BULK_IN_XFER_SIZE);
+				if (xfer_len > cdc_acm_class_cfg.bulk_in_xfer_size) {
+					ret = usbd_cdc_acm_transmit(xfer_buf, cdc_acm_class_cfg.bulk_in_xfer_size);
 					if (ret == HAL_OK) {
-						xfer_len -= CDC_ACM_BULK_IN_XFER_SIZE;
-						xfer_buf += CDC_ACM_BULK_IN_XFER_SIZE;
+						xfer_len -= cdc_acm_class_cfg.bulk_in_xfer_size;
+						xfer_buf += cdc_acm_class_cfg.bulk_in_xfer_size;
 					} else { // HAL_BUSY
 						RTK_LOGS(TAG, RTK_LOG_INFO, "Xfer busy, retry[1]\n");
 						rtos_time_delay_us(200);
@@ -538,7 +526,7 @@ static void example_usbd_cdc_acm_thread(void *param)
 		goto exit_usbd_init_fail;
 	}
 
-	ret = usbd_cdc_acm_init(&cdc_acm_cb, &cdc_acm_ep_cfg);
+	ret = usbd_cdc_acm_init(&cdc_acm_cb, &cdc_acm_class_cfg);
 
 	if (ret != HAL_OK) {
 		goto exit_usbd_cdc_acm_init_fail;

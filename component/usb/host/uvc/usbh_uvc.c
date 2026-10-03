@@ -519,6 +519,7 @@ int usbh_uvc_stop(u8 stream_index)
 {
 	usbh_uvc_host_t *uvc = &uvc_host;
 	usbh_uvc_stream_t *stream = NULL;
+	int ret;
 
 	if (stream_index >= USBH_UVC_VS_DESC_MAX_NUM) {
 		return HAL_ERR_PARA;
@@ -526,12 +527,25 @@ int usbh_uvc_stop(u8 stream_index)
 
 	stream = &uvc->stream[stream_index];
 
+	/* Halt the local data path first, so no ISOC transfer is armed while the control
+	 * request below takes the interface down to alt 0. */
+	ret = usbh_uvc_stream_stop(stream);
+
 	/* Send SET_INTERFACE(bInterfaceNumber, 0) to the camera so it stops transmitting
 	 * ISOC data. Guard: only when device is still connected and an alt was selected.
 	 * Fire-and-forget via ctrl state machine (set_alt=0 → no probe after reset). */
 	if ((uvc->host != NULL) &&
 		(uvc->host->connect_state >= USBH_STATE_SETUP) &&
 		(stream->cur_setting.valid != 0U)) {
+		/* Alt 0 of a VS interface carries no isochronous endpoint (USB 2.0 §9.6.5) and the
+		 * isochronous bandwidth is released with it (§5.6.4), so the streaming pipe must be
+		 * closed here and re-established by a fresh SET_INTERFACE in usbh_uvc_start().
+		 * pipe_num 0 is the core's control channel - never close that one. */
+		if (stream->cur_setting.pipe.pipe_num != 0U) {
+			usbh_close_pipe(uvc->host, &stream->cur_setting.pipe);
+		}
+		stream->alt_active = 0U;
+		stream->start_pending = 0U;
 		stream->set_alt = 0U;
 		stream->set_alt_retry = 0U;
 		stream->state = STREAM_STATE_RESET_ALT;
@@ -540,7 +554,7 @@ int usbh_uvc_stop(u8 stream_index)
 		usbh_notify(uvc->host, 0U, &usbh_uvc_driver);
 	}
 
-	return usbh_uvc_stream_stop(stream);
+	return ret;
 }
 
 /**
@@ -551,6 +565,10 @@ int usbh_uvc_stop(u8 stream_index)
  *         HAL_ERR_HW if the stream is not in the ready state or the pipe is invalid
  * @note     Data-flow-axis entry of the public lifecycle; pair with usbh_uvc_stop().
  *           Delegates to the stream mechanic usbh_uvc_stream_start().
+ *           After usbh_uvc_stop() the camera sits on alt 0, so this call first re-issues
+ *           SET_INTERFACE(itf, alt) through the ctrl state machine and returns HAL_OK
+ *           immediately; the pipe is re-opened and the data path kicked off from
+ *           usbh_uvc_ctrl_set_alt_done(), the same single point used by set_param().
  */
 int usbh_uvc_start(u8 stream_index)
 {
@@ -562,6 +580,25 @@ int usbh_uvc_start(u8 stream_index)
 	}
 
 	stream = &uvc->stream[stream_index];
+
+	/* Restart after usbh_uvc_stop(): the negotiated parameters and the selected alt are
+	 * still valid, so only the isochronous interface has to be re-selected. Probe/Commit
+	 * is deliberately not re-run - SET_INTERFACE alone re-arms the endpoint and re-reserves
+	 * the bandwidth (USB 2.0 §5.6.4, §9.4.10). */
+	if ((stream->stream_state == UVC_STREAM_READY) &&
+		(stream->alt_active == 0U) &&
+		(stream->cur_setting.valid != 0U) &&
+		(uvc->host != NULL) &&
+		(uvc->host->connect_state >= USBH_STATE_SETUP)) {
+		stream->start_pending = 1U;
+		stream->set_alt = 1U;
+		stream->set_alt_retry = 0U;
+		stream->state = STREAM_STATE_SET_ALT;
+		uvc->state = UVC_STATE_CTRL;
+		uvc->stream_ctrl_idx = stream->stream_idx;
+		usbh_notify(uvc->host, 0U, &usbh_uvc_driver);
+		return HAL_OK;
+	}
 
 	return usbh_uvc_stream_start(stream);
 }

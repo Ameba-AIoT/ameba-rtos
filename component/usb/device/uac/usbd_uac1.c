@@ -30,10 +30,6 @@
 #define USBD_UAC_FS_ISOC_MPS                        1023U   /* Full speed ISOC IN & OUT max packet size */
 #define USBD_UAC_FS_ISOC_MPS_ALIGNED                1024U   /* USBD_UAC_FS_ISOC_MPS adjusted to the DWORD boundary, refer to usb_get_dword_aligned_mps */
 
-#define USBD_UAC_LANGID_STRING                      0x0409U
-#define USBD_UAC_MFG_STRING                         "Realtek"
-#define USBD_UAC_PROD_FS_STRING                     "Realtek UAC1.0 (FS)"
-#define USBD_UAC_SN_STRING                          "1234567890"
 
 /**
  * Defines Audio trx buffer MAX count.
@@ -188,14 +184,6 @@ static const u8 usbd_uac_dev_desc[USB_LEN_DEV_DESC] = {
 	USBD_IDX_SERIAL_STR,         /* iSerialNumber */
 	0x01                         /* bNumConfigurations */
 }; /* usbd_uac_dev_desc */
-
-/* USB Standard String Descriptor 0 */
-static const u8 usbd_uac_lang_id_desc[USB_LEN_LANGID_STR_DESC] = {
-	USB_LEN_LANGID_STR_DESC,              /* bLength */
-	USB_DESC_TYPE_STRING,                 /* bDescriptorType */
-	USB_LOW_BYTE(USBD_UAC_LANGID_STRING), /* wLANGID */
-	USB_HIGH_BYTE(USBD_UAC_LANGID_STRING),
-}; /* usbd_uac_lang_id_desc */
 
 static const u8 usbd_uac_fs_config_desc[USBD_UAC_FS_CFG_DESC_BUF_LEN(USBD_UAC_DEFAULT_CH_CNT)] = {
 	/* USB UAC Device Configuration Descriptor */
@@ -797,19 +785,6 @@ static int usbd_uac_set_config(usb_dev_t *dev, u8 config)
 	}
 
 	cdev->dev = dev;
-
-	if (!cdev->from_composite) {
-#ifdef CONFIG_USBD_SELF_POWERED
-		dev->self_powered = 1;
-#else
-		dev->self_powered = 0;
-#endif
-#ifdef CONFIG_USBD_REMOTE_WAKEUP_EN
-		dev->remote_wakeup_en = 1;
-#else
-		dev->remote_wakeup_en = 0;
-#endif
-	}
 
 	cdev->alt_setting = 0U;
 
@@ -1634,20 +1609,10 @@ static u16 usbd_uac_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 	u16 len = 0;
 	u8 type = USB_HIGH_BYTE(req->wValue);
 	u8 is_cfg = 0;
-	u8 attr = 0x80U;
 
 	if (speed == USB_SPEED_HIGH) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid speed, UAC 1.0 only support full speed\n");
 		return len;
-	}
-
-	if (!cdev->from_composite) {
-#ifdef CONFIG_USBD_SELF_POWERED
-		attr |= USB_CFG_DESC_OFFSET_ATTR_BIT_SELF_POWERED;
-#endif
-#ifdef CONFIG_USBD_REMOTE_WAKEUP_EN
-		attr |= USB_CFG_DESC_OFFSET_ATTR_BIT_REMOTE_WAKEUP;
-#endif
 	}
 
 	switch (type) {
@@ -1679,28 +1644,9 @@ static u16 usbd_uac_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 #endif
 
 	case USB_DESC_TYPE_STRING:
-		switch (USB_LOW_BYTE(req->wValue)) {
-		case USBD_IDX_LANGID_STR:
-			desc = usbd_uac_lang_id_desc;
-			len = sizeof(usbd_uac_lang_id_desc);
-			break;
-		case USBD_IDX_MFC_STR:
-			len = usbd_get_str_descriptor(USBD_UAC_MFG_STRING, buf, buf_len);
-			break;
-		case USBD_IDX_PRODUCT_STR:
-			len = usbd_get_str_descriptor(USBD_UAC_PROD_FS_STRING, buf, buf_len);
-			break;
-		case USBD_IDX_SERIAL_STR:
-			len = usbd_get_str_descriptor(USBD_UAC_SN_STRING, buf, buf_len);
-			break;
-		case USBD_IDX_MS_OS_STR:
-			/*Not support*/
-			break;
-		/* Add customer string here */
-		default:
-			USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_GET_DESC, 0);
-			break;
-		}
+		/* Every string this class owns is registered with usbd_add_string() and answered by
+		   the core, which only forwards an index it does not know, e.g. the MS OS string */
+		USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_GET_DESC, 0);
 		break;
 
 	default:
@@ -1721,10 +1667,6 @@ static u16 usbd_uac_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 		buf[USB_CFG_DESC_OFFSET_TYPE] = type;
 		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN] = USB_LOW_BYTE(len);
 		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN + 1] = USB_HIGH_BYTE(len);
-
-		if (!cdev->from_composite) {
-			buf[USB_CFG_DESC_OFFSET_ATTR] = attr;
-		}
 
 		usbd_uac_patch_desc(buf + USB_LEN_CFG_DESC, len - USB_LEN_CFG_DESC, cdev->ep_cfg);
 	}

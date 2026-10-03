@@ -34,11 +34,6 @@ extern "C" {
 /* Defines configuration constants like VID/PID, USB strings, and power settings. */
 #define USBD_MSC_VID                   USB_VID            /**< Vendor ID. */
 #define USBD_MSC_PID                   USB_PID            /**< Product ID. */
-#define USBD_MSC_LANGID_STRING         0x0409U            /**< Language ID string (0x0409 for U.S. English). */
-#define USBD_MSC_MFG_STRING            "Realtek"          /**< Manufacturer string. */
-#define USBD_MSC_PROD_HS_STRING        "Realtek MSC (HS)" /**< Product string for High-Speed. */
-#define USBD_MSC_PROD_FS_STRING        "Realtek MSC (FS)" /**< Product string for Full-Speed. */
-#define USBD_MSC_SN_STRING             "1234567890"       /**< Serial number string. */
 
 /* Defines MSC-specific endpoint parameters. */
 #define USBD_MSC_HS_MAX_PACKET_SIZE    512U               /**< High-Speed BULK IN & OUT maximum packet size. */

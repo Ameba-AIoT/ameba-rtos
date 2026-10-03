@@ -14,13 +14,6 @@
 
 /* Private defines -----------------------------------------------------------*/
 
-// USB speed
-#ifdef CONFIG_SUPPORT_USB_FS_ONLY
-#define UVC_USB_SPEED                            USB_SPEED_FULL
-#else
-#define UVC_USB_SPEED                            USB_SPEED_HIGH
-#endif
-
 // Video parameters
 #define USBD_UVC_VIDEO_BUF_NUM                   1U
 #define USBD_UVC_VIDEO_FPS                       30U
@@ -62,7 +55,9 @@ static const usbd_uvc_ep_cfg_t uvc_ep = {
 };
 
 static usbd_config_t uvc_cfg = {
-	.speed = UVC_USB_SPEED,
+	.info = {
+		.prod_str = "Realtek UVC Device",
+	},
 	.isr_priority = INT_PRI_MIDDLE,
 	/* Enable SOF interrupt: drives ISOC IN arming/recovery and the SCR SOF counter. */
 	.ext_intr_enable = USBD_SOF_INTR,

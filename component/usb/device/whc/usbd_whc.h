@@ -21,7 +21,6 @@ extern "C" {
 #define USBD_WHC_VID                     USB_VID
 #define USBD_WHC_PID                     USB_PID
 
-#define USBD_WHC_LANGID_STRING           0x409
 #define USBD_WHC_MFG_STRING              "Realtek"               /**< Manufacturer string. */
 #define USBD_WHC_PROD_STRING             "802.11ax WLAN Adapter" /**< Product string. */
 #define USBD_WHC_SN_STRING               "00E04C000001"          /**< Serial number string. */
@@ -231,6 +230,10 @@ typedef struct {
 	rtos_task_t reset_task;
 	rtos_sema_t reset_sema;
 	u8 ctrl_req_pending; /* 1 if ctrl_req is waiting for its EP0 OUT data stage */
+	u8 bt_str_idx;       /* BT string index from usbd_add_string(), 0 if none */
+#ifdef CONFIG_WHC_ETH
+	u8 eth_str_idx;      /* Ethernet string index from usbd_add_string(), 0 if none */
+#endif
 #ifndef CONFIG_WHC_ETH
 	u8  bt_sco_alt; /* BT SCO is the only interface which owns alternate settings */
 #endif

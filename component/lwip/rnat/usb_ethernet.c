@@ -109,7 +109,9 @@ static const usbd_cdc_ecm_ep_cfg_t cdc_ecm_ep_cfg = {
 #endif
 
 static const usbd_config_t cdc_ecm_cfg = {
-	.speed = USB_ETH_SPEED,
+	.info = {
+		.prod_str = "Realtek CDC ECM",
+	},
 	.isr_priority = INT_PRI_MIDDLE,
 #if defined(CONFIG_AMEBASMART)
 	.nptx_max_epmis_cnt = 1U,
