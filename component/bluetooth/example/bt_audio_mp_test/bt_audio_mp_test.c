@@ -2180,7 +2180,7 @@ int bt_audio_mp_test_main(uint8_t enable)
 		bt_app_conf.prefer_tx_phy = 1 | 1 << 1 | 1 << 2;
 		bt_app_conf.prefer_rx_phy = 1 | 1 << 1 | 1 << 2;
 		bt_app_conf.max_tx_octets = 0x40;
-		bt_app_conf.max_tx_time = 0x200;
+		bt_app_conf.max_tx_time = 0x270;
 		bt_app_conf.a2dp_role = RTK_BT_A2DP_ROLE_SNK;
 		bt_app_conf.hfp_role = RTK_BT_AUDIO_HFP_ROLE_HF;
 		bt_app_conf.spp_role = RTK_BT_SPP_ROLE_CLIENT;
