@@ -19,9 +19,6 @@
 
 #define USBD_WHC_BULK_BUF_SIZE                               64U
 
-// USB speed
-#define WHC_USB_SPEED                                        USB_SPEED_FULL
-
 // Thread priorities
 #define WHC_INIT_THREAD_PRIORITY                             5
 #define WHC_HOTPLUG_THREAD_PRIORITY                          8
@@ -103,7 +100,9 @@ static void whc_cb_status_changed(u8 old_status, u8 status);
 static const char *const TAG = "WHC";
 
 static const usbd_config_t whc_cfg = {
-	.speed = WHC_USB_SPEED,
+	.info = {
+		.prod_str = "802.11n WLAN Adapter",
+	},
 	.isr_priority = INT_PRI_MIDDLE,
 };
 
@@ -608,7 +607,7 @@ static void example_usbd_whc_thread(void *param)
 
 	rtos_time_delay_ms(100);
 
-	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD WHC dplus demo start\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD WHC demo start\n");
 
 	rtos_task_delete(NULL);
 
@@ -631,7 +630,7 @@ clear_usb_driver_exit:
 	usbd_deinit();
 
 exit:
-	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD WHC dplus demo stop\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD WHC demo stop\n");
 	whc_free_resource();
 
 	rtos_task_delete(NULL);

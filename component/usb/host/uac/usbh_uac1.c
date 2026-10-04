@@ -80,7 +80,7 @@ typedef enum {
 /* Private function prototypes -----------------------------------------------*/
 static int usbh_uac_attach(usb_host_t *host);
 static void usbh_uac_detach(usb_host_t *host);
-static void usbh_uac_process(usb_host_t *host, usbh_event_t *event);
+static void usbh_uac_process(usb_host_t *host, usbh_drv_msg_t *msg);
 static int usbh_uac_ctrl_setting(usb_host_t *host, u32 msg);
 static int usbh_uac_setup(usb_host_t *host);
 static void usbh_uac_sof(usb_host_t *host);
@@ -2150,14 +2150,14 @@ static int usbh_uac_ctrl_setting(usb_host_t *host, u32 msg)
 }
 
 /**
-  * @brief  Main UAC class process callback called by the USB host core on each event.
-  *         In TRANSFER state, delegates pipe-0 events to the control state machine.
+  * @brief  Main UAC class process callback called by the USB host core on each driver message.
+  *         In TRANSFER state, delegates pipe-0 messages to the control state machine.
   *         In ERROR state, issues a ClearFeature to recover.
   * @param  host:  Pointer to the USB host handle.
-  * @param  event: Pointer to the event descriptor (contains pipe_num and event type).
+  * @param  msg: Pointer to the driver message (contains pipe_num and message type).
   * @retval None
   */
-static void usbh_uac_process(usb_host_t *host, usbh_event_t *event)
+static void usbh_uac_process(usb_host_t *host, usbh_drv_msg_t *msg)
 {
 	usbh_uac_t *uac = &usbh_uac;
 	int ret;
@@ -2166,7 +2166,7 @@ static void usbh_uac_process(usb_host_t *host, usbh_event_t *event)
 	case UAC_STATE_TRANSFER:
 		/* UAC only drives the control endpoint (pipe 0) here; ISOC pipes are
 		   serviced in the completed callback. */
-		if ((event) && (event->pipe_num == 0x00)) {
+		if ((msg) && (msg->pipe_num == 0x00)) {
 			(void)usbh_uac_ctrl_setting(host, 0);
 		}
 		break;
@@ -2330,8 +2330,11 @@ static u32 usbh_uac_read_ring_buf(usbh_uac_buf_ctrl_t *buf_ctrl, u8 *buffer, u32
 	u8 valid = 0;
 
 	do {
-		/* should exit : 1) Enough data has been obtained; 2) the next data cannot be saved completely */
-		if ((*copy_len >= size) || (*copy_len + buf_ctrl->mps > size)) {
+		/* should exit : 1) Enough data has been obtained; 2) the next data cannot be saved completely.
+		 * The headroom to reserve is a whole ring node, not one mps: on a high-bandwidth endpoint a
+		 * node holds a multi-transaction packet, and usb_ringbuf_remove_head() would truncate it to
+		 * the space left in the caller's buffer and drop the remainder with the node. */
+		if ((*copy_len >= size) || (*copy_len + buf_ctrl->node_size > size)) {
 			return 0;
 		}
 
@@ -2368,6 +2371,7 @@ static void usbh_uac_ep_buf_ctrl_deinit(usbh_uac_buf_ctrl_t *buf_ctrl)
 	u16 wait_ms = 10U; /* 10 ms total */
 
 	buf_ctrl->mps = 0;
+	buf_ctrl->node_size = 0;
 	buf_ctrl->next_xfer = 0;
 
 	/* The ring buffer and the packet geometry are rebuilt by the following ep_buf_ctrl_init(),
@@ -2425,12 +2429,14 @@ static void usbh_uac_channel_deinit(usbh_uac_channel_t *ch)
   * @brief  Initialize UAC endpoint buffer control structure
   * @param  buf_ctrl: Pointer to the UAC buffer control structure
   * @param  pipe: Pointer to pipe parameters structure
+  * @param  packet_size: Largest audio packet this alt setting produces, in bytes
   * @retval Status
   */
-static int usbh_uac_ep_buf_ctrl_init(usbh_uac_buf_ctrl_t *buf_ctrl, usbh_pipe_t *pipe)
+static int usbh_uac_ep_buf_ctrl_init(usbh_uac_buf_ctrl_t *buf_ctrl, usbh_pipe_t *pipe, u16 packet_size)
 {
 	int ret = HAL_ERR_MEM;
 	u8 buf_list_cnt;
+	u16 node_size;
 
 	buf_list_cnt = buf_ctrl->frame_cnt;
 	buf_ctrl->mps = pipe->ep_mps;
@@ -2440,7 +2446,16 @@ static int usbh_uac_ep_buf_ctrl_init(usbh_uac_buf_ctrl_t *buf_ctrl, usbh_pipe_t 
 		return ret;
 	}
 
-	ret = usb_ringbuf_manager_init(&(buf_ctrl->buf_manager), buf_list_cnt, buf_ctrl->mps, 1);
+	/* USB 2.0 5.6.3: a high-bandwidth isochronous endpoint may move up to three transactions
+	 * per service interval, so one audio packet can be larger than a single wMaxPacketSize -
+	 * set_alt_setting accepts any packet up to ep_mps * ep_trans. A ring node must therefore be
+	 * sized for the whole packet, not for one transaction: usb_ringbuf_add_tail() silently
+	 * truncates anything longer than node_size, which would drop the tail of every packet and
+	 * progressively shift the audio stream. */
+	node_size = (packet_size > buf_ctrl->mps) ? packet_size : buf_ctrl->mps;
+	buf_ctrl->node_size = node_size;
+
+	ret = usb_ringbuf_manager_init(&(buf_ctrl->buf_manager), buf_list_cnt, node_size, 1);
 	if (ret != HAL_OK) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Ringbuf init fail\n");
 		return ret;
@@ -2462,9 +2477,13 @@ static int usbh_uac_ep_buf_ctrl_init(usbh_uac_buf_ctrl_t *buf_ctrl, usbh_pipe_t 
   * @brief  Wait for an isochronous buffer to become available and check USB transfer status.
   * @param  pdata_ctrl: Pointer to the USB UAC buffer control structure.
   * @param  timeout_ms:  Time out
+  * @param  waited_ms:  Optional out parameter receiving the time actually spent waiting, in ms.
+  *                     Lets a caller that loops on this helper charge each wait against one
+  *                     overall budget instead of granting the full timeout again per iteration.
+  *                     May be NULL when the caller does not track a budget.
   * @retval Status
   */
-static int usbh_uac_wait_isoc_with_status_check(usbh_uac_buf_ctrl_t *pdata_ctrl, uint32_t timeout_ms)
+static int usbh_uac_wait_isoc_with_status_check(usbh_uac_buf_ctrl_t *pdata_ctrl, uint32_t timeout_ms, u32 *waited_ms)
 {
 	int ret = HAL_ERR_PARA;
 	u32 elapsed = 0;
@@ -2473,7 +2492,7 @@ static int usbh_uac_wait_isoc_with_status_check(usbh_uac_buf_ctrl_t *pdata_ctrl,
 	while (elapsed < timeout_ms) {
 		if (usbh_uac_usb_status_check() != HAL_OK) {
 			pdata_ctrl->wait_sema = 0;
-			return ret;
+			goto exit;
 		}
 
 		wait_time = (timeout_ms - elapsed > USBH_UAC_WAIT_SLICE_MS) ? USBH_UAC_WAIT_SLICE_MS : (timeout_ms - elapsed);
@@ -2481,16 +2500,25 @@ static int usbh_uac_wait_isoc_with_status_check(usbh_uac_buf_ctrl_t *pdata_ctrl,
 		pdata_ctrl->wait_sema = 1;
 		if (usb_os_sema_take(pdata_ctrl->isoc_sema, wait_time) == HAL_OK) {
 			pdata_ctrl->wait_sema = 0;
+			/* Charge the whole slice: the semaphore may have been given at any point inside it
+			 * and the OS does not report when, so this over-counts by less than one slice. */
+			elapsed += wait_time;
 			if (!pdata_ctrl->sema_valid) {
-				return HAL_ERR_PARA;
+				goto exit;
 			}
-			return HAL_OK;
+			ret = HAL_OK;
+			goto exit;
 		}
 
 		elapsed += wait_time;
 	}
 
 	pdata_ctrl->wait_sema = 0;
+
+exit:
+	if (waited_ms != NULL) {
+		*waited_ms = elapsed;
+	}
 	return ret;
 }
 
@@ -2698,6 +2726,7 @@ int usbh_uac_set_alt_setting(u8 dir, u8 channels, u8 bit_width, u32 sampling_fre
 	int i = 0;
 	int j = 0;
 	u32 ep_cap = 0U;
+	u32 binterval = 0U;
 	u32 compliant_rate = 0U;
 	u32 compliant_size = 0U;
 	u16 ep_mps = 0U;
@@ -2766,11 +2795,22 @@ int usbh_uac_set_alt_setting(u8 dir, u8 channels, u8 bit_width, u32 sampling_fre
 		pipe = &(as_itf->pipe);
 		ep_desc = &(as_itf->interface_array[as_itf->choose_alt_idx].ep_desc);
 
-		/* full speed*/
-		if (ep_desc->bInterval == 0U) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "FS interval is zero\n");
-			usb_os_unlock(uac->alt_set_mutex);
-			return HAL_ERR_PARA;
+		/* An isochronous bInterval is an exponent on both speeds (period = 2^(bInterval-1) frames
+		 * on FS, microframes on HS), so the same 1..16 range applies to each; see
+		 * USB_ISOC_xS_BINTERVAL_MIN/MAX in usb_ch9.h. bInterval comes straight from the device
+		 * descriptor and is therefore untrusted, and an out-of-range value used as a shift count
+		 * would be undefined behaviour (MISRA C:2012 Rule 1.3).
+		 *
+		 * Clamp rather than reject, matching usbh_get_interval() in the host core: that function
+		 * derives pipe->ep_interval from this very descriptor when usbh_open_pipe() runs below,
+		 * and the packet rate computed here must describe the same service interval - one says
+		 * how many bytes per interval, the other how often the interval comes round. Deriving
+		 * them from different readings of the same field would silently drift the audio stream.
+		 * Clamping does not weaken validation: a bInterval of 16 is legal yet still yields a zero
+		 * packet rate, so the zero guards below reject both it and any clamped larger value. */
+		binterval = MIN((MAX((u32)ep_desc->bInterval, USB_EP_BINTERVAL_EXP_MIN)), USB_EP_BINTERVAL_EXP_MAX);
+		if (binterval != (u32)ep_desc->bInterval) {
+			RTK_LOGS(TAG, RTK_LOG_WARN, "Clamp isoc bInterval %d to %d\n", ep_desc->bInterval, binterval);
 		}
 
 		ep_mps = ep_desc->wMaxPacketSize & USB_EP_MPS_SIZE_MASK;
@@ -2780,7 +2820,16 @@ int usbh_uac_set_alt_setting(u8 dir, u8 channels, u8 bit_width, u32 sampling_fre
 
 		if (host->dev_speed == USB_SPEED_HIGH) {
 			/* HS isoc: bInterval encodes interval = 2^(bInterval-1) microframes (8000/s) */
-			compliant_rate = (USBH_UAC_ONE_KHZ * USBH_UAC_HS_MICROFRAMES_PER_MS) >> (ep_desc->bInterval - 1U);
+			compliant_rate = (USBH_UAC_ONE_KHZ * USBH_UAC_HS_MICROFRAMES_PER_MS) >> (binterval - 1U);
+			/* A legal bInterval of 14..16 shifts 8000 down to 0, i.e. a service interval longer
+			 * than one second. No audio format this driver supports can be carried that way, and
+			 * the value is used as a divisor right below, so reject the alt setting instead of
+			 * dividing by zero. */
+			if (compliant_rate == 0U) {
+				RTK_LOGS(TAG, RTK_LOG_ERROR, "Isoc interval too long, bInterval %d\n", binterval);
+				usb_os_unlock(uac->alt_set_mutex);
+				return HAL_ERR_PARA;
+			}
 			compliant_size = channels * bit_width / USBH_UAC_BIT_TO_BYTE *
 							 ((sampling_freq + (compliant_rate - 1U)) / compliant_rate);
 
@@ -2794,17 +2843,28 @@ int usbh_uac_set_alt_setting(u8 dir, u8 channels, u8 bit_width, u32 sampling_fre
 			 * legitimately uses bInterval=1..3 on HS (125/250/500 us service) does
 			 * not show this gap. Gate on that size mismatch, not on bInterval<4
 			 * alone, so a compliant device is never misdetected. */
-			legal_interval = ((ep_desc->bInterval < USBH_UAC_LEGACY_FS_SIZE_RATIO_MIN) && (compliant_size > 0U) &&
+			legal_interval = ((binterval < USBH_UAC_LEGACY_FS_SIZE_RATIO_MIN) && (compliant_size > 0U) &&
 							  (ep_cap >= (compliant_size * USBH_UAC_LEGACY_FS_SIZE_RATIO_MIN))) ? 1U : 0U;
 
 			if (legal_interval != 0U) {
-				pdata_ctrl->packet_rate = USBH_UAC_ONE_KHZ / ep_desc->bInterval;
+				pdata_ctrl->packet_rate = USBH_UAC_ONE_KHZ / binterval;
 			} else {
 				pdata_ctrl->packet_rate = compliant_rate;
 			}
 		} else {
-			pdata_ctrl->packet_rate = USBH_UAC_ONE_KHZ >> (ep_desc->bInterval - 1U);
+			pdata_ctrl->packet_rate = USBH_UAC_ONE_KHZ >> (binterval - 1U);
 		}
+
+		/* packet_rate is the divisor of every packet-size term below. It can still be 0 for a
+		 * bInterval that is legal but implies a service interval longer than the 1 ms (FS) or
+		 * 1 s (HS) the rate is derived from, so it must be checked here rather than assumed
+		 * non-zero from the bInterval range alone. */
+		if (pdata_ctrl->packet_rate == 0U) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Zero packet rate, bInterval %d\n", binterval);
+			usb_os_unlock(uac->alt_set_mutex);
+			return HAL_ERR_PARA;
+		}
+
 		pdata_ctrl->sample_rem = sampling_freq % pdata_ctrl->packet_rate;
 		//calculate accurate one frame size(byte)
 		as_itf->packet_size_small = channels * bit_width / USBH_UAC_BIT_TO_BYTE * (sampling_freq / pdata_ctrl->packet_rate);
@@ -2836,15 +2896,15 @@ int usbh_uac_set_alt_setting(u8 dir, u8 channels, u8 bit_width, u32 sampling_fre
 			/* usbh_open_pipe() derives pipe->ep_interval from the HS microframe
 			 * formula unconditionally; override it to the FS-style ms reading
 			 * this device actually uses (see legal_interval above). */
-			pipe->ep_interval = (u32)ep_desc->bInterval * USBH_UAC_HS_MICROFRAMES_PER_MS;
+			pipe->ep_interval = binterval * USBH_UAC_HS_MICROFRAMES_PER_MS;
 		}
 
 		if (dir == USBH_UAC_ISOC_OUT_DIR) {
 			usbh_uac_ep_buf_ctrl_deinit(&(uac->isoc_out.buf_ctrl));
-			ret = usbh_uac_ep_buf_ctrl_init(&(uac->isoc_out.buf_ctrl), pipe);
+			ret = usbh_uac_ep_buf_ctrl_init(&(uac->isoc_out.buf_ctrl), pipe, as_itf->packet_size_large);
 		} else {
 			usbh_uac_ep_buf_ctrl_deinit(&(uac->isoc_in.buf_ctrl));
-			ret = usbh_uac_ep_buf_ctrl_init(&(uac->isoc_in.buf_ctrl), pipe);
+			ret = usbh_uac_ep_buf_ctrl_init(&(uac->isoc_in.buf_ctrl), pipe, as_itf->packet_size_large);
 		}
 
 		if (ret != HAL_OK) {
@@ -2963,7 +3023,7 @@ u32 usbh_uac_write(u8 *buffer, u32 size, u32 timeout_ms)
 		}
 
 		if (need_wait) {
-			if (usbh_uac_wait_isoc_with_status_check(pdata_ctrl, timeout_ms) != HAL_OK) {
+			if (usbh_uac_wait_isoc_with_status_check(pdata_ctrl, timeout_ms, NULL) != HAL_OK) {
 				break;
 			}
 			last_zero = 0;
@@ -3018,15 +3078,24 @@ u32 usbh_uac_read(u8 *buffer, u32 size, u32 time_out_ms)
 		}
 		usbh_uac_read_ring_buf(buf_ctrl, buffer, size, &copy_len, &pkt_cnt, &zero_pkt_flag);
 	} else {
+		u32 elapsed = 0;
+		u32 waited;
+
 		do {
 			if (usb_ringbuf_is_empty(&(buf_ctrl->buf_manager))) {
-				//wait sema
-				buf_ctrl->wait_sema = 1;
-				if (usb_os_sema_take(buf_ctrl->isoc_sema, time_out_ms) != HAL_OK) {
-					buf_ctrl->wait_sema = 0;
+				/* time_out_ms is the budget for the whole call, not per wait. A sparse capture
+				 * stream delivers a packet, fails to fill size, and empties the ring again; giving
+				 * the full timeout to every iteration would let this block the caller without any
+				 * upper bound, contrary to the timeout this API documents. */
+				if (elapsed >= time_out_ms) {
 					break;
 				}
-				buf_ctrl->wait_sema = 0;
+				waited = 0;
+				if (usbh_uac_wait_isoc_with_status_check(buf_ctrl, time_out_ms - elapsed, &waited) != HAL_OK) {
+					elapsed += waited;
+					break;
+				}
+				elapsed += waited;
 				/* If deinit started while we waited, do not touch resources */
 				if (!buf_ctrl->sema_valid) {
 					break;

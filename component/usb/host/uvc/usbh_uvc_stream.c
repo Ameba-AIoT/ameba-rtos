@@ -900,102 +900,102 @@ int usbh_uvc_stream_process_completed(usb_host_t *host, u8 pipe_num)
 	u8 i;
 	u8 j;
 
-	if (uvc->state == UVC_STATE_TRANSFER) {
-		for (i = 0U; i < uvc->uvc_desc.vs_num; i++) {
-			stream = &uvc->stream[i];
-			pipe = &(stream->cur_setting.pipe);
+	for (i = 0U; i < uvc->uvc_desc.vs_num; i++) {
+		stream = &uvc->stream[i];
+		pipe = &(stream->cur_setting.pipe);
 
-			if (pipe->pipe_num == pipe_num) {
-				urb_index = &(stream->cur_urb);
-				packet_index = &(stream->cur_packet);
-				// drop remain data when dettach
-				if ((stream->next_xfer == 0U) ||
-					(stream->is_resource_safe == 0U) ||
-					(stream->complete_flag == 0U)) {
-					if ((*packet_index > 0U) && (stream->urb[*urb_index] != NULL)) {
-						usbh_uvc_urb_t *cur_urb = stream->urb[*urb_index];
-						for (j = 0U; j < *packet_index; j++) {
-							cur_urb->packet_info[j].length = 0U;
-						}
-						*packet_index = 0U;
+		if (pipe->pipe_num == pipe_num) {
+			urb_index = &(stream->cur_urb);
+			packet_index = &(stream->cur_packet);
+			/* Gate per stream, not on the host-wide uvc->state: stopping one stream
+			 * drives uvc->state to IDLE and must not silence the other stream. */
+			if ((stream->stream_state != UVC_STREAM_ACTIVE) ||
+				(stream->next_xfer == 0U) ||
+				(stream->is_resource_safe == 0U) ||
+				(stream->complete_flag == 0U)) {
+				if ((*packet_index > 0U) && (stream->urb[*urb_index] != NULL)) {
+					usbh_uvc_urb_t *cur_urb = stream->urb[*urb_index];
+					for (j = 0U; j < *packet_index; j++) {
+						cur_urb->packet_info[j].length = 0U;
 					}
-
-					pipe->xfer_state = USBH_EP_XFER_IDLE;
-
-					return HAL_OK;
+					*packet_index = 0U;
 				}
 
-				if (stream->urb[*urb_index] == NULL) {
-					pipe->xfer_state = USBH_EP_XFER_IDLE;
-					return HAL_OK;
-				}
-				urb_state = usbh_get_urb_state(host, pipe);
-				if (urb_state == USBH_URB_DONE) {
+				pipe->xfer_state = USBH_EP_XFER_IDLE;
 
-#if (USBH_UVC_USE_HW == 0) && USBH_UVC_DEBUG
-					uvc->isoc_rx_done_cnt ++;
-#endif
-					rx_len = usbh_get_last_transfer_size(host, pipe);
-
-					/* some cameras send payload header without any valid payload packets, to reduce cpu loading just filter it */
-					//if (rx_len > 12) {
-#if (USBH_UVC_USE_HW == 0) && USBH_UVC_DEBUG
-					uvc->isoc_rx_process_cnt ++;
-#endif
-					stream->urb[*urb_index]->packet_info[*packet_index].length = rx_len;
-
-					/* don't submit cur urb without any valid payload, only 17% transfers with valid payload in total transfers */
-					(*packet_index) ++;
-
-					if (*packet_index >= stream->urb[*urb_index]->packet_num) {// a filled urb
-						*packet_index = 0U;
-#if (USBH_UVC_USE_HW == 0) && USBH_UVC_DEBUG
-						stream->urb[*urb_index]->submit_us = usb_os_get_timestamp_us();
-						stream->urb[*urb_index]->owner = 1U;
-#endif
-						next_urb = usbh_uvc_urb_complete(stream, stream->urb[*urb_index]);
-						if (next_urb != NULL) {
-							// update urb
-							*urb_index = next_urb->index;
-#if (USBH_UVC_USE_HW == 0) && USBH_UVC_DEBUG
-							next_urb->get_us = usb_os_get_timestamp_us();
-							next_urb->owner = 1U;// flying
-#endif
-						} else {
-#if (USBH_UVC_USE_HW == 0) && USBH_UVC_DEBUG
-							//record reuse cnt
-							stream->reuse_cnt++;
-#endif
-						}// else: get free urb fail, reuse current urb
-
-						if (usbh_uvc_usb_status_check() != HAL_OK) {
-							pipe->xfer_state = USBH_EP_XFER_IDLE;
-							return HAL_OK;
-						}
-
-						*packet_index = 0U;
-					}
-
-				} else {// urb stall/ err
-					pipe->xfer_state = USBH_EP_XFER_IDLE;
-				}
-
-				if (stream->next_xfer != 0U) {
-					elapsed_num = usbh_uvc_frame_num_dec(usbh_uvc_frame_num_inc(cur_frame, 1U), pipe->frame_num);
-					if (elapsed_num >= pipe->ep_interval) {
-#if (USBH_UVC_USE_HW == 0) && USBH_UVC_DEBUG
-						uvc->isoc_com_start_rx ++;
-#endif
-						usbh_uvc_isoc_in_process_xfer(stream, cur_frame);
-					} else {
-						pipe->xfer_state = USBH_EP_XFER_WAIT_SOF;
-					}
-				} else {
-					/* stop */
-					pipe->xfer_state = USBH_EP_XFER_IDLE;
-				}
-				break;
+				return HAL_OK;
 			}
+
+			if (stream->urb[*urb_index] == NULL) {
+				pipe->xfer_state = USBH_EP_XFER_IDLE;
+				return HAL_OK;
+			}
+			urb_state = usbh_get_urb_state(host, pipe);
+			if (urb_state == USBH_URB_DONE) {
+
+#if (USBH_UVC_USE_HW == 0) && USBH_UVC_DEBUG
+				uvc->isoc_rx_done_cnt ++;
+#endif
+				rx_len = usbh_get_last_transfer_size(host, pipe);
+
+				/* some cameras send payload header without any valid payload packets, to reduce cpu loading just filter it */
+				//if (rx_len > 12) {
+#if (USBH_UVC_USE_HW == 0) && USBH_UVC_DEBUG
+				uvc->isoc_rx_process_cnt ++;
+#endif
+				stream->urb[*urb_index]->packet_info[*packet_index].length = rx_len;
+
+				/* don't submit cur urb without any valid payload, only 17% transfers with valid payload in total transfers */
+				(*packet_index) ++;
+
+				if (*packet_index >= stream->urb[*urb_index]->packet_num) {// a filled urb
+					*packet_index = 0U;
+#if (USBH_UVC_USE_HW == 0) && USBH_UVC_DEBUG
+					stream->urb[*urb_index]->submit_us = usb_os_get_timestamp_us();
+					stream->urb[*urb_index]->owner = 1U;
+#endif
+					next_urb = usbh_uvc_urb_complete(stream, stream->urb[*urb_index]);
+					if (next_urb != NULL) {
+						// update urb
+						*urb_index = next_urb->index;
+#if (USBH_UVC_USE_HW == 0) && USBH_UVC_DEBUG
+						next_urb->get_us = usb_os_get_timestamp_us();
+						next_urb->owner = 1U;// flying
+#endif
+					} else {
+#if (USBH_UVC_USE_HW == 0) && USBH_UVC_DEBUG
+						//record reuse cnt
+						stream->reuse_cnt++;
+#endif
+					}// else: get free urb fail, reuse current urb
+
+					if (usbh_uvc_usb_status_check() != HAL_OK) {
+						pipe->xfer_state = USBH_EP_XFER_IDLE;
+						return HAL_OK;
+					}
+
+					*packet_index = 0U;
+				}
+
+			} else {// urb stall/ err
+				pipe->xfer_state = USBH_EP_XFER_IDLE;
+			}
+
+			if (stream->next_xfer != 0U) {
+				elapsed_num = usbh_uvc_frame_num_dec(usbh_uvc_frame_num_inc(cur_frame, 1U), pipe->frame_num);
+				if (elapsed_num >= pipe->ep_interval) {
+#if (USBH_UVC_USE_HW == 0) && USBH_UVC_DEBUG
+					uvc->isoc_com_start_rx ++;
+#endif
+					usbh_uvc_isoc_in_process_xfer(stream, cur_frame);
+				} else {
+					pipe->xfer_state = USBH_EP_XFER_WAIT_SOF;
+				}
+			} else {
+				/* stop */
+				pipe->xfer_state = USBH_EP_XFER_IDLE;
+			}
+			break;
 		}
 	}
 
@@ -1020,33 +1020,35 @@ void usbh_uvc_stream_process_sof(usb_host_t *host)
 	uvc->sof_cnt ++;
 #endif
 
-	if (uvc->state == UVC_STATE_TRANSFER) {
-		for (i = 0U; i < uvc->uvc_desc.vs_num; i++) {
-			stream = &uvc->stream[i];
+	for (i = 0U; i < uvc->uvc_desc.vs_num; i++) {
+		stream = &uvc->stream[i];
 
-			if (stream->next_xfer == 1U) {
-				cur_setting = &stream->cur_setting;
-				pipe = &cur_setting->pipe;
+		/* Gate per stream, not on the host-wide uvc->state: stopping one stream drives
+		 * uvc->state to IDLE and must not silence the other stream. */
+		if ((stream->stream_state == UVC_STREAM_ACTIVE) && (stream->next_xfer == 1U)) {
+			cur_setting = &stream->cur_setting;
+			pipe = &cur_setting->pipe;
 
-				if ((usbh_get_elapsed_frame_cnt(host, pipe->frame_num) >= pipe->ep_interval) ||
-					((pipe->xfer_state == USBH_EP_XFER_WAIT_SOF) &&
-					 (usbh_uvc_frame_num_dec(usbh_uvc_frame_num_inc(cur_frame, 1U), pipe->frame_num) >= pipe->ep_interval))) {
+			if ((usbh_get_elapsed_frame_cnt(host, pipe->frame_num) >= pipe->ep_interval) ||
+				((pipe->xfer_state == USBH_EP_XFER_WAIT_SOF) &&
+				 (usbh_uvc_frame_num_dec(usbh_uvc_frame_num_inc(cur_frame, 1U), pipe->frame_num) >= pipe->ep_interval))) {
 #if USBH_UVC_DEBUG
-					uvc->isoc_sof_start_rx ++;
+				uvc->isoc_sof_start_rx ++;
 #endif
-					usbh_uvc_isoc_in_process_xfer(stream, cur_frame);
-				} else { // interval
+				usbh_uvc_isoc_in_process_xfer(stream, cur_frame);
+			} else { // interval
 #if USBH_UVC_DEBUG
-					if (pipe->xfer_state == USBH_EP_XFER_IDLE) {
-						uvc->isoc_xfer_interval_cnt ++;
-					}
-#endif
+				if (pipe->xfer_state == USBH_EP_XFER_IDLE) {
+					uvc->isoc_xfer_interval_cnt ++;
 				}
+#endif
 			}
+		}
 
-			if (stream->state != STREAM_STATE_CTRL_IDLE) {
-				usbh_notify(host, 0x00, &usbh_uvc_driver);
-			}
+		/* Keep the ctrl-machine kick on the TRANSFER state only: in the CTRL states the
+		 * machine self-notifies, and a kick on every SOF would flood the host message queue. */
+		if ((uvc->state == UVC_STATE_TRANSFER) && (stream->state != STREAM_STATE_CTRL_IDLE)) {
+			usbh_notify(host, 0x00, &usbh_uvc_driver);
 		}
 	}
 }

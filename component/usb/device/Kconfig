@@ -7,22 +7,6 @@ config USBD_COMPOSITE_MENU
       Composite Device — combine multiple class functions into one USB device.
       Select one or more class options below to build together.
 
-config USBD_SELF_POWERED
-    bool "Self-powered device"
-    default n
-    help
-      Set bmAttributes bit 6 (Self-powered) in Configuration Descriptor
-      and GET_STATUS response.
-
-      If not selected, the device defaults to bus-powered mode.
-
-config USBD_REMOTE_WAKEUP_EN
-    bool "Remote wakeup enable"
-    default n
-    help
-      Set bmAttributes bit 5 (Remote Wakeup) in Configuration Descriptor.
-      When enabled, the device can signal remote wakeup to the host.
-
 comment "USB Device Class Selection"
 
 config USBD_CDC_ACM_MENU
@@ -112,6 +96,35 @@ config USBD_VENDOR_MENU
 config USBD_DFU_MENU
     bool "DFU"
     select USBD_DFU if WHC_HOST || WHC_NONE
+    if USBD_DFU_MENU
+        config USBD_DFU_WILL_DETACH
+            bool "Device generates its own detach after DFU_DETACH"
+            default y
+            help
+              Sets bmAttributes bit 3 (bitWillDetach, Ref DFU 1.1 4.1.3).
+              Y: the device toggles its own D+ pull-up after DFU_DETACH and the host must NOT
+              issue a USB Reset; no detach timer is built.
+              N: the device waits for the host to issue a USB Reset within wDetachTimeOut; a
+              one-shot detach timer reverts to Run-Time mode if the reset never arrives.
+
+        config USBD_DFU_MANIFESTATION_TOLERANT
+            bool "Tolerate further operations after manifestation"
+            default y
+            help
+              Sets bmAttributes bit 2 (bitManifestationTolerant, Ref DFU 1.1 4.1.3).
+              Y: the device returns to dfuIDLE right after manifest, so the host may continue
+              with further operations such as an UPLOAD verify.
+              N: the device enters dfuMANIFEST-WAIT-RESET and the host must issue a USB bus
+              reset to activate the new firmware.
+
+        config USBD_DFU_CAN_UPLOAD
+            bool "Support DFU_UPLOAD"
+            default y
+            help
+              Sets bmAttributes bit 1 (bitCanUpload, Ref DFU 1.1 4.1.3).
+              Y: DFU_UPLOAD is accepted and the application shall provide the read callback.
+              N: every DFU_UPLOAD is stalled into dfuERROR, saving the upload state and code.
+    endif
 
 config USBD_UVC_MENU
     bool "UVC"

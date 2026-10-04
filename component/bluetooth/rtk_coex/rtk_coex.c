@@ -21,7 +21,8 @@
 struct rtk_bt_coex_priv_t *p_rtk_bt_coex_priv = NULL;
 bool bt_coex_initialized = false;
 
-static struct rtk_bt_coex_conn_t  *bt_coex_find_link_by_handle(uint16_t conn_handle)
+/* caller must already hold conn_mutex */
+static struct rtk_bt_coex_conn_t  *bt_coex_find_link_by_handle_unlocked(uint16_t conn_handle)
 {
 	bool b_find = false;
 	struct list_head *plist = NULL;
@@ -45,6 +46,17 @@ static struct rtk_bt_coex_conn_t  *bt_coex_find_link_by_handle(uint16_t conn_han
 	} else {
 		return NULL;
 	}
+}
+
+static struct rtk_bt_coex_conn_t  *bt_coex_find_link_by_handle(uint16_t conn_handle)
+{
+	struct rtk_bt_coex_conn_t *p_conn = NULL;
+
+	osif_mutex_take(p_rtk_bt_coex_priv->conn_mutex, 0xFFFFFFFFUL);
+	p_conn = bt_coex_find_link_by_handle_unlocked(conn_handle);
+	osif_mutex_give(p_rtk_bt_coex_priv->conn_mutex);
+
+	return p_conn;
 }
 
 static void bt_coex_send_vendor_cmd(uint16_t cmd_id, uint8_t *pbuf, uint8_t len)
@@ -73,6 +85,7 @@ static void bt_coex_set_profile_info_to_fw(void)
 	uint8_t *pbuf = NULL;
 	uint8_t offset = 0;
 
+	osif_mutex_take(p_rtk_bt_coex_priv->conn_mutex, 0xFFFFFFFFUL);
 	if (!list_empty(&p_rtk_bt_coex_priv->conn_list)) {
 		plist = p_rtk_bt_coex_priv->conn_list.next;
 		while (plist != &p_rtk_bt_coex_priv->conn_list) {
@@ -86,6 +99,7 @@ static void bt_coex_set_profile_info_to_fw(void)
 			}
 		}
 	}
+	osif_mutex_give(p_rtk_bt_coex_priv->conn_mutex);
 
 	if (handle_number == 0) {
 		handle_number ++;    /* profile 0x00 should be reported to bt fw */
@@ -100,6 +114,7 @@ static void bt_coex_set_profile_info_to_fw(void)
 	offset ++;
 
 	plist = NULL;
+	osif_mutex_take(p_rtk_bt_coex_priv->conn_mutex, 0xFFFFFFFFUL);
 	if (!list_empty(&p_rtk_bt_coex_priv->conn_list)) {
 		plist = p_rtk_bt_coex_priv->conn_list.next;
 		while (plist != &p_rtk_bt_coex_priv->conn_list) {
@@ -121,6 +136,7 @@ static void bt_coex_set_profile_info_to_fw(void)
 			}
 		}
 	}
+	osif_mutex_give(p_rtk_bt_coex_priv->conn_mutex);
 
 	/* DBG_BT_COEX_DUMP("", pbuf, offset); */
 
@@ -178,8 +194,9 @@ static void bt_coex_del_check_timer(struct rtk_bt_coex_conn_t *p_conn, uint16_t 
 	if (!list_empty(&p_rtk_bt_coex_priv->monitor_list)) {
 		plist = p_rtk_bt_coex_priv->monitor_list.next;
 		while (plist != &p_rtk_bt_coex_priv->monitor_list) {
-			p_monitor_node = (struct rtk_bt_coex_monitor_node_t *)plist;
-			if ((p_monitor_node->p_conn == p_conn) && (p_monitor_node->profile_idx == profile_idx)) {
+			struct rtk_bt_coex_monitor_node_t *p_node = (struct rtk_bt_coex_monitor_node_t *)plist;
+			if ((p_node->p_conn == p_conn) && (p_node->profile_idx == profile_idx)) {
+				p_monitor_node = p_node;
 				break;
 			} else {
 				plist = plist->next;
@@ -276,7 +293,9 @@ static void bt_coex_handle_connection_complet_evt(uint8_t *p_evt_data)
 		memset(p_conn, 0, sizeof(struct rtk_bt_coex_conn_t));
 		p_conn->conn_handle = conn_handle;
 		INIT_LIST_HEAD(&p_conn->profile_list);
+		osif_mutex_take(p_rtk_bt_coex_priv->conn_mutex, 0xFFFFFFFFUL);
 		list_add_tail(&p_conn->list, &p_rtk_bt_coex_priv->conn_list);
+		osif_mutex_give(p_rtk_bt_coex_priv->conn_mutex);
 	}
 
 	p_conn->profile_bitmap = 0;
@@ -337,8 +356,16 @@ static void bt_coex_handle_disconnection_complete_evt(uint8_t *pdata)
 		break;
 	}
 
-	list_del(&p_conn->list);
-	osif_mem_free(p_conn);
+	/* re-locate before delete: p_conn may have been removed/freed by another path while lock was released above */
+	osif_mutex_take(p_rtk_bt_coex_priv->conn_mutex, 0xFFFFFFFFUL);
+	p_conn = bt_coex_find_link_by_handle_unlocked(conn_handle);
+	if (p_conn) {
+		list_del(&p_conn->list);
+	}
+	osif_mutex_give(p_rtk_bt_coex_priv->conn_mutex);
+	if (p_conn) {
+		osif_mem_free(p_conn);
+	}
 
 	DBG_BT_COEX("exit bt_coex_handle_disconnection_complete_evt \r\n");
 }
@@ -373,7 +400,9 @@ static void bt_coex_le_connect_complete_evt(uint8_t enhance, uint8_t *pdata)
 		memset(p_conn, 0, sizeof(struct rtk_bt_coex_conn_t));
 		p_conn->conn_handle = conn_handle;
 		INIT_LIST_HEAD(&p_conn->profile_list);
+		osif_mutex_take(p_rtk_bt_coex_priv->conn_mutex, 0xFFFFFFFFUL);
 		list_add_tail(&p_conn->list, &p_rtk_bt_coex_priv->conn_list);
+		osif_mutex_give(p_rtk_bt_coex_priv->conn_mutex);
 	}
 
 	p_conn->profile_bitmap = 0;
@@ -445,7 +474,9 @@ static void rtk_handle_le_cis_established_evt(uint8_t *pdata)
 		memset(p_conn, 0, sizeof(struct rtk_bt_coex_conn_t));
 		p_conn->conn_handle = conn_handle;
 		INIT_LIST_HEAD(&p_conn->profile_list);
+		osif_mutex_take(p_rtk_bt_coex_priv->conn_mutex, 0xFFFFFFFFUL);
 		list_add_tail(&p_conn->list, &p_rtk_bt_coex_priv->conn_list);
+		osif_mutex_give(p_rtk_bt_coex_priv->conn_mutex);
 	}
 
 	p_conn->profile_bitmap = 0;
@@ -480,7 +511,9 @@ static void rtk_handle_le_big_complete_evt(uint8_t *pdata)
 		memset(p_conn, 0, sizeof(struct rtk_bt_coex_conn_t));
 		p_conn->conn_handle = big_handle;
 		INIT_LIST_HEAD(&p_conn->profile_list);
+		osif_mutex_take(p_rtk_bt_coex_priv->conn_mutex, 0xFFFFFFFFUL);
 		list_add_tail(&p_conn->list, &p_rtk_bt_coex_priv->conn_list);
+		osif_mutex_give(p_rtk_bt_coex_priv->conn_mutex);
 	}
 
 	p_conn->profile_bitmap = 0;
@@ -506,8 +539,16 @@ static void rtk_handle_le_terminate_big_complete_evt(uint8_t *pdata)
 		if (p_conn->profile_bitmap & BIT(PROFILE_LE_AUDIO)) {
 			bt_coex_update_profile_info(p_conn, PROFILE_LE_AUDIO, false);
 		}
-		list_del(&p_conn->list);
-		osif_mem_free(p_conn);
+		/* re-locate before delete: p_conn may have been removed/freed by another path meanwhile */
+		osif_mutex_take(p_rtk_bt_coex_priv->conn_mutex, 0xFFFFFFFFUL);
+		p_conn = bt_coex_find_link_by_handle_unlocked((uint16_t)big_handle);
+		if (p_conn) {
+			list_del(&p_conn->list);
+		}
+		osif_mutex_give(p_rtk_bt_coex_priv->conn_mutex);
+		if (p_conn) {
+			osif_mem_free(p_conn);
+		}
 	}
 }
 
@@ -535,7 +576,9 @@ static void rtk_handle_le_big_sync_establish_evt(uint8_t *pdata)
 		memset(p_conn, 0, sizeof(struct rtk_bt_coex_conn_t));
 		p_conn->conn_handle = big_handle;
 		INIT_LIST_HEAD(&p_conn->profile_list);
+		osif_mutex_take(p_rtk_bt_coex_priv->conn_mutex, 0xFFFFFFFFUL);
 		list_add_tail(&p_conn->list, &p_rtk_bt_coex_priv->conn_list);
+		osif_mutex_give(p_rtk_bt_coex_priv->conn_mutex);
 	}
 
 	p_conn->profile_bitmap = 0;
@@ -561,8 +604,16 @@ static void rtk_handle_le_big_sync_lost_evt(uint8_t *pdata)
 		if (p_conn->profile_bitmap & BIT(PROFILE_LE_AUDIO)) {
 			bt_coex_update_profile_info(p_conn, PROFILE_LE_AUDIO, false);
 		}
-		list_del(&p_conn->list);
-		osif_mem_free(p_conn);
+		/* re-locate before delete: p_conn may have been removed/freed by another path meanwhile */
+		osif_mutex_take(p_rtk_bt_coex_priv->conn_mutex, 0xFFFFFFFFUL);
+		p_conn = bt_coex_find_link_by_handle_unlocked((uint16_t)big_handle);
+		if (p_conn) {
+			list_del(&p_conn->list);
+		}
+		osif_mutex_give(p_rtk_bt_coex_priv->conn_mutex);
+		if (p_conn) {
+			osif_mem_free(p_conn);
+		}
 	}
 }
 
@@ -1125,6 +1176,7 @@ static uint16_t bt_coex_get_max_connect_intvl(void)
 	struct list_head *plist = NULL;
 	struct rtk_bt_coex_conn_t *p_conn = NULL;
 
+	osif_mutex_take(p_rtk_bt_coex_priv->conn_mutex, 0xFFFFFFFFUL);
 	if (!list_empty(&p_rtk_bt_coex_priv->conn_list)) {
 		plist = p_rtk_bt_coex_priv->conn_list.next;
 		while (plist != &p_rtk_bt_coex_priv->conn_list) {
@@ -1135,6 +1187,7 @@ static uint16_t bt_coex_get_max_connect_intvl(void)
 			plist = plist->next;
 		}
 	}
+	osif_mutex_give(p_rtk_bt_coex_priv->conn_mutex);
 
 	return connect_interval;
 }
@@ -1144,6 +1197,7 @@ static uint8_t bt_coex_count_link(void)
 	uint8_t link_cnt = 0;
 	struct list_head *plist = NULL;
 
+	osif_mutex_take(p_rtk_bt_coex_priv->conn_mutex, 0xFFFFFFFFUL);
 	if (!list_empty(&p_rtk_bt_coex_priv->conn_list)) {
 		plist = p_rtk_bt_coex_priv->conn_list.next;
 		while (plist != &p_rtk_bt_coex_priv->conn_list) {
@@ -1151,6 +1205,7 @@ static uint8_t bt_coex_count_link(void)
 			plist = plist->next;
 		}
 	}
+	osif_mutex_give(p_rtk_bt_coex_priv->conn_mutex);
 
 	return link_cnt;
 }
@@ -1161,6 +1216,7 @@ static uint8_t bt_coex_link_status(void)
 	struct list_head *plist = NULL;
 	struct rtk_bt_coex_conn_t *p_conn = NULL;
 
+	osif_mutex_take(p_rtk_bt_coex_priv->conn_mutex, 0xFFFFFFFFUL);
 	if (!list_empty(&p_rtk_bt_coex_priv->conn_list)) {
 		plist = p_rtk_bt_coex_priv->conn_list.next;
 		while (plist != &p_rtk_bt_coex_priv->conn_list) {
@@ -1174,6 +1230,7 @@ static uint8_t bt_coex_link_status(void)
 			plist = plist->next;
 		}
 	}
+	osif_mutex_give(p_rtk_bt_coex_priv->conn_mutex);
 
 	return link_status;
 }
@@ -1566,6 +1623,9 @@ void bt_coex_send_w2b_sw_mailbox(uint8_t *user_data, uint16_t length)
 		}
 		memset(p_rtk_bt_coex_priv, 0, sizeof(struct rtk_bt_coex_priv_t));
 		INIT_LIST_HEAD(&p_rtk_bt_coex_priv->conn_list);
+		if (false == osif_mutex_create(&p_rtk_bt_coex_priv->conn_mutex)) {
+			return;
+		}
 
 #if defined(HCI_BT_COEX_BR_EDR_SUPPORT) && HCI_BT_COEX_BR_EDR_SUPPORT
 		INIT_LIST_HEAD(&p_rtk_bt_coex_priv->monitor_list);
@@ -1619,6 +1679,7 @@ void bt_coex_send_w2b_sw_mailbox(uint8_t *user_data, uint16_t length)
 #endif
 
 		plist = NULL;
+		osif_mutex_take(p_rtk_bt_coex_priv->conn_mutex, 0xFFFFFFFFUL);
 		if (!list_empty(&p_rtk_bt_coex_priv->conn_list)) {
 			plist = p_rtk_bt_coex_priv->conn_list.next;
 			while (plist != &p_rtk_bt_coex_priv->conn_list) {
@@ -1639,6 +1700,8 @@ void bt_coex_send_w2b_sw_mailbox(uint8_t *user_data, uint16_t length)
 				osif_mem_free(p_conn);
 			}
 		}
+		osif_mutex_give(p_rtk_bt_coex_priv->conn_mutex);
+		osif_mutex_delete(p_rtk_bt_coex_priv->conn_mutex);
 #if defined(HCI_BT_COEX_BR_EDR_SUPPORT) && HCI_BT_COEX_BR_EDR_SUPPORT
 		osif_mutex_delete(p_rtk_bt_coex_priv->monitor_mutex);
 		if (p_rtk_bt_coex_priv->monitor_timer) {

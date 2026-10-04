@@ -46,9 +46,15 @@ extern "C" {
 #error "Please set USBD_TP_TRACE_DEBUG in usbd.h"
 #endif
 
-/* Defines basic device parameters like VID, PID, and string descriptors. */
-#define USBD_UAC_VID                USB_VID /**< Vendor ID. */
-#define USBD_UAC_PID                USB_PID /**< Product ID. */
+/* Defaults applied when the matching @ref usbd_uac_config_t field is left 0. */
+#define USBD_UAC_DEFAULT_RX_BUF_CNT  20U    /**< Default RX ring buffer slot count. */
+#define USBD_UAC_DEFAULT_TX_BUF_CNT  20U    /**< Default TX ring buffer slot count. */
+/* Volume range reported to the host. UAC encodes volume as a signed fixed-point dB value, so the
+ * range wraps around zero: 0xFF42 is the minimum and 0x00BE the maximum. Both shall stay inside
+ * what the class volume mapping table covers. */
+#define USBD_UAC_DEFAULT_VOLUME_MIN  0xFF42U /**< Default minimum volume. */
+#define USBD_UAC_DEFAULT_VOLUME_MAX  0x00BEU /**< Default maximum volume. */
+#define USBD_UAC_DEFAULT_VOLUME      0x001FU /**< Default initial volume. */
 
 /* Uac Endpoint parameters */
 /* Audio channel count */
@@ -97,12 +103,6 @@ extern "C" {
  * @{
  */
 
-/* Endpoint address configuration for the UAC driver */
-typedef struct {
-	u8 isoc_in_addr;   /**< ISOC IN endpoint address */
-	u8 isoc_out_addr;  /**< ISOC OUT endpoint address */
-} usbd_uac_ep_cfg_t;
-
 /* Audio configuration parameters: The application uses this structure to configure audio parameters to the UAC driver. */
 typedef struct {
 	u32 sampling_freq;   /**< Audio sample frequency param. */
@@ -111,10 +111,33 @@ typedef struct {
 	u8 enable;           /**< Audio enable. */
 } usbd_audio_cfg_t;
 
+/**
+ * @brief Configuration for the UAC class.
+ * @details Carries every UAC option: the endpoint allocation, which the top-level application
+ *          owns, the audio format of each direction, and the ISOC buffer sizing and class-control
+ *          ranges. Used by both standalone and composite modes. Device-global parameters
+ *          (VID/PID, strings, power attributes) live in @ref usbd_dev_info_t instead.
+ * @note  The structure is stored by pointer, not copied, so it shall remain valid until
+ *        @ref usbd_uac_deinit.
+ * @note  The advertised sample rates, channel counts and bit widths are baked into the `const`
+ *        descriptor tables and selected at compile time by `USBD_UAC_DEFAULT_CH_CNT` and the
+ *        UAC version; the format fields here shall stay within what those tables advertise.
+ */
 typedef struct {
-	usbd_audio_cfg_t in;     /**< Audio configuration parameters for record. */
-	usbd_audio_cfg_t out;    /**< Audio configuration parameters for playback. */
-	void *audio_ctx;         /**< Audio context params. */
+	usbd_audio_cfg_t in;     /**< Audio format for record (device to host). */
+	usbd_audio_cfg_t out;    /**< Audio format for playback (host to device). */
+	const char *itf_str;     /**< iInterface string of the audio control interface, NULL for none. */
+	u16 volume_min;          /**< Minimum volume reported to the host, 0 uses @ref USBD_UAC_DEFAULT_VOLUME_MIN. */
+	u16 volume_max;          /**< Maximum volume reported to the host, 0 uses @ref USBD_UAC_DEFAULT_VOLUME_MAX. */
+	u16 volume_default;      /**< Initial volume, 0 uses @ref USBD_UAC_DEFAULT_VOLUME. */
+	u8 isoc_in_addr;         /**< ISOC IN endpoint address */
+	u8 isoc_out_addr;        /**< ISOC OUT endpoint address */
+	u8 rx_buf_cnt;           /**< RX ring buffer slot count, 0 uses @ref USBD_UAC_DEFAULT_RX_BUF_CNT. */
+	u8 tx_buf_cnt;           /**< TX ring buffer slot count, 0 uses @ref USBD_UAC_DEFAULT_TX_BUF_CNT. */
+	u8 mute_default;         /**< Initial mute state (0: unmuted, 1: muted). */
+} usbd_uac_config_t;
+
+typedef struct {
 
 	/**
 	 * @brief Called when the UAC class driver initialization for application resource setup.
@@ -230,7 +253,7 @@ typedef struct {
  * @brief Structure representing the UAC device instance.
  */
 typedef struct {
-	const usbd_uac_ep_cfg_t *ep_cfg;   /**< Pointer to endpoint address configuration. */
+	const usbd_uac_config_t *cfg;      /**< Pointer to the class configuration (set by init). */
 	const usbd_uac_cb_t *cb;           /**< Pointer to the user-defined callback structure. */
 	usb_dev_t *dev;                    /**< Pointer to the USB device instance. */
 
@@ -260,6 +283,8 @@ typedef struct {
 	u8 if_base;                        /**< First interface number of this class; 0 in standalone mode
 	                                        unless the composite framework rebases it via
 	                                        set_interface_base(). */
+	u8 itf_str_idx;                    /**< Audio control interface iInterface string index from
+	                                        usbd_add_string(), 0 for none. */
 } usbd_uac_dev_t;
 
 /* Exported macros -----------------------------------------------------------*/
@@ -280,7 +305,7 @@ typedef struct {
  * @param[in] ep_cfg: Pointer to endpoint address configuration, or NULL for defaults.
  * @return 0 on success, non-zero on failure.
  */
-int usbd_uac_init(const usbd_uac_cb_t *cb, const usbd_uac_ep_cfg_t *ep_cfg);
+int usbd_uac_init(const usbd_uac_cb_t *cb, const usbd_uac_config_t *cfg);
 
 #ifdef CONFIG_USBD_COMPOSITE
 /**
@@ -289,7 +314,7 @@ int usbd_uac_init(const usbd_uac_cb_t *cb, const usbd_uac_ep_cfg_t *ep_cfg);
  * @param[in] ep_cfg: Pointer to endpoint address configuration, or NULL for defaults.
  * @return 0 on success, non-zero on failure.
  */
-int usbd_composite_uac_init(const usbd_uac_cb_t *cb, const usbd_uac_ep_cfg_t *ep_cfg);
+int usbd_composite_uac_init(const usbd_uac_cb_t *cb, const usbd_uac_config_t *cfg);
 #endif
 
 /**
