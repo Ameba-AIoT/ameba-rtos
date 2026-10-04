@@ -282,10 +282,16 @@ enum rtw_ieee80211_back_actioncode {
 	RTW_WLAN_ACTION_DELBA = 2,
 };
 
+/* SA_QUERY action code */
+enum rtw_ieee80211_sa_query_actioncode {
+	RTW_WLAN_ACTION_SA_QUERY_REQ = 0,
+	RTW_WLAN_ACTION_SA_QUERY_RESP = 1,
+};
+
+
 enum rtw_ieee80211_spec_mgnt_actioncode {
 	RTW_WLAN_ACTION_CSA = 4,
 	RTW_WLAN_ACTION_EXTENDED_CSA = 5,
 };
 
 #endif
-
