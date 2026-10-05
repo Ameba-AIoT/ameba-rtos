@@ -638,7 +638,7 @@ int ble_transfer_module_main(uint8_t enable)
 		bt_app_conf.prefer_tx_phy = 1 | 1 << 1 | 1 << 2;
 		bt_app_conf.prefer_rx_phy = 1 | 1 << 1 | 1 << 2;
 		bt_app_conf.max_tx_octets = 0x40;
-		bt_app_conf.max_tx_time = 0x200;
+		bt_app_conf.max_tx_time = 0x270;
 #if defined(RTK_BLE_PRIVACY_SUPPORT) && RTK_BLE_PRIVACY_SUPPORT
 		memcpy(bt_app_conf.irk, privacy_irk, RTK_BT_LE_GAP_IRK_LEN);
 #endif
