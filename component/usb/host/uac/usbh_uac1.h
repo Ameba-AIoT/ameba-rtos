@@ -138,6 +138,10 @@ typedef struct {
 
 	__IO u16 written;        /**< Bytes accumulated in ringbuf_partial_write_buf for the current packet under construction */
 	__IO u16 mps;            /**< Endpoint Maximum Packet Size in bytes */
+	__IO u16 node_size;      /**< Ring buffer node size in bytes, i.e. the largest packet a node can hold.
+	                              Equals mps for a single-transaction endpoint and the full packet size for a
+	                              high-bandwidth one (USB 2.0 5.6.3), so it is what the read path must reserve
+	                              room for rather than mps */
 	__IO u8 sema_valid;      /**< 1 when isoc_sema has been created and is safe to use */
 	__IO u8 wait_sema;       /**< 1 while a write/read thread is blocked on isoc_sema (used for safe teardown) */
 	__IO u8 next_xfer;       /**< 1 to allow isochronous transfers; cleared by stop_play/stop_capture */
@@ -440,7 +444,9 @@ void usbh_uac_stop_capture(void);
   * @brief  Read audio data from UAC IN (microphone)
   * @param  buffer: Pointer to the data buffer to store read data
   * @param  size: Size of data to read (in bytes)
-  * @param  time_out_ms: Timeout in milliseconds to wait if no data available
+  * @param  time_out_ms: Total budget in milliseconds this call may spend waiting for data, not a
+  *                      per-packet allowance; 0 for non-blocking. May return fewer than @p size
+  *                      bytes when the budget runs out.
   * @retval Actual number of bytes read
   */
 u32 usbh_uac_read(u8 *buffer, u32 size, u32 time_out_ms);

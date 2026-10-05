@@ -189,6 +189,13 @@ void rtos_task_set_affinity(rtos_task_t p_handle, uint32_t coreID)
 {
 	vTaskCoreAffinitySet((TaskHandle_t) p_handle, 1 << coreID);
 }
+#else
+void rtos_task_set_affinity(rtos_task_t p_handle, uint32_t coreID)
+{
+	UNUSED(p_handle);
+	UNUSED(coreID);
+	/* configUSE_CORE_AFFINITY not enabled — nothing to do. */
+}
 #endif
 
 /* Realtek: Bind idle tasks to their respective cores at scheduler startup.

@@ -57,10 +57,10 @@ static const u8 usbd_msc_dev_desc[USB_LEN_DEV_DESC] = {
 	0x00,                                           /* bDeviceSubClass */
 	0x00,                                           /* bDeviceProtocol */
 	USB_MAX_EP0_SIZE,                               /* bMaxPacketSize */
-	USB_LOW_BYTE(USBD_MSC_VID),                      /* idVendor */
-	USB_HIGH_BYTE(USBD_MSC_VID),
-	USB_LOW_BYTE(USBD_MSC_PID),                      /* idProduct */
-	USB_HIGH_BYTE(USBD_MSC_PID),
+	USB_LOW_BYTE(USB_VID),                           /* idVendor (patched by core from usbd_dev_info_t) */
+	USB_HIGH_BYTE(USB_VID),
+	USB_LOW_BYTE(USB_PID),                           /* idProduct (patched by core from usbd_dev_info_t) */
+	USB_HIGH_BYTE(USB_PID),
 	0x00,                                           /* bcdDevice */
 	0x02,
 	USBD_IDX_MFC_STR,                               /* iManufacturer */
@@ -68,14 +68,6 @@ static const u8 usbd_msc_dev_desc[USB_LEN_DEV_DESC] = {
 	USBD_IDX_SERIAL_STR,                            /* iSerialNumber */
 	0x01                                            /* bNumConfigurations */
 };  /* usbd_msc_dev_desc */
-
-/* USB Standard String Descriptor 0 */
-static const u8 usbd_msc_lang_id_desc[USB_LEN_LANGID_STR_DESC] = {
-	USB_LEN_LANGID_STR_DESC,                        /* bLength */
-	USB_DESC_TYPE_STRING,                           /* bDescriptorType */
-	USB_LOW_BYTE(USBD_MSC_LANGID_STRING),           /* wLANGID */
-	USB_HIGH_BYTE(USBD_MSC_LANGID_STRING),
-};  /* usbd_msc_lang_id_desc */
 
 #ifndef CONFIG_USB_FS
 /* USB Standard Device Qualifier Descriptor */
@@ -381,19 +373,6 @@ static int usbd_msc_set_config(usb_dev_t *dev, u8 config)
 
 	cdev->dev = dev;
 
-	if (!cdev->from_composite) {
-#ifdef CONFIG_USBD_SELF_POWERED
-		dev->self_powered = 1;
-#else
-		dev->self_powered = 0;
-#endif
-#ifdef CONFIG_USBD_REMOTE_WAKEUP_EN
-		dev->remote_wakeup_en = 1;
-#else
-		dev->remote_wakeup_en = 0;
-#endif
-	}
-
 	/* Init BULK IN EP */
 	info = &ep_bulk_in->info;
 	info->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_MSC_HS_MAX_PACKET_SIZE : USBD_MSC_FS_MAX_PACKET_SIZE;
@@ -584,7 +563,7 @@ static int usbd_msc_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status)
 
 	/* Return non-zero if EP is not owned by MSC, so composite
 	 * dispatcher can continue iterating to the correct sub-function. */
-	if (ep_addr != cdev->ep_cfg->bulk_in_addr) {
+	if (ep_addr != cdev->cfg->bulk_in_addr) {
 		return HAL_ERR_PARA;
 	}
 
@@ -628,7 +607,7 @@ static void usbd_msc_tx_process(void)
 			break;
 		}
 	} else {
-		USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_XFER, cdev->ep_cfg->bulk_in_addr);
+		USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_XFER, cdev->cfg->bulk_in_addr);
 	}
 
 	usb_os_unlock(usbd_msc_sd_lock);
@@ -650,7 +629,7 @@ static int usbd_msc_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len)
 
 	/* Return non-zero if EP is not owned by MSC, so composite
 	 * dispatcher can continue iterating to the correct sub-function. */
-	if (ep_addr != cdev->ep_cfg->bulk_out_addr) {
+	if (ep_addr != cdev->cfg->bulk_out_addr) {
 		return HAL_ERR_PARA;
 	}
 
@@ -769,17 +748,19 @@ static void usbd_msc_rx_process(void)
 /** @cond PATCH_EP_ADDRESSES */
 
 /**
-  * @brief  Patch EP addresses in a configuration descriptor block
-  * @note   Replaces direction-only placeholders (USB_D2H/USB_H2D) with actual
-  *         EP addresses from the EP configuration structure.
+  * @brief  Patch the runtime-assigned fields in a configuration descriptor block
+  * @note   Replaces direction-only placeholders (USB_D2H/USB_H2D) with actual EP addresses from
+  *         the class configuration, and rewrites the iInterface string index with the index the
+  *         core assigned.
   * @param  desc: Pointer to config descriptor body (starting after config header)
   * @param  len: Length of the descriptor block
-  * @param  ep_cfg: EP configuration with actual endpoint addresses
   * @retval None
   */
-static void usbd_msc_patch_ep_addresses(u8 *desc, u16 len,
-										const usbd_msc_ep_cfg_t *ep_cfg)
+static void usbd_msc_patch_desc(u8 *desc, u16 len)
 {
+	usbd_msc_dev_t *cdev = &usbd_msc_dev;
+	const usbd_msc_config_t *cfg = cdev->cfg;
+
 	for (u16 i = 0; i < len;) {
 		u8 dlen = desc[i];
 		u8 dtype = desc[i + 1];
@@ -793,10 +774,12 @@ static void usbd_msc_patch_ep_addresses(u8 *desc, u16 len,
 			u8 type  = desc[i + 3] & 0x03;
 
 			if ((dir == USB_D2H) && (type == USB_CH_EP_TYPE_BULK)) {
-				desc[i + 2] = ep_cfg->bulk_in_addr;
+				desc[i + 2] = cfg->bulk_in_addr;
 			} else if ((dir == USB_H2D) && (type == USB_CH_EP_TYPE_BULK)) {
-				desc[i + 2] = ep_cfg->bulk_out_addr;
+				desc[i + 2] = cfg->bulk_out_addr;
 			}
+		} else if ((dtype == USB_DESC_TYPE_INTERFACE) && (dlen >= USB_LEN_IF_DESC)) {
+			desc[i + 8] = cdev->itf_str_idx;         /* iInterface */
 		}
 		i += dlen;
 	}
@@ -815,22 +798,11 @@ static void usbd_msc_patch_ep_addresses(u8 *desc, u16 len,
   */
 static u16 usbd_msc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16 buf_len)
 {
-	usbd_msc_dev_t *cdev = &usbd_msc_dev;
 	usb_speed_type_t speed = dev->dev_speed;
 	const u8 *desc = NULL;
 	u16 len = 0;
 	u8 type = USB_HIGH_BYTE(req->wValue);
 	u8 is_cfg = 0;
-	u8 attr = 0x80U;
-
-	if (!cdev->from_composite) {
-#ifdef CONFIG_USBD_SELF_POWERED
-		attr |= USB_CFG_DESC_OFFSET_ATTR_BIT_SELF_POWERED;
-#endif
-#ifdef CONFIG_USBD_REMOTE_WAKEUP_EN
-		attr |= USB_CFG_DESC_OFFSET_ATTR_BIT_REMOTE_WAKEUP;
-#endif
-	}
 
 	switch (type) {
 
@@ -872,32 +844,9 @@ static u16 usbd_msc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 #endif
 
 	case USB_DESC_TYPE_STRING:
-		switch (USB_LOW_BYTE(req->wValue)) {
-		case USBD_IDX_LANGID_STR:
-			desc = usbd_msc_lang_id_desc;
-			len = sizeof(usbd_msc_lang_id_desc);
-			break;
-		case USBD_IDX_MFC_STR:
-			len = usbd_get_str_descriptor(USBD_MSC_MFG_STRING, buf, buf_len);
-			break;
-		case USBD_IDX_PRODUCT_STR:
-			if (speed == USB_SPEED_HIGH) {
-				len = usbd_get_str_descriptor(USBD_MSC_PROD_HS_STRING, buf, buf_len);
-			} else {
-				len = usbd_get_str_descriptor(USBD_MSC_PROD_FS_STRING, buf, buf_len);
-			}
-			break;
-		case USBD_IDX_SERIAL_STR:
-			len = usbd_get_str_descriptor(USBD_MSC_SN_STRING, buf, buf_len);
-			break;
-		case USBD_IDX_MS_OS_STR:
-			/*Not support*/
-			break;
-		/* Add customer string here */
-		default:
-			USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_GET_DESC, 0);
-			break;
-		}
+		/* Every string this class owns is registered with usbd_add_string() and answered by
+		   the core, which only forwards an index it does not know, e.g. the MS OS string */
+		USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_GET_DESC, 0);
 		break;
 
 	default:
@@ -919,14 +868,8 @@ static u16 usbd_msc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN] = USB_LOW_BYTE(len);
 		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN + 1] = USB_HIGH_BYTE(len);
 
-		if (!cdev->from_composite) {
-			buf[USB_CFG_DESC_OFFSET_ATTR] = attr;
-		}
-
-		/* Patch EP addresses from placeholder to actual values */
-		usbd_msc_patch_ep_addresses(buf + USB_LEN_CFG_DESC,
-									len - USB_LEN_CFG_DESC,
-									cdev->ep_cfg);
+		/* Patch EP addresses and the class string index to actual values */
+		usbd_msc_patch_desc(buf + USB_LEN_CFG_DESC, len - USB_LEN_CFG_DESC);
 	}
 
 	return len;
@@ -979,10 +922,67 @@ static void usbd_msc_tx_thread(void *param)
 }
 
 /**
+  * @brief  Copy one SCSI INQUIRY identification field, space-padded to its fixed width
+  * @note   Ref SPC Table 59: the vendor/product/revision fields are fixed-width and
+  *         left-aligned, padded with ASCII spaces rather than NUL-terminated.
+  * @param  dst: Destination field inside the INQUIRY response
+  * @param  len: Field width in bytes
+  * @param  str: Configured string, NULL to leave the default in place
+  * @retval HAL_OK on success, HAL_ERR_PARA when the string is longer than the field
+  */
+static int usbd_msc_set_inquiry_field(u8 *dst, u32 len, const char *str)
+{
+	u32 i;
+
+	if (str == NULL) {
+		return HAL_OK;
+	}
+
+	for (i = 0U; (i < len) && (str[i] != '\0'); i++) {
+		dst[i] = (u8)str[i];
+	}
+
+	/* A longer string would be silently truncated into a different identity, so reject it. */
+	if (str[i] != '\0') {
+		return HAL_ERR_PARA;
+	}
+
+	for (; i < len; i++) {
+		dst[i] = (u8)' ';
+	}
+
+	return HAL_OK;
+}
+
+/**
+  * @brief  Build the per-instance SCSI standard INQUIRY response
+  * @note   Starts from the class default template and overwrites only the identification
+  *         fields the configuration supplies, so every other byte keeps its spec-defined value.
+  * @param  cdev: Device instance
+  * @param  cfg: Class configuration
+  * @retval HAL_OK on success, HAL_ERR_PARA when an identification string does not fit
+  */
+static int usbd_msc_build_inquiry_data(usbd_msc_dev_t *cdev, const usbd_msc_config_t *cfg)
+{
+	u8 *data = cdev->inquiry_data;
+
+	usb_os_memcpy((void *)data, (const void *)usbd_msc_default_inquiry_data, INQUIRY_DATA_LEN);
+
+	if ((usbd_msc_set_inquiry_field(&data[8], USBD_MSC_INQUIRY_VENDOR_LEN, cfg->inquiry_vendor) != HAL_OK) ||
+		(usbd_msc_set_inquiry_field(&data[16], USBD_MSC_INQUIRY_PRODUCT_LEN, cfg->inquiry_product) != HAL_OK) ||
+		(usbd_msc_set_inquiry_field(&data[32], USBD_MSC_INQUIRY_REVISION_LEN, cfg->inquiry_revision) != HAL_OK)) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Inquiry str too long\n");
+		return HAL_ERR_PARA;
+	}
+
+	return HAL_OK;
+}
+
+/**
   * @brief  Initialize MSC device
   * @retval Status
   */
-static int usbd_msc_private_init(const usbd_msc_cb_t *cb, const usbd_msc_ep_cfg_t *ep_cfg)
+static int usbd_msc_private_init(const usbd_msc_cb_t *cb, const usbd_msc_config_t *cfg)
 {
 	usbd_msc_dev_t *cdev = &usbd_msc_dev;
 	usbd_msc_disk_ops_t *ops = &cdev->disk_ops;
@@ -996,15 +996,40 @@ static int usbd_msc_private_init(const usbd_msc_cb_t *cb, const usbd_msc_ep_cfg_
 		return HAL_ERR_PARA;
 	}
 
-	if (ep_cfg == NULL) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid EP cfg\n");
+	if (cfg == NULL) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid cfg\n");
+		return HAL_ERR_PARA;
+	}
+
+	/* Both endpoints are mandatory, and a wrong direction bit would make the class claim an
+	   endpoint the controller drives the other way round. */
+	if (((cfg->bulk_in_addr & USB_REQ_DIR_MASK) != USB_D2H) ||
+		((cfg->bulk_out_addr & USB_REQ_DIR_MASK) != USB_H2D) ||
+		((cfg->bulk_in_addr & (~USB_REQ_DIR_MASK)) == 0U) ||
+		((cfg->bulk_out_addr & (~USB_REQ_DIR_MASK)) == 0U)) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid EP addr %02x/%02x\n", cfg->bulk_in_addr, cfg->bulk_out_addr);
+		return HAL_ERR_PARA;
+	}
+
+	/* A buffer shorter than one block cannot carry even a single-sector READ/WRITE. */
+	cdev->buf_size = (cfg->buf_size != 0U) ? cfg->buf_size : (u32)USBD_MSC_DEFAULT_BUF_SIZE;
+	if (cdev->buf_size < (u32)USBD_MSC_BLK_SIZE) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Buf size %u < %u\n", cdev->buf_size, (u32)USBD_MSC_BLK_SIZE);
+		return HAL_ERR_PARA;
+	}
+
+	if (usbd_msc_build_inquiry_data(cdev, cfg) != HAL_OK) {
 		return HAL_ERR_PARA;
 	}
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Init\n");
 
 	cdev->cb = cb;
-	cdev->ep_cfg = ep_cfg;
+	cdev->cfg = cfg;
+
+	/* The core owns the string table, so the same call works in standalone and composite
+	   mode. 0 means no iInterface string. */
+	cdev->itf_str_idx = usbd_add_string(cfg->itf_str);
 
 #ifdef CONFIG_USBD_MSC_RAM_DISK
 	ops->disk_getcapacity = RAM_GetCapacity;
@@ -1022,7 +1047,7 @@ static int usbd_msc_private_init(const usbd_msc_cb_t *cb, const usbd_msc_ep_cfg_
 		return ret;
 	}
 
-	cdev->data = (u8 *)usb_os_malloc(USBD_MSC_BUFLEN);
+	cdev->data = (u8 *)usb_os_malloc(cdev->buf_size);
 	if (cdev->data == NULL) {
 		ret = HAL_ERR_MEM;
 		goto data_buf_fail;
@@ -1052,25 +1077,29 @@ static int usbd_msc_private_init(const usbd_msc_cb_t *cb, const usbd_msc_ep_cfg_
 		goto create_tx_sema_fail;
 	}
 
-	ret = rtos_task_create(&cdev->rx_task, "usbd_msc_rx_thread", usbd_msc_rx_thread, NULL, USBD_MSC_TRX_THREAD_STACK_SIZE, USBD_MSC_RX_THREAD_PRIORITY);
+	ret = rtos_task_create(&cdev->rx_task, "usbd_msc_rx_thread", usbd_msc_rx_thread, NULL,
+						   (cfg->trx_task_stack_size != 0U) ? cfg->trx_task_stack_size : USBD_MSC_DEFAULT_TRX_TASK_STACK_SIZE,
+						   (cfg->rx_task_priority != 0U) ? cfg->rx_task_priority : USBD_MSC_DEFAULT_RX_TASK_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create RX thread fail\n");
 		goto create_rx_thread_fail;
 	}
 
-	ret = rtos_task_create(&cdev->tx_task, "usbd_msc_tx_thread", usbd_msc_tx_thread, NULL, USBD_MSC_TRX_THREAD_STACK_SIZE, USBD_MSC_TX_THREAD_PRIORITY);
+	ret = rtos_task_create(&cdev->tx_task, "usbd_msc_tx_thread", usbd_msc_tx_thread, NULL,
+						   (cfg->trx_task_stack_size != 0U) ? cfg->trx_task_stack_size : USBD_MSC_DEFAULT_TRX_TASK_STACK_SIZE,
+						   (cfg->tx_task_priority != 0U) ? cfg->tx_task_priority : USBD_MSC_DEFAULT_TX_TASK_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create TX thread fail\n");
 		goto create_tx_thread_fail;
 	}
 
 	info = &ep_bulk_in->info;
-	info->addr = ep_cfg->bulk_in_addr;
+	info->addr = cfg->bulk_in_addr;
 	info->type = USB_CH_EP_TYPE_BULK;
 	ep_bulk_in->dis_zlp = 1;
 
 	info = &ep_bulk_out->info;
-	info->addr = ep_cfg->bulk_out_addr;
+	info->addr = cfg->bulk_out_addr;
 	info->type = USB_CH_EP_TYPE_BULK;
 
 
@@ -1125,12 +1154,12 @@ void usbd_msc_disk_deinit(void)
 #endif
 }
 
-int usbd_msc_init(const usbd_msc_cb_t *cb, const usbd_msc_ep_cfg_t *ep_cfg)
+int usbd_msc_init(const usbd_msc_cb_t *cb, const usbd_msc_config_t *cfg)
 {
 	usbd_msc_dev_t *cdev = &usbd_msc_dev;
 	int ret;
 
-	ret = usbd_msc_private_init(cb, ep_cfg);
+	ret = usbd_msc_private_init(cb, cfg);
 	if (ret == HAL_OK) {
 		cdev->from_composite = 0;
 		usbd_register_class(&usbd_msc_driver);
@@ -1139,12 +1168,12 @@ int usbd_msc_init(const usbd_msc_cb_t *cb, const usbd_msc_ep_cfg_t *ep_cfg)
 }
 
 #ifdef CONFIG_USBD_COMPOSITE
-int usbd_composite_msc_init(const usbd_msc_cb_t *cb, const usbd_msc_ep_cfg_t *ep_cfg)
+int usbd_composite_msc_init(const usbd_msc_cb_t *cb, const usbd_msc_config_t *cfg)
 {
 	usbd_msc_dev_t *cdev = &usbd_msc_dev;
 	int ret;
 
-	ret = usbd_msc_private_init(cb, ep_cfg);
+	ret = usbd_msc_private_init(cb, cfg);
 	if (ret == HAL_OK) {
 		cdev->from_composite = 1;
 		ret = usbd_composite_register_driver(&usbd_msc_driver);
@@ -1265,7 +1294,7 @@ void usbd_msc_send_csw(usb_dev_t *dev, u8 status)
 	cdev->bot_status = USBD_MSC_STATUS_NORMAL;
 
 	if (usbd_msc_bulk_transmit(dev, (u8 *)csw, USB_MSC_CSW_LEN) != HAL_OK) {
-		USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_XFER, cdev->ep_cfg->bulk_in_addr);
+		USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_XFER, cdev->cfg->bulk_in_addr);
 	}
 
 #if USBD_MSC_FIX_CV_TEST_ISSUE
@@ -1283,6 +1312,6 @@ void usbd_msc_send_csw(usb_dev_t *dev, u8 status)
 	 * Bulk-Only Mass Storage Reset re-arms Bulk-Out instead of resuming a lost BOT phase. */
 	if (usbd_msc_bulk_receive(dev, (u8 *)cbw, USB_MSC_CBW_LEN, USBD_MSC_CBW_BUF_LEN) != HAL_OK) {
 		cdev->bot_status = USBD_MSC_STATUS_RECOVERY;
-		USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_XFER, cdev->ep_cfg->bulk_out_addr);
+		USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_XFER, cdev->cfg->bulk_out_addr);
 	}
 }

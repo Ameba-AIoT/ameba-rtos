@@ -62,6 +62,28 @@ static const u8 cdc_ncm_mac_valid[6] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55};
 static u8 cdc_ncm_dhcp_done = 0;
 static __IO u8 cdc_ncm_detach_pending = 0;
 static usb_os_sema_t cdc_ncm_detach_sema;
+
+/* Serializes the USB stack bring up / tear down against the lwIP TX path.
+   usbh_cdc_ncm_deinit() frees the NTB/TX buffers that usbh_cdc_ncm_transmit()
+   walks, and usbh_deinit() memset()s the whole host handle; the class API only
+   checks its own ready state on entry, so under SMP the lwIP thread on core 1 can
+   be past that check while core 0 frees what it dereferences. TX must be excluded
+   by lock, not by core.
+   Created before the stack comes up and never deleted: TX is driven by the lwIP
+   thread, which lives as long as the firmware and can not be joined by the
+   example, so there is no point in time at which this mutex is provably
+   unreferenced. cdc_ncm_stack_ready is the gate that keeps callers off the stack
+   instead. */
+static rtos_mutex_t cdc_ncm_state_mutex = NULL;
+
+/* 1: the stack is fully up and the class API may be called. Cleared before any
+   tear down, so a non-zero value also implies cdc_ncm_state_mutex is valid. */
+static volatile u8 cdc_ncm_stack_ready = 0;
+
+/* Set by the hotplug thread BEFORE it takes the lock, so a TX queued behind it
+   gives up instead of re-taking the lock between lwIP packets and starving this
+   thread out of a teardown it must perform. */
+static volatile u8 cdc_ncm_teardown = 0;
 #if CONFIG_USBH_CDC_NCM_HOTPLUG
 rtos_task_t 	            cdc_ncm_hotplug_task;
 #endif
@@ -260,6 +282,14 @@ static int usbh_cdc_ncm_do_init(void)
 		}
 		rtos_time_delay_ms(1000);
 	} while (1); //wait usb init success
+
+	/* Open the gate as the very last step, so no TX runs against a half built
+	   stack. Teardown is cleared alongside it because a TX that saw neither flag
+	   would slip through. */
+	rtos_mutex_take(cdc_ncm_state_mutex, RTOS_MAX_TIMEOUT);
+	cdc_ncm_stack_ready = 1U;
+	cdc_ncm_teardown = 0U;
+	rtos_mutex_give(cdc_ncm_state_mutex);
 
 	return 1;
 }
@@ -527,30 +557,61 @@ static void usbh_ncm_hotplug_thread(void *param)
 	for (;;) {
 		usb_os_sema_take(cdc_ncm_detach_sema, USB_OS_SEMA_TIMEOUT);
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Hot plug\n");
+
+		/* Announce the teardown BEFORE contending for the lock, so a TX queued
+		 * behind it gives up instead of re-taking the lock between lwIP packets
+		 * and starving this thread out of a teardown it must perform. */
+		cdc_ncm_teardown = 1U;
+
+		rtos_mutex_take(cdc_ncm_state_mutex, RTOS_MAX_TIMEOUT);
+		/* Close the gate under the lock: no TX is in flight here, and any later
+		 * one gives up on the cleared flag. */
+		cdc_ncm_stack_ready = 0U;
+
 		//stop isr
 		usbh_stop();
 		usbh_cdc_ncm_deinit();
 		usbh_deinit();
+		rtos_mutex_give(cdc_ncm_state_mutex);
 
 		rtos_time_delay_ms(10);
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Free heap size: 0x%08x\n", usb_os_get_free_heap_size());
 
+		rtos_mutex_take(cdc_ncm_state_mutex, RTOS_MAX_TIMEOUT);
+
 		ret = usbh_init(&usbh_ncm_cfg, &usbh_ncm_usr_cb);
 		if (ret != HAL_OK) {
+			rtos_mutex_give(cdc_ncm_state_mutex);
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Init USBH fail\n");
 			break;
 		}
 
 		ret = usbh_cdc_ncm_init(&cdc_ncm_usb_cb, &cdc_ncm_priv);
 		if (ret < 0) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "Init CDC NCM fail\n");
 			usbh_deinit();
+			rtos_mutex_give(cdc_ncm_state_mutex);
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Init CDC NCM fail\n");
 			break;
 		}
 
 		/* Re-arm USB TRX after the re-init. */
 		usbh_start();
+
+		/* Open the gate as the very last step, so no TX runs against a half
+		 * rebuilt stack. Unlike the initial bring-up this path does not wait for
+		 * the device to be configured, matching the pre-existing behaviour. */
+		cdc_ncm_stack_ready = 1U;
+		cdc_ncm_teardown = 0U;
+		rtos_mutex_give(cdc_ncm_state_mutex);
 	}
+
+	/* A re-init failed, so the stack is gone for good: keep TX out from here on.
+	 * The detach sema is deliberately left alive, the class callback may still be
+	 * about to give it. */
+	cdc_ncm_stack_ready = 0U;
+	cdc_ncm_teardown = 1U;
+	RTK_LOGS(TAG, RTK_LOG_ERROR, "Hotplug thread exit\n");
+	rtos_task_delete(NULL);
 }
 #endif
 
@@ -559,7 +620,26 @@ static void usbh_ncm_hotplug_thread(void *param)
 
 int usb_ethernet_transmit(u8 *buf, u32 len, u8 block)
 {
-	return usbh_cdc_ncm_transmit(buf, len, block);
+	int ret;
+
+	/* Gate on cdc_ncm_stack_ready BEFORE touching the mutex: the handle is still
+	   NULL if the example never started, and the flag is already cleared if a
+	   teardown is pending. A hotplug right after this check is harmless, the mutex
+	   stays valid and the re-check under it skips the TX. */
+	if ((cdc_ncm_stack_ready == 0U) || (cdc_ncm_teardown != 0U)) {
+		return HAL_ERR_HW;
+	}
+
+	rtos_mutex_take(cdc_ncm_state_mutex, RTOS_MAX_TIMEOUT);
+	if ((cdc_ncm_stack_ready == 0U) || (cdc_ncm_teardown != 0U)) {
+		/* Lost the race against a teardown */
+		ret = HAL_ERR_HW;
+	} else {
+		ret = usbh_cdc_ncm_transmit(buf, len, block);
+	}
+	rtos_mutex_give(cdc_ncm_state_mutex);
+
+	return ret;
 }
 
 void example_usbh_cdc_ncm(void)
@@ -571,6 +651,15 @@ void example_usbh_cdc_ncm(void)
 #endif
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "USBH NCM demo start\n");
+
+	/* Created before the stack comes up and never deleted, see the declaration */
+	if (cdc_ncm_state_mutex == NULL) {
+		status = rtos_mutex_create(&cdc_ncm_state_mutex);
+		if (status != RTK_SUCCESS) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Create state mutex fail\n");
+			return;
+		}
+	}
 
 	status = usb_os_sema_create(&cdc_ncm_detach_sema);
 	if (status != HAL_OK) {
@@ -587,6 +676,15 @@ void example_usbh_cdc_ncm(void)
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create hotplug check task fail\n");
 		goto exit_release;
 	}
+#if defined(CONFIG_SMP)
+	/* The USB OTG ISR is delivered on CPU0: the GIC pins every SPI to core 0
+	   (ITARGETSR is written to 0x01010101 in arm_gic.c gic_dist_init). Pinning the
+	   hotplug/deinit thread to CPU0 puts it on the same core as the ISR, so the
+	   local interrupt disables inside the teardown are meaningful again. The lwIP
+	   TX thread stays unaffined: a pending teardown is excluded from it by
+	   cdc_ncm_state_mutex, not by core. */
+	rtos_task_set_affinity(cdc_ncm_hotplug_task, 0);
+#endif
 #endif
 
 #if CONFIG_USBH_CDC_NCM_MEM_CHECK

@@ -14,11 +14,8 @@
 
 /* Private defines -----------------------------------------------------------*/
 
-#define USBD_DFU_DEMO_BUF_SIZE      (USBD_DFU_XFER_SIZE * 4U)  /* 4 KB */
+#define USBD_DFU_DEMO_BUF_SIZE      (USBD_DFU_DEFAULT_XFER_SIZE * 4U)  /* 4 KB */
 #define USBD_DFU_DEMO_WRITE_POLL_MS 1U  /* write_task needs a scheduler tick even for RAM memcpy */
-
-// USB speed
-#define DFU_USB_SPEED                             USB_SPEED_HIGH
 
 // Thread priorities
 #define DFU_INIT_THREAD_PRIORITY                  5
@@ -32,9 +29,11 @@
 static const char *const TAG = "DFU";
 
 static const usbd_config_t dfu_cfg = {
-	.speed = DFU_USB_SPEED,
 	.isr_priority = INT_PRI_MIDDLE,
 	.diag_enable = 1,
+	.info = {
+		.prod_str = "Realtek DFU Device",
+	},
 #if defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBAD) || defined(CONFIG_AMEBADPLUS)
 	.nptx_max_epmis_cnt = 1U,
 #elif defined(CONFIG_AMEBAGREEN2)
@@ -84,7 +83,7 @@ static int dfu_cb_deinit(void)
  */
 static int dfu_cb_write(u16 block_num, u8 *buf, u32 len)
 {
-	u32 offset = (u32)block_num * USBD_DFU_XFER_SIZE;
+	u32 offset = (u32)block_num * USBD_DFU_DEFAULT_XFER_SIZE;
 	u32 end;
 
 	if (offset + len > USBD_DFU_DEMO_BUF_SIZE) {
@@ -106,7 +105,7 @@ static int dfu_cb_write(u16 block_num, u8 *buf, u32 len)
  */
 static int dfu_cb_read(u16 block_num, u8 *buf, u32 max_len)
 {
-	u32 offset = (u32)block_num * USBD_DFU_XFER_SIZE;
+	u32 offset = (u32)block_num * USBD_DFU_DEFAULT_XFER_SIZE;
 	u32 remaining;
 	/* Snapshot the length once: write() may extend it concurrently on another
 	 * core, and re-reading it between the bound check and the subtraction below
@@ -155,7 +154,7 @@ static void dfu_cb_reconf(void)
 }
 #endif /* USBD_DFU_WILL_DETACH */
 
-static usbd_dfu_cb_t dfu_cb = {
+static const usbd_dfu_cb_t dfu_cb = {
 	.init           = dfu_cb_init,
 	.deinit         = dfu_cb_deinit,
 	.write          = dfu_cb_write,
@@ -165,6 +164,12 @@ static usbd_dfu_cb_t dfu_cb = {
 #if USBD_DFU_WILL_DETACH
 	.reconf         = dfu_cb_reconf,
 #endif
+};
+
+static const usbd_dfu_config_t dfu_class_cfg = {
+	/* Every field is left 0/NULL to take the class default: transfer size, detach timeout and
+	 * status delay, the DNLOAD/MANIFEST poll hints, the iInterface string, and the three task
+	 * stacks and priorities. */
 };
 
 #if USBD_DFU_WILL_DETACH
@@ -191,7 +196,7 @@ static void usbd_dfu_reconf_thread(void *param)
 		if (ret != HAL_OK) {
 			break;
 		}
-		ret = usbd_dfu_init(&dfu_cb);
+		ret = usbd_dfu_init(&dfu_cb, &dfu_class_cfg);
 		if (ret != HAL_OK) {
 			usbd_deinit();
 			break;
@@ -229,7 +234,7 @@ static void example_usbd_dfu_thread(void *param)
 		goto exit;
 	}
 
-	ret = usbd_dfu_init(&dfu_cb);
+	ret = usbd_dfu_init(&dfu_cb, &dfu_class_cfg);
 	if (ret != HAL_OK) {
 		usbd_deinit();
 		goto exit;

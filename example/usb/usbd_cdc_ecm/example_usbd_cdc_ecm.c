@@ -32,13 +32,6 @@
 
 #define CDC_ECM_TX_DEBUG                          0
 
-// USB speed
-#ifdef CONFIG_SUPPORT_USB_FS_ONLY
-#define CDC_ECM_USB_SPEED                         USB_SPEED_FULL
-#else
-#define CDC_ECM_USB_SPEED                         USB_SPEED_HIGH
-#endif
-
 // Thread priorities
 #define CDC_ECM_INIT_THREAD_PRIORITY              5
 #define CDC_ECM_LINK_STATE_THREAD_PRIORITY        4
@@ -94,7 +87,7 @@ extern struct netif *pnetif_usb_eth;
 static u8 usbd_ecm_dhcp_server_started = 0;
 /*
  * dongle_mac: MAC address reported to the USB host side of the CDC-ECM link.
- * It is passed into usbd_ecm_priv and advertised through the ECM functional descriptor
+ * It is passed in through cdc_ecm_class_cfg and advertised through the ECM functional descriptor
  * (iMACAddress string), so the host's virtual Ethernet adapter is assigned this MAC.
  * In other words, it identifies the "host-facing" end of the USB Ethernet dongle.
  */
@@ -111,12 +104,7 @@ static const u8 dongle_mac[6] = {0x02, 0x11, 0x22, 0x33, 0x44, 0x55};
 static const u8 dhcp_server_mac[6] = {0x02, 0x11, 0x22, 0x33, 0x44, 0x56};
 static __IO u8 usbd_ecm_link_disconnected = 0;
 
-static const usbd_cdc_ecm_priv_data_t usbd_ecm_priv = {
-	dongle_mac,
-};
-
 static const usbd_cdc_ecm_cb_t usbd_ecm_cb = {
-	.priv = &usbd_ecm_priv,
 	.init = usbd_ecm_cb_init,
 	.deinit = usbd_ecm_cb_deinit,
 	.setup = usbd_ecm_cb_setup,
@@ -124,14 +112,19 @@ static const usbd_cdc_ecm_cb_t usbd_ecm_cb = {
 	.status_changed = usbd_ecm_cb_status_changed,
 };
 
-static const usbd_cdc_ecm_ep_cfg_t usbd_ecm_ep_cfg = {
+static const usbd_cdc_ecm_config_t cdc_ecm_class_cfg = {
 	.bulk_in_addr  = CDC_ECM_BULK_IN_EP,
 	.bulk_out_addr = CDC_ECM_BULK_OUT_EP,
 	.intr_in_addr  = CDC_ECM_INTR_IN_EP,
+	.mac = dongle_mac,
+	/* Every remaining field is left 0 to take the class default: INTR IN interval,
+	 * TX queue depth and timeout, RX task stack size and priority. */
 };
 
 static const usbd_config_t usbd_ecm_cfg = {
-	.speed = CDC_ECM_USB_SPEED,
+	.info = {
+		.prod_str = "Realtek CDC ECM Device",
+	},
 	.isr_priority = INT_PRI_MIDDLE,
 	.ext_intr_enable = USBD_SOF_INTR,
 #if defined(CONFIG_AMEBASMART)
@@ -243,6 +236,21 @@ static __IO u8 usbd_ecm_attach_old_status = USBD_ATTACH_STATUS_INIT;
 static rtos_sema_t usbd_ecm_attach_status_changed_sema = NULL;
 static __IO u8 usbd_ecm_hotplug_thread_running = 0;
 #endif
+
+/* Serializes the USB stack bring up/tear down against the TX path, taken by the
+ * hotplug thread and by usb_ethernet_transmit().
+ * Created once and never deleted: TX is driven by the lwIP thread, which lives as
+ * long as the firmware and can not be joined by the example, so there is no point
+ * in time at which this mutex is provably unreferenced. usbd_ecm_stack_ready is
+ * the gate that keeps callers off the stack instead. */
+static rtos_mutex_t usbd_ecm_state_mutex = NULL;
+/* 1: usbd_init() and usbd_cdc_ecm_init() both done, TX allowed. Cleared before any
+ * tear down, so a non-zero value also implies usbd_ecm_state_mutex is valid.
+ * usbd_cdc_ecm_deinit() frees the TX ring buffer, the BULK IN DMA buffer and the
+ * TX slot sema, all of which usbd_cdc_ecm_transmit() dereferences; its internal
+ * data_alt_setting check only guards the entry and retry points, so under SMP the
+ * lwIP thread must be excluded from the whole teardown, not just narrowed. */
+static volatile u8 usbd_ecm_stack_ready = 0;
 
 /* Private functions ---------------------------------------------------------*/
 static void usbd_ecm_link_change_thread(void *param)
@@ -492,31 +500,47 @@ static void usbd_ecm_hotplug_thread(void *param)
 		if (current_status == USBD_ATTACH_STATUS_DETACHED) {
 			RTK_LOGS(TAG, RTK_LOG_INFO, "DETACHED\n");
 
+			/* Close the gate before tearing down. usb_ethernet_transmit() contends
+			 * for the same mutex, so no TX is in flight here and any later one sees
+			 * usbd_ecm_stack_ready == 0 and gives up. */
+			rtos_mutex_take(usbd_ecm_state_mutex, RTOS_MAX_TIMEOUT);
+			usbd_ecm_stack_ready = 0;
+
 			// Deinitialize CDC ECM
 			usbd_cdc_ecm_deinit();
 
 			// Deinitialize USB device
 			usbd_deinit();
+			rtos_mutex_give(usbd_ecm_state_mutex);
 
 			// Small delay to ensure proper cleanup
 			rtos_time_delay_ms(100);
 
 			RTK_LOGS(TAG, RTK_LOG_INFO, "Free heap 0x%x\n", rtos_mem_get_free_heap_size());
 
+			rtos_mutex_take(usbd_ecm_state_mutex, RTOS_MAX_TIMEOUT);
+
 			// Re-initialize USB device
 			ret = usbd_init(&usbd_ecm_cfg);
 			if (ret != HAL_OK) {
+				rtos_mutex_give(usbd_ecm_state_mutex);
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "Init fail %d\n", ret);
 				break;
 			}
 
 			// Re-initialize CDC ECM
-			ret = usbd_cdc_ecm_init(&usbd_ecm_cb, &usbd_ecm_ep_cfg);
+			ret = usbd_cdc_ecm_init(&usbd_ecm_cb, &cdc_ecm_class_cfg);
 			if (ret != HAL_OK) {
-				RTK_LOGS(TAG, RTK_LOG_ERROR, "Init ECM fail %d\n", ret);
 				usbd_deinit();
+				rtos_mutex_give(usbd_ecm_state_mutex);
+				RTK_LOGS(TAG, RTK_LOG_ERROR, "Init ECM fail %d\n", ret);
 				break;
 			}
+
+			/* Open the gate at the very last step, so that no TX runs before the
+			 * re-init is fully done. */
+			usbd_ecm_stack_ready = 1;
+			rtos_mutex_give(usbd_ecm_state_mutex);
 
 			RTK_LOGS(TAG, RTK_LOG_INFO, "Reinit done\n");
 
@@ -527,6 +551,9 @@ static void usbd_ecm_hotplug_thread(void *param)
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Thread exit\n");
 	usbd_ecm_hotplug_thread_running = 0;
+	/* Either the loop was asked to stop or a re-init failed; in both cases the
+	 * stack must be treated as gone, so keep TX out for good. */
+	usbd_ecm_stack_ready = 0;
 
 	/* The stack is fully deinited here, no ISR callback can give the sema any more.
 	   This thread is its only user left: free it as the last owner. */
@@ -552,6 +579,15 @@ static void usbd_ecm_init_thread(void *param)
 
 	rltk_usb_eth_init();
 
+	/* Created before the stack comes up and never deleted, see the declaration */
+	if (usbd_ecm_state_mutex == NULL) {
+		ret = rtos_mutex_create(&usbd_ecm_state_mutex);
+		if (ret != RTK_SUCCESS) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Create state mutex fail\n");
+			goto exit_cleanup;
+		}
+	}
+
 #if CDC_ECM_HOTPLUG
 	// Create semaphore for hotplug detection
 	ret = rtos_sema_create(&usbd_ecm_attach_status_changed_sema, 0U, 1U);
@@ -569,11 +605,14 @@ static void usbd_ecm_init_thread(void *param)
 	}
 
 	// Initialize CDC ECM
-	ret = usbd_cdc_ecm_init(&usbd_ecm_cb, &usbd_ecm_ep_cfg);
+	ret = usbd_cdc_ecm_init(&usbd_ecm_cb, &cdc_ecm_class_cfg);
 	if (ret != HAL_OK) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Init ECM fail %d\n", ret);
 		goto exit_usbd_cdc_ecm_init_fail;
 	}
+
+	/* The stack is fully up: allow TX */
+	usbd_ecm_stack_ready = 1;
 
 #if CDC_ECM_HOTPLUG
 	// Create hotplug detection thread
@@ -594,7 +633,7 @@ static void usbd_ecm_init_thread(void *param)
 #endif
 #endif
 
-	RTK_LOGS(TAG, RTK_LOG_INFO, "ECM demo start\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD CDC ECM demo start\n");
 
 	// Keep init thread alive briefly then exit
 	rtos_time_delay_ms(100);
@@ -603,7 +642,13 @@ static void usbd_ecm_init_thread(void *param)
 
 #if CDC_ECM_HOTPLUG
 exit_create_hotplug_task_fail:
+	/* The gate was already opened above, so the lwIP thread may be inside
+	 * usbd_cdc_ecm_transmit() right now: take the lock here too, exactly as the
+	 * hotplug thread does, instead of only closing the gate. */
+	rtos_mutex_take(usbd_ecm_state_mutex, RTOS_MAX_TIMEOUT);
+	usbd_ecm_stack_ready = 0;
 	usbd_cdc_ecm_deinit();
+	rtos_mutex_give(usbd_ecm_state_mutex);
 #endif
 
 exit_usbd_cdc_ecm_init_fail:
@@ -615,8 +660,9 @@ exit_usbd_init_fail:
 		rtos_sema_delete(usbd_ecm_attach_status_changed_sema);
 		usbd_ecm_attach_status_changed_sema = NULL;
 	}
-exit_cleanup:
 #endif
+	/* usbd_ecm_state_mutex is deliberately kept, see its declaration */
+exit_cleanup:
 	RTK_LOGS(TAG, RTK_LOG_ERROR, "Init fail\n");
 	rtos_task_delete(NULL);
 }
@@ -625,7 +671,26 @@ exit_cleanup:
 
 int usb_ethernet_transmit(u8 *buf, u32 len, u8 block)
 {
-	return usbd_cdc_ecm_transmit(buf, len, block);
+	int ret;
+
+	/* Gate on usbd_ecm_stack_ready BEFORE touching the mutex: it is still NULL if
+	 * the example was never started, and already cleared if the init failed or the
+	 * stack is gone for good. A hotplug right after this check is harmless, the
+	 * mutex stays valid and the re-check below skips the TX. */
+	if (usbd_ecm_stack_ready == 0U) {
+		return HAL_ERR_HW;
+	}
+
+	rtos_mutex_take(usbd_ecm_state_mutex, RTOS_MAX_TIMEOUT);
+	if (usbd_ecm_stack_ready == 0U) {
+		/* Lost the race against a hotplug tear down */
+		ret = HAL_ERR_HW;
+	} else {
+		ret = usbd_cdc_ecm_transmit(buf, len, block);
+	}
+	rtos_mutex_give(usbd_ecm_state_mutex);
+
+	return ret;
 }
 
 /**

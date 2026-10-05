@@ -31,17 +31,25 @@ None
 
 # Expect result
 
-1. Reset the board, following log shall be printed on the LOGUART console, make sure there is no USB related error reported:
+1. Reset the board, following log shall be printed on the LOGUART console. The test PASSes only if the lines below show up and no error level log (`-E`) is reported:
    ```
-   [NCM-I] USBD NCM demo start
+   [USBD-A] INIT
+   [NCM-I] USBD CDC NCM demo start
+   [NCM-I] Enter link status task!
    ```
+   Notes:
+   * `[USBD-A] INIT` comes from the USB device core, not from the example.
+   * On AmebaGreen2 an extra `[USB-I] UPHY para from ...` line is printed by the USB HAL before `[USBD-A] INIT`.
 
 2. Connect the USB port of Ameba board to USB host (Another Ameba board as USB CDC NCM host) with USB cable.
 
 3. If the test runs successfully, the console will show:
    ```
-   Device IP: 192.168.45.1
-   DHCP Server started
+   [NCM-I] Status change 0 -> 1
+   [NCM-I] Attached
+   [NCM-I] DHCP Server MAC: 00:e0:4c:xx:xx:xx
+   [NCM-I] Device IP: 192.168.45.1
+   [NCM-I] DHCP Server started
    ```
 
 4. After the host obtains an IP address via DHCP (e.g., 192.168.45.2), type command `AT+PING=192.168.45.2` on the device console to verify connectivity. Make sure the ping succeeds with no packet loss.
@@ -50,7 +58,24 @@ None
 
    Note: For detailed information about iperf and ping, please refer to https://aiot.realmcu.com/zh/latest/rtos/atcmd/at_command_network.html
 
-6. A shell command `usbd_ncm_link <0|1>` is provided to report the upper-layer network link state to the host. Calling it is edge-triggered; repeating the same value is a no-op inside the class driver.
+6. Hotplug check: the example tears down and re-inits the USB stack on every detach, so unplug and re-plug the cable, following log shall be printed for each cycle:
+   ```
+   [NCM-I] Status change 1 -> 2
+   [NCM-I] DETACHED
+   [USBD-A] DEINIT
+   [NCM-I] Free heap 0x<value>
+   [USBD-A] INIT
+   [NCM-I] Reinit done
+   [NCM-I] Stopping USB NCM DHCP Server...
+   [NCM-I] DHCP Server stopped
+   ```
+   The `Free heap` value shall stay stable across cycles, a value that keeps dropping indicates a memory leak.
+
+# Shell commands
+
+| Command | Description |
+| --- | --- |
+| `usbd_ncm_link <0\|1>` | Report the upper-layer network link state to the host. `1` means link up, `0` means link down. The call is edge-triggered, repeating the same value is a no-op inside the class driver. |
 
 # Note
 

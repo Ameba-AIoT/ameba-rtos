@@ -79,7 +79,7 @@ static const u8 usbd_msc_page80_inquiry_data[] = {
 };
 
 /* MSC standard inquiry data */
-static const u8 usbd_msc_standard_inquiry_data[] = {
+const u8 usbd_msc_default_inquiry_data[INQUIRY_DATA_LEN] = {
 	0x00,          /* Direct Access Device */
 	0x80,          /* RMB = 1: Removable Medium */
 	0x02,          /* Version: No conformance claim to standard */
@@ -176,7 +176,9 @@ static int  usbd_scsi_inquiry(usbd_msc_dev_t *cdev, u8 *params)
 		/* INQUIRY allocation length is a 16-bit big-endian field (CDB bytes 3-4) */
 		alloc_len = ((u16)params[3] << 8) | params[4];
 		cdev->data_length = MIN(alloc_len, INQUIRY_DATA_LEN);
-		usb_os_memcpy((void *)cdev->data, (const void *)usbd_msc_standard_inquiry_data, cdev->data_length);
+		/* Built at init from the configured identification strings, so it is per-instance
+		   rather than the const default template. */
+		usb_os_memcpy((void *)cdev->data, (const void *)cdev->inquiry_data, cdev->data_length);
 	}
 
 	return HAL_OK;
@@ -447,7 +449,7 @@ static int usbd_scsi_read(usbd_msc_dev_t *cdev, u8 *params)
 
 		cdev->bot_state = USBD_MSC_DATA_IN;
 	}
-	cdev->data_length = USBD_MSC_BUFLEN;
+	cdev->data_length = cdev->buf_size;
 
 	return usbd_scsi_process_read(cdev);
 }
@@ -516,11 +518,11 @@ static int usbd_scsi_write(usbd_msc_dev_t *cdev, u8 *params)
 			return HAL_ERR_PARA;
 		}
 
-		len = MIN(len, USBD_MSC_BUFLEN);
+		len = MIN(len, cdev->buf_size);
 
 		/* Prepare EP to receive first data packet */
 		cdev->bot_state = USBD_MSC_DATA_OUT;
-		usbd_msc_bulk_receive(cdev->dev, cdev->data, len, USBD_MSC_BUFLEN);
+		usbd_msc_bulk_receive(cdev->dev, cdev->data, len, cdev->buf_size);
 	} else { /* Write Process ongoing */
 		return usbd_scsi_process_write(cdev);
 	}
@@ -629,7 +631,7 @@ static int usbd_scsi_process_read(usbd_msc_dev_t *cdev)
 		cdev->blklen = (len >> USBD_MSC_BLK_BITS);
 	}
 
-	len = MIN(len, USBD_MSC_BUFLEN);
+	len = MIN(len, cdev->buf_size);
 
 	if (cdev->disk_ops.disk_read(cdev->lba, cdev->data, (len >> USBD_MSC_BLK_BITS))) {
 		usbd_scsi_sense_code(cdev, SCSI_SENSE_KEY_HARDWARE_ERROR, SCSI_ASC_UNRECOVERED_READ_ERROR);
@@ -659,7 +661,7 @@ static int usbd_scsi_process_write(usbd_msc_dev_t *cdev)
 {
 	u32 len = cdev->blklen * USBD_MSC_BLK_SIZE;
 
-	len = MIN(len, USBD_MSC_BUFLEN);
+	len = MIN(len, cdev->buf_size);
 
 	if (cdev->disk_ops.disk_write(cdev->lba, cdev->data, (len >> USBD_MSC_BLK_BITS))) {
 		usbd_scsi_sense_code(cdev, SCSI_SENSE_KEY_HARDWARE_ERROR, SCSI_ASC_WRITE_FAULT);
@@ -675,9 +677,9 @@ static int usbd_scsi_process_write(usbd_msc_dev_t *cdev)
 	if (cdev->blklen == 0U) {
 		usbd_msc_send_csw(cdev->dev, BOT_CSW_CMD_PASSED);
 	} else {
-		len = MIN((cdev->blklen * USBD_MSC_BLK_SIZE), USBD_MSC_BUFLEN);
+		len = MIN((cdev->blklen * USBD_MSC_BLK_SIZE), cdev->buf_size);
 		/* Prepare EP to Receive next packet */
-		usbd_msc_bulk_receive(cdev->dev, cdev->data, len, USBD_MSC_BUFLEN);
+		usbd_msc_bulk_receive(cdev->dev, cdev->data, len, cdev->buf_size);
 	}
 
 	return HAL_OK;

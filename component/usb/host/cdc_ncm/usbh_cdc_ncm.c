@@ -120,7 +120,7 @@ typedef struct {
 /* Private function prototypes -----------------------------------------------*/
 static int usbh_cdc_ncm_attach(usb_host_t *host);
 static void usbh_cdc_ncm_detach(usb_host_t *host);
-static void usbh_cdc_ncm_process(usb_host_t *host, usbh_event_t *event);
+static void usbh_cdc_ncm_process(usb_host_t *host, usbh_drv_msg_t *msg);
 static int usbh_cdc_ncm_setup(usb_host_t *host);
 static void usbh_cdc_ncm_sof(usb_host_t *host);
 static void usbh_cdc_ncm_process_bulk_out(usb_host_t *host);
@@ -894,6 +894,10 @@ static int usbh_cdc_ncm_parse_interface_desc(usb_host_t *host)
 		cdc->data_itf_id = data_itf_desc->bInterfaceNumber;
 		cdc->data_alt_set = data_itf_desc->bAlternateSetting;
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Get NCM data if(%d)alt(%d)\n", cdc->data_itf_id, cdc->data_alt_set);
+		/* Clear before the scan: the flags survive a detach, so a previous device
+		 * must not make a missing endpoint on this one look present. */
+		cdc->bulk_rx.valid = 0;
+		cdc->bulk_tx.valid = 0;
 		for (i = 0; i < data_itf_desc->bNumEndpoints; i++) {
 			ep = &data_itf_desc->ep_desc_array[i];
 			if (USB_EP_IS_IN(ep->bEndpointAddress)) {
@@ -903,6 +907,13 @@ static int usbh_cdc_ncm_parse_interface_desc(usb_host_t *host)
 				usb_os_memcpy((void *)&cdc->bulk_tx.ep_desc, (const void *)ep, sizeof(usbh_ep_desc_t));
 				cdc->bulk_tx.valid = 1;
 			}
+		}
+		/* NCM 1.0 6.2: the data class interface must expose one bulk IN and one bulk
+		 * OUT, otherwise no NTB can be exchanged. Reject here rather than reporting a
+		 * successful attach, else the SOF poll would drive a pipe never opened. */
+		if ((cdc->bulk_rx.valid == 0U) || (cdc->bulk_tx.valid == 0U)) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "NCM bulk ep missing\n");
+			return HAL_ERR_PARA;
 		}
 	} else {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Data itf parse fail\n");
@@ -1053,6 +1064,7 @@ static int usbh_cdc_ncm_parse_ntb16_block(u8 *ntb_buf, u32 ntb_len)
 	usbh_cdc_ncm_host_t *cdc = &usbh_cdc_ncm_host;
 	usb_cdc_ncm_nth16_t *nth;
 	usb_cdc_ncm_ndp16_t *ndp;
+	const usb_cdc_ncm_ndp16_entry_t *entries;
 	u16 ndp_offset;
 	u16 prev_offset;
 	u16 entry_cnt;
@@ -1103,7 +1115,7 @@ static int usbh_cdc_ncm_parse_ntb16_block(u8 *ntb_buf, u32 ntb_len)
 			break;
 		}
 
-		/* Datagram entries = (wLength - 8) / 4; last entry is a 0,0 terminator */
+		/* Datagram entries = (wLength - NDP16 header) / 4; last entry is a 0,0 terminator */
 		if (ndp->wLength < (USB_CDC_NCM_NDP16_MIN_LENGTH - USB_CDC_NCM_NDP16_ENTRY_LENGTH)) {
 			break;
 		}
@@ -1114,11 +1126,17 @@ static int usbh_cdc_ncm_parse_ntb16_block(u8 *ntb_buf, u32 ntb_len)
 					 ndp_offset, ndp->wLength, block_len);
 			break;
 		}
-		entry_cnt = (ndp->wLength - 8U) / USB_CDC_NCM_NDP16_ENTRY_LENGTH;
+		entry_cnt = (ndp->wLength - USB_CDC_NCM_NDP16_HEADER_LENGTH) / USB_CDC_NCM_NDP16_ENTRY_LENGTH;
+
+		/* Address the entry array through a pointer rather than ndp->aEntry[i]:
+		 * aEntry is declared with 2 elements as a place-holder, while a real NDP
+		 * carries entry_cnt of them (bounds-checked against block_len just above),
+		 * so indexing the declared array would be out of bounds. */
+		entries = (const usb_cdc_ncm_ndp16_entry_t *)(ntb_buf + ndp_offset + USB_CDC_NCM_NDP16_HEADER_LENGTH);
 
 		for (i = 0; i < entry_cnt; i++) {
-			u16 dg_index = ndp->aEntry[i].wDatagramIndex;
-			u16 dg_len = ndp->aEntry[i].wDatagramLength;
+			u16 dg_index = entries[i].wDatagramIndex;
+			u16 dg_len = entries[i].wDatagramLength;
 
 			/* Null entry terminates the datagram list */
 			if ((dg_index == 0) || (dg_len == 0)) {
@@ -1296,7 +1314,7 @@ static int usbh_cdc_ncm_setup(usb_host_t *host)
   * @param  host: Host handle
   * @retval None
   */
-static void usbh_cdc_ncm_process(usb_host_t *host, usbh_event_t *event)
+static void usbh_cdc_ncm_process(usb_host_t *host, usbh_drv_msg_t *msg)
 {
 	u8 req_status = HAL_OK;
 	usbh_cdc_ncm_host_t *cdc = &usbh_cdc_ncm_host;
@@ -1304,8 +1322,8 @@ static void usbh_cdc_ncm_process(usb_host_t *host, usbh_event_t *event)
 
 	switch (cdc->state) {
 	case CDC_NCM_STATE_TRANSFER:
-		if (event) {
-			pipe_num = event->pipe_num;
+		if (msg) {
+			pipe_num = msg->pipe_num;
 			if (pipe_num == cdc->bulk_tx.pipe.pipe_num) {
 				usbh_cdc_ncm_process_bulk_out(host);
 			} else if (pipe_num == cdc->bulk_rx.pipe.pipe_num) {
@@ -1568,7 +1586,7 @@ static int usbh_cdc_ncm_intr_rx_time_check(void)
 }
 
 /**
-  * @brief  Send event to transmit BULK data.
+  * @brief  Trigger transmission of BULK data.
   * @note   This function is called within an interrupt service routine (ISR) context;
   *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @return 0 on success, non-zero on failure.
@@ -1603,7 +1621,7 @@ static int usbh_cdc_ncm_bulk_tx(void)
 }
 
 /**
-  * @brief  Send event to receive BULK data.
+  * @brief  Trigger reception of BULK data.
   * @note   This function is called within an interrupt service routine (ISR) context;
   *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @return 0 on success, non-zero on failure.
@@ -1634,7 +1652,7 @@ static int usbh_cdc_ncm_bulk_receive(void)
 }
 
 /**
-  * @brief  Send event to receive INTR data.
+  * @brief  Trigger reception of INTR data.
   * @note   This function is called within an interrupt service routine (ISR) context;
   *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @return 0 on success, non-zero on failure.
@@ -1697,8 +1715,8 @@ static int usbh_cdc_ncm_agg_has_room(u8 b, u16 eth_len)
 
 	dg_index = usbh_cdc_ncm_tx_align_dg(cdc->tx_agg_write_off[b]);
 	ndp_off = (dg_index + eth_len + (ndp_align - 1U)) & ~((u32)ndp_align - 1U);
-	/* NDP = 8B header + (current + this + terminator) * 4B entries */
-	ndp_len = 8U + ((u32)cdc->tx_agg_pkt_cnt[b] + 2U) * USB_CDC_NCM_NDP16_ENTRY_LENGTH;
+	/* NDP = NDP16 header + (current + this + terminator) * 4B entries */
+	ndp_len = USB_CDC_NCM_NDP16_HEADER_LENGTH + ((u32)cdc->tx_agg_pkt_cnt[b] + 2U) * USB_CDC_NCM_NDP16_ENTRY_LENGTH;
 	total = ndp_off + ndp_len;
 
 	return (total <= usbh_cdc_ncm_tx_max_ntb(USBH_CDC_NCM_TX_AGG_BUF_SIZE)) ? 1 : 0;
@@ -1724,6 +1742,7 @@ static u16 usbh_cdc_ncm_agg_finalize(u8 b)
 	usbh_cdc_ncm_host_t *cdc = &usbh_cdc_ncm_host;
 	usb_cdc_ncm_nth16_t *nth;
 	usb_cdc_ncm_ndp16_t *ndp;
+	usb_cdc_ncm_ndp16_entry_t *entries;
 	u16 ndp_align = usbh_cdc_ncm_tx_ndp_align();
 	u16 ndp_off;
 	u16 i;
@@ -1737,15 +1756,21 @@ static u16 usbh_cdc_ncm_agg_finalize(u8 b)
 
 	ndp = (usb_cdc_ncm_ndp16_t *)(cdc->tx_agg_buf[b] + ndp_off);
 	ndp->dwSignature = USB_CDC_NCM_NDP16_NOCRC_SIGNATURE;
-	/* 8B header + (cnt datagram entries + 1 terminator) * 4B */
-	ndp->wLength = 8U + (u16)((cnt + 1U) * USB_CDC_NCM_NDP16_ENTRY_LENGTH);
+	/* NDP16 header + (cnt datagram entries + 1 terminator) * 4B */
+	ndp->wLength = USB_CDC_NCM_NDP16_HEADER_LENGTH + (u16)((cnt + 1U) * USB_CDC_NCM_NDP16_ENTRY_LENGTH);
 	ndp->wNextFpIndex = 0U;
+
+	/* Address the entry array through a pointer rather than ndp->aEntry[i]:
+	 * aEntry is declared with 2 elements as a place-holder, while cnt may reach
+	 * USBH_CDC_NCM_TX_AGG_MAX_DATAGRAMS, so indexing the declared array would be
+	 * out of bounds. agg_has_room() already reserved cnt + 1 entries. */
+	entries = (usb_cdc_ncm_ndp16_entry_t *)((u8 *)ndp + USB_CDC_NCM_NDP16_HEADER_LENGTH);
 	for (i = 0; i < cnt; i++) {
-		ndp->aEntry[i].wDatagramIndex = cdc->tx_agg_data_pos_idx[b][i];
-		ndp->aEntry[i].wDatagramLength = cdc->tx_agg_pkt_len[b][i];
+		entries[i].wDatagramIndex = cdc->tx_agg_data_pos_idx[b][i];
+		entries[i].wDatagramLength = cdc->tx_agg_pkt_len[b][i];
 	}
-	ndp->aEntry[cnt].wDatagramIndex = 0U;   /* terminator */
-	ndp->aEntry[cnt].wDatagramLength = 0U;
+	entries[cnt].wDatagramIndex = 0U;   /* terminator */
+	entries[cnt].wDatagramLength = 0U;
 
 	nth = (usb_cdc_ncm_nth16_t *)cdc->tx_agg_buf[b];
 	nth->dwSignature = USB_CDC_NCM_NTH16_SIGNATURE;

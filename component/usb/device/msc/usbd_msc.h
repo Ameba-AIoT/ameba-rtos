@@ -11,6 +11,7 @@
 
 #include "usbd.h"
 #include "usb_msc.h"
+#include "usb_scsi.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -27,18 +28,17 @@ extern "C" {
 /** @addtogroup Device_MSC_Constants Device MSC Constants
  * @{
  */
-#define USBD_MSC_TX_THREAD_PRIORITY    5U                 /**< TX thread priority */
-#define USBD_MSC_RX_THREAD_PRIORITY    5U                 /**< RX thread priority */
-#define USBD_MSC_TRX_THREAD_STACK_SIZE 1024U              /**< TX/RX thread tack size */
+/* Defaults applied when the matching @ref usbd_msc_config_t field is left 0. */
+#define USBD_MSC_DEFAULT_TX_TASK_PRIORITY   5U      /**< Default TX task priority. */
+#define USBD_MSC_DEFAULT_RX_TASK_PRIORITY   5U      /**< Default RX task priority. */
+#define USBD_MSC_DEFAULT_TRX_TASK_STACK_SIZE 1024U  /**< Default TX/RX task stack size in bytes. */
+#define USBD_MSC_DEFAULT_BUF_SIZE      (16 * 1024)  /**< Default size of the internal data buffer. */
 
-/* Defines configuration constants like VID/PID, USB strings, and power settings. */
-#define USBD_MSC_VID                   USB_VID            /**< Vendor ID. */
-#define USBD_MSC_PID                   USB_PID            /**< Product ID. */
-#define USBD_MSC_LANGID_STRING         0x0409U            /**< Language ID string (0x0409 for U.S. English). */
-#define USBD_MSC_MFG_STRING            "Realtek"          /**< Manufacturer string. */
-#define USBD_MSC_PROD_HS_STRING        "Realtek MSC (HS)" /**< Product string for High-Speed. */
-#define USBD_MSC_PROD_FS_STRING        "Realtek MSC (FS)" /**< Product string for Full-Speed. */
-#define USBD_MSC_SN_STRING             "1234567890"       /**< Serial number string. */
+/* Lengths of the SCSI INQUIRY identification fields (Ref SPC Table 59). A configured string
+ * shorter than the field is space-padded; a longer one is an error. */
+#define USBD_MSC_INQUIRY_VENDOR_LEN    8U           /**< Vendor identification field length. */
+#define USBD_MSC_INQUIRY_PRODUCT_LEN   16U          /**< Product identification field length. */
+#define USBD_MSC_INQUIRY_REVISION_LEN  4U           /**< Product revision level field length. */
 
 /* Defines MSC-specific endpoint parameters. */
 #define USBD_MSC_HS_MAX_PACKET_SIZE    512U               /**< High-Speed BULK IN & OUT maximum packet size. */
@@ -50,7 +50,6 @@ extern "C" {
 /* Defines storage-related parameters like block size and buffer length. */
 #define USBD_MSC_BLK_BITS              9                        /**< Number of bits per block (log2(512)). */
 #define USBD_MSC_BLK_SIZE              (1 << USBD_MSC_BLK_BITS) /**< Block size in bytes (512). */
-#define USBD_MSC_BUFLEN                (16 * 1024)              /**< Default size of the internal data buffer. */
 /**
   * @brief Size of the CBW buffer.
   * @note  The BULK OUT DMA window is always a multiple of the endpoint max packet size, so the
@@ -140,9 +139,34 @@ typedef struct {
  * @details This structure holds the endpoint addresses for MSC bulk IN and bulk OUT endpoints.
  */
 typedef struct {
+	/**
+	 * @brief Size of the internal data buffer, 0 uses @ref USBD_MSC_DEFAULT_BUF_SIZE.
+	 * @details Bounds how much of a READ/WRITE the class moves per SCSI round trip, so it
+	 *          trades throughput against heap. Shall be at least @ref USBD_MSC_BLK_SIZE.
+	 */
+	u32 buf_size;
+	const char *itf_str;                        /**< iInterface string of the MSC interface, NULL for none. */
+	/**
+	 * @brief SCSI INQUIRY vendor identification, NULL for the class default.
+	 * @details Space-padded to @ref USBD_MSC_INQUIRY_VENDOR_LEN; longer is rejected at init.
+	 */
+	const char *inquiry_vendor;
+	/**
+	 * @brief SCSI INQUIRY product identification, NULL for the class default.
+	 * @details Space-padded to @ref USBD_MSC_INQUIRY_PRODUCT_LEN; longer is rejected at init.
+	 */
+	const char *inquiry_product;
+	/**
+	 * @brief SCSI INQUIRY product revision level, NULL for the class default.
+	 * @details Space-padded to @ref USBD_MSC_INQUIRY_REVISION_LEN; longer is rejected at init.
+	 */
+	const char *inquiry_revision;
+	u16 trx_task_stack_size;                    /**< TX/RX task stack size in bytes, 0 uses @ref USBD_MSC_DEFAULT_TRX_TASK_STACK_SIZE. */
 	u8  bulk_in_addr;                           /**< Bulk IN endpoint address */
 	u8  bulk_out_addr;                          /**< Bulk OUT endpoint address */
-} usbd_msc_ep_cfg_t;
+	u8  tx_task_priority;                       /**< TX task priority, 0 uses @ref USBD_MSC_DEFAULT_TX_TASK_PRIORITY. */
+	u8  rx_task_priority;                       /**< RX task priority, 0 uses @ref USBD_MSC_DEFAULT_RX_TASK_PRIORITY. */
+} usbd_msc_config_t;
 
 /**
  * @brief Main structure for the MSC device class.
@@ -150,7 +174,7 @@ typedef struct {
  * @note The original snippet was incomplete.
  */
 typedef struct {
-	const usbd_msc_ep_cfg_t *ep_cfg;                /**< Pointer to the endpoint configuration structure. */
+	const usbd_msc_config_t *cfg;                   /**< Pointer to the class configuration (set by init). */
 	const usbd_msc_cb_t *cb;                        /**< Pointer to the user callback structure. */
 	usb_dev_t *dev;                                 /**< Pointer to the USB device structure. */
 	usbd_ep_t ep_bulk_in;                           /**< Structure for the Bulk IN endpoint. */
@@ -164,6 +188,8 @@ typedef struct {
 	rtos_sema_t tx_sema;                            /**< RTOS semaphore to signal data transmission. */
 	usb_msc_scsi_sense_data_t scsi_sense_data[USBD_MSC_SENSE_LIST_DEPTH]; /**< Array to store SCSI sense data. */
 	u8 *data;                                       /**< Pointer to the data buffer for transfers. */
+	u32 buf_size;                                   /**< Allocated size of `data`, i.e. the resolved
+	                                                     usbd_msc_config_t::buf_size. */
 	u32 data_length;                                /**< Transfer data length. */
 	u32 num_sectors;                                /**< Total number of sectors on the disk. */
 	u32 lba;                                        /**< Current logical block address for operations. */
@@ -179,6 +205,13 @@ typedef struct {
 	u8 ro : 1;                                      /**< Flag for media is write-protected. */
 	u8 bot_reset_pending : 1;                       /**< Set after BOT Reset; triggers one-time OUT EP reinit in send_csw. */
 	u8 from_composite;                              /**< Flag indicating if part of a composite device. */
+	u8 itf_str_idx;                                 /**< iInterface string index from usbd_add_string(), 0 for none. */
+	/**
+	 * @brief SCSI standard INQUIRY response, built at init from the configured identification strings.
+	 * @details Held per instance rather than as a const table because the vendor/product/revision
+	 *          fields are configurable; answered verbatim by the INQUIRY handler.
+	 */
+	u8 inquiry_data[INQUIRY_DATA_LEN];
 } usbd_msc_dev_t;
 
 /* Exported variables --------------------------------------------------------*/
@@ -194,19 +227,19 @@ typedef struct {
 /**
  * @brief Initializes the MSC device class driver (standalone).
  * @param[in] cb: Pointer to the user callback structure.
- * @param[in] ep_cfg: Pointer to the endpoint configuration structure.
+ * @param[in] cfg: Pointer to the class configuration. See @ref usbd_msc_config_t.
  * @return 0 on success, non-zero on failure.
  */
-int usbd_msc_init(const usbd_msc_cb_t *cb, const usbd_msc_ep_cfg_t *ep_cfg);
+int usbd_msc_init(const usbd_msc_cb_t *cb, const usbd_msc_config_t *cfg);
 
 #ifdef CONFIG_USBD_COMPOSITE
 /**
  * @brief Initializes MSC as part of a composite device.
  * @param[in] cb: Pointer to the user callback structure.
- * @param[in] ep_cfg: Pointer to the endpoint configuration structure.
+ * @param[in] cfg: Pointer to the class configuration. See @ref usbd_msc_config_t.
  * @return 0 on success, non-zero on failure.
  */
-int usbd_composite_msc_init(const usbd_msc_cb_t *cb, const usbd_msc_ep_cfg_t *ep_cfg);
+int usbd_composite_msc_init(const usbd_msc_cb_t *cb, const usbd_msc_config_t *cfg);
 #endif
 
 /**
