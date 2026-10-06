@@ -44,7 +44,6 @@ OBJS = $(notdir $(CSRC:.c=.o))
 all: CORE_TARGETS COPY_RAM_OBJS
 	make -C lwip all
 	make -C mqtt all
-	make -C http2 all
 	make -C httpc all
 	make -C httpd all
 	make -C websocket all
@@ -71,7 +70,6 @@ clean: CLEAN_OBJS
 	make -C httpd clean
 	make -C websocket clean
 	make -C mqtt clean
-	make -C http2 clean
 	make -C eap clean
 	make -C tftp clean
 	#make -C libcoap clean

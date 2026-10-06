@@ -3372,7 +3372,7 @@ int bt_tmap_a2dp_source_main(uint8_t role, uint8_t enable)
 			bt_app_conf.prefer_tx_phy = 1 | 1 << 1 | 1 << 2;
 			bt_app_conf.prefer_rx_phy = 1 | 1 << 1 | 1 << 2;
 			bt_app_conf.max_tx_octets = 0x40;
-			bt_app_conf.max_tx_time = 0x200;
+			bt_app_conf.max_tx_time = 0x270;
 			bt_app_conf.le_audio_app_conf = g_tmap_bmr_info.lea_app_conf;
 			/* a2dp role init */
 			a2dp_demo_role = RTK_BT_A2DP_ROLE_SRC;
@@ -3566,7 +3566,7 @@ int bt_tmap_a2dp_source_main(uint8_t role, uint8_t enable)
 			bt_app_conf.prefer_tx_phy = 1 | 1 << 1 | 1 << 2;
 			bt_app_conf.prefer_rx_phy = 1 | 1 << 1 | 1 << 2;
 			bt_app_conf.max_tx_octets = 0x40;
-			bt_app_conf.max_tx_time = 0x200;
+			bt_app_conf.max_tx_time = 0x270;
 			bt_app_conf.le_audio_app_conf = p_tmap_umr_info->lea_app_conf;
 
 			/* a2dp role init */
