@@ -28,13 +28,6 @@ static const char *const TAG = "COMP";
 
 static usbd_composite_dev_t usbd_composite_dev;
 
-/* String descriptors (internal) */
-static const char *const usbd_composite_strings[] = {
-	USBD_COMP_MFG_STRING,
-	USBD_COMP_PROD_STRING,
-	USBD_COMP_SN_STRING,
-};
-
 /* USB Standard Device Descriptor */
 static const u8 usbd_composite_dev_desc[USB_LEN_DEV_DESC] = {
 	USB_LEN_DEV_DESC,                               /* bLength */
@@ -44,12 +37,12 @@ static const u8 usbd_composite_dev_desc[USB_LEN_DEV_DESC] = {
 	0x02,                                           /* bDeviceSubClass: Common Class */
 	0x01,                                           /* bDeviceProtocol: IAD */
 	USB_MAX_EP0_SIZE,                               /* bMaxPacketSize0 */
-	USB_LOW_BYTE(USBD_COMP_VID), USB_HIGH_BYTE(USBD_COMP_VID),  /* idVendor */
-	USB_LOW_BYTE(USBD_COMP_PID), USB_HIGH_BYTE(USBD_COMP_PID),  /* idProduct */
-	0x00, 0x02,                                     /* bcdDevice */
-	0x01,                                           /* iManufacturer */
-	0x02,                                           /* iProduct */
-	0x03,                                           /* iSerialNumber */
+	USB_LOW_BYTE(USB_VID), USB_HIGH_BYTE(USB_VID),  /* idVendor (patched by core from usbd_dev_info_t) */
+	USB_LOW_BYTE(USB_PID), USB_HIGH_BYTE(USB_PID),  /* idProduct (patched by core from usbd_dev_info_t) */
+	0x00, 0x02,                                     /* bcdDevice (patched by core from usbd_dev_info_t) */
+	USBD_IDX_MFC_STR,                               /* iManufacturer (patched by core) */
+	USBD_IDX_PRODUCT_STR,                           /* iProduct (patched by core) */
+	USBD_IDX_SERIAL_STR,                            /* iSerialNumber (patched by core) */
 	0x01,                                           /* bNumConfigurations */
 };
 
@@ -77,16 +70,8 @@ static const u8 usbd_composite_config_desc[USB_LEN_CFG_DESC] = {
 	0x00,                                           /* bNumInterfaces (patched) */
 	0x01,                                           /* bConfigurationValue */
 	0x00,                                           /* iConfiguration */
-	0x80,                                           /* bmAttributes (patched at runtime for self_powered/remote_wakeup) */
-	0x32,                                           /* bMaxPower (100mA) */
-};
-
-/* Language ID String Descriptor */
-static const u8 usbd_composite_langid_desc[USB_LEN_LANGID_STR_DESC] = {
-	USB_LEN_LANGID_STR_DESC,                        /* bLength */
-	USB_DESC_TYPE_STRING,                           /* bDescriptorType */
-	USB_LOW_BYTE(USBD_COMP_LANGID),
-	USB_HIGH_BYTE(USBD_COMP_LANGID),
+	0x80,                                           /* bmAttributes (patched by core from usbd_dev_info_t) */
+	0x32,                                           /* bMaxPower (patched by core from usbd_dev_info_t) */
 };
 
 /* Private function prototypes -----------------------------------------------*/
@@ -304,7 +289,6 @@ static u16 usbd_composite_build_config_desc(usb_dev_t *dev, usb_setup_req_t *req
 	u16 desc_len;
 	u8 if_base = 0;
 	u8 if_cnt;
-	u8 attr;
 	u8 i;
 
 	/* Truncation is not allowed: a short descriptor is illegal, so stall instead */
@@ -320,15 +304,7 @@ static u16 usbd_composite_build_config_desc(usb_dev_t *dev, usb_setup_req_t *req
 		buf[1] = USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION;
 	}
 
-	/* Patch bmAttributes (byte 7) */
-	attr = 0x80U;
-#ifdef CONFIG_USBD_SELF_POWERED
-	attr |= USB_CFG_DESC_OFFSET_ATTR_BIT_SELF_POWERED;
-#endif
-#ifdef CONFIG_USBD_REMOTE_WAKEUP_EN
-	attr |= USB_CFG_DESC_OFFSET_ATTR_BIT_REMOTE_WAKEUP;
-#endif
-	buf[7] = attr;
+	/* bmAttributes and bMaxPower are patched by the core from usbd_dev_info_t */
 
 	/* First pass: populate if_counts[] from each sub-function's config descriptor
 	 * header, so that the config header's bNumInterfaces is correct before we
@@ -372,99 +348,6 @@ static u16 usbd_composite_build_config_desc(usb_dev_t *dev, usb_setup_req_t *req
 }
 
 /**
- * @brief  Hand out a private class-specific string index window to each sub-function.
- * @note   Indices 0..USBD_IDX_SERIAL_STR belong to the composite device itself
- *         (LANGID/MFG/PRODUCT/SERIAL); sub-functions get contiguous windows above them,
- *         in registration order. The window sizes are cached in cls_str_counts[] so that
- *         GET_DESCRIPTOR(String) routing can reproduce the same layout without calling
- *         set_str_base() again.
- */
-static void usbd_composite_assign_class_str_bases(void)
-{
-	usbd_composite_dev_t *cdev = &usbd_composite_dev;
-	const usbd_class_driver_t *driver;
-	u8 base = USBD_COMP_CLASS_STR_IDX_BASE;
-	u8 cnt;
-	u8 i;
-
-	for (i = 0; i < cdev->func_count; i++) {
-		cdev->cls_str_counts[i] = 0;
-
-		driver = cdev->drivers[i];
-		if (driver->set_str_base == NULL) {
-			continue;                          /* class owns no string */
-		}
-
-		if (base > USBD_COMP_CLASS_STR_IDX_MAX) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "Str idx full, func %u\n", i);
-			continue;
-		}
-
-		cnt = driver->set_str_base(base);
-		if ((u16)base + cnt > (u16)USBD_COMP_CLASS_STR_IDX_MAX + 1U) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "Str idx ovf, func %u cnt %u\n", i, cnt);
-			continue;                          /* leave count 0: no routing */
-		}
-
-		cdev->cls_str_counts[i] = cnt;
-		base += cnt;
-	}
-}
-
-/**
- * @brief  Get string descriptor.
- * @note   Device-global strings (LANGID/MFG/PRODUCT/SERIAL) are answered here; every index
- *         above USBD_IDX_SERIAL_STR belongs to the sub-function whose class-specific string
- *         window contains it (see usbd_composite_assign_class_str_bases). Without this
- *         delegation a function string such as the CDC ECM iMACAddress would be stalled and
- *         the host would fail to bind the function.
- * @param  dev: USB device instance.
- * @param  req: Setup request; wValue low byte carries the string index.
- * @param  buf: Output buffer.
- * @param  buf_len: Capacity of buf in bytes.
- * @retval Actual string descriptor length, or 0 if not found.
- */
-static u16 usbd_composite_get_string_desc(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16 buf_len)
-{
-	usbd_composite_dev_t *cdev = &usbd_composite_dev;
-	const usbd_class_driver_t *driver;
-	u8 str_idx = USB_LOW_BYTE(req->wValue);
-	u8 base = USBD_COMP_CLASS_STR_IDX_BASE;
-	u8 cnt;
-	u8 i;
-
-	if (str_idx == USBD_IDX_LANGID_STR) {
-		/* Truncation is not allowed: a short descriptor is illegal, so stall instead */
-		if (USB_LEN_LANGID_STR_DESC > buf_len) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "Str desc OVSZ %d > %d\n", USB_LEN_LANGID_STR_DESC, buf_len);
-			return 0;
-		}
-
-		usb_os_memcpy((void *)buf, (const void *)usbd_composite_langid_desc, USB_LEN_LANGID_STR_DESC);
-
-		return USB_LEN_LANGID_STR_DESC;
-	}
-
-	if (str_idx < USBD_COMP_CLASS_STR_IDX_BASE) {
-		return usbd_get_str_descriptor(usbd_composite_strings[str_idx - 1], buf, buf_len);
-	}
-
-	/* Class-specific range: hand the request to the owning sub-function. wValue already
-	 * carries the global index that the sub-function emitted into its own descriptors,
-	 * so req is forwarded unmodified. */
-	for (i = 0; i < cdev->func_count; i++) {
-		cnt = cdev->cls_str_counts[i];
-		if ((cnt != 0U) && (str_idx >= base) && (str_idx < (u8)(base + cnt))) {
-			driver = cdev->drivers[i];
-			return driver->get_descriptor(dev, req, buf, buf_len);
-		}
-		base += cnt;
-	}
-
-	return 0;   /* unknown index -> core stalls EP0 */
-}
-
-/**
  * @brief  Class driver get_descriptor callback.
  *         Called within ISR context; time-consuming operations not permitted.
  */
@@ -490,7 +373,11 @@ static u16 usbd_composite_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u
 		break;
 
 	case USB_DESC_TYPE_STRING:
-		return usbd_composite_get_string_desc(dev, req, buf, buf_len);
+		/* Every string is owned by the core: the device-global ones come from
+		   usbd_dev_info_t, the class ones from usbd_add_string(). The core only forwards an
+		   index it does not know, e.g. the MS OS string. */
+		USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_GET_DESC, 0);
+		break;
 
 	default:
 		break;
@@ -533,17 +420,6 @@ static int usbd_composite_set_config(usb_dev_t *dev, u8 config)
 	 * on, and if_counts[] is necessarily valid by now (the host cannot reach
 	 * SET_CONFIGURATION without having fetched the configuration descriptor). */
 	usbd_composite_assign_if_bases();
-
-#ifdef CONFIG_USBD_SELF_POWERED
-	dev->self_powered = 1;
-#else
-	dev->self_powered = 0;
-#endif
-#ifdef CONFIG_USBD_REMOTE_WAKEUP_EN
-	dev->remote_wakeup_en = 1;
-#else
-	dev->remote_wakeup_en = 0;
-#endif
 
 	/* Call each sub-function's set_config.
 	 * Continue on error so all functions get a chance to init their endpoints.
@@ -1010,11 +886,6 @@ int usbd_composite_init(const usbd_composite_cb_t *cb)
 	cdev->cb = cb;
 
 	usbd_composite_reset_active_func();
-
-	/* Lay out the string index windows once, after all sub-functions are registered:
-	 * the registration order is fixed from here on, so the windows stay in sync with
-	 * the layout that usbd_composite_get_string_desc() recomputes when routing. */
-	usbd_composite_assign_class_str_bases();
 
 	usbd_register_class(&usbd_composite_driver);
 

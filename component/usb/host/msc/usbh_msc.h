@@ -38,6 +38,9 @@ extern "C" {
 #define USBH_BOT_DATA_LENGTH                      64U         /**< Generic data buffer length for small transfers. */
 
 #define USBH_MSC_MAX_LUN                          1U          /**< Maximum number of logical units (LUNs) supported. */
+
+#define USBH_MSC_MIN_BLOCK_SIZE                   512U        /**< Minimum accepted logical block size reported by READ CAPACITY(10). */
+#define USBH_MSC_MAX_BLOCK_SIZE                   4096U       /**< Maximum accepted logical block size reported by READ CAPACITY(10). */
 /** @} End of Host_MSC_Constants group */
 /** @} End of USB_Host_Constants group */
 
@@ -160,7 +163,7 @@ typedef struct {
 /**
  * @brief MSC user callback structure.
  * @details This structure allows the user application to register callbacks for
- *          key MSC events like device attachment and detachment.
+ *          key MSC notifications like device attachment and detachment.
  */
 typedef struct {
 	/**

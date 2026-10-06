@@ -30,9 +30,6 @@ static u16 usbd_dfu_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 static int usbd_dfu_ep0_data_in(usb_dev_t *dev, u8 status);
 static int usbd_dfu_ep0_data_out(usb_dev_t *dev);
 static void usbd_dfu_status_changed(usb_dev_t *dev, u8 old_status, u8 status);
-#ifdef CONFIG_USBD_COMPOSITE
-static u8 usbd_dfu_set_str_base(u8 base);
-#endif
 static void usbd_dfu_reconf_task(void *param);
 
 static void usbd_dfu_manifest_task(void *param);
@@ -54,23 +51,15 @@ static const u8 usbd_dfu_dev_desc[USB_LEN_DEV_DESC] = {
 	0x00,                                           /* bDeviceSubClass */
 	0x00,                                           /* bDeviceProtocol */
 	USB_MAX_EP0_SIZE,                               /* bMaxPacketSize */
-	USB_LOW_BYTE(USBD_DFU_VID),                     /* idVendor */
-	USB_HIGH_BYTE(USBD_DFU_VID),
-	USB_LOW_BYTE(USBD_DFU_PID),                     /* idProduct */
-	USB_HIGH_BYTE(USBD_DFU_PID),
+	USB_LOW_BYTE(USB_VID),                          /* idVendor (patched by core from usbd_dev_info_t) */
+	USB_HIGH_BYTE(USB_VID),
+	USB_LOW_BYTE(USB_PID),                          /* idProduct (patched by core from usbd_dev_info_t) */
+	USB_HIGH_BYTE(USB_PID),
 	0x00, 0x02,                                     /* bcdDevice 2.00 */
 	USBD_IDX_MFC_STR,                               /* iManufacturer */
 	USBD_IDX_PRODUCT_STR,                           /* iProduct */
 	USBD_IDX_SERIAL_STR,                            /* iSerialNumber */
 	0x01,                                           /* bNumConfigurations */
-};
-
-/* USB Standard String Descriptor 0 */
-static const u8 usbd_dfu_lang_id_desc[USB_LEN_LANGID_STR_DESC] = {
-	USB_LEN_LANGID_STR_DESC,                        /* bLength */
-	USB_DESC_TYPE_STRING,                           /* bDescriptorType */
-	USB_LOW_BYTE(USBD_DFU_LANGID_STRING),            /* wLANGID: English */
-	USB_HIGH_BYTE(USBD_DFU_LANGID_STRING),
 };
 
 #ifndef CONFIG_USB_FS
@@ -115,8 +104,7 @@ static const u8 usbd_dfu_config_desc[] = {
 	USB_DFU_PROTOCOL_DFU,                          /* bInterfaceProtocol: 0x02 (DFU mode); patched
 	                                                   to 0x01 in get_descriptor while in Run-Time
 	                                                   mode */
-	USBD_DFU_CLASS_STR_BASE_DEFAULT +
-	USBD_DFU_STR_IDX_IFACE,                         /* iInterface, runtime patched */
+	0x00,                                           /* iInterface, runtime patched */
 
 	/* DFU Functional Descriptor */
 	0x09,                                           /* bLength */
@@ -124,7 +112,7 @@ static const u8 usbd_dfu_config_desc[] = {
 #if USBD_DFU_WILL_DETACH
 	USB_DFU_ATTR_WILL_DETACH |
 #endif
-#if USBD_DFU_MANIFESTATION_TOL
+#if USBD_DFU_MANIFESTATION_TOLERANT
 	USB_DFU_ATTR_MANIFEST_TOL |
 #endif
 #if USBD_DFU_CAN_UPLOAD
@@ -132,10 +120,10 @@ static const u8 usbd_dfu_config_desc[] = {
 #endif
 	USB_DFU_ATTR_CAN_DNLOAD |
 	0,                                             /* bmAttributes */
-	USB_LOW_BYTE(USBD_DFU_DETACH_TIMEOUT),          /* wDetachTimeOut */
-	USB_HIGH_BYTE(USBD_DFU_DETACH_TIMEOUT),
-	USB_LOW_BYTE(USBD_DFU_XFER_SIZE),              /* wTransferSize */
-	USB_HIGH_BYTE(USBD_DFU_XFER_SIZE),
+	USB_LOW_BYTE(USBD_DFU_DEFAULT_DETACH_TIMEOUT),  /* wDetachTimeOut (patched at runtime) */
+	USB_HIGH_BYTE(USBD_DFU_DEFAULT_DETACH_TIMEOUT),
+	USB_LOW_BYTE(USBD_DFU_DEFAULT_XFER_SIZE),      /* wTransferSize (patched at runtime) */
+	USB_HIGH_BYTE(USBD_DFU_DEFAULT_XFER_SIZE),
 	USB_LOW_BYTE(USB_DFU_BCD_VERSION),            /* bcdDFUVersion */
 	USB_HIGH_BYTE(USB_DFU_BCD_VERSION),
 };
@@ -149,9 +137,6 @@ static const usbd_class_driver_t usbd_dfu_driver = {
 	.ep0_data_in    = usbd_dfu_ep0_data_in,
 	.ep0_data_out   = usbd_dfu_ep0_data_out,
 	.status_changed = usbd_dfu_status_changed,
-#ifdef CONFIG_USBD_COMPOSITE
-	.set_str_base = usbd_dfu_set_str_base,
-#endif
 };
 
 /* DFU Device */
@@ -173,19 +158,6 @@ static int usbd_dfu_set_config(usb_dev_t *dev, u8 config)
 	}
 
 	dfu->dev = dev;
-
-	if (!dfu->from_composite) {
-#ifdef CONFIG_USBD_SELF_POWERED
-		dev->self_powered = 1;
-#else
-		dev->self_powered = 0;
-#endif
-#ifdef CONFIG_USBD_REMOTE_WAKEUP_EN
-		dev->remote_wakeup_en = 1;
-#else
-		dev->remote_wakeup_en = 0;
-#endif
-	}
 
 	dfu->alt_setting = 0U;
 	/* Save the default EP0 buffer and its capacity (shared by IN/OUT endpoints). */
@@ -423,7 +395,7 @@ static int usbd_dfu_setup(usb_dev_t *dev, usb_setup_req_t *req)
 		case USB_DFU_REQ_DNLOAD:
 			if (req->wLength > 0U) {
 				/* Reject oversized blocks before redirecting EP0 OUT buffer */
-				if (req->wLength > USBD_DFU_XFER_SIZE) {
+				if (req->wLength > dfu->xfer_size) {
 					ret = usbd_dfu_stall_error(dev, dfu, USBD_DFU_STATUS_ERR_STALLEDPKT);
 					break;
 				}
@@ -453,7 +425,7 @@ static int usbd_dfu_setup(usb_dev_t *dev, usb_setup_req_t *req)
 					/* Redirect EP0 OUT to our block buffer; also update xfer_buf_len
 					 * so usbd_ep_receive does not reject the oversized transfer. */
 					ep0_out->xfer_buf     = dfu->xfer_buf;
-					ep0_out->xfer_buf_len = USBD_DFU_XFER_SIZE;
+					ep0_out->xfer_buf_len = dfu->xfer_size;
 					ep0_out->xfer_len     = req->wLength;
 					if (usbd_ep_receive(dev, ep0_out) != HAL_OK) {
 						/* ARM failed — ep0_data_out will never fire; restore buffer now */
@@ -482,7 +454,7 @@ static int usbd_dfu_setup(usb_dev_t *dev, usb_setup_req_t *req)
 		case USB_DFU_REQ_UPLOAD:
 #if USBD_DFU_CAN_UPLOAD
 			/* Reject oversized requests before using the buffer */
-			if (req->wLength > USBD_DFU_XFER_SIZE) {
+			if (req->wLength > dfu->xfer_size) {
 				ret = usbd_dfu_stall_error(dev, dfu, USBD_DFU_STATUS_ERR_STALLEDPKT);
 				break;
 			}
@@ -500,7 +472,7 @@ static int usbd_dfu_setup(usb_dev_t *dev, usb_setup_req_t *req)
 					 * to DATA_IN (not STATUS_IN) so the IN endpoint is enabled and
 					 * the ZLP is physically sent, firing ep0_data_in to complete UPLOAD. */
 					ep0_in->xfer_buf     = dfu->xfer_buf;
-					ep0_in->xfer_buf_len = USBD_DFU_XFER_SIZE;
+					ep0_in->xfer_buf_len = dfu->xfer_size;
 					ep0_in->xfer_len     = MIN(len, req->wLength);
 					/* This EP0 IN data stage belongs to DFU: only its completion may
 					 * restore the buffer and advance the UPLOAD state machine. */
@@ -548,7 +520,7 @@ static int usbd_dfu_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			if (dfu->state == USB_DFU_STATE_MANIFEST) {
 				if (dfu->manifest_done) {
 					/* Manifest task + timer completed; transition per bmAttributes. */
-#if USBD_DFU_MANIFESTATION_TOL
+#if USBD_DFU_MANIFESTATION_TOLERANT
 					/* manifest_done left set; MANIFEST_SYNC at line 438 clears it on dfuIDLE. */
 					dfu->state  = USB_DFU_STATE_MANIFEST_SYNC;
 					dfu->status = USBD_DFU_STATUS_OK;
@@ -825,7 +797,7 @@ static void usbd_dfu_manifest_timer_cb(void *timer)
 
 	if (dfu->manifest_done) {
 		/* "Status poll timeout" + work done -> transition per bmAttributes */
-#if USBD_DFU_MANIFESTATION_TOL
+#if USBD_DFU_MANIFESTATION_TOLERANT
 		dfu->state = USB_DFU_STATE_MANIFEST_SYNC;
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Manifest done -> MANIFEST-SYNC\n");
 #else
@@ -897,18 +869,8 @@ static u16 usbd_dfu_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 	u16 len = 0U;
 	u8 type = USB_HIGH_BYTE(req->wValue);
 	u8 is_cfg = 0;
-	u8 attr = 0x80U;
 
 	UNUSED(dev);
-
-	if (!dfu->from_composite) {
-#ifdef CONFIG_USBD_SELF_POWERED
-		attr |= USB_CFG_DESC_OFFSET_ATTR_BIT_SELF_POWERED;
-#endif
-#ifdef CONFIG_USBD_REMOTE_WAKEUP_EN
-		attr |= USB_CFG_DESC_OFFSET_ATTR_BIT_REMOTE_WAKEUP;
-#endif
-	}
 
 	switch (type) {
 
@@ -937,29 +899,9 @@ static u16 usbd_dfu_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 		break;
 #endif
 	case USB_DESC_TYPE_STRING:
-		switch (USB_LOW_BYTE(req->wValue)) {
-		case USBD_IDX_LANGID_STR:
-			desc = usbd_dfu_lang_id_desc;
-			len = sizeof(usbd_dfu_lang_id_desc);
-			break;
-		case USBD_IDX_MFC_STR:
-			len = usbd_get_str_descriptor(USBD_DFU_MFR_STRING, buf, buf_len);
-			break;
-		case USBD_IDX_PRODUCT_STR:
-			len = usbd_get_str_descriptor(USBD_DFU_PRODUCT_STRING, buf, buf_len);
-			break;
-		case USBD_IDX_SERIAL_STR:
-			len = usbd_get_str_descriptor("00000000001", buf, buf_len);
-			break;
-		default:
-			/* Class-specific indices are decided at runtime (rebased by the composite
-			 * framework), so they cannot be case labels. Comparing them here also makes
-			 * it impossible to shadow the device-global indices above. */
-			if (USB_LOW_BYTE(req->wValue) == (u8)(dfu->cls_str_base + USBD_DFU_STR_IDX_IFACE)) {
-				len = usbd_get_str_descriptor(USBD_DFU_IFACE_STRING, buf, buf_len);
-			}
-			break;
-		}
+		/* Every string this class owns is registered with usbd_add_string() and answered by
+		   the core, which only forwards an index it does not know, e.g. the MS OS string */
+		USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_GET_DESC, 0);
 		break;
 
 	default:
@@ -981,38 +923,25 @@ static u16 usbd_dfu_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN]     = USB_LOW_BYTE(len);
 		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN + 1] = USB_HIGH_BYTE(len);
 
-		if (!dfu->from_composite) {
-			buf[USB_CFG_DESC_OFFSET_ATTR] = attr;
-		}
-
 		/* Static array carries the DFU-mode protocol (0x02); rewrite it to the
 		 * run-time protocol (0x01) until the device has switched to DFU mode. */
 		if (usbd_dfu_dev.mode == USB_DFU_PROTOCOL_RUNTIME) {
 			buf[USBD_DFU_CFG_IF_PROTOCOL_OFFSET] = USB_DFU_PROTOCOL_RUNTIME;
 		}
 
-		/* Static array carries the standalone default; rewrite it in case the
-		 * composite framework rebased the class string window. */
-		buf[USBD_DFU_CFG_IF_ISTR_OFFSET] = (u8)(dfu->cls_str_base + USBD_DFU_STR_IDX_IFACE);
+		/* Emit the runtime index the core assigned to the interface string */
+		buf[USBD_DFU_CFG_IF_ISTR_OFFSET] = dfu->itf_str_idx;
+
+		/* wDetachTimeOut and wTransferSize are configurable, so the template only carries the
+		   defaults; emit what this instance actually honours. */
+		buf[USBD_DFU_CFG_DETACH_TIMEOUT_OFFSET]     = USB_LOW_BYTE(dfu->detach_timeout_ms);
+		buf[USBD_DFU_CFG_DETACH_TIMEOUT_OFFSET + 1] = USB_HIGH_BYTE(dfu->detach_timeout_ms);
+		buf[USBD_DFU_CFG_XFER_SIZE_OFFSET]          = USB_LOW_BYTE(dfu->xfer_size);
+		buf[USBD_DFU_CFG_XFER_SIZE_OFFSET + 1]      = USB_HIGH_BYTE(dfu->xfer_size);
 	}
 
 	return len;
 }
-
-#ifdef CONFIG_USBD_COMPOSITE
-/**
- * @brief  Assign the first class-specific string index of this class (composite mode only)
- * @note   This function is called by the composite framework before enumeration.
- * @param  base: First class-specific string index for this class
- * @retval Number of class-specific string indices consumed
- */
-static u8 usbd_dfu_set_str_base(u8 base)
-{
-	usbd_dfu_dev.cls_str_base = base;
-
-	return USBD_DFU_CLASS_STR_COUNT;
-}
-#endif
 
 /**
  * @brief  USB attach/detach status change (called from ISR).
@@ -1045,7 +974,7 @@ static void usbd_dfu_detach_timeout_cb(void *timer)
 		dfu->mode  = USB_DFU_PROTOCOL_RUNTIME;
 		dfu->state = USB_DFU_STATE_APP_IDLE;
 		RTK_LOGS(TAG, RTK_LOG_WARN, "Detach: no USB Reset within %ums, reverted to Run-Time\n",
-				 USBD_DFU_DETACH_TIMEOUT);
+				 dfu->detach_timeout_ms);
 	}
 }
 #endif /* !USBD_DFU_WILL_DETACH */
@@ -1081,7 +1010,7 @@ static void usbd_dfu_reconf_task(void *param)
 #if USBD_DFU_WILL_DETACH
 		/* Let the DFU_DETACH status stage (EP0 IN ZLP) complete before the
 		 * application tears down the stack. */
-		usb_os_sleep_ms(USBD_DFU_DETACH_STATUS_DELAY_MS);
+		usb_os_sleep_ms(dfu->detach_status_delay_ms);
 		/* dfu->mode determines the target protocol.  Notify the application to
 		 * perform usbd_deinit/init so the host re-enumerates in the target mode. */
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Detach: re-enumerating in %s mode\n",
@@ -1095,7 +1024,7 @@ static void usbd_dfu_reconf_task(void *param)
 		 * timer callback becomes a no-op.  If the timer fires first it reverts to
 		 * Run-Time mode. */
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Detach: waiting for host USB Reset (%ums timeout)\n",
-				 USBD_DFU_DETACH_TIMEOUT);
+				 dfu->detach_timeout_ms);
 		rtos_timer_start(dfu->detach_timer, 0U);
 #endif /* USBD_DFU_WILL_DETACH */
 	}
@@ -1106,7 +1035,7 @@ static void usbd_dfu_reconf_task(void *param)
 /**
  * @brief  Initialize the DFU device class driver.
  */
-static int usbd_dfu_private_init(usbd_dfu_cb_t *cb)
+static int usbd_dfu_private_init(const usbd_dfu_cb_t *cb, const usbd_dfu_config_t *cfg)
 {
 	int ret = HAL_OK;
 	usbd_dfu_dev_t *dfu = &usbd_dfu_dev;
@@ -1116,16 +1045,38 @@ static int usbd_dfu_private_init(usbd_dfu_cb_t *cb)
 		return HAL_ERR_PARA;
 	}
 
+	if (cfg == NULL) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid cfg\n");
+		return HAL_ERR_PARA;
+	}
+
 	/* Preserve mode across a reconf reinit (WILL_DETACH=1).  On a fresh first
 	 * init the struct is zero-initialised (BSS), so saved_mode is 0 which is
 	 * neither RUNTIME nor DFU — default to RUNTIME below. */
 	u8 saved_mode = dfu->mode;
 	usb_os_memset((void *)dfu, 0, sizeof(usbd_dfu_dev_t));
 
-	/* Standalone default; the composite framework rebases it via set_str_base() */
-	dfu->cls_str_base = USBD_DFU_CLASS_STR_BASE_DEFAULT;
+	/* Resolved after the memset so the defaults survive it, and before the allocation and the
+	   descriptor patch path that both read them. */
+	dfu->cfg = cfg;
+	dfu->xfer_size = (cfg->xfer_size != 0U) ? cfg->xfer_size : (u32)USBD_DFU_DEFAULT_XFER_SIZE;
+	dfu->detach_timeout_ms = (cfg->detach_timeout_ms != 0U) ? cfg->detach_timeout_ms : (u32)USBD_DFU_DEFAULT_DETACH_TIMEOUT;
+	dfu->detach_status_delay_ms = (cfg->detach_status_delay_ms != 0U) ?
+								  cfg->detach_status_delay_ms : USBD_DFU_DEFAULT_DETACH_STATUS_DELAY_MS;
 
-	dfu->xfer_buf = (u8 *)usb_os_malloc(USBD_DFU_XFER_SIZE);
+	/* Both are 16-bit descriptor fields (wTransferSize, wDetachTimeOut), so a larger value
+	   could not be advertised truthfully. */
+	if ((dfu->xfer_size > 0xFFFFU) || (dfu->detach_timeout_ms > 0xFFFFU)) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "xfer size %u / detach %u exceeds u16\n",
+				 dfu->xfer_size, dfu->detach_timeout_ms);
+		return HAL_ERR_PARA;
+	}
+
+	/* The core owns the string table, so the same call works in standalone and composite
+	   mode. 0 means no iInterface string. */
+	dfu->itf_str_idx = usbd_add_string((cfg->itf_str != NULL) ? cfg->itf_str : USBD_DFU_DEFAULT_IFACE_STRING);
+
+	dfu->xfer_buf = (u8 *)usb_os_malloc(dfu->xfer_size);
 	if (dfu->xfer_buf == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "No mem for xfer_buf\n");
 		return HAL_ERR_MEM;
@@ -1144,7 +1095,7 @@ static int usbd_dfu_private_init(usbd_dfu_cb_t *cb)
 		dfu->xfer_buf = NULL;
 		return HAL_ERR_PARA;
 	}
-	dfu->write_poll_ms = USBD_DFU_WRITE_POLL_MS_DEFAULT;
+	dfu->write_poll_ms = (cfg->write_poll_ms != 0U) ? cfg->write_poll_ms : USBD_DFU_DEFAULT_WRITE_POLL_MS;
 #if USBD_DFU_CAN_UPLOAD
 	if (cb->read == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "read cb required (CAN_UPLOAD=1)\n");
@@ -1179,7 +1130,9 @@ static int usbd_dfu_private_init(usbd_dfu_cb_t *cb)
 	}
 
 	ret = rtos_task_create(&dfu->write_task, "usbd_dfu_write_thread", usbd_dfu_write_task,
-						   dfu, USBD_DFU_WRITE_TASK_STACK, USBD_DFU_WRITE_TASK_PRIORITY);
+						   dfu,
+						   (cfg->write_task_stack_size != 0U) ? cfg->write_task_stack_size : USBD_DFU_DEFAULT_WRITE_TASK_STACK,
+						   (cfg->write_task_priority != 0U) ? cfg->write_task_priority : USBD_DFU_DEFAULT_WRITE_TASK_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create write_task fail\n");
 		usb_os_sema_delete(dfu->write_sema);
@@ -1198,9 +1151,11 @@ static int usbd_dfu_private_init(usbd_dfu_cb_t *cb)
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create manifest_sema fail\n");
 		goto reconf_fail;
 	}
-	dfu->manifest_poll_ms = USBD_DFU_MANIFEST_POLL_MS_DEFAULT;
+	dfu->manifest_poll_ms = (cfg->manifest_poll_ms != 0U) ? cfg->manifest_poll_ms : USBD_DFU_DEFAULT_MANIFEST_POLL_MS;
 	ret = rtos_task_create(&dfu->manifest_task, "usbd_dfu_manifest_thread", usbd_dfu_manifest_task,
-						   dfu, USBD_DFU_MANIFEST_TASK_STACK, USBD_DFU_MANIFEST_TASK_PRIORITY);
+						   dfu,
+						   (cfg->manifest_task_stack_size != 0U) ? cfg->manifest_task_stack_size : USBD_DFU_DEFAULT_MANIFEST_TASK_STACK,
+						   (cfg->manifest_task_priority != 0U) ? cfg->manifest_task_priority : USBD_DFU_DEFAULT_MANIFEST_TASK_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create manifest_task fail\n");
 		usb_os_sema_delete(dfu->manifest_sema);
@@ -1221,7 +1176,9 @@ static int usbd_dfu_private_init(usbd_dfu_cb_t *cb)
 	}
 
 	ret = rtos_task_create(&dfu->reconf_task, "usbd_dfu_reconf_thread", usbd_dfu_reconf_task,
-						   dfu, USBD_DFU_REENUM_TASK_STACK, USBD_DFU_REENUM_TASK_PRIORITY);
+						   dfu,
+						   (cfg->reenum_task_stack_size != 0U) ? cfg->reenum_task_stack_size : USBD_DFU_DEFAULT_REENUM_TASK_STACK,
+						   (cfg->reenum_task_priority != 0U) ? cfg->reenum_task_priority : USBD_DFU_DEFAULT_REENUM_TASK_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create reconf_task fail\n");
 		usb_os_sema_delete(dfu->reconf_sema);
@@ -1233,7 +1190,7 @@ static int usbd_dfu_private_init(usbd_dfu_cb_t *cb)
 	/* One-shot timer: if host doesn't issue USB Reset within wDetachTimeOut, revert
 	 * to Run-Time mode.  Created here (task context); started in reconf_task. */
 	ret = rtos_timer_create(&dfu->detach_timer, "dfu_detach", 0U,
-							USBD_DFU_DETACH_TIMEOUT, 0U, usbd_dfu_detach_timeout_cb);
+							dfu->detach_timeout_ms, 0U, usbd_dfu_detach_timeout_cb);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create detach_timer fail\n");
 		rtos_task_t t = dfu->reconf_task;
@@ -1281,7 +1238,7 @@ void usbd_dfu_set_write_poll_ms(u32 poll_ms)
  * @brief  Set the bwPollTimeout (ms) reported to the host while the device
  *         is in the MANIFEST state ("Status poll timeout").  The timer fires
  *         after this interval to check whether manifestation is complete.
- *         Defaults to USBD_DFU_MANIFEST_POLL_MS_DEFAULT.
+ *         Defaults to usbd_dfu_config_t::manifest_poll_ms.
  */
 void usbd_dfu_set_manifest_poll_ms(u32 poll_ms)
 {
@@ -1303,12 +1260,12 @@ u8 usbd_dfu_get_state(void)
 	return (u8)usbd_dfu_dev.state;
 }
 
-int usbd_dfu_init(usbd_dfu_cb_t *cb)
+int usbd_dfu_init(const usbd_dfu_cb_t *cb, const usbd_dfu_config_t *cfg)
 {
 	usbd_dfu_dev_t *dfu = &usbd_dfu_dev;
 	int ret;
 
-	ret = usbd_dfu_private_init(cb);
+	ret = usbd_dfu_private_init(cb, cfg);
 	if (ret == HAL_OK) {
 		dfu->from_composite = 0;
 		usbd_register_class(&usbd_dfu_driver);
@@ -1317,12 +1274,12 @@ int usbd_dfu_init(usbd_dfu_cb_t *cb)
 }
 
 #ifdef CONFIG_USBD_COMPOSITE
-int usbd_composite_dfu_init(usbd_dfu_cb_t *cb)
+int usbd_composite_dfu_init(const usbd_dfu_cb_t *cb, const usbd_dfu_config_t *cfg)
 {
 	usbd_dfu_dev_t *dfu = &usbd_dfu_dev;
 	int ret;
 
-	ret = usbd_dfu_private_init(cb);
+	ret = usbd_dfu_private_init(cb, cfg);
 	if (ret == HAL_OK) {
 		dfu->from_composite = 1;
 		ret = usbd_composite_register_driver(&usbd_dfu_driver);

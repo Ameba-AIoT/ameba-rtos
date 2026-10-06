@@ -183,8 +183,31 @@ static rtos_sema_t uvc_start_sema;
 static rtos_sema_t uvc_setparam_sema;
 static rtos_mutex_t uvc_buf_mutex = NULL;
 static usbh_uvc_s_ctx_t uvc_s_ctx;
+/* Join handle for the frame worker, doubling as its liveness flag: the worker
+   clears it as its last action and the hotplug thread spins on it before calling
+   usbh_uvc_deinit(). Written by the worker, read by the hotplug thread, under SMP
+   on another core - so volatile, or the compiler may hoist the load out of that
+   spin loop and the teardown would free the stream while the worker still runs. */
+/* Bound for the error-path join of the frame worker. The normal hotplug join is
+   deliberately unbounded (freeing the stream under a live worker is a crash), but
+   an init rollback is already a failure path where hanging the example is worse
+   than proceeding. */
+#define USBH_UVC_WORKER_JOIN_TIMEOUT_MS         3000U
+
 static rtos_task_t uvc_task;
-static u8 uvc_setparam_status;
+
+/* Liveness flag for the frame worker, kept separate from the uvc_task handle:
+   the task creation API takes a non-volatile rtos_task_t *, so the handle itself
+   can not carry the qualifier. The worker sets this before it runs and clears it as
+   its last action; the hotplug thread spins on it before calling
+   usbh_uvc_deinit(). Written by the worker, read by the hotplug thread, under SMP
+   on another core - so volatile, or the compiler may hoist the load out of that
+   spin loop and the teardown would free the stream while the worker still runs. */
+static volatile u8 uvc_task_alive;
+/* Written by uvc_cb_setparam (class/core context), read by the test thread after
+   it takes uvc_setparam_sema. Under SMP those are different cores, so volatile
+   keeps the reader from using a value cached before the callback ran. */
+static volatile u8 uvc_setparam_status;
 static __IO u8 uvc_task_exiting = 0;
 
 static u64 rx_total_bytes;	/* total received bytes since rx_start; counted once per frame in the capture loop */
@@ -193,7 +216,10 @@ static u32 rx_start;
 #if (CONFIG_USBH_UVC_APP == USBH_UVC_APP_VFS)
 static rtos_sema_t uvc_vfs_save_img_sema = NULL;
 static u8 uvc_vfs_is_init = 0;
-static u8 uvc_vfs_thread_alive = 0;
+/* Liveness flag the owner thread spins on before freeing what the worker uses, so
+   volatile: the worker clears it from another core and the load must not be
+   hoisted out of that wait loop. */
+static volatile u8 uvc_vfs_thread_alive = 0;
 static u32 uvc_buf_size = 0;
 static RingBuffer *uvc_rb;
 #if (CONFIG_USBH_UVC_FORMAT_TYPE == USBH_UVC_FORMAT_MJPEG)
@@ -214,7 +240,8 @@ static int uvc_vfs_img_file_no = 0;
  *     is reached (H264/H265) or at exit. Used ONLY as the capture gate and upload-loop
  *     condition; it clears early (before teardown), so it must never be used to decide the
  *     thread has finished. Declared only for the mode0 / MJPEG builds that gate capture. */
-static u8 uvc_httpc_thread_alive = 0;
+/* Spun on by other threads, see uvc_vfs_thread_alive for why this is volatile. */
+static volatile u8 uvc_httpc_thread_alive = 0;
 #if ((USBH_UVC_HTTPC_BUFFER_MODE == 0) || (CONFIG_USBH_UVC_FORMAT_TYPE == USBH_UVC_FORMAT_MJPEG))
 static u8 uvc_httpc_connected = 0;
 #endif
@@ -1249,8 +1276,11 @@ static void example_usbh_uvc_hotplug_thread(void *param)
 
 			/* Wait for uvc_test to detect flag, break out of loop, and self-delete.
 			 * No timeout: must not deinit while uvc_test is still running,
-			 * as it may call usbh_uvc_put_frame() on already-freed memory. */
-			while (uvc_task != NULL) {
+			 * as it may call usbh_uvc_put_frame() on already-freed memory.
+			 * This join is what makes a state lock unnecessary here - the worker is
+			 * provably gone before any resource it touches is freed, which is a
+			 * stronger guarantee than excluding it by lock. */
+			while (uvc_task_alive != 0U) {
 				rtos_time_delay_ms(100);
 			}
 
@@ -1287,6 +1317,12 @@ static void example_usbh_uvc_hotplug_thread(void *param)
 			}
 		}
 	}
+
+	/* A re-init failed, so the stack is gone for good. Keep the frame worker out
+	 * by leaving the exiting flag raised, and wake it in case it is parked waiting
+	 * for the next attach. */
+	uvc_task_exiting = 1;
+	rtos_sema_give(uvc_start_sema);
 
 	RTK_LOGS(TAG, RTK_LOG_ERROR, "Hotplug thread fail\n");
 	rtos_task_delete(NULL);
@@ -1328,6 +1364,7 @@ static void example_usbh_uvc_test(void *param)
 		if (rtos_sema_take(uvc_start_sema, RTOS_SEMA_MAX_COUNT) != RTK_SUCCESS) {
 			continue;
 		}
+		/* cppcheck-suppress oppositeInnerCondition ; volatile: the hotplug thread sets this from another core while we block on the sema above */
 		/* hotplug handler gives this sema to unblock us after normal test completion. */
 		if (uvc_task_exiting != 0U) {
 			goto exit;
@@ -1496,7 +1533,7 @@ static void example_usbh_uvc_test(void *param)
 				/* Account for throughput here, once per captured frame, so the TP figure is
 				 * correct for every APP mode and pixel format (MJPEG/YUV/H264/H265). */
 				rx_total_bytes += len;
-				RTK_LOGS(TAG, RTK_LOG_INFO, "Captured frame %d, len=%d\n", img_cnt, len);
+				RTK_LOGS(TAG, RTK_LOG_INFO, "Captured frame %d, len=%d\n", img_cnt + 1, len);
 				usbh_uvc_img_prepare(buf);
 			}
 
@@ -1590,6 +1627,9 @@ exit:
 #endif
 
 	uvc_task = NULL;
+	/* Last action before self-deleting: the hotplug thread is allowed to free the
+	   stream resources the moment this reads back as 0. */
+	uvc_task_alive = 0U;
 	rtos_task_delete(NULL);
 }
 
@@ -1646,13 +1686,27 @@ static void example_usbh_uvc_task(void *param) {
 	if (ret != RTK_SUCCESS) {
 		goto usbh_uvc_deinit_exit;
 	}
+#if defined(CONFIG_SMP)
+	/* The USB OTG ISR is delivered on CPU0: the GIC pins every SPI to core 0
+	   (ITARGETSR is written to 0x01010101 in arm_gic.c gic_dist_init). Pinning the
+	   hotplug/deinit thread to CPU0 puts it on the same core as the ISR, so the
+	   local interrupt disables inside the teardown are meaningful again. The frame
+	   worker stays unaffined: it is excluded from the teardown by the join above,
+	   not by core. */
+	rtos_task_set_affinity(hotplug_task, 0);
+#endif
 #endif
 
 	while (1) {
 		if (rtos_sema_take(uvc_attach_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
+			/* Raised before the create, not inside the thread body: the new task may
+			   not run immediately, and a detach arriving in that window must still
+			   see a live worker and join it rather than tear the stream down. */
+			uvc_task_alive = 1U;
 			ret = rtos_task_create(&uvc_task, "usbh_uvc_test_thread", example_usbh_uvc_test, NULL,
 								   CONFIG_USBH_UVC_TEST_THREAD_STACK_SIZE, CONFIG_USBH_UVC_TEST_THREAD_PRIORITY);
 			if (ret != RTK_SUCCESS) {
+				uvc_task_alive = 0U;
 				goto delete_hotplug_task_exit;
 			}
 		}
@@ -1664,6 +1718,20 @@ delete_hotplug_task_exit:
 #if CONFIG_USBH_UVC_HOT_PLUG
 	rtos_task_delete(hotplug_task);
 #endif
+	/* The frame worker may be running: ask it to leave and wait for it, exactly as
+	   the hotplug thread does, so the deinit below does not free the stream from
+	   under it. Bounded here because this is already an error path - better to
+	   proceed than to hang the example. */
+	uvc_task_exiting = 1;
+	usbh_uvc_stop(CONFIG_USBH_UVC_STREAM_INDEX);
+	rtos_sema_give(uvc_start_sema);
+	{
+		u32 waited = 0U;
+		while ((uvc_task_alive != 0U) && (waited < USBH_UVC_WORKER_JOIN_TIMEOUT_MS)) {
+			rtos_time_delay_ms(100);
+			waited += 100U;
+		}
+	}
 
 #if CONFIG_USBH_UVC_HOT_PLUG
 usbh_uvc_deinit_exit:

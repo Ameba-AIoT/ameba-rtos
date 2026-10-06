@@ -25,14 +25,30 @@ None
 
 # Expect result
 
-1. Plugin Reset the board, following log shall be printed on the LOGUART console:
+1. Reset the board, following log shall be printed on the LOGUART console. The test PASSes only if the lines below show up and no error level log (`-E`) is reported:
 	```
-	[VND-I] USBD vendor demo start
+	[USBD-A] INIT
+	[VND-I] USBD VENDOR demo start
+	[VND-I] ATTACHED
 	```
+	Notes:
+	* `[USBD-A] INIT` comes from the USB device core, not from the example.
+	* `[VND-I] ATTACHED` is printed once the USB host has enumerated the device, so it only shows up after the cable is connected.
+	* On AmebaGreen2 an extra `[USB-I] UPHY para from ...` line is printed by the USB HAL before `[USBD-A] INIT`.
 
 2. Connect the USB port of Ameba board to USB vendor host (another Ameba board as USB vendor host) with USB cable.
 
-3. Reset and check the log via LOGUART console, make sure there is no error reported, the test result will be printed on the LOGUART console of USB vendor host, refer to the `README.md` of USB vendor host for details.
+3. Check the log via LOGUART console, make sure there is no error reported. The transfer threads are disabled by default, so the device side prints no further log, the test result is printed on the LOGUART console of the USB vendor host instead. Refer to the `README.md` of USB vendor host for details.
+
+4. Hotplug check: the example tears down and re-inits the USB stack on every detach, so unplug and re-plug the cable, following log shall be printed for each cycle:
+	```
+	[VND-I] DETACHED
+	[USBD-A] DEINIT
+	[VND-I] Free heap: 0x<value>
+	[USBD-A] INIT
+	[VND-I] ATTACHED
+	```
+	The `Free heap` value shall stay stable across cycles, a value that keeps dropping indicates a memory leak.
 
 # Note
 

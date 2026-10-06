@@ -11,10 +11,12 @@
 
 /* Private defines -----------------------------------------------------------*/
 
-/* String descriptor indexes, 0x00 ~ 0x03 are reserved by the USB device core */
-#define USBD_WHC_IDX_BT_STR              0x04U
+/* String descriptor index placeholders. The real indices are handed out by usbd_add_string()
+ * at init, so these values only mark the descriptor fields that usbd_whc_patch_str_idx()
+ * rewrites at runtime. They must stay outside the range the core assigns. */
+#define USBD_WHC_IDX_BT_STR              0xF0U
 #ifdef CONFIG_WHC_ETH
-#define USBD_WHC_IDX_ETH_STR             0x05U
+#define USBD_WHC_IDX_ETH_STR             0xF1U
 #endif
 
 /*
@@ -145,14 +147,6 @@ static const u8 usbd_whc_wifi_only_mode_dev_desc[USB_LEN_DEV_DESC] = {
 	USBD_IDX_SERIAL_STR,          // Index of serial number string
 	1                             // bNumConfigurations
 }; // usbd_whc_wifi_only_mode_dev_desc
-
-/* USB Standard Device Descriptor */
-static const u8 usbd_whc_lang_id_desc[USB_LEN_LANGID_STR_DESC] = {
-	USB_LEN_LANGID_STR_DESC,
-	USB_DESC_TYPE_STRING,
-	USB_LOW_BYTE(USBD_WHC_LANGID_STRING),
-	USB_HIGH_BYTE(USBD_WHC_LANGID_STRING),
-};
 
 /* USB Standard Device Descriptor */
 static const u8 usbd_whc_dev_qualifier_desc[USB_LEN_DEV_QUALIFIER_DESC] = {
@@ -454,7 +448,7 @@ static const u8 usbd_whc_config_desc[] = {
 	USBD_WHC_WIFI_ITF_CLASS,				// bInterfaceClass: Vendor Specific
 	USBD_WHC_WIFI_ITF_SUBCLASS,			// bInterfaceSubClass
 	USBD_WHC_WIFI_ITF_PROTOCOL,			// bInterfaceProtocol
-	USBD_IDX_PRODUCT_STR,					// iInterface: USBD_WHC_PROD_STRING
+	USBD_IDX_PRODUCT_STR,					// iInterface: device product string
 
 	/* Endpoint Descriptor */
 	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
@@ -779,7 +773,7 @@ static const u8 usbd_whc_full_speed_config_desc[] = {
 	USBD_WHC_WIFI_ITF_CLASS,				// bInterfaceClass: Vendor Specific
 	USBD_WHC_WIFI_ITF_SUBCLASS,			// bInterfaceSubClass
 	USBD_WHC_WIFI_ITF_PROTOCOL,			// bInterfaceProtocol
-	USBD_IDX_PRODUCT_STR,					// iInterface: USBD_WHC_PROD_STRING
+	USBD_IDX_PRODUCT_STR,					// iInterface: device product string
 
 	/* Endpoint Descriptor */
 	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
@@ -842,7 +836,7 @@ static const u8 usbd_whc_single_wifi_mode_config_desc[] = {
 	USBD_WHC_WIFI_ITF_CLASS,				// bInterfaceClass: Vendor Specific
 	USBD_WHC_WIFI_ITF_SUBCLASS,			// bInterfaceSubClass
 	USBD_WHC_WIFI_ITF_PROTOCOL,			// bInterfaceProtocol
-	USBD_IDX_PRODUCT_STR,					// iInterface: USBD_WHC_PROD_STRING
+	USBD_IDX_PRODUCT_STR,					// iInterface: device product string
 
 	/* Endpoint Descriptor */
 	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
@@ -936,7 +930,7 @@ static const u8 usbd_whc_wifi_only_mode_full_speed_config_desc[] = {
 	USBD_WHC_WIFI_ITF_CLASS,				// bInterfaceClass: Vendor Specific
 	USBD_WHC_WIFI_ITF_SUBCLASS,			// bInterfaceSubClass
 	USBD_WHC_WIFI_ITF_PROTOCOL,			// bInterfaceProtocol
-	USBD_IDX_PRODUCT_STR,					// iInterface: USBD_WHC_PROD_STRING
+	USBD_IDX_PRODUCT_STR,					// iInterface: device product string
 
 	/* Endpoint Descriptor */
 	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
@@ -1717,6 +1711,89 @@ static int usbd_whc_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len)
   * @param  len: Descriptor length
   * @retval Status
   */
+/**
+  * @brief  Publish the device identity to the USB device core
+  * @note   This device is identified by the values latched in hardware, not by the ones the
+  *         application configured: the host has already seen them while the ROM and the
+  *         bootloader enumerated, so the identity shall stay the same along the whole boot
+  *         chain. Every field is therefore assigned unconditionally, either from OTP when it
+  *         is programmed or from this class's own defaults.
+  *         The core reads these on every descriptor request, so assigning them once here is
+  *         enough. The OTP strings remain valid for as long as the device is enumerable,
+  *         because usbd_otp_deinit() runs after usbd_unregister_class().
+  * @param  otp: OTP parameters, already loaded
+  * @retval None
+  */
+static void usbd_whc_apply_dev_info(const usbd_otp_t *otp)
+{
+	usbd_dev_info_t *info = usbd_get_dev_info();
+	u16 pid;
+
+	if (otp->otp_param != 0U) {
+		info->vid = otp->vid;
+		info->pid = otp->pid;
+		info->mfg_str = (const char *)otp->mfg_str;
+		info->prod_str = (const char *)otp->prod_str;
+	} else {
+		/* NIC mode is told apart by its own product ID */
+		pid = (SYSCFG_OTP_BOOTSEL() == BOOT_FROM_USB) ? USBD_NIC_VID : USBD_WHC_PID;
+
+		info->vid = USBD_WHC_VID;
+		info->pid = pid;
+		info->mfg_str = USBD_WHC_MFG_STRING;
+		info->prod_str = USBD_WHC_PROD_STRING;
+	}
+
+	info->sn_str = (otp->otp_sn != 0U) ? (const char *)otp->sn_str : USBD_WHC_SN_STRING;
+	info->self_powered = otp->self_powered;
+	info->remote_wakeup_en = otp->remote_wakeup_en;
+}
+
+/**
+  * @brief  Replace the string index placeholders in a configuration descriptor block
+  * @note   Only the iInterface field of an Interface descriptor and the iFunction field of an
+  *         IAD are rewritten, so a placeholder value appearing in an unrelated byte, e.g. an
+  *         endpoint address or an MPS, is left untouched. An unregistered string resolves to 0,
+  *         which is the Chapter 9 encoding for "no string".
+  * @param  desc: Pointer to the config descriptor body, starting after the config header
+  * @param  len: Length of the descriptor block
+  * @retval None
+  */
+static void usbd_whc_patch_str_idx(u8 *desc, u16 len)
+{
+	usbd_whc_dev_t *idev = &usbd_whc_dev;
+	u16 i = 0U;
+	u8 dlen;
+	u8 dtype;
+	u8 *p;
+
+	while (i < len) {
+		dlen = desc[i];
+		dtype = desc[i + 1U];
+		if (dlen == 0U) {
+			break;
+		}
+
+		/* iInterface is the last byte of an Interface descriptor, iFunction the last byte
+		   of an IAD, so both sit one byte before the end of their descriptor */
+		if (((dtype == USB_DESC_TYPE_INTERFACE) && (dlen >= USB_LEN_IF_DESC)) ||
+			((dtype == USB_DESC_TYPE_IAD) && (dlen >= USB_LEN_IAD_DESC))) {
+			p = &desc[i + dlen - 1U];
+
+			if (*p == USBD_WHC_IDX_BT_STR) {
+				*p = idev->bt_str_idx;
+#ifdef CONFIG_WHC_ETH
+			} else if (*p == USBD_WHC_IDX_ETH_STR) {
+				*p = idev->eth_str_idx;
+#endif
+			} else {
+				/* Names no string of this class, or none at all */
+			}
+		}
+		i += dlen;
+	}
+}
+
 static u16 usbd_whc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16 buf_len)
 {
 	usb_speed_type_t speed = dev->dev_speed;
@@ -1726,10 +1803,6 @@ static u16 usbd_whc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 	u32 len = 0;
 	u8 type = USB_HIGH_BYTE(req->wValue);
 	u8 is_cfg = 0;
-	u8 is_dev = 0;
-
-	dev->self_powered = otp->self_powered;
-	dev->remote_wakeup_en = otp->remote_wakeup_en;
 
 	switch (type) {
 
@@ -1741,7 +1814,6 @@ static u16 usbd_whc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 		}
 
 		len = USB_LEN_DEV_DESC;
-		is_dev = 1;
 		break;
 
 	case USB_DESC_TYPE_CONFIGURATION:
@@ -1792,50 +1864,9 @@ static u16 usbd_whc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 		break;
 
 	case USB_DESC_TYPE_STRING:
-		switch (USB_LOW_BYTE(req->wValue)) {
-		case USBD_IDX_LANGID_STR:
-			desc = usbd_whc_lang_id_desc;
-			len = USB_LEN_LANGID_STR_DESC;
-			break;
-		case USBD_IDX_MFC_STR:
-			if (otp->otp_param) {
-				desc = otp->mfg_str;
-				len = otp->mfg_str_len;
-			} else {
-				len = usbd_get_str_descriptor(USBD_WHC_MFG_STRING, buf, buf_len);
-			}
-			break;
-		case USBD_IDX_PRODUCT_STR:
-			if (otp->otp_param) {
-				desc = otp->prod_str;
-				len = otp->prod_str_len;
-			} else {
-				len = usbd_get_str_descriptor(USBD_WHC_PROD_STRING, buf, buf_len);
-			}
-			break;
-		case USBD_IDX_SERIAL_STR:
-			if (otp->otp_sn) {
-				desc = otp->sn_str;
-				len = otp->sn_str_len;
-			} else {
-				len = usbd_get_str_descriptor(USBD_WHC_SN_STRING, buf, buf_len);
-			}
-			break;
-		case USBD_WHC_IDX_BT_STR:
-			len = usbd_get_str_descriptor(USBD_WHC_BT_STRING, buf, buf_len);
-			break;
-#ifdef CONFIG_WHC_ETH
-		case USBD_WHC_IDX_ETH_STR:
-			len = usbd_get_str_descriptor(USBD_WHC_ETH_STRING, buf, buf_len);
-			break;
-#endif
-		case USBD_IDX_MS_OS_STR:
-			/*Not support*/
-			break;
-		default:
-			USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_GET_DESC, 0);
-			break;
-		}
+		/* Every string this class owns is registered with usbd_add_string() and answered by
+		   the core, which only forwards an index it does not know, e.g. the MS OS string */
+		USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_GET_DESC, 0);
 		break;
 
 	default:
@@ -1852,29 +1883,14 @@ static u16 usbd_whc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 		usb_os_memcpy((void *)buf, (const void *)desc, len);
 	}
 
-	if (is_dev != 0) {
-		if (otp->otp_param) {
-			buf[USB_DEV_DESC_OFFSET_VID] = USB_LOW_BYTE(otp->vid);
-			buf[USB_DEV_DESC_OFFSET_VID + 1] = USB_HIGH_BYTE(otp->vid);
-			buf[USB_DEV_DESC_OFFSET_PID] = USB_LOW_BYTE(otp->pid);
-			buf[USB_DEV_DESC_OFFSET_PID + 1] = USB_HIGH_BYTE(otp->pid);
-		} else if (SYSCFG_OTP_BOOTSEL() == BOOT_FROM_USB) {
-			buf[USB_DEV_DESC_OFFSET_PID] = USB_LOW_BYTE(USBD_NIC_VID);
-			buf[USB_DEV_DESC_OFFSET_PID + 1] = USB_HIGH_BYTE(USBD_NIC_VID);
-		}
-	}
-
 	if (is_cfg != 0) {
 		buf[USB_CFG_DESC_OFFSET_TYPE] = type;
 		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN] = USB_LOW_BYTE(len);
 		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN + 1] = USB_HIGH_BYTE(len);
-		buf[USB_CFG_DESC_OFFSET_ATTR] &= ~(USB_CFG_DESC_OFFSET_ATTR_BIT_SELF_POWERED | USB_CFG_DESC_OFFSET_ATTR_BIT_REMOTE_WAKEUP);
-		if (otp->self_powered) {
-			buf[USB_CFG_DESC_OFFSET_ATTR] |= USB_CFG_DESC_OFFSET_ATTR_BIT_SELF_POWERED;
-		}
-		if (otp->remote_wakeup_en) {
-			buf[USB_CFG_DESC_OFFSET_ATTR] |= USB_CFG_DESC_OFFSET_ATTR_BIT_REMOTE_WAKEUP;
-		}
+
+		/* Emit the runtime string indices the core assigned. bmAttributes, bMaxPower and the
+		   device descriptor VID/PID/string indices are patched by the core itself. */
+		usbd_whc_patch_str_idx(buf + USB_LEN_CFG_DESC, (u16)(len - USB_LEN_CFG_DESC));
 	}
 
 	return len;
@@ -2051,6 +2067,15 @@ int usbd_whc_init(const usbd_whc_cb_t *cb)
 	if (usbd_otp_init(otp) != HAL_OK) {
 		RTK_LOGS(TAG, RTK_LOG_WARN, "Fail to load OTP para\n");
 	}
+
+	usbd_whc_apply_dev_info(otp);
+
+	/* Class-specific strings, whose indices the core hands out, so the descriptor fields
+	   naming them are patched at runtime rather than carrying a fixed index */
+	idev->bt_str_idx = (otp->bt_en != 0U) ? usbd_add_string(USBD_WHC_BT_STRING) : 0U;
+#ifdef CONFIG_WHC_ETH
+	idev->eth_str_idx = usbd_add_string(USBD_WHC_ETH_STRING);
+#endif
 
 	usbd_whc_wifi_init();
 #ifdef CONFIG_WHC_ETH

@@ -428,6 +428,8 @@ typedef struct {
 	u8 stream_idx;                          // Stream Index (0 or 1 for dual stream support)
 	u8 set_alt;                             // Flag used in ctrl process machine: 0 (Unset), 1 (Set).
 	u8 set_alt_retry;                       // Retry counter for SET_ALT (SET_INTERFACE) failures.
+	u8 alt_active;                          // Device parked on the streaming altsetting: 0 (alt 0, no isoc ep), 1 (working alt).
+	u8 start_pending;                       // SET_ALT in flight was issued by usbh_uvc_start(), not by set_param.
 } usbh_uvc_stream_t;
 
 /**

@@ -20,33 +20,27 @@ extern "C" {
 
 /* ---------- Configuration defines (device-specific) -----------------------*/
 
-/* Maximum firmware block transfer size per DNLOAD/UPLOAD request */
-#define USBD_DFU_XFER_SIZE                1024U
+/* Defaults applied when the matching @ref usbd_dfu_config_t field is left 0/NULL. */
 
-/* DFU detach timeout (ms) */
-#define USBD_DFU_DETACH_TIMEOUT           1000U
+/** Default maximum firmware block transfer size per DNLOAD/UPLOAD request. */
+#define USBD_DFU_DEFAULT_XFER_SIZE        1024U
+/** Default DFU detach timeout (ms), reported as wDetachTimeOut. */
+#define USBD_DFU_DEFAULT_DETACH_TIMEOUT   1000U
+/** Default iInterface string. */
+#define USBD_DFU_DEFAULT_IFACE_STRING     "DFU Interface"
 
-/* Device/Product IDs */
-#define USBD_DFU_VID                      USB_VID               /**< Vendor ID. */
-#define USBD_DFU_PID                      USB_PID               /**< Product ID. */
+/* Async write task defaults. frame data is staged in the class buffer, so the stack only needs
+ * call frames plus RTOS overhead. */
+#define USBD_DFU_DEFAULT_WRITE_TASK_STACK       768U
+#define USBD_DFU_DEFAULT_WRITE_TASK_PRIORITY    3U
+/** Default ms reported in bwPollTimeout during DNLOAD; 0 lets the host poll immediately. */
+#define USBD_DFU_DEFAULT_WRITE_POLL_MS          0U
 
-/* String descriptor content */
-#define USBD_DFU_LANGID_STRING            0x0409U
-#define USBD_DFU_MFR_STRING               "Realtek"
-#define USBD_DFU_PRODUCT_STRING           "Realtek DFU"
-#define USBD_DFU_IFACE_STRING             "DFU Interface"
-
-
-
-/* Async write task configuration */
-#define USBD_DFU_WRITE_TASK_STACK         768U
-#define USBD_DFU_WRITE_TASK_PRIORITY      3U
-#define USBD_DFU_WRITE_POLL_MS_DEFAULT    0U    /* ms reported in bwPollTimeout; set via usbd_dfu_set_write_poll_ms() */
-
-/* Async manifest task configuration */
-#define USBD_DFU_MANIFEST_TASK_STACK      768U
-#define USBD_DFU_MANIFEST_TASK_PRIORITY   3U
-#define USBD_DFU_MANIFEST_POLL_MS_DEFAULT 100U  /* ms reported as bwPollTimeout during MANIFEST */
+/* Async manifest task defaults. */
+#define USBD_DFU_DEFAULT_MANIFEST_TASK_STACK    768U
+#define USBD_DFU_DEFAULT_MANIFEST_TASK_PRIORITY 3U
+/** Default ms reported as bwPollTimeout during MANIFEST. */
+#define USBD_DFU_DEFAULT_MANIFEST_POLL_MS       100U
 
 /*
  * Run-Time / DFU Mode dual-descriptor support (DFU 1.1 §4.1/§4.2 + §5 Reconfiguration).
@@ -59,43 +53,107 @@ extern "C" {
 #define USBD_DFU_CFG_IF_PROTOCOL_OFFSET   16U
 /* Byte offset of iInterface inside the config blob: Config(9) + 8 */
 #define USBD_DFU_CFG_IF_ISTR_OFFSET       17U
+/* Byte offsets inside the config blob of the DFU Functional Descriptor fields patched at
+ * runtime: the descriptor starts after Config(9) + Interface(9), and wDetachTimeOut sits at
+ * its offset 3, wTransferSize at its offset 5. */
+#define USBD_DFU_CFG_DETACH_TIMEOUT_OFFSET 21U
+#define USBD_DFU_CFG_XFER_SIZE_OFFSET      23U
 /* Reconfiguration task that performs the off-ISR bus detach/attach */
-#define USBD_DFU_REENUM_TASK_STACK        768U
-#define USBD_DFU_REENUM_TASK_PRIORITY     3U
-/* Delay (ms) after DFU_DETACH so its control status stage completes before detach */
-#define USBD_DFU_DETACH_STATUS_DELAY_MS   5U
+#define USBD_DFU_DEFAULT_REENUM_TASK_STACK      768U
+#define USBD_DFU_DEFAULT_REENUM_TASK_PRIORITY   3U
+/** Default delay (ms) after DFU_DETACH so its control status stage completes before detach. */
+#define USBD_DFU_DEFAULT_DETACH_STATUS_DELAY_MS 5U
 
 /*
- * DFU bitWillDetach behaviour (DFU 1.1 §4.2.4, bmAttributes bit 3):
- *   1 — Device generates its own bus detach/attach sequence after DFU_DETACH.
+ * Feature switches. These select which code and which usbd_dfu_dev_t members are compiled, not
+ * just a value, so they stay compile-time and come from Kconfig: set CONFIG_USBD_DFU_WILL_DETACH,
+ * CONFIG_USBD_DFU_MANIFESTATION_TOLERANT and CONFIG_USBD_DFU_CAN_UPLOAD in the application prj.conf.
+ */
+
+/*
+ * DFU bitWillDetach behaviour (DFU 1.1 4.2.4, bmAttributes bit 3):
+ *   1 - Device generates its own bus detach/attach sequence after DFU_DETACH.
  *       The host must NOT issue a USB Reset; reconf_task toggles the D+ pull-up.
  *       bmAttributes bit 3 (WILL_DETACH) is set in the DFU Functional Descriptor.
- *   0 (default) — Device waits for the host to issue a USB Reset within
- *       wDetachTimeOut (USBD_DFU_DETACH_TIMEOUT) ms after DFU_DETACH.  If the
- *       reset arrives the device re-enumerates in DFU mode; if the timeout expires
- *       without a reset the device reverts to appIDLE (Run-Time mode).
+ *   0 - Device waits for the host to issue a USB Reset within wDetachTimeOut ms after
+ *       DFU_DETACH.  If the reset arrives the device re-enumerates in DFU mode; if the timeout
+ *       expires without a reset the device reverts to appIDLE (Run-Time mode).
  *       bmAttributes bit 3 is NOT set.
  */
+#ifdef CONFIG_USBD_DFU_WILL_DETACH
 #define USBD_DFU_WILL_DETACH              1
+#else
+#define USBD_DFU_WILL_DETACH              0
+#endif
 
 /*
- * DFU bitManifestationTolerant behaviour (DFU 1.1 §4.2, bmAttributes bit 2):
- *   1 (default) — Device returns to dfuIDLE immediately after manifest.
- *                 Host can continue further operations (e.g., UPLOAD verify).
- *   0 — Device enters dfuMANIFEST-WAIT-RESET after manifest.
+ * DFU bitManifestationTolerant behaviour (DFU 1.1 4.2, bmAttributes bit 2):
+ *   1 - Device returns to dfuIDLE immediately after manifest.
+ *       Host can continue further operations (e.g., UPLOAD verify).
+ *   0 - Device enters dfuMANIFEST-WAIT-RESET after manifest.
  *       Host must issue a USB bus reset to activate the new firmware.
  *       bmAttributes bit 2 is NOT set.
  */
-#define USBD_DFU_MANIFESTATION_TOL        1
+#ifdef CONFIG_USBD_DFU_MANIFESTATION_TOLERANT
+#define USBD_DFU_MANIFESTATION_TOLERANT        1
+#else
+#define USBD_DFU_MANIFESTATION_TOLERANT        0
+#endif
 
 /*
- * DFU bitCanUpload (bmAttributes bit 1): enables firmware upload (device→host).
- *   1 (default) — DFU_UPLOAD accepted; cb->read must be provided.
- *   0 — All DFU_UPLOAD stall → dfuERROR.
+ * DFU bitCanUpload (bmAttributes bit 1): enables firmware upload (device->host).
+ *   1 - DFU_UPLOAD accepted; cb->read must be provided.
+ *   0 - All DFU_UPLOAD stall -> dfuERROR.
  */
+#ifdef CONFIG_USBD_DFU_CAN_UPLOAD
 #define USBD_DFU_CAN_UPLOAD               1
+#else
+#define USBD_DFU_CAN_UPLOAD               0
+#endif
 
 /* Exported types ------------------------------------------------------------*/
+
+/**
+ * @brief Configuration for the DFU class.
+ * @details Carries every DFU option. This class is EP0-only (DFU 1.1: no class endpoints), so
+ *          there is no endpoint allocation to pass in; what remains is the advertised transfer
+ *          size and timeouts plus the sizing of the three asynchronous tasks. Device-global
+ *          parameters (VID/PID, strings, power attributes) live in @ref usbd_dev_info_t instead.
+ *          The bmAttributes feature bits are compile-time Kconfig options, not fields here,
+ *          because they select which code and which device members exist at all.
+ * @note  The structure is stored by pointer, not copied, so it shall remain valid until
+ *        @ref usbd_dfu_deinit.
+ */
+typedef struct {
+	/**
+	 * @brief Maximum firmware block per DNLOAD/UPLOAD, 0 uses @ref USBD_DFU_DEFAULT_XFER_SIZE.
+	 * @details Advertised as wTransferSize, so the host honours it, and it also sizes the class
+	 *          buffer that temporarily replaces the core's EP0 buffer. It therefore has to be
+	 *          DMA-alignable and within what the EP0 path can carry; init validates the
+	 *          allocation and rejects a size it cannot serve.
+	 */
+	u32 xfer_size;
+	/**
+	 * @brief Detach timeout in ms, 0 uses @ref USBD_DFU_DEFAULT_DETACH_TIMEOUT.
+	 * @details Reported as wDetachTimeOut and, when `CONFIG_USBD_DFU_WILL_DETACH` is not set,
+	 *          used as the real detach-timer period, so one value drives both and the device
+	 *          cannot promise the host a window it does not honour.
+	 */
+	u32 detach_timeout_ms;
+	u32 write_poll_ms;          /**< bwPollTimeout during DNLOAD, 0 uses @ref USBD_DFU_DEFAULT_WRITE_POLL_MS.
+	                                 Overridable later via @ref usbd_dfu_set_write_poll_ms. */
+	u32 manifest_poll_ms;       /**< bwPollTimeout during MANIFEST, 0 uses @ref USBD_DFU_DEFAULT_MANIFEST_POLL_MS.
+	                                 Overridable later via @ref usbd_dfu_set_manifest_poll_ms. */
+	const char *itf_str;        /**< iInterface string, NULL uses @ref USBD_DFU_DEFAULT_IFACE_STRING. */
+	u16 write_task_stack_size;  /**< Write task stack in bytes, 0 uses @ref USBD_DFU_DEFAULT_WRITE_TASK_STACK. */
+	u16 manifest_task_stack_size; /**< Manifest task stack in bytes, 0 uses @ref USBD_DFU_DEFAULT_MANIFEST_TASK_STACK. */
+	u16 reenum_task_stack_size; /**< Reconfiguration task stack in bytes, 0 uses @ref USBD_DFU_DEFAULT_REENUM_TASK_STACK. */
+	u16 detach_status_delay_ms; /**< Delay after DFU_DETACH before the bus detach, 0 uses
+	                                 @ref USBD_DFU_DEFAULT_DETACH_STATUS_DELAY_MS. */
+	u8  write_task_priority;    /**< Write task priority, 0 uses @ref USBD_DFU_DEFAULT_WRITE_TASK_PRIORITY. */
+	u8  manifest_task_priority; /**< Manifest task priority, 0 uses @ref USBD_DFU_DEFAULT_MANIFEST_TASK_PRIORITY. */
+	u8  reenum_task_priority;   /**< Reconfiguration task priority, 0 uses @ref USBD_DFU_DEFAULT_REENUM_TASK_PRIORITY. */
+} usbd_dfu_config_t;
 
 /**
  * @brief DFU status codes (DFU 1.1 spec Table 3-2)
@@ -154,7 +212,7 @@ typedef struct {
 	 * @note   Called from a dedicated task context — blocking operations
 	 *         such as flash erase/program are permitted.
 	 * @param  block_num: wBlockNum from the DFU_DNLOAD request.
-	 * @param  buf:       Data buffer (USBD_DFU_XFER_SIZE bytes max).
+	 * @param  buf:       Data buffer (usbd_dfu_config_t::xfer_size bytes max).
 	 * @param  len:       Actual byte count in this block.
 	 * @retval 0 on success.  Non-zero triggers dfuERROR with ERR_WRITE.
 	 */
@@ -208,20 +266,13 @@ typedef struct {
 	void (*status_changed)(u8 old_status, u8 status);
 } usbd_dfu_cb_t;
 
-/* Class-specific string descriptors: indices above USBD_IDX_SERIAL_STR, laid out as a
- * window whose base is the standalone default below, or the one assigned by the composite
- * framework via set_str_base(). */
-#define USBD_DFU_STR_IDX_IFACE            0U                         /* Ordinal of the interface string inside the class string window */
-#define USBD_DFU_CLASS_STR_COUNT          1U                         /* Class-specific string count: iInterface only */
-#define USBD_DFU_CLASS_STR_BASE_DEFAULT   (USBD_IDX_SERIAL_STR + 1U) /* Standalone base, right above the device-global strings */
-
 /**
  * @brief Internal DFU device instance (opaque to application).
  */
 typedef struct {
 	usb_dev_t         *dev;
-	usbd_dfu_cb_t     *cb;
-	u8                *xfer_buf;        /* DNLOAD/UPLOAD block buffer (USBD_DFU_XFER_SIZE) */
+	const usbd_dfu_cb_t *cb;
+	u8                *xfer_buf;        /* DNLOAD/UPLOAD block buffer (xfer_size bytes) */
 	u8                *ep0_default_buf;     /* Saved original ep0_in.xfer_buf (shared ctrl_buf) */
 	u32                ep0_default_buf_len;  /* Saved original ep0_out.xfer_buf_len (EP0 IN/OUT share capacity) */
 	usb_dfu_state_t    state;
@@ -257,9 +308,13 @@ typedef struct {
 	rtos_timer_t       detach_timer;    /* One-shot timer: fires if host doesn't Reset within wDetachTimeOut */
 #endif
 	u8                from_composite;   /**< Flag indicating if part of a composite device. */
-	u8                cls_str_base;     /**< First class-specific string index; the standalone default
-	                                         (right above USBD_IDX_SERIAL_STR) unless the composite
-	                                         framework rebases it via set_str_base(). */
+	u8                itf_str_idx;      /**< iInterface string index from usbd_add_string(), 0 for none. */
+	const usbd_dfu_config_t *cfg;       /**< Pointer to the class configuration (set by init). */
+	u32               xfer_size;        /**< Allocated size of xfer_buf, i.e. the resolved
+	                                         usbd_dfu_config_t::xfer_size. */
+	u32               detach_timeout_ms;      /**< Resolved usbd_dfu_config_t::detach_timeout_ms; drives both
+	                                               the advertised wDetachTimeOut and the detach timer. */
+	u16               detach_status_delay_ms; /**< Resolved usbd_dfu_config_t::detach_status_delay_ms. */
 } usbd_dfu_dev_t;
 
 /* Exported variables --------------------------------------------------------*/
@@ -271,7 +326,7 @@ typedef struct {
  * @param  cb: Pointer to user callback structure.
  * @retval 0 on success, non-zero on failure.
  */
-int usbd_dfu_init(usbd_dfu_cb_t *cb);
+int usbd_dfu_init(const usbd_dfu_cb_t *cb, const usbd_dfu_config_t *cfg);
 
 #ifdef CONFIG_USBD_COMPOSITE
 /**
@@ -280,7 +335,7 @@ int usbd_dfu_init(usbd_dfu_cb_t *cb);
  * @param  cb: Pointer to user callback structure.
  * @retval 0 on success, non-zero on failure.
  */
-int usbd_composite_dfu_init(usbd_dfu_cb_t *cb);
+int usbd_composite_dfu_init(const usbd_dfu_cb_t *cb, const usbd_dfu_config_t *cfg);
 #endif
 
 /**

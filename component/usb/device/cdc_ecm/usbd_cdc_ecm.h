@@ -32,14 +32,12 @@ extern "C" {
 
 #define USBD_CDC_ECM_MAC_STR_LEN        (6)      /**< Length of the MAC address in bytes. */
 
-/* Defines basic device parameters like VID, PID, and string descriptors. */
-#define USBD_CDC_ECM_VID                              USB_VID               /**< Vendor ID. */
-#define USBD_CDC_ECM_PID                              USB_PID               /**< Product ID. */
-#define USBD_CDC_ECM_LANGID_STRING                    0x0409U               /**< Language ID for string descriptors (0x0409 = English) */
-#define USBD_CDC_ECM_MFG_STRING                       "Realtek"             /**< Manufacturer string. */
-#define USBD_CDC_ECM_PROD_HS_STRING                   "Realtek CDC ECM (HS)"/**< Product string for High-Speed mode. */
-#define USBD_CDC_ECM_PROD_FS_STRING                   "Realtek CDC ECM (FS)"/**< Product string for Full-Speed mode. */
-#define USBD_CDC_ECM_SN_STRING                        "1234567890"          /**< Serial number string. */
+/* Defaults applied when the matching @ref usbd_cdc_ecm_config_t field is left 0. */
+#define USBD_CDC_ECM_DEFAULT_INTR_IN_INTERVAL         8U     /**< Default INTR IN bInterval. */
+#define USBD_CDC_ECM_DEFAULT_BULK_TX_QUEUE_DEPTH      5U     /**< Default TX ring buffer slot count. */
+#define USBD_CDC_ECM_DEFAULT_BULK_TX_TIMEOUT_MS       10U    /**< Default blocking-transmit timeout in ms. */
+#define USBD_CDC_ECM_DEFAULT_RX_TASK_STACK_SIZE       1280U  /**< Default RX delivery task stack size in bytes. */
+#define USBD_CDC_ECM_DEFAULT_RX_TASK_PRIORITY         6U     /**< Default RX delivery task priority. */
 
 /* Set to 1 to enable the periodic state-trace thread (default off).
  * When enabled, a low-priority thread prints link/endpoint/TX-ring-buffer state,
@@ -48,9 +46,6 @@ extern "C" {
  * without a debugger.  Zero-cost when disabled: every dbg_* counter field and
  * all instrumentation is compiled out. */
 #define USBD_CDC_ECM_STATE_TRACE_ENABLE 0
-
-#define USBD_CDC_ECM_HS_INTR_IN_INTERVAL              8U     /**< High speed INTR IN interval */
-#define USBD_CDC_ECM_FS_INTR_IN_INTERVAL              8U     /**< Full speed INTR IN interval */
 
 /* Interface numbers */
 #define USBD_CDC_ECM_COMM_INTERFACE_NUM 0x00U  /**< Communication interface */
@@ -74,22 +69,40 @@ extern "C" {
  */
 
 /**
- * @brief USB CDC ECM Device Private Data Structure.
+ * @brief Configuration for the CDC ECM class.
+ * @details Carries every CDC ECM option: the endpoint allocation, which the top-level
+ *          application owns, plus the MAC address and the TX/RX resource sizing. Used by
+ *          both standalone and composite modes. Device-global parameters (VID/PID, strings,
+ *          power attributes) live in @ref usbd_dev_info_t instead, and application-level
+ *          options such as hotplug or the network configuration belong in the example's own
+ *          configuration structure.
+ * @note  The structure is stored by pointer, not copied, so it shall remain valid until
+ *        @ref usbd_cdc_ecm_deinit.
  */
 typedef struct {
-	const u8 *mac_value;     /**< Pointer to the MAC address buffer; typically points to a 6-byte physical address. */
-} usbd_cdc_ecm_priv_data_t;
-
-/**
- * @brief EP configuration for CDC ECM.
- * @details Specifies endpoint addresses for BULK IN/OUT and INTR IN endpoints.
- *          Used by both standalone and composite modes. Assigned at example layer.
- */
-typedef struct {
-	u8  bulk_in_addr;       /**< BULK IN endpoint address (e.g. 0x81) */
-	u8  bulk_out_addr;      /**< BULK OUT endpoint address (e.g. 0x01) */
-	u8  intr_in_addr;       /**< INTERRUPT IN endpoint address (e.g. 0x83) */
-} usbd_cdc_ecm_ep_cfg_t;
+	/**
+	 * @brief MAC address reported to the host, 6 bytes, NULL for the class default.
+	 * @details Copied into the class at init and formatted into the iMACAddress string,
+	 *          so the buffer itself needs not outlive the init call.
+	 */
+	const u8 *mac;
+	const char *itf_str;        /**< iInterface string of the communication interface, NULL for none. */
+	u16 bulk_tx_timeout_ms;     /**< Blocking-transmit timeout in ms, 0 uses @ref USBD_CDC_ECM_DEFAULT_BULK_TX_TIMEOUT_MS. */
+	u16 rx_task_stack_size;     /**< RX delivery task stack size in bytes, 0 uses @ref USBD_CDC_ECM_DEFAULT_RX_TASK_STACK_SIZE. */
+	u8  bulk_in_addr;           /**< BULK IN endpoint address (e.g. 0x81). */
+	u8  bulk_out_addr;          /**< BULK OUT endpoint address (e.g. 0x01). */
+	u8  intr_in_addr;           /**< INTERRUPT IN endpoint address (e.g. 0x83). */
+	u8  intr_in_interval_hs;    /**< INTR IN bInterval at High Speed, 0 uses @ref USBD_CDC_ECM_DEFAULT_INTR_IN_INTERVAL. */
+	u8  intr_in_interval_fs;    /**< INTR IN bInterval at Full Speed, 0 uses @ref USBD_CDC_ECM_DEFAULT_INTR_IN_INTERVAL. */
+	/**
+	 * @brief Number of Ethernet frames the TX ring buffer can hold, 0 uses
+	 *        @ref USBD_CDC_ECM_DEFAULT_BULK_TX_QUEUE_DEPTH.
+	 * @details Each slot costs one max-size segment of heap, and deeper queues absorb longer
+	 *          bursts before @ref usbd_cdc_ecm_transmit has to block or drop.
+	 */
+	u8  bulk_tx_queue_depth;
+	u8  rx_task_priority;       /**< RX delivery task priority, 0 uses @ref USBD_CDC_ECM_DEFAULT_RX_TASK_PRIORITY. */
+} usbd_cdc_ecm_config_t;
 
 /**
  * @brief Structure containing callback functions for the CDC ECM class.
@@ -97,11 +110,6 @@ typedef struct {
  *          to handle class-specific events.
  */
 typedef struct {
-	/**
-	 * @brief Pointer to the USB CDC ECM private data structure.
-	 */
-	const usbd_cdc_ecm_priv_data_t *priv;
-
 	/**
 	 * @brief Called during CDC ECM class driver initialization to set up application resources.
 	 * @return 0 on success, non-zero on failure.
@@ -146,7 +154,7 @@ typedef struct {
  * @brief Structure representing the CDC ECM device instance.
  */
 typedef struct {
-	const usbd_cdc_ecm_ep_cfg_t *ep_cfg;  /**< Pointer to the EP configuration (set by init). */
+	const usbd_cdc_ecm_config_t *cfg;      /**< Pointer to the class configuration (set by init). */
 	const usbd_cdc_ecm_cb_t *cb;           /**< User-defined callback structure. */
 	usb_dev_t *dev;                         /**< USB device instance. */
 	usbd_ep_t ep_bulk_in;           /**< BULK IN endpoint. */
@@ -218,9 +226,14 @@ typedef struct {
 	__IO u8 rx_thread_running;              /**< RX thread loop guard; cleared to 0 to request exit. */
 	u8 ctrl_req_pending;                    /**< 1 if ctrl_req is waiting for its EP0 OUT data stage. */
 	u8 from_composite;                      /**< Flag indicating if part of a composite device. */
-	u8 cls_str_base;                        /**< First class-specific string index; the standalone default
-	                                             (right above USBD_IDX_SERIAL_STR) unless the composite
-	                                             framework rebases it via set_str_base(). */
+	u8 mac_str_idx;                         /**< iMACAddress string index from usbd_add_string(), 0 for none. */
+	u8 itf_str_idx;                         /**< Communication interface iInterface string index from usbd_add_string(), 0 for none. */
+	/**
+	 * @brief MAC address as the 12 uppercase hex characters the iMACAddress string reports.
+	 * @details Registered with the core by pointer, so it has to outlive enumeration rather
+	 *          than being formatted into a local buffer on each request.
+	 */
+	char mac_str[(USBD_CDC_ECM_MAC_STR_LEN * 2U) + 1U];
 	u8 if_base;                             /**< First interface number of this class; 0 in standalone
 	                                             mode unless the composite framework rebases it via
 	                                             set_interface_base(). */
@@ -243,19 +256,19 @@ typedef struct {
 /**
  * @brief Initializes class driver with application callback handler.
  * @param[in] cb: Pointer to the user-defined callback structure.
- * @param[in] ep_cfg: Pointer to EP configuration (endpoint addresses).
+ * @param[in] cfg: Pointer to the class configuration. See @ref usbd_cdc_ecm_config_t.
  * @return 0 on success, non-zero on failure.
  */
-int usbd_cdc_ecm_init(const usbd_cdc_ecm_cb_t *cb, const usbd_cdc_ecm_ep_cfg_t *ep_cfg);
+int usbd_cdc_ecm_init(const usbd_cdc_ecm_cb_t *cb, const usbd_cdc_ecm_config_t *cfg);
 
 #ifdef CONFIG_USBD_COMPOSITE
 /**
  * @brief Initializes class driver as part of a composite device.
  * @param[in] cb: Pointer to the user-defined callback structure.
- * @param[in] ep_cfg: Pointer to EP configuration (endpoint addresses).
+ * @param[in] cfg: Pointer to the class configuration. See @ref usbd_cdc_ecm_config_t.
  * @return 0 on success, non-zero on failure.
  */
-int usbd_composite_cdc_ecm_init(const usbd_cdc_ecm_cb_t *cb, const usbd_cdc_ecm_ep_cfg_t *ep_cfg);
+int usbd_composite_cdc_ecm_init(const usbd_cdc_ecm_cb_t *cb, const usbd_cdc_ecm_config_t *cfg);
 #endif
 
 /**
@@ -269,7 +282,8 @@ void usbd_cdc_ecm_deinit(void);
  * @brief Transmits data to the host over the BULK IN endpoint.
  * @param[in] buf: Pointer to the data buffer to be transmitted.
  * @param[in] len: Length of the data in bytes.
- * @param[in] block: Blocking mode flag (e.g., 0 for non-blocking, else for blocking).
+ * @param[in] block: Blocking mode flag (0 for non-blocking, else block up to
+ *                   @ref usbd_cdc_ecm_config_t::bulk_tx_timeout_ms).
  * @return 0 on success, non-zero on failure.
  */
 int usbd_cdc_ecm_transmit(u8 *buf, u32 len, u8 block);

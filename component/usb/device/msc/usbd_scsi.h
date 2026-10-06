@@ -12,6 +12,15 @@
 
 /* Exported defines ----------------------------------------------------------*/
 
+/* Exported variables --------------------------------------------------------*/
+
+/**
+ * @brief Class default SCSI standard INQUIRY response.
+ * @details Template the per-instance response is built from; only the identification fields
+ *          are overwritten from @ref usbd_msc_config_t.
+ */
+extern const u8 usbd_msc_default_inquiry_data[INQUIRY_DATA_LEN];
+
 /* Exported functions --------------------------------------------------------*/
 
 int usbd_scsi_process_cmd(usbd_msc_dev_t *cdev, u8 *cmd);

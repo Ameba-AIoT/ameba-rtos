@@ -96,7 +96,7 @@ typedef struct {
 /**
  * @brief Structure containing callback functions for the CDC ACM host class.
  * @details The user application should provide an instance of this structure
- *          to handle class-specific events.
+ *          to handle class-specific messages.
  */
 typedef struct {
 	/**

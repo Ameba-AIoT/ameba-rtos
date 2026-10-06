@@ -29,26 +29,16 @@ enum usbd_cdc_ecm_notify_state {
 #define USBD_CDC_ECM_RX_SPEED_CHECK                       0                     /* CDC ECM rx speed test */
 #define USBD_CDC_ECM_TX_SPEED_CHECK                       0                     /* CDC ECM tx speed test */
 
-/* TX ring buffer capacity: number of Ethernet frames that can be queued while a DMA
- * transfer is in progress.  USBD_CDC_ECM_BULK_TX_RB_SIZE slots tolerate bursts without blocking the caller. */
-#define USBD_CDC_ECM_BULK_TX_RB_SIZE                  5U
-
-/* Maximum time (ms) usbd_cdc_ecm_transmit() will block waiting for a ring buffer
- * slot when called with block != 0.
+/* TX ring buffer capacity (usbd_cdc_ecm_config_t::bulk_tx_queue_depth) is the number of
+ * Ethernet frames that can be queued while a DMA transfer is in progress; the default
+ * tolerates bursts without blocking the caller.
  *
- * Must be long enough to cover the ring-buffer drain time under peak throughput:
- *   USB HS (480 Mbps bus, ~40 MB/s BULK effective): BULK_TX_RB_SIZE - 1514 B / 40 MB/s -> 0.4 ms
- *   USB FS ( 12 Mbps bus, ~1.5 MB/s BULK effective): BULK_TX_RB_SIZE - 1514 B / 1.5 MB/s -> 10 ms
- * 10 ms gives 2 ~ 6 * headroom for normal bursts without risking a noticeable
+ * The matching blocking-transmit timeout (usbd_cdc_ecm_config_t::bulk_tx_timeout_ms) must be
+ * long enough to cover the ring-buffer drain time under peak throughput:
+ *   USB HS (480 Mbps bus, ~40 MB/s BULK effective): depth * 1514 B / 40 MB/s -> 0.4 ms
+ *   USB FS ( 12 Mbps bus, ~1.5 MB/s BULK effective): depth * 1514 B / 1.5 MB/s -> 10 ms
+ * The 10 ms default gives 2 ~ 6 * headroom for normal bursts without risking a noticeable
  * tcpip-task freeze when the host stops polling BULK IN (stuck-TX scenario). */
-#define USBD_CDC_ECM_BULK_TX_TIMEOUT_MS               10U
-
-/* Class-specific string descriptors: indices above USBD_IDX_SERIAL_STR, laid out as a
- * window whose base is the standalone default below, or the one assigned by the composite
- * framework via set_str_base(). */
-#define USBD_CDC_ECM_STR_IDX_MAC                      0U                         /**< Ordinal of the MAC string inside the class string window */
-#define USBD_CDC_ECM_CLASS_STR_COUNT                  1U                         /**< Class-specific string count: iMACAddress only */
-#define USBD_CDC_ECM_CLASS_STR_BASE_DEFAULT           (USBD_IDX_SERIAL_STR + 1U) /**< Standalone base, right above the device-global strings */
 
 /* Buffer sizes */
 #define USBD_CDC_ECM_BULK_BUF_MAX_SIZE                ((USB_CDC_ECM_MAX_SEGMENT_SIZE + USB_BULK_HS_MAX_MPS - 1) / USB_BULK_HS_MAX_MPS * USB_BULK_HS_MAX_MPS)
@@ -68,9 +58,12 @@ enum usbd_cdc_ecm_notify_state {
  *   The SOF handler (fires every 1 ms FS / 125 us HS) polls the flag and
  *   trigger the endpoint as soon as the thread frees the buffer.
  *
- * rx_xfer_idx tracks which of the two buffers is currently armed for USB OUT. */
-#define USBD_CDC_ECM_RX_THREAD_STACK_SIZE             1280U
-#define USBD_CDC_ECM_RX_THREAD_PRIORITY               6U
+ * rx_xfer_idx tracks which of the two buffers is currently armed for USB OUT.
+ *
+ * The thread's stack size and priority come from usbd_cdc_ecm_config_t. */
+
+/* Poll period (ms) of the RX thread's blocking wait: bounds how long the thread takes to
+ * observe rx_thread_running == 0 at teardown, not a functional parameter. */
 #define USBD_CDC_ECM_RX_SEMA_TAKE_TIMEOUT_MS          100U
 
 #if USBD_CDC_ECM_STATE_TRACE_ENABLE
@@ -91,7 +84,6 @@ static int usbd_ecm_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len);
 static void usbd_ecm_sof(usb_dev_t *dev);
 static void usbd_ecm_status_changed(usb_dev_t *dev, u8 old_status, u8 status);
 #ifdef CONFIG_USBD_COMPOSITE
-static u8 usbd_ecm_set_str_base(u8 base);
 static void usbd_ecm_set_interface_base(u8 base);
 #endif
 static void usbd_ecm_bulk_tx_start_from_rb(void);
@@ -122,23 +114,15 @@ static const u8 usbd_cdc_ecm_dev_desc[USB_LEN_DEV_DESC] = {
 	0x00,                                           /* bDeviceSubClass: 0x00 (must be 0x00 per CDC 1.2 5.1.1) */
 	0x00,                                           /* bDeviceProtocol */
 	USB_MAX_EP0_SIZE,                               /* bMaxPacketSize0 */
-	USB_LOW_BYTE(USBD_CDC_ECM_VID),                 /* idVendor */
-	USB_HIGH_BYTE(USBD_CDC_ECM_VID),
-	USB_LOW_BYTE(USBD_CDC_ECM_PID),                 /* idProduct */
-	USB_HIGH_BYTE(USBD_CDC_ECM_PID),
-	0x00, 0x02,                                     /* bcdDevice: 2.0 */
-	USBD_IDX_MFC_STR,                               /* iManufacturer */
-	USBD_IDX_PRODUCT_STR,                           /* iProduct */
-	USBD_IDX_SERIAL_STR,                            /* iSerialNumber */
+	USB_LOW_BYTE(USB_VID),                          /* idVendor (patched by core from usbd_dev_info_t) */
+	USB_HIGH_BYTE(USB_VID),
+	USB_LOW_BYTE(USB_PID),                          /* idProduct (patched by core from usbd_dev_info_t) */
+	USB_HIGH_BYTE(USB_PID),
+	0x00, 0x02,                                     /* bcdDevice: 2.0 (patched by core from usbd_dev_info_t) */
+	USBD_IDX_MFC_STR,                               /* iManufacturer (patched by core) */
+	USBD_IDX_PRODUCT_STR,                           /* iProduct (patched by core) */
+	USBD_IDX_SERIAL_STR,                            /* iSerialNumber (patched by core) */
 	0x01                                            /* bNumConfigurations */
-};
-
-/* USB Standard String Descriptor 0 (Language ID) */
-static const u8 usbd_cdc_ecm_lang_id_desc[USB_LEN_LANGID_STR_DESC] = {
-	USB_LEN_LANGID_STR_DESC,                        /* bLength */
-	USB_DESC_TYPE_STRING,                           /* bDescriptorType */
-	USB_LOW_BYTE(USBD_CDC_ECM_LANGID_STRING),       /* wLANGID */
-	USB_HIGH_BYTE(USBD_CDC_ECM_LANGID_STRING),
 };
 
 #ifndef CONFIG_USB_FS
@@ -205,8 +189,7 @@ static const u8 usbd_cdc_ecm_hs_config_desc[] = {
 	USB_CDC_ECM_ETHERNET_FUNC_DESC_SIZE,            /* bFunctionLength */
 	USB_CDC_CS_INTERFACE,                           /* bDescriptorType */
 	USB_CDC_FUNC_DESC_ETHERNET_NETWORKING,          /* bDescriptorSubtype */
-	USBD_CDC_ECM_CLASS_STR_BASE_DEFAULT +
-	USBD_CDC_ECM_STR_IDX_MAC,                       /* iMACAddress, runtime patched */
+	0x00,                                           /* iMACAddress, runtime patched */
 	0x00, 0x00, 0x00, 0x00,                         /* bmEthernetStatistics */
 	USB_LOW_BYTE(USB_CDC_ECM_MAX_SEGMENT_SIZE),     /* wMaxSegmentSize */
 	USB_HIGH_BYTE(USB_CDC_ECM_MAX_SEGMENT_SIZE),
@@ -220,7 +203,7 @@ static const u8 usbd_cdc_ecm_hs_config_desc[] = {
 	USB_CH_EP_TYPE_INTR,                            /* bmAttributes */
 	USB_LOW_BYTE(USB_CDC_ECM_INTR_IN_PACKET_SIZE),  /* wMaxPacketSize */
 	USB_HIGH_BYTE(USB_CDC_ECM_INTR_IN_PACKET_SIZE),
-	USBD_CDC_ECM_HS_INTR_IN_INTERVAL,               /* bInterval */
+	USBD_CDC_ECM_DEFAULT_INTR_IN_INTERVAL,          /* bInterval (patched at runtime) */
 
 	/* Data Interface Descriptor (Alt 0 - No endpoints) */
 	USB_LEN_IF_DESC,                                /* bLength */
@@ -314,8 +297,7 @@ static const u8 usbd_cdc_ecm_fs_config_desc[] = {
 	USB_CDC_ECM_ETHERNET_FUNC_DESC_SIZE,            /* bFunctionLength */
 	USB_CDC_CS_INTERFACE,                           /* bDescriptorType */
 	USB_CDC_FUNC_DESC_ETHERNET_NETWORKING,          /* bDescriptorSubtype */
-	USBD_CDC_ECM_CLASS_STR_BASE_DEFAULT +
-	USBD_CDC_ECM_STR_IDX_MAC,                       /* iMACAddress, runtime patched */
+	0x00,                                           /* iMACAddress, runtime patched */
 	0x00, 0x00, 0x00, 0x00,                         /* bmEthernetStatistics */
 	USB_LOW_BYTE(USB_CDC_ECM_MAX_SEGMENT_SIZE),     /* wMaxSegmentSize */
 	USB_HIGH_BYTE(USB_CDC_ECM_MAX_SEGMENT_SIZE),
@@ -329,7 +311,7 @@ static const u8 usbd_cdc_ecm_fs_config_desc[] = {
 	USB_CH_EP_TYPE_INTR,                            /* bmAttributes */
 	USB_LOW_BYTE(USB_CDC_ECM_INTR_IN_PACKET_SIZE),  /* wMaxPacketSize */
 	USB_HIGH_BYTE(USB_CDC_ECM_INTR_IN_PACKET_SIZE),
-	USBD_CDC_ECM_FS_INTR_IN_INTERVAL,               /* bInterval */
+	USBD_CDC_ECM_DEFAULT_INTR_IN_INTERVAL,          /* bInterval (patched at runtime) */
 
 	/* Data Interface Descriptor (Alt 0 - No endpoints) */
 	USB_LEN_IF_DESC,                                /* bLength */
@@ -384,7 +366,6 @@ static const usbd_class_driver_t usbd_cdc_ecm_driver = {
 	.sof = usbd_ecm_sof,
 	.status_changed = usbd_ecm_status_changed,
 #ifdef CONFIG_USBD_COMPOSITE
-	.set_str_base = usbd_ecm_set_str_base,
 	.set_interface_base = usbd_ecm_set_interface_base,
 #endif
 };
@@ -444,6 +425,10 @@ static void usbd_ecm_set_mac(const u8 *mac)
 	}
 
 	usb_os_memcpy((void *) & (ecm->mac[0]), (const void *)mac, USBD_CDC_ECM_MAC_STR_LEN);
+
+	/* Keep the string form in step: the core holds it by pointer for the iMACAddress
+	   string descriptor, so it is formatted here rather than on each request */
+	usbd_ecm_mac_to_string(ecm->mac, ecm->mac_str);
 
 	ecm->mac_valid = 1;
 }
@@ -801,19 +786,6 @@ static int usbd_ecm_set_config(usb_dev_t *dev, u8 config)
 
 	ecm->dev = dev;
 
-	if (!ecm->from_composite) {
-#ifdef CONFIG_USBD_SELF_POWERED
-		dev->self_powered = 1;
-#else
-		dev->self_powered = 0;
-#endif
-#ifdef CONFIG_USBD_REMOTE_WAKEUP_EN
-		dev->remote_wakeup_en = 1;
-#else
-		dev->remote_wakeup_en = 0;
-#endif
-	}
-
 	/* Initialize INTR IN endpoint.  It is the only endpoint that belongs to the
 	 * configuration itself: the communication interface has a single alternate
 	 * setting (alt 0), so its notification endpoint exists as soon as the device
@@ -1115,7 +1087,7 @@ static int usbd_ecm_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status)
 	UNUSED(dev);
 	UNUSED(status);
 
-	if (ep_addr == ecm->ep_cfg->bulk_in_addr) {
+	if (ep_addr == ecm->cfg->bulk_in_addr) {
 		ep_bulk_in->xfer_state = 0U;
 		/* The completed frame was already dequeued (and its slot freed) in
 		 * usbd_ecm_bulk_tx_start_from_rb() before the DMA started, so there is
@@ -1131,7 +1103,7 @@ static int usbd_ecm_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status)
 #if USBD_CDC_ECM_STATE_TRACE_ENABLE
 		ecm->dbg_bulk_in_done_cnt++;
 #endif
-	} else if (ep_addr == ecm->ep_cfg->intr_in_addr) {
+	} else if (ep_addr == ecm->cfg->intr_in_addr) {
 		ep_intr_in->xfer_state = 0U;
 		/* Defer the next notification transmission to the SOF handler so all
 		 * retry paths converge in one place (usbd_ecm_sof).  SOF fires every
@@ -1207,7 +1179,7 @@ static int usbd_ecm_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len)
 
 	UNUSED(dev);
 
-	if (ep_addr != ecm->ep_cfg->bulk_out_addr) {
+	if (ep_addr != ecm->cfg->bulk_out_addr) {
 		return HAL_ERR_PARA;
 	}
 
@@ -1338,19 +1310,26 @@ static int usbd_ecm_handle_ep0_data_out(usb_dev_t *dev)
 /**
  * @brief Patch the runtime-assigned fields in a configuration descriptor block
  * @note   Replaces direction-only EP placeholders (USB_D2H/USB_H2D) with actual
- *         EP addresses from the EP configuration structure, rewrites the iMACAddress
- *         string index with the current class string base, and rebases the Union FD
- *         interface cross-references with the current interface base. Both bases are
- *         the standalone defaults unless the composite framework rebased them.
+ *         EP addresses from the class configuration, applies the configured INTR IN
+ *         interval, rewrites the iMACAddress and iInterface string indices with the
+ *         indices the core assigned, and rebases the Union FD interface cross-references
+ *         with the current interface base, which is the standalone default unless the
+ *         composite framework rebased it.
  * @param  desc: Pointer to config descriptor body (starting after config header)
  * @param  len: Length of the descriptor block
- * @param  ep_cfg: EP configuration with actual endpoint addresses
+ * @param  speed: Current device speed, selects the INTR IN interval
  * @retval None
  */
-static void usbd_cdc_ecm_patch_desc(u8 *desc, u16 len,
-									const usbd_cdc_ecm_ep_cfg_t *ep_cfg)
+static void usbd_cdc_ecm_patch_desc(u8 *desc, u16 len, usb_speed_type_t speed)
 {
 	usbd_cdc_ecm_dev_t *ecm = &usbd_cdc_ecm_dev;
+	const usbd_cdc_ecm_config_t *cfg = ecm->cfg;
+	u8 interval;
+
+	interval = (speed == USB_SPEED_HIGH) ? cfg->intr_in_interval_hs : cfg->intr_in_interval_fs;
+	if (interval == 0U) {
+		interval = USBD_CDC_ECM_DEFAULT_INTR_IN_INTERVAL;
+	}
 
 	for (u16 i = 0; i < len;) {
 		u8 dlen = desc[i];
@@ -1371,18 +1350,26 @@ static void usbd_cdc_ecm_patch_desc(u8 *desc, u16 len,
 			u8 type  = desc[i + 3] & 0x03;
 
 			if ((dir == USB_D2H) && (type == USB_CH_EP_TYPE_BULK)) {
-				desc[i + 2] = ep_cfg->bulk_in_addr;
+				desc[i + 2] = cfg->bulk_in_addr;
 			} else if ((dir == USB_H2D) && (type == USB_CH_EP_TYPE_BULK)) {
-				desc[i + 2] = ep_cfg->bulk_out_addr;
+				desc[i + 2] = cfg->bulk_out_addr;
 			} else if ((dir == USB_D2H) && (type == USB_CH_EP_TYPE_INTR)) {
-				desc[i + 2] = ep_cfg->intr_in_addr;
+				desc[i + 2] = cfg->intr_in_addr;
+				if (dlen >= USB_LEN_EP_DESC) {
+					desc[i + 6] = interval;         /* bInterval */
+				}
 			}
+		} else if ((dtype == USB_DESC_TYPE_INTERFACE) && (dlen >= USB_LEN_IF_DESC) &&
+				   (desc[i + 5] == USB_CDC_COMM_INTERFACE_CLASS_CODE)) {
+			/* The data interface keeps the 0x00 placeholder: only the communication
+			 * interface is named, matching the CDC ACM class. */
+			desc[i + 8] = ecm->itf_str_idx;         /* iInterface */
 		} else if ((dtype == USB_CDC_CS_INTERFACE) && (dlen >= 4) &&
 				   (desc[i + 2] == USB_CDC_FUNC_DESC_ETHERNET_NETWORKING)) {
 			/* Ethernet Networking FD: iMACAddress at offset 3. Writes the standalone
 			 * default (same as the static template) unless the composite framework
 			 * rebased the class string window. */
-			desc[i + 3] = (u8)(ecm->cls_str_base + USBD_CDC_ECM_STR_IDX_MAC);
+			desc[i + 3] = ecm->mac_str_idx;
 		} else if ((dtype == USB_CDC_CS_INTERFACE) && (dlen >= 5) &&
 				   (desc[i + 2] == USB_CDC_FUNC_DESC_UNION)) {
 			/* Union FD: bControlInterface at offset 3, bSubordinateInterface0 at offset 4
@@ -1400,24 +1387,11 @@ static void usbd_cdc_ecm_patch_desc(u8 *desc, u16 len,
  */
 static u16 usbd_ecm_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16 buf_len)
 {
-	usbd_cdc_ecm_dev_t *ecm = &usbd_cdc_ecm_dev;
 	usb_speed_type_t speed = dev->dev_speed;
 	u8 desc_type = USB_HIGH_BYTE(req->wValue);
-	u8 desc_idx = USB_LOW_BYTE(req->wValue);
-	char mac_buf[32] = {0,};
 	const u8 *desc = NULL;
 	u16 len = 0;
 	u8 is_cfg = 0;
-	u8 attr = 0x80U;
-
-	if (!ecm->from_composite) {
-#ifdef CONFIG_USBD_SELF_POWERED
-		attr |= USB_CFG_DESC_OFFSET_ATTR_BIT_SELF_POWERED;
-#endif
-#ifdef CONFIG_USBD_REMOTE_WAKEUP_EN
-		attr |= USB_CFG_DESC_OFFSET_ATTR_BIT_REMOTE_WAKEUP;
-#endif
-	}
 
 	switch (desc_type) {
 	case USB_DESC_TYPE_DEVICE:
@@ -1455,31 +1429,9 @@ static u16 usbd_ecm_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 #endif
 
 	case USB_DESC_TYPE_STRING:
-		switch (desc_idx) {
-		case USBD_IDX_LANGID_STR:
-			desc = usbd_cdc_ecm_lang_id_desc;
-			len = sizeof(usbd_cdc_ecm_lang_id_desc);
-			break;
-		case USBD_IDX_MFC_STR:
-			len = usbd_get_str_descriptor(USBD_CDC_ECM_MFG_STRING, buf, buf_len);
-			break;
-		case USBD_IDX_PRODUCT_STR:
-			len = usbd_get_str_descriptor((speed == USB_SPEED_HIGH) ?
-										  USBD_CDC_ECM_PROD_HS_STRING : USBD_CDC_ECM_PROD_FS_STRING, buf, buf_len);
-			break;
-		case USBD_IDX_SERIAL_STR:
-			len = usbd_get_str_descriptor(USBD_CDC_ECM_SN_STRING, buf, buf_len);
-			break;
-		default:
-			/* Class-specific indices are decided at runtime (rebased by the composite
-			 * framework), so they cannot be case labels. Comparing them here also makes
-			 * it impossible to shadow the device-global indices above. */
-			if (desc_idx == (u8)(ecm->cls_str_base + USBD_CDC_ECM_STR_IDX_MAC)) {
-				usbd_ecm_mac_to_string((u8 *)(ecm->mac), mac_buf);
-				len = usbd_get_str_descriptor(mac_buf, buf, buf_len);
-			}
-			break;
-		}
+		/* Every string this class owns is registered with usbd_add_string() and answered by
+		   the core, which only forwards an index it does not know, e.g. the MS OS string */
+		USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_GET_DESC, 0);
 		break;
 
 	default:
@@ -1501,33 +1453,14 @@ static u16 usbd_ecm_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN] = USB_LOW_BYTE(len);
 		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN + 1] = USB_HIGH_BYTE(len);
 
-		if (!ecm->from_composite) {
-			buf[USB_CFG_DESC_OFFSET_ATTR] = attr;
-		}
-
-		/* Patch EP addresses and the class string index to actual values */
-		usbd_cdc_ecm_patch_desc(buf + USB_LEN_CFG_DESC,
-								len - USB_LEN_CFG_DESC,
-								ecm->ep_cfg);
+		/* Patch EP addresses, interval and the class string indices to actual values */
+		usbd_cdc_ecm_patch_desc(buf + USB_LEN_CFG_DESC, len - USB_LEN_CFG_DESC, speed);
 	}
 
 	return len;
 }
 
 #ifdef CONFIG_USBD_COMPOSITE
-/**
- * @brief Assign the first class-specific string index of this class (composite mode only)
- * @note  This function is called by the composite framework before enumeration.
- * @param base: First class-specific string index for this class
- * @retval Number of class-specific string indices consumed
- */
-static u8 usbd_ecm_set_str_base(u8 base)
-{
-	usbd_cdc_ecm_dev.cls_str_base = base;
-
-	return USBD_CDC_ECM_CLASS_STR_COUNT;
-}
-
 /**
  * @brief Store the first interface number assigned to this class by the composite framework
  * @note  This function is called within an interrupt service routine (ISR) context;
@@ -1674,10 +1607,10 @@ static void usbd_ecm_trace_task_deinit(void)
 /**
  * @brief Initialize CDC ECM class
  * @param cb: User callbacks
- * @param ep_cfg: EP configuration
+ * @param cfg: Class configuration
  * @retval Status
  */
-static int usbd_cdc_ecm_private_init(const usbd_cdc_ecm_cb_t *cb, const usbd_cdc_ecm_ep_cfg_t *ep_cfg)
+static int usbd_cdc_ecm_private_init(const usbd_cdc_ecm_cb_t *cb, const usbd_cdc_ecm_config_t *cfg)
 {
 	usbd_cdc_ecm_dev_t *ecm = &usbd_cdc_ecm_dev;
 
@@ -1685,6 +1618,7 @@ static int usbd_cdc_ecm_private_init(const usbd_cdc_ecm_cb_t *cb, const usbd_cdc
 	usbd_ep_t *ep_bulk_out = &ecm->ep_bulk_out;
 	usbd_ep_t *ep_intr_in = &ecm->ep_intr_in;
 	usb_ep_info_t *info;
+	u8 tx_depth;
 	int ret = HAL_OK;
 
 	if (cb == NULL) {
@@ -1692,22 +1626,43 @@ static int usbd_cdc_ecm_private_init(const usbd_cdc_ecm_cb_t *cb, const usbd_cdc
 		return HAL_ERR_PARA;
 	}
 
-	if (ep_cfg == NULL) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid EP cfg\n");
+	if (cfg == NULL) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid cfg\n");
+		return HAL_ERR_PARA;
+	}
+
+	/* Every endpoint is mandatory for this class, and a wrong direction bit would make the
+	   class claim an endpoint the controller drives the other way round. */
+	if (((cfg->bulk_in_addr & USB_REQ_DIR_MASK) != USB_D2H) ||
+		((cfg->bulk_out_addr & USB_REQ_DIR_MASK) != USB_H2D) ||
+		((cfg->intr_in_addr & USB_REQ_DIR_MASK) != USB_D2H) ||
+		((cfg->bulk_in_addr & (~USB_REQ_DIR_MASK)) == 0U) ||
+		((cfg->bulk_out_addr & (~USB_REQ_DIR_MASK)) == 0U) ||
+		((cfg->intr_in_addr & (~USB_REQ_DIR_MASK)) == 0U)) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid EP addr %02x/%02x/%02x\n",
+				 cfg->bulk_in_addr, cfg->bulk_out_addr, cfg->intr_in_addr);
 		return HAL_ERR_PARA;
 	}
 
 	usb_os_memset((void *)ecm, 0, sizeof(usbd_cdc_ecm_dev_t));
 
+	/* Published before anything that reads it, so the descriptor patch path and the TX path
+	   always see the configuration this init was given. */
+	ecm->cfg = cfg;
+
 	/* No H2D class request is waiting for its data stage yet (the memset above already
 	   cleared it; kept explicit so the invariant is visible at init). */
 	ecm->ctrl_req_pending = 0U;
-	/* Standalone default; the composite framework rebases it via set_str_base() */
-	ecm->cls_str_base = USBD_CDC_ECM_CLASS_STR_BASE_DEFAULT;
+	/* The core owns the string table, so the same call works in standalone and composite
+	   mode. mac_str is registered by pointer, so it may still be empty here: set_mac()
+	   formats it below, before enumeration can request it. */
+	ecm->mac_str_idx = usbd_add_string(ecm->mac_str);
+	ecm->itf_str_idx = usbd_add_string(cfg->itf_str);
 	/* Standalone default; the composite framework rebases it via set_interface_base() */
 	ecm->if_base = 0;
 
-	if (usb_ringbuf_manager_init(&ecm->bulk_tx_rb, USBD_CDC_ECM_BULK_TX_RB_SIZE,
+	tx_depth = (cfg->bulk_tx_queue_depth != 0U) ? cfg->bulk_tx_queue_depth : USBD_CDC_ECM_DEFAULT_BULK_TX_QUEUE_DEPTH;
+	if (usb_ringbuf_manager_init(&ecm->bulk_tx_rb, tx_depth,
 								 USBD_CDC_ECM_BULK_BUF_MAX_SIZE, 1) != HAL_OK) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Init bulk_tx ring buffer fail\n");
 		return HAL_ERR_MEM;
@@ -1724,14 +1679,14 @@ static int usbd_cdc_ecm_private_init(const usbd_cdc_ecm_cb_t *cb, const usbd_cdc
 
 	/* BULK IN transmits from ecm->bulk_tx_dma_buf (filled per-frame at TX time) */
 	info = &ep_bulk_in->info;
-	info->addr = ep_cfg->bulk_in_addr;
+	info->addr = cfg->bulk_in_addr;
 	info->type = USB_CH_EP_TYPE_BULK;
 	ep_bulk_in->xfer_buf_len = 0;
 	ep_bulk_in->xfer_buf = NULL;
 
 	/* Allocate BULK OUT ping-pong buffers */
 	info = &ep_bulk_out->info;
-	info->addr = ep_cfg->bulk_out_addr;
+	info->addr = cfg->bulk_out_addr;
 	info->type = USB_CH_EP_TYPE_BULK;
 	ep_bulk_out->xfer_buf_len = USBD_CDC_ECM_BULK_BUF_MAX_SIZE;
 	ep_bulk_out->xfer_len = ep_bulk_out->xfer_buf_len;
@@ -1771,7 +1726,8 @@ static int usbd_cdc_ecm_private_init(const usbd_cdc_ecm_cb_t *cb, const usbd_cdc
 	/* Start RX delivery thread */
 	ecm->rx_thread_running = 1;
 	ret = rtos_task_create(&ecm->rx_task, "usbd_cdc_ecm_rx_thread", usbd_cdc_ecm_rx_thread, NULL,
-						   USBD_CDC_ECM_RX_THREAD_STACK_SIZE, USBD_CDC_ECM_RX_THREAD_PRIORITY);
+						   (cfg->rx_task_stack_size != 0U) ? cfg->rx_task_stack_size : USBD_CDC_ECM_DEFAULT_RX_TASK_STACK_SIZE,
+						   (cfg->rx_task_priority != 0U) ? cfg->rx_task_priority : USBD_CDC_ECM_DEFAULT_RX_TASK_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create RX thread fail\n");
 		ecm->rx_thread_running = 0;
@@ -1781,7 +1737,7 @@ static int usbd_cdc_ecm_private_init(const usbd_cdc_ecm_cb_t *cb, const usbd_cdc
 
 	/* Allocate INTR IN buffer */
 	info = &ep_intr_in->info;
-	info->addr = ep_cfg->intr_in_addr;
+	info->addr = cfg->intr_in_addr;
 	info->type = USB_CH_EP_TYPE_INTR;
 	ep_intr_in->xfer_buf_len = USB_CDC_ECM_INTR_IN_PACKET_SIZE;
 	ep_intr_in->xfer_buf = (u8 *)usb_os_malloc(ep_intr_in->xfer_buf_len);
@@ -1790,11 +1746,7 @@ static int usbd_cdc_ecm_private_init(const usbd_cdc_ecm_cb_t *cb, const usbd_cdc
 		goto cleanup_rx_thread;
 	}
 
-	if ((cb != NULL) && (cb->priv != NULL) && (cb->priv->mac_value != NULL)) {
-		usbd_ecm_set_mac(cb->priv->mac_value);
-	} else {
-		usbd_ecm_set_mac(usbd_ecm_default_mac);
-	}
+	usbd_ecm_set_mac((cfg->mac != NULL) ? cfg->mac : usbd_ecm_default_mac);
 
 	if (cb->init != NULL) {
 		ret = cb->init();
@@ -1806,7 +1758,6 @@ static int usbd_cdc_ecm_private_init(const usbd_cdc_ecm_cb_t *cb, const usbd_cdc
 
 	/* Initialize user callbacks */
 	ecm->cb = cb;
-	ecm->ep_cfg = ep_cfg;
 
 	/* Register CDC ECM class driver */
 
@@ -1855,12 +1806,12 @@ exit:
 
 /* Exported functions --------------------------------------------------------*/
 
-int usbd_cdc_ecm_init(const usbd_cdc_ecm_cb_t *cb, const usbd_cdc_ecm_ep_cfg_t *ep_cfg)
+int usbd_cdc_ecm_init(const usbd_cdc_ecm_cb_t *cb, const usbd_cdc_ecm_config_t *cfg)
 {
 	usbd_cdc_ecm_dev_t *ecm = &usbd_cdc_ecm_dev;
 	int ret;
 
-	ret = usbd_cdc_ecm_private_init(cb, ep_cfg);
+	ret = usbd_cdc_ecm_private_init(cb, cfg);
 	if (ret == HAL_OK) {
 		ecm->from_composite = 0;
 		usbd_register_class(&usbd_cdc_ecm_driver);
@@ -1869,12 +1820,12 @@ int usbd_cdc_ecm_init(const usbd_cdc_ecm_cb_t *cb, const usbd_cdc_ecm_ep_cfg_t *
 }
 
 #ifdef CONFIG_USBD_COMPOSITE
-int usbd_composite_cdc_ecm_init(const usbd_cdc_ecm_cb_t *cb, const usbd_cdc_ecm_ep_cfg_t *ep_cfg)
+int usbd_composite_cdc_ecm_init(const usbd_cdc_ecm_cb_t *cb, const usbd_cdc_ecm_config_t *cfg)
 {
 	usbd_cdc_ecm_dev_t *ecm = &usbd_cdc_ecm_dev;
 	int ret;
 
-	ret = usbd_cdc_ecm_private_init(cb, ep_cfg);
+	ret = usbd_cdc_ecm_private_init(cb, cfg);
 	if (ret == HAL_OK) {
 		ecm->from_composite = 1;
 		ret = usbd_composite_register_driver(&usbd_cdc_ecm_driver);
@@ -1985,7 +1936,7 @@ void usbd_cdc_ecm_deinit(void)
   * @brief  Start to transmit data
   * @param  buf: Data buffer
   * @param  len: Data length
-  * @param  block: When non-zero, block up to USBD_CDC_ECM_BULK_TX_TIMEOUT_MS ms
+  * @param  block: When non-zero, block up to usbd_cdc_ecm_config_t::bulk_tx_timeout_ms ms
   *                waiting for a ring buffer slot before dropping.  Zero means
   *                non-blocking - drop immediately when the ring buffer is full.
   * @retval HAL_OK on success, HAL_BUSY if the ring buffer is full (frame dropped).
@@ -1993,6 +1944,7 @@ void usbd_cdc_ecm_deinit(void)
 int usbd_cdc_ecm_transmit(u8 *buf, u32 len, u8 block)
 {
 	usbd_cdc_ecm_dev_t *ecm = &usbd_cdc_ecm_dev;
+	u32 tx_timeout_ms;
 	int ret;
 
 	/* Reject invalid frames up front.  A NULL buffer or zero length would be
@@ -2040,16 +1992,16 @@ int usbd_cdc_ecm_transmit(u8 *buf, u32 len, u8 block)
 	 * block != 0: when the ring buffer is full, wait for the ISR to signal a free
 	 *             slot via bulk_tx_slot_sema rather than busy-sleeping.  Wakes up
 	 *             as soon as a XFRC fires (typically within one USB microframe),
-	 *             then retries.  Bounded by USBD_CDC_ECM_BULK_TX_TIMEOUT_MS.
+	 *             then retries.  Bounded by usbd_cdc_ecm_config_t::bulk_tx_timeout_ms.
 	 * block == 0: non-blocking; drop immediately when full. */
 	if (block) {
+		tx_timeout_ms = (ecm->cfg->bulk_tx_timeout_ms != 0U) ? ecm->cfg->bulk_tx_timeout_ms : USBD_CDC_ECM_DEFAULT_BULK_TX_TIMEOUT_MS;
 		do {
 			ret = usb_ringbuf_add_tail(&ecm->bulk_tx_rb, buf, len, 1U);
 			if (ret == HAL_OK) {
 				break;
 			}
-			if (usb_os_sema_take(ecm->bulk_tx_slot_sema,
-								 USBD_CDC_ECM_BULK_TX_TIMEOUT_MS) != HAL_OK) {
+			if (usb_os_sema_take(ecm->bulk_tx_slot_sema, tx_timeout_ms) != HAL_OK) {
 				RTK_LOGS(TAG, RTK_LOG_WARN, "TX timeout drop(%u)\n", len);
 				return HAL_BUSY;
 			}

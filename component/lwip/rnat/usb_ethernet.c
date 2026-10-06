@@ -76,10 +76,6 @@ int usb_ethernet_transmit(u8 *buf, u32 len, u8 block)
 static const u8 mac_valid[6] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55};
 static const u8 dhcp_server_mac[6] = {0x02, 0x11, 0x22, 0x33, 0x44, 0x56};
 
-static const usbd_cdc_ecm_priv_data_t ecm_priv = {
-	mac_valid,
-};
-
 static int cdc_ecm_cb_init(void);
 static int cdc_ecm_cb_deinit(void);
 static int cdc_ecm_cb_setup(usb_setup_req_t *req, u8 *buf);
@@ -87,7 +83,6 @@ static int cdc_ecm_cb_received(u8 *buf, u32 length);
 static void cdc_ecm_cb_status_changed(u8 old_status, u8 status);
 
 static const usbd_cdc_ecm_cb_t cdc_ecm_cb = {
-	.priv = &ecm_priv,
 	.init = cdc_ecm_cb_init,
 	.deinit = cdc_ecm_cb_deinit,
 	.setup = cdc_ecm_cb_setup,
@@ -95,10 +90,12 @@ static const usbd_cdc_ecm_cb_t cdc_ecm_cb = {
 	.status_changed = cdc_ecm_cb_status_changed,
 };
 
-static const usbd_cdc_ecm_ep_cfg_t cdc_ecm_ep_cfg = {
+static const usbd_cdc_ecm_config_t cdc_ecm_class_cfg = {
 	.bulk_in_addr  = CDC_ECM_BULK_IN_EP,
 	.bulk_out_addr = CDC_ECM_BULK_OUT_EP,
 	.intr_in_addr  = CDC_ECM_INTR_IN_EP,
+	.mac = mac_valid,
+	/* Every remaining field is left 0 to take the class default. */
 };
 
 
@@ -109,7 +106,9 @@ static const usbd_cdc_ecm_ep_cfg_t cdc_ecm_ep_cfg = {
 #endif
 
 static const usbd_config_t cdc_ecm_cfg = {
-	.speed = USB_ETH_SPEED,
+	.info = {
+		.prod_str = "Realtek CDC ECM",
+	},
 	.isr_priority = INT_PRI_MIDDLE,
 #if defined(CONFIG_AMEBASMART)
 	.nptx_max_epmis_cnt = 1U,
@@ -234,7 +233,7 @@ static void usb_eth_hotplug_thread(void *param)
 				break;
 			}
 
-			ret = usbd_cdc_ecm_init(&cdc_ecm_cb, &cdc_ecm_ep_cfg);
+			ret = usbd_cdc_ecm_init(&cdc_ecm_cb, &cdc_ecm_class_cfg);
 			if (ret != HAL_OK) {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "ECM init fail %d\n", ret);
 				usbd_deinit();
@@ -269,7 +268,7 @@ static int usb_eth_do_usb_init(void)
 		return -1;
 	}
 
-	ret = usbd_cdc_ecm_init(&cdc_ecm_cb, &cdc_ecm_ep_cfg);
+	ret = usbd_cdc_ecm_init(&cdc_ecm_cb, &cdc_ecm_class_cfg);
 	if (ret != HAL_OK) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "ECM init fail %d\n", ret);
 		usbd_deinit();

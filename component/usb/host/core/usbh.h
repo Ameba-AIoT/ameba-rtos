@@ -100,7 +100,19 @@ typedef enum {
 } usbh_urb_state_t;
 
 /**
- * @brief Defines message types for user process callbacks of @ref usbh_user_cb_t.
+ * @brief Defines application message types for user process callbacks of @ref usbh_user_cb_t.
+ *
+ * @note Naming convention in the host stack: everything the core hands to an
+ *       upper layer is a *message*, distinguished by recipient.
+ *       An *application message* (@ref usbh_msg_type_t, `USBH_MSG_*`) is a
+ *       notification code passed synchronously to the application's
+ *       @ref usbh_user_cb_t process() callback and is never queued.
+ *       A *driver message* (@ref usbh_drv_msg_t, @ref usbh_drv_msg_type_t,
+ *       `USBH_DRV_MSG_*`) is an item of the HCD message queue, consumed by the
+ *       host main task and dispatched to class drivers.
+ *       The two families are unrelated; do not mix them. The unprefixed
+ *       `USBH_MSG_*` family is the application-facing one, kept unprefixed for
+ *       API compatibility.
  */
 typedef enum {
 	USBH_MSG_USER_SET_CONFIG = 0U,/**< Message to request user to set the configuration. */
@@ -110,7 +122,7 @@ typedef enum {
 	USBH_MSG_PROBE_FAIL,          /**< Message indicating that device probing failed due to mismatched device properties. */
 	USBH_MSG_ATTACH_FAIL,         /**< Message indicating device attachment failed. */
 	USBH_MSG_ERROR,               /**< Message indicating a general error occurred. */
-} usbh_msg_t;
+} usbh_msg_type_t;
 
 /**
  * @brief  Defines the source for the USB host tick counter.
@@ -281,18 +293,18 @@ typedef union {
 } usbh_setup_req_t;
 
 /**
- * @brief Packed structure for a USB event message.
+ * @brief Packed structure for an item of the HCD driver message queue.
  */
 typedef struct {
-	u32 data;                          /**< Event private data. For USBH_CLASS_EVENT this carries the
+	u32 data;                          /**< Message private data. For USBH_DRV_MSG_CLASS this carries the
 	                                        originating class driver's slot index (0..config.class_num-1);
 	                                        CLASS_READY dispatch uses it to index class_slot[] and route
-	                                        the event to exactly that driver, so per-class process()
+	                                        the message to exactly that driver, so per-class process()
 	                                        handlers no longer need an owner filter guard. */
-	u16 tick;                          /**< Tick count when the event occurred. */
-	u8 pipe_num;                       /**< Pipe number associated with the event. */
-	u8 type;                           /**< Message type, corresponds to `usbh_event_type_t`. */
-} usbh_event_t;
+	u16 tick;                          /**< Tick count when the message was raised. */
+	u8 pipe_num;                       /**< Pipe number associated with the message. */
+	u8 type;                           /**< Driver message type, corresponds to `usbh_drv_msg_type_t`. */
+} usbh_drv_msg_t;
 
 /**
  * @brief USB host user configuration structure.
@@ -391,7 +403,7 @@ typedef struct {
 	* @param[in] host: USB host.
 	* @return 0 on success, non-zero on failure.
 	*/
-	int(*attach)(struct _usb_host_t *host);
+	int (*attach)(struct _usb_host_t *host);
 
 	/**
 	* @brief Called when a supported device is detached.
@@ -430,17 +442,17 @@ typedef struct {
 	* @return @ref HAL_OK when setup is complete, @ref HAL_BUSY while in progress,
 	*         another status to abandon this class.
 	*/
-	int(*setup)(struct _usb_host_t *host);
+	int (*setup)(struct _usb_host_t *host);
 
 	/**
 	* @brief Main processing loop for the class driver after class setup to process class-specific transfers.
-	* @details The core dispatches each event to exactly one class driver (by class slot for
-	*          @ref USBH_CLASS_EVENT, by the pipe's owning driver otherwise), so a driver never
-	*          sees a foreign event and has no result to report back to the core.
+	* @details The core dispatches each driver message to exactly one class driver (by class slot for
+	*          @ref USBH_DRV_MSG_CLASS, by the pipe's owning driver otherwise), so a driver never
+	*          sees a foreign message and has no result to report back to the core.
 	* @param[in] host: USB host.
-	* @param[in] event: @ref usbh_event_t.
+	* @param[in] msg: @ref usbh_drv_msg_t.
 	*/
-	void (*process)(struct _usb_host_t *host, usbh_event_t *event);
+	void (*process)(struct _usb_host_t *host, usbh_drv_msg_t *msg);
 
 	/**
 	* @brief Called at each Start-of-Frame (SOF) interrupt for class-specific timing process.
@@ -468,11 +480,11 @@ typedef struct {
  */
 typedef struct {
 	/**
-	* @brief Callback to handle class-independent events in the application.
+	* @brief Callback to handle class-independent notifications in the application.
 	* @details Pure notification: the core ignores any result, so the application cannot
 	*          influence the host state machine from here.
 	* @param[in] host: USB host.
-	* @param[in] msg: @ref usbh_msg_t.
+	* @param[in] msg: Application message type, @ref usbh_msg_type_t.
 	*/
 	void (*process)(struct _usb_host_t *host, u8 msg);
 
@@ -486,7 +498,7 @@ typedef struct {
 	 *	   else return !HAL_OK, the enum process will discard this device, and switch to check next hub port.
 	 * @return 0 on success, non-zero on failure.
 	 */
-	int(*validate)(struct _usb_host_t *host, u8 cfg_max);
+	int (*validate)(struct _usb_host_t *host, u8 cfg_max);
 } usbh_user_cb_t;
 
 /**
@@ -759,27 +771,28 @@ u32 usbh_get_elapsed_frame_cnt(usb_host_t *host, u32 start_frame);
 usbh_urb_state_t usbh_get_urb_state(usb_host_t *host, usbh_pipe_t *pipe);
 
 /**
- * @brief  Post a CLASS_EVENT to schedule the caller's process().
+ * @brief  Post a USBH_DRV_MSG_CLASS message to schedule the caller's process().
  *
  * Called by a class driver when it wants its own process() invoked (e.g. after
  * setup, on a state transition, or after handling a pipe completion in its ISR
- * callback). The event is routed by `owner` (resolved to its class_slot index),
+ * callback). The message is routed by `owner` (resolved to its class_slot index),
  * NOT by `pipe_num` - many callers pass pipe_num=0 for non-pipe-bound state
- * events, and pipe 0 (control EP0) has no class owner anyway. See
+ * changes, and pipe 0 (control EP0) has no class owner anyway. See
  * usbh_notify() in usbh.c for the full routing rationale.
  *
- * Note: pipe completion / state-changed events posted from the ISR use a
+ * Note: pipe completion / state-changed messages posted from the ISR use a
  * separate routing path (hc[pipe_num].driver_idx), so this API is only for
- * class-originated CLASS_EVENTs.
+ * class-originated USBH_DRV_MSG_CLASS messages.
  *
  * @param[in] host: Host Handle.
- * @param[in] pipe_num: Optional context, carried through to event.pipe_num;
- *                      0 when the event is not tied to a specific pipe.
+ * @param[in] pipe_num: Optional context, carried through to msg.pipe_num;
+ *                      0 when the message is not tied to a specific pipe.
  *                      Not used for routing.
  * @param[in] owner: Originating class driver. Required for routing. NULL falls
  *                   back defensively to slot 0.
- * @note The only failure mode is a full event queue, which the core logs on the
- *       spot and the caller cannot recover from, so no status is returned.
+ * @note The only failure mode is a full message queue, which the core counts for
+ *       the main task to report and the caller cannot recover from, so no status
+ *       is returned.
  */
 void usbh_notify(usb_host_t *host, u8 pipe_num, const usbh_class_driver_t *owner);
 

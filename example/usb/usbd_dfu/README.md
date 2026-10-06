@@ -27,10 +27,15 @@ None
 
 # Expect result
 
-1. Reset the board, the following log shall be printed on the LOGUART console, make sure there is no USB related error reported:
+1. Reset the board, the following log shall be printed on the LOGUART console. The test PASSes only if the lines below show up and no error level log (`-E`) is reported:
 	```
+	[USBD-A] INIT
+	[DFU-I] Init
 	[DFU-I] USBD DFU demo start
 	```
+	Notes:
+	* `[USBD-A] INIT` comes from the USB device core and `[DFU-I] Init` comes from the example `init` callback invoked by the class driver, not from the example thread itself.
+	* On AmebaGreen2 an extra `[USB-I] UPHY para from ...` line is printed by the USB HAL before `[USBD-A] INIT`.
 
 2. Connect the USB port of the Ameba board to the USB host (PC) with a USB cable. The host enumerates the device in Run-Time mode.
 
@@ -43,6 +48,10 @@ None
 	[DFU-I] DFU detach
 	[DFU-I] Detach: re-enumerating in DFU mode
 	[DFU-I] Reconf: re-enumerating
+	[DFU-I] Deinit
+	[USBD-A] DEINIT
+	[USBD-A] INIT
+	[DFU-I] Init
 	```
 
 4. `dfu-util` then sends the firmware blocks. For each 1 KB(default DFU block size) block received:
@@ -55,11 +64,18 @@ None
 5. After the final zero-length `DFU_DNLOAD`, the device manifests the image:
 	```
 	[DFU-I] Manifest OK (xxx B in RAM)
+	[DFU-I] Manifest done -> WAIT-RESET
 	```
+	The last line reads `-> MANIFEST-SYNC` instead when the class is built manifest-tolerant.
 
 6. Optionally upload the stored image back to verify:
 	```
 	dfu-util -U dump.bin
+	```
+	Each block served to the host prints:
+	```
+	[DFU-I] Read blk 0 offset 0 max 1024 (remain xxx B)
+	...
 	```
 
 # Note
