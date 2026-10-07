@@ -19,6 +19,13 @@ static const char *const TAG = "DFU";
 /* Fixed firmware size for DFU download/upload test */
 #define USBH_DFU_DEMO_FW_SIZE                    2048U
 
+/* Budget for a device to attach, and for one download/upload run to report back.
+   Bounded rather than RTOS_SEMA_MAX_COUNT so a device that never shows up, or one
+   unplugged mid-transfer whose done callback therefore never fires, still lets the
+   example tear the stack down and exit instead of parking forever. */
+#define USBH_DFU_ATTACH_TIMEOUT_MS               10000U
+#define USBH_DFU_XFER_TIMEOUT_MS                 30000U
+
 // Thread priorities
 #define USBH_DFU_INIT_THREAD_PRIORITY             1
 #define USBH_DFU_MAIN_TASK_PRIORITY               5
@@ -63,8 +70,9 @@ static rtos_sema_t dfu_attach_sema;
 static rtos_sema_t dfu_detach_sema;
 static rtos_sema_t dfu_download_sema;
 static rtos_sema_t dfu_upload_sema;
-static int         dfu_download_result;
-static int         dfu_upload_result;
+/* Written by the class callbacks, read by the test thread, possibly on another core */
+static volatile int dfu_download_result;
+static volatile int dfu_upload_result;
 
 /* Private functions ---------------------------------------------------------*/
 static void dfu_cb_attached(void)
@@ -219,8 +227,11 @@ static void example_usbh_dfu_thread(void *param)
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "USBH DFU demo start\n");
 
-	/* Wait for DFU device to attach */
-	if (rtos_sema_take(dfu_attach_sema, RTOS_SEMA_MAX_COUNT) != RTK_SUCCESS) {
+	/* Wait for DFU device to attach. Bounded: with no device present there is
+	 * nothing to test, and this thread owns the teardown below, so it must stay
+	 * reachable rather than block forever. */
+	if (rtos_sema_take(dfu_attach_sema, USBH_DFU_ATTACH_TIMEOUT_MS) != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Wait attach timeout\n");
 		goto deinit;
 	}
 
@@ -235,8 +246,13 @@ static void example_usbh_dfu_thread(void *param)
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Downloading %u bytes...\n", dfu_demo_fw_size);
 	ret = usbh_dfu_download();
 	if (ret == HAL_OK) {
-		rtos_sema_take(dfu_download_sema, RTOS_SEMA_MAX_COUNT);
-		ret = dfu_download_result;
+		/* Bounded: a device unplugged mid-download never calls download_done. */
+		if (rtos_sema_take(dfu_download_sema, USBH_DFU_XFER_TIMEOUT_MS) == RTK_SUCCESS) {
+			ret = dfu_download_result;
+		} else {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Download timeout\n");
+			ret = HAL_TIMEOUT;
+		}
 	}
 	if (ret != HAL_OK) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Download fail: %d, skip upload\n", ret);
@@ -251,8 +267,10 @@ static void example_usbh_dfu_thread(void *param)
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Uploading for verification...\n");
 		ret = usbh_dfu_upload();
 		if (ret == HAL_OK) {
-			rtos_sema_take(dfu_upload_sema, RTOS_SEMA_MAX_COUNT);
-			if (dfu_upload_result != HAL_OK) {
+			/* Bounded, see the download wait above. */
+			if (rtos_sema_take(dfu_upload_sema, USBH_DFU_XFER_TIMEOUT_MS) != RTK_SUCCESS) {
+				RTK_LOGS(TAG, RTK_LOG_ERROR, "Upload timeout\n");
+			} else if (dfu_upload_result != HAL_OK) {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "Upload fail: %d\n", dfu_upload_result);
 			}
 		} else {
@@ -288,5 +306,16 @@ void example_usbh_dfu(void)
 							  USBH_DFU_INIT_THREAD_STACK_SIZE, USBH_DFU_INIT_THREAD_PRIORITY);
 	if (status != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create thread fail\n");
+		return;
 	}
+#if defined(CONFIG_SMP)
+	/* The USB OTG ISR is delivered on CPU0: the GIC pins every SPI to core 0
+	   (ITARGETSR is written to 0x01010101 in arm_gic.c gic_dist_init). This single
+	   thread both drives the transfers and runs the teardown, so pinning it to
+	   CPU0 puts it on the same core as the ISR and makes the local interrupt
+	   disables inside the teardown meaningful again.
+	   No state lock is needed in this example: there is no second thread that
+	   calls the DFU class API, so the teardown can not race a caller. */
+	rtos_task_set_affinity(task, 0);
+#endif
 }

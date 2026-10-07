@@ -19,11 +19,6 @@
 #define USBD_HID_PRIV_ITF_NUM                0x00U /**< Priv/data interface. */
 #define USBD_HID_VEND_ITF_NUM                0x01U /**< Vend/Consumer Control interface. */
 
-/* String index */
-#define USBD_HID_STRING_MANUFACTURER         1 /**< Manufacture string index. */
-#define USBD_HID_STRING_PRODUCT              2 /**< Product string index. */
-#define USBD_HID_STRING_SERIALNUMBER         3 /**< Serial number string index. */
-
 /* Private types -------------------------------------------------------------*/
 
 /* Private macros ------------------------------------------------------------*/
@@ -80,24 +75,16 @@ static const u8 usbd_hid_dev_desc[USB_LEN_DEV_DESC] = {
 	0x00,											/* bDeviceSubClass */
 	0x00,											/* bDeviceProtocol */
 	USB_MAX_EP0_SIZE,								/* bMaxPacketSize */
-	USB_LOW_BYTE(USBD_HID_VID),						/* idVendor */
-	USB_HIGH_BYTE(USBD_HID_VID),
-	USB_LOW_BYTE(USBD_HID_PID),						/* idProduct */
-	USB_HIGH_BYTE(USBD_HID_PID),
-	0x00,											/* bcdDevice */
+	USB_LOW_BYTE(USB_VID),							/* idVendor (patched by core from usbd_dev_info_t) */
+	USB_HIGH_BYTE(USB_VID),
+	USB_LOW_BYTE(USB_PID),							/* idProduct (patched by core from usbd_dev_info_t) */
+	USB_HIGH_BYTE(USB_PID),
+	0x00,											/* bcdDevice (patched by core from usbd_dev_info_t) */
 	0x02,
-	USBD_HID_STRING_MANUFACTURER,					/* iManufacturer */
-	USBD_HID_STRING_PRODUCT,						/* iProduct */
-	USBD_HID_STRING_SERIALNUMBER,					/* iSerialNumber */
+	USBD_IDX_MFC_STR,								/* iManufacturer (patched by core) */
+	USBD_IDX_PRODUCT_STR,							/* iProduct (patched by core) */
+	USBD_IDX_SERIAL_STR,							/* iSerialNumber (patched by core) */
 	0x01											/* bNumConfigurations */
-};
-
-/* USB Standard String Descriptor 0 */
-static const u8 usbd_hid_lang_id_desc[USB_LEN_LANGID_STR_DESC] = {
-	USB_LEN_LANGID_STR_DESC,                        /* bLength */
-	USB_DESC_TYPE_STRING,                           /* bDescriptorType */
-	USB_LOW_BYTE(USBD_HID_LANGID_STRING),           /* wLANGID */
-	USB_HIGH_BYTE(USBD_HID_LANGID_STRING),
 };
 
 #ifndef CONFIG_USB_FS
@@ -719,7 +706,7 @@ static int hid_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len)
 
 	/* Return non-zero if EP is not owned by HID, so composite
 	 * dispatcher can continue iterating to the correct sub-function. */
-	if (ep_addr != hid->ep_cfg->intr_out_addr) {
+	if (ep_addr != hid->cfg->intr_out_addr) {
 		return HAL_ERR_PARA;
 	}
 
@@ -1022,19 +1009,6 @@ static int hid_set_config(usb_dev_t *dev, u8 config)
 
 	hid->dev = dev;
 
-	if (!hid->from_composite) {
-#ifdef CONFIG_USBD_SELF_POWERED
-		dev->self_powered = 1;
-#else
-		dev->self_powered = 0;
-#endif
-#ifdef CONFIG_USBD_REMOTE_WAKEUP_EN
-		dev->remote_wakeup_en = 1;
-#else
-		dev->remote_wakeup_en = 0;
-#endif
-	}
-
 	/* Init INTR IN EP */
 	info = &ep_intr_in->info;
 	ep_intr_in->xfer_state = 0;
@@ -1121,7 +1095,7 @@ static int hid_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status)
 
 	/* Check EP ownership before diagnosing, so a foreign EP (owned by another
 	 * composite sub-function) never produces a misattributed USB_DIAG entry. */
-	if (ep_addr == hid->ep_cfg->intr_in_addr) {
+	if (ep_addr == hid->cfg->intr_in_addr) {
 		if (status != HAL_OK) {
 			USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_XFER, ep_addr);
 		}
@@ -1133,7 +1107,7 @@ static int hid_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status)
 	}
 
 #ifdef CONFIG_USBD_HID_BIDIR
-	if (ep_addr == hid->ep_cfg->consumer_intr_in_addr) {
+	if (ep_addr == hid->cfg->consumer_intr_in_addr) {
 		if (status != HAL_OK) {
 			USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_XFER, ep_addr);
 		}
@@ -1152,12 +1126,20 @@ static int hid_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status)
   * @brief  Patch endpoint addresses in a configuration descriptor to use runtime EP config
   * @param  desc: Pointer to the descriptor buffer
   * @param  len: Total length of descriptor data
-  * @param  ep_cfg: Endpoint configuration with actual addresses to patch in
+  * @param  speed: Current device speed, selects the INTR bInterval
   * @retval void
   */
-static void usbd_hid_patch_ep_addresses(u8 *desc, u16 len, const usbd_hid_ep_cfg_t *ep_cfg)
+static void usbd_hid_patch_desc(u8 *desc, u16 len, usb_speed_type_t speed)
 {
+	usbd_hid_t *hid = &hid_device;
+	const usbd_hid_config_t *cfg = hid->cfg;
 	u16 i;
+	u8 interval;
+
+	interval = (speed == USB_SPEED_HIGH) ? cfg->intr_interval_hs : cfg->intr_interval_fs;
+	if (interval == 0U) {
+		interval = (speed == USB_SPEED_HIGH) ? USBD_HID_DEFAULT_HS_INTR_INTERVAL : USBD_HID_DEFAULT_FS_INTR_INTERVAL;
+	}
 #ifdef CONFIG_USBD_HID_BIDIR
 	u8 d2h_intr_seen = 0U;
 #endif
@@ -1176,20 +1158,25 @@ static void usbd_hid_patch_ep_addresses(u8 *desc, u16 len, const usbd_hid_ep_cfg
 #ifdef CONFIG_USBD_HID_BIDIR
 				/* Priv INTR IN comes first (Priv interface), Consumer INTR IN second. */
 				if (d2h_intr_seen == 0U) {
-					desc[i + 2] = ep_cfg->intr_in_addr;
+					desc[i + 2] = cfg->intr_in_addr;
 				} else {
-					desc[i + 2] = ep_cfg->consumer_intr_in_addr;
+					desc[i + 2] = cfg->consumer_intr_in_addr;
 				}
 				d2h_intr_seen++;
 #else
-				desc[i + 2] = ep_cfg->intr_in_addr;
+				desc[i + 2] = cfg->intr_in_addr;
 #endif
 			}
 #if defined(CONFIG_USBD_HID_KEYBOARD) || defined(CONFIG_USBD_HID_BIDIR)
 			else if ((dir == USB_H2D) && (type == USB_CH_EP_TYPE_INTR)) {
-				desc[i + 2] = ep_cfg->intr_out_addr;
+				desc[i + 2] = cfg->intr_out_addr;
 			}
 #endif
+			if ((type == USB_CH_EP_TYPE_INTR) && (dlen >= USB_LEN_EP_DESC)) {
+				desc[i + 6] = interval;             /* bInterval */
+			}
+		} else if ((dtype == USB_DESC_TYPE_INTERFACE) && (dlen >= USB_LEN_IF_DESC)) {
+			desc[i + 8] = hid->itf_str_idx;         /* iInterface */
 		}
 		i += dlen;
 	}
@@ -1207,14 +1194,12 @@ static void usbd_hid_patch_ep_addresses(u8 *desc, u16 len, const usbd_hid_ep_cfg
   */
 static u16 hid_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16 buf_len)
 {
-	usbd_hid_t *hid = &hid_device;
 	const u8 *desc = NULL;
 	usb_speed_type_t speed = dev->dev_speed;
 	u16 len = 0;
 	u16 report_len;
 	u8 type = USB_HIGH_BYTE(req->wValue);
 	u8 is_cfg = 0;
-	u8 attr = 0x80U;
 #ifdef CONFIG_USBD_HID_BIDIR
 	u16 vend_report_len = sizeof(hid_vend_report_desc);
 #endif
@@ -1226,15 +1211,6 @@ static u16 hid_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16
 #else
 	report_len = sizeof(hid_keyboard_report_desc);
 #endif
-
-	if (!hid->from_composite) {
-#ifdef CONFIG_USBD_SELF_POWERED
-		attr |= USB_CFG_DESC_OFFSET_ATTR_BIT_SELF_POWERED;
-#endif
-#ifdef CONFIG_USBD_REMOTE_WAKEUP_EN
-		attr |= USB_CFG_DESC_OFFSET_ATTR_BIT_REMOTE_WAKEUP;
-#endif
-	}
 
 	switch (type) {
 
@@ -1276,31 +1252,9 @@ static u16 hid_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16
 #endif
 
 	case USB_DESC_TYPE_STRING:
-		switch (USB_LOW_BYTE(req->wValue)) {
-		case USBD_IDX_LANGID_STR:
-			desc = usbd_hid_lang_id_desc;
-			len = sizeof(usbd_hid_lang_id_desc);
-			break;
-		case USBD_IDX_MFC_STR:
-			len = usbd_get_str_descriptor(USBD_HID_MFG_STRING, buf, buf_len);
-			break;
-		case USBD_IDX_PRODUCT_STR:
-			if (speed == USB_SPEED_HIGH) {
-				len = usbd_get_str_descriptor(USBD_HID_PROD_HS_STRING, buf, buf_len);
-			} else {
-				len = usbd_get_str_descriptor(USBD_HID_PROD_FS_STRING, buf, buf_len);
-			}
-			break;
-		case USBD_IDX_SERIAL_STR:
-			len = usbd_get_str_descriptor(USBD_HID_SN_STRING, buf, buf_len);
-			break;
-		case USBD_IDX_MS_OS_STR:
-			break;
-		/* Add customer string here */
-		default:
-			USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_GET_DESC, 0);
-			break;
-		}
+		/* Every string this class owns is registered with usbd_add_string() and answered by
+		   the core, which only forwards an index it does not know, e.g. the MS OS string */
+		USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_GET_DESC, 0);
 		break;
 
 	default:
@@ -1328,11 +1282,7 @@ static u16 hid_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16
 		buf[USBD_HID_CFG_VEND_DESC_ITEM_LENGTH_OFFSET + 1] = USB_HIGH_BYTE(vend_report_len);
 #endif
 
-		if (!hid->from_composite) {
-			buf[USB_CFG_DESC_OFFSET_ATTR] = attr;
-		}
-
-		usbd_hid_patch_ep_addresses(buf + USB_LEN_CFG_DESC, len - USB_LEN_CFG_DESC, hid->ep_cfg);
+		usbd_hid_patch_desc(buf + USB_LEN_CFG_DESC, len - USB_LEN_CFG_DESC, speed);
 	}
 
 	return len;
@@ -1387,7 +1337,7 @@ static void hid_sof(usb_dev_t *dev)
 }
 #endif
 
-static int usbd_hid_private_init(const usbd_hid_usr_cb_t *cb, const usbd_hid_ep_cfg_t *ep_cfg)
+static int usbd_hid_private_init(const usbd_hid_usr_cb_t *cb, const usbd_hid_config_t *cfg)
 {
 	int ret = HAL_OK;
 	usbd_hid_t *hid = &hid_device;
@@ -1400,12 +1350,42 @@ static int usbd_hid_private_init(const usbd_hid_usr_cb_t *cb, const usbd_hid_ep_
 		return HAL_ERR_PARA;
 	}
 
-	if (ep_cfg == NULL) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid EP cfg\n");
+	if (cfg == NULL) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid cfg\n");
 		return HAL_ERR_PARA;
 	}
 
-	tx_buf_len = ep_cfg->intr_in_xfer_size;
+	/* The INTR IN endpoint is mandatory for every HID variant, and a wrong direction bit would
+	   make the class claim an endpoint the controller drives the other way round. */
+	if (((cfg->intr_in_addr & USB_REQ_DIR_MASK) != USB_D2H) ||
+		((cfg->intr_in_addr & (~USB_REQ_DIR_MASK)) == 0U)) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid INTR IN addr %02x\n", cfg->intr_in_addr);
+		return HAL_ERR_PARA;
+	}
+#if defined(CONFIG_USBD_HID_KEYBOARD) || defined(CONFIG_USBD_HID_BIDIR)
+	if (((cfg->intr_out_addr & USB_REQ_DIR_MASK) != USB_H2D) ||
+		((cfg->intr_out_addr & (~USB_REQ_DIR_MASK)) == 0U)) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid INTR OUT addr %02x\n", cfg->intr_out_addr);
+		return HAL_ERR_PARA;
+	}
+#endif
+#ifdef CONFIG_USBD_HID_BIDIR
+	if (((cfg->consumer_intr_in_addr & USB_REQ_DIR_MASK) != USB_D2H) ||
+		((cfg->consumer_intr_in_addr & (~USB_REQ_DIR_MASK)) == 0U)) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid consumer INTR IN addr %02x\n", cfg->consumer_intr_in_addr);
+		return HAL_ERR_PARA;
+	}
+#endif
+
+	/* Published before anything that reads it: the descriptor patch path and every endpoint
+	   setup below resolve their options through hid->cfg. */
+	hid->cfg = cfg;
+
+	/* The core owns the string table, so the same call works in standalone and composite
+	   mode. 0 means no iInterface string. */
+	hid->itf_str_idx = usbd_add_string(cfg->itf_str);
+
+	tx_buf_len = cfg->intr_in_xfer_size;
 	if (tx_buf_len == 0) {
 		tx_buf_len = USBD_HID_INTR_IN_BUF_SIZE;
 	}
@@ -1413,7 +1393,7 @@ static int usbd_hid_private_init(const usbd_hid_usr_cb_t *cb, const usbd_hid_ep_
 #if defined(CONFIG_USBD_HID_KEYBOARD) || defined(CONFIG_USBD_HID_BIDIR)
 	usbd_ep_t *ep_intr_out = &hid->ep_intr_out;
 	info = &ep_intr_out->info;
-	info->addr = ep_cfg->intr_out_addr;
+	info->addr = cfg->intr_out_addr;
 	info->type = USB_CH_EP_TYPE_INTR;
 #ifdef CONFIG_USBD_HID_BIDIR
 	/* Bidir uses the ring-buffer's DMA slot for xfer_buf; no separate allocation. */
@@ -1421,7 +1401,7 @@ static int usbd_hid_private_init(const usbd_hid_usr_cb_t *cb, const usbd_hid_ep_
 	ep_intr_out->xfer_buf = NULL;
 	ep_intr_out->xfer_len = 0U;
 #else
-	ep_intr_out->xfer_buf_len = USBD_HID_INTR_OUT_BUF_SIZE;
+	ep_intr_out->xfer_buf_len = (cfg->intr_out_xfer_size != 0U) ? cfg->intr_out_xfer_size : USBD_HID_INTR_OUT_BUF_SIZE;
 	ep_intr_out->xfer_buf = (u8 *)usb_os_malloc(ep_intr_out->xfer_buf_len);
 	ep_intr_out->xfer_len = ep_intr_out->xfer_buf_len;
 	if (ep_intr_out->xfer_buf == NULL) {
@@ -1433,7 +1413,7 @@ static int usbd_hid_private_init(const usbd_hid_usr_cb_t *cb, const usbd_hid_ep_
 #ifdef CONFIG_USBD_HID_BIDIR
 	usbd_ep_t *ep_consumer_intr_in = &hid->ep_consumer_intr_in;
 	info = &ep_consumer_intr_in->info;
-	info->addr = ep_cfg->consumer_intr_in_addr;
+	info->addr = cfg->consumer_intr_in_addr;
 	info->type = USB_CH_EP_TYPE_INTR;
 	ep_consumer_intr_in->xfer_buf_len = USBD_HID_MAX_BUF_SIZE;
 	ep_consumer_intr_in->xfer_buf = (u8 *)usb_os_malloc(ep_consumer_intr_in->xfer_buf_len);
@@ -1443,7 +1423,7 @@ static int usbd_hid_private_init(const usbd_hid_usr_cb_t *cb, const usbd_hid_ep_
 #endif
 
 	info = &ep_intr_in->info;
-	info->addr = ep_cfg->intr_in_addr;
+	info->addr = cfg->intr_in_addr;
 	info->type = USB_CH_EP_TYPE_INTR;
 	ep_intr_in->xfer_buf_len = tx_buf_len;
 	ep_intr_in->xfer_buf = (u8 *)usb_os_malloc(tx_buf_len);
@@ -1475,7 +1455,6 @@ static int usbd_hid_private_init(const usbd_hid_usr_cb_t *cb, const usbd_hid_ep_
 	hid->ctrl_req_pending = 0U;
 
 	hid->cb = cb;
-	hid->ep_cfg = ep_cfg;
 	hid->protocol = 1U; /* HID 1.11 7.2.6: default to Report Protocol after enumeration */
 	if (cb->init != NULL) {
 		cb->init();
@@ -1487,12 +1466,12 @@ static int usbd_hid_private_init(const usbd_hid_usr_cb_t *cb, const usbd_hid_ep_
 
 /* Exported functions --------------------------------------------------------*/
 
-int usbd_hid_init(const usbd_hid_usr_cb_t *cb, const usbd_hid_ep_cfg_t *ep_cfg)
+int usbd_hid_init(const usbd_hid_usr_cb_t *cb, const usbd_hid_config_t *cfg)
 {
 	usbd_hid_t *hid = &hid_device;
 	int ret;
 
-	ret = usbd_hid_private_init(cb, ep_cfg);
+	ret = usbd_hid_private_init(cb, cfg);
 	if (ret == HAL_OK) {
 		hid->from_composite = 0;
 		usbd_register_class(&usbd_hid_driver);
@@ -1501,12 +1480,12 @@ int usbd_hid_init(const usbd_hid_usr_cb_t *cb, const usbd_hid_ep_cfg_t *ep_cfg)
 }
 
 #ifdef CONFIG_USBD_COMPOSITE
-int usbd_composite_hid_init(const usbd_hid_usr_cb_t *cb, const usbd_hid_ep_cfg_t *ep_cfg)
+int usbd_composite_hid_init(const usbd_hid_usr_cb_t *cb, const usbd_hid_config_t *cfg)
 {
 	usbd_hid_t *hid = &hid_device;
 	int ret;
 
-	ret = usbd_hid_private_init(cb, ep_cfg);
+	ret = usbd_hid_private_init(cb, cfg);
 	if (ret == HAL_OK) {
 		hid->from_composite = 1;
 		ret = usbd_composite_register_driver(&usbd_hid_driver);
@@ -1593,7 +1572,7 @@ int usbd_hid_send_data(const u8 *data, u32 len)
 #endif
 
 	if (!dev->is_ready) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "EP%02x TX not ready\n", hid->ep_cfg->intr_in_addr);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "EP%02x TX not ready\n", hid->cfg->intr_in_addr);
 		return ret;
 	}
 

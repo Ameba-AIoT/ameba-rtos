@@ -27,19 +27,19 @@ extern "C" {
  * @{
  */
 
-/* HID PID/VID */
-#define USBD_HID_VID                         USB_VID  /**< Vendor ID. */
-#define USBD_HID_PID                         USB_PID  /**< Product ID. */
+/* Defaults applied when the matching @ref usbd_hid_config_t field is left 0. */
+#define USBD_HID_INTR_IN_BUF_SIZE            512U    /**< Default INTR IN transfer buffer size. */
+#define USBD_HID_INTR_OUT_BUF_SIZE           1024U   /**< Default INTR OUT transfer buffer size. */
 
-/* HID strings */
-#define USBD_HID_LANGID_STRING               0x0409U             /**< Language ID for string descriptors (0x0409 = English) */
-#define USBD_HID_MFG_STRING                  "Realtek"           /**< Manufacturer string. */
-#define USBD_HID_PROD_HS_STRING              "Realtek HID (HS)"  /**< Product string for High-Speed mode. */
-#define USBD_HID_PROD_FS_STRING              "Realtek HID (FS)"  /**< Product string for Full-Speed mode. */
-#define USBD_HID_SN_STRING                   "1234567890"        /**< Serial number string. */
-
-#define USBD_HID_INTR_IN_BUF_SIZE            512U    /**< INTR IN maximum buffer size */
-#define USBD_HID_INTR_OUT_BUF_SIZE           1024U   /**< INTR OUT maximum buffer size */
+/* Default INTR bInterval. Full Speed counts frames (1 ms each), High Speed counts
+ * 2^(value-1) microframes, so the same polling rate needs different numbers: FS 10 -> 10 ms for
+ * mouse/keyboard, HS 4 -> 8 microframes -> 1 ms. The bidirectional variant polls every frame. */
+#ifdef CONFIG_USBD_HID_BIDIR
+#define USBD_HID_DEFAULT_FS_INTR_INTERVAL    1U      /**< Default INTR bInterval at Full Speed. */
+#else
+#define USBD_HID_DEFAULT_FS_INTR_INTERVAL    10U     /**< Default INTR bInterval at Full Speed. */
+#endif
+#define USBD_HID_DEFAULT_HS_INTR_INTERVAL    4U      /**< Default INTR bInterval at High Speed. */
 
 /* Endpoint address */
 #define USBD_HID_HS_INT_MAX_PACKET_SIZE      64 /**< High speed INTR maximum packet size */
@@ -96,15 +96,25 @@ extern "C" {
  *          (Consumer Control: Volume/Power).
  */
 typedef struct {
-	u32 intr_in_xfer_size;      /**< INTR IN transfer buffer size (0 = use default). */
-	u8  intr_in_addr;
-#if defined(CONFIG_USBD_HID_KEYBOARD) || defined(CONFIG_USBD_HID_BIDIR)
+	u32 intr_in_xfer_size;      /**< INTR IN transfer buffer size, 0 uses @ref USBD_HID_INTR_IN_BUF_SIZE. */
+	u32 intr_out_xfer_size;     /**< INTR OUT transfer buffer size, 0 uses @ref USBD_HID_INTR_OUT_BUF_SIZE.
+	                                 Ignored unless the keyboard variant is built. */
+	const char *itf_str;        /**< iInterface string of the HID interface, NULL for none. */
+	u8  intr_in_addr;           /**< INTR IN endpoint address. */
+	/**
+	 * @brief INTR OUT endpoint address.
+	 * @details Ignored unless `CONFIG_USBD_HID_KEYBOARD` (LED report) or
+	 *          `CONFIG_USBD_HID_BIDIR` (raw OUT report) is built.
+	 */
 	u8  intr_out_addr;
-#endif
-#ifdef CONFIG_USBD_HID_BIDIR
-	u8  consumer_intr_in_addr;  /**< Vendor (Consumer Control) INTR IN endpoint address. */
-#endif
-} usbd_hid_ep_cfg_t;
+	/**
+	 * @brief Vendor (Consumer Control) INTR IN endpoint address.
+	 * @details Ignored unless `CONFIG_USBD_HID_BIDIR` is built.
+	 */
+	u8  consumer_intr_in_addr;
+	u8  intr_interval_hs;       /**< INTR bInterval at High Speed, 0 uses @ref USBD_HID_DEFAULT_HS_INTR_INTERVAL. */
+	u8  intr_interval_fs;       /**< INTR bInterval at Full Speed, 0 uses @ref USBD_HID_DEFAULT_FS_INTR_INTERVAL. */
+} usbd_hid_config_t;
 
 /**
  * @brief Structure containing callback functions for the HID class.
@@ -205,7 +215,7 @@ typedef struct {
  * @brief Structure representing the HID device instance.
  */
 typedef struct {
-	const usbd_hid_ep_cfg_t *ep_cfg;    /**< Pointer to the EP configuration. */
+	const usbd_hid_config_t *cfg;       /**< Pointer to the class configuration (set by init). */
 	const usbd_hid_usr_cb_t *cb;        /**< Pointer to the user-defined callback structure. */
 	usb_dev_t *dev;               /**< Pointer to the USB device instance. */
 	usb_setup_req_t ctrl_req;     /**< Stores the current control request. */
@@ -226,6 +236,7 @@ typedef struct {
 	u8 idle_rate;                 /**< Store the device idle rate. */
 	u8 ctrl_req_pending;          /**< 1 if ctrl_req is waiting for its EP0 OUT data stage. */
 	u8 from_composite;			/**< Flag indicating if part of a composite device. */
+	u8 itf_str_idx;				/**< iInterface string index from usbd_add_string(), 0 for none. */
 } usbd_hid_t;
 
 /* Exported variables --------------------------------------------------------*/
@@ -242,19 +253,19 @@ typedef struct {
 /**
  * @brief Initializes class driver as a standalone device.
  * @param[in] cb: Pointer to the user-defined callback structure.
- * @param[in] ep_cfg: Pointer to EP configuration (endpoint addresses and buffer sizes).
+ * @param[in] cfg: Pointer to the class configuration. See @ref usbd_hid_config_t.
  * @return 0 on success, non-zero on failure.
  */
-int usbd_hid_init(const usbd_hid_usr_cb_t *cb, const usbd_hid_ep_cfg_t *ep_cfg);
+int usbd_hid_init(const usbd_hid_usr_cb_t *cb, const usbd_hid_config_t *cfg);
 
 #ifdef CONFIG_USBD_COMPOSITE
 /**
  * @brief Initializes class driver as part of a composite device.
  * @param[in] cb: Pointer to the user-defined callback structure.
- * @param[in] ep_cfg: Pointer to EP configuration (endpoint addresses and buffer sizes).
+ * @param[in] cfg: Pointer to the class configuration. See @ref usbd_hid_config_t.
  * @return 0 on success, non-zero on failure.
  */
-int usbd_composite_hid_init(const usbd_hid_usr_cb_t *cb, const usbd_hid_ep_cfg_t *ep_cfg);
+int usbd_composite_hid_init(const usbd_hid_usr_cb_t *cb, const usbd_hid_config_t *cfg);
 #endif
 
 /**

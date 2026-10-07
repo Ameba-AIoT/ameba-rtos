@@ -32,14 +32,34 @@ extern "C" {
 
 #define USBD_CDC_NCM_MAC_STR_LEN        (6)      /**< Length of the MAC address in bytes. */
 
-/* Defines basic device parameters like VID, PID, and string descriptors. */
-#define USBD_CDC_NCM_VID                              USB_VID               /**< Vendor ID. */
-#define USBD_CDC_NCM_PID                              USB_PID               /**< Product ID. */
-#define USBD_CDC_NCM_LANGID_STRING                    0x0409U               /**< Language ID for string descriptors (0x0409 = English) */
-#define USBD_CDC_NCM_MFG_STRING                       "Realtek"             /**< Manufacturer string. */
-#define USBD_CDC_NCM_PROD_HS_STRING                   "Realtek CDC NCM (HS)"/**< Product string for High-Speed mode. */
-#define USBD_CDC_NCM_PROD_FS_STRING                   "Realtek CDC NCM (FS)"/**< Product string for Full-Speed mode. */
-#define USBD_CDC_NCM_SN_STRING                        "1234567890"          /**< Serial number string. */
+/* Defaults applied when the matching @ref usbd_cdc_ncm_config_t field is left 0. */
+#define USBD_CDC_NCM_DEFAULT_INTR_IN_INTERVAL         8U     /**< Default INTR IN bInterval. */
+#define USBD_CDC_NCM_DEFAULT_NTB_IN_SIZE              4096U  /**< Default dwNtbInMaxSize. */
+#define USBD_CDC_NCM_DEFAULT_NTB_OUT_SIZE             4096U  /**< Default dwNtbOutMaxSize. */
+#define USBD_CDC_NCM_DEFAULT_NTB_OUT_MAX_DATAGRAMS    1U     /**< Default wNtbOutMaxDatagrams. */
+#define USBD_CDC_NCM_DEFAULT_BULK_TX_TIMEOUT_MS       20U    /**< Default blocking-transmit timeout in ms. */
+#define USBD_CDC_NCM_DEFAULT_RX_TASK_STACK_SIZE       1024U  /**< Default RX delivery task stack size in bytes. */
+#define USBD_CDC_NCM_DEFAULT_RX_TASK_PRIORITY         6U     /**< Default RX delivery task priority. */
+
+#ifdef CONFIG_USBD_CDC_NCM_TX_AGGREGATION
+/* Aggregation build: one slot is being filled while a second is in flight and a third queued,
+ * and 2 datagrams per NTB halve the per-frame NTB overhead at ~3 KB per slot buffer. */
+#define USBD_CDC_NCM_DEFAULT_TX_NTB_DEPTH             4U     /**< Default TX NTB ring slot count. */
+#define USBD_CDC_NCM_DEFAULT_NTB_IN_MAX_DATAGRAMS     2U     /**< Default datagrams aggregated per IN NTB. */
+#define USBD_CDC_NCM_DEFAULT_TX_RAW_QUEUE_DEPTH       4U     /**< Default raw frame queue depth (lwIP -> TX task). */
+#define USBD_CDC_NCM_DEFAULT_TX_TASK_STACK_SIZE       1024U  /**< Default TX aggregation task stack size in bytes. */
+#define USBD_CDC_NCM_DEFAULT_TX_TASK_PRIORITY         5U     /**< Default TX aggregation task priority. */
+#define USBD_CDC_NCM_DEFAULT_TX_SEMA_TIMEOUT_MS       10U    /**< Default TX task wake-up poll period in ms. */
+#else
+/* Non-aggregation: the lwIP task builds one-frame NTBs itself, so a depth of 3 (one in flight,
+ * one queued) is enough and only one datagram per NTB is ever emitted. */
+#define USBD_CDC_NCM_DEFAULT_TX_NTB_DEPTH             3U     /**< Default TX NTB ring slot count. */
+#define USBD_CDC_NCM_DEFAULT_NTB_IN_MAX_DATAGRAMS     1U     /**< Datagrams per IN NTB; always 1 without aggregation. */
+#endif
+
+/* Minimum TX NTB ring depth: the SPSC ring keeps one empty gap between the write and read
+ * index, so a depth of 2 is the smallest that leaves one usable slot. */
+#define USBD_CDC_NCM_MIN_TX_NTB_DEPTH                 2U
 
 /* Set to 1 to enable the periodic state-trace thread (default off).
  * When enabled, a low-priority thread prints link/endpoint/TX-ring-buffer state,
@@ -49,33 +69,8 @@ extern "C" {
  * all instrumentation is compiled out. */
 #define USBD_CDC_NCM_STATE_TRACE_ENABLE 0
 
-#define USBD_CDC_NCM_HS_INTR_IN_INTERVAL              8U     /**< High speed INTR IN interval */
-#define USBD_CDC_NCM_FS_INTR_IN_INTERVAL              8U     /**< Full speed INTR IN interval */
-
 /* Number of ping-pong RX buffers used to decouple USB OUT from upper-layer RX. */
 #define USBD_CDC_NCM_RX_BUF_NUM         2U
-
-/* Number of TX NTB ring slots (SPSC ring).
- * The ring keeps one empty gap between write and read index for lock-free
- * operation, so usable depth = DEPTH - 1.
- * Non-aggregation: DEPTH=3 (2 usable: one in-flight + one queued).
- * Aggregation:     DEPTH=4 (3 usable: one being filled + one in-flight + one queued). */
-#ifndef USBD_CDC_NCM_TX_DEPTH
-#ifdef CONFIG_USBD_CDC_NCM_TX_AGGREGATION
-#define USBD_CDC_NCM_TX_DEPTH           4U
-#else
-#define USBD_CDC_NCM_TX_DEPTH           3U
-#endif
-#endif
-
-#ifdef CONFIG_USBD_CDC_NCM_TX_AGGREGATION
-/* Aggregation TX task ring buffer depth (raw ethernet frames queued from lwIP).
- * 4 nodes = enough to absorb one full NTB worth of frames (MAX_DATAGRAMS=2)
- * plus 2 slots of burst headroom, without wasting memory. */
-#ifndef USBD_CDC_NCM_TX_RB_DEPTH
-#define USBD_CDC_NCM_TX_RB_DEPTH        4U
-#endif
-#endif
 
 /** @} End of Device_CDC_NCM_Constants group*/
 /** @} End of USB_Device_Constants group*/
@@ -92,22 +87,86 @@ extern "C" {
  */
 
 /**
- * @brief USB CDC NCM Device Private Data Structure.
+ * @brief Configuration for the CDC NCM class.
+ * @details Carries every CDC NCM option: the endpoint allocation, which the top-level
+ *          application owns, plus the MAC address, the advertised NTB parameters and the
+ *          TX/RX resource sizing. Used by both standalone and composite modes. Device-global
+ *          parameters (VID/PID, strings, power attributes) live in @ref usbd_dev_info_t
+ *          instead, and application-level options such as hotplug or the network configuration
+ *          belong in the example's own configuration structure.
+ * @note  The structure is stored by pointer, not copied, so it shall remain valid until
+ *        @ref usbd_cdc_ncm_deinit.
  */
 typedef struct {
-	const u8 *mac_value;     /**< Pointer to the MAC address buffer; typically points to a 6-byte physical address. */
-} usbd_cdc_ncm_priv_data_t;
-
-/**
- * @brief EP configuration for CDC NCM.
- * @details Specifies endpoint addresses for BULK IN/OUT and INTR IN endpoints.
- *          Used by both standalone and composite modes. Assigned at example layer.
- */
-typedef struct {
-	u8  bulk_in_addr;       /**< BULK IN endpoint address (e.g. 0x81) */
-	u8  bulk_out_addr;      /**< BULK OUT endpoint address (e.g. 0x01) */
-	u8  intr_in_addr;       /**< INTERRUPT IN endpoint address (e.g. 0x83) */
-} usbd_cdc_ncm_ep_cfg_t;
+	/**
+	 * @brief MAC address reported to the host, 6 bytes, NULL for the class default.
+	 * @details Copied into the class at init and formatted into the iMACAddress string,
+	 *          so the buffer itself needs not outlive the init call.
+	 */
+	const u8 *mac;
+	const char *itf_str;        /**< iInterface string of the communication interface, NULL for none. */
+	/**
+	 * @brief dwNtbInMaxSize advertised in GET_NTB_PARAMETERS, 0 uses @ref USBD_CDC_NCM_DEFAULT_NTB_IN_SIZE.
+	 * @details Upper bound on what SET_NTB_INPUT_SIZE may negotiate, so it shall be at least
+	 *          USB_CDC_NCM_MIN_NTB_INPUT_SIZE. It may exceed what one TX slot buffer holds:
+	 *          a device may always emit NTBs smaller than the maximum it advertises, and the
+	 *          class clamps every NTB to the slot capacity that `ntb_in_max_datagrams` sets.
+	 */
+	u32 ntb_in_max_size;
+	/**
+	 * @brief dwNtbOutMaxSize advertised in GET_NTB_PARAMETERS, 0 uses @ref USBD_CDC_NCM_DEFAULT_NTB_OUT_SIZE.
+	 * @details Also sizes the two ping-pong RX buffers, because the device shall be able to
+	 *          receive a whole max-size OUT NTB in one transfer.
+	 */
+	u32 ntb_out_max_size;
+	u16 bulk_tx_timeout_ms;     /**< Blocking-transmit timeout in ms, 0 uses @ref USBD_CDC_NCM_DEFAULT_BULK_TX_TIMEOUT_MS. */
+	u16 rx_task_stack_size;     /**< RX delivery task stack size in bytes, 0 uses @ref USBD_CDC_NCM_DEFAULT_RX_TASK_STACK_SIZE. */
+	u16 tx_task_stack_size;     /**< TX aggregation task stack size in bytes, 0 uses @ref USBD_CDC_NCM_DEFAULT_TX_TASK_STACK_SIZE.
+	                                 Ignored unless `CONFIG_USBD_CDC_NCM_TX_AGGREGATION`. */
+	u16 tx_sema_timeout_ms;     /**< TX aggregation task wake-up poll period in ms, 0 uses @ref USBD_CDC_NCM_DEFAULT_TX_SEMA_TIMEOUT_MS.
+	                                 Ignored unless `CONFIG_USBD_CDC_NCM_TX_AGGREGATION`. */
+	u8  bulk_in_addr;           /**< BULK IN endpoint address (e.g. 0x81). */
+	u8  bulk_out_addr;          /**< BULK OUT endpoint address (e.g. 0x01). */
+	u8  intr_in_addr;           /**< INTERRUPT IN endpoint address (e.g. 0x83). */
+	u8  intr_in_interval_hs;    /**< INTR IN bInterval at High Speed, 0 uses @ref USBD_CDC_NCM_DEFAULT_INTR_IN_INTERVAL. */
+	u8  intr_in_interval_fs;    /**< INTR IN bInterval at Full Speed, 0 uses @ref USBD_CDC_NCM_DEFAULT_INTR_IN_INTERVAL. */
+	/**
+	 * @brief Number of TX NTB ring slots, 0 uses @ref USBD_CDC_NCM_DEFAULT_TX_NTB_DEPTH.
+	 * @details The SPSC ring keeps one empty gap between the write and the read index, so the
+	 *          usable depth is one less than this and the minimum accepted value is
+	 *          @ref USBD_CDC_NCM_MIN_TX_NTB_DEPTH. Each slot owns one NTB buffer, whose size
+	 *          `ntb_in_max_datagrams` determines.
+	 */
+	u8  tx_ntb_depth;
+	/**
+	 * @brief Ethernet frames aggregated into one device-to-host (IN) NTB, 0 uses
+	 *        @ref USBD_CDC_NCM_DEFAULT_NTB_IN_MAX_DATAGRAMS.
+	 * @details "IN" is the USB direction (Ref NCM 1.0: IN = device-to-host), so this is purely a
+	 *          property of what the device emits; it is not the `ntb_out_max_datagrams` limit
+	 *          advertised for the opposite direction.
+	 *
+	 *          It sizes both the NDP16 directory a slot reserves, 8 + (value + 1) * 4 bytes, and
+	 *          the slot buffer itself, which holds that directory plus `value` max-size frames.
+	 *          A higher value lowers the per-frame NTB overhead and the number of USB transfers
+	 *          a small-packet burst costs, at a linearly growing heap cost: ~3 KB per slot at 2,
+	 *          ~6 KB at 4. Ignored unless `CONFIG_USBD_CDC_NCM_TX_AGGREGATION`: without it the
+	 *          lwIP task builds one-frame NTBs and the class forces 1.
+	 */
+	u8  ntb_in_max_datagrams;
+	/**
+	 * @brief wNtbOutMaxDatagrams advertised in GET_NTB_PARAMETERS, 0 uses
+	 *        @ref USBD_CDC_NCM_DEFAULT_NTB_OUT_MAX_DATAGRAMS.
+	 * @details How many datagrams the host may pack into one host-to-device (OUT) NTB
+	 *          (Ref NCM 1.0 Table 6-3). Purely advertised: the RX parser walks every NDP entry
+	 *          and bounds-checks each datagram, so the real limit is `ntb_out_max_size`.
+	 */
+	u8  ntb_out_max_datagrams;
+	u8  tx_raw_queue_depth;     /**< Raw frame queue depth (lwIP -> TX task), 0 uses @ref USBD_CDC_NCM_DEFAULT_TX_RAW_QUEUE_DEPTH.
+	                                 Ignored unless `CONFIG_USBD_CDC_NCM_TX_AGGREGATION`. */
+	u8  rx_task_priority;       /**< RX delivery task priority, 0 uses @ref USBD_CDC_NCM_DEFAULT_RX_TASK_PRIORITY. */
+	u8  tx_task_priority;       /**< TX aggregation task priority, 0 uses @ref USBD_CDC_NCM_DEFAULT_TX_TASK_PRIORITY.
+	                                 Ignored unless `CONFIG_USBD_CDC_NCM_TX_AGGREGATION`. */
+} usbd_cdc_ncm_config_t;
 
 /**
  * @brief One TX NTB buffer slot in the SPSC ring.
@@ -125,7 +184,7 @@ typedef struct {
 	u32 data_offset;        /**< Total NTB length (bytes) once finalised; DMA transfer length. */
 	u8 frame_count;         /**< Datagrams aggregated into this NTB so far. */
 	u16 sequence;           /**< NTH16 wSequence value for this NTB. */
-	u8 *buf;                /**< DMA-aligned NTB scratch buffer (size USBD_CDC_NCM_NTB_TX_BUF_SIZE). */
+	u8 *buf;                /**< DMA-aligned NTB scratch buffer (size usbd_cdc_ncm_dev_t::ntb_tx_buf_size). */
 } ncm_tx_ntb_t;
 
 /**
@@ -137,8 +196,6 @@ typedef struct {
 	/**
 	 * @brief Pointer to the USB CDC NCM private data structure.
 	 */
-	const usbd_cdc_ncm_priv_data_t *priv;
-
 	/**
 	 * @brief Called during CDC NCM class driver initialization to set up application resources.
 	 * @return 0 on success, non-zero on failure.
@@ -183,7 +240,7 @@ typedef struct {
  * @brief Structure representing the CDC NCM device instance.
  */
 typedef struct {
-	const usbd_cdc_ncm_ep_cfg_t *ep_cfg;  /**< Pointer to the EP configuration (set by init). */
+	const usbd_cdc_ncm_config_t *cfg;    /**< Pointer to the class configuration (set by init). */
 	const usbd_cdc_ncm_cb_t *cb;         /**< User-defined callback structure. */
 	usb_dev_t *dev;                 /**< USB device instance. */
 
@@ -193,7 +250,12 @@ typedef struct {
 
 	usb_setup_req_t ctrl_req;       /**< Saved control request for EP0 OUT data phase. */
 
-	ncm_tx_ntb_t tx_slot[USBD_CDC_NCM_TX_DEPTH]; /**< SPSC TX NTB ring slots. */
+	/* An NTB slot is always finalised and published before the producer returns:
+	 * the non-aggregation path builds one-frame NTBs in the lwIP task, and the
+	 * aggregation TX task stops appending as soon as the raw ring runs empty.
+	 * No slot is therefore ever left partially filled, so the TX path needs no
+	 * flush timeout or fill-in-progress state. */
+	ncm_tx_ntb_t *tx_slot;          /**< SPSC TX NTB ring, tx_ntb_depth slots allocated at init. */
 	usb_os_sema_t tx_buf_free_sema; /**< ISR -> producer: given each XFRC when a slot is freed. */
 	__IO u8 tx_wd;                  /**< Producer write index (TX task / lwIP task only advances this). */
 	__IO u8 tx_rd;                  /**< Consumer read index (USB ISR only advances this). */
@@ -202,16 +264,13 @@ typedef struct {
 #ifdef CONFIG_USBD_CDC_NCM_TX_AGGREGATION
 	/* Aggregation path: dedicated TX task reads raw frames from tx_raw_rb,
 	 * aggregates them into NTB slots, and advances tx_wd.
-	 * lwIP only calls usb_ringbuf_add_tail() and returns immediately. */
+	 * lwIP only calls usb_ringbuf_add_tail() and returns immediately.
+	 * Without this option the lwIP task builds one-frame NTBs itself, so none
+	 * of the fields below exist: no extra task, no ringbuf, minimal latency. */
 	usb_ringbuf_manager_t tx_raw_rb;    /**< Raw ethernet frame ring buffer (lwIP -> TX task). */
 	usb_os_sema_t tx_raw_sema;          /**< lwIP -> TX task: given when a frame is enqueued. */
 	usb_os_task_t tx_task;              /**< TX aggregation task handle. */
 	__IO u8 tx_task_running;            /**< TX task loop guard; cleared to 0 to request exit. */
-#else
-	/* Non-aggregation path: lwIP task directly builds one-frame NTBs and
-	 * advances tx_wd.  No extra task, no ringbuf, minimal latency. */
-	__IO u8 tx_filling_busy;        /**< 1 = producer is mid-append on slot[tx_wd]; SOF backs off. */
-	__IO u8 tx_wd_tick;             /**< SOF ticks since first frame appended to slot[tx_wd]. */
 #endif
 
 	usb_os_sema_t rx_data_ready_sema; /**< ISR -> thread: signals a buffer holds data. */
@@ -245,6 +304,25 @@ typedef struct {
 	u32 ntb_in_max_size;            /**< Max NTB the device may send to the host (IN),
 	                                     negotiated via SET_NTB_INPUT_SIZE.  Also caps the TX aggregation length. */
 	u32 ntb_out_max_size;           /**< Max NTB the host may send to the device (OUT). */
+	/**
+	 * @brief dwNtbInMaxSize the device advertises, i.e. the resolved
+	 *        usbd_cdc_ncm_config_t::ntb_in_max_size.
+	 * @details Ref NCM 1.0 6.2.1: GET_NTB_PARAMETERS reports the device's fixed capability,
+	 *          not the value last negotiated by SET_NTB_INPUT_SIZE, so this is kept separate
+	 *          from ntb_in_max_size and also serves as the upper bound that request accepts.
+	 */
+	u32 ntb_in_max_size_cap;
+
+	/* TX NTB layout, derived once at init from usbd_cdc_ncm_config_t::ntb_in_max_datagrams.
+	 * Held as fields rather than recomputed so the aggregation hot path does no arithmetic,
+	 * and so the slot buffers and the offsets written into them can never disagree. */
+	u32 agg_data_offset;            /**< Offset of the first datagram in a slot, i.e. NTH16 + NDP16
+	                                     directory rounded up to the datagram alignment. */
+	u32 ntb_tx_buf_size;            /**< Allocated size of one slot buffer: agg_data_offset plus
+	                                     ntb_in_max_datagrams aligned max-size frames. */
+	u32 rx_buf_size;                /**< Allocated size of one RX ping-pong buffer: a whole max-size
+	                                     OUT NTB, rounded up to a whole number of HS bulk packets. */
+
 	u16 sequence;                   /**< NTB sequence number, incremented per transmitted NTB. */
 
 	u8 mac[USBD_CDC_NCM_MAC_STR_LEN];    /**< Device MAC address (6 bytes). */
@@ -279,9 +357,16 @@ typedef struct {
 	u8 crc_mode;                    /**< CRC mode: 0=none, currently only no-CRC supported. */
 	u8 ctrl_req_pending;            /**< 1 if ctrl_req is waiting for its EP0 OUT data stage. */
 	u8 from_composite;              /**< Flag indicating if part of a composite device. */
-	u8 cls_str_base;                /**< First class-specific string index; the standalone default
-	                                     (right above USBD_IDX_SERIAL_STR) unless the composite
-	                                     framework rebases it via set_str_base(). */
+	u8 mac_str_idx;                 /**< iMACAddress string index from usbd_add_string(), 0 for none. */
+	u8 itf_str_idx;                 /**< Communication interface iInterface string index from usbd_add_string(), 0 for none. */
+	u8 tx_ntb_depth;                /**< Resolved TX NTB ring slot count (tx_slot[] length). */
+	u8 ntb_in_max_datagrams;        /**< Resolved datagrams per IN NTB; always 1 without aggregation. */
+	/**
+	 * @brief MAC address as the 12 uppercase hex characters the iMACAddress string reports.
+	 * @details Registered with the core by pointer, so it has to outlive enumeration rather
+	 *          than being formatted into a local buffer on each request.
+	 */
+	char mac_str[(USBD_CDC_NCM_MAC_STR_LEN * 2U) + 1U];
 	u8 if_base;                     /**< First interface number of this class; 0 in standalone mode
 	                                     unless the composite framework rebases it via
 	                                     set_interface_base(). */
@@ -304,19 +389,19 @@ typedef struct {
 /**
  * @brief Initializes class driver with application callback handler.
  * @param[in] cb: Pointer to the user-defined callback structure.
- * @param[in] ep_cfg: Pointer to EP configuration (endpoint addresses).
+ * @param[in] cfg: Pointer to the class configuration. See @ref usbd_cdc_ncm_config_t.
  * @return 0 on success, non-zero on failure.
  */
-int usbd_cdc_ncm_init(const usbd_cdc_ncm_cb_t *cb, const usbd_cdc_ncm_ep_cfg_t *ep_cfg);
+int usbd_cdc_ncm_init(const usbd_cdc_ncm_cb_t *cb, const usbd_cdc_ncm_config_t *cfg);
 
 #ifdef CONFIG_USBD_COMPOSITE
 /**
  * @brief Initializes class driver as part of a composite device.
  * @param[in] cb: Pointer to the user-defined callback structure.
- * @param[in] ep_cfg: Pointer to EP configuration (endpoint addresses).
+ * @param[in] cfg: Pointer to the class configuration. See @ref usbd_cdc_ncm_config_t.
  * @return 0 on success, non-zero on failure.
  */
-int usbd_composite_cdc_ncm_init(const usbd_cdc_ncm_cb_t *cb, const usbd_cdc_ncm_ep_cfg_t *ep_cfg);
+int usbd_composite_cdc_ncm_init(const usbd_cdc_ncm_cb_t *cb, const usbd_cdc_ncm_config_t *cfg);
 #endif
 
 /**
@@ -330,7 +415,8 @@ void usbd_cdc_ncm_deinit(void);
  * @brief Transmits an ethernet frame to the host wrapped in an NTB16.
  * @param[in] buf: Pointer to the ethernet frame buffer to be transmitted.
  * @param[in] len: Length of the ethernet frame in bytes.
- * @param[in] block: Blocking mode flag (e.g., 0 for non-blocking, else for blocking).
+ * @param[in] block: When non-zero, block for a bounded time waiting for TX room, then
+ *                   drop the frame and return HAL_BUSY.  When zero, drop immediately.
  * @return 0 on success, non-zero on failure.
  */
 int usbd_cdc_ncm_transmit(u8 *buf, u32 len, u8 block);

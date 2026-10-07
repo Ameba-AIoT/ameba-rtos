@@ -1,0 +1,69 @@
+[
+  // wlan.drv.tx (km4ns)
+  { func: "rtw_xmit_entry_sc",                          section: ".sram.only.text",  core: "km4ns" },
+  { func: "wifi_hal_interrupt_handle_tx",               section: ".sram.only.text",  core: "km4ns" },
+  { func: "wifi_hal_tx_isr",                            section: ".sram.only.text",  core: "km4ns" },
+  { func: "wifi_hal_check_txdesc_closed",               section: ".sram.only.text",  core: "km4ns" },
+  { func: "wifi_hal_txbd_set",                          section: ".sram.only.text",  core: "km4ns" },
+  { func: "wifi_hal_xmitframe_dump_sc",                 section: ".sram.only.text",  core: "km4ns" },
+  { func: "wifi_hal_tx_isr_check_acq_status_for_tb_dma_err", section: ".sram.only.text",  core: "km4ns" },
+  { func: "wifi_hal_xmit_check_acq_status_for_tb_dma_err",   section: ".sram.only.text",  core: "km4ns" },
+  { func: "wifi_hal_xmitframe_dump_sc_filldesc",        section: ".sram.only.text",  core: "km4ns" },
+  { func: "wifi_hal_pending_q_resume",                  section: ".sram.only.text",  core: "km4ns" },
+
+  // wlan.drv.rx (km4ns)
+  { func: "wifi_hal_normal_rx_process",                 section: ".sram.only.text",   core: "km4ns" },
+  { func: "wifi_hal_rx_mpdu",                           section: ".sram.only.text",   core: "km4ns" },
+  { func: "wifi_recv_tasklet",                          section: ".sram.only.text",   core: "km4ns" },
+  { func: "rtw_recv_indicatepkt_sc",                    section: ".sram.only.text",   core: "km4ns" },
+  { func: "rtw_recv_check_rx_shortcut_path",            section: ".sram.only.text",   core: "km4ns" },
+  { func: "wifi_hal_rx_amsdu_check",                    section: ".sram.only.text",   core: "km4ns" },
+
+  // wlan.whc.rx (km4ns)
+  { func: "whc_ipc_dev_recv",                           section: ".sram.only.text",   core: "km4ns" },
+  { func: "whc_ipc_send_msg",                           section: ".sram.only.text",   core: "km4ns" },
+
+  // wlan.drv.trx (km4ns)
+  { func: "wifi_hal_dma_interrupt",                     section: ".sram.only.text", core: "km4ns" },
+  { func: "wifi_hal_interrupt_handle",                  section: ".sram.only.text", core: "km4ns" },
+  { func: "wifi_hal_interrupt_handle_rx",               section: ".sram.only.text", core: "km4ns" },
+
+  // wlan.whc.trx (km4ns)
+  { func: "whc_ipc_dev_trx_event_hdl",                  section: ".sram.only.text",  core: "km4ns" },
+  { func: "whc_ipc_dev_trx_int_hdl",                    section: ".sram.only.text",  core: "km4ns" },
+  { func: "whc_msg_enqueue",                            section: ".sram.only.text",  core: "km4ns" },
+  { func: "whc_msg_get_queue_status",                   section: ".sram.only.text",  core: "km4ns" },
+  { func: "whc_msg_q_task",                             section: ".sram.only.text",  core: "km4ns" },
+
+  // iperf.udp (km4tz)
+  { func: "send_udp_packets",                           section: ".sram.only.text",  core: "km4tz" },
+  { func: "recv_udp_packets",                           section: ".sram.only.text",  core: "km4tz" },
+
+  // lwip.udp.tx (km4tz)
+  { func: "etharp_output",                              section: ".sram.only.text",  core: "km4tz" },
+  { func: "ethernet_output",                            section: ".sram.only.text",  core: "km4tz" },
+  { func: "ip4_output_if_opt_src",                      section: ".sram.only.text",  core: "km4tz" },
+  { func: "low_level_output_wifi",                      section: ".sram.only.text",  core: "km4tz" },
+
+  // wlan.whc.tx (km4tz)
+  { func: "whc_ipc_host_send",                          section: ".sram.only.text",   core: "km4tz" },
+  { func: "whc_ipc_host_send_skb",                      section: ".sram.only.text",   core: "km4tz" },
+
+  // lwip.udp.rx (km4tz)
+  { func: "netif_adapter_wifi_recv_whc",                section: ".sram.only.text",   core: "km4tz" },
+  { func: "ip4_input",                                  section: ".sram.only.text",   core: "km4tz" },
+  { func: "tcpip_inpkt",                                section: ".sram.only.text",   core: "km4tz" },
+  { func: "tcpip_input",                                section: ".sram.only.text",   core: "km4tz" },
+
+  // wlan.whc.rx (km4tz)
+  { func: "whc_ipc_host_rx_handler",                    section: ".sram.only.text",   core: "km4tz" },
+  { func: "whc_ipc_host_trx_event_hdl",                 section: ".sram.only.text",   core: "km4tz" },
+  { func: "whc_ipc_host_trx_int_hdl",                   section: ".sram.only.text",   core: "km4tz" },
+  { func: "whc_msg_enqueue",                            section: ".sram.only.text",   core: "km4tz" },
+  { func: "whc_msg_get_queue_status",                   section: ".sram.only.text",   core: "km4tz" },
+  { func: "whc_msg_q_task",                             section: ".sram.only.text",   core: "km4tz" },
+
+  // wlan.whc.trx (km4tz)
+  { func: "whc_ipc_rx_skb_cache_flush",                 section: ".sram.only.text",  core: "km4tz" },
+  { func: "whc_ipc_send_msg",                           section: ".sram.only.text",  core: "km4tz" },
+]

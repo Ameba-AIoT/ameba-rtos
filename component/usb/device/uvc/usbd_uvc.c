@@ -91,14 +91,6 @@ static const u8 usbd_uvc_dev_desc[USB_LEN_DEV_DESC] USB_DMA_ALIGNED = {
 	0x01                                            /* bNumConfigurations */
 };
 
-/* USB Standard String Descriptor 0 */
-static const u8 usbd_uvc_lang_id_desc[USB_LEN_LANGID_STR_DESC] USB_DMA_ALIGNED = {
-	USB_LEN_LANGID_STR_DESC,                        /* bLength */
-	USB_DESC_TYPE_STRING,                           /* bDescriptorType */
-	USB_LOW_BYTE(USBD_UVC_LANGID_STRING),           /* wLANGID */
-	USB_HIGH_BYTE(USBD_UVC_LANGID_STRING),
-};  /* usbd_uvc_lang_id_desc */
-
 #ifndef CONFIG_USB_FS
 /* USB Standard Device Qualifier Descriptor */
 static const u8 usbd_uvc_device_qualifier_desc[USB_LEN_DEV_QUALIFIER_DESC] USB_DMA_ALIGNED = {
@@ -711,22 +703,12 @@ static void usbd_uvc_set_interface_base(u8 base)
   */
 static u16 usbd_uvc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16 buf_len)
 {
-	usbd_uvc_dev_t *cdev = &usbd_uvc_dev;
-	usb_speed_type_t speed = dev->dev_speed;
 	u16 len = 0;
 	const u8 *desc = NULL;
 	u8 type = USB_HIGH_BYTE(req->wValue);
 	u8 is_cfg = 0;
-	u8 attr = 0x80U;
 
-	if (cdev->from_composite == 0U) {
-#ifdef CONFIG_USBD_SELF_POWERED
-		attr |= USB_CFG_DESC_OFFSET_ATTR_BIT_SELF_POWERED;
-#endif
-#ifdef CONFIG_USBD_REMOTE_WAKEUP_EN
-		attr |= USB_CFG_DESC_OFFSET_ATTR_BIT_REMOTE_WAKEUP;
-#endif
-	}
+	UNUSED(dev);
 
 	switch (type) {
 
@@ -766,37 +748,9 @@ static u16 usbd_uvc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 #endif
 
 	case USB_DESC_TYPE_STRING:
-		switch (USB_LOW_BYTE(req->wValue)) {
-		case USBD_IDX_LANGID_STR:
-			RTK_LOGS(TAG, RTK_LOG_DEBUG, "Get descriptor USBD_IDX_LANGID_STR\n");
-
-			desc = usbd_uvc_lang_id_desc;
-			len = sizeof(usbd_uvc_lang_id_desc);
-			break;
-		case USBD_IDX_MFC_STR:
-			RTK_LOGS(TAG, RTK_LOG_DEBUG, "Get descriptor USBD_IDX_MFC_STR\n");
-
-			len = usbd_get_str_descriptor(USBD_UVC_MFG_STRING, buf, buf_len);
-			break;
-		case USBD_IDX_PRODUCT_STR:
-			RTK_LOGS(TAG, RTK_LOG_DEBUG, "Get descriptor USBD_IDX_PRODUCT_STR\n");
-
-			if (speed == USB_SPEED_HIGH) {
-				len = usbd_get_str_descriptor(USBD_UVC_MFG_HS_STRING, buf, buf_len);
-			} else {
-				len = usbd_get_str_descriptor(USBD_UVC_MFG_FS_STRING, buf, buf_len);
-			}
-			break;
-		case USBD_IDX_SERIAL_STR:
-			RTK_LOGS(TAG, RTK_LOG_DEBUG, "Get descriptor USBD_IDX_SERIAL_STR\n");
-
-			len = usbd_get_str_descriptor(USBD_UVC_SN_STRING, buf, buf_len);
-			break;
-		default:
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "Get descriptor failed, invalid string index %d\n", USB_LOW_BYTE(req->wValue));
-
-			break;
-		}
+		/* Every string this class owns is registered with usbd_add_string() and answered by
+		   the core, which only forwards an index it does not know, e.g. the MS OS string */
+		USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_GET_DESC, 0);
 		break;
 
 	default:
@@ -818,9 +772,6 @@ static u16 usbd_uvc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 		   requested (CONFIGURATION vs OTHER_SPEED_CONFIGURATION); both cases share the
 		   same template array, so the copy in buf must be patched to match `type`. */
 		buf[USB_CFG_DESC_OFFSET_TYPE] = type;
-		if (cdev->from_composite == 0U) {
-			buf[USB_CFG_DESC_OFFSET_ATTR] = attr;
-		}
 		/* Patch the copy in buf, never the source template: get_descriptor() is invoked
 		 * repeatedly and the source must stay pristine. */
 		usbd_uvc_patch_desc(buf + USB_LEN_CFG_DESC, (u16)(len - USB_LEN_CFG_DESC));
@@ -851,19 +802,6 @@ static int usbd_uvc_set_config(usb_dev_t *dev, u8 config)
 	}
 
 	cdev->dev = dev;
-
-	if (cdev->from_composite == 0U) {
-#ifdef CONFIG_USBD_SELF_POWERED
-		dev->self_powered = 1;
-#else
-		dev->self_powered = 0;
-#endif
-#ifdef CONFIG_USBD_REMOTE_WAKEUP_EN
-		dev->remote_wakeup_en = 1;
-#else
-		dev->remote_wakeup_en = 0;
-#endif
-	}
 
 	RTK_LOGS(TAG, RTK_LOG_DEBUG, "Set config %d\n", config);
 	/* Init ISOC IN EP */

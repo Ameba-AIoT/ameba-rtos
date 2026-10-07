@@ -42,6 +42,12 @@ static const char *const TAG = "MSC";
 #define USBH_MSC_CHECK_DATA                  0
 #define USBH_MSC_MAX_FILES                   10
 
+/* Poll interval and budget of the "wait until the class is set up" loop. The
+   delay keeps the wait off the CPU, which matters under SMP: a tight spin here
+   can starve the core the USB main task runs on. */
+#define USBH_MSC_READY_POLL_MS               10U
+#define USBH_MSC_READY_TIMEOUT_MS            10000U
+
 /* Private types -------------------------------------------------------------*/
 
 /* Private macros ------------------------------------------------------------*/
@@ -52,6 +58,8 @@ static void msc_cb_attached(void);
 static void msc_cb_detached(void);
 static void msc_cb_setup(void);
 static void msc_cb_process(usb_host_t *host, u8 msg);
+static int msc_lock_stack(void);
+static void msc_unlock_stack(void);
 
 /* Private variables ---------------------------------------------------------*/
 
@@ -65,6 +73,36 @@ static u8 *msc_rd_buf;
 #if CONFIG_USBH_MSC_HOTPLUG
 static rtos_sema_t msc_detach_sema;
 #endif
+
+/* Serializes the FatFs I/O path against the hotplug thread's deinit/reinit.
+   Every f_read/f_write lands in USB_disk_read/USB_disk_write, which call
+   usbh_msc_read/usbh_msc_write; those poll the BOT state machine for the whole
+   duration of a sector transfer. Meanwhile usbh_msc_deinit() frees the CBW/CSW
+   and bounce buffers that poll loop walks, and usbh_deinit() memset()s the host
+   handle. The class API only checks host != NULL and the unit state on entry, so
+   under SMP the test thread on core 1 can be deep inside a transfer while core 0
+   frees it out from under it. The test thread must be excluded by lock, not by
+   core.
+   Created before the stack comes up and never deleted: the mount/test path can
+   not be joined by the example, so there is no point in time at which this mutex
+   is provably unreferenced. msc_stack_ready is the gate that keeps callers off
+   the stack instead. */
+static rtos_mutex_t msc_state_mutex = NULL;
+
+/* 1: usbh_init() and usbh_msc_init() are both done and the class API may be
+   called. Cleared before any teardown, so a non-zero value also implies
+   msc_state_mutex is valid. */
+static volatile u8 msc_stack_ready = 0;
+
+/* Set by the hotplug thread BEFORE it takes the lock, so the test thread sees it
+   between file operations, abandons the run and stops contending. Without that
+   ordering the test thread would keep re-taking the lock for its next sector and
+   the hotplug thread could be starved out of a teardown it must perform. */
+static volatile u8 msc_teardown = 0;
+
+/* Set by the hotplug thread when the stack can not be rebuilt. Tells the test
+   thread to stop for good rather than wait for an attach that can never come. */
+static volatile u8 msc_stack_fatal = 0;
 
 static const usbh_config_t usbh_cfg = {
 	.speed = USB_SPEED_HIGH,
@@ -107,6 +145,163 @@ static const usbh_user_cb_t usbh_usr_cb = {
 };
 
 /* Private functions ---------------------------------------------------------*/
+
+/**
+  * @brief  Take the stack lock if the class API may be reached right now
+  * @note   Gates on msc_stack_ready BEFORE touching the mutex: the handle is
+  *         still NULL if the example never started, and the flag is already
+  *         cleared if a teardown is pending. A hotplug right after this check is
+  *         harmless - the mutex stays valid and the re-check under it catches the
+  *         loss.
+  * @note   Wraps the FatFs calls rather than the class API, because the class is
+  *         reached indirectly through the disk driver and there is no hook inside
+  *         FatFs. The hold time is therefore one FatFs operation, bounded by the
+  *         per-transfer timeout inside usbh_msc_read/usbh_msc_write rather than by
+  *         a completion callback that may never arrive.
+  * @retval HAL_OK when the lock is held and the stack is usable, HAL_ERR_HW when
+  *         the caller must give up without unlocking
+  */
+static int msc_lock_stack(void)
+{
+	if ((msc_stack_ready == 0U) || (msc_teardown != 0U)) {
+		return HAL_ERR_HW;
+	}
+
+	rtos_mutex_take(msc_state_mutex, RTOS_MAX_TIMEOUT);
+
+	if ((msc_stack_ready == 0U) || (msc_teardown != 0U)) {
+		/* Lost the race against a teardown */
+		rtos_mutex_give(msc_state_mutex);
+		return HAL_ERR_HW;
+	}
+
+	return HAL_OK;
+}
+
+/**
+  * @brief  Release the stack lock taken by msc_lock_stack()
+  * @retval None
+  */
+static void msc_unlock_stack(void)
+{
+	rtos_mutex_give(msc_state_mutex);
+}
+
+/*
+ * Locked FatFs wrappers.
+ *
+ * Every one of these reaches the MSC class through the disk driver, so each has
+ * to be excluded from a concurrent teardown. They are thin wrappers rather than
+ * one lock around the whole test, because holding the lock for a full 10-file run
+ * would stall a hotplug for the entire test duration. One FatFs operation is the
+ * right granularity: it is bounded by the per-transfer timeout inside
+ * usbh_msc_read/usbh_msc_write.
+ *
+ * On a lost gate they return FR_DISK_ERR, which is exactly the code this example
+ * already treats as "device went away", so no call site needs a second error path.
+ */
+static FRESULT msc_fs_mount(FATFS *fs, const TCHAR *path, BYTE opt)
+{
+	FRESULT res;
+
+	if (msc_lock_stack() != HAL_OK) {
+		return FR_DISK_ERR;
+	}
+	res = f_mount(fs, path, opt);
+	msc_unlock_stack();
+
+	return res;
+}
+
+/*
+ * Unmount and close are the two operations that must run even when the device is
+ * already gone, because they also drop FatFs' own bookkeeping: the mount points
+ * at a FATFS object on the caller's stack and the FIL holds the open-file state.
+ * Skipping them on a closed gate would leave FatFs believing the volume is still
+ * mounted, with a dangling pointer once the caller returns.
+ *
+ * So these two take the lock unconditionally instead of going through
+ * msc_lock_stack(). The lock itself is always valid (created once, never
+ * deleted), and holding it means no teardown is in flight. If the stack is
+ * already down, the write that FatFs issues to flush is rejected by the class on
+ * its own state checks and the operation still clears the FatFs side.
+ */
+static FRESULT msc_fs_unmount(const TCHAR *path)
+{
+	FRESULT res;
+
+	rtos_mutex_take(msc_state_mutex, RTOS_MAX_TIMEOUT);
+	res = f_unmount(path);
+	rtos_mutex_give(msc_state_mutex);
+
+	return res;
+}
+
+static FRESULT msc_fs_open(FIL *fp, const TCHAR *path, BYTE mode)
+{
+	FRESULT res;
+
+	if (msc_lock_stack() != HAL_OK) {
+		return FR_DISK_ERR;
+	}
+	res = f_open(fp, path, mode);
+	msc_unlock_stack();
+
+	return res;
+}
+
+static FRESULT msc_fs_close(FIL *fp)
+{
+	FRESULT res;
+
+	/* Unconditional lock, see msc_fs_unmount() above. */
+	rtos_mutex_take(msc_state_mutex, RTOS_MAX_TIMEOUT);
+	res = f_close(fp);
+	rtos_mutex_give(msc_state_mutex);
+
+	return res;
+}
+
+static FRESULT msc_fs_lseek(FIL *fp, FSIZE_t ofs)
+{
+	FRESULT res;
+
+	if (msc_lock_stack() != HAL_OK) {
+		return FR_DISK_ERR;
+	}
+	res = f_lseek(fp, ofs);
+	msc_unlock_stack();
+
+	return res;
+}
+
+static FRESULT msc_fs_write(FIL *fp, const void *buf, UINT btw, UINT *bw)
+{
+	FRESULT res;
+
+	if (msc_lock_stack() != HAL_OK) {
+		*bw = 0U;
+		return FR_DISK_ERR;
+	}
+	res = f_write(fp, buf, btw, bw);
+	msc_unlock_stack();
+
+	return res;
+}
+
+static FRESULT msc_fs_read(FIL *fp, void *buf, UINT btr, UINT *br)
+{
+	FRESULT res;
+
+	if (msc_lock_stack() != HAL_OK) {
+		*br = 0U;
+		return FR_DISK_ERR;
+	}
+	res = f_read(fp, buf, btr, br);
+	msc_unlock_stack();
+
+	return res;
+}
 
 static void msc_cb_attached(void)
 {
@@ -154,6 +349,7 @@ static void usbh_msc_dump_boot_sector(void)
 	u8 *sec;
 	u32 lba;
 	u32 i;
+	DRESULT res;
 
 	sec = (u8 *)usb_os_malloc(512);
 	if (sec == NULL) {
@@ -172,7 +368,15 @@ static void usbh_msc_dump_boot_sector(void)
 			}
 		}
 
-		if (USB_disk_Driver.disk_read(sec, lba, 1) != RES_OK) {
+		/* Reaches usbh_msc_read() through the disk driver, so it needs the same
+		   exclusion as the FatFs path. */
+		if (msc_lock_stack() != HAL_OK) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Diag: stack gone\n");
+			break;
+		}
+		res = USB_disk_Driver.disk_read(sec, lba, 1);
+		msc_unlock_stack();
+		if (res != RES_OK) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Diag: read lba %d fail\n", lba);
 			break;
 		}
@@ -210,21 +414,38 @@ static int usbh_msc_file_test(void)
 	u32 test_sizes[] = {512, 1024, 2048, 4096, 8192};
 	u32 test_size;
 	u32 i;
+	u32 waited;
 	u8 data;
 
-	/* Wait for device attach + MSC ready */
+	/* Wait for device attach + MSC ready. Unbounded on purpose: with no device
+	   plugged in there is nothing to do but wait, and this example's whole point
+	   is to run again on the next attach. A dead stack is the one case that must
+	   not wait, and the hotplug thread signals that through msc_stack_fatal. */
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Wait for device attach...\n");
 	if (rtos_sema_take(msc_attach_sema, RTOS_SEMA_MAX_COUNT) != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Take attach sema fail\n");
 		return HAL_ERR_UNKNOWN;
 	}
 
+	if (msc_stack_fatal != 0U) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Stack gone, stop testing\n");
+		return HAL_ERR_UNKNOWN;
+	}
+
+	/* Bounded: a device that attaches but never completes setup must not park
+	   this thread forever. */
+	waited = 0U;
 	while (!msc_is_ready) {
-		if (!msc_is_connected) {
+		if ((!msc_is_connected) || (msc_teardown != 0U) || (msc_stack_ready == 0U)) {
 			RTK_LOGS(TAG, RTK_LOG_WARN, "Device disconnected before ready\n");
 			return HAL_ERR_UNKNOWN;
 		}
-		rtos_time_delay_ms(10);
+		if (waited >= USBH_MSC_READY_TIMEOUT_MS) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Wait ready timeout\n");
+			return HAL_ERR_UNKNOWN;
+		}
+		rtos_time_delay_ms(USBH_MSC_READY_POLL_MS);
+		waited += USBH_MSC_READY_POLL_MS;
 	}
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Device ready\n");
 
@@ -241,7 +462,7 @@ static int usbh_msc_file_test(void)
 	logical_drv[3] = 0;
 	strcpy(path, logical_drv);
 
-	res = f_mount(&fs, logical_drv, 1);
+	res = msc_fs_mount(&fs, logical_drv, 1);
 	if (res != FR_OK) {
 		/* rc: 1 FR_DISK_ERR, 3 FR_NOT_READY, 13 FR_NO_FILESYSTEM */
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to mount logical drive, rc=%d\n", res);
@@ -264,7 +485,7 @@ static int usbh_msc_file_test(void)
 		sprintf(&path[3], "TEST%u.DAT", (unsigned int)filenum);
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Open file: %s\n", path);
 
-		res = f_open(&f, path, FA_OPEN_ALWAYS | FA_READ | FA_WRITE);
+		res = msc_fs_open(&f, path, FA_OPEN_ALWAYS | FA_READ | FA_WRITE);
 		if (res) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Open file fail: %s, rc=%d\n", path, res);
 			ret = HAL_ERR_UNKNOWN;
@@ -284,7 +505,7 @@ static int usbh_msc_file_test(void)
 			RTK_LOGS(TAG, RTK_LOG_INFO, "W test: size %d, round %d...\n", test_size, USBH_MSC_TEST_ROUNDS);
 			start = SYSTIMER_TickGet();
 			for (round = 0; round < USBH_MSC_TEST_ROUNDS; ++round) {
-				res = f_write(&f, (void *)msc_wt_buf, test_size, (UINT *)&bw);
+				res = msc_fs_write(&f, (void *)msc_wt_buf, test_size, (UINT *)&bw);
 #if CONFIG_USBH_MSC_HOTPLUG
 				if (res == FR_DISK_ERR) {
 					RTK_LOGS(TAG, RTK_LOG_WARN, "W err: device disconnected (rc=%d)\n", res);
@@ -292,7 +513,7 @@ static int usbh_msc_file_test(void)
 				}
 #endif
 				if (res || (bw < test_size)) {
-					f_lseek(&f, 0);
+					(void)msc_fs_lseek(&f, 0);
 					RTK_LOGS(TAG, RTK_LOG_ERROR, "W err bw=%d, rc=%d\n", bw, res);
 					ret = HAL_ERR_UNKNOWN;
 					break;
@@ -312,11 +533,11 @@ static int usbh_msc_file_test(void)
 			RTK_LOGS(TAG, RTK_LOG_INFO, "W rate %d.%d KB/s for %d round @ %d ms\n", perf / 10, perf % 10, round, elapse);
 
 			/* Read */
-			f_lseek(&f, 0);
+			(void)msc_fs_lseek(&f, 0);
 			RTK_LOGS(TAG, RTK_LOG_INFO, "R test: size = %d round = %d...\n", test_size, USBH_MSC_TEST_ROUNDS);
 			start = SYSTIMER_TickGet();
 			for (round = 0; round < USBH_MSC_TEST_ROUNDS; ++round) {
-				res = f_read(&f, (void *)msc_rd_buf, test_size, (UINT *)&br);
+				res = msc_fs_read(&f, (void *)msc_rd_buf, test_size, (UINT *)&br);
 #if CONFIG_USBH_MSC_HOTPLUG
 				if (res == FR_DISK_ERR) {
 					RTK_LOGS(TAG, RTK_LOG_WARN, "R err: device disconnected (rc=%d)\n", res);
@@ -324,7 +545,7 @@ static int usbh_msc_file_test(void)
 				}
 #endif
 				if (res || (br < test_size)) {
-					f_lseek(&f, 0);
+					(void)msc_fs_lseek(&f, 0);
 					RTK_LOGS(TAG, RTK_LOG_ERROR, "R err br=%d, rc=%d\n", br, res);
 					ret = HAL_ERR_UNKNOWN;
 					break;
@@ -342,7 +563,7 @@ static int usbh_msc_file_test(void)
 			elapse = SYSTIMER_GetPassTime(start);
 			perf = (round * test_size * 10000 / 1024) / elapse;
 			RTK_LOGS(TAG, RTK_LOG_INFO, "R rate %d.%d KB/s for %d round @ %d ms\n", perf / 10, perf % 10, round, elapse);
-			f_lseek(&f, 0);
+			(void)msc_fs_lseek(&f, 0);
 
 #if USBH_MSC_CHECK_DATA
 			if (!(memcmp(msc_wt_buf, msc_rd_buf, test_size) == 0)) {
@@ -357,13 +578,13 @@ static int usbh_msc_file_test(void)
 
 #if CONFIG_USBH_MSC_HOTPLUG
 		if (res == FR_DISK_ERR) {
-			f_close(&f);
+			(void)msc_fs_close(&f);
 			ret = HAL_ERR_UNKNOWN;
 			break;
 		}
 #endif
 
-		f_close(&f);
+		(void)msc_fs_close(&f);
 		if (ret) {
 			break;
 		}
@@ -373,7 +594,7 @@ static int usbh_msc_file_test(void)
 	}
 
 	/* Unmount & unregister */
-	if (f_unmount(logical_drv) != FR_OK) {
+	if (msc_fs_unmount(logical_drv) != FR_OK) {
 		RTK_LOGS(TAG, RTK_LOG_WARN, "Unmount fail\n");
 	}
 	if (FATFS_UnRegisterDiskDriver(drv_num)) {
@@ -397,6 +618,17 @@ static void example_usbh_msc_hotplug_thread(void *param)
 			RTK_LOGS(TAG, RTK_LOG_INFO, "Hotplug: deinit USB stack\n");
 			rtos_time_delay_ms(100);
 
+			/* Announce the teardown BEFORE contending for the lock, so the test
+			   thread abandons its run between FatFs operations instead of
+			   re-taking the lock for its next sector and starving this thread
+			   out of a teardown it must perform. */
+			msc_teardown = 1U;
+
+			rtos_mutex_take(msc_state_mutex, RTOS_MAX_TIMEOUT);
+			/* Close the gate under the lock: no FatFs operation is in flight here,
+			   and any later one gives up on the cleared flag. */
+			msc_stack_ready = 0U;
+
 			usbh_stop();
 			usbh_msc_deinit();
 			rtos_time_delay_ms(20); /* let USB main task flush its queue before deletion */
@@ -407,30 +639,53 @@ static void example_usbh_msc_hotplug_thread(void *param)
 			msc_is_connected = 0;
 			msc_is_ready = 0;
 			rtos_sema_take(msc_attach_sema, 0);
+			rtos_mutex_give(msc_state_mutex);
 
 			rtos_time_delay_ms(10);
 
 			RTK_LOGS(TAG, RTK_LOG_INFO, "Free heap: 0x%08x\n", rtos_mem_get_free_heap_size());
 
+			rtos_mutex_take(msc_state_mutex, RTOS_MAX_TIMEOUT);
+
 			ret = usbh_init(&usbh_cfg, &usbh_usr_cb);
 			if (ret != HAL_OK) {
+				rtos_mutex_give(msc_state_mutex);
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "Hotplug: USBH init fail\n");
 				break;
 			}
 
 			ret = usbh_msc_init(&msc_usr_cb);
 			if (ret != HAL_OK) {
-				RTK_LOGS(TAG, RTK_LOG_ERROR, "Hotplug: MSC init fail\n");
 				usbh_deinit();
+				rtos_mutex_give(msc_state_mutex);
+				RTK_LOGS(TAG, RTK_LOG_ERROR, "Hotplug: MSC init fail\n");
 				break;
 			}
 
 			/* Re-arm USB TRX after the re-init. */
 			usbh_start();
 
+			/* Open the gate as the very last step, so no FatFs operation runs
+			   against a half-rebuilt stack. Clear teardown only after ready is
+			   set, or the test thread could slip through seeing neither flag. */
+			msc_stack_ready = 1U;
+			msc_teardown = 0U;
+			rtos_mutex_give(msc_state_mutex);
+
 			RTK_LOGS(TAG, RTK_LOG_INFO, "Hotplug: USB stack re-initialized\n");
 		}
 	}
+
+	/* A re-init failed, so the stack is gone for good. Keep the FatFs path out,
+	   and wake the test thread if it is parked waiting for an attach that will
+	   never come. The semas are left alive on purpose: the test thread may still
+	   be about to take one, and freeing them here would pull them out from under
+	   it. */
+	msc_stack_fatal = 1U;
+	msc_stack_ready = 0U;
+	msc_teardown = 1U;
+	rtos_sema_give(msc_attach_sema);
+	RTK_LOGS(TAG, RTK_LOG_ERROR, "Hotplug thread exit\n");
 
 	rtos_task_delete(NULL);
 }
@@ -442,6 +697,15 @@ void example_usbh_msc_thread(void *param)
 	int ret;
 
 	UNUSED(param);
+
+	/* Created before the stack comes up and never deleted, see the declaration */
+	if (msc_state_mutex == NULL) {
+		ret = rtos_mutex_create(&msc_state_mutex);
+		if (ret != RTK_SUCCESS) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Create state mutex fail\n");
+			goto exit_free;
+		}
+	}
 
 	ret = rtos_sema_create(&msc_attach_sema, 0U, 1U);
 	if (ret != RTK_SUCCESS) {
@@ -480,6 +744,9 @@ void example_usbh_msc_thread(void *param)
 	/* All class drivers registered; start USB TRX so enumeration can run. */
 	usbh_start();
 
+	/* The stack is fully up: allow the FatFs path to reach the class. */
+	msc_stack_ready = 1U;
+
 #if CONFIG_USBH_MSC_HOTPLUG
 	/* Start hotplug thread (waits on detach_sema, re-inits USB stack) */
 	{
@@ -490,10 +757,26 @@ void example_usbh_msc_thread(void *param)
 							   USBH_MSC_HOTPLUG_THREAD_PRIORITY);
 		if (ret != RTK_SUCCESS) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Create hotplug thread fail\n");
+			/* The gate is already open, so hold it shut under the lock for this
+			   rollback too, exactly as the hotplug thread does. */
+			msc_teardown = 1U;
+			rtos_mutex_take(msc_state_mutex, RTOS_MAX_TIMEOUT);
+			msc_stack_ready = 0U;
+			usbh_stop();
 			usbh_msc_deinit();
 			usbh_deinit();
+			rtos_mutex_give(msc_state_mutex);
 			goto exit_free;
 		}
+#if defined(CONFIG_SMP)
+		/* The USB OTG ISR is delivered on CPU0: the GIC pins every SPI to core 0
+		   (ITARGETSR is written to 0x01010101 in arm_gic.c gic_dist_init). Pinning
+		   the hotplug/deinit thread to CPU0 puts it on the same core as the ISR,
+		   so the local interrupt disables inside the teardown are meaningful
+		   again. The test thread stays unaffined: a pending teardown is excluded
+		   from it by msc_state_mutex, not by core. */
+		rtos_task_set_affinity(hotplug_task, 0);
+#endif
 	}
 #endif
 
@@ -501,6 +784,10 @@ void example_usbh_msc_thread(void *param)
 #if CONFIG_USBH_MSC_HOTPLUG
 	for (;;) {
 		ret = usbh_msc_file_test();
+		if (msc_stack_fatal != 0U) {
+			/* The stack can not be rebuilt, so no further attach will arrive. */
+			break;
+		}
 		if (ret == HAL_OK) {
 			RTK_LOGS(TAG, RTK_LOG_INFO, "All files done, repeat from 0\n");
 			/* Device still attached -- give sema so the next call does not
@@ -521,6 +808,8 @@ void example_usbh_msc_thread(void *param)
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Test %s, unplug and replug to repeat\n",
 				 ret == HAL_OK ? "done" : "interrupted");
 	}
+	/* Unreachable: without the hotplug thread nothing can declare the stack dead,
+	   so this loop only ends with the firmware. */
 #endif
 
 	/* Cleanup (unreachable in CONFIG_USBH_MSC_HOTPLUG=1 for the test thread, but keeps

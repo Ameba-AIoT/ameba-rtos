@@ -51,6 +51,27 @@ int dhcp_done = 0;
 extern struct netif *pnetif_usb_eth;
 
 static usb_os_sema_t cdc_ecm_detach_sema;
+
+/* Serializes the USB stack bring up / tear down against the lwIP TX path.
+   usbh_cdc_ecm_deinit() frees the TX buffers that usbh_cdc_ecm_send_data walks, and usbh_deinit()
+   memset()s the whole host handle; the class API only checks its own ready state
+   on entry, so under SMP the lwIP thread on core 1 can be past that check while
+   core 0 frees what it dereferences. TX must be excluded by lock, not by core.
+   Created before the stack comes up and never deleted: TX is driven by the lwIP
+   thread, which lives as long as the firmware and can not be joined by the
+   example, so there is no point in time at which this mutex is provably
+   unreferenced. cdc_ecm_stack_ready is the gate that keeps callers off the
+   stack instead. */
+static rtos_mutex_t cdc_ecm_state_mutex = NULL;
+
+/* 1: the stack is fully up and the class API may be called. Cleared before any
+   tear down, so a non-zero value also implies cdc_ecm_state_mutex is valid. */
+static volatile u8 cdc_ecm_stack_ready = 0;
+
+/* Set by the hotplug thread BEFORE it takes the lock, so a TX queued behind it
+   gives up instead of re-taking the lock between lwIP packets and starving this
+   thread out of a teardown it must perform. */
+static volatile u8 cdc_ecm_teardown = 0;
 #if ENABLE_USBH_CDC_ECM_HOT_PLUG
 rtos_task_t 	            hotplug_task;
 #endif
@@ -214,6 +235,15 @@ static int cdc_ecm_do_init(void)
 
 	usbh_cdc_ecm_prepare_done();
 
+	/* Open the gate as the very last step, so no TX runs against a half built
+	   stack. This routine is reused by the hotplug thread, so the re-attach path
+	   re-opens it here too; teardown is cleared alongside it because a TX that saw
+	   neither flag would slip through. */
+	rtos_mutex_take(cdc_ecm_state_mutex, RTOS_MAX_TIMEOUT);
+	cdc_ecm_stack_ready = 1U;
+	cdc_ecm_teardown = 0U;
+	rtos_mutex_give(cdc_ecm_state_mutex);
+
 	return 1;
 }
 
@@ -238,7 +268,14 @@ typedef struct pkt_attrib_s {
 	u8_t port_idx;
 } pkt_attrib_t;
 
-static void get_packet_attrib(struct pbuf *p, pkt_attrib_t *pattrib)
+/**
+  * @brief  Parse the attributes the bridge needs from an Ethernet frame
+  * @param  p: received pbuf
+  * @param  pattrib: parsed attributes, only valid when ERR_OK is returned
+  * @retval ERR_OK on success, ERR_VAL if the frame is too short for any of the
+  *         fixed offsets the bridge parses or rewrites, i.e. it must be dropped
+  */
+static err_t get_packet_attrib(struct pbuf *p, pkt_attrib_t *pattrib)
 {
 	u16_t protocol, src_port = 0, dst_port = 0;
 	u8_t type = 0;
@@ -250,11 +287,19 @@ static void get_packet_attrib(struct pbuf *p, pkt_attrib_t *pattrib)
 	u8_t *src_ip = NULL, *dst_ip = NULL;
 	struct eth_addr *src_addr, *dst_addr;
 
+	/* Without a complete Ethernet header none of the fields below exist */
+	if (p->len < (u16_t)ETH_HLEN) {
+		return ERR_VAL;
+	}
+
 	dst_addr = (struct eth_addr *)((u8_t *)p->payload);
 	src_addr = (struct eth_addr *)(((u8_t *)p->payload) + sizeof(struct eth_addr));
 	protocol = *((unsigned short *)((u8 *)p->payload + 2 * ETH_ALEN));
 
 	if (protocol == lwip_htons(ETHTYPE_IP)) {
+		if (p->len < (u16_t)(ETH_HLEN + sizeof(struct ip_hdr))) {
+			return ERR_VAL;
+		}
 		/* update src ip/mac mapping */
 		iph = (struct ip_hdr *)((u8 *)p->payload + ETH_HLEN);
 		src_ip = (u8_t *) & (iph->src.addr);
@@ -263,6 +308,9 @@ static void get_packet_attrib(struct pbuf *p, pkt_attrib_t *pattrib)
 
 		switch (iph->_proto) {
 		case IP_PROTO_TCP://TCP
+			if (p->len < (u16_t)(ETH_HLEN + sizeof(struct ip_hdr) + sizeof(struct tcp_hdr))) {
+				return ERR_VAL;
+			}
 			tcph = (struct tcp_hdr *)((u8 *)p->payload + ETH_HLEN + sizeof(struct ip_hdr));
 			if (tcph != NULL) {
 				src_port = PP_NTOHS(tcph->src);
@@ -271,6 +319,9 @@ static void get_packet_attrib(struct pbuf *p, pkt_attrib_t *pattrib)
 			}
 			break;
 		case IP_PROTO_UDP://UDP
+			if (p->len < (u16_t)(ETH_HLEN + sizeof(struct ip_hdr) + sizeof(struct udp_hdr))) {
+				return ERR_VAL;
+			}
 			udph = (struct udp_hdr *)((u8 *)p->payload + ETH_HLEN + sizeof(struct ip_hdr));
 			if (udph != NULL) {
 				src_port = PP_NTOHS(udph->src);
@@ -283,6 +334,11 @@ static void get_packet_attrib(struct pbuf *p, pkt_attrib_t *pattrib)
 			break;
 		}
 	} else if (protocol == lwip_htons(ETHTYPE_ARP)) {
+		/* A full ARP packet is required: both bridge directions rewrite the
+		 * sender/target hardware address at offset 22/32 of the frame */
+		if (p->len < (u16_t)SIZEOF_ETHARP_PACKET) {
+			return ERR_VAL;
+		}
 		arph = (struct etharp_hdr *)((u8 *)p->payload + ETH_HLEN);
 		src_ip = (u8 *) & (arph->sipaddr);
 		dst_ip = (u8 *) & (arph->dipaddr);
@@ -307,6 +363,8 @@ static void get_packet_attrib(struct pbuf *p, pkt_attrib_t *pattrib)
 	if (dst_ip != NULL) {
 		usb_os_memcpy((void *)pattrib->dst_ip, (const void *)dst_ip, sizeof(pattrib->dst_ip));
 	}
+
+	return ERR_OK;
 }
 
 static u32_t send_to_wifi(pkt_attrib_t *pattrib, struct pbuf *p)
@@ -347,61 +405,66 @@ static u32_t send_to_usb(pkt_attrib_t *pattrib, struct pbuf *p)
 
 static err_t usb_in_wifi_out(struct pbuf *p, struct netif *netif)
 {
-	pkt_attrib_t *pattrib;
+	pkt_attrib_t attrib;
 
 	if (p == NULL || netif == NULL) {
 		return ERR_VAL;
 	}
 
-	pattrib = (pkt_attrib_t *)usb_os_malloc(sizeof(pkt_attrib_t));
-	get_packet_attrib(p, pattrib);
-
-	//RTK_LOGS(TAG, RTK_LOG_INFO, "%s(%d) portnum=%d, protocol=0x%x\n", __FUNCTION__, __LINE__, netif->num, lwip_ntohs(pattrib->protocol));
-
-	if (pattrib->protocol == lwip_htons(ETHTYPE_IPV6)) {
+	/* Malformed/runt frame, drop it. The caller frees the pbuf on error, so
+	 * every path that already freed it must return ERR_OK. */
+	if (get_packet_attrib(p, &attrib) != ERR_OK) {
 		pbuf_free(p);
-		usb_os_mfree((void *)pattrib);
 		return ERR_OK;
 	}
-	pattrib->port_idx = netif->num;
+
+	//RTK_LOGS(TAG, RTK_LOG_INFO, "%s(%d) portnum=%d, protocol=0x%x\n", __FUNCTION__, __LINE__, netif->num, lwip_ntohs(attrib.protocol));
+
+	if (attrib.protocol == lwip_htons(ETHTYPE_IPV6)) {
+		pbuf_free(p);
+		return ERR_OK;
+	}
+	attrib.port_idx = netif->num;
 
 	//RTK_LOGS(TAG, RTK_LOG_INFO, "%s(%d): port_num:%d, protocol:%x, dst:%02x:%02x:%02x:%02x:%02x:%02x, src:%02x:%02x:%02x:%02x:%02x:%02x\n",
-	//			__func__, __LINE__, pattrib->port_idx, pattrib->protocol, pattrib->dst_mac.addr[0], pattrib->dst_mac.addr[1], pattrib->dst_mac.addr[2],
-	//			pattrib->dst_mac.addr[3], pattrib->dst_mac.addr[4], pattrib->dst_mac.addr[5], pattrib->src_mac.addr[0], pattrib->src_mac.addr[1],
-	//			pattrib->src_mac.addr[2], pattrib->src_mac.addr[3], pattrib->src_mac.addr[4], pattrib->src_mac.addr[5]);
+	//			__func__, __LINE__, attrib.port_idx, attrib.protocol, attrib.dst_mac.addr[0], attrib.dst_mac.addr[1], attrib.dst_mac.addr[2],
+	//			attrib.dst_mac.addr[3], attrib.dst_mac.addr[4], attrib.dst_mac.addr[5], attrib.src_mac.addr[0], attrib.src_mac.addr[1],
+	//			attrib.src_mac.addr[2], attrib.src_mac.addr[3], attrib.src_mac.addr[4], attrib.src_mac.addr[5]);
 
-	send_to_wifi(pattrib, p);
+	send_to_wifi(&attrib, p);
 
 	pbuf_free(p);
-	usb_os_mfree((void *)pattrib);
 
 	return ERR_OK;
 }
 
 static err_t wifi_in_usb_out(struct pbuf *p, struct netif *netif)
 {
-	pkt_attrib_t *pattrib;
+	pkt_attrib_t attrib;
 
 	if (p == NULL || netif == NULL) {
 		return ERR_VAL;
 	}
 
-	pattrib = (pkt_attrib_t *)usb_os_malloc(sizeof(pkt_attrib_t));
-	get_packet_attrib(p, pattrib);
-	//RTK_LOGS(TAG, RTK_LOG_INFO, "%s(%d) portnum=%d, protocol=0x%x\n", __FUNCTION__, __LINE__, netif->num, lwip_ntohs(pattrib->protocol));
-
-	if (pattrib->protocol == lwip_htons(ETHTYPE_IPV6)) {
+	/* Malformed/runt frame, drop it. The caller frees the pbuf on error, so
+	 * every path that already freed it must return ERR_OK. */
+	if (get_packet_attrib(p, &attrib) != ERR_OK) {
 		pbuf_free(p);
-		usb_os_mfree((void *)pattrib);
 		return ERR_OK;
 	}
-	pattrib->port_idx = netif->num;
+	//RTK_LOGS(TAG, RTK_LOG_INFO, "%s(%d) portnum=%d, protocol=0x%x\n", __FUNCTION__, __LINE__, netif->num, lwip_ntohs(attrib.protocol));
+
+	if (attrib.protocol == lwip_htons(ETHTYPE_IPV6)) {
+		pbuf_free(p);
+		return ERR_OK;
+	}
+	attrib.port_idx = netif->num;
 
 #if ECMBDEBUG
 	RTK_LOGS(TAG, RTK_LOG_INFO, "%s(%d): port_num:%d, protocol:%x, dst:%02x:%02x:%02x:%02x:%02x:%02x, src:%02x:%02x:%02x:%02x:%02x:%02x\n",
-			 __func__, __LINE__, pattrib->port_idx, pattrib->protocol, pattrib->dst_mac.addr[0], pattrib->dst_mac.addr[1], pattrib->dst_mac.addr[2],
-			 pattrib->dst_mac.addr[3], pattrib->dst_mac.addr[4], pattrib->dst_mac.addr[5], pattrib->src_mac.addr[0], pattrib->src_mac.addr[1],
-			 pattrib->src_mac.addr[2], pattrib->src_mac.addr[3], pattrib->src_mac.addr[4], pattrib->src_mac.addr[5]);
+			 __func__, __LINE__, attrib.port_idx, attrib.protocol, attrib.dst_mac.addr[0], attrib.dst_mac.addr[1], attrib.dst_mac.addr[2],
+			 attrib.dst_mac.addr[3], attrib.dst_mac.addr[4], attrib.dst_mac.addr[5], attrib.src_mac.addr[0], attrib.src_mac.addr[1],
+			 attrib.src_mac.addr[2], attrib.src_mac.addr[3], attrib.src_mac.addr[4], attrib.src_mac.addr[5]);
 
 	for (int i = 0; i < p->len; i++) {
 		RTK_LOGS(NOTAG, RTK_LOG_INFO, "%02x ", *((u8 *)p->payload + i));
@@ -409,17 +472,16 @@ static err_t wifi_in_usb_out(struct pbuf *p, struct netif *netif)
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n");
 #endif
 
-	if (pattrib->protocol == lwip_htons(ETHTYPE_ARP)) {
+	if (attrib.protocol == lwip_htons(ETHTYPE_ARP)) {
 		usb_os_memcpy((void *)((u8 *)p->payload + ETH_HLEN + 18), (const void *)&host_mac, ETH_ALEN);
 	}
 
 	//dst mac
 	usb_os_memcpy((void *)p->payload, (const void *)&host_mac, ETH_ALEN);
 
-	send_to_usb(pattrib, p);
+	send_to_usb(&attrib, p);
 
 	pbuf_free(p);
-	usb_os_mfree((void *)pattrib);
 	return ERR_OK;
 }
 
@@ -481,9 +543,20 @@ static void example_usbh_bridge_hotplug_thread(void *param)
 		usb_os_sema_take(cdc_ecm_detach_sema, USB_OS_SEMA_TIMEOUT);
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Hot plug\n");
 		//stop isr
+		/* Announce the teardown BEFORE contending for the lock, so a TX queued
+		 * behind it gives up instead of re-taking the lock between lwIP packets
+		 * and starving this thread out of a teardown it must perform. */
+		cdc_ecm_teardown = 1U;
+
+		rtos_mutex_take(cdc_ecm_state_mutex, RTOS_MAX_TIMEOUT);
+		/* Close the gate under the lock: no TX is in flight here, and any later
+		 * one gives up on the cleared flag. */
+		cdc_ecm_stack_ready = 0U;
+
 		usbh_stop();
 		usbh_cdc_ecm_deinit();
 		usbh_deinit();
+		rtos_mutex_give(cdc_ecm_state_mutex);
 
 		rtos_time_delay_ms(10);
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Free heap size: 0x%08x\n", usb_os_get_free_heap_size());
@@ -499,13 +572,40 @@ static void example_usbh_bridge_hotplug_thread(void *param)
 			break;
 		}
 	}
+
+	/* A re-init failed, so the stack is gone for good: keep TX out from here on.
+	 * The detach sema is deliberately left alive, the class callback may still be
+	 * about to give it. */
+	cdc_ecm_stack_ready = 0U;
+	cdc_ecm_teardown = 1U;
+	RTK_LOGS(TAG, RTK_LOG_ERROR, "Hotplug thread exit\n");
+	rtos_task_delete(NULL);
 }
 #endif
 
 /* Exported functions --------------------------------------------------------*/
 int usb_ethernet_transmit(u8 *buf, u32 len, u8 block)
 {
-	return usbh_cdc_ecm_send_data(buf, len, block);
+	int ret;
+
+	/* Gate on cdc_ecm_stack_ready BEFORE touching the mutex: the handle is still
+	   NULL if the example never started, and the flag is already cleared if a
+	   teardown is pending. A hotplug right after this check is harmless, the mutex
+	   stays valid and the re-check under it skips the TX. */
+	if ((cdc_ecm_stack_ready == 0U) || (cdc_ecm_teardown != 0U)) {
+		return HAL_ERR_HW;
+	}
+
+	rtos_mutex_take(cdc_ecm_state_mutex, RTOS_MAX_TIMEOUT);
+	if ((cdc_ecm_stack_ready == 0U) || (cdc_ecm_teardown != 0U)) {
+		/* Lost the race against a teardown */
+		ret = HAL_ERR_HW;
+	} else {
+		ret = usbh_cdc_ecm_send_data(buf, len, block);
+	}
+	rtos_mutex_give(cdc_ecm_state_mutex);
+
+	return ret;
 }
 
 void example_usbh_wifi_bridge(void)
@@ -513,6 +613,15 @@ void example_usbh_wifi_bridge(void)
 	int ret;
 	rtos_task_t monitor_task;
 	rtos_task_t bridge_task;
+
+	/* Created before the stack comes up and never deleted, see the declaration */
+	if (cdc_ecm_state_mutex == NULL) {
+		ret = rtos_mutex_create(&cdc_ecm_state_mutex);
+		if (ret != RTK_SUCCESS) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Create state mutex fail\n");
+			return;
+		}
+	}
 
 	ret = usb_os_sema_create(&cdc_ecm_detach_sema);
 	if (ret != HAL_OK) {
@@ -532,6 +641,15 @@ void example_usbh_wifi_bridge(void)
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create hotplug check task fail\n");
 		goto exit_release;
 	}
+#if defined(CONFIG_SMP)
+	/* The USB OTG ISR is delivered on CPU0: the GIC pins every SPI to core 0
+	   (ITARGETSR is written to 0x01010101 in arm_gic.c gic_dist_init). Pinning the
+	   hotplug/deinit thread to CPU0 puts it on the same core as the ISR, so the
+	   local interrupt disables inside the teardown are meaningful again. The lwIP
+	   TX thread stays unaffined: a pending teardown is excluded from it by
+	   cdc_ecm_state_mutex, not by core. */
+	rtos_task_set_affinity(hotplug_task, 0);
+#endif
 #endif
 
 	ret = rtos_task_create(&monitor_task, "usbh_bridge_monitor_thread",
