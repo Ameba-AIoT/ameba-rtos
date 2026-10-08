@@ -1026,7 +1026,8 @@ struct rtw_csi_header {
 	u8 n_rx;                    /**< Reserved. */
 	u8 n_sts;                   /**< Reserved. */
 	u8 trig_flag;               /**< CSI trigger source indicator (valid only in METHOD4, 0 if `trig_addr` valid) */
-	u8 rsvd[5];
+	u8 agc_index;               /**< Receiver gain setting index in dB (Reserved). */
+	u8 rsvd[4];
 };
 #pragma pack()
 
