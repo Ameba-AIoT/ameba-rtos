@@ -45,6 +45,9 @@ menu "CONFIG SHELL"
                     bool "Enable MQTT"
                 config ATCMD_WEBSOCKET
                     bool "Enable WEBSOCKET"
+                config ATCMD_HTTPD
+                    bool "Enable HTTPD (transparent HTTP server to host)"
+                    default n
                 config ATCMD_OTA
                     bool "Enable OTA"
                     default n
