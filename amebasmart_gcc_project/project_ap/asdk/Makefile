@@ -239,7 +239,6 @@ ifeq ($(CONFIG_AS_INIC_AP), y)
 	@+$(MAKE) -C make/network/ipnat all
 	@+$(MAKE) -C make/network/ipdnrd all
 	#@+$(MAKE) -C make/network/eap all
-	#@+$(MAKE) -C make/network/http2 all
 	#@+$(MAKE) -C make/network/tftp all
 endif
 endif
