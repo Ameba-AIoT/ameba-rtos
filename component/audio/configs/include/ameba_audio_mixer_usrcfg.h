@@ -39,6 +39,13 @@ typedef struct PrimaryAudioConfig {
 
 extern PrimaryAudioConfig kPrimaryAudioConfig;
 
+/*
+ * If system has no audio output, stop audio clock after kStandbyDurationNs time.
+ * If user wants audio clock all the time, please set it as:0x3FFFFFFFFFFFFFFF.
+ * If user wants default time calculated by framework, set it as -1.
+ */
+extern int64_t kStandbyDurationNs;
+
 #ifdef __cplusplus
 }
 #endif
