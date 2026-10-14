@@ -347,7 +347,7 @@ int ble_wifimate_device_main(uint8_t enable, uint16_t timeout)
 		bt_app_conf.prefer_tx_phy = 1 | 1 << 1 | 1 << 2;
 		bt_app_conf.prefer_rx_phy = 1 | 1 << 1 | 1 << 2;
 		bt_app_conf.max_tx_octets = 0x40;
-		bt_app_conf.max_tx_time = 0x200;
+		bt_app_conf.max_tx_time = 0x270;
 		bt_app_conf.user_def_service = false;
 		bt_app_conf.cccd_not_check = false;
 
