@@ -2,7 +2,7 @@
 #define __BT_INIC_DEFS_H__
 
 /* BT ID base should bigger than WHC_WIFI_EVT_MAX. */
-#define WHC_BT_ID_BASE 0xa5a5a5b0
+#define WHC_BT_ID_BASE 0xa5a5a540
 enum INIC_BT_ID_TYPE {
 	INIC_BT_HOST_TX = WHC_BT_ID_BASE,
 	INIC_BT_HOST_RX,

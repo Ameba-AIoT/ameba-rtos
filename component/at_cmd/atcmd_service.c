@@ -37,6 +37,7 @@
 #include "atcmd_sockets.h"
 #include "atcmd_http.h"
 #include "atcmd_websocket.h"
+#include "atcmd_httpd.h"
 #include "atcmd_network.h"
 #include "atcmd_ota.h"
 #endif
@@ -86,6 +87,9 @@ log_init_t log_init_table[] = {
 #if defined(CONFIG_ATCMD_WEBSOCKET) && (CONFIG_ATCMD_WEBSOCKET == 1)
 	at_websocket_init,
 #endif  /* CONFIG_ATCMD_WEBSOCKET */
+#if defined(CONFIG_ATCMD_HTTPD) && (CONFIG_ATCMD_HTTPD == 1)
+	at_httpd_init,
+#endif  /* CONFIG_ATCMD_HTTPD */
 #endif  /* CONFIG_LWIP_LAYER */
 #endif  /* CONFIG_WLAN */
 #endif  /* CONFIG_MP_SHRINK */

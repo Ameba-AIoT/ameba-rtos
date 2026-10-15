@@ -342,75 +342,9 @@ func_exit:
 
 static u8 whc_host_event_get_network_info(struct event_priv_t *event_priv, u32 *param_buf)
 {
-	uint32_t type = (uint32_t)param_buf[0];
-	int idx = param_buf[1];
-	/* input is used for WHC_WLAN_IS_VALID_IP, not used now. */
-	/* uint8_t *input = (uint8_t *)(&param_buf[2]); */
-	uint32_t *rsp_ptr = NULL;
-	uint32_t rsp_len = 0;
-	struct in_ifaddr *ifa = NULL;
-	uint32_t inic_ip_addr[WHC_MAX_NET_PORT_NUM] = {0};
-	uint32_t inic_ip_mask[WHC_MAX_NET_PORT_NUM] = {0};
-	struct whc_api_info *ret_msg;
-	u8 *buf;
-	u32 buf_len;
-
-#ifdef CONFIG_P2P
-	if (global_idev.p2p_global.pd_wlan_idx == 1) {
-		idx = idx ^ 1; /*GC intf is up, linux netdev idx is oppsite to driver wlan_idx*/
-	}
-#endif
-
-	switch (type) {
-	case WHC_WLAN_GET_IP:
-		rcu_read_lock();
-		in_dev_for_each_ifa_rcu(ifa, global_idev.pndev[idx]->ip_ptr)
-		memcpy(&inic_ip_addr[idx], &ifa->ifa_address, 4);
-		rcu_read_unlock();
-		rsp_ptr = &inic_ip_addr[idx];
-		rsp_len = 4;
-		break;
-	case WHC_WLAN_GET_GW:
-		dev_warn(global_idev.pwhc_dev, "WHC_WLAN_GET_GW is not supported. Add into global_idev if needed.");
-		break;
-	case WHC_WLAN_GET_GWMSK:
-		rcu_read_lock();
-		in_dev_for_each_ifa_rcu(ifa, global_idev.pndev[idx]->ip_ptr)
-		memcpy(&inic_ip_mask[idx], &ifa->ifa_mask, 4);
-		rcu_read_unlock();
-		rsp_ptr = &inic_ip_mask[idx];
-		rsp_len = 4;
-		break;
-	case WHC_WLAN_GET_HW_ADDR:
-		rsp_ptr = (uint32_t *)global_idev.pndev[idx]->dev_addr;
-		rsp_len = ETH_ALEN;
-		break;
-	case WHC_WLAN_IS_VALID_IP:
-		return 0;
-	}
-
-	/* free rx_event_msg */
-	kfree_skb(event_priv->rx_api_msg);
-
-	buf_len = SIZE_TX_DESC + sizeof(struct whc_api_info) + rsp_len;
-	buf = kzalloc(buf_len, GFP_KERNEL);
-	if (buf) {
-		/* fill whc_api_info_t */
-		ret_msg = (struct whc_api_info *)(buf + SIZE_TX_DESC);
-		ret_msg->event = WHC_WIFI_EVT_API_RETURN;
-		ret_msg->api_id = WHC_API_GET_LWIP_INFO;
-
-		/* copy data */
-		memcpy((u8 *)(ret_msg + 1), (u8 *)rsp_ptr, rsp_len);
-
-		/* send */
-		whc_host_send_data(buf, buf_len, NULL);
-#ifndef CONFIG_INIC_USB_ASYNC_SEND
-		kfree(buf);
-#endif
-	}
-
-	return 1;
+	/* NOT support for whc non-ipc mode.
+	Host would update network info through WHC_WIFI_TEST_NETWORK_INFO_UPDATE. */
+	return 0;
 }
 
 #ifdef CONFIG_NAN
@@ -452,15 +386,12 @@ static void whc_host_event_nan_cfgvendor_cmd_reply(struct event_priv_t *event_pr
 
 #endif
 
-void whc_host_event_task(struct work_struct *data)
+static void whc_host_event_handle(struct sk_buff *pskb)
 {
 	struct event_priv_t *event_priv = &global_idev.event_priv;
-	u8 already_ret = 0;
-	struct whc_api_info *p_recv_msg = (struct whc_api_info *)(event_priv->rx_api_msg->data + SIZE_RX_DESC);
+	struct whc_api_info *p_recv_msg = (struct whc_api_info *)(pskb->data + SIZE_RX_DESC);
 	u32 *param_buf = (u32 *)(p_recv_msg + 1);
-	struct whc_api_info *ret_msg;
-	u8 *buf;
-	u32 buf_len;
+	u32 api_id = p_recv_msg->api_id;
 #ifdef CONFIG_P2P
 	struct wireless_dev *wdev = NULL;
 #endif
@@ -468,9 +399,9 @@ void whc_host_event_task(struct work_struct *data)
 	u64 os_dep_data = 0;
 #endif
 
-	dev_dbg(global_idev.pwhc_dev, "-----DEVICE CALLING API %x START\n", p_recv_msg->api_id);
+	dev_dbg(global_idev.pwhc_dev, "-----DEVICE CALLING API %x START\n", api_id);
 
-	switch (p_recv_msg->api_id) {
+	switch (api_id) {
 
 	/* receive callback indication */
 	case WHC_API_SCAN_USER_CALLBACK:
@@ -515,7 +446,7 @@ void whc_host_event_task(struct work_struct *data)
 		//iiha_wifi_promisc_hdl(event_priv, p_recv_msg);
 		break;
 	case WHC_API_GET_LWIP_INFO:
-		already_ret = whc_host_event_get_network_info(event_priv, param_buf);
+		whc_host_event_get_network_info(event_priv, param_buf);
 		break;
 	case WHC_API_SET_NETIF_INFO:
 		whc_host_event_set_netif_info(event_priv, param_buf);
@@ -546,28 +477,23 @@ void whc_host_event_task(struct work_struct *data)
 		break;
 	}
 
-	if (already_ret == 0) {
-		buf_len = SIZE_TX_DESC + sizeof(struct whc_api_info);
-		buf = kzalloc(buf_len, GFP_KERNEL);
-		if (buf) {
-			/* fill and send ret_msg */
-			ret_msg = (struct whc_api_info *)(buf + SIZE_TX_DESC);
-			ret_msg->event = WHC_WIFI_EVT_API_RETURN;
-			ret_msg->api_id = p_recv_msg->api_id;
+	kfree_skb(pskb);
 
-			/* free rx_event_msg */
-			kfree_skb(event_priv->rx_api_msg);
-
-			whc_host_send_data(buf, buf_len, NULL);
-#ifndef CONFIG_INIC_USB_ASYNC_SEND
-			kfree(buf);
-#endif
-		}
-	}
-
-	dev_dbg(global_idev.pwhc_dev, "-----DEVICE CALLING API %x END\n", p_recv_msg->api_id);
+	dev_dbg(global_idev.pwhc_dev, "-----DEVICE CALLING API %x END\n", api_id);
 
 	return;
+}
+
+void whc_host_event_task(struct work_struct *data)
+{
+	struct event_priv_t *event_priv = &global_idev.event_priv;
+	struct sk_buff *pskb;
+
+	/* drain the queue: API_CALLs queued while this work is running are
+	 * handled here in order instead of waiting for the next schedule */
+	while ((pskb = skb_dequeue(&event_priv->rx_api_queue)) != NULL) {
+		whc_host_event_handle(pskb);
+	}
 }
 
 int whc_host_event_init(struct whc_device *idev)
@@ -580,6 +506,7 @@ int whc_host_event_init(struct whc_device *idev)
 	spin_lock_init(&event_priv->api_ret_lock);
 	event_priv->b_waiting_for_ret = 0;
 	event_priv->rx_api_ret_msg = NULL;
+	skb_queue_head_init(&event_priv->rx_api_queue);
 
 	/* initialize event tasklet */
 	INIT_WORK(&(event_priv->api_work), whc_host_event_task);
@@ -591,6 +518,9 @@ void whc_host_event_deinit(void)
 {
 	struct event_priv_t *event_priv = &global_idev.event_priv;
 	struct sk_buff *pskb_ret;
+
+	cancel_work_sync(&event_priv->api_work);
+	skb_queue_purge(&event_priv->rx_api_queue);
 
 	/* deinitialize the mutex to send event_priv message. */
 	mutex_destroy(&(event_priv->send_mutex));

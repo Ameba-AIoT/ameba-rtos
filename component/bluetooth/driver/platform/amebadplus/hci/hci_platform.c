@@ -390,10 +390,6 @@ static void bt_power_on(void)
 	set_reg_value(0x41008200, BIT1, 1);             /* enable BT Power Cut */
 	osif_delay_us(40);
 	set_reg_value(0x41008200, BIT17, 0);            /* disable ISO of BT */
-	set_reg_value(0x41008208, BIT2, 1);             /* enable WL RFAFE control circuit */
-	set_reg_value(0x41008480, BIT5 | BIT6, 3);      /* enable RFAFE */
-	set_reg_value(0x410084A8, BIT4, 1);             /* enable WL_CKI_80M_RFC, default=1, can skip */
-	set_reg_value(0x410084A8, BIT3, 0);             /* when WL RFAFE enter power off, keep WLRFC not power off */
 	set_reg_value(0x41008208, BIT1, 1);             /* release BTON reset */
 	osif_delay_us(100);
 	if (HCI_BT_KEEP_AWAKE) {
@@ -421,13 +417,6 @@ void bt_power_off(void)
 	osif_delay_us(100);
 	set_reg_value(0x41008280, BIT5, 0);             /* disable request poff xtal and swr, for next POFF flow */
 	set_reg_value(0x41008208, BIT1, 0);             /* assert BTON reset */
-#if defined(CONFIG_WLAN) && CONFIG_WLAN
-	if (!(wifi_is_running(STA_WLAN_INDEX) || wifi_is_running(SOFTAP_WLAN_INDEX)))
-#endif
-	{
-		set_reg_value(0x41008480, BIT5 | BIT6, 0);  /* disable RFAFE (if WIFI active, keep 2'b11) */
-		set_reg_value(0x41008208, BIT2, 0);         /* disable WL RFAFE control circuit (if WIFI active, keep 1'b1) */
-	}
 	set_reg_value(0x41008200, BIT17, 1);            /* enable ISO of BT */
 	set_reg_value(0x41008200, BIT1, 0);             /* disable BT Power Cut */
 	set_reg_value(0x41008280, BIT13, 0);            /* disable HOST_WAKE_BT */
@@ -516,6 +505,12 @@ void hci_platform_close(void)
 {
 	/* BT Controller Power Off */
 	bt_power_off();
+
+	/* Trigger WL re-enter IPS flow */
+#if defined(CONFIG_WLAN) && CONFIG_WLAN
+	wifi_ps_en_by_bt_on(DISABLE);
+	wifi_ps_en_by_bt_on(ENABLE);
+#endif
 
 	/* UART Close */
 	hci_uart_close();

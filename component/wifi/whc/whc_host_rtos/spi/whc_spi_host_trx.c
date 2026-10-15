@@ -27,7 +27,7 @@
 #define fix_tx_buf_num	2
 extern struct whc_spi_host_priv_t spi_host_priv;
 extern struct event_priv_t event_priv;
-u8 tx_buf[fix_tx_buf_num][4 + SPI_BUFSZ] = {0};
+u8 tx_buf[fix_tx_buf_num][4 + SPI_BUFSZ] __attribute__((aligned(4))) = {0};
 u8 used_buf_num = 0;
 extern int whc_host_init_done;
 
@@ -65,22 +65,13 @@ int whc_spi_host_send(int idx, struct eth_drv_sg *sg_list, int sg_len,
 	(void)is_special_pkt;
 	struct eth_drv_sg *psg_list;
 	int ret = RTK_SUCCESS, i = 0;
-	int pad_len = 0;
 	struct whc_msg_info *msg;
-	struct whc_txbuf_info_t *inic_tx = rtos_mem_zmalloc(sizeof(struct whc_txbuf_info_t));
+	struct whc_txbuf_info_t *inic_tx;
+	u8 *ptr;
 
 	if (!whc_host_init_done) {
 		RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "Host trx err: wifi not init\n");
 		return -RTK_ERR_WIFI_NOT_INIT;
-	}
-
-	rtos_mutex_take(spi_host_priv.host_send, 0xFFFFFFFF);
-
-	u8 *ptr = &(tx_buf[used_buf_num][0]);
-
-	if (*ptr != 0) {
-		RTK_LOGE(TAG_WLAN_INIC, "%s fail buf busy !\n\r", __func__);
-		return -RTK_ERR_WIFI_TX_BUF_FULL;
 	}
 
 	if (total_len > MAXIMUM_ETHERNET_PACKET_SIZE) {
@@ -88,14 +79,30 @@ int whc_spi_host_send(int idx, struct eth_drv_sg *sg_list, int sg_len,
 		return -RTK_ERR_BUFFER_OVERFLOW;
 	}
 
+	inic_tx = rtos_mem_zmalloc(sizeof(struct whc_txbuf_info_t));
+	if (!inic_tx) {
+		RTK_LOGE(TAG_WLAN_INIC, "%s mem fail\n\r", __func__);
+		return -RTK_ERR_NOMEM;
+	}
+
+	rtos_sema_take(spi_host_priv.host_send, 0xFFFFFFFF);
+
+	ptr = &(tx_buf[used_buf_num][0]);
+
+	if (*ptr != 0) {
+		RTK_LOGE(TAG_WLAN_INIC, "%s fail buf busy !\n\r", __func__);
+		rtos_sema_give(spi_host_priv.host_send);
+		rtos_mem_free(inic_tx);
+		return -RTK_ERR_WIFI_TX_BUF_FULL;
+	}
+
+	/* skip busy flag; tx_buf is 4-byte aligned, so msg is aligned and no padding is needed */
 	ptr += 4;
-	pad_len = ((u32)ptr - sizeof(struct whc_msg_info)) % DEV_DMA_ALIGN;
 	msg = (struct whc_msg_info *)(ptr);
 	msg->event = WHC_WIFI_EVT_XIMT_PKTS;
 	msg->wlan_idx = idx;
-	msg->pad_len = pad_len;
+	msg->pad_len = 0;
 	msg->data_len = 0;
-	/* allocate the skb buffer */
 
 	ptr += sizeof(struct whc_msg_info);
 
