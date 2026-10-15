@@ -21,6 +21,11 @@ FlashCalibPattern = [0x96969999, 0xFC66CC3F]
 ImagePattern = [0x35393138, 0x31313738]
 CompressFlag = [0x504D4F43, 0x53534552]
 
+# SoCs whose bootloader validates the app (IMG2) hash even when secure boot is
+# disabled, so the manifest must always carry a real ImgHash for them.
+# Keep in sync with the bootloader change; extend as more SoCs adopt it.
+ALWAYS_HASH_SOCS = ['amebadplus', 'amebalite', 'amebasmart']
+
 class ImgID(Enum):
     IMGID_BOOT = 0
     IMGID_NSPE = 1
@@ -426,6 +431,15 @@ class ManifestManager(ABC):
             ret = self.sboot.gen_signature(manifest.AuthAlg, private_key, manifest.SBPubKey, manifest, sizeof(Manifest_TypeDef) - SIGN_MAX_LEN, manifest.Signature)
             if ret != 0:
                 return Error(ErrorType.UNKNOWN_ERROR, f"self.sboot gen signature failed: {ret}")
+        elif image_type in [ImageType.IMAGE2, ImageType.APP_ALL] and self.context.soc_project in ALWAYS_HASH_SOCS:
+            # Always populate the app image hash (plain SHA-256) even when secure
+            # boot is disabled.
+            self.sboot.IsHMAC = 0
+            if self.sboot.gen_hash_id(manifest, "sha256") != 0:
+                return Error(ErrorType.UNKNOWN_ERROR, "self.sboot gen hash id failed")
+            ret = self.sboot.gen_image_hash(input_file, manifest.ImgHash)
+            if ret != 0:
+                return Error(ErrorType.UNKNOWN_ERROR, f"self.sboot gen image hash failed: {ret}")
 
         with open(output_file, 'wb') as f:
             f.write(string_at(addressof(manifest), sizeof(Manifest_TypeDef)))
