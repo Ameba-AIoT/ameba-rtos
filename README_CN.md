@@ -4,7 +4,7 @@
 
 # ameba-rtos
 
-**瑞昱 Ameba 系列芯片官方物联网开发框架，同时支持 Linux、 Windows 和 macOS 操作系统。**
+**瑞昱 Ameba 系列芯片官方物联网开发框架，同时支持 Linux、Windows 和 macOS 操作系统。**
 
 [![SDK](https://badgen.net/badge/SDK/FreeRTOS/blue)](https://aiot.realmcu.com/zh/latest/rtos/index.html)
 [![Release](https://badgen.net/github/release/Ameba-AIoT/ameba-rtos)](https://github.com/Ameba-AIoT/ameba-rtos/releases)
@@ -20,7 +20,7 @@
 
 </div>
 
-ameba-rtos 是瑞昱官方推出的物联网开发框架，基于 FreeRTOS，同时支持 Linux 和 Windows 操作系统。
+ameba-rtos 是瑞昱官方推出的物联网开发框架，基于 FreeRTOS，同时支持 Linux、Windows 和 macOS 操作系统。
 
 ## 🔌 支持的芯片
 
@@ -191,5 +191,5 @@ ameba.py monitor -p <PORT> -b 1500000
 
 ## 💬 反馈
 
-* 如果你在项目开发过程中有任何问题或建议，请登录 [Real-AIOT 论坛](https://forum.real-aiot.com/) 给我们反馈。
+* 如果你在项目开发过程中有任何问题或建议，请登录 [Ameba AIoT 论坛](https://forum.amebaiot.com/) 给我们反馈。
 * 如果你发现了错误或需要新功能，请先[查看 GitHub Issues](https://github.com/Ameba-AIoT/ameba-rtos/issues)，确保该问题尚未被提交。

@@ -20,7 +20,7 @@
 
 </div>
 
-ameba-rtos is the official IoT development framework for Realtek Ameba series SoCs, running on FreeRTOS and supported on both Linux and Windows.
+ameba-rtos is the official IoT development framework for Realtek Ameba series SoCs, running on FreeRTOS and supported on Linux, Windows and macOS.
 
 ## 🔌 Supported Chips
 
@@ -191,5 +191,5 @@ For users who can access [Gitee](https://gitee.com), we recommend downloading th
 
 ## 💬 Feedback
 
-* For questions or suggestions during development, visit [Real-AIOT Forum](https://forum.real-aiot.com/).
+* For questions or suggestions during development, visit [Ameba AIoT Forum](https://forum.amebaiot.com/).
 * For bugs or feature requests, [check the GitHub Issues](https://github.com/Ameba-AIoT/ameba-rtos/issues). Please check existing issues before opening a new one.
