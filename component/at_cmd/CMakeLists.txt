@@ -63,6 +63,9 @@ if(CONFIG_WHC_HOST OR CONFIG_WHC_NONE OR (CONFIG_WHC_DEV AND NOT CONFIG_WHC_INTF
     ameba_list_append(private_sources
         atcmd_otp.c
     )
+    ameba_list_append_if(CONFIG_ATCMD_SECURE private_sources
+        atcmd_secure.c
+    )
 endif()
 
 if(CONFIG_WHC_HOST OR CONFIG_WHC_NONE)
@@ -72,9 +75,6 @@ if(CONFIG_WHC_HOST OR CONFIG_WHC_NONE)
         atcmd_bt_mp.c
         atcmd_coex.c
     )
-    ameba_list_append_if(CONFIG_ATCMD_SECURE private_sources
-        atcmd_secure.c
-    )
     ameba_list_append_if(CONFIG_WLAN private_sources
         atcmd_http.c
         atcmd_mqtt.c
@@ -83,6 +83,9 @@ if(CONFIG_WHC_HOST OR CONFIG_WHC_NONE)
         atcmd_sockets.c
         atcmd_websocket.c
         atcmd_wifi.c
+    )
+    ameba_list_append_if(CONFIG_ATCMD_HTTPD private_sources
+        atcmd_httpd.c
     )
     ameba_list_append_if(CONFIG_WIFI_NAN_HOST_APP private_sources
         atcmd_wifi_nan.c

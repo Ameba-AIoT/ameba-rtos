@@ -356,9 +356,6 @@ static void whc_usb_dev_device_init(void)
 void whc_usb_dev_event_int_hdl(u8 *rxbuf, struct sk_buff *skb)
 {
 	u32 event = *(u32 *)rxbuf;
-#ifdef CONFIG_WHC_WIFI_API_PATH
-	struct whc_api_info *ret_msg;
-#endif
 #ifdef CONFIG_WHC_CMD_PATH
 	struct whc_cmd_path_hdr *hdr;
 #endif
@@ -368,19 +365,6 @@ void whc_usb_dev_event_int_hdl(u8 *rxbuf, struct sk_buff *skb)
 	case WHC_WIFI_EVT_API_CALL:
 		event_priv.rx_api_msg = rxbuf;
 		rtos_sema_give(event_priv.task_wake_sema);
-
-		break;
-	case WHC_WIFI_EVT_API_RETURN:
-		if (event_priv.b_waiting_for_ret) {
-			event_priv.rx_ret_msg = rxbuf;
-			rtos_sema_give(event_priv.api_ret_sema);
-		} else {
-			ret_msg = (struct whc_api_info *)rxbuf;
-			RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_WARN, "too late to receive API ret, ID: 0x%x!\n", ret_msg->api_id);
-
-			/* free rx buffer */
-			rtos_mem_free((u8 *)ret_msg);
-		}
 
 		break;
 #endif

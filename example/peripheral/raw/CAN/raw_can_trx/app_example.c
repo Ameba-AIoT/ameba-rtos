@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "example_a2c_ext.h"
+#include "example_can_ext.h"
 
 void app_example(void)
 {
-	example_raw_a2c_trx();
+	example_raw_can_trx();
 }

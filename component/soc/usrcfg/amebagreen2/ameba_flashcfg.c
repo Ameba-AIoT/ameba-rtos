@@ -41,6 +41,7 @@ const FlashInfo_TypeDef Flash_AVL[] = {
 	{0xC2,			0x000000FF,		FlashClass3,		0x000000FC,		NULL},	/* MXIC normal: MANUFACTURER_ID_BOHONG */
 	{0x68,			0x000000FF,		FlashClass2,		0x000043FC,		NULL},	/* Hua Hong */
 	{0x51,			0x000000FF,		FlashClass3,		0x000000FC,		NULL},	/* GD MD serial */
+	{0x701C,		0x0000FFFF,		FlashClass4,		0x000000FC,		NULL},	/* ESMT: EN25QHxxx, no QE bit */
 	{0x1C,			0x000000FF,		FlashClass2,		0x000043FC,		NULL},	/* ESMT: MANUFACTURER_ID_EON */
 	{0x20,			0x000000FF,		FlashClass1,		0x000043FC,		NULL},	/* XMC: MANUFACTURER_ID_WINBOND */
 	{0x85,			0x000000FF,		FlashClass1,		0x000043FC,		NULL},  /* PUYA */
@@ -65,7 +66,7 @@ FlashLayoutInfo_TypeDef Flash_Layout[] = {
 	{IMG_BOOT_OTA2, 0x081C0000, 0x081FFFFF}, //Boot Manifest(4K) + AP Bootloader(76K) OTA
 	{IMG_APP_OTA2,  0x08200000, 0x0837FFFF}, //Certificate(4K) + Manifest(4K) + AP Application OTA2 + RDP IMG OTA2
 
-	{VFS1,          0x083C0000, 0x0843FFFF}, //VFS region 1 (512K)
+	{VFS1,          0x08380000, 0x083FFFFF}, //VFS region 1 (512K)
 	{VFS2,          0xFFFFFFFF, 0xFFFFFFFF}, //VFS region 2
 	{USER,          0xFFFFFFFF, 0xFFFFFFFF}, //reserve for user
 

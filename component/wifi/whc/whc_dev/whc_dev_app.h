@@ -31,6 +31,7 @@
 #define WHC_WIFI_TEST_SHELL_CMD      0x18
 /* device→host: AT command response text from at_printf() */
 #define WHC_WIFI_TEST_AT_RESP        0x19
+#define WHC_WIFI_TEST_NETWORK_INFO_UPDATE	0x1a
 /* device→host: ACK for LOG_ENABLE/DISABLE; payload = WHC_WIFI_TEST(4B) | LOG_ACK(1B) | op(1B) */
 #define WHC_WIFI_TEST_LOG_ACK        0x1B
 /* device→host: TSF sync sample; payload = WHC_WIFI_TEST(4B) | TSF_SAMPLE(1B) | struct tsf_sync_sample */
@@ -79,5 +80,7 @@ void whc_dev_log_forward_init(void);
 #ifdef CONFIG_WHC_DEV_TSF_SYNC
 void whc_dev_tsf_ack_hdl(u8 *buf, u32 len);
 #endif
+
+int whc_dev_get_lwip_info(u32 type, unsigned char *input, int index);
 
 #endif

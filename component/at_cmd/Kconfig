@@ -45,15 +45,19 @@ menu "CONFIG SHELL"
                     bool "Enable MQTT"
                 config ATCMD_WEBSOCKET
                     bool "Enable WEBSOCKET"
+                config ATCMD_HTTPD
+                    bool "Enable HTTPD (transparent HTTP server to host)"
+                    default n
                 config ATCMD_OTA
                     bool "Enable OTA"
                     default n
-            endif
-        endif
-        config ATCMD_SECURE
-            bool "Enable ATCMD SECURE"
-            default n
-    endif
+            endif # !ATCMD_MANUAL_TEST
+            config ATCMD_SECURE
+                bool "Enable ATCMD SECURE"
+                default n
+        endif # SUPPORT_ATCMD
+    endif # SHELL
+
     config SHELL_TASK_STACK_BASIC_SIZE
         int
         # AP: TOTAL = BASIC_SIZE + CONTEXT_SAVE_SIZE + Margin
@@ -85,3 +89,6 @@ menu "CONFIG SHELL"
             Note: Priority order (top to bottom) means the first matching condition applies.
             As configurations are non-exclusive, place the largest required size at the top.
 endmenu
+
+config MP_INCLUDED
+    select ATCMD_SECURE if SUPPORT_ATCMD
