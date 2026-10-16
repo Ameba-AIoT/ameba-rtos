@@ -23,14 +23,30 @@ None
 
 # Expect result
 
-1. Reset the board, following log shall be printed on the LOGUART console, make sure there is no USB related error reported:
+1. Reset the board, following log shall be printed on the LOGUART console. The test PASSes only if the lines below show up and no error level log (`-E`) is reported:
 	```
+	[USBD-A] INIT
 	[ACM-I] USBD CDC ACM demo start
+	[ACM-I] ATTACHED
 	```
+	Notes:
+	* `[USBD-A] INIT` comes from the USB device core, not from the example.
+	* `[ACM-I] ATTACHED` is printed once the USB host has enumerated the device, so it only shows up after the cable is connected.
+	* On AmebaGreen2 an extra `[USB-I] UPHY para from ...` line is printed by the USB HAL before `[USBD-A] INIT`.
 
 2. Connect the USB port of Ameba board to USB host (PC or another Ameba board as USB CDC ACM host) with USB cable.
 
-3. Launch any serial port tool (e.g. Realtek Trace Tool), open the virtual serial port against the USB port of Ameba board, send messages to the Ameba board and the board will echo back the received messages.
+3. Launch any serial port tool (e.g. Realtek Trace Tool), open the virtual serial port against the USB port of Ameba board, send messages to the Ameba board and the board will echo back the received messages. The echo data path prints no log.
+
+4. Hotplug check: the example tears down and re-inits the USB stack on every detach, so unplug and re-plug the cable, following log shall be printed for each cycle:
+	```
+	[ACM-I] DETACHED
+	[USBD-A] DEINIT
+	[ACM-I] Free heap: 0x<value>
+	[USBD-A] INIT
+	[ACM-I] ATTACHED
+	```
+	The `Free heap` value shall stay stable across cycles, a value that keeps dropping indicates a memory leak.
 
 # Note
 

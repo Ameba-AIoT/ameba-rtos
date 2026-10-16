@@ -52,6 +52,7 @@ SECTIONS
 	{
 		__flash_text_start__ = .;
 		FLASH_INPUT_TEXT_SECTION
+		*(.flash.only.text*)
 		__flash_text_end__ = .;
 	} > KM4NS_IMG2_XIP
 

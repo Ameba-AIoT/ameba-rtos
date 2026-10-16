@@ -27,30 +27,7 @@ extern "C" {
 /** @addtogroup Device_CDC_ACM_Constants Device CDC ACM Constants
  * @{
  */
-#ifdef CONFIG_ATCMD_HOST_CONTROL
-#define USBD_CDC_ACM_NOTIFY                  1     /**< Enable/Disable notification feature. */
-#else
-#define USBD_CDC_ACM_NOTIFY                  1     /**< Enable/Disable notification feature. */
-#endif
-
-#if USBD_CDC_ACM_NOTIFY
-#define USBD_CDC_ACM_NOTIFY_LOOP_TEST        0     /**< Enable notification loopback test mode. */
-#endif
-
-#define USBD_CDC_ACM_BULK_TX_SKIP_MEMCPY     1     /**< Skip memcpy BULK IN DATA from application in class */
-
-/* Defines basic device parameters like VID, PID, and string descriptors. */
-#define USBD_CDC_ACM_VID                     USB_VID               /**< Vendor ID. */
-#define USBD_CDC_ACM_PID                     USB_PID               /**< Product ID. */
-#define USBD_CDC_ACM_LANGID_STRING           0x0409U               /**< Language ID for string descriptors (0x0409 = English) */
-#define USBD_CDC_ACM_MFG_STRING              "Realtek"             /**< Manufacturer string. */
-#define USBD_CDC_ACM_PROD_HS_STRING          "Realtek CDC ACM (HS)"/**< Product string for High-Speed mode. */
-#define USBD_CDC_ACM_PROD_FS_STRING          "Realtek CDC ACM (FS)"/**< Product string for Full-Speed mode. */
-#define USBD_CDC_ACM_SN_STRING               "1234567890"          /**< Serial number string. */
-
-/* Defines endpoint addresses for BULK and INTERRUPT transfers. */
-#define USBD_CDC_ACM_HS_INTR_IN_INTERVAL     8U     /**< High speed INTR IN interval */
-#define USBD_CDC_ACM_FS_INTR_IN_INTERVAL     8U     /**< Full speed INTR IN interval */
+#define USBD_CDC_ACM_DEFAULT_INTR_IN_INTERVAL 8U    /**< Default INTR IN bInterval, used when the configuration leaves it 0. */
 
 /** @} End of Device_CDC_ACM_Constants group */
 /** @} End of USB_Device_Constants group */
@@ -67,19 +44,41 @@ extern "C" {
  */
 
 /**
- * @brief EP configuration for CDC ACM.
- * @details Specifies endpoint addresses for BULK IN/OUT and INTR IN endpoints.
- *          Used by both standalone and composite modes. Assigned at example layer.
+ * @brief Configuration for the CDC ACM class.
+ * @details Carries every CDC ACM option: the endpoint allocation, which the top-level
+ *          application owns, plus the class feature switches. Used by both standalone and
+ *          composite modes. Device-global parameters (VID/PID, strings, power attributes)
+ *          live in @ref usbd_dev_info_t instead, and application-level options such as
+ *          hotplug or task priorities belong in the example's own configuration structure.
+ * @note  The structure is stored by pointer, not copied, so it shall remain valid until
+ *        @ref usbd_cdc_acm_deinit.
  */
 typedef struct {
-	u32 bulk_in_xfer_size;      /**< BULK IN transfer buffer size */
-	u32 bulk_out_xfer_size;     /**< BULK OUT transfer buffer size */
-	u8  bulk_in_addr;           /**< BULK IN endpoint address (e.g. 0x81) */
-	u8  bulk_out_addr;          /**< BULK OUT endpoint address (e.g. 0x01) */
-	u8  intr_in_addr;           /**< INTERRUPT IN endpoint address (e.g. 0x83) */
-} usbd_cdc_acm_ep_cfg_t;
+	u32 bulk_in_xfer_size;      /**< BULK IN transfer buffer size. */
+	u32 bulk_out_xfer_size;     /**< BULK OUT transfer buffer size. */
+	const char *itf_str;        /**< iInterface string of the communication interface, NULL for none. */
+	u8  bulk_in_addr;           /**< BULK IN endpoint address (e.g. 0x81). */
+	u8  bulk_out_addr;          /**< BULK OUT endpoint address (e.g. 0x01). */
+	u8  intr_in_addr;           /**< INTERRUPT IN endpoint address (e.g. 0x83). Ignored unless `notify_en` is set. */
+	u8  intr_in_interval_hs;    /**< INTR IN bInterval at High Speed, 0 uses @ref USBD_CDC_ACM_DEFAULT_INTR_IN_INTERVAL. */
+	u8  intr_in_interval_fs;    /**< INTR IN bInterval at Full Speed, 0 uses @ref USBD_CDC_ACM_DEFAULT_INTR_IN_INTERVAL. */
+	/**
+	 * @brief Enable the INTR IN notification endpoint (0: Disable, 1: Enable).
+	 * @details When disabled the class exposes no INTR IN endpoint, the communication
+	 *          interface reports bNumEndpoints 0, and @ref usbd_cdc_acm_notify_serial_state
+	 *          fails. Saves one endpoint and its TxFIFO for a host that never reads
+	 *          SERIAL_STATE.
+	 */
+	u8  notify_en : 1;
+	/**
+	 * @brief Transmit directly from the caller's buffer instead of copying (0: Disable, 1: Enable).
+	 * @details Avoids one memcpy per BULK IN transfer, but the caller's buffer shall be
+	 *          @ref USB_DMA_ALIGNED and shall stay valid and unmodified until the
+	 *          `transmitted` callback reports completion.
+	 */
+	u8  bulk_in_zero_copy : 1;
+} usbd_cdc_acm_config_t;
 
-#if USBD_CDC_ACM_NOTIFY
 /**
  * @brief Structure for CDC ACM notifications sent to the host.
  * @details This is a packed structure used for sending notifications like SERIAL_STATE
@@ -93,7 +92,6 @@ typedef struct {
 	u16 wLength;                       /**< Size of the notification data payload. */
 	u8 buf[USB_CDC_ACM_INTR_IN_DATA_SIZE]; /**< Notification data payload. */
 } __PACKED usbd_cdc_acm_ntf_t;
-#endif
 
 /**
  * @brief Structure containing callback functions for the CDC ACM class.
@@ -163,21 +161,19 @@ typedef struct {
  * @brief Structure representing the CDC ACM device instance.
  */
 typedef struct {
-	const usbd_cdc_acm_ep_cfg_t *ep_cfg;  /**< Pointer to the EP configuration (set by init). */
+	const usbd_cdc_acm_config_t *cfg; /**< Pointer to the class configuration (set by init). */
 	const usbd_cdc_acm_cb_t *cb;      /**< Pointer to the user-defined callback structure. */
 	usb_dev_t *dev;             /**< Pointer to the USB device instance. */
 	usb_setup_req_t ctrl_req;   /**< Stores the current control request. */
 	usbd_ep_t ep_bulk_in;       /**< BULK IN endpoint structure. */
 	usbd_ep_t ep_bulk_out;      /**< BULK OUT endpoint structure. */
 	usbd_ep_t ep_intr_in;       /**< INTERRUPT IN endpoint structure. */
-#if defined(USBD_CDC_ACM_NOTIFY_LOOP_TEST) && (USBD_CDC_ACM_NOTIFY_LOOP_TEST == 1)
-	u16 intr_notify_idx;        /**< Index for managing interrupt notifications. */
-#endif
 	u8 ctrl_req_pending;        /**< 1 if ctrl_req is waiting for its EP0 OUT data stage. */
 	u8 from_composite;          /**< Flag indicating if part of a composite device. */
 	u8 if_base;                 /**< First interface number of this class; 0 in standalone mode
 	                                 unless the composite framework rebases it via
 	                                 set_interface_base(). */
+	u8 itf_str_idx;             /**< iInterface string index from usbd_add_string(), 0 for none. */
 } usbd_cdc_acm_dev_t;
 
 /** @} End of Device_CDC_ACM_Types group */
@@ -197,19 +193,19 @@ typedef struct {
 /**
  * @brief Initializes class driver as a standalone device.
  * @param[in] cb: Pointer to the user-defined callback structure.
- * @param[in] ep_cfg: Pointer to EP configuration (endpoint addresses and buffer sizes).
+ * @param[in] cfg: Pointer to the class configuration. See @ref usbd_cdc_acm_config_t.
  * @return 0 on success, non-zero on failure.
  */
-int usbd_cdc_acm_init(const usbd_cdc_acm_cb_t *cb, const usbd_cdc_acm_ep_cfg_t *ep_cfg);
+int usbd_cdc_acm_init(const usbd_cdc_acm_cb_t *cb, const usbd_cdc_acm_config_t *cfg);
 
 #ifdef CONFIG_USBD_COMPOSITE
 /**
  * @brief Initializes class driver as part of a composite device.
  * @param[in] cb: Pointer to the user-defined callback structure.
- * @param[in] ep_cfg: Pointer to EP configuration (endpoint addresses and buffer sizes).
+ * @param[in] cfg: Pointer to the class configuration. See @ref usbd_cdc_acm_config_t.
  * @return 0 on success, non-zero on failure.
  */
-int usbd_composite_cdc_acm_init(const usbd_cdc_acm_cb_t *cb, const usbd_cdc_acm_ep_cfg_t *ep_cfg);
+int usbd_composite_cdc_acm_init(const usbd_cdc_acm_cb_t *cb, const usbd_cdc_acm_config_t *cfg);
 #endif
 
 /**
@@ -227,16 +223,14 @@ void usbd_cdc_acm_deinit(void);
  */
 int usbd_cdc_acm_transmit(u8 *buf, u32 len);
 
-#if USBD_CDC_ACM_NOTIFY
-
 /**
  * @brief Sets new line coding properties over the INTR IN endpoint.
+ * @note  Requires @ref usbd_cdc_acm_config_t::notify_en, otherwise the class owns no
+ *        INTR IN endpoint and the call fails.
  * @param[in] serial_state: New line coding properties.
  * @return 0 on success, non-zero on failure.
  */
 int usbd_cdc_acm_notify_serial_state(u16 serial_state);
-
-#endif
 
 /** @} End of Device_CDC_ACM_Functions group */
 /** @} End of USB_Device_Functions group */

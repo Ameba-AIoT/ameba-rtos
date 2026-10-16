@@ -30,16 +30,10 @@
 #define USBD_UAC_FS_ISOC_MPS                        1023U   /* Full speed ISOC IN & OUT max packet size */
 #define USBD_UAC_FS_ISOC_MPS_ALIGNED                1024U   /* USBD_UAC_FS_ISOC_MPS adjusted to the DWORD boundary, refer to usb_get_dword_aligned_mps */
 
-#define USBD_UAC_LANGID_STRING                      0x0409U
-#define USBD_UAC_MFG_STRING                         "Realtek"
-#define USBD_UAC_PROD_FS_STRING                     "Realtek UAC1.0 (FS)"
-#define USBD_UAC_SN_STRING                          "1234567890"
 
 /**
  * Defines Audio trx buffer MAX count.
  */
-#define USBD_UAC_RX_BUF_MAX_CNT                     20U     /**< RX Ringbuf count (scaled down by 2^(bInterval-1)) */
-#define USBD_UAC_TX_BUF_MAX_CNT                     20U     /**< TX Ringbuf count */
 
 #define USBD_UAC_FS_DEFAULT_BINTERVAL               1U      /**< FS ISOC bInterval used in EP descriptors */
 
@@ -48,8 +42,6 @@
  * Defines UAC 1.0 device volume MAX & MIN.
  * Must match usbd_uac_drv_vol[]'s dB-like range, not usbd_uac_pc_vol_lvl[].
  */
-#define USBD_UAC_VOLUME_CTRL_MIN                    0xFF42  /**< UAC 1.0 device MIN volume db. */
-#define USBD_UAC_VOLUME_CTRL_MAX                    0x00BE  /**< UAC 1.0 device MAX volume db. */
 
 /* sample sampling freq max count */
 #define USBD_UAC_SAMPLING_FREQ_MAX_COUNT            2U
@@ -177,10 +169,10 @@ static const u8 usbd_uac_dev_desc[USB_LEN_DEV_DESC] = {
 	0x00,                        /* bDeviceSubClass */
 	0x00,                        /* bDeviceProtocol */
 	USB_MAX_EP0_SIZE,            /* bMaxPacketSize */
-	USB_LOW_BYTE(USBD_UAC_VID),  /* idUAC */
-	USB_HIGH_BYTE(USBD_UAC_VID),
-	USB_LOW_BYTE(USBD_UAC_PID),  /* idProduct */
-	USB_HIGH_BYTE(USBD_UAC_PID),
+	USB_LOW_BYTE(USB_VID),  /* idUAC */
+	USB_HIGH_BYTE(USB_VID),
+	USB_LOW_BYTE(USB_PID),  /* idProduct */
+	USB_HIGH_BYTE(USB_PID),
 	0x00,                        /* bcdDevice */
 	0x01,
 	USBD_IDX_MFC_STR,            /* iManufacturer */
@@ -188,14 +180,6 @@ static const u8 usbd_uac_dev_desc[USB_LEN_DEV_DESC] = {
 	USBD_IDX_SERIAL_STR,         /* iSerialNumber */
 	0x01                         /* bNumConfigurations */
 }; /* usbd_uac_dev_desc */
-
-/* USB Standard String Descriptor 0 */
-static const u8 usbd_uac_lang_id_desc[USB_LEN_LANGID_STR_DESC] = {
-	USB_LEN_LANGID_STR_DESC,              /* bLength */
-	USB_DESC_TYPE_STRING,                 /* bDescriptorType */
-	USB_LOW_BYTE(USBD_UAC_LANGID_STRING), /* wLANGID */
-	USB_HIGH_BYTE(USBD_UAC_LANGID_STRING),
-}; /* usbd_uac_lang_id_desc */
 
 static const u8 usbd_uac_fs_config_desc[USBD_UAC_FS_CFG_DESC_BUF_LEN(USBD_UAC_DEFAULT_CH_CNT)] = {
 	/* USB UAC Device Configuration Descriptor */
@@ -636,9 +620,12 @@ static int usbd_uac_desc_dump(u8 *pbuf, int len)
   */
 static u16 usbd_uac_get_ring_buf_cnt(u8 speed)
 {
+	const usbd_uac_dev_t *cdev = &usbd_uac_dev;
+	u16 cnt = (cdev->cfg->rx_buf_cnt != 0U) ? cdev->cfg->rx_buf_cnt : USBD_UAC_DEFAULT_RX_BUF_CNT;
+
 	UNUSED(speed);
 
-	return USBD_UAC_RX_BUF_MAX_CNT / USBD_UAC_POW2(USBD_UAC_FS_DEFAULT_BINTERVAL - 1U);
+	return cnt / USBD_UAC_POW2(USBD_UAC_FS_DEFAULT_BINTERVAL - 1U);
 }
 
 /**
@@ -761,17 +748,17 @@ static inline u8 usbd_uac_ep_enable(const usbd_audio_cfg_t *ep)
   */
 static u8 usbd_uac_is_own_ep(const usbd_uac_dev_t *cdev, u8 ep_addr)
 {
-	const usbd_uac_ep_cfg_t *ep_cfg = cdev->ep_cfg;
+	const usbd_uac_config_t *cfg = cdev->cfg;
 
-	if ((ep_cfg == NULL) || (cdev->cb == NULL) || (ep_addr == 0U)) {
+	if ((cfg == NULL) || (cdev->cb == NULL) || (ep_addr == 0U)) {
 		return 0U;
 	}
 
-	if ((usbd_uac_ep_enable(&(cdev->cb->out)) != 0) && (ep_addr == ep_cfg->isoc_out_addr)) {
+	if ((usbd_uac_ep_enable(&(cfg->out)) != 0) && (ep_addr == cfg->isoc_out_addr)) {
 		return 1U;
 	}
 
-	if ((usbd_uac_ep_enable(&(cdev->cb->in)) != 0) && (ep_addr == ep_cfg->isoc_in_addr)) {
+	if ((usbd_uac_ep_enable(&(cfg->in)) != 0) && (ep_addr == cfg->isoc_in_addr)) {
 		return 1U;
 	}
 
@@ -797,19 +784,6 @@ static int usbd_uac_set_config(usb_dev_t *dev, u8 config)
 	}
 
 	cdev->dev = dev;
-
-	if (!cdev->from_composite) {
-#ifdef CONFIG_USBD_SELF_POWERED
-		dev->self_powered = 1;
-#else
-		dev->self_powered = 0;
-#endif
-#ifdef CONFIG_USBD_REMOTE_WAKEUP_EN
-		dev->remote_wakeup_en = 1;
-#else
-		dev->remote_wakeup_en = 0;
-#endif
-	}
 
 	cdev->alt_setting = 0U;
 
@@ -857,13 +831,13 @@ static void usbd_uac_clear_config(usb_dev_t *dev, u8 config)
 
 	/* DeInit ISOC IN EP */
 	info = &ep_isoc_in->info;
-	if ((cdev->cb != NULL) && (usbd_uac_ep_enable(&(cdev->cb->in)) != 0) && info->addr != 0) {
+	if ((cdev->cb != NULL) && (usbd_uac_ep_enable(&(cdev->cfg->in)) != 0) && info->addr != 0) {
 		usbd_ep_deinit(dev, ep_isoc_in);
 	}
 
 	/* DeInit ISOC OUT EP */
 	info = &ep_isoc_out->info;
-	if ((cdev->cb != NULL) && (usbd_uac_ep_enable(&(cdev->cb->out)) != 0) && info->addr != 0) {
+	if ((cdev->cb != NULL) && (usbd_uac_ep_enable(&(cdev->cfg->out)) != 0) && info->addr != 0) {
 		usbd_ep_deinit(dev, ep_isoc_out);
 	}
 }
@@ -1108,12 +1082,12 @@ static int usbd_uac_setup(usb_dev_t *dev, usb_setup_req_t *req)
 						ep0_in->xfer_len = 2U;
 						usbd_ep_transmit(dev, ep0_in);
 					} else if (req->bRequest == USB_UAC1_GET_MIN) {
-						u16 min_volume = USBD_UAC_VOLUME_CTRL_MIN;
+						u16 min_volume = (cdev->cfg->volume_min != 0U) ? cdev->cfg->volume_min : USBD_UAC_DEFAULT_VOLUME_MIN;
 						usb_os_memcpy((void *)ep0_in->xfer_buf, (const void *)&min_volume, 2);
 						ep0_in->xfer_len = 2U;
 						usbd_ep_transmit(dev, ep0_in);
 					} else if (req->bRequest == USB_UAC1_GET_MAX) {
-						u16 max_volume = USBD_UAC_VOLUME_CTRL_MAX;
+						u16 max_volume = (cdev->cfg->volume_max != 0U) ? cdev->cfg->volume_max : USBD_UAC_DEFAULT_VOLUME_MAX;
 						usb_os_memcpy((void *)ep0_in->xfer_buf, (const void *)&max_volume, 2);
 						ep0_in->xfer_len = 2U;
 						usbd_ep_transmit(dev, ep0_in);
@@ -1388,7 +1362,7 @@ static int usbd_uac_handle_ep0_data_out(usb_dev_t *dev)
 					byte_width = cdev->cur_byte_width;
 					ch_cnt = cdev->cur_ch_cnt;
 					/* Skip if SET_INTERFACE(alt=1) hasn't seeded ch_cnt/byte_width yet, else mps=0. */
-					if ((usbd_uac_ep_enable(&(cdev->cb->in)) != 0) && (ch_cnt != 0) && (byte_width != 0)) {
+					if ((usbd_uac_ep_enable(&(cdev->cfg->in)) != 0) && (ch_cnt != 0) && (byte_width != 0)) {
 						/* DeInit ISOC IN EP */
 						usbd_ep_deinit(dev, ep_isoc_in);
 						/* Init ISO IN EP */
@@ -1397,7 +1371,7 @@ static int usbd_uac_handle_ep0_data_out(usb_dev_t *dev)
 						usbd_ep_init(dev, ep_isoc_in);
 					}
 
-					if ((usbd_uac_ep_enable(&(cdev->cb->out)) != 0) && (ch_cnt != 0) && (byte_width != 0)) {
+					if ((usbd_uac_ep_enable(&(cdev->cfg->out)) != 0) && (ch_cnt != 0) && (byte_width != 0)) {
 						/* DeInit ISOC OUT EP */
 						usbd_ep_deinit(dev, ep_isoc_out);
 						/* Init ISO OUT EP */
@@ -1438,7 +1412,7 @@ static int usbd_uac_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status)
 
 	/* Return non-zero if EP is not owned by UAC1, so composite
 	 * dispatcher can continue iterating to the correct sub-function. */
-	if (ep_addr != cdev->ep_cfg->isoc_in_addr) {
+	if (ep_addr != cdev->cfg->isoc_in_addr) {
 		return HAL_ERR_PARA;
 	}
 
@@ -1515,7 +1489,7 @@ static int usbd_uac_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len)
 
 	/* Return non-zero if EP is not owned by UAC1, so composite
 	 * dispatcher can continue iterating to the correct sub-function. */
-	if (ep_addr != cdev->ep_cfg->isoc_out_addr) {
+	if (ep_addr != cdev->cfg->isoc_out_addr) {
 		return HAL_ERR_PARA;
 	}
 
@@ -1570,19 +1544,20 @@ static int usbd_uac_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len)
 /**
   * @brief  Patch the runtime-assigned fields in a configuration descriptor block
   * @note   Replaces direction-only EP placeholders (USB_D2H/USB_H2D) with the actual
-  *         EP addresses from ep_cfg, and rebases the AC Header baInterfaceNr[]
+  *         EP addresses from the class configuration, rewrites the iInterface string index,
+  *         and rebases the AC Header baInterfaceNr[]
   *         cross-references with the current interface base (0 unless the composite
   *         framework rebased it), which the framework does not touch: it only rebases
   *         the standard Interface and IAD descriptors.
   * @param  desc: Pointer to the descriptor buffer (after configuration descriptor header)
   * @param  len: Total length of descriptor data
-  * @param  ep_cfg: Endpoint configuration with actual addresses to patch in
   * @retval void
   */
-static void usbd_uac_patch_desc(u8 *desc, u16 len, const usbd_uac_ep_cfg_t *ep_cfg)
+static void usbd_uac_patch_desc(u8 *desc, u16 len)
 {
 	u16 i;
 	usbd_uac_dev_t *cdev = &usbd_uac_dev;
+	const usbd_uac_config_t *cfg = cdev->cfg;
 
 	for (i = 0; i < len;) {
 		u8 dlen = desc[i];
@@ -1595,10 +1570,14 @@ static void usbd_uac_patch_desc(u8 *desc, u16 len, const usbd_uac_ep_cfg_t *ep_c
 			u8 dir = addr & USB_REQ_DIR_MASK;
 			u8 type = desc[i + 3] & 0x03;
 			if ((dir == USB_D2H) && (type == USB_CH_EP_TYPE_ISOC)) {
-				desc[i + 2] = ep_cfg->isoc_in_addr;
+				desc[i + 2] = cfg->isoc_in_addr;
 			} else if ((dir == USB_H2D) && (type == USB_CH_EP_TYPE_ISOC)) {
-				desc[i + 2] = ep_cfg->isoc_out_addr;
+				desc[i + 2] = cfg->isoc_out_addr;
 			}
+		} else if ((dtype == USB_DESC_TYPE_INTERFACE) && (dlen >= USB_LEN_IF_DESC) &&
+				   (desc[i + 6] == USB_UAC_SUBCLASS_AUDIOCONTROL)) {
+			/* Only the audio control interface is named, matching the CDC ACM class. */
+			desc[i + 8] = cdev->itf_str_idx;         /* iInterface */
 		} else if ((dtype == USB_UAC_CS_INTERFACE) && (dlen >= USB_UAC1_AC_IF_HEADER_LEN) && (desc[i + 2] == USB_UAC_AC_HEADER)) {
 			/* AC Header: bInCollection at offset 7, baInterfaceNr[j] at offset 8+j
 			 * (Ref UAC 1.0 4.7.2). Each entry keeps its own class-local interface
@@ -1634,20 +1613,10 @@ static u16 usbd_uac_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 	u16 len = 0;
 	u8 type = USB_HIGH_BYTE(req->wValue);
 	u8 is_cfg = 0;
-	u8 attr = 0x80U;
 
 	if (speed == USB_SPEED_HIGH) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid speed, UAC 1.0 only support full speed\n");
 		return len;
-	}
-
-	if (!cdev->from_composite) {
-#ifdef CONFIG_USBD_SELF_POWERED
-		attr |= USB_CFG_DESC_OFFSET_ATTR_BIT_SELF_POWERED;
-#endif
-#ifdef CONFIG_USBD_REMOTE_WAKEUP_EN
-		attr |= USB_CFG_DESC_OFFSET_ATTR_BIT_REMOTE_WAKEUP;
-#endif
 	}
 
 	switch (type) {
@@ -1658,11 +1627,11 @@ static u16 usbd_uac_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 		break;
 
 	case USB_DESC_TYPE_CONFIGURATION:
-		if (usbd_uac_ep_enable(&(cdev->cb->out)) != 0) {
-			cdev->uac_isoc_out.isoc_mps = usbd_uac_get_mps(&(cdev->cb->out), speed);
+		if (usbd_uac_ep_enable(&(cdev->cfg->out)) != 0) {
+			cdev->uac_isoc_out.isoc_mps = usbd_uac_get_mps(&(cdev->cfg->out), speed);
 		}
-		if (usbd_uac_ep_enable(&(cdev->cb->in)) != 0) {
-			cdev->uac_isoc_in.isoc_mps  = usbd_uac_get_mps(&(cdev->cb->in), speed);
+		if (usbd_uac_ep_enable(&(cdev->cfg->in)) != 0) {
+			cdev->uac_isoc_in.isoc_mps  = usbd_uac_get_mps(&(cdev->cfg->in), speed);
 		}
 
 		desc = usbd_uac_fs_config_desc;
@@ -1679,28 +1648,9 @@ static u16 usbd_uac_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 #endif
 
 	case USB_DESC_TYPE_STRING:
-		switch (USB_LOW_BYTE(req->wValue)) {
-		case USBD_IDX_LANGID_STR:
-			desc = usbd_uac_lang_id_desc;
-			len = sizeof(usbd_uac_lang_id_desc);
-			break;
-		case USBD_IDX_MFC_STR:
-			len = usbd_get_str_descriptor(USBD_UAC_MFG_STRING, buf, buf_len);
-			break;
-		case USBD_IDX_PRODUCT_STR:
-			len = usbd_get_str_descriptor(USBD_UAC_PROD_FS_STRING, buf, buf_len);
-			break;
-		case USBD_IDX_SERIAL_STR:
-			len = usbd_get_str_descriptor(USBD_UAC_SN_STRING, buf, buf_len);
-			break;
-		case USBD_IDX_MS_OS_STR:
-			/*Not support*/
-			break;
-		/* Add customer string here */
-		default:
-			USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_GET_DESC, 0);
-			break;
-		}
+		/* Every string this class owns is registered with usbd_add_string() and answered by
+		   the core, which only forwards an index it does not know, e.g. the MS OS string */
+		USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_GET_DESC, 0);
 		break;
 
 	default:
@@ -1722,11 +1672,7 @@ static u16 usbd_uac_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN] = USB_LOW_BYTE(len);
 		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN + 1] = USB_HIGH_BYTE(len);
 
-		if (!cdev->from_composite) {
-			buf[USB_CFG_DESC_OFFSET_ATTR] = attr;
-		}
-
-		usbd_uac_patch_desc(buf + USB_LEN_CFG_DESC, len - USB_LEN_CFG_DESC, cdev->ep_cfg);
+		usbd_uac_patch_desc(buf + USB_LEN_CFG_DESC, len - USB_LEN_CFG_DESC);
 	}
 
 	return len;
@@ -1873,7 +1819,7 @@ static u32 usbd_uac_read_ring_buf(usbd_uac_buf_ctrl_t *pdata_ctrl, u8 *buffer, u
   * @param  cb: Callback functions for audio events
   * @retval Status
   */
-static int usbd_uac_private_init(const usbd_uac_cb_t *cb, const usbd_uac_ep_cfg_t *ep_cfg)
+static int usbd_uac_private_init(const usbd_uac_cb_t *cb, const usbd_uac_config_t *cfg)
 {
 	int ret = HAL_OK;
 	usbd_uac_dev_t *cdev = &usbd_uac_dev;
@@ -1886,8 +1832,32 @@ static int usbd_uac_private_init(const usbd_uac_cb_t *cb, const usbd_uac_ep_cfg_
 		return HAL_ERR_PARA;
 	}
 
-	cdev->cur_volume = 0x001F;
-	cdev->cur_mute = 0;
+	if (cfg == NULL) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid cfg\n");
+		return HAL_ERR_PARA;
+	}
+
+	/* At least one direction has to be enabled, otherwise the class owns no stream at all. */
+	if ((cfg->in.enable == 0) && (cfg->out.enable == 0)) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Pls cfg UAC EP\n");
+		return HAL_ERR_PARA;
+	}
+
+	/* A direction that is enabled needs its endpoint, with the right direction bit. */
+	if (((cfg->in.enable != 0) && (((cfg->isoc_in_addr & USB_REQ_DIR_MASK) != USB_D2H) ||
+								   ((cfg->isoc_in_addr & (~USB_REQ_DIR_MASK)) == 0U))) ||
+		((cfg->out.enable != 0) && (((cfg->isoc_out_addr & USB_REQ_DIR_MASK) != USB_H2D) ||
+									((cfg->isoc_out_addr & (~USB_REQ_DIR_MASK)) == 0U)))) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid EP addr %02x/%02x\n", cfg->isoc_in_addr, cfg->isoc_out_addr);
+		return HAL_ERR_PARA;
+	}
+
+	/* Published before anything that reads it: the descriptor patch path, the endpoint setup
+	   below and the ISOC buffer sizing all resolve their options through cdev->cfg. */
+	cdev->cfg = cfg;
+
+	cdev->cur_volume = (cfg->volume_default != 0U) ? cfg->volume_default : USBD_UAC_DEFAULT_VOLUME;
+	cdev->cur_mute = (cfg->mute_default != 0U) ? 1U : 0U;
 	cdev->cur_clk_valid = 1;
 	/* Default sampling rate so the first SET_INTERFACE(alt=1) can fire
 	 * format_changed(sampling_freq, ch_cnt, byte_width) with all three
@@ -1900,11 +1870,6 @@ static int usbd_uac_private_init(const usbd_uac_cb_t *cb, const usbd_uac_ep_cfg_
 	/* Standalone default; the composite framework rebases it via set_interface_base() */
 	cdev->if_base = 0;
 
-	if (ep_cfg == NULL) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid ep cfg\n");
-		return HAL_ERR_PARA;
-	}
-
 	usbd_uac_ep_buf_ctrl_deinit(&(cdev->uac_isoc_in));
 	usbd_uac_ep_buf_ctrl_deinit(&(cdev->uac_isoc_out));
 
@@ -1912,23 +1877,21 @@ static int usbd_uac_private_init(const usbd_uac_cb_t *cb, const usbd_uac_ep_cfg_
 	   so a re-init after deinit must not inherit a stale pending flag. */
 	cdev->ctrl_req_pending = 0U;
 
-	cdev->ep_cfg = ep_cfg;
+	/* The core owns the string table, so the same call works in standalone and composite
+	   mode. 0 means no iInterface string. */
+	cdev->itf_str_idx = usbd_add_string(cfg->itf_str);
 
 	info = &ep_isoc_out->info;
-	info->addr = cdev->ep_cfg->isoc_out_addr;
+	info->addr = cfg->isoc_out_addr;
 	info->type = USB_CH_EP_TYPE_ISOC;
 	info->binterval = USBD_UAC_FS_DEFAULT_BINTERVAL;
 	ep_isoc_out->xfer_buf_len = (u32)sizeof(usbd_uac_rx_buf);
 	info = &ep_isoc_in->info;
-	info->addr = cdev->ep_cfg->isoc_in_addr;
+	info->addr = cfg->isoc_in_addr;
 	info->type = USB_CH_EP_TYPE_ISOC;
 	info->binterval = USBD_UAC_FS_DEFAULT_BINTERVAL;
 
 	cdev->cb = cb;
-	if ((cb->in.enable == 0) && (cb->out.enable == 0)) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Pls cfg UAC EP\n");
-		return HAL_ERR_PARA;
-	}
 
 	if (cb->init != NULL) {
 		ret = cb->init();
@@ -1954,12 +1917,12 @@ static int usbd_uac_private_init(const usbd_uac_cb_t *cb, const usbd_uac_ep_cfg_
 
 /* Exported functions --------------------------------------------------------*/
 
-int usbd_uac_init(const usbd_uac_cb_t *cb, const usbd_uac_ep_cfg_t *ep_cfg)
+int usbd_uac_init(const usbd_uac_cb_t *cb, const usbd_uac_config_t *cfg)
 {
 	usbd_uac_dev_t *cdev = &usbd_uac_dev;
 	int ret;
 
-	ret = usbd_uac_private_init(cb, ep_cfg);
+	ret = usbd_uac_private_init(cb, cfg);
 	if (ret == HAL_OK) {
 		cdev->from_composite = 0;
 		usbd_register_class(&usbd_uac_driver);
@@ -1968,12 +1931,12 @@ int usbd_uac_init(const usbd_uac_cb_t *cb, const usbd_uac_ep_cfg_t *ep_cfg)
 }
 
 #ifdef CONFIG_USBD_COMPOSITE
-int usbd_composite_uac_init(const usbd_uac_cb_t *cb, const usbd_uac_ep_cfg_t *ep_cfg)
+int usbd_composite_uac_init(const usbd_uac_cb_t *cb, const usbd_uac_config_t *cfg)
 {
 	usbd_uac_dev_t *cdev = &usbd_uac_dev;
 	int ret;
 
-	ret = usbd_uac_private_init(cb, ep_cfg);
+	ret = usbd_uac_private_init(cb, cfg);
 	if (ret == HAL_OK) {
 		cdev->from_composite = 1;
 		ret = usbd_composite_register_driver(&usbd_uac_driver);
@@ -2067,7 +2030,7 @@ int usbd_uac_receive_data(void)
 		return HAL_ERR_HW;
 	}
 
-	if (usbd_uac_ep_enable(&(cdev->cb->out)) != 0) {
+	if (usbd_uac_ep_enable(&(cdev->cfg->out)) != 0) {
 		usb_ringbuf_reset(&(pbuf_ctrl->buf_list));
 		pbuf_ctrl->sof_idx = 0;
 		pbuf_ctrl->data_idx = 0;

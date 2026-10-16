@@ -58,13 +58,6 @@ static const u8 usbd_whc_wifi_only_mode_dev_desc[USB_LEN_DEV_DESC] = {
 }; // usbd_whc_wifi_only_mode_dev_desc
 
 /* USB Standard Device Descriptor */
-static const u8 usbd_whc_lang_id_desc[USB_LEN_LANGID_STR_DESC] = {
-	USB_LEN_LANGID_STR_DESC,
-	USB_DESC_TYPE_STRING,
-	USB_LOW_BYTE(USBD_WHC_LANGID_STRING),
-	USB_HIGH_BYTE(USBD_WHC_LANGID_STRING),
-};
-
 /* USB Full Speed Configuration Descriptor for WiFi-only mode */
 static const u8 usbd_whc_wifi_only_mode_full_speed_config_desc[] = {
 	/* Configuration Descriptor */
@@ -89,7 +82,7 @@ static const u8 usbd_whc_wifi_only_mode_full_speed_config_desc[] = {
 	0xFF,									// bInterfaceClass: Vendor Specific
 	0x00,									// bInterfaceSubClass: WHC function family
 	0x01,									// bInterfaceProtocol: WiFi function
-	USBD_IDX_PRODUCT_STR,					// iInterface: USBD_WHC_PROD_STRING
+	USBD_IDX_PRODUCT_STR,					// iInterface: device product string
 
 	/* Endpoint Descriptor */
 	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
@@ -512,27 +505,9 @@ static u16 usbd_whc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 		break;
 
 	case USB_DESC_TYPE_STRING:
-		switch (USB_LOW_BYTE(req->wValue)) {
-		case USBD_IDX_LANGID_STR:
-			desc = usbd_whc_lang_id_desc;
-			len = USB_LEN_LANGID_STR_DESC;
-			break;
-		case USBD_IDX_MFC_STR:
-			len = usbd_get_str_descriptor(USBD_WHC_MFG_STRING, buf, buf_len);
-			break;
-		case USBD_IDX_PRODUCT_STR:
-			len = usbd_get_str_descriptor(USBD_WHC_PROD_STRING, buf, buf_len);
-			break;
-		case USBD_IDX_SERIAL_STR:
-			len = usbd_get_str_descriptor(USBD_WHC_SN_STRING, buf, buf_len);
-			break;
-		case USBD_IDX_MS_OS_STR:
-			/*Not support*/
-			break;
-		default:
-			USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_GET_DESC, 0);
-			break;
-		}
+		/* Every string this class owns is registered with usbd_add_string() and answered by
+		   the core, which only forwards an index it does not know, e.g. the MS OS string */
+		USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_GET_DESC, 0);
 		break;
 
 	default:

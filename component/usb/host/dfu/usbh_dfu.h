@@ -50,12 +50,33 @@ extern "C" {
 /* Maximum consecutive write-block retries (CLRSTATUS path) before aborting */
 #define USBH_DFU_MAX_RETRY                  3U
 /* Upper bound (ms) applied to the device-reported bwPollTimeout. DFU 1.1 6.1.2 makes
- * bwPollTimeout a 24-bit hint (up to ~4.6 h); waiting it verbatim would block the USB
- * host task and every other class. Waiting less is protocol-legal: the host simply
- * re-issues GETSTATUS. */
+ * bwPollTimeout a 24-bit hint (up to ~4.6 h), so this clamps a device reporting a bogus
+ * or corrupt value; the wait itself no longer blocks the host task, as it is served in
+ * USBH_DFU_POLL_SLICE_MS slices. Waiting less than requested is recoverable: a device
+ * still busy answers dfuDNBUSY again and the host simply polls once more. */
 #define USBH_DFU_MAX_POLL_TIMEOUT           5000U
-/* Maximum GETSTATUS polls while device reports dfuMANIFEST; each poll waits
- * bwPollTimeout ms.  100 × 100 ms = 10 s max for a slow flash operation. */
+/* Longest single sleep (ms) the DFU state machine may hold the shared USB host task for.
+ * process() runs on usbh_hcd_main_task, which also drives enumeration, detach handling
+ * and every other class driver, so a device-reported poll timeout is served in slices of
+ * this size across successive process() calls instead of in one blocking sleep. */
+#define USBH_DFU_POLL_SLICE_MS              2U
+/* Floor applied to bwPollTimeout. DFU 1.1 6.1.2 lets a device report 0; honouring that
+ * literally would turn the DNBUSY poll into a back-to-back GETSTATUS loop. */
+#define USBH_DFU_POLL_MIN_MS                1U
+/* Bounds on how long the host waits for ONE block to finish programming. DFU 1.1 sets no
+ * upper limit on device programming time, so timing out a device that never leaves
+ * dfuDNBUSY is the host's responsibility. Two bounds, whichever trips first:
+ *   - poll count, mirroring USBH_DFU_MAX_MANIFEST_RETRY, catches a device that keeps
+ *     answering with bwPollTimeout = 0;
+ *   - wall-clock budget, which the count alone cannot bound because each poll waits up
+ *     to USBH_DFU_MAX_POLL_TIMEOUT (100 x 5 s would be over 8 min). */
+#define USBH_DFU_MAX_DNLOAD_POLL            100U
+#define USBH_DFU_DNLOAD_POLL_BUDGET_MS      10000U
+/* Maximum GETSTATUS polls while device reports dfuMANIFEST; each poll waits at least
+ * bwPollTimeout ms, so the worst case is this count times USBH_DFU_MAX_POLL_TIMEOUT.
+ * Unlike the per-block DNBUSY poll above this has no wall-clock budget: manifestation
+ * happens once at the end of a download, and the MANIFEST_SYNC branch resets the count
+ * only on observed progress. */
 #define USBH_DFU_MAX_MANIFEST_RETRY         100U
 
 /** @} End of Host_DFU_Constants group */
@@ -169,6 +190,13 @@ typedef struct {
 	                                           reset to 0 on each confirmed write. */
 	u8                   manifest_retry_cnt; /**< GETSTATUS polls while device reports dfuMANIFEST;
 	                                              independent of write retry_cnt. */
+	u32                  poll_remain;      /**< Slices still owed on the current bwPollTimeout wait;
+	                                            0 = no wait pending. */
+	u32                  dnload_poll_ms;   /**< Timestamp (ms) at which the current block's DNBUSY
+	                                            poll started, bounding it against the wall-clock
+	                                            budget; 0 = not started yet. */
+	u16                  dnload_poll_cnt;  /**< GETSTATUS polls spent on the current block while the
+	                                            device reports dfuDNBUSY/dfuDNLOAD-SYNC. */
 	u16                  xfer_len;        /**< Byte count of the block currently being downloaded;
 	                                           saved before the ctrl transfer starts so the DMA
 	                                           buffer is not re-filled while the transfer is live. */
@@ -178,7 +206,9 @@ typedef struct {
 	                                           1 = follow-up DFU_GETSTATUS in progress. */
 	u8                   itf_num;         /**< Matched DFU interface number (set on attach; used as wIndex for all DFU class requests). */
 	u8                   is_runtime;      /**< 1 = device attached in Run-Time mode (Protocol=0x01). */
-	u8                   reconf_pending;  /**< 1 = DFU_DETACH sent; awaiting re-enumeration as DFU mode. */
+	u8                   reconf_pending;  /**< 1 = attached in Run-Time mode and cb->attached() has not
+	                                           been delivered; suppresses cb->detached() until the
+	                                           device re-enumerates in DFU mode. */
 } usbh_dfu_host_t;
 
 /** @} End of Host_DFU_Types group */

@@ -55,7 +55,7 @@ static void usbh_hid_in_process(usb_host_t *host);
 static int usbh_hid_attach(usb_host_t *host);
 static void usbh_hid_detach(usb_host_t *host);
 static int usbh_hid_setup(usb_host_t *host);
-static void usbh_hid_process(usb_host_t *host, usbh_event_t *event);
+static void usbh_hid_process(usb_host_t *host, usbh_drv_msg_t *msg);
 static void usbh_hid_sof(usb_host_t *host);
 /* Private variables ---------------------------------------------------------*/
 static const char *const TAG = "HID";
@@ -1149,19 +1149,19 @@ static void usbh_hid_out_process(usb_host_t *host)
 /**
   * @brief  State machine handling callback
   * @param  host: Host handle
-  * @param  event: USB host event
+  * @param  msg: USB host driver message
   * @retval None
   */
-static void usbh_hid_process(usb_host_t *host, usbh_event_t *event)
+static void usbh_hid_process(usb_host_t *host, usbh_drv_msg_t *msg)
 {
 	usbh_hid_t *hid = &usbh_hid;
 	usbh_pipe_t *pipe = &(hid->pipe_in);
 
-	/* The core routes an event to the pipe's owning driver only, so the pipe
+	/* The core routes a driver message to the pipe's owning driver only, so the pipe
 	 * checks are defensive guards against a stale/closed pipe. */
-	if (event && (hid->hid_ctrl_buf) && (pipe->pipe_num != 0) && (event->pipe_num == pipe->pipe_num)) {
+	if (msg && (hid->hid_ctrl_buf) && (pipe->pipe_num != 0) && (msg->pipe_num == pipe->pipe_num)) {
 		usbh_hid_in_process(host);
-	} else if (event && (hid->pipe_out.pipe_num != 0) && (event->pipe_num == hid->pipe_out.pipe_num)) {
+	} else if (msg && (hid->pipe_out.pipe_num != 0) && (msg->pipe_num == hid->pipe_out.pipe_num)) {
 		usbh_hid_out_process(host);
 	}
 }
