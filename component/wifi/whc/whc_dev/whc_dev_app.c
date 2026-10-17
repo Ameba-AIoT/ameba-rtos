@@ -91,7 +91,17 @@ static struct rtw_network_info wifi = {0};
 /* update from host in mode s1d */
 struct whc_dev_network_info whc_network_info[2] = {0};
 
-__weak int whc_dev_ip_in_table_indicate(u8 gate, u8 ip)
+#ifdef CONFIG_NAN
+extern u8 NAN_IPv6Parm[16];
+#endif
+
+/**
+  * @brief  Check if an IP address is already in the IP allocation table.
+  * @param  gate: the third octet of the IP address (network segment).
+  * @param  d: the fourth octet of the IP address (host ID).
+  * @retval 0: IP is available; 1: IP is marked or network segment mismatch.
+  */
+int whc_dev_ip_in_table_indicate(u8 gate, u8 ip)
 {
 	(void)gate;
 	(void)ip;
@@ -101,29 +111,34 @@ __weak int whc_dev_ip_in_table_indicate(u8 gate, u8 ip)
 	//todo
 }
 
-__weak int whc_dev_get_lwip_info(u32 type, unsigned char *input, int index)
+/**
+  * @brief  Get ip, gw, gw_mask information.
+  * @param  type: info type, it can be WHC_WLAN_GET_IP/WHC_WLAN_GET_GW/WHC_WLAN_GET_GWMSK/WHC_WLAN_GET_HW_ADDR.
+  * @param  input: ip address if needed.
+  * @param  index: netif index
+  * @retval the address where ip/gw/gw_mask info is stored.
+  */
+int whc_dev_get_lwip_info(u32 type, unsigned char *input, int index)
 {
-	int ret;
-	(void)input;
+	(void) input;
+
+	u8 *ptr = NULL;
 
 	switch (type) {
 	case WHC_WLAN_GET_IP:
-		ret = (int)whc_network_info[index].ip;
+		ptr = whc_network_info[index].ip;
 		break;
-
 	case WHC_WLAN_GET_GW:
-		ret = (int)whc_network_info[index].gw;
+		ptr = whc_network_info[index].gw;
 		break;
-
 	case WHC_WLAN_GET_GWMSK:
-		ret = (int)whc_network_info[index].gw_mask;
+		ptr = whc_network_info[index].gw_mask;
 		break;
 	default:
-		RTK_LOGE(TAG_WLAN_INIC, "%s, ERROR: unknown network info type\n", __func__);
 		break;
 	}
 
-	return ret;
+	return (int)ptr;
 }
 
 static void rtw_scan_result_to_string(struct rtw_scan_result *result, u8 *buffer, size_t buffer_size)
@@ -430,6 +445,20 @@ __weak void whc_dev_pkt_rx_to_user_task(void)
 				if (*ptr == WHC_WIFI_TEST_SHELL_CMD) {
 					u8 *cmdstr = ptr + 1;
 					shell_cmd_inject((const char *)cmdstr, _strlen((const char *)cmdstr));
+				} else if (*ptr == WHC_WIFI_TEST_NETWORK_INFO_UPDATE) {
+					idx = *(ptr + 1);
+					memcpy(whc_network_info[idx].ip, ptr + 2, 4);
+					memcpy(whc_network_info[idx].gw, ptr + 6, 4);
+					memcpy(whc_network_info[idx].gw_mask, ptr + 10, 4);
+
+					if (idx == 0) {
+						memcpy(whc_ipc_ip_addr, ptr + 2, 4);
+						//memcpy(IPv4Parm.IP, ptr + 2, 4);
+						//memcpy(IPv6Parm.IP, ptr + 14, 16);
+					}
+#ifdef CONFIG_NAN
+					memcpy(NAN_IPv6Parm, ptr + 14, 16);
+#endif
 				}
 #ifdef CONFIG_LOG_FWD
 				else if (*ptr == WHC_WIFI_TEST_LOG_ENABLE || *ptr == WHC_WIFI_TEST_LOG_DISABLE) {

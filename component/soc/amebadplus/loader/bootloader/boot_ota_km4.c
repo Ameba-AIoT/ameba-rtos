@@ -435,7 +435,7 @@ void BOOT_OTA_Extract(void)
 		ret = BOOT_Extract_SignatureCheck(pManifest, SubImgInfo, 1);
 
 		/* 2. Extract to override other slot After Check Pass */
-		if (ret == 0) {
+		if (ret == TRUE) {
 			RTK_LOGI(TAG, "Extract from 0x%x to Override 0x%x, Compress Len is 0x%x\n", SubImgInfo[0].Addr, OverrideAddr, SubImgInfo[0].Len);
 
 			/* OverrideIdx is 0 or 1 */
