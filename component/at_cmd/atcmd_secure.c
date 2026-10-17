@@ -387,14 +387,14 @@ static int rsip_write_mode(u8 mode_val)
  * @param argc Argument count (minimum 5).
  * @param argv Argument vector: argv[2]=grp, argv[3]=mode, argv[4]=hex_key.
  */
-static void at_sec_rsip_key(u16 argc, char **argv)
+static int at_sec_rsip_key(u16 argc, char **argv)
 {
 	int grp, mode;
 	u8 buf[OTP_RSIP_KEY1_LEN];
 
 	if (argc < 5) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "arg err\n");
-		return;
+		return RTK_FAIL;
 	}
 
 	grp = parse_grp(argv[2]);
@@ -403,44 +403,45 @@ static void at_sec_rsip_key(u16 argc, char **argv)
 #ifdef CONFIG_RSIP_SINGLE_KEY
 	if (grp != 0) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "grp1 not sup\n");
-		return;
+		return RTK_FAIL;
 	}
 	if (mode == RSIP_MODE_GCM) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "gcm not sup\n");
-		return;
+		return RTK_FAIL;
 	}
 #endif
 
 	if (grp < 0 || mode < 0) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "param err\n");
-		return;
+		return RTK_FAIL;
 	}
 
 	if (mode == RSIP_MODE_XTS) {
 		/* XTS step 1: buffer first key (ECB), wait for RSIP_KEY2 */
 		if (hex2buf(argv[4], rsip_key1_buf, sizeof(rsip_key1_buf)) != OTP_RSIP_KEY1_LEN) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "ecb len err\n");
-			return;
+			return RTK_FAIL;
 		}
 		rsip_pending = TRUE;
 		rsip_pending_grp = grp;
 		RTK_LOGS(TAG, RTK_LOG_INFO, "KEY1 OK\n");
+		return RTK_SUCCESS;
 	} else {
 		/* CTR/GCM: single key, write immediately */
 		u32 addr1, addr2;
 
 		rsip_get_key_addrs(grp, mode, &addr1, &addr2);
 		if (rsip_write_mode((u8)mode) != RTK_SUCCESS) {
-			return;
+			return RTK_FAIL;
 		}
 		if (hex2buf(argv[4], buf, sizeof(buf)) != OTP_RSIP_KEY2_LEN) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "key len err\n");
-			return;
+			return RTK_FAIL;
 		}
 		if (OTP_WritePhyBuf(addr2, buf, OTP_RSIP_KEY2_LEN) != RTK_SUCCESS) {
-			return;
+			return RTK_FAIL;
 		}
-		RTK_LOGS(TAG, RTK_LOG_INFO, "OK\n");
+		return RTK_SUCCESS;
 	}
 }
 
@@ -460,24 +461,24 @@ static void at_sec_rsip_key(u16 argc, char **argv)
  * @param argc Argument count (minimum 3).
  * @param argv Argument vector: argv[2]=hex key string (64 chars = 32 bytes).
  */
-static void at_sec_rsip_key2(u16 argc, char **argv)
+static int at_sec_rsip_key2(u16 argc, char **argv)
 {
 	u32 addr1, addr2;
 	u8 buf[OTP_RSIP_KEY2_LEN];
 
 	if (!rsip_pending) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "no pending\n");
-		return;
+		return RTK_FAIL;
 	}
 
 	if (argc < 3) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "arg err\n");
-		return;
+		return RTK_FAIL;
 	}
 
 	if (hex2buf(argv[2], buf, sizeof(buf)) != OTP_RSIP_KEY2_LEN) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "ctr len err\n");
-		return;
+		return RTK_FAIL;
 	}
 
 	rsip_get_key_addrs(rsip_pending_grp, RSIP_MODE_XTS, &addr1, &addr2);
@@ -498,11 +499,11 @@ static void at_sec_rsip_key2(u16 argc, char **argv)
 	/* Secure clear key buffer */
 	_memset(rsip_key1_buf, 0, sizeof(rsip_key1_buf));
 
-	RTK_LOGS(TAG, RTK_LOG_INFO, "OK\n");
-	return;
+	return RTK_SUCCESS;
 
 clear:
 	_memset(rsip_key1_buf, 0, sizeof(rsip_key1_buf));
+	return RTK_FAIL;
 }
 
 /**
@@ -518,15 +519,16 @@ clear:
  * @param argc Argument count (minimum 3).
  * @param argv Argument vector: argv[2]="perm", "temp", or "temp_off".
  */
-static void at_sec_rsip_en(u16 argc, char **argv)
+static int at_sec_rsip_en(u16 argc, char **argv)
 {
 	if (argc < 3) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "arg err\n");
-		return;
+		return RTK_FAIL;
 	}
 	if (sec_enable(RSIP_EN_LOG_BIT, RSIP_EN_PHY_BIT, argv[2]) == RTK_SUCCESS) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "OK\n");
+		return RTK_SUCCESS;
 	}
+	return RTK_FAIL;
 }
 
 /**
@@ -535,11 +537,12 @@ static void at_sec_rsip_en(u16 argc, char **argv)
  * Clears RSIP_MODE_W_Forbidden bit at physical 0x367[3] to 0,
  * preventing any further changes to RSIP_MODE. This operation is permanent.
  */
-static void at_sec_rsip_lock(void)
+static int at_sec_rsip_lock(void)
 {
 	if (OTP_ClearPhyBit(OTP_RSIP_KEY_CTRL, RSIP_MODE_W_LOCK_BIT) == RTK_SUCCESS) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "OK\n");
+		return RTK_SUCCESS;
 	}
+	return RTK_FAIL;
 }
 
 /**
@@ -556,13 +559,13 @@ static void at_sec_rsip_lock(void)
  * @param argv Argument vector: argv[2]=grp, argv[3]=protection type.
  * @note grp1 protection is only available on Default group (not CONFIG_RSIP_SINGLE_KEY).
  */
-static void at_sec_rsip_prot(u16 argc, char **argv)
+static int at_sec_rsip_prot(u16 argc, char **argv)
 {
 	int grp, prot;
 
 	if (argc < 4) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "arg err\n");
-		return;
+		return RTK_FAIL;
 	}
 
 	grp = parse_grp(argv[2]);
@@ -571,13 +574,13 @@ static void at_sec_rsip_prot(u16 argc, char **argv)
 #ifdef CONFIG_RSIP_SINGLE_KEY
 	if (grp != 0) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "grp1 not sup\n");
-		return;
+		return RTK_FAIL;
 	}
 #endif
 
 	if (grp < 0 || prot == 0) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "param err\n");
-		return;
+		return RTK_FAIL;
 	}
 
 	if (grp == 0) {
@@ -585,21 +588,21 @@ static void at_sec_rsip_prot(u16 argc, char **argv)
 		if (prot & 1) { /* read protect */
 			if (OTP_ClearPhyBit(OTP_RSIP_KEY1_R_CTRL,
 								RSIP_KEY1_R_PROT_BIT) != RTK_SUCCESS) {
-				return;
+				return RTK_FAIL;
 			}
 			if (OTP_ClearPhyBit(OTP_RSIP_KEY_CTRL,
 								RSIP_KEY2_R_PROT_BIT) != RTK_SUCCESS) {
-				return;
+				return RTK_FAIL;
 			}
 		}
 		if (prot & 2) { /* write protect */
 			if (OTP_ClearPhyBit(OTP_RSIP_KEY_CTRL,
 								RSIP_KEY1_W_PROT_BIT) != RTK_SUCCESS) {
-				return;
+				return RTK_FAIL;
 			}
 			if (OTP_ClearPhyBit(OTP_RSIP_KEY_CTRL,
 								RSIP_KEY2_W_PROT_BIT) != RTK_SUCCESS) {
-				return;
+				return RTK_FAIL;
 			}
 		}
 	} else {
@@ -607,26 +610,26 @@ static void at_sec_rsip_prot(u16 argc, char **argv)
 		if (prot & 1) {
 			if (OTP_ClearPhyBit(OTP_KEY_PROT,
 								RSIP_KEY3_R_PROT_BIT) != RTK_SUCCESS) {
-				return;
+				return RTK_FAIL;
 			}
 			if (OTP_ClearPhyBit(OTP_KEY_PROT,
 								RSIP_KEY4_R_PROT_BIT) != RTK_SUCCESS) {
-				return;
+				return RTK_FAIL;
 			}
 		}
 		if (prot & 2) {
 			if (OTP_ClearPhyBit(OTP_KEY_PROT,
 								RSIP_KEY3_W_PROT_BIT) != RTK_SUCCESS) {
-				return;
+				return RTK_FAIL;
 			}
 			if (OTP_ClearPhyBit(OTP_KEY_PROT,
 								RSIP_KEY4_W_PROT_BIT) != RTK_SUCCESS) {
-				return;
+				return RTK_FAIL;
 			}
 		}
 	}
 
-	RTK_LOGS(TAG, RTK_LOG_INFO, "OK\n");
+	return RTK_SUCCESS;
 }
 
 /* ===== RDP sub-commands ===== */
@@ -644,15 +647,16 @@ static void at_sec_rsip_prot(u16 argc, char **argv)
  * @param argc Argument count (minimum 3).
  * @param argv Argument vector: argv[2]="perm", "temp", or "temp_off".
  */
-static void at_sec_rdp_en(u16 argc, char **argv)
+static int at_sec_rdp_en(u16 argc, char **argv)
 {
 	if (argc < 3) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "arg err\n");
-		return;
+		return RTK_FAIL;
 	}
 	if (sec_enable(RDP_EN_LOG_BIT, RDP_EN_PHY_BIT, argv[2]) == RTK_SUCCESS) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "OK\n");
+		return RTK_SUCCESS;
 	}
+	return RTK_FAIL;
 }
 
 /* RDP_KEY/RDP_PROT: Legacy group only (IPSEC-S independent key at 0x200) */
@@ -673,23 +677,24 @@ static void at_sec_rdp_en(u16 argc, char **argv)
  * @param argc Argument count (minimum 3).
  * @param argv Argument vector: argv[2]=hex key string (64 chars = 32 bytes).
  */
-static void at_sec_rdp_key(u16 argc, char **argv)
+static int at_sec_rdp_key(u16 argc, char **argv)
 {
 	u8 buf[OTP_RDP_KEY_LEN];
 
 	if (argc < 3) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "arg err\n");
-		return;
+		return RTK_FAIL;
 	}
 
 	if (hex2buf(argv[2], buf, sizeof(buf)) != OTP_RDP_KEY_LEN) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "len err:32B\n");
-		return;
+		return RTK_FAIL;
 	}
 
 	if (OTP_WritePhyBuf(OTP_RDP_KEY_ADDR, buf, OTP_RDP_KEY_LEN) == RTK_SUCCESS) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "OK\n");
+		return RTK_SUCCESS;
 	}
+	return RTK_FAIL;
 }
 
 /**
@@ -707,32 +712,32 @@ static void at_sec_rdp_key(u16 argc, char **argv)
  * @param argc Argument count (minimum 3).
  * @param argv Argument vector: argv[2]=protection type ("r", "w", or "rw").
  */
-static void at_sec_rdp_prot(u16 argc, char **argv)
+static int at_sec_rdp_prot(u16 argc, char **argv)
 {
 	int prot;
 
 	if (argc < 3) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "arg err\n");
-		return;
+		return RTK_FAIL;
 	}
 
 	prot = parse_prot(argv[2]);
 	if (prot == 0) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "param err\n");
-		return;
+		return RTK_FAIL;
 	}
 
 	if (prot & 1) {
 		if (OTP_ClearPhyBit(OTP_KEY_PROT, RDP_KEY_R_PROT_BIT) != RTK_SUCCESS) {
-			return;
+			return RTK_FAIL;
 		}
 	}
 	if (prot & 2) {
 		if (OTP_ClearPhyBit(OTP_KEY_PROT, RDP_KEY_W_PROT_BIT) != RTK_SUCCESS) {
-			return;
+			return RTK_FAIL;
 		}
 	}
-	RTK_LOGS(TAG, RTK_LOG_INFO, "OK\n");
+	return RTK_SUCCESS;
 }
 #endif /* CONFIG_RSIP_SINGLE_KEY */
 
@@ -803,7 +808,7 @@ static int sboot_write_alg(u8 auth, u8 hash)
  * @param argc Argument count (minimum 4).
  * @param argv Argument vector: argv[2]=pk slot, argv[3]=hex hash string.
  */
-static void at_sec_sboot_pk(u16 argc, char **argv)
+static int at_sec_sboot_pk(u16 argc, char **argv)
 {
 	int pk;
 	u32 addr;
@@ -811,25 +816,26 @@ static void at_sec_sboot_pk(u16 argc, char **argv)
 
 	if (argc < 4) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "arg err\n");
-		return;
+		return RTK_FAIL;
 	}
 
 	pk = parse_pk(argv[2]);
 	if (pk < 0) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "pk err\n");
-		return;
+		return RTK_FAIL;
 	}
 
 	addr = pk ? OTP_SBOOT_PK2_ADDR : OTP_SBOOT_PK1_ADDR;
 
 	if (hex2buf(argv[3], buf, OTP_SBOOT_PK_LEN) != OTP_SBOOT_PK_LEN) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "len err:32B\n");
-		return;
+		return RTK_FAIL;
 	}
 
 	if (OTP_WritePhyBuf(addr, buf, OTP_SBOOT_PK_LEN) == RTK_SUCCESS) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "OK\n");
+		return RTK_SUCCESS;
 	}
+	return RTK_FAIL;
 }
 
 /**
@@ -845,15 +851,16 @@ static void at_sec_sboot_pk(u16 argc, char **argv)
  * @param argc Argument count (minimum 3).
  * @param argv Argument vector: argv[2]="perm", "temp", or "temp_off".
  */
-static void at_sec_sboot_en(u16 argc, char **argv)
+static int at_sec_sboot_en(u16 argc, char **argv)
 {
 	if (argc < 3) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "arg err\n");
-		return;
+		return RTK_FAIL;
 	}
 	if (sec_enable(SBOOT_EN_LOG_BIT, SBOOT_EN_PHY_BIT, argv[2]) == RTK_SUCCESS) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "OK\n");
+		return RTK_SUCCESS;
 	}
+	return RTK_FAIL;
 }
 
 /**
@@ -876,24 +883,25 @@ static void at_sec_sboot_en(u16 argc, char **argv)
  * @see sboot_auth_tbl for supported auth algorithms per IC.
  * @see sboot_hash_tbl for supported hash algorithms.
  */
-static void at_sec_sboot_alg(u16 argc, char **argv)
+static int at_sec_sboot_alg(u16 argc, char **argv)
 {
 	int auth, hash;
 
 	if (argc < 4) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "arg err\n");
-		return;
+		return RTK_FAIL;
 	}
 
 	auth = parse_auth(argv[2]);
 	hash = parse_hash(argv[3]);
 	if (auth < 0 || hash < 0) {
-		return;
+		return RTK_FAIL;
 	}
 
 	if (sboot_write_alg((u8)auth, (u8)hash) == RTK_SUCCESS) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "OK\n");
+		return RTK_SUCCESS;
 	}
+	return RTK_FAIL;
 }
 
 /**
@@ -912,21 +920,22 @@ static void at_sec_sboot_alg(u16 argc, char **argv)
  * @param argc Argument count (minimum 3).
  * @param argv Argument vector: argv[2]="perm", "temp", or "temp_off".
  */
-static void at_sec_sboot_pqc(u16 argc, char **argv)
+static int at_sec_sboot_pqc(u16 argc, char **argv)
 {
 #if !defined(CONFIG_RSIP_SINGLE_KEY) && !defined(CONFIG_AMEBAGREEN2)
 	if (argc < 3) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "arg err\n");
-		return;
+		return RTK_FAIL;
 	}
 	if (sec_enable(PQC_EN_LOG_BIT, PQC_EN_PHY_BIT, argv[2]) == RTK_SUCCESS) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "OK\n");
+		return RTK_SUCCESS;
 	}
 #else
 	(void)argc;
 	(void)argv;
 	RTK_LOGS(TAG, RTK_LOG_ERROR, "not sup\n");
 #endif
+	return RTK_FAIL;
 }
 
 /**
@@ -944,23 +953,24 @@ static void at_sec_sboot_pqc(u16 argc, char **argv)
  * @param argc Argument count (minimum 3).
  * @param argv Argument vector: argv[2]=hex key string (64 chars = 32 bytes).
  */
-static void at_sec_sboot_hmac(u16 argc, char **argv)
+static int at_sec_sboot_hmac(u16 argc, char **argv)
 {
 	u8 buf[OTP_SBOOT_HMAC_LEN];
 
 	if (argc < 3) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "arg err\n");
-		return;
+		return RTK_FAIL;
 	}
 
 	if (hex2buf(argv[2], buf, OTP_SBOOT_HMAC_LEN) != OTP_SBOOT_HMAC_LEN) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "len err:32B\n");
-		return;
+		return RTK_FAIL;
 	}
 
 	if (OTP_WritePhyBuf(OTP_SBOOT_HMAC_ADDR, buf, OTP_SBOOT_HMAC_LEN) == RTK_SUCCESS) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "OK\n");
+		return RTK_SUCCESS;
 	}
+	return RTK_FAIL;
 }
 
 /**
@@ -976,24 +986,25 @@ static void at_sec_sboot_hmac(u16 argc, char **argv)
  * @param argc Argument count (minimum 3).
  * @param argv Argument vector: argv[2]="pk1" or "pk2".
  */
-static void at_sec_sboot_prot(u16 argc, char **argv)
+static int at_sec_sboot_prot(u16 argc, char **argv)
 {
 	int pk;
 
 	if (argc < 3) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "arg err\n");
-		return;
+		return RTK_FAIL;
 	}
 
 	pk = parse_pk(argv[2]);
 	if (pk < 0) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "pk err\n");
-		return;
+		return RTK_FAIL;
 	}
 
 	if (OTP_ClearPhyBit(OTP_KEY_PROT, pk ? PK2_W_PROT_BIT : PK1_W_PROT_BIT) == RTK_SUCCESS) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "OK\n");
+		return RTK_SUCCESS;
 	}
+	return RTK_FAIL;
 }
 
 /* ===== HUK sub-commands ===== */
@@ -1010,23 +1021,24 @@ static void at_sec_sboot_prot(u16 argc, char **argv)
  * @param argc Argument count (minimum 3).
  * @param argv Argument vector: argv[2]=hex seed string (32 chars = 16 bytes).
  */
-static void at_sec_huk_key(u16 argc, char **argv)
+static int at_sec_huk_key(u16 argc, char **argv)
 {
 	u8 buf[OTP_HUK_LEN];
 
 	if (argc < 3) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "arg err\n");
-		return;
+		return RTK_FAIL;
 	}
 
 	if (hex2buf(argv[2], buf, OTP_HUK_LEN) != OTP_HUK_LEN) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "len err:16B\n");
-		return;
+		return RTK_FAIL;
 	}
 
 	if (OTP_WritePhyBuf(OTP_HUK_ADDR, buf, OTP_HUK_LEN) == RTK_SUCCESS) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "OK\n");
+		return RTK_SUCCESS;
 	}
+	return RTK_FAIL;
 }
 
 /**
@@ -1035,11 +1047,12 @@ static void at_sec_huk_key(u16 argc, char **argv)
  * Clears HUK_DERIV_EN bit at physical 0x369[2] to 0.
  * After enabling, HUK is used by Boot ROM to derive device-unique keys via KDF.
  */
-static void at_sec_huk_en(void)
+static int at_sec_huk_en(void)
 {
 	if (OTP_ClearPhyBit(OTP_RSIP_MODE_CTRL, HUK_DERIV_EN_BIT) == RTK_SUCCESS) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "OK\n");
+		return RTK_SUCCESS;
 	}
+	return RTK_FAIL;
 }
 
 /**
@@ -1048,11 +1061,12 @@ static void at_sec_huk_en(void)
  * Clears HUK_W_Forbidden_EN bit at physical 0x364[7] to 0,
  * permanently preventing any further writes to the HUK OTP area.
  */
-static void at_sec_huk_lock(void)
+static int at_sec_huk_lock(void)
 {
 	if (OTP_ClearPhyBit(OTP_HUK_CTRL, HUK_LOCK_BIT) == RTK_SUCCESS) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "OK\n");
+		return RTK_SUCCESS;
 	}
+	return RTK_FAIL;
 }
 
 /* ===== Help ===== */
@@ -1118,70 +1132,79 @@ static void at_sec_help(void)
  */
 void at_secure(u16 argc, char **argv)
 {
+	int ret = RTK_FAIL;
+
 	if (argc < 2) {
 		at_sec_help();
-		return;
+		goto exit;
 	}
 
 	/* RSIP_KEY2: always handled (checks pending state internally) */
 	if (_strcmp((const char *)argv[1], "RSIP_KEY2") == 0) {
-		at_sec_rsip_key2(argc, argv);
-		return;
+		ret = at_sec_rsip_key2(argc, argv);
+		goto exit;
 	}
 
 	/* When XTS key1 is pending, only RSIP_KEY2 is accepted */
 	if (rsip_pending) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "pending key2\n");
-		return;
+		goto exit;
 	}
 
 	if (_strcmp((const char *)argv[1], "RSIP_KEY") == 0) {
-		at_sec_rsip_key(argc, argv);
+		ret = at_sec_rsip_key(argc, argv);
 	} else if (_strcmp((const char *)argv[1], "RSIP_EN") == 0) {
-		at_sec_rsip_en(argc, argv);
+		ret = at_sec_rsip_en(argc, argv);
 	} else if (_strcmp((const char *)argv[1], "RSIP_LOCK") == 0) {
-		at_sec_rsip_lock();
+		ret = at_sec_rsip_lock();
 	} else if (_strcmp((const char *)argv[1], "RSIP_PROT") == 0) {
-		at_sec_rsip_prot(argc, argv);
+		ret = at_sec_rsip_prot(argc, argv);
 	} else if (_strcmp((const char *)argv[1], "RDP_KEY") == 0) {
 #ifdef CONFIG_RSIP_SINGLE_KEY
-		at_sec_rdp_key(argc, argv);
+		ret = at_sec_rdp_key(argc, argv);
 #else
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Use RSIP\n");
 #endif
 	} else if (_strcmp((const char *)argv[1], "RDP_EN") == 0) {
-		at_sec_rdp_en(argc, argv);
+		ret = at_sec_rdp_en(argc, argv);
 	} else if (_strcmp((const char *)argv[1], "RDP_PROT") == 0) {
 #ifdef CONFIG_RSIP_SINGLE_KEY
-		at_sec_rdp_prot(argc, argv);
+		ret = at_sec_rdp_prot(argc, argv);
 #else
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Use RSIP\n");
 #endif
 	} else if (_strcmp((const char *)argv[1], "SBOOT_PK") == 0) {
-		at_sec_sboot_pk(argc, argv);
+		ret = at_sec_sboot_pk(argc, argv);
 	} else if (_strcmp((const char *)argv[1], "SBOOT_EN") == 0) {
-		at_sec_sboot_en(argc, argv);
+		ret = at_sec_sboot_en(argc, argv);
 	} else if (_strcmp((const char *)argv[1], "SBOOT_ALG") == 0) {
-		at_sec_sboot_alg(argc, argv);
+		ret = at_sec_sboot_alg(argc, argv);
 	} else if (_strcmp((const char *)argv[1], "SBOOT_PQC") == 0) {
-		at_sec_sboot_pqc(argc, argv);
+		ret = at_sec_sboot_pqc(argc, argv);
 	} else if (_strcmp((const char *)argv[1], "SBOOT_HMAC") == 0) {
-		at_sec_sboot_hmac(argc, argv);
+		ret = at_sec_sboot_hmac(argc, argv);
 	} else if (_strcmp((const char *)argv[1], "SBOOT_PROT") == 0) {
-		at_sec_sboot_prot(argc, argv);
+		ret = at_sec_sboot_prot(argc, argv);
 	} else if (_strcmp((const char *)argv[1], "HUK_KEY") == 0) {
-		at_sec_huk_key(argc, argv);
+		ret = at_sec_huk_key(argc, argv);
 	} else if (_strcmp((const char *)argv[1], "HUK_EN") == 0) {
-		at_sec_huk_en();
+		ret = at_sec_huk_en();
 	} else if (_strcmp((const char *)argv[1], "HUK_LOCK") == 0) {
-		at_sec_huk_lock();
+		ret = at_sec_huk_lock();
 	} else {
 		at_sec_help();
 	}
+
+exit:
+	if (ret == RTK_SUCCESS) {
+		at_printf(ATCMD_OK_END_STR);
+	} else {
+		at_printf(ATCMD_ERROR_END_STR, ret);
+	}
 }
 
-/** @brief AT+SEC command registration table (AP-only) */
-ATCMD_APONLY_TABLE_DATA_SECTION
+/** @brief AT+SEC command registration table */
+ATCMD_TABLE_DATA_SECTION
 const log_item_t at_sec_items[] = {
 	{"+SEC", at_secure},
 };

@@ -518,7 +518,14 @@ iperf_run_client(struct iperf_test *test)
 		memcpy(&write_set, &test->write_set, sizeof(fd_set));
 		(void) gettimeofday(&now, NULL);
 		timeout = tmr_timeout(&now);
-		result = select(test->max_fd + 1, &read_set, &write_set, NULL, timeout);
+
+		if (timeout != NULL && timeout->tv_sec == 0 && timeout->tv_usec == 0) {
+			rtos_time_delay_ms(1);
+		}
+
+		result = select(test->max_fd + 1, &read_set,
+						(test->state == TEST_RUNNING && !test->reverse) ? &write_set : NULL,
+						NULL, timeout);
 
 		if (result < 0 && errno != EINTR) {
 			i_errno = IESELECT;
@@ -573,6 +580,20 @@ iperf_run_client(struct iperf_test *test)
 				 (test->settings->blocks != 0 && test->blocks_sent >= test->settings->blocks))) {
 
 				IPERF3_DBG("the test is done,test->done:%d\n",  test->done);
+
+				/*
+				* Cancel the periodic timers.  As the timers are not re-set in this stage their expiration time
+				* is in the past, so without the cancellation the select() timeout is set to 0,
+				* and it enters a loop while waiting the exchanged results, etc.
+				*/
+				if (test->stats_timer != NULL) {
+					tmr_cancel(test->stats_timer);
+					test->stats_timer = NULL;
+				}
+				if (test->reporter_timer != NULL) {
+					tmr_cancel(test->reporter_timer);
+					test->reporter_timer = NULL;
+				}
 
 				// Unset non-blocking for non-UDP tests
 				if (test->protocol->id != Pudp) {

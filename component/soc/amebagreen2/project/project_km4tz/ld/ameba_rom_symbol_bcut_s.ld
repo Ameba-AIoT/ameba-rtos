@@ -390,7 +390,7 @@ SECTIONS
     PROVIDE(LOGUART_RxMonitorSatusGet = 0xbed7);
     PROVIDE(LOGUART_DiagInit = 0xbedb);
     PROVIDE(SDIO_StructInit = 0xbf69);
-    PROVIDE(SDIO_Init = 0xbf85);
+    PROVIDE(_SDIO_Init = 0xbf85);
     PROVIDE(SDIO_INTClear = 0xc031);
     PROVIDE(SDIO_INTClearAll = 0xc037);
     PROVIDE(SDIO_INTConfig = 0xc043);

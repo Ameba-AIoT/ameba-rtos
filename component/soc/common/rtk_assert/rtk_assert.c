@@ -8,7 +8,10 @@
 #include "stdarg.h"
 #include "ameba_soc.h"
 #if (defined(CONFIG_WHC_HOST) || defined(CONFIG_WHC_NONE)) && defined(CONFIG_UNITY_TEST)
+#include "os_wrapper.h"
 #include "unity.h"
+
+void *volatile g_unity_abort_task = NULL;
 #endif
 
 void __rtos_critical_enter_os(void);
@@ -110,9 +113,11 @@ void vAssertCalled(const char *pcInfo, uint32_t ulLine)
 	rtk_assert_printf("Assert Error! %s:%u\r\n", pcInfo, ulLine);
 
 #if (defined(CONFIG_WHC_HOST) || defined(CONFIG_WHC_NONE)) && defined(CONFIG_UNITY_TEST)
-	__rtos_critical_exit_os();
-	TEST_ABORT();
-#else
-	for (;;);
+	/* longjmp only if the current task owns the live setjmp frame */
+	if (g_unity_abort_task != NULL && g_unity_abort_task == rtos_task_handle_get() && !rtos_critical_is_in_interrupt()) {
+		__rtos_critical_exit_os();
+		TEST_ABORT();
+	}
 #endif
+	for (;;);
 }
