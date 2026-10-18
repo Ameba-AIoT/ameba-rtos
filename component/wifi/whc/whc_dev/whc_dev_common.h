@@ -57,7 +57,7 @@ enum WHC_WIFI_CTRL_TYPE {
 	WHC_CUST_EVT, /* the ID to transmit data for the customer. */
 
 	WHC_BT_EVT_BASE = WHC_BT_ID_BASE,
-	WHC_BT_EVT_MAX = WHC_BT_ID_BASE + 0x1000000
+	WHC_BT_EVT_MAX = WHC_BT_ID_BASE + 0x20
 };
 #endif
 

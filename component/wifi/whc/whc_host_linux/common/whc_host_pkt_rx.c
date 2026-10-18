@@ -70,7 +70,9 @@ int whc_host_recv_process(struct sk_buff *pskb)
 		whc_host_recv_pkts(pskb);
 		break;
 	case WHC_WIFI_EVT_API_CALL:
-		event_priv->rx_api_msg = pskb;
+		/* queue instead of waiting for the previous API to finish: the handler
+		 * may call a device API whose API_RETURN is behind this msg on the bus */
+		skb_queue_tail(&event_priv->rx_api_queue, pskb);
 		schedule_work(&(event_priv->api_work));
 		break;
 	case WHC_WIFI_EVT_API_RETURN:

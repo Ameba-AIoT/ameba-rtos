@@ -49,7 +49,6 @@ __weak int rtk_coex_ipc_h2c_info_handler(u16 type, u8 *pdata, u16 data_len)
 	u8 *data_temp = NULL;
 
 	if (!coex_ipc_host_initialized) {
-		//RTK_LOGS(TAG_WLAN_COEX, RTK_LOG_WARN, "coex ipc host not initialized!\r\n");
 		return ret;
 	}
 
@@ -151,7 +150,6 @@ void coex_ipc_api_host_int_hdl(void *Data, u32 IrqStatus, u32 ChanNum)
 	(void) ChanNum;
 
 	if (!coex_ipc_host_initialized) {
-		//RTK_LOGS(TAG_WLAN_COEX, RTK_LOG_WARN, "coex ipc host not initialized!\r\n");
 		return;
 	}
 
@@ -243,7 +241,7 @@ void coex_ipc_api_init_host(void)
 										COEX_STACK_SIZE_IPC_HST_API, CONFIG_COEX_IPC_HOST_API_PRIO)) {
 		rtos_sema_delete_static(g_host_coex_ipc_api_message_send_sema);
 		rtos_sema_delete_static(g_host_coex_ipc_api_task_wake_sema);
-		RTK_LOGS(TAG_WLAN_COEX, RTK_LOG_ERROR, "Create coex_ipc_api_host_task Err\n");
+		RTK_LOGS(TAG_WLAN_COEX, RTK_LOG_ERROR, "coex_ipc_api_host_task Err\n");
 	}
 
 }

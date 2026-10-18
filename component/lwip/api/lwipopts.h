@@ -202,4 +202,8 @@ extern unsigned int sys_now(void);
 #define CHECKSUM_CHECK_UDP              1
 #endif
 
+#if defined(CONFIG_WHC_HOST) && (!defined(CONFIG_WHC_INTF_IPC))
+#define LWIP_NETIF_EXT_STATUS_CALLBACK  1
+#endif
+
 #endif /* LWIP_HDR_LWIPOPTS_H */

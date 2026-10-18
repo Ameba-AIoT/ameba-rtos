@@ -162,16 +162,6 @@ exit:
 
 int whc_sdio_host_suspend_common(struct whc_sdio *priv)
 {
-#if defined(CONFIG_WHC_WIFI_API_PATH)
-	/* staion mode */
-	if (whc_host_wifi_get_join_status() == RTW_JOINSTATUS_SUCCESS) {
-		/* update ip address success */
-		if (whc_host_update_ip_addr()) {
-			return -EPERM;
-		}
-	}
-#endif
-
 	/* disable log fwd before RPWM SUSPEND; once SDIO_SetReady(DISABLE) host cannot command device */
 	if (whc_host_log_forward_pause()) {
 		return -EAGAIN;

@@ -302,16 +302,6 @@ static int whc_usb_host_suspend(struct usb_interface *intf, pm_message_t message
 	struct whc_usb *priv = &whc_usb_host_priv;
 	struct rtw_usbreq *req, *next;
 
-#if defined(CONFIG_WHC_WIFI_API_PATH)
-	/* staion mode */
-	if (global_idev.mlme_priv.rtw_join_status == RTW_JOINSTATUS_SUCCESS) {
-		/* update ip address success */
-		if (whc_host_update_ip_addr()) {
-			return -EPERM;
-		}
-	}
-#endif
-
 	/* disable log fwd before killing RX URBs; otherwise device wakes host via usbd_wake_host() */
 	if (whc_host_log_forward_pause()) {
 		return -EAGAIN;

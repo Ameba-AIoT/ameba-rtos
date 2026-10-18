@@ -194,7 +194,31 @@ static struct spi_driver whc_spi_host_driver = {
 	.probe = whc_spi_host_probe,
 	.remove = whc_spi_host_remove,
 };
-module_spi_driver(whc_spi_host_driver);
+
+static int __init whc_spi_host_init_module(void)
+{
+	int ret;
+
+	ret = spi_register_driver(&whc_spi_host_driver);
+	if (ret) {
+		pr_err("spi register driver Failed!\n");
+		return ret;
+	}
+
+	rtw_inetaddr_notifier_register();
+
+	return ret;
+}
+
+static void __exit whc_spi_host_cleanup_module(void)
+{
+	rtw_inetaddr_notifier_unregister();
+
+	spi_unregister_driver(&whc_spi_host_driver);
+}
+
+module_init(whc_spi_host_init_module);
+module_exit(whc_spi_host_cleanup_module);
 
 MODULE_AUTHOR("Realtek");
 MODULE_DESCRIPTION("RealTek iNIC WHC");

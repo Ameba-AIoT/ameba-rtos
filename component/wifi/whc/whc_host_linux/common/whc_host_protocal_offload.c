@@ -162,9 +162,6 @@ void rtw_set_offload_ctrl(u32 value)
 	/* send offload control bits to device, enable/disable offload */
 	whc_host_war_offload_ctrl(pwrctl->wowlan_war_offload_mode, pwrctl->wowlan_war_offload_ctrl);
 
-	/* update ip address */
-	whc_host_update_ip_addr();
-
 	if (pwrctl->wowlan_war_offload_mode) {
 		/* for mdns, update mdns parameters to device */
 		if (pwrctl->wowlan_war_offload_ctrl & WAR_MDNS_EN) {

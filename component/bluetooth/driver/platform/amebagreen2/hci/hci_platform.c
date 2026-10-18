@@ -349,10 +349,6 @@ static void bt_power_on(void)
 	set_reg_value(SYSTEM_CTRL_BASE + REG_LSYS_PWC, BIT1 | BIT2, 3);                 /* enable BT Power Cut & PD_SHRM Power Cut */
 	osif_delay_us(40);
 	set_reg_value(SYSTEM_CTRL_BASE + REG_LSYS_PWC, BIT17 | BIT18, 0);               /* disable ISO of BT and PD_SHRM */
-	set_reg_value(SYSTEM_CTRL_BASE + REG_LSYS_FEN_GRP1, BIT2, 1);                   /* enable WL RFAFE control circuit */
-	set_reg_value((u32)(&(WLAFE_BASE->WLAFE_ANAPAR_POW_MAC_0)), BIT5 | BIT6, 3);    /* enable RFAFE */
-	set_reg_value((u32)(&(WLAFE_BASE->WLAFE_WLRFC_CTRL)), BIT4, 1);                 /* enable WL_CKI_80M_RFC, default=1, can skip */
-	set_reg_value((u32)(&(WLAFE_BASE->WLAFE_WLRFC_CTRL)), BIT3, 0);                 /* when WL RFAFE enter power off, keep WLRFC not power off, default=0 */
 	set_reg_value(SYSTEM_CTRL_BASE + REG_LSYS_FEN_GRP1, BIT1, 1);                   /* release BTON reset */
 	osif_delay_us(100);
 	if (HCI_BT_KEEP_AWAKE) {
@@ -380,13 +376,6 @@ void bt_power_off(void)
 	osif_delay_us(100);
 	set_reg_value(SYSTEM_CTRL_BASE + REG_LSYS_BT_CTRL0, BIT5, 0);                   /* disable request poff xtal and swr, for next PON flow */
 	set_reg_value(SYSTEM_CTRL_BASE + REG_LSYS_FEN_GRP1, BIT1, 0);                   /* assert BTON reset */
-#if defined(CONFIG_WLAN) && CONFIG_WLAN
-	if (!(wifi_is_running(STA_WLAN_INDEX) || wifi_is_running(SOFTAP_WLAN_INDEX)))
-#endif
-	{
-		set_reg_value((u32)(&(WLAFE_BASE->WLAFE_ANAPAR_POW_MAC_0)), BIT5 | BIT6, 0); /* disable RFAFE (if WIFI active, keep 2'b11) */
-		set_reg_value(SYSTEM_CTRL_BASE + REG_LSYS_FEN_GRP1, BIT2, 0);                /* disable WL RFAFE control circuit (if WIFI active, keep 1'b1) */
-	}
 	set_reg_value(SYSTEM_CTRL_BASE + REG_LSYS_PWC, BIT17 | BIT18, 3);                /* enable ISO of BT and PD_SHRM */
 	set_reg_value(SYSTEM_CTRL_BASE + REG_LSYS_PWC, BIT1 | BIT2, 0);                  /* disable BT Power Cut & PD_SHRM Power Cut */
 	set_reg_value(SYSTEM_MEM_CTRL_BASE + REG_CTRL_GRP_BT_E0_CTRL, BIT3 | BIT4 | BIT5, 2); /* set BT BMEM high 32K power mode in sys LPS mode */
@@ -470,6 +459,12 @@ void hci_platform_close(void)
 {
 	/* BT Controller Power Off */
 	bt_power_off();
+
+	/* Trigger WL re-enter IPS flow */
+#if defined(CONFIG_WLAN) && CONFIG_WLAN
+	wifi_ps_en_by_bt_on(DISABLE);
+	wifi_ps_en_by_bt_on(ENABLE);
+#endif
 
 	/* UART Close */
 	hci_uart_close();

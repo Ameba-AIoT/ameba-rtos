@@ -373,8 +373,10 @@ static void rmesh_ota_firmware_download_end(u8 need_clear_sig)
 	if (need_clear_sig) {/*update to new img*/
 		sys_clear_ota_signature(OTA_IMGID_APP);
 	} else {
-		/*need clear new written sig when ota failed, otherwise when target ota is OTA1 and partial ota data already written, reset will hardfault*/
-		FLASH_WriteStream(g_rmesh_ota_status->image_addr, 8, (u8 *)empty_sig);
+		if (g_rmesh_ota_status) {
+			/*need clear new written sig when ota failed, otherwise when target ota is OTA1 and partial ota data already written, reset will hardfault*/
+			FLASH_WriteStream(g_rmesh_ota_status->image_addr, 8, (u8 *)empty_sig);
+		}
 	}
 
 	if (wifi_user_config.wtn_connect_only_to_rnat) {
