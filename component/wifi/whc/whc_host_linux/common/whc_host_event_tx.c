@@ -641,19 +641,6 @@ int whc_host_external_auth_start(u8 wlan_idx)
 	return ret;
 }
 
-u32 whc_host_update_ip_addr(void)
-{
-	u32 ret = 0;
-	u8 param[RTW_IP_ADDR_LEN + RTW_IPv6_ADDR_LEN];
-
-	memcpy(param, global_idev.ip_addr, RTW_IP_ADDR_LEN);
-	memcpy(param + RTW_IP_ADDR_LEN, global_idev.ipv6_addr, RTW_IPv6_ADDR_LEN);
-
-	whc_host_send_event(WHC_API_WIFI_IP_UPDATE, param, sizeof(param), (u8 *)&ret, sizeof(u32));
-
-	return ret;
-}
-
 int whc_host_get_traffic_stats(u8 wlan_idx, dma_addr_t traffic_stats_addr)
 {
 	int ret = 0;

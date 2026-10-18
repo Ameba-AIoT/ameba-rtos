@@ -80,7 +80,14 @@ int usbd_otp_init(usbd_otp_t *otp)
 	otp->otp_sn = 0U;
 	otp->otp_param = 0U;
 
+#if defined(CONFIG_BT) && defined(CONFIG_BT_INIC_USB)
+	/* The BT interfaces are exposed only when the firmware also runs the BT stack, so gate the
+	 * OTP capability bit on the SW configuration too: otherwise the descriptors advertise BT
+	 * while USB HCI vendor requests have no handler and STALL. */
 	otp->bt_en = ((HAL_READ32(OTPC_REG_BASE, SEC_OTP_SYSCFG0) & SEC_BIT_BT_FUNCTION_EN) == 0U) ? 0U : 1U;
+#else
+	otp->bt_en = 0U;
+#endif /* CONFIG_BT && CONFIG_BT_INIC_USB */
 
 	otp->mfg_str = (u8 *)usb_os_malloc(USBD_INIC_MAX_STR_LEN);
 	if (otp->mfg_str == NULL) {

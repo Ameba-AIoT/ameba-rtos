@@ -252,7 +252,7 @@ u8 BOOT_Extract_SignatureCheck(Manifest_TypeDef *Manifest, SubImgInfo_TypeDef *S
 	/* 1. check if secure boot enable. */
 	/* 2. read public key hash from OTP if sboot en. Start with a random index to avoid side channel attack. */
 	if (BOOT_SbootEn_Check(PubKeyHash) == DISABLE) {
-		return 0;
+		return TRUE;
 	}
 
 	/* 3. verify signature */
