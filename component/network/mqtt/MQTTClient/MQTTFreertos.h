@@ -35,7 +35,7 @@ enum {
 
 #define mqtt_printf(level, fmt, arg...)     \
 	do {\
-		if (level >= MQTT_DEBUG) {\
+		if (level >= MQTT_INFO) {\
 			{\
 				RTK_LOGA("MQTT", "[%d]mqtt:"fmt"\n\r", (int)rtos_time_get_current_system_time_ms(), ##arg);\
 			} \
