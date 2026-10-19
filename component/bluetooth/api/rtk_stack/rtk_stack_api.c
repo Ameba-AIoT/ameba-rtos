@@ -245,7 +245,7 @@ static uint16_t bt_stack_init(void *app_config)
 		default_conf.prefer_tx_phy = 1 | 1 << 1 | 1 << 2;
 		default_conf.prefer_rx_phy = 1 | 1 << 1 | 1 << 2;
 		default_conf.max_tx_octets = 0x40;
-		default_conf.max_tx_time = 0x200;
+		default_conf.max_tx_time = 0x270;
 #if defined(RTK_BLE_SET_TX_QUEUE_NUM) && RTK_BLE_SET_TX_QUEUE_NUM
 		default_conf.max_stack_tx_pending_num = RTK_BT_GATT_DEFAULT_CREDITS;
 #endif
