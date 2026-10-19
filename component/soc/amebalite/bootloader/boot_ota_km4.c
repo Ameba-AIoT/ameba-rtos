@@ -362,11 +362,14 @@ u8 BOOT_OTA_LoadIMG2(u8 ImgIndex)
 	}
 	Index += Cnt;
 
-	/* add 4K-align padding info */
+	/* add 4K-align padding info. Skip it if already 4K-aligned: ROM rtl_crypto_sha2_update
+	 * returns an uninitialized value for a zero-length input, failing the image hash check. */
 	SubImgInfo[Index].Addr = ImgAddr + TotalLen;
 	SubImgInfo[Index].Len = ((((TotalLen - 1) >> 12) + 1) << 12) - TotalLen;
-	TotalLen += SubImgInfo[Index].Len;
-	Index ++;
+	if (SubImgInfo[Index].Len != 0) {
+		TotalLen += SubImgInfo[Index].Len;
+		Index ++;
+	}
 
 	/* remap KM4 XIP image */
 	PhyAddr += TotalLen;
