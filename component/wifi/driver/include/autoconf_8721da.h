@@ -88,6 +88,7 @@
 
 #ifdef CONFIG_MCC_MODE
 #define CONFIG_TWT
+//#define CONFIG_MCC_AP_MGNT_AVOID_LEAKAGE
 #endif
 
 //#define CONFIG_P2P
@@ -161,4 +162,3 @@
 #endif
 #define CONFIG_IOT_RS 1
 #endif /*#ifndef AUTOCONF_8721DA_H */
-
