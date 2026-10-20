@@ -908,7 +908,7 @@ gp_reg_config:
 	if (HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_LSYS_BOOT_CFG) & LSYS_BIT_BOOT_WAKE_FROM_PS_HS) {
 		// start to init
 		/* ddrc drive cke here --> low */
-		ddrc->DDRC_CCR = DDRC_BIT_CR_UPDATE;
+		ddrc->DDRC_CCR = DDRC_BIT_CR_UPDATE; /* can only be used when resume ddrc */
 		ddrc->DDRC_DRR |= DDRC_REF_DIS(ENABLE);
 		// enable PWDPAN15N when phy and controller ready
 		HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_LSYS_DUMMY_098, (HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_LSYS_DUMMY_098)  | LSYS_BIT_PWDPAD15N_DQ | LSYS_BIT_PWDPAD15N_CA));
@@ -973,14 +973,13 @@ gp_reg_config:
 		while (((ddrc->DDRC_CCR) & DDRC_BIT_INIT) != DDRC_BIT_INIT);
 	}
 
+	ddrc->DDRC_TPR2 = (((ddrc->DDRC_TPR2) & (~ DDRC_MASK_TNS)) | DDRC_TNS(0x2));
+
 	// enter mem_mode
 	ddrc->DDRC_CSR = (DDRC_BIT_BSTC_IDLE | DDRC_BIT_TM_IDLE);
 
 	ddrc->DDRC_DRR |= DDRC_TREF(trefi_tck);
 	ddrc->DDRC_DRR &= (~DDRC_BIT_REF_DIS);
-
-	// start to init
-	ddrc->DDRC_CCR = DDRC_BIT_CR_UPDATE;
 
 	// check mode state
 	while (((ddrc->DDRC_CSR) & 0x7ff) != (DDRC_BIT_BSTC_IDLE | DDRC_BIT_TM_IDLE));
@@ -1054,11 +1053,6 @@ void rxi316_DynSre_init(u32 IdleCnt, u32 state)
 	ddrc->DDRC_CMD_DPIN = (DDRC_CS_N_NDGE(DDR_SLOW) | DDRC_RAS_N_NDGE(DDR_SLOW) |
 						   DDRC_CAS_N_NDGE(DDR_SLOW) |  DDRC_WE_N_NDGE(DDR_SHIGH) | \
 						   DDRC_BA_NDGE(DDR_SLOW) |  DDRC_ADDR_NDGE(DDR_SLOW));
-
-	ddrc->DDRC_TPR2 = (((ddrc->DDRC_TPR2) & (~ DDRC_MASK_TNS)) | DDRC_TNS(0x2));
-
-	/* update IOCR reg */
-	ddrc->DDRC_CCR = DDRC_BIT_CR_UPDATE;
 }
 
 /**
