@@ -107,14 +107,14 @@ u8 BOOT_SignatureCheck(Manifest_TypeDef *Manifest, SubImgInfo_TypeDef *SubImgInf
 	char *Name[] = {"IMG1", "IMG2", "IMG3"};
 	u8 AuthAlg, HashAlg;
 
-	/* 1. check if secure boot enable. */
-	if (SecureBootEn == DISABLE) {
-		return 0;
-	}
-
-	/* 2. verify signature */
-	/* 2.1 Initialize hash engine */
+	/* 1. Initialize hash engine */
 	CRYPTO_SHA_Init(NULL);
+
+	/* 2. check if secure boot enable. Image hash is validated even when sboot is off. */
+	if (SecureBootEn == DISABLE) {
+		HashAlg = Manifest->HashAlg;
+		goto SKIP_SBOOT;
+	}
 
 	/* 2.2 Check algorithm from manifest against OTP configuration if need. */
 	ret = SBOOT_Validate_Algorithm(&AuthAlg, &HashAlg, Manifest->AuthAlg, Manifest->HashAlg);
@@ -140,6 +140,7 @@ u8 BOOT_SignatureCheck(Manifest_TypeDef *Manifest, SubImgInfo_TypeDef *SubImgInf
 		goto SBOOT_FAIL;
 	}
 
+SKIP_SBOOT:
 	/* 2.5 calculate and validate image hash */
 	ret = SBOOT_Validate_ImgHash(HashAlg, Manifest->ImgHash, SubImgInfo, SubImgNum);
 	if (ret != 0) {
@@ -242,13 +243,14 @@ u8 BOOT_Extract_SignatureCheck(Manifest_TypeDef *Manifest, SubImgInfo_TypeDef *S
 
 	/* 1. check if secure boot enable. */
 	/* 2. read public key hash from OTP if sboot en. Start with a random index to avoid side channel attack. */
-	if (BOOT_SbootEn_Check(PubKeyHash) == DISABLE) {
-		return 0;
-	}
-
 	/* 3. verify signature */
 	/* 3.1 Initialize hash engine */
 	CRYPTO_SHA_Init(NULL);
+
+	if (BOOT_SbootEn_Check(PubKeyHash) == DISABLE) {
+		HashAlg = Manifest->HashAlg;
+		goto SKIP_SBOOT;
+	}
 
 	/* 3.2 Check algorithm from flash against OTP configuration if need. */
 	ret = SBOOT_Validate_Algorithm(&AuthAlg, &HashAlg, Manifest->AuthAlg, Manifest->HashAlg);
@@ -269,6 +271,7 @@ u8 BOOT_Extract_SignatureCheck(Manifest_TypeDef *Manifest, SubImgInfo_TypeDef *S
 		goto SBOOT_FAIL;
 	}
 
+SKIP_SBOOT:
 	/* 3.5 calculate and validate image hash */
 	ret = SBOOT_Validate_ImgHash(HashAlg, Manifest->ImgHash, SubImgInfo, SubImgNum);
 	if (ret != 0) {
@@ -276,9 +279,9 @@ u8 BOOT_Extract_SignatureCheck(Manifest_TypeDef *Manifest, SubImgInfo_TypeDef *S
 	}
 
 	RTK_LOGI(TAG, "Compressed Img VERIFY PASS\n");
-	return TRUE;
+	return 0;
 
 SBOOT_FAIL:
 	RTK_LOGE(TAG, "Compressed Img VERIFY FAIL, ret = %d\n", ret);
-	return FALSE;
+	return (u8)ret;
 }
