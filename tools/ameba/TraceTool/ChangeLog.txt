@@ -89,3 +89,4 @@ ChangeLog:
                   (2) Fix crash when the COM port list query is throttled
                   (3) Fix crash parsing some serial port names
                   (4) Fix high WMI service CPU usage from device polling
+20261016  v2.1.46 Fix log loss when file logging is off
