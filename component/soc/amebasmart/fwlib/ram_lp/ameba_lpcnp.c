@@ -143,7 +143,7 @@ void np_set_ddr_sre(void)
 
 	/* update IOCR reg */
 	ddrc->DDRC_IOCR &= (~DDRC_BIT_DYN_SRE);
-	ddrc->DDRC_CCR = DDRC_BIT_CR_UPDATE;
+
 	/*disable refresh function*/
 	//ddrc->DDRC_DRR |= DDRC_REF_DIS(ENABLE);
 	ddrc->DDRC_CSR = (DDRC_BIT_BSTC_IDLE | DDRC_BIT_TM_IDLE | DDRC_BIT_MEM_IDLE);
