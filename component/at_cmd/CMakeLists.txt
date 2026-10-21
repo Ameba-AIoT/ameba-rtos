@@ -62,6 +62,7 @@ if(CONFIG_SUPPORT_ATCMD)
 if(CONFIG_WHC_HOST OR CONFIG_WHC_NONE OR (CONFIG_WHC_DEV AND NOT CONFIG_WHC_INTF_IPC))
     ameba_list_append(private_sources
         atcmd_otp.c
+        atcmd_bt_mp.c
     )
     ameba_list_append_if(CONFIG_ATCMD_SECURE private_sources
         atcmd_secure.c
@@ -72,7 +73,6 @@ if(CONFIG_WHC_HOST OR CONFIG_WHC_NONE)
     ameba_list_append(private_sources
         atcmd_sys.c
         atcmd_fs.c
-        atcmd_bt_mp.c
         atcmd_coex.c
     )
     ameba_list_append_if(CONFIG_WLAN private_sources
