@@ -44,7 +44,7 @@ static struct sk_buff *whc_sdio_host_read_rxfifo(struct whc_sdio *priv, u32 size
 
 void whc_sdio_host_send_data(u8 *buf, u32 len, struct sk_buff *pskb)
 {
-	u32 polling_num = 0, try_cnt = 0;
+	u32 polling_num = 0;
 	struct whc_sdio *priv = &whc_sdio_priv;
 	INIC_TX_DESC *ptxdesc;
 
@@ -64,17 +64,20 @@ void whc_sdio_host_send_data(u8 *buf, u32 len, struct sk_buff *pskb)
 
 	// check if hardware tx fifo page is enough
 	while (priv->SdioTxBDFreeNum < 1) {
-		/* set 0 after query num < 1 */
-		/* jira: https://jira.realtek.com/browse/RSWLANDIOT-11649 */
-		priv->tx_avail_int_triggered = 0;
 #ifdef CONFIG_SDIO_TX_ENABLE_AVAL_INT
-		if (try_cnt ++ > 0) {
-			if (!wait_event_timeout(priv->txbd_wq, priv->tx_avail_int_triggered == 1, msecs_to_jiffies(1000))) {
-				dev_err(&priv->func->dev, "%s: TXBD unavailable, TX FAIL\n", __FUNCTION__);
-				goto exit;
-			}
-		}
+		/* Reset flag before query so any ISR firing after this point is
+		 * guaranteed to be caught by wait_event_timeout's condition check.
+		 * Should clear tx_avail_int_triggered each loop: jira: https://jira.realtek.com/browse/RSWLANDIOT-11649,
+		 * but can't put it after rtw_sdio_query_txbd_status considering lost-wakeup race */
+		priv->tx_avail_int_triggered = 0;
 		rtw_sdio_query_txbd_status(priv);
+		if (priv->SdioTxBDFreeNum >= 1) {
+			break;
+		}
+		if (!wait_event_timeout(priv->txbd_wq, priv->tx_avail_int_triggered == 1, msecs_to_jiffies(1000))) {
+			dev_err(&priv->func->dev, "%s: TXBD unavailable, TX FAIL\n", __FUNCTION__);
+			goto exit;
+		}
 #else
 		polling_num++;
 		if ((polling_num % 60) == 0) {
