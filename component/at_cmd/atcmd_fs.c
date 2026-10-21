@@ -258,8 +258,6 @@ static void at_fs_help(void)
 	RTK_LOGI(TAG, "\t<length>:\t\tneeded by operation 3,4\r\n");
 }
 
-//AT+FS=<operation>,<filename>,<offset>,<length>
-// operation: 0=list, 1=delete, 2=get size, 3=read, 4=write
 void at_fs(u16 argc, char **argv)
 {
 	u8 *buffer = NULL;
@@ -645,6 +643,111 @@ end:
 
 }
 
+static void at_certset_help(void)
+{
+	RTK_LOGI(TAG, "\r\n");
+	RTK_LOGI(TAG, "AT+CERTSET=<role>,<type>,<index>,<length>\r\n");
+	RTK_LOGI(TAG, "\t<role>:\t0=client, 1=server\r\n");
+	RTK_LOGI(TAG, "\t<type>:\t0=ca, 1=cert, 2=key\r\n");
+	RTK_LOGI(TAG, "\t<index>:\tcert index, 1~10\r\n");
+	RTK_LOGI(TAG, "\t<length>:\tcert length, 1~%d\r\n", MAX_CERT_LEN);
+}
+
+void at_certset(u16 argc, char **argv)
+{
+	static const char *const type_str[] = {"ca", "cert", "key"};
+	char *path = NULL;
+	char *prefix;
+	FILE *finfo;
+	u8 *buffer = NULL;
+	u8 error_no = 0, role, type, index;
+	int length, get_len, remain_len;
+
+	if (argc != 5) {
+		RTK_LOGW(TAG, "Number of parameters is wrong\r\n");
+		error_no = 1;
+		goto end;
+	}
+
+	role = atoi(argv[1]);
+	type = atoi(argv[2]);
+	index = atoi(argv[3]);
+	length = atoi(argv[4]);
+
+	if (role > 1 || type > 2 || index < 1 || index > 10 || length <= 0 || length > MAX_CERT_LEN) {
+		RTK_LOGW(TAG, "Parameters are invalid\r\n");
+		error_no = 1;
+		goto end;
+	}
+
+	prefix = find_vfs_tag(g_cert_fs);
+	if (prefix == NULL) {
+		RTK_LOGW(TAG, "VFS region is not exist\r\n");
+		error_no = 2;
+		goto end;
+	}
+
+	path = (char *)rtos_mem_zmalloc(VFS_PATH_MAX);
+	buffer = (u8 *)rtos_mem_zmalloc(length);
+	if (path == NULL || buffer == NULL) {
+		RTK_LOGW(TAG, "Memory allocation failed\r\n");
+		error_no = 2;
+		goto end;
+	}
+
+	if (atcmd_tt_mode_start(length) != 0) {
+		error_no = 2;
+		goto end;
+	}
+
+	remain_len = length;
+	while (remain_len > 0) {
+		get_len = atcmd_tt_mode_get(buffer + length - remain_len, remain_len);
+		if (get_len == 0) {
+			RTK_LOGW(TAG, "host stops tt mode\r\n");
+			error_no = 2;
+			atcmd_tt_mode_end();
+			goto end;
+		}
+		remain_len -= get_len;
+	}
+	atcmd_tt_mode_end();
+
+	/* make sure CERT dir exists, ignore error if already created */
+	DiagSnPrintf(path, VFS_PATH_MAX, "%s:CERT", prefix);
+	mkdir(path, 0);
+
+	DiagSnPrintf(path, VFS_PATH_MAX, "%s:CERT/%s_%s_%d.%s", prefix, role == 0 ? "client" : "server", type_str[type], index, type == 2 ? "key" : "crt");
+	finfo = fopen(path, "w");
+	if (finfo == NULL) {
+		RTK_LOGW(TAG, "%s open fail\r\n", path);
+		error_no = 3;
+		goto end;
+	}
+
+	if (fwrite(buffer, length, 1, finfo) != (size_t)length) {
+		RTK_LOGW(TAG, "%s write fail\r\n", path);
+		error_no = 3;
+	}
+	fclose(finfo);
+
+end:
+	if (buffer != NULL) {
+		rtos_mem_free(buffer);
+	}
+
+	if (path != NULL) {
+		rtos_mem_free(path);
+	}
+
+	if (error_no == 0) {
+		at_printf(ATCMD_OK_END_STR);
+	} else {
+		at_printf(ATCMD_ERROR_END_STR, error_no);
+		at_certset_help();
+	}
+}
+
 static void at_fs_region_help(void)
 {
 	RTK_LOGI(TAG, "\r\n");
@@ -697,5 +800,6 @@ ATCMD_APONLY_TABLE_DATA_SECTION
 const log_item_t at_fs_items[] = {
 	{"+FS", at_fs},
 	{"+CERT", at_cert},
+	{"+CERTSET", at_certset},
 	{"+FSRGN", at_fs_region},
 };

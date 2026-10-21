@@ -30,6 +30,10 @@ if (CONFIG_COEX_EXT_CHIP_SUPPORT AND NOT CONFIG_MP_SHRINK)
     set(need_external_lib ON)
 endif()
 
+if (CONFIG_PLATFORM_ZEPHYR)
+    set(need_external_lib ON)
+endif()
+
 ## Differentiated configuration based on SoC types
 ameba_list_append_if(need_external_lib public_libraries
     ${c_SDK_LIB_APPLICATION_DIR}/lib_${target_name}.a
