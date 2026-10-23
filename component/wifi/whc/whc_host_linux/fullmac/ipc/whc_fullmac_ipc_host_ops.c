@@ -1265,3 +1265,39 @@ int whc_fullmac_host_set_promisc_enable(u32 enable, u8 mode)
 
 	return ret;
 }
+
+int whc_fullmac_host_get_txpower(u8 rate, s8 *txpwr)
+{
+	int ret = 0;
+	u32 param_buf[2];
+	s8 *virt_addr = NULL;
+	dma_addr_t dma_addr = 0;
+	struct device *pdev = global_idev.ipc_dev;
+
+	virt_addr = kzalloc(sizeof(s8), GFP_KERNEL);
+	if (virt_addr == NULL) {
+		ret = -ENOMEM;
+		goto func_exit;
+	}
+
+	dma_addr = dma_map_single(pdev, virt_addr, sizeof(s8), DMA_FROM_DEVICE);
+	if (dma_mapping_error(pdev, dma_addr)) {
+		dev_err(global_idev.fullmac_dev, "%s: mapping dma error!\n", __func__);
+		ret = -EINVAL;
+		goto free_buf;
+	}
+	param_buf[0] = (u32)rate;
+	param_buf[1] = (u32)dma_addr;
+
+	ret = whc_fullmac_ipc_host_send_msg(WHC_API_WIFI_GET_TX_POWER, param_buf, 2);
+	/* need do cache invalidate before get value */
+	dma_unmap_single(pdev, dma_addr, sizeof(s8), DMA_FROM_DEVICE);
+	*txpwr = *virt_addr;
+
+free_buf:
+	kfree((u8 *)virt_addr);
+
+func_exit:
+	return ret;
+}
+
