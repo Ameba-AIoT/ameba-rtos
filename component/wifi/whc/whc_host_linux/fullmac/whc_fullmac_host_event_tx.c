@@ -1003,6 +1003,11 @@ int whc_fullmac_host_get_edcca_mode(u8 *edcca_mode)
 	return ret;
 }
 
+int whc_fullmac_host_get_txpower(u8 rate, s8 *txpwr)
+{
+	return -EPERM;
+}
+
 int whc_fullmac_host_get_ant_info(u8 *antdiv_mode, u8 *curr_ant)
 {
 	int ret = 0;
