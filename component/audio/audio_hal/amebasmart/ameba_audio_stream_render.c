@@ -668,10 +668,11 @@ Stream *ameba_audio_stream_tx_init(uint32_t device, StreamConfig config)
 	rstream->stream.multi_dma_xrun_mask = 0;
 	rstream->stream.dma_irq_masked = false;
 
-	uint32_t dma_len = rstream->stream.period_bytes * rstream->stream.channel / (rstream->stream.channel + rstream->stream.extra_channel);
-
-	ameba_audio_stream_tx_gdma_init(rstream->stream.sport_dev_num, GDMA_INT, &(rstream->stream.gdma_struct->u.SpTxGdmaInitStruct), rstream->stream.gdma_struct,
-									 (IRQ_FUN)ameba_audio_stream_tx_complete, (uint8_t *)rstream->stream.rbuffer->raw_data, dma_len);
+	if (rstream->stream.stream_mode == AMEBA_AUDIO_DMA_IRQ_MODE) {
+		uint32_t dma_len = rstream->stream.period_bytes * rstream->stream.channel / (rstream->stream.channel + rstream->stream.extra_channel);
+		ameba_audio_stream_tx_gdma_init(rstream->stream.sport_dev_num, GDMA_INT, &(rstream->stream.gdma_struct->u.SpTxGdmaInitStruct), rstream->stream.gdma_struct,
+										 (IRQ_FUN)ameba_audio_stream_tx_complete, (uint8_t *)rstream->stream.rbuffer->raw_data, dma_len);
+	}
 
 	if (IS_6_8_CHANNEL(config.channels)) {
 		rstream->stream.extra_gdma_struct = (GdmaCallbackData *)rtos_mem_calloc(1, sizeof(GdmaCallbackData));
@@ -689,8 +690,10 @@ Stream *ameba_audio_stream_tx_init(uint32_t device, StreamConfig config)
 		rtos_sema_create(&rstream->stream.extra_sem_gdma_end, 0, RTOS_SEMA_MAX_COUNT);
 
 		uint32_t extra_dma_len = rstream->stream.period_bytes * rstream->stream.extra_channel / (rstream->stream.channel + rstream->stream.extra_channel);
-		ameba_audio_stream_tx_gdma_init(rstream->stream.sport_dev_num, GDMA_EXT, &(rstream->stream.extra_gdma_struct->u.SpTxGdmaInitStruct), rstream->stream.extra_gdma_struct,
-										 (IRQ_FUN)ameba_audio_stream_tx_complete, (uint8_t *)rstream->stream.extra_rbuffer->raw_data, extra_dma_len);
+		if (rstream->stream.stream_mode == AMEBA_AUDIO_DMA_IRQ_MODE) {
+			ameba_audio_stream_tx_gdma_init(rstream->stream.sport_dev_num, GDMA_EXT, &(rstream->stream.extra_gdma_struct->u.SpTxGdmaInitStruct), rstream->stream.extra_gdma_struct,
+											 (IRQ_FUN)ameba_audio_stream_tx_complete, (uint8_t *)rstream->stream.extra_rbuffer->raw_data, extra_dma_len);
+		}
 	}
 
 	rstream->stream.trigger_tstamp = 0;
@@ -1159,7 +1162,8 @@ static int32_t ameba_audio_stream_tx_write_in_irq_mode(Stream *stream, const voi
 							   sp_txgdma_initstruct->GDMA_Index, sp_txgdma_initstruct->GDMA_ChNum, tx_addr, dma_len);
 
 				if (has_extra_dma) {
-					DCache_CleanInvalidate((uint32_t)extra_tx_addr, extra_dma_len);
+					extra_tx_addr = (uint32_t)(rstream->stream.extra_rbuffer->raw_data + ameba_audio_stream_buffer_get_tx_readptr(rstream->stream.extra_rbuffer));
+					DCache_CleanInvalidate(extra_tx_addr, extra_dma_len);
 					GDMA_Cmd(extra_sp_txgdma_initstruct->GDMA_Index, extra_sp_txgdma_initstruct->GDMA_ChNum, ENABLE);
 					rstream->stream.extra_gdma_cnt++;
 					HAL_AUDIO_INFO("gdma extra init: index:%d, chNum:%d, tx_addr:0x%lx, extra_dma_len:%lu",
