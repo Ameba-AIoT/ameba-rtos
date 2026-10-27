@@ -43,6 +43,7 @@ ameba_list_append(private_sources
     ameba_ipc_api.c
     ameba_ipc_ram.c
     ameba_gpio.c
+    ameba_pinmux.c
     ameba_ir.c
     ameba_i2c.c
     ameba_loguart.c

@@ -136,6 +136,13 @@ uint32_t rtos_task_priority_get(rtos_task_t p_handle);
 int rtos_task_priority_set(rtos_task_t p_handle, uint16_t priority);
 
 /**
+ * @brief  Get the stack size a task was created with.
+ * @param  p_handle: Task handle.
+ * @retval Stack size in words, or 0 if the handle is null or the stack high address is not recorded.
+ */
+uint32_t rtos_task_stack_size_get(rtos_task_t p_handle);
+
+/**
  * @brief  Print current task status
  */
 void rtos_task_out_current_status(void);

@@ -18,7 +18,7 @@ static const struct of_device_id whc_ipc_of_match[] = {
 
 MODULE_DEVICE_TABLE(of, whc_ipc_of_match);
 
-static void platform_device_init(struct platform_device *pdev)
+static int platform_device_init(struct platform_device *pdev)
 {
 	unsigned long pmem_len = 0;
 	struct axi_data *axi_data;
@@ -26,7 +26,7 @@ static void platform_device_init(struct platform_device *pdev)
 	axi_data = (struct axi_data *)kzalloc(sizeof(struct axi_data), in_interrupt() ? GFP_ATOMIC : GFP_KERNEL);
 	if (!axi_data) {
 		pr_err("Can't get axi_data\n");
-		goto exit;
+		return -ENOMEM;
 	}
 	paxi_data_global = axi_data;
 	axi_data->pdev = pdev;
@@ -40,7 +40,7 @@ static void platform_device_init(struct platform_device *pdev)
 	pmem_len = axi_data->wifi_reg_res->end - axi_data->wifi_reg_res->start + 1;
 
 	axi_data->wifi_reg_start = (unsigned long)devm_ioremap_resource(&pdev->dev, axi_data->wifi_reg_res);
-	if (!axi_data->wifi_reg_start) {
+	if (IS_ERR((void *)axi_data->wifi_reg_start)) {
 		pr_err("Can't map CTRL mem\n");
 		goto free_dvobj;
 	}
@@ -49,33 +49,46 @@ static void platform_device_init(struct platform_device *pdev)
 	pr_info("wifi reg mapped space start: 0x%08lx len:%08lx, after map:0x%08lx\n",
 			(unsigned long)axi_data->wifi_reg_res->start, pmem_len, axi_data->wifi_reg_start);
 
-	axi_data->fw_mem_res = platform_get_resource(pdev, IORESOURCE_MEM, 1);
-	if (!axi_data->fw_mem_res) {
+	axi_data->fw_psram_res = platform_get_resource(pdev, IORESOURCE_MEM, 1);
+	if (!axi_data->fw_psram_res) {
 		pr_err("Can't get np IORESOURCE_MEM\n");
 		goto free_dvobj;
 	}
 
-	pmem_len = axi_data->fw_mem_res->end - axi_data->fw_mem_res->start + 1;
+	pmem_len = axi_data->fw_psram_res->end - axi_data->fw_psram_res->start + 1;
 
-	axi_data->fw_mem_start = (unsigned long)devm_ioremap_resource(&pdev->dev, axi_data->fw_mem_res);
-	if (!axi_data->fw_mem_start) {
+	axi_data->fw_psram_start = (unsigned long)devm_ioremap_resource(&pdev->dev, axi_data->fw_psram_res);
+	if (IS_ERR((void *)axi_data->fw_psram_start)) {
 		pr_err("Can't map np mem\n");
 		goto free_dvobj;
 	}
-	axi_data->fw_mem_end = axi_data->fw_mem_start + pmem_len;
+	axi_data->fw_psram_end = axi_data->fw_psram_start + pmem_len;
 
-	pr_info("fw memory mapped space start: 0x%08lx len:%08lx, after map:0x%08lx\n",
-			(unsigned long)axi_data->fw_mem_res->start, pmem_len, axi_data->fw_mem_start);
+	pr_info("fw psram mapped space start: 0x%08lx len:%08lx, after map:0x%08lx\n",
+			(unsigned long)axi_data->fw_psram_res->start, pmem_len, axi_data->fw_psram_start);
 
-	return;
+	/* Optional 3rd reg: KM4 SRAM window, XIP boards only (see RSWLANDIOT-16775) */
+	axi_data->fw_sram_res = platform_get_resource(pdev, IORESOURCE_MEM, 2);
+	if (axi_data->fw_sram_res) {
+		pmem_len = axi_data->fw_sram_res->end - axi_data->fw_sram_res->start + 1;
+		axi_data->fw_sram_start = (unsigned long)devm_ioremap_resource(&pdev->dev, axi_data->fw_sram_res);
+		if (IS_ERR((void *)axi_data->fw_sram_start)) {
+			pr_err("Can't map np sram mem\n");
+			goto free_dvobj;
+		}
+		axi_data->fw_sram_end = axi_data->fw_sram_start + pmem_len;
+		pr_info("fw sram mapped space start: 0x%08lx len:%08lx, after map:0x%08lx\n",
+				(unsigned long)axi_data->fw_sram_res->start, pmem_len, axi_data->fw_sram_start);
+	}
+
+	return 0;
 
 free_dvobj:
 	kfree((u8 *)axi_data);
 	paxi_data_global = NULL;
 	platform_set_drvdata(pdev, NULL);
 
-exit:
-	return ;
+	return -ENODEV;
 }
 
 static void platform_device_deinit(struct platform_device *pdev)
@@ -93,7 +106,10 @@ static int whc_ipc_host_probe(struct platform_device *pdev)
 {
 	int err = 0;
 
-	platform_device_init(pdev);
+	err = platform_device_init(pdev);
+	if (err != 0) {
+		return err;
+	}
 
 	err = rtw_netdev_probe(&pdev->dev);
 	if (err != 0) {

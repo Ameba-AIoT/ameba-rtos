@@ -167,6 +167,22 @@ int32_t IPC_Message_Queue_Send(uint32_t id, uint8_t *buf, uint32_t size, int32_t
 		DCache_Invalidate((uint32_t)&info->rptr, BYTE_ALIGNMENT);
 	} while (timeout > 0 || timeout == WAIT_FOREVER);
 
+	/*
+	 * The finite-timeout loop above can EXIT (via the while() condition) with the
+	 * ring still full: for a finite timeout, `timeout` reaches 0 at the while()
+	 * test and we leave the loop WITHOUT ever hitting the `timeout == 0 ->
+	 * return IPC_TX_TIMEOUT` check at the top of the body. Falling straight
+	 * through to the write below would then OVERWRITE unread data and wrap wptr
+	 * past rptr, yet still return IPC_SUCCESS - the sender never sees the failure
+	 * and the data is silently lost. Re-check here: if there is still not enough
+	 * room, the send genuinely could not be delivered -> report IPC_TX_TIMEOUT.
+	 */
+	if (remain_bytes <= size) {
+		IPC_LOGE("id: %d ring FULL (remain=%d, need=%d), consumer stalled -> TX_TIMEOUT\n",
+				 (int)id, (int)remain_bytes, (int)size);
+		return IPC_TX_TIMEOUT;
+	}
+
 	end_addr = info->addr + info->len;
 	if (info->wptr + size > end_addr) {
 		segment_len = end_addr - info->wptr;

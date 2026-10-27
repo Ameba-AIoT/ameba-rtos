@@ -127,6 +127,9 @@ s32 wifi_connect(struct rtw_network_info *connect_param, u8 block)
 	memcpy(ptr, &connect_param->channel, sizeof(connect_param->channel));
 	ptr += sizeof(connect_param->channel);
 
+	memcpy(ptr, &connect_param->band, sizeof(connect_param->band));
+	ptr += sizeof(connect_param->band);
+
 	memcpy(ptr, &connect_param->pscan_option, sizeof(connect_param->pscan_option));
 	ptr += sizeof(connect_param->pscan_option);
 

@@ -134,17 +134,15 @@ void GDMA_Init(u8 GDMA_Index, u8 GDMA_ChNum, PGDMA_InitTypeDef GDMA_InitStruct)
 				GDMA_BIT_ExtendedSRC_PER1 | GDMA_BIT_ExtendedDEST_PER1);
 	/* Src Handshake*/
 	if (GDMA_InitStruct->GDMA_SrcHandshakeInterface >= 16) {
-		GDMA_InitStruct->GDMA_SrcHandshakeInterface = (GDMA_InitStruct->GDMA_SrcHandshakeInterface & 0xf);
-		CfgxUp |= (GDMA_InitStruct->GDMA_SrcHandshakeInterface << 7) | GDMA_BIT_ExtendedSRC_PER1;
+		CfgxUp |= GDMA_CFGx_H_SRC_PER(GDMA_InitStruct->GDMA_SrcHandshakeInterface) | GDMA_BIT_ExtendedSRC_PER1;
 	} else {
-		CfgxUp |= (GDMA_InitStruct->GDMA_SrcHandshakeInterface << 7);
+		CfgxUp |= GDMA_CFGx_H_SRC_PER(GDMA_InitStruct->GDMA_SrcHandshakeInterface);
 	}
 	/* Dst Handshake*/
 	if (GDMA_InitStruct->GDMA_DstHandshakeInterface >= 16) {
-		GDMA_InitStruct->GDMA_DstHandshakeInterface = (GDMA_InitStruct->GDMA_DstHandshakeInterface & 0xf);
-		CfgxUp |= (GDMA_InitStruct->GDMA_DstHandshakeInterface << 11) | GDMA_BIT_ExtendedDEST_PER1;
+		CfgxUp |= GDMA_CFGx_H_DEST_PER(GDMA_InitStruct->GDMA_DstHandshakeInterface) | GDMA_BIT_ExtendedDEST_PER1;
 	} else {
-		CfgxUp |= (GDMA_InitStruct->GDMA_DstHandshakeInterface << 11);
+		CfgxUp |= GDMA_CFGx_H_DEST_PER(GDMA_InitStruct->GDMA_DstHandshakeInterface);
 	}
 
 	GDMA->CH[GDMA_ChNum].CFG_LOW = CfgxLow;
@@ -215,6 +213,40 @@ void GDMA_SetLLP(u8 GDMA_Index, u8 GDMA_ChNum, u32 MultiBlockCount, struct GDMA_
 }
 
 /**
+  * @brief  Get the pending interrupt types of a GDMA channel without clearing them.
+  * @param  GDMA_Index Always 0.
+  * @param  GDMA_ChNum 0 ~ 7.
+  * @note  Only the masked status registers are read. Pair with GDMA_ClearINTPendingBit()
+  *            to clear exactly the types that were read, so an interrupt arriving in between
+  *            stays pending for the next ISR.
+  * @return  Pending interrupt types, refer to @ref GDMA_Interrupt_Type.
+  */
+__weak  u32
+GDMA_GetINTStatus(u8 GDMA_Index, u8 GDMA_ChNum)
+{
+	GDMA_TypeDef *GDMA = ((GDMA_TypeDef *) GDMA_BASE);
+	uint32_t temp_isr = 0;
+
+	(void)GDMA_Index;
+
+	if (TrustZone_IsSecure()) {
+		GDMA = ((GDMA_TypeDef *) GDMA0_REG_BASE_S);
+	}
+
+	if (GDMA->STATUS_TFR & BIT(GDMA_ChNum)) {
+		temp_isr |= TransferType;
+	}
+	if (GDMA->STATUS_BLOCK & BIT(GDMA_ChNum)) {
+		temp_isr |= BlockType;
+	}
+	if (GDMA->STATUS_ERR & BIT(GDMA_ChNum)) {
+		temp_isr |= ErrType;
+	}
+
+	return temp_isr;
+}
+
+/**
   * @brief  Clear the specified Pending Interrupt status.
   * @param  GDMA_Index Always 0.
   * @param  GDMA_ChNum 0 ~ 7.
@@ -223,54 +255,32 @@ void GDMA_SetLLP(u8 GDMA_Index, u8 GDMA_ChNum, u32 MultiBlockCount, struct GDMA_
   *            @arg TransferType
   *            @arg BlockType
   *            @arg ErrType
-  * @note  This function completes clearing the specified type interrupt status. Which type
-  *            interrupt status will be cleared, refer to the parameter "GDMA_IT".
-  * @return  Active interrupt types whose interrupt status is cleared,
-  *         refer to @ref GDMA_Interrupt_Type.
+  * @note  Only the types in "GDMA_IT" are cleared, nothing is read. Use GDMA_GetINTStatus()
+  *            to read the pending types first.
   */
-__weak  u32
+__weak  void
 GDMA_ClearINTPendingBit(u8 GDMA_Index, u8 GDMA_ChNum, u32 GDMA_IT)
 {
 	GDMA_TypeDef *GDMA = ((GDMA_TypeDef *) GDMA_BASE);
-	uint32_t temp_bit = 0;
-	uint32_t temp_isr = 0;
+
+	(void)GDMA_Index;
 
 	if (TrustZone_IsSecure()) {
 		GDMA = ((GDMA_TypeDef *) GDMA0_REG_BASE_S);
 	}
 
-	/* Check the parameters */
-	assert_param(IS_GDMA_Index(GDMA_Index));
-	assert_param(IS_GDMA_ChannelNum(GDMA_ChNum));
-	assert_param(IS_GDMA_CONFIG_IT(GDMA_IT));
-
-	/* get isr */
-	if ((GDMA->RAW_TFR & BIT(GDMA_ChNum)) && (GDMA->STATUS_TFR & BIT(GDMA_ChNum))) {
-		temp_isr |= (TransferType & GDMA_IT);
-	}
-	if ((GDMA->RAW_BLOCK & BIT(GDMA_ChNum)) && (GDMA->STATUS_BLOCK & BIT(GDMA_ChNum))) {
-		temp_isr |= (BlockType & GDMA_IT);
-	}
-	if ((GDMA->RAW_ERR & BIT(GDMA_ChNum)) && (GDMA->STATUS_ERR & BIT(GDMA_ChNum))) {
-		temp_isr |= (ErrType & GDMA_IT);
-	}
-
 	/* clear the selected DMA interrupts */
-	temp_bit = BIT(GDMA_ChNum) | BIT(GDMA_ChNum + 8);
-
 	if (GDMA_IT & TransferType) {
-		GDMA->CLEAR_TFR = temp_bit;
+		GDMA->CLEAR_TFR = BIT(GDMA_ChNum);
 	}
 
 	if (GDMA_IT & BlockType) {
-		GDMA->CLEAR_BLOCK = temp_bit;
+		GDMA->CLEAR_BLOCK = BIT(GDMA_ChNum);
 	}
 
 	if (GDMA_IT & ErrType) {
-		GDMA->CLEAR_ERR = temp_bit;
+		GDMA->CLEAR_ERR = BIT(GDMA_ChNum);
 	}
-
-	return temp_bit;
 }
 
 /**
@@ -284,36 +294,10 @@ GDMA_ClearINTPendingBit(u8 GDMA_Index, u8 GDMA_ChNum, u32 GDMA_IT)
 __weak  u32
 GDMA_ClearINT(u8 GDMA_Index, u8 GDMA_ChNum)
 {
-	GDMA_TypeDef *GDMA = ((GDMA_TypeDef *) GDMA_BASE);
-	uint32_t temp_bit = 0;
-	uint32_t temp_isr = 0;
-
-	if (TrustZone_IsSecure()) {
-		GDMA = ((GDMA_TypeDef *) GDMA0_REG_BASE_S);
-	}
-
-	/* Check the parameters */
-	assert_param(IS_GDMA_Index(GDMA_Index));
-	assert_param(IS_GDMA_ChannelNum(GDMA_ChNum));
-
-	/* get isr */
-	if ((GDMA->RAW_TFR & BIT(GDMA_ChNum)) && (GDMA->STATUS_TFR & BIT(GDMA_ChNum))) {
-		temp_isr |= TransferType;
-	}
-	if ((GDMA->RAW_BLOCK & BIT(GDMA_ChNum)) && (GDMA->STATUS_BLOCK & BIT(GDMA_ChNum))) {
-		temp_isr |= BlockType;
-	}
-	if ((GDMA->RAW_ERR & BIT(GDMA_ChNum)) && (GDMA->STATUS_ERR & BIT(GDMA_ChNum))) {
-		temp_isr |= ErrType;
-	}
-
-	/* clear the selected DMA interrupts */
-	temp_bit = BIT(GDMA_ChNum) | BIT(GDMA_ChNum + 8);
+	u32 temp_isr = GDMA_GetINTStatus(GDMA_Index, GDMA_ChNum);
 
 	/* clear all types of interrupt */
-	GDMA->CLEAR_TFR = temp_bit;
-	GDMA->CLEAR_BLOCK = temp_bit;
-	GDMA->CLEAR_ERR = temp_bit;
+	GDMA_ClearINTPendingBit(GDMA_Index, GDMA_ChNum, TransferType | BlockType | ErrType);
 
 	return temp_isr;
 }
@@ -847,17 +831,15 @@ GDMA_Abort(u8 GDMA_Index, u8 GDMA_ChNum)
 	while (timeout--) {
 		if ((GDMA->ChEnReg & BIT(GDMA_ChNum)) == 0 || \
 			(GDMA->CH[GDMA_ChNum].CFG_LOW & BIT_CFGx_L_INACTIVE)) {
-			break;
+			GDMA_Cmd(GDMA_Index, GDMA_ChNum, DISABLE);
+			return TRUE;
 		}
 	}
-	/*If the channel is still active after the timeout period, resume is required*/
-	if (timeout == 0) {
-		GDMA_Resume(GDMA_Index, GDMA_ChNum);
-		return FALSE;
-	}
 
-	GDMA_Cmd(GDMA_Index, GDMA_ChNum, DISABLE);
-	return TRUE;
+	/* The loop ran out: timeout has wrapped to 0xFFFFFFFF, so it cannot be tested here.
+	 * The channel is still active, resume is required. */
+	GDMA_Resume(GDMA_Index, GDMA_ChNum);
+	return FALSE;
 }
 
 /**

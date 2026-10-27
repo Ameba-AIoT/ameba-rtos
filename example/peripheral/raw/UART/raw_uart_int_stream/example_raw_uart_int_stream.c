@@ -125,7 +125,6 @@ u32 uart_irq(void *data)
 	u32 reg_lsr;
 	u32 TransCnt = 0;
 
-	u32 int_id = UART_IntReadId(UART_DEV);
 	reg_lsr = UART_LineStatusGet(UART_DEV);
 
 	/* tx FIFO empty */

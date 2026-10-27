@@ -246,7 +246,7 @@ static int _usb_trx_buf_init(void)
 	ep->buf = (u8 *)usb_os_malloc(ep->buf_len);
 	if (ep->buf == NULL) {
 		ret = HAL_ERR_MEM;
-		goto bt_init_clean_ep1_intr_in_buf_exit;
+		goto bt_init_clean_intr_in_buf_exit;
 	}
 
 	ep_num = USB_EP_NUM(USBD_WHC_BT_EP_BULK_OUT);
@@ -255,17 +255,17 @@ static int _usb_trx_buf_init(void)
 	ep->buf = (u8 *)usb_os_malloc(ep->buf_len);
 	if (ep->buf == NULL) {
 		ret = HAL_ERR_MEM;
-		goto bt_init_clean_ep2_bulk_in_buf_exit;
+		goto bt_init_clean_bulk_in_buf_exit;
 	}
 
 	return HAL_OK;
 
-bt_init_clean_ep2_bulk_in_buf_exit:
+bt_init_clean_bulk_in_buf_exit:
 	ep = &iapp->in_ep[USB_EP_NUM(USBD_WHC_BT_EP_BULK_IN)];
 	usb_os_mfree(ep->buf);
 	ep->buf = NULL;
 
-bt_init_clean_ep1_intr_in_buf_exit:
+bt_init_clean_intr_in_buf_exit:
 	ep = &iapp->in_ep[USB_EP_NUM(USBD_WHC_BT_EP_INTR_IN)];
 	usb_os_mfree(ep->buf);
 	ep->buf = NULL;

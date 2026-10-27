@@ -37,10 +37,10 @@
  * @brief WDGDev and WdgIrqNum
  */
 
-#if defined (CONFIG_ARM_CORE_CM4_KM4TZ)
+#if defined (CONFIG_ARM_CORE_CM55_KM55TZ)
 WDG_TypeDef *WDGDev = CPU0_NS_WDG_DEV;
 IRQn_Type WdgIrqNum = KM4TZ_NS_WDG_IRQ;
-#elif defined (CONFIG_ARM_CORE_CM4_KM4NS)
+#elif defined (CONFIG_ARM_CORE_CM55_KM55NS)
 WDG_TypeDef *WDGDev = CPU1_WDG_DEV;
 IRQn_Type WdgIrqNum = KM4NS_WDG_IRQ;
 #endif

@@ -47,7 +47,7 @@ Refer to the [EVB User Guide](https://aiot.realmcu.com/filelist?document_type=9)
 
 1. Reset the board, following log shall be printed on the LOGUART console, make sure there is no USB related error reported:
 	```
-	[VND-I] USBH vendor demo start
+	[VND-I] USBH VENDOR demo start
 	```
 2. Connect the vendor-specific USB device (e.g. another Ameba board running usbd_vendor_new application) to the USB port of the board with USB cable.
 
@@ -67,7 +67,7 @@ Refer to the [EVB User Guide](https://aiot.realmcu.com/filelist?document_type=9)
 	[VND-I] INTR loopback test start, times:100, size: 1024
 	[VND-I] BULK loopback test PASS 100/100
 	[VND-I] INTR loopback test PASS 100/100
-	[VND-I] USBH vendor demo stop
+	[VND-I] USBH VENDOR demo done
 	```
 # Note
 

@@ -91,6 +91,16 @@ int vfs_check_mount_flag(int vfs_type, int vfs_interface_type, char region, char
 #else
 	(void) region;
 #endif
+#if defined(CONFIG_VFS_RAM)
+	/* single RAM disk instance: one flag whichever FS owns it */
+	if (vfs_interface_type == VFS_INF_RAM) {
+		if (ram_mount_flag != 1) {
+			VFS_DBG(VFS_ERROR, "vfs-ram mount fail, %s is not allowed", operation);
+			return -1;
+		}
+		return 0;
+	}
+#endif
 	switch (vfs_type) {
 #ifdef CONFIG_VFS_FATFS_INCLUDED
 	case VFS_FATFS:
@@ -283,6 +293,12 @@ void vfs_assign_region(int vfs_type, char region, int interface)
 	u32 vfs2_start_addr;
 	u32 vfs2_end_addr;
 
+#if defined(CONFIG_VFS_RAM)
+	if (interface == VFS_INF_RAM) {
+		return;		/* RAM disk has no flash layout region */
+	}
+#endif
+
 	if (VFS1_FLASH_BASE_ADDR == 0) {
 		flash_get_layout_info(VFS1, &vfs1_start_addr, &vfs1_end_addr);
 		flash_get_layout_info(VFS2, &vfs2_start_addr, &vfs2_end_addr);
@@ -465,6 +481,111 @@ void vfs_set_user_encrypt_callback(char *prefix, vfs_enc_callback_t encrypt_func
 	return;
 }
 
+#if defined(CONFIG_VFS_RAM)
+static int vfs_ram_param_check(char region, char flag)
+{
+	if (region != VFS_REGION_RAM || flag != VFS_RW) {
+		RTK_LOGE("VFS", "ram bad param\n");
+		return -1;
+	}
+	if (ram_mount_flag) {
+		RTK_LOGE("VFS", "ram busy\n");
+		return -1;
+	}
+	return 0;
+}
+#endif
+
+/* Is (vfs_type, interface) built into this image? Mirrors the derived
+ * "FS x interface" Kconfig symbols; on-chip flash is always supported. */
+static int vfs_inf_supported(int vfs_type, int interface)
+{
+	if (interface == VFS_INF_FLASH) {
+		return 1;
+	}
+	switch (vfs_type) {
+	case VFS_LITTLEFS:
+#if defined(CONFIG_LITTLEFS_SECOND_FLASH)
+		if (interface == VFS_INF_SECOND_FLASH) {
+			return 1;
+		}
+#endif
+#if defined(VFS_RAM_LITTLEFS)
+		if (interface == VFS_INF_RAM) {
+			return 1;
+		}
+#endif
+		break;
+	case VFS_FATFS:
+#if defined(CONFIG_FATFS_SECOND_FLASH)
+		if (interface == VFS_INF_SECOND_FLASH) {
+			return 1;
+		}
+#endif
+#if defined(CONFIG_FATFS_SD_MODE)
+		if (interface == VFS_INF_SD) {
+			return 1;
+		}
+#endif
+#if defined(CONFIG_FATFS_SD_SPI_MODE)
+		if (interface == VFS_INF_SD_SPI) {
+			return 1;
+		}
+#endif
+#if defined(CONFIG_FATFS_USB_HOST)
+		if (interface == VFS_INF_USBH) {
+			return 1;
+		}
+#endif
+#if defined(VFS_RAM_FATFS)
+		if (interface == VFS_INF_RAM) {
+			return 1;
+		}
+#endif
+		break;
+	case VFS_REALFS:
+#if defined(CONFIG_REALFS_SD_MODE)
+		if (interface == VFS_INF_SD) {
+			return 1;
+		}
+#endif
+#if defined(CONFIG_REALFS_SECOND_FLASH_NAND)
+		if (interface == VFS_INF_SECOND_FLASH) {
+			return 1;
+		}
+#endif
+#if defined(VFS_RAM_REALFS)
+		if (interface == VFS_INF_RAM) {
+			return 1;
+		}
+#endif
+		break;
+	default:
+		break;
+	}
+	return 0;
+}
+
+/* FATFS (SD / SD-SPI / USB / second flash share one param + fatfs2_mount_flag)
+ * and REALFS (single instance) can hold only one non-flash volume at a time;
+ * a second register would otherwise "succeed" against the first volume. */
+static int vfs_single_volume_busy(int vfs_type, int interface)
+{
+	(void) interface;
+#if defined(CONFIG_VFS_FATFS_INCLUDED)
+	if (vfs_type == VFS_FATFS && interface != VFS_INF_FLASH && interface != VFS_INF_RAM && fatfs2_mount_flag) {
+		return 1;
+	}
+#endif
+#if defined(CONFIG_VFS_REALFS_INCLUDED)
+	if (vfs_type == VFS_REALFS && realfs_mount_flag) {
+		return 1;
+	}
+#endif
+	(void) vfs_type;
+	return 0;
+}
+
 int vfs_user_register(const char *prefix, int vfs_type, int interface, char region, char flag)
 {
 	int vfs_num = 0;
@@ -475,18 +596,29 @@ int vfs_user_register(const char *prefix, int vfs_type, int interface, char regi
 	if (vfs_type != VFS_FATFS && vfs_type != VFS_LITTLEFS && vfs_type != VFS_REALFS) {
 		VFS_DBG(VFS_ERROR, "It don't support the file system");
 		goto EXIT;
-	} else if (vfs_type == VFS_LITTLEFS && interface > VFS_INF_SECOND_FLASH) {
-		VFS_DBG(VFS_ERROR, "interface type not supported by littlefs");
-		goto EXIT;
-	} else if (vfs_type == VFS_REALFS && interface != VFS_INF_SD && interface != VFS_INF_FLASH
-			   && interface != VFS_INF_SECOND_FLASH) {
-		VFS_DBG(VFS_ERROR, "interface type not supported by realfs");
+	} else if (!vfs_inf_supported(vfs_type, interface)) {
+		RTK_LOGE("VFS", "fs %d inf %d not built\n", vfs_type, interface);
 		goto EXIT;
 	} else {
-		if (find_inf_number(prefix) >= 0) {
+		int registered_id = find_inf_number(prefix);
+		if (registered_id >= 0) {
+			user_config *user = &vfs.user[registered_id];
+			if (user->vfs_type != vfs_type || user->vfs_interface_type != interface || user->vfs_region != region || user->vfs_ro_flag != flag) {
+				RTK_LOGE("VFS", "prefix config mismatch\n");
+				goto EXIT;
+			}
 			VFS_DBG(VFS_INFO, "It has been already registered");
 			ret = 0;
 		} else {
+#if defined(CONFIG_VFS_RAM)
+			if (interface == VFS_INF_RAM && vfs_ram_param_check(region, flag)) {
+				goto EXIT;
+			}
+#endif
+			if (vfs_single_volume_busy(vfs_type, interface)) {
+				RTK_LOGE("VFS", "fs %d one ext volume only\n", vfs_type);
+				goto EXIT;
+			}
 			vfs_num = vfs_scan_vfs(vfs_type);
 			if (vfs_num < 0) {
 				if (vfs_type == VFS_LITTLEFS) {
@@ -557,6 +689,11 @@ int vfs_user_register(const char *prefix, int vfs_type, int interface, char regi
 #ifdef CONFIG_LITTLEFS_SECOND_FLASH
 			if (interface == VFS_INF_SECOND_FLASH) {
 				vfs.user[user_num].fs = &g_second_lfs;
+			}
+#endif
+#if defined(VFS_RAM_LITTLEFS)
+			if (vfs_type == VFS_LITTLEFS && interface == VFS_INF_RAM) {
+				vfs.user[user_num].fs = &g_ram_lfs;
 			}
 #endif
 		}

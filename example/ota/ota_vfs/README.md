@@ -59,7 +59,7 @@ The Ameba board downloads `ota_all.bin` from the VFS (FATFS) automatically. This
 
    Enable FATFS within APP Image in menuconfig:
    ```
-   CONFIG VFS --->
+   CONFIG File System --->
       [*] Enable VFS FATFS
           [*] FATFS within APP Image
    ```

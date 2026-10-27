@@ -655,6 +655,7 @@ u32 ADC_GetSampleValue(s32 VolMV)
 		}
 	} else {
 		assert_param(0);
+		return 0;
 	}
 }
 

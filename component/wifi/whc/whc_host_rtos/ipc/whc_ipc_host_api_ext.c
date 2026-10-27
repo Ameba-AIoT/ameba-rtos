@@ -58,6 +58,9 @@ struct internal_block_param *scan_abort_block_param = NULL;
 void (*p_ap_channel_switch_callback)(u8 channel, s8 ret) = NULL;
 #ifdef CONFIG_WIFI_TUNNEL
 int (*rmesh_ota_user_callback)(u8 *, u16) = NULL;
+#ifdef CONFIG_WTN_RNAT_INTERCOM
+int (*rmesh_rnat_adv_user_callback)(u8 *, u16) = NULL;
+#endif
 #endif
 /******************************************************
  *               Variables Declarations
@@ -1771,6 +1774,81 @@ int wifi_xmesh_get_rssi_info_list(u8 *buf, u8 *max_id)
 	rtos_mem_free(buf_tmp);
 	rtos_mem_free(max_id_tmp);
 	return ret;
+}
+#endif
+
+#ifdef CONFIG_WTN_RNAT_INTERCOM
+u8 wifi_rmesh_rnat_get_neighbor_info(struct wtn_rnat_neighbor *out, u8 max_count)
+{
+	u32 param_buf[2];
+	int ret_count;
+
+	u8 *out_tmp = (u8 *)rtos_mem_zmalloc(sizeof(struct wtn_rnat_neighbor) * max_count);
+	if (out_tmp == NULL) {
+		return 0;
+	}
+
+	param_buf[0] = (u32)out_tmp;
+	param_buf[1] = (u32)max_count;
+	DCache_CleanInvalidate((u32)out_tmp, sizeof(struct wtn_rnat_neighbor) * max_count);
+
+	ret_count = whc_ipc_host_api_message_send(WHC_API_WTN_RNAT_GET_NEIGHBOR_INFO, param_buf, 2);
+	if (ret_count > 0) {
+		DCache_Invalidate((u32)out_tmp, sizeof(struct wtn_rnat_neighbor) * ret_count);
+		memcpy(out, out_tmp, sizeof(struct wtn_rnat_neighbor) * ret_count);
+	} else {
+		ret_count = 0;
+	}
+
+	rtos_mem_free(out_tmp);
+	return (u8)ret_count;
+}
+
+void wifi_rmesh_rnat_set_gw(const u8 *gw)
+{
+	u32 param_buf[1];
+
+	u8 *gw_tmp = (u8 *)rtos_mem_zmalloc(4);
+	if (gw_tmp == NULL) {
+		return;
+	}
+	memcpy(gw_tmp, gw, 4);
+
+	param_buf[0] = (u32)gw_tmp;
+	DCache_CleanInvalidate((u32)gw_tmp, 4);
+
+	whc_ipc_host_api_message_send(WHC_API_WTN_RNAT_SET_GW, param_buf, 1);
+
+	rtos_mem_free(gw_tmp);
+}
+
+void wifi_rmesh_rnat_set_client_ip(const u8 *mac, u8 ip_byte4)
+{
+	u32 param_buf[2];
+
+	u8 *mac_tmp = (u8 *)rtos_mem_zmalloc(ETH_ALEN);
+	if (mac_tmp == NULL) {
+		return;
+	}
+	memcpy(mac_tmp, mac, ETH_ALEN);
+
+	param_buf[0] = (u32)mac_tmp;
+	param_buf[1] = (u32)ip_byte4;
+	DCache_CleanInvalidate((u32)mac_tmp, ETH_ALEN);
+
+	whc_ipc_host_api_message_send(WHC_API_WTN_RNAT_SET_CLIENT_IP, param_buf, 2);
+
+	rtos_mem_free(mac_tmp);
+}
+
+void wifi_rmesh_rnat_register_adv_callback(int (*adv_callback)(u8 *buf, u16 len))
+{
+	u32 param_buf[1];
+
+	param_buf[0] = (u32)adv_callback;
+	rmesh_rnat_adv_user_callback = adv_callback;
+
+	whc_ipc_host_api_message_send(WHC_API_WTN_RNAT_ADV_CB_REGISTER, param_buf, 1);
 }
 #endif
 

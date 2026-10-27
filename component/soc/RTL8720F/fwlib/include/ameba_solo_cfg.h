@@ -8,19 +8,19 @@
  * @file    ameba_solo_cfg.h
  * @brief   SOLO dual-core isolation configuration interface.
  *
- * In SOLO mode the two application cores (secure KM4TZ = mcu_app, non-secure
- * KM4NS = iot_app) share one die. With TrustZone compiled out the boot code
- * would otherwise leave every memory region / peripheral shared, so KM4NS
- * could read KM4TZ's private SRAM/PSRAM/flash and reach every peripheral.
+ * In SOLO mode the two application cores (secure KM55TZ = mcu_app, non-secure
+ * KM55NS = iot_app) share one die. With TrustZone compiled out the boot code
+ * would otherwise leave every memory region / peripheral shared, so KM55NS
+ * could read KM55TZ's private SRAM/PSRAM/flash and reach every peripheral.
  *
  * This module lets the user describe the isolation in ONE plain configuration
  * file (ameba_solocfg.c) using only two kinds of entries:
- *   - memory regions (start/end addresses) the KM4NS core may access;
- *   - peripherals reserved for the KM4TZ core.
- * Everything not listed stays private to KM4TZ. The user never deals with the
+ *   - memory regions (start/end addresses) the KM55NS core may access;
+ *   - peripherals reserved for the KM55TZ core.
+ * Everything not listed stays private to KM55TZ. The user never deals with the
  * underlying hardware protection controllers - that mapping is done in the
  * (closed) library ameba_solo_cfg_lib.c and applied once at boot by the secure
- * KM4TZ image1 (BOOT_RAM_SoloCfg), before the KM4NS core is released.
+ * KM55TZ image1 (BOOT_RAM_SoloCfg), before the KM55NS core is released.
  */
 
 #ifndef _AMEBA_SOLO_CFG_H_
@@ -33,24 +33,24 @@
 extern "C" {
 #endif
 
-/** Max memory regions the user may expose to KM4NS per storage type. */
+/** Max memory regions the user may expose to KM55NS per storage type. */
 #define SOLO_REGION_NUM		4
 
-/** One memory region (address range) the non-secure KM4NS core may access. */
+/** One memory region (address range) the non-secure KM55NS core may access. */
 typedef struct {
 	u32 start;			/*!< region base address */
 	u32 end;			/*!< region end address (inclusive) */
 } SOLO_REGION_TypeDef;
 
 /**
- * Peripherals that may be reserved for the secure KM4TZ core.
+ * Peripherals that may be reserved for the secure KM55TZ core.
  * The names below are the only handle the user needs; the mapping to the
  * hardware security controller is internal to ameba_solo_cfg_lib.c.
  * NOTE: system peripherals that must always stay shared (inter-core IPC,
  * SYSON, RSIP, RXI300) are intentionally NOT listed here.
  */
 typedef enum {
-	/* crypto / security engines (typical KM4TZ-only) */
+	/* crypto / security engines (typical KM55TZ-only) */
 	SOLO_PERIPH_PKE = 0,	/*!< public-key (PKA) engine */
 	SOLO_PERIPH_LALU_KEY,	/*!< LALU key management */
 	SOLO_PERIPH_AES,		/*!< AES */
@@ -59,7 +59,7 @@ typedef enum {
 	SOLO_PERIPH_TRNG,		/*!< true RNG */
 	SOLO_PERIPH_OTPC,		/*!< OTP controller */
 	/* general peripherals */
-	SOLO_PERIPH_WIFI,		/*!< WiFi (runs on KM4NS in SOLO) */
+	SOLO_PERIPH_WIFI,		/*!< WiFi (runs on KM55NS in SOLO) */
 	SOLO_PERIPH_SDN,		/*!< SDN */
 	SOLO_PERIPH_SDIO_DEVICE,/*!< SDIO device */
 	SOLO_PERIPH_SPORT0_I2S,	/*!< SPORT0 / I2S */
@@ -98,17 +98,17 @@ typedef enum {
 /* User configuration, defined in ameba_solocfg.c. The peripheral list is
  * terminated by SOLO_PERIPH_MAX; the memory tables are fixed at SOLO_REGION_NUM
  * entries each, with unused entries set to {0xFFFFFFFF, 0xFFFFFFFF}. */
-extern const SOLO_PERIPH_TypeDef solo_km4tz_periph[];				/*!< peripherals kept private to KM4TZ (SOLO_PERIPH_MAX terminated) */
-extern const SOLO_REGION_TypeDef solo_km4ns_flash[SOLO_REGION_NUM];	/*!< flash regions KM4NS may access */
-extern const SOLO_REGION_TypeDef solo_km4ns_sram[SOLO_REGION_NUM];	/*!< SRAM regions KM4NS may access */
-extern const SOLO_REGION_TypeDef solo_km4ns_psram[SOLO_REGION_NUM];	/*!< PSRAM regions KM4NS may access */
+extern const SOLO_PERIPH_TypeDef solo_km55tz_periph[];				/*!< peripherals kept private to KM55TZ (SOLO_PERIPH_MAX terminated) */
+extern const SOLO_REGION_TypeDef solo_km55ns_flash[SOLO_REGION_NUM];	/*!< flash regions KM55NS may access */
+extern const SOLO_REGION_TypeDef solo_km55ns_sram[SOLO_REGION_NUM];	/*!< SRAM regions KM55NS may access */
+extern const SOLO_REGION_TypeDef solo_km55ns_psram[SOLO_REGION_NUM];	/*!< PSRAM regions KM55NS may access */
 
 /**
  * @brief  Apply the SOLO isolation configured in ameba_solocfg.c.
- * @note   Called from the secure KM4TZ image1 in place of the TrustZone path
- *         (SOLO and TrustZone are mutually exclusive) before KM4NS is released.
- *         Programs and locks the memory / peripheral protection so KM4NS cannot
- *         reach KM4TZ's private memory or reserved peripherals.
+ * @note   Called from the secure KM55TZ image1 in place of the TrustZone path
+ *         (SOLO and TrustZone are mutually exclusive) before KM55NS is released.
+ *         Programs and locks the memory / peripheral protection so KM55NS cannot
+ *         reach KM55TZ's private memory or reserved peripherals.
  * @retval FIH_SUCCESS on success.
  */
 fih_ret BOOT_RAM_SoloCfg(void);
@@ -116,9 +116,9 @@ fih_ret BOOT_RAM_SoloCfg(void);
 /** Number of SOLO MPU entries the user can populate in ameba_solocfg.c. */
 #define SOLO_MPU_ENTRY_NUM	2
 
-/* Memory regions the KM4TZ app must NOT write. Filled in ameba_solocfg.c and applied
+/* Memory regions the KM55TZ app must NOT write. Filled in ameba_solocfg.c and applied
  * by app_start via app_solo_mpu_init(). Set unused entries to {0xFFFFFFFF, 0xFFFFFFFF}. */
-extern const SOLO_REGION_TypeDef solo_km4tz_ro_sram[SOLO_MPU_ENTRY_NUM];
+extern const SOLO_REGION_TypeDef solo_km55tz_ro_sram[SOLO_MPU_ENTRY_NUM];
 
 #ifdef __cplusplus
 }

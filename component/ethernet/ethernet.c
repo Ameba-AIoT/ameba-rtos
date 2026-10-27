@@ -1,14 +1,26 @@
 #include <cmsis.h>
 #include "ethernet_api.h"
-#include "wifi_api.h"
 #include "ethernet.h"
 #include "ethernet_ex_api.h"
 #include "timer_api.h"
 
 static const char *const TAG = "ETH";
-
+/* Descriptor number */
 #define ETH_TX_DESC_CNT         CONFIG_ETH_TX_DESC_CNT
 #define ETH_RX_DESC_CNT         CONFIG_ETH_RX_DESC_CNT
+/* The RX ring size register takes the count minus one as a mask */
+#if (ETH_RX_DESC_CNT & (ETH_RX_DESC_CNT - 1))
+#error "CONFIG_ETH_RX_DESC_CNT must be a power of two"
+#endif
+/* Retry count for transmission */
+#define ETH_TX_RETRY_CNT        3
+
+/* Only SoCs whose fwlib provides Ethernet_SwapRXSegBuf() define ETH_RX_ZERO_COPY. */
+#if defined(ETH_RX_ZERO_COPY) && ETH_RX_ZERO_COPY
+#define ETH_RX_ZC               1
+#else
+#define ETH_RX_ZC               0
+#endif
 
 /* Configuration Flags */
 volatile int eth_link_is_up = 0;
@@ -24,9 +36,85 @@ static u8 eth_rx_desc_arr[ETH_RX_DESC_CNT][ETH_RX_DESC_SIZE] __attribute__((alig
 
 /* OS sema/mutex */
 static rtos_mutex_t eth_tx_mutex;
-static rtos_sema_t  eth_link_sema;
 static rtos_sema_t  eth_rx_sema;
-static rtos_sema_t  eth_init_done_sema;
+
+#if ETH_RX_ZC
+/* One RX buffer. While its address sits in a descriptor it belongs to DMA; once the
+ * frame is received it goes up to lwIP as pc and comes back to the heap through
+ * eth_rx_blk_free(). pc gets a cache line of its own so invalidating dma[] before
+ * handing it to DMA never discards what the CPU wrote into the pbuf. */
+struct eth_rx_blk {
+	struct pbuf_custom pc;          /* must stay first: the pbuf address is the block address */
+	u8 rsvd[CACHE_LINE_SIZE - sizeof(struct pbuf_custom)];
+	u8 dma[ETH_MAX_BUF_SIZE];       /* cache-line aligned, whole lines only */
+};
+
+#define ETH_RX_BLK(dma_addr)    ((struct eth_rx_blk *)((u32)(dma_addr) - offsetof(struct eth_rx_blk, dma)))
+
+static void eth_rx_blk_free(struct pbuf *p)
+{
+	rtos_mem_free(p);
+}
+
+static struct eth_rx_blk *eth_rx_blk_alloc(void)
+{
+	/* rtos_mem_malloc returns cache-line aligned memory. */
+	struct eth_rx_blk *blk = (struct eth_rx_blk *)rtos_mem_malloc(sizeof(struct eth_rx_blk));
+
+	if (blk != NULL) {
+		blk->pc.custom_free_function = eth_rx_blk_free;
+		/* Drop whatever the previous owner of this memory left in the cache, or an
+		 * eviction could land on top of what DMA writes. */
+		DCache_Invalidate((u32)blk->dma, sizeof(blk->dma));
+	}
+
+	return blk;
+}
+
+/**
+  * @brief  Take the current RX frame out of the ring without copying it.
+  * @retval The frame as a pbuf chain, one pbuf per descriptor, or NULL when out of memory.
+  * @note   Every descriptor of the frame gets a fresh buffer, and the received ones become
+  *         the pbufs. All or nothing: if any allocation fails the old buffers stay in the
+  *         ring and the frame is dropped.
+  */
+static struct pbuf *eth_rx_zc_take(void)
+{
+	struct pbuf *head = NULL, *q;
+	struct eth_rx_blk *blk;
+	/* The MAC puts 2 bytes ahead of the frame in its first buffer. The descriptor length
+	 * counts frame bytes only (CRC included, those 2 not), so they shift the payload but
+	 * never shorten it. */
+	u32 seg, seg_len, off = 2;
+
+	for (seg = 0; seg < eth_handle.ETH_RxSegmentCount; seg++) {
+		blk = eth_rx_blk_alloc();
+		if (blk == NULL) {
+			goto undo;
+		}
+
+		blk = ETH_RX_BLK(Ethernet_SwapRXSegBuf(&eth_handle, seg, (u32)blk->dma, &seg_len));
+		q = pbuf_alloced_custom(PBUF_RAW, (u16)seg_len, PBUF_REF, &blk->pc, blk->dma + off, (u16)(sizeof(blk->dma) - off));
+		off = 0;
+
+		if (head == NULL) {
+			head = q;
+		} else {
+			pbuf_cat(head, q);
+		}
+	}
+
+	return head;
+
+undo:
+	/* The pbufs live inside the old blocks, so there is nothing to free but the new ones. */
+	for (seg = 0, q = head; q != NULL; seg++, q = q->next) {
+		rtos_mem_free(ETH_RX_BLK(Ethernet_SwapRXSegBuf(&eth_handle, seg, (u32)((struct eth_rx_blk *)q)->dma, &seg_len)));
+	}
+
+	return NULL;
+}
+#endif /* ETH_RX_ZC */
 
 /* Callbacks */
 eth_rx_prehandler_t eth_rx_preprocess_cb = NULL;
@@ -43,82 +131,46 @@ void eth_register_link_cb(link_up_down_callback pfunc)
 }
 
 /**
- * @brief  Configure Ethernet peripheral clock.
+ * @brief  Configure the PHY reset GPIO, the RMII pinmux and the MDC/MDIO pinmux.
  */
-static void eth_config_mac_clock(void)
-{
-	u8 gmac_ckd;
-	u32 gmac_clk = 0;
-
-	const SocClk_Info_TypeDef *pSocClk_Info = &SocClk_Info[Boot_SocClk_Info_Idx];
-
-	/* Select a clock source that can be divided up to 50MHz */
-	gmac_ckd = PLL_ClkSrcGet(pSocClk_Info->SYSPLL_CLK, pSocClk_Info->USBPLL_CLK, CLK_LIMIT_GMAC);
-
-	if (gmac_ckd & IS_SYS_PLL) {
-		gmac_clk = pSocClk_Info->SYSPLL_CLK / GET_CLK_DIV(gmac_ckd);
-	} else {
-		gmac_clk = pSocClk_Info->USBPLL_CLK / GET_CLK_DIV(gmac_ckd);
-	}
-
-	if (gmac_clk != CLK_LIMIT_GMAC) {
-		RTK_LOGE(TAG, "GMAC Clock %d Hz is invalid. RMII requires 50MHz!\n", gmac_clk);
-		assert_param(0);
-	}
-
-	if (gmac_ckd & IS_SYS_PLL) {
-		RCC_PeriphClockSourceSet(GMAC, SYS_PLL);
-		RCC_PeriphClockDividerFENSet(SYS_PLL_GMAC, ENABLE);
-		RCC_PeriphClockDividerSet(SYS_PLL_GMAC, GET_CLK_DIV(gmac_ckd));
-	} else {
-		RCC_PeriphClockSourceSet(GMAC, USB_PLL);
-		RCC_PeriphClockDividerFENSet(USB_PLL_GMAC, ENABLE);
-		RCC_PeriphClockDividerSet(USB_PLL_GMAC, GET_CLK_DIV(gmac_ckd));
-	}
-	RCC_PeriphClockCmd(APBPeriph_GMAC, APBPeriph_GMAC_CLOCK, ENABLE);
-}
-/**
- * @brief  Mac output 50M/25M clk to phy
- * @param  pin: The pin to output clk
- * @param  clk: 0xb: 50M, 0xc:25M
- * @retval None
- */
-void eth_config_phy_clock(u32 pin, u8 clk)
-{
-	Pinmux_Config(pin, PINMUX_FUNCTION_EXT_CLK_OUT);
-
-	u32 temp = HAL_READ32(PINMUX_REG_BASE, REG_PINMUX_SUB_CTRL);
-	temp |= PAD_BIT_DBG_CLK_FORCE;
-	temp &= ~PAD_MASK_DBG_CLK0_SEL;
-	temp |= PAD_DBG_CLK0_SEL(clk);
-
-	HAL_WRITE32(PINMUX_REG_BASE, REG_PINMUX_SUB_CTRL, temp);
-}
-/**
- * @brief  Configure RMII GPIO pins.
- */
-static void eth_config_gpio(void)
+static void eth_config_pins(void)
 {
 	GPIO_InitTypeDef GPIO_InitStruct;
 
-	/* Disable PHY reset pin (PA_3) to prevent accidental reset */
+	/* PHY hardware reset pin: park it as an input so it cannot reset the PHY by accident */
 	GPIO_InitStruct.GPIO_Mode = GPIO_Mode_IN;
 	GPIO_InitStruct.GPIO_Pin = _PA_3;
 	GPIO_Init(&GPIO_InitStruct);
 
-	/* Configure RMII function pins */
+	/* RMII data pins */
 	for (int i = 0; i < 8; i++) {
 		Pinmux_Config(ETHERNET_PAD[ETHERNET_Pin_Grp][i], PINMUX_FUNCTION_RMII);
 	}
 
-	/* Configure MDC/MDIO */
+	/* MDC/MDIO */
 	Pinmux_Config(ETHERNET_PAD[ETHERNET_Pin_Grp][8], PINMUX_FUNCTION_RMII_MDC);
 	Pinmux_Config(ETHERNET_PAD[ETHERNET_Pin_Grp][9], PINMUX_FUNCTION_RMII_MDIO);
+}
+/**
+ * @brief Configure the Ethernet PHY and MAC clocks.
+ * @note EXTCLK supplies an external 50MHz MAC clock, or outputs a
+ *       SoC-generated 50MHz/25MHz PHY clock. These modes are exclusive.
+ * @return Result returned by Ethernet_MacClkConfig().
+ */
+static int eth_config_clocks(void)
+{
+	/* Select the MAC clock source */
+#if defined(CONFIG_MAC_CLK_EXT)
+	return Ethernet_MacClkConfig(ETH_MAC_CLK_EXT50M, ETHERNET_PAD[ETHERNET_Pin_Grp][10]);
+#else
+	/* Configure the SoC clock output when the PHY requires it. */
+#if defined(CONFIG_SOC_OUTPUT_50M)
+	Ethernet_PhyClkConfig(ETHERNET_PAD[ETHERNET_Pin_Grp][10], ETH_PHY_CLK_50M);
+#elif defined(CONFIG_SOC_OUTPUT_25M)
+	Ethernet_PhyClkConfig(ETHERNET_PAD[ETHERNET_Pin_Grp][10], ETH_PHY_CLK_25M);
+#endif
 
-#if defined(CONFIG_MAC_OUTPUT_50M)
-	eth_config_phy_clock(ETHERNET_PAD[ETHERNET_Pin_Grp][10], EXT_CLK_50M);
-#elif defined(CONFIG_MAC_OUTPUT_25M)
-	eth_config_phy_clock(ETHERNET_PAD[ETHERNET_Pin_Grp][10], EXT_CLK_25M);
+	return Ethernet_MacClkConfig(ETH_MAC_CLK_INT50M, 0);
 #endif
 }
 
@@ -128,26 +180,53 @@ int eth_send(struct pbuf *p)
 	ETH_PktMetaDef meta;
 	struct pbuf *q;
 	u8 *dma_buffer = NULL;
+	const u8 *src;
+	u32 len;
+	u32 off;
+	u32 retry;
 
 	if (p == NULL) {
+		return ret;
+	}
+	off = (u32)p->payload & 3;
+	/* Checked before taking a descriptor, so a rejected frame leaves the ring untouched. */
+	if (off + p->tot_len > ETH_MAX_BUF_SIZE) {
+		RTK_LOGE(TAG, "TX frame too large: %d\n", p->tot_len);
 		return ret;
 	}
 	memset(&meta, 0, sizeof(ETH_PktMetaDef));
 	/* Lock TX to prevent race conditions */
 	rtos_mutex_take(eth_tx_mutex, MUTEX_WAIT_TIMEOUT);
 
-	/* Get a free descriptor buffer from hardware driver */
+	/* Get a free descriptor buffer from hardware driver. When the ring is full, give up the CPU for a tick
+	 * and retry a few times before failing the frame. This runs in tcpip_thread under the core lock, so keep
+	 * the retry count small: it bounds how long the stack can stall. */
 	dma_buffer = Ethernet_GetTXPktInfo(&eth_handle);
+	for (retry = 0; dma_buffer == NULL && retry < ETH_TX_RETRY_CNT; retry++) {
+		rtos_time_delay_ms(1);
+		dma_buffer = Ethernet_GetTXPktInfo(&eth_handle);
+	}
 
 	if (dma_buffer != NULL) {
-		/* Copy data from pbuf chain to flat DMA buffer (Zero-Copy to HW) */
+		/* Start the frame at the first pbuf's word offset and point the descriptor there (TX DMA takes any
+		 * byte address), so src and dst share a phase and ROM memcpy, which copies by words only when both
+		 * are aligned, does not fall back to bytes. */
+		dma_buffer += off;
+		eth_handle.ETH_TxDesc[eth_handle.ETH_TxDescCurrentNum].addr = (u32)dma_buffer;
+		/* Copy data from pbuf chain to flat DMA buffer */
 		for (q = p; q != NULL; q = q->next) {
-			if (meta.pkt_len + q->len > ETH_MAX_BUF_SIZE) {
-				RTK_LOGE(TAG, "Packet too large for buffer!\n");
-				break;
+			src = (const u8 *)q->payload;
+			len = q->len;
+			/* First pbuf only: dst shares its phase, so both are aligned after these bytes. Later pbufs are
+			 * expected to land aligned; if one does not, memcpy byte-copies it, slower but still correct. */
+			if (q == p) {
+				while (((u32)dma_buffer & 3) && len) {
+					*dma_buffer++ = *src++;
+					len--;
+				}
 			}
-			memcpy(dma_buffer, (void *)q->payload, q->len);
-			dma_buffer += q->len;
+			memcpy(dma_buffer, src, len);
+			dma_buffer += len;
 			meta.pkt_len += q->len;
 		}
 
@@ -163,21 +242,22 @@ int eth_send(struct pbuf *p)
 u32 eth_isr_handler(void *data)
 {
 	UNUSED(data);
-	/* Read the status once, turn it into events, and clear all interrupts. */
-	u32 int_event = Ethernet_GetAndClearINT();
+	/* Read the status once and clear every bit read, including the ones not acted on below. */
+	u16 status = Ethernet_GetPendingINT();
 
-	RTK_LOGD(TAG, "int status = %x\n", int_event);
+	Ethernet_ClearINT(status);
+
+	RTK_LOGD(TAG, "int status = %x\n", status);
 
 	/* 1. RX done, or the RX ring ran dry: both mean the RX task should drain and
 	 * recycle descriptors. */
-	if (int_event & (ETH_EVT_RX_DONE | ETH_EVT_RDU_RING1)) {
+	if (status & (BIT_ISR_ROK | BIT_ISR_RDU1)) {
 		rtos_sema_give(eth_rx_sema);
 	}
 
-	/* 2. Link change */
-	if (int_event & ETH_EVT_LINK_CHG) {
-		eth_link_is_up = Ethernet_GetLinkStatus() ? 1 : 0;
-		rtos_sema_give(eth_link_sema);
+	/* 2. Link change. A failed post (mbox full) drops this event only; the handler reads MSR afresh each time. */
+	if (status & BIT_ISR_LINKCHG) {
+		netif_adapter_eth_link_notify();
 	}
 
 	/* RX/TX errors and TX done need no action beyond the acknowledge above. */
@@ -257,7 +337,7 @@ void eth_rx_thread(void *param)
 				{
 					/* Optional: Custom Pre-processing for test*/
 					if (eth_rx_preprocess_cb) {
-						ret = eth_rx_preprocess_cb(&p, buf, meta.pkt_len);
+						ret = eth_rx_preprocess_cb(&p, buf + 2, meta.pkt_len);
 						if (ret == UPLOAD_TO_LWIP && p != NULL) {
 							netif_adapter_eth_recv(p);
 						} else if (p != NULL) {
@@ -265,9 +345,13 @@ void eth_rx_thread(void *param)
 							p = NULL;
 						}
 					} else {
-						/* buf already points past the MAC's 2-byte header, so drop
-						 * those 2 from the length too. */
+#if ETH_RX_ZC
+						p = eth_rx_zc_take();
+#else
+						/* buf is the word-aligned buffer start, 2 bytes ahead of the
+						 * frame; the copy keeps those 2 and strips them in the pbuf. */
 						p = netif_adapter_eth_buf_copy(meta.pkt_len - 2, buf);
+#endif
 						if (p != NULL) {
 							netif_adapter_eth_recv(p);
 						}
@@ -275,8 +359,8 @@ void eth_rx_thread(void *param)
 				}
 			}
 
-			/* Return descriptor to hardware; this is what advances the ring index. */
-			Ethernet_UpdateRXDESC(&eth_handle);
+			/* Return the frame's descriptors to hardware; this is what advances the ring index. */
+			Ethernet_ReleaseRXDesc(&eth_handle, eth_handle.ETH_RxSegmentCount);
 		}
 	}
 
@@ -284,44 +368,37 @@ void eth_rx_thread(void *param)
 	rtos_task_delete(NULL);
 }
 
+#ifndef CONFIG_RMII_VERIFY
 /**
- * @brief  Link Status Monitor Task.
- *         Notifies user callback when cable is plugged/unplugged.
+ * @brief  Link change handler, runs in tcpip_thread with the core lock held.
+ *         The netif may be touched directly, but nothing here may block or call netifapi.
  */
-static void eth_link_monitor_thread(void *param)
+static void eth_link_handler(void *ctx)
 {
-	(void)param;
+	u32 speed, duplex;
+	int link_up = Ethernet_GetLinkStatus() ? 1 : 0;
 
-	if (rtos_sema_take(eth_init_done_sema, RTOS_MAX_TIMEOUT) != RTK_SUCCESS) {
-		RTK_LOGE(TAG, "Ethernet Init Timeout!\n");
-		goto exit;
+	UNUSED(ctx);
+	/* The same message can be queued twice before it runs; report each state once. */
+	if (link_up == eth_link_is_up) {
+		return;
 	}
+	eth_link_is_up = link_up;
 
-	while (1) {
-		/* Wait for Link Change Event */
-		if (rtos_sema_take(eth_link_sema, RTOS_MAX_TIMEOUT) != RTK_SUCCESS) {
-			continue;
-		}
-
-		if (eth_link_is_up) {
-			RTK_LOGI(TAG, "Link Up\n");
-			Ethernet_GetSpeedDuplex();
-		} else {
-			/* Link Down Handling */
-			RTK_LOGI(TAG, "Link Down\n");
-		}
-
-		/* Execute User Callback */
-		if (eth_link_cb) {
-			eth_link_cb(eth_link_is_up);
-		}
+	if (link_up) {
+		Ethernet_GetSpeedDuplex(&speed, &duplex);
+		RTK_LOGI(TAG, "Link Up: %s, %s\n", (speed == ETH_SPEED_100M) ? "100M" : (speed == ETH_SPEED_10M) ? "10M" : "Unknown",
+				 (duplex == ETH_FULL_DUPLEX) ? "Full Duplex" : "Half Duplex");
+	} else {
+		RTK_LOGI(TAG, "Link Down\n");
 	}
+	netif_adapter_eth_set_link(link_up);
 
-exit:
-	rtos_sema_delete(eth_link_sema);
-	rtos_sema_delete(eth_init_done_sema);
-	rtos_task_delete(NULL);
+	if (eth_link_cb) {
+		eth_link_cb(link_up);
+	}
 }
+#endif
 
 /**
  * @brief  Hardware Initialization Task.
@@ -330,17 +407,14 @@ exit:
 static void eth_init_thread(void *param)
 {
 	(void)param;
-	u8 random_byte = 0;
-	u8 *hwinfo_buf;
-	u8 eth_mac[6];
+	int ret;
+	/* Used when the OTP holds no MAC: fixed prefix, random last byte */
+	const u8 default_mac[ETH_MAC_ADDR_LEN] = {0x00, 0xE0, 0x4C, 0xb7, 0x23, 0x00};
+	const u8 blank_mac[ETH_MAC_ADDR_LEN] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+	u8 eth_mac[ETH_MAC_ADDR_LEN];
 	/* Buffers */
 	u8 *eth_tx_pkt_buf = NULL;
 	u8 *eth_rx_pkt_buf = NULL;
-
-	/* Default Fake MAC if OTP is empty */
-	u8 default_mac[6] = {0x00, 0xE0, 0x4C, 0xb7, 0x23, 0x00};
-
-
 
 	/* PHY Configuration */
 	const struct eth_mdio_ops eth_mdio_bus = {
@@ -361,6 +435,10 @@ static void eth_init_thread(void *param)
 #endif
 
 	Ethernet_StructInit(&eth_handle, &phy_dev);
+	/* Ensure there is only one source for the RMII reference clock. */
+#if defined(CONFIG_PHY_INT_XTAL) || defined(CONFIG_MAC_CLK_EXT)
+	eth_handle.MacConfig.Bits.RefClkDir = ETH_REFCLK_PHY2MAC;
+#endif
 
 	/* Memory Allocation for Descriptors */
 	if (eth_tx_pkt_buf) {
@@ -373,9 +451,11 @@ static void eth_init_thread(void *param)
 	}
 
 	eth_tx_pkt_buf = (u8 *)rtos_mem_zmalloc(ETH_TX_DESC_CNT * ETH_MAX_BUF_SIZE);
+#if !ETH_RX_ZC
 	eth_rx_pkt_buf = (u8 *)rtos_mem_zmalloc(ETH_RX_DESC_CNT * ETH_MAX_BUF_SIZE);
+#endif
 
-	if (eth_tx_pkt_buf == NULL || eth_rx_pkt_buf == NULL) {
+	if (eth_tx_pkt_buf == NULL || (!ETH_RX_ZC && eth_rx_pkt_buf == NULL)) {
 		RTK_LOGE(TAG, "Memory allocation failed for descriptors!\n");
 		goto error;
 	}
@@ -383,6 +463,20 @@ static void eth_init_thread(void *param)
 	/* Clear Descriptor Arrays */
 	memset(eth_tx_desc_arr, 0, sizeof(eth_tx_desc_arr));
 	memset(eth_rx_desc_arr, 0, sizeof(eth_rx_desc_arr));
+
+#if ETH_RX_ZC
+	/* Each RX descriptor owns a block of its own. ETH_RxPktBuf stays NULL so that
+	 * Ethernet_Init() keeps these addresses. */
+	for (u32 i = 0; i < ETH_RX_DESC_CNT; i++) {
+		struct eth_rx_blk *blk = eth_rx_blk_alloc();
+
+		if (blk == NULL) {
+			RTK_LOGE(TAG, "Memory allocation failed for RX buffers!\n");
+			goto error;
+		}
+		((ETH_RxDescTypeDef *)eth_rx_desc_arr)[i].addr = (u32)blk->dma;
+	}
+#endif
 
 	/* Assign Buffers to Handle */
 	eth_handle.ETH_TxDescNum = ETH_TX_DESC_CNT;
@@ -392,53 +486,47 @@ static void eth_init_thread(void *param)
 	eth_handle.ETH_TxPktBuf  = eth_tx_pkt_buf;
 	eth_handle.ETH_RxPktBuf  = eth_rx_pkt_buf;
 
-	/* MAC Address Logic */
-	hwinfo_buf = (u8 *)rtos_mem_zmalloc(OTP_LMAP_LEN);
-	if (hwinfo_buf) {
-		OTP_LogicalRead(hwinfo_buf, 0, OTP_LMAP_LEN);
-		memcpy(eth_mac, &hwinfo_buf[EFUSE_ETH_MAC_ADDR], ETH_ALEN);
-
-		/* Check if MAC is invalid (all 0xFF) */
-		if (!memcmp(&hwinfo_buf[EFUSE_ETH_MAC_ADDR], "\xff\xff\xff\xff\xff\xff", ETH_ALEN)) {
-			/* Generate Random MAC based on default prefix */
-			random_byte = (u8)(_rand() % 1000) & 0xFE;
-			default_mac[5] = random_byte;
-			memcpy(eth_mac, default_mac, 6);
-		} else {
-			/* Apply SoftAP offset logic (Realtek specific) */
-			if (wifi_user_config.softap_addr_offset_idx == 0) {
-				eth_mac[wifi_user_config.softap_addr_offset_idx] += (3 << 1);
-			} else {
-				eth_mac[wifi_user_config.softap_addr_offset_idx] += 3;
-			}
-		}
-		rtos_mem_free(hwinfo_buf);
-	} else {
-		RTK_LOGE(TAG, "OTP malloc fail, using default MAC\n");
-		memcpy(eth_mac, default_mac, 6);
+	/* Start from all 0xFF so that a failed read counts as a blank OTP */
+	memset(eth_mac, 0xFF, sizeof(eth_mac));
+	OTP_LogicalRead(eth_mac, EFUSE_ETH_MAC_ADDR, sizeof(eth_mac));
+	if (memcmp(eth_mac, blank_mac, sizeof(eth_mac)) == 0) {
+		memcpy(eth_mac, default_mac, sizeof(eth_mac));
+		/* Bit 0 stays 0 so the address is unicast */
+		eth_mac[ETH_MAC_ADDR_LEN - 1] = (u8)(_rand() % 1000) & 0xFE;
 	}
 
 	/* Set MAC in Handle and LwIP struct */
 	memcpy((void *)(eth_handle.ETH_MacAddr), (void *)eth_mac, ETH_MAC_ADDR_LEN);
 	memcpy((void *)pnetif_eth->hwaddr, (void *)eth_mac, ETH_MAC_ADDR_LEN);
 
-	Ethernet_Init(&eth_handle);
+	ret = Ethernet_Init(&eth_handle);
+	if (ret != RTK_SUCCESS) {
+		RTK_LOGE(TAG, "Ethernet_Init failed: %d\n", ret);
+		goto error;
+	}
+
+	/* Sync Objects Creation, before the ISR and the netif can use them */
+	rtos_sema_create_binary(&eth_rx_sema);
+	rtos_mutex_create(&eth_tx_mutex);
+
+#ifndef CONFIG_RMII_VERIFY
+	/* Before the IRQ is enabled, so the ISR never sees a half-made message */
+	if (netif_adapter_eth_link_init(eth_link_handler) != 0) {
+		RTK_LOGE(TAG, "Link msg alloc failed\n");
+	}
+#endif
 
 	/* Interrupt Init */
 	InterruptRegister((IRQ_FUN)eth_isr_handler, (IRQn_Type)RMII_IRQ, (u32)&eth_handle, 5);
 	InterruptEn(RMII_IRQ, 5);
-	/* Sync Objects Creation */
-	rtos_sema_create_binary(&eth_rx_sema);
-	rtos_mutex_create(&eth_tx_mutex);
 
 #ifndef CONFIG_RMII_VERIFY
 	netifapi_netif_set_up(pnetif_eth);
 #endif
 
-	/* Signal Init Done */
-	rtos_sema_give(eth_init_done_sema);
-
-	if (RTK_SUCCESS != rtos_task_create(NULL, "ETH_RX", eth_rx_thread, NULL, 512, 5)) {
+	/* Must stay below tcpip_thread: higher starves the socket reader, lower drains
+	 * the ring too slowly. */
+	if (RTK_SUCCESS != rtos_task_create(NULL, "ETH_RX", eth_rx_thread, NULL, 512, 6)) {
 		RTK_LOGE(TAG, "Create ETH_RX task failed\n");
 	}
 	rtos_task_delete(NULL);
@@ -451,30 +539,36 @@ error:
 	if (eth_rx_pkt_buf) {
 		rtos_mem_free(eth_rx_pkt_buf);
 	}
+#if ETH_RX_ZC
+	for (u32 i = 0; i < ETH_RX_DESC_CNT; i++) {
+		u32 addr = ((ETH_RxDescTypeDef *)eth_rx_desc_arr)[i].addr;
+
+		if (addr) {
+			rtos_mem_free(ETH_RX_BLK(addr));
+		}
+	}
+#endif
 	rtos_task_delete(NULL);
 }
 
 void eth_init(void)
 {
+	int ret = RTK_FAIL;
+
 	RTK_LOGI(TAG, "Initializing Ethernet Driver...\n");
 
-	/* 1. Hardware Pin Config */
-	eth_config_gpio();
+	/* 1. Pins */
+	eth_config_pins();
 
-	/* 2. Clock Config */
-	eth_config_mac_clock();
+	/* 2. Configure Ethernet PHY and MAC clocks. */
+	ret = eth_config_clocks();
+	if (ret != RTK_SUCCESS) {
+		RTK_LOGE(TAG, "Ethernet clock config failed, Ethernet not started\n");
+		return;
+	}
 
-	/* 3. Initialize Synchronization */
-	rtos_sema_create_binary(&eth_init_done_sema);
-	rtos_sema_create_binary(&eth_link_sema);
-
-	/* 4. Start Background Tasks */
+	/* 3. Start Background Tasks */
 	if (RTK_SUCCESS != rtos_task_create(NULL, "ETH_INIT", eth_init_thread, NULL, 1536, 2)) {
 		RTK_LOGE(TAG, "Create ETH_INIT task failed!\n");
 	}
-#ifndef CONFIG_RMII_VERIFY
-	if (RTK_SUCCESS != rtos_task_create(NULL, "ETH_LINK", eth_link_monitor_thread, NULL, 1536, 3)) {
-		RTK_LOGE(TAG, "Create ETH_LINK task failed!\n");
-	}
-#endif
 }

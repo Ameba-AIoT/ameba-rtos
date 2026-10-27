@@ -72,6 +72,9 @@ extern u8 __retrieve_ap_buffer_size__[];
 /* for trustzone config */
 extern u8 __km4tz_bd_ram_start__[];
 
+/* FULLMAC image2 manifest start, defined in ameba_layout.ld */
+extern u8 __fullmac_manifest_start__[];
+
 extern u32 __km4tz_msp_ram_ns_limit__[];
 extern u32 __km4tz_msp_ram_ns__[];
 
@@ -210,9 +213,39 @@ extern void BOOT_RccConfig(void);
 
 #define IS_FLASH_ADDR(addr)			((addr >= 0x00200000) && (addr <= 0x1FFFFFFF))
 #define IS_DATA_FLASH_ADDR(addr)	((addr >= 0x60000000) && (addr <= 0x7FFFFFFF))
+
+/**
+ * @brief   Check that [addr, addr + len) lies completely inside [region_start, region_limit).
+ * @details Immune to integer overflow: it compares len with (region_limit - addr)
+ *          instead of calculating (addr + len), which may wrap around.
+ * @param[in] addr          Start address of the buffer.
+ * @param[in] len           Length of the buffer in bytes, zero is not allowed.
+ * @param[in] region_start  Start of the region (inclusive).
+ * @param[in] region_limit  End of the region (exclusive).
+ * @return  true if the buffer is valid, false otherwise.
+ */
+__STATIC_FORCEINLINE bool is_memory_range_valid(u32 addr, size_t len, u32 region_start, u32 region_limit)
+{
+	if ((addr < region_start) || (addr >= region_limit)) {
+		return false;
+	}
+
+	if ((len == 0) || (len > (size_t)(region_limit - addr))) {
+		return false;
+	}
+
+	return true;
+}
 #define RANGE_IS_BOOTRAM(src, len)	(((src) >= BOOT_LOADER_START) && ((len) < BOOT_LOADER_LIMIT - BOOT_LOADER_START) && ((src + len) < BOOT_LOADER_LIMIT))
 #define RANGE_IS_FULLMAC(src, len)	((((src) | TZ_IDAU_SEC_OFFSET) >= (FULLMAC_ADDR_START | TZ_IDAU_SEC_OFFSET)) && ((len) < FULLMAC_ADDR_END - FULLMAC_ADDR_START) && \
 									(((src + len) | TZ_IDAU_SEC_OFFSET) < (FULLMAC_ADDR_END | TZ_IDAU_SEC_OFFSET)))
+
+/* Enable divide-by-zero fault, shared by the cold boot and the PG wake of the NS core */
+__STATIC_INLINE void BOOT_SCBConfig_NP(void)
+{
+	/* Enable divide-by-zero fault */
+	SCB->CCR |= SCB_CCR_DIV_0_TRP_Msk;
+}
 
 #ifdef __cplusplus
 }

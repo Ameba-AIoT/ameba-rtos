@@ -11,7 +11,23 @@
 
 #include "dlist.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/** @addtogroup USB_Host_API USB Host API
+ *  @{
+ */
+
 /* Exported defines ----------------------------------------------------------*/
+
+/** @addtogroup USB_Host_Constants USB Host Constants
+ *  @{
+ */
+/** @defgroup Host_UVC_Desc_Constants Host UVC Descriptor Constants
+ *  @brief Class-specific descriptor type and subtype codes of the UVC specification.
+ *  @{
+ */
 
 #define USBH_UVC_CLASS_CODE                                  0xEU
 
@@ -67,24 +83,28 @@
 #define USBH_UVC_DESC_TYPE_CS_INTERFACE                      0x24U
 #define USBH_UVC_DESC_TYPE_CS_ENDPOINT                       0x25U
 
+/* bmHeaderInfo bits of the payload header, ref UVC 1.5 Table 2-5 */
+#define USBH_UVC_PH_FID                                      0x01U  /* Frame ID */
+#define USBH_UVC_PH_EOF                                      0x02U  /* End of Frame */
+#define USBH_UVC_PH_PTS                                      0x04U  /* Presentation Time */
+#define USBH_UVC_PH_SCR                                      0x08U  /* Source Clock Reference */
+#define USBH_UVC_PH_RES                                      0x10U  /* Payload specific bit */
+#define USBH_UVC_PH_STI                                      0x20U  /* Still Image */
+#define USBH_UVC_PH_ERR                                      0x40U  /* Error */
+#define USBH_UVC_PH_EOH                                      0x80U  /* End of header */
+
+/** @} End of Host_UVC_Desc_Constants group */
+/** @} End of USB_Host_Constants group */
 
 /* Exported types ------------------------------------------------------------*/
 
-
-typedef union {
-	u8 bitmap;
-	struct {
-		u8 fid: 1; /* FrameID */
-		u8 eof: 1; /* End of Frame */
-		u8 pts: 1; /* Presentation Time */
-		u8 scr: 1; /* Source Clock Reference */
-		u8 res: 1; /* Payload specific bit */
-		u8 sti: 1; /* Still Image */
-		u8 err: 1; /* Error */
-		u8 eoh: 1; /* End of header */
-	} b;
-} usbh_uvc_header_bitmap_t;
-
+/** @addtogroup USB_Host_Types USB Host Types
+ *  @{
+ */
+/** @defgroup Host_UVC_Desc_Types Host UVC Descriptor Types
+ *  @brief Packed class-specific descriptor layouts of the UVC specification.
+ *  @{
+ */
 
 /**
   * @brief	UVC Probe and Commit Control (UVC spec Table 4-75)
@@ -110,10 +130,10 @@ typedef  struct {
 	u8 bMaxVersion;
 } __PACKED usbh_uvc_stream_control_t;
 
+/* Overlays the received payload: only the wire fields belong here */
 typedef struct {
 	u8 bHeaderLength;
-	usbh_uvc_header_bitmap_t bmHeaderInfo;
-	u8 *ptr;
+	u8 bmHeaderInfo;              /* USBH_UVC_PH_xxx bits */
 } __PACKED usbh_uvc_vs_payload_header_t;
 
 typedef struct {
@@ -131,7 +151,7 @@ typedef struct {
 	u16 wTotalLength;
 	u32 dwClockFrequency;
 	u8 bInCollection;
-	u8 baInterfaceNr[0];
+	/* Followed by baInterfaceNr[bInCollection], read through bLength when needed */
 } __PACKED usbh_uvc_vc_header_desc_t;
 
 typedef struct {
@@ -171,7 +191,7 @@ typedef struct {
 	u8 wObjectiveFocalLengthMin[2];
 	u8 wObjectiveFocalLengthMax[2];
 	u8 wOcularFocalLength[2];
-	u8 bControlSize[1];
+	u8 bControlSize;
 	u8 bmControls[3];
 } __PACKED usbh_uvc_vc_ct_desc_t;
 
@@ -206,7 +226,7 @@ typedef struct {
 	u8 guidExtensionCode[16];
 	u8 bNumControls;
 	u8 bNrInPins;
-	u8 *baSourceID;
+	/* Followed by baSourceID[bNrInPins], bControlSize, bmControls[] and iExtension */
 } __PACKED usbh_uvc_vc_xu_desc_t;
 
 typedef struct {
@@ -232,7 +252,7 @@ typedef struct {
 	u8 bTriggerSupport;
 	u8 bTriggerUsage;
 	u8 bControlSize;
-	u8 bmaControls[];
+	/* Followed by bmaControls[bNumFormats][bControlSize] */
 } __PACKED usbh_uvc_vs_input_header_desc_t;
 
 typedef struct {
@@ -244,19 +264,32 @@ typedef struct {
 	u8 bEndPointAddress;
 	u8 bTerminalLink;
 	u8 bControlSize;
-	u8 bmaControls[];
+	/* Followed by bmaControls[bNumFormats][bControlSize] */
 } __PACKED usbh_uvc_vs_output_header_desc_t;
 
+/* A VC unit or terminal: the topology of the function, ref UVC 1.5 3.7.2 */
 typedef struct {
+	u8 *p;                        /* Its descriptor, in the config descriptor buffer */
+	const u8 *source;             /* bSourceID or baSourceID[] inside that descriptor, NULL for an input terminal */
 	struct list_head list;
-	u8 *p;
-	u8 type;
-	u8 id;
-	u8 source[];
+	u8 type;                      /* bDescriptorSubtype, USBH_UVC_VC_xxx */
+	u8 id;                        /* bTerminalID or bUnitID */
+	u8 source_num;                /* Number of entries at source */
 } usbh_uvc_entity_t;
+
+/** @} End of Host_UVC_Desc_Types group */
+/** @} End of USB_Host_Types group */
+
+/* Exported macros -----------------------------------------------------------*/
 
 /* Exported variables --------------------------------------------------------*/
 
 /* Exported functions --------------------------------------------------------*/
 
+/** @} End of USB_Host_API group */
+
+#ifdef __cplusplus
+}
 #endif
+
+#endif /* USBH_UVC_DESC_H */

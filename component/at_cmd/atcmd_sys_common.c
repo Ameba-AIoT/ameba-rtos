@@ -637,14 +637,49 @@ void at_state(u16 argc, char **argv)
 	UNUSED(argv);
 #if defined(configUSE_TRACE_FACILITY) && (configUSE_TRACE_FACILITY == 1) && (configUSE_STATS_FORMATTING_FUNCTIONS == 1) && (configGENERATE_RUN_TIME_STATS == 1)
 	{
-		char *pcWriteBuffer;
-		int task_n = uxTaskGetNumberOfTasks();
-		size_t buf_size = task_n * (configMAX_TASK_NAME_LEN + 16);
-		pcWriteBuffer = (char *)rtos_mem_malloc(buf_size);
-		_memset(pcWriteBuffer, 0, buf_size);
-		vTaskList((char *)pcWriteBuffer);
-		at_printf("Task List: \r\n%s\r\n", pcWriteBuffer);
-		rtos_mem_free(pcWriteBuffer);
+		/* Indexed by eTaskState, same characters vTaskList() uses (tskRUNNING_CHAR and friends). */
+		static const char task_state_char[] = {'X', 'R', 'B', 'S', 'D'};
+		char name_col[configMAX_TASK_NAME_LEN];
+		TaskStatus_t *status;
+		u32 task_n, filled, n, i;
+
+		task_n = uxTaskGetNumberOfTasks();
+		status = (TaskStatus_t *)rtos_mem_malloc(task_n * sizeof(TaskStatus_t));
+		filled = (status != NULL) ? uxTaskGetSystemState(status, task_n, NULL) : 0;
+		if (status == NULL) {
+			at_printf("Task List: alloc failed\r\n");
+		} else {
+			/* Stat: X-Running R-Ready B-Blocked S-Suspended D-Deleted. Stk: created stack size, HWM: smallest free stack
+			 * ever seen, both in words. Columns are tab-separated, so they only line up while each field fits its tab
+			 * cell: expect a shifted row where a value is wide (e.g. a 4-digit Stk under a 4-column tab). */
+			for (i = 0; i < (u32)(configMAX_TASK_NAME_LEN - 1); i++) {
+				name_col[i] = (i < 4) ? "Name"[i] : ' ';
+			}
+			name_col[i] = '\0';
+			at_printf("Task List: \r\n%s\tStat\tPri\tStk\tHWM\tNum\r\n", name_col);
+
+			for (n = 0; n < filled; n++) {
+				const char *name = status[n].pcTaskName;
+
+				/* Pad to the same width vTaskList() uses, so the Name column stays fixed. */
+				for (i = 0; i < (u32)(configMAX_TASK_NAME_LEN - 1) && name[i] != '\0'; i++) {
+					name_col[i] = name[i];
+				}
+				for (; i < (u32)(configMAX_TASK_NAME_LEN - 1); i++) {
+					name_col[i] = ' ';
+				}
+				name_col[i] = '\0';
+
+				at_printf("%s\t%c\t%u\t%u\t%u\t%u\r\n", name_col,
+						  (status[n].eCurrentState < sizeof(task_state_char)) ? task_state_char[status[n].eCurrentState] : '?',
+						  (unsigned int)status[n].uxCurrentPriority,
+						  (unsigned int)rtos_task_stack_size_get((rtos_task_t)status[n].xHandle),
+						  (unsigned int)status[n].usStackHighWaterMark,
+						  (unsigned int)status[n].xTaskNumber);
+			}
+			at_printf("\r\n");
+			rtos_mem_free(status);
+		}
 	}
 #endif
 
@@ -657,7 +692,7 @@ void at_state(u16 argc, char **argv)
 	at_printf(ATCMD_OK_END_STR);
 }
 
-#if (defined CONFIG_WHC_HOST) || (defined CONFIG_WHC_NONE)
+#ifdef CONFIG_OTA_ENABLED
 #ifndef CONFIG_AMEBAD
 u8 ota_get_cur_index(u8 img_id);
 static AuthHeader_TypeDef cert[2];
@@ -698,6 +733,7 @@ static u8 at_get_ota_version(void)
 	return ImgIndex;
 }
 #endif
+#endif
 
 /****************************************************************
 AT command process:
@@ -711,13 +747,15 @@ void at_gmr(u16 argc, char **argv)
 	UNUSED(argv);
 	u32 chip_info = 0;
 
-	at_printf("AMEBA-RTOS SDK VERSION: %d.%d.%d\n", AMEBA_RTOS_VERSION_MAJOR, AMEBA_RTOS_VERSION_MINOR, AMEBA_RTOS_VERSION_PATCH);
+	at_printf("AMEBA-RTOS SDK VERSION: %d.%d.%d\r\n", AMEBA_RTOS_VERSION_MAJOR, AMEBA_RTOS_VERSION_MINOR, AMEBA_RTOS_VERSION_PATCH);
 	at_printf("ATCMD VERSION: %d.%d.%d\r\n", ATCMD_VERSION, ATCMD_SUBVERSION, ATCMD_REVISION);
 
+#ifdef CONFIG_OTA_ENABLED
 #ifndef CONFIG_AMEBAD
 	u8 image_id = at_get_ota_version();
 	u32 version = (u32)(ver[image_id] & 0xFFFFFFFF);
-	at_printf("IMAGE VERSION: %x.%x\r\n", ((version >> 16) & 0xFFFF), (version & 0xFFFF));
+	at_printf("IMAGE VERSION: %d.%d\r\n", ((version >> 16) & 0xFFFF), (version & 0xFFFF));
+#endif
 #endif
 
 	chip_info = ChipInfo_GetSocName_ToBuf();
@@ -729,7 +767,6 @@ void at_gmr(u16 argc, char **argv)
 
 	at_printf(ATCMD_OK_END_STR);
 }
-#endif
 
 ATCMD_TABLE_DATA_SECTION
 const log_item_t at_sys_common_items[] = {

@@ -4,13 +4,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef EXAMPLE_USBD_COMPOSITE_CDC_ACM_MSC_H
 #define EXAMPLE_USBD_COMPOSITE_CDC_ACM_MSC_H
 
+/* Includes ------------------------------------------------------------------*/
+
 #include <platform_autoconf.h>
 
-/* Includes ------------------------------------------------------------------*/
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* Exported defines ----------------------------------------------------------*/
 
 /* Exported types ------------------------------------------------------------*/
 
@@ -18,9 +23,12 @@
 
 /* Exported variables --------------------------------------------------------*/
 
-/* Exported functions ------------------------------------------------------- */
+/* Exported functions --------------------------------------------------------*/
 
 void example_usbd_composite(void);
 
-#endif /* EXAMPLE_USBD_COMPOSITE_CDC_ACM_MSC_H */
+#ifdef __cplusplus
+}
+#endif
 
+#endif /* EXAMPLE_USBD_COMPOSITE_CDC_ACM_MSC_H */

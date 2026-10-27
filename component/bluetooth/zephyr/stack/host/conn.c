@@ -1266,6 +1266,9 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 
 			/* The last ref will be dropped during cleanup */
 			break;
+#if ZEPHYR_RTK_PATCH
+		case BT_CONN_INITIATING_FILTER_LIST: //fallthrough
+#endif
 		case BT_CONN_INITIATING:
 			/* LE Create Connection command failed. This might be
 			 * directly from the API, don't notify application in
@@ -1302,22 +1305,15 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 
 			bt_conn_unref(conn);
 			break;
+#if !ZEPHYR_RTK_PATCH
 		case BT_CONN_INITIATING_FILTER_LIST:
 			/* this indicates LE Create Connection with filter
 			 * policy has been stopped. This can only be triggered
 			 * by the application, so don't notify.
 			 */
-#if ZEPHYR_RTK_PATCH
-			if (conn->err) {
-				if (atomic_test_and_clear_bit(bt_dev.flags, BT_DEV_CONNECT_CANCELING)) {
-					notify_disconnected(conn);
-				} else {
-					notify_connected(conn);
-				}
-			}
-#endif
 			bt_conn_unref(conn);
 			break;
+#endif
 		case BT_CONN_ADV_CONNECTABLE:
 			/* This can only happen when application stops the
 			 * advertiser, conn->err is never set in this case.
@@ -1332,22 +1328,19 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 			break;
 		}
 		break;
+#if !ZEPHYR_RTK_PATCH
 	case BT_CONN_INITIATING_FILTER_LIST:
-#if ZEPHYR_RTK_PATCH
-		if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
-			conn->type == BT_CONN_TYPE_LE &&
-			bt_dev.create_param.timeout != 0) {
-			k_work_schedule(&conn->deferred_work,
-					K_MSEC(10 * bt_dev.create_param.timeout));
-		}
-#endif
 		break;
+#endif
 	case BT_CONN_ADV_CONNECTABLE:
 		break;
 	case BT_CONN_SCAN_BEFORE_INITIATING:
 		break;
 	case BT_CONN_ADV_DIR_CONNECTABLE:
 		break;
+#if ZEPHYR_RTK_PATCH
+	case BT_CONN_INITIATING_FILTER_LIST: //fallthrough
+#endif
 	case BT_CONN_INITIATING:
 		if (conn->type == BT_CONN_TYPE_SCO) {
 			break;
@@ -2140,7 +2133,9 @@ static void deferred_work(struct k_work *work)
 		} else {
 			LOG_WRN("Send LE param update failed (err %d)", err);
 		}
-	} else if (IS_ENABLED(CONFIG_BT_GAP_AUTO_UPDATE_CONN_PARAMS)) {
+	}
+#if !ZEPHYR_RTK_PATCH
+	else if (IS_ENABLED(CONFIG_BT_GAP_AUTO_UPDATE_CONN_PARAMS)) {
 #if defined(CONFIG_BT_GAP_PERIPHERAL_PREF_PARAMS)
 		int err;
 
@@ -2160,6 +2155,7 @@ static void deferred_work(struct k_work *work)
 		}
 #endif
 	}
+#endif
 
 	atomic_set_bit(conn->flags, BT_CONN_PERIPHERAL_PARAM_UPDATE);
 }
@@ -3444,6 +3440,7 @@ int bt_conn_le_create(const bt_addr_le_t *peer, const struct bt_conn_le_create_p
 	*ret_conn = conn;
 	return 0;
 }
+
 #if ZEPHYR_RTK_PATCH
 int bt_conn_le_create_cancel(const bt_addr_le_t *peer)
 {
@@ -3474,6 +3471,7 @@ int bt_conn_le_create_cancel(const bt_addr_le_t *peer)
 	return err;
 }
 #endif
+
 int bt_conn_le_create_synced(const struct bt_le_ext_adv *adv,
 			     const struct bt_conn_le_create_synced_param *synced_param,
 			     const struct bt_le_conn_param *conn_param, struct bt_conn **ret_conn)

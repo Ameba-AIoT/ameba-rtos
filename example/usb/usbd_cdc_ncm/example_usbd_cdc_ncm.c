@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/* Includes ------------------------------------------------------------------ */
+/* Includes ------------------------------------------------------------------*/
 
 #include <platform_autoconf.h>
 #include "basic_types.h"
@@ -29,13 +29,6 @@
 // and reset USB stack to avoid memory leak, only for example.
 // while test suspend/resume, hotplug should be disabled
 #define CDC_NCM_HOTPLUG                            1
-
-// USB speed
-#ifdef CONFIG_SUPPORT_USB_FS_ONLY
-#define CDC_NCM_USB_SPEED                          USB_SPEED_FULL
-#else
-#define CDC_NCM_USB_SPEED                          USB_SPEED_HIGH
-#endif
 
 // Thread priorities
 #define CDC_NCM_INIT_THREAD_PRIORITY               5
@@ -64,6 +57,7 @@
 #define CDC_NCM_GW_ADDR3                           1
 
 /* Private types -------------------------------------------------------------*/
+
 typedef enum {
 	ETH_STATUS_IDLE = 0U,
 	ETH_STATUS_DEINIT,
@@ -74,6 +68,9 @@ typedef enum {
 /* Private macros ------------------------------------------------------------*/
 
 /* Private function prototypes -----------------------------------------------*/
+
+static u32 usbd_cdc_ncm_cmd_link(u16 argc, u8 *argv[]);
+
 extern void rltk_usb_eth_init(void);
 extern void rltk_usb_eth_deinit(void);
 
@@ -86,13 +83,14 @@ static int usbd_cdc_ncm_cb_received(u8 *buf, u32 Len);
 static void usbd_cdc_ncm_cb_status_changed(u8 old_status, u8 status);
 
 /* Private variables ---------------------------------------------------------*/
+
 static const char *const TAG = "NCM";
 
 extern struct netif *pnetif_usb_eth;
 static u8 cdc_ncm_dhcp_server_started = 0;
 /*
  * cdc_ncm_dongle_mac: MAC address reported to the USB host side of the CDC-NCM link.
- * It is passed into cdc_ncm_priv and advertised through the NCM functional descriptor
+ * It is passed in through cdc_ncm_class_cfg and advertised through the NCM functional descriptor
  * (iMACAddress string), so the host's virtual Ethernet adapter is assigned this MAC.
  * In other words, it identifies the "host-facing" end of the USB Ethernet dongle.
  */
@@ -109,12 +107,7 @@ static const u8 cdc_ncm_dongle_mac[6] = {0x02, 0x11, 0x22, 0x33, 0x44, 0x55};
 static const u8 cdc_ncm_dhcp_server_mac[6] = {0x02, 0x11, 0x22, 0x33, 0x44, 0x56};
 static __IO u8 cdc_ncm_link_disconnected = 0;
 
-static const usbd_cdc_ncm_priv_data_t cdc_ncm_priv = {
-	cdc_ncm_dongle_mac,
-};
-
 static const usbd_cdc_ncm_cb_t cdc_ncm_cb = {
-	.priv = &cdc_ncm_priv,
 	.init = usbd_cdc_ncm_cb_init,
 	.deinit = usbd_cdc_ncm_cb_deinit,
 	.setup = usbd_cdc_ncm_cb_setup,
@@ -122,14 +115,21 @@ static const usbd_cdc_ncm_cb_t cdc_ncm_cb = {
 	.status_changed = usbd_cdc_ncm_cb_status_changed,
 };
 
-static const usbd_cdc_ncm_ep_cfg_t cdc_ncm_ep_cfg = {
+static const usbd_cdc_ncm_config_t cdc_ncm_class_cfg = {
 	.bulk_in_addr  = CDC_NCM_BULK_IN_EP,
 	.bulk_out_addr = CDC_NCM_BULK_OUT_EP,
 	.intr_in_addr  = CDC_NCM_INTR_IN_EP,
+	.mac = cdc_ncm_dongle_mac,
+	/* Every remaining field is left 0 to take the class default: INTR IN interval, advertised
+	 * NTB sizes and datagram counts, TX ring depth and timeout, and the task stacks and
+	 * priorities.  The aggregation-only fields are ignored unless
+	 * CONFIG_USBD_CDC_NCM_TX_AGGREGATION is enabled. */
 };
 
 static const usbd_config_t cdc_ncm_cfg = {
-	.speed = CDC_NCM_USB_SPEED,
+	.info = {
+		.prod_str = "Realtek CDC NCM Device",
+	},
 	.isr_priority = INT_PRI_MIDDLE,
 	.ext_intr_enable = USBD_SOF_INTR,
 #if defined(CONFIG_AMEBASMART)
@@ -157,7 +157,30 @@ static rtos_sema_t cdc_ncm_attach_status_changed_sema = NULL;
 static __IO u8 cdc_ncm_hotplug_thread_running = 0;
 #endif
 
+/* Serializes the USB stack bring up/tear down against the TX path, taken by the
+ * hotplug thread and by usb_ethernet_transmit().
+ * Created once and never deleted: TX is driven by the lwIP thread, which lives as
+ * long as the firmware and can not be joined by the example, so there is no point
+ * in time at which this mutex is provably unreferenced. cdc_ncm_stack_ready is the
+ * gate that keeps callers off the stack instead. */
+static rtos_mutex_t cdc_ncm_state_mutex = NULL;
+/* 1: usbd_init() and usbd_cdc_ncm_init() both done, TX allowed. Cleared before any
+ * tear down, so a non-zero value also implies cdc_ncm_state_mutex is valid.
+ * usbd_cdc_ncm_deinit() frees the TX ring buffer, the TX slot buffers and both TX
+ * semaphores, all of which usbd_cdc_ncm_transmit() dereferences; its internal
+ * data_alt_setting check only guards the entry and retry points, so under SMP the
+ * lwIP thread must be excluded from the whole teardown, not just narrowed. */
+static volatile u8 cdc_ncm_stack_ready = 0;
+
+/* Exported variables --------------------------------------------------------*/
+
+CMD_TABLE_DATA_SECTION
+const COMMAND_TABLE usbd_cdc_ncm_cmd_table[] = {
+	{"usbd_ncm_link", usbd_cdc_ncm_cmd_link},
+};
+
 /* Private functions ---------------------------------------------------------*/
+
 static void usbd_ncm_link_change_thread(void *param)
 {
 	eth_state_t ethernet_state = ETH_STATUS_IDLE;
@@ -400,31 +423,48 @@ static void usbd_ncm_hotplug_thread(void *param)
 		if (current_status == USBD_ATTACH_STATUS_DETACHED) {
 			RTK_LOGS(TAG, RTK_LOG_INFO, "DETACHED\n");
 
+			/* Close the gate before tearing down. usb_ethernet_transmit() contends
+			 * for the same mutex, so no TX is in flight here and any later one sees
+			 * cdc_ncm_stack_ready == 0 and gives up. */
+			rtos_mutex_take(cdc_ncm_state_mutex, RTOS_MAX_TIMEOUT);
+			cdc_ncm_stack_ready = 0;
+
 			// Deinitialize CDC NCM
 			usbd_cdc_ncm_deinit();
 
 			// Deinitialize USB device
 			usbd_deinit();
+			rtos_mutex_give(cdc_ncm_state_mutex);
 
 			// Small delay to ensure proper cleanup
 			rtos_time_delay_ms(100);
 
 			RTK_LOGS(TAG, RTK_LOG_INFO, "Free heap 0x%x\n", rtos_mem_get_free_heap_size());
 
+			rtos_mutex_take(cdc_ncm_state_mutex, RTOS_MAX_TIMEOUT);
+
 			// Re-initialize USB device
 			ret = usbd_init(&cdc_ncm_cfg);
 			if (ret != HAL_OK) {
+				rtos_mutex_give(cdc_ncm_state_mutex);
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "Init fail %d\n", ret);
 				break;
 			}
 
 			// Re-initialize CDC NCM
-			ret = usbd_cdc_ncm_init(&cdc_ncm_cb, &cdc_ncm_ep_cfg);
+			ret = usbd_cdc_ncm_init(&cdc_ncm_cb, &cdc_ncm_class_cfg);
 			if (ret != HAL_OK) {
-				RTK_LOGS(TAG, RTK_LOG_ERROR, "Init NCM fail %d\n", ret);
 				usbd_deinit();
+				rtos_mutex_give(cdc_ncm_state_mutex);
+				RTK_LOGS(TAG, RTK_LOG_ERROR, "Init NCM fail %d\n", ret);
 				break;
 			}
+			(void)usbd_cdc_ncm_set_link_status(1U);
+
+			/* Open the gate at the very last step, so that no TX runs before the
+			 * re-init is fully done. */
+			cdc_ncm_stack_ready = 1;
+			rtos_mutex_give(cdc_ncm_state_mutex);
 
 			RTK_LOGS(TAG, RTK_LOG_INFO, "Reinit done\n");
 
@@ -435,6 +475,9 @@ static void usbd_ncm_hotplug_thread(void *param)
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Thread exit\n");
 	cdc_ncm_hotplug_thread_running = 0;
+	/* Either the loop was asked to stop or a re-init failed; in both cases the
+	 * stack must be treated as gone, so keep TX out for good. */
+	cdc_ncm_stack_ready = 0;
 
 	/* The stack is fully deinited here, no ISR callback can give the sema any more.
 	   This thread is its only user left: free it as the last owner. */
@@ -460,6 +503,15 @@ static void usbd_ncm_init_thread(void *param)
 
 	rltk_usb_eth_init();
 
+	/* Created before the stack comes up and never deleted, see the declaration */
+	if (cdc_ncm_state_mutex == NULL) {
+		ret = rtos_mutex_create(&cdc_ncm_state_mutex);
+		if (ret != RTK_SUCCESS) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Create state mutex fail\n");
+			goto exit_cleanup;
+		}
+	}
+
 #if CDC_NCM_HOTPLUG
 	// Create semaphore for hotplug detection
 	ret = rtos_sema_create(&cdc_ncm_attach_status_changed_sema, 0U, 1U);
@@ -477,11 +529,18 @@ static void usbd_ncm_init_thread(void *param)
 	}
 
 	// Initialize CDC NCM
-	ret = usbd_cdc_ncm_init(&cdc_ncm_cb, &cdc_ncm_ep_cfg);
+	ret = usbd_cdc_ncm_init(&cdc_ncm_cb, &cdc_ncm_class_cfg);
 	if (ret != HAL_OK) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Init NCM fail %d\n", ret);
 		goto exit_usbd_cdc_ncm_init_fail;
 	}
+	/* The class starts with the uplink down; this example serves the host locally
+	 * (DHCP server on the device), so report it up.  The usbd_ncm_link command can
+	 * still change it to exercise the link notification. */
+	(void)usbd_cdc_ncm_set_link_status(1U);
+
+	/* The stack is fully up: allow TX */
+	cdc_ncm_stack_ready = 1;
 
 #if CDC_NCM_HOTPLUG
 	// Create hotplug detection thread
@@ -494,15 +553,13 @@ static void usbd_ncm_init_thread(void *param)
 	if (ret != RTK_SUCCESS) {
 		goto exit_create_hotplug_task_fail;
 	}
-#if defined(CONFIG_SMP)
+#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
 	/* C-2: the USB OTG ISR is delivered on CPU0 (GIC ITARGETSR pins every SPI to
 	   core 0). Pinning the hotplug thread to CPU0 makes its deinit/reinit single-core
 	   against the ISR, so deinit's local interrupt disable is meaningful under SMP. */
 	rtos_task_set_affinity(hotplug_task, 0);
 #endif
 #endif
-
-	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD NCM demo start\n");
 
 	// Keep init thread alive briefly then exit
 	rtos_time_delay_ms(100);
@@ -511,7 +568,13 @@ static void usbd_ncm_init_thread(void *param)
 
 #if CDC_NCM_HOTPLUG
 exit_create_hotplug_task_fail:
+	/* The gate was already opened above, so the lwIP thread may be inside
+	 * usbd_cdc_ncm_transmit() right now: take the lock here too, exactly as the
+	 * hotplug thread does, instead of only closing the gate. */
+	rtos_mutex_take(cdc_ncm_state_mutex, RTOS_MAX_TIMEOUT);
+	cdc_ncm_stack_ready = 0;
 	usbd_cdc_ncm_deinit();
+	rtos_mutex_give(cdc_ncm_state_mutex);
 #endif
 
 exit_usbd_cdc_ncm_init_fail:
@@ -523,9 +586,10 @@ exit_usbd_init_fail:
 		rtos_sema_delete(cdc_ncm_attach_status_changed_sema);
 		cdc_ncm_attach_status_changed_sema = NULL;
 	}
-exit_cleanup:
 #endif
-	RTK_LOGS(TAG, RTK_LOG_ERROR, "Init fail\n");
+	/* cdc_ncm_state_mutex is deliberately kept, see its declaration */
+exit_cleanup:
+	RTK_LOGS(TAG, RTK_LOG_ERROR, "USBD CDC NCM demo aborted\n");
 	rtos_task_delete(NULL);
 }
 
@@ -545,7 +609,26 @@ static u32 usbd_cdc_ncm_cmd_link(u16 argc, u8 *argv[])
 
 int usb_ethernet_transmit(u8 *buf, u32 len, u8 block)
 {
-	return usbd_cdc_ncm_transmit(buf, len, block);
+	int ret;
+
+	/* Gate on cdc_ncm_stack_ready BEFORE touching the mutex: it is still NULL if
+	 * the example was never started, and already cleared if the init failed or the
+	 * stack is gone for good. A hotplug right after this check is harmless, the
+	 * mutex stays valid and the re-check below skips the TX. */
+	if (cdc_ncm_stack_ready == 0U) {
+		return HAL_ERR_HW;
+	}
+
+	rtos_mutex_take(cdc_ncm_state_mutex, RTOS_MAX_TIMEOUT);
+	if (cdc_ncm_stack_ready == 0U) {
+		/* Lost the race against a hotplug tear down */
+		ret = HAL_ERR_HW;
+	} else {
+		ret = usbd_cdc_ncm_transmit(buf, len, block);
+	}
+	rtos_mutex_give(cdc_ncm_state_mutex);
+
+	return ret;
 }
 
 /**
@@ -557,6 +640,8 @@ void example_usbd_cdc_ncm(void)
 	int ret;
 	rtos_task_t init_task = NULL;
 	rtos_task_t monitor_task = NULL;
+
+	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD CDC NCM demo start\n");
 
 	ret = rtos_task_create(&init_task,
 						   "usbd_ncm_init_thread",
@@ -580,7 +665,3 @@ void example_usbd_cdc_ncm(void)
 	}
 }
 
-CMD_TABLE_DATA_SECTION
-const COMMAND_TABLE usbd_cdc_ncm_cmd_table[] = {
-	{"usbd_ncm_link", usbd_cdc_ncm_cmd_link},
-};

@@ -1,14 +1,24 @@
 # set this to 'y' to debug BT inic without WiFi WHC
 config BT_INIC_DEBUG
-    depends on (!WHC_DEV_MENU) && (!WHC_HOST_MENU)
+    depends on (!WHC_DEV_MENU && !WHC_HOST_MENU)
     bool
     default n
 
 # set this to 'y' to debug BT inic host without WiFi WHC
 config BT_INIC_HOST_DEBUG
-    depends on !WHC_DEV_MENU && !WHC_HOST_MENU
+    depends on (!WHC_DEV_MENU && !WHC_HOST_MENU)
     bool
     default n
+
+choice
+    depends on AMEBAGREEN2 && (WHC_DEV_MENU || BT_INIC_DEBUG)
+    prompt "Chip Select"
+    default BT_AMEBAGREEN2_FW
+    config BT_AMEBAGREEN2_FW
+        bool "AmebaGreen2"
+    config BT_RTL8851F_FW
+        bool "RTL8851F"
+endchoice
 
 choice
     depends on (WHC_DEV_MENU || BT_INIC_DEBUG || WHC_HOST_MENU || BT_INIC_HOST_DEBUG)

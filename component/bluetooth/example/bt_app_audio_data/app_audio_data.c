@@ -14,11 +14,7 @@
 #include <osif.h>
 #include <ameba_soc.h>
 #include <usbd.h>
-#if defined(CONFIG_USBD_UAC1)
-#include <usbd_uac1.h>
-#else
-#include <usbd_uac2.h>
-#endif
+#include <usbd_uac.h>
 /* Private defines -----------------------------------------------------------*/
 
 // Endpoint address
@@ -30,16 +26,13 @@
 #define USBD_UAC_ISOC_OUT_EP                      0x02U
 #endif
 
-// USB speed
+// USB speed. UAC runs Full Speed, so an HS-capable PHY is driven in Full-Speed mode; the
+// core clamps this to USB_SPEED_FULL by itself on an FS-only SoC.
 /*
      USB_SPEED_FULL: pcm data will be callback in every 1/8 ms, which will increase the CPU load
      USB_SPEED_HIGH_IN_FULL: pcm data will be callback every 1 ms
 */
-#ifdef CONFIG_SUPPORT_USB_FS_ONLY
-#define USBD_UAC_USB_SPEED                        USB_SPEED_FULL
-#else
 #define USBD_UAC_USB_SPEED                        USB_SPEED_HIGH_IN_FULL
-#endif
 
 // PCM data parameters
 #define AUDIO_SAMPLING_RATE_KHZ                   48U
@@ -87,20 +80,26 @@ static u8 usb_task_stop;
 static uint8_t demo_usb_task_run;
 
 static const usbd_config_t uac_cfg = {
-	.speed = USBD_UAC_USB_SPEED,
+	.info = {
+#ifdef CONFIG_USBD_UAC1
+		.prod_str = "Realtek UAC1.0",
+#else
+		.prod_str = "Realtek UAC2.0",
+#endif
+		.speed = USBD_UAC_USB_SPEED,
+	},
 	.isr_priority = INT_PRI_MIDDLE,
 	.ext_intr_enable = 0,
 };
 
-static const usbd_uac_ep_cfg_t uac_ep = {
+static usbd_uac_config_t uac_class_cfg = {
+	.in = {.enable = 0,}, /* current just support usb out,usb in TODO */
+	.out = {.enable = 1, .sampling_freq = AUDIO_SAMPLING_RATE, .byte_width = AUDIO_BYTE_WIDTH_SIZE, .ch_cnt = AUDIO_CHANNEL_NUM},
 	.isoc_in_addr  = USBD_UAC_ISOC_IN_EP,
 	.isoc_out_addr = USBD_UAC_ISOC_OUT_EP,
 };
 
 static const usbd_uac_cb_t uac_cb = {
-	.audio_ctx = NULL,
-	.in = {.enable = 0,}, /* current just support usb out,usb in TODO */
-	.out = {.enable = 1, .sampling_freq = AUDIO_SAMPLING_RATE, .byte_width = AUDIO_BYTE_WIDTH_SIZE, .ch_cnt = AUDIO_CHANNEL_NUM},
 	.init = uac_cb_init,
 	.deinit = uac_cb_deinit,
 	.setup = uac_cb_setup,
@@ -168,13 +167,13 @@ static void uac_cb_volume_changed(u8 volume)
 static void uac_cb_format_changed(u32 sampling_freq, u8 ch_cnt, u8 byte_width)
 {
 	if (sampling_freq != 0U) {
-		uac_cb.out.sampling_freq = sampling_freq;
+		uac_class_cfg.out.sampling_freq = sampling_freq;
 	}
 	if (ch_cnt != 0U) {
-		uac_cb.out.ch_cnt = ch_cnt;
+		uac_class_cfg.out.ch_cnt = ch_cnt;
 	}
 	if (byte_width != 0U) {
-		uac_cb.out.byte_width = byte_width;
+		uac_class_cfg.out.byte_width = byte_width;
 	}
 	osif_sem_give(uac_ready_sem);
 	usb_task_stop = 1;
@@ -191,7 +190,7 @@ static void bt_demo_usb_task_entry(void *ctx)
 			osif_sem_take(uac_ready_sem, BT_TIMEOUT_FOREVER);
 		}
 		usb_task_stop = 0;
-		usbd_uac_config(&(uac_cb.out), 0, 0);
+		usbd_uac_config(&(uac_class_cfg.out), 0, 0);
 		while (1) {
 			if (!demo_usb_task_run || usbd_uac_start_play() == HAL_OK) {
 				break;
@@ -256,7 +255,7 @@ bool demo_usb_init(void)
 		DiagPrintf("USB device init failed\r\n");
 		goto exit;
 	}
-	ret = usbd_uac_init(&uac_cb, &uac_ep);
+	ret = usbd_uac_init(&uac_cb, &uac_class_cfg);
 	if (ret) {
 		DiagPrintf("USB UAC init failed\r\n");
 		goto clear_usb_driver_exit;

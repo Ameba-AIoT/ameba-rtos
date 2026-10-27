@@ -24,10 +24,10 @@ static const char *const TAG = "LOCKS";
 // __attribute__((constructor))
 static void init_retarget_locks(void)
 {
-#ifdef CONFIG_ARM_CORE_CM4_KM4TZ
-	RTK_LOGI(TAG, "KM4TZ %s\n", __func__);
+#ifdef CONFIG_ARM_CORE_CM55_KM55TZ
+	RTK_LOGI(TAG, "KM55TZ %s\n", __func__);
 #else
-	RTK_LOGI(TAG, "KM4NS %s\n", __func__);
+	RTK_LOGI(TAG, "KM55NS %s\n", __func__);
 #endif
 #if(configSUPPORT_STATIC_ALLOCATION == 1)
 	xSemaphoreCreateRecursiveMutexStatic(&__lock___sfp_recursive_mutex);

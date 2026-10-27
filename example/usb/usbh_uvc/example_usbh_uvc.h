@@ -4,11 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef EXAMPLE_USBH_UVC_H
 #define EXAMPLE_USBH_UVC_H
 
 /* Includes ------------------------------------------------------------------*/
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* Exported defines ----------------------------------------------------------*/
 
 /* Exported types ------------------------------------------------------------*/
 
@@ -16,8 +21,12 @@
 
 /* Exported variables --------------------------------------------------------*/
 
-/* Exported functions ------------------------------------------------------- */
+/* Exported functions --------------------------------------------------------*/
 
 void example_usbh_uvc(void);
 
-#endif // EXAMPLE_USBH_UVC_H
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* EXAMPLE_USBH_UVC_H */

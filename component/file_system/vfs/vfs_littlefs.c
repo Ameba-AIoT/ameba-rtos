@@ -16,6 +16,10 @@ extern lfs_t g_second_lfs;
 extern lfs_t g_rolfs_lfs;
 #endif
 extern int rt_lfs_init(lfs_t *lfs);
+#if defined(VFS_RAM_LITTLEFS)
+extern int rt_lfs_ram_init(void);
+extern int rt_lfs_ram_deinit(void);
+#endif
 volatile uint8_t lfs_mount_flag = 0;
 volatile uint8_t lfs2_mount_flag = 0;
 #if defined(CONFIG_LITTLEFS_WITHIN_APP_IMG)
@@ -391,6 +395,14 @@ int littlefs_mount(int interface)
 {
 	int ret = 0;
 
+#if defined(VFS_RAM_LITTLEFS)
+	if (interface == VFS_INF_RAM) {
+		ret = rt_lfs_ram_init();
+		ram_mount_flag = (ret == 0) ? 1 : 0;
+		return ret;
+	}
+#endif
+
 	if (interface == VFS_INF_FLASH) {
 		ret = rt_lfs_init(&g_lfs);
 	}
@@ -447,6 +459,12 @@ int littlefs_unmount(int interface)
 {
 	(void) interface;
 	int ret = 0;
+
+#if defined(VFS_RAM_LITTLEFS)
+	if (interface == VFS_INF_RAM) {
+		return rt_lfs_ram_deinit();		/* also clears ram_mount_flag */
+	}
+#endif
 
 	if (interface == VFS_INF_FLASH) {
 		ret = lfs_unmount(&g_lfs);

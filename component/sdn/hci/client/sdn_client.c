@@ -65,7 +65,8 @@ struct sdn_client_rx {
 struct sdn_client {
 	struct sdn_client_tx tx;
 	struct sdn_client_rx rx;
-	bool is_mp;
+	uint8_t is_mp : 1;
+	uint8_t bt_on : 1;
 };
 static struct sdn_client g_sdn_client_intf = {0};
 extern struct sdn_t g_sdn;
@@ -484,6 +485,11 @@ bool sdn_in_mp(void)
 	return g_sdn_client_intf.is_mp;
 }
 
+bool sdn_bt_on(void)
+{
+	return g_sdn_client_intf.bt_on;
+}
+
 void sdn_client_intf_send(void *pdata_buf)
 {
 	_add_tail_lock(pdata_buf, &g_sdn_client_intf.tx.busy_list);
@@ -867,6 +873,7 @@ void sdn_add_protocol(uint8_t protocol)
 #ifdef CONFIG_BT_SDN
 	case SDN_INTF_BT:
 		ble_ll_init();
+		g_sdn_client_intf.bt_on = true;
 		break;
 #endif
 
@@ -890,6 +897,7 @@ void sdn_remove_protocol(uint8_t protocol)
 #ifdef CONFIG_BT_SDN
 	case SDN_INTF_BT:
 		ble_ll_deinit();
+		g_sdn_client_intf.bt_on = false;
 		break;
 #endif
 

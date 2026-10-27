@@ -106,7 +106,7 @@ ameba_set(c_CMPT_SOC_DIR)       # PATH to the component/soc/${c_SOC_TYPE} direct
 
 # Define variables of mcu project
 # NOTE: Feel free to use them. They will be updated to valid values automatically when project is created.
-ameba_set(c_MCU_TYPE)                   # MCU type, like km0, km4, ca32, kr4
+ameba_set(c_MCU_TYPE)                   # MCU type, like km0, km4, km55, ca32, kr4
 ameba_set(c_MCU_TYPE_UPPER)
 ameba_set(c_MCU_PROJECT_DIR)
 ameba_set(c_MCU_PROJECT_NAME)

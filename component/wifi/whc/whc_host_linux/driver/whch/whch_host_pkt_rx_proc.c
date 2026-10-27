@@ -1098,8 +1098,8 @@ union recv_frame *whc_host_recv_decryptor(u8 iface_type, struct whch_security_pr
 							prxattrib->hdrlen,								//Wlan Header Length
 							prxattrib->iv_len,								// IV length
 							payload_len, // Payload length
-							&psecuritypriv->dot11_wep_key[0].skey[0],	//WEP Key
-							psecuritypriv->dot11_wep_keylen[0],		//WEP Key Length
+							&psecuritypriv->dot11_wep_key[prxattrib->key_index].skey[0],	//WEP Key
+							psecuritypriv->dot11_wep_keylen[prxattrib->key_index],		//WEP Key Length
 							&crc	//CRC32 value filed
 						);
 			res = (decrypted == true) ? 0 : -1;

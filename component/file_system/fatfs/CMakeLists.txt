@@ -64,9 +64,22 @@ ameba_list_append(private_sources
 ameba_list_append(private_sources
     fatfs_flash.c
     fatfs_flash_api.c
-    fatfs_sdcard.c
-    fatfs_sdcard_api.c
+)
+
+# interface glue: built only when FATFS and the interface are both enabled
+if(CONFIG_FATFS_SD_MODE OR CONFIG_FATFS_SD_SPI_MODE)
+    ameba_list_append(private_sources
+        fatfs_sdcard.c
+        fatfs_sdcard_api.c
+    )
+endif()
+
+ameba_list_append_if(CONFIG_FATFS_USB_HOST private_sources
     fatfs_usbh_api.c
+)
+
+ameba_list_append_if(CONFIG_VFS_RAM private_sources
+    fatfs_ram.c
 )
 
 # Component private part, user config end(DO NOT remove this line)

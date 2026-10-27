@@ -191,6 +191,16 @@ enum rtw_support_band {
 };
 
 /**
+ * @brief  Wi-Fi frequency band selection for a connection (size: u8).
+ */
+enum rtw_connect_band {
+	RTW_CONNECT_BAND_ALL = 0,  /**< Connect on any supported frequency band. */
+	RTW_CONNECT_BAND_2G = 1,   /**< Connect on the 2.4 GHz band only. */
+	RTW_CONNECT_BAND_5G = 2,   /**< Connect on the 5 GHz band only. */
+	RTW_CONNECT_BAND_MAX       /**< Maximum connection band value (for bounds checking). */
+};
+
+/**
  * @brief  Speaker-related setting types (size: u8).
  */
 enum rtw_speaker_set_type {
@@ -902,7 +912,8 @@ struct rtw_network_info {
 	struct rtw_mac				prev_bssid; /**< BSSID of the AP before roaming. */
 	u8							by_reconn; /**< Indicates if connection is triggered by auto-reconnect. */
 	u8							sae_force_hnp : 1;/**< 1: force SAE to use the legacy Hunting-and-Pecking method.*/
-	u8							rom_rsvd[3];
+	u8							band; /**< Connection band: @ref RTW_CONNECT_BAND_ALL, @ref RTW_CONNECT_BAND_2G, or @ref RTW_CONNECT_BAND_5G. */
+	u8							rom_rsvd[2];
 };
 
 /**

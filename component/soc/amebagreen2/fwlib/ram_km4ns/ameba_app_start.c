@@ -80,6 +80,6 @@ void app_start(void)
 IMAGE2_ENTRY_SECTION
 RAM_START_FUNCTION Img2EntryFun0 = {
 	app_start,
-	SOCPS_WakeFromPG_NP,
+	NULL, // SOCPS_WakeFromPG_NP,
 	(u32)RomVectorTable,
 };

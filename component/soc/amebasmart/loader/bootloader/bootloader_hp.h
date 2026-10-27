@@ -66,6 +66,7 @@ void BOOT_TCMSet(u32 TCM_Size);
 u32  BOOT_Share_Memory_Patch(void);
 void Peripheral_Reset(void);
 bool BOOT_RRAM_InfoValid(void);
+void BOOT_Mem_AssistSet(void);
 
 #ifdef __cplusplus
 }

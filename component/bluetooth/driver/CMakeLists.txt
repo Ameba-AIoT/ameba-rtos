@@ -52,11 +52,19 @@ if(NOT CONFIG_BT_SDN)
 		hci/hci_transport/hci_h4.c
 	)
 
-	ameba_list_append(private_sources
-		platform/${c_SOC_TYPE}/hci/bt_mp_patch.c
-		platform/${c_SOC_TYPE}/hci/bt_normal_patch.c
-		platform/${c_SOC_TYPE}/hci/hci_uart.c
-	)
+	if(CONFIG_AMEBAGREEN2 AND CONFIG_BT_RTL8851F_FW)
+		ameba_list_append(private_sources
+			platform/amebagreen2/hci/RTL8851F/bt_mp_patch.c
+			platform/amebagreen2/hci/RTL8851F/bt_normal_patch.c
+			platform/amebagreen2/hci/hci_uart.c
+		)
+	else()
+		ameba_list_append(private_sources
+			platform/${c_SOC_TYPE}/hci/bt_mp_patch.c
+			platform/${c_SOC_TYPE}/hci/bt_normal_patch.c
+			platform/${c_SOC_TYPE}/hci/hci_uart.c
+		)
+	endif()
 endif()
 
 ameba_list_append(private_sources

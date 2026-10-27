@@ -8,6 +8,7 @@
 #define USBH_UAC1_H
 
 /* Includes ------------------------------------------------------------------*/
+
 #include "usbh.h"
 #include "usb_ch9.h"
 #include "usb_uac1.h"
@@ -18,11 +19,12 @@
 extern "C" {
 #endif
 
-/* Exported defines ----------------------------------------------------------*/
-
 /** @addtogroup USB_Host_API USB Host API
  *  @{
  */
+
+/* Exported defines ----------------------------------------------------------*/
+
 /** @addtogroup USB_Host_Constants USB Host Constants
  * @{
  */
@@ -60,8 +62,6 @@ extern "C" {
 /** @addtogroup Host_UAC_Types Host UAC Types
  * @{
  */
-
-/* Exported types ------------------------------------------------------------*/
 
 /* uac1.0 Audio Control   */
 /**
@@ -126,7 +126,6 @@ typedef struct {
   *         Manages ring buffers, synchronization, and isochronous packet sizing.
   */
 typedef struct {
-	usb_ringbuf_manager_t buf_manager; /**< Ring buffer manager for isochronous data */
 	rtos_sema_t isoc_sema;             /**< Semaphore signaled when a ring buffer slot becomes available */
 
 	/* Sampling Frequency and Packet Size Calculations */
@@ -134,13 +133,6 @@ typedef struct {
 	u32 sample_rem;        /**< Remainder of (sample_freq % pkt_per_second), used for fractional packet sizing */
 	u32 sample_accum;      /**< Accumulated remainder across frames; when >= pkt_per_second, one extra sample is added */
 	u32 last_sample_accum; /**< Saved accumulator value after the last committed packet, restored on ring-buffer full */
-	u16 packet_rate;       /**< Number of USB packets per second (max: 8000 for HS ISOC) */
-
-	__IO u16 written;        /**< Bytes accumulated in ringbuf_partial_write_buf for the current packet under construction */
-	__IO u16 mps;            /**< Endpoint Maximum Packet Size in bytes */
-	__IO u8 sema_valid;      /**< 1 when isoc_sema has been created and is safe to use */
-	__IO u8 wait_sema;       /**< 1 while a write/read thread is blocked on isoc_sema (used for safe teardown) */
-	__IO u8 next_xfer;       /**< 1 to allow isochronous transfers; cleared by stop_play/stop_capture */
 
 #if USBH_UAC_DEBUG
 	__IO u32 last_xfer_len;      /**< Length of the last completed IN transfer (used to detect ZLP) */
@@ -150,6 +142,21 @@ typedef struct {
 	u32 xfer_buf_err_cnt;        /**< Transfer error counter */
 	u32 xfer_interval_cnt;       /**< SOF interval mismatch counter */
 #endif
+
+	u16 packet_rate;       /**< Number of USB packets per second (max: 8000 for HS ISOC) */
+
+	__IO u16 written;        /**< Bytes accumulated in ringbuf_partial_write_buf for the current packet under construction */
+	__IO u16 mps;            /**< Endpoint Maximum Packet Size in bytes */
+	__IO u16 node_size;      /**< Ring buffer node size in bytes, i.e. the largest packet a node can hold.
+	                              Equals mps for a single-transaction endpoint and the full packet size for a
+	                              high-bandwidth one (USB 2.0 5.6.3), so it is what the read path must reserve
+	                              room for rather than mps */
+
+	usb_ringbuf_manager_t buf_manager; /**< Ring buffer manager for isochronous data */
+
+	__IO u8 sema_valid;      /**< 1 when isoc_sema has been created and is safe to use */
+	__IO u8 wait_sema;       /**< 1 while a write/read thread is blocked on isoc_sema (used for safe teardown) */
+	__IO u8 next_xfer;       /**< 1 to allow isochronous transfers; cleared by stop_play/stop_capture */
 
 	u8 frame_cnt;         /**< Ring buffer depth in frames; set from cb->isoc_out/in_frm_cnt before ep_buf_ctrl_init */
 } usbh_uac_buf_ctrl_t;
@@ -181,7 +188,7 @@ typedef struct {
   */
 typedef struct {
 	usbh_uac_format_cfg_t format_info; /**< Audio format details for this alternate setting */
-	usbh_ep_desc_t ep_desc;            /**< Isochronous endpoint descriptor for this alternate setting */
+	usbh_ep_desc_t ep_desc;            /**< Isochronous endpoint descriptor for this alternate setting (byte-packed) */
 	u8 alt_setting;                    /**< USB Alternate Setting number as reported in the descriptor */
 	u8 freq_ctrl_supported;            /**< 1 if the CS AS endpoint descriptor's bmAttributes advertises Sampling Frequency Control */
 } usbh_uac_as_itf_alt_info_t;
@@ -200,11 +207,12 @@ typedef struct {
   *         Manages all Alternate Settings and formats for a specific AS interface.
   */
 typedef struct {
-	usbh_uac_as_itf_alt_info_t interface_array[USBH_UAC_ALT_SETTING_MAX]; /**< Valid alternate settings (Alt 0 skipped; index 0 = Alt 1) */
-	usbh_pipe_t pipe;                     /**< USB pipe for this AS interface */
 	usbh_uac_audio_fmt_t *fmt_array;          /**< Flattened array of all supported audio formats (malloc'd in get_audio_format_info) */
 	u16 packet_size_small;                /**< Bytes per packet when the sample accumulator does not overflow */
 	u16 packet_size_large;                /**< Bytes per packet when the sample accumulator overflows (one extra sample) */
+
+	usbh_uac_as_itf_alt_info_t interface_array[USBH_UAC_ALT_SETTING_MAX]; /**< Valid alternate settings (Alt 0 skipped; index 0 = Alt 1) */
+	usbh_pipe_t pipe;                     /**< USB pipe for this AS interface */
 
 	u8 as_itf_num;                        /**< USB interface number of this AS interface */
 
@@ -212,7 +220,6 @@ typedef struct {
 	u8 fmt_array_cnt;                     /**< Number of entries in fmt_array[] */
 
 	u8 choose_alt_idx;                    /**< Index into interface_array[] for the currently active alternate setting */
-	u8 choose_freq_idx;                   /**< Index into format_info.freq[] for the currently active sampling frequency */
 } usbh_uac_as_itf_info_t;
 
 /**
@@ -226,64 +233,76 @@ typedef struct {
 	void (*setup)(void);                              /**< Called on each USB Setup-stage transaction */
 	void (*transmitted)(usbh_urb_state_t state);      /**< Reserved: registered by application but not currently invoked by the driver */
 	void (*received)(u8 *buf, u32 len);               /**< Reserved: registered by application but not currently invoked by the driver */
-
-	u8 isoc_in_frm_cnt;                               /**< Ring buffer depth in frames for IN/Record path (passed to ep_buf_ctrl_init) */
-	u8 isoc_out_frm_cnt;                              /**< Ring buffer depth in frames for OUT/Playback path (passed to ep_buf_ctrl_init) */
 } usbh_uac_cb_t;
+
+/**
+ * @brief Configuration for the UAC host class.
+ * @details Carries every UAC host option: how deep each direction's ISOC ring buffer is, which
+ *          also selects whether that direction is supported at all. Host-global parameters
+ *          (speed, FIFO depths, main task stack and priority, ISR priority) live in
+ *          @ref usbh_config_t instead.
+ * @note  The structure is stored by pointer, not copied, so it shall remain valid until
+ *        @ref usbh_uac_deinit.
+ * @note  Unlike most configuration fields in this stack, 0 here does NOT mean "take the
+ *        default": it disables that direction. At least one of the two shall be non-zero.
+ */
+typedef struct {
+	u8 isoc_in_frm_cnt;    /**< Ring buffer depth in frames for the IN/record path; 0 disables record. */
+	u8 isoc_out_frm_cnt;   /**< Ring buffer depth in frames for the OUT/playback path; 0 disables playback. */
+} usbh_uac_config_t;
 
 typedef struct {
 	usbh_uac_as_itf_info_t *as_itf;     /**< Pointer to the AS interface for this direction; NULL if not supported */
+	u8 *xfer_buf;                        /**< DMA-safe transfer buffer passed to usbh_transfer_data */
+	usbh_uac_buf_ctrl_t buf_ctrl;        /**< Isochronous buffer and packet-size control */
 
 	usbh_uac_volume_info_t volume_info[1 + USBH_UAC_MAX_CHANNEL]; /**< Volume info per channel: [0]=master, [1..N]=per-channel */
-
-	usbh_uac_buf_ctrl_t buf_ctrl;        /**< Isochronous buffer and packet-size control */
-	u8 *xfer_buf;                          /**< DMA-safe transfer buffer passed to usbh_transfer_data */
-
 } usbh_uac_channel_t;
 
 /**
   * @brief  Main UAC Host Class Driver Handle.
   */
 typedef struct {
-	usbh_uac_ac_itf_info_t ac_isoc_desc;  /**< Audio Control interface topology (Feature Units + Terminals) */
-
-	usbh_uac_channel_t isoc_out;          /**< OUT channel state (Playback/Speaker) */
-	usbh_uac_channel_t isoc_in;           /**< IN channel state (Record/Microphone) */
-
-	rtos_mutex_t alt_set_mutex;           /**< Serializes concurrent usbh_uac_set_alt_setting calls */
-	rtos_sema_t  ctrl_done_sema;          /**< Signaled by ctrl_setting when SET_ALT + SET_FREQ sequence completes */
-
 	const usbh_uac_cb_t *cb;/**< User callback structure registered via usbh_uac_init */
 	usb_host_t *host;                     /**< Pointer to the USB host handle, saved at attach */
-
 	u8 *audio_ctrl_buf;                   /**< Shared buffer for all USB control transfer payloads */
 	u8 *ringbuf_partial_write_buf;        /**< Staging buffer that accumulates partial writes until a full packet is ready */
 
-#if USBH_UAC_DEBUG
-	rtos_task_t dump_status_task;         /**< Handle for the periodic status-dump debug task */
-	u32 sof_cnt;                          /**< SOF interrupt counter, incremented in cb_sof */
-	u8 dump_status_task_alive;            /**< 1 while the dump task is running */
-	u8 dump_status_task_exit;             /**< Set to 0 to signal the dump task to exit */
-#endif
+	/* State machines */
+	__IO u8 xfer_state;        /**< Isochronous data transfer state (UAC_STATE_IDLE / UAC_STATE_TRANSFER) */
+	__IO u8 ctrl_state;        /**< USB control transfer state machine state (UAC_STATE_CTRL_IDLE, SET_ALT, SET_FREQ, ...) */
+	__IO u8 init_state;        /**< Initialization sequence state (UAC_INIT_OUT_GET_FU -> UAC_INIT_IN_GET_FU -> UAC_INIT_OUT_SET_ITF -> UAC_INIT_DONE) */
+	u8 cur_dir;                    /**< Direction being operated on by the current ctrl_state sequence */
 
+	/* Control operation: arguments of the in-flight ctrl_state sequence and its sync waiter */
+	rtos_mutex_t alt_set_mutex;          /**< Serializes concurrent usbh_uac_set_alt_setting calls */
+	rtos_sema_t  ctrl_done_sema;          /**< Signaled by ctrl_setting when SET_ALT + SET_FREQ sequence completes */
 	int ctrl_status;          /**< HAL status reported back to the current sync ctrl op (set/get) callers */
 	s16 get_volume_result;   /**< Volume word parsed by UAC_STATE_GET_VOLUME; consumed by get_volume() */
-
-	u8 get_ch;               /**< Channel argument for the active UAC_STATE_GET_* on-demand query */
 	u8 get_mute_result;      /**< Mute byte parsed by UAC_STATE_GET_MUTE; consumed by get_mute() */
+	u8 get_ch;             /**< Channel argument for the active UAC_STATE_GET_* on-demand query */
 	u8 ch_idx;                 /**< Channel index driving the current iterative SET_VOLUME/SET_MUTE loop (0 = master) */
 	u8 mute_value;             /**< Mute state (1: Mute, 0: Unmute) dispatched to process_set_ch_mute */
 	u8 volume_value;           /**< Volume value dispatched to process_set_ch_volume */
-	u8 cur_dir;                    /**< Direction being operated on by the current ctrl_state sequence */
 	u8 ctrl_waiting;               /**< 1 when a sync waiter is blocked on ctrl_done_sema.
 	                                  * Mutual exclusion among set_alt_setting/get_mute/get_volume is guaranteed
 	                                  * by alt_set_mutex held across the entire wait, so at most one waiter exists
 	                                  * at any time. ctrl_done_sema is drained before each take to absorb any stale
 	                                  * give left by the previous round's timeout/ctrl_finish race. */
-	__IO u8 xfer_state;        /**< Isochronous data transfer state (UAC_STATE_IDLE / UAC_STATE_TRANSFER) */
-	__IO u8 ctrl_state;        /**< USB control transfer state machine state (UAC_STATE_CTRL_IDLE, SET_ALT, SET_FREQ, ...) */
-	__IO u8 init_state;        /**< Initialization sequence state (UAC_INIT_OUT_GET_FU -> UAC_INIT_IN_GET_FU -> UAC_INIT_OUT_SET_ITF -> UAC_INIT_DONE) */
+
+	/* Channels and topology */
+	usbh_uac_channel_t isoc_out;          /**< OUT channel state (Playback/Speaker) */
+	usbh_uac_channel_t isoc_in;           /**< IN channel state (Record/Microphone) */
+	usbh_uac_ac_itf_info_t ac_isoc_desc;  /**< Audio Control interface topology (Feature Units + Terminals) */
+
+#if USBH_UAC_DEBUG
+	rtos_task_t dump_status_task;         /**< Handle for the periodic status-dump debug task. */
+	u32 sof_cnt;                          /**< SOF interrupt counter, incremented in cb_sof */
+	u8 dump_status_task_alive;            /**< 1 while the status-dump debug task is running */
+	u8 dump_status_task_exit;             /**< Set to 0 to signal the status-dump debug task to exit */
+#endif
 } usbh_uac_t;
+
 /** @} End of Host_UAC_Types group */
 /** @} End of USB_Host_Types group */
 
@@ -299,12 +318,14 @@ typedef struct {
 /** @addtogroup Host_UAC_Functions Host UAC Functions
  * @{
  */
+
 /**
   * @brief  Initialize the UAC Class Driver.
   * @param  cb: Pointer to the user callback structure.
+  * @param  cfg: Pointer to the class configuration. See @ref usbh_uac_config_t.
   * @return 0 on success, non-zero on failure.
   */
-int usbh_uac_init(const usbh_uac_cb_t *cb);
+int usbh_uac_init(const usbh_uac_cb_t *cb, const usbh_uac_config_t *cfg);
 
 /**
   * @brief  De-initialize the UAC Class Driver and release resources.
@@ -352,7 +373,7 @@ u32 usbh_uac_get_frame_size(u8 dir);
 /**
   * @brief  Synchronously read the current mute state from the device.
   *         Issues a UAC1 GET_CUR(MUTE) on the selected channel and blocks until
-  *         the response arrives or a 1 s timeout elapses.
+  *         the response arrives or a 6 s timeout elapses.
   * @param  dir:  Direction (USBH_UAC_ISOC_OUT_DIR or USBH_UAC_ISOC_IN_DIR).
   * @param  ch:   Channel index (0 = master, 1..N = individual channels).
   * @param  mute: Output pointer that receives the device's mute state.
@@ -371,7 +392,7 @@ int usbh_uac_set_mute(u8 mute, u8 dir);
 /**
   * @brief  Synchronously read the current volume from the device.
   *         Issues a UAC1 GET_CUR(VOLUME) on the selected channel and blocks until
-  *         the response arrives or a 1 s timeout elapses. The min/max range is
+  *         the response arrives or a 6 s timeout elapses. The min/max range is
   *         returned from the cache populated at attach time.
   * @param  dir:     Direction (USBH_UAC_ISOC_OUT_DIR or USBH_UAC_ISOC_IN_DIR).
   * @param  ch:      Channel index (0 = master, 1..N = individual channels).
@@ -420,8 +441,11 @@ void usbh_uac_stop_play(void);
   * @brief  Write audio data to the UAC driver ring buffer.
   * @param  buffer: Pointer to the PCM data buffer.
   * @param  size: Size of data to write (in bytes).
-  * @param  timeout_ms: Timeout in milliseconds to wait if buffer is full.
-  * @return Actual number of bytes written.
+  * @param  timeout_ms: Maximum wait in milliseconds each time the buffer is full; 0 for
+  *         non-blocking. The call returns once all data is queued, or when no space frees
+  *         up within timeout_ms (device stopped consuming or detached), so it may block
+  *         longer than timeout_ms while playback progresses.
+  * @return Actual number of bytes written; less than size only on such a stall.
   */
 u32 usbh_uac_write(u8 *buffer, u32 size, u32 timeout_ms);
 
@@ -440,17 +464,20 @@ void usbh_uac_stop_capture(void);
   * @brief  Read audio data from UAC IN (microphone)
   * @param  buffer: Pointer to the data buffer to store read data
   * @param  size: Size of data to read (in bytes)
-  * @param  time_out_ms: Timeout in milliseconds to wait if no data available
+  * @param  time_out_ms: Total budget in milliseconds this call may spend waiting for data, not a
+  *                      per-packet allowance; 0 for non-blocking. May return fewer than @p size
+  *                      bytes when the budget runs out.
   * @retval Actual number of bytes read
   */
 u32 usbh_uac_read(u8 *buffer, u32 size, u32 time_out_ms);
 
 /** @} End of Host_UAC_Functions group */
 /** @} End of USB_Host_Functions group */
+
 /** @} End of USB_Host_API group */
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif  /* USBH_UAC1_H */
+#endif /* USBH_UAC1_H */

@@ -28,7 +28,7 @@ const u16 Data_Flash_ReadMode = 0xFFFF;
 *	Note that, if new flash can be classfied as one of the Realtek-defined categories according to Classification SPEC,
 *	filling in the defined class index is necessary. Otherwise, FlashClassUser can be used to indicate new class.
 */
-FlashInfo_TypeDef Flash_AVL[] = {
+const FlashInfo_TypeDef Flash_AVL[] = {
 	/*flash_id,		flash_id_mask,	flash_class,		status_mask,	FlashInitHandler */
 
 	/* case1: Realtek defined class, any modification is not allowed */
@@ -39,9 +39,10 @@ FlashInfo_TypeDef Flash_AVL[] = {
 	{0xC8,			0x000000FF,		FlashClass2,		0x000043FC,		NULL},	/* GD normal: MANUFACTURER_ID_GD */
 	{0x28C2,		0x0000FFFF,		FlashClass6,		0x000200FC,		NULL},	/* MXIC wide-range VCC: MANUFACTURER_ID_MXIC */
 	{0xC2,			0x000000FF,		FlashClass3,		0x000000FC,		NULL},	/* MXIC normal: MANUFACTURER_ID_BOHONG */
-	{0x68,			0x000000FF,		FlashClass3,		0x000000FC,		NULL},	/* Hua Hong */
+	{0x68,			0x000000FF,		FlashClass2,		0x000043FC,		NULL},	/* Hua Hong */
 	{0x51,			0x000000FF,		FlashClass3,		0x000000FC,		NULL},	/* GD MD serial */
-	{0x1C,			0x000000FF,		FlashClass4,		0x000000FC,		NULL},	/* ESMT: MANUFACTURER_ID_EON */
+	{0x701C,		0x0000FFFF,		FlashClass4,		0x000000FC,		NULL},	/* ESMT: EN25QHxxx, no QE bit */
+	{0x1C,			0x000000FF,		FlashClass2,		0x000043FC,		NULL},	/* ESMT: MANUFACTURER_ID_EON */
 	{0x20,			0x000000FF,		FlashClass1,		0x000043FC,		NULL},	/* XMC: MANUFACTURER_ID_WINBOND */
 	{0x85,			0x000000FF,		FlashClass1,		0x000043FC,		NULL},  /* PUYA */
 	//{0x20,			0x000000FF,		FlashClass5,		0x000000FC,		NULL},	/* Micron: MANUFACTURER_ID_MICRON */
@@ -71,9 +72,9 @@ const FlashLayoutInfo_TypeDef Flash_Layout[] = {
 	{IMG_BOOT_OTA2, CONFIG_FLASH_BOOT_OTA2_OFFSET, CALC_END_ADDR(CONFIG_FLASH_BOOT_OTA2_OFFSET, CONFIG_FLASH_BOOT_OTA2_SIZE)}, //Boot Manifest(4K) + KM4 Bootloader(76K) OTA
 	{IMG_APP_OTA2,  CONFIG_FLASH_OTA2_OFFSET,  CALC_END_ADDR(CONFIG_FLASH_OTA2_OFFSET, CONFIG_FLASH_OTA2_SIZE)}, //Certificate(4K) + Manifest(4K) + KM0 & KM4 Application OTA2 + RDP IMG OTA2
 #ifdef CONFIG_SOLO
-	/* SOLO: km4ns(iot) app has its own independent dual OTA slots. */
-	{IMG_NP_OTA1,   CONFIG_FLASH_NP_OTA1_OFFSET, CALC_END_ADDR(CONFIG_FLASH_NP_OTA1_OFFSET, CONFIG_FLASH_NP_OTA1_SIZE)}, //km4ns app OTA1
-	{IMG_NP_OTA2,   CONFIG_FLASH_NP_OTA2_OFFSET, CALC_END_ADDR(CONFIG_FLASH_NP_OTA2_OFFSET, CONFIG_FLASH_NP_OTA2_SIZE)}, //km4ns app OTA2
+	/* SOLO: km55ns(iot) app has its own independent dual OTA slots. */
+	{IMG_NP_OTA1,   CONFIG_FLASH_NP_OTA1_OFFSET, CALC_END_ADDR(CONFIG_FLASH_NP_OTA1_OFFSET, CONFIG_FLASH_NP_OTA1_SIZE)}, //km55ns app OTA1
+	{IMG_NP_OTA2,   CONFIG_FLASH_NP_OTA2_OFFSET, CALC_END_ADDR(CONFIG_FLASH_NP_OTA2_OFFSET, CONFIG_FLASH_NP_OTA2_SIZE)}, //km55ns app OTA2
 #endif
 	{VFS1,          CONFIG_FLASH_VFS1_OFFSET,      CALC_END_ADDR(CONFIG_FLASH_VFS1_OFFSET, CONFIG_FLASH_VFS1_SIZE)}, //VFS region 1 (128K)
 	{VFS2,          CONFIG_FLASH_VFS2_OFFSET,      CALC_END_ADDR(CONFIG_FLASH_VFS2_OFFSET, CONFIG_FLASH_VFS2_SIZE)}, //VFS region 2

@@ -441,3 +441,47 @@ void CLK_SWITCH_XTAL(u32 State)
 	HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_LSYS_CKSL_GRP0, Temp);
 	RBSS_UDELAY_CLK = CPU_ClkGet() / 1000000;
 }
+
+/**
+  * @brief  Check whether the APB peripheral's clock has been enabled or not.
+  * @param  APBPeriph_Clock_in: specifies the APB peripheral to check.
+  *		This parameter can be one of @ref APBPeriph_UART0_CLOCK, APBPeriph_ATIM_CLOCK and etc.
+  * @retval TRUE: The APB peripheral's clock has been enabled
+  * 		FALSE: The APB peripheral's clock has not been enabled
+  */
+u32 RCC_PeriphClockEnableChk(u32 APBPeriph_Clock_in)
+{
+	u32 CkeRegVal, CkeBitMask;
+	u32 CkeRegOffset = 0;
+	u32 ClkRegIndx = (APBPeriph_Clock_in >> 30) & 0x03;
+
+	switch (ClkRegIndx) {
+	case 0x0:
+		CkeRegOffset = REG_LSYS_CKE_GRP0;
+		break;
+	case 0x1:
+		CkeRegOffset = REG_LSYS_CKE_GRP1;
+		break;
+	case 0x2:
+		CkeRegOffset = REG_LSYS_CKE_GRP2;
+		break;
+	default:
+		return FALSE;
+	}
+
+	CkeRegVal = HAL_READ32(SYSTEM_CTRL_BASE_LP, CkeRegOffset);
+	CkeBitMask = APBPeriph_Clock_in & (~(BIT(31) | BIT(30)));
+
+	/* Reject all-zero masks: with mask 0 the comparison would be vacuously
+	 * true and falsely report the peripheral as enabled.
+	 */
+	if (CkeBitMask == 0) {
+		return FALSE;
+	}
+
+	/* Strict match: every bit in the mask must be set. Most CKE masks are
+	 * single-bit, but the helper is also safe for multi-bit masks where
+	 * a half-set state must NOT be reported as enabled.
+	 */
+	return ((CkeRegVal & CkeBitMask) == CkeBitMask) ? TRUE : FALSE;
+}

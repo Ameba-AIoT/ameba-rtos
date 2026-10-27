@@ -215,10 +215,12 @@ void System_Reset(void)
 		return;
 	}
 
+retry:
 	HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_LSYS_SW_RST_TRIG, SYS_RESET_KEY);
 	HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_LSYS_SW_RST_CTRL, Trig);
 	HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_LSYS_SW_RST_TRIG, SYS_RESET_TRIG);
 
-	/* wait for reset */
-	while (1);
+	/* wait for reset. If cores trigger reset at the same time, the trigger may be lost, so retry with a different timeout per core */
+	DelayMs(10 + CPUID * 3);
+	goto retry;
 }

@@ -495,10 +495,10 @@
 #define LSYS_BIT_SYSRST_MSK_GPIO       ((u32)0x00000001 << 26)           /*!< R/W 0x1  gpio global reset 1: mask gpio reset when sys reset happen  0: reset by sys reset DD_SEC: bpc_swrst*/
 #define LSYS_SYSRST_MSK_GPIO(x)        ((u32)(((x) & 0x00000001) << 26))
 #define LSYS_GET_SYSRST_MSK_GPIO(x)    ((u32)(((x >> 26) & 0x00000001)))
-#define LSYS_BIT_SRST1_GLB_RST_EN      ((u32)0x00000001 << 25)           /*!< R/W 0x1  1.system reset1  will reset all syson IP and local CPU1(km4ns) 0.system reset0  will reset local CPU1(km4ns) DD_SEC: bpc_swrst*/
+#define LSYS_BIT_SRST1_GLB_RST_EN      ((u32)0x00000001 << 25)           /*!< R/W 0x1  1.system reset1  will reset all syson IP(contain km4ns/km4tz) 0.system reset0  will reset local CPU1(km4ns) DD_SEC: bpc_swrst*/
 #define LSYS_SRST1_GLB_RST_EN(x)       ((u32)(((x) & 0x00000001) << 25))
 #define LSYS_GET_SRST1_GLB_RST_EN(x)   ((u32)(((x >> 25) & 0x00000001)))
-#define LSYS_BIT_SRST0_GLB_RST_EN      ((u32)0x00000001 << 24)           /*!< R/W 0x1  1.system reset0  will reset all syson IP and local CPU0(km4tz) 0.system reset0  will reset local CPU0(km4tz) DD_SEC: bpc_swrst*/
+#define LSYS_BIT_SRST0_GLB_RST_EN      ((u32)0x00000001 << 24)           /*!< R/W 0x1  1.system reset0  will reset all syson IP(contain km4ns/km4tz) 0.system reset0  will reset local CPU0(km4tz) DD_SEC: bpc_swrst*/
 #define LSYS_SRST0_GLB_RST_EN(x)       ((u32)(((x) & 0x00000001) << 24))
 #define LSYS_GET_SRST0_GLB_RST_EN(x)   ((u32)(((x >> 24) & 0x00000001)))
 #define LSYS_MASK_SYS_GLBRST_TIMEOUT   ((u32)0x000000FF << 16)           /*!< R/W 0xff  If system glb rst en is disable , system reset will reset its local cpu only . but if bus is hang , it will trigger global reset also .  HW will wait local CPU's status , if it is not in IDLE in a threshold time, it will trigger global reset . Note : This value must set > 1 , it is base on 4M clock cycle . DD_SEC: bpc_swrst*/
@@ -960,7 +960,7 @@
 #define LSYS_MASK_CKD_SDM_I2S0     ((u32)0x0000001F << 24)           /*!< R/W 5'd4  Set a divider to nearest the target frequency . The i2s sdm base divider factor N  is this value + 1*/
 #define LSYS_CKD_SDM_I2S0(x)       (((u32)((x) & 0x0000001F) << 24))
 #define LSYS_GET_CKD_SDM_I2S0(x)   ((u32)(((x >> 24) & 0x0000001F)))
-#define LSYS_MASK_COMP_STEP_I2S0   ((u32)0x00FFFFFF << 0)            /*!< R/W 0x21FB72  i2s sdm clock interpolation period . This mains every this value's /N cycles ,  it will interpolate one /N+1 or /N-1 clock  to compensate period error. For example to generate 98.304M  from pll 480M (max precsion is 1K, step bit must > 480M/1K) 1. target is 98.304M, set i2s0_sdm_ckd = 4 (N=5 ) which is near target 2. set comp_sel is 1, for ckd is bigger than the fractional target (4.88) 2. Calcurate compensation normalized step :     target_per = 1000/98.304 = 10.172526ns     base_per    =  1000/(480/5)   = 10.4166666ns     intp_per     =  10000/(480/4)   = 8.3333333ns     err_accu = |target_per - base_per| = 0.24414     err_comp = |target_per - intp_per| = 1.8391927     normalizaiton = err_accu/err_comp = 0.13274302361..      Convert the decimal into hexadecimal. change format to unsigned Q0.24 , which is  floo( normalizaion * (1<<24))*/
+#define LSYS_MASK_COMP_STEP_I2S0   ((u32)0x00FFFFFF << 0)            /*!< R/W 0x21FB72  i2s sdm clock interpolation period . This mains every this value's /N cycles ,  it will interpolate one /N+1 or /N-1 clock  to compensate period error. For example to generate 98.304M  from pll 480M (max precsion is 1K, step bit must > 480M/1K) 1. target is 98.304M, set i2s0_sdm_ckd = 4 (N=5 ) which is near target 2. set comp_sel is 1, for ckd is bigger than the fractional target (4.88) 2. Calcurate compensation normalized step :     target_per = 1000/98.304 = 10.172526ns     base_per    =  1000/(480/5)   = 10.4166666ns     intp_per     =  10000/(480/4)   = 8.3333333ns     err_accu = |target_per - base_per| = 0.24414     err_comp = |target_per - intp_per| = 1.8391927     normalizaiton = err_accu/err_comp = 0.13274302361..      Convert the decimal into hexadecimal. change format to unsigned Q0.24 , which is  floo( normalizaion * (1<<24))  Note: to get 45.1584M, set comp_sel =0 , ckd_sdm = 10 , comp_step = 0x96_d51a*/
 #define LSYS_COMP_STEP_I2S0(x)     (((u32)((x) & 0x00FFFFFF) << 0))
 #define LSYS_GET_COMP_STEP_I2S0(x) ((u32)(((x >> 0) & 0x00FFFFFF)))
 /** @} */

@@ -27,6 +27,9 @@
 #include "proxy.h"
 #include "gatt_cli.h"
 #include "proxy_msg.h"
+#if ZEPHYR_RTK_PATCH
+#include "provisioner.h"
+#endif
 
 #define LOG_LEVEL CONFIG_BT_MESH_PROV_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -53,19 +56,38 @@ static void pb_gatt_msg_recv(struct bt_mesh_proxy_role *role)
 static void pb_gatt_connected(struct bt_conn *conn, void *user_data)
 {
 	ARG_UNUSED(user_data);
+#if ZEPHYR_RTK_PATCH
+	/* No target means the connection was made by address (manual mode) */
+	bool manual = !server.target;
+#endif
 
 	server.srv = bt_mesh_proxy_role_setup(conn, bt_mesh_gatt_send,
 					      pb_gatt_msg_recv);
 
 	server.target = NULL;
 
+#if ZEPHYR_RTK_PATCH
+	if (!bt_mesh_pb_gatt_cli_start(conn) && manual) {
+		bt_mesh_pb_gatt_cli_mark_manual();
+	}
+#else
 	bt_mesh_pb_gatt_cli_start(conn);
+#endif
 }
 
 static void pb_gatt_link_open(struct bt_conn *conn)
 {
 	bt_mesh_pb_gatt_cli_open(conn);
 }
+
+#if ZEPHYR_RTK_PATCH
+static void pb_gatt_link_open_failed(struct bt_conn *conn)
+{
+	ARG_UNUSED(conn);
+
+	bt_mesh_pb_gatt_prov_link_abort();
+}
+#endif
 
 static void pb_gatt_disconnected(struct bt_conn *conn)
 {
@@ -84,8 +106,23 @@ static const struct bt_mesh_gatt_cli pbgatt = {
 
 	.connected		= pb_gatt_connected,
 	.link_open		= pb_gatt_link_open,
-	.disconnected		= pb_gatt_disconnected
+	.disconnected		= pb_gatt_disconnected,
+#if ZEPHYR_RTK_PATCH
+	.link_open_failed	= pb_gatt_link_open_failed,
+#endif
 };
+
+#if ZEPHYR_RTK_PATCH
+int bt_mesh_pb_gatt_cli_discover(struct bt_conn *conn, bt_mesh_gatt_cli_dis_cb result)
+{
+	return bt_mesh_gatt_cli_discover(conn, &pbgatt, NULL, result);
+}
+
+int bt_mesh_pb_gatt_cli_set_notify(struct bt_conn *conn, bool enable)
+{
+	return bt_mesh_gatt_cli_set_notify(conn, enable);
+}
+#endif
 
 int bt_mesh_pb_gatt_cli_setup(const uint8_t uuid[16])
 {
@@ -116,7 +153,14 @@ void bt_mesh_pb_gatt_cli_adv_recv(const struct bt_le_scan_recv_info *info,
 
 	if (server.target &&
 	    !memcmp(server.target, uuid, 16)) {
+#if ZEPHYR_RTK_PATCH
+		/* The device keeps advertising while it is connected: use that connection if there is one */
+		if (bt_mesh_gatt_cli_reuse(info->addr, &pbgatt, NULL) == -ENOENT) {
+			(void)bt_mesh_gatt_cli_connect(info->addr, &pbgatt, NULL);
+		}
+#else
 		(void)bt_mesh_gatt_cli_connect(info->addr, &pbgatt, NULL);
+#endif
 		return;
 	}
 
@@ -124,7 +168,16 @@ void bt_mesh_pb_gatt_cli_adv_recv(const struct bt_le_scan_recv_info *info,
 		return;
 	}
 
+#if ZEPHYR_RTK_PATCH
+	/* zephyr_patch: OOB Information is big endian on air*/
+	oob_info = (bt_mesh_prov_oob_info_t)net_buf_simple_pull_be16(buf);
+#else
 	oob_info = (bt_mesh_prov_oob_info_t)net_buf_simple_pull_le16(buf);
+#endif
 
+#if ZEPHYR_RTK_PATCH
+	bt_mesh_prov->unprovisioned_beacon_gatt(uuid, oob_info, info->addr, info->rssi);
+#else
 	bt_mesh_prov->unprovisioned_beacon_gatt(uuid, oob_info);
+#endif
 }

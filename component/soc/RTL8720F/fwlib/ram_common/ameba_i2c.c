@@ -281,10 +281,16 @@ void I2C_SetSpeed(I2C_TypeDef *I2Cx, u32 SpdMd, u32 I2Clk, u32 I2CIPClk)
 	}
 
 	default:
-		break;
+		assert_param(0);
+		return;
 	}
 
 	/* check I2C filter */
+	if (ICHtime <= 200) {
+		RTK_LOGD(TAG, "Filter not support for current speed, it will be disabled.\n");
+		I2Cx->IC_FILTER = 0x00;
+		return;
+	}
 	u32 ICfilter = I2Cx->IC_FILTER;
 	u32 FilterLimit = ICHtime * IPClkM / 2000; /* filter_reg <= tHigh/4*2/clk_ns */
 	if (I2C_GET_IC_DIG_FLTR_DEG(ICfilter) > FilterLimit) {

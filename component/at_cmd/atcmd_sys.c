@@ -443,11 +443,10 @@ void at_uart(u16 argc, char **argv)
 	mode = (int)atoi(argv[1]);
 	baudrate = (int)atoi(argv[2]);
 
-	if (mode == 1) {
-		rt_kv_set("atcmd_uart_baudrate", (uint8_t *) &baudrate, 4);
-	}
-
 	if (baudrate >= 4800 && baudrate <= 6000000) {
+		if (mode == 1) {
+			rt_kv_set("atcmd_uart_baudrate", (uint8_t *) &baudrate, 4);
+		}
 		UART_SetBaud(UART_DEV, baudrate);
 	} else {
 		error_no = 1;

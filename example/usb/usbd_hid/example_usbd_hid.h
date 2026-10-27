@@ -4,18 +4,29 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/* Define to prevent recursive inclusion -------------------------------------*/
-
-#ifndef _EXAMPLE_USBD_HID_H
-#define _EXAMPLE_USBD_HID_H
+#ifndef EXAMPLE_USBD_HID_H
+#define EXAMPLE_USBD_HID_H
 
 /* Includes ------------------------------------------------------------------*/
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* Exported defines ----------------------------------------------------------*/
+
 /* Exported types ------------------------------------------------------------*/
 
-/* Exported functions ------------------------------------------------------- */
+/* Exported macros -----------------------------------------------------------*/
+
+/* Exported variables --------------------------------------------------------*/
+
+/* Exported functions --------------------------------------------------------*/
 
 void example_usbd_hid(void);
 
-#endif /* _EXAMPLE_USBD_HID_H */
+#ifdef __cplusplus
+}
+#endif
 
+#endif /* EXAMPLE_USBD_HID_H */

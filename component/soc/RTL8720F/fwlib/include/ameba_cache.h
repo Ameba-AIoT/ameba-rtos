@@ -11,31 +11,13 @@
 extern "C" {
 #endif
 
-/** @addtogroup AmebaD_Platform
+/** @addtogroup Ameba_Platform
   * @{
   */
 
 /** @defgroup CACHE
   * @brief CACHE modules
   * @{
-  */
-
-/** @addtogroup CACHE
-  * @verbatim
-  *****************************************************************************************
-  * Introduction
-  *****************************************************************************************
-  *		-just support read cache.
-  *		-32K bytes.
-  *		-used for flash read and XIP.
-  *
-  *****************************************************************************************
-  * how to use
-  *****************************************************************************************
-  *		Cache_Enable: enable/disable cache
-  *		Cache_Flush: flush cache, you should Cache_Flush after flash write or flash erase
-  *****************************************************************************************
-  * @endverbatim
   */
 
 /** @defgroup CACHE_Line_Aligned_define
@@ -151,7 +133,6 @@ void DCache_Invalidate(u32 Address, u32 Bytes)
   * @note  Dcache will be write back to memory.
   * @note  This can be used before DMA Tx, after CPU write data to DMA buffer.
   * @note  if Address is 0xFFFFFFFF, it means dont care, it was used when all Dcache be cleaned.
-  * @note  AmebaD cache is default read allocation and write through, so clean is not needed.
   */
 __STATIC_INLINE
 void DCache_Clean(u32 Address, u32 Bytes)
@@ -249,4 +230,4 @@ void Cache_Flush(void)
 /**
   * @}
   */
-#endif //_RTL8710B_CACHE_H_
+#endif //_AMEBA_CACHE_H_

@@ -364,6 +364,81 @@ int lfs_nor_rolfs_erase(const struct lfs_config *c, lfs_block_t block)
 }
 #endif
 
+#if defined(VFS_RAM_LITTLEFS)
+#include "vfs_ram.h"
+
+lfs_t g_ram_lfs;
+
+static int lfs_ram_read(const struct lfs_config *c, lfs_block_t block, lfs_off_t off, void *buffer, lfs_size_t size)
+{
+	return vfs_ram_read(c->block_size * block + off, buffer, size) ? LFS_ERR_IO : LFS_ERR_OK;
+}
+
+static int lfs_ram_prog(const struct lfs_config *c, lfs_block_t block, lfs_off_t off, const void *buffer, lfs_size_t size)
+{
+	return vfs_ram_write(c->block_size * block + off, buffer, size) ? LFS_ERR_IO : LFS_ERR_OK;
+}
+
+static int lfs_ram_erase(const struct lfs_config *c, lfs_block_t block)
+{
+	(void) c;
+	(void) block;
+	return LFS_ERR_OK;		/* RAM is overwritable in place */
+}
+
+static struct lfs_config g_ram_lfs_cfg = {
+	.read  = lfs_ram_read,
+	.prog  = lfs_ram_prog,
+	.erase = lfs_ram_erase,
+	.sync  = lfs_diskio_sync,
+
+#ifdef LFS_THREADSAFE
+	.lock = lfs_diskio_lock,
+	.unlock = lfs_diskio_unlock,
+#endif
+
+	.read_size = 16,
+	.prog_size = 16,
+	.block_size = CONFIG_VFS_RAM_LFS_BLOCK_SIZE,
+	.lookahead_size = 16,
+	.cache_size = 256,
+	.block_cycles = -1,		/* no wear on RAM */
+};
+
+/* volatile disk: allocate, then always format + mount */
+int rt_lfs_ram_init(void)
+{
+	u32 bs = CONFIG_VFS_RAM_LFS_BLOCK_SIZE;
+	u32 size = (u32)CONFIG_VFS_RAM_SIZE_KB * 1024;
+	int ret;
+
+	if (bs < 512 || bs > 4096 || (bs & (bs - 1)) || (size % bs) || (size / bs) < 8) {
+		RTK_LOGE("VFS", "ram size invalid\n");
+		return -1;
+	}
+	if (vfs_ram_open(VFS_LITTLEFS)) {
+		return -1;
+	}
+	g_ram_lfs_cfg.block_count = size / bs;
+	ret = lfs_format(&g_ram_lfs, &g_ram_lfs_cfg);
+	if (ret == 0) {
+		ret = lfs_mount(&g_ram_lfs, &g_ram_lfs_cfg);
+	}
+	if (ret) {
+		RTK_LOGE("VFS", "ram mkfs fail %d\n", ret);
+		vfs_ram_close();
+	}
+	return ret;
+}
+
+int rt_lfs_ram_deinit(void)
+{
+	int ret = lfs_unmount(&g_ram_lfs);
+	vfs_ram_close();
+	return ret;
+}
+#endif
+
 int lfs_diskio_sync(const struct lfs_config *c)
 {
 	(void) c;

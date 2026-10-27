@@ -60,10 +60,10 @@ extern u8 __km4tz_flash_text_start__[];
 extern u8 __km4tz_flash_text_end__[];
 extern u8 __km4ns_flash_text_start__[];
 extern u8 __km4ns_flash_text_end__[];
-extern u8 __km4ns_app_flash_text_start__[];
-extern u8 __km4ns_app_flash_text_end__[];
-extern u8 __km4ns_sram_start__[];
-extern u8 __km4ns_sram_end__[];
+extern u8 __km55ns_app_flash_text_start__[];
+extern u8 __km55ns_app_flash_text_end__[];
+extern u8 __km55ns_sram_start__[];
+extern u8 __km55ns_sram_end__[];
 extern u8 __solo_share_ram_end__[];
 extern u8 __km4tz_img3_text_start__[];
 extern u8 __km4tz_img3_text_end__[];
@@ -309,6 +309,13 @@ __STATIC_FORCEINLINE bool is_memory_range_valid(u32 addr, size_t len,
 #define RANGE_IS_FLOADER(src, len) \
     is_memory_range_valid(((u32)(src) | (u32)TZ_IDAU_SEC_OFFSET), (size_t)(len), \
                           (u32)LOADER_DOWNLOAD_ADDR, (u32)SRAM_END_ADDRESS_S)
+
+/* Enable divide-by-zero fault, shared by the cold boot and the PG wake of the NS core */
+__STATIC_INLINE void BOOT_SCBConfig_NP(void)
+{
+	/* Enable divide-by-zero fault */
+	SCB->CCR |= SCB_CCR_DIV_0_TRP_Msk;
+}
 
 #ifdef __cplusplus
 }

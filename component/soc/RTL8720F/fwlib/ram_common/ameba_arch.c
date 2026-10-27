@@ -37,7 +37,6 @@ void SystemCoreClockUpdate(void)             /* Get Core Clock Frequency      */
  */
 void SystemInit(void)
 {
-	// TODO: Hardware initial
 #ifdef UNALIGNED_SUPPORT_DISABLE
 	SCB->CCR |= SCB_CCR_UNALIGN_TRP_Msk;
 #endif

@@ -11,7 +11,6 @@
  * Include user defined options first. Anything not defined in these files
  * will be set to standard values. Override anything you dont like!
  */
-#include "dlist.h"
 #include "ameba_soc.h"
 #include "os_wrapper.h"
 #include <stdlib.h>
@@ -32,6 +31,7 @@ typedef struct _at_command_item_ {
 } log_item_t;
 
 void atcmd_service_add_table(log_item_t *tbl, int len);
+void *atcmd_handler(char *cmd);
 int parse_param(char *buf, char **argv);
 int parse_param_advance(char *buf, char **argv);
 

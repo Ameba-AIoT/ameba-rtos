@@ -17,23 +17,23 @@ set(v_AMEBA_LOG_LEVEL ${c_AMEBA_LOG_LEVEL_INFO})
 set(c_VERBOSE_MAKEFILE FALSE)
 
 ###############################################################################
-ameba_soc_project_create(RTL8720F p_OUTPUT_MCU_PROJECT km4tz)
+ameba_soc_project_create(RTL8720F p_OUTPUT_MCU_PROJECT km55tz)
 #WARNING: project MUST be called after ameba_soc_project_create()
 project(${c_SOC_TYPE} LANGUAGES C CXX ASM)
 
 ameba_soc_project_check()
 ###############################################################################
 #OPTIMIZE: Used in bin-merge process, remove theme if no need
-set(KM4TZ_PROJECT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/project_km4tz)
-set(KM4NS_PROJECT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/project_km4ns)
-set(KM4NS_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR}/project_km4ns)
-set(KM4TZ_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR}/project_km4tz)
+set(KM55TZ_PROJECT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/project_km55tz)
+set(KM55NS_PROJECT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/project_km55ns)
+set(KM55NS_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR}/project_km55ns)
+set(KM55TZ_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR}/project_km55tz)
 ###############################################################################
 
 ###############################################################################
 # Add sub projects
-ameba_add_subdirectory(project_km4tz)
-ameba_add_subdirectory(project_km4ns)
+ameba_add_subdirectory(project_km55tz)
+ameba_add_subdirectory(project_km55ns)
 ###############################################################################
 
 ###############################################################################
@@ -51,8 +51,8 @@ endif()
 ameba_firmware_package(
     ${app_name}         #Output app name, referred by c_APP_BINARY_NAME in postbuild.cmake
     p_MCU_PROJECTS      #MCU project list, notice the ORDER is important which determines the image2/image3 order in final binary file
-        km4ns #km4ns's image2 is in front of km4tz's image2/image3
-        km4tz
+        km55ns #km55ns's image2 is in front of km55tz's image2/image3
+        km55tz
 )
 ###############################################################################
 

@@ -281,7 +281,8 @@ void I2C_SetSpeed(I2C_TypeDef *I2Cx, u32 SpdMd, u32 I2Clk, u32 I2CIPClk)
 	}
 
 	default:
-		break;
+		assert_param(0);
+		return;
 	}
 
 	/* check I2C filter */

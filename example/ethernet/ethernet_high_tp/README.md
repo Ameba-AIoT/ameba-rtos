@@ -12,13 +12,13 @@ The callback function is invoked when the Ethernet link status changes (UP or DO
 
 1. Enable Ethernet Feature:
 
-   Use menuconfig and enable `CONFIG ETHERNET`, then select `PHY SOURCE CLK` according to how the PHY on your board is clocked (`50M from Ameba` / `25M from Ameba` / `PHY xtal`).
+   Use menuconfig and enable `CONFIG ETHERNET`, then select `MAC CLOCK SOURCE`. With `Internal clock divided from PLL`, also select `PHY CLOCK SOURCE` according to how the PHY on your board is clocked (`50M from Ameba` / `25M from Ameba` / `PHY xtal`); with `External 50M from the EXTCLK pin` the PHY runs from its own crystal and there is no such option.
 
    See [ETH PHY CLK](https://aiot.realmcu.com/zh/latest/rtos/peripherals/ethernet/index.html#eth-phy-clk) for more details.
 
 2. Select the RMII Pin Group:
 
-   Set `ETHERNET_Pin_Grp` in `component/soc/usrcfg/amebagreen2/ameba_intfcfg.c` to the group (`0x0`-`0x3`) that matches the RMII pins actually wired on your board. The pin mapping of each group is listed in `ETHERNET_PAD[]` in the same file.
+   Use menuconfig `CONFIG User Config` -> `Pinmux Group Configuration` -> `Ethernet(RMII) pinmux group` to select the group (`0`-`3`, default `2`) that matches the RMII pins actually wired on your board. The pin mapping of each group is listed in `ETHERNET_PAD[]` in `component/soc/usrcfg/amebagreen2/ameba_intfcfg.c`. Do not edit `ETHERNET_Pin_Grp` in that file directly, it is assigned from the menuconfig value.
 
 3. Throughput tuning:
 
@@ -27,7 +27,7 @@ The callback function is invoked when the Ethernet link status changes (UP or DO
    * Raise the CPU frequency: menuconfig `CONFIG User Config` -> `Clock Configuration` -> `SoC Clock Config` -> `[5] 1.0V, RMII/USB, CPU 320MHz`.
    * Enlarge the TCP send window/buffer size: menuconfig `CONFIG WIFI` -> `Enable HIGH TP`.
    * Increase the pbuf pool buffer size: menuconfig `CONFIG LWIP` -> `Len of pbuf pool` -> `1536`.
-   * Double the TX descriptor count: menuconfig `CONFIG ETHERNET` -> `Number of ETH TX descriptors` -> `16` (default is `8`).
+   * Descriptor count: with IMG2 in PSRAM the default is 8 TX + 8 RX descriptors, which is the tested configuration and normally needs no change. To change it, first enable `CONFIG ETHERNET` -> `Manually set the number of ETH descriptors`. The RX count must be a power of two.
 
 4. IP Configuration:
 

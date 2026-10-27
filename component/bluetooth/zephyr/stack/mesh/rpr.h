@@ -35,3 +35,8 @@ static inline bool rpr_node_equal(const struct bt_mesh_rpr_node *a,
 }
 
 enum bt_mesh_rpr_node_refresh bt_mesh_node_refresh_get(void);
+
+#if ZEPHYR_RTK_PATCH
+/* Set the bearer the RPR server uses to open the next link, BT_MESH_PROV_ADV or BT_MESH_PROV_GATT */
+int bt_mesh_rpr_srv_prefer_bearer_set(uint8_t bearer);
+#endif

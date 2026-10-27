@@ -45,7 +45,7 @@ int efuse_get_remaining_length(void)
   * @brief  Read eFuse content of specified user logical OTP.
   * @param  data: buffer address to save the readback data.
   * @retval none
-  * @note Read user logical OTP(0x170~0x19F).
+  * @note Read user logical OTP(0x2D0~0x2FF).
   */
 void efuse_mtp_read(uint8_t *data)
 {
@@ -64,12 +64,13 @@ void efuse_mtp_read(uint8_t *data)
 
 /**
   * @brief  Write user's content to user logical OTP.
-  * @param  offset: Address offset of the programmed user logical OTP(base address: 0x170).
+  * @param  offset: Address offset of the programmed user logical OTP(base address: 0x2D0).
   * @param  data: Data buffer to be programmed.
   * @param  len: Data length to be programmed.
-  *          - 0~32: Success
-  *          - -1: Failure
-  * @note Write user logical OTP(0x170~0x19F).
+  * @return Write result:
+  * @retval 0: Success.
+  * @retval -1: Failure, offset + len exceeds the user logical OTP size, or the OTP write fails.
+  * @note Write user logical OTP(0x2D0~0x2FF).
   */
 int efuse_mtp_write(uint32_t offset, uint32_t len, uint8_t *data)
 {
@@ -173,7 +174,8 @@ int efuse_otp_chk(u8 len, u8 *buf)
 	(void) len;
 	(void) buf;
 	printf("Does not support efuse_otp_chk function!\n");
-	return 0;
+	assert_param(0);
+	return -1;
 }
 
 /** @} */
@@ -182,4 +184,3 @@ int efuse_otp_chk(u8 len, u8 *buf)
 
 //#endif
 /******************* (C) COPYRIGHT 2016 Realtek Semiconductor *****END OF FILE****/
-

@@ -5,6 +5,21 @@
  */
 
 #include "ameba_soc.h"
+
+/**
+  * @brief  Clear one RW1C flag of RTC_ISR, other pending RW1C flags are kept.
+  * @param  RTC: RTC register base.
+  * @param  RTC_Flag: RW1C flag to clear.
+  * @retval None
+  */
+static void RTC_ISRClearFlag(RTC_TypeDef *RTC, u32 RTC_Flag)
+{
+	u32 Temp = RTC->RTC_ISR;
+
+	Temp &= ~RTC_ISR_RW1C_MASK;
+	Temp |= RTC_Flag;
+	RTC->RTC_ISR = Temp;
+}
 /** @addtogroup Ameba_Periph_Driver
   * @{
   */
@@ -60,7 +75,8 @@ u32 RTC_EnterInitMode(void)
 	/* Check if the Initialization mode is set */
 	if ((RTC->RTC_ISR & RTC_BIT_INITF) == 0) {
 		/* Set the Initialization mode */
-		RTC->RTC_ISR |= (u32)RTC_BIT_INIT;
+		/* INIT is the only R/W bit, the others are R or RW1C, so a plain write keeps pending flags */
+		RTC->RTC_ISR = RTC_BIT_INIT;
 
 		/* Wait till RTC is in INIT state and if Time out is reached exit */
 		do {
@@ -91,7 +107,7 @@ void RTC_ExitInitMode(void)
 	RTC_TypeDef *RTC = ((RTC_TypeDef *) RTC_BASE);
 
 	/* Exit Initialization mode */
-	RTC->RTC_ISR &= ~RTC_BIT_INIT;
+	RTC->RTC_ISR = 0;
 }
 
 /**
@@ -127,7 +143,7 @@ u32 RTC_WaitForSynchro(void)
 	RTC->RTC_WPR = RTC_KEY(0x53);
 
 	/* write 1 to Clear RSF flag */
-	RTC->RTC_ISR |= RTC_BIT_RSF;
+	RTC_ISRClearFlag(RTC, RTC_BIT_RSF);
 
 	/* Wait the registers to be synchronised */
 	do {
@@ -483,15 +499,9 @@ u32 RTC_SetTimeDayYear(u32 RTC_TimeDay, u32 RTC_TimeYear)
 void RTC_DayIntClear(void)
 {
 	RTC_TypeDef *RTC = ((RTC_TypeDef *) RTC_BASE);
-	u32 isr = RTC->RTC_ISR;
 	u32 counter = 0;
 
-	/*not clear alarm flag and wakeup flag*/
-	isr &= ~(RTC_BIT_ALMF | RTC_BIT_WUTF);
-
-	isr |= RTC_BIT_DOVTHF;
-
-	RTC->RTC_ISR = isr;
+	RTC_ISRClearFlag(RTC, RTC_BIT_DOVTHF);
 
 	while (1) {
 		/* check Alarm flag clear success*/
@@ -697,7 +707,7 @@ u32 RTC_SetAlarm(u32 RTC_Format, RTC_AlarmTypeDef *RTC_AlarmStruct)
 	}
 
 	/* clear isr, or set wll fail */
-	RTC->RTC_ISR |= RTC_BIT_ALMF;
+	RTC_ISRClearFlag(RTC, RTC_BIT_ALMF);
 
 	if (RTC->RTC_ISR & RTC_BIT_ALMWF) {
 		/* Configure the Alarm1 register H:M:S */
@@ -796,7 +806,7 @@ void RTC_AlarmCmd(u32 NewState)
 
 	/* Configure the Alarm state */
 	if (NewState != DISABLE) {
-		RTC->RTC_ISR |= RTC_BIT_ALMF;
+		RTC_ISRClearFlag(RTC, RTC_BIT_ALMF);
 
 		RTC->RTC_CR |= (u32)(RTC_BIT_ALME | RTC_BIT_ALMIE);
 
@@ -804,7 +814,7 @@ void RTC_AlarmCmd(u32 NewState)
 		(void) RTC_WaitForSynchro();
 	} else {
 		/* clear isr, or set will fail */
-		RTC->RTC_ISR |= RTC_BIT_ALMF;
+		RTC_ISRClearFlag(RTC, RTC_BIT_ALMF);
 
 		/* Disable the Alarm in RTC_CR register */
 		RTC->RTC_CR &= (u32)~(RTC_BIT_ALME | RTC_BIT_ALMIE);
@@ -833,15 +843,9 @@ void RTC_AlarmCmd(u32 NewState)
 void RTC_AlarmClear(void)
 {
 	RTC_TypeDef *RTC = ((RTC_TypeDef *) RTC_BASE);
-	u32 isr = RTC->RTC_ISR;
 	u32 counter = 0;
 
-	/*not clear day over thres flag and wakeup flag*/
-	isr &= ~(RTC_BIT_DOVTHF | RTC_BIT_WUTF);
-
-	isr |= RTC_BIT_ALMF;
-
-	RTC->RTC_ISR = isr;
+	RTC_ISRClearFlag(RTC, RTC_BIT_ALMF);
 
 	while (1) {
 		/* check Alarm flag clear success*/
@@ -882,7 +886,7 @@ u32 RTC_WaitForWUTSynchro(void)
 	RTC->RTC_WPR = RTC_KEY(0x53);
 
 	/* write 1 to Clear WUTRSF flag */
-	RTC->RTC_ISR |= RTC_BIT_WUTRSF;
+	RTC_ISRClearFlag(RTC, RTC_BIT_WUTRSF);
 
 	/* Wait the WUT registers to be synchronised */
 	while (counter <= SYNCHRO_TIMEOUT) {
@@ -938,7 +942,7 @@ u32 RTC_SetWakeup(u32 RTC_WakeupRange)
 	}
 
 	/* clear isr, or set wll fail */
-	RTC->RTC_ISR |= RTC_BIT_WUTF;
+	RTC_ISRClearFlag(RTC, RTC_BIT_WUTF);
 
 	if (RTC->RTC_ISR & RTC_BIT_WUTWF) {
 		/* Configure the WakeupTimer cloak */
@@ -986,7 +990,7 @@ void RTC_WakeupCmd(u32 NewState)
 
 	/* Configure the wakeup timer state */
 	if (NewState != DISABLE) {
-		RTC->RTC_ISR |= RTC_BIT_WUTF;
+		RTC_ISRClearFlag(RTC, RTC_BIT_WUTF);
 
 		RTC->RTC_CR |= (u32)(RTC_BIT_WUTE | RTC_BIT_WUTIE);
 
@@ -995,7 +999,7 @@ void RTC_WakeupCmd(u32 NewState)
 
 	} else {
 		/* clear isr, or set will fail */
-		RTC->RTC_ISR |= RTC_BIT_WUTF;
+		RTC_ISRClearFlag(RTC, RTC_BIT_WUTF);
 
 		/* Disable the wakeup timer in RTC_CR register */
 		RTC->RTC_CR &= (u32)~(RTC_BIT_WUTE | RTC_BIT_WUTIE);
@@ -1021,15 +1025,9 @@ void RTC_WakeupCmd(u32 NewState)
 void RTC_WakeupClear(void)
 {
 	RTC_TypeDef *RTC = ((RTC_TypeDef *) RTC_BASE);
-	u32 isr = RTC->RTC_ISR;
 	u32 counter = 0;
 
-	/*not clear day over thres flag and alarm flag*/
-	isr &= ~(RTC_BIT_DOVTHF | RTC_BIT_ALMF);
-
-	isr |= RTC_BIT_WUTF;
-
-	RTC->RTC_ISR = isr;
+	RTC_ISRClearFlag(RTC, RTC_BIT_WUTF);
 
 	while (counter <= WUTDIS_TIMEOUT) {
 		counter++;

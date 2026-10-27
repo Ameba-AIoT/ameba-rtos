@@ -33,6 +33,7 @@ struct rtw_cli_netlink_global *global = NULL;
 /* Define API handler */
 const struct cmd_func_t rtw_cli_cmd_handlers[] = {
 	{"getmac",          rtw_cli_cmd_getmac, API_WIFI_SEND_TO_DEV, WHC_WPA_OPS_UTIL, WHC_WPA_OPS_UTIL_GET_MAC_ADDR},
+	{"setmac",          rtw_cli_cmd_setmac, API_WIFI_SEND_TO_DEV, WHC_WPA_OPS_UTIL, WHC_WPA_OPS_UTIL_SET_MAC_ADDR},
 	{"set_network",     rtw_cli_cmd_set_network, API_WIFI_SEND_TO_DEV, WHC_WPA_OPS_UTIL, WHC_WPA_OPS_UTIL_SET_NETWORK},
 	{"list_networks",   rtw_cli_cmd_set_network, API_WIFI_SEND_TO_DEV, WHC_WPA_OPS_UTIL, WHC_WPA_OPS_UTIL_SET_NETWORK},
 	{"select_network",  rtw_cli_cmd_set_network, API_WIFI_SEND_TO_DEV, WHC_WPA_OPS_UTIL, WHC_WPA_OPS_UTIL_SET_NETWORK},

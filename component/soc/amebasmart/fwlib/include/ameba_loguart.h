@@ -850,6 +850,9 @@ _LONG_CALL_ u8 LOGUART_Writable(void);
 #define DiagPutChar		LOGUART_PutChar
 #define DiagGetChar		LOGUART_GetChar
 
+/* No NP/AP LOGUART interrupt routing to switch on AmebaSmart. */
+#define LOGUART_INT_NP2AP() (void)0
+
 #ifdef __cplusplus
 }
 #endif

@@ -17,6 +17,7 @@ static const char *const TAG = "AT-OTA";
 
 static int at_ota_status = 0;
 static int g_ota_user_imglen = 0;
+#define OTA_DROP_BUF_SIZE 1024
 
 static int ota_set_ssl_certificate(char **dest, CERT_TYPE cert_type, int index)
 {
@@ -358,6 +359,23 @@ void at_otauser(u16 argc, char **argv)
 	ret = ota_start(ctx);
 	if (ret == OTA_OK) {
 		at_printf(ATCMD_OK_END_STR);
+		/* Image is complete: stay in tt mode and silently drop the unused tail of <length>,
+		   otherwise it reaches the AT parser as a burst of unknown commands. */
+		if (g_ota_user_imglen > 0) {
+			u8 *drop = (u8 *)rtos_mem_malloc(OTA_DROP_BUF_SIZE);
+			int drop_len;
+
+			if (drop) {
+				while (g_ota_user_imglen > 0) {
+					drop_len = atcmd_tt_mode_get(drop, (g_ota_user_imglen < OTA_DROP_BUF_SIZE) ? g_ota_user_imglen : OTA_DROP_BUF_SIZE);
+					if (drop_len == 0) {
+						break;
+					}
+					g_ota_user_imglen -= drop_len;
+				}
+				rtos_mem_free(drop);
+			}
+		}
 		if (sysrst) {
 			rtos_time_delay_ms(20);
 			sys_reset();

@@ -59,8 +59,8 @@ ameba_list_append(c_GLOBAL_COMMON_LINK_OPTIONS
     "SHELL:-Wl,-wrap,printf"
 )
 
-# wrap function are defined in vfs_wrap.c
-ameba_list_append_if(CONFIG_VFS_ENABLED c_GLOBAL_COMMON_LINK_OPTIONS
+# wrap function are defined in vfs_wrap.c (real implementation, or stubs when VFS is disabled in menuconfig)
+ameba_list_append_if(CONFIG_VFS_SUPPORTED c_GLOBAL_COMMON_LINK_OPTIONS
     "SHELL:-Wl,-wrap,fopen"
     "SHELL:-Wl,-wrap,fclose"
     "SHELL:-Wl,-wrap,fread"

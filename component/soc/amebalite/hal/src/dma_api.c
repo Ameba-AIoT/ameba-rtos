@@ -103,8 +103,6 @@ void dma_memcpy(gdma_t *dma_obj, void *dst, void *src, uint32_t len)
 	GDMA_InitStruct.GDMA_Index = dma_obj->index;
 	GDMA_InitStruct.GDMA_IsrType = (TransferType | ErrType);
 
-	printf("%s: ==> Src=%p Dst=%p Len=%lu\r\n", __FUNCTION__, src, dst, (u32)len);
-
 	if ((((u32)src & 0x03) == 0) &&	(((u32)dst & 0x03) == 0) && ((len & 0x03) == 0)) {
 		/* 4-bytes aligned, move 4 bytes each transfer */
 		GDMA_InitStruct.GDMA_SrcMsize   = MsizeEight;

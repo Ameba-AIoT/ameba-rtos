@@ -14,12 +14,12 @@ ameba_list_append(public_includes
     include
 )
 
-if(${c_MCU_PROJECT_NAME} STREQUAL "km4tz" AND CONFIG_TRUSTZONE)
+if(${c_MCU_PROJECT_NAME} STREQUAL "km55tz" AND CONFIG_TRUSTZONE)
     ameba_list_append(public_libraries
         ${c_SDK_LIB_SOC_DIR}/lib_rom_tz.a
     )
-elseif(${c_MCU_PROJECT_NAME} STREQUAL "km4ns" AND CONFIG_SOLO)
-    # SOLO: km4ns owns a direct flash driver, so its rom lib is a distinct variant.
+elseif(${c_MCU_PROJECT_NAME} STREQUAL "km55ns" AND CONFIG_SOLO)
+    # SOLO: km55ns owns a direct flash driver, so its rom lib is a distinct variant.
     ameba_list_append(public_libraries
         ${c_SDK_LIB_SOC_DIR}/lib_rom_solo.a
     )
@@ -56,10 +56,10 @@ set(private_compile_options)         #private compile_options
 #------------------------------#
 # Component private part, user config begin
 if(${c_CURRENT_IMAGE_TYPE} STREQUAL "image2")
-    if(${c_MCU_PROJECT_NAME} STREQUAL "km4tz")
+    if(${c_MCU_PROJECT_NAME} STREQUAL "km55tz")
         if(CONFIG_TRUSTZONE)
             ameba_list_append(private_sources
-                rom_${c_MCU_PROJECT_NAME}/ameba_vector_rom.c
+                rom_km4tz/ameba_vector_rom.c
 
                 rom_km4tz/ameba_crypto_rsip.c
                 rom_km4tz/ameba_rsip_rom.c
@@ -106,7 +106,7 @@ if(${c_CURRENT_IMAGE_TYPE} STREQUAL "image2")
                 stdlib/sscanf_minimal.c
             )
         endif()
-    elseif(${c_MCU_PROJECT_NAME} STREQUAL "km4ns")
+    elseif(${c_MCU_PROJECT_NAME} STREQUAL "km55ns")
         ameba_list_append(private_sources
             rom_common/ameba_otp_rom.c
             rom_common/ameba_shell_rom.c
@@ -149,7 +149,7 @@ if(${c_CURRENT_IMAGE_TYPE} STREQUAL "image2")
             stdlib/sscanf_minimal.c
         )
 
-        # SOLO only: km4ns owns a direct flash driver. 
+        # SOLO only: km55ns owns a direct flash driver. 
         if(CONFIG_SOLO)
             ameba_list_append(private_sources
                 rom_common/ameba_flash_rom.c
@@ -163,7 +163,7 @@ endif()
 #WARNING: Select right API based on your component's release/not-release/standalone
 
 ###NOTE: For closed-source component, only build before release and libs are packaged into lib/soc
-if((${c_MCU_PROJECT_NAME} STREQUAL "km4tz") AND CONFIG_TRUSTZONE)
+if((${c_MCU_PROJECT_NAME} STREQUAL "km55tz") AND CONFIG_TRUSTZONE)
     ameba_add_external_soc_library(rom_tz
         p_SOURCES
             ${private_sources}
@@ -174,7 +174,7 @@ if((${c_MCU_PROJECT_NAME} STREQUAL "km4tz") AND CONFIG_TRUSTZONE)
         p_COMPILE_OPTIONS
             ${private_compile_options}
     )
-elseif((${c_MCU_PROJECT_NAME} STREQUAL "km4ns") AND CONFIG_SOLO)
+elseif((${c_MCU_PROJECT_NAME} STREQUAL "km55ns") AND CONFIG_SOLO)
     ameba_add_external_soc_library(rom_solo
         p_SOURCES
             ${private_sources}

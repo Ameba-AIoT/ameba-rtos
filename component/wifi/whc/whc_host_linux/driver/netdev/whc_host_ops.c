@@ -255,6 +255,9 @@ void whc_host_connect_indicate(unsigned int join_status, void *evt_info)
 			global_idev.whchpriv.htpriv[wlan_idx].HT_protection = join_status_info->HT_protection;
 			/* update stainfo for trx use */
 			whc_host_sta_update_stainfo(wlan_idx, join_status_info->bssid, &join_status_info->stainfo, &join_status_info->sec_priv);
+			/* WHY(sta-bcmc-rx): ap2sta rx looks up bcmc stainfo for bc/mc frames; without it peer's broadcast
+			 * ARP request is dropped and peer can't ping STA first. Do not alloc it only on AP start. */
+			whc_host_init_bcmc_stainfo(wlan_idx);
 #endif
 
 			netif_carrier_on(global_idev.pndev[wlan_idx]);

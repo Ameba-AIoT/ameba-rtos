@@ -36,6 +36,7 @@ extern ll_diskio_drv SD_disk_Driver;
 extern ll_diskio_drv SD_disk_spi_Driver;
 extern ll_diskio_drv FLASH_disk_Driver;
 extern ll_diskio_drv FLASH_second_disk_Driver;
+extern ll_diskio_drv RAM_disk_Driver;
 
 extern void (*fatfs_hostplug_usr_cb)(int);
 
@@ -57,6 +58,13 @@ int fatfs_flash_close(int interface);
 int fatfs_usbh_init(void);
 int fatfs_usbh_close(void);
 
+int fatfs_ram_init(void);
+int fatfs_ram_close(void);
+
+/* Register the hotplug callback, called with HOTPULG_IN / HOTPULG_OUT.
+ * For USB host it runs in the USB host task and must not do any file operation (mount,
+ * unmount, read, write, sync): the disk I/O waits for that very task and would deadlock.
+ * Give a semaphore instead and do the file work in an application thread. */
 void fatfs_set_hotplug_usr_cb(void (*cd_callback)(int status));
 
 int FATFS_RegisterDiskDriver(ll_diskio_drv *disk_drv);

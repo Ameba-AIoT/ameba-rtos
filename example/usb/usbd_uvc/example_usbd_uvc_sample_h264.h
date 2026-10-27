@@ -1,5 +1,25 @@
+/*
+ * Copyright (c) 2025 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #ifndef EXAMPLE_USBD_UVC_SAMPLE_H264_H
 #define EXAMPLE_USBD_UVC_SAMPLE_H264_H
+
+/* Includes ------------------------------------------------------------------*/
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* Exported defines ----------------------------------------------------------*/
+
+/* Exported types ------------------------------------------------------------*/
+
+/* Exported macros -----------------------------------------------------------*/
+
+/* Exported variables --------------------------------------------------------*/
 
 /*
  * H.264 Annex-B sample extracted from stream.h264
@@ -5880,5 +5900,11 @@ static const unsigned char h264_sample[] = {
 	0x70, 0x64, 0x20,
 };
 static const unsigned int h264_sample_len = sizeof(h264_sample);
+
+/* Exported functions --------------------------------------------------------*/
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* EXAMPLE_USBD_UVC_SAMPLE_H264_H */

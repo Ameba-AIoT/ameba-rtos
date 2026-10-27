@@ -43,6 +43,7 @@ void TM_StructInit(TM_InitTypeDef *TM_InitStruct)
 void TM_Init(TM_InitTypeDef *TM_InitStruct)
 {
 	THERMAL_TypeDef *thermal = TM_DEV;
+	u32 val;
 
 	if (TrustZone_IsSecure()) {
 		thermal = TM_DEV_S;
@@ -50,6 +51,9 @@ void TM_Init(TM_InitTypeDef *TM_InitStruct)
 
 	assert_param(IS_TM_DOWN_SAMPLE_RATE(TM_InitStruct->TM_DownSampRate));
 	assert_param(IS_TM_ADC_CLK_DIV(TM_InitStruct->TM_AdcClkDiv));
+	assert_param((TM_InitStruct->TM_HighProtectThreshold >= 0x46) && (TM_InitStruct->TM_HighProtectThreshold <= 0x8C));
+	assert_param(TM_InitStruct->TM_HighWarnThreshold < 0x100);
+	assert_param(TM_InitStruct->TM_LowWarnThreshold <= 0x1FF);
 
 	/* Disable thermal, clear pending interrupt */
 	TM_INTConfig(TM_BIT_IMR_TM_HIGH_WT | TM_BIT_IMR_TM_LOW_WT, DISABLE);
@@ -73,9 +77,18 @@ void TM_Init(TM_InitTypeDef *TM_InitStruct)
 
 	TM_INTClear();
 
-	TM_HighPtConfig(TM_InitStruct->TM_HighProtectThreshold, ENABLE);
-	TM_HighWtConfig(TM_InitStruct->TM_HighWarnThreshold, ENABLE);
-	TM_LowWtConfig(TM_InitStruct->TM_LowWarnThreshold, ENABLE);
+	TM_PwrProgCmd(ENABLE);
+
+	/* The thresholds are already in register format, fill them into the register fields directly */
+	val = thermal->TM_TH_CTRL;
+	val &= ~(TM_MASK_HIGH_PT_THR | TM_MASK_HIGH_WT_THR | TM_MASK_LOW_WT_THR);
+	val |= TM_HIGH_PT_THR(TM_InitStruct->TM_HighProtectThreshold);
+	val |= TM_HIGH_WT_THR(TM_InitStruct->TM_HighWarnThreshold);
+	val |= TM_LOW_WT_THR(TM_InitStruct->TM_LowWarnThreshold);
+	val |= TM_BIT_HIGHCMP_PT_EN | TM_BIT_HIGHCMP_WT_EN | TM_BIT_LOWCMP_WT_EN;
+	thermal->TM_TH_CTRL = val;
+
+	TM_PwrProgCmd(DISABLE);
 
 	TM_INTConfig(TM_BIT_IMR_TM_HIGH_WT | TM_BIT_IMR_TM_LOW_WT, ENABLE);
 
@@ -342,32 +355,54 @@ void TM_MinTempClr(void)
 }
 
 /**
+  * @brief  Get the threshold register value (1 sign bit + 8 integer bits) according to Celsius Degree.
+  * @param  TempC Temperature in Celsius Degree, which can be signed float, rounded to the nearest integer.
+  * @return Threshold register value.
+  */
+static u16 TM_GetTempCode(float TempC)
+{
+	s32 val = (s32)(TempC + ((TempC >= 0) ? 0.5f : -0.5f));
+
+	return (u16)(val & 0x1FF);
+}
+
+/**
   * @brief  Configure over-temp protect threshold for comparison with TEMP_OUT.
-  * @param  TM_HighPtThre When TEMP_OUT > TM_HighPtThre, an AON reset is triggered.
+  * @param  TM_HighPtThre Temperature threshold (float). When TEMP_OUT > threshold, an AON reset is triggered.
   * @internal
-  * @note   Only between 0x046 (70°C) and 0x08C (140°C) are valid.
+  * @note   Only between 70°C and 140°C are valid.
   * @endinternal
   * @param  NewState New state of the thermal over-temp protect comparison.
   *   			This parameter can be ENABLE or DISABLE.
+  * @param  Unit Unit of TM_HighPtThre.
+  *   			This parameter can be TM_DEG_C or TM_DEG_F.
   */
-void TM_HighPtConfig(u16 TM_HighPtThre, u32 NewState)
+void TM_HighPtConfig(float TM_HighPtThre, u32 NewState, TM_UnitDef Unit)
 {
 	u32 val;
+	u16 code;
 	THERMAL_TypeDef *thermal = TM_DEV;
 
 	if (TrustZone_IsSecure()) {
 		thermal = TM_DEV_S;
 	}
 
+	if (Unit == TM_DEG_C) {
+		code = TM_GetTempCode(TM_HighPtThre);
+	} else {
+		/* F = C * 1.8 + 32 */
+		code = TM_GetTempCode((TM_HighPtThre - 32) / 1.8f);
+	}
+
 	TM_PwrProgCmd(ENABLE);
 
 	if (NewState != DISABLE) {
-		assert_param((TM_HighPtThre >= 0x46) && (TM_HighPtThre <= 0x8C));
+		assert_param((code >= 0x46) && (code <= 0x8C));
 		val = thermal->TM_TH_CTRL;
 		val &= ~TM_MASK_HIGH_PT_THR;
-		val |= TM_HIGH_PT_THR(TM_HighPtThre);
+		val |= TM_HIGH_PT_THR(code);
 		thermal->TM_TH_CTRL = val;
-		thermal->TM_TH_CTRL |= (TM_BIT_HIGHCMP_PT_EN);
+		thermal->TM_TH_CTRL |= TM_BIT_HIGHCMP_PT_EN;
 	} else {
 		thermal->TM_TH_CTRL &= ~TM_BIT_HIGHCMP_PT_EN;
 	}
@@ -377,59 +412,77 @@ void TM_HighPtConfig(u16 TM_HighPtThre, u32 NewState)
 
 /**
   * @brief  Configure over-temp warning threshold for comparison with TEMP_OUT.
-  * @param  TM_HighWtThre When TM_HighWtThre <= TEMP_OUT < TM_HighPtThre, the ISR_TM_HIGH interrupt flag is set.
+  * @param  TM_HighWtThre Temperature threshold (float). When TM_HighWtThre <= TEMP_OUT < TM_HighPtThre, the ISR_TM_HIGH interrupt flag is set.
   * @note   Only values greater than 0 are supported.
   * @param  NewState New state of the thermal over-temp warning comparison.
   *   			This parameter can be ENABLE or DISABLE.
+  * @param  Unit Unit of TM_HighWtThre.
+  *   			This parameter can be TM_DEG_C or TM_DEG_F.
   */
-void TM_HighWtConfig(u16 TM_HighWtThre, u32 NewState)
+void TM_HighWtConfig(float TM_HighWtThre, u32 NewState, TM_UnitDef Unit)
 {
 	u32 val;
+	u16 code;
 	THERMAL_TypeDef *thermal = TM_DEV;
 
 	if (TrustZone_IsSecure()) {
 		thermal = TM_DEV_S;
 	}
 
+	if (Unit == TM_DEG_C) {
+		code = TM_GetTempCode(TM_HighWtThre);
+	} else {
+		/* F = C * 1.8 + 32 */
+		code = TM_GetTempCode((TM_HighWtThre - 32) / 1.8f);
+	}
+
 	if (NewState != DISABLE) {
-		assert_param(TM_HighWtThre < 0x100);
+		assert_param(code < 0x100);
 		val = thermal->TM_TH_CTRL;
 		val &= ~TM_MASK_HIGH_WT_THR;
-		val |= TM_HIGH_WT_THR(TM_HighWtThre);
+		val |= TM_HIGH_WT_THR(code);
 		thermal->TM_TH_CTRL = val;
-		thermal->TM_TH_CTRL |= (TM_BIT_HIGHCMP_WT_EN);
+		thermal->TM_TH_CTRL |= TM_BIT_HIGHCMP_WT_EN;
 	} else {
 		thermal->TM_TH_CTRL &= ~TM_BIT_HIGHCMP_WT_EN;
 	}
-
 }
 
 /**
   * @brief  Configure low-temp warning threshold for comparison with TEMP_OUT.
-  * @param  TM_LowWtThre When TEMP_OUT <= TM_LowWtThre, the ISR_TM_LOW interrupt flag is set.
+  * @param  TM_LowWtThre Temperature threshold (float). When TEMP_OUT <= TM_LowWtThre, the ISR_TM_LOW interrupt flag is set.
   * @param  NewState New state of the thermal low-temp warning comparison.
   *   			This parameter can be ENABLE or DISABLE.
+  * @param  Unit Unit of TM_LowWtThre.
+  *   			This parameter can be TM_DEG_C or TM_DEG_F.
   */
-void TM_LowWtConfig(u16 TM_LowWtThre, u32 NewState)
+void TM_LowWtConfig(float TM_LowWtThre, u32 NewState, TM_UnitDef Unit)
 {
 	u32 val;
+	u16 code;
 	THERMAL_TypeDef *thermal = TM_DEV;
 
 	if (TrustZone_IsSecure()) {
 		thermal = TM_DEV_S;
 	}
 
+	if (Unit == TM_DEG_C) {
+		code = TM_GetTempCode(TM_LowWtThre);
+	} else {
+		/* F = C * 1.8 + 32 */
+		code = TM_GetTempCode((TM_LowWtThre - 32) / 1.8f);
+	}
+
 	if (NewState != DISABLE) {
-		assert_param(TM_LowWtThre <= 0x1FF);
+		assert_param(code <= 0x1FF);
 		val = thermal->TM_TH_CTRL;
 		val &= ~TM_MASK_LOW_WT_THR;
-		val |= TM_LOW_WT_THR(TM_LowWtThre);
+		val |= TM_LOW_WT_THR(code);
 		thermal->TM_TH_CTRL = val;
-		thermal->TM_TH_CTRL |= (TM_BIT_LOWCMP_WT_EN);
+		thermal->TM_TH_CTRL |= TM_BIT_LOWCMP_WT_EN;
 	} else {
 		thermal->TM_TH_CTRL &= ~TM_BIT_LOWCMP_WT_EN;
 	}
-
 }
 
 /**
@@ -480,6 +533,22 @@ float TM_GetFdegree(u32 Data)
 	Fdegree = (TM_GetCdegree(Data) * 1.8) + 32;
 
 	return Fdegree;
+}
+
+/**
+  * @brief  Get temperature value according to the specified unit.
+  * @param  Data TM_RESULT(Binary complement form)
+  * @param  Unit Temperature unit.
+  *   			This parameter can be TM_DEG_C or TM_DEG_F.
+  * @return Temperature value of float type.
+  */
+float TM_GetDegree(u32 Data, TM_UnitDef Unit)
+{
+	if (Unit == TM_DEG_C) {
+		return TM_GetCdegree(Data);
+	} else {
+		return TM_GetFdegree(Data);
+	}
 }
 
 /** @} */

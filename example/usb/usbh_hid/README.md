@@ -57,9 +57,8 @@ Refer to the [EVB User Guide](https://aiot.realmcu.com/filelist?document_type=9)
 
 3. Once the HID driver enumerates successfully, the following logs appear:
 	```
-	[HID-I] CONNECT
-	[HID-I] HID attach
-	[HID-I] HID setup
+	[HID-I] ATTACH
+	[HID-I] SETUP
 	```
 
 4. Press a button on the HID device. The corresponding event is printed:
@@ -71,12 +70,10 @@ Refer to the [EVB User Guide](https://aiot.realmcu.com/filelist?document_type=9)
 
 5. Unplug the USB device. The detach log appears and the hotplug thread reinitializes the host stack:
 	```
-	[HID-I] HID detach
-	[HID-I] DISCONNECT
+	[HID-I] DETACH
 	[HID-I] ========== Hotplug #1 ==========
 	[HID-I] Free heap: 0x...
-	[HID-I] Re-init USB host...
-	[HID-I] Re-init complete
+	[HID-I] Reinit done
 	```
 
 6. Re-plug the device. It is re-enumerated automatically (steps 3–4 repeat) without a board reset.

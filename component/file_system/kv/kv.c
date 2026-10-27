@@ -6,6 +6,8 @@
 
 #include "platform_autoconf.h"
 #include "kv.h"
+
+#ifdef CONFIG_VFS_ENABLED
 #include "vfs.h"
 #ifdef CONFIG_VFS_FATFS_INCLUDED
 #include "ff.h"
@@ -428,3 +430,78 @@ exit:
 
 	return ret;
 }
+
+#else /* !CONFIG_VFS_ENABLED: VFS disabled in menuconfig, every KV op fails */
+
+/* atcmd_service.c checks this directly; keep it "not initialized" */
+int kv_init_done = -1;
+
+extern void vfs_stub_log(void);
+
+int vfs_kv_init(void)
+{
+	vfs_stub_log();
+	return -1;
+}
+
+int32_t rt_kv_set(const char *key, const void *val, int32_t len)
+{
+	(void)key;
+	(void)val;
+	(void)len;
+	vfs_stub_log();
+	return -1;
+}
+
+int32_t rt_kv_set_offset(const char *key, const void *val, int32_t len, int32_t offset)
+{
+	(void)key;
+	(void)val;
+	(void)len;
+	(void)offset;
+	vfs_stub_log();
+	return -1;
+}
+
+int32_t rt_kv_get(const char *key, void *buffer, int32_t len)
+{
+	(void)key;
+	(void)buffer;
+	(void)len;
+	vfs_stub_log();
+	return -1;
+}
+
+int32_t rt_kv_get_offset(const char *key, void *buffer, int32_t len, int32_t offset)
+{
+	(void)key;
+	(void)buffer;
+	(void)len;
+	(void)offset;
+	vfs_stub_log();
+	return -1;
+}
+
+int32_t rt_kv_size(const char *key)
+{
+	(void)key;
+	vfs_stub_log();
+	return -1;
+}
+
+int32_t rt_kv_delete(const char *key)
+{
+	(void)key;
+	vfs_stub_log();
+	return -1;
+}
+
+int rt_kv_list(char *buf, int32_t len)
+{
+	(void)buf;
+	(void)len;
+	vfs_stub_log();
+	return -1;
+}
+
+#endif /* CONFIG_VFS_ENABLED */

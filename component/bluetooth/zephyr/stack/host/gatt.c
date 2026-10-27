@@ -189,6 +189,18 @@ static ssize_t write_appearance(struct bt_conn *conn, const struct bt_gatt_attr 
 #endif
 
 #if defined(CONFIG_BT_GAP_PERIPHERAL_PREF_PARAMS)
+#if ZEPHYR_RTK_PATCH
+static struct bt_le_conn_param gaps_prefer_conn_param = {0};
+
+void bt_gaps_set_preferred_conn_param(uint16_t interval_min, uint16_t interval_max,
+									  uint16_t latency, uint16_t timeout)
+{
+	gaps_prefer_conn_param.interval_min = interval_min;
+	gaps_prefer_conn_param.interval_max = interval_max;
+	gaps_prefer_conn_param.latency = latency;
+	gaps_prefer_conn_param.timeout = timeout;
+}
+#else
 /* This checks if the range entered is valid */
 BUILD_ASSERT(!(CONFIG_BT_PERIPHERAL_PREF_MIN_INT > 3200 &&
 	     CONFIG_BT_PERIPHERAL_PREF_MIN_INT < 0xffff));
@@ -202,6 +214,7 @@ BUILD_ASSERT((CONFIG_BT_PERIPHERAL_PREF_MIN_INT == 0xffff) ||
 BUILD_ASSERT((CONFIG_BT_PERIPHERAL_PREF_TIMEOUT * 4U) >
 	     ((1U + CONFIG_BT_PERIPHERAL_PREF_LATENCY) *
 	      CONFIG_BT_PERIPHERAL_PREF_MAX_INT));
+#endif
 
 static ssize_t read_ppcp(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			 void *buf, uint16_t len, uint16_t offset)
@@ -213,10 +226,17 @@ static ssize_t read_ppcp(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 		uint16_t timeout;
 	} ppcp;
 
+#if ZEPHYR_RTK_PATCH
+	ppcp.min_int = sys_cpu_to_le16(gaps_prefer_conn_param.interval_min);
+	ppcp.max_int = sys_cpu_to_le16(gaps_prefer_conn_param.interval_max);
+	ppcp.latency = sys_cpu_to_le16(gaps_prefer_conn_param.latency);
+	ppcp.timeout = sys_cpu_to_le16(gaps_prefer_conn_param.timeout);
+#else
 	ppcp.min_int = sys_cpu_to_le16(CONFIG_BT_PERIPHERAL_PREF_MIN_INT);
 	ppcp.max_int = sys_cpu_to_le16(CONFIG_BT_PERIPHERAL_PREF_MAX_INT);
 	ppcp.latency = sys_cpu_to_le16(CONFIG_BT_PERIPHERAL_PREF_LATENCY);
 	ppcp.timeout = sys_cpu_to_le16(CONFIG_BT_PERIPHERAL_PREF_TIMEOUT);
+#endif
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, &ppcp,
 				 sizeof(ppcp));
@@ -1424,6 +1444,25 @@ static void sc_process(struct k_work *work)
 
 	atomic_set_bit(sc->flags, SC_INDICATE_PENDING);
 }
+
+int sc_indicate_conn(struct bt_conn *conn, uint16_t start, uint16_t end)
+{
+	uint16_t sc_range[2];
+	static struct bt_gatt_indicate_params sc_conn_ind;
+
+	sc_range[0] = sys_cpu_to_le16(start);
+	sc_range[1] = sys_cpu_to_le16(end);
+
+	sc_conn_ind.attr = &_1_gatt_svc.attrs[2];
+	sc_conn_ind.func = NULL;
+	sc_conn_ind.data = &sc_range[0];
+	sc_conn_ind.len = sizeof(sc_range);
+#if defined(CONFIG_BT_EATT)
+	sc_conn_ind.chan_opt = BT_ATT_CHAN_OPT_UNENHANCED_ONLY;
+#endif /* CONFIG_BT_EATT */
+
+	return bt_gatt_indicate(conn, &sc_conn_ind);
+}
 #endif /* defined(CONFIG_BT_GATT_SERVICE_CHANGED) */
 
 static void clear_ccc_cfg(struct bt_gatt_ccc_cfg *cfg)
@@ -1575,6 +1614,10 @@ static void bt_gatt_service_init(void)
 
 void bt_gatt_init(void)
 {
+#if ZEPHYR_RTK_PATCH
+	memset(&gaps_prefer_conn_param, 0xFF, sizeof(gaps_prefer_conn_param));
+#endif
+
 	if (atomic_test_and_set_bit(gatt_flags, GATT_INITIALIZED)) {
 		return;
 	}

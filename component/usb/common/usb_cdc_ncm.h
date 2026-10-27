@@ -8,6 +8,7 @@
 #define USB_CDC_NCM_H
 
 /* Includes ------------------------------------------------------------------*/
+
 #include "basic_types.h"
 #include "usb_cdc.h"
 
@@ -15,13 +16,18 @@
 extern "C" {
 #endif
 
-/* Exported defines ----------------------------------------------------------*/
-
 /** @addtogroup USB_Common_API USB Common API
  *  @{
  */
+
+/* Exported defines ----------------------------------------------------------*/
+
 /** @addtogroup USB_Common_Constants USB Common Constants
  * @{
+ */
+/** @defgroup USB_Common_CDC_NCM_Constants USB CDC NCM Constants (NCM 1.0)
+ *  @brief Network Control Model definitions shared by the USBD and USBH CDC NCM drivers.
+ *  @{
  */
 
 /* CDC NCM Subclass Code */
@@ -83,11 +89,16 @@ extern "C" {
 /* NCM Ethernet Frame Size */
 #define USB_CDC_NCM_MAX_ETHERNET_FRAME_SIZE             1514U /**< Maximum Ethernet frame size */
 
+/** @} End of USB_Common_CDC_NCM_Constants group */
 /** @} End of USB_Common_Constants group */
 
 /* Exported types ------------------------------------------------------------*/
 
 /** @addtogroup USB_Common_Types USB Common Types
+ *  @{
+ */
+/** @defgroup USB_Common_CDC_NCM_Types USB CDC NCM Types (NCM 1.0)
+ *  @brief Network Control Model types shared by the USBD and USBH CDC NCM drivers.
  *  @{
  */
 
@@ -183,12 +194,19 @@ typedef struct {
 	usb_cdc_ncm_ndp16_entry_t aEntry[2]; /**< First 2 entries (one real + terminator with index=0) */
 } __PACKED usb_cdc_ncm_ndp16_t;
 
-
+/** @} End of USB_Common_CDC_NCM_Types group */
 /** @} End of USB_Common_Types group */
+
+/* Exported macros -----------------------------------------------------------*/
+
+/* Exported variables --------------------------------------------------------*/
+
+/* Exported functions --------------------------------------------------------*/
+
 /** @} End of USB_Common_API group */
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif  /* USB_CDC_NCM_H */
+#endif /* USB_CDC_NCM_H */

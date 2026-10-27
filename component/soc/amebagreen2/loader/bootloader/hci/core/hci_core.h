@@ -17,6 +17,9 @@ extern "C" {
 
 /* Exported defines ----------------------------------------------------------*/
 
+/* Image2 manifest is downloaded to the last 4KB of the loader RAM, over the bootloader's own manifest */
+#define HCI_MANIFEST_ADDR				((u32)__fullmac_manifest_start__)
+
 #define HCI_XFER_REQ_QUERY				0x01U
 #define HCI_XFER_REQ_WRITE				0x02U
 #define HCI_XFER_REQ_CHECK				0x03U

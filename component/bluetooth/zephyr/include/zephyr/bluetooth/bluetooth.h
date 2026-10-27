@@ -750,6 +750,19 @@ enum {
 	 * @note Mutually exclusive with BT_LE_ADV_OPT_USE_IDENTITY.
 	 */
 	BT_LE_ADV_OPT_USE_NRPA = BIT(19),
+
+#if ZEPHYR_RTK_PATCH
+	/* This bit flag means adv is direct adv. Defaultly, it is high duty directed adv.
+	 * If BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY is also set, it is low duty directed adv.
+	 * We don't use "bt_le_adv_param::peer != NULL" to judge if adv is directed any more.
+	 * In some conditions, peer addr shall be set to find resolving list although the adv
+	 * is not directed */
+	BT_LE_ADV_OPT_DIR_ADV = BIT(20),
+
+	/* Set some adv parameters using the native value in bt_le_adv_param instead of
+	 * just using options. It's for ext adv to set hci parameters precisely. */
+	BT_LE_ADV_OPT_SET_PARAM_NATIVE = BIT(21),
+#endif
 };
 
 /** LE Advertising Parameters. */
@@ -771,6 +784,18 @@ struct bt_le_adv_param {
 	 **/
 	uint8_t  sid;
 
+#if ZEPHYR_RTK_PATCH
+	uint16_t props;
+
+	uint8_t own_addr_type;
+
+	int8_t tx_power;
+
+	uint8_t prim_adv_phy;
+
+	uint8_t sec_adv_phy;
+#endif
+
 	/**
 	 * @brief Secondary channel maximum skip count.
 	 *
@@ -780,10 +805,6 @@ struct bt_le_adv_param {
 	 * @note Requires @ref BT_LE_ADV_OPT_EXT_ADV
 	 */
 	uint8_t  secondary_max_skip;
-
-#if ZEPHYR_RTK_PATCH
-	uint8_t own_addr_type;
-#endif
 
 	/** Bit-field of advertising options */
 	uint32_t options;
@@ -2091,6 +2112,13 @@ enum {
 	 * @note Requires @ref BT_LE_SCAN_OPT_CODED.
 	 */
 	BT_LE_SCAN_OPT_NO_1M = BIT(3),
+
+#if ZEPHYR_RTK_PATCH
+	/* Use Coded PHY scan type parameter, if this bit is 0, Coded PHY will
+	 * default use 1M PHY scan type in hci cmd if 1M PHY is enabled.
+	 */
+	BT_LE_SCAN_OPT_CODED_SCAN_TYPE = BIT(4),
+#endif
 };
 
 #define BT_LE_SCAN_OPT_FILTER_WHITELIST __DEPRECATED_MACRO BT_LE_SCAN_OPT_FILTER_ACCEPT_LIST
@@ -2113,6 +2141,10 @@ enum {
 struct bt_le_scan_param {
 	/** Scan type (BT_LE_SCAN_TYPE_ACTIVE or BT_LE_SCAN_TYPE_PASSIVE) */
 	uint8_t  type;
+
+#if ZEPHYR_RTK_PATCH
+	uint8_t type_coded;
+#endif
 
 	/** Bit-field of scanning options. */
 	uint32_t options;

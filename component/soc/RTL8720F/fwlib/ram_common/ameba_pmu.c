@@ -234,11 +234,11 @@ void pmu_pre_sleep_processing(uint32_t *tick_before_sleep)
 	cur_device_id = pmu_exec_sleep_hook_funs();
 
 	if (cur_device_id != PMU_MAX) {
-		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "Sleep blocked because Dev %x  busy\n", cur_device_id);
+		RTK_LOGS(NOTAG, RTK_LOG_DEBUG, "Sleep blocked because Dev %x  busy\n", cur_device_id);
 		return;
 	}
 // #if (!defined (CONFIG_WHC_INTF_IPC) && defined (CONFIG_WHC_DEV))
-// #ifdef CONFIG_ARM_CORE_CM4_KM4TZ
+// #ifdef CONFIG_ARM_CORE_CM55_KM55TZ
 // 	SOCPS_Sleep_FULLMAC(sleep_type);
 // #endif
 // #else

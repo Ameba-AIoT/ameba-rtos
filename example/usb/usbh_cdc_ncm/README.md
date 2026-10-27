@@ -54,7 +54,7 @@ Refer to the [EVB User Guide](https://aiot.realmcu.com/filelist?document_type=9)
 
 2. Reset the board, following log shall be printed on the LOGUART console and DHCP will start, make sure there is no USB related error reported:
 	```
-	[NCM] CDC NCM demo start...
+	[NCM-I] USBH CDC NCM demo start
 	```
 
 3. If the test run success, the console will show:

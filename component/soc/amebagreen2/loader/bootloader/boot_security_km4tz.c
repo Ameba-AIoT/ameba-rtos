@@ -11,7 +11,7 @@
 static const char *const TAG = "BOOT";
 extern u32 Cert_PKHash_OTP_ADDR;
 extern u8 Signature[2][SIGN_MAX_LEN];
-u8 SecureBootEn = DISABLE;
+u8 SecureBootEn = ENABLE;
 
 fih_ret BOOT_ROM_OTFCheck(u32 start_addr, u32 end_addr, u32 IV_index, u32 OTF_index, u8 RSIP_KEY_ID);
 
@@ -104,10 +104,20 @@ fih_ret BOOT_SignatureCheck(Manifest_TypeDef *Manifest, SubImgInfo_TypeDef *SubI
 	}
 
 	/* 2.3 validate pubkey hash */
+	if (Cert->EntryNum > CERT_MAX_KEYINFO) {
+		FIH_SET(fih_rc, FIH_FAILURE);
+		goto SBOOT_FAIL;
+	}
+
 	for (i = 0; i < Cert->EntryNum; i++) {
 		if (Cert->PKInfo[i].KeyID == KeyID) {
 			break;
 		}
+	}
+
+	if (i == Cert->EntryNum) {
+		FIH_SET(fih_rc, FIH_FAILURE);
+		goto SBOOT_FAIL;
 	}
 
 	FIH_CALL(SBOOT_Validate_PubKey, fih_rc, AuthAlg, Manifest->SBPubKey, Cert->PKInfo[i].Hash);
@@ -149,20 +159,32 @@ SBOOT_FAIL:
 static u8 BOOT_SbootEn_Check(u8 *pk_hash)
 {
 	u8 i, j;
+	volatile u8 ff_cnt = 0;
+
+	/* Fail secure: the state stays ENABLE unless the OTP explicitly says secure boot is off. */
+	FIH_SET(SecureBootEn, ENABLE);
 
 	if (FIH_NOT_EQ(FALSE, SYSCFG_OTP_RMAMode())) {
 		j = _rand() % 32;
 		for (i = 0; i < 32; i++, j = (j + 1) % 32) {
 			/* 2. read public key hash from OTP. Start with a random index to avoid side channel attack. */
-			/* If in RMA mode but RMA Pubkey is not programed, skip SBOOT */
 			pk_hash[j] = HAL_READ8(OTPC_REG_BASE, SEC_PKKEY1_RMA_PK_0 + j);
-			if (pk_hash[j] != 0xFF) {
-				SecureBootEn++;
+			if (pk_hash[j] == 0xFF) {
+				ff_cnt++;
 			}
+		}
+
+		/* If in RMA mode but RMA Pubkey is not programed, skip SBOOT. Only a full 32 bytes of 0xFF
+		 * counts as not programed, so a skipped or cut short read keeps secure boot enabled. */
+		if (FIH_EQ(ff_cnt, 32)) {
+			FIH_SET(SecureBootEn, DISABLE);
+		} else {
+			FIH_SET(SecureBootEn, ENABLE);
 		}
 	} else {
 		/* 1. check if secure boot enable if not in RMA mode. */
 		if (FIH_EQ(FALSE, SYSCFG_OTP_SBootEn())) {
+			FIH_SET(SecureBootEn, DISABLE);
 			return SecureBootEn;
 		} else {
 			FIH_SET(SecureBootEn, ENABLE);

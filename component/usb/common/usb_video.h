@@ -7,6 +7,26 @@
 #ifndef USB_VIDEO_H
 #define USB_VIDEO_H
 
+/* Includes ------------------------------------------------------------------*/
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/** @addtogroup USB_Common_API USB Common API
+ *  @{
+ */
+
+/* Exported defines ----------------------------------------------------------*/
+
+/** @addtogroup USB_Common_Constants USB Common Constants
+ *  @{
+ */
+/** @defgroup USB_Common_Video_Constants USB Video Constants (UVC 1.5)
+ *  @brief Common protocol definitions shared by the USBD and USBH UVC drivers.
+ *  @{
+ */
+
 /* Video Device Class (UVC) Codes — USB-IF Video Class Code Table */
 
 #define USB_VIDEO_CLASS_CODE                        0x0EU   /**< Video interface class code. */
@@ -18,5 +38,22 @@
 
 /* Video Protocol Codes */
 #define USB_VIDEO_PROTOCOL_UNDEFINED                0x00U   /**< No protocol / undefined. */
+
+/** @} End of USB_Common_Video_Constants group */
+/** @} End of USB_Common_Constants group */
+
+/* Exported types ------------------------------------------------------------*/
+
+/* Exported macros -----------------------------------------------------------*/
+
+/* Exported variables --------------------------------------------------------*/
+
+/* Exported functions --------------------------------------------------------*/
+
+/** @} End of USB_Common_API group */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* USB_VIDEO_H */

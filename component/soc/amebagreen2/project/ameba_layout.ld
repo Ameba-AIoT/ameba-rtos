@@ -8,6 +8,9 @@
 #define SRAM_END                     (0x20080000)
 #define PSRAM_BASE                   (0x60000000)
 
+/* FULLMAC image2 manifest: the last 4KB of the 64KB loader RAM, over the bootloader's own manifest */
+#define FULLMAC_MANIFEST_START       (0x3007F000)
+
 /* PSRAM_END is the address window top = the largest PSRAM this chip supports
  * (amebagreen2: 16MB). It is only a static ceiling; the real heap top is the
  * runtime-measured capacity (ChipInfo_PsramHeapTop), so smaller boards shrink
@@ -175,7 +178,7 @@ MEMORY
     /* KM4TZ Secure RAM, BIT(28)=1 */
     KM4TZ_BOOTLOADER_RAM_S (rwx) :         ORIGIN = KM4TZ_IMG1_RAM_SATRT + SECURE_ADDR_OFFSET + IMAGE_HEADER_LEN, LENGTH = KM4TZ_IMG1_SIZE  - IMAGE_HEADER_LEN        /* KM4TZ BOOT Loader RAM: 4K or 32k */
 #ifndef CONFIG_FULLMAC_PG_LOADER
-    KM4TZ_FLOADER_RAM_S (rwx) :            ORIGIN = 0x30070020, LENGTH = 0x3007F000 - 0x30070020    /* Floader / FULLMAC bootloader: 60k, 0x3007F000 ~ 0x30080000 for MANIFEST */
+    KM4TZ_FLOADER_RAM_S (rwx) :            ORIGIN = 0x30070020, LENGTH = FULLMAC_MANIFEST_START - 0x30070020    /* Floader / FULLMAC bootloader: 60k, 0x3007F000 ~ 0x30080000 for MANIFEST */
 #else
     KM4TZ_FLOADER_RAM_S (rwx) :            ORIGIN = ORIGIN(FULLMAC_PG_LOADER_RAM), LENGTH = LENGTH(FULLMAC_PG_LOADER_RAM)
 #endif
@@ -231,6 +234,7 @@ __rom_text_region1_end__    = ORIGIN(DELAY_ROM) + LENGTH(DELAY_ROM);           /
 
 /*SRAM Layout boundary*/
 __km4tz_bd_ram_start__ = ORIGIN(KM4TZ_BD_RAM) - IMAGE_HEADER_LEN;
+__fullmac_manifest_start__ = FULLMAC_MANIFEST_START;
 
 __km4tz_msp_ram_ns_limit__ = ORIGIN(KM4TZ_MSP_RAM_NS);
 __km4tz_msp_ram_ns__ = ORIGIN(KM4TZ_MSP_RAM_NS) + LENGTH(KM4TZ_MSP_RAM_NS);

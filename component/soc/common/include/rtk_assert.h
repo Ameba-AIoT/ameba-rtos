@@ -12,7 +12,11 @@ extern "C" {
 #endif
 
 __attribute__((__noreturn__)) void vAssertCalled(const char *pcInfo, uint32_t ulLine);
-void rtk_assert_printf(const char *fmt, ...);
+
+#if (defined(CONFIG_WHC_HOST) || defined(CONFIG_WHC_NONE)) && defined(CONFIG_UNITY_TEST)
+/* Task owning the live Unity setjmp frame (TEST_PROTECT window); NULL when none. */
+extern void *volatile g_unity_abort_task;
+#endif
 
 /*
  * rtk_assert(__e, _comp):

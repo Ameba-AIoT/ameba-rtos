@@ -12,6 +12,7 @@ extern "C" {
 #endif
 
 int bt_stack_le_gap_init(void *app_config);
+uint16_t bt_stack_le_gap_deinit(void);
 uint16_t bt_stack_gattc_init(rtk_bt_app_conf_t *app_conf);
 void bt_stack_gattc_deinit(void);
 void bt_stack_gattc_disconnect_clear(uint16_t conn_handle);

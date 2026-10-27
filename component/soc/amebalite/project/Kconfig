@@ -374,10 +374,10 @@ menu "CONFIG WIFI"
 
 endmenu
 
-config VFS_ENABLED
+config VFS_SUPPORTED
     def_bool y
     depends on !MP_SHRINK
-    depends on (WHC_HOST || WHC_NONE || (WHC_DEV && WHC_DEV_FLASH_BOOT))
+    depends on (WHC_HOST || WHC_NONE || (WHC_DEV && !WHC_INTF_IPC))
 
 menu "CONFIG BT"
     config BT_MENU
@@ -422,7 +422,7 @@ config SHELL_TASK_STACK_BASIC_SIZE_FOR_KM4
 
 config SHELL_TASK_STACK_BASIC_SIZE_FOR_KR4
     int
-    default 944 if WHC_HOST
+    default 1152 if WHC_HOST
     default 2496 if WHC_NONE
     default 720
 

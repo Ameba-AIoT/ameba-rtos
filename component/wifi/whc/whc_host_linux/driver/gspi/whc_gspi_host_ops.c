@@ -132,7 +132,7 @@ static void whc_gspi_host_rxagg_dispatch_buf(struct whc_gspi *priv, u8 *buf, u32
 
 /* Block until at least one TXBD is free. Returns the free count, or 0 on timeout.
  * Caller must hold priv->lock. */
-static u8 whc_gspi_host_wait_txbd(struct whc_gspi *priv)
+static u16 whc_gspi_host_wait_txbd(struct whc_gspi *priv)
 {
 	u32 polling_num = 0;
 
@@ -149,7 +149,7 @@ static u8 whc_gspi_host_wait_txbd(struct whc_gspi *priv)
 		if (priv->GspiTxBDFreeNum >= 1) {
 			break;
 		}
-		if (!wait_event_timeout(priv->txbd_wq, priv->tx_avail_int_triggered == 1, msecs_to_jiffies(100))) {
+		if (!wait_event_timeout(priv->txbd_wq, priv->tx_avail_int_triggered == 1, msecs_to_jiffies(1000))) {
 			dev_err(&priv->spi_dev->dev, "%s: TXBD unavailable, TX FAIL\n", __func__);
 			return 0;
 		}
@@ -269,7 +269,7 @@ void whc_host_txagg_xmit(struct xmit_priv_t *xmit_priv)
 	struct whc_msg_node *p_node = NULL;	/* carried across rounds when the buffer fills mid-batch */
 	struct sk_buff *pskb;
 	u32 off, unit;
-	u8 free_bd;
+	u16 free_bd;
 	u8 agg_num;
 	INIC_TX_DESC *ptxdesc;
 

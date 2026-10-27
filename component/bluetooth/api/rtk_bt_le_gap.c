@@ -109,6 +109,35 @@ uint16_t rtk_bt_le_gap_set_preferred_conn_param(rtk_bt_le_preferred_conn_param_t
 		return RTK_BT_ERR_POINTER_INVALID;
 	}
 
+	if ((p_preferred_conn_param->conn_interval_min < 0x06 ||
+		 p_preferred_conn_param->conn_interval_min > 0x0C80) &&
+		p_preferred_conn_param->conn_interval_min != 0xFFFF) {
+		return RTK_BT_ERR_PARAM_INVALID;
+	}
+
+	if ((p_preferred_conn_param->conn_interval_max < 0x06 ||
+		 p_preferred_conn_param->conn_interval_max > 0x0C80) &&
+		p_preferred_conn_param->conn_interval_max != 0xFFFF) {
+		return RTK_BT_ERR_PARAM_INVALID;
+	}
+
+	if (p_preferred_conn_param->conn_interval_min != 0xFFFF &&
+		p_preferred_conn_param->conn_interval_max != 0xFFFF &&
+		p_preferred_conn_param->conn_interval_max < p_preferred_conn_param->conn_interval_min) {
+		return RTK_BT_ERR_PARAM_INVALID;
+	}
+
+	if (p_preferred_conn_param->slave_latency > 0x01F3 &&
+		p_preferred_conn_param->slave_latency != 0xFFFF) {
+		return RTK_BT_ERR_PARAM_INVALID;
+	}
+
+	if ((p_preferred_conn_param->supv_timeout < 0x0A ||
+		 p_preferred_conn_param->supv_timeout > 0x0C80) &&
+		p_preferred_conn_param->supv_timeout != 0xFFFF) {
+		return RTK_BT_ERR_PARAM_INVALID;
+	}
+
 	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_GAP, RTK_BT_LE_GAP_ACT_SET_PREFERRED_CONN_PARAM,
 						  (void *)p_preferred_conn_param, sizeof(rtk_bt_le_preferred_conn_param_t));
 

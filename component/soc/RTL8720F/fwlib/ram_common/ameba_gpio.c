@@ -158,11 +158,31 @@ void GPIO_UserUnRegIrq(u32 GPIO_Pin)
 			GPIO_IrqTable[idx].UsrIrqData = NULL;
 
 			GPIO_IrqTable[idx].IrqIdleEntryFlag = 0x0;
-
-			break;
 		}
 	}
 
+}
+
+/**
+  * @brief  Get the data direction of a GPIO pin.
+  * @param  port Port number, which can be any GPIO_PORT_X defined in @ref GPIO_Port_Type.
+  * @param  pin_mask Bitmask with exactly one bit set, identifying the pin.
+  * @return GPIO_Mode_OUT if the pin is configured as output, GPIO_Mode_IN otherwise.
+  */
+u32 GPIO_DirectionGet(u8 port, u32 pin_mask)
+{
+	GPIO_TypeDef *GPIOx;
+
+	assert_param(IS_GPIO_PORT_NUM(port));
+	assert_param(pin_mask != 0 && (pin_mask & (pin_mask - 1)) == 0);
+
+	if (TrustZone_IsSecure()) {
+		GPIOx = GPIO_PORTx_S[port];
+	} else {
+		GPIOx = GPIO_PORTx[port];
+	}
+
+	return (GPIOx->PORT.GPIO_DDR & pin_mask) ? GPIO_Mode_OUT : GPIO_Mode_IN;
 }
 /**
   * @}

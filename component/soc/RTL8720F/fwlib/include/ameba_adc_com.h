@@ -52,7 +52,7 @@
   * @brief
   * @{
   */
-#define ADC_COM_MASK_SEL_VREFP_VOL   ((u32)0x0000000F << 0)           /*!< R/W 4'b0100  AUX ADC Vrefp voltage: 0000:1.45V 0001:1.50V 0010:1.55V 0011:1.60V 0100:1.65V 0101:1.70V 0110:1.75V 0111:1.80V 1000:1.85V 1001:1.875V 1010:1.90V 1011:1.95V 1100:2.00V 1101:2.05V 1110:2.10V 1111:2.15V  Cs * VIN = 8C * Vrefp 3C * 5V = 8C * 1.875V 4C * 3.3V = 8C * 1.65V 8C * 1.8V = 8C * 1.8V AIF default 0100: 1.65V;*/
+#define ADC_COM_MASK_SEL_VREFP_VOL   ((u32)0x0000000F << 0)           /*!< R/W 4'b0100  AUX ADC Vrefp voltage: 0000:1.45V 0001:1.50V 0010:1.55V 0011:1.60V 0100:1.65V 0101:1.70V 0110:1.75V 0111:1.80V 1000:1.85V 1001:1.875V 1010:1.90V 1011:1.95V 1100:2.00V 1101:2.05V 1110:2.10V   Cs * VIN = 8C * Vrefp 3C * 5V = 8C * 1.875V 4C * 3.3V = 8C * 1.65V 8C * 1.8V = 8C * 1.8V AIF default 0100: 1.65V;*/
 #define ADC_COM_SEL_VREFP_VOL(x)     (((u32)((x) & 0x0000000F) << 0))
 #define ADC_COM_GET_SEL_VREFP_VOL(x) ((u32)(((x >> 0) & 0x0000000F)))
 /** @} */
@@ -102,7 +102,7 @@
   * @brief ADC Channel Clock Divider Register
   * @{
   */
-#define ADC_COM_MASK_ADC_CLK_HCNTx   ((u32)0x00000FFF << 0)           /*!< R/W 12'd19  This field defines clock driver high level of  chn in ADC module.  high level =( bit_adc_clk_hcntx+1) * ip_clk period .  hcnt11-13 is rsvd.*/
+#define ADC_COM_MASK_ADC_CLK_HCNTx   ((u32)0x00000FFF << 0)           /*!< R/W 12'd19  This field defines clock driver high level of  chn in ADC module.  high level =( bit_adc_clk_hcntx+1) * ip_clk period .*/
 #define ADC_COM_ADC_CLK_HCNTx(x)     (((u32)((x) & 0x00000FFF) << 0))
 #define ADC_COM_GET_ADC_CLK_HCNTx(x) ((u32)(((x >> 0) & 0x00000FFF)))
 /** @} */
@@ -121,7 +121,7 @@
   * @brief
   * @{
   */
-#define ADC_COM_MASK_ADC_SEL_VREFP_VOL_0   ((u32)0x0000000F << 0)           /*!< R/W 4'b0100  AUX ADC Vrefp voltage(all chn): 0000:1.45V 0001:1.50V 0010:1.55V 0011:1.60V 0100:1.65V 0101:1.70V 0110:1.75V 0111:1.80V 1000:1.85V 1001:1.875V 1010:1.90V 1011:1.95V 1100:2.00V 1101:2.05V 1110:2.10V 1111:2.15V  Cs * VIN = 8C * Vrefp 3C * 5V = 8C * 1.875V 4C * 3.3V = 8C * 1.65V 8C * 1.8V = 8C * 1.8V AIF default 0100: 1.65V;*/
+#define ADC_COM_MASK_ADC_SEL_VREFP_VOL_0   ((u32)0x0000000F << 0)           /*!< R/W 4'b0100  AUX ADC Vrefp voltage(all chn): 0000:1.45V 0001:1.50V 0010:1.55V 0011:1.60V 0100:1.65V 0101:1.70V 0110:1.75V 0111:1.80V 1000:1.85V 1001:1.875V 1010:1.90V 1011:1.95V 1100:2.00V 1101:2.05V 1110:2.10V   Cs * VIN = 8C * Vrefp 3C * 5V = 8C * 1.875V 4C * 3.3V = 8C * 1.65V 8C * 1.8V = 8C * 1.8V AIF default 0100: 1.65V;*/
 #define ADC_COM_ADC_SEL_VREFP_VOL_0(x)     (((u32)((x) & 0x0000000F) << 0))
 #define ADC_COM_GET_ADC_SEL_VREFP_VOL_0(x) ((u32)(((x >> 0) & 0x0000000F)))
 /** @} */
@@ -157,10 +157,11 @@ typedef struct {
 	__IO uint32_t ADC_COM_POW_CNT0             ;  /*!< Register,  Address offset:0x024 */
 	__IO uint32_t ADC_COM_POW_CNT1             ;  /*!< Register,  Address offset:0x028 */
 	__IO uint32_t RSVD3                        ;  /*!< Reserved,  Address offset:0x02C-0x02F */
-	__IO uint32_t ADC_COM_ADC_CLK_HCNTx_DIV[16];  /*!< ADC CHANNEL CLOCK DIVIDER REGISTER,  Address offset:0x030-0x06C */
+	__IO uint32_t ADC_COM_ADC_CLK_HCNTx_DIV[10];  /*!< ADC CHANNEL CLOCK DIVIDER REGISTER,  Address offset:0x030-0x054 */
+	__IO uint32_t RSVD4[6]                     ;  /*!< Reserved,  Address offset:0x058-0x06F */
 	__IO uint32_t ADC_COM_ADC_CLK_COV          ;  /*!< Register,  Address offset:0x070 */
 	__IO uint32_t ADC_COM_ADC_VOL_LIST_0       ;  /*!< Register,  Address offset:0x074 */
-	__IO uint32_t RSVD4[2]                     ;  /*!< Reserved,  Address offset:0x078-0x07F */
+	__IO uint32_t RSVD5[2]                     ;  /*!< Reserved,  Address offset:0x078-0x07F */
 	__IO uint32_t ADC_COM_ADC_PAD_TEST         ;  /*!< Register,  Address offset:0x080 */
 	__IO uint32_t ADC_COM_DUMMY                ;  /*!< DUMMY REGISTER,  Address offset:0x084 */
 } ADC_COM_TypeDef;

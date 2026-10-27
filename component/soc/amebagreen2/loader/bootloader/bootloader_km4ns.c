@@ -38,8 +38,7 @@ void BOOT_Image1(void)
 	/* enable cache */
 	Cache_Enable(ENABLE);
 
-	/* Enable divide-by-zero fault */
-	SCB->CCR |= SCB_CCR_DIV_0_TRP_Msk;
+	BOOT_SCBConfig_NP();
 
 	BOOT_CleanupSection();
 

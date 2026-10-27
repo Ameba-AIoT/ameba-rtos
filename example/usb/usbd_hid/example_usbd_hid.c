@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/* Includes ------------------------------------------------------------------ */
+/* Includes ------------------------------------------------------------------*/
 
 #include <platform_autoconf.h>
 #include "platform_stdlib.h"
@@ -26,13 +26,6 @@
 // avoid memory leak, only for example.
 // while test suspend/resume, hotplug should be disabled
 #define HID_HOTPLUG                              1
-
-// USB speed
-#ifdef CONFIG_SUPPORT_USB_FS_ONLY
-#define HID_USB_SPEED                            USB_SPEED_FULL
-#else
-#define HID_USB_SPEED                            USB_SPEED_HIGH
-#endif
 
 // Send mouse data through monitor
 #define HID_MOUSE_CMD                            1
@@ -150,7 +143,7 @@ static const usbd_hid_mouse_data_t mdata[] = {
 	{0,   0,   0,   0,   0,   0},	//left button released
 };
 #else
-usbd_hid_keyboard_data_t mdata[] = {
+static usbd_hid_keyboard_data_t mdata[] = {
 	{0,   0,   {0,	0,	0,	0,	0,	0} },	//all released
 
 	{0,   0,   {4,	0,	0,	0,	0,	0} },	//enter a pressed
@@ -172,15 +165,13 @@ usbd_hid_keyboard_data_t mdata[] = {
 	y_axos: no movement,
 	wheel: no scrolling.
 */
-CMD_TABLE_DATA_SECTION
-const COMMAND_TABLE usbd_hid_mouse_data_cmd[] = {
-	{"mouse", hid_cmd_mouse_data},
-};
 #endif
 #endif  //HID_MOUSE_CMD
 
 static const usbd_config_t hid_cfg = {
-	.speed = HID_USB_SPEED,
+	.info = {
+		.prod_str = "Realtek HID Device",
+	},
 	.isr_priority = INT_PRI_MIDDLE,
 #if defined(CONFIG_AMEBAGREEN2)
 	.rx_fifo_depth = 724U,
@@ -198,7 +189,7 @@ static const usbd_config_t hid_cfg = {
 #endif
 };
 
-static const usbd_hid_ep_cfg_t hid_ep = {
+static const usbd_hid_config_t hid_class_cfg = {
 	.intr_in_xfer_size = USBD_HID_INTR_IN_BUF_SIZE,
 	.intr_in_addr  = HID_INTR_IN_EP,
 #ifdef CONFIG_USBD_HID_KEYBOARD
@@ -216,6 +207,15 @@ static const usbd_hid_usr_cb_t hid_usr_cb = {
 #endif
 	.status_changed = hid_cb_status_changed,
 };
+
+/* Exported variables --------------------------------------------------------*/
+
+#if HID_MOUSE_CMD && defined(CONFIG_USBD_HID_MOUSE)
+CMD_TABLE_DATA_SECTION
+const COMMAND_TABLE usbd_hid_mouse_data_cmd[] = {
+	{"mouse", hid_cmd_mouse_data},
+};
+#endif
 
 /* Private functions ---------------------------------------------------------*/
 
@@ -352,6 +352,34 @@ static void hid_cb_status_changed(u8 old_status, u8 status)
 
 #if HID_MOUSE_CMD
 #ifdef CONFIG_USBD_HID_MOUSE
+/* The mouse report declares LOGICAL_MINIMUM(-127)/LOGICAL_MAXIMUM(127) (Ref HID 1.11 6.2.2.7),
+   so clamp explicitly: narrowing the unsigned parse result to char would silently wrap */
+static char hid_mouse_axis(const u8 *str)
+{
+	s32 val = (s32)strtoul((const char *)str, (char **)NULL, 10);
+
+	if (val > 127) {
+		val = 127;
+	} else if (val < -127) {
+		val = -127;
+	}
+
+	return (char)val;
+}
+
+/* Each button is a 1-bit field with LOGICAL_MINIMUM(0)/LOGICAL_MAXIMUM(1) (Ref HID 1.11 6.2.2.7), so
+   map any non-zero input to pressed: narrowing the unsigned parse result to u8 would drop high bits */
+static u8 hid_mouse_button(const u8 *str)
+{
+	u8 pressed = 0U;
+
+	if (strtoul((const char *)str, (char **)NULL, 10) != 0UL) {
+		pressed = 1U;
+	}
+
+	return pressed;
+}
+
 static u32 hid_cmd_mouse_data(u16 argc, u8  *argv[])
 {
 	usbd_hid_mouse_data_t data;
@@ -365,27 +393,27 @@ static u32 hid_cmd_mouse_data(u16 argc, u8  *argv[])
 	usb_os_memset((void *)&data, 0, sizeof(data));
 
 	if (argc > 0) {
-		data.left = strtoul((const char *)(argv[0]), (char **)NULL, 10);
+		data.left = hid_mouse_button(argv[0]);
 	}
 
 	if (argc > 1) {
-		data.right = strtoul((const char *)(argv[1]), (char **)NULL, 10);
+		data.right = hid_mouse_button(argv[1]);
 	}
 
 	if (argc > 2) {
-		data.middle = strtoul((const char *)(argv[2]), (char **)NULL, 10);
+		data.middle = hid_mouse_button(argv[2]);
 	}
 
 	if (argc > 3) {
-		data.x_axis = strtoul((const char *)(argv[3]), (char **)NULL, 10);
+		data.x_axis = hid_mouse_axis(argv[3]);
 	}
 
 	if (argc > 4) {
-		data.y_axis = strtoul((const char *)(argv[4]), (char **)NULL, 10);
+		data.y_axis = hid_mouse_axis(argv[4]);
 	}
 
 	if (argc > 5) {
-		data.wheel = strtoul((const char *)(argv[5]), (char **)NULL, 10);
+		data.wheel = hid_mouse_axis(argv[5]);
 	}
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Send mouse data\n");
@@ -502,7 +530,7 @@ static void example_usbd_hid_hotplug_thread(void *param)
 			rtos_mutex_take(hid_state_mutex, RTOS_MAX_TIMEOUT);
 			ret = usbd_init(&hid_cfg);
 			if (ret == 0) {
-				ret = usbd_hid_init(&hid_usr_cb, &hid_ep);
+				ret = usbd_hid_init(&hid_usr_cb, &hid_class_cfg);
 				if (ret != 0) {
 					usbd_deinit();
 				}
@@ -650,7 +678,6 @@ static void example_usbd_hid_thread(void *param)
 #endif
 
 	UNUSED(param);
-	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD HID demo start\n");
 
 	ret = rtos_mutex_create(&hid_state_mutex);
 	if (ret != RTK_SUCCESS) {
@@ -682,7 +709,7 @@ static void example_usbd_hid_thread(void *param)
 		goto exit_create_obj_fail;
 	}
 
-	ret = usbd_hid_init(&hid_usr_cb, &hid_ep);
+	ret = usbd_hid_init(&hid_usr_cb, &hid_class_cfg);
 	if (ret != 0) {
 		goto exit_usbd_init_fail;
 	}
@@ -699,7 +726,7 @@ static void example_usbd_hid_thread(void *param)
 	if (ret != RTK_SUCCESS) {
 		goto exit_usbd_hid_init_fail;
 	}
-#if defined(CONFIG_SMP)
+#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
 	/* C-2: the USB OTG ISR is delivered on CPU0 (GIC ITARGETSR pins every SPI to
 	   core 0). Pinning the hotplug/deinit thread to CPU0 puts it on the same core
 	   as the ISR, so deinit's local interrupt disable is meaningful again under
@@ -752,6 +779,8 @@ void example_usbd_hid(void)
 {
 	int ret;
 	rtos_task_t task;
+
+	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD HID demo start\n");
 
 	ret = rtos_task_create(&task, "usbd_hid_thread", example_usbd_hid_thread, NULL,
 						   HID_INIT_THREAD_STACK_SIZE, HID_INIT_THREAD_PRIORITY);

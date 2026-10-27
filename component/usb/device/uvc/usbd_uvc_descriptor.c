@@ -17,8 +17,18 @@
 /* Private macros ------------------------------------------------------------*/
 
 /* Private function prototypes -----------------------------------------------*/
+
 /* #define UVC_ORIGINAL_TYPE */
 #ifdef UVC_SINGLE_STREAM
+
+/* Private variables ---------------------------------------------------------*/
+
+static usbd_uvc_frame_info_t uvc_frames_h264[] = {
+	{ USBD_UVC_FRAME_WIDTH, USBD_UVC_FRAME_HEIGHT, { USBD_UVC_FPS(30), USBD_UVC_FPS(15), USBD_UVC_FPS(10), 0 },},
+	{ 0, 0, { 0, }, },
+};
+
+/* Exported variables --------------------------------------------------------*/
 
 /* UVC Device Descriptor Set */
 u8 usbd_uvc_descriptors[] = {
@@ -270,16 +280,40 @@ usbd_uvc_streaming_control_t usbd_uvc_commit = {
 	.bMaxVersion = 0,
 };
 
-
-usbd_uvc_frame_info_t uvc_frames_h264[] = {
-	{ USBD_UVC_FRAME_WIDTH, USBD_UVC_FRAME_HEIGHT, { USBD_UVC_FPS(30), USBD_UVC_FPS(15), USBD_UVC_FPS(10), 0 },},
-	{ 0, 0, { 0, }, },
-};
 usbd_uvc_format_info_t uvcd_formats[] = {
 	{ USBD_UVC_FORMAT_TYPE_H264, uvc_frames_h264 },
 };
 const u32 uvcd_nformats = sizeof(uvcd_formats) / sizeof(uvcd_formats[0]);
 #else
+
+/* Private variables ---------------------------------------------------------*/
+
+static usbd_uvc_frame_info_t uvc_frames_yuy2[] = {
+	{ USBD_TUNING_W, USBD_TUNING_H, { USBD_UVC_FPS(30), USBD_UVC_FPS(15), USBD_UVC_FPS(10), 0 },},
+	{ 0, 0, { 0, },  },
+};
+
+static usbd_uvc_frame_info_t uvc_frames_nv12[] = {
+	{ USBD_UVC_FRAME_WIDTH, USBD_UVC_FRAME_HEIGHT, { USBD_UVC_FPS(30), USBD_UVC_FPS(15), USBD_UVC_FPS(10), 0 },},
+	{ 0, 0, { 0, }, },
+};
+
+static usbd_uvc_frame_info_t uvc_frames_mjpeg[] = {
+	{ USBD_UVC_JPEG_FRAME_WIDTH, USBD_UVC_JPEG_FRAME_HEIGHT, { USBD_UVC_FPS(30), USBD_UVC_FPS(15), USBD_UVC_FPS(10), 0 },},
+	{ 0, 0, { 0, }, },
+};
+
+static usbd_uvc_frame_info_t uvc_frames_h264[] = {
+	{ USBD_UVC_FRAME_WIDTH, USBD_UVC_FRAME_HEIGHT, { USBD_UVC_FPS(30), USBD_UVC_FPS(15), USBD_UVC_FPS(10), 0 },},
+	{ 0, 0, { 0, }, },
+};
+
+static usbd_uvc_frame_info_t uvc_frames_h265[] = {
+	{ USBD_UVC_FRAME_WIDTH, USBD_UVC_FRAME_HEIGHT, { USBD_UVC_FPS(30), USBD_UVC_FPS(15), USBD_UVC_FPS(10), 0 },},
+	{ 0, 0, { 0, }, },
+};
+
+/* Exported variables --------------------------------------------------------*/
 
 u8 usbd_uvc_descriptors[] = {
 	/* ===== USB Configuration Descriptor (9 bytes) [USB2.0 9.6.3] ===== */
@@ -648,31 +682,6 @@ usbd_uvc_streaming_control_t usbd_uvc_commit = {
 	.bMaxVersion = 0,
 };
 
-usbd_uvc_frame_info_t uvc_frames_yuy2[] = {
-	{ USBD_TUNING_W, USBD_TUNING_H, { USBD_UVC_FPS(30), USBD_UVC_FPS(15), USBD_UVC_FPS(10), 0 },},
-	{ 0, 0, { 0, },  },
-};
-
-usbd_uvc_frame_info_t uvc_frames_nv12[] = {
-	{ USBD_UVC_FRAME_WIDTH, USBD_UVC_FRAME_HEIGHT, { USBD_UVC_FPS(30), USBD_UVC_FPS(15), USBD_UVC_FPS(10), 0 },},
-	{ 0, 0, { 0, }, },
-};
-
-usbd_uvc_frame_info_t uvc_frames_mjpeg[] = {
-	{ USBD_UVC_JPEG_FRAME_WIDTH, USBD_UVC_JPEG_FRAME_HEIGHT, { USBD_UVC_FPS(30), USBD_UVC_FPS(15), USBD_UVC_FPS(10), 0 },},
-	{ 0, 0, { 0, }, },
-};
-
-usbd_uvc_frame_info_t uvc_frames_h264[] = {
-	{ USBD_UVC_FRAME_WIDTH, USBD_UVC_FRAME_HEIGHT, { USBD_UVC_FPS(30), USBD_UVC_FPS(15), USBD_UVC_FPS(10), 0 },},
-	{ 0, 0, { 0, }, },
-};
-
-usbd_uvc_frame_info_t uvc_frames_h265[] = {
-	{ USBD_UVC_FRAME_WIDTH, USBD_UVC_FRAME_HEIGHT, { USBD_UVC_FPS(30), USBD_UVC_FPS(15), USBD_UVC_FPS(10), 0 },},
-	{ 0, 0, { 0, }, },
-};
-
 usbd_uvc_format_info_t uvcd_formats[] = {
 	{ USBD_UVC_FORMAT_TYPE_YUY2, uvc_frames_yuy2 },
 	{ USBD_UVC_FORMAT_TYPE_NV12, uvc_frames_nv12 },
@@ -681,4 +690,9 @@ usbd_uvc_format_info_t uvcd_formats[] = {
 	{ USBD_UVC_FORMAT_TYPE_H265, uvc_frames_h265 },
 };
 const u32 uvcd_nformats = sizeof(uvcd_formats) / sizeof(uvcd_formats[0]);
+
+/* Private functions ---------------------------------------------------------*/
+
+/* Exported functions --------------------------------------------------------*/
+
 #endif

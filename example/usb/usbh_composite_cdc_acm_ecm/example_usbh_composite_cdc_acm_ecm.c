@@ -4,7 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/* Includes ------------------------------------------------------------------ */
+/* Includes ------------------------------------------------------------------*/
+
 #include <platform_autoconf.h>
 #include <lwip/sockets.h>
 #include <lwip/netdb.h>
@@ -81,6 +82,7 @@
 #endif  /* CONFIG_USBH_COMP_ENABLE_REMOTE_FILE_DOWNLOAD */
 
 /* Private types -------------------------------------------------------------*/
+
 /* Ethernet State */
 typedef enum {
 	ETH_STATUS_IDLE = 0U,
@@ -195,10 +197,19 @@ typedef struct {
 	u8 dhcp_done;
 } dongle_ctx_t;
 
+/* Private macros ------------------------------------------------------------*/
+
 /* Private function prototypes -----------------------------------------------*/
+
+static u32 usbh_composite_acm_cmd_test(u16 argc, u8 *argv[]);
+static u32 usbh_composite_ecm_hotplug_cmd(u16 argc, u8 *argv[]);
+
 extern void rltk_usb_eth_init(void);
 extern void rltk_usb_eth_deinit(void);
 
+static int usbh_composite_cb_init(void);
+static void usbh_composite_cb_deinit(void);
+static void usbh_composite_cb_attached(void);
 static void usbh_composite_detached(void);
 static void usbh_composite_ecm_received(u8 *buf, u32 len);
 static void usbh_composite_acm_received(u8 *buf, u32 len, u8 status);
@@ -208,6 +219,7 @@ static void usbh_composite_cb_process(usb_host_t *host, u8 msg);
 static int usbh_composite_cb_device_check(usb_host_t *host, u8 cfg_max);
 
 /* Private variables ---------------------------------------------------------*/
+
 static const char *const TAG = "COMP";
 
 #if CONFIG_USBH_COMP_ENABLE_REMOTE_FILE_DOWNLOAD
@@ -223,7 +235,13 @@ static const u16 usbh_composite_ecm_led_color[1] = {0x1122};
 static const u8 usbh_composite_ecm_mac_str[6] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55};
 #endif
 
+#if CONFIG_USBH_COMP_HOT_PLUG_TEST
+/* Given by cb_detached, taken by the hot-plug thread. Guarded because every use
+   of it already sits inside a CONFIG_USBH_COMP_HOT_PLUG_TEST block, so with
+   hot-plug disabled the object is unreferenced and the build rejects it
+   (-Werror=unused-variable). */
 static rtos_sema_t usbh_composite_detach_sema;
+#endif
 static rtos_task_t usbh_composite_link_check_task;  /* link up down task */
 static rtos_task_t usbh_composite_ecm_init_task;  /* delete while init done */
 static rtos_task_t usbh_composite_acm_rx_task;  /* acm rx task */
@@ -244,7 +262,7 @@ static usbh_cdc_acm_param_t usbh_composite_dongle_array[] = {
 
 static dongle_ctx_t usbh_dongle_ctx;
 
-static const usbh_cdc_ecm_priv_data_t usbh_composite_ecm_priv = {
+static const usbh_cdc_ecm_config_t usbh_composite_ecm_class_cfg = {
 #if CONFIG_USBH_COMP_ENABLE_USER_SET_DONGLE_MAC
 	usbh_composite_ecm_led_color,
 	usbh_composite_ecm_mac_str,
@@ -289,10 +307,18 @@ static const usbh_config_t usbh_cfg = {
 static const usbh_cdc_acm_cb_t usbh_composite_acm_cfg = {
 	.received = usbh_composite_acm_received,
 	.transmitted = usbh_composite_acm_transmitted,
-	.priv = usbh_composite_dongle_array,
+};
+
+static const usbh_cdc_acm_config_t usbh_composite_acm_class_cfg = {
+	.dongle_param = usbh_composite_dongle_array,
+	/* Line coding and control line state are left 0 to take the class defaults;
+	 * notify_en stays 0 because this path only uses the AT and BULK pipes. */
 };
 
 static const usbh_cdc_ecm_state_cb_t usbh_composite_ecm_cfg = {
+	.init = usbh_composite_cb_init,
+	.deinit = usbh_composite_cb_deinit,
+	.attached = usbh_composite_cb_attached,
 	.received = usbh_composite_ecm_received,
 	.detached = usbh_composite_detached,
 };
@@ -302,7 +328,41 @@ static const usbh_user_cb_t usbh_composite_usr_cb = {
 	.validate = usbh_composite_cb_device_check,
 };
 
+/* Serializes the USB stack bring up / tear down against the class API callers.
+   usbh_cdc_acm_deinit() frees the line-coding buffers and drops its host handle,
+   usbh_cdc_ecm_deinit() frees the TX/RX buffers the lwIP path walks, and
+   usbh_deinit() memset()s the whole host handle. Each class API only checks its
+   own state on entry, so under SMP a caller on core 1 can be past that check while
+   core 0 frees what it dereferences. The callers must be excluded by lock, not by
+   core.
+   in_detach already parks the AT state machine and the ACM RX thread, but it is a
+   flag, not a barrier: a thread that passed the check is still inside the class
+   when the teardown runs. The lock closes that window.
+   Split two ways - ACM for the AT command path and the RX thread, ECM for the lwIP
+   TX path - so a long AT exchange does not stall network transmit. The teardown
+   takes both, always in the order acm, ecm.
+   Created before the stack comes up and never deleted: the lwIP thread and the ACM
+   RX thread can not be joined by the example, so there is no point in time at which
+   these mutexes are provably unreferenced. usbh_comp_stack_ready is the gate that
+   keeps callers off the stack instead. */
+static rtos_mutex_t usbh_comp_acm_mutex = NULL;
+
+static rtos_mutex_t usbh_comp_ecm_mutex = NULL;
+
+/* 1: the whole stack is up and the class APIs may be called. Cleared before any
+   tear down, so a non-zero value also implies both mutexes are valid. */
+static volatile u8 usbh_comp_stack_ready = 0;
+
+/* Exported variables --------------------------------------------------------*/
+
+CMD_TABLE_DATA_SECTION
+const COMMAND_TABLE usbh_composite_dongle_atcmd[] = {
+	{"ecm_cmd", usbh_composite_acm_cmd_test},
+	{"ecm_hotplug", usbh_composite_ecm_hotplug_cmd},
+};
+
 /* Private functions ---------------------------------------------------------*/
+
 static u8 usbh_composite_hex_to_char(u8 hex_num)
 {
 	if (hex_num >= '0' && hex_num <= '9') {
@@ -322,40 +382,6 @@ static u32 usbh_composite_strlen(u8 *pbuf)
 	return strlen((char *)pbuf);
 }
 
-static void usbh_composite_dongle_set_netinfo(u8 *pbuf, u8 *name)
-{
-	const char *pname = (const char *)name;
-	u8 len = 0;
-
-	/* A fragmented/short AT response can yield a NULL token from strsep(); reject it
-	   here instead of dereferencing pbuf below. */
-	if (pbuf == NULL) {
-		return;
-	}
-
-	if (pbuf[0] == '"') {
-		pbuf ++;
-	}
-	len = usbh_composite_strlen(pbuf);
-	if ((len > 0) && (pbuf[len - 1] == '"')) {
-		pbuf[len - 1] = 0;
-	}
-	len = usbh_composite_strlen(pbuf);
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Type(%s)=[%s(%d)]\n", name, pbuf, len);
-
-	/* whether support netinfo */
-	if (_strcmp(pname, "gw") == 0) {
-		usb_os_memcpy((void *)usbh_dongle_ctx.quectel.network.gw, (const void *)pbuf, len);
-	} else if (_strcmp(pname, "ip") == 0) {
-		usb_os_memcpy((void *)usbh_dongle_ctx.quectel.network.ip, (const void *)pbuf, len);
-	} else if (_strcmp(pname, "mask") == 0) {
-		usb_os_memcpy((void *)usbh_dongle_ctx.quectel.network.mask, (const void *)pbuf, len);
-	} else if (_strcmp(pname, "dns") == 0) {
-		usb_os_memcpy((void *)usbh_dongle_ctx.quectel.network.dns, (const void *)pbuf, len);
-	} else {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "Unknown name(%s)\n", name);
-	}
-}
 static u8 *usbh_composite_dongle_get_netinfo(u8 *name)
 {
 	const char *pname = (const char *)name;
@@ -376,6 +402,47 @@ static u8 *usbh_composite_dongle_get_netinfo(u8 *name)
 	return NULL;
 }
 
+static void usbh_composite_dongle_set_netinfo(u8 *pbuf, u8 *name)
+{
+	u8 *pdst;
+	u32 len;
+
+	/* A fragmented/short AT response can yield a NULL token from strsep(); reject it
+	   here instead of dereferencing pbuf below. */
+	if (pbuf == NULL) {
+		return;
+	}
+
+	pdst = usbh_composite_dongle_get_netinfo(name);
+	if (pdst == NULL) {  /* unknown name, already logged by get_netinfo() */
+		return;
+	}
+
+	if (pbuf[0] == '"') {
+		pbuf ++;
+	}
+	len = usbh_composite_strlen(pbuf);
+	if ((len > 0U) && (pbuf[len - 1U] == '"')) {
+		len--;
+		pbuf[len] = 0;
+	}
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Type(%s)=[%s(%u)]\n", name, pbuf, len);
+
+	/* The token points into the device-supplied AT response, so len is bounded only by
+	   CONFIG_USBH_COMP_PBUF_MAX_LEN-1 while the destination is a fixed
+	   CONFIG_USBH_COMP_NETWORK_INFO_MAX_STR array. A dotted-quad address never exceeds
+	   15 chars, so an over-long token is a malformed response: drop it rather than store
+	   a truncated value that inet_aton() would silently misread. */
+	if (len >= CONFIG_USBH_COMP_NETWORK_INFO_MAX_STR) {
+		RTK_LOGS(TAG, RTK_LOG_WARN, "Type(%s) len %u too long\n", name, len);
+		pdst[0] = 0;
+		return;
+	}
+
+	usb_os_memcpy((void *)pdst, (const void *)pbuf, len);
+	pdst[len] = 0;  /* keep the field a valid C string for inet_aton() */
+}
+
 /**
   * @brief  Class-independent user process callback.
   * @details For a multi-config 4G dongle the host FSM raises
@@ -385,7 +452,7 @@ static u8 *usbh_composite_dongle_get_netinfo(u8 *name)
   *          config that carries ECM also brings up ACM. Reuse the ECM helper
   *          usbh_cdc_ecm_choose_config() to locate and set that config.
   * @param  host: USB host handle
-  * @param  msg: @ref usbh_msg_t
+  * @param  msg: @ref usbh_msg_type_t
   * @retval Status
   */
 static void usbh_composite_cb_process(usb_host_t *host, u8 msg)
@@ -413,6 +480,22 @@ static int usbh_composite_cb_device_check(usb_host_t *host, u8 cfg_max)
 {
 	UNUSED(cfg_max);
 	return usbh_cdc_ecm_check_config_desc(host);
+}
+
+static int usbh_composite_cb_init(void)
+{
+	RTK_LOGS(TAG, RTK_LOG_INFO, "INIT\n");
+	return HAL_OK;
+}
+
+static void usbh_composite_cb_deinit(void)
+{
+	RTK_LOGS(TAG, RTK_LOG_INFO, "DEINIT\n");
+}
+
+static void usbh_composite_cb_attached(void)
+{
+	RTK_LOGS(TAG, RTK_LOG_INFO, "ATTACH\n");
 }
 
 /**
@@ -457,6 +540,43 @@ static void usbh_composite_acm_transmitted(u8 status)
 }
 
 /**
+  * @brief  Take one of the per-class stack locks if the class API may be used
+  * @note   Gates on usbh_comp_stack_ready BEFORE touching the mutex: the handle is
+  *         still NULL if the example never started, and the flag is already cleared
+  *         if a teardown is pending. A detach right after this check is harmless,
+  *         the mutex stays valid and the re-check under it catches the loss.
+  * @param  lock: usbh_comp_acm_mutex or usbh_comp_ecm_mutex
+  * @retval HAL_OK when the lock is held and the stack is usable, HAL_ERR_HW when
+  *         the caller must give up without unlocking
+  */
+static int usbh_comp_lock(rtos_mutex_t lock)
+{
+	if ((usbh_comp_stack_ready == 0U) || (usbh_dongle_ctx.in_detach != 0U) || (lock == NULL)) {
+		return HAL_ERR_HW;
+	}
+
+	rtos_mutex_take(lock, RTOS_MAX_TIMEOUT);
+
+	if ((usbh_comp_stack_ready == 0U) || (usbh_dongle_ctx.in_detach != 0U)) {
+		/* Lost the race against a teardown */
+		rtos_mutex_give(lock);
+		return HAL_ERR_HW;
+	}
+
+	return HAL_OK;
+}
+
+/**
+  * @brief  Release a lock taken by usbh_comp_lock()
+  * @param  lock: The same handle that was passed to usbh_comp_lock()
+  * @retval None
+  */
+static void usbh_comp_unlock(rtos_mutex_t lock)
+{
+	rtos_mutex_give(lock);
+}
+
+/**
   * @brief  Send an AT command over ACM bulk OUT and wait for TX completion.
   * @param  buf: data buffer (typically usbh_composite_acm_tx_buf)
   * @param  len: number of bytes to send
@@ -467,7 +587,17 @@ static void usbh_composite_acm_transmitted(u8 status)
   */
 static int usbh_composite_acm_transmit(u8 *buf, u32 len)
 {
-	int ret = usbh_cdc_acm_transmit(buf, len);
+	int ret;
+
+	/* Arm under the lock, then release it before waiting for the completion: the
+	   callback never comes for a device that was just unplugged, and the teardown
+	   must not be blocked for the whole wait. */
+	if (usbh_comp_lock(usbh_comp_acm_mutex) != HAL_OK) {
+		return HAL_ERR_HW;
+	}
+	ret = usbh_cdc_acm_transmit(buf, len);
+	usbh_comp_unlock(usbh_comp_acm_mutex);
+
 	if (ret == HAL_OK) {
 		if (usbh_composite_acm_send_sema != NULL) {
 			/* Bounded wait so a lost completion / detach cannot hang forever. */
@@ -488,7 +618,7 @@ static void usbh_composite_acm_received(u8 *pbuf, u32 len, u8 status)  /* type i
 	u32 i;
 	u16 vid = usbh_dongle_ctx.vid;
 
-	RTK_LOGS(TAG, RTK_LOG_INFO, "ACM data received len(%u) \n", len);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "ACM data received len(%u)\n", len);
 
 	if (pbuf == NULL || len == 0) {
 		RTK_LOGS(TAG, RTK_LOG_INFO, "ACM data received NULL or len=0\n");
@@ -497,27 +627,16 @@ static void usbh_composite_acm_received(u8 *pbuf, u32 len, u8 status)  /* type i
 
 	/* The bulk IN transfer delivers raw stream bytes with no NUL terminator, but the
 	   AT-response parsing below scans pbuf as a C string (strstr/strsep/strlen/atoi).
-	   pbuf is usbh_composite_acm_rx_buf[CONFIG_USBH_COMP_PBUF_MAX_LEN]; clamp to its capacity
-	   and terminate so every scan stays within the buffer. */
-	if (len >= CONFIG_USBH_COMP_PBUF_MAX_LEN) {
-		len = CONFIG_USBH_COMP_PBUF_MAX_LEN - 1;
+	   pbuf is usbh_composite_acm_rx_buf[CONFIG_USBH_COMP_PBUF_MAX_LEN], the only buffer armed
+	   with usbh_cdc_acm_receive(), so len <= CONFIG_USBH_COMP_PBUF_MAX_LEN. Cap len at the last
+	   index so the NUL always lands inside the buffer; a full-size transfer gives up its last byte. */
+	if (len > (CONFIG_USBH_COMP_PBUF_MAX_LEN - 1U)) {
+		len = CONFIG_USBH_COMP_PBUF_MAX_LEN - 1U;
 	}
 	pbuf[len] = '\0';
 
-	for (i = 0; i < len;) {
-		if (i + 10 <= len) {
-			RTK_LOGS(NOTAG, RTK_LOG_INFO, "%c%c%c%c%c%c%c%c%c%c",
-					 pbuf[i], pbuf[i + 1], pbuf[i + 2], pbuf[i + 3], pbuf[i + 4],
-					 pbuf[i + 5], pbuf[i + 6], pbuf[i + 7], pbuf[i + 8], pbuf[i + 9]);
-			i += 10;
-		} else {
-			for (; i < len; i++) {
-				RTK_LOGS(NOTAG, RTK_LOG_INFO, "%c", pbuf[i]);
-			}
-			break;
-		}
-	}
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n");
+	/* pbuf is NUL terminated above: print the AT response in one call */
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "%s\n", (char *)pbuf);
 
 	if (USBH_CDC_ACM_QUECTEL_DONGLE_VID == vid) {
 		/* EG91 */
@@ -560,6 +679,12 @@ static void usbh_composite_acm_received(u8 *pbuf, u32 len, u8 status)  /* type i
 			char *buff = (char *)pbuf;
 			char *p = strsep(&buff, "\"");
 			p = strsep(&buff, "\"");
+			/* The token comes from the device: a short one ("xx:xx:xx:xx:xx:xx" is 17 chars)
+			   would make the loop below read past its NUL */
+			if ((p != NULL) && (usbh_composite_strlen((u8 *)p) < 17U)) {
+				RTK_LOGS(TAG, RTK_LOG_WARN, "Bad MAC rsp\n");
+				p = NULL;
+			}
 			if (p != NULL) {
 				for (i = 0; i < 6; i++) {
 					usbh_dongle_ctx.quectel.mac[i] = usbh_composite_hex_to_char(p[3 * i + 0]) * 16 + usbh_composite_hex_to_char(p[3 * i + 1]) ;
@@ -780,6 +905,7 @@ static void usbh_composite_acm_received(u8 *pbuf, u32 len, u8 status)  /* type i
 static u32 usbh_composite_acm_cmd_test(u16 argc, u8 *argv[])
 {
 	u8 *cmd;
+	u32 cmd_len;
 	u8 try_cnt = 10;
 
 	if (argc == 0) {
@@ -788,15 +914,21 @@ static u32 usbh_composite_acm_cmd_test(u16 argc, u8 *argv[])
 	}
 
 	cmd = (u8 *)argv[0];
+	cmd_len = usbh_composite_strlen(cmd);
+	/* The shell line can exceed the TX buffer with CONFIG_LONGER_CMD; keep room for CR LF */
+	if (cmd_len + 2U > CONFIG_USBH_COMP_PBUF_MAX_LEN) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Cmd too long %u\n", cmd_len);
+		return HAL_ERR_PARA;
+	}
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "At cmd(%s)\n", cmd);
 	if (USBH_CDC_ACM_QUECTEL_DONGLE_VID == usbh_dongle_ctx.vid ||
 		USBH_CDC_ACM_FIBOCOM_DONGLE_LE271_VID == usbh_dongle_ctx.vid ||
 		USBH_CDC_ACM_SIMCOM_DONGLE_SIM767X_VID == usbh_dongle_ctx.vid) {
 		usb_os_memset((void *)usbh_composite_acm_tx_buf, 0x00, CONFIG_USBH_COMP_PBUF_MAX_LEN);
-		usb_os_memcpy((void *)usbh_composite_acm_tx_buf, (const void *)cmd, usbh_composite_strlen(cmd));
-		usbh_composite_acm_tx_buf[usbh_composite_strlen(cmd) + 0] = 0x0D;
-		usbh_composite_acm_tx_buf[usbh_composite_strlen(cmd) + 1] = 0x0A;
+		usb_os_memcpy((void *)usbh_composite_acm_tx_buf, (const void *)cmd, cmd_len);
+		usbh_composite_acm_tx_buf[cmd_len + 0U] = 0x0D;
+		usbh_composite_acm_tx_buf[cmd_len + 1U] = 0x0A;
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Pre AtCmd\n");
 		while (try_cnt >  0) {
 			if (HAL_OK == usbh_composite_acm_transmit(usbh_composite_acm_tx_buf, usbh_composite_strlen(usbh_composite_acm_tx_buf))) {
@@ -807,7 +939,7 @@ static u32 usbh_composite_acm_cmd_test(u16 argc, u8 *argv[])
 			try_cnt --;
 		}
 	}
-	RTK_LOGS(TAG, RTK_LOG_INFO, "At cmd(%s) finish!\n", cmd);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "AT cmd(%s) done\n", cmd);
 	return 0;
 }
 
@@ -829,7 +961,6 @@ static u8 usbh_composite_quectel_eg915_ctrl(void)
 			RTK_LOGS(TAG, RTK_LOG_INFO, "Enter state(%d)--------------------------------------------\n", state);
 		}
 		if (usbh_dongle_ctx.in_detach != 0) {
-			RTK_LOGS(TAG, RTK_LOG_INFO, "in_detach\n");
 			return 1;
 		}
 		switch (state) {
@@ -923,7 +1054,7 @@ static u8 usbh_composite_quectel_eg915_ctrl(void)
 			break;
 		case QUECTEL_DONGLE_STATUS_MAX:
 		default:
-			RTK_LOGS(TAG, RTK_LOG_INFO, "Get all network info !\n");
+			RTK_LOGS(TAG, RTK_LOG_INFO, "Get all network info\n");
 			rtos_time_delay_ms(10);
 			return 0;
 			break;
@@ -1082,7 +1213,7 @@ static u8 usbh_composite_quectel_eg91_ctrl(void)
 		break;
 		case QUECTEL_DONGLE_STATUS_MAX:
 		default:
-			RTK_LOGS(TAG, RTK_LOG_INFO, "Send request finish!\n");
+			RTK_LOGS(TAG, RTK_LOG_INFO, "Send request done\n");
 			rtos_time_delay_ms(10);
 			return 0;
 			break;
@@ -1345,7 +1476,7 @@ static u8 usbh_composite_fibocom_ctrl(void)
 			break;
 		case FIBOCOM_DONGLE_STATUS_DONE:
 		default:
-			RTK_LOGS(TAG, RTK_LOG_INFO, "LE271 has IP, dial OK!\n");
+			RTK_LOGS(TAG, RTK_LOG_INFO, "LE271 has IP, dial OK\n");
 			rtos_time_delay_ms(10);
 			return 0;
 		}
@@ -1611,12 +1742,12 @@ static int usbh_composite_dongle_netif_init(void)
 
 	pipaddr = (char *)usbh_composite_dongle_get_netinfo((u8 *)"ip");
 	if (NULL == pipaddr) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "Get ip failed !\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Get ip fail\n");
 		return -1;
 	} else {
 		ret = inet_aton(pipaddr, &ipaddr);
 		if (ret == 0) {
-			RTK_LOGS(TAG, RTK_LOG_INFO, "Inet_aton ip failed !\n");
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Inet_aton ip fail\n");
 			return -1;
 		}
 		netif_set_ipaddr(&xnetif[NET_IF_NUM - 1], &ipaddr);
@@ -1624,12 +1755,12 @@ static int usbh_composite_dongle_netif_init(void)
 
 	pnetmask = (char *)usbh_composite_dongle_get_netinfo((u8 *)"mask");
 	if (NULL == pnetmask) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "Get mask failed !\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Get mask fail\n");
 		return -1;
 	} else {
 		ret = inet_aton(pnetmask, &netmask);
 		if (ret == 0) {
-			RTK_LOGS(TAG, RTK_LOG_INFO, "Inet_aton netmask failed !\n");
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Inet_aton netmask fail\n");
 			return -1;
 		}
 		netif_set_netmask(&xnetif[NET_IF_NUM - 1], &netmask);
@@ -1637,12 +1768,12 @@ static int usbh_composite_dongle_netif_init(void)
 
 	pgw = (char *)usbh_composite_dongle_get_netinfo((u8 *)"gw");
 	if (NULL == pgw) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "Get gw failed !\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Get gw fail\n");
 		return -1;
 	} else {
 		ret = inet_aton(pgw, &gw);
 		if (ret == 0) {
-			RTK_LOGS(TAG, RTK_LOG_INFO, "Inet_aton gw failed !\n");
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Inet_aton gw fail\n");
 			return -1;
 		}
 		netif_set_gw(&xnetif[NET_IF_NUM - 1], &gw);
@@ -1650,17 +1781,17 @@ static int usbh_composite_dongle_netif_init(void)
 
 	pdnsserver = (char *)usbh_composite_dongle_get_netinfo((u8 *)"dns");
 	if (NULL == pdnsserver) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "Get dns failed !\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Get dns fail\n");
 		return -1;
 	} else {
 		ret = inet_aton(pdnsserver, &dnsserver);
 		if (ret == 0) {
-			RTK_LOGS(TAG, RTK_LOG_INFO, "Inet_aton dns failed !\n");
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Inet_aton dns fail\n");
 			return -1;
 		}
 		dns_setserver(0, &dnsserver);
 	}
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Run %s ok. \n", __func__);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Run %s ok\n", __func__);
 	return 0;
 }
 
@@ -1683,14 +1814,14 @@ static int usbh_composite_dongle_diag_cmd(void)
 		} else if (pid == USBH_CDC_ACM_QUECTEL_DONGLE_EG91_PID) {
 			return usbh_composite_quectel_eg91_ctrl();
 		} else {
-			RTK_LOGS(TAG, RTK_LOG_INFO, "Error happen, check the pid(%d)\n", pid);
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Error happen, check the pid(%d)\n", pid);
 		}
 	} else if ((USBH_CDC_ACM_FIBOCOM_DONGLE_LE271_VID == vid) && (pid == USBH_CDC_ACM_FIBOCOM_DONGLE_LE271_PID)) {
 		return usbh_composite_fibocom_ctrl();
 	} else if ((USBH_CDC_ACM_SIMCOM_DONGLE_SIM767X_VID == vid) && (pid == USBH_CDC_ACM_SIMCOM_DONGLE_SIM767X_PID)) {
 		return usbh_composite_simcom_ctrl();
 	} else {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "Error happen, check the vid(%d)\n", vid);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Error happen, check the vid(%d)\n", vid);
 	}
 
 	return 1;
@@ -1746,7 +1877,7 @@ static void usbh_composite_gpio_init(void)
 	static int init_ok = 0;
 	if (init_ok == 0) {
 		init_ok = 1;
-		RTK_LOGS(TAG, RTK_LOG_INFO, "[USB] gpio init\n");
+		RTK_LOGS(TAG, RTK_LOG_INFO, "GPIO init\n");
 		usbh_composite_gpio_power_init(CONFIG_USBH_COMP_USB_DEV_PWR_CTRL_GPIO);
 
 		usbh_composite_gpio_trigger(0);      /* power off */
@@ -1801,12 +1932,20 @@ static void usbh_composite_acm_rx_thread(void *param)
 
 		/* ACM RX loop for the current session */
 		while (usbh_dongle_ctx.in_detach == 0) {
-			if (usbh_cdc_acm_receive(usbh_composite_acm_rx_buf, CONFIG_USBH_COMP_PBUF_MAX_LEN) == HAL_OK) {
+			int armed = 0;
+
+			/* Lock covers the arming only, see usbh_composite_acm_transmit(). */
+			if (usbh_comp_lock(usbh_comp_acm_mutex) == HAL_OK) {
+				armed = (usbh_cdc_acm_receive(usbh_composite_acm_rx_buf, CONFIG_USBH_COMP_PBUF_MAX_LEN) == HAL_OK) ? 1 : 0;
+				usbh_comp_unlock(usbh_comp_acm_mutex);
+			}
+
+			if (armed != 0) {
 				/* Wait for completion (callback gives the sema).
 				 * Use a timeout so detach is noticed promptly. */
 				rtos_sema_take(usbh_composite_acm_rx_done_sema, 1000);
 			} else {
-				/* Pipe not ready yet: back off and retry. */
+				/* Pipe not ready yet, or the stack is down: back off and retry. */
 				rtos_time_delay_ms(10);
 			}
 		}
@@ -1824,11 +1963,25 @@ static void usbh_composite_acm_rx_thread(void *param)
  */
 static void usbh_composite_deinit_stack(void)
 {
+	/* in_detach first, so a caller inside a loop gives up its round instead of
+	   re-taking a lock between messages and starving this caller out. */
 	usbh_dongle_ctx.in_detach = 1;
+
+	/* Both locks, always in this order (acm, ecm). Each caller takes exactly one,
+	   never two, so a fixed order here is enough to rule out a cycle. */
+	rtos_mutex_take(usbh_comp_acm_mutex, RTOS_MAX_TIMEOUT);
+	rtos_mutex_take(usbh_comp_ecm_mutex, RTOS_MAX_TIMEOUT);
+	/* Close the gate under the locks: no class API call is in flight here, and any
+	   later one gives up on the cleared flag. */
+	usbh_comp_stack_ready = 0U;
+
 	usbh_stop();
 	usbh_cdc_acm_deinit();
 	usbh_cdc_ecm_deinit();
 	usbh_deinit();
+
+	rtos_mutex_give(usbh_comp_ecm_mutex);
+	rtos_mutex_give(usbh_comp_acm_mutex);
 }
 #endif
 
@@ -1846,12 +1999,12 @@ static int usbh_composite_init_stack(void)
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "USB init fail\n");
 		return HAL_ERR_UNKNOWN;
 	}
-	if (usbh_cdc_acm_init(&usbh_composite_acm_cfg) != HAL_OK) {
+	if (usbh_cdc_acm_init(&usbh_composite_acm_cfg, &usbh_composite_acm_class_cfg) != HAL_OK) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "ACM init fail\n");
 		usbh_deinit();
 		return HAL_ERR_UNKNOWN;
 	}
-	if (usbh_cdc_ecm_init(&usbh_composite_ecm_cfg, &usbh_composite_ecm_priv) != HAL_OK) {
+	if (usbh_cdc_ecm_init(&usbh_composite_ecm_cfg, &usbh_composite_ecm_class_cfg) != HAL_OK) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "ECM init fail\n");
 		usbh_cdc_acm_deinit();
 		usbh_deinit();
@@ -1875,6 +2028,13 @@ static int usbh_composite_init_stack(void)
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Example Pid 0x%x/Vid 0x%x\n", usbh_dongle_ctx.pid, usbh_dongle_ctx.vid);
 
+	/* Open the gate before releasing the RX pump: usbh_composite_dongle_diag_cmd()
+	   below issues ACM transfers through usbh_composite_acm_transmit(), which is
+	   gated on this flag, so it has to be set first or every AT command would be
+	   rejected. Ordered gate-then-in_detach because a caller checks both and the
+	   reverse order would let one through while the gate was still shut. */
+	usbh_comp_stack_ready = 1U;
+
 	/* Release acm_rx_thread now that a device is enumerated and the pipe
 	 * is available; diag AT commands need the RX pump running. */
 	usbh_dongle_ctx.in_detach = 0;
@@ -1893,7 +2053,7 @@ static int usbh_composite_init_stack(void)
 		return HAL_OK;
 	}
 
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Dongle Diag Err\n");
+	RTK_LOGS(TAG, RTK_LOG_ERROR, "Dongle diag fail\n");
 	return HAL_ERR_UNKNOWN;
 }
 
@@ -1907,7 +2067,7 @@ static void example_usbh_composite_link_change_thread(void *param)
 	eth_state_t ethernet_unplug = ETH_STATUS_IDLE;
 
 	UNUSED(param);
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Enter link status task!\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Enter link status task\n");
 
 	/* Wait for the USB stack to be ready before touching ECM APIs. During
 	 * detach/re-init phases in_detach is 1 and the stack has no active
@@ -1919,7 +2079,7 @@ static void example_usbh_composite_link_change_thread(void *param)
 		rtos_time_delay_ms(1000);
 	}
 
-	RTK_LOGS(TAG, RTK_LOG_INFO, "USB Init success!\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "USB init done\n");
 	for (;;) {
 		/* Park while USB stack is being torn down / re-initialized. Once
 		 * in_detach clears, the next iteration re-queries ECM state. */
@@ -1936,10 +2096,16 @@ static void example_usbh_composite_link_change_thread(void *param)
 
 		if (USB_VID == vid) {  /* rtk */
 			if (1 == link_is_up && (ethernet_unplug < ETH_STATUS_INIT)) {  /* unlink -> link */
-				RTK_LOGS(TAG, RTK_LOG_INFO, "Do DHCP\n");
 				mac = (u8 *)usbh_cdc_ecm_process_mac_str();
+				if (mac == NULL) {
+					/* iMACAddress string descriptor not readable yet; retry next round. */
+					RTK_LOGS(TAG, RTK_LOG_WARN, "MAC not ready\n");
+					rtos_time_delay_ms(1000);
+					continue;
+				}
+				RTK_LOGS(TAG, RTK_LOG_INFO, "Do DHCP\n");
 				usb_os_memcpy((void *)pnetif_usb_eth->hwaddr, (const void *)mac, 6);
-				RTK_LOGS(TAG, RTK_LOG_INFO, "MAC[%02x %02x %02x %02x %02x %02x]\r\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+				RTK_LOGS(TAG, RTK_LOG_INFO, "MAC[%02x %02x %02x %02x %02x %02x]\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 				netif_set_link_up(pnetif_usb_eth);
 
 				dhcp_status = lwip_request_ip(NETIF_USB_ETH_INDEX);
@@ -1949,7 +2115,7 @@ static void example_usbh_composite_link_change_thread(void *param)
 					ethernet_unplug = ETH_STATUS_INIT;
 					RTK_LOGS(TAG, RTK_LOG_INFO, "Switch to link\n");
 				} else {
-					RTK_LOGS(TAG, RTK_LOG_INFO, "DHCP Fail\n");
+					RTK_LOGS(TAG, RTK_LOG_ERROR, "DHCP fail\n");
 				}
 			} else if (0 == link_is_up && (ethernet_unplug >= ETH_STATUS_INIT)) {  /* link -> unlink */
 				ethernet_unplug = ETH_STATUS_DEINIT;
@@ -1967,7 +2133,7 @@ static void example_usbh_composite_link_change_thread(void *param)
 				ethernet_unplug = ETH_STATUS_INIT;
 				mac = usbh_dongle_ctx.quectel.mac;
 				usb_os_memcpy((void *)pnetif_usb_eth->hwaddr, (const void *)mac, 6);
-				RTK_LOGS(TAG, RTK_LOG_INFO, "MAC[%02x %02x %02x %02x %02x %02x]\r\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+				RTK_LOGS(TAG, RTK_LOG_INFO, "MAC[%02x %02x %02x %02x %02x %02x]\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 				netif_set_link_up(pnetif_usb_eth);
 
 				dhcp_status = lwip_request_ip(NETIF_USB_ETH_INDEX);
@@ -1988,6 +2154,12 @@ static void example_usbh_composite_link_change_thread(void *param)
 			if (1 == link_is_up && (ethernet_unplug < ETH_STATUS_INIT)) {
 				RTK_LOGS(TAG, RTK_LOG_INFO, "Pid 0x%x/Vid 0x%x, EG915 mac\n", vid, pid);
 				mac = (u8 *)usbh_cdc_ecm_process_mac_str();
+				if (mac == NULL) {
+					/* iMACAddress string descriptor not readable yet; retry next round. */
+					RTK_LOGS(TAG, RTK_LOG_WARN, "MAC not ready\n");
+					rtos_time_delay_ms(1000);
+					continue;
+				}
 				RTK_LOGS(TAG, RTK_LOG_INFO, "MAC:%02x:%02x:%02x:%02x:%02x:%02x\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 				usb_os_memcpy((void *)xnetif[NET_IF_NUM - 1].hwaddr, (const void *)mac, 6);
 				if (usbh_composite_dongle_netif_init() == 0) {
@@ -1996,7 +2168,7 @@ static void example_usbh_composite_link_change_thread(void *param)
 					netif_set_link_up(&xnetif[NET_IF_NUM - 1]);
 					netif_set_default(&xnetif[NET_IF_NUM - 1]);  /* choose the route path */
 					usbh_dongle_ctx.dhcp_done = 1;
-					RTK_LOGS(TAG, RTK_LOG_INFO, "Switch to link !!\n");
+					RTK_LOGS(TAG, RTK_LOG_INFO, "Switch to link\n");
 				}
 			} else if (0 == link_is_up && (ethernet_unplug >= ETH_STATUS_INIT)) {
 				ethernet_unplug = ETH_STATUS_DEINIT;
@@ -2012,11 +2184,18 @@ static void example_usbh_composite_link_change_thread(void *param)
 			 * (mode=0, 192.168.x.x range). usbh_composite_simcom_ctrl() ensures mode=0 is active
 			 * before returning (AT+USBNETIP=0 if needed). */
 			if (1 == link_is_up && (ethernet_unplug < ETH_STATUS_INIT)) {
+				mac = (u8 *)usbh_cdc_ecm_process_mac_str();
+				if (mac == NULL) {
+					/* iMACAddress string descriptor not readable yet; retry next round.
+					   ethernet_unplug stays below ETH_STATUS_INIT so this branch is re-entered. */
+					RTK_LOGS(TAG, RTK_LOG_WARN, "MAC not ready\n");
+					rtos_time_delay_ms(1000);
+					continue;
+				}
 				RTK_LOGS(TAG, RTK_LOG_INFO, "Do DHCP\n");
 				ethernet_unplug = ETH_STATUS_INIT;
-				mac = (u8 *)usbh_cdc_ecm_process_mac_str();
 				usb_os_memcpy((void *)pnetif_usb_eth->hwaddr, (const void *)mac, 6);
-				RTK_LOGS(TAG, RTK_LOG_INFO, "MAC[%02x %02x %02x %02x %02x %02x]\r\n",
+				RTK_LOGS(TAG, RTK_LOG_INFO, "MAC[%02x %02x %02x %02x %02x %02x]\n",
 						 mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 				netif_set_link_up(pnetif_usb_eth);
 
@@ -2038,7 +2217,7 @@ static void example_usbh_composite_link_change_thread(void *param)
 				RTK_LOGS(TAG, RTK_LOG_INFO, "ECM link is down (%u)\n", link_down_log_cnt);
 			}
 			if (link_is_up != 0) {
-				RTK_LOGS(TAG, RTK_LOG_INFO, "Error, the Vid 0x%x/Pid 0x%x can not match! \n", vid, pid);
+				RTK_LOGS(TAG, RTK_LOG_ERROR, "Vid 0x%x/Pid 0x%x not match\n", vid, pid);
 			}
 			rtos_time_delay_ms(1000);
 		}
@@ -2166,7 +2345,7 @@ static void example_usbh_composite_download_thread(void *param)
 					/* Remove header size to get first read size of data from body head */
 					read_size = pos - ((unsigned char *) body - dl_buf);
 					usbh_composite_ecm_check_download(body, read_size);
-					RTK_LOGS(TAG, RTK_LOG_INFO, "Body=0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x \n", body[0], body[1], body[2], body[3], body[4], body[5], body[6], body[7]);
+					RTK_LOGS(TAG, RTK_LOG_INFO, "Body=0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x\n", body[0], body[1], body[2], body[3], body[4], body[5], body[6], body[7]);
 					pos = 0;
 					content_len_pos = strstr((char const *)dl_buf, "Content-Length: ");
 					if (content_len_pos) {
@@ -2205,7 +2384,7 @@ static void example_usbh_composite_download_thread(void *param)
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Exit read. ret = %d\n", read_size);
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Http content-len = %dB, download resource size = %dB\n", content_len, resource_size);
 	} else {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Connect\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Connect fail\n");
 	}
 
 exit:
@@ -2224,7 +2403,7 @@ static void example_usbh_composite_init_task(void *param)
 	UNUSED(param);
 	ret = usbh_composite_init_stack();
 	if (ret != HAL_OK) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Initial USB bring-up failed; check hardware / cellular\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "USB init fail, check hardware/cellular\n");
 	}
 	/* Bootstrap task complete: self-delete. */
 	rtos_task_delete(NULL);
@@ -2250,7 +2429,7 @@ static void usbh_composite_start_workers(void)
 		goto exit_delete_link_check;
 	}
 
-	RTK_LOGS(TAG, RTK_LOG_INFO, "USB init start\r\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "USB init start\n");
 	return;
 
 exit_delete_link_check:
@@ -2273,7 +2452,7 @@ static void example_usbh_composite_mem_check_thread(void *param)
 	int ret;
 
 	UNUSED(param);
-	RTK_LOGS(TAG, RTK_LOG_INFO, "[test] mem_check start\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Mem check start\n");
 
 	/* First iteration: full init (creates link_check + init_task worker threads).
 	 * Later iterations only deinit/reinit the USB stack; the worker threads
@@ -2283,7 +2462,7 @@ static void example_usbh_composite_mem_check_thread(void *param)
 
 	for (;;) {
 		rtos_time_delay_ms(10000);
-		RTK_LOGS(TAG, RTK_LOG_INFO, "Loop create %d: all_free:0x%08x\r\n", loop, usb_os_get_free_heap_size());
+		RTK_LOGS(TAG, RTK_LOG_INFO, "Loop create %d: all_free:0x%08x\n", loop, usb_os_get_free_heap_size());
 
 		/* Tear down USB stack (worker tasks stay alive; they'll wait on the
 		 * next ready state after re-init). */
@@ -2292,7 +2471,7 @@ static void example_usbh_composite_mem_check_thread(void *param)
 		rtos_time_delay_ms(3000);
 		/* mmeory_array_dump(); */
 		/* vPortGetTaskHeapInfo(); */
-		RTK_LOGS(TAG, RTK_LOG_INFO, "Loop delete %d: all_free:0x%08x\r\n", loop, usb_os_get_free_heap_size());
+		RTK_LOGS(TAG, RTK_LOG_INFO, "Loop delete %d: all_free:0x%08x\n", loop, usb_os_get_free_heap_size());
 
 		/* Re-init the USB stack; usbh_composite_init_stack() clears in_detach on success so
 		 * RX pump can resume. */
@@ -2326,7 +2505,9 @@ static void example_usbh_composite_hotplug_thread(void *param)
 			/* usbh_composite_init_stack() clears in_detach on successful enumeration; on
 			 * failure it stays asserted so RX pump stays parked. */
 			if (usbh_composite_init_stack() != HAL_OK) {
-				RTK_LOGS(TAG, RTK_LOG_ERROR, "Hot-plug re-init failed; waiting for next detach\n");
+				RTK_LOGS(TAG, RTK_LOG_ERROR, "Reinit fail, wait for next detach\n");
+			} else {
+				RTK_LOGS(TAG, RTK_LOG_INFO, "Reinit done\n");
 			}
 		}
 	}
@@ -2347,12 +2528,21 @@ static u32 usbh_composite_ecm_hotplug_cmd(u16 argc, u8 *argv[])
 	return usbh_composite_hotplug_test();
 }
 
-/* Exported functions --------------------------------------------------------*/
 #if defined(CONFIG_LWIP_USB_ETHERNET) && CONFIG_LWIP_USB_ETHERNET
+
+/* Exported functions --------------------------------------------------------*/
 
 int usb_ethernet_transmit(u8 *buf, u32 len, u8 block)
 {
-	return usbh_cdc_ecm_send_data(buf, len, block);
+	int ret;
+
+	if (usbh_comp_lock(usbh_comp_ecm_mutex) != HAL_OK) {
+		return HAL_ERR_HW;
+	}
+	ret = usbh_cdc_ecm_send_data(buf, len, block);
+	usbh_comp_unlock(usbh_comp_ecm_mutex);
+
+	return ret;
 }
 
 void example_usbh_composite_cdc_acm_ecm(void)
@@ -2368,7 +2558,7 @@ void example_usbh_composite_cdc_acm_ecm(void)
 	rtos_task_t download_task;
 #endif
 
-	RTK_LOGS(TAG, RTK_LOG_INFO, "USBH Composite ECM demo start\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "USBH ACM+ECM comp demo start\n");
 
 	rltk_usb_eth_init();
 
@@ -2394,10 +2584,26 @@ void example_usbh_composite_cdc_acm_ecm(void)
 	 * task) is mandatory in every build config, not just the #else branch.
 	 * ------------------------------------------------------------------- */
 
+	/* Created before the stack comes up and never deleted, see the declarations */
+	if (usbh_comp_acm_mutex == NULL) {
+		ret = rtos_mutex_create(&usbh_comp_acm_mutex);
+		if (ret != RTK_SUCCESS) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Create acm mutex fail\n");
+			goto err_exit;
+		}
+	}
+	if (usbh_comp_ecm_mutex == NULL) {
+		ret = rtos_mutex_create(&usbh_comp_ecm_mutex);
+		if (ret != RTK_SUCCESS) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Create ecm mutex fail\n");
+			goto err_exit;
+		}
+	}
+
 	ret = rtos_sema_create(&usbh_composite_acm_rx_done_sema, 0U, 1U);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create acm rx done sema fail\n");
-		return;
+		goto err_exit;
 	}
 
 	ret = rtos_sema_create(&usbh_composite_acm_send_sema, 0U, 1U);
@@ -2430,6 +2636,15 @@ void example_usbh_composite_cdc_acm_ecm(void)
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create hotplug thread fail\n");
 		goto err_detach_sema;
 	}
+#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
+	/* The USB OTG ISR is delivered on CPU0: the GIC pins every SPI to core 0
+	   (ITARGETSR is written to 0x01010101 in arm_gic.c gic_dist_init). Pinning the
+	   hotplug/deinit thread to CPU0 puts it on the same core as the ISR, so the
+	   local interrupt disables inside the teardown are meaningful again. The lwIP TX
+	   thread and the ACM RX thread stay unaffined: a pending teardown is excluded
+	   from them by the per-class mutexes, not by core. */
+	rtos_task_set_affinity(hot_plug_task, 0);
+#endif
 #endif
 
 #if CONFIG_USBH_COMP_MEM_CHECK
@@ -2476,13 +2691,10 @@ err_send_sema:
 	rtos_sema_delete(usbh_composite_acm_send_sema);
 err_rx_done_sema:
 	rtos_sema_delete(usbh_composite_acm_rx_done_sema);
+err_exit:
+	RTK_LOGS(TAG, RTK_LOG_ERROR, "USBH ACM+ECM comp demo aborted\n");
 }
 
-CMD_TABLE_DATA_SECTION
-const COMMAND_TABLE usbh_composite_dongle_atcmd[] = {
-	{"ecm_cmd", usbh_composite_acm_cmd_test},
-	{"ecm_hotplug", usbh_composite_ecm_hotplug_cmd},
-};
 
 #else
 #error "No Lwip USB Ethernet Configuration"

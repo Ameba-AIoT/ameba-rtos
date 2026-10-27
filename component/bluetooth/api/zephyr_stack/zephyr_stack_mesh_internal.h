@@ -57,6 +57,8 @@ uint16_t bt_mesh_health_client_model_act_handle(rtk_bt_cmd_t *p_cmd);
 
 uint16_t bt_mesh_remote_prov_client_model_act_handle(rtk_bt_cmd_t *p_cmd);
 
+uint16_t bt_mesh_remote_prov_server_model_act_handle(rtk_bt_cmd_t *p_cmd);
+
 uint16_t bt_mesh_private_beacon_client_model_act_handle(rtk_bt_cmd_t *p_cmd);
 
 uint16_t bt_mesh_device_firmware_update_standlone_model_act_handle(rtk_bt_cmd_t *p_cmd);

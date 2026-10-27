@@ -366,8 +366,14 @@ alert(\"Your password is too long!(8-64)\");\
 #define MAX_PASSWORD_LEN		64
 #define MAX_CHANNEL_NUM			13
 
-struct rtw_wifi_setting Wifi_Setting = {RTW_MODE_NONE, {0}, {0}, 0, RTW_SECURITY_OPEN, {0}, 0, 0, 0, 0, 0};
-struct rtw_wifi_setting target_ap_setting = {RTW_MODE_NONE, {0}, {0}, 0, RTW_SECURITY_OPEN, {0}, 0, 0, 0, 0, 0};
+struct rtw_wifi_setting Wifi_Setting = {
+	.mode = RTW_MODE_NONE,
+	.security_type = RTW_SECURITY_OPEN,
+};
+struct rtw_wifi_setting target_ap_setting = {
+	.mode = RTW_MODE_NONE,
+	.security_type = RTW_SECURITY_OPEN,
+};
 
 static void vProcessConnection(void *param);
 

@@ -44,7 +44,12 @@ typedef struct timer_list	_timer;
 #define REAUTH_TO	(800)
 #endif
 #define REASSOC_TO	(300) //(50)
+
+#if defined(CONFIG_WIFI_VERIFY_PSPHY)
+#define SAE_REAUTH_TO	(8000)
+#else
 #define SAE_REAUTH_TO	(800)
+#endif
 
 void init_timer(struct timer_list *timer, const char *name);
 void mod_timer(struct timer_list *timer, uint32_t delay_time_ms);

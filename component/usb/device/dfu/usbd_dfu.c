@@ -17,6 +17,17 @@
    framework rebases wIndex to the function-local value before dispatching. */
 #define USBD_DFU_ITF_NUM                                0x00U
 
+/* wLength of the GETSTATE response, ref DFU 1.1 6.1.5 */
+#define USBD_DFU_STATE_PKT_SIZE                         1U
+
+/* Values of write_state: state of the block write_task programs, consumed by GETSTATUS */
+#define USBD_DFU_WRITE_BUSY                             0U
+#define USBD_DFU_WRITE_OK                               1U
+#define USBD_DFU_WRITE_FAIL                             2U
+
+/* Period of the warning usbd_dfu_stop_task() logs while a worker callback does not return */
+#define USBD_DFU_STOP_TASK_WARN_MS                      1000U
+
 /* Private types -------------------------------------------------------------*/
 
 /* Private macros ------------------------------------------------------------*/
@@ -30,14 +41,11 @@ static u16 usbd_dfu_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 static int usbd_dfu_ep0_data_in(usb_dev_t *dev, u8 status);
 static int usbd_dfu_ep0_data_out(usb_dev_t *dev);
 static void usbd_dfu_status_changed(usb_dev_t *dev, u8 old_status, u8 status);
-#ifdef CONFIG_USBD_COMPOSITE
-static u8 usbd_dfu_set_str_base(u8 base);
-#endif
 static void usbd_dfu_reconf_task(void *param);
 
 static void usbd_dfu_manifest_task(void *param);
 static void usbd_dfu_manifest_timer_cb(void *timer);
-#if !USBD_DFU_WILL_DETACH
+#ifndef CONFIG_USBD_DFU_WILL_DETACH
 static void usbd_dfu_detach_timeout_cb(void *timer);
 #endif
 
@@ -54,10 +62,10 @@ static const u8 usbd_dfu_dev_desc[USB_LEN_DEV_DESC] = {
 	0x00,                                           /* bDeviceSubClass */
 	0x00,                                           /* bDeviceProtocol */
 	USB_MAX_EP0_SIZE,                               /* bMaxPacketSize */
-	USB_LOW_BYTE(USBD_DFU_VID),                     /* idVendor */
-	USB_HIGH_BYTE(USBD_DFU_VID),
-	USB_LOW_BYTE(USBD_DFU_PID),                     /* idProduct */
-	USB_HIGH_BYTE(USBD_DFU_PID),
+	USB_LOW_BYTE(USB_VID),                          /* idVendor (patched by core from usbd_dev_info_t) */
+	USB_HIGH_BYTE(USB_VID),
+	USB_LOW_BYTE(USB_PID),                          /* idProduct (patched by core from usbd_dev_info_t) */
+	USB_HIGH_BYTE(USB_PID),
 	0x00, 0x02,                                     /* bcdDevice 2.00 */
 	USBD_IDX_MFC_STR,                               /* iManufacturer */
 	USBD_IDX_PRODUCT_STR,                           /* iProduct */
@@ -65,15 +73,7 @@ static const u8 usbd_dfu_dev_desc[USB_LEN_DEV_DESC] = {
 	0x01,                                           /* bNumConfigurations */
 };
 
-/* USB Standard String Descriptor 0 */
-static const u8 usbd_dfu_lang_id_desc[USB_LEN_LANGID_STR_DESC] = {
-	USB_LEN_LANGID_STR_DESC,                        /* bLength */
-	USB_DESC_TYPE_STRING,                           /* bDescriptorType */
-	USB_LOW_BYTE(USBD_DFU_LANGID_STRING),            /* wLANGID: English */
-	USB_HIGH_BYTE(USBD_DFU_LANGID_STRING),
-};
-
-#ifndef CONFIG_USB_FS
+#ifndef CONFIG_SUPPORT_USB_FS_ONLY
 /* USB Standard Device Qualifier Descriptor */
 static const u8 usbd_dfu_device_qualifier_desc[USB_LEN_DEV_QUALIFIER_DESC] = {
 	USB_LEN_DEV_QUALIFIER_DESC,                     /* bLength */
@@ -115,27 +115,26 @@ static const u8 usbd_dfu_config_desc[] = {
 	USB_DFU_PROTOCOL_DFU,                          /* bInterfaceProtocol: 0x02 (DFU mode); patched
 	                                                   to 0x01 in get_descriptor while in Run-Time
 	                                                   mode */
-	USBD_DFU_CLASS_STR_BASE_DEFAULT +
-	USBD_DFU_STR_IDX_IFACE,                         /* iInterface, runtime patched */
+	0x00,                                           /* iInterface, runtime patched */
 
 	/* DFU Functional Descriptor */
 	0x09,                                           /* bLength */
 	USB_DFU_FUNC_DESC_TYPE,                        /* bDescriptorType: 0x21 */
-#if USBD_DFU_WILL_DETACH
+#ifdef CONFIG_USBD_DFU_WILL_DETACH
 	USB_DFU_ATTR_WILL_DETACH |
 #endif
-#if USBD_DFU_MANIFESTATION_TOL
+#ifdef CONFIG_USBD_DFU_MANIFESTATION_TOLERANT
 	USB_DFU_ATTR_MANIFEST_TOL |
 #endif
-#if USBD_DFU_CAN_UPLOAD
+#ifdef CONFIG_USBD_DFU_CAN_UPLOAD
 	USB_DFU_ATTR_CAN_UPLOAD |
 #endif
 	USB_DFU_ATTR_CAN_DNLOAD |
 	0,                                             /* bmAttributes */
-	USB_LOW_BYTE(USBD_DFU_DETACH_TIMEOUT),          /* wDetachTimeOut */
-	USB_HIGH_BYTE(USBD_DFU_DETACH_TIMEOUT),
-	USB_LOW_BYTE(USBD_DFU_XFER_SIZE),              /* wTransferSize */
-	USB_HIGH_BYTE(USBD_DFU_XFER_SIZE),
+	USB_LOW_BYTE(USBD_DFU_DEFAULT_DETACH_TIMEOUT),  /* wDetachTimeOut (patched at runtime) */
+	USB_HIGH_BYTE(USBD_DFU_DEFAULT_DETACH_TIMEOUT),
+	USB_LOW_BYTE(USBD_DFU_DEFAULT_XFER_SIZE),      /* wTransferSize (patched at runtime) */
+	USB_HIGH_BYTE(USBD_DFU_DEFAULT_XFER_SIZE),
 	USB_LOW_BYTE(USB_DFU_BCD_VERSION),            /* bcdDFUVersion */
 	USB_HIGH_BYTE(USB_DFU_BCD_VERSION),
 };
@@ -149,14 +148,12 @@ static const usbd_class_driver_t usbd_dfu_driver = {
 	.ep0_data_in    = usbd_dfu_ep0_data_in,
 	.ep0_data_out   = usbd_dfu_ep0_data_out,
 	.status_changed = usbd_dfu_status_changed,
-#ifdef CONFIG_USBD_COMPOSITE
-	.set_str_base = usbd_dfu_set_str_base,
-#endif
 };
 
 /* DFU Device */
 static usbd_dfu_dev_t usbd_dfu_dev;
 
+/* Exported variables --------------------------------------------------------*/
 
 /* Private functions ---------------------------------------------------------*/
 
@@ -173,19 +170,6 @@ static int usbd_dfu_set_config(usb_dev_t *dev, u8 config)
 	}
 
 	dfu->dev = dev;
-
-	if (!dfu->from_composite) {
-#ifdef CONFIG_USBD_SELF_POWERED
-		dev->self_powered = 1;
-#else
-		dev->self_powered = 0;
-#endif
-#ifdef CONFIG_USBD_REMOTE_WAKEUP_EN
-		dev->remote_wakeup_en = 1;
-#else
-		dev->remote_wakeup_en = 0;
-#endif
-	}
 
 	dfu->alt_setting = 0U;
 	/* Save the default EP0 buffer and its capacity (shared by IN/OUT endpoints). */
@@ -223,7 +207,7 @@ static void usbd_dfu_clear_config(usb_dev_t *dev, u8 config)
 			dev->ep0_out.xfer_buf_len = dfu->ep0_default_buf_len;
 		}
 	}
-#if USBD_DFU_CAN_UPLOAD
+#ifdef CONFIG_USBD_DFU_CAN_UPLOAD
 	dfu->upload_last = 0U;
 #endif
 	dfu->ep0_in_owned = 0U;
@@ -233,7 +217,7 @@ static void usbd_dfu_clear_config(usb_dev_t *dev, u8 config)
 	 * comes up in dfuIDLE; a true cable unplug in run-time mode stays appIDLE. */
 	dfu->state = (dfu->mode == USB_DFU_PROTOCOL_RUNTIME)
 				 ? USB_DFU_STATE_APP_IDLE : USB_DFU_STATE_DFU_IDLE;
-#if !USBD_DFU_WILL_DETACH
+#ifndef CONFIG_USBD_DFU_WILL_DETACH
 	/* USB Reset arrived before wDetachTimeOut: stop the one-shot timer early so
 	 * it doesn't fire needlessly after the re-enumeration is already complete. */
 	if ((dfu->mode == USB_DFU_PROTOCOL_DFU) && (dfu->detach_timer != NULL)) {
@@ -245,8 +229,9 @@ static void usbd_dfu_clear_config(usb_dev_t *dev, u8 config)
 /**
  * @brief  Fill and transmit the 6-byte GETSTATUS response.
  *         poll_timeout is in milliseconds (little-endian 3 bytes).
+ * @retval Result of the EP0 IN submit, a failure makes the core stall EP0.
  */
-static void usbd_dfu_send_status(usb_dev_t *dev, usbd_dfu_dev_t *dfu, u32 poll_ms)
+static int usbd_dfu_send_status(usb_dev_t *dev, const usbd_dfu_dev_t *dfu, u32 poll_ms)
 {
 	usbd_ep_t *ep0_in = &dev->ep0_in;
 
@@ -257,7 +242,90 @@ static void usbd_dfu_send_status(usb_dev_t *dev, usbd_dfu_dev_t *dfu, u32 poll_m
 	ep0_in->xfer_buf[4] = (u8)dfu->state;
 	ep0_in->xfer_buf[5] = 0x00U;  /* iString */
 	ep0_in->xfer_len    = USB_DFU_STATUS_PKT_SIZE;
-	usbd_ep_transmit(dev, ep0_in);
+	return usbd_ep_transmit(dev, ep0_in);
+}
+
+/**
+ * @brief  Get the bwPollTimeout to report while write_task programs the current block.
+ * @note   Uses the per-block callback when available (e.g. sector-boundary vs. plain write),
+ *         otherwise the static write_poll_ms. write_task needs at least one scheduler tick to
+ *         post its result, so 0 is raised to 1 ms rather than letting the host poll back to back.
+ * @retval Poll timeout in ms, at least 1.
+ */
+static u32 usbd_dfu_get_busy_poll_ms(const usbd_dfu_dev_t *dfu)
+{
+	u32 pm = (dfu->cb->get_write_poll_ms != NULL) ? dfu->cb->get_write_poll_ms(dfu->block_num) : dfu->write_poll_ms;
+
+	return (pm == 0U) ? 1U : pm;
+}
+
+/**
+ * @brief  Leave dfuMANIFEST once the manifest work is done, per bmAttributes.
+ * @note   Called by GETSTATUS in ISR context and by the manifest timer callback in the timer
+ *         task, which may run on different SMP cores. The test and the transition are one
+ *         step under the USB critical section, so only one of them ever advances the state
+ *         and the reconfiguration is requested once. The semaphore is given outside of it.
+ * @retval 1 if this call advanced the state, 0 if manifestation is not done or the other
+ *         context already advanced it.
+ */
+static u8 usbd_dfu_manifest_advance(usbd_dfu_dev_t *dfu)
+{
+	u8 advanced = 0U;
+
+	usb_os_enter_critical();
+	if ((dfu->state == USB_DFU_STATE_MANIFEST) && (dfu->manifest_done != 0U)) {
+#ifdef CONFIG_USBD_DFU_MANIFESTATION_TOLERANT
+		/* manifest_done left set; GETSTATUS in dfuMANIFEST-SYNC clears it on dfuIDLE */
+		dfu->state = USB_DFU_STATE_MANIFEST_SYNC;
+#else
+		dfu->manifest_done = 0U;
+		dfu->state = USB_DFU_STATE_MANIFEST_WAIT_RESET;
+#ifdef CONFIG_USBD_DFU_WILL_DETACH
+		/* DFU 1.1 §7: device generates a detach-attach sequence.  Set mode to RUNTIME so
+		 * the device re-enumerates in Run-Time mode after deinit/init (booting the new
+		 * firmware). */
+		dfu->mode = USB_DFU_PROTOCOL_RUNTIME;
+		dfu->reconf_pending = 1U;
+#endif
+#endif
+		dfu->status = USBD_DFU_STATUS_OK;
+		advanced = 1U;
+	}
+	usb_os_exit_critical();
+
+#if !defined(CONFIG_USBD_DFU_MANIFESTATION_TOLERANT) && defined(CONFIG_USBD_DFU_WILL_DETACH)
+	if (advanced != 0U) {
+		usb_os_sema_give(dfu->reconf_sema);
+	}
+#endif
+
+	return advanced;
+}
+
+/**
+ * @brief  Apply the result write_task posted for the current DNLOAD block (ISR context).
+ * @note   Only this path moves the state machine on a block result, so write_task never
+ *         writes state/status concurrently with setup() on the other core.
+ * @retval 1 if the block has finished (state is now dfuDNLOAD-IDLE or dfuERROR), 0 if busy.
+ */
+static u8 usbd_dfu_apply_write_state(usbd_dfu_dev_t *dfu)
+{
+	u8 result = dfu->write_state;
+
+	if (result == USBD_DFU_WRITE_BUSY) {
+		return 0U;
+	}
+
+	dfu->write_state = USBD_DFU_WRITE_BUSY;
+	if (result == USBD_DFU_WRITE_OK) {
+		dfu->state = USB_DFU_STATE_DNLOAD_IDLE;
+	} else {
+		/* Ref DFU 1.1 6.1.2: a failed programming step is reported as errWRITE in dfuERROR */
+		dfu->state  = USB_DFU_STATE_ERROR;
+		dfu->status = USBD_DFU_STATUS_ERR_WRITE;
+	}
+
+	return 1U;
 }
 
 /**
@@ -275,8 +343,9 @@ static int usbd_dfu_stall_error(usb_dev_t *dev, usbd_dfu_dev_t *dfu, usbd_dfu_st
 
 /**
  * @brief  Validate bmRequestType direction and wLength of a DFU class request.
- *         Ref DFU 1.1 Table 3.2: every request has a fixed direction, and DETACH,
- *         CLRSTATUS and ABORT carry no data stage (wLength = 0).
+ *         Ref DFU 1.1 Table 3.2: every request has a fixed direction, DETACH, CLRSTATUS
+ *         and ABORT carry no data stage (wLength = 0), and the GETSTATUS and GETSTATE
+ *         responses have a fixed length of 6 and 1.
  * @retval 1 if the request is well formed, 0 otherwise.
  */
 static u8 usbd_dfu_req_is_valid(const usb_setup_req_t *req)
@@ -296,9 +365,15 @@ static u8 usbd_dfu_req_is_valid(const usb_setup_req_t *req)
 		valid = (dir == USB_H2D) ? 1U : 0U;
 		break;
 	case USB_DFU_REQ_UPLOAD:
-	case USB_DFU_REQ_GETSTATUS:
-	case USB_DFU_REQ_GETSTATE:
 		valid = (dir == USB_D2H) ? 1U : 0U;
+		break;
+	case USB_DFU_REQ_GETSTATUS:
+		/* Any other wLength would truncate the response, or for 0 leave the core to add a
+		   status stage on top of this data stage */
+		valid = ((dir == USB_D2H) && (req->wLength == USB_DFU_STATUS_PKT_SIZE)) ? 1U : 0U;
+		break;
+	case USB_DFU_REQ_GETSTATE:
+		valid = ((dir == USB_D2H) && (req->wLength == USBD_DFU_STATE_PKT_SIZE)) ? 1U : 0U;
 		break;
 	default:
 		valid = 0U;
@@ -335,23 +410,26 @@ static int usbd_dfu_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			}
 			break;
 		case USB_REQ_GET_INTERFACE:
-			/* Ref USB 2.0 9.4.4: request error for an interface that does not exist */
-			if (dev->dev_state != USBD_STATE_CONFIGURED) {
-				ret = HAL_ERR_HW;
-			} else if (req->wIndex != USBD_DFU_ITF_NUM) {
-				ret = HAL_ERR_HW;
-			} else {
+			/* Ref USB 2.0 9.4.4 and Table 9-3: wLength is one, and a request for a
+			   non-existent interface is a request error. A wLength of 0 would also make the
+			   core add a status stage on top of this data stage. */
+			if ((dev->dev_state == USBD_STATE_CONFIGURED) && (req->wIndex == USBD_DFU_ITF_NUM) && (req->wLength == 1U)) {
 				ep0_in->xfer_buf[0] = dfu->alt_setting;
 				ep0_in->xfer_len = 1U;
-				usbd_ep_transmit(dev, ep0_in);
+				ret = usbd_ep_transmit(dev, ep0_in);
+			} else {
+				ret = HAL_ERR_HW;
 			}
 			break;
 		case USB_REQ_GET_STATUS:
-			if (dev->dev_state == USBD_STATE_CONFIGURED) {
+			/* Ref USB 2.0 9.4.5 and Table 9-3: an interface-recipient GET_STATUS returns two
+			   reserved zero bytes, wLength is two, and a request for a non-existent interface
+			   is a request error */
+			if ((dev->dev_state == USBD_STATE_CONFIGURED) && (req->wIndex == USBD_DFU_ITF_NUM) && (req->wLength == 2U)) {
 				ep0_in->xfer_buf[0] = 0U;
 				ep0_in->xfer_buf[1] = 0U;
 				ep0_in->xfer_len = 2U;
-				usbd_ep_transmit(dev, ep0_in);
+				ret = usbd_ep_transmit(dev, ep0_in);
 			} else {
 				ret = HAL_ERR_HW;
 			}
@@ -410,6 +488,15 @@ static int usbd_dfu_setup(usb_dev_t *dev, usb_setup_req_t *req)
 				if (dfu->cb->detach != NULL) {
 					dfu->cb->detach();
 				}
+#ifndef CONFIG_USBD_DFU_WILL_DETACH
+				/* Ref DFU 1.1 6.1.1: wValue is the time the host waits for the device to be
+				   reset, never longer than the advertised wDetachTimeOut. The timer needs a
+				   non-zero period, so 0 is raised to the shortest one. */
+				dfu->detach_wait_ms = (u16)MIN((u32)req->wValue, dfu->detach_timeout_ms);
+				if (dfu->detach_wait_ms == 0U) {
+					dfu->detach_wait_ms = 1U;
+				}
+#endif
 				/* DFU 1.1 §5: Switch the descriptor set to DFU mode and defer
 				 * the actual re-enumeration to reconf_task (off ISR context). */
 				dfu->mode = USB_DFU_PROTOCOL_DFU;
@@ -423,7 +510,7 @@ static int usbd_dfu_setup(usb_dev_t *dev, usb_setup_req_t *req)
 		case USB_DFU_REQ_DNLOAD:
 			if (req->wLength > 0U) {
 				/* Reject oversized blocks before redirecting EP0 OUT buffer */
-				if (req->wLength > USBD_DFU_XFER_SIZE) {
+				if (req->wLength > dfu->xfer_size) {
 					ret = usbd_dfu_stall_error(dev, dfu, USBD_DFU_STATUS_ERR_STALLEDPKT);
 					break;
 				}
@@ -453,7 +540,7 @@ static int usbd_dfu_setup(usb_dev_t *dev, usb_setup_req_t *req)
 					/* Redirect EP0 OUT to our block buffer; also update xfer_buf_len
 					 * so usbd_ep_receive does not reject the oversized transfer. */
 					ep0_out->xfer_buf     = dfu->xfer_buf;
-					ep0_out->xfer_buf_len = USBD_DFU_XFER_SIZE;
+					ep0_out->xfer_buf_len = dfu->xfer_size;
 					ep0_out->xfer_len     = req->wLength;
 					if (usbd_ep_receive(dev, ep0_out) != HAL_OK) {
 						/* ARM failed — ep0_data_out will never fire; restore buffer now */
@@ -480,9 +567,9 @@ static int usbd_dfu_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			break;
 
 		case USB_DFU_REQ_UPLOAD:
-#if USBD_DFU_CAN_UPLOAD
+#ifdef CONFIG_USBD_DFU_CAN_UPLOAD
 			/* Reject oversized requests before using the buffer */
-			if (req->wLength > USBD_DFU_XFER_SIZE) {
+			if (req->wLength > dfu->xfer_size) {
 				ret = usbd_dfu_stall_error(dev, dfu, USBD_DFU_STATUS_ERR_STALLEDPKT);
 				break;
 			}
@@ -500,7 +587,7 @@ static int usbd_dfu_setup(usb_dev_t *dev, usb_setup_req_t *req)
 					 * to DATA_IN (not STATUS_IN) so the IN endpoint is enabled and
 					 * the ZLP is physically sent, firing ep0_data_in to complete UPLOAD. */
 					ep0_in->xfer_buf     = dfu->xfer_buf;
-					ep0_in->xfer_buf_len = USBD_DFU_XFER_SIZE;
+					ep0_in->xfer_buf_len = dfu->xfer_size;
 					ep0_in->xfer_len     = MIN(len, req->wLength);
 					/* This EP0 IN data stage belongs to DFU: only its completion may
 					 * restore the buffer and advance the UPLOAD state machine. */
@@ -522,7 +609,7 @@ static int usbd_dfu_setup(usb_dev_t *dev, usb_setup_req_t *req)
 #else
 			/* DFU 1.1 Table 3: bitCanUpload=0 → reject all UPLOAD, stall → dfuERROR */
 			ret = usbd_dfu_stall_error(dev, dfu, USBD_DFU_STATUS_ERR_STALLEDPKT);
-#endif /* USBD_DFU_CAN_UPLOAD */
+#endif /* CONFIG_USBD_DFU_CAN_UPLOAD */
 			break;
 
 		case USB_DFU_REQ_GETSTATUS:
@@ -536,87 +623,56 @@ static int usbd_dfu_setup(usb_dev_t *dev, usb_setup_req_t *req)
 					dfu->manifest_done = 0U;
 					dfu->state  = USB_DFU_STATE_DFU_IDLE;
 					dfu->status = USBD_DFU_STATUS_OK;
-					usbd_dfu_send_status(dev, dfu, 0U);
+					ret = usbd_dfu_send_status(dev, dfu, 0U);
 				} else {
 					/* Enter MANIFEST, wake manifest_task, return bwPollTimeout. */
 					dfu->state = USB_DFU_STATE_MANIFEST;
 					usb_os_sema_give(dfu->manifest_sema);
-					usbd_dfu_send_status(dev, dfu, dfu->manifest_poll_ms);
+					ret = usbd_dfu_send_status(dev, dfu, dfu->manifest_poll_ms);
 				}
 				break;
 			}
 			if (dfu->state == USB_DFU_STATE_MANIFEST) {
-				if (dfu->manifest_done) {
-					/* Manifest task + timer completed; transition per bmAttributes. */
-#if USBD_DFU_MANIFESTATION_TOL
-					/* manifest_done left set; MANIFEST_SYNC at line 438 clears it on dfuIDLE. */
-					dfu->state  = USB_DFU_STATE_MANIFEST_SYNC;
-					dfu->status = USBD_DFU_STATUS_OK;
-					usbd_dfu_send_status(dev, dfu, 0U);
-#else
-					dfu->manifest_done = 0U;
-					dfu->state  = USB_DFU_STATE_MANIFEST_WAIT_RESET;
-					dfu->status = USBD_DFU_STATUS_OK;
-					usbd_dfu_send_status(dev, dfu, 0U);
-#if USBD_DFU_WILL_DETACH
-					/* DFU 1.1 §7: device generates a detach-attach sequence.
-					 * Set mode to RUNTIME so the device re-enumerates in Run-Time mode
-					 * after deinit/init (booting the new firmware). */
-					dfu->mode = USB_DFU_PROTOCOL_RUNTIME;
-					dfu->reconf_pending = 1U;
-					usb_os_sema_give(dfu->reconf_sema);
-#endif
-#endif
+				/* Manifest task + timer completed: transition per bmAttributes.  The timer
+				 * callback may just have done it on the other core, either way the state is
+				 * past dfuMANIFEST then and is reported as is. */
+				if ((usbd_dfu_manifest_advance(dfu) != 0U) || (dfu->state != USB_DFU_STATE_MANIFEST)) {
+					ret = usbd_dfu_send_status(dev, dfu, 0U);
 				} else {
 					/* Manifest still in progress; host must wait bwPollTimeout. */
-					usbd_dfu_send_status(dev, dfu, dfu->manifest_poll_ms);
+					ret = usbd_dfu_send_status(dev, dfu, dfu->manifest_poll_ms);
 				}
 				break;
 			} else if (dfu->state == USB_DFU_STATE_MANIFEST_WAIT_RESET) {
 				/* Non-tolerant: waiting for USB bus reset to activate firmware */
-				usbd_dfu_send_status(dev, dfu, 0U);
+				ret = usbd_dfu_send_status(dev, dfu, 0U);
 			} else if (dfu->state == USB_DFU_STATE_DNLOAD_SYNC) {
 				/* DFU 1.1 §A.2.4: in dfuDNLOAD-SYNC the GETSTATUS response depends
 				 * on whether the previous block has finished programming.  The
-				 * write_done flag (set by write_task) is the authoritative source
+				 * write_state (set by write_task) is the authoritative source
 				 * and is race-free regardless of whether write_task completed
 				 * before or after this request arrived. */
-				if (dfu->write_done) {
-					/* Block fully programmed: advance to dfuDNLOAD-IDLE. */
-					dfu->write_done = 0U;
-					dfu->state = USB_DFU_STATE_DNLOAD_IDLE;
-					usbd_dfu_send_status(dev, dfu, 0U);
+				if (usbd_dfu_apply_write_state(dfu) != 0U) {
+					/* Block finished: dfuDNLOAD-IDLE, or dfuERROR with errWRITE. */
+					ret = usbd_dfu_send_status(dev, dfu, 0U);
 				} else {
 					/* write_task still running: report dfuDNBUSY so the host
-					 * backs off before polling again.  Use per-block callback when
-					 * available (e.g. sector-boundary vs. plain write), otherwise
-					 * fall back to the static write_poll_ms. */
-					u32 pm = (dfu->cb->get_write_poll_ms != NULL)
-							 ? dfu->cb->get_write_poll_ms(dfu->block_num)
-							 : dfu->write_poll_ms;
-					/* write_task needs at least one scheduler tick to run.
-					 * pm=0 lets the host repoll before write_done is set,
-					 * not stall: replies with write_poll_ms. */
-					if (pm == 0U) {
-						pm = 1U;
-					}
+					 * backs off before polling again. */
 					dfu->state = USB_DFU_STATE_DNBUSY;
-					usbd_dfu_send_status(dev, dfu, pm);
+					ret = usbd_dfu_send_status(dev, dfu, usbd_dfu_get_busy_poll_ms(dfu));
 				}
 			} else if (dfu->state == USB_DFU_STATE_DNBUSY) {
-				if (dfu->write_done) {
-					/* bwPollTimeout has elapsed and programming is complete:
-					 * advance to dfuDNLOAD-IDLE with no forced wait. */
-					dfu->write_done = 0U;
-					dfu->state = USB_DFU_STATE_DNLOAD_IDLE;
-					usbd_dfu_send_status(dev, dfu, 0U);
+				if (usbd_dfu_apply_write_state(dfu) != 0U) {
+					/* bwPollTimeout has elapsed and programming has finished:
+					 * report the result with no forced wait. */
+					ret = usbd_dfu_send_status(dev, dfu, 0U);
 				} else {
 					/* Still busy; tell the host to wait before polling
-					 * again (DFU 1.1 §A.2.5). */
-					usbd_dfu_send_status(dev, dfu, dfu->write_poll_ms);
+					 * again (DFU 1.1 §A.2.5), with the same timeout as dfuDNLOAD-SYNC. */
+					ret = usbd_dfu_send_status(dev, dfu, usbd_dfu_get_busy_poll_ms(dfu));
 				}
 			} else {
-				usbd_dfu_send_status(dev, dfu, 0U);
+				ret = usbd_dfu_send_status(dev, dfu, 0U);
 			}
 			break;
 
@@ -635,8 +691,8 @@ static int usbd_dfu_setup(usb_dev_t *dev, usb_setup_req_t *req)
 				ret = usbd_dfu_stall_error(dev, dfu, USBD_DFU_STATUS_ERR_STALLEDPKT);
 			} else {
 				ep0_in->xfer_buf[0] = (u8)dfu->state;
-				ep0_in->xfer_len    = 1U;
-				usbd_ep_transmit(dev, ep0_in);
+				ep0_in->xfer_len    = USBD_DFU_STATE_PKT_SIZE;
+				ret = usbd_ep_transmit(dev, ep0_in);
 			}
 			break;
 
@@ -694,7 +750,7 @@ static int usbd_dfu_ep0_data_in(usb_dev_t *dev, u8 status)
 		return HAL_OK;
 	}
 
-#if USBD_DFU_CAN_UPLOAD
+#ifdef CONFIG_USBD_DFU_CAN_UPLOAD
 	if (dfu->upload_last) {
 		dfu->upload_last = 0U;
 		dfu->state = USB_DFU_STATE_DFU_IDLE;
@@ -707,8 +763,8 @@ static int usbd_dfu_ep0_data_in(usb_dev_t *dev, u8 status)
 /**
  * @brief  EP0 OUT transfer complete: DNLOAD block received (called from ISR).
  *         Restores the EP0 OUT buffer and signals write_task to process the block.
- *         State is DNLOAD_SYNC here; the next GETSTATUS reports dfuDNBUSY while
- *         write_done is clear, then advances to DNLOAD_IDLE once it is set.
+ *         State is DNLOAD_SYNC here; the next GETSTATUS reports dfuDNBUSY until
+ *         write_task posts the block result in write_state.
  */
 static int usbd_dfu_ep0_data_out(usb_dev_t *dev)
 {
@@ -722,11 +778,11 @@ static int usbd_dfu_ep0_data_out(usb_dev_t *dev)
 		return HAL_ERR_HW;
 	}
 
-	/* Clear write_done before the block is programmed; GETSTATUS will report
-	 * dfuDNBUSY until write_task sets it again on completion. */
-	dfu->write_done = 0U;
+	/* Reset write_state before the block is programmed; GETSTATUS will report
+	 * dfuDNBUSY until write_task posts the result on completion. */
+	dfu->write_state = USBD_DFU_WRITE_BUSY;
 
-	/* Wake write_task; GETSTATUS reports DNBUSY until write_done is set, then DNLOAD_IDLE. */
+	/* Wake write_task; GETSTATUS reports DNBUSY until the result is posted. */
 	usb_os_sema_give(dfu->write_sema);
 
 	return HAL_OK;
@@ -734,8 +790,8 @@ static int usbd_dfu_ep0_data_out(usb_dev_t *dev)
 
 /**
  * @brief  Dedicated task that calls cb->write() outside of ISR context.
- *         Woken by ep0_data_out(); sets write_done on success (GETSTATUS then
- *         advances the state to DNLOAD_IDLE) or moves to DFU_ERROR on failure.
+ *         Woken by ep0_data_out(); posts the block result in write_state, which
+ *         GETSTATUS turns into dfuDNLOAD-IDLE or dfuERROR.
  *         Exits when write_stop is set.
  */
 static void usbd_dfu_write_task(void *param)
@@ -750,19 +806,21 @@ static void usbd_dfu_write_task(void *param)
 			break;
 		}
 		int ret = dfu->cb->write(dfu->block_num, dfu->xfer_buf, dfu->block_len);
+		/* Only post the result: state/status belong to setup() in ISR context, which may run
+		 * on the other core, so writing them here would race it. GETSTATUS reads the result
+		 * whether the host's first poll arrived before or after write_task finished, and it
+		 * never overwrites a concurrent ABORT/CLRSTATUS state change. */
 		if (ret != HAL_OK) {
-			dfu->state  = USB_DFU_STATE_ERROR;
-			dfu->status = USBD_DFU_STATUS_ERR_WRITE;
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Write blk %u err: %d\n", dfu->block_num, ret);
+			dfu->write_state = USBD_DFU_WRITE_FAIL;
 		} else {
-			/* Programming complete.  Setting write_done (rather than mutating
-			 * dfu->state here) is race-free: GETSTATUS reads it whether the
-			 * host's first poll arrived before or after write_task finished, and
-			 * it never overwrites a concurrent ABORT/CLRSTATUS state change. */
-			dfu->write_done = 1U;
+			dfu->write_state = USBD_DFU_WRITE_OK;
 		}
 	}
 
+	/* Publish the exit last: usbd_dfu_stop_task() waits for it before releasing what this
+	 * task uses, so nothing is touched after this point. */
+	dfu->write_task = NULL;
 	rtos_task_delete(NULL);
 }
 /**
@@ -801,6 +859,8 @@ static void usbd_dfu_manifest_task(void *param)
 		dfu->manifest_done = 1U;
 	}
 
+	/* Publish the exit last, refer to usbd_dfu_write_task() */
+	dfu->manifest_task = NULL;
 	rtos_task_delete(NULL);
 }
 
@@ -819,29 +879,65 @@ static void usbd_dfu_manifest_timer_cb(void *timer)
 
 	UNUSED(timer);
 
-	if (dfu->state != USB_DFU_STATE_MANIFEST) {
+	/* manifest_stop: torn down, the reconf_sema given below may be gone */
+	if ((dfu->manifest_stop != 0U) || (dfu->state != USB_DFU_STATE_MANIFEST)) {
 		return;
 	}
 
-	if (dfu->manifest_done) {
-		/* "Status poll timeout" + work done -> transition per bmAttributes */
-#if USBD_DFU_MANIFESTATION_TOL
-		dfu->state = USB_DFU_STATE_MANIFEST_SYNC;
-		RTK_LOGS(TAG, RTK_LOG_INFO, "Manifest done -> MANIFEST-SYNC\n");
+	if (dfu->manifest_done != 0U) {
+		/* "Status poll timeout" + work done -> transition per bmAttributes, unless a
+		 * GETSTATUS on the other core has just done it */
+		if (usbd_dfu_manifest_advance(dfu) != 0U) {
+#ifdef CONFIG_USBD_DFU_MANIFESTATION_TOLERANT
+			RTK_LOGS(TAG, RTK_LOG_INFO, "Manifest done -> MANIFEST-SYNC\n");
 #else
-		dfu->manifest_done = 0U;
-		dfu->state = USB_DFU_STATE_MANIFEST_WAIT_RESET;
-		RTK_LOGS(TAG, RTK_LOG_INFO, "Manifest done -> WAIT-RESET\n");
-#if USBD_DFU_WILL_DETACH
-		dfu->mode = USB_DFU_PROTOCOL_RUNTIME;
-		dfu->reconf_pending = 1U;
-		usb_os_sema_give(dfu->reconf_sema);
+			RTK_LOGS(TAG, RTK_LOG_INFO, "Manifest done -> WAIT-RESET\n");
 #endif
-#endif
+		}
 	} else {
 		/* Work still in progress -> extend the poll period */
 		rtos_timer_change_period(dfu->manifest_timer, dfu->manifest_poll_ms, 0U);
 	}
+}
+
+/**
+ * @brief  Ask a DFU worker task to exit and wait until it has.
+ * @note   The task clears its own handle as the very last step before deleting itself, so
+ *         once the handle reads NULL nothing it uses is in use any more. Deleting it from
+ *         here instead would race its self-delete on the other core, and could free the
+ *         block buffer while cb->write() or cb->manifest() still runs. The wait is not
+ *         bounded: both callbacks are required to return, and releasing what they use on a
+ *         timeout would turn a hang into a use after free. A callback that does not return
+ *         is reported once per USBD_DFU_STOP_TASK_WARN_MS instead.
+ * @param  task: Task handle, NULL if the task was never created or has already exited.
+ * @param  stop: Exit request flag polled by the task after each wakeup.
+ * @param  sema: Semaphore the task blocks on.
+ */
+static void usbd_dfu_stop_task(usb_os_task_t *task, u8 *stop, usb_os_sema_t sema)
+{
+	u32 wait_ms = 0U;
+
+	if (*task != NULL) {
+		*stop = 1U;
+		usb_os_sema_give(sema);
+		while (*task != NULL) {
+			usb_os_sleep_ms(1U);
+			wait_ms++;
+			if (wait_ms >= USBD_DFU_STOP_TASK_WARN_MS) {
+				RTK_LOGS(TAG, RTK_LOG_WARN, "Wait DFU task exit\n");
+				wait_ms = 0U;
+			}
+		}
+	}
+}
+
+/**
+ * @brief  Marker run by the timer service task, refer to usbd_dfu_cleanup_manifest().
+ */
+static void usbd_dfu_timer_sync(void *param, u32 unused)
+{
+	UNUSED(unused);
+	usb_os_sema_give((usb_os_sema_t)param);
 }
 
 /**
@@ -850,17 +946,22 @@ static void usbd_dfu_manifest_timer_cb(void *timer)
  */
 static void usbd_dfu_cleanup_manifest(usbd_dfu_dev_t *dfu)
 {
+	usbd_dfu_stop_task(&dfu->manifest_task, &dfu->manifest_stop, dfu->manifest_sema);
+
 	if (dfu->manifest_timer != NULL) {
+		/* manifest_stop turns every later timer callback into a no-op, but one may already
+		 * be running in the timer service task, possibly on the other core, about to re-arm
+		 * the timer or give reconf_sema. Queue a marker behind it and wait for it: the
+		 * service task handles its queue in order, so once the marker has run that callback
+		 * has returned, and the commands it issued are ahead of the stop and delete below.
+		 * This also covers a detach timer callback, the caller deletes that timer first. */
+		dfu->manifest_stop = 1U;
+		if (rtos_timer_pend_function_call(usbd_dfu_timer_sync, dfu->manifest_sema, 0U, RTOS_TIMER_MAX_DELAY) == RTK_SUCCESS) {
+			usb_os_sema_take(dfu->manifest_sema, USB_OS_SEMA_TIMEOUT);
+		}
 		rtos_timer_stop(dfu->manifest_timer, 0U);
 		rtos_timer_delete(dfu->manifest_timer, 0U);
 		dfu->manifest_timer = NULL;
-	}
-	if (dfu->manifest_task != NULL) {
-		rtos_task_t t = dfu->manifest_task;
-		dfu->manifest_task = NULL;
-		dfu->manifest_stop = 1U;
-		usb_os_sema_give(dfu->manifest_sema);
-		rtos_task_delete(t);
 	}
 	if (dfu->manifest_sema != NULL) {
 		usb_os_sema_delete(dfu->manifest_sema);
@@ -874,13 +975,7 @@ static void usbd_dfu_cleanup_manifest(usbd_dfu_dev_t *dfu)
  */
 static void usbd_dfu_cleanup_write(usbd_dfu_dev_t *dfu)
 {
-	if (dfu->write_task != NULL) {
-		rtos_task_t t = dfu->write_task;
-		dfu->write_task = NULL;
-		dfu->write_stop = 1U;
-		usb_os_sema_give(dfu->write_sema);
-		rtos_task_delete(t);
-	}
+	usbd_dfu_stop_task(&dfu->write_task, &dfu->write_stop, dfu->write_sema);
 	if (dfu->write_sema != NULL) {
 		usb_os_sema_delete(dfu->write_sema);
 		dfu->write_sema = NULL;
@@ -897,18 +992,8 @@ static u16 usbd_dfu_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 	u16 len = 0U;
 	u8 type = USB_HIGH_BYTE(req->wValue);
 	u8 is_cfg = 0;
-	u8 attr = 0x80U;
 
 	UNUSED(dev);
-
-	if (!dfu->from_composite) {
-#ifdef CONFIG_USBD_SELF_POWERED
-		attr |= USB_CFG_DESC_OFFSET_ATTR_BIT_SELF_POWERED;
-#endif
-#ifdef CONFIG_USBD_REMOTE_WAKEUP_EN
-		attr |= USB_CFG_DESC_OFFSET_ATTR_BIT_REMOTE_WAKEUP;
-#endif
-	}
 
 	switch (type) {
 
@@ -923,7 +1008,7 @@ static u16 usbd_dfu_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 		is_cfg = 1;
 		break;
 
-#ifndef CONFIG_USB_FS
+#ifndef CONFIG_SUPPORT_USB_FS_ONLY
 	case USB_DESC_TYPE_DEVICE_QUALIFIER:
 		desc = usbd_dfu_device_qualifier_desc;
 		len = sizeof(usbd_dfu_device_qualifier_desc);
@@ -937,29 +1022,9 @@ static u16 usbd_dfu_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 		break;
 #endif
 	case USB_DESC_TYPE_STRING:
-		switch (USB_LOW_BYTE(req->wValue)) {
-		case USBD_IDX_LANGID_STR:
-			desc = usbd_dfu_lang_id_desc;
-			len = sizeof(usbd_dfu_lang_id_desc);
-			break;
-		case USBD_IDX_MFC_STR:
-			len = usbd_get_str_descriptor(USBD_DFU_MFR_STRING, buf, buf_len);
-			break;
-		case USBD_IDX_PRODUCT_STR:
-			len = usbd_get_str_descriptor(USBD_DFU_PRODUCT_STRING, buf, buf_len);
-			break;
-		case USBD_IDX_SERIAL_STR:
-			len = usbd_get_str_descriptor("00000000001", buf, buf_len);
-			break;
-		default:
-			/* Class-specific indices are decided at runtime (rebased by the composite
-			 * framework), so they cannot be case labels. Comparing them here also makes
-			 * it impossible to shadow the device-global indices above. */
-			if (USB_LOW_BYTE(req->wValue) == (u8)(dfu->cls_str_base + USBD_DFU_STR_IDX_IFACE)) {
-				len = usbd_get_str_descriptor(USBD_DFU_IFACE_STRING, buf, buf_len);
-			}
-			break;
-		}
+		/* Every string this class owns is registered with usbd_add_string() and answered by
+		   the core, which only forwards an index it does not know, e.g. the MS OS string */
+		USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_GET_DESC, 0);
 		break;
 
 	default:
@@ -981,38 +1046,25 @@ static u16 usbd_dfu_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN]     = USB_LOW_BYTE(len);
 		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN + 1] = USB_HIGH_BYTE(len);
 
-		if (!dfu->from_composite) {
-			buf[USB_CFG_DESC_OFFSET_ATTR] = attr;
-		}
-
 		/* Static array carries the DFU-mode protocol (0x02); rewrite it to the
 		 * run-time protocol (0x01) until the device has switched to DFU mode. */
 		if (usbd_dfu_dev.mode == USB_DFU_PROTOCOL_RUNTIME) {
 			buf[USBD_DFU_CFG_IF_PROTOCOL_OFFSET] = USB_DFU_PROTOCOL_RUNTIME;
 		}
 
-		/* Static array carries the standalone default; rewrite it in case the
-		 * composite framework rebased the class string window. */
-		buf[USBD_DFU_CFG_IF_ISTR_OFFSET] = (u8)(dfu->cls_str_base + USBD_DFU_STR_IDX_IFACE);
+		/* Emit the runtime index the core assigned to the interface string */
+		buf[USBD_DFU_CFG_IF_ISTR_OFFSET] = dfu->itf_str_idx;
+
+		/* wDetachTimeOut and wTransferSize are configurable, so the template only carries the
+		   defaults; emit what this instance actually honours. */
+		buf[USBD_DFU_CFG_DETACH_TIMEOUT_OFFSET]     = USB_LOW_BYTE(dfu->detach_timeout_ms);
+		buf[USBD_DFU_CFG_DETACH_TIMEOUT_OFFSET + 1] = USB_HIGH_BYTE(dfu->detach_timeout_ms);
+		buf[USBD_DFU_CFG_XFER_SIZE_OFFSET]          = USB_LOW_BYTE(dfu->xfer_size);
+		buf[USBD_DFU_CFG_XFER_SIZE_OFFSET + 1]      = USB_HIGH_BYTE(dfu->xfer_size);
 	}
 
 	return len;
 }
-
-#ifdef CONFIG_USBD_COMPOSITE
-/**
- * @brief  Assign the first class-specific string index of this class (composite mode only)
- * @note   This function is called by the composite framework before enumeration.
- * @param  base: First class-specific string index for this class
- * @retval Number of class-specific string indices consumed
- */
-static u8 usbd_dfu_set_str_base(u8 base)
-{
-	usbd_dfu_dev.cls_str_base = base;
-
-	return USBD_DFU_CLASS_STR_COUNT;
-}
-#endif
 
 /**
  * @brief  USB attach/detach status change (called from ISR).
@@ -1029,7 +1081,7 @@ static void usbd_dfu_status_changed(usb_dev_t *dev, u8 old_status, u8 status)
 }
 
 
-#if !USBD_DFU_WILL_DETACH
+#ifndef CONFIG_USBD_DFU_WILL_DETACH
 /**
  * @brief  One-shot timer callback: fires when wDetachTimeOut expires without a USB Reset.
  *         If state is still appDETACH the host never issued a USB Reset, so revert to
@@ -1045,22 +1097,21 @@ static void usbd_dfu_detach_timeout_cb(void *timer)
 		dfu->mode  = USB_DFU_PROTOCOL_RUNTIME;
 		dfu->state = USB_DFU_STATE_APP_IDLE;
 		RTK_LOGS(TAG, RTK_LOG_WARN, "Detach: no USB Reset within %ums, reverted to Run-Time\n",
-				 USBD_DFU_DETACH_TIMEOUT);
+				 dfu->detach_timeout_ms);
 	}
 }
-#endif /* !USBD_DFU_WILL_DETACH */
+#endif /* !CONFIG_USBD_DFU_WILL_DETACH */
 
 /**
  * @brief  Reconfiguration task: handles the Run-Time → DFU mode transition off ISR context.
  *         Woken by the DFU_DETACH handler once dfu->mode has been switched to DFU.
  *
- *   WILL_DETACH=1: calls cb->reconf() to notify the application to perform
- *                  usbd_deinit/init, triggering re-enumeration in DFU mode.
- *   WILL_DETACH=0: starts a one-shot wDetachTimeOut timer and returns.  The host is
- *                  expected to issue a USB Reset within the timeout; if it does,
- *                  clear_config() handles the state switch (mode=DFU → dfuIDLE).
- *                  If the timer fires first, usbd_dfu_detach_timeout_cb() reverts to
- *                  Run-Time mode.
+ *   CONFIG_USBD_DFU_WILL_DETACH=y: calls cb->reconf() to notify the application to perform
+ *       usbd_deinit/init, triggering re-enumeration in DFU mode.
+ *   CONFIG_USBD_DFU_WILL_DETACH=n: starts a one-shot timer for the DFU_DETACH wValue, capped by
+ *       wDetachTimeOut, and returns.  The host is expected to issue a USB Reset within the
+ *       timeout; if it does, clear_config() handles the state switch (mode=DFU → dfuIDLE).
+ *       If the timer fires first, usbd_dfu_detach_timeout_cb() reverts to Run-Time mode.
  */
 static void usbd_dfu_reconf_task(void *param)
 {
@@ -1078,10 +1129,10 @@ static void usbd_dfu_reconf_task(void *param)
 		}
 		dfu->reconf_pending = 0U;
 
-#if USBD_DFU_WILL_DETACH
+#ifdef CONFIG_USBD_DFU_WILL_DETACH
 		/* Let the DFU_DETACH status stage (EP0 IN ZLP) complete before the
 		 * application tears down the stack. */
-		usb_os_sleep_ms(USBD_DFU_DETACH_STATUS_DELAY_MS);
+		usb_os_sleep_ms(dfu->detach_status_delay_ms);
 		/* dfu->mode determines the target protocol.  Notify the application to
 		 * perform usbd_deinit/init so the host re-enumerates in the target mode. */
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Detach: re-enumerating in %s mode\n",
@@ -1095,18 +1146,21 @@ static void usbd_dfu_reconf_task(void *param)
 		 * timer callback becomes a no-op.  If the timer fires first it reverts to
 		 * Run-Time mode. */
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Detach: waiting for host USB Reset (%ums timeout)\n",
-				 USBD_DFU_DETACH_TIMEOUT);
-		rtos_timer_start(dfu->detach_timer, 0U);
-#endif /* USBD_DFU_WILL_DETACH */
+				 dfu->detach_wait_ms);
+		/* Changing the period also starts a dormant timer */
+		rtos_timer_change_period(dfu->detach_timer, dfu->detach_wait_ms, 0U);
+#endif /* CONFIG_USBD_DFU_WILL_DETACH */
 	}
 
+	/* Publish the exit last, refer to usbd_dfu_write_task() */
+	dfu->reconf_task = NULL;
 	rtos_task_delete(NULL);
 }
 
 /**
  * @brief  Initialize the DFU device class driver.
  */
-static int usbd_dfu_private_init(usbd_dfu_cb_t *cb)
+static int usbd_dfu_private_init(const usbd_dfu_cb_t *cb, const usbd_dfu_config_t *cfg)
 {
 	int ret = HAL_OK;
 	usbd_dfu_dev_t *dfu = &usbd_dfu_dev;
@@ -1116,16 +1170,38 @@ static int usbd_dfu_private_init(usbd_dfu_cb_t *cb)
 		return HAL_ERR_PARA;
 	}
 
-	/* Preserve mode across a reconf reinit (WILL_DETACH=1).  On a fresh first
+	if (cfg == NULL) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid cfg\n");
+		return HAL_ERR_PARA;
+	}
+
+	/* Preserve mode across a reconf reinit (CONFIG_USBD_DFU_WILL_DETACH=y).  On a fresh first
 	 * init the struct is zero-initialised (BSS), so saved_mode is 0 which is
 	 * neither RUNTIME nor DFU — default to RUNTIME below. */
 	u8 saved_mode = dfu->mode;
 	usb_os_memset((void *)dfu, 0, sizeof(usbd_dfu_dev_t));
 
-	/* Standalone default; the composite framework rebases it via set_str_base() */
-	dfu->cls_str_base = USBD_DFU_CLASS_STR_BASE_DEFAULT;
+	/* Resolved after the memset so the defaults survive it, and before the allocation and the
+	   descriptor patch path that both read them. */
+	dfu->cfg = cfg;
+	dfu->xfer_size = (cfg->xfer_size != 0U) ? cfg->xfer_size : (u32)USBD_DFU_DEFAULT_XFER_SIZE;
+	dfu->detach_timeout_ms = (cfg->detach_timeout_ms != 0U) ? cfg->detach_timeout_ms : (u32)USBD_DFU_DEFAULT_DETACH_TIMEOUT;
+	dfu->detach_status_delay_ms = (cfg->detach_status_delay_ms != 0U) ?
+								  cfg->detach_status_delay_ms : USBD_DFU_DEFAULT_DETACH_STATUS_DELAY_MS;
 
-	dfu->xfer_buf = (u8 *)usb_os_malloc(USBD_DFU_XFER_SIZE);
+	/* Both are 16-bit descriptor fields (wTransferSize, wDetachTimeOut), so a larger value
+	   could not be advertised truthfully. */
+	if ((dfu->xfer_size > 0xFFFFU) || (dfu->detach_timeout_ms > 0xFFFFU)) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "xfer size %u / detach %u exceeds u16\n",
+				 dfu->xfer_size, dfu->detach_timeout_ms);
+		return HAL_ERR_PARA;
+	}
+
+	/* The core owns the string table, so the same call works in standalone and composite
+	   mode. 0 means no iInterface string. */
+	dfu->itf_str_idx = usbd_add_string((cfg->itf_str != NULL) ? cfg->itf_str : USBD_DFU_DEFAULT_IFACE_STRING);
+
+	dfu->xfer_buf = (u8 *)usb_os_malloc(dfu->xfer_size);
 	if (dfu->xfer_buf == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "No mem for xfer_buf\n");
 		return HAL_ERR_MEM;
@@ -1144,8 +1220,8 @@ static int usbd_dfu_private_init(usbd_dfu_cb_t *cb)
 		dfu->xfer_buf = NULL;
 		return HAL_ERR_PARA;
 	}
-	dfu->write_poll_ms = USBD_DFU_WRITE_POLL_MS_DEFAULT;
-#if USBD_DFU_CAN_UPLOAD
+	dfu->write_poll_ms = (cfg->write_poll_ms != 0U) ? cfg->write_poll_ms : USBD_DFU_DEFAULT_WRITE_POLL_MS;
+#ifdef CONFIG_USBD_DFU_CAN_UPLOAD
 	if (cb->read == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "read cb required (CAN_UPLOAD=1)\n");
 		usb_os_mfree((void *)dfu->xfer_buf);
@@ -1179,7 +1255,9 @@ static int usbd_dfu_private_init(usbd_dfu_cb_t *cb)
 	}
 
 	ret = rtos_task_create(&dfu->write_task, "usbd_dfu_write_thread", usbd_dfu_write_task,
-						   dfu, USBD_DFU_WRITE_TASK_STACK, USBD_DFU_WRITE_TASK_PRIORITY);
+						   dfu,
+						   (cfg->write_task_stack_size != 0U) ? cfg->write_task_stack_size : USBD_DFU_DEFAULT_WRITE_TASK_STACK,
+						   (cfg->write_task_priority != 0U) ? cfg->write_task_priority : USBD_DFU_DEFAULT_WRITE_TASK_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create write_task fail\n");
 		usb_os_sema_delete(dfu->write_sema);
@@ -1198,9 +1276,11 @@ static int usbd_dfu_private_init(usbd_dfu_cb_t *cb)
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create manifest_sema fail\n");
 		goto reconf_fail;
 	}
-	dfu->manifest_poll_ms = USBD_DFU_MANIFEST_POLL_MS_DEFAULT;
+	dfu->manifest_poll_ms = (cfg->manifest_poll_ms != 0U) ? cfg->manifest_poll_ms : USBD_DFU_DEFAULT_MANIFEST_POLL_MS;
 	ret = rtos_task_create(&dfu->manifest_task, "usbd_dfu_manifest_thread", usbd_dfu_manifest_task,
-						   dfu, USBD_DFU_MANIFEST_TASK_STACK, USBD_DFU_MANIFEST_TASK_PRIORITY);
+						   dfu,
+						   (cfg->manifest_task_stack_size != 0U) ? cfg->manifest_task_stack_size : USBD_DFU_DEFAULT_MANIFEST_TASK_STACK,
+						   (cfg->manifest_task_priority != 0U) ? cfg->manifest_task_priority : USBD_DFU_DEFAULT_MANIFEST_TASK_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create manifest_task fail\n");
 		usb_os_sema_delete(dfu->manifest_sema);
@@ -1221,7 +1301,9 @@ static int usbd_dfu_private_init(usbd_dfu_cb_t *cb)
 	}
 
 	ret = rtos_task_create(&dfu->reconf_task, "usbd_dfu_reconf_thread", usbd_dfu_reconf_task,
-						   dfu, USBD_DFU_REENUM_TASK_STACK, USBD_DFU_REENUM_TASK_PRIORITY);
+						   dfu,
+						   (cfg->reenum_task_stack_size != 0U) ? cfg->reenum_task_stack_size : USBD_DFU_DEFAULT_REENUM_TASK_STACK,
+						   (cfg->reenum_task_priority != 0U) ? cfg->reenum_task_priority : USBD_DFU_DEFAULT_REENUM_TASK_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create reconf_task fail\n");
 		usb_os_sema_delete(dfu->reconf_sema);
@@ -1229,23 +1311,19 @@ static int usbd_dfu_private_init(usbd_dfu_cb_t *cb)
 		goto reconf_fail;
 	}
 
-#if !USBD_DFU_WILL_DETACH
+#ifndef CONFIG_USBD_DFU_WILL_DETACH
 	/* One-shot timer: if host doesn't issue USB Reset within wDetachTimeOut, revert
 	 * to Run-Time mode.  Created here (task context); started in reconf_task. */
 	ret = rtos_timer_create(&dfu->detach_timer, "dfu_detach", 0U,
-							USBD_DFU_DETACH_TIMEOUT, 0U, usbd_dfu_detach_timeout_cb);
+							dfu->detach_timeout_ms, 0U, usbd_dfu_detach_timeout_cb);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create detach_timer fail\n");
-		rtos_task_t t = dfu->reconf_task;
-		dfu->reconf_task = NULL;
-		dfu->reconf_stop = 1U;
-		usb_os_sema_give(dfu->reconf_sema);
-		rtos_task_delete(t);
+		usbd_dfu_stop_task(&dfu->reconf_task, &dfu->reconf_stop, dfu->reconf_sema);
 		usb_os_sema_delete(dfu->reconf_sema);
 		dfu->reconf_sema = NULL;
 		goto reconf_fail;
 	}
-#endif /* !USBD_DFU_WILL_DETACH */
+#endif /* !CONFIG_USBD_DFU_WILL_DETACH */
 
 	dfu->state  = USB_DFU_STATE_APP_IDLE;
 	dfu->status = USBD_DFU_STATUS_OK;
@@ -1281,7 +1359,7 @@ void usbd_dfu_set_write_poll_ms(u32 poll_ms)
  * @brief  Set the bwPollTimeout (ms) reported to the host while the device
  *         is in the MANIFEST state ("Status poll timeout").  The timer fires
  *         after this interval to check whether manifestation is complete.
- *         Defaults to USBD_DFU_MANIFEST_POLL_MS_DEFAULT.
+ *         Defaults to usbd_dfu_config_t::manifest_poll_ms.
  */
 void usbd_dfu_set_manifest_poll_ms(u32 poll_ms)
 {
@@ -1303,12 +1381,12 @@ u8 usbd_dfu_get_state(void)
 	return (u8)usbd_dfu_dev.state;
 }
 
-int usbd_dfu_init(usbd_dfu_cb_t *cb)
+int usbd_dfu_init(const usbd_dfu_cb_t *cb, const usbd_dfu_config_t *cfg)
 {
 	usbd_dfu_dev_t *dfu = &usbd_dfu_dev;
 	int ret;
 
-	ret = usbd_dfu_private_init(cb);
+	ret = usbd_dfu_private_init(cb, cfg);
 	if (ret == HAL_OK) {
 		dfu->from_composite = 0;
 		usbd_register_class(&usbd_dfu_driver);
@@ -1317,12 +1395,12 @@ int usbd_dfu_init(usbd_dfu_cb_t *cb)
 }
 
 #ifdef CONFIG_USBD_COMPOSITE
-int usbd_composite_dfu_init(usbd_dfu_cb_t *cb)
+int usbd_composite_dfu_init(const usbd_dfu_cb_t *cb, const usbd_dfu_config_t *cfg)
 {
 	usbd_dfu_dev_t *dfu = &usbd_dfu_dev;
 	int ret;
 
-	ret = usbd_dfu_private_init(cb);
+	ret = usbd_dfu_private_init(cb, cfg);
 	if (ret == HAL_OK) {
 		dfu->from_composite = 1;
 		ret = usbd_composite_register_driver(&usbd_dfu_driver);
@@ -1343,39 +1421,42 @@ void usbd_dfu_deinit(void)
 {
 	usbd_dfu_dev_t *dfu = &usbd_dfu_dev;
 
+#ifdef CONFIG_USBD_COMPOSITE
+	/* Leave the composite framework before anything is torn down: it is refused while the
+	   composite device is still registered on the core, and the class must then stay intact */
+	if (dfu->from_composite != 0U) {
+		if (usbd_composite_unregister_driver(&usbd_dfu_driver) != HAL_OK) {
+			return;
+		}
+	}
+#endif
+
 	/* Unregister first: no setup()/ep0 callback can run afterwards, so the GETSTATUS
 	 * branch that dereferences cb->get_write_poll_ms in ISR context cannot race the
 	 * teardown below. */
 #ifdef CONFIG_USBD_COMPOSITE
-	if (dfu->from_composite) {
-		usbd_composite_unregister_driver(&usbd_dfu_driver);
-	} else
+	if (dfu->from_composite == 0U)
 #endif
 	{
 		usbd_unregister_class();
 	}
 
-#if !USBD_DFU_WILL_DETACH
-	/* Stop and delete the detach timeout timer before tearing down reconf_task. */
+	/* reconf_task starts the detach timer, so it goes first. */
+	usbd_dfu_stop_task(&dfu->reconf_task, &dfu->reconf_stop, dfu->reconf_sema);
+#ifndef CONFIG_USBD_DFU_WILL_DETACH
 	if (dfu->detach_timer != NULL) {
 		rtos_timer_stop(dfu->detach_timer, 0U);
 		rtos_timer_delete(dfu->detach_timer, 0U);
 		dfu->detach_timer = NULL;
 	}
-#endif /* !USBD_DFU_WILL_DETACH */
-	/* Stop reconf_task: set flag, unblock it, then delete. */
-	if (dfu->reconf_task != NULL) {
-		rtos_task_t t = dfu->reconf_task;
-		dfu->reconf_task = NULL;
-		dfu->reconf_stop = 1U;
-		usb_os_sema_give(dfu->reconf_sema);
-		rtos_task_delete(t);
-	}
+#endif /* !CONFIG_USBD_DFU_WILL_DETACH */
+	/* The manifest timer callback gives reconf_sema, so the timers are drained before it is
+	 * deleted, refer to usbd_dfu_cleanup_manifest(). */
+	usbd_dfu_cleanup_manifest(dfu);
 	if (dfu->reconf_sema != NULL) {
 		usb_os_sema_delete(dfu->reconf_sema);
 		dfu->reconf_sema = NULL;
 	}
-	usbd_dfu_cleanup_manifest(dfu);
 	usbd_dfu_cleanup_write(dfu);
 
 	/* write_task/manifest_task are gone and the class is unregistered, so this is the

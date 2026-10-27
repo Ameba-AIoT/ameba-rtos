@@ -20,7 +20,7 @@ Test Mode: (`VFS_LITTLEFS`/`VFS_FATFS`, `VFS_INF_FLASH`/`VFS_INF_SD`)
 		ret = vfs_user_register(VFS_PREFIX, VFS_FATFS, VFS_INF_FLASH, VFS_REGION_1, VFS_RW);
 		```
 
-2. Use menuconfig and choose `CONFIG VFS`
+2. Use menuconfig and choose `CONFIG File System`
    - For `VFS_LITTLEFS`:
 		```
 		[*] Enable VFS LITTLEFS
@@ -31,7 +31,6 @@ Test Mode: (`VFS_LITTLEFS`/`VFS_FATFS`, `VFS_INF_FLASH`/`VFS_INF_SD`)
 		```
 		[ ] Enable VFS LITTLEFS
 		[*] Enable VFS FATFS
-		FATFS Memory Type (FlASH)
 		```
 
 3. Build and Download:

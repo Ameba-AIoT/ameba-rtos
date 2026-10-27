@@ -7,11 +7,27 @@
 #ifndef USB_UAC2_H
 #define USB_UAC2_H
 
+/* Includes ------------------------------------------------------------------*/
+
 #include "usb_uac.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/** @addtogroup USB_Common_API USB Common API
+ *  @{
+ */
+
+/* Exported defines ----------------------------------------------------------*/
+
+/** @addtogroup USB_Common_Constants USB Common Constants
+ *  @{
+ */
+/** @defgroup USB_Common_UAC2_Constants USB UAC2 Constants (UAC 2.0)
+ *  @brief UAC 2.0 descriptor, request and control definitions shared by the USBD and USBH UAC drivers.
+ *  @{
+ */
 
 /**
  * Defines UAC 2.0 descriptor lengths.
@@ -42,8 +58,19 @@ extern "C" {
 /* A.17.4 Terminal Control Selectors */
 #define USB_UAC2_TE_CONNECTOR_CONTROL                              0x02U /**< UAC Audio Terminal Control Selectors CONNECTOR. */
 
+/** @} End of USB_Common_UAC2_Constants group */
+/** @} End of USB_Common_Constants group */
 
-/* Class specific types -------------------------------------------------------------*/
+/* Exported types ------------------------------------------------------------*/
+
+/** @addtogroup USB_Common_Types USB Common Types
+ *  @{
+ */
+/** @defgroup USB_Common_UAC2_Types USB UAC2 Types (UAC 2.0)
+ *  @brief UAC 2.0 descriptor, request and control definitions shared by the USBD and USBH UAC drivers.
+ *  @{
+ */
+
 /* 5.2.5.4.2 Connector Control */
 typedef struct {
 	u8  bNrChannels;
@@ -86,6 +113,17 @@ typedef struct {
 	u16 wNumSubRanges;
 	usb_uac2_freq_t usb_uac2_sub_ranges[];
 } __PACKED usb_uac2_sampling_freq_ctrl_range_t;
+
+/** @} End of USB_Common_UAC2_Types group */
+/** @} End of USB_Common_Types group */
+
+/* Exported macros -----------------------------------------------------------*/
+
+/* Exported variables --------------------------------------------------------*/
+
+/* Exported functions --------------------------------------------------------*/
+
+/** @} End of USB_Common_API group */
 
 #ifdef __cplusplus
 }

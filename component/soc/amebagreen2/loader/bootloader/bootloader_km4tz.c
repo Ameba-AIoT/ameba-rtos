@@ -133,6 +133,10 @@ void BOOT_SCBConfig_HP(void)
 
 	SCB_NS->SHCSR |= SCB_SHCSR_USGFAULTENA_Msk | SCB_SHCSR_BUSFAULTENA_Msk | SCB_SHCSR_MEMFAULTENA_Msk;
 
+	/* Enable divide-by-zero fault for both S and NS worlds */
+	SCB->CCR |= SCB_CCR_DIV_0_TRP_Msk;
+	SCB_NS->CCR |= SCB_CCR_DIV_0_TRP_Msk;
+
 	/* Enable all access to FPU */
 	SCB->CPACR |= 0x00f00000;
 	SCB_NS->CPACR |= 0x00f00000;
@@ -167,7 +171,7 @@ u32 BOOT_LoadImages(void)
 void BOOT_ReasonSet(void)
 {
 	u32 temp = HAL_READ32(SYSTEM_CTRL_BASE, REG_AON_BOOT_REASON_HW);
-	u32 BOOT_REASON_MASK = (AON_BIT_RSTF_THM < 1) - 1;
+	u32 BOOT_REASON_MASK = (AON_BIT_RSTF_THM << 1) - 1;
 
 	/*Clear the wake up reason*/
 	HAL_WRITE32(SYSTEM_CTRL_BASE, REG_AON_BOOT_REASON_HW, temp);
@@ -354,6 +358,9 @@ __weak void BOOT_Image1(void)
 
 	_memset((void *)__image1_bss_start__, 0, (__image1_bss_end__ - __image1_bss_start__));
 
+	/* Enable FPU and Secure/Usage/Mem/Bus/DivByZero Fault */
+	BOOT_SCBConfig_HP();
+
 #ifdef CONFIG_WHC_INTF_SPDIO
 	Boot_SDIO_Pinmux_init();
 #endif
@@ -372,10 +379,6 @@ __weak void BOOT_Image1(void)
 		_memset(RRAM_DEV, 0, sizeof(RRAM_TypeDef));
 		RRAM_DEV->MAGIC_NUMBER = 0x6969A5A5;
 	}
-
-	/* Enable divide-by-zero fault for both S and NS worlds */
-	SCB->CCR    |= SCB_CCR_DIV_0_TRP_Msk;
-	SCB_NS->CCR |= SCB_CCR_DIV_0_TRP_Msk;
 
 	BOOT_VerCheck();
 
@@ -434,9 +437,6 @@ __weak void BOOT_Image1(void)
 	// vector_table = (u32 *)Image2EntryFun->VectorNS;
 	// vector_table[1] = (u32)Image2EntryFun->RamStartFun;
 	SCB_NS->VTOR = (u32)Image2EntryFun->VectorNS;
-
-	/* Enable FPU and Secure/Usage/Mem/Bus Fault */
-	BOOT_SCBConfig_HP();
 
 	/* Set non-secure main stack (MSP_NS) */
 	__TZ_set_MSP_NS(MSP_RAM_HP_NS);

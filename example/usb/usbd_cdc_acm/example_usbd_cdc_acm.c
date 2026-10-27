@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/* Includes ------------------------------------------------------------------ */
+/* Includes ------------------------------------------------------------------*/
 
 #include <platform_autoconf.h>
 #include "basic_types.h"
@@ -13,30 +13,10 @@
 
 /* Private defines -----------------------------------------------------------*/
 
-// Endpoint address
-#if defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RLE1509)
-#define CDC_ACM_BULK_IN_EP                       0x82U
-#else
-#define CDC_ACM_BULK_IN_EP                       0x81U
-#endif
-#define CDC_ACM_BULK_OUT_EP                      0x02U
-#define CDC_ACM_INTR_IN_EP                       0x83U
-
-// Transfer size
-#define CDC_ACM_BULK_IN_XFER_SIZE                2048U
-#define CDC_ACM_BULK_OUT_XFER_SIZE               2048U
-
 // This configuration is used to enable a thread to check hotplug event
 // and reset USB stack to avoid memory leak, only for example.
 // while test suspend/resume, hotplug should be disabled
 #define CDC_ACM_HOTPLUG                          1
-
-// USB speed
-#ifdef CONFIG_SUPPORT_USB_FS_ONLY
-#define CDC_ACM_USB_SPEED                        USB_SPEED_FULL
-#else
-#define CDC_ACM_USB_SPEED                        USB_SPEED_HIGH
-#endif
 
 // Echo asynchronously, for transfer size larger than packet size. While fpr
 // transfer size less than packet size, the synchronous way is preferred.
@@ -83,18 +63,29 @@ static usb_cdc_acm_line_coding_t cdc_acm_line_coding;
 
 static u16 cdc_acm_ctrl_line_state;
 
-/* EP configuration for CDC ACM */
-static const usbd_cdc_acm_ep_cfg_t cdc_acm_ep_cfg = {
-	.bulk_in_addr  = CDC_ACM_BULK_IN_EP,
-	.bulk_out_addr = CDC_ACM_BULK_OUT_EP,
-	.intr_in_addr  = CDC_ACM_INTR_IN_EP,
-	.bulk_in_xfer_size  = CDC_ACM_BULK_IN_XFER_SIZE,
-	.bulk_out_xfer_size = CDC_ACM_BULK_OUT_XFER_SIZE,
+/* Class configuration for CDC ACM */
+static const usbd_cdc_acm_config_t cdc_acm_class_cfg = {
+#if defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RLE1509)
+	.bulk_in_addr  = 0x82U,
+#else
+	.bulk_in_addr  = 0x81U,
+#endif
+	.bulk_out_addr = 0x02U,
+	.intr_in_addr  = 0x83U,
+	.bulk_in_xfer_size  = 2048U,
+	.bulk_out_xfer_size = 2048U,
+	/* Expose the INTR IN endpoint, needed to report SERIAL_STATE */
+	.notify_en = 1,
+	/* Copy into the class TX buffer: the echo path transmits straight out of the BULK OUT
+	   buffer, which is re-armed for the next packet before the IN transfer has completed */
+	.bulk_in_zero_copy = 0,
 };
 
 static const usbd_config_t cdc_acm_cfg = {
-	.speed = CDC_ACM_USB_SPEED,
 	.isr_priority = INT_PRI_MIDDLE,
+	.info = {
+		.prod_str = "Realtek CDC ACM Device",
+	},
 #if defined(CONFIG_AMEBASMART)
 	.nptx_max_epmis_cnt = 1U,
 #elif defined(CONFIG_AMEBAGREEN2)
@@ -139,6 +130,8 @@ static volatile u8 cdc_acm_stack_fatal;
 static rtos_mutex_t cdc_acm_xfer_lock;
 static volatile u8 cdc_acm_teardown;
 #endif
+
+/* Exported variables --------------------------------------------------------*/
 
 /* Private functions ---------------------------------------------------------*/
 
@@ -221,6 +214,9 @@ static int cdc_acm_cb_received(u8 *buf, u32 len)
 		cdc_acm_async_xfer_buf_pos += len;
 		if (cdc_acm_async_xfer_buf_pos >= CDC_ACM_ASYNC_BUF_SIZE) {
 			cdc_acm_async_xfer_buf_pos = 0;
+			/* Hand the full buffer over before waking the xfer thread: it runs below the ISR,
+			   so the next OUT packet would otherwise refill the batch before it is sent. */
+			cdc_acm_async_xfer_busy = 1;
 			rtos_sema_give(cdc_acm_async_xfer_sema);
 		}
 	} else {
@@ -251,11 +247,8 @@ static int cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 	int ret = HAL_ERR_PARA;
 
 	switch (req->bRequest) {
-	case USB_CDC_ACM_SEND_ENCAPSULATED_COMMAND:
-	case USB_CDC_ACM_GET_ENCAPSULATED_RESPONSE:
-	case USB_CDC_ACM_SET_COMM_FEATURE:
-	case USB_CDC_ACM_GET_COMM_FEATURE:
-	case USB_CDC_ACM_CLEAR_COMM_FEATURE:
+	/* Ref CDC PSTN 1.2 Table 4: bmCapabilities 0x02 declares no Comm Feature support and no
+	   encapsulated protocol is implemented, so those requests fall to default and are STALLed */
 	case USB_CDC_ACM_SEND_BREAK:
 		/* Do nothing */
 		ret = HAL_OK;
@@ -290,16 +283,18 @@ static int cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 				D2-15:	Reserved, 0
 				D1:	RTS, 0 - Deactivate, 1 - Activate
 				D0:	DTR, 0 - Not Present, 1 - Present
+		Ref CDC PSTN 1.2 6.3.12: no data stage, so wLength must be zero; the reserved bits
+		are ignored rather than rejected.
 		*/
-		cdc_acm_ctrl_line_state = req->wValue;
-		if (cdc_acm_ctrl_line_state & 0x01) {
-			/* VCOM port activate */
-			USB_DIAG(USB_LAYER_APP, USB_EVT_LINK, 0);
-#if USBD_CDC_ACM_NOTIFY
-			usbd_cdc_acm_notify_serial_state(USB_CDC_ACM_CTRL_DSR | USB_CDC_ACM_CTRL_DCD);
-#endif
+		if (req->wLength == 0U) {
+			cdc_acm_ctrl_line_state = req->wValue & 0x03U;
+			if ((cdc_acm_ctrl_line_state & 0x01U) != 0U) {
+				/* VCOM port activate. A no-op when notify_en is clear, the class rejects it. */
+				USB_DIAG(USB_LAYER_APP, USB_EVT_LINK, 0);
+				usbd_cdc_acm_notify_serial_state(USB_CDC_ACM_CTRL_DSR | USB_CDC_ACM_CTRL_DCD);
+			}
+			ret = HAL_OK;
 		}
-		ret = HAL_OK;
 		break;
 
 	default:
@@ -363,7 +358,7 @@ static void example_usbd_cdc_acm_hotplug_thread(void *param)
 				if (ret != 0) {
 					break;
 				}
-				ret = usbd_cdc_acm_init(&cdc_acm_cb, &cdc_acm_ep_cfg);
+				ret = usbd_cdc_acm_init(&cdc_acm_cb, &cdc_acm_class_cfg);
 				if (ret != 0) {
 					usbd_deinit();
 					break;
@@ -400,7 +395,7 @@ static void example_usbd_cdc_acm_hotplug_thread(void *param)
 #endif
 	rtos_task_delete(NULL);
 }
-#endif // CONFIG_USBD_MSC_CHECK_USB_STATUS
+#endif // CDC_ACM_HOTPLUG
 
 #if CDC_ACM_ASYNC_XFER
 static void example_usbd_cdc_acm_xfer_thread(void *param)
@@ -434,6 +429,8 @@ static void example_usbd_cdc_acm_xfer_thread(void *param)
 #endif
 			xfer_len = CDC_ACM_ASYNC_BUF_SIZE;
 			xfer_buf = cdc_acm_async_xfer_buf;
+			/* Normally set by the ISR already; kept for a wake-up left pending across a hotplug
+			   reinit, whose cb_init cleared the flag */
 			cdc_acm_async_xfer_busy = 1;
 			RTK_LOGS(TAG, RTK_LOG_DEBUG, "Start xfer(%dB) idx(%d)\n", CDC_ACM_ASYNC_BUF_SIZE, cdc_acm_xfer_idx);
 			while (xfer_len > 0) {
@@ -455,11 +452,11 @@ static void example_usbd_cdc_acm_xfer_thread(void *param)
 					break;
 				}
 #endif
-				if (xfer_len > CDC_ACM_BULK_IN_XFER_SIZE) {
-					ret = usbd_cdc_acm_transmit(xfer_buf, CDC_ACM_BULK_IN_XFER_SIZE);
+				if (xfer_len > cdc_acm_class_cfg.bulk_in_xfer_size) {
+					ret = usbd_cdc_acm_transmit(xfer_buf, cdc_acm_class_cfg.bulk_in_xfer_size);
 					if (ret == HAL_OK) {
-						xfer_len -= CDC_ACM_BULK_IN_XFER_SIZE;
-						xfer_buf += CDC_ACM_BULK_IN_XFER_SIZE;
+						xfer_len -= cdc_acm_class_cfg.bulk_in_xfer_size;
+						xfer_buf += cdc_acm_class_cfg.bulk_in_xfer_size;
 					} else { // HAL_BUSY
 						RTK_LOGS(TAG, RTK_LOG_INFO, "Xfer busy, retry[1]\n");
 						rtos_time_delay_us(200);
@@ -538,7 +535,7 @@ static void example_usbd_cdc_acm_thread(void *param)
 		goto exit_usbd_init_fail;
 	}
 
-	ret = usbd_cdc_acm_init(&cdc_acm_cb, &cdc_acm_ep_cfg);
+	ret = usbd_cdc_acm_init(&cdc_acm_cb, &cdc_acm_class_cfg);
 
 	if (ret != HAL_OK) {
 		goto exit_usbd_cdc_acm_init_fail;
@@ -551,7 +548,7 @@ static void example_usbd_cdc_acm_thread(void *param)
 	if (ret != RTK_SUCCESS) {
 		goto exit_create_check_task_fail;
 	}
-#if defined(CONFIG_SMP)
+#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
 	/* C-2: the USB OTG ISR is delivered on CPU0 (GIC ITARGETSR pins every SPI to
 	   core 0, see arm_gic.c gic_dist_init). Pinning the hotplug/deinit thread to
 	   CPU0 puts it on the same core as the ISR, so deinit's local interrupt
@@ -573,8 +570,6 @@ static void example_usbd_cdc_acm_thread(void *param)
 
 	rtos_time_delay_ms(100);
 
-	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD CDC ACM demo start\n");
-
 	rtos_task_delete(NULL);
 
 	return;
@@ -595,7 +590,7 @@ exit_usbd_cdc_acm_init_fail:
 	usbd_deinit();
 
 exit_usbd_init_fail:
-	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD CDC ACM demo aborted\n");
+	RTK_LOGS(TAG, RTK_LOG_ERROR, "USBD CDC ACM demo aborted\n");
 	cdc_acm_free_resource();
 
 	rtos_task_delete(NULL);
@@ -612,6 +607,8 @@ void example_usbd_cdc_acm(void)
 {
 	int ret;
 	rtos_task_t task;
+
+	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD CDC ACM demo start\n");
 
 	ret = rtos_task_create(&task, "usbd_cdc_acm_thread", example_usbd_cdc_acm_thread, NULL,
 						   CDC_ACM_INIT_THREAD_STACK_SIZE, CDC_ACM_INIT_THREAD_PRIORITY);

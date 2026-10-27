@@ -239,6 +239,7 @@ int whc_host_send_connect(struct rtw_network_info *connect_param)
 		   sizeof(connect_param->password_len) +
 		   sizeof(connect_param->key_id) +
 		   sizeof(connect_param->channel) +
+		   sizeof(connect_param->band) +
 		   sizeof(connect_param->pscan_option) +
 		   sizeof(connect_param->is_wps_trigger) +
 		   sizeof(connect_param->wpa_supp) +
@@ -264,6 +265,9 @@ int whc_host_send_connect(struct rtw_network_info *connect_param)
 
 	memcpy(ptr, &connect_param->channel, sizeof(connect_param->channel));
 	ptr += sizeof(connect_param->channel);
+
+	memcpy(ptr, &connect_param->band, sizeof(connect_param->band));
+	ptr += sizeof(connect_param->band);
 
 	memcpy(ptr, &connect_param->pscan_option, sizeof(connect_param->pscan_option));
 	ptr += sizeof(connect_param->pscan_option);
@@ -1041,6 +1045,11 @@ int whc_host_get_edcca_mode(u8 *edcca_mode)
 	whc_host_send_event(WHC_API_WIFI_GET_EDCCA_MODE, NULL, 0, edcca_mode, sizeof(u8));
 
 	return ret;
+}
+
+int whc_host_get_txpower(u8 rate, s8 *txpwr)
+{
+	return -EPERM;
 }
 
 int whc_host_get_ant_info(u8 *antdiv_mode, u8 *curr_ant)

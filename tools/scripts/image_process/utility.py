@@ -147,11 +147,11 @@ def append_files(dst, *src):
                     dst_fd.write(content)
 
 def mcu_project_to_mcu_type(mcu_project:str, default:Union[str, None]='') -> Union[str, None]:
-    mcu_same_list = ['km0', 'km4', 'ca32', 'kr4']
+    mcu_same_list = ['km0', 'km4', 'km55', 'ca32', 'kr4']
     if mcu_project in mcu_same_list:
         return mcu_project
     mcu_dicts = {'ap': 'ca32', 'hp': 'km4', 'lp': 'km0'}
-    for t in mcu_dicts.values():
+    for t in ['km55'] + list(mcu_dicts.values()):
         if mcu_project.startswith(t):
             return t
     return mcu_dicts.get(mcu_project, default)

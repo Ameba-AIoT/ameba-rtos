@@ -493,6 +493,7 @@ bool SSI_TXGDMA_Init(
 			GDMA_InitStruct->GDMA_BlockSize = Length >> 1;
 		} else {
 			RTK_LOGE(TAG, "SSI_TXGDMA_Init: Alignment Err: pTxData=%p,  Length=%lu\n", pTxData, Length);
+			GDMA_ChnlFree(0, GdmaChnl);
 			return FALSE;
 		}
 	} else {
@@ -594,6 +595,7 @@ SSI_RXGDMA_Init(
 			GDMA_InitStruct->GDMA_DstDataWidth = TrWidthTwoBytes;
 		} else {
 			RTK_LOGE(TAG, "SSI_RXGDMA_Init: Alignment Err: pRxData=%p,  Length=%lu\n", pRxData, Length);
+			GDMA_ChnlFree(0, GdmaChnl);
 			return FALSE;
 		}
 	} else {

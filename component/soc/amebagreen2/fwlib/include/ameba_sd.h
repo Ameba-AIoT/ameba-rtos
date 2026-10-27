@@ -443,6 +443,7 @@ void SD_IRQ_Notify(void);
 void SD_CreateADMAEntry(u32 *pBuf, u16 Length, sdioh_adma_line_end_t End, u32 *pDescTable);
 SD_RESULT SD_ReadBlocks_ADMA(SD_HdlTypeDef *hsd, u8 *pData, u32 BlockAdd, u32 *pDescTbl, u32 DescItemNum);
 SD_RESULT SD_WriteBlocks_ADMA(SD_HdlTypeDef *hsd, u8 *pData, u32 BlockAdd, u32 *pDescTbl, u32 DescItemNum);
+_LONG_CALL_ u32 SD_IRQHandler(void *pData);
 
 /** @defgroup SDHOST_Exported_Functions SDHOST Exported Functions
   * @{

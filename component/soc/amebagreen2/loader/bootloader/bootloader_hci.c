@@ -47,6 +47,10 @@ void Boot_SDIO_Pinmux_init(void)
 	 * If done too late, it may cause host side SDIO card recognition timeout, resulting in sdio power supply failure. */
 	if (boot_src != BOOT_FROM_SDIO) {
 		_Init_SDIO_By_PinGrp();
+	} else {
+		/* boot from sdio, which means sdio fen&cke are both set already */
+		/* sw wa: revert SDIO ECO design */
+		HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_DUMMY_10, HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_DUMMY_10) | BIT3);
 	}
 }
 
@@ -83,8 +87,8 @@ void Boot_Fullmac_Secure_Check(u8 FlashValid, u8 PsramValid)
 
 	assert_param(sizeof(ApLabel) / sizeof(ApLabel[0]) == sizeof(SubImgInfo) / sizeof(SubImgInfo[0]));
 
-	/* for sram recycle, manifest is locate at 0x3007F000. */
-	Manifest = (Manifest_TypeDef *)0x3007F000;
+	/* for sram recycle, manifest is located at HCI_MANIFEST_ADDR (0x3007F000). */
+	Manifest = (Manifest_TypeDef *)HCI_MANIFEST_ADDR;
 
 	// Do not support RSIP-OTF, manifest cannot be found for image Header is encrypted.
 	assert_param(SYSCFG_OTP_BootFromNor());

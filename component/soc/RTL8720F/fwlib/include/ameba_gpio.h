@@ -7,77 +7,6 @@
 #ifndef _AMEBA_GPIO_H_
 #define _AMEBA_GPIO_H_
 
-/** @addtogroup GPIO
-  * @verbatim
-  *****************************************************************************************
-  * Introduction
-  *****************************************************************************************
-  * GPIO:
-  *		- Base Address: GPIO
-  *		- Port number: support A/B two ports
-  *		- Pin number: 0 ~ 31(portA),  0 ~ 31(portB)
-  *		- IRQ: GPIO_IRQ
-  *		- portA/B/C can be configured to interrupt mode
-  *
-  *****************************************************************************************
-  * How to use GPIO in normal mode
-  *****************************************************************************************
-  * To use GPIO peripheral in normal mode, the following steps are mandatory:
-  *
-  *		1. Enable the GPIO interface clock using
-  *			RCC_PeriphClockCmd(APBPeriph_GPIO, APBPeriph_GPIO_CLOCK, ENABLE);
-  *
-  *		2. Fill the GPIO_InitStruct with the desired parameters.
-  *
-  *		3. configure GPIO with the configuration(GPIO mode, pull up/down) of step2:
-  *			GPIO_Init(&GPIO_InitStruct)
-  *
-  *		4. Read or write GPIO pin according to GPIO out/in mode using
-  *			GPIO_ReadDataBit() or GPIO_WriteBit()
-  *
-  *****************************************************************************************
-  * How to use GPIO in interrupt mode
-  *****************************************************************************************
-  * To use GPIO in interrupt mode, the following steps are mandatory:
-  *
-  *		1. Enable the GPIO interface clock using
-  *			RCC_PeriphClockCmd(APBPeriph_GPIO, APBPeriph_GPIO_CLOCK, ENABLE);
-  *
-  *		2. Fill the GPIO_InitStruct with the desired parameters.
-  *
-  *		3. configure GPIO with the configuration(GPIO mode, pull up/down) of step2:
-  *			GPIO_Init(&GPIO_InitStruct)
-  *
-  *		4. Register a user interrupt handler:
-  *			GPIO_UserRegIrq
-  *
-  *		5. Configure interrupt mode(trigger, polarity, debounce):
-  *			GPIO_INTMode()
-  *
-  *		6. Enable the interrupt of a specified pin:
-  *			GPIO_INTConfig()
-  *
-  *		@note  PortA/B can configure interrupt mode.
-  *
-  *****************************************************************************************
-  * How to use GPIO port (multiple GPIO pins)
-  *****************************************************************************************
-  * To use GPIO port, the following steps are mandatory:
-  *
-  *		1. Enable the GPIO interface clock using
-  *			RCC_PeriphClockCmd(APBPeriph_GPIO, APBPeriph_GPIO_CLOCK, ENABLE);
-  *
-  *		2. Configure GPIO data direction(IN/OUT)
-  *			GPIO_PortDirection()
-  *
-  *		3. Read or write GPIO pin according to GPIO out/in mode using
-  *			GPIO_PortRead()
-  *			GPIO_PortWrite()
-  *
-  *****************************************************************************************
-  * @endverbatim
-  */
-
 /** @addtogroup Ameba_Periph_Driver
   * @{
   */
@@ -484,6 +413,7 @@ _LONG_CALL_ void GPIO_ODInit(u8 PinName, u32 PUInternal);
 _LONG_CALL_ void GPIO_ODWriteBit(u8 PinName, u32 PinState);
 _LONG_CALL_ void GPIO_SetDWWrapper(u32 Status);
 _LONG_CALL_ u32 GPIO_GetDWWrapper(void);
+_LONG_CALL_ u32 GPIO_DirectionGet(u8 port, u32 pin_mask);
 
 /**
   * @}

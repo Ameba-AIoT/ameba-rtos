@@ -685,7 +685,34 @@ class FloaderHandler(object):
     def otp_write_physical_map(self, address, size, data):
         self.logger.debug(f"OTP_WRAW: addr={hex(address)}, size={size}, data={data}")
 
-        ret = self.otp_write_map(OTP_WMAP, address, size, data)
+        ret = self.otp_write_map(OTP_WRAW, address, size, data)
+        if ret == ErrType.OK:
+            self.logger.debug("OTP_WRAW done")
+        else:
+            self.logger.debug(f"OTP_WRAW fail: {ret}")
+
+        return ret
+
+    def otp_write_physical_byte(self, address, byte_value):
+        """Write a single physical-OTP byte directly (OTP_WRAW), without the
+        address-relative indexing that otp_write_map() expects of its buffer.
+        OTP programs 1->0 only, so callers wanting to change individual bits must
+        read the byte first and pass the full intended value (see
+        burn_security_enable_bit)."""
+        self.logger.debug(f"OTP_WRAW: addr={hex(address)}, byte=0x{byte_value:02x}")
+
+        request_data = [OTP_WRAW]
+        request_data.extend(list(address.to_bytes(4, byteorder="little")))
+        request_data.extend(list((1).to_bytes(4, byteorder="little")))
+        request_data.append(byte_value & 0xFF)
+
+        request_bytes = bytearray(request_data)
+        ret, _ = self.send_request(request_bytes, len(request_bytes), self.setting.async_response_timeout_in_second, is_sync=False)
+        if ret != ErrType.OK:
+            self.logger.debug(f"OTP_WRAW fail: {ret}")
+            return ret
+
+        ret, _ = self.sense(self.setting.sync_response_timeout_in_second, op_code=OTP_WRAW, data=0)
         if ret == ErrType.OK:
             self.logger.debug("OTP_WRAW done")
         else:

@@ -70,20 +70,20 @@
 #define LOGUART_MASK_DUMMY_0C    ((u32)0x00007FFF << 16)           /*!< R/W 0xFF  dummy_0C*/
 #define LOGUART_DUMMY_0C(x)      (((u32)((x) & 0x00007FFF) << 16))
 #define LOGUART_GET_DUMMY_0C(x)  ((u32)(((x >> 16) & 0x00007FFF)))
-#define LOGUART_BIT_DLAB  ((u32)0x00000001 << 7)           /*!< R/W 0x0  Divisor Latch Access bit, and control the accessibility of the DLL, DLM and IER registers * 0: The divisor latches not accessible; IER accessible * 1: The divisor latches accessible; DLL and DLM accessible Note: THR/RBR don't care the value of dlab bit*/
-#define LOGUART_DLAB(x)   ((u32)(((x) & 0x00000001) << 7))
-#define LOGUART_BIT_BRCTL ((u32)0x00000001 << 6)           /*!< R/W 0x0  Break Control bit * 0: break signal disable * 1: break signal enable (logic '0')*/
-#define LOGUART_BRCTL(x)  ((u32)(((x) & 0x00000001) << 6))
-#define LOGUART_BIT_STKP  ((u32)0x00000001 << 5)           /*!< R/W 0x0  Stick Parity bit * 0: Not stick parity, the parity type is ODD or EVEN (depending on eps) * 1: Stick parity, eps=1: low parity (1'b0); eps=0: high parity (1'b1)*/
-#define LOGUART_STKP(x)   ((u32)(((x) & 0x00000001) << 5))
-#define LOGUART_BIT_EPS   ((u32)0x00000001 << 4)           /*!< R/W 0x0  Even Parity select * 0: Odd parity, the number of Logic "1" is odd. * 1: Even parity, the number of Logic "1" is even.*/
-#define LOGUART_EPS(x)    ((u32)(((x) & 0x00000001) << 4))
-#define LOGUART_BIT_PEN   ((u32)0x00000001 << 3)           /*!< R/W 0x0  Parity Enable * 0: No parity bit * 1: Parity bit is generated on each outgoing character and is checked on each incoming one*/
-#define LOGUART_PEN(x)    ((u32)(((x) & 0x00000001) << 3))
-#define LOGUART_BIT_STB   ((u32)0x00000001 << 2)           /*!< R/W 0x0  Stop bits length selection * 0: 1 stop bit * 1: 2 stop bits Note: The receiver always checks the first stop bit only.*/
-#define LOGUART_STB(x)    ((u32)(((x) & 0x00000001) << 2))
-#define LOGUART_BIT_WLS0  ((u32)0x00000001 << 0)           /*!< R/W 0x1  Word length selection * 0: 7 bits data * 1: 8 bits data*/
-#define LOGUART_WLS0(x)   ((u32)(((x) & 0x00000001) << 0))
+#define LOGUART_BIT_DLAB         ((u32)0x00000001 << 7)            /*!< R/W 0x0  Divisor Latch Access bit, and control the accessibility of the DLL, DLM and IER registers * 0: The divisor latches not accessible; IER accessible * 1: The divisor latches accessible; DLL and DLM accessible Note: THR/RBR don't care the value of dlab bit*/
+#define LOGUART_DLAB(x)          ((u32)(((x) & 0x00000001) << 7))
+#define LOGUART_BIT_BRCTL        ((u32)0x00000001 << 6)            /*!< R/W 0x0  Break Control bit * 0: break signal disable * 1: break signal enable (logic '0')*/
+#define LOGUART_BRCTL(x)         ((u32)(((x) & 0x00000001) << 6))
+#define LOGUART_BIT_STKP         ((u32)0x00000001 << 5)            /*!< R/W 0x0  Stick Parity bit * 0: Not stick parity, the parity type is ODD or EVEN (depending on eps) * 1: Stick parity, eps=1: low parity (1'b0); eps=0: high parity (1'b1)*/
+#define LOGUART_STKP(x)          ((u32)(((x) & 0x00000001) << 5))
+#define LOGUART_BIT_EPS          ((u32)0x00000001 << 4)            /*!< R/W 0x0  Even Parity select * 0: Odd parity, the number of Logic "1" is odd. * 1: Even parity, the number of Logic "1" is even.*/
+#define LOGUART_EPS(x)           ((u32)(((x) & 0x00000001) << 4))
+#define LOGUART_BIT_PEN          ((u32)0x00000001 << 3)            /*!< R/W 0x0  Parity Enable * 0: No parity bit * 1: Parity bit is generated on each outgoing character and is checked on each incoming one*/
+#define LOGUART_PEN(x)           ((u32)(((x) & 0x00000001) << 3))
+#define LOGUART_BIT_STB          ((u32)0x00000001 << 2)            /*!< R/W 0x0  Stop bits length selection * 0: 1 stop bit * 1: 2 stop bits Note: The receiver always checks the first stop bit only.*/
+#define LOGUART_STB(x)           ((u32)(((x) & 0x00000001) << 2))
+#define LOGUART_BIT_WLS0         ((u32)0x00000001 << 0)            /*!< R/W 0x1  Word length selection * 0: 7 bits data * 1: 8 bits data*/
+#define LOGUART_WLS0(x)          ((u32)(((x) & 0x00000001) << 0))
 /** @} */
 
 /** @defgroup LOGUART_UART_MCR
@@ -473,9 +473,9 @@
   * @brief loguart interrupt mask Register
   * @{
   */
-#define LOGUART_BIT_INTR_MASK_AP ((u32)0x00000001 << 1)           /*!< R/W 0x1  Mask loguart interrupt to km4tz 1:unmask  0:mask*/
+#define LOGUART_BIT_INTR_MASK_AP ((u32)0x00000001 << 1)           /*!< R/W 0x1  Mask loguart interrupt to km55tz 1:unmask  0:mask*/
 #define LOGUART_INTR_MASK_AP(x)  ((u32)(((x) & 0x00000001) << 1))
-#define LOGUART_BIT_INTR_MASK_NP ((u32)0x00000001 << 0)           /*!< R/W 0x1  Mask loguart interrupt to km4ns 1:unmask  0:mask*/
+#define LOGUART_BIT_INTR_MASK_NP ((u32)0x00000001 << 0)           /*!< R/W 0x1  Mask loguart interrupt to km55ns 1:unmask  0:mask*/
 #define LOGUART_INTR_MASK_NP(x)  ((u32)(((x) & 0x00000001) << 0))
 /** @} */
 

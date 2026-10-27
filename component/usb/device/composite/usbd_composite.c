@@ -7,19 +7,28 @@
 /* Includes ------------------------------------------------------------------*/
 
 #include "usbd_composite.h"
-#include <os_wrapper.h>
-#include <stdarg.h>
-#include <stdlib.h>
-
-/* Private types -------------------------------------------------------------*/
 
 /* Private defines -----------------------------------------------------------*/
 
-#define USBD_COMP_ITF_NONE         0xFF
+#define USBD_COMP_ITF_NONE         0xFFU
+
+/* Private types -------------------------------------------------------------*/
 
 /* Private macros ------------------------------------------------------------*/
 
-/* Private types ------------------------------------------------------------*/
+/* Private function prototypes -----------------------------------------------*/
+
+static u16 usbd_composite_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16 buf_len);
+static int usbd_composite_set_config(usb_dev_t *dev, u8 config);
+static void usbd_composite_clear_config(usb_dev_t *dev, u8 config);
+static int usbd_composite_setup(usb_dev_t *dev, usb_setup_req_t *req);
+static void usbd_composite_sof(usb_dev_t *dev);
+static int usbd_composite_ep0_data_in(usb_dev_t *dev, u8 status);
+static int usbd_composite_ep0_data_out(usb_dev_t *dev);
+static int usbd_composite_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status);
+static int usbd_composite_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len);
+static void usbd_composite_status_changed(usb_dev_t *dev, u8 old_status, u8 status);
+static void usbd_composite_wakeup(usb_dev_t *dev);
 
 /* Private variables ---------------------------------------------------------*/
 
@@ -27,13 +36,6 @@
 static const char *const TAG = "COMP";
 
 static usbd_composite_dev_t usbd_composite_dev;
-
-/* String descriptors (internal) */
-static const char *const usbd_composite_strings[] = {
-	USBD_COMP_MFG_STRING,
-	USBD_COMP_PROD_STRING,
-	USBD_COMP_SN_STRING,
-};
 
 /* USB Standard Device Descriptor */
 static const u8 usbd_composite_dev_desc[USB_LEN_DEV_DESC] = {
@@ -44,12 +46,12 @@ static const u8 usbd_composite_dev_desc[USB_LEN_DEV_DESC] = {
 	0x02,                                           /* bDeviceSubClass: Common Class */
 	0x01,                                           /* bDeviceProtocol: IAD */
 	USB_MAX_EP0_SIZE,                               /* bMaxPacketSize0 */
-	USB_LOW_BYTE(USBD_COMP_VID), USB_HIGH_BYTE(USBD_COMP_VID),  /* idVendor */
-	USB_LOW_BYTE(USBD_COMP_PID), USB_HIGH_BYTE(USBD_COMP_PID),  /* idProduct */
-	0x00, 0x02,                                     /* bcdDevice */
-	0x01,                                           /* iManufacturer */
-	0x02,                                           /* iProduct */
-	0x03,                                           /* iSerialNumber */
+	USB_LOW_BYTE(USB_VID), USB_HIGH_BYTE(USB_VID),  /* idVendor (patched by core from usbd_dev_info_t) */
+	USB_LOW_BYTE(USB_PID), USB_HIGH_BYTE(USB_PID),  /* idProduct (patched by core from usbd_dev_info_t) */
+	0x00, 0x02,                                     /* bcdDevice (patched by core from usbd_dev_info_t) */
+	USBD_IDX_MFC_STR,                               /* iManufacturer (patched by core) */
+	USBD_IDX_PRODUCT_STR,                           /* iProduct (patched by core) */
+	USBD_IDX_SERIAL_STR,                            /* iSerialNumber (patched by core) */
 	0x01,                                           /* bNumConfigurations */
 };
 
@@ -77,31 +79,28 @@ static const u8 usbd_composite_config_desc[USB_LEN_CFG_DESC] = {
 	0x00,                                           /* bNumInterfaces (patched) */
 	0x01,                                           /* bConfigurationValue */
 	0x00,                                           /* iConfiguration */
-	0x80,                                           /* bmAttributes (patched at runtime for self_powered/remote_wakeup) */
-	0x32,                                           /* bMaxPower (100mA) */
+	0x80,                                           /* bmAttributes (patched by core from usbd_dev_info_t) */
+	0x32,                                           /* bMaxPower (patched by core from usbd_dev_info_t) */
 };
 
-/* Language ID String Descriptor */
-static const u8 usbd_composite_langid_desc[USB_LEN_LANGID_STR_DESC] = {
-	USB_LEN_LANGID_STR_DESC,                        /* bLength */
-	USB_DESC_TYPE_STRING,                           /* bDescriptorType */
-	USB_LOW_BYTE(USBD_COMP_LANGID),
-	USB_HIGH_BYTE(USBD_COMP_LANGID),
+/**
+ * @brief  Composite class driver structure.
+ */
+static const usbd_class_driver_t usbd_composite_driver = {
+	.get_descriptor  = usbd_composite_get_descriptor,
+	.set_config      = usbd_composite_set_config,
+	.clear_config    = usbd_composite_clear_config,
+	.setup           = usbd_composite_setup,
+	.sof             = usbd_composite_sof,
+	.ep0_data_in     = usbd_composite_ep0_data_in,
+	.ep0_data_out    = usbd_composite_ep0_data_out,
+	.ep_data_in      = usbd_composite_ep_data_in,
+	.ep_data_out     = usbd_composite_ep_data_out,
+	.status_changed  = usbd_composite_status_changed,
+	.wakeup          = usbd_composite_wakeup,
 };
 
-/* Private function prototypes -----------------------------------------------*/
-
-static u16 usbd_composite_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16 buf_len);
-static int usbd_composite_set_config(usb_dev_t *dev, u8 config);
-static void usbd_composite_clear_config(usb_dev_t *dev, u8 config);
-static int usbd_composite_setup(usb_dev_t *dev, usb_setup_req_t *req);
-static void usbd_composite_sof(usb_dev_t *dev);
-static int usbd_composite_ep0_data_in(usb_dev_t *dev, u8 status);
-static int usbd_composite_ep0_data_out(usb_dev_t *dev);
-static int usbd_composite_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status);
-static int usbd_composite_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len);
-static void usbd_composite_status_changed(usb_dev_t *dev, u8 old_status, u8 status);
-static void usbd_composite_wakeup(usb_dev_t *dev);
+/* Exported variables --------------------------------------------------------*/
 
 /* Private functions ---------------------------------------------------------*/
 
@@ -115,31 +114,60 @@ static void usbd_composite_reset_active_func(void)
 }
 
 /**
- * @brief  Find the minimum interface number in a descriptor block.
+ * @brief  Validate a function descriptor block and collect its interface numbering.
+ * @note   Ref USB 2.0 9.5: every descriptor starts with bLength and bDescriptorType. A
+ *         descriptor shorter than its header, or running past the block, makes the whole
+ *         block malformed, so nothing is patched in it.
  * @param  desc: Pointer to descriptor block (after config descriptor).
  * @param  len: Length of descriptor block.
- * @retval Minimum interface number, or USBD_COMP_ITF_NONE if none found.
+ * @param  min_if: Receives the lowest bInterfaceNumber, USBD_COMP_ITF_NONE if none found.
+ * @param  max_if: Receives the highest bInterfaceNumber.
+ * @param  iad_end: Receives the highest bFirstInterface + bInterfaceCount of the IADs, 0 if none found.
+ * @retval HAL_OK, or HAL_ERR_PARA on a malformed block.
  */
-static u8 usbd_composite_find_min_interface(const u8 *desc, u16 len)
+static int usbd_composite_scan_func_desc(const u8 *desc, u16 len, u8 *min_if, u8 *max_if, u16 *iad_end)
 {
-	u16 i;
+	int ret = HAL_OK;
+	u16 i = 0U;
+	u16 end;
 	u8 dlen;
 	u8 dtype;
+	u8 itf;
 
-	i = 0;
-	while (i < len) {
-		dlen = desc[i];
-		dtype = desc[i + 1];
-		if (dlen == 0) {
-			break;
+	*min_if = USBD_COMP_ITF_NONE;
+	*max_if = 0U;
+	*iad_end = 0U;
+
+	while ((i < len) && (ret == HAL_OK)) {
+		dlen = ((u16)(len - i) >= USB_LEN_DESC_HEADER) ? desc[i] : 0U;
+		if ((dlen < USB_LEN_DESC_HEADER) || ((u16)dlen > (u16)(len - i))) {
+			ret = HAL_ERR_PARA;
+		} else {
+			dtype = desc[i + 1U];
+			if (dtype == USB_DESC_TYPE_INTERFACE) {
+				if (dlen < USB_LEN_IF_DESC) {
+					ret = HAL_ERR_PARA;
+				} else {
+					itf = desc[i + 2U];
+					*min_if = (itf < *min_if) ? itf : *min_if;
+					*max_if = (itf > *max_if) ? itf : *max_if;
+				}
+			} else if (dtype == USB_DESC_TYPE_IAD) {
+				if (dlen < USB_LEN_IAD_DESC) {
+					ret = HAL_ERR_PARA;
+				} else {
+					/* bFirstInterface at offset 2, bInterfaceCount at offset 3 */
+					end = (u16)((u16)desc[i + 2U] + (u16)desc[i + 3U]);
+					*iad_end = (end > *iad_end) ? end : *iad_end;
+				}
+			} else {
+				/* Class-specific and endpoint descriptors carry no interface number to patch */
+			}
+			i = (u16)(i + dlen);
 		}
-		if (dtype == USB_DESC_TYPE_INTERFACE) {
-			return desc[i + 2];
-		}
-		i += dlen;
 	}
 
-	return USBD_COMP_ITF_NONE;
+	return ret;
 }
 
 /**
@@ -150,6 +178,7 @@ static u8 usbd_composite_find_min_interface(const u8 *desc, u16 len)
  *         baInterfaceNr[], ...) is rebased by the owning class itself, which learns its
  *         interface base through set_interface_base(); keeping that knowledge in the class
  *         avoids a per-class switch here that silently misses any new class.
+ *         The block must have been validated by usbd_composite_scan_func_desc().
  * @param  desc: Pointer to descriptor block.
  * @param  len: Length of descriptor block.
  * @param  offset: Offset to add to each interface number.
@@ -170,109 +199,104 @@ static void usbd_composite_patch_if_numbers(u8 *desc, u16 len, u8 offset)
 		/* bInterfaceNumber and bFirstInterface both sit at offset 2; bAlternateSetting
 		 * (INTERFACE offset 3) must NOT be patched. */
 		if ((dtype == USB_DESC_TYPE_INTERFACE) || (dtype == USB_DESC_TYPE_IAD)) {
-			desc[i + 2] += offset;
+			/* Cannot wrap: the caller bounds every patched number by USBD_MAX_NUM_INTERFACES */
+			desc[i + 2U] = (u8)(desc[i + 2U] + offset);
 		}
 		i += dlen;
 	}
 }
 
 /**
- * @brief  Append a sub-function's descriptor block to the configuration buffer,
+ * @brief  Append a sub-function's descriptor block to the configuration buffer in place,
  *         patching IAD bFirstInterface and interface numbers as needed.
+ * @note   The sub-function emits a complete configuration descriptor, header included. It is
+ *         built at dest + dest_off - USB_LEN_CFG_DESC, so that its header overlays the last
+ *         USB_LEN_CFG_DESC bytes already assembled, which are saved before and restored after,
+ *         and its body lands right where it belongs. This needs neither a scratch buffer nor an
+ *         overlapping move. Every class patches its descriptor byte by byte, so building it at
+ *         an unaligned offset is safe; DMA alignment only concerns the start of dest.
  * @param  dev: USB device instance.
  * @param  req: Setup request.
  * @param  dest: Destination buffer for full configuration descriptor.
  * @param  dest_len: Capacity of dest in bytes.
- * @param  dest_off: Current offset in destination buffer.
- * @param  driver: Class driver pointer.
+ * @param  dest_off: Current offset in destination buffer, at least USB_LEN_CFG_DESC.
+ * @param  func: Sub-function index; its if_counts[] entry is updated from its descriptor.
  * @param  if_base: Interface number base for this function.
- * @param  if_count: Number of interfaces for this function (from pre-scan).
  * @retval Number of bytes appended, or 0 on error.
  */
-static u16 usbd_composite_append_func_desc(usb_dev_t *dev, usb_setup_req_t *req,
-		u8 *dest, u16 dest_len, u16 dest_off, const usbd_class_driver_t *driver,
-		u8 if_base, u8 if_count)
+static u16 usbd_composite_append_func_desc(usb_dev_t *dev, usb_setup_req_t *req, u8 *dest, u16 dest_len, u16 dest_off, u8 func, u8 if_base)
 {
 	usbd_composite_dev_t *cdev = &usbd_composite_dev;
-	u8 *temp = cdev->desc_buf;
+	const usbd_class_driver_t *driver = cdev->drivers[func];
+	u8 saved[USB_LEN_CFG_DESC];
+	u8 *hdr = dest + dest_off - USB_LEN_CFG_DESC;
+	u16 room = (u16)(dest_len - dest_off + USB_LEN_CFG_DESC);
 	u16 total;
 	u8 *src;
 	u16 src_len;
-	u8 orig_first;
-	u16 pos;
-	u8 dlen;
-	u8 dtype;
-	u8 iad_found = 0;
+	u8 if_count;
+	u8 min_if;
+	u8 max_if;
+	u16 iad_end;
 
-	total = driver->get_descriptor(dev, req, temp, (u16)cdev->desc_buf_size);
-	if (total <= USB_LEN_CFG_DESC) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Func get_desc fail\n");
+	/* A class rebases its own cross-interface references while building its descriptor */
+	if (driver->set_interface_base != NULL) {
+		driver->set_interface_base(if_base);
+	}
+
+	usb_os_memcpy((void *)saved, (const void *)hdr, USB_LEN_CFG_DESC);
+	total = driver->get_descriptor(dev, req, hdr, room);
+	if_count = hdr[4]; /* bNumInterfaces */
+	usb_os_memcpy((void *)hdr, (const void *)saved, USB_LEN_CFG_DESC);
+
+	/* Truncation is not allowed: a configuration descriptor beyond the EP0 buffer can only
+	 * be stalled, so usbd_config_t::ctrl_xfer_buf_len must cover its wTotalLength */
+	if ((total <= USB_LEN_CFG_DESC) || (total > room)) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Func %u desc fail, %u/%u B used\n", func, dest_off, dest_len);
 		return 0;
 	}
 
-	src = temp + USB_LEN_CFG_DESC;
-	src_len = total - USB_LEN_CFG_DESC;
+	src = dest + dest_off;
+	src_len = (u16)(total - USB_LEN_CFG_DESC);
 
-	/* Scan for IAD presence — multi-interface drivers MUST embed an IAD */
-	for (pos = 0; pos < src_len;) {
-		dlen = src[pos];
-		dtype = src[pos + 1];
-		if (dlen == 0) {
-			break;
-		}
-		if (dtype == USB_DESC_TYPE_IAD) {
-			iad_found = 1;
-			break;
-		}
-		pos += dlen;
+	if (usbd_composite_scan_func_desc(src, src_len, &min_if, &max_if, &iad_end) != HAL_OK) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Func %u desc malformed\n", func);
+		return 0;
 	}
 
-	if ((if_count > 1) && (iad_found == 0)) {
+	if (min_if != 0U) {
+		/* A class rebases its own cross-interface references by adding if_base to the
+		 * local interface numbers of its template, which is only equivalent to the
+		 * offset applied here when the template starts numbering at 0. */
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Func IF not 0-based: %u\n", min_if);
+		return 0;
+	}
+
+	/* Every interface and IAD must stay inside [if_base, if_base + if_count), the range the
+	 * setup routing assigns to this function, and the total within what the core accepts */
+	if ((max_if >= if_count) || (iad_end > if_count) || (((u16)if_base + if_count) > USBD_MAX_NUM_INTERFACES)) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Func %u IF range err %u/%u\n", func, max_if, if_count);
+		return 0;
+	}
+
+	/* Multi-interface drivers MUST embed an IAD */
+	if ((if_count > 1U) && (iad_end == 0U)) {
 		RTK_LOGS(TAG, RTK_LOG_WARN, "Func IF=%u: missing IAD\n", if_count);
 	}
 
-	/* Patch interface numbers */
-	orig_first = usbd_composite_find_min_interface(src, src_len);
-	if (orig_first != USBD_COMP_ITF_NONE) {
-		if (orig_first != 0U) {
-			/* A class rebases its own cross-interface references by adding if_base to the
-			 * local interface numbers of its template, which is only equivalent to the
-			 * offset applied here when the template starts numbering at 0. */
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "Func IF not 0-based: %u\n", orig_first);
-		}
-		if (if_base != orig_first) {
-			usbd_composite_patch_if_numbers(src, src_len, if_base - orig_first);
-		}
+	cdev->if_counts[func] = if_count;
+
+	if (if_base != 0U) {
+		usbd_composite_patch_if_numbers(src, src_len, if_base);
 	}
 
-	if ((u32)dest_off + (u32)src_len > (u32)dest_len) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Desc buf overflow\n");
-		return 0;
-	}
-
-	usb_os_memcpy((void *)(dest + dest_off), (const void *)src, src_len);
 	return src_len;
 }
 
 /**
- * @brief  Calculate total interface count from parsed if_counts[].
- */
-static u8 usbd_composite_total_if_count(void)
-{
-	usbd_composite_dev_t *cdev = &usbd_composite_dev;
-	u8 total = 0;
-	u8 i;
-
-	for (i = 0; i < cdev->func_count; i++) {
-		total += cdev->if_counts[i];
-	}
-	return total;
-}
-
-/**
  * @brief  Hand each sub-function the first interface number assigned to it.
- * @note   Requires if_counts[] to be up to date, so it must run after the descriptor
- *         pre-scan. Idempotent: as long as the registration order is unchanged, every
+ * @note   Requires if_counts[] to be up to date, so it must run after a configuration
+ *         descriptor build. Idempotent: as long as the registration order is unchanged, every
  *         call hands out the same base, which is why the sub-function only has to store
  *         it. A class owning no cross-interface reference leaves the callback NULL.
  */
@@ -293,18 +317,14 @@ static void usbd_composite_assign_if_bases(void)
 }
 
 /**
- * @brief  Build the full configuration descriptor by calling each sub-function.
+ * @brief  Build the full configuration descriptor by calling each sub-function once.
  */
 static u16 usbd_composite_build_config_desc(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16 buf_len)
 {
 	usbd_composite_dev_t *cdev = &usbd_composite_dev;
-	const usbd_class_driver_t *driver;
 	u16 total_len = USB_LEN_CFG_DESC;
 	u16 added;
-	u16 desc_len;
 	u8 if_base = 0;
-	u8 if_cnt;
-	u8 attr;
 	u8 i;
 
 	/* Truncation is not allowed: a short descriptor is illegal, so stall instead */
@@ -320,148 +340,26 @@ static u16 usbd_composite_build_config_desc(usb_dev_t *dev, usb_setup_req_t *req
 		buf[1] = USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION;
 	}
 
-	/* Patch bmAttributes (byte 7) */
-	attr = 0x80U;
-#ifdef CONFIG_USBD_SELF_POWERED
-	attr |= USB_CFG_DESC_OFFSET_ATTR_BIT_SELF_POWERED;
-#endif
-#ifdef CONFIG_USBD_REMOTE_WAKEUP_EN
-	attr |= USB_CFG_DESC_OFFSET_ATTR_BIT_REMOTE_WAKEUP;
-#endif
-	buf[7] = attr;
+	/* bmAttributes and bMaxPower are patched by the core from usbd_dev_info_t */
 
-	/* First pass: populate if_counts[] from each sub-function's config descriptor
-	 * header, so that the config header's bNumInterfaces is correct before we
-	 * start appending descriptor blocks.
-	 */
+	/* Append each sub-function's descriptor block. Its interface base only depends on the
+	 * functions before it, whose interface counts are known by the time it is built. */
 	for (i = 0; i < cdev->func_count; i++) {
-		desc_len = cdev->drivers[i]->get_descriptor(dev, req, cdev->desc_buf, (u16)cdev->desc_buf_size);
-		if (desc_len < USB_LEN_CFG_DESC) {
-			cdev->if_counts[i] = 0;
-		} else {
-			cdev->if_counts[i] = cdev->desc_buf[4]; /* bNumInterfaces */
-		}
-	}
-
-	buf[4] = usbd_composite_total_if_count(); /* bNumInterfaces */
-
-	/* if_counts[] is final now, so each sub-function's interface base is known: hand it
-	 * out before the second pass re-invokes get_descriptor(), which is where a class
-	 * rebases its own cross-interface references. The first pass only reads
-	 * bNumInterfaces, so running it with a stale base is harmless. */
-	usbd_composite_assign_if_bases();
-
-	/* Second pass: append each sub-function's descriptor block */
-	for (i = 0; i < cdev->func_count; i++) {
-		driver = cdev->drivers[i];
-		if_cnt = cdev->if_counts[i];
-
-		added = usbd_composite_append_func_desc(dev, req, buf, buf_len, total_len, driver, if_base, if_cnt);
+		added = usbd_composite_append_func_desc(dev, req, buf, buf_len, total_len, i, if_base);
 		if (added == 0) {
 			return 0;
 		}
-		total_len += added;
-		if_base += if_cnt;
+		total_len = (u16)(total_len + added);
+		/* Bounded by USBD_MAX_NUM_INTERFACES in usbd_composite_append_func_desc() */
+		if_base = (u8)(if_base + cdev->if_counts[i]);
 	}
 
-	/* Fill in wTotalLength */
+	/* Fill in bNumInterfaces and wTotalLength: if_base now counts every interface */
+	buf[4] = if_base;
 	buf[2] = USB_LOW_BYTE(total_len);
 	buf[3] = USB_HIGH_BYTE(total_len);
 
 	return total_len;
-}
-
-/**
- * @brief  Hand out a private class-specific string index window to each sub-function.
- * @note   Indices 0..USBD_IDX_SERIAL_STR belong to the composite device itself
- *         (LANGID/MFG/PRODUCT/SERIAL); sub-functions get contiguous windows above them,
- *         in registration order. The window sizes are cached in cls_str_counts[] so that
- *         GET_DESCRIPTOR(String) routing can reproduce the same layout without calling
- *         set_str_base() again.
- */
-static void usbd_composite_assign_class_str_bases(void)
-{
-	usbd_composite_dev_t *cdev = &usbd_composite_dev;
-	const usbd_class_driver_t *driver;
-	u8 base = USBD_COMP_CLASS_STR_IDX_BASE;
-	u8 cnt;
-	u8 i;
-
-	for (i = 0; i < cdev->func_count; i++) {
-		cdev->cls_str_counts[i] = 0;
-
-		driver = cdev->drivers[i];
-		if (driver->set_str_base == NULL) {
-			continue;                          /* class owns no string */
-		}
-
-		if (base > USBD_COMP_CLASS_STR_IDX_MAX) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "Str idx full, func %u\n", i);
-			continue;
-		}
-
-		cnt = driver->set_str_base(base);
-		if ((u16)base + cnt > (u16)USBD_COMP_CLASS_STR_IDX_MAX + 1U) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "Str idx ovf, func %u cnt %u\n", i, cnt);
-			continue;                          /* leave count 0: no routing */
-		}
-
-		cdev->cls_str_counts[i] = cnt;
-		base += cnt;
-	}
-}
-
-/**
- * @brief  Get string descriptor.
- * @note   Device-global strings (LANGID/MFG/PRODUCT/SERIAL) are answered here; every index
- *         above USBD_IDX_SERIAL_STR belongs to the sub-function whose class-specific string
- *         window contains it (see usbd_composite_assign_class_str_bases). Without this
- *         delegation a function string such as the CDC ECM iMACAddress would be stalled and
- *         the host would fail to bind the function.
- * @param  dev: USB device instance.
- * @param  req: Setup request; wValue low byte carries the string index.
- * @param  buf: Output buffer.
- * @param  buf_len: Capacity of buf in bytes.
- * @retval Actual string descriptor length, or 0 if not found.
- */
-static u16 usbd_composite_get_string_desc(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16 buf_len)
-{
-	usbd_composite_dev_t *cdev = &usbd_composite_dev;
-	const usbd_class_driver_t *driver;
-	u8 str_idx = USB_LOW_BYTE(req->wValue);
-	u8 base = USBD_COMP_CLASS_STR_IDX_BASE;
-	u8 cnt;
-	u8 i;
-
-	if (str_idx == USBD_IDX_LANGID_STR) {
-		/* Truncation is not allowed: a short descriptor is illegal, so stall instead */
-		if (USB_LEN_LANGID_STR_DESC > buf_len) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "Str desc OVSZ %d > %d\n", USB_LEN_LANGID_STR_DESC, buf_len);
-			return 0;
-		}
-
-		usb_os_memcpy((void *)buf, (const void *)usbd_composite_langid_desc, USB_LEN_LANGID_STR_DESC);
-
-		return USB_LEN_LANGID_STR_DESC;
-	}
-
-	if (str_idx < USBD_COMP_CLASS_STR_IDX_BASE) {
-		return usbd_get_str_descriptor(usbd_composite_strings[str_idx - 1], buf, buf_len);
-	}
-
-	/* Class-specific range: hand the request to the owning sub-function. wValue already
-	 * carries the global index that the sub-function emitted into its own descriptors,
-	 * so req is forwarded unmodified. */
-	for (i = 0; i < cdev->func_count; i++) {
-		cnt = cdev->cls_str_counts[i];
-		if ((cnt != 0U) && (str_idx >= base) && (str_idx < (u8)(base + cnt))) {
-			driver = cdev->drivers[i];
-			return driver->get_descriptor(dev, req, buf, buf_len);
-		}
-		base += cnt;
-	}
-
-	return 0;   /* unknown index -> core stalls EP0 */
 }
 
 /**
@@ -481,16 +379,31 @@ static u16 usbd_composite_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u
 		break;
 
 	case USB_DESC_TYPE_CONFIGURATION:
-	case USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION:
 		return usbd_composite_build_config_desc(dev, req, buf, buf_len);
 
+	/* Ref USB 2.0 9.6.2 and 9.6.4: only a high-speed capable device has a device qualifier and
+	   an other speed configuration, a single speed one answers them with a request error. The
+	   configured speed counts, not the negotiated one: an HS device behind an FS hub is still
+	   high-speed capable, while an HS PHY driven in Full-Speed mode never chirps. */
+	case USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION:
+		if (dev->info.speed == (u8)USB_SPEED_HIGH) {
+			return usbd_composite_build_config_desc(dev, req, buf, buf_len);
+		}
+		break;
+
 	case USB_DESC_TYPE_DEVICE_QUALIFIER:
-		desc = usbd_composite_dev_qualifier_desc;
-		len = USB_LEN_DEV_QUALIFIER_DESC;
+		if (dev->info.speed == (u8)USB_SPEED_HIGH) {
+			desc = usbd_composite_dev_qualifier_desc;
+			len = USB_LEN_DEV_QUALIFIER_DESC;
+		}
 		break;
 
 	case USB_DESC_TYPE_STRING:
-		return usbd_composite_get_string_desc(dev, req, buf, buf_len);
+		/* Every string is owned by the core: the device-global ones come from
+		   usbd_dev_info_t, the class ones from usbd_add_string(). The core only forwards an
+		   index it does not know, e.g. the MS OS string. */
+		USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_GET_DESC, 0);
+		break;
 
 	default:
 		break;
@@ -522,28 +435,33 @@ static int usbd_composite_set_config(usb_dev_t *dev, u8 config)
 	u8 i;
 
 	/* Only the bConfigurationValue advertised in the config descriptor is valid */
-	if (config != 1U) {
+	if ((config != 1U) || (cdev->func_count == 0U)) {
 		return HAL_ERR_PARA;
 	}
 
 	usbd_composite_reset_active_func();
 
-	/* Re-assert the interface bases before any sub-function starts running: a class
-	 * naming one of its interfaces in a notification payload needs its base from here
-	 * on, and if_counts[] is necessarily valid by now (the host cannot reach
-	 * SET_CONFIGURATION without having fetched the configuration descriptor). */
-	usbd_composite_assign_if_bases();
+	/* Ref USB 2.0 9.4.7: a host may set the configuration without having read its descriptor,
+	 * e.g. from a cache, but if_counts[] is only learnt by building it. It is filled in order
+	 * and a valid function never reports 0 interfaces, so a known last entry means all are.
+	 * SET_CONFIGURATION has no data stage and its status stage is only sent once this returns,
+	 * so the EP0 IN buffer is free to build into. */
+	if (cdev->if_counts[cdev->func_count - 1U] == 0U) {
+		usb_setup_req_t cfg_req = {
+			.bmRequestType = USB_D2H,
+			.bRequest = USB_REQ_GET_DESCRIPTOR,
+			.wValue = (u16)((u16)USB_DESC_TYPE_CONFIGURATION << 8U),
+			.wIndex = 0U,
+			.wLength = 0U,
+		};
+		if (usbd_composite_build_config_desc(dev, &cfg_req, dev->ep0_in.xfer_buf, (u16)dev->ep0_in.xfer_buf_len) == 0U) {
+			return HAL_ERR_PARA;
+		}
+	}
 
-#ifdef CONFIG_USBD_SELF_POWERED
-	dev->self_powered = 1;
-#else
-	dev->self_powered = 0;
-#endif
-#ifdef CONFIG_USBD_REMOTE_WAKEUP_EN
-	dev->remote_wakeup_en = 1;
-#else
-	dev->remote_wakeup_en = 0;
-#endif
+	/* Re-assert the interface bases before any sub-function starts running: a class
+	 * naming one of its interfaces in a notification payload needs its base from here on. */
+	usbd_composite_assign_if_bases();
 
 	/* Call each sub-function's set_config.
 	 * Continue on error so all functions get a chance to init their endpoints.
@@ -911,24 +829,7 @@ static void usbd_composite_wakeup(usb_dev_t *dev)
 	}
 }
 
-/**
- * @brief  Composite class driver structure.
- */
-static const usbd_class_driver_t usbd_composite_driver = {
-	.get_descriptor  = usbd_composite_get_descriptor,
-	.set_config      = usbd_composite_set_config,
-	.clear_config    = usbd_composite_clear_config,
-	.setup           = usbd_composite_setup,
-	.sof             = usbd_composite_sof,
-	.ep0_data_in     = usbd_composite_ep0_data_in,
-	.ep0_data_out    = usbd_composite_ep0_data_out,
-	.ep_data_in      = usbd_composite_ep_data_in,
-	.ep_data_out     = usbd_composite_ep_data_out,
-	.status_changed  = usbd_composite_status_changed,
-	.wakeup          = usbd_composite_wakeup,
-};
-
-/* Exported functions ---------------------------------------------------------*/
+/* Exported functions --------------------------------------------------------*/
 
 /**
  * @brief  Register a class driver with the composite framework.
@@ -939,21 +840,22 @@ int usbd_composite_register_driver(const usbd_class_driver_t *driver)
 {
 	usbd_composite_dev_t *cdev = &usbd_composite_dev;
 
-	if (driver == NULL) {
+	/* get_descriptor is the only callback invoked without a NULL check */
+	if ((driver == NULL) || (driver->get_descriptor == NULL)) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid driver\n");
 		return HAL_ERR_PARA;
+	}
+
+	/* Avoid duplicate registration, before the capacity check so that it stays idempotent on a full table */
+	for (u8 i = 0; i < cdev->func_count; i++) {
+		if (cdev->drivers[i] == driver) {
+			return HAL_OK;
+		}
 	}
 
 	if (cdev->func_count >= USBD_COMP_MAX_FUNCS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Too many funcs (%u)\n", cdev->func_count);
 		return HAL_ERR_PARA;
-	}
-
-	/* Avoid duplicate registration */
-	for (u8 i = 0; i < cdev->func_count; i++) {
-		if (cdev->drivers[i] == driver) {
-			return HAL_OK;
-		}
 	}
 
 	cdev->drivers[cdev->func_count] = driver;
@@ -965,60 +867,67 @@ int usbd_composite_register_driver(const usbd_class_driver_t *driver)
  * @brief  Unregister a class driver from the composite framework.
  * @note   Called from within each class driver's deinit function when
  *         the driver was registered as part of a composite device.
+ *         Refused while the composite device is registered with the core: the ISR walks
+ *         drivers[] and if_counts[] on any core, so they are only changed while it is off.
+ *         The class deinit then returns without releasing anything, refer to the header.
+ * @retval HAL_OK on success, HAL_BUSY while usbd_composite_deinit() has not been called
  */
-void usbd_composite_unregister_driver(const usbd_class_driver_t *driver)
+int usbd_composite_unregister_driver(const usbd_class_driver_t *driver)
 {
 	usbd_composite_dev_t *cdev = &usbd_composite_dev;
 	u8 i;
 
+	if (cdev->registered != 0U) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Unreg func while running\n");
+		return HAL_BUSY;
+	}
+
 	if (driver == NULL) {
-		return;
+		return HAL_OK;
 	}
 
 	for (i = 0; i < cdev->func_count; i++) {
 		if (cdev->drivers[i] == driver) {
-			/* Shift remaining entries to fill the gap */
+			/* Shift remaining entries to fill the gap, keeping if_counts[] aligned */
 			cdev->func_count--;
 			for (; i < cdev->func_count; i++) {
-				cdev->drivers[i] = cdev->drivers[i + 1];
+				cdev->drivers[i] = cdev->drivers[i + 1U];
+				cdev->if_counts[i] = cdev->if_counts[i + 1U];
 			}
 			cdev->drivers[cdev->func_count] = NULL;
+			cdev->if_counts[cdev->func_count] = 0U;
+			usbd_composite_reset_active_func();
 			break;
 		}
 	}
+
+	return HAL_OK;
 }
 
 int usbd_composite_init(const usbd_composite_cb_t *cb)
 {
 	usbd_composite_dev_t *cdev = &usbd_composite_dev;
+	int ret;
 
 	if (cdev->func_count == 0) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "No funcs registered\n");
 		return HAL_ERR_PARA;
 	}
 
-	/* Determine descriptor scratch buffer size from core EP0 transfer buffer */
-	cdev->desc_buf_size = usbd_get_ctrl_xfer_buf_len();
-
-	/* Allocate descriptor scratch buffer */
-	cdev->desc_buf = (u8 *)usb_os_malloc(cdev->desc_buf_size);
-	if (cdev->desc_buf == NULL) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Desc buf alloc fail\n");
-		return HAL_ERR_MEM;
-	}
-
 	cdev->cb = cb;
 
 	usbd_composite_reset_active_func();
 
-	/* Lay out the string index windows once, after all sub-functions are registered:
-	 * the registration order is fixed from here on, so the windows stay in sync with
-	 * the layout that usbd_composite_get_string_desc() recomputes when routing. */
-	usbd_composite_assign_class_str_bases();
+	/* Set before the ISR can run, cleared by usbd_composite_deinit() once it is blocked */
+	cdev->registered = 1U;
 
-	usbd_register_class(&usbd_composite_driver);
+	ret = usbd_register_class(&usbd_composite_driver);
+	if (ret != HAL_OK) {
+		usbd_unregister_class();
+		cdev->registered = 0U;
+	}
 
-	return HAL_OK;
+	return ret;
 }
 
 void usbd_composite_deinit(void)
@@ -1027,6 +936,5 @@ void usbd_composite_deinit(void)
 
 	usbd_unregister_class();
 
-	usb_os_mfree((void *)cdev->desc_buf);
 	usb_os_memset((void *)cdev, 0, sizeof(usbd_composite_dev_t));
 }

@@ -87,6 +87,8 @@ s32 wifi_is_running(u8 wlan_idx);
  * @note
  *      - Ensure Wi-Fi is enabled (wifi_on()) before calling this function.
  *      - If `connect_param->bssid` is set, it takes precedence over `connect_param->ssid` for connection.
+ *      - Set `connect_param->band` to @ref RTW_CONNECT_BAND_ALL (0), @ref RTW_CONNECT_BAND_2G (1),
+ *        or @ref RTW_CONNECT_BAND_5G (2) to select the bands used while searching for the AP.
  *      - Asynchronous Wi-Fi connect results are obtained through the event handler registered
  *        for @ref RTW_EVENT_JOIN_STATUS (see example_wifi_event.c).
  */

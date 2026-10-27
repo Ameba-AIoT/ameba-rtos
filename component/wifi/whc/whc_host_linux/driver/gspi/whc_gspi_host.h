@@ -100,13 +100,12 @@ struct whc_gspi {
 	u32			gspi_hisr;
 	u32			GspiTxMaxSZ;
 	u16			txbd_size;
-	u8			GspiTxBDFreeNum;
-
+	u16			GspiTxBDFreeNum;
+	u16			txbd_wptr;
 	u8			swap;		/* 1 = 4-byte swap needed (device little-endian) */
 	u8			irq_alloc;
 	u8			dev_state;
 	u8			tx_avail_int_triggered;
-	u8			txbd_wptr;
 
 	void	(*rx_recv_notify)(void);
 #ifdef WHC_TX_AGG
@@ -122,7 +121,6 @@ u32  rtw_gspi_init(struct whc_gspi *priv);
 u32  rtw_gspi_init_common(struct whc_gspi *priv);
 void rtw_gspi_deinit(struct whc_gspi *priv);
 u32  rtw_gspi_get_rx_len(struct whc_gspi *priv);
-u32  rtw_gspi_get_free_txbd(struct whc_gspi *priv);
 u8   rtw_gspi_query_txbd_status(struct whc_gspi *priv);
 #ifdef WHC_RX_AGG
 void rtw_gspi_enable_rx_agg(struct whc_gspi *priv);

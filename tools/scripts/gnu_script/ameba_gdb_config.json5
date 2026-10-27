@@ -96,19 +96,19 @@
     },
   },
   RTL8720F: {
-    IMG_PROJECT: 'km4tz',
+    IMG_PROJECT: 'km55tz',
     GDB_PORTS: {
-      km4tz: 2335,
-      km4ns: 2331,
+      km55tz: 2335,
+      km55ns: 2331,
     },
     REG_VARS: {
       SYSTEM_CTRL_BASE: '0x40801000',
       REG_LSYS_BOOT_CFG: '0x026C',
     },
     ROM: {
-      km4tz:
+      km55tz:
         ['./lib/RTL8720F_rom_acut/km4tz_rom.bin', '0x00020000'], // one file only
-      km4ns:
+      km55ns:
         ['./lib/RTL8720F_rom_acut/km4ns_rom.bin', '0x00020000'], // one file only
     },
     BIN_MAP: [

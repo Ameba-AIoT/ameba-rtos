@@ -23,9 +23,9 @@
                 "component/soc/common/include/cmsis"
             ],
             "add-symbol-file": [
-                "build_${socSelection}/build/project_km4tz/image/target_loader.axf",
-                "component/soc/RTL8720F/project/project_km4tz/lib/RTL8720F_rom_acut/target_rom.axf",
-                "component/soc/RTL8720F/project/project_km4tz/lib/RTL8720F_rom_acut/target_rom_ns.axf"
+                "build_${socSelection}/build/project_km55tz/image/target_loader.axf",
+                "component/soc/RTL8720F/project/project_km55tz/lib/RTL8720F_rom_acut/target_rom.axf",
+                "component/soc/RTL8720F/project/project_km55tz/lib/RTL8720F_rom_acut/target_rom_ns.axf"
             ]
         },
         "overrideCommands": [
@@ -54,7 +54,7 @@
                 "component/soc/common/include/cmsis"
             ],
             "add-symbol-file": [
-                "component/soc/RTL8720F/project/project_km4ns/lib/RTL8720F_rom_acut/target_rom.axf"
+                "component/soc/RTL8720F/project/project_km55ns/lib/RTL8720F_rom_acut/target_rom.axf"
             ]
         },
         "overrideCommands": [

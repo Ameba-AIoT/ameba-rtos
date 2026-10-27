@@ -41,3 +41,6 @@ else()
     )
 endif()
 
+if((NOT CONFIG_AMEBASMART) AND (NOT CONFIG_AMEBAD))
+    ameba_add_subdirectory(wififw_feature_disable)
+endif()

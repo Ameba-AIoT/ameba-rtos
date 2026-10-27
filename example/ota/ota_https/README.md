@@ -92,7 +92,7 @@ If you encounter SSL connection errors:
 
 Increase `MBEDTLS_SSL_IN_CONTENT_LEN` in menuconfig:
 ```
-CONFIG SSL --->
+CONFIG MbedTLS --->
    (16384) Maximum len of incoming fragments
 ```
 Save and exit, then rebuild and test again.

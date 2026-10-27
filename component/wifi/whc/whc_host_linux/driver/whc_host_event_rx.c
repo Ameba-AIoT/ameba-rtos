@@ -100,10 +100,9 @@ u8 whc_host_event_nan_ndp_status_indicate(u32 *param_buf)
 #endif /* CONFIG_WHCH */
 #endif
 
-void whc_host_event_task(struct work_struct *data)
+static void whc_host_event_handle(struct sk_buff *pskb)
 {
-	struct event_priv_t *event_priv = &global_idev.event_priv;
-	struct whc_api_info *p_recv_msg = (struct whc_api_info *)(event_priv->rx_api_msg->data + SIZE_RX_DESC);
+	struct whc_api_info *p_recv_msg = (struct whc_api_info *)(pskb->data + SIZE_RX_DESC);
 	u32 *param_buf = (u32 *)(p_recv_msg + 1);
 	u32 api_id = p_recv_msg->api_id;
 
@@ -111,15 +110,23 @@ void whc_host_event_task(struct work_struct *data)
 
 	whc_host_internal_event_handle(api_id, param_buf);
 
-	kfree_skb(event_priv->rx_api_msg);
+	kfree_skb(pskb);
 
 	dev_dbg(global_idev.pwhc_dev, "-----DEVICE CALLING API %x END\n", api_id);
 
-	/* signal dispatch: this API is fully processed; the next WHC_WIFI_EVT_API_CALL
-	 * can now overwrite rx_api_msg without overwriting a still-pending message */
-	event_priv->rx_api_msg = NULL;
-
 	return;
+}
+
+void whc_host_event_task(struct work_struct *data)
+{
+	struct event_priv_t *event_priv = &global_idev.event_priv;
+	struct sk_buff *pskb;
+
+	/* drain the queue: API_CALLs queued while this work is running are
+	 * handled here in order instead of waiting for the next schedule */
+	while ((pskb = skb_dequeue(&event_priv->rx_api_queue)) != NULL) {
+		whc_host_event_handle(pskb);
+	}
 }
 
 int whc_host_event_init(struct whc_device *idev)
@@ -132,6 +139,7 @@ int whc_host_event_init(struct whc_device *idev)
 	spin_lock_init(&event_priv->api_ret_lock);
 	event_priv->b_waiting_for_ret = 0;
 	event_priv->rx_api_ret_msg = NULL;
+	skb_queue_head_init(&event_priv->rx_api_queue);
 
 	/* initialize event tasklet */
 	INIT_WORK(&(event_priv->api_work), whc_host_event_task);
@@ -143,6 +151,9 @@ void whc_host_event_deinit(void)
 {
 	struct event_priv_t *event_priv = &global_idev.event_priv;
 	struct sk_buff *pskb_ret;
+
+	cancel_work_sync(&event_priv->api_work);
+	skb_queue_purge(&event_priv->rx_api_queue);
 
 	/* deinitialize the mutex to send event_priv message. */
 	mutex_destroy(&(event_priv->send_mutex));

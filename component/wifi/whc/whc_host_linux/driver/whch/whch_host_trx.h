@@ -90,5 +90,6 @@ int  whc_host_recv_process_indicatepkts(u8 iface_type, union recv_frame *prframe
 int  whc_host_on_action_block_ack(struct rtw_event_addba_nego *nego_info);
 
 void whc_host_set_key(struct rtw_crypt_info *crypt);
+int whc_host_set_wep_key(u8 iface_type, u8 key_idx, const u8 *key, int key_len);
 
 #endif /* __WHCH_HOST_TRX_H__ */

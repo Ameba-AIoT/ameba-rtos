@@ -161,7 +161,7 @@ int dsp_suspend(u32 type)
 	sleep_wevent_config_val[1] = HAL_READ32(PMC_BASE, WAK_MASK1_DSP);
 	sleep_wevent_config_val[0] = HAL_READ32(PMC_BASE, WAK_MASK0_DSP);
 
-	RTK_LOGS(NOTAG, RTK_LOG_DEBUG, "dsp_suspend %lx %lx\n", sleep_wevent_config_val[0], sleep_wevent_config_val[1]);
+	RTK_LOGS(NOTAG, RTK_LOG_DEBUG, "dsp_suspend %x %x\n", sleep_wevent_config_val[0], sleep_wevent_config_val[1]);
 	if ((sleep_wevent_config_val[0] | sleep_wevent_config_val[1])) {
 		InterruptRegister(NPWDSP_INTHandler, DSP_WAKE_IRQ, (u32)PMC_BASE, INT_PRI5);
 		InterruptEn(DSP_WAKE_IRQ, INT_PRI5);
@@ -199,7 +199,7 @@ void dsp_tickless_ipc_int(UNUSED_WARN_DIS void *Data, UNUSED_WARN_DIS u32 IrqSta
 	//TODO: set dlps
 	if (psleep_param->dlps_enable) {
 		RCC_PeriphClockCmd(APBPeriph_ATIM, APBPeriph_ATIM_CLOCK, ENABLE);
-		if (psleep_param->sleep_time) {
+		if (psleep_param->sleep_time != 0 && psleep_param->sleep_time != PMU_SLEEP_FOREVER) {
 			AONTimer_ClearINT();
 			AONTimer_Setting(psleep_param->sleep_time);
 			AONTimer_INT(ENABLE);

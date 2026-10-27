@@ -7,37 +7,6 @@
 #ifndef _AMEBA_WDG_H_
 #define _AMEBA_WDG_H_
 
-/** @addtogroup WDG
-  * @verbatim
-  *****************************************************************************************
-  * Introduction
-  *****************************************************************************************
-  * WDG:
-  * 	- Base Address: VENDOR_REG_BASE
-  * 	- Timer clk: IWDG 100K Aon clk and WDG1~WDG4 SDM 32k
-  * 	- Generates MCU reset or WDG interrupt on expiry of a programmed time period,
-  * 	  unless the program refreshes the watchdog
-  * 	- IRQ: WDG_IRQ
-  *
-
-  *****************************************************************************************
-  * How to use WDG
-  *****************************************************************************************
-  *      To use WDG peripheral, the following steps are mandatory:
-  *
-  *      1. Configure WDG with the corresponding configuration.
-  *			WDG_Init(&WDG_InitStruct)
-  *
-  *      2. Activate the WDG peripheral:
-  *			WDG_Cmd(ENABLE).
-  *
-  *      @note	WDG_Refresh() function is used to clear timer, if call this function before timeout period,
-  *			then MCU reset or WDG interrupt won't generate
-  *
-  *****************************************************************************************
-  * @endverbatim
-  */
-
 /** @addtogroup Ameba_Periph_Driver
   * @{
   */

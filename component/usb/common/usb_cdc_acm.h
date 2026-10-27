@@ -8,6 +8,7 @@
 #define USB_CDC_ACM_H
 
 /* Includes ------------------------------------------------------------------*/
+
 #include "basic_types.h"
 #include "usb_cdc.h"
 
@@ -15,13 +16,18 @@
 extern "C" {
 #endif
 
-/* Exported defines ----------------------------------------------------------*/
-
 /** @addtogroup USB_Common_API USB Common API
  *  @{
  */
+
+/* Exported defines ----------------------------------------------------------*/
+
 /** @addtogroup USB_Common_Constants USB Common Constants
  * @{
+ */
+/** @defgroup USB_Common_CDC_ACM_Constants USB CDC ACM Constants (PSTN 1.2)
+ *  @brief Abstract Control Model definitions shared by the USBD and USBH CDC ACM drivers.
+ *  @{
  */
 
 /* CDC Communication Subclass Codes */
@@ -58,6 +64,8 @@ extern "C" {
 #define USB_CDC_ACM_INTR_IN_REQUEST_SIZE                8U       /**< Notification request header size (bytes) */
 #define USB_CDC_ACM_INTR_IN_DATA_SIZE                   2U       /**< Notification data payload size (bytes) */
 #define USB_CDC_ACM_LINE_CODING_SIZE                    7U       /**< Line Coding structure size (Set/Get Line Coding data length) */
+
+/** @} End of USB_Common_CDC_ACM_Constants group */
 /** @} End of USB_Common_Constants group */
 
 /* Exported types ------------------------------------------------------------*/
@@ -65,6 +73,11 @@ extern "C" {
 /** @addtogroup USB_Common_Types USB Common Types
  * @{
  */
+/** @defgroup USB_Common_CDC_ACM_Types USB CDC ACM Types (PSTN 1.2)
+ *  @brief Abstract Control Model types shared by the USBD and USBH CDC ACM drivers.
+ *  @{
+ */
+
 /**
  * @brief  USB CDC Parity Type Definition
  * @note   Corresponds to the bParityType field in the Line Coding structure
@@ -100,11 +113,20 @@ typedef union {
 		u8  bDataBits;   /**< Data Bits (usually 5, 6, 7, 8, or 16) */
 	} b;                 /**< Structured member access */
 } __PACKED usb_cdc_acm_line_coding_t;
+
+/** @} End of USB_Common_CDC_ACM_Types group */
 /** @} End of USB_Common_Types group */
+
+/* Exported macros -----------------------------------------------------------*/
+
+/* Exported variables --------------------------------------------------------*/
+
+/* Exported functions --------------------------------------------------------*/
+
 /** @} End of USB_Common_API group */
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif  /* USB_CDC_ACM_H */
+#endif /* USB_CDC_ACM_H */

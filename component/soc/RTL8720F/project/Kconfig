@@ -152,8 +152,8 @@ comment "-----Connectivity config-----"
 menu "CONFIG WHC INTF"
     choice
         prompt "WHC MODE"
-        # SOLO: km4ns is the network core running the full single-core wifi stack
-        # (WHC_NONE), km4tz is the minimal MCU core; so default to SINGLE CORE.
+        # SOLO: km55ns is the network core running the full single-core wifi stack
+        # (WHC_NONE), km55tz is the minimal MCU core; so default to SINGLE CORE.
         default WIFI_SINGLE_CORE_MENU if SOLO
         default WHC_INTF_IPC_MENU
             config WHC_INTF_IPC_MENU
@@ -165,12 +165,12 @@ menu "CONFIG WHC INTF"
             config WHC_DEV_MENU
                 bool "WHC_DEV"
                 select WIFI_HOST_CONTROL
-                select WHC_DEV_FOR_KM4TZ
+                select WHC_DEV_FOR_KM55TZ
                 depends on !SOLO
             config WHC_HOST_MENU
                 bool "WHC_HOST"
                 select WHC_HOST_IMPL
-                select WHC_HOST_FOR_KM4TZ
+                select WHC_HOST_FOR_KM55TZ
                 depends on !SOLO
     endchoice
 
@@ -194,11 +194,11 @@ menu "CONFIG WHC INTF"
         config WHC_WIFI_API_PATH
             default y if WHC_DEV_MENU
             bool "Support WHC WIFI API PATH"
-        config WHC_WPA_SUPPLICANT_OFFLOAD_FOR_KM4TZ
+        config WHC_WPA_SUPPLICANT_OFFLOAD_FOR_KM55TZ
             bool "Support WHC SUPPLICANT OFFLOAD"
-        config WHC_DEV_TCPIP_KEEPALIVE_FOR_KM4TZ
+        config WHC_DEV_TCPIP_KEEPALIVE_FOR_KM55TZ
             bool "Support WHC DEV TCPIP KEEPALIVE"
-        config WAR_OFFLOAD_FOR_KM4TZ
+        config WAR_OFFLOAD_FOR_KM55TZ
             bool
             help
               Device-side mDNS offload, hidden for now. Once the host enables it at
@@ -231,7 +231,7 @@ menu "CONFIG WHC INTF"
         endmenu
     endif
 
-    if WHC_DEV_MENU && WHC_WPA_SUPPLICANT_OFFLOAD_FOR_KM4TZ
+    if WHC_DEV_MENU && WHC_WPA_SUPPLICANT_OFFLOAD_FOR_KM55TZ
 
         menu "WPA Mode"
 
@@ -261,34 +261,34 @@ menu "CONFIG WHC INTF"
     if WHC_INTF_IPC_MENU || WIFI_SINGLE_CORE_MENU
         choice
             prompt "WHC Host Location"
-            # SOLO single-core: put the wifi stack on km4ns (selects WHC_NONE_FOR_KM4NS).
-            default WHC_HOST_LOC_KM4NS_MENU if SOLO
-            default WHC_HOST_LOC_KM4TZ_MENU
-            config WHC_HOST_LOC_KM4TZ_MENU
-                bool "KM4TZ"
+            # SOLO single-core: put the wifi stack on km55ns (selects WHC_NONE_FOR_KM55NS).
+            default WHC_HOST_LOC_KM55NS_MENU if SOLO
+            default WHC_HOST_LOC_KM55TZ_MENU
+            config WHC_HOST_LOC_KM55TZ_MENU
+                bool "KM55TZ"
                 depends on !SOLO
-                select WHC_HOST_FOR_KM4TZ if WHC_INTF_IPC_MENU
-                select WHC_DEV_FOR_KM4NS if WHC_INTF_IPC_MENU
-                select WHC_NONE_FOR_KM4TZ if WIFI_SINGLE_CORE_MENU
-            config WHC_HOST_LOC_KM4NS_MENU
-                bool "KM4NS"
-                select WHC_HOST_FOR_KM4NS if WHC_INTF_IPC_MENU
-                select WHC_DEV_FOR_KM4TZ if WHC_INTF_IPC_MENU
-                select WHC_NONE_FOR_KM4NS if WIFI_SINGLE_CORE_MENU
+                select WHC_HOST_FOR_KM55TZ if WHC_INTF_IPC_MENU
+                select WHC_DEV_FOR_KM55NS if WHC_INTF_IPC_MENU
+                select WHC_NONE_FOR_KM55TZ if WIFI_SINGLE_CORE_MENU
+            config WHC_HOST_LOC_KM55NS_MENU
+                bool "KM55NS"
+                select WHC_HOST_FOR_KM55NS if WHC_INTF_IPC_MENU
+                select WHC_DEV_FOR_KM55TZ if WHC_INTF_IPC_MENU
+                select WHC_NONE_FOR_KM55NS if WIFI_SINGLE_CORE_MENU
         endchoice
     endif
 
-    config WHC_HOST_FOR_KM4TZ
+    config WHC_HOST_FOR_KM55TZ
         bool
-    config WHC_DEV_FOR_KM4NS
+    config WHC_DEV_FOR_KM55NS
         bool
-    config WHC_HOST_FOR_KM4NS
+    config WHC_HOST_FOR_KM55NS
         bool
-    config WHC_DEV_FOR_KM4TZ
+    config WHC_DEV_FOR_KM55TZ
         bool
-    config WHC_NONE_FOR_KM4TZ
+    config WHC_NONE_FOR_KM55TZ
         bool
-    config WHC_NONE_FOR_KM4NS
+    config WHC_NONE_FOR_KM55NS
         bool
     config WHC_WIFI_API_PATH
         bool
@@ -321,7 +321,7 @@ menu "CONFIG WIFI"
             select WLAN
             select FW_DRIVER_COEXIST
             select WIFI_FW_EN if !MP_SHRINK
-            select LWIP_LAYER if WHC_DEV_TCPIP_KEEPALIVE_FOR_KM4TZ
+            select LWIP_LAYER if WHC_DEV_TCPIP_KEEPALIVE_FOR_KM55TZ
 
         config WHC_HOST_IMPL
             bool
@@ -338,7 +338,7 @@ menu "CONFIG WIFI"
             select ENABLE_WPS if WIFI_WPS_ENABLE_MENU
             select ENABLE_WPS_DISCOVERY if ENABLE_WPS
 
-        config WIFI_FW_EN_FOR_KM4NS
+        config WIFI_FW_EN_FOR_KM55NS
             depends on !WHC_DEV_MENU
             bool
             default !MP_SHRINK
@@ -368,15 +368,15 @@ menu "CONFIG WIFI"
         bool
 endmenu
 
-config VFS_ENABLED
+config VFS_SUPPORTED
     def_bool y
     depends on !MP_SHRINK
-    depends on (WHC_HOST || WHC_NONE || (WHC_DEV && WHC_DEV_FLASH_BOOT))
+    depends on (WHC_HOST || WHC_NONE || (WHC_DEV && !WHC_INTF_IPC))
 
-config SDN_FOR_KM4NS        # SDN lib is always on, always on NP
+config SDN_FOR_KM55NS        # SDN lib is always on, always on NP
     def_bool y
 
-config SDN_DEV_FOR_KM4NS    # SDN DEV is always on NP, set on when BT or wpan enabled.
+config SDN_DEV_FOR_KM55NS    # SDN DEV is always on NP, set on when BT or wpan enabled.
     bool
 
 config SDN_HOST             # SDN HOST is on the same core with BT or wpan.
@@ -397,7 +397,7 @@ menu "CONFIG BT"
 
         config BT_SDN    # controller is SDN
             def_bool y
-            select SDN_DEV_FOR_KM4NS
+            select SDN_DEV_FOR_KM55NS
 
         rsource "../../../bluetooth/Kconfig.inic"
 
@@ -457,12 +457,12 @@ endmenu
 
 comment "----end of MENUCONFIG FOR General------"
 
-menu "MENUCONFIG FOR KM4TZ CONFIG"
-    rsource "project_km4tz/Kconfig"
+menu "MENUCONFIG FOR KM55TZ CONFIG"
+    rsource "project_km55tz/Kconfig"
 endmenu
 
-menu "MENUCONFIG FOR KM4NS CONFIG"
-    rsource "project_km4ns/Kconfig"
+menu "MENUCONFIG FOR KM55NS CONFIG"
+    rsource "project_km55ns/Kconfig"
 endmenu
 
 

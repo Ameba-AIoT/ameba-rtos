@@ -240,6 +240,14 @@ typedef struct {
 } TM_InitTypeDef;
 
 /**
+  * @brief Thermal temperature unit
+  */
+typedef enum {
+	TM_DEG_C = 0, /*!< Celsius degree */
+	TM_DEG_F = 1, /*!< Fahrenheit degree */
+} TM_UnitDef;
+
+/**
   * @}
   */
 
@@ -322,6 +330,7 @@ typedef struct {
 
 _LONG_CALL_ void TM_StructInit(TM_InitTypeDef *TM_InitStruct);
 _LONG_CALL_ void TM_Init(TM_InitTypeDef *TM_InitStruct);
+_LONG_CALL_ void TM_PwrProgCmd(u32 NewState);
 _LONG_CALL_ void TM_Cmd(u32 NewState);
 _LONG_CALL_ int TM_PollDataValid(void);
 _LONG_CALL_ void TM_INTConfig(u32 TM_IT, u32 NewState);
@@ -334,11 +343,12 @@ _LONG_CALL_ u32 TM_GetMaxTemp(void);
 _LONG_CALL_ u32 TM_GetMinTemp(void);
 _LONG_CALL_ void TM_MaxTempClr(void);
 _LONG_CALL_ void TM_MinTempClr(void);
-_LONG_CALL_ void TM_HighPtConfig(u16 TM_HighPtThre, u32 NewState);
-_LONG_CALL_ void TM_HighWtConfig(u16 TM_HighWtThre, u32 NewState);
-_LONG_CALL_ void TM_LowWtConfig(u16 TM_LowWtThre, u32 NewState);
+_LONG_CALL_ void TM_HighPtConfig(float TM_HighPtThre, u32 NewState, TM_UnitDef Unit);
+_LONG_CALL_ void TM_HighWtConfig(float TM_HighWtThre, u32 NewState, TM_UnitDef Unit);
+_LONG_CALL_ void TM_LowWtConfig(float TM_LowWtThre, u32 NewState, TM_UnitDef Unit);
 _LONG_CALL_ float TM_GetCdegree(u32 Data);
 _LONG_CALL_ float TM_GetFdegree(u32 Data);
+_LONG_CALL_ float TM_GetDegree(u32 Data, TM_UnitDef Unit);
 
 /**
   * @}

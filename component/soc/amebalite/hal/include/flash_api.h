@@ -67,6 +67,13 @@ void flash_erase_sector(flash_t *obj, uint32_t address);
 void flash_erase_block(flash_t *obj, uint32_t address);
 
 /**
+  * @brief  Erase the whole flash chip
+  * @param  obj: Flash object define in application software.
+  * @retval none
+  */
+void flash_erase_chip(flash_t *obj);
+
+/**
   * @brief  Read a word from specified address
   * @param  obj: Flash object define in application software.
   * @param  address: Specifies the address to read from.
@@ -216,7 +223,7 @@ int flash_get_extend_addr(flash_t *obj);
   * @param  obj: Flash object define in application software.
   * @param  buf: Pointer to a byte array to save the readback ID.
   * @param  len: Specifies the length of the buf. It should be 3.
-  * @retval -1: Fail.
+  * @retval Length of the flash ID that has been read (equal to len).
   */
 int flash_read_id(flash_t *obj, uint8_t *buf, uint8_t len);
 

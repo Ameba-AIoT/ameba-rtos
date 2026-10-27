@@ -67,7 +67,7 @@ struct event_priv_t {
 	struct work_struct			api_work; /* event_priv task to haddle event_priv msg */
 	struct mutex				send_mutex; /* mutex to protect send host event_priv message */
 
-	struct sk_buff				*rx_api_msg;
+	struct sk_buff_head			rx_api_queue; /* API_CALL msgs waiting for api_work */
 	struct sk_buff				*rx_api_ret_msg;
 
 	struct completion			api_ret_sema; /* sema to wait for API calling done */

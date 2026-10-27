@@ -138,11 +138,22 @@ u8 BOOT_SignatureCheck(Manifest_TypeDef *Manifest, SubImgInfo_TypeDef *SubImgInf
 	}
 
 	/* 2.3 validate pubkey hash */
+	if (Cert->EntryNum > CERT_MAX_KEYINFO) {
+		ret = -1;
+		goto SBOOT_FAIL;
+	}
+
 	for (i = 0; i < Cert->EntryNum; i++) {
 		if (Cert->PKInfo[i].KeyID == KeyID) {
 			break;
 		}
 	}
+
+	if (i == Cert->EntryNum) {
+		ret = -1;
+		goto SBOOT_FAIL;
+	}
+
 	ret = SBOOT_Validate_PubKey(AuthAlg, Manifest->SBPubKey, Cert->PKInfo[i].Hash);
 	if (ret != 0) {
 		goto SBOOT_FAIL;
@@ -660,6 +671,11 @@ int BOOT_SignatureCheck_PQC(Manifest_TypeDef *Manifest, Certificate_TypeDef *Cer
 	}
 
 	/* 2. Find PQC public key hash from certificate entry using KeyID */
+	if (Cert->EntryNum > CERT_MAX_KEYINFO) {
+		RTK_LOGE(TAG, "Invalid certificate EntryNum %d\n", Cert->EntryNum);
+		return -1;
+	}
+
 	for (i = 0; i < Cert->EntryNum; i++) {
 		if (Cert->PKInfo[i].KeyID == KeyID) {  /* KeyID = KEYID_NSPE_PQC = 1 */
 			PQC_PubKeyHash = Cert->PKInfo[i].Hash;

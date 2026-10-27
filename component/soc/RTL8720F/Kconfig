@@ -1,21 +1,21 @@
-config TEST_KM4TZ_MENU
-    bool "Test code run on km4tz"
+config TEST_KM55TZ_MENU
+    bool "Test code run on km55tz"
 
-config TEST_KM4NS_MENU
-    bool "Test code run on km4ns"
+config TEST_KM55NS_MENU
+    bool "Test code run on km55ns"
 
-if TEST_KM4TZ_MENU||TEST_KM4NS_MENU
+if TEST_KM55TZ_MENU||TEST_KM55NS_MENU
 
 menu "CONFIG FUNCTION TEST"
     config PER_TEST_MENU
         bool "Enable Peripheral Test"
-        select PER_TEST_FOR_KM4TZ if TEST_KM4TZ_MENU
-        select PER_TEST_FOR_KM4NS if TEST_KM4NS_MENU
+        select PER_TEST_FOR_KM55TZ if TEST_KM55TZ_MENU
+        select PER_TEST_FOR_KM55NS if TEST_KM55NS_MENU
 
-    config PER_TEST_FOR_KM4TZ
+    config PER_TEST_FOR_KM55TZ
         bool
 
-    config PER_TEST_FOR_KM4NS
+    config PER_TEST_FOR_KM55NS
         bool
 
     if PER_TEST_MENU
@@ -29,7 +29,7 @@ menu "CONFIG FUNCTION TEST"
                     select USB_DEVICE_EN
                 config OLT
                     bool "OLT_Test"
-                config FT_FOR_KM4TZ
+                config FT_FOR_KM55TZ
                     bool "FT_Test"
                 config SIMULATION
                     bool "IMG_SIM"
@@ -217,13 +217,13 @@ endmenu
 menu "CONFIG SECURE TEST"
     config SEC_VERIFY_MENU
         bool "SEC_Verify_Mode"
-        select SEC_VERIFY_FOR_KM4TZ if TEST_KM4TZ_MENU
-        select SEC_VERIFY_FOR_KM4NS if TEST_KM4NS_MENU
+        select SEC_VERIFY_FOR_KM55TZ if TEST_KM55TZ_MENU
+        select SEC_VERIFY_FOR_KM55NS if TEST_KM55NS_MENU
 
-    config SEC_VERIFY_FOR_KM4TZ
+    config SEC_VERIFY_FOR_KM55TZ
         bool
 
-    config SEC_VERIFY_FOR_KM4NS
+    config SEC_VERIFY_FOR_KM55NS
         bool
 
     if SEC_VERIFY_MENU

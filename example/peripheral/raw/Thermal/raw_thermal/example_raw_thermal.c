@@ -10,36 +10,11 @@
 
 void TM_Display_Result(u32 Data)
 {
-	char s;
-	u8 integer = 0;
-	u16 decimal = 0;
+	float Cdegree = TM_GetDegree(Data, TM_DEG_C);
+	char s = (Cdegree >= 0) ? '+' : '-';
+	int integer = (int)(Cdegree >= 0 ? Cdegree : -Cdegree);
+	int decimal = (int)(((Cdegree >= 0 ? Cdegree : -Cdegree) - integer) * 10000);
 
-#if defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBALITE) || defined(CONFIG_AMEBADPLUS) || defined(CONFIG_AMEBAGREEN2)
-	u32 temp = 0;
-
-	if (Data >= 0x40000) {
-		s = '-';
-		temp = 0x80000 - Data;
-		integer = (int)(temp >> 10);
-		decimal = (int)(TEMP_DECIMAL_OUT(temp) * 10000 >> 10);
-	} else {
-		s = '+';
-		integer = (int)(Data >> 10);
-		decimal = (int)(TEMP_DECIMAL_OUT(Data) * 10000 >> 10);
-	}
-#elif defined(CONFIG_RTL8720F)
-	float Cdegree = TM_GetCdegree(Data);
-
-	if (Cdegree >= 0) {
-		s = '+';
-		integer = (int)(Cdegree);
-		decimal = (int)((Cdegree - integer) * 10000);
-	} else {
-		s = '-';
-		integer = (int)(abs(Cdegree));
-		decimal = (int)((abs(Cdegree) - integer) * 10000);
-	}
-#endif
 	printf("Temperature: %c%d.%4d C\n", s, integer, decimal);
 }
 
@@ -77,30 +52,24 @@ void raw_thermal_task(void)
 	TM_InitTypeDef TM_InitStruct;
 
 	TM_StructInit(&TM_InitStruct);
-#if defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBALITE) || defined(CONFIG_AMEBADPLUS) || defined(CONFIG_AMEBAGREEN2)
+#if defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBALITE) || defined(CONFIG_AMEBAGREEN2)
 	TM_InitStruct.TM_DownSampRate = 2;
 	TM_InitStruct.TM_AdcClkDiv = 1;
+	TM_InitStruct.TM_TimePeriod = 15;
+#elif defined(CONFIG_RTL8720F)
+	TM_InitStruct.TM_TimePeriod = 0x8;			 // N * 0.65s = 5.2s
+#endif
 	TM_InitStruct.TM_HighProtectThreshold = 125; // 125 Celsius
 	TM_InitStruct.TM_HighWarnThreshold = 50;	 // 50 Celsius
 	TM_InitStruct.TM_LowWarnThreshold = 20;		 // 20 Celsius
-	TM_InitStruct.TM_TimePeriod = 15;
-#elif defined(CONFIG_RTL8720F)
-	TM_InitStruct.TM_HighProtectThreshold = 841; // 125 Celsius
-	TM_InitStruct.TM_HighWarnThreshold = 690;	 // 50 Celsius
-	TM_InitStruct.TM_LowWarnThreshold = 630;	 // 20 Celsius
-	TM_InitStruct.TM_TimePeriod = 0x8;			 // N * 0.65s = 5.2s
-#endif
-
 	TM_Init(&TM_InitStruct);
 
 	TM_Display_Result(TM_GetTempResult());
 
-	tm = TM_GetCdegree(TM_GetTempResult());
-
+	tm = TM_GetDegree(TM_GetTempResult(), TM_DEG_C);
 	printf("Temperature = %4f C\n", tm);
 
-	tm = TM_GetFdegree(TM_GetTempResult());
-
+	tm = TM_GetDegree(TM_GetTempResult(), TM_DEG_F);
 	printf("Temperature = %4f F\n", tm);
 
 	InterruptRegister((IRQ_FUN)TMIrqHandler, THERMAL_IRQ, (u32)NULL, 5);

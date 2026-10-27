@@ -14,15 +14,15 @@
 #include "usbh_uvc_desc.h"
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
-
-/* Exported defines ----------------------------------------------------------*/
 
 /** @addtogroup USB_Host_API USB Host API
  *  @{
  */
+
+/* Exported defines ----------------------------------------------------------*/
+
 /** @addtogroup USB_Host_Constants USB Host Constants
  * @{
  */
@@ -86,7 +86,6 @@ extern "C"
  * combine thread (consumer) then batch-drains the whole ring. Both are tunable. */
 #define USBH_UVC_URB_NUMS                             12U     /**< Ring depth: number of single-packet URB slots (usable = NUMS-1). */
 #define USBH_UVC_URB_WATERMARK                        6U      /**< ISR wakes combine thread when ready URB count >= this. Must be < USBH_UVC_URB_NUMS. */
-#define USBH_UVC_URB_SIZE                             3072U   /**< Legacy: not used by the SPSC single-packet ring. */
 #define USBH_UVC_URB_PACKET_NUM                       1U      /**< Payload packets per URB slot; also the packet_info[] entry count. */
 
 /* Task Configuration */
@@ -140,14 +139,19 @@ typedef struct  {
 } usbh_uvc_s_ctx_t;
 
 /**
- * @brief UVC Global Context.
+ * @brief Configuration for the UVC host class.
+ * @details Carries every UVC host option: the per-stream frame buffer size and, on SoCs with
+ *          the hardware decoder, its ISR priority. Host-global parameters (speed, FIFO depths,
+ *          main task stack and priority, ISR priority) live in @ref usbh_config_t instead.
+ * @note  The structure is stored by pointer, not copied, so it shall remain valid until
+ *        @ref usbh_uvc_deinit.
  */
 typedef struct  {
 	u32 frame_buf_size;    /**< Size of a single video frame buffer in bytes (applied to every stream at init). */
 #if USBH_UVC_USE_HW
 	u8 hw_isr_pri;         /**< UVC hardware ISR priority. */
 #endif
-} usbh_uvc_ctx_t;
+} usbh_uvc_config_t;
 
 /**
  * @brief UVC Host User Callback Interface.
@@ -158,35 +162,36 @@ typedef struct {
 	 *        Used for application-specific resource setup.
 	 * @return 0 on success, non-zero on failure.
 	 */
-	int(* init)(void);
+	int (*init)(void);
 
 	/**
 	 * @brief Callback invoked during UVC driver de-initialization.
 	 *        Used for application-specific resource cleanup.
 	 */
-	void (* deinit)(void);
+	void (*deinit)(void);
 
 	/**
 	 * @brief Callback invoked when a UVC device is attached.
 	 */
-	void (* attached)(void);
+	void (*attached)(void);
 
 	/**
 	 * @brief Callback invoked when a UVC device is detached.
 	 */
-	void (* detached)(void);
+	void (*detached)(void);
 
 	/**
 	 * @brief Callback invoked when the device setup phase is complete.
 	 */
-	void (* setup)(void);
+	void (*setup)(void);
 
 	/**
 	 * @brief Callback invoked when the UVC parameter-setting sequence
 	 *        (Probe/Commit/SET_INTERFACE) completes; status is HAL_OK
-	 *        on success or HAL_ERR_HW on failure.
+	 *        on success, HAL_ERR_MEM if the streaming buffers cannot be
+	 *        allocated, or HAL_ERR_HW on any other failure.
 	 */
-	void (* set_param)(int status);  // status: HAL_OK on success, HAL_ERR_HW on failure
+	void (*set_param)(int status);
 } usbh_uvc_cb_t;
 
 /**
@@ -194,7 +199,6 @@ typedef struct {
  *        Represents a single video frame node in the queue.
  */
 typedef struct {
-	struct list_head list;      /**< Linked list node for queue management. */
 	u8 *buf;                    /**< Pointer to the data buffer containing the frame. */
 	u32 byteused;               /**< Actual number of bytes used in the buffer (frame size). */
 	u32 timestamp;              /**< Presentation timestamp of the frame. */
@@ -202,6 +206,7 @@ typedef struct {
 	u32 get_frame_ts;           /**< Timestamp recorded when consumer gets this frame. */
 	u32 submit_frame_ts;        /**< Timestamp recorded when driver submits this frame. */
 #endif
+	struct list_head list;      /**< Linked list node for queue management. */
 	u8 err;                    /**< Error flags associated with this frame. */
 	u8 state;             /**< Current state of this frame buffer, @ref usbh_uvc_frame_state_t. */
 } usbh_uvc_frame_t;
@@ -260,20 +265,14 @@ typedef struct {
 } __PACKED usbh_uvc_vs_frame_t;
 
 typedef struct {
-	char name[32];
 	usbh_uvc_vs_frame_t *frame;
 	u32 frame_num;
-	u32 fcc;
-	u32 flags;
 	u8 type;
 	u8 index;
-	u8 bpp;
-	u8 colorspace;
 } usbh_uvc_vs_format_t;
 
 typedef struct {
 	usbh_uvc_vc_header_desc_t *vcheader;
-	void *p;
 	u8 bInterfaceNumber;
 	u8 entity_num;
 } usbh_uvc_vc_t;
@@ -284,11 +283,9 @@ typedef struct {
 } usbh_uvc_alt_t;
 
 typedef struct {
-	usbh_uvc_alt_t altsetting[USBH_UVC_VS_ALTS_MAX_NUM];
-	usbh_uvc_vs_input_header_desc_t *InputHeader;
 	usbh_uvc_vs_format_t *format;
 	u32 format_num;
-	void *p;
+	usbh_uvc_alt_t altsetting[USBH_UVC_VS_ALTS_MAX_NUM];
 	u8 bInterfaceNumber;
 	u8 alt_num;
 } usbh_uvc_vs_t;
@@ -302,9 +299,9 @@ typedef struct {
 /* --- Streaming module types (usbh_uvc_stream.c) --- */
 
 typedef struct {
-	usbh_pipe_t pipe;
 	usbh_uvc_alt_t *altsetting;
 	usbh_uvc_vs_t *cur_vs_intf;
+	usbh_pipe_t pipe;
 	u8 bAlternateSetting;
 	u8 bInterfaceNumber;
 	u8 valid;
@@ -317,19 +314,18 @@ typedef struct {
 } usbh_uvc_packet_desc_t;
 
 typedef struct {
-	usbh_uvc_packet_desc_t packet_info[USBH_UVC_URB_PACKET_NUM];
 	u8 *addr;
+	usbh_uvc_packet_desc_t packet_info[USBH_UVC_URB_PACKET_NUM];
+	u8 index;
+	u8 packet_num;
 #if USBH_UVC_DEBUG
+	__IO u8 owner;
+	__IO u8 valid_data;
 	u32 get_us;
 	u32 submit_us;
 	u32 process_us;
 	u32 regive_us;
-	__IO u8 owner;
-	__IO u8 valid_data;
 #endif
-	u8 index;
-	u8 packet_num;
-	u8 packet_length;
 } usbh_uvc_urb_t;
 #endif
 
@@ -347,20 +343,26 @@ typedef struct {
 #endif
 
 typedef struct {
-	usbh_uvc_setting_t cur_setting;                /* Current interface setting (Alt setting) */
-	usbh_uvc_frame_t frame_buffer[USBH_UVC_VIDEO_FRAME_NUMS];/* Frame object pool (Metadata) */
-	usb_os_task_t combine_task;                     /* Handle for the SW decoding thread */
-	usbh_uvc_stream_control_t stream_ctrl;         /* UVC Probe/Commit control data */
-
 	usbh_uvc_vs_t *vs_intf;                 /* Pointer to Video Streaming Interface */
-	usbh_uvc_vs_format_t *def_format;       /* Default format descriptor */
-	usbh_uvc_vs_format_t *cur_format;       /* Current active format descriptor */
-	usbh_uvc_vs_frame_t *cur_frame;         /* Current active frame resolution descriptor */
 
-	u32 frame_buffer_size;                  /* Size of one frame buffer */
-	u8 *frame_buf;                          /* Raw memory block allocated for all frames */
-	usb_os_sema_t frame_sema;               /* Semaphore to notify App: "Frame Ready" */
+	/* Stream state */
+	__IO u8 state;                          // State for state machine, @ref usbh_stream_state_t
+	__IO u8 stream_state;                   // Stream state, @ref usbh_uvc_streaming_state_t
+	u8 stream_idx;                          // Stream Index (0 or 1 for dual stream support)
+	u8 set_alt;                             // Flag used in ctrl process machine: 0 (Unset), 1 (Set).
+	u8 set_alt_retry;                       // Retry counter for SET_ALT (SET_INTERFACE) failures.
+	u8 alt_active;                          // Device parked on the streaming altsetting: 0 (alt 0, no isoc ep), 1 (working alt).
+	u8 start_pending;                       // SET_ALT in flight was issued by usbh_uvc_start(), not by set_param.
 	u8 trunc_warned;                        /* Truncation already reported this round: throttles the ISR-context warning */
+
+	usb_os_task_t combine_task;             /* Handle for the SW decoding thread */
+
+	/* Frame delivery to the App */
+	usb_os_sema_t frame_sema;               /* Semaphore to notify App: "Frame Ready" */
+	__IO u8 get_valid;                      // 1 while a thread is inside get_frame, refer to usbh_uvc_exit_get_frame()
+	__IO u8 put_valid;                      // 1 while a thread is inside put_frame, refer to usbh_uvc_exit_get_frame()
+	u8 *frame_buf;                          /* Raw memory block allocated for all frames */
+	u32 frame_buffer_size;                  /* Size of one frame buffer */
 
 #if USBH_UVC_USE_HW
 	usbh_hw_uvc_dec_t *uvc_dec;                    /* Handle for UVC hardware combiner */
@@ -390,16 +392,39 @@ typedef struct {
 	* 3. Multiple URBs fill one Frame.
 	* Frames form the stream, which is delivered to the App on a per-frame basis.
 	*/
-	struct list_head frame_empty;           /* List of free frames ready to be filled */
-	struct list_head frame_chain;           /* List of completed frames ready for App */
-	usb_os_lock_t frame_mutex;              /* Mutex protecting frame lists */
-	usbh_uvc_frame_t *cur_frame_buf;        /* Pointer to the frame currently being assembled */
+	/* SW combine thread */
+	__IO u8 complete_on;                    // Flag for Thread Loop: 1=Run, 0=Exit (controls combine task lifecycle)
+	__IO u8 complete_flag;                  // Flag for ISR Gate: 1=Allow pushing to queue, 0=Drop (protects queue access)
+	__IO u8 is_resource_safe;               // Flag for uvc resource: 0 (UnSafe), 1 (Safe).
+	__IO u8 next_xfer;                      // Flag for next xfer: 0 (Stop), 1 (Start).
+	__IO u8 combine_busy;                   // 1 while the combine thread is inside a URB batch, refer to usbh_uvc_stream_pause_combine()
 
+	/* URB ring */
 	usb_os_sema_t urb_ready_sema;           /* Queue: ready for give */
 	usbh_uvc_urb_t *urb[USBH_UVC_URB_NUMS]; /* URB object pool */
 	u8 *urb_buffer;                         /* Raw memory block for URB */
+	u16 urb_buffer_size;                    // Size of one URB buffer
+	__IO u8 urb_head;                      // SPSC ring READ cursor (combine thread owns): next filled slot to consume
+	u8 cur_urb;                           // Index of the URB currently being filled by combine_urb
+	u8 cur_packet;                          // Index of the packet within the current URB
+	u8 last_fid;                            // Last Frame ID (toggled bit in UVC payloadheader)
 
-#if USBH_UVC_DEBUG
+	/* Free/ready frame lists */
+	usb_os_lock_t frame_mutex;              /* Mutex protecting frame lists */
+	usbh_uvc_frame_t *cur_frame_buf;        /* Pointer to the frame currently being assembled */
+	struct list_head frame_empty;           /* List of free frames ready to be filled */
+	struct list_head frame_chain;           /* List of completed frames ready for App */
+
+#endif// USBH_UVC_USE_HW == 0
+
+	/* Interface setting and Probe/Commit */
+	usbh_uvc_setting_t cur_setting;                /* Current interface setting (Alt setting) */
+	usbh_uvc_stream_control_t stream_ctrl;  /* UVC Probe/Commit control data */
+
+	/* Frame object pool */
+	usbh_uvc_frame_t frame_buffer[USBH_UVC_VIDEO_FRAME_NUMS];/* Frame object pool (Metadata) */
+
+#if (USBH_UVC_USE_HW == 0) && USBH_UVC_DEBUG
 	u32 rx_frame_cnt;                       /* Counters of valid frames successfully pushed to App queue */
 	u32 err_frame_cnt;                      /* Counters of frames dropped due to UVC payloadheader error bit */
 	u32 trunc_frame_cnt;                    /* Counters of frames dropped because they exceeded frame_buffer_size */
@@ -410,56 +435,22 @@ typedef struct {
 	u32 next_no_buf_cnt;                    /* Counters of total failed attempts to acquire a free buffer */
 	u32 reuse_cnt;
 #endif
-
-	u16 urb_buffer_size;                    // Size of one URB buffer
-	u8 cur_urb;                             // Index of the URB currently being filled by combine_urb
-	u8 cur_packet;                          // Index of the packet within the current URB
-	u8 last_fid;                            // Last Frame ID (toggled bit in UVC payloadheader)
-	__IO u8 urb_head;                      // SPSC ring READ cursor (combine thread owns): next filled slot to consume
-	__IO u8 complete_flag;                  // Flag for ISR Gate: 1=Allow pushing to queue, 0=Drop (protects queue access)
-	__IO u8 complete_on;                    // Flag for Thread Loop: 1=Run, 0=Exit (controls combine task lifecycle)
-	__IO u8 is_resource_safe;               // Flag for uvc resource: 0 (UnSafe), 1 (Safe).
-	__IO u8 next_xfer;                      // Flag for next xfer: 0 (Stop), 1 (Start).
-#endif// USBH_UVC_USE_HW == 0
-	__IO u8 stream_state;                   // Stream state, @ref usbh_uvc_streaming_state_t
-	__IO u8 state;                          // State for state machine, @ref usbh_stream_state_t
-	__IO u8 get_valid;                      // Flag indicating get_frame is in use. Set to 1 when entering get_frame, cleared to 0 when exiting.
-	__IO u8 get_exit;                       // Flag to signal get_frame to exit safely. Set to 1 before detaching to ensure get_frame has exited.
-	u8 stream_idx;                          // Stream Index (0 or 1 for dual stream support)
-	u8 set_alt;                             // Flag used in ctrl process machine: 0 (Unset), 1 (Set).
-	u8 set_alt_retry;                       // Retry counter for SET_ALT (SET_INTERFACE) failures.
 } usbh_uvc_stream_t;
 
 /**
  * @brief UVC Host driver context (internal root object).
  */
 typedef struct {
-	usbh_uvc_stream_t stream[USBH_UVC_VS_DESC_MAX_NUM];
-	usbh_uvc_cfg_t uvc_desc;
-	usbh_setup_req_t setup_req;
-	struct list_head entity_list;
 	usb_host_t *host;
 	const usbh_uvc_cb_t *cb;
 	u8 *request_buf;
 
-#if (USBH_UVC_USE_HW == 0) && USBH_UVC_DEBUG
-	u32 sof_cnt;
-	u32 isoc_rx_start_cnt;
-	u32 isoc_rx_done_cnt;
-	u32 isoc_rx_process_cnt;
-	u32 isoc_com_start_rx;
-	u32 isoc_sof_start_rx;
-	u32 isoc_in_empty_cnt;
-	u32 isoc_xfer_interval_cnt;
-	u32 max_hold_frame_ms;
-	/* SW Dump Task control */
-	rtos_task_t sw_dump_task;
-	u32 max_combine_cost_us;                // Max combine_urb() cost per URB (us)
-	u32 max_memcpy_cost_us;                 // Max single payload memcpy cost inside combine_urb (us)
-	u32 max_publish_cost_us;                // Max next_frame_buffer (publish + rotate) cost (us)
-	u32 max_batch_drain_us;                 // Max time to drain the whole ready ring in one wake (us)
-	u32 max_batch_cnt;                      // Max URBs drained in one wake (for watermark tuning) (us)
-#endif
+	__IO u8 state; // @ref usbh_uvc_state_t
+	__IO u8 stream_ctrl_idx; // record stream idx for ctrl process
+
+	usbh_uvc_cfg_t uvc_desc;
+	struct list_head entity_list;
+	usbh_uvc_stream_t stream[USBH_UVC_VS_DESC_MAX_NUM];
 
 #if USBH_UVC_USE_HW
 	/**
@@ -471,25 +462,42 @@ typedef struct {
 	void (*hw_error)(u32 err);
 	usbh_uvc_err_t hw_stats;
 	usbh_uvc_err_t hw_stats_shadow;
+	u8 hw_isr_pri;
+	__IO u8 hw_irq_ref_cnt;
 #if USBH_UVC_DEBUG
 	/* HW Dump Task control */
-	rtos_task_t hw_dump_task;
+	usb_os_task_t hw_dump_task;
 	usb_os_sema_t hw_dump_sema;
 	__IO u8 hw_dump_task_alive;
 	__IO u8 hw_dump_task_exit;
 #endif
-	u8 hw_isr_pri;
-	__IO u8 hw_irq_ref_cnt;
 #endif
 
 #if (USBH_UVC_USE_HW == 0) && USBH_UVC_DEBUG
+	/* SW Dump Task control */
+	usb_os_task_t sw_dump_task;
 	__IO u8 sw_dump_task_alive;
 	__IO u8 sw_dump_task_exit;
+	u32 sof_cnt;
+	u32 isoc_rx_start_cnt;
+	u32 isoc_rx_done_cnt;
+	u32 isoc_rx_process_cnt;
+	u32 isoc_com_start_rx;
+	u32 isoc_sof_start_rx;
+	u32 isoc_in_empty_cnt;
+	u32 isoc_xfer_interval_cnt;
+	u32 max_hold_frame_ms;
+	u32 max_combine_cost_us;                // Max combine_urb() cost per URB (us)
+	u32 max_memcpy_cost_us;                 // Max single payload memcpy cost inside combine_urb (us)
+	u32 max_publish_cost_us;                // Max next_frame_buffer (publish + rotate) cost (us)
+	u32 max_batch_drain_us;                 // Max time to drain the whole ready ring in one wake (us)
+	u32 max_batch_cnt;                      // Max URBs drained in one wake (for watermark tuning) (us)
 #endif
-
-	__IO u8 state; // @ref usbh_uvc_state_t
-	__IO u8 stream_ctrl_idx; // record stream idx for ctrl process
 } usbh_uvc_host_t;
+
+/* Exported macros -----------------------------------------------------------*/
+
+/* Exported variables --------------------------------------------------------*/
 
 /* Exported functions --------------------------------------------------------*/
 
@@ -499,6 +507,7 @@ typedef struct {
 /** @addtogroup Host_UVC_Functions Host UVC Functions
  * @{
  */
+
 /**
  * @brief  Initializes the UVC host class driver.
  *         Registers the application callback handler and global context, and
@@ -517,11 +526,11 @@ typedef struct {
  *         is then selected by the stream_index argument on the data-flow APIs. For a
  *         single-stream camera (USBH_UVC_VS_DESC_MAX_NUM = 1) stream_index must be 0;
  *         a dual-stream camera (= 2) accepts stream_index 0 or 1.
- * @param[in] cfg: Pointer to the global UVC context configuration (incl. frame_buf_size).
  * @param[in] cb: Pointer to the user-defined callback structure.
+ * @param[in] cfg: Pointer to the class configuration. See @ref usbh_uvc_config_t.
  * @return 0 on success, non-zero on failure.
  */
-int usbh_uvc_init(const usbh_uvc_ctx_t *cfg, const usbh_uvc_cb_t *cb);
+int usbh_uvc_init(const usbh_uvc_cb_t *cb, const usbh_uvc_config_t *cfg);
 
 /**
  * @brief  Sets video streaming parameters for the interface.
@@ -548,16 +557,21 @@ int usbh_uvc_start(u8 stream_index);
  * @param[in] stream_index: VideoStreaming stream index, range 0 .. USBH_UVC_VS_DESC_MAX_NUM-1
  *                     (must be 0 for a single-stream camera).
  * @return Pointer to a valid `usbh_uvc_frame_t` if available, otherwise NULL.
+ * @note   One consumer thread per stream: usbh_uvc_stop() and usbh_uvc_deinit() wait for the
+ *         call in progress to return, so they must not be called from inside it.
  */
 usbh_uvc_frame_t *usbh_uvc_get_frame(u8 stream_index);
 
 /**
  * @brief  Returns a processed frame back to the driver's free pool.
- *         Must be called after the application finishes using the frame.
+ *         Must be called after the application finishes using the frame, and for every
+ *         frame got before usbh_uvc_stop(): usbh_uvc_start() refuses to restart the HW
+ *         decoder while one is still held.
  * @param[in] frame    Pointer to the frame to be released. Must be obtained via usbh_uvc_get_frame().
  * @param[in] stream_index  VideoStreaming stream index, range 0 .. USBH_UVC_VS_DESC_MAX_NUM-1
  *                     (must be 0 for a single-stream camera).
- * @return 0 on success; negative value on failure.
+ * @note   Same single consumer thread per stream as usbh_uvc_get_frame().
+ * @return 0 on success, HAL_ERR_PARA on invalid parameters, HAL_ERR_HW if the frame lock failed.
  */
 int usbh_uvc_put_frame(usbh_uvc_frame_t *frame, u8 stream_index);
 
@@ -606,12 +620,13 @@ void usbh_uvc_print_stats(u8 stream_index);
 #endif
 #endif
 
+/** @} End of Host_UVC_Functions group */
+/** @} End of USB_Host_Functions group */
+
+/** @} End of USB_Host_API group */
+
 #ifdef __cplusplus
 }
 #endif
-
-/** @} End of Host_UVC_Functions group */
-/** @} End of USB_Host_Functions group */
-/** @} End of USB_Host_API group */
 
 #endif /* USBH_UVC_H */

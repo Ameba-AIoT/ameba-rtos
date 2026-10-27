@@ -247,7 +247,7 @@ void get_vad_data(u32 time_period_ms, u8 *buf)
 	if (first_time_flag) {
 		addr_ref = get_hit_addr();
 		first_time_flag = 0;
-		RTK_LOGS(NOTAG, RTK_LOG_DEBUG, "first get data: hit addr is %lx\n", addr_ref);
+		RTK_LOGS(NOTAG, RTK_LOG_DEBUG, "first get data: hit addr is %x\n", addr_ref);
 		if (VAD_DEV -> VAD_BUF_CTRL0 & VAD_BIT_CH0_IN_VADBUF_EN) {
 			addr_ch0 = get_start_addr_block(addr_ref, 0);
 		}
@@ -274,8 +274,8 @@ void get_vad_data(u32 time_period_ms, u8 *buf)
 	u32 addr_curr = get_current_addr();
 	u32 data_stored = get_data_stored_block(addr_ref, addr_curr);
 
-	RTK_LOGS(NOTAG, RTK_LOG_DEBUG, "addr_ref %lx  addr_curr %lx  byte_num %lx  data_stored %lx\r\n", addr_ref, addr_curr, byte_num, data_stored);
-	RTK_LOGS(NOTAG, RTK_LOG_DEBUG, "addr_ch0  %lx  addr_ch1  %lx  addr_ch2  %lx  addr_ch3  %lx\r\n", addr_ch0, addr_ch1, addr_ch2, addr_ch3);
+	RTK_LOGS(NOTAG, RTK_LOG_DEBUG, "addr_ref %x  addr_curr %x  byte_num %x  data_stored %x\r\n", addr_ref, addr_curr, byte_num, data_stored);
+	RTK_LOGS(NOTAG, RTK_LOG_DEBUG, "addr_ch0  %x  addr_ch1  %x  addr_ch2  %x  addr_ch3  %x\r\n", addr_ch0, addr_ch1, addr_ch2, addr_ch3);
 
 	while (byte_num > data_stored) {
 		addr_curr = get_current_addr();
@@ -318,7 +318,7 @@ void get_vad_data(u32 time_period_ms, u8 *buf)
 
 	u8 *temp_buf = malloc(used_bytes);
 	if (!temp_buf) {
-		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "get_vad_data: malloc(%lu) failed\n", used_bytes);
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "get_vad_data: malloc(%u) failed\n", used_bytes);
 		return;
 	}
 	/* example:turn block0  block1  block2 into 0 1 2 0 1 2...(interleave)*/

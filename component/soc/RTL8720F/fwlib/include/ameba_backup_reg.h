@@ -11,7 +11,7 @@
 extern "C" {
 #endif
 
-/** @addtogroup AmebaD_Platform
+/** @addtogroup Ameba_Platform
   * @{
   */
 
@@ -20,49 +20,10 @@ extern "C" {
   * @{
   */
 
-/** @addtogroup BKUP_REG
-  * @verbatim
-  *****************************************************************************************
-  * Introduction
-  *****************************************************************************************
-  * backup register size:
-  *		-16bytes (4 dwords)
-  *
-  * usage:
-  *		- user can use this registers to save some data before reset happens
-  *
-  * backup register can not be reset by following functions:
-  *		- cpu reset
-  *		- system reset
-  *		- soc sleep mode
-  *
-  * backup register will be reset by following functions:
-  *		- soc deep sleep mode
-  *		- soc power down reset
-  *		- soc power off
-  *
-  * system defined bits (other bits are reserved for user):
-  *		- dword0[9]: this is SW set bit before reboot, for uart download
-  *		- dword0[10]: this is SW set bit before reboot, for uart download debug
-  *		- dword0[27:24]: this is bootcnt for roll-back
-  *		- dword0[30]: boot version, 0 for OTA1, 1 for OTA2
-  *		- dword0[31]: set when bootcnt > 3, means default version cannot work
-  *
-  *****************************************************************************************
-  * how to use
-  *****************************************************************************************
-  *		BKUP_Write: write a dword backup register
-  *		BKUP_Read: read a dword backup register
-  *		BKUP_Set: set 1 to some bits of backup register
-  *		BKUP_Clear: set 0 to some bits of backup register
-  *****************************************************************************************
-  * @endverbatim
-  */
-
 /**************************************************************************//**
- * @defgroup AMEBAD_BACKUP_REG
+ * @defgroup BACKUP_REG_Register
  * @{
- * @brief AMEBAD_BACKUP_REG Register Declaration
+ * @brief BACKUP_REG Register Declaration
  * @note 16 Bytes total
  *****************************************************************************/
 typedef struct {
@@ -149,4 +110,4 @@ _LONG_CALL_ void BKUP_Clear(u32 DwordIdx, u32 BitMask);
   * @}
   */
 
-#endif //_RTL8710B_BACKUP_REG_H_
+#endif //_AMEBA_BACKUP_REG_H_

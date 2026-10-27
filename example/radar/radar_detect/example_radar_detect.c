@@ -39,6 +39,7 @@ extern void wifi_radar_register_report_cb(void (*cb)(u8 *evt_info));
 extern void wifi_radar_rpt_hdl(u8 *radar_buffer, float aagc_gain, float *dagc_gain_array);
 extern bool wifi_radar_nn_init(void);
 extern void wifi_radar_nn_deinit(void);
+extern void wifi_radar_light_init(void);
 static void radar_buffer_deinit(void)
 {
 	u8 i = 0;
@@ -468,6 +469,9 @@ static void radar_detect_thread(void *param)
 		RTK_LOGE(NOTAG, "[radar] wifi_radar_nn_init() failed, NN inference disabled\n");
 	}
 #endif
+
+	/* One-time PA23 GPIO setup for the kalman-tracking light control (before radar en). */
+	wifi_radar_light_init();
 
 	/* cis cfg and csi en */
 	act_param.act = RTW_RADAR_ACT_CFG;  /* radar cfg */

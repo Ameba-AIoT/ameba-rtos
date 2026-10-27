@@ -192,61 +192,9 @@ static const char *const TAG = "ETH";
   */
 
 /**
- * @brief  Clear all pending interrupt status bits.
- *         Usually called during initialization or error recovery.
- */
-void Ethernet_ClearAllINT(void)
-{
-	ETHERNET_TypeDef *ETHx = ((ETHERNET_TypeDef *) RMII_REG_BASE);
-	/* Write 1 to clear. A bare 16-bit write to the status half: no read, so a bit
-	 * that arrives between read and write cannot be clobbered, and the mask half
-	 * is not touched. */
-	ETHx->ETH_ISR = (u16)0xFFFF;
-}
-
-/**
- * @brief  Map a raw interrupt status word to logical events.
- * @param  status ETH_ISR contents.
- * @return Bitmask of events (@ref eth_link_event).
- * @note   The IMR is deliberately not consulted: it only gates whether a bit
- *         raises the interrupt line, and this IP latches several of them either
- *         way, so masking here would hide work that still has to be done.
- */
-static u16 Ethernet_StatusToEvent(u16 status)
-{
-	u16 int_event = ETH_EVT_NO_EVENT;
-
-	if (status & (u16)BIT_ISR_ROK) {
-		int_event |= ETH_EVT_RX_DONE;
-	}
-
-	if (status & (u16)BIT_ISR_TOK_TI) {
-		int_event |= ETH_EVT_TX_DONE;
-	}
-
-	if (status & (u16)BIT_ISR_LINKCHG) {
-		int_event |= ETH_EVT_LINK_CHG;
-	}
-
-	if (status & (u16)(BIT_ISR_RER_OVF | BIT_ISR_RER_RUNT)) {
-		int_event |= ETH_EVT_RX_ERROR;
-	}
-
-	if (status & (u16)BIT_ISR_TER) {
-		int_event |= ETH_EVT_TX_ERROR;
-	}
-
-	if (status & (u16)BIT_ISR_RDU1) {
-		int_event |= ETH_EVT_RDU_RING1;
-	}
-
-	return int_event;
-}
-
-/**
- * @brief  Get currently pending interrupt events, without clearing them.
- * @return Bitmask of pending events (@ref eth_link_event).
- */
+  * @brief  Read the pending interrupt status without clearing it.
+  * @return ETH_ISR contents, a combination of BIT_ISR_* bits.
+  */
 u16 Ethernet_GetPendingINT(void)
 {
 	ETHERNET_TypeDef *ETHx = ((ETHERNET_TypeDef *) RMII_REG_BASE);
@@ -255,73 +203,18 @@ u16 Ethernet_GetPendingINT(void)
 }
 
 /**
- * @brief  Read the pending interrupt status, map it to events, and clear every
- *         status bit that was read, in one pass.
- * @return Bitmask of pending events (@ref eth_link_event).
- * @note   Use this from the ISR instead of Ethernet_GetPendingINT() followed by
- *         Ethernet_ClearINT(). Clearing by event cannot reach a status bit that
- *         no event maps to, so bits like TDU and RDU1 latch forever and the DMA
- *         stops polling descriptors. Clearing exactly the bits just read also
- *         cannot lose an interrupt that arrives after the read, unlike a
- *         read-modify-write or a blanket 0xFFFF.
- */
-u16 Ethernet_GetAndClearINT(void)
+  * @brief  Clear interrupt status bits.
+  * @param  status BIT_ISR_* bits to clear.
+  * @note   ETH_ISR is write-1-to-clear, so this is a plain write: the bits not in status, and any that
+  *         arrived after they were read, are left pending. An ISR must clear every bit it read from
+  *         Ethernet_GetPendingINT(), not only the ones it acts on: TDU and RDU1 latch until cleared and
+  *         stall the DMA meanwhile.
+  */
+void Ethernet_ClearINT(u16 status)
 {
 	ETHERNET_TypeDef *ETHx = ((ETHERNET_TypeDef *) RMII_REG_BASE);
-	u16 status = ETHx->ETH_ISR;
-	u16 int_event = Ethernet_StatusToEvent(status);
 
-	/* Write back exactly what was read: every pending bit is acknowledged,
-	 * including the ones no event maps to. Plain assignment, not |=: this is a
-	 * write-1-to-clear register, so a read-modify-write would pick up bits that
-	 * arrived after the read above and clear them without ever reporting them. */
-	if (status != 0) {
-		ETHx->ETH_ISR = status;
-	}
-
-	return int_event;
-}
-
-/**
- * @brief  Clear specified interrupt events.
- *         Converts software events back to hardware register write-1-to-clear.
- * @param  int_events Bitmask of events to clear.
- */
-void Ethernet_ClearINT(uint32_t int_events)
-{
-	ETHERNET_TypeDef *ETHx = ((ETHERNET_TypeDef *) RMII_REG_BASE);
-	u32 clear_mask = 0;
-
-	if (int_events & ETH_EVT_RX_DONE) {
-		clear_mask |= BIT_ISR_ROK;
-	}
-
-	if (int_events & ETH_EVT_TX_DONE) {
-		clear_mask |= BIT_ISR_TOK_TI;
-	}
-
-	if (int_events & ETH_EVT_LINK_CHG) {
-		clear_mask |= BIT_ISR_LINKCHG;
-	}
-
-	if (int_events & ETH_EVT_RX_ERROR) {
-		clear_mask |= (BIT_ISR_RER_OVF | BIT_ISR_RER_RUNT);
-	}
-
-	if (int_events & ETH_EVT_TX_ERROR) {
-		clear_mask |= BIT_ISR_TER;
-	}
-
-	if (int_events & ETH_EVT_RDU_RING1) {
-		clear_mask |= BIT_ISR_RDU1;
-	}
-
-	/* Write 1 to clear. A bare 16-bit write: no read-modify-write, so a status bit
-	 * that arrives between the read and the write cannot be clobbered, and the mask
-	 * half at 0x03E is left alone. */
-	if (clear_mask != 0) {
-		ETHx->ETH_ISR = (u16)clear_mask;
-	}
+	ETHx->ETH_ISR = status;
 }
 
 /**
@@ -395,6 +288,75 @@ void Ethernet_UseExtClk(u32 pin)
 }
 
 /**
+  * @brief  Select the MAC clock source and enable the MAC clock.
+  * @param  src     ETH_MAC_CLK_INT50M: divide SYS_PLL or USB_PLL down to 50MHz.
+  *                 ETH_MAC_CLK_EXT50M: take 50MHz from ext_pin.
+  * @param  ext_pin Pin that receives the external clock, only used for ETH_MAC_CLK_EXT50M.
+  * @return RTK_SUCCESS, or RTK_FAIL if the PLLs cannot give 50MHz.
+  */
+int Ethernet_MacClkConfig(enum eth_mac_clk_src src, u32 ext_pin)
+{
+	const SocClk_Info_TypeDef *pSocClk_Info = &SocClk_Info[Boot_SocClk_Info_Idx];
+	u8 gmac_ckd;
+	u32 gmac_clk;
+
+	if (src == ETH_MAC_CLK_EXT50M) {
+		/* The clock has to reach the pin before the mux switches to it, or the MAC loses its clock. */
+		Ethernet_UseExtClk(ext_pin);
+		RCC_PeriphClockSourceSet(GMAC, EXT50M);
+	} else {
+		/* Select a clock source that can be divided up to 50MHz */
+		gmac_ckd = PLL_ClkSrcGet(pSocClk_Info->SYSPLL_CLK, pSocClk_Info->USBPLL_CLK, CLK_LIMIT_GMAC);
+		/* The divider is 0 when the chosen PLL runs at 0Hz, and dividing by it below would fault */
+		if (GET_CLK_DIV(gmac_ckd) == 0) {
+			RTK_LOGE(TAG, "No PLL to derive the GMAC clock from\n");
+			return RTK_FAIL;
+		}
+		if (gmac_ckd & IS_SYS_PLL) {
+			gmac_clk = pSocClk_Info->SYSPLL_CLK / GET_CLK_DIV(gmac_ckd);
+		} else {
+			gmac_clk = pSocClk_Info->USBPLL_CLK / GET_CLK_DIV(gmac_ckd);
+		}
+
+		if (gmac_clk != CLK_LIMIT_GMAC) {
+			RTK_LOGE(TAG, "GMAC clock %u Hz, RMII needs 50MHz\n", gmac_clk);
+			return RTK_FAIL;
+		}
+
+		if (gmac_ckd & IS_SYS_PLL) {
+			RCC_PeriphClockSourceSet(GMAC, SYS_PLL);
+			RCC_PeriphClockDividerFENSet(SYS_PLL_GMAC, ENABLE);
+			RCC_PeriphClockDividerSet(SYS_PLL_GMAC, GET_CLK_DIV(gmac_ckd));
+		} else {
+			RCC_PeriphClockSourceSet(GMAC, USB_PLL);
+			RCC_PeriphClockDividerFENSet(USB_PLL_GMAC, ENABLE);
+			RCC_PeriphClockDividerSet(USB_PLL_GMAC, GET_CLK_DIV(gmac_ckd));
+		}
+	}
+	RCC_PeriphClockCmd(APBPeriph_GMAC, APBPeriph_GMAC_CLOCK, ENABLE);
+
+	return RTK_SUCCESS;
+}
+
+/**
+  * @brief  Output a 50MHz or 25MHz clock on a pin, to feed the PHY.
+  * @param  pin Pin that supports the EXT_CLK_OUT pinmux function.
+  * @param  clk ETH_PHY_CLK_50M or ETH_PHY_CLK_25M.
+  */
+void Ethernet_PhyClkConfig(u32 pin, enum eth_phy_clk clk)
+{
+	u32 temp;
+
+	Pinmux_Config(pin, PINMUX_FUNCTION_EXT_CLK_OUT);
+
+	temp = HAL_READ32(PINMUX_REG_BASE, REG_PINMUX_SUB_CTRL);
+	temp |= PAD_BIT_DBG_CLK_FORCE;
+	temp &= ~PAD_MASK_DBG_CLK0_SEL;
+	temp |= PAD_DBG_CLK0_SEL(clk);
+	HAL_WRITE32(PINMUX_REG_BASE, REG_PINMUX_SUB_CTRL, temp);
+}
+
+/**
   * @brief  Enable or disable MDIO auto-polling of the PHY status registers.
   * @param  opt This parameter can be one of the following values:
   *         - ENABLE:  Enable auto-polling.
@@ -415,44 +377,20 @@ void Ethernet_AutoPolling(u32 opt)
  *
  *  @param  ETH_InitStruct The pointer to @ref ETH_InitTypeDef.
  *
- *  @return The TX packet buffer address, or NULL if no descriptor is available.
+ *  @return The word-aligned start of the TX packet buffer, or NULL if no descriptor is available.
+ *          TX DMA reads from any byte address, so the caller may start the frame 1~3 bytes into
+ *          the buffer by writing that address back to the descriptor.
+ *  @note   Per-packet path: ETH_InitStruct and the ring are validated once by Ethernet_Init().
  */
 u8 *Ethernet_GetTXPktInfo(ETH_InitTypeDef *ETH_InitStruct)
 {
-	ETHERNET_TypeDef *ETHx = ((ETHERNET_TypeDef *) RMII_REG_BASE);
-	u8 tx_idx;
+	u16 tx_idx = ETH_InitStruct->ETH_TxDescCurrentNum;
 	u8 *buf = NULL;
-
-	if (ETH_InitStruct == NULL) {
-		RTK_LOGE(TAG, "Invalid para: ETH_InitStruct is NULL\n");
-		return NULL;
-	}
-
-	if (ETH_InitStruct->ETH_TxDesc == NULL) {
-		RTK_LOGE(TAG, "Invalid para: ETH_TxDesc is NULL\n");
-		return NULL;
-	}
-
-	/* Validate descriptor count */
-	if (ETH_InitStruct->ETH_TxDescNum == 0) {
-		RTK_LOGE(TAG, "Invalid ETH_TxDescNum: 0\n");
-		return NULL;
-	}
-
-	tx_idx = ETH_InitStruct->ETH_TxDescCurrentNum;
-
-	/* Bounds check for tx_idx */
-	if (tx_idx >= ETH_InitStruct->ETH_TxDescNum) {
-		RTK_LOGE(TAG, "Tx index %d exceeds count %d\n", tx_idx, ETH_InitStruct->ETH_TxDescNum);
-		return NULL;
-	}
 
 	/* check if current Tx descriptor is available (OWN bit = 0 means CPU owns it) */
 	if ((((u32)(ETH_InitStruct->ETH_TxDesc[tx_idx].dw1)) & FEMAC_TX_DSC_BIT_OWN) == 0) {
-		buf = (u8 *)ETH_InitStruct->ETH_TxDesc[tx_idx].addr;
-	} else {
-		/* Trigger TX interrupt to wake DMA */
-		ETHx->ETH_ISR |= BIT_ISR_TOK_TI;
+		/* The caller may have moved addr off the buffer start for the previous frame. */
+		buf = (u8 *)(ETH_InitStruct->ETH_TxDesc[tx_idx].addr & ~3U);
 	}
 
 	return buf;
@@ -463,25 +401,24 @@ u8 *Ethernet_GetTXPktInfo(ETH_InitTypeDef *ETH_InitStruct)
  *
  *  @param  ETH_InitStruct Pointer to Ethernet initialization structure.
  *  @param  meta           Pointer to packet metadata (Length, VLAN, etc.).
- *
+ *  @note   Per-packet path: ETH_InitStruct and the ring are validated once by Ethernet_Init().
  */
 void Ethernet_UpdateTXDESCAndSend(ETH_InitTypeDef *ETH_InitStruct, ETH_PktMetaDef *meta)
 {
 	ETHERNET_TypeDef *ETHx = ((ETHERNET_TypeDef *)RMII_REG_BASE);
-	u8 tx_idx = ETH_InitStruct->ETH_TxDescCurrentNum;
+	u16 tx_idx = ETH_InitStruct->ETH_TxDescCurrentNum;
 	u32 cmd_sts = 0;
 	u32 size;
 	u16 swapped_tci;
 
-	/* 1. Validate parameters */
-	if (ETH_InitStruct == NULL || meta == NULL) {
-		RTK_LOGE(TAG, "Invalid para\n");
+	/* 1. Validate the caller-supplied metadata */
+	if (meta == NULL) {
 		return;
 	}
 
 	size = meta->pkt_len;
 	if (size == 0 || size > ETH_InitStruct->ETH_TxBufSize) {
-		RTK_LOGE(TAG, "Invalid oversize packet: %lu\n", size);
+		RTK_LOGE(TAG, "Invalid oversize packet: %u\n", size);
 		return;
 	}
 
@@ -514,11 +451,12 @@ void Ethernet_UpdateTXDESCAndSend(ETH_InitTypeDef *ETH_InitStruct, ETH_PktMetaDe
 		cmd_sts |= FEMAC_TX_DSC_BIT_EOR;
 	}
 
-	/* Core Protection: Memory Barrier, ensuring that dw2/dw3 has been actually written to physical memory  */
-	__asm volatile("dsb" ::: "memory");
-
 	/* 7. Set OWN bit to transfer ownership to DMA */
 	ETH_InitStruct->ETH_TxDesc[tx_idx].dw1 = (cmd_sts | FEMAC_TX_DSC_BIT_OWN);
+
+	/* The descriptor is Normal memory and the doorbell Device memory, which the core does not order
+	 * against each other: without this DMA could be woken before it can see OWN. */
+	__asm volatile("dsb" ::: "memory");
 
 	/* 8. Update TX index */
 	tx_idx++;
@@ -528,10 +466,57 @@ void Ethernet_UpdateTXDESCAndSend(ETH_InitTypeDef *ETH_InitStruct, ETH_PktMetaDe
 	ETH_InitStruct->ETH_TxDescCurrentNum = tx_idx;
 
 	/* 9. Trigger DMA to poll TX descriptor */
-	ETHx->ETH_ISR |= BIT_ISR_TOK_TI;
 	ETHx->ETH_ETHER_IO_CMD |= BIT_TXFN1ST;
 }
 
+
+/**
+ * @brief  Hand the next n RX descriptors back to DMA and advance the ring index past them.
+ * @param  ETH_InitStruct Pointer to Ethernet initialization structure.
+ * @param  n              Number of descriptors, starting at ETH_RxDescCurrentNum. After a frame
+ *                        from Ethernet_GetRXPktInfo(), pass ETH_RxSegmentCount.
+ * @note   Per-packet path: ETH_InitStruct and the ring are validated once by Ethernet_Init().
+ */
+void Ethernet_ReleaseRXDesc(ETH_InitTypeDef *ETH_InitStruct, u32 n)
+{
+	ETHERNET_TypeDef *ETHx = ((ETHERNET_TypeDef *) RMII_REG_BASE);
+	u32 curr_idx = ETH_InitStruct->ETH_RxDescCurrentNum;
+	u32 last_idx = ETH_InitStruct->ETH_RxDescNum - 1;
+	u32 dw1_val;
+
+	/* EOR is a property of the slot, not of the frame, so it comes from the index instead of a read of dw1. */
+	while (n--) {
+		ETH_InitStruct->ETH_RxDesc[curr_idx].dw2 = 0;
+		ETH_InitStruct->ETH_RxDesc[curr_idx].dw3 = 0;
+
+		dw1_val = FEMAC_RX_DSC_BIT_OWN | ETH_InitStruct->ETH_RxBufSize;
+		if (curr_idx == last_idx) {
+			dw1_val |= FEMAC_RX_DSC_BIT_EOR;
+		}
+
+		/* Transfer ownership back to DMA */
+		ETH_InitStruct->ETH_RxDesc[curr_idx].dw1 = dw1_val;
+
+		curr_idx = (curr_idx == last_idx) ? 0 : curr_idx + 1;
+	}
+
+	/* Update global index to point to the next fresh descriptor */
+	ETH_InitStruct->ETH_RxDescCurrentNum = curr_idx;
+
+	/* The OWN writes must reach memory before RDU1 is released, or DMA could poll a descriptor
+	 * it does not own yet and latch RDU1 again. */
+	__asm volatile("dsb" ::: "memory");
+
+	/* DES_NUM tells the MAC the last descriptor the CPU has handed back, so its PAUSE check follows the free count. */
+	curr_idx = (curr_idx == 0) ? last_idx : curr_idx - 1;
+	ETHx->ETH_ETHRNTRXCPU_DES_NUM1 = (ETHx->ETH_ETHRNTRXCPU_DES_NUM1 & ~(MASK_ETHRNTRXCPU_DES_NUM_1_7_0 | MASK_ETHRNTRXCPU_DES_NUM_1_11_8)) |
+									 ETHRNTRXCPU_DES_NUM_1_11_8(curr_idx >> 8) | ETHRNTRXCPU_DES_NUM_1_7_0(curr_idx);
+
+	/* RDU1 latches when the ring runs dry and holds off RX DMA until cleared, so release it now
+	 * that descriptors are back. Write that bit alone: ETH_ISR is write-1-to-clear, and reading it
+	 * back first would also clear pending ROK/LINKCHG before the ISR sees them. */
+	ETHx->ETH_ISR = BIT_ISR_RDU1;
+}
 
 /**
  * @brief  Get the current RX packet buffer address and extract packet metadata.
@@ -539,55 +524,67 @@ void Ethernet_UpdateTXDESCAndSend(ETH_InitTypeDef *ETH_InitStruct, ETH_PktMetaDe
  * @param  ETH_InitStruct Pointer to Ethernet initialization structure
  *                            containing the RX descriptor ring and current index.
  * @param meta           Pointer to metadata structure to be populated by the driver.
- * @return Packet buffer address, or NULL if no complete frame is available.
+ * @return Start of the first RX buffer, or NULL if no complete frame is available. The MAC puts
+ *         2 bytes ahead of the frame, so the ethernet header starts at return + 2.
+ * @note   Per-packet path: ETH_InitStruct and the ring are validated once by Ethernet_Init().
  */
 u8 *Ethernet_GetRXPktInfo(ETH_InitTypeDef *ETH_InitStruct, ETH_PktMetaDef *meta)
 {
-	ETHERNET_TypeDef *ETHx = ((ETHERNET_TypeDef *) RMII_REG_BASE);
 	u32 total_pkt_size = 0;
 	u32 desc_len = 0;
-	u8 start_idx, scan_idx;
+	u32 seg_cnt = 0;
+	u16 start_idx, scan_idx;
 	u8 *buf = NULL;
-	volatile u32 dw1_status;
-	volatile u32 dw2_status;
-	u8 is_fs = 0;
+	/* Plain locals: ETH_RxDesc is a volatile pointer, so each descriptor word is read from
+	 * memory exactly once here and then used from a register. */
+	u32 dw1_status;
+	u32 dw2_status;
 
-	if (ETH_InitStruct == NULL || ETH_InitStruct->ETH_RxDesc == NULL || meta == NULL) {
-		RTK_LOGE(TAG, "Invalid para\n");
+	if (meta == NULL) {
 		return NULL;
 	}
 
-	if (ETH_InitStruct->ETH_RxDescNum == 0) {
+	start_idx = ETH_InitStruct->ETH_RxDescCurrentNum;
+	scan_idx = start_idx;
+
+	/* Every drain of the ring ends on an empty slot, so skip clearing meta when there is no frame. */
+	if (ETH_InitStruct->ETH_RxDesc[start_idx].dw1 & FEMAC_RX_DSC_BIT_OWN) {
 		return NULL;
 	}
 
 	/* Initialize meta block */
 	_memset(meta, 0, sizeof(ETH_PktMetaDef));
 
-	start_idx = ETH_InitStruct->ETH_RxDescCurrentNum;
-	scan_idx = start_idx;
-
 	/* Scan loop to find a complete frame (FS -> LS) */
 	while (1) {
 		dw1_status = ETH_InitStruct->ETH_RxDesc[scan_idx].dw1;
-		dw2_status = ETH_InitStruct->ETH_RxDesc[scan_idx].dw2;
 
 		/* Check Ownership */
 		if ((dw1_status & FEMAC_RX_DSC_BIT_OWN) != 0) {
-			/* Trigger RX interrupt to ensure DMA keeps working */
-			ETHx->ETH_ISR |= BIT_ISR_ROK;
 			return NULL;
+		}
+
+		/* A frame must start on an FS, and a second FS before its LS means the first frame was cut
+		 * short. Either way the segments counted so far, or this lone non-FS one, can never become
+		 * a frame: give them back and scan again from here, or the ring index would park on them. */
+		if ((dw1_status & FEMAC_RX_DSC_BIT_FS) ? (seg_cnt != 0) : (seg_cnt == 0)) {
+			Ethernet_ReleaseRXDesc(ETH_InitStruct, seg_cnt ? seg_cnt : 1);
+			start_idx = ETH_InitStruct->ETH_RxDescCurrentNum;
+			scan_idx = start_idx;
+			total_pkt_size = 0;
+			seg_cnt = 0;
+			continue;
 		}
 
 		/* Check First Segment (FS) */
 		if (dw1_status & FEMAC_RX_DSC_BIT_FS) {
-			is_fs = 1;
-			buf = (u8 *)(ETH_InitStruct->ETH_RxDesc[scan_idx].addr + 2);
+			buf = (u8 *)(ETH_InitStruct->ETH_RxDesc[scan_idx].addr);
 		}
 
 		/* Accumulate Length */
 		desc_len = FEMAC_RX_DSC_GET_LEN(dw1_status);
 		total_pkt_size += desc_len;
+		seg_cnt++;
 
 		/* Invalidate Cache */
 		DCache_Invalidate((u32)(ETH_InitStruct->ETH_RxDesc[scan_idx].addr), desc_len);
@@ -596,8 +593,10 @@ u8 *Ethernet_GetRXPktInfo(ETH_InitTypeDef *ETH_InitStruct, ETH_PktMetaDef *meta)
 		if (dw1_status & FEMAC_RX_DSC_BIT_LS) {
 			/* Fill Metadata from LS descriptor */
 			meta->pkt_len = total_pkt_size;
+			ETH_InitStruct->ETH_RxSegmentCount = seg_cnt;
 
-			/* Extract VLAN info */
+			/* Extract VLAN info; only the LS descriptor carries it. */
+			dw2_status = ETH_InitStruct->ETH_RxDesc[scan_idx].dw2;
 			if (dw2_status & FEMAC_RX_W2_BIT_CTAVA) {
 				u16 raw_tci = (u16)(dw2_status & FEMAC_RX_W2_MASK_CVLAN_TAG);
 				meta->vlan_valid = 1;
@@ -628,76 +627,40 @@ u8 *Ethernet_GetRXPktInfo(ETH_InitTypeDef *ETH_InitStruct, ETH_PktMetaDef *meta)
 		}
 
 		if (scan_idx == start_idx) {
+			/* The whole ring is one frame without an LS: drop it rather than wait forever. */
 			RTK_LOGE(TAG, "RX Ring Error: No LS bit found\n");
+			Ethernet_ReleaseRXDesc(ETH_InitStruct, seg_cnt);
 			return NULL;
 		}
 	}
 
-	if (is_fs && buf) {
-		return buf;
-	}
-
-	return NULL;
+	return buf;
 }
 
 /**
- *  @brief  Return the current RX descriptor to DMA (supports jumbo frames).
- *
- *  @param  ETH_InitStruct The pointer to @ref ETH_InitTypeDef.
- *
+ * @brief  Replace the buffer of one segment of the current RX frame, for zero-copy RX.
+ * @param  ETH_InitStruct Pointer to Ethernet initialization structure.
+ * @param  seg            Segment index within the frame: 0 is FS, must be below ETH_RxSegmentCount.
+ * @param  new_buf        Buffer handed to DMA in its place: cache-line aligned, ETH_RxBufSize bytes, invalidated.
+ * @param  seg_len        Returns the byte count DMA wrote into the old buffer.
+ * @return The old buffer address, now owned by the caller.
+ * @note   Call after Ethernet_GetRXPktInfo() and before Ethernet_ReleaseRXDesc(), which hands the
+ *         descriptors back to DMA. Calling it again with the old buffer undoes the swap.
  */
-void Ethernet_UpdateRXDESC(ETH_InitTypeDef *ETH_InitStruct)
+u32 Ethernet_SwapRXSegBuf(ETH_InitTypeDef *ETH_InitStruct, u32 seg, u32 new_buf, u32 *seg_len)
 {
-	ETHERNET_TypeDef *ETHx = ((ETHERNET_TypeDef *) RMII_REG_BASE);
-	u8 curr_idx;
-	u32 dw1_val;
+	u32 idx = ETH_InitStruct->ETH_RxDescCurrentNum + seg;
+	u32 old_buf;
 
-	if (ETH_InitStruct == NULL || ETH_InitStruct->ETH_RxDesc == NULL) {
-		return;
+	if (idx >= ETH_InitStruct->ETH_RxDescNum) {
+		idx -= ETH_InitStruct->ETH_RxDescNum;
 	}
 
-	curr_idx = ETH_InitStruct->ETH_RxDescCurrentNum;
+	old_buf = ETH_InitStruct->ETH_RxDesc[idx].addr;
+	*seg_len = FEMAC_RX_DSC_GET_LEN(ETH_InitStruct->ETH_RxDesc[idx].dw1);
+	ETH_InitStruct->ETH_RxDesc[idx].addr = new_buf;
 
-	/*
-	 * Release loop:
-	 * Release all descriptors used by the current frame (FS...LS) back to DMA.
-	 */
-	while (1) {
-		/* Read current status to check for LS bit later */
-		volatile u32 current_status = ETH_InitStruct->ETH_RxDesc[curr_idx].dw1;
-		u8 is_last_segment = (current_status & FEMAC_RX_DSC_BIT_LS) ? 1 : 0;
-		ETH_InitStruct->ETH_RxDesc[curr_idx].dw2 = 0;
-		ETH_InitStruct->ETH_RxDesc[curr_idx].dw3 = 0;
-
-		/* Prepare new Status Word */
-		dw1_val = (current_status & FEMAC_RX_DSC_BIT_EOR);
-		dw1_val |= (FEMAC_RX_DSC_BIT_OWN | ETH_InitStruct->ETH_RxBufSize);
-
-		/* Core protection: Memory barrier, ensuring that the OWN bit is assigned only after the clear operation takes effect. */
-		__asm volatile("dsb" ::: "memory");
-
-		/* Transfer ownership back to DMA */
-		ETH_InitStruct->ETH_RxDesc[curr_idx].dw1 = dw1_val;
-
-		curr_idx++;
-		if (curr_idx >= ETH_InitStruct->ETH_RxDescNum) {
-			curr_idx = 0;
-		}
-
-		if (is_last_segment) {
-			break;
-		}
-
-		if (curr_idx == ETH_InitStruct->ETH_RxDescCurrentNum) {
-			break;
-		}
-	}
-
-	/* Update global index to point to the next fresh descriptor */
-	ETH_InitStruct->ETH_RxDescCurrentNum = curr_idx;
-
-	/* Trigger RX interrupt to wake DMA */
-	ETHx->ETH_ISR |= BIT_ISR_ROK;
+	return old_buf;
 }
 
 /**
@@ -713,20 +676,17 @@ u32 Ethernet_GetLinkStatus(void)
 }
 
 /**
- * @brief Get speed and duplex of ethernet
- *
+ * @brief  Get the speed and duplex the MAC is running at.
+ * @param  speed  Returns the link speed, see @ref eth_speed.
+ * @param  duplex Returns the duplex mode, see @ref eth_duplex.
  */
-void Ethernet_GetSpeedDuplex(void)
+void Ethernet_GetSpeedDuplex(u32 *speed, u32 *duplex)
 {
 	ETHERNET_TypeDef *ETHx = ((ETHERNET_TypeDef *) RMII_REG_BASE);
-	/* Get and Log MAC Link Info (Only if link is up) */
-	u32 speed = GET_SPEED(ETHx->ETH_MSR);
-	u32 duplex = GET_FULLDUPREG(ETHx->ETH_MSR);
+	u32 msr = ETHx->ETH_MSR;
 
-	RTK_LOGI(TAG, "MAC Link Info: %s, %s\n",
-			 (speed == ETH_SPEED_100M) ? "100 Mb/s" :
-			 (speed == ETH_SPEED_10M)  ? "10 Mb/s"  : "Unknown",
-			 (duplex == ETH_FULL_DUPLEX) ? "Full Duplex" : "Half Duplex");
+	*speed = GET_SPEED(msr);
+	*duplex = GET_FULLDUPREG(msr);
 }
 
 /**
@@ -816,7 +776,6 @@ int Ethernet_WritePhyReg(uint8_t phy_addr, uint8_t reg_addr, uint16_t data)
 	ETHx->ETH_MIIAR = (BIT_FLAG | BIT_DISABLE_AUTO_POLLING |
 					   PHYADDRESS(phy_addr) | REGADDR4_0(reg_addr) | data);
 
-	/* Note: The write is triggered immediately. Some drivers wait for idle here too. */
 	return RTK_SUCCESS;
 }
 
@@ -846,9 +805,10 @@ void Ethernet_StructInit(ETH_InitTypeDef *ETH_InitStruct, struct eth_phy_dev *PH
 	ETH_InitStruct->MacConfig.Bits.PktFilterConfig = ETH_FILTER_DEFAULT_UNICAST; /* Accept unicast + broadcast */
 	ETH_InitStruct->MacConfig.Bits.EEEEnable       = DISABLE;               /* Disable EEE */
 	ETH_InitStruct->MacConfig.Bits.AutoNego        = ETH_NWAY_ENABLE;       /* Enable Auto-Negotiation */
+	ETH_InitStruct->MacConfig.Bits.FlowCtrl        = ETH_FLOW_FULL;         /* Send and honor PAUSE */
 
-	/* EEE parameters */
-	if (ETH_InitStruct->MacConfig.Bits.EEEEnable) {
+	/* EEE parameters, filled only once the caller has pointed EEE_Config at storage */
+	if (ETH_InitStruct->MacConfig.Bits.EEEEnable && ETH_InitStruct->EEE_Config) {
 		Ethernet_EEE_StructInit(ETH_InitStruct->EEE_Config);
 	}
 
@@ -863,7 +823,7 @@ void Ethernet_StructInit(ETH_InitTypeDef *ETH_InitStruct, struct eth_phy_dev *PH
 	ETH_InitStruct->DMA_RxTriggerLevel = ETH_TRIGGER_LEVEL_1_PKT;
 	ETH_InitStruct->DMA_TxTriggerLevel = ETH_TRIGGER_LEVEL_1_PKT;
 
-	ETH_InitStruct->ETH_RxDescNum = 10;
+	ETH_InitStruct->ETH_RxDescNum = 8;
 	ETH_InitStruct->ETH_TxDescNum = 8;
 
 	/* Default Buffer Sizes */
@@ -873,9 +833,10 @@ void Ethernet_StructInit(ETH_InitTypeDef *ETH_InitStruct, struct eth_phy_dev *PH
 	ETH_InitStruct->ETH_RxBufSize = ETH_MAX_BUF_SIZE;
 
 	/* Interrupts */
-	/* BIT_IMR_* sit at bit16..31 of the combined word, shift down for ETH_IMR. */
-	ETH_InitStruct->ETH_IntMask = (u16)((BIT_IMR_LINKCHG | BIT_IMR_TOK_TI |
-										 BIT_IMR_RER_OVF | BIT_IMR_ROK) >> 16);
+	/* Only what the ISR acts on. TX completion and RX overflow need no handling, and an RX overflow
+	 * interrupt per dropped frame only adds load when the CPU already cannot keep up. Their status
+	 * bits still latch and are cleared along with the rest. */
+	ETH_InitStruct->ETH_IntMask = BIT_IMR_LINKCHG | BIT_IMR_ROK;
 }
 
 /**
@@ -883,19 +844,31 @@ void Ethernet_StructInit(ETH_InitTypeDef *ETH_InitStruct, struct eth_phy_dev *PH
   * @param  ETH_InitStruct Pointer to @ref ETH_InitTypeDef containing the full Ethernet configuration.
   * @return RTK_SUCCESS on success, or a negative error code:
   *         - -RTK_ERR_BADARG if ETH_InitStruct, phy_dev, or phy_dev->ops is NULL.
-  *         - -RTK_ERR_TIMEOUT if MAC reset or auto-negotiation timed out.
+  *         - -RTK_ERR_TIMEOUT if MAC reset timed out.
+  * @note   Does not wait for auto-negotiation: it can take seconds, or never finish with no cable,
+  *         and the link change interrupt reports the result.
   */
 int Ethernet_Init(ETH_InitTypeDef *ETH_InitStruct)
 {
 	ETHERNET_TypeDef *ETHx = ((ETHERNET_TypeDef *) RMII_REG_BASE);
 	u32 temp = 0;
-	u8 i, filter_mode;
-	u32 timeout = 1000;
+	u16 i;
+	u8 filter_mode;
+	u32 timeout = 1000, pse_on, pse_off;
 	int32_t ret = RTK_SUCCESS;
 	struct eth_phy_dev *phy = NULL;
 
 	if (!ETH_InitStruct || !ETH_InitStruct->phy_dev || !ETH_InitStruct->phy_dev->ops) {
 		RTK_LOGE(TAG, "Init: Invalid Param or PHY Dev\r\n");
+		ret = -RTK_ERR_BADARG;
+		goto exit;
+	}
+
+	/* The per-packet TRX functions rely on this check and do not repeat it. RINGSIZE takes the RX count
+	 * minus one as a mask, and the PAUSE thresholds need at least 4. */
+	if (!ETH_InitStruct->ETH_TxDesc || !ETH_InitStruct->ETH_RxDesc || !ETH_InitStruct->ETH_TxDescNum || ETH_InitStruct->ETH_RxDescNum < 4 ||
+		ETH_InitStruct->ETH_RxDescNum > 4096 || (ETH_InitStruct->ETH_RxDescNum & (ETH_InitStruct->ETH_RxDescNum - 1))) {
+		RTK_LOGE(TAG, "Init: Invalid desc ring\n");
 		ret = -RTK_ERR_BADARG;
 		goto exit;
 	}
@@ -908,13 +881,14 @@ int Ethernet_Init(ETH_InitTypeDef *ETH_InitStruct)
 	/* reset MAC */
 	ETHx->ETH_CR |= BIT_RST;
 
-	while ((ETHx->ETH_CR & BIT_RST) && timeout--) {
+	/* timeout-- in the loop condition wraps to 0xFFFFFFFF on expiry, so test it inside instead. */
+	while (ETHx->ETH_CR & BIT_RST) {
+		if (timeout-- == 0) {
+			ret = -RTK_ERR_TIMEOUT;
+			RTK_LOGE(TAG, "MAC Reset Timeout\n");
+			goto exit;
+		}
 		DelayUs(10);
-	}
-	if (timeout == 0) {
-		ret = -RTK_ERR_TIMEOUT;
-		RTK_LOGE(TAG, "MAC Reset Timeout\n");
-		goto exit;
 	}
 
 	/* reset phy */
@@ -955,6 +929,8 @@ int Ethernet_Init(ETH_InitTypeDef *ETH_InitStruct)
 	if (ETH_InitStruct->MacConfig.Bits.AutoNego) {
 		phy->link_cfg.autoneg_en = TRUE;
 		phy->link_cfg.advertise_100m = TRUE;
+		phy->link_cfg.advertise_pause = TRUE;
+		phy->link_cfg.advertise_asym_pause = TRUE;
 	} else {
 		phy->link_cfg.autoneg_en = FALSE;
 		/* speed */
@@ -998,8 +974,14 @@ int Ethernet_Init(ETH_InitTypeDef *ETH_InitStruct)
 	ETHx->ETH_MSR |= BIT_REG_RMII2MII_EN;
 	Ethernet_SetRefclkDirec(ETH_InitStruct->MacConfig.Bits.RefClkDir);
 
-	ETHx->ETH_MSR |= BIT_TXFCE;
-	ETHx->ETH_MSR |= BIT_RXFCE; /* Rx flow control bit can be set only in full duplex mode */
+	/* TXFCE sends PAUSE, RXFCE honors it; both act in full duplex only. */
+	ETHx->ETH_MSR &= ~(BIT_TXFCE | BIT_RXFCE);
+	if (ETH_InitStruct->MacConfig.Bits.FlowCtrl & ETH_FLOW_TX_ONLY) {
+		ETHx->ETH_MSR |= BIT_TXFCE;
+	}
+	if (ETH_InitStruct->MacConfig.Bits.FlowCtrl & ETH_FLOW_RX_ONLY) {
+		ETHx->ETH_MSR |= BIT_RXFCE;
+	}
 	ETHx->ETH_MSR |= REFCLK_PHASE(ETH_InitStruct->MacConfig.Bits.RefClkPhase);
 
 	ETHx->ETH_TCR &= ~MASK_IFG2_0;
@@ -1042,14 +1024,12 @@ int Ethernet_Init(ETH_InitTypeDef *ETH_InitStruct)
 	}
 
 	ETHx->ETH_VLAN_REG = temp;
-	/* Enable MAC Rx VLAN de-tagging */
-	if (ETH_InitStruct->VlanConfig.Bits.RxStrip) {
-		ETHx->ETH_CR |= BIT_RXVLAN;
-	}
 	/* EEE configuration */
-	if (ETH_InitStruct->MacConfig.Bits.EEEEnable) {
+	if (ETH_InitStruct->MacConfig.Bits.EEEEnable && ETH_InitStruct->EEE_Config) {
 		Ethernet_EEE_Init(ETHx, ETH_InitStruct->EEE_Config);
-		phy->ops->cfg_eee(phy, ENABLE);
+		if (phy->ops->cfg_eee) {
+			phy->ops->cfg_eee(phy, ENABLE);
+		}
 	}
 	/* Packet filter */
 	filter_mode = ETH_InitStruct->MacConfig.Bits.PktFilterConfig;
@@ -1098,10 +1078,19 @@ int Ethernet_Init(ETH_InitTypeDef *ETH_InitStruct)
 		ETHx->ETH_CR |= BIT_RXJUMBO;
 	}
 	/* DMA descriptor control*/
-	ETHx->ETH_ETHRNTRXCPU_DES_NUM1 = RX_PSE_DES_THRES_OFF_1_7_0(0x01) | \
-									 RX_PSE_DES_THRES_ON_1_11_8((ETH_InitStruct->ETH_RxDescNum - 2) >> 8) | RX_PSE_DES_THRES_ON_1_7_0(ETH_InitStruct->ETH_RxDescNum - 2) | \
+	/* PAUSE on when the free RX descriptors minus one fall to pse_on, off when back to pse_off.
+	 * A higher ON or OFF keeps the sender stopped too long: 0/2 measured best with 4 descriptors. */
+	pse_on = ETH_InitStruct->ETH_RxDescNum / 3 - 1;
+	pse_off = ETH_InitStruct->ETH_RxDescNum / 2;
+	ETHx->ETH_ETHRNTRXCPU_DES_NUM1 = RX_PSE_DES_THRES_OFF_1_7_0(pse_off) | \
+									 RX_PSE_DES_THRES_ON_1_11_8(pse_on >> 8) | RX_PSE_DES_THRES_ON_1_7_0(pse_on) | \
 									 ETHRNTRXCPU_DES_NUM_1_11_8((ETH_InitStruct->ETH_RxDescNum - 1) >> 8) | ETHRNTRXCPU_DES_NUM_1_7_0(ETH_InitStruct->ETH_RxDescNum - 1);
-	ETHx->ETH_RX_RINGSIZE1 |= RXRINGSIZE_1_LOW(ETH_InitStruct->ETH_RxDescNum - 1);
+	/* OFF bits 11:8 live in another register, next to clock settings that must be kept. */
+	ETHx->ETH_CONFIG_CLK_AND_RX_PSE_DES_THRES_H = (ETHx->ETH_CONFIG_CLK_AND_RX_PSE_DES_THRES_H & ~MASK_RX_PSE_DES_THRES_OFF_1) |
+			RX_PSE_DES_THRES_OFF_1(pse_off >> 8);
+	/* Overwrite both halves of the size field: |= kept whatever a previous init left there. */
+	ETHx->ETH_RX_RINGSIZE1 = (ETHx->ETH_RX_RINGSIZE1 & ~(MASK_RXRINGSIZE_1_LOW | MASK_RXRINGSIZE_1_HIGH)) |
+							 RXRINGSIZE_1_LOW(ETH_InitStruct->ETH_RxDescNum - 1) | RXRINGSIZE_1_HIGH((ETH_InitStruct->ETH_RxDescNum - 1) >> 8);
 
 	ETHx->ETH_IO_CMD1 = DSC_FORMAT_EXTRA(0x3) | BIT_EN_4GB | BIT_RXOKINT_MSK_128B;
 	/* RX interrupt mitigation: raise RxOK once per 4 frames instead of once per
@@ -1137,7 +1126,10 @@ int Ethernet_Init(ETH_InitTypeDef *ETH_InitStruct)
 		} else {
 			ETH_InitStruct->ETH_RxDesc[i].dw1 = FEMAC_RX_DSC_BIT_OWN | ETH_InitStruct->ETH_RxBufSize;
 		}
-		ETH_InitStruct->ETH_RxDesc[i].addr = (u32)(ETH_InitStruct->ETH_RxPktBuf + (i * ETH_InitStruct->ETH_RxBufSize));
+		/* A NULL ETH_RxPktBuf means the caller already put a buffer in each descriptor (zero-copy RX). */
+		if (ETH_InitStruct->ETH_RxPktBuf) {
+			ETH_InitStruct->ETH_RxDesc[i].addr = (u32)(ETH_InitStruct->ETH_RxPktBuf + (i * ETH_InitStruct->ETH_RxBufSize));
+		}
 		ETH_InitStruct->ETH_RxDesc[i].dw2 = 0;
 		ETH_InitStruct->ETH_RxDesc[i].dw3 = 0;
 	}
@@ -1156,17 +1148,6 @@ int Ethernet_Init(ETH_InitTypeDef *ETH_InitStruct)
 	/* enable Rx ring1 */
 	ETHx->ETH_IO_CMD1 |= BIT_RXRING1;
 
-	if (ETH_InitStruct->MacConfig.Bits.AutoNego) {
-		timeout = 50000;
-		while (timeout--) {
-			if (GET_NWCOMPLETE((ETHx->ETH_MSR) & BIT_NWCOMPLETE)) {
-				break;
-			}
-		}
-		if (timeout == 0) {
-			ret = -RTK_ERR_TIMEOUT;
-		}
-	}
 exit:
 	return ret;
 }

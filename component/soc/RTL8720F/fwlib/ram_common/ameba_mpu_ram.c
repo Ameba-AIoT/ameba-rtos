@@ -52,7 +52,7 @@ void mpu_init(void)
   */
 void mpu_set_mem_attr(uint8_t attr_idx, uint8_t mem_attr)
 {
-	assert_param(attr_idx < MPU_MAX_REGION);
+	assert_param(attr_idx < 8);
 
 	ARM_MPU_Disable();
 	ARM_MPU_SetMemAttr(attr_idx, mem_attr);
@@ -93,7 +93,7 @@ void mpu_region_cfg(uint8_t region_num, mpu_region_config *pmpu_cfg)
 
 /**
   * @brief  free mpu entry.
-  * @param  entry_index: KM4_NS: 0~7, KM4TZ_NS: 0~7; KM4TZ_S: 0~7.
+  * @param  entry_index: 0 ~ (MPU_MAX_REGION - 1), KM55TZ: 0~5, KM55NS: 0~3.
   * @retval   None
   */
 void mpu_entry_free(u32 entry_index)
@@ -104,7 +104,7 @@ void mpu_entry_free(u32 entry_index)
 /**
   * @brief  alloc a free mpu entry.
   * @param  NA.
-  * @retval value: mpu entry index KM4_NS: 0~7, KM4TZ_NS: 0~7; KM4TZ_S: 0~7, -1 is fail.
+  * @retval value: mpu entry index 0 ~ (MPU_MAX_REGION - 1), KM55TZ: 0~5, KM55NS: 0~3, -1 is fail.
   */
 char mpu_entry_alloc(void)
 {

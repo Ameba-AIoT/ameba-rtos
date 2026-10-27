@@ -11,14 +11,24 @@
 
 #include "basic_types.h"
 
-/* Exported defines ----------------------------------------------------------*/
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /** @addtogroup USB_Common_API USB Common API
  *  @{
  */
+
+/* Exported defines ----------------------------------------------------------*/
+
 /** @addtogroup USB_Common_Constants USB Common Constants
  * @{
  */
+/** @defgroup USB_Common_Ch9_Constants USB Ch9 Constants
+ *  @brief Chapter 9 standard descriptor, request and status definitions.
+ *  @{
+ */
+
 #define USB_VERSION_ID_0201                           0x0201 /**< USB Specification version 2.01. */
 
 /**
@@ -57,11 +67,20 @@
 /* Device descriptor offset */
 #define USB_DEV_DESC_OFFSET_VID                        8U      /**< Offset to idVendor in device descriptor. */
 #define USB_DEV_DESC_OFFSET_PID                        10U     /**< Offset to idProduct in device descriptor. */
+#define USB_DEV_DESC_OFFSET_BCD_DEV                    12U     /**< Offset to bcdDevice in device descriptor. */
+#define USB_DEV_DESC_OFFSET_IMFG                       14U     /**< Offset to iManufacturer in device descriptor. */
+#define USB_DEV_DESC_OFFSET_IPROD                      15U     /**< Offset to iProduct in device descriptor. */
+#define USB_DEV_DESC_OFFSET_ISN                        16U     /**< Offset to iSerialNumber in device descriptor. */
+#define USB_DEV_DESC_OFFSET_NUM_CFG                    17U     /**< Offset to bNumConfigurations in device descriptor. */
+
+/* Device qualifier descriptor offset */
+#define USB_DEV_QUALIFIER_DESC_OFFSET_NUM_CFG          8U      /**< Offset to bNumConfigurations in device qualifier descriptor. */
 
 /* Configuration descriptor offset */
 #define USB_CFG_DESC_OFFSET_TYPE                       1U      /**< Offset to bDescriptorType in configuration descriptor. */
 #define USB_CFG_DESC_OFFSET_TOTAL_LEN                  2U      /**< Offset to wTotalLength in configuration descriptor. */
 #define USB_CFG_DESC_OFFSET_ATTR                       7U      /**< Offset to bmAttributes in configuration descriptor. */
+#define USB_CFG_DESC_OFFSET_MAX_POWER                  8U      /**< Offset to bMaxPower in configuration descriptor. */
 #define USB_CFG_DESC_OFFSET_ATTR_BIT_SELF_POWERED      BIT(6)  /**< Self-powered bit in bmAttributes. */
 #define USB_CFG_DESC_OFFSET_ATTR_BIT_REMOTE_WAKEUP     BIT(5)  /**< Remote wakeup bit in bmAttributes. */
 
@@ -74,10 +93,6 @@
 #define USB_REQ_NUM_MASK                               0x7FU   /**< Mask for endpoint number. */
 #define USB_H2D                                        0x00U   /**< Host-to-Device direction. */
 #define USB_D2H                                        0x80U   /**< Device-to-Host direction. */
-
-#define USB_EP_IS_IN(ep_addr)	                       (((ep_addr) & USB_REQ_DIR_MASK) == USB_D2H)  /**< Check if the endpoint direction is IN. */
-#define USB_EP_IS_OUT(ep_addr)	                       (((ep_addr) & USB_REQ_DIR_MASK) == USB_H2D)  /**< Check if the endpoint direction is OUT. */
-#define USB_EP_NUM(ep_addr)		                       ((ep_addr) & USB_REQ_NUM_MASK)               /**< Get endpoint number from address. */
 
 /* D6..5 Type */
 #define USB_REQ_TYPE_STANDARD                          0x00U   /**< Standard request type. */
@@ -183,6 +198,39 @@
 /** @} */
 
 /**
+ * @brief Legal bInterval ranges of an endpoint descriptor (USB 2.0 9.6.6).
+ * @details bInterval is the period of a periodic endpoint, and the spec encodes it in two
+ *          different ways depending on speed and transfer type. Mixing them up misreads the
+ *          service interval by up to 2^15, so pick the pair matching the endpoint:
+ *          - Isochronous, full and high speed, and Interrupt at high speed: a *exponent*, where
+ *            the period is 2^(bInterval-1) frames (full speed) or microframes (high speed).
+ *            Range 1..16; a value above 16 is malformed and, used as a shift count, would be
+ *            undefined behaviour.
+ *          - Interrupt at full/low speed: a *linear* count of frames, range 1..255.
+ *          Bulk and Control endpoints have no period; bInterval is reserved and must be ignored.
+ *
+ *          Note that these bounds only make a descriptor well formed, not usable: the longest
+ *          legal exponent (16, i.e. 2^15 frames/microframes) is a period of several seconds,
+ *          which many derived rate computations cannot represent. Range-check with these macros,
+ *          then still validate whatever rate or size is computed from the value.
+ * @{
+ */
+#define USB_EP_BINTERVAL_EXP_MIN                       1U    /**< Min bInterval where the period is 2^(bInterval-1). */
+#define USB_EP_BINTERVAL_EXP_MAX                       16U   /**< Max bInterval where the period is 2^(bInterval-1). */
+#define USB_EP_BINTERVAL_LINEAR_MIN                    1U    /**< Min bInterval where the period is bInterval frames. */
+#define USB_EP_BINTERVAL_LINEAR_MAX                    255U  /**< Max bInterval where the period is bInterval frames. */
+
+#define USB_ISOC_FS_BINTERVAL_MIN                      USB_EP_BINTERVAL_EXP_MIN    /**< FS Isochronous: 2^(n-1) frames. */
+#define USB_ISOC_FS_BINTERVAL_MAX                      USB_EP_BINTERVAL_EXP_MAX    /**< FS Isochronous: 2^(n-1) frames. */
+#define USB_ISOC_HS_BINTERVAL_MIN                      USB_EP_BINTERVAL_EXP_MIN    /**< HS Isochronous: 2^(n-1) microframes. */
+#define USB_ISOC_HS_BINTERVAL_MAX                      USB_EP_BINTERVAL_EXP_MAX    /**< HS Isochronous: 2^(n-1) microframes. */
+#define USB_INTR_FS_BINTERVAL_MIN                      USB_EP_BINTERVAL_LINEAR_MIN /**< FS Interrupt: bInterval frames. */
+#define USB_INTR_FS_BINTERVAL_MAX                      USB_EP_BINTERVAL_LINEAR_MAX /**< FS Interrupt: bInterval frames. */
+#define USB_INTR_HS_BINTERVAL_MIN                      USB_EP_BINTERVAL_EXP_MIN    /**< HS Interrupt: 2^(n-1) microframes. */
+#define USB_INTR_HS_BINTERVAL_MAX                      USB_EP_BINTERVAL_EXP_MAX    /**< HS Interrupt: 2^(n-1) microframes. */
+/** @} */
+
+/**
  * @brief Defines related to the USB Hub Class specification.
  * @{
  */
@@ -193,19 +241,19 @@
  * @brief Feature selectors for Hub Port Get/Set/Clear Feature requests.
  * @{
  */
-#define USB_PORT_FEAT_CONNECTION         0      /**< Port Connection feature. */
-#define USB_PORT_FEAT_ENABLE             1      /**< Port Enable feature. */
-#define USB_PORT_FEAT_SUSPEND            2      /**< Port Suspend feature. */
-#define USB_PORT_FEAT_OVER_CURRENT       3      /**< Port Over-current feature. */
-#define USB_PORT_FEAT_RESET              4      /**< Port Reset feature. */
-#define USB_PORT_FEAT_POWER              8      /**< Port Power feature. */
-#define USB_PORT_FEAT_LOWSPEED           9      /**< Port Low-speed device attached feature. */
-#define USB_PORT_FEAT_HIGHSPEED          10     /**< Port High-speed device attached feature. */
-#define USB_PORT_FEAT_C_CONNECTION       16     /**< Port Connection change feature. */
-#define USB_PORT_FEAT_C_ENABLE           17     /**< Port Enable change feature. */
-#define USB_PORT_FEAT_C_SUSPEND          18     /**< Port Suspend change feature. */
-#define USB_PORT_FEAT_C_OVER_CURRENT     19     /**< Port Over-current change feature. */
-#define USB_PORT_FEAT_C_RESET            20     /**< Port Reset change feature. */
+#define USB_PORT_FEAT_CONNECTION         0U     /**< Port Connection feature. */
+#define USB_PORT_FEAT_ENABLE             1U     /**< Port Enable feature. */
+#define USB_PORT_FEAT_SUSPEND            2U     /**< Port Suspend feature. */
+#define USB_PORT_FEAT_OVER_CURRENT       3U     /**< Port Over-current feature. */
+#define USB_PORT_FEAT_RESET              4U     /**< Port Reset feature. */
+#define USB_PORT_FEAT_POWER              8U     /**< Port Power feature. */
+#define USB_PORT_FEAT_LOWSPEED           9U     /**< Port Low-speed device attached feature. */
+#define USB_PORT_FEAT_HIGHSPEED          10U    /**< Port High-speed device attached feature. */
+#define USB_PORT_FEAT_C_CONNECTION       16U    /**< Port Connection change feature. */
+#define USB_PORT_FEAT_C_ENABLE           17U    /**< Port Enable change feature. */
+#define USB_PORT_FEAT_C_SUSPEND          18U    /**< Port Suspend change feature. */
+#define USB_PORT_FEAT_C_OVER_CURRENT     19U    /**< Port Over-current change feature. */
+#define USB_PORT_FEAT_C_RESET            20U    /**< Port Reset change feature. */
 /** @} */
 
 /**
@@ -235,15 +283,20 @@
 #define USB_PORT_STAT_C_RESET              0x0010 /**< Reset completion has occurred. */
 /** @} */
 /** @} */
-/** @} End of USB_Common_Constants group */
 
-/* Exported macros -----------------------------------------------------------*/
+/** @} End of USB_Common_Ch9_Constants group */
+/** @} End of USB_Common_Constants group */
 
 /* Exported types ------------------------------------------------------------*/
 
 /** @addtogroup USB_Common_Types USB Common Types
  * @{
  */
+/** @defgroup USB_Common_Ch9_Types USB Ch9 Types
+ *  @brief Chapter 9 standard descriptor and setup packet types.
+ *  @{
+ */
+
 /**
  * @brief Defines the transfer type of a USB endpoint.
  * @details Corresponds to the `bmAttributes` field in the endpoint descriptor.
@@ -267,11 +320,35 @@ typedef struct {
 	u16 wIndex;                   /**< Request-specific index, often an interface or endpoint number. */
 	u16 wLength;                  /**< Number of bytes to transfer in the data phase. */
 } __PACKED usb_setup_req_t;
+
+/** @} End of USB_Common_Ch9_Types group */
 /** @} End of USB_Common_Types group */
-/** @} End of USB_Common_API group */
+
+/* Exported macros -----------------------------------------------------------*/
+
+/** @addtogroup USB_Common_Constants USB Common Constants
+ *  @{
+ */
+/** @defgroup USB_Common_Ch9_Macros USB Ch9 Macros
+ *  @brief Endpoint address helper macros of Chapter 9.
+ *  @{
+ */
+
+#define USB_EP_IS_IN(ep_addr)	                       (((ep_addr) & USB_REQ_DIR_MASK) == USB_D2H)  /**< Check if the endpoint direction is IN. */
+#define USB_EP_IS_OUT(ep_addr)	                       (((ep_addr) & USB_REQ_DIR_MASK) == USB_H2D)  /**< Check if the endpoint direction is OUT. */
+#define USB_EP_NUM(ep_addr)		                       ((ep_addr) & USB_REQ_NUM_MASK)               /**< Get endpoint number from address. */
+
+/** @} End of USB_Common_Ch9_Macros group */
+/** @} End of USB_Common_Constants group */
 
 /* Exported variables --------------------------------------------------------*/
 
 /* Exported functions --------------------------------------------------------*/
+
+/** @} End of USB_Common_API group */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* USB_CH9_H */

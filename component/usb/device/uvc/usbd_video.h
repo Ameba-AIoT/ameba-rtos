@@ -4,12 +4,28 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#ifndef USBD_VIDEO_H
+#define USBD_VIDEO_H
+
 /* Includes ------------------------------------------------------------------*/
 
-#ifndef __USBD_VIDEO_H
-#define __USBD_VIDEO_H
-/* Includes ------------------------------------------------------------------*/
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/** @addtogroup USB_Device_API USB Device API
+ *  @{
+ */
+
 /* Exported defines ----------------------------------------------------------*/
+
+/** @addtogroup USB_Device_Constants USB Device Constants
+ *  @{
+ */
+/** @defgroup Device_Video_Constants Device Video Constants
+ *  @brief UVC descriptor subtypes, control selectors and request codes used by the UVC class.
+ *  @{
+ */
 
 /* A.2. Video Interface Subclass Codes */
 #define USBD_UVC_SC_UNDEFINED                              0x00
@@ -168,8 +184,6 @@
 #define USBD_UVC_CONTROL_CAP_AUTOUPDATE                    (1 << 3)
 #define USBD_UVC_CONTROL_CAP_ASYNCHRONOUS                  (1 << 4)
 
-#define USBD_UVC_FPS(fps) (10000000/fps)
-
 #define USBD_UVC_FORMAT_TYPE_YUY2                          0
 #define USBD_UVC_FORMAT_TYPE_NV12                          1
 #define USBD_UVC_FORMAT_TYPE_MJPEG                         2
@@ -184,7 +198,19 @@
 #define USBD_UVC_JPEG_FRAME_WIDTH                          1920
 #define USBD_UVC_JPEG_FRAME_HEIGHT                         1080
 
-#define USBD_UVC_WBVAL(x)   ((x) & 0xFF), (((x) >> 8) & 0xFF)
+/** @} End of Device_Video_Constants group */
+/** @} End of USB_Device_Constants group */
+
+/* Exported types ------------------------------------------------------------*/
+
+/** @addtogroup USB_Device_Types USB Device Types
+ *  @{
+ */
+/** @defgroup Device_Video_Types Device Video Types
+ *  @brief Streaming control and probe/commit types of the UVC protocol.
+ *  @{
+ */
+
 /**
  * @brief UVC Streaming Control structure.
  * @details
@@ -235,9 +261,34 @@ typedef struct {
 	u8 init;/* It only support whether the uvc is first init 0:Not initialized 1: Initialized */
 } usbd_uvc_format_t;
 
+/** @} End of Device_Video_Types group */
+/** @} End of USB_Device_Types group */
+
+/* Exported macros -----------------------------------------------------------*/
+
+/** @addtogroup USB_Device_Constants USB Device Constants
+ *  @{
+ */
+/** @defgroup Device_Video_Macros Device Video Macros
+ *  @brief Frame-rate and little-endian helper macros of the UVC protocol.
+ *  @{
+ */
+
+#define USBD_UVC_FPS(fps) (10000000/fps)
+
+#define USBD_UVC_WBVAL(x)   ((x) & 0xFF), (((x) >> 8) & 0xFF)
+
+/** @} End of Device_Video_Macros group */
+/** @} End of USB_Device_Constants group */
+
 /* Exported variables --------------------------------------------------------*/
 
 /* Exported functions --------------------------------------------------------*/
 
-#endif /* __USBD_VIDEO_H */
+/** @} End of USB_Device_API group */
 
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* USBD_VIDEO_H */

@@ -156,7 +156,9 @@ bool bt_inic_open(void)
 		return true;
 	}
 
+#if (defined(CONFIG_AMEBAGREEN2) && CONFIG_AMEBAGREEN2) && (defined(CONFIG_BT_RTL8851F_FW) && CONFIG_BT_RTL8851F_FW)
 	hci_platform_external_fw_log_pin();
+#endif
 
 	if (!hci_controller_open()) {
 		return false;

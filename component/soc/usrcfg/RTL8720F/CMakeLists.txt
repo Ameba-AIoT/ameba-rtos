@@ -53,8 +53,8 @@ ameba_list_append(private_sources
     ameba_xtal_trackingcfg.c
 )
 
-# SOLO isolation user config (KM4TZ-private peripherals + KM4NS-allowed memory
-# regions), consumed by BOOT_RAM_SoloCfg (lib/solo) in the km4tz bootloader.
+# SOLO isolation user config (KM55TZ-private peripherals + KM55NS-allowed memory
+# regions), consumed by BOOT_RAM_SoloCfg (lib/solo) in the km55tz bootloader.
 if(CONFIG_SOLO)
     ameba_list_append(private_sources
         ameba_solocfg.c

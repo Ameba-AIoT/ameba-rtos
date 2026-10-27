@@ -32,7 +32,18 @@ void whc_ipc_host_recv_pkts(int idx_wlan, struct dev_sk_buff *skb_phy)
 	}
 
 	skb = llhw_ipc_fw_phy_to_virt((unsigned long)skb_phy);
+	if (!skb) {
+		/* still ack NP so it frees the rx skb for this interrupt */
+		dev_err(global_idev.pwhc_dev, "%s: invalid fw ptr\n", __func__);
+		goto recv_done;
+	}
+
 	data_addr = llhw_ipc_fw_phy_to_virt((unsigned long)skb->data);
+	if (!data_addr) {
+		dev_err(global_idev.pwhc_dev, "%s: invalid fw ptr\n", __func__);
+		goto recv_done;
+	}
+
 	/* allocate pbuf to store ethernet data from IPC. */
 	pskb = netdev_alloc_skb(idev->pndev[idx_wlan], skb->len);
 	if (pskb == NULL) {
@@ -81,6 +92,12 @@ static unsigned int whc_ipc_host_recv_interrupt(aipc_ch_t *ch, ipc_msg_struct_t 
 	struct whc_ipc_ex_msg *p_ipc_msg = (struct whc_ipc_ex_msg *)llhw_ipc_fw_phy_to_virt(pmsg->msg);
 	struct device *pdev = NULL;
 	int  ret = 0;
+
+	if (!p_ipc_msg) {
+		ret = -EFAULT;
+		dev_err(global_idev.pwhc_dev, "%s: invalid fw ptr (%d).\n", __func__, ret);
+		goto func_exit;
+	}
 
 	pdev = global_idev.ipc_dev;
 	if (!pdev) {

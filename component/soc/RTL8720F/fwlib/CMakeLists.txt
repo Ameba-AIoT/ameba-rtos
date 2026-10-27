@@ -8,8 +8,8 @@ ameba_global_include(
 ameba_add_subdirectory(ram_common)
 ameba_add_subdirectory(${c_COMPONENT_DIR}/soc/common/rtk_assert)
 
-if("${c_MCU_PROJECT_NAME}" STREQUAL "km4tz")
-    ameba_add_subdirectory(ram_km4tz)
-elseif("${c_MCU_PROJECT_NAME}" STREQUAL "km4ns")
-    ameba_add_subdirectory(ram_km4ns)
+if("${c_MCU_PROJECT_NAME}" STREQUAL "km55tz")
+    ameba_add_subdirectory(ram_km55tz)
+elseif("${c_MCU_PROJECT_NAME}" STREQUAL "km55ns")
+    ameba_add_subdirectory(ram_km55ns)
 endif()

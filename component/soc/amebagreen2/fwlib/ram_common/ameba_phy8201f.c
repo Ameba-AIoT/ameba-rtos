@@ -285,7 +285,7 @@ static int phy_rtl8201_init(struct eth_phy_dev *phy)
 	/* 2. Verify ID */
 	phy_id = ((uint32_t)id1 << 16) | id2;
 	if (phy_id  != RTL8201_PHY_ID_MATCH) {
-		RTK_LOGE(TAG, "RTL8201 ID Mismatch. Read: 0x%08X", phy_id);
+		RTK_LOGE(TAG, "RTL8201 ID Mismatch. Read: 0x%08X\n", phy_id);
 		return RTK_FAIL;
 	}
 

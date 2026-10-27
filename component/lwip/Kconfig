@@ -22,15 +22,23 @@ menu "CONFIG LWIP"
     config USB_ETHERNET_BRIDGE_PROVIDER
         bool
 
-    config LWIP_USB_ETHERNET
+    config LWIP_USB_ETHERNET_MENU
         bool "Enable LWIP USB ETHERNET"
         depends on USB_ETHERNET_PROVIDER
         default y
+        select LWIP_USB_ETHERNET if WHC_HOST || WHC_NONE
 
-    config LWIP_USB_ETHERNET_BRIDGE
+    config LWIP_USB_ETHERNET_BRIDGE_MENU
         bool "Enable LWIP USB ETHERNET BRIDGE"
         depends on USB_ETHERNET_BRIDGE_PROVIDER
         default y
+        select LWIP_USB_ETHERNET_BRIDGE if WHC_HOST || WHC_NONE
+
+    config LWIP_USB_ETHERNET
+        bool
+
+    config LWIP_USB_ETHERNET_BRIDGE
+        bool
 
     config LWIP_ETHERNET
         depends on ETHERNET

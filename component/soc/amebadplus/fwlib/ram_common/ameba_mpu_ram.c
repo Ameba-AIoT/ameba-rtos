@@ -52,7 +52,7 @@ void mpu_init(void)
   */
 void mpu_set_mem_attr(uint8_t attr_idx, uint8_t mem_attr)
 {
-	assert_param(attr_idx < MPU_MAX_REGION);
+	assert_param(attr_idx < MPU_MAX_MEM_ATTR);
 
 	ARM_MPU_Disable();
 	ARM_MPU_SetMemAttr(attr_idx, mem_attr);

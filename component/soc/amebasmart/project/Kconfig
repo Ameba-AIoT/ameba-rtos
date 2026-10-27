@@ -40,10 +40,6 @@ config SUPPORT_USBD_UAC
 config SUPPORT_AUDIO_FOR_USB
     def_bool y
 
-# USB MSC device supports external flash as storage media
-config SUPPORT_USBD_MSC_SECOND_FLASH
-    def_bool y
-
 config SUPPORT_USBH_UAC
     def_bool y
 
@@ -157,7 +153,7 @@ menu "CONFIG APPLICATION"
     config APPLICATION_SHELL_TASK_STACK_SIZE_MENU
         int "Shell task stack size for application (bytes)"
         range 256 8192
-        default 2248
+        default 2264
 
 endmenu
 
@@ -286,7 +282,7 @@ menu "CONFIG WIFI"
 
 endmenu
 
-config VFS_ENABLED
+config VFS_SUPPORTED
     depends on !(MP_SHRINK) && (WHC_HOST || WHC_NONE)
     def_bool y
 

@@ -179,7 +179,7 @@ static usbh_cdc_acm_param_t usbh_comp_dongle_array[] = {
 
 static dongle_ctx_t usbh_dongle_ctx;
 
-static const usbh_cdc_ecm_priv_data_t usbh_comp_ecm_priv = {
+static const usbh_cdc_ecm_config_t usbh_comp_ecm_class_cfg = {
 	NULL,
 	NULL,
 	0,
@@ -210,7 +210,12 @@ static const usbh_config_t usbh_cfg = {
 static const usbh_cdc_acm_cb_t usbh_comp_acm_cfg = {
 	.received  = usbh_comp_acm_received,
 	.transmitted = usbh_comp_acm_transmitted,
-	.priv     = usbh_comp_dongle_array,
+};
+
+static const usbh_cdc_acm_config_t usbh_comp_acm_class_cfg = {
+	.dongle_param = usbh_comp_dongle_array,
+	/* Line coding and control line state are left 0 to take the class defaults;
+	 * notify_en stays 0 because this path only uses the AT and BULK pipes. */
 };
 
 static const usbh_cdc_ecm_state_cb_t usbh_comp_ecm_cfg = {
@@ -353,9 +358,80 @@ static void usbh_comp_acm_transmitted(u8 status)
 	}
 }
 
+/* Serializes the USB stack bring up / tear down against the class API callers.
+   usbh_cdc_acm_deinit() frees the line-coding buffers and drops its host handle,
+   usbh_cdc_ecm_deinit() frees the TX/RX buffers the lwIP path walks, and
+   usbh_deinit() memset()s the whole host handle. Each class API only checks its
+   own state on entry, so under SMP a caller on core 1 can be past that check while
+   core 0 frees what it dereferences. The callers must be excluded by lock, not by
+   core.
+   in_detach already parks the AT state machine and the ACM RX thread, but it is a
+   flag, not a barrier: a thread that passed the check is still inside the class
+   when the teardown runs. The lock closes that window.
+   Split two ways - ACM for the AT command path and the RX thread, ECM for the lwIP
+   TX path - so a long AT exchange does not stall network transmit. The teardown
+   takes both, always in the order acm, ecm.
+   Created before the stack comes up and never deleted: the lwIP thread and the ACM
+   RX thread can not be joined here, so there is no point in time at which these
+   mutexes are provably unreferenced. usbh_comp_stack_ready is the gate that keeps
+   callers off the stack instead. */
+static rtos_mutex_t usbh_comp_acm_mutex = NULL;
+static rtos_mutex_t usbh_comp_ecm_mutex = NULL;
+
+/* 1: the whole stack is up and the class APIs may be called. Cleared before any
+   tear down, so a non-zero value also implies both mutexes are valid. */
+static volatile u8 usbh_comp_stack_ready = 0;
+
+/**
+  * @brief  Take one of the per-class stack locks if the class API may be used
+  * @note   Gates on usbh_comp_stack_ready BEFORE touching the mutex: the handle is
+  *         still NULL before bring-up, and the flag is already cleared once a
+  *         teardown is pending. A detach right after this check is harmless, the
+  *         mutex stays valid and the re-check under it catches the loss.
+  * @param  lock: usbh_comp_acm_mutex or usbh_comp_ecm_mutex
+  * @retval HAL_OK when the lock is held and the stack is usable, HAL_ERR_HW when
+  *         the caller must give up without unlocking
+  */
+static int usbh_comp_lock(rtos_mutex_t lock)
+{
+	if ((usbh_comp_stack_ready == 0U) || (usbh_dongle_ctx.in_detach != 0U) || (lock == NULL)) {
+		return HAL_ERR_HW;
+	}
+
+	rtos_mutex_take(lock, RTOS_MAX_TIMEOUT);
+
+	if ((usbh_comp_stack_ready == 0U) || (usbh_dongle_ctx.in_detach != 0U)) {
+		/* Lost the race against a teardown */
+		rtos_mutex_give(lock);
+		return HAL_ERR_HW;
+	}
+
+	return HAL_OK;
+}
+
+/**
+  * @brief  Release a lock taken by usbh_comp_lock()
+  * @param  lock: The same handle that was passed to usbh_comp_lock()
+  * @retval None
+  */
+static void usbh_comp_unlock(rtos_mutex_t lock)
+{
+	rtos_mutex_give(lock);
+}
+
 static int usbh_comp_acm_transmit(u8 *buf, u32 len)
 {
-	int ret = usbh_cdc_acm_transmit(buf, len);
+	int ret;
+
+	/* Arm under the lock, then release it before waiting for the completion: the
+	   callback never comes for a device that was just unplugged, and the teardown
+	   must not be blocked for the whole wait. */
+	if (usbh_comp_lock(usbh_comp_acm_mutex) != HAL_OK) {
+		return HAL_ERR_HW;
+	}
+	ret = usbh_cdc_acm_transmit(buf, len);
+	usbh_comp_unlock(usbh_comp_acm_mutex);
+
 	if (ret == HAL_OK) {
 		if (usbh_comp_acm_send_sema != NULL) {
 			rtos_sema_take(usbh_comp_acm_send_sema, 1000);
@@ -377,20 +453,18 @@ static void usbh_comp_acm_received(u8 *pbuf, u32 len, u8 status)
 		goto done;
 	}
 
-	for (i = 0; i < len;) {
-		if (i + 10 <= len) {
-			RTK_LOGS(NOTAG, RTK_LOG_INFO, "%c%c%c%c%c%c%c%c%c%c",
-					 pbuf[i], pbuf[i + 1], pbuf[i + 2], pbuf[i + 3], pbuf[i + 4],
-					 pbuf[i + 5], pbuf[i + 6], pbuf[i + 7], pbuf[i + 8], pbuf[i + 9]);
-			i += 10;
-		} else {
-			for (; i < len; i++) {
-				RTK_LOGS(NOTAG, RTK_LOG_INFO, "%c", pbuf[i]);
-			}
-			break;
-		}
+	/* The bulk IN transfer delivers raw stream bytes with no NUL terminator, but the
+	   AT-response parsing below scans pbuf as a C string (strstr/strsep/strlen/atoi).
+	   pbuf is usbh_comp_acm_rx_buf[CONFIG_USBH_COMP_PBUF_MAX_LEN], the only buffer armed
+	   with usbh_cdc_acm_receive(), so len <= CONFIG_USBH_COMP_PBUF_MAX_LEN. Cap len at the last
+	   index so the NUL always lands inside the buffer; a full-size transfer gives up its last byte. */
+	if (len > (CONFIG_USBH_COMP_PBUF_MAX_LEN - 1U)) {
+		len = CONFIG_USBH_COMP_PBUF_MAX_LEN - 1U;
 	}
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n");
+	pbuf[len] = '\0';
+
+	/* pbuf is NUL terminated above: print the AT response in one call */
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "%s\n", (char *)pbuf);
 
 	if (USBH_CDC_ACM_QUECTEL_DONGLE_VID == vid) {
 		if (strstr((char *)pbuf, "+CEREG")) {
@@ -421,6 +495,12 @@ static void usbh_comp_acm_received(u8 *pbuf, u32 len, u8 status)
 			char *buff = (char *)pbuf;
 			char *p = strsep(&buff, "\"");
 			p = strsep(&buff, "\"");
+			/* The token comes from the device: a short one ("xx:xx:xx:xx:xx:xx" is 17 chars)
+			   would make the loop below read past its NUL */
+			if ((p != NULL) && (usbh_comp_strlen((u8 *)p) < 17U)) {
+				RTK_LOGS(TAG, RTK_LOG_WARN, "Bad MAC rsp\n");
+				p = NULL;
+			}
 			if (p != NULL) {
 				for (i = 0; i < 6; i++) {
 					usbh_dongle_ctx.quectel.mac[i] =
@@ -608,9 +688,18 @@ static void usbh_comp_acm_rx_thread(void *param)
 			rtos_time_delay_ms(10);
 		}
 		while (usbh_dongle_ctx.in_detach == 0) {
-			if (usbh_cdc_acm_receive(usbh_comp_acm_rx_buf, CONFIG_USBH_COMP_PBUF_MAX_LEN) == HAL_OK) {
+			int armed = 0;
+
+			/* Lock covers the arming only, see usbh_comp_acm_transmit(). */
+			if (usbh_comp_lock(usbh_comp_acm_mutex) == HAL_OK) {
+				armed = (usbh_cdc_acm_receive(usbh_comp_acm_rx_buf, CONFIG_USBH_COMP_PBUF_MAX_LEN) == HAL_OK) ? 1 : 0;
+				usbh_comp_unlock(usbh_comp_acm_mutex);
+			}
+
+			if (armed != 0) {
 				rtos_sema_take(usbh_comp_acm_rx_done_sema, 1000);
 			} else {
+				/* Pipe not ready yet, or the stack is down: back off and retry. */
 				rtos_time_delay_ms(10);
 			}
 		}
@@ -1337,12 +1426,12 @@ static int usbh_comp_do_init(void)
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "USB init fail\n");
 		return HAL_ERR_UNKNOWN;
 	}
-	if (usbh_cdc_acm_init(&usbh_comp_acm_cfg) != HAL_OK) {
+	if (usbh_cdc_acm_init(&usbh_comp_acm_cfg, &usbh_comp_acm_class_cfg) != HAL_OK) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "ACM init fail\n");
 		usbh_deinit();
 		return HAL_ERR_UNKNOWN;
 	}
-	if (usbh_cdc_ecm_init(&usbh_comp_ecm_cfg, &usbh_comp_ecm_priv) != HAL_OK) {
+	if (usbh_cdc_ecm_init(&usbh_comp_ecm_cfg, &usbh_comp_ecm_class_cfg) != HAL_OK) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "ECM init fail\n");
 		usbh_cdc_acm_deinit();
 		usbh_deinit();
@@ -1358,6 +1447,13 @@ static int usbh_comp_do_init(void)
 	usbh_dongle_ctx.pid = usbh_cdc_ecm_get_device_pid();
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "VID 0x%x PID 0x%x\n", usbh_dongle_ctx.vid, usbh_dongle_ctx.pid);
+
+	/* Open the gate before releasing the RX pump: usbh_comp_dongle_diag_cmd() below
+	   issues ACM transfers through usbh_comp_acm_transmit(), which is gated on this
+	   flag, so it has to be set first or every AT command would be rejected. Ordered
+	   gate-then-in_detach because a caller checks both, and the reverse order would
+	   let one through while the gate was still shut. */
+	usbh_comp_stack_ready = 1U;
 
 	usbh_dongle_ctx.in_detach = 0;
 
@@ -1376,11 +1472,26 @@ static void usb_4g_hotplug_thread(void *param)
 	UNUSED(param);
 	for (;;) {
 		if (rtos_sema_take(usbh_comp_detach_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
+			/* in_detach first, so a caller inside a loop gives up its round instead
+			   of re-taking a lock between messages and starving this thread out. */
 			usbh_dongle_ctx.in_detach = 1;
+
+			/* Both locks, always in this order (acm, ecm). Each caller takes exactly
+			   one, never two, so a fixed order here is enough to rule out a cycle. */
+			rtos_mutex_take(usbh_comp_acm_mutex, RTOS_MAX_TIMEOUT);
+			rtos_mutex_take(usbh_comp_ecm_mutex, RTOS_MAX_TIMEOUT);
+			/* Close the gate under the locks: no class API call is in flight here,
+			   and any later one gives up on the cleared flag. */
+			usbh_comp_stack_ready = 0U;
+
 			usbh_stop();
 			usbh_cdc_acm_deinit();
 			usbh_cdc_ecm_deinit();
 			usbh_deinit();
+
+			rtos_mutex_give(usbh_comp_ecm_mutex);
+			rtos_mutex_give(usbh_comp_acm_mutex);
+
 			rtos_time_delay_ms(100);
 			RTK_LOGS(TAG, RTK_LOG_INFO, "Hotplug reinit heap:0x%x\n", rtos_mem_get_free_heap_size());
 			if (usbh_comp_do_init() != HAL_OK) {
@@ -1484,7 +1595,15 @@ void usb_eth_register_link_cb(void (*cb)(int link_up))
 
 int usb_ethernet_transmit(u8 *buf, u32 len, u8 block)
 {
-	return usbh_cdc_ecm_send_data(buf, len, block);
+	int ret;
+
+	if (usbh_comp_lock(usbh_comp_ecm_mutex) != HAL_OK) {
+		return HAL_ERR_HW;
+	}
+	ret = usbh_cdc_ecm_send_data(buf, len, block);
+	usbh_comp_unlock(usbh_comp_ecm_mutex);
+
+	return ret;
 }
 
 void usb_eth_init(void)
@@ -1493,6 +1612,22 @@ void usb_eth_init(void)
 	rtos_task_t hotplug_task;
 
 	rltk_usb_eth_init();
+
+	/* Created before the stack comes up and never deleted, see the declarations */
+	if (usbh_comp_acm_mutex == NULL) {
+		ret = rtos_mutex_create(&usbh_comp_acm_mutex);
+		if (ret != RTK_SUCCESS) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Create acm mutex fail\n");
+			return;
+		}
+	}
+	if (usbh_comp_ecm_mutex == NULL) {
+		ret = rtos_mutex_create(&usbh_comp_ecm_mutex);
+		if (ret != RTK_SUCCESS) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Create ecm mutex fail\n");
+			return;
+		}
+	}
 
 	ret = rtos_sema_create(&usbh_comp_acm_rx_done_sema, 0U, 1U);
 	if (ret != RTK_SUCCESS) {
@@ -1529,6 +1664,15 @@ void usb_eth_init(void)
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create hotplug task fail\n");
 		goto err_detach_sema;
 	}
+#if defined(CONFIG_SMP)
+	/* The USB OTG ISR is delivered on CPU0: the GIC pins every SPI to core 0
+	   (ITARGETSR is written to 0x01010101 in arm_gic.c gic_dist_init). Pinning the
+	   hotplug/deinit thread to CPU0 puts it on the same core as the ISR, so the
+	   local interrupt disables inside the teardown are meaningful again. The lwIP TX
+	   thread and the ACM RX thread stay unaffined: a pending teardown is excluded
+	   from them by the per-class mutexes, not by core. */
+	rtos_task_set_affinity(hotplug_task, 0);
+#endif
 
 	ret = rtos_task_create(&usbh_comp_link_check_task, "usb_4g_link",
 						   usb_4g_link_thread, NULL,

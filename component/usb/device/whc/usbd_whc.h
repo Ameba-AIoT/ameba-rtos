@@ -16,12 +16,23 @@
 extern "C" {
 #endif
 
+/** @addtogroup USB_Device_API USB Device API
+ *  @{
+ */
+
 /* Exported defines ----------------------------------------------------------*/
+
+/** @addtogroup USB_Device_Constants USB Device Constants
+ *  @{
+ */
+/** @defgroup Device_WHC_Constants Device WHC Constants
+ *  @brief Identity defaults, endpoint sizing and firmware type codes of the WHC class.
+ *  @{
+ */
 
 #define USBD_WHC_VID                     USB_VID
 #define USBD_WHC_PID                     USB_PID
 
-#define USBD_WHC_LANGID_STRING           0x409
 #define USBD_WHC_MFG_STRING              "Realtek"               /**< Manufacturer string. */
 #define USBD_WHC_PROD_STRING             "802.11ax WLAN Adapter" /**< Product string. */
 #define USBD_WHC_SN_STRING               "00E04C000001"          /**< Serial number string. */
@@ -35,8 +46,7 @@ extern "C" {
 #define USBD_WHC_FS_BULK_MPS             64U   /* Full speed BULK IN & OUT maximum packet size */
 #ifdef CONFIG_WHC_ETH
 /* High speed Ethernet BULK IN maximum packet size.
-Per USB 2.0 spec §5.8.3, the wMaxPacketSize of high-speed BULK IN EP should be 512, otherwise USB-IF Chapter 9 / USB3CV will fail.
-However, the TxFIFO 5# depth is only 128 DWORD / 512byte, so there will be latencies on the AHB between transactions without ping-pong. */
+Per USB 2.0 spec §5.8.3, the wMaxPacketSize of high-speed BULK IN EP should be 512, otherwise USB-IF Chapter 9 / USB3CV will fail. */
 #define USBD_WHC_ETH_HS_IN_MPS            512U
 #endif
 #define USBD_WHC_HS_INTR_MPS             16U   /* High speed INTR IN & OUT maximum packet size */
@@ -52,13 +62,16 @@ However, the TxFIFO 5# depth is only 128 DWORD / 512byte, so there will be laten
  * USBD_WHC_WIFI_BULK_OUT_EP_NUM.
  */
 #define USBD_WHC_BT_EP_INTR_IN            0x81U
-#define USBD_WHC_BT_EP_BULK_IN            0x82U
 #define USBD_WHC_BT_EP_BULK_OUT           0x02U
 #ifdef CONFIG_WHC_ETH
-/* EP3 OUT is reused as Ethernet BULK OUT, EP6 IN is free as WiFi only uses EP6 OUT */
+/* Ethernet reuses the BT SCO ISOC OUT EP as its BULK OUT. Its BULK IN takes the BT BULK IN EP, whose TxFIFO
+ * holds two HS packets for ping-pong, while BT BULK IN moves to an EP whose TxFIFO holds one HS packet, enough for
+ * the BT throughput. Each IN EP owns a dedicated TxFIFO, so the IN EP number sets the FIFO depth. */
+#define USBD_WHC_BT_EP_BULK_IN            0x86U
 #define USBD_WHC_ETH_EP_BULK_OUT          0x03U
-#define USBD_WHC_ETH_EP_BULK_IN           0x86U
+#define USBD_WHC_ETH_EP_BULK_IN           0x82U
 #else
+#define USBD_WHC_BT_EP_BULK_IN            0x82U
 /* BT SCO ISOC EPs, only available when Ethernet is disabled, EP3 is taken by Ethernet otherwise */
 #define USBD_WHC_BT_EP_ISOC_IN            0x83U
 #define USBD_WHC_BT_EP_ISOC_OUT           0x03U
@@ -68,7 +81,6 @@ However, the TxFIFO 5# depth is only 128 DWORD / 512byte, so there will be laten
 #define USBD_WHC_WIFI_EP_BULK_OUT_2       0x06U
 #define USBD_WHC_WIFI_EP_BULK_OUT_3       0x07U
 #define USBD_WHC_WIFI_BULK_OUT_EP_NUM     3     /* Number of WiFi BULK OUT pipes */
-
 
 /* Interface class/subclass/protocol triples
  *
@@ -104,7 +116,18 @@ However, the TxFIFO 5# depth is only 128 DWORD / 512byte, so there will be laten
 
 #define USBD_WHC_FW_TYPE_APPLICATION     0xF2U
 
+/** @} End of Device_WHC_Constants group */
+/** @} End of USB_Device_Constants group */
+
 /* Exported types ------------------------------------------------------------*/
+
+/** @addtogroup USB_Device_Types USB Device Types
+ *  @{
+ */
+/** @defgroup Device_WHC_Types Device WHC Types
+ *  @brief Packet header, endpoint, callback and device context types of the WHC class.
+ *  @{
+ */
 
 typedef struct {
 	/* DWORD 0 */
@@ -136,8 +159,8 @@ typedef struct {
 } __PACKED usbd_whc_query_packet_t;
 
 typedef struct {
-	usbd_ep_t ep;
 	void *userdata; /* userdata for each ep */
+	usbd_ep_t ep;
 } usbd_whc_ep_t;
 
 /**
@@ -222,25 +245,40 @@ typedef struct {
 } usbd_whc_cb_t;
 
 typedef struct {
+	usb_dev_t *dev;
+	const usbd_whc_cb_t *cb;
+	rtos_task_t reset_task;
+	rtos_sema_t reset_sema;
 	usbd_whc_ep_t in_ep[USB_MAX_ENDPOINTS];
 	usbd_whc_ep_t out_ep[USB_MAX_ENDPOINTS];
 	usbd_otp_t otp;
-	usb_dev_t *dev;
-	const usbd_whc_cb_t *cb;
 	usb_setup_req_t ctrl_req;
-	rtos_task_t reset_task;
-	rtos_sema_t reset_sema;
 	u8 ctrl_req_pending; /* 1 if ctrl_req is waiting for its EP0 OUT data stage */
+	u8 bt_str_idx;       /* BT string index from usbd_add_string(), 0 if none */
+#ifdef CONFIG_WHC_ETH
+	u8 eth_str_idx;      /* Ethernet string index from usbd_add_string(), 0 if none */
+#endif
 #ifndef CONFIG_WHC_ETH
 	u8  bt_sco_alt; /* BT SCO is the only interface which owns alternate settings */
 #endif
 } usbd_whc_dev_t;
+
+/** @} End of Device_WHC_Types group */
+/** @} End of USB_Device_Types group */
 
 /* Exported macros -----------------------------------------------------------*/
 
 /* Exported variables --------------------------------------------------------*/
 
 /* Exported functions --------------------------------------------------------*/
+
+/** @addtogroup USB_Device_Functions USB Device Functions
+ *  @{
+ */
+/** @defgroup Device_WHC_Functions Device WHC Functions
+ *  @brief Lifecycle and transfer operations of the WHC class.
+ *  @{
+ */
 
 /**
 * @brief Initializes class driver with application callback handler.
@@ -276,8 +314,12 @@ int usbd_whc_transmit_data(u8 ep_addr, u8 *buf, u32 len, void *userdata);
 
 /**
  * @brief Prepares to receive non-control OUT data.
+ * @note  The controller writes whole packets, so the DMA window is usb_get_dma_len(len, MPS),
+ *        which exceeds len when len is not a multiple of the MPS. The buffer shall hold that
+ *        window: the class does not report its capacity, so the core cannot reject or clamp an
+ *        oversized OUT transfer and a host sending more than len bytes overruns a smaller buffer.
  * @param[in] ep_addr: Endpoint address.
- * @param[in] buf: Pointer to the data buffer.
+ * @param[in] buf: Pointer to the data buffer, at least usb_get_dma_len(len, MPS) bytes.
  * @param[in] len: Length of the data in bytes.
  * @param[in] userdata: userdata from application for each endpoint.
  * @return 0 on success, non-zero on failure.
@@ -292,8 +334,13 @@ int usbd_whc_receive_data(u8 ep_addr, u8 *buf, u32 len, void *userdata);
  */
 u8 usbd_whc_is_bt_en(void);
 
+/** @} End of Device_WHC_Functions group */
+/** @} End of USB_Device_Functions group */
+
+/** @} End of USB_Device_API group */
+
 #ifdef __cplusplus
 }
 #endif
 
-#endif  /* USBD_WHC_H */
+#endif /* USBD_WHC_H */

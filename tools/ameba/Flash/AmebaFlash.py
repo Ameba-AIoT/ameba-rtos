@@ -154,6 +154,7 @@ def flash_process_entry(profile_info, serial_port, serial_baudrate, image_dir, s
                         log_level, log_f,
                         read_wifimac=False,
                         key_prog_specs=None,
+                        sec_en_bits=None,
                         remote_server=None, remote_port=None, remote_password=None,
                         cancel_event=None, active_handlers=None, active_handlers_lock=None):
     logger = create_logger(serial_port, log_level=log_level, file=log_f)
@@ -263,6 +264,15 @@ def flash_process_entry(profile_info, serial_port, serial_baudrate, image_dir, s
                 logger.error(f"Fail to restore the flash block protection")
                 sys_exit(logger, False, ret)
 
+        # Enable security features last: the write is irreversible, so it must not
+        # happen until the firmware it protects is verified on flash. Enabling RSIP
+        # before a successful download would leave the device unable to boot.
+        if sec_en_bits:
+            for name, phy_bit in sec_en_bits:
+                ret = ameba.burn_security_enable_bit(name, phy_bit)
+                if ret != ErrType.OK:
+                    sys_exit(logger, False, ret)
+
         ret = ameba.post_process()
         if ret != ErrType.OK:
             logger.error("Post process fail")
@@ -275,18 +285,24 @@ def flash_process_entry(profile_info, serial_port, serial_baudrate, image_dir, s
             sys_exit(logger, False, ret)
 
         logger.info(f'WiFiMAC: {ameba.device_info.get_wifi_mac_text()}')
-    elif key_prog_specs is not None:
-        # Standalone key-prog (no download in this invocation).
+    elif (key_prog_specs is not None) or sec_en_bits:
+        # Standalone OTP programming (no download in this invocation): key-prog
+        # and/or the security enable bits.
         ret = ameba.prepare(show_device_info=False)
         if ret != ErrType.OK:
-            logger.error("Prepare for key program fail")
+            logger.error("Prepare for OTP program fail")
             sys_exit(logger, False, ret)
 
-        for idx, spec in enumerate(key_prog_specs):
+        for idx, spec in enumerate(key_prog_specs or []):
             logger.info(f"Program key {idx + 1}/{len(key_prog_specs)} at {hex(spec['address'])}...")
             ret = ameba.burn_key(**spec)
             if ret != ErrType.OK:
                 logger.error(f"Program key at {hex(spec['address'])} fail")
+                sys_exit(logger, False, ret)
+
+        for name, phy_bit in (sec_en_bits or []):
+            ret = ameba.burn_security_enable_bit(name, phy_bit)
+            if ret != ErrType.OK:
                 sys_exit(logger, False, ret)
     else:
         # erase
@@ -417,6 +433,15 @@ def main(argc, argv):
     parser.add_argument('--key-enc-data', type=str,
                         help='expected ciphertext as hex string (model-unique only); '
                              'auto-computed as AES-ECB(KeyData, RawData) when not specified')
+    parser.add_argument('--rsip-en', action='store_true',
+                        help='DANGER: permanently enable RSIP by clearing physical OTP 0x368[2]. '
+                             'Irreversible. Runs after --key-prog in the same floader session, so a '
+                             'device-unique key and its RSIP enable need no bootable firmware in between. '
+                             'For the reversible development path use AT+SEC=RSIP_EN,temp instead.')
+    parser.add_argument('--sboot-en', action='store_true',
+                        help='DANGER: permanently enable secure boot by clearing physical OTP 0x368[3]. '
+                             'Irreversible; the device will refuse unsigned firmware afterwards. '
+                             'For the reversible development path use AT+SEC=SBOOT_EN,temp instead.')
 
     parser.add_argument('--remote-server', type=str, help='remote serial server IP address')
     parser.add_argument('--remote-password', type=str, help='remote serial server validation password')
@@ -445,6 +470,11 @@ def main(argc, argv):
     padding = args.padding if args.padding is not None else 0xFF
     output_binary = args.output
     key_prog = args.key_prog
+    sec_en_bits = []
+    if args.rsip_en:
+        sec_en_bits.append(("RSIP", OtpRsipEnPhyBit))
+    if args.sboot_en:
+        sec_en_bits.append(("secure boot", OtpSbootEnPhyBit))
 
     remote_server = args.remote_server
     remote_port = 58916
@@ -591,14 +621,18 @@ def main(argc, argv):
     # a board reset; the floader encrypts/verifies with the RAM copy of the key).
     # chip-erase may run standalone OR be combined with download (erase the whole
     # chip, then program in the same run — download_images() does the erase first).
+    # --rsip-en / --sboot-en may run standalone OR follow key-prog/download in the
+    # same floader session, which is what lets a device-unique key be programmed and
+    # its feature enabled without a bootable firmware in between.
     exclusive_ops = [erase, chip_erase, read_wifimac]
     if download and chip_erase:
         # Combined chip-erase + download: chip-erase is part of the download flow,
         # so don't count it as a separate exclusive operation.
         exclusive_ops = [erase, read_wifimac]
-    op_count = sum(1 for op in exclusive_ops if op) + (1 if (download or key_prog) else 0)
+    op_count = sum(1 for op in exclusive_ops if op) + (1 if (download or key_prog or sec_en_bits) else 0)
     if op_count != 1:
-        logger.error("Exactly one of {download[+key-prog][+chip-erase], erase, chip-erase, read-wifimac, key-prog} should be set")
+        logger.error("Exactly one of {download[+key-prog][+chip-erase][+rsip-en/sboot-en], erase, chip-erase, "
+                     "read-wifimac, key-prog[+rsip-en/sboot-en], rsip-en/sboot-en} should be set")
         sys.exit(1)
 
     # key_prog_specs: list of dicts (XTS needs two keys: ECB + CTR slots).
@@ -746,7 +780,9 @@ def main(argc, argv):
     elif read_wifimac:
         # profile, port, baudrate, memory-type
         pass
-    elif key_prog:
+    elif key_prog or sec_en_bits:
+        # OTP-only run (key-prog and/or security enable bits): needs no image
+        # layout or erase range.
         pass
     else:
         # erase
@@ -795,7 +831,7 @@ def main(argc, argv):
                 end_address = start_address + size * 1024
             memory_info.end_address = end_address
 
-    if (not read_wifimac) and (not key_prog):
+    if (not read_wifimac) and (not key_prog) and (not sec_en_bits):
         if chip_erase:
             logger.info(f"Chip erase: {chip_erase}")
             if memory_type is None:
@@ -844,7 +880,7 @@ def main(argc, argv):
             entry_args = (
                 profile_info, sp, serial_baudrate, image_dir, settings, deepcopy(images_info), chip_erase,
                 memory_type, memory_info, download, log_level, log_f, read_wifimac,
-                key_prog_specs, remote_server, remote_port, remote_password,
+                key_prog_specs, sec_en_bits, remote_server, remote_port, remote_password,
                 cancel_event, active_handlers, active_handlers_lock)
             port_logger = logging.getLogger(str(sp))
             if watchdog is not None:

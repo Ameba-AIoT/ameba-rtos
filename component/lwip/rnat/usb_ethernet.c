@@ -76,10 +76,6 @@ int usb_ethernet_transmit(u8 *buf, u32 len, u8 block)
 static const u8 mac_valid[6] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55};
 static const u8 dhcp_server_mac[6] = {0x02, 0x11, 0x22, 0x33, 0x44, 0x56};
 
-static const usbd_cdc_ecm_priv_data_t ecm_priv = {
-	mac_valid,
-};
-
 static int cdc_ecm_cb_init(void);
 static int cdc_ecm_cb_deinit(void);
 static int cdc_ecm_cb_setup(usb_setup_req_t *req, u8 *buf);
@@ -87,7 +83,6 @@ static int cdc_ecm_cb_received(u8 *buf, u32 length);
 static void cdc_ecm_cb_status_changed(u8 old_status, u8 status);
 
 static const usbd_cdc_ecm_cb_t cdc_ecm_cb = {
-	.priv = &ecm_priv,
 	.init = cdc_ecm_cb_init,
 	.deinit = cdc_ecm_cb_deinit,
 	.setup = cdc_ecm_cb_setup,
@@ -95,10 +90,12 @@ static const usbd_cdc_ecm_cb_t cdc_ecm_cb = {
 	.status_changed = cdc_ecm_cb_status_changed,
 };
 
-static const usbd_cdc_ecm_ep_cfg_t cdc_ecm_ep_cfg = {
+static const usbd_cdc_ecm_config_t cdc_ecm_class_cfg = {
 	.bulk_in_addr  = CDC_ECM_BULK_IN_EP,
 	.bulk_out_addr = CDC_ECM_BULK_OUT_EP,
 	.intr_in_addr  = CDC_ECM_INTR_IN_EP,
+	.mac = mac_valid,
+	/* Every remaining field is left 0 to take the class default. */
 };
 
 
@@ -109,7 +106,9 @@ static const usbd_cdc_ecm_ep_cfg_t cdc_ecm_ep_cfg = {
 #endif
 
 static const usbd_config_t cdc_ecm_cfg = {
-	.speed = USB_ETH_SPEED,
+	.info = {
+		.prod_str = "Realtek CDC ECM",
+	},
 	.isr_priority = INT_PRI_MIDDLE,
 #if defined(CONFIG_AMEBASMART)
 	.nptx_max_epmis_cnt = 1U,
@@ -160,15 +159,14 @@ static int cdc_ecm_cb_setup(usb_setup_req_t *req, u8 *buf)
 		/* Standard SET_INTERFACE */
 	} else if (req_type == USB_REQ_TYPE_CLASS) {
 		switch (req_code) {
-		case USB_CDC_ECM_SET_ETHERNET_PACKET_FILTER:
+		case USB_CDC_SET_ETHERNET_PACKET_FILTER:
 			RTK_LOGS(TAG, RTK_LOG_INFO, "Set filter 0x%04x\n", req->wValue);
 			break;
-		case USB_CDC_ECM_SET_ETHERNET_MULTICAST_FILTERS:
+		case USB_CDC_SET_ETHERNET_MULTICAST_FILTERS:
 			RTK_LOGS(TAG, RTK_LOG_INFO, "Set mul filter\n");
 			break;
-		case USB_CDC_ECM_GET_ETHERNET_STATISTIC:
-			RTK_LOGS(TAG, RTK_LOG_INFO, "Get eth stat 0x%04x\n", req->wValue);
-			break;
+		/* GET_ETHERNET_STATISTIC falls to default: the class reports bmEthernetStatistics
+		 * = 0, so the request must be STALLed (Ref USB 2.0 9.2.7), not answered with zeros. */
 		default:
 			RTK_LOGS(TAG, RTK_LOG_WARN, "Unknown req 0x%02x\n", req_code);
 			ret = HAL_ERR_UNKNOWN;
@@ -234,12 +232,15 @@ static void usb_eth_hotplug_thread(void *param)
 				break;
 			}
 
-			ret = usbd_cdc_ecm_init(&cdc_ecm_cb, &cdc_ecm_ep_cfg);
+			ret = usbd_cdc_ecm_init(&cdc_ecm_cb, &cdc_ecm_class_cfg);
 			if (ret != HAL_OK) {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "ECM init fail %d\n", ret);
 				usbd_deinit();
 				break;
 			}
+
+			/* The class starts with the uplink down; R-NAT serves the host locally */
+			usbd_cdc_ecm_set_link_status(1U);
 
 			RTK_LOGS(TAG, RTK_LOG_INFO, "Reinit done\n");
 		} else if (current_status == USBD_ATTACH_STATUS_ATTACHED) {
@@ -269,7 +270,7 @@ static int usb_eth_do_usb_init(void)
 		return -1;
 	}
 
-	ret = usbd_cdc_ecm_init(&cdc_ecm_cb, &cdc_ecm_ep_cfg);
+	ret = usbd_cdc_ecm_init(&cdc_ecm_cb, &cdc_ecm_class_cfg);
 	if (ret != HAL_OK) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "ECM init fail %d\n", ret);
 		usbd_deinit();
@@ -277,6 +278,9 @@ static int usb_eth_do_usb_init(void)
 		cdc_ecm_attach_sema = NULL;
 		return -1;
 	}
+
+	/* The class starts with the uplink down; R-NAT serves the host locally */
+	usbd_cdc_ecm_set_link_status(1U);
 
 	return 0;
 }
@@ -313,7 +317,7 @@ static const usbh_user_cb_t usbh_ecm_usr_cb = {
 	.validate = cdc_ecm_cb_device_check,
 };
 
-static const usbh_cdc_ecm_priv_data_t ecm_priv = {
+static const usbh_cdc_ecm_config_t ecm_class_cfg = {
 	led_color,
 	mac_valid,
 	sizeof(led_color) / sizeof(led_color[0]),
@@ -406,9 +410,18 @@ static int usb_eth_do_usb_init(void)
 		return -1;
 	}
 
-	ret = usbh_cdc_ecm_init(&cdc_ecm_usb_cb, &ecm_priv);
+	ret = usbh_cdc_ecm_init(&cdc_ecm_usb_cb, &ecm_class_cfg);
 	if (ret != HAL_OK) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Init CDC ECM fail\n");
+		usbh_deinit();
+		return -1;
+	}
+
+	/* All class drivers registered; start USB TRX so enumeration can run. */
+	ret = usbh_start();
+	if (ret != HAL_OK) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Start USBH fail\n");
+		usbh_cdc_ecm_deinit();
 		usbh_deinit();
 		return -1;
 	}
@@ -433,6 +446,7 @@ static void usb_eth_hotplug_thread(void *param)
 
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Hot plug\n");
 
+		usbh_stop();
 		usbh_cdc_ecm_deinit();
 		usbh_deinit();
 
@@ -444,9 +458,18 @@ static void usb_eth_hotplug_thread(void *param)
 			break;
 		}
 
-		ret = usbh_cdc_ecm_init(&cdc_ecm_usb_cb, &ecm_priv);
+		ret = usbh_cdc_ecm_init(&cdc_ecm_usb_cb, &ecm_class_cfg);
 		if (ret != HAL_OK) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Init CDC ECM fail\n");
+			usbh_deinit();
+			break;
+		}
+
+		/* Re-arm USB TRX after the re-init. */
+		ret = usbh_start();
+		if (ret != HAL_OK) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Start USBH fail\n");
+			usbh_cdc_ecm_deinit();
 			usbh_deinit();
 			break;
 		}

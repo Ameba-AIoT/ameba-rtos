@@ -5,10 +5,10 @@
  */
 
 #include "ameba_soc.h"
-#include "bootloader_km4tz.h"
+#include "bootloader_km55tz.h"
 #include "ameba_dump_stack.h"
 #include "ameba_secure_boot.h"
-#include "boot_ota_km4tz.h"
+#include "boot_ota_km55tz.h"
 #if (!defined (CONFIG_WHC_INTF_IPC) && defined (CONFIG_WHC_DEV))
 #include "hci_core.h"
 #endif

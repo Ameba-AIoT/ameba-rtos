@@ -14,7 +14,7 @@ int whc_ipc_host_send_msg(u32 id, u32 *param_buf, u32 buf_len)
 {
 	struct event_priv_t *event_priv = &global_idev.event_priv;
 	int ret = 0;
-	int cnt = 120000;
+	int cnt = 16000;
 
 	if (!global_idev.host_init_done) {
 		dev_err(global_idev.pwhc_dev, "Host api err: wifi not init\n");
@@ -46,19 +46,22 @@ int whc_ipc_host_send_msg(u32 id, u32 *param_buf, u32 buf_len)
 	ret = ameba_ipc_channel_send(global_idev.event_ch, &(event_priv->api_ipc_msg));
 	if (ret < 0) {
 		dev_err(global_idev.pwhc_dev, "LINUX IPC SEND FAIL!!!! ret = %d", ret);
+		mutex_unlock(&(event_priv->iiha_send_mutex));
+		goto func_exit;
 	}
 
+	/* usleep_range instead of udelay: yield the CPU so the worker that sets PROCESS_DONE can run (RSWLANDIOT-16775) */
 	while (event_priv->preq_msg->api_id != WHC_API_PROCESS_DONE) {
-		cnt --;
+		cnt--;
 		if (cnt == 0) {
 			dev_warn(global_idev.pwhc_dev, "wait remsg has been 1.2s,id:%x\n", event_priv->preq_msg->api_id);
 		}
-		udelay(10);
+		usleep_range(75, 100);
 	}
 
-	mutex_unlock(&(event_priv->iiha_send_mutex));
-
 	ret = event_priv->preq_msg->ret;
+
+	mutex_unlock(&(event_priv->iiha_send_mutex));
 
 func_exit:
 	return ret;
@@ -455,7 +458,7 @@ u32 whc_host_update_ip_addr(void)
 	int ret = 0;
 	struct event_priv_t *event_priv = &global_idev.event_priv;
 	u32 param_buf[1] = {0};
-	u32 try_cnt = 5000;//wait 10ms
+	u32 try_cnt = 134;
 	u8 *ip_addr = NULL;
 	dma_addr_t ip_addr_phy = 0;
 
@@ -486,8 +489,8 @@ u32 whc_host_update_ip_addr(void)
 
 	while (try_cnt) {
 		if (event_priv->preq_msg->api_id != WHC_API_PROCESS_DONE) {
-			try_cnt --;
-			udelay(2);
+			try_cnt--;
+			usleep_range(75, 100);
 		} else {
 			break;
 		}
@@ -497,8 +500,9 @@ u32 whc_host_update_ip_addr(void)
 		dev_err(global_idev.pwhc_dev, "wowlan update ip address fail");
 	}
 
-	mutex_unlock(&(event_priv->iiha_send_mutex));
 	ret = event_priv->preq_msg->ret;
+
+	mutex_unlock(&(event_priv->iiha_send_mutex));
 
 	if (ip_addr) {
 		dma_free_coherent(global_idev.pwhc_dev, sizeof(u32), ip_addr, ip_addr_phy);
@@ -1118,6 +1122,31 @@ int whc_host_get_edcca_mode(u8 *edcca_mode)
 	/* need do cache invalidate before get value */
 	*edcca_mode = *virt_addr;
 	rtw_mfree(sizeof(u8), virt_addr, dma_addr);
+
+func_exit:
+	return ret;
+}
+
+int whc_host_get_txpower(u8 rate, s8 *txpwr)
+{
+	int ret = 0;
+	u32 param_buf[2];
+	s8 *virt_addr = NULL;
+	dma_addr_t dma_addr = 0;
+
+	virt_addr = rtw_malloc(sizeof(s8), &dma_addr);
+	if (virt_addr == NULL) {
+		dev_err(global_idev.pwhc_dev, "%s: malloc failed!\n", __func__);
+		ret = -ENOMEM;
+		goto func_exit;
+	}
+	param_buf[0] = (u32)rate;
+	param_buf[1] = (u32)dma_addr;
+
+	ret = whc_ipc_host_send_msg(WHC_API_WIFI_GET_TX_POWER, param_buf, 2);
+	/* need do cache invalidate before get value */
+	*txpwr = *virt_addr;
+	rtw_mfree(sizeof(s8), virt_addr, dma_addr);
 
 func_exit:
 	return ret;

@@ -13,13 +13,18 @@
 extern "C" {
 #endif
 
-/* Exported defines ----------------------------------------------------------*/
-
 /** @addtogroup USB_Common_API USB Common API
  *  @{
  */
+
+/* Exported defines ----------------------------------------------------------*/
+
 /** @addtogroup USB_Common_Constants USB Common Constants
  * @{
+ */
+/** @defgroup USB_Common_CDC_Constants USB CDC Constants (CDC 1.2)
+ *  @brief Communications Device Class definitions shared by the USBD and USBH CDC drivers.
+ *  @{
  */
 
 /* CDC Class Codes */
@@ -87,11 +92,21 @@ extern "C" {
 #define USB_CDC_CONNECTION_BITRATE_HS                   480000000U /**< High Speed: 480 Mbit/s */
 #define USB_CDC_CONNECTION_BITRATE_FS                   12000000U  /**< Full Speed: 12 Mbit/s */
 
+/** @} End of USB_Common_CDC_Constants group */
 /** @} End of USB_Common_Constants group */
+
+/* Exported types ------------------------------------------------------------*/
+
+/* Exported macros -----------------------------------------------------------*/
+
+/* Exported variables --------------------------------------------------------*/
+
+/* Exported functions --------------------------------------------------------*/
+
 /** @} End of USB_Common_API group */
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif  /* USB_CDC_H */
+#endif /* USB_CDC_H */

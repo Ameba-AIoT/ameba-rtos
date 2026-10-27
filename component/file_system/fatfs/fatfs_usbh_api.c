@@ -109,6 +109,8 @@ int fatfs_usbh_init(void)
 	}
 
 	usbh_msc_init(&fatfs_msc_usr_cb);
+	/* All class drivers registered; start USB TRX so enumeration can run. */
+	usbh_start();
 
 	while (1) {
 		if (fatfs_msc_is_ready) {

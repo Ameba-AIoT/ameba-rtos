@@ -37,7 +37,7 @@
 
 static uint16_t i2c_target_addr[3];
 I2C_InitTypeDef I2CInitDat[3];
-static u32 restart_enable = 0;
+static uint32_t restart_enable[3] = {0};
 static u32 master_addr_retry = 1;
 
 
@@ -97,7 +97,7 @@ void i2c_init(i2c_t *obj, PinName sda, PinName scl)
 
 	/* Init global variables */
 	i2c_target_addr[obj->i2c_idx] = I2CInitDat[obj->i2c_idx].I2CAckAddr;
-	restart_enable = 0;
+	restart_enable[obj->i2c_idx] = 0;
 
 	/* Init I2C now */
 	if (I2CInitDat[obj->i2c_idx].I2CIdx == 0) {
@@ -202,7 +202,7 @@ void i2c_restart_enable(i2c_t *obj)
 		I2C_Cmd(obj->I2Cx, ENABLE);
 	}
 
-	restart_enable = 1;
+	restart_enable[obj->i2c_idx] = 1;
 }
 
 /**
@@ -225,7 +225,7 @@ void i2c_restart_disable(i2c_t *obj)
 		I2C_Cmd(obj->I2Cx, ENABLE);
 	}
 
-	restart_enable = 0;
+	restart_enable[obj->i2c_idx] = 0;
 }
 
 /**
@@ -389,14 +389,14 @@ int i2c_write(i2c_t *obj, int address, const char *data, int length, int stop)
 		I2C_Init(obj->I2Cx, &I2CInitDat[obj->i2c_idx]);
 		I2C_Cmd(obj->I2Cx, ENABLE);
 
-		restart_enable = 0;
+		restart_enable[obj->i2c_idx] = 0;
 	}
 
 	if (1 == stop) {
 		return I2C_MasterWrite(obj->I2Cx, (unsigned char *)data, length);
 	}
 
-	if (restart_enable == 0) {
+	if (restart_enable[obj->i2c_idx] == 0) {
 		i2c_restart_enable(obj);
 	}
 	return i2c_send_restart(obj->I2Cx, (unsigned char *)data, length, 1);

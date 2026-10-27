@@ -7,54 +7,6 @@
 #ifndef _AMEBA_SPORT_H_
 #define _AMEBA_SPORT_H_
 
-/** @addtogroup AUDIO_SPORT
-  * @verbatim
-  *****************************************************************************************
-  * Introduction
-  *****************************************************************************************
-  * audio sport:
-  * 	- Base Address: AUDIO_SPORT0_DEV,AUDIO_SPORT1_DEV,AUDIO_SPORT2_DEV,AUDIO_SPORT3_DEV,
-  * 	- Source clk: 40MHz
-  * 	- Sample rate: 8/16/32/44.1/48/88.2/96 /11.025/12/22.05 KHz
-  * 	- Sample bit: 16 bit, 20 bit,24 bit, 32bit
-  * 	- Channel number: mono or stereo
-  * 	- Data format: I2S, Left justified, PCM mode A, PCM mode B
-  * 	- Use GDMA to move data
-  *
-  *****************************************************************************************
-  * How to use audio sport
-  *****************************************************************************************
-  *      To use audio codec sport, the following steps are mandatory:
-  *
-  *      1. Open audio codec clock and function using
-  *			PLLx_Set(0, ENABLE); (x is 0 or 1)
-  *			RCC_PeriphClockCmd(APBPeriph_AUDIOC, APBPeriph_AUDIOC_CLOCK, ENABLE);
-  *			RCC_PeriphClockCmd(APBPeriph_SPORT, APBPeriph_SPORT_CLOCK, ENABLE);
-  *
-  *      2. AUDIO SPORT pin setting:
-  *			PAD_CMD(PinName, DISABLE).
-  *
-  *      3. Fill the AUDIO_SP_InitStruct with the desired parameters.
-  *
-  *      4. configure AUDIO SPORT with the corresponding configuration.
-  *			AUDIO_SP_Init(AUDIO_SP_DEV, &SP_InitStruct)
-  *
-  *      5. According to audio codec transfer direction, start Tx or Rx or both path
-  *		start Tx path:
-  *			AUDIO_SP_DmaCmd(AUDIO_SPORT_DEV, ENABLE);
-  *			AUDIO_SP_TxStart(AUDIO_SPORT_DEV, ENABLE);
-  *		start Rx path:
-  *			AUDIO_SP_DmaCmd(AUDIO_SPORT_DEV, ENABLE);
-  *			AUDIO_SP_RxStart(AUDIO_SPORT_DEV, ENABLE);
-  *
-  *      6. Use AUDIO_SP_TXGDMA_Init or AUDIO_SP_RXGDMA_Init or both function to activate the GDMA according to transfer direction.
-  *
-  *      @note    All other functions can be used separately to modify, if needed,
-  *			a specific feature of the AUDIO SPORT.
-  *****************************************************************************************
-  * @endverbatim
-  */
-
 /** @addtogroup Ameba_Periph_Driver
   * @{
   */

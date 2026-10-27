@@ -14,9 +14,6 @@
 /******************************************************************/
 /********** MACROS for FULLMAC. **************/
 /******************************************************************/
-/* Allow print debug info at runtime by control log level. */
-/* Runtime order: echo 8 4 1 7 > /proc/sys/kernel/printk   */
-#define DEBUG 1
 
 #ifdef CONFIG_NAN
 #define WHC_MAX_NET_PORT_NUM		(3)

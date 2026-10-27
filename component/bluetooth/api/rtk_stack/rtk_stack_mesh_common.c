@@ -1355,7 +1355,7 @@ static uint16_t rtk_stack_send_one_shot_adv(rtk_bt_mesh_stack_act_send_adv_t *ad
 	uint8_t *padv_data = gap_sched_task_get();
 	if (NULL == padv_data) {
 		BT_LOGE("[%s] Allocate padv_data fail ! \n\r", __func__);
-		return RTK_BT_MESH_STACK_API_FAIL;
+		return RTK_BT_FAIL;
 	}
 	memcpy(padv_data, adv_param->adv_raw_data, adv_param->adv_data_len);
 
@@ -1373,7 +1373,7 @@ static uint16_t rtk_stack_send_one_shot_adv(rtk_bt_mesh_stack_act_send_adv_t *ad
 		break;
 	}
 	gap_sched_try(ptask);
-	return RTK_BT_MESH_STACK_API_SUCCESS;
+	return RTK_BT_OK;
 }
 
 static uint16_t rtk_stack_set_random_value_for_authentication(rtk_bt_mesh_stack_act_set_random_value_t *value)
@@ -1384,16 +1384,16 @@ static uint16_t rtk_stack_set_random_value_for_authentication(rtk_bt_mesh_stack_
 	oob_size = oob_size_for_provisioning;
 	store_data_use_big_endian(random, auth_data, oob_size);
 	if (prov_auth_value_set(auth_data, oob_size)) {
-		return RTK_BT_MESH_STACK_API_SUCCESS;
+		return RTK_BT_OK;
 	} else {
-		return RTK_BT_MESH_STACK_API_FAIL;
+		return RTK_BT_FAIL;
 	}
 }
 
 static uint16_t rtk_stack_get_heartbeat_subscribe_result(rtk_bt_mesh_hb_sub_t *hb_sub)
 {
 	*(hb_sub_t *)hb_sub = hb_subscription_get();
-	return RTK_BT_MESH_STACK_API_SUCCESS;
+	return RTK_BT_OK;
 }
 
 static uint16_t rtk_stack_set_model_subscribe(rtk_bt_mesh_set_model_subscribe_t *model_sub)
@@ -1402,17 +1402,22 @@ static uint16_t rtk_stack_set_model_subscribe(rtk_bt_mesh_set_model_subscribe_t 
 	mesh_model_p pmodel = mesh_model_get_by_model_id(p_element, model_sub->model_id);
 	if (pmodel == NULL || MESH_NOT_SUBSCRIBE_ADDR(model_sub->sub_addr)) {
 		BT_LOGE("[%s] Can not get model info or sub addr(0x%x) is not correct!\r\n", __func__, model_sub->sub_addr);
-		return RTK_BT_MESH_STACK_API_FAIL;
+		return RTK_BT_FAIL;
 	} else {
 		if (mesh_model_sub(pmodel, model_sub->sub_addr)) {
-			return RTK_BT_MESH_STACK_API_SUCCESS;
+			return RTK_BT_OK;
 		} else {
 			BT_LOGE("[%s] Set model subscribe fail!\r\n", __func__);
-			return RTK_BT_MESH_STACK_API_FAIL;
+			return RTK_BT_FAIL;
 		}
 	}
 }
 
+#if defined(RTK_BLE_MESH_PROVISIONER_SUPPORT) && RTK_BLE_MESH_PROVISIONER_SUPPORT
+/* The caller of the set prov param cmd may free its param after the cmd returns, so keep a copy */
+static rtk_bt_mesh_stack_act_set_prov_param_t prov_param_store;
+static bool prov_param_store_valid;
+#endif
 static void rtk_stack_prov_param_set(rtk_bt_mesh_stack_act_set_prov_param_t *p_data)
 {
 	uint16_t net_key_index;
@@ -1548,7 +1553,7 @@ static bool rtk_stack_retrans_param_set(rtk_bt_mesh_stack_set_retrans_param_t *p
 	result->ttl = mesh_node.ttl;
 	result->trans_retrans_count = mesh_node.trans_retrans_count;
 	rtk_bt_evt_indicate(p_evt, NULL);
-	return RTK_BT_MESH_STACK_API_SUCCESS;
+	return RTK_BT_OK;
 }
 
 #if defined(RTK_BLE_MESH_PROVISIONER_SUPPORT) && RTK_BLE_MESH_PROVISIONER_SUPPORT
@@ -1560,9 +1565,9 @@ static uint16_t rtk_stack_pb_adv_con(rtk_bt_mesh_stack_act_pb_adv_con_t *pbadvco
 	le_vendor_set_mesh_packet_priority(mesh_prio);
 #endif
 	if (pb_adv_link_open(0, pbadvcon->uuid)) {
-		ret = RTK_BT_MESH_STACK_API_SUCCESS;
+		ret = RTK_BT_OK;
 	} else {
-		ret = RTK_BT_MESH_STACK_API_FAIL;
+		ret = RTK_BT_FAIL;
 	}
 	return ret;
 }
@@ -1571,9 +1576,9 @@ static uint16_t rtk_stack_pb_adv_discon(void)
 {
 	uint16_t ret;
 	if (pb_adv_link_close(0, PB_ADV_LINK_CLOSE_SUCCESS)) {
-		ret = RTK_BT_MESH_STACK_API_SUCCESS;
+		ret = RTK_BT_OK;
 	} else {
-		ret = RTK_BT_MESH_STACK_API_FAIL;
+		ret = RTK_BT_FAIL;
 	}
 	return ret;
 }
@@ -1629,7 +1634,7 @@ static uint16_t rtk_stack_pb_gatt_con(rtk_bt_mesh_stack_act_pb_gatt_con_t *pgatt
 		return RTK_BT_ERR_LOWER_STACK_API;
 	}
 
-	return RTK_BT_MESH_STACK_API_SUCCESS;
+	return RTK_BT_OK;
 }
 
 static uint16_t rtk_stack_pb_gatt_discon(rtk_bt_mesh_stack_act_pb_gatt_discon_t *pgatt_discon)
@@ -1646,16 +1651,16 @@ static uint16_t rtk_stack_pb_gatt_discon(rtk_bt_mesh_stack_act_pb_gatt_discon_t 
 		return RTK_BT_ERR_LOWER_STACK_API;
 	}
 
-	return RTK_BT_MESH_STACK_API_SUCCESS;
+	return RTK_BT_OK;
 }
 
 static uint16_t rtk_stack_start_provisioning(rtk_bt_mesh_stack_act_start_prov_t *start_prov)
 {
 	uint16_t ret;
 	if (prov_invite(start_prov->attn_dur)) {
-		ret = RTK_BT_MESH_STACK_API_SUCCESS;
+		ret = RTK_BT_OK;
 	} else {
-		ret = RTK_BT_MESH_STACK_API_FAIL;
+		ret = RTK_BT_FAIL;
 	}
 	return ret;
 }
@@ -1667,7 +1672,7 @@ static uint16_t rtk_stack_method_choose_for_prov(rtk_bt_mesh_stack_prov_start_t 
 		RTK_BT_MESH_PROV_START_OUTPUT_OOB_ACTION_OUTPUT_NUMERIC == method->auth_action.oob_action) {
 		oob_size_for_provisioning = method->auth_size.oob_size;
 	}
-	return RTK_BT_MESH_STACK_API_SUCCESS;
+	return RTK_BT_OK;
 }
 
 static int prov_client_conn_id;
@@ -1677,13 +1682,13 @@ static uint16_t rtk_stack_prov_service_discovery(rtk_bt_mesh_stack_act_prov_dis_
 	uint8_t conn_id;
 	if (bt_stack_le_gap_get_conn_id(prov_dis->conn_handle, &conn_id)) {
 		BT_LOGE("[%s] Get connection id fail\r\n", __func__);
-		return RTK_BT_MESH_STACK_API_FAIL;
+		return RTK_BT_FAIL;
 	}
 	if (prov_client_start_discovery(conn_id)) {
 		prov_client_conn_id = conn_id;  // Save the conn id for use of notify of prov service later
-		ret = RTK_BT_MESH_STACK_API_SUCCESS;
+		ret = RTK_BT_OK;
 	} else {
-		ret = RTK_BT_MESH_STACK_API_FAIL;
+		ret = RTK_BT_FAIL;
 	}
 	return ret;
 }
@@ -1693,15 +1698,15 @@ static uint16_t rtk_stack_prov_service_set_notify(rtk_bt_mesh_stack_act_prov_set
 	uint16_t ret;
 	uint8_t ctx_id = 0;
 	if (!prov_client_data_out_cccd_set(prov_client_conn_id, prov_notify->is_enable)) {
-		ret = RTK_BT_MESH_STACK_API_FAIL;
+		ret = RTK_BT_FAIL;
 		goto end;
 	}
 	ctx_id = prov_service_alloc_proxy_ctx(prov_client_conn_id);
 	if (ctx_id == MESH_PROXY_PROTOCOL_RSVD_CTX_ID) {
-		ret = RTK_BT_MESH_STACK_API_FAIL;
+		ret = RTK_BT_FAIL;
 		goto end;
 	}
-	ret = RTK_BT_MESH_STACK_API_SUCCESS;
+	ret = RTK_BT_OK;
 end:
 	return ret;
 }
@@ -1712,13 +1717,13 @@ static uint16_t rtk_stack_proxy_service_discovery(rtk_bt_mesh_stack_act_proxy_di
 	uint8_t conn_id;
 	if (bt_stack_le_gap_get_conn_id(proxy_dis->conn_handle, &conn_id)) {
 		BT_LOGE("[%s] Get connection id fail\r\n", __func__);
-		return RTK_BT_MESH_STACK_API_FAIL;
+		return RTK_BT_FAIL;
 	}
 	if (proxy_client_start_discovery(conn_id)) {
 		proxy_client_conn_id = conn_id;  // Save the conn id for use of notify of proxy service later
-		ret = RTK_BT_MESH_STACK_API_SUCCESS;
+		ret = RTK_BT_OK;
 	} else {
-		ret = RTK_BT_MESH_STACK_API_FAIL;
+		ret = RTK_BT_FAIL;
 	}
 	return ret;
 }
@@ -1727,9 +1732,9 @@ static uint16_t rtk_stack_proxy_service_set_notify(rtk_bt_mesh_stack_act_proxy_s
 {
 	uint16_t ret;
 	if (proxy_client_data_out_cccd_set(proxy_client_conn_id, proxy_notify->is_enable)) {
-		ret = RTK_BT_MESH_STACK_API_SUCCESS;
+		ret = RTK_BT_OK;
 	} else {
-		ret = RTK_BT_MESH_STACK_API_FAIL;
+		ret = RTK_BT_FAIL;
 	}
 	return ret;
 }
@@ -1872,14 +1877,14 @@ static uint16_t rtk_stack_set_service_adv(rtk_bt_mesh_stack_act_set_service_adv_
 		mesh_private_service_identity_adv_stop();
 	}
 
-	return RTK_BT_MESH_STACK_API_SUCCESS;
+	return RTK_BT_OK;
 }
 #endif // end of RTK_BLE_MESH_DEVICE_SUPPORT
 
 extern bool bt_stack_profile_check(rtk_bt_profile_t profile);
 uint16_t bt_mesh_stack_act_handle(rtk_bt_cmd_t *p_cmd)
 {
-	uint16_t ret = RTK_BT_MESH_STACK_API_FAIL;
+	uint16_t ret = RTK_BT_FAIL;
 	if (true != bt_stack_profile_check(RTK_BT_PROFILE_MESH)) {
 		BT_LOGE("Error: BLE MESH profile is not initiated\r\n");
 		ret = RTK_BT_ERR_UNSUPPORTED;
@@ -1888,15 +1893,20 @@ uint16_t bt_mesh_stack_act_handle(rtk_bt_cmd_t *p_cmd)
 	switch (p_cmd->act) {
 	case RTK_BT_MESH_STACK_ACT_NODE_RESET:
 		mesh_node_reset();
-		ret = RTK_BT_MESH_STACK_API_SUCCESS;
+#if defined(RTK_BLE_MESH_PROVISIONER_SUPPORT) && RTK_BLE_MESH_PROVISIONER_SUPPORT
+		if (prov_param_store_valid) {
+			rtk_stack_prov_param_set(&prov_param_store);
+		}
+#endif
+		ret = RTK_BT_OK;
 		break;
 	case RTK_BT_MESH_STACK_ACT_DEV_INFO_SWITCH:
 		rtk_stack_set_device_info_display(p_cmd->param);
-		ret = RTK_BT_MESH_STACK_API_SUCCESS;
+		ret = RTK_BT_OK;
 		break;
 	case RTK_BT_MESH_STACK_ACT_USER_LIST_INFO:
 		user_cmd_list(NULL);
-		ret = RTK_BT_MESH_STACK_API_SUCCESS;
+		ret = RTK_BT_OK;
 		break;
 	case RTK_BT_MESH_STACK_ACT_SEND_ONE_SHOT_ADV:
 		ret = rtk_stack_send_one_shot_adv(p_cmd->param);
@@ -1916,25 +1926,29 @@ uint16_t bt_mesh_stack_act_handle(rtk_bt_cmd_t *p_cmd)
 #if defined(RTK_BLE_MESH_BASED_ON_CODED_PHY) && RTK_BLE_MESH_BASED_ON_CODED_PHY
 	case RTK_BT_MESH_STACK_ACT_SET_TX_PHY:
 		if (rtk_stack_set_tx_phy(p_cmd->param)) {
-			ret = RTK_BT_MESH_STACK_API_SUCCESS;
+			ret = RTK_BT_OK;
 		}
 		break;
 #endif
 	case RTK_BT_MESH_STACK_ACT_SET_PROV_PARAM:
+#if defined(RTK_BLE_MESH_PROVISIONER_SUPPORT) && RTK_BLE_MESH_PROVISIONER_SUPPORT
+		prov_param_store = *(rtk_bt_mesh_stack_act_set_prov_param_t *)p_cmd->param;
+		prov_param_store_valid = true;
+#endif
 		rtk_stack_prov_param_set(p_cmd->param);
-		ret = RTK_BT_MESH_STACK_API_SUCCESS;
+		ret = RTK_BT_OK;
 		break;
 #if defined(RTK_BLE_MESH_FN_SUPPORT) && RTK_BLE_MESH_FN_SUPPORT
 	case RTK_BT_MESH_STACK_ACT_FN_INIT:
 		if (rtk_stack_fn_init(p_cmd->param)) {
-			ret = RTK_BT_MESH_STACK_API_SUCCESS;
+			ret = RTK_BT_OK;
 		} else {
-			ret = RTK_BT_MESH_STACK_API_FAIL;
+			ret = RTK_BT_FAIL;
 		}
 		break;
 	case RTK_BT_MESH_STACK_ACT_FN_DEINIT:
 		rtk_stack_fn_deinit();
-		ret = RTK_BT_MESH_STACK_API_SUCCESS;
+		ret = RTK_BT_OK;
 		break;
 #endif // end of RTK_BLE_MESH_FN_SUPPORT
 #if defined(RTK_BLE_MESH_PROVISIONER_SUPPORT) && RTK_BLE_MESH_PROVISIONER_SUPPORT
@@ -1973,9 +1987,9 @@ uint16_t bt_mesh_stack_act_handle(rtk_bt_cmd_t *p_cmd)
 #if defined(RTK_BLE_MESH_LPN_SUPPORT) && RTK_BLE_MESH_LPN_SUPPORT
 	case RTK_BT_MESH_STACK_ACT_LPN_INIT:
 		if (rtk_stack_lpn_init(p_cmd->param)) {
-			ret = RTK_BT_MESH_STACK_API_SUCCESS;
+			ret = RTK_BT_OK;
 		} else {
-			ret = RTK_BT_MESH_STACK_API_FAIL;
+			ret = RTK_BT_FAIL;
 		}
 		break;
 	case RTK_BT_MESH_STACK_ACT_LPN_REQ: {
@@ -1986,20 +2000,20 @@ uint16_t bt_mesh_stack_act_handle(rtk_bt_cmd_t *p_cmd)
 	}
 	case RTK_BT_MESH_STACK_ACT_LPN_SUB: {
 		rtk_stack_lpn_sub(p_cmd->param);
-		ret = RTK_BT_MESH_STACK_API_SUCCESS;
+		ret = RTK_BT_OK;
 		break;
 	}
 	case RTK_BT_MESH_STACK_ACT_LPN_CLEAR: {
 		if (rtk_stack_lpn_clear(p_cmd->param)) {
-			ret = RTK_BT_MESH_STACK_API_SUCCESS;
+			ret = RTK_BT_OK;
 		} else {
-			ret = RTK_BT_MESH_STACK_API_FAIL;
+			ret = RTK_BT_FAIL;
 		}
 		break;
 	}
 	case RTK_BT_MESH_STACK_ACT_LPN_DEINIT:
 		rtk_stack_lpn_deinit();
-		ret = RTK_BT_MESH_STACK_API_SUCCESS;
+		ret = RTK_BT_OK;
 		break;
 #endif // end of RTK_BLE_MESH_LPN_SUPPORT
 	case RTK_BT_MESH_STACK_ACT_SET_SERVICE_ADV:
@@ -2008,7 +2022,8 @@ uint16_t bt_mesh_stack_act_handle(rtk_bt_cmd_t *p_cmd)
 #endif // end of RTK_BLE_MESH_DEVICE_SUPPORT
 	default:
 		BT_LOGE("[%s] Unknown p_cmd->act:%d\r\n", __func__, p_cmd->act);
-		break;
+		ret = RTK_BT_ERR_NO_CASE_ELEMENT;
+		goto end;
 	}
 end:
 	p_cmd->ret = ret;
@@ -2020,12 +2035,12 @@ uint16_t bt_stack_mesh_init(void *data)
 {
 	rtk_bt_mesh_app_conf_t *mesh_app_conf = &((rtk_bt_app_conf_t *)data)->bt_mesh_app_conf;
 	if (rtk_bt_mesh_save_info(mesh_app_conf)) {
-		return RTK_BT_MESH_STACK_API_FAIL;
+		return RTK_BT_FAIL;
 	}
 	rtk_bt_mesh_gap_init();
 	rtk_bt_mesh_stack_init(mesh_app_conf);
 	rtk_bt_mesh_one_shot_adv_init();
-	return RTK_BT_MESH_STACK_API_SUCCESS;
+	return RTK_BT_OK;
 }
 
 void bt_stack_mesh_deinit(void)
@@ -2036,6 +2051,7 @@ void bt_stack_mesh_deinit(void)
 	prov_client_deinit();
 #if defined(RTK_BLE_MESH_PROVISIONER_SUPPORT) && RTK_BLE_MESH_PROVISIONER_SUPPORT
 	proxy_client_deinit();
+	prov_param_store_valid = false;
 #endif
 }
 

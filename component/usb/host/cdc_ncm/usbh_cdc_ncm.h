@@ -25,12 +25,12 @@ extern "C" {
        USB Core Driver
 */
 
-/* Exported defines ----------------------------------------------------------*/
-
-/* Exported macros -----------------------------------------------------------*/
 /** @addtogroup USB_Host_API USB Host API
  *  @{
  */
+
+/* Exported defines ----------------------------------------------------------*/
+
 /** @addtogroup USB_Host_Constants USB Host Constants
  * @{
  */
@@ -62,13 +62,15 @@ extern "C" {
  */
 
 /**
- * @brief USB CDC NCM Host Private Data Structure.
+ * @brief Configuration for the CDC NCM host class.
+ * @details Carries every CDC NCM host option. Host-global parameters (speed, FIFO depths,
+ *          main task stack and priority, ISR priority) live in @ref usbh_config_t instead.
+ * @note  The structure is stored by pointer, but the MAC is copied at init, so the buffer
+ *        itself need not outlive the init call.
  */
 typedef struct {
-	const u16 *led_array;    /**< Pointer to the LED status array */
-	const u8 *mac_value;     /**< Pointer to the MAC address buffer */
-	u8 led_cnt;        /**< LED count */
-} usbh_cdc_ncm_priv_data_t;
+	const u8 *mac_value;     /**< MAC address to program, 6 bytes, NULL to keep the dongle default. */
+} usbh_cdc_ncm_config_t;
 
 /* NCM user callback interface */
 typedef struct {
@@ -76,42 +78,42 @@ typedef struct {
 	 * @brief Callback invoked during NCM class driver initialization.
 	 * @return 0 on success, non-zero on failure.
 	 */
-	int(* init)(void);
+	int (*init)(void);
 
 	/**
 	 * @brief Callback invoked during NCM class driver de-initialization.
 	 */
-	void (* deinit)(void);
+	void (*deinit)(void);
 
 	/**
 	 * @brief Callback invoked when a device is attached.
 	 */
-	void (* attached)(void);
+	void (*attached)(void);
 
 	/**
 	 * @brief Callback invoked when a device is detached.
 	 */
-	void (* detached)(void);
+	void (*detached)(void);
 
 	/**
 	 * @brief Callback invoked when the device setup phase is complete.
 	 */
-	void (* setup)(void);
+	void (*setup)(void);
 
 	/**
 	 * @brief Callback invoked when a bulk IN data transfer (Receive) is complete.
 	 * @param[in] buf: Pointer to the buffer containing received data.
 	 * @param[in] len: Length of the valid received data in bytes.
 	 */
-	void (* received)(u8 *buf, u32 len);
+	void (*received)(u8 *buf, u32 len);
 } usbh_cdc_ncm_state_cb_t;
 
 typedef struct {
 	usbh_pipe_t pipe;                         /**< USB Host pipe handle. */
-	usbh_ep_desc_t ep_desc;                   /**< Endpoint descriptor. */
 #if USBH_CDC_NCM_STATE_TRACE_ENABLE
 	u32 trigger_cnt;                          /**< Debug trigger counter. */
 #endif
+	usbh_ep_desc_t ep_desc;                   /**< Endpoint descriptor (byte-packed). */
 	u8 valid;                                 /**< Validity flag for this pipe info. */
 } usbh_cdc_ncm_pipe_info_t;
 
@@ -122,37 +124,64 @@ typedef struct {
  * @brief Structure representing the CDC NCM host instance.
  */
 typedef struct {
+	const usbh_cdc_ncm_state_cb_t *cb;               /**< User callback structure */
+	usb_host_t *host;                                /**< USB Host core handle */
+	u8 *dongle_ctrl_buf;                             /**< Buffer for control transfers (cache aligned) */
+
+	/* Class state */
+	u16 sub_status;                                  /**< NCM sub-status */
+	u16 intr_check_tick;                             /**< NCM Intr check tick */
+	u8 state;                                        /**< Internal state machine status */
+	__IO u8 eth_hw_connect;                          /**< Ethernet physical link status: 0=Disconnect, 1=Connect */
+	u8 halt_ep_addr;                                 /**< Address of the halted endpoint being cleared in CDC_NCM_STATE_ERROR */
+	u8 halt_retry_cnt;                               /**< Failed CLEAR_FEATURE(ENDPOINT_HALT) attempts for halt_ep_addr */
+
+	/* Device identity and interfaces */
+	u16 vid;                                         /**< Vendor ID */
+	u16 pid;                                         /**< Product ID */
+	u8 ctrl_itf_id;                                  /**< Communication (control) Interface number */
+	u8 data_itf_id;                                  /**< Data Interface number */
+	u8 data_alt_set;                                 /**< Alternate Setting value for Data Interface */
+	u8 union_data_itf_id;                            /**< Data Interface number from Union Functional Descriptor, 0xFF if not found */
+
+	/* Pipes */
 	usbh_cdc_ncm_pipe_info_t intr_rx;                /**< Intr IN Endpoint Info */
 	usbh_cdc_ncm_pipe_info_t bulk_tx;                /**< Bulk OUT Endpoint Info */
 	usbh_cdc_ncm_pipe_info_t bulk_rx;                /**< Bulk IN Endpoint Info */
 
+	/* NTB parameters */
+	u32 ntb_in_max_size;                             /**< Max NTB the device may send to the host (IN direction) */
+	u32 ntb_out_max_size;                            /**< Max NTB the host may send to the device (OUT direction) */
 	usb_cdc_ncm_ntb_parameters_t ntb_params;         /**< NTB parameters from device */
+	u16 ntb_sequence;                                /**< NTB sequence counter */
+	u16 packet_filter;                               /**< Packet filter configuration */
 
+	/* BULK TX */
 	usb_os_sema_t bulk_tx_sema;                      /**< Semaphore for BULK TX synchronization */
-	const usbh_cdc_ncm_state_cb_t *cb;                     /**< User callback structure */
-	usb_host_t *host;                                /**< USB Host core handle */
-	u8 *dongle_ctrl_buf;                             /**< Buffer for control transfers (cache aligned) */
 #if !defined(CONFIG_USBH_CDC_NCM_TX_AGGREGATION)
 	u8 *tx_ntb_buf;                                  /**< DMA-safe TX NTB buffer (non-aggregation path), allocated in init */
 #else
-	u8 *tx_agg_buf[USBH_CDC_NCM_TX_AGG_NUM_BUF];    /**< DMA-safe TX aggregation ping-pong buffers, allocated in init */
+	u8 *tx_agg_buf[USBH_CDC_NCM_TX_AGG_NUM_BUF];     /**< DMA-safe TX aggregation ping-pong buffers, allocated in init */
 #endif
-	u32 ntb_in_max_size;                             /**< Max NTB the device may send to the host (IN direction) */
-	u32 ntb_out_max_size;                            /**< Max NTB the host may send to the device (OUT direction) */
+	__IO u8 bulk_tx_block;                           /**< Flag indicating BULK TX is blocked/busy */
+	__IO u8 bulk_tx_err;                             /**< Set when the BULK TX a blocked sender waits for failed */
+	__IO u8 tx_open;                                 /**< Set by init once the TX resources exist, cleared first by deinit */
+	__IO u8 tx_users;                                /**< Tasks inside the TX API; deinit waits for 0 before freeing TX resources */
 
 #if defined(CONFIG_USBH_CDC_NCM_TX_AGGREGATION)
 	/* ====================================================================
 	 * TX datagram aggregation bookkeeping
 	 * --------------------------------------------------------------------
-	 * The DMA payload itself lives in two file-static, cache-line-aligned
-	 * buffers in the .c (g_ncm_tx_agg_buf[2][SIZE]). The members below are
+	 * The DMA payload itself lives in tx_agg_buf[], per-instance cache-line-aligned
+	 * heap buffers allocated by usbh_cdc_ncm_init() and freed by usbh_cdc_ncm_deinit().
+	 * The members below are
 	 * pure metadata: they record what is currently in each buffer, and which
 	 * one is being filled vs. transmitted. All of them are guarded by
 	 * tx_agg_lock (producer task vs. TX-complete callback).
 	 *
 	 * --- Per-buffer NTB layout (b = 0 or 1) ----------------------------
 	 *
-	 *   g_ncm_tx_agg_buf[b]:
+	 *   tx_agg_buf[b]:
 	 *
 	 *   off=0                                   tx_agg_write_off[b]
 	 *    |                                            |
@@ -211,37 +240,27 @@ typedef struct {
 	u16 tx_agg_pkt_cnt[USBH_CDC_NCM_TX_AGG_NUM_BUF];                                        /**< Number of datagrams currently appended in each buffer. */
 	u16 tx_agg_data_pos_idx[USBH_CDC_NCM_TX_AGG_NUM_BUF][USBH_CDC_NCM_TX_AGG_MAX_DATAGRAMS];/**< Byte offset of each datagram inside its buffer. */
 	u16 tx_agg_pkt_len[USBH_CDC_NCM_TX_AGG_NUM_BUF][USBH_CDC_NCM_TX_AGG_MAX_DATAGRAMS];     /**< Byte length of each datagram. */
-	u8 tx_agg_fill_idx;                                                                     /**< Index (0/1) of the buffer currently being filled. */
-	__IO u8 tx_agg_xfer_busy;                                                               /**< 1 while a buffer is on the wire (USB OUT in progress). */
+	u8 tx_agg_fill_idx;                              /**< TX aggregation: index (0/1) of the buffer currently being filled. */
+	__IO u8 tx_agg_xfer_busy;                        /**< TX aggregation: 1 while a buffer is on the wire (USB OUT in progress). */
 #endif
 
-#if USBH_CDC_NCM_STATE_TRACE_ENABLE
-	rtos_task_t trace_task;                          /**< Debug state-trace task handle. */
-	u8 trace_task_init_flag;                         /**< Trace task created flag. */
-#endif
-
-	u16 ntb_sequence;                                /**< NTB sequence counter */
-	u16 intr_check_tick;                             /**< NCM Intr check tick */
-	u16 sub_status;                                  /**< NCM sub-status */
-	u16 packet_filter;                               /**< Packet filter configuration */
-	u16 vid;                                         /**< Vendor ID */
-	u16 pid;                                         /**< Product ID */
-
+	/* MAC address and dongle registers */
 	u8 mac[CDC_NCM_MAC_STR_LEN];                     /**< Buffer for saving MAC string */
+	u8 mac_valid;                                    /**< Flag indicating if MAC address is valid */
+	u8 mac_src_type;                                 /**< NCM dongle MAC source type */
+	u8 iMACAddressStringId;                          /**< Index of the MAC address string descriptor */
 	u8 mac_ctrl_lock[CDC_NCM_CTRL_REG_BUF_LEN];      /**< Buffer for MAC lock register readback */
 	u8 rcr[CDC_NCM_CTRL_REG_BUF_LEN];                /**< RCR (Receive Configuration Register) value */
 
-	u8 ctrl_itf_id;                                  /**< Communication (control) Interface number */
-	u8 data_itf_id;                                  /**< Data Interface number */
-	u8 data_alt_set;                                 /**< Alternate Setting value for Data Interface */
-	u8 union_data_itf_id;                            /**< Data Interface number from Union Functional Descriptor, 0xFF if not found */
-	u8 iMACAddressStringId;                          /**< Index of the MAC address string descriptor */
-	u8 state;                                        /**< Internal state machine status */
-	u8 mac_valid;                                    /**< Flag indicating if MAC address is valid */
-	u8 mac_src_type;                                 /**< NCM dongle MAC source type */
-	__IO u8 bulk_tx_block;                           /**< Flag indicating BULK TX is blocked/busy */
-	__IO u8 eth_hw_connect;                          /**< Ethernet physical link status: 0=Disconnect, 1=Connect */
+#if USBH_CDC_NCM_STATE_TRACE_ENABLE
+	rtos_task_t trace_task;                          /**< Debug state-trace task handle. */
+	u8 trace_task_init_flag;                         /**< Debug state-trace task created flag. */
+#endif
 } usbh_cdc_ncm_host_t;
+
+/* Exported macros -----------------------------------------------------------*/
+
+/* Exported variables --------------------------------------------------------*/
 
 /* Exported functions --------------------------------------------------------*/
 
@@ -255,10 +274,11 @@ typedef struct {
 /**
  * @brief  Initializes the CDC NCM host class driver.
  * @param[in] cb: Pointer to the user-defined callback structure.
- * @param[in] priv: Pointer to the user-defined private parameter structure.
+ * @param[in] cfg: Pointer to the class configuration, NULL to take every default.
+ *                 See @ref usbh_cdc_ncm_config_t.
  * @return 0 (HAL_OK) on success, non-zero on failure.
  */
-int usbh_cdc_ncm_init(const usbh_cdc_ncm_state_cb_t *cb, const usbh_cdc_ncm_priv_data_t *priv);
+int usbh_cdc_ncm_init(const usbh_cdc_ncm_state_cb_t *cb, const usbh_cdc_ncm_config_t *cfg);
 
 /**
  * @brief  De-initializes the CDC NCM host class driver and releases resources.
@@ -294,6 +314,8 @@ u8 usbh_cdc_ncm_is_configured(void);
  * @param[in] buf: Pointer to the data buffer (Ethernet frame) to be transmitted.
  * @param[in] len: Length of the data in bytes.
  * @param[in] block: Blocking mode flag (e.g., 0 for non-blocking, else for blocking).
+ * @note   Task context only, one sender at a time. Safe against a concurrent deinit of the class:
+ *         returns HAL_ERR_HW while the class is not initialized or is being de-initialized.
  * @return 0 (HAL_OK) on success, non-zero on failure.
  */
 int usbh_cdc_ncm_transmit(u8 *buf, u32 len, u8 block);
@@ -313,10 +335,11 @@ const u8 *usbh_cdc_ncm_get_mac_str(void);
 
 /** @} End of Host_CDC_NCM_Functions group */
 /** @} End of USB_Host_Functions group */
+
 /** @} End of USB_Host_API group */
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif  /* USBH_CDC_NCM_H */
+#endif /* USBH_CDC_NCM_H */

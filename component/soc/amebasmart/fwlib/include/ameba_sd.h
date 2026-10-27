@@ -228,7 +228,7 @@ typedef enum {
 /** @defgroup SD_RESP_ACMD SD RESP ACMD
   * @{
   */
-#define SD_APP_CMD						BIT(5)   /*!< Status bit indicating an application command follows. */
+#define SDIOH_R1_APP_CMD					BIT(5)   /*!< Card status bit indicating the card expects an application command next. */
 /**
   * @}
   */

@@ -12,6 +12,28 @@
 
 struct axi_data *paxi_data_global;
 
+/*
+ * to convert physic address from fw to virtual address in linux system.
+ */
+__iomem void *llhw_ipc_fw_phy_to_virt(phys_addr_t p)
+{
+	struct axi_data *axi = paxi_data_global;
+	struct resource *res = axi->fw_psram_res;
+
+	/* Route SRAM-window phys first; DDR boards keep fw_psram only (RSWLANDIOT-16775) */
+	if (axi->fw_sram_res &&
+		p >= axi->fw_sram_res->start && p <= axi->fw_sram_res->end) {
+		return (__iomem void *)((p - axi->fw_sram_res->start) + axi->fw_sram_start);
+	}
+
+	if (p < res->start || p > res->end) {
+		WARN_ONCE(1, "whc: fw ptr 0x%llx out of PSRAM/SRAM window\n", (unsigned long long)p);
+		return NULL;
+	}
+
+	return (__iomem void *)((p - res->start) + axi->fw_psram_start);
+}
+
 void *rtw_malloc(size_t size, dma_addr_t *paddr)
 {
 	return dma_alloc_coherent(global_idev.pwhc_dev, size, paddr, GFP_KERNEL);

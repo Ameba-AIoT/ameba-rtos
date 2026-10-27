@@ -19,6 +19,7 @@
 
 /* Private function prototypes -----------------------------------------------*/
 
+static u8 usbd_vendor_get_interval(u8 interval_hs, u8 interval_fs, u8 is_hs);
 static int usbd_vendor_set_config(usb_dev_t *dev, u8 config);
 static void usbd_vendor_clear_config(usb_dev_t *dev, u8 config);
 static int usbd_vendor_setup(usb_dev_t *dev, usb_setup_req_t *req);
@@ -42,27 +43,19 @@ static const u8 usbd_vendor_dev_desc[USB_LEN_DEV_DESC] = {
 	0x00,                                           /* bDeviceSubClass */
 	0x00,                                           /* bDeviceProtocol */
 	USB_MAX_EP0_SIZE,                               /* bMaxPacketSize */
-	USB_LOW_BYTE(USBD_VENDOR_VID),                  /* idVendor */
-	USB_HIGH_BYTE(USBD_VENDOR_VID),
-	USB_LOW_BYTE(USBD_VENDOR_PID),                  /* idProduct */
-	USB_HIGH_BYTE(USBD_VENDOR_PID),
-	0x00,                                           /* bcdDevice */
+	USB_LOW_BYTE(USB_VID),                          /* idVendor (patched by core from usbd_dev_info_t) */
+	USB_HIGH_BYTE(USB_VID),
+	USB_LOW_BYTE(USB_PID),                          /* idProduct (patched by core from usbd_dev_info_t) */
+	USB_HIGH_BYTE(USB_PID),
+	0x00,                                           /* bcdDevice (patched by core from usbd_dev_info_t) */
 	0x02,
-	USBD_IDX_MFC_STR,                               /* iManufacturer */
-	USBD_IDX_PRODUCT_STR,                           /* iProduct */
-	USBD_IDX_SERIAL_STR,                            /* iSerialNumber */
+	USBD_IDX_MFC_STR,                               /* iManufacturer (patched by core) */
+	USBD_IDX_PRODUCT_STR,                           /* iProduct (patched by core) */
+	USBD_IDX_SERIAL_STR,                            /* iSerialNumber (patched by core) */
 	0x01                                            /* bNumConfigurations */
 };  /* usbd_vendor_dev_desc */
 
-/* USB Standard String Descriptor 0 */
-static const u8 usbd_vendor_lang_id_desc[USB_LEN_LANGID_STR_DESC] = {
-	USB_LEN_LANGID_STR_DESC,                        /* bLength */
-	USB_DESC_TYPE_STRING,                           /* bDescriptorType */
-	USB_LOW_BYTE(USBD_VENDOR_LANGID_STRING),            /* wLANGID */
-	USB_HIGH_BYTE(USBD_VENDOR_LANGID_STRING),
-};  /* usbd_vendor_lang_id_desc */
-
-#ifndef CONFIG_USB_FS
+#ifndef CONFIG_SUPPORT_USB_FS_ONLY
 /* USB Standard Device Qualifier Descriptor */
 static const u8 usbd_vendor_device_qualifier_desc[USB_LEN_DEV_QUALIFIER_DESC] = {
 	USB_LEN_DEV_QUALIFIER_DESC,                     /* bLength */
@@ -126,7 +119,7 @@ static const u8 usbd_vendor_hs_config_desc[] = {
 	USB_CH_EP_TYPE_INTR,							/* bmAttributes: INTR */
 	USB_LOW_BYTE(USBD_VENDOR_HS_INTR_MPS),			/* wMaxPacketSize: */
 	USB_HIGH_BYTE(USBD_VENDOR_HS_INTR_MPS),
-	USBD_VENDOR_HS_INTR_OUT_INTERVAL,				/* bInterval */
+	USBD_VENDOR_DEFAULT_EP_INTERVAL,				/* bInterval (patched at runtime) */
 
 	/* INTR IN Endpoint Descriptor */
 	USB_LEN_EP_DESC,                                /* bLength */
@@ -135,7 +128,7 @@ static const u8 usbd_vendor_hs_config_desc[] = {
 	USB_CH_EP_TYPE_INTR,							/* bmAttributes: INTR */
 	USB_LOW_BYTE(USBD_VENDOR_HS_INTR_MPS),			/* wMaxPacketSize: */
 	USB_HIGH_BYTE(USBD_VENDOR_HS_INTR_MPS),
-	USBD_VENDOR_HS_INTR_IN_INTERVAL,				/* bInterval */
+	USBD_VENDOR_DEFAULT_EP_INTERVAL,				/* bInterval (patched at runtime) */
 
 	/* ISOC OUT Endpoint Descriptor */
 	USB_LEN_EP_DESC,                                /* bLength */
@@ -144,7 +137,7 @@ static const u8 usbd_vendor_hs_config_desc[] = {
 	USB_CH_EP_TYPE_ISOC,							/* bmAttributes: ISOC */
 	USB_LOW_BYTE(USBD_VENDOR_HS_ISOC_MPS),			/* wMaxPacketSize: */
 	USB_HIGH_BYTE(USBD_VENDOR_HS_ISOC_MPS),
-	USBD_VENDOR_HS_ISOC_OUT_INTERVAL,				/* bInterval */
+	USBD_VENDOR_DEFAULT_EP_INTERVAL,				/* bInterval (patched at runtime) */
 
 	/* ISOC IN Endpoint Descriptor */
 	USB_LEN_EP_DESC,                                /* bLength */
@@ -153,7 +146,7 @@ static const u8 usbd_vendor_hs_config_desc[] = {
 	USB_CH_EP_TYPE_ISOC,							/* bmAttributes: ISOC */
 	USB_LOW_BYTE(USBD_VENDOR_HS_ISOC_MPS),			/* wMaxPacketSize: */
 	USB_HIGH_BYTE(USBD_VENDOR_HS_ISOC_MPS),
-	USBD_VENDOR_HS_ISOC_IN_INTERVAL,				/* bInterval */
+	USBD_VENDOR_DEFAULT_EP_INTERVAL,				/* bInterval (patched at runtime) */
 };  /* usbd_vendor_hs_config_desc */
 #endif
 
@@ -206,7 +199,7 @@ static const u8 usbd_vendor_fs_config_desc[] = {
 	USB_CH_EP_TYPE_INTR,							/* bmAttributes: INTR */
 	USB_LOW_BYTE(USBD_VENDOR_FS_INTR_MPS),          /* wMaxPacketSize: */
 	USB_HIGH_BYTE(USBD_VENDOR_FS_INTR_MPS),
-	USBD_VENDOR_FS_INTR_OUT_INTERVAL,				/* bInterval */
+	USBD_VENDOR_DEFAULT_EP_INTERVAL,				/* bInterval (patched at runtime) */
 
 	/* INTR IN Endpoint Descriptor */
 	USB_LEN_EP_DESC,                                /* bLength */
@@ -215,7 +208,7 @@ static const u8 usbd_vendor_fs_config_desc[] = {
 	USB_CH_EP_TYPE_INTR,							/* bmAttributes: INTR */
 	USB_LOW_BYTE(USBD_VENDOR_FS_INTR_MPS),          /* wMaxPacketSize: */
 	USB_HIGH_BYTE(USBD_VENDOR_FS_INTR_MPS),
-	USBD_VENDOR_FS_INTR_IN_INTERVAL,				/* bInterval */
+	USBD_VENDOR_DEFAULT_EP_INTERVAL,				/* bInterval (patched at runtime) */
 
 	/* ISOC OUT Endpoint Descriptor */
 	USB_LEN_EP_DESC,                                /* bLength */
@@ -224,7 +217,7 @@ static const u8 usbd_vendor_fs_config_desc[] = {
 	USB_CH_EP_TYPE_ISOC,                            /* bmAttributes: ISOC */
 	USB_LOW_BYTE(USBD_VENDOR_FS_ISOC_MPS),          /* wMaxPacketSize: */
 	USB_HIGH_BYTE(USBD_VENDOR_FS_ISOC_MPS),
-	USBD_VENDOR_FS_ISOC_OUT_INTERVAL,               /* bInterval */
+	USBD_VENDOR_DEFAULT_EP_INTERVAL,               /* bInterval */
 
 	/* ISOC IN Endpoint Descriptor */
 	USB_LEN_EP_DESC,                                /* bLength */
@@ -233,7 +226,7 @@ static const u8 usbd_vendor_fs_config_desc[] = {
 	USB_CH_EP_TYPE_ISOC,                            /* bmAttributes: ISOC */
 	USB_LOW_BYTE(USBD_VENDOR_FS_ISOC_MPS),          /* wMaxPacketSize: */
 	USB_HIGH_BYTE(USBD_VENDOR_FS_ISOC_MPS),
-	USBD_VENDOR_FS_ISOC_IN_INTERVAL,                /* bInterval */
+	USBD_VENDOR_DEFAULT_EP_INTERVAL,                /* bInterval */
 };  /* usbd_vendor_fs_config_desc */
 
 /* Vendor Class Driver */
@@ -250,6 +243,8 @@ static const usbd_class_driver_t usbd_vendor_driver = {
 
 /* Vendor Device */
 static usbd_vendor_dev_t usbd_vendor_dev;
+
+/* Exported variables --------------------------------------------------------*/
 
 /* Private functions ---------------------------------------------------------*/
 
@@ -281,6 +276,22 @@ static int usbd_vendor_config_out_xfer_len(usbd_ep_t *ep)
 }
 
 /**
+  * @brief  Get the bInterval of a periodic endpoint for a speed
+  * @note   Shared by the descriptor patch and set_config, so the interval the endpoint is opened
+  *         with is the one the host reads from the descriptor, ref USB 2.0 9.6.6.
+  * @param  interval_hs: Configured High-Speed value, 0 for the class default
+  * @param  interval_fs: Configured Full-Speed value, 0 for the class default
+  * @param  is_hs: 1 for High Speed, 0 for Full Speed
+  * @retval bInterval
+  */
+static u8 usbd_vendor_get_interval(u8 interval_hs, u8 interval_fs, u8 is_hs)
+{
+	u8 interval = (is_hs != 0U) ? interval_hs : interval_fs;
+
+	return (interval != 0U) ? interval : USBD_VENDOR_DEFAULT_EP_INTERVAL;
+}
+
+/**
   * @brief  Set Vendor class configuration
   * @note   This function is called within an interrupt service routine (ISR) context;
   *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
@@ -298,7 +309,9 @@ static int usbd_vendor_set_config(usb_dev_t *dev, u8 config)
 	usbd_ep_t *ep_bulk_out = &cdev->ep_bulk_out;
 	usbd_ep_t *ep_intr_in = &cdev->ep_intr_in;
 	usbd_ep_t *ep_intr_out = &cdev->ep_intr_out;
+	const usbd_vendor_config_t *cfg = cdev->cfg;
 	u8 speed = dev->dev_speed;
+	u8 is_hs = (speed == USB_SPEED_HIGH) ? 1U : 0U;
 	usb_ep_info_t *info;
 
 	/* Only the bConfigurationValue advertised in the config descriptor is valid */
@@ -308,32 +321,25 @@ static int usbd_vendor_set_config(usb_dev_t *dev, u8 config)
 
 	cdev->dev = dev;
 
-	if (!cdev->from_composite) {
-#ifdef CONFIG_USBD_SELF_POWERED
-		dev->self_powered = 1;
-#else
-		dev->self_powered = 0;
-#endif
-#ifdef CONFIG_USBD_REMOTE_WAKEUP_EN
-		dev->remote_wakeup_en = 1;
-#else
-		dev->remote_wakeup_en = 0;
-#endif
-	}
-
 	cdev->alt_setting = 0U;
 	/* Init INTR IN EP */
 	info = &ep_intr_in->info;
 	info->mps = (speed == USB_SPEED_HIGH) ? USBD_VENDOR_HS_INTR_MPS : USBD_VENDOR_FS_INTR_MPS;
-	info->binterval = (speed == USB_SPEED_HIGH) ? USBD_VENDOR_HS_INTR_IN_INTERVAL : USBD_VENDOR_FS_INTR_IN_INTERVAL;
-	usbd_ep_init(dev, ep_intr_in);
+	info->binterval = usbd_vendor_get_interval(cfg->intr_in_interval_hs, cfg->intr_in_interval_fs, is_hs);
+	ret = usbd_ep_init(dev, ep_intr_in);
+	if (ret != HAL_OK) {
+		goto exit_clear_config;
+	}
 	ep_intr_in->xfer_state = 0;
 
 	/* Init INTR OUT EP */
 	info = &ep_intr_out->info;
 	info->mps = (speed == USB_SPEED_HIGH) ? USBD_VENDOR_HS_INTR_MPS : USBD_VENDOR_FS_INTR_MPS;
-	info->binterval = (speed == USB_SPEED_HIGH) ? USBD_VENDOR_HS_INTR_OUT_INTERVAL : USBD_VENDOR_FS_INTR_OUT_INTERVAL;
-	usbd_ep_init(dev, ep_intr_out);
+	info->binterval = usbd_vendor_get_interval(cfg->intr_out_interval_hs, cfg->intr_out_interval_fs, is_hs);
+	ret = usbd_ep_init(dev, ep_intr_out);
+	if (ret != HAL_OK) {
+		goto exit_clear_config;
+	}
 	ret = usbd_vendor_config_out_xfer_len(ep_intr_out);
 	if (ret != HAL_OK) {
 		goto exit_clear_config;
@@ -346,13 +352,19 @@ static int usbd_vendor_set_config(usb_dev_t *dev, u8 config)
 	/* Init BULK IN EP */
 	info = &ep_bulk_in->info;
 	info->mps = (speed == USB_SPEED_HIGH) ? USBD_VENDOR_HS_BULK_MPS : USBD_VENDOR_FS_BULK_MPS;
-	usbd_ep_init(dev, ep_bulk_in);
+	ret = usbd_ep_init(dev, ep_bulk_in);
+	if (ret != HAL_OK) {
+		goto exit_clear_config;
+	}
 	ep_bulk_in->xfer_state = 0;
 
 	/* Init BULK OUT EP */
 	info = &ep_bulk_out->info;
 	info->mps = (speed == USB_SPEED_HIGH) ? USBD_VENDOR_HS_BULK_MPS : USBD_VENDOR_FS_BULK_MPS;
-	usbd_ep_init(dev, ep_bulk_out);
+	ret = usbd_ep_init(dev, ep_bulk_out);
+	if (ret != HAL_OK) {
+		goto exit_clear_config;
+	}
 	ret = usbd_vendor_config_out_xfer_len(ep_bulk_out);
 	if (ret != HAL_OK) {
 		goto exit_clear_config;
@@ -365,14 +377,20 @@ static int usbd_vendor_set_config(usb_dev_t *dev, u8 config)
 	/* Init ISO IN EP */
 	info = &ep_isoc_in->info;
 	info->mps = (speed == USB_SPEED_HIGH) ? USBD_VENDOR_HS_ISOC_MPS : USBD_VENDOR_FS_ISOC_MPS;
-	info->binterval = (speed == USB_SPEED_HIGH) ? USBD_VENDOR_HS_ISOC_IN_INTERVAL : USBD_VENDOR_FS_ISOC_IN_INTERVAL;
-	usbd_ep_init(dev, ep_isoc_in);
+	info->binterval = usbd_vendor_get_interval(cfg->isoc_in_interval_hs, cfg->isoc_in_interval_fs, is_hs);
+	ret = usbd_ep_init(dev, ep_isoc_in);
+	if (ret != HAL_OK) {
+		goto exit_clear_config;
+	}
 
 	/* Init ISO OUT EP */
 	info = &ep_isoc_out->info;
 	info->mps = (speed == USB_SPEED_HIGH) ? USBD_VENDOR_HS_ISOC_MPS : USBD_VENDOR_FS_ISOC_MPS;
-	info->binterval = (speed == USB_SPEED_HIGH) ? USBD_VENDOR_HS_ISOC_OUT_INTERVAL : USBD_VENDOR_FS_ISOC_OUT_INTERVAL;
-	usbd_ep_init(dev, ep_isoc_out);
+	info->binterval = usbd_vendor_get_interval(cfg->isoc_out_interval_hs, cfg->isoc_out_interval_fs, is_hs);
+	ret = usbd_ep_init(dev, ep_isoc_out);
+	if (ret != HAL_OK) {
+		goto exit_clear_config;
+	}
 	ret = usbd_vendor_config_out_xfer_len(ep_isoc_out);
 	if (ret != HAL_OK) {
 		goto exit_clear_config;
@@ -481,7 +499,9 @@ static int usbd_vendor_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			}
 			break;
 		case USB_REQ_GET_INTERFACE:
-			if (dev->dev_state == USBD_STATE_CONFIGURED) {
+			/* Ref USB 2.0 9.4.4 and Table 9-3: wLength is one, and a request for a
+			   non-existent interface is a request error */
+			if ((dev->dev_state == USBD_STATE_CONFIGURED) && (req->wIndex == 0U) && (req->wLength == 1U)) {
 				ep0_in->xfer_buf[0] = cdev->alt_setting;
 				ep0_in->xfer_len = 1U;
 				ret = usbd_ep_transmit(dev, ep0_in);
@@ -490,7 +510,10 @@ static int usbd_vendor_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			}
 			break;
 		case USB_REQ_GET_STATUS:
-			if (dev->dev_state == USBD_STATE_CONFIGURED) {
+			/* Ref USB 2.0 9.4.5 and Table 9-3: an interface-recipient GET_STATUS returns two
+			   reserved zero bytes, wLength is two, and a request for a non-existent interface
+			   is a request error */
+			if ((dev->dev_state == USBD_STATE_CONFIGURED) && (req->wIndex == 0U) && (req->wLength == 2U)) {
 				ep0_in->xfer_buf[0] = 0U;
 				ep0_in->xfer_buf[1] = 0U;
 				ep0_in->xfer_len = 2U;
@@ -583,8 +606,8 @@ static int usbd_vendor_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status)
 
 	/* Ref USB 2.0 5.3.2: an endpoint is owned by exactly one function. Reject a foreign
 	   address so that the composite dispatcher keeps iterating to the real owner. */
-	if ((ep_addr != cdev->ep_cfg->intr_in_addr) && (ep_addr != cdev->ep_cfg->bulk_in_addr)
-		&& (ep_addr != cdev->ep_cfg->isoc_in_addr)) {
+	if ((ep_addr != cdev->cfg->intr_in_addr) && (ep_addr != cdev->cfg->bulk_in_addr)
+		&& (ep_addr != cdev->cfg->isoc_in_addr)) {
 		return HAL_ERR_PARA;
 	}
 
@@ -592,21 +615,21 @@ static int usbd_vendor_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status)
 		USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_XFER, ep_addr);
 	}
 
-	if (ep_addr == cdev->ep_cfg->intr_in_addr) {
+	if (ep_addr == cdev->cfg->intr_in_addr) {
 		ep_intr_in->xfer_state = 0U;
 		if (cb->intr_transmitted != NULL) {
 			cb->intr_transmitted(status);
 		}
 	}
 
-	if (ep_addr == cdev->ep_cfg->bulk_in_addr) {
+	if (ep_addr == cdev->cfg->bulk_in_addr) {
 		ep_bulk_in->xfer_state = 0U;
 		if (cb->bulk_transmitted != NULL) {
 			cb->bulk_transmitted(status);
 		}
 	}
 
-	if (ep_addr == cdev->ep_cfg->isoc_in_addr) {
+	if (ep_addr == cdev->cfg->isoc_in_addr) {
 		if (cb->isoc_transmitted != NULL) {
 			cb->isoc_transmitted(status);
 		}
@@ -636,12 +659,12 @@ static int usbd_vendor_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len)
 	/* Ref USB 2.0 5.3.2: an endpoint is owned by exactly one function. Reject a foreign
 	   address so that the composite dispatcher keeps iterating to the real owner, which
 	   also re-arms its own OUT endpoint. */
-	if ((ep_addr != cdev->ep_cfg->intr_out_addr) && (ep_addr != cdev->ep_cfg->bulk_out_addr)
-		&& (ep_addr != cdev->ep_cfg->isoc_out_addr)) {
+	if ((ep_addr != cdev->cfg->intr_out_addr) && (ep_addr != cdev->cfg->bulk_out_addr)
+		&& (ep_addr != cdev->cfg->isoc_out_addr)) {
 		return HAL_ERR_PARA;
 	}
 
-	if (ep_addr == cdev->ep_cfg->intr_out_addr) {
+	if (ep_addr == cdev->cfg->intr_out_addr) {
 		if ((len > 0) && (cb != NULL) && (cb->intr_received != NULL)) {
 			cb->intr_received(ep_intr_out->xfer_buf, len);
 		}
@@ -651,7 +674,7 @@ static int usbd_vendor_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len)
 		}
 	}
 
-	if (ep_addr == cdev->ep_cfg->bulk_out_addr) {
+	if (ep_addr == cdev->cfg->bulk_out_addr) {
 		if ((len > 0) && (cb != NULL) && (cb->bulk_received != NULL)) {
 			cb->bulk_received(ep_bulk_out->xfer_buf, len);
 		}
@@ -661,7 +684,7 @@ static int usbd_vendor_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len)
 		}
 	}
 
-	if (ep_addr == cdev->ep_cfg->isoc_out_addr) {
+	if (ep_addr == cdev->cfg->isoc_out_addr) {
 		if ((len > 0) && (cb != NULL) && (cb->isoc_received != NULL)) {
 			cb->isoc_received(ep_isoc_out->xfer_buf, len);
 		}
@@ -720,11 +743,15 @@ static int usbd_vendor_handle_ep0_data_out(usb_dev_t *dev)
   *         EP addresses from the EP configuration structure.
   * @param  desc: Pointer to config descriptor body (starting after config header)
   * @param  len: Length of the descriptor block
-  * @param  ep_cfg: EP configuration with actual endpoint addresses
+  * @param  speed: Speed the descriptor describes, selects the INTR/ISOC intervals
   * @retval None
   */
-static void usbd_vendor_patch_ep_addresses(u8 *desc, u16 len, const usbd_vendor_ep_cfg_t *ep_cfg)
+static void usbd_vendor_patch_desc(u8 *desc, u16 len, usb_speed_type_t speed)
 {
+	usbd_vendor_dev_t *cdev = &usbd_vendor_dev;
+	const usbd_vendor_config_t *cfg = cdev->cfg;
+	u8 is_hs = (speed == USB_SPEED_HIGH) ? 1U : 0U;
+
 	for (u16 i = 0; i < len;) {
 		u8 dlen = desc[i];
 		u8 dtype = desc[i + 1];
@@ -737,19 +764,33 @@ static void usbd_vendor_patch_ep_addresses(u8 *desc, u16 len, const usbd_vendor_
 			u8 dir   = addr & USB_REQ_DIR_MASK;
 			u8 type  = desc[i + 3] & 0x03;
 
+			u8 interval = USBD_VENDOR_DEFAULT_EP_INTERVAL;
+
 			if ((dir == USB_D2H) && (type == USB_CH_EP_TYPE_BULK)) {
-				desc[i + 2] = ep_cfg->bulk_in_addr;
+				desc[i + 2] = cfg->bulk_in_addr;
 			} else if ((dir == USB_H2D) && (type == USB_CH_EP_TYPE_BULK)) {
-				desc[i + 2] = ep_cfg->bulk_out_addr;
+				desc[i + 2] = cfg->bulk_out_addr;
 			} else if ((dir == USB_D2H) && (type == USB_CH_EP_TYPE_INTR)) {
-				desc[i + 2] = ep_cfg->intr_in_addr;
+				desc[i + 2] = cfg->intr_in_addr;
+				interval = usbd_vendor_get_interval(cfg->intr_in_interval_hs, cfg->intr_in_interval_fs, is_hs);
 			} else if ((dir == USB_H2D) && (type == USB_CH_EP_TYPE_INTR)) {
-				desc[i + 2] = ep_cfg->intr_out_addr;
+				desc[i + 2] = cfg->intr_out_addr;
+				interval = usbd_vendor_get_interval(cfg->intr_out_interval_hs, cfg->intr_out_interval_fs, is_hs);
 			} else if ((dir == USB_D2H) && (type == USB_CH_EP_TYPE_ISOC)) {
-				desc[i + 2] = ep_cfg->isoc_in_addr;
+				desc[i + 2] = cfg->isoc_in_addr;
+				interval = usbd_vendor_get_interval(cfg->isoc_in_interval_hs, cfg->isoc_in_interval_fs, is_hs);
 			} else if ((dir == USB_H2D) && (type == USB_CH_EP_TYPE_ISOC)) {
-				desc[i + 2] = ep_cfg->isoc_out_addr;
+				desc[i + 2] = cfg->isoc_out_addr;
+				interval = usbd_vendor_get_interval(cfg->isoc_out_interval_hs, cfg->isoc_out_interval_fs, is_hs);
 			}
+
+			/* BULK leaves bInterval 0 (ignored for BULK, Ref USB 2.0 9.6.6); the periodic
+			   endpoints take the configured value, or the class default when left 0. */
+			if ((type != USB_CH_EP_TYPE_BULK) && (dlen >= USB_LEN_EP_DESC)) {
+				desc[i + 6] = interval;
+			}
+		} else if ((dtype == USB_DESC_TYPE_INTERFACE) && (dlen >= USB_LEN_IF_DESC)) {
+			desc[i + 8] = cdev->itf_str_idx;         /* iInterface */
 		}
 		i += dlen;
 	}
@@ -766,22 +807,13 @@ static void usbd_vendor_patch_ep_addresses(u8 *desc, u16 len, const usbd_vendor_
   */
 static u16 usbd_vendor_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16 buf_len)
 {
-	usbd_vendor_dev_t *cdev = &usbd_vendor_dev;
 	usb_speed_type_t speed = dev->dev_speed;
+	/* Speed the returned configuration describes, which selects the bInterval encoding */
+	usb_speed_type_t desc_speed = speed;
 	const u8 *desc = NULL;
 	u16 len = 0;
 	u8 type = USB_HIGH_BYTE(req->wValue);
 	u8 is_cfg = 0;
-	u8 attr = 0x80U;
-
-	if (!cdev->from_composite) {
-#ifdef CONFIG_USBD_SELF_POWERED
-		attr |= USB_CFG_DESC_OFFSET_ATTR_BIT_SELF_POWERED;
-#endif
-#ifdef CONFIG_USBD_REMOTE_WAKEUP_EN
-		attr |= USB_CFG_DESC_OFFSET_ATTR_BIT_REMOTE_WAKEUP;
-#endif
-	}
 
 	switch (type) {
 
@@ -791,7 +823,7 @@ static u16 usbd_vendor_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *
 		break;
 
 	case USB_DESC_TYPE_CONFIGURATION:
-#ifndef CONFIG_USB_FS
+#ifndef CONFIG_SUPPORT_USB_FS_ONLY
 		if (speed == USB_SPEED_HIGH) {
 			desc = usbd_vendor_hs_config_desc;
 			len = sizeof(usbd_vendor_hs_config_desc);
@@ -804,51 +836,32 @@ static u16 usbd_vendor_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *
 		is_cfg = 1;
 		break;
 
-#ifndef CONFIG_USB_FS
+#ifndef CONFIG_SUPPORT_USB_FS_ONLY
 	case USB_DESC_TYPE_DEVICE_QUALIFIER:
 		desc = usbd_vendor_device_qualifier_desc;
 		len = sizeof(usbd_vendor_device_qualifier_desc);
 		break;
 
 	case USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION:
+		/* Ref USB 2.0 9.6.4: describes the configuration at the speed the device is not
+		   running at, so its bInterval is patched for that speed, not the current one */
 		if (speed == USB_SPEED_HIGH) {
 			desc = usbd_vendor_fs_config_desc;
 			len = sizeof(usbd_vendor_fs_config_desc);
+			desc_speed = USB_SPEED_FULL;
 		} else {
 			desc = usbd_vendor_hs_config_desc;
 			len = sizeof(usbd_vendor_hs_config_desc);
+			desc_speed = USB_SPEED_HIGH;
 		}
 		is_cfg = 1;
 		break;
 #endif
 
 	case USB_DESC_TYPE_STRING:
-		switch (USB_LOW_BYTE(req->wValue)) {
-		case USBD_IDX_LANGID_STR:
-			desc = usbd_vendor_lang_id_desc;
-			len = sizeof(usbd_vendor_lang_id_desc);
-			break;
-		case USBD_IDX_MFC_STR:
-			len = usbd_get_str_descriptor(USBD_VENDOR_MFG_STRING, buf, buf_len);
-			break;
-		case USBD_IDX_PRODUCT_STR:
-			if (speed == USB_SPEED_HIGH) {
-				len = usbd_get_str_descriptor(USBD_VENDOR_PROD_HS_STRING, buf, buf_len);
-			} else {
-				len = usbd_get_str_descriptor(USBD_VENDOR_PROD_FS_STRING, buf, buf_len);
-			}
-			break;
-		case USBD_IDX_SERIAL_STR:
-			len = usbd_get_str_descriptor(USBD_VENDOR_SN_STRING, buf, buf_len);
-			break;
-		case USBD_IDX_MS_OS_STR:
-			/*Not support*/
-			break;
-		/* Add customer string here */
-		default:
-			USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_GET_DESC, 0);
-			break;
-		}
+		/* Every string this class owns is registered with usbd_add_string() and answered by
+		   the core, which only forwards an index it does not know, e.g. the MS OS string */
+		USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_GET_DESC, 0);
 		break;
 
 	default:
@@ -870,14 +883,8 @@ static u16 usbd_vendor_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *
 		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN] = USB_LOW_BYTE(len);
 		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN + 1] = USB_HIGH_BYTE(len);
 
-		if (!cdev->from_composite) {
-			buf[USB_CFG_DESC_OFFSET_ATTR] = attr;
-		}
-
-		/* Patch EP addresses from placeholder to actual values */
-		usbd_vendor_patch_ep_addresses(buf + USB_LEN_CFG_DESC,
-									   len - USB_LEN_CFG_DESC,
-									   cdev->ep_cfg);
+		/* Patch EP addresses, intervals and the class string index to actual values */
+		usbd_vendor_patch_desc(buf + USB_LEN_CFG_DESC, len - USB_LEN_CFG_DESC, desc_speed);
 	}
 
 	return len;
@@ -906,10 +913,10 @@ static void usbd_vendor_status_changed(usb_dev_t *dev, u8 old_status, u8 status)
 /**
   * @brief  Initialize vendor device
   * @param[in] cb: Pointer to the user-defined callback structure.
-  * @param[in] ep_cfg: Pointer to EP configuration (endpoint addresses and buffer sizes).
+  * @param[in] cfg: Pointer to the class configuration.
   * @retval Status
   */
-static int usbd_vendor_private_init(const usbd_vendor_cb_t *cb, const usbd_vendor_ep_cfg_t *ep_cfg)
+static int usbd_vendor_private_init(const usbd_vendor_cb_t *cb, const usbd_vendor_config_t *cfg)
 {
 	int ret = HAL_OK;
 	usbd_vendor_dev_t *cdev = &usbd_vendor_dev;
@@ -926,21 +933,45 @@ static int usbd_vendor_private_init(const usbd_vendor_cb_t *cb, const usbd_vendo
 		return HAL_ERR_PARA;
 	}
 
-	if (ep_cfg == NULL) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid EP cfg\n");
+	if (cfg == NULL) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid cfg\n");
 		return HAL_ERR_PARA;
 	}
 
-	cdev->ep_cfg = ep_cfg;
+	/* Every endpoint is mandatory for this class, and a wrong direction bit would make the
+	   class claim an endpoint the controller drives the other way round. */
+	if (((cfg->bulk_in_addr & USB_REQ_DIR_MASK) != USB_D2H) ||
+		((cfg->isoc_in_addr & USB_REQ_DIR_MASK) != USB_D2H) ||
+		((cfg->intr_in_addr & USB_REQ_DIR_MASK) != USB_D2H) ||
+		((cfg->bulk_out_addr & USB_REQ_DIR_MASK) != USB_H2D) ||
+		((cfg->isoc_out_addr & USB_REQ_DIR_MASK) != USB_H2D) ||
+		((cfg->intr_out_addr & USB_REQ_DIR_MASK) != USB_H2D) ||
+		((cfg->bulk_in_addr & (~USB_REQ_DIR_MASK)) == 0U) ||
+		((cfg->bulk_out_addr & (~USB_REQ_DIR_MASK)) == 0U) ||
+		((cfg->isoc_in_addr & (~USB_REQ_DIR_MASK)) == 0U) ||
+		((cfg->isoc_out_addr & (~USB_REQ_DIR_MASK)) == 0U) ||
+		((cfg->intr_in_addr & (~USB_REQ_DIR_MASK)) == 0U) ||
+		((cfg->intr_out_addr & (~USB_REQ_DIR_MASK)) == 0U)) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid EP addr\n");
+		return HAL_ERR_PARA;
+	}
+
+	/* Published before anything that reads it: the descriptor patch path and every endpoint
+	   setup below resolve their options through cdev->cfg. */
+	cdev->cfg = cfg;
+
+	/* The core owns the string table, so the same call works in standalone and composite
+	   mode. 0 means no iInterface string. */
+	cdev->itf_str_idx = usbd_add_string(cfg->itf_str);
 
 	/* No H2D class/vendor request is waiting for its data stage yet. */
 	cdev->ctrl_req_pending = 0U;
 
 	info = &ep_bulk_out->info;
-	info->addr = cdev->ep_cfg->bulk_out_addr;
+	info->addr = cdev->cfg->bulk_out_addr;
 	info->type = USB_CH_EP_TYPE_BULK;
-	ep_bulk_out->xfer_len = cdev->ep_cfg->bulk_out_xfer_size;
-	ep_bulk_out->xfer_buf_len = cdev->ep_cfg->bulk_out_xfer_size;
+	ep_bulk_out->xfer_len = cdev->cfg->bulk_out_xfer_size;
+	ep_bulk_out->xfer_buf_len = cdev->cfg->bulk_out_xfer_size;
 	ep_bulk_out->xfer_buf = (u8 *)usb_os_malloc(ep_bulk_out->xfer_buf_len);
 	if (ep_bulk_out->xfer_buf == NULL) {
 		ret = HAL_ERR_MEM;
@@ -948,9 +979,9 @@ static int usbd_vendor_private_init(const usbd_vendor_cb_t *cb, const usbd_vendo
 	}
 
 	info = &ep_bulk_in->info;
-	info->addr = cdev->ep_cfg->bulk_in_addr;
+	info->addr = cdev->cfg->bulk_in_addr;
 	info->type = USB_CH_EP_TYPE_BULK;
-	ep_bulk_in->xfer_buf_len = cdev->ep_cfg->bulk_in_xfer_size;
+	ep_bulk_in->xfer_buf_len = cdev->cfg->bulk_in_xfer_size;
 	ep_bulk_in->xfer_buf = (u8 *)usb_os_malloc(ep_bulk_in->xfer_buf_len);
 	if (ep_bulk_in->xfer_buf == NULL) {
 		ret = HAL_ERR_MEM;
@@ -958,11 +989,11 @@ static int usbd_vendor_private_init(const usbd_vendor_cb_t *cb, const usbd_vendo
 	}
 
 	info = &ep_intr_out->info;
-	info->addr = cdev->ep_cfg->intr_out_addr;
+	info->addr = cdev->cfg->intr_out_addr;
 	info->type = USB_CH_EP_TYPE_INTR;
 	info->binterval = 1U;
-	ep_intr_out->xfer_len = cdev->ep_cfg->intr_out_xfer_size;
-	ep_intr_out->xfer_buf_len = cdev->ep_cfg->intr_out_xfer_size;
+	ep_intr_out->xfer_len = cdev->cfg->intr_out_xfer_size;
+	ep_intr_out->xfer_buf_len = cdev->cfg->intr_out_xfer_size;
 	ep_intr_out->xfer_buf = (u8 *)usb_os_malloc(ep_intr_out->xfer_buf_len);
 	if (ep_intr_out->xfer_buf == NULL) {
 		ret = HAL_ERR_MEM;
@@ -970,10 +1001,10 @@ static int usbd_vendor_private_init(const usbd_vendor_cb_t *cb, const usbd_vendo
 	}
 
 	info = &ep_intr_in->info;
-	info->addr = cdev->ep_cfg->intr_in_addr;
+	info->addr = cdev->cfg->intr_in_addr;
 	info->type = USB_CH_EP_TYPE_INTR;
 	info->binterval = 1U;
-	ep_intr_in->xfer_buf_len = cdev->ep_cfg->intr_in_xfer_size;
+	ep_intr_in->xfer_buf_len = cdev->cfg->intr_in_xfer_size;
 	ep_intr_in->xfer_buf = (u8 *)usb_os_malloc(ep_intr_in->xfer_buf_len);
 	if (ep_intr_in->xfer_buf == NULL) {
 		ret = HAL_ERR_MEM;
@@ -981,11 +1012,11 @@ static int usbd_vendor_private_init(const usbd_vendor_cb_t *cb, const usbd_vendo
 	}
 
 	info = &ep_isoc_out->info;
-	info->addr = cdev->ep_cfg->isoc_out_addr;
+	info->addr = cdev->cfg->isoc_out_addr;
 	info->type = USB_CH_EP_TYPE_ISOC;
 	info->binterval = 1U;
-	ep_isoc_out->xfer_len = cdev->ep_cfg->isoc_out_xfer_size;
-	ep_isoc_out->xfer_buf_len = cdev->ep_cfg->isoc_out_xfer_size;
+	ep_isoc_out->xfer_len = cdev->cfg->isoc_out_xfer_size;
+	ep_isoc_out->xfer_buf_len = cdev->cfg->isoc_out_xfer_size;
 	ep_isoc_out->xfer_buf = (u8 *)usb_os_malloc(ep_isoc_out->xfer_buf_len);
 	if (ep_isoc_out->xfer_buf == NULL) {
 		ret = HAL_ERR_MEM;
@@ -993,10 +1024,10 @@ static int usbd_vendor_private_init(const usbd_vendor_cb_t *cb, const usbd_vendo
 	}
 
 	info = &ep_isoc_in->info;
-	info->addr = cdev->ep_cfg->isoc_in_addr;
+	info->addr = cdev->cfg->isoc_in_addr;
 	info->type = USB_CH_EP_TYPE_ISOC;
 	info->binterval = 1U;
-	ep_isoc_in->xfer_buf_len = cdev->ep_cfg->isoc_in_xfer_size;
+	ep_isoc_in->xfer_buf_len = cdev->cfg->isoc_in_xfer_size;
 	ep_isoc_in->xfer_buf = (u8 *)usb_os_malloc(ep_isoc_in->xfer_buf_len);
 	if (ep_isoc_in->xfer_buf == NULL) {
 		ret = HAL_ERR_MEM;
@@ -1047,15 +1078,15 @@ init_exit:
 /**
   * @brief  Initialize vendor device as a standalone device (from_composite = 0).
   * @param[in] cb: Pointer to the user-defined callback structure.
-  * @param[in] ep_cfg: Pointer to EP configuration (endpoint addresses and buffer sizes).
+  * @param[in] cfg: Pointer to the class configuration.
   * @retval Status
   */
-int usbd_vendor_init(const usbd_vendor_cb_t *cb, const usbd_vendor_ep_cfg_t *ep_cfg)
+int usbd_vendor_init(const usbd_vendor_cb_t *cb, const usbd_vendor_config_t *cfg)
 {
 	usbd_vendor_dev_t *cdev = &usbd_vendor_dev;
 	int ret;
 
-	ret = usbd_vendor_private_init(cb, ep_cfg);
+	ret = usbd_vendor_private_init(cb, cfg);
 	if (ret == HAL_OK) {
 		cdev->from_composite = 0;
 		usbd_register_class(&usbd_vendor_driver);
@@ -1067,15 +1098,15 @@ int usbd_vendor_init(const usbd_vendor_cb_t *cb, const usbd_vendor_ep_cfg_t *ep_
 /**
   * @brief  Initialize vendor device as part of a composite device (from_composite = 1).
   * @param[in] cb: Pointer to the user-defined callback structure.
-  * @param[in] ep_cfg: Pointer to EP configuration (endpoint addresses and buffer sizes).
+  * @param[in] cfg: Pointer to the class configuration.
   * @retval Status
   */
-int usbd_composite_vendor_init(const usbd_vendor_cb_t *cb, const usbd_vendor_ep_cfg_t *ep_cfg)
+int usbd_composite_vendor_init(const usbd_vendor_cb_t *cb, const usbd_vendor_config_t *cfg)
 {
 	usbd_vendor_dev_t *cdev = &usbd_vendor_dev;
 	int ret;
 
-	ret = usbd_vendor_private_init(cb, ep_cfg);
+	ret = usbd_vendor_private_init(cb, cfg);
 	if (ret == HAL_OK) {
 		cdev->from_composite = 1;
 		ret = usbd_composite_register_driver(&usbd_vendor_driver);
@@ -1103,17 +1134,31 @@ void usbd_vendor_deinit(void)
 	usbd_ep_t *ep_bulk_out = &cdev->ep_bulk_out;
 	usbd_ep_t *ep_intr_in = &cdev->ep_intr_in;
 	usbd_ep_t *ep_intr_out = &cdev->ep_intr_out;
+	u32 wait = 0U;
 
-	while (ep_intr_in->is_busy) {
-		usb_os_delay_us(100);
+#ifdef CONFIG_USBD_COMPOSITE
+	/* Leave the composite framework before anything is torn down: it is refused while the
+	   composite device is still registered on the core, and the class must then stay intact */
+	if (cdev->from_composite != 0U) {
+		if (usbd_composite_unregister_driver(&usbd_vendor_driver) != HAL_OK) {
+			return;
+		}
+	}
+#endif
+
+	/* Wait for in-flight BULK/INTR IN transfers to complete (xfer_state is cleared in the
+	   completion ISR) before the DMA buffers are freed. Bounded (~100 ms): a TX armed just
+	   before a detach never gets a completion. ISOC IN keeps no in-flight state, see
+	   usbd_vendor_transmit_isoc_data(). */
+	while ((wait < 100U) && ((ep_bulk_in->xfer_state != 0U) || (ep_intr_in->xfer_state != 0U))) {
+		usb_os_sleep_ms(1U);
+		wait++;
 	}
 
 	/* Unregister first: no class callback can run afterwards, so releasing cb and the pending
 	   control request below cannot race an EP0 OUT completion in ISR context. */
 #ifdef CONFIG_USBD_COMPOSITE
-	if (cdev->from_composite) {
-		usbd_composite_unregister_driver(&usbd_vendor_driver);
-	} else
+	if (cdev->from_composite == 0U)
 #endif
 	{
 		usbd_unregister_class();
@@ -1154,7 +1199,9 @@ int usbd_vendor_transmit_bulk_data(u8 *buf, u32 len)
 	usb_dev_t *dev = cdev->dev;
 	usbd_ep_t *ep_bulk_in = &cdev->ep_bulk_in;
 
-	if (!dev->is_ready) {
+	/* cdev->dev is assigned in set_config, so it is NULL until the host has
+	   configured the device. */
+	if ((dev == NULL) || (dev->is_ready == 0U)) {
 		return HAL_ERR_HW;
 	}
 
@@ -1189,7 +1236,9 @@ int usbd_vendor_transmit_intr_data(u8 *buf, u32 len)
 	usb_dev_t *dev = cdev->dev;
 	usbd_ep_t *ep_intr_in = &cdev->ep_intr_in;
 
-	if (!dev->is_ready) {
+	/* cdev->dev is assigned in set_config, so it is NULL until the host has
+	   configured the device. */
+	if ((dev == NULL) || (dev->is_ready == 0U)) {
 		return HAL_ERR_HW;
 	}
 
@@ -1220,7 +1269,9 @@ int usbd_vendor_transmit_isoc_data(u8 *buf, u32 len)
 	usb_dev_t *dev = cdev->dev;
 	usbd_ep_t *ep_isoc_in = &cdev->ep_isoc_in;
 
-	if (!dev->is_ready) {
+	/* cdev->dev is assigned in set_config, so it is NULL until the host has
+	   configured the device. */
+	if ((dev == NULL) || (dev->is_ready == 0U)) {
 		return HAL_ERR_HW;
 	}
 
@@ -1228,7 +1279,10 @@ int usbd_vendor_transmit_isoc_data(u8 *buf, u32 len)
 		len = ep_isoc_in->xfer_buf_len;
 	}
 
+	/* Ref USB 2.0 5.6: ISOC is a timely, best-effort stream without retry, so no in-flight
+	   state is kept. Each call arms the next packet right away, the caller accepts that a
+	   packet still pending may be overwritten. */
 	usb_os_memcpy((void *)ep_isoc_in->xfer_buf, (const void *)buf, len);
 	ep_isoc_in->xfer_len = len;
-	return usbd_ep_transmit(cdev->dev, ep_isoc_in);
+	return usbd_ep_transmit(dev, ep_isoc_in);
 }

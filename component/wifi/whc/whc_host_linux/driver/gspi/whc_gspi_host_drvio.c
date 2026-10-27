@@ -84,8 +84,6 @@ static int gspi_frame_xfer(struct whc_gspi *priv, u8 *buf, u32 len)
 	xfer.tx_buf = buf;
 	xfer.rx_buf = buf;
 	xfer.len = len;
-	/* todo */
-	xfer.speed_hz = 10000000;
 	spi_message_init(&msg);
 	spi_message_add_tail(&xfer, &msg);
 

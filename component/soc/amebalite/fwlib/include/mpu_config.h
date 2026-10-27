@@ -155,6 +155,7 @@ typedef struct {
 #define MPU_MEM_ATTR_IDX_WT_T_RA 1
 #define MPU_MEM_ATTR_IDX_WB_T_RWA 2
 #define MPU_MEM_ATTR_IDX_DEVICE 3
+#define MPU_MAX_MEM_ATTR 8	/* MAIR0/MAIR1 provide Attr0~Attr7 */
 /**
  * @}
  */

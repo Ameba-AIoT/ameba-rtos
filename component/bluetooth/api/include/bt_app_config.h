@@ -24,52 +24,80 @@ extern "C"
 #include <rtk_bt_mesh_def.h>
 #endif
 
+/**
+ * @def       RTK_BT_LE_GAP_IRK_LEN
+ * @brief     Length of the Identity Resolving Key (IRK).
+ */
 #define RTK_BT_LE_GAP_IRK_LEN       16
 
 /**
- * @typedef rtk_bt_app_conf_t
- * @brief   structure of default APP configuration
+ * @typedef   rtk_bt_app_conf_t
+ * @brief     Default application configuration.
  */
 typedef struct {
-	uint8_t  a2dp_role;                        /*!< Default A2DP profile role (Only used in BR/EDR) */
-	uint8_t  spp_role;                         /*!< Default SPP profile role (Only used in BR/EDR) */
-	uint8_t  hfp_role;                         /*!< Default HFP profile role (Only used in BR/EDR) */
-	uint8_t  hid_role;                         /*!< Default HID profile role (Only used in BR/EDR) */
-	uint32_t app_profile_support;              /*!< app profile support @ref rtk_bt_profile_t */
-	uint8_t  server_chann;                     /*!< rfc server channel */
-	uint16_t mtu_size;                         /*!< Deafult MTU config, Max value can be set is 512 */
-	bool     master_init_mtu_req;              /*!< Whether local device as master will auto initiate exchange MTU request when connected.
-                                                    If this value is false, user can use @ref rtk_bt_gattc_exchange_mtu
-                                                    to initiate exchange MTU request. */
-	bool     slave_init_mtu_req;               /*!< Whether local device as slave will auto initiate exchange MTU request when connected. */
-	uint8_t  prefer_all_phy;                   /*!< Deafult PHY config: preferred all phy @ref rtk_bt_le_all_phy_prefer_t */
-	uint8_t  prefer_tx_phy;                    /*!< Deafult PHY config: preferred tx phy @ref rtk_bt_le_trx_phy_prefer_t */
-	uint8_t  prefer_rx_phy;                    /*!< Deafult PHY config: preferred rx phy @ref rtk_bt_le_trx_phy_prefer_t */
-	uint16_t max_tx_octets;                    /*!< Default data len config: Max tx octects */
-	uint16_t max_tx_time;                      /*!< Default data len config: Max tx time */
+	uint8_t  a2dp_role;                              /*!< Default A2DP profile role. Only used in BR/EDR. @ref rtk_bt_a2dp_role_t. */
+	uint8_t  spp_role;                               /*!< Default SPP profile role. Only used in BR/EDR. @ref rtk_bt_spp_role_t. */
+	uint8_t  hfp_role;                               /*!< Default HFP profile role. Only used in BR/EDR. @ref rtk_bt_hfp_role_t. */
+	uint8_t  hid_role;                               /*!< Default HID profile role. Only used in BR/EDR. @ref rtk_bt_hid_role_t. */
+	uint32_t app_profile_support;                    /*!< Bit mask of the profiles supported by the application, @ref rtk_bt_profile_t values. */
+	uint8_t  server_chann;                           /*!< RFCOMM server channel number. */
+	uint16_t mtu_size;                               /*!< Default ATT MTU size.
+                                                      *   Max value: 512.
+                                                      *   Default: 180 when NULL is passed to @ref rtk_bt_enable. */
+	bool     master_init_mtu_req;                    /*!< Whether the local device, as central, automatically initiates the exchange MTU request once connected.
+                                                      *   - true: send the exchange MTU request automatically.
+                                                      *   - false: do not send the exchange MTU request automatically. */
+	bool     slave_init_mtu_req;                     /*!< Whether the local device, as peripheral, automatically initiates the exchange MTU request once connected.
+                                                      *   - true: send the exchange MTU request automatically.
+                                                      *   - false: do not send the exchange MTU request automatically. */
+	uint8_t  prefer_all_phy;                         /*!< Default preferred PHY setting: whether the Host has preference for the TX and RX PHY.
+                                                      *   @ref rtk_bt_le_all_phy_prefer_t. */
+	uint8_t  prefer_tx_phy;                          /*!< Default preferred TX PHY setting. @ref rtk_bt_le_trx_phy_prefer_t. */
+	uint8_t  prefer_rx_phy;                          /*!< Default preferred RX PHY setting. @ref rtk_bt_le_trx_phy_prefer_t. */
+	uint16_t max_tx_octets;                          /*!< Default data length setting.
+                                                      *   Range: 0x001B to 0x00FB.
+                                                      *   All other values reserved for future use. */
+	uint16_t max_tx_time;                            /*!< Default data length setting.
+                                                      *   Range: 0x0148 to 0x4290.
+                                                      *   Units: microseconds.
+                                                      *   All other values reserved for future use. */
 #if defined(RTK_BLE_SET_TX_QUEUE_NUM) && RTK_BLE_SET_TX_QUEUE_NUM
-	uint16_t max_stack_tx_pending_num;         /*!< Default max stack tx pending num: default is RTK_BT_GATT_DEFAULT_CREDITS */
+	uint16_t max_stack_tx_pending_num;               /*!< Maximum number of packets pending in the stack TX queue.
+                                                      *   Range: 2 to 15.
+                                                      *   0: @ref RTK_BT_GATT_DEFAULT_CREDITS is used. */
 #endif
-	bool     irk_auto_gen;                     /*!< Whether stack auto generate local IRK. If true, stack will auto generate a value for local IRK and save to
-                                                    FTL first time, then load it from FTL when need to use local IRK next time. */
-	uint8_t  irk[RTK_BT_LE_GAP_IRK_LEN];       /*!< Local IRK data. If irk_auto_gen is false, user can set local IRK value by this field. */
-	bool     user_def_service;                 /*!< Whether register gap and gatt service in app, or use builtin service in stack */
-	bool     cccd_not_check;                   /*!< Whether check if cccd is enabled before send indicate or notify. If true, cccd will not be checked;
-                                                    if false, cccd will be checked, if bit of indicate/notify is not enabled, send indicate or notify will fail */
-	bool     cccd_not_save;                    /*!< Whether save local server's cccd info to flash when bonded. If true, cccd will not be saved. If false,
-                                                    cccd will be saved, and when reconnect to the bonded device, @ref RTK_BT_GATTS_EVT_CCCD_IND events
-                                                    will be indicated immediately.
-                                                    By default, cccd will be saved. And this value will be ignored if @ref RTK_BLE_AUDIO_SUPPORT is enabled.*/
-	bool     key_convert_le_to_bredr;          /*!< Whether convert BLE LTK(only secure connections pairing) to BR/EDR link key (This configuration can only be used in BLE-BR/EDR Dual mode) */
-	uint8_t  min_enc_key_size;                 /*!< The minimum encryption key size that can be permitted when BLE pairing. */
+	bool     irk_auto_gen;                           /*!< Whether the stack automatically generates the local IRK.
+                                                      *   - true: generate a local IRK and save it to FTL on first use, then load it from FTL afterwards.
+                                                      *   - false: use the value set in @ref irk. */
+	uint8_t  irk[RTK_BT_LE_GAP_IRK_LEN];             /*!< Local IRK data.
+                                                      *   Only used when @ref irk_auto_gen is false. */
+	bool     user_def_service;                       /*!< Whether the GAP and GATT services are registered by the application.
+                                                      *   - true: the application registers the GAP and GATT services.
+                                                      *   - false: the built-in services of the stack are used. */
+	bool     cccd_not_check;                         /*!< Whether to skip checking the CCCD before sending an indication or notification.
+                                                      *   - true: the CCCD is not checked.
+                                                      *   - false: the CCCD is checked, and sending fails if the corresponding indication or notification
+                                                      *   bit is not enabled. */
+	bool     cccd_not_save;                          /*!< Whether to skip saving the local server's CCCD information to flash when bonded.
+                                                      *   - true: the CCCD is not saved.
+                                                      *   - false: the CCCD is saved, and @ref RTK_BT_GATTS_EVT_CCCD_IND is indicated immediately
+                                                      *   when reconnecting to the bonded device.
+                                                      *   By default, the CCCD is saved. This value is ignored if @ref RTK_BLE_AUDIO_SUPPORT is enabled. */
+	bool     key_convert_le_to_bredr;                /*!< Whether to convert the BLE LTK (secure connections pairing only) to a BR/EDR link key.
+                                                      *   - true: convert the key.
+                                                      *   - false: do not convert the key.
+                                                      *   Only used in BLE-BR/EDR dual mode. */
+	uint8_t  min_enc_key_size;                       /*!< Minimum encryption key size permitted during BLE pairing.
+                                                      *   Range: 7 to 16.
+                                                      *   0: the setting is not applied. */
 #if defined(RTK_BLE_ISO_SUPPORT) && RTK_BLE_ISO_SUPPORT
-	rtk_bt_le_iso_app_conf_t le_iso_app_conf; /*!< Default configuration for le iso */
+	rtk_bt_le_iso_app_conf_t le_iso_app_conf;        /*!< Default configuration of LE ISO. */
 #endif
 #if defined(RTK_BLE_AUDIO_SUPPORT) && RTK_BLE_AUDIO_SUPPORT
-	rtk_bt_le_audio_app_conf_t le_audio_app_conf; /*!< Default configuration for le audio */
+	rtk_bt_le_audio_app_conf_t le_audio_app_conf;    /*!< Default configuration of LE Audio. */
 #endif
 #if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT
-	rtk_bt_mesh_app_conf_t bt_mesh_app_conf;   /*!< Default configuration for bt mesh */
+	rtk_bt_mesh_app_conf_t bt_mesh_app_conf;         /*!< Default configuration of BT Mesh. */
 #endif
 } rtk_bt_app_conf_t;
 

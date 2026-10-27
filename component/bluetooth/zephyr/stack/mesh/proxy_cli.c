@@ -125,6 +125,16 @@ static void proxy_connected(struct bt_conn *conn, void *user_data)
 {
 	struct bt_mesh_proxy_server *srv = user_data;
 
+#if ZEPHYR_RTK_PATCH
+	/* Manual mode: the server slot is picked here, the connection was made by address */
+	if (!srv) {
+		srv = find_proxy_srv(BT_MESH_KEY_UNUSED, false, true);
+		if (!srv) {
+			(void)bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+			return;
+		}
+	}
+#endif
 	srv->role = bt_mesh_proxy_role_setup(conn, bt_mesh_gatt_send,
 					     proxy_msg_recv);
 }
@@ -133,6 +143,11 @@ static void proxy_link_open(struct bt_conn *conn)
 {
 	struct bt_mesh_proxy_server *srv = find_proxy_srv_by_conn(conn);
 
+#if ZEPHYR_RTK_PATCH
+	if (!srv) {
+		return;
+	}
+#endif
 	srv->link_opened = true;
 }
 
@@ -140,6 +155,11 @@ static void proxy_disconnected(struct bt_conn *conn)
 {
 	struct bt_mesh_proxy_server *srv = find_proxy_srv_by_conn(conn);
 
+#if ZEPHYR_RTK_PATCH
+	if (!srv) {
+		return;
+	}
+#endif
 	bt_mesh_proxy_role_cleanup(srv->role);
 
 	srv->role = NULL;
@@ -399,3 +419,15 @@ bool bt_mesh_proxy_cli_is_connected(uint16_t net_idx)
 
 	return false;
 }
+
+#if ZEPHYR_RTK_PATCH
+int bt_mesh_proxy_cli_discover(struct bt_conn *conn, bt_mesh_gatt_cli_dis_cb result)
+{
+	return bt_mesh_gatt_cli_discover(conn, &proxy, NULL, result);
+}
+
+int bt_mesh_proxy_cli_set_notify(struct bt_conn *conn, bool enable)
+{
+	return bt_mesh_gatt_cli_set_notify(conn, enable);
+}
+#endif

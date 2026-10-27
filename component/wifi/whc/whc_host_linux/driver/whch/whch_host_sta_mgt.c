@@ -205,6 +205,11 @@ int whc_host_init_bcmc_stainfo(u8 iface_type)
 	struct sta_mlme_priv 	*psta_mlmepriv;
 	u8	bc_addr[6] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
 
+	/* STA port bcmc is the global bcmc_stainfo, re-adding it on reassoc would corrupt sta_list */
+	if (whc_host_sta_get_stainfo(iface_type, bc_addr)) {
+		goto exit;
+	}
+
 	psta = whc_host_sta_alloc_stainfo(iface_type, bc_addr);
 
 	if (psta == NULL) {
@@ -272,14 +277,13 @@ void whc_host_sta_update_stainfo(u8 iface_type, u8 *hwaddr, struct rtw_event_sta
 
 		//security related
 		psecuritypriv->dot11_wpa_mode = psecinfo->dot11_wpa_mode;
+		psecuritypriv->b_sw_encrypt = psecinfo->b_sw_encrypt;
+		psecuritypriv->dot11PrivacyAlgrthm = psecinfo->dot11PrivacyAlgrthm;
+		psecuritypriv->dot118021XGrpPrivacy = psecinfo->dot118021XGrpPrivacy;
 
 		if (psecuritypriv->dot11_wpa_mode) {
 			psecuritypriv->b_installGrpkey = false;
 			psecuritypriv->b_usetkipkey = false;
-			psecuritypriv->b_sw_encrypt = psecinfo->b_sw_encrypt;
-			psecuritypriv->dot118021XGrpPrivacy = psecinfo->dot118021XGrpPrivacy;
-			psecuritypriv->dot11PrivacyAlgrthm = psecinfo->dot11PrivacyAlgrthm;
-
 			psta_security->dot11_security_privacy = psecuritypriv->dot11PrivacyAlgrthm;
 			psta_security->b_ieee8021x_blocked = true;
 			psta_security->b_pairwise_key_installed = false;
@@ -298,6 +302,7 @@ void whc_host_sta_free_resource(u8 wlan_idx)
 {
 	if (wlan_idx == WHC_STA_PORT) {
 		whc_host_sta_free_stainfo(wlan_idx, global_idev.bssid);
+		whc_host_free_bcmc_stainfo(wlan_idx);
 	}
 }
 #endif

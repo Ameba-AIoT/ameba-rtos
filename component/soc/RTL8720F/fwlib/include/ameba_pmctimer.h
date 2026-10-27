@@ -131,12 +131,12 @@ extern "C" {
 /** @defgroup PMCTIMER_Device_Config PMCTIMER Device Config
   * @{
   */
-#if defined(CONFIG_ARM_CORE_CM4_KM4NS)
-#define PMC_TIMER_DEV PMCTIMER_DEV0   /*!< PMC timer device instance for CM4/KM4NS core. */
-#define PMC_TIMER_IRQ PMC_TIMER0_IRQ   /*!< PMC timer IRQ number for CM4/KM4NS core. */
+#if defined(CONFIG_ARM_CORE_CM55_KM55NS)
+#define PMC_TIMER_DEV PMCTIMER_DEV0   /*!< PMC timer device instance for CM4/KM55NS core. */
+#define PMC_TIMER_IRQ PMC_TIMER0_IRQ   /*!< PMC timer IRQ number for CM4/KM55NS core. */
 #else
-#define PMC_TIMER_DEV PMCTIMER_DEV1   /*!< PMC timer device instance for CM4/KM4TZ core. */
-#define PMC_TIMER_IRQ PMC_TIMER1_IRQ   /*!< PMC timer IRQ number for CM4/KM4TZ core. */
+#define PMC_TIMER_DEV PMCTIMER_DEV1   /*!< PMC timer device instance for CM4/KM55TZ core. */
+#define PMC_TIMER_IRQ PMC_TIMER1_IRQ   /*!< PMC timer IRQ number for CM4/KM55TZ core. */
 #endif
 #define PMC_TIMER_INT_PRIO INT_PRI_LOWEST   /*!< PMC timer interrupt priority. */
 /**

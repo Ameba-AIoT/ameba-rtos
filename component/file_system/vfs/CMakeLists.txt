@@ -43,10 +43,21 @@ set(private_compile_options)         #private compile_options
 # You may use if-else condition to set these predefined variable
 
 ameba_list_append(private_sources
-    vfs_littlefs.c
     vfs_wrap.c
+)
+
+if(CONFIG_VFS_ENABLED)
+ameba_list_append(private_sources
+    vfs_littlefs.c
     vfs.c
+)
+
+ameba_list_append_if(CONFIG_FATFS_SD_SPI_MODE private_sources
     vfs_sd_spi.c
+)
+
+ameba_list_append_if(CONFIG_VFS_RAM private_sources
+    vfs_ram.c
 )
 
 ameba_list_append_if(CONFIG_SUPPORT_NAND_FLASH private_sources
@@ -54,9 +65,9 @@ ameba_list_append_if(CONFIG_SUPPORT_NAND_FLASH private_sources
     vfs_nand_ftl_mfg.c
 )
 
-# external SPI NAND raw driver + FTL, shared by the littlefs (VFS_SECOND_FLASH_NAND)
-# and the realfs (REALFS_SECOND_FLASH_NAND) second-flash paths
-if(CONFIG_VFS_SECOND_FLASH_NAND OR CONFIG_REALFS_SECOND_FLASH_NAND)
+# external SPI NAND raw driver + FTL, shared by the littlefs and the realfs
+# second-flash paths (only when one of those FS is enabled with the interface)
+if((CONFIG_LITTLEFS_SECOND_FLASH AND CONFIG_VFS_SECOND_FLASH_NAND) OR CONFIG_REALFS_SECOND_FLASH_NAND)
     ameba_list_append(private_sources
         vfs_second_nand_spi.c
         vfs_second_nand_ftl.c
@@ -70,7 +81,7 @@ elseif(CONFIG_FATFS_SECOND_FLASH OR CONFIG_LITTLEFS_SECOND_FLASH)
 endif()
 
 # LBM (logical block mapping) is shared by the on-chip and the external NAND
-if(CONFIG_SUPPORT_NAND_FLASH OR CONFIG_VFS_SECOND_FLASH_NAND OR CONFIG_REALFS_SECOND_FLASH_NAND)
+if(CONFIG_SUPPORT_NAND_FLASH OR (CONFIG_LITTLEFS_SECOND_FLASH AND CONFIG_VFS_SECOND_FLASH_NAND) OR CONFIG_REALFS_SECOND_FLASH_NAND)
     ameba_list_append(private_sources
         lbm_core.c
     )
@@ -87,6 +98,11 @@ if(CONFIG_VFS_REALFS_INCLUDED)
     if(CONFIG_REALFS_SD_MODE)
         ameba_list_append(private_sources
             ${c_CMPT_FILE_SYSTEM_DIR}/realfs/port/realfs_bdev_sd.c
+        )
+    endif()
+    if(CONFIG_REALFS_RAM)
+        ameba_list_append(private_sources
+            ${c_CMPT_FILE_SYSTEM_DIR}/realfs/port/realfs_bdev_ram.c
         )
     endif()
     if(CONFIG_REALFS_FLASH)
@@ -121,6 +137,7 @@ endif()
 ameba_list_append(private_includes
     ${c_MBEDTLS_DIR}/include
 )
+endif() # CONFIG_VFS_ENABLED
 # Component private part, user config end(DO NOT remove this line)
 #------------------------------------------------------------------#
 

@@ -1131,8 +1131,8 @@ typedef enum _FLASH_REGION_TYPE_ {
 	VFS1  =   	5,
 	VFS2  =   	6,
 	USER  =   	7,
-	IMG_NP_OTA1 =	8,	/* SOLO: km4ns (NP) app OTA slot A (independent of the mcu_app slot) */
-	IMG_NP_OTA2 =	9,	/* SOLO: km4ns (NP) app OTA slot B */
+	IMG_NP_OTA1 =	8,	/* SOLO: km55ns (NP) app OTA slot A (independent of the mcu_app slot) */
+	IMG_NP_OTA2 =	9,	/* SOLO: km55ns (NP) app OTA slot B */
 } FLASH_REGION_TYPE;
 /** @} */
 
@@ -1277,6 +1277,8 @@ _LONG_CALL_ void FLASH_SetSpiMode(SPIC_TypeDef *spi_flash, FLASH_InitTypeDef *FL
 _LONG_CALL_ void FLASH_DeepPowerDown(u32 NewState);
 _LONG_CALL_ void FLASH_TxData(u32 StartAddr, u32 DataPhaseLen, u8 *pData);
 _LONG_CALL_ void FLASH_RxData(u8 cmd, u32 StartAddr, u32 read_len, u8 *read_data);
+_LONG_CALL_ void FLASH_TxBasic(u8 cmd, u32 StartAddr, u32 DataPhaseLen, u8 *pData);
+_LONG_CALL_ void FLASH_RxBasic(u8 cmd, u32 StartAddr, u32 read_len, u8 *read_data);
 
 _LONG_CALL_ void FLASH_Read_HandShake_Cmd(u32 Dphy_Dly_Cnt, u32 NewState);
 _LONG_CALL_ u32 FLASH_Read_HandShake(FLASH_InitTypeDef *FLASH_InitStruct, u8 SpicBitMode, u8 Dphy_Dly_Cnt);

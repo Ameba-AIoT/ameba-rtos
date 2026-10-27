@@ -81,6 +81,9 @@
 #include "ameba_ddr_device.h"
 #include "ameba_sdioh.h"
 #include "ameba_sd.h"
+#ifdef __ZEPHYR__
+#include "ameba_sd_host_wrapper.h"
+#endif
 #include "ameba_thermal.h"
 #include "ameba_debugtimer.h"
 #include "ameba_trng.h"

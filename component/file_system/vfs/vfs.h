@@ -4,6 +4,7 @@
 extern "C" {
 #endif
 
+#include "platform_autoconf.h"
 #include "basic_types.h"
 #include "log.h"
 #include <sys/unistd.h>
@@ -50,6 +51,7 @@ extern "C" {
 #define VFS_INF_SD				0x02
 #define VFS_INF_SD_SPI			0x03
 #define VFS_INF_USBH				0x04
+#define VFS_INF_RAM				0x05	//volatile RAM disk, medium (SRAM/PSRAM) chosen by Kconfig
 
 /*vfs read-write permission when initializing*/
 #define VFS_RW 0x00
@@ -61,9 +63,15 @@ extern "C" {
 #define VFS_REGION_4	0x03	//second flash , SD card or SPI-compatible SD NAND
 #if defined(CONFIG_LITTLEFS_WITHIN_APP_IMG)
 #define VFS_REGION_ROLFS	0x04	//read-only littlefs blob embedded within app image
-#define VFS_USER_REGION_MAX 0x05		//number of supported file system regions
+#define VFS_USER_REGION_BASE 0x05
 #else
-#define VFS_USER_REGION_MAX 0x04		//number of supported file system regions
+#define VFS_USER_REGION_BASE 0x04
+#endif
+#define VFS_REGION_RAM	0x05	//RAM disk (label only, no flash address)
+#if defined(CONFIG_VFS_RAM)
+#define VFS_USER_REGION_MAX (VFS_USER_REGION_BASE + 1)	//number of supported file system regions
+#else
+#define VFS_USER_REGION_MAX VFS_USER_REGION_BASE		//number of supported file system regions
 #endif
 
 /* related to op_prepend_header.py */
@@ -218,6 +226,19 @@ extern volatile uint8_t lfs_rolfs_mount_flag;
 #endif
 extern volatile uint8_t fatfs_mount_flag;
 extern volatile uint8_t fatfs2_mount_flag;
+#if defined(CONFIG_VFS_RAM)
+extern volatile uint8_t ram_mount_flag;
+/* which file systems can be mounted on VFS_INF_RAM in this build */
+#if defined(CONFIG_VFS_LITTLEFS_INCLUDED)
+#define VFS_RAM_LITTLEFS	1
+#endif
+#if defined(CONFIG_VFS_FATFS_INCLUDED) && !defined(CONFIG_FATFS_READ_ONLY)
+#define VFS_RAM_FATFS		1
+#endif
+#if defined(CONFIG_REALFS_RAM)
+#define VFS_RAM_REALFS		1
+#endif
+#endif
 
 extern u32 vfs_nand_flash_pagesize;
 extern u32 vfs_nand_flash_pagenum;

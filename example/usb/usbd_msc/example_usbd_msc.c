@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/* Includes ------------------------------------------------------------------ */
+/* Includes ------------------------------------------------------------------*/
 
 #include <platform_autoconf.h>
 #include "usbd_msc.h"
@@ -14,6 +14,15 @@
 #endif
 #ifdef CONFIG_USBD_MSC_SECOND_FLASH
 #include "vfs_second_nor_flash.h"
+#endif
+#if defined(CONFIG_USBD_MSC_FLASH) || defined(CONFIG_USBD_MSC_RAM)
+#include "vfs.h"
+#define USBD_MSC_VFS_PREFIX  "usbmsc"
+#endif
+#ifdef CONFIG_USBD_MSC_FLASH
+/* On-chip flash region for the MSC U-disk, overridable by editing this macro.
+   Defaults to VFS2 because VFS1 is usually taken by the system LITTLEFS/KV. */
+#define USBD_MSC_FLASH_VFS_REGION VFS_REGION_2
 #endif
 
 /* Private defines -----------------------------------------------------------*/
@@ -31,19 +40,12 @@
 #define MSC_USB_HOTPLUG                           1
 #define MSC_SD_HOTPLUG                            0
 
-#if !defined(CONFIG_USBD_MSC_SD_MODE) && (MSC_SD_HOTPLUG == 1)
+#if !defined(CONFIG_USBD_MSC_SD_CARD) && (MSC_SD_HOTPLUG == 1)
 #error "Only SD card (SD mode) support SD hotplug"
 #endif
 
 #if !defined(CONFIG_AMEBASMART) && (MSC_SD_HOTPLUG == 1)
 #error "SD hotplug is not supported"
-#endif
-
-// USB speed
-#ifdef CONFIG_SUPPORT_USB_FS_ONLY
-#define MSC_USB_SPEED                            USB_SPEED_FULL
-#else
-#define MSC_USB_SPEED                            USB_SPEED_HIGH
 #endif
 
 // Thread priorities
@@ -52,12 +54,12 @@
 #define MSC_SD_HOTPLUG_THREAD_PRIORITY            8
 
 // Thread stack sizes
-#define MSC_INIT_THREAD_STACK_SIZE                1024U
+#define MSC_INIT_THREAD_STACK_SIZE                1400U
 #define MSC_USB_HOTPLUG_THREAD_STACK_SIZE         1024U
 #define MSC_SD_HOTPLUG_THREAD_STACK_SIZE          1024U
 
-
 /* Private types -------------------------------------------------------------*/
+
 typedef enum {
 	USBD_MSC_HOTPLUG_NONE = 0U,
 	USBD_MSC_USB_HOTPLUG,
@@ -85,7 +87,9 @@ static void msc_cb_status_changed(u8 old_status, u8 status);
 static const char *const TAG = "MSC";
 
 static const usbd_config_t msc_cfg = {
-	.speed = MSC_USB_SPEED,
+	.info = {
+		.prod_str = "Realtek MSC Device",
+	},
 	.isr_priority = INT_PRI_MIDDLE,
 #if defined(CONFIG_AMEBASMART)
 	.nptx_max_epmis_cnt = 100U,
@@ -105,7 +109,7 @@ static const usbd_config_t msc_cfg = {
 #endif
 };
 
-static const usbd_msc_ep_cfg_t msc_ep = {
+static const usbd_msc_config_t msc_class_cfg = {
 	.bulk_in_addr  = MSC_BULK_IN_EP,
 	.bulk_out_addr = MSC_BULK_OUT_EP,
 };
@@ -115,12 +119,14 @@ static const usbd_msc_cb_t msc_cb = {
 };
 
 #if MSC_USB_HOTPLUG
-static u8 msc_usb_attach_status;
+/* Written by the ISR, read by the hotplug thread, possibly on another core */
+static volatile u8 msc_usb_attach_status;
 static rtos_sema_t msc_usb_status_changed_sema;
 #endif
 
 #if MSC_SD_HOTPLUG
-static u8 msc_sd_status;
+/* Written by the SD card-detect callback, read by the SD thread, possibly on another core */
+static volatile u8 msc_sd_status;
 static rtos_sema_t msc_sd_status_changed_sema;
 #endif
 
@@ -140,6 +146,8 @@ static volatile u8 msc_stack_fatal;
    the peer once the lock is released. */
 static rtos_mutex_t msc_stack_lock;
 #endif
+
+/* Exported variables --------------------------------------------------------*/
 
 /* Private functions ---------------------------------------------------------*/
 
@@ -249,7 +257,7 @@ static void example_usbd_msc_usb_hotplug_thread(void *param)
 				if (ret != 0) {
 					break;
 				}
-				ret = usbd_msc_init(&msc_cb, &msc_ep);
+				ret = usbd_msc_init(&msc_cb, &msc_class_cfg);
 				if (ret != 0) {
 					usbd_deinit();
 					break;
@@ -313,7 +321,7 @@ static void example_usbd_msc_sd_hotplug_thread(void *param)
 				if (ret != 0) {
 					break;
 				}
-				ret = usbd_msc_init(&msc_cb, &msc_ep);
+				ret = usbd_msc_init(&msc_cb, &msc_class_cfg);
 				if (ret != 0) {
 					usbd_deinit();
 					break;
@@ -382,14 +390,33 @@ static void example_usbd_msc_thread(void *param)
 #endif
 
 #ifdef CONFIG_USBD_MSC_SECOND_FLASH
+#ifndef CONFIG_SECOND_FLASH_NOR
 	second_flash_spi_init();
 	second_flash_get_id();
+#endif
+#endif
+
+#ifdef CONFIG_USBD_MSC_FLASH
+	/* Mount FATFS on the selected on-chip flash region. */
+	ret = vfs_user_register(USBD_MSC_VFS_PREFIX, VFS_FATFS, VFS_INF_FLASH, USBD_MSC_FLASH_VFS_REGION, VFS_RW);
+	if (ret != 0) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "VFS register FATFS/FLASH fail: %d\n", ret);
+		goto exit_usbd_msc_disk_init_fail;
+	}
+#elif defined(CONFIG_USBD_MSC_RAM)
+	/* Mount FATFS on the VFS RAM disk (volatile, formatted fresh on every register). */
+	ret = vfs_user_register(USBD_MSC_VFS_PREFIX, VFS_FATFS, VFS_INF_RAM, VFS_REGION_RAM, VFS_RW);
+	if (ret != 0) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "VFS register FATFS/RAM fail: %d\n", ret);
+		goto exit_usbd_msc_disk_init_fail;
+	}
 #endif
 
 	ret = usbd_msc_disk_init();
 	if (ret != HAL_OK) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Init disk fail\n");
-		goto exit_usbd_msc_disk_init_fail;
+		/* VFS FATFS volume is already registered above; unwind it too. */
+		goto exit_usbd_init_fail;
 	}
 
 	ret = usbd_init(&msc_cfg);
@@ -398,7 +425,7 @@ static void example_usbd_msc_thread(void *param)
 		goto exit_usbd_init_fail;
 	}
 
-	ret = usbd_msc_init(&msc_cb, &msc_ep);
+	ret = usbd_msc_init(&msc_cb, &msc_class_cfg);
 	if (ret != HAL_OK) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Init MSC class fail\n");
 		goto exit_usbd_msc_init_fail;
@@ -412,7 +439,7 @@ static void example_usbd_msc_thread(void *param)
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create hotplug thread fail\n");
 		goto exit_create_hotplug_fail;
 	}
-#if defined(CONFIG_SMP)
+#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
 	/* C-2: the USB OTG ISR is delivered on CPU0 (GIC ITARGETSR pins every SPI to core 0).
 	   Pinning the threads that touch the device stack to CPU0 makes task<->ISR access
 	   single-core, so deinit's local interrupt disable is meaningful again under SMP. */
@@ -429,14 +456,12 @@ static void example_usbd_msc_thread(void *param)
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create SD card hotplug thread fail\n");
 		goto exit_create_msc_sd_hotplug_fail;
 	}
-#if defined(CONFIG_SMP)
+#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
 	/* Same reason as the USB hotplug thread: this one deinits/reinits the device
 	   stack too, so it must run on the core the OTG ISR is delivered on. */
 	rtos_task_set_affinity(sd_task, 0);
 #endif
 #endif // MSC_SD_HOTPLUG
-
-	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD MSC demo start\n");
 
 	rtos_task_delete(NULL);
 
@@ -460,7 +485,14 @@ exit_usbd_msc_init_fail:
 exit_usbd_init_fail:
 	usbd_msc_disk_deinit();
 
+#ifdef CONFIG_USBD_MSC_FLASH
+	vfs_user_unregister(USBD_MSC_VFS_PREFIX, VFS_FATFS, VFS_INF_FLASH);
+#elif defined(CONFIG_USBD_MSC_RAM)
+	vfs_user_unregister(USBD_MSC_VFS_PREFIX, VFS_FATFS, VFS_INF_RAM);
+#endif
+
 exit_usbd_msc_disk_init_fail:
+	RTK_LOGS(TAG, RTK_LOG_ERROR, "USBD MSC demo aborted\n");
 #if (MSC_SD_HOTPLUG == 1) || (MSC_USB_HOTPLUG == 1)
 	msc_free_resource();
 #endif
@@ -474,6 +506,8 @@ void example_usbd_msc(void)
 {
 	int ret;
 	rtos_task_t task;
+
+	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD MSC demo start\n");
 
 	ret = rtos_task_create(&task, "usbd_msc_thread", example_usbd_msc_thread, NULL,
 						   MSC_INIT_THREAD_STACK_SIZE, MSC_INIT_THREAD_PRIORITY);

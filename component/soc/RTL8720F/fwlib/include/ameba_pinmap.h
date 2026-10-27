@@ -15,24 +15,6 @@ extern "C" {
   * @{
   */
 
-/** @verbatim
-  *****************************************************************************************
-  * PINMAP
-  *****************************************************************************************
-  *   you can use pinmap to config pinmux instead of Pinmux_Config function
-  *   you can use pinmap to config GPIO pull high/low status for power save when enter power save mode
-  *****************************************************************************************
-  * How To Use
-  *****************************************************************************************
-  *	-1) ENABLE MACRO: CONFIG_PINMAP_ENABLE
-  *	-2) Set all pins function in pmap_func based on your board
-  *	-3) Bootloader will call pinmap_init, then all pinmux will be set based on pmap_func
-  *	-4) pinmap_sleep will be called when enter sleep mode, all GPIO will pull high or low based on pmap_func
-  *	-5) pinmap_wake will be called when wake from sleep mode, all GPIO will back to active mode
-  *****************************************************************************************
-  * @endverbatim
-  */
-
 /** @defgroup PINMAP
   * @brief PINMAP driver modules
   * @{

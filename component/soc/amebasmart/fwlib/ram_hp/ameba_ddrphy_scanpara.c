@@ -83,8 +83,8 @@
 #define BSTC_STOP_EN			0x0 //Disable to run BSTC hardware function.
 #define BSTC_LOOP_EN			0x1 //Enable loop mode.
 
-// BSTC BCT for loop counter setting
-#define LOOP_CNT                 0x0
+// BSTC BCT for loop counter setting, LOOP_CNT > 0 makes BSTC finish by itself after LOOP_CNT rounds
+#define LOOP_CNT                 0xFF
 
 // Disable refresh function
 #define CR_DIS_REF               0x0
@@ -610,12 +610,16 @@ void DDR_PHY_BSTC_STARK(void)
 	//*******		 Issue BSTC_MODE done			 *********
 	//********************************************************
 	// Wait BSTC_DONE
-	while ((ddrc->DDRC_CCR & DDRC_BIT_BSTC) >> 2 == 0) {
-		DelayMs(1000 * 1);
+	DelayMs(1);
+	while ((ddrc->DDRC_CCR & DDRC_BIT_BSTC) == 0) {
 		//RTK_LOGI(TAG,  "//===== Force BSTC OFF =====\n");
 		ddrc->DDRC_BCR |= DDRC_BIT_STOP;
-		RTK_LOGI(TAG,  "CR_BCR %p = 0x%08lX\n", &(ddrc->DDRC_BCR), ddrc->DDRC_BCR);
+		RTK_LOGE(TAG,  "CR_BCR %p = 0x%08lX\n", &(ddrc->DDRC_BCR), ddrc->DDRC_BCR);
 	};	// wait BISC done
+
+	// flush DRAMC FIFO after each BSTC flow
+	ddrc->DDRC_CCR = DDRC_BIT_FLUSH_FIFO;
+	while ((ddrc->DDRC_CCR & DDRC_BIT_FLUSH_FIFO) == 0);
 
 	//********************************************************
 	//******		  iniitialize bstc rd			   *******
@@ -746,11 +750,16 @@ void sram_sg(void)
 	//*******        Issue BSTC_MODE done            *********
 	//********************************************************
 	// Wait BSTC_DONE
-	while ((ddrc->DDRC_CCR & DDRC_BIT_BSTC) >> 2 == 0) {
-		DelayMs(1000 * 1);//rw 秒數 ( sram_sg )
+	DelayMs(1);
+	while ((ddrc->DDRC_CCR & DDRC_BIT_BSTC) == 0) {
 		//RTK_LOGI(TAG,  "//===== Force BSTC OFF =====\n");
 		ddrc->DDRC_BCR |= DDRC_BIT_STOP;
+		RTK_LOGE(TAG,  "CR_BCR %p = 0x%08lX\n", &(ddrc->DDRC_BCR), ddrc->DDRC_BCR);
 	};	// wait BISC done
+
+	// flush DRAMC FIFO after each BSTC flow
+	ddrc->DDRC_CCR = DDRC_BIT_FLUSH_FIFO;
+	while ((ddrc->DDRC_CCR & DDRC_BIT_FLUSH_FIFO) == 0);
 
 	//********************************************************
 	//*******    Check BSTC ERR Cnt and Read data    *********
@@ -820,31 +829,27 @@ void tx_MR_wrlvl(void)
 	/*disable refresh function*/
 	ddrc->DDRC_CSR = (DDRC_BIT_BSTC_IDLE | DDRC_BIT_TM_IDLE | DDRC_BIT_MEM_IDLE);//Set RXI316 all idle mode
 	ddrc->DDRC_DRR |= DDRC_BIT_REF_DIS; //Disable auto refresh
-	DelayMs(10);
+	// polling idle status, for all cmds and data done in ddrc
+	while (((ddrc->DDRC_CSR) & (DDRC_BIT_BSTC_IDLE | DDRC_BIT_TM_IDLE | DDRC_BIT_MEM_IDLE)) != (DDRC_BIT_BSTC_IDLE | DDRC_BIT_TM_IDLE | DDRC_BIT_MEM_IDLE));
+
 	ddrc->DDRC_TIE_DPIN |= DDRC_BIT_CKE; //TIE CKE=1
 	ddrc->DDRC_TIE_DPIN |= DDRC_BIT_CKE_1;
 	ddrc->DDRC_CCR = DDRC_DPIT(ENABLE);
-	DelayMs(10); //delay for tMOD
+	while ((ddrc->DDRC_CCR & DDRC_BIT_DPIT) != DDRC_BIT_DPIT); //delay for tMOD
 
 	/*precharge all*/
 	ddrc->DDRC_CMD_DPIN_NDGE = DDRC_BIT_ACT_N_NDGE | DDRC_BIT_CAS_N_NDGE | DDRC_ADDR_NDGE(BIT10); //A10/CAS_N/ACT_N to High
 	ddrc->DDRC_CMD_DPIN = DDRC_BIT_ACT_N_NDGE | DDRC_BIT_CAS_N_NDGE | DDRC_ADDR_NDGE(BIT10);
 	ddrc->DDRC_CSR = (ddrc->DDRC_CSR & ~DDRC_MASK_DPIN_CMD_INFO) | DDRC_DPIN_CMD_INFO(DDR_DPIN_CMD_PRECHARGE_ALL);
 	ddrc->DDRC_CCR = DDRC_DPIT(ENABLE);
-	DelayMs(10);
+	while ((ddrc->DDRC_CCR & DDRC_BIT_DPIT) != DDRC_BIT_DPIT);
 
 	/*Write leveling enable*/
 	ddrc->DDRC_CMD_DPIN_NDGE = DDRC_BIT_ACT_N_NDGE | DDRC_BA_NDGE(0x1) | DDRC_GET_ADDR_NDGE(MR1_addr) | BIT7;//Set bit7 of MR1
 	ddrc->DDRC_CMD_DPIN = DDRC_BIT_ACT_N_NDGE | DDRC_BA_NDGE(0x1) | DDRC_GET_ADDR_NDGE(MR1_addr) | BIT7;
 	ddrc->DDRC_CCR = DDRC_DPIT(ENABLE);
-	DelayMs(10);
-	ddrc->DDRC_TIE_DPIN &= ~DDRC_BIT_CKE; //TIE CKE=0
-	ddrc->DDRC_TIE_DPIN &= ~DDRC_BIT_CKE_1;
-	ddrc->DDRC_CCR = DDRC_DPIT(ENABLE);
-	DelayMs(10);
+	while ((ddrc->DDRC_CCR & DDRC_BIT_DPIT) != DDRC_BIT_DPIT);
 
-	ddrc->DDRC_DRR &= ~DDRC_BIT_REF_DIS;//Enable auto refresh
-	ddrc->DDRC_CSR = (DDRC_BIT_TM_IDLE | DDRC_BIT_BSTC_IDLE);
 	//Enable DQ input
 	ddr_phy->DDRPHY_DQ_IO_CTL_0_SETx[0] = (ddr_phy->DDRPHY_DQ_IO_CTL_0_SETx[0] & ~(DDRPHY_MASK_DQ_IE_FRC_EN | DDRPHY_MASK_DQ_IE_SIG)) |
 										  DDRPHY_DQ_IE_FRC_EN(0xFF) | DDRPHY_DQ_IE_SIG(0xFF);
@@ -868,7 +873,7 @@ void tx_MR_wrlvl(void)
 		ddr_phy->DDRPHY_DQ_DLY_1_SETx[1] = (ddr_phy->DDRPHY_DQ_DLY_1_SETx[1] & ~DDRPHY_MASK_DQS_DLY_SEL) | DDRPHY_DQS_DLY_SEL(dly);*/
 		ddr_phy->DDRPHY_DPI_CTRL_1 |= DDRPHY_BIT_FW_SET_WR_DLY | DDRPHY_BIT_WRITE_EN_0; // fw_set_wr_dly[1:0] = 3
 		ddr_phy->DDRPHY_DQ_DQS_CTRL |= DDRPHY_BIT_TRIG_DQS; // trig_dqs
-		DelayMs(500);
+		DelayUs(1);
 
 		//RTK_LOGI(TAG,  "CK0 PI = 0x%08lX\n", DDRPHY_GET_DPI_POST_PI_SEL0(ddr_phy->DDRPHY_PLL_PI0));
 		//RTK_LOGI(TAG,  "DQS0 PI = 0x%08lX\n", DDRPHY_GET_DPI_POST_PI_SEL2(ddr_phy->DDRPHY_PLL_PI0));
@@ -876,9 +881,15 @@ void tx_MR_wrlvl(void)
 		//RTK_LOGI(TAG,  "DQS2 PI = 0x%08lX\n", DDRPHY_GET_DPI_POST_PI_SEL4(ddr_phy->DDRPHY_PLL_PI1));
 		//RTK_LOGI(TAG,  "DQS3 PI = 0x%08lX\n", DDRPHY_GET_DPI_POST_PI_SEL5(ddr_phy->DDRPHY_PLL_PI1));
 		RTK_LOGI(TAG,  "DQSPI=%02d, DQ0~31 = 0x%08lX\n", dqs_pi, ddr_phy->DDRPHY_DQ_PAT_IN0); // dq_pat_in
-
-		//DelayMs(1000*1);
 	}
+
+	ddrc->DDRC_TIE_DPIN &= ~DDRC_BIT_CKE; //TIE CKE=0
+	ddrc->DDRC_TIE_DPIN &= ~DDRC_BIT_CKE_1;
+	ddrc->DDRC_CCR = DDRC_DPIT(ENABLE);
+	while ((ddrc->DDRC_CCR & DDRC_BIT_DPIT) != DDRC_BIT_DPIT);
+
+	ddrc->DDRC_CSR = (DDRC_BIT_BSTC_IDLE | DDRC_BIT_TM_IDLE);
+	ddrc->DDRC_DRR &= ~DDRC_BIT_REF_DIS;//Enable auto refresh
 }
 
 void tx_rw_wrlvl(void)
@@ -1872,7 +1883,7 @@ void SOC_DQ_VREF(int step)
 	//REG_READ64(ddr_phy->DDRPHY_0x374);
 	//REG_READ64(ddr_phy->DDRPHY_0x378);
 
-	DelayMs(1000);
+	DelayMs(10);
 	//REG_WRITE64_Mask2(ddr_phy->DDRPHY_CAL_MODE_CTRL, CAL_MODE_CTRL_FW_VR_UPD_0, 4, 0); // 0: vref_s canNOT be applied to Vref pad by fw_set_rd_dly
 	ddr_phy->DDRPHY_DPI_CTRL_0 = (ddr_phy->DDRPHY_DPI_CTRL_0 & ~(DDRPHY_MASK_FW_SET_MODE)) | DDRPHY_FW_SET_MODE(0x0);
 }//SOC_DQ_VREF

@@ -58,7 +58,7 @@ static const char *const TAG = "ACM";
 static u8 cdc_acm_loopback_tx_buf[USBH_CDC_ACM_LOOPBACK_BUF_SIZE] ALIGNMTO(CACHE_LINE_SIZE);
 static u8 cdc_acm_loopback_rx_buf[USBH_CDC_ACM_LOOPBACK_BUF_SIZE] ALIGNMTO(CACHE_LINE_SIZE);
 static u8 tt_mode_tx_buf[USBH_CDC_ACM_LOOPBACK_BUF_SIZE] ALIGNMTO(CACHE_LINE_SIZE);
-#if CONFIG_USBH_CDC_ACM_NOTIFY
+#ifdef CONFIG_USBH_CDC_ACM_NOTIFY
 static u8 cdc_acm_notify_rx_buf[USBH_CDC_ACM_NOTIFY_BUF_SIZE] ALIGNMTO(CACHE_LINE_SIZE);
 #endif
 
@@ -120,6 +120,11 @@ static const usbh_cdc_acm_cb_t cdc_acm_usr_cb = {
 	.received  = cdc_acm_cb_received,
 	.notify   = cdc_acm_cb_notify,
 	.line_coding_changed = cdc_acm_cb_line_coding_changed
+};
+
+static const usbh_cdc_acm_config_t cdc_acm_class_cfg = {
+	/* Line coding and control line state left 0 take the class defaults: 115200 8N1
+	 * with both control lines deasserted. */
 };
 
 static const usbh_user_cb_t usbh_usr_cb = {
@@ -293,7 +298,7 @@ WAIT_CONNECT:
 	vTaskDelete(NULL);
 }
 
-#if CONFIG_USBH_CDC_ACM_NOTIFY
+#ifdef CONFIG_USBH_CDC_ACM_NOTIFY
 static void usbh_notify_task(void *param)
 {
 	UNUSED(param);
@@ -460,7 +465,7 @@ static void cdc_acm_hotplug_thread(void *param)
 				break;
 			}
 
-			ret = usbh_cdc_acm_init(&cdc_acm_usr_cb);
+			ret = usbh_cdc_acm_init(&cdc_acm_usr_cb, &cdc_acm_class_cfg);
 			if (ret < 0) {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "Init CDC ACM fail\n");
 				usbh_deinit();
@@ -490,7 +495,7 @@ static void atcmd_usbh_cdc_acm_task(void *param)
 		goto error_exit;
 	}
 
-	status = usbh_cdc_acm_init(&cdc_acm_usr_cb);  /*0 means use default transfer size, and it can not exceed 65536*/
+	status = usbh_cdc_acm_init(&cdc_acm_usr_cb, &cdc_acm_class_cfg);
 	if (status != HAL_OK) {
 		usbh_deinit();
 		goto error_exit;
@@ -509,7 +514,7 @@ static void atcmd_usbh_cdc_acm_task(void *param)
 	if (xSemaphoreTake(cdc_acm_attach_sema, 0xFFFFFFFF) == pdPASS) {
 		xTaskCreate((void *)usbh_tx_task, ((const char *)"usbh_tx_task"), 1024 / sizeof(portSTACK_TYPE), NULL, 3, NULL);
 		xTaskCreate((void *)usbh_rx_task, ((const char *)"usbh_rx_task"), 1024 / sizeof(portSTACK_TYPE), NULL, 4, NULL);
-#if CONFIG_USBH_CDC_ACM_NOTIFY
+#ifdef CONFIG_USBH_CDC_ACM_NOTIFY
 		xTaskCreate((void *)usbh_notify_task, ((const char *)"usbh_notify_task"), 1024 / sizeof(portSTACK_TYPE), NULL, 4, NULL);
 #endif
 		xTaskCreate((void *)uart_show_rx_data_task, ((const char *)"uart_show_rx_data_task"), 1024 / sizeof(portSTACK_TYPE), NULL, 1, NULL);

@@ -73,7 +73,7 @@ extern "C" {
 #define SDN_SRAM_DATA_SECTION				SRAM_ONLY_DATA_SECTION
 
 #define SRAM_WLAN_CRITICAL_CODE_SECTION     //SECTION(".wlan.critical.text")
-#define SRAM_IPERF_CRITICAL_CODE_SECTION    SECTION(".wlan.critical.text")
+#define SRAM_IPERF_CRITICAL_CODE_SECTION    //SECTION(".wlan.critical.text")
 #define SRAM_LWIP_CRITICAL_CODE_SECTION_L1  //SECTION(".wlan.critical.text")
 #define SRAM_LWIP_CRITICAL_CODE_SECTION_L2  //SECTION(".wlan.critical.text")
 

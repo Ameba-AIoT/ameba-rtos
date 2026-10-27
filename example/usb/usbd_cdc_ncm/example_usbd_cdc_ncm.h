@@ -4,11 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef EXAMPLE_USBD_CDC_NCM_H
 #define EXAMPLE_USBD_CDC_NCM_H
 
 /* Includes ------------------------------------------------------------------*/
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* Exported defines ----------------------------------------------------------*/
 
 /* Exported types ------------------------------------------------------------*/
 
@@ -16,8 +21,12 @@
 
 /* Exported variables --------------------------------------------------------*/
 
-/* Exported functions ------------------------------------------------------- */
+/* Exported functions --------------------------------------------------------*/
 
 void example_usbd_cdc_ncm(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* EXAMPLE_USBD_CDC_NCM_H */

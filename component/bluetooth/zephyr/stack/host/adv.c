@@ -406,7 +406,12 @@ static bool valid_adv_ext_param(const struct bt_le_adv_param *param)
 {
 	if (IS_ENABLED(CONFIG_BT_EXT_ADV) &&
 	    BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
-		if (param->peer &&
+		if (
+#if ZEPHYR_RTK_PATCH
+			(param->options & BT_LE_ADV_OPT_DIR_ADV) &&
+#else
+			param->peer &&
+#endif
 		    !(param->options & BT_LE_ADV_OPT_EXT_ADV) &&
 		    !(param->options & BT_LE_ADV_OPT_CONNECTABLE)) {
 			/* Cannot do directed non-connectable advertising
@@ -415,7 +420,12 @@ static bool valid_adv_ext_param(const struct bt_le_adv_param *param)
 			return false;
 		}
 
-		if (param->peer &&
+		if (
+#if ZEPHYR_RTK_PATCH
+			(param->options & BT_LE_ADV_OPT_DIR_ADV) &&
+#else
+			param->peer &&
+#endif
 		    (param->options & BT_LE_ADV_OPT_EXT_ADV) &&
 		    !(param->options & BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY)) {
 			/* High duty cycle directed connectable advertising
@@ -445,7 +455,11 @@ static bool valid_adv_ext_param(const struct bt_le_adv_param *param)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_PRIVACY) &&
+#if ZEPHYR_RTK_PATCH
+		(param->options & BT_LE_ADV_OPT_DIR_ADV) &&
+#else
 	    param->peer &&
+#endif
 	    (param->options & BT_LE_ADV_OPT_USE_IDENTITY) &&
 	    (param->options & BT_LE_ADV_OPT_DIR_ADDR_RPA)) {
 		/* own addr type used for both RPAs in directed advertising. */
@@ -472,12 +486,22 @@ static bool valid_adv_ext_param(const struct bt_le_adv_param *param)
 
 	if ((param->options & (BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY |
 			       BT_LE_ADV_OPT_DIR_ADDR_RPA)) &&
-	    !param->peer) {
+#if ZEPHYR_RTK_PATCH
+		!(param->options & BT_LE_ADV_OPT_DIR_ADV)
+#else
+	    !param->peer
+#endif
+		) {
 		return false;
 	}
 
 	if ((param->options & BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY) ||
-	    !param->peer) {
+#if ZEPHYR_RTK_PATCH
+		!(param->options & BT_LE_ADV_OPT_DIR_ADV)
+#else
+	    !param->peer
+#endif
+		) {
 		if (param->interval_min > param->interval_max ||
 		    param->interval_min < 0x0020 ||
 		    param->interval_max > 0x4000) {
@@ -500,7 +524,13 @@ static bool valid_adv_param(const struct bt_le_adv_param *param)
 		return false;
 	}
 
-	if (param->peer && !(param->options & BT_LE_ADV_OPT_CONNECTABLE)) {
+	if (
+#if ZEPHYR_RTK_PATCH
+		(param->options & BT_LE_ADV_OPT_DIR_ADV) &&
+#else
+		param->peer &&
+#endif
+		!(param->options & BT_LE_ADV_OPT_CONNECTABLE)) {
 		return false;
 	}
 
@@ -951,10 +981,14 @@ static uint8_t get_adv_channel_map(uint32_t options)
 
 static inline bool adv_is_directed(const struct bt_le_ext_adv *adv)
 {
+#if ZEPHYR_RTK_PATCH
+	return !!(adv->options & BT_LE_ADV_OPT_DIR_ADV);
+#else
 	/* The advertiser is assumed to be directed when the peer address has
 	 * been set.
 	 */
 	return !bt_addr_le_eq(&adv->target_addr, BT_ADDR_LE_ANY);
+#endif
 }
 
 static int le_adv_start_add_conn(const struct bt_le_ext_adv *adv,
@@ -1026,7 +1060,11 @@ int bt_le_adv_start_legacy(struct bt_le_ext_adv *adv,
 	struct bt_hci_cp_le_set_adv_param set_param;
 	struct bt_conn *conn = NULL;
 	struct net_buf *buf;
+#if ZEPHYR_RTK_PATCH
+	bool dir_adv = !!(param->options & BT_LE_ADV_OPT_DIR_ADV), scannable = false;
+#else
 	bool dir_adv = (param->peer != NULL), scannable = false;
+#endif
 	enum adv_name_type name_type;
 
 	int err;
@@ -1061,21 +1099,31 @@ int bt_le_adv_start_legacy(struct bt_le_ext_adv *adv,
 	adv->id = param->id;
 	bt_dev.adv_conn_id = adv->id;
 #if ZEPHYR_RTK_PATCH
+	adv->options = param->options;
 	adv->own_addr_type = param->own_addr_type;
 	set_param.own_addr_type = param->own_addr_type;
+	if (param->peer) {
+		bt_addr_le_copy(&adv->target_addr, param->peer);
+	} else {
+		bt_addr_le_copy(&adv->target_addr, BT_ADDR_LE_ANY);
+	}
+	/* Always set direct_addr, no matter if adv is direct adv. If own_addr_type
+	 * is 2 or 3, direct_addr will be used to find resolving list even if adv
+	 * is not direct adv */
+	bt_addr_le_copy(&set_param.direct_addr, &adv->target_addr);
 #else
 	err = bt_id_set_adv_own_addr(adv, param->options, dir_adv,
 				     &set_param.own_addr_type);
 	if (err) {
 		return err;
 	}
-#endif
 
 	if (dir_adv) {
 		bt_addr_le_copy(&adv->target_addr, param->peer);
 	} else {
 		bt_addr_le_copy(&adv->target_addr, BT_ADDR_LE_ANY);
 	}
+#endif
 
 	name_type = get_adv_name_type_param(param);
 
@@ -1087,7 +1135,9 @@ int bt_le_adv_start_legacy(struct bt_le_ext_adv *adv,
 				set_param.type = BT_HCI_ADV_DIRECT_IND;
 			}
 
+#if !ZEPHYR_RTK_PATCH
 			bt_addr_le_copy(&set_param.direct_addr, param->peer);
+#endif
 		} else {
 			scannable = true;
 			set_param.type = BT_HCI_ADV_IND;
@@ -1179,7 +1229,11 @@ static int le_ext_adv_param_set(struct bt_le_ext_adv *adv,
 				bool  has_scan_data)
 {
 	struct bt_hci_cp_le_set_ext_adv_param *cp;
+#if ZEPHYR_RTK_PATCH
+	bool dir_adv = !!(param->options & BT_LE_ADV_OPT_DIR_ADV), scannable;
+#else
 	bool dir_adv = param->peer != NULL, scannable;
+#endif
 	struct net_buf *buf, *rsp;
 	int err;
 	enum adv_name_type name_type;
@@ -1198,19 +1252,25 @@ static int le_ext_adv_param_set(struct bt_le_ext_adv *adv,
 #if ZEPHYR_RTK_PATCH
 	adv->own_addr_type = param->own_addr_type;
 	cp->own_addr_type = param->own_addr_type;
+	if (param->peer) {
+		bt_addr_le_copy(&adv->target_addr, param->peer);
+	} else {
+		bt_addr_le_copy(&adv->target_addr, BT_ADDR_LE_ANY);
+	}
+	bt_addr_le_copy(&cp->peer_addr, &adv->target_addr);
 #else
 	err = bt_id_set_adv_own_addr(adv, param->options, dir_adv,
 				     &cp->own_addr_type);
 	if (err) {
 		return err;
 	}
-#endif
 
 	if (dir_adv) {
 		bt_addr_le_copy(&adv->target_addr, param->peer);
 	} else {
 		bt_addr_le_copy(&adv->target_addr, BT_ADDR_LE_ANY);
 	}
+#endif
 
 	name_type = get_adv_name_type_param(param);
 
@@ -1219,64 +1279,80 @@ static int le_ext_adv_param_set(struct bt_le_ext_adv *adv,
 	sys_put_le24(param->interval_max, cp->prim_max_interval);
 	cp->prim_channel_map = get_adv_channel_map(param->options);
 	cp->filter_policy = get_filter_policy(param->options);
-	cp->tx_power = BT_HCI_LE_ADV_TX_POWER_NO_PREF;
 
-	cp->prim_adv_phy = BT_HCI_LE_PHY_1M;
-	if ((param->options & BT_LE_ADV_OPT_EXT_ADV) &&
-	    !(param->options & BT_LE_ADV_OPT_NO_2M)) {
-		cp->sec_adv_phy = BT_HCI_LE_PHY_2M;
+#if ZEPHYR_RTK_PATCH
+	if (param->options & BT_LE_ADV_OPT_SET_PARAM_NATIVE) {
+		cp->tx_power = param->tx_power;
+		cp->prim_adv_phy = param->prim_adv_phy;
+		cp->sec_adv_max_skip = param->secondary_max_skip;
+		cp->sec_adv_phy = param->sec_adv_phy;
+		cp->scan_req_notify_enable = 0;
+		props = param->props;
+		scannable = !!(props & BT_HCI_LE_ADV_PROP_SCAN);
 	} else {
-		cp->sec_adv_phy = BT_HCI_LE_PHY_1M;
-	}
+#endif
+		cp->tx_power = BT_HCI_LE_ADV_TX_POWER_NO_PREF;
 
-	if (param->options & BT_LE_ADV_OPT_CODED) {
-		cp->prim_adv_phy = BT_HCI_LE_PHY_CODED;
-		cp->sec_adv_phy = BT_HCI_LE_PHY_CODED;
-	}
+		cp->prim_adv_phy = BT_HCI_LE_PHY_1M;
+		if ((param->options & BT_LE_ADV_OPT_EXT_ADV) &&
+			!(param->options & BT_LE_ADV_OPT_NO_2M)) {
+			cp->sec_adv_phy = BT_HCI_LE_PHY_2M;
+		} else {
+			cp->sec_adv_phy = BT_HCI_LE_PHY_1M;
+		}
 
-	if (!(param->options & BT_LE_ADV_OPT_EXT_ADV)) {
-		props |= BT_HCI_LE_ADV_PROP_LEGACY;
-	}
+		if (param->options & BT_LE_ADV_OPT_CODED) {
+			cp->prim_adv_phy = BT_HCI_LE_PHY_CODED;
+			cp->sec_adv_phy = BT_HCI_LE_PHY_CODED;
+		}
 
-	if (param->options & BT_LE_ADV_OPT_USE_TX_POWER) {
-		props |= BT_HCI_LE_ADV_PROP_TX_POWER;
-	}
+		if (!(param->options & BT_LE_ADV_OPT_EXT_ADV)) {
+			props |= BT_HCI_LE_ADV_PROP_LEGACY;
+		}
 
-	if (param->options & BT_LE_ADV_OPT_ANONYMOUS) {
-		props |= BT_HCI_LE_ADV_PROP_ANON;
-	}
+		if (param->options & BT_LE_ADV_OPT_USE_TX_POWER) {
+			props |= BT_HCI_LE_ADV_PROP_TX_POWER;
+		}
 
-	if (param->options & BT_LE_ADV_OPT_NOTIFY_SCAN_REQ) {
-		cp->scan_req_notify_enable = BT_HCI_LE_ADV_SCAN_REQ_ENABLE;
-	}
+		if (param->options & BT_LE_ADV_OPT_ANONYMOUS) {
+			props |= BT_HCI_LE_ADV_PROP_ANON;
+		}
 
-	if (param->options & BT_LE_ADV_OPT_CONNECTABLE) {
-		props |= BT_HCI_LE_ADV_PROP_CONN;
-		if (!dir_adv && !(param->options & BT_LE_ADV_OPT_EXT_ADV)) {
-			/* When using non-extended adv packets then undirected
-			 * advertising has to be scannable as well.
-			 * We didn't require this option to be set before, so
-			 * it is implicitly set instead in this case.
-			 */
+		if (param->options & BT_LE_ADV_OPT_NOTIFY_SCAN_REQ) {
+			cp->scan_req_notify_enable = BT_HCI_LE_ADV_SCAN_REQ_ENABLE;
+		}
+
+		if (param->options & BT_LE_ADV_OPT_CONNECTABLE) {
+			props |= BT_HCI_LE_ADV_PROP_CONN;
+			if (!dir_adv && !(param->options & BT_LE_ADV_OPT_EXT_ADV)) {
+				/* When using non-extended adv packets then undirected
+				 * advertising has to be scannable as well.
+				 * We didn't require this option to be set before, so
+				 * it is implicitly set instead in this case.
+				 */
+				props |= BT_HCI_LE_ADV_PROP_SCAN;
+			}
+		}
+
+		if ((param->options & BT_LE_ADV_OPT_SCANNABLE) || has_scan_data ||
+			(name_type == ADV_NAME_TYPE_SD)) {
 			props |= BT_HCI_LE_ADV_PROP_SCAN;
 		}
-	}
 
-	if ((param->options & BT_LE_ADV_OPT_SCANNABLE) || has_scan_data ||
-	    (name_type == ADV_NAME_TYPE_SD)) {
-		props |= BT_HCI_LE_ADV_PROP_SCAN;
-	}
+		scannable = !!(props & BT_HCI_LE_ADV_PROP_SCAN);
 
-	scannable = !!(props & BT_HCI_LE_ADV_PROP_SCAN);
-
-	if (dir_adv) {
-		props |= BT_HCI_LE_ADV_PROP_DIRECT;
-		if (!(param->options & BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY)) {
-			props |= BT_HCI_LE_ADV_PROP_HI_DC_CONN;
+		if (dir_adv) {
+			props |= BT_HCI_LE_ADV_PROP_DIRECT;
+			if (!(param->options & BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY)) {
+				props |= BT_HCI_LE_ADV_PROP_HI_DC_CONN;
+			}
+#if !ZEPHYR_RTK_PATCH
+			bt_addr_le_copy(&cp->peer_addr, param->peer);
+#endif
 		}
-
-		bt_addr_le_copy(&cp->peer_addr, param->peer);
+#if ZEPHYR_RTK_PATCH
 	}
+#endif
 
 	cp->sid = param->sid;
 
@@ -1335,7 +1411,11 @@ int bt_le_adv_start_ext(struct bt_le_ext_adv *adv,
 		.timeout = 0,
 		.num_events = 0,
 	};
+#if ZEPHYR_RTK_PATCH
+	bool dir_adv = !!(param->options & BT_LE_ADV_OPT_DIR_ADV);
+#else
 	bool dir_adv = (param->peer != NULL);
+#endif
 	struct bt_conn *conn = NULL;
 	int err;
 

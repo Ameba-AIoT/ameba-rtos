@@ -1,4 +1,9 @@
-menu "CONFIG OTA OPTION"
+config OTA_ENABLED
+    def_bool y
+    depends on !MP_SHRINK
+    depends on WHC_HOST || WHC_NONE || (WHC_DEV && WHC_DEV_FLASH_BOOT)
+
+menu "CONFIG OTA"
     config OTA_SWITCH_STRATEGY
         bool "OTA Image Switch Strategy"
         default y

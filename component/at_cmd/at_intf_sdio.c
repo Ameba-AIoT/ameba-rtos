@@ -16,6 +16,7 @@ static const char *const TAG = "AT_SDIO-D";
 
 #define SDIO_TX_BD_NUM	4	// 1 bd per transaction; no alignment constraint
 #define SDIO_RX_BD_NUM	10
+#define ATCMD_SDIO_TX_RETRY	100	// max resends of one packet when ex_spdio_tx fails, 1 ms apart
 #define SDIO_RX_BUFSZ	(SPDIO_RX_BUFSZ_ALIGN(2048+24)) //n*64, must be rounded to 64, extra 24 bytes for spdio header info
 
 static struct spdio_t spdio_dev = {0};
@@ -40,11 +41,11 @@ char ex_spdio_tx(u8 *pdata, u16 size, u8 type)
 	UNUSED(type);
 	int ret;
 	struct spdio_buf_t *tx_buf = (struct spdio_buf_t *)rtos_mem_malloc(sizeof(struct spdio_buf_t));
-	memset((u8 *)tx_buf, 0, sizeof(struct spdio_buf_t));
 
 	if (!tx_buf) {
 		return RTK_FAIL;
 	}
+	memset((u8 *)tx_buf, 0, sizeof(struct spdio_buf_t));
 	tx_buf->buf_allocated = (u32)rtos_mem_malloc(size + SPDIO_DMA_ALIGN_4);
 	if (!tx_buf->buf_allocated) {
 		rtos_mem_free((u8 *)tx_buf);
@@ -65,6 +66,7 @@ char ex_spdio_tx(u8 *pdata, u16 size, u8 type)
 	if (ret == FALSE) {
 		rtos_mem_free((u8 *)tx_buf->buf_allocated);
 		rtos_mem_free((u8 *)tx_buf);
+		return RTK_FAIL;
 	}
 
 	return RTK_SUCCESS;
@@ -242,11 +244,9 @@ recv_again:
 					RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "\r\n\n#\r\n");
 				}
 
-				memset((u8 *)pCmdLogBuf->UARTLogBuf, CMD_BUFLEN, '\0');
+				memset((u8 *)pCmdLogBuf->UARTLogBuf, 0, CMD_BUFLEN);
 				pCmdLogBuf->BufCount = 0;
 				continue;
-			} else {
-				memset((u8 *)pCmdLogBuf->UARTLogBuf, CMD_BUFLEN, '\0');
 			}
 		}
 
@@ -263,7 +263,7 @@ recv_again:
 
 void atcmd_sdio_output_handler_task(void)
 {
-	u32 actual_len = 0, send_len;
+	u32 actual_len = 0, send_len, retry;
 	struct atcmd_sdio_hdr *hdr = (struct atcmd_sdio_hdr *)sdio_txbuf;
 	while (1) {
 		rtos_sema_take(atcmd_sdio_tx_sema, 0xFFFFFFFF);
@@ -281,10 +281,22 @@ void atcmd_sdio_output_handler_task(void)
 			hdr->len = (u16)send_len;
 			RingBuffer_Read(at_sdio_tx_ring_buf, sdio_txbuf + ATCMD_SDIO_HDR_SIZE, send_len);
 
-			// take tx done sema
-			rtos_sema_take(atcmd_sdio_tx_done_sema, 0xFFFFFFFF);
+			for (retry = 0; retry < ATCMD_SDIO_TX_RETRY; retry++) {
+				// take tx done sema
+				rtos_sema_take(atcmd_sdio_tx_done_sema, 0xFFFFFFFF);
 
-			ex_spdio_tx(sdio_txbuf, ATCMD_SDIO_HDR_SIZE + send_len, 0);
+				if (ex_spdio_tx(sdio_txbuf, ATCMD_SDIO_HDR_SIZE + send_len, 0) == RTK_SUCCESS) {
+					break;
+				}
+
+				/* No tx_done callback will come for a failed transmit, give the sema back
+				 * so the next take does not block forever, then resend the same packet */
+				rtos_sema_give(atcmd_sdio_tx_done_sema);
+				rtos_time_delay_ms(1);
+			}
+			if (retry == ATCMD_SDIO_TX_RETRY) {
+				RTK_LOGE(TAG, "sdio tx failed, drop %u bytes\n", send_len);
+			}
 
 			if (actual_len > send_len) {
 				rtos_sema_give(atcmd_sdio_tx_sema);

@@ -244,6 +244,7 @@ _LONG_CALL_ u32 XTAL_ClkGet(void);
 _LONG_CALL_ void PLL_I2S_Div(int Sportx, u32 div);
 _LONG_CALL_ void PLL_I2S_98P304M(u32 NewState);
 _LONG_CALL_ void PLL_I2S_45P158M(u32 NewState);
+_LONG_CALL_ void PLL_I2S_24P576M(u32 NewState);
 _LONG_CALL_ float PLL_I2S_98P304M_ClkTune(u32 pll_sel, float ppm, u32 action);
 _LONG_CALL_ float PLL_I2S_45P158M_ClkTune(u32 pll_sel, float ppm, u32 action);
 _LONG_CALL_ void PLL_NP_ClkSet(u32 PllClk);
@@ -307,6 +308,7 @@ void XTAL_PDCK(void);
 void XTAL_INIT(void);
 void XTAL_LPSDIG(u32 status);
 void CLK_SWITCH_XTAL(u32 State);
+u32 RCC_PeriphClockEnableChk(u32 APBPeriph_Clock_in);
 
 #define CA7_GET_CLKSEL(x)		((x >> 2) & 0x3)
 #define CA7_GET_CLKDIV(x)		(x & 0x3)

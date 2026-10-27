@@ -1264,7 +1264,8 @@ _LONG_CALL_ void GDMA_Init(u8 GDMA_Index, u8 GDMA_ChNum, PGDMA_InitTypeDef GDMA_
 _LONG_CALL_ void GDMA_SetLLP(u8 GDMA_Index, u8 GDMA_ChNum, u32 MultiBlockCount, struct GDMA_CH_LLI *pGdmaChLli, u32 round);
 _LONG_CALL_ void GDMA_Cmd(u8 GDMA_Index, u8 GDMA_ChNum, u32 NewState);
 _LONG_CALL_ void GDMA_INTConfig(u8 GDMA_Index, u8 GDMA_ChNum, u32 GDMA_IT, u32 NewState);
-_LONG_CALL_ u32	 GDMA_ClearINTPendingBit(u8 GDMA_Index, u8 GDMA_ChNum, u32 GDMA_IT);
+_LONG_CALL_ u32	 GDMA_GetINTStatus(u8 GDMA_Index, u8 GDMA_ChNum);
+_LONG_CALL_ void GDMA_ClearINTPendingBit(u8 GDMA_Index, u8 GDMA_ChNum, u32 GDMA_IT);
 _LONG_CALL_ u32	 GDMA_ClearINT(u8 GDMA_Index, u8 GDMA_ChNum);
 _LONG_CALL_ void GDMA_ChCleanAutoReload(u8 GDMA_Index, u8 GDMA_ChNum, u32 CleanType);
 
@@ -1282,6 +1283,7 @@ _LONG_CALL_ void GDMA_SetChnlPriority(u8 GDMA_Index, u8 GDMA_ChNum, u32 ChnlPrio
 _LONG_CALL_ void GDMA_Suspend(u8 GDMA_Index, u8 GDMA_ChNum);
 _LONG_CALL_ void GDMA_Resume(u8 GDMA_Index, u8 GDMA_ChNum);
 _LONG_CALL_ u8   GDMA_Abort(u8 GDMA_Index, u8 GDMA_ChNum);
+_LONG_CALL_ u8   GDMA_ChannelIsActive(u8 GDMA_Index, u8 GDMA_ChNum);
 _LONG_CALL_ void GDMA_SourceGather(u8 GDMA_Index, u8 GDMA_ChNum, u32 Src_GatherCount, u32 Src_GatherInterval);
 _LONG_CALL_ void GDMA_DestinationScatter(u8 GDMA_Index, u8 GDMA_ChNum, u32 Dst_ScatterCount, u32 Dst_ScatterInterval);
 /**

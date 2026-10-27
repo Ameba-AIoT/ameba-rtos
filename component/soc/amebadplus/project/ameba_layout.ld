@@ -152,7 +152,7 @@ MEMORY
 	/* PMC RAM, fixed in memory layout, do not changed */
 	KM0_IMG2_ENTRY (rwx) :                  ORIGIN = 0x20004D20, LENGTH = 0x20004D80 - 0x20004D20	/* KM0 IMG2 Entry(ROM Used): 128B */
 	KM4_IMG2_ENTRY (rwx) :                  ORIGIN = 0x20004DA0, LENGTH = 0x20004DC0 - 0x20004DA0	/* KM4 IMG2 Entry: 64B */
-	KM0_IPC_RAM (rwx) :                     ORIGIN = 0x20004E00, LENGTH = 0x20005000 - 0x20004E20	/* KM0 IPC RAM: 512B */
+	KM0_IPC_RAM (rwx) :                     ORIGIN = 0x20004E00, LENGTH = 0x20005000 - 0x20004E00	/* KM0 IPC RAM: 512B */
 
 	/* IMG2 RAM */
 	KM4_BD_RAM_TZ (rwx) :                   ORIGIN = KM4_RAM_TZ_START + IMAGE_HEADER_LEN, 		LENGTH = KM4_RAM_TZ_SIZE - IMAGE_HEADER_LEN						 /* KM4 BD RAM TZ: 64KB */

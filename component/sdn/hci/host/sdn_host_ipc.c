@@ -30,8 +30,11 @@ static struct sdn_host_ipc {
 } g_sdn_host_intf = {0};
 
 #define SDN_HOST_IPC_RX_TASK_PRI                5
+#if defined(CONFIG_WPAN_DRIVER_VHDLC_PLATFORM)
+#define SDN_HOST_IPC_RX_TASK_SIZE               (768 + 1024)
+#else
 #define SDN_HOST_IPC_RX_TASK_SIZE               768
-
+#endif
 
 #if defined(CONFIG_BT_SDN)
 #if defined(CONFIG_BLE_LL_EXT_ADV_ENABLE) || defined(CONFIG_BLE_LL_DATA_LEN_EXT_ENABLE)

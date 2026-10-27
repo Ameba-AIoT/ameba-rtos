@@ -18,6 +18,7 @@
 #include "mbedtls/ecdh.h"
 #include "mbedtls/bignum.h"
 #include "mbedtls/platform.h"
+#include "mbedtls/platform_util.h"
 
 /* define it in mbedtls_config_xxx.h */
 #if defined(MBEDTLS_ECDH_GEN_PUBLIC_ALT) || defined(MBEDTLS_ECDH_COMPUTE_SHARED_ALT) || \
@@ -80,7 +81,6 @@ pke_ecp_curve_id get_curve_id_from_mbedtls(mbedtls_ecp_group *grp)
 	} else {
 		curve_id = PKE_ECP_CURVE_NONE;
 		mbedtls_printf("unsupport curve. %s \n", __func__);
-		while(1);
 	}
 	return curve_id;
 }
@@ -99,6 +99,11 @@ static int ecp_mul_restartable_internal(mbedtls_ecp_group *grp, mbedtls_ecp_poin
 	uint8_t res_y[64];
 	uint8_t res_z = 1;
 
+	pke_ecp_curve_id curve_id = get_curve_id_from_mbedtls(grp);
+	if (curve_id == PKE_ECP_CURVE_NONE) {
+		return MBEDTLS_ERR_ECP_FEATURE_UNAVAILABLE;
+	}
+
 	// decode u and scalar
 	if (grp->id == MBEDTLS_ECP_DP_CURVE25519) {
 		PKE_MONTGOMERY_DECODE_SCALAR_25519(m->p);
@@ -110,7 +115,7 @@ static int ecp_mul_restartable_internal(mbedtls_ecp_group *grp, mbedtls_ecp_poin
 	// pke ecp mul
 	pke_ecp_group pke_grp;
 	pke_ecp_point pke_R, pke_P;
-	pke_ecp_group_init_in_rom(&pke_grp, get_curve_id_from_mbedtls(grp));
+	pke_ecp_group_init_in_rom(&pke_grp, curve_id);
 	pke_ecp_point_init_base_point(&pke_grp, &pke_P);
 	pke_ecp_point_init(&pke_R);
 
@@ -126,11 +131,24 @@ static int ecp_mul_restartable_internal(mbedtls_ecp_group *grp, mbedtls_ecp_poin
 	pke_R.Y_p = res_y;
 
 	ret = pke_ecp_mul(&pke_grp, &pke_R, (uint8_t *)m->p, mbedtls_mpi_size(m),  &pke_P);
+	if (ret != RTK_SUCCESS) {
+		mbedtls_platform_zeroize(res_x, sizeof(res_x));
+		mbedtls_platform_zeroize(res_y, sizeof(res_y));
+		return MBEDTLS_ERR_PLATFORM_HW_ACCEL_FAILED;
+	}
 
 	// read result to mbedtls mpi
-	mbedtls_mpi_read_binary_le(&R->Y, res_y, pke_grp.precise_bits / 8);
-	mbedtls_mpi_read_binary_le(&R->X, res_x, pke_grp.precise_bits / 8);
-	mbedtls_mpi_read_binary_le(&R->Z, &res_z, 1);
+	MBEDTLS_MPI_CHK(mbedtls_mpi_read_binary_le(&R->Y, res_y, pke_grp.precise_bits / 8));
+	MBEDTLS_MPI_CHK(mbedtls_mpi_read_binary_le(&R->X, res_x, pke_grp.precise_bits / 8));
+	MBEDTLS_MPI_CHK(mbedtls_mpi_read_binary_le(&R->Z, &res_z, 1));
+
+cleanup:
+	mbedtls_platform_zeroize(res_x, sizeof(res_x));
+	mbedtls_platform_zeroize(res_y, sizeof(res_y));
+	/* prevent caller from using a partially imported point */
+	if (ret != 0) {
+		mbedtls_ecp_point_free(R);
+	}
 	return ret;
 }
 #endif
@@ -146,30 +164,55 @@ int mbedtls_ecdsa_sign(mbedtls_ecp_group *grp, mbedtls_mpi *r, mbedtls_mpi *s,
 	int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
 	pke_ecp_group pke_grp;
 	size_t precise_byte = (grp->nbits + 7 ) / 8;
-	uint8_t *hash_buf = mbedtls_calloc(blen, 1);
-	uint8_t *rand_buf = mbedtls_calloc(precise_byte, 1);
-	uint8_t *res_sign_r_buf = mbedtls_calloc(precise_byte, 1);
-	uint8_t *res_sign_s_buf = mbedtls_calloc(precise_byte, 1);
+	uint8_t *hash_buf = NULL;
+	uint8_t *rand_buf = NULL;
+	uint8_t *res_sign_r_buf = NULL;
+	uint8_t *res_sign_s_buf = NULL;
+
+	pke_ecp_curve_id curve_id = get_curve_id_from_mbedtls(grp);
+	if (curve_id == PKE_ECP_CURVE_NONE) {
+		return MBEDTLS_ERR_ECP_FEATURE_UNAVAILABLE;
+	}
 
 	/* check hash len */
 	if (blen > 64) {
 		mbedtls_printf("[%s] hash len unsupport \n", __func__);
+		return MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
+	}
+
+	/* make sure d is in range 1..n-1 */
+	if (mbedtls_mpi_cmp_int(d, 1) < 0 || mbedtls_mpi_cmp_mpi(d, &grp->N) >= 0) {
+		return MBEDTLS_ERR_ECP_INVALID_KEY;
+	}
+
+	/* ROM pke_ecdsa_lalu_hash_process writes precise_byte bytes, which can exceed blen */
+	hash_buf = mbedtls_calloc(MAX(blen, precise_byte), 1);
+	rand_buf = mbedtls_calloc(precise_byte, 1);
+	res_sign_r_buf = mbedtls_calloc(precise_byte, 1);
+	res_sign_s_buf = mbedtls_calloc(precise_byte, 1);
+	if (hash_buf == NULL || rand_buf == NULL || res_sign_r_buf == NULL || res_sign_s_buf == NULL) {
+		ret = MBEDTLS_ERR_ECP_ALLOC_FAILED;
 		goto cleanup;
 	}
 
 	/* get rand buffer */
-	TRNG_get_random_bytes(rand_buf, precise_byte - 1);
+	if (TRNG_get_random_bytes(rand_buf, precise_byte - 1) != RTK_SUCCESS) {
+		ret = MBEDTLS_ERR_ECP_RANDOM_FAILED;
+		goto cleanup;
+	}
 	rand_buf[precise_byte - 1] = 0;
 
 	/* process hash buffer */
 	pke_ecdsa_lalu_hash_process(hash_buf, (uint8_t *)buf, blen, grp->nbits);
 
 	/* temp sign buffer */
-	pke_ecp_group_init_in_rom(&pke_grp, get_curve_id_from_mbedtls(grp));
-	if ((ret = pke_ecdsa_write_signature(&pke_grp, PKE_ECDSA_PRIV_KEY_SW, rand_buf, precise_byte,
-										 (uint8_t *)d->p, mbedtls_mpi_size(d),
-										 hash_buf, blen, res_sign_r_buf, res_sign_s_buf)) != 0) {
+	pke_ecp_group_init_in_rom(&pke_grp, curve_id);
+	ret = pke_ecdsa_write_signature(&pke_grp, PKE_ECDSA_PRIV_KEY_SW, rand_buf, precise_byte,
+									(uint8_t *)d->p, mbedtls_mpi_size(d),
+									hash_buf, blen, res_sign_r_buf, res_sign_s_buf);
+	if (ret != RTK_SUCCESS) {
 		mbedtls_printf("%s fail, ret %d\n", __func__, ret);
+		ret = MBEDTLS_ERR_PLATFORM_HW_ACCEL_FAILED;
 		goto cleanup;
 	}
 
@@ -185,6 +228,9 @@ int mbedtls_ecdsa_sign(mbedtls_ecp_group *grp, mbedtls_mpi *r, mbedtls_mpi *s,
 	}
 
 cleanup:
+	if (rand_buf != NULL) {
+		mbedtls_platform_zeroize(rand_buf, precise_byte);
+	}
 	mbedtls_free(rand_buf);
 	mbedtls_free(hash_buf);
 	mbedtls_free(res_sign_r_buf);
@@ -202,24 +248,52 @@ int mbedtls_ecdsa_verify(mbedtls_ecp_group *grp,
 {
 	int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
 	pke_ecp_group pke_grp;
+	size_t precise_byte = (grp->nbits + 7) / 8;
+	uint8_t *hash_buf = NULL;
+	uint8_t *param_buf = NULL;
 
-	uint8_t *hash_buf = mbedtls_calloc(blen, 1);
+	pke_ecp_curve_id curve_id = get_curve_id_from_mbedtls(grp);
+	if (curve_id == PKE_ECP_CURVE_NONE) {
+		return MBEDTLS_ERR_ECP_FEATURE_UNAVAILABLE;
+	}
 
 	if (blen > 64) {
 		mbedtls_printf("[%s] hash len unsupport \n", __func__);
+		return MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
+	}
+
+	/* make sure r and s are in range 1..n-1 */
+	if (mbedtls_mpi_cmp_int(r, 1) < 0 || mbedtls_mpi_cmp_mpi(r, &grp->N) >= 0 ||
+		mbedtls_mpi_cmp_int(s, 1) < 0 || mbedtls_mpi_cmp_mpi(s, &grp->N) >= 0) {
+		return MBEDTLS_ERR_ECP_VERIFY_FAILED;
+	}
+
+	/* ROM pke_ecdsa_lalu_hash_process writes precise_byte bytes, which can exceed blen */
+	hash_buf = mbedtls_calloc(MAX(blen, precise_byte), 1);
+	/* ROM reads precise_byte bytes of each operand, which may exceed the limbs an mpi holds */
+	param_buf = mbedtls_calloc(precise_byte, 4);
+	if (hash_buf == NULL || param_buf == NULL) {
+		ret = MBEDTLS_ERR_ECP_ALLOC_FAILED;
 		goto cleanup;
 	}
 
+	MBEDTLS_MPI_CHK(mbedtls_mpi_write_binary_le(&Q->X, param_buf, precise_byte));
+	MBEDTLS_MPI_CHK(mbedtls_mpi_write_binary_le(&Q->Y, param_buf + precise_byte, precise_byte));
+	MBEDTLS_MPI_CHK(mbedtls_mpi_write_binary_le(r, param_buf + 2 * precise_byte, precise_byte));
+	MBEDTLS_MPI_CHK(mbedtls_mpi_write_binary_le(s, param_buf + 3 * precise_byte, precise_byte));
+
 	pke_ecdsa_lalu_hash_process(hash_buf, (uint8_t *)buf, blen, grp->nbits);
-	pke_ecp_group_init_in_rom(&pke_grp, get_curve_id_from_mbedtls(grp));
-	ret = pke_ecdsa_read_signature(&pke_grp, (uint8_t *)Q->X.p, (uint8_t *)Q->Y.p,
-										hash_buf, blen, (uint8_t *)r->p, (uint8_t *)s->p);
+	pke_ecp_group_init_in_rom(&pke_grp, curve_id);
+	ret = pke_ecdsa_read_signature(&pke_grp, param_buf, param_buf + precise_byte,
+								   hash_buf, blen, param_buf + 2 * precise_byte, param_buf + 3 * precise_byte);
 	if (ret != RTK_SUCCESS) {
 		mbedtls_printf("%s fail, ret %d\n", __func__, ret);
+		ret = MBEDTLS_ERR_ECP_VERIFY_FAILED;
 	}
 
 cleanup:
 	mbedtls_free(hash_buf);
+	mbedtls_free(param_buf);
 	return ret;
 }
 #endif

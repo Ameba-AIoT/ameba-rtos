@@ -39,9 +39,9 @@ set(private_compile_options)         #private compile_options
 #------------------------------#
 # Component private part, user config begin
 
-if("${c_MCU_PROJECT_NAME}" STREQUAL "km4ns")
+if("${c_MCU_PROJECT_NAME}" STREQUAL "km55ns")
     ameba_list_append(private_sources
-        bootloader_km4ns_lib.c
+        bootloader_km55ns_lib.c
     )
 endif()
 # Component private part, user config end

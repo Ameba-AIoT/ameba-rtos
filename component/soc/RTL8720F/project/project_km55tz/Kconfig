@@ -1,0 +1,32 @@
+comment "----------CPU config----------"
+
+menu "CONFIG CHIP"
+    choice
+        prompt "ArmCore"
+        default ARM_CORE_CM55_KM55TZ_FOR_KM55TZ
+        config ARM_CORE_CM55_KM55TZ_FOR_KM55TZ
+            bool "ARM_CM55_KM55TZ"
+    endchoice
+
+    config ARM_CORE_CM4_FOR_KM55TZ
+        bool
+        default y
+
+    # Legacy core macro for shared code and auto-generated headers that still test the KM4 name
+    config ARM_CORE_CM4_KM4TZ_FOR_KM55TZ
+        bool
+        default y
+
+    choice
+        prompt "Chip Version"
+        default RTL8720F_A_CUT_FOR_KM55TZ
+        config RTL8720F_A_CUT_FOR_KM55TZ
+            bool "RTL8720F_A_Cut"
+    endchoice
+
+    config CPU_HAS_FPU_FOR_KM55TZ
+        bool
+        default y
+endmenu
+
+

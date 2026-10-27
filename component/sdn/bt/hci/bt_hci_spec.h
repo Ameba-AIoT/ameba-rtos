@@ -2057,7 +2057,7 @@ struct bt_hci_evt_le_subrate_change {
 	uint16_t supervision_timeout;
 } __attribute__((packed));
 
-#define BT_HCI_AUX_PHY_TO_HCI_PHY(aux_phy) ((aux_phy) + 1)
+#define BT_PHY_TO_HCI_PHY(phy) ((phy) + 1)
 
 #define BT_HCI_LE_ADV_EVT_TYPE_CONN                 BIT(0)
 #define BT_HCI_LE_ADV_EVT_TYPE_SCAN                 BIT(1)

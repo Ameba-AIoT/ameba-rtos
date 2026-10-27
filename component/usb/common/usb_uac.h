@@ -7,6 +7,26 @@
 #ifndef USB_UAC_H
 #define USB_UAC_H
 
+/* Includes ------------------------------------------------------------------*/
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/** @addtogroup USB_Common_API USB Common API
+ *  @{
+ */
+
+/* Exported defines ----------------------------------------------------------*/
+
+/** @addtogroup USB_Common_Constants USB Common Constants
+ *  @{
+ */
+/** @defgroup USB_Common_UAC_Constants USB UAC Constants
+ *  @brief Audio Class definitions shared by UAC 1.0/2.0 and by the USBD and USBH UAC drivers.
+ *  @{
+ */
+
 /* Audio Class Codes */
 #define USB_UAC_CLASS_CODE                         0x01U
 #define USB_UAC_IF_CLASS_AUDIO                     0x01U
@@ -61,5 +81,22 @@
 #define USB_UAC_FU_UNDERFLOW                       0x0EU
 #define USB_UAC_FU_OVERFLOW                        0x0FU
 #define USB_UAC_FU_LATENCY                         0x10U
+
+/** @} End of USB_Common_UAC_Constants group */
+/** @} End of USB_Common_Constants group */
+
+/* Exported types ------------------------------------------------------------*/
+
+/* Exported macros -----------------------------------------------------------*/
+
+/* Exported variables --------------------------------------------------------*/
+
+/* Exported functions --------------------------------------------------------*/
+
+/** @} End of USB_Common_API group */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* USB_UAC_H */

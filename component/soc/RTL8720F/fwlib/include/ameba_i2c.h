@@ -7,63 +7,6 @@
 #ifndef _AMEBA_I2C_H_
 #define _AMEBA_I2C_H_
 
-/** @addtogroup I2C
-  * @verbatim
-  *****************************************************************************************
-  * Introduction
-  *****************************************************************************************
-  * I2C0:
-  *		- Base Address: I2C0_DEV
-  *		- IPclk: 10MHz
-  *		- Speed: Standard (up to 100 kHz) and Fast (up to 400 kHz) Modes
-  *		- Address: 7/10-bit Address Mode
-  *		- Slave: Slave1 (support 7/10-bit address); Slave2 (only support 7-bit address)
-  *		- IRQ: I2C0_IRQ_LP, I2C0_IRQ, I2C0_IRQ_AP
-  *
-  * I2C1:
-  *		- Base Address: I2C1_DEV
-  *		- IPclk: 100MHz
-  *		- Speed: Standard (up to 100 kHz), Fast (up to 400 kHz) Modes and High Speed (up to 3.4Mbps) mode.
-  *		- Address: 7/10-bit Address Mode
-  *		- Slave: Slave1 (support 7/10-bit address); Slave2 (only support 7-bit address)
-  *		- IRQ: I2C1_IRQ, I2C1_IRQ_AP
-  *
-  * I2C2:
-  *		- Base Address: I2C2_DEV
-  *		- IPclk: 100MHz
-  *		- Speed: Standard (up to 100 kHz), Fast (up to 400 kHz) Modes and High Speed (up to 3.4Mbps) mode.
-  *		- Address: 7/10-bit Address Mode
-  *		- Slave: Slave1 (support 7/10-bit address); Slave2 (only support 7-bit address)
-  *		- IRQ: I2C2_IRQ, I2C2_IRQ_AP
-  *****************************************************************************************
-  * How to use Normal I2C
-  *****************************************************************************************
-  *      To use the normal i2c mode, the following steps are mandatory:
-  *
-  *      1. Enable peripheral clock using the following functions.(it is enabled by default)
-  *			RCC_PeriphClockCmd(APBPeriph_I2Cx, APBPeriph_I2Cx_CLOCK, ENABLE);
-  *
-  *      2. configure the I2C pinmux.
-  *			Pinmux_Config(Pin_Num, PINMUX_FUNCTION_I2C)
-  *
-  *      3. Program Role, Address Mode, Speed Mode, I2C CLK, Slave address, Threshold, Feature Supports
-  *			I2C_StructInit()
-  *
-  *      4. Init Hardware use step3 parameters:
-  *			I2C_Init(I2C_TypeDef *I2Cx, I2C_InitTypeDef* I2C_InitStruct)
-  *
-  *      5. Enable the NVIC and the corresponding interrupt using following function if you need
-  *			to use interrupt mode.
-  *			I2C_INTConfig(): I2C IRQ Mask set
-  *			InterruptRegister(): register the i2c irq handler
-  *			InterruptEn(): Enable the NVIC interrupt
-  *
-  *      6. Enable i2c module using I2C_Cmd().
-  *
-  *****************************************************************************************
-  * @endverbatim
-  */
-
 /** @addtogroup Ameba_Periph_Driver
   * @{
   */

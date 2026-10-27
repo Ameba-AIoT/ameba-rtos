@@ -89,6 +89,10 @@ int fatfs_get_interface(int interface)
 		drv_id = FATFS_getDrivernum("SD_SPI");
 	} else if (interface == VFS_INF_USBH) {
 		drv_id = FATFS_getDrivernum("USB");
+#if defined(VFS_RAM_FATFS)
+	} else if (interface == VFS_INF_RAM) {
+		drv_id = FATFS_getDrivernum("RAM");
+#endif
 	} else {
 		return -1;
 	}
@@ -495,6 +499,11 @@ int fatfs_stat(void *fs, char *path, struct stat *buf)
 int fatfs_mount(int interface)
 {
 	int ret = -1;
+#if defined(VFS_RAM_FATFS)
+	if (interface == VFS_INF_RAM) {
+		return fatfs_ram_init();		/* sets ram_mount_flag */
+	}
+#endif
 	if (interface == VFS_INF_SD || interface == VFS_INF_SD_SPI) {
 		VFS_DBG(VFS_INFO, "sd mount");
 #if defined(CONFIG_FATFS_SD_MODE) || defined(CONFIG_FATFS_SD_SPI_MODE)
@@ -524,7 +533,12 @@ int fatfs_mount(int interface)
 int fatfs_ummount(int interface)
 {
 	int ret = 0;
-	if (interface == VFS_INF_SD) {
+#if defined(VFS_RAM_FATFS)
+	if (interface == VFS_INF_RAM) {
+		return fatfs_ram_close();		/* clears ram_mount_flag */
+	}
+#endif
+	if (interface == VFS_INF_SD || interface == VFS_INF_SD_SPI) {
 		VFS_DBG(VFS_INFO, "sd unmount");
 #if defined(CONFIG_FATFS_SD_MODE) || defined(CONFIG_FATFS_SD_SPI_MODE)
 		ret = fatfs_sd_close();
@@ -542,10 +556,11 @@ int fatfs_ummount(int interface)
 		return -1;
 	}
 
-	if (interface == VFS_INF_SD || interface == VFS_INF_SECOND_FLASH) {
-		fatfs2_mount_flag = 0;
-	} else if (interface == VFS_INF_FLASH) {
+	/* all non-flash interfaces share fatfs2_mount_flag (see fatfs_mount) */
+	if (interface == VFS_INF_FLASH) {
 		fatfs_mount_flag = 0;
+	} else {
+		fatfs2_mount_flag = 0;
 	}
 
 

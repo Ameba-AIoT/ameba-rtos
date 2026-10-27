@@ -373,6 +373,12 @@ static u32 ssi_dma_send(void *Adapter, u8 *pTxData, u32 Length)
 						  ssi_adapter, (IRQ_FUN) ssi_dma_tx_irq,
 						  pTxData, Length);
 
+	if (ret == FALSE) {
+		SSI_SetDmaEnable(ssi_adapter->spi_dev, DISABLE, SPI_BIT_TDMAE);
+		ssi_adapter->dma_en &= ~SPI_DMA_TX_EN;
+		return FALSE;
+	}
+
 	return ret;
 }
 
@@ -395,6 +401,11 @@ static u32 ssi_dma_recv(void *Adapter, u8  *pRxData, u32 Length)
 	ret = SSI_RXGDMA_Init(ssi_adapter->Index, &ssi_adapter->SSIRxGdmaInitStruct,
 						  ssi_adapter, (IRQ_FUN) ssi_dma_rx_irq,
 						  pRxData, Length);
+
+	if (ret == FALSE) {
+		ssi_adapter->dma_en &= ~SPI_DMA_RX_EN;
+		return FALSE;
+	}
 
 	/* Set SSI DMA Enable */
 	SSI_SetDmaEnable(ssi_adapter->spi_dev, ENABLE, SPI_BIT_RDMAE);

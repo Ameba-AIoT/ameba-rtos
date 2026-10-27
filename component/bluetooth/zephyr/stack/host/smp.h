@@ -183,4 +183,8 @@ int bt_smp_irk_get(uint8_t *ir, uint8_t *irk);
 void bt_set_mitm_flag(bool enable);
 
 void bt_set_min_enc_key_size_required(uint8_t size);
+
+void bt_set_sign_key_flag(bool enable);
+
+void bt_set_sc_support(bool enable);
 #endif

@@ -105,6 +105,58 @@ void whc_host_set_key(struct rtw_crypt_info *crypt)
 
 	return;
 }
+
+
+static int whc_host_wep_hex_key(const u8 *key, u16 key_len, u8 *wep_key, u16 *wep_key_len)
+{
+	u16 i;
+	int high;
+	int low;
+
+	if ((key_len != 10) && (key_len != 26)) {
+		return -EINVAL;
+	}
+
+	*wep_key_len = key_len / 2;
+	for (i = 0; i < *wep_key_len; i++) {
+		high = hex_to_bin(key[i * 2]);
+		low = hex_to_bin(key[i * 2 + 1]);
+		if ((high < 0) || (low < 0)) {
+			return -EINVAL;
+		}
+		wep_key[i] = (high << 4) | low;
+	}
+
+	return 0;
+}
+
+int whc_host_set_wep_key(u8 iface_type, u8 key_idx, const u8 *key, int key_len)
+{
+	struct whch_security_priv *psecuritypriv = &global_idev.whchpriv.securitypriv[iface_type];
+	u8 wep_key[13];
+	u16 converted_key_len = key_len;
+
+	if (!key || ((key_len != 5) && (key_len != 13) &&
+				 (key_len != 10) && (key_len != 26)) || (key_idx >= 4)) {
+		return -EINVAL;
+	}
+
+	if (key_len == 10 || key_len == 26) {
+		if (whc_host_wep_hex_key(key, key_len, wep_key, &converted_key_len)) {
+			return -EINVAL;
+		}
+	} else {
+		memcpy(wep_key, key, key_len);
+	}
+
+	memset(psecuritypriv->dot11_wep_key[key_idx].skey, 0, sizeof(psecuritypriv->dot11_wep_key[0].skey));
+	memcpy(psecuritypriv->dot11_wep_key[key_idx].skey, wep_key, converted_key_len);
+	psecuritypriv->dot11_wep_keylen[key_idx] = converted_key_len;
+	psecuritypriv->dot11_wep_key_index = key_idx;
+
+	return 0;
+}
+
 void whc_host_dynamic_timer_hdl(struct work_struct *work)
 {
 	struct whch_rx_stats *pcount = &global_idev.whchpriv.rx_stats[WHC_STA_PORT];

@@ -4,45 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/** @addtogroup Ameba_Logsys
-  * @verbatim
-  *****************************************************************************************
-  * Introduction
-  *****************************************************************************************
-  * Log System:
-  *   - Six severity levels: NONE, ALWAYS, ERROR, WARN, INFO, DEBUG
-  *   - COMPIL_LOG_LEVEL gates messages at compile time; calls above the threshold
-  *     produce no code or data in the binary
-  *   - Per-tag runtime level cache (up to LOG_TAG_CACHE_ARRAY_SIZE entries) allows
-  *     fine-grained output control without rebuilding
-  *   - Two write paths: rtk_log_write() for normal images,
-  *     rtk_log_write_nano() for ROM/bootloader (reduced footprint)
-  *
-  *****************************************************************************************
-  * How to use the Log System
-  *****************************************************************************************
-  *   1. Optionally set COMPIL_LOG_LEVEL before including this header to adjust
-  *      the compile-time gate (default: RTK_LOG_INFO):
-  *        #define COMPIL_LOG_LEVEL  RTK_LOG_DEBUG
-  *        #include "log.h"
-  *
-  *   2. Define a module tag string:
-  *        static const char *const TAG = "WIFI";
-  *
-  *   3. Use RTK_LOGS() to emit messages — recommended entry point:
-  *        RTK_LOGS(TAG, RTK_LOG_INFO, "Link up, RSSI=%d dBm\n", rssi);
-  *
-  *   4. Adjust per-tag runtime level on demand:
-  *        rtk_log_level_set(TAG, RTK_LOG_DEBUG);
-  *
-  *   @note RTK_LOGx() macros (RTK_LOGA / RTK_LOGE / RTK_LOGW / RTK_LOGI / RTK_LOGD)
-  *         are kept for backward compatibility; RTK_LOGS() is preferred for new code.
-  *   @note Use NOTAG as the tag argument when no module label is needed.
-  *
-  *****************************************************************************************
-  * @endverbatim
-  */
-
 /** @addtogroup Ameba_Periph_Driver
   * @{
   */
