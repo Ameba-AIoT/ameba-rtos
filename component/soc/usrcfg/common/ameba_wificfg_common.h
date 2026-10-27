@@ -300,6 +300,9 @@ struct wifi_user_conf {
 
 	/*!	The maximum number of NAN peers can be tracked concurrently, should not exceed 15. Default: 6. */
 	u8 nan_max_peer_num;
+
+	/*! 0: Disable TPC feature, 1: Enable TPC feature. */
+	u8 tpc_enable;
 };
 
 /** @} End of WIFI_Exported_Structure_Types group*/
