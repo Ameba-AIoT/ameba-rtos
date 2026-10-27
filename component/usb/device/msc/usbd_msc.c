@@ -1296,27 +1296,26 @@ int usbd_composite_msc_init(const usbd_msc_cb_t *cb, const usbd_msc_config_t *cf
 void usbd_msc_deinit(void)
 {
 	usbd_msc_dev_t *cdev = &usbd_msc_dev;
+	int ret;
 
+	/* Leave the core before anything is torn down. Composite: refused until
+	   usbd_composite_deinit() has blocked the ISR and cleared the configuration of every
+	   function. Standalone: refused in interrupt context. Either way nothing is released when
+	   refused, and once accepted no class callback runs any more and every endpoint of this
+	   class is deinitialized: ref USB 2.0 9.4.7, the transfers still pending are aborted. */
 #ifdef CONFIG_USBD_COMPOSITE
-	/* Leave the composite framework before anything is torn down: it is refused while the
-	   composite device is still registered on the core, and the class must then stay intact */
 	if (cdev->from_composite != 0U) {
-		if (usbd_composite_unregister_driver(&usbd_msc_driver) != HAL_OK) {
-			return;
-		}
-	}
-#endif
-
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Deinit\n");
-
-	/* Unregister first: no endpoint completion can give tx_sema/rx_sema afterwards, so they can
-	   be deleted below without an ISR giving a freed semaphore */
-#ifdef CONFIG_USBD_COMPOSITE
-	if (cdev->from_composite == 0U)
+		ret = usbd_composite_unregister_driver(&usbd_msc_driver);
+	} else
 #endif
 	{
-		usbd_unregister_class();
+		ret = usbd_unregister_class();
 	}
+	if (ret != HAL_OK) {
+		return;
+	}
+
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Deinit\n");
 
 	/* Both threads hold the lock while they process a command. Taking it waits for a command in
 	   progress to finish, so neither thread is deleted while it owns the lock or uses the buffers

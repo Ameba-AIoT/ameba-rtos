@@ -47,6 +47,7 @@ extern "C" {
 
 #define USBH_UAC_ALT_SETTING_MAX        10      /**< Maximum number of Alternate Settings per interface */
 #define USBH_UAC_FREQ_FORMAT_MAX        6       /**< Maximum number of discrete sampling frequencies per format */
+#define USBH_UAC_FMT_MAX                (USBH_UAC_ALT_SETTING_MAX * USBH_UAC_FREQ_FORMAT_MAX) /**< Maximum number of formats listed per AS interface */
 
 #define USBH_UAC_ISOC_OUT_DIR           0U      /**< Isochronous OUT endpoint (Playback) */
 #define USBH_UAC_ISOC_IN_DIR            1U      /**< Isochronous IN endpoint (Recording) */
@@ -181,6 +182,7 @@ typedef struct {
 	u8 channels;  /**< Number of audio channels */
 	u8 freq_cnt;  /**< Number of valid entries in freq[] */
 	u8 freq_continuous; /**< 1 when bSamFreqType==0: freq[0]/freq[1] are the lower/upper bounds of a continuous range */
+	u8 subframe_size;   /**< Bytes one sample occupies on the bus (bSubframeSize), e.g. 4 for 24-bit audio in a 32-bit container */
 } usbh_uac_format_cfg_t;
 
 /**
@@ -200,6 +202,7 @@ typedef struct {
 	u32 sampling_freq;     /**< Sampling frequency in Hz */
 	u8 bit_width;          /**< Bit depth per sample */
 	u8 ch_cnt;             /**< Channel count */
+	u8 subframe_size;      /**< Bytes one sample occupies in the PCM stream, may exceed bit_width / 8 (Audio Formats 1.0 2.2.5) */
 } usbh_uac_audio_fmt_t;
 
 /**
@@ -207,7 +210,6 @@ typedef struct {
   *         Manages all Alternate Settings and formats for a specific AS interface.
   */
 typedef struct {
-	usbh_uac_audio_fmt_t *fmt_array;          /**< Flattened array of all supported audio formats (malloc'd in get_audio_format_info) */
 	u16 packet_size_small;                /**< Bytes per packet when the sample accumulator does not overflow */
 	u16 packet_size_large;                /**< Bytes per packet when the sample accumulator overflows (one extra sample) */
 
@@ -220,6 +222,8 @@ typedef struct {
 	u8 fmt_array_cnt;                     /**< Number of entries in fmt_array[] */
 
 	u8 choose_alt_idx;                    /**< Index into interface_array[] for the currently active alternate setting */
+
+	usbh_uac_audio_fmt_t fmt_array[USBH_UAC_FMT_MAX]; /**< Flattened list of all supported audio formats */
 } usbh_uac_as_itf_info_t;
 
 /**
@@ -252,7 +256,9 @@ typedef struct {
 } usbh_uac_config_t;
 
 typedef struct {
-	usbh_uac_as_itf_info_t *as_itf;     /**< Pointer to the AS interface for this direction; NULL if not supported */
+	usbh_uac_as_itf_info_t *as_itf;     /**< AS interface bound for this direction; NULL when the device offers none or it is detached */
+	usbh_uac_as_itf_info_t *as_itf_mem; /**< Storage as_itf binds to: allocated in usbh_uac_init() when the direction is enabled
+	                                         and freed only in usbh_uac_deinit(), so a pointer taken from it stays valid across detach */
 	u8 *xfer_buf;                        /**< DMA-safe transfer buffer passed to usbh_transfer_data */
 	usbh_uac_buf_ctrl_t buf_ctrl;        /**< Isochronous buffer and packet-size control */
 
@@ -357,9 +363,11 @@ int usbh_uac_set_alt_setting(u8 dir, u8 channels, u8 bit_width, u32 sampling_fre
 
 /**
   * @brief  Get the list of audio formats supported by the connected device.
+  * @note   The array stays addressable until usbh_uac_deinit(), but its content describes the
+  *         device only until the detached callback; stop using it from then on.
   * @param  dir: Direction (0: Playback/OUT, 1: Record/IN).
   * @param  fmt_cnt: Pointer to store the number of formats found.
-  * @return Pointer to the array of supported formats.
+  * @return Pointer to the array of supported formats, NULL if the direction is not available.
   */
 const usbh_uac_audio_fmt_t *usbh_uac_get_alt_setting(u8 dir, u8 *fmt_cnt);
 
@@ -405,6 +413,7 @@ int usbh_uac_get_volume(u8 dir, u8 ch, s16 *volume, s16 *vol_min, s16 *vol_max);
 
 /**
   * @brief  Set the volume level percentage.
+  * @note   A channel whose volume range could not be read at attach is skipped with a warning.
   * @param  volume: Volume level (0-100).
   * @param  dir: Direction.
   * @return 0 on success, non-zero on failure.
@@ -439,15 +448,19 @@ void usbh_uac_stop_play(void);
 
 /**
   * @brief  Write audio data to the UAC driver ring buffer.
+  * @note   Single writer: call it from one thread at a time.
   * @param  buffer: Pointer to the PCM data buffer.
-  * @param  size: Size of data to write (in bytes).
+  * @param  size: Size of data to write (in bytes), at most 0x7FFFFFFF.
   * @param  timeout_ms: Maximum wait in milliseconds each time the buffer is full; 0 for
   *         non-blocking. The call returns once all data is queued, or when no space frees
-  *         up within timeout_ms (device stopped consuming or detached), so it may block
-  *         longer than timeout_ms while playback progresses.
-  * @return Actual number of bytes written; less than size only on such a stall.
+  *         up within timeout_ms, so it may block longer than timeout_ms while playback progresses.
+  * @return > 0: bytes queued, less than size when the buffer stayed full or the stream ended midway;
+  *         0: the stream runs but the buffer stayed full, nothing was queued;
+  *         -HAL_ERR_PARA: invalid argument or no playback interface;
+  *         -HAL_BUSY: playback is not started;
+  *         -HAL_ERR_HW: the device is not connected.
   */
-u32 usbh_uac_write(u8 *buffer, u32 size, u32 timeout_ms);
+int usbh_uac_write(u8 *buffer, u32 size, u32 timeout_ms);
 
 /**
   * @brief  Start the audio capture process (microphone recording).
@@ -467,9 +480,13 @@ void usbh_uac_stop_capture(void);
   * @param  time_out_ms: Total budget in milliseconds this call may spend waiting for data, not a
   *                      per-packet allowance; 0 for non-blocking. May return fewer than @p size
   *                      bytes when the budget runs out.
-  * @retval Actual number of bytes read
+  * @return > 0: bytes read;
+  *         0: the stream runs but no data arrived within time_out_ms;
+  *         -HAL_ERR_PARA: invalid argument or no record interface;
+  *         -HAL_BUSY: capture is not started;
+  *         -HAL_ERR_HW: the device is not connected.
   */
-u32 usbh_uac_read(u8 *buffer, u32 size, u32 time_out_ms);
+int usbh_uac_read(u8 *buffer, u32 size, u32 time_out_ms);
 
 /** @} End of Host_UAC_Functions group */
 /** @} End of USB_Host_Functions group */

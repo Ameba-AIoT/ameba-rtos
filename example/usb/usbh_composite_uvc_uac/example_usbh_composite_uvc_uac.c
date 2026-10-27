@@ -404,7 +404,10 @@ static int usbh_comp_lock(rtos_mutex_t lock)
 		return HAL_ERR_HW;
 	}
 
-	rtos_mutex_take(lock, RTOS_MAX_TIMEOUT);
+	if (rtos_mutex_take(lock, RTOS_MAX_TIMEOUT) != RTK_SUCCESS) {
+		/* Not held: the caller gives up and must not unlock */
+		return HAL_ERR_HW;
+	}
 
 	if ((usbh_comp_stack_ready == 0U) || (usbh_comp_teardown != 0U)) {
 		/* Lost the race against a teardown */
@@ -631,6 +634,7 @@ static void usbh_uvc_uac_ctrl_thread(void *param)
 	u8 is_playing = 0U;
 	u8 is_recording = 0U;
 	u8 do_ctrl_setup = 0U;
+	u8 setparam_ok = 0U;
 	u8 uac_ready;
 	u8 fmt_cnt = 0U;
 	u8 i = 0U;
@@ -673,10 +677,11 @@ static void usbh_uvc_uac_ctrl_thread(void *param)
 		}
 
 		if (do_ctrl_setup != 0U) {
-			/* The whole negotiation runs under one ctrl lock hold, so a teardown waits for
-			   the complete sequence: up to USBH_COMPOSITE_CTRL_TIMEOUT_MS for the UVC
-			   set_param result plus up to 6 s (the UAC driver's sync timeout) for each UAC
-			   SET_INTERFACE, but never for a data stream. */
+			/* The negotiation runs under the ctrl lock, except for the wait on the UVC
+			   set_param result: that wait touches no stack state, so the lock is dropped
+			   across it and a teardown is not held up by it. A teardown still waits for an
+			   in-flight UAC SET_INTERFACE, up to 6 s (the UAC driver's sync timeout) each,
+			   but never for a data stream. */
 			if (uac_ready == 0U) {
 				if ((usbh_uac_support_playback() == 0) && (usbh_uac_support_record() == 0)) {
 					RTK_LOGS(TAG, RTK_LOG_INFO, "UVC-only device (no UAC attached)\n");
@@ -695,8 +700,20 @@ static void usbh_uvc_uac_ctrl_thread(void *param)
 			usbh_uvc_s_ctx.frame_buf_size = USBH_UVC_FRAME_BUF_SIZE;
 			if (usbh_uvc_set_param(&usbh_uvc_s_ctx, USBH_UVC_STREAM_INDEX) != HAL_OK) {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "UVC setparam req fail\n");
-			} else if (rtos_sema_take(usbh_uvc_setparam_sema, USBH_COMPOSITE_CTRL_TIMEOUT_MS) != RTK_SUCCESS) {
-				RTK_LOGS(TAG, RTK_LOG_ERROR, "UVC setparam timeout\n");
+				setparam_ok = 0U;
+			} else {
+				usbh_comp_unlock(usbh_comp_ctrl_mutex);
+				setparam_ok = (rtos_sema_take(usbh_uvc_setparam_sema, USBH_COMPOSITE_CTRL_TIMEOUT_MS) == RTK_SUCCESS) ? 1U : 0U;
+				if (usbh_comp_lock(usbh_comp_ctrl_mutex) != HAL_OK) {
+					/* Stack went away during the wait: skip the rest of this round */
+					do_ctrl_setup = 0U;
+				}
+			}
+
+			if (do_ctrl_setup == 0U) {
+				RTK_LOGS(TAG, RTK_LOG_WARN, "Ctrl setup aborted\n");
+			} else if (setparam_ok == 0U) {
+				RTK_LOGS(TAG, RTK_LOG_ERROR, "UVC setparam fail/timeout\n");
 			} else if (usbh_uvc_setparam_status != HAL_OK) {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "UVC setparam fail=%d\n", usbh_uvc_setparam_status);
 			} else {
@@ -712,7 +729,7 @@ static void usbh_uvc_uac_ctrl_thread(void *param)
 			}
 
 			/* 3. UAC OUT SET_INTERFACE (blocking ctrl) */
-			if (usbh_uac_support_playback() != 0) {
+			if ((do_ctrl_setup != 0U) && (usbh_uac_support_playback() != 0)) {
 				fmt_out = usbh_uac_get_alt_setting(USBH_UAC_ISOC_OUT_DIR, &fmt_cnt);
 				if ((fmt_out != NULL) && (fmt_cnt > 0U)) {
 					RTK_LOGS(TAG, RTK_LOG_INFO, "Play fmt list:\n");
@@ -748,7 +765,7 @@ static void usbh_uvc_uac_ctrl_thread(void *param)
 			}
 
 			/* 4. UAC IN SET_INTERFACE (blocking ctrl) */
-			if (usbh_uac_support_record() != 0) {
+			if ((do_ctrl_setup != 0U) && (usbh_uac_support_record() != 0)) {
 				fmt_in = usbh_uac_get_alt_setting(USBH_UAC_ISOC_IN_DIR, &fmt_cnt);
 				if ((fmt_in != NULL) && (fmt_cnt > 0U)) {
 					RTK_LOGS(TAG, RTK_LOG_INFO, "Rec fmt list:\n");
@@ -784,8 +801,11 @@ static void usbh_uvc_uac_ctrl_thread(void *param)
 			}
 
 			/* Negotiation done: release the ctrl lock before the long detach wait
-			   below, so a teardown is not blocked for the whole session. */
-			usbh_comp_unlock(usbh_comp_ctrl_mutex);
+			   below, so a teardown is not blocked for the whole session. Not held when
+			   the stack went away during the UVC wait. */
+			if (do_ctrl_setup != 0U) {
+				usbh_comp_unlock(usbh_comp_ctrl_mutex);
+			}
 		}
 
 		/* Release UAC data threads unconditionally (they guard via is_ready). */
@@ -924,6 +944,7 @@ static void usbh_uac_play_thread(void *param)
 	u32 play_loop_count = 0U;
 	u32 frame_size = 0U;
 	u32 debug_time = 0U;
+	int ret;
 
 	UNUSED(param);
 
@@ -963,20 +984,22 @@ static void usbh_uac_play_thread(void *param)
 			usbh_uac_play_count++;
 
 			/* Send silence (zeros) as demo playback data. Write exactly one ISOC
-			 * frame per call so the OUT buffer stays full. usbh_uac_write returns
-			 * the byte count actually written, not a status code, so a short write
-			 * means the ring buffer stayed full for the whole timeout. Back off in
-			 * that case: the timeout alone does not throttle the loop when the
-			 * write fails immediately. */
+			 * frame per call so the OUT buffer stays full. A negative return means the
+			 * stream stopped or the device is gone; a short one means the ring buffer
+			 * stayed full for the whole timeout. Back off in that case: the timeout
+			 * alone does not throttle the loop when the write fails immediately. */
 			if (usbh_comp_lock(usbh_comp_play_mutex) != HAL_OK) {
 				break;
 			}
-			if (usbh_uac_write(silence, frame_size, USBH_UAC_WRITE_TIMEOUT_MS) != frame_size) {
-				usbh_comp_unlock(usbh_comp_play_mutex);
+			ret = usbh_uac_write(silence, frame_size, USBH_UAC_WRITE_TIMEOUT_MS);
+			usbh_comp_unlock(usbh_comp_play_mutex);
+			if (ret < 0) {
+				RTK_LOGS(TAG, RTK_LOG_WARN, "Play write err %d\n", -ret);
+				break;
+			}
+			if ((u32)ret != frame_size) {
 				usbh_uac_err_count++;
 				rtos_time_delay_ms(USBH_UAC_PLAY_LOOP_DELAY_MS);
-			} else {
-				usbh_comp_unlock(usbh_comp_play_mutex);
 			}
 
 			if ((usb_os_get_timestamp_ms() - debug_time) >= USBH_UAC_DEBUG_TRACE_STEP) {
@@ -1020,7 +1043,7 @@ static void usbh_uac_record_thread(void *param)
 	u32 total_read = 0U;
 	u32 read_len = 0U;
 	u32 debug_time = 0U;
-	u32 ret = 0U;
+	int ret = 0;
 
 #ifdef CONFIG_SUPPORT_AUDIO_FOR_USB
 	AudioTrackConfig track_config = {0};
@@ -1150,14 +1173,20 @@ static void usbh_uac_record_thread(void *param)
 			ret = usbh_uac_read(usbh_uac_record_buffer, read_len, USBH_UAC_READ_TIMEOUT_MS);
 			usbh_comp_unlock(usbh_comp_record_mutex);
 
-			if (ret > 0U) {
+			if (ret < 0) {
+				/* Stream stopped or device gone: end this session, the next setup restarts it */
+				RTK_LOGS(TAG, RTK_LOG_WARN, "Rec read err %d\n", -ret);
+				break;
+			}
+
+			if (ret > 0) {
 				record_loop_count++;
 				usbh_uac_record_count++;
-				total_read += ret;
+				total_read += (u32)ret;
 
 #ifdef CONFIG_SUPPORT_AUDIO_FOR_USB
 				if (audio_track != NULL) {
-					AudioTrack_Write(audio_track, (u8 *)usbh_uac_record_buffer, ret, true);
+					AudioTrack_Write(audio_track, (u8 *)usbh_uac_record_buffer, (u32)ret, true);
 				}
 #endif
 			}
@@ -1392,6 +1421,8 @@ static void usbh_composite_compute_expected_db(s16 vol_min, s16 vol_max, u8 perc
 			raw = vol_min;
 		} else if (raw > vol_max) {
 			raw = vol_max;
+		} else {
+			/* within range */
 		}
 		*expect = (s16)raw;
 	}
@@ -1622,6 +1653,30 @@ static u32 usbh_composite_voldown(u8 *vol)
 	return HAL_OK;
 }
 
+/**
+  * @brief  Parse the mute argument of the shell command.
+  * @param  arg:  Argument string.
+  * @param  mute: Output value, written only on success.
+  * @retval HAL_OK for exactly "0" or "1", HAL_ERR_PARA otherwise.
+  */
+static int usbh_composite_parse_mute(const u8 *arg, u8 *mute)
+{
+	char *end = NULL;
+	u32 num;
+
+	if ((arg == NULL) || (arg[0] == 0U)) {
+		return HAL_ERR_PARA;
+	}
+
+	num = (u32)_strtoul((const char *)arg, &end, 10);
+	if ((end == NULL) || (*end != '\0') || (num > 1U)) {
+		return HAL_ERR_PARA;
+	}
+
+	*mute = (u8)num;
+	return HAL_OK;
+}
+
 static u32 usbh_composite_cmd(u16 argc, u8 *argv[])
 {
 	const char *cmd;
@@ -1630,7 +1685,7 @@ static u32 usbh_composite_cmd(u16 argc, u8 *argv[])
 	int ret;
 	u8 mute = 0;
 
-	if (argc == 0) {
+	if ((argc == 0U) || (argv[0] == NULL)) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid argument\n");
 		return HAL_ERR_PARA;
 	}
@@ -1638,7 +1693,7 @@ static u32 usbh_composite_cmd(u16 argc, u8 *argv[])
 	cmd = (const char *)argv[0];
 
 	if (_stricmp(cmd, "init") == 0) {
-		if ((argv[1] != NULL) && (_stricmp((const char *)argv[1], "record") == 0)) {
+		if ((argc >= 2U) && (argv[1] != NULL) && (_stricmp((const char *)argv[1], "record") == 0)) {
 			uac_ctrl_dir = USBH_UAC_ISOC_IN_DIR;
 			RTK_LOGS(TAG, RTK_LOG_INFO, "Record Control\n");
 		} else {
@@ -1646,9 +1701,9 @@ static u32 usbh_composite_cmd(u16 argc, u8 *argv[])
 			RTK_LOGS(TAG, RTK_LOG_INFO, "Playback Control\n");
 		}
 	} else if (_stricmp(cmd, "mute") == 0) {
-		mute = 1;
-		if (argv[1]) {
-			mute = (u8)_strtoul((const char *)(argv[1]), (char **)NULL, 10);
+		if ((argc < 2U) || (usbh_composite_parse_mute(argv[1], &mute) != HAL_OK)) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Usage: uach mute 0|1\n");
+			return HAL_ERR_PARA;
 		}
 
 		/* See the volume commands for why the shell path needs the lock. */
@@ -1668,7 +1723,7 @@ static u32 usbh_composite_cmd(u16 argc, u8 *argv[])
 	} else if (_stricmp(cmd, "vol") == 0) {
 		cur_vol = (uac_ctrl_dir == USBH_UAC_ISOC_IN_DIR) ? &cur_record_volume : &cur_playback_volume;
 
-		if ((argv[1] != NULL) && (_stricmp((const char *)argv[1], "down") == 0)) {
+		if ((argc >= 2U) && (argv[1] != NULL) && (_stricmp((const char *)argv[1], "down") == 0)) {
 			vol_ret = usbh_composite_voldown(cur_vol);
 		} else {
 			vol_ret = usbh_composite_volup(cur_vol);

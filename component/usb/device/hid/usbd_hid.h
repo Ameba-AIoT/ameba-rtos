@@ -272,6 +272,9 @@ int usbd_composite_hid_init(const usbd_hid_usr_cb_t *cb, const usbd_hid_config_t
 
 /**
   * @brief  DeInitialize HID device
+  * @note  Call it in task context, once no other task is inside usbd_hid_send_data(),
+  *        usbd_hid_volume_ctrl() or usbd_hid_power_ctrl(): the TX buffers they write to are
+  *        released here.
   * @note  Composite mode: call it after @ref usbd_composite_deinit. Before that the class is
   *        still reachable from the USB ISR, so the call returns at once and releases nothing.
   * @return None. This is a teardown path: apart from the composite case above, the class is always

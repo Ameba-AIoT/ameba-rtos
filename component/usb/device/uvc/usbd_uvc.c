@@ -1455,28 +1455,20 @@ int usbd_composite_uvc_init(const usbd_uvc_ep_cfg_t *ep_cfg)
   */
 void usbd_uvc_deinit(void)
 {
+	usbd_uvc_dev_t *cdev = &usbd_uvc_dev;
+	int ret;
+
 #ifdef CONFIG_USBD_COMPOSITE
-	/* Leave the composite framework before anything is torn down: it is refused while the
-	   composite device is still registered on the core, and the class must then stay intact */
-	if (usbd_uvc_dev.from_composite != 0U) {
-		if (usbd_composite_unregister_driver(&usbd_uvc_driver) != HAL_OK) {
+	if (cdev->from_composite != 0U) {
+		/* Leave the composite framework before anything is torn down: it is refused while the
+		   composite device is still registered on the core, and the class must then stay intact */
+		ret = usbd_composite_unregister_driver(&usbd_uvc_driver);
+		if (ret != HAL_OK) {
 			return;
 		}
-	}
-#endif
-
-	/* Drop any request still waiting for its data stage, so a re-init cannot inherit it and
-	   dispatch a stale payload. No class callback runs once unregistered. */
-	usbd_uvc_dev.ctrl_req_pending = 0U;
-
-#ifdef CONFIG_USBD_COMPOSITE
-	if (usbd_uvc_dev.from_composite == 0U)
+	} else
 #endif
 	{
-		usbd_uvc_dev_t *cdev = &usbd_uvc_dev;
-		usbd_uvc_video_t *video = &cdev->video;
-		u8 wait_cnt = 0U;
-
 		/* res_created is set once the locks/semas below exist, before init_done, so this
 		   covers both a double call and an init that failed before setting init_done
 		   (e.g. ring buffer alloc failure) without skipping their teardown. */
@@ -1484,7 +1476,24 @@ void usbd_uvc_deinit(void)
 			return;
 		}
 
-		usbd_unregister_class();
+		/* Refused in interrupt context: the ISR may still use what is released below */
+		ret = usbd_unregister_class();
+		if (ret != HAL_OK) {
+			return;
+		}
+	}
+
+	/* Drop any request still waiting for its data stage, so a re-init cannot inherit it and
+	   dispatch a stale payload. No class callback runs once unregistered. */
+	cdev->ctrl_req_pending = 0U;
+
+#ifdef CONFIG_USBD_COMPOSITE
+	if (cdev->from_composite == 0U)
+#endif
+	{
+		usbd_uvc_video_t *video = &cdev->video;
+		u8 wait_cnt = 0U;
+
 		cdev->init_done = 0U;
 		cdev->res_created = 0U;
 		cdev->running = 0U;

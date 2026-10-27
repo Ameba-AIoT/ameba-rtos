@@ -907,6 +907,7 @@ int usbd_composite_unregister_driver(const usbd_class_driver_t *driver)
 int usbd_composite_init(const usbd_composite_cb_t *cb)
 {
 	usbd_composite_dev_t *cdev = &usbd_composite_dev;
+	int unregister_ret;
 	int ret;
 
 	if (cdev->func_count == 0) {
@@ -923,18 +924,28 @@ int usbd_composite_init(const usbd_composite_cb_t *cb)
 
 	ret = usbd_register_class(&usbd_composite_driver);
 	if (ret != HAL_OK) {
-		usbd_unregister_class();
-		cdev->registered = 0U;
+		/* The guard is only dropped once the core really let the framework go, refer to
+		   usbd_composite_unregister_driver() */
+		unregister_ret = usbd_unregister_class();
+		if (unregister_ret == HAL_OK) {
+			cdev->registered = 0U;
+		}
 	}
 
 	return ret;
 }
 
-void usbd_composite_deinit(void)
+int usbd_composite_deinit(void)
 {
 	usbd_composite_dev_t *cdev = &usbd_composite_dev;
+	int ret;
 
-	usbd_unregister_class();
+	/* Refused in interrupt context: the ISR may still dispatch to the functions, so the
+	   framework, and registered with it, is kept for the class deinit APIs to refuse too */
+	ret = usbd_unregister_class();
+	if (ret == HAL_OK) {
+		usb_os_memset((void *)cdev, 0, sizeof(usbd_composite_dev_t));
+	}
 
-	usb_os_memset((void *)cdev, 0, sizeof(usbd_composite_dev_t));
+	return ret;
 }

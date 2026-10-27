@@ -1622,41 +1622,30 @@ void usbd_hid_deinit(void)
 #ifdef CONFIG_USBD_HID_VENDOR
 	usbd_ep_t *ep_vendor_intr_in = &hid->ep_vendor_intr_in;
 #endif
+	int ret;
 
+	/* Leave the core before anything is torn down. Composite: refused until
+	   usbd_composite_deinit() has blocked the ISR and cleared the configuration of every
+	   function. Standalone: refused in interrupt context. Either way nothing is released when
+	   refused, and once accepted no class callback runs any more and every endpoint of this
+	   class is deinitialized: ref USB 2.0 9.4.7, the transfers still pending are aborted. */
 #ifdef CONFIG_USBD_COMPOSITE
-	/* Leave the composite framework before anything is torn down: it is refused while the
-	   composite device is still registered on the core, and the class must then stay intact */
 	if (hid->from_composite != 0U) {
-		if (usbd_composite_unregister_driver(&usbd_hid_driver) != HAL_OK) {
-			return;
-		}
-	}
-#endif
-
-	/* Wait for in-flight transfers on all HID EPs to actually complete
-	 * (xfer_state is cleared in the completion ISR) before freeing the DMA
-	 * buffers, so the controller never DMAs from freed memory on hot-unplug.
-	 * Bounded (~100 ms) to avoid a hang if a completion never arrives after
-	 * detach. */
-	u32 wait = 0U;
-	while ((wait < 100U) &&
-		   (ep_intr_in->xfer_state
-#ifdef CONFIG_USBD_HID_VENDOR
-			|| ep_vendor_intr_in->xfer_state
-#endif
-		   )) {
-		/* Yield instead of holding the CPU: the completion runs in ISR context and the
-		 * wait is only bounded, so spinning would starve equal/lower-priority tasks. */
-		usb_os_sleep_ms(1U);
-		wait++;
-	}
-
-#ifdef CONFIG_USBD_COMPOSITE
-	if (hid->from_composite == 0U)
+		ret = usbd_composite_unregister_driver(&usbd_hid_driver);
+	} else
 #endif
 	{
-		usbd_unregister_class();
+		ret = usbd_unregister_class();
 	}
+	if (ret != HAL_OK) {
+		return;
+	}
+
+	/* No completion arrives any more to clear them */
+	ep_intr_in->xfer_state = 0U;
+#ifdef CONFIG_USBD_HID_VENDOR
+	ep_vendor_intr_in->xfer_state = 0U;
+#endif
 
 	/* Unregistered above: no class callback can run afterwards, so dropping the pending
 	 * control request here cannot race an EP0 OUT completion in ISR context. */

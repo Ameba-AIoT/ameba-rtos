@@ -250,6 +250,9 @@ int usbd_composite_vendor_init(const usbd_vendor_cb_t *cb, const usbd_vendor_con
 
 /**
  * @brief De-initializes the Vendor class driver.
+ * @note  Call it in task context, once no other task is inside usbd_vendor_transmit_bulk_data(),
+ *        usbd_vendor_transmit_intr_data() or usbd_vendor_transmit_isoc_data(): the TX buffers
+ *        they write to are released here.
  * @note  Composite mode: call it after @ref usbd_composite_deinit. Before that the class is
  *        still reachable from the USB ISR, so the call returns at once and releases nothing.
  * @return None. This is a teardown path: apart from the composite case above, the class is always

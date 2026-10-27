@@ -1183,36 +1183,28 @@ void usbd_cdc_acm_deinit(void)
 	usbd_ep_t *ep_bulk_in = &cdev->ep_bulk_in;
 	usbd_ep_t *ep_bulk_out = &cdev->ep_bulk_out;
 	usbd_ep_t *ep_intr_in = &cdev->ep_intr_in;
-	u32 wait;
+	int ret;
 
+	/* Leave the core before anything is torn down. Composite: refused until
+	   usbd_composite_deinit() has blocked the ISR and cleared the configuration of every
+	   function. Standalone: refused in interrupt context. Either way nothing is released when
+	   refused, and once accepted no class callback runs any more and every endpoint of this
+	   class is deinitialized: ref USB 2.0 9.4.7, the transfers still pending are aborted. */
 #ifdef CONFIG_USBD_COMPOSITE
-	/* Leave the composite framework before anything is torn down: it is refused while the
-	   composite device is still registered on the core, and the class must then stay intact */
 	if (cdev->from_composite != 0U) {
-		if (usbd_composite_unregister_driver(&usbd_cdc_acm_driver) != HAL_OK) {
-			return;
-		}
-	}
-#endif
-
-	/* Wait for in-flight transfers to actually complete (xfer_state is cleared in the
-	 * completion ISR) before the endpoints are released and the DMA buffers freed, so
-	 * the controller never DMAs from freed memory on hot-unplug.
-	 * Bounded (~100 ms): a TX armed just before a disconnect or suspend never gets a
-	 * completion callback, because the core leaves USBD_STATE_CONFIGURED, so an
-	 * unbounded loop would hang the calling task forever. */
-	wait = 0U;
-	while ((wait < 1000U) && (ep_bulk_in->xfer_state || ep_intr_in->xfer_state)) {
-		usb_os_delay_us(100);
-		wait++;
-	}
-
-#ifdef CONFIG_USBD_COMPOSITE
-	if (cdev->from_composite == 0U)
+		ret = usbd_composite_unregister_driver(&usbd_cdc_acm_driver);
+	} else
 #endif
 	{
-		usbd_unregister_class();
+		ret = usbd_unregister_class();
 	}
+	if (ret != HAL_OK) {
+		return;
+	}
+
+	/* No completion arrives any more to clear them */
+	ep_bulk_in->xfer_state = 0U;
+	ep_intr_in->xfer_state = 0U;
 
 	/* Unregistered above: no class callback can run afterwards, so dropping the pending
 	   control request here cannot race an EP0 OUT completion in ISR context. */

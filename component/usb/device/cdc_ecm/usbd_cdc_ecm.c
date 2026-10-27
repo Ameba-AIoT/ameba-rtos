@@ -2002,20 +2002,32 @@ void usbd_cdc_ecm_deinit(void)
 	usbd_ep_t *ep_bulk_out = &ecm->ep_bulk_out;
 	usbd_ep_t *ep_intr_in = &ecm->ep_intr_in;
 	u32 wait_cnt = 0U;
+	int ret;
 	u8 i;
 
+	/* Leave the core before anything is torn down. Composite: refused until
+	   usbd_composite_deinit() has blocked the ISR and cleared the configuration of every
+	   function. Standalone: refused in interrupt context. Either way nothing is released when
+	   refused, and once accepted no class callback runs any more and every endpoint of this
+	   class is deinitialized: ref USB 2.0 9.4.7, the transfers still pending are aborted. */
 #ifdef CONFIG_USBD_COMPOSITE
-	/* Leave the composite framework before anything is torn down: it is refused while the
-	   composite device is still registered on the core, and the class must then stay intact */
 	if (ecm->from_composite != 0U) {
-		if (usbd_composite_unregister_driver(&usbd_cdc_ecm_driver) != HAL_OK) {
-			return;
-		}
-	}
+		ret = usbd_composite_unregister_driver(&usbd_cdc_ecm_driver);
+	} else
 #endif
+	{
+		ret = usbd_unregister_class();
+	}
+	if (ret != HAL_OK) {
+		return;
+	}
 
-	/* Close the TX gate first: from here on usbd_cdc_ecm_transmit() rejects new callers,
-	 * and the ones already inside are waited for below before their resources go away. */
+	/* No completion arrives any more to clear them */
+	ep_bulk_in->xfer_state = 0U;
+	ep_intr_in->xfer_state = 0U;
+
+	/* Close the TX gate: from here on usbd_cdc_ecm_transmit() rejects new callers, and the
+	 * ones already inside are waited for below before their resources go away. */
 	usb_os_enter_critical();
 	ecm->is_closing = 1U;
 	usb_os_exit_critical();
@@ -2029,25 +2041,6 @@ void usbd_cdc_ecm_deinit(void)
 	/* Stop the trace thread first so it does not read state being torn down. */
 	usbd_ecm_trace_task_deinit();
 #endif
-
-	/* Wait for ongoing BULK/INTR DMA transfers to complete.
-	 * xfer_state is set to 1 before usbd_ep_transmit() and cleared to 0
-	 * by the XFRC ISR, so it is the correct in-flight indicator.
-	 * (is_busy is a function-call-level flag and clears too early.)
-	 * Bounded to ~100 ms like the other classes and sleeping, not spinning: a transfer
-	 * the host stopped polling never completes, waiting longer does not help. */
-	while ((ep_bulk_in->xfer_state || ep_intr_in->xfer_state) && (wait_cnt < 100U)) {
-		usb_os_sleep_ms(1U);
-		wait_cnt++;
-	}
-
-	/* Unregister class driver */
-#ifdef CONFIG_USBD_COMPOSITE
-	if (ecm->from_composite == 0U)
-#endif
-	{
-		usbd_unregister_class();
-	}
 
 	/* Wait for every task still inside usbd_cdc_ecm_transmit() to leave.  A caller blocked
 	 * on a TX slot is woken on each round and leaves on is_closing; deleting the sema while
@@ -2065,8 +2058,8 @@ void usbd_cdc_ecm_deinit(void)
 		}
 	}
 
-	/* After unregister, no more USB ISRs will fire.  Free the TX ring buffer
-	 * and the private BULK IN DMA buffer. */
+	/* No more USB ISR runs against this class.  Free the TX ring buffer and the
+	 * private BULK IN DMA buffer. */
 	usb_ringbuf_manager_deinit(&ecm->bulk_tx_rb);
 	usb_os_mfree((void *)ecm->bulk_tx_dma_buf);
 	ecm->bulk_tx_dma_buf = NULL;
