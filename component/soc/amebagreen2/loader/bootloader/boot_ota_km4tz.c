@@ -263,7 +263,7 @@ fih_ret BOOT_OTA_LoadIMGAll(u8 ImgIndex)
 	Cnt = sizeof(NpLabel) / sizeof(char *);
 	ImgAddr = SYSCFG_OTP_BootFromNor() ? LogAddr : PhyAddr;
 	if (BOOT_LoadSubImage(&SubImgInfo[Index], ImgAddr, Cnt, NpLabel, TRUE) == FALSE) {
-		FIH_RET(fih_rc);
+		FIH_RET(FIH_FAILURE);
 	}
 
 	for (i = 0; i < Cnt; i++) {
@@ -287,7 +287,7 @@ fih_ret BOOT_OTA_LoadIMGAll(u8 ImgIndex)
 	Cnt = sizeof(ApLabel) / sizeof(char *);
 	ImgAddr = SYSCFG_OTP_BootFromNor() ? LogAddr : PhyAddr;
 	if (BOOT_LoadSubImage(&SubImgInfo[Index], ImgAddr, Cnt, ApLabel, TRUE) == FALSE) {
-		FIH_RET(fih_rc);
+		FIH_RET(FIH_FAILURE);
 	}
 
 	/* Get RDP image Addr */
@@ -303,7 +303,7 @@ fih_ret BOOT_OTA_LoadIMGAll(u8 ImgIndex)
 
 	/* Load IMG3 when TrustZone enabled */
 	if (BOOT_DecRDPImg(PhyAddr, Manifest[ImgIndex].RsipIV, &SubImgInfo[Index], &Cnt) == FALSE) {
-		FIH_RET(fih_rc);
+		FIH_RET(FIH_FAILURE);
 	}
 	Index += Cnt;
 #endif

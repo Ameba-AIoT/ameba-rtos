@@ -126,11 +126,20 @@ static int ecp_mul_restartable_internal(mbedtls_ecp_group *grp, mbedtls_ecp_poin
 	pke_R.Y_p = res_y;
 
 	ret = pke_ecp_mul(&pke_grp, &pke_R, (uint8_t *)m->p, mbedtls_mpi_size(m),  &pke_P);
+	if (ret != RTK_SUCCESS) {
+		return MBEDTLS_ERR_PLATFORM_HW_ACCEL_FAILED;
+	}
 
 	// read result to mbedtls mpi
-	mbedtls_mpi_read_binary_le(&R->Y, res_y, pke_grp.precise_bits / 8);
-	mbedtls_mpi_read_binary_le(&R->X, res_x, pke_grp.precise_bits / 8);
-	mbedtls_mpi_read_binary_le(&R->Z, &res_z, 1);
+	MBEDTLS_MPI_CHK(mbedtls_mpi_read_binary_le(&R->Y, res_y, pke_grp.precise_bits / 8));
+	MBEDTLS_MPI_CHK(mbedtls_mpi_read_binary_le(&R->X, res_x, pke_grp.precise_bits / 8));
+	MBEDTLS_MPI_CHK(mbedtls_mpi_read_binary_le(&R->Z, &res_z, 1));
+
+cleanup:
+	/* prevent caller from using a partially imported point */
+	if (ret != 0) {
+		mbedtls_ecp_point_free(R);
+	}
 	return ret;
 }
 #endif

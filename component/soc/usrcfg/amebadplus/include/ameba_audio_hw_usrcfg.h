@@ -112,6 +112,14 @@ extern "C" {
  */
 #define AUDIO_I2S_OUT_DATA_FORMAT        0
 
+#define AUDIO_I2S_MASTER                 0
+#define AUDIO_I2S_SLAVE                  1
+
+/*
+ *Define I2S out role. AUDIO_I2S_SLAVE or AUDIO_I2S_MASTER.
+ */
+#define AUDIO_I2S_OUT_ROLE               AUDIO_I2S_MASTER
+
 /*
  *Define I2S out pins.
  */
@@ -158,15 +166,10 @@ extern "C" {
  */
 #define AUDIO_I2S_IN_SPORT_INDEX         1
 
-#define AUDIO_I2S_MASTER                 0
-#define AUDIO_I2S_SLAVE                  1
-
 /*
- *Define I2S in role.
- *0: master.
- *1: slave.
+ *Define I2S in role. AUDIO_I2S_SLAVE or AUDIO_I2S_MASTER.
  */
-#define AUDIO_I2S_IN_ROLE                1
+#define AUDIO_I2S_IN_ROLE                AUDIO_I2S_SLAVE
 
 /*
  *Define I2S in pins.
@@ -237,6 +240,13 @@ extern "C" {
  *Set 0 to disable debug for buffer level.
  */
 #define AUDIO_OUT_DEBUG_BUFFER_LEVEL           0
+
+/*
+ *Set -1: no I2S used by both input and output.
+ *Set 0: I2S0 used by both input and output.
+ *Set 1: I2S1 used by both input and output.
+ */
+#define AUDIO_I2S_IN_OUT_COMMON_SPORT          -1
 
 #ifdef __cplusplus
 }

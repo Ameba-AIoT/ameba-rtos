@@ -152,4 +152,11 @@
  */
 #define AUDIO_OUT_DEBUG_BUFFER_LEVEL    0
 
+/*
+ *Set -1: no I2S used by both input and output.
+ *Set 0: I2S0 used by both input and output.
+ *Set 1: I2S1 used by both input and output.
+ */
+#define AUDIO_I2S_IN_OUT_COMMON_SPORT          -1
+
 #endif
