@@ -21,7 +21,11 @@
 
 static const char *const TAG = "MSC";
 
+/* Exported variables --------------------------------------------------------*/
+
 /* Private functions ---------------------------------------------------------*/
+
+/* Exported functions --------------------------------------------------------*/
 
 /**
   * @brief  Issue TestUnitReady command.
@@ -109,7 +113,21 @@ int usbh_scsi_read_capacity(usbh_msc_host_t *msc, u8 lun, usbh_scsi_capacity_t *
 			/* Block length is a 4-byte big-endian field (bytes 4-7) */
 			u32 blk_len = ((u32)msc->hbot.pbuf[4] << 24U) | ((u32)msc->hbot.pbuf[5] << 16U) |
 						  ((u32)msc->hbot.pbuf[6] << 8U) | (u32)msc->hbot.pbuf[7];
-			capacity->block_size = blk_len;
+
+			/* Validate the geometry at its source: every later transfer derives
+			   dCBWDataTransferLength from block_size, so a bogus value would build an
+			   illegal CBW (BOT 6.7 presumes a self-consistent one). Accept only a power
+			   of two inside the range the block layer can handle, else clear the geometry
+			   and report HAL_ERR_PARA so the caller can mark the LUN unusable. */
+			if ((blk_len < USBH_MSC_MIN_BLOCK_SIZE) || (blk_len > USBH_MSC_MAX_BLOCK_SIZE) ||
+				((blk_len & (blk_len - 1U)) != 0U)) {
+				RTK_LOGS(TAG, RTK_LOG_ERROR, "Bad blk size %d\n", blk_len);
+				capacity->block_nbr = 0U;
+				capacity->block_size = 0U;
+				status = HAL_ERR_PARA;
+			} else {
+				capacity->block_size = blk_len;
+			}
 		}
 		break;
 
@@ -352,8 +370,7 @@ int usbh_scsi_read(usbh_msc_host_t *msc, u8 lun, u32 address, u8 *pbuf, u32 leng
 		cbw->field.CBWCB[7] = (((u8 *)&length)[1]);
 		cbw->field.CBWCB[8] = (((u8 *)&length)[0]);
 
-		msc->hbot.origin_rx_buf = pbuf;
-		msc->hbot.origin_rx_buf_len = cbw->field.dCBWDataTransferLength;
+		UNUSED(pbuf);  /* the destination is hbot.cmd_buf, which outlives a Reset Recovery retry */
 		msc->hbot.rx_data_len = 0U;
 		if ((msc->hbot.pbuf != NULL) && (msc->hbot.pbuf != msc->hbot.data)) {
 			usb_os_mfree((void *)msc->hbot.pbuf);
@@ -374,16 +391,19 @@ int usbh_scsi_read(usbh_msc_host_t *msc, u8 lun, u32 address, u8 *pbuf, u32 leng
 			/* BOT §5.2/§6.7 case 5: only the bytes the device really transferred are valid data.
 			   The tail of the zero-initialized bounce buffer is not medium content, so it must
 			   never be handed to the caller as if it were. */
-			u32 valid_len = (msc->hbot.rx_data_len < msc->hbot.origin_rx_buf_len) ? msc->hbot.rx_data_len : msc->hbot.origin_rx_buf_len;
+			u32 req_len = cbw->field.dCBWDataTransferLength;
+			u32 valid_len = (msc->hbot.rx_data_len < req_len) ? msc->hbot.rx_data_len : req_len;
 
-			usb_os_memcpy((void *)msc->hbot.origin_rx_buf, (const void *)msc->hbot.pbuf, valid_len);
+			/* Safe even if the caller is abandoning the command: it does not return before the
+			   host task ends the command, see usbh_msc_xfer(). */
+			usb_os_memcpy((void *)msc->hbot.cmd_buf, (const void *)msc->hbot.pbuf, valid_len);
 			usb_os_mfree((void *)msc->hbot.pbuf);
 			msc->hbot.pbuf = NULL;
 
-			if (valid_len < msc->hbot.origin_rx_buf_len) {
+			if (valid_len < req_len) {
 				/* Short read: the block request is not fully satisfied, report it instead of
 				   silently returning partially filled sectors. */
-				RTK_LOGS(TAG, RTK_LOG_WARN, "Short rd %d/%d\n", valid_len, msc->hbot.origin_rx_buf_len);
+				RTK_LOGS(TAG, RTK_LOG_WARN, "Short rd %d/%d\n", valid_len, req_len);
 				status = HAL_ERR_UNKNOWN;
 			}
 		}
@@ -394,4 +414,5 @@ int usbh_scsi_read(usbh_msc_host_t *msc, u8 lun, u32 address, u8 *pbuf, u32 leng
 	}
 
 	return status;
+
 }

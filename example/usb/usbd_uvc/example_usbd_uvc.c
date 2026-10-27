@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/* Includes ------------------------------------------------------------------ */
+/* Includes ------------------------------------------------------------------*/
 
 #include <platform_autoconf.h>
 #include "usbd.h"
@@ -13,13 +13,6 @@
 #include "example_usbd_uvc_sample_h264.h"
 
 /* Private defines -----------------------------------------------------------*/
-
-// USB speed
-#ifdef CONFIG_SUPPORT_USB_FS_ONLY
-#define UVC_USB_SPEED                            USB_SPEED_FULL
-#else
-#define UVC_USB_SPEED                            USB_SPEED_HIGH
-#endif
 
 // Video parameters
 #define USBD_UVC_VIDEO_BUF_NUM                   1U
@@ -31,6 +24,8 @@
 
 // Thread stack sizes
 #define UVC_INIT_THREAD_STACK_SIZE               (256 * 4)
+
+#define USBD_UVC_FRAME_INTERVAL_MS               (1000U / USBD_UVC_VIDEO_FPS)
 
 /* Private types -------------------------------------------------------------*/
 
@@ -44,8 +39,6 @@ typedef struct video_array_s {
 } video_array_t;
 
 /* Private macros ------------------------------------------------------------*/
-
-#define USBD_UVC_FRAME_INTERVAL_MS               (1000U / USBD_UVC_VIDEO_FPS)
 
 /* Private function prototypes -----------------------------------------------*/
 
@@ -62,7 +55,9 @@ static const usbd_uvc_ep_cfg_t uvc_ep = {
 };
 
 static usbd_config_t uvc_cfg = {
-	.speed = UVC_USB_SPEED,
+	.info = {
+		.prod_str = "Realtek UVC Device",
+	},
 	.isr_priority = INT_PRI_MIDDLE,
 	/* Enable SOF interrupt: drives ISOC IN arming/recovery and the SCR SOF counter. */
 	.ext_intr_enable = USBD_SOF_INTR,
@@ -79,6 +74,10 @@ static usbd_config_t uvc_cfg = {
 	.isoc_use_ptx_threshold = 1U,
 #endif
 };
+
+/* Exported variables --------------------------------------------------------*/
+
+/* Private functions ---------------------------------------------------------*/
 
 static u32 array_get_h264_frame_size(const u8 *ptr_start, const u8 *ptr_end, u8 nal_len)
 {
@@ -186,7 +185,6 @@ static void example_usbd_uvc_thread(void *param)
 		goto exit_create_video_task_fail;
 	}
 
-	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD UVC demo start\n");
 	rtos_task_delete(NULL);
 	return;
 
@@ -195,6 +193,7 @@ exit_usbd_uvc_init_fail:
 	usbd_uvc_deinit();
 	usbd_deinit();
 exit_usbd_init_fail:
+	RTK_LOGS(TAG, RTK_LOG_ERROR, "USBD UVC demo aborted\n");
 	rtos_task_delete(NULL);
 }
 
@@ -204,6 +203,8 @@ void example_usbd_uvc(void)
 {
 	int ret;
 	rtos_task_t task;
+
+	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD UVC demo start\n");
 
 	ret = rtos_task_create(&task, "usbd_uvc_thread", example_usbd_uvc_thread, NULL, UVC_INIT_THREAD_STACK_SIZE,
 						   UVC_INIT_THREAD_PRIORITY);

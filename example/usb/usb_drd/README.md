@@ -39,7 +39,7 @@ Refer to the [EVB User Guide](https://aiot.realmcu.com/filelist?document_type=9)
 			*** USB Host Class Selection ***
 	[*] 	MSC
 	```
-	- Choose `CONFIG VFS --->`:
+	- Choose `CONFIG File System --->`:
 	```
 	[*] Enable VFS FATFS
 	```
@@ -118,14 +118,14 @@ Refer to the [EVB User Guide](https://aiot.realmcu.com/filelist?document_type=9)
 	- Disconnect the USB port of Ameba board from USB host (if previously connected), connect it to a UDisk formatted with FATFS with OTG cable, Ameba board will recoganize the MSC device, check the log on the LOGUART console and make sure there is no USB related error reported.
 
 		```
-		[USBH-A] Device attached,speed 0
-		[USBH-A] PID: 0x6545
-		[USBH-A] VID: 0x0930
-		[USBH-A] Address 1 assigned
+		[USBH-A] Dev attach, speed 0
+		[USBH-A] PID 6545
+		[USBH-A] VID 0930
+		[USBH-A] Addr 1
 		[USBH-A] MFG: TOSHIBA
 		[USBH-A] PROD: TransMemory
 		[USBH-A] SN: C03FD5F7715FE3417000DE76
-		[USBH-A] Enum done, total 1 cfg
+		[USBH-A] Enum done, 1 cfg
 		[USBH-A] Switch to itf: 0
 		[USBH-A] Class: 0x08
 		[USBH-A] SubClass: 0x06

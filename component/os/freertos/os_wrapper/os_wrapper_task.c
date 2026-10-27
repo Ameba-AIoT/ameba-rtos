@@ -135,6 +135,23 @@ int rtos_task_priority_set(rtos_task_t p_handle, uint16_t priority)
 	return RTK_SUCCESS;
 }
 
+uint32_t rtos_task_stack_size_get(rtos_task_t p_handle)
+{
+#if ( ( portSTACK_GROWTH > 0 ) || ( configRECORD_STACK_HIGH_ADDRESS == 1 ) )
+	/* StaticTask_t mirrors TCB_t: pxDummy6 = pxStack (lowest word), pxDummy8 = pxEndOfStack (highest valid word). */
+	const StaticTask_t *p_tcb = (const StaticTask_t *)p_handle;
+
+	if (p_tcb == NULL) {
+		return 0;
+	}
+
+	return (uint32_t)((StackType_t *)p_tcb->pxDummy8 - (StackType_t *)p_tcb->pxDummy6) + 1;
+#else
+	UNUSED(p_handle);
+	return 0;
+#endif
+}
+
 void rtos_task_set_time_out_state(rtos_time_out_t *const p_rtos_time_out)
 {
 	vTaskSetTimeOutState((TimeOut_t *const)p_rtos_time_out);
@@ -188,6 +205,13 @@ rtos_task_t rtos_task_handle_get_idle(uint32_t coreID)
 void rtos_task_set_affinity(rtos_task_t p_handle, uint32_t coreID)
 {
 	vTaskCoreAffinitySet((TaskHandle_t) p_handle, 1 << coreID);
+}
+#else
+void rtos_task_set_affinity(rtos_task_t p_handle, uint32_t coreID)
+{
+	UNUSED(p_handle);
+	UNUSED(coreID);
+	/* configUSE_CORE_AFFINITY not enabled — nothing to do. */
 }
 #endif
 

@@ -13,6 +13,7 @@
 #include <stdarg.h>
 #include <zephyr/sys/util.h>
 #include <zephyr_log.h>
+#include <zephyr/toolchain/gcc.h>
 
 /* This header file keeps all macros and functions needed for creating logging
  * messages (macros like @ref LOG_ERR).
@@ -41,8 +42,6 @@ static inline char z_log_minimal_level_to_char(int level)
 	}
 }
 
-#if defined(CONFIG_LOG) && CONFIG_LOG
-
 #if (ZLOG_STACK_MODE == ZLOG_STACK_MODE_PRINTF)
 #define Z_LOG_PRINT_DETAIL(_level, ...)	\
 	do {	\
@@ -65,7 +64,7 @@ static inline char z_log_minimal_level_to_char(int level)
 		}	\
 	} while(0)
 
-#else /* ZLOG_STACK_MODE == ZLOG_STACK_MODE_PRINTF */
+#elif (ZLOG_STACK_MODE == ZLOG_STACK_MODE_ARGS)
 
 #define TRACE_STRING_DATA __attribute__((section(".BTTRACE"))) __attribute__((aligned(4))) __attribute__((used))
 #define __count_args(_0,  _1,  _2,  _3,  _4,  _5,  _6,  _7,  _8,  _9,  _10, _11, _12, _13, _14, _15,\
@@ -92,7 +91,39 @@ static inline char z_log_minimal_level_to_char(int level)
 		}	\
 	} while(0)
 
-#endif /* ZLOG_STACK_MODE == ZLOG_STACK_MODE_PRINTF */
+#endif /* #if (ZLOG_STACK_MODE == ZLOG_STACK_MODE_PRINTF) */
+
+#if (ZLOG_STACK_MODE == ZLOG_STACK_MODE_OFF)
+/* Keep args referenced in dead code so log-only params/vars do not trigger -Wunused */
+static inline void z_log_arg_checker(const char *fmt, ...)
+{
+	ARG_UNUSED(fmt);
+}
+
+#define Z_LOG_PRINT_DETAIL(_level, fmt, ...) \
+	do {			\
+		if (0) {	\
+			z_log_arg_checker(fmt, ##__VA_ARGS__);	\
+		}			\
+	} while (0)
+
+#define Z_LOG(_level, ...) \
+	do {			\
+		if (0) {	\
+			z_log_arg_checker(__VA_ARGS__);	\
+		}			\
+	} while (0)
+
+#define Z_LOG_HEXDUMP(_level, _data, _length, ...) \
+	do {			\
+		if (0) {	\
+			ARG_UNUSED(_data);				\
+			ARG_UNUSED(_length);			\
+			z_log_arg_checker(__VA_ARGS__);	\
+		}			\
+	} while (0)
+
+#else /* #if (ZLOG_STACK_MODE == ZLOG_STACK_MODE_OFF) */
 
 #define Z_LOG(_level, ...) \
 	do {					\
@@ -110,11 +141,7 @@ static inline char z_log_minimal_level_to_char(int level)
 		}	\
 	} while(0)
 
-#else /* defined(CONFIG_LOG) && CONFIG_LOG */
-#define Z_LOG_PRINT_DETAIL(_level, fmt, ...) { }
-#define Z_LOG(_level, ...) { }
-#define Z_LOG_HEXDUMP(_level, _data, _length, ...) { }
-#endif /* defined(CONFIG_LOG) && CONFIG_LOG */
+#endif /*#if (ZLOG_STACK_MODE == ZLOG_STACK_MODE_OFF) */
 
 #ifdef __cplusplus
 }

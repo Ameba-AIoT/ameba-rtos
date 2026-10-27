@@ -5,7 +5,7 @@
  */
 
 #include "ameba_soc.h"
-#include "boot_ota_km4tz.h"
+#include "boot_ota_km55tz.h"
 
 static const char *const TAG = "SOLO";
 
@@ -129,11 +129,11 @@ void SOLO_Plfm1ResetHandler(void)
 	/* SOLO: before releasing cpu1, reload the iot image. If an iot OTA committed a
 	 * newer slot, BOOT_OTA_LoadNP re-selects it (by cert version), re-verifies it
 	 * and re-points REG_LSYS_BOOT_ADDR_KM4NS, so cpu1 boots the updated iot image.
-	 * (Runs in the resident bootloader; MMU_ID3 is NP-only so km4tz is undisturbed.) */
-	BOOT_OTA_LoadNP();
-
-	/* step11: let cpu1 run */
-	HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_BOOT_CFG, HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_BOOT_CFG) | LSYS_BIT_BOOT_CPU1_RUN);
+	 * (Runs in the resident bootloader; MMU_ID3 is NP-only so km55tz is undisturbed.) */
+	if (BOOT_OTA_LoadNP() != RTK_FAIL) {
+		/* step11: let cpu1 run, only if its image verified. Otherwise it stays halted. */
+		HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_BOOT_CFG, HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_BOOT_CFG) | LSYS_BIT_BOOT_CPU1_RUN);
+	}
 
 	/* step12: clear interrupt trigger by sw write timeout_trigger_n */
 	NVIC_ClearPendingIRQ(RXI300_IRQ);

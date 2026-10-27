@@ -385,41 +385,6 @@ skip_wlanhdr:
 		SetAckpolicy(qc, pattrib->ack_policy);
 	}
 
-#if 0
-	//Update Seq Num will be handled by f/w
-	if (psta_xmitpriv) {
-		psta_xmitpriv->txseq_tid[pattrib->priority]++;
-		psta_xmitpriv->txseq_tid[pattrib->priority] &= 0xFFF;
-		pattrib->seqnum = psta_xmitpriv->txseq_tid[pattrib->priority];
-		SetSeqNum(hdr, pattrib->seqnum);
-
-		//check if enable ampdu
-		if (pattrib->b_ht_en && psta_htpriv->ampdu_enable) {
-			if (psta_htpriv->addba_success_bitmap & BIT(pattrib->priority)) {
-				pattrib->b_ampdu_en = true;
-			}
-		}
-
-		//re-check if enable ampdu by BA_starting_seqctrl
-		if (pattrib->b_ampdu_en == true) {
-			u16 tx_seq;
-
-			tx_seq = psta_xmitpriv->ba_starting_seqctrl[pattrib->priority & 0x0f];
-
-			//check BA_starting_seqctrl
-			if (SN_LESS(pattrib->seqnum, tx_seq)) {
-				pattrib->b_ampdu_en = false;//AGG BK
-			} else if (SN_EQUAL(pattrib->seqnum, tx_seq)) {
-				psta_xmitpriv->ba_starting_seqctrl[pattrib->priority & 0x0f] = (tx_seq + 1) & 0xfff;
-				pattrib->b_ampdu_en = true;//AGG EN
-			} else {
-				psta_xmitpriv->ba_starting_seqctrl[pattrib->priority & 0x0f] = (pattrib->seqnum + 1) & 0xfff;
-				pattrib->b_ampdu_en = true;//AGG EN
-			}
-		}
-	}
-#endif
-
 	return res;
 }
 
@@ -552,8 +517,8 @@ int whc_host_xmit_enc_software(u8 iface_type, struct whch_security_priv *psecuri
 				pattrib->hdrlen,	// WLAN header length
 				pattrib->iv_len,	// IV length
 				pattrib->last_txcmdsz - pattrib->hdrlen - pattrib->iv_len - pattrib->icv_len,	// Data length
-				&psecuritypriv->dot11_wep_key[0].skey[0],// WEP key
-				psecuritypriv->dot11_wep_keylen[0]//WEP key_len,
+				&psecuritypriv->dot11_wep_key[pattrib->key_idx].skey[0],// WEP key
+				psecuritypriv->dot11_wep_keylen[pattrib->key_idx]//WEP key_len,
 			);
 			break;
 

@@ -191,7 +191,7 @@ bool rtk_stack_dfu_initiator_init(void)
 
 static uint16_t rtk_mesh_dfu_initiator_upload_start(rtk_bt_mesh_dfu_initiator_upload_start_t *start)
 {
-	uint16_t ret = RTK_BT_MESH_DFU_MODEL_API_FAIL;
+	uint16_t ret = RTK_BT_FAIL;
 	fw_id_t firmware_id;
 
 	BT_LOGD("[%s] Enter.\r\n", __func__);
@@ -201,7 +201,7 @@ static uint16_t rtk_mesh_dfu_initiator_upload_start(rtk_bt_mesh_dfu_initiator_up
 
 	if (dfu_init_upload_start(start->dst, start->app_key_index, start->update_timeout_base, start->p_metadata, start->metadata_len, &firmware_id, start->fw_id_len,
 							  start->fw_image_size)) {
-		ret = RTK_BT_MESH_DFU_MODEL_API_SUCCESS;
+		ret = RTK_BT_OK;
 	}
 
 	return ret;
@@ -209,7 +209,7 @@ static uint16_t rtk_mesh_dfu_initiator_upload_start(rtk_bt_mesh_dfu_initiator_up
 
 static uint16_t rtk_mesh_dfu_initiator_receiver_add(rtk_bt_mesh_dfu_initiator_dist_recv_add_t *p)
 {
-	uint16_t ret = RTK_BT_MESH_DFU_MODEL_API_FAIL;
+	uint16_t ret = RTK_BT_FAIL;
 	fw_dist_receiver_t *rece;
 
 	BT_LOGD("[%s] Enter.\r\n", __func__);
@@ -254,7 +254,7 @@ static uint16_t rtk_mesh_dfu_initiator_distribute_start(rtk_bt_mesh_dfu_initiato
 extern bool bt_stack_profile_check(rtk_bt_profile_t profile);
 uint16_t bt_mesh_dfu_initiator_act_handle(rtk_bt_cmd_t *p_cmd)
 {
-	uint16_t ret = RTK_BT_MESH_MSG_SEND_CAUSE_FAIL;
+	uint16_t ret = RTK_BT_OK;
 
 	if (true != bt_stack_profile_check(RTK_BT_PROFILE_MESH)) {
 		BT_LOGE("[%s] Error: BLE MESH profile is not initiated.\r\n", __func__);
@@ -283,7 +283,12 @@ uint16_t bt_mesh_dfu_initiator_act_handle(rtk_bt_cmd_t *p_cmd)
 	}
 	default:
 		BT_LOGE("[%s] Unknown p_cmd->act:%d\r\n", __func__, p_cmd->act);
-		break;
+		ret = RTK_BT_ERR_NO_CASE_ELEMENT;
+		goto end;
+	}
+	if (ret) {
+		BT_LOGE("[%s] return ret:%d\r\n", __func__, ret);
+		ret = RTK_BT_ERR_LOWER_STACK_API;
 	}
 end:
 	p_cmd->ret = ret;
@@ -541,7 +546,7 @@ bool rtk_stack_dfu_standalone_updater_init(void)
 extern bool bt_stack_profile_check(rtk_bt_profile_t profile);
 uint16_t bt_mesh_dfu_standalone_updater_act_handle(rtk_bt_cmd_t *p_cmd)
 {
-	uint16_t ret = RTK_BT_MESH_DFU_MODEL_API_FAIL;
+	uint16_t ret = RTK_BT_FAIL;
 	static rtk_bt_mesh_dfu_standalone_updater_set_param_t dfu_param = {0};
 
 	if (true != bt_stack_profile_check(RTK_BT_PROFILE_MESH)) {
@@ -554,13 +559,13 @@ uint16_t bt_mesh_dfu_standalone_updater_act_handle(rtk_bt_cmd_t *p_cmd)
 	switch (p_cmd->act) {
 	case RTK_BT_MESH_DFU_ACT_STANDALONE_UPDATER_SET_PARAM: {
 		memcpy(&dfu_param, p_cmd->param, sizeof(rtk_bt_mesh_dfu_standalone_updater_set_param_t));
-		ret = RTK_BT_MESH_DFU_MODEL_API_SUCCESS;
+		ret = RTK_BT_OK;
 		break;
 	}
 	case RTK_BT_MESH_DFU_ACT_STANDALONE_UPDATER_ADD_RECEIVER: {
 		rtk_bt_mesh_dfu_standalone_updater_add_receiver_param_t *rece = (rtk_bt_mesh_dfu_standalone_updater_add_receiver_param_t *)p_cmd->param;
 		if (dfu_dist_add_receiver(rece->addr, rece->update_image_index)) {
-			ret = RTK_BT_MESH_DFU_MODEL_API_SUCCESS;
+			ret = RTK_BT_OK;
 		} else {
 			BT_LOGE("[%s] Mesh stack api return fail for p_cmd->act:%d.\r\n", __func__, p_cmd->act);
 		}
@@ -569,7 +574,7 @@ uint16_t bt_mesh_dfu_standalone_updater_act_handle(rtk_bt_cmd_t *p_cmd)
 	case RTK_BT_MESH_DFU_ACT_STANDALONE_UPDATER_START: {
 		rtk_bt_mesh_dfu_standalone_update_start_t *start = (rtk_bt_mesh_dfu_standalone_update_start_t *)p_cmd->param;
 		if (dfu_dist_start(start->dst, start->app_key_index, start->update_timeout_base, dfu_param.meta_data, dfu_param.meta_data_len, dfu_param.image_size)) {
-			ret = RTK_BT_MESH_DFU_MODEL_API_SUCCESS;
+			ret = RTK_BT_OK;
 		} else {
 			BT_LOGE("[%s] Mesh stack api return fail for p_cmd->act:%d.\r\n", __func__, p_cmd->act);
 		}
@@ -577,7 +582,8 @@ uint16_t bt_mesh_dfu_standalone_updater_act_handle(rtk_bt_cmd_t *p_cmd)
 	}
 	default:
 		BT_LOGE("[%s] Unknown p_cmd->act:%d\r\n", __func__, p_cmd->act);
-		break;
+		ret = RTK_BT_ERR_NO_CASE_ELEMENT;
+		goto end;
 	}
 end:
 	p_cmd->ret = ret;

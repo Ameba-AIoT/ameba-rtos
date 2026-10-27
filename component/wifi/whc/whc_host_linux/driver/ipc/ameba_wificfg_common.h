@@ -302,6 +302,12 @@ struct wifi_user_conf {
 	/*! 0: Disable R-Mesh TDMA feature, 1: Enable R-Mesh TDMA feature.*/
 	u8 wtn_tdma_en;
 
+	/*! 0: Disable R-Mesh RNAT inter-communication feature, 1: Enable R-Mesh RNAT inter-communication feature.*/
+	u8 wtn_rnat_intercom_en;
+
+	/*!	The maximum number of NAN peers can be tracked concurrently, should not exceed 15. Default: 6. */
+	u8 nan_max_peer_num;
+
 	/*! 0: Disable TPC feature, 1: Enable TPC feature. */
 	u8 tpc_enable;
 

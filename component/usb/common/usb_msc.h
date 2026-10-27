@@ -8,9 +8,26 @@
 #define USB_MSC_H
 
 /* Includes ------------------------------------------------------------------*/
+
 #include "usb_scsi.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/** @addtogroup USB_Common_API USB Common API
+ *  @{
+ */
+
 /* Exported defines ----------------------------------------------------------*/
+
+/** @addtogroup USB_Common_Constants USB Common Constants
+ *  @{
+ */
+/** @defgroup USB_Common_MSC_Constants USB MSC Constants (BOT 1.0)
+ *  @brief Common protocol definitions shared by the USBD and USBH MSC drivers.
+ *  @{
+ */
 
 /* MSC interface class, subclass and protocol codes */
 #define USB_MSC_CLASS_CODE                      0x08U   /**< Mass Storage Class code.        */
@@ -28,7 +45,18 @@
 #define USB_MSC_CSW_LEN                            13U          /**< Standard CSW length in bytes. */
 #define USB_BOT_CBW_TAG                            0x20304050U /**< A default tag for CBW, should be unique per command. */
 
+/** @} End of USB_Common_MSC_Constants group */
+/** @} End of USB_Common_Constants group */
+
 /* Exported types ------------------------------------------------------------*/
+
+/** @addtogroup USB_Common_Types USB Common Types
+ *  @{
+ */
+/** @defgroup USB_Common_MSC_Types USB MSC Types (BOT 1.0)
+ *  @brief Common protocol types shared by the USBD and USBH MSC drivers.
+ *  @{
+ */
 
 /**
  * @brief BOT CSW status enumeration.
@@ -78,5 +106,20 @@ typedef struct {
 	u8 asc;                          /**< Additional Sense Code. */
 	u8 ascq;                         /**< Additional Sense Code Qualifier. */
 } usb_msc_scsi_sense_data_t;
+
+/** @} End of USB_Common_MSC_Types group */
+/** @} End of USB_Common_Types group */
+
+/* Exported macros -----------------------------------------------------------*/
+
+/* Exported variables --------------------------------------------------------*/
+
+/* Exported functions --------------------------------------------------------*/
+
+/** @} End of USB_Common_API group */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* USB_MSC_H */

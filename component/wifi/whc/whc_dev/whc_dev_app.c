@@ -485,10 +485,12 @@ static void whc_dev_handle_set_host_rtos(u8 *ptr)
 	wifi_user_config.cfg80211 = 0;
 }
 
+#ifdef CONFIG_OTA_ENABLED
 static void whc_dev_handle_ota(u8 *ptr)
 {
 	whc_dev_ota_process(ptr);
 }
+#endif /* CONFIG_OTA_ENABLED */
 
 static void whc_dev_handle_network_info_update(u8 *ptr)
 {
@@ -509,10 +511,12 @@ static void whc_dev_handle_network_info_update(u8 *ptr)
 #endif /* !CONFIG_MP_SHRINK */
 
 /* These subcmds are outside CONFIG_MP_SHRINK guard in v03_9 */
+#ifdef CONFIG_OTA_ENABLED
 static void whc_dev_handle_clear_ota(u8 *ptr)
 {
 	sys_clear_ota_signature(*(ptr + 1));
 }
+#endif /* CONFIG_OTA_ENABLED */
 
 static void whc_dev_handle_shell_cmd(u8 *ptr)
 {
@@ -563,12 +567,16 @@ static const struct whc_dev_subcmd_entry whc_dev_subcmd_entries[] = {
 	{WHC_WIFI_TEST_SET_TICKPS_CMD,		whc_dev_handle_tickps_cmd},
 	{WHC_WIFI_TEST_WIFION,			whc_dev_handle_wifion},
 	{WHC_WIFI_TEST_SET_HOST_RTOS,		whc_dev_handle_set_host_rtos},
+#ifdef CONFIG_OTA_ENABLED
 	{WHC_WIFI_TEST_OTA,			whc_dev_handle_ota},
+#endif
 	{WHC_WIFI_TEST_NETWORK_INFO_UPDATE,	whc_dev_handle_network_info_update},
 #endif /* !CONFIG_MP_SHRINK */
 
 	/* Outside CONFIG_MP_SHRINK */
+#ifdef CONFIG_OTA_ENABLED
 	{WHC_WIFI_TEST_CLEAR_OTA,		whc_dev_handle_clear_ota},
+#endif
 	{WHC_WIFI_TEST_SHELL_CMD,		whc_dev_handle_shell_cmd},
 #ifdef CONFIG_LOG_FWD
 	{WHC_WIFI_TEST_LOG_ENABLE,		whc_dev_handle_log_enable},

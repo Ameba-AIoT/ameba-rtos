@@ -59,7 +59,7 @@ void Wakepin_Select(u32 pin_sel)
 
 	/* disable wakepin */
 	Rtemp = HAL_READ32(SYSTEM_CTRL_BASE, REG_AON_GPIO_CTRL);
-	Rtemp &= ~(AON_GPIO_WAKE_FEN(0));
+	Rtemp &= ~(AON_GPIO_WAKE_FEN(BIT(0)));
 	HAL_WRITE32(SYSTEM_CTRL_BASE, REG_AON_GPIO_CTRL, Rtemp);
 
 	/* select pin */
@@ -70,7 +70,7 @@ void Wakepin_Select(u32 pin_sel)
 
 	/* enable wakepin */
 	Rtemp = HAL_READ32(SYSTEM_CTRL_BASE, REG_AON_GPIO_CTRL);
-	Rtemp |= AON_GPIO_WAKE_FEN(0);
+	Rtemp |= AON_GPIO_WAKE_FEN(BIT(0));
 	HAL_WRITE32(SYSTEM_CTRL_BASE, REG_AON_GPIO_CTRL, Rtemp);
 }
 /**

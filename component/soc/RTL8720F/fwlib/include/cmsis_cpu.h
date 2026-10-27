@@ -26,8 +26,8 @@
 #define __ICACHE_PRESENT          1U        /* Instruction Cache present */
 #define __DCACHE_PRESENT          1U        /* Data Cache present */
 
-/* KM4TZ & KM4NS has different configuration */
-#if defined (CONFIG_ARM_CORE_CM4_KM4TZ)
+/* KM55TZ & KM55NS has different configuration */
+#if defined (CONFIG_ARM_CORE_CM55_KM55TZ)
 #define __FPU_PRESENT             1U        /* FPU present */
 #define __DSP_PRESENT             1U        /* DSP extension present */
 #else

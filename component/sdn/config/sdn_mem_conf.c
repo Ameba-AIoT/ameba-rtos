@@ -2,7 +2,7 @@
 #include <platform_autoconf.h>
 #include <basic_types.h>
 #include <sdn_mem_conf.h>
-#ifdef CONFIG_BT_SDN
+
 #include <host_bt_feature.h>
 
 uint8_t g_ble_ll_max_link_num = BLE_LL_MAX_CONN_NUM;
@@ -32,6 +32,4 @@ uint8_t g_ble_ll_pa_sync_chain_num = BLE_LL_MAX_PA_SYNC_CHAIN_NUM;
 #else
 uint8_t g_ble_ll_max_pa_sync_set_num = 0;
 uint8_t g_ble_ll_pa_sync_chain_num = 0;
-#endif
-
 #endif

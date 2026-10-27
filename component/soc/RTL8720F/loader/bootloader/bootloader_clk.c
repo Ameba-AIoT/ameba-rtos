@@ -48,7 +48,7 @@ void BOOT_SOC_ClkSet(void)
 	BOOT_SOC_ClkChk(pSocClk_Info);
 
 	/* Pre-populate key clock fields so CPU_ClkGet() reads valid data in step 5 */
-	/* No semaphore needed: KM4NS has not started yet at this point */
+	/* No semaphore needed: KM55NS has not started yet at this point */
 	GBSS_DEV->clk_info_bk.USBPLL_CLK = pSocClk_Info->USBPLL_CLK;
 	GBSS_DEV->clk_info_bk.SYSPLL_CLK = pSocClk_Info->SYSPLL_CLK;
 	GBSS_DEV->clk_info_bk.Vol_Type = pSocClk_Info->Vol_Type;

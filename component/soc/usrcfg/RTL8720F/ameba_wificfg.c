@@ -31,7 +31,7 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.auto_reconnect_interval = 5;
 	wifi_user_config.no_beacon_disconnect_time = 9; /* unit 2s, default 18s */
 
-#if (defined(CONFIG_WHC_INTF_SPDIO) || defined(CONFIG_WHC_INTF_USB))
+#if defined(CONFIG_WHC_INTF_SPDIO)
 	skb_num_np_rsvd = 10; /* 4 for rx_ring_buffer + 2 for mgnt trx + 4 for spido rx_ring_buffer */
 	wifi_user_config.skb_num_np = 20;  /* skb_num_np should >= rx_ampdu_num + skb_num_np_rsvd */
 	wifi_user_config.skb_num_ap = 0;
@@ -131,6 +131,11 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.wtn_max_node_num = 15;
 #if defined(CONFIG_RMESH_EN) && !defined(CONFIG_RNAT_EN)
 	wifi_user_config.wtn_max_refugee_num = CONFIG_WIFI_RMESH_MAX_REFUGEE_NUM;
+#endif
+
+	/* NAN mode */
+#if defined(CONFIG_WIFI_NAN_ENABLE)
+	wifi_user_config.nan_max_peer_num = 6;	/*should not exceed 15 */
 #endif
 
 	/* ensure skb_num_np >= rx_ampdu_num + skb_num_np_rsvd */

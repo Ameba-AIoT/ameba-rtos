@@ -682,6 +682,20 @@ static void set_phy_conn_param(const struct bt_conn *conn,
 	phy->max_ce_len = 0;
 }
 
+#if ZEPHYR_RTK_PATCH
+static void set_per_phy_conn_param(struct bt_le_conn_param *param,
+								struct bt_hci_ext_conn_phy *phy)
+{
+	phy->conn_interval_min = sys_cpu_to_le16(param->interval_min);
+	phy->conn_interval_max = sys_cpu_to_le16(param->interval_max);
+	phy->conn_latency = sys_cpu_to_le16(param->latency);
+	phy->supervision_timeout = sys_cpu_to_le16(param->timeout);
+
+	phy->min_ce_len = 0;
+	phy->max_ce_len = 0;
+}
+#endif
+
 int bt_le_create_conn_ext(const struct bt_conn *conn)
 {
 	struct bt_hci_cp_le_ext_create_conn *cp;
@@ -754,16 +768,34 @@ int bt_le_create_conn_ext(const struct bt_conn *conn)
 			bt_dev.create_param.interval);
 		phy->scan_window = sys_cpu_to_le16(
 			bt_dev.create_param.window);
+#if ZEPHYR_RTK_PATCH
+		if (bt_dev.create_param.options & BT_CONN_LE_OPT_MULTI_PHY_PARAM) {
+			set_per_phy_conn_param(&bt_dev.create_param.per_phy[0], phy);
+		} else {
+			set_phy_conn_param(conn, phy);
+		}
+#else
 		set_phy_conn_param(conn, phy);
+#endif
 	}
 
 #if ZEPHYR_RTK_PATCH
 	if (bt_dev.create_param.options & BT_CONN_LE_OPT_2M) {
 		cp->phys |= BT_HCI_LE_EXT_SCAN_PHY_2M;
 		phy = net_buf_add(buf, sizeof(*phy));
-		phy->scan_interval = 0;   /* no primary scan on 2M per BLE spec */
-		phy->scan_window = 0;
-		set_phy_conn_param(conn, phy);
+		/* 2M PHY scan_interval/scan_window shall be ignored in controller.
+		 * Here, use parameters from other PHY just to avoid possible hci parameter check */
+		phy->scan_interval = sys_cpu_to_le16(bt_dev.create_param.interval ?
+											bt_dev.create_param.interval :
+											bt_dev.create_param.interval_coded);
+		phy->scan_window = sys_cpu_to_le16(bt_dev.create_param.window ?
+											bt_dev.create_param.window :
+											bt_dev.create_param.window_coded);
+		if (bt_dev.create_param.options & BT_CONN_LE_OPT_MULTI_PHY_PARAM) {
+			set_per_phy_conn_param(&bt_dev.create_param.per_phy[1], phy);
+		} else {
+			set_phy_conn_param(conn, phy);
+		}
 	}
 #endif
 
@@ -774,7 +806,15 @@ int bt_le_create_conn_ext(const struct bt_conn *conn)
 			bt_dev.create_param.interval_coded);
 		phy->scan_window = sys_cpu_to_le16(
 			bt_dev.create_param.window_coded);
+#if ZEPHYR_RTK_PATCH
+		if (bt_dev.create_param.options & BT_CONN_LE_OPT_MULTI_PHY_PARAM) {
+			set_per_phy_conn_param(&bt_dev.create_param.per_phy[2], phy);
+		} else {
+			set_phy_conn_param(conn, phy);
+		}
+#else
 		set_phy_conn_param(conn, phy);
+#endif
 	}
 
 	bt_hci_cmd_state_set_init(buf, &state, bt_dev.flags,
@@ -1736,6 +1776,14 @@ void bt_hci_le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 		if (err) {
 			LOG_WRN("Failed to read PHY (%d)", err);
 		}
+#if ZEPHYR_RTK_PATCH
+		else {
+			if (conn->le.phy.tx_phy > BT_GAP_LE_PHY_1M ||
+				conn->le.phy.rx_phy > BT_GAP_LE_PHY_1M) {
+				notify_le_phy_updated(conn);
+			}
+		}
+#endif
 	}
 #endif /* defined(CONFIG_BT_USER_PHY_UPDATE) */
 
@@ -2238,7 +2286,9 @@ static void unpair(uint8_t id, const bt_addr_le_t *addr)
 			conn->le.keys = NULL;
 		}
 
+#if !ZEPHYR_RTK_PATCH
 		bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+#endif
 		bt_conn_unref(conn);
 	}
 
@@ -3915,7 +3965,7 @@ const char *bt_hci_get_ver_str(uint8_t core_version)
 {
 	const char * const str[] = {
 		"1.0b", "1.1", "1.2", "2.0", "2.1", "3.0", "4.0", "4.1", "4.2",
-		"5.0", "5.1", "5.2", "5.3", "5.4"
+		"5.0", "5.1", "5.2", "5.3", "5.4", "6.0", "6.1", "6.2", "6.3"
 	};
 
 	if (core_version < ARRAY_SIZE(str)) {

@@ -35,5 +35,6 @@ RTL8713E
 RTL8710E
 RTL8721Dx
 RTL8721F
+RTL8720F
 
 * W25Q256jv Nor Flash and GD25B64C Nor FLASh have been tested, other Flash with the same operation commands and flow also can be supported.

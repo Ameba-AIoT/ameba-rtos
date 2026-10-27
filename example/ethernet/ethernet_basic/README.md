@@ -12,20 +12,22 @@ The callback function is invoked when the Ethernet link status changes (UP or DO
 
 1. Enable Ethernet Feature:
 
-   Use menuconfig and enable `CONFIG ETHERNET`, then select `PHY SOURCE CLK` according to how the PHY on your board is clocked:
-   * `50M from Ameba` - Ameba outputs a 50MHz clock to the PHY
-   * `25M from Ameba` - Ameba outputs a 25MHz clock to the PHY
-   * `PHY xtal` - PHY is clocked by its own crystal
+   Use menuconfig and enable `CONFIG ETHERNET`, then select `MAC CLOCK SOURCE`:
+   * `Internal clock divided from PLL` - the MAC clock comes from the SoC. Then select `PHY CLOCK SOURCE` according to how the PHY on your board is clocked:
+     * `50M from Ameba` - Ameba outputs a 50MHz clock to the PHY
+     * `25M from Ameba` - Ameba outputs a 25MHz clock to the PHY
+     * `PHY xtal` - PHY is clocked by its own crystal
+   * `External 50M from the EXTCLK pin` - the MAC clock comes from outside. The EXTCLK pin is an input then, so Ameba cannot clock the PHY and there is no `PHY CLOCK SOURCE` option: the PHY runs from its own crystal
 
    See [ETH PHY CLK](https://aiot.realmcu.com/zh/latest/rtos/peripherals/ethernet/index.html#eth-phy-clk) for more details.
 
 2. Select the RMII Pin Group:
 
-   Set `ETHERNET_Pin_Grp` in `component/soc/usrcfg/amebagreen2/ameba_intfcfg.c` to the group (`0x0`-`0x3`) that matches the RMII pins actually wired on your board. The pin mapping of each group is listed in `ETHERNET_PAD[]` in the same file.
+   Use menuconfig `CONFIG User Config` -> `Pinmux Group Configuration` -> `Ethernet(RMII) pinmux group` to select the group (`0`-`3`, default `2`) that matches the RMII pins actually wired on your board. The pin mapping of each group is listed in `ETHERNET_PAD[]` in `component/soc/usrcfg/amebagreen2/ameba_intfcfg.c`. Do not edit `ETHERNET_Pin_Grp` in that file directly, it is assigned from the menuconfig value.
 
 3. IP Configuration:
 
-   The example obtain an IP address automatically from the network via DHCP.
+   The example obtains an IP address automatically from the network via DHCP.
 
 4. Build and Download:
    * Refer to the SDK Examples section of the online documentation to generate images.

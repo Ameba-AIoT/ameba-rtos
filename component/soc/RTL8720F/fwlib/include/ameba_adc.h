@@ -7,59 +7,6 @@
 #ifndef _AMEBA_ADC_H_
 #define _AMEBA_ADC_H_
 
-/** @addtogroup ADC
-  * @verbatim
-  *****************************************************************************************
-  * Introduction
-  *****************************************************************************************
-  * ADC:
-  * 	- Base Address: ADC
-  * 	- Channel number: 11
-  *		- CH7~10: internal ADC channel
-  *		- CH0~6: external ADC channel
-  * 	- Sample rate: configurable, frequency = CLK_ADC_CORE/divider, in which CLK_ADC_CORE is 4MHz, and can
-  *		be divided by 4/8/16/24/32/64/128.
-  * 	- Resolution: 16 bit
-  * 	- Analog signal sampling: support 0 ~ 3.3V
-  * 	- IRQ: ADC_IRQ
-  * 	- Support Software-Trigger mode, Automatic mode, Timer-Trigger mode and Comparator-Assist mode.
-  *
-  *****************************************************************************************
-  * How to use ADC in interrupt mode
-  *****************************************************************************************
-  * 	  To use ADC in interrupt mode, the following steps are mandatory:
-  *
-  *      1. Enable the ADC interface clock:
-  *			RCC_PeriphClockCmd(APBPeriph_ADC, APBPeriph_ADC_CLOCK, ENABLE);
-  *
-  *      2. Fill the ADC_InitStruct with the desired parameters.
-  *
-  *      3. Init Hardware with the parameters in ADC_InitStruct.
-  *			ADC_Init(ADC_InitTypeDef* ADC_InitStruct)
-  *
-  *      4. Clear ADC interrupt:
-  *			ADC_INTClear()
-  *
-  *      5. To configure interrupts:
-  *			ADC_INTConfig(ADC_IT, ENABLE)
-  *
-  *      6. Enable the NVIC and the corresponding interrupt using following function.
-  *			-InterruptRegister(): register the ADC irq handler
-  *			-InterruptEn(): Enable the NVIC interrupt and set irq priority
-  *
-  *      7. Activate the ADC:
-  *			ADC_Cmd(ENABLE).
-  *
-  *      8. Enbale specified mode:
-  *			ADC_SWTrigCmd(ENABLE)/ADC_AutoCSwCmd(ENABLE)/ADC_TimerTrigCmd(Tim_Idx, PeriodMs, ENABLE)
-  *
-  *      @note	1. If use ADC compare mode, call ADC_SetComp(ADC_channel, CompThresH, CompThresL, CompCtrl) to configure
-  *                  2. If use ADC comparator-assist mode, you need to setup and enable comparator.
-  *
-  *****************************************************************************************
-  * @endverbatim
-  */
-
 /** @addtogroup Ameba_Periph_Driver
   * @{
   */
@@ -588,14 +535,6 @@ extern "C" {
   */
 
 /**
-  * @brief  ADC Channel Init Structure Definition
-  */
-struct ADC_CHInitTypeDef {
-	u8 ADC_InputSwing;		/*!< Specifies ADC input swing selection. */
-	u16 ADC_SamplePeriodUs;	/*!< Specifies ADC sample period in microseconds. This parameter can be set to 0x1~0x400 (xtal4m clock) or 0x1~0x800 (osc2m clock). */
-};
-
-/**
   * @brief  ADC Init Structure Definition
   */
 typedef struct {
@@ -617,8 +556,8 @@ typedef struct {
 									number is the same as this parameter. Default 0xFF means there is no need
 									to set particular channel. */
 
-	struct ADC_CHInitTypeDef ADC_Chan[8];			/*!< Specifies the initialization parameters for each channel */
-
+	u16 ADC_SamplePeriodUs;			/*!< Specifies ADC sample period in microseconds.
+                  This parameter can be set to 0x1~0x400 (xtal4m clock) or 0x1~0x800 (osc2m clock). */
 } ADC_InitTypeDef;
 
 /**
@@ -630,6 +569,14 @@ typedef struct {
 	s32 cal_c;			/*!< Calibration coefficient C. */
 	u8 init_done;			/*!< Calibration parameter initialization done flag. */
 } ADC_CalParaTypeDef;
+
+/**
+  * @brief ADC reference voltage selection Structure Definition
+  */
+typedef struct {
+	u8 vref_sel;			/*!< Reference voltage selection value. */
+	u8 init_done;			/*!< Reference voltage selection value initialization done flag. */
+} ADC_VrefSelTypeDef;
 
 /**
   * @brief ADC Oversample Ratio
@@ -887,7 +834,6 @@ typedef enum {
 #define ADC_VREF_2P0						((u8)0x0C) /*!< ADC reference voltage 2.00 V. */
 #define ADC_VREF_2P05						((u8)0x0D) /*!< ADC reference voltage 2.05 V. */
 #define ADC_VREF_2P1						((u8)0x0E) /*!< ADC reference voltage 2.10 V. */
-#define ADC_VREF_2P15						((u8)0x0F) /*!< ADC reference voltage 2.15 V. */
 /**
   * @}
   */
@@ -896,7 +842,6 @@ typedef enum {
   * @{
   */
 #define NORM_VOL_ADDR			0x7DA /*!< OTP address for normal channel voltage calibration. */
-#define INTER_R_ADDR			0x7EC /*!< OTP address for internal resistance calibration. */
 #define VREF_SEL_ADDR			0x7E4 /*!< OTP address for voltage reference selection. */
 /**
   * @}
@@ -947,7 +892,6 @@ _LONG_CALL_ void ADC_SetBreakTO(u16 TimeOutCnt);
 _LONG_CALL_ void ADC_KeepPowerCmd(u32 NewState);
 _LONG_CALL_ void ADC_InitCalPara(ADC_CalParaTypeDef *CalPara);
 _LONG_CALL_ s32 ADC_GetVoltage(u32 chan_data);
-_LONG_CALL_ u32 ADC_GetInterR(void);
 _LONG_CALL_ u32 ADC_GetSampleValue(s32 VolMV);
 
 /**

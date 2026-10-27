@@ -130,7 +130,7 @@ void ap_tickless_ipc_int(void *Data, u32 IrqStatus, u32 ChanNum)
 		SOCPS_BitPermissionEntry(LSYS_BIT_BPC_ATIM, ENABLE);
 		SOCPS_PeriPermissionEntry(LSYS_BIT_BPC_SPIC | LSYS_BIT_BPC_CPU0 | LSYS_BIT_BPC_PMC, ENABLE);
 		RCC_PeriphClockCmd(APBPeriph_ATIM, APBPeriph_ATIM_CLOCK, ENABLE);
-		if (psleep_param->sleep_time) {
+		if (psleep_param->sleep_time != 0 && psleep_param->sleep_time != PMU_SLEEP_FOREVER) {
 			AONTimer_ClearINT();
 			AONTimer_Setting(psleep_param->sleep_time);
 			AONTimer_INT(ENABLE);

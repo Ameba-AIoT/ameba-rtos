@@ -22,6 +22,19 @@ u32 CurrentTemp;
  * @{
  */
 
+/* Threshold format: 1 sign bit + 8 integer bits (two's complement), in Celsius */
+/* Keep the threshold format of TM_InitTypeDef consistent with previous ICs (e.g. 0x7D = 125C, 0x1D8 = -40C) */
+static float TM_ThreToFloat(u16 Thre)
+{
+	s32 val = Thre & 0x1FF;
+
+	if (val & 0x100) {
+		val -= 0x200;
+	}
+
+	return (float)val;
+}
+
 /**
  * @brief Initialize the parameters in the TM_InitStruct with default values.
  * @param TM_InitStruct: pointer to a TM_InitTypeDef structure that contains
@@ -30,9 +43,9 @@ u32 CurrentTemp;
  */
 void TM_StructInit(TM_InitTypeDef *TM_InitStruct)
 {
-	TM_InitStruct->TM_HighProtectThreshold = 841; // 125 Celsius
-	TM_InitStruct->TM_HighWarnThreshold = 801; // 105 Celsius
-	TM_InitStruct->TM_LowWarnThreshold = 509; // -40 Celsius
+	TM_InitStruct->TM_HighProtectThreshold = 0x7D; // 125 Celsius
+	TM_InitStruct->TM_HighWarnThreshold = 0x69; // 105 Celsius
+	TM_InitStruct->TM_LowWarnThreshold = 0x1D8; // -40 Celsius
 	TM_InitStruct->TM_TimePeriod = 0x8; // N * 0.65s = 5.2s
 }
 
@@ -128,9 +141,9 @@ void TM_Init(TM_InitTypeDef *TM_InitStruct)
 
 	TM_INTClear();
 
-	TM_HighPtConfig(TM_InitStruct->TM_HighProtectThreshold, ENABLE);
-	TM_HighWtConfig(TM_InitStruct->TM_HighWarnThreshold, ENABLE);
-	TM_LowWtConfig(TM_InitStruct->TM_LowWarnThreshold, ENABLE);
+	TM_HighPtConfig(TM_ThreToFloat(TM_InitStruct->TM_HighProtectThreshold), ENABLE, TM_DEG_C);
+	TM_HighWtConfig(TM_ThreToFloat(TM_InitStruct->TM_HighWarnThreshold), ENABLE, TM_DEG_C);
+	TM_LowWtConfig(TM_ThreToFloat(TM_InitStruct->TM_LowWarnThreshold), ENABLE, TM_DEG_C);
 
 	TM_INTConfig(ADC_BIT_IT_TM_HIGH_WT_EN | ADC_BIT_IT_TM_LOW_WT_EN, ENABLE);
 
@@ -160,7 +173,7 @@ void TM_PwrProgCmd(u32 NewState)
 		reg |= ADC_TM_PWR(TM_PROG_PWR);
 	}
 
-	adc->ADC_TM_TH_CTRL1 |= reg;
+	adc->ADC_TM_TH_CTRL1 = reg;
 }
 
 /**
@@ -172,23 +185,23 @@ void TM_PwrProgCmd(u32 NewState)
 void TM_Cmd(u32 NewState)
 {
 	ADC_TypeDef *adc = ADC;
-	u16 thre;
 
 	if (TrustZone_IsSecure()) {
 		adc = ADC_S;
 	}
 
-	thre = ADC_GET_TM_HIGH_PT_THR(adc->ADC_TM_TH_CTRL1);
+	TM_PwrProgCmd(ENABLE);
 
 	if (NewState != DISABLE) {
-		TM_HighPtConfig(thre, ENABLE);
-
+		/* set en_bit only and keep high_pt_thre unchanged */
+		adc->ADC_TM_TH_CTRL1 |= ADC_BIT_TM_HIGHCMP_PT_EN;
 		TM_INTConfig(ADC_BIT_IT_TM_HIGH_WT_EN | ADC_BIT_IT_TM_LOW_WT_EN, ENABLE);
 	} else {
-		TM_HighPtConfig(thre, DISABLE);
-
+		adc->ADC_TM_TH_CTRL1 &= ~ADC_BIT_TM_HIGHCMP_PT_EN;
 		TM_INTConfig(ADC_BIT_IT_TM_HIGH_WT_EN | ADC_BIT_IT_TM_LOW_WT_EN, DISABLE);
 	}
+
+	TM_PwrProgCmd(DISABLE);
 }
 
 /**
@@ -398,19 +411,40 @@ void TM_MinTempClr(void)
 }
 
 /**
+ * @brief Get temperature code according to Celsius Degree.
+ * @param TempC Temperature in Celsius Degree, which can be signed float。
+ * @return Temperature code.
+ */
+static u16 TM_GetTempCode(float TempC)
+{
+	/* sync with HW: T = 0.480828f * ADC_data - 288.768 */
+	return (u16)((TempC + 288.768) / 0.480828f);
+}
+
+/**
  * @brief Configure over-temp protect threshold for comparison with TEMP_OUT.
- * @param TM_HighPtThre: When TEMP_OUT > TM_HighPtThre, it will set aon reset.
+ * @param TM_HighPtThre: Temperature threshold (float). When TEMP_OUT > threshold, it will set aon reset.
  * @param NewState: new state of the thermal over-temp protect comparison.
  *  			This parameter can be: ENABLE or DISABLE.
+ * @param Unit: unit of TM_HighPtThre.
+ *  			This parameter can be: TM_DEG_C or TM_DEG_F.
  * @retval None
  */
-void TM_HighPtConfig(u16 TM_HighPtThre, u32 NewState)
+void TM_HighPtConfig(float TM_HighPtThre, u32 NewState, TM_UnitDef Unit)
 {
 	ADC_TypeDef *adc = ADC;
 	u32 reg;
+	u16 code;
 
 	if (TrustZone_IsSecure()) {
 		adc = ADC_S;
+	}
+
+	if (Unit == TM_DEG_C) {
+		code = TM_GetTempCode(TM_HighPtThre);
+	} else {
+		/* F = C * 1.8 + 32 */
+		code = TM_GetTempCode((TM_HighPtThre - 32) / 1.8f);
 	}
 
 	TM_PwrProgCmd(ENABLE);
@@ -418,7 +452,7 @@ void TM_HighPtConfig(u16 TM_HighPtThre, u32 NewState)
 	if (NewState != DISABLE) {
 		reg = adc->ADC_TM_TH_CTRL1;
 		reg &= ~ADC_MASK_TM_HIGH_PT_THR;
-		reg |= ADC_TM_HIGH_PT_THR(TM_HighPtThre);
+		reg |= ADC_TM_HIGH_PT_THR(code);
 		adc->ADC_TM_TH_CTRL1 = reg;
 		adc->ADC_TM_TH_CTRL1 |= ADC_BIT_TM_HIGHCMP_PT_EN;
 	} else {
@@ -430,47 +464,67 @@ void TM_HighPtConfig(u16 TM_HighPtThre, u32 NewState)
 
 /**
  * @brief Configure over-temp warning threshold for comparison with TEMP_OUT.
- * @param TM_HighWtThre: When TM_HighWtThre <= TEMP_OUT < TM_HighPtThre, it will set int pending flag ISR_TM_HIGH.
+ * @param TM_HighWtThre: Temperature threshold (float). When TM_HighWtThre <= TEMP_OUT < TM_HighPtThre, it will set int pending flag ISR_TM_HIGH.
  * @param NewState: Unused.
+ * @param Unit: unit of TM_HighWtThre.
+ *  			This parameter can be: TM_DEG_C or TM_DEG_F.
  * @retval None
  */
-void TM_HighWtConfig(u16 TM_HighWtThre, u32 NewState)
+void TM_HighWtConfig(float TM_HighWtThre, u32 NewState, TM_UnitDef Unit)
 {
 	(void)NewState;
 
 	ADC_TypeDef *adc = ADC;
 	u32 reg;
+	u16 code;
 
 	if (TrustZone_IsSecure()) {
 		adc = ADC_S;
 	}
 
+	if (Unit == TM_DEG_C) {
+		code = TM_GetTempCode(TM_HighWtThre);
+	} else {
+		/* F = C * 1.8 + 32 */
+		code = TM_GetTempCode((TM_HighWtThre - 32) / 1.8f);
+	}
+
 	reg = adc->ADC_TM_TH_CTRL0;
 	reg &= ~ADC_MASK_TM_HIGH_WT_THR;
-	reg |= ADC_TM_HIGH_WT_THR(TM_HighWtThre);
+	reg |= ADC_TM_HIGH_WT_THR(code);
 	adc->ADC_TM_TH_CTRL0 = reg;
 }
 
 /**
  * @brief Configure low-temp warning threshold for comparison with TEMP_OUT.
- * @param TM_LowWtThre: When TEMP_OUT <= TM_LowWtThre, it will set int pending flag ISR_TM_LOW.
+ * @param TM_LowWtThre: Temperature threshold (float). When TEMP_OUT <= TM_LowWtThre, it will set int pending flag ISR_TM_LOW.
  * @param NewState: Unused.
+ * @param Unit: unit of TM_LowWtThre.
+ *  			This parameter can be: TM_DEG_C or TM_DEG_F.
  * @retval None
  */
-void TM_LowWtConfig(u16 TM_LowWtThre, u32 NewState)
+void TM_LowWtConfig(float TM_LowWtThre, u32 NewState, TM_UnitDef Unit)
 {
 	(void)NewState;
 
 	ADC_TypeDef *adc = ADC;
 	u32 reg;
+	u16 code;
 
 	if (TrustZone_IsSecure()) {
 		adc = ADC_S;
 	}
 
+	if (Unit == TM_DEG_C) {
+		code = TM_GetTempCode(TM_LowWtThre);
+	} else {
+		/* F = C * 1.8 + 32 */
+		code = TM_GetTempCode((TM_LowWtThre - 32) / 1.8f);
+	}
+
 	reg = adc->ADC_TM_TH_CTRL0;
 	reg &= ~ADC_MASK_TM_LOW_WT_THR;
-	reg |= ADC_TM_LOW_WT_THR(TM_LowWtThre);
+	reg |= ADC_TM_LOW_WT_THR(code);
 	adc->ADC_TM_TH_CTRL0 = reg;
 }
 
@@ -481,7 +535,8 @@ void TM_LowWtConfig(u16 TM_LowWtThre, u32 NewState)
  */
 float TM_GetCdegree(u32 Data)
 {
-	return 0.480828f * Data - 288.768;
+	/* sync with HW: T = 0.480828 * ADC_data - 288.768 */
+	return 0.480828f * Data - 288.768f;
 }
 
 /**
@@ -499,14 +554,19 @@ float TM_GetFdegree(u32 Data)
 }
 
 /**
- * @brief Get temperature code according to Celsius Degree.
- * @param TempC Temperature in Celsius Degree, which can be signed float。
- * @return Temperature code.
+ * @brief Get temperature value according to the specified unit.
+ * @param Data: TM_RESULT(Binary complement form)
+ * @param Unit: temperature unit.
+ *  			This parameter can be: TM_DEG_C or TM_DEG_F.
+ * @retval Temperature value of float type
  */
-u32 TM_GetTempCode(float TempC)
+float TM_GetDegree(u32 Data, TM_UnitDef Unit)
 {
-	/* T = 0.4964 * ADC_data - 292.3 */
-	return (u32)((TempC + 292.3) / 0.4964f);
+	if (Unit == TM_DEG_C) {
+		return TM_GetCdegree(Data);
+	} else {
+		return TM_GetFdegree(Data);
+	}
 }
 
 /** @} */

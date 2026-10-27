@@ -39,6 +39,9 @@ static irqreturn_t whc_gspi_host_dev_irq_fn(int irq, void *context)
 {
 	struct whc_gspi *priv = &whc_gspi_priv;
 	u32 value, himr;
+#ifdef CONFIG_AMEBADPLUS
+	u32 freepage;
+#endif
 
 	/* read HISR (32-bit) */
 	priv->gspi_hisr = rtw_read32(priv, GSPI_REG_HISR);
@@ -55,8 +58,8 @@ static irqreturn_t whc_gspi_host_dev_irq_fn(int irq, void *context)
 #ifdef CONFIG_GSPI_TX_ENABLE_AVAL_INT
 		if (priv->gspi_hisr & GSPI_HISR_TXBD_AVAL_INT) {
 #ifdef CONFIG_AMEBADPLUS
-			/* DP: read FREE_TXBD_NUM to clear the aval int */
-			(void)rtw_read32(priv, GSPI_REG_FREE_TXBD_NUM);
+			/* for DP, read txbd to clear aval int */
+			freepage = rtw_read32(priv, GSPI_REG_FREE_TXBD_NUM);
 #else
 			/* green2 and later: reading TXBD never clears it, W1C instead */
 			rtw_write32(priv, GSPI_REG_HISR, GSPI_HISR_TXBD_AVAL_INT);

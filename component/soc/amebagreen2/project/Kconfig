@@ -390,10 +390,10 @@ menu "CONFIG WIFI"
         bool
 endmenu
 
-config VFS_ENABLED
+config VFS_SUPPORTED
     def_bool y
     depends on !MP_SHRINK
-    depends on (WHC_HOST || WHC_NONE || (WHC_DEV && WHC_DEV_FLASH_BOOT))
+    depends on (WHC_HOST || WHC_NONE || (WHC_DEV && !WHC_INTF_IPC))
 
 menu "CONFIG BT"
     config  BT_MENU
@@ -430,36 +430,54 @@ menu "CONFIG ETHERNET"
 		default n
         select ETHERNET_RMII
         select LWIP_ETHERNET
+        select LWIP_LAYER if WHC_HOST
 
     config ETHERNET_RMII
         bool
 
 	if ETHERNET
 		choice
-			prompt "PHY SOURCE CLK"
-			default MAC_OUTPUT_50M
-			config MAC_OUTPUT_50M
-				bool "50M from Ameba"
-			config MAC_OUTPUT_25M
-				bool "25M from Ameba"
-			config PHY_INT_XTAL
-				bool "PHY xtal"
+			prompt "MAC CLOCK SOURCE"
+			default MAC_CLK_INT
+			help
+				Where the MAC gets its 50MHz clock.
+			config MAC_CLK_INT
+				bool "Internal clock divided from PLL"
+			if MAC_CLK_INT
+				choice
+					prompt "PHY CLOCK SOURCE"
+					default SOC_OUTPUT_50M
+					help
+						REF_CLK direction follows PHY CLOCK SOURCE.
+					config SOC_OUTPUT_50M
+						bool "50M from Ameba"
+					config SOC_OUTPUT_25M
+						bool "25M from Ameba"
+					config PHY_INT_XTAL
+						bool "PHY xtal"
+				endchoice
+			endif
+			config MAC_CLK_EXT
+				bool "External 50M from the EXTCLK pin"
 		endchoice
 
-		config ETH_TX_DESC_CNT
-			int "Number of ETH TX descriptors"
-			default 16
-			range 2 64
-			help
-			  Costs about 1.5KB of heap per entry. 8 drops frames on line-rate
-			  bursts because eth_send() has no back-pressure.
+		# Default 8+8 with PSRAM, 4+4 otherwise; only these are tested. About 1.5KB heap per entry.
+		config ETH_DESC_CNT_MANUAL
+			bool "Manually set the number of ETH descriptors"
+			default n
 
+		config ETH_TX_DESC_CNT
+			int "Number of ETH TX descriptors" if ETH_DESC_CNT_MANUAL
+			default 8 if IMG2_PSRAM
+			default 4
+			range 4 64
+
+		# Must be a power of two
 		config ETH_RX_DESC_CNT
-			int "Number of ETH RX descriptors"
-			default 16
-			range 2 64
-			help
-			  Costs about 1.5KB of heap per entry.
+			int "Number of ETH RX descriptors" if ETH_DESC_CNT_MANUAL
+			default 8 if IMG2_PSRAM
+			default 4
+			range 4 64
 	endif
 endmenu
 

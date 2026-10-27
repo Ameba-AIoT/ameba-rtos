@@ -10,8 +10,6 @@
 
 /* Private defines -----------------------------------------------------------*/
 
-#define USBD_WHC_IDX_INTERFACE_STR 0x04U
-
 #define USBD_WHC_ITF_NUM           1U
 
 #define USBD_WHC_EP_STATE_IDLE     0U
@@ -58,13 +56,6 @@ static const u8 usbd_whc_wifi_only_mode_dev_desc[USB_LEN_DEV_DESC] = {
 }; // usbd_whc_wifi_only_mode_dev_desc
 
 /* USB Standard Device Descriptor */
-static const u8 usbd_whc_lang_id_desc[USB_LEN_LANGID_STR_DESC] = {
-	USB_LEN_LANGID_STR_DESC,
-	USB_DESC_TYPE_STRING,
-	USB_LOW_BYTE(USBD_WHC_LANGID_STRING),
-	USB_HIGH_BYTE(USBD_WHC_LANGID_STRING),
-};
-
 /* USB Full Speed Configuration Descriptor for WiFi-only mode */
 static const u8 usbd_whc_wifi_only_mode_full_speed_config_desc[] = {
 	/* Configuration Descriptor */
@@ -89,7 +80,7 @@ static const u8 usbd_whc_wifi_only_mode_full_speed_config_desc[] = {
 	0xFF,									// bInterfaceClass: Vendor Specific
 	0x00,									// bInterfaceSubClass: WHC function family
 	0x01,									// bInterfaceProtocol: WiFi function
-	USBD_IDX_PRODUCT_STR,					// iInterface: USBD_WHC_PROD_STRING
+	USBD_IDX_PRODUCT_STR,					// iInterface: device product string
 
 	/* Endpoint Descriptor */
 	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
@@ -134,6 +125,8 @@ static const usbd_class_driver_t usbd_whc_driver = {
 
 /* WHC Device */
 static usbd_whc_dev_t usbd_whc_dev;
+
+/* Exported variables --------------------------------------------------------*/
 
 /* Private functions ---------------------------------------------------------*/
 
@@ -323,7 +316,7 @@ static int usbd_whc_setup(usb_dev_t *dev, usb_setup_req_t *req)
 					/* Cap the IN data stage to the control buffer, a short response is legal
 					 * as per USB 2.0 9.3.5 while an oversized xfer_len is rejected by the core
 					 * and would leave the control transfer unanswered */
-					ep0_in->xfer_len = (req->wLength < ep0_in->xfer_buf_len) ? req->wLength : (u16)ep0_in->xfer_buf_len;
+					ep0_in->xfer_len = (req->wLength < ep0_in->xfer_buf_len) ? (u32)req->wLength : ep0_in->xfer_buf_len;
 					ret = usbd_ep_transmit(dev, ep0_in);
 				}
 			} else {
@@ -512,27 +505,9 @@ static u16 usbd_whc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 		break;
 
 	case USB_DESC_TYPE_STRING:
-		switch (USB_LOW_BYTE(req->wValue)) {
-		case USBD_IDX_LANGID_STR:
-			desc = usbd_whc_lang_id_desc;
-			len = USB_LEN_LANGID_STR_DESC;
-			break;
-		case USBD_IDX_MFC_STR:
-			len = usbd_get_str_descriptor(USBD_WHC_MFG_STRING, buf, buf_len);
-			break;
-		case USBD_IDX_PRODUCT_STR:
-			len = usbd_get_str_descriptor(USBD_WHC_PROD_STRING, buf, buf_len);
-			break;
-		case USBD_IDX_SERIAL_STR:
-			len = usbd_get_str_descriptor(USBD_WHC_SN_STRING, buf, buf_len);
-			break;
-		case USBD_IDX_MS_OS_STR:
-			/*Not support*/
-			break;
-		default:
-			USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_GET_DESC, 0);
-			break;
-		}
+		/* Every string this class owns is registered with usbd_add_string() and answered by
+		   the core, which only forwards an index it does not know, e.g. the MS OS string */
+		USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_GET_DESC, 0);
 		break;
 
 	default:
@@ -725,10 +700,16 @@ int usbd_whc_transmit_data(u8 ep_addr, u8 *buf, u32 len, void *userdata)
 				DCache_Clean((u32)buf, len);
 			} else {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "EP TX buf align err\n");
-				return HAL_ERR_MEM;
+				ret = HAL_ERR_MEM;
 			}
 		}
-		ret = usbd_ep_transmit(dev, ep);
+		if (ret == HAL_OK) {
+			ret = usbd_ep_transmit(dev, ep);
+		} else {
+			/* Every failure path returns before the endpoint is enabled, so no completion
+			 * interrupt will ever release the EP: release it here or it stays BUSY forever */
+			ep->xfer_state = USBD_WHC_EP_STATE_IDLE;
+		}
 	} else {
 		RTK_LOGS(TAG, RTK_LOG_WARN, "EP%02x TX BUSY\n", ep_addr);
 		ret = HAL_BUSY;
@@ -759,6 +740,9 @@ int usbd_whc_receive_data(u8 ep_addr, u8 *buf, u32 len, void *userdata)
 
 	ep->xfer_buf = buf;
 	ep->xfer_len = len;
+	/* FIXME: len is the capacity of buf: reporting it lets the core reject a DMA window larger than
+	 * the buffer and clamp what an oversized OUT transfer may write, refer to usbd_ep_receive */
+	//ep->xfer_buf_len = len;
 	idev->out_ep[num].userdata = userdata;
 	if ((ep->skip_dcache_pre_clean) && (buf != NULL) && (len != 0)) {
 		if (USB_IS_MEM_DMA_ALIGNED(buf)) {

@@ -200,10 +200,10 @@
   * @{
   */
 #define PAD_BIT_DBG_CLK_FORCE   ((u32)0x00000001 << 8)           /*!< R/W 0h  Force debug clock divider enable if testmode in clock debug ICFG. This maybe used when EXT_CLK_OUT was used.*/
-#define PAD_MASK_DBG_CLK1_SEL   ((u32)0x0000000F << 4)           /*!< R/W 0h  debug clock1  in CLOCK testmode  0: xtal 40M 1: xtal 20M 2: xtal 2M 3: xtal lps 312.5K 4: sdm_32.768k 5: sdm_1Hz 6.usb pll div 7.sys pll div 8: osc131k 9: osc2M 10: osc100K*/
+#define PAD_MASK_DBG_CLK1_SEL   ((u32)0x0000000F << 4)           /*!< R/W 0h  debug clock1  in CLOCK testmode  0: xtal 40M 1: xtal 20M 2: xtal 2M 3: xtal lps 312.5K 4: sdm_32.768k 5: sdm_1Hz 6.psram pll div:  div_coef default 16, config formula is (0x40801250[3:0]+1)*8 7.usb pll div:  div_coef default 32, config formula is (0x40801258[3:0]+1)*8 8: tie 0 9: osc2M 10: osc100K*/
 #define PAD_DBG_CLK1_SEL(x)     (((u32)((x) & 0x0000000F) << 4))
 #define PAD_GET_DBG_CLK1_SEL(x) ((u32)(((x >> 4) & 0x0000000F)))
-#define PAD_MASK_DBG_CLK0_SEL   ((u32)0x0000000F << 0)           /*!< R/W 0h  debug clock1  in CLOCK testmode  0: xtal 40M 1: xtal 20M 2: xtal 2M 3: xtal lps 312.5K 4: sdm_32.768k 5: sdm_1Hz 6.usb pll div 7.sys pll div 8: osc131k 9: osc2M 10: osc100K*/
+#define PAD_MASK_DBG_CLK0_SEL   ((u32)0x0000000F << 0)           /*!< R/W 0h  debug clock1  in CLOCK testmode  0: xtal 40M 1: xtal 20M 2: xtal 2M 3: xtal lps 312.5K 4: sdm_32.768k 5: sdm_1Hz 6.psram pll div:  div_coef default 16, config formula is (0x40801250[3:0]+1)*8 7.usb pll div:  div_coef default 32, config formula is (0x40801258[3:0]+1)*8 8: tie 0 9: osc2M 10: osc100K*/
 #define PAD_DBG_CLK0_SEL(x)     (((u32)((x) & 0x0000000F) << 0))
 #define PAD_GET_DBG_CLK0_SEL(x) ((u32)(((x >> 0) & 0x0000000F)))
 /** @} */

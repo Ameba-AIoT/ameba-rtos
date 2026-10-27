@@ -876,6 +876,7 @@ int32_t serial_recv_stream_dma(serial_t *obj, char *prxbuf, uint32_t len)
 		if (ret1 == TRUE) {
 			serial_dma_en[obj->uart_idx] |= SERIAL_RX_DMA_EN;
 		} else {
+			UART_SetRxFlag(puart_adapter->UartIndex, 0);
 			return HAL_BUSY;
 		}
 	}
@@ -924,6 +925,7 @@ int32_t serial_send_stream_dma(serial_t *obj, char *ptxbuf, uint32_t len)
 		if (ret1 == TRUE) {
 			serial_dma_en[obj->uart_idx] |= SERIAL_TX_DMA_EN;
 		} else {
+			UART_SetTxFlag(puart_adapter->UartIndex, 0);
 			return HAL_BUSY;
 		}
 	}
@@ -1077,20 +1079,18 @@ int32_t serial_recv_blocked(serial_t *obj, char *prxbuf, uint32_t len, uint32_t 
 	uint32_t startcount = SYSTIMER_TickGet();
 
 	obj->rx_len = len;
-	while (1) {
-		while (!serial_readable(obj));
-		UART_CharGet(UARTx, (u8 *)prxbuf);
-
-		prxbuf++;
-		cnt++;
-
-		if (cnt == len) {
-			break;
-		}
-
+	while (cnt < len) {
 		if (SYSTIMER_GetPassTime(startcount) > timeout_ms) {
 			break;
 		}
+
+		if (!serial_readable(obj)) {
+			continue;
+		}
+
+		UART_CharGet(UARTx, (u8 *)prxbuf);
+		prxbuf++;
+		cnt++;
 	}
 
 	return cnt;
@@ -1112,20 +1112,18 @@ int32_t serial_send_blocked(serial_t *obj, char *ptxbuf, uint32_t len, uint32_t 
 	uint32_t startcount = SYSTIMER_TickGet();
 
 	obj->tx_len = len;
-	while (1) {
-		while (!serial_writable(obj));
-		UART_CharPut(UARTx, *ptxbuf);
-
-		ptxbuf++;
-		cnt++;
-
-		if (cnt == len) {
-			break;
-		}
-
+	while (cnt < len) {
 		if (SYSTIMER_GetPassTime(startcount) > timeout_ms) {
 			break;
 		}
+
+		if (!serial_writable(obj)) {
+			continue;
+		}
+
+		UART_CharPut(UARTx, *ptxbuf);
+		ptxbuf++;
+		cnt++;
 	}
 
 	return cnt;

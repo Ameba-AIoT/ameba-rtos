@@ -55,7 +55,7 @@ void IPC_SetTxThreshold(IPC_TypeDef *IPCx, u32 threshold)
   * @param  IPCx IPC device pointer, which can be any IPCx_DEV defined in Peripheral Declarations.
   * @param  timeout If the number of data in fifo is below the threshold for a period longer than that timeout, an interrupt will be triggered
   */
-void IPC_SetTxtTimeout(IPC_TypeDef *IPCx, u32 timeout)
+void IPC_SetTxTimeout(IPC_TypeDef *IPCx, u32 timeout)
 {
 	u32 Temp;
 

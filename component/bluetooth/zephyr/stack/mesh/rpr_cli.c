@@ -66,6 +66,10 @@ static void link_report(struct bt_mesh_rpr_cli *cli,
 		 * protocol timeout is not. Use default provisioning protocol timeout.
 		 */
 		cli->link.time = PROTOCOL_TIMEOUT_SEC;
+#if ZEPHYR_RTK_PATCH
+		/* Re-arm now: the Invite may come long after the link is opened, the timer is still the open-link one */
+		k_work_reschedule(&cli->link.timeout, K_SECONDS(cli->link.time));
+#endif
 		return;
 	}
 
@@ -366,6 +370,17 @@ static void link_timeout(struct k_work *work)
 
 	if (bearer.link != BEARER_LINK_IDLE) {
 		LOG_DBG("");
+#if ZEPHYR_RTK_PATCH
+		/* Tell the server, otherwise it keeps the link Active and answers the next Link Open with it */
+		if (cli->link.state == BT_MESH_RPR_LINK_ACTIVE) {
+			struct bt_mesh_msg_ctx ctx = LINK_CTX(&cli->link.srv, false);
+
+			BT_MESH_MODEL_BUF_DEFINE(buf, RPR_OP_LINK_CLOSE, 1);
+			bt_mesh_model_msg_init(&buf, RPR_OP_LINK_CLOSE);
+			net_buf_simple_add_u8(&buf, PROV_BEARER_LINK_STATUS_FAIL);
+			(void)bt_mesh_model_send(cli->mod, &ctx, &buf, NULL, NULL);
+		}
+#endif
 		link_closed(cli, BT_MESH_RPR_ERR_LINK_CLOSED_BY_CLIENT);
 	}
 }

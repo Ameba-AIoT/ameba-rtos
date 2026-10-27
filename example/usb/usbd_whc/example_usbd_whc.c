@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/* Includes ------------------------------------------------------------------ */
+/* Includes ------------------------------------------------------------------*/
 
 #include <platform_autoconf.h>
 #include "usbd_whc.h"
@@ -65,10 +65,10 @@ static void whc_cb_transmitted(usbd_whc_ep_t *in_ep, u8 status);
 static void whc_cb_status_changed(u8 old_status, u8 status);
 
 /* Private variables ---------------------------------------------------------*/
+
 static const char *const TAG = "WHC";
 
 static const usbd_config_t whc_cfg = {
-	.speed = USB_SPEED_HIGH,
 	.isr_priority = INT_PRI_MIDDLE,
 #if defined(CONFIG_AMEBAGREEN2)
 #ifdef CONFIG_WHC_ETH
@@ -109,7 +109,7 @@ static rtos_sema_t whc_eth_bulk_in_sema;
 #endif
 
 #if WHC_HOTPLUG
-static u8 whc_attach_status;
+static __IO u8 whc_attach_status;
 static rtos_sema_t whc_attach_status_changed_sema;
 /* Raised by the hotplug thread when the stack can not be recovered: the bulk IN
    threads leave their loops so the semaphores can be freed safely. */
@@ -123,6 +123,8 @@ static rtos_task_t whc_bt_bulk_in_task;
 #ifdef CONFIG_WHC_ETH
 static rtos_task_t whc_eth_bulk_in_task;
 #endif
+
+/* Exported variables --------------------------------------------------------*/
 
 /* Private functions ---------------------------------------------------------*/
 
@@ -267,7 +269,8 @@ static int whc_cb_setup(usb_setup_req_t *req, u8 *buf)
 	UNUSED(req);
 	UNUSED(buf);
 
-	return HAL_OK;
+	/* Unsupported: let the class STALL EP0 as per USB 2.0 9.2.7 */
+	return HAL_ERR_PARA;
 }
 
 static int whc_wifi_init(void)
@@ -292,7 +295,7 @@ static int whc_wifi_init(void)
 	ep->buf = (u8 *)usb_os_malloc(ep->buf_len);
 	if (ep->buf == NULL) {
 		ret = HAL_ERR_MEM;
-		goto wifi_init_clean_ep4_bulk_in_buf_exit;
+		goto wifi_init_clean_bulk_in_buf_exit;
 	}
 
 	ep_num = USB_EP_NUM(USBD_WHC_WIFI_EP_BULK_OUT_2);
@@ -301,7 +304,7 @@ static int whc_wifi_init(void)
 	ep->buf = (u8 *)usb_os_malloc(ep->buf_len);
 	if (ep->buf == NULL) {
 		ret = HAL_ERR_MEM;
-		goto wifi_init_clean_ep5_bulk_out_buf_exit;
+		goto wifi_init_clean_bulk_out_1_buf_exit;
 	}
 
 	ep_num = USB_EP_NUM(USBD_WHC_WIFI_EP_BULK_OUT_3);
@@ -310,22 +313,22 @@ static int whc_wifi_init(void)
 	ep->buf = (u8 *)usb_os_malloc(ep->buf_len);
 	if (ep->buf == NULL) {
 		ret = HAL_ERR_MEM;
-		goto wifi_init_clean_ep6_bulk_out_buf_exit;
+		goto wifi_init_clean_bulk_out_2_buf_exit;
 	}
 
 	return HAL_OK;
 
-wifi_init_clean_ep6_bulk_out_buf_exit:
+wifi_init_clean_bulk_out_2_buf_exit:
 	ep = &iapp->out_ep[USB_EP_NUM(USBD_WHC_WIFI_EP_BULK_OUT_2)];
 	usb_os_mfree(ep->buf);
 	ep->buf = NULL;
 
-wifi_init_clean_ep5_bulk_out_buf_exit:
+wifi_init_clean_bulk_out_1_buf_exit:
 	ep = &iapp->out_ep[USB_EP_NUM(USBD_WHC_WIFI_EP_BULK_OUT_1)];
 	usb_os_mfree(ep->buf);
 	ep->buf = NULL;
 
-wifi_init_clean_ep4_bulk_in_buf_exit:
+wifi_init_clean_bulk_in_buf_exit:
 	ep = &iapp->in_ep[USB_EP_NUM(USBD_WHC_WIFI_EP_BULK_IN)];
 	usb_os_mfree(ep->buf);
 	ep->buf = NULL;
@@ -357,12 +360,12 @@ static int whc_eth_init(void)
 	ep->buf = (u8 *)usb_os_malloc(ep->buf_len);
 	if (ep->buf == NULL) {
 		ret = HAL_ERR_MEM;
-		goto eth_init_clean_ep6_bulk_in_buf_exit;
+		goto eth_init_clean_bulk_in_buf_exit;
 	}
 
 	return HAL_OK;
 
-eth_init_clean_ep6_bulk_in_buf_exit:
+eth_init_clean_bulk_in_buf_exit:
 	ep = &iapp->in_ep[USB_EP_NUM(USBD_WHC_ETH_EP_BULK_IN)];
 	usb_os_mfree(ep->buf);
 	ep->buf = NULL;
@@ -394,7 +397,7 @@ static int whc_bt_init(void)
 	ep->buf = (u8 *)usb_os_malloc(ep->buf_len);
 	if (ep->buf == NULL) {
 		ret = HAL_ERR_MEM;
-		goto bt_init_clean_ep1_intr_in_buf_exit;
+		goto bt_init_clean_intr_in_buf_exit;
 	}
 
 	ep_num = USB_EP_NUM(USBD_WHC_BT_EP_BULK_OUT);
@@ -403,17 +406,17 @@ static int whc_bt_init(void)
 	ep->buf = (u8 *)usb_os_malloc(ep->buf_len);
 	if (ep->buf == NULL) {
 		ret = HAL_ERR_MEM;
-		goto bt_init_clean_ep2_bulk_in_buf_exit;
+		goto bt_init_clean_bulk_in_buf_exit;
 	}
 
 	return HAL_OK;
 
-bt_init_clean_ep2_bulk_in_buf_exit:
+bt_init_clean_bulk_in_buf_exit:
 	ep = &iapp->in_ep[USB_EP_NUM(USBD_WHC_BT_EP_BULK_IN)];
 	usb_os_mfree(ep->buf);
 	ep->buf = NULL;
 
-bt_init_clean_ep1_intr_in_buf_exit:
+bt_init_clean_intr_in_buf_exit:
 	ep = &iapp->in_ep[USB_EP_NUM(USBD_WHC_BT_EP_INTR_IN)];
 	usb_os_mfree(ep->buf);
 	ep->buf = NULL;
@@ -567,10 +570,10 @@ static int whc_cb_received(usbd_whc_ep_t *out_ep, u32 len)
 		usbd_whc_receive_data(USBD_WHC_WIFI_EP_BULK_OUT_1, ep->xfer_buf, ep->xfer_len, NULL);
 		break;
 	case USBD_WHC_WIFI_EP_BULK_OUT_2:
-		// TBD
-		break;
 	case USBD_WHC_WIFI_EP_BULK_OUT_3:
-		// TBD
+		/* Sink only: the single WiFi BULK IN loopback is owned by OUT_1. Re-arm at once,
+		 * the framework auto re-arm excludes these EPs */
+		usbd_whc_receive_data(ep->info.addr, ep->xfer_buf, ep->xfer_len, NULL);
 		break;
 #ifdef CONFIG_WHC_ETH
 	case USBD_WHC_ETH_EP_BULK_OUT:
@@ -841,7 +844,7 @@ static void example_usbd_whc_thread(void *param)
 		goto clear_bt_bulk_in_task;
 #endif
 	}
-#if defined(CONFIG_SMP)
+#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
 	/* C-2: the USB OTG ISR is delivered on CPU0 (GIC ITARGETSR pins every SPI to core 0).
 	   Pinning the hotplug/deinit thread to CPU0 puts it on the same core as the ISR,
 	   so deinit's local interrupt disable is meaningful again under SMP. The wifi/bt/eth
@@ -852,8 +855,6 @@ static void example_usbd_whc_thread(void *param)
 #endif // WHC_HOTPLUG
 
 	rtos_time_delay_ms(100);
-
-	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD WHC demo start\n");
 
 	rtos_task_delete(NULL);
 
@@ -880,7 +881,7 @@ clear_usb_driver_exit:
 	usbd_deinit();
 
 exit:
-	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD WHC demo stop\n");
+	RTK_LOGS(TAG, RTK_LOG_ERROR, "USBD WHC demo aborted\n");
 	whc_free_resource();
 
 	rtos_task_delete(NULL);
@@ -892,6 +893,8 @@ void example_usbd_whc(void)
 {
 	int ret;
 	rtos_task_t task;
+
+	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD WHC demo start\n");
 
 	ret = rtos_task_create(&task, "usbd_whc_thread", example_usbd_whc_thread, NULL,
 						   WHC_INIT_THREAD_STACK_SIZE, WHC_INIT_THREAD_PRIORITY);

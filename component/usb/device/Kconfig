@@ -7,22 +7,6 @@ config USBD_COMPOSITE_MENU
       Composite Device — combine multiple class functions into one USB device.
       Select one or more class options below to build together.
 
-config USBD_SELF_POWERED
-    bool "Self-powered device"
-    default n
-    help
-      Set bmAttributes bit 6 (Self-powered) in Configuration Descriptor
-      and GET_STATUS response.
-
-      If not selected, the device defaults to bus-powered mode.
-
-config USBD_REMOTE_WAKEUP_EN
-    bool "Remote wakeup enable"
-    default n
-    help
-      Set bmAttributes bit 5 (Remote Wakeup) in Configuration Descriptor.
-      When enabled, the device can signal remote wakeup to the host.
-
 comment "USB Device Class Selection"
 
 config USBD_CDC_ACM_MENU
@@ -56,8 +40,8 @@ config USBD_HID_MENU
                 bool "Mouse"
             config USBD_HID_KEYBOARD
                 bool "Keyboard"
-            config USBD_HID_BIDIR
-                bool "Vendor bidirectional"
+            config USBD_HID_VENDOR
+                bool "Vendor"
                 depends on USBD_COMPOSITE_MENU
         endchoice
     endif
@@ -73,19 +57,34 @@ config USBD_MSC_MENU
     if USBD_MSC_MENU
         choice
             prompt "Select storage media"
-            default USBD_MSC_SD_MODE
-            config USBD_MSC_RAM_DISK
-                bool "RAM"
-            config USBD_MSC_SD_MODE
-                bool "SD Card (SD mode)"
-                depends on SUPPORT_SDIOH
+            default USBD_MSC_SD_CARD
+            config USBD_MSC_FLASH
+                bool "FLASH (on-chip)"
+                depends on VFS_MENU
                 select VFS_FATFS_INCLUDED if WHC_HOST || WHC_NONE
-                select FATFS_SD_MODE if WHC_HOST || WHC_NONE
             config USBD_MSC_SECOND_FLASH
-                bool "Second FLASH"
-                depends on SUPPORT_USBD_MSC_SECOND_FLASH
+                bool "Second FLASH (NOR)"
+                depends on VFS_MENU
                 select VFS_FATFS_INCLUDED if WHC_HOST || WHC_NONE
-                select FATFS_SECOND_FLASH if WHC_HOST || WHC_NONE
+                select VFS_SECOND_FLASH if WHC_HOST || WHC_NONE
+                help
+                  Needs a NOR second flash: keep "Second flash is external SPI NAND"
+                  unchecked under CONFIG File System. A NAND selection fails the build.
+            config USBD_MSC_SD_CARD
+                bool "SD card, SDIO mode"
+                depends on SUPPORT_SDIOH && VFS_MENU
+                select VFS_FATFS_INCLUDED if WHC_HOST || WHC_NONE
+                select VFS_SD_CARD if WHC_HOST || WHC_NONE
+            config USBD_MSC_SD_SPI
+                bool "SD card, SPI mode"
+                depends on VFS_MENU
+                select VFS_FATFS_INCLUDED if WHC_HOST || WHC_NONE
+                select VFS_SD_SPI if WHC_HOST || WHC_NONE
+            config USBD_MSC_RAM
+                bool "RAM disk"
+                depends on VFS_MENU
+                select VFS_FATFS_INCLUDED if WHC_HOST || WHC_NONE
+                select VFS_RAM if WHC_HOST || WHC_NONE
         endchoice
     endif
 
@@ -105,6 +104,54 @@ config USBD_UAC_MENU
             select USBD_UAC2 if WHC_HOST || WHC_NONE
     endchoice
 
+    if USBD_UAC_MENU
+        choice
+            prompt "Playback max channels"
+            default USBD_UAC_OUT_CH_2
+            help
+              One streaming alt setting is declared per channel count from 2 up to this value.
+              The ISOC OUT ring is sized for it, set it to the channels the product can play.
+              Full Speed carries 48 kHz only if channels x bytes per sample <= 20.
+            config USBD_UAC_OUT_CH_2
+                bool "2"
+            config USBD_UAC_OUT_CH_4
+                bool "4"
+            config USBD_UAC_OUT_CH_6
+                bool "6"
+            config USBD_UAC_OUT_CH_8
+                bool "8"
+        endchoice
+
+        choice
+            prompt "Playback bit width"
+            default USBD_UAC_OUT_BIT_16
+            help
+              Subslot size declared by every playback alt setting. AmebaSmart cannot play 32-bit.
+            config USBD_UAC_OUT_BIT_16
+                bool "16-bit"
+            config USBD_UAC_OUT_BIT_24
+                bool "24-bit"
+            config USBD_UAC_OUT_BIT_32
+                bool "32-bit"
+        endchoice
+
+        choice
+            prompt "Playback max sampling rate"
+            depends on USBD_UAC2_MENU
+            default USBD_UAC_OUT_FREQ_48K
+            help
+              The clock RANGE lists 44.1 kHz up to this rate. A Full-Speed connection of an HS-capable
+              SoC declares only the rates that fit Full Speed. The ring grows with the rate, e.g.
+              about 4.5 KB at 2ch/16-bit/48 kHz and 16 KB at 192 kHz on High Speed.
+            config USBD_UAC_OUT_FREQ_48K
+                bool "48 kHz"
+            config USBD_UAC_OUT_FREQ_96K
+                bool "96 kHz"
+            config USBD_UAC_OUT_FREQ_192K
+                bool "192 kHz"
+        endchoice
+    endif
+
 config USBD_VENDOR_MENU
     bool "VENDOR"
     select USBD_VENDOR if WHC_HOST || WHC_NONE
@@ -112,6 +159,35 @@ config USBD_VENDOR_MENU
 config USBD_DFU_MENU
     bool "DFU"
     select USBD_DFU if WHC_HOST || WHC_NONE
+    if USBD_DFU_MENU
+        config USBD_DFU_WILL_DETACH
+            bool "Device generates its own detach after DFU_DETACH"
+            default y
+            help
+              Sets bmAttributes bit 3 (bitWillDetach, Ref DFU 1.1 4.1.3).
+              Y: the device toggles its own D+ pull-up after DFU_DETACH and the host must NOT
+              issue a USB Reset; no detach timer is built.
+              N: the device waits for the host to issue a USB Reset within wDetachTimeOut; a
+              one-shot detach timer reverts to Run-Time mode if the reset never arrives.
+
+        config USBD_DFU_MANIFESTATION_TOLERANT
+            bool "Tolerate further operations after manifestation"
+            default y
+            help
+              Sets bmAttributes bit 2 (bitManifestationTolerant, Ref DFU 1.1 4.1.3).
+              Y: the device returns to dfuIDLE right after manifest, so the host may continue
+              with further operations such as an UPLOAD verify.
+              N: the device enters dfuMANIFEST-WAIT-RESET and the host must issue a USB bus
+              reset to activate the new firmware.
+
+        config USBD_DFU_CAN_UPLOAD
+            bool "Support DFU_UPLOAD"
+            default y
+            help
+              Sets bmAttributes bit 1 (bitCanUpload, Ref DFU 1.1 4.1.3).
+              Y: DFU_UPLOAD is accepted and the application shall provide the read callback.
+              N: every DFU_UPLOAD is stalled into dfuERROR, saving the upload state and code.
+    endif
 
 config USBD_UVC_MENU
     bool "UVC"

@@ -3,6 +3,7 @@
 #include "basic_types.h"
 #include "ftl.h"
 
+#ifdef CONFIG_VFS_ENABLED
 #include "vfs.h"
 #include "lfs.h"
 
@@ -291,3 +292,33 @@ uint32_t vfs_ftl_init(void)
 
 	return 0;
 }
+
+#else /* !CONFIG_VFS_ENABLED: VFS disabled in menuconfig, BT bond info is not persisted */
+
+extern void vfs_stub_log(void);
+
+uint32_t ftl_save_to_storage(u8 *pdata_tmp, uint16_t offset, uint16_t size)
+{
+	(void)pdata_tmp;
+	(void)offset;
+	(void)size;
+	vfs_stub_log();
+	return FTL_WRITE_ERROR_NOT_INIT;
+}
+
+uint32_t ftl_load_from_storage(void *pdata_tmp, uint16_t offset, uint16_t size)
+{
+	(void)pdata_tmp;
+	(void)offset;
+	(void)size;
+	vfs_stub_log();
+	return FTL_READ_ERROR_NOT_INIT;
+}
+
+uint32_t vfs_ftl_init(void)
+{
+	vfs_stub_log();
+	return FTL_INIT_ERROR_ERASE_FAIL;
+}
+
+#endif /* CONFIG_VFS_ENABLED */

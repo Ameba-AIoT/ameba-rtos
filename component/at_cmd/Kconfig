@@ -16,6 +16,8 @@ menu "CONFIG SHELL"
                     bool "Manual Test Mode"
                 config ATCMD_HOST_CONTROL
                     bool "Host Control Mode"
+                    # interface/pin/baudrate config, certificates and AT+FS all live on VFS
+                    depends on VFS_MENU
                     select LONGER_CMD
                     select USB_OTG_EN_MENU if SUPPORT_USB
                     select USB_DEVICE_EN if !USB_HOST_EN_MENU
@@ -51,10 +53,13 @@ menu "CONFIG SHELL"
                 config ATCMD_OTA
                     bool "Enable OTA"
                     default n
-            endif
-        endif
-        config ATCMD_SECURE
-            bool "Enable ATCMD SECURE"
-            default n
-    endif
+            endif # !ATCMD_MANUAL_TEST
+            config ATCMD_SECURE
+                bool "Enable ATCMD SECURE"
+                default n
+        endif # SUPPORT_ATCMD
+    endif # SHELL
 endmenu
+
+config MP_INCLUDED
+    select ATCMD_SECURE if SUPPORT_ATCMD

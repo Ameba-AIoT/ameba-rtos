@@ -279,9 +279,11 @@ void SPDIO_TxBd_DataReady_DeviceRx(SDIO_TypeDef *SDIO, PSPDIO_ADAPTER pSPDIODev,
 	PINIC_TX_DESC pTxDesc;
 	volatile u16 TxBDWPtr = SDIO_TXBD_WPTR_Get(SDIO);
 	s8 ret = RTK_FAIL;
-	u32 RxDataAddr;
-	u8 *read_buf = NULL;
-	u32 pkt_len = 0;
+	struct spdio_buf_t *cb_buf;
+	u8 *pkt_data;
+	u32 pkt_len;
+	u8 pkt_type;
+	u8 valid;
 
 	assert_param(IS_SDIO_DEVICE(SDIO));
 
@@ -296,42 +298,38 @@ void SPDIO_TxBd_DataReady_DeviceRx(SDIO_TypeDef *SDIO, PSPDIO_ADAPTER pSPDIODev,
 		pTxBdHdl = pSPDIODev->pTXBDHdl + pSPDIODev->TXBDRPtr;
 		pTXBD = pTxBdHdl->pTXBD;
 
+		pkt_data = (u8 *)(pTXBD->Address);
+		DCache_Invalidate((u32)pkt_data, pSPDIODev->device_rx_bufsz);
+		cb_buf = NULL;
+		pkt_type = 0;
+		valid = TRUE;
+
 		if (SDIO_WIFI == SDIO) {
-			pTxDesc = (PINIC_TX_DESC)(pTXBD->Address);
-			DCache_Invalidate((u32)pTxDesc, sizeof(INIC_TX_DESC));
-			assert_param(pTxDesc->txpktsize != 0); /* TRUE When SDIO is Non-Secure Master */
+			pTxDesc = (PINIC_TX_DESC)pkt_data;
 
 			RTK_LOGS(TAG, RTK_LOG_DEBUG, "SPDIO_DeviceRx: PktSz=%d Offset=%d\n", pTxDesc->txpktsize, pTxDesc->offset);
 
-			if ((pTxDesc->txpktsize + pTxDesc->offset) <= pSPDIODev->device_rx_bufsz) {
+			if (((pTxDesc->txpktsize + pTxDesc->offset) <= pSPDIODev->device_rx_bufsz) && pTxDesc->txpktsize != 0) {
 				// use the callback function to forward this packet to target(WLan) driver
-				RxDataAddr = pTXBD->Address + pTxDesc->offset;
-				DCache_Invalidate(RxDataAddr, pTxDesc->txpktsize);
-				ret = spdio_device_rx_done_cb(pSPDIODev, pTxBdHdl->dev_rx_buf, (u8 *)(RxDataAddr), pTxDesc->txpktsize, pTxDesc->type);
-				if (ret == RTK_FAIL) {
-					pSPDIODev->WaitForDeviceRxbuf = TRUE;
-					RTK_LOGS(TAG, RTK_LOG_WARN, "spdio_device_rx_done_cb return fail!\n");
-				} else {
-					pSPDIODev->WaitForDeviceRxbuf = FALSE;
-					// No need to change the device rx buffer address.
-					DCache_CleanInvalidate(pTxBdHdl->dev_rx_buf->buf_addr, pTxBdHdl->dev_rx_buf->buf_size);
-					pTXBD->Address = pTxBdHdl->dev_rx_buf->buf_addr;
-					DCache_Clean((u32)pTXBD, sizeof(SPDIO_TX_BD));
-				}
+				cb_buf = pTxBdHdl->dev_rx_buf;
+				pkt_data += pTxDesc->offset;
+				pkt_len = pTxDesc->txpktsize;
+				pkt_type = pTxDesc->type;
 			} else {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid TxDesc packet, Just drop it\n");
 				ret = RTK_SUCCESS; // pretend we call the TX callback OK
+				valid = FALSE;
 			}
 		} else {
-			read_buf = (u8 *)(pTXBD->Address);
-			DCache_Invalidate((u32)read_buf, pSPDIODev->device_rx_bufsz);
-			pkt_len = *((u16 *)read_buf);
+			pkt_len = *((u16 *)pkt_data);
 
 			if (pkt_len > pSPDIODev->device_rx_bufsz) {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "SDIO TX packet size is over tx buf size\n");
 			}
+		}
 
-			ret = spdio_device_rx_done_cb(pSPDIODev, NULL, read_buf, pkt_len, NULL);
+		if (valid) {
+			ret = spdio_device_rx_done_cb(pSPDIODev, cb_buf, pkt_data, pkt_len, pkt_type);
 			if (ret == RTK_FAIL) {
 				pSPDIODev->WaitForDeviceRxbuf = TRUE;
 				RTK_LOGS(TAG, RTK_LOG_WARN, "spdio_device_rx_done_cb return fail!\n");

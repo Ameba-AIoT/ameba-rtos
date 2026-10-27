@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/* Includes ------------------------------------------------------------------ */
+/* Includes ------------------------------------------------------------------*/
 
 #include <platform_autoconf.h>
 #include "platform_stdlib.h"
@@ -14,18 +14,40 @@
 
 /* Private defines -----------------------------------------------------------*/
 
-static const char *const TAG = "DFU";
-
 /* Fixed firmware size for DFU download/upload test */
 #define USBH_DFU_DEMO_FW_SIZE                    2048U
+
+/* Budget for a device to attach, and for one download/upload run to report back.
+   Bounded rather than RTOS_SEMA_MAX_COUNT so a device that never shows up, or one
+   unplugged mid-transfer whose done callback therefore never fires, still lets the
+   example tear the stack down and exit instead of parking forever. */
+#define USBH_DFU_ATTACH_TIMEOUT_MS               10000U
+#define USBH_DFU_XFER_TIMEOUT_MS                 30000U
 
 // Thread priorities
 #define USBH_DFU_INIT_THREAD_PRIORITY             1
 #define USBH_DFU_MAIN_TASK_PRIORITY               5
 // Thread stack sizes
 #define USBH_DFU_INIT_THREAD_STACK_SIZE           768U
-#define USBH_DFU_MAIN_TASK_STACK_SIZE             768U
+#define USBH_DFU_MAIN_TASK_STACK_SIZE             1024U
+
+/* Private types -------------------------------------------------------------*/
+
+/* Private macros ------------------------------------------------------------*/
+
+/* Private function prototypes -----------------------------------------------*/
+
+static void dfu_cb_attached(void);
+static void dfu_cb_detached(void);
+static int dfu_cb_get_block(u16 block_num, u8 *buf, u32 max_len);
+static void dfu_cb_download_done(int status);
+static int dfu_cb_recv_block(u16 block_num, u8 *buf, u32 len);
+static void dfu_cb_upload_done(int status);
+static void dfu_cb_process(usb_host_t *host, u8 msg);
+
 /* Private variables ---------------------------------------------------------*/
+
+static const char *const TAG = "DFU";
 
 static const usbh_config_t usbh_cfg = {
 	.speed                = USB_SPEED_HIGH,
@@ -58,30 +80,58 @@ static const usbh_config_t usbh_cfg = {
 
 static u8  dfu_demo_fw[USBH_DFU_DEMO_FW_SIZE];
 static u32 dfu_demo_fw_size;
+/* Upload block size, learned from block 0. Blocks are wTransferSize bytes, which the device
+   chooses and may be smaller than USBH_DFU_DEFAULT_XFER_SIZE; only the last one is short. */
+static u32 dfu_demo_up_blk_size;
 
 static rtos_sema_t dfu_attach_sema;
 static rtos_sema_t dfu_detach_sema;
 static rtos_sema_t dfu_download_sema;
 static rtos_sema_t dfu_upload_sema;
-static int         dfu_download_result;
-static int         dfu_upload_result;
+/* Written by the class callbacks, read by the test thread, possibly on another core */
+static volatile int dfu_download_result;
+static volatile int dfu_upload_result;
+/* Set by recv_block on a block that does not match the downloaded image */
+static volatile u8 dfu_verify_err;
+
+static const usbh_dfu_cb_t dfu_cb = {
+	.attached        = dfu_cb_attached,
+	.detached        = dfu_cb_detached,
+	.get_block     = dfu_cb_get_block,
+	.download_done = dfu_cb_download_done,
+	.recv_block    = dfu_cb_recv_block,
+	.upload_done   = dfu_cb_upload_done,
+};
+
+static const usbh_dfu_config_t dfu_class_cfg = {
+	/* xfer_size left 0 takes the class default. */
+};
+
+static const usbh_user_cb_t usbh_usr_cb = {
+	.process = dfu_cb_process
+};
+
+/* Exported variables --------------------------------------------------------*/
 
 /* Private functions ---------------------------------------------------------*/
+
 static void dfu_cb_attached(void)
 {
-	RTK_LOGS(TAG, RTK_LOG_INFO, "DFU device attached\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "ATTACH\n");
 	rtos_sema_give(dfu_attach_sema);
 }
 
 static void dfu_cb_detached(void)
 {
-	RTK_LOGS(TAG, RTK_LOG_INFO, "DFU device detached\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "DETACH\n");
 	rtos_sema_give(dfu_detach_sema);
 }
 
 static int dfu_cb_get_block(u16 block_num, u8 *buf, u32 max_len)
 {
-	u32 offset = (u32)block_num * USBH_DFU_XFER_SIZE;
+	/* max_len is the negotiated wTransferSize, the same for every block of a download, and
+	   every block but the last is full, so it also gives the image offset. */
+	u32 offset = (u32)block_num * max_len;
 	u32 remaining;
 
 	if (offset >= dfu_demo_fw_size) {
@@ -110,16 +160,22 @@ static void dfu_cb_download_done(int status)
 
 static int dfu_cb_recv_block(u16 block_num, u8 *buf, u32 len)
 {
-	u32 offset = (u32)block_num * USBH_DFU_XFER_SIZE;
+	u32 offset;
+
+	/* A short block 0 ends the upload, so no later block depends on its length. */
+	if (block_num == 0U) {
+		dfu_demo_up_blk_size = len;
+	}
+	offset = (u32)block_num * dfu_demo_up_blk_size;
 
 	RTK_LOGS(TAG, RTK_LOG_DEBUG, "Recv blk %u len %u\n", block_num, len);
-	/* Verify the uploaded data matches what was downloaded */
-	if (offset + len <= dfu_demo_fw_size) {
-		if (memcmp(buf, dfu_demo_fw + offset, len) != 0) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "Verify blk %u FAIL \n", block_num);
-		} else {
-			RTK_LOGS(TAG, RTK_LOG_INFO, "Verify blk %u OK \n", block_num);
-		}
+	/* Verify the uploaded data matches what was downloaded. Data past the end of the image
+	   is a mismatch too: the device returned more than it was given. */
+	if ((offset + len > dfu_demo_fw_size) || (memcmp(buf, dfu_demo_fw + offset, len) != 0)) {
+		dfu_verify_err = 1U;
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Verify blk %u FAIL\n", block_num);
+	} else {
+		RTK_LOGS(TAG, RTK_LOG_INFO, "Verify blk %u OK\n", block_num);
 	}
 	return HAL_OK;
 }
@@ -135,15 +191,6 @@ static void dfu_cb_upload_done(int status)
 	rtos_sema_give(dfu_upload_sema);
 }
 
-static const usbh_dfu_cb_t dfu_cb = {
-	.attached        = dfu_cb_attached,
-	.detached        = dfu_cb_detached,
-	.get_block     = dfu_cb_get_block,
-	.download_done = dfu_cb_download_done,
-	.recv_block    = dfu_cb_recv_block,
-	.upload_done   = dfu_cb_upload_done,
-};
-
 static void dfu_cb_process(usb_host_t *host, u8 msg)
 {
 	UNUSED(host);
@@ -157,10 +204,6 @@ static void dfu_cb_process(usb_host_t *host, u8 msg)
 		break;
 	}
 }
-
-static const usbh_user_cb_t usbh_usr_cb = {
-	.process = dfu_cb_process
-};
 
 static void example_usbh_dfu_thread(void *param)
 {
@@ -207,7 +250,7 @@ static void example_usbh_dfu_thread(void *param)
 		goto exit;
 	}
 
-	ret = usbh_dfu_init(&dfu_cb);
+	ret = usbh_dfu_init(&dfu_cb, &dfu_class_cfg);
 	if (ret != HAL_OK) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "DFU init fail\n");
 		usbh_deinit();
@@ -217,10 +260,12 @@ static void example_usbh_dfu_thread(void *param)
 	/* All class drivers registered; start USB TRX so enumeration can run. */
 	usbh_start();
 
-	RTK_LOGS(TAG, RTK_LOG_INFO, "USBH DFU demo start\n");
-
-	/* Wait for DFU device to attach */
-	if (rtos_sema_take(dfu_attach_sema, RTOS_SEMA_MAX_COUNT) != RTK_SUCCESS) {
+	/* Wait for DFU device to attach. Bounded: with no device present there is
+	 * nothing to test, and this thread owns the teardown below, so it must stay
+	 * reachable rather than block forever. */
+	if (rtos_sema_take(dfu_attach_sema, USBH_DFU_ATTACH_TIMEOUT_MS) != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Wait attach timeout\n");
+		ret = HAL_TIMEOUT;
 		goto deinit;
 	}
 
@@ -228,6 +273,7 @@ static void example_usbh_dfu_thread(void *param)
 	attr = usbh_dfu_get_attr();
 	if (!(attr & USB_DFU_ATTR_CAN_DNLOAD)) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Device does not support DFU_DNLOAD\n");
+		ret = HAL_ERR_PARA;
 		goto deinit;
 	}
 
@@ -235,8 +281,13 @@ static void example_usbh_dfu_thread(void *param)
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Downloading %u bytes...\n", dfu_demo_fw_size);
 	ret = usbh_dfu_download();
 	if (ret == HAL_OK) {
-		rtos_sema_take(dfu_download_sema, RTOS_SEMA_MAX_COUNT);
-		ret = dfu_download_result;
+		/* Bounded: a device unplugged mid-download never calls download_done. */
+		if (rtos_sema_take(dfu_download_sema, USBH_DFU_XFER_TIMEOUT_MS) == RTK_SUCCESS) {
+			ret = dfu_download_result;
+		} else {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Download timeout\n");
+			ret = HAL_TIMEOUT;
+		}
 	}
 	if (ret != HAL_OK) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Download fail: %d, skip upload\n", ret);
@@ -249,11 +300,22 @@ static void example_usbh_dfu_thread(void *param)
 	 * MANIFEST-WAIT-RESET and detaches, upload not possible). */
 	if ((attr & USB_DFU_ATTR_MANIFEST_TOL) && (attr & USB_DFU_ATTR_CAN_UPLOAD)) {
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Uploading for verification...\n");
+		dfu_verify_err = 0U;
 		ret = usbh_dfu_upload();
 		if (ret == HAL_OK) {
-			rtos_sema_take(dfu_upload_sema, RTOS_SEMA_MAX_COUNT);
-			if (dfu_upload_result != HAL_OK) {
+			/* Bounded, see the download wait above. */
+			if (rtos_sema_take(dfu_upload_sema, USBH_DFU_XFER_TIMEOUT_MS) != RTK_SUCCESS) {
+				RTK_LOGS(TAG, RTK_LOG_ERROR, "Upload timeout\n");
+				ret = HAL_TIMEOUT;
+			} else if (dfu_upload_result != HAL_OK) {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "Upload fail: %d\n", dfu_upload_result);
+				ret = dfu_upload_result;
+			} else if (dfu_verify_err != 0U) {
+				/* The transfer itself succeeded, so the class reported OK: only the data differs. */
+				RTK_LOGS(TAG, RTK_LOG_ERROR, "Upload verify fail\n");
+				ret = HAL_ERR_UNKNOWN;
+			} else {
+				/* Upload and verify passed */
 			}
 		} else {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Upload start fail: %d\n", ret);
@@ -263,7 +325,6 @@ static void example_usbh_dfu_thread(void *param)
 				 (attr & USB_DFU_ATTR_CAN_UPLOAD) ? "non-tolerant device" : "no upload support");
 	}
 
-	RTK_LOGS(TAG, RTK_LOG_INFO, "USBH DFU demo stop\n");
 deinit:
 	usbh_stop();
 	usbh_dfu_deinit();
@@ -274,6 +335,12 @@ exit:
 	rtos_sema_delete(dfu_detach_sema);
 	rtos_sema_delete(dfu_download_sema);
 	rtos_sema_delete(dfu_upload_sema);
+	/* One verdict line for every run that printed "demo start", whichever step ended it. */
+	if (ret == HAL_OK) {
+		RTK_LOGS(TAG, RTK_LOG_INFO, "USBH DFU demo done\n");
+	} else {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "USBH DFU demo aborted\n");
+	}
 	rtos_task_delete(NULL);
 }
 
@@ -284,9 +351,22 @@ void example_usbh_dfu(void)
 	int status;
 	rtos_task_t task;
 
+	RTK_LOGS(TAG, RTK_LOG_INFO, "USBH DFU demo start\n");
+
 	status = rtos_task_create(&task, "usbh_dfu_thread", example_usbh_dfu_thread, NULL,
 							  USBH_DFU_INIT_THREAD_STACK_SIZE, USBH_DFU_INIT_THREAD_PRIORITY);
 	if (status != RTK_SUCCESS) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create thread fail\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create USBH DFU thread fail\n");
+		return;
 	}
+#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
+	/* The USB OTG ISR is delivered on CPU0: the GIC pins every SPI to core 0
+	   (ITARGETSR is written to 0x01010101 in arm_gic.c gic_dist_init). This single
+	   thread both drives the transfers and runs the teardown, so pinning it to
+	   CPU0 puts it on the same core as the ISR and makes the local interrupt
+	   disables inside the teardown meaningful again.
+	   No state lock is needed in this example: there is no second thread that
+	   calls the DFU class API, so the teardown can not race a caller. */
+	rtos_task_set_affinity(task, 0);
+#endif
 }

@@ -8,18 +8,23 @@
 #define USB_DFU_H
 
 /* Includes ------------------------------------------------------------------*/
+
 #include "basic_types.h"
 
-/* Exported defines ----------------------------------------------------------*/
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /** @addtogroup USB_Common_API USB Common API
  *  @{
  */
+
+/* Exported defines ----------------------------------------------------------*/
+
 /** @addtogroup USB_Common_Constants USB Common Constants
  *  @{
  */
-
-/** @defgroup USB_DFU_Constants DFU Protocol Constants (USB DFU 1.1)
+/** @defgroup USB_Common_DFU_Constants USB DFU Constants (DFU 1.1)
  *  @brief Common protocol definitions shared by USBD and USBH DFU drivers.
  *  @{
  */
@@ -30,7 +35,8 @@
 #define USB_DFU_PROTOCOL_RUNTIME            0x01U   /**< Run-Time protocol (application running) */
 #define USB_DFU_PROTOCOL_DFU                0x02U   /**< DFU mode protocol */
 
-/* DFU Functional Descriptor ------------------------------------------------*/
+/* DFU Functional Descriptor */
+
 #define USB_DFU_FUNC_DESC_TYPE              0x21U   /**< DFU Functional Descriptor type */
 #define USB_DFU_FUNC_DESC_SIZE              9U      /**< DFU Functional Descriptor size (bytes) */
 
@@ -49,13 +55,31 @@
 #define USB_DFU_REQ_GETSTATE                0x05U   /**< DFU_GETSTATE request */
 #define USB_DFU_REQ_ABORT                   0x06U   /**< DFU_ABORT request */
 
-/* DFU GETSTATUS response packet size ---------------------------------------*/
+/* DFU GETSTATUS response packet size */
+
 #define USB_DFU_STATUS_PKT_SIZE             6U      /**< GETSTATUS response is always 6 bytes */
 
 /* DFU version (DFU 1.1 = 0x0110) -------------------------------------------*/
 #define USB_DFU_BCD_VERSION                 0x0110U /**< BCD-encoded DFU specification version */
 
 /* DFU device state values (DFU 1.1 spec, Table 3-1) ------------------------*/
+
+/** @} End of USB_Common_DFU_Constants group */
+/** @} End of USB_Common_Constants group */
+
+/** @addtogroup USB_Common_Types USB Common Types
+ *  @{
+ */
+/** @defgroup USB_Common_DFU_Types USB DFU Types (DFU 1.1)
+ *  @brief DFU state and status types shared by the USBD and USBH DFU drivers.
+ *  @{
+ */
+
+/** @} End of USB_Common_DFU_Types group */
+/** @} End of USB_Common_Types group */
+
+/* Exported types ------------------------------------------------------------*/
+
 /** @brief DFU device states (DFU 1.1 spec Table 3-1) */
 typedef enum {
 	USB_DFU_STATE_APP_IDLE               = 0U,  /**< Run-Time mode, waiting for DFU_DETACH */
@@ -71,13 +95,6 @@ typedef enum {
 	USB_DFU_STATE_ERROR                  = 10U, /**< Error state */
 } usb_dfu_state_t;
 
-/** @} End of USB_DFU_Constants group */
-/** @} End of USB_Common_Constants group */
-
-/** @addtogroup USB_Common_Types USB Common Types
- *  @{
- */
-
 /**
  * @brief DFU Functional Descriptor (9 bytes, bDescriptorType=0x21).
  *        Matches the USB DFU 1.1 spec §4.1.3 descriptor layout.
@@ -91,7 +108,16 @@ typedef struct {
 	u16 bcdDFUVersion;     /**< BCD-encoded DFU specification release number. */
 } __PACKED usb_dfu_func_desc_t;
 
-/** @} End of USB_Common_Types group */
+/* Exported macros -----------------------------------------------------------*/
+
+/* Exported variables --------------------------------------------------------*/
+
+/* Exported functions --------------------------------------------------------*/
+
 /** @} End of USB_Common_API group */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* USB_DFU_H */

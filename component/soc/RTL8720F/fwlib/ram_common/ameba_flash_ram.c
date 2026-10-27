@@ -14,9 +14,9 @@ static uint32_t PrevIrqStatus = 0;
 #define WRITE_SYNC_CLEAR   0
 #define WRITE_SYNC_LOCK    1
 #define WRITE_SYNC_UNLOCK  2
-#define WRITE_SYNC_PARKED  3	/* SOLO: KM4TZ has parked (off the flash bus), KM4NS may write */
+#define WRITE_SYNC_PARKED  3	/* SOLO: KM55TZ has parked (off the flash bus), KM55NS may write */
 
-#ifdef CONFIG_ARM_CORE_CM4_KM4NS
+#ifdef CONFIG_ARM_CORE_CM55_KM55NS
 static u32 Start_Timer_Cnt = 0;
 static u32 Start_Systick_Cnt = 0;
 
@@ -36,12 +36,12 @@ void FLASH_Write_IPC_Int(void *Data, u32 IrqStatus, u32 ChanNum)
 	DCache_Invalidate((u32)pflag, sizeof(pflag));
 
 	if (*pflag == WRITE_SYNC_LOCK) {
-		/* Km4 in FLASH_Write_Lock, waiting for Km0 to record timer value */
+		/* Km55 in FLASH_Write_Lock, waiting for Km0 to record timer value */
 		Start_Timer_Cnt = SYSTIMER_TickGet();
 		Start_Systick_Cnt = xTaskGetTickCountFromISR();
 		*pflag = WRITE_SYNC_CLEAR;
 	} else if (*pflag == WRITE_SYNC_UNLOCK) {
-		/* Km4 in FLASH_Write_Unlock, waiting for Km0 to compensate systick value */
+		/* Km55 in FLASH_Write_Unlock, waiting for Km0 to compensate systick value */
 		u32 time_pass_ms = SYSTIMER_GetPassTime(Start_Timer_Cnt);
 		u32 End_Systick_Cnt = xTaskGetTickCountFromISR();
 		u32 systick_pass_tick = 0;
@@ -85,18 +85,18 @@ const IPC_INIT_TABLE ipc_flashpg_table[] = {
 };
 
 #ifdef CONFIG_SOLO
-/* SOLO: KM4NS also writes/erases flash directly (iot OTA). As the writer it must
- * keep KM4TZ off the flash bus while KM4NS drives the SPIC in user mode, so
- * KM4NS needs the sender side (NP->AP).
+/* SOLO: KM55NS also writes/erases flash directly (iot OTA). As the writer it must
+ * keep KM55TZ off the flash bus while KM55NS drives the SPIC in user mode, so
+ * KM55NS needs the sender side (NP->AP).
  *
- * KM4TZ is the SPIC owner: when it writes, HW stalls KM4NS XIP fetches. But when
- * KM4NS (non-owner) writes, KM4TZ XIP fetches are NOT stalled and return garbage.
- * So KM4TZ must be actively PARKED (spin in SRAM-resident code, IRQ off) for the
- * whole KM4NS user-mode window. Protocol:
- *   LOCK  : KM4NS sets flag=LOCK, sends 1 IPC, waits until KM4TZ acks flag=PARKED.
- *           Only then does KM4NS enter SPIC user mode and write.
- *   UNLOCK: KM4NS sets flag=UNLOCK directly (KM4TZ is spin-polling it, no 2nd IPC),
- *           waits until KM4TZ finishes tick compensation and sets flag=CLEAR. */
+ * KM55TZ is the SPIC owner: when it writes, HW stalls KM55NS XIP fetches. But when
+ * KM55NS (non-owner) writes, KM55TZ XIP fetches are NOT stalled and return garbage.
+ * So KM55TZ must be actively PARKED (spin in SRAM-resident code, IRQ off) for the
+ * whole KM55NS user-mode window. Protocol:
+ *   LOCK  : KM55NS sets flag=LOCK, sends 1 IPC, waits until KM55TZ acks flag=PARKED.
+ *           Only then does KM55NS enter SPIC user mode and write.
+ *   UNLOCK: KM55NS sets flag=UNLOCK directly (KM55TZ is spin-polling it, no 2nd IPC),
+ *           waits until KM55TZ finishes tick compensation and sets flag=CLEAR. */
 
 SOLO_SHARE_SECTION
 ALIGNMTO(CACHE_LINE_SIZE) static u8 Flash_Sync_Flag[CACHE_LINE_SIZE];
@@ -107,7 +107,7 @@ static void Flash_Write_Lock_IPC(u8 sync_type)
 	DCache_Clean((u32)Flash_Sync_Flag, sizeof(Flash_Sync_Flag));
 
 	if (sync_type == WRITE_SYNC_LOCK) {
-		/* Kick KM4TZ into the park handler, then wait until it is parked. */
+		/* Kick KM55TZ into the park handler, then wait until it is parked. */
 		IPC_MSG_STRUCT ipc_msg_temp;
 		ipc_msg_temp.msg_type = IPC_USER_POINT;
 		ipc_msg_temp.msg = (u32)Flash_Sync_Flag;
@@ -122,7 +122,7 @@ static void Flash_Write_Lock_IPC(u8 sync_type)
 			}
 		}
 	} else {
-		/* UNLOCK: KM4TZ is already spin-polling the flag, no IPC needed. */
+		/* UNLOCK: KM55TZ is already spin-polling the flag, no IPC needed. */
 		while (1) {
 			DCache_Invalidate((u32)Flash_Sync_Flag, sizeof(Flash_Sync_Flag));
 			if (Flash_Sync_Flag[0] == WRITE_SYNC_CLEAR) {
@@ -133,7 +133,7 @@ static void Flash_Write_Lock_IPC(u8 sync_type)
 }
 #endif
 #else
-/* CONFIG_ARM_CORE_CM4_KM4TZ */
+/* CONFIG_ARM_CORE_CM55_KM55TZ */
 #ifdef CONFIG_SOLO
 /* SOLO: SRAM is isolation so put it into share sram. */
 SOLO_SHARE_SECTION
@@ -166,9 +166,9 @@ static void Flash_Write_Lock_IPC(u8 sync_type)
 }
 
 #ifdef CONFIG_SOLO
-/* SOLO: KM4NS writes/erases flash directly (iot OTA). As the peer, KM4TZ must
- * PARK off the flash bus for the whole KM4NS user-mode window, otherwise its XIP
- * fetches return garbage (KM4NS is not the SPIC owner -> no HW stall for KM4TZ).
+/* SOLO: KM55NS writes/erases flash directly (iot OTA). As the peer, KM55TZ must
+ * PARK off the flash bus for the whole KM55NS user-mode window, otherwise its XIP
+ * fetches return garbage (KM55NS is not the SPIC owner -> no HW stall for KM55TZ).
  *
  * The park spin must not fetch from flash, so this handler is placed in SRAM
  * (SRAM_ONLY_TEXT_SECTION) and the spin only uses the inlined DCache_Invalidate.
@@ -204,8 +204,8 @@ void FLASH_Write_IPC_Int(void *Data, u32 IrqStatus, u32 ChanNum)
 
 	u32 prev_irq = irq_disable_save();
 
-	/* Ack: tell KM4NS we are parked. After this KM4NS may switch the SPIC to
-	 * user mode. Every instruction below until KM4NS clears user mode must be
+	/* Ack: tell KM55NS we are parked. After this KM55NS may switch the SPIC to
+	 * user mode. Every instruction below until KM55NS clears user mode must be
 	 * SRAM-resident (this function + inlined DCache ops). */
 	*pflag = WRITE_SYNC_PARKED;
 	DCache_Clean((u32)pflag, CACHE_LINE_SIZE);
@@ -217,12 +217,12 @@ void FLASH_Write_IPC_Int(void *Data, u32 IrqStatus, u32 ChanNum)
 		}
 	}
 
-	/* KM4NS has exited user mode (auto/XIP restored) before setting UNLOCK. */
+	/* KM55NS has exited user mode (auto/XIP restored) before setting UNLOCK. */
 	irq_enable_restore(prev_irq);
 
 	/* Compensate the RTOS tick for the parked interval -- only once the scheduler
-	 * is running. KM4NS can request a park very early (e.g. its wifi init writes
-	 * flash while KM4TZ is still in pre-scheduler boot); at that point the FreeRTOS
+	 * is running. KM55NS can request a park very early (e.g. its wifi init writes
+	 * flash while KM55TZ is still in pre-scheduler boot); at that point the FreeRTOS
 	 * task lists are not initialised, so xTaskIncrementTick would fault. */
 	if (rtos_sched_get_state() != RTOS_SCHED_NOT_STARTED) {
 		u32 time_pass_ms = SYSTIMER_GetPassTime(Start_Timer_Cnt);
@@ -248,7 +248,7 @@ void FLASH_Write_IPC_Int(void *Data, u32 IrqStatus, u32 ChanNum)
 		DCache_Clean((u32)pflag, CACHE_LINE_SIZE);
 		portEND_SWITCHING_ISR(xSwitchRequired);
 	} else {
-		/* Pre-scheduler: no ticks to compensate, just release KM4NS. */
+		/* Pre-scheduler: no ticks to compensate, just release KM55NS. */
 		*pflag = WRITE_SYNC_CLEAR;
 		DCache_Clean((u32)pflag, CACHE_LINE_SIZE);
 	}
@@ -281,11 +281,11 @@ void FLASH_Write_Lock(void)
 	while (IPC_SEMTake(IPC_SEM_FLASH, 1000) != TRUE) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "FLASH_Write_Lock get hw sema fail\n");
 	}
-#ifdef CONFIG_ARM_CORE_CM4_KM4TZ
-	/* Sent IPC to KM4NS */
+#ifdef CONFIG_ARM_CORE_CM55_KM55TZ
+	/* Sent IPC to KM55NS */
 	Flash_Write_Lock_IPC(WRITE_SYNC_LOCK);
-#elif defined(CONFIG_ARM_CORE_CM4_KM4NS) && defined(CONFIG_SOLO)
-	/* SOLO: KM4NS writes flash directly, pause KM4TZ XIP */
+#elif defined(CONFIG_ARM_CORE_CM55_KM55NS) && defined(CONFIG_SOLO)
+	/* SOLO: KM55NS writes flash directly, pause KM55TZ XIP */
 	Flash_Write_Lock_IPC(WRITE_SYNC_LOCK);
 #endif
 	/* disable irq */
@@ -299,11 +299,11 @@ void FLASH_Write_Lock(void)
  */
 void FLASH_Write_Unlock(void)
 {
-#ifdef CONFIG_ARM_CORE_CM4_KM4TZ
-	/* Sent IPC to KM4NS */
+#ifdef CONFIG_ARM_CORE_CM55_KM55TZ
+	/* Sent IPC to KM55NS */
 	Flash_Write_Lock_IPC(WRITE_SYNC_UNLOCK);
-#elif defined(CONFIG_ARM_CORE_CM4_KM4NS) && defined(CONFIG_SOLO)
-	/* SOLO: KM4NS writes flash directly, resume KM4TZ XIP */
+#elif defined(CONFIG_ARM_CORE_CM55_KM55NS) && defined(CONFIG_SOLO)
+	/* SOLO: KM55NS writes flash directly, resume KM55TZ XIP */
 	Flash_Write_Lock_IPC(WRITE_SYNC_UNLOCK);
 #endif
 	/* restore irq */

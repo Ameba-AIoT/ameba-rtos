@@ -22,8 +22,8 @@ u8 WB_WR_INIT_LATENCY_SPEC[8] = {
 	WB_WR_INIT_LATENCY_5CLK,
 	WB_WR_INIT_LATENCY_6CLK,
 	WB_WR_INIT_LATENCY_7CLK,
-	NULL,
-	NULL,
+	0,
+	0,
 	WB_WR_INIT_LATENCY_10CLK
 };
 
@@ -270,8 +270,7 @@ void PSRAM_PHY_Init(PSPHY_InitTypeDef *PSPHY_InitStruct)
 	PSPHY_TypeDef *psram_phy = PSRAMPHY_DEV;
 
 	//0x04
-	psram_phy->PSPHY_CAL_PAR = PSPHY_PRE_CAL_PHASE(PSPHY_InitStruct->PSRAMP_PRE_CAL_PHASE) | \
-							   PSPHY_CFG_CAL_JMIN(PSPHY_InitStruct->PSRAMP_CFG_CAL_JMIN) | \
+	psram_phy->PSPHY_CAL_PAR = PSPHY_CFG_CAL_JMIN(PSPHY_InitStruct->PSRAMP_CFG_CAL_JMIN) | \
 							   PSPHY_CFG_CAL_JMAX(PSPHY_InitStruct->PSRAMP_CFG_CAL_JMAX) | \
 							   PSPHY_CFG_CAL_J(PSPHY_InitStruct->PSRAMP_CFG_CAL_J) | \
 							   PSPHY_CFG_CAL_N(PSPHY_InitStruct->PSRAMP_CFG_CAL_N);
@@ -554,28 +553,15 @@ void PSRAM_WB_DEVIC_Init(void)
 {
 	u8 data[2];
 
-	if (PsramInfo.Psram_Type == PSRAM_TYPE_WB957) {
+	data[0] = PSRAM_BIT8_WB_BURST_LENGTH(PSRAM_BURST_BIT8_SET) | \
+			  PSRAM_WB_RESERVER | \
+			  PSRAM_WB_DRIVE_STRENGTH(WB_Drive_Strength_010) | \
+			  PSRAM_WB_DPD_EN(WB_NORMAL_OPE);	 // keep default driving stength
 
-		data[0] = PSRAM_BIT8_WB_BURST_LENGTH(PSRAM_BURST_BIT8_CLR) | \
-				  PSRAM_WB_RESERVER | \
-				  PSRAM_WB_DRIVE_STRENGTH(WB_Drive_Strength_010) | \
-				  PSRAM_WB_DPD_EN(WB_NORMAL_OPE);
-
-		data[1] = PSRAM_WB_BURST_LENGTH(WB_BURST_LEN_2048B) | \
-				  PSRAM_WB_HyBURSE_EN | \
-				  PSRAM_WB_FIX_LATENCY_EN(!PsramInfo.Psram_RdVL) | \
-				  PSRAM_WB_INIT_LATENCY(WB_WR_INIT_LATENCY_SPEC[PsramInfo.Psram_Latency_Set - 3]);
-	} else {
-		data[0] = PSRAM_BIT8_WB_BURST_LENGTH(PSRAM_BURST_BIT8_SET) | \
-				  PSRAM_WB_RESERVER | \
-				  PSRAM_WB_DRIVE_STRENGTH(WB_Drive_Strength_000) | \
-				  PSRAM_WB_DPD_EN(WB_NORMAL_OPE);	 // keep default driving stength
-
-		data[1] = PSRAM_WB_BURST_LENGTH(WB_BURST_LEN_128B) | \
-				  PSRAM_WB_HyBURSE_EN | \
-				  PSRAM_WB_FIX_LATENCY_EN(!PsramInfo.Psram_RdVL) | \
-				  PSRAM_WB_INIT_LATENCY(WB_WR_INIT_LATENCY_SPEC[PsramInfo.Psram_Latency_Set - 3]);
-	}
+	data[1] = PSRAM_WB_BURST_LENGTH(WB_BURST_LEN_128B) | \
+			  PSRAM_WB_HyBURSE_EN | \
+			  PSRAM_WB_FIX_LATENCY_EN(!PsramInfo.Psram_RdVL) | \
+			  PSRAM_WB_INIT_LATENCY(WB_WR_INIT_LATENCY_SPEC[PsramInfo.Psram_Latency_Set - 3]);
 
 	PSRAM_REG_Write(MCM_PSRAM_VENDOR_WB, PSRAM_WB_CR0, 2, data);
 }
@@ -731,7 +717,7 @@ bool PSRAM_calibration(void)
 
 		psram_phy->PSPHY_PRE_CAL_PAR = PSPHY_PRE_CAL_PHASE(phase);
 		for (caltempN = 0; caltempN < 32; caltempN++) {
-			psram_phy->PSPHY_CAL_PAR = tempPHYPara | caltempN | PSPHY_PRE_CAL_PHASE(phase);
+			psram_phy->PSPHY_CAL_PAR = tempPHYPara | caltempN;
 			/*PG needs to be recalibrated when the temperature changes sharply.
 			To avoid accessing the secure address, the calibration address starts from __km4tz_bd_psram_start__.*/
 			for (int i = 0; i < 6; i += 1) {

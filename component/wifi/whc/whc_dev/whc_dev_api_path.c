@@ -372,6 +372,9 @@ void whc_event_wifi_connect(u32 api_id, u32 *param_buf)
 	memcpy(&connect_param.channel, ptr, sizeof(connect_param.channel));
 	ptr += sizeof(connect_param.channel);
 
+	memcpy(&connect_param.band, ptr, sizeof(connect_param.band));
+	ptr += sizeof(connect_param.band);
+
 	memcpy(&connect_param.pscan_option, ptr, sizeof(connect_param.pscan_option));
 	ptr += sizeof(connect_param.pscan_option);
 

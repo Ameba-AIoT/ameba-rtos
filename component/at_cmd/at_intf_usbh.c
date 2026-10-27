@@ -110,6 +110,11 @@ static const usbh_cdc_acm_cb_t cdc_acm_usr_cb = {
 	.line_coding_changed = cdc_acm_cb_line_coding_changed
 };
 
+static const usbh_cdc_acm_config_t cdc_acm_class_cfg = {
+	/* Every field left 0 takes the class default: 115200 8N1, both control lines
+	 * deasserted, and no notification pipe. */
+};
+
 static const usbh_user_cb_t usbh_usr_cb = {
 	.process = cdc_acm_cb_process
 };
@@ -351,6 +356,7 @@ static void cdc_acm_hotplug_thread(void *param)
 	for (;;) {
 		if (rtos_sema_take(cdc_acm_detach_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
 			rtos_time_delay_ms(100);
+			usbh_stop();
 			usbh_cdc_acm_deinit();
 			usbh_deinit();
 			rtos_time_delay_ms(10);
@@ -361,9 +367,18 @@ static void cdc_acm_hotplug_thread(void *param)
 				break;
 			}
 
-			ret = usbh_cdc_acm_init(&cdc_acm_usr_cb);
-			if (ret < 0) {
+			ret = usbh_cdc_acm_init(&cdc_acm_usr_cb, &cdc_acm_class_cfg);
+			if (ret != HAL_OK) {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "Init CDC ACM fail\n");
+				usbh_deinit();
+				break;
+			}
+
+			/* Re-arm USB TRX after the re-init. */
+			ret = usbh_start();
+			if (ret != HAL_OK) {
+				RTK_LOGS(TAG, RTK_LOG_ERROR, "Start USBH fail\n");
+				usbh_cdc_acm_deinit();
 				usbh_deinit();
 				break;
 			}
@@ -390,8 +405,16 @@ static void atcmd_usbh_cdc_acm_task(void *param)
 		goto error_exit;
 	}
 
-	status = usbh_cdc_acm_init(&cdc_acm_usr_cb);  /*0 means use default transfer size, and it can not exceed 65536*/
+	status = usbh_cdc_acm_init(&cdc_acm_usr_cb, &cdc_acm_class_cfg);
 	if (status != HAL_OK) {
+		usbh_deinit();
+		goto error_exit;
+	}
+
+	/* All class drivers registered; start USB TRX so enumeration can run. */
+	status = usbh_start();
+	if (status != HAL_OK) {
+		usbh_cdc_acm_deinit();
 		usbh_deinit();
 		goto error_exit;
 	}
@@ -400,6 +423,7 @@ static void atcmd_usbh_cdc_acm_task(void *param)
 
 	status = xTaskCreate((void *)cdc_acm_hotplug_thread, ((const char *)"cdc_acm_hotplug_thread"), 1024 / sizeof(portSTACK_TYPE), NULL, 3, NULL);
 	if (status != pdPASS) {
+		usbh_stop();
 		usbh_cdc_acm_deinit();
 		usbh_deinit();
 		goto error_exit;

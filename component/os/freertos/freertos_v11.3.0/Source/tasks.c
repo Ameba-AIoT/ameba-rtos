@@ -4359,7 +4359,7 @@ void vTaskCompTick( const TickType_t xTicksToComp )
 {
     if( xTicksToComp > 1 )
     {
-        if( xTickCount + xTicksToComp > xTickCount )
+        if( ( TickType_t ) ( xTickCount + xTicksToComp ) > xTickCount )
         {
             xTickCount += ( xTicksToComp - 1 );
             /* not overflow, just trigger task list update */
@@ -4367,11 +4367,11 @@ void vTaskCompTick( const TickType_t xTicksToComp )
         }
         else
         {
-            if( xTickCount <= 0xFFFFFFFE )
+            if( xTickCount <= ( portMAX_DELAY - 1 ) )
             {
                 /* need to trigger task list update and then trigger task list switch before tick overflow */
-                xPendedTicks += ( xTicksToComp - ( 0xFFFFFFFE - xTickCount ) );
-                xTickCount = 0xFFFFFFFE;
+                xPendedTicks += ( xTicksToComp - ( ( portMAX_DELAY - 1 ) - xTickCount ) );
+                xTickCount = ( portMAX_DELAY - 1 );
             }
             else
             {

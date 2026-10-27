@@ -144,8 +144,6 @@ void whc_host_hal_txdesc_fill(struct xmit_frame *pxmitframe, u8 *pbuf)
 		}
 		ptxdesc->port_id = iface_type;
 		ptxdesc->qsel = pattrib->qsel;
-		ptxdesc->seq = pattrib->seqnum;
-
 		ptxdesc->sectype = whc_host_hal_txdesc_fill_sectype(pattrib->encrypt, pattrib->b_swenc);
 
 		whc_host_hal_txdesc_fill_vcs(ptxdesc, pattrib->vcs_mode, pmlmeinfo->cur_channel, pmlmeinfo->b_preamble_mode);
@@ -220,7 +218,6 @@ void whc_host_hal_txdesc_fill(struct xmit_frame *pxmitframe, u8 *pbuf)
 		//softAP encrypted bcmc using EN_DESC_ID and CAMID. When EN_DESC_ID is set, no CAM search is done.
 		ptxdesc->macid = pattrib->mac_id;	 // CAM_ID(MAC_ID)
 		ptxdesc->qsel = pattrib->qsel;
-		ptxdesc->seq = pattrib->seqnum;
 		ptxdesc->userate = 1; // driver uses rate
 		ptxdesc->datarate = whc_host_hal_mrate_to_hwrate(global_idev.whchpriv.mlmepriv.user_tx_rate);
 	}
@@ -252,18 +249,6 @@ void whc_host_hal_txdesc_fill(struct xmit_frame *pxmitframe, u8 *pbuf)
 
 #ifdef CONFIG_NAN
 	whch_host_nan_update_txdesc(pxmitframe, pbuf);
-#endif
-
-#ifdef CONFIG_WIFI_TUNNEL
-	if (pattrib->wtunnel_tx_swap) {
-		ptxdesc->retry_limit = 24;
-		ptxdesc->en_hwseq = 0;
-		ptxdesc->tx_swap = 1;
-		ptxdesc->ul_swap = pattrib->wtunnel_ul_swap;
-		dev_dbg(global_idev.pwhc_dev, "[whc] relay pkt: tx_swap=%d ul_swap=%d qsel=%d en_hwseq=%d seqnum=%d\n",
-				ptxdesc->tx_swap, ptxdesc->ul_swap, ptxdesc->qsel, ptxdesc->en_hwseq, pattrib->seqnum);
-	}
-	wifi_tunnelapi_update_txdata_macswap(ptxdesc, (u8 *)(pxmitframe->pkt->data), 0);
 #endif
 
 	if (pattrib->b_tx_raw) {

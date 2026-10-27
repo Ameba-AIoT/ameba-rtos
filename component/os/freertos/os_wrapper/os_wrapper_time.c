@@ -74,9 +74,9 @@ uint64_t rtos_time_get_current_system_time_ms_64bit(void)
 	uint32_t current_ms;
 	uint64_t total_ms;
 
-	current_ms = rtos_time_get_current_system_time_ms();
-
 	__rtos_critical_enter_os();
+
+	current_ms = rtos_time_get_current_system_time_ms();
 
 	if (current_ms < last_ms) {
 		overflow_count++;
@@ -115,7 +115,7 @@ uint64_t rtos_time_get_current_system_time_ns(void)
 #if defined CONFIG_ARM_CORE_CM4 || defined CONFIG_ARM_CORE_CM0
 	uint64_t timer_cnt_pass = portNVIC_SYSTICK_LOAD_REG - portNVIC_SYSTICK_CURRENT_VALUE_REG;
 	uint32_t time_pass_ns = (timer_cnt_pass * 1000) / (configCPU_CLOCK_HZ / 1000000UL);
-	if (__NVIC_GetPendingIRQ(SysTick_IRQn)) {
+	if (SCB->ICSR & SCB_ICSR_PENDSTSET_Msk) {
 		time_ms ++;
 	}
 	time_ns = time_ms * 1000000ULL + time_pass_ns;

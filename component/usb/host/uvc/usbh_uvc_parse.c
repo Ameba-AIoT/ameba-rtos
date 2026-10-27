@@ -9,8 +9,8 @@
 #include "usbh_uvc.h"
 #include "usbh_uvc_parse.h"
 
-
 /* Private defines -----------------------------------------------------------*/
+
 #define USBH_UVC_BCD_UVC_1_1                   (0x0110U)  /**< UVC 1.1 release number. */
 #define USBH_UVC_BCD_UVC_1_5                   (0x0150U)  /**< UVC 1.5 release number. */
 #define USBH_UVC_PROBE_SIZE_UVC10              (26U)      /**< Probe/Commit control size for UVC 1.0. */
@@ -53,21 +53,34 @@ static const char *const TAG = "UVC";
 
 extern usbh_uvc_host_t uvc_host;
 
+/* Exported variables --------------------------------------------------------*/
+
 /* Private functions ---------------------------------------------------------*/
 
 /**
   * @brief	Alloc entity memory
-  * @param	extrabytes: extra memory except usbh_uvc_entity_t
+  * @param	desc: descriptor of the entity, in the config descriptor buffer
+  * @param	type: bDescriptorSubtype of the entity
+  * @param	source: first source ID inside desc, NULL for an input terminal
+  * @param	source_num: number of source IDs at source
   * @retval Pointer to alloc entity
+  * @note	The source IDs are referenced, not copied: they live as long as desc, which
+  *			usbh_uvc_desc_deinit() never outlives.
   */
-static usbh_uvc_entity_t *usbh_uvc_entity_alloc(u32 extrabytes)
+static usbh_uvc_entity_t *usbh_uvc_entity_alloc(u8 *desc, u8 type, const u8 *source, u8 source_num)
 {
 	usbh_uvc_entity_t *entity;
 
-	entity = (usbh_uvc_entity_t *) usb_os_malloc(sizeof(usbh_uvc_entity_t) + extrabytes);
+	entity = (usbh_uvc_entity_t *) usb_os_malloc(sizeof(usbh_uvc_entity_t));
 	if (entity == NULL) {
 		return NULL;
 	}
+
+	entity->p = desc;
+	entity->id = desc[3];
+	entity->type = type;
+	entity->source = source;
+	entity->source_num = source_num;
 
 	return entity;
 }
@@ -176,75 +189,56 @@ static int usbh_uvc_parse_entity(u8 *desc, u16 remain)
 
 	case USBH_UVC_VC_INPUT_TERMINAL:
 		vc_intf->entity_num ++;
-		entity = usbh_uvc_entity_alloc(1);
+		/* The start of the topology, no source */
+		entity = usbh_uvc_entity_alloc(desc, USBH_UVC_VC_INPUT_TERMINAL, NULL, 0U);
 		if (entity == NULL) {
 			return HAL_ERR_MEM;
 		}
-		entity->p = desc;
-		entity->id = desc[3];
-		entity->source[0] = 0;
-		entity->type = USBH_UVC_VC_INPUT_TERMINAL;
-
 		break;
 
 	case USBH_UVC_VC_OUTPUT_TERMINAL:
 		vc_intf->entity_num ++;
-		entity = usbh_uvc_entity_alloc(1);
+		/* bSourceID at offset 7, ref UVC 1.5 Table 3-5 */
+		entity = usbh_uvc_entity_alloc(desc, USBH_UVC_VC_OUTPUT_TERMINAL, &desc[7], 1U);
 		if (entity == NULL) {
 			return HAL_ERR_MEM;
 		}
-		entity->p = desc;
-		entity->id = desc[3];
-		entity->source[0] = desc[7];
-		entity->type = USBH_UVC_VC_OUTPUT_TERMINAL;
 		break;
 
 	case USBH_UVC_VC_SELECTOR_UNIT:
 		vc_intf->entity_num ++;
-		entity = usbh_uvc_entity_alloc(desc[4]);
+		/* baSourceID[bNrInPins] at offset 5, ref UVC 1.5 Table 3-7 */
+		entity = usbh_uvc_entity_alloc(desc, USBH_UVC_VC_SELECTOR_UNIT, &desc[5], desc[4]);
 		if (entity == NULL) {
 			return HAL_ERR_MEM;
 		}
-		entity->p = desc;
-		entity->id = desc[3];
-		usb_os_memcpy((void *)entity->source, (const void *)&desc[5], desc[4]);
-		entity->type = USBH_UVC_VC_SELECTOR_UNIT;
 		break;
 
 	case USBH_UVC_VC_PROCESSING_UNIT:
 		vc_intf->entity_num ++;
-		entity = usbh_uvc_entity_alloc(1);
+		/* bSourceID at offset 4, ref UVC 1.5 Table 3-8 */
+		entity = usbh_uvc_entity_alloc(desc, USBH_UVC_VC_PROCESSING_UNIT, &desc[4], 1U);
 		if (entity == NULL) {
 			return HAL_ERR_MEM;
 		}
-		entity->p = desc;
-		entity->id = desc[3];
-		entity->source[0] = desc[4];
-		entity->type = USBH_UVC_VC_PROCESSING_UNIT;
 		break;
 
 	case USBH_UVC_VC_EXTENSION_UNIT:
 		vc_intf->entity_num ++;
-		entity = usbh_uvc_entity_alloc(desc[21]);
+		/* baSourceID[bNrInPins] at offset 22, ref UVC 1.5 Table 3-10 */
+		entity = usbh_uvc_entity_alloc(desc, USBH_UVC_VC_EXTENSION_UNIT, &desc[22], desc[21]);
 		if (entity == NULL) {
 			return HAL_ERR_MEM;
 		}
-		entity->p = desc;
-		entity->id = desc[3];
-		usb_os_memcpy((void *)entity->source, (const void *)&desc[22], desc[21]);
-		entity->type = USBH_UVC_VC_EXTENSION_UNIT;
 		break;
 
 	case USBH_UVC_VC_ENCODING_UNIT:
 		vc_intf->entity_num ++;
-		entity = usbh_uvc_entity_alloc(1);
+		/* bSourceID at offset 4, ref UVC 1.5 Table 3-11 */
+		entity = usbh_uvc_entity_alloc(desc, USBH_UVC_VC_ENCODING_UNIT, &desc[4], 1U);
 		if (entity == NULL) {
 			return HAL_ERR_MEM;
 		}
-		entity->p = desc;
-		entity->id = desc[3];
-		entity->source[0] = desc[4];
-		entity->type = USBH_UVC_VC_ENCODING_UNIT;
 		break;
 
 	default:
@@ -280,8 +274,7 @@ static int usbh_uvc_parse_vc(usbh_itf_data_t *itf_data)
 	if (desc == NULL) {
 		return HAL_ERR_HW;
 	}
-	//save the first interface number
-	vc_intf->p = desc;
+	/* save the first interface number */
 	vc_intf->bInterfaceNumber = desc[2];
 
 	while (1) {
@@ -420,7 +413,6 @@ static int usbh_uvc_parse_format(usbh_uvc_vs_t *vs_intf, u8 *pbuf, u16 *length)
 	u16 totallen = 0;
 	u16 remain;
 
-
 	if (*length < 6U) {
 		//RTK_LOGS(TAG, RTK_LOG_DEBUG, "Desc too short\n");
 		return HAL_ERR_PARA;
@@ -431,7 +423,6 @@ static int usbh_uvc_parse_format(usbh_uvc_vs_t *vs_intf, u8 *pbuf, u16 *length)
 		return HAL_ERR_PARA;
 	}
 
-	vs_intf->InputHeader = (usbh_uvc_vs_input_header_desc_t *)desc;
 	totallen = (u16)(desc[4] | (desc[5] << 8));
 
 	/*first scan to get total number of format and frame*/
@@ -515,6 +506,10 @@ static int usbh_uvc_parse_format(usbh_uvc_vs_t *vs_intf, u8 *pbuf, u16 *length)
 	alloc_size = (format_num * sizeof(usbh_uvc_vs_format_t)) + \
 				 frame_array_size + \
 				 (total_interval_num * sizeof(u32));
+	/* No FORMAT/FRAME descriptor at all: a malformed VS interface, not an allocation failure */
+	if (alloc_size == 0U) {
+		return HAL_ERR_PARA;
+	}
 	vs_intf->format = (usbh_uvc_vs_format_t *) usb_os_malloc(alloc_size);
 	if (vs_intf->format == NULL) {
 		return HAL_ERR_MEM;
@@ -548,7 +543,6 @@ static int usbh_uvc_parse_format(usbh_uvc_vs_t *vs_intf, u8 *pbuf, u16 *length)
 			vs_intf->format[format_idx].frame = &tmp_frame[parsed_frame_num];
 			vs_intf->format[format_idx].type = desc[2];
 			vs_intf->format[format_idx].index = desc[3];
-			//vs_intf->format[format_idx].bpp = desc[21];
 			format_idx++;
 			break;
 
@@ -649,15 +643,16 @@ static int usbh_uvc_parse_vs(usbh_itf_data_t *itf_data)
 {
 	usbh_uvc_host_t *uvc = &uvc_host;
 	usbh_uvc_vs_t *vs_intf = NULL;
+	usbh_uvc_alt_t *alt = NULL;
 	u8 *desc = NULL;
 	u8 *next_desc = NULL;
 	int ret;
 	u16 len;
 	u16 itf_total_len = 0;
+	usbh_ep_desc_t *ep_desc;
 	u8 bAlternateSetting;
 	u8 type;
 	u8 vs_num = uvc->uvc_desc.vs_num;
-
 
 	if (vs_num >= USBH_UVC_VS_DESC_MAX_NUM) {
 		/* Already at max VS capacity — skip this extra VS interface.
@@ -678,7 +673,6 @@ static int usbh_uvc_parse_vs(usbh_itf_data_t *itf_data)
 
 	desc = itf_data->raw_data;
 	/* save the first interface number (Alt 0) */
-	vs_intf->p = desc;
 	vs_intf->bInterfaceNumber = desc[2];
 
 	/* Skip the first descriptor (Interface Alt 0) */
@@ -720,14 +714,24 @@ static int usbh_uvc_parse_vs(usbh_itf_data_t *itf_data)
 			}
 			bAlternateSetting = ((usbh_itf_desc_t *)desc)->bAlternateSetting;
 			if (bAlternateSetting != 0U) {
-				if (bAlternateSetting <= USBH_UVC_VS_ALTS_MAX_NUM) {
-					vs_intf->altsetting[bAlternateSetting - 1].p = desc;
+				/* Store compactly in discovery order: USB 2.0 §9.6.5 lets bAlternateSetting take any
+				 * value, so it must not be used as an array index. altsetting[0..alt_num-1] therefore
+				 * always maps 1:1 to the alts actually present, and the consumers (find_alt / attach)
+				 * read the real alt number back out of the stored descriptor. */
+				if (vs_intf->alt_num < USBH_UVC_VS_ALTS_MAX_NUM) {
+					alt = &vs_intf->altsetting[vs_intf->alt_num];
+					alt->p = desc;
 					vs_intf->alt_num++;
 
 					next_desc = desc + len;
-					if ((itf_total_len + len) < itf_data->raw_data_len) {
-						if (((usbh_desc_header_t *)next_desc)->bDescriptorType == USB_DESC_TYPE_ENDPOINT) {
-							vs_intf->altsetting[bAlternateSetting - 1].endpoint = (usbh_ep_desc_t *)next_desc;
+					if (((u32)itf_total_len + len + USB_LEN_EP_DESC) <= itf_data->raw_data_len) {
+						ep_desc = (usbh_ep_desc_t *)next_desc;
+						/* Only isochronous IN streaming is supported: a bulk or an OUT endpoint
+						 * would be opened and scheduled as one, ref UVC 1.5 2.4.3 */
+						if ((ep_desc->bDescriptorType == USB_DESC_TYPE_ENDPOINT) &&
+							((ep_desc->bmAttributes & USB_EP_XFER_TYPE_MASK) == (u8)USB_CH_EP_TYPE_ISOC) &&
+							USB_EP_IS_IN(ep_desc->bEndpointAddress)) {
+							alt->endpoint = ep_desc;
 						}
 					}
 				} else {
@@ -748,6 +752,8 @@ static int usbh_uvc_parse_vs(usbh_itf_data_t *itf_data)
 	}
 	return HAL_OK;
 }
+
+/* Exported functions --------------------------------------------------------*/
 
 /**
   * @brief  Get Probe/Commit control wLength based on bcdUVC (UVC spec Table 4-75)
@@ -819,7 +825,7 @@ int usbh_uvc_parse_cfgdesc(usb_host_t *host)
   * @retval Status
   */
 int usbh_uvc_desc_find_format_frame(usbh_uvc_stream_t *stream, usbh_uvc_s_ctx_t *context,
-									u32 *format_idx, u32 *frame_idx)
+									u8 *format_idx, u8 *frame_idx)
 {
 	usbh_uvc_vs_format_t *format;
 	usbh_uvc_vs_frame_t  *frame;
@@ -900,7 +906,7 @@ int usbh_uvc_desc_find_format_frame(usbh_uvc_stream_t *stream, usbh_uvc_s_ctx_t 
   * @retval Status
   */
 int usbh_uvc_desc_find_frame_rate(usbh_uvc_stream_t *stream, usbh_uvc_s_ctx_t *context,
-								  u32 *interval, u32 *format_idx, u32 *frame_idx)
+								  u32 *interval, u8 *format_idx, u8 *frame_idx)
 {
 	usbh_uvc_vs_format_t *format;
 	usbh_uvc_vs_frame_t  *frame;
@@ -954,7 +960,7 @@ int usbh_uvc_desc_find_frame_rate(usbh_uvc_stream_t *stream, usbh_uvc_s_ctx_t *c
 
 	if (frame->bFrameIntervalType != 0U) {
 		/* Discrete: dwFrameInterval[] sorted ascending. */
-		best = (u32) - 1;
+		best = UINT32_MAX;
 		for (i = 0U; i < frame->bFrameIntervalType; i++) {
 			cur  = frame->dwFrameInterval[i];
 			dist = ((fps > cur) ? (fps - cur) : (cur - fps));
@@ -1003,11 +1009,9 @@ int usbh_uvc_desc_find_frame_rate(usbh_uvc_stream_t *stream, usbh_uvc_s_ctx_t *c
   */
 int usbh_uvc_desc_init(void)
 {
-	usbh_uvc_host_t *uvc = &uvc_host;
+	/* Release whatever a previous parse left behind before reusing the list */
+	usbh_uvc_desc_deinit();
 
-	INIT_LIST_HEAD(&uvc->entity_list);
-
-	uvc->uvc_desc.vc_intf.entity_num = 0;
 	return HAL_OK;
 }
 
@@ -1023,11 +1027,17 @@ void usbh_uvc_desc_deinit(void)
 	struct list_head *n;
 	usbh_uvc_entity_t *ent;
 
-	list_for_each_safe(p, n, &uvc->entity_list) {
-		ent = list_entry(p, usbh_uvc_entity_t, list);
-		list_del(p);
-		usbh_uvc_entity_free(ent);
+	/* The list head is still zeroed by usbh_uvc_init() until the first init here */
+	if (uvc->entity_list.next != NULL) {
+		list_for_each_safe(p, n, &uvc->entity_list) {
+			ent = list_entry(p, usbh_uvc_entity_t, list);
+			list_del(p);
+			usbh_uvc_entity_free(ent);
+		}
 	}
 
 	INIT_LIST_HEAD(&uvc->entity_list);
+	uvc->uvc_desc.vc_intf.entity_num = 0U;
+	/* Points into the config descriptor buffer, which the core frees on detach */
+	uvc->uvc_desc.vc_intf.vcheader = NULL;
 }

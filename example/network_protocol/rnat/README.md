@@ -440,7 +440,7 @@ This enables NAT forwarding between WAN and LAN interfaces, allowing LAN devices
 When a supported 4G USB dongle is plugged in, the driver automatically runs the AT command dialing sequence and brings up the ECM data interface:
 
 ```
-[USBH-A] Device connect
+[USBH-A] Dev conn
 ...
 [USB-4G-I] VID 0x2c7c PID 0x0191
 [USB-4G-I] LE271 state(0)
@@ -464,8 +464,8 @@ When a supported 4G USB dongle is plugged in, the driver automatically runs the 
 
 When the dongle is unplugged, the driver detects the detach and tears down the connection:
 ```
-[USBH-A] Device disconnected
-[USBH-A] Force to detach 12
+[USBH-A] Dev disc
+[USBH-A] Force detach 12
 [USB-4G-I] DETACH
 [USB-4G-I] Hotplug reinit heap:0x1051468
 [USB-W] UPHY OTP flag 0xff, use default

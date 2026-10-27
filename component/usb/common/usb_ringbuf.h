@@ -8,6 +8,7 @@
 #define USB_RINGBUF_H
 
 /* Includes ------------------------------------------------------------------*/
+
 #include "usb_os.h"
 
 #ifdef __cplusplus
@@ -22,10 +23,24 @@ extern "C" {
  * This structure ensures that data frames address meet DMA cache-line alignment requirements.
  */
 
+/** @addtogroup USB_Common_API USB Common API
+ *  @{
+ */
+
 /* Exported defines ----------------------------------------------------------*/
+
 #ifndef CONFIG_NON_OS
 
 /* Exported types ------------------------------------------------------------*/
+
+/** @addtogroup USB_Common_Types USB Common Types
+ *  @{
+ */
+/** @defgroup USB_Common_Ringbuf_Types USB Ring Buffer Types
+ *  @brief Node and manager types of the block-based USB ring buffer.
+ *  @{
+ */
+
 /**
  * @brief Individual data node within the ring buffer.
  * Represents a single block of memory within the managed buffer pool.
@@ -50,11 +65,23 @@ typedef struct {
 	__IO u8 capacity;           /**< Maximum number of nodes (blocks) the buffer can hold. */
 } usb_ringbuf_manager_t;
 
+/** @} End of USB_Common_Ringbuf_Types group */
+/** @} End of USB_Common_Types group */
+
 /* Exported macros -----------------------------------------------------------*/
 
 /* Exported variables --------------------------------------------------------*/
 
 /* Exported functions --------------------------------------------------------*/
+
+/** @addtogroup USB_Common_Functions USB Common Functions
+ *  @{
+ */
+/** @defgroup USB_Common_Ringbuf_Functions USB Ring Buffer Functions
+ *  @brief Lifecycle and enqueue/dequeue operations of the block-based USB ring buffer.
+ *  @{
+ */
+
 /**
  * @brief  Initializes the USB ring buffer manager.
  *
@@ -92,6 +119,37 @@ int usb_ringbuf_manager_deinit(usb_ringbuf_manager_t *handle);
  * @return 0 on success.
  */
 int usb_ringbuf_reset(usb_ringbuf_manager_t *handle);
+
+/**
+ * @brief  Gets the head packet in place, without removing it.
+ *
+ * Consumer side only. The returned node stays owned by the consumer, and the producer
+ * cannot overwrite it, until usb_ringbuf_pop_head() is called.
+ *
+ * @param[in]  handle  Pointer to the manager structure.
+ * @param[out] len     Length of the packet, only valid when the return value is not NULL.
+ * @return Pointer to the packet data, or NULL if the buffer is empty.
+ */
+u8 *usb_ringbuf_peek_head(usb_ringbuf_manager_t *handle, u32 *len);
+
+/**
+ * @brief  Removes the head packet previously read by usb_ringbuf_peek_head().
+ *
+ * Consumer side only.
+ *
+ * @param[in,out] handle  Pointer to the manager structure.
+ */
+void usb_ringbuf_pop_head(usb_ringbuf_manager_t *handle);
+
+/**
+ * @brief  Discards every queued packet from the consumer side.
+ *
+ * Unlike usb_ringbuf_reset(), only the head pointer is moved (to the tail), so it is safe
+ * against a producer concurrently calling usb_ringbuf_add_tail() on another core.
+ *
+ * @param[in,out] handle  Pointer to the manager structure.
+ */
+void usb_ringbuf_drop_all(usb_ringbuf_manager_t *handle);
 
 /**
  * @brief  Retrieves the number of valid data nodes currently in the buffer.
@@ -136,7 +194,7 @@ int usb_ringbuf_is_full(usb_ringbuf_manager_t *handle);
  *   - 0: Success.
  *   - Non-zero: Error (e.g., buffer is full).
  */
-int usb_ringbuf_add_tail(usb_ringbuf_manager_t *handle, u8 *buf, u32 size, u8 valid);
+int usb_ringbuf_add_tail(usb_ringbuf_manager_t *handle, const u8 *buf, u32 size, u8 valid);
 
 /**
  * @brief  Reads and removes a data packet from the head of the buffer.
@@ -153,7 +211,12 @@ int usb_ringbuf_add_tail(usb_ringbuf_manager_t *handle, u8 *buf, u32 size, u8 va
  */
 u32 usb_ringbuf_remove_head(usb_ringbuf_manager_t *handle, u8 *buffer, u32 size, u8 *valid);
 
-#endif
+/** @} End of USB_Common_Ringbuf_Functions group */
+/** @} End of USB_Common_Functions group */
+
+#endif /* CONFIG_NON_OS */
+
+/** @} End of USB_Common_API group */
 
 #ifdef __cplusplus
 }

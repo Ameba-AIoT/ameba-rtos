@@ -48,7 +48,7 @@ Refer to the [EVB User Guide](https://aiot.realmcu.com/filelist?document_type=9)
 
 1. Reset the board, following log shall be printed on the LOGUART console, make sure there is no USB related error reported:
 	```
-	[COMP-I] USBH UAC&HID composite demo start
+	[COMP-I] USBH HID+UAC comp demo start
 	```
 
 2. Connect the USB port of Ameba board to USB UAC HID device (for example headphone) with USB cable.

@@ -49,35 +49,35 @@ Refer to the [EVB User Guide](https://aiot.realmcu.com/filelist?document_type=9)
 
 1. Reset the board, the following log shall be printed on the LOGUART console, make sure there is no USB related error reported:
 	```
-	[COMP_UVC_UAC-I] USBH UVC&UAC composite demo start
+	[COMP-I] USBH UVC+UAC comp demo start
 	```
 
 2. Connect the USB port of the Ameba board to a USB UVC+UAC composite device (e.g. a USB camera with built-in microphone) with a USB cable.
 
 3. Once the device enumerates successfully, video streaming starts automatically. Frame statistics are reported on the console at 1-second intervals:
 	```
-	[COMP_UVC_UAC-I] UVC Attach
-	[COMP_UVC_UAC-I] UAC Attach
-	[COMP_UVC_UAC-I] UVC SETUP
-	[COMP_UVC_UAC-I] UAC SETUP
-	[COMP_UVC_UAC-I] UVC set param (2560x1440@30fps)
-	[COMP_UVC_UAC-I] UVC streaming started
-	[COMP_UVC_UAC-I] UVC frames: 30 (size=78643, ts=0)
-	[COMP_UVC_UAC-I] UVC frames: 60 (size=78643, ts=0)
+	[COMP-I] UVC ATTACH
+	[COMP-I] UAC ATTACH
+	[COMP-I] UVC SETUP
+	[COMP-I] UAC SETUP
+	[COMP-I] UVC set param (2560x1440@30fps)
+	[COMP-I] UVC streaming started
+	[COMP-I] UVC frames: 30 (size=78643, ts=0)
+	[COMP-I] UVC frames: 60 (size=78643, ts=0)
 	```
 
 4. If the device exposes a UAC microphone (ISOC IN), the audio capture pipeline starts automatically. The available audio formats are listed and the preferred format is selected. Audio data statistics are reported at 1-second intervals:
 	```
-	[COMP_UVC_UAC-I] Rec fmt list:
-	[COMP_UVC_UAC-I] [0] CH=1 BW=16 FREQ=8000
-	[COMP_UVC_UAC-I] [5] CH=1 BW=16 FREQ=48000
-	[COMP_UVC_UAC-I] UAC rec started
-	[COMP_UVC_UAC-I] Rec loop=94 bytes=96000
-	[COMP_UVC_UAC-I] Rec loop=188 bytes=192000
+	[COMP-I] Rec fmt list:
+	[COMP-I] [0] CH=1 BW=16 FREQ=8000
+	[COMP-I] [5] CH=1 BW=16 FREQ=48000
+	[COMP-I] UAC rec started
+	[COMP-I] Rec loop=94 bytes=96000
+	[COMP-I] Rec loop=188 bytes=192000
 	```
 	If the device has no speaker output (ISOC OUT not supported), the following message is printed and the play thread exits silently:
 	```
-	[COMP_UVC_UAC-I] Play not ready or not supported
+	[COMP-I] Play not ready or not supported
 	```
 
 5. Reset and check the log via LOGUART console, make sure there is no error reported.

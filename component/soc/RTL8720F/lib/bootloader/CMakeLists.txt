@@ -39,8 +39,8 @@ set(private_compile_options)         #private compile_options
 # Component private part, user config begin
 
 ameba_list_append(private_sources
-    boot_trustzone_km4tz_lib.c
-    bootloader_km4_lib.c
+    boot_trustzone_km55tz_lib.c
+    bootloader_km55_lib.c
 )
 
 # Component private part, user config end

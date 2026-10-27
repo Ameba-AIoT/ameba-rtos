@@ -33,6 +33,11 @@ struct prov_link {
 	void *cb_data;
 	struct prov_bearer_send_cb comp;
 	struct k_work_delayable prot_timer;
+#if ZEPHYR_RTK_PATCH
+	bool manual;
+	/* The RPR server is waiting for the device to be connected, LINK_ACTIVE is not set on this path */
+	bool srv_wait;
+#endif
 };
 
 static struct prov_link link;
@@ -55,6 +60,19 @@ static void link_closed(enum prov_bearer_link_status status)
 
 	reset_state();
 
+#if ZEPHYR_RTK_PATCH
+	link.srv_wait = false;
+
+	/* A manual connection may drop before the provisioning link is opened, there is no cb then */
+	if (link.manual) {
+		link.manual = false;
+		link.cb = NULL;
+	}
+
+	if (!cb) {
+		return;
+	}
+#endif
 	cb->link_closed(&bt_mesh_pb_gatt, cb_data, status);
 }
 
@@ -62,6 +80,14 @@ static void protocol_timeout(struct k_work *work)
 {
 	ARG_UNUSED(work);
 
+#if ZEPHYR_RTK_PATCH
+	if (link.srv_wait) {
+		/* No device was connected in time: drop the target and tell the RPR server */
+		(void)bt_mesh_pb_gatt_cli_setup(NULL);
+		link_closed(PROV_BEARER_LINK_STATUS_TIMEOUT);
+		return;
+	}
+#endif
 	if (!atomic_test_bit(bt_mesh_prov_link.flags, LINK_ACTIVE)) {
 		return;
 	}
@@ -148,6 +174,22 @@ int bt_mesh_pb_gatt_cli_start(struct bt_conn *conn)
 	return 0;
 }
 
+#if ZEPHYR_RTK_PATCH
+void bt_mesh_pb_gatt_cli_mark_manual(void)
+{
+	link.cb = NULL;
+	link.manual = true;
+}
+
+/* Called by the RPR server after prov_link_open() succeeded without a connection */
+void bt_mesh_pb_gatt_srv_wait(void)
+{
+	if (!link.conn) {
+		link.srv_wait = true;
+	}
+}
+#endif
+
 int bt_mesh_pb_gatt_cli_open(struct bt_conn *conn)
 {
 	LOG_DBG("conn %p", (void *)conn);
@@ -157,6 +199,18 @@ int bt_mesh_pb_gatt_cli_open(struct bt_conn *conn)
 		return -ENOTCONN;
 	}
 
+#if ZEPHYR_RTK_PATCH
+	if (!link.cb) {
+		return -ENOTCONN;
+	}
+
+	link.srv_wait = false;
+
+	if (link.manual) {
+		/* The Invite may come long after the notify is enabled */
+		k_work_reschedule(&link.prot_timer, bt_mesh_prov_protocol_timeout_get());
+	}
+#endif
 	link.cb->link_opened(&bt_mesh_pb_gatt, link.cb_data);
 
 	return 0;
@@ -172,6 +226,14 @@ static int prov_link_open(const uint8_t uuid[16], uint8_t timeout,
 
 	k_work_reschedule(&link.prot_timer, K_SECONDS(timeout));
 
+#if ZEPHYR_RTK_PATCH
+	/* Manual mode: the connection already exists, nothing to wait for. The RPR server has no
+	 * connection yet, it waits for the advertising of the device.
+	 */
+	if (link.conn) {
+		return 0;
+	}
+#endif
 	return bt_mesh_pb_gatt_cli_setup(uuid);
 }
 

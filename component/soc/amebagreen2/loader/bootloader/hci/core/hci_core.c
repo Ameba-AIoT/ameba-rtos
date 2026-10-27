@@ -36,6 +36,27 @@ IMAGE_HEADER EmptyPsramImgHdr;
 /* Private functions ---------------------------------------------------------*/
 
 /**
+  * @brief  Check a host supplied SRAM range
+  * @param  addr : Start address
+  * @param  size : Size in byte, shall be non-zero and a multiple of 4
+  * @retval TRUE if the range lies entirely in the image2 area or the manifest area.
+  *         The bootloader area [LOADER_DOWNLOAD_ADDR, HCI_MANIFEST_ADDR) is never accessible,
+  *         otherwise the host could patch the bootloader and skip the image2 verification.
+  */
+static u8 HCI_SramRangeIsValid(u32 addr, u32 size)
+{
+	/* fold the non-secure alias (0x2xxxxxxx) onto the secure one (0x3xxxxxxx) */
+	addr |= TZ_IDAU_SEC_OFFSET;
+
+	if ((size & 0x3) != 0) {
+		return FALSE;
+	}
+
+	return is_memory_range_valid(addr, size, FULLMAC_ADDR_START, LOADER_DOWNLOAD_ADDR) ||
+		   is_memory_range_valid(addr, size, HCI_MANIFEST_ADDR, FULLMAC_ADDR_END);
+}
+
+/**
   * @brief  Write image frame
   * @param  addr : Destination address
   * @param  src  : Frame buffer
@@ -46,13 +67,18 @@ static int HCI_WriteImage(u32 addr, const u8 *src, u32 size)
 {
 	u32 i;
 
-	/* Host Send empty img header */
+	/* Host Send empty img header: it is stored in the bootloader's own header buffer, not at the
+	 * host supplied address, so there is nothing to check. */
 	if (size == IMAGE_HEADER_LEN) {
 		if (IS_FLASH_ADDR(addr)) {
 			addr = (u32)&EmptyXipImgHdr;
 		} else {
 			addr = (u32)&EmptyPsramImgHdr;
 		}
+	} else if (!IS_FLASH_ADDR(addr) && !IS_DATA_FLASH_ADDR(addr) && !HCI_SramRangeIsValid(addr, size)) {
+		/* Only allow to write PSRAM (0x6xxxxxxx ~ 0x7xxxxxxx) or the FULLMAC sram except the
+		 * bootloader, to avoid attack. */
+		return HAL_ERR_PARA;
 	}
 
 	if (IS_FLASH_ADDR(addr)) {
@@ -68,13 +94,6 @@ static int HCI_WriteImage(u32 addr, const u8 *src, u32 size)
 			nor_ftl_write_page(addr + i, src + i);
 		}
 	} else {
-		/* Only allow to write hs sram, to avoid attack */
-#ifdef HCI_TARGET_ADDR_CHECK_TODO
-		if (!RANGE_IS_FULLMAC(addr, size - 1)) {
-			return HAL_ERR_PARA;
-		}
-#endif
-
 		for (i = 0; i < size; i += 4) {
 			*((u32 *)(addr + i)) = (*((u32 *)(src + i)));
 		}
@@ -97,26 +116,22 @@ static int HCI_CalculateChecksum(u32 addr, u32 size, u32 *result)
 	u32 data;
 	u32 i;
 
-	/* Host Send empty img header */
+	/* Host Send empty img header: read back from the bootloader's own header buffer */
 	if (size == IMAGE_HEADER_LEN) {
 		if (IS_FLASH_ADDR(addr)) {
 			addr = (u32)&EmptyXipImgHdr;
 		} else {
 			addr = (u32)&EmptyPsramImgHdr;
 		}
+	} else if (!IS_FLASH_ADDR(addr) && !IS_DATA_FLASH_ADDR(addr) && !HCI_SramRangeIsValid(addr, size)) {
+		/* Only allow to read PSRAM or the FULLMAC sram except the bootloader, to avoid attack */
+		return HAL_ERR_PARA;
 	}
 
 	if (IS_FLASH_ADDR(addr)) {
 		if (!IS_FLASH_ADDR(addr + size - 1)) {
 			return HAL_ERR_PARA;
 		}
-	} else {
-#ifdef HCI_TARGET_ADDR_CHECK_TODO
-		/* Only allow to read hs sram, to avoid attack */
-		if (!RANGE_IS_FULLMAC(addr, size - 1)) {
-			return HAL_ERR_PARA;
-		}
-#endif
 	}
 
 	for (i = 0; i < size; i += 4) {

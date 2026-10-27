@@ -47,15 +47,15 @@ Refer to the [EVB User Guide](https://aiot.realmcu.com/filelist?document_type=9)
 
 1. Reset the board, the following log shall be printed on the LOGUART console, make sure there is no USB related error reported:
 	```
-	[DFU-I] FW size: 2048 B
 	[DFU-I] USBH DFU demo start
+	[DFU-I] FW size: 2048 B
 	```
 
 2. Connect a USB DFU device (e.g. another Ameba board running the `usbd_dfu` application) to the USB port of the board with a USB cable.
 
 3. The host enumerates the device and starts the download automatically. The following log is printed:
 	```
-	[DFU-I] DFU device attached
+	[DFU-I] ATTACH
 	[DFU-I] Downloading 2048 bytes...
 	[DFU-I] Send blk 0 offset 0/2048 B
 	[DFU-I] Send blk 1 offset 1024/2048 B
@@ -72,10 +72,19 @@ Refer to the [EVB User Guide](https://aiot.realmcu.com/filelist?document_type=9)
 	[DFU-I] Upload OK
 	```
 
+5. The demo ends with one verdict line. On success:
+	```
+	[DFU-I] USBH DFU demo done
+	```
+	On any failure (no device attached in time, download/upload error or timeout, or uploaded data that does not match the downloaded image), the reason is logged first, followed by:
+	```
+	[DFU-E] USBH DFU demo aborted
+	```
+
 # Note
 
 - The demo uses a fixed 2 KB sequential test pattern (`0x00, 0x01, ..., 0xFF, 0x00, ...`) as the firmware payload. Replace `dfu_demo_fw` initialization in `example_usbh_dfu.c` with actual firmware data for production use.
-- If the DFU device is not manifestation tolerant (`bitManifestationTolerant=0`), the upload step is skipped because the device enters `MANIFEST-WAIT-RESET` state and detaches after manifest.
+- If the DFU device is not manifestation tolerant (`bitManifestationTolerant=0`), the upload step is skipped because the device enters `MANIFEST-WAIT-RESET` state and detaches after manifest. The download alone then decides the verdict, so the demo still ends with `done`.
 - The host handles both Run-Time mode devices (DFU 1.1 §5 reconfiguration: issues `DFU_DETACH` and waits for re-enumeration in DFU mode) and devices that enumerate directly in DFU mode.
 
 # Supported IC

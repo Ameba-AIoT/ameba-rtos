@@ -8,6 +8,7 @@
 
 #if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT
 #include <stdio.h>
+#include <errno.h>
 #include <string.h>
 
 #include <rtk_bt_common.h>
@@ -28,6 +29,10 @@
 #include <rtk_bt_mesh_def.h>
 #include <rtk_bt_mesh_common.h>
 #include <rtk_bt_mesh_remote_prov_model.h>
+#if ZEPHYR_RTK_PATCH
+#include <provisioner.h>
+#include <rpr.h>
+#endif
 #include <msg.h>
 #include <zephyr/bluetooth/mesh/rpr_cli.h>
 #include <zephyr/bluetooth/mesh/rpr.h>
@@ -162,6 +167,84 @@ static uint16_t rtk_bt_mesh_remote_prov_client_scan_caps_get(rtk_bt_mesh_remote_
 rtk_bt_mesh_remote_prov_client_link_open_t rpr_link_open_info;
 
 extern rtk_bt_mesh_provisioning_method_t pro_provisioning_method;
+#if ZEPHYR_RTK_PATCH
+static uint16_t rtk_bt_mesh_remote_prov_client_link_open_prov(rtk_bt_mesh_remote_prov_client_link_open_t *rmt_link)
+{
+	const struct bt_mesh_rpr_node srv = {
+		.addr = rmt_link->dst,
+		.net_idx = rmt_link->net_key_index,
+		.ttl = BT_MESH_TTL_DEFAULT,
+	};
+
+	rpr_link_open_info = *rmt_link;
+	return (uint16_t)bt_mesh_pb_remote_link_open(&rpr_cli, &srv, rmt_link->uuid, rmt_link->net_key_index, rmt_link->link_open_timeout);
+}
+
+rtk_bt_mesh_remote_prov_client_link_open_dkri_t rpr_dkri_info = {0, 0, 0xff};
+static struct bt_mesh_rpr_node rpr_dkri_srv;
+static uint16_t rtk_bt_mesh_remote_prov_client_link_open_dkri(rtk_bt_mesh_remote_prov_client_link_open_dkri_t *rmt_dkri)
+{
+	enum bt_mesh_rpr_node_refresh refresh;
+	int ret;
+
+	switch (rmt_dkri->dkri_procedure) {
+	case RTK_BT_MESH_RMT_PROV_DKRI_DEV_KEY_REFRESH:
+		refresh = BT_MESH_RPR_NODE_REFRESH_DEVKEY;
+		break;
+	case RTK_BT_MESH_RMT_PROV_DKRI_NODE_ADDR_REFRESH:
+		refresh = BT_MESH_RPR_NODE_REFRESH_ADDR;
+		break;
+	case RTK_BT_MESH_RMT_PROV_DKRI_NODE_COMPO_REFRESH:
+		refresh = BT_MESH_RPR_NODE_REFRESH_COMPOSITION;
+		break;
+	default:
+		return RTK_BT_ERR_PARAM_INVALID;
+	}
+
+	rpr_dkri_info = *rmt_dkri;
+	rpr_dkri_srv.addr = rmt_dkri->dst;
+	rpr_dkri_srv.net_idx = rmt_dkri->net_key_index;
+	rpr_dkri_srv.ttl = BT_MESH_TTL_DEFAULT;
+	ret = bt_mesh_pb_remote_link_open_node(&rpr_cli, &rpr_dkri_srv, refresh);
+
+	/* ret > 0: the server is on this node, no link is needed */
+	return (ret < 0) ? RTK_BT_ERR_LOWER_STACK_API : RTK_BT_OK;
+}
+
+static uint16_t rpr_dkri_invite(uint8_t dkri_procedure, uint16_t addr, uint8_t attn_dur)
+{
+	int ret;
+
+	if (rpr_dkri_info.dkri_procedure != dkri_procedure) {
+		return 0;
+	}
+
+	ret = bt_mesh_prov_invite(addr, attn_dur);
+	if (ret == -ENOLINK && bt_mesh_has_addr(rpr_dkri_info.dst)) {
+		/* local server: no link, refresh locally */
+		return bt_mesh_pb_remote_open_node(&rpr_cli, &rpr_dkri_srv, addr,
+										   dkri_procedure == RTK_BT_MESH_RMT_PROV_DKRI_NODE_COMPO_REFRESH);
+	}
+
+	return (uint16_t)ret;
+}
+
+static uint16_t rtk_bt_mesh_remote_prov_client_refresh_dev_key(uint8_t *attn_dur)
+{
+	return rpr_dkri_invite(RTK_BT_MESH_RMT_PROV_DKRI_DEV_KEY_REFRESH, rpr_dkri_info.dst, *attn_dur);
+}
+
+static uint16_t rtk_bt_mesh_remote_prov_client_refresh_node_addr(rtk_bt_mesh_remote_prov_client_node_addr_refresh_t *addr_refresh)
+{
+	return rpr_dkri_invite(RTK_BT_MESH_RMT_PROV_DKRI_NODE_ADDR_REFRESH, addr_refresh->node_addr, addr_refresh->attn_dur);
+}
+
+static uint16_t rtk_bt_mesh_remote_prov_client_refresh_compo_data(uint8_t *attn_dur)
+{
+	return rpr_dkri_invite(RTK_BT_MESH_RMT_PROV_DKRI_NODE_COMPO_REFRESH, rpr_dkri_info.dst, *attn_dur);
+}
+#else
+extern rtk_bt_mesh_provisioning_method_t pro_provisioning_method;
 static uint16_t rtk_bt_mesh_remote_prov_client_link_open_prov(rtk_bt_mesh_remote_prov_client_link_open_t *rmt_link)
 {
 	pro_provisioning_method = RTK_BT_MESH_PROVISIONING_REMOTE_PROV_METHOD;
@@ -217,10 +300,12 @@ static uint16_t rtk_bt_mesh_remote_prov_client_refresh_compo_data(uint8_t *attn_
 	return 0;
 }
 
+#endif
+
 extern bool bt_stack_profile_check(rtk_bt_profile_t profile);
 uint16_t bt_mesh_remote_prov_client_model_act_handle(rtk_bt_cmd_t *p_cmd)
 {
-	uint16_t ret = RTK_BT_MESH_MSG_SEND_CAUSE_FAIL;
+	uint16_t ret = RTK_BT_OK;
 	if (true != bt_stack_profile_check(RTK_BT_PROFILE_MESH)) {
 		BT_LOGE("Error: BLE MESH profile is not initiated\r\n");
 		ret = RTK_BT_ERR_UNSUPPORTED;
@@ -260,7 +345,12 @@ uint16_t bt_mesh_remote_prov_client_model_act_handle(rtk_bt_cmd_t *p_cmd)
 	}
 	default:
 		BT_LOGE("[%s] Unknown act:%d\r\n", __func__, p_cmd->act);
-		break;
+		ret = RTK_BT_ERR_NO_CASE_ELEMENT;
+		goto end;
+	}
+	if (ret) {
+		BT_LOGE("[%s] return ret:%d\r\n", __func__, ret);
+		ret = RTK_BT_ERR_LOWER_STACK_API;
 	}
 end:
 	p_cmd->ret = ret;
@@ -268,5 +358,49 @@ end:
 	return ret;
 }
 
+#endif
+
+#if ZEPHYR_RTK_PATCH && defined(CONFIG_BT_MESH_RPR_SRV) && CONFIG_BT_MESH_RPR_SRV
+extern bool bt_stack_profile_check(rtk_bt_profile_t profile);
+uint16_t bt_mesh_remote_prov_server_model_act_handle(rtk_bt_cmd_t *p_cmd)
+{
+	uint16_t ret = RTK_BT_OK;
+	if (true != bt_stack_profile_check(RTK_BT_PROFILE_MESH)) {
+		BT_LOGE("Error: BLE MESH profile is not initiated\r\n");
+		ret = RTK_BT_ERR_UNSUPPORTED;
+		goto end;
+	}
+	if (!p_cmd) {
+		BT_LOGE("[%s] param is NULL!\r\n", __func__);
+		return RTK_BT_FAIL;
+	}
+	switch (p_cmd->act) {
+	case RTK_BT_MESH_REMOTE_PROV_SERVER_ACT_SET_PREFER_BEARER: {
+		/* Same value as rtk_bt_mesh_bearer_field_t: 1 is PB-ADV, 2 is PB-GATT */
+		rtk_bt_mesh_bearer_field_t *bearer = (rtk_bt_mesh_bearer_field_t *)p_cmd->param;
+		uint8_t type;
+
+		if (RTK_BT_MESH_BEARER_FIELD_ADV == *bearer) {
+			type = BT_MESH_PROV_ADV;
+		} else if (RTK_BT_MESH_BEARER_FIELD_GATT == *bearer) {
+			type = BT_MESH_PROV_GATT;
+		} else {
+			BT_LOGE("[%s] Unsupported bearer:%d\r\n", __func__, *bearer);
+			ret = RTK_BT_ERR_PARAM_INVALID;
+			break;
+		}
+		ret = (0 == bt_mesh_rpr_srv_prefer_bearer_set(type)) ? RTK_BT_OK : RTK_BT_ERR_PARAM_INVALID;
+		break;
+	}
+	default:
+		BT_LOGE("[%s] Unknown act:%d\r\n", __func__, p_cmd->act);
+		ret = RTK_BT_ERR_NO_CASE_ELEMENT;
+		goto end;
+	}
+end:
+	p_cmd->ret = ret;
+	osif_sem_give(p_cmd->psem);
+	return ret;
+}
 #endif
 #endif

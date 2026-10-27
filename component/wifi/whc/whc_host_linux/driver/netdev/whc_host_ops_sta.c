@@ -440,6 +440,17 @@ static int whc_host_connect_ops(struct wiphy *wiphy, struct net_device *ndev, st
 		connect_param->security_type |= AES_CMAC_ENABLED;
 	}
 
+#ifdef CONFIG_WHCH
+	if (connect_param->security_type & WEP_ENABLED) {
+		if (whc_host_set_wep_key(wlan_idx, sme->key_idx, sme->key, sme->key_len) == -EINVAL) {
+			dev_err(global_idev.pwhc_dev, "%s: set wep key fail!", __func__);
+			cfg80211_connect_result(ndev, NULL, NULL, 0, NULL, 0, WLAN_STATUS_UNSPECIFIED_FAILURE, GFP_ATOMIC);
+			ret = -EINVAL;
+			goto exit;
+		}
+	}
+#endif
+
 	if (sme->want_1x || (sme->auth_type == NL80211_AUTHTYPE_NETWORK_EAP) ||
 		(sme->crypto.akm_suites[0] == WIFI_AKM_SUITE_IEEE8021X) ||
 		(sme->crypto.akm_suites[0] == WIFI_AKM_SUITE_FT_IEEE8021X) ||
@@ -668,15 +679,76 @@ static int whc_host_set_txpower(struct wiphy *wiphy, struct wireless_dev *wdev, 
 }
 
 #if (KERNEL_VERSION(6, 18, 0) <= LINUX_VERSION_CODE)
-static int whc_host_get_txpower(struct wiphy *wiphy, struct wireless_dev *wdev, int radio_idx, unsigned int link_id, int *dbm)
+static int whc_host_get_txpower_ops(struct wiphy *wiphy, struct wireless_dev *wdev, int radio_idx, unsigned int link_id, int *dbm)
 #else
-static int whc_host_get_txpower(struct wiphy *wiphy, struct wireless_dev *wdev, int *dbm)
+static int whc_host_get_txpower_ops(struct wiphy *wiphy, struct wireless_dev *wdev, int *dbm)
 #endif
 {
+	int ret = 0;
+	u8 is_mp = 0;
+	s8 txpwr = 0;
+	u8 cur_tx_rate = RTW_RATE_UNKNOWN;
+	struct net_device *ndev;
+	struct rtw_wifi_setting *setting_vir;
+	union rtw_traffic_stats *traffic_stats_vir;
+	dma_addr_t setting_phy, stats_traffic;
+
 	dev_dbg(global_idev.pwhc_dev, "[whc]: %s", __func__);
 
-	/* Operation not permitted */
-	return -EPERM;
+	whc_host_dev_driver_is_mp(&is_mp);
+	if (is_mp == 1) {
+		return -EPERM;
+	}
+
+	if (!wdev) {
+		return -ENODEV;
+	}
+
+	ndev = wdev_to_ndev(wdev);
+	if (!ndev) {
+		return -ENODEV;
+	}
+
+	if (rtw_netdev_idx(ndev) != WHC_STA_PORT) {
+		return -EPERM;
+	}
+
+	if (global_idev.mlme_priv.rtw_join_status == RTW_JOINSTATUS_SUCCESS) {
+		traffic_stats_vir = rtw_malloc(sizeof(union rtw_traffic_stats), &stats_traffic);
+		if (!traffic_stats_vir) {
+			return -ENOMEM;
+		}
+		ret = whc_host_get_traffic_stats(STA_WLAN_INDEX, stats_traffic);
+		if (!ret) {
+			cur_tx_rate = traffic_stats_vir->sta.cur_tx_data_rate;
+		}
+		rtw_mfree(sizeof(union rtw_traffic_stats), traffic_stats_vir, stats_traffic);
+	} else {
+		setting_vir = rtw_malloc(sizeof(struct rtw_wifi_setting), &setting_phy);
+		if (!setting_vir) {
+			return -ENOMEM;
+		}
+		ret = whc_host_get_setting(STA_WLAN_INDEX, setting_phy);
+		if (!ret) {
+			if (setting_vir->channel >= 1 && setting_vir->channel <= 14) {
+				cur_tx_rate = RTW_RATE_1M;
+			} else if (setting_vir->channel >= 36 && setting_vir->channel <= 177) {
+				cur_tx_rate = RTW_RATE_6M;
+			}
+		}
+		rtw_mfree(sizeof(struct rtw_wifi_setting), setting_vir, setting_phy);
+	}
+	if (ret || cur_tx_rate == 0 || cur_tx_rate == RTW_RATE_UNKNOWN) {
+		return -ENOENT;
+	}
+
+	ret = whc_host_get_txpower(cur_tx_rate, &txpwr);
+	if (ret != 0) {
+		return -ENOENT;
+	}
+
+	*dbm = (int)txpwr / 4;
+	return 0;
 }
 
 static int whc_host_set_power_mgmt(struct wiphy *wiphy, struct net_device *ndev, bool enabled, int timeout)
@@ -1356,7 +1428,7 @@ void whc_host_ops_sta_init(void)
 	ops->join_ibss = whc_host_join_ibss;
 	ops->leave_ibss = whc_host_leave_ibss;
 	ops->set_tx_power = whc_host_set_txpower;
-	ops->get_tx_power = whc_host_get_txpower;
+	ops->get_tx_power = whc_host_get_txpower_ops;
 	ops->set_power_mgmt = whc_host_set_power_mgmt;
 	ops->set_monitor_channel = whc_host_set_monitor_channel;
 	ops->get_channel = whc_host_get_channel_ops;

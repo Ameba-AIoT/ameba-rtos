@@ -4,6 +4,7 @@ cmake_minimum_required(VERSION 3.20.0)
 include(${c_CMAKE_FILES_DIR}/utility.cmake)
 include(${c_CMAKE_FILES_DIR}/global_define.cmake)
 import_kconfig("CONFIG" ${c_MCU_KCONFIG_FILE})
+ameba_reset_global_define() #NOTE: Some variables like c_MP need to update after import kconfig
 
 message( "========== Image app generate start ==========")
 
@@ -17,7 +18,7 @@ ameba_modify_file_path(${app_full_path} app_compress p_SUFFIX _compress)
 ameba_modify_file_path(${app_ns_full_path} app_compress_ns p_SUFFIX _compress)
 
 if (CONFIG_WHC_INTF_SPDIO AND CONFIG_WHC_DEV_MENU)
-    ameba_execute_process(COMMAND ${CMAKE_COMMAND} -E rename ${FINAL_IMAGE_DIR}/km4tz_fullmac_img_1.bin ${FINAL_IMAGE_DIR}/RTL8720F_FW_1.bin)
+    ameba_execute_process(COMMAND ${CMAKE_COMMAND} -E rename ${FINAL_IMAGE_DIR}/km55tz_fullmac_img_1.bin ${FINAL_IMAGE_DIR}/RTL8720F_FW_1.bin)
     ameba_execute_process(
         COMMAND ${CMAKE_COMMAND} -E cat ${c_IMAGE2_ALL_FILES}
         OUTPUT_FILE ${c_IMAGE_OUTPUT_DIR}/combined_image2_all.bin
@@ -33,7 +34,7 @@ if (CONFIG_WHC_INTF_SPDIO AND CONFIG_WHC_DEV_MENU)
         ameba_execute_process(COMMAND ${CMAKE_COMMAND} -E rename ${FINAL_IMAGE_DIR}/RTL8720F_FW_2.bin ${FINAL_IMAGE_DIR}/RTL8720F_FW_2_MP.bin)
     endif()
 else()
-    ameba_execute_process(COMMAND ${CMAKE_COMMAND} -E remove ${FINAL_IMAGE_DIR}/km4tz_fullmac_img_1.bin)
+    ameba_execute_process(COMMAND ${CMAKE_COMMAND} -E remove ${FINAL_IMAGE_DIR}/km55tz_fullmac_img_1.bin)
 endif()
 
 if(CONFIG_TRUSTZONE)
@@ -84,7 +85,6 @@ if(CONFIG_SOLO)
 else()
     set(ota_image ${c_IMAGE_OUTPUT_DIR}/ota_all.bin)
 endif()
-ameba_modify_file_path(${ota_image} ota_image_ns p_SUFFIX _ns)
 ameba_modify_file_path(${ota_image} ota_image_ns p_SUFFIX _ns)
 
 if(CONFIG_COMPRESS_OTA_IMG)

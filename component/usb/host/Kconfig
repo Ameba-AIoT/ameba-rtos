@@ -5,6 +5,16 @@ config USBH_CDC_ACM_MENU
     select USBH_CDC_ACM if WHC_HOST || WHC_NONE
 
     if USBH_CDC_ACM_MENU
+        config USBH_CDC_ACM_NOTIFY_MENU
+            bool "Notification support"
+            default n
+            select USBH_CDC_ACM_NOTIFY if WHC_HOST || WHC_NONE
+            help
+              Open the INTR IN pipe and report SERIAL_STATE through the notify callback.
+              The application shall also set USBH_SOF_INTR in usbh_config_t::ext_intr_enable,
+              because the notification watchdog runs from the SOF callback.
+              Leave disabled to save the pipe, the SOF watchdog and the notify code.
+
         config USBH_CDC_ACM_4G_DONGLE_MENU
             bool "4G LTE dongle support"
             default n
@@ -47,6 +57,7 @@ config USBH_CDC_NCM_MENU
 
 config USBH_MSC_MENU
     bool "MSC"
+    depends on VFS_MENU
     select USBH_MSC if WHC_HOST || WHC_NONE
     select VFS_FATFS_INCLUDED if WHC_HOST || WHC_NONE
 

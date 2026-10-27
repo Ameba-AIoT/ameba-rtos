@@ -28,6 +28,7 @@
 #include <stack/host/conn_internal.h>
 #include <stack/host/smp.h>
 #include <stack/host/adv.h>
+#include <stack/host/att_internal.h>
 #include <zephyr/sys/byteorder.h>
 #include <stack/host/keys.h>
 #include <stack/host/settings.h>
@@ -61,7 +62,11 @@ static uint8_t legacy_ad_buf[BT_ZEPHYR_LEGACY_ADV_MAX_LEN];
 static uint8_t legacy_sd_buf[BT_ZEPHYR_LEGACY_ADV_MAX_LEN];
 static bt_zephyr_adv_data legacy_ad;
 static bt_zephyr_adv_data legacy_sd;
+static rtk_bt_le_adv_param_t legacy_adv_param;
+static bool legacy_adv_param_valid = false;
 static struct bt_le_scan_param scan_param;
+static rtk_bt_le_scan_param_t legacy_scan_param;
+static bool legacy_scan_param_valid = false;
 static uint8_t zephyr_scan_state = ZEPHYR_SCAN_STATE_IDLE;
 static bt_security_t security_level = BT_SECURITY_L2;
 
@@ -106,8 +111,24 @@ static void bt_zephyr_connected_callback(struct bt_conn *conn, uint8_t err)
 	rtk_bt_evt_t *p_evt = NULL;
 	rtk_bt_le_conn_ind_t *p_conn_ind;
 	bt_addr_le_t *peer_addr;
+	bool use_ext_hci = false;
 
 	if (conn->type != BT_CONN_TYPE_LE) {
+		return;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_EXT_ADV) && BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
+		use_ext_hci = true;
+	}
+
+	/* When use ext adv hci, adv stop by duration will be reported in bt_hci_le_adv_set_terminated()
+	 * by callback adv->cb->sent. When use legacy adv hci, no hci_le_adv_set_terminated_evt,
+	 * just report BT_HCI_ERR_ADV_TIMEOUT(0x3C) in hci_le_enhanced_conn_complete_evt(ext hci may
+	 * also report this, but not mandatory in BT spec). */
+	if (BT_HCI_ERR_ADV_TIMEOUT == err) {
+		if (!use_ext_hci) {
+			_indicate_adv_stop(RTK_BT_LE_ADV_STOP_BY_DURATION);
+		}
 		return;
 	}
 
@@ -120,9 +141,9 @@ static void bt_zephyr_connected_callback(struct bt_conn *conn, uint8_t err)
 	p_conn_ind = (rtk_bt_le_conn_ind_t *)p_evt->data;
 
 	/* For central, if le connection cannot be established within timeout, zephyr stack will
-	auto cancel it, then the hci_le_conn_complete_evt or hci_le_enhanced_conn_complete_evt
-	will report error code RTK_BT_HCI_ERR_UNKNOWN_CONN_ID(0x2) */
-	if (RTK_BT_HCI_ERR_UNKNOWN_CONN_ID == err && BT_HCI_ROLE_CENTRAL == conn->role) {
+	 * auto cancel it, then the hci_le_conn_complete_evt or hci_le_enhanced_conn_complete_evt
+	 * will report error code BT_HCI_ERR_UNKNOWN_CONN_ID(0x2) */
+	if (BT_HCI_ERR_UNKNOWN_CONN_ID == err && BT_HCI_ROLE_CENTRAL == conn->role) {
 		p_conn_ind->err = RTK_BT_ERR_CREATE_CONN_TIMEOUT;
 	} else {
 		p_conn_ind->err = RTK_BT_HCI_ERR(err);
@@ -140,24 +161,25 @@ static void bt_zephyr_connected_callback(struct bt_conn *conn, uint8_t err)
 		p_conn_ind->peer_addr.type = conn->le.dst.type;
 		if (!err && memcmp(peer_addr->a.val, conn->le.dst.a.val, BT_ADDR_SIZE)) {
 			/* If the peer_addr not equal to dst addr(identity address), that means peer_addr is RPA,
-			 translate the public(0)/random(1) addr type to public-ident(2)/random-ident(3) addr type */
+			 * translate the public(0)/random(1) addr type to public-ident(2)/random-ident(3) addr type */
 			p_conn_ind->peer_addr.type |= 0x2;
 		}
 		memcpy(p_conn_ind->peer_addr.addr_val, conn->le.dst.a.val, BT_ADDR_SIZE);
 	} else {
-		/* dst addr is resolved by host, this situation is for stack internal use. So, not report dst addr in
-		conn/disconn callback to APP in this situation. */
+		/* dst addr is resolved by host, this situation is for stack internal use.
+		 * So, not report dst addr in conn/disconn callback to APP in this situation. */
 		p_conn_ind->peer_addr.type = peer_addr->type;
 		memcpy(p_conn_ind->peer_addr.addr_val, peer_addr->a.val, BT_ADDR_SIZE);
 	}
 
 	rtk_bt_evt_indicate(p_evt, NULL);
 
-#if !defined(RTK_BLE_5_0_USE_EXTENDED_ADV) || !RTK_BLE_5_0_USE_EXTENDED_ADV
-	if (conn->role == BT_HCI_ROLE_PERIPHERAL) {
+	/* When use ext adv hci, adv stop by connection will be reported in bt_hci_le_adv_set_terminated
+	 * by callback adv->cb->connect. When use legacy adv hci, no adv_set_terminated event,
+	 * so, just report here. And the adv stopped report shall come after le connected report. */
+	if (!use_ext_hci && conn->role == BT_HCI_ROLE_PERIPHERAL) {
 		_indicate_adv_stop(RTK_BT_LE_ADV_STOP_BY_CONN);
 	}
-#endif
 }
 
 static void bt_zephyr_disconnected_callback(struct bt_conn *conn, uint8_t reason)
@@ -237,9 +259,9 @@ void bt_zephyr_le_security_changed(struct bt_conn *conn, bt_security_t level, en
 	(void)level;
 
 	/* The le security changed callback may occurred in 2 conditions:
-	1. In pairing procedure, link is encrypted to distribute keys, auth_result should not reported in this condition
-	   because pairing is still not finished, it will be reported later in pairing_complete/pairing_failed callback.
-	2. Link encryption is established using saved LTK(without pairing). Report auth_result in this condition. */
+	 * 1. In pairing procedure, link is encrypted to distribute keys, auth_result should not reported in this condition
+	 *    because pairing is still not finished, it will be reported later in pairing_complete/pairing_failed callback.
+	 * 2. Link encryption is established using saved LTK(without pairing). Report auth_result in this condition. */
 	if (!bt_conn_is_in_pairing(conn)) {
 		auth_result_indicate(conn, err);
 	}
@@ -713,17 +735,9 @@ void bt_zephyr_auth_pairing_failed(struct bt_conn *conn, enum bt_security_err re
 	auth_result_indicate(conn, reason);
 }
 
-void bt_zephyr_auth_bond_deleted(uint8_t id, const bt_addr_le_t *peer)
-{
-	(void)id;
-
-	bond_info_indicate(RTK_BT_LE_BOND_DELETE, peer, NULL);
-}
-
 struct bt_conn_auth_info_cb bt_zephyr_auth_info_cb = {
 	.pairing_complete = bt_zephyr_auth_pairing_complete,
 	.pairing_failed = bt_zephyr_auth_pairing_failed,
-	.bond_deleted = bt_zephyr_auth_bond_deleted,
 };
 #endif
 
@@ -781,7 +795,7 @@ static void bt_zephyr_le_per_adv_term(struct bt_le_per_adv_sync *sync, const str
 	p_ind = (rtk_bt_le_pa_sync_ind_t *)p_evt->data;
 	p_ind->sync_id = bt_le_per_adv_sync_get_index(sync);
 	p_ind->state = RTK_BT_LE_PA_SYNC_STATE_TERMINATED;
-	p_ind->cause = info->reason;
+	p_ind->cause = RTK_BT_HCI_ERR(info->reason);
 	rtk_bt_evt_indicate(p_evt, NULL);
 }
 
@@ -918,6 +932,10 @@ int bt_stack_le_gap_init(void *app_config)
 uint16_t bt_stack_le_gap_deinit(void)
 {
 	memset((void *)bt_stack_le_conn_handle, 0, sizeof(uint16_t) * CONFIG_BT_MAX_CONN);
+
+	legacy_adv_param_valid = false;
+	legacy_scan_param_valid = false;
+
 	return 0;
 }
 
@@ -974,6 +992,24 @@ static uint16_t bt_stack_le_gap_set_apperance(void *param)
 	}
 }
 
+extern void bt_gaps_set_preferred_conn_param(uint16_t interval_min, uint16_t interval_max,
+											 uint16_t latency, uint16_t timeout);
+static uint16_t bt_stack_le_gap_set_preferred_conn_param(void *param)
+{
+#if defined(CONFIG_BT_GAP_PERIPHERAL_PREF_PARAMS)
+	rtk_bt_le_preferred_conn_param_t *p_preferred_conn_param = (rtk_bt_le_preferred_conn_param_t *)param;
+
+	bt_gaps_set_preferred_conn_param(p_preferred_conn_param->conn_interval_min,
+									 p_preferred_conn_param->conn_interval_max,
+									 p_preferred_conn_param->slave_latency,
+									 p_preferred_conn_param->supv_timeout);
+	return 0;
+#else
+	(void)param;
+	return RTK_BT_ERR_UNSUPPORTED;
+#endif
+}
+
 static uint16_t bt_stack_le_gap_set_adv_data(void *param, uint32_t param_len)
 {
 	memcpy(legacy_ad_buf, param, param_len);
@@ -993,6 +1029,14 @@ static uint16_t bt_stack_le_gap_set_scan_rsp_data(void *param, uint32_t param_le
 }
 
 #if defined(CONFIG_BT_EXT_ADV)
+static void legacy_adv_sent(struct bt_le_ext_adv *adv, struct bt_le_ext_adv_sent_info *info)
+{
+	(void)adv;
+	(void)info;
+
+	_indicate_adv_stop(RTK_BT_LE_ADV_STOP_BY_DURATION);
+}
+
 static void legacy_adv_connected(struct bt_le_ext_adv *adv, struct bt_le_ext_adv_connected_info *info)
 {
 	(void)adv;
@@ -1002,6 +1046,7 @@ static void legacy_adv_connected(struct bt_le_ext_adv *adv, struct bt_le_ext_adv
 }
 
 static struct bt_le_ext_adv_cb bt_zephyr_legacy_adv_cb = {
+	.sent = legacy_adv_sent,
 	.connected = legacy_adv_connected,
 };
 #endif
@@ -1061,6 +1106,7 @@ static uint16_t bt_stack_le_gap_start_adv(void *param)
 		break;
 	}
 
+	/* adv type */
 	switch (padv_param->type) {
 	case RTK_BT_LE_ADV_TYPE_IND:
 		le_adv.options |= BT_LE_ADV_OPT_CONNECTABLE;
@@ -1070,6 +1116,7 @@ static uint16_t bt_stack_le_gap_start_adv(void *param)
 	case RTK_BT_LE_ADV_TYPE_DIRECT_IND_HIGH:
 		le_adv.options |= BT_LE_ADV_OPT_CONNECTABLE;
 		le_adv.options |= BT_LE_ADV_OPT_ONE_TIME;
+		le_adv.options |= BT_LE_ADV_OPT_DIR_ADV;
 		break;
 	case RTK_BT_LE_ADV_TYPE_SCAN_IND:
 		le_adv.options |= BT_LE_ADV_OPT_SCANNABLE;
@@ -1077,6 +1124,7 @@ static uint16_t bt_stack_le_gap_start_adv(void *param)
 	case RTK_BT_LE_ADV_TYPE_DIRECT_IND_LOW:
 		le_adv.options |= BT_LE_ADV_OPT_CONNECTABLE;
 		le_adv.options |= BT_LE_ADV_OPT_ONE_TIME;
+		le_adv.options |= BT_LE_ADV_OPT_DIR_ADV;
 		le_adv.options |= BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY;
 		break;
 	default:
@@ -1084,35 +1132,15 @@ static uint16_t bt_stack_le_gap_start_adv(void *param)
 	}
 
 	/* own address */
+	le_adv.own_addr_type = padv_param->own_addr_type;
 	if (padv_param->own_addr_type == RTK_BT_LE_ADDR_TYPE_PUBLIC) {
 		le_adv.options |= BT_LE_ADV_OPT_USE_IDENTITY;
 	}
-	le_adv.own_addr_type = padv_param->own_addr_type;
 
-	/* directed */
-	if (padv_param->type == RTK_BT_LE_ADV_TYPE_DIRECT_IND_HIGH ||
-		padv_param->type == RTK_BT_LE_ADV_TYPE_DIRECT_IND_LOW) {
-		switch (padv_param->peer_addr.type) {
-		case RTK_BT_LE_ADDR_TYPE_PUBLIC:
-			peer_addr.type = BT_ADDR_LE_PUBLIC;
-			break;
-		case RTK_BT_LE_ADDR_TYPE_RANDOM:
-			peer_addr.type = BT_ADDR_LE_RANDOM;
-			break;
-		case RTK_BT_LE_ADDR_TYPE_RPA_PUBLIC:
-			le_adv.options |= BT_LE_ADV_OPT_DIR_ADDR_RPA;
-			peer_addr.type = BT_ADDR_LE_PUBLIC_ID;
-			break;
-		case RTK_BT_LE_ADDR_TYPE_RPA_RANDOM:
-			le_adv.options |= BT_LE_ADV_OPT_DIR_ADDR_RPA;
-			peer_addr.type = BT_ADDR_LE_RANDOM_ID;
-			break;
-		default:
-			break;
-		}
-		memcpy(peer_addr.a.val, padv_param->peer_addr.addr_val, BT_ADDR_SIZE);
-		le_adv.peer = &peer_addr;
-	}
+	/* peer address */
+	peer_addr.type = padv_param->peer_addr.type;
+	memcpy(peer_addr.a.val, padv_param->peer_addr.addr_val, BT_ADDR_SIZE);
+	le_adv.peer = &peer_addr;
 
 	if (!(le_adv.options & BT_LE_ADV_OPT_SCANNABLE)) {
 		sd = NULL;
@@ -1121,10 +1149,13 @@ static uint16_t bt_stack_le_gap_start_adv(void *param)
 
 	if (IS_ENABLED(CONFIG_BT_EXT_ADV) && BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
 		struct bt_le_ext_adv *adv = adv_get_legacy();
+		if (!adv) {
+			return RTK_BT_ERR_LOWER_STACK_API;
+		}
+
 #if defined(CONFIG_BT_EXT_ADV)
 		adv->cb = &bt_zephyr_legacy_adv_cb;
 #endif
-
 		if (padv_param->own_addr_type != RTK_BT_LE_ADDR_TYPE_PUBLIC &&
 			!bt_addr_le_eq(&bt_dev.random_addr, BT_ADDR_LE_ANY)) {
 			err = bt_id_set_adv_random_addr(adv, &bt_dev.random_addr.a);
@@ -1139,6 +1170,10 @@ static uint16_t bt_stack_le_gap_start_adv(void *param)
 	if (err) {
 		return zephyr_err_to_rtk(err);
 	}
+
+	/* cache adv param snapshot for GET_ADV_PARAM to read back */
+	memcpy(&legacy_adv_param, padv_param, sizeof(rtk_bt_le_adv_param_t));
+	legacy_adv_param_valid = true;
 
 #if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT
 	/* When mesh is running, app adv is treated as mesh adv (align with rtk_stack),
@@ -1169,6 +1204,17 @@ static uint16_t bt_stack_le_gap_start_adv(void *param)
 	}
 
 	return 0;
+}
+
+static uint16_t bt_stack_le_gap_get_adv_param(void *param)
+{
+	rtk_bt_le_adv_param_t *padv_param = (rtk_bt_le_adv_param_t *)param;
+
+	if (!legacy_adv_param_valid) {
+		return RTK_BT_ERR_LOWER_STACK_API;
+	}
+	memcpy(padv_param, &legacy_adv_param, sizeof(rtk_bt_le_adv_param_t));
+	return RTK_BT_OK;
 }
 
 static uint16_t bt_stack_le_gap_stop_adv(void)
@@ -1376,6 +1422,7 @@ static uint16_t bt_stack_le_gap_create_ext_adv(void *param)
 
 	memset(&le_adv, 0, sizeof(struct bt_le_adv_param));
 
+	le_adv.options |= BT_LE_ADV_OPT_SET_PARAM_NATIVE;
 	le_adv.id = id;
 	le_adv.sid = padv_param->adv_sid;
 	le_adv.secondary_max_skip = padv_param->secondary_adv_max_skip;
@@ -1383,6 +1430,7 @@ static uint16_t bt_stack_le_gap_create_ext_adv(void *param)
 	le_adv.interval_max = padv_param->primary_adv_interval_max;
 
 	/* adv event properties */
+	le_adv.props = padv_param->adv_event_prop;
 	if (padv_param->adv_event_prop & BT_HCI_LE_ADV_PROP_CONN) {
 		le_adv.options |= BT_LE_ADV_OPT_CONNECTABLE;
 		le_adv.options |= BT_LE_ADV_OPT_ONE_TIME;
@@ -1390,15 +1438,19 @@ static uint16_t bt_stack_le_gap_create_ext_adv(void *param)
 	if (padv_param->adv_event_prop & BT_HCI_LE_ADV_PROP_SCAN) {
 		le_adv.options |= BT_LE_ADV_OPT_SCANNABLE;
 	}
-	if ((padv_param->adv_event_prop & BT_HCI_LE_ADV_PROP_DIRECT) &&
-		!(padv_param->adv_event_prop & BT_HCI_LE_ADV_PROP_HI_DC_CONN)) {
-		le_adv.options |= BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY;
+	if (padv_param->adv_event_prop & BT_HCI_LE_ADV_PROP_DIRECT) {
+		le_adv.options |= BT_LE_ADV_OPT_DIR_ADV;
+		if (!(padv_param->adv_event_prop & BT_HCI_LE_ADV_PROP_HI_DC_CONN)) {
+			le_adv.options |= BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY;
+		}
 	}
 	if (!(padv_param->adv_event_prop & BT_HCI_LE_ADV_PROP_LEGACY)) {
 		le_adv.options |= BT_LE_ADV_OPT_EXT_ADV;
 	}
 
 	/* PHY */
+	le_adv.prim_adv_phy = padv_param->primary_adv_phy;
+	le_adv.sec_adv_phy = padv_param->secondary_adv_phy;
 	if (padv_param->primary_adv_phy == RTK_BT_LE_PHYS_PRIM_ADV_CODED &&
 		padv_param->secondary_adv_phy == RTK_BT_LE_PHYS_CODED) {
 		le_adv.options |= BT_LE_ADV_OPT_CODED;
@@ -1407,9 +1459,6 @@ static uint16_t bt_stack_le_gap_create_ext_adv(void *param)
 		if (!(padv_param->adv_event_prop & BT_HCI_LE_ADV_PROP_LEGACY)) {
 			le_adv.options |= BT_LE_ADV_OPT_NO_2M; //legacy adv cannot use this option
 		}
-	} else if (!(padv_param->primary_adv_phy == RTK_BT_LE_PHYS_PRIM_ADV_1M &&
-				 padv_param->secondary_adv_phy == RTK_BT_LE_PHYS_2M)) {
-		return RTK_BT_ERR_PARAM_INVALID;
 	}
 
 	/* channel map */
@@ -1439,40 +1488,22 @@ static uint16_t bt_stack_le_gap_create_ext_adv(void *param)
 		break;
 	}
 
-	// /* TX power */
-	// if (padv_param->tx_power != 0x7F) {
-	//  le_adv.options |= BT_LE_ADV_OPT_USE_TX_POWER;
-	// }
+	/* TX power */
+	le_adv.tx_power = padv_param->tx_power;
+	if (padv_param->adv_event_prop & BT_HCI_LE_ADV_PROP_TX_POWER) {
+		le_adv.options |= BT_LE_ADV_OPT_USE_TX_POWER;
+	}
 
 	/* own address */
+	le_adv.own_addr_type = padv_param->own_addr.type;
 	if (padv_param->own_addr.type == RTK_BT_LE_ADDR_TYPE_PUBLIC) {
 		le_adv.options |= BT_LE_ADV_OPT_USE_IDENTITY;
 	}
-	le_adv.own_addr_type = padv_param->own_addr.type;
 
-	/* directed */
-	if (padv_param->adv_event_prop & BT_HCI_LE_ADV_PROP_DIRECT) {
-		switch (padv_param->peer_addr.type) {
-		case RTK_BT_LE_ADDR_TYPE_PUBLIC:
-			peer_addr.type = BT_ADDR_LE_PUBLIC;
-			break;
-		case RTK_BT_LE_ADDR_TYPE_RANDOM:
-			peer_addr.type = BT_ADDR_LE_RANDOM;
-			break;
-		case RTK_BT_LE_ADDR_TYPE_RPA_PUBLIC:
-			le_adv.options |= BT_LE_ADV_OPT_DIR_ADDR_RPA;
-			peer_addr.type = BT_ADDR_LE_PUBLIC_ID;
-			break;
-		case RTK_BT_LE_ADDR_TYPE_RPA_RANDOM:
-			le_adv.options |= BT_LE_ADV_OPT_DIR_ADDR_RPA;
-			peer_addr.type = BT_ADDR_LE_RANDOM_ID;
-			break;
-		default:
-			break;
-		}
-		memcpy(peer_addr.a.val, padv_param->peer_addr.addr_val, BT_ADDR_SIZE);
-		le_adv.peer = &peer_addr;
-	}
+	/* peer address */
+	peer_addr.type = padv_param->peer_addr.type;
+	memcpy(peer_addr.a.val, padv_param->peer_addr.addr_val, BT_ADDR_SIZE);
+	le_adv.peer = &peer_addr;
 
 	err = bt_le_ext_adv_create(&le_adv, &bt_zephyr_ext_adv_cb, &adv);
 	if (err) {
@@ -1603,7 +1634,22 @@ static uint16_t bt_stack_le_gap_set_scan_param(void *param)
 		scan_param.options |= BT_LE_SCAN_OPT_FILTER_ACCEPT_LIST;
 	}
 
+	/* cache original param for GET_SCAN_PARAM to read back (translation above is lossy) */
+	memcpy(&legacy_scan_param, p_param, sizeof(rtk_bt_le_scan_param_t));
+	legacy_scan_param_valid = true;
+
 	return 0;
+}
+
+static uint16_t bt_stack_le_gap_get_scan_param(void *param)
+{
+	rtk_bt_le_scan_param_t *pscan_param = (rtk_bt_le_scan_param_t *)param;
+
+	if (!legacy_scan_param_valid) {
+		return RTK_BT_ERR_LOWER_STACK_API;
+	}
+	memcpy(pscan_param, &legacy_scan_param, sizeof(rtk_bt_le_scan_param_t));
+	return RTK_BT_OK;
 }
 
 static uint16_t bt_stack_le_gap_start_scan(bool is_ext)
@@ -1687,7 +1733,8 @@ static uint16_t bt_stack_le_gap_ext_scan_set_param(void *param)
 	scan_param.window = p_param->window[0];
 
 	if (p_param->phys[1]) {
-		scan_param.options |= BT_LE_SCAN_OPT_CODED;
+		scan_param.options |= (BT_LE_SCAN_OPT_CODED | BT_LE_SCAN_OPT_CODED_SCAN_TYPE);
+		scan_param.type_coded = p_param->type[1];
 		scan_param.interval_coded = p_param->interval[1];
 		scan_param.window_coded = p_param->window[1];
 	}
@@ -1713,6 +1760,7 @@ static uint16_t bt_stack_le_gap_ext_connect(void *param)
 	memset(&le_create_param, 0, sizeof(struct bt_conn_le_create_param));
 	memset(&le_conn_param, 0, sizeof(struct bt_le_conn_param));
 
+	le_create_param.options |= BT_CONN_LE_OPT_MULTI_PHY_PARAM;
 	if (!p_ext_conn_param->init_phys[0]) {
 		le_create_param.options |= BT_CONN_LE_OPT_NO_1M;
 	}
@@ -1731,11 +1779,15 @@ static uint16_t bt_stack_le_gap_ext_connect(void *param)
 				le_create_param.window = p_ext_conn_param->scan_window[i];
 			}
 
+			le_create_param.per_phy[i].interval_max = p_ext_conn_param->conn_interval_max[i];
+			le_create_param.per_phy[i].interval_min = p_ext_conn_param->conn_interval_min[i];
+			le_create_param.per_phy[i].latency = p_ext_conn_param->conn_latency[i];
+			le_create_param.per_phy[i].timeout = p_ext_conn_param->supv_timeout[i];
+
 			le_conn_param.interval_max = p_ext_conn_param->conn_interval_max[i];
 			le_conn_param.interval_min = p_ext_conn_param->conn_interval_min[i];
 			le_conn_param.latency = p_ext_conn_param->conn_latency[i];
 			le_conn_param.timeout = p_ext_conn_param->supv_timeout[i];
-
 		}
 	}
 
@@ -2773,7 +2825,6 @@ static uint16_t bt_stack_le_gap_read_peer_resolv_addr(void *param)
 }
 #endif
 
-void bt_set_sc_support(bool enable);
 static uint16_t bt_stack_le_sm_set_security_param(void *p_param)
 {
 	rtk_bt_le_security_param_t *param = (rtk_bt_le_security_param_t *)p_param;
@@ -2839,6 +2890,8 @@ static uint16_t bt_stack_le_sm_set_security_param(void *p_param)
 	if (param->io_cap == BT_SMP_IO_NO_INPUT_OUTPUT) {
 		security_level = BT_SECURITY_L2;
 	}
+
+	bt_set_sign_key_flag(!!param->sign_key_flag);
 
 	bt_conn_auth_cb_register(NULL);
 	if (bt_conn_auth_cb_register(&bt_zephyr_auth_cb)) {
@@ -3050,6 +3103,9 @@ static uint16_t bt_stack_le_sm_delete_bond_device(void *param)
 			return RTK_BT_ERR_LOWER_STACK_API;
 		}
 	}
+
+	bond_info_indicate(RTK_BT_LE_BOND_DELETE, &dst, NULL);
+
 	return 0;
 }
 
@@ -3085,6 +3141,32 @@ static uint16_t bt_stack_le_gap_get_mtu_size(void *param)
 	bt_conn_unref(conn);
 
 	*get_mtu->p_mtu_size = mtu_size;
+
+	return 0;
+}
+
+static uint16_t bt_stack_le_gap_set_max_mtu_size(void *param)
+{
+	uint16_t mtu_size = *(uint16_t *)param;
+	struct bt_conn *conn = NULL;
+	int i;
+
+	for (i = 0; i < CONFIG_BT_MAX_CONN; i++) {
+		conn = bt_conn_lookup_index(i);
+		if (conn) {
+			bt_conn_state_t state = conn->state;
+
+			bt_conn_unref(conn);
+
+			if (state == BT_CONN_CONNECTED ||
+				state == BT_CONN_INITIATING ||
+				state == BT_CONN_INITIATING_FILTER_LIST) {
+				return RTK_BT_ERR_STATE_INVALID;
+			}
+		}
+	}
+
+	bt_host.att_mtu = MAX(mtu_size, BT_ATT_DEFAULT_LE_MTU);
 
 	return 0;
 }
@@ -3529,7 +3611,7 @@ uint16_t bt_stack_le_gap_act_handle(rtk_bt_cmd_t *p_cmd)
 		break;
 	case RTK_BT_LE_GAP_ACT_SET_PREFERRED_CONN_PARAM:
 		BT_LOGD("RTK_BT_LE_GAP_ACT_SET_PREFERRED_CONN_PARAM \r\n");
-		//ret = bt_stack_le_gap_set_preferred_conn_param(p_cmd->param);
+		ret = bt_stack_le_gap_set_preferred_conn_param(p_cmd->param);
 		break;
 	case RTK_BT_LE_GAP_ACT_SET_RAND_ADDR:
 		BT_LOGD("RTK_BT_LE_GAP_ACT_SET_RAND_ADDR \r\n");
@@ -3554,6 +3636,10 @@ uint16_t bt_stack_le_gap_act_handle(rtk_bt_cmd_t *p_cmd)
 	case RTK_BT_LE_GAP_ACT_START_ADV:
 		BT_LOGD("RTK_BT_LE_GAP_ACT_START_ADV \r\n");
 		ret = bt_stack_le_gap_start_adv(p_cmd->param);
+		break;
+	case RTK_BT_LE_GAP_ACT_GET_ADV_PARAM:
+		BT_LOGD("RTK_BT_LE_GAP_ACT_GET_ADV_PARAM \r\n");
+		ret = bt_stack_le_gap_get_adv_param(p_cmd->param);
 		break;
 	case RTK_BT_LE_GAP_ACT_STOP_ADV:
 		BT_LOGD("RTK_BT_LE_GAP_ACT_STOP_ADV \r\n");
@@ -3651,6 +3737,10 @@ uint16_t bt_stack_le_gap_act_handle(rtk_bt_cmd_t *p_cmd)
 		BT_LOGD("RTK_BT_LE_GAP_ACT_SET_SCAN_PARAM \r\n");
 		ret = bt_stack_le_gap_set_scan_param(p_cmd->param);
 		break;
+	case RTK_BT_LE_GAP_ACT_GET_SCAN_PARAM:
+		BT_LOGD("RTK_BT_LE_GAP_ACT_GET_SCAN_PARAM \r\n");
+		ret = bt_stack_le_gap_get_scan_param(p_cmd->param);
+		break;
 	case RTK_BT_LE_GAP_ACT_START_SCAN:
 		BT_LOGD("RTK_BT_LE_GAP_ACT_START_SCAN \r\n");
 		ret = bt_stack_le_gap_start_scan(false);
@@ -3722,6 +3812,10 @@ uint16_t bt_stack_le_gap_act_handle(rtk_bt_cmd_t *p_cmd)
 	case RTK_BT_LE_GAP_ACT_GET_MTU_SIZE:
 		BT_LOGD("RTK_BT_LE_GAP_ACT_GET_MTU_SIZE\r\n");
 		ret = bt_stack_le_gap_get_mtu_size(p_cmd->param);
+		break;
+	case RTK_BT_LE_GAP_ACT_SET_MAX_MTU_SIZE:
+		BT_LOGD("RTK_BT_LE_GAP_ACT_SET_MAX_MTU_SIZE \r\n");
+		ret = bt_stack_le_gap_set_max_mtu_size(p_cmd->param);
 		break;
 	case RTK_BT_LE_GAP_ACT_SET_CHANNELS:
 		BT_LOGD("RTK_BT_LE_GAP_ACT_SET_CHANNELS\r\n");

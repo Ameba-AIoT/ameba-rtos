@@ -26,13 +26,39 @@
 #include "dhcp/dhcps.h"
 #include "wtn_app_rnat.h"
 #include "dns_proxy.h"
+#include "rnat_netif.h"
+#include "lwip_ipnat.h"
 
 #ifdef CONFIG_RNAT_EN
-static int wifi_repeater_ap_config_complete = 0;
 rtos_task_t rnat_ap_start_task_hdl = NULL;
-rtos_task_t rnat_poll_ip_task_hdl = NULL;
 
-extern void ip_nat_reinitialize(void);
+static rnat_ip_info_t g_ap_custom_ip = {
+	.ip = { .addr = PP_HTONL(LWIP_MAKEU32(10, 200, 1, 1)) },
+	.gw = { .addr = PP_HTONL(LWIP_MAKEU32(10, 200, 1, 1)) },
+	.netmask = { .addr = PP_HTONL(LWIP_MAKEU32(255, 255, 255, 0)) }
+};
+
+static rnat_wifi_config_t g_ap_wifi_config = {0};
+
+const rnat_netif_config_t g_rnat_sta_netif_config = {
+	.role = RNAT_ROLE_WAN,
+	.ip_method = RNAT_IP_METHOD_DHCP_CLIENT,
+	.priority = RNAT_ROUTE_PRIO_WAN_STA,
+	.ip_info = NULL,
+	.if_desc = "STA",
+	.status_callback = NULL,
+	.callback_user_data = NULL
+};
+
+const rnat_netif_config_t g_rnat_ap_netif_config = {
+	.role = RNAT_ROLE_LAN,
+	.ip_method = RNAT_IP_METHOD_DHCP_SERVER,
+	.priority = RNAT_ROUTE_PRIO_LAN,
+	.ip_info = &g_ap_custom_ip,  /* Use custom static IP */
+	.if_desc = "AP",
+	.status_callback = NULL,
+	.callback_user_data = NULL
+};
 
 static void rnat_wifi_stop_ap(void)
 {
@@ -50,145 +76,14 @@ static void rnat_wifi_stop_ap(void)
 	wifi_stop_ap();
 }
 
-static int rnat_wifi_restart_ap(struct rtw_softap_info *softAP_config, u32 softap_ip, u32 softap_netmask)
-{
-	u32 addr;
-	u32 netmask;
-	u32 gw;
-	uint8_t iptab[4];
-	int timeout = 20;
-
-	rnat_wifi_stop_ap();
-
-	// start ap
-	if (wifi_start_ap(softAP_config) < 0) {
-		return -1;
-	}
-
-	while (1) {
-		struct rtw_wifi_setting softapsetting;
-		wifi_get_setting(SOFTAP_WLAN_INDEX, &softapsetting);
-		if (strlen((const char *)softapsetting.ssid) > 0) {
-			if (strcmp((const char *) softapsetting.ssid, (const char *)softAP_config->ssid.val) == 0) {
-				break;
-			}
-		}
-
-		if (timeout == 0) {
-			RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "\n\r%s(%d)ERROR: Start AP timeout!\n", __FUNCTION__, __LINE__);
-			return -1;
-		}
-
-		rtos_time_delay_ms(1000);
-		timeout --;
-	}
-
-	iptab[0] = (uint8_t)(softap_ip);
-	iptab[1] = (uint8_t)(softap_ip >> 8);
-	iptab[2] = (uint8_t)(softap_ip >> 16);
-	iptab[3] = (uint8_t)(softap_ip >> 24);
-	addr = CONCAT_TO_UINT32(iptab[0], iptab[1], iptab[2], iptab[3]);
-	gw = CONCAT_TO_UINT32(iptab[0], iptab[1], iptab[2], 1);
-
-	iptab[0] = (uint8_t)(softap_netmask);
-	iptab[1] = (uint8_t)(softap_netmask >> 8);
-	iptab[2] = (uint8_t)(softap_netmask >> 16);
-	iptab[3] = (uint8_t)(softap_netmask >> 24);
-	netmask = CONCAT_TO_UINT32(iptab[0], iptab[1], iptab[2], iptab[3]);
-
-	lwip_set_ip(NETIF_WLAN_AP_INDEX, addr, netmask, gw);
-	// start dhcp server
-	dhcps_init(pnetif_ap);
-	dhcps_start(pnetif_ap);
-#if defined(CONFIG_IP6_RLOCAL) && (CONFIG_IP6_RLOCAL == 1)
-	lwip_autoip_ipv6(NETIF_WLAN_AP_INDEX);
-#endif
-	return 0;
-}
-
-static int rnat_avoid_confliction_ip(void)
-{
-	struct rtw_wifi_setting setting;
-	struct rtw_softap_info softAP_config = {0};
-	u32 wlan1_ip, wlan1_mask, wlan0_ip, wlan0_mask, maskVal;
-	u32 bitmask = 0;
-	int i = 0;
-
-	wlan0_ip = *((unsigned int *)(lwip_get_ip(NETIF_WLAN_STA_INDEX)));
-	wlan0_mask = *((unsigned int *)(lwip_get_mask(NETIF_WLAN_STA_INDEX)));
-
-	wlan1_ip = *((unsigned int *)(lwip_get_ip(NETIF_WLAN_AP_INDEX)));
-	wlan1_mask = *((unsigned int *)(lwip_get_mask(NETIF_WLAN_AP_INDEX)));
-
-	memcpy(&maskVal, wlan1_mask > wlan0_mask ? &wlan0_mask : &wlan1_mask, 4);
-
-	if ((wlan0_ip & maskVal) == (wlan1_ip & maskVal)) { //wan ip conflict lan ip
-		for (i = 0; i < 31; i++) {
-			bitmask = (u32)htonl(1 << i);
-			if ((maskVal & bitmask) != 0) {
-				break;
-			}
-		}
-
-		if ((wlan1_ip & bitmask) == 0) {
-			wlan1_ip = wlan1_ip | bitmask;
-		} else {
-			wlan1_ip = wlan1_ip & (~bitmask);
-		}
-
-		wifi_get_setting(SOFTAP_WLAN_INDEX, &setting);
-		softAP_config.ssid.len = strlen((char *)setting.ssid);
-		memcpy(softAP_config.ssid.val, setting.ssid, softAP_config.ssid.len);
-		softAP_config.password = setting.password;
-		softAP_config.password_len = strlen((char *)setting.password);
-		softAP_config.security_type = setting.security_type;
-		softAP_config.channel = setting.channel;
-
-		if (rnat_wifi_restart_ap(&softAP_config, wlan1_ip, wlan1_mask) < 0) {
-			RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "\n\rERROR: wifi_restart_ap Operation failed!");
-		}
-	}
-
-	return 0;
-}
-
-static void rnat_poll_ip_changed_thread(void *param)
-{
-	(void) param;
-	unsigned int oldip, newip;
-	memcpy(&oldip, lwip_get_ip(NETIF_WLAN_STA_INDEX), 4);
-
-	while (1) {
-		memcpy(&newip, lwip_get_ip(NETIF_WLAN_STA_INDEX), 4);
-		if (0x0 == newip) {
-			goto nextcheck;
-		}
-
-		if (1 == wifi_repeater_ap_config_complete && oldip != newip) {
-			RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "%s(%d)oldip=%x,newip=%x\n", __FUNCTION__, __LINE__, oldip, newip);
-			ip_nat_reinitialize();
-			dns_proxy_update_upstream_servers();
-			rnat_avoid_confliction_ip();
-			oldip = newip;
-		}
-
-nextcheck:
-		rtos_time_delay_ms(1000);
-	}
-
-	rtos_task_delete(NULL);
-}
 
 static void rnat_ap_start_thread(void *param)
 {
 	/* To avoid gcc warnings */
 	(void) param;
-	u32 ip_addr;
-	u32 netmask;
-	u32 gw;
 	struct rtw_wifi_setting wifi_setting = {0};
-	struct rtw_softap_info softap_config = {0};
-	u8 timeout = 20;
+	struct rtw_wifi_setting ap_setting = {0};
+	u8 *sta_ip;
 
 	/*step1: check if STA port connected to AP successfully*/
 	while (1) {
@@ -198,56 +93,85 @@ static void rnat_ap_start_thread(void *param)
 		rtos_time_delay_ms(200);
 	}
 
-	/*step2: get STA port setting and start softap with same ssid and password*/
+	/* softap already running with the same ssid/password as the STA's connected AP: nothing to start */
 	wifi_get_setting(STA_WLAN_INDEX, &wifi_setting);
-	if (wifi_setting.security_type & WPA_SECURITY) {/*softap only support WPA2, currently not support WPA*/
-		softap_config.security_type = (wifi_setting.security_type & (~WPA_SECURITY)) | (WPA2_SECURITY);
+	rnat_netif_t *ap_netif = rnat_netif_get(lwip_idx_get_netif(NETIF_WLAN_AP_INDEX));
+	if (wifi_is_running(SOFTAP_WLAN_INDEX) == TRUE) {
+		wifi_get_setting(SOFTAP_WLAN_INDEX, &ap_setting);
+		if (!strcmp((char *)ap_setting.ssid, (char *)wifi_setting.ssid) &&
+			(wifi_setting.security_type == RTW_SECURITY_OPEN ? ap_setting.security_type == RTW_SECURITY_OPEN :
+			 !strcmp((char *)ap_setting.password, (char *)wifi_setting.password))) {
+			goto exit;/*restart softap only when realAP change*/
+		}
+
+		if (ap_netif) {/*rnat already started，no need do dns_proxy/rnat_init again*/
+			u8 *ap_ip = lwip_get_ip(NETIF_WLAN_AP_INDEX);
+			if (ap_ip) {
+				etharp_remove_static_entry((ip4_addr_t *)ap_ip);
+			}
+			goto restart_ap;
+		}
+	}
+
+	rnat_netif_t *sta_netif = rnat_netif_get(lwip_idx_get_netif(NETIF_WLAN_STA_INDEX));
+	if (sta_netif == NULL) {
+		/* Initialize and start DNS Proxy */
+		dns_proxy_init(DNS_PROXY_CACHE_MAX_ENTRIES, DNS_PROXY_TX_MAX_PENDING);
+		dns_proxy_start(DNS_PROXY_LISTEN_PORT);
+		/* Initialize R-NAT system */
+		rnat_init();
+
+		sta_netif = rnat_netif_create(NETIF_WLAN_STA_INDEX, &g_rnat_sta_netif_config);
+		/* just now, so the one-shot LWIP_NSC_LINK_CHANGED event was missed and is_active stayed false;
+		* without this the STA (prio 102) loses to the AP (prio 0) in rnat_update_default_gw()
+		*/
+		if (sta_netif) {
+			sta_netif->is_active = true;
+		}
+	}
+
+restart_ap:
+	/*step2: softap ssid = STA port's connected ap ssid + last byte of STA port's mac (hex)*/
+	strncpy(g_ap_wifi_config.ssid, (char *)wifi_setting.ssid, sizeof(g_ap_wifi_config.ssid) - 1);
+	g_ap_wifi_config.ssid[sizeof(g_ap_wifi_config.ssid) - 1] = '\0';
+	strncpy(g_ap_wifi_config.password, (char *)wifi_setting.password, sizeof(g_ap_wifi_config.password) - 1);
+	g_ap_wifi_config.channel = wifi_setting.channel;
+
+	/*step3: softap ip/gw: only the 3rd byte of g_ap_custom_ip.ip is replaced by the last byte of STA port's ip*/
+	sta_ip = lwip_get_ip(NETIF_WLAN_STA_INDEX);
+	((u8 *)&g_ap_custom_ip.ip.addr)[2] = sta_ip[3];
+	g_ap_custom_ip.gw = g_ap_custom_ip.ip;
+
+	ap_netif = rnat_netif_get(lwip_idx_get_netif(NETIF_WLAN_AP_INDEX));
+	if (!ap_netif) {
+		ap_netif = rnat_netif_create(NETIF_WLAN_AP_INDEX, &g_rnat_ap_netif_config);
 	} else {
-		softap_config.security_type = wifi_setting.security_type;
+		/* rnat_netif_create() only applies ip_info once; on restart apply the new subnet before DHCP server is re-inited */
+		struct ip_addr check_ip;
+		ip_addr_copy_from_ip4(check_ip, g_ap_custom_ip.ip);
+		if (!lwip_subnet_is_used(&check_ip, ap_netif->lwip_netif)) {
+			netifapi_netif_set_addr(ap_netif->lwip_netif, &g_ap_custom_ip.ip, &g_ap_custom_ip.netmask, &g_ap_custom_ip.gw);
+		} else {
+			RTK_LOGS(NOTAG, RTK_LOG_WARN, "AP custom subnet conflicts, auto-allocating\n");
+			if (lwip_alloc_ip(NETIF_WLAN_AP_INDEX) != 0) {
+				goto exit;
+			}
+		}
 	}
-	if (wifi_setting.security_type != RTW_SECURITY_OPEN) {
-		u8 softap_password[RTW_MAX_PSK_LEN] = {0};
-		softap_config.password_len = strlen((char *)wifi_setting.password);
-		memcpy(softap_password, wifi_setting.password, softap_config.password_len);
-		softap_config.password = softap_password;
-	}
-	softap_config.channel = wifi_setting.channel;
-	softap_config.ssid.len = strlen((char *)wifi_setting.ssid);
-	memcpy(softap_config.ssid.val, wifi_setting.ssid, softap_config.ssid.len);
-	if (wifi_start_ap(&softap_config) < 0) {
-		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "\n\r[RMESH NAT] ERROR: wifi_start_ap failed\n");
+	if (rnat_netif_start(ap_netif, (void *)&g_ap_wifi_config) < 0) {
+		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "\n\r%s(%d)ERROR: Start AP failed!\n", __FUNCTION__, __LINE__);
 		goto exit;
 	}
 
-	while (timeout > 0) {
-		wifi_get_setting(SOFTAP_WLAN_INDEX, &wifi_setting);
-		if (strlen((char *)wifi_setting.ssid) > 0) {
-			if (strcmp((char *)wifi_setting.ssid, (char *)softap_config.ssid.val) == 0) {
-				RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "[RMESH NAT] %s started\n", softap_config.ssid.val);
-				break;
-			}
-		}
-
-		rtos_time_delay_ms(1000);
-		timeout--;
-	}
-
-
-	ip_addr = CONCAT_TO_UINT32(NAT_AP_IP_ADDR0, NAT_AP_IP_ADDR1, NAT_AP_IP_ADDR2, NAT_AP_IP_ADDR3);
-	netmask = CONCAT_TO_UINT32(NAT_AP_NETMASK_ADDR0, NAT_AP_NETMASK_ADDR1, NAT_AP_NETMASK_ADDR2, NAT_AP_NETMASK_ADDR3);
-	gw = CONCAT_TO_UINT32(NAT_AP_GW_ADDR0, NAT_AP_GW_ADDR1, NAT_AP_GW_ADDR2, NAT_AP_GW_ADDR3);
-	lwip_set_ip(NETIF_WLAN_AP_INDEX, ip_addr, netmask, gw);
-
-	RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "\n\r[RMESH NAT] Start DHCP server\n");
-	dhcps_init(pnetif_ap);
-	dhcps_start(pnetif_ap);
+#ifdef CONFIG_WTN_RNAT_INTERCOM
+	wtn_rnat_intercom_set_self_gw();
+#endif
 
 #if defined(CONFIG_IP6_RLOCAL) && (CONFIG_IP6_RLOCAL == 1)
 	lwip_autoip_ipv6(NETIF_WLAN_AP_INDEX);
 #endif
 	rtos_time_delay_ms(1000);
 
-	wifi_repeater_ap_config_complete = 1;
 exit:
 	rnat_ap_start_task_hdl = NULL;
 	rtos_task_delete(NULL);
@@ -257,6 +181,7 @@ u8 wtn_rnat_search_client_ip(u8 *src_mac)
 {
 	return dhcps_search_client_ip(pnetif_ap, src_mac);
 }
+
 #endif
 
 void wtn_rnat_ap_init(u8 enable)
@@ -264,22 +189,22 @@ void wtn_rnat_ap_init(u8 enable)
 #ifdef CONFIG_RNAT_EN
 	RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "RNAT AP INIT=%d\n", enable);
 	if (enable) {
-		wifi_repeater_ap_config_complete = 0;
-
 		if (rnat_ap_start_task_hdl == NULL) {
 			if (rtos_task_create(&rnat_ap_start_task_hdl, ((const char *)"rnat_start_thread"), rnat_ap_start_thread, NULL, 1024 * 4, 1) != RTK_SUCCESS) {
 				RTK_LOGS(NOTAG, RTK_LOG_ALWAYS,  "\n\r%s rtos_task_create failed\n", __FUNCTION__);
 			}
 		}
-		if (rnat_poll_ip_task_hdl == NULL) {
-			if (rtos_task_create(&rnat_poll_ip_task_hdl, ((const char *)"rnat_poll_ip_changed_thread"), rnat_poll_ip_changed_thread, NULL, 1024 * 4, 1) != RTK_SUCCESS) {
-				RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "\n\r%s rtos_task_create failed\n", __FUNCTION__);
-			}
-			dns_proxy_init(DNS_PROXY_CACHE_MAX_ENTRIES, DNS_PROXY_TX_MAX_PENDING);
-			dns_proxy_start(DNS_PROXY_LISTEN_PORT);
+#ifdef CONFIG_WTN_RNAT_INTERCOM
+		if (wifi_user_config.wtn_rnat_intercom_en) {
+			wtn_rnat_intercom_start();
 		}
+#endif
 	} else {
-		wifi_repeater_ap_config_complete = 0;
+#ifdef CONFIG_WTN_RNAT_INTERCOM
+		if (wifi_user_config.wtn_rnat_intercom_en) {
+			return;
+		}
+#endif
 		rnat_wifi_stop_ap();
 	}
 #else

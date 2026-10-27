@@ -1047,11 +1047,15 @@ static void bt_hci_le_per_adv_sync_established_common(struct net_buf *buf)
 	if (pending_per_adv_sync) {
 		atomic_clear_bit(pending_per_adv_sync->flags,
 				 BT_PER_ADV_SYNC_SYNCING);
+#if !ZEPHYR_RTK_PATCH
 		err = bt_le_scan_update(false);
 
 		if (err) {
 			LOG_ERR("Could not update scan (%d)", err);
 		}
+#else
+		ARG_UNUSED(err);
+#endif
 	}
 
 	if (evt->status == BT_HCI_ERR_OP_CANCELLED_BY_HOST) {
@@ -1134,7 +1138,11 @@ static void bt_hci_le_per_adv_sync_established_common(struct net_buf *buf)
 		}
 	}
 
+#if ZEPHYR_RTK_PATCH
+	sync_info.addr = &evt->adv_addr;
+#else
 	sync_info.addr = &pending_per_adv_sync->addr;
+#endif
 	sync_info.sid = pending_per_adv_sync->sid;
 #if defined(CONFIG_BT_PER_ADV_SYNC_RSP)
 	sync_info.num_subevents = evt->num_subevents;
@@ -1258,7 +1266,11 @@ void bt_hci_le_per_adv_sync_lost(struct net_buf *buf)
 	}
 
 	/* There is no status in the per. adv. sync lost event */
+#if ZEPHYR_RTK_PATCH
+	per_adv_sync_terminated(per_adv_sync, BT_HCI_ERR_CONN_TIMEOUT);
+#else
 	per_adv_sync_terminated(per_adv_sync, BT_HCI_ERR_UNSPECIFIED);
+#endif
 }
 
 #if defined(CONFIG_BT_CONN)
@@ -1517,9 +1529,20 @@ static bool valid_le_scan_param(const struct bt_le_scan_param *param)
 		return false;
 	}
 
+#if ZEPHYR_RTK_PATCH
+	if ((param->options & (BT_LE_SCAN_OPT_CODED | BT_LE_SCAN_OPT_CODED_SCAN_TYPE)) &&
+		param->type_coded != BT_HCI_LE_SCAN_PASSIVE &&
+		param->type_coded != BT_HCI_LE_SCAN_ACTIVE) {
+		return false;
+	}
+#endif
+
 	if (param->options & ~(BT_LE_SCAN_OPT_FILTER_DUPLICATE |
 			       BT_LE_SCAN_OPT_FILTER_ACCEPT_LIST |
 			       BT_LE_SCAN_OPT_CODED |
+#if ZEPHYR_RTK_PATCH
+				   BT_LE_SCAN_OPT_CODED_SCAN_TYPE |
+#endif
 			       BT_LE_SCAN_OPT_NO_1M)) {
 		return false;
 	}
@@ -1582,10 +1605,12 @@ int bt_le_scan_start(const struct bt_le_scan_param *param, bt_le_scan_cb_t cb)
 	if (IS_ENABLED(CONFIG_BT_EXT_ADV) &&
 	    BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
 
+#if !ZEPHYR_RTK_PATCH
 		if (IS_ENABLED(CONFIG_BT_SCAN_AND_INITIATE_IN_PARALLEL) && param->timeout) {
 			atomic_clear_bit(bt_dev.flags, BT_DEV_EXPLICIT_SCAN);
 			return -ENOTSUP;
 		}
+#endif
 
 		struct bt_hci_ext_scan_phy param_1m;
 		struct bt_hci_ext_scan_phy param_coded;
@@ -1608,8 +1633,15 @@ int bt_le_scan_start(const struct bt_le_scan_param *param, bt_le_scan_cb_t cb)
 			uint16_t window = param->window_coded ?
 				param->window_coded :
 				param->window;
-
+#if ZEPHYR_RTK_PATCH
+			if (param->options & BT_LE_SCAN_OPT_CODED_SCAN_TYPE) {
+				param_coded.type = param->type_coded;
+			} else {
+				param_coded.type = param->type;
+			}
+#else
 			param_coded.type = param->type;
+#endif
 			param_coded.interval = sys_cpu_to_le16(interval);
 			param_coded.window = sys_cpu_to_le16(window);
 			phy_coded = &param_coded;
@@ -1825,6 +1857,7 @@ int bt_le_per_adv_sync_create(const struct bt_le_per_adv_sync_param *param,
 
 	atomic_set_bit(per_adv_sync->flags, BT_PER_ADV_SYNC_SYNCING);
 
+#if !ZEPHYR_RTK_PATCH
 	/* Syncing requires that scan is enabled. If the caller doesn't enable
 	 * scan first, we enable it here, and disable it once the sync has been
 	 * established. We don't need to use any callbacks since we rely on
@@ -1838,6 +1871,7 @@ int bt_le_per_adv_sync_create(const struct bt_le_per_adv_sync_param *param,
 			return err;
 		}
 	}
+#endif
 
 	*out_sync = per_adv_sync;
 	bt_addr_le_copy(&per_adv_sync->addr, &param->addr);

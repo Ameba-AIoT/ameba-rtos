@@ -8,6 +8,7 @@
 #define USB_CDC_ECM_H
 
 /* Includes ------------------------------------------------------------------*/
+
 #include "basic_types.h"
 #include "usb_cdc.h"
 
@@ -15,13 +16,18 @@
 extern "C" {
 #endif
 
-/* Exported defines ----------------------------------------------------------*/
-
 /** @addtogroup USB_Common_API USB Common API
  *  @{
  */
+
+/* Exported defines ----------------------------------------------------------*/
+
 /** @addtogroup USB_Common_Constants USB Common Constants
  * @{
+ */
+/** @defgroup USB_Common_CDC_ECM_Constants USB CDC ECM Constants (ECM 1.2)
+ *  @brief Ethernet Control Model definitions shared by the USBD and USBH CDC ECM drivers.
+ *  @{
  */
 
 /* CDC Communication Subclass Codes */
@@ -75,12 +81,17 @@ extern "C" {
 /* MAC Address String Descriptor */
 #define USB_CDC_ECM_MAC_STRING_SIZE                     12U      /**< MAC address string length (12 Unicode characters) */
 
+/** @} End of USB_Common_CDC_ECM_Constants group */
 /** @} End of USB_Common_Constants group */
 
 /* Exported types ------------------------------------------------------------*/
 
 /** @addtogroup USB_Common_Types USB Common Types
  * @{
+ */
+/** @defgroup USB_Common_CDC_ECM_Types USB CDC ECM Types (ECM 1.2)
+ *  @brief Ethernet Control Model types shared by the USBD and USBH CDC ECM drivers.
+ *  @{
  */
 
 /**
@@ -128,12 +139,19 @@ typedef struct {
 	usb_cdc_ecm_speed_change_data_t data; /**< Speed change data */
 } __PACKED usb_cdc_ecm_notify_t;
 
-
+/** @} End of USB_Common_CDC_ECM_Types group */
 /** @} End of USB_Common_Types group */
+
+/* Exported macros -----------------------------------------------------------*/
+
+/* Exported variables --------------------------------------------------------*/
+
+/* Exported functions --------------------------------------------------------*/
+
 /** @} End of USB_Common_API group */
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif  /* USB_CDC_ECM_H */
+#endif /* USB_CDC_ECM_H */

@@ -164,8 +164,6 @@ void GPIO_UserUnRegIrq(u32 GPIO_Pin)
 			GPIO_IrqTable[idx].UsrIrqData = NULL;
 
 			GPIO_IrqTable[idx].IrqIdleEntryFlag = 0x0;
-
-			break;
 		}
 	}
 

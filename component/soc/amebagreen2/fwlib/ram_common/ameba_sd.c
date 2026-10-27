@@ -24,7 +24,6 @@ static u32 SD_WideBus_Disable(SD_HdlTypeDef *hsd);
 static u32 SD_GetCardSCR(SD_HdlTypeDef *hsd);
 static void SD_Write_IT(SD_HdlTypeDef *hsd);
 static void SD_Read_IT(SD_HdlTypeDef *hsd);
-static u32 SD_IRQHandler(void *pData);
 
 /** @addtogroup Ameba_Periph_Driver
   * @{
@@ -118,6 +117,8 @@ static void SD_CardDetectHdl(u32 id, u32 event)
 	} else if (level == HAL_IRQ_RISE) { // low->high
 		RTK_LOGI(TAG, "Card Removed!\n");
 		sd_status = SD_NODISK;
+	} else {
+		return;
 	}
 
 	if (cd_cb != NULL) {
@@ -589,7 +590,7 @@ SD_RESULT SD_CardInit(void)
 
 		/* Wait until func1 is ready */
 		while (1) {
-			ret = SD_IO_RW_Direct(hsd, BUS_READ, SDIO_FUNC0, SDIOD_CCCR_IORDY, NULL, &val);
+			ret = SD_IO_RW_Direct(hsd, BUS_READ, SDIO_FUNC0, SDIOD_CCCR_IORDY, (u8)0x0, &val);
 			if (ret != SD_OK) {
 				return SD_ERROR;
 			}
@@ -1883,11 +1884,13 @@ SD_RESULT SD_Erase(SD_HdlTypeDef *hsd, u32 BlockStartAdd, u32 BlockEndAdd)
 	}
 }
 
+/// @cond
 /**
  * @brief  SD Host interrupt handler.
+ * @param  pData Pointer to SD handle.
  * @return 0.
  */
-static u32 SD_IRQHandler(void *pData)
+u32 SD_IRQHandler(void *pData)
 {
 	SD_HdlTypeDef *hsd = (SD_HdlTypeDef *)pData;
 	SDIOHOST_TypeDef *SDIOx = hsd->Instance;
@@ -1968,6 +1971,7 @@ static u32 SD_IRQHandler(void *pData)
 
 	return 0;
 }
+/// @endcond
 
 /**
  * @brief  Return card identification information stored in the CID register.

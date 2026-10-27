@@ -85,6 +85,10 @@ static int pke_rsa_prime_generate(size_t nbits, uint8_t *num_buf, int flags)
 	size_t rounds = 0;
 	size_t prime_bytes = nbits / 8;
 
+	if (prime_bytes > sizeof(a_buf)) {
+		return MBEDTLS_ERR_RSA_BAD_INPUT_DATA;
+	}
+
 	if ((flags & MBEDTLS_MPI_GEN_PRIME_FLAG_LOW_ERR) == 0) {
 		/*
 		 * 2^-80 error probability, number of rounds chosen per HAC, table 4.4
@@ -178,6 +182,9 @@ static int mbedtls_mpi_gen_prime_pke(mbedtls_mpi *X, size_t nbits, int flags,
 	}
 
 	uint8_t *num_buf = malloc(nbits / 8);
+	if (num_buf == NULL) {
+		return MBEDTLS_ERR_MPI_ALLOC_FAILED;
+	}
 	if (RTK_SUCCESS != pke_rsa_prime_generate(nbits, num_buf, flags)) {
 		ret = RTK_FAIL;
 		goto cleanup;

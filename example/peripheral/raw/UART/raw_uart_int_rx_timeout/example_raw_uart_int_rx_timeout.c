@@ -165,6 +165,7 @@ u32 uart_irq(void *data)
 
 	return 0;
 }
+#endif
 
 void uart_int_send(UART_OBJ *uart_obj, u8 *pstr, u32 len)
 {

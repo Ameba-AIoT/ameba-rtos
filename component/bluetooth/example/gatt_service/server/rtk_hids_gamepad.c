@@ -284,7 +284,7 @@ static void gamepad_hid_read_hdl(void *data)
 		uint16_t offset = p_read_ind->offset;
 		uint16_t actual_len = total_len - offset;
 
-		if (offset >= total_len) {
+		if (offset > total_len) {
 			read_resp.err_code = RTK_BT_ATT_ERR_INVALID_OFFSET;
 			break;
 		}

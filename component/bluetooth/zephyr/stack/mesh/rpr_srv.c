@@ -20,6 +20,9 @@
 #include "prov.h"
 #include "crypto.h"
 #include "rpr.h"
+#if ZEPHYR_RTK_PATCH
+#include "pb_gatt.h"
+#endif
 #include "net.h"
 #include "mesh.h"
 
@@ -79,7 +82,15 @@ static struct {
 		uint8_t rx_pdu;
 		struct bt_mesh_rpr_node cli;
 		struct bt_mesh_rpr_unprov *dev;
+#if ZEPHYR_RTK_PATCH
+		/* Bearer of the current link, locked when the link is opened */
+		const struct prov_bearer *bearer;
+#endif
 	} link;
+#if ZEPHYR_RTK_PATCH
+	/* Bearer used to open the next link, PB-ADV by default */
+	const struct prov_bearer *prefer_bearer;
+#endif
 	struct {
 		const struct prov_bearer_cb *cb;
 		enum bt_mesh_rpr_node_refresh procedure;
@@ -94,6 +105,31 @@ static struct {
 		.adv_data = NET_BUF_SIMPLE(CONFIG_BT_MESH_RPR_SRV_AD_DATA_MAX)
 	}
 };
+
+#if ZEPHYR_RTK_PATCH
+static const struct prov_bearer *link_bearer(void)
+{
+	return srv.link.bearer ? srv.link.bearer : &bt_mesh_pb_adv;
+}
+
+int bt_mesh_rpr_srv_prefer_bearer_set(uint8_t bearer)
+{
+	switch (bearer) {
+	case BT_MESH_PROV_ADV:
+		srv.prefer_bearer = &bt_mesh_pb_adv;
+		break;
+#if defined(CONFIG_BT_MESH_PB_GATT_CLIENT)
+	case BT_MESH_PROV_GATT:
+		srv.prefer_bearer = &bt_mesh_pb_gatt;
+		break;
+#endif
+	default:
+		return -EINVAL;
+	}
+
+	return 0;
+}
+#endif
 
 enum bt_mesh_rpr_node_refresh bt_mesh_node_refresh_get(void)
 {
@@ -142,6 +178,9 @@ static void cli_link_clear(void)
 {
 	srv.link.cli.addr = BT_MESH_ADDR_UNASSIGNED;
 	srv.link.cli.net_idx = BT_MESH_KEY_UNUSED;
+#if ZEPHYR_RTK_PATCH
+	srv.link.bearer = NULL;
+#endif
 }
 
 static void scan_status_send(struct bt_mesh_msg_ctx *ctx,
@@ -377,7 +416,11 @@ static void link_close(enum bt_mesh_rpr_status status,
 
 		cli_link_clear();
 	} else {
+#if ZEPHYR_RTK_PATCH
+		link_bearer()->link_close(reason);
+#else
 		bt_mesh_pb_adv.link_close(reason);
+#endif
 	}
 }
 
@@ -546,7 +589,11 @@ static void pb_rx(const struct prov_bearer *bearer, void *cb_data,
 		LOG_ERR("PDU send fail: %d", err);
 		link_close(BT_MESH_RPR_ERR_LINK_CLOSED_AS_CANNOT_SEND_PDU,
 			   PROV_BEARER_LINK_STATUS_FAIL);
+#if ZEPHYR_RTK_PATCH
+		link_bearer()->link_close(PROV_ERR_RESOURCES);
+#else
 		bt_mesh_pb_adv.link_close(PROV_ERR_RESOURCES);
+#endif
 	}
 }
 
@@ -957,7 +1004,17 @@ static int handle_link_open(const struct bt_mesh_model *mod, struct bt_mesh_msg_
 		srv.link.dev->flags = 0;
 	}
 
+#if ZEPHYR_RTK_PATCH
+	srv.link.bearer = srv.prefer_bearer ? srv.prefer_bearer : &bt_mesh_pb_adv;
+	err = link_bearer()->link_open(uuid, timeout, &prov_bearer_cb, &srv);
+#if defined(CONFIG_BT_MESH_PB_GATT_CLIENT)
+	if (!err && srv.link.bearer == &bt_mesh_pb_gatt) {
+		bt_mesh_pb_gatt_srv_wait();
+	}
+#endif
+#else
 	err = bt_mesh_pb_adv.link_open(uuid, timeout, &prov_bearer_cb, &srv);
+#endif
 	if (err) {
 		status = BT_MESH_RPR_ERR_LINK_CANNOT_OPEN;
 		goto rsp;
@@ -1056,7 +1113,11 @@ static int handle_pdu_send(const struct bt_mesh_model *mod, struct bt_mesh_msg_c
 		srv.refresh.cb->recv(&pb_remote_srv, srv.refresh.cb_data, buf);
 	} else {
 		srv.link.state = BT_MESH_RPR_LINK_SENDING;
+#if ZEPHYR_RTK_PATCH
+		err = link_bearer()->send(buf, pdu_send_complete, &srv);
+#else
 		err = bt_mesh_pb_adv.send(buf, pdu_send_complete, &srv);
+#endif
 		if (err) {
 			link_close(
 				BT_MESH_RPR_ERR_LINK_CLOSED_AS_CANNOT_SEND_PDU,

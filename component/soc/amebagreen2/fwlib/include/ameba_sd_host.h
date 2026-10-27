@@ -1920,7 +1920,9 @@ typedef struct {
  */
 
 /* Initialization/de-initialization functions */
+void SDIO_ClockSourceInit(void);
 u32 SDIOH_Init(SDIOHOST_TypeDef *SDIOx);
+u32 SDIO_HostInit(SDIOHOST_TypeDef *SDIOx);
 
 /* I/O operation functions */
 u32 SDIO_ReadFIFO(SDIOHOST_TypeDef *SDIOx);

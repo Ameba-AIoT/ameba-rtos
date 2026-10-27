@@ -12,7 +12,7 @@ None
 
 # SW configuration
 
-1. Use menuconfig and choose `CONFIG VFS`:
+1. Use menuconfig and choose `CONFIG File System`:
 	```C
 	[*] Enable VFS FATFS
 	[*]     FATFS within APP Image

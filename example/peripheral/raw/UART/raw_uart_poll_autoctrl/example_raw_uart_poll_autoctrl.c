@@ -11,7 +11,11 @@
 #include "example_uart_ext.h"
 #include "os_wrapper.h"
 
+#if defined(CONFIG_AMEBAPRO3)
 #define UART_DEV	UART3_DEV
+#else
+#define UART_DEV	UART0_DEV
+#endif
 #define UART_BAUD	38400
 #define UART_BUF_SIZE	1000
 

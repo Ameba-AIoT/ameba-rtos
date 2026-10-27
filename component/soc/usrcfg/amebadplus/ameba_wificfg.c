@@ -68,7 +68,7 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.freq_band_support = RTW_SUPPORT_BAND_MAX;
 	wifi_user_config.tx_pwr_table_selection = 2;
 	wifi_user_config.tpc_enable = 0; /* 1: apply TPC for FCC/MKK/KCC/IC/ETSI(5.25~5.35GHz, 5.47~5.725GHz), CN(5.25~5.35GHz) */
-	wifi_user_config.dfs_master_enable = 0; /* 0: Disable SoftAP DFS master, 1: Enable (CAC/NOP/radar on DFS channels) */
+	wifi_user_config.dfs_master_enable = 0; /* 0: Disable SoftAP DFS master, 1: Enable (only for supported country code) */
 	wifi_user_config.rtw_802_11d_en = 0;
 	wifi_user_config.rtw_trp_tis_cert_en = RTW_TRP_TIS_DISABLE;
 	wifi_user_config.rtw_edcca_mode = RTW_EDCCA_NORM;
@@ -140,6 +140,10 @@ _WEAK void wifi_set_user_config(void)
 		skb_num_np_rsvd = 16; /*4 for rx_ring_buffer + 2 for mgnt trx + 10 for tunnel tx */
 		wifi_user_config.skb_num_np = 20; /* skb_num_np should >= rx_ampdu_num + skb_num_np_rsvd */
 	}
+	/* NAN mode */
+#if defined(CONFIG_WIFI_NAN_ENABLE)
+	wifi_user_config.nan_max_peer_num = 6;	/*should not exceed 15 */
+#endif
 
 	/* ensure skb_num_np >= rx_ampdu_num + skb_num_np_rsvd */
 	if (wifi_user_config.skb_num_np < wifi_user_config.rx_ampdu_num + skb_num_np_rsvd) {

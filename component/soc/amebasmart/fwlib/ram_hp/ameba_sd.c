@@ -166,7 +166,7 @@ static u32 CmdRespError(u8 resp_type, u8 cmd)
 		}
 
 		if (cmd == SD_CMD_AppCmd) {
-			if (!(resp_byte4 & SD_APP_CMD)) {
+			if (!(resp_byte4 & SDIOH_R1_APP_CMD)) {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "ACMD isn't expected !!\r\n");
 				return HAL_ERR_UNKNOWN;
 			}
@@ -926,6 +926,7 @@ static u32 SD_SwitchFunction(u8 mode, u8 speed, u8 *buf_32align)
 
 /**
   * @brief  SD Host interrupt handler.
+  * @param  param Interrupt callback parameter, this parameter is not used.
   * @return 0.
   */
 static u32 SD_IRQHandler(void *param)
@@ -1841,7 +1842,7 @@ void SD_CardInit(void)
 		RTK_LOGS(TAG, RTK_LOG_INFO, "SD card is initialized\r\n");
 	} else {
 		card_info.sd_status = SD_INITERR;
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Init FAIL, ret: %lu\n", ret);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Init FAIL, ret: %u\n", ret);
 	}
 }
 

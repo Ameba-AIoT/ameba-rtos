@@ -18,21 +18,27 @@
 extern "C" {
 #endif
 
-/* Exported defines ----------------------------------------------------------*/
-
 /** @addtogroup USB_Host_API USB Host API
  *  @{
  */
+
+/* Exported defines ----------------------------------------------------------*/
+
 /** @addtogroup USB_Host_Constants USB Host Constants
  * @{
  */
 /** @addtogroup Host_Core_Constants Host Core Constants
  * @{
  */
+
 /* This define is used to trace transfer performance */
 #define USBH_TP_TRACE_DEBUG                 0U
 
 #define USBH_MAX_HUB_PORT                   7
+
+#define USBH_CLASS_ISR_SYNC_TIMEOUT_MS      10U    /**< Default @ref usbh_sync_isr() bound for a class tearing down after its slot gate closed */
+#define USBH_TEARDOWN_WAIT_FIRST_LOG_MS     1000U  /**< A teardown wait that has no upper bound logs an ERROR once it has waited this long */
+#define USBH_TEARDOWN_WAIT_LOG_MS           5000U  /**< ... and repeats it at this period from then on */
 
 /* USB Host interrupt enable flag*/
 #define USBH_SOF_INTR                       (BIT0) /**< Start of (micro)Frame GINTSTS.Sof. For host class driver to handle timing issues in SOF callback of @ref usbh_class_driver_t */
@@ -65,6 +71,7 @@ extern "C" {
 /** @addtogroup Host_Core_Types Host Core Types
  * @{
  */
+
 /**
  * @brief Defines the transfer states for an endpoint's pipe.
  */
@@ -100,7 +107,19 @@ typedef enum {
 } usbh_urb_state_t;
 
 /**
- * @brief Defines message types for user process callbacks of @ref usbh_user_cb_t.
+ * @brief Defines application message types for user process callbacks of @ref usbh_user_cb_t.
+ *
+ * @note Naming convention in the host stack: everything the core hands to an
+ *       upper layer is a *message*, distinguished by recipient.
+ *       An *application message* (@ref usbh_msg_type_t, `USBH_MSG_*`) is a
+ *       notification code passed synchronously to the application's
+ *       @ref usbh_user_cb_t process() callback and is never queued.
+ *       A *driver message* (@ref usbh_drv_msg_t, usbh_drv_msg_type_t,
+ *       `USBH_DRV_MSG_*`) is an item of the HCD message queue, consumed by the
+ *       host main task and dispatched to class drivers.
+ *       The two families are unrelated; do not mix them. The unprefixed
+ *       `USBH_MSG_*` family is the application-facing one, kept unprefixed for
+ *       API compatibility.
  */
 typedef enum {
 	USBH_MSG_USER_SET_CONFIG = 0U,/**< Message to request user to set the configuration. */
@@ -109,8 +128,14 @@ typedef enum {
 	USBH_MSG_WAKEUP,              /**< Message indicating the host has been woken from suspend by a device-initiated remote wakeup. */
 	USBH_MSG_PROBE_FAIL,          /**< Message indicating that device probing failed due to mismatched device properties. */
 	USBH_MSG_ATTACH_FAIL,         /**< Message indicating device attachment failed. */
-	USBH_MSG_ERROR,               /**< Message indicating a general error occurred. */
-} usbh_msg_t;
+	USBH_MSG_ERROR,               /**< Message indicating the core gave the attached device up: enumeration aborted or a
+	                                 usbh_reenumerate() request refused. The device is left alone until replugged.
+	                                 A failed control request is reported only to its requester, by return value. */
+	USBH_MSG_RESET,               /**< Message indicating a class-requested reset of the attached device is starting.
+	                                 Reported before the class detach callbacks it causes, which are therefore not
+	                                 an unplug; the device is then enumerated again and the classes re-attach.
+	                                 No USBH_MSG_DISCONNECTED / USBH_MSG_CONNECTED pair is reported for it. */
+} usbh_msg_type_t;
 
 /**
  * @brief  Defines the source for the USB host tick counter.
@@ -169,7 +194,7 @@ typedef struct {
 	u8 bDescriptorType;           /**< BOS Descriptor Type. */
 	u16 wTotalLength;             /**< Total length of the BOS descriptor and all its sub-descriptors. */
 	u8 bNumDeviceCaps;            /**< The number of device capability descriptors in the BOS. */
-} usbh_dev_bos_t;
+} __PACKED usbh_dev_bos_t;
 
 /**
  * @brief USB standard endpoint descriptor structure.
@@ -281,18 +306,18 @@ typedef union {
 } usbh_setup_req_t;
 
 /**
- * @brief Packed structure for a USB event message.
+ * @brief Packed structure for an item of the HCD driver message queue.
  */
 typedef struct {
-	u32 data;                          /**< Event private data. For USBH_CLASS_EVENT this carries the
+	u32 data;                          /**< Message private data. For USBH_DRV_MSG_CLASS this carries the
 	                                        originating class driver's slot index (0..config.class_num-1);
 	                                        CLASS_READY dispatch uses it to index class_slot[] and route
-	                                        the event to exactly that driver, so per-class process()
+	                                        the message to exactly that driver, so per-class process()
 	                                        handlers no longer need an owner filter guard. */
-	u16 tick;                          /**< Tick count when the event occurred. */
-	u8 pipe_num;                       /**< Pipe number associated with the event. */
-	u8 type;                           /**< Message type, corresponds to `usbh_event_type_t`. */
-} usbh_event_t;
+	u16 tick;                          /**< Tick count when the message was raised. */
+	u8 pipe_num;                       /**< Pipe number associated with the message. */
+	u8 type;                           /**< Driver message type, corresponds to `usbh_drv_msg_type_t`. */
+} usbh_drv_msg_t;
 
 /**
  * @brief USB host user configuration structure.
@@ -324,7 +349,21 @@ typedef struct {
 	 * - `USB_SPEED_FULL`: USB 1.1 Full-Speed mode(for FS-only SoCs).
 	 */
 	u8 speed : 2;
-	u8 isr_in_critical : 1;               /**< Flag to process USB ISR within a critical section (0: Disable, 1: Enable). */
+	/**
+	 * @brief Process the whole USB ISR, class callbacks included, inside the USB critical section (0: Disable, 1: Enable).
+	 * @details When enabled:
+	 *   - The callbacks run with interrupts disabled, and with the USB spinlock held under SMP:
+	 *     keep them short. Under SMP a USB API called on the other core spins with its
+	 *     interrupts disabled until the ISR has left.
+	 *   - A callback shall not take the critical section of another component, and no code
+	 *     shall call a USB API while holding one. Under SMP either order against the ISR
+	 *     on the other core deadlocks both cores.
+	 * @note  Ignored and forced to 1 on an SMP build (RTOS_NUM_CORES > 1): the USB IRQ runs on
+	 *        another core than the task, which is only excluded from the ISR register and
+	 *        state updates if the ISR holds the USB lock as well. The rules above then always
+	 *        apply to the class sof()/completed() callbacks.
+	 */
+	u8 isr_in_critical : 1;
 	u8 hub_support : 1;                   /**< Support 1-level HUB (0: Disable, 1: Enable). */
 	u8 diag_enable : 1;                   /**< Enable USB diag ring buffer and polling task (0: Disable, 1: Enable).
                                               When disabled, error diagnostic information is silently lost.
@@ -337,9 +376,11 @@ typedef struct {
 typedef struct {
 	u8 *xfer_buf;                     /**< Pointer to the transfer buffer. */
 	u32 xfer_len;                     /**< Total length of the data to transfer. */
+	u32 xfer_buf_len;                 /**< Capacity of xfer_buf in bytes, 0 to skip the check. An IN transfer reserves whole packets,
+	                                     so @ref usbh_transfer_data() rejects one whose usb_get_dma_len(xfer_len, ep_mps) exceeds it. */
 	u32 tick;                         /**< Host tick count at the start of the transfer (based on SOF or timestamp). */
 	__IO u16 frame_num;               /**< Frame number for the transfer (from HFNUM register, max 0x3FFF). */
-	u16 max_timeout_tick;             /**< Maximum wait timeout in ticks for this transfer. */
+	u16 max_timeout_tick;             /**< Maximum wait timeout in ticks for this transfer, a tick being 125 us at HS and 1 ms at FS/LS; 0 for 100 ms. */
 	u16 ep_interval;                  /**< Endpoint polling interval in ticks. */
 
 	/* Endpoint information get from the endpoint descriptor */
@@ -391,7 +432,7 @@ typedef struct {
 	* @param[in] host: USB host.
 	* @return 0 on success, non-zero on failure.
 	*/
-	int(*attach)(struct _usb_host_t *host);
+	int (*attach)(struct _usb_host_t *host);
 
 	/**
 	* @brief Called when a supported device is detached.
@@ -410,13 +451,13 @@ typedef struct {
 	*
 	*          The status is interpreted in exactly three ways, and a class must not
 	*          conflate them:
-	*          - @ref HAL_OK: this class is fully set up. The core advances to the next
+	*          - HAL_OK: this class is fully set up. The core advances to the next
 	*            class and, once all are done, enters CLASS_READY.
-	*          - @ref HAL_BUSY: still in progress, call me again. This is the only status
+	*          - HAL_BUSY: still in progress, call me again. This is the only status
 	*            that requests a retry, and it must be returned whenever the class
 	*            intends to make further attempts - including when an optional request
 	*            failed but the sequence continues to its next step. A class that stays
-	*            BUSY without advancing for longer than @ref USBH_CLASS_SETUP_TIMEOUT_MS
+	*            BUSY without advancing for longer than USBH_CLASS_SETUP_TIMEOUT_MS
 	*            is detached and skipped by the core's progress watchdog.
 	*          - any other status: terminal failure. The core calls this class's detach(),
 	*            drops it and continues with the remaining classes; if no class is left,
@@ -427,20 +468,20 @@ typedef struct {
 	*            fall back to a default and keep going instead of failing the class.
 	*
 	* @param[in] host: USB host.
-	* @return @ref HAL_OK when setup is complete, @ref HAL_BUSY while in progress,
+	* @return HAL_OK when setup is complete, HAL_BUSY while in progress,
 	*         another status to abandon this class.
 	*/
-	int(*setup)(struct _usb_host_t *host);
+	int (*setup)(struct _usb_host_t *host);
 
 	/**
 	* @brief Main processing loop for the class driver after class setup to process class-specific transfers.
-	* @details The core dispatches each event to exactly one class driver (by class slot for
-	*          @ref USBH_CLASS_EVENT, by the pipe's owning driver otherwise), so a driver never
-	*          sees a foreign event and has no result to report back to the core.
+	* @details The core dispatches each driver message to exactly one class driver (by class slot for
+	*          USBH_DRV_MSG_CLASS, by the pipe's owning driver otherwise), so a driver never
+	*          sees a foreign message and has no result to report back to the core.
 	* @param[in] host: USB host.
-	* @param[in] event: @ref usbh_event_t.
+	* @param[in] msg: @ref usbh_drv_msg_t.
 	*/
-	void (*process)(struct _usb_host_t *host, usbh_event_t *event);
+	void (*process)(struct _usb_host_t *host, usbh_drv_msg_t *msg);
 
 	/**
 	* @brief Called at each Start-of-Frame (SOF) interrupt for class-specific timing process.
@@ -468,11 +509,11 @@ typedef struct {
  */
 typedef struct {
 	/**
-	* @brief Callback to handle class-independent events in the application.
+	* @brief Callback to handle class-independent notifications in the application.
 	* @details Pure notification: the core ignores any result, so the application cannot
 	*          influence the host state machine from here.
 	* @param[in] host: USB host.
-	* @param[in] msg: @ref usbh_msg_t.
+	* @param[in] msg: Application message type, @ref usbh_msg_type_t.
 	*/
 	void (*process)(struct _usb_host_t *host, u8 msg);
 
@@ -486,7 +527,7 @@ typedef struct {
 	 *	   else return !HAL_OK, the enum process will discard this device, and switch to check next hub port.
 	 * @return 0 on success, non-zero on failure.
 	 */
-	int(*validate)(struct _usb_host_t *host, u8 cfg_max);
+	int (*validate)(struct _usb_host_t *host, u8 cfg_max);
 } usbh_user_cb_t;
 
 /**
@@ -519,8 +560,11 @@ typedef struct _usb_host_t {
 	u8 dev_speed;                       /**< The speed of the attached device. */
 	u8 connect_state;                   /**< The current connection state. See @ref usbh_state_t. */
 } usb_host_t;
+
 /** @} End of Host_Core_Types group */
 /** @} End of USB_Host_Types group */
+
+/* Exported macros -----------------------------------------------------------*/
 
 /* Exported variables --------------------------------------------------------*/
 
@@ -532,6 +576,7 @@ typedef struct _usb_host_t {
 /** @addtogroup Host_Core_Functions_For_Applications Host Core Functions For Applications
  * @{
  */
+
 /**
  * @brief Initialize USB host core driver with user configuration and callback.
  * @param[in] cfg: USB user configuration.
@@ -546,33 +591,51 @@ int usbh_init(const usbh_config_t *cfg, const usbh_user_cb_t *cb);
 void usbh_deinit(void);
 
 /**
- * @brief Force the attached device through a fresh enumeration.
- * @details Restarts the port without tearing down the core: VBUS is dropped and
- *          global interrupts are disabled, both EP0 pipes are freed, the bus is
- *          left quiesced for 200 ms, the enumeration/control state machines and
- *          the cached device info (address, speed, descriptor buffer) are reset
- *          to their power-on values, and the host is started again with the port
- *          state machine back at idle. A device that is still plugged in is then
- *          re-enumerated from scratch, exactly as on a fresh hot-plug.
- *
- *          Registered class drivers are NOT unregistered and the core is NOT
- *          deinitialized, so the same drivers re-bind by matching the freshly
- *          read descriptors. Typical uses are recovering from a wedged device
- *          and picking up a device that changed its descriptors on the fly
- *          (e.g. a DFU run-time -> DFU-mode switch on a device that does not
- *          detach itself).
- * @note  Runs the 200 ms quiesce delay inline, so call it from task context
- *        only - never from an ISR or an ISR-context class callback
- *        (@ref usbh_class_driver_t::sof, @ref usbh_class_driver_t::completed).
- * @note  Every pipe a class opened is invalidated. A class whose device is
- *        currently attached gets its @ref usbh_class_driver_t::detach called by
- *        the resulting disconnect handling; do not keep using cached pipe
- *        handles across this call.
+ * @brief Request a reset and a fresh enumeration of the attached device.
+ * @details The host task detaches every class driver, reports @ref USBH_MSG_RESET to the
+ *          application, resets the root port and enumerates the device again from address 0,
+ *          so the same class drivers re-bind to a device in its power-on state. Typical uses
+ *          are the last recovery step of a class whose own recovery failed (e.g. MSC after a
+ *          failed BOT Reset Recovery, as Linux usb_reset_device() is for its class drivers),
+ *          and picking up a device that changed its descriptors on the fly (e.g. a DFU
+ *          run-time -> DFU-mode switch on a device that does not detach itself).
+ *          A hub on the root port is reset with the device behind it.
+ * @note  Asynchronous: only records the request and wakes the host task, so it may be called
+ *        from any context, including a class process() or ISR-context callback. After it
+ *        returns HAL_OK a class must not use its pipes; its detach() runs from the host task.
+ * @note  At most USBH_REENUMERATE_MAX_CNT resets are allowed per physical attach and only an
+ *        unplug renews them. Once they are spent the request is refused: @ref USBH_MSG_ERROR
+ *        is reported, every class is detached and the device is left alone until it is
+ *        replugged.
  * @warning Requires an initialized core: call only after a successful
  *          @ref usbh_init(), and never after @ref usbh_deinit().
- * @return 0 on success, non-zero on failure.
+ * @return HAL_OK if the reset was scheduled, HAL_BUSY if one is already pending,
+ *         HAL_ERR_PARA if no device is attached, HAL_ERR_HW if the reenumerate budget is spent.
  */
 int usbh_reenumerate(void);
+
+/**
+ * @brief Wait until no class sof()/completed() callback runs on any core.
+ * @details The core enters a class ISR callback only while its slot is attached, but a
+ *          callback another core entered just before a gate closed may still be running.
+ *          The core already waits this way whenever it closes a slot gate itself: before a
+ *          class detach() and inside @ref usbh_unregister_class(), so a class deinit() that
+ *          unregisters before freeing needs no call. A class that tears down ISR data under
+ *          its own gate while still attached (e.g. on an alt setting change) closes that gate,
+ *          then calls this, then frees: any callback entered after the gate closed sees it
+ *          closed. A full barrier here and one in the IRQ handler between its counter increment
+ *          and its gate reads make the handshake hold on weak-order SMP, so a plain store is
+ *          enough for the gate.
+ * @note  Task context only, it sleeps between polls. Returns at once in the usual case, and
+ *        never while a callback still runs: the caller frees right after, so an early return
+ *        would be the use after free this guards against. An IRQ handler that does not end is
+ *        a fault, reported with an ERROR log every USBH_TEARDOWN_WAIT_LOG_MS, but waited out.
+ * @param[in] timeout_ms: Wait after which an ERROR is logged; the wait itself goes on until the
+ *        callback leaves. A callback normally ends within microseconds.
+ * @return HAL_OK if no callback ran past timeout_ms, HAL_TIMEOUT if one did (it has left all the
+ *         same), HAL_ERR_PARA in ISR context or without an initialized core.
+ */
+int usbh_sync_isr(u32 timeout_ms);
 
 /**
  * @brief Get the USB address currently assigned to the attached device.
@@ -626,6 +689,7 @@ int usbh_select_test_mode(u8 mode);
 /** @addtogroup Host_Core_Functions_For_Classes Host Core Functions For Classes
  * @{
  */
+
 /**
  * @brief Register a host class driver, called in class initialization function.
  *        Only records the driver in class_driver[]; USB TRX is NOT started
@@ -640,9 +704,24 @@ int usbh_register_class(const usbh_class_driver_t *driver);
  *        Removes ONLY the matching driver from class_driver[]; does not stop
  *        hardware (usbh_stop()) or release core resources (usbh_deinit()).
  *        A driver that was never registered is silently ignored.
+ * @details The slot is released by the host task between two driver messages, so on a
+ *          HAL_OK return none of attach(), setup(), process() or detach() of this driver runs,
+ *          none will run again, and an EP0 request it left in flight is halted with its
+ *          buffer dropped. Its sof()/completed() are waited out as well (@ref usbh_sync_isr()).
+ *          So a class deinit() calls this first and may then free everything those callbacks
+ *          touch. A class data pipe is not covered: close it with @ref usbh_close_pipe().
+ * @note  Task context only, and not from the host task: no class callback and no
+ *        @ref usbh_user_cb_t process() may deinit a class, as the release waits for the host
+ *        task, which is the caller then. The wait has no upper bound, since freeing before
+ *        the host task is out of the driver is a use after free; a wait past
+ *        USBH_TEARDOWN_WAIT_LOG_MS is reported with an ERROR log at that period. The caller
+ *        must therefore not hold a lock that a callback of any class takes.
  * @param[in] driver: USB class driver.
+ * @return HAL_OK once the driver is out (also when it was not registered or the core is not
+ *         initialized), HAL_ERR_PARA in ISR context or on the host task, where nothing was
+ *         released and the caller must not free anything.
  */
-void usbh_unregister_class(const usbh_class_driver_t *driver);
+int usbh_unregister_class(const usbh_class_driver_t *driver);
 
 /**
  * @brief Start USB host TRX: drive VBUS and enable global interrupts.
@@ -674,12 +753,17 @@ void usbh_stop(void);
  * @param[in] host: Host Handle.
  * @param[in] pipe: Pipe struct handle.
  * @param[in] ep_desc: Endpoint descriptor handle.
+ * @param[in] owner: The class driver that owns the pipe.
  * @return 0 on success, non-zero on failure.
  */
 int usbh_open_pipe(usb_host_t *host, usbh_pipe_t *pipe, usbh_ep_desc_t *ep_desc, const usbh_class_driver_t *owner);
 
 /**
  * @brief  Close a pipe.
+ * @details Halts the channel, drops its transfer buffer and waits out a completion ISR another
+ *          core entered before, so on return neither the controller nor the ISR touches the
+ *          buffer of the last transfer and the caller may free it.
+ * @note   Task context only.
  * @param[in] host: Host Handle.
  * @param[in] pipe: Pipe struct handle.
  */
@@ -759,27 +843,28 @@ u32 usbh_get_elapsed_frame_cnt(usb_host_t *host, u32 start_frame);
 usbh_urb_state_t usbh_get_urb_state(usb_host_t *host, usbh_pipe_t *pipe);
 
 /**
- * @brief  Post a CLASS_EVENT to schedule the caller's process().
+ * @brief  Post a USBH_DRV_MSG_CLASS message to schedule the caller's process().
  *
  * Called by a class driver when it wants its own process() invoked (e.g. after
  * setup, on a state transition, or after handling a pipe completion in its ISR
- * callback). The event is routed by `owner` (resolved to its class_slot index),
+ * callback). The message is routed by `owner` (resolved to its class_slot index),
  * NOT by `pipe_num` - many callers pass pipe_num=0 for non-pipe-bound state
- * events, and pipe 0 (control EP0) has no class owner anyway. See
+ * changes, and pipe 0 (control EP0) has no class owner anyway. See
  * usbh_notify() in usbh.c for the full routing rationale.
  *
- * Note: pipe completion / state-changed events posted from the ISR use a
+ * Note: pipe completion / state-changed messages posted from the ISR use a
  * separate routing path (hc[pipe_num].driver_idx), so this API is only for
- * class-originated CLASS_EVENTs.
+ * class-originated USBH_DRV_MSG_CLASS messages.
  *
  * @param[in] host: Host Handle.
- * @param[in] pipe_num: Optional context, carried through to event.pipe_num;
- *                      0 when the event is not tied to a specific pipe.
+ * @param[in] pipe_num: Optional context, carried through to msg.pipe_num;
+ *                      0 when the message is not tied to a specific pipe.
  *                      Not used for routing.
  * @param[in] owner: Originating class driver. Required for routing. NULL falls
  *                   back defensively to slot 0.
- * @note The only failure mode is a full event queue, which the core logs on the
- *       spot and the caller cannot recover from, so no status is returned.
+ * @note The only failure mode is a full message queue, which the core counts for
+ *       the main task to report and the caller cannot recover from, so no status
+ *       is returned.
  */
 void usbh_notify(usb_host_t *host, u8 pipe_num, const usbh_class_driver_t *owner);
 
@@ -789,7 +874,9 @@ void usbh_notify(usb_host_t *host, u8 pipe_num, const usbh_class_driver_t *owner
  * @param[in] host: Host Handle.
  * @param[in] itf_num: Interface number.
  * @param[in] alt_setting: Interface alternate setting number.
- * @return 0 on success, non-zero on failure.
+ * @return HAL_BUSY while in progress, the owner is driven again; HAL_OK on success; HAL_ERR_PARA on
+ *         STALL or a torn down host; HAL_ERR_UNKNOWN once the retry budget or the control
+ *         timeout is spent. A failure is reported only by this value, never by a USBH_MSG_*.
  */
 int usbh_ctrl_set_interface(usb_host_t *host, u8 itf_num, u8 alt_setting);
 
@@ -797,7 +884,9 @@ int usbh_ctrl_set_interface(usb_host_t *host, u8 itf_num, u8 alt_setting);
  * @brief  Send `SET_FEATURE` standard request to device (remote wakeup feature,..)
  * @param[in] host: Host handler.
  * @param[in] value: Feature value.
- * @return 0 on success, non-zero on failure.
+ * @return HAL_BUSY while in progress, the owner is driven again; HAL_OK on success; HAL_ERR_PARA on
+ *         STALL or a torn down host; HAL_ERR_UNKNOWN once the retry budget or the control
+ *         timeout is spent. A failure is reported only by this value, never by a USBH_MSG_*.
  */
 int usbh_ctrl_set_feature(usb_host_t *host, u8 value);
 
@@ -805,21 +894,32 @@ int usbh_ctrl_set_feature(usb_host_t *host, u8 value);
  * @brief  Send `CLEAR_FEATURE` standard request to device.
  * @param[in] host: Host Handle.
  * @param[in] ep_num: Endpoint number.
- * @return 0 on success, non-zero on failure.
+ * @return HAL_BUSY while in progress, the owner is driven again; HAL_OK on success; HAL_ERR_PARA on
+ *         STALL or a torn down host; HAL_ERR_UNKNOWN once the retry budget or the control
+ *         timeout is spent. A failure is reported only by this value, never by a USBH_MSG_*.
  */
 int usbh_ctrl_clear_feature(usb_host_t *host, u8 ep_num);
 
 /**
  * @brief  Send control request to device.
+ * @note   For a D2H request the controller reserves whole EP0 packets, so buf shall hold
+ *         usb_get_dma_len(wLength, USB_MAX_EP0_SIZE) bytes, i.e. wLength rounded up to 64,
+ *         even though no more than wLength is ever reported as received.
  * @param[in] host: Host Handle.
  * @param[in] req: Control request.
  * @param[in] buf: Data buffer.
- * @return 0 on success, non-zero on failure.
+ * @return HAL_BUSY while in progress, the owner is driven again; HAL_OK on success; HAL_ERR_PARA on
+ *         STALL or a torn down host; HAL_ERR_UNKNOWN once the retry budget or the control
+ *         timeout is spent. A failure is reported only by this value, never by a USBH_MSG_*.
  */
 int usbh_ctrl_request(usb_host_t *host, usbh_setup_req_t *req, u8 *buf);
 
 /**
  * @brief  Start one data transfer.
+ * @note   An IN transfer reserves whole packets of ep_mps bytes, each adjusted to the DWORD
+ *         boundary, so the device may fill up to usb_get_dma_len(xfer_len, ep_mps) bytes of
+ *         xfer_buf; the received length may exceed xfer_len by the tail of the last packet.
+ *         Set xfer_buf_len to have such a request rejected when the buffer cannot hold it.
  * @param[in] host: Host Handle.
  * @param[in] pipe: Pipe struct handle.
  * @return 0 on success, non-zero on failure.
@@ -842,14 +942,25 @@ u32 usbh_get_last_transfer_size(usb_host_t *host, usbh_pipe_t *pipe);
 u32 usbh_get_last_ctrl_in_size(usb_host_t *host);
 
 /**
+ * @brief  Get the LANGID to use as wIndex of a GET_DESCRIPTOR(STRING) request.
+ * @details Learned from string descriptor 0 of the attached device during enumeration,
+ *          US English (0x0409) when listed or when the device reports none. Ref USB 2.0 9.6.7.
+ * @param[in] host: Host Handle.
+ * @return LANGID of the attached device.
+ */
+u16 usbh_get_lang_id(usb_host_t *host);
+
+/**
  * @brief  Start one transfer and handle result.
  * @param[in] host: Host Handle.
  * @param[in] pipe: Pipe struct handle.
  * @return 0 on success, non-zero on failure.
  */
 int usbh_transfer_process(usb_host_t *host, usbh_pipe_t *pipe);
+
 /** @} End of Host_Core_Functions_For_Classes group */
 /** @} End of USB_Host_Functions group */
+
 /** @} End of USB_Host_API group */
 
 #ifdef __cplusplus

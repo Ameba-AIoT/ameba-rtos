@@ -13,7 +13,7 @@ set(TARGET_LIB wifi_fw)
 
 # You may use if-else condition to set or update predefined variable above
 
-if("${c_MCU_PROJECT_NAME}" STREQUAL "km4tz")
+if("${c_MCU_PROJECT_NAME}" STREQUAL "km55tz")
     if(NOT CONFIG_FW_DRIVER_COEXIST)
         return()
     endif()

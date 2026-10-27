@@ -5,6 +5,7 @@
  */
 
 /* Includes ------------------------------------------------------------------*/
+
 #include "usbd.h"
 #include "usbd_uvc.h"
 #include "usbd_video.h"
@@ -12,6 +13,7 @@
 #include "os_wrapper.h"
 
 /* Private defines -----------------------------------------------------------*/
+
 /* VC entity type IDs */
 #define UVC_VC_ITT_CAMERA       0x01
 #define UVC_VC_PROCESS_UNIT     0x02
@@ -35,9 +37,9 @@
 /* Private macros ------------------------------------------------------------*/
 
 /* Private function prototypes -----------------------------------------------*/
+
 static void usbd_uvc_copy_int_response(usbd_uvc_request_data_t *resp, const int *value, u16 wlength);
 static int usbd_uvc_send_response(usbd_uvc_dev_t *uvc, usbd_uvc_request_data_t *data);
-static int usbd_uvc_receive_response(usbd_uvc_dev_t *uvc, usbd_uvc_req_data_t *uvc_event);
 static void usbd_uvc_events_process_standard(usbd_uvc_dev_t *dev, usb_setup_req_t *ctrl, usbd_uvc_request_data_t *resp);
 static void usbd_uvc_events_process_control(usbd_uvc_dev_t *dev, usb_setup_req_t *ctrl, usbd_uvc_request_data_t *resp);
 static void usbd_uvc_dump_uvc_format(void);
@@ -49,35 +51,16 @@ static void usbd_uvc_control_process_data(usbd_uvc_dev_t *dev, usbd_uvc_request_
 static void usbd_uvc_streaming_process_data(usbd_uvc_dev_t *dev, usbd_uvc_request_data_t *data);
 static void usbd_uvc_events_process_data(usbd_uvc_dev_t *dev, usbd_uvc_request_data_t *data);
 
-usbd_uvc_process_unit_t p_data;
-usbd_uvc_process_unit_t x_data;
+/* Private variables ---------------------------------------------------------*/
+
 static const char *const TAG = "UVC";
 
-/**
-  * @brief  Initialize UVC control parameters
-  *         Initialize default/min/max/current values for
-  *         Processing Unit and Extension Unit controls.
-  * @retval 0 on success
-  */
-int usbd_uvc_parameter_init(void)
-{
-	p_data.cur = USBD_UVC_PU_BRIGHTNESS_CUR;
-	p_data.min = 0;
-	p_data.max = USBD_UVC_PU_BRIGHTNESS_MAX;
-	p_data.res = 1;
-	p_data.def = USBD_UVC_PU_BRIGHTNESS_DEF;
-	p_data.info = USBD_UVC_PU_BRIGHTNESS_INFO;
-	p_data.len = USBD_UVC_PU_BRIGHTNESS_LEN;
+usbd_uvc_process_unit_t p_data;
+usbd_uvc_process_unit_t x_data;
 
-	x_data.cur = USBD_UVC_XU_DATA_CUR;
-	x_data.min = 0;
-	x_data.max = USBD_UVC_XU_DATA_MAX;
-	x_data.res = 1;
-	x_data.def = USBD_UVC_XU_DATA_CUR;
-	x_data.info = USBD_UVC_XU_DATA_INFO;
-	x_data.len = USBD_UVC_XU_DATA_LEN;
-	return HAL_OK;
-}
+/* Exported variables --------------------------------------------------------*/
+
+/* Private functions ---------------------------------------------------------*/
 
 /**
   * @brief  Copy a single control value (always sizeof(int) bytes) into resp->data
@@ -132,23 +115,6 @@ static int usbd_uvc_send_response(usbd_uvc_dev_t *uvc, usbd_uvc_request_data_t *
 	return ret;
 }
 /**
-  * @brief  Prepare EP0 OUT to receive control data from host
-  * @param  uvc        UVC device context
-  * @param  uvc_event  UVC request event data
-  * @retval 0 on success
-  */
-static int
-usbd_uvc_receive_response(usbd_uvc_dev_t *uvc, usbd_uvc_req_data_t *uvc_event)
-{
-	int ret = 0;
-	usbd_ep_t *ep0_out = &uvc->dev->ep0_out;
-	if (uvc_event->req.wLength > 0) {
-		ep0_out->xfer_len = uvc_event->req.wLength;
-		usbd_ep_receive(uvc->dev, ep0_out);
-	}
-	return ret;
-}
-/**
   * @brief  Handle standard USB requests
   * @param  dev   UVC device context
   * @param  ctrl  USB setup request
@@ -171,7 +137,7 @@ usbd_uvc_events_process_standard(usbd_uvc_dev_t *dev, usb_setup_req_t *
   * @param  resp  Response buffer
   * @retval None
   */
-void usbd_uvc_get_command_process_unit(usbd_uvc_dev_t *dev, usb_setup_req_t *ctrl, usbd_uvc_request_data_t *resp)
+static void usbd_uvc_get_command_process_unit(usbd_uvc_dev_t *dev, usb_setup_req_t *ctrl, usbd_uvc_request_data_t *resp)
 {
 	if (dev->command_entity == UVC_VC_PROCESS_UNIT) {
 		switch (ctrl->bRequest) {
@@ -343,6 +309,7 @@ static void usbd_uvc_dump_uvc_format(void)
 		RTK_LOGS(TAG, RTK_LOG_INFO, "FPS %d\n", format->frames->intervals[i]);
 	}
 }
+
 /**
   * @brief  Fill UVC streaming control structure
   *         Used for PROBE / COMMIT / GET_MIN / GET_MAX requests.
@@ -543,7 +510,7 @@ usbd_uvc_events_process_setup(usbd_uvc_dev_t *dev, usb_setup_req_t *ctrl,
   * @param  data  Received control data
   * @retval None
   */
-void usbd_uvc_set_command_process_unit(usbd_uvc_dev_t *dev, usbd_uvc_request_data_t *data)
+static void usbd_uvc_set_command_process_unit(usbd_uvc_dev_t *dev, usbd_uvc_request_data_t *data)
 {
 	(void)dev;
 	(void)data;
@@ -698,6 +665,35 @@ usbd_uvc_events_process_data(usbd_uvc_dev_t *dev, usbd_uvc_request_data_t *data)
 		return;
 	}
 }
+
+/* Exported functions --------------------------------------------------------*/
+
+/**
+  * @brief  Initialize UVC control parameters
+  *         Initialize default/min/max/current values for
+  *         Processing Unit and Extension Unit controls.
+  * @retval 0 on success
+  */
+int usbd_uvc_parameter_init(void)
+{
+	p_data.cur = USBD_UVC_PU_BRIGHTNESS_CUR;
+	p_data.min = 0;
+	p_data.max = USBD_UVC_PU_BRIGHTNESS_MAX;
+	p_data.res = 1;
+	p_data.def = USBD_UVC_PU_BRIGHTNESS_DEF;
+	p_data.info = USBD_UVC_PU_BRIGHTNESS_INFO;
+	p_data.len = USBD_UVC_PU_BRIGHTNESS_LEN;
+
+	x_data.cur = USBD_UVC_XU_DATA_CUR;
+	x_data.min = 0;
+	x_data.max = USBD_UVC_XU_DATA_MAX;
+	x_data.res = 1;
+	x_data.def = USBD_UVC_XU_DATA_CUR;
+	x_data.info = USBD_UVC_XU_DATA_INFO;
+	x_data.len = USBD_UVC_XU_DATA_LEN;
+	return HAL_OK;
+}
+
 /**
   * @brief  Main UVC event processing function
   *         Handle SETUP, DATA, STREAMON, and STREAMOFF events.
@@ -708,7 +704,6 @@ usbd_uvc_events_process_data(usbd_uvc_dev_t *dev, usbd_uvc_request_data_t *data)
 void usbd_uvc_events_process(usbd_uvc_dev_t *dev, usbd_uvc_req_data_t *uvc_event)
 {
 	usbd_uvc_request_data_t resp;
-	int ret;
 
 	usb_os_memset(&resp, 0U, (u32)sizeof(resp));
 
@@ -732,13 +727,12 @@ void usbd_uvc_events_process(usbd_uvc_dev_t *dev, usbd_uvc_req_data_t *uvc_event
 		break;
 	}
 
+	/* An H2D data stage needs no action here: usbd_uvc_setup() already armed EP0 OUT before
+	   dispatching, and arming it again re-drives the EP0 OUT state machine, losing the
+	   SET_CUR(PROBE/COMMIT) payload so the host control transfer times out. */
 	if ((uvc_event->req.bmRequestType & USBD_UVC_BMREQTYPE_DIR_IN) != 0U) {
-		ret = usbd_uvc_send_response(dev, &resp);
-	} else {
-		ret = usbd_uvc_receive_response(dev, uvc_event);
-	}
-	if (ret < 0) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "UVCIOC_S_EVENT failed\n");
-		return;
+		if (usbd_uvc_send_response(dev, &resp) < 0) {
+			RTK_LOGS(TAG, RTK_LOG_INFO, "UVCIOC_S_EVENT failed\n");
+		}
 	}
 }

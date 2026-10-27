@@ -8,13 +8,31 @@
 #define EXAMPLE_USBH_HID_H
 
 /* Includes ------------------------------------------------------------------*/
+
 #include "basic_types.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* Exported defines ----------------------------------------------------------*/
+
+/* Exported types ------------------------------------------------------------*/
+
+/* Exported macros -----------------------------------------------------------*/
+
+/* Exported variables --------------------------------------------------------*/
+
 /* Exported functions --------------------------------------------------------*/
+
 /**
   * @brief  USB Host HID example entry.
   * @retval void
   */
 void example_usbh_hid(void);
 
-#endif  /* EXAMPLE_USBH_HID_H */
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* EXAMPLE_USBH_HID_H */

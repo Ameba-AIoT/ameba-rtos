@@ -5,6 +5,7 @@
  */
 
 /* Includes ------------------------------------------------------------------*/
+
 #include "usbd.h"
 #include "usbd_uvc.h"
 #ifdef CONFIG_USBD_COMPOSITE
@@ -42,6 +43,7 @@
 /* Private macros ------------------------------------------------------------*/
 
 /* Private function prototypes -----------------------------------------------*/
+
 static u16 usbd_uvc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16 buf_len);
 static int usbd_uvc_set_config(usb_dev_t *dev, u8 config);
 static void usbd_uvc_stop_streaming(usbd_uvc_dev_t *cdev);
@@ -91,15 +93,7 @@ static const u8 usbd_uvc_dev_desc[USB_LEN_DEV_DESC] USB_DMA_ALIGNED = {
 	0x01                                            /* bNumConfigurations */
 };
 
-/* USB Standard String Descriptor 0 */
-static const u8 usbd_uvc_lang_id_desc[USB_LEN_LANGID_STR_DESC] USB_DMA_ALIGNED = {
-	USB_LEN_LANGID_STR_DESC,                        /* bLength */
-	USB_DESC_TYPE_STRING,                           /* bDescriptorType */
-	USB_LOW_BYTE(USBD_UVC_LANGID_STRING),           /* wLANGID */
-	USB_HIGH_BYTE(USBD_UVC_LANGID_STRING),
-};  /* usbd_uvc_lang_id_desc */
-
-#ifndef CONFIG_USB_FS
+#ifndef CONFIG_SUPPORT_USB_FS_ONLY
 /* USB Standard Device Qualifier Descriptor */
 static const u8 usbd_uvc_device_qualifier_desc[USB_LEN_DEV_QUALIFIER_DESC] USB_DMA_ALIGNED = {
 	USB_LEN_DEV_QUALIFIER_DESC,                     /* bLength */
@@ -131,6 +125,8 @@ static const usbd_class_driver_t usbd_uvc_driver = {
 #endif
 };
 
+/* Exported variables --------------------------------------------------------*/
+
 /* Private functions ---------------------------------------------------------*/
 
 /* --- Payload ring helpers (single-producer task / single-consumer ISR) -----
@@ -160,7 +156,7 @@ static void usbd_uvc_rb_commit_write(usb_ringbuf_manager_t *rb, u16 len)
 	usb_ringbuf_t *node = &rb->list_node[rb->tail];
 	node->buf_len = len;
 	node->data_valid = 1U;
-	__sync_synchronize();
+	usb_os_mem_sync();
 	rb->tail = (rb->tail + 1U) % rb->capacity;
 }
 
@@ -186,7 +182,7 @@ static void usbd_uvc_rb_pop_read(usb_ringbuf_manager_t *rb)
 	usb_ringbuf_t *node = &rb->list_node[rb->head];
 	node->buf_len = 0;
 	node->data_valid = 0U;
-	__sync_synchronize();
+	usb_os_mem_sync();
 	rb->head = (rb->head + 1U) % rb->capacity;
 }
 
@@ -241,6 +237,59 @@ usbd_uvc_video_encode_header(usbd_uvc_video_t *video, u8 *data, u8 frame_start, 
 }
 
 /**
+  * @brief  Report whether a frame carries a decodable random-access point
+  *         (H.264: an IDR or SPS NAL; H.265: an IRAP or VPS/SPS/PPS NAL).
+  * @param  video  UVC video context (its fcc selects the bitstream syntax)
+  * @param  mem    Frame payload as produced by the encoder (Annex-B)
+  * @param  len    Frame length in bytes
+  * @retval 1 if the frame starts a decodable sequence, 0 if it is a delta frame
+  * @note   Raw formats (YUY2/NV12) and MJPEG are intra-only, so every frame is
+  *         a random-access point and the function returns 1 for them.
+  */
+static u8 usbd_uvc_video_is_key_frame(const usbd_uvc_video_t *video, const u8 *mem, u32 len)
+{
+	u32 i = 0U;
+	u32 nal = 0U;
+
+	if ((video->fcc != USBD_UVC_FORMAT_TYPE_H264) && (video->fcc != USBD_UVC_FORMAT_TYPE_H265)) {
+		return 1U;
+	}
+
+	/* Walk the Annex-B start codes; the first byte after one is the NAL header. */
+	while (i + 3U < len) {
+		if ((mem[i] == 0U) && (mem[i + 1U] == 0U)) {
+			if (mem[i + 2U] == 1U) {
+				nal = i + 3U;
+			} else if ((mem[i + 2U] == 0U) && (mem[i + 3U] == 1U)) {
+				nal = i + 4U;
+			} else {
+				i++;
+				continue;
+			}
+			if (nal >= len) {
+				break;
+			}
+			if (video->fcc == USBD_UVC_FORMAT_TYPE_H264) {
+				u8 type = (u8)(mem[nal] & 0x1FU);
+				/* 5 = IDR slice, 7 = SPS: both start a sequence the host can decode. */
+				if ((type == 5U) || (type == 7U)) {
+					return 1U;
+				}
+			} else {
+				u8 type = (u8)((mem[nal] >> 1) & 0x3FU);
+				/* 16..21 = IRAP/BLA/CRA/IDR; 32/33/34 = VPS/SPS/PPS. */
+				if (((type >= 16U) && (type <= 21U)) || ((type >= 32U) && (type <= 34U))) {
+					return 1U;
+				}
+			}
+			i = nal;
+		}
+		i++;
+	}
+	return 0U;
+}
+
+/**
   * @brief  Encode one full video frame into the payload ring (producer, task ctx)
   *         Slices the frame into microframe-sized payloads (12B header + data),
   *         blocking on the ring-space semaphore while the ring is full. All memcpy
@@ -269,6 +318,30 @@ usbd_uvc_video_produce_frame(usb_dev_t *dev, const u8 *mem, u32 len)
 	if ((mem == NULL) || (len == 0U)) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Produce_frame: invalid frame mem=%p len=%u\n", mem, len);
 		return;
+	}
+
+	/* A stream that starts on a delta frame leaves the host decoder with no SPS/PPS
+	   and no reference picture, so ffmpeg reports "non-existing PPS 0 referenced" /
+	   "decode_slice_header error" for the frames up to the next IDR. The encoder runs
+	   continuously from app start, so the frame handed over at SET_INTERFACE(1,1) is
+	   unrelated to the GOP boundary. Drop payloads until the first random-access
+	   frame, mirroring the drop-until-I-frame gate the RTSP path uses. */
+	if (video->wait_keyframe != 0U) {
+		if (usbd_uvc_video_is_key_frame(video, mem, len) != 0U) {
+			RTK_LOGS(TAG, RTK_LOG_INFO, "Key frame reached, streaming starts\n");
+			video->wait_keyframe = 0U;
+		} else if (video->keyframe_gate_left != 0U) {
+			video->keyframe_gate_left--;
+			RTK_LOGS(TAG, RTK_LOG_DEBUG, "Drop delta frame before first key frame (%u left)\n",
+					 (unsigned)video->keyframe_gate_left);
+			return;
+		} else {
+			/* Encoder never produced one within the window: stream as before rather
+			   than stay silent, but say so because decode errors will follow. */
+			RTK_LOGS(TAG, RTK_LOG_WARN, "No key frame within %u frames, gate opened\n",
+					 (unsigned)USBD_UVC_KEYFRAME_GATE_FRAMES);
+			video->wait_keyframe = 0U;
+		}
 	}
 
 	while (sent < len) {
@@ -341,99 +414,6 @@ usbd_uvc_video_try_arm(usb_dev_t *dev)
 }
 
 /**
-  * @brief  usb_os_mfree UVC buffer and return it to output queue
-  * @param  video UVC video context
-  * @retval None
-  */
-void usbd_uvc_free_uvcd_list_buffer(usbd_uvc_video_t *video)
-{
-	if (list_empty(&video->output_queue)) {
-		usb_os_lock(video->output_lock);
-		list_add_tail(&video->uvc_buffer.buffer_list, &video->output_queue);
-		usb_os_unlock(video->output_lock);
-		usb_os_sema_give(video->output_queue_sema);
-		usb_os_sema_give(video->output_frame_sema);
-		RTK_LOGS(TAG, RTK_LOG_DEBUG, "Free the buffer\n");
-	} else {
-		RTK_LOGS(TAG, RTK_LOG_DEBUG, "No buffer to free\n");
-	}
-}
-/**
-  * @brief  Put buffer back to output queue
-  *         Used when frame transmission is completed
-  * @param  payload UVC buffer
-  * @retval None
-  */
-void usbd_uvc_video_put_out_stream_queue(usbd_uvc_buffer_t *payload)
-{
-	usbd_uvc_dev_t *uvc_ctx = &usbd_uvc_dev;
-	usbd_uvc_video_t *video = &uvc_ctx->video;
-	usb_os_lock(video->output_lock);
-	/* Guard against relinking a node already on a list (would corrupt it).
-	   A node is safe to link when:
-	     - null-initialized (zero-init global, never touched): next == NULL
-	     - properly detached via list_del_init:               next == &node
-	   list_empty() alone is NOT sufficient: it returns false for zero-init
-	   nodes (next==NULL != &node), which silently drops app-side buffers. */
-	if (payload->buffer_list.next == NULL || list_empty(&payload->buffer_list)) {
-		list_add_tail(&payload->buffer_list, &video->output_queue);
-	} else {
-		RTK_LOGS(TAG, RTK_LOG_WARN, "Put_out: skip linked buf %p next=%p\n",
-				 (void *)payload, (void *)payload->buffer_list.next);
-	}
-	usb_os_unlock(video->output_lock);
-}
-/**
-  * @brief  Put buffer into input queue
-  *         Buffer contains new video frame data
-  * @param  payload UVC buffer
-  * @retval None
-  */
-void usbd_uvc_video_put_in_stream_queue(usbd_uvc_buffer_t *payload)
-{
-	usbd_uvc_dev_t *uvc_ctx = &usbd_uvc_dev;
-	usbd_uvc_video_t *video = &uvc_ctx->video;
-	usb_os_lock(video->input_lock);
-	/* Same null-init guard as put_out_stream_queue. */
-	if (payload->buffer_list.next == NULL || list_empty(&payload->buffer_list)) {
-		list_add_tail(&payload->buffer_list, &video->input_queue);
-	} else {
-		RTK_LOGS(TAG, RTK_LOG_WARN, "Put_in: skip linked buf %p next=%p\n",
-				 (void *)payload, (void *)payload->buffer_list.next);
-	}
-	usb_os_unlock(video->input_lock);
-	/* Signal get_frame_handler that a new frame is available.
-	   Without this, if get_frame_handler's FRAME_WAIT_ITER spin expires before
-	   we call put_in_stream_queue (a race at stream start or after stop/restart),
-	   it falls back to sema_take(output_queue_sema) and nobody gives it —
-	   permanent deadlock with uvcd_handle blocked in the out_stream_queue poll loop. */
-	usb_os_sema_give(video->output_queue_sema);
-}
-/**
-  * @brief  Get buffer from output queue
-  * @retval Pointer to UVC buffer or NULL if empty
-  */
-usbd_uvc_buffer_t *usbd_uvc_video_out_stream_queue(void)
-{
-	usbd_uvc_dev_t *uvc_ctx = &usbd_uvc_dev;
-	usbd_uvc_video_t *video = &uvc_ctx->video;
-	usbd_uvc_buffer_t *payload = NULL;
-	if (!list_empty(&video->output_queue)) {
-		usb_os_lock(video->output_lock);
-		payload = list_first_entry(&video->output_queue, usbd_uvc_buffer_t, buffer_list);
-		video->uvc_buffer = *payload;
-		list_del_init(&payload->buffer_list);
-		/* video->uvc_buffer is a snapshot copy: its embedded buffer_list still
-		   holds payload's old link pointers. Re-init it so the later
-		   put_out_stream_queue(&video->uvc_buffer) in wait_frame_down() sees a
-		   properly detached node instead of a stale/aliased one. */
-		INIT_LIST_HEAD(&video->uvc_buffer.buffer_list);
-		usb_os_unlock(video->output_lock);
-	}
-	return payload;
-}
-
-/**
   * @brief  Get one video buffer from input queue
   * @param  uvc_ctx UVC device context
   * @retval Pointer to UVC buffer or NULL if empty
@@ -452,37 +432,6 @@ static usbd_uvc_buffer_t *usbd_uvc_video_in_stream_queue(usbd_uvc_dev_t *uvc_ctx
 		usb_os_unlock(video->input_lock);
 	}
 	return payload;
-}
-/**
-  * @brief  Wait until current UVC video frame transmission is completed
-  *         Block the caller until the output frame semaphore is released,
-  *         indicating that one video frame has been fully sent.
-  * @retval None
-  */
-void usbd_uvc_wait_frame_down(void)
-{
-	usbd_uvc_dev_t *uvc_ctx = &usbd_uvc_dev;
-	usbd_uvc_video_t *video = &uvc_ctx->video;
-	usb_os_sema_take(video->output_frame_sema, RTOS_MAX_DELAY);
-	usbd_uvc_video_put_out_stream_queue(&video->uvc_buffer);
-	usb_os_sema_give(video->output_queue_sema);
-}
-/**
-  * @brief  Get private UVC device context
-  *         Return internal UVC device structure pointer
-  * @retval Pointer to UVC device context
-  */
-usbd_uvc_dev_t *get_private_usbd_uvcd(void)
-{
-	return &usbd_uvc_dev;
-}
-/**
-  * @brief  Get UVC running status
-  * @retval 1 if UVC streaming is running, otherwise 0
-  */
-int usbd_uvc_get_status(void)
-{
-	return usbd_uvc_dev.running;
 }
 /**
   * @brief  Handle EP0 OUT data stage (Control OUT)
@@ -711,22 +660,12 @@ static void usbd_uvc_set_interface_base(u8 base)
   */
 static u16 usbd_uvc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16 buf_len)
 {
-	usbd_uvc_dev_t *cdev = &usbd_uvc_dev;
-	usb_speed_type_t speed = dev->dev_speed;
 	u16 len = 0;
 	const u8 *desc = NULL;
 	u8 type = USB_HIGH_BYTE(req->wValue);
 	u8 is_cfg = 0;
-	u8 attr = 0x80U;
 
-	if (cdev->from_composite == 0U) {
-#ifdef CONFIG_USBD_SELF_POWERED
-		attr |= USB_CFG_DESC_OFFSET_ATTR_BIT_SELF_POWERED;
-#endif
-#ifdef CONFIG_USBD_REMOTE_WAKEUP_EN
-		attr |= USB_CFG_DESC_OFFSET_ATTR_BIT_REMOTE_WAKEUP;
-#endif
-	}
+	UNUSED(dev);
 
 	switch (type) {
 
@@ -746,7 +685,7 @@ static u16 usbd_uvc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 		RTK_LOGS(TAG, RTK_LOG_INFO, "desc_self %p len %d\r\n", desc, len);
 		break;
 
-#ifndef CONFIG_USB_FS
+#ifndef CONFIG_SUPPORT_USB_FS_ONLY
 	case USB_DESC_TYPE_DEVICE_QUALIFIER:
 		RTK_LOGS(TAG, RTK_LOG_DEBUG, "Get descriptor USB_DESC_TYPE_DEVICE_QUALIFIER\n");
 
@@ -766,37 +705,9 @@ static u16 usbd_uvc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 #endif
 
 	case USB_DESC_TYPE_STRING:
-		switch (USB_LOW_BYTE(req->wValue)) {
-		case USBD_IDX_LANGID_STR:
-			RTK_LOGS(TAG, RTK_LOG_DEBUG, "Get descriptor USBD_IDX_LANGID_STR\n");
-
-			desc = usbd_uvc_lang_id_desc;
-			len = sizeof(usbd_uvc_lang_id_desc);
-			break;
-		case USBD_IDX_MFC_STR:
-			RTK_LOGS(TAG, RTK_LOG_DEBUG, "Get descriptor USBD_IDX_MFC_STR\n");
-
-			len = usbd_get_str_descriptor(USBD_UVC_MFG_STRING, buf, buf_len);
-			break;
-		case USBD_IDX_PRODUCT_STR:
-			RTK_LOGS(TAG, RTK_LOG_DEBUG, "Get descriptor USBD_IDX_PRODUCT_STR\n");
-
-			if (speed == USB_SPEED_HIGH) {
-				len = usbd_get_str_descriptor(USBD_UVC_MFG_HS_STRING, buf, buf_len);
-			} else {
-				len = usbd_get_str_descriptor(USBD_UVC_MFG_FS_STRING, buf, buf_len);
-			}
-			break;
-		case USBD_IDX_SERIAL_STR:
-			RTK_LOGS(TAG, RTK_LOG_DEBUG, "Get descriptor USBD_IDX_SERIAL_STR\n");
-
-			len = usbd_get_str_descriptor(USBD_UVC_SN_STRING, buf, buf_len);
-			break;
-		default:
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "Get descriptor failed, invalid string index %d\n", USB_LOW_BYTE(req->wValue));
-
-			break;
-		}
+		/* Every string this class owns is registered with usbd_add_string() and answered by
+		   the core, which only forwards an index it does not know, e.g. the MS OS string */
+		USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_GET_DESC, 0);
 		break;
 
 	default:
@@ -818,9 +729,6 @@ static u16 usbd_uvc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 		   requested (CONFIGURATION vs OTHER_SPEED_CONFIGURATION); both cases share the
 		   same template array, so the copy in buf must be patched to match `type`. */
 		buf[USB_CFG_DESC_OFFSET_TYPE] = type;
-		if (cdev->from_composite == 0U) {
-			buf[USB_CFG_DESC_OFFSET_ATTR] = attr;
-		}
 		/* Patch the copy in buf, never the source template: get_descriptor() is invoked
 		 * repeatedly and the source must stay pristine. */
 		usbd_uvc_patch_desc(buf + USB_LEN_CFG_DESC, (u16)(len - USB_LEN_CFG_DESC));
@@ -851,19 +759,6 @@ static int usbd_uvc_set_config(usb_dev_t *dev, u8 config)
 	}
 
 	cdev->dev = dev;
-
-	if (cdev->from_composite == 0U) {
-#ifdef CONFIG_USBD_SELF_POWERED
-		dev->self_powered = 1;
-#else
-		dev->self_powered = 0;
-#endif
-#ifdef CONFIG_USBD_REMOTE_WAKEUP_EN
-		dev->remote_wakeup_en = 1;
-#else
-		dev->remote_wakeup_en = 0;
-#endif
-	}
 
 	RTK_LOGS(TAG, RTK_LOG_DEBUG, "Set config %d\n", config);
 	/* Init ISOC IN EP */
@@ -900,6 +795,10 @@ static void usbd_uvc_stop_streaming(usbd_uvc_dev_t *cdev)
 
 	video->uvc_buffer.bytesused = 0U; /* reset for next frame */
 	video->buf_used = 0U; /* reset buffer offset */
+	/* Re-arm the key-frame gate: the next SET_INTERFACE(1,1) may land anywhere in
+	   the encoder's GOP, exactly like the first one. */
+	video->wait_keyframe = 0U;
+	video->keyframe_gate_left = 0U;
 
 	/* Only rescue output_frame_sema if the buffer is actually missing from
 	   output_queue (see usbd_uvc_set_interface() for the full race explanation);
@@ -1096,6 +995,11 @@ static u8 usbd_uvc_set_interface(usb_dev_t *dev, u8 interface, u8 alt)
 			video->stall_sof = 0U;
 			video->buf_used = 0U;
 			video->fid = 0U;
+			/* The encoder has been running since app start, so the next frame is
+			   somewhere in the middle of a GOP. Hold the payloads back until the
+			   first key frame so the host decoder can decode from frame one. */
+			video->wait_keyframe = 1U;
+			video->keyframe_gate_left = USBD_UVC_KEYFRAME_GATE_FRAMES;
 			RTK_LOGS(TAG, RTK_LOG_INFO, "Start to send the frame\n");
 			cdev->running = 1U;
 			usb_os_sema_give(video->output_queue_sema);
@@ -1322,6 +1226,10 @@ static int usbd_uvc_private_init(const usbd_uvc_ep_cfg_t *ep_cfg)
 	usb_os_sema_create(&video->output_frame_sema);
 	usb_os_sema_create(&video->in_rb_space_sema);
 
+	/* All locks/semas above now exist; usbd_uvc_deinit() must tear them down even if a
+	   later step in this function fails and returns early. */
+	dev->res_created = 1U;
+
 	/* Payload ring: USBD_UVC_IN_SLOT_CNT nodes of one microframe payload each,
 	   cache-line aligned so the TX DMA can read each node in place. */
 	if (usb_ringbuf_manager_init(&video->in_rb, USBD_UVC_IN_SLOT_CNT, USBD_UVC_IN_BUF_SIZE, 1) != HAL_OK) {
@@ -1371,6 +1279,136 @@ exit:
 /* Exported functions --------------------------------------------------------*/
 
 /**
+  * @brief  usb_os_mfree UVC buffer and return it to output queue
+  * @param  video UVC video context
+  * @retval None
+  */
+void usbd_uvc_free_uvcd_list_buffer(usbd_uvc_video_t *video)
+{
+	if (list_empty(&video->output_queue)) {
+		usb_os_lock(video->output_lock);
+		list_add_tail(&video->uvc_buffer.buffer_list, &video->output_queue);
+		usb_os_unlock(video->output_lock);
+		usb_os_sema_give(video->output_queue_sema);
+		usb_os_sema_give(video->output_frame_sema);
+		RTK_LOGS(TAG, RTK_LOG_DEBUG, "Free the buffer\n");
+	} else {
+		RTK_LOGS(TAG, RTK_LOG_DEBUG, "No buffer to free\n");
+	}
+}
+/**
+  * @brief  Put buffer back to output queue
+  *         Used when frame transmission is completed
+  * @param  payload UVC buffer
+  * @retval None
+  */
+void usbd_uvc_video_put_out_stream_queue(usbd_uvc_buffer_t *payload)
+{
+	usbd_uvc_dev_t *uvc_ctx = &usbd_uvc_dev;
+	usbd_uvc_video_t *video = &uvc_ctx->video;
+	usb_os_lock(video->output_lock);
+	/* Guard against relinking a node already on a list (would corrupt it).
+	   A node is safe to link when:
+	     - null-initialized (zero-init global, never touched): next == NULL
+	     - properly detached via list_del_init:               next == &node
+	   list_empty() alone is NOT sufficient: it returns false for zero-init
+	   nodes (next==NULL != &node), which silently drops app-side buffers. */
+	if (payload->buffer_list.next == NULL || list_empty(&payload->buffer_list)) {
+		list_add_tail(&payload->buffer_list, &video->output_queue);
+	} else {
+		RTK_LOGS(TAG, RTK_LOG_WARN, "Put_out: skip linked buf %p next=%p\n",
+				 (void *)payload, (void *)payload->buffer_list.next);
+	}
+	usb_os_unlock(video->output_lock);
+}
+/**
+  * @brief  Put buffer into input queue
+  *         Buffer contains new video frame data
+  * @param  payload UVC buffer
+  * @retval None
+  */
+void usbd_uvc_video_put_in_stream_queue(usbd_uvc_buffer_t *payload)
+{
+	usbd_uvc_dev_t *uvc_ctx = &usbd_uvc_dev;
+	usbd_uvc_video_t *video = &uvc_ctx->video;
+	usb_os_lock(video->input_lock);
+	/* Same null-init guard as put_out_stream_queue. */
+	if (payload->buffer_list.next == NULL || list_empty(&payload->buffer_list)) {
+		list_add_tail(&payload->buffer_list, &video->input_queue);
+	} else {
+		RTK_LOGS(TAG, RTK_LOG_WARN, "Put_in: skip linked buf %p next=%p\n",
+				 (void *)payload, (void *)payload->buffer_list.next);
+	}
+	usb_os_unlock(video->input_lock);
+	/* Signal get_frame_handler that a new frame is available.
+	   Without this, if get_frame_handler's FRAME_WAIT_ITER spin expires before
+	   we call put_in_stream_queue (a race at stream start or after stop/restart),
+	   it falls back to sema_take(output_queue_sema) and nobody gives it —
+	   permanent deadlock with uvcd_handle blocked in the out_stream_queue poll loop. */
+	usb_os_sema_give(video->output_queue_sema);
+}
+/**
+  * @brief  Get buffer from output queue
+  * @retval Pointer to UVC buffer or NULL if empty
+  */
+usbd_uvc_buffer_t *usbd_uvc_video_out_stream_queue(void)
+{
+	usbd_uvc_dev_t *uvc_ctx = &usbd_uvc_dev;
+	usbd_uvc_video_t *video = &uvc_ctx->video;
+	usbd_uvc_buffer_t *payload = NULL;
+	if (!list_empty(&video->output_queue)) {
+		usb_os_lock(video->output_lock);
+		payload = list_first_entry(&video->output_queue, usbd_uvc_buffer_t, buffer_list);
+		video->uvc_buffer = *payload;
+		list_del_init(&payload->buffer_list);
+		/* video->uvc_buffer is a snapshot copy: its embedded buffer_list still
+		   holds payload's old link pointers. Re-init it so the later
+		   put_out_stream_queue(&video->uvc_buffer) in wait_frame_down() sees a
+		   properly detached node instead of a stale/aliased one. */
+		INIT_LIST_HEAD(&video->uvc_buffer.buffer_list);
+		usb_os_unlock(video->output_lock);
+	}
+	return payload;
+}
+/**
+  * @brief  Wait until current UVC video frame transmission is completed
+  *         Block the caller until the output frame semaphore is released,
+  *         indicating that one video frame has been fully sent.
+  * @retval None
+  */
+void usbd_uvc_wait_frame_down(void)
+{
+	usbd_uvc_dev_t *uvc_ctx = &usbd_uvc_dev;
+	usbd_uvc_video_t *video = &uvc_ctx->video;
+	usb_os_sema_take(video->output_frame_sema, RTOS_MAX_DELAY);
+	/* usbd_uvc_deinit() gives this sema to unblock a caller still in-flight, after already
+	   clearing init_done; bail out before touching output_lock/output_queue_sema, which
+	   deinit deletes right after waking us. */
+	if (uvc_ctx->init_done == 0U) {
+		return;
+	}
+	usbd_uvc_video_put_out_stream_queue(&video->uvc_buffer);
+	usb_os_sema_give(video->output_queue_sema);
+}
+/**
+  * @brief  Get private UVC device context
+  *         Return internal UVC device structure pointer
+  * @retval Pointer to UVC device context
+  */
+usbd_uvc_dev_t *get_private_usbd_uvcd(void)
+{
+	return &usbd_uvc_dev;
+}
+/**
+  * @brief  Get UVC running status
+  * @retval 1 if UVC streaming is running, otherwise 0
+  */
+int usbd_uvc_get_status(void)
+{
+	return usbd_uvc_dev.running;
+}
+
+/**
   * @brief  Initialize UVC device as a standalone device (from_composite = 0)
   * @retval Status
   */
@@ -1417,31 +1455,51 @@ int usbd_composite_uvc_init(const usbd_uvc_ep_cfg_t *ep_cfg)
   */
 void usbd_uvc_deinit(void)
 {
+#ifdef CONFIG_USBD_COMPOSITE
+	/* Leave the composite framework before anything is torn down: it is refused while the
+	   composite device is still registered on the core, and the class must then stay intact */
+	if (usbd_uvc_dev.from_composite != 0U) {
+		if (usbd_composite_unregister_driver(&usbd_uvc_driver) != HAL_OK) {
+			return;
+		}
+	}
+#endif
+
 	/* Drop any request still waiting for its data stage, so a re-init cannot inherit it and
-	   dispatch a stale payload. The unregister below stops all further class callbacks. */
+	   dispatch a stale payload. No class callback runs once unregistered. */
 	usbd_uvc_dev.ctrl_req_pending = 0U;
 
 #ifdef CONFIG_USBD_COMPOSITE
-	if (usbd_uvc_dev.from_composite != 0U) {
-		usbd_composite_unregister_driver(&usbd_uvc_driver);
-	} else
+	if (usbd_uvc_dev.from_composite == 0U)
 #endif
 	{
 		usbd_uvc_dev_t *cdev = &usbd_uvc_dev;
 		usbd_uvc_video_t *video = &cdev->video;
 		u8 wait_cnt = 0U;
 
+		/* res_created is set once the locks/semas below exist, before init_done, so this
+		   covers both a double call and an init that failed before setting init_done
+		   (e.g. ring buffer alloc failure) without skipping their teardown. */
+		if (cdev->res_created == 0U) {
+			return;
+		}
+
 		usbd_unregister_class();
 		cdev->init_done = 0U;
+		cdev->res_created = 0U;
 		cdev->running = 0U;
 
 		/* Wake the frame worker task so it observes init_done == 0 and self-deletes
 		BEFORE we usb_os_mfree the semaphores it blocks on (delete-under-blocked-
 		receiver would corrupt the object / crash). Order: wake -> join -> usb_os_mfree.
 		get_frame_handler is parked on output_queue_sema; the producer may also be
-		parked on in_rb_space_sema inside usbd_uvc_video_produce_frame(). */
+		parked on in_rb_space_sema inside usbd_uvc_video_produce_frame(). uvcd_handle()'s
+		caller (an external task this module does not own/join) may be parked on
+		output_frame_sema inside usbd_uvc_wait_frame_down(); init_done is already 0 above,
+		so it bails out on wake instead of touching the locks/queues deleted below. */
 		usb_os_sema_give(video->output_queue_sema);
 		usb_os_sema_give(video->in_rb_space_sema);
+		usb_os_sema_give(video->output_frame_sema);
 
 		/* Join: wait (bounded) for the frame task to clear its alive flag. */
 		while ((cdev->frame_task_alive != 0U) && (wait_cnt < 100U)) {
@@ -1463,6 +1521,12 @@ void usbd_uvc_deinit(void)
 		usb_os_sema_delete(video->output_queue_sema);
 		usb_os_sema_delete(video->output_frame_sema);
 		usb_os_sema_delete(video->in_rb_space_sema);
+		/* uvc_format_ptr is only set after the ring buffer alloc below succeeds, so an init
+		   that failed before that point (res_created is still enough to get us here) never set it. */
+		if (cdev->uvc_format_ptr != NULL) {
+			usb_os_sema_delete(cdev->uvc_format_ptr->uvcd_change_sema);
+			cdev->uvc_format_ptr = NULL;
+		}
 		usb_os_lock_delete(cdev->bod_mutex);
 		usb_os_lock_delete(video->input_lock);
 		usb_os_lock_delete(video->output_lock);

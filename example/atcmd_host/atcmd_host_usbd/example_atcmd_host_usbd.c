@@ -42,13 +42,6 @@
 // while test suspend/resume, hotplug should be disabled
 #define CDC_ACM_HOTPLUG                          1
 
-// USB speed
-#ifdef CONFIG_SUPPORT_USB_FS_ONLY
-#define CDC_ACM_USB_SPEED                        USB_SPEED_FULL
-#else
-#define CDC_ACM_USB_SPEED                        USB_SPEED_HIGH
-#endif
-
 // Asynchronous transfer size
 #define CDC_ACM_ASYNC_BUF_SIZE                   2048U
 
@@ -93,16 +86,20 @@ static usb_cdc_acm_line_coding_t cdc_acm_line_coding;
 static u16 cdc_acm_ctrl_line_state;
 
 /* EP configuration for CDC ACM */
-static const usbd_cdc_acm_ep_cfg_t cdc_acm_ep = {
+static const usbd_cdc_acm_config_t cdc_acm_ep = {
 	.bulk_in_addr  = CDC_ACM_BULK_IN_EP,
 	.bulk_out_addr = CDC_ACM_BULK_OUT_EP,
 	.intr_in_addr  = CDC_ACM_INTR_IN_EP,
 	.bulk_in_xfer_size  = CDC_ACM_BULK_IN_XFER_SIZE,
 	.bulk_out_xfer_size = CDC_ACM_BULK_OUT_XFER_SIZE,
+	.notify_en = 1,
+	.bulk_in_zero_copy = 1,
 };
 
 static const usbd_config_t cdc_acm_cfg = {
-	.speed = CDC_ACM_USB_SPEED,
+	.info = {
+		.prod_str = "Realtek CDC ACM",
+	},
 	.isr_priority = INT_PRI_MIDDLE,
 #if defined(CONFIG_AMEBASMART)
 	.nptx_max_epmis_cnt = 1U,
@@ -287,11 +284,8 @@ static int cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 	int ret = HAL_ERR_PARA;
 
 	switch (req->bRequest) {
-	case USB_CDC_ACM_SEND_ENCAPSULATED_COMMAND:
-	case USB_CDC_ACM_GET_ENCAPSULATED_RESPONSE:
-	case USB_CDC_ACM_SET_COMM_FEATURE:
-	case USB_CDC_ACM_GET_COMM_FEATURE:
-	case USB_CDC_ACM_CLEAR_COMM_FEATURE:
+	/* Ref CDC PSTN 1.2 Table 4: bmCapabilities 0x02 declares no Comm Feature support and no
+	   encapsulated protocol is implemented, so those requests fall to default and are STALLed */
 	case USB_CDC_ACM_SEND_BREAK:
 		/* Do nothing */
 		ret = HAL_OK;
@@ -326,15 +320,17 @@ static int cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 				D2-15:	Reserved, 0
 				D1:	RTS, 0 - Deactivate, 1 - Activate
 				D0:	DTR, 0 - Not Present, 1 - Present
+		Ref CDC PSTN 1.2 6.3.12: no data stage, so wLength must be zero; the reserved bits
+		are ignored rather than rejected.
 		*/
-		cdc_acm_ctrl_line_state = req->wValue;
-		if (cdc_acm_ctrl_line_state & 0x01) {
-			RTK_LOGS(TAG, RTK_LOG_INFO, "VCOM port activate\n");
-#if USBD_CDC_ACM_NOTIFY
-			usbd_cdc_acm_notify_serial_state(USB_CDC_ACM_CTRL_DSR | USB_CDC_ACM_CTRL_DCD);
-#endif
+		if (req->wLength == 0U) {
+			cdc_acm_ctrl_line_state = req->wValue & 0x03U;
+			if ((cdc_acm_ctrl_line_state & 0x01U) != 0U) {
+				RTK_LOGS(TAG, RTK_LOG_INFO, "VCOM port activate\n");
+				usbd_cdc_acm_notify_serial_state(USB_CDC_ACM_CTRL_DSR | USB_CDC_ACM_CTRL_DCD);
+			}
+			ret = HAL_OK;
 		}
-		ret = HAL_OK;
 		break;
 
 	default:

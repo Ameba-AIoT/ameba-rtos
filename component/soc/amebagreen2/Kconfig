@@ -32,6 +32,7 @@ menu "CONFIG FUNCTION TEST"
                     select USB_DEVICE_EN
                 config EMC
                     bool "EMC_Test"
+                    depends on VFS_MENU
                     select USB_OTG_EN if WHC_HOST
                     select USB_HOST_EN if WHC_HOST
                     select USBH_MSC if WHC_HOST

@@ -22,7 +22,7 @@ extern "C" {
 extern const u16 Flash_ReadMode;
 extern const u16 Data_Flash_ReadMode;
 
-extern FlashInfo_TypeDef Flash_AVL[];
+extern const FlashInfo_TypeDef Flash_AVL[];
 
 extern const FlashLayoutInfo_TypeDef Flash_Layout[];
 

@@ -52,7 +52,7 @@ Refer to the [EVB User Guide](https://aiot.realmcu.com/filelist?document_type=9)
 
 2. Reset the board, following log shall be printed on the LOGUART console and DHCP will start, make sure there is no USB related error reported:
 	```
-	[ECM] USB host usbh_wifi_bridge demo started...
+	[ECMB-I] USBH WIFI BRIDGE demo start
 	```
 
 3. Type command "AT+WLCONN=ssid,xx,pw,yy" to connect to the router, xx is the routr ssid name,yy is the password,you can type command "AT+WLCONN" to get more details about the command.

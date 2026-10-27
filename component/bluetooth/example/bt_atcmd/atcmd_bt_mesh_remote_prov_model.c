@@ -14,6 +14,7 @@
 #include <bt_utils.h>
 #include <atcmd_bt_impl.h>
 
+#include <rtk_bt_def.h>
 #include <rtk_bt_mesh_def.h>
 #include <rtk_bt_mesh_remote_prov_model.h>
 
@@ -35,7 +36,7 @@ static int atcmd_ble_mesh_remote_prov_client_scan_start(int argc, char **argv)
 		}
 	}
 	ret = rtk_bt_mesh_remote_prov_scan_start(&rmt_scan);
-	if (RTK_BT_MESH_MSG_SEND_CAUSE_SUCCESS != ret) {
+	if (RTK_BT_OK != ret) {
 		BT_LOGE("[%s] Remote prov start scan fail,reason:%d\r\n", __func__, ret);
 		return ret;
 	}
@@ -200,7 +201,7 @@ static int atcmd_ble_mesh_remote_prov_server_set_prefer_bearer(int argc, char **
 	rtk_bt_mesh_bearer_field_t bearer;
 	bearer = str_to_int(argv[0]);
 	ret = rtk_bt_mesh_remote_prov_set_prefer_bearer(&bearer);
-	if (RTK_BT_MESH_MSG_SEND_CAUSE_SUCCESS != ret) {
+	if (RTK_BT_OK != ret) {
 		BT_LOGE("[%s] Remote prov set prefer bearer fail,reason:%d\r\n", __func__, ret);
 		return ret;
 	}

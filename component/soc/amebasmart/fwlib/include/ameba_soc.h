@@ -21,7 +21,9 @@
 /* ram headers */
 
 #include "os_wrapper.h"
+#ifndef __ZEPHYR__
 #include "heap_trace.h"
+#endif
 
 #include "ameba_pmu.h"
 #endif

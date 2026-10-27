@@ -10,9 +10,7 @@
 
 #include "hci_core.h"
 #include "ameba_nor_ftl.h"
-#if defined(CONFIG_WHC_INTF_USB)
-#include "usbd_intf.h"
-#elif defined(CONFIG_WHC_INTF_SPDIO)
+#if defined(CONFIG_WHC_INTF_SPDIO)
 #include "sdio_intf.h"
 #endif
 /* Private defines -----------------------------------------------------------*/
@@ -85,7 +83,7 @@ static int HCI_WriteImage(u32 addr, const u8 *src, u32 size)
 			nor_ftl_write_page(addr + i, src + i);
 		}
 	} else {
-		/* Only allow writes to km4tz FULLMAC region or km4ns BD RAM */
+		/* Only allow writes to km55tz FULLMAC region or km55ns BD RAM */
 #ifdef HCI_TARGET_ADDR_CHECK_TODO
 		if (!RANGE_IS_FULLMAC(addr, size - 1) &&
 			!is_memory_range_valid(addr, size, (u32)__km4ns_bd_ram_start__, (u32)__km4ns_bd_ram_end__)) {
@@ -134,7 +132,7 @@ static int HCI_CalculateChecksum(u32 addr, u32 size, u32 *result)
 	}
 
 	for (i = 0; i < size; i += 4) {
-		/* performance: km4 spic read 32bytes cost 1.095us with 1 cache line @4IO/100M
+		/* performance: km55 spic read 32bytes cost 1.095us with 1 cache line @4IO/100M
 			8*HAL_READ32 cost 1.095us *4(max) * 5 = 20us @1IO/20M
 		*/
 		data = HAL_READ32(addr, i);
@@ -388,9 +386,7 @@ int HCI_Init(void)
 	int ret;
 	HCI_AdapterTypeDef *adapter = &HCI_Adapter;
 
-#if defined(CONFIG_WHC_INTF_USB)
-	adapter->Interface = &USBD_Interface;
-#elif defined(CONFIG_WHC_INTF_SPDIO)
+#if defined(CONFIG_WHC_INTF_SPDIO)
 	adapter->Interface = &SDIO_Interface;
 #else
 	RTK_LOGE(TAG, "Invalid WHC interface\n");

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/* Includes ------------------------------------------------------------------ */
+/* Includes ------------------------------------------------------------------*/
 
 #include <platform_autoconf.h>
 #include "usbd_cdc_acm.h"
@@ -56,13 +56,11 @@
 
 #define COMP_UAC_DEMUX_CH_DEBUG                      1
 
-#ifdef CONFIG_SUPPORT_USB_FS_ONLY
-#define COMP_USB_SPEED                                USB_SPEED_FULL
-#elif defined(CONFIG_USBD_UAC1)
-/* UAC 1.0 spec supports only Full Speed. */
+/* Only UAC 1.0 has to pick a speed: its spec supports Full Speed only, so an HS-capable
+ * PHY is driven in Full-Speed mode. Otherwise the speed is left to the core, which clamps
+ * to Full Speed by itself on an FS-only SoC. */
+#ifdef CONFIG_USBD_UAC1
 #define COMP_USB_SPEED                                USB_SPEED_HIGH_IN_FULL
-#else
-#define COMP_USB_SPEED                                USB_SPEED_HIGH
 #endif
 
 // This configuration is used to enable a thread to check hotplug event
@@ -92,16 +90,22 @@ static int composite_cdc_acm_cb_received(u8 *buf, u32 Len);
 static int composite_init_stack(void);
 #if COMP_HOTPLUG
 static void composite_cb_status_changed(u8 old_status, u8 status);
+#endif
 static void composite_stop_workers(void);
 static void composite_release_semas(void);
-#endif
+static void example_audio_track_play(void);
 
 /* Private variables ---------------------------------------------------------*/
 
 static const char *const TAG = "COMP";
 
 static const usbd_config_t composite_cfg = {
-	.speed = COMP_USB_SPEED,
+	.info = {
+		.prod_str = "Realtek ACM+UAC Composite Device",
+#ifdef COMP_USB_SPEED
+		.speed = COMP_USB_SPEED,
+#endif
+	},
 	.isr_priority = INT_PRI_MIDDLE,
 	/* Enlarge this value if composite configuration descriptor is larger than 512B */
 	/* .ctrl_xfer_buf_len = 512U, */
@@ -121,12 +125,16 @@ static const usbd_config_t composite_cfg = {
 };
 
 /* CDC ACM endpoint configuration */
-static const usbd_cdc_acm_ep_cfg_t cdc_acm_ep = {
+static const usbd_cdc_acm_config_t cdc_acm_class_cfg = {
 	.bulk_in_addr  = COMP_CDC_BULK_IN_EP,
 	.bulk_out_addr = COMP_CDC_BULK_OUT_EP,
 	.intr_in_addr  = COMP_CDC_INTR_IN_EP,
 	.bulk_in_xfer_size  = CDC_BULK_IN_XFER_SIZE,
 	.bulk_out_xfer_size = CDC_BULK_OUT_XFER_SIZE,
+	.notify_en = 1,
+	/* Copy into the class TX buffer: the echo path transmits straight out of the BULK OUT
+	   buffer, which is re-armed for the next packet before the IN transfer has completed */
+	.bulk_in_zero_copy = 0,
 };
 
 /* CDC ACM user callbacks */
@@ -141,16 +149,15 @@ static const usbd_cdc_acm_cb_t composite_cdc_acm_usr_cb = {
 };
 
 /* UAC endpoint configuration */
-static const usbd_uac_ep_cfg_t uac_ep = {
+static const usbd_uac_config_t uac_class_cfg = {
+	.in = {.enable = 0, },
+	.out = {.enable = 1, },
 	.isoc_in_addr  = COMP_UAC_ISOC_IN_EP,
 	.isoc_out_addr = COMP_UAC_ISOC_OUT_EP,
 };
 
 /* UAC user callbacks */
 static usbd_uac_cb_t composite_uac_cb = {
-	.in = {.enable = 0, },
-	.out = {.enable = 1, },
-	.audio_ctx = NULL,
 	.init = NULL,
 	.deinit = NULL,
 	.setup = NULL,
@@ -173,7 +180,19 @@ static u8 recv_buf[COMP_USBD_AUDIO_MS_BUF_SIZE * 2];
 
 static rtos_sema_t uac_ready_sema;
 static volatile u8 audio_task_stop;
-static volatile u8 uac_playing;
+
+/* Serializes the composite stack bring up/tear down against the playback thread,
+ * taken by the hotplug thread and by the playback thread for a whole session.
+ * Created once and never deleted: the example may be started again, and
+ * composite_stack_ready is the gate that keeps callers off the stack. */
+static rtos_mutex_t composite_state_lock = NULL;
+/* 1: the whole composite stack is up, the class APIs may be called. Cleared before any
+ * tear down, so a non-zero value also implies composite_state_lock is valid.
+ * usbd_uac_deinit() frees the ISOC ring buffer and its semaphores, which
+ * usbd_uac_read() dereferences; the bounded wait this replaces could time out and
+ * deinit under a playback thread still inside the stack, which is what happens on SMP
+ * where that thread keeps running on the other core. */
+static volatile u8 composite_stack_ready;
 
 /* Worker thread handles and exit flags. Every worker leaves its loop on its own
    exit flag, clears its handle and then deletes itself; composite_stop_workers() is
@@ -185,7 +204,8 @@ static volatile u8 composite_playback_exit;
 static rtos_task_t composite_hotplug_task;
 static volatile u8 composite_hotplug_exit;
 static rtos_sema_t composite_attach_status_changed_sema;
-static u8 composite_attach_status;
+/* Written by the ISR, read by the hotplug thread, possibly on another core */
+static volatile u8 composite_attach_status;
 
 /* Composite-level callback: forwarded the aggregated attach status by the
    composite framework, used to drive the hotplug thread. */
@@ -205,8 +225,7 @@ static usbd_audio_cfg_t uac_play_cfg = {
 	.enable = 1,
 };
 
-/* Private function prototypes -----------------------------------------------*/
-static void example_audio_track_play(void);
+/* Exported variables --------------------------------------------------------*/
 
 /* Private functions ---------------------------------------------------------*/
 
@@ -247,7 +266,7 @@ static int composite_cdc_acm_cb_deinit(void)
   */
 static int composite_cdc_acm_cb_received(u8 *buf, u32 len)
 {
-	if (buf && len) {
+	if ((buf != NULL) && (len != 0U)) {
 		usbd_cdc_acm_transmit(buf, len);
 	}
 	return 0;
@@ -299,13 +318,17 @@ static int composite_cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 				D2-15:	Reserved, 0
 				D1:	RTS, 0 - Deactivate, 1 - Activate
 				D0:	DTR, 0 - Not Present, 1 - Present
+		Ref CDC PSTN 1.2 6.3.12: no data stage, so wLength must be zero; the reserved bits
+		are ignored rather than rejected.
 		*/
-		if (req->wValue & 0x01) {
-			/* VCOM port activate */
-			USB_DIAG(USB_LAYER_APP, USB_EVT_LINK, 0);
-			usbd_cdc_acm_notify_serial_state(USB_CDC_ACM_CTRL_DSR | USB_CDC_ACM_CTRL_DCD);
+		if (req->wLength == 0U) {
+			if ((req->wValue & 0x01U) != 0U) {
+				/* VCOM port activate */
+				USB_DIAG(USB_LAYER_APP, USB_EVT_LINK, 0);
+				usbd_cdc_acm_notify_serial_state(USB_CDC_ACM_CTRL_DSR | USB_CDC_ACM_CTRL_DCD);
+			}
+			ret = HAL_OK;
 		}
-		ret = HAL_OK;
 		break;
 
 	case USB_CDC_ACM_SEND_BREAK:
@@ -324,6 +347,7 @@ static int composite_cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 /* playback , USB OUT */
 static void example_audio_track_play(void)
 {
+	usbd_audio_cfg_t play_cfg;
 	u32 read_dat_len = 0;
 #ifndef CONFIG_SUPPORT_AUDIO_FOR_USB
 	u32 total_len = 0;
@@ -335,7 +359,12 @@ static void example_audio_track_play(void)
 	/* Sizes the ISOC OUT ring buffer / mps and arms the endpoint. Required on every
 	   build: without it isoc_mps stays 0, usbd_uac_receive_data() bails out and no
 	   OUT packet is ever received, so it must not depend on the audio framework. */
-	if (usbd_uac_config(&uac_play_cfg, 0, 0) != HAL_OK) {
+	/* One consistent snapshot: format_changed() rewrites the fields from the ISR */
+	rtos_critical_enter(RTOS_CRITICAL_USB);
+	play_cfg = uac_play_cfg;
+	rtos_critical_exit(RTOS_CRITICAL_USB);
+
+	if (usbd_uac_config(&play_cfg, 0, 0) != HAL_OK) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "UAC config fail\n");
 		return;
 	}
@@ -352,9 +381,9 @@ static void example_audio_track_play(void)
 		uint32_t format;
 		int32_t track_buf_size;
 
-		uint32_t g_track_rate = uac_play_cfg.sampling_freq;
-		uint32_t g_track_channel = uac_play_cfg.ch_cnt;
-		uint32_t g_track_format = uac_play_cfg.byte_width * 8;
+		uint32_t g_track_rate = play_cfg.sampling_freq;
+		uint32_t g_track_channel = play_cfg.ch_cnt;
+		uint32_t g_track_format = play_cfg.byte_width * 8;
 
 		uint32_t play_track_channel = g_track_channel;
 
@@ -387,9 +416,12 @@ static void example_audio_track_play(void)
 			break;
 		}
 
+		/* Every failure below stops the ISOC OUT stream armed above and frees the track, so a
+		   failed session leaves nothing running or allocated */
 		audio_track = AudioTrack_Create();
 		if (!audio_track) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Create AudioTrack fail\n");
+			usbd_uac_stop_play();
 			return;
 		}
 
@@ -406,7 +438,12 @@ static void example_audio_track_play(void)
 		track_config.format = format;
 		track_config.channel_count = play_track_channel;
 		track_config.buffer_bytes = track_buf_size;
-		AudioTrack_Init(audio_track, &track_config, AUDIO_OUTPUT_FLAG_NONE);
+		if (AudioTrack_Init(audio_track, &track_config, AUDIO_OUTPUT_FLAG_NONE) != AUDIO_OK) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Audio track init fail\n");
+			usbd_uac_stop_play();
+			AudioTrack_Destroy(audio_track);
+			return;
+		}
 
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Track buf size:%d\n", track_buf_size);
 
@@ -416,12 +453,13 @@ static void example_audio_track_play(void)
 
 		if (AudioTrack_Start(audio_track) != AUDIO_OK) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Audio track start fail\n");
+			usbd_uac_stop_play();
+			AudioTrack_Destroy(audio_track);
 			return;
 		}
 
 		RTK_LOGS(TAG, RTK_LOG_INFO, "UAC stop %d\n", audio_task_stop);
 
-		uac_playing = 1;
 		while (!audio_task_stop) {
 			read_dat_len = usbd_uac_read(recv_buf, COMP_USBD_AUDIO_MS_BUF_SIZE * 2, 500, NULL);
 			if (read_dat_len > 0) {
@@ -450,12 +488,10 @@ static void example_audio_track_play(void)
 		AudioTrack_Destroy(audio_track);
 
 		audio_track = NULL;
-		uac_playing = 0;
 	}
 #else
 	/* No audio framework on this SoC: keep draining the ISOC OUT stream so the host
 	   still sees a working speaker endpoint, and report the throughput instead. */
-	uac_playing = 1;
 	while (!audio_task_stop) {
 		read_dat_len = usbd_uac_read(recv_buf, COMP_USBD_AUDIO_MS_BUF_SIZE * 2, 500, NULL);
 		read_cnt++;
@@ -471,7 +507,6 @@ static void example_audio_track_play(void)
 	}
 
 	usbd_uac_stop_play();
-	uac_playing = 0;
 #endif
 	RTK_LOGS(TAG, RTK_LOG_DEBUG, "Audio track demo stop\n\n\n");
 }
@@ -487,6 +522,8 @@ static void example_audio_track_play(void)
   */
 static void composite_uac_cb_format_changed(u32 sampling_freq, u8 ch_cnt, u8 byte_width)
 {
+	/* The player thread snapshots the format under the same lock, refer to example_audio_track_play() */
+	rtos_critical_enter(RTOS_CRITICAL_USB);
 	if (sampling_freq != 0U) {
 		uac_play_cfg.sampling_freq = sampling_freq;
 	}
@@ -496,6 +533,7 @@ static void composite_uac_cb_format_changed(u32 sampling_freq, u8 ch_cnt, u8 byt
 	if (byte_width != 0U) {
 		uac_play_cfg.byte_width = byte_width;
 	}
+	rtos_critical_exit(RTOS_CRITICAL_USB);
 
 	if (sampling_freq && ch_cnt && byte_width) {
 		/* Stop the current stream so usbd_uac_read returns at once (next_xfer=0) and the
@@ -522,13 +560,13 @@ static int composite_init_stack(void)
 		return ret;
 	}
 
-	ret = usbd_composite_cdc_acm_init(&composite_cdc_acm_usr_cb, &cdc_acm_ep);
+	ret = usbd_composite_cdc_acm_init(&composite_cdc_acm_usr_cb, &cdc_acm_class_cfg);
 	if (ret != HAL_OK) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "CDC ACM init fail\n");
 		goto exit_usbd_init;
 	}
 
-	ret = usbd_composite_uac_init(&composite_uac_cb, &uac_ep);
+	ret = usbd_composite_uac_init(&composite_uac_cb, &uac_class_cfg);
 	if (ret != HAL_OK) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "UAC init fail\n");
 		goto exit_cdc_acm_init;
@@ -585,7 +623,6 @@ static void composite_cb_status_changed(u8 old_status, u8 status)
    first so the UAC class can be torn down safely. */
 static void example_usbd_composite_hotplug_thread(void *param)
 {
-	int wait_cnt;
 	u8 fatal = 0U;
 
 	UNUSED(param);
@@ -597,22 +634,26 @@ static void example_usbd_composite_hotplug_thread(void *param)
 			}
 			if (composite_attach_status == USBD_ATTACH_STATUS_DETACHED) {
 				RTK_LOGS(TAG, RTK_LOG_INFO, "DETACHED\n");
-				/* Stop the playback loop and wait for it to unwind before
-				   tearing down the UAC class. */
+				/* Ask the playback loop to leave first: stop_play() unblocks a pending
+				   usbd_uac_read(), audio_task_stop ends the loop. Both must run while
+				   the stack is still up, so before the lock. */
 				audio_task_stop = 1;
 				usbd_uac_stop_play();
-				rtos_time_delay_ms(200);
-				wait_cnt = 0;
-				while ((uac_playing != 0) && (wait_cnt < 25)) { /* max wait 500ms */
-					rtos_time_delay_ms(20);
-					wait_cnt++;
-				}
+				/* The playback thread holds this lock for as long as it is inside the
+				   class APIs, so taking it here waits until it is not: unlike a bounded
+				   wait, this can not time out and deinit under a thread that is still
+				   running, which matters on SMP where it runs on the other core. */
+				rtos_mutex_take(composite_state_lock, RTOS_MAX_TIMEOUT);
+				composite_stack_ready = 0;
 				composite_deinit_stack();
 				RTK_LOGS(TAG, RTK_LOG_INFO, "Free heap: 0x%x\n", rtos_mem_get_free_heap_size());
 				if (composite_init_stack() != HAL_OK) {
+					rtos_mutex_give(composite_state_lock);
 					fatal = 1U;
 					break;
 				}
+				composite_stack_ready = 1;
+				rtos_mutex_give(composite_state_lock);
 			} else if (composite_attach_status == USBD_ATTACH_STATUS_ATTACHED) {
 				RTK_LOGS(TAG, RTK_LOG_INFO, "ATTACHED\n");
 			} else {
@@ -650,7 +691,15 @@ static void example_usbd_composite_acm_uac_audio_track_thread(void *param)
 			break;
 		}
 		audio_task_stop = 0;
-		example_audio_track_play();
+		/* Hold the lock for the whole playback session: it keeps a pending teardown
+		   out of the class APIs this thread is inside. The hotplug thread raises
+		   audio_task_stop before it asks for the lock, so the loop inside always
+		   leaves and the wait is bounded. */
+		rtos_mutex_take(composite_state_lock, RTOS_MAX_TIMEOUT);
+		if (composite_stack_ready != 0U) {
+			example_audio_track_play();
+		}
+		rtos_mutex_give(composite_state_lock);
 	}
 
 	/* uac_ready_sema is owned by example_usbd_composite(): the format_changed
@@ -660,17 +709,35 @@ static void example_usbd_composite_acm_uac_audio_track_thread(void *param)
 }
 
 /**
+  * @brief  Name the first worker thread that has not left yet
+  * @retval Thread name, NULL once every worker is gone
+  */
+static const char *composite_get_running_worker(void)
+{
+	if (composite_playback_task != NULL) {
+		return "playback";
+	}
+#if COMP_HOTPLUG
+	if (composite_hotplug_task != NULL) {
+		return "hotplug";
+	}
+#endif
+	return NULL;
+}
+
+/**
   * @brief  Ask every worker thread to leave its loop, then wait for it to delete
   *         itself (each worker clears its own handle as its last action).
   * @note   Must run before composite_release_semas(): the workers block on those
-  *         semaphores. A worker that misses its polling window within the grace
-  *         period is force-deleted as a last resort.
+  *         semaphores. A worker is never deleted from outside: it may be inside the
+  *         class APIs or hold a lock, so the wait is not bounded and a stuck worker is
+  *         reported every 2s instead.
   * @retval None
   */
 static void composite_stop_workers(void)
 {
-	int wait_cnt;
-	u8 running;
+	const char *name;
+	u32 wait_cnt = 0U;
 
 	/* Raise every exit flag first, then wake whoever is blocked on a semaphore. */
 	audio_task_stop = 1;
@@ -684,29 +751,16 @@ static void composite_stop_workers(void)
 
 	/* Wait for the workers to unwind. The playback loop needs the longest:
 	   usbd_uac_read() has a 500ms timeout and the AudioTrack teardown follows. */
-	for (wait_cnt = 0; wait_cnt < 100; wait_cnt++) { /* max wait 2s */
-		running = (composite_playback_task != NULL) ? 1U : 0U;
-#if COMP_HOTPLUG
-		running |= (composite_hotplug_task != NULL) ? 1U : 0U;
-#endif
-		if (running == 0) {
-			return;
-		}
+	name = composite_get_running_worker();
+	while (name != NULL) {
 		rtos_time_delay_ms(20);
+		wait_cnt++;
+		if (wait_cnt >= 100U) {
+			RTK_LOGS(TAG, RTK_LOG_WARN, "Wait %s exit\n", name);
+			wait_cnt = 0U;
+		}
+		name = composite_get_running_worker();
 	}
-
-	/* Last resort for a worker stuck outside its polling point. */
-	RTK_LOGS(TAG, RTK_LOG_WARN, "Force delete worker thread\n");
-	if (composite_playback_task != NULL) {
-		rtos_task_delete(composite_playback_task);
-		composite_playback_task = NULL;
-	}
-#if COMP_HOTPLUG
-	if (composite_hotplug_task != NULL) {
-		rtos_task_delete(composite_hotplug_task);
-		composite_hotplug_task = NULL;
-	}
-#endif
 }
 
 /**
@@ -740,24 +794,7 @@ static void example_usbd_composite_acm_uac_init_thread(void *param)
 	if (ret != HAL_OK) {
 		goto exit_release_sema;
 	}
-
-#if COMP_HOTPLUG
-	ret = rtos_task_create(&composite_hotplug_task, "usbd_composite_hotplug_thread",
-						   example_usbd_composite_hotplug_thread, NULL,
-						   COMP_HOTPLUG_THREAD_STACK_SIZE, COMP_HOTPLUG_THREAD_PRIORITY);
-	if (ret != RTK_SUCCESS) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create hotplug thread fail\n");
-		goto exit_stop_workers;
-	}
-#if defined(CONFIG_SMP)
-	/* C-2: the USB OTG ISR is delivered on CPU0 (GIC ITARGETSR pins every SPI to core 0).
-	   Pinning the hotplug/deinit thread to CPU0 puts it on the same core as the ISR,
-	   so deinit's local interrupt disable is meaningful again under SMP. The playback
-	   data thread stays unaffined: composite_stop_workers() gates it out of a pending
-	   teardown, so it does not need to share the ISR's core. */
-	rtos_task_set_affinity(composite_hotplug_task, 0);
-#endif
-#endif
+	composite_stack_ready = 1;
 
 	/* Created here (after this thread's own CPU1-bring-up delay has already
 	 * elapsed) rather than from example_usbd_composite(), because a task's
@@ -772,7 +809,25 @@ static void example_usbd_composite_acm_uac_init_thread(void *param)
 		goto exit_stop_workers;
 	}
 
-	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD COMP demo start\n");
+#if COMP_HOTPLUG
+	/* Created last: the hotplug thread is the only one that tears the stack down on its
+	   own, so once it runs nothing is left to unwind here */
+	ret = rtos_task_create(&composite_hotplug_task, "usbd_composite_hotplug_thread",
+						   example_usbd_composite_hotplug_thread, NULL,
+						   COMP_HOTPLUG_THREAD_STACK_SIZE, COMP_HOTPLUG_THREAD_PRIORITY);
+	if (ret != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create hotplug thread fail\n");
+		goto exit_stop_workers;
+	}
+#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
+	/* C-2: the USB OTG ISR is delivered on CPU0 (GIC ITARGETSR pins every SPI to core 0).
+	   Pinning the hotplug/deinit thread to CPU0 puts it on the same core as the ISR,
+	   so deinit's local interrupt disable is meaningful again under SMP. The playback
+	   data thread stays unaffined: a pending deinit is excluded from it by
+	   composite_state_lock, not by core. */
+	rtos_task_set_affinity(composite_hotplug_task, 0);
+#endif
+#endif
 
 	rtos_task_delete(NULL);
 	return;
@@ -781,11 +836,13 @@ static void example_usbd_composite_acm_uac_init_thread(void *param)
 	   semaphores and touch the UAC class), then the USB stack, then the
 	   semaphores themselves. */
 exit_stop_workers:
+	composite_stack_ready = 0;
 	composite_stop_workers();
 	composite_deinit_stack();
 
 exit_release_sema:
 	composite_release_semas();
+	RTK_LOGS(TAG, RTK_LOG_ERROR, "USBD ACM+UAC comp demo aborted\n");
 	rtos_task_delete(NULL);
 }
 
@@ -801,12 +858,28 @@ void example_usbd_composite(void)
 	int ret;
 	rtos_task_t task;
 
+	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD ACM+UAC comp demo start\n");
+
+	/* Created once and never deleted, see its declaration. */
+	if (composite_state_lock == NULL) {
+		ret = rtos_mutex_create(&composite_state_lock);
+		if (ret != RTK_SUCCESS) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Create lock fail\n");
+			return;
+		}
+	}
+
 	ret = rtos_sema_create(&uac_ready_sema, 0U, 1U);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create sema fail\n");
 		return;
 	}
+	/* Raised by composite_stop_workers() of a previous run, the new workers would leave at once */
 	audio_task_stop = 0;
+	composite_playback_exit = 0;
+#if COMP_HOTPLUG
+	composite_hotplug_exit = 0;
+#endif
 
 #if COMP_HOTPLUG
 	ret = rtos_sema_create(&composite_attach_status_changed_sema, 0U, 1U);

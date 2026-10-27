@@ -15,27 +15,22 @@
 extern "C" {
 #endif
 
-/* Exported defines ----------------------------------------------------------*/
-
 /** @addtogroup USB_Device_API USB Device API
  *  @{
  */
+
+/* Exported defines ----------------------------------------------------------*/
+
 /** @addtogroup USB_Device_Constants USB Device Constants
  * @{
  */
 /** @addtogroup Device_Vendor_Constants Device Vendor Constants
  * @{
  */
-#define USBD_VENDOR_VID                  USB_VID					/**< Vendor ID */
-#define USBD_VENDOR_PID                  USB_PID					/**< Product ID */
+
 #define USBD_VENDOR_CLASS_CODE           0xFFU					/**< Device class code (0xFF = Vendor Specific) */
 #define USBD_VENDOR_SUBCLASS_CODE        0x00U					/**< Device subclass code (0x00 = No specific subclass) */
 #define USBD_VENDOR_PROTOCOL             0x00U					/**< Device protocol code (0x00 = No specific protocol) */
-#define USBD_VENDOR_LANGID_STRING        0x0409U					/**< Language ID for string descriptors (0x0409 = English) */
-#define USBD_VENDOR_MFG_STRING           "Realtek"				/**< Manufacturer string */
-#define USBD_VENDOR_PROD_HS_STRING       "Realtek Vendor (HS)"	/**< Product string for High-Speed mode */
-#define USBD_VENDOR_PROD_FS_STRING       "Realtek Vendor (FS)"	/**< Product string for Full-Speed mode */
-#define USBD_VENDOR_SN_STRING            "1234567890"			/**< Serial number string */
 
 #define USBD_VENDOR_HS_BULK_MPS          512U   /**< High speed BULK IN & OUT maximum packet size */
 #define USBD_VENDOR_FS_BULK_MPS          64U    /**< Full speed BULK IN & OUT maximum packet size */
@@ -44,23 +39,23 @@ extern "C" {
 #define USBD_VENDOR_HS_ISOC_MPS          1024U  /**< High speed ISOC IN & OUT maximum packet size */
 #define USBD_VENDOR_FS_ISOC_MPS          1023U  /**< Full speed ISOC IN & OUT maximum packet size */
 
-#define USBD_VENDOR_HS_INTR_IN_INTERVAL  2U    /**< High speed INTR IN interval */
-#define USBD_VENDOR_HS_INTR_OUT_INTERVAL 2U    /**< High speed INTR OUT interval */
-#define USBD_VENDOR_FS_INTR_IN_INTERVAL  2U    /**< Full speed INTR IN interval */
-#define USBD_VENDOR_FS_INTR_OUT_INTERVAL 2U    /**< Full speed INTR OUT interval */
+/* Default applied when the matching @ref usbd_vendor_config_t interval field is left 0. */
+#define USBD_VENDOR_DEFAULT_EP_INTERVAL  2U    /**< Default INTR/ISOC bInterval, both speeds. */
 
-#define USBD_VENDOR_HS_ISOC_IN_INTERVAL  2U    /**< High speed ISOC IN interval */
-#define USBD_VENDOR_HS_ISOC_OUT_INTERVAL 2U    /**< High speed ISOC OUT interval */
-#define USBD_VENDOR_FS_ISOC_IN_INTERVAL  2U    /**< Full speed ISOC IN interval */
-#define USBD_VENDOR_FS_ISOC_OUT_INTERVAL 2U    /**< Full speed ISOC OUT interval */
 /** @} End of Device_Vendor_Constants group */
 /** @} End of USB_Device_Constants group */
 
 /* Exported types ------------------------------------------------------------*/
 
 /**
- * @brief Vendor endpoint configuration structure.
- * @details Used to configure endpoint addresses and buffer sizes at runtime.
+ * @brief Configuration for the Vendor class.
+ * @details Carries every Vendor option: the endpoint allocation, which the top-level application
+ *          owns, plus the per-endpoint transfer sizes and intervals. Used by both standalone and
+ *          composite modes. Device-global parameters (VID/PID, strings, power attributes) live in
+ *          @ref usbd_dev_info_t instead, and application-level options such as hotplug or task
+ *          priorities belong in the example's own configuration structure.
+ * @note  The structure is stored by pointer, not copied, so it shall remain valid until
+ *        @ref usbd_vendor_deinit.
  */
 typedef struct {
 	u32 bulk_in_xfer_size;   /**< BULK IN transfer buffer size */
@@ -69,13 +64,22 @@ typedef struct {
 	u32 isoc_out_xfer_size;  /**< ISOC OUT transfer buffer size */
 	u32 intr_in_xfer_size;   /**< INTR IN transfer buffer size */
 	u32 intr_out_xfer_size;  /**< INTR OUT transfer buffer size */
+	const char *itf_str;     /**< iInterface string of the Vendor interface, NULL for none. */
 	u8 bulk_in_addr;    /**< BULK IN endpoint address */
 	u8 bulk_out_addr;   /**< BULK OUT endpoint address */
 	u8 isoc_in_addr;    /**< ISOC IN endpoint address */
 	u8 isoc_out_addr;   /**< ISOC OUT endpoint address */
 	u8 intr_in_addr;    /**< INTR IN endpoint address */
 	u8 intr_out_addr;   /**< INTR OUT endpoint address */
-} usbd_vendor_ep_cfg_t;
+	u8 intr_in_interval_hs;  /**< INTR IN bInterval at High Speed, 0 uses @ref USBD_VENDOR_DEFAULT_EP_INTERVAL. */
+	u8 intr_in_interval_fs;  /**< INTR IN bInterval at Full Speed, 0 uses @ref USBD_VENDOR_DEFAULT_EP_INTERVAL. */
+	u8 intr_out_interval_hs; /**< INTR OUT bInterval at High Speed, 0 uses @ref USBD_VENDOR_DEFAULT_EP_INTERVAL. */
+	u8 intr_out_interval_fs; /**< INTR OUT bInterval at Full Speed, 0 uses @ref USBD_VENDOR_DEFAULT_EP_INTERVAL. */
+	u8 isoc_in_interval_hs;  /**< ISOC IN bInterval at High Speed, 0 uses @ref USBD_VENDOR_DEFAULT_EP_INTERVAL. */
+	u8 isoc_in_interval_fs;  /**< ISOC IN bInterval at Full Speed, 0 uses @ref USBD_VENDOR_DEFAULT_EP_INTERVAL. */
+	u8 isoc_out_interval_hs; /**< ISOC OUT bInterval at High Speed, 0 uses @ref USBD_VENDOR_DEFAULT_EP_INTERVAL. */
+	u8 isoc_out_interval_fs; /**< ISOC OUT bInterval at Full Speed, 0 uses @ref USBD_VENDOR_DEFAULT_EP_INTERVAL. */
+} usbd_vendor_config_t;
 
 /** @addtogroup USB_Device_Types USB Device Types
  * @{
@@ -83,6 +87,7 @@ typedef struct {
 /** @addtogroup Device_Vendor_Types Device Vendor Types
  * @{
  */
+
 /**
  * @brief Structure containing callback functions for the Vendor class.
  * @details The user application should provide an instance of this structure
@@ -193,20 +198,22 @@ typedef struct {
  * @brief Structure representing the Vendor device instance.
  */
 typedef struct {
-	const usbd_vendor_ep_cfg_t *ep_cfg;	/**< Pointer to the EP configuration. */
+	const usbd_vendor_config_t *cfg;	/**< Pointer to the class configuration (set by init). */
 	const usbd_vendor_cb_t *cb;		/**< Pointer to the user-defined callback structure */
 	usb_dev_t *dev;				/**< Pointer to the USB device instance */
-	usb_setup_req_t ctrl_req;	/**< Stores the current control request */
 	usbd_ep_t ep_isoc_in;		/**< ISOC IN endpoint structure */
 	usbd_ep_t ep_isoc_out;		/**< ISOC OUT endpoint structure */
 	usbd_ep_t ep_bulk_in;		/**< BULK IN endpoint structure */
 	usbd_ep_t ep_bulk_out;		/**< BULK OUT endpoint structure */
 	usbd_ep_t ep_intr_in;		/**< INTR IN endpoint structure */
 	usbd_ep_t ep_intr_out;		/**< INTR OUT endpoint structure */
+	usb_setup_req_t ctrl_req;	/**< Stores the current control request (byte-packed) */
 	u8 alt_setting;				/**< Alternate setting number of the current interface */
 	u8 ctrl_req_pending;		/**< 1 if ctrl_req is waiting for its EP0 OUT data stage */
 	u8 from_composite;			/**< Flag indicating if part of a composite device. */
+	u8 itf_str_idx;				/**< iInterface string index from usbd_add_string(), 0 for none. */
 } usbd_vendor_dev_t;
+
 /** @} End of Device_Vendor_Types group */
 /** @} End of USB_Device_Types group */
 
@@ -226,24 +233,27 @@ typedef struct {
 /**
  * @brief Initializes class driver with application callback handler.
  * @param[in] cb: Pointer to the user-defined callback structure.
+ * @param[in] cfg: Pointer to the class configuration. See @ref usbd_vendor_config_t.
  * @return 0 on success, non-zero on failure.
  */
-int usbd_vendor_init(const usbd_vendor_cb_t *cb, const usbd_vendor_ep_cfg_t *ep_cfg);
+int usbd_vendor_init(const usbd_vendor_cb_t *cb, const usbd_vendor_config_t *cfg);
 
 #ifdef CONFIG_USBD_COMPOSITE
 /**
  * @brief Initializes class driver as part of a composite device.
  * @param[in] cb: Pointer to the user-defined callback structure.
- * @param[in] ep_cfg: Pointer to EP configuration.
+ * @param[in] cfg: Pointer to the class configuration. See @ref usbd_vendor_config_t.
  * @return 0 on success, non-zero on failure.
  */
-int usbd_composite_vendor_init(const usbd_vendor_cb_t *cb, const usbd_vendor_ep_cfg_t *ep_cfg);
+int usbd_composite_vendor_init(const usbd_vendor_cb_t *cb, const usbd_vendor_config_t *cfg);
 #endif
 
 /**
  * @brief De-initializes the Vendor class driver.
- * @return None. This is a teardown path: the class is always unregistered and every resource it
- *         owns released, so there is nothing for the caller to recover from.
+ * @note  Composite mode: call it after @ref usbd_composite_deinit. Before that the class is
+ *        still reachable from the USB ISR, so the call returns at once and releases nothing.
+ * @return None. This is a teardown path: apart from the composite case above, the class is always
+ *         unregistered and every resource it owns released, nothing for the caller to recover from.
  */
 void usbd_vendor_deinit(void);
 
@@ -273,10 +283,11 @@ int usbd_vendor_transmit_isoc_data(u8 *buf, u32 len);
 
 /** @} End of Device_Vendor_Functions group */
 /** @} End of USB_Device_Functions group */
+
 /** @} End of USB_Device_API group */
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif  /* USBD_VENDOR_H */
+#endif /* USBD_VENDOR_H */

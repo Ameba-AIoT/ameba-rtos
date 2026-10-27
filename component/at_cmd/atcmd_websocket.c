@@ -9,6 +9,7 @@
 #ifdef CONFIG_LWIP_LAYER
 #if defined(CONFIG_ATCMD_WEBSOCKET) && (CONFIG_ATCMD_WEBSOCKET == 1)
 #include "lwip_netconf.h"
+#include "dlist.h"
 #include "atcmd_service.h"
 #include "atcmd_websocket.h"
 

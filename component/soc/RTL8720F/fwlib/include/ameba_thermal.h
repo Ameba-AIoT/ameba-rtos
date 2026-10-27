@@ -54,6 +54,14 @@ typedef struct {
 } TM_InitTypeDef;
 
 /**
+ * @brief Thermal temperature unit
+ */
+typedef enum {
+	TM_DEG_C = 0, /*!< Celsius degree */
+	TM_DEG_F = 1, /*!< Fahrenheit degree */
+} TM_UnitDef;
+
+/**
  * @}
  */
 
@@ -111,12 +119,12 @@ _LONG_CALL_ u32 TM_GetMaxTemp(void);
 _LONG_CALL_ u32 TM_GetMinTemp(void);
 _LONG_CALL_ void TM_MaxTempClr(void);
 _LONG_CALL_ void TM_MinTempClr(void);
-_LONG_CALL_ void TM_HighPtConfig(u16 TM_HighPtThre, u32 NewState);
-_LONG_CALL_ void TM_HighWtConfig(u16 TM_HighWtThre, u32 NewState);
-_LONG_CALL_ void TM_LowWtConfig(u16 TM_LowWtThre, u32 NewState);
+_LONG_CALL_ void TM_HighPtConfig(float TM_HighPtThre, u32 NewState, TM_UnitDef Unit);
+_LONG_CALL_ void TM_HighWtConfig(float TM_HighWtThre, u32 NewState, TM_UnitDef Unit);
+_LONG_CALL_ void TM_LowWtConfig(float TM_LowWtThre, u32 NewState, TM_UnitDef Unit);
 _LONG_CALL_ float TM_GetCdegree(u32 Data);
 _LONG_CALL_ float TM_GetFdegree(u32 Data);
-_LONG_CALL_ u32 TM_GetTempCode(float TempC);
+_LONG_CALL_ float TM_GetDegree(u32 Data, TM_UnitDef Unit);
 
 #ifdef __cplusplus
 }

@@ -138,6 +138,10 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.wtn_max_refugee_num = CONFIG_WIFI_RMESH_MAX_REFUGEE_NUM;
 #endif
 
+#if defined(CONFIG_WIFI_NAN_ENABLE)
+	wifi_user_config.nan_max_peer_num = 6;	/*should not exceed 15 */
+#endif
+
 	/* ensure skb_num_np >= rx_ampdu_num + skb_num_np_rsvd */
 	if (wifi_user_config.skb_num_np < wifi_user_config.rx_ampdu_num + skb_num_np_rsvd) {
 		wifi_user_config.skb_num_np = wifi_user_config.rx_ampdu_num + skb_num_np_rsvd;

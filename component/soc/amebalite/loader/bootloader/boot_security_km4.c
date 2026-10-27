@@ -118,6 +118,10 @@ u8 BOOT_SignatureCheck(Manifest_TypeDef *Manifest, SubImgInfo_TypeDef *SubImgInf
 	 * flash-corrupted app image is rejected. When sboot is off, skip the signature
 	 * steps and use Manifest->HashAlg directly (OTP has no algorithm constraint). */
 	if (SecureBootEn == DISABLE) {
+		/* Standalone DSP image is not hashed when sboot is off. */
+		if (KeyID == KEYID_DSP) {
+			return TRUE;
+		}
 		HashAlg = Manifest->HashAlg;
 		goto IMG_HASH;
 	}
@@ -129,11 +133,22 @@ u8 BOOT_SignatureCheck(Manifest_TypeDef *Manifest, SubImgInfo_TypeDef *SubImgInf
 	}
 
 	/* 2.3 validate pubkey hash */
+	if (Cert->EntryNum > CERT_MAX_KEYINFO) {
+		ret = 1;
+		goto SBOOT_FAIL;
+	}
+
 	for (i = 0; i < Cert->EntryNum; i++) {
 		if (Cert->PKInfo[i].KeyID == KeyID) {
 			break;
 		}
 	}
+
+	if (i == Cert->EntryNum) {
+		ret = 1;
+		goto SBOOT_FAIL;
+	}
+
 	ret = SBOOT_Validate_PubKey(AuthAlg, Manifest->SBPubKey, Cert->PKInfo[i].Hash);
 	if (ret != 0) {
 		goto SBOOT_FAIL;

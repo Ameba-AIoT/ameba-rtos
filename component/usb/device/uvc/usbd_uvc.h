@@ -4,10 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef USBD_UVCD_H
-#define USBD_UVCD_H
+#ifndef USBD_UVC_H
+#define USBD_UVC_H
 
 /* Includes ------------------------------------------------------------------*/
+
 #include "dlist.h"
 #include "usbd_video.h"
 #include "usb_ringbuf.h"
@@ -16,7 +17,20 @@
 extern "C" {
 #endif
 
+/** @addtogroup USB_Device_API USB Device API
+ *  @{
+ */
+
 /* Exported defines ----------------------------------------------------------*/
+
+/** @addtogroup USB_Device_Constants USB Device Constants
+ *  @{
+ */
+/** @defgroup Device_UVC_Constants Device UVC Constants
+ *  @brief Interface indices, event codes and descriptor lengths of the UVC class.
+ *  @{
+ */
+
 #define USBD_UVC_INTF_CONTROL           0
 #define USBD_UVC_INTF_STREAMING         1
 
@@ -44,16 +58,12 @@ extern "C" {
 #define USBD_TUNING_H                   USBD_UVC_FRAME_HEIGHT
 #endif
 
-
 #define USBD_UVC_WEBCAM_VENDOR_ID       USB_VID
 #define USBD_UVC_WEBCAM_PRODUCT_ID      USB_PID
 #define USBD_UVC_WEBCAM_DEVICE_BCD      0x0010
-#define USBD_UVC_LANGID_STRING          0x0409U
 
-#define USBD_UVC_MFG_STRING             "Realtek"
 #define USBD_UVC_MFG_HS_STRING          "USB UVC CLASS"
 #define USBD_UVC_MFG_FS_STRING          "USB UVC CLASS"
-#define USBD_UVC_SN_STRING              "1234567890"
 
 #define USBD_UVC_MAKE_SUBCMD(data,dir,subcmd) ((u8)(data)<<7|(u8)(dir)<<6|subcmd)
 
@@ -110,6 +120,10 @@ extern "C" {
 #define USBD_UVC_FRAME_INTERVAL_CNT          4U         /* Number of frame intervals in usbd_uvc_frame_info_t.intervals[] */
 #define USBD_UVC_BMREQTYPE_DIR_IN            0x80U      /* bmRequestType direction bit: device-to-host */
 #define USBD_UVC_CLOCK_FREQUENCY             48000000U  /* Source clock frequency in Hz (48 MHz) */
+/* Bounded key-frame gate: at 30 fps this is 3 s, i.e. three GOPs for the default
+   GOP of 30. If no key frame shows up in that window the gate opens anyway so a
+   stream whose encoder cannot emit one is not silenced forever. */
+#define USBD_UVC_KEYFRAME_GATE_FRAMES        90U
 
 /* Periodic stats dump thread. Set to 1 to enable; keeps the dump task and its
 	struct fields out of production builds entirely. */
@@ -139,9 +153,18 @@ extern "C" {
    removed; every wTotalLength that counted them must subtract this. */
 #define USBD_UVC_VC_INTR_EP_DESC_LEN              12U
 
-/* Exported macros -----------------------------------------------------------*/
+/** @} End of Device_UVC_Constants group */
+/** @} End of USB_Device_Constants group */
 
 /* Exported types ------------------------------------------------------------*/
+
+/** @addtogroup USB_Device_Types USB Device Types
+ *  @{
+ */
+/** @defgroup Device_UVC_Types Device UVC Types
+ *  @brief Endpoint configuration, streaming control and device context types of the UVC class.
+ *  @{
+ */
 
 /**
 	* @brief UVC endpoint configuration structure.
@@ -209,11 +232,11 @@ typedef struct {
 	* Used for communication between USB and ISP firmware logic.
 	*/
 typedef struct {
-	u8 buf[0x40];   /* The maximum buffer size — 64B, largest member */
 	u32 offset;     /* to recode the index for read and write */
 	u16 cmdcode;
 	u16 param;
 	u16 addr;
+	u8 buf[0x40];   /* The maximum buffer size, 64B */
 	u8 index;
 	u8 length;
 } usbd_uvc_isp_usbd_cmd_data_t;
@@ -234,11 +257,11 @@ typedef struct {
 	* Represents a single video buffer used for streaming.
 	*/
 typedef struct {
-	struct list_head buffer_list;
 	const u8 *mem;
 	u32 bytesused;
 	void *exbuf;
 	int index;
+	struct list_head buffer_list;
 } usbd_uvc_buffer_t;
 
 /**
@@ -263,40 +286,49 @@ typedef struct {
 	* including format, buffers, payload handling, and synchronization.
 	*/
 typedef struct {
-	usbd_uvc_buffer_t uvc_buffer;
-	/* ISOC IN payload ring (producer: get_frame task, consumer: ISR).
-		Each node holds one microframe payload (USBD_UVC_PAYLOAD_HEADER_LEN + data = USBD_UVC_IN_BUF_SIZE). */
-	usb_ringbuf_manager_t in_rb;     /**< Payload ring; TX DMA reads node->buf in place (zero-copy). */
-	struct list_head input_queue;    /* 8B */
-	struct list_head output_queue;   /* 8B */
+	/* Active format */
 	int stream_index;
 	u32 fcc;
 	u32 width;
 	u32 height;
 	u32 imagesize;
 	u32 frm_type;
+	u8 format;
+	u8 bpp;
+	u8 fid;
+	u8 end_flag;
+
+	/* Payload and timing */
 	u32 req_size;
 	u32 payload_size;
 	u32 max_payload_size;
 	u32 buf_used;
-	usb_os_sema_t in_rb_space_sema;  /**< Given by ISR when a node is consumed; producer waits on it when ring is full. */
 	u32 cur_pts;                     /**< PTS (48MHz units) captured at frame start; constant for the whole frame. */
+	__IO u16 sof_count;              /**< Software SOF counter (11-bit) maintained in .sof; used as SCR SOF token. */
+	__IO u8 armed;                 /**< 1 = an ISOC IN xfer is in flight (set/cleared only in ISR). */
+	__IO u8 stall_sof;               /**< SOF count since arm; watchdog for incompISOIN recovery. */
+	u8 wait_keyframe;                /**< 1 = streaming just started; drop payloads until a key frame. */
+	u8 keyframe_gate_left;           /**< Frames the key-frame gate may still drop before giving up. */
+
+	/* ISOC IN payload ring (producer: get_frame task, consumer: ISR).
+		Each node holds one microframe payload (USBD_UVC_PAYLOAD_HEADER_LEN + data = USBD_UVC_IN_BUF_SIZE). */
+	usb_ringbuf_manager_t in_rb;     /**< Payload ring; TX DMA reads node->buf in place (zero-copy). */
+	usb_os_sema_t in_rb_space_sema;  /**< Given by ISR when a node is consumed; producer waits on it when ring is full. */
+
+	/* Frame queues */
+	usb_os_lock_t input_lock;
+	struct list_head input_queue;    /* 8B */
+	usb_os_lock_t output_lock;
+	struct list_head output_queue;   /* 8B */
+	usb_os_sema_t output_queue_sema;
+	usb_os_sema_t output_frame_sema;
+	usbd_uvc_buffer_t uvc_buffer;
+
 	/* Diagnostics counters — updated in ISR; read only by the dump thread */
 	__IO u32 tx_payloads;  /**< Total microframe payloads transmitted (XFRC). */
 	__IO u32 tx_frames;    /**< Total UVC frames fully queued into ring by producer. */
 	__IO u32 incomp_cnt;   /**< incompISOIN recoveries: SOF watchdog triggered. */
 	__IO u32 underrun_cnt; /**< Ring underrun: try_arm found empty ring. */
-	usb_os_lock_t input_lock;
-	usb_os_lock_t output_lock;
-	usb_os_sema_t output_queue_sema;
-	usb_os_sema_t output_frame_sema;
-	__IO u16 sof_count;              /**< Software SOF counter (11-bit) maintained in .sof; used as SCR SOF token. */
-	__IO u8 armed;                   /**< 1 = an ISOC IN xfer is in flight (set/cleared only in ISR). */
-	__IO u8 stall_sof;               /**< SOF count since arm; watchdog for incompISOIN recovery. */
-	u8 fid;
-	u8 format;
-	u8 end_flag;
-	u8 bpp;
 } usbd_uvc_video_t;
 
 /**
@@ -306,16 +338,9 @@ typedef struct {
 	* streaming, USB endpoints, and synchronization primitives.
 	*/
 typedef struct {
-	usbd_uvc_video_t video;
-	usbd_uvc_streaming_control_t probe;
-	usbd_uvc_streaming_control_t commit;
-	usbd_uvc_req_data_t req_data;
-	u8 result[64];             /* 64B response buffer */
-	struct list_head bod_list; /* 8B: two list pointers */
-	u32 event_setup_out : 1;
-	int control;               /* control selector */
-	int command_interface;     /* 0x00 = control, 0x01 = streaming */
-	int command_entity;        /* 0x02 = process unit, 0x03 = extension unit */
+	usb_dev_t *dev;
+	const usbd_uvc_ep_cfg_t *ep_cfg;
+	usbd_uvc_format_t *uvc_format_ptr;
 	/**
 		* @brief Called when UVC streaming parameters are committed/changed by the host.
 		* @note   This function is called within an interrupt service routine (ISR) context;
@@ -323,47 +348,93 @@ typedef struct {
 		* @param[in] uvc_format_ptr: Pointer to the active UVC format descriptor.
 		*/
 	void (*change_parm_cb)(void *);
-	usb_dev_t *dev;
-	usb_os_sema_t uvc_cmd_wakeup_sema;
-#if USBD_UVC_DEBUG
-	rtos_task_t dump_task;
-#endif
-	usb_os_lock_t bod_mutex;
-	usb_os_lock_t lock;
-	usbd_ep_t ep_isoc_in;
-	usbd_uvc_format_t *uvc_format_ptr;
-	const usbd_uvc_ep_cfg_t *ep_cfg;
-	u16 event_length;
-	u16 interface_number;
-	u8 uvc_cmd_blocked;
-#if USBD_UVC_DEBUG
-	u8 dump_task_exit;
-	u8 dump_task_alive;
-#endif
+
+	/* Lifecycle and interface state */
 	u8 running;
 	u8 init_done;        /* 0: not initialized, 1: fully initialized */
+	u8 res_created;      /* 1 once locks/semas below are created; set before init_done, guards their teardown */
 	u8 frame_task_alive; /* 1 while usbd_uvc_get_frame_handler runs; deinit joins on it */
 	u8 frame_done;
 	u8 config;
-	u8 ctrl_req;
-	u8 ctrl_data_len;
 	u8 ctrl_req_pending;    /**< 1 if ctrl_req is waiting for its EP0 OUT data stage. */
 	u8 from_composite;      /**< Flag indicating if part of a composite device. */
 	u8 if_base;             /**< First interface number of this class; 0 in standalone mode unless
 	                             the composite framework rebases it via set_interface_base(). */
+
+	/* Video streaming */
+	usbd_uvc_video_t video;
+	usbd_ep_t ep_isoc_in;
+
+	/* Class control request */
+	int control;               /* control selector */
+	int command_interface;     /* 0x00 = control, 0x01 = streaming */
+	int command_entity;        /* 0x02 = process unit, 0x03 = extension unit */
+	u32 event_setup_out : 1;
+	u16 event_length;
+	u16 interface_number;
+	u8 ctrl_req;
+	u8 ctrl_data_len;
+	u8 uvc_cmd_blocked;
+	usbd_uvc_req_data_t req_data;
+	u8 result[64];             /* 64B response buffer */
+
+	/* Streaming negotiation */
+	usbd_uvc_streaming_control_t probe;
+	usbd_uvc_streaming_control_t commit;
+
+	/* Command thread and locks */
+	usb_os_sema_t uvc_cmd_wakeup_sema;
+	usb_os_lock_t bod_mutex;
+	struct list_head bod_list; /* 8B: two list pointers */
+	usb_os_lock_t lock;
+
+#if USBD_UVC_DEBUG
+	rtos_task_t dump_task;
+	u8 dump_task_exit;
+	u8 dump_task_alive;
+#endif
 } usbd_uvc_dev_t;
+
+/** @} End of Device_UVC_Types group */
+/** @} End of USB_Device_Types group */
+
+/* Exported macros -----------------------------------------------------------*/
 
 /* Exported variables --------------------------------------------------------*/
 
+/** @addtogroup USB_Device_Variables USB Device Variables
+ *  @{
+ */
+/** @defgroup Device_UVC_Variables Device UVC Variables
+ *  @brief Negotiated streaming controls and descriptor tables of the UVC class.
+ *  @{
+ */
+
+/** @brief Probe control, holding the parameters currently being negotiated. */
+extern usbd_uvc_streaming_control_t usbd_uvc_probe;
+/** @brief Commit control, holding the parameters the host committed to. */
+extern usbd_uvc_streaming_control_t usbd_uvc_commit;
+/** @brief Table of supported formats and their frame descriptors. */
+extern usbd_uvc_format_info_t uvcd_formats[];
+/** @brief Number of entries in @ref uvcd_formats. */
+extern const u32 uvcd_nformats;
+/** @brief Assembled configuration descriptor block of the UVC class. */
+extern u8 usbd_uvc_descriptors[];
+/** @brief Length in bytes of @ref usbd_uvc_descriptors. */
+extern int usbd_uvc_descriptors_size;
+
+/** @} End of Device_UVC_Variables group */
+/** @} End of USB_Device_Variables group */
+
 /* Exported functions --------------------------------------------------------*/
 
-
-extern usbd_uvc_streaming_control_t usbd_uvc_probe;
-extern usbd_uvc_streaming_control_t usbd_uvc_commit;
-extern usbd_uvc_format_info_t uvcd_formats[];
-extern const u32 uvcd_nformats;
-extern u8 usbd_uvc_descriptors[];
-extern int usbd_uvc_descriptors_size;
+/** @addtogroup USB_Device_Functions USB Device Functions
+ *  @{
+ */
+/** @defgroup Device_UVC_Functions Device UVC Functions
+ *  @brief Lifecycle, event dispatch and state query of the UVC class.
+ *  @{
+ */
 
 /**
 	* @brief  Dispatch a UVC event (SETUP / DATA / STREAMON / STREAMOFF) to the event handlers.
@@ -410,12 +481,19 @@ void usbd_uvc_wait_frame_down(void);
 int usbd_uvc_get_status(void);
 
 /**
-	* @brief  Initialize the UVC device class and start its worker tasks.
+	* @brief  Initialize the UVC device class (standalone) and start its worker tasks.
+	* @param[in]  ep_cfg  Endpoint configuration; NULL selects the class defaults.
 	* @retval HAL_OK on success, negative error code on failure.
 	*/
 int usbd_uvc_init(const usbd_uvc_ep_cfg_t *ep_cfg);
 
 #ifdef CONFIG_USBD_COMPOSITE
+/**
+	* @brief  Initialize UVC as part of a composite device, where driver registration
+	*         is handled by the composite framework.
+	* @param[in]  ep_cfg  Endpoint configuration assigned by the top-level application.
+	* @retval HAL_OK on success, negative error code on failure.
+	*/
 int usbd_composite_uvc_init(const usbd_uvc_ep_cfg_t *ep_cfg);
 #endif
 
@@ -427,6 +505,8 @@ int usbd_uvc_parameter_init(void);
 
 /**
 	* @brief  Tear down the UVC device class: stop tasks, delete OS objects, free ring.
+	* @note  Composite mode: call it after @ref usbd_composite_deinit. Before that the class is
+	*        still reachable from the USB ISR, so the call returns at once and releases nothing.
 	*/
 void usbd_uvc_deinit(void);
 
@@ -443,6 +523,11 @@ void usbd_uvc_set_change_parm_cb(int cb);
 	* @note   Do not free the returned pointer.
 	*/
 usbd_uvc_format_t *usbd_uvc_get_format(void);
+
+/** @} End of Device_UVC_Functions group */
+/** @} End of USB_Device_Functions group */
+
+/** @} End of USB_Device_API group */
 
 #ifdef __cplusplus
 }

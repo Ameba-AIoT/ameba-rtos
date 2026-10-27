@@ -8,7 +8,7 @@
 #include <math.h>
 
 ADC_CalParaTypeDef CalParaNorm;
-u8 vref_init_done = FALSE;
+ADC_VrefSelTypeDef VrefInit;
 
 /** @addtogroup Ameba_Periph_Driver
  * @{
@@ -37,13 +37,10 @@ void ADC_StructInit(ADC_InitTypeDef *ADC_InitStruct)
 	ADC_InitStruct->ADC_RxThresholdLevel = 0;
 	ADC_InitStruct->ADC_CvlistLen = ADC_CH_NUM - 1;
 	ADC_InitStruct->ADC_SpecialCh = 0xFF;
+	ADC_InitStruct->ADC_SamplePeriodUs = 6;// 6us, 166.67KHz
 
 	for (i = 0; i < ADC_InitStruct->ADC_CvlistLen + 1; i++) {
 		ADC_InitStruct->ADC_Cvlist[i] = i;
-	}
-
-	for (i = 0; i < ADC_EXT_CH_NUM; i++) {
-		ADC_InitStruct->ADC_Chan[i].ADC_SamplePeriodUs = 6; // 6us, 166.67KHz
 	}
 }
 
@@ -58,7 +55,6 @@ void ADC_Init(ADC_InitTypeDef *ADC_InitStruct)
 	u32 value;
 	u8 chan;
 	int len, i;
-	u8 vref_sel;
 
 	if (TrustZone_IsSecure()) {
 		adc = ADC_S;
@@ -66,6 +62,10 @@ void ADC_Init(ADC_InitTypeDef *ADC_InitStruct)
 
 	assert_param(IS_ADC_MODE(ADC_InitStruct->ADC_OpMode));
 	assert_param(ADC_InitStruct->ADC_CvlistLen < 16);
+	assert_param(ADC_InitStruct->ADC_SamplePeriodUs >= 1 && ADC_InitStruct->ADC_SamplePeriodUs <= 0x400);
+	for (i = 0; i < ADC_InitStruct->ADC_CvlistLen + 1; i++) {
+		assert_param(IS_ADC_CHN_SEL(ADC_InitStruct->ADC_Cvlist[i]));
+	}
 
 	/* Clear tm_latch related bits */
 	/* Clear status bit */
@@ -89,24 +89,28 @@ void ADC_Init(ADC_InitTypeDef *ADC_InitStruct)
 	ADC_Cmd(DISABLE);
 
 	/* Calibrate Vref according to EFuse */
-	if (!vref_init_done) {
+	if (!VrefInit.init_done) {
 		/* step1: read EFuse */
-		OTP_Read8(VREF_SEL_ADDR, &vref_sel);
+		OTP_Read8(VREF_SEL_ADDR, &VrefInit.vref_sel);
 		/* [3:0]: Vref Selection */
-		vref_sel &= 0xF;
-
-		/* step2: update vref sel para */
-		value = ADC_COM->ADC_COM_ADC_VOL_LIST_0;
-		value &= ~ADC_COM_MASK_ADC_SEL_VREFP_VOL_0;
-		if (vref_sel == ADC_VREF_1P7) {
-			value |= ADC_COM_ADC_SEL_VREFP_VOL_0(ADC_VREF_1P7);
-		} else {
-			value |= ADC_COM_ADC_SEL_VREFP_VOL_0(ADC_VREF_1P65); // default
-		}
-		ADC_COM->ADC_COM_ADC_VOL_LIST_0 = value;
-
-		vref_init_done = TRUE;
+		VrefInit.vref_sel &= 0xF;
+		VrefInit.init_done = TRUE;
 	}
+
+	/* Reset of ADC fen & cke will reset vref. Update vref again. */
+	/* step2: update vref sel para */
+	value = ADC_COM->ADC_COM_ADC_VOL_LIST_0;
+	value &= ~ADC_COM_MASK_ADC_SEL_VREFP_VOL_0;
+	if (VrefInit.vref_sel == ADC_VREF_1P7) {
+		value |= ADC_COM_ADC_SEL_VREFP_VOL_0(ADC_VREF_1P7);
+	} else if ((VrefInit.vref_sel == ADC_VREF_1P65) || (VrefInit.vref_sel == 0xF)) { // EFuse not programmed
+		value |= ADC_COM_ADC_SEL_VREFP_VOL_0(ADC_VREF_1P65); // default
+	} else {
+		RTK_LOGE(NOTAG, "ADC Vref EFuse 0x%x invalid (expect 0x5, 0x4 or 0xF(NOT Programmed))\n", VrefInit.vref_sel);
+		assert_param(0);
+		return;
+	}
+	ADC_COM->ADC_COM_ADC_VOL_LIST_0 = value;
 
 	adc->ADC_INTR_CTRL = 0;
 	ADC_INTClear();
@@ -121,11 +125,13 @@ void ADC_Init(ADC_InitTypeDef *ADC_InitStruct)
 	for (i = 0; i < ADC_InitStruct->ADC_CvlistLen + 1; i++) {
 		chan = ADC_InitStruct->ADC_Cvlist[i];
 
-		/* Set channel sample time */
-		value = ADC_COM->ADC_COM_ADC_CLK_HCNTx_DIV[chan];
-		value &= ~ADC_COM_MASK_ADC_CLK_HCNTx;
-		value |= ADC_COM_ADC_CLK_HCNTx(ADC_InitStruct->ADC_Chan[chan].ADC_SamplePeriodUs * 0x4 - 0x3);
-		ADC_COM->ADC_COM_ADC_CLK_HCNTx_DIV[chan] = value;
+		if (chan != ADC_DUMMY_CYCLE) {
+			/* Set channel sample time */
+			value = ADC_COM->ADC_COM_ADC_CLK_HCNTx_DIV[chan];
+			value &= ~ADC_COM_MASK_ADC_CLK_HCNTx;
+			value |= ADC_COM_ADC_CLK_HCNTx(ADC_InitStruct->ADC_SamplePeriodUs * 0x4 - 0x3);
+			ADC_COM->ADC_COM_ADC_CLK_HCNTx_DIV[chan] = value;
+		}
 	}
 
 	/* Set channel switch list */
@@ -187,12 +193,17 @@ void ADC_SetChanHCnt(u8 ADC_channel, u16 HCnt)
 	u32 value;
 
 	assert_param(HCnt < 0x1000);
+	assert_param(IS_ADC_CHN_SEL(ADC_channel));
 
-	/* Set channel sample time */
-	value = ADC_COM->ADC_COM_ADC_CLK_HCNTx_DIV[ADC_channel];
-	value &= ~ADC_COM_MASK_ADC_CLK_HCNTx;
-	value |= ADC_COM_ADC_CLK_HCNTx(HCnt);
-	ADC_COM->ADC_COM_ADC_CLK_HCNTx_DIV[ADC_channel] = value;
+	if (ADC_channel != ADC_DUMMY_CYCLE) {
+		/* Set channel sample time */
+		value = ADC_COM->ADC_COM_ADC_CLK_HCNTx_DIV[ADC_channel];
+		value &= ~ADC_COM_MASK_ADC_CLK_HCNTx;
+		value |= ADC_COM_ADC_CLK_HCNTx(HCnt);
+		ADC_COM->ADC_COM_ADC_CLK_HCNTx_DIV[ADC_channel] = value;
+	} else {
+		RTK_LOGE(NOTAG, "Hcnt is ONLY for CH0-CH9!\n");
+	}
 }
 
 /**
@@ -757,24 +768,6 @@ s32 ADC_GetVoltage(u32 chan_data)
 }
 
 /**
- * @brief Get internal R resistance of V33 channels(CH0~CH5) in divided mode.
- * @return Internal R resistance value in Kohm.
- */
-u32 ADC_GetInterR(void)
-{
-#ifdef AMEBADPLUS_TODO
-	u8 r_offset;
-
-	OTP_Read8(INTER_R_ADDR, &r_offset);
-
-	return ((u32)r_offset + 400);
-#endif
-
-	RTK_LOGE(NOTAG, "[NOTE]TBD: EFuse is not ready.\n");
-	return 0;
-}
-
-/**
   * @brief Get normal channel sample value according to voltage in mV.
   * @param VolMV ADC Voltage in mV.
   * @return ADC conversion data.
@@ -812,6 +805,7 @@ u32 ADC_GetSampleValue(s32 VolMV)
 		}
 	} else {
 		assert_param(0);
+		return 0;
 	}
 }
 

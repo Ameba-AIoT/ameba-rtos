@@ -305,10 +305,7 @@ typedef struct {
   */
 
 #define	PSRAM_TYPE_WB955	0x0
-#define	PSRAM_TYPE_WB957	0x1
-#define	PSRAM_TYPE_WB958	0x2
 #define	PSRAM_TYPE_APM64	0x10
-#define	PSRAM_TYPE_APM128	0x11
 #define	PSRAM_TYPE_APM_UPSRAM	0x12	/* APM APS03208E 32Mb X8 uPSRAM */
 
 
@@ -320,11 +317,11 @@ typedef struct {
 /** @defgroup WB_Drive_Strength
   * @{
   */
-#define WB_Drive_Strength_000		0x0 //wb958:34ohms, wb957:25ohms, wb955:50ohms
-#define WB_Drive_Strength_001		0x1 //wb958:115ohms, wb957:50ohms, wb955:35ohms
-#define WB_Drive_Strength_010		0x2	//wb958:67ohms, wb957:100ohms, wb955:100ohms
-#define WB_Drive_Strength_011		0x3	//wb958:46ohms, wb957:200ohms, wb955:200ohms
-#define WB_Drive_Strength_100		0x4	//wb958:34ohms, wb957:300ohms
+#define WB_Drive_Strength_000		0x0 //wb958:34ohms, wb955:50ohms
+#define WB_Drive_Strength_001		0x1 //wb958:115ohms, wb955:35ohms
+#define WB_Drive_Strength_010		0x2	//wb958:67ohms, wb955:100ohms
+#define WB_Drive_Strength_011		0x3	//wb958:46ohms, wb955:200ohms
+#define WB_Drive_Strength_100		0x4	//wb958:34ohms
 #define WB_Drive_Strength_101		0x5	//wb958:27ohms
 #define WB_Drive_Strength_110		0x6	//wb958:22ohms
 #define WB_Drive_Strength_111		0x7	//wb958:19ohms
@@ -364,11 +361,10 @@ typedef struct {
 /** @defgroup WB_BURST_LEN
   * @{
   */
-#define WB_BURST_LEN_16B		0x2// wb957:[8,1,0]=110
-#define WB_BURST_LEN_32B		0x3// wb957:[8,1,0]=111
-#define WB_BURST_LEN_64B		0x1// wb957:[8,1,0]=101
-#define WB_BURST_LEN_128B		0x0// wb957:[8,1,0]=100
-#define WB_BURST_LEN_2048B		0x3// wb957:[8,1,0]=011
+#define WB_BURST_LEN_16B		0x2
+#define WB_BURST_LEN_32B		0x3
+#define WB_BURST_LEN_64B		0x1
+#define WB_BURST_LEN_128B		0x0
 
 /**
   * @}
@@ -585,12 +581,10 @@ _LONG_CALL_ void set_psram_wakeup_mode(void);
 #define Psram_WB_TRWR250		35
 
 #define Psram_WB955_TEXTHS		70		//unit us
-#define Psram_WB957_TEXTHS		100
 #define Psram_WB958_TEXTHS		100
 #define Psram_APM_TEXTHS		150
 
 #define Psram_WB955_THSIN		0		//unit us
-#define Psram_WB957_THSIN		3
 #define Psram_WB958_THSIN		3
 #define Psram_APM_THSIN		150
 
@@ -601,8 +595,7 @@ _LONG_CALL_ void set_psram_wakeup_mode(void);
 #define PSRAM_PHY_PAD_DRIVING	0x18
 #define PSRAM_PHY_VOL_TUNE		0x2C
 
-#define PSRAM_BURST_BIT8_SET		0x1//for wb955 958,this bit is reserved. for wb957, CR0[8,1,0]: 111 32bytes, 011:2048bytes, 100: 128bytes
-#define PSRAM_BURST_BIT8_CLR		0x0
+#define PSRAM_BURST_BIT8_SET		0x1//for wb955, this bit is reserved
 
 #define PSRAM_CAL_DQ0_7				0x0
 #define PSRAM_CAL_DQ8_15			0x1

@@ -60,7 +60,19 @@ LOG_MODULE_REGISTER(bt_mesh_lpn);
 #define LPN_AUTO_TIMEOUT 0
 #endif
 
+#if ZEPHYR_RTK_PATCH
+/* Set by bt_mesh_lpn_params_set(), the defaults are the Kconfig values */
+/* Signed as the Kconfig values are, otherwise the macros derived from them turn unsigned */
+static int32_t lpn_poll_timeout = CONFIG_BT_MESH_LPN_POLL_TIMEOUT; /* in units of 100 ms */
+static int32_t lpn_poll_interval; /* in units of 100 ms, 0: the interval grows as the original */
+static uint8_t lpn_recv_delay = CONFIG_BT_MESH_LPN_RECV_DELAY; /* ms */
+static uint8_t lpn_rx_widen; /* ms */
+static uint16_t lpn_net_idx = BT_MESH_KEY_ANY;
+
+#define LPN_RECV_DELAY            lpn_recv_delay
+#else
 #define LPN_RECV_DELAY            CONFIG_BT_MESH_LPN_RECV_DELAY
+#endif
 #define SCAN_LATENCY              MIN(CONFIG_BT_MESH_LPN_SCAN_LATENCY, \
 				      LPN_RECV_DELAY)
 
@@ -75,9 +87,15 @@ LOG_MODULE_REGISTER(bt_mesh_lpn);
 #define REQ_RETRY_DURATION(lpn)   (LPN_RECV_DELAY + (lpn)->adv_duration + \
 				      (lpn)->recv_win + POLL_RETRY_TIMEOUT)
 
+#if ZEPHYR_RTK_PATCH
+#define POLL_TIMEOUT_INIT         (MIN(CONFIG_BT_MESH_LPN_INIT_POLL_TIMEOUT, lpn_poll_timeout) * 100)
+
+#define POLL_TIMEOUT              (lpn_poll_timeout * 100)
+#else
 #define POLL_TIMEOUT_INIT         (CONFIG_BT_MESH_LPN_INIT_POLL_TIMEOUT * 100)
 
 #define POLL_TIMEOUT              (CONFIG_BT_MESH_LPN_POLL_TIMEOUT * 100)
+#endif
 
 #define REQ_ATTEMPTS_MAX          6
 #define REQ_ATTEMPTS(lpn)         MIN(REQ_ATTEMPTS_MAX, \
@@ -93,7 +111,11 @@ LOG_MODULE_REGISTER(bt_mesh_lpn);
 		      (CONFIG_BT_MESH_LPN_RECV_WIN_FACTOR << 5))
 
 #define POLL_TO(to) { (uint8_t)((to) >> 16), (uint8_t)((to) >> 8), (uint8_t)(to) }
+#if ZEPHYR_RTK_PATCH
+#define LPN_POLL_TO POLL_TO(lpn_poll_timeout)
+#else
 #define LPN_POLL_TO POLL_TO(CONFIG_BT_MESH_LPN_POLL_TIMEOUT)
+#endif
 
 /* 5 transmissions, 20ms interval: single-shot polls get lost on-air in dense
  * BLE adv environments; retransmitting spans 80ms (<< recv_win) so the friend
@@ -144,11 +166,22 @@ static int32_t poll_timeout(struct bt_mesh_lpn *lpn)
 		return MIN((uint32_t)POLL_TIMEOUT_MAX(lpn), (1 * MSEC_PER_SEC));
 	}
 
+#if ZEPHYR_RTK_PATCH
+	if (lpn_poll_interval) {
+		/* Stay below the max so that the retries still fit in the PollTimeout */
+		lpn->poll_timeout = MIN(lpn_poll_interval * 100, POLL_TIMEOUT_MAX(lpn));
+	} else if (lpn->poll_timeout < POLL_TIMEOUT_MAX(lpn)) {
+		lpn->poll_timeout *= 2;
+		lpn->poll_timeout =
+			MIN(lpn->poll_timeout, POLL_TIMEOUT_MAX(lpn));
+	}
+#else
 	if (lpn->poll_timeout < POLL_TIMEOUT_MAX(lpn)) {
 		lpn->poll_timeout *= 2;
 		lpn->poll_timeout =
 			MIN(lpn->poll_timeout, POLL_TIMEOUT_MAX(lpn));
 	}
+#endif
 
 	LOG_DBG("Poll Timeout is %ums", lpn->poll_timeout);
 
@@ -258,6 +291,17 @@ static void clear_friendship(bool force, bool disable)
 	struct bt_mesh_lpn *lpn = &bt_mesh.lpn;
 	bool was_established = lpn->established;
 	uint16_t frnd = lpn->frnd;
+#if ZEPHYR_RTK_PATCH
+	/* The friendship was cleared already, e.g. lost on its own or a second lpn_clear */
+	if (!lpn->sub) {
+		if (disable) {
+			/* The LPN is waiting to look for a Friend again, stop it as it was asked to */
+			(void)k_work_cancel_delayable(&lpn->timer);
+			lpn_set_state(BT_MESH_LPN_DISABLED);
+		}
+		return;
+	}
+#endif
 	uint16_t net_idx = lpn->sub->net_idx;
 
 	LOG_DBG("force %u disable %u", force, disable);
@@ -404,7 +448,11 @@ static int send_friend_req(struct bt_mesh_lpn *lpn)
 
 	LOG_DBG("");
 
+#if ZEPHYR_RTK_PATCH
+	lpn->sub = (lpn_net_idx == BT_MESH_KEY_ANY) ? bt_mesh_subnet_next(NULL) : bt_mesh_subnet_get(lpn_net_idx);
+#else
 	lpn->sub = bt_mesh_subnet_next(NULL);
+#endif
 	if (!lpn->sub) {
 		LOG_ERR("No subnets, can't start LPN mode");
 		return -ENOENT;
@@ -450,8 +498,14 @@ static void req_send_end(int err, void *user_data)
 		/* We start scanning a bit early to eliminate risk of missing
 		 * response data due to HCI and other latencies.
 		 */
+#if ZEPHYR_RTK_PATCH
+		/* A short recv_delay or a long adv_duration must not make the delay negative */
+		k_work_reschedule(&lpn->timer,
+				  K_MSEC(MAX(0, LPN_RECV_DELAY - SCAN_LATENCY - RX_DELAY_CORRECTION(lpn) - lpn_rx_widen)));
+#else
 		k_work_reschedule(&lpn->timer,
 				  K_MSEC(LPN_RECV_DELAY - SCAN_LATENCY - RX_DELAY_CORRECTION(lpn)));
+#endif
 	} else {
 		lpn_set_state(BT_MESH_LPN_WAIT_UPDATE);
 		k_work_reschedule(&lpn->timer, K_MSEC(LPN_RECV_DELAY + lpn->recv_win));
@@ -528,6 +582,37 @@ void bt_mesh_lpn_disable(bool force)
 
 	clear_friendship(force, true);
 }
+
+#if ZEPHYR_RTK_PATCH
+int bt_mesh_lpn_params_set(uint16_t net_idx, uint32_t poll_interval, uint32_t poll_timeout, uint8_t recv_delay, uint8_t rx_widen)
+{
+	if (bt_mesh.lpn.state != BT_MESH_LPN_DISABLED) {
+		return -EALREADY;
+	}
+
+	/* poll_timeout: 0x00000A - 0x34BBFF, recv_delay: 0x0A - 0xFF */
+	if (poll_timeout < 0x0A || poll_timeout > 0x34BBFF || recv_delay < 0x0A) {
+		return -EINVAL;
+	}
+
+	/* 0: not set, otherwise it must be less than the PollTimeout */
+	if (poll_interval >= poll_timeout) {
+		return -EINVAL;
+	}
+
+	if (net_idx != BT_MESH_KEY_ANY && !bt_mesh_subnet_get(net_idx)) {
+		return -ENOENT;
+	}
+
+	lpn_net_idx = net_idx;
+	lpn_poll_interval = (int32_t)poll_interval;
+	lpn_poll_timeout = (int32_t)poll_timeout;
+	lpn_recv_delay = recv_delay;
+	lpn_rx_widen = rx_widen;
+
+	return 0;
+}
+#endif
 
 int bt_mesh_lpn_set(bool enable)
 {
@@ -964,11 +1049,21 @@ static void lpn_timeout(struct k_work *work)
 
 		LOG_ERR("No response from Friend after %u retries", lpn->req_attempts);
 		lpn->req_attempts = 0U;
+#if ZEPHYR_RTK_PATCH
+		/* An lpn_clear is ongoing: do not look for a Friend again */
+		clear_friendship(true, lpn->disable);
+#else
 		clear_friendship(true, false);
+#endif
 		break;
 	case BT_MESH_LPN_RECV_DELAY:
+#if ZEPHYR_RTK_PATCH
+		k_work_reschedule(&lpn->timer,
+				  K_MSEC(SCAN_LATENCY + lpn->recv_win + RX_DELAY_CORRECTION(lpn) + lpn_rx_widen));
+#else
 		k_work_reschedule(&lpn->timer,
 				  K_MSEC(SCAN_LATENCY + lpn->recv_win + RX_DELAY_CORRECTION(lpn)));
+#endif
 		lpn_set_state(BT_MESH_LPN_WAIT_UPDATE);
 		bt_mesh_scan_enable();
 		break;

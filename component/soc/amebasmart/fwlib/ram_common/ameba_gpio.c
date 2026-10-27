@@ -71,6 +71,29 @@ u32 GPIO_DirectionGet(u8 port, u32 pin_mask)
 
 /** @} */
 
+/**
+  * @brief  Get the pull-up/pull-down configuration of a GPIO pin.
+  * @param  PinName Pin name, which can be any value of PINMUX_Pin_Name_definitions.
+  * @return Current pull configuration:
+  *           - GPIO_PuPd_UP:     pull-up enabled
+  *           - GPIO_PuPd_DOWN:   pull-down enabled
+  *           - GPIO_PuPd_NOPULL: neither pull-up nor pull-down
+  */
+u8 PAD_PullCtrlGet(u8 PinName)
+{
+	u32 Temp = PINMUX->PADCTR[PinName];
+
+	assert_param(PinName <= _PC_7);
+
+	if ((Temp & PAD_BIT_GPIOx_PU) && !(Temp & PAD_BIT_GPIOx_PD)) {
+		return GPIO_PuPd_UP;
+	} else if (!(Temp & PAD_BIT_GPIOx_PU) && (Temp & PAD_BIT_GPIOx_PD)) {
+		return GPIO_PuPd_DOWN;
+	}
+
+	return GPIO_PuPd_NOPULL;
+}
+
 /** @} */
 
 /** @} */

@@ -266,7 +266,7 @@ ll_diskio_drv SD_disk_Driver = {
 #endif
 
 #if defined(CONFIG_FATFS_SD_SPI_MODE) && CONFIG_FATFS_SD_SPI_MODE
-DSTATUS interpret_sd_status(SD_SPI_RESULT result)
+DSTATUS interpret_sd_spi_status(SD_SPI_RESULT result)
 {
 	DSTATUS ret = 0;
 	if (result == SD_SPI_OK) {
@@ -284,7 +284,7 @@ DSTATUS interpret_sd_status(SD_SPI_RESULT result)
 	return ret;
 }
 
-DRESULT interpret_sd_result(SD_SPI_RESULT result)
+DRESULT interpret_sd_spi_result(SD_SPI_RESULT result)
 {
 	DRESULT ret = 0;
 	if (result == SD_SPI_OK) {
@@ -301,7 +301,7 @@ DSTATUS SD_disk_spi_status(void)
 {
 	SD_SPI_RESULT res;
 	res = sd_spi_get_status();
-	return interpret_sd_status(res);;
+	return interpret_sd_spi_status(res);;
 }
 
 DSTATUS SD_disk_spi_initialize(void)
@@ -312,7 +312,7 @@ DSTATUS SD_disk_spi_initialize(void)
 	res = sd_spi_device_init();
 	fatfs_init_status = 1;//The card is initialized
 	sd_unlock();
-	return interpret_sd_status(res);
+	return interpret_sd_spi_status(res);
 }
 
 DSTATUS SD_disk_spi_deinitialize(void)
@@ -322,7 +322,7 @@ DSTATUS SD_disk_spi_deinitialize(void)
 	fatfs_init_status = 0;//The card is not initialized
 	res = sd_spi_device_deinit();
 	sd_unlock();
-	return interpret_sd_status(res);
+	return interpret_sd_spi_status(res);
 }
 
 /* Read sector(s) --------------------------------------------*/
@@ -336,7 +336,7 @@ DRESULT SD_disk_spi_read(BYTE *buff, DWORD sector, /*unsigned int*/UINT count)
 			res = STA_NODISK;
 			break;
 		}
-		res = interpret_sd_result(sd_spi_read_data(buff, sector, count));
+		res = interpret_sd_spi_result(sd_spi_read_data(buff, sector, count));
 		if (++retry_cnt >= 3) {
 			break;
 		}
@@ -358,7 +358,7 @@ DRESULT SD_disk_spi_write(const BYTE *buff, DWORD sector, /*unsigned int*/UINT c
 			res = STA_NODISK;
 			break;
 		}
-		res = interpret_sd_result(sd_spi_write_data((uint8_t *)buff, sector, count));
+		res = interpret_sd_spi_result(sd_spi_write_data((uint8_t *)buff, sector, count));
 		if (++retry_cnt >= 3) {
 			break;
 		}
@@ -386,7 +386,7 @@ DRESULT SD_disk_spi_ioctl(BYTE cmd, void *buff)
 		break;
 	case GET_SECTOR_COUNT:	/* Get media size (for only f_mkfs()) */
 		result = sd_spi_get_sector_count((unsigned long *) buff);
-		res = interpret_sd_result(result);
+		res = interpret_sd_spi_result(result);
 		break;
 	/* for case _MAX_SS != _MIN_SS */
 	case GET_SECTOR_SIZE:	/* Get sector size (for multiple sector size (_MAX_SS >= 1024)) */

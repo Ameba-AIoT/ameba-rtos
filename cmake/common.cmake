@@ -197,7 +197,7 @@ macro(ameba_mcu_project_create name mcu_type)
         ameba_set(c_ISA_TYPE "RISC-V")
         ameba_set(c_SDK_NAME "vsdk")
     else()
-        ameba_set(c_ISA_TYPE "ARM") #mcu_type is one of km0/km4/ca32
+        ameba_set(c_ISA_TYPE "ARM") #mcu_type is one of km0/km4/km55/ca32
         ameba_set(c_SDK_NAME "asdk")
     endif()
 

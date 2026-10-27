@@ -63,7 +63,7 @@ In addition, if testing the VFS SD card scenario, please adjust the SDIOH pinmux
    [*] UVC
    ```
 
-   If configuring `USBH_UVC_APP_VFS`, additionally run `./menuconfig.py` under the project directory and select `CONFIG VFS`:
+   If configuring `USBH_UVC_APP_VFS`, additionally run `./menuconfig.py` under the project directory and select `CONFIG File System`:
    ```
    [*] Enable VFS FATFS
            FATFS Memory Type (SD MODE)  --->
@@ -233,7 +233,7 @@ Attach a USB camera to the USB port of the Ameba development board, then reset t
 ...
 ```
 
-   **H264 / H265** — the stream is uploaded in bulk rather than per-frame. When hardware UVC is enabled, frames are first accumulated in PSRAM and then POSTed together; otherwise the stream is POSTed continuously until the 2 MB `USBH_UVC_HTTPC_VIDEO_SIZE` target is reached. Upload is not bounded by a fixed frame count.
+   **H264 / H265** — the stream is uploaded in bulk rather than per-frame. When hardware UVC is enabled, frames are first accumulated in a 2 MB buffer allocated from the PSRAM heap and then POSTed together (the upload is skipped if the chip has no PSRAM or the buffer cannot be allocated; on RLE1509 add `CONFIG_DISABLE_PSRAM=n` to `prj.conf`, as PSRAM is disabled by default there); otherwise the stream is POSTed continuously until the 2 MB `USBH_UVC_HTTPC_VIDEO_SIZE` target is reached. Upload is not bounded by a fixed frame count.
 
 ```
 [UVC-I] USBH UVC demo start                    #criteria: init

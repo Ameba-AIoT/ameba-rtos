@@ -5,6 +5,7 @@
  */
 
 /* Includes ------------------------------------------------------------------*/
+
 #include "usb_os.h"
 #include "usbh_cdc_ecm.h"
 #if USBH_CDC_ECM_STATE_TRACE_ENABLE
@@ -13,6 +14,7 @@
 #endif
 
 /* Private defines -----------------------------------------------------------*/
+
 #define USBH_CDC_ECM_ENABLE_DUMP_DESCRIPTOR_PARSE    0
 
 #define USBH_CDC_ECM_BULK_BUF_MAX_SIZE               (512*3)
@@ -44,6 +46,15 @@
 #define USBH_CDC_ECM_ETH_STATUS_CHECK_TIME           300U  //300ms
 
 #define USBH_CDC_ECM_MAC_STRING_LEN                  (32)
+
+/* CLEAR_FEATURE(ENDPOINT_HALT) attempts before the device is re-enumerated */
+#define USBH_CDC_ECM_HALT_RETRY_MAX_CNT              3U
+
+/* Upper bound for deinit to wait for the tasks inside usbh_cdc_ecm_send_data() to leave. A
+ * woken caller leaves within microseconds, only a starved one takes longer. */
+#define USBH_CDC_ECM_TX_EXIT_TIMEOUT_MS              500U
+
+/* Private types -------------------------------------------------------------*/
 
 typedef enum {
 	CDC_ECM_CAP_RCR_CMD      = (BIT0),  /* Receive Control Register, enables UDP functionality */
@@ -96,19 +107,24 @@ typedef enum {
 	CDC_ECM_STATE_ERROR,
 } usbh_cdc_ecm_state_t;
 
-/* Private types -------------------------------------------------------------*/
 typedef struct {
 	u16 pid;
 	u16 feature;
 } __PACKED usbh_cdc_ecm_priv_config_t;
 
 /* Private macros ------------------------------------------------------------*/
+
 #define  USBH_CDC_ECM_FREE_MEM(x)  if(x){ usb_os_mfree((void *)x); x = NULL;}
 
 /* Private function prototypes -----------------------------------------------*/
+
+#if USBH_CDC_ECM_STATE_TRACE_ENABLE
+static u32 usbh_cdc_ecm_cmd_entry(u16 argc, u8 *argv[]);
+#endif
+
 static int usbh_cdc_ecm_attach(usb_host_t *host);
 static void usbh_cdc_ecm_detach(usb_host_t *host);
-static void usbh_cdc_ecm_process(usb_host_t *host, usbh_event_t *event);
+static void usbh_cdc_ecm_process(usb_host_t *host, usbh_drv_msg_t *msg);
 static int usbh_cdc_ecm_setup(usb_host_t *host);
 static void usbh_cdc_ecm_sof(usb_host_t *host);
 static void usbh_cdc_ecm_process_bulk_out(usb_host_t *host);
@@ -123,12 +139,15 @@ static int usbh_cdc_ecm_parse_ctrl(usbh_itf_data_t *itf_data);
 static int usbh_cdc_ecm_tx_status_check(void);
 static int usbh_cdc_ecm_bulk_send(u8 *buf, u32 len);
 static void usbh_cdc_ecm_deinit_all_pipe(void);
+static void usbh_cdc_ecm_halt(usb_host_t *host, const usbh_pipe_t *pipe);
+static void usbh_cdc_ecm_process_halt(usb_host_t *host);
 #if USBH_CDC_ECM_STATE_TRACE_ENABLE
 static void usbh_cdc_ecm_trace_task_init(void);
 static void usbh_cdc_ecm_trace_task_deinit(void);
 #endif
 
 /* Private variables ---------------------------------------------------------*/
+
 static const char *const TAG = "ECMH";
 
 static const usbh_cdc_ecm_priv_config_t usbh_cdc_ecm_rtk_dongle[] = {
@@ -167,8 +186,19 @@ static u8                       usbh_cdc_ecm_trace_task_init_flag = 0;
 
 static usbh_cdc_ecm_host_t usbh_cdc_ecm_host;
 
+/* Exported variables --------------------------------------------------------*/
+
+#if USBH_CDC_ECM_STATE_TRACE_ENABLE
+CMD_TABLE_DATA_SECTION
+const COMMAND_TABLE usbh_cdc_ecm_cmd_table[] = {
+	{"ecmh", usbh_cdc_ecm_cmd_entry},
+};
+#endif /* USBH_CDC_ECM_STATE_TRACE_ENABLE */
+
 /* Private functions ---------------------------------------------------------*/
-/* USB basic functions ----------------------------------------------------*/
+
+/* USB basic functions */
+
 static u8 usbh_cdc_ecm_support_feature(u16 pid, usbh_cdc_ecm_dongle_capability_t type)
 {
 	usbh_cdc_ecm_priv_config_t *ecm_dongle;
@@ -264,7 +294,8 @@ static int usbh_cdc_ecm_cb_intr_receive(u8 *buf, u32 length)
 	return HAL_OK;
 }
 
-/* USB CDC ECM Control Functions Start ----------------------------------------------------*/
+/* USB CDC ECM control functions */
+
 /**
   * @brief  Get string descriptor by str id
   * @param  host: Host handle
@@ -280,8 +311,8 @@ static int usbh_cdc_ecm_process_get_string(usb_host_t *host, u8 *pbuf, u16 bufle
 	setup.req.bmRequestType = USB_D2H | USB_REQ_RECIPIENT_DEVICE | USB_REQ_TYPE_STANDARD;
 	setup.req.bRequest = USB_REQ_GET_DESCRIPTOR;
 	setup.req.wValue = USB_DESC_STRING | str_id;
-	/* wIndex of a string-descriptor request is the Language ID (US English). */
-	setup.req.wIndex = 0x0409U;
+	/* wIndex of a string-descriptor request is a LANGID the device supports, Ref USB 2.0 9.6.7 */
+	setup.req.wIndex = usbh_get_lang_id(host);
 	setup.req.wLength = buflen;
 
 	return usbh_ctrl_request(host, &setup, pbuf);
@@ -665,7 +696,8 @@ static void usbh_cdc_ecm_config_dongle_mac(usb_host_t *host, u16 vid, u16 pid)
 	case CDC_ECM_STATE_CTRL_MAC_SET_MAC2: //8152 mac
 		cdc->dongle_ctrl_buf[0] = cdc->mac[4];
 		cdc->dongle_ctrl_buf[1] = cdc->mac[5];
-		cdc->dongle_ctrl_buf[2] = cdc->dongle_ctrl_buf[3] = 0xFF;
+		cdc->dongle_ctrl_buf[2] = 0xFF;
+		cdc->dongle_ctrl_buf[3] = 0xFF;
 		state = usbh_cdc_ecm_process_mac_set_mac2(host);
 		if (state == HAL_OK) {
 			cdc->sub_status++;
@@ -1102,13 +1134,15 @@ static int usbh_cdc_ecm_attach(usb_host_t *host) //parse all ep info
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Open intr pipe fail\n");
 			return HAL_ERR_PARA;
 		}
-		pipe_info->pipe.xfer_buf = (u8 *)usb_os_malloc(pipe_info->pipe.ep_mps);
+		/* The controller may fill a whole packet, adjusted to the DWORD boundary */
+		pipe_info->pipe.xfer_buf = (u8 *)usb_os_malloc(usb_get_dma_len(pipe_info->pipe.ep_mps, pipe_info->pipe.ep_mps));
 		if (pipe_info->pipe.xfer_buf == NULL) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Malloc intr rx buf fail\n");
 			usbh_cdc_ecm_deinit_all_pipe();
 			return HAL_ERR_MEM;
 		}
 		pipe_info->pipe.xfer_len = pipe_info->pipe.ep_mps;
+		pipe_info->pipe.xfer_buf_len = usb_get_dma_len(pipe_info->pipe.ep_mps, pipe_info->pipe.ep_mps);
 		pipe_info->pipe.xfer_state = USBH_EP_XFER_START;
 
 		/* Widen the poll window past the 1-frame bInterval=1 case, else the SOF
@@ -1144,12 +1178,14 @@ static int usbh_cdc_ecm_attach(usb_host_t *host) //parse all ep info
 			return HAL_ERR_MEM;
 		}
 		pipe_info->pipe.xfer_len = USBH_CDC_ECM_BULK_BUF_MAX_SIZE;
+		pipe_info->pipe.xfer_buf_len = USBH_CDC_ECM_BULK_BUF_MAX_SIZE;
 		pipe_info->pipe.xfer_state = USBH_EP_XFER_START;
 
 		pipe_info->pipe.max_timeout_tick = USBH_CDC_ECM_BULK_IN_IDLE_MAX_CNT;
 	}
 	usbh_cdc_ecm_dump_ecm_cfgdesc();
 
+	cdc->halt_retry_cnt = 0U;
 	cdc->state = CDC_ECM_STATE_IDLE;
 
 	if ((cdc->cb != NULL) && (cdc->cb->attached != NULL)) {
@@ -1171,9 +1207,18 @@ static void usbh_cdc_ecm_detach(usb_host_t *host)
 
 	cdc->state = CDC_ECM_STATE_IDLE;
 	cdc->ready_to_xfer = 0;
+	/* Both describe the device that is leaving: a later attach must not inherit them */
+	cdc->eth_hw_connect = 0;
+	cdc->mac_valid = 0;
 
 	usbh_cdc_ecm_deinit_all_pipe();
 	cdc->host = NULL;
+
+	/* Fail a blocked sender: the closed pipe never completes its TX. Given unconditionally
+	 * so a sender that has not published bulk_tx_block yet is covered too; it then sees the
+	 * cleared state, and a give nobody consumes is dropped by the next blocking send. */
+	cdc->bulk_tx_err = 1U;
+	usb_os_sema_give(cdc->bulk_tx_sema);
 
 	if ((cdc->cb != NULL) && (cdc->cb->detached != NULL)) {
 		cdc->cb->detached();
@@ -1216,20 +1261,92 @@ static int usbh_cdc_ecm_setup(usb_host_t *host)
 }
 
 /**
+  * @brief  Start the recovery of a halted endpoint
+  * @note   A halted endpoint answers every transaction with STALL until the host clears it
+  *         (Ref USB 2.0 8.4.5 / 9.4.5), so re-submitting only repeats the STALL. Entering
+  *         CDC_ECM_STATE_ERROR stops the SOF from re-arming any pipe until it is cleared.
+  * @param  host: Host handle
+  * @param  pipe: Halted pipe
+  * @retval None
+  */
+static void usbh_cdc_ecm_halt(usb_host_t *host, const usbh_pipe_t *pipe)
+{
+	usbh_cdc_ecm_host_t *cdc = &usbh_cdc_ecm_host;
+
+	/* One halt at a time: another stalled pipe stays idle, is re-armed after this clear and
+	 * then reports its own STALL */
+	if (cdc->state == CDC_ECM_STATE_ERROR) {
+		return;
+	}
+
+	cdc->halt_ep_addr = pipe->ep_addr;
+	cdc->state = CDC_ECM_STATE_ERROR;
+	usbh_notify(host, 0U, &usbh_cdc_ecm_driver);
+}
+
+/**
+  * @brief  Clear the halted endpoint, re-enumerate the device if that keeps failing
+  * @note   CLEAR_FEATURE(ENDPOINT_HALT) also resets the device data toggle to DATA0 (Ref USB
+  *         2.0 9.4.5), matching the host toggle the STALL interrupt already reset. Once back in
+  *         CDC_ECM_STATE_TRANSFER the SOF re-arms the pipes as usual.
+  * @param  host: Host handle
+  * @retval None
+  */
+static void usbh_cdc_ecm_process_halt(usb_host_t *host)
+{
+	usbh_cdc_ecm_host_t *cdc = &usbh_cdc_ecm_host;
+	usbh_setup_req_t setup;
+	int ret;
+
+	/* Re-enumeration already requested: wait for the detach it brings */
+	if (cdc->halt_retry_cnt >= USBH_CDC_ECM_HALT_RETRY_MAX_CNT) {
+		return;
+	}
+
+	/* Sent through usbh_ctrl_request(), which rejects the call while another class of a
+	 * composite device owns EP0; usbh_ctrl_clear_feature() lacks that owner check */
+	setup.req.bmRequestType = USB_H2D | USB_REQ_TYPE_STANDARD | USB_REQ_RECIPIENT_ENDPOINT;
+	setup.req.bRequest = USB_REQ_CLEAR_FEATURE;
+	setup.req.wValue = USB_FEATURE_EP_HALT;
+	setup.req.wIndex = cdc->halt_ep_addr;
+	setup.req.wLength = 0U;
+	ret = usbh_ctrl_request(host, &setup, NULL);
+	if (ret == HAL_OK) {
+		RTK_LOGS(TAG, RTK_LOG_WARN, "EP%d halt cleared\n", cdc->halt_ep_addr);
+		cdc->halt_retry_cnt = 0U;
+		cdc->state = CDC_ECM_STATE_TRANSFER;
+		/* This state swallowed any pipe message that arrived meanwhile: re-drive every pipe so a
+		 * completion latched in that window is still consumed */
+		usbh_notify(host, cdc->intr_rx.pipe.pipe_num, &usbh_cdc_ecm_driver);
+		usbh_notify(host, cdc->bulk_rx.pipe.pipe_num, &usbh_cdc_ecm_driver);
+		usbh_notify(host, cdc->bulk_tx.pipe.pipe_num, &usbh_cdc_ecm_driver);
+	} else if (ret != HAL_BUSY) {
+		cdc->halt_retry_cnt++;
+		if (cdc->halt_retry_cnt >= USBH_CDC_ECM_HALT_RETRY_MAX_CNT) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "EP%d clear halt fail, re-enum\n", cdc->halt_ep_addr);
+			(void)usbh_reenumerate();
+		} else {
+			usbh_notify(host, 0U, &usbh_cdc_ecm_driver);
+		}
+	} else {
+		/* In flight: the EP0 completion re-drives process() */
+	}
+}
+
+/**
   * @brief  Usb State Machine handling callback
   * @param  host: Host handle
   * @retval None
   */
-static void usbh_cdc_ecm_process(usb_host_t *host, usbh_event_t *event)
+static void usbh_cdc_ecm_process(usb_host_t *host, usbh_drv_msg_t *msg)
 {
-	u8 req_status = HAL_OK;
 	usbh_cdc_ecm_host_t *cdc = &usbh_cdc_ecm_host;
 	u8 pipe_num;
 
 	switch (cdc->state) {
 	case CDC_ECM_STATE_TRANSFER:
-		if (event) {
-			pipe_num = event->pipe_num;
+		if (msg) {
+			pipe_num = msg->pipe_num;
 			if (pipe_num == cdc->bulk_tx.pipe.pipe_num) {
 				usbh_cdc_ecm_process_bulk_out(host);
 			} else if (pipe_num == cdc->bulk_rx.pipe.pipe_num) {
@@ -1241,10 +1358,7 @@ static void usbh_cdc_ecm_process(usb_host_t *host, usbh_event_t *event)
 		break;
 
 	case CDC_ECM_STATE_ERROR:
-		req_status = usbh_ctrl_clear_feature(host, 0x00U);
-		if (req_status == HAL_OK) {
-			cdc->state = CDC_ECM_STATE_IDLE;
-		}
+		usbh_cdc_ecm_process_halt(host);
 		break;
 
 	case CDC_ECM_STATE_IDLE:
@@ -1295,6 +1409,7 @@ static void usbh_cdc_ecm_process_bulk_out(usb_host_t *host)
 	usbh_cdc_ecm_host_t *cdc = &usbh_cdc_ecm_host;
 	usbh_cdc_ecm_pipe_info_t *pipe_info = &(cdc->bulk_tx);
 	usbh_pipe_t *ep = &(pipe_info->pipe);
+	usbh_urb_state_t urb_state;
 	int status;
 
 #if USBH_CDC_ECM_STATE_TRACE_ENABLE
@@ -1307,9 +1422,17 @@ static void usbh_cdc_ecm_process_bulk_out(usb_host_t *host)
 	} else if (ep->xfer_state == USBH_EP_XFER_START) {
 		usbh_notify(host, ep->pipe_num, &usbh_cdc_ecm_driver);
 	} else if (ep->xfer_state == USBH_EP_XFER_ERROR) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "BULK TX fail %d\n", usbh_get_urb_state(host, ep));
-		ep->xfer_state = USBH_EP_XFER_START;
-		usbh_notify(host, ep->pipe_num, &usbh_cdc_ecm_driver);
+		urb_state = usbh_get_urb_state(host, ep);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "BULK TX fail %d\n", urb_state);
+		if (urb_state == USBH_URB_STALL) {
+			usbh_cdc_ecm_halt(host, ep);
+		}
+		/* Drop the frame (Ethernet is best effort) and release the sender: re-sending it
+		 * forever left a blocked sender waiting on a TX that never completes. */
+		ep->xfer_state = USBH_EP_XFER_IDLE;
+		usbh_cdc_ecm_cb_bulk_send(HAL_ERR_HW);
+	} else {
+		/* Idle or still in flight */
 	}
 }
 
@@ -1360,6 +1483,7 @@ static void usbh_cdc_ecm_process_bulk_in(usb_host_t *host)
 	usbh_cdc_ecm_pipe_info_t *pipe_info = &(cdc->bulk_rx);
 	usbh_pipe_t *bulk_in = &(pipe_info->pipe);
 	int status = usbh_transfer_process(host, bulk_in);
+	usbh_urb_state_t urb_state;
 	u32 len = 0;
 
 #if USBH_CDC_ECM_STATE_TRACE_ENABLE
@@ -1373,14 +1497,27 @@ static void usbh_cdc_ecm_process_bulk_in(usb_host_t *host)
 		bulk_in->xfer_state = USBH_EP_XFER_START;
 		usbh_notify(host, bulk_in->pipe_num, &usbh_cdc_ecm_driver);
 	} else if (bulk_in->xfer_state == USBH_EP_XFER_START) {
+		/* rx_len is written only by a transfer-complete interrupt and zeroed on every submit,
+		 * so a transfer that is merely being retried reads 0 and the callback drops it. A
+		 * non-zero length means the transfer did complete just as the retry fired (or the
+		 * N*MPS data before a trailing ZLP landed), so it is real data and is delivered. */
 		len = usbh_get_last_transfer_size(host, bulk_in);
 		usbh_cdc_ecm_cb_bulk_receive(bulk_in->xfer_buf, len);
 
 		usbh_notify(host, bulk_in->pipe_num, &usbh_cdc_ecm_driver);
 	} else if (bulk_in->xfer_state == USBH_EP_XFER_ERROR) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "BULK RX fail %d\n", usbh_get_urb_state(host, bulk_in));
-		bulk_in->xfer_state = USBH_EP_XFER_START;
-		usbh_notify(host, bulk_in->pipe_num, &usbh_cdc_ecm_driver);
+		urb_state = usbh_get_urb_state(host, bulk_in);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "BULK RX fail %d\n", urb_state);
+		if (urb_state == USBH_URB_STALL) {
+			/* Re-armed by the SOF once the halt is cleared */
+			bulk_in->xfer_state = USBH_EP_XFER_IDLE;
+			usbh_cdc_ecm_halt(host, bulk_in);
+		} else {
+			bulk_in->xfer_state = USBH_EP_XFER_START;
+			usbh_notify(host, bulk_in->pipe_num, &usbh_cdc_ecm_driver);
+		}
+	} else {
+		/* Still in flight */
 	}
 }
 
@@ -1394,6 +1531,7 @@ static void usbh_cdc_ecm_process_intr_in(usb_host_t *host)
 	usbh_cdc_ecm_host_t *cdc = &usbh_cdc_ecm_host;
 	usbh_cdc_ecm_pipe_info_t *pipe_info = &(cdc->intr_rx);
 	usbh_pipe_t *intr_in = &(pipe_info->pipe);
+	usbh_urb_state_t urb_state = usbh_get_urb_state(host, intr_in);
 
 #if USBH_CDC_ECM_STATE_TRACE_ENABLE
 	pipe_info->trigger_cnt++;
@@ -1403,12 +1541,20 @@ static void usbh_cdc_ecm_process_intr_in(usb_host_t *host)
 	 * here rather than via usbh_transfer_process(), which raced the SOF re-arm and
 	 * dropped the one-shot network-connection notification. xfer_state==BUSY is
 	 * stable vs. the SOF ISR, so this read-check-consume is race-free. */
-	if ((intr_in->xfer_state == USBH_EP_XFER_BUSY) &&
-		(usbh_get_urb_state(host, intr_in) == USBH_URB_DONE)) {
+	if ((intr_in->xfer_state == USBH_EP_XFER_BUSY) && (urb_state == USBH_URB_DONE)) {
 		u32 len = usbh_get_last_transfer_size(host, intr_in);
 		intr_in->retry_cnt = 0;
 		intr_in->xfer_state = USBH_EP_XFER_IDLE;
 		usbh_cdc_ecm_cb_intr_receive(intr_in->xfer_buf, len);
+		return;
+	}
+
+	/* The SOF never re-arms a stalled pipe (see usbh_cdc_ecm_intr_receive()), so a STALL stays
+	 * latched with xfer_state==BUSY until handled here; the SOF re-arms it once cleared. */
+	if ((intr_in->xfer_state == USBH_EP_XFER_BUSY) && (urb_state == USBH_URB_STALL)) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "INTR RX stall\n");
+		intr_in->xfer_state = USBH_EP_XFER_IDLE;
+		usbh_cdc_ecm_halt(host, intr_in);
 		return;
 	}
 
@@ -1506,7 +1652,7 @@ static int usbh_cdc_ecm_intr_rx_time_check(void)
 }
 
 /**
-  * @brief  Send event to transmit BULK data.
+  * @brief  Trigger transmission of BULK data.
   * @note   This function is called within an interrupt service routine (ISR) context;
   *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @return 0 on success, non-zero on failure.
@@ -1523,8 +1669,9 @@ static int usbh_cdc_ecm_bulk_tx(void)
 	}
 
 	if (cdc->state == CDC_ECM_STATE_TRANSFER) {
-		if ((ep->xfer_state == USBH_EP_XFER_IDLE) || (usbh_cdc_ecm_bulk_tx_time_check() == HAL_OK)) {
-
+		/* An idle pipe has nothing to drive: bulk_send() notifies when it arms a TX, and
+		   process_bulk_out() is a no-op on IDLE, so only re-drive an armed or in-flight TX */
+		if ((ep->xfer_state != USBH_EP_XFER_IDLE) && (usbh_cdc_ecm_bulk_tx_time_check() == HAL_OK)) {
 			usbh_notify(host, ep->pipe_num, &usbh_cdc_ecm_driver);
 			ret = HAL_OK;
 		}
@@ -1534,7 +1681,7 @@ static int usbh_cdc_ecm_bulk_tx(void)
 }
 
 /**
-  * @brief  Send event to receive BULK data.
+  * @brief  Trigger reception of BULK data.
   * @note   This function is called within an interrupt service routine (ISR) context;
   *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @return 0 on success, non-zero on failure.
@@ -1565,7 +1712,7 @@ static int usbh_cdc_ecm_bulk_receive(void)
 }
 
 /**
-  * @brief  Send event to receive INTR data.
+  * @brief  Trigger reception of INTR data.
   * @note   This function is called within an interrupt service routine (ISR) context;
   *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @return 0 on success, non-zero on failure.
@@ -1584,7 +1731,10 @@ static int usbh_cdc_ecm_intr_receive(void)
 	if (cdc->state == CDC_ECM_STATE_TRANSFER) {
 		if (((ep->xfer_state == USBH_EP_XFER_IDLE) && (usbh_get_elapsed_ticks(host, ep->tick) >= cdc->intr_check_tick))
 			|| (usbh_cdc_ecm_intr_rx_time_check() == HAL_OK)) {
-			ep->xfer_state = USBH_EP_XFER_START;
+			/* A STALL is only reported: re-submitting to a halted endpoint repeats the STALL */
+			if ((ep->xfer_state != USBH_EP_XFER_BUSY) || (usbh_get_urb_state(host, ep) != USBH_URB_STALL)) {
+				ep->xfer_state = USBH_EP_XFER_START;
+			}
 			usbh_notify(host, ep->pipe_num, &usbh_cdc_ecm_driver);
 			ret = HAL_OK;
 		}
@@ -1611,7 +1761,8 @@ static int usbh_cdc_ecm_bulk_send(u8 *buf, u32 len)
 		return ret;
 	}
 
-	if ((cdc->state == CDC_ECM_STATE_IDLE) || (cdc->state == CDC_ECM_STATE_TRANSFER)) {
+	/* Only in TRANSFER, and never write the state: the task may have just entered ERROR to clear a halt */
+	if (cdc->state == CDC_ECM_STATE_TRANSFER) {
 		if (ep->xfer_state == USBH_EP_XFER_IDLE) {
 			ep->xfer_buf = buf;
 			ep->xfer_len = len;
@@ -1622,7 +1773,6 @@ static int usbh_cdc_ecm_bulk_send(u8 *buf, u32 len)
 				ep->trx_zlp = 0;
 			}
 			ep->xfer_state = USBH_EP_XFER_START;
-			cdc->state = CDC_ECM_STATE_TRANSFER;
 			usbh_notify(host, ep->pipe_num, &usbh_cdc_ecm_driver);
 			ret = HAL_OK;
 		}
@@ -1634,12 +1784,11 @@ static int usbh_cdc_ecm_bulk_send(u8 *buf, u32 len)
 static int usbh_cdc_ecm_cb_bulk_send(int state)
 {
 	usbh_cdc_ecm_host_t *cdc = &usbh_cdc_ecm_host;
-	if (state == HAL_OK) {
-		if (cdc->bulk_tx_block) {
-			usb_os_sema_give(cdc->bulk_tx_sema);
-		}
-	} else {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "BULK TX fail, state %d\n", state);
+
+	/* Release a blocked sender on success and on failure alike, failure reported through bulk_tx_err */
+	if (cdc->bulk_tx_block) {
+		cdc->bulk_tx_err = (state == HAL_OK) ? 0U : 1U;
+		usb_os_sema_give(cdc->bulk_tx_sema);
 	}
 
 	return HAL_OK;
@@ -1648,12 +1797,18 @@ static int usbh_cdc_ecm_cb_bulk_send(int state)
 static int usbh_cdc_ecm_tx_status_check(void)
 {
 	usbh_cdc_ecm_host_t *cdc = &usbh_cdc_ecm_host;
-	if (cdc->bulk_tx_block) {
-		//release the sema to return usbh_cdc_ecm_send_data
-		do {
-			usb_os_sema_give(cdc->bulk_tx_sema);
-			usb_os_sleep_ms(1U);
-		} while (cdc->bulk_tx_block);
+	u32 wait_ms = 0U;
+
+	/* Wake a sender blocked on the sema and wait for every task inside the TX API to leave
+	 * before the sema and buffers go away; bounded so a starved caller cannot hang the teardown */
+	while ((cdc->bulk_tx_block != 0U) || (cdc->tx_users != 0U)) {
+		if (wait_ms >= USBH_CDC_ECM_TX_EXIT_TIMEOUT_MS) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Wait TX exit TO\n");
+			break;
+		}
+		(void)usb_os_sema_give(cdc->bulk_tx_sema);
+		usb_os_sleep_ms(1U);
+		wait_ms++;
 	}
 
 	return HAL_OK;
@@ -1708,7 +1863,7 @@ static void usbh_cdc_ecm_trace_thread(void *param)
 	}
 }
 
-void usbh_cdc_ecm_trace_task_init(void)
+static void usbh_cdc_ecm_trace_task_init(void)
 {
 	int status;
 	if (usbh_cdc_ecm_trace_task_init_flag) {
@@ -1721,7 +1876,7 @@ void usbh_cdc_ecm_trace_task_init(void)
 	}
 }
 
-void usbh_cdc_ecm_trace_task_deinit(void)
+static void usbh_cdc_ecm_trace_task_deinit(void)
 {
 	if (usbh_cdc_ecm_trace_task != NULL) {
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Del trace task\n");
@@ -1791,19 +1946,16 @@ static u32 usbh_cdc_ecm_cmd_entry(u16 argc, u8 *argv[])
 	ecmh reset
 	ecmh dump_time
 */
-CMD_TABLE_DATA_SECTION
-const COMMAND_TABLE usbh_cdc_ecm_cmd_table[] = {
-	{"ecmh", usbh_cdc_ecm_cmd_entry},
-};
 #endif
 
 /* Exported functions --------------------------------------------------------*/
+
 /**
   * @brief  Init CDC ECM class
   * @param  cb: User callback
   * @retval Status
   */
-int usbh_cdc_ecm_init(const usbh_cdc_ecm_state_cb_t *cb, const usbh_cdc_ecm_priv_data_t *priv)
+int usbh_cdc_ecm_init(const usbh_cdc_ecm_state_cb_t *cb, const usbh_cdc_ecm_config_t *cfg)
 {
 	usbh_cdc_ecm_host_t *cdc = &usbh_cdc_ecm_host;
 	int ret = HAL_OK;
@@ -1820,7 +1972,8 @@ int usbh_cdc_ecm_init(const usbh_cdc_ecm_state_cb_t *cb, const usbh_cdc_ecm_priv
 		return HAL_ERR_PARA;
 	}
 
-	cdc->dongle_ctrl_buf = (u8 *)usb_os_malloc(USBH_CDC_ECM_MAC_STRING_LEN);
+	/* Every D2H request on it reserves a whole EP0 packet, whatever its wLength */
+	cdc->dongle_ctrl_buf = (u8 *)usb_os_malloc(USB_MAX_EP0_SIZE);
 	if (NULL == cdc->dongle_ctrl_buf) {
 		ret = HAL_ERR_MEM;
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Get ctrl buf mem fail\n");
@@ -1829,19 +1982,15 @@ int usbh_cdc_ecm_init(const usbh_cdc_ecm_state_cb_t *cb, const usbh_cdc_ecm_priv
 
 	cdc->mac_valid = 0;
 
-	/* priv == NULL is valid (e.g. usbh_wifi_bridge always passes NULL). mac_valid is set later
-	 * during enumeration; led_array/led_cnt == 0 causes LED setup to be skipped gracefully.
-	 * Return HAL_OK so callers checking ret < 0 are not falsely triggered. */
-	if (priv == NULL) {
-		RTK_LOGS(TAG, RTK_LOG_WARN, "Param error\n");
-		USBH_CDC_ECM_FREE_MEM(cdc->led_array);
-		cdc->led_cnt = 0;
-	} else {
-		if (priv->mac_value) {
-			usbh_cdc_ecm_set_dongle_mac(priv->mac_value);
+	/* cfg == NULL is valid (e.g. usbh_wifi_bridge passes NULL): mac_valid is set later during
+	 * enumeration, and led_cnt == 0 makes LED setup skip gracefully. */
+	cdc->led_cnt = 0;
+	if (cfg != NULL) {
+		if (cfg->mac_value != NULL) {
+			usbh_cdc_ecm_set_dongle_mac(cfg->mac_value);
 		}
-		if ((priv->led_array != NULL) && (priv->led_cnt > 0)) {
-			usbh_cdc_ecm_set_dongle_led_array(priv->led_array, priv->led_cnt);
+		if ((cfg->led_array != NULL) && (cfg->led_cnt > 0U)) {
+			usbh_cdc_ecm_set_dongle_led_array(cfg->led_array, cfg->led_cnt);
 		}
 	}
 
@@ -1866,6 +2015,12 @@ int usbh_cdc_ecm_init(const usbh_cdc_ecm_state_cb_t *cb, const usbh_cdc_ecm_priv
 	usbh_cdc_ecm_trace_task_init();
 #endif
 
+	/* Every TX resource exists from here on: let the TX API in. The critical section orders
+	   the resource stores before the gate for the other core. */
+	usb_os_enter_critical();
+	cdc->tx_open = 1U;
+	usb_os_exit_critical();
+
 	return ret;
 
 user_deinit:
@@ -1887,10 +2042,23 @@ ctrl_buf_fail:
 void usbh_cdc_ecm_deinit(void)
 {
 	usbh_cdc_ecm_host_t *cdc = &usbh_cdc_ecm_host;
+
+	/* Close the TX gate first: the TX API rejects new callers from here on, and the ones
+	 * already inside are waited for in tx_status_check() before their resources go away */
+	usb_os_enter_critical();
+	cdc->tx_open = 0U;
+	usb_os_exit_critical();
+
 	cdc->eth_hw_connect = 0;
 	cdc->ready_to_xfer = 0;
 
-	usbh_unregister_class(&usbh_cdc_ecm_driver);
+	/* Before anything is freed: on HAL_OK no attach/setup/process/detach of this
+	 * class runs any more, an EP0 request it left in flight is halted and a sof() still
+	 * running on another core is waited out. Anything else means nothing was released. */
+	if (usbh_unregister_class(&usbh_cdc_ecm_driver) != HAL_OK) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Deinit refused\n");
+		return;
+	}
 
 #if USBH_CDC_ECM_STATE_TRACE_ENABLE
 	usbh_cdc_ecm_trace_task_deinit();
@@ -1986,13 +2154,13 @@ void usbh_cdc_ecm_prepare_done(void)
 }
 
 /**
-  * @brief  Start to transmit data
+  * @brief  Send one Ethernet frame, called by usbh_cdc_ecm_send_data() inside the TX gate
   * @param  buf: Data buffer
   * @param  len: Data length
   * @param  block: Whether block until xfer done
   * @retval Status
   */
-int usbh_cdc_ecm_send_data(u8 *buf, u32 len, u8 block)
+static int usbh_cdc_ecm_tx_frame(u8 *buf, u32 len, u8 block)
 {
 	usbh_cdc_ecm_host_t *cdc = &usbh_cdc_ecm_host;
 	u8 retry_cnt = 0;
@@ -2009,6 +2177,10 @@ int usbh_cdc_ecm_send_data(u8 *buf, u32 len, u8 block)
 #endif
 
 	if (block) {
+		cdc->bulk_tx_err = 0U;
+		/* Drop a give left over from a TX nobody waited for (e.g. by detach), else the take
+		 * below would return before this TX completes */
+		(void)usb_os_sema_take(cdc->bulk_tx_sema, 0U);
 		cdc->bulk_tx_block = 1;
 	}
 
@@ -2029,7 +2201,12 @@ int usbh_cdc_ecm_send_data(u8 *buf, u32 len, u8 block)
 
 	//wait cdc_ecm_cb_bulk_send to give the sema
 	if ((ret == HAL_OK) && block) {
-		usb_os_sema_take(cdc->bulk_tx_sema, USB_OS_SEMA_TIMEOUT);
+		/* No timeout on purpose: every submitted TX ends in cb_bulk_send() or detach, and returning
+		 * earlier would hand the buffer back to the caller while the controller still reads it */
+		(void)usb_os_sema_take(cdc->bulk_tx_sema, USB_OS_SEMA_TIMEOUT);
+		if (cdc->bulk_tx_err != 0U) {
+			ret = HAL_ERR_HW;
+		}
 #if USBH_CDC_ECM_TX_SPEED_CHECK
 		usb_tx_end_time = usb_os_get_timestamp_ms();
 		usb_tx_interval_time = (usb_tx_end_time - usb_tx_start_time) * RTOS_TICK_RATE_MS;
@@ -2045,6 +2222,45 @@ int usbh_cdc_ecm_send_data(u8 *buf, u32 len, u8 block)
 	}
 
 	cdc->bulk_tx_block = 0;
+
+	return ret;
+}
+
+/**
+  * @brief  Transmits an Ethernet packet to the device via the Bulk OUT endpoint.
+  * @note   Task context only, one sender at a time. Gated against deinit: a caller is either
+  *         counted in tx_users before deinit closes the gate, or rejected after it.
+  * @param  buf: Ethernet frame
+  * @param  len: Frame length
+  * @param  block: Non-zero to wait until the transfer completes
+  * @retval HAL_OK on success, HAL_ERR_HW while the class is not initialized or being
+  *         de-initialized, HAL_ERR_PARA in interrupt context, others on transfer failure.
+  */
+int usbh_cdc_ecm_send_data(u8 *buf, u32 len, u8 block)
+{
+	usbh_cdc_ecm_host_t *cdc = &usbh_cdc_ecm_host;
+	int ret;
+
+	/* A blocking send waits on a semaphore */
+	if (usb_os_is_in_interrupt() != 0U) {
+		return HAL_ERR_PARA;
+	}
+
+	/* Counted under the same lock deinit closes the gate with, so deinit either sees this
+	 * caller or this caller sees the gate closed: never both missed */
+	usb_os_enter_critical();
+	if (cdc->tx_open == 0U) {
+		usb_os_exit_critical();
+		return HAL_ERR_HW;
+	}
+	cdc->tx_users++;
+	usb_os_exit_critical();
+
+	ret = usbh_cdc_ecm_tx_frame(buf, len, block);
+
+	usb_os_enter_critical();
+	cdc->tx_users--;
+	usb_os_exit_critical();
 
 	return ret;
 }
@@ -2102,14 +2318,10 @@ int usbh_cdc_ecm_get_link_status(void)
   */
 const u8 *usbh_cdc_ecm_process_mac_str(void)
 {
-	u8 i = 0;
 	usbh_cdc_ecm_host_t *cdc = &usbh_cdc_ecm_host;
-	while (!cdc->mac_valid && i < 10) {
-		usb_os_sleep_ms(1000);
-		i++;
-		RTK_LOGS(TAG, RTK_LOG_INFO,  "Wait to get MAC string!\n");
-	}
 
+	/* No wait: the MAC is settled in setup(), before the device reports ready, so waiting here
+	 * only stalled the caller's link poll while no device was attached */
 	if (cdc->mac_valid == 0) {
 		return NULL;
 	}

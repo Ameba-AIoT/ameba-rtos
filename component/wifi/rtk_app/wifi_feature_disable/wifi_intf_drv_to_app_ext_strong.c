@@ -536,3 +536,30 @@ int wifi_xmesh_stop_xmesh(u8 enable)
 	call_noused = __LINE__;
 	return RTK_FAIL;
 }
+
+u8 wifi_rmesh_rnat_get_neighbor_info(void *out, u8 max_count)
+{
+	UNUSED(out);
+	UNUSED(max_count);
+	call_noused = __LINE__;
+	return 0;
+}
+
+void wifi_rmesh_rnat_set_gw(const u8 *gw)
+{
+	UNUSED(gw);
+	call_noused = __LINE__;
+}
+
+void wifi_rmesh_rnat_set_client_ip(const u8 *mac, u8 ip_byte4)
+{
+	UNUSED(mac);
+	UNUSED(ip_byte4);
+	call_noused = __LINE__;
+}
+
+void wifi_rmesh_rnat_register_adv_callback(int (*adv_callback)(u8 *buf, u16 len))
+{
+	UNUSED(adv_callback);
+	call_noused = __LINE__;
+}

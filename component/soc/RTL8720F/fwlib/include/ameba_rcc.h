@@ -11,7 +11,7 @@
 extern "C" {
 #endif
 
-/** @addtogroup AmebaD_Platform
+/** @addtogroup Ameba_Platform
   * @{
   */
 
@@ -22,25 +22,6 @@ extern "C" {
 
 
 /** @defgroup HS_RCC
-  * @verbatim
-  *****************************************************************************************
-  * Introduction
-  *****************************************************************************************
-  *		- functions prototypes for peripheral reset and clock control driver.
-  *
-  *****************************************************************************************
-  *
-  *****************************************************************************************
-  * how to use
-  *****************************************************************************************
-  * use UART0 as example:
-  *		RCC_PeriphClockCmd(APBPeriph_UART0, APBPeriph_UART0_CLOCK, ENABLE);
-  *
-  *****************************************************************************************
-  * @endverbatim
-  */
-
-/** @addtogroup HS_RCC
   * @brief HS_RCC driver modules
   * @{
   */

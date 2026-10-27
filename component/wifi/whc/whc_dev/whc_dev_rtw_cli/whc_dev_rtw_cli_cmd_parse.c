@@ -46,6 +46,14 @@ __weak int whc_wpa_ops_get_macaddr(u8 *ptr, u8 *buf)
 	return 0;
 }
 
+__weak int whc_wpa_ops_set_macaddr(u8 *ptr, u8 *buf)
+{
+	(void)ptr;
+	(void)buf;
+
+	return 0;
+}
+
 __weak int whc_wpa_ops_do_scan(u8 *ptr, u8 *buf)
 {
 	(void)ptr;
@@ -159,6 +167,10 @@ void whc_dev_cmd_rx_to_user_task(void)
 				if (*ptr == WHC_WPA_OPS_UTIL_GET_MAC_ADDR) {
 					ptr += 1;
 					whc_wpa_ops_get_macaddr(ptr, buf);
+
+				} else if (*ptr == WHC_WPA_OPS_UTIL_SET_MAC_ADDR) {
+					ptr += 1;
+					whc_wpa_ops_set_macaddr(ptr, buf);
 
 				} else if (*ptr == WHC_WPA_OPS_UTIL_SET_NETWORK) {
 					ptr += 1;

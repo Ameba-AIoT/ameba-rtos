@@ -11,77 +11,13 @@
 extern "C" {
 #endif
 
-/** @addtogroup AmebaD_Platform
+/** @addtogroup Ameba_Platform
   * @{
   */
 
 /** @defgroup SYSCFG
   * @brief SYSCFG driver modules
   * @{
-  */
-
-/** @addtogroup SYSCFG
-  * @verbatim
-  *****************************************************************************************
-  * Introduction
-  *****************************************************************************************
-  * Used for system, user can not used it if not needed.
-  *
-  *****************************************************************************************
-  * REG_SYS_SYSTEM_CFG0 Introduction
-  *****************************************************************************************
-  *
-  *    BIT[31]		Trapped PKG_ENG_SEL value 0: normal package; 1: engineering mode
-  *    BIT[30]		CHIP_EN PIN input value
-  *    BIT[27:24]	BD info
-  *    BIT[16]		1: Test chip;  0:MP
-  *    BIT[11:8]	Vendor ID
-  *    BIT[7:4]		Chip version
-  *    BIT[3:0]		Vendor ID defined in RF
-  *
-  *****************************************************************************************
-  * REG_LP_SYSTEM_CFG1 Introduction
-  *****************************************************************************************
-  *
-  *    BIT[31:28]	is BIT_SYSCFG_TRP_ICFG, value is load from following trap pin:
-  *    			ICFG[0]/ICFG[1]/ICFG[2]/ICFG[3] when trap pin TSET_MODE_SEL = 1
-  *    BIT[27]		is BIT_SYSCFG_TRP_BOOT_SEL
-  *    			0: boot normal, 1: uart flash download
-  *    			value load from trap pin UART_DOWNLOAD_IMAGE
-  *    BIT[25]		is BIT_SYSCFG_TRP_SPSLDO_SEL, Trapped Selection for SPS
-  *    			0: SWR mode; 1: LDO mode
-  *    			load from trap pin SPS_LDO_SEL
-  *    BIT[8]		BIT_SYS_XCLK_VLD	Xtal Clock Stable, 1: Clock Stable
-  *    BIT[0]		BIT_SYSCFG_ALDN_STS 1: SYS CFG autoload done; 0; SYSCFG autoload not ready
-  *
-  *****************************************************************************************
-  * REG_LP_SYSTEM_CFG2 Introduction
-  *****************************************************************************************
-  *
-  *    BIT[7:0]		ROM Information
-  *
-  *
-  *****************************************************************************************
-    * trap pins
-  *****************************************************************************************
-  *
-  *    GPIOA_0:
-  *			TEST_MODE_SEL
-  *			default PD
-  *
-  *    GPIOA_3:
-  *			SPS_LDO_SEL
-  *			default PU, internal PU
-  *			0: SWR 1: LDO
-  *			load to 0x1F4[25]
-  *
-  *    GPIOA_30:
-  *			UART_DOWNLOAD_IMAGE
-  *			default PU
-  *			load to 0x1F4[27]
-  *
-  *****************************************************************************************
-  * @endverbatim
   */
 
 /* Exported constants --------------------------------------------------------*/

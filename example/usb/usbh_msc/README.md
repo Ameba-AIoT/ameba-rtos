@@ -47,7 +47,7 @@ Refer to the [EVB User Guide](https://aiot.realmcu.com/filelist?document_type=9)
 			USB Mode (Host)  --->
 	[*] 	MSC
 	```
-	- Choose `CONFIG VFS --->`:
+	- Choose `CONFIG File System --->`:
 	```
 	[*] Enable VFS FATFS
 	```
@@ -71,14 +71,14 @@ Refer to the [EVB User Guide](https://aiot.realmcu.com/filelist?document_type=9)
 
 3. Ameba board recognizes the MSC device, mounts it, and runs the write/read performance test over all files. Check the log on the LOGUART console and make sure there is no USB related error reported. Example of the expected PASS log (per file, sizes repeat 512 → 4096):
 	```
-	[USBH-A] Device attached,speed 0
-	[USBH-A] PID: 0x6545
-	[USBH-A] VID: 0x0930
-	[USBH-A] Address 1 assigned
+	[USBH-A] Dev attach, speed 0
+	[USBH-A] PID 6545
+	[USBH-A] VID 0930
+	[USBH-A] Addr 1
 	[USBH-A] MFG: TOSHIBA
 	[USBH-A] PROD: TransMemory
 	[USBH-A] SN: C03FD5F7715FE3417000DE76
-	[USBH-A] Enum done, total 1 cfg
+	[USBH-A] Enum done, 1 cfg
 	[USBH-A] Switch to itf: 0
 	[USBH-A] Class: 0x08
 	[USBH-A] SubClass: 0x06
@@ -132,8 +132,8 @@ Refer to the [EVB User Guide](https://aiot.realmcu.com/filelist?document_type=9)
 		[MSC-W] W err: device disconnected (rc=1)
 		[MSC-I] DETACH
 		[MSC-W] I/O interrupted, wait for next attach
-		[MSC-I] Hotplug: deinit USB stack
-		[MSC-I] Hotplug: USB stack re-initialized
+		[MSC-I] Free heap: 0x...
+		[MSC-I] Reinit done
 		[MSC-I] Wait for device attach...
 		```
 

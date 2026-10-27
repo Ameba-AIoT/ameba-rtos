@@ -23,6 +23,11 @@ void wifi_hal_antdiv_training_timer_init(void *a)
 	UNUSED(a);
 }
 
+void wifi_hal_antdiv_training_timer_deinit(void)
+{
+
+}
+
 void wifi_hal_antdiv_init(void *a)
 {
 	UNUSED(a);

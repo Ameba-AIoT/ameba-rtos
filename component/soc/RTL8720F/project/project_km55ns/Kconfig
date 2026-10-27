@@ -1,0 +1,30 @@
+comment "----------CPU config----------"
+
+menu "CONFIG Chip Arch"
+    # Adding the suffix _FOR_KM55NS is not allowed here
+endmenu
+
+menu "CONFIG CHIP"
+    choice
+        prompt "ArmCore"
+        default ARM_CORE_CM55_KM55NS_FOR_KM55NS
+        config ARM_CORE_CM55_KM55NS_FOR_KM55NS
+            bool "ARM_CM55_KM55NS"
+    endchoice
+
+    config ARM_CORE_CM4_FOR_KM55NS
+        bool
+        default y
+
+    # Legacy core macro for shared code and auto-generated headers that still test the KM4 name
+    config ARM_CORE_CM4_KM4NS_FOR_KM55NS
+        bool
+        default y
+
+    choice
+        prompt "Chip Version"
+        default RTL8720F_A_CUT_FOR_KM55NS
+        config RTL8720F_A_CUT_FOR_KM55NS
+            bool "RTL8720F_A_Cut"
+    endchoice
+endmenu

@@ -35,9 +35,11 @@ set(private_compile_options)         #private compile_options
 #------------------------------#
 # Component private part, user config begin
 
-if (CONFIG_WHC_HOST OR CONFIG_WHC_NONE OR (CONFIG_WHC_DEV AND NOT CONFIG_WHC_INTF_IPC))
-    ameba_list_append(private_sources ameba_ota.c)
+if (NOT CONFIG_OTA_ENABLED)
+    return()
 endif()
+
+ameba_list_append(private_sources ameba_ota.c)
 
 # Component private part, user config end
 #------------------------------#
@@ -45,16 +47,14 @@ endif()
 #WARNING: Select right API based on your component's release/not-release/standalone
 
 ###NOTE: For closed-source component, only build before release and libs are packaged into lib/soc
-if (CONFIG_WHC_HOST OR CONFIG_WHC_NONE OR (CONFIG_WHC_DEV AND NOT CONFIG_WHC_INTF_IPC))
-    ameba_add_internal_library(ameba_ota
-        p_SOURCES
-            ${private_sources}
-        p_INCLUDES
-            ${private_includes}
-        p_DEFINITIONS
-            ${private_definitions}
-        p_COMPILE_OPTIONS
-            ${private_compile_options}
-    )
-endif()
+ameba_add_internal_library(ameba_ota
+    p_SOURCES
+        ${private_sources}
+    p_INCLUDES
+        ${private_includes}
+    p_DEFINITIONS
+        ${private_definitions}
+    p_COMPILE_OPTIONS
+        ${private_compile_options}
+)
 ##########################################################################################

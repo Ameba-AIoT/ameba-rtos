@@ -61,6 +61,13 @@ extern int dhcps_ip_in_table_check(uint8_t gate, uint8_t d);
 #endif
 #ifdef CONFIG_WIFI_TUNNEL
 extern int(*rmesh_ota_user_callback)(u8 *, u16);
+#ifdef CONFIG_WTN_RNAT_INTERCOM
+extern int(*rmesh_rnat_adv_user_callback)(u8 *, u16);
+#endif
+#endif
+#if defined(CONFIG_RADAR) && defined(CONFIG_WIFI_RADAR_ENABLE) && !defined(CONFIG_MP_SHRINK)
+extern u8 wifi_radar_host_rpt_drop(u32 event_id, u32 *param_buf);
+extern void wifi_radar_host_pending_cnt(u32 event_id, u32 event_cmd, u8 is_enqueue);
 #endif
 /* ---------------------------- Private Functions --------------------------- */
 /* wifi callback & blocked in NP */
@@ -318,6 +325,22 @@ static int whc_ipc_host_api_wtn_ota_callback_handler(struct whc_ipc_dev_req_msg 
 
 	return ret;
 }
+
+#ifdef CONFIG_WTN_RNAT_INTERCOM
+static int whc_ipc_host_api_wtn_rnat_adv_callback_handler(struct whc_ipc_dev_req_msg *p_ipc_msg)
+{
+	u8 *buf = (u8 *)p_ipc_msg->param_buf[0];
+	u16 len = (u16)p_ipc_msg->param_buf[1];
+	int ret = RTK_FAIL;
+
+	if (rmesh_rnat_adv_user_callback) {
+		DCache_Invalidate((u32)buf, (u32)len);
+		ret = rmesh_rnat_adv_user_callback(buf, len);
+	}
+
+	return ret;
+}
+#endif
 #endif
 
 static u8 *whc_ipc_host_api_unblk_api_copy(u8 *src_buf, u32 buf_len)
@@ -428,6 +451,9 @@ static void whc_ipc_host_api_unblk_api_enqueue(struct whc_ipc_host_unblk_api_nod
 		rtos_mutex_take(g_host_unblk_api_q_priv.host_unblk_api_q_mutex, MUTEX_WAIT_TIMEOUT);
 		rtw_list_insert_tail(&p_unblk_api_node->list, &g_host_unblk_api_q_priv.host_unblk_api_queue);
 		g_host_unblk_api_q_priv.host_unblk_api_node_cnt++;
+#if defined(CONFIG_RADAR) && defined(CONFIG_WIFI_RADAR_ENABLE) && !defined(CONFIG_MP_SHRINK)
+		wifi_radar_host_pending_cnt(p_unblk_api_node->event_id, p_unblk_api_node->param_buf[0], TRUE);
+#endif
 		if ((g_host_unblk_api_q_priv.host_unblk_api_node_cnt % CONFIG_INIC_IPC_HOST_EVT_Q_DEPTH == 0) &&
 			(g_host_unblk_api_q_priv.host_unblk_api_node_cnt / CONFIG_INIC_IPC_HOST_EVT_Q_DEPTH != 0)) {
 			RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ALWAYS, "%d nodes in Evt_q\n", g_host_unblk_api_q_priv.host_unblk_api_node_cnt);
@@ -452,6 +478,7 @@ void whc_ipc_host_wifi_indication_enqueue(u32 event, u8 *evt_info, s32 evt_len)
 	if (evt_info && evt_len) {
 		buffer = rtos_mem_zmalloc(evt_len);
 		if (buffer == NULL) {
+			rtos_mem_free((unsigned char *)p_unblk_api_node);
 			return;
 		}
 		memcpy(buffer, evt_info, evt_len);
@@ -473,6 +500,9 @@ static struct whc_ipc_host_unblk_api_node *whc_ipc_host_api_unblk_api_dequeue(vo
 		p_unblk_api_node = LIST_CONTAINOR(plist, struct whc_ipc_host_unblk_api_node, list);
 		rtw_list_delete(&(p_unblk_api_node->list));
 		g_host_unblk_api_q_priv.host_unblk_api_node_cnt--;
+#if defined(CONFIG_RADAR) && defined(CONFIG_WIFI_RADAR_ENABLE) && !defined(CONFIG_MP_SHRINK)
+		wifi_radar_host_pending_cnt(p_unblk_api_node->event_id, p_unblk_api_node->param_buf[0], FALSE);
+#endif
 	}
 	rtos_mutex_give(g_host_unblk_api_q_priv.host_unblk_api_q_mutex);
 	return p_unblk_api_node;
@@ -534,9 +564,19 @@ void whc_ipc_host_blk_api_task_h(void)
 		case WHC_API_WTN_OTA_CALLBACK:
 			p_ipc_msg->ret = whc_ipc_host_api_wtn_ota_callback_handler(p_ipc_msg);
 			break;
+#ifdef CONFIG_WTN_RNAT_INTERCOM
+		case WHC_API_WTN_RNAT_ADV_CALLBACK:
+			p_ipc_msg->ret = whc_ipc_host_api_wtn_rnat_adv_callback_handler(p_ipc_msg);
+			break;
+#endif
 #endif
 		default:
 			/* event & api without return value */
+#if defined(CONFIG_RADAR) && defined(CONFIG_WIFI_RADAR_ENABLE) && !defined(CONFIG_MP_SHRINK)
+			if (wifi_radar_host_rpt_drop(p_ipc_msg->enevt_id, p_ipc_msg->param_buf)) {
+				break;
+			}
+#endif
 			p_unblk_api_node = whc_ipc_host_api_unblk_api_msg_to_node(p_ipc_msg->enevt_id, p_ipc_msg->param_buf);
 			whc_ipc_host_api_unblk_api_enqueue(p_unblk_api_node);
 			break;

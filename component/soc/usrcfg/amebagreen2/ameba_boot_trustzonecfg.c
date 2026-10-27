@@ -105,7 +105,7 @@ const TZ_CFG_TypeDef mpc2_config[MPC_ENTRY_NUM] =						/* Security configuration
 const TZ_CFG_TypeDef mpc1_config[MPC_ENTRY_NUM] =						/* Security configuration for Flash */
 {
 //  Start					End						CTRL
-	{0x02000000,			0xFFFFFFFF, 			MPC_RO | MPC_NS},	/* entry0: Flash can be rw by ns word */
+	{0x02000000,			0xFFFFFFFF, 			MPC_RO | MPC_NS},	/* entry0: Flash can be read-only by ns word */
 	{0xFFFFFFFF,			0xFFFFFFFF, 			MPC_RW | MPC_NS},	/* entry1: TODO */
 	{0xFFFFFFFF,			0xFFFFFFFF,				MPC_RW | MPC_NS},	/* entry2: TODO */
 	{0xFFFFFFFF,			0xFFFFFFFF,				MPC_RW | MPC_NS},	/* entry3: TODO */

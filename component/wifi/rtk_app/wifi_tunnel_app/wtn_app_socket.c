@@ -492,8 +492,11 @@ int wtn_socket_send(u8 *buf, u32 len)
 int wtn_socket_init(u8 enable, u8 rnat_ap_start)
 {
 #ifdef CONFIG_RMESH_SOCKET_EN
-	wtn_rnat_ap_start = rnat_ap_start;
 	if (enable) {
+		if (wtn_rnat_ap_start) {
+			return RTK_SUCCESS; /* rnat socket tasks already running (softap restart re-triggers init) */
+		}
+		wtn_rnat_ap_start = rnat_ap_start;
 		rtos_sema_create_static(&wtn_socket_send_sema, 0, 0xFFFFFFFF);
 		rtw_init_queue(&wtn_buf_queue);
 		wtn_socket_need_close = 0;
@@ -504,13 +507,16 @@ int wtn_socket_init(u8 enable, u8 rnat_ap_start)
 		memset(wtn_server_ip, 0, 4);
 		memset(wtn_buf_pool, 0, WTN_BUF_NUM * sizeof(struct wtn_buf_node));
 		if (rtos_task_create(NULL, "wtn_rx_socket_handler", wtn_rx_socket_handler, NULL, 2048, 2) != RTK_SUCCESS) {
+			wtn_rnat_ap_start = 0;
 			return RTK_FAIL;
 		}
 
 		if (rtos_task_create(NULL, "wtn_tx_socket_handler", wtn_tx_socket_handler, NULL, 2048, 2) != RTK_SUCCESS) {
+			wtn_rnat_ap_start = 0;
 			return RTK_FAIL;
 		}
 	} else {
+		wtn_rnat_ap_start = 0;
 		wtn_socket_need_close = 1;
 		if (wtn_socket_send_sema) {
 			rtos_sema_give(wtn_socket_send_sema);/*trigger socket tx task to end*/

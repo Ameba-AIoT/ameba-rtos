@@ -887,6 +887,35 @@ static uint16_t bt_stack_gatts_write_rsp(void *param)
 	return 0;
 }
 
+extern int sc_indicate_conn(struct bt_conn *conn, uint16_t start, uint16_t end);
+uint16_t bt_stack_gatts_service_changed_indicate(void *param)
+{
+#if defined(CONFIG_BT_GATT_SERVICE_CHANGED)
+	rtk_bt_gatts_service_changed_indicate_param_t *srv_change =
+		(rtk_bt_gatts_service_changed_indicate_param_t *)param;
+	struct bt_conn *conn = NULL;
+	int err;
+
+	conn = bt_conn_lookup_handle(srv_change->conn_handle, BT_CONN_TYPE_LE);
+	if (!conn) {
+		return RTK_BT_ERR_NO_CONNECTION;
+	}
+
+	err = sc_indicate_conn(conn, srv_change->start_handle, srv_change->end_handle);
+
+	bt_conn_unref(conn);
+
+	if (err) {
+		return RTK_BT_ERR_LOWER_STACK_API;
+	}
+
+	return 0;
+#else
+	(void)param;
+	return RTK_BT_ERR_UNSUPPORTED;
+#endif
+}
+
 uint16_t bt_stack_gatts_act_handle(rtk_bt_cmd_t *p_cmd)
 {
 	uint16_t ret = RTK_BT_OK;
@@ -914,6 +943,9 @@ uint16_t bt_stack_gatts_act_handle(rtk_bt_cmd_t *p_cmd)
 		break;
 	case RTK_BT_GATTS_ACT_INDICATE:
 		ret = bt_stack_gatts_indicate(p_cmd->param);
+		break;
+	case RTK_BT_GATTS_ACT_SERVICE_CHANGED_INDICATE:
+		ret = bt_stack_gatts_service_changed_indicate(p_cmd->param);
 		break;
 	default:
 		BT_LOGE("bt_stack_le_act_handle:unknown act: %d \r\n", p_cmd->act);

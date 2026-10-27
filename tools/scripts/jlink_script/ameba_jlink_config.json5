@@ -95,13 +95,13 @@
   },
   RTL8720F: {
     GDB_PORTS: {
-      km4tz: 2335,
-      km4ns: 2331,
+      km55tz: 2335,
+      km55ns: 2331,
       swd: 2335,
     },
     DEVICE: {
-      km4tz: 'Cortex-M33',
-      km4ns: 'Cortex-M33',
+      km55tz: 'Cortex-M33',
+      km55ns: 'Cortex-M33',
     },
     AP_ADD: {
       '0': 'APB',
@@ -110,8 +110,8 @@
       '3': 'APB',
     },
     AP_USE: {
-      km4tz: 2,
-      km4ns: 1,
+      km55tz: 2,
+      km55ns: 1,
       swd: [2, 3, 2],   // Init*1, Reset*2
     },
   },

@@ -758,6 +758,7 @@ enum {
 	 *  @note Requires @ref BT_CONN_LE_OPT_CODED.
 	 */
 	BT_CONN_LE_OPT_NO_1M = BIT(1),
+
 #if ZEPHYR_RTK_PATCH
 	/** @brief Enable LE 2M PHY connection parameters.
 	 *
@@ -766,6 +767,9 @@ enum {
 	 *  No primary scan is performed on 2M (per BLE spec).
 	 */
 	BT_CONN_LE_OPT_2M = BIT(2),
+
+	/* Ext conn using parameter each PHY */
+	BT_CONN_LE_OPT_MULTI_PHY_PARAM = BIT(3),
 #endif
 };
 
@@ -776,6 +780,9 @@ struct bt_conn_le_create_param {
 
 #if ZEPHYR_RTK_PATCH
 	uint8_t own_addr_type;
+
+	/** Conn parameter for each PHY, element order [0]->1M; [1]->2M; [2]->Coded  */
+	struct bt_le_conn_param per_phy[3];
 #endif
 
 	/** Scan interval (N * 0.625 ms) */

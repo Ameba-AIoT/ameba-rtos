@@ -198,7 +198,7 @@ void atcmd_spi_task(void)
 					if (rtos_timer_is_timer_active(xTimers_SPI_Output)) {
 						rtos_timer_stop(xTimers_SPI_Output, 0);
 					}
-					rtos_queue_send(g_spi_cmd_queue, (void *)&req, 0xFFFFFFFF);
+					rtos_queue_send(g_spi_cmd_queue, (void *)&req, 0);
 				} else if (remain_len > 0) {
 					if (rtos_timer_is_timer_active(xTimers_SPI_Output) == 0) {
 						rtos_timer_start(xTimers_SPI_Output, 0);
@@ -334,7 +334,7 @@ void atcmd_spi_task(void)
 					if (rtos_timer_is_timer_active(xTimers_SPI_Output)) {
 						rtos_timer_stop(xTimers_SPI_Output, 0);
 					}
-					rtos_queue_send(g_spi_cmd_queue, (void *)&req, 0xFFFFFFFF);
+					rtos_queue_send(g_spi_cmd_queue, (void *)&req, 0);
 				} else if (remain_len > 0) {
 					if (rtos_timer_is_timer_active(xTimers_SPI_Output) == 0) {
 						rtos_timer_start(xTimers_SPI_Output, 0);
@@ -472,11 +472,9 @@ recv_again:
 					RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "\r\n\n#\r\n");
 				}
 
-				memset((u8 *)pCmdLogBuf->UARTLogBuf, CMD_BUFLEN, '\0');
+				memset((u8 *)pCmdLogBuf->UARTLogBuf, 0, CMD_BUFLEN);
 				pCmdLogBuf->BufCount = 0;
 				continue;
-			} else {
-				memset(shell_ctl.pTmpLogBuf->UARTLogBuf, CMD_BUFLEN, '\0');
 			}
 		}
 
@@ -496,7 +494,7 @@ void spi_output_timeout_handler(void *arg)
 	(void) arg;
 	struct atcmd_spi_req req = {0};
 	req.cmd = SPI_SLAVE_WR_CMD;
-	rtos_queue_send(g_spi_cmd_queue, (void *)&req, 0xFFFFFFFF);
+	rtos_queue_send(g_spi_cmd_queue, (void *)&req, 0);
 }
 
 void atio_spi_output(char *buf, int len)
@@ -530,7 +528,7 @@ void atio_spi_output(char *buf, int len)
 			if (rtos_timer_is_timer_active(xTimers_SPI_Output)) {
 				rtos_timer_stop(xTimers_SPI_Output, 0);
 			}
-			rtos_queue_send(g_spi_cmd_queue, (void *)&req, 0xFFFFFFFF);
+			rtos_queue_send(g_spi_cmd_queue, (void *)&req, 0);
 		} else if (remain_len > 0) {
 			if (rtos_timer_is_timer_active(xTimers_SPI_Output) == 0) {
 				rtos_timer_start(xTimers_SPI_Output, 0);

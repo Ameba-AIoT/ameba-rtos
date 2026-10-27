@@ -5,6 +5,7 @@
  */
 
 /* Includes ------------------------------------------------------------------*/
+
 #include <platform_autoconf.h>
 #include "platform_stdlib.h"
 #include "basic_types.h"
@@ -33,7 +34,12 @@
 #define USBH_HID_INIT_THREAD_STACK_SIZE             768U
 #define USBH_HID_HOTPLUG_THREAD_STACK_SIZE          768U
 
+/* Private types -------------------------------------------------------------*/
+
+/* Private macros ------------------------------------------------------------*/
+
 /* Private function prototypes -----------------------------------------------*/
+
 static void usbh_hid_cb_report(usbh_hid_event_t *event);
 static void usbh_hid_cb_attached(void);
 static void usbh_hid_cb_detached(void);
@@ -41,19 +47,41 @@ static void usbh_hid_cb_setup(void);
 static void usbh_hid_cb_process(usb_host_t *host, u8 msg);
 
 /* Private variables ---------------------------------------------------------*/
+
 static const char *const TAG = "HID";
 
+#if CONFIG_USBH_HID_HOTPLUG
 /**
  * @brief Application-level context for the HID demo.
+ * @note  Both members exist only to run the hot-plug worker, and every use of
+ *        them is already inside a CONFIG_USBH_HID_HOTPLUG block, so the whole
+ *        context is compiled out with it. Without this guard the instance is
+ *        unreferenced when hot-plug is disabled, which the build treats as an
+ *        error (-Werror=unused-variable).
  */
 typedef struct {
 	rtos_sema_t detach_sema;    /*!< Signaled by detach callback; consumed by hotplug thread */
-#if CONFIG_USBH_HID_HOTPLUG
 	rtos_task_t hotplug_task;   /*!< Hot-plug monitoring thread handle */
-#endif
 } usbh_hid_ctx_t;
 
 static usbh_hid_ctx_t usbh_hid_ctx;
+#endif
+
+/* Serializes the USB stack bring up / tear down against any caller of the HID
+   class API. This example drives no transfers of its own - the class runs its
+   own report parse thread and hands events up through the report callback - so
+   today the only contender is the init thread's rollback path. The lock is kept
+   anyway because usbh_hid_deinit() frees hid_ctrl_buf and the report ring buffer
+   while only checking hid->host on entry: under SMP any future caller of
+   usbh_hid_send_report() on another core would be inside that API while this
+   thread frees what it dereferences. Excluding such a caller has to be done by
+   lock, not by core.
+   Created before the stack comes up and never deleted: a caller of the class API
+   can not be joined by the example, so there is no point in time at which this
+   mutex is provably unreferenced. A caller added later (e.g. of
+   usbh_hid_send_report()) shall take this mutex and add a ready flag that the
+   bring up sets and every tear down clears under it, as usbh_msc does. */
+static rtos_mutex_t usbh_hid_state_mutex = NULL;
 
 /* USB host stack configuration */
 static const usbh_config_t usbh_cfg = {
@@ -97,6 +125,8 @@ static const usbh_user_cb_t usbh_usr_cb = {
 	.process = usbh_hid_cb_process,
 };
 
+/* Exported variables --------------------------------------------------------*/
+
 /* Private functions ---------------------------------------------------------*/
 
 /**
@@ -136,7 +166,7 @@ static void usbh_hid_cb_report(usbh_hid_event_t *event)
   */
 static void usbh_hid_cb_attached(void)
 {
-	RTK_LOGS(TAG, RTK_LOG_INFO, "HID attach\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "ATTACH\n");
 }
 
 /**
@@ -145,7 +175,7 @@ static void usbh_hid_cb_attached(void)
   */
 static void usbh_hid_cb_detached(void)
 {
-	RTK_LOGS(TAG, RTK_LOG_INFO, "HID detach\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "DETACH\n");
 
 #if CONFIG_USBH_HID_HOTPLUG
 	rtos_sema_give(usbh_hid_ctx.detach_sema);
@@ -157,7 +187,7 @@ static void usbh_hid_cb_detached(void)
   */
 static void usbh_hid_cb_setup(void)
 {
-	RTK_LOGS(TAG, RTK_LOG_INFO, "HID setup\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "SETUP\n");
 }
 
 /**
@@ -169,17 +199,7 @@ static void usbh_hid_cb_setup(void)
 static void usbh_hid_cb_process(usb_host_t *host, u8 msg)
 {
 	UNUSED(host);
-
-	switch (msg) {
-	case USBH_MSG_DISCONNECTED:
-		RTK_LOGS(TAG, RTK_LOG_INFO, "DISCONNECT\n");
-		break;
-	case USBH_MSG_CONNECTED:
-		RTK_LOGS(TAG, RTK_LOG_INFO, "CONNECT\n");
-		break;
-	default:
-		break;
-	}
+	UNUSED(msg);
 }
 
 #if CONFIG_USBH_HID_HOTPLUG
@@ -209,36 +229,44 @@ static void example_usbh_hid_hotplug_thread(void *param)
 
 		rtos_time_delay_ms(200);
 
-		/* Tear down */
+		/* Tear down under the lock, see usbh_hid_state_mutex */
+		rtos_mutex_take(usbh_hid_state_mutex, RTOS_MAX_TIMEOUT);
 		usbh_stop();
 		usbh_hid_deinit();
 		usbh_deinit();
+		rtos_mutex_give(usbh_hid_state_mutex);
 
 		rtos_time_delay_ms(100);
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Free heap: 0x%x\n", rtos_mem_get_free_heap_size());
 
 		/* Re-initialize */
-		RTK_LOGS(TAG, RTK_LOG_INFO, "Re-init USB host...\n");
+		rtos_mutex_take(usbh_hid_state_mutex, RTOS_MAX_TIMEOUT);
 
 		ret = usbh_init(&usbh_cfg, &usbh_usr_cb);
 		if (ret != HAL_OK) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "USB re-init fail: %d\n", ret);
+			rtos_mutex_give(usbh_hid_state_mutex);
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Reinit fail: %d\n", ret);
 			break;
 		}
 
 		ret = usbh_hid_init(&usbh_hid_cfg);
 		if (ret != HAL_OK) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "HID re-init fail: %d\n", ret);
 			usbh_deinit();
+			rtos_mutex_give(usbh_hid_state_mutex);
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Reinit fail: %d\n", ret);
 			break;
 		}
 
 		usbh_start();
+		rtos_mutex_give(usbh_hid_state_mutex);
 
-		RTK_LOGS(TAG, RTK_LOG_INFO, "Re-init complete\n");
+		RTK_LOGS(TAG, RTK_LOG_INFO, "Reinit done\n");
 	}
 
-	RTK_LOGS(TAG, RTK_LOG_ERROR, "Hotplug thread exited\n");
+	/* A re-init failed, so the stack is gone for good. The detach sema is
+	   deliberately left alive - the class callback may still be about to give
+	   it, and freeing it here would pull it out from under that. */
+	RTK_LOGS(TAG, RTK_LOG_ERROR, "Hotplug thread exit\n");
 	usbh_hid_ctx.hotplug_task = NULL;
 	rtos_task_delete(NULL);
 }
@@ -256,11 +284,20 @@ static void example_usbh_hid_init_thread(void *param)
 
 	UNUSED(param);
 
+	/* Created before the stack comes up and never deleted, see the declaration */
+	if (usbh_hid_state_mutex == NULL) {
+		ret = rtos_mutex_create(&usbh_hid_state_mutex);
+		if (ret != RTK_SUCCESS) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Create state mutex fail\n");
+			goto abort_exit;
+		}
+	}
+
 #if CONFIG_USBH_HID_HOTPLUG
 	ret = rtos_sema_create(&usbh_hid_ctx.detach_sema, 0U, 1U);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create detach sema fail\n");
-		goto example_exit;
+		goto abort_exit;
 	}
 #endif
 
@@ -287,24 +324,44 @@ static void example_usbh_hid_init_thread(void *param)
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create hotplug thread fail\n");
 		goto usbh_hid_deinit_exit;
 	}
+#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
+	/* The USB OTG ISR is delivered on CPU0: the GIC pins every SPI to core 0
+	   (ITARGETSR is written to 0x01010101 in arm_gic.c gic_dist_init). Pinning
+	   the hotplug/deinit thread to CPU0 puts it on the same core as the ISR, so
+	   the local interrupt disables inside the teardown are meaningful again. Any
+	   class API caller stays unaffined: a pending teardown is excluded from it by
+	   usbh_hid_state_mutex, not by core. */
+	rtos_task_set_affinity(usbh_hid_ctx.hotplug_task, 0);
+#endif
 #endif
 
-	RTK_LOGS(TAG, RTK_LOG_INFO, "USBH HID example running\n");
 	goto example_exit;
 
 #if CONFIG_USBH_HID_HOTPLUG
 usbh_hid_deinit_exit:
+	/* Roll back under the lock, exactly as the hotplug thread does. usbh_deinit() is
+	   called here rather than by falling through to usb_deinit_exit, so the whole
+	   teardown happens under one lock hold. */
+	rtos_mutex_take(usbh_hid_state_mutex, RTOS_MAX_TIMEOUT);
 	usbh_stop();
-#endif
 	usbh_hid_deinit();
+	usbh_deinit();
+	rtos_mutex_give(usbh_hid_state_mutex);
+	goto free_sema_exit;
+#endif
 
 usb_deinit_exit:
+	/* usbh_hid_init() failed, so only the host core is up and the gate was never
+	   opened: no lock needed here. */
 	usbh_deinit();
 
 free_sema_exit:
 #if CONFIG_USBH_HID_HOTPLUG
 	rtos_sema_delete(usbh_hid_ctx.detach_sema);
 #endif
+
+abort_exit:
+	RTK_LOGS(TAG, RTK_LOG_ERROR, "USBH HID demo aborted\n");
 
 example_exit:
 	rtos_task_delete(NULL);
@@ -326,6 +383,6 @@ void example_usbh_hid(void)
 						   example_usbh_hid_init_thread, NULL,
 						   USBH_HID_INIT_THREAD_STACK_SIZE, USBH_HID_INIT_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create init thread fail\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create USBH HID thread fail\n");
 	}
 }

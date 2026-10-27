@@ -285,6 +285,12 @@ uint16_t bt_stack_act_handler(rtk_bt_cmd_t *p_cmd)
 		BT_LOGD("RTK_BT_LE_GP_MESH_HEALTH_SERVER_MODEL group");
 		bt_mesh_health_server_model_act_handle(p_cmd);
 		break;
+#if ZEPHYR_RTK_PATCH && defined(CONFIG_BT_MESH_RPR_SRV) && CONFIG_BT_MESH_RPR_SRV
+	case RTK_BT_LE_GP_MESH_REMOTE_PROV_SERVER_MODEL:
+		BT_LOGD("RTK_BT_LE_GP_MESH_REMOTE_PROV_SERVER_MODEL group");
+		bt_mesh_remote_prov_server_model_act_handle(p_cmd);
+		break;
+#endif
 #endif
 #if defined(BT_MESH_ENABLE_DATATRANS_MODEL) && BT_MESH_ENABLE_DATATRANS_MODEL
 	case RTK_BT_LE_GP_MESH_DATATRANS_MODEL:
@@ -680,6 +686,8 @@ failed:
 
 static uint16_t bt_stack_deinit(void)
 {
+	bt_stack_le_gap_deinit();
+
 	zephyr_bt_disable();
 
 	zephyr_btlog_deinit();

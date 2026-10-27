@@ -15,17 +15,19 @@
 extern "C" {
 #endif
 
-/* Exported defines ----------------------------------------------------------*/
-
 /** @addtogroup USB_Host_API USB Host API
  *  @{
  */
+
+/* Exported defines ----------------------------------------------------------*/
+
 /** @addtogroup USB_Host_Constants USB Host Constants
  * @{
  */
 /** @addtogroup Host_Vendor_Constants Host Vendor Constants
  * @{
  */
+
 /**
  * @brief  Enable the ISOC test finish log and buffer dump.
  * @note   Set to 1 for manual debugging only: the dump is test_cnt/10 UART lines, which costs
@@ -38,27 +40,10 @@ extern "C" {
 #define VENDOR_SUBCLASS_CODE         0x00U  /**< Vendor Specific SubClass Code */
 #define VENDOR_PROTOCOL              0x00U  /**< Vendor Specific Protocol Code */
 
-/* Endpoint Mask definitions for internal testing */
-#define USBH_VENDOR_MASK_ALL_EPS     0x3FU   /**< Mask for All Endpoints */
-#define USBH_VENDOR_MASK_BULK_IN     (BIT0)  /**< Mask for Bulk IN transfer */
-#define USBH_VENDOR_MASK_BULK_OUT    (BIT1)  /**< Mask for Bulk OUT transfer */
-#define USBH_VENDOR_MASK_INTR_IN     (BIT2)  /**< Mask for Interrupt IN transfer */
-#define USBH_VENDOR_MASK_INTR_OUT    (BIT3)  /**< Mask for Interrupt OUT transfer */
-#define USBH_VENDOR_MASK_ISOC_IN     (BIT4)  /**< Mask for Isochronous IN transfer */
-#define USBH_VENDOR_MASK_ISOC_OUT    (BIT5)  /**< Mask for Isochronous OUT transfer */
 /** @} End of Host_Vendor_Constants group */
 /** @} End of USB_Host_Constants group */
 
 /* Exported types ------------------------------------------------------------*/
-
-/**
- * @brief  Align data length to 4-byte boundary (Round up).
- * @note   Used for FIFO read operations where 32-bit access alignment is required.
- * @param  x: Original data length (bytes).
- * @retval Aligned length.
- */
-#define USB_FIFO_READ_SIZE_ALIGNED4B(x)     ((((u32)x + 3U) / 4U) * 4U )
-#define USB_CTRL_BUF_LENGTH                 (18)    /**< Buffer length for control transfer */
 
 /** @addtogroup USB_Host_Types USB Host Types
  * @{
@@ -66,14 +51,13 @@ extern "C" {
 /** @addtogroup Host_Vendor_Types Host Vendor Types
  * @{
  */
+
 /**
  * @brief  States for Vendor State Machine.
  */
 typedef enum {
-	VENDOR_STATE_IDLE = 0U, /**< Idle state */
-	VENDOR_STATE_XFER,      /**< Data transfer start state */
-	VENDOR_STATE_BUSY,      /**< Data transfer busy state */
-	VENDOR_STATE_ERROR,     /**< Error state */
+	VENDOR_STATE_IDLE = 0U, /**< No device attached, the data pipes are closed */
+	VENDOR_STATE_XFER,      /**< Device attached, the data pipes may be used */
 } usbh_vendor_state_t;
 
 /**
@@ -84,12 +68,12 @@ typedef struct {
 	 * @brief Called when the host driver initialization.
 	 * @return 0 on success, non-zero on failure.
 	 */
-	int(* init)(void);
+	int (*init)(void);
 
 	/**
 	 * @brief Called when the host driver de-initialization.
 	 */
-	void (* deinit)(void);
+	void (*deinit)(void);
 
 	/**
 	 * @brief Called when device attached, used to report device connection status.
@@ -132,14 +116,14 @@ typedef struct {
 typedef struct {
 	usbh_pipe_t pipe;          /**< USB Host pipe handle */
 	u8 *xfer_bk_buf;           /**< Backup pointer to the original user buffer */
-	u8 *test_buf;              /**< Buffer for verification/testing */
 	u32 xfer_max_len;          /**< Max length of a single transfer */
 	u32 xfer_cnt;              /**< Current transfer count (for test loops), same width as the test_cnt API argument */
 	u32 xfer_max_cnt;          /**< Target transfer count (for test loops), same width as the test_cnt API argument */
 	u16 cur_frame;             /**< Current frame number (for ISOC synchronization), 14-bit HFNUM value */
-	u8 test_mask;              /**< Single-bit mask identifying which endpoint this transfer belongs to (one of @ref USBH_VENDOR_MASK_BULK_IN etc.) */
+	u8 busy;                   /**< Transfer claimed by the API and its completion not yet reported */
 #if USBH_VENDOR_DEBUG
 	u8 xfer_done;              /**< Test loop finished, latched in ISR context and reported by the class task */
+	u8 *test_buf;              /**< Buffer for verification/testing, one byte per ISOC test loop */
 #endif
 } usbh_vendor_xfer_t;
 
@@ -147,18 +131,17 @@ typedef struct {
  * @brief  Vendor Host Class Structure
  */
 typedef struct {
+	const usbh_vendor_cb_t *cb;         /**< Pointer to user callback structure */
+	usb_host_t *host;                   /**< Pointer to USB Host core handle */
 	usbh_vendor_xfer_t bulk_in_xfer;    /**< Bulk IN transfer handle */
 	usbh_vendor_xfer_t bulk_out_xfer;   /**< Bulk OUT transfer handle */
 	usbh_vendor_xfer_t intr_in_xfer;    /**< Interrupt IN transfer handle */
 	usbh_vendor_xfer_t intr_out_xfer;   /**< Interrupt OUT transfer handle */
 	usbh_vendor_xfer_t isoc_in_xfer;    /**< Isochronous IN transfer handle */
 	usbh_vendor_xfer_t isoc_out_xfer;   /**< Isochronous OUT transfer handle */
-	const usbh_vendor_cb_t *cb;         /**< Pointer to user callback structure */
-	usb_host_t *host;                   /**< Pointer to USB Host core handle */
-	u8 *ctrl_buf;                       /**< Buffer for control transfer */
-	u8 ep_mask;                         /**< Active endpoint mask */
 	u8 state;                           /**< Current class state machine state, @ref usbh_vendor_state_t. */
 } usbh_vendor_host_t;
+
 /** @} End of Host_Vendor_Types group */
 /** @} End of USB_Host_Types group */
 
@@ -174,6 +157,7 @@ typedef struct {
 /** @addtogroup Host_Vendor_Functions Host Vendor Functions
  * @{
  */
+
 /**
  * @brief  Initialize the Vendor Class driver.
  * @param  cb: Pointer to the application callback structure.
@@ -251,12 +235,14 @@ u16 usbh_vendor_get_bulk_ep_mps(void);
  * @retval Max packet size in bytes.
  */
 u16 usbh_vendor_get_intr_ep_mps(void);
+
 /** @} End of Host_Vendor_Functions group */
 /** @} End of USB_Host_Functions group */
+
 /** @} End of USB_Host_API group */
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif  /* USBH_VENDOR_H */
+#endif /* USBH_VENDOR_H */

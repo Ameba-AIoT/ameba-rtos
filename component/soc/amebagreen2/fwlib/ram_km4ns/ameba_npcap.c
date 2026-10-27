@@ -125,7 +125,7 @@ void ap_tickless_ipc_int(void *Data, u32 IrqStatus, u32 ChanNum)
 
 	if (psleep_param->dlps_enable) {
 		RCC_PeriphClockCmd(APBPeriph_ATIM, APBPeriph_ATIM_CLOCK, ENABLE);
-		if (psleep_param->sleep_time) {
+		if (psleep_param->sleep_time != 0 && psleep_param->sleep_time != PMU_SLEEP_FOREVER) {
 			AONTimer_ClearINT();
 			AONTimer_Setting(psleep_param->sleep_time);
 			AONTimer_INT(ENABLE);

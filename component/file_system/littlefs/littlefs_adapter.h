@@ -91,6 +91,12 @@ int lfs_diskio_unlock(const struct lfs_config *c);
 
 int rt_lfs_init(lfs_t *lfs);
 
+#if defined(VFS_RAM_LITTLEFS)
+extern lfs_t g_ram_lfs;
+int rt_lfs_ram_init(void);
+int rt_lfs_ram_deinit(void);
+#endif
+
 enum {
 	FS_ERROR = 0,
 	FS_WARNING,

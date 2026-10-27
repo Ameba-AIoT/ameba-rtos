@@ -549,7 +549,7 @@ bool SPDIO_Device_Init(struct spdio_t *obj)
 			goto SDIO_INIT_ERR;
 		}
 		pTxBdHdl->isFree = 1;
-		RTK_LOGS(TAG, RTK_LOG_INFO, "TX_BD%lu @ %p %p\n", i, pTxBdHdl, pTxBdHdl->pTXBD);
+		RTK_LOGS(TAG, RTK_LOG_INFO, "TX_BD%u @ %p %p\n", i, pTxBdHdl, pTxBdHdl->pTXBD);
 	}
 
 	pgSPDIODev->pRXBDHdl = (SPDIO_RX_BD_HANDLE *)rtos_mem_zmalloc(obj->host_rx_bd_num * sizeof(SPDIO_RX_BD_HANDLE));

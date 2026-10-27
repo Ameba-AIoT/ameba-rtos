@@ -778,15 +778,16 @@ class ManifestManager(ABC):
             if ret != 0:
                 return Error(ErrorType.UNKNOWN_ERROR, f"self.sboot gen signature failed: {ret}")
         elif image_type in ([ImageType.IMAGE1, ImageType.IMAGE2, ImageType.APP_ALL]
-                             if self.context.soc_project == 'RLE1509'
+                             if self.context.soc_project in ['RLE1509', 'RTL8720F', 'amebagreen2']
                              else [ImageType.IMAGE2, ImageType.APP_ALL]):
             # Always populate the image hash (plain SHA-256) even when secure boot
             # is disabled, so a boot stage that checks it can reject a flash-corrupted
             # image. IMAGE2(app) is validated by the bootloader on every SoC that
-            # adopts the always-on hash. IMAGE1(bootloader) is validated by the ROM
-            # only on RLE1509 (ROM still in development), so limit IMG1 hashing to it:
-            # other SoCs run a production mask ROM that would misbehave on a non-0xFF
-            # IMG1 HashAlg when secure boot is off.
+            # adopts the always-on hash. IMAGE1 is also hashed on RLE1509 (ROM validates
+            # it) and on RTL8720F/amebagreen2, whose fullmac HCI boot packs IMG2 with an
+            # IMAGE1-type manifest that the bootloader validates; their ROM ignores the
+            # IMG1 HashAlg/ImgHash when secure boot is off. Other SoCs run a production
+            # mask ROM that would misbehave on a non-0xFF IMG1 HashAlg when sboot is off.
             self.sboot.IsHMAC = 0
             if self.sboot.gen_hash_id(basic_manifest_part, "sha256") != 0:
                 return Error(ErrorType.UNKNOWN_ERROR, "self.sboot gen hash id failed")

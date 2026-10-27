@@ -20,9 +20,14 @@ struct axi_data {
 	unsigned long wifi_reg_start; /* shared mem start */
 
 	/* np MEM map */
-	struct resource *fw_mem_res; /* firmware mem resource in dts */
-	unsigned long fw_mem_end; /* firmware mem end */
-	unsigned long fw_mem_start; /* firmware mem start */
+	struct resource *fw_psram_res; /* firmware psram resource in dts */
+	unsigned long fw_psram_end; /* firmware psram end */
+	unsigned long fw_psram_start; /* firmware psram start */
+
+	/* Optional SRAM window for KM4 flash-XIP (see RSWLANDIOT-16775) */
+	struct resource *fw_sram_res;
+	unsigned long fw_sram_end;
+	unsigned long fw_sram_start;
 };
 
 extern struct axi_data *paxi_data_global;
@@ -30,13 +35,7 @@ extern struct axi_data *paxi_data_global;
 /*
  * to convert physic address from fw to virtual address in linux system.
  */
-static inline __iomem void *llhw_ipc_fw_phy_to_virt(phys_addr_t p)
-{
-	struct axi_data *axi = paxi_data_global;
-	struct resource *res = axi->fw_mem_res;
-
-	return (__iomem void *)((p - res->start) + axi->fw_mem_start);
-}
+__iomem void *llhw_ipc_fw_phy_to_virt(phys_addr_t p);
 
 /*
  * to read wifi registers in linux system.

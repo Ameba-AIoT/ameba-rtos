@@ -1,0 +1,105 @@
+[
+  // wlan.drv.tx
+  { func: "rtw_xmit_entry_sc",                          section: ".sram.only.text" },
+  { func: "wifi_hal_interrupt_handle_tx",               section: ".sram.only.text" },
+  { func: "wifi_hal_tx_isr",                            section: ".sram.only.text" },
+  { func: "wifi_hal_check_txdesc_closed",               section: ".sram.only.text" },
+  { func: "wifi_hal_txbd_set",                          section: ".sram.only.text" },
+  { func: "wifi_hal_xmitframe_dump_sc",                 section: ".sram.only.text" },
+  { func: "wifi_hal_tx_isr_check_acq_status_for_tb_dma_err", section: ".sram.only.text" },
+  { func: "wifi_hal_xmit_check_acq_status_for_tb_dma_err",   section: ".sram.only.text" },
+  { func: "wifi_hal_xmitframe_dump_sc_filldesc",        section: ".sram.only.text" },
+  { func: "wifi_hal_pending_q_resume",                  section: ".sram.only.text" },
+
+  // wlan.drv.rx
+  { func: "wifi_hal_normal_rx_process",                 section: ".sram.only.text" },
+  { func: "wifi_hal_rx_mpdu",                           section: ".sram.only.text" },
+  { func: "wifi_recv_tasklet",                          section: ".sram.only.text" },
+  { func: "rtw_recv_indicatepkt_sc",                    section: ".sram.only.text" },
+  { func: "rtw_recv_check_rx_shortcut_path",            section: ".sram.only.text" },
+  { func: "wifi_hal_rx_amsdu_check",                    section: ".sram.only.text" },
+
+  // wlan.whc.rx (dev)
+  { func: "whc_ipc_dev_recv",                           section: ".sram.only.text" },
+
+  // wlan.drv.trx
+  { func: "wifi_hal_dma_interrupt",                     section: ".sram.only.text" },
+  { func: "wifi_hal_interrupt_handle",                  section: ".sram.only.text" },
+  { func: "wifi_hal_interrupt_handle_rx",               section: ".sram.only.text" },
+
+  // wlan.whc.trx (dev)
+  { func: "whc_ipc_dev_trx_event_hdl",                  section: ".sram.only.text" },
+  { func: "whc_ipc_dev_trx_int_hdl",                    section: ".sram.only.text" },
+
+  // iperf.udp
+  { func: "send_udp_packets",                           section: ".sram.only.text" },
+  { func: "recv_udp_packets",                           section: ".sram.only.text" },
+
+  // lwip.udp.tx
+  { func: "etharp_output",                              section: ".sram.only.text" },
+  { func: "ethernet_output",                            section: ".sram.only.text" },
+  { func: "ip4_output_if_opt_src",                      section: ".sram.only.text" },
+  { func: "low_level_output_wifi",                      section: ".sram.only.text" },
+
+  // wlan.whc.tx (host)
+  { func: "whc_ipc_host_send",                          section: ".sram.only.text" },
+  { func: "whc_ipc_host_send_skb",                      section: ".sram.only.text" },
+
+  // lwip.udp.rx
+  { func: "netif_adapter_wifi_recv_whc",                section: ".sram.only.text" },
+  { func: "ip4_input",                                  section: ".sram.only.text" },
+  { func: "tcpip_inpkt",                                section: ".sram.only.text" },
+  { func: "tcpip_input",                                section: ".sram.only.text" },
+
+  // wlan.whc.rx (host)
+  { func: "whc_ipc_host_rx_handler",                    section: ".sram.only.text" },
+  { func: "whc_ipc_host_trx_event_hdl",                 section: ".sram.only.text" },
+  { func: "whc_ipc_host_trx_int_hdl",                   section: ".sram.only.text" },
+
+  // wlan.whc.trx (shared by host/dev, whichever core compiles it)
+  { func: "whc_ipc_rx_skb_cache_flush",                 section: ".sram.only.text" },
+  { func: "whc_ipc_send_msg",                           section: ".sram.only.text" },
+  { func: "whc_msg_enqueue",                            section: ".sram.only.text" },
+  { func: "whc_msg_get_queue_status",                   section: ".sram.only.text" },
+  { func: "whc_msg_q_task",                             section: ".sram.only.text" },
+
+  // eth.trx
+  { func: "eth_isr_handler",                            section: ".sram.only.text" },
+  { func: "Ethernet_GetPendingINT",                     section: ".sram.only.text" },
+  { func: "Ethernet_ClearINT",                          section: ".sram.only.text" },
+  { func: "eth_rx_thread",                              section: ".sram.only.text" },
+  { func: "Ethernet_GetRXPktInfo",                      section: ".sram.only.text" },
+  { func: "Ethernet_ReleaseRXDesc",                     section: ".sram.only.text" },
+  { func: "Ethernet_SwapRXSegBuf",                      section: ".sram.only.text" },
+  { func: "eth_rx_blk_alloc",                           section: ".sram.only.text" },
+  { func: "eth_rx_blk_free",                            section: ".sram.only.text" },
+  { func: "netif_adapter_eth_buf_copy",                 section: ".sram.only.text" },
+  { func: "netif_adapter_eth_recv",                     section: ".sram.only.text" },
+  { func: "low_level_output_eth",                       section: ".sram.only.text" },
+  { func: "eth_send",                                   section: ".sram.only.text" },
+  { func: "Ethernet_GetTXPktInfo",                      section: ".sram.only.text" },
+  { func: "Ethernet_UpdateTXDESCAndSend",               section: ".sram.only.text" },
+
+  // os.wrapper
+  { func: "rtos_sema_take",                             section: ".sram.only.text" },
+  { func: "rtos_sema_give",                             section: ".sram.only.text" },
+  { func: "rtos_queue_send",                            section: ".sram.only.text" },
+  { func: "rtos_queue_receive",                         section: ".sram.only.text" },
+  { func: "rtos_mutex_take",                            section: ".sram.only.text" },
+  { func: "rtos_mutex_give",                            section: ".sram.only.text" },
+  { func: "rtos_critical_enter",                        section: ".sram.only.text" },
+  { func: "rtos_critical_exit",                         section: ".sram.only.text" },
+  { func: "rtos_critical_is_in_interrupt",              section: ".sram.only.text" },
+  { func: "rtos_get_critical_state",                    section: ".sram.only.text" },
+  { func: "rtos_task_get_thread_local_storage_pointer", section: ".sram.only.text" },
+  { func: "rtos_time_get_current_system_time_ms",       section: ".sram.only.text" },
+  { func: "rtos_time_delay_ms",                         section: ".sram.only.text" },
+  { func: "rtos_mem_malloc",                            section: ".sram.only.text" },
+  { func: "rtos_mem_free",                              section: ".sram.only.text" },
+
+  // os.heap: zero-copy RX allocates and frees one DMA block per frame
+  { func: "pvPortMallocCacheAligned",                   section: ".sram.only.text" },
+  { func: "pvPortMallocCacheAlignedCore",               section: ".sram.only.text" },
+  { func: "vPortFree",                                  section: ".sram.only.text" },
+  { func: "prvInsertBlockIntoFreeList",                 section: ".sram.only.text" },
+]

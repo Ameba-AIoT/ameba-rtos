@@ -7,6 +7,7 @@
 #include <bt_api_config.h>
 
 #if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT
+#include <errno.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -25,6 +26,13 @@
 #endif
 #include <prov.h>
 #include <subnet.h>
+#if ZEPHYR_RTK_PATCH
+#include <provisioner.h>
+#include <gatt_cli.h>
+#include <pb_gatt_cli.h>
+#include <proxy_cli.h>
+#include <stack/host/conn_internal.h>
+#endif
 #include <mesh/adv.h>
 #include <bt_app_config.h>
 #include <rtk_bt_def.h>
@@ -61,6 +69,15 @@ void bt_mesh_prov_last_link_status(enum prov_bearer_link_status reason)
 	last_link_status = reason;
 }
 
+#if ZEPHYR_RTK_PATCH && defined(RTK_BLE_MESH_PROVISIONER_SUPPORT) && RTK_BLE_MESH_PROVISIONER_SUPPORT
+#if defined(CONFIG_BT_MESH_PB_GATT_CLIENT)
+static uint16_t pb_gatt_conn_handle;
+static bool pb_gatt_conn_valid = false;
+static uint16_t proxy_conn_handle;
+static bool proxy_conn_valid = false;
+#endif
+#endif
+
 extern uint16_t bt_stack_gap_vendor_cmd_req(void *param);
 static void prov_link_opened(bt_mesh_prov_bearer_t bearer)
 {
@@ -69,8 +86,14 @@ static void prov_link_opened(bt_mesh_prov_bearer_t bearer)
 	bt_stack_gap_vendor_cmd_req(&mesh_pri);
 	prov_procedure_success = false;
 
+#if ZEPHYR_RTK_PATCH && defined(RTK_BLE_MESH_PROVISIONER_SUPPORT) && RTK_BLE_MESH_PROVISIONER_SUPPORT
+	/* provisioner: the link is opened by an earlier cmd, the Invite is sent later by the prov cmd.
+	 * PB-GATT is not reported, the app judges it by the GATT connect / disconnect. */
+	if (bearer == BT_MESH_PROV_ADV || bearer == BT_MESH_PROV_REMOTE) {
+#else
 	if ((bearer == BT_MESH_PROV_ADV && !bt_mesh_is_provisioned()) ||
 		bearer == BT_MESH_PROV_REMOTE) {
+#endif
 		rtk_bt_evt_t *p_evt = NULL;
 		rtk_bt_mesh_prov_generic_cb_type_t *link_state = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_STACK, RTK_BT_MESH_STACK_EVT_PB_ADV_LINK_STATE,
@@ -120,17 +143,22 @@ static void prov_link_closed(bt_mesh_prov_bearer_t bearer)
 
 #if defined(RTK_BLE_MESH_PROVISIONER_SUPPORT) && RTK_BLE_MESH_PROVISIONER_SUPPORT
 static uint8_t default_pro_uuid[16] = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f};
+#if !ZEPHYR_RTK_PATCH
 static bool pb_adv_link_opening = false;
 static bool pb_gatt_link_opening = false;
 static uint8_t adv_target_uuid[16] = {0};
 static uint8_t gatt_target_uuid[16] = {0};
 rtk_bt_mesh_provisioning_method_t pro_provisioning_method = RTK_BT_MESH_PROVISIONING_METHOD_NONE;
+#endif
 static bool dev_info_switch_flag = false;
+static rtk_bt_mesh_stack_act_set_prov_param_t saved_prov_param;
+static bool saved_prov_param_valid = false;
 
 static void unprovisioned_beacon(uint8_t uuid[16], bt_mesh_prov_oob_info_t oob_info, uint32_t *uri_hash)
 {
 	(void)oob_info;
 	(void)uri_hash;
+#if !ZEPHYR_RTK_PATCH
 	if (pb_adv_link_opening && !memcmp(uuid, adv_target_uuid, 16)) {
 		// Report PB-ADV link open to app
 		rtk_bt_evt_t *p_evt = NULL;
@@ -142,6 +170,7 @@ static void unprovisioned_beacon(uint8_t uuid[16], bt_mesh_prov_oob_info_t oob_i
 		pb_adv_link_opening = false;
 		pro_provisioning_method = RTK_BT_MESH_PROVISIONING_PB_ADV_METHOD;
 	}
+#endif
 
 	if (dev_info_switch_flag) {
 		rtk_bt_evt_t *p_evt = NULL;
@@ -154,9 +183,14 @@ static void unprovisioned_beacon(uint8_t uuid[16], bt_mesh_prov_oob_info_t oob_i
 	}
 }
 
+#if ZEPHYR_RTK_PATCH
+static void unprovisioned_beacon_gatt(uint8_t uuid[16], bt_mesh_prov_oob_info_t oob_info, const bt_addr_le_t *addr, int8_t rssi)
+#else
 static void unprovisioned_beacon_gatt(uint8_t uuid[16], bt_mesh_prov_oob_info_t oob_info)
+#endif
 {
 	(void)oob_info;
+#if !ZEPHYR_RTK_PATCH
 	if (pb_gatt_link_opening && !memcmp(uuid, gatt_target_uuid, 16)) {
 		// Report PB-GATT conn to app
 		rtk_bt_evt_t *p_evt = NULL;
@@ -168,6 +202,7 @@ static void unprovisioned_beacon_gatt(uint8_t uuid[16], bt_mesh_prov_oob_info_t 
 		pb_gatt_link_opening = false;
 		pro_provisioning_method = RTK_BT_MESH_PROVISIONING_PB_GATT_METHOD;
 	}
+#endif
 
 	if (dev_info_switch_flag) {
 		rtk_bt_evt_t *p_evt = NULL;
@@ -175,10 +210,43 @@ static void unprovisioned_beacon_gatt(uint8_t uuid[16], bt_mesh_prov_oob_info_t 
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_STACK, RTK_BT_MESH_STACK_EVT_DEVICE_INFO_PROV_DISPLAY, sizeof(rtk_bt_mesh_stack_evt_dev_info_provision_adv_t));
 		device_info_prov = (rtk_bt_mesh_stack_evt_dev_info_provision_adv_t *)p_evt->data;
 		memcpy(device_info_prov->dev_uuid, uuid, 16);
+#if ZEPHYR_RTK_PATCH
+		memcpy(device_info_prov->dev_info.bt_addr, addr->a.val, 6);
+		device_info_prov->dev_info.bt_addr_type = addr->type;
+		device_info_prov->dev_info.rssi = rssi;
+#else
 		device_info_prov->dev_info.bt_addr_type = 0xff;  // Used to distinguish zephyr mesh stack with rtk mesh stack
+#endif
 		rtk_bt_evt_indicate(p_evt, NULL);
 	}
 }
+
+#if ZEPHYR_RTK_PATCH
+static void proxy_adv(const bt_addr_le_t *addr, int8_t rssi, const uint8_t *data, uint8_t len)
+{
+	rtk_bt_evt_t *p_evt;
+	rtk_bt_mesh_stack_evt_dev_info_proxy_adv_t *info;
+
+	/* Network ID: type + 8 bytes, Node Identity: type + hash + random */
+	if (!dev_info_switch_flag || len < 1 || data[0] > 1 || len != (data[0] ? 17 : 9)) {
+		return;
+	}
+
+	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_STACK, RTK_BT_MESH_STACK_EVT_DEVICE_INFO_PROXY_DISPLAY,
+								sizeof(rtk_bt_mesh_stack_evt_dev_info_proxy_adv_t));
+	if (!p_evt) {
+		return;
+	}
+
+	info = (rtk_bt_mesh_stack_evt_dev_info_proxy_adv_t *)p_evt->data;
+	memcpy(info->dev_info.bt_addr, addr->a.val, 6);
+	info->dev_info.bt_addr_type = addr->type;
+	info->dev_info.rssi = rssi;
+	info->len = len;
+	memcpy(&info->proxy, data, len);
+	rtk_bt_evt_indicate(p_evt, NULL);
+}
+#endif
 
 #if defined(CONFIG_BT_MESH_RPR_CLI) && CONFIG_BT_MESH_RPR_CLI
 extern struct bt_mesh_prov_link bt_mesh_prov_link;
@@ -223,6 +291,9 @@ static const struct bt_mesh_prov pro_prov = {
 	.uuid = default_pro_uuid,
 	.unprovisioned_beacon = unprovisioned_beacon,
 	.unprovisioned_beacon_gatt = unprovisioned_beacon_gatt,
+#if ZEPHYR_RTK_PATCH
+	.proxy_adv = proxy_adv,
+#endif
 	.node_added = node_added,
 	.output_number = output_number,
 	.input = notify_input,
@@ -285,8 +356,29 @@ static void prov_reset(void)
 					   );
 }
 
+#define PROV_OOB_INFO_NUMBER_MASK (RTK_BT_MESH_PROV_CAP_OUTPUT_OOB_ACTION_BLINK | RTK_BT_MESH_PROV_CAP_OUTPUT_OOB_ACTION_BEEP | \
+                                   RTK_BT_MESH_PROV_CAP_OUTPUT_OOB_ACTION_VIBRATE | RTK_BT_MESH_PROV_CAP_OUTPUT_OOB_ACTION_OUTPUT_NUMERIC)
+#define PROV_OOB_INFO_FROM_CAP \
+    ((((PROV_SUPPORT_OUTPUT_OOB_ACTION) & PROV_OOB_INFO_NUMBER_MASK) || \
+      ((PROV_SUPPORT_INPUT_OOB_ACTION) & (RTK_BT_MESH_PROV_CAP_INPUT_OOB_ACTION_BIT_PUSH | RTK_BT_MESH_PROV_CAP_INPUT_OOB_ACTION_BIT_TWIST | \
+                                          RTK_BT_MESH_PROV_CAP_INPUT_OOB_ACTION_BIT_INPUT_NUMERIC)) ? BT_MESH_PROV_OOB_NUMBER : 0) | \
+     ((((PROV_SUPPORT_OUTPUT_OOB_ACTION) & RTK_BT_MESH_PROV_CAP_OUTPUT_OOB_ACTION_OUTPUT_ALPHANUMERIC) || \
+       ((PROV_SUPPORT_INPUT_OOB_ACTION) & RTK_BT_MESH_PROV_CAP_INPUT_OOB_ACTION_BIT_INPUT_ALPHANUMERIC)) ? BT_MESH_PROV_OOB_STRING : 0))
+
+#if ZEPHYR_RTK_PATCH
+static void prov_started(void)
+{
+	rtk_bt_evt_t *p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_STACK, RTK_BT_MESH_STACK_EVT_DEVICE_START_PROVED, 0);
+
+	if (p_evt) {
+		rtk_bt_evt_indicate(p_evt, NULL);
+	}
+}
+#endif
+
 static const struct bt_mesh_prov dev_prov = {
 	.uuid = default_dev_uuid,
+	.oob_info = (bt_mesh_prov_oob_info_t)PROV_OOB_INFO_FROM_CAP,
 	.complete = prov_complete,
 	.reprovisioned = prov_reprovisioned,
 	.reset = prov_reset,
@@ -303,6 +395,9 @@ static const struct bt_mesh_prov dev_prov = {
 	.input_size = PROV_SUPPORT_INPUT_OOB_SIZE,
 	.link_open = prov_link_opened,
 	.link_close = prov_link_closed,
+#if ZEPHYR_RTK_PATCH
+	.start = prov_started,
+#endif
 };
 
 #endif  // RTK_BLE_MESH_DEVICE_SUPPORT
@@ -504,12 +599,21 @@ void bt_stack_mesh_deinit(void)
 {
 	unicast_self_addr = 0;
 #if defined(RTK_BLE_MESH_PROVISIONER_SUPPORT) && RTK_BLE_MESH_PROVISIONER_SUPPORT
+#if !ZEPHYR_RTK_PATCH
 	pb_adv_link_opening = false;
 	pb_gatt_link_opening = false;
 	memset(adv_target_uuid, 0, sizeof(adv_target_uuid));
 	memset(gatt_target_uuid, 0, sizeof(gatt_target_uuid));
 	pro_provisioning_method = RTK_BT_MESH_PROVISIONING_METHOD_NONE;
+#endif
 	dev_info_switch_flag = false;
+	saved_prov_param_valid = false;
+#if ZEPHYR_RTK_PATCH
+#if defined(CONFIG_BT_MESH_PB_GATT_CLIENT)
+	pb_gatt_conn_valid = false;
+	proxy_conn_valid = false;
+#endif
+#endif
 #endif
 #if defined(RTK_BLE_MESH_DEVICE_SUPPORT) && RTK_BLE_MESH_DEVICE_SUPPORT
 	// Disable relate timer, if not do it, the timer will fail to enter callback when repeat init
@@ -616,12 +720,16 @@ static void own_models_bind_app_key(const struct bt_mesh_model *model, const str
 
 static uint16_t zephyr_stack_set_prov_param(rtk_bt_mesh_stack_act_set_prov_param_t *p_data)
 {
-	uint16_t ret = RTK_BT_MESH_STACK_API_FAIL;
+	uint16_t ret = RTK_BT_FAIL;
 	int err;
 	struct bt_mesh_cdb_node *self = NULL;
 
 	// Set the default val if the data is all 0s
 	pre_process_prov_param(p_data);
+#if defined(RTK_BLE_MESH_PROVISIONER_SUPPORT) && RTK_BLE_MESH_PROVISIONER_SUPPORT
+	saved_prov_param = *p_data;
+	saved_prov_param_valid = true;
+#endif
 
 	err = bt_mesh_cdb_create(p_data->net_key);
 	if (err == -EALREADY) {
@@ -705,76 +813,277 @@ static uint16_t zephyr_stack_set_prov_param(rtk_bt_mesh_stack_act_set_prov_param
 		bt_mesh_cdb_node_store(self);
 	}
 
-	return RTK_BT_MESH_STACK_API_SUCCESS;
+	return RTK_BT_OK;
 }
 
 #if defined(RTK_BLE_MESH_PROVISIONER_SUPPORT) && RTK_BLE_MESH_PROVISIONER_SUPPORT
 static uint16_t zephyr_stack_pb_adv_con(rtk_bt_mesh_stack_act_pb_adv_con_t *pbadvcon)
 {
+#if ZEPHYR_RTK_PATCH
+	return (uint16_t)bt_mesh_pb_adv_link_open(pbadvcon->uuid, global_net_idx);
+#else
 	memcpy(adv_target_uuid, pbadvcon->uuid, 16);
 	pb_adv_link_opening = true;
-	return RTK_BT_MESH_STACK_API_SUCCESS;
+	return RTK_BT_OK;
+#endif
 }
 
 static uint16_t zephyr_stack_pb_adv_discon(void)
 {
+#if ZEPHYR_RTK_PATCH
+	if (atomic_test_bit(bt_mesh_prov_link.flags, LINK_ACTIVE) && bt_mesh_prov_link.bearer) {
+		bt_mesh_prov_link.bearer->link_close(PROV_BEARER_LINK_STATUS_SUCCESS);
+	}
+#else
 	pb_adv_link_opening = false;
 	memset(adv_target_uuid, 0, 16);
-	return RTK_BT_MESH_STACK_API_SUCCESS;
+#endif
+	return RTK_BT_OK;
 }
+
+#if ZEPHYR_RTK_PATCH && defined(CONFIG_BT_MESH_PB_GATT_CLIENT)
+
+static void pb_gatt_dis_result(struct bt_conn *conn, enum bt_mesh_gatt_cli_dis_result res)
+{
+	(void)conn;
+	rtk_bt_evt_t *p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_STACK, RTK_BT_MESH_STACK_EVT_PROV_SERVICE_DIS_RESULT,
+											  sizeof(rtk_bt_mesh_stack_evt_prov_dis_t));
+	rtk_bt_mesh_stack_evt_prov_dis_t *dis_event;
+
+	if (!p_evt) {
+		return;
+	}
+
+	dis_event = (rtk_bt_mesh_stack_evt_prov_dis_t *)p_evt->data;
+	switch (res) {
+	case BT_MESH_GATT_CLI_DIS_DONE:
+		dis_event->dis_result = RTK_BT_MESH_PROV_DISC_DONE;
+		break;
+	case BT_MESH_GATT_CLI_DIS_NOT_FOUND:
+		dis_event->dis_result = RTK_BT_MESH_PROV_DISC_NOT_FOUND;
+		break;
+	default:
+		dis_event->dis_result = RTK_BT_MESH_PROV_DISC_FAIL;
+		break;
+	}
+	rtk_bt_evt_indicate(p_evt, NULL);
+}
+
+static void proxy_dis_result(struct bt_conn *conn, enum bt_mesh_gatt_cli_dis_result res)
+{
+	(void)conn;
+	rtk_bt_evt_t *p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_STACK, RTK_BT_MESH_STACK_EVT_PROXY_SERVICE_DIS_RESULT,
+											  sizeof(rtk_bt_mesh_stack_evt_proxy_dis_t));
+	rtk_bt_mesh_stack_evt_proxy_dis_t *dis_event;
+
+	if (!p_evt) {
+		return;
+	}
+
+	dis_event = (rtk_bt_mesh_stack_evt_proxy_dis_t *)p_evt->data;
+	switch (res) {
+	case BT_MESH_GATT_CLI_DIS_DONE:
+		dis_event->dis_result = RTK_BT_MESH_PROXY_DISC_DONE;
+		break;
+	case BT_MESH_GATT_CLI_DIS_NOT_FOUND:
+		dis_event->dis_result = RTK_BT_MESH_PROXY_DISC_NOT_FOUND;
+		break;
+	default:
+		dis_event->dis_result = RTK_BT_MESH_PROXY_DISC_FAIL;
+		break;
+	}
+	rtk_bt_evt_indicate(p_evt, NULL);
+}
+#endif
 
 static uint16_t zephyr_stack_pb_gatt_con(rtk_bt_mesh_stack_act_pb_gatt_con_t *pgatt_con)
 {
-	int ret = RTK_BT_MESH_STACK_API_SUCCESS;
+	int ret;
+
+#if ZEPHYR_RTK_PATCH && defined(CONFIG_BT_MESH_PB_GATT_CLIENT)
+	/* Manual mode, same as the rtk mesh stack: connect by address. Whether it is used for
+	 * provisioning or as a proxy is decided later by the prov_dis / proxy_dis cmd. */
+	rtk_bt_le_create_conn_param_t *p = &pgatt_con->conn_param;
+	bt_addr_le_t peer_addr = {};
+	struct bt_conn_le_create_param create_param = {};
+	struct bt_le_conn_param conn_param = {};
+
+	peer_addr.type = p->peer_addr.type;
+	memcpy(peer_addr.a.val, p->peer_addr.addr_val, BT_ADDR_SIZE);
+	create_param.options = BT_CONN_LE_OPT_NONE;
+	create_param.own_addr_type = p->own_addr_type;
+	create_param.interval = p->scan_interval;
+	create_param.interval_coded = p->scan_interval;
+	create_param.window = p->scan_window;
+	create_param.window_coded = p->scan_window;
+	create_param.timeout = p->scan_timeout;
+	conn_param.interval_min = p->conn_interval_min;
+	conn_param.interval_max = p->conn_interval_max;
+	conn_param.latency = p->conn_latency;
+	conn_param.timeout = p->supv_timeout;
+
+	ret = bt_mesh_gatt_cli_connect_manual(&peer_addr, &create_param, &conn_param);
+#else
 	if (pgatt_con->param.is_prov_link) {
 		memcpy(gatt_target_uuid, pgatt_con->param.u.uuid, 16);
 		pb_gatt_link_opening = true;
+		ret = RTK_BT_OK;
 	} else {
 		ret = bt_mesh_proxy_connect(pgatt_con->param.u.net_idx);
 	}
+#endif
 	if (-EALREADY == ret) {
 		// BT_LOGA("[%s] Proxy link is already connect\r\n", __func__);
-		ret = RTK_BT_MESH_STACK_API_SUCCESS;
+		ret = RTK_BT_OK;
 	}
 	return (uint16_t)ret;
 }
 
 static uint16_t zephyr_stack_prov_service_discovery(rtk_bt_mesh_stack_act_prov_dis_t *prov_dis)
 {
+#if ZEPHYR_RTK_PATCH && defined(CONFIG_BT_MESH_PB_GATT_CLIENT)
+	struct bt_conn *conn = bt_conn_lookup_handle(prov_dis->conn_handle, BT_CONN_TYPE_LE);
+	int err;
+
+	if (!conn) {
+		BT_LOGE("[%s] Get connection fail\r\n", __func__);
+		return RTK_BT_FAIL;
+	}
+
+	err = bt_mesh_pb_gatt_cli_discover(conn, pb_gatt_dis_result);
+	bt_conn_unref(conn);
+	if (err) {
+		return (uint16_t)err;
+	}
+
+	/* The notify cmd has no conn handle, remember it */
+	pb_gatt_conn_handle = prov_dis->conn_handle;
+	pb_gatt_conn_valid = true;
+#else
 	(void)prov_dis;
-	return RTK_BT_MESH_STACK_API_SUCCESS;
+#endif
+	return RTK_BT_OK;
 }
 
 static uint16_t zephyr_stack_prov_service_set_notify(rtk_bt_mesh_stack_act_prov_set_notify_t *prov_notify)
 {
+#if ZEPHYR_RTK_PATCH && defined(CONFIG_BT_MESH_PB_GATT_CLIENT)
+	struct bt_conn *conn;
+	int err;
+
+	if (!pb_gatt_conn_valid) {
+		BT_LOGE("[%s] Prov service is not discovered\r\n", __func__);
+		return RTK_BT_FAIL;
+	}
+
+	conn = bt_conn_lookup_handle(pb_gatt_conn_handle, BT_CONN_TYPE_LE);
+	if (!conn) {
+		pb_gatt_conn_valid = false;
+		return RTK_BT_ERR_NO_CONNECTION;
+	}
+
+	if (prov_notify->is_enable) {
+		/* Bind the provisioning link first, enabling notify makes it opened */
+		err = bt_mesh_pb_gatt_prov_link_open(global_net_idx);
+		if (err) {
+			bt_conn_unref(conn);
+			return (uint16_t)err;
+		}
+	}
+
+	err = bt_mesh_pb_gatt_cli_set_notify(conn, prov_notify->is_enable);
+	bt_conn_unref(conn);
+	if (err) {
+		if (prov_notify->is_enable) {
+			bt_mesh_pb_gatt_prov_link_abort();
+		}
+		return (uint16_t)err;
+	}
+#else
 	(void)prov_notify;
-	return RTK_BT_MESH_STACK_API_SUCCESS;
+#endif
+	return RTK_BT_OK;
 }
 
 static uint16_t zephyr_stack_proxy_service_discovery(rtk_bt_mesh_stack_act_proxy_dis_t *proxy_dis)
 {
+#if ZEPHYR_RTK_PATCH && defined(CONFIG_BT_MESH_PROXY_CLIENT)
+	struct bt_conn *conn = bt_conn_lookup_handle(proxy_dis->conn_handle, BT_CONN_TYPE_LE);
+	int err;
+
+	if (!conn) {
+		BT_LOGE("[%s] Get connection fail\r\n", __func__);
+		return RTK_BT_FAIL;
+	}
+
+	err = bt_mesh_proxy_cli_discover(conn, proxy_dis_result);
+	bt_conn_unref(conn);
+	if (err) {
+		return (uint16_t)err;
+	}
+
+	/* The notify cmd has no conn handle, remember it */
+	proxy_conn_handle = proxy_dis->conn_handle;
+	proxy_conn_valid = true;
+#else
 	(void)proxy_dis;
-	return RTK_BT_MESH_STACK_API_SUCCESS;
+#endif
+	return RTK_BT_OK;
 }
 
 static uint16_t zephyr_stack_proxy_service_set_notify(rtk_bt_mesh_stack_act_proxy_set_notify_t *proxy_notify)
 {
+#if ZEPHYR_RTK_PATCH && defined(CONFIG_BT_MESH_PROXY_CLIENT)
+	struct bt_conn *conn;
+	int err;
+
+	if (!proxy_conn_valid) {
+		BT_LOGE("[%s] Proxy service is not discovered\r\n", __func__);
+		return RTK_BT_FAIL;
+	}
+
+	conn = bt_conn_lookup_handle(proxy_conn_handle, BT_CONN_TYPE_LE);
+	if (!conn) {
+		proxy_conn_valid = false;
+		return RTK_BT_ERR_NO_CONNECTION;
+	}
+
+	err = bt_mesh_proxy_cli_set_notify(conn, proxy_notify->is_enable);
+	bt_conn_unref(conn);
+	if (err) {
+		return (uint16_t)err;
+	}
+#else
 	(void)proxy_notify;
-	return RTK_BT_MESH_STACK_API_SUCCESS;
+#endif
+	return RTK_BT_OK;
 }
 
 static uint16_t zephyr_stack_pb_gatt_discon(rtk_bt_mesh_stack_act_pb_gatt_discon_t *pgatt_discon)
 {
-	int ret = RTK_BT_MESH_STACK_API_SUCCESS;
+	int ret;
+
+#if ZEPHYR_RTK_PATCH && defined(CONFIG_BT_MESH_PB_GATT_CLIENT)
+	/* Manual mode, same as the rtk mesh stack: disconnect the connection of the given handle */
+	struct bt_conn *conn = bt_conn_lookup_handle(pgatt_discon->conn_handle, BT_CONN_TYPE_LE);
+
+	if (!conn) {
+		return RTK_BT_ERR_NO_CONNECTION;
+	}
+	ret = bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+	bt_conn_unref(conn);
+#else
+	ret = RTK_BT_OK;
 	if (pgatt_discon->param.is_prov_link) {
 		pb_gatt_link_opening = false;
 		memset(gatt_target_uuid, 0, 16);
 	} else {
 		ret = bt_mesh_proxy_disconnect(pgatt_discon->param.net_idx);
 	}
+#endif
 	if (-EALREADY == ret) {
 		// BT_LOGA("[%s] Proxy link is already disconnect\r\n", __func__);
-		ret = RTK_BT_MESH_STACK_API_SUCCESS;
+		ret = RTK_BT_OK;
 	}
 	return (uint16_t)ret;
 }
@@ -786,7 +1095,17 @@ extern struct bt_mesh_rpr_cli rpr_cli;
 
 static uint16_t zephyr_stack_start_provisioning(rtk_bt_mesh_stack_act_start_prov_t *start_prov)
 {
-	uint16_t ret = RTK_BT_MESH_STACK_API_FAIL;
+#if ZEPHYR_RTK_PATCH
+	/* The link (PB-ADV / PB-GATT / PB-Remote) was opened by an earlier cmd, which also decided the bearer */
+	int err = bt_mesh_prov_invite(0, start_prov->attn_dur);
+
+	if (err == -ENOLINK) {
+		BT_LOGE("[%s] Provisioning link is not opened\r\n", __func__);
+	}
+
+	return (uint16_t)err;
+#else
+	uint16_t ret = RTK_BT_FAIL;
 	switch (pro_provisioning_method) {
 	case RTK_BT_MESH_PROVISIONING_PB_ADV_METHOD:
 		ret = (uint16_t)bt_mesh_provision_adv(adv_target_uuid, global_net_idx, 0, start_prov->attn_dur);
@@ -813,11 +1132,12 @@ static uint16_t zephyr_stack_start_provisioning(rtk_bt_mesh_stack_act_start_prov
 		break;
 	}
 	return ret;
+#endif
 }
 
 static uint16_t zephyr_stack_method_choose_for_prov(rtk_bt_mesh_stack_prov_start_t *method)
 {
-	uint16_t ret = RTK_BT_MESH_STACK_API_FAIL;
+	uint16_t ret = RTK_BT_FAIL;
 	int err;
 
 	if (RTK_BT_MESH_PROV_START_FIPS_P256_ELLIPTIC_CURVE != method->algorithm) {
@@ -990,12 +1310,24 @@ BT_MESH_LPN_CB_DEFINE(lpn_cb) = {
 static uint16_t zephyr_stack_lpn_init(rtk_bt_mesh_stack_act_lpn_init_t *lpn)
 {
 	(void)lpn;
-	return RTK_BT_MESH_STACK_API_SUCCESS;
+	return RTK_BT_OK;
 }
 
 static uint16_t zephyr_stack_lpn_req(rtk_bt_mesh_stack_act_lpn_req_t *lpn)
 {
+#if ZEPHYR_RTK_PATCH
+	int err = 0;
+	if (lpn->poll_timeout) {
+		err = bt_mesh_lpn_params_set(lpn->net_key_index, lpn->poll_interval, lpn->poll_timeout, lpn->frnd_rx_delay, lpn->frnd_rx_widen);
+	} else {
+		err = bt_mesh_lpn_params_set(BT_MESH_KEY_ANY, 0, CONFIG_BT_MESH_LPN_POLL_TIMEOUT, CONFIG_BT_MESH_LPN_RECV_DELAY, 0);
+	}
+	if (err) {
+		return (uint16_t)err;
+	}
+#else
 	(void)lpn;
+#endif
 	return bt_mesh_lpn_set(true);
 }
 
@@ -1018,7 +1350,7 @@ static int zephyr_stack_lpn_clear(rtk_bt_mesh_stack_act_lpn_clear_t *clear_frien
 
 static uint16_t zephyr_stack_lpn_deinit(void)
 {
-	return RTK_BT_MESH_STACK_API_SUCCESS;
+	return RTK_BT_OK;
 }
 
 #endif  // RTK_BLE_MESH_LPN_SUPPORT
@@ -1031,7 +1363,7 @@ static uint16_t zephyr_stack_set_service_adv(rtk_bt_mesh_stack_act_set_service_a
 		bt_mesh_adv_gatt_disable();
 	}
 
-	return RTK_BT_MESH_STACK_API_SUCCESS;
+	return RTK_BT_OK;
 }
 #endif  // RTK_BLE_MESH_DEVICE_SUPPORT
 
@@ -1482,7 +1814,7 @@ static uint16_t zephyr_stack_list_info(void)
 	memcpy(p_evt->data, list_copy, len);
 	rtk_bt_evt_indicate(p_evt, NULL);
 
-	return RTK_BT_MESH_STACK_API_SUCCESS;
+	return RTK_BT_OK;
 }
 
 /*-------------------------- END OF USER CMD LIST INFO ------------------------------------------*/
@@ -1491,7 +1823,19 @@ static uint16_t zephyr_stack_node_reset(void)
 {
 	bt_mesh_reset();
 	bt_mesh_cdb_clear();
-	return RTK_BT_MESH_STACK_API_SUCCESS;
+#if defined(RTK_BLE_MESH_PROVISIONER_SUPPORT) && RTK_BLE_MESH_PROVISIONER_SUPPORT
+	/* Provisioner reset only drops provisioned nodes: redo the init as at boot, with the saved params */
+	if (saved_prov_param_valid) {
+		rtk_bt_mesh_stack_act_set_prov_param_t param = saved_prov_param;
+#if !ZEPHYR_RTK_PATCH
+		pb_adv_link_opening = false;
+		pb_gatt_link_opening = false;
+		pro_provisioning_method = RTK_BT_MESH_PROVISIONING_METHOD_NONE;
+#endif
+		return zephyr_stack_set_prov_param(&param);
+	}
+#endif
+	return RTK_BT_OK;
 }
 
 static uint16_t zephyr_stack_set_random_value_for_authentication(rtk_bt_mesh_stack_act_set_random_value_t *value)
@@ -1502,12 +1846,12 @@ static uint16_t zephyr_stack_set_random_value_for_authentication(rtk_bt_mesh_sta
 		BT_LOGE("[%s] Input number fail:%d\r\n", __func__, err);
 		return (uint16_t)err;
 	}
-	return RTK_BT_MESH_STACK_API_SUCCESS;
+	return RTK_BT_OK;
 }
 
 static uint16_t zephyr_stack_retrans_param_set(rtk_bt_mesh_stack_set_retrans_param_t *param)
 {
-	uint16_t ret = RTK_BT_MESH_STACK_API_SUCCESS;
+	uint16_t ret = RTK_BT_OK;
 	uint8_t xmit;
 	uint32_t int_ms;
 	int err;
@@ -1515,27 +1859,27 @@ static uint16_t zephyr_stack_retrans_param_set(rtk_bt_mesh_stack_set_retrans_par
 	// Set default ttl
 	if (bt_mesh_default_ttl_set(param->ttl)) {
 		BT_LOGE("[%s] Set default ttl to %d fail\r\n", __func__, param->ttl);
-		ret = RTK_BT_MESH_STACK_API_FAIL;
+		ret = RTK_BT_FAIL;
 	}
 
 	// Set relay count
 	if (param->relay_retrans_count > 7) {
 		BT_LOGE("[%s] Relay retrans count %d > 7, set fail\r\n", __func__, param->relay_retrans_count);
-		ret = RTK_BT_MESH_STACK_API_FAIL;
+		ret = RTK_BT_FAIL;
 	} else {
 		xmit = bt_mesh_relay_retransmit_get();
 		int_ms = BT_MESH_TRANSMIT_INT(xmit);
 		err = bt_mesh_relay_set(BT_MESH_FEATURE_ENABLED, BT_MESH_TRANSMIT(param->relay_retrans_count, int_ms));
 		if (err && err != -EALREADY) {
 			BT_LOGE("[%s] Set relay retrans count %d fail\r\n", __func__, param->relay_retrans_count);
-			ret = RTK_BT_MESH_STACK_API_FAIL;
+			ret = RTK_BT_FAIL;
 		}
 	}
 
 	// Set network retrans count
 	if (param->net_retrans_count > 7) {
 		BT_LOGE("[%s] Network retrans count %d > 7, set fail\r\n", __func__, param->net_retrans_count);
-		ret = RTK_BT_MESH_STACK_API_FAIL;
+		ret = RTK_BT_FAIL;
 	} else {
 		xmit = bt_mesh_net_transmit_get();
 		int_ms = BT_MESH_TRANSMIT_INT(xmit);
@@ -1544,7 +1888,7 @@ static uint16_t zephyr_stack_retrans_param_set(rtk_bt_mesh_stack_set_retrans_par
 
 	if (param->trans_retrans_count > 15) {
 		BT_LOGE("[%s] Transport retrans count %d > 15, set fail\r\n", __func__, param->trans_retrans_count);
-		ret = RTK_BT_MESH_STACK_API_FAIL;
+		ret = RTK_BT_FAIL;
 	} else {
 		bt_mesh.sar_tx.unicast_retrans_count = param->trans_retrans_count;
 		bt_mesh.sar_tx.multicast_retrans_count = param->trans_retrans_count;
@@ -1575,7 +1919,7 @@ static uint16_t zephyr_stack_get_heartbeat_subscribe_result(rtk_bt_mesh_hb_sub_t
 	hb_sub->count = get.count;
 	hb_sub->min_hops = get.min_hops;
 	hb_sub->max_hops = get.max_hops;
-	return RTK_BT_MESH_STACK_API_SUCCESS;
+	return RTK_BT_OK;
 }
 
 #if defined(RTK_BLE_MESH_FN_SUPPORT) && RTK_BLE_MESH_FN_SUPPORT
@@ -1623,19 +1967,19 @@ BT_MESH_FRIEND_CB_DEFINE(friend) = {
 static uint16_t zephyr_stack_fn_init(rtk_bt_mesh_stack_act_fn_init_t *friend_init)
 {
 	(void)friend_init;
-	return RTK_BT_MESH_STACK_API_SUCCESS;
+	return RTK_BT_OK;
 }
 
 static uint16_t zephyr_stack_fn_deinit(void)
 {
-	return RTK_BT_MESH_STACK_API_SUCCESS;
+	return RTK_BT_OK;
 }
 #endif  // RTK_BLE_MESH_FN_SUPPORT
 
 extern bool bt_stack_profile_check(rtk_bt_profile_t profile);
 uint16_t bt_mesh_stack_act_handle(rtk_bt_cmd_t *p_cmd)
 {
-	uint16_t ret = RTK_BT_MESH_STACK_API_FAIL;
+	uint16_t ret = RTK_BT_FAIL;
 	if (true != bt_stack_profile_check(RTK_BT_PROFILE_MESH)) {
 		BT_LOGE("[%s] Error: BLE MESH profile is not initiated\r\n", __func__);
 		ret = RTK_BT_ERR_UNSUPPORTED;
@@ -1678,7 +2022,7 @@ uint16_t bt_mesh_stack_act_handle(rtk_bt_cmd_t *p_cmd)
 		break;
 	case RTK_BT_MESH_STACK_ACT_DEV_INFO_SWITCH:
 		zephyr_stack_set_device_info_display(p_cmd->param);
-		ret = RTK_BT_MESH_STACK_API_SUCCESS;
+		ret = RTK_BT_OK;
 		break;
 #endif  // RTK_BLE_MESH_PROVISIONER_SUPPORT
 #if defined(RTK_BLE_MESH_DEVICE_SUPPORT) && RTK_BLE_MESH_DEVICE_SUPPORT
@@ -1692,7 +2036,7 @@ uint16_t bt_mesh_stack_act_handle(rtk_bt_cmd_t *p_cmd)
 	}
 	case RTK_BT_MESH_STACK_ACT_LPN_SUB: {
 		zephyr_stack_lpn_sub(p_cmd->param);
-		ret = RTK_BT_MESH_STACK_API_SUCCESS;
+		ret = RTK_BT_OK;
 		break;
 	}
 	case RTK_BT_MESH_STACK_ACT_LPN_CLEAR: {
@@ -1732,7 +2076,8 @@ uint16_t bt_mesh_stack_act_handle(rtk_bt_cmd_t *p_cmd)
 #endif  // RTK_BLE_MESH_FN_SUPPORT
 	default:
 		BT_LOGE("[%s] Unknown p_cmd->act:%d\r\n", __func__, p_cmd->act);
-		break;
+		ret = RTK_BT_ERR_NO_CASE_ELEMENT;
+		goto end;
 	}
 end:
 	p_cmd->ret = ret;

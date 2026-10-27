@@ -127,5 +127,5 @@ void us_ticker_disable_interrupt(void)
 
 void us_ticker_clear_interrupt(void)
 {
-	RTIM_INTClear(TIMx[APP_TIM_ID]);//AembaD TODO
+	RTIM_INTClear(TIMx[APP_TIM_ID]);
 }

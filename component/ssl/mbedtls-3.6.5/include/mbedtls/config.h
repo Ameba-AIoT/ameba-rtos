@@ -27,9 +27,12 @@
 #if defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_AMEBAL2)
 #include "ameba.h"
 #include "mbedtls/mbedtls_config_green2.h"
-#elif (defined(CONFIG_RTL8720F) || defined(CONFIG_RLE1509))
+#elif defined(CONFIG_RTL8720F)
 #include "ameba.h"
 #include "mbedtls/mbedtls_config_rtl8720f.h"
+#elif defined(CONFIG_RLE1509)
+#include "ameba.h"
+#include "mbedtls/mbedtls_config_rle1509.h"
 #elif defined(CONFIG_AMEBALITE) || defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBADPLUS)
 #include "mbedtls/mbedtls_config_legacy.h"
 #else

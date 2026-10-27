@@ -35,7 +35,7 @@ HCI_InterfaceTypeDef SDIO_Interface = {
 /* Private functions ---------------------------------------------------------*/
 
 /**
-  * @brief  USB download interface initialize
+  * @brief  SDIO interface initialize
   * @param  adapter: HCI adapter
   * @retval Status
   */
@@ -47,7 +47,7 @@ static int SDIO_Intf_Init(HCI_AdapterTypeDef *adapter)
 }
 
 /**
-  * @brief  USB download interface de-initialize
+  * @brief  SDIO interface de-initialize
   * @param  adapter: HCI adapter
   * @retval Status
   */

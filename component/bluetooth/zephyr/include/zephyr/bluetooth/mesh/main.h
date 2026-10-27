@@ -15,6 +15,9 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/sys/iterable_sections.h>
+#if ZEPHYR_RTK_PATCH
+#include <zephyr/bluetooth/addr.h>
+#endif
 
 /**
  * @brief Provisioning
@@ -242,8 +245,14 @@ struct bt_mesh_prov {
 	 *  @param uuid     UUID
 	 *  @param oob_info OOB Information
 	 */
+#if ZEPHYR_RTK_PATCH
+	void        (*unprovisioned_beacon_gatt)(uint8_t uuid[16],
+						 bt_mesh_prov_oob_info_t oob_info,
+						 const bt_addr_le_t *addr, int8_t rssi);
+#else
 	void        (*unprovisioned_beacon_gatt)(uint8_t uuid[16],
 						 bt_mesh_prov_oob_info_t oob_info);
+#endif
 
 	/** @brief Provisioning link has been opened.
 	 *
@@ -262,6 +271,20 @@ struct bt_mesh_prov {
 	 *  @param bearer Provisioning bearer.
 	 */
 	void        (*link_close)(bt_mesh_prov_bearer_t bearer);
+
+#if ZEPHYR_RTK_PATCH
+	/** @brief Provisioning Start PDU has been received and accepted (device side). */
+	void        (*start)(void);
+
+	/** @brief Mesh Proxy Service advertising (Network ID / Node Identity) has been received.
+	 *
+	 *  @param addr Advertiser address.
+	 *  @param rssi RSSI of the advertising report.
+	 *  @param data Service data after the service UUID: type followed by the identification parameters.
+	 *  @param len  Length of data.
+	 */
+	void        (*proxy_adv)(const bt_addr_le_t *addr, int8_t rssi, const uint8_t *data, uint8_t len);
+#endif
 
 	/** @brief Provisioning is complete.
 	 *
@@ -653,6 +676,23 @@ bool bt_mesh_iv_update(void);
  *  @return Zero on success or (negative) error code otherwise.
  */
 int bt_mesh_lpn_set(bool enable);
+
+#if ZEPHYR_RTK_PATCH
+/** @brief Set the Friend Request parameters of the next LPN friendship.
+ *
+ *  Must be called while the LPN is disabled, before bt_mesh_lpn_set(true).
+ *
+ *  @param net_idx      NetKey index to establish the friendship on, or BT_MESH_KEY_ANY for the first subnet.
+ *  @param poll_interval Interval of the Friend Poll in units of 100 ms, less than poll_timeout,
+ *                      0 to let the interval grow up to its maximum.
+ *  @param poll_timeout PollTimeout in units of 100 ms, 0x00000A - 0x34BBFF.
+ *  @param recv_delay   ReceiveDelay in ms, 0x0A - 0xFF.
+ *  @param rx_widen     Receive window widening in ms.
+ *
+ *  @return Zero on success or (negative) error code otherwise.
+ */
+int bt_mesh_lpn_params_set(uint16_t net_idx, uint32_t poll_interval, uint32_t poll_timeout, uint8_t recv_delay, uint8_t rx_widen);
+#endif
 
 /** @brief Send out a Friend Poll message.
  *

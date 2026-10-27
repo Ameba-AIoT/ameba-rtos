@@ -307,10 +307,10 @@ menu "CONFIG WHC INTF"
         bool
 endmenu
 
-config VFS_ENABLED
+config VFS_SUPPORTED
     def_bool y
     depends on !MP_SHRINK
-    depends on (WHC_HOST || WHC_NONE || (WHC_DEV && WHC_DEV_FLASH_BOOT))
+    depends on (WHC_HOST || WHC_NONE || (WHC_DEV && !WHC_INTF_IPC))
 
 menu "CONFIG WIFI"
     config WLAN_MENU

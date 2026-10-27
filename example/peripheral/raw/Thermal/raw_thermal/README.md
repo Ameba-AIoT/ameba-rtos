@@ -16,10 +16,25 @@
 
 # Expected Result
 
-1. Three forms of temperature values can be obtained:
-   String type: `TM_Display_Result(u32 Data)`
-   Celsius type: `TM_GetCdegree(u32 Data)`
-   Fahrenheit type:`TM_GetFdegree(u32 Data)`
+1. After boot, the current temperature is printed once in three forms, e.g.:
+
+   ```
+   Temperature: +25.1234 C
+   Temperature = 25.123400 C
+   Temperature = 77.222122 F
+   ```
+
+   * String type: `TM_Display_Result(u32 Data)`, built on `TM_GetDegree(Data, TM_DEG_C)`
+   * Celsius type: `TM_GetDegree(u32 Data, TM_DEG_C)`
+   * Fahrenheit type: `TM_GetDegree(u32 Data, TM_DEG_F)`
+
+2. Thresholds are set in Celsius: low warning 20, high warning 50, high protect 125. When the temperature crosses a warning threshold, the interrupt handler prints the warning and the current temperature (the first line is printed only for the threshold that triggered):
+
+   ```
+   Low warning temperature detect interrupt
+   High warning temperature detect interrupt
+   Temperature: +52.3456 C
+   ``
 
 # Note
 

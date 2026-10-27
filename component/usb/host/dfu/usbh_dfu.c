@@ -10,6 +10,9 @@
 
 /* Private defines -----------------------------------------------------------*/
 
+/* DFU 1.0 Functional Descriptor length: the DFU 1.1 one without bcdDFUVersion */
+#define USBH_DFU_FUNC_DESC_SIZE_V10         7U
+
 /* Private types -------------------------------------------------------------*/
 
 /* Private macros ------------------------------------------------------------*/
@@ -19,13 +22,15 @@
 static int usbh_dfu_attach(usb_host_t *host);
 static void usbh_dfu_detach(usb_host_t *host);
 static int usbh_dfu_setup(usb_host_t *host);
-static void usbh_dfu_process(usb_host_t *host, usbh_event_t *event);
+static void usbh_dfu_process(usb_host_t *host, usbh_drv_msg_t *msg);
 static int usbh_dfu_process_getstatus(usb_host_t *host);
 static int usbh_dfu_process_clrstatus(usb_host_t *host);
 static int usbh_dfu_process_dnload(usb_host_t *host, u16 block_num, u8 *buf, u16 len);
 static int usbh_dfu_process_upload(usb_host_t *host, u16 block_num, u8 *buf, u16 len);
 static int usbh_dfu_process_abort(usb_host_t *host);
 static int usbh_dfu_process_detach(usb_host_t *host, u16 timeout);
+static void usbh_dfu_finish(usbh_dfu_host_t *dfu, int status);
+
 /* Private variables ---------------------------------------------------------*/
 
 static const char *const TAG = "DFU";
@@ -59,6 +64,8 @@ static const usbh_class_driver_t usbh_dfu_driver = {
 };
 
 static usbh_dfu_host_t usbh_dfu_host;
+
+/* Exported variables --------------------------------------------------------*/
 
 /* Private functions ---------------------------------------------------------*/
 
@@ -117,11 +124,17 @@ static int usbh_dfu_attach(usb_host_t *host)
 		}
 
 		if (desc_type == USB_DFU_FUNC_DESC_TYPE) {
-			if ((u16)(offset + USB_DFU_FUNC_DESC_SIZE) <= remaining) {
+			/* Parse within the descriptor's own bLength, not just the raw data: DFU 1.1 4.1.3
+			 * fixes it to 9, a DFU 1.0 device sends 7 and has no bcdDFUVersion. */
+			if ((desc_len >= USBH_DFU_FUNC_DESC_SIZE_V10) && ((u16)(offset + desc_len) <= remaining)) {
 				dfu->func_desc.bmAttributes   = buf[offset + 2U];
 				dfu->func_desc.wDetachTimeOut = (u16)(buf[offset + 3U] | ((u16)buf[offset + 4U] << 8));
 				dfu->func_desc.wTransferSize  = (u16)(buf[offset + 5U] | ((u16)buf[offset + 6U] << 8));
-				dfu->func_desc.bcdDFUVersion  = (u16)(buf[offset + 7U] | ((u16)buf[offset + 8U] << 8));
+				if (desc_len >= USB_DFU_FUNC_DESC_SIZE) {
+					dfu->func_desc.bcdDFUVersion = (u16)(buf[offset + 7U] | ((u16)buf[offset + 8U] << 8));
+				} else {
+					dfu->func_desc.bcdDFUVersion = 0x0100U;
+				}
 				RTK_LOGS(TAG, RTK_LOG_INFO,
 						 "DFU func: attr=0x%02x detach=%u xferSize=%u ver=0x%04x\n",
 						 dfu->func_desc.bmAttributes,
@@ -129,7 +142,7 @@ static int usbh_dfu_attach(usb_host_t *host)
 						 dfu->func_desc.wTransferSize,
 						 dfu->func_desc.bcdDFUVersion);
 			} else {
-				RTK_LOGS(TAG, RTK_LOG_ERROR, "DFU func desc truncated\n");
+				RTK_LOGS(TAG, RTK_LOG_ERROR, "Bad DFU func desc len %u\n", desc_len);
 			}
 			break;
 		}
@@ -139,10 +152,10 @@ static int usbh_dfu_attach(usb_host_t *host)
 
 	/* Clamp wTransferSize to the driver's internal buffer limit */
 	if ((dfu->func_desc.wTransferSize == 0U) ||
-		(dfu->func_desc.wTransferSize > USBH_DFU_XFER_SIZE)) {
+		(dfu->func_desc.wTransferSize > dfu->xfer_size)) {
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Clamp wTransferSize %u -> %u\n",
-				 dfu->func_desc.wTransferSize, (u16)USBH_DFU_XFER_SIZE);
-		dfu->func_desc.wTransferSize = USBH_DFU_XFER_SIZE;
+				 dfu->func_desc.wTransferSize, (u16)dfu->xfer_size);
+		dfu->func_desc.wTransferSize = (u16)dfu->xfer_size;
 	}
 
 	dfu->host      = host;
@@ -154,6 +167,13 @@ static int usbh_dfu_attach(usb_host_t *host)
 		 * cb->attached() is NOT called yet; it will be called after the device
 		 * re-enumerates with Protocol=0x02. */
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Run-Time DFU device: starting reconfiguration\n");
+		/* Mark the reconfiguration in progress here, not after DFU_DETACH succeeds:
+		 * cb->attached() is deliberately not called for a Run-Time interface, so a
+		 * disconnect from now until the device re-enumerates in DFU mode must not
+		 * deliver cb->detached() either (DFU 1.1 5). The DFU_DETACH request needs
+		 * several process() calls to retire and the device may drop off the bus
+		 * inside that window. */
+		dfu->reconf_pending = 1U;
 		dfu->state = USBH_DFU_STATE_RECONFIGURE;
 		usbh_notify(host, 0, &usbh_dfu_driver);
 		return HAL_OK;
@@ -183,6 +203,7 @@ static void usbh_dfu_detach(usb_host_t *host)
 
 	dfu->state        = USBH_DFU_STATE_IDLE;
 	dfu->xfer_pending = 0U;
+	dfu->poll_remain  = 0U; /* drop a sliced wait owed to a device that is gone */
 	dfu->host         = NULL;
 
 	if (dfu->reconf_pending) {
@@ -259,6 +280,73 @@ static int usbh_dfu_parse_status(usb_host_t *host)
 	dfu->dev_state    = buf[4];
 
 	return HAL_OK;
+}
+
+/**
+  * @brief  Arm a bwPollTimeout wait, to be served in slices by usbh_dfu_poll_wait().
+  * @note   DFU 1.1 6.1.2 makes bwPollTimeout the *minimum* interval between two
+  *         DFU_GETSTATUS requests; it does not require one continuous sleep, so slicing
+  *         the wait keeps the protocol timing while releasing the shared host task.
+  *         The wait is measured against a timestamp taken here rather than by summing
+  *         slice lengths: an OS sleep may return up to one tick early, and a device polled
+  *         inside dfuDNBUSY stalls the request and enters dfuERROR (DFU 1.1 A.2.5).
+  * @param  dfu: DFU host instance
+  * @param  timeout: Device-reported bwPollTimeout in ms, already clamped by parse_status
+  * @retval None
+  */
+static void usbh_dfu_poll_arm(usbh_dfu_host_t *dfu, u32 timeout)
+{
+	dfu->poll_start_ms = usb_os_get_timestamp_ms();
+	dfu->poll_remain = (timeout > USBH_DFU_POLL_MIN_MS) ? timeout : USBH_DFU_POLL_MIN_MS;
+}
+
+/**
+  * @brief  Get how long the armed bwPollTimeout wait still has to run.
+  * @note   One ms more than the plain difference: both timestamps are truncated to whole
+  *         ms, so an elapsed reading equal to the timeout may still be up to 1 ms short.
+  * @param  dfu: DFU host instance
+  * @retval Remaining wait in ms, 0 once the wait has fully elapsed.
+  */
+static u32 usbh_dfu_poll_left(const usbh_dfu_host_t *dfu)
+{
+	u32 elapsed = usb_os_get_timestamp_ms() - dfu->poll_start_ms;
+
+	return (elapsed > dfu->poll_remain) ? 0U : (dfu->poll_remain - elapsed + 1U);
+}
+
+/**
+  * @brief  Serve one slice of a pending bwPollTimeout wait.
+  * @note   Sleeps at most USBH_DFU_POLL_SLICE_MS, then either reports the wait complete or
+  *         re-posts a driver message so the remaining slices run on later process() calls.
+  *         Self-notifying is what keeps the wait alive: in CLASS_READY the core's watchdog
+  *         message is routed by pipe and EP0 carries no class owner, so a class that
+  *         returns without notifying has no other wake source.
+  * @param  host: Host handle
+  * @retval 1 wait still in progress - caller must stay in its current state and return;
+  *         0 no wait pending, or the wait just completed.
+  */
+static u8 usbh_dfu_poll_wait(usb_host_t *host)
+{
+	usbh_dfu_host_t *dfu = &usbh_dfu_host;
+	u32 left;
+
+	if (dfu->poll_remain == 0U) {
+		return 0U;
+	}
+
+	left = usbh_dfu_poll_left(dfu);
+	if (left > 0U) {
+		/* A short bwPollTimeout must not be stretched to a whole slice: it is paid once per
+		 * block, so the excess would add up over a large image. */
+		usb_os_sleep_ms((left > USBH_DFU_POLL_SLICE_MS) ? USBH_DFU_POLL_SLICE_MS : left);
+		if (usbh_dfu_poll_left(dfu) > 0U) {
+			usbh_notify(host, 0, &usbh_dfu_driver);
+			return 1U;
+		}
+	}
+
+	dfu->poll_remain = 0U;
+	return 0U;
 }
 
 /**
@@ -366,12 +454,35 @@ static int usbh_dfu_process_detach(usb_host_t *host, u16 timeout)
 }
 
 /**
-  * @brief  State machine handling callback — drives the DFU protocol.
-  * @param  host:  Host handle
-  * @param  event: USB host event (unused — DFU uses EP0 only)
+  * @brief  End the current download or upload and report it to the application.
+  * @note   Sets IDLE before the callback: if the application calls usbh_dfu_upload()
+  *         from within download_done(), it must see IDLE to pass the state guard.
+  * @param  dfu: DFU host instance
+  * @param  status: HAL_OK on success, HAL_ERR_UNKNOWN on failure
   * @retval None
   */
-static void usbh_dfu_process(usb_host_t *host, usbh_event_t *event)
+static void usbh_dfu_finish(usbh_dfu_host_t *dfu, int status)
+{
+	dfu->state = USBH_DFU_STATE_IDLE;
+
+	if (dfu->is_download) {
+		if ((dfu->cb != NULL) && (dfu->cb->download_done != NULL)) {
+			dfu->cb->download_done(status);
+		}
+	} else {
+		if ((dfu->cb != NULL) && (dfu->cb->upload_done != NULL)) {
+			dfu->cb->upload_done(status);
+		}
+	}
+}
+
+/**
+  * @brief  State machine handling callback — drives the DFU protocol.
+  * @param  host:  Host handle
+  * @param  msg: USB host driver message (unused — DFU uses EP0 only)
+  * @retval None
+  */
+static void usbh_dfu_process(usb_host_t *host, usbh_drv_msg_t *msg)
 {
 	int req_status = HAL_OK;
 	usbh_dfu_host_t *dfu = &usbh_dfu_host;
@@ -379,7 +490,7 @@ static void usbh_dfu_process(usb_host_t *host, usbh_event_t *event)
 	u8 *buf = dfu->xfer_buf;
 	int block_len;
 
-	UNUSED(event);
+	UNUSED(msg);
 
 	switch (dfu->state) {
 
@@ -392,8 +503,11 @@ static void usbh_dfu_process(usb_host_t *host, usbh_event_t *event)
 		 * Send DFU_DETACH to the Run-Time device so it switches to DFU mode.
 		 * bitWillDetach=1 (our device): the device performs bus detach/attach
 		 *   itself; the host simply waits for the natural re-enumeration.
-		 * bitWillDetach=0: the host must issue a USB reset, but no public bus-
-		 *   reset API is available at the class-driver level — log a warning.
+		 * bitWillDetach=0: the device waits in appDETACH for a USB reset and falls
+		 *   back to appIDLE if none comes within wDetachTimeOut (DFU 1.1 5.1), so
+		 *   the host resets it now. The reset detaches this class from the host
+		 *   task after process() returns; reconf_pending keeps that detach from
+		 *   reaching the application, which is told only of the DFU-mode device.
 		 */
 		req_status = usbh_dfu_process_detach(host, dfu->func_desc.wDetachTimeOut);
 		if (req_status == HAL_OK) {
@@ -404,17 +518,27 @@ static void usbh_dfu_process(usb_host_t *host, usbh_event_t *event)
 				RTK_LOGS(TAG, RTK_LOG_INFO,
 						 "bitWillDetach=1: waiting for device to re-enumerate in DFU mode\n");
 			} else {
-				RTK_LOGS(TAG, RTK_LOG_WARN,
-						 "bitWillDetach=0: USB reset required — trigger externally or power cycle\n");
+				req_status = usbh_reenumerate();
+				if (req_status != HAL_OK) {
+					/* Same outcome as a device that never re-enumerates in DFU mode, see the
+					 * DFU_DETACH failure branch below. */
+					RTK_LOGS(TAG, RTK_LOG_ERROR, "Reset after DFU_DETACH fail %d\n", req_status);
+				}
 			}
-			/* Mark that the next detach event is part of reconfiguration so
-			 * usbh_dfu_detach() can suppress the spurious cb->detached() call. */
-			dfu->reconf_pending = 1U;
+			/* reconf_pending was already set in attach(): it marks "cb->attached() not
+			 * delivered", which holds from attach until the DFU-mode re-enumeration. */
 			dfu->state = USBH_DFU_STATE_IDLE;
 		} else if (req_status != HAL_BUSY) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "DFU_DETACH failed (%d)\n", req_status);
-			dfu->state = USBH_DFU_STATE_ERROR;
-			usbh_notify(host, 0, &usbh_dfu_driver);
+			/* Do NOT go to USBH_DFU_STATE_ERROR: the application requested neither a
+			 * download nor an upload, so that state's completion callbacks would be
+			 * spurious - is_download is still 0, which would fire upload_done(). The
+			 * reconfiguration simply did not happen; drop back to IDLE and leave the
+			 * device in Run-Time mode. reconf_pending stays set, so a later disconnect
+			 * still suppresses cb->detached(), and the application keeps waiting on
+			 * cb->attached() - the same observable outcome as a device that never
+			 * re-enumerated in DFU mode. */
+			dfu->state = USBH_DFU_STATE_IDLE;
 		}
 		break;
 
@@ -435,7 +559,7 @@ static void usbh_dfu_process(usb_host_t *host, usbh_event_t *event)
 		 * initiated) and again on each intermediate call while the control
 		 * transfer is progressing through its SETUP/DATA/STATUS phases.
 		 * Only when all phases complete does it return HAL_OK.
-		 * Do not treat HAL_BUSY as an error — the CTRL_EVENT and URB_EVENT
+		 * Do not treat HAL_BUSY as an error — the CTRL and URB driver messages
 		 * interrupts will keep re-invoking process() until the transfer
 		 * finishes; no extra notify is needed in the BUSY case.
 		 */
@@ -464,16 +588,20 @@ static void usbh_dfu_process(usb_host_t *host, usbh_event_t *event)
 
 			case USB_DFU_STATE_DNLOAD_SYNC:
 			case USB_DFU_STATE_DNBUSY:
-				/* Device is still programming — wait then check again */
+				/* Device is still programming — honour bwPollTimeout then check again */
+				usbh_dfu_poll_arm(dfu, dfu->poll_timeout);
 				dfu->state = USBH_DFU_STATE_DNLOAD_POLL;
 				break;
 
 			case USB_DFU_STATE_DNLOAD_IDLE:
-				/* Block confirmed written: update resume checkpoint.
-				 * Guard against u16 wrap when block_num is 0 (0-1 = 0xFFFF collides
-				 * with the "no block confirmed yet" sentinel). */
-				dfu->last_good_block = (dfu->block_num > 0U) ? (dfu->block_num - 1U) : 0U;
+				/* Block confirmed written: update resume checkpoint. wBlockNum wraps from
+				 * 65535 to 0 (DFU 1.1 6.1.1), so a block_num of 0 here confirmed 65535:
+				 * the u16 wrap is the right answer, and its +1 resumes at block 0. */
+				dfu->last_good_block = (u16)(dfu->block_num - 1U);
 				dfu->retry_cnt       = 0U;
+				/* Block written: the DNBUSY poll bounds restart for the next one. */
+				dfu->dnload_poll_cnt = 0U;
+				dfu->dnload_poll_ms  = 0U;
 				dfu->state = USBH_DFU_STATE_DNLOAD_BLOCK;
 				break;
 
@@ -484,7 +612,8 @@ static void usbh_dfu_process(usb_host_t *host, usbh_event_t *event)
 
 			case USB_DFU_STATE_MANIFEST_SYNC:
 			case USB_DFU_STATE_MANIFEST:
-				/* Device is manifesting the firmware */
+				/* Device is manifesting the firmware — honour bwPollTimeout first */
+				usbh_dfu_poll_arm(dfu, dfu->poll_timeout);
 				dfu->state = USBH_DFU_STATE_MANIFEST_POLL;
 				break;
 
@@ -508,7 +637,7 @@ static void usbh_dfu_process(usb_host_t *host, usbh_event_t *event)
 			dfu->state = USBH_DFU_STATE_ERROR;
 			usbh_notify(host, 0, &usbh_dfu_driver);
 		}
-		/* HAL_BUSY: ctrl transfer in flight — CTRL/URB event re-triggers process() */
+		/* HAL_BUSY: ctrl transfer in flight — CTRL/URB msg re-triggers process() */
 		break;
 
 	case USBH_DFU_STATE_CLR_STATUS:
@@ -523,6 +652,10 @@ static void usbh_dfu_process(usb_host_t *host, usbh_event_t *event)
 			} else {
 				/* Resume from first unconfirmed block (0xFFFF+1=0 for fresh start) */
 				dfu->block_num = dfu->last_good_block + 1U;
+				/* Fresh attempt at that block: restart its DNBUSY poll bounds. The
+				 * overall retry count (retry_cnt) still bounds this loop. */
+				dfu->dnload_poll_cnt = 0U;
+				dfu->dnload_poll_ms  = 0U;
 				RTK_LOGS(TAG, RTK_LOG_INFO,
 						 "Retry %u/%u from blk %u\n",
 						 dfu->retry_cnt, USBH_DFU_MAX_RETRY, (u32)dfu->block_num);
@@ -583,7 +716,7 @@ static void usbh_dfu_process(usb_host_t *host, usbh_event_t *event)
 			usbh_notify(host, 0, &usbh_dfu_driver);
 		} else if (req_status == HAL_BUSY) {
 			dfu->xfer_pending = 1U;
-			/* ctrl transfer in flight — CTRL/URB event re-triggers process() */
+			/* ctrl transfer in flight — CTRL/URB msg re-triggers process() */
 		} else {
 			dfu->xfer_pending = 0U;
 			RTK_LOGS(TAG, RTK_LOG_ERROR,
@@ -594,11 +727,27 @@ static void usbh_dfu_process(usb_host_t *host, usbh_event_t *event)
 		break;
 
 	case USBH_DFU_STATE_DNLOAD_POLL:
-		/* Wait the device-reported poll timeout then re-query status */
-		if (dfu->poll_timeout > 0U) {
-			usb_os_sleep_ms(dfu->poll_timeout);
+		/* Serve the device-reported poll timeout in slices; nothing else may run in this
+		 * state until the full wait has elapsed. */
+		if (usbh_dfu_poll_wait(host) != 0U) {
+			break;
 		}
-		dfu->state = USBH_DFU_STATE_GET_STATUS;
+
+		/* First poll for this block: start the wall-clock budget. A timestamp of exactly
+		 * 0 re-reads it one poll later, which only extends the budget by one interval. */
+		if (dfu->dnload_poll_ms == 0U) {
+			dfu->dnload_poll_ms = usb_os_get_timestamp_ms();
+		}
+		dfu->dnload_poll_cnt++;
+
+		if ((dfu->dnload_poll_cnt > USBH_DFU_MAX_DNLOAD_POLL) ||
+			((usb_os_get_timestamp_ms() - dfu->dnload_poll_ms) > USBH_DFU_DNLOAD_POLL_BUDGET_MS)) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "DNBUSY timeout at blk %u after %u polls\n",
+					 (u32)dfu->block_num, (u32)dfu->dnload_poll_cnt);
+			dfu->state = USBH_DFU_STATE_ERROR;
+		} else {
+			dfu->state = USBH_DFU_STATE_GET_STATUS;
+		}
 		usbh_notify(host, 0, &usbh_dfu_driver);
 		break;
 
@@ -620,6 +769,12 @@ static void usbh_dfu_process(usb_host_t *host, usbh_event_t *event)
 		break;
 
 	case USBH_DFU_STATE_MANIFEST_POLL:
+		/* Serve any pending bwPollTimeout BEFORE re-issuing GETSTATUS: re-entering this
+		 * state with a wait still owed must not send another request. */
+		if (usbh_dfu_poll_wait(host) != 0U) {
+			break;
+		}
+
 		req_status = usbh_dfu_process_getstatus(host);
 		if (req_status == HAL_OK) {
 			if (usbh_dfu_parse_status(host) != HAL_OK) {
@@ -636,38 +791,44 @@ static void usbh_dfu_process(usb_host_t *host, usbh_event_t *event)
 				/* Manifestation complete — firmware has been accepted */
 				dfu->state = USBH_DFU_STATE_DONE;
 			} else if (dfu->dev_state == USB_DFU_STATE_MANIFEST) {
-				/* Still manifesting — wait poll_timeout and retry */
-				if (dfu->poll_timeout > 0U) {
-					usb_os_sleep_ms(dfu->poll_timeout);
-				}
+				/* Check the retry bound before arming the wait, so an already exhausted
+				 * poll does not spend another bwPollTimeout before failing. */
 				if (++dfu->manifest_retry_cnt > USBH_DFU_MAX_MANIFEST_RETRY) {
 					RTK_LOGS(TAG, RTK_LOG_ERROR, "Manifest timeout after %u retries\n",
 							 dfu->manifest_retry_cnt);
 					dfu->state = USBH_DFU_STATE_ERROR;
+				} else {
+					/* Still manifesting — wait poll_timeout and retry (stay in this state) */
+					usbh_dfu_poll_arm(dfu, dfu->poll_timeout);
 				}
-				/* Stay in MANIFEST_POLL */
 			} else if (dfu->dev_state == USB_DFU_STATE_MANIFEST_SYNC) {
 				/* Reset retry counter on progress; prevents slow devices from timing out. */
 				dfu->manifest_retry_cnt = 0U;
-				if (dfu->poll_timeout > 0U) {
-					usb_os_sleep_ms(dfu->poll_timeout);
-				}
+				usbh_dfu_poll_arm(dfu, dfu->poll_timeout);
 				/* Stay in MANIFEST_POLL to re-issue GETSTATUS */
 			} else if (dfu->dev_state == USB_DFU_STATE_MANIFEST_WAIT_RESET) {
 				/* DFU 1.1 §7: device is in dfuMANIFEST-WAIT-RESET.
 				 * bitWillDetach=1: device generates its own detach-attach sequence.
-				 * bitWillDetach=0: host must issue a USB reset (no public API available
-				 *                  at class-driver level; application must trigger a
-				 *                  bus reset or power cycle externally). */
+				 * bitWillDetach=0: the new firmware only runs once the host resets the
+				 *                  device, so a download is not complete without it. */
 				if (dfu->func_desc.bmAttributes & USB_DFU_ATTR_WILL_DETACH) {
 					RTK_LOGS(TAG, RTK_LOG_INFO,
 							 "MANIFEST-WAIT-RESET: device will self-detach\n");
+					dfu->state = USBH_DFU_STATE_DONE;
 				} else {
-					RTK_LOGS(TAG, RTK_LOG_WARN,
-							 "MANIFEST-WAIT-RESET: USB reset required (bitWillDetach=0) — "
-							 "trigger bus reset via application or power cycle\n");
+					/* The reset is asynchronous: the host task runs it, detaching this class,
+					 * before any message queued from here is dispatched. Report the result now,
+					 * not through the DONE / ERROR states, or the detach would swallow it. */
+					req_status = usbh_reenumerate();
+					if (req_status == HAL_OK) {
+						RTK_LOGS(TAG, RTK_LOG_INFO, "MANIFEST-WAIT-RESET: reset device\n");
+						usbh_dfu_finish(dfu, HAL_OK);
+					} else {
+						RTK_LOGS(TAG, RTK_LOG_ERROR, "MANIFEST-WAIT-RESET: reset fail %d\n", req_status);
+						usbh_dfu_finish(dfu, HAL_ERR_UNKNOWN);
+					}
+					break;
 				}
-				dfu->state = USBH_DFU_STATE_DONE;
 			} else if (dfu->dev_state == USB_DFU_STATE_ERROR) {
 				RTK_LOGS(TAG, RTK_LOG_ERROR,
 						 "Device error during manifest (status=0x%02x)\n",
@@ -694,7 +855,7 @@ static void usbh_dfu_process(usb_host_t *host, usbh_event_t *event)
 		 *   phase 1 — DFU_GETSTATUS (D2H, checks device state for EOF)
 		 * upload_phase tracks which ctrl transfer is currently in flight.
 		 * When a transfer returns HAL_BUSY the field is left unchanged and
-		 * subsequent CTRL/URB events will re-invoke process() to advance
+		 * subsequent CTRL/URB messages will re-invoke process() to advance
 		 * the ctrl state machine until HAL_OK is returned.
 		 */
 		if (dfu->upload_phase == 0U) {
@@ -790,37 +951,15 @@ static void usbh_dfu_process(usb_host_t *host, usbh_event_t *event)
 		break;
 
 	case USBH_DFU_STATE_DONE:
-		/* Set IDLE before callback: if the application calls usbh_dfu_upload()
-		 * from within download_done(), it must see IDLE to pass the state guard. */
 		RTK_LOGS(TAG, RTK_LOG_DEBUG, "Transfer done (is_download=%u)\n",
 				 dfu->is_download);
-		dfu->state = USBH_DFU_STATE_IDLE;
-
-		if (dfu->is_download) {
-			if ((dfu->cb != NULL) && (dfu->cb->download_done != NULL)) {
-				dfu->cb->download_done(HAL_OK);
-			}
-		} else {
-			if ((dfu->cb != NULL) && (dfu->cb->upload_done != NULL)) {
-				dfu->cb->upload_done(HAL_OK);
-			}
-		}
+		usbh_dfu_finish(dfu, HAL_OK);
 		break;
 
 	case USBH_DFU_STATE_ERROR:
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Transfer error (is_download=%u)\n",
 				 dfu->is_download);
-		dfu->state = USBH_DFU_STATE_IDLE;
-
-		if (dfu->is_download) {
-			if ((dfu->cb != NULL) && (dfu->cb->download_done != NULL)) {
-				dfu->cb->download_done(HAL_ERR_UNKNOWN);
-			}
-		} else {
-			if ((dfu->cb != NULL) && (dfu->cb->upload_done != NULL)) {
-				dfu->cb->upload_done(HAL_ERR_UNKNOWN);
-			}
-		}
+		usbh_dfu_finish(dfu, HAL_ERR_UNKNOWN);
 		break;
 
 	default:
@@ -835,7 +974,7 @@ static void usbh_dfu_process(usb_host_t *host, usbh_event_t *event)
   * @param  cb: User callback table
   * @retval Status
   */
-int usbh_dfu_init(const usbh_dfu_cb_t *cb)
+int usbh_dfu_init(const usbh_dfu_cb_t *cb, const usbh_dfu_config_t *cfg)
 {
 	int ret = HAL_OK;
 	usbh_dfu_host_t *dfu = &usbh_dfu_host;
@@ -845,19 +984,35 @@ int usbh_dfu_init(const usbh_dfu_cb_t *cb)
 		return HAL_ERR_PARA;
 	}
 
+	if (cfg == NULL) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid cfg\n");
+		return HAL_ERR_PARA;
+	}
+
 	usb_os_memset((void *)dfu, 0, sizeof(usbh_dfu_host_t));
 	dfu->cb = cb;
 
-	/* Allocate the DMA-aligned transfer buffer */
-	dfu->xfer_buf = (u8 *)usb_os_malloc(USBH_DFU_XFER_SIZE);
+	/* Resolved after the memset so the default survives it, and before the allocation and
+	   the attach-time wTransferSize clamp that both read it. */
+	dfu->cfg = cfg;
+	dfu->xfer_size = (cfg->xfer_size != 0U) ? cfg->xfer_size : (u32)USBH_DFU_DEFAULT_XFER_SIZE;
+
+	/* wTransferSize is a 16-bit descriptor field, so a larger buffer could never be
+	   advertised by any device and would only waste heap. */
+	if (dfu->xfer_size > 0xFFFFU) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Xfer size %u exceeds u16\n", dfu->xfer_size);
+		return HAL_ERR_PARA;
+	}
+
+	RTK_LOGS(TAG, RTK_LOG_DEBUG, "Config:\n");
+	RTK_LOGS(TAG, RTK_LOG_DEBUG, "* xfer_size: %d\n", dfu->xfer_size);
+
+	/* Allocate the DMA-aligned transfer buffer. UPLOAD and GETSTATUS are D2H requests whose data
+	   stage reserves whole EP0 packets, so round it up to the EP0 MPS, refer to usbh_ctrl_request() */
+	dfu->xfer_buf = (u8 *)usb_os_malloc(usb_get_dma_len(dfu->xfer_size, USB_MAX_EP0_SIZE));
 	if (dfu->xfer_buf == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Malloc xfer_buf fail\n");
 		return HAL_ERR_MEM;
-	}
-	if (!USB_IS_MEM_DMA_ALIGNED(dfu->xfer_buf)) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "xfer_buf not DMA-aligned\n");
-		ret = HAL_ERR_MEM;
-		goto exit_free;
 	}
 
 	if (cb->init != NULL) {
@@ -895,11 +1050,17 @@ void usbh_dfu_deinit(void)
 {
 	usbh_dfu_host_t *dfu = &usbh_dfu_host;
 
+	/* First, before anything is freed: on HAL_OK no attach/setup/process/detach of this
+	 * class runs any more, an EP0 request it left in flight is halted and a sof() still
+	 * running on another core is waited out. Anything else means nothing was released. */
+	if (usbh_unregister_class(&usbh_dfu_driver) != HAL_OK) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Deinit refused\n");
+		return;
+	}
+
 	if ((dfu->cb != NULL) && (dfu->cb->deinit != NULL)) {
 		dfu->cb->deinit();
 	}
-
-	usbh_unregister_class(&usbh_dfu_driver);
 
 	usb_os_mfree((void *)dfu->xfer_buf);
 	dfu->xfer_buf = NULL;
@@ -935,6 +1096,9 @@ int usbh_dfu_download(void)
 	dfu->block_num       = 0U;
 	dfu->last_good_block = 0xFFFFU; /* sentinel: no block confirmed yet */
 	dfu->retry_cnt       = 0U;
+	dfu->poll_remain     = 0U;
+	dfu->dnload_poll_cnt = 0U;
+	dfu->dnload_poll_ms  = 0U;
 	dfu->state           = USBH_DFU_STATE_GET_STATUS;
 
 	usbh_notify(host, 0, &usbh_dfu_driver);
@@ -966,10 +1130,13 @@ int usbh_dfu_upload(void)
 		return HAL_ERR_PARA;
 	}
 
-	dfu->is_download = 0U;
-	dfu->block_num   = 0U;
-	dfu->upload_phase = 0U;
-	dfu->state       = USBH_DFU_STATE_GET_STATUS; /* confirm dfuIDLE before upload */
+	dfu->is_download     = 0U;
+	dfu->block_num       = 0U;
+	dfu->last_good_block = 0xFFFFU; /* sentinel, as in download: a CLR_STATUS retry restarts at 0 */
+	dfu->retry_cnt       = 0U;
+	dfu->upload_phase    = 0U;
+	dfu->poll_remain     = 0U;
+	dfu->state           = USBH_DFU_STATE_GET_STATUS; /* confirm dfuIDLE before upload */
 
 	usbh_notify(host, 0, &usbh_dfu_driver);
 
@@ -990,6 +1157,7 @@ int usbh_dfu_abort(void)
 		return HAL_ERR_UNKNOWN;
 	}
 
+	dfu->poll_remain = 0U; /* abandon any wait owed by the transfer being aborted */
 	dfu->state = USBH_DFU_STATE_ABORT;
 	usbh_notify(host, 0, &usbh_dfu_driver);
 

@@ -498,7 +498,7 @@ Server terminal output:
 
 | Metric | Value | Notes |
 |---|---|---|
-| image3 bin (XIP Flash) | **31.7 KB** (32,480 B) | `km4tz_image3_all.bin` |
+| image3 bin (XIP Flash) | **31.7 KB** (32,480 B) | `km55tz_image3_all.bin` |
 | Static SRAM | **32.4 KB** (33,197 B) | `.text` + `.data` + `.bss`; used from power-on |
 | S-heap available | **31.6 KB** (32,339 B) | 64 KB SRAM partition − static SRAM |
 | S-heap dynamic peak | **5.3 KB** (5,395 B) | Measured watermark; ECDSA P-256 sign operation |

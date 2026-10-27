@@ -87,6 +87,9 @@ static const char *const TAG = "NETIF_ADAPT";
 #if defined(CONFIG_LWIP_ETHERNET)
 extern struct netif *pnetif_eth;
 extern int eth_send(struct pbuf * p);
+
+/* Posted on every link change; runs the driver's handler in tcpip_thread */
+static struct tcpip_callback_msg *eth_link_msg;
 #endif
 
 #if defined(CONFIG_LWIP_USB_ETHERNET)
@@ -328,18 +331,22 @@ struct pbuf * netif_adapter_eth_buf_copy(u32 frame_len, u8 *src_buf)
 		return NULL;
 	}
 
-	// Allocate buffer to store received packet
-	p = pbuf_alloc(PBUF_RAW, frame_len, PBUF_POOL);
+	/* src_buf is the word-aligned DMA buffer start, with the frame 2 bytes in. Copy those 2
+	 * bytes as well so src and dst are both word aligned and the ROM memcpy copies by words,
+	 * then strip them. The IP header then sits at payload + 14 = 16, word aligned too. */
+	p = pbuf_alloc(PBUF_RAW, frame_len + 2, PBUF_POOL);
 	if (p == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_WARN, "\n\r[%s]Cannot allocate pbuf to receive packet(%d)\n", __func__, frame_len);
 		return NULL;
 	}
 
 	for (q = p; q != NULL && sg_len < MAX_ETH_DRV_SG; q = q->next) {
-		memcpy((void *)(q->payload), src_buf, q->len);
+		memcpy(q->payload, src_buf, q->len);
 		src_buf += q->len;
 		sg_len++;
 	}
+
+	pbuf_remove_header(p, 2);
 
 	return p;
 }
@@ -354,6 +361,34 @@ void netif_adapter_eth_recv(struct pbuf *p)
 	// Pass received packet to the interface
 	if (ERR_OK != netif->input(p, netif)) {
 		pbuf_free(p);
+	}
+}
+
+/* handler runs in tcpip_thread with the core lock held: it may call netif_adapter_eth_set_link() but must not block.
+ * Call before the link interrupt is enabled, so the ISR never sees a half-made message. */
+int netif_adapter_eth_link_init(void (*handler)(void *ctx))
+{
+	eth_link_msg = tcpip_callbackmsg_new(handler, NULL);
+
+	return (eth_link_msg != NULL) ? 0 : -1;
+}
+
+/* Called from the ISR. The handler must read the link state afresh, so one queued message covers any number of changes.
+ * A post that finds the mbox full is dropped. */
+void netif_adapter_eth_link_notify(void)
+{
+	if (eth_link_msg != NULL) {
+		tcpip_callbackmsg_trycallback_fromisr(eth_link_msg);
+	}
+}
+
+/* Called from the link handler only, in tcpip_thread */
+void netif_adapter_eth_set_link(int up)
+{
+	if (up) {
+		netif_set_link_up(pnetif_eth);
+	} else {
+		netif_set_link_down(pnetif_eth);
 	}
 }
 #endif
@@ -529,6 +564,11 @@ err_t netif_adapter_init(struct netif *netif)
 #if defined(CONFIG_LWIP_ETHERNET)
 	if (netif_idx == NETIF_ETH_INDEX) {
 		netif->linkoutput = low_level_output_eth;
+#if LWIP_CHECKSUM_CTRL_PER_NETIF
+		NETIF_SET_CHECKSUM_CTRL(netif, NETIF_CHECKSUM_ENABLE_ALL &
+								~(NETIF_CHECKSUM_GEN_IP | NETIF_CHECKSUM_GEN_TCP | NETIF_CHECKSUM_GEN_UDP |
+								  NETIF_CHECKSUM_CHECK_IP | NETIF_CHECKSUM_CHECK_TCP | NETIF_CHECKSUM_CHECK_UDP));
+#endif
 	} else
 #endif
 	{

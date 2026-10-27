@@ -37,6 +37,16 @@ extern "C" {
 
 int efuse_get_remaining_length(void);
 void efuse_mtp_read(uint8_t *data);
+/**
+  * @brief  Write user's content to user logical OTP.
+  * @param  offset: Address offset of the programmed user logical OTP(base address: 0x170).
+  * @param  len: Data length to be programmed.
+  * @param  data: Data buffer to be programmed.
+  * @return Write result:
+  * @retval 1: Success.
+  * @retval -1: Failure, offset + len exceeds the user logical OTP size, or the OTP write fails.
+  * @note Write user logical OTP(0x170~0x19F).
+  */
 int efuse_mtp_write(uint32_t offset, uint32_t len, uint8_t *data);
 int efuse_otp_read(uint32_t offset, uint32_t len, uint8_t *buf);
 int efuse_otp_write(uint32_t offset, uint32_t len, uint8_t *buf);

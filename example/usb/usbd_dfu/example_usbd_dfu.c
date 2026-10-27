@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/* Includes ------------------------------------------------------------------ */
+/* Includes ------------------------------------------------------------------*/
 
 #include <platform_autoconf.h>
 #include "platform_stdlib.h"
@@ -14,11 +14,8 @@
 
 /* Private defines -----------------------------------------------------------*/
 
-#define USBD_DFU_DEMO_BUF_SIZE      (USBD_DFU_XFER_SIZE * 4U)  /* 4 KB */
+#define USBD_DFU_DEMO_BUF_SIZE      (USBD_DFU_DEFAULT_XFER_SIZE * 4U)  /* 4 KB */
 #define USBD_DFU_DEMO_WRITE_POLL_MS 1U  /* write_task needs a scheduler tick even for RAM memcpy */
-
-// USB speed
-#define DFU_USB_SPEED                             USB_SPEED_HIGH
 
 // Thread priorities
 #define DFU_INIT_THREAD_PRIORITY                  5
@@ -28,13 +25,32 @@
 #define DFU_INIT_THREAD_STACK_SIZE                768U
 #define DFU_RECONF_THREAD_STACK_SIZE              768U
 
+/* Private types -------------------------------------------------------------*/
+
+/* Private macros ------------------------------------------------------------*/
+
+/* Private function prototypes -----------------------------------------------*/
+
+static int dfu_cb_init(void);
+static int dfu_cb_deinit(void);
+static int dfu_cb_write(u16 block_num, u8 *buf, u32 len);
+static int dfu_cb_read(u16 block_num, u8 *buf, u32 max_len);
+static void dfu_cb_manifest(void);
+static void dfu_cb_detach(void);
+#ifdef CONFIG_USBD_DFU_WILL_DETACH
+static void dfu_cb_reconf(void);
+#endif
+
 /* Private variables ---------------------------------------------------------*/
+
 static const char *const TAG = "DFU";
 
 static const usbd_config_t dfu_cfg = {
-	.speed = DFU_USB_SPEED,
 	.isr_priority = INT_PRI_MIDDLE,
 	.diag_enable = 1,
+	.info = {
+		.prod_str = "Realtek DFU Device",
+	},
 #if defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBAD) || defined(CONFIG_AMEBADPLUS)
 	.nptx_max_epmis_cnt = 1U,
 #elif defined(CONFIG_AMEBAGREEN2)
@@ -59,9 +75,29 @@ static u8  dfu_demo_fw_buf[USBD_DFU_DEMO_BUF_SIZE];
  * two different cores under SMP: never cache it across the two reads below */
 static volatile u32 dfu_demo_fw_len;
 
-#if USBD_DFU_WILL_DETACH
+#ifdef CONFIG_USBD_DFU_WILL_DETACH
 static rtos_sema_t dfu_reconf_sema;
 #endif
+
+static const usbd_dfu_cb_t dfu_cb = {
+	.init           = dfu_cb_init,
+	.deinit         = dfu_cb_deinit,
+	.write          = dfu_cb_write,
+	.read           = dfu_cb_read,
+	.manifest       = dfu_cb_manifest,
+	.detach         = dfu_cb_detach,
+#ifdef CONFIG_USBD_DFU_WILL_DETACH
+	.reconf         = dfu_cb_reconf,
+#endif
+};
+
+static const usbd_dfu_config_t dfu_class_cfg = {
+	/* Every field is left 0/NULL to take the class default: transfer size, detach timeout and
+	 * status delay, the DNLOAD/MANIFEST poll hints, the iInterface string, and the three task
+	 * stacks and priorities. */
+};
+
+/* Exported variables --------------------------------------------------------*/
 
 /* Private functions ---------------------------------------------------------*/
 
@@ -84,7 +120,7 @@ static int dfu_cb_deinit(void)
  */
 static int dfu_cb_write(u16 block_num, u8 *buf, u32 len)
 {
-	u32 offset = (u32)block_num * USBD_DFU_XFER_SIZE;
+	u32 offset = (u32)block_num * USBD_DFU_DEFAULT_XFER_SIZE;
 	u32 end;
 
 	if (offset + len > USBD_DFU_DEMO_BUF_SIZE) {
@@ -106,7 +142,7 @@ static int dfu_cb_write(u16 block_num, u8 *buf, u32 len)
  */
 static int dfu_cb_read(u16 block_num, u8 *buf, u32 max_len)
 {
-	u32 offset = (u32)block_num * USBD_DFU_XFER_SIZE;
+	u32 offset = (u32)block_num * USBD_DFU_DEFAULT_XFER_SIZE;
 	u32 remaining;
 	/* Snapshot the length once: write() may extend it concurrently on another
 	 * core, and re-reading it between the bound check and the subtraction below
@@ -143,7 +179,7 @@ static void dfu_cb_detach(void)
 	RTK_LOGS(TAG, RTK_LOG_INFO, "DFU detach\n");
 }
 
-#if USBD_DFU_WILL_DETACH
+#ifdef CONFIG_USBD_DFU_WILL_DETACH
 /*
  * reconf() is called from the driver's reconf_task (task context) after the
  * GETSTATUS response has been transmitted.  Signal usbd_dfu_reconf_thread to
@@ -153,21 +189,9 @@ static void dfu_cb_reconf(void)
 {
 	rtos_sema_give(dfu_reconf_sema);
 }
-#endif /* USBD_DFU_WILL_DETACH */
+#endif /* CONFIG_USBD_DFU_WILL_DETACH */
 
-static usbd_dfu_cb_t dfu_cb = {
-	.init           = dfu_cb_init,
-	.deinit         = dfu_cb_deinit,
-	.write          = dfu_cb_write,
-	.read           = dfu_cb_read,
-	.manifest       = dfu_cb_manifest,
-	.detach         = dfu_cb_detach,
-#if USBD_DFU_WILL_DETACH
-	.reconf         = dfu_cb_reconf,
-#endif
-};
-
-#if USBD_DFU_WILL_DETACH
+#ifdef CONFIG_USBD_DFU_WILL_DETACH
 static void usbd_dfu_reconf_thread(void *param)
 {
 	int ret;
@@ -191,7 +215,7 @@ static void usbd_dfu_reconf_thread(void *param)
 		if (ret != HAL_OK) {
 			break;
 		}
-		ret = usbd_dfu_init(&dfu_cb);
+		ret = usbd_dfu_init(&dfu_cb, &dfu_class_cfg);
 		if (ret != HAL_OK) {
 			usbd_deinit();
 			break;
@@ -206,18 +230,18 @@ static void usbd_dfu_reconf_thread(void *param)
 	dfu_reconf_sema = NULL;
 	rtos_task_delete(NULL);
 }
-#endif /* USBD_DFU_WILL_DETACH */
+#endif /* CONFIG_USBD_DFU_WILL_DETACH */
 
 static void example_usbd_dfu_thread(void *param)
 {
 	int ret;
-#if USBD_DFU_WILL_DETACH
+#ifdef CONFIG_USBD_DFU_WILL_DETACH
 	rtos_task_t reconf_task;
 #endif
 
 	UNUSED(param);
 
-#if USBD_DFU_WILL_DETACH
+#ifdef CONFIG_USBD_DFU_WILL_DETACH
 	ret = rtos_sema_create(&dfu_reconf_sema, 0U, 1U);
 	if (ret != RTK_SUCCESS) {
 		goto exit;
@@ -229,7 +253,7 @@ static void example_usbd_dfu_thread(void *param)
 		goto exit;
 	}
 
-	ret = usbd_dfu_init(&dfu_cb);
+	ret = usbd_dfu_init(&dfu_cb, &dfu_class_cfg);
 	if (ret != HAL_OK) {
 		usbd_deinit();
 		goto exit;
@@ -237,7 +261,7 @@ static void example_usbd_dfu_thread(void *param)
 
 	usbd_dfu_set_write_poll_ms(USBD_DFU_DEMO_WRITE_POLL_MS);
 
-#if USBD_DFU_WILL_DETACH
+#ifdef CONFIG_USBD_DFU_WILL_DETACH
 	ret = rtos_task_create(&reconf_task, "usbd_dfu_reconf_thread", usbd_dfu_reconf_thread, NULL,
 						   DFU_RECONF_THREAD_STACK_SIZE, DFU_RECONF_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
@@ -245,7 +269,7 @@ static void example_usbd_dfu_thread(void *param)
 		usbd_deinit();
 		goto exit;
 	}
-#if defined(CONFIG_SMP)
+#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
 	/* C-2: the USB OTG ISR is delivered on CPU0 (GIC ITARGETSR pins every SPI to
 	   core 0). Pinning the thread that deinits/reinits the stack to CPU0 puts it on
 	   the same core as the ISR, so deinit's local interrupt disable is meaningful
@@ -254,13 +278,12 @@ static void example_usbd_dfu_thread(void *param)
 #endif
 #endif
 
-	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD DFU demo start\n");
 	rtos_task_delete(NULL);
 	return;
 
 exit:
-	RTK_LOGS(TAG, RTK_LOG_ERROR, "USBD DFU demo fail\n");
-#if USBD_DFU_WILL_DETACH
+	RTK_LOGS(TAG, RTK_LOG_ERROR, "USBD DFU demo aborted\n");
+#ifdef CONFIG_USBD_DFU_WILL_DETACH
 	rtos_sema_delete(dfu_reconf_sema);
 	dfu_reconf_sema = NULL;
 #endif
@@ -274,9 +297,11 @@ void example_usbd_dfu(void)
 	int status;
 	rtos_task_t task;
 
+	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD DFU demo start\n");
+
 	status = rtos_task_create(&task, "usbd_dfu_thread", example_usbd_dfu_thread, NULL,
 							  DFU_INIT_THREAD_STACK_SIZE, DFU_INIT_THREAD_PRIORITY);
 	if (status != RTK_SUCCESS) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create thread fail\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create USBD DFU thread fail\n");
 	}
 }

@@ -68,9 +68,33 @@ LOG_MODULE_REGISTER(bt_smp);
 #define LINK_DIST 0
 #endif
 
+#if ZEPHYR_RTK_PATCH
+#define RECV_KEYS_DEFAULT (BT_SMP_DIST_ENC_KEY | BT_SMP_DIST_ID_KEY | LINK_DIST)
+#define SEND_KEYS_DEFAULT (BT_SMP_DIST_ENC_KEY | ID_DIST | LINK_DIST)
+static uint8_t smp_recv_keys = RECV_KEYS_DEFAULT;
+static uint8_t smp_send_keys = SEND_KEYS_DEFAULT;
+void bt_set_sign_key_flag(bool enable)
+{
+	if (enable) {
+#if defined(CONFIG_BT_SIGNING)
+		smp_recv_keys |= BT_SMP_DIST_SIGN;
+		smp_send_keys |= BT_SMP_DIST_SIGN;
+#else
+		/* If you want to set sign key flag to true, please enable CONFIG_BT_SIGNING */
+		LOG_WRN("BT signing not supported");
+#endif
+	} else {
+		smp_recv_keys &= ~BT_SMP_DIST_SIGN;
+		smp_send_keys &= ~BT_SMP_DIST_SIGN;
+	}
+}
+#define RECV_KEYS (smp_recv_keys)
+#define SEND_KEYS (smp_send_keys)
+#else /* ZEPHYR_RTK_PATCH */
 #define RECV_KEYS (BT_SMP_DIST_ENC_KEY | BT_SMP_DIST_ID_KEY | SIGN_DIST |\
 		   LINK_DIST)
 #define SEND_KEYS (BT_SMP_DIST_ENC_KEY | ID_DIST | SIGN_DIST | LINK_DIST)
+#endif /* ZEPHYR_RTK_PATCH */
 
 #define RECV_KEYS_SC (RECV_KEYS & ~(BT_SMP_DIST_ENC_KEY))
 #define SEND_KEYS_SC (SEND_KEYS & ~(BT_SMP_DIST_ENC_KEY))
@@ -2607,6 +2631,7 @@ void bt_set_bondable(bool enable)
 {
 	bondable = enable;
 }
+
 #if ZEPHYR_RTK_PATCH
 void bt_set_mitm_flag(bool enable)
 {
@@ -2623,6 +2648,7 @@ void bt_set_min_enc_key_size_required(uint8_t size)
 	min_enc_key_size_required = size;
 }
 #endif
+
 /* Add function for legacy oob, zephyr_patch */
 void bt_set_sc_support(bool enable)
 {
@@ -6070,6 +6096,11 @@ int bt_smp_init(void)
 	if (!IS_ENABLED(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY)) {
 		bt_pub_key_gen(&pub_key_cb);
 	}
+
+#if ZEPHYR_RTK_PATCH
+	smp_recv_keys = RECV_KEYS_DEFAULT;
+	smp_send_keys = SEND_KEYS_DEFAULT;
+#endif
 
 	return smp_self_test();
 }

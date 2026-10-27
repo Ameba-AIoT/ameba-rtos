@@ -7,11 +7,27 @@
 #ifndef USB_UAC1_H
 #define USB_UAC1_H
 
+/* Includes ------------------------------------------------------------------*/
+
 #include "usb_uac.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/** @addtogroup USB_Common_API USB Common API
+ *  @{
+ */
+
+/* Exported defines ----------------------------------------------------------*/
+
+/** @addtogroup USB_Common_Constants USB Common Constants
+ *  @{
+ */
+/** @defgroup USB_Common_UAC1_Constants USB UAC1 Constants (UAC 1.0)
+ *  @brief UAC 1.0 descriptor, request and terminal definitions shared by the USBD and USBH UAC drivers.
+ *  @{
+ */
 
 #define USB_UAC1_VERSION_01_00                      0x100U
 
@@ -138,6 +154,19 @@ typedef struct {
 	uint8_t bSamFreqType;
 	uint8_t tSamFreq[3][3];
 } __PACKED usb_uac1_format_type_i_discrete_descriptor;
+
+/** @} End of USB_Common_UAC1_Constants group */
+/** @} End of USB_Common_Constants group */
+
+/* Exported types ------------------------------------------------------------*/
+
+/* Exported macros -----------------------------------------------------------*/
+
+/* Exported variables --------------------------------------------------------*/
+
+/* Exported functions --------------------------------------------------------*/
+
+/** @} End of USB_Common_API group */
 
 #ifdef __cplusplus
 }

@@ -7,12 +7,22 @@
 #ifndef EXAMPLE_USBD_COMPOSITE_HID_UAC_RECORD_AUDIO_DATA_H
 #define EXAMPLE_USBD_COMPOSITE_HID_UAC_RECORD_AUDIO_DATA_H
 
+/* Includes ------------------------------------------------------------------*/
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/*  16bit 16000 2channel 1s*/
-const unsigned char usbd_uac_record_audio_data[] = {
+/* Exported defines ----------------------------------------------------------*/
+
+/* Exported types ------------------------------------------------------------*/
+
+/* Exported macros -----------------------------------------------------------*/
+
+/* Exported variables --------------------------------------------------------*/
+
+/* 16bit 16000 2channel 1s. Static: this header is included by the example .c only */
+static const unsigned char usbd_uac_record_audio_data[] = {
 	0xCA, 0xFD, 0xCF, 0xFD, 0x8B, 0x03, 0x83, 0x03, 0x7A, 0xF9, 0x86, 0xF9, 0x31, 0x1D, 0x02, 0x1D, 0xBB, 0x4A, 0x44, 0x4A, 0x0C, 0x40, 0xA7, 0x3F,
 	0x96, 0x43, 0x29, 0x43, 0x09, 0x3F, 0xA7, 0x3E, 0xC1, 0x3F, 0x59, 0x3F, 0x04, 0x3D, 0xA7, 0x3C, 0x96, 0x3C, 0x30, 0x3C, 0xCA, 0x3A, 0x73, 0x3A,
 	0xBE, 0x39, 0x5C, 0x39, 0x88, 0x38, 0x33, 0x38, 0x1D, 0x37, 0xC2, 0x36, 0x4B, 0x36, 0xF5, 0x35, 0xA7, 0x34, 0x55, 0x34, 0x19, 0x34, 0xC3, 0x33,
@@ -2692,10 +2702,12 @@ const unsigned char usbd_uac_record_audio_data[] = {
 	0x85, 0xFF, 0x6F, 0xFF, 0x76, 0xFF, 0x8F, 0xFF, 0xE3, 0xFF, 0xF4, 0xFF, 0x5C, 0x00, 0x7E, 0x00,
 };
 
-const unsigned int usbd_uac_record_data_len = 64000;
+static const unsigned int usbd_uac_record_data_len = sizeof(usbd_uac_record_audio_data);
+
+/* Exported functions --------------------------------------------------------*/
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif // EXAMPLE_USBH_UAC_AUDIO_DATA_H
+#endif /* EXAMPLE_USBD_COMPOSITE_HID_UAC_RECORD_AUDIO_DATA_H */

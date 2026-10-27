@@ -8,12 +8,6 @@ enum prehandler_ret {
 	UPLOAD_TO_LWIP = 0x1,
 };
 
-
-enum ext_clk_sel {
-	EXT_CLK_50M = 0xb,
-	EXT_CLK_25M = 0xc,
-};
-
 typedef void (*link_up_down_callback)(int link_up);
 typedef enum prehandler_ret(*eth_rx_prehandler_t)(struct pbuf **p, u8 *buf, u32 len);
 void eth_init(void);

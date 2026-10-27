@@ -86,10 +86,19 @@ static void rtw_gspi_init_txavailbd_threshold(struct whc_gspi *priv)
 
 	freeBDNum = rtw_read32(priv, GSPI_REG_FREE_TXBD_NUM) & GSPI_FREE_TXBD_NUM_MSK;
 
-	/* When the free BD count crosses from "< L" up to ">= H", TXBD_AVAL fires.
-	 * The driver always keeps at least 1 BD free, hence L = 1. */
+#if defined(CONFIG_AMEBAGREEN2) || defined (CONFIG_AMEBAX)
+	/* The value of GSPI_REG_FREE_TXBD_NUM = actual FREE TXBD NUM-1.
+	When this value changes from "< txBDTh_l" to ">= txBDTh_h", TXBD_AVAIL interrupt triggers.
+	Because driver would keep at least 1 TXBD available, so this value would >= 0*/
 	txBDTh_l = 1;
 	txBDTh_h = (freeBDNum + 1) / 2;
+#else
+	/* When actual FREE TXBD NUM changes from "< txBDTh_l" to ">= txBDTh_h", TXBD_AVAIL interrupt triggers.
+	Because driver would keep at least 1 TXBD available, so the actual FREE TXBD NUM would >= 1*/
+	txBDTh_l = 2;
+	txBDTh_h = 3;
+#endif
+
 	if (txBDTh_h < txBDTh_l) {
 		txBDTh_h = txBDTh_l;
 	}
@@ -113,20 +122,17 @@ void rtw_gspi_enable_rx_agg(struct whc_gspi *priv)
 
 u8 rtw_gspi_query_txbd_status(struct whc_gspi *priv)
 {
-#ifdef CALCULATE_FREE_TXBD
-	u8 wptr = priv->txbd_wptr;
-	u8 rptr;
+	u16 wptr = priv->txbd_wptr;
+	u16 rptr;
 
-	rptr = rtw_read8(priv, SPDIO_REG_TXBD_RPTR);
+	rptr = (u16)rtw_read8(priv, SPDIO_REG_TXBD_RPTR);
 
 	if (wptr >= rptr) {
 		priv->GspiTxBDFreeNum = priv->txbd_size + rptr - wptr - 1;
 	} else {
 		priv->GspiTxBDFreeNum = rptr - wptr - 1;
 	}
-#else
-	priv->GspiTxBDFreeNum = rtw_read16(priv, GSPI_REG_FREE_TXBD_NUM);
-#endif
+
 	return true;
 }
 

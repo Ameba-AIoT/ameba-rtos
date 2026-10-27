@@ -33,6 +33,8 @@ DRESULT USB_disk_ioctl(BYTE cmd, void *buff);
 
 static const char *const TAG = "MSC";
 
+/* Exported variables --------------------------------------------------------*/
+
 /* USB Disk Driver */
 ll_diskio_drv USB_disk_Driver = {
 	.disk_initialize = USB_disk_initialize,
@@ -82,7 +84,7 @@ DRESULT USB_disk_read(BYTE *buff, DWORD sector, u32 count)
 	usbh_msc_lun_t info = {0};
 	int status = HAL_OK;
 
-#if CONFIG_USBH_MSC_RETRY
+#if USBH_MSC_RETRY_ENABLE
 	int i;
 
 	for (i = 0; i < USBH_MSC_RETRY_CNT; ++i) {
@@ -142,7 +144,7 @@ DRESULT USB_disk_write(const BYTE *buff, DWORD sector, u32 count)
 	usbh_msc_lun_t info = {0};
 	int status = HAL_OK;
 
-#if CONFIG_USBH_MSC_RETRY
+#if USBH_MSC_RETRY_ENABLE
 	int i;
 
 	for (i = 0; i < USBH_MSC_RETRY_CNT; ++i) {

@@ -38,6 +38,7 @@ void SOCPS_NVICBackupEntry(struct CPU_BackUp_TypeDef *bk, SysTick_Type *systick,
 
 void SOCPS_NVICReFillEntry(struct CPU_BackUp_TypeDef *bk, SysTick_Type *systick, NVIC_Type *nvic, SCB_Type *scb)
 {
+	BOOT_SCBConfig_NP();
 	SOCPS_NVICReFill(bk, systick, nvic, scb);
 }
 

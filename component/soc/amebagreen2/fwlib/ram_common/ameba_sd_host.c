@@ -39,6 +39,26 @@ static u8 is_timeout(u32 start_us, u32 timeout_us)
   */
 
 /**
+ * @brief  Route the SD host to its clock source. Call before touching any SD
+ *         host register, as the register block is only reachable once the
+ *         peripheral is fed from a running clock.
+ */
+void SDIO_ClockSourceInit(void)
+{
+	RCC_PeriphClockSourceSet(SDH, SYS_PLL);
+	RCC_PeriphClockDividerFENSet(SYS_PLL_SDH, 1);
+}
+
+/**
+ * @brief  Host-init entry for the shared Zephyr SDHC driver; thin alias for
+ *         SDIOH_Init(). Native firmware keeps calling SDIOH_Init() directly.
+ */
+u32 SDIO_HostInit(SDIOHOST_TypeDef *SDIOx)
+{
+	return SDIOH_Init(SDIOx);
+}
+
+/**
  * @brief  Initialize the SD host controller and enable the SD clock.
  * @param  SDIOx Pointer to SD host controller.
  * @return HAL status:

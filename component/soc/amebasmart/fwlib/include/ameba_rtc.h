@@ -514,6 +514,14 @@ typedef struct {
   * @}
   */
 
+/** @defgroup RTC_ISR_Mask RTC ISR Mask
+  * @{
+  */
+#define RTC_ISR_RW1C_MASK	(RTC_BIT_DOVTHF | RTC_BIT_WUTF | RTC_BIT_ALMF | RTC_BIT_RSF | RTC_BIT_WUTRSF) /*!< RW1C flags of RTC_ISR register. */
+/**
+  * @}
+  */
+
 /** @defgroup RTC_Timeout_Control RTC Timeout Control
   * @{
   */

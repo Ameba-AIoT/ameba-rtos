@@ -11,7 +11,7 @@
 extern "C" {
 #endif
 
-#if defined(CONFIG_ARM_CORE_CM4_KM4TZ)
+#if defined(CONFIG_ARM_CORE_CM55_KM55TZ)
 typedef enum {
 	PMU_OS              = 0,
 	PMU_WLAN_DEVICE,
@@ -24,7 +24,7 @@ typedef enum {
 	PMU_DEV_USER_BASE,     /* reserved for customer use */
 	PMU_MAX,
 } PMU_DEVICE;
-#else /* CONFIG_ARM_CORE_CM4_KM4NS */
+#else /* CONFIG_ARM_CORE_CM55_KM55NS */
 typedef enum {
 	PMU_OS              = 0,
 	PMU_WLAN_DEVICE,

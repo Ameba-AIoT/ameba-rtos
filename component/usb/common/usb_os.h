@@ -21,13 +21,18 @@
 extern "C" {
 #endif
 
-/* Exported defines ----------------------------------------------------------*/
-
 /** @addtogroup USB_Common_API USB Common API
  *  @{
  */
+
+/* Exported defines ----------------------------------------------------------*/
+
 /** @addtogroup USB_Common_Constants USB Common Constants
  * @{
+ */
+/** @defgroup USB_Common_OS_Constants USB OS Constants
+ *  @brief Timeout and alignment definitions of the USB OS abstraction.
+ *  @{
  */
 
 /**
@@ -35,6 +40,11 @@ extern "C" {
  */
 #ifndef CONFIG_NON_OS
 #define USB_OS_SEMA_TIMEOUT		(RTOS_SEMA_MAX_COUNT)
+
+/**
+ * @brief Timeout value making a queue or semaphore wait block until it is served.
+ */
+#define USB_OS_WAIT_FOREVER		(RTOS_MAX_TIMEOUT)
 #endif
 
 /**
@@ -46,7 +56,43 @@ extern "C" {
 #define USB_DMA_ALIGNED		__attribute__((aligned(CACHE_LINE_SIZE)))
 #endif
 
+/** @} End of USB_Common_OS_Constants group */
+/** @} End of USB_Common_Constants group */
+
+/* Exported types ------------------------------------------------------------*/
+
+/** @addtogroup USB_Common_Types USB Common Types
+ * @{
+ */
+/** @defgroup USB_Common_OS_Types USB OS Types
+ *  @brief Abstracted OS object types of the USB OS abstraction.
+ *  @{
+ */
+
+/**
+ * @brief Type definitions for abstracting OS objects.
+ * @{
+ */
+#ifndef CONFIG_NON_OS
+typedef rtos_mutex_t usb_os_lock_t;   /**< Abstracted type for a mutex or lock. */
+typedef rtos_sema_t usb_os_sema_t;    /**< Abstracted type for a semaphore. */
+typedef rtos_queue_t usb_os_queue_t;  /**< Abstracted type for a message queue. */
+typedef rtos_task_t usb_os_task_t;    /**< Abstracted type for a task handle. */
+#endif
+/** @} */
+
+/** @} End of USB_Common_OS_Types group */
+/** @} End of USB_Common_Types group */
+
 /* Exported macros -----------------------------------------------------------*/
+
+/** @addtogroup USB_Common_Constants USB Common Constants
+ * @{
+ */
+/** @defgroup USB_Common_OS_Constants USB OS Constants
+ *  @brief Timeout and alignment definitions of the USB OS abstraction.
+ *  @{
+ */
 
 /**
  * @brief Checks if a memory address is aligned to the cache line size.
@@ -74,25 +120,9 @@ extern "C" {
 #ifndef USB_HIGH_BYTE
 #define USB_HIGH_BYTE(x)	((u8)(((x) >> 8) & 0x00FFU))
 #endif
+
+/** @} End of USB_Common_OS_Constants group */
 /** @} End of USB_Common_Constants group */
-
-/* Exported types ------------------------------------------------------------*/
-
-/** @addtogroup USB_Common_Types USB Common Types
- * @{
- */
-/**
- * @brief Type definitions for abstracting OS objects.
- * @{
- */
-#ifndef CONFIG_NON_OS
-typedef rtos_mutex_t usb_os_lock_t;   /**< Abstracted type for a mutex or lock. */
-typedef rtos_sema_t usb_os_sema_t;    /**< Abstracted type for a semaphore. */
-typedef rtos_queue_t usb_os_queue_t;  /**< Abstracted type for a message queue. */
-typedef rtos_task_t usb_os_task_t;    /**< Abstracted type for a task handle. */
-#endif
-/** @} */
-/** @} End of USB_Common_Types group */
 
 /* Exported variables --------------------------------------------------------*/
 
@@ -101,6 +131,11 @@ typedef rtos_task_t usb_os_task_t;    /**< Abstracted type for a task handle. */
 /** @addtogroup USB_Common_Functions USB Common Functions
  * @{
  */
+/** @defgroup USB_Common_OS_Functions USB OS Functions
+ *  @brief Memory, lock, semaphore, queue and timing wrappers of the USB OS abstraction.
+ *  @{
+ */
+
 /**
  * @brief Delays execution for a specified number of milliseconds.
  * @param[in] ms: The duration to sleep in milliseconds.
@@ -147,6 +182,14 @@ void usb_os_memset(void *buf, u8 val, u32 size);
  */
 void usb_os_memcpy(void *dst, const void *src, u32 size);
 
+/**
+ * @brief Issues a full memory barrier.
+ * @details Every memory access before the call completes before any access after it, as seen
+ *          by other cores and bus masters. Use it to publish data shared between task and ISR
+ *          contexts that may run on different SMP cores.
+ */
+void usb_os_mem_sync(void);
+
 #ifndef CONFIG_NON_OS
 /**
  * @brief Allocates a block of memory from the heap.
@@ -190,25 +233,66 @@ int usb_os_lock(usb_os_lock_t lock);
 int usb_os_unlock(usb_os_lock_t lock);
 
 /**
- * @brief Enters a critical section (disables interrupts).
- * @param[in] in_critical: Flag indicating if this should be a critical section.
+ * @brief Enters the USB critical section (disables interrupts, and takes the USB spinlock under SMP).
+ * @note  Usable in task and ISR context. Nests on the same core: calling it again while
+ *        already inside, e.g. from a class callback of an ISR running with isr_in_critical,
+ *        only counts the nesting.
  * @return 0 on success, non-zero on failure
  */
-int usb_os_enter_critical(u8 in_critical);
+int usb_os_enter_critical(void);
 
 /**
- * @brief Exits a critical section (enables interrupts).
- * @param[in] in_critical: Flag indicating if this should be a critical section.
+ * @brief Exits the USB critical section, restoring interrupts on the outermost level only.
  * @return 0 on success, non-zero on failure
  */
-int usb_os_exit_critical(u8 in_critical);
+int usb_os_exit_critical(void);
 
 /**
- * @brief Creates a new binary or counting semaphore.
+ * @brief Tells whether the caller runs in interrupt context.
+ * @return 1 in interrupt context, 0 in task context.
+ */
+u8 usb_os_is_in_interrupt(void);
+
+/**
+ * @brief Atomically increments a counter shared across cores and contexts.
+ * @note  Lock free and usable from any context, without the interrupt latency of
+ *        @ref usb_os_enter_critical(). Full barrier on both sides.
+ * @param[in,out] cnt: Counter to increment.
+ */
+void usb_os_atomic_inc(volatile u32 *cnt);
+
+/**
+ * @brief Atomically decrements a counter shared across cores and contexts.
+ * @note  See @ref usb_os_atomic_inc().
+ * @param[in,out] cnt: Counter to decrement.
+ */
+void usb_os_atomic_dec(volatile u32 *cnt);
+
+/**
+ * @brief Atomically reads a counter shared across cores and contexts.
+ * @note  Full barrier: the stores the other core made before its last update are visible.
+ * @param[in] cnt: Counter to read.
+ * @return Current value.
+ */
+u32 usb_os_atomic_load(const volatile u32 *cnt);
+
+/**
+ * @brief Creates a new binary semaphore, initially empty.
  * @param[out] sema: Pointer to the semaphore handle to be created.
  * @return 0 on success, non-zero on failure
  */
 int usb_os_sema_create(usb_os_sema_t *sema);
+
+/**
+ * @brief Creates a new counting semaphore.
+ * @details The handle is released and used with the same calls as a binary semaphore:
+ *          @ref usb_os_sema_delete, @ref usb_os_sema_take and @ref usb_os_sema_give.
+ * @param[out] sema: Pointer to the semaphore handle to be created.
+ * @param[in] init_count: Initial count, no greater than max_count.
+ * @param[in] max_count: Maximum count, at least 1.
+ * @return 0 on success, HAL_ERR_PARA on invalid counts, HAL_ERR_MEM if it cannot be created.
+ */
+int usb_os_sema_create_with_count(usb_os_sema_t *sema, u32 init_count, u32 max_count);
 
 /**
  * @brief Deletes a semaphore.
@@ -272,7 +356,10 @@ int usb_os_queue_receive(usb_os_queue_t queue, void *msg, u32 wait_ms);
  */
 u32 usb_os_get_free_heap_size(void);
 #endif
+
+/** @} End of USB_Common_OS_Functions group */
 /** @} End of USB_Common_Functions group */
+
 /** @} End of USB_Common_API group */
 
 #ifdef __cplusplus
@@ -280,4 +367,3 @@ u32 usb_os_get_free_heap_size(void);
 #endif
 
 #endif /* USB_OS_H */
-

@@ -317,7 +317,8 @@ def main():
         if os.name == "nt":
             toolchain_path = os.path.join(args.toolchain_dir, "mingw32", "newlib")
         else:
-            toolchain_path = os.path.join(args.toolchain_dir, "linux", "newlib")
+            host = "darwin" if sys.platform == "darwin" else "linux"
+            toolchain_path = os.path.join(args.toolchain_dir, host, "newlib")
         if not os.path.exists(args.toolchain_dir):
             print_red(f"Error: Toolchain '{args.toolchain_dir}' does not exist")
 

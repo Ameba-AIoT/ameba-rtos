@@ -92,15 +92,6 @@
 #define GET_MAR7(x) ((u32)(((x >> 0) & 0x000000FF)))
 /** @} */
 
-/** @defgroup ETH_TXOKCNT
-  * @brief
-  * @{
-  */
-#define MASK_TXOK   ((u16)0x0000FFFF << 0)           /*!< RWC 0x0  16-bit counter of  Tx Ok packets.  Rolls over automatically.  Write to clear.*/
-#define TXOK(x)     (((u16)((x) & 0x0000FFFF) << 0))
-#define GET_TXOK(x) ((u16)(((x >> 0) & 0x0000FFFF)))
-/** @} */
-
 /** @defgroup ETH_RXOKCNT
   * @brief
   * @{
@@ -110,13 +101,13 @@
 #define GET_RXOK(x) ((u16)(((x >> 0) & 0x0000FFFF)))
 /** @} */
 
-/** @defgroup ETH_TXERR
+/** @defgroup ETH_TXOKCNT
   * @brief
   * @{
   */
-#define MASK_TXERR   ((u16)0x0000FFFF << 0)           /*!< RWC 0x0  16-bit counter of TxErr packets.  Rolls over automatically.  Write  to clear. The source of TxErr are txunder, txabt(in half-duplex mode) or txlinkerr.*/
-#define TXERR(x)     (((u16)((x) & 0x0000FFFF) << 0))
-#define GET_TXERR(x) ((u16)(((x >> 0) & 0x0000FFFF)))
+#define MASK_TXOK   ((u16)0x0000FFFF << 0)           /*!< RWC 0x0  16-bit counter of  Tx Ok packets.  Rolls over automatically.  Write to clear.*/
+#define TXOK(x)     (((u16)((x) & 0x0000FFFF) << 0))
+#define GET_TXOK(x) ((u16)(((x >> 0) & 0x0000FFFF)))
 /** @} */
 
 /** @defgroup ETH_RXERR
@@ -128,13 +119,13 @@
 #define GET_RXERR(x) ((u16)(((x >> 0) & 0x0000FFFF)))
 /** @} */
 
-/** @defgroup ETH_MISSPKT
+/** @defgroup ETH_TXERR
   * @brief
   * @{
   */
-#define MASK_MISSPKT   ((u16)0x0000FFFF << 0)           /*!< RWC 0x0  16-bit counter of Missed packets.  Rolls over automatically.  Write to clear.*/
-#define MISSPKT(x)     (((u16)((x) & 0x0000FFFF) << 0))
-#define GET_MISSPKT(x) ((u16)(((x >> 0) & 0x0000FFFF)))
+#define MASK_TXERR   ((u16)0x0000FFFF << 0)           /*!< RWC 0x0  16-bit counter of TxErr packets.  Rolls over automatically.  Write  to clear. The source of TxErr are txunder, txabt(in half-duplex mode) or txlinkerr.*/
+#define TXERR(x)     (((u16)((x) & 0x0000FFFF) << 0))
+#define GET_TXERR(x) ((u16)(((x >> 0) & 0x0000FFFF)))
 /** @} */
 
 /** @defgroup ETH_FAE
@@ -146,13 +137,13 @@
 #define GET_FAE(x) ((u16)(((x >> 0) & 0x0000FFFF)))
 /** @} */
 
-/** @defgroup ETH_TX1COL
+/** @defgroup ETH_MISSPKT
   * @brief
   * @{
   */
-#define MASK_TX1COL   ((u16)0x0000FFFF << 0)           /*!< RWC 0x0  16-bit counter of  TxCol packets.  Rolls over automatically.  Write to clear.  This only record which have entered just one collision before Tx OK*/
-#define TX1COL(x)     (((u16)((x) & 0x0000FFFF) << 0))
-#define GET_TX1COL(x) ((u16)(((x >> 0) & 0x0000FFFF)))
+#define MASK_MISSPKT   ((u16)0x0000FFFF << 0)           /*!< RWC 0x0  16-bit counter of Missed packets.  Rolls over automatically.  Write to clear.*/
+#define MISSPKT(x)     (((u16)((x) & 0x0000FFFF) << 0))
+#define GET_MISSPKT(x) ((u16)(((x >> 0) & 0x0000FFFF)))
 /** @} */
 
 /** @defgroup ETH_TXMCOL
@@ -164,13 +155,13 @@
 #define GET_TXMCOL(x) ((u16)(((x >> 0) & 0x0000FFFF)))
 /** @} */
 
-/** @defgroup ETH_RXOKPHY
+/** @defgroup ETH_TX1COL
   * @brief
   * @{
   */
-#define MASK_RXOKPHY   ((u16)0x0000FFFF << 0)           /*!< RWC 0x0  16-bit counter of Rx Ok packets with physical address matching destination address.  Rolls over automatically.  Write to clear.*/
-#define RXOKPHY(x)     (((u16)((x) & 0x0000FFFF) << 0))
-#define GET_RXOKPHY(x) ((u16)(((x >> 0) & 0x0000FFFF)))
+#define MASK_TX1COL   ((u16)0x0000FFFF << 0)           /*!< RWC 0x0  16-bit counter of  TxCol packets.  Rolls over automatically.  Write to clear.  This only record which have entered just one collision before Tx OK*/
+#define TX1COL(x)     (((u16)((x) & 0x0000FFFF) << 0))
+#define GET_TX1COL(x) ((u16)(((x >> 0) & 0x0000FFFF)))
 /** @} */
 
 /** @defgroup ETH_RXOKBRD
@@ -182,13 +173,13 @@
 #define GET_RXOKBRD(x) ((u16)(((x >> 0) & 0x0000FFFF)))
 /** @} */
 
-/** @defgroup ETH_RXOKMU1
+/** @defgroup ETH_RXOKPHY
   * @brief
   * @{
   */
-#define MASK_RXOKMUL   ((u16)0x0000FFFF << 0)           /*!< RWC 0x0  16-bit counter of Rx Ok packets with multicast destination address.   Rolls over automatically.   Write to clear.*/
-#define RXOKMUL(x)     (((u16)((x) & 0x0000FFFF) << 0))
-#define GET_RXOKMUL(x) ((u16)(((x >> 0) & 0x0000FFFF)))
+#define MASK_RXOKPHY   ((u16)0x0000FFFF << 0)           /*!< RWC 0x0  16-bit counter of Rx Ok packets with physical address matching destination address.  Rolls over automatically.  Write to clear.*/
+#define RXOKPHY(x)     (((u16)((x) & 0x0000FFFF) << 0))
+#define GET_RXOKPHY(x) ((u16)(((x >> 0) & 0x0000FFFF)))
 /** @} */
 
 /** @defgroup ETH_TXABT
@@ -200,13 +191,13 @@
 #define GET_TXABT(x) ((u16)(((x >> 0) & 0x0000FFFF)))
 /** @} */
 
-/** @defgroup ETH_TXUNDERC
+/** @defgroup ETH_RXOKMU1
   * @brief
   * @{
   */
-#define MASK_TXUNDERC   ((u16)0x0000FFFF << 0)           /*!< RWC 0x0  16-bit counter of Tx Underrun packets. Rolls over automatically.  Write to clear.  gmac only.*/
-#define TXUNDERC(x)     (((u16)((x) & 0x0000FFFF) << 0))
-#define GET_TXUNDERC(x) ((u16)(((x >> 0) & 0x0000FFFF)))
+#define MASK_RXOKMUL   ((u16)0x0000FFFF << 0)           /*!< RWC 0x0  16-bit counter of Rx Ok packets with multicast destination address.   Rolls over automatically.   Write to clear.*/
+#define RXOKMUL(x)     (((u16)((x) & 0x0000FFFF) << 0))
+#define GET_RXOKMUL(x) ((u16)(((x >> 0) & 0x0000FFFF)))
 /** @} */
 
 /** @defgroup ETH_MISSPKT_RDU
@@ -216,6 +207,15 @@
 #define MASK_RDU_MISSPKTC   ((u16)0x0000FFFF << 0)           /*!< RWC 0x0  16-bit counter of miss packets due to rx descriptor is unavailable. Rolls over automatically.  Write to clear.  gmac only.*/
 #define RDU_MISSPKTC(x)     (((u16)((x) & 0x0000FFFF) << 0))
 #define GET_RDU_MISSPKTC(x) ((u16)(((x >> 0) & 0x0000FFFF)))
+/** @} */
+
+/** @defgroup ETH_TXUNDERC
+  * @brief
+  * @{
+  */
+#define MASK_TXUNDERC   ((u16)0x0000FFFF << 0)           /*!< RWC 0x0  16-bit counter of Tx Underrun packets. Rolls over automatically.  Write to clear.  gmac only.*/
+#define TXUNDERC(x)     (((u16)((x) & 0x0000FFFF) << 0))
+#define GET_TXUNDERC(x) ((u16)(((x >> 0) & 0x0000FFFF)))
 /** @} */
 
 /** @defgroup ETH_TRSR
@@ -260,100 +260,106 @@
 #define GET_RST(x)         ((u32)(((x >> 0) & 0x00000001)))
 /** @} */
 
-/** @defgroup ETH_ISR_AND_IMR
+/** @defgroup ETH_ISR
   * @brief
   * @{
   */
-#define BIT_IMR_RDU6        ((u32)0x00000001 << 31)           /*!< R/W   */
-#define IMR_RDU6(x)         ((u32)(((x) & 0x00000001) << 31))
-#define GET_IMR_RDU6(x)     ((u32)(((x >> 31) & 0x00000001)))
-#define BIT_IMR_RDU5        ((u32)0x00000001 << 30)           /*!< R/W   */
-#define IMR_RDU5(x)         ((u32)(((x) & 0x00000001) << 30))
-#define GET_IMR_RDU5(x)     ((u32)(((x >> 30) & 0x00000001)))
-#define BIT_IMR_RDU4        ((u32)0x00000001 << 29)           /*!< R/W   */
-#define IMR_RDU4(x)         ((u32)(((x) & 0x00000001) << 29))
-#define GET_IMR_RDU4(x)     ((u32)(((x >> 29) & 0x00000001)))
-#define BIT_IMR_RDU3        ((u32)0x00000001 << 28)           /*!< R/W   */
-#define IMR_RDU3(x)         ((u32)(((x) & 0x00000001) << 28))
-#define GET_IMR_RDU3(x)     ((u32)(((x >> 28) & 0x00000001)))
-#define BIT_IMR_RDU2        ((u32)0x00000001 << 27)           /*!< R/W   */
-#define IMR_RDU2(x)         ((u32)(((x) & 0x00000001) << 27))
-#define GET_IMR_RDU2(x)     ((u32)(((x >> 27) & 0x00000001)))
-#define BIT_IMR_SWINT       ((u32)0x00000001 << 26)           /*!< R/W   */
-#define IMR_SWINT(x)        ((u32)(((x) & 0x00000001) << 26))
-#define GET_IMR_SWINT(x)    ((u32)(((x >> 26) & 0x00000001)))
-#define BIT_IMR_TDU         ((u32)0x00000001 << 25)           /*!< R/W   */
-#define IMR_TDU(x)          ((u32)(((x) & 0x00000001) << 25))
-#define GET_IMR_TDU(x)      ((u32)(((x >> 25) & 0x00000001)))
-#define BIT_IMR_LINKCHG     ((u32)0x00000001 << 24)           /*!< R/W   */
-#define IMR_LINKCHG(x)      ((u32)(((x) & 0x00000001) << 24))
-#define GET_IMR_LINKCHG(x)  ((u32)(((x >> 24) & 0x00000001)))
-#define BIT_IMR_TER         ((u32)0x00000001 << 23)           /*!< R/W   */
-#define IMR_TER(x)          ((u32)(((x) & 0x00000001) << 23))
-#define GET_IMR_TER(x)      ((u32)(((x >> 23) & 0x00000001)))
-#define BIT_IMR_TOK_TI      ((u32)0x00000001 << 22)           /*!< R/W   */
-#define IMR_TOK_TI(x)       ((u32)(((x) & 0x00000001) << 22))
-#define GET_IMR_TOK_TI(x)   ((u32)(((x >> 22) & 0x00000001)))
-#define BIT_IMR_RDU1        ((u32)0x00000001 << 21)           /*!< R/W   */
-#define IMR_RDU1(x)         ((u32)(((x) & 0x00000001) << 21))
-#define GET_IMR_RDU1(x)     ((u32)(((x >> 21) & 0x00000001)))
-#define BIT_IMR_RER_OVF     ((u32)0x00000001 << 20)           /*!< R/W   */
-#define IMR_RER_OVF(x)      ((u32)(((x) & 0x00000001) << 20))
-#define GET_IMR_RER_OVF(x)  ((u32)(((x >> 20) & 0x00000001)))
-#define BIT_IMR_RER_RUNT    ((u32)0x00000001 << 18)           /*!< R/W   */
-#define IMR_RER_RUNT(x)     ((u32)(((x) & 0x00000001) << 18))
-#define GET_IMR_RER_RUNT(x) ((u32)(((x >> 18) & 0x00000001)))
-#define BIT_IMR_CNT_WRAP    ((u32)0x00000001 << 17)           /*!< R/W   */
-#define IMR_CNT_WRAP(x)     ((u32)(((x) & 0x00000001) << 17))
-#define GET_IMR_CNT_WRAP(x) ((u32)(((x >> 17) & 0x00000001)))
-#define BIT_IMR_ROK         ((u32)0x00000001 << 16)           /*!< R/W   */
-#define IMR_ROK(x)          ((u32)(((x) & 0x00000001) << 16))
-#define GET_IMR_ROK(x)      ((u32)(((x >> 16) & 0x00000001)))
-#define BIT_ISR_RDU6        ((u32)0x00000001 << 15)           /*!< RWC   Rx Descriptor Unavailable for RING6:  When set, indicates Rx descriptor is unavailable.  Write 1 to clear.*/
-#define ISR_RDU6(x)         ((u32)(((x) & 0x00000001) << 15))
-#define GET_ISR_RDU6(x)     ((u32)(((x >> 15) & 0x00000001)))
-#define BIT_ISR_RDU5        ((u32)0x00000001 << 14)           /*!< RWC   Rx Descriptor Unavailable for RING5:  When set, indicates Rx descriptor is unavailable.  Write 1 to clear.*/
-#define ISR_RDU5(x)         ((u32)(((x) & 0x00000001) << 14))
-#define GET_ISR_RDU5(x)     ((u32)(((x >> 14) & 0x00000001)))
-#define BIT_ISR_RDU4        ((u32)0x00000001 << 13)           /*!< RWC   Rx Descriptor Unavailable for RING4:  When set, indicates Rx descriptor is unavailable.  Write 1 to clear.*/
-#define ISR_RDU4(x)         ((u32)(((x) & 0x00000001) << 13))
-#define GET_ISR_RDU4(x)     ((u32)(((x >> 13) & 0x00000001)))
-#define BIT_ISR_RDU3        ((u32)0x00000001 << 12)           /*!< RWC   Rx Descriptor Unavailable for RING3:  When set, indicates Rx descriptor is unavailable.  Write 1 to clear.*/
-#define ISR_RDU3(x)         ((u32)(((x) & 0x00000001) << 12))
-#define GET_ISR_RDU3(x)     ((u32)(((x >> 12) & 0x00000001)))
-#define BIT_ISR_RDU2        ((u32)0x00000001 << 11)           /*!< RWC   Rx Descriptor Unavailable for RING2:  When set, indicates Rx descriptor is unavailable.  Write 1 to clear.*/
-#define ISR_RDU2(x)         ((u32)(((x) & 0x00000001) << 11))
-#define GET_ISR_RDU2(x)     ((u32)(((x >> 11) & 0x00000001)))
-#define BIT_ISR_SWINT       ((u32)0x00000001 << 10)           /*!< RWC   Software Interrupt pending:  When set to 1 indicates a software interrupt was forced.   Write 1 to clear.*/
-#define ISR_SWINT(x)        ((u32)(((x) & 0x00000001) << 10))
-#define GET_ISR_SWINT(x)    ((u32)(((x >> 10) & 0x00000001)))
-#define BIT_ISR_TDU         ((u32)0x00000001 << 9)            /*!< RWC   Tx Descriptor Unavailable:  When set, indicates Tx descriptor is unavailable.  Write 1 to clear.*/
-#define ISR_TDU(x)          ((u32)(((x) & 0x00000001) << 9))
-#define GET_ISR_TDU(x)      ((u32)(((x >> 9) & 0x00000001)))
-#define BIT_ISR_LINKCHG     ((u32)0x00000001 << 8)            /*!< RWC   Link Change:   Write 1 to clear.*/
-#define ISR_LINKCHG(x)      ((u32)(((x) & 0x00000001) << 8))
-#define GET_ISR_LINKCHG(x)  ((u32)(((x >> 8) & 0x00000001)))
-#define BIT_ISR_TER         ((u32)0x00000001 << 7)            /*!< RWC   Transmit (Tx) Error:  Indicates that a packet transmission was aborted, due to excessive collisions, according to the TXRR's setting.   Write 1 to clear.*/
-#define ISR_TER(x)          ((u32)(((x) & 0x00000001) << 7))
-#define GET_ISR_TER(x)      ((u32)(((x >> 7) & 0x00000001)))
-#define BIT_ISR_TOK_TI      ((u32)0x00000001 << 6)            /*!< RWC   Transmit Interrupt:   Indicates that the DMA of the last descriptor of TxIntMitigation number of Tx packet has completed and the last descriptor has been closed.  Write 1 to clear.*/
-#define ISR_TOK_TI(x)       ((u32)(((x) & 0x00000001) << 6))
-#define GET_ISR_TOK_TI(x)   ((u32)(((x >> 6) & 0x00000001)))
-#define BIT_ISR_RDU1        ((u32)0x00000001 << 5)            /*!< RWC   Rx Descriptor Unavailable for RING1:  When set, indicates Rx descriptor is unavailable.  Write 1 to clear.*/
-#define ISR_RDU1(x)         ((u32)(((x) & 0x00000001) << 5))
-#define GET_ISR_RDU1(x)     ((u32)(((x >> 5) & 0x00000001)))
-#define BIT_ISR_RER_OVF     ((u32)0x00000001 << 4)            /*!< RWC   Rx FIFO Overflow, caused by RBO/RDU, poor system bus (Lexra bus) performance, or overloaded Lexra bus traffic.  Write 1 to clear.*/
-#define ISR_RER_OVF(x)      ((u32)(((x) & 0x00000001) << 4))
-#define GET_ISR_RER_OVF(x)  ((u32)(((x >> 4) & 0x00000001)))
-#define BIT_ISR_RER_RUNT    ((u32)0x00000001 << 2)            /*!< RWC   Rx error caused by runt error characterized by the frame length in bytes being less than 64 bytes. Write 1 to clear.*/
-#define ISR_RER_RUNT(x)     ((u32)(((x) & 0x00000001) << 2))
-#define GET_ISR_RER_RUNT(x) ((u32)(((x >> 2) & 0x00000001)))
-#define BIT_ISR_CNT_WRAP    ((u32)0x00000001 << 1)            /*!< RWC   Tx/rx counter wrap interrupt.*/
-#define ISR_CNT_WRAP(x)     ((u32)(((x) & 0x00000001) << 1))
-#define GET_ISR_CNT_WRAP(x) ((u32)(((x >> 1) & 0x00000001)))
-#define BIT_ISR_ROK         ((u32)0x00000001 << 0)            /*!< RWC   Receive (Rx) OK:  This interrupt is set either when RxIntMitigation packet is met or RxPktTimer expires. Write 1 to clear.*/
-#define ISR_ROK(x)          ((u32)(((x) & 0x00000001) << 0))
-#define GET_ISR_ROK(x)      ((u32)(((x >> 0) & 0x00000001)))
+#define BIT_ISR_RDU6        ((u16)0x00000001 << 15)           /*!< RWC   Rx Descriptor Unavailable for RING6:  When set, indicates Rx descriptor is unavailable.  Write 1 to clear.*/
+#define ISR_RDU6(x)         ((u16)(((x) & 0x00000001) << 15))
+#define GET_ISR_RDU6(x)     ((u16)(((x >> 15) & 0x00000001)))
+#define BIT_ISR_RDU5        ((u16)0x00000001 << 14)           /*!< RWC   Rx Descriptor Unavailable for RING5:  When set, indicates Rx descriptor is unavailable.  Write 1 to clear.*/
+#define ISR_RDU5(x)         ((u16)(((x) & 0x00000001) << 14))
+#define GET_ISR_RDU5(x)     ((u16)(((x >> 14) & 0x00000001)))
+#define BIT_ISR_RDU4        ((u16)0x00000001 << 13)           /*!< RWC   Rx Descriptor Unavailable for RING4:  When set, indicates Rx descriptor is unavailable.  Write 1 to clear.*/
+#define ISR_RDU4(x)         ((u16)(((x) & 0x00000001) << 13))
+#define GET_ISR_RDU4(x)     ((u16)(((x >> 13) & 0x00000001)))
+#define BIT_ISR_RDU3        ((u16)0x00000001 << 12)           /*!< RWC   Rx Descriptor Unavailable for RING3:  When set, indicates Rx descriptor is unavailable.  Write 1 to clear.*/
+#define ISR_RDU3(x)         ((u16)(((x) & 0x00000001) << 12))
+#define GET_ISR_RDU3(x)     ((u16)(((x >> 12) & 0x00000001)))
+#define BIT_ISR_RDU2        ((u16)0x00000001 << 11)           /*!< RWC   Rx Descriptor Unavailable for RING2:  When set, indicates Rx descriptor is unavailable.  Write 1 to clear.*/
+#define ISR_RDU2(x)         ((u16)(((x) & 0x00000001) << 11))
+#define GET_ISR_RDU2(x)     ((u16)(((x >> 11) & 0x00000001)))
+#define BIT_ISR_SWINT       ((u16)0x00000001 << 10)           /*!< RWC   Software Interrupt pending:  When set to 1 indicates a software interrupt was forced.   Write 1 to clear.*/
+#define ISR_SWINT(x)        ((u16)(((x) & 0x00000001) << 10))
+#define GET_ISR_SWINT(x)    ((u16)(((x >> 10) & 0x00000001)))
+#define BIT_ISR_TDU         ((u16)0x00000001 << 9)            /*!< RWC   Tx Descriptor Unavailable:  When set, indicates Tx descriptor is unavailable.  Write 1 to clear.*/
+#define ISR_TDU(x)          ((u16)(((x) & 0x00000001) << 9))
+#define GET_ISR_TDU(x)      ((u16)(((x >> 9) & 0x00000001)))
+#define BIT_ISR_LINKCHG     ((u16)0x00000001 << 8)            /*!< RWC   Link Change:   Write 1 to clear.*/
+#define ISR_LINKCHG(x)      ((u16)(((x) & 0x00000001) << 8))
+#define GET_ISR_LINKCHG(x)  ((u16)(((x >> 8) & 0x00000001)))
+#define BIT_ISR_TER         ((u16)0x00000001 << 7)            /*!< RWC   Transmit (Tx) Error:  Indicates that a packet transmission was aborted, due to excessive collisions, according to the TXRR's setting.   Write 1 to clear.*/
+#define ISR_TER(x)          ((u16)(((x) & 0x00000001) << 7))
+#define GET_ISR_TER(x)      ((u16)(((x >> 7) & 0x00000001)))
+#define BIT_ISR_TOK_TI      ((u16)0x00000001 << 6)            /*!< RWC   Transmit Interrupt:   Indicates that the DMA of the last descriptor of TxIntMitigation number of Tx packet has completed and the last descriptor has been closed.  Write 1 to clear.*/
+#define ISR_TOK_TI(x)       ((u16)(((x) & 0x00000001) << 6))
+#define GET_ISR_TOK_TI(x)   ((u16)(((x >> 6) & 0x00000001)))
+#define BIT_ISR_RDU1        ((u16)0x00000001 << 5)            /*!< RWC   Rx Descriptor Unavailable for RING1:  When set, indicates Rx descriptor is unavailable.  Write 1 to clear.*/
+#define ISR_RDU1(x)         ((u16)(((x) & 0x00000001) << 5))
+#define GET_ISR_RDU1(x)     ((u16)(((x >> 5) & 0x00000001)))
+#define BIT_ISR_RER_OVF     ((u16)0x00000001 << 4)            /*!< RWC   Rx FIFO Overflow, caused by RBO/RDU, poor system bus (Lexra bus) performance, or overloaded Lexra bus traffic.  Write 1 to clear.*/
+#define ISR_RER_OVF(x)      ((u16)(((x) & 0x00000001) << 4))
+#define GET_ISR_RER_OVF(x)  ((u16)(((x >> 4) & 0x00000001)))
+#define BIT_ISR_RER_RUNT    ((u16)0x00000001 << 2)            /*!< RWC   Rx error caused by runt error characterized by the frame length in bytes being less than 64 bytes. Write 1 to clear.*/
+#define ISR_RER_RUNT(x)     ((u16)(((x) & 0x00000001) << 2))
+#define GET_ISR_RER_RUNT(x) ((u16)(((x >> 2) & 0x00000001)))
+#define BIT_ISR_CNT_WRAP    ((u16)0x00000001 << 1)            /*!< RWC   Tx/rx counter wrap interrupt.*/
+#define ISR_CNT_WRAP(x)     ((u16)(((x) & 0x00000001) << 1))
+#define GET_ISR_CNT_WRAP(x) ((u16)(((x >> 1) & 0x00000001)))
+#define BIT_ISR_ROK         ((u16)0x00000001 << 0)            /*!< RWC   Receive (Rx) OK:  This interrupt is set either when RxIntMitigation packet is met or RxPktTimer expires. Write 1 to clear.*/
+#define ISR_ROK(x)          ((u16)(((x) & 0x00000001) << 0))
+#define GET_ISR_ROK(x)      ((u16)(((x >> 0) & 0x00000001)))
+/** @} */
+
+/** @defgroup ETH_IMR
+  * @brief
+  * @{
+  */
+#define BIT_IMR_RDU6        ((u16)0x00000001 << 15)           /*!< R/W   */
+#define IMR_RDU6(x)         ((u16)(((x) & 0x00000001) << 15))
+#define GET_IMR_RDU6(x)     ((u16)(((x >> 15) & 0x00000001)))
+#define BIT_IMR_RDU5        ((u16)0x00000001 << 14)           /*!< R/W   */
+#define IMR_RDU5(x)         ((u16)(((x) & 0x00000001) << 14))
+#define GET_IMR_RDU5(x)     ((u16)(((x >> 14) & 0x00000001)))
+#define BIT_IMR_RDU4        ((u16)0x00000001 << 13)           /*!< R/W   */
+#define IMR_RDU4(x)         ((u16)(((x) & 0x00000001) << 13))
+#define GET_IMR_RDU4(x)     ((u16)(((x >> 13) & 0x00000001)))
+#define BIT_IMR_RDU3        ((u16)0x00000001 << 12)           /*!< R/W   */
+#define IMR_RDU3(x)         ((u16)(((x) & 0x00000001) << 12))
+#define GET_IMR_RDU3(x)     ((u16)(((x >> 12) & 0x00000001)))
+#define BIT_IMR_RDU2        ((u16)0x00000001 << 11)           /*!< R/W   */
+#define IMR_RDU2(x)         ((u16)(((x) & 0x00000001) << 11))
+#define GET_IMR_RDU2(x)     ((u16)(((x >> 11) & 0x00000001)))
+#define BIT_IMR_SWINT       ((u16)0x00000001 << 10)           /*!< R/W   */
+#define IMR_SWINT(x)        ((u16)(((x) & 0x00000001) << 10))
+#define GET_IMR_SWINT(x)    ((u16)(((x >> 10) & 0x00000001)))
+#define BIT_IMR_TDU         ((u16)0x00000001 << 9)            /*!< R/W   */
+#define IMR_TDU(x)          ((u16)(((x) & 0x00000001) << 9))
+#define GET_IMR_TDU(x)      ((u16)(((x >> 9) & 0x00000001)))
+#define BIT_IMR_LINKCHG     ((u16)0x00000001 << 8)            /*!< R/W   */
+#define IMR_LINKCHG(x)      ((u16)(((x) & 0x00000001) << 8))
+#define GET_IMR_LINKCHG(x)  ((u16)(((x >> 8) & 0x00000001)))
+#define BIT_IMR_TER         ((u16)0x00000001 << 7)            /*!< R/W   */
+#define IMR_TER(x)          ((u16)(((x) & 0x00000001) << 7))
+#define GET_IMR_TER(x)      ((u16)(((x >> 7) & 0x00000001)))
+#define BIT_IMR_TOK_TI      ((u16)0x00000001 << 6)            /*!< R/W   */
+#define IMR_TOK_TI(x)       ((u16)(((x) & 0x00000001) << 6))
+#define GET_IMR_TOK_TI(x)   ((u16)(((x >> 6) & 0x00000001)))
+#define BIT_IMR_RDU1        ((u16)0x00000001 << 5)            /*!< R/W   */
+#define IMR_RDU1(x)         ((u16)(((x) & 0x00000001) << 5))
+#define GET_IMR_RDU1(x)     ((u16)(((x >> 5) & 0x00000001)))
+#define BIT_IMR_RER_OVF     ((u16)0x00000001 << 4)            /*!< R/W   */
+#define IMR_RER_OVF(x)      ((u16)(((x) & 0x00000001) << 4))
+#define GET_IMR_RER_OVF(x)  ((u16)(((x >> 4) & 0x00000001)))
+#define BIT_IMR_RER_RUNT    ((u16)0x00000001 << 2)            /*!< R/W   */
+#define IMR_RER_RUNT(x)     ((u16)(((x) & 0x00000001) << 2))
+#define GET_IMR_RER_RUNT(x) ((u16)(((x >> 2) & 0x00000001)))
+#define BIT_IMR_CNT_WRAP    ((u16)0x00000001 << 1)            /*!< R/W   */
+#define IMR_CNT_WRAP(x)     ((u16)(((x) & 0x00000001) << 1))
+#define GET_IMR_CNT_WRAP(x) ((u16)(((x >> 1) & 0x00000001)))
+#define BIT_IMR_ROK         ((u16)0x00000001 << 0)            /*!< R/W   */
+#define IMR_ROK(x)          ((u16)(((x) & 0x00000001) << 0))
+#define GET_IMR_ROK(x)      ((u16)(((x >> 0) & 0x00000001)))
 /** @} */
 
 /** @defgroup ETH_TCR
@@ -531,13 +537,13 @@
 #define MASK_EEE_ABY               ((u32)0x00000003 << 8)            /*!< R 0x0  Indicates eee ability of PCS.  Eee_aby[0]: eee ability in 100M  Eee_aby[1]: eee ability in giga mode.*/
 #define EEE_ABY(x)                 (((u32)((x) & 0x00000003) << 8))
 #define GET_EEE_ABY(x)             ((u32)(((x >> 8) & 0x00000003)))
-#define BIT_REG_RMII2MII_EN        ((u32)0x00000001 << 7)            /*!< R/W 1'b0  1: transfer MII signals to RMII signals  This function is only valid in MII mode.  (default 0: for AmebaI//AmebaPro/AmebaPro2)*/
+#define BIT_REG_RMII2MII_EN        ((u32)0x00000001 << 7)            /*!< R/W 1'b1  1: transfer MII signals to RMII signals  This function is only valid in MII mode.  (default 0: for AmebaI//AmebaPro/AmebaPro2)*/
 #define REG_RMII2MII_EN(x)         ((u32)(((x) & 0x00000001) << 7))
 #define GET_REG_RMII2MII_EN(x)     ((u32)(((x >> 7) & 0x00000001)))
 #define BIT_GMAC_MD_MST            ((u32)0x00000001 << 6)            /*!< R 0x1  1: GMAC is used to be MDIO master. (When bit[13] is setting as '0')  0: GMAC is used to be MDIO slave. (When bit[13] is setting as '1')*/
 #define GMAC_MD_MST(x)             ((u32)(((x) & 0x00000001) << 6))
 #define GET_GMAC_MD_MST(x)         ((u32)(((x >> 6) & 0x00000001)))
-#define BIT_REFCLK_PHASE           ((u32)0x00000001 << 1)            /*!< R/W 0x0  1: for Tx transaction, TXEN & TXD signals are changed on the rising edge of REF_CLK; for Rx transaction, RXD signals are sampled on the rising edge of REF_CLK  0: for Tx transaction, TXEN & TXD signals are changed on the falling edge of REF_CLK; for Rx transaction, RXD signals are sampled on the falling edge of REF_CLK*/
+#define BIT_REFCLK_PHASE           ((u32)0x00000001 << 1)            /*!< R/W 0x0  1: for Tx transaction, TXEN & TXD signals are changed on the falling edge of REF_CLK; for Rx transaction, RXD signals are sampled on the falling edge of REF_CLK 0: for Tx transaction, TXEN & TXD signals are changed on the rising edge of REF_CLK; for Rx transaction, RXD signals are sampled on the rising edge of REF_CLK*/
 #define REFCLK_PHASE(x)            ((u32)(((x) & 0x00000001) << 1))
 #define GET_REFCLK_PHASE(x)        ((u32)(((x >> 1) & 0x00000001)))
 #define BIT_REFCLK_ON              ((u32)0x00000001 << 0)            /*!< R/W 0x1  1: REF_CLK on  0: REF_CLK off*/
@@ -552,7 +558,7 @@
 #define BIT_FLAG                    ((u32)0x00000001 << 31)           /*!< R/W 0x0  Flag bit, used to identify access to MII register:  1:  Write data to MII register.  Turns to 0 automatically upon completion of MAC writing to the specified MII register.  0:  Read data from MII register.  Turns to 1 automatically upon completion of MAC reading the specified MII register.    Read write turn around time I s about 64 us.*/
 #define FLAG(x)                     ((u32)(((x) & 0x00000001) << 31))
 #define GET_FLAG(x)                 ((u32)(((x >> 31) & 0x00000001)))
-#define MASK_PHYADDRESS             ((u32)0x0000001F << 26)           /*!< R/W 0x0  Defines the Phy address for the MII.*/
+#define MASK_PHYADDRESS             ((u32)0x0000001F << 26)           /*!< R/W 0x1  Defines the Phy address for the MII.*/
 #define PHYADDRESS(x)               (((u32)((x) & 0x0000001F) << 26))
 #define GET_PHYADDRESS(x)           ((u32)(((x >> 26) & 0x0000001F)))
 #define BIT_MDIO_BUSY               ((u32)0x00000001 << 25)           /*!< R   MDIO is busy*/
@@ -588,7 +594,7 @@
   * @brief
   * @{
   */
-#define MASK_STAG_PID         ((u32)0x0000FFFF << 16)           /*!< R/W 0x8  Set the s-tag protocol identifier. This field is valid only when COM_REG.TDSC_VLAN_TYPE is high.*/
+#define MASK_STAG_PID         ((u32)0x0000FFFF << 16)           /*!< R/W 0x88a8  Set the s-tag protocol identifier. This field is valid only when COM_REG.TDSC_VLAN_TYPE is high.*/
 #define STAG_PID(x)           (((u32)((x) & 0x0000FFFF) << 16))
 #define GET_STAG_PID(x)       ((u32)(((x >> 16) & 0x0000FFFF)))
 #define BIT_TDSC_VLAN_TYPE    ((u32)0x00000001 << 15)           /*!< R/W 0x0  1: tx command descriptor.tx_vlan_action is for s-tag.  0: tx command descriptor.tx_vlan_action is for c-tag.*/
@@ -1254,9 +1260,9 @@
   * @brief
   * @{
   */
-#define MASK_TXFDPx   ((u32)0xFFFFFFFF << 0)           /*!< R/W 0x0  Tx xst priority Descriptor Pointer to the Tx Ring*/
-#define TXFDPx(x)     (((u32)((x) & 0xFFFFFFFF) << 0))
-#define GET_TXFDPx(x) ((u32)(((x >> 0) & 0xFFFFFFFF)))
+#define MASK_TXFDPx   ((u32)0x3FFFFFFF << 2)           /*!< R/W 0x0  Tx xst priority Descriptor Pointer to the Tx Ring*/
+#define TXFDPx(x)     (((u32)((x) & 0x3FFFFFFF) << 2))
+#define GET_TXFDPx(x) ((u32)(((x >> 2) & 0x3FFFFFFF)))
 /** @} */
 
 /** @defgroup ETH_TXCDOx
@@ -1272,9 +1278,9 @@
   * @brief
   * @{
   */
-#define MASK_TXFDP1   ((u32)0xFFFFFFFF << 0)           /*!< R/W 0x0  Tx 1st priority Descriptor Pointer to the Tx Ring*/
-#define TXFDP1(x)     (((u32)((x) & 0xFFFFFFFF) << 0))
-#define GET_TXFDP1(x) ((u32)(((x >> 0) & 0xFFFFFFFF)))
+#define MASK_TXFDP1   ((u32)0x3FFFFFFF << 2)           /*!< R/W 0x0  Tx 1st priority Descriptor Pointer to the Tx Ring*/
+#define TXFDP1(x)     (((u32)((x) & 0x3FFFFFFF) << 2))
+#define GET_TXFDP1(x) ((u32)(((x >> 2) & 0x3FFFFFFF)))
 /** @} */
 
 /** @defgroup ETH_TXCDO1
@@ -1290,9 +1296,9 @@
   * @brief
   * @{
   */
-#define MASK_TXFDP2   ((u32)0xFFFFFFFF << 0)           /*!< R/W 0x0  Tx 2st priority Descriptor Pointer to the Tx Ring*/
-#define TXFDP2(x)     (((u32)((x) & 0xFFFFFFFF) << 0))
-#define GET_TXFDP2(x) ((u32)(((x >> 0) & 0xFFFFFFFF)))
+#define MASK_TXFDP2   ((u32)0x3FFFFFFF << 2)           /*!< R/W 0x0  Tx 2st priority Descriptor Pointer to the Tx Ring*/
+#define TXFDP2(x)     (((u32)((x) & 0x3FFFFFFF) << 2))
+#define GET_TXFDP2(x) ((u32)(((x >> 2) & 0x3FFFFFFF)))
 /** @} */
 
 /** @defgroup ETH_TXCDO2
@@ -1308,9 +1314,9 @@
   * @brief
   * @{
   */
-#define MASK_TXFDP3   ((u32)0xFFFFFFFF << 0)           /*!< R/W 0x0  Tx 3st priority Descriptor Pointer to the Tx Ring*/
-#define TXFDP3(x)     (((u32)((x) & 0xFFFFFFFF) << 0))
-#define GET_TXFDP3(x) ((u32)(((x >> 0) & 0xFFFFFFFF)))
+#define MASK_TXFDP3   ((u32)0x3FFFFFFF << 2)           /*!< R/W 0x0  Tx 3st priority Descriptor Pointer to the Tx Ring*/
+#define TXFDP3(x)     (((u32)((x) & 0x3FFFFFFF) << 2))
+#define GET_TXFDP3(x) ((u32)(((x >> 2) & 0x3FFFFFFF)))
 /** @} */
 
 /** @defgroup ETH_TXCDO3
@@ -1326,9 +1332,9 @@
   * @brief
   * @{
   */
-#define MASK_TXFDP4   ((u32)0xFFFFFFFF << 0)           /*!< R/W 0x0  Tx 4st priority Descriptor Pointer to the Tx Ring*/
-#define TXFDP4(x)     (((u32)((x) & 0xFFFFFFFF) << 0))
-#define GET_TXFDP4(x) ((u32)(((x >> 0) & 0xFFFFFFFF)))
+#define MASK_TXFDP4   ((u32)0x3FFFFFFF << 2)           /*!< R/W 0x0  Tx 4st priority Descriptor Pointer to the Tx Ring*/
+#define TXFDP4(x)     (((u32)((x) & 0x3FFFFFFF) << 2))
+#define GET_TXFDP4(x) ((u32)(((x >> 2) & 0x3FFFFFFF)))
 /** @} */
 
 /** @defgroup ETH_TXCDO4
@@ -1344,9 +1350,9 @@
   * @brief
   * @{
   */
-#define MASK_TXFDP5   ((u32)0xFFFFFFFF << 0)           /*!< R/W 0x0  Tx 5st priority Descriptor Pointer to the Tx Ring*/
-#define TXFDP5(x)     (((u32)((x) & 0xFFFFFFFF) << 0))
-#define GET_TXFDP5(x) ((u32)(((x >> 0) & 0xFFFFFFFF)))
+#define MASK_TXFDP5   ((u32)0x3FFFFFFF << 2)           /*!< R/W 0x0  Tx 5st priority Descriptor Pointer to the Tx Ring*/
+#define TXFDP5(x)     (((u32)((x) & 0x3FFFFFFF) << 2))
+#define GET_TXFDP5(x) ((u32)(((x >> 2) & 0x3FFFFFFF)))
 /** @} */
 
 /** @defgroup ETH_TXCDO5
@@ -1572,18 +1578,9 @@
   * @brief
   * @{
   */
-#define MASK_RXFDPx   ((u32)0xFFFFFFFF << 0)           /*!< R/W 0x0  Rx  queue Descriptor Pointer to the Rx Ring*/
-#define RXFDPx(x)     (((u32)((x) & 0xFFFFFFFF) << 0))
-#define GET_RXFDPx(x) ((u32)(((x >> 0) & 0xFFFFFFFF)))
-/** @} */
-
-/** @defgroup ETH_RXCDOx
-  * @brief
-  * @{
-  */
-#define MASK_RXCDOx   ((u16)0x00000FFF << 0)           /*!< R 0x0  Rx Current Descriptor Offset of  queue: RxFDP+RxCDO = current descriptor pointer.  CDO increments by 16 each time (each increment is one byte)*/
-#define RXCDOx(x)     (((u16)((x) & 0x00000FFF) << 0))
-#define GET_RXCDOx(x) ((u16)(((x >> 0) & 0x00000FFF)))
+#define MASK_RXFDPx   ((u32)0x3FFFFFFF << 2)           /*!< R/W 0x0  Rx  queue Descriptor Pointer to the Rx Ring*/
+#define RXFDPx(x)     (((u32)((x) & 0x3FFFFFFF) << 2))
+#define GET_RXFDPx(x) ((u32)(((x >> 2) & 0x3FFFFFFF)))
 /** @} */
 
 /** @defgroup ETH_RXRINGSIZEx
@@ -1593,6 +1590,15 @@
 #define MASK_RXRINGSIZEx   ((u16)0x00000FFF << 0)           /*!< R/W 0x0  The total number of descriptors in the Rx descriptor rings of  queue.  Act as bit mask, eg. RxRingSize [11:0]:  0000_0000_1111:  16 descriptors  0000_0001_1111:  32 descriptors  0000_0011_1111:  64 descriptors  0000_0111_1111:  128 descriptors  0000_1111_1111:  256 descriptors  0001_1111_1111:  512 descriptors  0011_1111_1111:  1024 descriptors  0111_1111_1111:  2048 descriptors  1111_1111_1111:  4096 descriptors  Any other value in this register yields undefined results.*/
 #define RXRINGSIZEx(x)     (((u16)((x) & 0x00000FFF) << 0))
 #define GET_RXRINGSIZEx(x) ((u16)(((x >> 0) & 0x00000FFF)))
+/** @} */
+
+/** @defgroup ETH_RXCDOx
+  * @brief
+  * @{
+  */
+#define MASK_RXCDOx   ((u16)0x00000FFF << 0)           /*!< R 0x0  Rx Current Descriptor Offset of  queue: RxFDP+RxCDO = current descriptor pointer.  CDO increments by 16 each time (each increment is one byte)*/
+#define RXCDOx(x)     (((u16)((x) & 0x00000FFF) << 0))
+#define GET_RXCDOx(x) ((u16)(((x >> 0) & 0x00000FFF)))
 /** @} */
 
 /** @defgroup ETH_RX_CPU_DESNx
@@ -1620,18 +1626,9 @@
   * @brief
   * @{
   */
-#define MASK_RXFDP2   ((u32)0xFFFFFFFF << 0)           /*!< R/W 0x0  Rx  queue Descriptor Pointer to the Rx Ring*/
-#define RXFDP2(x)     (((u32)((x) & 0xFFFFFFFF) << 0))
-#define GET_RXFDP2(x) ((u32)(((x >> 0) & 0xFFFFFFFF)))
-/** @} */
-
-/** @defgroup ETH_RXCDO2
-  * @brief
-  * @{
-  */
-#define MASK_RXCDO2   ((u16)0x00000FFF << 0)           /*!< R 0x0  Rx Current Descriptor Offset of  queue: RxFDP+RxCDO = current descriptor pointer.  CDO increments by 16 each time (each increment is one byte)*/
-#define RXCDO2(x)     (((u16)((x) & 0x00000FFF) << 0))
-#define GET_RXCDO2(x) ((u16)(((x >> 0) & 0x00000FFF)))
+#define MASK_RXFDP2   ((u32)0x3FFFFFFF << 2)           /*!< R/W 0x0  Rx  queue Descriptor Pointer to the Rx Ring*/
+#define RXFDP2(x)     (((u32)((x) & 0x3FFFFFFF) << 2))
+#define GET_RXFDP2(x) ((u32)(((x >> 2) & 0x3FFFFFFF)))
 /** @} */
 
 /** @defgroup ETH_RXRINGSIZE2
@@ -1641,6 +1638,15 @@
 #define MASK_RXRINGSIZE2   ((u16)0x00000FFF << 0)           /*!< R/W 0x0  The total number of descriptors in the Rx descriptor rings of  queue.  Act as bit mask, eg. RxRingSize [11:0]:  0000_0000_1111:  16 descriptors  0000_0001_1111:  32 descriptors  0000_0011_1111:  64 descriptors  0000_0111_1111:  128 descriptors  0000_1111_1111:  256 descriptors  0001_1111_1111:  512 descriptors  0011_1111_1111:  1024 descriptors  0111_1111_1111:  2048 descriptors  1111_1111_1111:  4096 descriptors  Any other value in this register yields undefined results.*/
 #define RXRINGSIZE2(x)     (((u16)((x) & 0x00000FFF) << 0))
 #define GET_RXRINGSIZE2(x) ((u16)(((x >> 0) & 0x00000FFF)))
+/** @} */
+
+/** @defgroup ETH_RXCDO2
+  * @brief
+  * @{
+  */
+#define MASK_RXCDO2   ((u16)0x00000FFF << 0)           /*!< R 0x0  Rx Current Descriptor Offset of  queue: RxFDP+RxCDO = current descriptor pointer.  CDO increments by 16 each time (each increment is one byte)*/
+#define RXCDO2(x)     (((u16)((x) & 0x00000FFF) << 0))
+#define GET_RXCDO2(x) ((u16)(((x >> 0) & 0x00000FFF)))
 /** @} */
 
 /** @defgroup ETH_RX_CPU_DESN2
@@ -1668,18 +1674,9 @@
   * @brief
   * @{
   */
-#define MASK_RXFDP3   ((u32)0xFFFFFFFF << 0)           /*!< R/W 0x0  Rx  queue Descriptor Pointer to the Rx Ring*/
-#define RXFDP3(x)     (((u32)((x) & 0xFFFFFFFF) << 0))
-#define GET_RXFDP3(x) ((u32)(((x >> 0) & 0xFFFFFFFF)))
-/** @} */
-
-/** @defgroup ETH_RXCDO3
-  * @brief
-  * @{
-  */
-#define MASK_RXCDO3   ((u16)0x00000FFF << 0)           /*!< R 0x0  Rx Current Descriptor Offset of  queue: RxFDP+RxCDO = current descriptor pointer.  CDO increments by 16 each time (each increment is one byte)*/
-#define RXCDO3(x)     (((u16)((x) & 0x00000FFF) << 0))
-#define GET_RXCDO3(x) ((u16)(((x >> 0) & 0x00000FFF)))
+#define MASK_RXFDP3   ((u32)0x3FFFFFFF << 2)           /*!< R/W 0x0  Rx  queue Descriptor Pointer to the Rx Ring*/
+#define RXFDP3(x)     (((u32)((x) & 0x3FFFFFFF) << 2))
+#define GET_RXFDP3(x) ((u32)(((x >> 2) & 0x3FFFFFFF)))
 /** @} */
 
 /** @defgroup ETH_RXRINGSIZE3
@@ -1689,6 +1686,15 @@
 #define MASK_RXRINGSIZE3   ((u16)0x00000FFF << 0)           /*!< R/W 0x0  The total number of descriptors in the Rx descriptor rings of  queue.  Act as bit mask, eg. RxRingSize [11:0]:  0000_0000_1111:  16 descriptors  0000_0001_1111:  32 descriptors  0000_0011_1111:  64 descriptors  0000_0111_1111:  128 descriptors  0000_1111_1111:  256 descriptors  0001_1111_1111:  512 descriptors  0011_1111_1111:  1024 descriptors  0111_1111_1111:  2048 descriptors  1111_1111_1111:  4096 descriptors  Any other value in this register yields undefined results.*/
 #define RXRINGSIZE3(x)     (((u16)((x) & 0x00000FFF) << 0))
 #define GET_RXRINGSIZE3(x) ((u16)(((x >> 0) & 0x00000FFF)))
+/** @} */
+
+/** @defgroup ETH_RXCDO3
+  * @brief
+  * @{
+  */
+#define MASK_RXCDO3   ((u16)0x00000FFF << 0)           /*!< R 0x0  Rx Current Descriptor Offset of  queue: RxFDP+RxCDO = current descriptor pointer.  CDO increments by 16 each time (each increment is one byte)*/
+#define RXCDO3(x)     (((u16)((x) & 0x00000FFF) << 0))
+#define GET_RXCDO3(x) ((u16)(((x >> 0) & 0x00000FFF)))
 /** @} */
 
 /** @defgroup ETH_RX_CPU_DESN3
@@ -1716,18 +1722,9 @@
   * @brief
   * @{
   */
-#define MASK_RXFDP4   ((u32)0xFFFFFFFF << 0)           /*!< R/W 0x0  Rx  queue Descriptor Pointer to the Rx Ring*/
-#define RXFDP4(x)     (((u32)((x) & 0xFFFFFFFF) << 0))
-#define GET_RXFDP4(x) ((u32)(((x >> 0) & 0xFFFFFFFF)))
-/** @} */
-
-/** @defgroup ETH_RXCDO4
-  * @brief
-  * @{
-  */
-#define MASK_RXCDO4   ((u16)0x00000FFF << 0)           /*!< R 0x0  Rx Current Descriptor Offset of  queue: RxFDP+RxCDO = current descriptor pointer.  CDO increments by 16 each time (each increment is one byte)*/
-#define RXCDO4(x)     (((u16)((x) & 0x00000FFF) << 0))
-#define GET_RXCDO4(x) ((u16)(((x >> 0) & 0x00000FFF)))
+#define MASK_RXFDP4   ((u32)0x3FFFFFFF << 2)           /*!< R/W 0x0  Rx  queue Descriptor Pointer to the Rx Ring*/
+#define RXFDP4(x)     (((u32)((x) & 0x3FFFFFFF) << 2))
+#define GET_RXFDP4(x) ((u32)(((x >> 2) & 0x3FFFFFFF)))
 /** @} */
 
 /** @defgroup ETH_RXRINGSIZE4
@@ -1737,6 +1734,15 @@
 #define MASK_RXRINGSIZE4   ((u16)0x00000FFF << 0)           /*!< R/W 0x0  The total number of descriptors in the Rx descriptor rings of  queue.  Act as bit mask, eg. RxRingSize [11:0]:  0000_0000_1111:  16 descriptors  0000_0001_1111:  32 descriptors  0000_0011_1111:  64 descriptors  0000_0111_1111:  128 descriptors  0000_1111_1111:  256 descriptors  0001_1111_1111:  512 descriptors  0011_1111_1111:  1024 descriptors  0111_1111_1111:  2048 descriptors  1111_1111_1111:  4096 descriptors  Any other value in this register yields undefined results.*/
 #define RXRINGSIZE4(x)     (((u16)((x) & 0x00000FFF) << 0))
 #define GET_RXRINGSIZE4(x) ((u16)(((x >> 0) & 0x00000FFF)))
+/** @} */
+
+/** @defgroup ETH_RXCDO4
+  * @brief
+  * @{
+  */
+#define MASK_RXCDO4   ((u16)0x00000FFF << 0)           /*!< R 0x0  Rx Current Descriptor Offset of  queue: RxFDP+RxCDO = current descriptor pointer.  CDO increments by 16 each time (each increment is one byte)*/
+#define RXCDO4(x)     (((u16)((x) & 0x00000FFF) << 0))
+#define GET_RXCDO4(x) ((u16)(((x >> 0) & 0x00000FFF)))
 /** @} */
 
 /** @defgroup ETH_RX_CPU_DESN4
@@ -1764,18 +1770,9 @@
   * @brief
   * @{
   */
-#define MASK_RXFDP5   ((u32)0xFFFFFFFF << 0)           /*!< R/W 0x0  Rx  queue Descriptor Pointer to the Rx Ring*/
-#define RXFDP5(x)     (((u32)((x) & 0xFFFFFFFF) << 0))
-#define GET_RXFDP5(x) ((u32)(((x >> 0) & 0xFFFFFFFF)))
-/** @} */
-
-/** @defgroup ETH_RXCDO5
-  * @brief
-  * @{
-  */
-#define MASK_RXCDO5   ((u16)0x00000FFF << 0)           /*!< R 0x0  Rx Current Descriptor Offset of  queue: RxFDP+RxCDO = current descriptor pointer.  CDO increments by 16 each time (each increment is one byte)*/
-#define RXCDO5(x)     (((u16)((x) & 0x00000FFF) << 0))
-#define GET_RXCDO5(x) ((u16)(((x >> 0) & 0x00000FFF)))
+#define MASK_RXFDP5   ((u32)0x3FFFFFFF << 2)           /*!< R/W 0x0  Rx  queue Descriptor Pointer to the Rx Ring*/
+#define RXFDP5(x)     (((u32)((x) & 0x3FFFFFFF) << 2))
+#define GET_RXFDP5(x) ((u32)(((x >> 2) & 0x3FFFFFFF)))
 /** @} */
 
 /** @defgroup ETH_RXRINGSIZE5
@@ -1785,6 +1782,15 @@
 #define MASK_RXRINGSIZE5   ((u16)0x00000FFF << 0)           /*!< R/W 0x0  The total number of descriptors in the Rx descriptor rings of  queue.  Act as bit mask, eg. RxRingSize [11:0]:  0000_0000_1111:  16 descriptors  0000_0001_1111:  32 descriptors  0000_0011_1111:  64 descriptors  0000_0111_1111:  128 descriptors  0000_1111_1111:  256 descriptors  0001_1111_1111:  512 descriptors  0011_1111_1111:  1024 descriptors  0111_1111_1111:  2048 descriptors  1111_1111_1111:  4096 descriptors  Any other value in this register yields undefined results.*/
 #define RXRINGSIZE5(x)     (((u16)((x) & 0x00000FFF) << 0))
 #define GET_RXRINGSIZE5(x) ((u16)(((x >> 0) & 0x00000FFF)))
+/** @} */
+
+/** @defgroup ETH_RXCDO5
+  * @brief
+  * @{
+  */
+#define MASK_RXCDO5   ((u16)0x00000FFF << 0)           /*!< R 0x0  Rx Current Descriptor Offset of  queue: RxFDP+RxCDO = current descriptor pointer.  CDO increments by 16 each time (each increment is one byte)*/
+#define RXCDO5(x)     (((u16)((x) & 0x00000FFF) << 0))
+#define GET_RXCDO5(x) ((u16)(((x >> 0) & 0x00000FFF)))
 /** @} */
 
 /** @defgroup ETH_RX_CPU_DESN5
@@ -1812,18 +1818,9 @@
   * @brief
   * @{
   */
-#define MASK_RXFDP6   ((u32)0xFFFFFFFF << 0)           /*!< R/W 0x0  Rx  queue Descriptor Pointer to the Rx Ring*/
-#define RXFDP6(x)     (((u32)((x) & 0xFFFFFFFF) << 0))
-#define GET_RXFDP6(x) ((u32)(((x >> 0) & 0xFFFFFFFF)))
-/** @} */
-
-/** @defgroup ETH_RXCDO6
-  * @brief
-  * @{
-  */
-#define MASK_RXCDO6   ((u16)0x00000FFF << 0)           /*!< R 0x0  Rx Current Descriptor Offset of  queue: RxFDP+RxCDO = current descriptor pointer.  CDO increments by 16 each time (each increment is one byte)*/
-#define RXCDO6(x)     (((u16)((x) & 0x00000FFF) << 0))
-#define GET_RXCDO6(x) ((u16)(((x >> 0) & 0x00000FFF)))
+#define MASK_RXFDP6   ((u32)0x3FFFFFFF << 2)           /*!< R/W 0x0  Rx  queue Descriptor Pointer to the Rx Ring*/
+#define RXFDP6(x)     (((u32)((x) & 0x3FFFFFFF) << 2))
+#define GET_RXFDP6(x) ((u32)(((x >> 2) & 0x3FFFFFFF)))
 /** @} */
 
 /** @defgroup ETH_RXRINGSIZE6
@@ -1833,6 +1830,15 @@
 #define MASK_RXRINGSIZE6   ((u16)0x00000FFF << 0)           /*!< R/W 0x0  The total number of descriptors in the Rx descriptor rings of  queue.  Act as bit mask, eg. RxRingSize [11:0]:  0000_0000_1111:  16 descriptors  0000_0001_1111:  32 descriptors  0000_0011_1111:  64 descriptors  0000_0111_1111:  128 descriptors  0000_1111_1111:  256 descriptors  0001_1111_1111:  512 descriptors  0011_1111_1111:  1024 descriptors  0111_1111_1111:  2048 descriptors  1111_1111_1111:  4096 descriptors  Any other value in this register yields undefined results.*/
 #define RXRINGSIZE6(x)     (((u16)((x) & 0x00000FFF) << 0))
 #define GET_RXRINGSIZE6(x) ((u16)(((x >> 0) & 0x00000FFF)))
+/** @} */
+
+/** @defgroup ETH_RXCDO6
+  * @brief
+  * @{
+  */
+#define MASK_RXCDO6   ((u16)0x00000FFF << 0)           /*!< R 0x0  Rx Current Descriptor Offset of  queue: RxFDP+RxCDO = current descriptor pointer.  CDO increments by 16 each time (each increment is one byte)*/
+#define RXCDO6(x)     (((u16)((x) & 0x00000FFF) << 0))
+#define GET_RXCDO6(x) ((u16)(((x >> 0) & 0x00000FFF)))
 /** @} */
 
 /** @defgroup ETH_RX_CPU_DESN6
@@ -1860,18 +1866,9 @@
   * @brief
   * @{
   */
-#define MASK_RXFDP1   ((u32)0xFFFFFFFF << 0)           /*!< R/W 0x0  Rx 1st queue Descriptor Pointer to the Rx Ring*/
-#define RXFDP1(x)     (((u32)((x) & 0xFFFFFFFF) << 0))
-#define GET_RXFDP1(x) ((u32)(((x >> 0) & 0xFFFFFFFF)))
-/** @} */
-
-/** @defgroup ETH_RX_CDO1
-  * @brief
-  * @{
-  */
-#define MASK_RXCDO1   ((u16)0x00000FFF << 0)           /*!< R 0x0  Rx Current Descriptor Offset of 1st queue: RxFDP+RxCDO = current descriptor pointer.  CDO increments by 16 each time (each increment is one byte).*/
-#define RXCDO1(x)     (((u16)((x) & 0x00000FFF) << 0))
-#define GET_RXCDO1(x) ((u16)(((x >> 0) & 0x00000FFF)))
+#define MASK_RXFDP1   ((u32)0x3FFFFFFF << 2)           /*!< R/W 0x0  Rx 1st queue Descriptor Pointer to the Rx Ring*/
+#define RXFDP1(x)     (((u32)((x) & 0x3FFFFFFF) << 2))
+#define GET_RXFDP1(x) ((u32)(((x >> 2) & 0x3FFFFFFF)))
 /** @} */
 
 /** @defgroup ETH_RX_RINGSIZE1
@@ -1884,6 +1881,15 @@
 #define MASK_RXRINGSIZE_1_HIGH   ((u16)0x0000000F << 0)           /*!< R/W 0x0  This is the bits11-8 of RxRingSize1.*/
 #define RXRINGSIZE_1_HIGH(x)     (((u16)((x) & 0x0000000F) << 0))
 #define GET_RXRINGSIZE_1_HIGH(x) ((u16)(((x >> 0) & 0x0000000F)))
+/** @} */
+
+/** @defgroup ETH_RX_CDO1
+  * @brief
+  * @{
+  */
+#define MASK_RXCDO1   ((u16)0x00000FFF << 0)           /*!< R 0x0  Rx Current Descriptor Offset of 1st queue: RxFDP+RxCDO = current descriptor pointer.  CDO increments by 16 each time (each increment is one byte).*/
+#define RXCDO1(x)     (((u16)((x) & 0x00000FFF) << 0))
+#define GET_RXCDO1(x) ((u16)(((x >> 0) & 0x00000FFF)))
 /** @} */
 
 /** @defgroup ETH_SMSA
@@ -1920,15 +1926,15 @@
   * @brief
   * @{
   */
-#define BIT_SET_D_TXC                 ((u32)0x00000001 << 21)           /*!< R/W 0x0  Add delay to gmii_txc_out. Used in clk.  Rgmii_1000: add 2nS delay.  Rgmii_100:  add 4nS delay.  Rgmii_10:   add 4nS delay.*/
-#define SET_D_TXC(x)                  ((u32)(((x) & 0x00000001) << 21))
-#define GET_SET_D_TXC(x)              ((u32)(((x >> 21) & 0x00000001)))
-#define MASK_RXC_DLY_SEL              ((u32)0x0000001F << 16)           /*!< R/W 0x0  32-tap delay chain for rxc. This field is valid when CONFIG_CLK_REG.dis_dly_mode is 0.*/
-#define RXC_DLY_SEL(x)                (((u32)((x) & 0x0000001F) << 16))
-#define GET_RXC_DLY_SEL(x)            ((u32)(((x >> 16) & 0x0000001F)))
-#define MASK_RX_PSE_DES_THRES_OFF_1   ((u32)0x0000000F << 0)            /*!< R/W 0x0  This is the Rx_Pse_Des_Thres_off1[11:8].*/
-#define RX_PSE_DES_THRES_OFF_1(x)     (((u32)((x) & 0x0000000F) << 0))
-#define GET_RX_PSE_DES_THRES_OFF_1(x) ((u32)(((x >> 0) & 0x0000000F)))
+#define MASK_RX_PSE_DES_THRES_OFF_1   ((u32)0x0000000F << 24)           /*!< R/W 0x0  This is the Rx_Pse_Des_Thres_off1[11:8].*/
+#define RX_PSE_DES_THRES_OFF_1(x)     (((u32)((x) & 0x0000000F) << 24))
+#define GET_RX_PSE_DES_THRES_OFF_1(x) ((u32)(((x >> 24) & 0x0000000F)))
+#define BIT_SET_D_TXC                 ((u32)0x00000001 << 5)            /*!< R/W 0x0  Add delay to gmii_txc_out. Used in clk.  Rgmii_1000: add 2nS delay.  Rgmii_100:  add 4nS delay.  Rgmii_10:   add 4nS delay.*/
+#define SET_D_TXC(x)                  ((u32)(((x) & 0x00000001) << 5))
+#define GET_SET_D_TXC(x)              ((u32)(((x >> 5) & 0x00000001)))
+#define MASK_RXC_DLY_SEL              ((u32)0x0000001F << 0)            /*!< R/W 0x0  32-tap delay chain for rxc. This field is valid when CONFIG_CLK_REG.dis_dly_mode is 0.*/
+#define RXC_DLY_SEL(x)                (((u32)((x) & 0x0000001F) << 0))
+#define GET_RXC_DLY_SEL(x)            ((u32)(((x >> 0) & 0x0000001F)))
 /** @} */
 
 /** @defgroup ETH_ETHRNTRXCPU_DES_NUM1
@@ -2114,25 +2120,25 @@ typedef struct {
 	__IO uint32_t ETH_IDR4                             ;  /*!< Register,  Address offset:0x004 */
 	__IO uint32_t ETH_MAR0                             ;  /*!< Register,  Address offset:0x008 */
 	__IO uint32_t ETH_MAR4                             ;  /*!< Register,  Address offset:0x00C */
-	__IO uint16_t ETH_TXOKCNT                          ;  /*!< Register,  Address offset:0x010 */
-	__IO uint16_t ETH_RXOKCNT                          ;  /*!< Register,  Address offset:0x012 */
-	__IO uint16_t ETH_TXERR                            ;  /*!< Register,  Address offset:0x014 */
-	__IO uint16_t ETH_RXERR                            ;  /*!< Register,  Address offset:0x016 */
-	__IO uint16_t ETH_MISSPKT                          ;  /*!< Register,  Address offset:0x018 */
-	__IO uint16_t ETH_FAE                              ;  /*!< Register,  Address offset:0x01A */
-	__IO uint16_t ETH_TX1COL                           ;  /*!< Register,  Address offset:0x01C */
-	__IO uint16_t ETH_TXMCOL                           ;  /*!< Register,  Address offset:0x01E */
-	__IO uint16_t ETH_RXOKPHY                          ;  /*!< Register,  Address offset:0x020 */
-	__IO uint16_t ETH_RXOKBRD                          ;  /*!< Register,  Address offset:0x022 */
-	__IO uint16_t ETH_RXOKMU1                          ;  /*!< Register,  Address offset:0x024 */
-	__IO uint16_t ETH_TXABT                            ;  /*!< Register,  Address offset:0x026 */
-	__IO uint16_t ETH_TXUNDERC                         ;  /*!< Register,  Address offset:0x028 */
-	__IO uint16_t ETH_MISSPKT_RDU                      ;  /*!< Register,  Address offset:0x02A */
+	__IO uint16_t ETH_RXOKCNT                          ;  /*!< Register,  Address offset:0x010 */
+	__IO uint16_t ETH_TXOKCNT                          ;  /*!< Register,  Address offset:0x012 */
+	__IO uint16_t ETH_RXERR                            ;  /*!< Register,  Address offset:0x014 */
+	__IO uint16_t ETH_TXERR                            ;  /*!< Register,  Address offset:0x016 */
+	__IO uint16_t ETH_FAE                              ;  /*!< Register,  Address offset:0x018 */
+	__IO uint16_t ETH_MISSPKT                          ;  /*!< Register,  Address offset:0x01A */
+	__IO uint16_t ETH_TXMCOL                           ;  /*!< Register,  Address offset:0x01C */
+	__IO uint16_t ETH_TX1COL                           ;  /*!< Register,  Address offset:0x01E */
+	__IO uint16_t ETH_RXOKBRD                          ;  /*!< Register,  Address offset:0x020 */
+	__IO uint16_t ETH_RXOKPHY                          ;  /*!< Register,  Address offset:0x022 */
+	__IO uint16_t ETH_TXABT                            ;  /*!< Register,  Address offset:0x024 */
+	__IO uint16_t ETH_RXOKMU1                          ;  /*!< Register,  Address offset:0x026 */
+	__IO uint16_t ETH_MISSPKT_RDU                      ;  /*!< Register,  Address offset:0x028 */
+	__IO uint16_t ETH_TXUNDERC                         ;  /*!< Register,  Address offset:0x02A */
 	__IO uint32_t RSVD0[2]                             ;  /*!< Reserved,  Address offset:0x02C-0x033 */
 	__I  uint32_t ETH_TRSR                             ;  /*!< Register,  Address offset:0x034 */
 	__IO uint32_t ETH_CR                               ;  /*!< Register,  Address offset:0x038 */
-	__IO uint16_t ETH_ISR                              ;  /*!< Register,  Address offset:0x03C, low half: write-1-to-clear status */
-	__IO uint16_t ETH_IMR                              ;  /*!< Register,  Address offset:0x03E, high half: interrupt mask */
+	__IO uint16_t ETH_ISR                              ;  /*!< Register,  Address offset:0x03C */
+	__IO uint16_t ETH_IMR                              ;  /*!< Register,  Address offset:0x03E */
 	__IO uint32_t ETH_TCR                              ;  /*!< Register,  Address offset:0x040 */
 	__IO uint32_t ETH_RCR                              ;  /*!< Register,  Address offset:0x044 */
 	__IO uint32_t ETH_CPUTAG                           ;  /*!< Register,  Address offset:0x048 */
@@ -2196,34 +2202,34 @@ typedef struct {
 	__IO uint32_t ETH_RRING_MAP6                       ;  /*!< Register,  Address offset:0x1384 */
 	__IO uint32_t RSVD13[2]                            ;  /*!< Reserved,  Address offset:0x1388-0x138F */
 	__IO uint32_t ETH_RXFDP2                           ;  /*!< Register,  Address offset:0x1390 */
-	__I  uint16_t ETH_RXCDO2                           ;  /*!< Register,  Address offset:0x1394 */
-	__IO uint16_t ETH_RXRINGSIZE2                      ;  /*!< Register,  Address offset:0x1396 */
+	__IO uint16_t ETH_RXRINGSIZE2                      ;  /*!< Register,  Address offset:0x1394 */
+	__I  uint16_t ETH_RXCDO2                           ;  /*!< Register,  Address offset:0x1396 */
 	__IO uint32_t ETH_RX_CPU_DESN2                     ;  /*!< Register,  Address offset:0x1398 */
 	__IO uint32_t ETH_RX_DES_THRES2                    ;  /*!< Register,  Address offset:0x139C */
 	__IO uint32_t ETH_RXFDP3                           ;  /*!< Register,  Address offset:0x13A0 */
-	__I  uint16_t ETH_RXCDO3                           ;  /*!< Register,  Address offset:0x13A4 */
-	__IO uint16_t ETH_RXRINGSIZE3                      ;  /*!< Register,  Address offset:0x13A6 */
+	__IO uint16_t ETH_RXRINGSIZE3                      ;  /*!< Register,  Address offset:0x13A4 */
+	__I  uint16_t ETH_RXCDO3                           ;  /*!< Register,  Address offset:0x13A6 */
 	__IO uint32_t ETH_RX_CPU_DESN3                     ;  /*!< Register,  Address offset:0x13A8 */
 	__IO uint32_t ETH_RX_DES_THRES3                    ;  /*!< Register,  Address offset:0x13AC */
 	__IO uint32_t ETH_RXFDP4                           ;  /*!< Register,  Address offset:0x13B0 */
-	__I  uint16_t ETH_RXCDO4                           ;  /*!< Register,  Address offset:0x13B4 */
-	__IO uint16_t ETH_RXRINGSIZE4                      ;  /*!< Register,  Address offset:0x13B6 */
+	__IO uint16_t ETH_RXRINGSIZE4                      ;  /*!< Register,  Address offset:0x13B4 */
+	__I  uint16_t ETH_RXCDO4                           ;  /*!< Register,  Address offset:0x13B6 */
 	__IO uint32_t ETH_RX_CPU_DESN4                     ;  /*!< Register,  Address offset:0x13B8 */
 	__IO uint32_t ETH_RX_DES_THRES4                    ;  /*!< Register,  Address offset:0x13BC */
 	__IO uint32_t ETH_RXFDP5                           ;  /*!< Register,  Address offset:0x13C0 */
-	__I  uint16_t ETH_RXCDO5                           ;  /*!< Register,  Address offset:0x13C4 */
-	__IO uint16_t ETH_RXRINGSIZE5                      ;  /*!< Register,  Address offset:0x13C6 */
+	__IO uint16_t ETH_RXRINGSIZE5                      ;  /*!< Register,  Address offset:0x13C4 */
+	__I  uint16_t ETH_RXCDO5                           ;  /*!< Register,  Address offset:0x13C6 */
 	__IO uint32_t ETH_RX_CPU_DESN5                     ;  /*!< Register,  Address offset:0x13C8 */
 	__IO uint32_t ETH_RX_DES_THRES5                    ;  /*!< Register,  Address offset:0x13CC */
 	__IO uint32_t ETH_RXFDP6                           ;  /*!< Register,  Address offset:0x13D0 */
-	__I  uint16_t ETH_RXCDO6                           ;  /*!< Register,  Address offset:0x13D4 */
-	__IO uint16_t ETH_RXRINGSIZE6                      ;  /*!< Register,  Address offset:0x13D6 */
+	__IO uint16_t ETH_RXRINGSIZE6                      ;  /*!< Register,  Address offset:0x13D4 */
+	__I  uint16_t ETH_RXCDO6                           ;  /*!< Register,  Address offset:0x13D6 */
 	__IO uint32_t ETH_RX_CPU_DESN6                     ;  /*!< Register,  Address offset:0x13D8 */
 	__IO uint32_t ETH_RX_DES_THRES6                    ;  /*!< Register,  Address offset:0x13DC */
 	__IO uint32_t RSVD14[4]                            ;  /*!< Reserved,  Address offset:0x13E0-0x13EF */
 	__IO uint32_t ETH_RX_FDP1                          ;  /*!< Register,  Address offset:0x13F0 */
-	__I  uint16_t ETH_RX_CDO1                          ;  /*!< Register,  Address offset:0x13F4 */
-	__IO uint16_t ETH_RX_RINGSIZE1                     ;  /*!< Register,  Address offset:0x13F6 */
+	__IO uint16_t ETH_RX_RINGSIZE1                     ;  /*!< Register,  Address offset:0x13F4 */
+	__I  uint16_t ETH_RX_CDO1                          ;  /*!< Register,  Address offset:0x13F6 */
 	__IO uint32_t RSVD15                               ;  /*!< Reserved,  Address offset:0x13F8-0x13FB */
 	__IO uint32_t ETH_SMSA                             ;  /*!< Register,  Address offset:0x13FC */
 	__IO uint32_t ETH_PROBE_SELEXCT                    ;  /*!< Register,  Address offset:0x1400 */
@@ -2285,6 +2291,10 @@ struct eth_mdio_ops;
  * to software checksums if a hardware problem ever turns up -- the lwIP port
  * reads the same macro, so both sides fall back together. */
 #define ETH_CSUM_OFFLOAD            1 /*!< Enable the MAC's TX insertion and RX validation of IPv4/TCP/UDP checksums. */
+/* The RX descriptors take a fresh buffer per frame and the received one goes up to
+ * lwIP as is, instead of being copied into a pbuf. Same reasoning as above for not
+ * being a Kconfig symbol; set to 0 to fall back to the copy path. */
+#define ETH_RX_ZERO_COPY            1 /*!< Hand RX DMA buffers to lwIP without copying. */
 /* VLAN Headers */
 #define ETH_C_VLAN_HDR              0x8100279F /*!< C-VLAN (802.1Q) header template value with TPID 0x8100. */
 #define ETH_S_VLAN_HDR              0x88A8279F /*!< S-VLAN (QinQ) header template value. */
@@ -2614,31 +2624,6 @@ typedef struct {
 /*                       5. Configuration Enums                               */
 /* ========================================================================== */
 
-/* --- Interrupt & Events --- */
-/**
- * @brief Ethernet event flags indicating link and data-path status.
- */
-enum eth_link_event {
-	ETH_EVT_NO_EVENT     = 0,          /*!< No event pending. */
-	/* Standard Events */
-	ETH_EVT_RX_DONE      = (1 << 0),  /*!< Packet received successfully. */
-	ETH_EVT_TX_DONE      = (1 << 1),  /*!< Packet transmitted successfully. */
-	ETH_EVT_LINK_CHG     = (1 << 2),  /*!< Link status changed. */
-	ETH_EVT_RX_ERROR     = (1 << 3),  /*!< RX overflow or runt error occurred. */
-	ETH_EVT_TX_ERROR     = (1 << 4),  /*!< TX error occurred. */
-
-	/* RX Descriptor Unavailable (RDU) Events for specific Rings */
-	ETH_EVT_RDU_RING1    = (1 << 5),  /*!< RX descriptor unavailable for Ring1. */
-	ETH_EVT_RDU_RING2    = (1 << 6),  /*!< RX descriptor unavailable for Ring2. */
-	ETH_EVT_RDU_RING3    = (1 << 7),  /*!< RX descriptor unavailable for Ring3. */
-	ETH_EVT_RDU_RING4    = (1 << 8),  /*!< RX descriptor unavailable for Ring4. */
-	ETH_EVT_RDU_RING5    = (1 << 9),  /*!< RX descriptor unavailable for Ring5. */
-	ETH_EVT_RDU_RING6    = (1 << 10), /*!< RX descriptor unavailable for Ring6. */
-	ETH_EVT_TDU_RING     = (1 << 11), /*!< TX descriptor unavailable. */
-	/* Alias for backward compatibility (Ring 1 default) */
-	ETH_EVT_RX_NO_DESC   = ETH_EVT_RDU_RING1 /*!< Alias for Ring1 RDU event. */
-};
-
 /* --- Link & Speed --- */
 /**
  * @brief Ethernet link speed.
@@ -2770,6 +2755,22 @@ enum eth_refclk_phase {
 enum eth_refclk_dir {
 	ETH_REFCLK_PHY2MAC  = 0x00, /*!< REF_CLK driven by PHY to MAC. */
 	ETH_REFCLK_MAC2PHY  = 0x01, /*!< REF_CLK driven by MAC to PHY. */
+};
+
+/**
+ * @brief Where the MAC gets its 50MHz clock.
+ */
+enum eth_mac_clk_src {
+	ETH_MAC_CLK_INT50M = 0x00, /*!< Divided down from an on-chip PLL. */
+	ETH_MAC_CLK_EXT50M   = 0x01, /*!< 50MHz from the EXT_CLK50M_IN pin. */
+};
+
+/**
+ * @brief Clock the MAC outputs to the PHY on the EXT_CLK_OUT pin.
+ */
+enum eth_phy_clk {
+	ETH_PHY_CLK_50M = 0x0b, /*!< 50MHz. */
+	ETH_PHY_CLK_25M = 0x0c, /*!< 25MHz. */
 };
 
 /**
@@ -3226,9 +3227,9 @@ typedef struct {
 	uint16_t ETH_TxDescNum;                         /*!< Number of TX descriptors (1-4096). */
 	uint16_t ETH_RxDescNum;                         /*!< Number of RX descriptors (1-4096). */
 
-	uint8_t  ETH_TxDescCurrentNum;       /*!< Index of the TX descriptor currently in use. */
-	uint8_t  ETH_RxDescCurrentNum;       /*!< Index of the RX descriptor currently in use. */
-	uint8_t  ETH_RxFrameStartDescIdx;    /*!< Descriptor index of the first segment of the current RX frame. */
+	uint16_t ETH_TxDescCurrentNum;       /*!< Index of the TX descriptor currently in use. */
+	uint16_t ETH_RxDescCurrentNum;       /*!< Index of the RX descriptor currently in use. */
+	uint16_t ETH_RxFrameStartDescIdx;    /*!< Descriptor index of the first segment of the current RX frame. */
 	u32     ETH_RxFrameLen;              /*!< Total length of the current received frame in bytes. */
 	u32     ETH_TxFrameLen;              /*!< Length of the last transmitted frame in bytes. */
 	u32     ETH_RxSegmentCount;          /*!< Number of descriptors used by the current received frame. */
@@ -3319,26 +3320,27 @@ int Ethernet_Init(ETH_InitTypeDef *ETH_InitStruct);
 void Ethernet_SetMacAddr(u8 *ETH_MacAddr);
 void Ethernet_SetRefclkDirec(u32 refclk_mode);
 void Ethernet_UseExtClk(u32 pin);
+int Ethernet_MacClkConfig(enum eth_mac_clk_src src, u32 ext_pin);
+void Ethernet_PhyClkConfig(u32 pin, enum eth_phy_clk clk);
 void Ethernet_AutoPolling(u32 opt);
 
 /* Interrupts */
 u16 Ethernet_GetPendingINT(void);
-u16 Ethernet_GetAndClearINT(void);
-void Ethernet_ClearINT(uint32_t int_events);
-void Ethernet_ClearAllINT(void);
+void Ethernet_ClearINT(u16 status);
 
 /* DMA & Packet Handling */
 void Ethernet_SetDescAddr(ETH_InitTypeDef *ETH_InitStruct);
 u8 *Ethernet_GetTXPktInfo(ETH_InitTypeDef *ETH_InitStruct);
 void Ethernet_UpdateTXDESCAndSend(ETH_InitTypeDef *ETH_InitStruct, ETH_PktMetaDef *meta);
 u8 *Ethernet_GetRXPktInfo(ETH_InitTypeDef *ETH_InitStruct, ETH_PktMetaDef *meta);
-void Ethernet_UpdateRXDESC(ETH_InitTypeDef *ETH_InitStruct);
+u32 Ethernet_SwapRXSegBuf(ETH_InitTypeDef *ETH_InitStruct, u32 seg, u32 new_buf, u32 *seg_len);
+void Ethernet_ReleaseRXDesc(ETH_InitTypeDef *ETH_InitStruct, u32 n);
 
 /* PHY / Link Helper */
 int Ethernet_ReadPhyReg(uint8_t phy_id, uint8_t reg_addr, uint16_t *data);
 int Ethernet_WritePhyReg(uint8_t phy_id, uint8_t reg_addr, uint16_t data);
 u32 Ethernet_GetLinkStatus(void);
-void Ethernet_GetSpeedDuplex(void);
+void Ethernet_GetSpeedDuplex(u32 *speed, u32 *duplex);
 /**
   * @}
   */

@@ -64,8 +64,9 @@ void efuse_mtp_read(uint8_t *data)
   * @param  offset: Address offset of the programmed user logical OTP(base address: 0x170).
   * @param  data: Data buffer to be programmed.
   * @param  len: Data length to be programmed.
-  *          - 0~32: Success
-  *          - -1: Failure
+  * @return Write result:
+  * @retval 1: Success.
+  * @retval -1: Failure, offset + len exceeds the user logical OTP size, or the OTP write fails.
   * @note Write user logical OTP(0x170~0x19F).
   */
 int efuse_mtp_write(uint32_t offset, uint32_t len, uint8_t *data)

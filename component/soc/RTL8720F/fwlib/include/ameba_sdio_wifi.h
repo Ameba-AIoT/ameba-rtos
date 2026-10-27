@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _AMEBAGREEN2_SDIO_WIFI_H_
-#define _AMEBAGREEN2_SDIO_WIFI_H_
+#ifndef _AMEBA_SDIO_WIFI_H_
+#define _AMEBA_SDIO_WIFI_H_
 
 /** @addtogroup Ameba_Periph_Driver
   * @{

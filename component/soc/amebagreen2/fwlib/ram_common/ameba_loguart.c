@@ -242,9 +242,12 @@ bool LOGUART_RXGDMA_Init(
 void LOGUART_PutChar_RAM(u8 c)
 {
 	LOGUART_TypeDef *UARTLOG = LOGUART_DEV;
-	u32 CPUID = SYS_CPUID();
+	u32 CPUID;
 
 	LOGUART_WaitTx();
+
+	/* Read CPUID after the call so it need not be kept in a callee-saved register (saves 8 bytes of stack) */
+	CPUID = SYS_CPUID();
 
 	UARTLOG->LOGUART_UART_THRx[LOG_UART_IDX_FLAG[CPUID].idx] = c;
 }

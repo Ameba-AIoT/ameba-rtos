@@ -39,11 +39,11 @@ set(private_compile_options)         #private compile_options
 #------------------------------#
 # Component private part, user config begin
 
-if("${c_MCU_PROJECT_NAME}" STREQUAL "km4tz")
+if("${c_MCU_PROJECT_NAME}" STREQUAL "km55tz")
     ameba_list_append(private_sources
-        bootloader_km4tz.c
-        boot_ota_km4tz.c
-        boot_security_km4tz.c
+        bootloader_km55tz.c
+        boot_ota_km55tz.c
+        boot_security_km55tz.c
         bootloader_clk.c
         bootloader_hci.c
     )
@@ -54,9 +54,9 @@ if("${c_MCU_PROJECT_NAME}" STREQUAL "km4tz")
     endif()
 endif()
 
-if("${c_MCU_PROJECT_NAME}" STREQUAL "km4ns")
+if("${c_MCU_PROJECT_NAME}" STREQUAL "km55ns")
     ameba_list_append(private_sources
-        bootloader_km4ns.c
+        bootloader_km55ns.c
     )
 endif()
 
@@ -66,15 +66,10 @@ else()
   set(loader_condition FALSE)
 endif()
 
-if("${c_MCU_PROJECT_NAME}" STREQUAL "km4tz" AND loader_condition)
+if("${c_MCU_PROJECT_NAME}" STREQUAL "km55tz" AND loader_condition)
     ameba_list_append_if(loader_condition private_includes
         hci/core
         ${c_COMPONENT_DIR}/soc/common/flash_wrapper/inc
-    )
-
-    ameba_list_append_if(CONFIG_WHC_INTF_USB private_includes
-        ${c_CMPT_USB_DIR}/common
-        hci/usb
     )
 
     ameba_list_append_if(CONFIG_WHC_INTF_SPDIO private_includes
@@ -83,15 +78,6 @@ if("${c_MCU_PROJECT_NAME}" STREQUAL "km4tz" AND loader_condition)
 
     ameba_list_append_if(loader_condition private_sources
         hci/core/hci_core.c
-    )
-
-    ameba_list_append_if(CONFIG_WHC_INTF_USB private_sources
-        hci/usb/usbd_core.c
-        hci/usb/usbd_hal.c
-        hci/usb/usbd_pcd.c
-        hci/usb/usbd_otp.c
-        hci/usb/usbd_whc_class.c
-        hci/usb/usbd_intf.c
     )
 
     ameba_list_append_if(CONFIG_WHC_INTF_SPDIO private_sources

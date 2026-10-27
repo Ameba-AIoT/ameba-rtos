@@ -3,6 +3,7 @@
 #include "whc_wpas_std_app.h"
 
 extern int start_wpa_supplicant(char *iface_name);
+extern int wpas_std_is_started(void);
 extern void whc_rtw_cli_send_to_host(u8 idx, u32 cmd_category, u8 cmd_id,
 									 u8 *user_data, u32 user_data_len);
 
@@ -65,6 +66,51 @@ int whc_wpa_ops_get_macaddr(u8 *ptr, u8 *buf)
 
 	return 0;
 
+}
+
+int whc_wpa_ops_set_macaddr(u8 *ptr, u8 *buf)
+{
+	u8 idx = 0;
+	u8 *mac = NULL;
+	int ret = 0;
+
+	(void)buf;
+
+	idx = *ptr++;
+	ptr++; /* = efuse byte from host; always write to RAM for safety */
+	mac = ptr;
+
+	RTK_LOGI(TAG_WLAN_INIC, "%s, idx: %d, mac: "
+			 "%02x:%02x:%02x:%02x:%02x:%02x\n", __func__, idx,
+			 mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+
+	if (idx != 0) {
+		RTK_LOGW(TAG_WLAN_INIC, "%s, idx %d not supported, "
+				 "wlan1 mac is derived from wlan0\n", __func__, idx);
+		return 0;
+	}
+
+	/* wpa_supplicant caches the mac (incl. p2p device addr) at startup, set mac before start */
+	if (wpas_std_is_started()) {
+		RTK_LOGE(TAG_WLAN_INIC, "%s, wpa_supplicant already started, set mac before start\n", __func__);
+		return RTK_FAIL;
+	}
+
+	/*
+	 * NOTE: efuse/OTP write is currently disabled for safety (RAM only).
+	 * To enable it later:
+	 *   1. Restore the efuse byte:  u8 efuse = *ptr++;
+	 *   2. Pass it through:         wifi_set_mac_address(idx, mac, efuse);
+	 *   3. Wire format is unchanged: [idx(1)][efuse(1)][mac(6)]
+	 *      (userspace rtw_cli already accepts "setmac <idx> <mac> 1" and
+	 *      warns that efuse writes are limited/irreversible).
+	 */
+	ret = wifi_set_mac_address(idx, mac, 0);
+	if (ret != RTK_SUCCESS) {
+		RTK_LOGE(TAG_WLAN_INIC, "%s, set mac fail, ret: %d\n", __func__, ret);
+	}
+
+	return ret;
 }
 
 void whc_dev_rtw_cli_wpas_reply_info_hdl(u8 idx, const char *reply, size_t reply_len)

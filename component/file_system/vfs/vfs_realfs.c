@@ -30,6 +30,9 @@
 #if defined(CONFIG_REALFS_FLASH_NOR_MAP)
 #include "realfs_erasedev_nor.h"
 #endif
+#if defined(VFS_RAM_REALFS)
+#include "realfs_bdev_ram.h"
+#endif
 
 /* Erase-aware (route-B) mode is used by raw NAND (via LBM, on-chip or external)
  * and the NOR@512B map. */
@@ -648,6 +651,12 @@ static int g_bdev_inf = -1;
  * On NOR / SD targets the existing bdev path is used unchanged. */
 static int realfs_open_bdev(int interface, struct realfs_bdev *bdev, int for_format)
 {
+#if defined(VFS_RAM_REALFS)
+	if (interface == VFS_INF_RAM) {
+		(void)for_format;
+		return realfs_bdev_ram_open(bdev, CONFIG_VFS_RAM_REALFS_BLOCK_SIZE);
+	}
+#endif
 #if defined(CONFIG_REALFS_SD_MODE)
 	if (interface == VFS_INF_SD) {
 		return realfs_bdev_sd_open(bdev, RFS_BLOCK_SIZE);
@@ -765,6 +774,12 @@ static void realfs_close_bdev(int interface, struct realfs_bdev *bdev)
 	 * second-NAND-only build no branch below is compiled, so mark params used. */
 	(void)interface;
 	(void)bdev;
+#if defined(VFS_RAM_REALFS)
+	if (interface == VFS_INF_RAM) {
+		realfs_bdev_ram_close(bdev);		/* frees the RAM disk, clears ram_mount_flag */
+		return;
+	}
+#endif
 #if defined(CONFIG_REALFS_SD_MODE)
 	if (interface == VFS_INF_SD) {
 		realfs_bdev_sd_close(bdev);
@@ -824,6 +839,29 @@ static int realfs_vfs_mount(int interface)
 		}
 		g_bdev_inf = interface;
 		realfs_mount_flag = 1;
+		rfs_unlock();
+		return 0;
+	}
+#endif
+#if defined(VFS_RAM_REALFS)
+	if (interface == VFS_INF_RAM) {
+		/* volatile disk: always start from a fresh format */
+		rc = realfs_format(&g_bdev, 0);
+		if (rc == REALFS_ERR_INVAL) {
+			RTK_LOGE("VFS", "ram size invalid\n");
+		}
+		if (rc == 0) {
+			rc = realfs_mount(&g_rfs, &g_bdev);
+		}
+		if (rc) {
+			RTK_LOGE("VFS", "ram mkfs fail %d\n", rc);
+			realfs_close_bdev(interface, &g_bdev);
+			rfs_unlock();
+			return -1;
+		}
+		g_bdev_inf = interface;
+		realfs_mount_flag = 1;
+		ram_mount_flag = 1;
 		rfs_unlock();
 		return 0;
 	}

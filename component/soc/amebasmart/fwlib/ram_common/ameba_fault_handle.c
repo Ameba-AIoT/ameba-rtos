@@ -162,16 +162,11 @@ void HANDLER_HardFault(void)
 		"MOV 		R2, LR					\n\t" /* Third parameter is LR current value */
 		"MOV 		R3, #0					\n\t"
 		"PUSH 		{R4-R7}					\n\t"
-		"MOV		R6, #16					\n\t"
-		"ADD		R4, R0, R6				\n\t" /* Skip R4-R7, and point to top of mstack*/
-		"MOV 		R5, R8					\n\t"
-		"STR        R5, [R4, #0]			\n\t"
+		"MOV 		R4, R8					\n\t" /* PUSH only takes R0-R7 on M23, copy R8-R11 down */
 		"MOV 		R5, R9					\n\t"
-		"STR        R5, [R4, #4]			\n\t"
-		"MOV 		R5, R10					\n\t"
-		"STR        R5, [R4, #8]			\n\t"
-		"MOV 		R5, R11					\n\t"
-		"STR        R5, [R4, #12]			\n\t"
+		"MOV 		R6, R10					\n\t"
+		"MOV 		R7, R11					\n\t"
+		"PUSH 		{R4-R7}					\n\t" /* R8-R11 below R4-R7, not into the exception frame */
 		"B			Fault_Handler			\n\t"
 	);
 }
@@ -208,18 +203,16 @@ void Fault_Handler(uint32_t mstack[], uint32_t pstack[], uint32_t lr_value, uint
 	High addr -> |  xxx  | <--- &extra_regs[0] is mstack;
 	  ^          |  R7   | <--- extra_regs[-1]
 	  |	         |  ...  |
-	  |	         |  R4   |
-	  |	         |  R8   |
+	  |	         |  R4   | <--- extra_regs[-4]
+	  |	         |  R11  | <--- extra_regs[-5]
 	  |	         |  ...  |
-	Low addr  -> |  R11  | <--- extra_regs[-8]*/
+	Low addr  -> |  R8   | <--- extra_regs[-8]*/
 
-	//point to R7, R8 ~ R11 were not saved.
-	extra_regs--;
 	for (int i = REG_R4; i <= REG_R7; i++) {
-		regs[i] = extra_regs[-REG_R7 + i];
+		regs[i] = extra_regs[i - REG_R7 - 1];
 	}
 	for (int i = REG_R8; i <= REG_R11; i++) {
-		regs[i] = extra_regs[-i];
+		regs[i] = extra_regs[i - REG_R11 - 5];
 	}
 	cstack = is_psp ? pstack : mstack;
 

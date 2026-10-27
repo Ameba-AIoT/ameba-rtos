@@ -218,7 +218,7 @@ int settings_call_set_handler(const char *name,
 
 		if (rc != 0) {
 #if ZEPHYR_RTK_PATCH
-			LOG_ERR("set-value failure. key: %s, handler: %s, error(%d)",
+			LOG_WRN("set-value failure. key: %s, handler: %s, error(%d)",
 				name, ch->name, rc);
 #else
 			LOG_ERR("set-value failure. key: %s error(%d)",

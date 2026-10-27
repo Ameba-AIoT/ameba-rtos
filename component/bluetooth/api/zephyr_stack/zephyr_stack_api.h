@@ -12,8 +12,8 @@
 
 #define BT_ZEPHYR_LEGACY_ADV_MAX_LEN        31
 
-#define RTK_BT_HCI_ERR(err)    (err ? (RTK_BT_ERR_HCI_GROUP | err) : 0)
-#define RTK_BT_ATT_ERR(err)    (err ? (RTK_BT_ERR_ATT_GROUP | err) : 0)
+#define RTK_BT_HCI_ERR(err)    ((err) ? (RTK_BT_ERR_HCI_GROUP | (err)) : 0)
+#define RTK_BT_ATT_ERR(err)    ((err) ? (RTK_BT_ERR_ATT_GROUP | (err)) : 0)
 
 typedef struct {
 	struct bt_data data;

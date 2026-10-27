@@ -86,6 +86,8 @@ menu "CONFIG USB"
 
     config USBH_CDC_ACM
         bool
+    config USBH_CDC_ACM_NOTIFY
+        bool
     config USBH_CDC_ACM_4G_DONGLE
         bool
     config USBH_CDC_ECM

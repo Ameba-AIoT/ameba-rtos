@@ -67,12 +67,12 @@ soc_configs:Dict[str, SocImageConfig] = {
         dsp_section = None
     ),
     "RTL8720F": SocImageConfig(
-        image1_section = "KM4TZ_BOOT_XIP",
+        image1_section = "KM55TZ_BOOT_XIP",
         image2_section = {
-            "km4ns": "KM4NS_IMG2_XIP",
-            "km4tz": "KM4TZ_IMG2_XIP",
+            "km55ns": "KM55NS_IMG2_XIP",
+            "km55tz": "KM55TZ_IMG2_XIP",
         },
-        image3_section = "KM4TZ_IMG3_XIP",
+        image3_section = "KM55TZ_IMG3_XIP",
         dsp_section = None
     ),
     "RLE1509": SocImageConfig(
@@ -296,6 +296,9 @@ class FirmwarePackage(OperationBase):
             tmp_gcm_prepend_file_name = modify_file_path(tmp_en_file_name, suffix='_tag_prepend')   #prepend gcm tag file
             manifest_config = self.manifest_manager.image1
             gcm_enable = manifest_config.rsip_enable and manifest_config.rsip_mode == 2
+            if gcm_enable and self.context.soc_project == 'amebagreen2':
+                self.logger.fatal("amebagreen2 ROM does not support RSIP GCM for IMG1, set rsip_mode to XTS or CTR")
+                return Error(ErrorType.INVALID_INPUT, "RSIP GCM is not supported for amebagreen2 IMG1")
 
             if os.path.exists(tmp_manifest_source_file): os.remove(tmp_manifest_source_file)
 
@@ -304,9 +307,9 @@ class FirmwarePackage(OperationBase):
 
             manifest_file_name = os.path.join(self.output_image_dir, 'manifest_boot.bin') #output manifest file
             # GCM tag bin is prepended to the manifest source for ImgSize accounting, but it is
-            # authenticated by RSIP HW OTF, so exclude it from the image hash (matches ROM which
-            # skips SubImgInfo[0] in SBOOT_Validate_ImgHash).
-            hash_skip_bytes = os.path.getsize(tmp_gcm_prepend_file_name) if gcm_enable else 0
+            # authenticated by RSIP HW OTF, so exclude it from the IMG1 hash. Only the RTL8720F ROM
+            # hashes the IMG1 tag (SubImgInfo[0]) in SBOOT_Validate_ImgHash.
+            hash_skip_bytes = os.path.getsize(tmp_gcm_prepend_file_name) if gcm_enable and self.context.soc_project != 'RTL8720F' else 0
             res = self.manifest_manager.create_manifest(manifest_file_name, tmp_manifest_source_file, ImageType.IMAGE1, hash_skip_bytes=hash_skip_bytes)
             if res:
                 self.logger.fatal("Failed generating manifest file")

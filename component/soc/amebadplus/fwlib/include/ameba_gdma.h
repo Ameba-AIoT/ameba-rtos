@@ -175,6 +175,8 @@
 #define BIT_CFGX_UP_SEC_DISABLE			    ((u32)(0x00000001 << 3))		/*!< Upper word Bit[10:7]. write 0 to enable secure transfer, default is 0 */
 #define BIT_CFGX_UP_SRC_PER				      ((u32)(0x0000000F << 7))		/*!< Upper word Bit[10:7].hardware handshaking interface for source peripheral*/
 #define BIT_CFGX_UP_DEST_PER			      ((u32)(0x0000000F << 11))		/*!< Upper word Bit[14:11].hardware handshaking interface for destination peripheral*/
+#define GDMA_CFGx_H_SRC_PER(x)			(((u32)((x) & 0x0000000F) << 7))	/*!< Handshake interface number (low 4 bits) of the source peripheral */
+#define GDMA_CFGx_H_DEST_PER(x)			(((u32)((x) & 0x0000000F) << 11))	/*!< Handshake interface number (low 4 bits) of the destination peripheral */
 #define BIT_CFGX_UP_FIFO_MODE			      ((u32)(0x00000001 << 1 ))		/*!< Upper word Bit[1].hardware FIFO Mode Select, write 1 to enable*/
 #define GDMA_BIT_ExtendedSRC_PER1		    ((u32)0x00000001 << 15)
 #define GDMA_BIT_ExtendedSRC_PER2		    ((u32)0x00000001 << 17)
@@ -607,7 +609,8 @@ _LONG_CALL_ void GDMA_Init(u8 GDMA_Index, u8 GDMA_ChNum, PGDMA_InitTypeDef GDMA_
 _LONG_CALL_ void GDMA_SetLLP(u8 GDMA_Index, u8 GDMA_ChNum, u32 MultiBlockCount, struct GDMA_CH_LLI *pGdmaChLli, u32 round);
 _LONG_CALL_ void GDMA_Cmd(u8 GDMA_Index, u8 GDMA_ChNum, u32 NewState);
 _LONG_CALL_ void GDMA_INTConfig(u8 GDMA_Index, u8 GDMA_ChNum, u32 GDMA_IT, u32 NewState);
-_LONG_CALL_ u32	 GDMA_ClearINTPendingBit(u8 GDMA_Index, u8 GDMA_ChNum, u32 GDMA_IT);
+_LONG_CALL_ u32	 GDMA_GetINTStatus(u8 GDMA_Index, u8 GDMA_ChNum);
+_LONG_CALL_ void GDMA_ClearINTPendingBit(u8 GDMA_Index, u8 GDMA_ChNum, u32 GDMA_IT);
 _LONG_CALL_ u32	 GDMA_ClearINT(u8 GDMA_Index, u8 GDMA_ChNum);
 _LONG_CALL_ void GDMA_ChCleanAutoReload(u8 GDMA_Index, u8 GDMA_ChNum, u32 CleanType);
 

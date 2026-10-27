@@ -954,6 +954,13 @@ static void link_open(struct prov_rx *rx, struct net_buf_simple *buf)
 		return;
 	}
 
+#if ZEPHYR_RTK_PATCH
+	/* A provisioned node does not accept a new PB-ADV link */
+	if (bt_mesh_is_provisioned()) {
+		return;
+	}
+#endif
+
 	if (memcmp(buf->data, bt_mesh_prov_get()->uuid, 16)) {
 		LOG_DBG("Bearer open message not for us");
 		return;

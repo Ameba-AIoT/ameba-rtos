@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _AMEBAGREEN2_KEY_MANAGEMENT_H_
-#define _AMEBAGREEN2_KEY_MANAGEMENT_H_
+#ifndef _AMEBA_CRYPTO_H_
+#define _AMEBA_CRYPTO_H_
 
 /* MANUAL_GEN_START */
 #ifdef __cplusplus

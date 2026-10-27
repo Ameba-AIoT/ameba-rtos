@@ -48,6 +48,11 @@ static struct {
 	uint8_t new_dev_key[16];
 } provisionee;
 
+#if ZEPHYR_RTK_PATCH
+static bool invite_deferred;
+static bool link_ready;
+#endif
+
 static void send_pub_key(void);
 static void prov_dh_key_gen(void);
 
@@ -715,6 +720,10 @@ static void prov_link_closed(enum prov_bearer_link_status status)
 	ARG_UNUSED(status);
 
 	LOG_DBG("");
+#if ZEPHYR_RTK_PATCH
+	invite_deferred = false;
+	link_ready = false;
+#endif
 	if (atomic_test_bit(bt_mesh_prov_link.flags, COMPLETE)) {
 		prov_node_add();
 	}
@@ -724,6 +733,12 @@ static void prov_link_closed(enum prov_bearer_link_status status)
 
 static void prov_link_opened(void)
 {
+#if ZEPHYR_RTK_PATCH
+	if (invite_deferred) {
+		link_ready = true;
+		return;
+	}
+#endif
 	send_invite();
 }
 
@@ -860,6 +875,76 @@ int bt_mesh_pb_adv_open(const uint8_t uuid[16], uint16_t net_idx, uint16_t addr,
 }
 #endif
 
+#if ZEPHYR_RTK_PATCH
+/* Open the link only, the Invite is sent later by bt_mesh_prov_invite() */
+static int link_open_deferred(const uint8_t *uuid, const struct prov_bearer *bearer, uint16_t net_idx,
+			      void *bearer_cb_data, uint8_t timeout)
+{
+	int err;
+
+	invite_deferred = true;
+	link_ready = false;
+	err = link_open(uuid, bearer, net_idx, 0, 0, bearer_cb_data, timeout);
+	if (err) {
+		invite_deferred = false;
+	}
+
+	return err;
+}
+#endif
+
+#if ZEPHYR_RTK_PATCH && defined(CONFIG_BT_MESH_PB_ADV)
+int bt_mesh_pb_adv_link_open(const uint8_t uuid[16], uint16_t net_idx)
+{
+	if (!bt_mesh_is_provisioned() || bt_mesh_subnet_get(net_idx) == NULL) {
+		return -EINVAL;
+	}
+
+	return link_open_deferred(uuid, &bt_mesh_pb_adv, net_idx, NULL, LINK_ESTABLISHMENT_TIMEOUT);
+}
+#endif
+
+#if ZEPHYR_RTK_PATCH
+int bt_mesh_prov_invite(uint16_t addr, uint8_t attention_duration)
+{
+	if (!invite_deferred || !link_ready) {
+		return -ENOLINK;
+	}
+
+	invite_deferred = false;
+	link_ready = false;
+	bt_mesh_prov_link.addr = addr;
+	provisionee.attention_duration = attention_duration;
+	send_invite();
+
+	return 0;
+}
+#endif
+
+#if ZEPHYR_RTK_PATCH && defined(CONFIG_BT_MESH_PB_GATT_CLIENT)
+/* Bind the provisioning link to an already established and discovered GATT connection.
+ * The Invite is sent later by bt_mesh_prov_invite(). The device UUID is unknown.
+ */
+int bt_mesh_pb_gatt_prov_link_open(uint16_t net_idx)
+{
+	static const uint8_t no_uuid[16];
+
+	if (!bt_mesh_is_provisioned() || bt_mesh_subnet_get(net_idx) == NULL) {
+		return -EINVAL;
+	}
+
+	return link_open_deferred(no_uuid, &bt_mesh_pb_gatt, net_idx, NULL, PROTOCOL_TIMEOUT_SEC);
+}
+
+void bt_mesh_pb_gatt_prov_link_abort(void)
+{
+	if (invite_deferred && !link_ready) {
+		invite_deferred = false;
+		atomic_clear_bit(bt_mesh_prov_link.flags, LINK_ACTIVE);
+	}
+}
+#endif
+
 #if defined(CONFIG_BT_MESH_PB_GATT_CLIENT)
 int bt_mesh_pb_gatt_open(const uint8_t uuid[16], uint16_t net_idx, uint16_t addr,
 			 uint8_t attention_duration)
@@ -975,4 +1060,41 @@ int bt_mesh_pb_remote_open_node(struct bt_mesh_rpr_cli *cli,
 	return link_open(NULL, &pb_remote_cli, provisionee.node->net_idx, addr,
 			 0, &ctx, 0);
 }
+
+#if ZEPHYR_RTK_PATCH
+int bt_mesh_pb_remote_link_open(struct bt_mesh_rpr_cli *cli, const struct bt_mesh_rpr_node *srv,
+				const uint8_t uuid[16], uint16_t net_idx, uint8_t link_open_timeout)
+{
+	struct pb_remote_ctx ctx = { .cli = cli, .srv = srv };
+
+	if (!bt_mesh_is_provisioned() || bt_mesh_subnet_get(net_idx) == NULL) {
+		return -EINVAL;
+	}
+
+	return link_open_deferred(uuid, &pb_remote_cli, net_idx, &ctx, link_open_timeout);
+}
+
+/* Open the PB-Remote link for a node refresh only. A local server needs no link, 1 is returned. */
+int bt_mesh_pb_remote_link_open_node(struct bt_mesh_rpr_cli *cli, struct bt_mesh_rpr_node *srv,
+				     enum bt_mesh_rpr_node_refresh refresh)
+{
+	struct pb_remote_ctx ctx = { .cli = cli, .srv = srv, .refresh = refresh };
+
+	if (!bt_mesh_is_provisioned()) {
+		return -EINVAL;
+	}
+
+	provisionee.node = bt_mesh_cdb_node_get(srv->addr);
+	if (!provisionee.node) {
+		LOG_ERR("No CDB node for 0x%04x", srv->addr);
+		return -ENOENT;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_MESH_RPR_SRV) && bt_mesh_has_addr(srv->addr)) {
+		return 1;
+	}
+
+	return link_open_deferred(NULL, &pb_remote_cli, provisionee.node->net_idx, &ctx, 0);
+}
+#endif
 #endif

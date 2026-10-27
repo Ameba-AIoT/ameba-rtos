@@ -11,33 +11,6 @@
 extern "C" {
 #endif
 
-/** @addtogroup BOR
-  * @verbatim
-  *****************************************************************************************
-  * Introduction
-  *****************************************************************************************
-  * functions:
-  * 	- set bor mode
-  * 	- bor rising and falling threshold set for reset or interrupt mode
-  * 	- bor debounce timer set
-  * 	- bor interrupt clear
-  *
-  *****************************************************************************************
-  * How to use BOR
-  *****************************************************************************************
-  *      To use the BOR mode, the following steps are mandatory:
-  *
-  *      1. Choose bor mode using the follwoing functions.
-  *			BOR_ModeSet(u32 Option);
-  *
-  *      2. If Choose bor Interrupt mode, register bor Interrupt handler using the follwoing functions.
-  *			InterruptRegister() : register bor Interrupt handler
-  *			InterruptEn() : enable bor Interrupt
-  *
-  *****************************************************************************************
-  * @endverbatim
-  */
-
 /** @addtogroup Ameba_Periph_Driver
   * @{
   */

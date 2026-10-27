@@ -690,12 +690,9 @@ static rtk_bt_evt_cb_ret_t ble_mesh_stack_app_callback(uint8_t evt_code, void *p
 		rtk_bt_mesh_stack_evt_dev_info_provision_adv_t *prov_info;
 		prov_info = (rtk_bt_mesh_stack_evt_dev_info_provision_adv_t *)param;
 		BT_LOGA("[APP] ");
-		if (0xff != prov_info->dev_info.bt_addr_type) {
-			// Only for RTK mesh stack, report bt address and type information(zephyr mesh stack can not report)
-			BT_LOGA("bt addr=0x%02x%02x%02x%02x%02x%02x type=%d rssi=%d ", prov_info->dev_info.bt_addr[5], prov_info->dev_info.bt_addr[4],
-					prov_info->dev_info.bt_addr[3], prov_info->dev_info.bt_addr[2], prov_info->dev_info.bt_addr[1], prov_info->dev_info.bt_addr[0],
-					prov_info->dev_info.bt_addr_type, prov_info->dev_info.rssi);
-		}
+		BT_LOGA("bt addr=0x%02x%02x%02x%02x%02x%02x type=%d rssi=%d ", prov_info->dev_info.bt_addr[5], prov_info->dev_info.bt_addr[4],
+				prov_info->dev_info.bt_addr[3], prov_info->dev_info.bt_addr[2], prov_info->dev_info.bt_addr[1], prov_info->dev_info.bt_addr[0],
+				prov_info->dev_info.bt_addr_type, prov_info->dev_info.rssi);
 		BT_LOGA("prov=");
 		mesh_data_uart_dump(prov_info->dev_uuid, 16);
 		BT_AT_PRINT("+BLEMESHSTACK:dev_info,0x%02x%02x%02x%02x%02x%02x,%d,%d,prov,",

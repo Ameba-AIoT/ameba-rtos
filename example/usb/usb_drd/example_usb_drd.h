@@ -4,11 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef EXAMPLE_USB_DRD_H
 #define EXAMPLE_USB_DRD_H
 
 /* Includes ------------------------------------------------------------------*/
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* Exported defines ----------------------------------------------------------*/
 
 /* Exported types ------------------------------------------------------------*/
 
@@ -16,10 +21,12 @@
 
 /* Exported variables --------------------------------------------------------*/
 
-/* Exported functions ------------------------------------------------------- */
+/* Exported functions --------------------------------------------------------*/
 
 void example_usb_drd(void);
 
+#ifdef __cplusplus
+}
+#endif
 
-#endif /* EXAMPLE_USBD_MSC_H */
-
+#endif /* EXAMPLE_USB_DRD_H */

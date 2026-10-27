@@ -81,7 +81,7 @@ void shell_loguratRx_ipc_int(void *Data, u32 IrqStatus, u32 ChanNum)
 	shell_cmd_inject((const char *)ptmpbuf->UARTLogBuf, ptmpbuf->BufCount);
 }
 
-#ifdef CONFIG_ARM_CORE_CM4_KM4NS
+#ifdef CONFIG_ARM_CORE_CM55_KM55NS
 u8 tmp_log_buf_array[CMD_BUFLEN];
 UART_LOG_BUF tmp_log_buf = {
 	.UARTLogBuf = tmp_log_buf_array,
@@ -115,7 +115,8 @@ void shell_loguratRx_Ipc_Tx(u32 ipc_dir, u32 ipc_ch)
 
 void shell_loguartRx_dispatch(void)
 {
-	u32 i, CpuId, cmd_done = FALSE;
+	u32 i, cmd_done = FALSE;
+	u32 CpuId = WHC_HOST_CPU_ID;
 	PUART_LOG_BUF pUartLogBuf = shell_ctl.pTmpLogBuf;
 
 	for (i = 0; i < pUartLogBuf->UARTLogBufLen; i++) {
@@ -212,10 +213,6 @@ void shell_init_ram(void)
 {
 #if defined(CONFIG_SUPPORT_ATCMD)
 	atcmd_service_init();
-#endif
-
-#ifdef AMEBAD_TODO
-	LOGUART_SetBaud_FromFlash();
 #endif
 
 #ifdef CONFIG_LONGER_CMD

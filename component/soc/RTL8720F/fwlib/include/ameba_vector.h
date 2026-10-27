@@ -19,30 +19,13 @@
 extern "C" {
 #endif
 
-/** @addtogroup AmebaD_Platform
+/** @addtogroup Ameba_Platform
   * @{
   */
 
 /** @defgroup IRQ
   * @brief IRQ modules
   * @{
-  */
-
-/** @addtogroup IRQ
-  * @verbatim
-  *****************************************************************************************
-  * Introduction
-  *****************************************************************************************
-  * IRQ table, please refer to IRQ Exported Constants->IRQn_enum->IRQn
-  *
-  *****************************************************************************************
-  * how to use
-  *****************************************************************************************
-  *		1. register/unregister IRQ use: InterruptRegister/InterruptUnRegister
-  *		2. enable/disable IRQ use: InterruptEn/InterruptDis
-  *
-  *****************************************************************************************
-  * @endverbatim
   */
 
 /* Exported types ------------------------------------------------------------*/

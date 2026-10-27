@@ -44,7 +44,7 @@ void System_Reset(void)
 		Trig |= LSYS_BIT_KM4TZ_SYS_RST;
 	} else if (CPUID == KM4NS_CPU_ID) {
 #ifdef CONFIG_SOLO
-		/* SOLO: km4ns(iot) cannot reset the whole chip. A "system reset" from iot means reset only the iot(platform1) subsystem */
+		/* SOLO: km55ns(iot) cannot reset the whole chip. A "system reset" from iot means reset only the iot(platform1) subsystem */
 		Platform1_Reset();
 		return;
 #endif
@@ -54,12 +54,14 @@ void System_Reset(void)
 		return;
 	}
 
+retry:
 	HAL_WRITE16(SYSTEM_CTRL_BASE, REG_LSYS_SW_RST_TRIG, SYS_RESET_KEY);
 	HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_SW_RST_CTRL, Trig);
 	HAL_WRITE16(SYSTEM_CTRL_BASE, REG_LSYS_SW_RST_TRIG, SYS_RESET_TRIG);
 
-	/* wait for reset */
-	while (1);
+	/* wait for reset. If cores trigger reset at the same time, the trigger may be lost, so retry with a different timeout per core */
+	DelayMs(10 + CPUID * 3);
+	goto retry;
 }
 
 

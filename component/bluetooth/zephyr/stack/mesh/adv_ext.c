@@ -341,7 +341,17 @@ static void send_pending_adv(struct k_work *work)
 	}
 
 	if (atomic_test_and_clear_bit(ext_adv->flags, ADV_FLAG_SCHEDULE_PENDING)) {
+#if ZEPHYR_RTK_PATCH
+		/* Running inside the work: schedule_send() sees the work as pending, stops the adv and never resubmits */
+		if (atomic_test_and_clear_bit(ext_adv->flags, ADV_FLAG_PROXY)) {
+			atomic_clear_bit(ext_adv->flags, ADV_FLAG_PROXY_START);
+			(void)bt_le_ext_adv_stop(ext_adv->instance);
+			atomic_clear_bit(ext_adv->flags, ADV_FLAG_ACTIVE);
+		}
+		k_work_submit(&ext_adv->work);
+#else
 		schedule_send(ext_adv);
+#endif
 	}
 }
 

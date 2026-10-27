@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/* Includes ------------------------------------------------------------------ */
+/* Includes ------------------------------------------------------------------*/
 
 #include <platform_autoconf.h>
 #include "usbd_whc.h"
@@ -18,9 +18,6 @@
 #define WHC_HOTPLUG                                          1
 
 #define USBD_WHC_BULK_BUF_SIZE                               64U
-
-// USB speed
-#define WHC_USB_SPEED                                        USB_SPEED_FULL
 
 // Thread priorities
 #define WHC_INIT_THREAD_PRIORITY                             5
@@ -84,9 +81,10 @@ typedef struct {
 	usbd_whc_app_ep_t out_ep[USB_MAX_ENDPOINTS];
 } usbd_whc_app_t;
 
-#define	USBD_WHC_QUERY_PACKET_SIZE			(sizeof(usbd_whc_query_packet_t))
-
 /* Private macros ------------------------------------------------------------*/
+
+/* Depends on usbd_whc_query_packet_t declared above. */
+#define	USBD_WHC_QUERY_PACKET_SIZE			(sizeof(usbd_whc_query_packet_t))
 
 /* Private function prototypes -----------------------------------------------*/
 
@@ -100,10 +98,13 @@ static void whc_cb_transmitted(usbd_whc_ep_t *in_ep, u8 status);
 static void whc_cb_status_changed(u8 old_status, u8 status);
 
 /* Private variables ---------------------------------------------------------*/
+
 static const char *const TAG = "WHC";
 
 static const usbd_config_t whc_cfg = {
-	.speed = WHC_USB_SPEED,
+	.info = {
+		.prod_str = "802.11n WLAN Adapter",
+	},
 	.isr_priority = INT_PRI_MIDDLE,
 };
 
@@ -124,7 +125,7 @@ static rtos_sema_t whc_wifi_bulk_in_sema;
 static rtos_sema_t reset_sema;
 
 #if WHC_HOTPLUG
-static u8 whc_attach_status;
+static __IO u8 whc_attach_status;
 static rtos_sema_t whc_attach_status_changed_sema;
 #endif
 
@@ -138,6 +139,8 @@ static rtos_task_t whc_reset_task;
    threads leave their loops so the semaphores can be freed safely. */
 static volatile u8 whc_stack_fatal;
 #endif
+
+/* Exported variables --------------------------------------------------------*/
 
 /* Private functions ---------------------------------------------------------*/
 
@@ -198,36 +201,34 @@ static void whc_stop_workers(void)
 
 static int whc_setup_handle_query(usb_setup_req_t *req, u8 *buf)
 {
-	int ret = HAL_ERR_PARA;
 	usbd_whc_query_packet_t *pkt;
 
-	/* The ACK packet is built in place, reject a request which cannot carry it */
-	if (buf == NULL) {
+	/* QUERY/RESET are read requests whose data stage is exactly one ACK packet: the class
+	 * transmits wLength bytes, so any other length or direction would expose stale EP0 data
+	 * or let an H2D request trigger the reset */
+	if ((buf == NULL) || ((req->bmRequestType & USB_REQ_DIR_MASK) != USB_D2H) ||
+		(req->wLength != USBD_WHC_QUERY_PACKET_SIZE)) {
 		return HAL_ERR_PARA;
 	}
 
-	if (req->wIndex == USBD_WHC_VENDOR_QUERY_CMD) {
-		pkt = (usbd_whc_query_packet_t *)buf;
-		pkt->data_len = 0;
-		pkt->data_offset = USBD_WHC_QUERY_PACKET_SIZE;
-		pkt->pkt_type = USBD_WHC_VENDOR_QUERY_ACK;
-		pkt->xfer_status = HAL_OK;
-		pkt->rl_version = (u8)(EFUSE_GetChipVersion() & 0xFF);
-		pkt->dev_mode = USBD_WHC_FW_TYPE_RAM;
-		ret = HAL_OK;
-	} else if (req->wIndex == USBD_WHC_VENDOR_RESET_CMD) {
-		pkt = (usbd_whc_query_packet_t *)buf;
-		pkt->data_len = 0;
-		pkt->data_offset = USBD_WHC_QUERY_PACKET_SIZE;
-		pkt->pkt_type = USBD_WHC_VENDOR_RESET_ACK;
-		pkt->xfer_status = HAL_OK;
-		pkt->rl_version = (u8)(EFUSE_GetChipVersion() & 0xFF);
-		pkt->dev_mode = USBD_WHC_FW_TYPE_RAM;
-		rtos_sema_give(reset_sema);
-		ret = HAL_OK;
+	if ((req->wIndex != USBD_WHC_VENDOR_QUERY_CMD) && (req->wIndex != USBD_WHC_VENDOR_RESET_CMD)) {
+		return HAL_ERR_PARA;
 	}
 
-	return ret;
+	pkt = (usbd_whc_query_packet_t *)buf;
+	usb_os_memset((void *)pkt, 0, USBD_WHC_QUERY_PACKET_SIZE);
+	pkt->data_offset = USBD_WHC_QUERY_PACKET_SIZE;
+	pkt->xfer_status = HAL_OK;
+	pkt->rl_version = (u8)(EFUSE_GetChipVersion() & 0xFFU);
+	pkt->dev_mode = USBD_WHC_FW_TYPE_RAM;
+	if (req->wIndex == USBD_WHC_VENDOR_QUERY_CMD) {
+		pkt->pkt_type = USBD_WHC_VENDOR_QUERY_ACK;
+	} else {
+		pkt->pkt_type = USBD_WHC_VENDOR_RESET_ACK;
+		rtos_sema_give(reset_sema);
+	}
+
+	return HAL_OK;
 }
 
 /**
@@ -294,7 +295,7 @@ static int whc_wifi_init(void)
 	ep->buf = (u8 *)usb_os_malloc(ep->buf_len);
 	if (ep->buf == NULL) {
 		ret = HAL_ERR_MEM;
-		goto wifi_init_clean_ep3_bulk_in_buf_exit;
+		goto wifi_init_clean_bulk_in_buf_exit;
 	}
 
 	ep_num = USB_EP_NUM(USBD_WHC_WIFI_EP_BULK_OUT_1);
@@ -303,17 +304,17 @@ static int whc_wifi_init(void)
 	ep->buf = (u8 *)usb_os_malloc(ep->buf_len);
 	if (ep->buf == NULL) {
 		ret = HAL_ERR_MEM;
-		goto wifi_init_clean_ep4_bulk_out_buf_exit;
+		goto wifi_init_clean_bulk_out_2_buf_exit;
 	}
 
 	return HAL_OK;
 
-wifi_init_clean_ep4_bulk_out_buf_exit:
+wifi_init_clean_bulk_out_2_buf_exit:
 	ep = &iapp->out_ep[USB_EP_NUM(USBD_WHC_WIFI_EP_BULK_OUT_2)];
 	usb_os_mfree((void *)ep->buf);
 	ep->buf = NULL;
 
-wifi_init_clean_ep3_bulk_in_buf_exit:
+wifi_init_clean_bulk_in_buf_exit:
 	ep = &iapp->in_ep[USB_EP_NUM(USBD_WHC_WIFI_EP_BULK_IN)];
 	usb_os_mfree((void *)ep->buf);
 	ep->buf = NULL;
@@ -403,6 +404,14 @@ static int whc_cb_received(usbd_whc_ep_t *out_ep, u32 len)
 		usb_os_memcpy((void *)ep_in->buf, (const void *)ep->xfer_buf, len);
 		ep_in->buf_len = len;
 		rtos_sema_give(whc_wifi_bulk_in_sema);
+
+		/* Framework auto re-arm excludes this EP; re-arm the next BULK OUT receive */
+		usbd_whc_receive_data(USBD_WHC_WIFI_EP_BULK_OUT_2, ep->xfer_buf, ep->xfer_len, NULL);
+		break;
+	case USBD_WHC_WIFI_EP_BULK_OUT_1:
+		/* Sink only: the single WiFi BULK IN loopback is owned by OUT_2. Re-arm at once,
+		 * the framework auto re-arm excludes this EP */
+		usbd_whc_receive_data(USBD_WHC_WIFI_EP_BULK_OUT_1, ep->xfer_buf, ep->xfer_len, NULL);
 		break;
 	default:
 		break;
@@ -596,7 +605,7 @@ static void example_usbd_whc_thread(void *param)
 	if (ret != RTK_SUCCESS) {
 		goto clear_reset_task;
 	}
-#if defined(CONFIG_SMP)
+#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
 	/* C-2: the USB OTG ISR is delivered on CPU0 (GIC ITARGETSR pins every SPI to core 0).
 	   Pinning the hotplug/deinit thread to CPU0 puts it on the same core as the ISR,
 	   so deinit's local interrupt disable is meaningful again under SMP. The bulk-in /
@@ -607,8 +616,6 @@ static void example_usbd_whc_thread(void *param)
 #endif // WHC_HOTPLUG
 
 	rtos_time_delay_ms(100);
-
-	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD WHC dplus demo start\n");
 
 	rtos_task_delete(NULL);
 
@@ -631,7 +638,7 @@ clear_usb_driver_exit:
 	usbd_deinit();
 
 exit:
-	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD WHC dplus demo stop\n");
+	RTK_LOGS(TAG, RTK_LOG_ERROR, "USBD WHC demo aborted\n");
 	whc_free_resource();
 
 	rtos_task_delete(NULL);
@@ -643,6 +650,8 @@ void example_usbd_whc_dplus(void)
 {
 	int ret;
 	rtos_task_t task;
+
+	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD WHC demo start\n");
 
 	ret = rtos_task_create(&task, "usbd_whc_thread", example_usbd_whc_thread, NULL,
 						   WHC_INIT_THREAD_STACK_SIZE, WHC_INIT_THREAD_PRIORITY);

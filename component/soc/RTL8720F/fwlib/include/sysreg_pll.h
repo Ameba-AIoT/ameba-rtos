@@ -156,7 +156,7 @@
   * @{
   */
 #define PLL_BIT_CK_CAL_START  ((u32)0x00000001 << 31)           /*!< R/W/ES 0x0  Start clk calibration . This bit will auto-set to 0 when cal done .*/
-#define PLL_MASK_CK_CAL_SEL   ((u32)0x00000003 << 16)           /*!< R/W 0x0  Calibration clock selection . The refrence clock is xtal clock. 0: OSC4M 1: AON100K 2: AON128K for SDM*/
+#define PLL_MASK_CK_CAL_SEL   ((u32)0x00000003 << 16)           /*!< R/W 0x0  Calibration clock selection . The refrence clock is xtal clock. 0: OSC2M 1: AON100K 2: OSC2M div (clk div config register: 0x408010fc[5:2])*/
 #define PLL_CK_CAL_SEL(x)     (((u32)((x) & 0x00000003) << 16))
 #define PLL_GET_CK_CAL_SEL(x) ((u32)(((x >> 16) & 0x00000003)))
 #define PLL_MASK_CK_CAL_RPT   ((u32)0x0000FFFF << 0)            /*!< R   Clock calibration result if ck_cal_sel==0 :  cal_clock_freq(Hz) = xtal_clock_freq(Hz)  * 32 / ck_cal_rpt else : cal_clock_freq(Hz)  = xtal_clock_freq(Hz)  * 8 / ck_cal_rpt*/

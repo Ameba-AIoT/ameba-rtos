@@ -244,6 +244,87 @@ void rtw_cli_cmd_getmac(int argc, char **argv, u8 api_id, u32 cmd_category, u8 c
 	}
 }
 
+/* Parse "aa:bb:cc:dd:ee:ff" into a 6-byte MAC, return 0 on success. */
+static int parse_mac_addr(const char *str, u8 *mac)
+{
+	int i, n;
+	unsigned int val;
+
+	if (str == NULL) {
+		return -1;
+	}
+
+	for (i = 0; i < 6; i++) {
+		n = sscanf(str, "%2x", &val);
+		if (n != 1) {
+			return -1;
+		}
+		mac[i] = (u8)val;
+
+		if (i < 5) {
+			if (str[2] != ':' && str[2] != '-') {
+				return -1;
+			}
+			str += 3;
+		}
+	}
+
+	return 0;
+}
+
+void rtw_cli_cmd_setmac(int argc, char **argv, u8 api_id, u32 cmd_category, u8 cmd_id)
+{
+	struct whc_host_cli_setmac_t cmd;
+	int ret = 0;
+	u8 idx = 0;
+	u8 efuse = 0;
+
+	if (argc < 3) {
+		printf("usage: setmac <idx> <aa:bb:cc:dd:ee:ff> [1(efuse)]\n");
+		return;
+	}
+
+	memset(&cmd, 0, sizeof(cmd));
+
+	idx = (u8)atoi(argv[1]);
+	if (idx > 1) {
+		printf("invalid idx: %d (only 0/1)\n", idx);
+		return;
+	}
+
+	if (parse_mac_addr(argv[2], cmd.mac) != 0) {
+		printf("invalid mac: %s\n", argv[2]);
+		return;
+	}
+
+	if (argc >= 4) {
+		efuse = (u8)atoi(argv[3]);
+		if (efuse > 1) {
+			printf("invalid efuse: %d (0/1)\n", efuse);
+			return;
+		}
+		if (efuse == 1) {
+			printf("WARNING: efuse write is limited and irreversible!\n");
+		}
+	}
+
+	cmd.category = cmd_category;
+	cmd.cmd_id = cmd_id;
+	cmd.idx = idx;
+	cmd.efuse = efuse;
+
+	printf("setmac %d %02x:%02x:%02x:%02x:%02x:%02x efuse=%d\n",
+		   cmd.idx, cmd.mac[0], cmd.mac[1], cmd.mac[2],
+		   cmd.mac[3], cmd.mac[4], cmd.mac[5], cmd.efuse);
+
+	ret = rtw_cli_send_nl_data(WHC_CMD_CUSTOM_API, (u8 *)&cmd,
+							   sizeof(cmd), api_id, NULL, NULL);
+	if (ret < 0) {
+		printf("msg send fail\n");
+		return;
+	}
+}
+
 void rtw_cli_cmd_set_network(int argc, char **argv, u8 api_id, u32 cmd_category, u8 cmd_id)
 {
 	struct whc_host_cli_send_string_t cmd;

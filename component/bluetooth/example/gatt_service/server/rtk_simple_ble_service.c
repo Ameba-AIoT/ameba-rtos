@@ -98,7 +98,7 @@ void simple_ble_service_callback(uint8_t event, void *data)
 		read_resp.cid = p_read_ind->cid;
 		read_resp.index = p_read_ind->index;
 		if (SIMPLE_BLE_READ_INDEX == p_read_ind->index) {
-			if (offset >= SIMPLE_BLE_READ_MAX_LEN) {
+			if (offset > SIMPLE_BLE_READ_MAX_LEN) {
 				read_resp.err_code = RTK_BT_ATT_ERR_INVALID_OFFSET;
 			} else {
 				read_resp.data = &simple_ble_read_val[offset];

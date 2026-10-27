@@ -827,6 +827,7 @@ u32 ADC_GetSampleValue(s32 VolMV, u8 IsVBatChan)
 		}
 	} else {
 		assert_param(0);
+		return 0;
 	}
 }
 

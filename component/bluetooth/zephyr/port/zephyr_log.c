@@ -324,13 +324,13 @@ void btsnoop_send(uint8_t type, uint8_t *data, uint32_t len, bool c2h)
 #endif
 }
 
+#if (ZLOG_STACK_MODE == ZLOG_STACK_MODE_ARGS)
 /* stacklog args format
 * | 0x7E | len | type ||| level | log_idx | param_num |   params    |
 * |   1  |  1  |  1   |||   1   |   4     |   1       | param_num*4 |
 */
 void zephyr_stacklog_args_send(char level, int log_idx, char num, ...)
 {
-#if (ZLOG_STACK_MODE == ZLOG_STACK_MODE_ARGS)
 	btlog_message *msg;
 	int idx = 0, len = 2;
 	bool hexdump = true;
@@ -378,9 +378,5 @@ void zephyr_stacklog_args_send(char level, int log_idx, char num, ...)
 	}
 
 	btlog_send(msg);
-#else
-	(void)level;
-	(void)log_idx;
-	(void)num;
-#endif
 }
+#endif

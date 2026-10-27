@@ -60,6 +60,14 @@ struct whc_host_cli_send_string_t {
 	u8  message[256];
 } __attribute__((packed));
 
+struct whc_host_cli_setmac_t {
+	u32 category;       // WHC_WPA_OPS_UTIL
+	u8  cmd_id;         // WHC_WPA_OPS_UTIL_SET_MAC_ADDR
+	u8  idx;            // Interface
+	u8  efuse;          // 0: RAM only, 1: efuse (OTP)
+	u8  mac[6];         // MAC address (big-endian order)
+} __attribute__((packed));
+
 
 typedef void (*cmd_handler_t)(int argc, char **argv, u8 api_id, u32 cmd_category, u8 cmd_id);
 
@@ -79,6 +87,7 @@ struct cmd_func_t {
 void rtw_cli_cmd_scan(int argc, char **argv, u8 api_id, u32 cmd_category, u8 cmd_id);
 void rtw_cli_cmd_scan_result(int argc, char **argv, u8 api_id, u32 cmd_category, u8 cmd_id);
 void rtw_cli_cmd_getmac(int argc, char **argv, u8 api_id, u32 cmd_category, u8 cmd_id);
+void rtw_cli_cmd_setmac(int argc, char **argv, u8 api_id, u32 cmd_category, u8 cmd_id);
 void rtw_cli_cmd_set_network(int argc, char **argv, u8 api_id, u32 cmd_category, u8 cmd_id);
 void rtw_cli_cmd_wpas_cmd(int argc, char **argv, u8 api_id,
 						  u32 cmd_category, u8 cmd_id);

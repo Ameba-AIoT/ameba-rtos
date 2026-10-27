@@ -84,7 +84,7 @@ void ipc_table_init(IPC_TypeDef *IPCx)
 #else
 	IPC_SelectMode(IPCx, IPC_UNSHARE_MODE);
 	IPC_SetTxThreshold(IPCx, IPC_TX_LEVEVL);
-	IPC_SetTxtTimeout(IPCx, IPC_TX_TIMEOUT);
+	IPC_SetTxTimeout(IPCx, IPC_TX_TIMEOUT);
 #endif
 
 	for (i = 0; i < ipc_num; i++) {
@@ -114,7 +114,7 @@ void ipc_table_init(IPC_TypeDef *IPCx)
 			/* overwrite the old call back func for cpu reset happens */
 			RTK_LOGW(TAG, "Channel Conflict for CPU %lu Channel %lu ! Ignore If CPU Has Reset\r\n", SYS_CPUID(), IPC_ChShift);
 #ifndef CONFIG_SOLO
-			/* SOLO: after a plfm1 reset km4ns re-inits and must re-register the
+			/* SOLO: after a plfm1 reset km55ns re-inits and must re-register the
 			 * freshly-loaded image's handler, so fall through to overwrite here.
 			 * Non-SOLO keeps the original skip-on-conflict behavior. */
 			continue;
@@ -246,6 +246,7 @@ u32 ipc_send_message_unshare(IPC_Direction_Mode IPC_Dir, u8 IPC_ChNum, PIPC_DATA
 	/*polling check channel busy*/
 	if (IPCx->IPC_TX_CH_ST & (BIT(IPC_ChNum))) {
 		if (IPC_wait_idle(IPCx, IPC_ChNum)) {
+			IPC_SEMFree(SemaId);
 			return IPC_SEND_TIMEOUT;
 		}
 	}

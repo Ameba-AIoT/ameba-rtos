@@ -189,6 +189,12 @@ static void prov_start(const uint8_t *data)
 		return;
 	}
 
+#if ZEPHYR_RTK_PATCH
+	if (bt_mesh_prov->start) {
+		bt_mesh_prov->start();
+	}
+#endif
+
 	if (atomic_test_bit(bt_mesh_prov_link.flags, OOB_STATIC_KEY)) {
 		/* Trim the Auth if it is longer than required length */
 		memcpy(bt_mesh_prov_link.auth, bt_mesh_prov->static_val,

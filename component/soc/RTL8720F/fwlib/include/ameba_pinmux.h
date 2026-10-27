@@ -11,42 +11,6 @@
  * @{
  */
 
-/** @verbatim
- *****************************************************************************************
-* Introduction
-*****************************************************************************************
-*		-Every GPIO pin can be set to some function based on pinmux spec.
-*		-Every GPIO pin can set internal pull-up, pull-down based on pinmux spec.
-*
-*====================================================================
-* Pad Control Spec.
-*====================================================================
-*		-[31:18]		reserved
-*		-[17]			pull down resistor enable when system is in sleep
-*		-[16]			pull up resistor enable when system is in sleep
-*		-[13]			slew rate control
-*		-[12]			schmitt trigger enable
-*		-[11]			pad driving strength
-*		-[10]			pull resistor selection
-*		-[9]			pull down resistor enable when system is in active
-*		-[8]			pull up resistor enable when system is in active
-*		-[7:5]			reserved for function id extend
-*		-[4:0]			function id
-*
-*****************************************************************************************
-* How to use Pinmux
-*****************************************************************************************
-*		1. Set the Internal pad function type for  each pin using the following function:
-*			Pinmux_Config(u8 PinName, u32 PinFunc)
-*
-*		2. Set the Internal pad pull type for each pin using the following function:
-*			PAD_PullCtrl(u8 PinName, u8 PullType)
-*			PAD_SleepPullCtrl(u8 PinName, u8 PullType);
-*
-*****************************************************************************************
-* @endverbatim
-*/
-
 /** @defgroup PIN PIN
  * @brief PIN driver modules
  * @{

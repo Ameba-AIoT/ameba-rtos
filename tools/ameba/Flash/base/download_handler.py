@@ -66,6 +66,14 @@ OtpSpicAddrModePosForAmebaD = 6
 OtpSpicAddrMode4ByteForAmebaD = (1 << OtpSpicAddrModePosForAmebaD)
 OtpSpicAddrMode3ByteForAmebaD = (0 << OtpSpicAddrModePosForAmebaD)
 
+# Physical-OTP security enable bits (permanent). Mirrors atcmd_secure.h:
+# OTP_SEC_EN / RSIP_EN_PHY_BIT / SBOOT_EN_PHY_BIT. The device treats a bit
+# value of 0 as "enabled" (SYSCFG_OTP_RSIPEn/SBootEn test !(reg & bit)), and
+# physical OTP can only be programmed 1->0, so enabling is irreversible.
+OtpSecEnAddr = 0x368
+OtpRsipEnPhyBit = 2
+OtpSbootEnPhyBit = 3
+
 
 class Ameba(object):
     def __init__(self,
@@ -750,6 +758,39 @@ class Ameba(object):
                     return ErrType.SYS_PARAMETER
 
         return self.floader_handler.key_prog(key_type, lock, address, key_data, raw_data, enc_data)
+
+    def burn_security_enable_bit(self, name, phy_bit):
+        """Permanently enable a security feature by clearing its physical-OTP bit.
+
+        The device reads a bit value of 0 as enabled, and physical OTP only
+        programs 1->0, so enabling is irreversible. The byte is read first and
+        only the target bit cleared, matching OTP_ClearPhyBit() used by
+        AT+SEC=RSIP_EN,perm: bits already blown for other features stay as they
+        are, and OTP_Write8() is not asked for a 1->0 transition it cannot make
+        (which it would report as "OTP can't from .. to ..").
+        The reversible logical-OTP path is not covered here.
+        """
+        self.logger.info(f"Permanently enable {name}: clear physical OTP "
+                         f"{hex(OtpSecEnAddr)}[{phy_bit}] (irreversible)")
+
+        ret, buf = self.floader_handler.otp_read_physical_map(OtpSecEnAddr, 1)
+        if ret != ErrType.OK:
+            self.logger.error(f"Fail to read physical OTP {hex(OtpSecEnAddr)}: {ret}")
+            return ret
+
+        current = buf[0]
+        if not (current >> phy_bit) & 0x01:
+            self.logger.info(f"{name} already enabled ({hex(OtpSecEnAddr)} = {hex(current)}), skip")
+            return ErrType.OK
+
+        byte_value = current & (~(1 << phy_bit) & 0xFF)
+        self.logger.info(f"{hex(OtpSecEnAddr)}: {hex(current)} -> {hex(byte_value)}")
+
+        ret = self.floader_handler.otp_write_physical_byte(OtpSecEnAddr, byte_value)
+        if ret != ErrType.OK:
+            self.logger.error(f"Fail to enable {name}: {ret}")
+
+        return ret
 
     def burn_binary(self, image_path, image_info, enc_mode=None, iv=b"", key_map=b""):
         """Download a binary image per protocol spec section 3.3.

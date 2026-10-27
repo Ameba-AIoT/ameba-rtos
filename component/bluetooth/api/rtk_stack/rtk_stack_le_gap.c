@@ -2922,10 +2922,6 @@ static uint16_t bt_stack_le_gap_set_preferred_conn_param(void *param)
 {
 	uint16_t conn_interval_min = 0, conn_interval_max = 0, slave_latency = 0, supervision_timeout = 0;
 
-	if (param == NULL) {
-		return RTK_BT_ERR_PARAM_INVALID;
-	}
-
 	rtk_bt_le_preferred_conn_param_t *p_preferred_conn_param = (rtk_bt_le_preferred_conn_param_t *)param;
 	conn_interval_min = p_preferred_conn_param->conn_interval_min;
 	conn_interval_max = p_preferred_conn_param->conn_interval_max;

@@ -24,6 +24,10 @@ static void whc_host_external_event_handle(struct whc_ipc_dev_req_msg *p_recv_ms
 	if (p_recv_msg->enevt_id == WHC_API_WIFI_EVENT) {
 		event = (u32)p_recv_msg->param_buf[0];
 		evt_info = llhw_ipc_fw_phy_to_virt(p_recv_msg->param_buf[1]);
+		if (!evt_info) {
+			dev_err(global_idev.pwhc_dev, "%s: invalid evt_info\n", __func__);
+			return;
+		}
 
 		for (i = 0; i < array_len_of_event_external_hdl; i++) {
 			if (event_external_hdl[i].evt_id == event) {
@@ -46,6 +50,11 @@ u8 whc_host_event_scan_report_indicate(u32 *param_buf)
 	unsigned char *IEs = llhw_ipc_fw_phy_to_virt(param_buf[4]);
 	u32 ie_len = param_buf[5];
 
+	if (!mac_addr || !IEs) {
+		dev_err(global_idev.pwhc_dev, "%s: invalid fw ptr\n", __func__);
+		goto func_exit;
+	}
+
 	if (!global_idev.event_ch) {
 		dev_err(global_idev.pwhc_dev, "%s,%s: event_priv_t is NULL in!\n", "event", __func__);
 		goto func_exit;
@@ -67,6 +76,11 @@ u8 whc_host_event_update_regd_indicate(u32 *param_buf)
 {
 	struct rtw_country_code_table *ptab = (struct rtw_country_code_table *)llhw_ipc_fw_phy_to_virt(param_buf[0]);
 
+	if (!ptab) {
+		dev_err(global_idev.pwhc_dev, "%s: invalid fw ptr\n", __func__);
+		return 0;
+	}
+
 	whc_host_regd_update(ptab);
 	return 0;
 }
@@ -74,6 +88,11 @@ u8 whc_host_event_update_regd_indicate(u32 *param_buf)
 u8 whc_host_event_set_acs_info(u32 *param_buf)
 {
 	struct rtw_acs_mntr_rpt *acs_rpt = llhw_ipc_fw_phy_to_virt(param_buf[0]);
+
+	if (!acs_rpt) {
+		dev_err(global_idev.pwhc_dev, "%s: invalid fw ptr\n", __func__);
+		return 0;
+	}
 
 	if (!global_idev.event_ch) {
 		dev_err(global_idev.pwhc_dev, "%s,%s: event_priv_t is NULL in!\n", "event", __func__);
@@ -94,6 +113,11 @@ u8 whc_host_event_join_status_indicate(u32 *param_buf)
 	u32 event = (u32)param_buf[0];
 	char *evt_info = llhw_ipc_fw_phy_to_virt(param_buf[1]);
 
+	if (!evt_info) {
+		dev_err(global_idev.pwhc_dev, "%s: invalid fw ptr\n", __func__);
+		return 0;
+	}
+
 	whc_host_join_status_hdl(event, evt_info);
 	return 0;
 }
@@ -102,6 +126,11 @@ u8 whc_host_event_set_netif_info(u32 *param_buf)
 {
 	int idx = (u32)param_buf[0];
 	unsigned char *dev_addr = llhw_ipc_fw_phy_to_virt(param_buf[1]);
+
+	if (!dev_addr) {
+		dev_err(global_idev.pwhc_dev, "%s: invalid fw ptr\n", __func__);
+		return 0;
+	}
 
 	if (!global_idev.event_ch) {
 		dev_err(global_idev.pwhc_dev, "%s,%s: event_priv_t is NULL in!\n", "event", __func__);
@@ -123,6 +152,11 @@ u8 whc_host_event_get_network_info(u32 *param_buf)
 	uint32_t type = (uint32_t)param_buf[0];
 	int idx = param_buf[2];
 	uint32_t rsp_len = 0;
+
+	if (!p_ipc_msg) {
+		dev_err(global_idev.pwhc_dev, "%s: invalid fw ptr\n", __func__);
+		return 0;
+	}
 
 	if (!global_idev.event_ch) {
 		dev_err(global_idev.pwhc_dev, "%s: event_priv_t is NULL!\n", "event");
@@ -155,7 +189,16 @@ u8 whc_host_event_promisc_pkt_hdl(u32 *param_buf)
 	}
 
 	ppktinfo = llhw_ipc_fw_phy_to_virt((phys_addr_t)param_buf[0]);
+	if (!ppktinfo) {
+		dev_err(global_idev.pwhc_dev, "%s: invalid fw ptr\n", __func__);
+		goto func_exit;
+	}
+
 	buf = (uint8_t *)llhw_ipc_fw_phy_to_virt((phys_addr_t)ppktinfo->buf);
+	if (!buf) {
+		dev_err(global_idev.pwhc_dev, "%s: invalid fw ptr\n", __func__);
+		goto func_exit;
+	}
 
 	ppktinfo->buf = buf;
 	rtw_promisc_rx(ppktinfo);
@@ -174,6 +217,11 @@ u8 whc_host_event_nan_match_indicate(u32 *param_buf)
 	unsigned char *IEs = llhw_ipc_fw_phy_to_virt(param_buf[4]);
 	u32 info_len = param_buf[5];
 	u64 cookie = ((u64)param_buf[7] << 32) | param_buf[6];
+
+	if (!mac_addr || !IEs) {
+		dev_err(global_idev.pwhc_dev, "%s: invalid fw ptr\n", __func__);
+		goto func_exit;
+	}
 
 	pdev = global_idev.ipc_dev;
 	if (!pdev) {
@@ -194,6 +242,11 @@ u8 whc_host_event_nan_cfgvendor_event_indicate(u32 *param_buf)
 	unsigned char *event_addr = llhw_ipc_fw_phy_to_virt(param_buf[1]);
 	u32 size = param_buf[2];
 
+	if (!event_addr) {
+		dev_err(global_idev.pwhc_dev, "%s: invalid fw ptr\n", __func__);
+		goto func_exit;
+	}
+
 	pdev = global_idev.ipc_dev;
 	if (!pdev) {
 		dev_err(global_idev.pwhc_dev, "%s,%s: device is NULL in scan!\n", "event", __func__);
@@ -211,6 +264,11 @@ u8 whc_host_event_nan_cfgvendor_cmd_reply(u32 *param_buf)
 	struct device *pdev = NULL;
 	unsigned char *data_addr = llhw_ipc_fw_phy_to_virt(param_buf[0]);
 	u32 size = param_buf[1];
+
+	if (!data_addr) {
+		dev_err(global_idev.pwhc_dev, "%s: invalid fw ptr\n", __func__);
+		goto func_exit;
+	}
 
 	pdev = global_idev.ipc_dev;
 	if (!pdev) {
@@ -249,6 +307,10 @@ void whc_host_event_task(struct work_struct *data)
 		goto func_exit;
 	}
 	p_recv_msg = llhw_ipc_fw_phy_to_virt(event_priv->recv_ipc_msg.msg);
+	if (!p_recv_msg) {
+		dev_err(global_idev.pwhc_dev, "%s: invalid fw ptr\n", __func__);
+		goto func_exit;
+	}
 
 	whc_host_external_event_handle(p_recv_msg);
 

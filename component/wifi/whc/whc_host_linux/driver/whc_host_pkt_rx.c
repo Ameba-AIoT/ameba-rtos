@@ -154,24 +154,15 @@ int whc_host_recv_dispatch(struct sk_buff *pskb)
 	u32 event = *(u32 *)(pskb->data + SIZE_RX_DESC);
 	struct event_priv_t *event_priv = &global_idev.event_priv;
 	struct whc_api_info *ret_msg;
-	int counter = 0;
 
 	switch (event) {
 	case WHC_WIFI_EVT_RECV_PKTS:
 		whc_host_recv_pkts(pskb);
 		break;
 	case WHC_WIFI_EVT_API_CALL:
-		/* wait for the previous API handler to finish so the new message doesn't
-		 * overwrite a still-pending rx_api_msg */
-		while (event_priv->rx_api_msg) {
-			msleep(1);
-			counter++;
-			if (counter == 500) {
-				counter = 0;
-				dev_err(global_idev.pwhc_dev, "%s: waiting for last API to finish\n", __func__);
-			}
-		}
-		event_priv->rx_api_msg = pskb;
+		/* queue instead of waiting for the previous API to finish: the handler
+		 * may call a device API whose API_RETURN is behind this msg on the bus */
+		skb_queue_tail(&event_priv->rx_api_queue, pskb);
 		schedule_work(&(event_priv->api_work));
 		break;
 	case WHC_WIFI_EVT_API_RETURN:

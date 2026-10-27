@@ -181,12 +181,8 @@ struct pkt_attrib {
 	u8	encrypt : 4;	//when 0 indicate no encrypt. when non-zero, indicate the encrypt algorith
 	u8	b_tx_sgi : 4; //short GI
 
-	u8 	agg_num : 5;
-	u8 	ampdu_density : 3;
-
 	u32	pktlen;		//the original 802.3 pkt raw_data len (not include ether_hdr data)
 	u16	ether_type;
-	u16	seqnum;
 	u16	hdrlen;		//the WLAN Header Len
 	u16	last_txcmdsz;
 

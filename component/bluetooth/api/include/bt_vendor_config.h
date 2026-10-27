@@ -153,6 +153,16 @@ extern "C"
 #endif
 
 /*
+ * RLE1509
+ */
+#elif defined(CONFIG_RLE1509) && CONFIG_RLE1509
+
+#define VENDOR_CMD_SET_MESH_INFO_SUPPORT                 1
+#if defined(VENDOR_CMD_SET_MESH_INFO_SUPPORT) && VENDOR_CMD_SET_MESH_INFO_SUPPORT
+#define VENDOR_CMD_SET_MESH_INFO_OPCODE                  0xFCA6
+#endif
+
+/*
  * AmebaPro3
  */
 #elif defined(CONFIG_AMEBAPRO3) && CONFIG_AMEBAPRO3

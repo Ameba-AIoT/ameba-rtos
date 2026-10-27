@@ -315,6 +315,10 @@ void BOOT_SCBConfig_HP(void)
 	SCB_NS->SHCSR |=  SCB_SHCSR_USGFAULTENA_Msk | \
 					  SCB_SHCSR_BUSFAULTENA_Msk | SCB_SHCSR_MEMFAULTENA_Msk;
 
+	/* Enable divide-by-zero fault for both S and NS worlds */
+	SCB->CCR |= SCB_CCR_DIV_0_TRP_Msk;
+	SCB_NS->CCR |= SCB_CCR_DIV_0_TRP_Msk;
+
 	/* Enable all access to FPU */
 	SCB->CPACR |= 0x00f00000;
 	SCB_NS->CPACR |=  0x00f00000;
@@ -812,8 +816,9 @@ void Peripheral_Reset(void)
 /* RAE/WAE are the ULL memory read/write assist enables, i.e. memory interface timing. In every
  * FTC_ULL_1 register below the 1.0V pair resets to 0 while the 0.9V pair resets to 1, and 0 is the
  * wrong value for this IC. Align 1P0 with 0P9 during init, before the core voltage is raised. */
+/* Non-static: also called by the Zephyr KM4 MCUboot boot_prepare.c */
 BOOT_RAM_TEXT_SECTION
-static void BOOT_Mem_AssistSet(void)
+void BOOT_Mem_AssistSet(void)
 {
 	/* Each domain pairs its own offset with its own bit macros, so a future bit move in one of
 	 * them only changes this table. The bits happen to be identical today. */
@@ -870,6 +875,9 @@ __weak void BOOT_Image1(void)
 
 	_memset((void *) __image1_bss_start__, 0, (__image1_bss_end__ - __image1_bss_start__)); /*clear bss first*/
 
+	/* Enable FPU and Secure/Usage/Mem/Bus/DivByZero Fault */
+	BOOT_SCBConfig_HP();
+
 	BOOT_ReasonSet();
 
 	/* For debug reset: when debugger reset cpu, it's required to reset other cpus and some peripherals */
@@ -880,7 +888,9 @@ __weak void BOOT_Image1(void)
 		RRAM->MAGIC_NUMBER = 0x6969A5A5;
 	}
 
+#ifndef CONFIG_LINUX_FW_EN
 	BOOT_VerCheck();
+#endif
 
 	if (!SYSCFG_OTP_DisBootLog()) {
 		LOG_MASK_MODULE(MODULE_BOOT, LEVEL_INFO, ENABLE);
@@ -900,10 +910,6 @@ __weak void BOOT_Image1(void)
 		SWR_AUDIO_Manual(DISABLE);
 		SWR_AUDIO(ENABLE);
 	}
-
-	/* Enable divide-by-zero fault for both S and NS worlds */
-	SCB->CCR    |= SCB_CCR_DIV_0_TRP_Msk;
-	SCB_NS->CCR |= SCB_CCR_DIV_0_TRP_Msk;
 
 	BOOT_SOC_ClkSet();
 
@@ -1032,9 +1038,6 @@ __weak void BOOT_Image1(void)
 
 	/* Add redefine secure fault handler to vector table* */
 	Fault_Hanlder_Redirect(NULL);
-	/* Enable FPU and Secure/Usage/Mem/Bus Fault */
-	BOOT_SCBConfig_HP();
-
 	/* it will be reset after PG, backup SCB_VTOR_S */
 	BOOT_SCBVTORBackup_HP();
 
@@ -1080,11 +1083,7 @@ IMAGE1_ENTRY_SECTION
 RAM_FUNCTION_START_TABLE RamStartTable = {
 	.RamStartFun = NULL,
 	.RamWakeupFun = NULL,
-#ifdef __ZEPHYR__
-	.RamPatchFun0 = NULL,
-#else
 	.RamPatchFun0 = BOOT_WakeFromPG,
-#endif
 	.RamPatchFun1 = NULL,
 	.RamPatchFun2 = NULL,
 	.FlashStartFun = BOOT_Image1,

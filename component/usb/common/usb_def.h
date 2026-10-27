@@ -11,14 +11,24 @@
 
 #include "basic_types.h"
 
-/* Exported defines ----------------------------------------------------------*/
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /** @addtogroup USB_Common_API USB Common API
  *  @{
  */
+
+/* Exported defines ----------------------------------------------------------*/
+
 /** @addtogroup USB_Common_Constants USB Common Constants
  * @{
  */
+/** @defgroup USB_Common_Def_Constants USB Common Misc Constants
+ *  @brief Speed, status and error code definitions shared across the USB stack.
+ *  @{
+ */
+
 /**
  * @brief  Mask of a USB frame/microframe number.
  * @note   Ref USB 2.0 spec 8.4.3 and the DWC OTG HFNUM/DSTS.FNSOF fields: the frame number is an
@@ -34,18 +44,18 @@
  *         wrapped distance as (USB_FRAME_NUM_MAX - start + 1 + cur) instead of masking.
  */
 #define USB_FRAME_NUM_MAX                   USB_FRAME_NUM_MASK
-/** @} End of USB_Common_Constants group */
-/** @} End of USB_Common_API group */
 
-/* Exported macros -----------------------------------------------------------*/
+/** @} End of USB_Common_Def_Constants group */
+/** @} End of USB_Common_Constants group */
 
 /* Exported types ------------------------------------------------------------*/
 
-/** @addtogroup USB_Common_API USB Common API
- *  @{
- */
 /** @addtogroup USB_Common_Types USB Common Types
  * @{
+ */
+/** @defgroup USB_Common_Def_Types USB Common Misc Types
+ *  @brief Speed and status types shared across the USB stack.
+ *  @{
  */
 
 /**
@@ -73,7 +83,10 @@ typedef struct {
 	u8 addr;                            /**< Endpoint address (includes direction). */
 } usb_ep_info_t;
 
+/** @} End of USB_Common_Def_Types group */
 /** @} End of USB_Common_Types group */
+
+/* Exported macros -----------------------------------------------------------*/
 
 /* Exported variables --------------------------------------------------------*/
 
@@ -82,6 +95,11 @@ typedef struct {
 /** @addtogroup USB_Common_Functions USB Common Functions
  * @{
  */
+/** @defgroup USB_Common_Def_Functions USB Common Misc Functions
+ *  @brief Helpers for the shared USB definitions.
+ *  @{
+ */
+
 /**
   * @brief  Get the per-packet stride of an OUT transfer, adjusted to the DWORD boundary
   * @note   DWC OTG Programming Guide, Application Requirements of the OUT data transfers:
@@ -124,7 +142,7 @@ static inline u32 usb_get_dma_len(u32 xfer_len, u32 mps)
 
 /**
   * @brief  Get the largest OUT transfer length whose DMA window still fits in a given buffer
-  * @note   This is the inverse of @ref usb_get_dma_len: it answers how long a transfer may be
+  * @note   This is the inverse of usb_get_dma_len: it answers how long a transfer may be
   *         requested before the window the core derives from it overflows the buffer.
   *         Solving usb_get_dma_len(len, mps) <= buf_len gives
   *             n = buf_len / usb_get_dword_aligned_mps(mps)    whole packet slots that fit
@@ -152,8 +170,13 @@ static inline u32 usb_get_max_payload_len(u32 buf_len, u32 mps)
 	return (buf_len / aligned_mps) * mps;
 }
 
+/** @} End of USB_Common_Def_Functions group */
 /** @} End of USB_Common_Functions group */
 
 /** @} End of USB_Common_API group */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* USB_DEF_H */

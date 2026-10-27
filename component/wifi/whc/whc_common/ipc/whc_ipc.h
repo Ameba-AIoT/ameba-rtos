@@ -35,6 +35,9 @@
 #ifdef CONFIG_WIFI_XMESH
 #include "wifi_api_xmesh.h"
 #endif
+#ifdef CONFIG_WTN_RNAT_INTERCOM
+#include "wifi_api_rmesh_rnat.h"
+#endif
 #ifdef CONFIG_WHC_DEV_TCPIP_KEEPALIVE
 /* dev-side tcpip keepalive is shared with the usb/spi/sdio path. */
 #include "rtw_skbuff.h"
@@ -82,6 +85,9 @@
 #ifdef CONFIG_WIFI_TUNNEL
 #define whc_dev_wtn_rnat_ap_init                         whc_ipc_dev_wtn_rnat_ap_init
 #define whc_dev_wtn_ota_callback_indicate                whc_ipc_dev_wtn_ota_callback_indicate
+#ifdef CONFIG_WTN_RNAT_INTERCOM
+#define whc_dev_wtn_rnat_adv_callback_indicate           whc_ipc_dev_wtn_rnat_adv_callback_indicate
+#endif
 #ifdef CONFIG_WTN_SOCKET_APP
 #define whc_dev_wtn_socket_send                          whc_ipc_dev_wtn_socket_send
 #define whc_dev_wtn_socket_init                          whc_ipc_dev_wtn_socket_init
@@ -205,6 +211,9 @@ int whc_ipc_dev_ip_in_table_indicate(u8 gate, u8 ip);
 #ifdef CONFIG_WIFI_TUNNEL
 void whc_ipc_dev_wtn_rnat_ap_init(u8 enable);
 int whc_ipc_dev_wtn_ota_callback_indicate(u8 *buf, u16 len);
+#ifdef CONFIG_WTN_RNAT_INTERCOM
+int whc_ipc_dev_wtn_rnat_adv_callback_indicate(u8 *buf, u16 len);
+#endif
 #ifdef CONFIG_WTN_SOCKET_APP
 int whc_ipc_dev_wtn_socket_send(u8 *buf, u32 len);
 void whc_ipc_dev_wtn_socket_init(u8 enable, u8 rnat_ap_start);

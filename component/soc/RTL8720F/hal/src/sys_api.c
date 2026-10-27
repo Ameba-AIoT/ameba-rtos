@@ -224,7 +224,7 @@ void sys_reset(void)
   */
 void sys_cpu_reset(void)
 {
-	RTK_LOGA(TAG, "AmebaGreen2 not support sys_cpu_reset function!\n");
+	RTK_LOGA(TAG, "Not support sys_cpu_reset function!\n");
 	assert_param(0);
 }
 /** @} */
