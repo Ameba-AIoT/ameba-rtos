@@ -88,7 +88,11 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.wowlan_rx_bcmc_dis = 0;
 
 	/* Softap related */
-	wifi_user_config.ap_sta_num = 5;	/*should not exceed 14 */
+#if defined(CONFIG_WIFI_AP_STA_NUM)
+	wifi_user_config.ap_sta_num = CONFIG_WIFI_AP_STA_NUM;
+#else
+	wifi_user_config.ap_sta_num = 5;	/*should not exceed 25 */
+#endif
 	wifi_user_config.ap_polling_sta = 0;
 	wifi_user_config.ap_bypass_forwarding = 0;
 
@@ -137,6 +141,10 @@ _WEAK void wifi_set_user_config(void)
 		skb_num_np_rsvd = 16; /*4 for rx_ring_buffer + 2 for mgnt trx + 10 for tunnel tx */
 		wifi_user_config.skb_num_np = 20; /* skb_num_np should >= rx_ampdu_num + skb_num_np_rsvd */
 	}
+	/* NAN mode */
+#if defined(CONFIG_WIFI_NAN_ENABLE)
+	wifi_user_config.nan_max_peer_num = 6;	/*should not exceed 15 */
+#endif
 
 	/* ensure skb_num_np >= rx_ampdu_num + skb_num_np_rsvd */
 	if (wifi_user_config.skb_num_np < wifi_user_config.rx_ampdu_num + skb_num_np_rsvd) {
@@ -144,10 +152,9 @@ _WEAK void wifi_set_user_config(void)
 		RTK_LOGW(TAG_WLAN_DRV, "change skb_num_np to %d\n", wifi_user_config.skb_num_np);
 	}
 
-	/* ensure ap_sta_num not exceed 14*/
-	if (wifi_user_config.ap_sta_num > 14) {
-		wifi_user_config.ap_sta_num = 14;
-		RTK_LOGW(TAG_WLAN_DRV, "change ap_sta_num to 14\n");
+	if (wifi_user_config.ap_sta_num > 25) {
+		wifi_user_config.ap_sta_num = 25;
+		RTK_LOGW(TAG_WLAN_DRV, "change ap_sta_num to 25\n");
 	}
 }
 

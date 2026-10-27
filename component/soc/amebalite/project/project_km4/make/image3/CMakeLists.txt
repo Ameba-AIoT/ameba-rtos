@@ -61,8 +61,8 @@ add_custom_command(
     COMMAND ${CMAKE_OBJDUMP} -j .gnu.sgstubs -d ${c_SDK_IMAGE_TARGET_DIR}/target_img3.axf > ${c_SDK_IMAGE_TARGET_DIR}/cmse_implib.asm
 
     COMMAND ${CMAKE_COMMAND} -E echo "  BIN      ${c_MCU_PROJECT_NAME}_image3_all.bin"
-    COMMAND ${CMAKE_OBJCOPY}  -j .ram_image3.text -j .ram_image3.data -Obinary ${c_SDK_IMAGE_TARGET_DIR}/target_pure_img3.axf ${c_SDK_IMAGE_TARGET_DIR}/ram_3_s.bin
-    COMMAND ${CMAKE_OBJCOPY}  -j .gnu.sgstubs -j .ram_image3.entry -Obinary ${c_SDK_IMAGE_TARGET_DIR}/target_pure_img3.axf ${c_SDK_IMAGE_TARGET_DIR}/ram_3_nsc.bin
+    COMMAND ${CMAKE_OBJCOPY}  -j .ram_image3.entry -j .ram_image3.text -j .ram_image3.data -Obinary ${c_SDK_IMAGE_TARGET_DIR}/target_pure_img3.axf ${c_SDK_IMAGE_TARGET_DIR}/ram_3_s.bin
+    COMMAND ${CMAKE_OBJCOPY}  -j .gnu.sgstubs -Obinary ${c_SDK_IMAGE_TARGET_DIR}/target_pure_img3.axf ${c_SDK_IMAGE_TARGET_DIR}/ram_3_nsc.bin
 
     COMMAND ${CMAKE_COMMAND} -E echo "========== Image manipulating start =========="
     COMMAND ${op_PAD} -i ${c_SDK_IMAGE_TARGET_DIR}/ram_3_s.bin -l 32

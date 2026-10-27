@@ -472,11 +472,9 @@ recv_again:
 					RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "\r\n\n#\r\n");
 				}
 
-				memset((u8 *)pCmdLogBuf->UARTLogBuf, '\0', CMD_BUFLEN);
+				memset((u8 *)pCmdLogBuf->UARTLogBuf, 0, CMD_BUFLEN);
 				pCmdLogBuf->BufCount = 0;
 				continue;
-			} else {
-				memset(shell_ctl.pTmpLogBuf->UARTLogBuf, '\0', CMD_BUFLEN);
 			}
 		}
 

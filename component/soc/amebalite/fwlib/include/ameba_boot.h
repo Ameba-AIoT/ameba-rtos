@@ -101,13 +101,13 @@ extern u8 __rom_stdlib_text_start__[];
 extern u8 __rom_stdlib_text_end__[];
 
 /* sym for trustzone config */
-extern u8 __km4_tz_nsc_start__[];
-extern u8 __km4_tz_entry_start__[];
-extern u8 __km4_tz_entry_end__[];
+extern u8 __km4_tz_start__[];
+extern u8 __km4_tz_nsc_limit__[];
+extern u8 __km4_tz_end__[];
 
-extern u8 __km4_psram_tz_nsc_start__[];
-extern u8 __km4_psram_tz_entry_start__[];
-extern u8 __km4_psram_tz_entry_end__[];
+extern u8 __km4_psram_tz_start__[];
+extern u8 __km4_psram_tz_nsc_limit__[];
+extern u8 __km4_psram_tz_end__[];
 
 extern u8 __km4_bd_ram_start__[];
 extern u8 __km4_bd_psram_start__[];

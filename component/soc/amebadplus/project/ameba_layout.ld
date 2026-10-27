@@ -53,6 +53,8 @@
 
 #if defined(CONFIG_WIFI_NAN_HOST_APP)
 #define RAM_KM0_IMG2_SIZE				KBYTES(128)
+#elif defined(CONFIG_WIFI_AP_STA_NUM) && (CONFIG_WIFI_AP_STA_NUM > 5)
+#define RAM_KM0_IMG2_SIZE				KBYTES(96 + 2 * (CONFIG_WIFI_AP_STA_NUM - 5))
 #else
 #define RAM_KM0_IMG2_SIZE				KBYTES(96)
 #endif

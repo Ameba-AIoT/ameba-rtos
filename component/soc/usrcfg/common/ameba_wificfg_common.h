@@ -297,6 +297,9 @@ struct wifi_user_conf {
 
 	/*! Max refugee number this node can accept in R-mesh network, valid only when R-mesh is enabled and R-NAT is disabled. */
 	u8 wtn_max_refugee_num;
+
+	/*!	The maximum number of NAN peers can be tracked concurrently, should not exceed 15. Default: 6. */
+	u8 nan_max_peer_num;
 };
 
 /** @} End of WIFI_Exported_Structure_Types group*/
