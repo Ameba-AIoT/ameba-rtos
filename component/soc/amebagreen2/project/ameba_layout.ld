@@ -171,6 +171,7 @@ MEMORY
     /* IMG2 RAM */
 #if (!defined (CONFIG_WHC_INTF_IPC) && defined (CONFIG_WHC_DEV))
     KM4TZ_BD_RAM (rwx) :                   ORIGIN = ORIGIN(FULLMAC_IMG2), LENGTH = LENGTH(FULLMAC_IMG2)
+    KM4NS_BD_RAM (rwx) :                   ORIGIN = ORIGIN(FULLMAC_IMG2) + LENGTH(FULLMAC_IMG2), LENGTH = 0                    /* KM4NS has no image2 in FULLMAC, keep an empty region for ameba_img2_all.ld */
 #else
     KM4TZ_BD_RAM_TZ_NSC (rwx) :            ORIGIN = KM4TZ_RAM_TZ_NSC_START + IMAGE_HEADER_LEN,     LENGTH = RAM_TZ_NSC_SIZE - IMAGE_HEADER_LEN                                   /* KM4TZ BD RAM NSC: 4k */
     KM4TZ_BD_RAM_TZ_ENTRY (rwx) :          ORIGIN = KM4TZ_RAM_TZ_ENTRY_START,  LENGTH = RAM_TZ_ENTRY_SIZE                                                                        /* KM4TZ BD RAM ENTRY: 16k */
