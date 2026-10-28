@@ -105,6 +105,8 @@ typedef struct {
 
 	/**
 	* @brief Callback invoked when a bulk IN data transfer (Receive) is complete.
+	* @note  Runs in the USB host task. buf is valid only until the callback returns: the class re-arms the
+	*        same buffer right after, so copy the frame out before returning, never keep the pointer.
 	* @param[in] buf: Pointer to the buffer containing received data.
 	* @param[in] len: Length of the valid received data in bytes.
 	*/
@@ -146,7 +148,6 @@ typedef struct {
 	u16 pid;                                         /**< Product ID */
 	u8 data_itf_id;                                  /**< Data Interface number */
 	u8 data_alt_set;                                 /**< Alternate Setting value for Data Interface */
-	u8 union_data_itf_id;                            /**< Data Interface number from Union Functional Descriptor, 0xFF if not found */
 
 	/* Pipes */
 	usbh_cdc_ecm_pipe_info_t intr_rx;                /**< Intr IN Endpoint Info */
@@ -240,6 +241,8 @@ void usbh_cdc_ecm_prepare_done(void);
  * @param[in] block: Blocking mode flag (e.g., 0 for non-blocking, else for blocking).
  * @note   Task context only, one sender at a time. Safe against a concurrent deinit of the class:
  *         returns HAL_ERR_HW while the class is not initialized or is being de-initialized.
+ *         A blocking send waits until the transfer completes, so it shall not be called inside a critical
+ *         section or the PMU suspend flow, where the task can not block.
  * @return 0 (HAL_OK) on success, non-zero on failure.
  */
 int usbh_cdc_ecm_send_data(u8 *buf, u32 len, u8 block);

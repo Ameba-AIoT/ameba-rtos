@@ -2149,13 +2149,19 @@ void usbd_whc_deinit(void)
 {
 	usbd_whc_dev_t *idev = &usbd_whc_dev;
 	usbd_otp_t *otp = &idev->otp;
+	int ret;
+
+	/* Unregister first: no class callback can run afterwards, so releasing cb and the pending
+	 * control request below cannot race an EP0 OUT completion in ISR context, nor the vendor
+	 * RESET request give reset_sema once it is deleted. Refused in interrupt context, then
+	 * nothing is released. */
+	ret = usbd_unregister_class();
+	if (ret != HAL_OK) {
+		return;
+	}
 
 	rtos_task_delete(idev->reset_task);
 	rtos_sema_delete(idev->reset_sema);
-
-	/* Unregister first: no class callback can run afterwards, so releasing cb and the pending
-	 * control request below cannot race an EP0 OUT completion in ISR context */
-	usbd_unregister_class();
 
 	idev->ctrl_req_pending = 0U;
 

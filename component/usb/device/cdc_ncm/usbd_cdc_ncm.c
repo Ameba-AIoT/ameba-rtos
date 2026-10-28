@@ -3056,19 +3056,31 @@ void usbd_cdc_ncm_deinit(void)
 	usbd_ep_t *ep_bulk_out = &ncm->ep_bulk_out;
 	usbd_ep_t *ep_intr_in = &ncm->ep_intr_in;
 	u32 wait_cnt = 0U;
+	int ret;
 
+	/* Leave the core before anything is torn down. Composite: refused until
+	   usbd_composite_deinit() has blocked the ISR and cleared the configuration of every
+	   function. Standalone: refused in interrupt context. Either way nothing is released when
+	   refused, and once accepted no class callback runs any more and every endpoint of this
+	   class is deinitialized: ref USB 2.0 9.4.7, the transfers still pending are aborted. */
 #ifdef CONFIG_USBD_COMPOSITE
-	/* Leave the composite framework before anything is torn down: it is refused while the
-	   composite device is still registered on the core, and the class must then stay intact */
 	if (ncm->from_composite != 0U) {
-		if (usbd_composite_unregister_driver(&usbd_cdc_ncm_driver) != HAL_OK) {
-			return;
-		}
-	}
+		ret = usbd_composite_unregister_driver(&usbd_cdc_ncm_driver);
+	} else
 #endif
+	{
+		ret = usbd_unregister_class();
+	}
+	if (ret != HAL_OK) {
+		return;
+	}
 
-	/* Close the TX gate first: from here on usbd_cdc_ncm_transmit() rejects new callers,
-	 * and the ones already inside are waited for below before their resources go away. */
+	/* No completion arrives any more to clear them */
+	ep_bulk_in->xfer_state = 0U;
+	ep_intr_in->xfer_state = 0U;
+
+	/* Close the TX gate: from here on usbd_cdc_ncm_transmit() rejects new callers, and the
+	 * ones already inside are waited for below before their resources go away. */
 	usb_os_enter_critical();
 	ncm->is_closing = 1U;
 	usb_os_exit_critical();
@@ -3094,26 +3106,6 @@ void usbd_cdc_ncm_deinit(void)
 	usbd_cdc_ncm_tx_task_deinit();
 #endif
 
-	/* Wait for any in-flight IN transfer to actually complete before tearing
-	 * down. xfer_state is the real in-flight flag: it is set when a transfer is
-	 * submitted and cleared by the completion ISR. A bounded timeout (~100 ms,
-	 * sleeping rather than spinning) avoids waiting forever if the device was
-	 * detached and the completion interrupt will never arrive. This matters
-	 * because the INTR IN xfer_buf is freed below and must not be read by a
-	 * still-active DMA. */
-	while ((ep_bulk_in->xfer_state || ep_intr_in->xfer_state) && (wait_cnt < 100U)) {
-		usb_os_sleep_ms(1U);
-		wait_cnt++;
-	}
-
-	/* Unregister class driver */
-#ifdef CONFIG_USBD_COMPOSITE
-	if (ncm->from_composite == 0U)
-#endif
-	{
-		usbd_unregister_class();
-	}
-
 	/* Wait for every task still inside usbd_cdc_ncm_transmit() to leave.  A caller blocked
 	 * on TX room is woken on each round and leaves on is_closing; deleting the sema while
 	 * it still waits on it, or freeing the slots it is writing to, would be a use after free,
@@ -3130,7 +3122,7 @@ void usbd_cdc_ncm_deinit(void)
 		}
 	}
 
-	/* After unregister, no more USB ISRs will fire.  Tear down TX state. */
+	/* No more USB ISR runs against this class.  Tear down TX state. */
 	{
 		u8 i;
 		for (i = 0U; i < ncm->tx_ntb_depth; i++) {

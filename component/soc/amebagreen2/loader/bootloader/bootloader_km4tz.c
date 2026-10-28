@@ -266,6 +266,9 @@ __weak void BOOT_WakeFromPG(void)
 		goto exit;
 	}
 
+	/* Enable Secure/Usage/Mem/Bus/DivByZero Fault again, they are lost in PG */
+	BOOT_SCBConfig_HP();
+
 	/* Set non-secure main stack (MSP_NS) */
 	__TZ_set_MSP_NS(MSP_RAM_HP_NS);
 

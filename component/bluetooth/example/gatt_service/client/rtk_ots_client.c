@@ -293,7 +293,7 @@ uint16_t ots_client_close_channel(uint16_t conn_handle)
 	if (!db || !db->coc_open) {
 		return RTK_BT_ERR_NO_ENTRY;
 	}
-	return rtk_bt_le_gap_coc_disconnect(db->coc_cid);
+	return rtk_bt_le_gap_coc_disconnect(db->conn_handle, db->coc_cid);
 #else
 	(void)conn_handle;
 	return RTK_BT_ERR_UNSUPPORTED;
@@ -354,7 +354,7 @@ static void ots_client_coc_send_chunk(uint8_t conn_id)
 	if (!db || db->xfer_state != OTS_CLIENT_XFER_WRITE || db->xfer_remaining == 0) {
 		return;
 	}
-	if (rtk_bt_le_gap_coc_get_chan_param(RTK_BT_LE_COC_CHAN_PARAM_MTU, db->coc_cid, &mtu) != RTK_BT_OK || mtu == 0) {
+	if (rtk_bt_le_gap_coc_get_chan_param(RTK_BT_LE_COC_CHAN_PARAM_MTU, db->conn_handle, db->coc_cid, &mtu) != RTK_BT_OK || mtu == 0) {
 		mtu = 23;
 	}
 	chunk = (mtu < OTS_CLIENT_COC_MAX_CHUNK) ? mtu : OTS_CLIENT_COC_MAX_CHUNK;
@@ -365,7 +365,7 @@ static void ots_client_coc_send_chunk(uint8_t conn_id)
 	for (i = 0; i < chunk; i++) {
 		ots_client_coc_txbuf[i] = (uint8_t)(db->xfer_offset + db->xfer_sent + i);
 	}
-	if (rtk_bt_le_gap_coc_send_data(db->coc_cid, (uint16_t)chunk, ots_client_coc_txbuf) != RTK_BT_OK) {
+	if (rtk_bt_le_gap_coc_send_data(db->conn_handle, db->coc_cid, (uint16_t)chunk, ots_client_coc_txbuf) != RTK_BT_OK) {
 		BT_LOGE("[APP] OTS client coc send data failed\r\n");
 		db->xfer_state = OTS_CLIENT_XFER_IDLE;
 	}
@@ -940,7 +940,7 @@ void ots_client_coc_send_result_hdl(void *data)
 		return;
 	}
 	/* advance by the chunk just sent */
-	if (rtk_bt_le_gap_coc_get_chan_param(RTK_BT_LE_COC_CHAN_PARAM_MTU, db->coc_cid, &mtu) != RTK_BT_OK || mtu == 0) {
+	if (rtk_bt_le_gap_coc_get_chan_param(RTK_BT_LE_COC_CHAN_PARAM_MTU, db->conn_handle, db->coc_cid, &mtu) != RTK_BT_OK || mtu == 0) {
 		mtu = 23;
 	}
 	chunk = (mtu < OTS_CLIENT_COC_MAX_CHUNK) ? mtu : OTS_CLIENT_COC_MAX_CHUNK;

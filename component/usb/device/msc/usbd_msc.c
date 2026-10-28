@@ -408,17 +408,26 @@ static int usbd_msc_set_config(usb_dev_t *dev, u8 config)
 	/* Init BULK IN EP */
 	info = &ep_bulk_in->info;
 	info->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_MSC_HS_MAX_PACKET_SIZE : USBD_MSC_FS_MAX_PACKET_SIZE;
-	usbd_ep_init(dev, ep_bulk_in);
+	ret = usbd_ep_init(dev, ep_bulk_in);
+	if (ret != HAL_OK) {
+		usbd_msc_clear_config(dev, config);
+		return ret;
+	}
 
 	/* Init BULK OUT EP */
 	info = &ep_bulk_out->info;
 	info->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_MSC_HS_MAX_PACKET_SIZE : USBD_MSC_FS_MAX_PACKET_SIZE;
-	usbd_ep_init(dev, ep_bulk_out);
+	ret = usbd_ep_init(dev, ep_bulk_out);
+	if (ret != HAL_OK) {
+		usbd_msc_clear_config(dev, config);
+		return ret;
+	}
 
 	cdev->bot_state = USBD_MSC_IDLE;
 	cdev->bot_status = USBD_MSC_STATUS_NORMAL;
 	usb_os_memset((void *)&cdev->scsi_sense, 0U, sizeof(cdev->scsi_sense));
 	cdev->is_open = 1U;
+	cdev->prevent_removal = 0U;
 	cdev->ro = 0U;
 	cdev->phase_error = 0U;
 	cdev->bot_reset_pending = 0U;
@@ -540,7 +549,7 @@ static int usbd_msc_setup(usb_dev_t *dev, usb_setup_req_t *req)
 		case USB_REQ_SET_INTERFACE:
 			if (dev->dev_state != USBD_STATE_CONFIGURED) {
 				ret = HAL_ERR_PARA;
-			} else if ((req->wIndex == USBD_MSC_ITF_NUM) && (USB_LOW_BYTE(req->wValue) == 0U)) {
+			} else if ((req->wIndex == USBD_MSC_ITF_NUM) && (req->wValue == 0U)) {
 				/* Ref USB 2.0 9.4.10: the endpoints of the selected interface return to
 				   their default state, not halted and data toggle DATA0. This holds even
 				   for an interface with the default setting only, hosts do send the
@@ -651,7 +660,7 @@ static int usbd_msc_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status)
 	}
 
 	cdev->tx_status = status;
-	rtos_sema_give(cdev->tx_sema);
+	usb_os_sema_give(cdev->tx_sema);
 
 	return HAL_OK;
 }
@@ -669,7 +678,11 @@ static void usbd_msc_tx_process(void)
 	usb_dev_t *dev = cdev->dev;
 	u8 csw_status;
 
-	usb_os_lock(usbd_msc_sd_lock);
+	/* Without the lock the TX thread could race the RX one on the medium and the BOT state */
+	if (usb_os_lock(usbd_msc_sd_lock) != HAL_OK) {
+		USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_XFER, cdev->cfg->bulk_in_addr);
+		return;
+	}
 
 	if (cdev->tx_status == HAL_OK) {
 		switch (cdev->bot_state) {
@@ -726,8 +739,10 @@ static int usbd_msc_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len)
 		return HAL_ERR_PARA;
 	}
 
-	cdev->rx_data_length = len;
-	rtos_sema_give(cdev->rx_sema);
+	/* Only a CBW is ever checked against this length, and the Bulk-Out window never exceeds the CBW or
+	   data buffer: a longer value cannot be a CBW, so it is saturated to one that never matches */
+	cdev->rx_data_length = (len > USBD_MSC_CBW_BUF_LEN) ? (u16)USBD_MSC_CBW_BUF_LEN : (u16)len;
+	usb_os_sema_give(cdev->rx_sema);
 
 	return HAL_OK;
 }
@@ -746,7 +761,11 @@ static void usbd_msc_rx_process(void)
 	u32 cbw_data_len = cbw->field.dCBWDataTransferLength;
 	u32 length;
 
-	usb_os_lock(usbd_msc_sd_lock);
+	/* Without the lock the RX thread could race the TX one on the medium and the BOT state */
+	if (usb_os_lock(usbd_msc_sd_lock) != HAL_OK) {
+		USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_XFER, cdev->cfg->bulk_out_addr);
+		return;
+	}
 
 	switch (cdev->bot_state) {
 	case USBD_MSC_IDLE:
@@ -840,6 +859,13 @@ static void usbd_msc_rx_process(void)
 
 	case USBD_MSC_DATA_OUT:
 		if (usbd_scsi_process_cmd(cdev, cbwcb) != HAL_OK) {
+			/* Ref MSC BOT 1.0 6.7.3: the medium failed on a chunk while the host still owns the rest of the OUT
+			   data stage. STALL Bulk-Out so those bytes are not read as the next CBW, as for Case 9/13 above; the
+			   CSW flows on the un-stalled Bulk-In pipe. Not when the failing chunk was the last one: the host
+			   has sent everything, and a halt would only fail its next CBW. */
+			if (usbd_scsi_out_data_pending(cdev) != 0U) {
+				usbd_ep_set_stall(dev, &cdev->ep_bulk_out);
+			}
 			usbd_msc_send_csw(dev, BOT_CSW_CMD_FAILED);
 		}
 
@@ -869,16 +895,23 @@ static void usbd_msc_patch_desc(u8 *desc, u16 len)
 	const usbd_msc_config_t *cfg = cdev->cfg;
 
 	for (u16 i = 0U; i < len;) {
-		u8 dlen = desc[i];
-		u8 dtype = desc[i + 1];
-		if (dlen == 0U) {
+		u8 dlen;
+		u8 dtype;
+
+		/* Read a header only when it fits, and patch a descriptor only when its bLength fits what is left */
+		if (((u32)len - i) < USB_LEN_DESC_HEADER) {
+			break;
+		}
+		dlen = desc[i];
+		dtype = desc[i + 1U];
+		if ((dlen < USB_LEN_DESC_HEADER) || ((u32)dlen > ((u32)len - i))) {
 			break;
 		}
 
-		if ((dtype == USB_DESC_TYPE_ENDPOINT) && ((i + 3U) <= len)) {
+		if ((dtype == USB_DESC_TYPE_ENDPOINT) && (dlen >= USB_LEN_EP_DESC)) {
 			u8 addr  = desc[i + 2];
 			u8 dir   = addr & USB_REQ_DIR_MASK;
-			u8 type  = desc[i + 3] & 0x03U;
+			u8 type  = desc[i + 3] & USB_EP_XFER_TYPE_MASK;
 
 			if ((dir == USB_D2H) && (type == USB_CH_EP_TYPE_BULK)) {
 				desc[i + 2] = cfg->bulk_in_addr;
@@ -1015,7 +1048,7 @@ static void usbd_msc_rx_thread(void *param)
 	UNUSED(param);
 
 	for (;;) {
-		if (rtos_sema_take(cdev->rx_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
+		if (usb_os_sema_take(cdev->rx_sema, RTOS_SEMA_MAX_COUNT) == HAL_OK) {
 			usbd_msc_rx_process();
 		}
 	}
@@ -1028,7 +1061,7 @@ static void usbd_msc_tx_thread(void *param)
 	UNUSED(param);
 
 	for (;;) {
-		if (rtos_sema_take(cdev->tx_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
+		if (usb_os_sema_take(cdev->tx_sema, RTOS_SEMA_MAX_COUNT) == HAL_OK) {
 			usbd_msc_tx_process();
 		}
 	}
@@ -1174,14 +1207,14 @@ static int usbd_msc_private_init(const usbd_msc_cb_t *cb, const usbd_msc_config_
 		goto csw_fail;
 	}
 
-	ret = rtos_sema_create(&cdev->rx_sema, 0U, 1U);
-	if (ret != RTK_SUCCESS) {
+	ret = usb_os_sema_create(&cdev->rx_sema);
+	if (ret != HAL_OK) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create RX sema fail\n");
 		goto create_rx_sema_fail;
 	}
 
-	ret = rtos_sema_create(&cdev->tx_sema, 0U, 1U);
-	if (ret != RTK_SUCCESS) {
+	ret = usb_os_sema_create(&cdev->tx_sema);
+	if (ret != HAL_OK) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create TX sema fail\n");
 		goto create_tx_sema_fail;
 	}
@@ -1191,6 +1224,7 @@ static int usbd_msc_private_init(const usbd_msc_cb_t *cb, const usbd_msc_config_
 						   (cfg->rx_task_priority != 0U) ? cfg->rx_task_priority : USBD_MSC_DEFAULT_RX_TASK_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create RX thread fail\n");
+		ret = HAL_ERR_MEM;
 		goto create_rx_thread_fail;
 	}
 
@@ -1199,6 +1233,7 @@ static int usbd_msc_private_init(const usbd_msc_cb_t *cb, const usbd_msc_config_
 						   (cfg->tx_task_priority != 0U) ? cfg->tx_task_priority : USBD_MSC_DEFAULT_TX_TASK_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create TX thread fail\n");
+		ret = HAL_ERR_MEM;
 		goto create_tx_thread_fail;
 	}
 
@@ -1219,11 +1254,11 @@ create_tx_thread_fail:
 	cdev->rx_task = NULL;
 
 create_rx_thread_fail:
-	rtos_sema_delete(cdev->tx_sema);
+	usb_os_sema_delete(cdev->tx_sema);
 	cdev->tx_sema = NULL;
 
 create_tx_sema_fail:
-	rtos_sema_delete(cdev->rx_sema);
+	usb_os_sema_delete(cdev->rx_sema);
 	cdev->rx_sema = NULL;
 
 create_rx_sema_fail:
@@ -1264,7 +1299,11 @@ int usbd_msc_init(const usbd_msc_cb_t *cb, const usbd_msc_config_t *cfg)
 	ret = usbd_msc_private_init(cb, cfg);
 	if (ret == HAL_OK) {
 		cdev->from_composite = 0U;
-		usbd_register_class(&usbd_msc_driver);
+		ret = usbd_register_class(&usbd_msc_driver);
+		if (ret != HAL_OK) {
+			/* private_init completed, so deinit is its exact reverse */
+			usbd_msc_deinit();
+		}
 	}
 	return ret;
 }
@@ -1296,27 +1335,26 @@ int usbd_composite_msc_init(const usbd_msc_cb_t *cb, const usbd_msc_config_t *cf
 void usbd_msc_deinit(void)
 {
 	usbd_msc_dev_t *cdev = &usbd_msc_dev;
+	int ret;
 
+	/* Leave the core before anything is torn down. Composite: refused until
+	   usbd_composite_deinit() has blocked the ISR and cleared the configuration of every
+	   function. Standalone: refused in interrupt context. Either way nothing is released when
+	   refused, and once accepted no class callback runs any more and every endpoint of this
+	   class is deinitialized: ref USB 2.0 9.4.7, the transfers still pending are aborted. */
 #ifdef CONFIG_USBD_COMPOSITE
-	/* Leave the composite framework before anything is torn down: it is refused while the
-	   composite device is still registered on the core, and the class must then stay intact */
 	if (cdev->from_composite != 0U) {
-		if (usbd_composite_unregister_driver(&usbd_msc_driver) != HAL_OK) {
-			return;
-		}
-	}
-#endif
-
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Deinit\n");
-
-	/* Unregister first: no endpoint completion can give tx_sema/rx_sema afterwards, so they can
-	   be deleted below without an ISR giving a freed semaphore */
-#ifdef CONFIG_USBD_COMPOSITE
-	if (cdev->from_composite == 0U)
+		ret = usbd_composite_unregister_driver(&usbd_msc_driver);
+	} else
 #endif
 	{
-		usbd_unregister_class();
+		ret = usbd_unregister_class();
 	}
+	if (ret != HAL_OK) {
+		return;
+	}
+
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Deinit\n");
 
 	/* Both threads hold the lock while they process a command. Taking it waits for a command in
 	   progress to finish, so neither thread is deleted while it owns the lock or uses the buffers
@@ -1333,11 +1371,11 @@ void usbd_msc_deinit(void)
 
 	/* Cleared once deleted, so that a repeated deinit does not delete them again */
 	if (cdev->tx_sema != NULL) {
-		rtos_sema_delete(cdev->tx_sema);
+		usb_os_sema_delete(cdev->tx_sema);
 		cdev->tx_sema = NULL;
 	}
 	if (cdev->rx_sema != NULL) {
-		rtos_sema_delete(cdev->rx_sema);
+		usb_os_sema_delete(cdev->rx_sema);
 		cdev->rx_sema = NULL;
 	}
 

@@ -366,7 +366,11 @@ static void example_usbh_ecm_link_change_thread(void *param)
 					dhcp_done = 1;
 					RTK_LOGS(TAG, RTK_LOG_INFO, "Switch to link\n");
 				} else {
-					RTK_LOGS(TAG, RTK_LOG_ERROR, "DHCP fail\n");
+					/* Back to IDLE so the next round retries: a 4G dongle reports the link up for good,
+					   so no link-down edge would ever bring this branch back */
+					RTK_LOGS(TAG, RTK_LOG_ERROR, "DHCP fail, retry\n");
+					ethernet_state = ETH_STATUS_IDLE;
+					rtos_time_delay_ms(1000);
 				}
 			}
 		} else if (0 == link_is_up && (ethernet_state >= ETH_STATUS_INIT)) {	// link -> unlink

@@ -603,10 +603,12 @@ int usbd_register_class(const usbd_class_driver_t *driver);
 /**
  * @brief Un-register a class, called in class de-initialization function.
  * @note  Task context only, same rule as @ref usbd_deinit.
- * @return None. This is a teardown path: the class is always detached and the device driven
- *         to the detached state, so there is nothing for the caller to recover from.
+ * @return HAL_OK once the class is detached and the device driven to the detached state, also
+ *         when no class was registered. HAL_ERR_PARA when called in interrupt context: nothing
+ *         was done, the class is still reachable from the USB ISR, so the caller shall not
+ *         release anything.
  */
-void usbd_unregister_class(void);
+int usbd_unregister_class(void);
 
 /**
  * @brief Initialize an endpoint.

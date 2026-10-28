@@ -40,8 +40,9 @@ extern "C" {
  *        When enabled, the driver accepts a VID/PID parameter table via
  *        usbh_cdc_acm_config_t::dongle_param and handles vendor-specific ACM topologies
  *        (param-driven AT-command interface index, single vendor interface
- *        carrying INTR+BULK+BULK, SET_INTERFACE alternate setting). A plain
- *        CDC ACM device (dongle_param == NULL) works exactly as before.
+ *        carrying INTR+BULK+BULK, SET_INTERFACE alternate setting).
+ * @note  When enabled, only a device listed in dongle_param is attached: a plain
+ *        CDC ACM device whose VID/PID is not in the table fails to attach.
  */
 #ifndef CONFIG_USBH_CDC_ACM_4G_DONGLE
 #define CONFIG_USBH_CDC_ACM_4G_DONGLE               0
@@ -191,7 +192,7 @@ typedef struct {
 	void (*transmitted)(u8 status);
 
 	/**
-	 * @brief Called when the line coding parameters have changed.
+	 * @brief Called after the device reported its line coding, which may differ from the one requested.
 	 * @param[in] line_coding: Pointer to the new line coding structure.
 	 */
 	void (*line_coding_changed)(usb_cdc_acm_line_coding_t *line_coding);
@@ -211,6 +212,7 @@ typedef struct {
 	u8 bulk_in_busy;                            /**< BULK IN submitted and its completion not yet reported. */
 	u8 bulk_out_busy;                           /**< BULK OUT submitted and its completion not yet reported. */
 	u8 intr_in_busy;                            /**< INTR IN submitted and its completion not yet reported. */
+	u8 line_coding_valid;                       /**< line_coding filled by setup(), from the device or the default. */
 
 	/* Pipes */
 	usbh_pipe_t bulk_in;                        /**< BULK IN pipe structure. */
@@ -252,6 +254,9 @@ typedef struct {
 
 /**
  * @brief Initializes the CDC ACM host class driver.
+ * @note  The class relies on the SOF interrupt to re-drive a NAKed BULK transfer and to re-arm the INTR IN poll,
+ *        so the host shall run with usbh_config_t::tick_source = USBH_SOF_TICK, or with USBH_SOF_INTR set in
+ *        usbh_config_t::ext_intr_enable.
  * @param[in] cb: Pointer to the user-defined callback structure.
  * @param[in] cfg: Pointer to the class configuration. See @ref usbh_cdc_acm_config_t.
  * @return 0 on success, non-zero on failure.
@@ -265,7 +270,7 @@ void usbh_cdc_acm_deinit(void);
 
 /**
  * @brief Sets the line coding parameters for the device.
- * @param[in] lc: Pointer to the line coding structure.
+ * @param[in] lc: Pointer to the line coding structure, checked against PSTN 1.2 Table 17.
  * @return 0 on success, HAL_BUSY while a previous class request is still in flight, other non-zero on failure.
  */
 int usbh_cdc_acm_set_line_coding(usb_cdc_acm_line_coding_t *lc);
@@ -273,7 +278,8 @@ int usbh_cdc_acm_set_line_coding(usb_cdc_acm_line_coding_t *lc);
 /**
  * @brief Gets the current line coding parameters from the device.
  * @param[out] lc: Pointer to the structure where the line coding will be stored.
- * @return 0 on success, HAL_BUSY while SET/GET_LINE_CODING is still in flight, other non-zero on failure.
+ * @return 0 on success, HAL_BUSY before the class setup has read it or while SET/GET_LINE_CODING is still in
+ *         flight, other non-zero on failure.
  */
 int usbh_cdc_acm_get_line_coding(usb_cdc_acm_line_coding_t *lc);
 
@@ -318,6 +324,10 @@ int usbh_cdc_acm_receive(u8 *buf, u32 len);
  * @brief Prepares to receive notification data (e.g. Serial State) over the INTERRUPT IN pipe.
  * @note  Requires `CONFIG_USBH_CDC_ACM_NOTIFY`, otherwise the class owns no INTR IN pipe
  *        and this function is not built.
+ *        The pipe stays busy until the notify callback, and buf must stay valid until then.
+ *        One call receives one INTR IN packet. A device whose INTR IN MPS is below the 10-byte
+ *        SERIAL_STATE splits it over two packets, which is not supported yet: such a notification
+ *        is reported as notify(NULL, 0), and attach logs a warning.
  *        buf is accessed by DMA and must be cache line aligned (e.g. declared with USB_DMA_ALIGNED).
  * @param[in] buf: Pointer to the buffer where notification data will be stored.
  * @param[in] len: Length of the buffer in bytes, at least the INTR IN MPS: the controller may fill a whole packet.

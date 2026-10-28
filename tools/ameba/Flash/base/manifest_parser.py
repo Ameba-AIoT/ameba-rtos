@@ -72,6 +72,7 @@ CERT_SIZE_EXT     = 0x2000   # Extended Certificate_TypeDef is 8 KB
 IMAGE_HEADER_LEN  = 0x20     # 32-byte prepend header per sub-bin
 
 # Offsets within Manifest_TypeDef (relative to manifest section start)
+_RSIP_KEY_GRP_OFFSET = 14
 _RSIP_CFG_OFFSET  = 15
 _RSIP_IV_OFFSET   = 32
 
@@ -115,19 +116,31 @@ _PREPEND_PATTERN_IMG2 = _PATTERN_IMG2
 
 _MAX_SUB_BIN_SIZE = 16 * 1024 * 1024
 
-# ── SoC-specific km_aes_key_id (amebagreen2 bootloader hardcoded) ─────────────
+# ── SoC-specific km_aes_key_id ────────────────────────────────────────────────
 
 _KM_AES_KEY_S_IPSEC_KEY1   = 0x00   # image2 ECB (OTP 0x200)
 _KM_AES_KEY_S_IPSEC_KEY2   = 0x01   # image2 CTR (OTP 0x220)
 _KM_AES_KEY_S_RSIP_ECB_KEY = 0x04   # image1/3 ECB (OTP 0x2C0)
 _KM_AES_KEY_S_RSIP_CTR_KEY = 0x05   # image1/3 CTR (OTP 0x2E0)
 
-# Per-partition-type key_id pair (matches bootloader RSIP_KEY_NUM0/1 assignment)
+# key_id pair of each RSIP key group
+_KEY_GROUP0 = (_KM_AES_KEY_S_RSIP_ECB_KEY, _KM_AES_KEY_S_RSIP_CTR_KEY)  # RSIP_KEY_NUM0: OTP 0x2C0/0x2E0
+_KEY_GROUP1 = (_KM_AES_KEY_S_IPSEC_KEY1,   _KM_AES_KEY_S_IPSEC_KEY2)    # RSIP_KEY_NUM1: OTP 0x200/0x220
+
+# Per-partition-type key_id pair.  image1/image3 always use group 0; image2 uses the
+# group named by its manifest RsipKeyGrp (see _image2_key_ids).
 _KEY_IDS = {
-    'image1': (_KM_AES_KEY_S_RSIP_ECB_KEY, _KM_AES_KEY_S_RSIP_CTR_KEY),  # RSIP_KEY_NUM0: OTP 0x2C0/0x2E0
-    'image2': (_KM_AES_KEY_S_IPSEC_KEY1,   _KM_AES_KEY_S_IPSEC_KEY2),    # RSIP_KEY_NUM1: OTP 0x200/0x220
-    'image3': (_KM_AES_KEY_S_RSIP_ECB_KEY, _KM_AES_KEY_S_RSIP_CTR_KEY),  # same as image1 (inherit_from: image1)
+    'image1': _KEY_GROUP0,
+    'image2': _KEY_GROUP1,   # default when RsipKeyGrp does not select group 0
+    'image3': _KEY_GROUP0,   # same as image1 (inherit_from: image1)
 }
+
+
+def _image2_key_ids(rsip_key_grp: int) -> tuple:
+    """Key_id pair for image2, matching the bootloader MANIFEST_RSIP_IMG2_KEY_GROUP():
+    RsipKeyGrp == 0x01 selects group 0, any other value (incl. 0xFF of images built
+    before the field existed) selects group 1."""
+    return _KEY_GROUP0 if rsip_key_grp == 0x01 else _KEY_GROUP1
 
 
 
@@ -219,7 +232,8 @@ def _scan_regions(image_data: bytes, partition_type: str,
                   image_data_start: int,
                   enc_mode_hint: int = 0,
                   rsip_iv_hint: bytes = None,
-                  image3_enc_mode: int = ENC_MODE_NONE) -> list:
+                  image3_enc_mode: int = ENC_MODE_NONE,
+                  key_ids: tuple = None) -> list:
     """Walk the sub-bin chain and build RSIP region descriptors.
 
     Region boundary detection — address-descending heuristic:
@@ -240,12 +254,13 @@ def _scan_regions(image_data: bytes, partition_type: str,
         In that case replace this heuristic with an explicit SoC-keyed XIP
         range table (see ameba_layout.ld for the authoritative ranges).
 
-    key_id_ecb/key_id_ctr are derived from partition_type, not sub-bin address.
+    key_id_ecb/key_id_ctr come from key_ids (image2 key group from its manifest), or
+    from partition_type when key_ids is None; never from the sub-bin address.
 
     Validation: header pattern + size-bounds only — no address range checks.
     """
     sub_bin_pattern = _PATTERN_IMG1 if partition_type == 'image1' else _PATTERN_IMG2
-    key_id_ecb, key_id_ctr = _KEY_IDS[partition_type]
+    key_id_ecb, key_id_ctr = key_ids if key_ids is not None else _KEY_IDS[partition_type]
 
     offset       = image_data_start
     total        = len(image_data)
@@ -436,6 +451,9 @@ def build_rsip_meta(image_path: str,
     # recognises the XIP sub-bin anchor and builds the region descriptor instead
     # of silently breaking out of the scan and returning no regions.
     image3_enc_mode = ENC_MODE_NONE
+    key_ids = None
+    if partition_type == 'image2' and manifest_start is not None:
+        key_ids = _image2_key_ids(image_data[manifest_start + _RSIP_KEY_GRP_OFFSET])
     if partition_type == 'image3':
         image3_enc_mode = enc_mode
     elif partition_type == 'image2' and manifest_start is not None:
@@ -447,7 +465,7 @@ def build_rsip_meta(image_path: str,
     try:
         regions = _scan_regions(image_data, partition_type, image_data_start,
                         enc_mode_hint=enc_mode_hint, rsip_iv_hint=rsip_iv_hint,
-                        image3_enc_mode=image3_enc_mode)
+                        image3_enc_mode=image3_enc_mode, key_ids=key_ids)
     except RegionScanError as e:
         logger.warning(
             f"manifest_parser: enc_mode={enc_mode}, plaintext sub-bin scan failed "

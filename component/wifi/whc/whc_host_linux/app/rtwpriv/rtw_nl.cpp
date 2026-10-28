@@ -16,6 +16,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 #include <unistd.h>
 #include <errno.h>
 #include <stdint.h>
@@ -78,6 +79,13 @@
 #define WHC_WIFI_TEST_OTA		0x10
 #define WHC_WIFI_TEST_LOG_ENABLE	0x15
 #define WHC_WIFI_TEST_LOG_DISABLE	0x16
+#define WHC_WIFI_TEST_SHELL_CMD		0x18
+#define WHC_WIFI_TEST_AT_RESP		0x19
+
+/* AT_RESP has no end marker, so a quiet period is taken as end of output. */
+#define RTW_NL_AT_IDLE_MS		200
+
+static size_t nl_at_resp_bytes;
 
 /* ---------------------------------------------------------------------------
  * MP result fragmentation (from whc_def.h / whc_host_app.c):
@@ -449,6 +457,19 @@ static int nl_do_transaction(struct msgtemplate *msg, int recv_reply, int expect
 	 *                    whc_host_app poll() loop. */
 	if (recv_reply) {
 		int looping = 1;
+
+		if (recv_reply == RTW_NL_REPLY_AT) {
+			struct timeval idle;
+			idle.tv_sec = RTW_NL_AT_IDLE_MS / 1000;
+			idle.tv_usec = (RTW_NL_AT_IDLE_MS % 1000) * 1000;
+			if (setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &idle, sizeof(idle)) < 0) {
+				fprintf(stderr, "Failed to set socket receive timeout: %s\n",
+						strerror(errno));
+				close(fd);
+				return -1;
+			}
+		}
+
 		/* MP reply reassembly buffer (RTW_NL_REPLY_MP only) */
 		uint8_t mpfrag_buf[WHC_MP_FRAG_NUM * WHC_MP_FRAG_SIZE + 1];
 		int mpfrag_received = 0;
@@ -466,7 +487,8 @@ static int nl_do_transaction(struct msgtemplate *msg, int recv_reply, int expect
 					/* For streaming modes (scan/MP) a timeout
 					 * just ends the stream and is not fatal. */
 					if (recv_reply == RTW_NL_REPLY_SCAN
-						|| recv_reply == RTW_NL_REPLY_MP) {
+						|| recv_reply == RTW_NL_REPLY_MP
+						|| recv_reply == RTW_NL_REPLY_AT) {
 						break;
 					}
 					fprintf(stderr,
@@ -511,6 +533,24 @@ static int nl_do_transaction(struct msgtemplate *msg, int recv_reply, int expect
 					}
 
 					switch (sub_cmd) {
+					case WHC_WIFI_TEST_AT_RESP: {
+						/* payload = at_printf() text, not NUL-terminated:
+						 * length comes from the netlink attribute. */
+						int text_len = (int)na->nla_len
+									   - (int)(NLA_HDRLEN + sizeof(uint32_t) + 1);
+						int max_len = rep_len
+									  - (int)(NLMSG_HDRLEN + GENL_HDRLEN + NLA_HDRLEN + 5);
+
+						if (text_len > max_len) {
+							text_len = max_len;
+						}
+						if (text_len > 0) {
+							fwrite(payload, 1, (size_t)text_len, stdout);
+							fflush(stdout);
+							nl_at_resp_bytes += (size_t)text_len;
+						}
+						continue;  /* AT stream ends on idle timeout only */
+					}
 					case WHC_WIFI_TEST_GET_MAC_ADDR:
 						/* payload: [idx(1)][mac(6)] */
 						printf("MAC ADDR %02x:%02x:%02x:%02x:%02x:%02x\n",
@@ -703,6 +743,8 @@ int rtw_nl_send_buf(const uint8_t *payload, uint32_t payload_len, int expect_rep
 		expect_sub = WHC_WIFI_TEST_SCAN_RESULT;
 	} else if (expect_reply == RTW_NL_REPLY_MP) {
 		expect_sub = WHC_WIFI_TEST_MP;
+	} else if (expect_reply == RTW_NL_REPLY_AT) {
+		expect_sub = WHC_WIFI_TEST_AT_RESP;
 	} else if (expect_reply == RTW_NL_REPLY_ONCE && payload_len >= 5) {
 		uint8_t req_sub = payload[4];
 		if (req_sub == WHC_WIFI_TEST_GET_MAC_ADDR ||
@@ -741,6 +783,47 @@ int rtw_nl_send_log_fwd(int enable)
 	msg.n.nlmsg_len += ptr - msg.buf;
 
 	return nl_do_transaction(&msg, RTW_NL_NO_REPLY, -1, NULL, 0);
+}
+
+/* ---------------------------------------------------------------------------
+ * Public API - rtw_nl_send_shell (Pattern A: transparent device shell command)
+ *
+ * Mirrors whc_host_send_shell_cmd() of whc_cust_path_demo:
+ *   [WHC_WIFI_TEST(4)] [WHC_WIFI_TEST_SHELL_CMD(1)] [cmd string + '\0']
+ * ------------------------------------------------------------------------- */
+
+#define RTW_NL_SHELL_MAX	1024
+
+int rtw_nl_send_shell(const char *cmd)
+{
+	uint8_t payload[5 + RTW_NL_SHELL_MAX];
+	uint32_t cmd_len;
+	int ret;
+
+	if (!cmd || !*cmd) {
+		fprintf(stderr, "Empty shell command\n");
+		return -1;
+	}
+
+	cmd_len = (uint32_t)strlen(cmd) + 1;	/* include trailing '\0' */
+	if (cmd_len > RTW_NL_SHELL_MAX) {
+		fprintf(stderr, "Shell command too long (max %d)\n", RTW_NL_SHELL_MAX - 1);
+		return -1;
+	}
+
+	*(uint32_t *)payload = WHC_WIFI_TEST;
+	payload[4] = WHC_WIFI_TEST_SHELL_CMD;
+	memcpy(payload + 5, cmd, cmd_len);
+
+	nl_at_resp_bytes = 0;
+	ret = rtw_nl_send_buf(payload, 5 + cmd_len, RTW_NL_REPLY_AT);
+
+	/* Only AT commands are expected to answer here; DW/EW print to dmesg. */
+	if (ret == 0 && nl_at_resp_bytes == 0 && strncasecmp(cmd, "AT", 2) == 0) {
+		fprintf(stderr, "No AT response; run 'rtwpriv -n <ifname> logon' first.\n");
+	}
+
+	return ret;
 }
 
 /* ---------------------------------------------------------------------------

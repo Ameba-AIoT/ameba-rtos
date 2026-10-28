@@ -133,7 +133,7 @@ PSRAM_END       ──────────►└─────────�
 #define KM4NS_BD_PSRAM_LENGTH         (KM4NS_PSRAM_IMG2_SIZE - IMAGE_HEADER_LEN)
 #else
 #define KM4NS_PSRAM_IMG2_SIZE         0
-#define KM4NS_BD_PSRAM_ORIGIN         KM4NS_IMG2_PSRAM_START
+#define KM4NS_BD_PSRAM_ORIGIN         (KM4NS_IMG2_PSRAM_START + IMAGE_HEADER_LEN)
 #define KM4NS_BD_PSRAM_LENGTH         0
 #endif
 
@@ -186,6 +186,7 @@ MEMORY
     /* IMG2 RAM */
 #if (!defined (CONFIG_WHC_INTF_IPC) && defined (CONFIG_WHC_DEV))
     KM4TZ_BD_RAM (rwx) :                   ORIGIN = ORIGIN(FULLMAC_IMG2), LENGTH = LENGTH(FULLMAC_IMG2)
+    KM4NS_BD_RAM (rwx) :                   ORIGIN = ORIGIN(FULLMAC_IMG2) + LENGTH(FULLMAC_IMG2), LENGTH = 0                    /* KM4NS has no image2 in FULLMAC, keep an empty region for ameba_img2_all.ld */
 #else
     KM4TZ_BD_RAM_TZ (rwx) :                ORIGIN = KM4TZ_RAM_TZ_START + IMAGE_HEADER_LEN,     LENGTH = KM4TZ_RAM_TZ_SIZE - IMAGE_HEADER_LEN                                   /* KM4TZ BD RAM TZ: ENTRY + SECURE + NSC */
     KM4TZ_BD_RAM (rwx) :                   ORIGIN = KM4TZ_IMG2_RAM_START + IMAGE_HEADER_LEN,   LENGTH = KM4NS_IMG2_RAM_START - KM4TZ_IMG2_RAM_START - IMAGE_HEADER_LEN           /* KM4TZ BD RAM: TZ On, 308KB; Tz off, 384K */
@@ -254,4 +255,6 @@ __km4ns_bd_ram_mp_start__ = ORIGIN(KM4NS_BD_RAM_MP);
 /* code analyse used */
 __rtk_fixed_addr__ = SRAM_BASE + KM4TZ_KM4NS_RAM_SIZE;
 __img1_sram_size__ = KM4TZ_IMG1_SIZE;
+/* SRAM top, used by the bootloader to check sub-image headers */
+__sram_end__ = SRAM_END;
 __img3_sram_size__ = KM4TZ_RAM_TZ_SIZE;

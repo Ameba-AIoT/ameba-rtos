@@ -571,7 +571,7 @@ RTW_RET_STATUS rtw_nan_api_deinit(uint16_t phy_num)
 	return RTW_RET_STATUS_SUCCESS;
 }
 
-RTW_RET_STATUS rtw_nan_api_start_nan(char *intf)
+RTW_RET_STATUS rtw_nan_api_start_nan(char *intf, uint8_t band)
 {
 	struct nan_customer_nandow nandow_cmd;
 	struct rtw_nan_enable *nan_enabled;;
@@ -591,6 +591,7 @@ RTW_RET_STATUS rtw_nan_api_start_nan(char *intf)
 
 	nan_enabled = &nandow_cmd.para.nan_enabled;
 	nan_enabled->enable = 1;
+	nan_enabled->band = band;
 
 	input = &nandow_cmd;
 	input_len = sizeof(struct nan_customer_nandow);

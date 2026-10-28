@@ -1420,26 +1420,26 @@ int usbd_composite_dfu_init(const usbd_dfu_cb_t *cb, const usbd_dfu_config_t *cf
 void usbd_dfu_deinit(void)
 {
 	usbd_dfu_dev_t *dfu = &usbd_dfu_dev;
+	int ret;
 
+	/* Leave the core before anything is torn down. Composite: refused until
+	   usbd_composite_deinit() has blocked the ISR and cleared the configuration of every
+	   function. Standalone: refused in interrupt context. Either way nothing is released when
+	   refused, and once accepted no class callback runs any more and every endpoint of this
+	   class is deinitialized: ref USB 2.0 9.4.7, the transfers still pending are aborted. */
 #ifdef CONFIG_USBD_COMPOSITE
-	/* Leave the composite framework before anything is torn down: it is refused while the
-	   composite device is still registered on the core, and the class must then stay intact */
 	if (dfu->from_composite != 0U) {
-		if (usbd_composite_unregister_driver(&usbd_dfu_driver) != HAL_OK) {
-			return;
-		}
-	}
-#endif
-
-	/* Unregister first: no setup()/ep0 callback can run afterwards, so the GETSTATUS
-	 * branch that dereferences cb->get_write_poll_ms in ISR context cannot race the
-	 * teardown below. */
-#ifdef CONFIG_USBD_COMPOSITE
-	if (dfu->from_composite == 0U)
+		ret = usbd_composite_unregister_driver(&usbd_dfu_driver);
+	} else
 #endif
 	{
-		usbd_unregister_class();
+		ret = usbd_unregister_class();
 	}
+	if (ret != HAL_OK) {
+		return;
+	}
+	/* No setup()/ep0 callback runs from here on, so the GETSTATUS branch that dereferences
+	 * cb->get_write_poll_ms in ISR context cannot race the teardown below. */
 
 	/* reconf_task starts the detach timer, so it goes first. */
 	usbd_dfu_stop_task(&dfu->reconf_task, &dfu->reconf_stop, dfu->reconf_sema);

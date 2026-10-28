@@ -830,24 +830,18 @@ GDMA_Abort(u8 GDMA_Index, u8 GDMA_ChNum)
 	if (TrustZone_IsSecure()) {
 		GDMA = ((GDMA_TypeDef *) GDMA0_REG_BASE_S);
 	}
-	/* Check the parameters */
-	assert_param(IS_GDMA_Index(GDMA_Index));
-	assert_param(IS_GDMA_ChannelNum(GDMA_ChNum));
 
 	GDMA_Suspend(GDMA_Index, GDMA_ChNum);
-	/*If ChEnReg[GDMA_ChNum] is not equal to 0, it means that
-	  the channel is working and the Suspend status must be checked.*/
+	/* CH_EN can only be cleared once INACTIVE is set (a write of 0 is ignored otherwise), so wait for INACTIVE only.
+	 * On timeout the channel is left suspended; resuming would make the caller's later disable ineffective. */
 	while (timeout--) {
-		if ((GDMA_GET_CHENREG_L_1_CH_EN(GDMA->GDMA_CHENREG_L_1) & BIT(GDMA_ChNum)) == 0 || \
-			(GDMA->CH[GDMA_ChNum].GDMA_CFGx_L & GDMA_BIT_CFGx_L_INACTIVE)) {
+		if (GDMA->CH[GDMA_ChNum].GDMA_CFGx_L & GDMA_BIT_CFGx_L_INACTIVE) {
 			GDMA_Cmd(GDMA_Index, GDMA_ChNum, DISABLE);
 			return TRUE;
 		}
+		DelayUs(1);
 	}
 
-	/* The loop ran out: timeout has wrapped to 0xFFFFFFFF, so it cannot be tested here.
-	 * The channel is still active, resume is required. */
-	GDMA_Resume(GDMA_Index, GDMA_ChNum);
 	return FALSE;
 }
 

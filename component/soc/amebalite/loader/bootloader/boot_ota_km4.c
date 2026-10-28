@@ -115,6 +115,45 @@ u8 BOOT_OTA_SlotSelect(void)
 }
 
 
+/* The address and the size in a sub-image header are not authenticated before the image is copied.
+ * Only the memory space and the bootloader's own memory are checked, not how the layout divides it.
+ * A copy may go anywhere in SRAM or PSRAM, in the non-secure or the secure alias, whose limits are
+ * SRAM_END and PSRAM_END of the layout. Peripherals are outside of both. It must not overlap:
+ *  - the RAM that is fixed for KR4 and KM4: ROM BSS, MSP and the bootloader (IMG1 slot), from SRAM_BASE
+ *    to the end of the IMG1 slot, except what lies between the ROM BSS ranges and in front of the IMG1
+ *    slot (KR4 IPC RAM, PMC RAM, boot entries and backups), which the sub-images are loaded to.
+ * The loader does not link the ROM symbols, so the ROM BSS ranges are the ROM constants in
+ * project_km4/ld/ameba_rom_symbol_acut.ld: __rom_bss_start__ :380 (0x20004000), __rom_bss_end__ :397,
+ * __rom_bss_start_ns__ :398 (0x20005000), __rom_bss_end_ns__ :405. */
+#define BOOT_ROM_BSS_END		0x200048E4
+#define BOOT_ROM_BSS_NS_START	0x20005000
+#define BOOT_ROM_BSS_NS_END		0x20005448
+/* true if [addr, addr + len) and [start, end) have a byte in common, without adding addr and len */
+static bool BOOT_RangeOverlap(u32 addr, u32 len, u32 start, u32 end)
+{
+	return (addr < end) && ((addr >= start) || (len > (start - addr)));
+}
+
+static bool BOOT_SubImgDstValid(u32 DstAddr, u32 Len)
+{
+	u32 FixedEnd = (u32)__rtk_fixed_addr__ + (u32)__img1_sram_size__;
+	u32 LoadEnd = (u32)__km4_boot_ram_end__;
+	u32 Alias;
+
+	for (Alias = 0; Alias <= TZ_IDAU_SEC_OFFSET; Alias += TZ_IDAU_SEC_OFFSET) {
+		if (BOOT_RangeOverlap(DstAddr, Len, SRAM_BASE + Alias, BOOT_ROM_BSS_END + Alias)
+			|| BOOT_RangeOverlap(DstAddr, Len, BOOT_ROM_BSS_NS_START + Alias, BOOT_ROM_BSS_NS_END + Alias)
+			|| BOOT_RangeOverlap(DstAddr, Len, LoadEnd + Alias, FixedEnd + Alias)) {
+			return false;
+		}
+	}
+
+	return is_memory_range_valid(DstAddr, Len, SRAM_BASE, (u32)__sram_end__)
+		   || is_memory_range_valid(DstAddr, Len, SRAM_BASE + TZ_IDAU_SEC_OFFSET, (u32)__sram_end__ + TZ_IDAU_SEC_OFFSET)
+		   || is_memory_range_valid(DstAddr, Len, PSRAM_BASE, (u32)__non_secure_psram_end__)
+		   || is_memory_range_valid(DstAddr, Len, PSRAM_BASE_S, (u32)__non_secure_psram_end__ + TZ_IDAU_SEC_OFFSET);
+}
+
 u8 BOOT_LoadSubImage(SubImgInfo_TypeDef *SubImgInfo, u32 StartAddr, u8 Num, char **ImgName, u8 ErrLog)
 {
 	IMAGE_HEADER ImgHdr;
@@ -123,6 +162,11 @@ u8 BOOT_LoadSubImage(SubImgInfo_TypeDef *SubImgInfo, u32 StartAddr, u8 Num, char
 	RRAM_TypeDef *rram = RRAM_DEV;
 
 	for (i = 0; i < Num; i++) {
+		/* StartAddr moves by the unauthenticated size of the previous sub-image, keep it in flash */
+		if (!IS_FLASH_ADDR(StartAddr)) {
+			RTK_LOGD(TAG, "%s invalid\n", ImgName[i]);
+			return FALSE;
+		}
 		_memcpy((void *)&ImgHdr, (void *)StartAddr, IMAGE_HEADER_LEN);
 
 		if ((ImgHdr.signature[0] != APP_IMAGE_PATTERN_1) || (ImgHdr.signature[1] != APP_IMAGE_PATTERN_2)) {
@@ -142,6 +186,12 @@ u8 BOOT_LoadSubImage(SubImgInfo_TypeDef *SubImgInfo, u32 StartAddr, u8 Num, char
 				rram->DSPIMG_DTCM1_ADDR = StartAddr;
 			}
 		} else {
+			/* anything but flash has to be memory outside of the bootloader, this also refuses a wrapped DstAddr */
+			if (!IS_FLASH_ADDR(DstAddr) && !BOOT_SubImgDstValid(DstAddr, Len)) {
+				RTK_LOGD(TAG, "%s invalid\n", ImgName[i]);
+				return FALSE;
+			}
+
 			/* If not XIP sub-image, then copy it to specific address (include the IMAGE_HEADER)*/
 			if ((!IS_FLASH_ADDR(DstAddr)) && (Len > IMAGE_HEADER_LEN)) {
 				_memcpy((void *)DstAddr, (void *)StartAddr, Len);

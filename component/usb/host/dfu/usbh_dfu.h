@@ -48,12 +48,13 @@ extern "C" {
 
 /* Maximum consecutive write-block retries (CLRSTATUS path) before aborting */
 #define USBH_DFU_MAX_RETRY                  3U
-/* Upper bound (ms) applied to the device-reported bwPollTimeout. DFU 1.1 6.1.2 makes
- * bwPollTimeout a 24-bit hint (up to ~4.6 h), so this clamps a device reporting a bogus
- * or corrupt value; the wait itself no longer blocks the host task, as it is served in
- * USBH_DFU_POLL_SLICE_MS slices. Waiting less than requested is recoverable: a device
- * still busy answers dfuDNBUSY again and the host simply polls once more. */
-#define USBH_DFU_MAX_POLL_TIMEOUT           5000U
+/* Largest device-reported bwPollTimeout (ms) the host accepts. DFU 1.1 6.1.2 makes bwPollTimeout
+ * the minimum time before the next DFU_GETSTATUS, and a device polled sooner while in dfuDNBUSY
+ * stalls the request and enters dfuERROR (DFU 1.1 A.2.5), so the host never shortens it. The
+ * field is 24-bit (up to ~4.6 h): a value above this bound, far beyond any flash erase, is taken
+ * as a broken device and fails the transfer. The wait itself does not block the host task, as it
+ * is served in USBH_DFU_POLL_SLICE_MS slices. */
+#define USBH_DFU_MAX_POLL_TIMEOUT           60000U
 /* Longest single sleep (ms) the DFU state machine may hold the shared USB host task for.
  * process() runs on usbh_hcd_main_task, which also drives enumeration, detach handling
  * and every other class driver, so a device-reported poll timeout is served in slices of
@@ -69,14 +70,14 @@ extern "C" {
  *   - poll count, mirroring USBH_DFU_MAX_MANIFEST_RETRY, catches a device that keeps
  *     answering with bwPollTimeout = 0;
  *   - wall-clock budget, which the count alone cannot bound because each poll waits up
- *     to USBH_DFU_MAX_POLL_TIMEOUT (100 x 5 s would be over 8 min). */
+ *     to USBH_DFU_MAX_POLL_TIMEOUT. It equals that bound, so one maximal poll still fits. */
 #define USBH_DFU_MAX_DNLOAD_POLL            100U
-#define USBH_DFU_DNLOAD_POLL_BUDGET_MS      10000U
-/* Maximum GETSTATUS polls while device reports dfuMANIFEST; each poll waits at least
- * bwPollTimeout ms, so the worst case is this count times USBH_DFU_MAX_POLL_TIMEOUT.
- * Unlike the per-block DNBUSY poll above this has no wall-clock budget: manifestation
- * happens once at the end of a download, and the MANIFEST_SYNC branch resets the count
- * only on observed progress. */
+#define USBH_DFU_DNLOAD_POLL_BUDGET_MS      USBH_DFU_MAX_POLL_TIMEOUT
+/* Maximum GETSTATUS polls while device reports dfuMANIFEST or dfuMANIFEST-SYNC; each poll
+ * waits at least bwPollTimeout ms. Unlike the per-block DNBUSY poll above this has no
+ * wall-clock budget: manifestation happens once at the end of a download. The count is reset
+ * only on observed progress, dfuMANIFEST -> dfuMANIFEST-SYNC, so a device repeating either
+ * state is still bounded. */
 #define USBH_DFU_MAX_MANIFEST_RETRY         100U
 
 /** @} End of Host_DFU_Constants group */
@@ -107,6 +108,7 @@ typedef enum {
 	USBH_DFU_STATE_ERROR,              /**< Error occurred; about to invoke the error callback. */
 	USBH_DFU_STATE_RECONFIGURE,        /**< Run-Time device: sending DFU_DETACH to trigger re-enumeration. */
 	USBH_DFU_STATE_ABORT,              /**< Issuing DFU_ABORT to cancel an in-progress transfer. */
+	USBH_DFU_STATE_RECOVER,            /**< Issuing DFU_ABORT to return a device left mid-transfer to dfuIDLE. */
 } usbh_dfu_state_t;
 
 /**
@@ -206,7 +208,10 @@ typedef struct {
 	u8                   reconf_pending;  /**< 1 = attached in Run-Time mode and cb->attached() has not
 	                                           been delivered; suppresses cb->detached() until the
 	                                           device re-enumerates in DFU mode. */
-	u8                   xfer_pending;    /**< 1 while a DNLOAD block ctrl transfer is in flight. */
+	u8                   ctrl_pending;    /**< 1 while a DFU class request is in flight on EP0. */
+	u8                   xfer_active;     /**< 1 from usbh_dfu_download()/upload() until its done callback. */
+	u8                   abort_req;       /**< 1 = usbh_dfu_abort() asked, served once no request is in flight. */
+	u8                   starting;        /**< 1 until the first GETSTATUS of a transfer has found the device in dfuIDLE. */
 	usb_dfu_func_desc_t  func_desc;       /**< Parsed DFU Functional Descriptor fields (byte-packed). */
 
 	/* Block transfer */
@@ -276,8 +281,10 @@ void usbh_dfu_deinit(void);
  *          triggers the first process() call.  The driver will call
  *          cb->get_block() repeatedly until it returns 0 (EOF), then sends
  *          the final zero-length DFU_DNLOAD and polls for manifestation.
+ *          Every accepted download ends with exactly one download_done(), also when the
+ *          device is detached or the transfer is aborted (HAL_ERR_UNKNOWN then).
  * @return HAL_OK if the operation was accepted, HAL_ERR_UNKNOWN if no device
- *         is connected.
+ *         is connected or a transfer or abort is already in progress.
  */
 int usbh_dfu_download(void);
 
@@ -286,15 +293,20 @@ int usbh_dfu_download(void);
  * @details Transitions the state machine to USBH_DFU_STATE_UPLOAD_BLOCK and
  *          triggers the first process() call.  The driver calls cb->recv_block()
  *          for every block received.  The upload ends when the device returns a
- *          short (or zero-length) block.
+ *          short (or zero-length) block. Every accepted upload ends with exactly one
+ *          upload_done(), also when the device is detached, the transfer is aborted or
+ *          recv_block() refuses a block (HAL_ERR_UNKNOWN then).
  * @return HAL_OK if the operation was accepted, HAL_ERR_UNKNOWN if no device
- *         is connected.
+ *         is connected or a transfer or abort is already in progress.
  */
 int usbh_dfu_upload(void);
 
 /**
- * @brief Sends DFU_ABORT to the device and resets the host state to IDLE.
- * @return HAL_OK on success, HAL_ERR_UNKNOWN if no device is connected.
+ * @brief Requests DFU_ABORT and returns the host state to IDLE.
+ * @details Asynchronous: DFU_ABORT is sent once the request currently in flight, and any
+ *          bwPollTimeout the device asked for, have completed. A download or upload in
+ *          progress then ends with its done callback reporting HAL_ERR_UNKNOWN.
+ * @return HAL_OK if the abort was accepted, HAL_ERR_UNKNOWN if no DFU-mode device is connected.
  */
 int usbh_dfu_abort(void);
 

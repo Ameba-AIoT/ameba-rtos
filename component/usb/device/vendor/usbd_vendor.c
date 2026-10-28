@@ -1134,35 +1134,28 @@ void usbd_vendor_deinit(void)
 	usbd_ep_t *ep_bulk_out = &cdev->ep_bulk_out;
 	usbd_ep_t *ep_intr_in = &cdev->ep_intr_in;
 	usbd_ep_t *ep_intr_out = &cdev->ep_intr_out;
-	u32 wait = 0U;
+	int ret;
 
+	/* Leave the core before anything is torn down. Composite: refused until
+	   usbd_composite_deinit() has blocked the ISR and cleared the configuration of every
+	   function. Standalone: refused in interrupt context. Either way nothing is released when
+	   refused, and once accepted no class callback runs any more and every endpoint of this
+	   class is deinitialized: ref USB 2.0 9.4.7, the transfers still pending are aborted. */
 #ifdef CONFIG_USBD_COMPOSITE
-	/* Leave the composite framework before anything is torn down: it is refused while the
-	   composite device is still registered on the core, and the class must then stay intact */
 	if (cdev->from_composite != 0U) {
-		if (usbd_composite_unregister_driver(&usbd_vendor_driver) != HAL_OK) {
-			return;
-		}
-	}
-#endif
-
-	/* Wait for in-flight BULK/INTR IN transfers to complete (xfer_state is cleared in the
-	   completion ISR) before the DMA buffers are freed. Bounded (~100 ms): a TX armed just
-	   before a detach never gets a completion. ISOC IN keeps no in-flight state, see
-	   usbd_vendor_transmit_isoc_data(). */
-	while ((wait < 100U) && ((ep_bulk_in->xfer_state != 0U) || (ep_intr_in->xfer_state != 0U))) {
-		usb_os_sleep_ms(1U);
-		wait++;
-	}
-
-	/* Unregister first: no class callback can run afterwards, so releasing cb and the pending
-	   control request below cannot race an EP0 OUT completion in ISR context. */
-#ifdef CONFIG_USBD_COMPOSITE
-	if (cdev->from_composite == 0U)
+		ret = usbd_composite_unregister_driver(&usbd_vendor_driver);
+	} else
 #endif
 	{
-		usbd_unregister_class();
+		ret = usbd_unregister_class();
 	}
+	if (ret != HAL_OK) {
+		return;
+	}
+
+	/* No completion arrives any more to clear them */
+	ep_bulk_in->xfer_state = 0U;
+	ep_intr_in->xfer_state = 0U;
 
 	cdev->ctrl_req_pending = 0U;
 

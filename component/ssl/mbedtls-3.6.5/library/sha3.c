@@ -51,6 +51,8 @@
 #include "mbedtls/platform.h"
 #endif /* MBEDTLS_SELF_TEST */
 
+#if !defined(MBEDTLS_SHA3_ALT)
+
 #define XOR_BYTE 0x6
 
 /* Precomputed masks for the iota transform.
@@ -372,6 +374,8 @@ exit:
     mbedtls_sha3_free(ctx);
     return ret;
 }
+
+#endif /* !MBEDTLS_SHA3_ALT */
 
 /*
  * output = SHA-3( input buffer )

@@ -1212,7 +1212,7 @@ done:
 	}
 }
 
- __attribute__((unused))
+__attribute__((unused))
 static void keys_add_id(struct bt_keys *keys, void *data)
 {
 	ARG_UNUSED(data);

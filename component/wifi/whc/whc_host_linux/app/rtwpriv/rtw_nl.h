@@ -44,6 +44,7 @@ int rtw_nl_send_cmd_buf(const char *cmd, char *outbuf, size_t outlen);
 #define RTW_NL_REPLY_ONCE	1	/* read a single WHC_CMD_EVENT reply */
 #define RTW_NL_REPLY_SCAN	2	/* loop reading SCAN_RESULT until idx==0 */
 #define RTW_NL_REPLY_MP		3	/* loop reassembling MP result fragments */
+#define RTW_NL_REPLY_AT		4	/* stream AT_RESP text to stdout until idle */
 
 /*
  * rtw_nl_send_buf - Send a raw buffer via CMD_WIFI_SEND_BUF (Pattern A).
@@ -54,6 +55,15 @@ int rtw_nl_send_cmd_buf(const char *cmd, char *outbuf, size_t outlen);
  * expect_reply selects the reply-handling mode (see RTW_NL_* above).
  */
 int rtw_nl_send_buf(const uint8_t *payload, uint32_t payload_len, int expect_reply);
+
+/*
+ * rtw_nl_send_shell - Run a device shell command (AT+xxx, DW, EW, ...).
+ *
+ * AT+xxx output (AT_RESP) is printed to stdout until the device goes quiet.
+ * DW/EW output is console logging and shows up in dmesg instead.
+ * Both need log forwarding on (logon); this call does not change it.
+ */
+int rtw_nl_send_shell(const char *cmd);
 
 /*
  * rtw_nl_send_dbg - Send debug command via CMD_WIFI_DBG (Pattern B).

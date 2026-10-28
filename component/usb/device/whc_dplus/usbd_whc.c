@@ -635,10 +635,14 @@ init_exit:
 void usbd_whc_deinit(void)
 {
 	usbd_whc_dev_t *idev = &usbd_whc_dev;
+	int ret;
 
 	/* Unregister first: no class callback can run afterwards, so releasing cb and the pending
 	 * control request below cannot race an EP0 OUT completion in ISR context */
-	usbd_unregister_class();
+	ret = usbd_unregister_class();
+	if (ret != HAL_OK) {
+		return;
+	}
 
 	idev->ctrl_req_pending = 0U;
 
