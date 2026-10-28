@@ -154,9 +154,6 @@ menu "CONFIG APPLICATION"
     menu "AI Config"
         orsource "../../../tflite_micro/Kconfig"
         orsource "../../../aivoice/Kconfig"
-        if AIVOICE_EN_MENU
-            orsource "../../../application/speechmind/Kconfig"
-        endif
     endmenu
 
     orsource "../../../application/Kconfig"
