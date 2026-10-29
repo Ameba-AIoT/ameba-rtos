@@ -12,7 +12,6 @@
 #include "usbd_composite.h"
 #endif
 #include "usbd_video.h"
-#include "usb_video.h"
 //#include "os_wrapper.h"
 
 /* Private defines -----------------------------------------------------------*/
@@ -316,7 +315,7 @@ usbd_uvc_video_produce_frame(usb_dev_t *dev, const u8 *mem, u32 len)
 	UNUSED(dev);
 
 	if ((mem == NULL) || (len == 0U)) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Produce_frame: invalid frame mem=%p len=%u\n", mem, len);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Produce_frame: invalid frame mem=0x%08x len=%u\n", (u32)mem, len);
 		return;
 	}
 
@@ -682,7 +681,7 @@ static u16 usbd_uvc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 		len  = usbd_uvc_descriptors_size;
 		is_cfg = 1;
 
-		RTK_LOGS(TAG, RTK_LOG_INFO, "desc_self %p len %d\r\n", desc, len);
+		RTK_LOGS(TAG, RTK_LOG_INFO, "desc_self 0x%08x len %d\r\n", (u32)desc, len);
 		break;
 
 #ifndef CONFIG_SUPPORT_USB_FS_ONLY
@@ -1316,8 +1315,8 @@ void usbd_uvc_video_put_out_stream_queue(usbd_uvc_buffer_t *payload)
 	if (payload->buffer_list.next == NULL || list_empty(&payload->buffer_list)) {
 		list_add_tail(&payload->buffer_list, &video->output_queue);
 	} else {
-		RTK_LOGS(TAG, RTK_LOG_WARN, "Put_out: skip linked buf %p next=%p\n",
-				 (void *)payload, (void *)payload->buffer_list.next);
+		RTK_LOGS(TAG, RTK_LOG_WARN, "Put_out: skip linked buf 0x%08x next=0x%08x\n",
+				 (u32)payload, (u32)payload->buffer_list.next);
 	}
 	usb_os_unlock(video->output_lock);
 }
@@ -1336,8 +1335,8 @@ void usbd_uvc_video_put_in_stream_queue(usbd_uvc_buffer_t *payload)
 	if (payload->buffer_list.next == NULL || list_empty(&payload->buffer_list)) {
 		list_add_tail(&payload->buffer_list, &video->input_queue);
 	} else {
-		RTK_LOGS(TAG, RTK_LOG_WARN, "Put_in: skip linked buf %p next=%p\n",
-				 (void *)payload, (void *)payload->buffer_list.next);
+		RTK_LOGS(TAG, RTK_LOG_WARN, "Put_in: skip linked buf 0x%08x next=0x%08x\n",
+				 (u32)payload, (u32)payload->buffer_list.next);
 	}
 	usb_os_unlock(video->input_lock);
 	/* Signal get_frame_handler that a new frame is available.
@@ -1455,28 +1454,20 @@ int usbd_composite_uvc_init(const usbd_uvc_ep_cfg_t *ep_cfg)
   */
 void usbd_uvc_deinit(void)
 {
+	usbd_uvc_dev_t *cdev = &usbd_uvc_dev;
+	int ret;
+
 #ifdef CONFIG_USBD_COMPOSITE
-	/* Leave the composite framework before anything is torn down: it is refused while the
-	   composite device is still registered on the core, and the class must then stay intact */
-	if (usbd_uvc_dev.from_composite != 0U) {
-		if (usbd_composite_unregister_driver(&usbd_uvc_driver) != HAL_OK) {
+	if (cdev->from_composite != 0U) {
+		/* Leave the composite framework before anything is torn down: it is refused while the
+		   composite device is still registered on the core, and the class must then stay intact */
+		ret = usbd_composite_unregister_driver(&usbd_uvc_driver);
+		if (ret != HAL_OK) {
 			return;
 		}
-	}
-#endif
-
-	/* Drop any request still waiting for its data stage, so a re-init cannot inherit it and
-	   dispatch a stale payload. No class callback runs once unregistered. */
-	usbd_uvc_dev.ctrl_req_pending = 0U;
-
-#ifdef CONFIG_USBD_COMPOSITE
-	if (usbd_uvc_dev.from_composite == 0U)
+	} else
 #endif
 	{
-		usbd_uvc_dev_t *cdev = &usbd_uvc_dev;
-		usbd_uvc_video_t *video = &cdev->video;
-		u8 wait_cnt = 0U;
-
 		/* res_created is set once the locks/semas below exist, before init_done, so this
 		   covers both a double call and an init that failed before setting init_done
 		   (e.g. ring buffer alloc failure) without skipping their teardown. */
@@ -1484,7 +1475,24 @@ void usbd_uvc_deinit(void)
 			return;
 		}
 
-		usbd_unregister_class();
+		/* Refused in interrupt context: the ISR may still use what is released below */
+		ret = usbd_unregister_class();
+		if (ret != HAL_OK) {
+			return;
+		}
+	}
+
+	/* Drop any request still waiting for its data stage, so a re-init cannot inherit it and
+	   dispatch a stale payload. No class callback runs once unregistered. */
+	cdev->ctrl_req_pending = 0U;
+
+#ifdef CONFIG_USBD_COMPOSITE
+	if (cdev->from_composite == 0U)
+#endif
+	{
+		usbd_uvc_video_t *video = &cdev->video;
+		u8 wait_cnt = 0U;
+
 		cdev->init_done = 0U;
 		cdev->res_created = 0U;
 		cdev->running = 0U;

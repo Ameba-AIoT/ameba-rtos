@@ -232,6 +232,10 @@ typedef struct {
 	 * @brief Called when USB attach status changes for application to support hot-plug events.
 	 * @note   This function is called within an interrupt service routine (ISR) context;
 	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+	 * @note   A bus suspend is also reported as USBD_ATTACH_STATUS_DETACHED, and the class then
+	 *         drops the data interface back to alt 0. A host resuming without re-enumeration
+	 *         finds the data path stopped, so the application shall reinitialize the class
+	 *         (usbd_cdc_ncm_deinit/usbd_deinit, then usbd_init/usbd_cdc_ncm_init) on DETACHED.
 	 * @param[in] old_status: The previous attach status.
 	 * @param[in] status: The new attach status.
 	 */
@@ -437,7 +441,7 @@ void usbd_cdc_ncm_deinit(void);
  * @note   Task context only, a call in interrupt context is rejected. It may run concurrently
  *         with usbd_cdc_ncm_deinit(), which waits for it to leave before releasing resources.
  */
-int usbd_cdc_ncm_transmit(u8 *buf, u32 len, u8 block);
+int usbd_cdc_ncm_transmit(const u8 *buf, u32 len, u8 block);
 
 /**
  * @brief  Gets the link state last reported to the host.

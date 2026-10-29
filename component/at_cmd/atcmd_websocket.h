@@ -148,7 +148,7 @@ extern struct wssrv_conn *ws_server_get_conn_info(int conn_no);
 extern void ws_server_sendText(char *message, size_t message_len, int use_mask, struct wssrv_conn *conn);
 extern void ws_server_sendBinary(uint8_t *message, size_t message_len, int use_mask, struct wssrv_conn *conn);
 extern void ws_server_sendClose(struct wssrv_conn *conn);
-extern void ws_server_sendData(uint8_t type, size_t message_size, uint8_t *message, int useMask, uint8_t send_mode, uint8_t fin_flag, struct wssrv_conn *conn);
+extern int ws_server_sendData(uint8_t type, size_t message_size, uint8_t *message, int useMask, uint8_t send_mode, uint8_t fin_flag, struct wssrv_conn *conn);
 extern int ws_server_get_close_reason(struct wssrv_conn *conn);
 extern void ws_server_set_close_reason(struct wssrv_conn *conn, int reason);
 

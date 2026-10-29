@@ -110,10 +110,12 @@ int usbd_composite_init(const usbd_composite_cb_t *cb);
 
 /**
  * @brief De-initialize composite USB device.
- * @note  Call it in task context before the deinit of each class, then @ref usbd_deinit:
+ * @note  Call it in task context before the deinit of each class, then @ref usbd_deinit.
  *        it blocks the ISR and clears the configuration of every registered function.
+ * @return HAL_OK on success. HAL_ERR_PARA when called in interrupt context: nothing was done
+ *         and the deinit of each class keeps refusing, refer to @ref usbd_unregister_class.
  */
-void usbd_composite_deinit(void);
+int usbd_composite_deinit(void);
 
 /** @} End of USB_Device_API group */
 

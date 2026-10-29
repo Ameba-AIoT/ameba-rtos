@@ -102,6 +102,8 @@ typedef struct {
 
 	/**
 	 * @brief Callback invoked when a bulk IN data transfer (Receive) is complete.
+	 * @note  Runs in the USB host task, once per datagram of the NTB. buf is valid only until the callback
+	 *        returns: the class re-arms the NTB buffer right after, so copy the frame out before returning.
 	 * @param[in] buf: Pointer to the buffer containing received data.
 	 * @param[in] len: Length of the valid received data in bytes.
 	 */
@@ -142,7 +144,6 @@ typedef struct {
 	u8 ctrl_itf_id;                                  /**< Communication (control) Interface number */
 	u8 data_itf_id;                                  /**< Data Interface number */
 	u8 data_alt_set;                                 /**< Alternate Setting value for Data Interface */
-	u8 union_data_itf_id;                            /**< Data Interface number from Union Functional Descriptor, 0xFF if not found */
 
 	/* Pipes */
 	usbh_cdc_ncm_pipe_info_t intr_rx;                /**< Intr IN Endpoint Info */
@@ -154,7 +155,8 @@ typedef struct {
 	u32 ntb_out_max_size;                            /**< Max NTB the host may send to the device (OUT direction) */
 	usb_cdc_ncm_ntb_parameters_t ntb_params;         /**< NTB parameters from device */
 	u16 ntb_sequence;                                /**< NTB sequence counter */
-	u16 packet_filter;                               /**< Packet filter configuration */
+	u16 tx_err_cnt;                                  /**< Consecutive non-STALL BULK OUT errors */
+	u16 rx_err_cnt;                                  /**< Consecutive non-STALL BULK IN errors */
 
 	/* BULK TX */
 	usb_os_sema_t bulk_tx_sema;                      /**< Semaphore for BULK TX synchronization */
@@ -294,9 +296,8 @@ int usbh_cdc_ncm_choose_config(usb_host_t *host);
 
 /**
  * @brief  Validates the device configuration descriptor for CDC NCM support.
- * @note   Searches for both the NCM Communication Interface and the NCM Data
- *         Interface.  Both must be present for the device to be accepted as
- *         a valid CDC NCM device.
+ * @note   Applies the same rules as attach: the NCM Communication Interface with one INTR IN endpoint
+ *         and the NCM Data Interface (protocol 0x01) it names in its Union, with one BULK IN/OUT pair.
  * @param[in] host: USB Host Handle.
  * @return HAL_OK if both NCM interfaces are found, HAL_ERR_PARA otherwise.
  */
@@ -316,6 +317,8 @@ u8 usbh_cdc_ncm_is_configured(void);
  * @param[in] block: Blocking mode flag (e.g., 0 for non-blocking, else for blocking).
  * @note   Task context only, one sender at a time. Safe against a concurrent deinit of the class:
  *         returns HAL_ERR_HW while the class is not initialized or is being de-initialized.
+ *         A blocking send waits until the transfer completes, so it shall not be called inside a critical
+ *         section or the PMU suspend flow, where the task can not block.
  * @return 0 (HAL_OK) on success, non-zero on failure.
  */
 int usbh_cdc_ncm_transmit(u8 *buf, u32 len, u8 block);

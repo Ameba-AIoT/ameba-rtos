@@ -88,6 +88,8 @@ extern "C" {
 #define USBH_HID_TRACK_USAGE_CNT               5U   /**< Tracked usages: volume up/down/mute, play-pause, stop */
 #define USBH_HID_ARRAY_ELEM_CNT                4U   /**< Max usage codes decoded from one Array field */
 #define USBH_HID_REPORT_MAX_LEN                64U  /**< Largest FS/LS INTR IN report kept per ring node (Ref USB 2.0 5.7.3) */
+#define USBH_HID_DESC_LEN                      9U   /**< HID descriptor length with one class descriptor, Ref HID 1.11 6.2.1 */
+#define USBH_HID_HALT_RETRY_MAX_CNT            3U   /**< CLEAR_FEATURE(ENDPOINT_HALT) attempts before the device is re-enumerated */
 
 /** @} End of Host_HID_Constants group */
 /** @} End of USB_Host_Constants group */
@@ -139,10 +141,13 @@ typedef enum {
 
 /**
  * @brief HID Event Structure.
+ * @note  Reported once per INTR IN report, also for a report repeating the previous one. Only presses are
+ *        decoded: a tracked control set in the report gives its type with is_press 1, a report with no tracked
+ *        control set, a key release included, gives VOLUME_EVENT_NONE with is_press 0.
  */
 typedef struct {
-	usbh_hid_event_type_t type; /**< Event type */
-	u8 is_press;                          /**< 1 if pressed, 0 if released */
+	usbh_hid_event_type_t type; /**< Event type, VOLUME_EVENT_NONE when no tracked control is set */
+	u8 is_press;                          /**< 1 if a tracked control is pressed, 0 for VOLUME_EVENT_NONE */
 } usbh_hid_event_t;
 
 /**
@@ -192,6 +197,7 @@ typedef struct {
 	} consumer_array;
 
 	u8 report_id_count;         /**< Number of report IDs found */
+	u8 report_id_zero;          /**< The descriptor declares the reserved Report ID 0, so its reports can not be framed */
 } usbh_hid_ctrl_caps_t;
 
 /**
@@ -228,7 +234,7 @@ typedef struct {
 	void (*attached)(void);    /**< Called when device is attached */
 	void (*detached)(void);    /**< Called when device is detached */
 	void (*setup)(void);       /**< Called during setup phase */
-	void (*report)(usbh_hid_event_t *event); /**< Called when a HID event occurs */
+	void (*report)(usbh_hid_event_t *event); /**< Called for every INTR IN report received, see usbh_hid_event_t */
 } usbh_hid_usr_cb_t;
 
 typedef struct {
@@ -241,6 +247,8 @@ typedef struct {
 	u8 itf_idx;                               /**< Interface Index */
 	u8 itf_alt_idx;                           /**< Interface Alternate Setting Index */
 	u8 alt_setting_count;                     /**< Number of alternate settings on this HID interface */
+	u8 halt_pending;                          /**< INTR IN STALLed, CLEAR_FEATURE(ENDPOINT_HALT) to be sent */
+	u8 halt_retry_cnt;                        /**< Failed CLEAR_FEATURE(ENDPOINT_HALT) attempts */
 
 	/* Descriptors */
 	usbh_dev_hid_desc_t hid_desc;             /**< HID Descriptor */

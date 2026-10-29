@@ -31,6 +31,19 @@
 #define USBD_HID_DESC							0x21
 #define USBD_HID_REPORT_DESC					0x22
 
+/* Report type in the high byte of the GET_REPORT/SET_REPORT wValue, Ref HID 1.11 7.2.1 */
+#define USBD_HID_REPORT_TYPE_INPUT           0x01U
+
+/* Length of the Input report each interface declares, Report ID included where one is declared */
+#if defined(CONFIG_USBD_HID_VENDOR)
+#define USBD_HID_PRIV_INPUT_REPORT_LEN       (1U + USBD_HID_TX_PKT_SIZE)
+#define USBD_HID_VENDOR_INPUT_REPORT_LEN     2U
+#elif defined(CONFIG_USBD_HID_MOUSE)
+#define USBD_HID_PRIV_INPUT_REPORT_LEN       4U
+#else
+#define USBD_HID_PRIV_INPUT_REPORT_LEN       8U
+#endif
+
 #ifdef CONFIG_USBD_HID_VENDOR
 /* Vendor command bits carried in the Volume/Power report payload. */
 #define USBD_HID_CMD_VOLUME_UP                            BIT0
@@ -62,6 +75,7 @@ static u32 usbd_hid_ring_buf_cnt_internal(const usbd_hid_buf_ctrl_t *pdata_ctrl)
 #endif
 static void hid_status_changed(usb_dev_t *dev, u8 old_status, u8 status);
 static u8 usbd_hid_is_own_itf(u16 itf);
+static u16 usbd_hid_get_input_report_len(u16 itf, u16 value);
 
 /* Private variables ---------------------------------------------------------*/
 
@@ -593,7 +607,7 @@ static int usbd_hid_ring_buf_ctrl_init(usbd_hid_buf_ctrl_t *pbuf_ctrl)
 		pbuf_ctrl->buf_array[i].buf_valid_len = 0U;
 	}
 
-	if (rtos_sema_create(&pbuf_ctrl->rx_sema, 0U, 0xFFFFU) != RTK_SUCCESS) {
+	if (usb_os_sema_create_with_count(&pbuf_ctrl->rx_sema, 0U, 0xFFFFU) != HAL_OK) {
 		usb_os_mfree(pbuf_ctrl->buf_array);
 		pbuf_ctrl->buf_array = NULL;
 		usb_os_mfree(pbuf_ctrl->hid_buf);
@@ -611,7 +625,7 @@ static void usbd_hid_ring_buf_ctrl_deinit(usbd_hid_buf_ctrl_t *pbuf_ctrl)
 		pbuf_ctrl->hid_sema_valid = 0U;
 		if (pbuf_ctrl->read_wait_sema) {
 			/* Release any thread blocked in usbd_hid_read(). */
-			rtos_sema_give(pbuf_ctrl->rx_sema);
+			usb_os_sema_give(pbuf_ctrl->rx_sema);
 		}
 		/* Wait for usbd_hid_read() to observe hid_sema_valid == 0 before deleting
 		 * rx_sema. Yield instead of busy-wait: a lower-priority reader would
@@ -619,7 +633,7 @@ static void usbd_hid_ring_buf_ctrl_deinit(usbd_hid_buf_ctrl_t *pbuf_ctrl)
 		do {
 			usb_os_sleep_ms(1U);
 		} while (pbuf_ctrl->read_wait_sema);
-		rtos_sema_delete(pbuf_ctrl->rx_sema);
+		usb_os_sema_delete(pbuf_ctrl->rx_sema);
 	}
 	if (pbuf_ctrl->buf_array != NULL) {
 		usb_os_mfree(pbuf_ctrl->buf_array);
@@ -701,6 +715,7 @@ static int hid_handle_ep0_data_out(usb_dev_t *dev)
 static int hid_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len)
 {
 	usbd_hid_t *hid = &hid_device;
+	int ret = HAL_OK;
 #ifndef CONFIG_USBD_HID_VENDOR
 	usbd_ep_t *ep_intr_out = &hid->ep_intr_out;
 #endif
@@ -722,7 +737,7 @@ static int hid_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len)
 			 * the same write slot here, else the EP stays disabled and every later OUT
 			 * token is NAKed. is_intr_out_busy stays 1: the slot is still unwritten, so
 			 * hid_sof() must not advance write_idx for it. */
-			usbd_hid_receive();
+			ret = usbd_hid_receive();
 		} else {
 			/* Publish the payload to the write slot for readers. If the ring is full,
 			 * leave the EP un-rearmed (is_intr_out_busy=0); hid_sof re-arms on a free slot. */
@@ -731,33 +746,71 @@ static int hid_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len)
 			   SMP core. Also covers hid_sof(), which advances write_idx for this slot later. */
 			usb_os_mem_sync();
 
-			if (hid->cb->received) {
+			if (hid->cb->received != NULL) {
 				hid->cb->received(pbuf_ctrl->buf_array[pbuf_ctrl->write_idx].buf_raw, len);
 			}
 
 			if (!usbd_hid_ring_buf_is_full_internal(pbuf_ctrl)) {
 				pbuf_ctrl->write_idx = (u8)(((u32)pbuf_ctrl->write_idx + 1U) % (u32)pbuf_ctrl->buf_array_cnt);
 				pbuf_ctrl->is_intr_out_busy = 1;
-				usbd_hid_receive();
+				ret = usbd_hid_receive();
 			} else {
 				pbuf_ctrl->is_intr_out_busy = 0;
 			}
 
-			rtos_sema_give(pbuf_ctrl->rx_sema);
+			usb_os_sema_give(pbuf_ctrl->rx_sema);
 		}
 	}
 #else
-	if (hid->cb->received && (len > 0)) {
+	if ((hid->cb->received != NULL) && (len > 0U)) {
 		hid->cb->received(ep_intr_out->xfer_buf, len);
 	}
 	/* Keyboard: single-shot buffer, re-arm immediately */
-	usbd_hid_receive();
+	ret = usbd_hid_receive();
 #endif
+
+	if (ret != HAL_OK) {
+		/* The OUT endpoint stays un-armed and NAKs the host from now on */
+		USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_XFER, ep_addr);
+	}
 
 	return HAL_OK;
 }
 
 #endif // CONFIG_USBD_HID_KEYBOARD || CONFIG_USBD_HID_VENDOR
+
+/**
+  * @brief  Get the length of the Input report a GET_REPORT names
+  * @param  itf: Class-local interface number, the whole wIndex of the request
+  * @param  value: wValue of the request, report type in the high byte and Report ID in the low
+  * @retval Report length in bytes, 0 when the interface declares no such Input report
+  */
+static u16 usbd_hid_get_input_report_len(u16 itf, u16 value)
+{
+	u16 len = 0U;
+	u8 id = USB_LOW_BYTE(value);
+
+	if (USB_HIGH_BYTE(value) != USBD_HID_REPORT_TYPE_INPUT) {
+		return 0U;
+	}
+
+#if defined(CONFIG_USBD_HID_VENDOR)
+	if ((itf == USBD_HID_PRIV_ITF_NUM) && (id == USBD_HID_REPORT_ID)) {
+		len = USBD_HID_PRIV_INPUT_REPORT_LEN;
+	} else if ((itf == USBD_HID_VENDOR_ITF_NUM) && (id == USBD_HID_VOLUME_REPORT_ID)) {
+		len = USBD_HID_VENDOR_INPUT_REPORT_LEN;
+	} else {
+		/* not a report this function declares */
+	}
+#else
+	/* No Report ID is declared, so the ID is 0 (Ref HID 1.11 7.2.1) */
+	if ((itf == USBD_HID_PRIV_ITF_NUM) && (id == 0U)) {
+		len = USBD_HID_PRIV_INPUT_REPORT_LEN;
+	}
+#endif
+
+	return len;
+}
 
 /**
   * @brief  Check whether an interface number belongs to this function
@@ -953,19 +1006,34 @@ static int hid_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			hid->protocol = USB_LOW_BYTE(req->wValue);
 			break;
 		case USBD_HID_GET_PROTOCOL:
+			/* Ref HID 1.11 7.2.5: wValue 0, a one-byte data stage */
+			if ((req->wValue != 0U) || (req->wLength != 1U) || ((req->bmRequestType & USB_REQ_DIR_MASK) != USB_D2H)) {
+				ret = HAL_ERR_PARA;
+				break;
+			}
 			ep0_in->xfer_buf[0] = hid->protocol;
 			ep0_in->xfer_len = 1U;
 			ret = usbd_ep_transmit(dev, ep0_in);
 			break;
 
 		case USBD_HID_GET_REPORT:
-			/* send an empty report */
-			ep0_in->xfer_len = MIN(req->wLength, ep0_in->xfer_buf_len);
+			/* Ref HID 1.11 7.2.1: wValue carries the report type and ID. Only the Input report
+			   each interface declares exists here, so any other type or ID is a request error */
+			report_len = usbd_hid_get_input_report_len(req->wIndex, req->wValue);
+			if ((report_len == 0U) || (req->wLength == 0U) || ((req->bmRequestType & USB_REQ_DIR_MASK) != USB_D2H)) {
+				ret = HAL_ERR_PARA;
+				break;
+			}
+			/* send an idle report, the Report ID first where the interface declares one */
+			ep0_in->xfer_len = MIN(MIN(req->wLength, report_len), ep0_in->xfer_buf_len);
 			usb_os_memset((void *)ep0_in->xfer_buf, 0x0, ep0_in->xfer_len);
+			if (USB_LOW_BYTE(req->wValue) != 0U) {
+				ep0_in->xfer_buf[0] = USB_LOW_BYTE(req->wValue);
+			}
 			ret = usbd_ep_transmit(dev, ep0_in);
 			break;
 		case USBD_HID_SET_REPORT:
-			if ((req->wLength) && (!(req->bmRequestType & 0x80U))) {
+			if ((req->wLength != 0U) && ((req->bmRequestType & USB_REQ_DIR_MASK) == USB_H2D)) {
 				if (req->wLength > ep0_out->xfer_buf_len) {
 					/* Cannot accept the data stage: stall so the host recovers promptly */
 					ret = HAL_ERR_PARA;
@@ -975,6 +1043,9 @@ static int hid_setup(usb_dev_t *dev, usb_setup_req_t *req)
 				 * payload in a following data stage, the request cannot be dispatched yet. */
 				usb_os_memcpy((void *)&hid->ctrl_req, (const void *)req, sizeof(usb_setup_req_t));
 				hid->ctrl_req_pending = 1U;
+				/* The EP0 buffer is shared with every control transfer: clear the window, so a
+				   data stage that ends short leaves zeros, not an earlier transfer, behind */
+				usb_os_memset((void *)ep0_out->xfer_buf, 0, req->wLength);
 				ep0_out->xfer_len = req->wLength;
 				ret = usbd_ep_receive(dev, ep0_out);
 				if (ret != HAL_OK) {
@@ -993,6 +1064,12 @@ static int hid_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			break;
 
 		case USBD_HID_SET_IDLE:
+			/* Ref HID 1.11 7.2.4: no data stage. The low byte of wValue names the report the
+			   rate applies to, 0 meaning all of them; a single rate is kept for every report */
+			if ((req->wLength != 0U) || ((req->bmRequestType & USB_REQ_DIR_MASK) != USB_H2D)) {
+				ret = HAL_ERR_PARA;
+				break;
+			}
 			hid->idle_rate = USB_HIGH_BYTE(req->wValue);
 			/* HID 1.11 7.2.4 idle semantics are delivered by the application layer, not
 			 * by this driver: each report here is pushed on every usbd_hid_send_data()
@@ -1001,6 +1078,11 @@ static int hid_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			 * itself. This driver only stores/echoes idle_rate for host compliance. */
 			break;
 		case USBD_HID_GET_IDLE:
+			/* Ref HID 1.11 7.2.3: a one-byte data stage, wValue high byte reserved as 0 */
+			if ((USB_HIGH_BYTE(req->wValue) != 0U) || (req->wLength != 1U) || ((req->bmRequestType & USB_REQ_DIR_MASK) != USB_D2H)) {
+				ret = HAL_ERR_PARA;
+				break;
+			}
 			ep0_in->xfer_buf[0] = hid->idle_rate;
 			ep0_in->xfer_len = 1U;
 			ret = usbd_ep_transmit(dev, ep0_in);
@@ -1050,13 +1132,19 @@ static int hid_set_config(usb_dev_t *dev, u8 config)
 	info = &ep_intr_in->info;
 	ep_intr_in->xfer_state = 0;
 	info->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_HID_HS_INT_MAX_PACKET_SIZE : USBD_HID_FS_INT_MAX_PACKET_SIZE;
-	usbd_ep_init(dev, ep_intr_in);
+	ret = usbd_ep_init(dev, ep_intr_in);
+	if (ret != HAL_OK) {
+		goto exit_clear_config;
+	}
 
 #if defined(CONFIG_USBD_HID_KEYBOARD) || defined(CONFIG_USBD_HID_VENDOR)
 	/* Init INTR OUT EP */
 	info = &ep_intr_out->info;
 	info->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_HID_HS_INT_MAX_PACKET_SIZE : USBD_HID_FS_INT_MAX_PACKET_SIZE;
-	usbd_ep_init(dev, ep_intr_out);
+	ret = usbd_ep_init(dev, ep_intr_out);
+	if (ret != HAL_OK) {
+		goto exit_clear_config;
+	}
 #endif
 
 #ifdef CONFIG_USBD_HID_VENDOR
@@ -1064,16 +1152,35 @@ static int hid_set_config(usb_dev_t *dev, u8 config)
 	info = &ep_vendor_intr_in->info;
 	ep_vendor_intr_in->xfer_state = 0;
 	info->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_HID_HS_INT_MAX_PACKET_SIZE : USBD_HID_FS_INT_MAX_PACKET_SIZE;
-	usbd_ep_init(dev, ep_vendor_intr_in);
+	ret = usbd_ep_init(dev, ep_vendor_intr_in);
+	if (ret != HAL_OK) {
+		goto exit_clear_config;
+	}
 
-	/* The vendor variant uses a ring buffer; arm the first OUT reception into the current write slot */
+	/* The vendor variant uses a ring buffer; arm the first OUT reception into the current write
+	   slot. Busy only once armed: hid_sof() retries an un-armed slot. */
+	ret = usbd_hid_receive();
+	if (ret != HAL_OK) {
+		goto exit_clear_config;
+	}
 	hid->rx_ctrl.is_intr_out_busy = 1U;
-	usbd_hid_receive();
 #elif defined(CONFIG_USBD_HID_KEYBOARD)
 	/* Prepare to receive next INTR OUT packet */
-	usbd_hid_receive();
+	ret = usbd_hid_receive();
+	if (ret != HAL_OK) {
+		goto exit_clear_config;
+	}
 #endif
 
+	return HAL_OK;
+
+exit_clear_config:
+	/* Release the endpoints initialized above */
+	hid_clear_config(dev, config);
+#ifdef CONFIG_USBD_HID_VENDOR
+	/* Nothing is armed: keep hid_sof() off the endpoints until the next set_config() */
+	hid->rx_ctrl.is_intr_out_busy = 1U;
+#endif
 	return ret;
 }
 
@@ -1106,7 +1213,17 @@ static void hid_clear_config(usb_dev_t *dev, u8 config)
 #endif
 #ifdef CONFIG_USBD_HID_VENDOR
 	usbd_ep_deinit(dev, ep_vendor_intr_in);
+	/* No OUT transfer is armed any more, but is_intr_out_busy is left as it is: 1 keeps hid_sof()
+	   from advancing write_idx over an unwritten slot and arming an unconfigured endpoint, and
+	   set_config() arms the current slot again. The ring content and indices are kept, a reader
+	   may be walking them in task context. */
 #endif
+
+	/* Ref HID 1.11 7.2.6: the protocol returns to Report after a reset, and the idle rate and a
+	   control write waiting for its data stage belong to the configuration that is gone */
+	hid->protocol = 1U;
+	hid->idle_rate = 0U;
+	hid->ctrl_req_pending = 0U;
 }
 
 /**
@@ -1135,7 +1252,7 @@ static int hid_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status)
 			USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_XFER, ep_addr);
 		}
 		ep_intr_in->xfer_state = 0U;
-		if (hid->cb->transmitted) {
+		if (hid->cb->transmitted != NULL) {
 			hid->cb->transmitted(status);
 		}
 		return HAL_OK;
@@ -1180,15 +1297,23 @@ static void usbd_hid_patch_desc(u8 *desc, u16 len, usb_speed_type_t speed)
 #endif
 
 	for (i = 0; i < len;) {
-		u8 dlen = desc[i];
-		u8 dtype = desc[i + 1];
-		if (dlen == 0) {
+		u8 dlen;
+		u8 dtype;
+
+		/* Read a header only when it fits, and patch a descriptor only when its bLength fits
+		   what is left of the block */
+		if (((u32)len - i) < USB_LEN_DESC_HEADER) {
 			break;
 		}
-		if ((dtype == USB_DESC_TYPE_ENDPOINT) && ((i + 3) <= len)) {
+		dlen = desc[i];
+		dtype = desc[i + 1U];
+		if ((dlen < USB_LEN_DESC_HEADER) || ((u32)dlen > ((u32)len - i))) {
+			break;
+		}
+		if ((dtype == USB_DESC_TYPE_ENDPOINT) && (dlen >= USB_LEN_EP_DESC)) {
 			u8 addr = desc[i + 2];
 			u8 dir = addr & USB_REQ_DIR_MASK;
-			u8 type = desc[i + 3] & 0x03;
+			u8 type = desc[i + 3] & USB_EP_XFER_TYPE_MASK;
 			if ((dir == USB_D2H) && (type == USB_CH_EP_TYPE_INTR)) {
 #ifdef CONFIG_USBD_HID_VENDOR
 				/* Priv INTR IN comes first (Priv interface), Vendor INTR IN second. */
@@ -1207,7 +1332,7 @@ static void usbd_hid_patch_desc(u8 *desc, u16 len, usb_speed_type_t speed)
 				desc[i + 2] = cfg->intr_out_addr;
 			}
 #endif
-			if ((type == USB_CH_EP_TYPE_INTR) && (dlen >= USB_LEN_EP_DESC)) {
+			if (type == USB_CH_EP_TYPE_INTR) {
 				desc[i + 6] = interval;             /* bInterval */
 			}
 		} else if ((dtype == USB_DESC_TYPE_INTERFACE) && (dlen >= USB_LEN_IF_DESC)) {
@@ -1344,7 +1469,7 @@ static void hid_status_changed(usb_dev_t *dev, u8 old_status, u8 status)
 
 	UNUSED(dev);
 
-	if (hid->cb->status_changed) {
+	if (hid->cb->status_changed != NULL) {
 		hid->cb->status_changed(old_status, status);
 	}
 }
@@ -1369,10 +1494,12 @@ static void hid_sof(usb_dev_t *dev)
 		 * was full; a reader has drained one now, so advance and re-arm. */
 		ctrl->write_idx = (u8)(((u32)ctrl->write_idx + 1U) % (u32)ctrl->buf_array_cnt);
 		ctrl->is_intr_out_busy = 1U;
-		usbd_hid_receive();
+		if (usbd_hid_receive() != HAL_OK) {
+			USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_XFER, hid->cfg->intr_out_addr);
+		}
 	}
 
-	if (hid->cb->sof) {
+	if (hid->cb->sof != NULL) {
 		hid->cb->sof();
 	}
 }
@@ -1525,13 +1652,19 @@ static int usbd_hid_system_control(u8 cmd_bitmap)
 	usbd_ep_t *ep_vendor = &hid->ep_vendor_intr_in;
 	u8 press[2];
 	u8 release[2] = {USBD_HID_VOLUME_REPORT_ID, 0x00U};
+	u8 claimed;
 
 	if ((dev == NULL) || (!dev->is_ready)) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Vendor TX not ready\n");
 		return ret;
 	}
 
-	if (ep_vendor->xfer_state) {
+	/* Claim the endpoint atomically, as usbd_hid_send_data() does */
+	usb_os_enter_critical();
+	claimed = (ep_vendor->xfer_state == 0U) ? 1U : 0U;
+	ep_vendor->xfer_state = 1U;
+	usb_os_exit_critical();
+	if (claimed == 0U) {
 		return HAL_BUSY;
 	}
 
@@ -1539,7 +1672,6 @@ static int usbd_hid_system_control(u8 cmd_bitmap)
 	press[1] = cmd_bitmap;
 
 	/* Press */
-	ep_vendor->xfer_state = 1U;
 	usb_os_memcpy((void *)ep_vendor->xfer_buf, (void *)press, sizeof(press));
 	ep_vendor->xfer_len = sizeof(press);
 	ret = usbd_ep_transmit(dev, ep_vendor);
@@ -1563,8 +1695,15 @@ static int usbd_hid_system_control(u8 cmd_bitmap)
 		return HAL_ERR_HW;
 	}
 
-	/* Release */
+	/* Release: only once the press has completed, its buffer is still owned by the controller
+	   otherwise */
+	usb_os_enter_critical();
+	claimed = (ep_vendor->xfer_state == 0U) ? 1U : 0U;
 	ep_vendor->xfer_state = 1U;
+	usb_os_exit_critical();
+	if (claimed == 0U) {
+		return HAL_BUSY;
+	}
 	usb_os_memcpy((void *)ep_vendor->xfer_buf, (void *)release, sizeof(release));
 	ep_vendor->xfer_len = sizeof(release);
 	ret = usbd_ep_transmit(dev, ep_vendor);
@@ -1607,7 +1746,11 @@ int usbd_hid_init(const usbd_hid_usr_cb_t *cb, const usbd_hid_config_t *cfg)
 	ret = usbd_hid_private_init(cb, cfg);
 	if (ret == HAL_OK) {
 		hid->from_composite = 0;
-		usbd_register_class(&usbd_hid_driver);
+		ret = usbd_register_class(&usbd_hid_driver);
+		if (ret != HAL_OK) {
+			/* private_init completed, so deinit is its exact reverse */
+			usbd_hid_deinit();
+		}
 	}
 	return ret;
 }
@@ -1622,41 +1765,30 @@ void usbd_hid_deinit(void)
 #ifdef CONFIG_USBD_HID_VENDOR
 	usbd_ep_t *ep_vendor_intr_in = &hid->ep_vendor_intr_in;
 #endif
+	int ret;
 
+	/* Leave the core before anything is torn down. Composite: refused until
+	   usbd_composite_deinit() has blocked the ISR and cleared the configuration of every
+	   function. Standalone: refused in interrupt context. Either way nothing is released when
+	   refused, and once accepted no class callback runs any more and every endpoint of this
+	   class is deinitialized: ref USB 2.0 9.4.7, the transfers still pending are aborted. */
 #ifdef CONFIG_USBD_COMPOSITE
-	/* Leave the composite framework before anything is torn down: it is refused while the
-	   composite device is still registered on the core, and the class must then stay intact */
 	if (hid->from_composite != 0U) {
-		if (usbd_composite_unregister_driver(&usbd_hid_driver) != HAL_OK) {
-			return;
-		}
-	}
-#endif
-
-	/* Wait for in-flight transfers on all HID EPs to actually complete
-	 * (xfer_state is cleared in the completion ISR) before freeing the DMA
-	 * buffers, so the controller never DMAs from freed memory on hot-unplug.
-	 * Bounded (~100 ms) to avoid a hang if a completion never arrives after
-	 * detach. */
-	u32 wait = 0U;
-	while ((wait < 100U) &&
-		   (ep_intr_in->xfer_state
-#ifdef CONFIG_USBD_HID_VENDOR
-			|| ep_vendor_intr_in->xfer_state
-#endif
-		   )) {
-		/* Yield instead of holding the CPU: the completion runs in ISR context and the
-		 * wait is only bounded, so spinning would starve equal/lower-priority tasks. */
-		usb_os_sleep_ms(1U);
-		wait++;
-	}
-
-#ifdef CONFIG_USBD_COMPOSITE
-	if (hid->from_composite == 0U)
+		ret = usbd_composite_unregister_driver(&usbd_hid_driver);
+	} else
 #endif
 	{
-		usbd_unregister_class();
+		ret = usbd_unregister_class();
 	}
+	if (ret != HAL_OK) {
+		return;
+	}
+
+	/* No completion arrives any more to clear them */
+	ep_intr_in->xfer_state = 0U;
+#ifdef CONFIG_USBD_HID_VENDOR
+	ep_vendor_intr_in->xfer_state = 0U;
+#endif
 
 	/* Unregistered above: no class callback can run afterwards, so dropping the pending
 	 * control request here cannot race an EP0 OUT completion in ISR context. */
@@ -1686,6 +1818,7 @@ int usbd_hid_send_data(const u8 *data, u32 len)
 	usbd_hid_t *hid = &hid_device;
 	usb_dev_t *dev = hid->dev;
 	usbd_ep_t *ep_intr_in = &hid->ep_intr_in;
+	u8 claimed;
 #ifdef CONFIG_USBD_HID_VENDOR
 	/* Ref HID 1.11 5.6 and 8.1: the priv report descriptor declares a Report ID, so every
 	   report on this interface starts with it, see USBD_HID_REPORT_ID for non-standard hosts */
@@ -1699,9 +1832,12 @@ int usbd_hid_send_data(const u8 *data, u32 len)
 	}
 
 #ifdef CONFIG_USBD_HID_VENDOR
-	if (len > ep_intr_in->xfer_buf_len - hdr_len) {
-		RTK_LOGS(TAG, RTK_LOG_WARN, "len %d > buf %u, truncated\n", (int)(len + hdr_len), ep_intr_in->xfer_buf_len);
-		len = ep_intr_in->xfer_buf_len - hdr_len;
+	/* Ref HID 1.11 5.6: the priv Input report has the fixed Report Count its descriptor declares,
+	   so a longer payload cannot be carried in one report. private_init guarantees the buffer
+	   holds the Report ID plus that count. */
+	if (len > USBD_HID_TX_PKT_SIZE) {
+		RTK_LOGS(TAG, RTK_LOG_WARN, "len %u > rpt %u, truncated\n", len, (u32)USBD_HID_TX_PKT_SIZE);
+		len = USBD_HID_TX_PKT_SIZE;
 	}
 #else
 	if (len > ep_intr_in->xfer_buf_len) {
@@ -1710,9 +1846,15 @@ int usbd_hid_send_data(const u8 *data, u32 len)
 	}
 #endif
 
-	if (!ep_intr_in->xfer_state) {
+	/* Claim the endpoint atomically: a task on another core, or a class callback in ISR context,
+	   may test xfer_state at the same time, and both would otherwise fill the same buffer */
+	usb_os_enter_critical();
+	claimed = (ep_intr_in->xfer_state == 0U) ? 1U : 0U;
+	ep_intr_in->xfer_state = 1U;
+	usb_os_exit_critical();
+
+	if (claimed != 0U) {
 		if (dev->is_ready) { // In case deinit when plug out
-			ep_intr_in->xfer_state = 1U;
 #ifdef CONFIG_USBD_HID_VENDOR
 			ep_intr_in->xfer_buf[0] = USBD_HID_REPORT_ID;
 			usb_os_memcpy((void *)(ep_intr_in->xfer_buf + hdr_len), (const void *)data, len);
@@ -1740,7 +1882,8 @@ int usbd_hid_send_data(const u8 *data, u32 len)
 				ep_intr_in->xfer_state = 0U;
 			}
 		} else {
-			/*TX not ready*/
+			/*TX not ready: give the endpoint back*/
+			ep_intr_in->xfer_state = 0U;
 		}
 	} else {
 		/*TX busy*/
@@ -1810,7 +1953,7 @@ u32 usbd_hid_read(u8 *buffer, u32 size, u32 time_out_ms)
 			ctrl->read_wait_sema = 0U;
 			return 0U;
 		}
-		if (rtos_sema_take(ctrl->rx_sema, time_out_ms) != RTK_SUCCESS) {
+		if (usb_os_sema_take(ctrl->rx_sema, time_out_ms) != HAL_OK) {
 			ctrl->read_wait_sema = 0U;
 			return 0U;
 		}

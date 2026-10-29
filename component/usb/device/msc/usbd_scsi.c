@@ -353,14 +353,23 @@ static int usbd_scsi_start_stop_unit(usbd_msc_dev_t *cdev, u8 *params)
 	loej  = (u8)(params[4] & 0x02U);
 	start = (u8)(params[4] & 0x01U);
 
-	/*
-	 * Our emulation doesn't support mounting; the medium is
-	 * available for use as soon as it is loaded.
-	 */
+	/* Ref SBC-4 START STOP UNIT: START=1 with LOEJ=1 loads the medium, START=0 with LOEJ=1 ejects it, and
+	 * LOEJ=0 leaves the medium where it is. The medium is fixed in the device, so loading it back only needs
+	 * the backing storage to answer: its capacity is read again, as it may have changed meanwhile. */
 	if (start != 0U) {
-		if (cdev->is_open != 1U) {
+		if (loej != 0U) {
+			cdev->num_sectors = 0U;
+			if ((cdev->disk_ops.disk_getcapacity == NULL) || (cdev->disk_ops.disk_getcapacity(&cdev->num_sectors) != 0)) {
+				cdev->num_sectors = 0U;
+				usbd_scsi_sense_code(cdev, SCSI_SENSE_KEY_NOT_READY, SCSI_ASC_MEDIUM_NOT_PRESENT);
+				return HAL_ERR_PARA;
+			}
+			cdev->is_open = 1U;
+		} else if (cdev->is_open != 1U) {
 			usbd_scsi_sense_code(cdev, SCSI_SENSE_KEY_NOT_READY, SCSI_ASC_MEDIUM_NOT_PRESENT);
 			return HAL_ERR_PARA;
+		} else {
+			/* medium already loaded */
 		}
 
 		return HAL_OK;
@@ -368,6 +377,13 @@ static int usbd_scsi_start_stop_unit(usbd_msc_dev_t *cdev, u8 *params)
 
 	if (loej == 0U) {
 		return HAL_OK;
+	}
+
+	/* Ref SPC-4 PREVENT ALLOW MEDIUM REMOVAL: an eject is refused while the host keeps the medium locked */
+	if (cdev->prevent_removal != 0U) {
+		usbd_scsi_sense_code(cdev, SCSI_SENSE_KEY_ILLEGAL_REQUEST, SCSI_ASC_MEDIUM_REMOVAL_PREVENTED);
+		cdev->scsi_sense.ascq = SCSI_ASCQ_MEDIUM_REMOVAL_PREVENTED;
+		return HAL_ERR_PARA;
 	}
 	cdev->is_open = 0U;
 
@@ -382,9 +398,21 @@ static int usbd_scsi_start_stop_unit(usbd_msc_dev_t *cdev, u8 *params)
 */
 static int usbd_scsi_prevent_allow(usbd_msc_dev_t *cdev, u8 *params)
 {
-	UNUSED(params);
-
 	cdev->data_length = 0U;
+
+	/* Ref SPC-4 PREVENT ALLOW MEDIUM REMOVAL: byte 4 bits 1:0 are PREVENT, 01b locks the medium and 00b
+	 * unlocks it; 10b and 11b are obsolete, so they are rejected */
+	switch (params[4] & 0x03U) {
+	case 0x00U:
+		cdev->prevent_removal = 0U;
+		break;
+	case 0x01U:
+		cdev->prevent_removal = 1U;
+		break;
+	default:
+		usbd_scsi_sense_code(cdev, SCSI_SENSE_KEY_ILLEGAL_REQUEST, SCSI_ASC_INVALID_FIELD_IN_CDB);
+		return HAL_ERR_PARA;
+	}
 
 	return HAL_OK;
 }
@@ -400,8 +428,24 @@ static int usbd_scsi_read(usbd_msc_dev_t *cdev, u8 *params)
 	usb_msc_bot_cbw_t *cbw = cdev->cbw;
 
 	if (cdev->bot_state == USBD_MSC_IDLE) { /* Idle */
-		/* case 2 */
 		if (cbw->field.dCBWDataTransferLength == 0U) {
+			/* Ref SBC-4: a TRANSFER LENGTH of 0 reads nothing and is not an error. With no data stage either,
+			 * this is BOT 6.7.2 Case 1 (Hn = Dn): pass with no data. A CDB asking for blocks is Case 2
+			 * (Hn < Di): phase error. */
+			if (params[0] == SCSI_READ10) {
+				cdev->blklen = ((u32)params[7] << 8) | (u32)params[8];
+			} else {
+				cdev->blklen = ((u32)params[6] << 24) | ((u32)params[7] << 16) | ((u32)params[8] << 8) | (u32)params[9];
+			}
+			if (cdev->blklen == 0U) {
+				cdev->data_length = 0U;
+				/* No block is read, but the unit shall still be ready, as for any other medium access */
+				if (cdev->is_open != 1U) {
+					usbd_scsi_sense_code(cdev, SCSI_SENSE_KEY_NOT_READY, SCSI_ASC_MEDIUM_NOT_PRESENT);
+					return HAL_ERR_PARA;
+				}
+				return HAL_OK;
+			}
 			usbd_scsi_sense_code(cdev, SCSI_SENSE_KEY_ILLEGAL_REQUEST, SCSI_ASC_INVALID_COMMAND_OPERATION_CODE);
 			cdev->phase_error = 1U;
 			return HAL_ERR_PARA;
@@ -702,6 +746,19 @@ static int usbd_scsi_process_write(usbd_msc_dev_t *cdev)
 }
 
 /* Exported functions --------------------------------------------------------*/
+
+/**
+* @brief  Check whether the host still has OUT data to send after the chunk being written
+* @note   Valid while a WRITE is in its data stage: blklen counts the blocks not yet written, the chunk just
+*         received included, and each chunk holds at most buf_size bytes, see usbd_scsi_process_write().
+* @param  cdev: Device instance
+* @retval 1 if more OUT data follows the current chunk, 0 otherwise
+*/
+u8 usbd_scsi_out_data_pending(const usbd_msc_dev_t *cdev)
+{
+	/* Compared in blocks, the byte count of a WRITE(12) would not fit in u32 */
+	return (cdev->blklen > (cdev->buf_size >> USBD_MSC_BLK_BITS)) ? 1U : 0U;
+}
 
 /**
 * @brief  Process SCSI commands

@@ -701,6 +701,7 @@ def main(argc, argv):
     images_info = None
     if download:
         # download
+        logger.info(f"Boot guard burn: {'disabled' if settings.dis_boot_guard_burn else 'enabled'}")
         if (image is None) and (image_dir is None) and (partition_table is None):
             logger.error('Invalid arguments, no image or image_dir input')
             parser.print_usage()

@@ -19,6 +19,9 @@
 #define USBH_CDC_ACM_DEFAULT_DTE_RATE               115200U
 #define USBH_CDC_ACM_DEFAULT_DATA_BITS              8U
 
+/* SET_CONTROL_LINE_STATE wValue: D0 = DTR, D1 = RTS, D15..D2 reserved (Ref PSTN 1.2 6.3.12) */
+#define USBH_CDC_ACM_CTRL_LINE_STATE_MASK           0x0003U
+
 /* Private types -------------------------------------------------------------*/
 
 #if CONFIG_USBH_CDC_ACM_4G_DONGLE
@@ -38,8 +41,8 @@ typedef enum {
 static int usbh_cdc_acm_attach(usb_host_t *host);
 static void usbh_cdc_acm_detach(usb_host_t *host);
 static void usbh_cdc_acm_process(usb_host_t *host, usbh_drv_msg_t *msg);
-#ifdef CONFIG_USBH_CDC_ACM_NOTIFY
 static void usbh_cdc_acm_sof(usb_host_t *host);
+#ifdef CONFIG_USBH_CDC_ACM_NOTIFY
 static void usbh_cdc_acm_completed(usb_host_t *host, u8 pipe_num);
 static void usbh_cdc_acm_process_intr_rx(usb_host_t *host);
 #endif
@@ -57,8 +60,6 @@ static const char *const TAG = "ACMH";
 
 #if CONFIG_USBH_CDC_ACM_4G_DONGLE
 
-#define USBH_CDC_ACM_BULK_OUT_MAX_TIMEOUT_TICK      USB_BULK_OUT_MAX_TIMEOUT_TICK
-#define USBH_CDC_ACM_BULK_IN_MAX_TIMEOUT_TICK       USB_BULK_IN_MAX_TIMEOUT_TICK
 #define USBH_CDC_ACM_INTR_MAX_TIMEOUT_TICK          USB_INTR_MAX_TIMEOUT_TICK
 #endif
 
@@ -83,8 +84,12 @@ static const usbh_dev_id_t cdc_acm_devs[] = {
 		 * using the standard CDC-ACM descriptor (class 0x02 / subclass 0x02).
 		 * This entry ensures Phase-1 claims that interface so attach() can
 		 * locate and open its bulk endpoints via the vendor-specific path
-		 * (usbh_cdc_acm_attach_quectel). */
-		.mMatchFlags = USBH_DEV_ID_MATCH_ITF_CLASS | USBH_DEV_ID_MATCH_ITF_SUBCLASS,
+		 * (usbh_cdc_acm_attach_quectel). Bound to the Quectel VID, the only
+		 * vendor taking that path: a vendor-specific interface of any other
+		 * device belongs to another driver (e.g. usbh_vendor), and claiming it
+		 * here would keep it from that driver after attach() rejects it. */
+		.mMatchFlags = USBH_DEV_ID_MATCH_VID | USBH_DEV_ID_MATCH_ITF_CLASS | USBH_DEV_ID_MATCH_ITF_SUBCLASS,
+		.idVendor = USBH_CDC_ACM_QUECTEL_DONGLE_VID,
 		.bInterfaceClass = 0xFF,
 		.bInterfaceSubClass = 0x00,
 	},
@@ -100,8 +105,8 @@ static const usbh_class_driver_t usbh_cdc_acm_driver = {
 	.detach = usbh_cdc_acm_detach,
 	.setup = usbh_cdc_acm_setup,
 	.process = usbh_cdc_acm_process,
-#ifdef CONFIG_USBH_CDC_ACM_NOTIFY
 	.sof = usbh_cdc_acm_sof,
+#ifdef CONFIG_USBH_CDC_ACM_NOTIFY
 	.completed = usbh_cdc_acm_completed,
 #endif
 };
@@ -142,31 +147,124 @@ static void usbh_cdc_acm_dump_desc(void)
 }
 
 /**
-  * @brief  Validate the line coding carried by the class configuration
+  * @brief  Validate a line coding before it is sent in SET_LINE_CODING
   * @note   Ref PSTN 1.2 Table 17: bDataBits is one of 5/6/7/8/16, bCharFormat selects
   *         1 / 1.5 / 2 stop bits, and bParityType is none/odd/even/mark/space. A value
-  *         outside those sets would be sent verbatim in SET_LINE_CODING, so it is
-  *         rejected at init instead.
-  * @param  cfg: Class configuration
+  *         outside those sets would be sent verbatim, so it is rejected by the caller.
+  * @param  data_bits: bDataBits
+  * @param  char_format: bCharFormat
+  * @param  parity_type: bParityType
   * @retval HAL_OK when the line coding is legal, HAL_ERR_PARA otherwise
   */
-static int usbh_cdc_acm_check_line_coding(const usbh_cdc_acm_config_t *cfg)
+static int usbh_cdc_acm_check_line_coding(u8 data_bits, u8 char_format, u8 parity_type)
 {
-	u8 data_bits = (cfg->data_bits != 0U) ? cfg->data_bits : USBH_CDC_ACM_DEFAULT_DATA_BITS;
-
 	if ((data_bits != 5U) && (data_bits != 6U) && (data_bits != 7U) &&
 		(data_bits != 8U) && (data_bits != 16U)) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid data bits %d\n", data_bits);
 		return HAL_ERR_PARA;
 	}
 
-	if (cfg->char_format > LINE_CODING_CHAR_FORMAT_2_STOP_BITS) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid char format %d\n", cfg->char_format);
+	if (char_format > LINE_CODING_CHAR_FORMAT_2_STOP_BITS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid char format %d\n", char_format);
 		return HAL_ERR_PARA;
 	}
 
-	if (cfg->parity_type > LINE_CODING_PARITY_SPACE) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid parity %d\n", cfg->parity_type);
+	if (parity_type > LINE_CODING_PARITY_SPACE) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid parity %d\n", parity_type);
+		return HAL_ERR_PARA;
+	}
+
+	return HAL_OK;
+}
+
+/**
+  * @brief  Load the default line coding, 115200 8N1, for a device that does not report its own
+  * @retval None
+  */
+static void usbh_cdc_acm_set_default_line_coding(void)
+{
+	usb_cdc_acm_line_coding_t *lc = usbh_cdc_acm_host.line_coding;
+
+	lc->b.dwDteRate = USBH_CDC_ACM_DEFAULT_DTE_RATE;
+	lc->b.bCharFormat = LINE_CODING_CHAR_FORMAT_1_STOP_BITS;
+	lc->b.bParityType = LINE_CODING_PARITY_NO;
+	lc->b.bDataBits = USBH_CDC_ACM_DEFAULT_DATA_BITS;
+}
+
+/**
+  * @brief  Close every pipe of the class that is open
+  * @note   Guarded with pipe_num: an unopened pipe has pipe_num 0, and closing it would halt the control pipe.
+  * @param  host: Host handle
+  * @retval None
+  */
+static void usbh_cdc_acm_close_pipes(usb_host_t *host)
+{
+	usbh_cdc_acm_host_t *cdc = &usbh_cdc_acm_host;
+
+	if (cdc->intr_in.pipe_num != 0U) {
+		usbh_close_pipe(host, &cdc->intr_in);
+	}
+	if (cdc->bulk_in.pipe_num != 0U) {
+		usbh_close_pipe(host, &cdc->bulk_in);
+	}
+	if (cdc->bulk_out.pipe_num != 0U) {
+		usbh_close_pipe(host, &cdc->bulk_out);
+	}
+}
+
+/**
+  * @brief  Open one BULK endpoint of the data interface
+  * @note   Only a BULK endpoint carries ACM data (Ref CDC 1.2 3.3.2), and each direction is opened once: a second
+  *         endpoint of the same direction would overwrite the pipe of the first and leak its channel.
+  * @param  host: Host handle
+  * @param  ep_desc: Endpoint descriptor
+  * @retval HAL_OK when opened or skipped as not BULK, HAL_ERR_PARA on a duplicate direction or an open failure
+  */
+static int usbh_cdc_acm_open_bulk_ep(usb_host_t *host, usbh_ep_desc_t *ep_desc)
+{
+	usbh_cdc_acm_host_t *cdc = &usbh_cdc_acm_host;
+	usbh_pipe_t *pipe;
+	u32 timeout;
+
+	if ((ep_desc->bmAttributes & USB_EP_XFER_TYPE_MASK) != USB_CH_EP_TYPE_BULK) {
+		RTK_LOGS(TAG, RTK_LOG_WARN, "Skip EP%02x type %d\n", ep_desc->bEndpointAddress, ep_desc->bmAttributes);
+		return HAL_OK;
+	}
+
+	if (USB_EP_IS_IN(ep_desc->bEndpointAddress)) {
+		pipe = &cdc->bulk_in;
+		timeout = USB_BULK_IN_MAX_TIMEOUT_TICK;
+	} else {
+		pipe = &cdc->bulk_out;
+		timeout = USB_BULK_OUT_MAX_TIMEOUT_TICK;
+	}
+
+	if (pipe->pipe_num != 0U) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Dup EP%02x\n", ep_desc->bEndpointAddress);
+		return HAL_ERR_PARA;
+	}
+
+	if (usbh_open_pipe(host, pipe, ep_desc, &usbh_cdc_acm_driver) != HAL_OK) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Open EP%02x fail\n", ep_desc->bEndpointAddress);
+		return HAL_ERR_PARA;
+	}
+	pipe->max_timeout_tick = timeout;
+
+	return HAL_OK;
+}
+
+/**
+  * @brief  Check that both BULK pipes are open
+  * @note   ACM data needs a BULK IN and a BULK OUT (Ref CDC 1.2 3.3.2). A path that opened neither, or only
+  *         one, would leave pipe_num 0, which is EP0, and ep_mps 0 to the transmit/receive length math.
+  * @retval HAL_OK when both are open, HAL_ERR_PARA otherwise
+  */
+static int usbh_cdc_acm_check_bulk_pipes(void)
+{
+	usbh_cdc_acm_host_t *cdc = &usbh_cdc_acm_host;
+
+	if ((cdc->bulk_in.pipe_num == 0U) || (cdc->bulk_out.pipe_num == 0U)) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Missing bulk pipe\n");
 		return HAL_ERR_PARA;
 	}
 
@@ -184,14 +282,15 @@ static int usbh_cdc_acm_check_line_coding(const usbh_cdc_acm_config_t *cfg)
   * @param  buf: Transfer buffer
   * @param  len: Transfer length
   * @param  buf_len: Capacity of buf, refer to usbh_pipe_t xfer_buf_len
-  * @retval HAL_OK when armed, HAL_ERR_UNKNOWN when the pipe is still in use
+  * @retval HAL_OK when armed, HAL_ERR_UNKNOWN when the pipe is not open or still in use
   */
 static int usbh_cdc_acm_claim_pipe(usbh_pipe_t *pipe, u8 *busy, u8 *buf, u32 len, u32 buf_len)
 {
 	int ret = HAL_ERR_UNKNOWN;
 
 	usb_os_enter_critical();
-	if ((*busy == 0U) && (pipe->xfer_state == USBH_EP_XFER_IDLE)) {
+	/* An unopened pipe has pipe_num 0, which is EP0, and ep_mps 0 */
+	if ((pipe->pipe_num != 0U) && (*busy == 0U) && (pipe->xfer_state == USBH_EP_XFER_IDLE)) {
 		*busy = 1U;
 		pipe->xfer_buf = buf;
 		pipe->xfer_len = len;
@@ -221,6 +320,18 @@ static void usbh_cdc_acm_release(u8 *flag)
 {
 	usb_os_enter_critical();
 	*flag = 0U;
+	usb_os_exit_critical();
+}
+
+/**
+  * @brief  Publish line_coding as filled, to usbh_cdc_acm_get_line_coding()
+  * @note   Taken under the critical section so the line coding stored before is visible to the other core first.
+  * @retval None
+  */
+static void usbh_cdc_acm_set_line_coding_valid(void)
+{
+	usb_os_enter_critical();
+	usbh_cdc_acm_host.line_coding_valid = 1U;
 	usb_os_exit_critical();
 }
 
@@ -300,11 +411,13 @@ static u8 usbh_cdc_acm_get_union_data_itf(const usbh_itf_data_t *itf_data, u8 co
   */
 static const usbh_cdc_acm_param_t *usbh_cdc_acm_find_param(const usbh_cdc_acm_param_t *list, u16 vid, u16 pid)
 {
-	while ((list != NULL) && (list->vid != 0)) {
-		if ((list->vid == vid) && (list->pid == pid)) {
-			return list;
+	const usbh_cdc_acm_param_t *item = list;
+
+	while ((item != NULL) && (item->vid != 0U)) {
+		if ((item->vid == vid) && (item->pid == pid)) {
+			return item;
 		}
-		list++;
+		item++;
 	}
 	return NULL;
 }
@@ -334,80 +447,63 @@ static usbh_itf_desc_t *usbh_cdc_acm_find_itf(usbh_itf_data_t *itf_data, u8 itf_
 }
 
 /**
-  * @brief  Open BULK in/out pipes from a CDC data interface descriptor.
+  * @brief  Open the BULK in/out pipes of a CDC data interface descriptor
+  * @param  host: Host handle
+  * @param  itf_desc: Data interface descriptor
+  * @retval HAL_OK when both BULK pipes are open, HAL_ERR_PARA otherwise
   */
-static int usbh_cdc_acm_open_data_eps(usb_host_t *host, usbh_cdc_acm_host_t *cdc, usbh_itf_desc_t *itf_desc)
+static int usbh_cdc_acm_open_data_eps(usb_host_t *host, usbh_itf_desc_t *itf_desc)
 {
-	usbh_pipe_t *bulk_out = &cdc->bulk_out;
-	usbh_pipe_t *bulk_in = &cdc->bulk_in;
-	int ret = HAL_OK;
+	u8 i;
 
-	for (u8 i = 0; i < itf_desc->bNumEndpoints; i++) {
-		usbh_ep_desc_t *ep_desc = &itf_desc->ep_desc_array[i];
-		if ((ep_desc->bEndpointAddress & USB_REQ_DIR_MASK) == USB_D2H) {
-			ret = usbh_open_pipe(host, bulk_in, ep_desc, &usbh_cdc_acm_driver);
-			if (ret != HAL_OK) {
-				RTK_LOGS(TAG, RTK_LOG_ERROR, "Open bulk in pipe fail\n");
-				return ret;
-			}
-			bulk_in->max_timeout_tick = USBH_CDC_ACM_BULK_IN_MAX_TIMEOUT_TICK;
-		} else {
-			ret = usbh_open_pipe(host, bulk_out, ep_desc, &usbh_cdc_acm_driver);
-			if (ret != HAL_OK) {
-				RTK_LOGS(TAG, RTK_LOG_ERROR, "Open bulk out pipe fail\n");
-				return ret;
-			}
-			bulk_out->max_timeout_tick = USBH_CDC_ACM_BULK_OUT_MAX_TIMEOUT_TICK;
+	for (i = 0U; i < itf_desc->bNumEndpoints; i++) {
+		if (usbh_cdc_acm_open_bulk_ep(host, &itf_desc->ep_desc_array[i]) != HAL_OK) {
+			return HAL_ERR_PARA;
 		}
 	}
-	return ret;
+
+	return usbh_cdc_acm_check_bulk_pipes();
 }
 
 /**
   * @brief  Open all endpoints (BULK in/out + INTR in) carried by a Quectel-style
   *         vendor-specific interface.
+  * @param  host: Host handle
+  * @param  cdc: Class handle
+  * @param  itf_desc: Vendor interface descriptor
+  * @retval HAL_OK when both BULK pipes are open, HAL_ERR_PARA otherwise
   */
 static int usbh_cdc_acm_open_quectel_eps(usb_host_t *host, usbh_cdc_acm_host_t *cdc, usbh_itf_desc_t *itf_desc)
 {
-	usbh_pipe_t *bulk_out = &cdc->bulk_out;
-	usbh_pipe_t *bulk_in = &cdc->bulk_in;
-#ifdef CONFIG_USBH_CDC_ACM_NOTIFY
-	usbh_pipe_t *intr_in = &cdc->intr_in;
-#endif
+	usbh_ep_desc_t *ep_desc;
+	u8 i;
 
-	for (u8 i = 0; i < itf_desc->bNumEndpoints; i++) {
-		usbh_ep_desc_t *ep_desc = &itf_desc->ep_desc_array[i];
+	for (i = 0U; i < itf_desc->bNumEndpoints; i++) {
+		ep_desc = &itf_desc->ep_desc_array[i];
 
-		if ((ep_desc->bmAttributes & USB_EP_XFER_TYPE_MASK) == USB_CH_EP_TYPE_BULK) {
-			if (USB_EP_IS_IN(ep_desc->bEndpointAddress)) {
-				if (usbh_open_pipe(host, bulk_in, ep_desc, &usbh_cdc_acm_driver) != HAL_OK) {
-					RTK_LOGS(TAG, RTK_LOG_ERROR, "Open bulk in pipe fail\n");
-					return HAL_ERR_PARA;
-				}
-				bulk_in->max_timeout_tick = USBH_CDC_ACM_BULK_IN_MAX_TIMEOUT_TICK;
-			} else {
-				if (usbh_open_pipe(host, bulk_out, ep_desc, &usbh_cdc_acm_driver) != HAL_OK) {
-					RTK_LOGS(TAG, RTK_LOG_ERROR, "Open bulk out pipe fail\n");
-					return HAL_ERR_PARA;
-				}
-				bulk_out->max_timeout_tick = USBH_CDC_ACM_BULK_OUT_MAX_TIMEOUT_TICK;
-			}
-		} else if ((ep_desc->bmAttributes & USB_EP_XFER_TYPE_MASK) == USB_CH_EP_TYPE_INTR) {
+		if ((ep_desc->bmAttributes & USB_EP_XFER_TYPE_MASK) == USB_CH_EP_TYPE_INTR) {
 #ifdef CONFIG_USBH_CDC_ACM_NOTIFY
 			/* Only open INTR IN when notification support is enabled; otherwise
 			 * the pipe would be opened but never polled or closed (leaked),
 			 * because notify_process() / SOF / detach() paths are compiled out. */
-			if (usbh_open_pipe(host, intr_in, ep_desc, &usbh_cdc_acm_driver) != HAL_OK) {
-				RTK_LOGS(TAG, RTK_LOG_ERROR, "Open intr in pipe fail\n");
-				return HAL_ERR_PARA;
+			if (USB_EP_IS_IN(ep_desc->bEndpointAddress) && (cdc->intr_in.pipe_num == 0U)) {
+				if (usbh_open_pipe(host, &cdc->intr_in, ep_desc, &usbh_cdc_acm_driver) != HAL_OK) {
+					RTK_LOGS(TAG, RTK_LOG_ERROR, "Open intr in pipe fail\n");
+					return HAL_ERR_PARA;
+				}
+				cdc->intr_in.max_timeout_tick = USBH_CDC_ACM_INTR_MAX_TIMEOUT_TICK;
 			}
-			intr_in->max_timeout_tick = USBH_CDC_ACM_INTR_MAX_TIMEOUT_TICK;
+#else
+			UNUSED(cdc);
 #endif
+		} else if (usbh_cdc_acm_open_bulk_ep(host, ep_desc) != HAL_OK) {
+			return HAL_ERR_PARA;
 		} else {
-			RTK_LOGS(TAG, RTK_LOG_INFO, "Unknown xfer type(%d)\n", ep_desc->bmAttributes);
+			/* BULK opened, or any other type skipped */
 		}
 	}
-	return HAL_OK;
+
+	return usbh_cdc_acm_check_bulk_pipes();
 }
 
 /**
@@ -450,7 +546,7 @@ static int usbh_cdc_acm_attach_acm_4g(usb_host_t *host, usbh_cdc_acm_host_t *cdc
 	 * the pipe would be opened but never polled or closed (leaked),
 	 * because notify_process() / SOF / detach() paths are compiled out. */
 	ep_desc = &itf_desc->ep_desc_array[0];
-	if ((ep_desc->bEndpointAddress & USB_REQ_DIR_MASK) == USB_D2H) {
+	if (USB_EP_IS_IN(ep_desc->bEndpointAddress) && ((ep_desc->bmAttributes & USB_EP_XFER_TYPE_MASK) == USB_CH_EP_TYPE_INTR)) {
 		if (usbh_open_pipe(host, intr_in, ep_desc, &usbh_cdc_acm_driver) != HAL_OK) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Open intr in pipe fail\n");
 			return HAL_ERR_PARA;
@@ -482,10 +578,7 @@ static int usbh_cdc_acm_attach_acm_4g(usb_host_t *host, usbh_cdc_acm_host_t *cdc
 	cdc->data_itf_alt = itf_desc->bAlternateSetting;
 	cdc->comm_itf_num = comm_itf_num;
 
-	if (usbh_cdc_acm_open_data_eps(host, cdc, itf_desc) != HAL_OK) {
-		return HAL_ERR_HW;
-	}
-	return HAL_OK;
+	return usbh_cdc_acm_open_data_eps(host, itf_desc);
 }
 
 /**
@@ -524,6 +617,13 @@ static int usbh_cdc_acm_attach_quectel(usb_host_t *host, usbh_cdc_acm_host_t *cd
 /**
   * @brief  Run the 4G-dongle control-setting sequence: SET_INTERFACE (data alt),
   *         SET_LINE_CODING, GET_LINE_CODING. Driven from setup() until HAL_OK.
+  * @note   A refused SET_INTERFACE of a non-zero alternate setting is terminal: the BULK endpoints live in that
+  *         setting and stay inactive without it. Alternate setting 0 is the one already selected by
+  *         SET_CONFIGURATION, and an interface with no other setting may STALL the request (Ref USB 2.0
+  *         9.4.10), so it is no error. A refused SET/GET_LINE_CODING is optional for an AT port and leaves the
+  *         default line coding, as in usbh_cdc_acm_setup().
+  * @param  host: Host handle
+  * @retval HAL_OK when done, HAL_BUSY while running, HAL_ERR_PARA when the data interface can not be selected
   */
 static int usbh_cdc_acm_ctrl_setting(usb_host_t *host)
 {
@@ -536,18 +636,17 @@ static int usbh_cdc_acm_ctrl_setting(usb_host_t *host)
 	int state = HAL_OK;
 
 	switch (cdc->sub_status) {
-	case USBH_CDC_ACM_CTRL_IDLE:
-		ret_state = HAL_OK;
-		break;
-
 	case USBH_CDC_ACM_CTRL_ALT_SETTING:
 		state = usbh_ctrl_set_interface(host, cdc->data_itf_num, cdc->data_itf_alt);
-		if (state == HAL_OK) {
+		if ((state == HAL_OK) || ((state != HAL_BUSY) && (cdc->data_itf_alt == 0U))) {
 			cdc->sub_status = USBH_CDC_ACM_CTRL_SET_LINE_CODING;
 		} else if (state != HAL_BUSY) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Set itf %d alt %d err %d\n", cdc->data_itf_num, cdc->data_itf_alt, state);
 			cdc->sub_status = USBH_CDC_ACM_CTRL_IDLE;
+			ret_state = HAL_ERR_PARA;
+		} else {
+			/* Control transfer still in flight */
 		}
-		usbh_notify(host, 0, &usbh_cdc_acm_driver);
 		break;
 
 	case USBH_CDC_ACM_CTRL_SET_LINE_CODING:
@@ -555,28 +654,38 @@ static int usbh_cdc_acm_ctrl_setting(usb_host_t *host)
 		if (state == HAL_OK) {
 			cdc->sub_status = USBH_CDC_ACM_CTRL_GET_LINE_CODING;
 		} else if (state != HAL_BUSY) {
-			cdc->sub_status = USBH_CDC_ACM_CTRL_IDLE;
+			/* GET_LINE_CODING may still report what the device runs with */
+			RTK_LOGS(TAG, RTK_LOG_WARN, "Set line coding err %d\n", state);
+			cdc->sub_status = USBH_CDC_ACM_CTRL_GET_LINE_CODING;
+		} else {
+			/* Control transfer still in flight */
 		}
-		usbh_notify(host, 0, &usbh_cdc_acm_driver);
 		break;
 
 	case USBH_CDC_ACM_CTRL_GET_LINE_CODING:
 		state = usbh_cdc_acm_process_get_line_coding(host, cdc->line_coding);
-		if (state == HAL_OK) {
-			cdc->sub_status = USBH_CDC_ACM_CTRL_IDLE;
-			if ((cdc->cb != NULL) && (cdc->cb->line_coding_changed != NULL)) {
+		if (state != HAL_BUSY) {
+			if (state != HAL_OK) {
+				RTK_LOGS(TAG, RTK_LOG_WARN, "Get line coding err %d, use default\n", state);
+				usbh_cdc_acm_set_default_line_coding();
+			} else if ((cdc->cb != NULL) && (cdc->cb->line_coding_changed != NULL)) {
 				cdc->cb->line_coding_changed(cdc->line_coding);
+			} else {
+				/* No user to tell */
 			}
-			ret_state = HAL_OK;
-		} else if (state != HAL_BUSY) {
 			cdc->sub_status = USBH_CDC_ACM_CTRL_IDLE;
+			ret_state = HAL_OK;
 		}
-		usbh_notify(host, 0, &usbh_cdc_acm_driver);
 		break;
 
+	case USBH_CDC_ACM_CTRL_IDLE:
 	default:
 		ret_state = HAL_OK;
 		break;
+	}
+
+	if (ret_state == HAL_BUSY) {
+		usbh_notify(host, 0U, &usbh_cdc_acm_driver);
 	}
 
 	return ret_state;
@@ -612,34 +721,25 @@ static int usbh_cdc_acm_attach(usb_host_t *host)
 		ret = usbh_cdc_acm_attach_acm_4g(host, cdc);
 	}
 	if (ret != HAL_OK) {
-		/* Roll back any pipe the 4G attach already opened (guard with pipe_num:
-		 * only close open pipes). Otherwise a partial attach leaks them until
-		 * physical unplug, since the core only calls detach() for attached slots. */
-		if (cdc->intr_in.pipe_num) {
-			usbh_close_pipe(host, &cdc->intr_in);
-		}
-		if (cdc->bulk_in.pipe_num) {
-			usbh_close_pipe(host, &cdc->bulk_in);
-		}
-		if (cdc->bulk_out.pipe_num) {
-			usbh_close_pipe(host, &cdc->bulk_out);
-		}
+		/* Roll back any pipe the 4G attach already opened. Otherwise a partial attach
+		 * leaks them until physical unplug, since the core only calls detach() for
+		 * attached slots. */
+		usbh_cdc_acm_close_pipes(host);
 		return ret;
 	}
 	cdc->sub_status = USBH_CDC_ACM_CTRL_ALT_SETTING;
+	UNUSED(status);
 #else
 	usbh_itf_data_t *itf_data;
 	usbh_itf_desc_t *comm_itf_desc;
 	usbh_itf_desc_t *data_itf_desc;
-	usbh_ep_desc_t *ep_desc;
-	usbh_pipe_t *bulk_out = &cdc->bulk_out;
-	usbh_pipe_t *bulk_in = &cdc->bulk_in;
 	usbh_dev_id_t dev_id = {0,};
 	usbh_itf_data_t *node;
 	u8 comm_itf_num;
 	u8 union_itf_num;
 	u8 i;
 #ifdef CONFIG_USBH_CDC_ACM_NOTIFY
+	usbh_ep_desc_t *ep_desc;
 	usbh_pipe_t *intr_in = &cdc->intr_in;
 #endif
 
@@ -676,9 +776,10 @@ static int usbh_cdc_acm_attach(usb_host_t *host)
 
 #ifdef CONFIG_USBH_CDC_ACM_NOTIFY
 	/* The comm interface may legally carry 0 endpoints (no notify INTR EP). */
-	if (comm_itf_desc->bNumEndpoints >= 1) {
+	if (comm_itf_desc->bNumEndpoints >= 1U) {
 		ep_desc = &comm_itf_desc->ep_desc_array[0];
-		if ((ep_desc->bEndpointAddress & USB_REQ_DIR_MASK) == USB_D2H) {
+		if (USB_EP_IS_IN(ep_desc->bEndpointAddress) &&
+			((ep_desc->bmAttributes & USB_EP_XFER_TYPE_MASK) == USB_CH_EP_TYPE_INTR)) {
 			if (usbh_open_pipe(host, intr_in, ep_desc, &usbh_cdc_acm_driver) == HAL_OK) {
 				intr_in->max_timeout_tick = USB_INTR_MAX_TIMEOUT_TICK;
 			} else {
@@ -726,30 +827,17 @@ static int usbh_cdc_acm_attach(usb_host_t *host)
 		goto open_fail;
 	}
 
-	/* Set data in/out endpoints */
-	for (i = 0U; (i < data_itf_desc->bNumEndpoints) && (i < 2U); i++) {
-		ep_desc = &data_itf_desc->ep_desc_array[i];
-		if ((ep_desc->bEndpointAddress & USB_REQ_DIR_MASK) == USB_D2H) {
-			if (usbh_open_pipe(host, bulk_in, ep_desc, &usbh_cdc_acm_driver) != HAL_OK) {
-				RTK_LOGS(TAG, RTK_LOG_ERROR, "Open bulk in pipe fail\n");
-				status = HAL_ERR_PARA;
-				goto open_fail;
-			}
-			bulk_in->max_timeout_tick = USB_BULK_IN_MAX_TIMEOUT_TICK;
-		} else {
-			if (usbh_open_pipe(host, bulk_out, ep_desc, &usbh_cdc_acm_driver) != HAL_OK) {
-				RTK_LOGS(TAG, RTK_LOG_ERROR, "Open bulk out pipe fail\n");
-				status = HAL_ERR_PARA;
-				goto open_fail;
-			}
-			bulk_out->max_timeout_tick = USB_BULK_OUT_MAX_TIMEOUT_TICK;
+	/* Data endpoints of the default setting (Ref CDC 1.2 3.3.2): only BULK ones, one per direction */
+	for (i = 0U; i < data_itf_desc->bNumEndpoints; i++) {
+		if (usbh_cdc_acm_open_bulk_ep(host, &data_itf_desc->ep_desc_array[i]) != HAL_OK) {
+			status = HAL_ERR_PARA;
+			goto open_fail;
 		}
 	}
 
 	/* Both bulk pipes are mandatory for CDC ACM data transfer */
-	if ((bulk_in->pipe_num == 0) || (bulk_out->pipe_num == 0)) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Missing bulk pipe\n");
-		status = HAL_ERR_PARA;
+	status = usbh_cdc_acm_check_bulk_pipes();
+	if (status != HAL_OK) {
 		goto open_fail;
 	}
 #endif
@@ -760,6 +848,18 @@ static int usbh_cdc_acm_attach(usb_host_t *host)
 	cdc->bulk_out_busy = 0U;
 	cdc->bulk_in_busy = 0U;
 	cdc->intr_in_busy = 0U;
+	cdc->line_coding_valid = 0U;
+
+#ifdef CONFIG_USBH_CDC_ACM_NOTIFY
+	/* A legal MPS below the 10-byte SERIAL_STATE splits it over two packets (Ref USB 2.0 5.7.3), but a notify
+	   transfer receives one packet, so such a notification is reported as notify(NULL, 0).
+	   FIXME: when ep_mps < USB_CDC_ACM_INTR_IN_PACKET_SIZE, reassemble the notification in the class: store each
+	   packet, re-arm the pipe for the next one, and deliver once the header plus wLength bytes, or a short packet,
+	   have arrived. */
+	if ((cdc->intr_in.pipe_num != 0U) && (cdc->intr_in.ep_mps < USB_CDC_ACM_INTR_IN_PACKET_SIZE)) {
+		RTK_LOGS(TAG, RTK_LOG_WARN, "INTR MPS %d < %d, SERIAL_STATE lost\n", cdc->intr_in.ep_mps, USB_CDC_ACM_INTR_IN_PACKET_SIZE);
+	}
+#endif
 
 	usbh_cdc_acm_dump_desc();
 
@@ -771,21 +871,9 @@ static int usbh_cdc_acm_attach(usb_host_t *host)
 
 #if !CONFIG_USBH_CDC_ACM_4G_DONGLE
 open_fail:
-	/* Roll back any pipe already opened (guard with pipe_num: only close open pipes) */
-#ifdef CONFIG_USBH_CDC_ACM_NOTIFY
-	if (intr_in->pipe_num) {
-		usbh_close_pipe(host, intr_in);
-	}
-#endif
-	if (bulk_in->pipe_num) {
-		usbh_close_pipe(host, bulk_in);
-	}
-	if (bulk_out->pipe_num) {
-		usbh_close_pipe(host, bulk_out);
-	}
+	/* Roll back any pipe already opened */
+	usbh_cdc_acm_close_pipes(host);
 	return status;
-#else
-	UNUSED(status);
 #endif
 }
 
@@ -797,28 +885,12 @@ open_fail:
 static void usbh_cdc_acm_detach(usb_host_t *host)
 {
 	usbh_cdc_acm_host_t *cdc = &usbh_cdc_acm_host;
-	usbh_pipe_t *bulk_out = &cdc->bulk_out;
-	usbh_pipe_t *bulk_in = &cdc->bulk_in;
-#ifdef CONFIG_USBH_CDC_ACM_NOTIFY
-	usbh_pipe_t *intr_in = &cdc->intr_in;
-#endif
 
 	if ((cdc->cb != NULL) && (cdc->cb->detached != NULL)) {
 		cdc->cb->detached();
 	}
-#ifdef CONFIG_USBH_CDC_ACM_NOTIFY
-	if (intr_in->pipe_num) {
-		usbh_close_pipe(host, intr_in);
-	}
-#endif
 
-	if (bulk_in->pipe_num) {
-		usbh_close_pipe(host, bulk_in);
-	}
-
-	if (bulk_out->pipe_num) {
-		usbh_close_pipe(host, bulk_out);
-	}
+	usbh_cdc_acm_close_pipes(host);
 
 	/* Device gone: drop the stale host handle and reset state so post-detach
 	   transmit/receive calls are rejected by their host/connect_state checks. */
@@ -827,6 +899,7 @@ static void usbh_cdc_acm_detach(usb_host_t *host)
 	cdc->bulk_out_busy = 0U;
 	cdc->bulk_in_busy = 0U;
 	cdc->intr_in_busy = 0U;
+	cdc->line_coding_valid = 0U;
 	cdc->comm_itf_num = 0U;
 	cdc->ctrl_line_state = 0U;
 	cdc->break_duration = 0U;
@@ -851,6 +924,7 @@ static int usbh_cdc_acm_setup(usb_host_t *host)
 	if (cdc->param_item != NULL) {
 		status = usbh_cdc_acm_ctrl_setting(host);
 		if (status == HAL_OK) {
+			usbh_cdc_acm_set_line_coding_valid();
 			if ((cdc->cb != NULL) && (cdc->cb->setup != NULL)) {
 				cdc->cb->setup();
 			}
@@ -874,11 +948,10 @@ static int usbh_cdc_acm_setup(usb_host_t *host)
 		 * "optional request refused means use a default" handling that MSC
 		 * applies to GET_MAX_LUN. */
 		RTK_LOGS(TAG, RTK_LOG_WARN, "Get line coding err %d, use default\n", status);
-		cdc->line_coding->b.dwDteRate = USBH_CDC_ACM_DEFAULT_DTE_RATE;
-		cdc->line_coding->b.bCharFormat = LINE_CODING_CHAR_FORMAT_1_STOP_BITS;
-		cdc->line_coding->b.bParityType = LINE_CODING_PARITY_NO;
-		cdc->line_coding->b.bDataBits = USBH_CDC_ACM_DEFAULT_DATA_BITS;
+		usbh_cdc_acm_set_default_line_coding();
 	}
+
+	usbh_cdc_acm_set_line_coding_valid();
 
 	if ((cdc->cb != NULL) && (cdc->cb->setup != NULL)) {
 		cdc->cb->setup();
@@ -887,54 +960,80 @@ static int usbh_cdc_acm_setup(usb_host_t *host)
 	return HAL_OK;
 }
 
+/**
+  * @brief  Check whether a BULK pipe has been busy longer than its timeout
+  * @note   ISR context, read only. A NAKed BULK channel masks its NAK interrupt after the first one, so
+  *         nothing else wakes the host task to run the timeout and NAK retry of usbh_transfer_process().
+  *         Only a NAKed transfer (URB_BUSY) is re-driven: one that has seen no NAK is still moving data and is
+  *         reported by its own completion.
+  * @param  host: Host handle
+  * @param  pipe: BULK pipe
+  * @retval 1 when the owner shall be re-driven, 0 otherwise
+  */
+static u8 usbh_cdc_acm_bulk_due(usb_host_t *host, usbh_pipe_t *pipe)
+{
+	if ((pipe->pipe_num != 0U) && (pipe->xfer_state == USBH_EP_XFER_BUSY) &&
+		(usbh_get_elapsed_ticks(host, pipe->tick) > pipe->max_timeout_tick) &&
+		(usbh_get_urb_state(host, pipe) == USBH_URB_BUSY)) {
+		return 1U;
+	}
+
+	return 0U;
+}
+
 #ifdef CONFIG_USBH_CDC_ACM_NOTIFY
+/**
+  * @brief  Check whether the polling interval of an unanswered INTR IN transfer has elapsed
+  * @note   Read only, so the SOF ISR and the host task may both call it.
+  * @param  host: Host handle
+  * @param  pipe: INTR IN pipe
+  * @retval 1 when the transfer shall be re-armed, 0 otherwise
+  */
+static u8 usbh_cdc_acm_intr_due(usb_host_t *host, usbh_pipe_t *pipe)
+{
+	usbh_urb_state_t urb_state;
+
+	if ((pipe->pipe_num == 0U) || (pipe->xfer_state != USBH_EP_XFER_BUSY)) {
+		return 0U;
+	}
+
+	/* A DONE transfer is left to process_intr_rx() */
+	urb_state = usbh_get_urb_state(host, pipe);
+	if ((urb_state != USBH_URB_BUSY) && (urb_state != USBH_URB_IDLE)) {
+		return 0U;
+	}
+
+	return ((usbh_get_elapsed_frame_cnt(host, pipe->frame_num) + 1U) >= pipe->ep_interval) ? 1U : 0U;
+}
+#endif
+
 /**
   * @brief  SOF callback for CDC ACM. Runs in ISR context every microframe;
   *         time-consuming operations (e.g. `malloc`, `rtos_sema_take`) are not permitted.
+  * @note   Wakeup only: the pipes are written by the host task alone, which may run on another core, so this
+  *         reads their state and notifies the owner. The INTR IN is re-armed once its polling interval has
+  *         elapsed, a BULK pipe re-driven once it has been busy past its timeout.
   * @param  host: Host handle
   * @retval None
-  * @note   INTR IN watchdog + retry: when a notification transfer is in flight
-  *         and its polling interval has elapsed, re-arm it (up to
-  *         USB_INTR_RETRY_MAX_CNT retries, then mark error). Only does work while an
-  *         CONFIG_USBH_CDC_ACM_NOTIFY is enabled (this whole callback is compiled out
-  *         otherwise). BULK IN reception is application-initiated: the app calls
-  *         usbh_cdc_acm_receive() in a loop (re-arming buf/len each time), so
-  *         the SOF does not drive bulk IN.
   */
 static void usbh_cdc_acm_sof(usb_host_t *host)
 {
 	usbh_cdc_acm_host_t *cdc = &usbh_cdc_acm_host;
-	usbh_pipe_t *intr_in = &cdc->intr_in;
-	usbh_urb_state_t urb_state;
-	u32 elapsed;
 
-	/* INTR IN: watchdog + retry on timeout (only when a transfer is in flight). */
-	if (intr_in->pipe_num != 0) {
-		if (intr_in->xfer_state == USBH_EP_XFER_BUSY) {
-			/* Sample HFNUM only with a transfer in flight: this runs every (micro)frame */
-			elapsed = usbh_get_elapsed_frame_cnt(host, intr_in->frame_num);
-			urb_state = usbh_get_urb_state(host, intr_in);
-			if ((urb_state == USBH_URB_BUSY) || (urb_state == USBH_URB_IDLE)) {
-				if (elapsed + 1 >= intr_in->ep_interval) {
-					intr_in->retry_cnt++;
-					if (intr_in->retry_cnt <= USB_INTR_RETRY_MAX_CNT) {
-						intr_in->frame_num = usbh_get_current_frame_number(host);
-						intr_in->xfer_state = USBH_EP_XFER_START;
-						usbh_notify(host, intr_in->pipe_num, &usbh_cdc_acm_driver);
-					} else {
-						/* Retry count exceeded, set error */
-						intr_in->retry_cnt = 0;
-						intr_in->xfer_state = USBH_EP_XFER_ERROR;
-						usbh_notify(host, intr_in->pipe_num, &usbh_cdc_acm_driver);
-					}
-				}
-				/* If interval not elapsed, keep BUSY state */
-			}
-			/* If URB is DONE, wait for process_intr_rx to handle complete */
-		}
+#ifdef CONFIG_USBH_CDC_ACM_NOTIFY
+	if (usbh_cdc_acm_intr_due(host, &cdc->intr_in) != 0U) {
+		usbh_notify(host, cdc->intr_in.pipe_num, &usbh_cdc_acm_driver);
+	}
+#endif
+	if (usbh_cdc_acm_bulk_due(host, &cdc->bulk_in) != 0U) {
+		usbh_notify(host, cdc->bulk_in.pipe_num, &usbh_cdc_acm_driver);
+	}
+	if (usbh_cdc_acm_bulk_due(host, &cdc->bulk_out) != 0U) {
+		usbh_notify(host, cdc->bulk_out.pipe_num, &usbh_cdc_acm_driver);
 	}
 }
 
+#ifdef CONFIG_USBH_CDC_ACM_NOTIFY
 /**
   * @brief  Transfer completion callback: handle the end of an interrupt IN transfer,
   * @note   This function is called within an interrupt service routine (ISR) context;
@@ -950,7 +1049,7 @@ static void usbh_cdc_acm_completed(usb_host_t *host, u8 pipe_num)
 
 	/* The core routes a completion to the pipe's owning driver only, so the
 	 * pipe check is a defensive guard against a stale/closed INTR pipe. */
-	if (intr_in->pipe_num && (pipe_num == intr_in->pipe_num)) {
+	if ((intr_in->pipe_num != 0U) && (pipe_num == intr_in->pipe_num)) {
 		if (intr_in->xfer_state == USBH_EP_XFER_BUSY) {
 			usbh_notify(host, intr_in->pipe_num, &usbh_cdc_acm_driver);
 		}
@@ -1025,13 +1124,10 @@ static void usbh_cdc_acm_process(usb_host_t *host, usbh_drv_msg_t *msg)
 	case USBH_CDC_ACM_STATE_GET_LINE_CODING:
 		req_status = usbh_cdc_acm_process_get_line_coding(host, cdc->line_coding);
 		if (req_status == HAL_OK) {
-			usb_cdc_acm_line_coding_t *lc = cdc->line_coding;
-			usb_cdc_acm_line_coding_t *ulc = cdc->user_line_coding;
-			/* Compare before EP0 is released: a new SET_LINE_CODING rewrites ulc */
-			u8 applied = ((lc->b.bCharFormat == ulc->b.bCharFormat) && (lc->b.bDataBits == ulc->b.bDataBits) &&
-						  (lc->b.bParityType == ulc->b.bParityType) && (lc->b.dwDteRate == ulc->b.dwDteRate)) ? 1U : 0U;
+			/* Report what the device now runs with, which it may have adjusted from the request (Ref PSTN 1.2
+			   6.3.11), so the user always learns the line coding actually in effect */
 			usbh_cdc_acm_release(&cdc->state);
-			if ((applied != 0U) && (cdc->cb != NULL) && (cdc->cb->line_coding_changed != NULL)) {
+			if ((cdc->cb != NULL) && (cdc->cb->line_coding_changed != NULL)) {
 				cdc->cb->line_coding_changed(cdc->line_coding);
 			}
 		} else if (req_status != HAL_BUSY) {
@@ -1239,8 +1335,9 @@ static void usbh_cdc_acm_report_notify(u8 *buf, u32 len, u8 status)
 
 	if ((len >= USB_CDC_NOTIFY_HDR_LEN) && (buf[0] == (USB_D2H | USB_REQ_TYPE_CLASS | USB_REQ_RECIPIENT_INTERFACE)) &&
 		(buf[1] == USB_CDC_ACM_NOTIFY_SERIAL_STATE)) {
+		/* SERIAL_STATE always carries the 2-byte UART state bitmap, any other wLength is malformed */
 		data_len = (u32)buf[6] | ((u32)buf[7] << 8U);
-		if (len >= (USB_CDC_NOTIFY_HDR_LEN + data_len)) {
+		if ((data_len == USB_CDC_ACM_INTR_IN_DATA_SIZE) && (len >= (USB_CDC_NOTIFY_HDR_LEN + data_len))) {
 			cdc->cb->notify(&buf[USB_CDC_NOTIFY_HDR_LEN], data_len, status);
 			return;
 		}
@@ -1261,7 +1358,22 @@ static void usbh_cdc_acm_process_intr_rx(usb_host_t *host)
 	/* Latched before the pipe can turn idle, see usbh_cdc_acm_process_rx() */
 	u8 *buf = intr_in->xfer_buf;
 	u32 len;
-	int status = usbh_transfer_process(host, intr_in);
+	int status;
+
+	/* An unanswered poll is re-armed here rather than in the SOF ISR, so the pipe has a single writer. A device
+	   with nothing to report NAKs every poll, after USB_INTR_RETRY_MAX_CNT of them the user gets notify(NULL, 0)
+	   and decides whether to re-arm. */
+	if (usbh_cdc_acm_intr_due(host, intr_in) != 0U) {
+		intr_in->retry_cnt++;
+		if (intr_in->retry_cnt <= USB_INTR_RETRY_MAX_CNT) {
+			intr_in->xfer_state = USBH_EP_XFER_START;
+		} else {
+			intr_in->retry_cnt = 0U;
+			intr_in->xfer_state = USBH_EP_XFER_ERROR;
+		}
+	}
+
+	status = usbh_transfer_process(host, intr_in);
 
 	if ((status == HAL_OK) && (intr_in->xfer_state == USBH_EP_XFER_IDLE)) {
 		len = usbh_get_last_transfer_size(host, intr_in);
@@ -1307,10 +1419,23 @@ int usbh_cdc_acm_init(const usbh_cdc_acm_cb_t *cb, const usbh_cdc_acm_config_t *
 		return HAL_ERR_PARA;
 	}
 
+	/* line_coding is only allocated by a successful init and freed by deinit: a second init would leak it and
+	   register the driver twice */
+	if (cdc->line_coding != NULL) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Already init\n");
+		return HAL_ERR_PARA;
+	}
+
 	/* The line coding is what the device is actually programmed with, so an illegal
 	   combination has to be rejected here rather than being sent on the wire
 	   (Ref PSTN 1.2 Table 17). */
-	if (usbh_cdc_acm_check_line_coding(cfg) != HAL_OK) {
+	if (usbh_cdc_acm_check_line_coding((cfg->data_bits != 0U) ? cfg->data_bits : USBH_CDC_ACM_DEFAULT_DATA_BITS,
+									   cfg->char_format, cfg->parity_type) != HAL_OK) {
+		return HAL_ERR_PARA;
+	}
+
+	if ((cfg->ctrl_line_state & ~USBH_CDC_ACM_CTRL_LINE_STATE_MASK) != 0U) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid ctrl line state %02x\n", cfg->ctrl_line_state);
 		return HAL_ERR_PARA;
 	}
 
@@ -1337,14 +1462,14 @@ int usbh_cdc_acm_init(const usbh_cdc_acm_cb_t *cb, const usbh_cdc_acm_config_t *
 	cdc->line_coding = (usb_cdc_acm_line_coding_t *)usb_os_malloc(USB_MAX_EP0_SIZE);
 	if (cdc->line_coding == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Malloc line code fail\n");
-		return HAL_ERR_MEM;
+		ret = HAL_ERR_MEM;
+		goto init_fail;
 	}
 	cdc->user_line_coding = (usb_cdc_acm_line_coding_t *)usb_os_malloc(sizeof(usb_cdc_acm_line_coding_t));
 	if (cdc->user_line_coding == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Malloc user line code fail\n");
-		usb_os_mfree((void *)cdc->line_coding);
-		cdc->line_coding = NULL;
-		return HAL_ERR_MEM;
+		ret = HAL_ERR_MEM;
+		goto init_fail;
 	}
 
 	/* init user_line_coding from the configuration; char_format/parity_type are used as
@@ -1354,16 +1479,6 @@ int usbh_cdc_acm_init(const usbh_cdc_acm_cb_t *cb, const usbh_cdc_acm_config_t *
 	cdc->user_line_coding->b.bParityType = cfg->parity_type;
 	cdc->user_line_coding->b.bDataBits = (cfg->data_bits != 0U) ? cfg->data_bits : USBH_CDC_ACM_DEFAULT_DATA_BITS;
 
-	ret = usbh_register_class(&usbh_cdc_acm_driver);
-	if (ret != HAL_OK) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Register class fail %d\n", ret);
-		usb_os_mfree((void *)cdc->line_coding);
-		cdc->line_coding = NULL;
-		usb_os_mfree((void *)cdc->user_line_coding);
-		cdc->user_line_coding = NULL;
-		return ret;
-	}
-
 	cdc->ctrl_line_state = cfg->ctrl_line_state;
 	cdc->cb = cb;
 
@@ -1371,6 +1486,26 @@ int usbh_cdc_acm_init(const usbh_cdc_acm_cb_t *cb, const usbh_cdc_acm_config_t *
 	cdc->param_item = NULL;
 #endif
 
+	/* Last: once registered, the host task may attach and read everything set above */
+	ret = usbh_register_class(&usbh_cdc_acm_driver);
+	if (ret != HAL_OK) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Register class fail %d\n", ret);
+		goto init_fail;
+	}
+
+	return HAL_OK;
+
+init_fail:
+	/* Undo in reverse order, user resources last as they were taken first */
+	usb_os_mfree((void *)cdc->user_line_coding);
+	cdc->user_line_coding = NULL;
+	usb_os_mfree((void *)cdc->line_coding);
+	cdc->line_coding = NULL;
+	cdc->cb = NULL;
+	cdc->cfg = NULL;
+	if (cb->deinit != NULL) {
+		cb->deinit();
+	}
 	return ret;
 }
 
@@ -1399,17 +1534,8 @@ void usbh_cdc_acm_deinit(void)
 		cdc->bulk_out_busy = 0U;
 		cdc->bulk_in_busy = 0U;
 		cdc->intr_in_busy = 0U;
-		/* Guard with pipe_num: an unopened pipe has pipe_num == 0, and
-		   usbh_close_pipe() would otherwise halt/free the control pipe (pipe 0). */
-		if (cdc->intr_in.pipe_num) {
-			usbh_close_pipe(host, &cdc->intr_in);
-		}
-		if (cdc->bulk_in.pipe_num) {
-			usbh_close_pipe(host, &cdc->bulk_in);
-		}
-		if (cdc->bulk_out.pipe_num) {
-			usbh_close_pipe(host, &cdc->bulk_out);
-		}
+		cdc->line_coding_valid = 0U;
+		usbh_cdc_acm_close_pipes(host);
 	}
 
 	usb_os_mfree((void *)cdc->line_coding);
@@ -1434,7 +1560,7 @@ int usbh_cdc_acm_set_control_line_state(u16 bitmap)
 	usb_host_t *host = cdc->host;
 	int ret = HAL_ERR_UNKNOWN;
 
-	if (host == NULL) {
+	if ((host == NULL) || ((bitmap & ~USBH_CDC_ACM_CTRL_LINE_STATE_MASK) != 0U)) {
 		return HAL_ERR_PARA;
 	}
 
@@ -1488,6 +1614,11 @@ int usbh_cdc_acm_set_line_coding(usb_cdc_acm_line_coding_t *line_coding)
 		return HAL_ERR_PARA;
 	}
 
+	/* Rejected here as in init, rather than sent and STALLed after this call already returned */
+	if (usbh_cdc_acm_check_line_coding(line_coding->b.bDataBits, line_coding->b.bCharFormat, line_coding->b.bParityType) != HAL_OK) {
+		return HAL_ERR_PARA;
+	}
+
 	if (host->connect_state == USBH_STATE_SETUP) {
 		ret = usbh_cdc_acm_claim_ctrl(USBH_CDC_ACM_STATE_SET_LINE_CODING, 0U, line_coding);
 		if (ret == HAL_OK) {
@@ -1517,9 +1648,10 @@ int usbh_cdc_acm_get_line_coding(usb_cdc_acm_line_coding_t *line_coding)
 		usb_cdc_acm_line_coding_t *lc = cdc->line_coding;
 		usb_cdc_acm_line_coding_t *ulc = line_coding;
 		/* line_coding is the DMA target of SET/GET_LINE_CODING: a copy taken while that
-		   pair runs could mix old and new bytes */
+		   pair runs could mix old and new bytes. Until setup() has filled it, during ATTACH, it holds nothing. */
 		usb_os_enter_critical();
-		if ((cdc->state == USBH_CDC_ACM_STATE_SET_LINE_CODING) || (cdc->state == USBH_CDC_ACM_STATE_GET_LINE_CODING)) {
+		if ((cdc->line_coding_valid == 0U) || (cdc->state == USBH_CDC_ACM_STATE_SET_LINE_CODING) ||
+			(cdc->state == USBH_CDC_ACM_STATE_GET_LINE_CODING)) {
 			ret = HAL_BUSY;
 		} else {
 			ulc->b.dwDteRate = lc->b.dwDteRate;

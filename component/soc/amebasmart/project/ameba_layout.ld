@@ -77,7 +77,7 @@ MEMORY
 
 	CA32_DYNAMIC_APP_LOAD_DRAM (rwx) :      ORIGIN = 0x6FFFFFFF, LENGTH = 0x6FFFFFFF - 0x6FFFFFFF	/* CA32 CA32 DYNAMIC APP LOAD DRAM: 1MB */
 
-	KM0_BD_DRAM (rwx) :                     ORIGIN = 0x6FFFFFFF, LENGTH = 0x6FFFFFFF - 0x6FFFFFFF	/* KM0 BD DRAM */
+	KM0_BD_DRAM (rwx) :                     ORIGIN = 0x60000020, LENGTH = 0	/* KM0 BD DRAM: header-only stub, must lie in PSRAM for the boot check */
 }
 
 __rom_stdlib_text_start__ = ORIGIN(KM4_IROM_STDLIB_NS);
@@ -101,6 +101,17 @@ __ca32_fip_dram_start__ = ORIGIN(CA32_BL3_DRAM_NS) + SECURE_ADDR_OFFSET; /* CA32
 ASSERT(__ca32_fip_dram_start__ + KBYTES(2048) < PSRAM_END + SECURE_ADDR_OFFSET, "Error: reserved 2MB for FIP Img, please check psram size.")
 #endif
 __non_secure_psram_end__ = PSRAM_END;
+
+/* Memory the boot loader accepts as a sub-image destination, and the RAM of the boot loader itself (see BOOT_LoadSubImage) */
+__hp_sram_end__ = ORIGIN(KM4_AUDIO_BUFFER) + LENGTH(KM4_AUDIO_BUFFER);
+__hp_ext_sram_end__ = ORIGIN(EXTENTION_SRAM) + LENGTH(EXTENTION_SRAM);
+__lp_sram_end__ = ORIGIN(KM0_IPC_RAM) + LENGTH(KM0_IPC_RAM);
+__km4_boot_prot_start__ = ORIGIN(KM4_ROMBSS_RAM_S) - SECURE_ADDR_OFFSET;
+__km4_boot_prot_end__ = ORIGIN(KM4_BOOTLOADER_RAM_S) + LENGTH(KM4_BOOTLOADER_RAM_S) - SECURE_ADDR_OFFSET;
+__km4_rombss_ns_start__ = ORIGIN(KM4_MSP_RAM_NS);
+__km4_rombss_ns_end__ = ORIGIN(KM4_STDLIB_HEAP_RAM_NS) + LENGTH(KM4_STDLIB_HEAP_RAM_NS);
+__km0_rombss_start__ = ORIGIN(KM0_ROMBSS_RAM);
+__km0_rombss_end__ = ORIGIN(KM0_MSP_RAM) + LENGTH(KM0_MSP_RAM);
 
 __km4_msp_ram_ns_limit__ = ORIGIN(KM4_MSP_RAM_NS);
 __km0_msp_ram_limit__ = ORIGIN(KM0_MSP_RAM);

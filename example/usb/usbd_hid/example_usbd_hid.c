@@ -322,11 +322,9 @@ static void hid_cb_transmitted(u8 status)
   */
 static void hid_cb_received(u8 *buf, u32 len)
 {
+	/* ISR context: no logging per report, it would stretch the interrupt for every OUT packet */
 	UNUSED(buf);
 	UNUSED(len);
-	if (len > 0) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "RX %d byte(s): 0x%02x\n", len, buf[0]);
-	}
 }
 #endif
 
@@ -671,7 +669,7 @@ static void example_usbd_hid_thread(void *param)
 {
 	int ret;
 #if HID_HOTPLUG
-	rtos_task_t hotplug_task;
+	rtos_task_t hotplug_task = NULL;
 #endif
 #if HID_CONSTANT_DATA
 	rtos_task_t xfer_task;
@@ -751,18 +749,29 @@ static void example_usbd_hid_thread(void *param)
 	rtos_task_delete(NULL);
 	return;
 
+#if HID_HOTPLUG || HID_CONSTANT_DATA
 #if HID_CONSTANT_DATA
 exit_create_hotplug_task_fail:
-#if HID_HOTPLUG
-	rtos_task_delete(hotplug_task);
 #endif
-#endif
-
 #if HID_HOTPLUG
 exit_usbd_hid_init_fail:
 #endif
+	/* Same exclusion as the hotplug teardown: once the mutex is held no shell TX is inside
+	   the class API and the hotplug thread is not in the middle of a teardown, so closing the
+	   gate, stopping that thread and deiniting cannot race either of them */
+	rtos_mutex_take(hid_state_mutex, RTOS_MAX_TIMEOUT);
 	hid_stack_ready = 0U;
+#if HID_CONSTANT_DATA && HID_HOTPLUG
+	if (hotplug_task != NULL) {
+		rtos_task_delete(hotplug_task);
+	}
+#endif
 	usbd_hid_deinit();
+
+	usbd_deinit();
+	rtos_mutex_give(hid_state_mutex);
+	goto exit_create_obj_fail;
+#endif
 
 exit_usbd_init_fail:
 	usbd_deinit();

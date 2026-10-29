@@ -18,8 +18,8 @@
 #define USBH_DFU_DEMO_FW_SIZE                    2048U
 
 /* Budget for a device to attach, and for one download/upload run to report back.
-   Bounded rather than RTOS_SEMA_MAX_COUNT so a device that never shows up, or one
-   unplugged mid-transfer whose done callback therefore never fires, still lets the
+   Bounded rather than RTOS_SEMA_MAX_COUNT so a device that never shows up, or one that
+   hangs mid-transfer (an unplug is reported through the done callback), still lets the
    example tear the stack down and exit instead of parking forever. */
 #define USBH_DFU_ATTACH_TIMEOUT_MS               10000U
 #define USBH_DFU_XFER_TIMEOUT_MS                 30000U
@@ -85,7 +85,6 @@ static u32 dfu_demo_fw_size;
 static u32 dfu_demo_up_blk_size;
 
 static rtos_sema_t dfu_attach_sema;
-static rtos_sema_t dfu_detach_sema;
 static rtos_sema_t dfu_download_sema;
 static rtos_sema_t dfu_upload_sema;
 /* Written by the class callbacks, read by the test thread, possibly on another core */
@@ -123,8 +122,8 @@ static void dfu_cb_attached(void)
 
 static void dfu_cb_detached(void)
 {
+	/* A transfer in progress is failed by the class through its done callback, which wakes the test thread */
 	RTK_LOGS(TAG, RTK_LOG_INFO, "DETACH\n");
-	rtos_sema_give(dfu_detach_sema);
 }
 
 static int dfu_cb_get_block(u16 block_num, u8 *buf, u32 max_len)
@@ -219,12 +218,6 @@ static void example_usbh_dfu_thread(void *param)
 		goto exit;
 	}
 
-	ret = rtos_sema_create(&dfu_detach_sema,   0U, 1U);
-	if (ret != RTK_SUCCESS) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create sema fail\n");
-		goto exit;
-	}
-
 	ret = rtos_sema_create(&dfu_download_sema, 0U, 1U);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create sema fail\n");
@@ -281,7 +274,7 @@ static void example_usbh_dfu_thread(void *param)
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Downloading %u bytes...\n", dfu_demo_fw_size);
 	ret = usbh_dfu_download();
 	if (ret == HAL_OK) {
-		/* Bounded: a device unplugged mid-download never calls download_done. */
+		/* Bounded: download_done also reports an unplug, the bound only covers a device that hangs. */
 		if (rtos_sema_take(dfu_download_sema, USBH_DFU_XFER_TIMEOUT_MS) == RTK_SUCCESS) {
 			ret = dfu_download_result;
 		} else {
@@ -332,7 +325,6 @@ deinit:
 
 exit:
 	rtos_sema_delete(dfu_attach_sema);
-	rtos_sema_delete(dfu_detach_sema);
 	rtos_sema_delete(dfu_download_sema);
 	rtos_sema_delete(dfu_upload_sema);
 	/* One verdict line for every run that printed "demo start", whichever step ended it. */

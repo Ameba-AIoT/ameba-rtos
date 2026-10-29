@@ -42,6 +42,17 @@ void app_mbedtls_image3_init(void)
 
 extern const SAU_CFG_TypeDef sau_config[];
 
+#ifdef CONFIG_KM_SW_KEY_GRANT_NS
+/* grant once before NS runs so no world ever sees the grant change while a key is in use */
+static void IMG3_KM_GrantNS(void)
+{
+	crypto_km_share_secure_key(KM_KEY_S_SW1, 1);
+	crypto_km_allow_nsec_write_sw_key(KM_KEY_S_SW1, 1);
+	crypto_km_share_secure_key(KM_KEY_S_SW2, 1);
+	crypto_km_allow_nsec_write_sw_key(KM_KEY_S_SW2, 1);
+}
+#endif
+
 __NO_RETURN void IMG3_NsStart(u32 Addr)
 {
 	nsfunc *fp = (nsfunc *)cmse_nsfptr_create(Addr);
@@ -59,6 +70,10 @@ void IMG3_WakeFromPG(void)
 	if (FIH_NOT_EQ(fih_rc, FIH_SUCCESS)) {
 		while (1);
 	}
+
+#ifdef CONFIG_KM_SW_KEY_GRANT_NS
+	IMG3_KM_GrantNS();
+#endif
 
 	PRAM_START_FUNCTION Image2EntryFun = (PRAM_START_FUNCTION)__image2_entry_func__;
 	IMG3_NsStart((u32)Image2EntryFun->RamWakeupFun);
@@ -81,6 +96,10 @@ void BOOT_IMG3(void)
 
 #ifdef CONFIG_TRUSTZONE_MBEDTLS
 	app_mbedtls_image3_init();
+#endif
+
+#ifdef CONFIG_KM_SW_KEY_GRANT_NS
+	IMG3_KM_GrantNS();
 #endif
 
 	/* Before entering NS world, clean and invalidate the D-cache.

@@ -148,6 +148,10 @@ static const usbh_msc_cb_t msc_usr_cb = {
 	.setup = msc_cb_setup,
 };
 
+static const usbh_msc_config_t msc_class_cfg = {
+	/* buf_size left 0 takes the class default. */
+};
+
 static const usbh_user_cb_t usbh_usr_cb = {
 	.process = msc_cb_process
 };
@@ -448,7 +452,7 @@ static int usbh_msc_file_test(void)
 	u32 start;
 	u32 elapse;
 	u32 perf = 0;
-	u32 test_sizes[] = {512, 1024, 2048, 4096, 8192};
+	u32 test_sizes[] = {512, 1024, 2048, 4096};
 	u32 test_size;
 	u32 i;
 	u8 data;
@@ -533,7 +537,8 @@ static int usbh_msc_file_test(void)
 			break;
 		}
 #endif
-		sprintf(&path[3], "TEST%u.DAT", (unsigned int)filenum);
+		/* Bounded by the room left after the "N:/" drive prefix. DiagSnPrintf has no %u. */
+		DiagSnPrintf(&path[3], sizeof(path) - 3U, "TEST%d.DAT", (int)filenum);
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Open file: %s\n", path);
 
 		res = msc_fs_open(&f, path, FA_OPEN_ALWAYS | FA_READ | FA_WRITE);
@@ -709,7 +714,7 @@ static void example_usbh_msc_hotplug_thread(void *param)
 				break;
 			}
 
-			ret = usbh_msc_init(&msc_usr_cb);
+			ret = usbh_msc_init(&msc_usr_cb, &msc_class_cfg);
 			if (ret != HAL_OK) {
 				usbh_deinit();
 				rtos_mutex_give(msc_state_mutex);
@@ -794,7 +799,7 @@ static void example_usbh_msc_thread(void *param)
 		goto exit_free;
 	}
 
-	ret = usbh_msc_init(&msc_usr_cb);
+	ret = usbh_msc_init(&msc_usr_cb, &msc_class_cfg);
 	if (ret != HAL_OK) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "MSC init fail\n");
 		usbh_deinit();

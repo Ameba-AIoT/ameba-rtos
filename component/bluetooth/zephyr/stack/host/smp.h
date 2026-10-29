@@ -187,4 +187,6 @@ void bt_set_min_enc_key_size_required(uint8_t size);
 void bt_set_sign_key_flag(bool enable);
 
 void bt_set_sc_support(bool enable);
+
+int bt_smp_le_oob_set_remote_sc_data(const struct bt_le_oob_sc_data *oobd_remote);
 #endif

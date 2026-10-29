@@ -140,3 +140,6 @@ ChangeLog:
                   (5) Show detailed failure information in the port progress tooltip
                   (6) Include the device UUID in download logs
                   (7) Optimize download logs for debug
+20261027  v3.0.2  (1) Support for boot protection during firmware flashing
+                  (2) Fix entering download mode fail issue when the download baudrate differs from handshake baudrate
+                  (3) Remove the restriction of NAND flash ECC capability check

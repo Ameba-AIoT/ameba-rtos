@@ -151,6 +151,10 @@ static const usbh_msc_cb_t usbh_msc_usr_cb = {
 	.setup = usbh_msc_cb_setup,
 };
 
+static const usbh_msc_config_t usbh_msc_class_cfg = {
+	/* buf_size left 0 takes the class default. */
+};
+
 static const usbh_user_cb_t usbh_usr_cb = {
 	.process = usbh_msc_cb_process
 };
@@ -702,7 +706,7 @@ static void usbh_msc_cmd_test(u16 argc, char **argv)
 			error_no = ret;
 			goto end;
 		}
-		ret = usbh_msc_init(&usbh_msc_usr_cb);
+		ret = usbh_msc_init(&usbh_msc_usr_cb, &usbh_msc_class_cfg);
 		if (ret != HAL_OK) {
 			usbh_deinit();
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to init MSC: %d\n", ret);

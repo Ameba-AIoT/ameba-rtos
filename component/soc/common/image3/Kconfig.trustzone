@@ -35,6 +35,15 @@ if TRUSTZONE
             Compile secure_ecdsa_client_service.c into image3.
             Required only by the rdp_mutual_auth_ecdsa example (ECDSA P-256 mTLS client).
             Leave disabled for all other examples to keep image3 smaller.
+
+    config KM_SW_KEY_GRANT_NS
+        bool "Grant both KM software keys to the non-secure world at boot"
+        depends on RLE1509
+        default y
+        help
+            Image3 grants NS write and use of KM_KEY_S_SW1/KM_KEY_S_SW2 once before NS starts.
+            The two slots are then shared by both worlds: every user must hold
+            IPC_SEM_CRYPTO_AES_SW_KEY from set key until the engine has consumed it.
 endif
 
 endmenu

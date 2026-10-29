@@ -225,7 +225,7 @@ static void example_usbh_hid_hotplug_thread(void *param)
 		}
 
 		hotplug_count++;
-		RTK_LOGS(TAG, RTK_LOG_INFO, "\n========== Hotplug #%d ==========\n", hotplug_count);
+		RTK_LOGS(TAG, RTK_LOG_INFO, "\n========== Hotplug #%u ==========\n", hotplug_count);
 
 		rtos_time_delay_ms(200);
 

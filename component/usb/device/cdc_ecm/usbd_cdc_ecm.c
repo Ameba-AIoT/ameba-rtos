@@ -99,7 +99,7 @@ static inline u8 usbd_ecm_char_to_hex(u8 value);
 static void usbd_ecm_mac_to_string(const u8 *mac, char *mac_str);
 static void usbd_ecm_set_mac(const u8 *mac);
 static int usbd_ecm_bulk_send(u8 *buf, u32 len);
-static int usbd_ecm_tx_enqueue(u8 *buf, u32 len, u8 block);
+static int usbd_ecm_tx_enqueue(const u8 *buf, u32 len, u8 block);
 #if USBD_CDC_ECM_STATE_TRACE_ENABLE
 static void usbd_ecm_trace_task_init(void);
 static void usbd_ecm_trace_task_deinit(void);
@@ -136,7 +136,7 @@ static const u8 usbd_cdc_ecm_device_qualifier_desc[USB_LEN_DEV_QUALIFIER_DESC] =
 	USB_LEN_DEV_QUALIFIER_DESC,                     /* bLength */
 	USB_DESC_TYPE_DEVICE_QUALIFIER,                 /* bDescriptorType */
 	0x00, 0x02,                                     /* bcdUSB: 2.0 */
-	0x00,                                           /* bDeviceClass */
+	USB_CDC_CLASS_CODE,                             /* bDeviceClass: CDC, same as the device descriptor (USB 2.0 9.6.2) */
 	0x00,                                           /* bDeviceSubClass */
 	0x00,                                           /* bDeviceProtocol */
 	USB_MAX_EP0_SIZE,                               /* bMaxPacketSize0 */
@@ -612,7 +612,7 @@ static int usbd_ecm_bulk_receive(u8 *buf, u32 length)
 
 	if (usb_rx_interval_time >= 2000) {
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Heap %d RX %dB in %d ms, %d Kbps\n",
-				 rtos_mem_get_free_heap_size(),
+				 usb_os_get_free_heap_size(),
 				 (u32)usb_rx_total_len, (u32)usb_rx_interval_time, (u32)((usb_rx_total_len * 8 * 1000) / (usb_rx_interval_time * 1024)));
 		usb_rx_start_time = usb_rx_end_time;
 		usb_rx_total_len = 0;
@@ -794,7 +794,7 @@ static int usbd_ecm_bulk_send(u8 *buf, u32 len)
   * @param  block: See usbd_cdc_ecm_transmit()
   * @retval HAL_OK on success, HAL_BUSY if the frame is dropped.
   */
-static int usbd_ecm_tx_enqueue(u8 *buf, u32 len, u8 block)
+static int usbd_ecm_tx_enqueue(const u8 *buf, u32 len, u8 block)
 {
 	usbd_cdc_ecm_dev_t *ecm = &usbd_cdc_ecm_dev;
 	u32 tx_timeout_ms;
@@ -862,7 +862,7 @@ static int usbd_ecm_tx_enqueue(u8 *buf, u32 len, u8 block)
 
 	if (usb_tx_interval_time >= 3000) {
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Heap %d TX %dB in %d ms, %d Kbps\n",
-				 rtos_mem_get_free_heap_size(),
+				 usb_os_get_free_heap_size(),
 				 (u32)usb_tx_total_len, (u32)usb_tx_interval_time,
 				 (u32)((usb_tx_total_len * 8 * 1000) / (usb_tx_interval_time * 1024)));
 		usb_tx_start_time = usb_tx_end_time;
@@ -987,6 +987,9 @@ static int usbd_ecm_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			   request leaves the interface exactly as it was. */
 			if (dev->dev_state != USBD_STATE_CONFIGURED) {
 				ret = HAL_ERR_PARA;
+			} else if ((USB_HIGH_BYTE(req->wValue) != 0U) || (req->wLength != 0U)) {
+				/* Ref USB 2.0 Table 9-3: the whole wValue is the alternate setting and wLength is zero */
+				ret = HAL_ERR_PARA;
 			} else {
 				u8 alt = USB_LOW_BYTE(req->wValue);
 
@@ -1062,6 +1065,9 @@ static int usbd_ecm_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			 * interface's setting for it would be wrong. */
 			if (dev->dev_state != USBD_STATE_CONFIGURED) {
 				ret = HAL_ERR_PARA;
+			} else if ((req->wValue != 0U) || (req->wLength != 1U)) {
+				/* Ref USB 2.0 Table 9-3: wValue is zero and wLength is one */
+				ret = HAL_ERR_PARA;
 			} else if (req->wIndex == USBD_CDC_ECM_DATA_INTERFACE_NUM) {
 				ep0_in->xfer_buf[0] = ecm->data_alt_setting;
 				ep0_in->xfer_len = 1U;
@@ -1083,7 +1089,7 @@ static int usbd_ecm_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			   into an EP0 STALL on a non-HAL_OK return. */
 			if (dev->dev_state != USBD_STATE_CONFIGURED) {
 				ret = HAL_ERR_PARA;
-			} else if (req->wLength != 2U) {
+			} else if ((req->wValue != 0U) || (req->wLength != 2U)) {
 				ret = HAL_ERR_PARA;
 			} else if ((req->wIndex == USBD_CDC_ECM_DATA_INTERFACE_NUM) || (req->wIndex == USBD_CDC_ECM_COMM_INTERFACE_NUM)) {
 				ep0_in->xfer_buf[0] = 0U;
@@ -1483,10 +1489,10 @@ static void usbd_cdc_ecm_patch_desc(u8 *desc, u16 len, usb_speed_type_t speed)
 		}
 		dtype = desc[i + 1];
 
-		if ((dtype == USB_DESC_TYPE_ENDPOINT) && (dlen >= 4U)) {
+		if ((dtype == USB_DESC_TYPE_ENDPOINT) && (dlen >= USB_LEN_EP_DESC)) {
 			u8 addr  = desc[i + 2];
 			u8 dir   = addr & USB_REQ_DIR_MASK;
-			u8 type  = desc[i + 3] & 0x03;
+			u8 type  = desc[i + 3] & USB_EP_XFER_TYPE_MASK;
 
 			if ((dir == USB_D2H) && (type == USB_CH_EP_TYPE_BULK)) {
 				desc[i + 2] = cfg->bulk_in_addr;
@@ -1494,9 +1500,7 @@ static void usbd_cdc_ecm_patch_desc(u8 *desc, u16 len, usb_speed_type_t speed)
 				desc[i + 2] = cfg->bulk_out_addr;
 			} else if ((dir == USB_D2H) && (type == USB_CH_EP_TYPE_INTR)) {
 				desc[i + 2] = cfg->intr_in_addr;
-				if (dlen >= USB_LEN_EP_DESC) {
-					desc[i + 6] = interval;         /* bInterval */
-				}
+				desc[i + 6] = interval;             /* bInterval */
 			}
 		} else if ((dtype == USB_DESC_TYPE_INTERFACE) && (dlen >= USB_LEN_IF_DESC) &&
 				   (desc[i + 5] == USB_CDC_COMM_INTERFACE_CLASS_CODE)) {
@@ -1533,6 +1537,12 @@ static u16 usbd_ecm_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 	const u8 *desc = NULL;
 	u16 len = 0;
 	u8 is_cfg = 0;
+
+	/* Ref USB 2.0 9.4.3: the index only selects among string and configuration descriptors;
+	   with a single configuration, a non-string index other than 0 names no descriptor. */
+	if ((desc_type != USB_DESC_TYPE_STRING) && (USB_LOW_BYTE(req->wValue) != 0U)) {
+		return 0;
+	}
 
 	switch (desc_type) {
 	case USB_DESC_TYPE_DEVICE:
@@ -1704,7 +1714,7 @@ static void usbd_ecm_trace_thread(void *param)
 					 "cnt tx%d in%d out%d intr%d/rxd%d rxl%d drp%d/Heap %d\n",
 					 ecm->dbg_tx_cnt, ecm->dbg_bulk_in_done_cnt, ecm->dbg_bulk_out_done_cnt,
 					 ecm->dbg_intr_in_done_cnt, ecm->dbg_rx_deliver_cnt, ecm->dbg_rx_loop_cnt,
-					 ecm->dbg_tx_drop_cnt, rtos_mem_get_free_heap_size());
+					 ecm->dbg_tx_drop_cnt, usb_os_get_free_heap_size());
 		}
 
 		usb_os_sleep_ms(USBD_CDC_ECM_TRACE_INTERVAL_MS);
@@ -2002,20 +2012,32 @@ void usbd_cdc_ecm_deinit(void)
 	usbd_ep_t *ep_bulk_out = &ecm->ep_bulk_out;
 	usbd_ep_t *ep_intr_in = &ecm->ep_intr_in;
 	u32 wait_cnt = 0U;
+	int ret;
 	u8 i;
 
+	/* Leave the core before anything is torn down. Composite: refused until
+	   usbd_composite_deinit() has blocked the ISR and cleared the configuration of every
+	   function. Standalone: refused in interrupt context. Either way nothing is released when
+	   refused, and once accepted no class callback runs any more and every endpoint of this
+	   class is deinitialized: ref USB 2.0 9.4.7, the transfers still pending are aborted. */
 #ifdef CONFIG_USBD_COMPOSITE
-	/* Leave the composite framework before anything is torn down: it is refused while the
-	   composite device is still registered on the core, and the class must then stay intact */
 	if (ecm->from_composite != 0U) {
-		if (usbd_composite_unregister_driver(&usbd_cdc_ecm_driver) != HAL_OK) {
-			return;
-		}
-	}
+		ret = usbd_composite_unregister_driver(&usbd_cdc_ecm_driver);
+	} else
 #endif
+	{
+		ret = usbd_unregister_class();
+	}
+	if (ret != HAL_OK) {
+		return;
+	}
 
-	/* Close the TX gate first: from here on usbd_cdc_ecm_transmit() rejects new callers,
-	 * and the ones already inside are waited for below before their resources go away. */
+	/* No completion arrives any more to clear them */
+	ep_bulk_in->xfer_state = 0U;
+	ep_intr_in->xfer_state = 0U;
+
+	/* Close the TX gate: from here on usbd_cdc_ecm_transmit() rejects new callers, and the
+	 * ones already inside are waited for below before their resources go away. */
 	usb_os_enter_critical();
 	ecm->is_closing = 1U;
 	usb_os_exit_critical();
@@ -2029,25 +2051,6 @@ void usbd_cdc_ecm_deinit(void)
 	/* Stop the trace thread first so it does not read state being torn down. */
 	usbd_ecm_trace_task_deinit();
 #endif
-
-	/* Wait for ongoing BULK/INTR DMA transfers to complete.
-	 * xfer_state is set to 1 before usbd_ep_transmit() and cleared to 0
-	 * by the XFRC ISR, so it is the correct in-flight indicator.
-	 * (is_busy is a function-call-level flag and clears too early.)
-	 * Bounded to ~100 ms like the other classes and sleeping, not spinning: a transfer
-	 * the host stopped polling never completes, waiting longer does not help. */
-	while ((ep_bulk_in->xfer_state || ep_intr_in->xfer_state) && (wait_cnt < 100U)) {
-		usb_os_sleep_ms(1U);
-		wait_cnt++;
-	}
-
-	/* Unregister class driver */
-#ifdef CONFIG_USBD_COMPOSITE
-	if (ecm->from_composite == 0U)
-#endif
-	{
-		usbd_unregister_class();
-	}
 
 	/* Wait for every task still inside usbd_cdc_ecm_transmit() to leave.  A caller blocked
 	 * on a TX slot is woken on each round and leaves on is_closing; deleting the sema while
@@ -2065,8 +2068,8 @@ void usbd_cdc_ecm_deinit(void)
 		}
 	}
 
-	/* After unregister, no more USB ISRs will fire.  Free the TX ring buffer
-	 * and the private BULK IN DMA buffer. */
+	/* No more USB ISR runs against this class.  Free the TX ring buffer and the
+	 * private BULK IN DMA buffer. */
 	usb_ringbuf_manager_deinit(&ecm->bulk_tx_rb);
 	usb_os_mfree((void *)ecm->bulk_tx_dma_buf);
 	ecm->bulk_tx_dma_buf = NULL;
@@ -2097,8 +2100,9 @@ void usbd_cdc_ecm_deinit(void)
 	ecm->ctrl_req_pending = 0U;
 
 	/* Call user deinit */
-	if (ecm->cb && ecm->cb->deinit) {
-		ecm->cb->deinit();
+	if ((ecm->cb != NULL) && (ecm->cb->deinit != NULL) && (ecm->cb->deinit() != HAL_OK)) {
+		/* Teardown goes on regardless, the class resources are released below */
+		RTK_LOGS(TAG, RTK_LOG_WARN, "CB deinit fail\n");
 	}
 
 	/* Free buffers */
@@ -2127,7 +2131,7 @@ void usbd_cdc_ecm_deinit(void)
   *         waits on a semaphore, so a call in interrupt context is rejected.
   * @retval HAL_OK on success, HAL_BUSY if the ring buffer is full (frame dropped).
   */
-int usbd_cdc_ecm_transmit(u8 *buf, u32 len, u8 block)
+int usbd_cdc_ecm_transmit(const u8 *buf, u32 len, u8 block)
 {
 	usbd_cdc_ecm_dev_t *ecm = &usbd_cdc_ecm_dev;
 	int ret;
@@ -2147,10 +2151,10 @@ int usbd_cdc_ecm_transmit(u8 *buf, u32 len, u8 block)
 		return HAL_ERR_PARA;
 	}
 
-	/* Reject frames larger than the ring buffer node size.  usb_ringbuf_add_tail()
-	 * silently truncates oversized data; such truncation would corrupt the frame
-	 * without any indication to the caller. */
-	if (len > USBD_CDC_ECM_BULK_BUF_MAX_SIZE) {
+	/* Ref CDC ECM 1.2 5.4: wMaxSegmentSize is the longest frame the host is told to expect,
+	 * so never send more.  The ring node is larger only because the shared RX buffer size is
+	 * rounded up to whole packets. */
+	if (len > USB_CDC_ECM_MAX_SEGMENT_SIZE) {
 		RTK_LOGS(TAG, RTK_LOG_WARN, "TX frame too large: %u\n", len);
 		return HAL_ERR_PARA;
 	}

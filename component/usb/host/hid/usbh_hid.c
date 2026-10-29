@@ -51,6 +51,7 @@ static int usbh_hid_parse_interface(usb_host_t *host);
 static int usbh_hid_process_get_hid_report_desc(usb_host_t *host);
 static int usbh_hid_handle_report_desc(usb_host_t *host);
 static void usbh_hid_in_process(usb_host_t *host);
+static void usbh_hid_process_halt(usb_host_t *host);
 static int usbh_hid_attach(usb_host_t *host);
 static void usbh_hid_detach(usb_host_t *host);
 static int usbh_hid_setup(usb_host_t *host);
@@ -169,12 +170,12 @@ static const u8 *usbh_hid_fetch_item(const u8 *start, const u8 *end, usbh_hid_it
 	}
 
 	u8 b = *start++;
-	item->type = (b >> 2) & 3;
-	item->tag = (b >> 4) & 15;
-	item->size = b & 3;
+	item->type = (u8)((b >> 2) & 0x3U);
+	item->tag = (u8)((b >> 4) & 0xFU);
+	item->size = (u8)(b & 0x3U);
 
-	if (item->size == 3) {
-		item->size = 4;
+	if (item->size == 3U) {
+		item->size = 4U;
 	}
 
 	/* Ref HID 1.11 6.2.2.2: item data is little endian. Cast to u32 before the
@@ -233,12 +234,18 @@ static void usbh_hid_process_global_item(usbh_hid_parse_state *state, const usbh
 		state->feat_bit_offset = 0;
 		state->device_info->report_id_count++;
 		state->report_id = (u8)item->data;
+		/* Ref HID 1.11 6.2.2.7: Report ID 0 is reserved. Whether such a device prefixes its reports with it is
+		 * undefined, so no field position can be trusted */
+		if (state->report_id == 0U) {
+			RTK_LOGS(TAG, RTK_LOG_WARN, "Report ID 0 reserved\n");
+			state->device_info->report_id_zero = 1U;
+		}
 #if USBH_HID_REPORT_DESC_PARSE_DEBUG
 		RTK_LOGS(NOTAG, RTK_LOG_INFO, "Report ID: %d\n", state->report_id);
 #endif
 		break;
 	default:
-		RTK_LOGS(NOTAG, RTK_LOG_INFO, "Unknown Global Item (Tag: 0x%X)\n", item->tag);
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "Unknown Global Item (Tag: 0x%x)\n", item->tag);
 		break;
 	}
 }
@@ -687,6 +694,10 @@ static int usbh_hid_parse_hid_report(const u8 *report_data, u8 report_len,
 
 	/* Array field: the report carries the usage code of the key being pressed,
 	 * not one bit per key. A code of 0 means "no key pressed". */
+	if (device_info->report_id_zero != 0U) {
+		return HAL_OK;
+	}
+
 	if (device_info->consumer_array.supported && (report_id == device_info->consumer_array.report_id)) {
 		for (u8 i = 0; i < device_info->consumer_array.elem_cnt; i++) {
 			usage = usbh_hid_extract_bits(data_start, data_len,
@@ -836,24 +847,36 @@ static int usbh_hid_parse_details(usbh_itf_data_t *itf_data)
 
 		switch (((usbh_desc_header_t *) desc)->bDescriptorType) {
 		case USB_DESC_TYPE_INTERFACE:
-			if (((usbh_itf_desc_t *)desc)->bInterfaceNumber != hid->itf_idx) { //find another itf, should return
+			/* Only the setting SET_INTERFACE selects is parsed: another interface, or another alternate
+			 * setting of this one, describes endpoints that are not active */
+			if ((((usbh_itf_desc_t *)desc)->bInterfaceNumber != hid->itf_idx) || (((usbh_itf_desc_t *)desc)->bAlternateSetting != hid->itf_alt_idx)) {
 				RTK_LOGS(TAG, RTK_LOG_DEBUG, "Hid intf new %d:old %d, return\n\n", ((usbh_itf_desc_t *)desc)->bInterfaceNumber, hid->itf_idx);
 				return HAL_OK;
 			}
 			break;
 		case USBH_HID_DESC:
+			/* Ref HID 1.11 6.2.1: at least 9 bytes, the fields read below */
+			if (len < USBH_HID_DESC_LEN) {
+				RTK_LOGS(TAG, RTK_LOG_WARN, "Short HID desc %d\n", len);
+				break;
+			}
 			hid_desc = (usbh_dev_hid_desc_t *)desc;
 			usb_os_memcpy((void *) & (hid->hid_desc), (const void *)hid_desc, sizeof(usbh_dev_hid_desc_t));
 			break;
 
 		case USB_DESC_TYPE_ENDPOINT:
+			/* Ref HID 1.11 4.4: HID uses Interrupt endpoints only, one per direction */
 			ep_desc = (usbh_ep_desc_t *)desc;
-			if (USB_EP_IS_IN(ep_desc->bEndpointAddress)) {
-				/* Interrupt IN �� receives HID reports from device */
-				usb_os_memcpy((void *) & (hid->ep_desc_in), (const void *)ep_desc, sizeof(usbh_ep_desc_t));
+			if ((ep_desc->bmAttributes & USB_EP_XFER_TYPE_MASK) != USB_CH_EP_TYPE_INTR) {
+				RTK_LOGS(TAG, RTK_LOG_WARN, "Skip EP%02x type %d\n", ep_desc->bEndpointAddress, ep_desc->bmAttributes);
+			} else if (USB_EP_IS_IN(ep_desc->bEndpointAddress)) {
+				if (hid->ep_desc_in.bEndpointAddress == 0U) {
+					usb_os_memcpy((void *) & (hid->ep_desc_in), (const void *)ep_desc, sizeof(usbh_ep_desc_t));
+				}
 			} else {
-				/* Interrupt OUT �� sends output reports to device */
-				usb_os_memcpy((void *) & (hid->ep_desc_out), (const void *)ep_desc, sizeof(usbh_ep_desc_t));
+				if (hid->ep_desc_out.bEndpointAddress == 0U) {
+					usb_os_memcpy((void *) & (hid->ep_desc_out), (const void *)ep_desc, sizeof(usbh_ep_desc_t));
+				}
 			}
 			break;
 
@@ -880,9 +903,9 @@ static int usbh_hid_parse_interface(usb_host_t *host)
 	usbh_itf_data_t *itf_data = usbh_get_interface_descriptor(host, &dev_id);
 	int ret = HAL_OK;
 
-	if (itf_data) {
+	if (itf_data != NULL) {
 		ret = usbh_hid_parse_details(itf_data);
-		if (ret) {
+		if (ret != HAL_OK) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "AC parse fail\n");
 			return ret;
 		}
@@ -898,6 +921,14 @@ static int usbh_hid_process_get_hid_report_desc(usb_host_t *host)
 {
 	usbh_setup_req_t setup;
 	usbh_hid_t *hid = &usbh_hid;
+
+	/* Ref HID 1.11 6.2.1: the first class descriptor is the Report descriptor. Anything else, a missing or
+	 * zeroed HID descriptor included, leaves no report layout to fetch. */
+	if ((hid->hid_desc.bNumDescriptors == 0U) || (hid->hid_desc.bReportDescriptorType != USBH_HID_REPORT_TYPE) ||
+		(hid->hid_desc.wDescriptorLength == 0U)) {
+		RTK_LOGS(TAG, RTK_LOG_WARN, "Bad HID desc, HID events off\n");
+		return HAL_ERR_PARA;
+	}
 
 	if (hid->hid_desc.wDescriptorLength > USBH_HID_CTRL_BUF_LEN) {
 		RTK_LOGS(TAG, RTK_LOG_WARN, "Report desc %dB > %dB, HID events off\n", hid->hid_desc.wDescriptorLength, USBH_HID_CTRL_BUF_LEN);
@@ -924,7 +955,7 @@ static int usbh_hid_handle_report_desc(usb_host_t *host)
 	u32 rx_len;
 	int ret = HAL_OK;
 
-	if (hid->pipe_in.ep_addr && hid->report_desc == NULL) {
+	if ((hid->pipe_in.ep_addr != 0U) && (hid->report_desc == NULL)) {
 		//1. set itf
 		//2. set idle
 		//3. get report desc
@@ -1017,15 +1048,69 @@ static void usbh_hid_in_process(usb_host_t *host)
 			}
 		} else if (urb_state == USBH_URB_ERROR) {
 			pipe->xfer_state = USBH_EP_XFER_START;
+		} else if (urb_state == USBH_URB_STALL) {
+			/* A halted endpoint answers every IN with STALL until the host clears it (Ref USB 2.0 8.4.5 /
+			 * 9.4.5), so polling on would only repeat it: park the pipe until the halt is cleared */
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "INTR IN stall\n");
+			pipe->xfer_state = USBH_EP_XFER_IDLE;
+			hid->halt_pending = 1U;
+			usbh_notify(host, 0U, &usbh_hid_driver);
 		} else if (urb_state == USBH_URB_IDLE) {
-			if (usbh_get_elapsed_ticks(host, pipe->tick) > (10) * pipe->ep_interval) {
+			if (usbh_get_elapsed_ticks(host, pipe->tick) > (10U * pipe->ep_interval)) {
 				pipe->xfer_state = USBH_EP_XFER_START;
 			}
+		} else {
+			/* No other URB state is reported for an INTR pipe */
 		}
 		break;
 
 	default:
 		break;
+	}
+}
+
+/**
+  * @brief  Clear the halted INTR IN endpoint, re-enumerate the device if that keeps failing
+  * @note   Host task only. CLEAR_FEATURE(ENDPOINT_HALT) also resets the device data toggle to DATA0 (Ref USB 2.0
+  *         9.4.5), matching the host toggle the STALL interrupt already reset. The pipe is then polled again.
+  * @param  host: Host handle
+  * @retval None
+  */
+static void usbh_hid_process_halt(usb_host_t *host)
+{
+	usbh_hid_t *hid = &usbh_hid;
+	usbh_setup_req_t setup;
+	int ret;
+
+	/* Re-enumeration already requested: wait for the detach it brings */
+	if (hid->halt_retry_cnt >= USBH_HID_HALT_RETRY_MAX_CNT) {
+		return;
+	}
+
+	/* Sent through usbh_ctrl_request(), which rejects the call while another class of a composite device owns
+	 * EP0; usbh_ctrl_clear_feature() lacks that owner check */
+	setup.req.bmRequestType = USB_H2D | USB_REQ_TYPE_STANDARD | USB_REQ_RECIPIENT_ENDPOINT;
+	setup.req.bRequest = USB_REQ_CLEAR_FEATURE;
+	setup.req.wValue = USB_FEATURE_EP_HALT;
+	setup.req.wIndex = hid->pipe_in.ep_addr;
+	setup.req.wLength = 0U;
+	ret = usbh_ctrl_request(host, &setup, NULL);
+	if (ret == HAL_OK) {
+		RTK_LOGS(TAG, RTK_LOG_WARN, "EP%02x halt cleared\n", hid->pipe_in.ep_addr);
+		hid->halt_pending = 0U;
+		hid->halt_retry_cnt = 0U;
+		hid->pipe_in.xfer_state = USBH_EP_XFER_START;
+		usbh_notify(host, hid->pipe_in.pipe_num, &usbh_hid_driver);
+	} else if (ret != HAL_BUSY) {
+		hid->halt_retry_cnt++;
+		if (hid->halt_retry_cnt >= USBH_HID_HALT_RETRY_MAX_CNT) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "EP%02x clear halt fail, re-enum\n", hid->pipe_in.ep_addr);
+			(void)usbh_reenumerate();
+		} else {
+			usbh_notify(host, 0U, &usbh_hid_driver);
+		}
+	} else {
+		/* In flight: the EP0 completion re-drives process() */
 	}
 }
 
@@ -1042,14 +1127,16 @@ static int usbh_hid_attach(usb_host_t *host)
 	int status = HAL_ERR_UNKNOWN;
 
 	hid->host = host;
+	hid->halt_pending = 0U;
+	hid->halt_retry_cnt = 0U;
 
 	status = usbh_hid_parse_interface(host);
-	if (status) {
+	if (status != HAL_OK) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Cfg parse fail\n");
 		return status;
 	}
 
-	if (hid->ep_desc_in.bEndpointAddress) {
+	if (hid->ep_desc_in.bEndpointAddress != 0U) {
 		/* Each IN transaction lands in hid_ctrl_buf and the controller writes a whole packet of
 		 * up to wMaxPacketSize bytes, so an endpoint larger than the buffer would overrun it */
 		if ((hid->ep_desc_in.wMaxPacketSize & USB_EP_MPS_SIZE_MASK) > USBH_HID_CTRL_BUF_LEN) {
@@ -1060,7 +1147,7 @@ static int usbh_hid_attach(usb_host_t *host)
 		/* SET_INTERFACE is only required when more than one alt setting exists.
 		 * For the typical single-alt HID interface, skip it to avoid an unneeded
 		 * control transfer (and the 5 ms recovery on devices that STALL it). */
-		hid->report_desc_status = (hid->alt_setting_count > 1) ? USBH_HID_REPORT_SET_ALT
+		hid->report_desc_status = (hid->alt_setting_count > 1U) ? USBH_HID_REPORT_SET_ALT
 								  : USBH_HID_REPORT_GET_DESC;
 
 		if (usbh_open_pipe(host, pipe, &(hid->ep_desc_in), &usbh_hid_driver) != HAL_OK) {
@@ -1070,10 +1157,10 @@ static int usbh_hid_attach(usb_host_t *host)
 	}
 
 	/* Open the Interrupt OUT pipe if the interface exposes one. */
-	if (hid->ep_desc_out.bEndpointAddress) {
+	if (hid->ep_desc_out.bEndpointAddress != 0U) {
 		if (usbh_open_pipe(host, &(hid->pipe_out), &(hid->ep_desc_out), &usbh_hid_driver) != HAL_OK) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Open intr out pipe fail\n");
-			if (hid->pipe_in.pipe_num) {
+			if (hid->pipe_in.pipe_num != 0U) {
 				usbh_close_pipe(host, &(hid->pipe_in));
 			}
 			return HAL_ERR_PARA;
@@ -1096,13 +1183,15 @@ static void usbh_hid_detach(usb_host_t *host)
 {
 	usbh_hid_t *hid = &usbh_hid;
 
-	if (hid->pipe_in.pipe_num) {
+	if (hid->pipe_in.pipe_num != 0U) {
 		usbh_close_pipe(host, &(hid->pipe_in));
 	}
 
-	if (hid->pipe_out.pipe_num) {
+	if (hid->pipe_out.pipe_num != 0U) {
 		usbh_close_pipe(host, &(hid->pipe_out));
 	}
+	hid->halt_pending = 0U;
+	hid->halt_retry_cnt = 0U;
 
 	/* Close the gate and clear the caps in one step, see usbh_hid_parse_hid_report_desc() */
 	usb_os_enter_critical();
@@ -1116,6 +1205,7 @@ static void usbh_hid_detach(usb_host_t *host)
 	hid->itf_idx = 0;
 	hid->itf_alt_idx = 0;
 	hid->alt_setting_count = 0;
+	/* Fails only for a NULL handle, never the case for this static instance */
 	usb_ringbuf_reset(&(hid->report_msg));
 
 	if ((hid->cb != NULL) && (hid->cb->detached != NULL)) {
@@ -1186,9 +1276,16 @@ static void usbh_hid_process(usb_host_t *host, usbh_drv_msg_t *msg)
 
 	/* The core routes a driver message to the pipe's owning driver only, so the pipe
 	 * checks are defensive guards against a stale/closed pipe. */
-	if (msg && (hid->hid_ctrl_buf) && (pipe->pipe_num != 0) && (msg->pipe_num == pipe->pipe_num)) {
+	if (hid->halt_pending != 0U) {
+		/* Served before any pipe message: the IN pipe stays parked until the halt is cleared */
+		usbh_hid_process_halt(host);
+	} else if ((msg != NULL) && (hid->hid_ctrl_buf != NULL) && (pipe->pipe_num != 0U) && (msg->pipe_num == pipe->pipe_num)) {
 		usbh_hid_in_process(host);
-	} else if (msg && (hid->pipe_out.pipe_num != 0) && (msg->pipe_num == hid->pipe_out.pipe_num)) {
+	} else {
+		/* Not the IN pipe */
+	}
+
+	if ((msg != NULL) && (hid->pipe_out.pipe_num != 0U) && (msg->pipe_num == hid->pipe_out.pipe_num)) {
 		usbh_hid_out_process(host);
 	}
 }
@@ -1205,7 +1302,7 @@ static void usbh_hid_sof(usb_host_t *host)
 	usbh_hid_t *hid = &usbh_hid;
 	usbh_pipe_t *pipe = &(hid->pipe_in);
 
-	if ((pipe->pipe_num != 0) &&
+	if ((pipe->pipe_num != 0U) && (hid->halt_pending == 0U) &&
 		(usbh_get_elapsed_ticks(host, pipe->tick) > USBH_HID_TRIGGER_MAX_CNT)) {
 		usbh_notify(host, pipe->pipe_num, &usbh_hid_driver);
 	}
@@ -1219,7 +1316,7 @@ static void usbh_hid_msg_parse_thread(void *param)
 	u8 read_cnt;
 	u8 ctrl_on;
 
-	while (hid->parse_task_exit == 0) {
+	while (hid->parse_task_exit == 0U) {
 		read_cnt = (u8)usb_ringbuf_remove_head(handle, hid->report_buf, USBH_HID_MSG_LENGTH, NULL);
 		if (read_cnt != 0U) {
 			/* Gate and caps are read together under the lock they are written with */
@@ -1260,6 +1357,13 @@ int usbh_hid_init(const usbh_hid_usr_cb_t *cb)
 		return HAL_ERR_PARA;
 	}
 
+	/* hid_ctrl_buf is only allocated by a successful init and freed by deinit: a second init would leak it,
+	   the ring and the parse task, and register the driver twice */
+	if (hid->hid_ctrl_buf != NULL) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Already init\n");
+		return HAL_ERR_PARA;
+	}
+
 	usb_os_memset((void *)hid, 0x00, sizeof(usbh_hid_t));
 
 	hid->hid_ctrl_buf = (u8 *)usb_os_malloc(USBH_HID_CTRL_BUF_LEN);
@@ -1280,18 +1384,13 @@ int usbh_hid_init(const usbh_hid_usr_cb_t *cb)
 	ret = usb_ringbuf_manager_init(&(hid->report_msg), USBH_HID_MST_COUNT, USBH_HID_MSG_LENGTH, 0);
 	if (ret != HAL_OK) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Ringbuffer init fail\n");
-		usb_os_mfree((void *)hid->hid_ctrl_buf);
-		hid->hid_ctrl_buf = NULL;
-		return ret;
+		goto ring_fail;
 	}
 
 	ret = usb_os_sema_create(&(hid->report_sema));
 	if (ret != HAL_OK) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create sema fail\n");
-		usb_ringbuf_manager_deinit(&(hid->report_msg));
-		usb_os_mfree((void *)hid->hid_ctrl_buf);
-		hid->hid_ctrl_buf = NULL;
-		return ret;
+		goto sema_fail;
 	}
 
 	/* Set before task creation, not inside the thread body: rtos_task_create()
@@ -1306,12 +1405,8 @@ int usbh_hid_init(const usbh_hid_usr_cb_t *cb)
 						 NULL, USBH_HID_THREAD_STACK_SIZE, USBH_HID_THREAD_PRIORITY) != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create parse thread fail\n");
 		hid->parse_task_alive = 0;
-		usb_os_sema_delete(hid->report_sema);
-		hid->report_sema = NULL;
-		usb_ringbuf_manager_deinit(&(hid->report_msg));
-		usb_os_mfree((void *)hid->hid_ctrl_buf);
-		hid->hid_ctrl_buf = NULL;
-		return HAL_ERR_UNKNOWN;
+		ret = HAL_ERR_UNKNOWN;
+		goto task_fail;
 	}
 
 	hid->cb = cb;
@@ -1319,21 +1414,31 @@ int usbh_hid_init(const usbh_hid_usr_cb_t *cb)
 	ret = usbh_register_class(&usbh_hid_driver);
 	if (ret != HAL_OK) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Register class fail %d\n", ret);
+		hid->cb = NULL;
 		hid->parse_task_exit = 1;
 		usb_os_sema_give(hid->report_sema);
 		do {
 			rtos_time_delay_ms(1);
-		} while (hid->parse_task_alive);
-		usb_os_sema_delete(hid->report_sema);
-		hid->report_sema = NULL;
-		usb_ringbuf_manager_deinit(&(hid->report_msg));
-		usb_os_mfree((void *)hid->hid_ctrl_buf);
-		hid->hid_ctrl_buf = NULL;
-		hid->cb = NULL;
-		return ret;
+		} while (hid->parse_task_alive != 0U);
+		goto task_fail;
 	}
 
 	return HAL_OK;
+
+	/* Undo in reverse order, the user resources taken by cb->init() last */
+task_fail:
+	usb_os_sema_delete(hid->report_sema);
+	hid->report_sema = NULL;
+sema_fail:
+	/* Fails only for a NULL handle, never the case for this static instance */
+	usb_ringbuf_manager_deinit(&(hid->report_msg));
+ring_fail:
+	if (cb->deinit != NULL) {
+		cb->deinit();
+	}
+	usb_os_mfree((void *)hid->hid_ctrl_buf);
+	hid->hid_ctrl_buf = NULL;
+	return ret;
 }
 
 /**
@@ -1355,12 +1460,12 @@ void usbh_hid_deinit(void)
 		hid->cb->deinit();
 	}
 
-	if (hid->parse_task_alive) {
+	if (hid->parse_task_alive != 0U) {
 		hid->parse_task_exit = 1;
 		usb_os_sema_give(hid->report_sema);
 		do {
 			rtos_time_delay_ms(1);
-		} while (hid->parse_task_alive);
+		} while (hid->parse_task_alive != 0U);
 	}
 
 	if (hid->report_sema != NULL) {
@@ -1368,17 +1473,18 @@ void usbh_hid_deinit(void)
 		hid->report_sema = NULL;
 	}
 
-	if (hid->pipe_in.pipe_num && hid->host) {
+	if ((hid->pipe_in.pipe_num != 0U) && (hid->host != NULL)) {
 		usbh_close_pipe(hid->host, &(hid->pipe_in));
 	}
 
-	if (hid->pipe_out.pipe_num && hid->host) {
+	if ((hid->pipe_out.pipe_num != 0U) && (hid->host != NULL)) {
 		usbh_close_pipe(hid->host, &(hid->pipe_out));
 	}
 
 	usb_os_mfree((void *)hid->hid_ctrl_buf);
 	hid->hid_ctrl_buf = NULL;
 
+	/* Fails only for a NULL handle, never the case for this static instance */
 	usb_ringbuf_manager_deinit(&(hid->report_msg));
 }
 
@@ -1394,7 +1500,7 @@ int usbh_hid_send_report(u8 *buf, u32 len)
 	usbh_hid_t *hid = &usbh_hid;
 	usbh_pipe_t *pipe = &(hid->pipe_out);
 
-	if (!pipe->pipe_num) {
+	if (pipe->pipe_num == 0U) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "HID no OUT pipe\n");
 		return HAL_ERR_PARA;
 	}

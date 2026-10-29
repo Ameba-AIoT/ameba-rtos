@@ -151,10 +151,10 @@ static void usbd_cdc_ncm_set_mac(const u8 *mac);
 static int usbd_cdc_ncm_bulk_send(u8 *buf, u32 len);
 
 static void usbd_cdc_ncm_agg_begin(ncm_tx_ntb_t *slot, u16 sequence);
-static int  usbd_cdc_ncm_agg_append(ncm_tx_ntb_t *slot, u8 *frame, u32 frame_len);
+static int  usbd_cdc_ncm_agg_append(ncm_tx_ntb_t *slot, const u8 *frame, u32 frame_len);
 static void usbd_cdc_ncm_agg_finalize(ncm_tx_ntb_t *slot);
 static void usbd_cdc_ncm_tx_kick(usbd_cdc_ncm_dev_t *ncm);
-static int usbd_cdc_ncm_tx_enqueue(u8 *buf, u32 len, u8 block);
+static int usbd_cdc_ncm_tx_enqueue(const u8 *buf, u32 len, u8 block);
 static void usbd_cdc_ncm_tx_wake_producer(usbd_cdc_ncm_dev_t *ncm);
 static int usbd_cdc_ncm_data_alt_start(usb_dev_t *dev);
 static void usbd_cdc_ncm_data_alt_stop(usb_dev_t *dev);
@@ -201,7 +201,7 @@ static const u8 usbd_cdc_ncm_device_qualifier_desc[USB_LEN_DEV_QUALIFIER_DESC] =
 	USB_LEN_DEV_QUALIFIER_DESC,                     /* bLength */
 	USB_DESC_TYPE_DEVICE_QUALIFIER,                 /* bDescriptorType */
 	0x00, 0x02,                                     /* bcdUSB: 2.0 */
-	0x00,                                           /* bDeviceClass */
+	USB_CDC_COMM_INTERFACE_CLASS_CODE,              /* bDeviceClass: same as the device descriptor (USB 2.0 9.6.2) */
 	0x00,                                           /* bDeviceSubClass */
 	0x00,                                           /* bDeviceProtocol */
 	USB_MAX_EP0_SIZE,                               /* bMaxPacketSize0 */
@@ -561,7 +561,7 @@ static void usbd_cdc_ncm_agg_begin(ncm_tx_ntb_t *slot, u16 sequence)
  * @param frame_len: Frame length.
  * @retval HAL_OK on success, HAL_ERR_PARA if buffer full (caller must flush first).
  */
-static int usbd_cdc_ncm_agg_append(ncm_tx_ntb_t *slot, u8 *frame, u32 frame_len)
+static int usbd_cdc_ncm_agg_append(ncm_tx_ntb_t *slot, const u8 *frame, u32 frame_len)
 {
 	const usbd_cdc_ncm_dev_t *ncm = &usbd_cdc_ncm_dev;
 	usb_cdc_ncm_ndp16_entry_t *entry;
@@ -1082,7 +1082,7 @@ static int usbd_cdc_ncm_bulk_receive(u8 *buf, u32 length)
 
 	if (usb_rx_interval_time >= 2000) {
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Heap %d RX %dB in %d ms, %d Kbps\n",
-				 rtos_mem_get_free_heap_size(),
+				 usb_os_get_free_heap_size(),
 				 (u32)usb_rx_total_len, (u32)usb_rx_interval_time, (u32)((usb_rx_total_len * 8 * 1000) / (usb_rx_interval_time * 1024)));
 		usb_rx_start_time = usb_rx_end_time;
 		usb_rx_total_len = 0;
@@ -1209,6 +1209,13 @@ static int usbd_cdc_ncm_bulk_receive(u8 *buf, u32 length)
 						 "Datagram %d out of range: idx=%d+len=%d, hdr=%d, rx=%d\n",
 						 i, datagram_index, datagram_length, header_length, length);
 				break;
+			}
+
+			/* Ref NCM 1.0 3.3.1: a datagram is one Ethernet frame without FCS, never longer than
+			 * the wMaxSegmentSize this device advertises.  Drop an oversized one and go on. */
+			if (datagram_length > USB_CDC_NCM_MAX_ETHERNET_FRAME_SIZE) {
+				RTK_LOGS(TAG, RTK_LOG_WARN, "Datagram %d too long: %d\n", i, datagram_length);
+				continue;
 			}
 
 			if ((ncm->cb != NULL) && (ncm->cb->received != NULL)) {
@@ -1394,7 +1401,7 @@ static int usbd_cdc_ncm_bulk_send(u8 *buf, u32 len)
  * @param  block: See usbd_cdc_ncm_transmit()
  * @retval Status
  */
-static int usbd_cdc_ncm_tx_enqueue(u8 *buf, u32 len, u8 block)
+static int usbd_cdc_ncm_tx_enqueue(const u8 *buf, u32 len, u8 block)
 {
 	usbd_cdc_ncm_dev_t *ncm = &usbd_cdc_ncm_dev;
 	u32 tx_timeout_ms;
@@ -1537,7 +1544,7 @@ static int usbd_cdc_ncm_tx_enqueue(u8 *buf, u32 len, u8 block)
 
 	if (usb_tx_interval_time >= 3000) {
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Heap %d TX %dB in %d ms, %d Kbps\n",
-				 rtos_mem_get_free_heap_size(),
+				 usb_os_get_free_heap_size(),
 				 (u32)usb_tx_total_len, (u32)usb_tx_interval_time, (u32)((usb_tx_total_len * 8 * 1000) / (usb_tx_interval_time * 1024)));
 		usb_tx_start_time = usb_tx_end_time;
 		usb_tx_total_len = 0;
@@ -1576,7 +1583,6 @@ static void usbd_cdc_ncm_tx_wake_producer(usbd_cdc_ncm_dev_t *ncm)
 static int usbd_cdc_ncm_set_config(usb_dev_t *dev, u8 config)
 {
 	usbd_cdc_ncm_dev_t *ncm = &usbd_cdc_ncm_dev;
-	usbd_ep_t *ep_bulk_out = &ncm->ep_bulk_out;
 	usbd_ep_t *ep_intr_in = &ncm->ep_intr_in;
 	usb_ep_info_t *info;
 	int ret;
@@ -1602,12 +1608,10 @@ static int usbd_cdc_ncm_set_config(usb_dev_t *dev, u8 config)
 	info->mps = USBD_CDC_NCM_INTR_IN_PACKET_SIZE;
 	ret = usbd_ep_init(dev, ep_intr_in);
 
-	/* Reset the RX state machine so a re-enumeration (clear->set config) starts
-	 * from a clean buffer hand-off state rather than inheriting stale indices. */
-	ncm->rx_buf_free = 1U;
+	/* Drop a frame deferred before the reset.  rx_buf_free/rx_xfer_idx are left alone: the RX
+	 * thread may still be parsing the buffer it was handed, and only it may release that buffer,
+	 * so the armed buffer stays the other one. */
 	ncm->rx_pending_len = 0U;
-	ncm->rx_xfer_idx = 0U;
-	ep_bulk_out->xfer_buf = ncm->rx_buf[ncm->rx_xfer_idx];
 
 	/* Ref NCM 1.0 6.2.7: dwNtbInMaxSize returns to its default when the device is
 	 * re-configured, because the host renegotiates it per configuration. */
@@ -1693,6 +1697,9 @@ static int usbd_cdc_ncm_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			   request leaves the interface exactly as it was. */
 			if (dev->dev_state != USBD_STATE_CONFIGURED) {
 				ret = HAL_ERR_PARA;
+			} else if ((USB_HIGH_BYTE(req->wValue) != 0U) || (req->wLength != 0U)) {
+				/* Ref USB 2.0 Table 9-3: the whole wValue is the alternate setting and wLength is zero */
+				ret = HAL_ERR_PARA;
 			} else {
 				u8 alt = USB_LOW_BYTE(req->wValue);
 
@@ -1774,6 +1781,9 @@ static int usbd_cdc_ncm_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			 * interface's setting for it would be wrong. */
 			if (dev->dev_state != USBD_STATE_CONFIGURED) {
 				ret = HAL_ERR_PARA;
+			} else if ((req->wValue != 0U) || (req->wLength != 1U)) {
+				/* Ref USB 2.0 Table 9-3: wValue is zero and wLength is one */
+				ret = HAL_ERR_PARA;
 			} else if (req->wIndex == USBD_CDC_NCM_DATA_INTERFACE_NUM) {
 				ep0_in->xfer_buf[0] = ncm->data_alt_setting;
 				ep0_in->xfer_len = 1U;
@@ -1797,7 +1807,7 @@ static int usbd_cdc_ncm_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			   exactly as for SET_INTERFACE / GET_INTERFACE above. */
 			if (dev->dev_state != USBD_STATE_CONFIGURED) {
 				ret = HAL_ERR_PARA;
-			} else if (req->wLength != 2U) {
+			} else if ((req->wValue != 0U) || (req->wLength != 2U)) {
 				ret = HAL_ERR_PARA;
 			} else if ((req->wIndex == USBD_CDC_NCM_COMM_INTERFACE_NUM) || (req->wIndex == USBD_CDC_NCM_DATA_INTERFACE_NUM)) {
 				ep0_in->xfer_buf[0] = 0U;
@@ -1946,8 +1956,8 @@ static int usbd_cdc_ncm_setup(usb_dev_t *dev, usb_setup_req_t *req)
 
 			switch (req->bRequest) {
 			case USB_CDC_NCM_SET_NTB_FORMAT:
-				/* wValue: 0=NTB16, 1=NTB32 */
-				if (wValue == 0) {
+				/* wValue: 0=NTB16, 1=NTB32.  Ref NCM 1.0 6.2.8: no data stage, wLength is zero */
+				if ((wValue == 0U) && (req->wLength == 0U)) {
 					ncm->ntb_format = 0;
 					ret = HAL_OK;
 				} else {
@@ -1979,6 +1989,10 @@ static int usbd_cdc_ncm_setup(usb_dev_t *dev, usb_setup_req_t *req)
 					usb_os_memcpy((void *)&ncm->ctrl_req, (const void *)req, sizeof(usb_setup_req_t));
 					ncm->ctrl_req_pending = 1U;
 					ep0_out->xfer_len = req->wLength;
+					/* The core does not report a short data stage, so clear the payload
+					 * window: missing bytes then read as 0 instead of the residue of the
+					 * previous control transfer, and fail the range check below. */
+					usb_os_memset((void *)ep0_out->xfer_buf, 0, req->wLength);
 					ret = usbd_ep_receive(dev, ep0_out);
 					if (ret != HAL_OK) {
 						/* The data stage never started, so no EP0 OUT completion will
@@ -2010,8 +2024,8 @@ static int usbd_cdc_ncm_setup(usb_dev_t *dev, usb_setup_req_t *req)
 				break;
 
 			case USB_CDC_NCM_SET_CRC_MODE:
-				/* Only no-CRC (mode 0) supported */
-				if (wValue == USB_CDC_NCM_CRC_MODE_NONE) {
+				/* Only no-CRC (mode 0) supported.  Ref NCM 1.0 6.2.11: no data stage, wLength is zero */
+				if ((wValue == USB_CDC_NCM_CRC_MODE_NONE) && (req->wLength == 0U)) {
 					ncm->crc_mode = 0;
 					ret = HAL_OK;
 				} else {
@@ -2318,9 +2332,9 @@ static int usbd_cdc_ncm_handle_ep0_data_out(usb_dev_t *dev)
 		if (ncm->ctrl_req.bRequest == USB_CDC_NCM_SET_NTB_INPUT_SIZE) {
 			/* dwNtbInMaxSize: 4-byte little-endian payload from the DATA stage.
 			 *
-			 * The SETUP stage already rejected any wLength != 4, so the four bytes
-			 * below are guaranteed to be host-supplied payload rather than residue
-			 * from a previous control transfer.  Re-assert it here: the core does
+			 * The SETUP stage already rejected any wLength != 4 and cleared the four
+			 * bytes, so a short data stage leaves zeros rather than residue from a
+			 * previous control transfer.  Re-assert the length here: the core does
 			 * not hand the received length to this callback, so the stashed request
 			 * is the only place that knowledge exists. */
 			if (ncm->ctrl_req.wLength != 4U) {
@@ -2405,10 +2419,10 @@ static void usbd_cdc_ncm_patch_desc(u8 *desc, u16 len, usb_speed_type_t speed)
 		}
 		dtype = desc[i + 1];
 
-		if ((dtype == USB_DESC_TYPE_ENDPOINT) && (dlen >= 4U)) {
+		if ((dtype == USB_DESC_TYPE_ENDPOINT) && (dlen >= USB_LEN_EP_DESC)) {
 			u8 addr  = desc[i + 2];
 			u8 dir   = addr & USB_REQ_DIR_MASK;
-			u8 type  = desc[i + 3] & 0x03;
+			u8 type  = desc[i + 3] & USB_EP_XFER_TYPE_MASK;
 
 			if ((dir == USB_D2H) && (type == USB_CH_EP_TYPE_BULK)) {
 				desc[i + 2] = cfg->bulk_in_addr;
@@ -2416,9 +2430,7 @@ static void usbd_cdc_ncm_patch_desc(u8 *desc, u16 len, usb_speed_type_t speed)
 				desc[i + 2] = cfg->bulk_out_addr;
 			} else if ((dir == USB_D2H) && (type == USB_CH_EP_TYPE_INTR)) {
 				desc[i + 2] = cfg->intr_in_addr;
-				if (dlen >= USB_LEN_EP_DESC) {
-					desc[i + 6] = interval;         /* bInterval */
-				}
+				desc[i + 6] = interval;             /* bInterval */
 			}
 		} else if ((dtype == USB_DESC_TYPE_INTERFACE) && (dlen >= USB_LEN_IF_DESC) &&
 				   (desc[i + 5] == USB_CDC_COMM_INTERFACE_CLASS_CODE)) {
@@ -2461,6 +2473,12 @@ static u16 usbd_cdc_ncm_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 
 	const u8 *desc = NULL;
 	u16 len = 0;
 	u8 is_cfg = 0;
+
+	/* Ref USB 2.0 9.4.3: the index only selects among string and configuration descriptors;
+	   with a single configuration, a non-string index other than 0 names no descriptor. */
+	if ((desc_type != USB_DESC_TYPE_STRING) && (USB_LOW_BYTE(req->wValue) != 0U)) {
+		return 0;
+	}
 
 	switch (desc_type) {
 	case USB_DESC_TYPE_DEVICE:
@@ -2621,7 +2639,7 @@ static void usbd_cdc_ncm_trace_thread(void *param)
 					 "cnt tx%d in%d out%d intr%d rxd%d/Heap %d ntb %d/%d\n",
 					 ncm->dbg_tx_cnt, ncm->dbg_bulk_in_done_cnt, ncm->dbg_bulk_out_done_cnt,
 					 ncm->dbg_intr_in_done_cnt, ncm->dbg_rx_deliver_cnt,
-					 rtos_mem_get_free_heap_size(), ncm->ntb_in_max_size, ncm->ntb_out_max_size);
+					 usb_os_get_free_heap_size(), ncm->ntb_in_max_size, ncm->ntb_out_max_size);
 			RTK_LOGS(TAG, RTK_LOG_INFO, "tx pp[0] frm%d off%d / pp[1] frm%d off%d / wd%d rd%d inflight%d\n",
 					 ncm->tx_slot[0].frame_count, ncm->tx_slot[0].data_offset,
 					 ncm->tx_slot[1].frame_count, ncm->tx_slot[1].data_offset,
@@ -2715,6 +2733,17 @@ static int usbd_cdc_ncm_private_init(const usbd_cdc_ncm_cb_t *cb, const usbd_cdc
 		return HAL_ERR_PARA;
 	}
 
+	/* Ref USB 2.0 9.6.6: the endpoint numbers must exist on the controller, and the two IN
+	   endpoints must differ, otherwise two endpoints would share one hardware endpoint */
+	if (((cfg->bulk_in_addr & (u8)(~USB_REQ_DIR_MASK)) >= USB_MAX_ENDPOINTS) ||
+		((cfg->bulk_out_addr & (u8)(~USB_REQ_DIR_MASK)) >= USB_MAX_ENDPOINTS) ||
+		((cfg->intr_in_addr & (u8)(~USB_REQ_DIR_MASK)) >= USB_MAX_ENDPOINTS) ||
+		(cfg->bulk_in_addr == cfg->intr_in_addr)) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid EP addr %02x/%02x/%02x\n",
+				 cfg->bulk_in_addr, cfg->bulk_out_addr, cfg->intr_in_addr);
+		return HAL_ERR_PARA;
+	}
+
 	/* Published before anything that reads it: the descriptor patch path, the TX path and
 	   the aggregation task all resolve their options through ncm->cfg. */
 	ncm->cfg = cfg;
@@ -2737,18 +2766,17 @@ static int usbd_cdc_ncm_private_init(const usbd_cdc_ncm_cb_t *cb, const usbd_cdc
 	   NTB to what a slot can actually hold.  The default 4096 therefore exceeds the 1546 B
 	   (one datagram) / 3068 B (two) a slot holds, exactly as before this was configurable. */
 	ncm->ntb_in_max_size_cap = (cfg->ntb_in_max_size != 0U) ? cfg->ntb_in_max_size : USBD_CDC_NCM_DEFAULT_NTB_IN_SIZE;
-	if (ncm->ntb_in_max_size_cap < USB_CDC_NCM_MIN_NTB_INPUT_SIZE) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "NTB IN size %u < %u\n", ncm->ntb_in_max_size_cap,
-				 (u32)USB_CDC_NCM_MIN_NTB_INPUT_SIZE);
+	/* NTB-16 carries 16-bit block lengths and offsets, so 65535 is the largest NTB it can describe */
+	if ((ncm->ntb_in_max_size_cap < USB_CDC_NCM_MIN_NTB_INPUT_SIZE) || (ncm->ntb_in_max_size_cap > USB_CDC_NCM_MAX_NTB_INPUT_SIZE)) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "NTB IN size %u out of range\n", ncm->ntb_in_max_size_cap);
 		return HAL_ERR_PARA;
 	}
 
 	/* dwNtbOutMaxSize sizes the RX buffers, so it has to hold at least one full-size
 	   Ethernet frame wrapped in a minimal NTB or the host could not send one at all. */
 	ncm->ntb_out_max_size = (cfg->ntb_out_max_size != 0U) ? cfg->ntb_out_max_size : USBD_CDC_NCM_DEFAULT_NTB_OUT_SIZE;
-	if (ncm->ntb_out_max_size < USBD_CDC_NCM_BULK_ONE_FRAME_SIZE) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "NTB OUT size %u < %u\n", ncm->ntb_out_max_size,
-				 (u32)USBD_CDC_NCM_BULK_ONE_FRAME_SIZE);
+	if ((ncm->ntb_out_max_size < USBD_CDC_NCM_BULK_ONE_FRAME_SIZE) || (ncm->ntb_out_max_size > USB_CDC_NCM_MAX_NTB_INPUT_SIZE)) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "NTB OUT size %u out of range\n", ncm->ntb_out_max_size);
 		return HAL_ERR_PARA;
 	}
 
@@ -3056,19 +3084,31 @@ void usbd_cdc_ncm_deinit(void)
 	usbd_ep_t *ep_bulk_out = &ncm->ep_bulk_out;
 	usbd_ep_t *ep_intr_in = &ncm->ep_intr_in;
 	u32 wait_cnt = 0U;
+	int ret;
 
+	/* Leave the core before anything is torn down. Composite: refused until
+	   usbd_composite_deinit() has blocked the ISR and cleared the configuration of every
+	   function. Standalone: refused in interrupt context. Either way nothing is released when
+	   refused, and once accepted no class callback runs any more and every endpoint of this
+	   class is deinitialized: ref USB 2.0 9.4.7, the transfers still pending are aborted. */
 #ifdef CONFIG_USBD_COMPOSITE
-	/* Leave the composite framework before anything is torn down: it is refused while the
-	   composite device is still registered on the core, and the class must then stay intact */
 	if (ncm->from_composite != 0U) {
-		if (usbd_composite_unregister_driver(&usbd_cdc_ncm_driver) != HAL_OK) {
-			return;
-		}
-	}
+		ret = usbd_composite_unregister_driver(&usbd_cdc_ncm_driver);
+	} else
 #endif
+	{
+		ret = usbd_unregister_class();
+	}
+	if (ret != HAL_OK) {
+		return;
+	}
 
-	/* Close the TX gate first: from here on usbd_cdc_ncm_transmit() rejects new callers,
-	 * and the ones already inside are waited for below before their resources go away. */
+	/* No completion arrives any more to clear them */
+	ep_bulk_in->xfer_state = 0U;
+	ep_intr_in->xfer_state = 0U;
+
+	/* Close the TX gate: from here on usbd_cdc_ncm_transmit() rejects new callers, and the
+	 * ones already inside are waited for below before their resources go away. */
 	usb_os_enter_critical();
 	ncm->is_closing = 1U;
 	usb_os_exit_critical();
@@ -3094,26 +3134,6 @@ void usbd_cdc_ncm_deinit(void)
 	usbd_cdc_ncm_tx_task_deinit();
 #endif
 
-	/* Wait for any in-flight IN transfer to actually complete before tearing
-	 * down. xfer_state is the real in-flight flag: it is set when a transfer is
-	 * submitted and cleared by the completion ISR. A bounded timeout (~100 ms,
-	 * sleeping rather than spinning) avoids waiting forever if the device was
-	 * detached and the completion interrupt will never arrive. This matters
-	 * because the INTR IN xfer_buf is freed below and must not be read by a
-	 * still-active DMA. */
-	while ((ep_bulk_in->xfer_state || ep_intr_in->xfer_state) && (wait_cnt < 100U)) {
-		usb_os_sleep_ms(1U);
-		wait_cnt++;
-	}
-
-	/* Unregister class driver */
-#ifdef CONFIG_USBD_COMPOSITE
-	if (ncm->from_composite == 0U)
-#endif
-	{
-		usbd_unregister_class();
-	}
-
 	/* Wait for every task still inside usbd_cdc_ncm_transmit() to leave.  A caller blocked
 	 * on TX room is woken on each round and leaves on is_closing; deleting the sema while
 	 * it still waits on it, or freeing the slots it is writing to, would be a use after free,
@@ -3130,7 +3150,7 @@ void usbd_cdc_ncm_deinit(void)
 		}
 	}
 
-	/* After unregister, no more USB ISRs will fire.  Tear down TX state. */
+	/* No more USB ISR runs against this class.  Tear down TX state. */
 	{
 		u8 i;
 		for (i = 0U; i < ncm->tx_ntb_depth; i++) {
@@ -3186,8 +3206,9 @@ void usbd_cdc_ncm_deinit(void)
 	ncm->ctrl_req_pending = 0U;
 
 	/* Call user deinit */
-	if (ncm->cb && ncm->cb->deinit) {
-		ncm->cb->deinit();
+	if ((ncm->cb != NULL) && (ncm->cb->deinit != NULL) && (ncm->cb->deinit() != HAL_OK)) {
+		/* Teardown goes on regardless, the class resources are released below */
+		RTK_LOGS(TAG, RTK_LOG_WARN, "CB deinit fail\n");
 	}
 
 	/* Free buffers */
@@ -3211,7 +3232,7 @@ void usbd_cdc_ncm_deinit(void)
  * @param block: Whether block until xfer done
  * @retval Status
  */
-int usbd_cdc_ncm_transmit(u8 *buf, u32 len, u8 block)
+int usbd_cdc_ncm_transmit(const u8 *buf, u32 len, u8 block)
 {
 	usbd_cdc_ncm_dev_t *ncm = &usbd_cdc_ncm_dev;
 	int ret;

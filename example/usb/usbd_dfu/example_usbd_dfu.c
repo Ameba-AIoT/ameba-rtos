@@ -153,8 +153,6 @@ static int dfu_cb_read(u16 block_num, u8 *buf, u32 max_len)
 		return 0;  /* EOF */
 	}
 	remaining = len - offset;
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Read blk %u offset %u max %u (remain %u B)\n",
-			 block_num, offset, max_len, remaining);
 	if (remaining > max_len) {
 		remaining = max_len;
 	}
@@ -172,7 +170,8 @@ static void dfu_cb_manifest(void)
 
 /*
  * detach() is called from ISR context when the host issues DFU_DETACH in
- * Run-Time mode (appIDLE).
+ * Run-Time mode (appIDLE), so it only records minimal state; nothing to do in this demo.
+ * reconf() logs the re-enumeration in task context.
  */
 static void dfu_cb_detach(void)
 {

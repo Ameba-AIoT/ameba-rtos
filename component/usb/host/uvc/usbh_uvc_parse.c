@@ -779,8 +779,8 @@ int usbh_uvc_parse_cfgdesc(usb_host_t *host)
 	int ret = HAL_ERR_PARA;
 	usbh_dev_id_t dev_id = {0,};
 
-	dev_id.bInterfaceClass = USBH_UVC_CLASS_CODE;
-	dev_id.bInterfaceSubClass = USBH_UVC_SUBCLASS_VIDEOCONTROL;
+	dev_id.bInterfaceClass = USB_VIDEO_CLASS_CODE;
+	dev_id.bInterfaceSubClass = USB_VIDEO_SUBCLASS_VIDEOCONTROL;
 	dev_id.mMatchFlags = USBH_DEV_ID_MATCH_ITF_INFO;
 	itf_data = usbh_get_interface_descriptor(host, &dev_id);
 	if (itf_data == NULL) {
@@ -794,8 +794,8 @@ int usbh_uvc_parse_cfgdesc(usb_host_t *host)
 		}
 	}
 
-	dev_id.bInterfaceClass = USBH_UVC_CLASS_CODE;
-	dev_id.bInterfaceSubClass = USBH_UVC_SUBCLASS_VIDEOSTREAMING;
+	dev_id.bInterfaceClass = USB_VIDEO_CLASS_CODE;
+	dev_id.bInterfaceSubClass = USB_VIDEO_SUBCLASS_VIDEOSTREAMING;
 	dev_id.mMatchFlags = USBH_DEV_ID_MATCH_ITF_INFO;
 	itf_data = usbh_get_interface_descriptor(host, &dev_id);
 

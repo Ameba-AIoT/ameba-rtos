@@ -122,6 +122,44 @@ u8 BOOT_OTA_SlotSelect(void)
 
 }
 
+/* The address and the size in a sub-image header are not authenticated before the image is copied.
+ * Only the memory space and the bootloader's own memory are checked, not how the layout divides it.
+ * A copy may go anywhere in HP SRAM (non-secure or secure alias), HP extension SRAM, LP SRAM or PSRAM
+ * (non-secure or secure alias), whose limits are exported by the layout. Peripherals are outside of all
+ * of them. It must not overlap the RAM that the boot loader and the ROM use:
+ *  - HP: ROM BSS, MSP and the boot loader (KM4_ROMBSS_RAM_S to KM4_BOOTLOADER_RAM_S), in both aliases
+ *  - HP: the ROM BSS, MSP and heap of KM4 non-secure (KM4_MSP_RAM_NS to KM4_STDLIB_HEAP_RAM_NS), in both aliases
+ *  - LP: the ROM BSS and MSP of KM0 (KM0_ROMBSS_RAM to KM0_MSP_RAM) */
+/* true if [addr, addr + len) and [start, end) have a byte in common, without adding addr and len */
+BOOT_RAM_TEXT_SECTION
+static bool BOOT_RangeOverlap(u32 addr, u32 len, u32 start, u32 end)
+{
+	return (addr < end) && ((addr >= start) || (len > (start - addr)));
+}
+
+BOOT_RAM_TEXT_SECTION
+static bool BOOT_SubImgDstValid(u32 DstAddr, u32 Len)
+{
+	u32 Alias;
+
+	for (Alias = 0; Alias <= TZ_IDAU_SEC_OFFSET; Alias += TZ_IDAU_SEC_OFFSET) {
+		if (BOOT_RangeOverlap(DstAddr, Len, (u32)__km4_boot_prot_start__ + Alias, (u32)__km4_boot_prot_end__ + Alias)
+			|| BOOT_RangeOverlap(DstAddr, Len, (u32)__km4_rombss_ns_start__ + Alias, (u32)__km4_rombss_ns_end__ + Alias)) {
+			return false;
+		}
+	}
+	if (BOOT_RangeOverlap(DstAddr, Len, (u32)__km0_rombss_start__, (u32)__km0_rombss_end__)) {
+		return false;
+	}
+
+	return is_memory_range_valid(DstAddr, Len, SRAM_BASE, (u32)__hp_sram_end__)
+		   || is_memory_range_valid(DstAddr, Len, SRAM_BASE + TZ_IDAU_SEC_OFFSET, (u32)__hp_sram_end__ + TZ_IDAU_SEC_OFFSET)
+		   || is_memory_range_valid(DstAddr, Len, HP_SRAM_EXT_BASE, (u32)__hp_ext_sram_end__)
+		   || is_memory_range_valid(DstAddr, Len, LP_SRAM_BASE, (u32)__lp_sram_end__)
+		   || is_memory_range_valid(DstAddr, Len, PSRAM_BASE, (u32)__non_secure_psram_end__)
+		   || is_memory_range_valid(DstAddr, Len, PSRAM_BASE_S, (u32)__non_secure_psram_end__ + TZ_IDAU_SEC_OFFSET);
+}
+
 BOOT_RAM_TEXT_SECTION
 u8 BOOT_LoadSubImage(SubImgInfo_TypeDef *SubImgInfo, u32 StartAddr, u8 Num, char **ImgName, u8 ErrLog)
 {
@@ -130,6 +168,11 @@ u8 BOOT_LoadSubImage(SubImgInfo_TypeDef *SubImgInfo, u32 StartAddr, u8 Num, char
 	u32 i;
 
 	for (i = 0; i < Num; i++) {
+		/* StartAddr moves by the unauthenticated size of the previous sub-image, keep it in flash */
+		if (!IS_FLASH_ADDR(StartAddr)) {
+			RTK_LOGD(TAG, "%s invalid\n", ImgName[i]);
+			return FALSE;
+		}
 		BOOT_ImgCopy((void *)&ImgHdr, (void *)StartAddr, IMAGE_HEADER_LEN);
 
 		if ((ImgHdr.signature[0] != APP_IMAGE_PATTERN_1) || (ImgHdr.signature[1] != APP_IMAGE_PATTERN_2)) {
@@ -141,6 +184,12 @@ u8 BOOT_LoadSubImage(SubImgInfo_TypeDef *SubImgInfo, u32 StartAddr, u8 Num, char
 
 		DstAddr = ImgHdr.image_addr - IMAGE_HEADER_LEN;
 		Len = ImgHdr.image_size + IMAGE_HEADER_LEN;
+
+		/* anything but flash has to be memory outside of the bootloader, this also refuses a wrapped DstAddr */
+		if (!IS_FLASH_ADDR(DstAddr) && !BOOT_SubImgDstValid(DstAddr, Len)) {
+			RTK_LOGD(TAG, "%s invalid\n", ImgName[i]);
+			return FALSE;
+		}
 
 		/* If not XIP sub-image, then copy it to specific address (include the IMAGE_HEADER)*/
 		if ((!IS_FLASH_ADDR(DstAddr)) && (Len > IMAGE_HEADER_LEN)) {

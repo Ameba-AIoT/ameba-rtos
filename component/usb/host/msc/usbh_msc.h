@@ -47,6 +47,11 @@ extern "C" {
 #define USBH_MSC_MIN_BLOCK_SIZE                   512U        /**< Minimum accepted logical block size reported by READ CAPACITY(10). */
 #define USBH_MSC_MAX_BLOCK_SIZE                   4096U       /**< Maximum accepted logical block size reported by READ CAPACITY(10). */
 
+#define USBH_MSC_DEFAULT_BUF_SIZE                 (16U * 1024U) /**< Default size of the READ(10)/WRITE(10) bounce buffer. */
+/* One READ(10)/WRITE(10) chunk is one channel transfer: at full speed HCTSIZn.PktCnt (10 bits)
+ * caps it at 1023 packets of 64 bytes, and the buffer holds a whole number of the largest blocks. */
+#define USBH_MSC_MAX_BUF_SIZE                     (60U * 1024U) /**< Maximum size of the READ(10)/WRITE(10) bounce buffer. */
+
 /** @} End of Host_MSC_Constants group */
 /** @} End of USB_Host_Constants group */
 
@@ -128,9 +133,13 @@ typedef struct {
 	u32 rx_data_len;                /**< Bytes actually sent by the device in the Data-In phase (BOT §6.7 case 5). */
 	u32 cmd_address;                /**< LBA of the in-flight READ/WRITE, re-used to re-issue the same CBW (BOT §6.3.3). */
 	u32 cmd_block_count;            /**< Block count of the in-flight READ/WRITE, re-used on the retry path. */
-	u8 *cmd_buf;                    /**< User buffer of the in-flight READ/WRITE: READ copies the data here, WRITE sends it. */
-	u8 *pbuf;                       /**< Internal pointer to the current data buffer for transfer. */
+	u32 cmd_done_count;             /**< Blocks of the in-flight READ/WRITE already moved; the next chunk starts here. */
+	u8 *cmd_rx_buf;                 /**< User buffer of the in-flight READ, receiving the data. */
+	const u8 *cmd_tx_buf;           /**< User buffer of the in-flight WRITE, holding the data to send. */
+	u8 *pbuf;                       /**< Data buffer of the current command: data, or bounce_buf for READ(10)/WRITE(10). */
 	u8 *data;                       /**< A general-purpose data buffer. */
+	u8 *bounce_buf;                 /**< READ(10)/WRITE(10) bounce buffer, one chunk of a READ/WRITE. */
+	u32 bounce_len;                 /**< Size of bounce_buf, the resolved usbh_msc_config_t::buf_size. */
 	u32 tag_counter;                /**< Per-CBW tag; incremented before each CBW send (BOT §6.3.1). */
 	u8 state;                       /**< Current state of the BOT state machine, @ref usbh_bot_state_t. */
 	u8 reset_recovery;              /**< Set during BOT Reset Recovery, so the endpoint-halt clearing ends in BOT_SEND_CBW. */
@@ -174,7 +183,7 @@ typedef struct {
 	usbh_scsi_inquiry_t inquiry;        /**< Identity reported by INQUIRY. */
 	u8 state;                           /**< Current state of the per-unit state machine, @ref usbh_msc_state_t. */
 	u8 error;                           /**< Stores the last occurred error, @ref usbh_msc_error_t. */
-	u8 prev_ready_state;                /**< HAL status of the previous TEST UNIT READY, used to detect a ready-state change. */
+	u8 prev_ready;                      /**< 1 if the previous TEST UNIT READY passed, used to detect a ready-state change. */
 	u8 state_changed;                   /**< 1 if the last TEST UNIT READY changed the ready state, else 0. */
 	u8 retired;                         /**< 1 once a timed-out init or a failed Reset Recovery left the unit unusable; READ/WRITE are
 	                                         refused until re-attach. Unlike error, a single failed command never sets it. */
@@ -201,6 +210,20 @@ typedef struct {
 } usbh_msc_cb_t;
 
 /**
+ * @brief Configuration for the MSC host class.
+ * @note  Read by usbh_msc_init() only, so it need not outlive that call.
+ */
+typedef struct {
+	/**
+	 * @brief Size of the READ(10)/WRITE(10) bounce buffer, 0 uses @ref USBH_MSC_DEFAULT_BUF_SIZE.
+	 * @details Allocated once by usbh_msc_init(). A READ/WRITE larger than it is moved in chunks of
+	 *          this size, one READ(10)/WRITE(10) each, so it trades throughput against heap. Shall be a
+	 *          multiple of @ref USBH_MSC_MAX_BLOCK_SIZE not above @ref USBH_MSC_MAX_BUF_SIZE.
+	 */
+	u32 buf_size;
+} usbh_msc_config_t;
+
+/**
  * @brief MSC host structure.
  * @details This structure holds all the state and context for the MSC host driver.
  */
@@ -212,7 +235,7 @@ typedef struct {
 	u8 state;                              /**< Current state of the main MSC state machine, @ref usbh_msc_state_t. */
 	u8 req_state;                          /**< Current state of the MSC control request state machine, @ref usbh_msc_req_state_t. */
 	u8 current_lun;                        /**< The currently active logical unit number. */
-	u8 max_lun;                            /**< The maximum logical unit number supported by the device. */
+	u8 max_lun;                            /**< Number of LUNs in use: GET MAX LUN + 1, clamped to USBH_MSC_MAX_LUN. */
 	u8 itf_num;                            /**< MSC interface number; used as wIndex in class requests (BOT §3.1). */
 	u8 init_diag_done;                     /**< 1 once the stuck LUN init diagnostic has been printed for this attach. */
 	u8 init_recovery;                      /**< Recovery steps a stuck LUN init has used this attach: 1 after BOT Reset Recovery. */
@@ -250,9 +273,10 @@ typedef struct {
 /**
  * @brief Initializes the MSC class driver with application callback handler.
  * @param[in] cb: Pointer to a user callback structure.
- * @return 0 on success, non-zero on failure.
+ * @param[in] cfg: Pointer to the class configuration. See @ref usbh_msc_config_t.
+ * @return HAL_OK on success, HAL_ERR_PARA if cb/cfg is invalid, another HAL error code otherwise.
  */
-int usbh_msc_init(const usbh_msc_cb_t *cb);
+int usbh_msc_init(const usbh_msc_cb_t *cb, const usbh_msc_config_t *cfg);
 
 /**
  * @brief De-initializes the MSC class driver.
@@ -274,8 +298,10 @@ int usbh_msc_bot_process(usb_host_t *host, u8 lun);
 int usbh_msc_is_ready(void);
 
 /**
- * @brief Gets the maximum number of logical units (LUNs) supported by the device.
- * @return The maximum LUN number.
+ * @brief Gets the number of logical units (LUNs) in use.
+ * @return The LUN count, i.e. the GET MAX LUN result + 1 clamped to @ref USBH_MSC_MAX_LUN, so valid
+ *         LUN indexes are 0 to count - 1. 0 if no device is attached, 0xFFFFFFFF while the class is
+ *         still bringing the LUNs up or a command is in flight.
  */
 u32 usbh_msc_get_max_lun(void);
 
@@ -318,7 +344,7 @@ int usbh_msc_read(u8 lun, u32 address, u8 *pbuf, u32 length);
  * @param[in] length: The number of logical blocks to write.
  * @return HAL_OK on success, HAL_TIMEOUT if the command was abandoned, another HAL error code otherwise.
  */
-int usbh_msc_write(u8 lun, u32 address, u8 *pbuf, u32 length);
+int usbh_msc_write(u8 lun, u32 address, const u8 *pbuf, u32 length);
 
 /** @} End of Host_MSC_Functions group */
 /** @} End of USB_Host_Functions group */

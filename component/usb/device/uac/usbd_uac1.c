@@ -2212,27 +2212,28 @@ int usbd_uac_init(const usbd_uac_cb_t *cb, const usbd_uac_config_t *cfg)
 void usbd_uac_deinit(void)
 {
 	usbd_uac_dev_t *cdev = &usbd_uac_dev;
+	int ret;
 
+	/* Leave the core before anything is torn down. Composite: refused until
+	   usbd_composite_deinit() has blocked the ISR and cleared the configuration of every
+	   function. Standalone: refused in interrupt context. Either way nothing is released when
+	   refused, and once accepted no class callback runs any more and every endpoint of this
+	   class is deinitialized: ref USB 2.0 9.4.7, the transfers still pending are aborted. */
 #ifdef CONFIG_USBD_COMPOSITE
-	/* Leave the composite framework before anything is torn down: it is refused while the
-	   composite device is still registered on the core, and the class must then stay intact */
 	if (cdev->from_composite != 0U) {
-		if (usbd_composite_unregister_driver(&usbd_uac_driver) != HAL_OK) {
-			return;
-		}
-	}
+		ret = usbd_composite_unregister_driver(&usbd_uac_driver);
+	} else
 #endif
+	{
+		ret = usbd_unregister_class();
+	}
+	if (ret != HAL_OK) {
+		return;
+	}
 
 #if USBD_UAC_DEBUG
 	cdev->isoc_dump_thread = 0;
 #endif
-#ifdef CONFIG_USBD_COMPOSITE
-	if (cdev->from_composite == 0U)
-#endif
-	{
-		usbd_unregister_class();
-	}
-
 	usbd_uac_ep_buf_ctrl_deinit(&(cdev->uac_isoc_in));
 	usbd_uac_ep_buf_ctrl_deinit(&(cdev->uac_isoc_out));
 

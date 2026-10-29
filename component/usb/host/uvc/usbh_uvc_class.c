@@ -40,7 +40,7 @@ static const usbh_dev_id_t uvc_devs[] = {
 	{
 		.mMatchFlags = USBH_DEV_ID_MATCH_ITF_CLASS,
 		.idVendor = 0x0BDA,
-		.bInterfaceClass = USBH_UVC_CLASS_CODE,
+		.bInterfaceClass = USB_VIDEO_CLASS_CODE,
 	},
 	{
 	},

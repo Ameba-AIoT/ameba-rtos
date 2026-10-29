@@ -120,7 +120,7 @@ PSRAM_END       ──────────►└─────────�
 #define KM0_BD_PSRAM_LENGTH			(KM0_PSRAM_IMG2_SIZE - IMAGE_HEADER_LEN)
 #else
 #define KM0_PSRAM_IMG2_SIZE			0
-#define KM0_BD_PSRAM_ORIGIN			KM0_IMG2_PSRAM_START
+#define KM0_BD_PSRAM_ORIGIN			(KM0_IMG2_PSRAM_START + IMAGE_HEADER_LEN)
 #define KM0_BD_PSRAM_LENGTH			0
 #endif
 
@@ -229,6 +229,9 @@ __rom_text_region1_end__   = ORIGIN(WIFI_ROM) + LENGTH(WIFI_ROM);               
 /* code analyse used */
 __rtk_fixed_addr__ = SRAM_BASE + KM0_KM4_RAM_SIZE;
 __img1_sram_size__ = KM4_IMG1_SIZE;
+/* SRAM top and the bootloader's protected RAM, used by the bootloader to check sub-image headers */
+__sram_end__ = SRAM_END;
+__km4_romcom_ram_end__ = ORIGIN(KM4_ROMBSS_RAM_COM) + LENGTH(KM4_ROMBSS_RAM_COM);
 __img3_sram_size__ = KM4_RAM_TZ_SIZE;
 
 __km4_msp_ram_ns_limit__ = ORIGIN(KM4_MSP_RAM_NS);

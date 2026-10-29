@@ -344,7 +344,11 @@ static void usbh_ncm_link_change_thread(void *param)
 					cdc_ncm_dhcp_done = 1;
 					RTK_LOGS(TAG, RTK_LOG_INFO, "Switch to link\n");
 				} else {
-					RTK_LOGS(TAG, RTK_LOG_ERROR, "DHCP fail\n");
+					/* Back to IDLE so the next round retries: while the link stays up no link-down edge
+					   would ever bring this branch back */
+					RTK_LOGS(TAG, RTK_LOG_ERROR, "DHCP fail, retry\n");
+					ethernet_state = ETH_STATUS_IDLE;
+					rtos_time_delay_ms(1000);
 				}
 			}
 		} else if (0 == link_is_up && (ethernet_state >= ETH_STATUS_INIT)) {	// link -> unlink
@@ -540,9 +544,14 @@ static void usbh_ncm_mem_check_thread(void *param)
 			RTK_LOGS(TAG, RTK_LOG_INFO, "Del monitor_task\n");
 			rtos_task_delete(monitor_task);
 
+			/* Same teardown as the hotplug thread: gate TX off, then release in reverse init order */
+			cdc_ncm_teardown = 1U;
+			rtos_mutex_take(cdc_ncm_state_mutex, RTOS_MAX_TIMEOUT);
+			cdc_ncm_stack_ready = 0U;
 			usbh_stop();
 			usbh_cdc_ncm_deinit();
 			usbh_deinit();
+			rtos_mutex_give(cdc_ncm_state_mutex);
 
 			rtos_time_delay_ms(3000);
 			RTK_LOGS(TAG, RTK_LOG_INFO, "Loop delete %d: all_free:0x%08x\n", loop, usb_os_get_free_heap_size());

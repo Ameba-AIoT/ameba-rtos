@@ -29,6 +29,7 @@
 #include <stack/host/smp.h>
 #include <stack/host/adv.h>
 #include <stack/host/att_internal.h>
+#include <stack/host/l2cap_internal.h>
 #include <zephyr/sys/byteorder.h>
 #include <stack/host/keys.h>
 #include <stack/host/settings.h>
@@ -68,7 +69,6 @@ static struct bt_le_scan_param scan_param;
 static rtk_bt_le_scan_param_t legacy_scan_param;
 static bool legacy_scan_param_valid = false;
 static uint8_t zephyr_scan_state = ZEPHYR_SCAN_STATE_IDLE;
-static bt_security_t security_level = BT_SECURITY_L2;
 
 extern struct bt_dev bt_dev;
 uint16_t bt_stack_le_gap_get_conn_id(uint16_t conn_handle, uint8_t *p_conn_id);
@@ -240,9 +240,11 @@ void bt_zephyr_le_param_update_callback(struct bt_conn *conn, uint16_t interval,
 	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_GAP,
 								RTK_BT_LE_GAP_EVT_CONN_UPDATE_IND,
 								sizeof(rtk_bt_le_conn_update_ind_t));
+	if (!p_evt) {
+		return;
+	}
 
 	update_conn = (rtk_bt_le_conn_update_ind_t *)p_evt->data;
-
 	update_conn->err = 0;
 	update_conn->conn_handle = conn->handle;
 	update_conn->conn_interval = interval;
@@ -590,9 +592,12 @@ void zephyr_auth_passkey_confirm(struct bt_conn *conn, unsigned int passkey)
 
 void zephyr_auth_oob_data_request(struct bt_conn *conn, struct bt_conn_oob_info *info)
 {
-	(void)info;
 	rtk_bt_evt_t *p_evt;
 	rtk_bt_le_auth_oob_input_ind_t *oob_input_ind;
+
+	if (info->type != BT_CONN_OOB_LE_LEGACY) {
+		return;
+	}
 
 	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_GAP,
 								RTK_BT_LE_GAP_EVT_AUTH_OOB_KEY_INPUT_IND,
@@ -603,19 +608,7 @@ void zephyr_auth_oob_data_request(struct bt_conn *conn, struct bt_conn_oob_info 
 
 	oob_input_ind = (rtk_bt_le_auth_oob_input_ind_t *)p_evt->data;
 	oob_input_ind->conn_handle = conn->handle;
-	// if (info->type == BT_CONN_OOB_LE_LEGACY)
-	//  oob_input_ind->type = RTK_BT_LE_SM_OOB_LEGACY;
-	// else if (info->lesc.oob_config == BT_CONN_OOB_LOCAL_ONLY) {
-	//  oob_input_ind->type = RTK_BT_LE_SM_OOB_SC_LOCAL;
-	// }
-	// else if (info->lesc.oob_config == BT_CONN_OOB_REMOTE_ONLY) {
-	//  oob_input_ind->type = RTK_BT_LE_SM_OOB_SC_REMOTE;
-	// }
-	// else if (info->lesc.oob_config == BT_CONN_OOB_BOTH_PEERS) {
-	//  oob_input_ind->type = RTK_BT_LE_SM_OOB_SC_BOTH;
-	// }
-
-	BT_LOGD("[auth_oob_input]: need user to input oob data, conn_handle: %d\r\n", conn->handle);
+	BT_LOGD("[auth_oob_input]: need user to input oob tk, conn_handle: %d\r\n", conn->handle);
 
 	rtk_bt_evt_indicate(p_evt, NULL);
 }
@@ -925,16 +918,6 @@ int bt_stack_le_gap_init(void *app_config)
 #if defined(RTK_BLE_5_1_CTE_SUPPORT) && RTK_BLE_5_1_CTE_SUPPORT
 	le_df_init();
 #endif
-
-	return 0;
-}
-
-uint16_t bt_stack_le_gap_deinit(void)
-{
-	memset((void *)bt_stack_le_conn_handle, 0, sizeof(uint16_t) * CONFIG_BT_MAX_CONN);
-
-	legacy_adv_param_valid = false;
-	legacy_scan_param_valid = false;
 
 	return 0;
 }
@@ -2844,8 +2827,6 @@ static uint16_t bt_stack_le_sm_set_security_param(void *p_param)
 	}
 #endif
 
-	security_level = BT_SECURITY_L2;
-
 	bt_set_bondable(param->bond_flag);
 
 	memset(&bt_zephyr_auth_cb, 0, sizeof(struct bt_conn_auth_cb));
@@ -2865,9 +2846,8 @@ static uint16_t bt_stack_le_sm_set_security_param(void *p_param)
 		bt_zephyr_auth_cb.passkey_entry = zephyr_auth_passkey_entry;
 	}
 
-	if (param->mitm_flag) { /* may support numerical comparison or passkey entry */
+	if (param->mitm_flag) {
 		bt_set_mitm_flag(true);
-		security_level = BT_SECURITY_L3;
 	} else {
 		bt_set_mitm_flag(false);
 	}
@@ -2875,20 +2855,13 @@ static uint16_t bt_stack_le_sm_set_security_param(void *p_param)
 	if (param->oob_data_flag) {
 		bt_zephyr_auth_cb.oob_data_request = zephyr_auth_oob_data_request;
 	}
-	// sc oob is not supported temporarily
-	bt_le_oob_set_sc_flag(false);
+	bt_le_oob_set_sc_flag(param->oob_data_flag);
 	bt_le_oob_set_legacy_flag(param->oob_data_flag);
 
-	/* bt_set_sc_support() is added by ping_yan in smp.c, remove it when sc oob is supported */
-	if (param->sec_pair_flag && (!param->oob_data_flag)) {
-		security_level = BT_SECURITY_L4;
+	if (param->sec_pair_flag) {
 		bt_set_sc_support(true);
 	} else {
-		bt_set_sc_support(false); /* disable sc when oob is requested, remove this restiction when sc oob is supported */
-	}
-
-	if (param->io_cap == BT_SMP_IO_NO_INPUT_OUTPUT) {
-		security_level = BT_SECURITY_L2;
+		bt_set_sc_support(false);
 	}
 
 	bt_set_sign_key_flag(!!param->sign_key_flag);
@@ -2912,7 +2885,11 @@ static uint16_t bt_stack_le_sm_start_security(void *param)
 		return RTK_BT_ERR_NO_CONNECTION;
 	}
 
-	err = bt_conn_set_security(conn, security_level);
+	/* Set BT_SECURITY_L2 as the lowest required security level of this connection.
+	 * If set too high, pairing may fail if peer device's pairing method not meet
+	 * the requirement, ref function remote_sec_level_reachable(). And the connection's
+	 * actual security level is decided by the paring_req/rsp parameters finally. */
+	err = bt_conn_set_security(conn, BT_SECURITY_L2);
 
 	bt_conn_unref(conn);
 
@@ -3021,6 +2998,39 @@ static uint16_t bt_stack_le_sm_set_oob_data(void *param)
 
 	if (err) {
 		return zephyr_err_to_rtk(err);
+	}
+
+	return 0;
+}
+
+static uint16_t bt_stack_le_sm_get_sc_local_oob(void *param)
+{
+	rtk_bt_le_sc_local_oob_data_t *oob_data = (rtk_bt_le_sc_local_oob_data_t *)param;
+	struct bt_le_oob_sc_data oob_sc = {0};
+	int err;
+
+	err = bt_smp_le_oob_generate_sc_data(&oob_sc);
+	if (err) {
+		return RTK_BT_ERR_LOWER_STACK_API;
+	}
+
+	memcpy(oob_data->rand, oob_sc.r, 16);
+	memcpy(oob_data->confirm, oob_sc.c, 16);
+
+	return 0;
+}
+
+static uint16_t bt_stack_le_sm_input_sc_peer_oob(void *param)
+{
+	rtk_bt_le_sc_peer_oob_data_t *oob_data = (rtk_bt_le_sc_peer_oob_data_t *)param;
+	struct bt_le_oob_sc_data oob_sc = {0};
+	int err;
+
+	memcpy(oob_sc.r, oob_data->rand, 16);
+	memcpy(oob_sc.c, oob_data->confirm, 16);
+	err = bt_smp_le_oob_set_remote_sc_data(&oob_sc);
+	if (err) {
+		return RTK_BT_ERR_LOWER_STACK_API;
 	}
 
 	return 0;
@@ -3515,6 +3525,456 @@ static uint16_t bt_stack_le_gap_get_antenna_info(void *param)
 }
 #endif /* RTK_BLE_5_1_CTE_SUPPORT */
 
+#if defined(RTK_BLE_COC_SUPPORT) && RTK_BLE_COC_SUPPORT
+struct bt_l2cap_le_coc_chan {
+	struct bt_l2cap_le_chan chan;
+	uint8_t credit;
+};
+static uint16_t le_coc_local_mtu = BT_L2CAP_SDU_RX_MTU;
+
+#define BT_L2CAP_LE_COC_CHAN(_ch)    CONTAINER_OF(_ch, struct bt_l2cap_le_coc_chan, chan)
+
+K_MEM_SLAB_DEFINE(le_coc_server_pool, sizeof(struct bt_l2cap_server),
+				  GAP_MAX_LE_COC_SERVER_REG_NUM, __alignof__(struct bt_l2cap_server));
+K_MEM_SLAB_DEFINE(le_coc_chan_slab, sizeof(struct bt_l2cap_le_coc_chan),
+				  GAP_MAX_LE_COC_CHANN_NUM, __alignof__(struct bt_l2cap_le_coc_chan));
+
+/* send conn_req ======> connected cb   | connect OK, err=0 (coc conn intiator)
+ *          idle ======> connected cb   | connect OK, err=0 (coc conn receiver) */
+static void le_coc_chan_connected(struct bt_l2cap_chan *chan)
+{
+	rtk_bt_evt_t *p_evt;
+
+	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_GAP, RTK_BT_LE_GAP_EVT_COC_CONNECT_IND,
+								sizeof(rtk_bt_le_coc_conn_state_ind_t));
+	if (!p_evt) {
+		return;
+	}
+
+	rtk_bt_le_coc_conn_state_ind_t *state_ind = (rtk_bt_le_coc_conn_state_ind_t *)p_evt->data;
+	state_ind->conn_handle = chan->conn->handle;
+	state_ind->cid = BT_L2CAP_LE_CHAN(chan)->rx.cid;
+	state_ind->err = 0;
+	rtk_bt_evt_indicate(p_evt, NULL);
+}
+
+/* send conn_req ======> disconnected cb   | connect failed, err!=0 (coc conn intiator)
+ * coc connected ======> disconnected cb   | disconnect OK, err=0 (both coc conn intiator and receiver) */
+static void le_coc_chan_disconnected(struct bt_l2cap_chan *chan)
+{
+	rtk_bt_evt_t *p_evt;
+	uint16_t err = 0;
+	uint8_t evt_code = RTK_BT_LE_GAP_EVT_COC_DISCONNECT_IND;
+
+	if (BT_L2CAP_CONNECTING == BT_L2CAP_LE_CHAN(chan)->state) {
+		/* When le coc send connect request, state changes to BT_L2CAP_CONNECTING.
+		 * Then, disconnect callback comes, regart it as coc connect failed instead
+		 * of coc disconnected. */
+		evt_code = RTK_BT_LE_GAP_EVT_COC_CONNECT_IND;
+		err = RTK_BT_FAIL;
+	}
+
+	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_GAP, evt_code,
+								sizeof(rtk_bt_le_coc_conn_state_ind_t));
+	if (!p_evt) {
+		return;
+	}
+
+	rtk_bt_le_coc_conn_state_ind_t *state_ind = (rtk_bt_le_coc_conn_state_ind_t *)p_evt->data;
+	state_ind->conn_handle = chan->conn->handle;
+	state_ind->cid = BT_L2CAP_LE_CHAN(chan)->rx.cid;
+	state_ind->err = err;
+	rtk_bt_evt_indicate(p_evt, NULL);
+}
+
+static int le_coc_chan_received(struct bt_l2cap_chan *chan, struct net_buf *buf)
+{
+	rtk_bt_evt_t *p_evt;
+
+	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_GAP, RTK_BT_LE_GAP_EVT_COC_RECEIVE_DATA_IND,
+								(sizeof(rtk_bt_le_coc_receive_data_ind_t) + buf->len));
+	if (!p_evt) {
+		return 0;
+	}
+
+	rtk_bt_le_coc_receive_data_ind_t *data_ind = (rtk_bt_le_coc_receive_data_ind_t *)p_evt->data;
+	data_ind->conn_handle = chan->conn->handle;
+	data_ind->cid = BT_L2CAP_LE_CHAN(chan)->rx.cid;
+	data_ind->len = buf->len;
+	data_ind->data = BT_STRUCT_TAIL(data_ind, rtk_bt_le_coc_receive_data_ind_t);
+	memcpy(data_ind->data, buf->data, buf->len);
+	rtk_bt_evt_indicate(p_evt, NULL);
+	return 0;
+}
+
+static void le_coc_data_sent(struct bt_l2cap_chan *chan)
+{
+	rtk_bt_evt_t *p_evt;
+	struct bt_l2cap_le_chan *le_chan = BT_L2CAP_LE_CHAN(chan);
+	struct bt_l2cap_le_coc_chan *le_coc_chan = BT_L2CAP_LE_COC_CHAN(le_chan);
+
+	/* Here credits not refer to l2cap channel credits. It means bt stack layer is ready
+	 * to send 1 more packet. Because when a coc data packet sent, stack will get resources
+	 * to send next one. */
+	uint32_t flags = osif_lock();
+	le_coc_chan->credit++;
+	osif_unlock(flags);
+
+	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_GAP, RTK_BT_LE_GAP_EVT_COC_SEND_DATA_RESULT_IND,
+								sizeof(rtk_bt_le_coc_send_data_res_ind_t));
+	if (!p_evt) {
+		return;
+	}
+
+	rtk_bt_le_coc_send_data_res_ind_t *res_ind = (rtk_bt_le_coc_send_data_res_ind_t *)p_evt->data;
+	res_ind->conn_handle = chan->conn->handle;
+	res_ind->cid = BT_L2CAP_LE_CHAN(chan)->rx.cid;
+	res_ind->err = 0;
+	res_ind->credit = le_coc_chan->credit;
+
+	rtk_bt_evt_indicate(p_evt, NULL);
+}
+
+static void le_coc_chan_released(struct bt_l2cap_chan *chan)
+{
+	struct bt_l2cap_le_chan *le_chan = BT_L2CAP_LE_CHAN(chan);
+	struct bt_l2cap_le_coc_chan *le_coc_chan = BT_L2CAP_LE_COC_CHAN(le_chan);
+
+	k_mem_slab_free(&le_coc_chan_slab, (void *)le_coc_chan);
+}
+
+static struct bt_l2cap_chan_ops le_coc_chan_ops = {
+	.connected = le_coc_chan_connected,
+	.disconnected = le_coc_chan_disconnected,
+	.recv = le_coc_chan_received,
+	.sent = le_coc_data_sent,
+	.released = le_coc_chan_released,
+};
+
+static struct bt_l2cap_le_coc_chan *le_coc_chan_new(void)
+{
+	struct bt_l2cap_le_coc_chan *le_coc_chan;
+
+	if (k_mem_slab_alloc(&le_coc_chan_slab, (void **)&le_coc_chan, K_NO_WAIT)) {
+		return NULL;
+	}
+	memset(le_coc_chan, 0, sizeof(*le_coc_chan));
+	le_coc_chan->chan.chan.ops = &le_coc_chan_ops;
+	le_coc_chan->chan.rx.mtu = le_coc_local_mtu;
+	le_coc_chan->credit = GAP_MAX_LE_COC_CREDITS;
+
+	return le_coc_chan;
+}
+
+static void le_coc_chan_delete(struct bt_l2cap_le_coc_chan *le_coc_chan)
+{
+	k_mem_slab_free(&le_coc_chan_slab, le_coc_chan);
+}
+
+static int bt_le_coc_accept(struct bt_conn *conn, struct bt_l2cap_server *server,
+							struct bt_l2cap_chan **chan)
+{
+	(void)conn;
+	(void)server;
+	struct bt_l2cap_le_coc_chan *le_coc_chan;
+
+	le_coc_chan = le_coc_chan_new();
+	if (!le_coc_chan) {
+		return -ENOMEM;
+	}
+
+	*chan = &le_coc_chan->chan.chan;
+
+	return 0;
+}
+
+static void bt_le_coc_server_free(struct bt_l2cap_server *server)
+{
+	k_mem_slab_free(&le_coc_server_pool, server);
+}
+
+static uint16_t bt_le_coc_register(uint16_t psm)
+{
+	struct bt_l2cap_server *le_coc_server;
+
+	if (bt_l2cap_server_lookup_psm(psm)) {
+		return RTK_BT_ERR_ALREADY_DONE;
+	}
+
+	if (k_mem_slab_alloc(&le_coc_server_pool, (void **)&le_coc_server, K_NO_WAIT)) {
+		return RTK_BT_ERR_NO_MEMORY;
+	}
+	memset(le_coc_server, 0, sizeof(*le_coc_server));
+	le_coc_server->psm = psm;
+	le_coc_server->accept = bt_le_coc_accept;
+	le_coc_server->sec_level = BT_SECURITY_L1;
+	le_coc_server->free = bt_le_coc_server_free;
+
+	if (bt_l2cap_server_register(le_coc_server)) {
+		bt_le_coc_server_free(le_coc_server);
+		return RTK_BT_ERR_LOWER_STACK_API;
+	}
+
+	return 0;
+}
+
+static uint16_t bt_le_coc_unregister(uint16_t psm)
+{
+	struct bt_l2cap_server *le_coc_server = bt_l2cap_server_lookup_psm(psm);
+
+	if (!le_coc_server) {
+		return RTK_BT_ERR_NO_ENTRY;
+	}
+
+	/* Check if this psm is le coc server */
+	if (le_coc_server->accept != bt_le_coc_accept) {
+		return RTK_BT_ERR_MISMATCH;
+	}
+
+	if (bt_l2cap_server_unregister(le_coc_server)) {
+		return RTK_BT_ERR_LOWER_STACK_API;
+	}
+	bt_le_coc_server_free(le_coc_server);
+
+	return 0;
+}
+
+static uint16_t bt_stack_le_gap_coc_register_psm(void *param)
+{
+	rtk_bt_le_coc_psm_reg_param_t *reg_param = (rtk_bt_le_coc_psm_reg_param_t *)param;
+
+	if (!reg_param->le_psm) {
+		return RTK_BT_ERR_PARAM_INVALID;
+	}
+
+	if (reg_param->is_register) {
+		return bt_le_coc_register(reg_param->le_psm);
+	} else {
+		return bt_le_coc_unregister(reg_param->le_psm);
+	}
+}
+
+static uint16_t bt_stack_le_gap_coc_set_psm_security(void *param)
+{
+	struct bt_l2cap_server *le_coc_server = NULL;
+	rtk_bt_le_coc_set_psm_sec_param_t *sec_param = (rtk_bt_le_coc_set_psm_sec_param_t *)param;
+	uint8_t sec_level = BT_SECURITY_L1;
+
+	le_coc_server = bt_l2cap_server_lookup_psm(sec_param->le_psm);
+	if (!le_coc_server) {
+		return RTK_BT_ERR_NO_ENTRY;
+	}
+
+	/* Check if this psm is le coc server */
+	if (le_coc_server->accept != bt_le_coc_accept) {
+		return RTK_BT_ERR_MISMATCH;
+	}
+
+	if (sec_param->active) {
+		switch (sec_param->sec_mode) {
+		case RTK_BT_LE_COC_SEC_NONE:
+			sec_level = BT_SECURITY_L1;
+			break;
+		case RTK_BT_LE_COC_SEC_UNAUTHEN_ENCRYPT:
+			sec_level = BT_SECURITY_L2;
+			break;
+		case RTK_BT_LE_COC_SEC_AUTHEN_ENCRYPT:
+			sec_level = BT_SECURITY_L3;
+			break;
+		case RTK_BT_LE_COC_SEC_SECURE_CONN_AUTHEN:
+			sec_level = BT_SECURITY_L4;
+			break;
+		default:
+			return RTK_BT_ERR_UNSUPPORTED;
+		}
+		/* sec_param->key_size is not used because zephyr stack just use security
+		 * level 1-4 to judge if security is satisfied. */
+	}
+
+	le_coc_server->sec_level = sec_level;
+
+	return 0;
+}
+
+static struct bt_l2cap_le_coc_chan *le_coc_chan_lookup_cid(uint16_t conn_handle, uint16_t cid)
+{
+	struct bt_conn *conn = NULL;
+	struct bt_l2cap_chan *chan = NULL;
+	struct bt_l2cap_le_chan *le_chan = NULL;
+	struct bt_l2cap_le_coc_chan *le_coc_chan = NULL;
+
+	conn = bt_conn_lookup_handle(conn_handle, BT_CONN_TYPE_LE);
+	if (!conn) {
+		return NULL;
+	}
+
+	chan = bt_l2cap_le_lookup_rx_cid(conn, cid);
+	if (!chan) {
+		goto exit;
+	}
+
+	/* Check if this chan is le coc chan */
+	if (!chan->ops || chan->ops->recv != le_coc_chan_received) {
+		goto exit;
+	}
+
+	le_chan = BT_L2CAP_LE_CHAN(chan);
+	if (le_chan->state != BT_L2CAP_CONNECTED) {
+		goto exit;
+	}
+
+	le_coc_chan = BT_L2CAP_LE_COC_CHAN(le_chan);
+
+exit:
+	bt_conn_unref(conn);
+	return le_coc_chan;
+}
+
+static uint16_t bt_stack_le_gap_coc_set_param(void *param)
+{
+	rtk_bt_le_coc_param_set_t *param_set = (rtk_bt_le_coc_param_set_t *)param;
+
+	if (RTK_BT_LE_COC_PARAM_LOCAL_MTU == param_set->param_type) {
+		if (param_set->value < 23 || param_set->value > BT_L2CAP_SDU_RX_MTU) {
+			return RTK_BT_ERR_PARAM_INVALID;
+		}
+		le_coc_local_mtu = param_set->value;
+	}
+
+	return 0;
+}
+
+static uint16_t bt_stack_le_gap_coc_get_chan_param(void *param)
+{
+	struct bt_l2cap_le_coc_chan *le_coc_chan = NULL;
+	rtk_bt_le_coc_chan_param_get_t *param_get = (rtk_bt_le_coc_chan_param_get_t *)param;
+
+	le_coc_chan = le_coc_chan_lookup_cid(param_get->conn_handle, param_get->cid);
+	if (!le_coc_chan) {
+		return RTK_BT_ERR_NO_ENTRY;
+	}
+
+	switch (param_get->param_type) {
+	case RTK_BT_LE_COC_CHAN_PARAM_CUR_CREDITS:
+		*param_get->value = le_coc_chan->credit;
+		break;
+	case RTK_BT_LE_COC_CHAN_PARAM_MAX_CREDITS:
+		*param_get->value = GAP_MAX_LE_COC_CREDITS;
+		break;
+	case RTK_BT_LE_COC_CHAN_PARAM_MTU:
+		*param_get->value = le_coc_chan->chan.tx.mtu;
+		break;
+	default:
+		break;
+	}
+
+	return 0;
+}
+
+static uint16_t bt_stack_le_gap_coc_connect(void *param)
+{
+	struct bt_conn *conn = NULL;
+	struct bt_l2cap_le_coc_chan *le_coc_chan = NULL;
+	rtk_bt_le_coc_connect_param_t *coc_conn = (rtk_bt_le_coc_connect_param_t *)param;
+	uint16_t ret = 0;
+
+	if (!bt_l2cap_server_lookup_psm(coc_conn->le_psm)) {
+		return RTK_BT_ERR_NO_ENTRY;
+	}
+
+	conn = bt_conn_lookup_handle(coc_conn->conn_handle, BT_CONN_TYPE_LE);
+	if (!conn) {
+		return RTK_BT_ERR_NO_CONNECTION;
+	}
+
+	le_coc_chan = le_coc_chan_new();
+	if (!le_coc_chan) {
+		ret = RTK_BT_ERR_NO_RESOURCE;
+		goto exit;
+	}
+
+	if (bt_l2cap_chan_connect(conn, &le_coc_chan->chan.chan, coc_conn->le_psm)) {
+		ret = RTK_BT_ERR_LOWER_STACK_API;
+		goto exit;
+	}
+
+exit:
+	if (ret && le_coc_chan) {
+		le_coc_chan_delete(le_coc_chan);
+	}
+	bt_conn_unref(conn);
+	return ret;
+}
+
+static uint16_t bt_stack_le_gap_coc_disconnect(void *param)
+{
+	struct bt_l2cap_le_coc_chan *le_coc_chan = NULL;
+	rtk_bt_le_coc_disconnect_param_t *disconn_param = (rtk_bt_le_coc_disconnect_param_t *)param;
+
+	le_coc_chan = le_coc_chan_lookup_cid(disconn_param->conn_handle, disconn_param->cid);
+	if (!le_coc_chan) {
+		return RTK_BT_ERR_NO_ENTRY;
+	}
+
+	if (bt_l2cap_chan_disconnect(&le_coc_chan->chan.chan)) {
+		return RTK_BT_ERR_LOWER_STACK_API;
+	}
+
+	return 0;
+}
+
+static uint16_t bt_stack_le_gap_coc_send_data(void *param)
+{
+	struct bt_l2cap_le_coc_chan *le_coc_chan = NULL;
+	struct net_buf *buf = NULL;
+	uint16_t ret = 0;
+	rtk_bt_le_coc_send_data_param_t *send_data = (rtk_bt_le_coc_send_data_param_t *)param;
+
+	le_coc_chan = le_coc_chan_lookup_cid(send_data->conn_handle, send_data->cid);
+	if (!le_coc_chan) {
+		return RTK_BT_ERR_NO_ENTRY;
+	}
+
+	buf = bt_l2cap_create_pdu_timeout(NULL, BT_L2CAP_SDU_HDR_SIZE, K_NO_WAIT);
+	if (!buf) {
+		return RTK_BT_ERR_NO_MEMORY;
+	}
+
+	if (send_data->len > le_coc_chan->chan.tx.mtu ||
+		send_data->len > net_buf_tailroom(buf)) {
+		ret = RTK_BT_ERR_PARAM_INVALID;
+		goto exit;
+	}
+	net_buf_add_mem(buf, send_data->data, send_data->len);
+
+	uint32_t flags = osif_lock();
+	if (!le_coc_chan->credit) {
+		osif_unlock(flags);
+		ret = RTK_BT_ERR_NO_CREDITS;
+		goto exit;
+	}
+	le_coc_chan->credit--;
+	osif_unlock(flags);
+
+	/* It cannot be guaranteed that bt_l2cap_chan_send finished earlier than le_coc_data_sent
+	 * callback triggered, so, here we do credit-- before bt_l2cap_chan_send, and then credit++
+	 * if send failed. */
+	if (bt_l2cap_chan_send(&le_coc_chan->chan.chan, buf)) {
+		flags = osif_lock();
+		le_coc_chan->credit++;
+		osif_unlock(flags);
+		ret = RTK_BT_ERR_LOWER_STACK_API;
+		goto exit;
+	}
+
+exit:
+	if (ret && buf) {
+		net_buf_unref(buf);
+	}
+	return ret;
+}
+#endif /* RTK_BLE_COC_SUPPORT */
+
 #if defined(RTK_BLE_5_4_PA_RSP_SUPPORT) && RTK_BLE_5_4_PA_RSP_SUPPORT
 static uint16_t bt_stack_le_pawr_set_subevent_data(void *param)
 {
@@ -3587,6 +4047,20 @@ static uint16_t bt_stack_le_pawr_sync_subevent(void *param)
 	return 0;
 }
 #endif
+
+uint16_t bt_stack_le_gap_deinit(void)
+{
+	memset((void *)bt_stack_le_conn_handle, 0, sizeof(uint16_t) * CONFIG_BT_MAX_CONN);
+#if defined(RTK_BLE_COC_SUPPORT) && RTK_BLE_COC_SUPPORT
+	bt_l2cap_dynamic_servers_free();
+	le_coc_local_mtu = BT_L2CAP_SDU_RX_MTU;
+#endif
+
+	legacy_adv_param_valid = false;
+	legacy_scan_param_valid = false;
+
+	return 0;
+}
 
 uint16_t bt_stack_le_gap_act_handle(rtk_bt_cmd_t *p_cmd)
 {
@@ -3879,6 +4353,14 @@ uint16_t bt_stack_le_gap_act_handle(rtk_bt_cmd_t *p_cmd)
 		BT_LOGD("RTK_BT_LE_GAP_ACT_OOB_KEY_INPUT\r\n");
 		ret = bt_stack_le_sm_set_oob_data(p_cmd->param);
 		break;
+	case RTK_BT_LE_GAP_ACT_GET_SC_LOCAL_OOB:
+		BT_LOGD("RTK_BT_LE_GAP_ACT_GET_SC_LOCAL_OOB\r\n");
+		ret = bt_stack_le_sm_get_sc_local_oob(p_cmd->param);
+		break;
+	case RTK_BT_LE_GAP_ACT_INPUT_SC_PEER_OOB:
+		BT_LOGD("RTK_BT_LE_GAP_ACT_INPUT_SC_PEER_OOB\r\n");
+		ret = bt_stack_le_sm_input_sc_peer_oob(p_cmd->param);
+		break;
 	case RTK_BT_LE_GAP_ACT_GET_BOND_NUM:
 		BT_LOGD("RTK_BT_LE_GAP_ACT_GET_BOND_NUM\r\n");
 		ret = bt_stack_le_sm_get_bond_num(p_cmd->param);
@@ -3977,6 +4459,44 @@ uint16_t bt_stack_le_gap_act_handle(rtk_bt_cmd_t *p_cmd)
 		break;
 	}
 #endif
+#endif
+
+#if defined(RTK_BLE_COC_SUPPORT) && RTK_BLE_COC_SUPPORT
+	case RTK_BT_LE_GAP_ACT_COC_REG_PSM: {
+		BT_LOGD("RTK_BT_LE_GAP_ACT_COC_REG_PSM \r\n");
+		ret = bt_stack_le_gap_coc_register_psm(p_cmd->param);
+		break;
+	}
+	case RTK_BT_LE_GAP_ACT_COC_SET_PSM_SECURITY: {
+		BT_LOGD("RTK_BT_LE_GAP_ACT_COC_SET_PSM_SECURITY \r\n");
+		ret = bt_stack_le_gap_coc_set_psm_security(p_cmd->param);
+		break;
+	}
+	case RTK_BT_LE_GAP_ACT_COC_SET_PARAM: {
+		BT_LOGD("RTK_BT_LE_GAP_ACT_COC_SET_PARAM \r\n");
+		ret = bt_stack_le_gap_coc_set_param(p_cmd->param);
+		break;
+	}
+	case RTK_BT_LE_GAP_ACT_COC_GET_CHAN_PARAM: {
+		BT_LOGD("RTK_BT_LE_GAP_ACT_COC_GET_CHAN_PARAM \r\n");
+		ret = bt_stack_le_gap_coc_get_chan_param(p_cmd->param);
+		break;
+	}
+	case RTK_BT_LE_GAP_ACT_COC_CONN: {
+		BT_LOGD("RTK_BT_LE_GAP_ACT_COC_CONN \r\n");
+		ret = bt_stack_le_gap_coc_connect(p_cmd->param);
+		break;
+	}
+	case RTK_BT_LE_GAP_ACT_COC_DISCONN: {
+		BT_LOGD("RTK_BT_LE_GAP_ACT_COC_DISCONN \r\n");
+		ret = bt_stack_le_gap_coc_disconnect(p_cmd->param);
+		break;
+	}
+	case RTK_BT_LE_GAP_ACT_COC_SEND_DATA: {
+		BT_LOGD("RTK_BT_LE_GAP_ACT_COC_SEND_DATA \r\n");
+		ret = bt_stack_le_gap_coc_send_data(p_cmd->param);
+		break;
+	}
 #endif
 
 #if defined(RTK_BLE_5_4_PA_RSP_SUPPORT) && RTK_BLE_5_4_PA_RSP_SUPPORT

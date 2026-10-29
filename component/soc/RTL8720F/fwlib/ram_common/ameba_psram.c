@@ -136,6 +136,7 @@ void ChipInfo_InitPsramInfoFromMemInfo(const MCM_MemTypeDef *meminfo, PSRAMINFO_
 void PSRAM_CLK_Update(void)
 {
 	u32 PsramClk = 0;
+	u32 clk_mhz;
 	u32 Temp = HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_CKSL_GRP0);
 	u32 ClkSel = LSYS_GET_CKSL_PSRAM(Temp);
 	u32 psram_actual_end;
@@ -157,12 +158,14 @@ void PSRAM_CLK_Update(void)
 
 	PsramInfo.Psram_Clk_Set = PsramClk / 2;
 
-	if (!PsramClk) {
+	/* clk is 400/200 MHz (SYS PLL 400M, limited by CLK_LIMIT_PSRAM 400M / CLK_LIMIT_SPIC 208M), or XTAL 40M / FPGA 20M: whole MHz, so 32-bit math suffices */
+	clk_mhz = PsramClk / 1000000;
+	if (!clk_mhz) {
 		RTK_LOGE(TAG, "Invalid PsramClk\n");
 		return ;
 	}
 
-	PsramInfo.PSRAMC_Clk_Unit = 1000000000000 / PsramClk;//unit ps
+	PsramInfo.PSRAMC_Clk_Unit = 1000000 / clk_mhz;//unit ps
 	PsramInfo.Psram_Resume_Cnt = Psram_RESUME_TIME * 1000 / (PsramInfo.PSRAMC_Clk_Unit);
 
 	if (PsramInfo.Psram_Vendor == MCM_PSRAM_VENDOR_WB) {
@@ -285,66 +288,6 @@ void PSRAM_PHY_Init(PSPHY_InitTypeDef *PSPHY_InitStruct)
 
 }
 
-
-void PSRAM_InfoDump(void)
-{
-	SPIC_TypeDef *psram_ctrl = PSRAMC_DEV;
-	PSPHY_TypeDef *psram_phy = PSRAMPHY_DEV;
-
-//	RTK_LOGI(TAG, "BDnum is 0x%x\n", ChipInfo_BDNum());
-
-	RTK_LOGI(TAG, "SSIENR\t0x%x=0x%x\n", &psram_ctrl->SSIENR, psram_ctrl->SSIENR);
-	RTK_LOGI(TAG, "CTRLR0\t0x%x=0x%x\n", &psram_ctrl->CTRLR0, psram_ctrl->CTRLR0);
-	RTK_LOGI(TAG, "BAUDR\t0x%x=0x%x\n", &psram_ctrl->BAUDR, psram_ctrl->BAUDR);
-	RTK_LOGI(TAG, "VALID_CMD\t0x%x=0x%x\n", &psram_ctrl->VALID_CMD, psram_ctrl->VALID_CMD);
-	RTK_LOGI(TAG, "CTRLR2\t0x%x=0x%x\n", &psram_ctrl->CTRLR2, psram_ctrl->CTRLR2);
-	RTK_LOGI(TAG, "DEVICE_INFO\t0x%x=0x%x\n", &psram_ctrl->DEVICE_INFO, psram_ctrl->DEVICE_INFO);
-	RTK_LOGI(TAG, "TPR0\t0x%x=0x%x\n", &psram_ctrl->TPR0, psram_ctrl->TPR0);
-	RTK_LOGI(TAG, "TPR1\t0x%x=0x%x\n", &psram_ctrl->TPR1, psram_ctrl->TPR1);
-	RTK_LOGI(TAG, "TPR2\t0x%x=0x%x\n", &psram_ctrl->TPR2, psram_ctrl->TPR2);
-
-	RTK_LOGI(TAG, "READ_FAST_SINGLE\t0x%x=0x%x\n", &psram_ctrl->READ_FAST_SINGLE, psram_ctrl->READ_FAST_SINGLE);
-	RTK_LOGI(TAG, "WRITE_SINGLE\t0x%x=0x%x\n", &psram_ctrl->WRITE_SINGLE, psram_ctrl->WRITE_SINGLE);
-	RTK_LOGI(TAG, "AUTO_LENGTH\t0x%x=0x%x\n", &psram_ctrl->AUTO_LENGTH, psram_ctrl->AUTO_LENGTH);
-	RTK_LOGI(TAG, "USER_LENGTH\t0x%x=0x%x\n", &psram_ctrl->USER_LENGTH, psram_ctrl->USER_LENGTH);
-	RTK_LOGI(TAG, "AUTO_LENGTH2\t0x%x=0x%x\n", &psram_ctrl->AUTO_LENGTH2, psram_ctrl->AUTO_LENGTH2);
-	RTK_LOGI(TAG, "SR\t0x%x=0x%x\n", &psram_ctrl->SR, psram_ctrl->SR);
-	RTK_LOGI(TAG, "SLOT_STARVE\t0x%x=0x%x\n", &psram_ctrl->SLOT_STARVE, psram_ctrl->SLOT_STARVE);
-
-	RTK_LOGI(TAG, "PSPHY_CAL_CTRL\t0x%x=0x%x\n", &psram_phy->PSPHY_CAL_CTRL, psram_phy->PSPHY_CAL_CTRL);
-	RTK_LOGI(TAG, "PSPHY_CAL_PAR\t0x%x=0x%x\n", &psram_phy->PSPHY_CAL_PAR, psram_phy->PSPHY_CAL_PAR);
-	RTK_LOGI(TAG, "PSPHY_PHY_CTRL\t0x%x=0x%x\n", &psram_phy->PSPHY_PHY_CTRL, psram_phy->PSPHY_PHY_CTRL);
-	RTK_LOGI(TAG, "PSPHY_DBG_SEL\t0x%x=0x%x\n", &psram_phy->PSPHY_DBG_SEL, psram_phy->PSPHY_DBG_SEL);
-
-
-	if (PsramInfo.Psram_Vendor == MCM_PSRAM_VENDOR_WB) {
-		u8 psramir0[2] = {0, 0};
-		u8 psramcr0[2] = {0, 0};
-		u8 psramcr1[2] = {0, 0};
-
-		PSRAM_REG_Read(MCM_PSRAM_VENDOR_WB, 0x0, 2, psramir0, 0);
-		PSRAM_REG_Read(MCM_PSRAM_VENDOR_WB, 0x0, 2, psramcr0, 1);
-		PSRAM_REG_Read(MCM_PSRAM_VENDOR_WB, 0x1, 2, psramcr1, 1);
-
-		RTK_LOGI(TAG, "IR0=[0x%x, 0x%x], CR0=[0x%x, 0x%x], CR1=[0x%x, 0x%x]\n",
-				 psramir0[1], psramir0[0], psramcr0[1], psramcr0[0], psramcr1[1], psramcr1[0]);
-	} else if (PsramInfo.Psram_Type == PSRAM_TYPE_APM_UPSRAM) {
-		u8 mr1 = 0, mr2 = 0;
-
-		PSRAM_UPSRAM_REG_Read(0x1, &mr1);
-		PSRAM_UPSRAM_REG_Read(0x2, &mr2);
-
-		RTK_LOGI(TAG, "MR1=0x%x, MR2=0x%x\n", mr1, mr2);
-	} else {
-		u8 mr0 = 0, mr4 = 0, mr8 = 0;
-
-		PSRAM_REG_Read(MCM_PSRAM_VENDOR_APM, 0x0, 1, &mr0, 0);
-		PSRAM_REG_Read(MCM_PSRAM_VENDOR_APM, 0x4, 1, &mr4, 0);
-		PSRAM_REG_Read(MCM_PSRAM_VENDOR_APM, 0x8, 1, &mr8, 0);
-
-		RTK_LOGI(TAG, "MR0=0x%x, MR4=0x%x, MR8=0x%x\n", mr0, mr4, mr8);
-	}
-}
 
 /**
   * @brief Initializes the PSRAM controller according to the specified

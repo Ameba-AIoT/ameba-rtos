@@ -20,10 +20,12 @@
 /* wLength of the GETSTATE response, ref DFU 1.1 6.1.5 */
 #define USBD_DFU_STATE_PKT_SIZE                         1U
 
-/* Values of write_state: state of the block write_task programs, consumed by GETSTATUS */
-#define USBD_DFU_WRITE_BUSY                             0U
-#define USBD_DFU_WRITE_OK                               1U
-#define USBD_DFU_WRITE_FAIL                             2U
+/* Values of write_state: state of the block write_task programs, consumed by GETSTATUS.
+   BUSY means write_task owns xfer_buf, so no DNLOAD/UPLOAD may reuse the buffer. */
+#define USBD_DFU_WRITE_IDLE                             0U
+#define USBD_DFU_WRITE_BUSY                             1U
+#define USBD_DFU_WRITE_OK                               2U
+#define USBD_DFU_WRITE_FAIL                             3U
 
 /* Period of the warning usbd_dfu_stop_task() logs while a worker callback does not return */
 #define USBD_DFU_STOP_TASK_WARN_MS                      1000U
@@ -312,11 +314,12 @@ static u8 usbd_dfu_apply_write_state(usbd_dfu_dev_t *dfu)
 {
 	u8 result = dfu->write_state;
 
-	if (result == USBD_DFU_WRITE_BUSY) {
+	if ((result != USBD_DFU_WRITE_OK) && (result != USBD_DFU_WRITE_FAIL)) {
 		return 0U;
 	}
 
-	dfu->write_state = USBD_DFU_WRITE_BUSY;
+	/* Result consumed, write_task has released xfer_buf */
+	dfu->write_state = USBD_DFU_WRITE_IDLE;
 	if (result == USBD_DFU_WRITE_OK) {
 		dfu->state = USB_DFU_STATE_DNLOAD_IDLE;
 	} else {
@@ -403,17 +406,17 @@ static int usbd_dfu_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			   error, ref DFU 1.1 4.2.3. */
 			if (dev->dev_state != USBD_STATE_CONFIGURED) {
 				ret = HAL_ERR_HW;
-			} else if ((req->wIndex != USBD_DFU_ITF_NUM) || (USB_LOW_BYTE(req->wValue) != 0U)) {
+			} else if ((req->wIndex != USBD_DFU_ITF_NUM) || (req->wValue != 0U) || (req->wLength != 0U)) {
 				ret = HAL_ERR_HW;
 			} else {
 				dfu->alt_setting = 0U;
 			}
 			break;
 		case USB_REQ_GET_INTERFACE:
-			/* Ref USB 2.0 9.4.4 and Table 9-3: wLength is one, and a request for a
-			   non-existent interface is a request error. A wLength of 0 would also make the
+			/* Ref USB 2.0 9.4.4 and Table 9-3: wValue is zero, wLength is one, and a request for
+			   a non-existent interface is a request error. A wLength of 0 would also make the
 			   core add a status stage on top of this data stage. */
-			if ((dev->dev_state == USBD_STATE_CONFIGURED) && (req->wIndex == USBD_DFU_ITF_NUM) && (req->wLength == 1U)) {
+			if ((dev->dev_state == USBD_STATE_CONFIGURED) && (req->wValue == 0U) && (req->wIndex == USBD_DFU_ITF_NUM) && (req->wLength == 1U)) {
 				ep0_in->xfer_buf[0] = dfu->alt_setting;
 				ep0_in->xfer_len = 1U;
 				ret = usbd_ep_transmit(dev, ep0_in);
@@ -423,9 +426,9 @@ static int usbd_dfu_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			break;
 		case USB_REQ_GET_STATUS:
 			/* Ref USB 2.0 9.4.5 and Table 9-3: an interface-recipient GET_STATUS returns two
-			   reserved zero bytes, wLength is two, and a request for a non-existent interface
-			   is a request error */
-			if ((dev->dev_state == USBD_STATE_CONFIGURED) && (req->wIndex == USBD_DFU_ITF_NUM) && (req->wLength == 2U)) {
+			   reserved zero bytes, wValue is zero, wLength is two, and a request for a non-existent
+			   interface is a request error */
+			if ((dev->dev_state == USBD_STATE_CONFIGURED) && (req->wValue == 0U) && (req->wIndex == USBD_DFU_ITF_NUM) && (req->wLength == 2U)) {
 				ep0_in->xfer_buf[0] = 0U;
 				ep0_in->xfer_buf[1] = 0U;
 				ep0_in->xfer_len = 2U;
@@ -514,6 +517,12 @@ static int usbd_dfu_setup(usb_dev_t *dev, usb_setup_req_t *req)
 					ret = usbd_dfu_stall_error(dev, dfu, USBD_DFU_STATUS_ERR_STALLEDPKT);
 					break;
 				}
+				/* A block from before a bus reset or CLRSTATUS may still be programmed from
+				   xfer_buf, receiving into it would corrupt that block, ref DFU 1.1 A.2.4 */
+				if (dfu->write_state == USBD_DFU_WRITE_BUSY) {
+					ret = usbd_dfu_stall_error(dev, dfu, USBD_DFU_STATUS_ERR_STALLEDPKT);
+					break;
+				}
 				/* Block download */
 				if (dfu->state == USB_DFU_STATE_DFU_IDLE ||
 					dfu->state == USB_DFU_STATE_DNLOAD_IDLE) {
@@ -568,8 +577,8 @@ static int usbd_dfu_setup(usb_dev_t *dev, usb_setup_req_t *req)
 
 		case USB_DFU_REQ_UPLOAD:
 #ifdef CONFIG_USBD_DFU_CAN_UPLOAD
-			/* Reject oversized requests before using the buffer */
-			if (req->wLength > dfu->xfer_size) {
+			/* Reject oversized requests, and a buffer still owned by write_task, before using it */
+			if ((req->wLength > dfu->xfer_size) || (dfu->write_state == USBD_DFU_WRITE_BUSY)) {
 				ret = usbd_dfu_stall_error(dev, dfu, USBD_DFU_STATUS_ERR_STALLEDPKT);
 				break;
 			}
@@ -812,10 +821,12 @@ static void usbd_dfu_write_task(void *param)
 		 * never overwrites a concurrent ABORT/CLRSTATUS state change. */
 		if (ret != HAL_OK) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Write blk %u err: %d\n", dfu->block_num, ret);
-			dfu->write_state = USBD_DFU_WRITE_FAIL;
-		} else {
-			dfu->write_state = USBD_DFU_WRITE_OK;
 		}
+		/* Published under the critical section, whose barrier orders every access of
+		   cb->write() to xfer_buf before the release seen by setup() on the other core */
+		usb_os_enter_critical();
+		dfu->write_state = (ret != HAL_OK) ? USBD_DFU_WRITE_FAIL : USBD_DFU_WRITE_OK;
+		usb_os_exit_critical();
 	}
 
 	/* Publish the exit last: usbd_dfu_stop_task() waits for it before releasing what this
@@ -983,6 +994,17 @@ static void usbd_dfu_cleanup_write(usbd_dfu_dev_t *dfu)
 }
 
 /**
+ * @brief  Call the application deinit callback, if any (task context).
+ * @note   Teardown goes on regardless of the result, so a failure is only reported.
+ */
+static void usbd_dfu_cb_deinit(const usbd_dfu_cb_t *cb)
+{
+	if ((cb->deinit != NULL) && (cb->deinit() != HAL_OK)) {
+		RTK_LOGS(TAG, RTK_LOG_WARN, "CB deinit fail\n");
+	}
+}
+
+/**
  * @brief  Get descriptor callback (called from ISR).
  */
 static u16 usbd_dfu_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16 buf_len)
@@ -994,6 +1016,12 @@ static u16 usbd_dfu_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 	u8 is_cfg = 0;
 
 	UNUSED(dev);
+
+	/* Ref USB 2.0 9.4.3: the index only selects among string and configuration descriptors;
+	   with a single configuration, a non-string index other than 0 names no descriptor. */
+	if ((type != USB_DESC_TYPE_STRING) && (USB_LOW_BYTE(req->wValue) != 0U)) {
+		return 0;
+	}
 
 	switch (type) {
 
@@ -1246,9 +1274,7 @@ static int usbd_dfu_private_init(const usbd_dfu_cb_t *cb, const usbd_dfu_config_
 	ret = usb_os_sema_create(&dfu->write_sema);
 	if (ret != HAL_OK) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "No mem for write_sema\n");
-		if (cb->deinit != NULL) {
-			cb->deinit();
-		}
+		usbd_dfu_cb_deinit(cb);
 		usb_os_mfree((void *)dfu->xfer_buf);
 		dfu->xfer_buf = NULL;
 		return HAL_ERR_MEM;
@@ -1262,9 +1288,7 @@ static int usbd_dfu_private_init(const usbd_dfu_cb_t *cb, const usbd_dfu_config_
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create write_task fail\n");
 		usb_os_sema_delete(dfu->write_sema);
 		dfu->write_sema = NULL;
-		if (cb->deinit != NULL) {
-			cb->deinit();
-		}
+		usbd_dfu_cb_deinit(cb);
 		usb_os_mfree((void *)dfu->xfer_buf);
 		dfu->xfer_buf = NULL;
 		return HAL_ERR_MEM;
@@ -1334,9 +1358,7 @@ static int usbd_dfu_private_init(const usbd_dfu_cb_t *cb, const usbd_dfu_config_
 reconf_fail:
 	usbd_dfu_cleanup_manifest(dfu);
 	usbd_dfu_cleanup_write(dfu);
-	if (cb->deinit != NULL) {
-		cb->deinit();
-	}
+	usbd_dfu_cb_deinit(cb);
 	usb_os_mfree((void *)dfu->xfer_buf);
 	dfu->xfer_buf = NULL;
 	return HAL_ERR_MEM;
@@ -1389,7 +1411,11 @@ int usbd_dfu_init(const usbd_dfu_cb_t *cb, const usbd_dfu_config_t *cfg)
 	ret = usbd_dfu_private_init(cb, cfg);
 	if (ret == HAL_OK) {
 		dfu->from_composite = 0;
-		usbd_register_class(&usbd_dfu_driver);
+		ret = usbd_register_class(&usbd_dfu_driver);
+		if (ret != HAL_OK) {
+			/* private_init completed, so deinit is its exact reverse */
+			usbd_dfu_deinit();
+		}
 	}
 	return ret;
 }
@@ -1420,26 +1446,26 @@ int usbd_composite_dfu_init(const usbd_dfu_cb_t *cb, const usbd_dfu_config_t *cf
 void usbd_dfu_deinit(void)
 {
 	usbd_dfu_dev_t *dfu = &usbd_dfu_dev;
+	int ret;
 
+	/* Leave the core before anything is torn down. Composite: refused until
+	   usbd_composite_deinit() has blocked the ISR and cleared the configuration of every
+	   function. Standalone: refused in interrupt context. Either way nothing is released when
+	   refused, and once accepted no class callback runs any more and every endpoint of this
+	   class is deinitialized: ref USB 2.0 9.4.7, the transfers still pending are aborted. */
 #ifdef CONFIG_USBD_COMPOSITE
-	/* Leave the composite framework before anything is torn down: it is refused while the
-	   composite device is still registered on the core, and the class must then stay intact */
 	if (dfu->from_composite != 0U) {
-		if (usbd_composite_unregister_driver(&usbd_dfu_driver) != HAL_OK) {
-			return;
-		}
-	}
-#endif
-
-	/* Unregister first: no setup()/ep0 callback can run afterwards, so the GETSTATUS
-	 * branch that dereferences cb->get_write_poll_ms in ISR context cannot race the
-	 * teardown below. */
-#ifdef CONFIG_USBD_COMPOSITE
-	if (dfu->from_composite == 0U)
+		ret = usbd_composite_unregister_driver(&usbd_dfu_driver);
+	} else
 #endif
 	{
-		usbd_unregister_class();
+		ret = usbd_unregister_class();
 	}
+	if (ret != HAL_OK) {
+		return;
+	}
+	/* No setup()/ep0 callback runs from here on, so the GETSTATUS branch that dereferences
+	 * cb->get_write_poll_ms in ISR context cannot race the teardown below. */
 
 	/* reconf_task starts the detach timer, so it goes first. */
 	usbd_dfu_stop_task(&dfu->reconf_task, &dfu->reconf_stop, dfu->reconf_sema);
@@ -1463,9 +1489,7 @@ void usbd_dfu_deinit(void)
 	 * only remaining user of cb: releasing it here cannot be observed as a NULL
 	 * dereference by another context (MISRA-C:2012 Rule 1.3). */
 	if (dfu->cb != NULL) {
-		if (dfu->cb->deinit != NULL) {
-			dfu->cb->deinit();
-		}
+		usbd_dfu_cb_deinit(dfu->cb);
 		dfu->cb = NULL;
 	}
 

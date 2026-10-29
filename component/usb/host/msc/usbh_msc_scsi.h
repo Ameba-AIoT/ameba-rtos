@@ -78,10 +78,10 @@ int usbh_scsi_request_sense(usbh_msc_host_t *msc, u8 lun, usb_msc_scsi_sense_dat
  * @param  lun: Logical Unit Number.
  * @param  address: Start sector address.
  * @param  pbuf: Data to write.
- * @param  length: Number of sectors to write.
+ * @param  length: Number of sectors to write, at most one bounce buffer.
  * @return HAL_OK on success, a HAL error code otherwise.
  */
-int usbh_scsi_write(usbh_msc_host_t *msc, u8 lun, u32 address, u8 *pbuf, u32 length);
+int usbh_scsi_write(usbh_msc_host_t *msc, u8 lun, u32 address, const u8 *pbuf, u32 length);
 
 /**
  * @brief  Issue the READ (10) command.
@@ -89,7 +89,7 @@ int usbh_scsi_write(usbh_msc_host_t *msc, u8 lun, u32 address, u8 *pbuf, u32 len
  * @param  lun: Logical Unit Number.
  * @param  address: Start sector address.
  * @param  pbuf: Buffer receiving the data read.
- * @param  length: Number of sectors to read.
+ * @param  length: Number of sectors to read, at most one bounce buffer.
  * @return HAL_OK on success, a HAL error code otherwise.
  */
 int usbh_scsi_read(usbh_msc_host_t *msc, u8 lun, u32 address, u8 *pbuf, u32 length);
