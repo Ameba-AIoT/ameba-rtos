@@ -90,3 +90,7 @@ ChangeLog:
                   (3) Fix crash parsing some serial port names
                   (4) Fix high WMI service CPU usage from device polling
 20261016  v2.1.46 Fix log loss when file logging is off
+20261027  v2.1.47 (1) Fix log view not auto-scrolling to latest log under heavy log output
+                  (2) Pause log view while text is selected or scrolled up, add auto-scroll indicator
+                  (3) Count line limit by log lines, apply it on all tabs, remove blank top line
+                  (4) Fix Clear Log dropping data from the file log
