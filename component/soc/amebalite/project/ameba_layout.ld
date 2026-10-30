@@ -227,7 +227,7 @@ ASSERT(KM4_IMG2_PSRAM_START + IMAGE_HEADER_LEN <= PSRAM_END, "PSRAM over-committ
 #define KR4_BD_PSRAM_ORIGIN			(KR4_IMG2_PSRAM_START + IMAGE_HEADER_LEN)
 #define KR4_BD_PSRAM_LENGTH			(PSRAM_KR4_IMG2_SIZE - IMAGE_HEADER_LEN)
 #else
-#define KR4_BD_PSRAM_ORIGIN			(KR4_IMG2_PSRAM_START)
+#define KR4_BD_PSRAM_ORIGIN			(KR4_IMG2_PSRAM_START + IMAGE_HEADER_LEN)
 #define KR4_BD_PSRAM_LENGTH			0
 #endif
 
@@ -356,6 +356,7 @@ __kr4_boot_entry2_addr__ = ORIGIN(KR4_RAM_ONLY);
 /* code analyse used */
 __rtk_fixed_addr__ = SRAM_BASE + KR4_KM4_RAM_SIZE;
 __img1_sram_size__ = KM4_IMG1_SIZE;
+__km4_boot_ram_end__ = ORIGIN(KM4_BOOT_RAM) + LENGTH(KM4_BOOT_RAM);
 __img3_sram_size__ = KM4_RAM_TZ_SIZE;
 
 /* for sleep backup */

@@ -11,6 +11,7 @@
 #include "basic_types.h"
 #include "os_wrapper.h"
 #include "usbh_uac1.h"
+#include "atcmd_service.h"
 
 #ifdef CONFIG_SUPPORT_AUDIO_FOR_USB
 #include "audio/audio_control.h"
@@ -59,6 +60,10 @@
 #define USBH_UAC_PLAY_SAMPLING_FREQ             48000   /* 48 kHz */
 
 /* Thread priorities (higher number = higher priority) */
+/* Playback volume in percent: start value, and the step of USBHUAC vol up/down */
+#define USBH_UAC_VOL_INIT                       50U
+#define USBH_UAC_VOL_STEP                       5U
+
 #define USBH_UAC_INIT_THREAD_PRIORITY           5
 #define USBH_UAC_MAIN_TASK_PRIORITY             5
 #define USBH_UAC_HOTPLUG_THREAD_PRIORITY        6
@@ -126,10 +131,8 @@ typedef struct {
 
 /* Private function prototypes -----------------------------------------------*/
 
-static u32 uach_mute(u16 argc, u8 *argv[]);
-static u32 uach_vol(u16 argc, u8 *argv[]);
-static u32 uach_voldown(u16 argc, u8 *argv[]);
-static u32 uach_volup(u16 argc, u8 *argv[]);
+static int uach_cmd(u16 argc, u8 *argv[]);
+static void uach_cmd_at(u16 argc, char **argv);
 
 static int usbh_uac_cb_init(void);
 static void usbh_uac_cb_deinit(void);
@@ -144,7 +147,7 @@ static void usbh_uac_cb_process(usb_host_t *host, u8 msg);
 static const char *const TAG = "UAC";
 
 /** Example-layer playback volume tracker, used by the shell test commands. */
-static u8 example_usbh_uac_volume = 50;
+static u8 example_usbh_uac_volume = USBH_UAC_VOL_INIT;
 
 #if USBH_UAC_XFER_CHECK
 /** Fixed-pattern playback buffer used only by the TX validation path. */
@@ -243,12 +246,10 @@ static const usbh_user_cb_t usbh_usr_cb = {
 
 /* Exported variables --------------------------------------------------------*/
 
-CMD_TABLE_DATA_SECTION
-const COMMAND_TABLE usbh_uac_test_md_table[] = {
-	{"uach_mute",    uach_mute},
-	{"uach_vol",     uach_vol},
-	{"uach_volup",   uach_volup},
-	{"uach_voldown", uach_voldown},
+/* AT commands "AT+<cmd>=<p1>,<p2>...": the command name is case-sensitive, the parameters are not */
+ATCMD_TABLE_DATA_SECTION
+const log_item_t usbh_uac_test_md_table[] = {
+	{"+USBHUAC", uach_cmd_at},
 };
 
 /* Private functions ---------------------------------------------------------*/
@@ -260,24 +261,27 @@ const COMMAND_TABLE usbh_uac_test_md_table[] = {
   *         if a teardown is pending. A hotplug right after this check is harmless,
   *         the mutex stays valid and the re-check under it catches the loss.
   * @param  lock: One of usbh_uac_play_mutex / _record_mutex / _ctrl_mutex
-  * @retval HAL_OK when the lock is held and the stack is usable, HAL_ERR_HW when
+  * @retval RTK_SUCCESS when the lock is held and the stack is usable, -RTK_ERR_IO when
   *         the caller must give up without unlocking
   */
 static int usbh_uac_lock(rtos_mutex_t lock)
 {
 	if ((usbh_uac_stack_ready == 0U) || (usbh_uac_teardown != 0U) || (lock == NULL)) {
-		return HAL_ERR_HW;
+		return -RTK_ERR_IO;
 	}
 
-	rtos_mutex_take(lock, RTOS_MAX_TIMEOUT);
+	if (rtos_mutex_take(lock, RTOS_MAX_TIMEOUT) != RTK_SUCCESS) {
+		/* Not held: the caller gives up and must not unlock */
+		return -RTK_ERR_IO;
+	}
 
 	if ((usbh_uac_stack_ready == 0U) || (usbh_uac_teardown != 0U)) {
 		/* Lost the race against a teardown */
 		rtos_mutex_give(lock);
-		return HAL_ERR_HW;
+		return -RTK_ERR_IO;
 	}
 
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 /**
@@ -292,12 +296,12 @@ static void usbh_uac_unlock(rtos_mutex_t lock)
 
 /**
   * @brief  UAC class init callback - invoked once when the driver is registered.
-  * @retval HAL_OK
+  * @retval RTK_SUCCESS
   */
 static int usbh_uac_cb_init(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "INIT\n");
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 /**
@@ -369,7 +373,7 @@ static void usbh_uac_cb_transmitted(usbh_urb_state_t state)
   * @brief  USB host top-level event callback (connect / disconnect / probe fail).
   * @param  host: USB host handle (unused)
   * @param  msg:  Event identifier
-  * @retval HAL_OK
+  * @retval RTK_SUCCESS
   */
 static void usbh_uac_cb_process(usb_host_t *host, u8 msg)
 {
@@ -414,7 +418,7 @@ static void example_usbh_uac_play_thread(void *param)
 	u32 send_len = 0;
 	u32 offset = 0;
 	u32 debug_time = 0;
-	u32 ret;
+	int ret;
 	u8 playback_format_find = 0;
 	u8 is_playing = 0;
 	u8 fmt_cnt;
@@ -445,7 +449,7 @@ static void example_usbh_uac_play_thread(void *param)
 			continue;
 		}
 
-		if (usbh_uac_lock(usbh_uac_play_mutex) != HAL_OK) {
+		if (usbh_uac_lock(usbh_uac_play_mutex) != RTK_SUCCESS) {
 			continue;
 		}
 
@@ -491,7 +495,7 @@ static void example_usbh_uac_play_thread(void *param)
 		if (usbh_uac_set_alt_setting(USBH_UAC_ISOC_OUT_DIR,
 									 USBH_UAC_PLAY_CHANNELS,
 									 USBH_UAC_PLAY_BITWIDTH,
-									 USBH_UAC_PLAY_SAMPLING_FREQ) != HAL_OK) {
+									 USBH_UAC_PLAY_SAMPLING_FREQ) != RTK_SUCCESS) {
 			usbh_uac_unlock(usbh_uac_play_mutex);
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Play set alt fail\n");
 			continue;
@@ -515,7 +519,7 @@ static void example_usbh_uac_play_thread(void *param)
 		 * PHASE 3: CONTINUOUS PLAYBACK
 		 */
 		if (usbh_uac_ctx.is_ready != 0) {
-			if (usbh_uac_lock(usbh_uac_play_mutex) != HAL_OK) {
+			if (usbh_uac_lock(usbh_uac_play_mutex) != RTK_SUCCESS) {
 				continue;
 			}
 			usbh_uac_start_play();
@@ -538,37 +542,40 @@ static void example_usbh_uac_play_thread(void *param)
 			while (offset < total_len && usbh_uac_ctx.is_ready != 0
 				   && usbh_uac_ctx.play.thread_exit == 0) {
 				send_len = 0;
-				TRNG_get_random_bytes(&send_len, 2);
+				if (TRNG_get_random_bytes(&send_len, 2) != RTK_SUCCESS) {
+					send_len = 0;
+				}
 				send_len = send_len & 0x0FFFU;
 
+				/* A failed or zero draw falls back to one packet, so every round moves data
+				   instead of spinning without a delay */
 				if (send_len == 0) {
-					continue;
+					send_len = (frame_size != 0U) ? frame_size : 1U;
 				}
 
 				if (offset + send_len > total_len) {
 					send_len = total_len - offset;
 				}
 
-				if (usbh_uac_lock(usbh_uac_play_mutex) != HAL_OK) {
+				if (usbh_uac_lock(usbh_uac_play_mutex) != RTK_SUCCESS) {
 					goto play_stop;
 				}
 				ret = usbh_uac_write((u8 *)(usbh_uac_audio_data_handle + offset), send_len, 10);
 				usbh_uac_unlock(usbh_uac_play_mutex);
 
-				/* Keep what was queued and retry only the rest: resending it would play it twice */
-				offset += ret;
-				if (ret != send_len) {
-					usbh_uac_ctx.play.err_count++;
-					if (usbh_uac_ctx.is_ready == 0 || usbh_uac_ctx.play.err_count > 100) {
-						RTK_LOGS(TAG, RTK_LOG_ERROR, "Play err %d\n",
-								 usbh_uac_ctx.play.err_count);
-						goto play_stop;
-					}
-					rtos_time_delay_ms(2);
-					continue;
+				if (ret < 0) {
+					/* Stream stopped or device gone: end this session, the next setup restarts it */
+					RTK_LOGS(TAG, RTK_LOG_WARN, "Play write err %d\n", -ret);
+					goto play_stop;
 				}
 
-				usbh_uac_ctx.play.err_count = 0;
+				/* Keep what was queued and retry only the rest: resending it would play it twice */
+				offset += (u32)ret;
+				if ((u32)ret != send_len) {
+					/* Ring stayed full: the device consumes slower than expected, back off */
+					usbh_uac_ctx.play.err_count++;
+					rtos_time_delay_ms(2);
+				}
 			}
 
 			if ((usb_os_get_timestamp_ms() - debug_time) >= USBH_UAC_DEBUG_TRACE_STEP) {
@@ -590,7 +597,7 @@ play_stop:
 			RTK_LOGS(TAG, RTK_LOG_INFO, "Play stop loops=%d\n", play_loop_count);
 			/* Best effort: on a closed gate the stack is already down and the
 			   class has stopped the stream itself in the detach callback. */
-			if (usbh_uac_lock(usbh_uac_play_mutex) == HAL_OK) {
+			if (usbh_uac_lock(usbh_uac_play_mutex) == RTK_SUCCESS) {
 				usbh_uac_stop_play();
 				usbh_uac_unlock(usbh_uac_play_mutex);
 			}
@@ -604,7 +611,7 @@ play_stop:
 	}
 
 	if (is_playing != 0) {
-		if (usbh_uac_lock(usbh_uac_play_mutex) == HAL_OK) {
+		if (usbh_uac_lock(usbh_uac_play_mutex) == RTK_SUCCESS) {
 			usbh_uac_stop_play();
 			usbh_uac_unlock(usbh_uac_play_mutex);
 		}
@@ -638,7 +645,7 @@ static void example_usbh_uac_record_thread(void *param)
 	u32 total_read = 0;
 	u32 read_len = 0;
 	u32 debug_time = 0;
-	u32 ret;
+	int ret;
 	u8 is_recording = 0;
 	u8 fmt_cnt;
 	u8 i = 0;
@@ -674,7 +681,7 @@ static void example_usbh_uac_record_thread(void *param)
 			continue;
 		}
 
-		if (usbh_uac_lock(usbh_uac_record_mutex) != HAL_OK) {
+		if (usbh_uac_lock(usbh_uac_record_mutex) != RTK_SUCCESS) {
 			continue;
 		}
 
@@ -703,7 +710,7 @@ static void example_usbh_uac_record_thread(void *param)
 		if (usbh_uac_set_alt_setting(USBH_UAC_ISOC_IN_DIR,
 									 fmt_info[0].ch_cnt,
 									 fmt_info[0].bit_width,
-									 fmt_info[0].sampling_freq) != HAL_OK) {
+									 fmt_info[0].sampling_freq) != RTK_SUCCESS) {
 			usbh_uac_unlock(usbh_uac_record_mutex);
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Rec set alt fail\n");
 			continue;
@@ -746,49 +753,49 @@ static void example_usbh_uac_record_thread(void *param)
 			break;
 		}
 
+		/* Local monitoring output is optional. On any failure below, audio_track is left NULL
+		   and capture still starts: the IN alt setting is already selected, and the data is
+		   read and dropped instead. */
 		audio_track = AudioTrack_Create();
 		if (audio_track == NULL) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "Rec track create fail\n");
-			continue;
-		}
-
-		track_buf_size = AudioTrack_GetMinBufferBytes(audio_track, AUDIO_CATEGORY_MEDIA,
-						 g_track_rate, format, g_track_channel) * 10;
-		if (track_buf_size == 0) {
-			track_buf_size = (int32_t)(g_track_rate * g_track_format / 8
-									   * g_track_channel / 1000 * 100);
-			RTK_LOGS(TAG, RTK_LOG_INFO, "Rec track buf resize %d\n", track_buf_size);
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Rec track create fail, drain without output\n");
 		} else {
-			RTK_LOGS(TAG, RTK_LOG_INFO, "Rec track buf %d\n", track_buf_size);
-		}
-
-		{
 			AudioTrackConfig track_config;
+
+			track_buf_size = AudioTrack_GetMinBufferBytes(audio_track, AUDIO_CATEGORY_MEDIA,
+							 g_track_rate, format, g_track_channel) * 10;
+			if (track_buf_size == 0) {
+				track_buf_size = (int32_t)(g_track_rate * g_track_format / 8
+										   * g_track_channel / 1000 * 100);
+				RTK_LOGS(TAG, RTK_LOG_INFO, "Rec track buf resize %d\n", track_buf_size);
+			} else {
+				RTK_LOGS(TAG, RTK_LOG_INFO, "Rec track buf %d\n", track_buf_size);
+			}
+
 			track_config.category_type  = AUDIO_CATEGORY_MEDIA;
 			track_config.sample_rate    = g_track_rate;
 			track_config.format         = format;
 			track_config.channel_count  = g_track_channel;
 			track_config.buffer_bytes   = track_buf_size;
 			AudioTrack_Init(audio_track, &track_config, AUDIO_OUTPUT_FLAG_NONE);
+
+			AudioTrack_SetVolume(audio_track, 1.0, 1.0);
+			AudioTrack_SetStartThresholdBytes(audio_track, track_buf_size);
+
+			if (AudioTrack_Start(audio_track) != AUDIO_OK) {
+				RTK_LOGS(TAG, RTK_LOG_ERROR, "Rec track start fail, drain without output\n");
+				AudioTrack_Destroy(audio_track);
+				audio_track = NULL;
+			} else {
+				RTK_LOGS(TAG, RTK_LOG_INFO, "Rec track started\n");
+			}
 		}
-
-		AudioTrack_SetVolume(audio_track, 1.0, 1.0);
-		AudioTrack_SetStartThresholdBytes(audio_track, track_buf_size);
-
-		if (AudioTrack_Start(audio_track) != AUDIO_OK) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "Rec track start fail\n");
-			AudioTrack_Destroy(audio_track);
-			audio_track = NULL;
-			continue;
-		}
-
-		RTK_LOGS(TAG, RTK_LOG_INFO, "Rec track started\n");
 #endif
 
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Rec start, frame=%d\n", frame_size);
 
 		if (usbh_uac_ctx.is_ready != 0) {
-			if (usbh_uac_lock(usbh_uac_record_mutex) != HAL_OK) {
+			if (usbh_uac_lock(usbh_uac_record_mutex) != RTK_SUCCESS) {
 				goto record_stop;
 			}
 			usbh_uac_start_capture();
@@ -800,35 +807,37 @@ static void example_usbh_uac_record_thread(void *param)
 
 		while (usbh_uac_ctx.is_ready != 0 && usbh_uac_ctx.record.thread_exit == 0) {
 			read_len = USBH_UAC_RECORD_BUFFER_SIZE;
-			if (usbh_uac_lock(usbh_uac_record_mutex) != HAL_OK) {
+			if (usbh_uac_lock(usbh_uac_record_mutex) != RTK_SUCCESS) {
 				goto record_stop;
 			}
 			ret = usbh_uac_read(usbh_uac_record_buffer, read_len, 1000);
 			usbh_uac_unlock(usbh_uac_record_mutex);
 
+			if (ret < 0) {
+				/* Stream stopped or device gone: end this session, the next setup restarts it */
+				RTK_LOGS(TAG, RTK_LOG_WARN, "Rec read err %d\n", -ret);
+				goto record_stop;
+			}
+
 			if (ret > 0) {
 				record_loop_count++;
 				usbh_uac_ctx.record.count++;
-				total_read += ret;
+				total_read += (u32)ret;
 
 #ifdef CONFIG_SUPPORT_AUDIO_FOR_USB
 				if (audio_track != NULL) {
-					AudioTrack_Write(audio_track, (u8 *)usbh_uac_record_buffer, ret, true);
+					AudioTrack_Write(audio_track, (u8 *)usbh_uac_record_buffer, (u32)ret, true);
 				}
 #endif
-				if ((usb_os_get_timestamp_ms() - debug_time) >= USBH_UAC_DEBUG_TRACE_STEP) {
-					debug_time = usb_os_get_timestamp_ms();
-					RTK_LOGS(TAG, RTK_LOG_INFO, "Rec status loop=%d bytes=%d err=%d\n",
-							 record_loop_count, total_read, usbh_uac_ctx.record.err_count);
-				}
-			} else if (ret == 0) {
-				/* timeout / no data - nothing to report */
 			} else {
+				/* Running stream, no data within the timeout: count it and keep waiting */
 				usbh_uac_ctx.record.err_count++;
-				if (usbh_uac_ctx.record.err_count > 100) {
-					RTK_LOGS(TAG, RTK_LOG_ERROR, "Rec err %d\n", usbh_uac_ctx.record.err_count);
-					goto record_stop;
-				}
+			}
+
+			if ((usb_os_get_timestamp_ms() - debug_time) >= USBH_UAC_DEBUG_TRACE_STEP) {
+				debug_time = usb_os_get_timestamp_ms();
+				RTK_LOGS(TAG, RTK_LOG_INFO, "Rec status loop=%d bytes=%d empty=%d\n",
+						 record_loop_count, total_read, usbh_uac_ctx.record.err_count);
 			}
 		}
 
@@ -838,7 +847,7 @@ record_stop:
 					 record_loop_count, total_read);
 			/* Best effort: on a closed gate the stack is already down and the class
 			   has stopped the stream itself in the detach callback. */
-			if (usbh_uac_lock(usbh_uac_record_mutex) == HAL_OK) {
+			if (usbh_uac_lock(usbh_uac_record_mutex) == RTK_SUCCESS) {
 				usbh_uac_stop_capture();
 				usbh_uac_unlock(usbh_uac_record_mutex);
 			}
@@ -863,7 +872,7 @@ record_stop:
 	}
 
 	if (is_recording != 0) {
-		if (usbh_uac_lock(usbh_uac_record_mutex) == HAL_OK) {
+		if (usbh_uac_lock(usbh_uac_record_mutex) == RTK_SUCCESS) {
 			usbh_uac_stop_capture();
 			usbh_uac_unlock(usbh_uac_record_mutex);
 		}
@@ -945,7 +954,7 @@ static void example_usbh_uac_hotplug_thread(void *param)
 		rtos_mutex_take(usbh_uac_ctrl_mutex, RTOS_MAX_TIMEOUT);
 
 		ret = usbh_init(&usbh_cfg, &usbh_usr_cb);
-		if (ret != HAL_OK) {
+		if (ret != RTK_SUCCESS) {
 			rtos_mutex_give(usbh_uac_ctrl_mutex);
 			rtos_mutex_give(usbh_uac_record_mutex);
 			rtos_mutex_give(usbh_uac_play_mutex);
@@ -954,7 +963,7 @@ static void example_usbh_uac_hotplug_thread(void *param)
 		}
 
 		ret = usbh_uac_init(&usbh_uac_cfg, &uac_class_cfg);
-		if (ret != HAL_OK) {
+		if (ret != RTK_SUCCESS) {
 			usbh_deinit();
 			rtos_mutex_give(usbh_uac_ctrl_mutex);
 			rtos_mutex_give(usbh_uac_record_mutex);
@@ -1072,14 +1081,14 @@ static void example_usbh_uac_thread(void *param)
 
 	/* Initialise USB host. */
 	ret = usbh_init(&usbh_cfg, &usbh_usr_cb);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "USBH init fail %d\n", ret);
 		goto delete_record_task_exit;
 	}
 
 	/* Register UAC class driver. */
 	ret = usbh_uac_init(&usbh_uac_cfg, &uac_class_cfg);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "UAC init fail %d\n", ret);
 		goto usb_deinit_exit;
 	}
@@ -1168,92 +1177,130 @@ example_exit:
 	rtos_task_delete(NULL);
 }
 
-static u32 uach_mute(u16 argc, u8 *argv[])
+/**
+  * @brief  Parse a decimal shell argument and check its range.
+  * @param  arg: Argument string.
+  * @param  max: Largest accepted value.
+  * @param  val: Output value, written only on success.
+  * @retval RTK_SUCCESS when the whole string is a number in [0, max], -RTK_ERR_BADARG otherwise.
+  */
+static int uach_parse_arg(const u8 *arg, u32 max, u8 *val)
 {
-	u8 mute;
+	char *end = NULL;
+	u32 num;
 
-	if (argc == 0) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid argument\n");
-		return HAL_ERR_PARA;
+	if ((arg == NULL) || (arg[0] == 0U)) {
+		return -RTK_ERR_BADARG;
 	}
 
-	mute = 1;
-	if (argv[0] != NULL) {
-		mute = (u8)_strtoul((const char *)(argv[0]), (char **)NULL, 10);
+	num = (u32)_strtoul((const char *)arg, &end, 10);
+	if ((end == NULL) || (*end != '\0') || (num > max)) {
+		return -RTK_ERR_BADARG;
 	}
+
+	*val = (u8)num;
+	return RTK_SUCCESS;
+}
+
+/**
+  * @brief  Apply a playback mute or volume under the control lock.
+  * @param  is_mute: 1 to set the mute state, 0 to set the volume.
+  * @param  val: Mute 0|1, or volume 0..100.
+  * @retval RTK_SUCCESS, or -RTK_ERR_IO when the stack is gone or the device refused it.
+  */
+static int uach_apply(u8 is_mute, u8 val)
+{
+	int ret;
 
 	/* Shell context, i.e. a thread of its own: it has to be excluded from a
 	   concurrent teardown exactly like the workers are. */
-	if (usbh_uac_lock(usbh_uac_ctrl_mutex) != HAL_OK) {
+	if (usbh_uac_lock(usbh_uac_ctrl_mutex) != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Stack not ready\n");
-		return HAL_ERR_HW;
+		return -RTK_ERR_IO;
 	}
-	usbh_uac_set_mute(mute, USBH_UAC_ISOC_OUT_DIR);
-	usbh_uac_unlock(usbh_uac_ctrl_mutex);
-	return HAL_OK;
-}
-
-static u32 uach_vol(u16 argc, u8 *argv[])
-{
-	u8 vol;
-
-	if (argc == 0) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid argument\n");
-		return HAL_ERR_PARA;
-	}
-
-	vol = 50;
-	if (argv[0] != NULL) {
-		vol = (u8)_strtoul((const char *)(argv[0]), (char **)NULL, 10);
-	}
-	example_usbh_uac_volume = vol;
-	/* See uach_mute() for why the shell path needs the lock. */
-	if (usbh_uac_lock(usbh_uac_ctrl_mutex) != HAL_OK) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Stack not ready\n");
-		return HAL_ERR_HW;
-	}
-	usbh_uac_set_volume(example_usbh_uac_volume, USBH_UAC_ISOC_OUT_DIR);
-	usbh_uac_unlock(usbh_uac_ctrl_mutex);
-	return HAL_OK;
-}
-
-static u32 uach_volup(u16 argc, u8 *argv[])
-{
-	UNUSED(argc);
-	UNUSED(argv);
-
-	example_usbh_uac_volume += 5U;
-	if (example_usbh_uac_volume >= 100U) {
-		example_usbh_uac_volume = 100U;
-	}
-	/* See uach_mute() for why the shell path needs the lock. */
-	if (usbh_uac_lock(usbh_uac_ctrl_mutex) != HAL_OK) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Stack not ready\n");
-		return HAL_ERR_HW;
-	}
-	usbh_uac_set_volume(example_usbh_uac_volume, USBH_UAC_ISOC_OUT_DIR);
-	usbh_uac_unlock(usbh_uac_ctrl_mutex);
-	return HAL_OK;
-}
-
-static u32 uach_voldown(u16 argc, u8 *argv[])
-{
-	UNUSED(argc);
-	UNUSED(argv);
-
-	if (example_usbh_uac_volume < 5U) {
-		example_usbh_uac_volume = 0U;
+	if (is_mute != 0U) {
+		ret = usbh_uac_set_mute(val, USBH_UAC_ISOC_OUT_DIR);
 	} else {
-		example_usbh_uac_volume -= 5U;
+		ret = usbh_uac_set_volume(val, USBH_UAC_ISOC_OUT_DIR);
 	}
-	/* See uach_mute() for why the shell path needs the lock. */
-	if (usbh_uac_lock(usbh_uac_ctrl_mutex) != HAL_OK) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Stack not ready\n");
-		return HAL_ERR_HW;
-	}
-	usbh_uac_set_volume(example_usbh_uac_volume, USBH_UAC_ISOC_OUT_DIR);
 	usbh_uac_unlock(usbh_uac_ctrl_mutex);
-	return HAL_OK;
+	if (ret != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Set fail %d\n", ret);
+		return -RTK_ERR_IO;
+	}
+	return RTK_SUCCESS;
+}
+
+static void uach_cmd_usage(void)
+{
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Usage: AT+USBHUAC=<cmd>[,<args>]\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "  mute,<0|1>         Playback (USB OUT) mute, 1: mute, 0: unmute\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "  vol,<0..100|up|down>\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "                     Playback volume in percent, or step it by %d; start value %d\n", USBH_UAC_VOL_STEP, USBH_UAC_VOL_INIT);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "  help               Print this help\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "All need an attached and set up device\n");
+}
+
+static int uach_cmd(u16 argc, u8 *argv[])
+{
+	const char *cmd = (argc != 0U) ? (const char *)argv[0] : NULL;
+	const char *arg = (argc > 1U) ? (const char *)argv[1] : NULL;
+	int ret;
+	u8 val;
+
+	if ((cmd == NULL) || (_stricmp(cmd, "help") == 0) || (_stricmp(cmd, "?") == 0)) {
+		uach_cmd_usage();
+		return (cmd == NULL) ? -RTK_ERR_BADARG : RTK_SUCCESS;
+	}
+
+	if (_stricmp(cmd, "mute") == 0) {
+		if ((argc != 2U) || (uach_parse_arg(argv[1], 1U, &val) != RTK_SUCCESS)) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Usage: AT+USBHUAC=mute,<0|1>\n");
+			return -RTK_ERR_BADARG;
+		}
+		return uach_apply(1U, val);
+	}
+
+	if (_stricmp(cmd, "vol") == 0) {
+		if (argc != 2U) {
+			val = 0xFFU;
+		} else if (_stricmp(arg, "up") == 0) {
+			/* Saturate before adding so the u8 can not wrap */
+			val = (example_usbh_uac_volume > (100U - USBH_UAC_VOL_STEP)) ? 100U : (u8)(example_usbh_uac_volume + USBH_UAC_VOL_STEP);
+		} else if (_stricmp(arg, "down") == 0) {
+			val = (example_usbh_uac_volume < USBH_UAC_VOL_STEP) ? 0U : (u8)(example_usbh_uac_volume - USBH_UAC_VOL_STEP);
+		} else if (uach_parse_arg(argv[1], 100U, &val) != RTK_SUCCESS) {
+			val = 0xFFU;
+		} else {
+			/* a valid percentage */
+		}
+		if (val == 0xFFU) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Usage: AT+USBHUAC=vol,<0..100|up|down>\n");
+			return -RTK_ERR_BADARG;
+		}
+		/* Track the device: only a volume it accepted becomes the base of the next step */
+		ret = uach_apply(0U, val);
+		if (ret == RTK_SUCCESS) {
+			example_usbh_uac_volume = val;
+			RTK_LOGS(TAG, RTK_LOG_INFO, "Vol %d\n", val);
+		}
+		return ret;
+	}
+
+	RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid cmd: %s, try AT+USBHUAC=help\n", cmd);
+	return -RTK_ERR_BADARG;
+}
+
+/* AT entry: argv[0] is reserved by the AT parser and argv[1] holds the first parameter */
+static void uach_cmd_at(u16 argc, char **argv)
+{
+	int ret = uach_cmd((argc != 0U) ? (argc - 1U) : 0U, (u8 **)&argv[1]);
+
+	if (ret == RTK_SUCCESS) {
+		at_printf(ATCMD_OK_END_STR);
+	} else {
+		at_printf(ATCMD_ERROR_END_STR, (int)ret);
+	}
 }
 
 /* Exported functions --------------------------------------------------------*/

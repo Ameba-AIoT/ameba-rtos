@@ -25,7 +25,9 @@
 #define HCI_BT_COEX_SW_MAILBOX     0
 #define HCI_BT_COEX_BR_EDR_SUPPORT   1
 
-#define HCI_BT_KEEP_AWAKE          0
+#define HCI_BT_POWER_SAVE_MODE     1    /* 0: Controller does not support power save
+                                           1: Controller auto power save
+                                           2: Host wants to keep controller awake */
 
 /**
 * @typedef   bt_ant_t
@@ -35,6 +37,10 @@ typedef enum {
 	ANT_S0 = 0,                      /*!< 0, means bt_rfafe */
 	ANT_S1,                          /*!< 1, means wl_rfafe */
 } bt_ant_t;
+
+#define hci_platform_register_bt_wake_host_irq(void)
+#define hci_platform_unregister_bt_wake_host_irq(void)
+#define hci_platform_op_bt_wake_host_irq(op)
 
 void hci_platform_cfg_bd_addr(uint8_t *bdaddr);
 void hci_platform_get_config(uint8_t **buf, uint16_t *len);

@@ -444,15 +444,12 @@ config COMPILE_ROM
     depends on FPGA
 
 comment "Choose the build configuration"
-    choice
-        prompt "Link ROM Mode"
-        default LINK_ROM_SYMB
-        config LINK_ROM_LIB
-            bool "Link_ROM_Library"
+config LINK_ROM_LIB
+    bool "Link_ROM_Library"
+    depends on !AMEBA_RLS
 
-        config LINK_ROM_SYMB
-            bool "Link_ROM_Symbol"
-    endchoice
+config LINK_ROM_SYMB
+    def_bool !LINK_ROM_LIB
 endmenu
 
 comment "----end of MENUCONFIG FOR General------"

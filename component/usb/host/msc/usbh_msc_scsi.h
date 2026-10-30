@@ -41,7 +41,7 @@ extern "C" {
  * @brief  Issue the TEST UNIT READY command.
  * @param  msc: MSC host handle.
  * @param  lun: Logical Unit Number.
- * @return HAL_OK on success, a HAL error code otherwise.
+ * @return RTK_SUCCESS on success, a RTK error code otherwise.
  */
 int usbh_scsi_test_unit_ready(usbh_msc_host_t *msc, u8 lun);
 
@@ -50,7 +50,7 @@ int usbh_scsi_test_unit_ready(usbh_msc_host_t *msc, u8 lun);
  * @param  msc: MSC host handle.
  * @param  lun: Logical Unit Number.
  * @param  capacity: Output, receives the block count and block size.
- * @return HAL_OK on success, a HAL error code otherwise.
+ * @return RTK_SUCCESS on success, a RTK error code otherwise.
  */
 int usbh_scsi_read_capacity(usbh_msc_host_t *msc, u8 lun, usbh_scsi_capacity_t *capacity);
 
@@ -59,7 +59,7 @@ int usbh_scsi_read_capacity(usbh_msc_host_t *msc, u8 lun, usbh_scsi_capacity_t *
  * @param  msc: MSC host handle.
  * @param  lun: Logical Unit Number.
  * @param  inquiry: Output, receives the standard INQUIRY response.
- * @return HAL_OK on success, a HAL error code otherwise.
+ * @return RTK_SUCCESS on success, a RTK error code otherwise.
  */
 int usbh_scsi_inquiry(usbh_msc_host_t *msc, u8 lun, usbh_scsi_inquiry_t *inquiry);
 
@@ -68,7 +68,7 @@ int usbh_scsi_inquiry(usbh_msc_host_t *msc, u8 lun, usbh_scsi_inquiry_t *inquiry
  * @param  msc: MSC host handle.
  * @param  lun: Logical Unit Number.
  * @param  sense_data: Output, receives the sense key, ASC and ASCQ.
- * @return HAL_OK on success, a HAL error code otherwise.
+ * @return RTK_SUCCESS on success, a RTK error code otherwise.
  */
 int usbh_scsi_request_sense(usbh_msc_host_t *msc, u8 lun, usb_msc_scsi_sense_data_t *sense_data);
 
@@ -78,10 +78,10 @@ int usbh_scsi_request_sense(usbh_msc_host_t *msc, u8 lun, usb_msc_scsi_sense_dat
  * @param  lun: Logical Unit Number.
  * @param  address: Start sector address.
  * @param  pbuf: Data to write.
- * @param  length: Number of sectors to write.
- * @return HAL_OK on success, a HAL error code otherwise.
+ * @param  length: Number of sectors to write, at most one bounce buffer.
+ * @return RTK_SUCCESS on success, a RTK error code otherwise.
  */
-int usbh_scsi_write(usbh_msc_host_t *msc, u8 lun, u32 address, u8 *pbuf, u32 length);
+int usbh_scsi_write(usbh_msc_host_t *msc, u8 lun, u32 address, const u8 *pbuf, u32 length);
 
 /**
  * @brief  Issue the READ (10) command.
@@ -89,8 +89,8 @@ int usbh_scsi_write(usbh_msc_host_t *msc, u8 lun, u32 address, u8 *pbuf, u32 len
  * @param  lun: Logical Unit Number.
  * @param  address: Start sector address.
  * @param  pbuf: Buffer receiving the data read.
- * @param  length: Number of sectors to read.
- * @return HAL_OK on success, a HAL error code otherwise.
+ * @param  length: Number of sectors to read, at most one bounce buffer.
+ * @return RTK_SUCCESS on success, a RTK error code otherwise.
  */
 int usbh_scsi_read(usbh_msc_host_t *msc, u8 lun, u32 address, u8 *pbuf, u32 length);
 

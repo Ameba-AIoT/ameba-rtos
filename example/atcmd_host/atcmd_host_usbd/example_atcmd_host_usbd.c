@@ -65,7 +65,7 @@ static int cdc_acm_cb_init(void);
 static int cdc_acm_cb_deinit(void);
 static int cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf);
 static int cdc_acm_cb_received(u8 *buf, u32 Len);
-static void cdc_acm_cb_transmitted(u8 status);
+static void cdc_acm_cb_transmitted(int status);
 static void cdc_acm_cb_status_changed(u8 old_status, u8 status);
 
 /* Private variables ---------------------------------------------------------*/
@@ -196,7 +196,7 @@ static int cdc_acm_cb_init(void)
 	lc->b.bParityType = 0x00;
 	lc->b.bDataBits = 0x08;
 
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 /**
@@ -206,7 +206,7 @@ static int cdc_acm_cb_init(void)
   */
 static int cdc_acm_cb_deinit(void)
 {
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 /**
@@ -267,9 +267,9 @@ static int cdc_acm_cb_received(u8 *buf, u32 len)
 	return 0;
 }
 
-static void cdc_acm_cb_transmitted(u8 status)
+static void cdc_acm_cb_transmitted(int status)
 {
-	if (status == HAL_OK) {
+	if (status == RTK_SUCCESS) {
 		rtos_sema_give(atcmd_usbd_tx_done_sema);
 	} else {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "TX fail: %d\n", status);
@@ -281,14 +281,14 @@ static int cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 	usb_cdc_acm_line_coding_t *lc = &cdc_acm_line_coding;
 	/* Ref USB 2.0 9.2.7: anything not explicitly accepted below is a request error, so
 	   the default status makes the core STALL EP0 instead of ACKing the status stage. */
-	int ret = HAL_ERR_PARA;
+	int ret = -RTK_ERR_BADARG;
 
 	switch (req->bRequest) {
 	/* Ref CDC PSTN 1.2 Table 4: bmCapabilities 0x02 declares no Comm Feature support and no
 	   encapsulated protocol is implemented, so those requests fall to default and are STALLed */
 	case USB_CDC_ACM_SEND_BREAK:
 		/* Do nothing */
-		ret = HAL_OK;
+		ret = RTK_SUCCESS;
 		break;
 
 	case USB_CDC_ACM_SET_LINE_CODING:
@@ -299,7 +299,7 @@ static int cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 			lc->b.bCharFormat = buf[4];
 			lc->b.bParityType = buf[5];
 			lc->b.bDataBits = buf[6];
-			ret = HAL_OK;
+			ret = RTK_SUCCESS;
 		}
 		break;
 
@@ -311,7 +311,7 @@ static int cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 		buf[4] = lc->b.bCharFormat;
 		buf[5] = lc->b.bParityType;
 		buf[6] = lc->b.bDataBits;
-		ret = HAL_OK;
+		ret = RTK_SUCCESS;
 		break;
 
 	case USB_CDC_ACM_SET_CONTROL_LINE_STATE:
@@ -329,7 +329,7 @@ static int cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 				RTK_LOGS(TAG, RTK_LOG_INFO, "VCOM port activate\n");
 				usbd_cdc_acm_notify_serial_state(USB_CDC_ACM_CTRL_DSR | USB_CDC_ACM_CTRL_DCD);
 			}
-			ret = HAL_OK;
+			ret = RTK_SUCCESS;
 		}
 		break;
 
@@ -420,12 +420,12 @@ static void example_usbd_cdc_acm_thread(void *param)
 	serial_irq_set(&sobj, TxIrq, 1);
 
 	ret = usbd_init(&cdc_acm_cfg);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		goto exit_usbd_init_fail;
 	}
 
 	ret = usbd_cdc_acm_init(&cdc_acm_cb, &cdc_acm_ep);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		goto exit_usbd_cdc_acm_init_fail;
 	}
 
@@ -476,7 +476,7 @@ static void tt_mode_test_task(void *param)
 			xSemaphoreTake(tt_mode_tx_sema, 0xFFFFFFFF);
 			send_len = tt_len_tmp > (CDC_ACM_BULK_OUT_XFER_SIZE) ? (CDC_ACM_BULK_OUT_XFER_SIZE) : tt_len_tmp;
 			ret = usbd_cdc_acm_transmit(tt_tx_buf, send_len);
-			while (ret != HAL_OK) {
+			while (ret != RTK_SUCCESS) {
 				RTK_LOGS(TAG, RTK_LOG_INFO, "Xfer busy, retry[2]\r\n");
 				rtos_time_delay_ms(1);
 				ret = usbd_cdc_acm_transmit(tt_tx_buf, send_len);
@@ -501,7 +501,7 @@ static void uart_irq_handle_task(void)
 			tt_len = atoi((char *)&uart_irq_buffer[10]);
 		}
 		ret = usbd_cdc_acm_transmit(uart_irq_buffer, uart_irq_count);
-		while (ret != HAL_OK) {
+		while (ret != RTK_SUCCESS) {
 			RTK_LOGS(TAG, RTK_LOG_INFO, "Xfer busy, retry[2]\r\n");
 			rtos_time_delay_ms(1);
 			ret = usbd_cdc_acm_transmit(uart_irq_buffer, uart_irq_count);

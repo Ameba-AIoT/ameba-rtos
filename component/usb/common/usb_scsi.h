@@ -67,6 +67,7 @@ extern "C" {
 
 #define CBW_CB_LENGTH                               16U   /**< Size of the CBWCB field of a CBW (BOT 5.1). */
 #define CBW_LENGTH                                  10U   /**< bCBWCBLength used for 10-byte command blocks. */
+#define CBW_LENGTH_SIX_BYTE_COMMAND                 6U    /**< bCBWCBLength used for 6-byte command blocks. */
 
 /* SCSI Sense key Code */
 #define SCSI_SENSE_KEY_NO_SENSE                     0x00U /**< Sense key: no specific sense information. */
@@ -99,6 +100,8 @@ extern "C" {
 #define SCSI_ASC_NOT_READY_TO_READY_CHANGE          0x28U /**< ASC: not ready to ready change (same code as SCSI_ASC_MEDIUM_HAVE_CHANGED). */
 #define SCSI_ASC_FORMAT_ERROR                       0x31U /**< ASC: medium format corrupted. */
 #define SCSI_ASC_MEDIUM_NOT_PRESENT                 0x3AU /**< ASC: medium not present. */
+#define SCSI_ASC_MEDIUM_REMOVAL_PREVENTED           0x53U /**< ASC: medium removal prevented, with @ref SCSI_ASCQ_MEDIUM_REMOVAL_PREVENTED. */
+#define SCSI_ASCQ_MEDIUM_REMOVAL_PREVENTED          0x02U /**< ASCQ paired with @ref SCSI_ASC_MEDIUM_REMOVAL_PREVENTED. */
 
 /* SCSI ASCQ */
 #define SCSI_ASCQ_FORMAT_COMMAND_FAILED             0x01  /**< ASCQ with ASC 0x31: format command failed. */

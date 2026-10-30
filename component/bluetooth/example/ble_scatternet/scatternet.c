@@ -148,36 +148,6 @@ static bool privacy_enable = false;
 static bool privacy_whitelist = true;
 #endif
 
-#if defined(RTK_BT_POWER_CONTROL_SUPPORT) && RTK_BT_POWER_CONTROL_SUPPORT
-#define BT_WAKE_UP_HOST         0    //If set to 1, WAKE_SRC_BT_WAKE_HOST should be set to wakeup AP core in ameba_sleepcfg.c
-#if defined(BT_WAKE_UP_HOST) && BT_WAKE_UP_HOST
-#include "rtk_bt_power_control.h"
-
-static void bt_wake_up_host_suspend(void)
-{
-	BT_LOGA("[BT_PS] Enter bt_wake_up_host_suspend\r\n");
-}
-
-static void bt_wake_up_host_resume(void)
-{
-	BT_LOGA("[BT_PS] Enter bt_wake_up_host_resume\r\n");
-
-	/* Our demo releases BT wake lock here, it can be released anywhere as application's request */
-	rtk_bt_release_wakelock();
-}
-
-static void bt_wake_up_host_init(void)
-{
-	rtk_bt_power_save_init((rtk_bt_ps_callback)bt_wake_up_host_suspend, (rtk_bt_ps_callback)bt_wake_up_host_resume);
-}
-
-static void bt_wake_up_host_deinit(void)
-{
-	rtk_bt_power_save_deinit();
-}
-#endif
-#endif
-
 static void app_server_disconnect(uint16_t conn_handle)
 {
 	simple_ble_srv_disconnect(conn_handle);
@@ -1299,15 +1269,7 @@ int ble_scatternet_main(uint8_t enable)
 		}
 		BT_APP_PROCESS(rtk_bt_le_gap_start_adv(&adv_param));
 #endif
-
-#if (defined(BT_WAKE_UP_HOST) && BT_WAKE_UP_HOST) && (defined(RTK_BT_POWER_CONTROL_SUPPORT) && RTK_BT_POWER_CONTROL_SUPPORT)
-		bt_wake_up_host_init();
-#endif
 	} else if (0 == enable) {
-#if (defined(BT_WAKE_UP_HOST) && BT_WAKE_UP_HOST) && (defined(RTK_BT_POWER_CONTROL_SUPPORT) && RTK_BT_POWER_CONTROL_SUPPORT)
-		bt_wake_up_host_deinit();
-#endif
-
 		/* Disable BT */
 		BT_APP_PROCESS(rtk_bt_disable());
 

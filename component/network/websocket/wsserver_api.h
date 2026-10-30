@@ -34,6 +34,8 @@ extern uint8_t ws_server_debug;
 
 /***************************************************************************/
 
+#define WS_SERVER_MAX_CTRL_PAYLOAD   125 /*!< Max payload length of a control frame (RFC 6455) */
+
 /**********************Define the data structures***************************/
 
 /**
@@ -88,6 +90,10 @@ typedef struct _ws_conn {
 	ws_conn_state state;		/*!< Connection state */
 	struct task_struct task;        /*!< Connection task context */
 	int close_reason;			/*!< Connection close reason */
+	uint8_t pong_pending;			/*!< A PONG is waiting to be sent between data frames */
+	uint8_t pong_len;				/*!< Payload length of the pending PONG */
+	uint8_t pong_payload[WS_SERVER_MAX_CTRL_PAYLOAD];	/*!< Payload of the pending PONG, echoed from PING */
+	volatile uint8_t close_req;		/*!< Close requested by other task, conn thread frees the connection */
 } ws_conn;
 
 /**

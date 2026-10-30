@@ -483,7 +483,7 @@ int usbd_uvc_get_status(void);
 /**
 	* @brief  Initialize the UVC device class (standalone) and start its worker tasks.
 	* @param[in]  ep_cfg  Endpoint configuration; NULL selects the class defaults.
-	* @retval HAL_OK on success, negative error code on failure.
+	* @retval RTK_SUCCESS on success, negative error code on failure.
 	*/
 int usbd_uvc_init(const usbd_uvc_ep_cfg_t *ep_cfg);
 
@@ -492,14 +492,14 @@ int usbd_uvc_init(const usbd_uvc_ep_cfg_t *ep_cfg);
 	* @brief  Initialize UVC as part of a composite device, where driver registration
 	*         is handled by the composite framework.
 	* @param[in]  ep_cfg  Endpoint configuration assigned by the top-level application.
-	* @retval HAL_OK on success, negative error code on failure.
+	* @retval RTK_SUCCESS on success, negative error code on failure.
 	*/
 int usbd_composite_uvc_init(const usbd_uvc_ep_cfg_t *ep_cfg);
 #endif
 
 /**
 	* @brief  Initialize UVC processing-unit and extension-unit control parameters.
-	* @retval HAL_OK on success.
+	* @retval RTK_SUCCESS on success.
 	*/
 int usbd_uvc_parameter_init(void);
 

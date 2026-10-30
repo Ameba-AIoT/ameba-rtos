@@ -197,7 +197,7 @@ static int cdc_ecm_cb_device_check(usb_host_t *host, u8 cfg_max)
 static int cdc_ecm_cb_init(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "INIT\n");
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 /**
@@ -273,13 +273,13 @@ static int cdc_ecm_do_init(void)
 	int ret = 0;
 
 	ret = usbh_init(&usbh_ecm_cfg, &usbh_ecm_usr_cb);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Init USBH fail\n");
 		return 0;
 	}
 
 	ret = usbh_cdc_ecm_init(&cdc_ecm_usb_cb, &ecm_class_cfg);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Init CDC ECM fail\n");
 		usbh_deinit();
 		return 0;
@@ -366,7 +366,11 @@ static void example_usbh_ecm_link_change_thread(void *param)
 					dhcp_done = 1;
 					RTK_LOGS(TAG, RTK_LOG_INFO, "Switch to link\n");
 				} else {
-					RTK_LOGS(TAG, RTK_LOG_ERROR, "DHCP fail\n");
+					/* Back to IDLE so the next round retries: a 4G dongle reports the link up for good,
+					   so no link-down edge would ever bring this branch back */
+					RTK_LOGS(TAG, RTK_LOG_ERROR, "DHCP fail, retry\n");
+					ethernet_state = ETH_STATUS_IDLE;
+					rtos_time_delay_ms(1000);
 				}
 			}
 		} else if (0 == link_is_up && (ethernet_state >= ETH_STATUS_INIT)) {	// link -> unlink
@@ -666,13 +670,13 @@ int usb_ethernet_transmit(u8 *buf, u32 len, u8 block)
 	   teardown is pending. A hotplug right after this check is harmless, the mutex
 	   stays valid and the re-check under it skips the TX. */
 	if ((cdc_ecm_stack_ready == 0U) || (cdc_ecm_teardown != 0U)) {
-		return HAL_ERR_HW;
+		return -RTK_ERR_IO;
 	}
 
 	rtos_mutex_take(cdc_ecm_state_mutex, RTOS_MAX_TIMEOUT);
 	if ((cdc_ecm_stack_ready == 0U) || (cdc_ecm_teardown != 0U)) {
 		/* Lost the race against a teardown */
-		ret = HAL_ERR_HW;
+		ret = -RTK_ERR_IO;
 	} else {
 		ret = usbh_cdc_ecm_send_data(buf, len, block);
 	}
@@ -701,7 +705,7 @@ void example_usbh_cdc_ecm(void)
 	}
 
 	ret = usb_os_sema_create(&cdc_ecm_detach_sema);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create detach sema fail\n");
 		return;
 	}

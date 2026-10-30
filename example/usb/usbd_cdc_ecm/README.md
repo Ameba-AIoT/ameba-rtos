@@ -72,7 +72,7 @@ None
 
 | Command | Description |
 | --- | --- |
-| `usbd_ecm_link <0\|1>` | Report the upper-layer network link state to the host. `1` means link up, `0` means link down. The call is edge-triggered, repeating the same value is a no-op inside the class driver. The example reports `1` after every class init; the host only sees the link up while its data interface is active. |
+| `AT+USBDECM=link,<0\|1>` | Report the upper-layer network link state to the host. `1` means link up, `0` means link down; any other value is rejected. The call is edge-triggered, repeating the same value is a no-op inside the class driver. The example reports `1` after every class init; the host only sees the link up while its data interface is active. |
 
 # Note
 

@@ -83,7 +83,7 @@ static void usbd_ecm_clear_config(usb_dev_t *dev, u8 config);
 static int usbd_ecm_setup(usb_dev_t *dev, usb_setup_req_t *req);
 static u16 usbd_ecm_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16 buf_len);
 static int usbd_ecm_handle_ep0_data_out(usb_dev_t *dev);
-static int usbd_ecm_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status);
+static int usbd_ecm_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, int status);
 static int usbd_ecm_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len);
 static void usbd_ecm_sof(usb_dev_t *dev);
 static void usbd_ecm_status_changed(usb_dev_t *dev, u8 old_status, u8 status);
@@ -99,7 +99,7 @@ static inline u8 usbd_ecm_char_to_hex(u8 value);
 static void usbd_ecm_mac_to_string(const u8 *mac, char *mac_str);
 static void usbd_ecm_set_mac(const u8 *mac);
 static int usbd_ecm_bulk_send(u8 *buf, u32 len);
-static int usbd_ecm_tx_enqueue(u8 *buf, u32 len, u8 block);
+static int usbd_ecm_tx_enqueue(const u8 *buf, u32 len, u8 block);
 #if USBD_CDC_ECM_STATE_TRACE_ENABLE
 static void usbd_ecm_trace_task_init(void);
 static void usbd_ecm_trace_task_deinit(void);
@@ -136,7 +136,7 @@ static const u8 usbd_cdc_ecm_device_qualifier_desc[USB_LEN_DEV_QUALIFIER_DESC] =
 	USB_LEN_DEV_QUALIFIER_DESC,                     /* bLength */
 	USB_DESC_TYPE_DEVICE_QUALIFIER,                 /* bDescriptorType */
 	0x00, 0x02,                                     /* bcdUSB: 2.0 */
-	0x00,                                           /* bDeviceClass */
+	USB_CDC_CLASS_CODE,                             /* bDeviceClass: CDC, same as the device descriptor (USB 2.0 9.6.2) */
 	0x00,                                           /* bDeviceSubClass */
 	0x00,                                           /* bDeviceProtocol */
 	USB_MAX_EP0_SIZE,                               /* bMaxPacketSize0 */
@@ -481,7 +481,7 @@ static void usbd_ecm_bulk_tx_start_from_rb(void)
 	 * only reachable failure is a device that went not-ready (bus reset / detach), where
 	 * the frame is undeliverable anyway, and the host retransmits at the IP layer. */
 	ret = usbd_ecm_bulk_send(ecm->bulk_tx_dma_buf, frame_len);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 #if USBD_CDC_ECM_STATE_TRACE_ENABLE
 		ecm->dbg_tx_drop_cnt++;
 		RTK_LOGS(TAG, RTK_LOG_WARN, "TX submit fail %d drop(%u)\n", ret, frame_len);
@@ -503,7 +503,7 @@ static void usbd_ecm_bulk_tx_start_from_rb(void)
  *         On failure every step already taken is undone, so the interface stays in alt 0
  *         and the caller answers SET_INTERFACE with a request error.
  * @param  dev: USB device instance.
- * @retval HAL_OK on success, otherwise the error of the failing endpoint operation.
+ * @retval RTK_SUCCESS on success, otherwise the error of the failing endpoint operation.
  */
 static int usbd_ecm_data_alt_start(usb_dev_t *dev)
 {
@@ -514,7 +514,7 @@ static int usbd_ecm_data_alt_start(usb_dev_t *dev)
 	int ret;
 
 	if (ecm->data_alt_setting != 0U) {
-		return HAL_OK;
+		return RTK_SUCCESS;
 	}
 
 	mps = (dev->dev_speed == USB_SPEED_HIGH) ? (u16)USB_BULK_HS_MAX_MPS : (u16)USB_BULK_FS_MAX_MPS;
@@ -523,7 +523,7 @@ static int usbd_ecm_data_alt_start(usb_dev_t *dev)
 	ep_bulk_in->xfer_state = 0U;
 	ep_bulk_in->info.mps = mps;
 	ret = usbd_ep_init(dev, ep_bulk_in);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		usbd_ecm_data_alt_stop(dev);
 		return ret;
 	}
@@ -531,7 +531,7 @@ static int usbd_ecm_data_alt_start(usb_dev_t *dev)
 	/* Initialize BULK OUT endpoint */
 	ep_bulk_out->info.mps = mps;
 	ret = usbd_ep_init(dev, ep_bulk_out);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		usbd_ecm_data_alt_stop(dev);
 		return ret;
 	}
@@ -545,7 +545,7 @@ static int usbd_ecm_data_alt_start(usb_dev_t *dev)
 
 	/* Start receiving */
 	ret = usbd_ep_receive(dev, ep_bulk_out);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		usbd_ecm_data_alt_stop(dev);
 	}
 
@@ -612,7 +612,7 @@ static int usbd_ecm_bulk_receive(u8 *buf, u32 length)
 
 	if (usb_rx_interval_time >= 2000) {
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Heap %d RX %dB in %d ms, %d Kbps\n",
-				 rtos_mem_get_free_heap_size(),
+				 usb_os_get_free_heap_size(),
 				 (u32)usb_rx_total_len, (u32)usb_rx_interval_time, (u32)((usb_rx_total_len * 8 * 1000) / (usb_rx_interval_time * 1024)));
 		usb_rx_start_time = usb_rx_end_time;
 		usb_rx_total_len = 0;
@@ -624,15 +624,15 @@ static int usbd_ecm_bulk_receive(u8 *buf, u32 length)
 		ecm->cb->received(buf, length);
 	}
 
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 /**
  * @brief  Send the next pending INTR IN notification and advance the state machine.
  * @note   This function is called within an interrupt service routine (ISR) context;
  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
- * @retval HAL_OK on success, HAL_ERR_PARA if no notification is pending,
- *         or a HAL error code if the transfer could not be submitted.
+ * @retval RTK_SUCCESS on success, -RTK_ERR_BADARG if no notification is pending,
+ *         or a RTK error code if the transfer could not be submitted.
  */
 static int usbd_ecm_send_notification(void)
 {
@@ -678,11 +678,11 @@ static int usbd_ecm_send_notification(void)
 
 	case USBD_ECM_NOTIFY_NONE:
 	default:
-		return HAL_OK;
+		return RTK_SUCCESS;
 	}
 
 	status = usbd_ecm_intr_in_send(&event, length);
-	if (status == HAL_OK) {
+	if (status == RTK_SUCCESS) {
 		/* Advance state only on success; retry will re-send the same notification. */
 		ecm->notify_state = next_state;
 	}
@@ -701,7 +701,7 @@ static int usbd_ecm_intr_in_send(void *data, u16 len)
 	usbd_cdc_ecm_dev_t *ecm = &usbd_cdc_ecm_dev;
 	usb_dev_t *dev = ecm->dev;
 	usbd_ep_t *ep_intr_in = &ecm->ep_intr_in;
-	int ret = HAL_ERR_HW;
+	int ret = -RTK_ERR_IO;
 
 	if (!dev->is_ready) {
 		return ret;
@@ -718,7 +718,7 @@ static int usbd_ecm_intr_in_send(void *data, u16 len)
 			usb_os_memcpy((void *)ep_intr_in->xfer_buf, (const void *)data, len);
 			ep_intr_in->xfer_len = len;
 			ret = usbd_ep_transmit(dev, ep_intr_in);
-			if (ret != HAL_OK) {
+			if (ret != RTK_SUCCESS) {
 				/* The transfer never started (e.g. buffer alignment / HW error),
 				 * so no XFRC interrupt will fire to clear xfer_state.  Reset it
 				 * here, otherwise the INTR IN path wedges permanently: the SOF
@@ -732,7 +732,7 @@ static int usbd_ecm_intr_in_send(void *data, u16 len)
 		}
 	} else {
 		/*TX busy*/
-		ret = HAL_BUSY;
+		ret = -RTK_ERR_BUSY;
 	}
 
 	return ret;
@@ -749,14 +749,14 @@ static int usbd_ecm_bulk_send(u8 *buf, u32 len)
 	usbd_cdc_ecm_dev_t *ecm = &usbd_cdc_ecm_dev;
 	usbd_ep_t *ep_bulk_in = &ecm->ep_bulk_in;
 	usb_dev_t *dev = ecm->dev;
-	int ret = HAL_ERR_HW;
+	int ret = -RTK_ERR_IO;
 
 	if (!dev->is_ready) {
 		return ret;
 	}
 
 	if (buf == NULL || len == 0) {
-		return HAL_ERR_PARA;
+		return -RTK_ERR_BADARG;
 	}
 
 	if (ep_bulk_in->xfer_state == 0U) {
@@ -768,7 +768,7 @@ static int usbd_ecm_bulk_send(u8 *buf, u32 len)
 		if (dev->is_ready) {
 			ep_bulk_in->xfer_len = len;
 			ret = usbd_ep_transmit(dev, ep_bulk_in);
-			if (ret != HAL_OK) {
+			if (ret != RTK_SUCCESS) {
 				/* The transfer never started (e.g. buffer alignment / HW error),
 				 * so no XFRC interrupt will fire to clear xfer_state.  Reset it
 				 * here, otherwise the BULK IN path wedges permanently: the ISR
@@ -780,7 +780,7 @@ static int usbd_ecm_bulk_send(u8 *buf, u32 len)
 			ep_bulk_in->xfer_state = 0U;
 		}
 	} else {
-		ret = HAL_BUSY;
+		ret = -RTK_ERR_BUSY;
 	}
 
 	return ret;
@@ -792,9 +792,9 @@ static int usbd_ecm_bulk_send(u8 *buf, u32 len)
   * @param  buf: Data buffer
   * @param  len: Data length
   * @param  block: See usbd_cdc_ecm_transmit()
-  * @retval HAL_OK on success, HAL_BUSY if the frame is dropped.
+  * @retval RTK_SUCCESS on success, -RTK_ERR_BUSY if the frame is dropped.
   */
-static int usbd_ecm_tx_enqueue(u8 *buf, u32 len, u8 block)
+static int usbd_ecm_tx_enqueue(const u8 *buf, u32 len, u8 block)
 {
 	usbd_cdc_ecm_dev_t *ecm = &usbd_cdc_ecm_dev;
 	u32 tx_timeout_ms;
@@ -824,12 +824,12 @@ static int usbd_ecm_tx_enqueue(u8 *buf, u32 len, u8 block)
 		tx_timeout_ms = (ecm->cfg->bulk_tx_timeout_ms != 0U) ? ecm->cfg->bulk_tx_timeout_ms : USBD_CDC_ECM_DEFAULT_BULK_TX_TIMEOUT_MS;
 		do {
 			ret = usb_ringbuf_add_tail(&ecm->bulk_tx_rb, buf, len, 1U);
-			if (ret == HAL_OK) {
+			if (ret == RTK_SUCCESS) {
 				break;
 			}
-			if (usb_os_sema_take(ecm->bulk_tx_slot_sema, tx_timeout_ms) != HAL_OK) {
+			if (usb_os_sema_take(ecm->bulk_tx_slot_sema, tx_timeout_ms) != RTK_SUCCESS) {
 				RTK_LOGS(TAG, RTK_LOG_WARN, "TX timeout drop(%u)\n", len);
-				return HAL_BUSY;
+				return -RTK_ERR_BUSY;
 			}
 			/* Sema may have been fired by deinit/clear_config/SET_INTERFACE alt 0
 			 * rather than a real XFRC.  Test data_alt_setting, the "BULK endpoints
@@ -837,14 +837,14 @@ static int usbd_ecm_tx_enqueue(u8 *buf, u32 len, u8 block)
 			 * so it says nothing about the endpoints.  is_closing means deinit is
 			 * waiting for this call to leave. */
 			if ((ecm->data_alt_setting == 0U) || (ecm->is_closing != 0U)) {
-				return HAL_BUSY;
+				return -RTK_ERR_BUSY;
 			}
 		} while (1);
 	} else {
 		ret = usb_ringbuf_add_tail(&ecm->bulk_tx_rb, buf, len, 1U);
-		if (ret != HAL_OK) {
+		if (ret != RTK_SUCCESS) {
 			RTK_LOGS(TAG, RTK_LOG_WARN, "TX drop(%u)\n", len);
-			return HAL_BUSY;
+			return -RTK_ERR_BUSY;
 		}
 	}
 
@@ -862,7 +862,7 @@ static int usbd_ecm_tx_enqueue(u8 *buf, u32 len, u8 block)
 
 	if (usb_tx_interval_time >= 3000) {
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Heap %d TX %dB in %d ms, %d Kbps\n",
-				 rtos_mem_get_free_heap_size(),
+				 usb_os_get_free_heap_size(),
 				 (u32)usb_tx_total_len, (u32)usb_tx_interval_time,
 				 (u32)((usb_tx_total_len * 8 * 1000) / (usb_tx_interval_time * 1024)));
 		usb_tx_start_time = usb_tx_end_time;
@@ -870,7 +870,7 @@ static int usbd_ecm_tx_enqueue(u8 *buf, u32 len, u8 block)
 	}
 #endif
 
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 /**
@@ -890,7 +890,7 @@ static int usbd_ecm_set_config(usb_dev_t *dev, u8 config)
 
 	/* Only the bConfigurationValue advertised in the config descriptor is valid */
 	if (config != 1U) {
-		return HAL_ERR_PARA;
+		return -RTK_ERR_BADARG;
 	}
 
 	ecm->dev = dev;
@@ -964,7 +964,7 @@ static int usbd_ecm_setup(usb_dev_t *dev, usb_setup_req_t *req)
 	usbd_cdc_ecm_dev_t *ecm = &usbd_cdc_ecm_dev;
 	usbd_ep_t *ep0_in = &dev->ep0_in;
 	usbd_ep_t *ep0_out = &dev->ep0_out;
-	int ret = HAL_OK;
+	int ret = RTK_SUCCESS;
 	u8 req_type = req->bmRequestType & USB_REQ_TYPE_MASK;
 
 	switch (req_type) {
@@ -982,18 +982,21 @@ static int usbd_ecm_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			   Ref USB 2.0 9.4.10 request error: an alternate setting that is not
 			   defined in the configuration descriptor - or an interface this function
 			   does not own - must be answered with a request error, which the device
-			   core turns into an EP0 STALL on a non-HAL_OK return.  The alternate
+			   core turns into an EP0 STALL on a non-RTK_SUCCESS return.  The alternate
 			   setting is validated BEFORE any state is modified, so a rejected
 			   request leaves the interface exactly as it was. */
 			if (dev->dev_state != USBD_STATE_CONFIGURED) {
-				ret = HAL_ERR_PARA;
+				ret = -RTK_ERR_BADARG;
+			} else if ((USB_HIGH_BYTE(req->wValue) != 0U) || (req->wLength != 0U)) {
+				/* Ref USB 2.0 Table 9-3: the whole wValue is the alternate setting and wLength is zero */
+				ret = -RTK_ERR_BADARG;
 			} else {
 				u8 alt = USB_LOW_BYTE(req->wValue);
 
 				if (req->wIndex == USBD_CDC_ECM_DATA_INTERFACE_NUM) {
 					/* Data interface: alt 0 (no endpoints) and alt 1 (BULK IN/OUT) only */
 					if (alt > 1U) {
-						ret = HAL_ERR_PARA;
+						ret = -RTK_ERR_BADARG;
 					} else if (alt == 1U) {
 						/* Bring the BULK endpoints up before reporting the link, so the
 						 * host finds a working data path as soon as it sees the
@@ -1001,7 +1004,7 @@ static int usbd_ecm_setup(usb_dev_t *dev, usb_setup_req_t *req)
 						 * request, rather than reporting an alternate setting whose
 						 * endpoints do not work. */
 						ret = usbd_ecm_data_alt_start(dev);
-						if (ret == HAL_OK) {
+						if (ret == RTK_SUCCESS) {
 							/* USB 2.0 9.4.10: the endpoints of the selected interface return
 							 * to their default state.  A freshly initialised endpoint is
 							 * already unhalted, but a repeated request for the alternate
@@ -1018,7 +1021,7 @@ static int usbd_ecm_setup(usb_dev_t *dev, usb_setup_req_t *req)
 							 * notification is never silently lost. */
 							ecm->notify_state = USBD_ECM_NOTIFY_CONNECT;
 							ecm->connect_status = ecm->uplink_status;
-							if (usbd_ecm_send_notification() != HAL_OK) {
+							if (usbd_ecm_send_notification() != RTK_SUCCESS) {
 								ecm->notify_retry = 1U;
 							}
 						}
@@ -1039,16 +1042,16 @@ static int usbd_ecm_setup(usb_dev_t *dev, usb_setup_req_t *req)
 				} else if (req->wIndex == USBD_CDC_ECM_COMM_INTERFACE_NUM) {
 					/* Communication interface: alt 0 is the only defined setting */
 					if (alt != 0U) {
-						ret = HAL_ERR_PARA;
+						ret = -RTK_ERR_BADARG;
 					} else {
 						usbd_ep_clear_stall(dev, &ecm->ep_intr_in);
 					}
 				} else {
 					/* Foreign interface: not ours to configure */
-					ret = HAL_ERR_PARA;
+					ret = -RTK_ERR_BADARG;
 				}
 
-				if ((ret == HAL_OK) && (ecm->cb != NULL) && (ecm->cb->setup != NULL)) {
+				if ((ret == RTK_SUCCESS) && (ecm->cb != NULL) && (ecm->cb->setup != NULL)) {
 					/* Notification only: the request has already been applied above */
 					ecm->cb->setup(req, NULL);
 				}
@@ -1061,7 +1064,10 @@ static int usbd_ecm_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			 * the communication interface only has alt 0, so reporting the data
 			 * interface's setting for it would be wrong. */
 			if (dev->dev_state != USBD_STATE_CONFIGURED) {
-				ret = HAL_ERR_PARA;
+				ret = -RTK_ERR_BADARG;
+			} else if ((req->wValue != 0U) || (req->wLength != 1U)) {
+				/* Ref USB 2.0 Table 9-3: wValue is zero and wLength is one */
+				ret = -RTK_ERR_BADARG;
 			} else if (req->wIndex == USBD_CDC_ECM_DATA_INTERFACE_NUM) {
 				ep0_in->xfer_buf[0] = ecm->data_alt_setting;
 				ep0_in->xfer_len = 1U;
@@ -1072,7 +1078,7 @@ static int usbd_ecm_setup(usb_dev_t *dev, usb_setup_req_t *req)
 				ret = usbd_ep_transmit(dev, ep0_in);
 			} else {
 				/* Foreign interface: request error */
-				ret = HAL_ERR_PARA;
+				ret = -RTK_ERR_BADARG;
 			}
 			break;
 
@@ -1080,11 +1086,11 @@ static int usbd_ecm_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			/* Ref USB 2.0 9.4.5 and Table 9-3: an interface-recipient GET_STATUS returns
 			   two reserved zero bytes and wLength is two. A request naming an interface
 			   this function does not own is a request error, which the device core turns
-			   into an EP0 STALL on a non-HAL_OK return. */
+			   into an EP0 STALL on a non-RTK_SUCCESS return. */
 			if (dev->dev_state != USBD_STATE_CONFIGURED) {
-				ret = HAL_ERR_PARA;
-			} else if (req->wLength != 2U) {
-				ret = HAL_ERR_PARA;
+				ret = -RTK_ERR_BADARG;
+			} else if ((req->wValue != 0U) || (req->wLength != 2U)) {
+				ret = -RTK_ERR_BADARG;
 			} else if ((req->wIndex == USBD_CDC_ECM_DATA_INTERFACE_NUM) || (req->wIndex == USBD_CDC_ECM_COMM_INTERFACE_NUM)) {
 				ep0_in->xfer_buf[0] = 0U;
 				ep0_in->xfer_buf[1] = 0U;
@@ -1092,25 +1098,25 @@ static int usbd_ecm_setup(usb_dev_t *dev, usb_setup_req_t *req)
 				ret = usbd_ep_transmit(dev, ep0_in);
 			} else {
 				/* Foreign interface: request error */
-				ret = HAL_ERR_PARA;
+				ret = -RTK_ERR_BADARG;
 			}
 			break;
 
 		default:
-			ret = HAL_ERR_PARA;
+			ret = -RTK_ERR_BADARG;
 			break;
 		}
 		break;
 
 	case USB_REQ_TYPE_CLASS:
 		if ((req->bmRequestType & USB_REQ_RECIPIENT_MASK) != USB_REQ_RECIPIENT_INTERFACE) {
-			ret = HAL_ERR_PARA;
+			ret = -RTK_ERR_BADARG;
 			break;
 		}
 		/* Ref ECM 1.2 6.2: every management element request is addressed to the Communication
 		   Class interface. Reject any other interface so composite dispatch can continue. */
 		if (req->wIndex != USBD_CDC_ECM_COMM_INTERFACE_NUM) {
-			ret = HAL_ERR_PARA;
+			ret = -RTK_ERR_BADARG;
 			break;
 		}
 		if (req->wLength > 0U) {
@@ -1137,7 +1143,7 @@ static int usbd_ecm_setup(usb_dev_t *dev, usb_setup_req_t *req)
 				if ((rsp_len == 0U) || (ecm->cb == NULL) || (ecm->cb->setup == NULL)) {
 					/* Unsupported request or nobody can produce the data stage: report a
 					 * request error instead of leaving the host waiting for a reply. */
-					ret = HAL_ERR_PARA;
+					ret = -RTK_ERR_BADARG;
 				} else {
 					if (rsp_len > (u16)ep0_in->xfer_buf_len) {
 						rsp_len = (u16)ep0_in->xfer_buf_len;
@@ -1147,9 +1153,9 @@ static int usbd_ecm_setup(usb_dev_t *dev, usb_setup_req_t *req)
 					 * control-buffer contents to the host. */
 					usb_os_memset((void *)ep0_in->xfer_buf, 0, rsp_len);
 					ret = ecm->cb->setup(req, ep0_in->xfer_buf);
-					if (ret == HAL_OK) {
+					if (ret == RTK_SUCCESS) {
 						/* Ref USB 2.0 9.2.7: never return more than wLength bytes; the core
-						 * STALLs EP0 on a non-HAL_OK return, so propagate a submit failure
+						 * STALLs EP0 on a non-RTK_SUCCESS return, so propagate a submit failure
 						 * instead of leaving the host in a control-transfer timeout. */
 						ep0_in->xfer_len = (req->wLength < rsp_len) ? req->wLength : rsp_len;
 						ret = usbd_ep_transmit(dev, ep0_in);
@@ -1161,7 +1167,7 @@ static int usbd_ecm_setup(usb_dev_t *dev, usb_setup_req_t *req)
 				ecm->ctrl_req_pending = 1U;
 				ep0_out->xfer_len = req->wLength;
 				ret = usbd_ep_receive(dev, ep0_out);
-				if (ret != HAL_OK) {
+				if (ret != RTK_SUCCESS) {
 					/* The data stage never started, so no EP0 OUT completion will
 					 * arrive to consume the stashed request.  Invalidate it, else the
 					 * next unrelated request's data stage would be interpreted as this
@@ -1178,7 +1184,7 @@ static int usbd_ecm_setup(usb_dev_t *dev, usb_setup_req_t *req)
 		break;
 
 	default:
-		ret = HAL_ERR_HW;
+		ret = -RTK_ERR_IO;
 		break;
 	}
 
@@ -1194,7 +1200,7 @@ static int usbd_ecm_setup(usb_dev_t *dev, usb_setup_req_t *req)
  * @param status: Transfer status
  * @retval Status
  */
-static int usbd_ecm_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status)
+static int usbd_ecm_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, int status)
 {
 	usbd_cdc_ecm_dev_t *ecm = &usbd_cdc_ecm_dev;
 	usbd_ep_t *ep_bulk_in = &ecm->ep_bulk_in;
@@ -1230,10 +1236,10 @@ static int usbd_ecm_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status)
 #endif
 	} else {
 		/* Return non-zero so composite dispatcher continues iterating. */
-		return HAL_ERR_PARA;
+		return -RTK_ERR_BADARG;
 	}
 
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 /**
@@ -1254,7 +1260,7 @@ static void usbd_cdc_ecm_rx_thread(void *param)
 		 * the upper-layer received() callback). */
 		ecm->dbg_rx_loop_cnt++;
 #endif
-		if (usb_os_sema_take(ecm->rx_data_ready_sema, USBD_CDC_ECM_RX_SEMA_TAKE_TIMEOUT_MS) != HAL_OK) {
+		if (usb_os_sema_take(ecm->rx_data_ready_sema, USBD_CDC_ECM_RX_SEMA_TAKE_TIMEOUT_MS) != RTK_SUCCESS) {
 			/* timeout - re-check running flag */
 			continue;
 		}
@@ -1296,7 +1302,7 @@ static int usbd_ecm_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len)
 	UNUSED(dev);
 
 	if (ep_addr != ecm->cfg->bulk_out_addr) {
-		return HAL_ERR_PARA;
+		return -RTK_ERR_BADARG;
 	}
 
 	/* Invalidate cache if needed */
@@ -1325,14 +1331,14 @@ static int usbd_ecm_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len)
 			 * see NAK on the bulk-out pipe. Mark as pending so the SOF handler
 			 * re trigger the endpoint as soon as the thread frees the buffer. */
 			ecm->rx_pending_len = len;
-			return HAL_OK;
+			return RTK_SUCCESS;
 		}
 	}
 
 	/* Do not re-arm once the host has deselected data-interface alt 1: the
 	 * endpoint no longer exists. */
 	if (ecm->data_alt_setting == 0U) {
-		return HAL_OK;
+		return RTK_SUCCESS;
 	}
 
 	/* Continue receiving */
@@ -1370,7 +1376,7 @@ static void usbd_ecm_sof(usb_dev_t *dev)
 
 	/* Retry a previously-failed notification when the endpoint is free. */
 	if (ecm->notify_retry && ep_intr_in->xfer_state == 0U) {
-		if (usbd_ecm_send_notification() == HAL_OK) {
+		if (usbd_ecm_send_notification() == RTK_SUCCESS) {
 			ecm->notify_retry = 0U;
 		}
 	}
@@ -1408,7 +1414,7 @@ static void usbd_ecm_sof(usb_dev_t *dev)
 	ep_bulk_out->xfer_buf = ecm->rx_buf[ecm->rx_xfer_idx];
 	ecm->rx_pending_len = 0U;
 
-	if (usbd_ep_receive(ecm->dev, ep_bulk_out) != HAL_OK) {
+	if (usbd_ep_receive(ecm->dev, ep_bulk_out) != RTK_SUCCESS) {
 		/* Nobody to report to from the SOF ISR: record it, the host keeps seeing NAK */
 		USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_XFER, ecm->cfg->bulk_out_addr);
 	}
@@ -1429,7 +1435,7 @@ static int usbd_ecm_handle_ep0_data_out(usb_dev_t *dev)
 	   success, an application without a setup handler simply ignores class-specific requests
 	   (e.g. SET_ETHERNET_PACKET_FILTER) and the data stage itself was received correctly.
 	   Stalling here would make the host give up on the interface. */
-	int ret = HAL_OK;
+	int ret = RTK_SUCCESS;
 
 	if (ecm->ctrl_req_pending != 0U) {
 		/* Consume the pending request first: a single data stage belongs to exactly one setup
@@ -1483,10 +1489,10 @@ static void usbd_cdc_ecm_patch_desc(u8 *desc, u16 len, usb_speed_type_t speed)
 		}
 		dtype = desc[i + 1];
 
-		if ((dtype == USB_DESC_TYPE_ENDPOINT) && (dlen >= 4U)) {
+		if ((dtype == USB_DESC_TYPE_ENDPOINT) && (dlen >= USB_LEN_EP_DESC)) {
 			u8 addr  = desc[i + 2];
 			u8 dir   = addr & USB_REQ_DIR_MASK;
-			u8 type  = desc[i + 3] & 0x03;
+			u8 type  = desc[i + 3] & USB_EP_XFER_TYPE_MASK;
 
 			if ((dir == USB_D2H) && (type == USB_CH_EP_TYPE_BULK)) {
 				desc[i + 2] = cfg->bulk_in_addr;
@@ -1494,9 +1500,7 @@ static void usbd_cdc_ecm_patch_desc(u8 *desc, u16 len, usb_speed_type_t speed)
 				desc[i + 2] = cfg->bulk_out_addr;
 			} else if ((dir == USB_D2H) && (type == USB_CH_EP_TYPE_INTR)) {
 				desc[i + 2] = cfg->intr_in_addr;
-				if (dlen >= USB_LEN_EP_DESC) {
-					desc[i + 6] = interval;         /* bInterval */
-				}
+				desc[i + 6] = interval;             /* bInterval */
 			}
 		} else if ((dtype == USB_DESC_TYPE_INTERFACE) && (dlen >= USB_LEN_IF_DESC) &&
 				   (desc[i + 5] == USB_CDC_COMM_INTERFACE_CLASS_CODE)) {
@@ -1533,6 +1537,12 @@ static u16 usbd_ecm_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 	const u8 *desc = NULL;
 	u16 len = 0;
 	u8 is_cfg = 0;
+
+	/* Ref USB 2.0 9.4.3: the index only selects among string and configuration descriptors;
+	   with a single configuration, a non-string index other than 0 names no descriptor. */
+	if ((desc_type != USB_DESC_TYPE_STRING) && (USB_LOW_BYTE(req->wValue) != 0U)) {
+		return 0;
+	}
 
 	switch (desc_type) {
 	case USB_DESC_TYPE_DEVICE:
@@ -1704,7 +1714,7 @@ static void usbd_ecm_trace_thread(void *param)
 					 "cnt tx%d in%d out%d intr%d/rxd%d rxl%d drp%d/Heap %d\n",
 					 ecm->dbg_tx_cnt, ecm->dbg_bulk_in_done_cnt, ecm->dbg_bulk_out_done_cnt,
 					 ecm->dbg_intr_in_done_cnt, ecm->dbg_rx_deliver_cnt, ecm->dbg_rx_loop_cnt,
-					 ecm->dbg_tx_drop_cnt, rtos_mem_get_free_heap_size());
+					 ecm->dbg_tx_drop_cnt, usb_os_get_free_heap_size());
 		}
 
 		usb_os_sleep_ms(USBD_CDC_ECM_TRACE_INTERVAL_MS);
@@ -1763,16 +1773,16 @@ static int usbd_cdc_ecm_private_init(const usbd_cdc_ecm_cb_t *cb, const usbd_cdc
 	usbd_ep_t *ep_intr_in = &ecm->ep_intr_in;
 	usb_ep_info_t *info;
 	u8 tx_depth;
-	int ret = HAL_OK;
+	int ret = RTK_SUCCESS;
 
 	if (cb == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid user CB\n");
-		return HAL_ERR_PARA;
+		return -RTK_ERR_BADARG;
 	}
 
 	if (cfg == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid cfg\n");
-		return HAL_ERR_PARA;
+		return -RTK_ERR_BADARG;
 	}
 
 	/* Every endpoint is mandatory for this class, and a wrong direction bit would make the
@@ -1785,7 +1795,7 @@ static int usbd_cdc_ecm_private_init(const usbd_cdc_ecm_cb_t *cb, const usbd_cdc
 		((cfg->intr_in_addr & (~USB_REQ_DIR_MASK)) == 0U)) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid EP addr %02x/%02x/%02x\n",
 				 cfg->bulk_in_addr, cfg->bulk_out_addr, cfg->intr_in_addr);
-		return HAL_ERR_PARA;
+		return -RTK_ERR_BADARG;
 	}
 
 	usb_os_memset((void *)ecm, 0, sizeof(usbd_cdc_ecm_dev_t));
@@ -1807,9 +1817,9 @@ static int usbd_cdc_ecm_private_init(const usbd_cdc_ecm_cb_t *cb, const usbd_cdc
 
 	tx_depth = (cfg->bulk_tx_queue_depth != 0U) ? cfg->bulk_tx_queue_depth : USBD_CDC_ECM_DEFAULT_BULK_TX_QUEUE_DEPTH;
 	if (usb_ringbuf_manager_init(&ecm->bulk_tx_rb, tx_depth,
-								 USBD_CDC_ECM_BULK_BUF_MAX_SIZE, 1) != HAL_OK) {
+								 USBD_CDC_ECM_BULK_BUF_MAX_SIZE, 1) != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Init bulk_tx ring buffer fail\n");
-		return HAL_ERR_MEM;
+		return -RTK_ERR_NOMEM;
 	}
 
 	/* Private DMA source buffer for BULK IN.  Each frame is copied here from the
@@ -1817,7 +1827,7 @@ static int usbd_cdc_ecm_private_init(const usbd_cdc_ecm_cb_t *cb, const usbd_cdc
 	ecm->bulk_tx_dma_buf = (u8 *)usb_os_malloc(USBD_CDC_ECM_BULK_BUF_MAX_SIZE);
 	if (ecm->bulk_tx_dma_buf == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Alloc bulk_tx dma buf fail\n");
-		ret = HAL_ERR_MEM;
+		ret = -RTK_ERR_NOMEM;
 		goto exit;
 	}
 
@@ -1837,13 +1847,13 @@ static int usbd_cdc_ecm_private_init(const usbd_cdc_ecm_cb_t *cb, const usbd_cdc
 
 	ecm->rx_buf[0] = (u8 *)usb_os_malloc(USBD_CDC_ECM_BULK_BUF_MAX_SIZE);
 	if (ecm->rx_buf[0] == NULL) {
-		ret = HAL_ERR_MEM;
+		ret = -RTK_ERR_NOMEM;
 		goto exit;
 	}
 
 	ecm->rx_buf[1] = (u8 *)usb_os_malloc(USBD_CDC_ECM_BULK_BUF_MAX_SIZE);
 	if (ecm->rx_buf[1] == NULL) {
-		ret = HAL_ERR_MEM;
+		ret = -RTK_ERR_NOMEM;
 		goto cleanup_rx_buf0;
 	}
 
@@ -1851,16 +1861,16 @@ static int usbd_cdc_ecm_private_init(const usbd_cdc_ecm_cb_t *cb, const usbd_cdc
 	ep_bulk_out->xfer_buf = ecm->rx_buf[ecm->rx_xfer_idx];
 
 	/* bulk_tx_slot_sema: ISR -> tcpip, given each time a TX ring buffer slot is freed. */
-	if (usb_os_sema_create(&ecm->bulk_tx_slot_sema) != HAL_OK) {
+	if (usb_os_sema_create(&ecm->bulk_tx_slot_sema) != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create TX slot sema fail\n");
-		ret = HAL_ERR_MEM;
+		ret = -RTK_ERR_NOMEM;
 		goto cleanup_rx_buf1;
 	}
 
 	/* rx_data_ready_sema: ISR -> thread, given when a buffer is filled. */
-	if (usb_os_sema_create(&ecm->rx_data_ready_sema) != HAL_OK) {
+	if (usb_os_sema_create(&ecm->rx_data_ready_sema) != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create RX data_ready sema fail\n");
-		ret = HAL_ERR_MEM;
+		ret = -RTK_ERR_NOMEM;
 		goto cleanup_tx_slot_sema;
 	}
 
@@ -1875,7 +1885,7 @@ static int usbd_cdc_ecm_private_init(const usbd_cdc_ecm_cb_t *cb, const usbd_cdc
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create RX thread fail\n");
 		ecm->rx_thread_running = 0;
-		ret = HAL_ERR_HW;
+		ret = -RTK_ERR_IO;
 		goto cleanup_rx_data_ready_sema;
 	}
 
@@ -1886,7 +1896,7 @@ static int usbd_cdc_ecm_private_init(const usbd_cdc_ecm_cb_t *cb, const usbd_cdc
 	ep_intr_in->xfer_buf_len = USB_CDC_ECM_INTR_IN_PACKET_SIZE;
 	ep_intr_in->xfer_buf = (u8 *)usb_os_malloc(ep_intr_in->xfer_buf_len);
 	if (ep_intr_in->xfer_buf == NULL) {
-		ret = HAL_ERR_MEM;
+		ret = -RTK_ERR_NOMEM;
 		goto cleanup_rx_thread;
 	}
 
@@ -1894,7 +1904,7 @@ static int usbd_cdc_ecm_private_init(const usbd_cdc_ecm_cb_t *cb, const usbd_cdc
 
 	if (cb->init != NULL) {
 		ret = cb->init();
-		if (ret != HAL_OK) {
+		if (ret != RTK_SUCCESS) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "User init fail: %d\n", ret);
 			goto cleanup_intr_in;
 		}
@@ -1913,7 +1923,7 @@ static int usbd_cdc_ecm_private_init(const usbd_cdc_ecm_cb_t *cb, const usbd_cdc
 	   above already cleared it, kept explicit as the counterpart of deinit. */
 	ecm->is_closing = 0U;
 
-	return HAL_OK;
+	return RTK_SUCCESS;
 
 cleanup_intr_in:
 	usb_os_mfree((void *)ep_intr_in->xfer_buf);
@@ -1960,10 +1970,10 @@ int usbd_cdc_ecm_init(const usbd_cdc_ecm_cb_t *cb, const usbd_cdc_ecm_config_t *
 	int ret;
 
 	ret = usbd_cdc_ecm_private_init(cb, cfg);
-	if (ret == HAL_OK) {
+	if (ret == RTK_SUCCESS) {
 		ecm->from_composite = 0;
 		ret = usbd_register_class(&usbd_cdc_ecm_driver);
-		if (ret != HAL_OK) {
+		if (ret != RTK_SUCCESS) {
 			/* private_init completed, so deinit is its exact reverse */
 			usbd_cdc_ecm_deinit();
 		}
@@ -1978,10 +1988,10 @@ int usbd_composite_cdc_ecm_init(const usbd_cdc_ecm_cb_t *cb, const usbd_cdc_ecm_
 	int ret;
 
 	ret = usbd_cdc_ecm_private_init(cb, cfg);
-	if (ret == HAL_OK) {
+	if (ret == RTK_SUCCESS) {
 		ecm->from_composite = 1;
 		ret = usbd_composite_register_driver(&usbd_cdc_ecm_driver);
-		if (ret != HAL_OK) {
+		if (ret != RTK_SUCCESS) {
 			/* private_init completed, so deinit is its exact reverse. from_composite is
 			   already 1, so the unregister inside is a no-op for an unregistered driver. */
 			usbd_cdc_ecm_deinit();
@@ -2002,20 +2012,32 @@ void usbd_cdc_ecm_deinit(void)
 	usbd_ep_t *ep_bulk_out = &ecm->ep_bulk_out;
 	usbd_ep_t *ep_intr_in = &ecm->ep_intr_in;
 	u32 wait_cnt = 0U;
+	int ret;
 	u8 i;
 
+	/* Leave the core before anything is torn down. Composite: refused until
+	   usbd_composite_deinit() has blocked the ISR and cleared the configuration of every
+	   function. Standalone: refused in interrupt context. Either way nothing is released when
+	   refused, and once accepted no class callback runs any more and every endpoint of this
+	   class is deinitialized: ref USB 2.0 9.4.7, the transfers still pending are aborted. */
 #ifdef CONFIG_USBD_COMPOSITE
-	/* Leave the composite framework before anything is torn down: it is refused while the
-	   composite device is still registered on the core, and the class must then stay intact */
 	if (ecm->from_composite != 0U) {
-		if (usbd_composite_unregister_driver(&usbd_cdc_ecm_driver) != HAL_OK) {
-			return;
-		}
-	}
+		ret = usbd_composite_unregister_driver(&usbd_cdc_ecm_driver);
+	} else
 #endif
+	{
+		ret = usbd_unregister_class();
+	}
+	if (ret != RTK_SUCCESS) {
+		return;
+	}
 
-	/* Close the TX gate first: from here on usbd_cdc_ecm_transmit() rejects new callers,
-	 * and the ones already inside are waited for below before their resources go away. */
+	/* No completion arrives any more to clear them */
+	ep_bulk_in->xfer_state = 0U;
+	ep_intr_in->xfer_state = 0U;
+
+	/* Close the TX gate: from here on usbd_cdc_ecm_transmit() rejects new callers, and the
+	 * ones already inside are waited for below before their resources go away. */
 	usb_os_enter_critical();
 	ecm->is_closing = 1U;
 	usb_os_exit_critical();
@@ -2029,25 +2051,6 @@ void usbd_cdc_ecm_deinit(void)
 	/* Stop the trace thread first so it does not read state being torn down. */
 	usbd_ecm_trace_task_deinit();
 #endif
-
-	/* Wait for ongoing BULK/INTR DMA transfers to complete.
-	 * xfer_state is set to 1 before usbd_ep_transmit() and cleared to 0
-	 * by the XFRC ISR, so it is the correct in-flight indicator.
-	 * (is_busy is a function-call-level flag and clears too early.)
-	 * Bounded to ~100 ms like the other classes and sleeping, not spinning: a transfer
-	 * the host stopped polling never completes, waiting longer does not help. */
-	while ((ep_bulk_in->xfer_state || ep_intr_in->xfer_state) && (wait_cnt < 100U)) {
-		usb_os_sleep_ms(1U);
-		wait_cnt++;
-	}
-
-	/* Unregister class driver */
-#ifdef CONFIG_USBD_COMPOSITE
-	if (ecm->from_composite == 0U)
-#endif
-	{
-		usbd_unregister_class();
-	}
 
 	/* Wait for every task still inside usbd_cdc_ecm_transmit() to leave.  A caller blocked
 	 * on a TX slot is woken on each round and leaves on is_closing; deleting the sema while
@@ -2065,8 +2068,8 @@ void usbd_cdc_ecm_deinit(void)
 		}
 	}
 
-	/* After unregister, no more USB ISRs will fire.  Free the TX ring buffer
-	 * and the private BULK IN DMA buffer. */
+	/* No more USB ISR runs against this class.  Free the TX ring buffer and the
+	 * private BULK IN DMA buffer. */
 	usb_ringbuf_manager_deinit(&ecm->bulk_tx_rb);
 	usb_os_mfree((void *)ecm->bulk_tx_dma_buf);
 	ecm->bulk_tx_dma_buf = NULL;
@@ -2097,8 +2100,9 @@ void usbd_cdc_ecm_deinit(void)
 	ecm->ctrl_req_pending = 0U;
 
 	/* Call user deinit */
-	if (ecm->cb && ecm->cb->deinit) {
-		ecm->cb->deinit();
+	if ((ecm->cb != NULL) && (ecm->cb->deinit != NULL) && (ecm->cb->deinit() != RTK_SUCCESS)) {
+		/* Teardown goes on regardless, the class resources are released below */
+		RTK_LOGS(TAG, RTK_LOG_WARN, "CB deinit fail\n");
 	}
 
 	/* Free buffers */
@@ -2125,16 +2129,16 @@ void usbd_cdc_ecm_deinit(void)
   *                non-blocking - drop immediately when the ring buffer is full.
   * @note   Task context only: the ring buffer has a single producer and a blocking call
   *         waits on a semaphore, so a call in interrupt context is rejected.
-  * @retval HAL_OK on success, HAL_BUSY if the ring buffer is full (frame dropped).
+  * @retval RTK_SUCCESS on success, -RTK_ERR_BUSY if the ring buffer is full (frame dropped).
   */
-int usbd_cdc_ecm_transmit(u8 *buf, u32 len, u8 block)
+int usbd_cdc_ecm_transmit(const u8 *buf, u32 len, u8 block)
 {
 	usbd_cdc_ecm_dev_t *ecm = &usbd_cdc_ecm_dev;
 	int ret;
 
 	if (usb_os_is_in_interrupt() != 0U) {
 		USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_XFER, 0U);
-		return HAL_ERR_PARA;
+		return -RTK_ERR_BADARG;
 	}
 
 	/* Reject invalid frames up front.  A NULL buffer or zero length would be
@@ -2144,15 +2148,15 @@ int usbd_cdc_ecm_transmit(u8 *buf, u32 len, u8 block)
 	 * which never fires for an un-started transfer. */
 	if ((buf == NULL) || (len == 0U)) {
 		RTK_LOGS(TAG, RTK_LOG_WARN, "TX bad param (len %u)\n", len);
-		return HAL_ERR_PARA;
+		return -RTK_ERR_BADARG;
 	}
 
-	/* Reject frames larger than the ring buffer node size.  usb_ringbuf_add_tail()
-	 * silently truncates oversized data; such truncation would corrupt the frame
-	 * without any indication to the caller. */
-	if (len > USBD_CDC_ECM_BULK_BUF_MAX_SIZE) {
+	/* Ref CDC ECM 1.2 5.4: wMaxSegmentSize is the longest frame the host is told to expect,
+	 * so never send more.  The ring node is larger only because the shared RX buffer size is
+	 * rounded up to whole packets. */
+	if (len > USB_CDC_ECM_MAX_SEGMENT_SIZE) {
 		RTK_LOGS(TAG, RTK_LOG_WARN, "TX frame too large: %u\n", len);
-		return HAL_ERR_PARA;
+		return -RTK_ERR_BADARG;
 	}
 
 	/* The BULK IN endpoint only exists while the host has selected data-interface
@@ -2163,7 +2167,7 @@ int usbd_cdc_ecm_transmit(u8 *buf, u32 len, u8 block)
 	usb_os_enter_critical();
 	if ((ecm->is_closing != 0U) || (ecm->data_alt_setting == 0U)) {
 		usb_os_exit_critical();
-		return HAL_BUSY;
+		return -RTK_ERR_BUSY;
 	}
 	/* Counted under the same lock that deinit closes the gate with, so deinit either sees
 	 * this caller or this caller sees is_closing: never both missed */
@@ -2199,7 +2203,7 @@ int usbd_cdc_ecm_get_link_status(void)
   *         no-ops and every notification field keeps the USB ISR as its only writer.
   *         Callable from any task context.
   * @param  link_up: Non-zero when the network link is up, zero when it is down.
-  * @retval HAL_OK
+  * @retval RTK_SUCCESS
   */
 int usbd_cdc_ecm_set_link_status(u8 link_up)
 {
@@ -2207,7 +2211,7 @@ int usbd_cdc_ecm_set_link_status(u8 link_up)
 
 	ecm->uplink_status = (link_up != 0U) ? 1U : 0U;
 
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 __attribute__((weak))

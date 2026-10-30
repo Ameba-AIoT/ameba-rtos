@@ -41,3 +41,7 @@ class DeviceInfo(object):
 
     def is_boot_from_nand(self):
         return self.memory_type == MemoryInfo.MEMORY_TYPE_NAND
+
+    def supports_short_write(self):
+        # Flashloader CmdSetVersion 2.1 accepts WRITE payloads shorter than a page (NOR only)
+        return self.cmd_set_version >= 0x0201

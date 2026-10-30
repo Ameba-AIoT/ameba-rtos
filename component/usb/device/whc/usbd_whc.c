@@ -80,7 +80,7 @@
 #define	USBD_WHC_QUERY_PACKET_SIZE       (sizeof(usbd_whc_query_packet_t))
 
 /* Number of interfaces reported in the active config descriptor */
-#define USBD_WHC_ITF_CNT(idev)           (((idev)->otp.bt_en) ? USBD_WHC_ITF_NUM : USBD_WHC_WIFI_ONLY_ITF_NUM)
+#define USBD_WHC_ITF_CNT(idev)           (((idev)->otp.bt_en != 0U) ? USBD_WHC_ITF_NUM : USBD_WHC_WIFI_ONLY_ITF_NUM)
 
 /* Private function prototypes -----------------------------------------------*/
 
@@ -97,7 +97,7 @@ static int usbd_whc_clear_eth_config(usb_dev_t *dev, u8 config);
 static int usbd_whc_setup(usb_dev_t *dev, usb_setup_req_t *req);
 static u16 usbd_whc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16 buf_len);
 static int usbd_whc_handle_ep0_data_out(usb_dev_t *dev);
-static int usbd_whc_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status);
+static int usbd_whc_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, int status);
 static int usbd_whc_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len);
 static void usbd_whc_status_changed(usb_dev_t *dev, u8 old_status, u8 status);
 static void usbd_whc_wakeup(usb_dev_t *dev);
@@ -1041,7 +1041,7 @@ static int usbd_whc_set_wifi_config(usb_dev_t *dev, u8 config)
 	info = &ep->info;
 	info->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_WHC_HS_BULK_MPS : USBD_WHC_FS_BULK_MPS;
 	ret = usbd_ep_init(dev, ep);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		usbd_whc_clear_wifi_config(dev, config);
 		return ret;
 	}
@@ -1052,7 +1052,7 @@ static int usbd_whc_set_wifi_config(usb_dev_t *dev, u8 config)
 	info = &ep->info;
 	info->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_WHC_HS_BULK_MPS : USBD_WHC_FS_BULK_MPS;
 	ret = usbd_ep_init(dev, ep);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		usbd_whc_clear_wifi_config(dev, config);
 		return ret;
 	}
@@ -1063,7 +1063,7 @@ static int usbd_whc_set_wifi_config(usb_dev_t *dev, u8 config)
 	info = &ep->info;
 	info->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_WHC_HS_BULK_MPS : USBD_WHC_FS_BULK_MPS;
 	ret = usbd_ep_init(dev, ep);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		usbd_whc_clear_wifi_config(dev, config);
 		return ret;
 	}
@@ -1074,13 +1074,13 @@ static int usbd_whc_set_wifi_config(usb_dev_t *dev, u8 config)
 	info = &ep->info;
 	info->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_WHC_HS_BULK_MPS : USBD_WHC_FS_BULK_MPS;
 	ret = usbd_ep_init(dev, ep);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		usbd_whc_clear_wifi_config(dev, config);
 		return ret;
 	}
 	ep->xfer_state = USBD_WHC_EP_STATE_IDLE;
 
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 #ifdef CONFIG_WHC_ETH
@@ -1104,7 +1104,7 @@ static int usbd_whc_set_eth_config(usb_dev_t *dev, u8 config)
 	info = &ep->info;
 	info->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_WHC_HS_BULK_MPS : USBD_WHC_FS_BULK_MPS;
 	ret = usbd_ep_init(dev, ep);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		usbd_whc_clear_eth_config(dev, config);
 		return ret;
 	}
@@ -1115,13 +1115,13 @@ static int usbd_whc_set_eth_config(usb_dev_t *dev, u8 config)
 	info = &ep->info;
 	info->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_WHC_ETH_HS_IN_MPS : USBD_WHC_FS_BULK_MPS;
 	ret = usbd_ep_init(dev, ep);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		usbd_whc_clear_eth_config(dev, config);
 		return ret;
 	}
 	ep->xfer_state = USBD_WHC_EP_STATE_IDLE;
 
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 #endif
 
@@ -1145,7 +1145,7 @@ static int usbd_whc_set_bt_config(usb_dev_t *dev, u8 config)
 	info = &ep->info;
 	info->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_WHC_HS_INTR_MPS : USBD_WHC_FS_INTR_MPS;
 	ret = usbd_ep_init(dev, ep);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		usbd_whc_clear_bt_config(dev, config);
 		return ret;
 	}
@@ -1156,7 +1156,7 @@ static int usbd_whc_set_bt_config(usb_dev_t *dev, u8 config)
 	info = &ep->info;
 	info->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_WHC_HS_BULK_MPS : USBD_WHC_FS_BULK_MPS;
 	ret = usbd_ep_init(dev, ep);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		usbd_whc_clear_bt_config(dev, config);
 		return ret;
 	}
@@ -1167,13 +1167,13 @@ static int usbd_whc_set_bt_config(usb_dev_t *dev, u8 config)
 	info = &ep->info;
 	info->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_WHC_HS_BULK_MPS : USBD_WHC_FS_BULK_MPS;
 	ret = usbd_ep_init(dev, ep);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		usbd_whc_clear_bt_config(dev, config);
 		return ret;
 	}
 	ep->xfer_state = USBD_WHC_EP_STATE_IDLE;
 
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 /**
@@ -1192,7 +1192,7 @@ static int usbd_whc_set_config(usb_dev_t *dev, u8 config)
 
 	/* Only the bConfigurationValue advertised in the config descriptor is valid */
 	if (config != 1U) {
-		return HAL_ERR_PARA;
+		return -RTK_ERR_BADARG;
 	}
 
 	idev->dev = dev;
@@ -1203,33 +1203,33 @@ static int usbd_whc_set_config(usb_dev_t *dev, u8 config)
 #endif
 
 	ret = usbd_whc_set_wifi_config(dev, config);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		return ret;
 	}
 
-	if (otp->bt_en) {
+	if (otp->bt_en != 0U) {
 		ret = usbd_whc_set_bt_config(dev, config);
-		if (ret != HAL_OK) {
+		if (ret != RTK_SUCCESS) {
 			goto clean_wifi_config_exit;
 		}
 	}
 
 #ifdef CONFIG_WHC_ETH
 	ret = usbd_whc_set_eth_config(dev, config);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		goto clean_bt_config_exit;
 	}
 #endif
 
 	if ((idev->cb != NULL) && (idev->cb->set_config != NULL)) {
 		ret = idev->cb->set_config();
-		if (ret != HAL_OK) {
+		if (ret != RTK_SUCCESS) {
 			/* Roll back all the interfaces inited above, as the application fails to start up */
 			goto clean_config_exit;
 		}
 	}
 
-	return HAL_OK;
+	return RTK_SUCCESS;
 
 clean_config_exit:
 #ifdef CONFIG_WHC_ETH
@@ -1237,7 +1237,7 @@ clean_config_exit:
 
 clean_bt_config_exit:
 #endif
-	if (otp->bt_en) {
+	if (otp->bt_en != 0U) {
 		usbd_whc_clear_bt_config(dev, config);
 	}
 
@@ -1279,7 +1279,7 @@ static int usbd_whc_clear_wifi_config(usb_dev_t *dev, u8 config)
 	ep->xfer_state = USBD_WHC_EP_STATE_IDLE;
 	usbd_ep_deinit(dev, ep);
 
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 #ifdef CONFIG_WHC_ETH
@@ -1306,7 +1306,7 @@ static int usbd_whc_clear_eth_config(usb_dev_t *dev, u8 config)
 	ep->xfer_state = USBD_WHC_EP_STATE_IDLE;
 	usbd_ep_deinit(dev, ep);
 
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 #endif
 
@@ -1338,7 +1338,7 @@ static int usbd_whc_clear_bt_config(usb_dev_t *dev, u8 config)
 	ep->xfer_state = USBD_WHC_EP_STATE_IDLE;
 	usbd_ep_deinit(dev, ep);
 
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 /**
@@ -1360,7 +1360,7 @@ static void usbd_whc_clear_config(usb_dev_t *dev, u8 config)
 	usbd_whc_clear_eth_config(dev, config);
 #endif
 
-	if (otp->bt_en) {
+	if (otp->bt_en != 0U) {
 		usbd_whc_clear_bt_config(dev, config);
 	}
 
@@ -1380,7 +1380,7 @@ static void usbd_whc_clear_config(usb_dev_t *dev, u8 config)
   */
 static int usbd_whc_handle_setup(usb_setup_req_t *req, u8 *buf, u16 buf_len)
 {
-	int ret = HAL_ERR_PARA;
+	int ret = -RTK_ERR_BADARG;
 	usbd_whc_query_packet_t *pkt;
 	usbd_whc_dev_t *idev = &usbd_whc_dev;
 
@@ -1388,7 +1388,7 @@ static int usbd_whc_handle_setup(usb_setup_req_t *req, u8 *buf, u16 buf_len)
 		/* The ACK packet is built in place and the data stage is wLength bytes long, so accept
 		 * exactly one packet: a longer wLength would send stale EP0 buffer content to the host */
 		if ((buf == NULL) || (buf_len < USBD_WHC_QUERY_PACKET_SIZE) || (req->wLength != USBD_WHC_QUERY_PACKET_SIZE)) {
-			return HAL_ERR_PARA;
+			return -RTK_ERR_BADARG;
 		}
 
 		pkt = (usbd_whc_query_packet_t *)buf;
@@ -1398,17 +1398,17 @@ static int usbd_whc_handle_setup(usb_setup_req_t *req, u8 *buf, u16 buf_len)
 			pkt->data_len = 0;
 			pkt->data_offset = USBD_WHC_QUERY_PACKET_SIZE;
 			pkt->pkt_type = USBD_WHC_VENDOR_QUERY_ACK;
-			pkt->xfer_status = HAL_OK;
+			pkt->xfer_status = RTK_SUCCESS;
 			pkt->rl_version = (u8)(EFUSE_GetChipVersion() & 0xFF);
 			pkt->dev_mode = USBD_WHC_FW_TYPE_APPLICATION;
-			ret = HAL_OK;
+			ret = RTK_SUCCESS;
 		} else if (req->wIndex == USBD_WHC_VENDOR_RESET_CMD) {
 			pkt->data_len = 0;
 			pkt->data_offset = USBD_WHC_QUERY_PACKET_SIZE;
 			pkt->pkt_type = USBD_WHC_VENDOR_RESET_ACK;
-			pkt->xfer_status = HAL_OK;
+			pkt->xfer_status = RTK_SUCCESS;
 			rtos_sema_give(idev->reset_sema);
-			ret = HAL_OK;
+			ret = RTK_SUCCESS;
 		} else {
 			/* Unsupported sub command, keep the request error */
 		}
@@ -1437,17 +1437,17 @@ static void usbd_whc_itf_clear_stall(usb_dev_t *dev, u16 itf)
 {
 	usbd_whc_dev_t *idev = &usbd_whc_dev;
 
-	if (itf == ((idev->otp.bt_en) ? USBD_WHC_ITF_WIFI : USBD_WHC_WIFI_ONLY_ITF_WIFI)) {
+	if (itf == ((idev->otp.bt_en != 0U) ? USBD_WHC_ITF_WIFI : USBD_WHC_WIFI_ONLY_ITF_WIFI)) {
 		usbd_ep_clear_stall(dev, &idev->in_ep[USB_EP_NUM(USBD_WHC_WIFI_EP_BULK_IN)].ep);
 		usbd_ep_clear_stall(dev, &idev->out_ep[USB_EP_NUM(USBD_WHC_WIFI_EP_BULK_OUT_1)].ep);
 		usbd_ep_clear_stall(dev, &idev->out_ep[USB_EP_NUM(USBD_WHC_WIFI_EP_BULK_OUT_2)].ep);
 		usbd_ep_clear_stall(dev, &idev->out_ep[USB_EP_NUM(USBD_WHC_WIFI_EP_BULK_OUT_3)].ep);
 #ifdef CONFIG_WHC_ETH
-	} else if (itf == ((idev->otp.bt_en) ? USBD_WHC_ITF_ETH : USBD_WHC_WIFI_ONLY_ITF_ETH)) {
+	} else if (itf == ((idev->otp.bt_en != 0U) ? USBD_WHC_ITF_ETH : USBD_WHC_WIFI_ONLY_ITF_ETH)) {
 		usbd_ep_clear_stall(dev, &idev->in_ep[USB_EP_NUM(USBD_WHC_ETH_EP_BULK_IN)].ep);
 		usbd_ep_clear_stall(dev, &idev->out_ep[USB_EP_NUM(USBD_WHC_ETH_EP_BULK_OUT)].ep);
 #endif
-	} else if ((idev->otp.bt_en) && (itf == USBD_WHC_ITF_BT)) {
+	} else if ((idev->otp.bt_en != 0U) && (itf == USBD_WHC_ITF_BT)) {
 		usbd_ep_clear_stall(dev, &idev->in_ep[USB_EP_NUM(USBD_WHC_BT_EP_INTR_IN)].ep);
 		usbd_ep_clear_stall(dev, &idev->in_ep[USB_EP_NUM(USBD_WHC_BT_EP_BULK_IN)].ep);
 		usbd_ep_clear_stall(dev, &idev->out_ep[USB_EP_NUM(USBD_WHC_BT_EP_BULK_OUT)].ep);
@@ -1467,7 +1467,7 @@ static void usbd_whc_itf_clear_stall(usb_dev_t *dev, u16 itf)
 static int usbd_whc_setup(usb_dev_t *dev, usb_setup_req_t *req)
 {
 	u8 alt;
-	int ret = HAL_OK;
+	int ret = RTK_SUCCESS;
 	usbd_whc_dev_t *idev = &usbd_whc_dev;
 	usbd_ep_t *ep0_in = &dev->ep0_in;
 	usbd_ep_t *ep0_out = &dev->ep0_out;
@@ -1483,27 +1483,27 @@ static int usbd_whc_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			 */
 #ifdef CONFIG_WHC_ETH
 			if ((dev->dev_state != USBD_STATE_CONFIGURED) || (req->wIndex >= USBD_WHC_ITF_CNT(idev)) || (req->wValue != 0U)) {
-				ret = HAL_ERR_HW;
+				ret = -RTK_ERR_IO;
 			} else {
 				usbd_whc_itf_clear_stall(dev, req->wIndex);
 			}
 #else
 			if ((dev->dev_state == USBD_STATE_CONFIGURED) && (req->wIndex < USBD_WHC_ITF_CNT(idev))) {
-				if ((idev->otp.bt_en) && (req->wIndex == USBD_WHC_ITF_BT_SCO)) {
+				if ((idev->otp.bt_en != 0U) && (req->wIndex == USBD_WHC_ITF_BT_SCO)) {
 					if (req->wValue < USBD_WHC_BT_SCO_ALT_NUM) {
 						idev->bt_sco_alt = (u8)req->wValue;
 					} else {
-						ret = HAL_ERR_HW;
+						ret = -RTK_ERR_IO;
 					}
 				} else if (req->wValue != 0U) {
-					ret = HAL_ERR_HW;
+					ret = -RTK_ERR_IO;
 				}
 
-				if (ret == HAL_OK) {
+				if (ret == RTK_SUCCESS) {
 					usbd_whc_itf_clear_stall(dev, req->wIndex);
 				}
 			} else {
-				ret = HAL_ERR_HW;
+				ret = -RTK_ERR_IO;
 			}
 #endif
 			break;
@@ -1511,7 +1511,7 @@ static int usbd_whc_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			if ((dev->dev_state == USBD_STATE_CONFIGURED) && (req->wIndex < USBD_WHC_ITF_CNT(idev))) {
 				alt = 0U;
 #ifndef CONFIG_WHC_ETH
-				if ((idev->otp.bt_en) && (req->wIndex == USBD_WHC_ITF_BT_SCO)) {
+				if ((idev->otp.bt_en != 0U) && (req->wIndex == USBD_WHC_ITF_BT_SCO)) {
 					alt = idev->bt_sco_alt;
 				}
 #endif
@@ -1519,21 +1519,22 @@ static int usbd_whc_setup(usb_dev_t *dev, usb_setup_req_t *req)
 				ep0_in->xfer_len = 1U;
 				ret = usbd_ep_transmit(dev, ep0_in);
 			} else {
-				ret = HAL_ERR_HW;
+				ret = -RTK_ERR_IO;
 			}
 			break;
 		case USB_REQ_GET_STATUS:
-			if (dev->dev_state == USBD_STATE_CONFIGURED) {
+			/* Ref USB 2.0 9.4.5: a request for an interface this function does not own is a request error */
+			if ((dev->dev_state == USBD_STATE_CONFIGURED) && (req->wIndex < USBD_WHC_ITF_CNT(idev))) {
 				ep0_in->xfer_buf[0] = 0U;
 				ep0_in->xfer_buf[1] = 0U;
 				ep0_in->xfer_len = 2U;
 				ret = usbd_ep_transmit(dev, ep0_in);
 			} else {
-				ret = HAL_ERR_HW;
+				ret = -RTK_ERR_IO;
 			}
 			break;
 		default:
-			ret = HAL_ERR_HW;
+			ret = -RTK_ERR_IO;
 			break;
 		}
 		break;
@@ -1543,12 +1544,12 @@ static int usbd_whc_setup(usb_dev_t *dev, usb_setup_req_t *req)
 		 * requests use 0xC0/0x40 and the BT HCI command uses 0x20, so reject any other
 		 * recipient with a request error as per USB 2.0 9.2.7 */
 		if ((req->bmRequestType & USB_REQ_RECIPIENT_MASK) != USB_REQ_RECIPIENT_DEVICE) {
-			ret = HAL_ERR_HW;
+			ret = -RTK_ERR_IO;
 		} else if ((req->bmRequestType & USB_REQ_DIR_MASK) == USB_D2H) {
 			if (req->wLength != 0U) {
 				// SETUP + DATA IN + STATUS
 				ret = usbd_whc_handle_setup(req, ep0_in->xfer_buf, (u16)ep0_in->xfer_buf_len);
-				if (ret == HAL_OK) {
+				if (ret == RTK_SUCCESS) {
 					/* Cap the IN data stage to the control buffer, a short response is legal
 					 * as per USB 2.0 9.3.5 while an oversized xfer_len is rejected by the core
 					 * and would leave the control transfer unanswered */
@@ -1557,7 +1558,7 @@ static int usbd_whc_setup(usb_dev_t *dev, usb_setup_req_t *req)
 				}
 			} else {
 				// SETUP + ZLP IN + STATUS, invalid
-				ret = HAL_ERR_PARA;
+				ret = -RTK_ERR_BADARG;
 			}
 		} else {
 			if (req->wLength != 0U) {
@@ -1565,13 +1566,13 @@ static int usbd_whc_setup(usb_dev_t *dev, usb_setup_req_t *req)
 				if (req->wLength > ep0_out->xfer_buf_len) {
 					/* The OUT data stage cannot be buffered, the host sends wLength bytes
 					 * and there is no way to shorten it: reject the request */
-					ret = HAL_ERR_PARA;
+					ret = -RTK_ERR_BADARG;
 				} else {
 					usb_os_memcpy((void *)&idev->ctrl_req, (const void *)req, sizeof(usb_setup_req_t));
 					idev->ctrl_req_pending = 1U;
 					ep0_out->xfer_len = req->wLength;
 					ret = usbd_ep_receive(dev, ep0_out);
-					if (ret != HAL_OK) {
+					if (ret != RTK_SUCCESS) {
 						/* EP0 OUT was not armed, so no data stage completion will ever arrive.
 						 * Drop the pending request to keep the next transfer clean */
 						idev->ctrl_req_pending = 0U;
@@ -1584,7 +1585,7 @@ static int usbd_whc_setup(usb_dev_t *dev, usb_setup_req_t *req)
 		}
 		break;
 	default:
-		ret = HAL_ERR_HW;
+		ret = -RTK_ERR_IO;
 		break;
 	}
 
@@ -1600,7 +1601,7 @@ static int usbd_whc_setup(usb_dev_t *dev, usb_setup_req_t *req)
   */
 static int usbd_whc_handle_ep0_data_out(usb_dev_t *dev)
 {
-	int ret = HAL_OK;
+	int ret = RTK_SUCCESS;
 	usbd_whc_dev_t *idev = &usbd_whc_dev;
 	const usbd_whc_cb_t *cb = idev->cb;
 
@@ -1629,7 +1630,7 @@ static int usbd_whc_handle_ep0_data_out(usb_dev_t *dev)
   * @param  ep_addr: endpoint address
   * @retval Status
   */
-static int usbd_whc_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status)
+static int usbd_whc_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, int status)
 {
 	usbd_whc_dev_t *idev = &usbd_whc_dev;
 	const usbd_whc_cb_t *cb = idev->cb;
@@ -1642,13 +1643,13 @@ static int usbd_whc_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status)
 	/* USB_EP_NUM() keeps 7 bits of the address, so the index has to be range-checked before use */
 	if (ep_num >= USB_MAX_ENDPOINTS) {
 		USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_XFER, ep_addr);
-		return HAL_ERR_PARA;
+		return -RTK_ERR_BADARG;
 	}
 
 	in_ep = &idev->in_ep[ep_num];
 	ep = &in_ep->ep;
 
-	if (status != HAL_OK) {
+	if (status != RTK_SUCCESS) {
 		USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_XFER, ep_addr);
 	}
 
@@ -1658,7 +1659,7 @@ static int usbd_whc_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status)
 		cb->transmitted(in_ep, status);
 	}
 
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 /**
@@ -1685,7 +1686,7 @@ static int usbd_whc_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len)
 	/* USB_EP_NUM() keeps 7 bits of the address, so the index has to be range-checked before use */
 	if (ep_num >= USB_MAX_ENDPOINTS) {
 		USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_XFER, ep_addr);
-		return HAL_ERR_PARA;
+		return -RTK_ERR_BADARG;
 	}
 
 	out_ep = &idev->out_ep[ep_num];
@@ -1710,7 +1711,7 @@ static int usbd_whc_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len)
 		usbd_whc_receive_data(ep_addr, ep->xfer_buf, ep->xfer_len, userdata);
 	}
 
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 /**
@@ -1747,7 +1748,7 @@ static void usbd_whc_apply_dev_info(const usbd_otp_t *otp)
 		info->prod_str = (const char *)otp->prod_str;
 	} else {
 		/* NIC mode is told apart by its own product ID */
-		pid = (SYSCFG_OTP_BOOTSEL() == BOOT_FROM_USB) ? USBD_NIC_VID : USBD_WHC_PID;
+		pid = (SYSCFG_OTP_BOOTSEL() == BOOT_FROM_USB) ? USBD_NIC_PID : USBD_WHC_PID;
 
 		info->vid = USBD_WHC_VID;
 		info->pid = pid;
@@ -1815,10 +1816,17 @@ static u16 usbd_whc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 	u8 type = USB_HIGH_BYTE(req->wValue);
 	u8 is_cfg = 0;
 
+	/* Ref USB 2.0 9.4.3: the index only selects among string and configuration descriptors;
+	   the core checks the configuration index, a non-zero index of any other one names no descriptor */
+	if ((type != USB_DESC_TYPE_STRING) && (type != USB_DESC_TYPE_CONFIGURATION) &&
+		(type != USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION) && (USB_LOW_BYTE(req->wValue) != 0U)) {
+		return 0;
+	}
+
 	switch (type) {
 
 	case USB_DESC_TYPE_DEVICE:
-		if (otp->bt_en) {
+		if (otp->bt_en != 0U) {
 			desc = usbd_whc_dev_desc;
 		} else {
 			desc = usbd_whc_wifi_only_mode_dev_desc;
@@ -1828,7 +1836,7 @@ static u16 usbd_whc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 		break;
 
 	case USB_DESC_TYPE_CONFIGURATION:
-		if (otp->bt_en) {
+		if (otp->bt_en != 0U) {
 			if (speed == USB_SPEED_HIGH) {
 				desc = usbd_whc_config_desc;
 				len = sizeof(usbd_whc_config_desc);
@@ -1854,7 +1862,7 @@ static u16 usbd_whc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 		break;
 
 	case USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION:
-		if (otp->bt_en) {
+		if (otp->bt_en != 0U) {
 			if (speed == USB_SPEED_HIGH) {
 				desc = usbd_whc_full_speed_config_desc;
 				len = sizeof(usbd_whc_full_speed_config_desc);
@@ -1894,6 +1902,14 @@ static u16 usbd_whc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 		usb_os_memcpy((void *)buf, (const void *)desc, len);
 	}
 
+	/* Ref USB 2.0 9.6.2: the qualifier class triple matches the device descriptor in use */
+	if (type == USB_DESC_TYPE_DEVICE_QUALIFIER) {
+		desc = (otp->bt_en != 0U) ? usbd_whc_dev_desc : usbd_whc_wifi_only_mode_dev_desc;
+		buf[4] = desc[4];   /* bDeviceClass */
+		buf[5] = desc[5];   /* bDeviceSubClass */
+		buf[6] = desc[6];   /* bDeviceProtocol */
+	}
+
 	if (is_cfg != 0) {
 		buf[USB_CFG_DESC_OFFSET_TYPE] = type;
 		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN] = USB_LOW_BYTE(len);
@@ -1904,11 +1920,11 @@ static u16 usbd_whc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 		usbd_whc_patch_str_idx(buf + USB_LEN_CFG_DESC, (u16)(len - USB_LEN_CFG_DESC));
 	}
 
-	return len;
+	return (u16)len;
 
 }
 
-static int usbd_whc_wifi_init(void)
+static void usbd_whc_wifi_init(void)
 {
 	usbd_whc_dev_t *idev = &usbd_whc_dev;
 	usbd_ep_t *ep;
@@ -1946,13 +1962,10 @@ static int usbd_whc_wifi_init(void)
 	info->type = USB_CH_EP_TYPE_BULK;
 	ep->skip_dcache_pre_clean = 0;
 	ep->skip_dcache_post_invalidate = 0;
-
-	return HAL_OK;
-
 }
 
 #ifdef CONFIG_WHC_ETH
-static int usbd_whc_eth_init(void)
+static void usbd_whc_eth_init(void)
 {
 	usbd_whc_dev_t *idev = &usbd_whc_dev;
 	usbd_ep_t *ep;
@@ -1974,14 +1987,11 @@ static int usbd_whc_eth_init(void)
 	info->type = USB_CH_EP_TYPE_BULK;
 	ep->skip_dcache_pre_clean = 0;
 	ep->skip_dcache_post_invalidate = 0;
-
-	return HAL_OK;
 }
 #endif
 
-static int usbd_whc_bt_init(void)
+static void usbd_whc_bt_init(void)
 {
-	int ret = HAL_OK;
 	usbd_whc_dev_t *idev = &usbd_whc_dev;
 	usbd_ep_t *ep;
 	usb_ep_info_t *info;
@@ -2004,8 +2014,6 @@ static int usbd_whc_bt_init(void)
 	info = &ep->info;
 	info->addr = USBD_WHC_BT_EP_BULK_OUT;
 	info->type = USB_CH_EP_TYPE_BULK;
-
-	return ret;
 }
 
 /**
@@ -2066,16 +2074,16 @@ static void usbd_whc_reset_thread(void *param)
   */
 int usbd_whc_init(const usbd_whc_cb_t *cb)
 {
-	int ret = HAL_OK;
+	int ret = RTK_SUCCESS;
 	usbd_whc_dev_t *idev = &usbd_whc_dev;
 	usbd_otp_t *otp = &idev->otp;
 
 	if (cb == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid user CB\n");
-		return HAL_ERR_PARA;
+		return -RTK_ERR_BADARG;
 	}
 
-	if (usbd_otp_init(otp) != HAL_OK) {
+	if (usbd_otp_init(otp) != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_WARN, "Fail to load OTP para\n");
 	}
 
@@ -2093,7 +2101,7 @@ int usbd_whc_init(const usbd_whc_cb_t *cb)
 	usbd_whc_eth_init();
 #endif
 
-	if (otp->bt_en) {
+	if (otp->bt_en != 0U) {
 		usbd_whc_bt_init();
 	}
 
@@ -2103,13 +2111,13 @@ int usbd_whc_init(const usbd_whc_cb_t *cb)
 	idev->cb = cb;
 	if (cb->init != NULL) {
 		ret = cb->init();
-		if (ret != HAL_OK) {
+		if (ret != RTK_SUCCESS) {
 			goto init_exit;
 		}
 	}
 
 	if (rtos_sema_create(&idev->reset_sema, 0, 1) != RTK_SUCCESS) {
-		ret = HAL_ERR_MEM;
+		ret = -RTK_ERR_NOMEM;
 		goto init_clean_cb;
 	}
 
@@ -2119,9 +2127,16 @@ int usbd_whc_init(const usbd_whc_cb_t *cb)
 		goto init_clean_all;
 	}
 
-	usbd_register_class(&usbd_whc_driver);
+	ret = usbd_register_class(&usbd_whc_driver);
+	if (ret != RTK_SUCCESS) {
+		goto init_clean_task;
+	}
 
 	return ret;
+
+init_clean_task:
+	rtos_task_delete(idev->reset_task);
+	idev->reset_task = NULL;
 
 init_clean_all:
 	rtos_sema_delete(idev->reset_sema);
@@ -2149,13 +2164,19 @@ void usbd_whc_deinit(void)
 {
 	usbd_whc_dev_t *idev = &usbd_whc_dev;
 	usbd_otp_t *otp = &idev->otp;
+	int ret;
+
+	/* Unregister first: no class callback can run afterwards, so releasing cb and the pending
+	 * control request below cannot race an EP0 OUT completion in ISR context, nor the vendor
+	 * RESET request give reset_sema once it is deleted. Refused in interrupt context, then
+	 * nothing is released. */
+	ret = usbd_unregister_class();
+	if (ret != RTK_SUCCESS) {
+		return;
+	}
 
 	rtos_task_delete(idev->reset_task);
 	rtos_sema_delete(idev->reset_sema);
-
-	/* Unregister first: no class callback can run afterwards, so releasing cb and the pending
-	 * control request below cannot race an EP0 OUT completion in ISR context */
-	usbd_unregister_class();
 
 	idev->ctrl_req_pending = 0U;
 
@@ -2177,7 +2198,7 @@ int usbd_whc_transmit_ctrl_data(u8 *buf, u16 len)
 
 	/* idev->dev is set on SET_CONFIGURATION only, it stays NULL until enumeration completes */
 	if ((dev == NULL) || (dev->is_ready == 0U)) {
-		return HAL_ERR_HW;
+		return -RTK_ERR_IO;
 	}
 
 	ep0_in = &dev->ep0_in;
@@ -2192,7 +2213,8 @@ int usbd_whc_transmit_ctrl_data(u8 *buf, u16 len)
 
 int usbd_whc_transmit_data(u8 ep_addr, u8 *buf, u32 len, void *userdata)
 {
-	int ret = HAL_OK;
+	int ret = RTK_SUCCESS;
+	u8 claimed;
 	u8 num = USB_EP_NUM(ep_addr);
 	usbd_whc_dev_t *idev = &usbd_whc_dev;
 	usb_dev_t *dev = idev->dev;
@@ -2200,18 +2222,30 @@ int usbd_whc_transmit_data(u8 ep_addr, u8 *buf, u32 len, void *userdata)
 
 	if (USB_EP_IS_OUT(ep_addr) || (num >= USB_MAX_ENDPOINTS)) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid EP 0x%02x\n", ep_addr);
-		return HAL_ERR_PARA;
+		return -RTK_ERR_BADARG;
 	}
 
 	/* idev->dev is set on SET_CONFIGURATION only, it stays NULL until enumeration completes */
 	if ((dev == NULL) || (dev->is_ready == 0U)) {
-		return HAL_ERR_HW;
+		return -RTK_ERR_IO;
 	}
 
 	ep = &idev->in_ep[num].ep;
 
-	if (ep->xfer_state == USBD_WHC_EP_STATE_IDLE) {
-		ep->xfer_state = USBD_WHC_EP_STATE_BUSY;
+	/* Only an endpoint this class opened carries its address, refer to the *_init helpers: a
+	 * zero info.addr would make the core program EP0 instead */
+	if (ep->info.addr != ep_addr) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid EP 0x%02x\n", ep_addr);
+		return -RTK_ERR_BADARG;
+	}
+
+	/* Claim the endpoint atomically: the TX done ISR releases it, possibly on another core */
+	usb_os_enter_critical();
+	claimed = (ep->xfer_state == USBD_WHC_EP_STATE_IDLE) ? 1U : 0U;
+	ep->xfer_state = USBD_WHC_EP_STATE_BUSY;
+	usb_os_exit_critical();
+
+	if (claimed != 0U) {
 		idev->in_ep[num].userdata = userdata;
 		ep->xfer_buf = buf;/*Application should free this txbuf only afer TX DONE*/
 		ep->xfer_len = len;
@@ -2220,19 +2254,20 @@ int usbd_whc_transmit_data(u8 ep_addr, u8 *buf, u32 len, void *userdata)
 				DCache_Clean((u32)buf, len);
 			} else {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "EP TX buf align err\n");
-				ret = HAL_ERR_MEM;
+				ret = -RTK_ERR_NOMEM;
 			}
 		}
-		if (ret == HAL_OK) {
+		if (ret == RTK_SUCCESS) {
 			ret = usbd_ep_transmit(dev, ep);
-		} else {
+		}
+		if (ret != RTK_SUCCESS) {
 			/* Every failure path returns before the endpoint is enabled, so no completion
 			 * interrupt will ever release the EP: release it here or it stays BUSY forever */
 			ep->xfer_state = USBD_WHC_EP_STATE_IDLE;
 		}
 	} else {
 		RTK_LOGS(TAG, RTK_LOG_WARN, "EP%02x TX BUSY\n", ep_addr);
-		ret = HAL_BUSY;
+		ret = -RTK_ERR_BUSY;
 	}
 
 	return ret;
@@ -2245,18 +2280,26 @@ int usbd_whc_receive_data(u8 ep_addr, u8 *buf, u32 len, void *userdata)
 	usb_dev_t *dev = idev->dev;
 	usbd_ep_t *ep;
 
-	if (USB_EP_IS_IN(ep_addr) || (num >= USB_MAX_ENDPOINTS)) {
+	/* EP0 belongs to the core, the class only receives on the bulk OUT endpoints it opened */
+	if (USB_EP_IS_IN(ep_addr) || (num == 0U) || (num >= USB_MAX_ENDPOINTS)) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid EP 0x%02x\n", ep_addr);
-		return HAL_ERR_PARA;
+		return -RTK_ERR_BADARG;
 	}
 
 	/* idev->dev is set on SET_CONFIGURATION only, it stays NULL until enumeration completes */
 	if ((dev == NULL) || (dev->is_ready == 0U)) {
 		/*RX not ready*/
-		return HAL_ERR_HW;
+		return -RTK_ERR_IO;
 	}
 
 	ep = &idev->out_ep[num].ep;
+
+	/* Only an endpoint this class opened carries its address. EP0 OUT is rejected above: the
+	 * out_ep[0] slot is never opened, so its zero address would match ep_addr 0x00 here */
+	if (ep->info.addr != ep_addr) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid EP 0x%02x\n", ep_addr);
+		return -RTK_ERR_BADARG;
+	}
 
 	ep->xfer_buf = buf;
 	ep->xfer_len = len;
@@ -2272,7 +2315,7 @@ int usbd_whc_receive_data(u8 ep_addr, u8 *buf, u32 len, void *userdata)
 			DCache_Clean((u32)buf, usb_get_dma_len(len, ep->info.mps));
 		} else {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "EP RX buf align err\n");
-			return HAL_ERR_MEM;
+			return -RTK_ERR_NOMEM;
 		}
 	}
 	return usbd_ep_receive(dev, ep);
@@ -2283,5 +2326,5 @@ u8 usbd_whc_is_bt_en(void)
 	usbd_whc_dev_t *idev = &usbd_whc_dev;
 	usbd_otp_t *otp = &idev->otp;
 	/*Call this after usbd_otp_init*/
-	return  otp->bt_en;
+	return (otp->bt_en != 0U) ? 1U : 0U;
 }

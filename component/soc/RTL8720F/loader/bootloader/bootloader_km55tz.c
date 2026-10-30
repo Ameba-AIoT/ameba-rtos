@@ -123,7 +123,7 @@ int BOOT_PSRAM_Init(void)
 	/* psram calibration */
 	if (SYSCFG_CHIPType_Get() == CHIP_TYPE_ASIC) {
 		if (PSRAM_calibration() == FALSE) {
-			PSRAM_InfoDump();
+			RTK_LOGE(TAG, "PSRAM calibration fail, clk %d MHz\n", PsramInfo.Psram_Clk_Set * 2 / 1000000);
 		}
 	}
 

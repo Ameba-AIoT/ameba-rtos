@@ -225,7 +225,7 @@ static void example_usbh_hid_hotplug_thread(void *param)
 		}
 
 		hotplug_count++;
-		RTK_LOGS(TAG, RTK_LOG_INFO, "\n========== Hotplug #%d ==========\n", hotplug_count);
+		RTK_LOGS(TAG, RTK_LOG_INFO, "\n========== Hotplug #%u ==========\n", hotplug_count);
 
 		rtos_time_delay_ms(200);
 
@@ -243,14 +243,14 @@ static void example_usbh_hid_hotplug_thread(void *param)
 		rtos_mutex_take(usbh_hid_state_mutex, RTOS_MAX_TIMEOUT);
 
 		ret = usbh_init(&usbh_cfg, &usbh_usr_cb);
-		if (ret != HAL_OK) {
+		if (ret != RTK_SUCCESS) {
 			rtos_mutex_give(usbh_hid_state_mutex);
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Reinit fail: %d\n", ret);
 			break;
 		}
 
 		ret = usbh_hid_init(&usbh_hid_cfg);
-		if (ret != HAL_OK) {
+		if (ret != RTK_SUCCESS) {
 			usbh_deinit();
 			rtos_mutex_give(usbh_hid_state_mutex);
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Reinit fail: %d\n", ret);
@@ -302,13 +302,13 @@ static void example_usbh_hid_init_thread(void *param)
 #endif
 
 	ret = usbh_init(&usbh_cfg, &usbh_usr_cb);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "USB init fail: %d\n", ret);
 		goto free_sema_exit;
 	}
 
 	ret = usbh_hid_init(&usbh_hid_cfg);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "HID init fail: %d\n", ret);
 		goto usb_deinit_exit;
 	}

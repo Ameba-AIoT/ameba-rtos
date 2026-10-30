@@ -12,6 +12,7 @@
 #include "os_wrapper.h"
 #include "lwip_netconf.h"
 #include "dhcp/dhcps.h"
+#include "atcmd_service.h"
 
 /* Private defines -----------------------------------------------------------*/
 
@@ -69,7 +70,8 @@ typedef enum {
 
 /* Private function prototypes -----------------------------------------------*/
 
-static u32 usbd_cdc_ncm_cmd_link(u16 argc, u8 *argv[]);
+static int usbd_cdc_ncm_cmd_link(u16 argc, u8 *argv[]);
+static void usbd_cdc_ncm_cmd_link_at(u16 argc, char **argv);
 
 extern void rltk_usb_eth_init(void);
 extern void rltk_usb_eth_deinit(void);
@@ -174,9 +176,10 @@ static volatile u8 cdc_ncm_stack_ready = 0;
 
 /* Exported variables --------------------------------------------------------*/
 
-CMD_TABLE_DATA_SECTION
-const COMMAND_TABLE usbd_cdc_ncm_cmd_table[] = {
-	{"usbd_ncm_link", usbd_cdc_ncm_cmd_link},
+/* AT commands "AT+<cmd>=<p1>,<p2>...": the command name is case-sensitive, the parameters are not */
+ATCMD_TABLE_DATA_SECTION
+const log_item_t usbd_cdc_ncm_cmd_table[] = {
+	{"+USBDNCM", usbd_cdc_ncm_cmd_link_at},
 };
 
 /* Private functions ---------------------------------------------------------*/
@@ -272,7 +275,7 @@ static void usbd_ncm_link_change_thread(void *param)
   */
 static int usbd_cdc_ncm_cb_init(void)
 {
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 /**
@@ -281,7 +284,7 @@ static int usbd_cdc_ncm_cb_init(void)
   */
 static int usbd_cdc_ncm_cb_deinit(void)
 {
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 /**
@@ -293,7 +296,7 @@ static int usbd_cdc_ncm_cb_deinit(void)
 static int usbd_cdc_ncm_cb_received(u8 *buf, u32 length)
 {
 	if (buf == NULL || length == 0) {
-		return HAL_ERR_PARA;
+		return -RTK_ERR_BADARG;
 	}
 
 #if 0
@@ -309,7 +312,7 @@ static int usbd_cdc_ncm_cb_received(u8 *buf, u32 length)
 		netif_adapter_usb_eth_recv(buf, length);
 	}
 
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 /**
@@ -322,11 +325,11 @@ static int usbd_cdc_ncm_cb_received(u8 *buf, u32 length)
   */
 static int usbd_cdc_ncm_cb_setup(usb_setup_req_t *req, u8 *buf)
 {
-	int ret = HAL_OK;
+	int ret = RTK_SUCCESS;
 	UNUSED(buf);
 
 	if (req == NULL) {
-		return HAL_ERR_PARA;
+		return -RTK_ERR_BADARG;
 	}
 
 	u8 req_type = req->bmRequestType & USB_REQ_TYPE_MASK;
@@ -349,13 +352,13 @@ static int usbd_cdc_ncm_cb_setup(usb_setup_req_t *req, u8 *buf)
 			 * only forwards what it does not recognise.
 			 *
 			 * Anything left here is unsupported and must be answered with a request
-			 * error so the core STALLs EP0 (Ref USB 2.0 9.2.7).  Returning HAL_OK
+			 * error so the core STALLs EP0 (Ref USB 2.0 9.2.7).  Returning RTK_SUCCESS
 			 * used to be actively harmful for a device-to-host request such as
 			 * GET_ETHERNET_STATISTIC: the class driver would then transmit
 			 * req->wLength bytes of whatever the EP0 buffer happened to hold,
 			 * leaking stale buffer content to the host instead of stalling.
 			 */
-			ret = HAL_ERR_PARA;
+			ret = -RTK_ERR_BADARG;
 			break;
 		}
 	}
@@ -445,7 +448,7 @@ static void usbd_ncm_hotplug_thread(void *param)
 
 			// Re-initialize USB device
 			ret = usbd_init(&cdc_ncm_cfg);
-			if (ret != HAL_OK) {
+			if (ret != RTK_SUCCESS) {
 				rtos_mutex_give(cdc_ncm_state_mutex);
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "Init fail %d\n", ret);
 				break;
@@ -453,7 +456,7 @@ static void usbd_ncm_hotplug_thread(void *param)
 
 			// Re-initialize CDC NCM
 			ret = usbd_cdc_ncm_init(&cdc_ncm_cb, &cdc_ncm_class_cfg);
-			if (ret != HAL_OK) {
+			if (ret != RTK_SUCCESS) {
 				usbd_deinit();
 				rtos_mutex_give(cdc_ncm_state_mutex);
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "Init NCM fail %d\n", ret);
@@ -523,19 +526,19 @@ static void usbd_ncm_init_thread(void *param)
 
 	// Initialize USB device
 	ret = usbd_init(&cdc_ncm_cfg);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Init fail %d\n", ret);
 		goto exit_usbd_init_fail;
 	}
 
 	// Initialize CDC NCM
 	ret = usbd_cdc_ncm_init(&cdc_ncm_cb, &cdc_ncm_class_cfg);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Init NCM fail %d\n", ret);
 		goto exit_usbd_cdc_ncm_init_fail;
 	}
 	/* The class starts with the uplink down; this example serves the host locally
-	 * (DHCP server on the device), so report it up.  The usbd_ncm_link command can
+	 * (DHCP server on the device), so report it up.  The USBDNCM link command can
 	 * still change it to exercise the link notification. */
 	(void)usbd_cdc_ncm_set_link_status(1U);
 
@@ -593,16 +596,45 @@ exit_cleanup:
 	rtos_task_delete(NULL);
 }
 
-/* Shell command: ncm_link <0|1> -- report the upper-layer network link state
- * to the host. Mirrors the ECM example's `ecm_link` cmd. Edge-triggered:
+/* Shell command USBDNCM link <0|1> -- report the upper-layer network link state
+ * to the host. Mirrors the ECM example's USBDECM. Edge-triggered:
  * calling repeatedly with the same value is a no-op inside the class driver. */
-static u32 usbd_cdc_ncm_cmd_link(u16 argc, u8 *argv[])
+static int usbd_cdc_ncm_cmd_link(u16 argc, u8 *argv[])
 {
-	if (argc == 0 || argv[0] == NULL) {
-		return HAL_ERR_PARA;
+	const char *cmd = (argc != 0U) ? (const char *)argv[0] : NULL;
+	const char *val = (argc > 1U) ? (const char *)argv[1] : NULL;
+	u8 link_up;
+
+	if ((cmd == NULL) || (_stricmp(cmd, "help") == 0) || (_stricmp(cmd, "?") == 0)) {
+		RTK_LOGS(TAG, RTK_LOG_INFO, "Usage: AT+USBDNCM=<cmd>[,<args>]\n");
+		RTK_LOGS(TAG, RTK_LOG_INFO, "  link,<0|1>  Report the upper-layer network link to the host, 1: up, 0: down\n");
+		RTK_LOGS(TAG, RTK_LOG_INFO, "              Edge-triggered: the same value twice sends no notification\n");
+		RTK_LOGS(TAG, RTK_LOG_INFO, "  help        Print this help\n");
+		return (cmd == NULL) ? -RTK_ERR_BADARG : RTK_SUCCESS;
 	}
-	u8 link_up = (u8)(_strtoul((const char *)argv[0], NULL, 10) ? 1 : 0);
+
+	if ((_stricmp(cmd, "link") != 0) || (argc != 2U) || (val[1] != '\0') || ((val[0] != '0') && (val[0] != '1'))) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Usage: AT+USBDNCM=link,<0|1>\n");
+		return -RTK_ERR_BADARG;
+	}
+
+	link_up = (val[0] == '1') ? 1U : 0U;
+
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Set NCM link status -> %s\n", link_up ? "UP" : "DOWN");
+
 	return (u32)usbd_cdc_ncm_set_link_status(link_up);
+}
+
+/* AT entry: argv[0] is reserved by the AT parser and argv[1] holds the first parameter */
+static void usbd_cdc_ncm_cmd_link_at(u16 argc, char **argv)
+{
+	int ret = usbd_cdc_ncm_cmd_link((argc != 0U) ? (argc - 1U) : 0U, (u8 **)&argv[1]);
+
+	if (ret == RTK_SUCCESS) {
+		at_printf(ATCMD_OK_END_STR);
+	} else {
+		at_printf(ATCMD_ERROR_END_STR, (int)ret);
+	}
 }
 
 /* Exported functions --------------------------------------------------------*/
@@ -616,13 +648,13 @@ int usb_ethernet_transmit(u8 *buf, u32 len, u8 block)
 	 * stack is gone for good. A hotplug right after this check is harmless, the
 	 * mutex stays valid and the re-check below skips the TX. */
 	if (cdc_ncm_stack_ready == 0U) {
-		return HAL_ERR_HW;
+		return -RTK_ERR_IO;
 	}
 
 	rtos_mutex_take(cdc_ncm_state_mutex, RTOS_MAX_TIMEOUT);
 	if (cdc_ncm_stack_ready == 0U) {
 		/* Lost the race against a hotplug tear down */
-		ret = HAL_ERR_HW;
+		ret = -RTK_ERR_IO;
 	} else {
 		ret = usbd_cdc_ncm_transmit(buf, len, block);
 	}

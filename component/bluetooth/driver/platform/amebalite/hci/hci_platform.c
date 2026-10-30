@@ -342,9 +342,6 @@ static void bt_power_on(void)
 	set_reg_value(0x4100C208, BIT1, 1);             /* release BTON reset */
 	osif_delay_us(100);
 	set_reg_value(0x4100C214, BIT2, 0);             /* disable clk_osc4m_wlbt */
-	if (HCI_BT_KEEP_AWAKE) {
-		set_reg_value(0x4100C280, BIT13, 1);        /* enable HOST_WAKE_BT */
-	}
 }
 
 void bt_power_off(void)
@@ -450,6 +447,43 @@ void hci_platform_get_config(uint8_t **buf, uint16_t *len)
 {
 	*buf = hci_init_config;
 	*len = sizeof(hci_init_config);
+}
+
+static uint32_t hci_platform_bt_wake_host_irq_handler(void *data)
+{
+	(void)data;
+
+	InterruptDis(BT_WAKE_HOST_IRQ);
+
+	return 1;
+}
+
+void hci_platform_register_bt_wake_host_irq(void)
+{
+	InterruptRegister((IRQ_FUN)hci_platform_bt_wake_host_irq_handler, BT_WAKE_HOST_IRQ, NULL, INT_PRI_LOWEST);
+}
+
+void hci_platform_unregister_bt_wake_host_irq(void)
+{
+	InterruptDis(BT_WAKE_HOST_IRQ);
+	InterruptUnRegister(BT_WAKE_HOST_IRQ);
+}
+
+void hci_platform_op_bt_wake_host_irq(bool op)
+{
+	if (op) {
+		if (irq_get_pending(BT_WAKE_HOST_IRQ)) {
+			irq_clear_pending(BT_WAKE_HOST_IRQ);
+		}
+		/* Enable BT_WAKE_HOST irq */
+		InterruptEn(BT_WAKE_HOST_IRQ, INT_PRI_LOWEST);
+	} else {
+		/* Disable BT_WAKE_HOST irq */
+		InterruptDis(BT_WAKE_HOST_IRQ);
+		if (irq_get_pending(BT_WAKE_HOST_IRQ)) {
+			irq_clear_pending(BT_WAKE_HOST_IRQ);
+		}
+	}
 }
 
 void hci_platform_debug_enable(void)
