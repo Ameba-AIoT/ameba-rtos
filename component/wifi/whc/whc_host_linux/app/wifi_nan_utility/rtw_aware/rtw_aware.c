@@ -136,8 +136,13 @@ struct nan_service_mgnt {
 	struct dns_sd_config dns_record;
 };
 
+/* NAN band, same bits as the device RTW_SUPPORT_BAND_*; 0 = follow chip band */
+#define NAN_BAND_2G		0x1
+#define NAN_BAND_2G_5G	0x3
+
 struct basic_config {
 	char device_mac[MAC_STR_LEN];
+	uint8_t band;
 };
 
 static int __main_terminated;
@@ -1548,6 +1553,21 @@ int get_basic_from_json(json_object *obj, struct basic_config *basic_info)
 	CPY_OBJ_STR(basic_info->device_mac, mac_obj);
 	RTW_INFO("mac_addr : %s \n", basic_info->device_mac);
 
+	/* band (optional): "2g" or "2g_5g"; absent = follow chip band. No 5G-only (ch6 DW is mandatory) */
+	if (json_object_object_get_ex(obj, "band", &tmp_obj)) {
+		const char *band_str = json_object_get_string(tmp_obj);
+
+		if (band_str && strcmp(band_str, "2g") == 0) {
+			basic_info->band = NAN_BAND_2G;
+		} else if (band_str && strcmp(band_str, "2g_5g") == 0) {
+			basic_info->band = NAN_BAND_2G_5G;
+		} else {
+			RTW_INFO("wrong band %s, use \"2g\" or \"2g_5g\"\n", band_str ? band_str : "(null)");
+			return false;
+		}
+		RTW_INFO("band : %s \n", band_str);
+	}
+
 	return true;
 }
 
@@ -1581,7 +1601,10 @@ int read_from_json_file(char *filename,
 
 	/* Basic information */
 	if (json_object_object_get_ex(test_obj, "basic", &basic_obj)) {
-		get_basic_from_json(basic_obj, basic_info);
+		if (!get_basic_from_json(basic_obj, basic_info)) {
+			ret = false;
+			goto exit;
+		}
 	} else {
 		RTW_INFO("Cannot find basic \n");
 		ret = false;
@@ -1797,6 +1820,7 @@ int main(int argc, char *argv[])
 		setup_nan_mgnt(aware_role, &g_nan_service_mgnt[i].dns_record, &g_nan_service_mgnt[i].nan_mgnt);
 	}
 	dns_register_evt_cb(dns_evt_hdr);
+	dns_set_band(basic_info.band);
 
 	/* start service */
 	if (aware_role == RTW_AWARE_ROLE_PUBLISH) {
