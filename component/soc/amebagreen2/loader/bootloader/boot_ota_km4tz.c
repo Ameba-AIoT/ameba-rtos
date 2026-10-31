@@ -117,6 +117,35 @@ u8 BOOT_OTA_SlotSelect(void)
 	return (Ver[0] >= Ver[1]) ? BOOT_FROM_OTA1 : BOOT_FROM_OTA2;
 }
 
+/* The address and the size in a sub-image header are not authenticated before the image is copied.
+ * Only the memory space and the bootloader's own memory are checked, not how the layout divides it.
+ * A copy may go anywhere in SRAM or PSRAM, in the non-secure or the secure alias, whose limits are
+ * SRAM_END and PSRAM_END of the layout. Peripherals are outside of both. It must not overlap the RAM
+ * that the layout fixes for the CPUs and the bootloader: [SRAM_BASE, __boot_fixed_end__), which is ROM BSS,
+ * MSP and the IMG1 slot, and [__boot_loader_start__, __boot_loader_end__), the FULLMAC bootloader and manifest. */
+/* true if [addr, addr + len) and [start, end) have a byte in common, without adding addr and len */
+static bool BOOT_RangeOverlap(u32 addr, u32 len, u32 start, u32 end)
+{
+	return (addr < end) && ((addr >= start) || (len > (start - addr)));
+}
+
+static bool BOOT_SubImgDstValid(u32 DstAddr, u32 Len)
+{
+	u32 Alias;
+
+	for (Alias = 0; Alias <= TZ_IDAU_SEC_OFFSET; Alias += TZ_IDAU_SEC_OFFSET) {
+		if (BOOT_RangeOverlap(DstAddr, Len, SRAM_BASE + Alias, (u32)__boot_fixed_end__ + Alias)
+			|| BOOT_RangeOverlap(DstAddr, Len, (u32)__boot_loader_start__ + Alias, (u32)__boot_loader_end__ + Alias)) {
+			return false;
+		}
+	}
+
+	return is_memory_range_valid(DstAddr, Len, SRAM_BASE, (u32)__sram_end__)
+		   || is_memory_range_valid(DstAddr, Len, SRAM_BASE + TZ_IDAU_SEC_OFFSET, (u32)__sram_end__ + TZ_IDAU_SEC_OFFSET)
+		   || is_memory_range_valid(DstAddr, Len, PSRAM_BASE, (u32)__non_secure_psram_end__)
+		   || is_memory_range_valid(DstAddr, Len, PSRAM_BASE_S, (u32)__non_secure_psram_end__ + TZ_IDAU_SEC_OFFSET);
+}
+
 u8 BOOT_LoadSubImage(SubImgInfo_TypeDef *SubImgInfo, u32 StartAddr, u8 Num, char **ImgName, u8 ErrLog)
 {
 	IMAGE_HEADER ImgHdr;
@@ -124,6 +153,11 @@ u8 BOOT_LoadSubImage(SubImgInfo_TypeDef *SubImgInfo, u32 StartAddr, u8 Num, char
 	u32 i;
 
 	for (i = 0; i < Num; i++) {
+		/* StartAddr moves by the unauthenticated size of the previous sub-image, keep it in flash */
+		if (!IS_FLASH_ADDR(StartAddr)) {
+			RTK_LOGD(TAG, "%s invalid\n", ImgName[i]);
+			return FALSE;
+		}
 		BOOT_ImgCopy((void *)&ImgHdr, (void *)StartAddr, IMAGE_HEADER_LEN);
 		if (_memcmp(ImgHdr.signature, ImagePattern, sizeof(ImagePattern)) != 0) {
 			if (ErrLog == TRUE) {
@@ -134,6 +168,13 @@ u8 BOOT_LoadSubImage(SubImgInfo_TypeDef *SubImgInfo, u32 StartAddr, u8 Num, char
 
 		DstAddr = ImgHdr.image_addr - IMAGE_HEADER_LEN;
 		Len = ImgHdr.image_size + IMAGE_HEADER_LEN;
+
+		/* header-only sub-image is not copied, skip the destination check */
+		/* anything but flash has to be memory outside of the bootloader, this also refuses a wrapped DstAddr */
+		if (!IS_FLASH_ADDR(DstAddr) && (Len != IMAGE_HEADER_LEN) && !BOOT_SubImgDstValid(DstAddr, Len)) {
+			RTK_LOGD(TAG, "%s invalid\n", ImgName[i]);
+			return FALSE;
+		}
 
 		/* np rom code jump address is from NP_BOOT_INDEX */
 		if (ImgHdr.boot_index == NP_BOOT_INDEX) {

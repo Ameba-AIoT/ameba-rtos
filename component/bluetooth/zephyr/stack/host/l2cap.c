@@ -1181,6 +1181,32 @@ int bt_l2cap_server_register(struct bt_l2cap_server *server)
 	return 0;
 }
 
+#if ZEPHYR_RTK_PATCH
+int bt_l2cap_server_unregister(struct bt_l2cap_server *server)
+{
+	if (!bt_l2cap_server_lookup_psm(server->psm)) {
+		return -EADDRNOTAVAIL;
+	}
+
+	sys_slist_find_and_remove(&servers, &server->node);
+
+	return 0;
+}
+
+void bt_l2cap_dynamic_servers_free(void)
+{
+	struct bt_l2cap_server *server;
+	sys_snode_t *node;
+
+	while ((node = sys_slist_get(&servers)) != NULL) {
+		server = CONTAINER_OF(node, struct bt_l2cap_server, node);
+		if (server->free) {
+			server->free(server);
+		}
+	}
+}
+#endif
+
 #if defined(CONFIG_BT_L2CAP_SEG_RECV)
 static void l2cap_chan_seg_recv_rx_init(struct bt_l2cap_le_chan *chan)
 {
@@ -1839,6 +1865,7 @@ static void le_disconn_req(struct bt_l2cap *l2cap, uint8_t ident,
 	l2cap_send_sig(conn, buf);
 }
 
+__attribute__((unused))
 static int l2cap_change_security(struct bt_l2cap_le_chan *chan, uint16_t err)
 {
 	struct bt_conn *conn = chan->chan.conn;
@@ -2075,10 +2102,12 @@ static void le_conn_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 		break;
 	case BT_L2CAP_LE_ERR_AUTHENTICATION:
 	case BT_L2CAP_LE_ERR_ENCRYPTION:
+#if !ZEPHYR_RTK_PATCH
 		/* If security needs changing wait it to be completed */
 		if (l2cap_change_security(chan, result) == 0) {
 			return;
 		}
+#endif
 		bt_l2cap_chan_remove(conn, &chan->chan);
 		__fallthrough;
 	default:
@@ -2089,6 +2118,7 @@ static void le_conn_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 static void le_disconn_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 			   struct net_buf *buf)
 {
+	ARG_UNUSED(ident);
 	struct bt_conn *conn = l2cap->chan.chan.conn;
 	struct bt_l2cap_le_chan *chan;
 	struct bt_l2cap_disconn_rsp *rsp = (void *)buf->data;
@@ -2114,6 +2144,7 @@ static void le_disconn_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 static void le_credits(struct bt_l2cap *l2cap, uint8_t ident,
 		       struct net_buf *buf)
 {
+	ARG_UNUSED(ident);
 	struct bt_conn *conn = l2cap->chan.chan.conn;
 	struct bt_l2cap_chan *chan;
 	struct bt_l2cap_le_credits *ev = (void *)buf->data;
@@ -2152,6 +2183,7 @@ static void le_credits(struct bt_l2cap *l2cap, uint8_t ident,
 static void reject_cmd(struct bt_l2cap *l2cap, uint8_t ident,
 		       struct net_buf *buf)
 {
+	ARG_UNUSED(buf);
 	struct bt_conn *conn = l2cap->chan.chan.conn;
 	struct bt_l2cap_le_chan *chan;
 
@@ -2421,6 +2453,7 @@ int bt_l2cap_chan_recv_complete(struct bt_l2cap_chan *chan, struct net_buf *buf)
 
 static struct net_buf *l2cap_alloc_frag(k_timeout_t timeout, void *user_data)
 {
+	ARG_UNUSED(timeout);
 	struct bt_l2cap_le_chan *chan = user_data;
 	struct net_buf *frag = NULL;
 
@@ -2437,6 +2470,7 @@ static struct net_buf *l2cap_alloc_frag(k_timeout_t timeout, void *user_data)
 static void l2cap_chan_le_recv_sdu(struct bt_l2cap_le_chan *chan,
 				   struct net_buf *buf, uint16_t seg)
 {
+	ARG_UNUSED(seg);
 	int err;
 
 	LOG_DBG("chan %p len %zu", chan, buf->len);
@@ -2620,7 +2654,7 @@ static void l2cap_chan_le_recv(struct bt_l2cap_le_chan *chan,
 
 		/* Send sdu_len/mps worth of credits */
 		uint16_t credits = DIV_ROUND_UP(
-			MIN(sdu_len - buf->len, net_buf_tailroom(chan->_sdu)),
+			MIN(sdu_len - buf->len, (uint16_t)net_buf_tailroom(chan->_sdu)),
 			chan->rx.mps);
 
 		if (credits) {
@@ -2843,6 +2877,7 @@ static int l2cap_le_connect(struct bt_conn *conn, struct bt_l2cap_le_chan *ch,
 
 	ch->psm = psm;
 
+#if !ZEPHYR_RTK_PATCH
 	if (conn->sec_level < ch->required_sec_level) {
 		err = bt_conn_set_security(conn, ch->required_sec_level);
 		if (err) {
@@ -2854,6 +2889,7 @@ static int l2cap_le_connect(struct bt_conn *conn, struct bt_l2cap_le_chan *ch,
 
 		return 0;
 	}
+#endif
 
 	err = l2cap_le_conn_req(ch);
 	if (err) {
@@ -2864,7 +2900,9 @@ static int l2cap_le_connect(struct bt_conn *conn, struct bt_l2cap_le_chan *ch,
 
 fail:
 	bt_l2cap_chan_remove(conn, &ch->chan);
+#if !ZEPHYR_RTK_PATCH
 	bt_l2cap_chan_del(&ch->chan);
+#endif
 	return err;
 }
 

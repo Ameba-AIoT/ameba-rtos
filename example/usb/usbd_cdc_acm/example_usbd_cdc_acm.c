@@ -176,7 +176,7 @@ static int cdc_acm_cb_init(void)
 	cdc_acm_async_xfer_busy = 0;
 #endif
 
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 /**
@@ -190,7 +190,7 @@ static int cdc_acm_cb_deinit(void)
 	cdc_acm_async_xfer_buf_pos = 0;
 	cdc_acm_async_xfer_busy = 0;
 #endif
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 /**
@@ -204,7 +204,7 @@ static int cdc_acm_cb_deinit(void)
 static int cdc_acm_cb_received(u8 *buf, u32 len)
 {
 #if CDC_ACM_ASYNC_XFER
-	int ret = HAL_OK;
+	int ret = RTK_SUCCESS;
 	if (0 == cdc_acm_async_xfer_busy) {
 		if ((cdc_acm_async_xfer_buf_pos + len) > CDC_ACM_ASYNC_BUF_SIZE) {
 			len = CDC_ACM_ASYNC_BUF_SIZE - cdc_acm_async_xfer_buf_pos;  // extra data discarded
@@ -221,7 +221,7 @@ static int cdc_acm_cb_received(u8 *buf, u32 len)
 		}
 	} else {
 		// RTK_LOGS(TAG, RTK_LOG_WARN, "Busy, discard %dB\n", len);
-		ret = HAL_BUSY;
+		ret = -RTK_ERR_BUSY;
 	}
 
 	return ret;
@@ -244,14 +244,14 @@ static int cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 	usb_cdc_acm_line_coding_t *lc = &cdc_acm_line_coding;
 	/* Ref USB 2.0 9.2.7: anything not explicitly accepted below is a request error, so
 	   the default status makes the core STALL EP0 instead of ACKing the status stage. */
-	int ret = HAL_ERR_PARA;
+	int ret = -RTK_ERR_BADARG;
 
 	switch (req->bRequest) {
 	/* Ref CDC PSTN 1.2 Table 4: bmCapabilities 0x02 declares no Comm Feature support and no
 	   encapsulated protocol is implemented, so those requests fall to default and are STALLed */
 	case USB_CDC_ACM_SEND_BREAK:
 		/* Do nothing */
-		ret = HAL_OK;
+		ret = RTK_SUCCESS;
 		break;
 
 	case USB_CDC_ACM_SET_LINE_CODING:
@@ -262,7 +262,7 @@ static int cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 			lc->b.bCharFormat = buf[4];
 			lc->b.bParityType = buf[5];
 			lc->b.bDataBits = buf[6];
-			ret = HAL_OK;
+			ret = RTK_SUCCESS;
 		}
 		break;
 
@@ -274,7 +274,7 @@ static int cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 		buf[4] = lc->b.bCharFormat;
 		buf[5] = lc->b.bParityType;
 		buf[6] = lc->b.bDataBits;
-		ret = HAL_OK;
+		ret = RTK_SUCCESS;
 		break;
 
 	case USB_CDC_ACM_SET_CONTROL_LINE_STATE:
@@ -293,7 +293,7 @@ static int cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 				USB_DIAG(USB_LAYER_APP, USB_EVT_LINK, 0);
 				usbd_cdc_acm_notify_serial_state(USB_CDC_ACM_CTRL_DSR | USB_CDC_ACM_CTRL_DCD);
 			}
-			ret = HAL_OK;
+			ret = RTK_SUCCESS;
 		}
 		break;
 
@@ -347,7 +347,7 @@ static void example_usbd_cdc_acm_hotplug_thread(void *param)
 				RTK_LOGS(TAG, RTK_LOG_INFO, "DETACHED\n");
 #if CDC_ACM_HOTPLUG && CDC_ACM_ASYNC_XFER
 				/* Set teardown before taking the lock so an in-flight xfer yields
-				   instead of spinning on HAL_BUSY while we free the stack. */
+				   instead of spinning on -RTK_ERR_BUSY while we free the stack. */
 				cdc_acm_teardown = 1U;
 				rtos_mutex_take(cdc_acm_xfer_lock, RTOS_SEMA_MAX_COUNT);
 #endif
@@ -423,7 +423,7 @@ static void example_usbd_cdc_acm_xfer_thread(void *param)
 #if CDC_ACM_HOTPLUG && CDC_ACM_ASYNC_XFER
 			/* Take the batch lock. A pending hotplug (teardown) is checked inside
 			   the loop below so we yield promptly instead of holding the lock
-			   across a HAL_BUSY retry while the stack is being freed. */
+			   across a -RTK_ERR_BUSY retry while the stack is being freed. */
 			rtos_mutex_take(cdc_acm_xfer_lock, RTOS_SEMA_MAX_COUNT);
 			lock_held = 1U;
 #endif
@@ -454,22 +454,22 @@ static void example_usbd_cdc_acm_xfer_thread(void *param)
 #endif
 				if (xfer_len > cdc_acm_class_cfg.bulk_in_xfer_size) {
 					ret = usbd_cdc_acm_transmit(xfer_buf, cdc_acm_class_cfg.bulk_in_xfer_size);
-					if (ret == HAL_OK) {
+					if (ret == RTK_SUCCESS) {
 						xfer_len -= cdc_acm_class_cfg.bulk_in_xfer_size;
 						xfer_buf += cdc_acm_class_cfg.bulk_in_xfer_size;
-					} else { // HAL_BUSY
+					} else { // -RTK_ERR_BUSY
 						RTK_LOGS(TAG, RTK_LOG_INFO, "Xfer busy, retry[1]\n");
 						rtos_time_delay_us(200);
 					}
 				} else {
 					ret = usbd_cdc_acm_transmit(xfer_buf, xfer_len);
-					if (ret == HAL_OK) {
+					if (ret == RTK_SUCCESS) {
 						xfer_len = 0;
 						cdc_acm_async_xfer_busy = 0;
 						cdc_acm_xfer_idx++;
 						RTK_LOGS(TAG, RTK_LOG_DEBUG, "Xfer done\n");
 						break;
-					} else { // HAL_BUSY
+					} else { // -RTK_ERR_BUSY
 						RTK_LOGS(TAG, RTK_LOG_INFO, "Xfer busy, retry[2]\n");
 						rtos_time_delay_us(200);
 					}
@@ -531,13 +531,13 @@ static void example_usbd_cdc_acm_thread(void *param)
 #endif
 
 	ret = usbd_init(&cdc_acm_cfg);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		goto exit_usbd_init_fail;
 	}
 
 	ret = usbd_cdc_acm_init(&cdc_acm_cb, &cdc_acm_class_cfg);
 
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		goto exit_usbd_cdc_acm_init_fail;
 	}
 

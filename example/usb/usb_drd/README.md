@@ -64,7 +64,7 @@ Refer to the [EVB User Guide](https://aiot.realmcu.com/filelist?document_type=9)
 
 	**Host Mode**
 	- AT+USBHMSC=init
-	- AT+USBHMSC=rw_test
+	- AT+USBHMSC=rw_test[,<count>]  (`<count>`: number of test files 1..255, default 5)
 	- AT+USBHMSC=deinit
 
 	Follow the commands in sequence appropriate to the test different mode.

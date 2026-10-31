@@ -42,6 +42,10 @@ typedef enum {
     MBEDTLS_SHA3_512, /*!< SHA3-512 */
 } mbedtls_sha3_id;
 
+#if !defined(MBEDTLS_SHA3_ALT)
+// Regular implementation
+//
+
 /**
  * \brief          The SHA-3 context structure.
  *
@@ -54,6 +58,10 @@ typedef struct {
     uint16_t MBEDTLS_PRIVATE(max_block_size);
 }
 mbedtls_sha3_context;
+
+#else  /* MBEDTLS_SHA3_ALT */
+#include "sha3_alt.h"
+#endif /* MBEDTLS_SHA3_ALT */
 
 /**
  * \brief          This function initializes a SHA-3 context.

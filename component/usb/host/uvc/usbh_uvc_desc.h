@@ -10,6 +10,7 @@
 /* Includes ------------------------------------------------------------------*/
 
 #include "dlist.h"
+#include "usb_video.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -28,8 +29,6 @@ extern "C" {
  *  @brief Class-specific descriptor type and subtype codes of the UVC specification.
  *  @{
  */
-
-#define USBH_UVC_CLASS_CODE                                  0xEU
 
 /* A.5. Video Class-Specific VC Interface Descriptor Subtypes */
 #define USBH_UVC_VC_DESCRIPTOR_UNDEFINED                     0x00U
@@ -76,9 +75,6 @@ extern "C" {
 
 #define USBH_UVC_VS_PROBE_CONTROL                            (0x1U<<8U)
 #define USBH_UVC_VS_COMMIT_CONTROL                           (0x2U<<8U)
-
-#define USBH_UVC_SUBCLASS_VIDEOCONTROL                       0x01U
-#define USBH_UVC_SUBCLASS_VIDEOSTREAMING                     0x02U
 
 #define USBH_UVC_DESC_TYPE_CS_INTERFACE                      0x24U
 #define USBH_UVC_DESC_TYPE_CS_ENDPOINT                       0x25U

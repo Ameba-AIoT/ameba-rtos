@@ -120,6 +120,10 @@ static volatile u8 vendor_teardown = 0;
    thread to stop for good rather than spin against a stack that is gone. */
 static volatile u8 vendor_stack_fatal = 0;
 
+/* 1 while the hotplug thread may still touch the semas. Cleared by the thread as
+   its very last access, so the bootstrap thread may free them once it reads 0. */
+static volatile u8 vendor_hotplug_alive = 0;
+
 static const usbh_config_t usbh_cfg = {
 	.speed = USB_SPEED_HIGH,
 	.ext_intr_enable = USBH_SOF_INTR,
@@ -173,13 +177,13 @@ static const usbh_user_cb_t usbh_usr_cb = {
   *         cleared if a teardown is pending or the stack is gone for good. A
   *         hotplug right after this check is harmless - the mutex stays valid and
   *         the re-check under it catches the loss.
-  * @retval HAL_OK when the lock is held and the stack is usable, HAL_ERR_HW when
+  * @retval RTK_SUCCESS when the lock is held and the stack is usable, -RTK_ERR_IO when
   *         the caller must give up without unlocking
   */
 static int vendor_lock_stack(void)
 {
 	if ((vendor_stack_ready == 0U) || (vendor_teardown != 0U)) {
-		return HAL_ERR_HW;
+		return -RTK_ERR_IO;
 	}
 
 	rtos_mutex_take(vendor_state_mutex, RTOS_MAX_TIMEOUT);
@@ -187,10 +191,10 @@ static int vendor_lock_stack(void)
 	if ((vendor_stack_ready == 0U) || (vendor_teardown != 0U)) {
 		/* Lost the race against a teardown */
 		rtos_mutex_give(vendor_state_mutex);
-		return HAL_ERR_HW;
+		return -RTK_ERR_IO;
 	}
 
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 /**
@@ -226,7 +230,7 @@ static void vendor_drain_sema(rtos_sema_t sema)
   * @brief  Wait until the class driver has finished its setup phase
   * @note   Bounded, and aborts early on a fatal stack, so a test can not hang
   *         when no device is ever plugged in or the stack failed to come back.
-  * @retval HAL_OK once the class is set up, HAL_TIMEOUT on expiry or fatal stack
+  * @retval RTK_SUCCESS once the class is set up, -RTK_ERR_TIMEOUT on expiry or fatal stack
   */
 static int vendor_wait_ready(void)
 {
@@ -234,18 +238,18 @@ static int vendor_wait_ready(void)
 
 	while (waited < USBH_VENDOR_READY_TIMEOUT_MS) {
 		if (vendor_stack_fatal != 0U) {
-			return HAL_TIMEOUT;
+			return -RTK_ERR_TIMEOUT;
 		}
 		if ((vendor_is_ready != 0) && (vendor_stack_ready != 0U)) {
 			rtos_time_delay_ms(USBH_VENDOR_READY_POLL_MS);
-			return HAL_OK;
+			return RTK_SUCCESS;
 		}
 		rtos_time_delay_ms(USBH_VENDOR_READY_POLL_MS);
 		waited += USBH_VENDOR_READY_POLL_MS;
 	}
 
 	RTK_LOGS(TAG, RTK_LOG_ERROR, "Wait ready timeout\n");
-	return HAL_TIMEOUT;
+	return -RTK_ERR_TIMEOUT;
 }
 
 /**
@@ -294,7 +298,7 @@ static void vendor_cb_received(u8 ep_type, u8 *buf, u32 len, int status)
 
 	switch (ep_type) {
 	case USB_CH_EP_TYPE_BULK:
-		if (status == HAL_OK) {
+		if (status == RTK_SUCCESS) {
 			//limited the copy len
 			if ((len > 0) && ((vendor_bulk_total_rx_len + len) <= USBH_VENDOR_BULK_LOOPBACK_BUF_SIZE)) {
 				//memcpy(vendor_bulk_loopback_rx_buf + vendor_bulk_total_rx_len, buf, len);
@@ -314,7 +318,7 @@ static void vendor_cb_received(u8 ep_type, u8 *buf, u32 len, int status)
 
 		break;
 	case USB_CH_EP_TYPE_INTR:
-		if (status == HAL_OK) {
+		if (status == RTK_SUCCESS) {
 			//limited the copy len
 			if ((len > 0) && ((vendor_intr_total_rx_len + len) <= USBH_VENDOR_INTR_LOOPBACK_BUF_SIZE)) {
 				//memcpy(vendor_intr_loopback_rx_buf + vendor_intr_total_rx_len, buf, len);
@@ -366,9 +370,10 @@ static void vendor_cb_transmitted(u8 ep_type)
 static void vendor_intr_loopback_test(void)
 {
 	int i, j;
+	int ret;
 	int vendor_intr_rx_errcnt = 0;
 
-	if (vendor_wait_ready() != HAL_OK) {
+	if (vendor_wait_ready() != RTK_SUCCESS) {
 		rtos_sema_give(vendor_done_sema);
 		return;
 	}
@@ -386,24 +391,32 @@ static void vendor_intr_loopback_test(void)
 		/* Arm under the lock, then release it before waiting for the completion
 		   callback: the callback never comes for a device that was just
 		   unplugged, and the hotplug thread must not be blocked that long. */
-		if (vendor_lock_stack() != HAL_OK) {
+		if (vendor_lock_stack() != RTK_SUCCESS) {
 			break;
 		}
 		vendor_drain_sema(vendor_intr_send_sema);
-		(void)usbh_vendor_intr_transmit(vendor_intr_loopback_tx_buf, USBH_VENDOR_INTR_LOOPBACK_BUF_SIZE, USBH_VENDOR_INTR_LOOPBACK_CNT);
+		ret = usbh_vendor_intr_transmit(vendor_intr_loopback_tx_buf, USBH_VENDOR_INTR_LOOPBACK_BUF_SIZE, USBH_VENDOR_INTR_LOOPBACK_CNT);
 		vendor_unlock_stack();
+		if (ret != RTK_SUCCESS) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "INTR TX start fail: %d\n", ret);
+			break;
+		}
 
 		if (rtos_sema_take(vendor_intr_send_sema, USBH_VENDOR_XFER_TIMEOUT_MS) != RTK_SUCCESS) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "INTR TX timeout\n");
 			break;
 		}
 
-		if (vendor_lock_stack() != HAL_OK) {
+		if (vendor_lock_stack() != RTK_SUCCESS) {
 			break;
 		}
 		vendor_drain_sema(vendor_intr_receive_sema);
-		(void)usbh_vendor_intr_receive(vendor_intr_loopback_rx_buf, USBH_VENDOR_INTR_LOOPBACK_BUF_SIZE, USBH_VENDOR_INTR_LOOPBACK_CNT);
+		ret = usbh_vendor_intr_receive(vendor_intr_loopback_rx_buf, USBH_VENDOR_INTR_LOOPBACK_BUF_SIZE, USBH_VENDOR_INTR_LOOPBACK_CNT);
 		vendor_unlock_stack();
+		if (ret != RTK_SUCCESS) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "INTR RX start fail: %d\n", ret);
+			break;
+		}
 
 		if (rtos_sema_take(vendor_intr_receive_sema, USBH_VENDOR_XFER_TIMEOUT_MS) == RTK_SUCCESS) {
 			/*check rx data*/
@@ -426,9 +439,10 @@ static void vendor_intr_loopback_test(void)
 static void vendor_bulk_loopback_test(void)
 {
 	int i, j;
+	int ret;
 	int vendor_bulk_rx_errcnt = 0;
 
-	if (vendor_wait_ready() != HAL_OK) {
+	if (vendor_wait_ready() != RTK_SUCCESS) {
 		rtos_sema_give(vendor_done_sema);
 		return;
 	}
@@ -444,24 +458,32 @@ static void vendor_bulk_loopback_test(void)
 		usb_os_memset((void *)vendor_bulk_loopback_tx_buf, i, USBH_VENDOR_BULK_LOOPBACK_BUF_SIZE);
 
 		/* Lock covers the arming only, see the INTR test for why. */
-		if (vendor_lock_stack() != HAL_OK) {
+		if (vendor_lock_stack() != RTK_SUCCESS) {
 			break;
 		}
 		vendor_drain_sema(vendor_bulk_send_sema);
-		(void)usbh_vendor_bulk_transmit(vendor_bulk_loopback_tx_buf, USBH_VENDOR_BULK_LOOPBACK_BUF_SIZE, USBH_VENDOR_BULK_LOOPBACK_CNT);
+		ret = usbh_vendor_bulk_transmit(vendor_bulk_loopback_tx_buf, USBH_VENDOR_BULK_LOOPBACK_BUF_SIZE, USBH_VENDOR_BULK_LOOPBACK_CNT);
 		vendor_unlock_stack();
+		if (ret != RTK_SUCCESS) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "BULK TX start fail: %d\n", ret);
+			break;
+		}
 
 		if (rtos_sema_take(vendor_bulk_send_sema, USBH_VENDOR_XFER_TIMEOUT_MS) != RTK_SUCCESS) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "BULK TX timeout\n");
 			break;
 		}
 
-		if (vendor_lock_stack() != HAL_OK) {
+		if (vendor_lock_stack() != RTK_SUCCESS) {
 			break;
 		}
 		vendor_drain_sema(vendor_bulk_receive_sema);
-		(void)usbh_vendor_bulk_receive(vendor_bulk_loopback_rx_buf, USBH_VENDOR_BULK_LOOPBACK_BUF_SIZE, USBH_VENDOR_BULK_LOOPBACK_CNT);
+		ret = usbh_vendor_bulk_receive(vendor_bulk_loopback_rx_buf, USBH_VENDOR_BULK_LOOPBACK_BUF_SIZE, USBH_VENDOR_BULK_LOOPBACK_CNT);
 		vendor_unlock_stack();
+		if (ret != RTK_SUCCESS) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "BULK RX start fail: %d\n", ret);
+			break;
+		}
 
 		if (rtos_sema_take(vendor_bulk_receive_sema, USBH_VENDOR_XFER_TIMEOUT_MS) == RTK_SUCCESS) {
 			/*check rx data*/
@@ -485,7 +507,7 @@ static void vendor_isoc_test(void)
 {
 	int ret;
 
-	if (vendor_wait_ready() != HAL_OK) {
+	if (vendor_wait_ready() != RTK_SUCCESS) {
 		goto isoc_exit;
 	}
 	RTK_LOGS(TAG, RTK_LOG_INFO, "ISOC test start, times:%d, size: %d\n", USBH_VENDOR_ISOC_TEST_CNT, USBH_VENDOR_ISOC_TEST_BUF_SIZE);
@@ -500,7 +522,7 @@ static void vendor_isoc_test(void)
 	 * Both directions are armed under one lock hold: the done semas are only
 	 * given after the whole SOF-paced loop finishes, so waiting for them inside
 	 * the lock would block a hotplug for the entire ISOC run. */
-	if (vendor_lock_stack() != HAL_OK) {
+	if (vendor_lock_stack() != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Device disconnect\n");
 		goto isoc_exit;
 	}
@@ -509,7 +531,7 @@ static void vendor_isoc_test(void)
 	vendor_drain_sema(vendor_isoc_rxdone_sema);
 
 	ret = usbh_vendor_isoc_transmit(vendor_isoc_tx_buf, USBH_VENDOR_ISOC_TEST_BUF_SIZE, USBH_VENDOR_ISOC_TEST_CNT);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		vendor_unlock_stack();
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "ISOC TX start fail: %d\n", ret);
 		goto isoc_exit;
@@ -517,7 +539,7 @@ static void vendor_isoc_test(void)
 
 	ret = usbh_vendor_isoc_receive(vendor_isoc_rx_buf, USBH_VENDOR_ISOC_TEST_BUF_SIZE, USBH_VENDOR_ISOC_TEST_CNT);
 	vendor_unlock_stack();
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "ISOC RX start fail: %d\n", ret);
 		goto isoc_exit;
 	}
@@ -566,6 +588,10 @@ static void example_usbh_vendor_hotplug_thread(void *param)
 
 	for (;;) {
 		if (rtos_sema_take(vendor_detach_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
+			/* Woken by the bootstrap thread to exit, not by a detach */
+			if (vendor_stack_fatal != 0U) {
+				break;
+			}
 			rtos_time_delay_ms(100);//make sure disconnect handle finish before deinit.
 
 			/* Announce the teardown BEFORE contending for the lock, so a test
@@ -596,14 +622,14 @@ static void example_usbh_vendor_hotplug_thread(void *param)
 			rtos_mutex_take(vendor_state_mutex, RTOS_MAX_TIMEOUT);
 
 			ret = usbh_init(&usbh_cfg, &usbh_usr_cb);
-			if (ret != HAL_OK) {
+			if (ret != RTK_SUCCESS) {
 				rtos_mutex_give(vendor_state_mutex);
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "Reinit fail: %d\n", ret);
 				break;
 			}
 
 			ret = usbh_vendor_init(&vendor_usr_cb);
-			if (ret != HAL_OK) {
+			if (ret != RTK_SUCCESS) {
 				usbh_deinit();
 				rtos_mutex_give(vendor_state_mutex);
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "Reinit fail: %d\n", ret);
@@ -642,6 +668,7 @@ static void example_usbh_vendor_hotplug_thread(void *param)
 	rtos_sema_give(vendor_isoc_rxdone_sema);
 	rtos_sema_give(vendor_attach_sema);
 	RTK_LOGS(TAG, RTK_LOG_ERROR, "Hotplug thread exit\n");
+	vendor_hotplug_alive = 0U;
 
 	rtos_task_delete(NULL);
 }
@@ -667,9 +694,11 @@ static void example_usbh_vendor_thread(void *param)
 #if CONFIG_USBH_VENDOR_HOT_PLUG_TEST
 	rtos_task_t task = NULL;
 #endif
-	rtos_task_t bulk_task;
 	int started = 0;
 	int i;
+#if CONFIG_USBH_VENDOR_HOT_PLUG_TEST
+	u32 waited;
+#endif
 
 	UNUSED(param);
 
@@ -728,12 +757,12 @@ static void example_usbh_vendor_thread(void *param)
 	}
 
 	ret = usbh_init(&usbh_cfg, &usbh_usr_cb);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		goto error_exit;
 	}
 
 	ret = usbh_vendor_init(&vendor_usr_cb);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		usbh_deinit();
 		goto error_exit;
 	}
@@ -745,10 +774,12 @@ static void example_usbh_vendor_thread(void *param)
 	vendor_stack_ready = 1U;
 
 #if CONFIG_USBH_VENDOR_HOT_PLUG_TEST
+	vendor_hotplug_alive = 1U;
 	ret = rtos_task_create(&task, "usbh_vendor_hotplug_thread",
 						   example_usbh_vendor_hotplug_thread, NULL,
 						   CONFIG_USBH_VENDOR_HOTPLUG_THREAD_STACK_SIZE, CONFIG_USBH_VENDOR_HOTPLUG_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
+		vendor_hotplug_alive = 0U;
 		/* The gate is already open, so hold it shut under the lock for this
 		   rollback too, exactly as the hotplug thread does. */
 		vendor_teardown = 1U;
@@ -782,7 +813,7 @@ static void example_usbh_vendor_thread(void *param)
 		vendor_isoc_test();
 		started++;
 
-		ret = rtos_task_create(&bulk_task, "usbh_vendor_bulk_test_thread", example_usbh_vendor_bulk_test, NULL,
+		ret = rtos_task_create(NULL, "usbh_vendor_bulk_test_thread", example_usbh_vendor_bulk_test, NULL,
 							   CONFIG_USBH_VENDOR_TEST_THREAD_STACK_SIZE, CONFIG_USBH_VENDOR_TEST_THREAD_PRIORITY);
 		if (ret != RTK_SUCCESS) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Create bulk test thread fail\n");
@@ -794,7 +825,6 @@ static void example_usbh_vendor_thread(void *param)
 							   CONFIG_USBH_VENDOR_TEST_THREAD_STACK_SIZE, CONFIG_USBH_VENDOR_TEST_THREAD_PRIORITY);
 		if (ret != RTK_SUCCESS) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Create intr test thread fail\n");
-			rtos_task_delete(bulk_task);
 			goto deinit_exit;
 		}
 		started++;
@@ -826,11 +856,30 @@ deinit_exit:
 	vendor_stack_fatal = 1U;
 	vendor_teardown = 1U;
 
-	/* Stop the hotplug thread before the semaphores it waits on are freed. */
+	/* Never delete a running thread: it may hold vendor_state_mutex, which a
+	   deleted task never gives back, and the take below would block forever.
+	   Each started test sees the flags, leaves within one transfer timeout and
+	   gives vendor_done_sema. If one does not, it may still use the semas and
+	   the stack, so leave both alone. */
+	for (i = 0; i < started; i++) {
+		if (rtos_sema_take(vendor_done_sema, USBH_VENDOR_READY_TIMEOUT_MS) != RTK_SUCCESS) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Wait test exit timeout\n");
+			goto example_exit;
+		}
+	}
+
 #if CONFIG_USBH_VENDOR_HOT_PLUG_TEST
-	if (task != NULL) {
-		rtos_task_delete(task);
-		task = NULL;
+	/* Wake the hotplug thread so it sees vendor_stack_fatal and exits, and wait
+	   for it before the semaphores it uses are freed. */
+	rtos_sema_give(vendor_detach_sema);
+	waited = 0U;
+	while ((vendor_hotplug_alive != 0U) && (waited < USBH_VENDOR_READY_TIMEOUT_MS)) {
+		rtos_time_delay_ms(USBH_VENDOR_READY_POLL_MS);
+		waited += USBH_VENDOR_READY_POLL_MS;
+	}
+	if (vendor_hotplug_alive != 0U) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Wait hotplug exit timeout\n");
+		goto example_exit;
 	}
 #endif
 	rtos_mutex_take(vendor_state_mutex, RTOS_MAX_TIMEOUT);

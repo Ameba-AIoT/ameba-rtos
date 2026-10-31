@@ -293,7 +293,7 @@ static void whc_usb_dev_irq_task(void)
 }
 
 /* device->host  .transmitted*/
-static void whc_usb_dev_tx_done_cb(usbd_whc_ep_t *in_ep, u8 status)
+static void whc_usb_dev_tx_done_cb(usbd_whc_ep_t *in_ep, int status)
 {
 	UNUSED(status);
 	usb_ep_info_t *info = &in_ep->ep.info;

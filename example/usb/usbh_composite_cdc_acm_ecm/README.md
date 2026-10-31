@@ -65,6 +65,15 @@ Refer to the [EVB User Guide](https://aiot.realmcu.com/filelist?document_type=9)
 
 5. The example also support iperf test, type "AT+IPERF=-s" to act as a TCP iperf server, type "AT+IPERF=-c,xx.xx.xx.x,-i,1,-t,10" to act as a TCP client. of course it also support UDP test, type "AT+IPERF" to get more information about the iperf
 
+# Shell commands
+
+Type the AT commands on the LOGUART console. Parameters are comma separated; the command name is case-sensitive, the parameters are not. `AT+<cmd>=help` prints the usage, every command ends with `OK` or `ERROR: <code>`.
+
+| Command | Description |
+| --- | --- |
+| `AT+USBHACM=send,<at>` | Send one AT command, CR LF appended, to the 4G dongle over its CDC ACM port, e.g. `AT+USBHACM=send,AT+CSQ`. `<at>` is taken exactly as typed, commas included, e.g. `AT+USBHACM=send,AT+CGDCONT=1,"IP","cmnet"`. At most 1022 characters, and the whole line has to fit the 127-byte console buffer. Only for Quectel, Fibocom LE271 and SIMCOM SIM767X dongles; the send is retried up to 10 times at 1 s interval, so the console can block for about 10 s. |
+| `AT+USBHECM=hotplug` | Power-cycle the dongle through the power-control GPIO. Prints `Not support` unless `CONFIG_USBH_COMP_GPIO_POWER_CTRL` is set. |
+
 # Note
 
 For other chips, refer to the AN for setup guide.

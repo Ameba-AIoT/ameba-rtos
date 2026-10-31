@@ -303,7 +303,7 @@ static void vendor_stop_xfer_threads(void)
   *
   *         This demo defines no class/vendor command, so every nonstandard request is
   *         rejected and the USB stack STALLs EP0, as required by USB 2.0 9.2.6.1. Do not
-  *         return HAL_OK for an unhandled request: for a D2H request the class transmits
+  *         return RTK_SUCCESS for an unhandled request: for a D2H request the class transmits
   *         the whole response window, so accepting a request without filling the window
   *         would return meaningless data to the host.
   *
@@ -321,7 +321,7 @@ static int vendor_cb_setup(usb_setup_req_t *req, u8 *buf)
 	UNUSED(req);
 	UNUSED(buf);
 
-	return HAL_ERR_PARA;
+	return -RTK_ERR_BADARG;
 }
 
 /**
@@ -331,7 +331,7 @@ static int vendor_cb_setup(usb_setup_req_t *req, u8 *buf)
   */
 static int vendor_cb_init(void)
 {
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 /**
@@ -341,7 +341,7 @@ static int vendor_cb_init(void)
   */
 static int vendor_cb_deinit(void)
 {
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 /**
@@ -353,7 +353,7 @@ static int vendor_cb_deinit(void)
   */
 static int vendor_cb_set_config(void)
 {
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 /**
@@ -370,7 +370,7 @@ static int vendor_cb_intr_received(u8 *buf, u32 len)
 	vendor_intr_tx_buf = buf;
 	vendor_intr_tx_len = len;
 	rtos_sema_give(vendor_intr_async_xfer_sema);
-	return HAL_OK;
+	return RTK_SUCCESS;
 #else
 	return usbd_vendor_transmit_intr_data(buf, len);
 #endif // VENDOR_INTR_ASYNC_XFER
@@ -421,7 +421,7 @@ static int vendor_cb_isoc_received(u8 *buf, u32 len)
 	vendor_isoc_tx_buf = buf;
 	vendor_isoc_tx_len = len;
 	rtos_sema_give(vendor_isoc_async_xfer_sema);
-	return HAL_OK;
+	return RTK_SUCCESS;
 #else
 	return usbd_vendor_transmit_isoc_data(buf, len);
 #endif // VENDOR_ISOC_ASYNC_XFER
@@ -469,7 +469,7 @@ static int vendor_cb_bulk_received(u8 *buf, u32 len)
 	vendor_bulk_tx_buf = buf;
 	vendor_bulk_tx_len = len;
 	rtos_sema_give(vendor_bulk_async_xfer_sema);
-	return HAL_OK;
+	return RTK_SUCCESS;
 #else
 	return usbd_vendor_transmit_bulk_data(buf, len);
 #endif // VENDOR_BULK_ASYNC_XFER
@@ -652,12 +652,12 @@ static void example_usbd_vendor_thread(void *param)
 	}
 
 	ret = usbd_init(&vendor_cfg);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		goto exit;
 	}
 
 	ret = usbd_vendor_init(&vendor_cb, &vendor_class_cfg);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		goto clear_usb_driver_exit;
 	}
 #if VENDOR_ASYNC_XFER

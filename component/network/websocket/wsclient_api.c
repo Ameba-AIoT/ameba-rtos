@@ -6,6 +6,9 @@ void (*ws_receive_cb)(wsclient_context **, int, enum opcode_type) = NULL;
 void (*ws_receive_pong_cb)(wsclient_context **) = NULL;
 void (*ws_close_cb)(wsclient_context *) = NULL;
 
+/* Max time to wait for socket writable when a send made no progress, then retry anyway */
+#define WSCLIENT_WRITE_WAIT_MS		100
+
 uint32_t wsclient_keepalive_idle = 0;
 uint32_t wsclient_keepalive_interval = 0;
 uint32_t wsclient_keepalive_count = 0;
@@ -365,7 +368,12 @@ void ws_poll(int timeout, wsclient_context **wsclient)   // timeout in milliseco
 					}
 					ret = wsc->fun_ops.client_send(wsc, (char *)tmp_buf->txbuf + tmp_buf->send_offset, (remain_len > 10 * 1024 ? 10 * 1024 : remain_len));
 					if (ret == 0) {
-						rtos_time_delay_ms(25);
+						/* No progress (full TCP send buffer, or TLS WANT_WRITE): wait until lwIP reports
+						 * the socket writable instead of sleeping a fixed time. Timeout covers TLS WANT_READ */
+						FD_ZERO(&u_w.wfds);
+						FD_SET(wsc->sockfd, &u_w.wfds);
+						struct timeval wtv = { 0, WSCLIENT_WRITE_WAIT_MS * 1000 };
+						select(wsc->sockfd + 1, NULL, &u_w.wfds, NULL, &wtv);
 						continue;
 					} else if (ret < 0) {
 						closesocket(wsc->sockfd);

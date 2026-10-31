@@ -5,9 +5,7 @@
  */
 
 #include "ameba_soc.h"
-#ifndef __ZEPHYR__
-#include "arch_timer.h"
-#endif
+#include "os_wrapper_specific.h"
 
 extern uint64_t vGetGenericTimerFreq(void);
 

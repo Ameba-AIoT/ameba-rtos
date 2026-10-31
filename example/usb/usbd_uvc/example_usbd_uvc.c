@@ -150,20 +150,20 @@ static void example_usbd_uvc_video_thread(void *param)
 
 static void example_usbd_uvc_thread(void *param)
 {
-	int ret = HAL_OK;
+	int ret = RTK_SUCCESS;
 	rtos_task_t task;
 	u32 i = 0U;
 
 	UNUSED(param);
 
 	ret = usbd_init(&uvc_cfg);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Init USBD fail\n");
 		goto exit_usbd_init_fail;
 	}
 
 	ret = usbd_uvc_init(&uvc_ep);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Init UVC class fail\n");
 		goto exit_usbd_uvc_init_fail;
 	}

@@ -106,13 +106,13 @@ static int dfu_cb_init(void)
 	usb_os_memset((void *)dfu_demo_fw_buf, 0, USBD_DFU_DEMO_BUF_SIZE);
 	dfu_demo_fw_len = 0U;
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Init\n");
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 static int dfu_cb_deinit(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Deinit\n");
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 /*
@@ -125,7 +125,7 @@ static int dfu_cb_write(u16 block_num, u8 *buf, u32 len)
 
 	if (offset + len > USBD_DFU_DEMO_BUF_SIZE) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Write out of range: blk=%u len=%u\n", block_num, len);
-		return HAL_ERR_PARA;
+		return -RTK_ERR_BADARG;
 	}
 	usb_os_memcpy((void *)(dfu_demo_fw_buf + offset), (const void *)buf, len);
 	end = offset + len;
@@ -134,7 +134,7 @@ static int dfu_cb_write(u16 block_num, u8 *buf, u32 len)
 	}
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Write blk %u offset %u len %u (total %u B)\n",
 			 block_num, offset, len, dfu_demo_fw_len);
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 /*
@@ -153,8 +153,6 @@ static int dfu_cb_read(u16 block_num, u8 *buf, u32 max_len)
 		return 0;  /* EOF */
 	}
 	remaining = len - offset;
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Read blk %u offset %u max %u (remain %u B)\n",
-			 block_num, offset, max_len, remaining);
 	if (remaining > max_len) {
 		remaining = max_len;
 	}
@@ -172,7 +170,8 @@ static void dfu_cb_manifest(void)
 
 /*
  * detach() is called from ISR context when the host issues DFU_DETACH in
- * Run-Time mode (appIDLE).
+ * Run-Time mode (appIDLE), so it only records minimal state; nothing to do in this demo.
+ * reconf() logs the re-enumeration in task context.
  */
 static void dfu_cb_detach(void)
 {
@@ -212,11 +211,11 @@ static void usbd_dfu_reconf_thread(void *param)
 		usbd_deinit();
 		//RTK_LOGS(TAG, RTK_LOG_INFO, "Free heap: 0x%x\n", rtos_mem_get_free_heap_size());
 		ret = usbd_init(&dfu_cfg);
-		if (ret != HAL_OK) {
+		if (ret != RTK_SUCCESS) {
 			break;
 		}
 		ret = usbd_dfu_init(&dfu_cb, &dfu_class_cfg);
-		if (ret != HAL_OK) {
+		if (ret != RTK_SUCCESS) {
 			usbd_deinit();
 			break;
 		}
@@ -249,12 +248,12 @@ static void example_usbd_dfu_thread(void *param)
 #endif
 
 	ret = usbd_init(&dfu_cfg);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		goto exit;
 	}
 
 	ret = usbd_dfu_init(&dfu_cb, &dfu_class_cfg);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		usbd_deinit();
 		goto exit;
 	}

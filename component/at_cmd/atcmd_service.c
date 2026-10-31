@@ -112,6 +112,8 @@ volatile u8 g_tt_mode_stop_char_cnt = 0;
 rtos_timer_t xTimers_TT_Mode;
 char pin_name[5] = "NONE";
 rtos_sema_t atcmd_tt_mode_sema;
+/* protect tt mode ring buffer lifetime: producer check+write vs atcmd_tt_mode_end destroy */
+rtos_mutex_t atcmd_tt_mode_mutex;
 static char at_config_file_exist = 0;
 extern int kv_init_done;
 extern s32 wifi_set_countrycode(u8 *cntcode);
@@ -323,11 +325,13 @@ int atcmd_tt_mode_get(u8 *buf, u32 len)
 
 void atcmd_tt_mode_end(void)
 {
+	rtos_mutex_take(atcmd_tt_mode_mutex, MUTEX_WAIT_TIMEOUT);
 	g_tt_mode = 0;
 	g_tt_mode_stop_flag = 0;
 	g_tt_mode_check_watermark = 0;
 	RingBuffer_Destroy(atcmd_tt_mode_rx_ring_buf);
 	atcmd_tt_mode_rx_ring_buf = NULL;
+	rtos_mutex_give(atcmd_tt_mode_mutex);
 	RTK_LOGI(TAG, "exit tt mode\n");
 	// info HOST we exit tt mode now if needed
 	//at_printf(ATCMD_EXIT_TT_MODE_STR);
@@ -631,6 +635,7 @@ void atcmd_host_control_mode_init_thread(void *param)
 
 	//initialize tt mode ring sema
 	rtos_sema_create(&atcmd_tt_mode_sema, 0, 0xFFFF);
+	rtos_mutex_create(&atcmd_tt_mode_mutex);
 
 	if (kv_init_done != 1) {
 		RTK_LOGE(TAG, "file system init fail\n");

@@ -102,6 +102,9 @@ extern "C" {
 #define CONFIG_BT_L2CAP_TX_MTU 262
 #define CONFIG_BT_L2CAP_TX_BUF_COUNT 8
 #define CONFIG_BT_L2CAP_TX_FRAG_COUNT 0
+#if defined(RTK_BLE_COC_SUPPORT) && RTK_BLE_COC_SUPPORT
+#define CONFIG_BT_L2CAP_DYNAMIC_CHANNEL 1
+#endif
 
 /*--------------------------------- BT gatt ---------------------------------*/
 #define CONFIG_BT_ATT_TX_COUNT 5

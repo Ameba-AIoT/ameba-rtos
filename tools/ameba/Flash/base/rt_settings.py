@@ -69,6 +69,11 @@ class RtSettings():
         # CLI and GUI.
         self.split_single_image_by_layout = bool(_c("SplitSingleImageByLayout", False))
 
+        # Boot guard burn: program the first bytes of the image at the flash start address
+        # (8B on NOR, the first block on NAND) last, after every other byte is written and
+        # verified, so an interrupted download leaves the device unbootable. Enabled by default.
+        self.dis_boot_guard_burn = bool(_c("DisBootGuardBurn", False))
+
         # ── GUIRunTime: download target / GUI runtime fields ───────────────
         self.profile = _g("Profile", "")
         self.port = _g("Port", [])
@@ -122,6 +127,7 @@ class RtSettings():
                 "PostProcess": self.post_process,
                 "FlashProtectionProcess": self.flash_protection_process,
                 "SplitSingleImageByLayout": self.split_single_image_by_layout,
+                "DisBootGuardBurn": self.dis_boot_guard_burn,
             },
             # ── GUIRunTime: download target / GUI runtime fields ───────────
             "GUIRunTime": {

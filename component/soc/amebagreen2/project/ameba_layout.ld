@@ -10,6 +10,8 @@
 
 /* FULLMAC image2 manifest: the last 4KB of the 64KB loader RAM, over the bootloader's own manifest */
 #define FULLMAC_MANIFEST_START       (0x3007F000)
+/* FULLMAC bootloader (FLOADER) start in the secure alias, after the image header */
+#define FULLMAC_FLOADER_START        (0x30070020)
 
 /* PSRAM_END is the address window top = the largest PSRAM this chip supports
  * (amebagreen2: 16MB). It is only a static ceiling; the real heap top is the
@@ -133,7 +135,7 @@ PSRAM_END       ──────────►└─────────�
 #define KM4NS_BD_PSRAM_LENGTH         (KM4NS_PSRAM_IMG2_SIZE - IMAGE_HEADER_LEN)
 #else
 #define KM4NS_PSRAM_IMG2_SIZE         0
-#define KM4NS_BD_PSRAM_ORIGIN         KM4NS_IMG2_PSRAM_START
+#define KM4NS_BD_PSRAM_ORIGIN         (KM4NS_IMG2_PSRAM_START + IMAGE_HEADER_LEN)
 #define KM4NS_BD_PSRAM_LENGTH         0
 #endif
 
@@ -178,7 +180,7 @@ MEMORY
     /* KM4TZ Secure RAM, BIT(28)=1 */
     KM4TZ_BOOTLOADER_RAM_S (rwx) :         ORIGIN = KM4TZ_IMG1_RAM_SATRT + SECURE_ADDR_OFFSET + IMAGE_HEADER_LEN, LENGTH = KM4TZ_IMG1_SIZE  - IMAGE_HEADER_LEN        /* KM4TZ BOOT Loader RAM: 4K or 32k */
 #ifndef CONFIG_FULLMAC_PG_LOADER
-    KM4TZ_FLOADER_RAM_S (rwx) :            ORIGIN = 0x30070020, LENGTH = FULLMAC_MANIFEST_START - 0x30070020    /* Floader / FULLMAC bootloader: 60k, 0x3007F000 ~ 0x30080000 for MANIFEST */
+    KM4TZ_FLOADER_RAM_S (rwx) :            ORIGIN = FULLMAC_FLOADER_START, LENGTH = FULLMAC_MANIFEST_START - FULLMAC_FLOADER_START    /* Floader / FULLMAC bootloader: 60k, 0x3007F000 ~ 0x30080000 for MANIFEST */
 #else
     KM4TZ_FLOADER_RAM_S (rwx) :            ORIGIN = ORIGIN(FULLMAC_PG_LOADER_RAM), LENGTH = LENGTH(FULLMAC_PG_LOADER_RAM)
 #endif
@@ -186,6 +188,7 @@ MEMORY
     /* IMG2 RAM */
 #if (!defined (CONFIG_WHC_INTF_IPC) && defined (CONFIG_WHC_DEV))
     KM4TZ_BD_RAM (rwx) :                   ORIGIN = ORIGIN(FULLMAC_IMG2), LENGTH = LENGTH(FULLMAC_IMG2)
+    KM4NS_BD_RAM (rwx) :                   ORIGIN = ORIGIN(FULLMAC_IMG2) + LENGTH(FULLMAC_IMG2), LENGTH = 0                    /* KM4NS has no image2 in FULLMAC, keep an empty region for ameba_img2_all.ld */
 #else
     KM4TZ_BD_RAM_TZ (rwx) :                ORIGIN = KM4TZ_RAM_TZ_START + IMAGE_HEADER_LEN,     LENGTH = KM4TZ_RAM_TZ_SIZE - IMAGE_HEADER_LEN                                   /* KM4TZ BD RAM TZ: ENTRY + SECURE + NSC */
     KM4TZ_BD_RAM (rwx) :                   ORIGIN = KM4TZ_IMG2_RAM_START + IMAGE_HEADER_LEN,   LENGTH = KM4NS_IMG2_RAM_START - KM4TZ_IMG2_RAM_START - IMAGE_HEADER_LEN           /* KM4TZ BD RAM: TZ On, 308KB; Tz off, 384K */
@@ -251,7 +254,22 @@ __non_secure_psram_end__ = PSRAM_END;
 __km4tz_bd_ram_mp_start__ = ORIGIN(KM4TZ_BD_RAM_MP) - IMAGE_HEADER_LEN - 1024 + IMAGE_HEADER_LEN;
 __km4ns_bd_ram_mp_start__ = ORIGIN(KM4NS_BD_RAM_MP);
 
+/* SRAM that a sub-image must not overlap, non-secure alias: [SRAM_BASE, __boot_fixed_end__) and [__boot_loader_start__, __boot_loader_end__) */
+#if (!defined (CONFIG_WHC_INTF_IPC) && defined (CONFIG_WHC_DEV))
+/* FULLMAC: IMG2 starts right after the ROM BSS and MSP, the bootloader runs from the FLOADER RAM and the manifest follows it */
+__boot_fixed_end__ = ORIGIN(FULLMAC_IMG2) - IMAGE_HEADER_LEN;
+__boot_loader_start__ = FULLMAC_FLOADER_START - IMAGE_HEADER_LEN - SECURE_ADDR_OFFSET;
+__boot_loader_end__ = SRAM_END;
+#else
+/* the empty range has to be at SRAM_END */
+__boot_fixed_end__ = SRAM_BASE + KM4TZ_KM4NS_RAM_SIZE + KM4TZ_IMG1_SIZE;
+__boot_loader_start__ = SRAM_END;
+__boot_loader_end__ = SRAM_END;
+#endif
+
 /* code analyse used */
 __rtk_fixed_addr__ = SRAM_BASE + KM4TZ_KM4NS_RAM_SIZE;
 __img1_sram_size__ = KM4TZ_IMG1_SIZE;
+/* SRAM top, used by the bootloader to check sub-image headers */
+__sram_end__ = SRAM_END;
 __img3_sram_size__ = KM4TZ_RAM_TZ_SIZE;

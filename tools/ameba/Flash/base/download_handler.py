@@ -54,6 +54,10 @@ CmdEsc = b'\x1b\r\n'
 CmdSetBackupRegister = bytes("EW 0x480003C0 0x200\r\n", encoding="utf-8")
 CmdResetIntoDownloadMode = bytes("reboot uartburn\r\n", encoding="utf-8")
 
+# Boot guard burn: bytes at the NOR flash start address kept 0xFF until all other
+# data is written (the 8B FlashCalibPattern the ROM checks)
+HEADER_DEFER_LEN_NOR = 8
+
 OtpSpicAddrModeAddr = 0x02
 OtpSpicAddrModeMask = 0x02
 OtpSpicAddrModePos = 1
@@ -375,6 +379,11 @@ class Ameba(object):
         is_floader = False
         boot_delay = self.setting.usb_rom_boot_delay_in_second if self.profile_info.support_usb_download else self.setting.rom_boot_delay_in_second
 
+        if not self.is_usb:
+            # ROM sends NAK at handshake baudrate, but a previous check may leave the port at
+            # the floader baudrate (e.g. retry after entering download mode with DTR/RTS)
+            self.switch_baudrate(self.profile_info.handshake_baudrate, self.setting.baudrate_switch_delay_in_second)
+
         self.logger.debug(f"Check download mode with baudrate {self.serial_port.baudrate}")
         try:
             self.logger.debug(f"Check whether in rom download mode")
@@ -492,8 +501,9 @@ class Ameba(object):
 
         if self.device_info.is_boot_from_nand():
             if self.device_info.flash_req_host_ecc_level > 0:
-                self.logger.error(f"Unsupported NAND flash model without internal ECC")
-                return ErrType.SYS_IO
+                # The tool relies on the internal ECC of the NAND; download anyway but warn
+                self.logger.warning(f"NAND flash requires {self.device_info.flash_req_host_ecc_level}-bit host ECC, "
+                                    f"which is not supported, continue without host ECC")
             if self.device_info.flash_pages_per_block != FlashUtils.NandDefaultPagePerBlock.value:
                 self.logger.error(
                     f"Unsupported NAND flash model with {self.device_info.flash_pages_per_block} pages per block")
@@ -1125,7 +1135,53 @@ class Ameba(object):
         return ret
 
     def download_images(self):
+        try:
+            return self._download_images()
+        finally:
+            # Deferred header state only lives for one download run
+            self._hdr_commit = None
+            self._pending_checksums = []
+
+    def _download_images(self):
         ret = ErrType.OK
+
+        # Split a merged single image into per-partition segments so the all-FF
+        # padding between/after partitions is skipped instead of being programmed.
+        self.expand_merged_image()
+
+        # Collect (image_info, path, from_download_img_info) before any flash access so
+        # the deferred header commit can be prepared before chip erase.
+        planned = []
+        if self.download_img_info:
+            for image_info in self.download_img_info:
+                img_path = image_info.image_name
+                image_info.image_name = os.path.basename(img_path)
+                planned.append((image_info, img_path, True))
+        else:
+            is_area_A = False
+            is_area_B = False
+            for image_info in self.profile_info.images:
+                if not image_info.mandatory:
+                    continue
+                img_name = image_info.image_name
+                if img_name.strip().startswith(("A:", "a_")):
+                    is_area_A = True
+                elif img_name.strip().startswith(("B:", "b_")):
+                    is_area_B = True
+
+                if is_area_A and is_area_B:
+                    self.logger.error(f"NOT support both A and B download at the same time")
+                    return ErrType.SYS_PARAMETER
+
+                img_name = self._process_image(img_name)
+                planned.append((image_info, os.path.realpath(os.path.join(self.image_path, img_name)), False))
+
+        self._hdr_commit = None
+        self._pending_checksums = []
+        if not self.setting.dis_boot_guard_burn:
+            ret = self._prepare_header_commit(planned)
+            if ret != ErrType.OK:
+                return ret
 
         # support chip erase
         if self.chip_erase and (self.memory_type in (MemoryInfo.MEMORY_TYPE_NOR, MemoryInfo.MEMORY_TYPE_NAND)):
@@ -1134,24 +1190,16 @@ class Ameba(object):
                 self.logger.error(f"Chip erase fail")
                 return ret
 
-        # Split a merged single image into per-partition segments so the all-FF
-        # padding between/after partitions is skipped instead of being programmed.
-        self.expand_merged_image()
-
         # Cache image1's RSIP params so image3 (which inherits from image1 and has
         # no embedded manifest) can reuse them.  image1 is typically boot.bin and
         # is processed first in the image list.
         _image1_enc_mode = RSIP_ENC_MODE_NONE
         _image1_rsip_iv  = None
 
-        if self.download_img_info:
-            for image_info in self.download_img_info:
-                img_path = image_info.image_name
-                img_name = os.path.basename(img_path)
-                image_info.image_name = img_name
-
-                img_label = self._image_log_label(image_info)
-                self.logger.info(f"{img_label} download...")
+        for image_info, img_path, from_img_info in planned:
+            img_label = self._image_log_label(image_info) if from_img_info else image_info.image_name
+            self.logger.info(f"{img_label} download...")
+            if from_img_info:
                 ret = self._download_image_with_rsip(
                     img_path, image_info,
                     enc_mode_hint=_image1_enc_mode,
@@ -1164,40 +1212,161 @@ class Ameba(object):
                     if _enc != RSIP_ENC_MODE_NONE and _iv is not None:
                         _image1_enc_mode = _enc
                         _image1_rsip_iv  = _iv
-
-                if ret != ErrType.OK:
-                    self.logger.info(f"{img_label} download fail: {ret}")
-                    break
-        else:
-            is_area_A = False
-            is_area_B = False
-            for image_info in self.profile_info.images:
-                is_mandatory = image_info.mandatory
-                if not is_mandatory:
-                    continue
-                img_name = image_info.image_name
-                self.logger.info(f"{img_name} download...")
-                if img_name.strip().startswith(("A:", "a_")):
-                    is_area_A = True
-                elif img_name.strip().startswith(("B:", "b_")):
-                    is_area_B = True
-
-                if is_area_A and is_area_B:
-                    self.logger.error(f"NOT support both A and B download at the same time")
-                    ret = ErrType.SYS_PARAMETER
-                    break
-
-                img_name = self._process_image(img_name)
-                img_path = os.path.realpath(os.path.join(self.image_path, img_name))
+            else:
                 ret = self._download_image_with_rsip(img_path, image_info)
-                if ret != ErrType.OK:
-                    self.logger.info(f"{img_name} download fail: {ret}")
-                    break
+
+            if ret != ErrType.OK:
+                self.logger.info(f"{img_label} download fail: {ret}")
+                return ret
+
+        if self._hdr_commit is not None:
+            ret = self._finish_header_commit()
 
         if ret == ErrType.OK:
             self.logger.info("All images download done")
 
         return ret
+
+    def _prepare_header_commit(self, planned):
+        """Back up the head of the image at the flash start address, which is
+        programmed last by _finish_header_commit()."""
+        flash_start = self.profile_info.flash_start_address
+        entry = next((e for e in planned if e[0].start_address == flash_start and
+                      e[0].memory_type in (MemoryInfo.MEMORY_TYPE_NOR, MemoryInfo.MEMORY_TYPE_NAND)), None)
+        if entry is None:
+            self.logger.warning(f"Boot guard burn: no image at {hex(flash_start)}, download normally")
+            return ErrType.OK
+
+        image_info, img_path, _ = entry
+        is_nand = (image_info.memory_type == MemoryInfo.MEMORY_TYPE_NAND)
+        if is_nand:
+            # NAND must be programmed page by page in ascending order inside a block, so the
+            # whole first block is deferred; the first page is only read for the blank check.
+            length = self.device_info.flash_page_size
+        else:
+            if not self.device_info.supports_short_write():
+                version = self.device_info.cmd_set_version
+                self.logger.error(f"Boot guard burn requires flashloader CmdSetVersion >= 2.1 "
+                                  f"(current {(version >> 8) & 0xFF}.{version & 0xFF}), please update flashloader")
+                return ErrType.SYS_PROTO
+            length = HEADER_DEFER_LEN_NOR
+
+            # The deferred NOR header is committed as plaintext, so it must not be in an RSIP region
+            enc_mode, _, rsip_meta, rsip_regions = build_rsip_meta(img_path)
+            if (enc_mode != RSIP_ENC_MODE_NONE and rsip_meta is not None and
+                    any(self._addr_in_rsip_region(off, rsip_regions) for off in range(0, length, 4))):
+                self.logger.error(f"Boot guard burn: first {length}B of {os.path.basename(img_path)} "
+                                  f"are in an RSIP region, cannot defer header")
+                return ErrType.SYS_PARAMETER
+
+        file_offset = getattr(image_info, "file_offset", 0) or 0
+        try:
+            with open(img_path, 'rb') as stream:
+                stream.seek(file_offset)
+                data = stream.read(length)
+        except OSError as err:
+            self.logger.error(f"Boot guard burn: read {img_path} fail: {err}")
+            return ErrType.SYS_PARAMETER
+        data += FlashUtils.FlashWritePaddingData.value.to_bytes(1, "little") * (length - len(data))
+
+        if data == b'\xff' * length:
+            self.logger.info(f"Boot guard burn: header at {hex(flash_start)} is blank, download normally")
+            return ErrType.OK
+
+        self._hdr_commit = {
+            "image_info": image_info,
+            "address": image_info.start_address,
+            "data": data,
+            "is_nand": is_nand,
+            # NAND only, filled by _download_image(): pages of the deferred block,
+            # the WRITE type they use and the RSIP META of the image
+            "pages": [],
+            "write_mem_type": image_info.memory_type,
+            "rsip_meta": None,
+        }
+        if is_nand:
+            self.logger.info(f"Header deferred: {hex(flash_start)}, "
+                             f"first block {self.device_info.flash_block_size() // 1024}KB (NAND)")
+        else:
+            self.logger.info(f"Header deferred: {hex(flash_start)}, {length}B (NOR)")
+        return ErrType.OK
+
+    def _finish_header_commit(self):
+        """Verify every other image, then commit the deferred header, then verify the
+        image that holds it, so the device only becomes bootable once all other images
+        are known good."""
+        commit_info = self._hdr_commit["image_info"]
+        commit_check = None
+        for check in self._pending_checksums:
+            if check["image_info"] is commit_info:
+                commit_check = check
+                continue
+            ret = self._verify_image_checksum(**check)
+            if ret != ErrType.OK:
+                self.logger.error("Header commit skipped: image checksum fail")
+                return ret
+
+        if commit_info.memory_type == MemoryInfo.MEMORY_TYPE_NAND:
+            ret = self._commit_nand_first_block(commit_info)
+        else:
+            ret = self._commit_nor_header(commit_info)
+        if ret != ErrType.OK:
+            return ret
+
+        if commit_check is not None:
+            ret = self._verify_image_checksum(**commit_check)
+        return ret
+
+    def _commit_nor_header(self, commit_info):
+        mem_type = commit_info.memory_type
+        address = self._hdr_commit["address"]
+        data = self._hdr_commit["data"]
+
+        # Move the WRITE cursor back to the header without erasing (FS_ERASE size 0)
+        ret = self.floader_handler.erase_flash(mem_type, address, address, 0, nor_erase_timeout_in_second(0), sense=True)
+        if ret == ErrType.OK:
+            ret = self.floader_handler.write(mem_type, data, len(data), address,
+                                             FlashUtils.MinFlashProcessTimeoutInSecond.value, need_sense=True)
+        if ret != ErrType.OK:
+            self.logger.error(f"Header commit fail: {ret}")
+            return ret
+        self.logger.info(f"Header commit: {hex(address)} {len(data)}B OK")
+        return ErrType.OK
+
+    def _commit_nand_first_block(self, commit_info):
+        """Program the deferred NAND block from its first page in ascending order. The
+        block was erased and left blank by the first pass, so it is not erased again."""
+        mem_type = commit_info.memory_type
+        address = self._hdr_commit["address"]
+        pages = self._hdr_commit["pages"]
+        write_mem_type = self._hdr_commit["write_mem_type"]
+        rsip_meta = self._hdr_commit["rsip_meta"]
+        block_size = self.device_info.flash_block_size()
+        move_timeout = nand_erase_timeout_in_second(0, block_size)
+        write_timeout = nand_program_timeout_in_second(block_size, self.device_info.flash_page_size) + \
+            FlashUtils.NandBlockEraseTimeoutInSeconds.value
+
+        ret = ErrType.OK
+        if rsip_meta is not None:
+            # Later images replaced the META; restore this image's regions and its
+            # partition base, which the first FS_ERASE after META registers.
+            ret = self.floader_handler.write_meta_data(rsip_meta=rsip_meta)
+            if ret == ErrType.OK and address != commit_info.start_address:
+                ret = self.floader_handler.erase_flash(mem_type, commit_info.start_address, commit_info.start_address,
+                                                       0, move_timeout, sense=True)
+        # Move the WRITE cursor back to the deferred block without erasing (FS_ERASE size 0)
+        if ret == ErrType.OK:
+            ret = self.floader_handler.erase_flash(mem_type, address, address, 0, move_timeout, sense=True)
+        for idx, (page_addr, page_data) in enumerate(pages):
+            if ret != ErrType.OK:
+                break
+            ret = self.floader_handler.write(write_mem_type, page_data, len(page_data), page_addr, write_timeout,
+                                             need_sense=(idx == len(pages) - 1))
+        if ret != ErrType.OK:
+            self.logger.error(f"Header commit fail: {ret}")
+            return ret
+        self.logger.info(f"Header commit: {hex(address)} {len(pages)} pages OK")
+        return ErrType.OK
 
     def _image_log_label(self, image_info) -> str:
         """Return the image base name for logging, tagged with its address range when
@@ -1240,7 +1409,8 @@ class Ameba(object):
             self.logger.error(f"RSIP META send fail: {ret}")
             return ret
 
-        return self._download_image(img_path, image_info, write_enc=True, rsip_regions=rsip_regions)
+        return self._download_image(img_path, image_info, write_enc=True, rsip_regions=rsip_regions,
+                                    rsip_meta=rsip_meta)
 
     def get_page_alligned_size(self, size, page_size):
         result = size
@@ -1373,7 +1543,7 @@ class Ameba(object):
                 self.logger.info(
                     f"Merged image kept as one image; trim trailing padding to {valid_length}B")
 
-    def _download_image(self, image_path, image_info, write_enc=False, rsip_regions=None):
+    def _download_image(self, image_path, image_info, write_enc=False, rsip_regions=None, rsip_meta=None):
         ret = ErrType.OK
 
         page_size = self.device_info.flash_page_size
@@ -1386,6 +1556,12 @@ class Ameba(object):
         is_ram = (image_info.memory_type == MemoryInfo.MEMORY_TYPE_RAM)
         padding_byte_val = self.setting.ram_download_padding_byte if is_ram else FlashUtils.FlashWritePaddingData.value
         padding_char = padding_byte_val.to_bytes(1, byteorder="little")
+
+        # Boot guard burn: this image holds the deferred header. On NOR its first
+        # HEADER_DEFER_LEN_NOR bytes go out as 0xFF; on NAND its first good block is skipped.
+        # The checksum still covers the real data, which _finish_header_commit() writes.
+        hdr_commit = getattr(self, "_hdr_commit", None)
+        defer_header = (hdr_commit is not None) and (hdr_commit["image_info"] is image_info)
 
         write_mem_type = (image_info.memory_type | WRITE_TYPE_ENCRYPTED_BIT) if write_enc else image_info.memory_type
         if write_enc and rsip_regions:
@@ -1464,6 +1640,16 @@ class Ameba(object):
 
                     next_erase_addr = addr + self.device_info.flash_block_size()
 
+                    # Defer the first good block: it stays erased here and is programmed in
+                    # ascending page order by _commit_nand_first_block(). Pages of a NAND
+                    # block must not be programmed out of order.
+                    defer_block = defer_header and tx_sum == 0
+                    if defer_block:
+                        hdr_commit["address"] = addr
+                        hdr_commit["pages"] = []
+                        hdr_commit["write_mem_type"] = write_mem_type
+                        hdr_commit["rsip_meta"] = rsip_meta
+
                     i = 0
                     while i < pages_per_block:
                         if self.is_cancelled():
@@ -1484,8 +1670,12 @@ class Ameba(object):
 
                             need_sense = (is_last_page or (i == pages_per_block - 1))
 
-                            ret = self.floader_handler.write(write_mem_type, chunk_data,
-                                                             page_size, addr, write_timeout, need_sense=need_sense)
+                            if defer_block:
+                                # The next block's FS_ERASE moves the WRITE cursor past this block
+                                hdr_commit["pages"].append((addr, chunk_data))
+                            else:
+                                ret = self.floader_handler.write(write_mem_type, chunk_data,
+                                                                 page_size, addr, write_timeout, need_sense=need_sense)
                             if ret == ErrType.OK:
                                 # 新的极速计算方式 (利用 C 语言层加速)
                                 # '<' 代表小端模式，'I' 代表 unsigned int (4字节)
@@ -1635,7 +1825,10 @@ class Ameba(object):
                         part_off = addr - image_info.start_address
                         if not self._addr_in_rsip_region(part_off, rsip_regions):
                             page_write_mem_type = image_info.memory_type
-                    ret = self.floader_handler.write(page_write_mem_type, chunk_data,
+                    write_data = chunk_data
+                    if defer_header and tx_sum == 0 and not is_ram:
+                        write_data = padding_char * HEADER_DEFER_LEN_NOR + chunk_data[HEADER_DEFER_LEN_NOR:]
+                    ret = self.floader_handler.write(page_write_mem_type, write_data,
                                                      page_size, addr, write_timeout, need_sense=need_sense)
                     if ret != ErrType.OK:
                         self.logger.info(f"Write to addr={hex(addr)} size={page_size} fail: {ret}")
@@ -1707,55 +1900,90 @@ class Ameba(object):
             file_stream.close()
 
         if ret == ErrType.OK:
-            cal_checksum = 0
-            if image_info.memory_type == MemoryInfo.MEMORY_TYPE_NAND:
-                checksum_timeout = nand_checksum_timeout_in_second(aligned_img_length, None)
+            check = {
+                "image_path": image_path,
+                "image_info": image_info,
+                "aligned_img_length": aligned_img_length,
+                "checksum": checksum,
+                "write_enc": write_enc,
+                "rsip_meta": rsip_meta,
+            }
+            if hdr_commit is not None:
+                # Boot guard burn: verify only after all images are written
+                self._pending_checksums.append(check)
             else:
-                checksum_timeout = nor_checksum_timeout_in_second(aligned_img_length)
-            chksm_mode = "RSIP plaintext (device OTF-decrypt)" if write_enc else "plaintext (direct read)"
-            self.logger.debug(
-                f"Checksum verify: {image_info.image_name} len={aligned_img_length} "
-                f"mode={chksm_mode}")
-            ret, cal_checksum = self.floader_handler.checksum(image_info.memory_type, image_info.start_address,
-                                                              image_info.end_address, aligned_img_length,
-                                                              checksum_timeout)
+                check["rsip_meta"] = None   # META for this image is still active on the device
+                ret = self._verify_image_checksum(**check)
+
+        return ret
+
+    def _verify_image_checksum(self, image_path, image_info, aligned_img_length, checksum,
+                               write_enc=False, rsip_meta=None):
+        page_size = self.device_info.flash_page_size
+
+        if rsip_meta is not None:
+            # A deferred CHKSM runs after later images replaced the META; restore this
+            # image's regions and partition base (FS_ERASE size 0 does not erase).
+            ret = self.floader_handler.write_meta_data(rsip_meta=rsip_meta)
             if ret == ErrType.OK:
-                if cal_checksum != checksum:
-                    self.logger.info(f"Checksum fail: expect {hex(checksum)} get {hex(cal_checksum)}")
-                    ret = ErrType.SYS_CHECKSUM
-                    if image_info.memory_type != MemoryInfo.MEMORY_TYPE_NAND:
-                        try:
-                            import struct as _struct
-                            rb_addr = image_info.start_address
-                            rb_timeout = nor_checksum_timeout_in_second(page_size)
-                            mismatch_count = 0
-                            with open(image_path, 'rb') as rb_stream:
-                                for pg in range(aligned_img_length // page_size):
-                                    expected = rb_stream.read(page_size)
-                                    if len(expected) < page_size:
-                                        expected += b'\xff' * (page_size - len(expected))
-                                    r, rb_data = self.floader_handler.read(
-                                        image_info.memory_type, rb_addr, page_size, rb_timeout)
-                                    if r == ErrType.OK and rb_data and len(rb_data) >= 4:
-                                        if rb_data[:page_size] != expected:
-                                            exp_w = _struct.unpack('<I', expected[:4])[0]
-                                            got_w = _struct.unpack('<I', rb_data[:4])[0]
-                                            self.logger.info(
-                                                f"  Page {pg} @ {hex(rb_addr)}: expect={hex(exp_w)} got={hex(got_w)}")
-                                            mismatch_count += 1
-                                    else:
-                                        self.logger.info(f"  Page {pg} @ {hex(rb_addr)}: read failed: {r}")
-                                        mismatch_count += 1
-                                    rb_addr += page_size
-                            self.logger.info(
-                                f"Readback: {mismatch_count}/{aligned_img_length // page_size} pages mismatch")
-                        except Exception as e:
-                            self.logger.debug(f"Readback diagnostic error: {e}")
+                if image_info.memory_type == MemoryInfo.MEMORY_TYPE_NAND:
+                    move_timeout = nand_erase_timeout_in_second(0, self.device_info.flash_block_size())
                 else:
-                    self.logger.info(
-                        f"Checksum OK: tool={hex(checksum)}, device={hex(cal_checksum)}")
+                    move_timeout = nor_erase_timeout_in_second(0)
+                ret = self.floader_handler.erase_flash(image_info.memory_type, image_info.start_address,
+                                                       image_info.start_address, 0, move_timeout, sense=True)
+            if ret != ErrType.OK:
+                self.logger.info(f"Checksum prepare fail: {ret}")
+                return ret
+
+        if image_info.memory_type == MemoryInfo.MEMORY_TYPE_NAND:
+            checksum_timeout = nand_checksum_timeout_in_second(aligned_img_length, None)
+        else:
+            checksum_timeout = nor_checksum_timeout_in_second(aligned_img_length)
+        chksm_mode = "RSIP plaintext (device OTF-decrypt)" if write_enc else "plaintext (direct read)"
+        self.logger.debug(
+            f"Checksum verify: {image_info.image_name} len={aligned_img_length} "
+            f"mode={chksm_mode}")
+        ret, cal_checksum = self.floader_handler.checksum(image_info.memory_type, image_info.start_address,
+                                                          image_info.end_address, aligned_img_length,
+                                                          checksum_timeout)
+        if ret == ErrType.OK:
+            if cal_checksum != checksum:
+                self.logger.info(f"Checksum fail: expect {hex(checksum)} get {hex(cal_checksum)}")
+                ret = ErrType.SYS_CHECKSUM
+                if image_info.memory_type != MemoryInfo.MEMORY_TYPE_NAND:
+                    try:
+                        import struct as _struct
+                        rb_addr = image_info.start_address
+                        rb_timeout = nor_checksum_timeout_in_second(page_size)
+                        mismatch_count = 0
+                        with open(image_path, 'rb') as rb_stream:
+                            for pg in range(aligned_img_length // page_size):
+                                expected = rb_stream.read(page_size)
+                                if len(expected) < page_size:
+                                    expected += b'\xff' * (page_size - len(expected))
+                                r, rb_data = self.floader_handler.read(
+                                    image_info.memory_type, rb_addr, page_size, rb_timeout)
+                                if r == ErrType.OK and rb_data and len(rb_data) >= 4:
+                                    if rb_data[:page_size] != expected:
+                                        exp_w = _struct.unpack('<I', expected[:4])[0]
+                                        got_w = _struct.unpack('<I', rb_data[:4])[0]
+                                        self.logger.info(
+                                            f"  Page {pg} @ {hex(rb_addr)}: expect={hex(exp_w)} got={hex(got_w)}")
+                                        mismatch_count += 1
+                                else:
+                                    self.logger.info(f"  Page {pg} @ {hex(rb_addr)}: read failed: {r}")
+                                    mismatch_count += 1
+                                rb_addr += page_size
+                        self.logger.info(
+                            f"Readback: {mismatch_count}/{aligned_img_length // page_size} pages mismatch")
+                    except Exception as e:
+                        self.logger.debug(f"Readback diagnostic error: {e}")
             else:
-                self.logger.info(f"Checksum read fail: {ret}")
+                self.logger.info(
+                    f"Checksum OK: tool={hex(checksum)}, device={hex(cal_checksum)}")
+        else:
+            self.logger.info(f"Checksum read fail: {ret}")
 
         return ret
 

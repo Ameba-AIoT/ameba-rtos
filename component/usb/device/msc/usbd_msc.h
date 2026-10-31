@@ -181,6 +181,7 @@ typedef struct {
 	u8 phase_error;                                 /**< SCSI check status. */
 	u8 csw_pending;                                 /**< Failed Data-In command whose CSW waits for the Bulk-In halt to be cleared. */
 	u8 is_open;                                     /**< MSC is ready for data transfer. */
+	u8 prevent_removal;                             /**< Medium removal prevented by PREVENT ALLOW MEDIUM REMOVAL. */
 	u8 wedged;                                      /**< Bulk endpoints halted on an invalid CBW until Reset Recovery. */
 	u8 bot_reset_pending;                           /**< Set after BOT Reset; triggers one-time OUT EP reinit in send_csw. */
 	u8 ro;                                          /**< Flag for media is write-protected. */
@@ -212,9 +213,9 @@ typedef struct {
 
 	/* RX / TX threads */
 	rtos_task_t rx_task;                           /**< RTOS task handle for data reception. */
-	rtos_sema_t rx_sema;                            /**< RTOS semaphore to signal data reception. */
+	usb_os_sema_t rx_sema;                          /**< Semaphore to signal data reception. */
 	rtos_task_t tx_task;                            /**< RTOS task handle for data transmission. */
-	rtos_sema_t tx_sema;                            /**< RTOS semaphore to signal data transmission. */
+	usb_os_sema_t tx_sema;                          /**< Semaphore to signal data transmission. */
 
 	/* Endpoints */
 	usbd_ep_t ep_bulk_in;                           /**< Structure for the Bulk IN endpoint. */

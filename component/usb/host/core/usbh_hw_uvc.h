@@ -116,7 +116,7 @@ typedef struct {
 /**
  * @brief  Initialize a UVC hardware decoder channel.
  * @param  uvc_dec: Decoder channel context.
- * @return HAL_OK on success, a HAL error code otherwise.
+ * @return RTK_SUCCESS on success, a RTK error code otherwise.
  */
 int usbh_hw_uvc_init(usbh_hw_uvc_dec_t *uvc_dec);
 

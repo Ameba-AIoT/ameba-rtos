@@ -138,7 +138,7 @@ typedef struct {
 	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	 * @param[in] status: The status of the transmission.
 	 */
-	void (*transmitted)(u8 status);
+	void (*transmitted)(int status);
 
 	/**
 	 * @brief Called when USB attach status changes for application to support hot-plug events.
@@ -213,6 +213,8 @@ int usbd_composite_cdc_acm_init(const usbd_cdc_acm_cb_t *cb, const usbd_cdc_acm_
 
 /**
  * @brief De-initializes the CDC ACM class driver.
+ * @note  Call it in task context, once no other task is inside usbd_cdc_acm_transmit() or
+ *        usbd_cdc_acm_notify_serial_state(): the TX buffers they write to are released here.
  * @note  Composite mode: call it after @ref usbd_composite_deinit. Before that the class is
  *        still reachable from the USB ISR, so the call returns at once and releases nothing.
  * @return None. This is a teardown path: apart from the composite case above, the class is always
@@ -222,18 +224,22 @@ void usbd_cdc_acm_deinit(void);
 
 /**
  * @brief Transmits data to the host over the BULK IN endpoint.
+ * @note  At most @ref usbd_cdc_acm_config_t::bulk_in_xfer_size bytes are sent per call, a longer
+ *        len is cut to that size.
  * @param[in] buf: Pointer to the data buffer to be transmitted.
  * @param[in] len: Length of the data in bytes.
- * @return 0 on success, non-zero on failure.
+ * @return 0 on success, -RTK_ERR_BUSY while the previous transfer is in flight, -RTK_ERR_IO when the
+ *         device is not configured, other non-zero on failure.
  */
-int usbd_cdc_acm_transmit(u8 *buf, u32 len);
+int usbd_cdc_acm_transmit(const u8 *buf, u32 len);
 
 /**
  * @brief Sets new line coding properties over the INTR IN endpoint.
  * @note  Requires @ref usbd_cdc_acm_config_t::notify_en, otherwise the class owns no
  *        INTR IN endpoint and the call fails.
  * @param[in] serial_state: New line coding properties.
- * @return 0 on success, non-zero on failure.
+ * @return 0 on success, -RTK_ERR_BUSY while the previous notification is in flight, -RTK_ERR_IO when
+ *         the device is not configured, other non-zero on failure.
  */
 int usbd_cdc_acm_notify_serial_state(u16 serial_state);
 

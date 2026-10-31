@@ -1886,7 +1886,7 @@ uint16_t rtk_bt_le_gap_coc_set_param(rtk_bt_le_coc_param_type_t param_type, uint
 }
 
 uint16_t rtk_bt_le_gap_coc_get_chan_param(rtk_bt_le_coc_chan_param_type_t param_type,
-										  uint16_t cid, uint16_t *value)
+										  uint16_t conn_handle, uint16_t cid, uint16_t *value)
 {
 	uint16_t ret = RTK_BT_OK;
 
@@ -1900,6 +1900,7 @@ uint16_t rtk_bt_le_gap_coc_get_chan_param(rtk_bt_le_coc_chan_param_type_t param_
 
 	rtk_bt_le_coc_chan_param_get_t param = {
 		.param_type = param_type,
+		.conn_handle = conn_handle,
 		.cid = cid,
 		.value = value,
 	};
@@ -1921,16 +1922,20 @@ uint16_t rtk_bt_le_gap_coc_connect(uint16_t conn_handle, uint16_t le_psm)
 	return ret;
 }
 
-uint16_t rtk_bt_le_gap_coc_disconnect(uint16_t cid)
+uint16_t rtk_bt_le_gap_coc_disconnect(uint16_t conn_handle, uint16_t cid)
 {
 	uint16_t ret = RTK_BT_OK;
 
+	rtk_bt_le_coc_disconnect_param_t param = {
+		.conn_handle = conn_handle,
+		.cid = cid,
+	};
 	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_GAP, RTK_BT_LE_GAP_ACT_COC_DISCONN,
-						  &cid, sizeof(uint16_t));
+						  &param, sizeof(rtk_bt_le_coc_disconnect_param_t));
 	return ret;
 }
 
-uint16_t rtk_bt_le_gap_coc_send_data(uint16_t cid, uint16_t len, uint8_t *data)
+uint16_t rtk_bt_le_gap_coc_send_data(uint16_t conn_handle, uint16_t cid, uint16_t len, uint8_t *data)
 {
 	uint16_t ret = RTK_BT_OK;
 
@@ -1939,6 +1944,7 @@ uint16_t rtk_bt_le_gap_coc_send_data(uint16_t cid, uint16_t len, uint8_t *data)
 	}
 
 	rtk_bt_le_coc_send_data_param_t param = {
+		.conn_handle = conn_handle,
 		.cid = cid,
 		.len = len,
 		.data = data,

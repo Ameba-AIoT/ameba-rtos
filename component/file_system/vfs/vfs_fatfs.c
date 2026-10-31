@@ -360,7 +360,7 @@ struct dirent *fatfs_readdir(void *fs, vfs_file *finfo)
 	} else {
 		finfo->ent.d_type = DT_REG;
 	}
-	sprintf(finfo->ent.d_name, "%s", m_fileinfo.fname);
+	strcpy(finfo->ent.d_name, m_fileinfo.fname);
 	return &finfo->ent;
 }
 
@@ -479,8 +479,6 @@ int fatfs_stat(void *fs, char *path, struct stat *buf)
 	int day = finfo.fdate & 31;
 	int hour = finfo.ftime >> 11;
 	int minute = (finfo.ftime >> 5) & 63;
-	char timestr[24];
-	snprintf(timestr, sizeof(timestr), "%d/%d/%d %d:%d", year, month, day, hour, minute);
 
 	tm.tm_year = year - 1900; /* years since 1900 */
 	tm.tm_mon = month - 1;

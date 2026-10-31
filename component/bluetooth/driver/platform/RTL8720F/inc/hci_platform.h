@@ -17,8 +17,6 @@
 #define HCI_BT_COEX_SW_MAILBOX     0
 #define HCI_BT_COEX_BR_EDR_SUPPORT   0
 
-#define HCI_BT_KEEP_AWAKE          0
-
 void hci_platform_cfg_bd_addr(uint8_t *bdaddr);
 int hci_platform_get_write_phy_efuse_data(uint8_t *data, uint8_t len);
 

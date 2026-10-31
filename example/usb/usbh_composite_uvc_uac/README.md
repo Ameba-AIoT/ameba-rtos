@@ -82,6 +82,18 @@ Refer to the [EVB User Guide](https://aiot.realmcu.com/filelist?document_type=9)
 
 5. Reset and check the log via LOGUART console, make sure there is no error reported.
 
+# Shell commands
+
+Type the AT commands on the LOGUART console. Parameters are comma separated; the command name is case-sensitive, the parameters are not. `AT+<cmd>=help` prints the usage, every command ends with `OK` or `ERROR: <code>`.
+
+| Command | Description |
+| --- | --- |
+| `AT+USBHUAC=init[,<play\|record>]` | Select the stream the following `mute`/`vol` act on, default `play`. |
+| `AT+USBHUAC=mute,<0\|1>` | Mute (`1`) or unmute (`0`) the selected stream. |
+| `AT+USBHUAC=vol,<0..100\|up\|down>` | Set the volume of the selected stream in percent, or step it by 20. Each stream starts at 50. |
+
+`mute`/`vol` need an attached and set up device.
+
 # Supported IC
 
 RTL8730E

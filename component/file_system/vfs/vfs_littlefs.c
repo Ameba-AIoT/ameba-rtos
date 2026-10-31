@@ -311,7 +311,7 @@ struct dirent *littlefs_readdir(void *fs, vfs_file *finfo)
 	} else {
 		finfo->ent.d_type = DT_REG;
 	}
-	sprintf(finfo->ent.d_name, "%s", info.name);
+	strcpy(finfo->ent.d_name, info.name);
 	return &finfo->ent;
 }
 

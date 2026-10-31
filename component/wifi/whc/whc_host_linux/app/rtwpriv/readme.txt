@@ -82,6 +82,7 @@ Helper command list (parsed locally, mapped to dedicated WHC sub-commands):
   logon                         -                   no      Enable device log
   logoff                        -                   no      Disable device log
   dbg       <cmd> [args...]     free-form string    yes     Send a CMD_WIFI_DBG string
+  shell     <cmd> [args...]     free-form string    yes     Run a device shell command (see Notes)
 
 Examples:
         rtwpriv -n wlan0 getmac 0
@@ -89,12 +90,22 @@ Examples:
         rtwpriv -n wlan0 logon
         rtwpriv -n wlan0 logoff
         rtwpriv -n wlan0 dbg <driver-dbg-command>
+        rtwpriv -n wlan0 shell AT+OTP=RMAP,0,256     (output on stdout)
+        rtwpriv -n wlan0 shell AT+SEC                (usage in dmesg, ERROR on stdout)
+        rtwpriv -n wlan0 shell DW 40000000 4         (output in dmesg)
+        rtwpriv -n wlan0 shell EW 40000000 12345678
 
 Notes:
   - Reply "yes": the tool sends the request, then waits (up to 10s) for the
     device's WHC_CMD_EVENT reply and prints it.
   - The WiFi driver (whc_demo Netlink family) must be loaded; otherwise the
     tool reports "Failed to resolve Netlink family 'whc_demo'".
+  - shell: the command is injected into the device shell as-is (not limited to
+    AT commands). It does not change log forwarding, so run "logon" first.
+    Output goes to different places:
+      AT+xxx      printed on stdout (AT_RESP) until the device is silent for 200 ms;
+                  a command that stays quiet longer than that may be cut off.
+      DW / EW     not AT output: shown in the host kernel log, read with "dmesg".
 
 A. Feature
 

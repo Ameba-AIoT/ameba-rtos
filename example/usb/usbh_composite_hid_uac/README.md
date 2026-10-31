@@ -67,14 +67,41 @@ Refer to the [EVB User Guide](https://aiot.realmcu.com/filelist?document_type=9)
 		[COMP-I] Rec stats loop=1334 bytes=1152576 err=0
 		```
 
-4. If the headphones also have volume control buttons, when you press the button, you will receive the following print on the serial port
-   	```
-	- Volume Up
-	- Volume Down
+4. If the headset also has HID media keys, each press is printed and acted on. Holding a key acts once, not repeatedly.
+
+	| Key | Action |
+	| --- | --- |
+	| Volume Up / Down | Step the volume of the selected stream (see `AT+USBHUAC=init`) by `CONFIG_USBH_COMP_HID_UAC_VOLUME_STEP` (20 by default), as `AT+USBHUAC=vol,up\|down` does |
+	| Mute | Toggle mute of the selected stream, from the mute state the device reports |
+	| Play/Pause | Pause playback, press again to resume where it stopped |
+	| Stop | Stop playback, Play/Pause then restarts it from the beginning |
+
 	```
+	Volume Up
+	[COMP-I] Vol 70
+	Play/Pause
+	[COMP-I] Play paused
+	Play/Pause
+	[COMP-I] Play resumed
+	```
+
+	A paused playback stops the ISOC OUT stream. A volume or mute key prints `Set vol fail` / `Set mute fail` when the device has no such control. A newly attached device starts playing; its mute state is left as the device keeps it.
 
 5. Reset and check the log via LOGUART console, make sure there is no error reported
 
+
+# Shell commands
+
+Type the AT commands on the LOGUART console. Parameters are comma separated; the command name is case-sensitive, the parameters are not. `AT+<cmd>=help` prints the usage, every command ends with `OK` or `ERROR: <code>`.
+
+| Command | Description |
+| --- | --- |
+| `AT+USBHUAC=init[,<play\|record>]` | Select the stream the following `mute`/`vol` act on, default `play`. |
+| `AT+USBHUAC=mute,<0\|1>` | Mute (`1`) or unmute (`0`) the selected stream. |
+| `AT+USBHUAC=vol,<0..100\|up\|down>` | Set the volume of the selected stream in percent, or step it by 20. Each stream starts at 50. |
+| `AT+USBHUAC=hotplug` | Power-cycle the device through the power-control GPIO, to exercise re-enumeration. Prints `Not support` unless `CONFIG_USBH_COMP_HID_UAC_GPIO_POWER_CTRL` is set. |
+
+`mute`/`vol` need an attached and set up device.
 
 # Supported IC
 
