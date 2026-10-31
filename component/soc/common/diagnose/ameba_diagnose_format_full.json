@@ -15,6 +15,12 @@
       "compatible": [
         "87f57635"
       ],
+      "format": {}
+    },
+    "a6a80b69": {
+      "compatible": [
+        "522b9f08"
+      ],
       "format": {
         "rtk_event_level": {
           "RTK_EVENT_LEVEL_ALWAYS": 0,
@@ -193,6 +199,7 @@
           "No Memory": 4,
           "Timeout": 5,
           "Data exceeds allocated buffer size.": 6,
+          "I/O error": 7,
           "Invalid key": 4107,
           "Can't find targrt AP": 4108,
           "Auth fail": 4109,
@@ -208,5 +215,5 @@
       }
     }
   },
-  "latest_hash": "522b9f08"
+  "latest_hash": "a6a80b69"
 }

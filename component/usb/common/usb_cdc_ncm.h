@@ -81,7 +81,7 @@ extern "C" {
 #define USB_CDC_NCM_NTH16_LENGTH                        12U   /**< NTH16 header length */
 #define USB_CDC_NCM_NDP16_HEADER_LENGTH                 8U    /**< NDP16 header length, i.e. offset of aEntry[0]
                                                                    (dwSignature + wLength + wNextFpIndex) */
-#define USB_CDC_NCM_NDP16_MIN_LENGTH                    16U   /**< Minimum NDP16 length (2 datagram entries + terminator) */
+#define USB_CDC_NCM_NDP16_MIN_LENGTH                    16U   /**< Minimum NDP16 length (header + 1 datagram entry + terminator entry) */
 #define USB_CDC_NCM_NDP16_ENTRY_LENGTH                  4U    /**< Each NDP16 datagram entry length */
 #define USB_CDC_NCM_DATAGRAM_ALIGN                      4U    /**< Default datagram alignment */
 #define USB_CDC_NCM_MAX_DATAGRAMS_DEFAULT               1U    /**< Default max datagrams per NTB */

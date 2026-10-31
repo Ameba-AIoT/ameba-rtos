@@ -52,7 +52,7 @@ static int atcmd_usbd_init(void);
 static int atcmd_usbd_deinit(void);
 static int atcmd_usbd_setup(usb_setup_req_t *req, u8 *buf);
 static int atcmd_usbd_received(u8 *buf, u32 Len);
-static void atcmd_usbd_transmitted(u8 status);
+static void atcmd_usbd_transmitted(int status);
 static void atcmd_usbd_status_changed(u8 old_status, u8 status);
 
 /* Private variables ---------------------------------------------------------*/
@@ -219,13 +219,14 @@ static int atcmd_usbd_received(u8 *buf, u32 len)
 	return ret;
 }
 
-void atcmd_usbd_transmitted(u8 status)
+static void atcmd_usbd_transmitted(int status)
 {
-	if (status == HAL_OK) {
-		rtos_sema_give(atcmd_usbd_tx_done_sema);
-	} else {
+	if (status != HAL_OK) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "TX fail: %d\n", status);
 	}
+	/* Release the TX task whatever the outcome: it waits for every submitted transfer, and
+	   a failed one completes too, so withholding the give would block every later TX */
+	rtos_sema_give(atcmd_usbd_tx_done_sema);
 }
 
 /**
@@ -330,12 +331,19 @@ static void atcmd_usbd_tx_task(void *param)
 
 				RingBuffer_Read(at_usbd_tx_ring_buf, usbd_tx_buf, send_len);
 				ret = usbd_cdc_acm_transmit(usbd_tx_buf, send_len);
-				while (ret != HAL_OK) {
+				/* Retry only while the previous transfer is in flight; any other error, e.g. the
+				   host not configured, would never clear by retrying */
+				while (ret == -RTK_ERR_BUSY) {
 					RTK_LOGS(TAG, RTK_LOG_INFO, "Xfer busy, retry[2]\r\n");
 					rtos_time_delay_ms(1);
 					ret = usbd_cdc_acm_transmit(usbd_tx_buf, send_len);
 				}
-				rtos_sema_take(atcmd_usbd_tx_done_sema, RTOS_SEMA_MAX_COUNT);
+				if (ret == HAL_OK) {
+					/* Only a submitted transfer completes and gives this sema */
+					rtos_sema_take(atcmd_usbd_tx_done_sema, RTOS_SEMA_MAX_COUNT);
+				} else {
+					RTK_LOGS(TAG, RTK_LOG_WARN, "TX drop %d\n", ret);
+				}
 
 				remain_len -= send_len;
 			}
@@ -360,10 +368,14 @@ static void atcmd_usbd_notify_task(void *param)
 
 				RingBuffer_Read(at_usbd_notify_ring_buf, usbd_tx_buf, send_len);
 				ret = usbd_cdc_acm_notify_serial_state(*((u16 *)usbd_tx_buf));
-				while (ret != HAL_OK) {
+				/* Same retry rule as the TX path: only a busy endpoint clears by itself */
+				while (ret == -RTK_ERR_BUSY) {
 					RTK_LOGS(TAG, RTK_LOG_INFO, "Xfer busy, retry[2]\r\n");
 					rtos_time_delay_ms(1);
 					ret = usbd_cdc_acm_notify_serial_state(*((u16 *)usbd_tx_buf));
+				}
+				if (ret != HAL_OK) {
+					RTK_LOGS(TAG, RTK_LOG_WARN, "Notify drop %d\n", ret);
 				}
 				remain_len -= send_len;
 			}

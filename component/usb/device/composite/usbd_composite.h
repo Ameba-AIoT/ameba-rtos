@@ -75,7 +75,7 @@ typedef struct {
 /**
  * @brief Register a class driver with the composite framework.
  * @param[in] driver  Pointer to the class driver.
- * @return HAL_OK on success, error code on failure.
+ * @return RTK_SUCCESS on success, error code on failure.
  * @note  Must be called AFTER the class driver's composite_init (e.g.
  *        @ref usbd_composite_cdc_acm_init) and BEFORE @ref usbd_composite_init.
  */
@@ -92,7 +92,7 @@ int usbd_composite_register_driver(const usbd_class_driver_t *driver);
  *        of every function, which a class deinit relies on before freeing its buffers.
  *        The call is refused while the composite device is registered.
  *        The class deinit then returns without releasing anything.
- * @return HAL_OK on success, HAL_BUSY while the composite device is registered.
+ * @return RTK_SUCCESS on success, -RTK_ERR_BUSY while the composite device is registered.
  */
 int usbd_composite_unregister_driver(const usbd_class_driver_t *driver);
 
@@ -104,16 +104,18 @@ int usbd_composite_unregister_driver(const usbd_class_driver_t *driver);
  *        The configuration descriptor is assembled from all sub-functions directly in the
  *        EP0 control transfer buffer and cannot be truncated, so @ref usbd_config_t::ctrl_xfer_buf_len
  *        must cover its total length at every supported speed, otherwise enumeration fails.
- * @return HAL_OK on success, error code otherwise.
+ * @return RTK_SUCCESS on success, error code otherwise.
  */
 int usbd_composite_init(const usbd_composite_cb_t *cb);
 
 /**
  * @brief De-initialize composite USB device.
- * @note  Call it in task context before the deinit of each class, then @ref usbd_deinit:
+ * @note  Call it in task context before the deinit of each class, then @ref usbd_deinit.
  *        it blocks the ISR and clears the configuration of every registered function.
+ * @return RTK_SUCCESS on success. -RTK_ERR_BADARG when called in interrupt context: nothing was done
+ *         and the deinit of each class keeps refusing, refer to @ref usbd_unregister_class.
  */
-void usbd_composite_deinit(void);
+int usbd_composite_deinit(void);
 
 /** @} End of USB_Device_API group */
 

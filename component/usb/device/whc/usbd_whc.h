@@ -32,6 +32,7 @@ extern "C" {
 
 #define USBD_WHC_VID                     USB_VID
 #define USBD_WHC_PID                     USB_PID
+#define USBD_NIC_PID                     0x8006U  /**< NIC mode PID (used to patch device descriptor at runtime). */
 
 #define USBD_WHC_MFG_STRING              "Realtek"               /**< Manufacturer string. */
 #define USBD_WHC_PROD_STRING             "802.11ax WLAN Adapter" /**< Product string. */
@@ -40,7 +41,6 @@ extern "C" {
 #ifdef CONFIG_WHC_ETH
 #define USBD_WHC_ETH_STRING              "Ethernet Adapter"      /**< Ethernet interface string. */
 #endif
-#define USBD_NIC_VID                      0x8006                  /**< NIC mode VID (used to patch device descriptor at runtime). */
 
 #define USBD_WHC_HS_BULK_MPS             512U  /* High speed BULK IN & OUT maximum packet size */
 #define USBD_WHC_FS_BULK_MPS             64U   /* Full speed BULK IN & OUT maximum packet size */
@@ -214,7 +214,7 @@ typedef struct {
 	 * @param[in] in_ep: Pointer to the WHC IN endpoint.
 	 * @param[in] status: The status of the transmission.
 	 */
-	void (*transmitted)(usbd_whc_ep_t *in_ep, u8 status);
+	void (*transmitted)(usbd_whc_ep_t *in_ep, int status);
 
 	/**
 	 * @brief Called when non-control OUT transfer done, for application to handle the received host command/data.

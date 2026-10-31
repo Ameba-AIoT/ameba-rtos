@@ -12,7 +12,6 @@
 #include "usbd_composite.h"
 #endif
 #include "usbd_video.h"
-#include "usb_video.h"
 //#include "os_wrapper.h"
 
 /* Private defines -----------------------------------------------------------*/
@@ -50,8 +49,8 @@ static void usbd_uvc_stop_streaming(usbd_uvc_dev_t *cdev);
 static void usbd_uvc_clear_config(usb_dev_t *dev, u8 config);
 static int usbd_uvc_setup(usb_dev_t *dev, usb_setup_req_t *req);
 static int usbd_uvc_handle_ep0_data_out(usb_dev_t *dev);
-static int usbd_uvc_handle_ep0_data_in(usb_dev_t *dev, u8 status);
-static int usbd_uvc_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status);
+static int usbd_uvc_handle_ep0_data_in(usb_dev_t *dev, int status);
+static int usbd_uvc_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, int status);
 static int usbd_uvc_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len);
 static void usbd_uvc_handle_sof(usb_dev_t *dev);
 static u8 usbd_uvc_set_interface(usb_dev_t *dev, u8 interface, u8 alt);
@@ -316,7 +315,7 @@ usbd_uvc_video_produce_frame(usb_dev_t *dev, const u8 *mem, u32 len)
 	UNUSED(dev);
 
 	if ((mem == NULL) || (len == 0U)) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Produce_frame: invalid frame mem=%p len=%u\n", mem, len);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Produce_frame: invalid frame mem=0x%08x len=%u\n", (u32)mem, len);
 		return;
 	}
 
@@ -439,20 +438,20 @@ static usbd_uvc_buffer_t *usbd_uvc_video_in_stream_queue(usbd_uvc_dev_t *uvc_ctx
   *         time-consuming operations (e.g., `usb_os_malloc`, `rtos_sema_take`) are not permitted.
   *         Receive class-specific control data from host
   * @param  dev USB device instance
-  * @retval HAL status
+  * @retval RTK status
   */
 static int usbd_uvc_handle_ep0_data_out(usb_dev_t *dev)
 {
 	usbd_uvc_req_data_t req_data;
 	usbd_uvc_dev_t *cdev = &usbd_uvc_dev;
 	usbd_ep_t *ep0_out = &dev->ep0_out;
-	int ret = HAL_OK;
+	int ret = RTK_SUCCESS;
 
 	/* No pending request means this data stage does not belong to UVC, the composite dispatcher
 	   already routed it by active_func. Ref USB 2.0 8.5.3.1: a non-zero return makes the core
 	   stall the status stage, so do not report a failure the host cannot act on. */
 	if (cdev->ctrl_req_pending == 0U) {
-		return HAL_OK;
+		return RTK_SUCCESS;
 	}
 
 	/* Consume the pending request: a single data stage belongs to exactly one setup packet, so
@@ -473,13 +472,13 @@ static int usbd_uvc_handle_ep0_data_out(usb_dev_t *dev)
   *         time-consuming operations (e.g., `usb_os_malloc`, `rtos_sema_take`) are not permitted.
   * @param  dev USB device instance
   * @param  status Transfer status
-  * @retval HAL status
+  * @retval RTK status
   */
-static int usbd_uvc_handle_ep0_data_in(usb_dev_t *dev, u8 status)
+static int usbd_uvc_handle_ep0_data_in(usb_dev_t *dev, int status)
 {
 	(void)dev;
 	(void)status;
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 /**
   * @brief  Handle isochronous IN endpoint transfer complete
@@ -489,24 +488,24 @@ static int usbd_uvc_handle_ep0_data_in(usb_dev_t *dev, u8 status)
   * @param  dev     USB device instance
   * @param  ep_addr Endpoint address
   * @param  status  Transfer status
-  * @retval HAL status
+  * @retval RTK status
   */
-static int usbd_uvc_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status)
+static int usbd_uvc_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, int status)
 {
 	usbd_uvc_dev_t *cdev = &usbd_uvc_dev;
 	usbd_uvc_video_t *video = &cdev->video;
 
 	UNUSED(status);
 
-	/* Return non-HAL_OK for a foreign endpoint so composite dispatch can continue to
+	/* Return non-RTK_SUCCESS for a foreign endpoint so composite dispatch can continue to
 	   the owning function (Ref component/usb/CLAUDE.md rule 7; mirrors
 	   usbd_msc_handle_ep_data_in()). */
 	if (ep_addr != cdev->ep_isoc_in.info.addr) {
-		return HAL_ERR_PARA;
+		return -RTK_ERR_BADARG;
 	}
 
 	if (cdev->init_done == 0U) {
-		return HAL_OK;
+		return RTK_SUCCESS;
 	}
 
 	/* The armed payload finished transmitting this microframe: consume it,
@@ -520,12 +519,12 @@ static int usbd_uvc_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status)
 	}
 
 	if (cdev->running == 0U) {
-		return HAL_OK;
+		return RTK_SUCCESS;
 	}
 
 	usbd_uvc_video_try_arm(dev);
 
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 /**
@@ -578,7 +577,7 @@ static void usbd_uvc_handle_sof(usb_dev_t *dev)
   * @param  dev     USB device instance
   * @param  ep_addr Endpoint address
   * @param  len     Length of received data
-  * @retval HAL status
+  * @retval RTK status
   */
 static int usbd_uvc_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len)
 {
@@ -589,7 +588,7 @@ static int usbd_uvc_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len)
 	(void)dev;
 	(void)ep_addr;
 	(void)len;
-	return HAL_ERR_PARA;
+	return -RTK_ERR_BADARG;
 }
 /**
   * @brief  Rebase the class-specific interface cross-references of a config descriptor block
@@ -682,7 +681,7 @@ static u16 usbd_uvc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 		len  = usbd_uvc_descriptors_size;
 		is_cfg = 1;
 
-		RTK_LOGS(TAG, RTK_LOG_INFO, "desc_self %p len %d\r\n", desc, len);
+		RTK_LOGS(TAG, RTK_LOG_INFO, "desc_self 0x%08x len %d\r\n", (u32)desc, len);
 		break;
 
 #ifndef CONFIG_SUPPORT_USB_FS_ONLY
@@ -744,18 +743,18 @@ static u16 usbd_uvc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
   *         Initialize isochronous IN endpoint for video streaming
   * @param  dev     USB device instance
   * @param  config  Configuration index
-  * @retval HAL status
+  * @retval RTK status
   */
 static int usbd_uvc_set_config(usb_dev_t *dev, u8 config)
 {
 	usbd_uvc_dev_t *cdev = &usbd_uvc_dev;
 	usbd_ep_t *ep_isoc_in = &cdev->ep_isoc_in;
 	usb_ep_info_t *info = &ep_isoc_in->info;
-	int ret = HAL_OK;
+	int ret = RTK_SUCCESS;
 
 	/* Only the bConfigurationValue advertised in the config descriptor is valid */
 	if (config != 1U) {
-		return HAL_ERR_PARA;
+		return -RTK_ERR_BADARG;
 	}
 
 	cdev->dev = dev;
@@ -840,7 +839,7 @@ static void usbd_uvc_clear_config(usb_dev_t *dev, u8 config)
   *         time-consuming operations (e.g., `usb_os_malloc`, `rtos_sema_take`) are not permitted.
   * @param  dev  USB device instance
   * @param  req  USB setup request
-  * @retval HAL status
+  * @retval RTK status
   */
 static int usbd_uvc_setup(usb_dev_t *dev, usb_setup_req_t *req)
 {
@@ -848,7 +847,7 @@ static int usbd_uvc_setup(usb_dev_t *dev, usb_setup_req_t *req)
 	usbd_uvc_dev_t *cdev = &usbd_uvc_dev;
 	usbd_ep_t *ep0_in = &dev->ep0_in;
 	usbd_ep_t *ep0_out = &dev->ep0_out;
-	int ret = HAL_OK;
+	int ret = RTK_SUCCESS;
 	RTK_LOGS(TAG, RTK_LOG_DEBUG, "Setup bmRequestType=0x%08x bRequest=0x%08x wLength=0x%08x wValue=0x%08x wIndex=0x%08x\n",
 			 req->bmRequestType,
 			 req->bRequest,
@@ -862,13 +861,13 @@ static int usbd_uvc_setup(usb_dev_t *dev, usb_setup_req_t *req)
 		switch (req->bRequest) {
 		case USB_REQ_SET_INTERFACE:
 			if (dev->dev_state != USBD_STATE_CONFIGURED) {
-				ret = HAL_ERR_PARA;
+				ret = -RTK_ERR_BADARG;
 			} else if ((req->wIndex != USBD_UVC_INTF_CONTROL) && (req->wIndex != USBD_UVC_INTF_STREAMING)) {
 				/* Ref USB 2.0 Table 9-10: the whole wIndex is the interface number, and a
 				   foreign interface must be rejected so composite dispatch is not broken */
-				ret = HAL_ERR_PARA;
+				ret = -RTK_ERR_BADARG;
 			} else if (usbd_uvc_set_interface(dev, (u8)req->wIndex, USB_LOW_BYTE(req->wValue)) != 0U) {
-				ret = HAL_ERR_PARA;
+				ret = -RTK_ERR_BADARG;
 			} else {
 				/* SET_INTERFACE accepted */
 			}
@@ -876,7 +875,7 @@ static int usbd_uvc_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			break;
 		case USB_REQ_GET_INTERFACE:
 			if (dev->dev_state != USBD_STATE_CONFIGURED) {
-				ret = HAL_ERR_PARA;
+				ret = -RTK_ERR_BADARG;
 			} else if (req->wIndex == USBD_UVC_INTF_CONTROL) {
 				/* Ref USB 2.0 9.4.4: the VC interface has one alternate setting only */
 				ep0_in->xfer_buf[0] = 0U;
@@ -889,7 +888,7 @@ static int usbd_uvc_setup(usb_dev_t *dev, usb_setup_req_t *req)
 				ep0_in->xfer_len = 1U;
 				usbd_ep_transmit(dev, ep0_in);
 			} else {
-				ret = HAL_ERR_PARA;
+				ret = -RTK_ERR_BADARG;
 			}
 			RTK_LOGS(TAG, RTK_LOG_DEBUG, "USB_REQ_GET_INTERFACE\n");
 			break;
@@ -900,15 +899,15 @@ static int usbd_uvc_setup(usb_dev_t *dev, usb_setup_req_t *req)
 				ep0_in->xfer_len = 2U;
 				usbd_ep_transmit(dev, ep0_in);
 			} else {
-				ret = HAL_ERR_PARA;
+				ret = -RTK_ERR_BADARG;
 			}
 			RTK_LOGS(TAG, RTK_LOG_DEBUG, "USB_REQ_GET_STATUS\n");
 			break;
 		default:
 			/* Never use success as the default branch: an unrecognized standard
-			   interface request must stall instead of silently returning HAL_OK
+			   interface request must stall instead of silently returning RTK_SUCCESS
 			   with nothing transmitted (Ref component/usb/CLAUDE.md rule 6). */
-			ret = HAL_ERR_PARA;
+			ret = -RTK_ERR_BADARG;
 			break;
 		}
 		break;
@@ -919,7 +918,7 @@ static int usbd_uvc_setup(usb_dev_t *dev, usb_setup_req_t *req)
 		   anything else must be stalled instead of leaving the data stage unanswered. */
 		if (((req->bmRequestType & USB_REQ_RECIPIENT_MASK) != USB_REQ_RECIPIENT_INTERFACE)
 			|| ((USB_LOW_BYTE(req->wIndex) != USBD_UVC_INTF_CONTROL) && (USB_LOW_BYTE(req->wIndex) != USBD_UVC_INTF_STREAMING))) {
-			ret = HAL_ERR_PARA;
+			ret = -RTK_ERR_BADARG;
 			break;
 		}
 		req_data.type = USBD_UVC_EVENT_SETUP;
@@ -930,26 +929,26 @@ static int usbd_uvc_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			   usbd_uvc_handle_ep0_data_out(), whose destination holds 64 bytes, so a larger
 			   wLength is rejected here instead of overflowing it. */
 			if (req->wLength > sizeof(req_data.uvc_data.data)) {
-				ret = HAL_ERR_PARA;
+				ret = -RTK_ERR_BADARG;
 				break;
 			}
 			cdev->ctrl_req = req->bRequest;
 			cdev->ctrl_data_len = (u8)req->wLength;
 			cdev->ctrl_req_pending = 1U;
 			ep0_out->xfer_len = req->wLength;
-			if (usbd_ep_receive(dev, ep0_out) != HAL_OK) {
+			if (usbd_ep_receive(dev, ep0_out) != RTK_SUCCESS) {
 				/* The data stage never started, so no EP0 OUT completion will arrive to
 				   consume the pending request. Drop it, else the next unrelated request's
 				   data stage would be delivered as this one's payload. */
 				cdev->ctrl_req_pending = 0U;
-				ret = HAL_ERR_HW;
+				ret = -RTK_ERR_IO;
 				break;
 			}
 		}
 		usbd_uvc_events_process(cdev, &req_data);
 		break;
 	default:
-		ret = HAL_ERR_HW;
+		ret = -RTK_ERR_IO;
 		break;
 	}
 	return ret;
@@ -1184,14 +1183,14 @@ static void usbd_uvc_patch_ep_addresses(u8 old_addr, u8 new_addr)
   *         - Create queues, semaphores, and tasks
   *         - Prepare video streaming environment
   * @param  ep_cfg: Endpoint configuration
-  * @retval HAL_OK if success, otherwise error code
+  * @retval RTK_SUCCESS if success, otherwise error code
   */
 static int usbd_uvc_private_init(const usbd_uvc_ep_cfg_t *ep_cfg)
 {
 	usbd_uvc_dev_t *dev = &usbd_uvc_dev;
 	usbd_uvc_video_t *video = &dev->video;
 	usb_ep_info_t *info = &dev->ep_isoc_in.info;
-	int ret = HAL_OK;
+	int ret = RTK_SUCCESS;
 
 	usbd_uvc_parameter_init();
 	usbd_ext_init();
@@ -1203,7 +1202,7 @@ static int usbd_uvc_private_init(const usbd_uvc_ep_cfg_t *ep_cfg)
 
 	if (ep_cfg == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid EP cfg\n");
-		return HAL_ERR_PARA;
+		return -RTK_ERR_BADARG;
 	}
 
 	dev->ep_cfg = ep_cfg;
@@ -1232,7 +1231,7 @@ static int usbd_uvc_private_init(const usbd_uvc_ep_cfg_t *ep_cfg)
 
 	/* Payload ring: USBD_UVC_IN_SLOT_CNT nodes of one microframe payload each,
 	   cache-line aligned so the TX DMA can read each node in place. */
-	if (usb_ringbuf_manager_init(&video->in_rb, USBD_UVC_IN_SLOT_CNT, USBD_UVC_IN_BUF_SIZE, 1) != HAL_OK) {
+	if (usb_ringbuf_manager_init(&video->in_rb, USBD_UVC_IN_SLOT_CNT, USBD_UVC_IN_BUF_SIZE, 1) != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "UVC payload ring alloc fail\n");
 		ret = -1;
 		goto exit;
@@ -1316,8 +1315,8 @@ void usbd_uvc_video_put_out_stream_queue(usbd_uvc_buffer_t *payload)
 	if (payload->buffer_list.next == NULL || list_empty(&payload->buffer_list)) {
 		list_add_tail(&payload->buffer_list, &video->output_queue);
 	} else {
-		RTK_LOGS(TAG, RTK_LOG_WARN, "Put_out: skip linked buf %p next=%p\n",
-				 (void *)payload, (void *)payload->buffer_list.next);
+		RTK_LOGS(TAG, RTK_LOG_WARN, "Put_out: skip linked buf 0x%08x next=0x%08x\n",
+				 (u32)payload, (u32)payload->buffer_list.next);
 	}
 	usb_os_unlock(video->output_lock);
 }
@@ -1336,8 +1335,8 @@ void usbd_uvc_video_put_in_stream_queue(usbd_uvc_buffer_t *payload)
 	if (payload->buffer_list.next == NULL || list_empty(&payload->buffer_list)) {
 		list_add_tail(&payload->buffer_list, &video->input_queue);
 	} else {
-		RTK_LOGS(TAG, RTK_LOG_WARN, "Put_in: skip linked buf %p next=%p\n",
-				 (void *)payload, (void *)payload->buffer_list.next);
+		RTK_LOGS(TAG, RTK_LOG_WARN, "Put_in: skip linked buf 0x%08x next=0x%08x\n",
+				 (u32)payload, (u32)payload->buffer_list.next);
 	}
 	usb_os_unlock(video->input_lock);
 	/* Signal get_frame_handler that a new frame is available.
@@ -1419,7 +1418,7 @@ int usbd_uvc_init(const usbd_uvc_ep_cfg_t *ep_cfg)
 
 	/* private_init memsets the whole singleton, so the mode must be stored after it. */
 	ret = usbd_uvc_private_init(ep_cfg);
-	if (ret == HAL_OK) {
+	if (ret == RTK_SUCCESS) {
 		dev->from_composite = 0;
 		usbd_register_class(&usbd_uvc_driver);
 	}
@@ -1438,7 +1437,7 @@ int usbd_composite_uvc_init(const usbd_uvc_ep_cfg_t *ep_cfg)
 
 	/* private_init memsets the whole singleton, so the mode must be stored after it. */
 	ret = usbd_uvc_private_init(ep_cfg);
-	if (ret == HAL_OK) {
+	if (ret == RTK_SUCCESS) {
 		dev->from_composite = 1;
 		ret = usbd_composite_register_driver(&usbd_uvc_driver);
 	}
@@ -1455,28 +1454,20 @@ int usbd_composite_uvc_init(const usbd_uvc_ep_cfg_t *ep_cfg)
   */
 void usbd_uvc_deinit(void)
 {
+	usbd_uvc_dev_t *cdev = &usbd_uvc_dev;
+	int ret;
+
 #ifdef CONFIG_USBD_COMPOSITE
-	/* Leave the composite framework before anything is torn down: it is refused while the
-	   composite device is still registered on the core, and the class must then stay intact */
-	if (usbd_uvc_dev.from_composite != 0U) {
-		if (usbd_composite_unregister_driver(&usbd_uvc_driver) != HAL_OK) {
+	if (cdev->from_composite != 0U) {
+		/* Leave the composite framework before anything is torn down: it is refused while the
+		   composite device is still registered on the core, and the class must then stay intact */
+		ret = usbd_composite_unregister_driver(&usbd_uvc_driver);
+		if (ret != RTK_SUCCESS) {
 			return;
 		}
-	}
-#endif
-
-	/* Drop any request still waiting for its data stage, so a re-init cannot inherit it and
-	   dispatch a stale payload. No class callback runs once unregistered. */
-	usbd_uvc_dev.ctrl_req_pending = 0U;
-
-#ifdef CONFIG_USBD_COMPOSITE
-	if (usbd_uvc_dev.from_composite == 0U)
+	} else
 #endif
 	{
-		usbd_uvc_dev_t *cdev = &usbd_uvc_dev;
-		usbd_uvc_video_t *video = &cdev->video;
-		u8 wait_cnt = 0U;
-
 		/* res_created is set once the locks/semas below exist, before init_done, so this
 		   covers both a double call and an init that failed before setting init_done
 		   (e.g. ring buffer alloc failure) without skipping their teardown. */
@@ -1484,7 +1475,24 @@ void usbd_uvc_deinit(void)
 			return;
 		}
 
-		usbd_unregister_class();
+		/* Refused in interrupt context: the ISR may still use what is released below */
+		ret = usbd_unregister_class();
+		if (ret != RTK_SUCCESS) {
+			return;
+		}
+	}
+
+	/* Drop any request still waiting for its data stage, so a re-init cannot inherit it and
+	   dispatch a stale payload. No class callback runs once unregistered. */
+	cdev->ctrl_req_pending = 0U;
+
+#ifdef CONFIG_USBD_COMPOSITE
+	if (cdev->from_composite == 0U)
+#endif
+	{
+		usbd_uvc_video_t *video = &cdev->video;
+		u8 wait_cnt = 0U;
+
 		cdev->init_done = 0U;
 		cdev->res_created = 0U;
 		cdev->running = 0U;

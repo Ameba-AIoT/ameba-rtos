@@ -367,7 +367,15 @@ sock_inc_used_locked(struct lwip_sock *sock)
   LWIP_ASSERT("sock != NULL", sock != NULL);
 
   if (sock->fd_free_pending) {
-    LWIP_ASSERT("sock->fd_used != 0", sock->fd_used != 0);
+/* Modified by Realtek start */
+    /* No assertion on fd_used here (see lwIP bug #68700): once a deferred free
+     * has completed, fd_used == 0 while fd_free_pending stays set until
+     * alloc_socket() reuses the slot. That is a valid state, reachable from
+     * select()/poll() whenever a closed fd is still in the fd_set (not FD_CLR'ed).
+     * Refusing the socket (as sock_inc_used() does) lets the caller report
+     * EBADF instead of aborting.
+     */
+/* Modified by Realtek end */
     return 0;
   }
 
@@ -2122,7 +2130,16 @@ lwip_select(int maxfdp1, fd_set *readset, fd_set *writeset, fd_set *exceptset,
             (exceptset && FD_ISSET(i, exceptset))) {
           struct lwip_sock *sock;
           SYS_ARCH_PROTECT(lev);
-          sock = tryget_socket_unconn_locked(i);
+/* Modified by Realtek start */
+          /* Use the 'nouse' variant (see lwIP bug #57445, fixed in 2.1.3): if the
+           * socket was closed by another thread while we were waiting
+           * (fd_free_pending set), tryget_socket_unconn_locked() returns NULL and
+           * select_waiting would leak, later tripping "select_waiting == 0" in
+           * alloc_socket(). used_sockets holds a reference for the whole call,
+           * so the slot cannot be freed and no extra reference is needed here.
+           */
+          sock = tryget_socket_unconn_nouse(i);
+          LWIP_ASSERT("socket gone at the end of select", sock != NULL);
           if (sock != NULL) {
             /* for now, handle select_waiting==0... */
             LWIP_ASSERT("sock->select_waiting > 0", sock->select_waiting > 0);
@@ -2130,7 +2147,7 @@ lwip_select(int maxfdp1, fd_set *readset, fd_set *writeset, fd_set *exceptset,
               sock->select_waiting--;
             }
             SYS_ARCH_UNPROTECT(lev);
-            done_socket(sock);
+/* Modified by Realtek end */
           } else {
             SYS_ARCH_UNPROTECT(lev);
             /* Not a valid socket */

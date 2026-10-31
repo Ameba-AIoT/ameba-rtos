@@ -61,7 +61,7 @@ static int whc_cb_setup(usb_setup_req_t *req, u8 *buf);
 static int whc_cb_set_config(void);
 static int whc_cb_clear_config(void);
 static int whc_cb_received(usbd_whc_ep_t *out_ep, u32 len);
-static void whc_cb_transmitted(usbd_whc_ep_t *in_ep, u8 status);
+static void whc_cb_transmitted(usbd_whc_ep_t *in_ep, int status);
 static void whc_cb_status_changed(u8 old_status, u8 status);
 
 /* Private variables ---------------------------------------------------------*/
@@ -270,12 +270,12 @@ static int whc_cb_setup(usb_setup_req_t *req, u8 *buf)
 	UNUSED(buf);
 
 	/* Unsupported: let the class STALL EP0 as per USB 2.0 9.2.7 */
-	return HAL_ERR_PARA;
+	return -RTK_ERR_BADARG;
 }
 
 static int whc_wifi_init(void)
 {
-	int ret = HAL_OK;
+	int ret = RTK_SUCCESS;
 	usbd_whc_app_t *iapp = &usbd_whc_app;
 	usbd_whc_app_ep_t *ep;
 	u8 ep_num;
@@ -285,7 +285,7 @@ static int whc_wifi_init(void)
 	ep->buf_len = WHC_WIFI_BULK_IN_BUF_SIZE;
 	ep->buf = (u8 *)usb_os_malloc(ep->buf_len);
 	if (ep->buf == NULL) {
-		ret = HAL_ERR_MEM;
+		ret = -RTK_ERR_NOMEM;
 		goto wifi_init_exit;
 	}
 
@@ -294,7 +294,7 @@ static int whc_wifi_init(void)
 	ep->buf_len = WHC_WIFI_BULK_OUT_1_BUF_SIZE;
 	ep->buf = (u8 *)usb_os_malloc(ep->buf_len);
 	if (ep->buf == NULL) {
-		ret = HAL_ERR_MEM;
+		ret = -RTK_ERR_NOMEM;
 		goto wifi_init_clean_bulk_in_buf_exit;
 	}
 
@@ -303,7 +303,7 @@ static int whc_wifi_init(void)
 	ep->buf_len = WHC_WIFI_BULK_OUT_2_BUF_SIZE;
 	ep->buf = (u8 *)usb_os_malloc(ep->buf_len);
 	if (ep->buf == NULL) {
-		ret = HAL_ERR_MEM;
+		ret = -RTK_ERR_NOMEM;
 		goto wifi_init_clean_bulk_out_1_buf_exit;
 	}
 
@@ -312,11 +312,11 @@ static int whc_wifi_init(void)
 	ep->buf_len = WHC_WIFI_BULK_OUT_3_BUF_SIZE;
 	ep->buf = (u8 *)usb_os_malloc(ep->buf_len);
 	if (ep->buf == NULL) {
-		ret = HAL_ERR_MEM;
+		ret = -RTK_ERR_NOMEM;
 		goto wifi_init_clean_bulk_out_2_buf_exit;
 	}
 
-	return HAL_OK;
+	return RTK_SUCCESS;
 
 wifi_init_clean_bulk_out_2_buf_exit:
 	ep = &iapp->out_ep[USB_EP_NUM(USBD_WHC_WIFI_EP_BULK_OUT_2)];
@@ -340,7 +340,7 @@ wifi_init_exit:
 #ifdef CONFIG_WHC_ETH
 static int whc_eth_init(void)
 {
-	int ret = HAL_OK;
+	int ret = RTK_SUCCESS;
 	usbd_whc_app_t *iapp = &usbd_whc_app;
 	usbd_whc_app_ep_t *ep;
 	u8 ep_num;
@@ -350,7 +350,7 @@ static int whc_eth_init(void)
 	ep->buf_len = WHC_ETH_BULK_IN_BUF_SIZE;
 	ep->buf = (u8 *)usb_os_malloc(ep->buf_len);
 	if (ep->buf == NULL) {
-		ret = HAL_ERR_MEM;
+		ret = -RTK_ERR_NOMEM;
 		goto eth_init_exit;
 	}
 
@@ -359,11 +359,11 @@ static int whc_eth_init(void)
 	ep->buf_len = WHC_ETH_BULK_OUT_BUF_SIZE;
 	ep->buf = (u8 *)usb_os_malloc(ep->buf_len);
 	if (ep->buf == NULL) {
-		ret = HAL_ERR_MEM;
+		ret = -RTK_ERR_NOMEM;
 		goto eth_init_clean_bulk_in_buf_exit;
 	}
 
-	return HAL_OK;
+	return RTK_SUCCESS;
 
 eth_init_clean_bulk_in_buf_exit:
 	ep = &iapp->in_ep[USB_EP_NUM(USBD_WHC_ETH_EP_BULK_IN)];
@@ -377,7 +377,7 @@ eth_init_exit:
 
 static int whc_bt_init(void)
 {
-	int ret = HAL_OK;
+	int ret = RTK_SUCCESS;
 	usbd_whc_app_t *iapp = &usbd_whc_app;
 	usbd_whc_app_ep_t *ep;
 	u8 ep_num;
@@ -387,7 +387,7 @@ static int whc_bt_init(void)
 	ep->buf_len = WHC_BT_INTR_IN_BUF_SIZE;
 	ep->buf = (u8 *)usb_os_malloc(ep->buf_len);
 	if (ep->buf == NULL) {
-		ret = HAL_ERR_MEM;
+		ret = -RTK_ERR_NOMEM;
 		goto bt_init_exit;
 	}
 
@@ -396,7 +396,7 @@ static int whc_bt_init(void)
 	ep->buf_len = WHC_BT_BULK_IN_BUF_SIZE;
 	ep->buf = (u8 *)usb_os_malloc(ep->buf_len);
 	if (ep->buf == NULL) {
-		ret = HAL_ERR_MEM;
+		ret = -RTK_ERR_NOMEM;
 		goto bt_init_clean_intr_in_buf_exit;
 	}
 
@@ -405,11 +405,11 @@ static int whc_bt_init(void)
 	ep->buf_len = WHC_BT_BULK_OUT_BUF_SIZE;
 	ep->buf = (u8 *)usb_os_malloc(ep->buf_len);
 	if (ep->buf == NULL) {
-		ret = HAL_ERR_MEM;
+		ret = -RTK_ERR_NOMEM;
 		goto bt_init_clean_bulk_in_buf_exit;
 	}
 
-	return HAL_OK;
+	return RTK_SUCCESS;
 
 bt_init_clean_bulk_in_buf_exit:
 	ep = &iapp->in_ep[USB_EP_NUM(USBD_WHC_BT_EP_BULK_IN)];
@@ -432,28 +432,28 @@ bt_init_exit:
   */
 static int whc_cb_init(void)
 {
-	int ret = HAL_OK;
+	int ret = RTK_SUCCESS;
 
 	ret = whc_wifi_init();
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		goto init_exit;
 	}
 
 	if (usbd_whc_is_bt_en()) {
 		ret = whc_bt_init();
-		if (ret != HAL_OK) {
+		if (ret != RTK_SUCCESS) {
 			goto init_deinit_wifi_exit;
 		}
 	}
 
 #ifdef CONFIG_WHC_ETH
 	ret = whc_eth_init();
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		goto init_deinit_bt_exit;
 	}
 #endif
 
-	return HAL_OK;
+	return RTK_SUCCESS;
 
 #ifdef CONFIG_WHC_ETH
 init_deinit_bt_exit:
@@ -484,7 +484,7 @@ static int whc_cb_deinit(void)
 	if (usbd_whc_is_bt_en()) {
 		whc_bt_deinit();
 	}
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 /**
@@ -517,7 +517,7 @@ static int whc_cb_set_config(void)
 	usbd_whc_receive_data(USBD_WHC_ETH_EP_BULK_OUT, ep->buf, ep->buf_len, NULL);
 #endif
 
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 /**
@@ -529,7 +529,7 @@ static int whc_cb_set_config(void)
   */
 static int whc_cb_clear_config(void)
 {
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 /**
@@ -593,7 +593,7 @@ static int whc_cb_received(usbd_whc_ep_t *out_ep, u32 len)
 		break;
 	}
 
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 /**
@@ -604,7 +604,7 @@ static int whc_cb_received(usbd_whc_ep_t *out_ep, u32 len)
   * @param  status: Transfer completion status
   * @retval None
   */
-static void whc_cb_transmitted(usbd_whc_ep_t *in_ep, u8 status)
+static void whc_cb_transmitted(usbd_whc_ep_t *in_ep, int status)
 {
 	usbd_ep_t *ep = &in_ep->ep;
 
@@ -801,12 +801,12 @@ static void example_usbd_whc_thread(void *param)
 #endif
 
 	ret = usbd_init(&whc_cfg);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		goto exit;
 	}
 
 	ret = usbd_whc_init(&whc_cb);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		goto clear_usb_driver_exit;
 	}
 

@@ -9,6 +9,7 @@
 #include "usbd.h"
 #include "usbd_uvc.h"
 #include "usbd_video.h"
+#include "usb_video.h"
 
 /* Private defines -----------------------------------------------------------*/
 
@@ -50,9 +51,9 @@ u8 usbd_uvc_descriptors[] = {
 	0x08, 0x0B,             // bLength, bDescriptorType = IAD
 	0x00,                   // bFirstInterface
 	0x02,                   // bInterfaceCount (VC + VS)
-	0x0E,                   // bFunctionClass = CC_VIDEO
-	0x03,                   // bFunctionSubClass = SC_VIDEO_INTERFACE_COLLECTION
-	0x00,                   // bFunctionProtocol
+	USB_VIDEO_CLASS_CODE,   // bFunctionClass = CC_VIDEO
+	USB_VIDEO_SUBCLASS_INTERFACE_COLLECTION, // bFunctionSubClass = SC_VIDEO_INTERFACE_COLLECTION
+	USB_VIDEO_PROTOCOL_UNDEFINED, // bFunctionProtocol
 	0x00,                   // iFunction
 
 	/* =========================
@@ -62,9 +63,9 @@ u8 usbd_uvc_descriptors[] = {
 	0x00,                   // bInterfaceNumber
 	0x00,                   // bAlternateSetting
 	0x01,                   // bNumEndpoints
-	0x0E,                   // bInterfaceClass = CC_VIDEO
-	0x01,                   // bInterfaceSubClass = SC_VIDEOCONTROL
-	0x00,                   // bInterfaceProtocol
+	USB_VIDEO_CLASS_CODE,   // bInterfaceClass = CC_VIDEO
+	USB_VIDEO_SUBCLASS_VIDEOCONTROL, // bInterfaceSubClass = SC_VIDEOCONTROL
+	USB_VIDEO_PROTOCOL_UNDEFINED, // bInterfaceProtocol
 	0x00,                   // iInterface
 
 	/* =========================
@@ -156,9 +157,9 @@ u8 usbd_uvc_descriptors[] = {
 	0x01,                   // bInterfaceNumber = 1
 	0x00,                   // bAlternateSetting = 0 (zero-bandwidth)
 	0x00,                   // bNumEndpoints = 0
-	0x0E,                   // bInterfaceClass = CC_VIDEO
-	0x02,                   // bInterfaceSubClass = SC_VIDEOSTREAMING
-	0x00,                   // bInterfaceProtocol = PC_PROTOCOL_UNDEFINED
+	USB_VIDEO_CLASS_CODE,   // bInterfaceClass = CC_VIDEO
+	USB_VIDEO_SUBCLASS_VIDEOSTREAMING, // bInterfaceSubClass = SC_VIDEOSTREAMING
+	USB_VIDEO_PROTOCOL_UNDEFINED, // bInterfaceProtocol = PC_PROTOCOL_UNDEFINED
 	0x00,                   // iInterface
 
 	/* =========================
@@ -225,9 +226,9 @@ u8 usbd_uvc_descriptors[] = {
 	0x01,                   // bInterfaceNumber = 1
 	0x01,                   // bAlternateSetting = 1 (active streaming)
 	0x01,                   // bNumEndpoints = 1 (ISOC IN)
-	0x0E,                   // bInterfaceClass = CC_VIDEO
-	0x02,                   // bInterfaceSubClass = SC_VIDEOSTREAMING
-	0x00,                   // bInterfaceProtocol = PC_PROTOCOL_UNDEFINED
+	USB_VIDEO_CLASS_CODE,   // bInterfaceClass = CC_VIDEO
+	USB_VIDEO_SUBCLASS_VIDEOSTREAMING, // bInterfaceSubClass = SC_VIDEOSTREAMING
+	USB_VIDEO_PROTOCOL_UNDEFINED, // bInterfaceProtocol = PC_PROTOCOL_UNDEFINED
 	0x00,                   // iInterface
 
 	/* =========================
@@ -332,9 +333,9 @@ u8 usbd_uvc_descriptors[] = {
 	0x0B,                                           /* bDescriptorType: IAD */
 	0x00,                                           /* bFirstInterface: VC (0) */
 	0x02,                                           /* bInterfaceCount: VC + VS */
-	0x0E,                                           /* bFunctionClass: CC_VIDEO */
-	0x03,                                           /* bFunctionSubClass: SC_VIDEO_INTERFACE_COLLECTION */
-	0x00,                                           /* bFunctionProtocol */
+	USB_VIDEO_CLASS_CODE,                           /* bFunctionClass: CC_VIDEO */
+	USB_VIDEO_SUBCLASS_INTERFACE_COLLECTION,        /* bFunctionSubClass: SC_VIDEO_INTERFACE_COLLECTION */
+	USB_VIDEO_PROTOCOL_UNDEFINED,                   /* bFunctionProtocol */
 	0x00,                                           /* iFunction */
 
 	/* ===== VideoControl Interface, Alt 0 (9 bytes) ===== */
@@ -343,9 +344,9 @@ u8 usbd_uvc_descriptors[] = {
 	0x00,                                           /* bInterfaceNumber: 0 */
 	0x00,                                           /* bAlternateSetting */
 	0x00,                                           /* bNumEndpoints: 0 (status interrupt endpoint removed, DK-22) */
-	0x0E,                                           /* bInterfaceClass: CC_VIDEO */
-	0x01,                                           /* bInterfaceSubClass: SC_VIDEOCONTROL */
-	0x00,                                           /* bInterfaceProtocol */
+	USB_VIDEO_CLASS_CODE,                           /* bInterfaceClass: CC_VIDEO */
+	USB_VIDEO_SUBCLASS_VIDEOCONTROL,                /* bInterfaceSubClass: SC_VIDEOCONTROL */
+	USB_VIDEO_PROTOCOL_UNDEFINED,                   /* bInterfaceProtocol */
 	0x00,                                           /* iInterface */
 
 	/* ===== Class-specific VC Interface Header (13 bytes) [UVC1.5 Tbl 3-3] ===== */
@@ -422,9 +423,9 @@ u8 usbd_uvc_descriptors[] = {
 	0x01,                                           /* bInterfaceNumber: 1 */
 	0x00,                                           /* bAlternateSetting: 0 */
 	0x00,                                           /* bNumEndpoints: 0 */
-	0x0E,                                           /* bInterfaceClass: CC_VIDEO */
-	0x02,                                           /* bInterfaceSubClass: SC_VIDEOSTREAMING */
-	0x00,                                           /* bInterfaceProtocol */
+	USB_VIDEO_CLASS_CODE,                           /* bInterfaceClass: CC_VIDEO */
+	USB_VIDEO_SUBCLASS_VIDEOSTREAMING,              /* bInterfaceSubClass: SC_VIDEOSTREAMING */
+	USB_VIDEO_PROTOCOL_UNDEFINED,                   /* bInterfaceProtocol */
 	0x00,                                           /* iInterface */
 
 	/* ===== Class-specific VS Input Header (18 bytes) [UVC1.5 Tbl 3-14] ===== */
@@ -628,9 +629,9 @@ u8 usbd_uvc_descriptors[] = {
 	0x01,                                           /* bInterfaceNumber = 1 (VS) */
 	0x01,                                           /* bAlternateSetting = 1 (active) */
 	0x01,                                           /* bNumEndpoints = 1 */
-	0x0E,                                           /* bInterfaceClass = CC_VIDEO */
-	0x02,                                           /* bInterfaceSubClass = SC_VIDEOSTREAMING */
-	0x00,                                           /* bInterfaceProtocol = PC_PROTOCOL_UNDEFINED */
+	USB_VIDEO_CLASS_CODE,                           /* bInterfaceClass = CC_VIDEO */
+	USB_VIDEO_SUBCLASS_VIDEOSTREAMING,              /* bInterfaceSubClass = SC_VIDEOSTREAMING */
+	USB_VIDEO_PROTOCOL_UNDEFINED,                   /* bInterfaceProtocol = PC_PROTOCOL_UNDEFINED */
 	0x00,                                           /* iInterface = 0 (no string) */
 
 	/* Isochronous Endpoint (7 bytes) — ISOC IN, HS high-bandwidth 3x1024 */

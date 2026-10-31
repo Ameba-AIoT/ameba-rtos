@@ -45,11 +45,11 @@ None
 
 4. Type following command from Ameba LOGUART console to send mouse data to PC:
 	```
-	# mouse <left> <right> <middle> <x_axis> <y_axis> <wheel>
+	# AT+USBDHID=mouse,<left>,<right>,<middle>,<x>,<y>,<wheel>
 	```
 	E.g., to move mouse cursor to right by 50 pixels:
 	```
-	# mouse 0 0 0 50 0 0
+	# AT+USBDHID=mouse,0,0,0,50,0,0
 	```
 	Then the position of PC mouse pointer shall be changed accordingly, and following log is printed:
 	```
@@ -70,7 +70,7 @@ None
 
 | Command | Description |
 | --- | --- |
-| `mouse <left> <right> <middle> <x_axis> <y_axis> <wheel>` | Send one HID mouse report to the host. Only `<left>` is mandatory, the remaining arguments default to 0. The axis values are clamped to the -127..127 range declared by the mouse report descriptor. |
+| `AT+USBDHID=mouse,<left>[,<right>,<middle>,<x>,<y>,<wheel>]` | Send one HID mouse report to the host. Only `<left>` is mandatory, the remaining arguments default to 0. `<left>`/`<right>`/`<middle>`: `0` or `1` (pressed); `<x>`/`<y>`/`<wheel>`: -127..127, the range the mouse report descriptor declares. Any other value is rejected. |
 
 # Note
 

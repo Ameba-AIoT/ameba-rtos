@@ -16,6 +16,7 @@ typedef enum atcmd_log_type_e {
 	atcmd_log_type_set = 1,
 	atcmd_log_type_print_all = 2,
 	atcmd_log_type_clear_all = 3,
+	atcmd_log_type_console_drop = 4,
 	atcmd_log_type_invalid
 } atcmd_log_type;
 

@@ -7,6 +7,7 @@
 /* this file is build in no secure img, function in this file will call NSC functions */
 
 #include "ameba_soc.h"
+#include "fault_injection_hardening.h"
 #include "ssl_rom_to_ram_map.h"
 
 static const char *const TAG = "BOOT";

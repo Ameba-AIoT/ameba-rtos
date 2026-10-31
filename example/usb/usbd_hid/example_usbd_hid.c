@@ -11,6 +11,7 @@
 #include "basic_types.h"
 #include "usbd_hid.h"
 #include "os_wrapper.h"
+#include "atcmd_service.h"
 
 /* Private defines -----------------------------------------------------------*/
 
@@ -82,7 +83,7 @@ typedef struct {
 static void hid_cb_init(void);
 static void hid_cb_deinit(void);
 static void hid_cb_setup(void);
-static void hid_cb_transmitted(u8 status);
+static void hid_cb_transmitted(int status);
 #ifdef CONFIG_USBD_HID_KEYBOARD
 static void hid_cb_received(u8 *buf, u32 len);
 #endif
@@ -90,7 +91,8 @@ static void hid_cb_status_changed(u8 old_status, u8 status);
 
 #if HID_MOUSE_CMD
 #ifdef CONFIG_USBD_HID_MOUSE
-static u32 hid_cmd_mouse_data(u16 argc, u8  *argv[]);
+static int hid_cmd_mouse_data(u16 argc, u8  *argv[]);
+static void hid_cmd_mouse_data_at(u16 argc, char **argv);
 #endif
 #endif
 
@@ -211,9 +213,10 @@ static const usbd_hid_usr_cb_t hid_usr_cb = {
 /* Exported variables --------------------------------------------------------*/
 
 #if HID_MOUSE_CMD && defined(CONFIG_USBD_HID_MOUSE)
-CMD_TABLE_DATA_SECTION
-const COMMAND_TABLE usbd_hid_mouse_data_cmd[] = {
-	{"mouse", hid_cmd_mouse_data},
+/* AT commands "AT+<cmd>=<p1>,<p2>...": the command name is case-sensitive, the parameters are not */
+ATCMD_TABLE_DATA_SECTION
+const log_item_t usbd_hid_mouse_data_cmd[] = {
+	{"+USBDHID", hid_cmd_mouse_data_at},
 };
 #endif
 
@@ -303,7 +306,7 @@ static void hid_cb_setup(void)
   * @param  status: Transfer completion status
   * @retval None
   */
-static void hid_cb_transmitted(u8 status)
+static void hid_cb_transmitted(int status)
 {
 	UNUSED(status);
 #if HID_CONSTANT_DATA
@@ -322,11 +325,9 @@ static void hid_cb_transmitted(u8 status)
   */
 static void hid_cb_received(u8 *buf, u32 len)
 {
+	/* ISR context: no logging per report, it would stretch the interrupt for every OUT packet */
 	UNUSED(buf);
 	UNUSED(len);
-	if (len > 0) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "RX %d byte(s): 0x%02x\n", len, buf[0]);
-	}
 }
 #endif
 
@@ -352,73 +353,108 @@ static void hid_cb_status_changed(u8 old_status, u8 status)
 
 #if HID_MOUSE_CMD
 #ifdef CONFIG_USBD_HID_MOUSE
-/* The mouse report declares LOGICAL_MINIMUM(-127)/LOGICAL_MAXIMUM(127) (Ref HID 1.11 6.2.2.7),
-   so clamp explicitly: narrowing the unsigned parse result to char would silently wrap */
-static char hid_mouse_axis(const u8 *str)
+/* Parse a whole-string decimal in [min, max], an optional leading '-' allowed for a negative min */
+static int hid_parse_s32(const u8 *str, s32 min, s32 max, s32 *val)
 {
-	s32 val = (s32)strtoul((const char *)str, (char **)NULL, 10);
+	const char *p = (const char *)str;
+	char *end = NULL;
+	u32 mag;
+	s32 num;
+	u8 neg = 0U;
 
-	if (val > 127) {
-		val = 127;
-	} else if (val < -127) {
-		val = -127;
+	if (p == NULL) {
+		return -RTK_ERR_BADARG;
+	}
+	if (*p == '-') {
+		neg = 1U;
+		p++;
+	}
+	if ((*p < '0') || (*p > '9')) {
+		return -RTK_ERR_BADARG;
+	}
+	mag = (u32)strtoul(p, &end, 10);
+	if ((end == NULL) || (*end != '\0') || (mag > 0x7FFFFFFFU)) {
+		return -RTK_ERR_BADARG;
+	}
+	num = (neg != 0U) ? -(s32)mag : (s32)mag;
+	if ((num < min) || (num > max)) {
+		return -RTK_ERR_BADARG;
 	}
 
-	return (char)val;
+	*val = num;
+	return RTK_SUCCESS;
 }
 
-/* Each button is a 1-bit field with LOGICAL_MINIMUM(0)/LOGICAL_MAXIMUM(1) (Ref HID 1.11 6.2.2.7), so
-   map any non-zero input to pressed: narrowing the unsigned parse result to u8 would drop high bits */
-static u8 hid_mouse_button(const u8 *str)
+static void hid_cmd_usage(void)
 {
-	u8 pressed = 0U;
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Usage: AT+USBDHID=<cmd>[,<args>]\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "  mouse,<left>[,<right>,<middle>,<x>,<y>,<wheel>]\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "        Send one mouse report. left/right/middle: 0|1 (1 = pressed)\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "        x/y/wheel: relative move -127..127; omitted args are 0. Needs the host to have configured the device\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "  help  Print this help\n");
+}
 
-	if (strtoul((const char *)str, (char **)NULL, 10) != 0UL) {
-		pressed = 1U;
+/* Fill a mouse report from "mouse <left> [<right> <middle> <x> <y> <wheel>]", argv[0] being "mouse" */
+static int hid_parse_mouse(u16 argc, u8 *argv[], usbd_hid_mouse_data_t *data)
+{
+	s32 val[6] = {0};
+	s32 min;
+	u16 i;
+
+	if ((argc < 2U) || (argc > 7U)) {
+		return -RTK_ERR_BADARG;
+	}
+	for (i = 1U; i < argc; i++) {
+		/* Buttons are 1-bit fields, the axes LOGICAL_MINIMUM(-127)/LOGICAL_MAXIMUM(127), Ref HID 1.11 6.2.2.7 */
+		min = (i <= 3U) ? 0 : -127;
+		if (hid_parse_s32(argv[i], min, (i <= 3U) ? 1 : 127, &val[i - 1U]) != RTK_SUCCESS) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid arg %d: %s\n", i, argv[i]);
+			return -RTK_ERR_BADARG;
+		}
 	}
 
-	return pressed;
+	usb_os_memset((void *)data, 0, sizeof(*data));
+	data->left = (u8)val[0];
+	data->right = (u8)val[1];
+	data->middle = (u8)val[2];
+	data->x_axis = (char)val[3];
+	data->y_axis = (char)val[4];
+	data->wheel = (char)val[5];
+	return RTK_SUCCESS;
 }
 
-static u32 hid_cmd_mouse_data(u16 argc, u8  *argv[])
+static int hid_cmd_mouse_data(u16 argc, u8  *argv[])
 {
 	usbd_hid_mouse_data_t data;
 
-	if (argc == 0U) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid arguments, usage:\n"
-				 "mouse <left> [<right> <middle> <x_axis> <y_axis> <wheel>]\n");
-		return HAL_ERR_PARA;
+	if ((argc == 0U) || (_stricmp((const char *)argv[0], "help") == 0) || (_stricmp((const char *)argv[0], "?") == 0)) {
+		hid_cmd_usage();
+		return (argc == 0U) ? -RTK_ERR_BADARG : RTK_SUCCESS;
 	}
-
-	usb_os_memset((void *)&data, 0, sizeof(data));
-
-	if (argc > 0) {
-		data.left = hid_mouse_button(argv[0]);
+	if (_stricmp((const char *)argv[0], "mouse") != 0) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid cmd: %s, try AT+USBDHID=help\n", argv[0]);
+		return -RTK_ERR_BADARG;
 	}
-
-	if (argc > 1) {
-		data.right = hid_mouse_button(argv[1]);
-	}
-
-	if (argc > 2) {
-		data.middle = hid_mouse_button(argv[2]);
-	}
-
-	if (argc > 3) {
-		data.x_axis = hid_mouse_axis(argv[3]);
-	}
-
-	if (argc > 4) {
-		data.y_axis = hid_mouse_axis(argv[4]);
-	}
-
-	if (argc > 5) {
-		data.wheel = hid_mouse_axis(argv[5]);
+	if (hid_parse_mouse(argc, argv, &data) != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Usage: AT+USBDHID=mouse,<left>[,<right>,<middle>,<x>,<y>,<wheel>]\n");
+		return -RTK_ERR_BADARG;
 	}
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Send mouse data\n");
 
 	return (u32)hid_send_device_data(&data);
+}
+
+/* AT entry: argv[0] is reserved by the AT parser and argv[1] holds the first parameter */
+static void hid_cmd_mouse_data_at(u16 argc, char **argv)
+{
+	int ret = hid_cmd_mouse_data((argc != 0U) ? (argc - 1U) : 0U, (u8 **)&argv[1]);
+
+	if (ret == RTK_SUCCESS) {
+		at_printf(ATCMD_OK_END_STR);
+	} else {
+		at_printf(ATCMD_ERROR_END_STR, (int)ret);
+	}
 }
 #endif
 #endif  //HID_MOUSE_CMD
@@ -432,7 +468,7 @@ static u32 hid_cmd_mouse_data(u16 argc, u8  *argv[])
   * @note   Also reachable from the shell thread through the mouse command, i.e.
   *         before the example is started and after it has aborted
   * @param  pdata: Mouse or keyboard data to send
-  * @retval Result of the operation: HAL_OK if success else fail
+  * @retval Result of the operation: RTK_SUCCESS if success else fail
   */
 static int hid_send_device_data(const void *pdata)
 {
@@ -479,14 +515,14 @@ static int hid_send_device_data(const void *pdata)
 	 * mutex stays valid and the re-check below skips the TX */
 	if (hid_stack_ready == 0U) {
 		RTK_LOGS(TAG, RTK_LOG_WARN, "Stack not ready, skip TX\n");
-		return HAL_ERR_HW;
+		return -RTK_ERR_IO;
 	}
 
 	rtos_mutex_take(hid_state_mutex, RTOS_MAX_TIMEOUT);
 	if (hid_stack_ready == 0U) {
 		/* Lost the race against a hotplug tear down */
 		RTK_LOGS(TAG, RTK_LOG_WARN, "Stack torn down, skip TX\n");
-		ret = HAL_ERR_HW;
+		ret = -RTK_ERR_IO;
 	} else {
 #ifdef CONFIG_USBD_HID_MOUSE
 		ret = usbd_hid_send_data((const u8 *)byte, 4);
@@ -630,7 +666,7 @@ static void example_usbd_hid_xfer_thread(void *param)
 					RTK_LOGS(TAG, RTK_LOG_WARN, "TX timeout\n");
 					goto session_end;
 				}
-				if (hid_send_device_data(&mdata[i]) != HAL_OK) {
+				if (hid_send_device_data(&mdata[i]) != RTK_SUCCESS) {
 					goto session_end;
 				}
 				rtos_time_delay_ms(delaytime);
@@ -671,7 +707,7 @@ static void example_usbd_hid_thread(void *param)
 {
 	int ret;
 #if HID_HOTPLUG
-	rtos_task_t hotplug_task;
+	rtos_task_t hotplug_task = NULL;
 #endif
 #if HID_CONSTANT_DATA
 	rtos_task_t xfer_task;
@@ -751,18 +787,29 @@ static void example_usbd_hid_thread(void *param)
 	rtos_task_delete(NULL);
 	return;
 
+#if HID_HOTPLUG || HID_CONSTANT_DATA
 #if HID_CONSTANT_DATA
 exit_create_hotplug_task_fail:
-#if HID_HOTPLUG
-	rtos_task_delete(hotplug_task);
 #endif
-#endif
-
 #if HID_HOTPLUG
 exit_usbd_hid_init_fail:
 #endif
+	/* Same exclusion as the hotplug teardown: once the mutex is held no shell TX is inside
+	   the class API and the hotplug thread is not in the middle of a teardown, so closing the
+	   gate, stopping that thread and deiniting cannot race either of them */
+	rtos_mutex_take(hid_state_mutex, RTOS_MAX_TIMEOUT);
 	hid_stack_ready = 0U;
+#if HID_CONSTANT_DATA && HID_HOTPLUG
+	if (hotplug_task != NULL) {
+		rtos_task_delete(hotplug_task);
+	}
+#endif
 	usbd_hid_deinit();
+
+	usbd_deinit();
+	rtos_mutex_give(hid_state_mutex);
+	goto exit_create_obj_fail;
+#endif
 
 exit_usbd_init_fail:
 	usbd_deinit();

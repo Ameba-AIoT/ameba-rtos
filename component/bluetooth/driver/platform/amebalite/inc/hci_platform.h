@@ -27,7 +27,9 @@
 #define HCI_BT_COEX_SW_MAILBOX     0
 #define HCI_BT_COEX_BR_EDR_SUPPORT   1
 
-#define HCI_BT_KEEP_AWAKE          0
+#define HCI_BT_POWER_SAVE_MODE     1    /* 0: Controller does not support power save
+                                           1: Controller auto power save
+                                           2: Host wants to keep controller awake */
 
 #define hci_platform_record_chipid(__chipid)  (__chipid)
 
@@ -42,6 +44,10 @@ void rtk_bt_post_enable(void);
 uint8_t hci_platform_open(void);
 void hci_platform_close(void);
 void hci_platform_free(void);
+
+void hci_platform_register_bt_wake_host_irq(void);
+void hci_platform_unregister_bt_wake_host_irq(void);
+void hci_platform_op_bt_wake_host_irq(bool op);
 
 void hci_platform_debug_enable(void);
 

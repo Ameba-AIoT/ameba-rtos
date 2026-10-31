@@ -4,6 +4,18 @@ static const char *TAG = "example_main";
 
 static control_status_t g_control_status = EXAMPLE_CONTROL_INIT;
 static gpio_t g_led_obj;
+static rtos_queue_t g_ctrl_q;
+
+/**
+ * @brief Control message passed from the wifi cast receive callback to the control task.
+ */
+struct example_ctrl_msg {
+	u8  mac[ETH_ALEN];
+	u16 len;
+	u8  value;
+	s8  rssi;
+	u16 type;
+};
 
 static void example_control_light_cb(u8 *src_mac, u32 status)
 {
@@ -40,20 +52,43 @@ static void example_control_bind_cb(u8 *src_mac, u32 status)
 	rtos_mem_free(node);
 }
 
+static void example_recv_cb_task(void *param)
+{
+	(void)param;
+	struct example_ctrl_msg msg;
+
+	while (1) {
+		if (RTK_SUCCESS != rtos_queue_receive(g_ctrl_q, &msg, 0xFFFFFFFF)) {
+			continue;
+		}
+		RTK_LOGI(TAG, MAC_FMT", len: %d, rssi: %d, type: %x\n", MAC_ARG(msg.mac), msg.len, msg.rssi, msg.type);
+		if (msg.type & WIFI_CAST_CONTROL_LIGHT) {
+			example_control_light_cb(msg.mac, msg.value);
+		} else if (msg.type & WIFI_CAST_CONTROL_BIND) {
+			example_control_bind_cb(msg.mac, msg.value);
+		}
+	}
+	rtos_task_delete(NULL);
+}
+
+
 static void example_recv_callback(wifi_cast_node_t *pnode, unsigned char *buf, unsigned int len, signed char rssi)
 {
-	if (len < sizeof(struct example_frame_head)) {
+	struct example_ctrl_msg msg;
+
+	/* Need the frame header plus the one-byte control value after it. */
+	if (len < sizeof(struct example_frame_head) + 1) {
 		return;
 	}
 
 	struct example_frame_head *hdr = (struct example_frame_head *)buf;
-	u8 value = *(buf + sizeof(struct example_frame_head));
-	RTK_LOGI(TAG, MAC_FMT", len: %d, rssi: %d, type: %x\n", MAC_ARG(pnode->mac), len, rssi, hdr->type);
-	if (hdr->type & WIFI_CAST_CONTROL_LIGHT) {
-		example_control_light_cb(pnode->mac, value);
-	} else if (hdr->type & WIFI_CAST_CONTROL_BIND) {
-		example_control_bind_cb(pnode->mac, value);
-	}
+	memcpy(msg.mac, pnode->mac, ETH_ALEN);
+	msg.len = len;
+	msg.value = *(buf + sizeof(struct example_frame_head));
+	msg.rssi = rssi;
+	msg.type = hdr->type;
+
+	rtos_queue_send(g_ctrl_q, &msg, 0);
 }
 
 static void example_led_init(void)
@@ -131,6 +166,17 @@ static void example_main_task(void *param)
 	UNUSED(param);
 	rtos_time_delay_ms(2000);
 	RTK_LOGI(TAG, "------------->start\n");
+
+	if (rtos_queue_create(&g_ctrl_q, 8, sizeof(struct example_ctrl_msg)) != RTK_SUCCESS) {
+		RTK_LOGE(TAG, "Failed to create ctrl queue\n\r");
+		rtos_task_delete(NULL);
+		return;
+	}
+	if (rtos_task_create(NULL, "example_recv_cb_task", example_recv_cb_task, NULL, 512 * 4, 1) != RTK_SUCCESS) {
+		RTK_LOGE(TAG, "Failed to create example_recv_cb_task\n\r");
+		rtos_task_delete(NULL);
+		return;
+	}
 
 	wifi_cast_config_t config = WIFI_CAST_INIT_CONFIG_DEFAULT();
 	WIFI_CAST_ERROR_CHECK(wifi_cast_init(&config));

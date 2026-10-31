@@ -156,10 +156,21 @@ u32 SOLO_Rxi300TimoutHandler(void *param)
 		/* let platform1 reset */
 		Platform1_Reset();
 	} else {
-		/* Non-timeout error (e.g. code 0x01 = address-hole: a master accessed an
-		 * unmapped address). Log the offending address ONCE and clear the error */
-		RTK_LOGI(TAG, "rxi300_handler err: code=%x addr=%08x\n", code, (unsigned int)RXI_300->ADR0);
-		RXI_300->INT_CLR = RXI300_BIT_ERR_INTR_CLR;
+		/* Non-timeout error. Both error logs can raise RXI300_IRQ, so log and clear whichever is set,
+		 * otherwise the IRQ stays asserted and re-enters forever:
+		 *  - NS ELR (PLD0..INT_CLR), e.g. code 0x01 = address-hole: a master accessed an unmapped address.
+		 *  - S ELR (PLD0_S..INT_CLR_S), code 0x02 = secure fault, e.g. KM55NS hit a KM55TZ-only region blocked by MPC/PPC. */
+		u32 code_s = RXI_300->CODE_S;
+
+		if (code) {
+			RTK_LOGI(TAG, "rxi300_handler err: code=%x addr=%08x\n", code, (unsigned int)RXI_300->ADR0);
+			RXI_300->INT_CLR = RXI300_BIT_ERR_INTR_CLR;
+		}
+
+		if (code_s) {
+			RTK_LOGI(TAG, "rxi300_handler sec err: code=%x id=%x addr=%08x\n", code_s, (unsigned int)RXI_300->ID_S, (unsigned int)RXI_300->ADR0_S);
+			RXI_300->INT_CLR_S = RXI300_BIT_ERR_INTR_CLR_S;
+		}
 	}
 
 	InterruptEn(RXI300_IRQ, INT_PRI_HIGHEST);

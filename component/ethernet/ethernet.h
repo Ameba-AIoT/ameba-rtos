@@ -8,11 +8,12 @@ enum prehandler_ret {
 	UPLOAD_TO_LWIP = 0x1,
 };
 
-typedef void (*link_up_down_callback)(int link_up);
 typedef enum prehandler_ret(*eth_rx_prehandler_t)(struct pbuf **p, u8 *buf, u32 len);
+
+extern rtos_sema_t eth_link_sema;
+
 void eth_init(void);
 int eth_send(struct pbuf *p);
 void eth_register_rx_patch(eth_rx_prehandler_t pfunc1);
-void eth_register_link_cb(link_up_down_callback pfunc);
 
 #endif // __MII_ETHERNETIF_H__

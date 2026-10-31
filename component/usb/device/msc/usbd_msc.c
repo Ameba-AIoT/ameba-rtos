@@ -48,7 +48,7 @@ static int usbd_msc_set_config(usb_dev_t *dev, u8 config);
 static void usbd_msc_clear_config(usb_dev_t *dev, u8 config);
 static int usbd_msc_setup(usb_dev_t *dev, usb_setup_req_t *req);
 static u16 usbd_msc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16 buf_len);
-static int usbd_msc_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status);
+static int usbd_msc_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, int status);
 static int usbd_msc_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len);
 static void usbd_msc_status_changed(usb_dev_t *dev, u8 old_status, u8 status);
 
@@ -218,7 +218,7 @@ static int usbd_msc_media_init(void)
 	/* FATFS is mounted by the app; MSC only does raw I/O. */
 	return RAM_disk_Driver.disk_initialize();
 #else
-	return HAL_ERR_PARA;		/* unreachable: a media is enforced at the top of the file */
+	return -RTK_ERR_BADARG;		/* unreachable: a media is enforced at the top of the file */
 #endif
 }
 
@@ -239,7 +239,7 @@ static void usbd_msc_media_deinit(void)
 #elif defined CONFIG_USBD_MSC_RAM
 	status = RAM_disk_Driver.disk_deinitialize();
 #else
-	status = HAL_ERR_PARA;	/* unreachable: a media is enforced at the top of the file */
+	status = -RTK_ERR_BADARG;	/* unreachable: a media is enforced at the top of the file */
 #endif
 
 	/* Best effort: a backend that cannot unmount cleanly is reported here. Nothing can be done
@@ -269,7 +269,7 @@ static int usbd_msc_media_getcapacity(u32 *sector_count)
 #elif defined CONFIG_USBD_MSC_RAM
 	ret = RAM_disk_Driver.disk_ioctl(GET_SECTOR_COUNT, &count);
 #else
-	ret = HAL_ERR_PARA;		/* unreachable: a media is enforced at the top of the file */
+	ret = -RTK_ERR_BADARG;		/* unreachable: a media is enforced at the top of the file */
 #endif
 	if (ret == 0) {
 		*sector_count = (u32)count;
@@ -291,7 +291,7 @@ static int usbd_msc_media_readblocks(u32 sector, u8 *data, u32 count)
 #elif defined CONFIG_USBD_MSC_RAM
 	return RAM_disk_Driver.disk_read(data, sector, count);
 #else
-	return HAL_ERR_PARA;		/* unreachable: a media is enforced at the top of the file */
+	return -RTK_ERR_BADARG;		/* unreachable: a media is enforced at the top of the file */
 #endif
 }
 
@@ -308,7 +308,7 @@ static int usbd_msc_media_writeblocks(u32 sector, const u8 *data, u32 count)
 #elif defined CONFIG_USBD_MSC_RAM
 	return RAM_disk_Driver.disk_write(data, sector, count);
 #else
-	return HAL_ERR_PARA;		/* unreachable: a media is enforced at the top of the file */
+	return -RTK_ERR_BADARG;		/* unreachable: a media is enforced at the top of the file */
 #endif
 }
 
@@ -335,7 +335,7 @@ static void usbd_msc_abort(usb_dev_t *dev)
 		 * CBW. Without it the EP is neither stalled nor listening once the halt is
 		 * cleared by CLEAR_FEATURE or SET_CONFIGURATION. A failure means the device is no longer ready
 		 * (suspend/disconnect), the host then recovers by reset. */
-		if (usbd_msc_bulk_receive(dev, (u8 *)cbw, USB_MSC_CBW_LEN, USBD_MSC_CBW_BUF_LEN) != HAL_OK) {
+		if (usbd_msc_bulk_receive(dev, (u8 *)cbw, USB_MSC_CBW_LEN, USBD_MSC_CBW_BUF_LEN) != RTK_SUCCESS) {
 			RTK_LOGS(TAG, RTK_LOG_WARN, "EP%02x xfer err\n", cdev->cfg->bulk_out_addr);
 		}
 	}
@@ -377,7 +377,7 @@ static void usbd_msc_defer_csw(usb_dev_t *dev, u8 status)
 	usbd_ep_set_stall(dev, &cdev->ep_bulk_in);
 
 	/* A failure means the device is no longer ready (suspend/disconnect), the host then recovers by reset */
-	if (usbd_msc_bulk_receive(dev, (u8 *)cdev->cbw, USB_MSC_CBW_LEN, USBD_MSC_CBW_BUF_LEN) != HAL_OK) {
+	if (usbd_msc_bulk_receive(dev, (u8 *)cdev->cbw, USB_MSC_CBW_LEN, USBD_MSC_CBW_BUF_LEN) != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_WARN, "EP%02x xfer err\n", cdev->cfg->bulk_out_addr);
 	}
 }
@@ -392,7 +392,7 @@ static void usbd_msc_defer_csw(usb_dev_t *dev, u8 status)
   */
 static int usbd_msc_set_config(usb_dev_t *dev, u8 config)
 {
-	int ret = HAL_OK;
+	int ret = RTK_SUCCESS;
 	usbd_msc_dev_t *cdev = &usbd_msc_dev;
 	usbd_ep_t *ep_bulk_in = &cdev->ep_bulk_in;
 	usbd_ep_t *ep_bulk_out = &cdev->ep_bulk_out;
@@ -400,7 +400,7 @@ static int usbd_msc_set_config(usb_dev_t *dev, u8 config)
 
 	/* Only the bConfigurationValue advertised in the config descriptor is valid */
 	if (config != 1U) {
-		return HAL_ERR_PARA;
+		return -RTK_ERR_BADARG;
 	}
 
 	cdev->dev = dev;
@@ -408,17 +408,26 @@ static int usbd_msc_set_config(usb_dev_t *dev, u8 config)
 	/* Init BULK IN EP */
 	info = &ep_bulk_in->info;
 	info->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_MSC_HS_MAX_PACKET_SIZE : USBD_MSC_FS_MAX_PACKET_SIZE;
-	usbd_ep_init(dev, ep_bulk_in);
+	ret = usbd_ep_init(dev, ep_bulk_in);
+	if (ret != RTK_SUCCESS) {
+		usbd_msc_clear_config(dev, config);
+		return ret;
+	}
 
 	/* Init BULK OUT EP */
 	info = &ep_bulk_out->info;
 	info->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_MSC_HS_MAX_PACKET_SIZE : USBD_MSC_FS_MAX_PACKET_SIZE;
-	usbd_ep_init(dev, ep_bulk_out);
+	ret = usbd_ep_init(dev, ep_bulk_out);
+	if (ret != RTK_SUCCESS) {
+		usbd_msc_clear_config(dev, config);
+		return ret;
+	}
 
 	cdev->bot_state = USBD_MSC_IDLE;
 	cdev->bot_status = USBD_MSC_STATUS_NORMAL;
 	usb_os_memset((void *)&cdev->scsi_sense, 0U, sizeof(cdev->scsi_sense));
 	cdev->is_open = 1U;
+	cdev->prevent_removal = 0U;
 	cdev->ro = 0U;
 	cdev->phase_error = 0U;
 	cdev->bot_reset_pending = 0U;
@@ -428,7 +437,7 @@ static int usbd_msc_set_config(usb_dev_t *dev, u8 config)
 	/* Prepare to receive next BULK OUT packet. Without it the device would enumerate but never see a CBW, so
 	   fail the configuration and let the core stall SET_CONFIGURATION instead. */
 	ret = usbd_msc_bulk_receive(dev, (u8 *)cdev->cbw, USB_MSC_CBW_LEN, USBD_MSC_CBW_BUF_LEN);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		usbd_msc_clear_config(dev, config);
 	}
 
@@ -475,7 +484,7 @@ static int usbd_msc_setup(usb_dev_t *dev, usb_setup_req_t *req)
 	usbd_msc_dev_t *cdev = &usbd_msc_dev;
 	usbd_ep_t *ep0_in = &dev->ep0_in;
 	u8 ep_addr = USB_LOW_BYTE(req->wIndex);
-	int ret = HAL_OK;
+	int ret = RTK_SUCCESS;
 
 	//RTK_LOGS(TAG, RTK_LOG_DEBUG, "SETUP: bmRequestType=0x%02x bRequest=0x%02x wLength=0x%04x wValue=%x\n",
 	//		 req->bmRequestType, req->bRequest, req->wLength, req->wValue);
@@ -494,7 +503,7 @@ static int usbd_msc_setup(usb_dev_t *dev, usb_setup_req_t *req)
 				ep0_in->xfer_len = 2U;
 				ret = usbd_ep_transmit(dev, ep0_in);
 			} else {
-				ret = HAL_ERR_PARA;
+				ret = -RTK_ERR_BADARG;
 			}
 			break;
 
@@ -506,21 +515,21 @@ static int usbd_msc_setup(usb_dev_t *dev, usb_setup_req_t *req)
 				ep0_in->xfer_len = 1U;
 				ret = usbd_ep_transmit(dev, ep0_in);
 			} else {
-				ret = HAL_ERR_PARA;
+				ret = -RTK_ERR_BADARG;
 			}
 			break;
 
 		case USB_REQ_CLEAR_FEATURE:
 			/* Offered by the core only once it has validated an ENDPOINT_HALT request on an opened endpoint.
-			   HAL_OK means the class has handled the halt itself and the core only ACKs the request; any other
+			   RTK_SUCCESS means the class has handled the halt itself and the core only ACKs the request; any other
 			   value, including a foreign endpoint in composite mode, lets the core clear the halt as usual. */
 			if (((req->bmRequestType & USB_REQ_RECIPIENT_MASK) != USB_REQ_RECIPIENT_ENDPOINT) ||
 				((ep_addr != cdev->cfg->bulk_in_addr) && (ep_addr != cdev->cfg->bulk_out_addr))) {
-				ret = HAL_ERR_PARA;
+				ret = -RTK_ERR_BADARG;
 			} else if (cdev->wedged != 0U) {
 				/* Ref MSC BOT 1.0 6.6.1: after an invalid CBW both bulk endpoints stay halted until Reset
 				   Recovery, so keep the halt. */
-				ret = HAL_OK;
+				ret = RTK_SUCCESS;
 			} else if ((ep_addr == cdev->cfg->bulk_in_addr) && (cdev->csw_pending != 0U)) {
 				/* Ref MSC BOT 1.0 6.7.2: the halt ended a failed Data-In stage, see usbd_msc_defer_csw(). Once
 				   the host clears it the CSW follows on Bulk-In, so clear the halt (data toggle DATA0) before
@@ -528,19 +537,19 @@ static int usbd_msc_setup(usb_dev_t *dev, usb_setup_req_t *req)
 				   CSW is sent; the MSC threads do not touch Bulk-In or the CSW meanwhile. */
 				cdev->csw_pending = 0U;
 				usbd_ep_clear_stall(dev, &cdev->ep_bulk_in);
-				if (usbd_msc_bulk_transmit(dev, (u8 *)cdev->csw, USB_MSC_CSW_LEN) != HAL_OK) {
+				if (usbd_msc_bulk_transmit(dev, (u8 *)cdev->csw, USB_MSC_CSW_LEN) != RTK_SUCCESS) {
 					USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_XFER, cdev->cfg->bulk_in_addr);
 				}
-				ret = HAL_OK;
+				ret = RTK_SUCCESS;
 			} else {
-				ret = HAL_ERR_PARA;
+				ret = -RTK_ERR_BADARG;
 			}
 			break;
 
 		case USB_REQ_SET_INTERFACE:
 			if (dev->dev_state != USBD_STATE_CONFIGURED) {
-				ret = HAL_ERR_PARA;
-			} else if ((req->wIndex == USBD_MSC_ITF_NUM) && (USB_LOW_BYTE(req->wValue) == 0U)) {
+				ret = -RTK_ERR_BADARG;
+			} else if ((req->wIndex == USBD_MSC_ITF_NUM) && (req->wValue == 0U)) {
 				/* Ref USB 2.0 9.4.10: the endpoints of the selected interface return to
 				   their default state, not halted and data toggle DATA0. This holds even
 				   for an interface with the default setting only, hosts do send the
@@ -563,26 +572,26 @@ static int usbd_msc_setup(usb_dev_t *dev, usb_setup_req_t *req)
 				/* Ref USB 2.0 9.4.9: this function declares alternate setting 0 only, so any
 				   other bAlternateSetting is a request error; likewise a foreign interface
 				   number, which must be rejected for composite dispatch to continue. */
-				ret = HAL_ERR_PARA;
+				ret = -RTK_ERR_BADARG;
 			}
 			break;
 
 
 		default:
-			ret = HAL_ERR_PARA;
+			ret = -RTK_ERR_BADARG;
 			break;
 		}
 		break;
 	/* Class request */
 	case USB_REQ_TYPE_CLASS:
 		if ((req->bmRequestType & USB_REQ_RECIPIENT_MASK) != USB_REQ_RECIPIENT_INTERFACE) {
-			ret = HAL_ERR_PARA;
+			ret = -RTK_ERR_BADARG;
 			break;
 		}
 		/* Ref MSC BOT 1.0 3.1 and 3.2: wIndex of both class requests is the interface number.
 		   A foreign interface must be rejected so that composite dispatch can continue. */
 		if (req->wIndex != USBD_MSC_ITF_NUM) {
-			ret = HAL_ERR_PARA;
+			ret = -RTK_ERR_BADARG;
 			break;
 		}
 		switch (req->bRequest) {
@@ -594,7 +603,7 @@ static int usbd_msc_setup(usb_dev_t *dev, usb_setup_req_t *req)
 				/* A failed submit makes the core stall the request, as for the standard requests above */
 				ret = usbd_ep_transmit(dev, ep0_in);
 			} else {
-				ret = HAL_ERR_PARA;
+				ret = -RTK_ERR_BADARG;
 			}
 			break;
 
@@ -612,18 +621,18 @@ static int usbd_msc_setup(usb_dev_t *dev, usb_setup_req_t *req)
 				/* Prepare to receive BOT cmd. On failure stall the reset so the host escalates to a port reset. */
 				ret = usbd_msc_bulk_receive(dev, (u8 *)cdev->cbw, USB_MSC_CBW_LEN, USBD_MSC_CBW_BUF_LEN);
 			} else {
-				ret = HAL_ERR_PARA;
+				ret = -RTK_ERR_BADARG;
 			}
 			break;
 
 		default:
-			ret = HAL_ERR_PARA;
+			ret = -RTK_ERR_BADARG;
 			break;
 		}
 		break;
 
 	default:
-		ret = HAL_ERR_PARA;
+		ret = -RTK_ERR_BADARG;
 		break;
 	}
 
@@ -638,7 +647,7 @@ static int usbd_msc_setup(usb_dev_t *dev, usb_setup_req_t *req)
   * @param  ep_addr: endpoint address
   * @retval Status
   */
-static int usbd_msc_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status)
+static int usbd_msc_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, int status)
 {
 	usbd_msc_dev_t *cdev = &usbd_msc_dev;
 
@@ -647,13 +656,13 @@ static int usbd_msc_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status)
 	/* Return non-zero if EP is not owned by MSC, so composite
 	 * dispatcher can continue iterating to the correct sub-function. */
 	if (ep_addr != cdev->cfg->bulk_in_addr) {
-		return HAL_ERR_PARA;
+		return -RTK_ERR_BADARG;
 	}
 
 	cdev->tx_status = status;
-	rtos_sema_give(cdev->tx_sema);
+	usb_os_sema_give(cdev->tx_sema);
 
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 /**
@@ -669,12 +678,16 @@ static void usbd_msc_tx_process(void)
 	usb_dev_t *dev = cdev->dev;
 	u8 csw_status;
 
-	usb_os_lock(usbd_msc_sd_lock);
+	/* Without the lock the TX thread could race the RX one on the medium and the BOT state */
+	if (usb_os_lock(usbd_msc_sd_lock) != RTK_SUCCESS) {
+		USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_XFER, cdev->cfg->bulk_in_addr);
+		return;
+	}
 
-	if (cdev->tx_status == HAL_OK) {
+	if (cdev->tx_status == RTK_SUCCESS) {
 		switch (cdev->bot_state) {
 		case USBD_MSC_DATA_IN:
-			if (usbd_scsi_process_cmd(cdev, cbw->field.CBWCB) != HAL_OK) {
+			if (usbd_scsi_process_cmd(cdev, cbw->field.CBWCB) != RTK_SUCCESS) {
 				/* The medium failed after part of the data was sent, and the host still expects the rest on
 				 * Bulk-In, so end the data stage with a halt rather than a CSW. A phase error recorded for this
 				 * command (Case 7, Hi < Di) takes precedence over the medium error, ref BOT 6.7.2, and is
@@ -723,13 +736,15 @@ static int usbd_msc_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len)
 	/* Return non-zero if EP is not owned by MSC, so composite
 	 * dispatcher can continue iterating to the correct sub-function. */
 	if (ep_addr != cdev->cfg->bulk_out_addr) {
-		return HAL_ERR_PARA;
+		return -RTK_ERR_BADARG;
 	}
 
-	cdev->rx_data_length = len;
-	rtos_sema_give(cdev->rx_sema);
+	/* Only a CBW is ever checked against this length, and the Bulk-Out window never exceeds the CBW or
+	   data buffer: a longer value cannot be a CBW, so it is saturated to one that never matches */
+	cdev->rx_data_length = (len > USBD_MSC_CBW_BUF_LEN) ? (u16)USBD_MSC_CBW_BUF_LEN : (u16)len;
+	usb_os_sema_give(cdev->rx_sema);
 
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 /**
@@ -746,7 +761,11 @@ static void usbd_msc_rx_process(void)
 	u32 cbw_data_len = cbw->field.dCBWDataTransferLength;
 	u32 length;
 
-	usb_os_lock(usbd_msc_sd_lock);
+	/* Without the lock the RX thread could race the TX one on the medium and the BOT state */
+	if (usb_os_lock(usbd_msc_sd_lock) != RTK_SUCCESS) {
+		USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_XFER, cdev->cfg->bulk_out_addr);
+		return;
+	}
 
 	switch (cdev->bot_state) {
 	case USBD_MSC_IDLE:
@@ -779,7 +798,7 @@ static void usbd_msc_rx_process(void)
 			/* A valid CBW proves the host has already cleared the halts, e.g. by SET_CONFIGURATION, which the
 			   core handles without the class, so an older wedge no longer applies. */
 			cdev->wedged = 0U;
-			if (usbd_scsi_process_cmd(cdev, cbwcb) != HAL_OK) {
+			if (usbd_scsi_process_cmd(cdev, cbwcb) != RTK_SUCCESS) {
 				if (cdev->phase_error != 0U) {
 					if ((cbw_data_len != 0U) && ((cbw->field.bmCBWFlags & 0x80U) == 0U)) {
 						/* Case 13: Ho < Do — the host still owns an OUT data stage that the
@@ -819,7 +838,7 @@ static void usbd_msc_rx_process(void)
 					csw->field.bCSWStatus = BOT_CSW_CMD_PASSED;
 					cdev->bot_state = USBD_MSC_SEND_DATA;
 
-					if (usbd_msc_bulk_transmit(dev, cdev->data, length) != HAL_OK) {
+					if (usbd_msc_bulk_transmit(dev, cdev->data, length) != RTK_SUCCESS) {
 						RTK_LOGS(TAG, RTK_LOG_WARN, "EP%02x xfer err\n", cdev->cfg->bulk_in_addr);
 					}
 				} else if (cdev->data_length == 0U) {
@@ -839,7 +858,14 @@ static void usbd_msc_rx_process(void)
 		break;
 
 	case USBD_MSC_DATA_OUT:
-		if (usbd_scsi_process_cmd(cdev, cbwcb) != HAL_OK) {
+		if (usbd_scsi_process_cmd(cdev, cbwcb) != RTK_SUCCESS) {
+			/* Ref MSC BOT 1.0 6.7.3: the medium failed on a chunk while the host still owns the rest of the OUT
+			   data stage. STALL Bulk-Out so those bytes are not read as the next CBW, as for Case 9/13 above; the
+			   CSW flows on the un-stalled Bulk-In pipe. Not when the failing chunk was the last one: the host
+			   has sent everything, and a halt would only fail its next CBW. */
+			if (usbd_scsi_out_data_pending(cdev) != 0U) {
+				usbd_ep_set_stall(dev, &cdev->ep_bulk_out);
+			}
 			usbd_msc_send_csw(dev, BOT_CSW_CMD_FAILED);
 		}
 
@@ -869,16 +895,23 @@ static void usbd_msc_patch_desc(u8 *desc, u16 len)
 	const usbd_msc_config_t *cfg = cdev->cfg;
 
 	for (u16 i = 0U; i < len;) {
-		u8 dlen = desc[i];
-		u8 dtype = desc[i + 1];
-		if (dlen == 0U) {
+		u8 dlen;
+		u8 dtype;
+
+		/* Read a header only when it fits, and patch a descriptor only when its bLength fits what is left */
+		if (((u32)len - i) < USB_LEN_DESC_HEADER) {
+			break;
+		}
+		dlen = desc[i];
+		dtype = desc[i + 1U];
+		if ((dlen < USB_LEN_DESC_HEADER) || ((u32)dlen > ((u32)len - i))) {
 			break;
 		}
 
-		if ((dtype == USB_DESC_TYPE_ENDPOINT) && ((i + 3U) <= len)) {
+		if ((dtype == USB_DESC_TYPE_ENDPOINT) && (dlen >= USB_LEN_EP_DESC)) {
 			u8 addr  = desc[i + 2];
 			u8 dir   = addr & USB_REQ_DIR_MASK;
-			u8 type  = desc[i + 3] & 0x03U;
+			u8 type  = desc[i + 3] & USB_EP_XFER_TYPE_MASK;
 
 			if ((dir == USB_D2H) && (type == USB_CH_EP_TYPE_BULK)) {
 				desc[i + 2] = cfg->bulk_in_addr;
@@ -1015,7 +1048,7 @@ static void usbd_msc_rx_thread(void *param)
 	UNUSED(param);
 
 	for (;;) {
-		if (rtos_sema_take(cdev->rx_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
+		if (usb_os_sema_take(cdev->rx_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
 			usbd_msc_rx_process();
 		}
 	}
@@ -1028,7 +1061,7 @@ static void usbd_msc_tx_thread(void *param)
 	UNUSED(param);
 
 	for (;;) {
-		if (rtos_sema_take(cdev->tx_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
+		if (usb_os_sema_take(cdev->tx_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
 			usbd_msc_tx_process();
 		}
 	}
@@ -1041,14 +1074,14 @@ static void usbd_msc_tx_thread(void *param)
   * @param  dst: Destination field inside the INQUIRY response
   * @param  len: Field width in bytes
   * @param  str: Configured string, NULL to leave the default in place
-  * @retval HAL_OK on success, HAL_ERR_PARA when the string is longer than the field
+  * @retval RTK_SUCCESS on success, -RTK_ERR_BADARG when the string is longer than the field
   */
 static int usbd_msc_set_inquiry_field(u8 *dst, u32 len, const char *str)
 {
 	u32 i;
 
 	if (str == NULL) {
-		return HAL_OK;
+		return RTK_SUCCESS;
 	}
 
 	for (i = 0U; (i < len) && (str[i] != '\0'); i++) {
@@ -1057,14 +1090,14 @@ static int usbd_msc_set_inquiry_field(u8 *dst, u32 len, const char *str)
 
 	/* A longer string would be silently truncated into a different identity, so reject it. */
 	if (str[i] != '\0') {
-		return HAL_ERR_PARA;
+		return -RTK_ERR_BADARG;
 	}
 
 	for (; i < len; i++) {
 		dst[i] = (u8)' ';
 	}
 
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 /**
@@ -1073,7 +1106,7 @@ static int usbd_msc_set_inquiry_field(u8 *dst, u32 len, const char *str)
   *         fields the configuration supplies, so every other byte keeps its spec-defined value.
   * @param  cdev: Device instance
   * @param  cfg: Class configuration
-  * @retval HAL_OK on success, HAL_ERR_PARA when an identification string does not fit
+  * @retval RTK_SUCCESS on success, -RTK_ERR_BADARG when an identification string does not fit
   */
 static int usbd_msc_build_inquiry_data(usbd_msc_dev_t *cdev, const usbd_msc_config_t *cfg)
 {
@@ -1081,14 +1114,14 @@ static int usbd_msc_build_inquiry_data(usbd_msc_dev_t *cdev, const usbd_msc_conf
 
 	usb_os_memcpy((void *)data, (const void *)usbd_msc_default_inquiry_data, INQUIRY_DATA_LEN);
 
-	if ((usbd_msc_set_inquiry_field(&data[8], USBD_MSC_INQUIRY_VENDOR_LEN, cfg->inquiry_vendor) != HAL_OK) ||
-		(usbd_msc_set_inquiry_field(&data[16], USBD_MSC_INQUIRY_PRODUCT_LEN, cfg->inquiry_product) != HAL_OK) ||
-		(usbd_msc_set_inquiry_field(&data[32], USBD_MSC_INQUIRY_REVISION_LEN, cfg->inquiry_revision) != HAL_OK)) {
+	if ((usbd_msc_set_inquiry_field(&data[8], USBD_MSC_INQUIRY_VENDOR_LEN, cfg->inquiry_vendor) != RTK_SUCCESS) ||
+		(usbd_msc_set_inquiry_field(&data[16], USBD_MSC_INQUIRY_PRODUCT_LEN, cfg->inquiry_product) != RTK_SUCCESS) ||
+		(usbd_msc_set_inquiry_field(&data[32], USBD_MSC_INQUIRY_REVISION_LEN, cfg->inquiry_revision) != RTK_SUCCESS)) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Inquiry str too long\n");
-		return HAL_ERR_PARA;
+		return -RTK_ERR_BADARG;
 	}
 
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 /**
@@ -1102,16 +1135,16 @@ static int usbd_msc_private_init(const usbd_msc_cb_t *cb, const usbd_msc_config_
 	usbd_ep_t *ep_bulk_in = &cdev->ep_bulk_in;
 	usbd_ep_t *ep_bulk_out = &cdev->ep_bulk_out;
 	usb_ep_info_t *info;
-	int ret = HAL_OK;
+	int ret = RTK_SUCCESS;
 
 	if (cb == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid user CB\n");
-		return HAL_ERR_PARA;
+		return -RTK_ERR_BADARG;
 	}
 
 	if (cfg == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid cfg\n");
-		return HAL_ERR_PARA;
+		return -RTK_ERR_BADARG;
 	}
 
 	/* Both endpoints are mandatory, and a wrong direction bit would make the class claim an
@@ -1121,7 +1154,7 @@ static int usbd_msc_private_init(const usbd_msc_cb_t *cb, const usbd_msc_config_
 		((cfg->bulk_in_addr & (~USB_REQ_DIR_MASK)) == 0U) ||
 		((cfg->bulk_out_addr & (~USB_REQ_DIR_MASK)) == 0U)) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid EP addr %02x/%02x\n", cfg->bulk_in_addr, cfg->bulk_out_addr);
-		return HAL_ERR_PARA;
+		return -RTK_ERR_BADARG;
 	}
 
 	/* READ/WRITE move whole blocks per round trip: a buffer shorter than one block cannot carry a single
@@ -1130,11 +1163,11 @@ static int usbd_msc_private_init(const usbd_msc_cb_t *cb, const usbd_msc_config_
 	cdev->buf_size = (cfg->buf_size != 0U) ? cfg->buf_size : USBD_MSC_DEFAULT_BUF_SIZE;
 	if ((cdev->buf_size < USBD_MSC_BLK_SIZE) || ((cdev->buf_size & (USBD_MSC_BLK_SIZE - 1U)) != 0U)) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Bad buf size %u\n", cdev->buf_size);
-		return HAL_ERR_PARA;
+		return -RTK_ERR_BADARG;
 	}
 
-	if (usbd_msc_build_inquiry_data(cdev, cfg) != HAL_OK) {
-		return HAL_ERR_PARA;
+	if (usbd_msc_build_inquiry_data(cdev, cfg) != RTK_SUCCESS) {
+		return -RTK_ERR_BADARG;
 	}
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Init\n");
@@ -1151,36 +1184,36 @@ static int usbd_msc_private_init(const usbd_msc_cb_t *cb, const usbd_msc_config_
 	ops->disk_write = usbd_msc_media_writeblocks;
 
 	ret = usb_os_lock_create(&usbd_msc_sd_lock);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create lock fail\n");
 		return ret;
 	}
 
 	cdev->data = (u8 *)usb_os_malloc(cdev->buf_size);
 	if (cdev->data == NULL) {
-		ret = HAL_ERR_MEM;
+		ret = -RTK_ERR_NOMEM;
 		goto data_buf_fail;
 	}
 
 	cdev->cbw = (usb_msc_bot_cbw_t *)usb_os_malloc(USBD_MSC_CBW_BUF_LEN);
 	if (cdev->cbw == NULL) {
-		ret = HAL_ERR_MEM;
+		ret = -RTK_ERR_NOMEM;
 		goto cbw_fail;
 	}
 
 	cdev->csw = (usb_msc_bot_csw_t *)usb_os_malloc(USB_MSC_CSW_LEN);
 	if (cdev->csw == NULL) {
-		ret = HAL_ERR_MEM;
+		ret = -RTK_ERR_NOMEM;
 		goto csw_fail;
 	}
 
-	ret = rtos_sema_create(&cdev->rx_sema, 0U, 1U);
+	ret = usb_os_sema_create(&cdev->rx_sema);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create RX sema fail\n");
 		goto create_rx_sema_fail;
 	}
 
-	ret = rtos_sema_create(&cdev->tx_sema, 0U, 1U);
+	ret = usb_os_sema_create(&cdev->tx_sema);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create TX sema fail\n");
 		goto create_tx_sema_fail;
@@ -1191,6 +1224,7 @@ static int usbd_msc_private_init(const usbd_msc_cb_t *cb, const usbd_msc_config_
 						   (cfg->rx_task_priority != 0U) ? cfg->rx_task_priority : USBD_MSC_DEFAULT_RX_TASK_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create RX thread fail\n");
+		ret = -RTK_ERR_NOMEM;
 		goto create_rx_thread_fail;
 	}
 
@@ -1199,6 +1233,7 @@ static int usbd_msc_private_init(const usbd_msc_cb_t *cb, const usbd_msc_config_
 						   (cfg->tx_task_priority != 0U) ? cfg->tx_task_priority : USBD_MSC_DEFAULT_TX_TASK_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create TX thread fail\n");
+		ret = -RTK_ERR_NOMEM;
 		goto create_tx_thread_fail;
 	}
 
@@ -1212,18 +1247,18 @@ static int usbd_msc_private_init(const usbd_msc_cb_t *cb, const usbd_msc_config_
 	info->type = USB_CH_EP_TYPE_BULK;
 
 
-	return HAL_OK;
+	return RTK_SUCCESS;
 
 create_tx_thread_fail:
 	rtos_task_delete(cdev->rx_task);
 	cdev->rx_task = NULL;
 
 create_rx_thread_fail:
-	rtos_sema_delete(cdev->tx_sema);
+	usb_os_sema_delete(cdev->tx_sema);
 	cdev->tx_sema = NULL;
 
 create_tx_sema_fail:
-	rtos_sema_delete(cdev->rx_sema);
+	usb_os_sema_delete(cdev->rx_sema);
 	cdev->rx_sema = NULL;
 
 create_rx_sema_fail:
@@ -1262,9 +1297,13 @@ int usbd_msc_init(const usbd_msc_cb_t *cb, const usbd_msc_config_t *cfg)
 	int ret;
 
 	ret = usbd_msc_private_init(cb, cfg);
-	if (ret == HAL_OK) {
+	if (ret == RTK_SUCCESS) {
 		cdev->from_composite = 0U;
-		usbd_register_class(&usbd_msc_driver);
+		ret = usbd_register_class(&usbd_msc_driver);
+		if (ret != RTK_SUCCESS) {
+			/* private_init completed, so deinit is its exact reverse */
+			usbd_msc_deinit();
+		}
 	}
 	return ret;
 }
@@ -1276,10 +1315,10 @@ int usbd_composite_msc_init(const usbd_msc_cb_t *cb, const usbd_msc_config_t *cf
 	int ret;
 
 	ret = usbd_msc_private_init(cb, cfg);
-	if (ret == HAL_OK) {
+	if (ret == RTK_SUCCESS) {
 		cdev->from_composite = 1U;
 		ret = usbd_composite_register_driver(&usbd_msc_driver);
-		if (ret != HAL_OK) {
+		if (ret != RTK_SUCCESS) {
 			/* private_init completed, so deinit is its exact reverse. from_composite is
 			   already 1, so the unregister inside is a no-op for an unregistered driver. */
 			usbd_msc_deinit();
@@ -1296,27 +1335,26 @@ int usbd_composite_msc_init(const usbd_msc_cb_t *cb, const usbd_msc_config_t *cf
 void usbd_msc_deinit(void)
 {
 	usbd_msc_dev_t *cdev = &usbd_msc_dev;
+	int ret;
 
+	/* Leave the core before anything is torn down. Composite: refused until
+	   usbd_composite_deinit() has blocked the ISR and cleared the configuration of every
+	   function. Standalone: refused in interrupt context. Either way nothing is released when
+	   refused, and once accepted no class callback runs any more and every endpoint of this
+	   class is deinitialized: ref USB 2.0 9.4.7, the transfers still pending are aborted. */
 #ifdef CONFIG_USBD_COMPOSITE
-	/* Leave the composite framework before anything is torn down: it is refused while the
-	   composite device is still registered on the core, and the class must then stay intact */
 	if (cdev->from_composite != 0U) {
-		if (usbd_composite_unregister_driver(&usbd_msc_driver) != HAL_OK) {
-			return;
-		}
-	}
-#endif
-
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Deinit\n");
-
-	/* Unregister first: no endpoint completion can give tx_sema/rx_sema afterwards, so they can
-	   be deleted below without an ISR giving a freed semaphore */
-#ifdef CONFIG_USBD_COMPOSITE
-	if (cdev->from_composite == 0U)
+		ret = usbd_composite_unregister_driver(&usbd_msc_driver);
+	} else
 #endif
 	{
-		usbd_unregister_class();
+		ret = usbd_unregister_class();
 	}
+	if (ret != RTK_SUCCESS) {
+		return;
+	}
+
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Deinit\n");
 
 	/* Both threads hold the lock while they process a command. Taking it waits for a command in
 	   progress to finish, so neither thread is deleted while it owns the lock or uses the buffers
@@ -1333,11 +1371,11 @@ void usbd_msc_deinit(void)
 
 	/* Cleared once deleted, so that a repeated deinit does not delete them again */
 	if (cdev->tx_sema != NULL) {
-		rtos_sema_delete(cdev->tx_sema);
+		usb_os_sema_delete(cdev->tx_sema);
 		cdev->tx_sema = NULL;
 	}
 	if (cdev->rx_sema != NULL) {
-		rtos_sema_delete(cdev->rx_sema);
+		usb_os_sema_delete(cdev->rx_sema);
 		cdev->rx_sema = NULL;
 	}
 
@@ -1365,7 +1403,7 @@ void usbd_msc_deinit(void)
 */
 int usbd_msc_bulk_transmit(usb_dev_t *dev, u8 *buf, u32 len)
 {
-	int ret = HAL_ERR_HW;
+	int ret = -RTK_ERR_IO;
 	usbd_msc_dev_t *cdev = &usbd_msc_dev;
 	usbd_ep_t *ep_bulk_in = &cdev->ep_bulk_in;
 
@@ -1388,7 +1426,7 @@ int usbd_msc_bulk_transmit(usb_dev_t *dev, u8 *buf, u32 len)
 */
 int usbd_msc_bulk_receive(usb_dev_t *dev, u8 *buf, u32 len, u32 buf_len)
 {
-	int ret = HAL_ERR_HW;
+	int ret = -RTK_ERR_IO;
 	usbd_msc_dev_t *cdev = &usbd_msc_dev;
 	usbd_ep_t *ep_bulk_out = &cdev->ep_bulk_out;
 
@@ -1422,7 +1460,7 @@ void usbd_msc_send_csw(usb_dev_t *dev, u8 status)
 	cdev->bot_state = USBD_MSC_IDLE;
 	cdev->bot_status = USBD_MSC_STATUS_NORMAL;
 
-	if (usbd_msc_bulk_transmit(dev, (u8 *)csw, USB_MSC_CSW_LEN) != HAL_OK) {
+	if (usbd_msc_bulk_transmit(dev, (u8 *)csw, USB_MSC_CSW_LEN) != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_WARN, "EP%02x xfer err\n", cdev->cfg->bulk_in_addr);
 	}
 
@@ -1439,7 +1477,7 @@ void usbd_msc_send_csw(usb_dev_t *dev, u8 status)
 	 * (suspend/disconnect); the endpoint is left un-armed and the controller NAKs, which is
 	 * the correct flow control, ref USB 2.0 8.4.6. Keep bot_status in RECOVERY so the next
 	 * Bulk-Only Mass Storage Reset re-arms Bulk-Out instead of resuming a lost BOT phase. */
-	if (usbd_msc_bulk_receive(dev, (u8 *)cbw, USB_MSC_CBW_LEN, USBD_MSC_CBW_BUF_LEN) != HAL_OK) {
+	if (usbd_msc_bulk_receive(dev, (u8 *)cbw, USB_MSC_CBW_LEN, USBD_MSC_CBW_BUF_LEN) != RTK_SUCCESS) {
 		cdev->bot_status = USBD_MSC_STATUS_RECOVERY;
 		RTK_LOGS(TAG, RTK_LOG_WARN, "EP%02x xfer err\n", cdev->cfg->bulk_out_addr);
 	}

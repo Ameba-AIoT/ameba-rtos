@@ -127,6 +127,27 @@ u8 BOOT_OTA_SlotSelect(void)
 	return (Ver[0] >= Ver[1]) ? BOOT_FROM_OTA1 : BOOT_FROM_OTA2;
 }
 
+/* The address and the size in a sub-image header are not authenticated before the image is copied.
+ * Only the memory space and the bootloader's own memory are checked, not how the layout divides it.
+ * The limits are SRAM_END and PSRAM_END of the layout, in the non-secure and in the secure alias
+ * (SRAM_END_ADDRESS_S is SRAM_END + TZ_IDAU_SEC_OFFSET, the layout asserts it, and it is defined in every
+ * configuration, unlike the SOLO only __km4ns_sram_end__). The bootloader's memory is [SRAM_BASE, end of
+ * the IMG1 slot). Peripherals are outside of all of them. */
+static bool BOOT_SubImgDstValid(u32 DstAddr, u32 Len)
+{
+	u32 Img1End = ((u32)__km4tz_bootloader_ram_s_start__ - TZ_IDAU_SEC_OFFSET) + (u32)__img1_sram_size__;
+
+	if (((DstAddr >= SRAM_BASE) && (DstAddr < Img1End))
+		|| ((DstAddr >= SRAM_BASE_S) && (DstAddr < Img1End + TZ_IDAU_SEC_OFFSET))) {
+		return false;
+	}
+
+	return is_memory_range_valid(DstAddr, Len, SRAM_BASE, (u32)SRAM_END_ADDRESS_S - TZ_IDAU_SEC_OFFSET)
+		   || is_memory_range_valid(DstAddr, Len, SRAM_BASE_S, (u32)SRAM_END_ADDRESS_S)
+		   || is_memory_range_valid(DstAddr, Len, PSRAM_BASE, (u32)__non_secure_psram_end__)
+		   || is_memory_range_valid(DstAddr, Len, PSRAM_BASE_S, (u32)__non_secure_psram_end__ + TZ_IDAU_SEC_OFFSET);
+}
+
 fih_ret BOOT_LoadSubImage(SubImgInfo_TypeDef *SubImgInfo, u32 StartAddr, u8 Num, char **ImgName, u8 ErrLog)
 {
 	FIH_DECLARE(fih_rc, FIH_FAILURE);
@@ -135,6 +156,11 @@ fih_ret BOOT_LoadSubImage(SubImgInfo_TypeDef *SubImgInfo, u32 StartAddr, u8 Num,
 	u32 i;
 
 	for (i = 0; i < Num; i++) {
+		/* StartAddr moves by the unauthenticated size of the previous sub-image, keep it in flash */
+		if (!IS_FLASH_ADDR(StartAddr)) {
+			RTK_LOGD(TAG, "%s invalid\n", ImgName[i]);
+			FIH_RET(FIH_FAILURE);
+		}
 		BOOT_ImgCopy((void *)&ImgHdr, (void *)StartAddr, IMAGE_HEADER_LEN);
 		if (_memcmp(ImgHdr.signature, ImagePattern, sizeof(ImagePattern)) != 0) {
 			if (ErrLog == TRUE) {
@@ -145,6 +171,13 @@ fih_ret BOOT_LoadSubImage(SubImgInfo_TypeDef *SubImgInfo, u32 StartAddr, u8 Num,
 
 		DstAddr = ImgHdr.image_addr - IMAGE_HEADER_LEN;
 		Len = ImgHdr.image_size + IMAGE_HEADER_LEN;
+
+		/* header-only sub-image is not copied, skip the destination check */
+		/* anything but flash has to be memory outside of the bootloader, this also refuses a wrapped DstAddr */
+		if (!IS_FLASH_ADDR(DstAddr) && (Len != IMAGE_HEADER_LEN) && !BOOT_SubImgDstValid(DstAddr, Len)) {
+			RTK_LOGD(TAG, "%s invalid\n", ImgName[i]);
+			FIH_RET(FIH_FAILURE);
+		}
 
 		/* np rom code jump address is from NP_BOOT_INDEX */
 		if (ImgHdr.boot_index == NP_BOOT_INDEX) {
@@ -311,7 +344,7 @@ fih_ret BOOT_OTA_LoadIMGAll(u8 ImgIndex)
 	/* Load IMG3 when TrustZone enabled */
 	FIH_CALL(BOOT_DecRDPImg, fih_rc, PhyAddr, &Manifest[ImgIndex], &SubImgInfo[Index], &Cnt);
 	if (FIH_NOT_EQ(fih_rc, FIH_SUCCESS)) {
-		FIH_RET(fih_rc);
+		goto SBOOT_FAIL;
 	}
 	Index += Cnt;
 #endif

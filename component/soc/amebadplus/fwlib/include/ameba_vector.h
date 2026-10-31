@@ -50,8 +50,8 @@ typedef void (*Fault_Patch)(uint32_t *MSP, uint32_t *PSP, uint32_t lr, uint32_t 
   * @{
   */
 extern _LONG_CALL_ void irq_table_init(u32 StackP);
-extern _LONG_CALL_ void irq_enable(IRQn_Type   IrqNum);
-extern _LONG_CALL_ void irq_disable(IRQn_Type   IrqNum);
+extern _LONG_CALL_ void (irq_enable)(IRQn_Type IrqNum);
+extern _LONG_CALL_ void (irq_disable)(IRQn_Type IrqNum);
 extern _LONG_CALL_ void irq_set_priority(IRQn_Type irqn, uint32_t priority);
 extern _LONG_CALL_ uint32_t irq_get_priority(IRQn_Type irqn);
 extern _LONG_CALL_ void irq_set_pending(IRQn_Type irqn);
