@@ -6,9 +6,14 @@
 #include "PinNames.h"
 #include "serial_api.h"
 #include "serial_ex_api.h"
+#include "mbedtls/ecp.h"
+#if defined(CONFIG_MBEDTLS_USE_LEGACY_API)
 #include "mbedtls/entropy.h"
 #include "mbedtls/ctr_drbg.h"
 #include "mbedtls/ecdh.h"
+#else
+#include "psa/crypto.h"
+#endif
 
 #define UART_IDX  0
 #define UART_BAUD_RATE 1500000

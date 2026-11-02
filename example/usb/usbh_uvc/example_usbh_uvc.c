@@ -12,6 +12,7 @@
 #include "basic_types.h"
 #include "os_wrapper.h"
 #include "usbh_uvc.h"
+#include "atcmd_service.h"
 
 /* Private defines -----------------------------------------------------------*/
 
@@ -217,7 +218,7 @@ static volatile u8 uvc_task_alive;
 /* Written by uvc_cb_setparam (class/core context), read by the test thread after
    it takes uvc_setparam_sema. Under SMP those are different cores, so volatile
    keeps the reader from using a value cached before the callback ran. */
-static volatile u8 uvc_setparam_status;
+static volatile int uvc_setparam_status;
 static __IO u8 uvc_task_exiting = 0;
 
 static u64 rx_total_bytes;	/* total received bytes since rx_start; counted once per frame in the capture loop */
@@ -366,7 +367,7 @@ static const usbh_uvc_cb_t uvc_cb = {
 static int uvc_cb_init(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "INIT\n");
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 static void uvc_cb_deinit(void)
@@ -1194,7 +1195,7 @@ static int uvc_httpc_start(void)
 	while (lwip_check_connectivity(NETIF_WLAN_STA_INDEX) != CONNECTION_VALID) {
 		/* A detach must not wait for WiFi, or the hotplug join never finishes */
 		if (uvc_task_exiting != 0U) {
-			return HAL_ERR_HW;
+			return -RTK_ERR_IO;
 		}
 		rtos_time_delay_ms(2000);
 	}
@@ -1205,12 +1206,12 @@ static int uvc_httpc_start(void)
 	 * uploaded this time. */
 	if (!ChipInfo_PsramExists()) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "%s: no PSRAM, upload skipped\n", USBH_UVC_HTTP_TAG);
-		return HAL_ERR_HW;
+		return -RTK_ERR_IO;
 	}
 	uvc_httpc_psramp_base = (u8 *)rtos_heap_types_malloc(USBH_UVC_HTTPC_PSRAM_BUF_SIZE, TYPE_DRAM);
 	if (uvc_httpc_psramp_base == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "%s: PSRAM buffer alloc fail, upload skipped\n", USBH_UVC_HTTP_TAG);
-		return HAL_ERR_MEM;
+		return -RTK_ERR_NOMEM;
 	}
 	ret = rtos_sema_create(&uvc_httpc_done_sema, 0U, 1U);
 	if (ret != RTK_SUCCESS) {
@@ -1342,7 +1343,7 @@ static void example_usbh_uvc_hotplug_thread(void *param)
 			rtos_sema_give(uvc_start_sema);
 			/* Wake uvc_test if it is waiting for the set_param result, which a detached
 			   device never delivers: it would otherwise hold the join for up to 5 s. */
-			uvc_setparam_status = HAL_ERR_HW;
+			uvc_setparam_status = -RTK_ERR_IO;
 			rtos_sema_give(uvc_setparam_sema);
 #if (CONFIG_USBH_UVC_APP == USBH_UVC_APP_HTTPC) && (USBH_UVC_HTTPC_BUFFER_MODE == 0)
 			/* MJPEG upload thread runs while(1); give its sema so it checks uvc_task_exiting and exits. */
@@ -1383,13 +1384,13 @@ static void example_usbh_uvc_hotplug_thread(void *param)
 			uvc_task_exiting = 0;
 
 			ret = usbh_init(&usbh_cfg, NULL);
-			if (ret != HAL_OK) {
+			if (ret != RTK_SUCCESS) {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "Reinit fail\n");
 				break;
 			}
 
 			ret = usbh_uvc_init(&uvc_cb, &uvc_cfg);
-			if (ret != HAL_OK) {
+			if (ret != RTK_SUCCESS) {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "Reinit fail\n");
 				usbh_deinit();
 				break;
@@ -1397,7 +1398,7 @@ static void example_usbh_uvc_hotplug_thread(void *param)
 
 			/* Re-arm USB TRX after the re-init. */
 			ret = usbh_start();
-			if (ret != HAL_OK) {
+			if (ret != RTK_SUCCESS) {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "Reinit fail\n");
 				usbh_uvc_deinit();
 				usbh_deinit();
@@ -1547,7 +1548,7 @@ static void example_usbh_uvc_test(void *param)
 
 		/* Wait for the semaphore indicating the setting is actually completed */
 		if (rtos_sema_take(uvc_setparam_sema, 5000) == RTK_SUCCESS) {
-			if (uvc_setparam_status != HAL_OK) {
+			if (uvc_setparam_status != RTK_SUCCESS) {
 				/* A detach wakes this wait with an error on purpose, refer to the hotplug thread */
 				if (uvc_task_exiting == 0U) {
 					RTK_LOGS(TAG, RTK_LOG_ERROR, "Set paras err: %s %d*%d@%dfps status=%d\n",
@@ -1611,7 +1612,7 @@ static void example_usbh_uvc_test(void *param)
 			/* Upload thread finished 2 MB and cleared uvc_httpc_connected: stop capturing now so
 			 * no frame is logged or counted after "Upload complete". Return this frame unused. */
 			if (uvc_httpc_connected == 0U) {
-				if (usbh_uvc_put_frame(buf, CONFIG_USBH_UVC_STREAM_INDEX) != HAL_OK) {
+				if (usbh_uvc_put_frame(buf, CONFIG_USBH_UVC_STREAM_INDEX) != RTK_SUCCESS) {
 					RTK_LOGS(TAG, RTK_LOG_ERROR, "Put frame fail\n");
 				}
 				break;
@@ -1631,7 +1632,7 @@ static void example_usbh_uvc_test(void *param)
 				usbh_uvc_img_prepare(buf);
 			}
 
-			if (usbh_uvc_put_frame(buf, CONFIG_USBH_UVC_STREAM_INDEX) != HAL_OK) {
+			if (usbh_uvc_put_frame(buf, CONFIG_USBH_UVC_STREAM_INDEX) != RTK_SUCCESS) {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "Put frame fail\n");
 			}
 
@@ -1761,12 +1762,12 @@ static void example_usbh_uvc_task(void *param) {
 	}
 
 	ret = usbh_init(&usbh_cfg, NULL);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		goto free_sema_exit;
 	}
 
 	ret = usbh_uvc_init(&uvc_cb, &uvc_cfg);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		goto usb_deinit_exit;
 	}
 
@@ -1826,7 +1827,7 @@ delete_hotplug_task_exit:
 	uvc_task_exiting = 1;
 	usbh_uvc_stop(CONFIG_USBH_UVC_STREAM_INDEX);
 	rtos_sema_give(uvc_start_sema);
-	uvc_setparam_status = HAL_ERR_HW;
+	uvc_setparam_status = -RTK_ERR_IO;
 	rtos_sema_give(uvc_setparam_sema);
 	{
 		u32 waited = 0U;
@@ -1857,21 +1858,69 @@ example_exit:
 }
 
 #if (CONFIG_USBH_UVC_APP == USBH_UVC_APP_HTTPC)
-static u32 uvch_set_ip(u16 argc, u8 * argv[]) {
-	if (argc == 0 || argv[0] == NULL) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Usage: uvch_set_ip <ip>\n");
-		return HAL_ERR_PARA;
+/* Dotted-quad IPv4 check: four decimal fields 0..255, no leading sign, nothing else */
+static int uvch_check_ip(const char *ip) {
+	u32 field = 0U;
+	u32 digits = 0U;
+	u32 dots = 0U;
+	const char *p;
+
+	for (p = ip; *p != '\0'; p++) {
+		if ((*p >= '0') && (*p <= '9')) {
+			field = (field * 10U) + (u32)(*p - '0');
+			digits++;
+			if ((digits > 3U) || (field > 255U)) {
+				return -RTK_ERR_BADARG;
+			}
+		} else if ((*p == '.') && (digits != 0U) && (dots < 3U)) {
+			dots++;
+			field = 0U;
+			digits = 0U;
+		} else {
+			return -RTK_ERR_BADARG;
+		}
 	}
 
-	snprintf(uvc_httpc_server_ip, sizeof(uvc_httpc_server_ip), "%s", (const char *)argv[0]);
-	RTK_LOGS(TAG, RTK_LOG_INFO, "HTTPC server IP set to: %s\n", uvc_httpc_server_ip);
-
-	return HAL_OK;
+	return ((dots == 3U) && (digits != 0U)) ? RTK_SUCCESS : -RTK_ERR_BADARG;
 }
 
-CMD_TABLE_DATA_SECTION
-const COMMAND_TABLE uvc_httpc_test_cmd_table[] = {
-	{"uvch_set_ip", uvch_set_ip},
+static int uvch_set_ip(u16 argc, u8 * argv[]) {
+	const char *cmd = (argc != 0U) ? (const char *)argv[0] : NULL;
+
+	if ((cmd == NULL) || (_stricmp(cmd, "help") == 0) || (_stricmp(cmd, "?") == 0)) {
+		RTK_LOGS(TAG, RTK_LOG_INFO, "Usage: AT+USBHUVC=<cmd>[,<args>]\n");
+		RTK_LOGS(TAG, RTK_LOG_INFO, "  ip,<a.b.c.d>  IPv4 address of the HTTP server the frames are posted to,\n");
+		RTK_LOGS(TAG, RTK_LOG_INFO, "                default %s; set it before the WiFi/HTTPC connection is up\n", USBH_UVC_HTTPC_SERVER);
+		RTK_LOGS(TAG, RTK_LOG_INFO, "  help          Print this help\n");
+		return (cmd == NULL) ? -RTK_ERR_BADARG : RTK_SUCCESS;
+	}
+
+	if ((_stricmp(cmd, "ip") != 0) || (argc != 2U) || (uvch_check_ip((const char *)argv[1]) != RTK_SUCCESS)) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Usage: AT+USBHUVC=ip,<a.b.c.d>\n");
+		return -RTK_ERR_BADARG;
+	}
+
+	snprintf(uvc_httpc_server_ip, sizeof(uvc_httpc_server_ip), "%s", (const char *)argv[1]);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "HTTPC server IP set to: %s\n", uvc_httpc_server_ip);
+
+	return RTK_SUCCESS;
+}
+
+/* AT entry: argv[0] is reserved by the AT parser and argv[1] holds the first parameter */
+static void uvch_set_ip_at(u16 argc, char **argv) {
+	int ret = uvch_set_ip((argc != 0U) ? (argc - 1U) : 0U, (u8 **)&argv[1]);
+
+	if (ret == RTK_SUCCESS) {
+		at_printf(ATCMD_OK_END_STR);
+	} else {
+		at_printf(ATCMD_ERROR_END_STR, (int)ret);
+	}
+}
+
+/* AT commands "AT+<cmd>=<p1>,<p2>...": the command name is case-sensitive, the parameters are not */
+ATCMD_TABLE_DATA_SECTION
+const log_item_t uvc_httpc_test_cmd_table[] = {
+	{"+USBHUVC", uvch_set_ip_at},
 };
 #endif
 

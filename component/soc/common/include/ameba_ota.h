@@ -20,7 +20,7 @@ extern "C" {
 #define OTA_IMGID_BOOT  0  /* Bootloader */
 #define OTA_IMGID_APP   1  /* Application */
 
-#if defined(CONFIG_AMEBASMART)
+#if defined(CONFIG_AMEBASMART) || (defined(CONFIG_AMEBAPRO3) && defined(CONFIG_LINUX_FW_EN))
 #define OTA_IMGID_APIMG 2  /* Linux AP Image */
 #define OTA_IMGID_MAX   3
 #elif defined(CONFIG_AMEBALITE)

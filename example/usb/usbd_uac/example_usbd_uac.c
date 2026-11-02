@@ -12,6 +12,7 @@
 #include "platform_stdlib.h"
 #include "basic_types.h"
 #include "usbd_uac.h"
+#include "atcmd_service.h"
 
 /* This used to check the USB issue */
 /*
@@ -110,7 +111,8 @@
 /* Private function prototypes -----------------------------------------------*/
 
 #if USBD_UAC_ENABLE_RECORD
-static u32 uac_cmd_record(u16 argc, u8 *argv[]);
+static int uac_cmd_record(u16 argc, u8 *argv[]);
+static void uac_cmd_record_at(u16 argc, char **argv);
 #endif
 
 static int uac_cb_init(void);
@@ -257,9 +259,10 @@ static u8 uac_record_chunk[USBD_UAC_RECORD_CHUNK_LEN] USB_DMA_ALIGNED;
 /* Exported variables --------------------------------------------------------*/
 
 #if USBD_UAC_ENABLE_RECORD
-CMD_TABLE_DATA_SECTION
-const COMMAND_TABLE usbd_uac_cmd_table[] = {
-	{"usbd_uac_record", uac_cmd_record},
+/* AT commands "AT+<cmd>=<p1>,<p2>...": the command name is case-sensitive, the parameters are not */
+ATCMD_TABLE_DATA_SECTION
+const log_item_t usbd_uac_cmd_table[] = {
+	{"+USBDUAC", uac_cmd_record_at},
 };
 #endif /* USBD_UAC_ENABLE_RECORD */
 
@@ -368,7 +371,7 @@ static int uac_cb_setup(usb_setup_req_t *req, u8 *buf)
 
 	/* No vendor request is implemented by this example, reject so that the class
 	   driver makes the core STALL EP0 instead of ACKing an unsupported request */
-	return HAL_ERR_PARA;
+	return -RTK_ERR_BADARG;
 }
 
 /**
@@ -378,7 +381,7 @@ static int uac_cb_setup(usb_setup_req_t *req, u8 *buf)
   */
 static int uac_cb_init(void)
 {
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 /**
@@ -388,7 +391,7 @@ static int uac_cb_init(void)
   */
 static int uac_cb_deinit(void)
 {
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 /**
@@ -401,7 +404,7 @@ static int uac_cb_deinit(void)
 static int uac_cb_set_config(void)
 {
 	//usb ready
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 /**
@@ -582,14 +585,14 @@ static void example_audio_track_play(void)
 
 	/* Fails until the host has enumerated the device or for a format the class does not
 	   declare: wait for the next format change or attach instead of streaming unsized */
-	if (usbd_uac_config(&play_cfg, 0, 0) != HAL_OK) {
+	if (usbd_uac_config(&play_cfg, 0, 0) != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "UAC config fail\n");
 		return;
 	}
 	/* isoc_mps is cleared on deinit, so start_play() keeps failing once the stack is
 	   torn down: leave on any stop request instead of retrying forever. Nothing to
 	   unwind here, no AudioTrack has been created yet. */
-	while (usbd_uac_start_play() != HAL_OK) {
+	while (usbd_uac_start_play() != RTK_SUCCESS) {
 		if ((uac_task_exiting != 0) || (uac_player_stop != 0) || (uac_stack_fatal != 0)) {
 			return;
 		}
@@ -763,10 +766,11 @@ static void example_usbd_uac_audio_track_thread(void *param)
 
 #if USBD_UAC_ENABLE_RECORD
 /* Replays a synthetic 1 kHz tone as the microphone (USB IN) source, once triggered
- * by the "usbd_uac_record" console command. */
+ * by the "USBDUAC record" console command. */
 static void example_usbd_uac_record_thread(void *param)
 {
 	u32 i;
+	u32 tx_fail_cnt;
 	u32 frames = USBD_UAC_RECORD_CHUNK_LEN / (USBD_UAC_IN_DEFAULT_CH_CNT * USBD_UAC_IN_DEFAULT_BYTE_WIDTH);
 	s16 *frame = (s16 *)(void *)uac_record_chunk;
 
@@ -796,21 +800,31 @@ static void example_usbd_uac_record_thread(void *param)
 			continue;
 		}
 
-		if (usbd_uac_config(&uac_record_cfg, 1, 0) != HAL_OK) {
+		if (usbd_uac_config(&uac_record_cfg, 1, 0) != RTK_SUCCESS) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "UAC config fail\n");
 			rtos_mutex_give(uac_record_lock);
 			continue;
 		}
-		if (usbd_uac_start_record() != HAL_OK) {
+		if (usbd_uac_start_record() != RTK_SUCCESS) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "UAC start record fail\n");
 			rtos_mutex_give(uac_record_lock);
 			continue;
 		}
 
 		RTK_LOGS(TAG, RTK_LOG_INFO, "UAC record start\n");
+		tx_fail_cnt = 0U;
 		while (uac_task_exiting == 0) {
 			for (i = 0; i < USBD_UAC_RECORD_SLICES_PER_MS; i++) {
-				usbd_uac_transmit_data(&uac_record_chunk[i * USBD_UAC_RECORD_SLICE_LEN], USBD_UAC_RECORD_SLICE_LEN);
+				/* A live stream tolerates a lost slice, so keep the pace and only report the first
+				   failure of a run, to stay off the console at 8 kHz */
+				if (usbd_uac_transmit_data(&uac_record_chunk[i * USBD_UAC_RECORD_SLICE_LEN], USBD_UAC_RECORD_SLICE_LEN) != RTK_SUCCESS) {
+					if (tx_fail_cnt == 0U) {
+						RTK_LOGS(TAG, RTK_LOG_WARN, "UAC record tx fail\n");
+					}
+					tx_fail_cnt++;
+				} else {
+					tx_fail_cnt = 0U;
+				}
 			}
 			rtos_time_delay_ms(USBD_UAC_RECORD_CHUNK_DELAY_MS);
 		}
@@ -824,21 +838,40 @@ static void example_usbd_uac_record_thread(void *param)
 	rtos_task_delete(NULL);
 }
 
-static u32 uac_cmd_record(u16 argc, u8 *argv[])
+static int uac_cmd_record(u16 argc, u8 *argv[])
 {
-	UNUSED(argc);
-	UNUSED(argv);
+	const char *cmd = (argc != 0U) ? (const char *)argv[0] : NULL;
+
+	if ((cmd == NULL) || (_stricmp(cmd, "record") != 0) || (argc != 1U)) {
+		RTK_LOGS(TAG, RTK_LOG_INFO, "Usage: AT+USBDUAC=<cmd>\n");
+		RTK_LOGS(TAG, RTK_LOG_INFO, "  record   Replay the built-in clip on the mic (USB IN) stream once the host\n");
+		RTK_LOGS(TAG, RTK_LOG_INFO, "           configured it; each call queues one more session. UAC 2.0, non FS-only build only\n");
+		RTK_LOGS(TAG, RTK_LOG_INFO, "  help     Print this help\n");
+		return ((cmd != NULL) && ((_stricmp(cmd, "help") == 0) || (_stricmp(cmd, "?") == 0))) ? RTK_SUCCESS : -RTK_ERR_BADARG;
+	}
 
 	/* NULL only if the example never created it; once created it is never deleted, refer to
 	   uac_free_resource(), so the handle cannot be freed under this shell thread. */
 	if (uac_record_start_sema == NULL) {
-		return (u32)HAL_ERR_HW;
+		return -RTK_ERR_IO;
 	}
 
 	if (rtos_sema_give(uac_record_start_sema) != RTK_SUCCESS) {
-		return (u32)HAL_ERR_HW;
+		return -RTK_ERR_IO;
 	}
-	return (u32)HAL_OK;
+	return RTK_SUCCESS;
+}
+
+/* AT entry: argv[0] is reserved by the AT parser and argv[1] holds the first parameter */
+static void uac_cmd_record_at(u16 argc, char **argv)
+{
+	int ret = uac_cmd_record((argc != 0U) ? (argc - 1U) : 0U, (u8 **)&argv[1]);
+
+	if (ret == RTK_SUCCESS) {
+		at_printf(ATCMD_OK_END_STR);
+	} else {
+		at_printf(ATCMD_ERROR_END_STR, (int)ret);
+	}
 }
 
 #endif /* USBD_UAC_ENABLE_RECORD */
@@ -896,13 +929,13 @@ static void example_usbd_uac_thread(void *param)
 	uac_task_exiting = 0;
 
 	ret = usbd_init(&uac_cfg);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "USB init fail\n");
 		goto exit;
 	}
 
 	ret = usbd_uac_init(&uac_cb, &uac_class_cfg);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "UAC init fail\n");
 		goto clear_usb_driver_exit;
 	}

@@ -8,6 +8,7 @@
 #include "ameba_secure_boot.h"
 #include "bootloader_km55tz.h"
 #include "boot_ota_km55tz.h"
+#include "ameba_ota_rollback.h"
 #ifdef CONFIG_COMPRESS_OTA_IMG
 #include "ameba_boot_lzma.h"
 #endif
@@ -46,28 +47,8 @@ u32 OTA_Region[IMG_TYPE_CNT][2] = {0};
   */
 static s64 BOOT_OTA_GetCertRollbackVer(void)
 {
-	u32 Anti_VerNum = 0, VER0, VER1;
-
-	/* Cert/app version is same, so Anti_VerNum for cert/app can be same */
-	if (SYSCFG_OTP_AntiRollback()) {
-		VER0 = HAL_READ32(OTPC_REG_BASE, SEC_BOOT_VER0);
-		VER1 = HAL_READ32(OTPC_REG_BASE, SEC_BOOT_VER1);
-
-		for (int i = 0; i < 32; i++) {
-			if ((VER0 & BIT(i)) == 0) {
-				Anti_VerNum++;
-			}
-
-			if ((VER1 & BIT(i)) == 0) {
-				Anti_VerNum++;
-			}
-		}
-
-		/*Only Check MajorImgVer with Anti_VerNum in otp*/
-		Anti_VerNum = Anti_VerNum << 16;
-	}
-
-	return Anti_VerNum;
+	/* Only Check MajorImgVer with the APP version in otp, the BOOT version is checked by the ROM */
+	return (s64)OTA_AntiRollback_GetAppVer() << 16;
 }
 
 static void BOOT_OTA_ValidIMGNum(void)
@@ -127,6 +108,27 @@ u8 BOOT_OTA_SlotSelect(void)
 	return (Ver[0] >= Ver[1]) ? BOOT_FROM_OTA1 : BOOT_FROM_OTA2;
 }
 
+/* The address and the size in a sub-image header are not authenticated before the image is copied.
+ * Only the memory space and the bootloader's own memory are checked, not how the layout divides it.
+ * The limits are SRAM_END and PSRAM_END of the layout, in the non-secure and in the secure alias
+ * (SRAM_END_ADDRESS_S is SRAM_END + TZ_IDAU_SEC_OFFSET, the layout asserts it, and it is defined in every
+ * configuration, unlike the SOLO only __km4ns_sram_end__). The bootloader's memory is [SRAM_BASE, end of
+ * the IMG1 slot). Peripherals are outside of all of them. */
+static bool BOOT_SubImgDstValid(u32 DstAddr, u32 Len)
+{
+	u32 Img1End = ((u32)__km4tz_bootloader_ram_s_start__ - TZ_IDAU_SEC_OFFSET) + (u32)__img1_sram_size__;
+
+	if (((DstAddr >= SRAM_BASE) && (DstAddr < Img1End))
+		|| ((DstAddr >= SRAM_BASE_S) && (DstAddr < Img1End + TZ_IDAU_SEC_OFFSET))) {
+		return false;
+	}
+
+	return is_memory_range_valid(DstAddr, Len, SRAM_BASE, (u32)SRAM_END_ADDRESS_S - TZ_IDAU_SEC_OFFSET)
+		   || is_memory_range_valid(DstAddr, Len, SRAM_BASE_S, (u32)SRAM_END_ADDRESS_S)
+		   || is_memory_range_valid(DstAddr, Len, PSRAM_BASE, (u32)__non_secure_psram_end__)
+		   || is_memory_range_valid(DstAddr, Len, PSRAM_BASE_S, (u32)__non_secure_psram_end__ + TZ_IDAU_SEC_OFFSET);
+}
+
 fih_ret BOOT_LoadSubImage(SubImgInfo_TypeDef *SubImgInfo, u32 StartAddr, u8 Num, char **ImgName, u8 ErrLog)
 {
 	FIH_DECLARE(fih_rc, FIH_FAILURE);
@@ -135,6 +137,11 @@ fih_ret BOOT_LoadSubImage(SubImgInfo_TypeDef *SubImgInfo, u32 StartAddr, u8 Num,
 	u32 i;
 
 	for (i = 0; i < Num; i++) {
+		/* StartAddr moves by the unauthenticated size of the previous sub-image, keep it in flash */
+		if (!IS_FLASH_ADDR(StartAddr)) {
+			RTK_LOGD(TAG, "%s invalid\n", ImgName[i]);
+			FIH_RET(FIH_FAILURE);
+		}
 		BOOT_ImgCopy((void *)&ImgHdr, (void *)StartAddr, IMAGE_HEADER_LEN);
 		if (_memcmp(ImgHdr.signature, ImagePattern, sizeof(ImagePattern)) != 0) {
 			if (ErrLog == TRUE) {
@@ -145,6 +152,13 @@ fih_ret BOOT_LoadSubImage(SubImgInfo_TypeDef *SubImgInfo, u32 StartAddr, u8 Num,
 
 		DstAddr = ImgHdr.image_addr - IMAGE_HEADER_LEN;
 		Len = ImgHdr.image_size + IMAGE_HEADER_LEN;
+
+		/* header-only sub-image is not copied, skip the destination check */
+		/* anything but flash has to be memory outside of the bootloader, this also refuses a wrapped DstAddr */
+		if (!IS_FLASH_ADDR(DstAddr) && (Len != IMAGE_HEADER_LEN) && !BOOT_SubImgDstValid(DstAddr, Len)) {
+			RTK_LOGD(TAG, "%s invalid\n", ImgName[i]);
+			FIH_RET(FIH_FAILURE);
+		}
 
 		/* np rom code jump address is from NP_BOOT_INDEX */
 		if (ImgHdr.boot_index == NP_BOOT_INDEX) {
@@ -311,7 +325,7 @@ fih_ret BOOT_OTA_LoadIMGAll(u8 ImgIndex)
 	/* Load IMG3 when TrustZone enabled */
 	FIH_CALL(BOOT_DecRDPImg, fih_rc, PhyAddr, &Manifest[ImgIndex], &SubImgInfo[Index], &Cnt);
 	if (FIH_NOT_EQ(fih_rc, FIH_SUCCESS)) {
-		FIH_RET(fih_rc);
+		goto SBOOT_FAIL;
 	}
 	Index += Cnt;
 #endif
@@ -514,6 +528,9 @@ u8 BOOT_OTA_IMG(void)
 		goto Fail;
 	}
 
+	/* step2.2: count this boot, boot the other OTA if the APP did not confirm for too long */
+	ImgIndex = OTA_Rollback_SelectApp(ImgIndex, ValidIMGNum);
+
 	/* step3: check img from selected idx */
 	for (i = 0; i < ValidIMGNum; i++) {
 
@@ -590,9 +607,9 @@ Fail:
   *         BOOT_Enable_NP() releases CPU1.
   *
   *         Anti-rollback: BOOT_OTA_ValidIMGNum() (called below) applies the OTP
-  *         SEC_BOOT_VER counter (BOOT_OTA_GetCertRollbackVer) against the NP cert
+  *         APP version area (BOOT_OTA_GetCertRollbackVer) against the NP cert
   *         key version, same as the AP path. With the SOLO single-key design (mcu &
-  *         iot share the key version) the shared counter gates NP downgrades too.
+  *         iot share the key version) the APP version area gates NP downgrades too.
   *
   *         NOTE: secure-boot / RSIP-OTF paths here are compile-verified only
   *         (OTP-dependent, not board-verified). The MMU_ID1 remap of

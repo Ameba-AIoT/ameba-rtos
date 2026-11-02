@@ -18,8 +18,8 @@
 #define USBH_DFU_DEMO_FW_SIZE                    2048U
 
 /* Budget for a device to attach, and for one download/upload run to report back.
-   Bounded rather than RTOS_SEMA_MAX_COUNT so a device that never shows up, or one
-   unplugged mid-transfer whose done callback therefore never fires, still lets the
+   Bounded rather than RTOS_SEMA_MAX_COUNT so a device that never shows up, or one that
+   hangs mid-transfer (an unplug is reported through the done callback), still lets the
    example tear the stack down and exit instead of parking forever. */
 #define USBH_DFU_ATTACH_TIMEOUT_MS               10000U
 #define USBH_DFU_XFER_TIMEOUT_MS                 30000U
@@ -85,7 +85,6 @@ static u32 dfu_demo_fw_size;
 static u32 dfu_demo_up_blk_size;
 
 static rtos_sema_t dfu_attach_sema;
-static rtos_sema_t dfu_detach_sema;
 static rtos_sema_t dfu_download_sema;
 static rtos_sema_t dfu_upload_sema;
 /* Written by the class callbacks, read by the test thread, possibly on another core */
@@ -123,8 +122,8 @@ static void dfu_cb_attached(void)
 
 static void dfu_cb_detached(void)
 {
+	/* A transfer in progress is failed by the class through its done callback, which wakes the test thread */
 	RTK_LOGS(TAG, RTK_LOG_INFO, "DETACH\n");
-	rtos_sema_give(dfu_detach_sema);
 }
 
 static int dfu_cb_get_block(u16 block_num, u8 *buf, u32 max_len)
@@ -150,7 +149,7 @@ static int dfu_cb_get_block(u16 block_num, u8 *buf, u32 max_len)
 static void dfu_cb_download_done(int status)
 {
 	dfu_download_result = status;
-	if (status == HAL_OK) {
+	if (status == RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Download OK\n");
 	} else {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Download FAIL: %d\n", status);
@@ -177,13 +176,13 @@ static int dfu_cb_recv_block(u16 block_num, u8 *buf, u32 len)
 	} else {
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Verify blk %u OK\n", block_num);
 	}
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 static void dfu_cb_upload_done(int status)
 {
 	dfu_upload_result = status;
-	if (status == HAL_OK) {
+	if (status == RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Upload OK\n");
 	} else {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Upload FAIL: %d\n", status);
@@ -219,12 +218,6 @@ static void example_usbh_dfu_thread(void *param)
 		goto exit;
 	}
 
-	ret = rtos_sema_create(&dfu_detach_sema,   0U, 1U);
-	if (ret != RTK_SUCCESS) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create sema fail\n");
-		goto exit;
-	}
-
 	ret = rtos_sema_create(&dfu_download_sema, 0U, 1U);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create sema fail\n");
@@ -245,13 +238,13 @@ static void example_usbh_dfu_thread(void *param)
 	}
 
 	ret = usbh_init(&usbh_cfg, &usbh_usr_cb);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "USBH init fail\n");
 		goto exit;
 	}
 
 	ret = usbh_dfu_init(&dfu_cb, &dfu_class_cfg);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "DFU init fail\n");
 		usbh_deinit();
 		goto exit;
@@ -265,7 +258,7 @@ static void example_usbh_dfu_thread(void *param)
 	 * reachable rather than block forever. */
 	if (rtos_sema_take(dfu_attach_sema, USBH_DFU_ATTACH_TIMEOUT_MS) != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Wait attach timeout\n");
-		ret = HAL_TIMEOUT;
+		ret = -RTK_ERR_TIMEOUT;
 		goto deinit;
 	}
 
@@ -273,23 +266,23 @@ static void example_usbh_dfu_thread(void *param)
 	attr = usbh_dfu_get_attr();
 	if (!(attr & USB_DFU_ATTR_CAN_DNLOAD)) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Device does not support DFU_DNLOAD\n");
-		ret = HAL_ERR_PARA;
+		ret = -RTK_ERR_BADARG;
 		goto deinit;
 	}
 
 	/* Download firmware to device */
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Downloading %u bytes...\n", dfu_demo_fw_size);
 	ret = usbh_dfu_download();
-	if (ret == HAL_OK) {
-		/* Bounded: a device unplugged mid-download never calls download_done. */
+	if (ret == RTK_SUCCESS) {
+		/* Bounded: download_done also reports an unplug, the bound only covers a device that hangs. */
 		if (rtos_sema_take(dfu_download_sema, USBH_DFU_XFER_TIMEOUT_MS) == RTK_SUCCESS) {
 			ret = dfu_download_result;
 		} else {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Download timeout\n");
-			ret = HAL_TIMEOUT;
+			ret = -RTK_ERR_TIMEOUT;
 		}
 	}
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Download fail: %d, skip upload\n", ret);
 		goto deinit;
 	}
@@ -302,18 +295,18 @@ static void example_usbh_dfu_thread(void *param)
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Uploading for verification...\n");
 		dfu_verify_err = 0U;
 		ret = usbh_dfu_upload();
-		if (ret == HAL_OK) {
+		if (ret == RTK_SUCCESS) {
 			/* Bounded, see the download wait above. */
 			if (rtos_sema_take(dfu_upload_sema, USBH_DFU_XFER_TIMEOUT_MS) != RTK_SUCCESS) {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "Upload timeout\n");
-				ret = HAL_TIMEOUT;
-			} else if (dfu_upload_result != HAL_OK) {
+				ret = -RTK_ERR_TIMEOUT;
+			} else if (dfu_upload_result != RTK_SUCCESS) {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "Upload fail: %d\n", dfu_upload_result);
 				ret = dfu_upload_result;
 			} else if (dfu_verify_err != 0U) {
 				/* The transfer itself succeeded, so the class reported OK: only the data differs. */
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "Upload verify fail\n");
-				ret = HAL_ERR_UNKNOWN;
+				ret = RTK_FAIL;
 			} else {
 				/* Upload and verify passed */
 			}
@@ -332,11 +325,10 @@ deinit:
 
 exit:
 	rtos_sema_delete(dfu_attach_sema);
-	rtos_sema_delete(dfu_detach_sema);
 	rtos_sema_delete(dfu_download_sema);
 	rtos_sema_delete(dfu_upload_sema);
 	/* One verdict line for every run that printed "demo start", whichever step ended it. */
-	if (ret == HAL_OK) {
+	if (ret == RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_INFO, "USBH DFU demo done\n");
 	} else {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "USBH DFU demo aborted\n");

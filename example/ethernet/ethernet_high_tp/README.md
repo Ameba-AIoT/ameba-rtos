@@ -1,8 +1,8 @@
 # Example Description
 
-This example demonstrates Ethernet driver usage tuned for high throughput. It shows how to initialize the Ethernet interface and register a link status callback function via `eth_register_link_cb()`.
+This example demonstrates Ethernet driver usage tuned for high throughput. It shows how to initialize the Ethernet interface and handle link status changes in the example's own thread: a binary semaphore is assigned to `eth_link_sema` before `eth_init()`, and the driver gives it on every link change.
 
-The callback function is invoked when the Ethernet link status changes (UP or DOWN), where IP configuration is performed.
+The link thread reads the link state and invokes the callback function when it changes (UP or DOWN), where IP configuration is performed.
 
 # HW Configuration
 
@@ -59,7 +59,7 @@ Type `AT+IPERF` alone for more options.
 
 # Note
 
-- The callback function is called in `eth_link_monitor_thread`.
+- The callback function is called in the example's `ETH_LINK` thread, so it may block and call `netifapi_*`.
 - `eth_send()` copies packet data with `memcpy()`. If the source and destination buffers are not word-aligned, the copy degrades to a byte-by-byte copy, which lowers throughput. Keep application-side TX buffers word-aligned to get the benefit of word copies.
 
 # Supported IC

@@ -41,7 +41,7 @@ extern "C" {
  * @brief  Send a SET_CUR request on the Probe or Commit control.
  * @param  stream: UVC streaming interface.
  * @param  probe: 1 to address the Probe control, 0 for the Commit control.
- * @return HAL_OK on success, a HAL error code otherwise.
+ * @return RTK_SUCCESS on success, a RTK error code otherwise.
  */
 int usbh_uvc_stream_ctrl_set_video(usbh_uvc_stream_t *stream, u8 probe);
 
@@ -50,14 +50,14 @@ int usbh_uvc_stream_ctrl_set_video(usbh_uvc_stream_t *stream, u8 probe);
  * @param  stream: UVC streaming interface.
  * @param  probe: 1 to address the Probe control, 0 for the Commit control.
  * @param  request: Request code to issue.
- * @return HAL_OK on success, a HAL error code otherwise.
+ * @return RTK_SUCCESS on success, a RTK error code otherwise.
  */
 int usbh_uvc_stream_ctrl_get_video(usbh_uvc_stream_t *stream, u8 probe, u16 request);
 
 /**
  * @brief  Allocate and initialize all runtime resources of a UVC stream.
  * @param  stream: UVC streaming interface.
- * @return HAL_OK on success, a HAL error code otherwise.
+ * @return RTK_SUCCESS on success, a RTK error code otherwise.
  */
 int usbh_uvc_stream_open(usbh_uvc_stream_t *stream);
 
@@ -71,14 +71,14 @@ void usbh_uvc_stream_close(usbh_uvc_stream_t *stream);
 /**
  * @brief  Start the data path of a UVC stream, moving it from READY to ACTIVE.
  * @param  stream: UVC streaming interface.
- * @return HAL_OK on success or if the stream is already active, a HAL error code otherwise.
+ * @return RTK_SUCCESS on success or if the stream is already active, a RTK error code otherwise.
  */
 int usbh_uvc_stream_start(usbh_uvc_stream_t *stream);
 
 /**
  * @brief  Stop the data path of a UVC stream, moving it from ACTIVE to READY.
  * @param  stream: UVC streaming interface.
- * @return HAL_OK on success or if the stream is not currently active, a HAL error code otherwise.
+ * @return RTK_SUCCESS on success or if the stream is not currently active, a RTK error code otherwise.
  */
 int usbh_uvc_stream_stop(usbh_uvc_stream_t *stream);
 
@@ -101,7 +101,7 @@ void usbh_uvc_stream_free_urb_buffer(usbh_uvc_stream_t *stream);
 /**
  * @brief  Allocate the URB buffers sized to the pipe's current transfer length.
  * @param  stream: UVC streaming interface.
- * @return HAL_OK on success, a HAL error code otherwise.
+ * @return RTK_SUCCESS on success, a RTK error code otherwise.
  */
 int usbh_uvc_stream_alloc_urb_buffer(usbh_uvc_stream_t *stream);
 
@@ -118,7 +118,7 @@ void usbh_uvc_stream_process_sof(usb_host_t *host);
  * @note   ISR context: must not block or allocate.
  * @param  host: Host handle.
  * @param  pipe_num: Pipe number that completed.
- * @return HAL_OK on success, a HAL error code otherwise.
+ * @return RTK_SUCCESS on success, a RTK error code otherwise.
  */
 int usbh_uvc_stream_process_completed(usb_host_t *host, u8 pipe_num);
 

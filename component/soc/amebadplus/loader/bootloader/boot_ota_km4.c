@@ -7,6 +7,7 @@
 #include "ameba_soc.h"
 #include "boot_security_km4.h"
 #include "boot_ota_km4.h"
+#include "ameba_ota_rollback.h"
 #ifdef CONFIG_COMPRESS_OTA_IMG
 #include "ameba_boot_lzma.h"
 #endif
@@ -58,23 +59,8 @@ u32 BOOT_OTA_GetManifestSize(Manifest_TypeDef *Manifest)
   */
 static s64 BOOT_OTA_GetCertRollbackVer(void)
 {
-	u32 tmp, Anti_VerNum = 0;
-
-	/* Cert/app version is same, so Anti_VerNum for cert/app can be same */
-	if (SYSCFG_OTP_AntiRollback()) {
-		tmp = HAL_READ16(OTPC_REG_BASE, SEC_BOOT_IMGVER0);
-
-		for (int i = 0; i < 16; i++) {
-			if ((tmp & BIT(i)) == 0) {
-				Anti_VerNum++;
-			}
-		}
-
-		/*Only Check MajorImgVer with Anti_VerNum in otp*/
-		Anti_VerNum = Anti_VerNum << 16;
-	}
-
-	return Anti_VerNum;
+	/* Only Check MajorImgVer with the APP version in otp, the BOOT version is checked by the ROM */
+	return (s64)OTA_AntiRollback_GetAppVer() << 16;
 }
 
 /**
@@ -129,6 +115,41 @@ u8 BOOT_OTA_SlotSelect(void)
 	return ImgIndex;
 }
 
+/* The address and the size in a sub-image header are not authenticated before the image is copied.
+ * Only the memory space and the bootloader's own memory are checked, not how the layout divides it.
+ * A copy may go anywhere in SRAM or PSRAM, in the non-secure or the secure alias, whose limits are
+ * SRAM_END and PSRAM_END of the layout. Peripherals are outside of both. It must not overlap:
+ *  - the RAM that is fixed for KM0 and KM4: ROM BSS, MSP and the bootloader (IMG1 slot), from SRAM_BASE
+ *    to the end of the IMG1 slot, except the part of KM4_ROMBSS_RAM_COM behind the ROM BSS, which holds
+ *    the IMG2 entry, IPC RAM and PMC RAM that the sub-images are loaded to.
+ * The loader does not link the ROM symbols, so the end of the ROM BSS in KM4_ROMBSS_RAM_COM is the ROM
+ * constant: __rom_bss_end__ in project_km4/ld/ameba_rom_symbol_acut.ld:402 (start is :385, 0x20004000). */
+#define BOOT_ROM_BSS_COM_END	0x200048E0
+/* true if [addr, addr + len) and [start, end) have a byte in common, without adding addr and len */
+static bool BOOT_RangeOverlap(u32 addr, u32 len, u32 start, u32 end)
+{
+	return (addr < end) && ((addr >= start) || (len > (start - addr)));
+}
+
+static bool BOOT_SubImgDstValid(u32 DstAddr, u32 Len)
+{
+	u32 FixedEnd = (u32)__rtk_fixed_addr__ + (u32)__img1_sram_size__;
+	u32 ComEnd = (u32)__km4_romcom_ram_end__;
+	u32 Alias;
+
+	for (Alias = 0; Alias <= TZ_IDAU_SEC_OFFSET; Alias += TZ_IDAU_SEC_OFFSET) {
+		if (BOOT_RangeOverlap(DstAddr, Len, SRAM_BASE + Alias, BOOT_ROM_BSS_COM_END + Alias)
+			|| BOOT_RangeOverlap(DstAddr, Len, ComEnd + Alias, FixedEnd + Alias)) {
+			return false;
+		}
+	}
+
+	return is_memory_range_valid(DstAddr, Len, SRAM_BASE, (u32)__sram_end__)
+		   || is_memory_range_valid(DstAddr, Len, SRAM_BASE + TZ_IDAU_SEC_OFFSET, (u32)__sram_end__ + TZ_IDAU_SEC_OFFSET)
+		   || is_memory_range_valid(DstAddr, Len, PSRAM_BASE, (u32)__non_secure_psram_end__)
+		   || is_memory_range_valid(DstAddr, Len, PSRAM_BASE_S, (u32)__non_secure_psram_end__ + TZ_IDAU_SEC_OFFSET);
+}
+
 u8 BOOT_LoadSubImage(SubImgInfo_TypeDef *SubImgInfo, u32 StartAddr, u8 Num, char **ImgName, u8 ErrLog)
 {
 	IMAGE_HEADER ImgHdr;
@@ -136,6 +157,11 @@ u8 BOOT_LoadSubImage(SubImgInfo_TypeDef *SubImgInfo, u32 StartAddr, u8 Num, char
 	u32 i;
 
 	for (i = 0; i < Num; i++) {
+		/* StartAddr moves by the unauthenticated size of the previous sub-image, keep it in flash */
+		if (!IS_FLASH_ADDR(StartAddr)) {
+			RTK_LOGD(TAG, "%s invalid\n", ImgName[i]);
+			return FALSE;
+		}
 		_memcpy((void *)&ImgHdr, (void *)StartAddr, IMAGE_HEADER_LEN);
 
 		if ((ImgHdr.signature[0] != APP_IMAGE_PATTERN_1) || (ImgHdr.signature[1] != APP_IMAGE_PATTERN_2)) {
@@ -147,6 +173,13 @@ u8 BOOT_LoadSubImage(SubImgInfo_TypeDef *SubImgInfo, u32 StartAddr, u8 Num, char
 
 		DstAddr = ImgHdr.image_addr - IMAGE_HEADER_LEN;
 		Len = ImgHdr.image_size + IMAGE_HEADER_LEN;
+
+		/* header-only sub-image is not copied, skip the destination check */
+		/* anything but flash has to be memory outside of the bootloader, this also refuses a wrapped DstAddr */
+		if (!IS_FLASH_ADDR(DstAddr) && (Len != IMAGE_HEADER_LEN) && !BOOT_SubImgDstValid(DstAddr, Len)) {
+			RTK_LOGD(TAG, "%s invalid\n", ImgName[i]);
+			return FALSE;
+		}
 
 		/* If not XIP sub-image, then copy it to specific address (include the IMAGE_HEADER)*/
 		if ((!IS_FLASH_ADDR(DstAddr)) && (Len > IMAGE_HEADER_LEN)) {
@@ -467,6 +500,9 @@ u8 BOOT_OTA_IMG(void)
 	if (ValidIMGNum == NONEVALIDIMG) {
 		goto Fail;
 	}
+
+	/* step2.2: pick the APP slot for this boot by the ROM BootCnt */
+	ImgIndex = OTA_Rollback_SelectApp(ImgIndex, ValidIMGNum);
 
 	version = (u32)(Ver[ImgIndex] & 0xFFFFFFFF);
 	/* step3: check img from selected idx */

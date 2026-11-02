@@ -252,7 +252,12 @@ static void example_usbd_msc_usb_hotplug_thread(void *param)
 				usbd_deinit();
 				usbd_msc_disk_deinit();
 				RTK_LOGS(TAG, RTK_LOG_INFO, "Free heap: 0x%x\n", rtos_mem_get_free_heap_size());
-				usbd_msc_disk_init();
+				ret = usbd_msc_disk_init();
+				if (ret != RTK_SUCCESS) {
+					/* No medium to expose: leave the stack down rather than enumerate a disk every access fails */
+					RTK_LOGS(TAG, RTK_LOG_ERROR, "Init disk fail %d\n", ret);
+					break;
+				}
 				ret = usbd_init(&msc_cfg);
 				if (ret != 0) {
 					break;
@@ -413,20 +418,20 @@ static void example_usbd_msc_thread(void *param)
 #endif
 
 	ret = usbd_msc_disk_init();
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Init disk fail\n");
 		/* VFS FATFS volume is already registered above; unwind it too. */
 		goto exit_usbd_init_fail;
 	}
 
 	ret = usbd_init(&msc_cfg);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Init USBD fail\n");
 		goto exit_usbd_init_fail;
 	}
 
 	ret = usbd_msc_init(&msc_cb, &msc_class_cfg);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Init MSC class fail\n");
 		goto exit_usbd_msc_init_fail;
 	}

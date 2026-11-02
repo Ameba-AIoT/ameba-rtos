@@ -210,7 +210,7 @@ void BOOT_PSRAM_Init(void)
 	/* psram calibration */
 	if ((SYSCFG_CHIPType_Get() == CHIP_TYPE_ASIC_POSTSIM) || (SYSCFG_CHIPType_Get() == CHIP_TYPE_FPGA)) {
 		if (PSRAM_calibration() == FALSE) {
-			// PSRAM_InfoDump();
+			RTK_LOGE(TAG, "PSRAM calibration fail\n");
 		}
 	}
 }

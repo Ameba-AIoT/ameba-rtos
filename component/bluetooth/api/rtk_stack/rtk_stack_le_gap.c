@@ -6108,7 +6108,7 @@ static uint16_t bt_stack_le_gap_coc_connect(void *param)
 
 static uint16_t bt_stack_le_gap_coc_disconnect(void *param)
 {
-	uint16_t cid = *(uint16_t *)param;
+	uint16_t cid = ((rtk_bt_le_coc_disconnect_param_t *)param)->cid;
 	T_GAP_CAUSE cause;
 
 	cause = le_coc_disc(cid);

@@ -148,8 +148,8 @@ extern void netif_adapter_usb_eth_recv(u8 *buf, u32 len);
 
 static void usbh_comp_detached(void);
 static void usbh_comp_ecm_received(u8 *buf, u32 len);
-static void usbh_comp_acm_received(u8 *buf, u32 len, u8 status);
-static void usbh_comp_acm_transmitted(u8 status);
+static void usbh_comp_acm_received(u8 *buf, u32 len, int status);
+static void usbh_comp_acm_transmitted(int status);
 static void usbh_comp_acm_rx_thread(void *param);
 static void usbh_comp_cb_process(usb_host_t *host, u8 msg);
 static int usbh_comp_cb_device_check(usb_host_t *host, u8 cfg_max);
@@ -347,7 +347,7 @@ static void usbh_comp_ecm_received(u8 *buf, u32 len)
 	netif_adapter_usb_eth_recv(buf, len);
 }
 
-static void usbh_comp_acm_transmitted(u8 status)
+static void usbh_comp_acm_transmitted(int status)
 {
 	if (status == HAL_OK) {
 		if (usbh_comp_acm_send_sema != NULL) {
@@ -440,7 +440,7 @@ static int usbh_comp_acm_transmit(u8 *buf, u32 len)
 	return ret;
 }
 
-static void usbh_comp_acm_received(u8 *pbuf, u32 len, u8 status)
+static void usbh_comp_acm_received(u8 *pbuf, u32 len, int status)
 {
 	u32 i;
 	u16 vid = usbh_dongle_ctx.vid;

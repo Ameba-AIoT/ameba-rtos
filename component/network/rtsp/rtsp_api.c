@@ -1528,7 +1528,7 @@ Redo:
 		if (enter_rtsp_request_loop) {
 			printf("[%s] Enter rtsp request_loop\n\r", (rtsp_ctx->is_connected_to_proxy == 1) ? "Proxy" : "Local");
 			memset(request_concat_buf, 0, RTSP_REQUEST_BUF_SIZE);
-			uint32_t concat_buf_len = 0;
+			int concat_buf_len = 0;
 			while (rtsp_is_stream_enabled(rtsp_ctx)) {
 #if ENABLE_PROXY_SEVER
 				if (rtsp_ctx->is_connected_to_proxy == 1) {
@@ -1581,7 +1581,8 @@ Redo:
 					keep_alive_time = rtos_time_get_current_system_time_ms();
 #endif
 					memset(request, 0, RTSP_REQUEST_BUF_SIZE);
-					uint32_t read_len = 0;
+					/* Keep read() errors signed so disconnects reach socket cleanup. */
+					int read_len = 0;
 
 					rtos_mutex_take(rtsp_ctx->socket_lock, MUTEX_WAIT_TIMEOUT);
 					read_len = read(rtsp_ctx->client_socket, request, RTSP_REQUEST_BUF_SIZE);
@@ -1595,7 +1596,7 @@ Redo:
 					if (concat_buf_len == 0) { // complete frame or 1st segment
 						if (*request == '$') {
 							rtsp_ctx->request_type = RTSP_INTERLEAVED_FRAME;
-							uint32_t rtsp_interleaved_len = 4 + ntohs(*(uint16_t *)(request + 2));
+							int rtsp_interleaved_len = 4 + ntohs(*(uint16_t *)(request + 2));
 							rtsp_ctx->request_incomplete = (read_len < rtsp_interleaved_len) ? 1 : 0;
 							if (read_len < rtsp_interleaved_len) {
 								rtsp_ctx->request_incomplete = 1;
@@ -1610,14 +1611,14 @@ Redo:
 					// rtsp_ctx->request_incomplete is updated by rtsp_parse_request();
 
 					if (rtsp_ctx->request_incomplete) {
-						uint32_t copy_len = (concat_buf_len + read_len <= RTSP_REQUEST_BUF_SIZE - 1) ? read_len : (RTSP_REQUEST_BUF_SIZE - 1 - concat_buf_len);
+						int copy_len = (concat_buf_len + read_len <= RTSP_REQUEST_BUF_SIZE - 1) ? read_len : (RTSP_REQUEST_BUF_SIZE - 1 - concat_buf_len);
 						memcpy(request_concat_buf + concat_buf_len, request, copy_len);
 						concat_buf_len += copy_len;
 						if (concat_buf_len == copy_len) { // 1st segment, just copy
 							continue;
 						} else {
 							if (rtsp_ctx->request_type == RTSP_INTERLEAVED_FRAME) {
-								uint32_t rtsp_interleaved_len = 4 + ntohs(*(uint16_t *)(request + 2));
+								int rtsp_interleaved_len = 4 + ntohs(*(uint16_t *)(request + 2));
 								rtsp_ctx->request_incomplete = (concat_buf_len < rtsp_interleaved_len) ? 1 : 0;
 							} else {
 								rtsp_parse_request(rtsp_ctx, request_concat_buf);

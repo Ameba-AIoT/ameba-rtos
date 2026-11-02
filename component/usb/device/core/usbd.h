@@ -315,7 +315,10 @@ typedef struct _usbd_class_driver_t {
 	 *     - `USB_DESC_TYPE_CONFIGURATION`: Configuration Descriptor, mandatory.
 	 *     - `USB_DESC_TYPE_DEVICE_QUALIFIER`: Device Qualifier Descriptor, required for dual-speed (FS/HS) devices                                                                                                     |
 	 *     - `USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION`: Other Speed Configuration Descriptor, required for dual-speed (FS/HS) devices.
-	 *     - `USB_DESC_TYPE_STRING`: String descriptors (language ID, manufacturer, product, serial), optional.
+	 *     - `USB_DESC_TYPE_STRING`: Not handled by the class: the core answers the language ID and the
+	 *       device strings from @ref usbd_dev_info_t, and the strings a class registers through
+	 *       @ref usbd_add_string. Only an index the core does not own (e.g. the 0xEE MS OS string) is
+	 *       forwarded here, return 0 if unsupported.
 	 * @param[in] dev: USB device.
 	 * @param[in] req: USB setup request.
 	 * @param[out] buf: Buffer to store the requested descriptor.
@@ -415,7 +418,7 @@ typedef struct _usbd_class_driver_t {
 	 *         dispatcher to keep iterating to the owning sub-function. The core itself ignores
 	 *         it: the data has already been ACKed by the host and cannot be recalled.
 	 */
-	int (*ep0_data_in)(usb_dev_t *dev, u8 status);
+	int (*ep0_data_in)(usb_dev_t *dev, int status);
 
 	/**
 	 * @brief Callback invoked when an OUT data transfer on EP0 is complete.
@@ -444,7 +447,7 @@ typedef struct _usbd_class_driver_t {
 	 *         it: ref USB 2.0 8.4.6, leaving the endpoint unarmed already makes the controller
 	 *         NAK the next IN token, which is the correct "no data yet" response.
 	 */
-	int (*ep_data_in)(usb_dev_t *dev, u8 ep_addr, u8 status);
+	int (*ep_data_in)(usb_dev_t *dev, u8 ep_addr, int status);
 
 	/**
 	 * @brief Callback invoked when a bulk/interrupt/isochronous OUT data transfer on EP is complete.
@@ -583,6 +586,10 @@ void usbd_cg_unregister(void);
  * @brief Sends a remote wakeup signal to the USB host to resume communication.
  * @note  Task context only: this call blocks for about 8ms as required by the USB spec.
  *        It fails unless the bus is suspended (USB 2.0 7.1.7.7).
+ * @note  USB 2.0 9.4.5 only allows a remote wakeup once the host has enabled it by
+ *        SET_FEATURE(DEVICE_REMOTE_WAKEUP). This call is kept permissive and still signals
+ *        when the host has not enabled it, only logging a warning, as some hosts never enable
+ *        the feature. A strictly compliant application shall not call it in that case.
  * @return 0 on success, non-zero on failure.
  */
 int usbd_wake_host(void);
@@ -603,10 +610,12 @@ int usbd_register_class(const usbd_class_driver_t *driver);
 /**
  * @brief Un-register a class, called in class de-initialization function.
  * @note  Task context only, same rule as @ref usbd_deinit.
- * @return None. This is a teardown path: the class is always detached and the device driven
- *         to the detached state, so there is nothing for the caller to recover from.
+ * @return RTK_SUCCESS once the class is detached and the device driven to the detached state, also
+ *         when no class was registered. -RTK_ERR_BADARG when called in interrupt context: nothing
+ *         was done, the class is still reachable from the USB ISR, so the caller shall not
+ *         release anything.
  */
-void usbd_unregister_class(void);
+int usbd_unregister_class(void);
 
 /**
  * @brief Initialize an endpoint.
@@ -655,7 +664,8 @@ int usbd_ep_transmit(usb_dev_t *dev, usbd_ep_t *ep);
  *     - The transfer executes asynchronously: function return doesn't indicate completion.
  *     - Retrieved data is available via the ep_data_out/ep0_data_out callback of the @ref usbd_class_driver_t.
  *     - The hardware always receives in whole packets, so the DMA window is `xfer_len` rounded up
- *       to a multiple of the endpoint MPS (one MPS when `xfer_len` is 0). The class shall provide a
+ *       to a multiple of the DWORD aligned endpoint MPS (one such MPS when `xfer_len` is 0), refer
+ *       to usb_get_dma_len() and usb_get_max_payload_len(). The class shall provide a
  *       @ref usbd_ep_t::xfer_buf of at least that capacity and report it via
  *       @ref usbd_ep_t::xfer_buf_len, otherwise a host sending a longer packet than expected
  *       overflows the buffer. Requests violating this are rejected when `xfer_buf_len` is set.

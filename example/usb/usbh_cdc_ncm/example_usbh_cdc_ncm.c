@@ -10,7 +10,11 @@
 #include <lwip/netdb.h>
 #include "os_wrapper.h"
 #include "wifi_api.h"
+#if defined(CONFIG_MBEDTLS_USE_LEGACY_API)
 #include "mbedtls/md5.h"
+#else
+#include "psa/crypto.h"
+#endif
 #include "lwip_netconf.h"
 #include "usbh_cdc_ncm.h"
 
@@ -73,7 +77,11 @@ static const char *const TAG = "NCM";
 
 #if CONFIG_USBH_CDC_NCM_REMOTE_FILE_DOWNLOAD
 static unsigned char cdc_ncm_dl_buf[BUFFER_SIZE + 1];
+#if defined(CONFIG_MBEDTLS_USE_LEGACY_API)
 static mbedtls_md5_context ctx;
+#else
+static psa_hash_operation_t ctx;
+#endif
 #if CONFIG_USBH_CDC_NCM_DUMP_FILE
 #define CONFIG_USBH_CDC_NCM_DUMP_PSRAM_HEAP_SIZE               (29000)
 static unsigned char cdc_ncm_dump_psram_heap[CONFIG_USBH_CDC_NCM_DUMP_PSRAM_HEAP_SIZE];
@@ -176,7 +184,7 @@ static const usbh_cdc_ncm_config_t cdc_ncm_class_cfg = {
   *         Communication Interface and the NCM Data Interface.
   * @param[in] host: USB host handle.
   * @param[in] cfg_max: Number of configurations (unused).
-  * @return HAL_OK if the device is a valid CDC NCM device, non-zero otherwise.
+  * @return RTK_SUCCESS if the device is a valid CDC NCM device, non-zero otherwise.
   */
 static int usbh_cdc_ncm_cb_device_check(usb_host_t *host, u8 cfg_max)
 {
@@ -191,7 +199,7 @@ static int usbh_cdc_ncm_cb_device_check(usb_host_t *host, u8 cfg_max)
 static int usbh_cdc_ncm_cb_init(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "INIT\n");
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 /**
@@ -266,13 +274,13 @@ static int usbh_cdc_ncm_do_init(void)
 	int ret = 0;
 
 	ret = usbh_init(&usbh_ncm_cfg, &usbh_ncm_usr_cb);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Init USBH fail\n");
 		return 0;
 	}
 
 	ret = usbh_cdc_ncm_init(&cdc_ncm_usb_cb, &cdc_ncm_class_cfg);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Init CDC NCM fail\n");
 		usbh_deinit();
 		return 0;
@@ -344,7 +352,11 @@ static void usbh_ncm_link_change_thread(void *param)
 					cdc_ncm_dhcp_done = 1;
 					RTK_LOGS(TAG, RTK_LOG_INFO, "Switch to link\n");
 				} else {
-					RTK_LOGS(TAG, RTK_LOG_ERROR, "DHCP fail\n");
+					/* Back to IDLE so the next round retries: while the link stays up no link-down edge
+					   would ever bring this branch back */
+					RTK_LOGS(TAG, RTK_LOG_ERROR, "DHCP fail, retry\n");
+					ethernet_state = ETH_STATUS_IDLE;
+					rtos_time_delay_ms(1000);
 				}
 			}
 		} else if (0 == link_is_up && (ethernet_state >= ETH_STATUS_INIT)) {	// link -> unlink
@@ -379,7 +391,11 @@ static int usbh_cdc_ncm_update_data_check(char *pdata, unsigned int length)
 		return 0;
 	}
 	usbh_cdc_ncm_save_to_memory(pdata, length);
+#if defined(CONFIG_MBEDTLS_USE_LEGACY_API)
 	mbedtls_md5_update(&ctx, (const unsigned char *)pdata, length);
+#else
+	psa_hash_update(&ctx, (const uint8_t *)pdata, length);
+#endif
 	return  0;
 }
 
@@ -447,8 +463,13 @@ static void usbh_ncm_download_thread(void *param)
 
 		write(server_fd, (char const *)cdc_ncm_dl_buf, strlen((char const *)cdc_ncm_dl_buf));
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Will call read\n");
+#if defined(CONFIG_MBEDTLS_USE_LEGACY_API)
 		mbedtls_md5_init(&ctx);
 		mbedtls_md5_starts(&ctx);
+#else
+		ctx = psa_hash_operation_init();
+		psa_hash_setup(&ctx, PSA_ALG_MD5);
+#endif
 
 		while (((content_len == 0) || (resource_size < content_len))
 			   && ((read_size = read(server_fd, cdc_ncm_dl_buf + pos, BUFFER_SIZE - pos)) > 0)) {
@@ -494,8 +515,13 @@ static void usbh_ncm_download_thread(void *param)
 		}
 
 		usbh_cdc_ncm_write_data_to_flash();
+#if defined(CONFIG_MBEDTLS_USE_LEGACY_API)
 		mbedtls_md5_finish(&ctx, output);
 		mbedtls_md5_free(&ctx);
+#else
+		size_t olen;
+		psa_hash_finish(&ctx, output, sizeof(output), &olen);
+#endif
 
 		RTK_LOGS(TAG, RTK_LOG_INFO, "mbedtls_md5_finish md5\n");
 		for (u8 hh = 0; hh < MD5_CHECK_BUFFER_LEN; hh++) {
@@ -540,9 +566,14 @@ static void usbh_ncm_mem_check_thread(void *param)
 			RTK_LOGS(TAG, RTK_LOG_INFO, "Del monitor_task\n");
 			rtos_task_delete(monitor_task);
 
+			/* Same teardown as the hotplug thread: gate TX off, then release in reverse init order */
+			cdc_ncm_teardown = 1U;
+			rtos_mutex_take(cdc_ncm_state_mutex, RTOS_MAX_TIMEOUT);
+			cdc_ncm_stack_ready = 0U;
 			usbh_stop();
 			usbh_cdc_ncm_deinit();
 			usbh_deinit();
+			rtos_mutex_give(cdc_ncm_state_mutex);
 
 			rtos_time_delay_ms(3000);
 			RTK_LOGS(TAG, RTK_LOG_INFO, "Loop delete %d: all_free:0x%08x\n", loop, usb_os_get_free_heap_size());
@@ -612,13 +643,13 @@ int usb_ethernet_transmit(u8 *buf, u32 len, u8 block)
 	   teardown is pending. A hotplug right after this check is harmless, the mutex
 	   stays valid and the re-check under it skips the TX. */
 	if ((cdc_ncm_stack_ready == 0U) || (cdc_ncm_teardown != 0U)) {
-		return HAL_ERR_HW;
+		return -RTK_ERR_IO;
 	}
 
 	rtos_mutex_take(cdc_ncm_state_mutex, RTOS_MAX_TIMEOUT);
 	if ((cdc_ncm_stack_ready == 0U) || (cdc_ncm_teardown != 0U)) {
 		/* Lost the race against a teardown */
-		ret = HAL_ERR_HW;
+		ret = -RTK_ERR_IO;
 	} else {
 		ret = usbh_cdc_ncm_transmit(buf, len, block);
 	}
@@ -647,7 +678,7 @@ void example_usbh_cdc_ncm(void)
 	}
 
 	status = usb_os_sema_create(&cdc_ncm_detach_sema);
-	if (status != HAL_OK) {
+	if (status != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create detach sema fail\n");
 		return;
 	}

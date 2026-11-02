@@ -54,7 +54,7 @@ static int usbd_otp_parse_map(usbd_otp_t *otp, u8 *map, u32 reg)
 	status = OTP_LogicalRead(map, USB_OTP_START, USB_OTP_LEN);
 	if (status != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "OTP read fail %d\n", status);
-		return HAL_ERR_HW;
+		return -RTK_ERR_IO;
 	}
 
 	if ((reg & USB_ADDON_REG_AUTOLOAD_CTRL_BIT_SQNUM_ROM) == 0U) {
@@ -64,19 +64,19 @@ static int usbd_otp_parse_map(usbd_otp_t *otp, u8 *map, u32 reg)
 		// Mfg string
 		mfg_len = map[off];
 		if ((mfg_len < 2U) || ((off + mfg_len) >= USB_OTP_LEN)) {
-			return HAL_ERR_PARA;
+			return -RTK_ERR_BADARG;
 		}
 		off += mfg_len;
 		// Product string
 		prod_len = map[off];
 		if ((prod_len < 2U) || ((off + prod_len) >= USB_OTP_LEN)) {
-			return HAL_ERR_PARA;
+			return -RTK_ERR_BADARG;
 		}
 		off += prod_len;
 		// SN string
 		sn_len = map[off];
 		if ((sn_len < 2U) || ((off + sn_len) > USB_OTP_LEN)) {
-			return HAL_ERR_PARA;
+			return -RTK_ERR_BADARG;
 		}
 		usb_os_memcpy((void *)buf, (const void *)&map[off + 2U], sn_len - 2U);
 		buf[sn_len - 2U] = '\0';
@@ -87,16 +87,16 @@ static int usbd_otp_parse_map(usbd_otp_t *otp, u8 *map, u32 reg)
 
 	if ((reg & USB_ADDON_REG_AUTOLOAD_CTRL_BIT_AUTOLOAD_DESC_EN) != 0U) {
 		// VID
-		otp->vid = map[USB_OTP_OFFSET_VID] | ((u16)map[USB_OTP_OFFSET_VID + 1] << 8);
+		otp->vid = (u16)((u16)map[USB_OTP_OFFSET_VID] | (u16)((u16)map[USB_OTP_OFFSET_VID + 1U] << 8));
 		// PID
-		otp->pid = map[USB_OTP_OFFSET_PID] | ((u16)map[USB_OTP_OFFSET_PID + 1] << 8);
+		otp->pid = (u16)((u16)map[USB_OTP_OFFSET_PID] | (u16)((u16)map[USB_OTP_OFFSET_PID + 1U] << 8));
 		RTK_LOGS(TAG, RTK_LOG_DEBUG, "Get OTP PID-VID: 0x%04x-0x%04x\n", otp->pid, otp->vid);
 		off = USB_OTP_OFFSET_STR;
 		// Mfg string
 		mfg_len = map[off];
 		/* The product length byte follows the mfg string, so it has to stay inside the map */
 		if ((mfg_len < 2U) || ((off + mfg_len) >= USB_OTP_LEN)) {
-			return HAL_ERR_PARA;
+			return -RTK_ERR_BADARG;
 		}
 		usb_os_memcpy((void *)buf, (const void *)&map[off + 2U], mfg_len - 2U);
 		buf[mfg_len - 2U] = '\0';
@@ -107,7 +107,7 @@ static int usbd_otp_parse_map(usbd_otp_t *otp, u8 *map, u32 reg)
 		prod_len = map[off];
 		/* Bound by the raw ASCII length */
 		if ((prod_len < 2U) || ((off + prod_len) > USB_OTP_LEN)) {
-			return HAL_ERR_PARA;
+			return -RTK_ERR_BADARG;
 		}
 		usb_os_memcpy((void *)buf, (const void *)&map[off + 2U], prod_len - 2U);
 		buf[prod_len - 2U] = '\0';
@@ -116,14 +116,14 @@ static int usbd_otp_parse_map(usbd_otp_t *otp, u8 *map, u32 reg)
 		otp->otp_param = 1U;
 	}
 
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 /* Exported functions --------------------------------------------------------*/
 
 int usbd_otp_init(usbd_otp_t *otp)
 {
-	int ret = HAL_OK;
+	int ret = RTK_SUCCESS;
 	u32 reg;
 	u8 *map;
 
@@ -138,14 +138,14 @@ int usbd_otp_init(usbd_otp_t *otp)
 
 	otp->mfg_str = (u8 *)usb_os_malloc(USBD_OTP_MAX_STR_LEN + 1U);
 	if (otp->mfg_str == NULL) {
-		return HAL_ERR_MEM;
+		return -RTK_ERR_NOMEM;
 	}
 
 	otp->prod_str = (u8 *)usb_os_malloc(USBD_OTP_MAX_STR_LEN + 1U);
 	if (otp->prod_str == NULL) {
 		usb_os_mfree((void *)otp->mfg_str);
 		otp->mfg_str = NULL;
-		return HAL_ERR_MEM;
+		return -RTK_ERR_NOMEM;
 	}
 
 	otp->sn_str = (u8 *)usb_os_malloc(USBD_OTP_MAX_STR_LEN + 1U);
@@ -154,7 +154,7 @@ int usbd_otp_init(usbd_otp_t *otp)
 		otp->mfg_str = NULL;
 		usb_os_mfree((void *)otp->prod_str);
 		otp->prod_str = NULL;
-		return HAL_ERR_MEM;
+		return -RTK_ERR_NOMEM;
 	}
 
 	reg = HAL_READ32(USB_ADDON_REG_AUTOLOAD_CTRL, 0U);
@@ -171,7 +171,7 @@ int usbd_otp_init(usbd_otp_t *otp)
 			otp->prod_str = NULL;
 			usb_os_mfree((void *)otp->sn_str);
 			otp->sn_str = NULL;
-			return HAL_ERR_MEM;
+			return -RTK_ERR_NOMEM;
 		}
 
 		ret = usbd_otp_parse_map(otp, map, reg);

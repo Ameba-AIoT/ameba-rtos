@@ -219,7 +219,7 @@ static int composite_cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 	usb_cdc_acm_line_coding_t *lc = &composite_cdc_acm_line_coding;
 	/* Ref USB 2.0 9.2.7: anything not explicitly accepted below is a request error, so
 	   the default status makes the core STALL EP0 instead of ACKing the status stage. */
-	int ret = HAL_ERR_PARA;
+	int ret = -RTK_ERR_BADARG;
 
 	switch (req->bRequest) {
 	case USB_CDC_ACM_SET_LINE_CODING:
@@ -230,7 +230,7 @@ static int composite_cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 			lc->b.bCharFormat = buf[4];
 			lc->b.bParityType = buf[5];
 			lc->b.bDataBits = buf[6];
-			ret = HAL_OK;
+			ret = RTK_SUCCESS;
 		}
 		break;
 
@@ -242,7 +242,7 @@ static int composite_cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 		buf[4] = lc->b.bCharFormat;
 		buf[5] = lc->b.bParityType;
 		buf[6] = lc->b.bDataBits;
-		ret = HAL_OK;
+		ret = RTK_SUCCESS;
 		break;
 
 	case USB_CDC_ACM_SET_CONTROL_LINE_STATE:
@@ -260,13 +260,13 @@ static int composite_cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 				USB_DIAG(USB_LAYER_APP, USB_EVT_LINK, 0);
 				usbd_cdc_acm_notify_serial_state(USB_CDC_ACM_CTRL_DSR | USB_CDC_ACM_CTRL_DCD);
 			}
-			ret = HAL_OK;
+			ret = RTK_SUCCESS;
 		}
 		break;
 
 	case USB_CDC_ACM_SEND_BREAK:
 		/* Do nothing */
-		ret = HAL_OK;
+		ret = RTK_SUCCESS;
 		break;
 
 	default:
@@ -297,7 +297,7 @@ static int composite_cdc_acm_cb_received(u8 *buf, u32 len)
   * @brief  Bring up the whole composite stack (disk + core + each class + framework).
   * @note   Reused by both the initial start-up and the hotplug re-init path.
   *         The storage disk must be initialised before usbd_init.
-  * @retval HAL_OK on success, other HAL_Status code on failure (all partial resources rolled back)
+  * @retval RTK_SUCCESS on success, other HAL_Status code on failure (all partial resources rolled back)
   */
 static int composite_init_stack(void)
 {
@@ -326,7 +326,7 @@ static int composite_init_stack(void)
 	}
 #endif
 	ret = usbd_msc_disk_init();
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "MSC disk init failed\r\n");
 #ifdef CONFIG_USBD_MSC_FLASH
 		vfs_user_unregister(COMP_MSC_VFS_PREFIX, VFS_FATFS, VFS_INF_FLASH);
@@ -338,32 +338,32 @@ static int composite_init_stack(void)
 
 	/* Step 2: Start USB device stack */
 	ret = usbd_init(&composite_cfg);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "usbd_init failed\r\n");
 		goto exit_disk_init;
 	}
 
 	/* Step 3: Initialize each class driver with its EP config */
 	ret = usbd_composite_cdc_acm_init(&composite_cdc_acm_usr_cb, &cdc_acm_class_cfg);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "CDC ACM init failed\r\n");
 		goto exit_usbd_init;
 	}
 
 	ret = usbd_composite_msc_init(&composite_msc_usr_cb, &msc_class_cfg);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "MSC init failed\r\n");
 		goto exit_cdc_acm_init;
 	}
 
 	/* Step 4: Start composite framework (drivers already registered via composite_init calls above) */
 	ret = usbd_composite_init(COMP_CB);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Composite init failed\r\n");
 		goto exit_msc_init;
 	}
 
-	return HAL_OK;
+	return RTK_SUCCESS;
 
 exit_msc_init:
 	usbd_msc_deinit();
@@ -452,7 +452,7 @@ static void example_usbd_composite_hotplug_thread(void *param)
 					usb_status = USBD_ATTACH_STATUS_DETACHED;
 				} else {
 					RTK_LOGS(TAG, RTK_LOG_INFO, "SD card insert, re-init USB\n");
-					if (composite_init_stack() != HAL_OK) {
+					if (composite_init_stack() != RTK_SUCCESS) {
 						/* rolled back; stay down and retry on the next insertion */
 						continue;
 					}
@@ -470,7 +470,7 @@ static void example_usbd_composite_hotplug_thread(void *param)
 				RTK_LOGS(TAG, RTK_LOG_INFO, "DETACHED\r\n");
 				composite_deinit_stack();
 				RTK_LOGS(TAG, RTK_LOG_INFO, "Free heap: 0x%x\n", rtos_mem_get_free_heap_size());
-				if (composite_init_stack() != HAL_OK) {
+				if (composite_init_stack() != RTK_SUCCESS) {
 					break;
 				}
 			} else if (status == USBD_ATTACH_STATUS_ATTACHED) {
@@ -512,7 +512,7 @@ void example_usbd_composite(void)
 #endif
 
 	ret = composite_init_stack();
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		goto exit_release_sema;
 	}
 

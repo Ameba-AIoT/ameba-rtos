@@ -11,6 +11,7 @@
 #include "usbd_hid.h"
 #include "usbd_composite.h"
 #include "os_wrapper.h"
+#include "atcmd_service.h"
 
 /* Private defines -----------------------------------------------------------*/
 
@@ -82,7 +83,8 @@ static int composite_cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf);
 static int composite_cdc_acm_cb_received(u8 *buf, u32 len);
 
 static void composite_hid_cb_setup(void);
-static u32 composite_cmd_mouse_data(u16 argc, u8 *argv[]);
+static int composite_cmd_mouse_data(u16 argc, u8 *argv[]);
+static void composite_cmd_mouse_data_at(u16 argc, char **argv);
 
 static int composite_init_stack(void);
 #if COMP_HOTPLUG
@@ -194,9 +196,10 @@ static const usbd_composite_cb_t composite_usr_cb = {
 
 /* Exported variables --------------------------------------------------------*/
 
-CMD_TABLE_DATA_SECTION
-const COMMAND_TABLE usbd_composite_mouse_data_cmd[] = {
-	{"mouse", composite_cmd_mouse_data},
+/* AT commands "AT+<cmd>=<p1>,<p2>...": the command name is case-sensitive, the parameters are not */
+ATCMD_TABLE_DATA_SECTION
+const log_item_t usbd_composite_mouse_data_cmd[] = {
+	{"+USBDHID", composite_cmd_mouse_data_at},
 };
 
 /* Private functions ---------------------------------------------------------*/
@@ -241,7 +244,7 @@ static int composite_cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 	usb_cdc_acm_line_coding_t *lc = &composite_cdc_acm_line_coding;
 	/* Ref USB 2.0 9.2.7: anything not explicitly accepted below is a request error, so
 	   the default status makes the core STALL EP0 instead of ACKing the status stage. */
-	int ret = HAL_ERR_PARA;
+	int ret = -RTK_ERR_BADARG;
 
 	switch (req->bRequest) {
 	case USB_CDC_ACM_SET_LINE_CODING:
@@ -252,7 +255,7 @@ static int composite_cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 			lc->b.bCharFormat = buf[4];
 			lc->b.bParityType = buf[5];
 			lc->b.bDataBits = buf[6];
-			ret = HAL_OK;
+			ret = RTK_SUCCESS;
 		}
 		break;
 
@@ -264,7 +267,7 @@ static int composite_cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 		buf[4] = lc->b.bCharFormat;
 		buf[5] = lc->b.bParityType;
 		buf[6] = lc->b.bDataBits;
-		ret = HAL_OK;
+		ret = RTK_SUCCESS;
 		break;
 
 	case USB_CDC_ACM_SET_CONTROL_LINE_STATE:
@@ -282,13 +285,13 @@ static int composite_cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 				USB_DIAG(USB_LAYER_APP, USB_EVT_LINK, 0);
 				usbd_cdc_acm_notify_serial_state(USB_CDC_ACM_CTRL_DSR | USB_CDC_ACM_CTRL_DCD);
 			}
-			ret = HAL_OK;
+			ret = RTK_SUCCESS;
 		}
 		break;
 
 	case USB_CDC_ACM_SEND_BREAK:
 		/* Do nothing */
-		ret = HAL_OK;
+		ret = RTK_SUCCESS;
 		break;
 
 	default:
@@ -331,7 +334,7 @@ static void composite_hid_cb_setup(void)
 static int composite_hid_send_device_data(composite_hid_mouse_data_t *data)
 {
 	u8 byte[4];
-	int ret = HAL_ERR_HW;
+	int ret = -RTK_ERR_IO;
 
 	usb_os_memset((void *)byte, 0, 4);
 
@@ -375,67 +378,120 @@ static int composite_hid_send_device_data(composite_hid_mouse_data_t *data)
 	return ret;
 }
 
-/* The mouse report declares LOGICAL_MINIMUM(-127)/LOGICAL_MAXIMUM(127) (Ref HID 1.11 6.2.2.7),
-   so clamp explicitly: narrowing the unsigned parse result to char would silently wrap */
-static char composite_hid_mouse_axis(const u8 *str)
+/* Parse a whole-string decimal in [min, max], an optional leading '-' allowed for a negative min */
+static int composite_hid_parse_s32(const u8 *str, s32 min, s32 max, s32 *val)
 {
-	s32 val = (s32)_strtoul((const char *)str, (char **)NULL, 10);
+	const char *p = (const char *)str;
+	char *end = NULL;
+	u32 mag;
+	s32 num;
+	u8 neg = 0U;
 
-	if (val > 127) {
-		val = 127;
-	} else if (val < -127) {
-		val = -127;
+	if (p == NULL) {
+		return -RTK_ERR_BADARG;
+	}
+	if (*p == '-') {
+		neg = 1U;
+		p++;
+	}
+	if ((*p < '0') || (*p > '9')) {
+		return -RTK_ERR_BADARG;
+	}
+	mag = (u32)_strtoul(p, &end, 10);
+	if ((end == NULL) || (*end != '\0') || (mag > 0x7FFFFFFFU)) {
+		return -RTK_ERR_BADARG;
+	}
+	num = (neg != 0U) ? -(s32)mag : (s32)mag;
+	if ((num < min) || (num > max)) {
+		return -RTK_ERR_BADARG;
 	}
 
-	return (char)val;
+	*val = num;
+	return RTK_SUCCESS;
 }
 
-static u32 composite_cmd_mouse_data(u16 argc, u8 *argv[])
+static void composite_hid_cmd_usage(void)
+{
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Usage: AT+USBDHID=<cmd>[,<args>]\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "  mouse,<left>[,<right>,<middle>,<x>,<y>,<wheel>]\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "        Send one mouse report. left/right/middle: 0|1 (1 = pressed)\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "        x/y/wheel: relative move -127..127; omitted args are 0. Needs the host to have configured the device\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "  help  Print this help\n");
+}
+
+/* Fill a mouse report from "mouse <left> [<right> <middle> <x> <y> <wheel>]", argv[0] being "mouse" */
+static int composite_hid_parse_mouse(u16 argc, u8 *argv[], composite_hid_mouse_data_t *data)
+{
+	s32 val[6] = {0};
+	s32 min;
+	u16 i;
+
+	if ((argc < 2U) || (argc > 7U)) {
+		return -RTK_ERR_BADARG;
+	}
+	for (i = 1U; i < argc; i++) {
+		/* Buttons are 1-bit fields, the axes LOGICAL_MINIMUM(-127)/LOGICAL_MAXIMUM(127), Ref HID 1.11 6.2.2.7 */
+		min = (i <= 3U) ? 0 : -127;
+		if (composite_hid_parse_s32(argv[i], min, (i <= 3U) ? 1 : 127, &val[i - 1U]) != RTK_SUCCESS) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid arg %d: %s\n", i, argv[i]);
+			return -RTK_ERR_BADARG;
+		}
+	}
+
+	usb_os_memset((void *)data, 0, sizeof(*data));
+	data->left = (u8)val[0];
+	data->right = (u8)val[1];
+	data->middle = (u8)val[2];
+	data->x_axis = (char)val[3];
+	data->y_axis = (char)val[4];
+	data->wheel = (char)val[5];
+	return RTK_SUCCESS;
+}
+
+static int composite_cmd_mouse_data(u16 argc, u8 *argv[])
 {
 	composite_hid_mouse_data_t data;
 	int ret;
 
-	if (argc == 0U) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid arguments, usage:\n"
-				 "mouse <left> [<right> <middle> <x_axis> <y_axis> <wheel>]\n");
-		return (u32)HAL_ERR_PARA;
+	if ((argc == 0U) || (_stricmp((const char *)argv[0], "help") == 0) || (_stricmp((const char *)argv[0], "?") == 0)) {
+		composite_hid_cmd_usage();
+		return (argc == 0U) ? -RTK_ERR_BADARG : RTK_SUCCESS;
 	}
-
-	usb_os_memset((void *)&data, 0, sizeof(data));
-
-	if (argc > 0) {
-		data.left = _strtoul((const char *)argv[0], (char **)NULL, 10);
+	if (_stricmp((const char *)argv[0], "mouse") != 0) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid cmd: %s, try AT+USBDHID=help\n", argv[0]);
+		return -RTK_ERR_BADARG;
 	}
-	if (argc > 1) {
-		data.right = _strtoul((const char *)argv[1], (char **)NULL, 10);
-	}
-	if (argc > 2) {
-		data.middle = _strtoul((const char *)argv[2], (char **)NULL, 10);
-	}
-	if (argc > 3) {
-		data.x_axis = composite_hid_mouse_axis(argv[3]);
-	}
-	if (argc > 4) {
-		data.y_axis = composite_hid_mouse_axis(argv[4]);
-	}
-	if (argc > 5) {
-		data.wheel = composite_hid_mouse_axis(argv[5]);
+	if (composite_hid_parse_mouse(argc, argv, &data) != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Usage: AT+USBDHID=mouse,<left>[,<right>,<middle>,<x>,<y>,<wheel>]\n");
+		return -RTK_ERR_BADARG;
 	}
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Send mouse data\n");
 	ret = composite_hid_send_device_data(&data);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_WARN, "HID tx fail %d\n", ret);
 	}
 
 	return (u32)ret;
 }
 
+/* AT entry: argv[0] is reserved by the AT parser and argv[1] holds the first parameter */
+static void composite_cmd_mouse_data_at(u16 argc, char **argv)
+{
+	int ret = composite_cmd_mouse_data((argc != 0U) ? (argc - 1U) : 0U, (u8 **)&argv[1]);
+
+	if (ret == RTK_SUCCESS) {
+		at_printf(ATCMD_OK_END_STR);
+	} else {
+		at_printf(ATCMD_ERROR_END_STR, (int)ret);
+	}
+}
+
 
 /**
   * @brief  Bring up the whole composite stack (core + each class + framework).
   * @note   Reused by both the initial start-up and the hotplug re-init path.
-  * @retval HAL_OK on success, other HAL_Status code on failure (all partial resources rolled back)
+  * @retval RTK_SUCCESS on success, other HAL_Status code on failure (all partial resources rolled back)
   */
 static int composite_init_stack(void)
 {
@@ -443,32 +499,32 @@ static int composite_init_stack(void)
 
 	/* Step 1: Start USB device stack */
 	ret = usbd_init(&composite_cfg);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "usbd_init failed\r\n");
 		return ret;
 	}
 
 	/* Step 2: Initialize each class driver with its EP config */
 	ret = usbd_composite_cdc_acm_init(&composite_cdc_acm_usr_cb, &cdc_acm_class_cfg);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "CDC ACM init failed\r\n");
 		goto exit_usbd_init;
 	}
 
 	ret = usbd_composite_hid_init(&composite_hid_usr_cb, &hid_class_cfg);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "HID init failed\r\n");
 		goto exit_cdc_acm_init;
 	}
 
 	/* Step 3: Start composite framework (drivers already registered via composite_init calls above) */
 	ret = usbd_composite_init(COMP_CB);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Composite init failed\r\n");
 		goto exit_hid_init;
 	}
 
-	return HAL_OK;
+	return RTK_SUCCESS;
 
 exit_hid_init:
 	usbd_hid_deinit();
@@ -522,7 +578,7 @@ static void example_usbd_composite_hotplug_thread(void *param)
 				composite_stack_ready = 0;
 				composite_deinit_stack();
 				RTK_LOGS(TAG, RTK_LOG_INFO, "Free heap: 0x%x\n", rtos_mem_get_free_heap_size());
-				if (composite_init_stack() != HAL_OK) {
+				if (composite_init_stack() != RTK_SUCCESS) {
 					rtos_mutex_give(composite_state_lock);
 					break;
 				}
@@ -573,7 +629,7 @@ void example_usbd_composite(void)
 #endif
 
 	ret = composite_init_stack();
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		goto exit_release_sema;
 	}
 	composite_stack_ready = 1;

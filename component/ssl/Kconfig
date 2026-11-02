@@ -13,6 +13,13 @@ menu "CONFIG MbedTLS"
         bool "Enable threading"
         default n
 
+    config MBEDTLS_USE_LEGACY_API
+        bool "Use legacy crypto API instead of PSA API" if RTL8720F || AMEBAGREEN2
+        default y
+        help
+          Upper-layer modules call mbedtls_aes/sha/ecdsa/ctr_drbg... legacy API.
+          Disable it to switch those modules to PSA API (psa_crypto_init is called at boot).
+
     config MBEDTLS_SSL_IN_CONTENT_LEN_MENU
         depends on MBEDTLS_ENABLED_MENU
         int "Maximum len of incoming fragments"

@@ -14,6 +14,7 @@
 #include "ameba_soc.h"
 #include "platform_stdlib.h"
 #include "basic_types.h"
+#include "atcmd_service.h"
 
 /* This used to check the USB issue */
 /*
@@ -93,13 +94,16 @@
 #endif
 
 #if COMP_UAC_ENABLE_RECORD
-/* Mic loopback record thread, triggered by the "usbd_uac_record" console command */
+/* Mic loopback record thread, triggered by the "USBDUAC record" console command */
 #define COMP_UAC_RECORD_THREAD_PRIORITY               4U
 #define COMP_UAC_RECORD_THREAD_STACK_SIZE             (1024U * 4)
 /* 1 ms of the 16kHz/2ch/16bit record format */
 #define COMP_UAC_RECORD_CHUNK_LEN                     64U
 #define COMP_UAC_RECORD_CHUNK_DELAY_MS                1U
 #include "example_usbd_composite_hid_uac_record_audio_data.h"
+
+/* The record thread reads the table in whole chunks, refer to example_usbd_composite_hid_uac_record_thread() */
+_Static_assert((sizeof(usbd_uac_record_audio_data) % COMP_UAC_RECORD_CHUNK_LEN) == 0U, "UAC record data len");
 #endif
 
 /* Private types -------------------------------------------------------------*/
@@ -112,11 +116,11 @@
 static void composite_uac_cb_mute_changed(u8 mute);
 static void composite_uac_cb_volume_changed(u8 volume);
 
-static u32 composite_hid_cmd_tx(u16 argc, u8 *argv[]);
-static u32 composite_hid_cmd_voldown(u16 argc, u8 *argv[]);
-static u32 composite_hid_cmd_volup(u16 argc, u8 *argv[]);
+static int composite_hid_cmd(u16 argc, u8 *argv[]);
+static void composite_hid_cmd_at(u16 argc, char **argv);
 #if COMP_UAC_ENABLE_RECORD
-static u32 composite_uac_cmd_record(u16 argc, u8 *argv[]);
+static int composite_uac_cmd(u16 argc, u8 *argv[]);
+static void composite_uac_cmd_at(u16 argc, char **argv);
 #endif
 
 static int composite_init_stack(void);
@@ -337,15 +341,14 @@ static rtos_sema_t uac_record_start_sema;
 
 /* Exported variables --------------------------------------------------------*/
 
-CMD_TABLE_DATA_SECTION
-const COMMAND_TABLE composite_hid_uac_cmd_table[] = {
+/* AT commands "AT+<cmd>=<p1>,<p2>...": the command name is case-sensitive, the parameters are not */
+ATCMD_TABLE_DATA_SECTION
+const log_item_t composite_hid_uac_cmd_table[] = {
 #ifdef CONFIG_USBD_HID_VENDOR
-	{"usbd_hid_tx", composite_hid_cmd_tx},
-	{"usbd_hid_volup", composite_hid_cmd_volup},
-	{"usbd_hid_voldown", composite_hid_cmd_voldown},
+	{"+USBDHID", composite_hid_cmd_at},
 #endif
 #if COMP_UAC_ENABLE_RECORD
-	{"usbd_uac_record", composite_uac_cmd_record},
+	{"+USBDUAC", composite_uac_cmd_at},
 #endif
 };
 
@@ -450,11 +453,11 @@ static void example_audio_track_play(void)
 	play_cfg = uac_play_cfg;
 	rtos_critical_exit(RTOS_CRITICAL_USB);
 
-	if (usbd_uac_config(&play_cfg, 0, 0) != HAL_OK) {
+	if (usbd_uac_config(&play_cfg, 0, 0) != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "UAC config fail\n");
 		return;
 	}
-	while (usbd_uac_start_play() != HAL_OK) {
+	while (usbd_uac_start_play() != RTK_SUCCESS) {
 		if (audio_task_stop || composite_playback_exit) {
 			return;
 		}
@@ -661,19 +664,34 @@ static void example_usbd_composite_hid_uac_hid_rx_thread(void *param)
 	rtos_task_delete(NULL);
 }
 
-static u32 composite_hid_cmd_tx(u16 argc, u8 *argv[])
+/* Whole-string decimal in [min, max] */
+static int composite_parse_u32(const u8 *str, u32 min, u32 max, u32 *val)
+{
+	char *end = NULL;
+	u32 num;
+
+	if ((str == NULL) || (str[0] < (u8)'0') || (str[0] > (u8)'9')) {
+		return -RTK_ERR_BADARG;
+	}
+	num = (u32)_strtoul((const char *)str, &end, 10);
+	if ((end == NULL) || (*end != '\0') || (num < min) || (num > max)) {
+		return -RTK_ERR_BADARG;
+	}
+	*val = num;
+	return RTK_SUCCESS;
+}
+
+static int composite_hid_cmd_tx(u16 argc, u8 *argv[])
 {
 	u16 size = 10U;
 	u32 val;
 	int ret;
 
-	if (argc == 0U) {
-		size = 10U;
-	} else {
-		/* Clamp before narrowing, else a value above 0xFFFF would wrap to a small length */
-		val = _strtoul((const char *)argv[0], NULL, 10);
-		if (val > COMP_HID_TX_BUF_LEN) {
-			val = COMP_HID_TX_BUF_LEN;
+	if (argc != 0U) {
+		if (composite_parse_u32(argv[0], 1U, COMP_HID_TX_BUF_LEN, &val) != RTK_SUCCESS) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Usage: AT+USBDHID=tx[,<len>]\n");
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "  len: 1..%d\n", COMP_HID_TX_BUF_LEN);
+			return -RTK_ERR_BADARG;
 		}
 		size = (u16)val;
 	}
@@ -684,16 +702,16 @@ static u32 composite_hid_cmd_tx(u16 argc, u8 *argv[])
 	   the example never got far enough to create it, and it is deliberately never
 	   deleted, so a non-zero gate means the handle is valid. */
 	if (composite_stack_ready == 0U) {
-		return (u32)HAL_ERR_HW;
+		return -RTK_ERR_IO;
 	}
 	rtos_mutex_take(composite_hid_lock, RTOS_MAX_TIMEOUT);
 	if (composite_stack_ready == 0U) {
-		ret = HAL_ERR_HW;
+		ret = -RTK_ERR_IO;
 	} else {
 		ret = usbd_hid_send_data(hid_tx_buf, size);
 	}
 	rtos_mutex_give(composite_hid_lock);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_WARN, "HID tx fail %d\n", ret);
 	}
 
@@ -705,39 +723,77 @@ static u32 composite_hid_cmd_tx(u16 argc, u8 *argv[])
   * @param  up: 1 for volume up, 0 for volume down
   * @retval Status
   */
-static u32 composite_hid_volume_ctrl(u8 up)
+static int composite_hid_volume_ctrl(u8 up)
 {
-	int ret = HAL_ERR_HW;
+	int ret = -RTK_ERR_IO;
 
 	if (composite_stack_ready == 0U) {
-		return (u32)HAL_ERR_HW;
+		return -RTK_ERR_IO;
 	}
 	rtos_mutex_take(composite_hid_lock, RTOS_MAX_TIMEOUT);
 	if (composite_stack_ready != 0U) {
 		ret = usbd_hid_volume_ctrl(up);
 	}
 	rtos_mutex_give(composite_hid_lock);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_WARN, "HID vol fail %d\n", ret);
 	}
 
 	return (u32)ret;
 }
 
-static u32 composite_hid_cmd_volup(u16 argc, u8 *argv[])
+static void composite_hid_cmd_usage(void)
 {
-	UNUSED(argc);
-	UNUSED(argv);
-
-	return composite_hid_volume_ctrl(1);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Usage: AT+USBDHID=<cmd>[,<args>]\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "  tx[,<len>]     Send len bytes on the HID interrupt IN EP, len: 1..%d, default 10\n", COMP_HID_TX_BUF_LEN);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "                 Every byte holds len & 0xFF\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "  vol,<up|down>  Send a vendor volume up/down key\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "  help           Print this help\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "All need the host to have configured the device\n");
 }
 
-static u32 composite_hid_cmd_voldown(u16 argc, u8 *argv[])
+static int composite_hid_cmd(u16 argc, u8 *argv[])
 {
-	UNUSED(argc);
-	UNUSED(argv);
+	const char *cmd = (argc != 0U) ? (const char *)argv[0] : NULL;
+	const char *dir = (argc > 1U) ? (const char *)argv[1] : NULL;
 
-	return composite_hid_volume_ctrl(0);
+	if ((cmd == NULL) || (_stricmp(cmd, "help") == 0) || (_stricmp(cmd, "?") == 0)) {
+		composite_hid_cmd_usage();
+		return (cmd == NULL) ? -RTK_ERR_BADARG : RTK_SUCCESS;
+	}
+
+	if (_stricmp(cmd, "tx") == 0) {
+		if (argc > 2U) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Usage: AT+USBDHID=tx[,<len>]\n");
+			return -RTK_ERR_BADARG;
+		}
+		return composite_hid_cmd_tx(argc - 1U, argv + 1);
+	}
+	if (_stricmp(cmd, "vol") == 0) {
+		if ((argc == 2U) && (_stricmp(dir, "up") == 0)) {
+			return composite_hid_volume_ctrl(1);
+		}
+		if ((argc == 2U) && (_stricmp(dir, "down") == 0)) {
+			return composite_hid_volume_ctrl(0);
+		}
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Usage: AT+USBDHID=vol,<up|down>\n");
+		return -RTK_ERR_BADARG;
+	}
+
+	RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid cmd: %s, try AT+USBDHID=help\n", cmd);
+	return -RTK_ERR_BADARG;
+}
+
+/* AT entry: argv[0] is reserved by the AT parser and argv[1] holds the first parameter */
+static void composite_hid_cmd_at(u16 argc, char **argv)
+{
+	int ret = composite_hid_cmd((argc != 0U) ? (argc - 1U) : 0U, (u8 **)&argv[1]);
+
+	if (ret == RTK_SUCCESS) {
+		at_printf(ATCMD_OK_END_STR);
+	} else {
+		at_printf(ATCMD_ERROR_END_STR, (int)ret);
+	}
 }
 #endif /* CONFIG_USBD_HID_VENDOR */
 
@@ -768,12 +824,12 @@ static void example_usbd_composite_hid_uac_record_thread(void *param)
 		}
 
 		/* Fails before the host has configured the device: the record ring would stay unsized */
-		if (usbd_uac_config(&uac_record_cfg, 1, 0) != HAL_OK) {
+		if (usbd_uac_config(&uac_record_cfg, 1, 0) != RTK_SUCCESS) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "UAC record cfg fail\n");
 			rtos_mutex_give(composite_record_lock);
 			continue;
 		}
-		if (usbd_uac_start_record() != HAL_OK) {
+		if (usbd_uac_start_record() != RTK_SUCCESS) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "UAC start record fail\n");
 			rtos_mutex_give(composite_record_lock);
 			continue;
@@ -786,7 +842,7 @@ static void example_usbd_composite_hid_uac_record_thread(void *param)
 			/* One ms of audio per call, the class cuts it into per-(micro)frame packets. A live
 			   stream tolerates a lost chunk, so keep the 1 ms pace and only report the first
 			   failure of a run, to stay off the console at 1 kHz. */
-			if (usbd_uac_transmit_data(&usbd_uac_record_audio_data[offset], COMP_UAC_RECORD_CHUNK_LEN) != HAL_OK) {
+			if (usbd_uac_transmit_data(&usbd_uac_record_audio_data[offset], COMP_UAC_RECORD_CHUNK_LEN) != RTK_SUCCESS) {
 				if (tx_fail_cnt == 0U) {
 					RTK_LOGS(TAG, RTK_LOG_WARN, "UAC record tx fail\n");
 				}
@@ -808,58 +864,77 @@ static void example_usbd_composite_hid_uac_record_thread(void *param)
 	rtos_task_delete(NULL);
 }
 
-static u32 composite_uac_cmd_record(u16 argc, u8 *argv[])
+static int composite_uac_cmd(u16 argc, u8 *argv[])
 {
-	UNUSED(argc);
-	UNUSED(argv);
+	const char *cmd = (argc != 0U) ? (const char *)argv[0] : NULL;
+
+	if ((cmd == NULL) || (_stricmp(cmd, "help") == 0) || (_stricmp(cmd, "?") == 0) || (_stricmp(cmd, "record") != 0) || (argc != 1U)) {
+		RTK_LOGS(TAG, RTK_LOG_INFO, "Usage: AT+USBDUAC=<cmd>\n");
+		RTK_LOGS(TAG, RTK_LOG_INFO, "  record   Replay the built-in clip on the mic (USB IN) stream once the host\n");
+		RTK_LOGS(TAG, RTK_LOG_INFO, "           configured it; each call queues one more session\n");
+		RTK_LOGS(TAG, RTK_LOG_INFO, "  help     Print this help\n");
+		return ((cmd != NULL) && ((_stricmp(cmd, "help") == 0) || (_stricmp(cmd, "?") == 0))) ? RTK_SUCCESS : -RTK_ERR_BADARG;
+	}
 
 	/* NULL only if the example never created it; once created it is never deleted, refer to
 	   composite_release_semas(), so the handle cannot be freed under this shell thread. */
 	if (uac_record_start_sema == NULL) {
-		return (u32)HAL_ERR_HW;
+		return -RTK_ERR_IO;
 	}
 
 	if (rtos_sema_give(uac_record_start_sema) != RTK_SUCCESS) {
-		return (u32)HAL_ERR_HW;
+		return -RTK_ERR_IO;
 	}
-	return (u32)HAL_OK;
+	return RTK_SUCCESS;
+}
+
+/* AT entry: argv[0] is reserved by the AT parser and argv[1] holds the first parameter */
+static void composite_uac_cmd_at(u16 argc, char **argv)
+{
+	int ret = composite_uac_cmd((argc != 0U) ? (argc - 1U) : 0U, (u8 **)&argv[1]);
+
+	if (ret == RTK_SUCCESS) {
+		at_printf(ATCMD_OK_END_STR);
+	} else {
+		at_printf(ATCMD_ERROR_END_STR, (int)ret);
+	}
 }
 #endif /* COMP_UAC_ENABLE_RECORD */
 
 /**
   * @brief  Bring up the whole composite stack (core + each class + framework).
   * @note   Reused by both the initial start-up and the hotplug re-init path.
-  * @retval HAL_OK on success, other HAL_Status code on failure (all partial resources rolled back)
+  * @retval RTK_SUCCESS on success, other HAL_Status code on failure (all partial resources rolled back)
   */
 static int composite_init_stack(void)
 {
 	int ret;
 
 	ret = usbd_init(&composite_cfg);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "USB init fail\n");
 		return ret;
 	}
 
 	ret = usbd_composite_hid_init(&composite_hid_usr_cb, &hid_class_cfg);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "HID init fail\n");
 		goto exit_usbd_init;
 	}
 
 	ret = usbd_composite_uac_init(&composite_uac_cb, &uac_class_cfg);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "UAC init fail\n");
 		goto exit_hid_init;
 	}
 
 	ret = usbd_composite_init(COMP_CB);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Composite init fail\n");
 		goto exit_uac_init;
 	}
 
-	return HAL_OK;
+	return RTK_SUCCESS;
 
 exit_uac_init:
 	usbd_uac_deinit();
@@ -962,7 +1037,7 @@ static void example_usbd_composite_hotplug_thread(void *param)
 				composite_stack_ready = 0;
 				composite_deinit_stack();
 				RTK_LOGS(TAG, RTK_LOG_INFO, "Free heap: 0x%x\n", rtos_mem_get_free_heap_size());
-				if (composite_init_stack() != HAL_OK) {
+				if (composite_init_stack() != RTK_SUCCESS) {
 					composite_state_unlock_all();
 					fatal = 1U;
 					break;
@@ -1090,7 +1165,7 @@ static void composite_release_semas(void)
 	rtos_sema_delete(composite_attach_status_changed_sema);
 	composite_attach_status_changed_sema = NULL;
 #endif
-	/* uac_record_start_sema is not deleted: the "usbd_uac_record" command gives it from the
+	/* uac_record_start_sema is not deleted: the "USBDUAC record" command gives it from the
 	   shell thread, which can not be joined, as for the locks. A left over count is harmless:
 	   at worst it starts one record session, which gates itself on composite_stack_ready. */
 	rtos_sema_delete(uac_state_sema);
@@ -1109,7 +1184,7 @@ static void example_usbd_composite_hid_uac_init_thread(void *param)
 	composite_uac_cb.format_changed = composite_uac_cb_format_changed;
 
 	ret = composite_init_stack();
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		goto exit_release_sema;
 	}
 	composite_stack_ready = 1;

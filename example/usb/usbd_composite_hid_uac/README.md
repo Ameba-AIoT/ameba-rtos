@@ -81,7 +81,7 @@ None
 	```
 	- Configure Recording Software: Launch Audacity. Navigate to Audio Setup > Recording Device and select the target device: Microphone (Realtek HID+UAC Composite Device).
 	- Initialize Data Stream: Click the Record button on the Audacity toolbar to prepare the Host to receive audio frames.
-	- Execute Test Command: In the device's serial console (UART), execute "usbd_uac_record" command to trigger data transmission.
+	- Execute Test Command: In the device's serial console (UART), execute "AT+USBDUAC=record" command to trigger data transmission.
 	- Verify Output: Audacity will begin receiving a continuous, looping data stream. Once sufficient data has been captured, click the Stop button and play back the track to verify audio integrity; a clear, looping audio signal should be heard.
 	```
 	Triggering the record command prints:
@@ -95,7 +95,7 @@ None
 		click rescan ,choose "Realtek HID+UAC Composite Device" device,and click connect
 	- Test
 		USBD RX:type "0x1F,1,2,3,4" in the HIDPyToy,and click "Send Out Report", the LOGUART console will print the message
-		USBD TX:type "usbd_hid_tx xx" in the LOGUART console, and click "Read In Reports" in the HIDPyToy, you will get a message from the ameba device
+		USBD TX:type "AT+USBDHID=tx,xx" in the LOGUART console, and click "Read In Reports" in the HIDPyToy, you will get a message from the ameba device
 		Notice:please trigger USBD RX first
 	```
 	Each Out Report received from the host prints:
@@ -103,7 +103,7 @@ None
 	[COMP-I] HID RX <len> bytes, first byte:1f
 	```
 
-6. Type "usbd_hid_volup"/"usbd_hid_voldown" in the LOGUART console, the windows volume control bar will pop-up, and the volume will up/down
+6. Type "AT+USBDHID=vol,up"/"AT+USBDHID=vol,down" in the LOGUART console, the windows volume control bar will pop-up, and the volume will up/down
 
 7. Hotplug check: the example tears down and re-inits the whole composite stack on every detach, so unplug and re-plug the cable, following log shall be printed for each cycle:
 	```
@@ -119,10 +119,9 @@ None
 
 | Command | Description |
 | --- | --- |
-| `usbd_hid_tx [size]` | Send `size` bytes on the HID interrupt IN endpoint, default 10 bytes, clamped to the TX buffer length. |
-| `usbd_hid_volup` | Send a HID vendor volume-up report to the host. |
-| `usbd_hid_voldown` | Send a HID vendor volume-down report to the host. |
-| `usbd_uac_record` | Start the microphone (USB IN) replay, which feeds the built-in audio sample to the host. Only registered on a UAC 2.0 and non-FS-only build. |
+| `AT+USBDHID=tx[,<len>]` | Send `len` bytes on the HID interrupt IN endpoint, every byte holding `len & 0xFF`. `len`: 1..60 (the TX buffer length), default 10; any other value is rejected. |
+| `AT+USBDHID=vol,<up\|down>` | Send a HID vendor volume-up / volume-down report to the host. |
+| `AT+USBDUAC=record` | Start the microphone (USB IN) replay, which feeds the built-in audio sample to the host. Each call queues one more session. Only registered on a UAC 2.0 and non-FS-only build. |
 
 Note: the `usbd_hid_*` commands are only registered when the HID device type is `Vendor` (`CONFIG_USBD_HID_VENDOR`).
 

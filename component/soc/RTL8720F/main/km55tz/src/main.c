@@ -9,11 +9,16 @@
 #endif
 #ifdef CONFIG_MBEDTLS_ENABLED
 #include "threading_alt.h"
+#if !defined(CONFIG_MBEDTLS_USE_LEGACY_API)
+#include "psa/crypto.h"
+#include "rtk_assert.h"
+#endif
 #endif
 #if defined(CONFIG_BT_COEXIST)
 #include "rtw_coex_ipc.h"
 #endif
 #include "ameba_diagnose.h"
+#include "ameba_ota_rollback.h"
 
 //#include "wifi_fast_connect.h"
 static const char *const TAG = "MAIN";
@@ -68,6 +73,10 @@ void app_mbedtls_rom_init(void)
 	ssl_function_map.ssl_snprintf = (int (*)(char *s, size_t n, const char *format, ...))DiagSnPrintf;
 #if defined(CONFIG_MBEDTLS_THREADING)
 	mbedtls_threading_init();
+#endif
+#if defined(CONFIG_MBEDTLS_ENABLED) && !defined(CONFIG_MBEDTLS_USE_LEGACY_API)
+	psa_status_t psa_ret = psa_crypto_init();
+	rtk_assert(psa_ret == PSA_SUCCESS, TAG);
 #endif
 	/* mbedtls calls into the HW crypto engine with interrupts disabled via the
 	 * IPC semaphore, so cache inconsistency cannot occur; suppress the
@@ -139,6 +148,12 @@ _WEAK void app_example(void)
 
 }
 
+/* OTA rollback: clear BootCnt once the application works. Override it to clear after the product's own self check. */
+_WEAK void app_ota_rollback_ok_callback(void)
+{
+	OTA_Rollback_Clear();
+}
+
 //default main
 int main(void)
 {
@@ -198,6 +213,7 @@ int main(void)
 
 	/* Execute application example */
 	app_example();
+	app_ota_rollback_ok_callback();
 
 	/* Set delay function for hw ipc sema */
 	IPC_patch_function(&rtos_critical_enter, &rtos_critical_exit, RTOS_CRITICAL_SEMA);

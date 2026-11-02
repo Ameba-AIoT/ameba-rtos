@@ -165,7 +165,7 @@ static int cdc_ecm_cb_device_check(usb_host_t *host, u8 cfg_max)
 static int cdc_ecm_cb_init(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "INIT\n");
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 static void cdc_ecm_cb_deinit(void)
@@ -217,7 +217,12 @@ static void cdc_ecm_cb_process(usb_host_t *host, u8 msg)
 	UNUSED(host);
 	switch (msg) {
 	case USBH_MSG_USER_SET_CONFIG:
-		usbh_cdc_ecm_choose_config(host);
+		/* Diagnostic only: the core goes on to SET_CONFIG whatever this returns, and a device
+		   without an ECM function is not reported here but silently mapped to config 0, on
+		   which attach then fails */
+		if (usbh_cdc_ecm_choose_config(host) != RTK_SUCCESS) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Choose config fail\n");
+		}
 		break;
 	case USBH_MSG_DISCONNECTED:
 		// usbh_cdc_ecm_host_user.cdc_ecm_is_ready = 0;
@@ -233,23 +238,29 @@ static void cdc_ecm_cb_process(usb_host_t *host, u8 msg)
 
 static int cdc_ecm_do_init(void)
 {
-	int ret = 0;
+	int ret;
 
 	ret = usbh_init(&usbh_ecm_cfg, &usbh_ecm_usr_cb);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Init USBH fail\n");
-		return 0;
+		return ret;
 	}
 
 	ret = usbh_cdc_ecm_init(&cdc_ecm_usb_cb, NULL);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Init CDC ECM fail\n");
 		usbh_deinit();
-		return 0;
+		return ret;
 	}
 
 	/* All class drivers registered; start USB TRX so enumeration can run. */
-	usbh_start();
+	ret = usbh_start();
+	if (ret != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Start USBH fail\n");
+		usbh_cdc_ecm_deinit();
+		usbh_deinit();
+		return ret;
+	}
 
 	do {
 		if (usbh_cdc_ecm_usb_is_ready()) {
@@ -269,17 +280,17 @@ static int cdc_ecm_do_init(void)
 	cdc_ecm_teardown = 0U;
 	rtos_mutex_give(cdc_ecm_state_mutex);
 
-	return 1;
+	return RTK_SUCCESS;
 }
 
 /**
   * @brief  Parse the attributes the bridge needs from an Ethernet frame
   * @param  p: received pbuf
-  * @param  pattrib: parsed attributes, only valid when ERR_OK is returned
-  * @retval ERR_OK on success, ERR_VAL if the frame is too short for any of the
+  * @param  pattrib: parsed attributes, only valid when RTK_SUCCESS is returned
+  * @retval RTK_SUCCESS on success, -RTK_ERR_BADARG if the frame is too short for any of the
   *         fixed offsets the bridge parses or rewrites, i.e. it must be dropped
   */
-static err_t get_packet_attrib(struct pbuf *p, pkt_attrib_t *pattrib)
+static int get_packet_attrib(struct pbuf *p, pkt_attrib_t *pattrib)
 {
 	u16_t protocol, src_port = 0, dst_port = 0;
 	u8_t type = 0;
@@ -293,7 +304,7 @@ static err_t get_packet_attrib(struct pbuf *p, pkt_attrib_t *pattrib)
 
 	/* Without a complete Ethernet header none of the fields below exist */
 	if (p->len < (u16_t)ETH_HLEN) {
-		return ERR_VAL;
+		return -RTK_ERR_BADARG;
 	}
 
 	dst_addr = (struct eth_addr *)((u8_t *)p->payload);
@@ -302,7 +313,7 @@ static err_t get_packet_attrib(struct pbuf *p, pkt_attrib_t *pattrib)
 
 	if (protocol == lwip_htons(ETHTYPE_IP)) {
 		if (p->len < (u16_t)(ETH_HLEN + sizeof(struct ip_hdr))) {
-			return ERR_VAL;
+			return -RTK_ERR_BADARG;
 		}
 		/* update src ip/mac mapping */
 		iph = (struct ip_hdr *)((u8 *)p->payload + ETH_HLEN);
@@ -313,7 +324,7 @@ static err_t get_packet_attrib(struct pbuf *p, pkt_attrib_t *pattrib)
 		switch (iph->_proto) {
 		case IP_PROTO_TCP://TCP
 			if (p->len < (u16_t)(ETH_HLEN + sizeof(struct ip_hdr) + sizeof(struct tcp_hdr))) {
-				return ERR_VAL;
+				return -RTK_ERR_BADARG;
 			}
 			tcph = (struct tcp_hdr *)((u8 *)p->payload + ETH_HLEN + sizeof(struct ip_hdr));
 			if (tcph != NULL) {
@@ -324,7 +335,7 @@ static err_t get_packet_attrib(struct pbuf *p, pkt_attrib_t *pattrib)
 			break;
 		case IP_PROTO_UDP://UDP
 			if (p->len < (u16_t)(ETH_HLEN + sizeof(struct ip_hdr) + sizeof(struct udp_hdr))) {
-				return ERR_VAL;
+				return -RTK_ERR_BADARG;
 			}
 			udph = (struct udp_hdr *)((u8 *)p->payload + ETH_HLEN + sizeof(struct ip_hdr));
 			if (udph != NULL) {
@@ -341,7 +352,7 @@ static err_t get_packet_attrib(struct pbuf *p, pkt_attrib_t *pattrib)
 		/* A full ARP packet is required: both bridge directions rewrite the
 		 * sender/target hardware address at offset 22/32 of the frame */
 		if (p->len < (u16_t)SIZEOF_ETHARP_PACKET) {
-			return ERR_VAL;
+			return -RTK_ERR_BADARG;
 		}
 		arph = (struct etharp_hdr *)((u8 *)p->payload + ETH_HLEN);
 		src_ip = (u8 *) & (arph->sipaddr);
@@ -368,10 +379,10 @@ static err_t get_packet_attrib(struct pbuf *p, pkt_attrib_t *pattrib)
 		usb_os_memcpy((void *)pattrib->dst_ip, (const void *)dst_ip, sizeof(pattrib->dst_ip));
 	}
 
-	return ERR_OK;
+	return RTK_SUCCESS;
 }
 
-static u32_t send_to_wifi(pkt_attrib_t *pattrib, struct pbuf *p)
+static int send_to_wifi(pkt_attrib_t *pattrib, struct pbuf *p)
 {
 	if (pattrib->protocol == lwip_htons(ETHTYPE_ARP)) {
 		usb_os_memcpy((void *)&host_mac, (const void *)((u8 *)p->payload + ETH_ALEN), ETH_ALEN);
@@ -393,18 +404,22 @@ static u32_t send_to_wifi(pkt_attrib_t *pattrib, struct pbuf *p)
 		usb_os_memcpy((void *)((u8 *)p->payload + ETH_ALEN + 16), (const void *)pnetif_sta->hwaddr, ETH_ALEN);
 	}
 
-	pnetif_sta->linkoutput(pnetif_sta, p);
+	if (pnetif_sta->linkoutput(pnetif_sta, p) != ERR_OK) {
+		return -RTK_ERR_IO;
+	}
 
-	return 0;
+	return RTK_SUCCESS;
 }
 
-static u32_t send_to_usb(pkt_attrib_t *pattrib, struct pbuf *p)
+static int send_to_usb(pkt_attrib_t *pattrib, struct pbuf *p)
 {
 	UNUSED(pattrib);
 
-	pnetif_usb_eth->linkoutput(pnetif_usb_eth, p);
+	if (pnetif_usb_eth->linkoutput(pnetif_usb_eth, p) != ERR_OK) {
+		return -RTK_ERR_IO;
+	}
 
-	return 0;
+	return RTK_SUCCESS;
 }
 
 static err_t usb_in_wifi_out(struct pbuf *p, struct netif *netif)
@@ -417,7 +432,7 @@ static err_t usb_in_wifi_out(struct pbuf *p, struct netif *netif)
 
 	/* Malformed/runt frame, drop it. The caller frees the pbuf on error, so
 	 * every path that already freed it must return ERR_OK. */
-	if (get_packet_attrib(p, &attrib) != ERR_OK) {
+	if (get_packet_attrib(p, &attrib) != RTK_SUCCESS) {
 		pbuf_free(p);
 		return ERR_OK;
 	}
@@ -435,7 +450,12 @@ static err_t usb_in_wifi_out(struct pbuf *p, struct netif *netif)
 	//			attrib.dst_mac.addr[3], attrib.dst_mac.addr[4], attrib.dst_mac.addr[5], attrib.src_mac.addr[0], attrib.src_mac.addr[1],
 	//			attrib.src_mac.addr[2], attrib.src_mac.addr[3], attrib.src_mac.addr[4], attrib.src_mac.addr[5]);
 
-	send_to_wifi(&attrib, p);
+	/* A frame that can not be sent is dropped like on any bridge. The log is DEBUG level on
+	   purpose, a per-frame log would flood the console under congestion, so it is only
+	   visible when COMPIL_LOG_LEVEL is raised to RTK_LOG_DEBUG */
+	if (send_to_wifi(&attrib, p) != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_DEBUG, "To WiFi drop\n");
+	}
 
 	pbuf_free(p);
 
@@ -452,7 +472,7 @@ static err_t wifi_in_usb_out(struct pbuf *p, struct netif *netif)
 
 	/* Malformed/runt frame, drop it. The caller frees the pbuf on error, so
 	 * every path that already freed it must return ERR_OK. */
-	if (get_packet_attrib(p, &attrib) != ERR_OK) {
+	if (get_packet_attrib(p, &attrib) != RTK_SUCCESS) {
 		pbuf_free(p);
 		return ERR_OK;
 	}
@@ -483,7 +503,10 @@ static err_t wifi_in_usb_out(struct pbuf *p, struct netif *netif)
 	//dst mac
 	usb_os_memcpy((void *)p->payload, (const void *)&host_mac, ETH_ALEN);
 
-	send_to_usb(&attrib, p);
+	/* Dropped the same way as in usb_in_wifi_out */
+	if (send_to_usb(&attrib, p) != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_DEBUG, "To USB drop\n");
+	}
 
 	pbuf_free(p);
 	return ERR_OK;
@@ -497,7 +520,7 @@ static void example_usbh_bridge_monitor_thread(void *param)
 	eth_state_t ethernet_unplug = ETH_STATUS_IDLE;
 
 	//todo: The usb will not be initialized at the beginning(need the cooperation of hw design)
-	if (cdc_ecm_do_init() == 0) {
+	if (cdc_ecm_do_init() != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "USB init fail\n");
 
 		rtos_task_delete(NULL);
@@ -508,11 +531,14 @@ static void example_usbh_bridge_monitor_thread(void *param)
 
 		if (1 == link_is_up && (ethernet_unplug < ETH_STATUS_INIT)) {	// unlink -> link
 			ethernet_unplug = ETH_STATUS_INIT;
-			netif_set_link_up(pnetif_usb_eth);
+			/* Not the tcpip thread, so go through netifapi like the link down below */
+			netifapi_netif_set_link_up(pnetif_usb_eth);
 			RTK_LOGS(TAG, RTK_LOG_INFO, "Switch to link\n");
 		} else if (0 == link_is_up && (ethernet_unplug >= ETH_STATUS_INIT)) {	// link -> unlink
 			ethernet_unplug = ETH_STATUS_DEINIT;
-			netif_set_default(pnetif_sta);
+			netifapi_netif_set_default(pnetif_sta);
+			/* Clear the link flag and the ARP entries of the gone USB interface */
+			netifapi_netif_set_link_down(pnetif_usb_eth);
 			RTK_LOGS(TAG, RTK_LOG_INFO, "Switch to unlink\n");
 		} else {
 			rtos_time_delay_ms(1000);
@@ -568,7 +594,7 @@ static void example_usbh_bridge_hotplug_thread(void *param)
 		 * Without prepare_done() ready_to_xfer stays 0 after replug, so
 		 * bulk-IN receive scheduling and link status never resume.
 		 */
-		if (cdc_ecm_do_init() == 0) {
+		if (cdc_ecm_do_init() != RTK_SUCCESS) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Reinit fail\n");
 			break;
 		}
@@ -596,13 +622,13 @@ int usb_ethernet_transmit(u8 *buf, u32 len, u8 block)
 	   teardown is pending. A hotplug right after this check is harmless, the mutex
 	   stays valid and the re-check under it skips the TX. */
 	if ((cdc_ecm_stack_ready == 0U) || (cdc_ecm_teardown != 0U)) {
-		return HAL_ERR_HW;
+		return -RTK_ERR_IO;
 	}
 
 	rtos_mutex_take(cdc_ecm_state_mutex, RTOS_MAX_TIMEOUT);
 	if ((cdc_ecm_stack_ready == 0U) || (cdc_ecm_teardown != 0U)) {
 		/* Lost the race against a teardown */
-		ret = HAL_ERR_HW;
+		ret = -RTK_ERR_IO;
 	} else {
 		ret = usbh_cdc_ecm_send_data(buf, len, block);
 	}
@@ -629,7 +655,7 @@ void example_usbh_wifi_bridge(void)
 	}
 
 	ret = usb_os_sema_create(&cdc_ecm_detach_sema);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create detach sema fail\n");
 		goto exit;
 	}

@@ -148,6 +148,10 @@ static const usbh_msc_cb_t msc_usr_cb = {
 	.setup = msc_cb_setup,
 };
 
+static const usbh_msc_config_t msc_class_cfg = {
+	/* buf_size left 0 takes the class default. */
+};
+
 static const usbh_user_cb_t usbh_usr_cb = {
 	.process = msc_cb_process
 };
@@ -168,13 +172,13 @@ static const usbh_user_cb_t usbh_usr_cb = {
   *         FatFs. The hold time is therefore one FatFs operation, bounded by the
   *         per-transfer timeout inside usbh_msc_read/usbh_msc_write rather than by
   *         a completion callback that may never arrive.
-  * @retval HAL_OK when the lock is held and the stack is usable, HAL_ERR_HW when
+  * @retval RTK_SUCCESS when the lock is held and the stack is usable, -RTK_ERR_IO when
   *         the caller must give up without unlocking
   */
 static int msc_lock_stack(void)
 {
 	if ((msc_stack_ready == 0U) || (msc_teardown != 0U)) {
-		return HAL_ERR_HW;
+		return -RTK_ERR_IO;
 	}
 
 	rtos_mutex_take(msc_state_mutex, RTOS_MAX_TIMEOUT);
@@ -182,10 +186,10 @@ static int msc_lock_stack(void)
 	if ((msc_stack_ready == 0U) || (msc_teardown != 0U)) {
 		/* Lost the race against a teardown */
 		rtos_mutex_give(msc_state_mutex);
-		return HAL_ERR_HW;
+		return -RTK_ERR_IO;
 	}
 
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 /**
@@ -214,7 +218,7 @@ static FRESULT msc_fs_mount(FATFS *fs, const TCHAR *path, BYTE opt)
 {
 	FRESULT res;
 
-	if (msc_lock_stack() != HAL_OK) {
+	if (msc_lock_stack() != RTK_SUCCESS) {
 		return FR_DISK_ERR;
 	}
 	res = f_mount(fs, path, opt);
@@ -251,7 +255,7 @@ static FRESULT msc_fs_open(FIL *fp, const TCHAR *path, BYTE mode)
 {
 	FRESULT res;
 
-	if (msc_lock_stack() != HAL_OK) {
+	if (msc_lock_stack() != RTK_SUCCESS) {
 		return FR_DISK_ERR;
 	}
 	res = f_open(fp, path, mode);
@@ -276,7 +280,7 @@ static FRESULT msc_fs_lseek(FIL *fp, FSIZE_t ofs)
 {
 	FRESULT res;
 
-	if (msc_lock_stack() != HAL_OK) {
+	if (msc_lock_stack() != RTK_SUCCESS) {
 		return FR_DISK_ERR;
 	}
 	res = f_lseek(fp, ofs);
@@ -289,7 +293,7 @@ static FRESULT msc_fs_write(FIL *fp, const void *buf, UINT btw, UINT *bw)
 {
 	FRESULT res;
 
-	if (msc_lock_stack() != HAL_OK) {
+	if (msc_lock_stack() != RTK_SUCCESS) {
 		*bw = 0U;
 		return FR_DISK_ERR;
 	}
@@ -303,7 +307,7 @@ static FRESULT msc_fs_read(FIL *fp, void *buf, UINT btr, UINT *br)
 {
 	FRESULT res;
 
-	if (msc_lock_stack() != HAL_OK) {
+	if (msc_lock_stack() != RTK_SUCCESS) {
 		*br = 0U;
 		return FR_DISK_ERR;
 	}
@@ -407,7 +411,7 @@ static void usbh_msc_dump_boot_sector(void)
 
 		/* Reaches usbh_msc_read() through the disk driver, so it needs the same
 		   exclusion as the FatFs path. */
-		if (msc_lock_stack() != HAL_OK) {
+		if (msc_lock_stack() != RTK_SUCCESS) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Diag: stack gone\n");
 			break;
 		}
@@ -441,14 +445,14 @@ static int usbh_msc_file_test(void)
 	FRESULT res;
 	char logical_drv[4];
 	char path[64] = {0};
-	int ret = HAL_OK;
+	int ret = RTK_SUCCESS;
 	u32 br;
 	u32 bw;
 	u32 round = 0;
 	u32 start;
 	u32 elapse;
 	u32 perf = 0;
-	u32 test_sizes[] = {512, 1024, 2048, 4096, 8192};
+	u32 test_sizes[] = {512, 1024, 2048, 4096};
 	u32 test_size;
 	u32 i;
 	u8 data;
@@ -460,12 +464,12 @@ static int usbh_msc_file_test(void)
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Wait for device attach...\n");
 	if (rtos_sema_take(msc_attach_sema, RTOS_SEMA_MAX_COUNT) != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Take attach sema fail\n");
-		return HAL_ERR_UNKNOWN;
+		return RTK_FAIL;
 	}
 
 	if (msc_stack_fatal != 0U) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Stack gone, stop testing\n");
-		return HAL_ERR_UNKNOWN;
+		return RTK_FAIL;
 	}
 
 	/* Bounded: a device that attaches but never completes setup must not park
@@ -474,23 +478,23 @@ static int usbh_msc_file_test(void)
 	while (!msc_is_ready) {
 		if (msc_need_replug != 0U) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Device not responding, replug\n");
-			return HAL_ERR_HW;
+			return -RTK_ERR_IO;
 		}
 		if (((!msc_is_connected) && (msc_reenumerating == 0U)) || (msc_teardown != 0U) || (msc_stack_ready == 0U)) {
 			RTK_LOGS(TAG, RTK_LOG_WARN, "Device disconnected before ready\n");
-			return HAL_ERR_UNKNOWN;
+			return RTK_FAIL;
 		}
 		elapse = rtos_time_get_current_system_time_ms() - start;
 		if (elapse >= USBH_MSC_READY_TIMEOUT_MS) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Wait ready timeout\n");
-			return HAL_TIMEOUT;
+			return -RTK_ERR_TIMEOUT;
 		}
 		rtos_sema_take(msc_ready_sema, USBH_MSC_READY_TIMEOUT_MS - elapse);
 	}
 	if (usbh_msc_unit_is_ready(0U) == 0) {
 		/* setup() ran, but the class retired the LUN after its whole recovery. */
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Lun 0 unusable\n");
-		return HAL_ERR_HW;
+		return -RTK_ERR_IO;
 	}
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Device ready\n");
 
@@ -498,7 +502,7 @@ static int usbh_msc_file_test(void)
 	drv_num = FATFS_RegisterDiskDriver(&USB_disk_Driver);
 	if (drv_num < 0) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Register disk driver fail\n");
-		return HAL_ERR_UNKNOWN;
+		return RTK_FAIL;
 	}
 
 	logical_drv[0] = drv_num + '0';
@@ -519,7 +523,7 @@ static int usbh_msc_file_test(void)
 		FATFS_UnRegisterDiskDriver(drv_num);
 		/* A disk without a FAT/exFAT volume is a media problem, not an I/O one: rebuilding
 		   the stack reads the same sectors again, so let the caller wait for a replug */
-		return (res == FR_NO_FILESYSTEM) ? HAL_ERR_PARA : HAL_ERR_UNKNOWN;
+		return (res == FR_NO_FILESYSTEM) ? -RTK_ERR_BADARG : RTK_FAIL;
 	}
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "FatFS USB W/R performance test start, free heap: 0x%08x\n", rtos_mem_get_free_heap_size());
@@ -529,17 +533,18 @@ static int usbh_msc_file_test(void)
 #if CONFIG_USBH_MSC_HOTPLUG
 		if (!msc_is_ready) {
 			RTK_LOGS(TAG, RTK_LOG_WARN, "Device detached during test\n");
-			ret = HAL_ERR_UNKNOWN;
+			ret = RTK_FAIL;
 			break;
 		}
 #endif
-		sprintf(&path[3], "TEST%u.DAT", (unsigned int)filenum);
+		/* Bounded by the room left after the "N:/" drive prefix. DiagSnPrintf has no %u. */
+		DiagSnPrintf(&path[3], sizeof(path) - 3U, "TEST%d.DAT", (int)filenum);
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Open file: %s\n", path);
 
 		res = msc_fs_open(&f, path, FA_OPEN_ALWAYS | FA_READ | FA_WRITE);
 		if (res) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Open file fail: %s, rc=%d\n", path, res);
-			ret = HAL_ERR_UNKNOWN;
+			ret = RTK_FAIL;
 			break;
 		}
 
@@ -566,7 +571,7 @@ static int usbh_msc_file_test(void)
 				if (res || (bw < test_size)) {
 					(void)msc_fs_lseek(&f, 0);
 					RTK_LOGS(TAG, RTK_LOG_ERROR, "W err bw=%d, rc=%d\n", bw, res);
-					ret = HAL_ERR_UNKNOWN;
+					ret = RTK_FAIL;
 					break;
 				}
 			}
@@ -598,7 +603,7 @@ static int usbh_msc_file_test(void)
 				if (res || (br < test_size)) {
 					(void)msc_fs_lseek(&f, 0);
 					RTK_LOGS(TAG, RTK_LOG_ERROR, "R err br=%d, rc=%d\n", br, res);
-					ret = HAL_ERR_UNKNOWN;
+					ret = RTK_FAIL;
 					break;
 				}
 			}
@@ -621,7 +626,7 @@ static int usbh_msc_file_test(void)
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "WR%d check err: %d-%d-%d-%d vs %d-%d-%d-%d\n", test_size,
 						 msc_wt_buf[0], msc_wt_buf[1], msc_wt_buf[test_size - 2], msc_wt_buf[test_size - 1],
 						 msc_rd_buf[0], msc_rd_buf[1], msc_rd_buf[test_size - 2], msc_rd_buf[test_size - 1]);
-				ret = HAL_ERR_UNKNOWN;
+				ret = RTK_FAIL;
 				break;
 			}
 #endif
@@ -630,7 +635,7 @@ static int usbh_msc_file_test(void)
 #if CONFIG_USBH_MSC_HOTPLUG
 		if (res == FR_DISK_ERR) {
 			(void)msc_fs_close(&f);
-			ret = HAL_ERR_UNKNOWN;
+			ret = RTK_FAIL;
 			break;
 		}
 #endif
@@ -703,14 +708,14 @@ static void example_usbh_msc_hotplug_thread(void *param)
 			rtos_mutex_take(msc_state_mutex, RTOS_MAX_TIMEOUT);
 
 			ret = usbh_init(&usbh_cfg, &usbh_usr_cb);
-			if (ret != HAL_OK) {
+			if (ret != RTK_SUCCESS) {
 				rtos_mutex_give(msc_state_mutex);
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "Reinit fail\n");
 				break;
 			}
 
-			ret = usbh_msc_init(&msc_usr_cb);
-			if (ret != HAL_OK) {
+			ret = usbh_msc_init(&msc_usr_cb, &msc_class_cfg);
+			if (ret != RTK_SUCCESS) {
 				usbh_deinit();
 				rtos_mutex_give(msc_state_mutex);
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "Reinit fail\n");
@@ -789,13 +794,13 @@ static void example_usbh_msc_thread(void *param)
 
 	/* Init USB host + MSC class driver */
 	ret = usbh_init(&usbh_cfg, &usbh_usr_cb);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "USBH init fail\n");
 		goto exit_free;
 	}
 
-	ret = usbh_msc_init(&msc_usr_cb);
-	if (ret != HAL_OK) {
+	ret = usbh_msc_init(&msc_usr_cb, &msc_class_cfg);
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "MSC init fail\n");
 		usbh_deinit();
 		goto exit_free;
@@ -848,12 +853,12 @@ static void example_usbh_msc_thread(void *param)
 			/* The stack can not be rebuilt, so no further attach will arrive. */
 			break;
 		}
-		if (ret == HAL_OK) {
+		if (ret == RTK_SUCCESS) {
 			RTK_LOGS(TAG, RTK_LOG_INFO, "All files done, repeat from 0\n");
 			/* Device still attached -- give sema so the next call does not
 			 * block at rtos_sema_take waiting for a new attach event. */
 			rtos_sema_give(msc_attach_sema);
-		} else if (ret == HAL_ERR_PARA) {
+		} else if (ret == -RTK_ERR_BADARG) {
 			/* Wait for the next attach, which only an unplug and replug can bring */
 			RTK_LOGS(TAG, RTK_LOG_WARN, "No FAT volume, replug a FAT/exFAT disk\n");
 		} else if ((msc_is_connected != 0) && (msc_teardown == 0U) && (msc_need_replug == 0U)) {
@@ -875,7 +880,7 @@ static void example_usbh_msc_thread(void *param)
 	for (;;) {
 		ret = usbh_msc_file_test();
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Test %s, unplug and replug to repeat\n",
-				 ret == HAL_OK ? "done" : "interrupted");
+				 ret == RTK_SUCCESS ? "done" : "interrupted");
 	}
 	/* Unreachable: without the hotplug thread nothing can declare the stack dead,
 	   so this loop only ends with the firmware. */

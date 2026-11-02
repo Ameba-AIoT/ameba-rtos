@@ -5,57 +5,66 @@
 
 static const char *TAG = "ETH_HIGH_TP";
 
-#define ETH_DHCP_POLL_MS        100
-#define ETH_DHCP_POLL_CNT       300     /* give up reporting after 30 s; the DHCP client keeps trying */
-
-static u32 eth_dhcp_poll_cnt;
-
-/* lwIP timeout, runs in tcpip_thread: report the lease once DHCP has bound. */
-static void eth_dhcp_check(void *arg)
-{
-	(void)arg;
-
-	if (dhcp_supplied_address(pnetif_eth)) {
-		netif_set_default(pnetif_eth);
-		uint8_t *ip = lwip_get_ip(NETIF_ETH_INDEX);
-		RTK_LOGI(TAG, "Ethernet DHCP got IP: %d.%d.%d.%d\n", ip[0], ip[1], ip[2], ip[3]);
-	} else if (++eth_dhcp_poll_cnt < ETH_DHCP_POLL_CNT) {
-		sys_timeout(ETH_DHCP_POLL_MS, eth_dhcp_check, NULL);
-	} else {
-		RTK_LOGW(TAG, "Ethernet DHCP failed to get IP\n");
-	}
-}
-
 /**
  * @brief  User-defined link status callback function
  * @param  link_up: 1 means link UP, 0 means link DOWN
- * @note   Runs in tcpip_thread with the netif link state already updated: must not block or call netifapi_*.
+ * @note   Runs in the example's own link thread: it may block and call netifapi_*.
  */
 static void my_eth_link_callback(int link_up)
 {
-	sys_untimeout(eth_dhcp_check, NULL);
-
 	if (link_up) {
 		RTK_LOGI(TAG, "=== Ethernet Link UP ===\n");
 
+		/* Notify LwIP Link is Up */
 		if (!netif_is_up(pnetif_eth)) {
-			netif_set_up(pnetif_eth);
+			netifapi_netif_set_up(pnetif_eth);
 		}
-#if LWIP_IPV6
-		netif_create_ip6_linklocal_address(pnetif_eth, 1);
-#endif
-		if (dhcp_start(pnetif_eth) == ERR_OK) {
-			eth_dhcp_poll_cnt = 0;
-			sys_timeout(ETH_DHCP_POLL_MS, eth_dhcp_check, NULL);
+		netifapi_netif_set_link_up(pnetif_eth);
+
+		/* DHCP */
+		u32 dhcp_status = lwip_request_ip(NETIF_ETH_INDEX);
+		if (DHCP_ADDRESS_ASSIGNED == dhcp_status) {
+			netifapi_netif_set_default(pnetif_eth);
+
+			uint8_t *ip = lwip_get_ip(NETIF_ETH_INDEX);
+			RTK_LOGI(TAG, "Ethernet DHCP got IP: %d.%d.%d.%d\n", ip[0], ip[1], ip[2], ip[3]);
 		} else {
-			RTK_LOGW(TAG, "Ethernet DHCP start failed\n");
+			RTK_LOGW(TAG, "Ethernet DHCP failed to get IP\n");
 		}
 	} else {
+		/* Link Down Handling */
 		RTK_LOGI(TAG, "=== Ethernet Link DOWN ===\n");
 
-		/* Stop the client and clear the address */
-		dhcp_release_and_stop(pnetif_eth);
+		/* Release IP and bring down the interface */
+		netifapi_netif_set_link_down(pnetif_eth);
+		lwip_dhcp_stop(NETIF_ETH_INDEX);
 		RTK_LOGI(TAG, "Ethernet IP released\n");
+	}
+}
+
+static void example_ethernet_link_thread(void *param)
+{
+	u32 speed, duplex;
+	int last = -1;
+
+	(void)param;
+	for (;;) {
+		if (rtos_sema_take(eth_link_sema, RTOS_MAX_TIMEOUT) != RTK_SUCCESS) {
+			continue;
+		}
+
+		int up = Ethernet_GetLinkStatus() ? 1 : 0;
+		if (up == last) {
+			continue;
+		}
+		last = up;
+
+		if (up) {
+			Ethernet_GetSpeedDuplex(&speed, &duplex);
+			RTK_LOGI(TAG, "Link Up: %s, %s\n", (speed == ETH_SPEED_100M) ? "100M" : (speed == ETH_SPEED_10M) ? "10M" : "Unknown",
+					 (duplex == ETH_FULL_DUPLEX) ? "Full Duplex" : "Half Duplex");
+		}
+		my_eth_link_callback(up);
 	}
 }
 
@@ -67,7 +76,19 @@ static void example_ethernet_high_tp_thread(void *param)
 	RTK_LOGI(TAG, "  Ethernet High Throughput Example\n");
 	RTK_LOGI(TAG, "========================================\n");
 
-	eth_register_link_cb(my_eth_link_callback);
+	if (rtos_sema_create_binary(&eth_link_sema) != RTK_SUCCESS) {
+		RTK_LOGE(TAG, "Create link sema failed!\n");
+		rtos_task_delete(NULL);
+		return;
+	}
+
+	if (rtos_task_create(NULL, "ETH_LINK", example_ethernet_link_thread, NULL, 1536, 3) != RTK_SUCCESS) {
+		RTK_LOGE(TAG, "Create link thread failed!\n");
+		rtos_sema_delete(eth_link_sema);
+		eth_link_sema = NULL;
+		rtos_task_delete(NULL);
+		return;
+	}
 
 	eth_init();
 

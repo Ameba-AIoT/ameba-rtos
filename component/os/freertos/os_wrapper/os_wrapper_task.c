@@ -5,9 +5,11 @@
  */
 
 #include "ameba.h"
+#include "ameba_pmu.h"
 #include "FreeRTOS.h"
 #include "task.h"
 #include "os_wrapper.h"
+#include "os_wrapper_specific.h"
 #include <assert.h>
 
 static_assert(RTOS_TASK_MAX_PRIORITIES == configMAX_PRIORITIES, "Incorrect RTOS_TASK_MAX_PRIORITIES value config");
@@ -116,6 +118,38 @@ int rtos_task_yield(void)
 rtos_task_t rtos_task_handle_get(void)
 {
 	return (rtos_task_t)xTaskGetCurrentTaskHandle();
+}
+
+int rtos_task_notify_give(rtos_task_t p_handle)
+{
+	BaseType_t task_woken = pdFALSE;
+
+	if (p_handle == NULL) {
+		return RTK_FAIL;
+	}
+
+	if (rtos_critical_is_in_interrupt()) {
+		vTaskNotifyGiveFromISR((TaskHandle_t)p_handle, &task_woken);
+		portEND_SWITCHING_ISR(task_woken);
+	} else {
+		xTaskNotifyGive((TaskHandle_t)p_handle);
+	}
+	return RTK_SUCCESS;
+}
+
+int rtos_task_notify_take(uint32_t wait_ms)
+{
+	/* There is no ISR version of ulTaskNotifyTake(). */
+	if (rtos_critical_is_in_interrupt()) {
+		return RTK_FAIL;
+	}
+
+	/* Same rule as rtos_sema_take(): never block where the OS cannot switch tasks. */
+	if (!pmu_yield_os_check() || rtos_get_critical_state()) {
+		wait_ms = 0;
+	}
+
+	return ulTaskNotifyTake(pdTRUE, RTOS_CONVERT_MS_TO_TICKS(wait_ms)) != 0 ? RTK_SUCCESS : RTK_FAIL;
 }
 
 char *rtos_task_name_get(rtos_task_t p_handle)

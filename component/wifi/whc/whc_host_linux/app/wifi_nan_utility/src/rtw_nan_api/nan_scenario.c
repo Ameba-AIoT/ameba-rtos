@@ -18,6 +18,7 @@ struct srvc_info *srvc_info_list[MAX_SERVICE_NUM] = {NULL};
 bool b_nan_start;
 bool b_ble_trigger_enable = false;
 char *supplicant_log_file;
+static uint8_t g_nan_band; /* RTW_SUPPORT_BAND_*, 0 = follow chip band */
 char *supplicant_dbg_para;
 char supplicant_pid[16] = {0};
 
@@ -557,7 +558,7 @@ void nan_evt_handler(uint8_t event_id, void *buf, uint32_t len)
 	break;
 	case NAN_EVT_BLE_RECV_TIGGER:
 		INFO_PRINT("[rtw_scenario] %s: ble recv trigger frame\n", __func__);
-		if (rtw_nan_api_start_nan(nan_intf) != RTW_RET_STATUS_SUCCESS) {
+		if (rtw_nan_api_start_nan(nan_intf, g_nan_band) != RTW_RET_STATUS_SUCCESS) {
 			INFO_PRINT("[rtw_scenario] failed to start NAN!\n");
 			break;
 		}
@@ -651,7 +652,7 @@ RTW_RET_STATUS dns_publish(uint16_t phy_num,
 		INFO_PRINT("[rtw_scenario] start ble-trigger scan.\n");
 	} else {
 		/* without using ble-trigger, start nan directly */
-		if (rtw_nan_api_start_nan(nan_intf) != RTW_RET_STATUS_SUCCESS) {
+		if (rtw_nan_api_start_nan(nan_intf, g_nan_band) != RTW_RET_STATUS_SUCCESS) {
 			INFO_PRINT("[rtw_scenario] failed to start NAN!\n");
 			goto exit;
 		}
@@ -726,7 +727,7 @@ RTW_RET_STATUS dns_subscribe(uint16_t phy_num,
 	INFO_PRINT("[rtw_scenario] service_name:%s\n", info->service_name);
 
 	/* start nan directly */
-	if (rtw_nan_api_start_nan(nan_intf) != RTW_RET_STATUS_SUCCESS) {
+	if (rtw_nan_api_start_nan(nan_intf, g_nan_band) != RTW_RET_STATUS_SUCCESS) {
 		INFO_PRINT("[rtw_scenario] %s failed to start NAN!\n", __func__);
 		ret = RTW_RET_STATUS_INIT_ERROR;
 		goto exit;
@@ -815,4 +816,10 @@ RTW_RET_STATUS dns_pairing_setpw(uint8_t *pairing_peer_nmi, char *pw, uint8_t pw
 void dns_register_evt_cb(rtw_dns_evt_cb cb)
 {
 	g_dns_evt_cb = cb;
+}
+
+/* call before dns_publish / dns_subscribe; applied when they start NAN */
+void dns_set_band(uint8_t band)
+{
+	g_nan_band = band;
 }

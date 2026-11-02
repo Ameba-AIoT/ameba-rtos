@@ -266,10 +266,12 @@ static int composite_cdc_acm_cb_deinit(void)
   */
 static int composite_cdc_acm_cb_received(u8 *buf, u32 len)
 {
-	if ((buf != NULL) && (len != 0U)) {
-		usbd_cdc_acm_transmit(buf, len);
+	if ((buf == NULL) || (len == 0U)) {
+		return RTK_SUCCESS;
 	}
-	return 0;
+
+	/* Loopback; -RTK_ERR_BUSY means the previous echo is still in flight and this one is dropped */
+	return usbd_cdc_acm_transmit(buf, len);
 }
 
 /**
@@ -286,7 +288,7 @@ static int composite_cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 	usb_cdc_acm_line_coding_t *lc = &composite_cdc_acm_line_coding;
 	/* Ref USB 2.0 9.2.7: anything not explicitly accepted below is a request error, so
 	   the default status makes the core STALL EP0 instead of ACKing the status stage. */
-	int ret = HAL_ERR_PARA;
+	int ret = -RTK_ERR_BADARG;
 
 	switch (req->bRequest) {
 	case USB_CDC_ACM_SET_LINE_CODING:
@@ -297,7 +299,7 @@ static int composite_cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 			lc->b.bCharFormat = buf[4];
 			lc->b.bParityType = buf[5];
 			lc->b.bDataBits = buf[6];
-			ret = HAL_OK;
+			ret = RTK_SUCCESS;
 		}
 		break;
 
@@ -309,7 +311,7 @@ static int composite_cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 		buf[4] = lc->b.bCharFormat;
 		buf[5] = lc->b.bParityType;
 		buf[6] = lc->b.bDataBits;
-		ret = HAL_OK;
+		ret = RTK_SUCCESS;
 		break;
 
 	case USB_CDC_ACM_SET_CONTROL_LINE_STATE:
@@ -327,13 +329,13 @@ static int composite_cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 				USB_DIAG(USB_LAYER_APP, USB_EVT_LINK, 0);
 				usbd_cdc_acm_notify_serial_state(USB_CDC_ACM_CTRL_DSR | USB_CDC_ACM_CTRL_DCD);
 			}
-			ret = HAL_OK;
+			ret = RTK_SUCCESS;
 		}
 		break;
 
 	case USB_CDC_ACM_SEND_BREAK:
 		/* Do nothing */
-		ret = HAL_OK;
+		ret = RTK_SUCCESS;
 		break;
 
 	default:
@@ -364,11 +366,11 @@ static void example_audio_track_play(void)
 	play_cfg = uac_play_cfg;
 	rtos_critical_exit(RTOS_CRITICAL_USB);
 
-	if (usbd_uac_config(&play_cfg, 0, 0) != HAL_OK) {
+	if (usbd_uac_config(&play_cfg, 0, 0) != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "UAC config fail\n");
 		return;
 	}
-	while (usbd_uac_start_play() != HAL_OK) {
+	while (usbd_uac_start_play() != RTK_SUCCESS) {
 		if (audio_task_stop || composite_playback_exit) {
 			return;
 		}
@@ -548,37 +550,37 @@ static void composite_uac_cb_format_changed(u32 sampling_freq, u8 ch_cnt, u8 byt
 /**
   * @brief  Bring up the whole composite stack (core + each class + framework).
   * @note   Reused by both the initial start-up and the hotplug re-init path.
-  * @retval HAL_OK on success, other HAL_Status code on failure (all partial resources rolled back)
+  * @retval RTK_SUCCESS on success, other HAL_Status code on failure (all partial resources rolled back)
   */
 static int composite_init_stack(void)
 {
 	int ret;
 
 	ret = usbd_init(&composite_cfg);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "USB init fail\n");
 		return ret;
 	}
 
 	ret = usbd_composite_cdc_acm_init(&composite_cdc_acm_usr_cb, &cdc_acm_class_cfg);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "CDC ACM init fail\n");
 		goto exit_usbd_init;
 	}
 
 	ret = usbd_composite_uac_init(&composite_uac_cb, &uac_class_cfg);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "UAC init fail\n");
 		goto exit_cdc_acm_init;
 	}
 
 	ret = usbd_composite_init(COMP_CB);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Composite init fail\n");
 		goto exit_uac_init;
 	}
 
-	return HAL_OK;
+	return RTK_SUCCESS;
 
 exit_uac_init:
 	usbd_uac_deinit();
@@ -647,7 +649,7 @@ static void example_usbd_composite_hotplug_thread(void *param)
 				composite_stack_ready = 0;
 				composite_deinit_stack();
 				RTK_LOGS(TAG, RTK_LOG_INFO, "Free heap: 0x%x\n", rtos_mem_get_free_heap_size());
-				if (composite_init_stack() != HAL_OK) {
+				if (composite_init_stack() != RTK_SUCCESS) {
 					rtos_mutex_give(composite_state_lock);
 					fatal = 1U;
 					break;
@@ -791,7 +793,7 @@ static void example_usbd_composite_acm_uac_init_thread(void *param)
 	composite_uac_cb.format_changed = composite_uac_cb_format_changed;
 
 	ret = composite_init_stack();
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		goto exit_release_sema;
 	}
 	composite_stack_ready = 1;

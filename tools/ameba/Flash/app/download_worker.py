@@ -35,6 +35,17 @@ class DownloadWorker(QThread):
         self.log_file = log_file
         self.log_level = log_level
 
+    def _nand_layout_end_address(self, start, image_end):
+        """Return the highest end address of the flash layout partitions overlapping
+        [start, image_end), or None when the image overlaps no partition."""
+        end = None
+        for part in self.profile_info.images:
+            if self.profile_info.is_ram_address(part.start_address):
+                continue
+            if part.start_address < image_end and part.end_address > start:
+                end = part.end_address if end is None else max(end, part.end_address)
+        return end
+
     def run(self):
         logger = None
         progress_handler = None
@@ -86,6 +97,20 @@ class DownloadWorker(QThread):
                 img.image_name = self.image_path
                 img.start_address = self.start_address
                 img.end_address = self.start_address + os.path.getsize(self.image_path)
+                # NAND requires a block-aligned end address and skips bad blocks inside
+                # the partition, so start + file size is neither aligned nor leaves room
+                # for bad blocks. Extend the end to the covered layout partitions.
+                if memory_type == MemoryInfo.MEMORY_TYPE_NAND:
+                    layout_end = self._nand_layout_end_address(img.start_address, img.end_address)
+                    if layout_end is None or layout_end < img.end_address:
+                        logger.error(
+                            f"NAND image 0x{img.start_address:08X}-0x{img.end_address:08X} "
+                            f"does not fit in the profile layout")
+                        self.result_ready.emit(
+                            False, failure_message("Invalid NAND image address")
+                        )
+                        return
+                    img.end_address = layout_end
                 img.memory_type = memory_type
                 img.mandatory = True
                 # A single image may actually be a merged image (e.g. image_all.bin)

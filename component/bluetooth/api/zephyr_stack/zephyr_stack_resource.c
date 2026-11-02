@@ -33,6 +33,10 @@ STRUCT_ARRAY_SIZE_DECLARE(init_entry) = sizeof(STRUCT_ARRAY(init_entry)) / sizeo
 extern struct k_mem_slab att_slab;
 extern struct k_mem_slab chan_slab;
 extern struct k_mem_slab req_slab;
+#if defined(RTK_BLE_COC_SUPPORT) && RTK_BLE_COC_SUPPORT
+extern struct k_mem_slab le_coc_server_pool;
+extern struct k_mem_slab le_coc_chan_slab;
+#endif
 #if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT
 extern struct k_mem_slab loopback_buf_pool;
 extern struct k_mem_slab segs;
@@ -48,6 +52,10 @@ STRUCT_ARRAY_DECLARE(k_mem_slab) = {
 	&att_slab,
 	&chan_slab,
 	&req_slab,
+#if defined(RTK_BLE_COC_SUPPORT) && RTK_BLE_COC_SUPPORT
+	&le_coc_server_pool,
+	&le_coc_chan_slab,
+#endif
 #if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT
 	&loopback_buf_pool,
 	&segs,

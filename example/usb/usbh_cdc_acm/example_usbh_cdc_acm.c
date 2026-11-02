@@ -65,12 +65,12 @@ static void cdc_acm_cb_deinit(void);
 static void cdc_acm_cb_attached(void);
 static void cdc_acm_cb_detached(void);
 static void cdc_acm_cb_setup(void);
-static void cdc_acm_cb_transmitted(u8 status);
-static void cdc_acm_cb_received(u8 *buf, u32 len, u8 status);
+static void cdc_acm_cb_transmitted(int status);
+static void cdc_acm_cb_received(u8 *buf, u32 len, int status);
 static void cdc_acm_cb_line_coding_changed(usb_cdc_acm_line_coding_t *line_coding);
 static void cdc_acm_cb_process(usb_host_t *host, u8 msg);
 #ifdef CONFIG_USBH_CDC_ACM_NOTIFY
-static void cdc_acm_cb_notify(u8 *buf, u32 len, u8 status);
+static void cdc_acm_cb_notify(u8 *buf, u32 len, int status);
 static void cdc_acm_notify_test(void);
 #endif
 #if CONFIG_USBH_CDC_ACM_SPEED_TEST
@@ -97,7 +97,7 @@ static u8 cdc_acm_loopback_rx_buf[USBH_CDC_ACM_LOOPBACK_BUF_SIZE] USB_DMA_ALIGNE
 static u8 cdc_acm_notify_rx_buf[USBH_CDC_ACM_NOTIFY_BUF_SIZE] USB_DMA_ALIGNED;
 static rtos_sema_t cdc_acm_notify_sema;
 /* Written by the class callback, read by the notify thread, possibly on another core */
-static volatile u8 cdc_acm_notify_status;
+static volatile int cdc_acm_notify_status;
 #endif
 static rtos_sema_t cdc_acm_detach_sema;
 /* Given once per completed class setup, i.e. once per enumerated device: each
@@ -220,13 +220,13 @@ static volatile u64 rx_loop_cnt = 0, rx_loop_sub_cnt = 0;
   *         cleared if a teardown is pending or the stack is gone for good. A
   *         hotplug right after this check is harmless - the mutex stays valid and
   *         the re-check under it catches the loss.
-  * @retval HAL_OK when the lock is held and the stack is usable, HAL_ERR_HW when
+  * @retval RTK_SUCCESS when the lock is held and the stack is usable, -RTK_ERR_IO when
   *         the caller must give up without unlocking
   */
 static int cdc_acm_lock_stack(void)
 {
 	if ((cdc_acm_stack_ready == 0U) || (cdc_acm_teardown != 0U)) {
-		return HAL_ERR_HW;
+		return -RTK_ERR_IO;
 	}
 
 	rtos_mutex_take(cdc_acm_state_mutex, RTOS_MAX_TIMEOUT);
@@ -234,10 +234,10 @@ static int cdc_acm_lock_stack(void)
 	if ((cdc_acm_stack_ready == 0U) || (cdc_acm_teardown != 0U)) {
 		/* Lost the race against a teardown */
 		rtos_mutex_give(cdc_acm_state_mutex);
-		return HAL_ERR_HW;
+		return -RTK_ERR_IO;
 	}
 
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 /**
@@ -289,19 +289,19 @@ static u8 cdc_acm_round_gone(void)
   *         is gone. It must never wait for the NEXT device: that device's setup
   *         starts a round of its own, and running this round against it would
   *         run the tests twice for one enumeration.
-  * @retval HAL_OK when the class API may be used, HAL_ERR_HW otherwise
+  * @retval RTK_SUCCESS when the class API may be used, -RTK_ERR_IO otherwise
   */
 static int cdc_acm_wait_ready(void)
 {
 	while ((cdc_acm_is_ready != 0) && (cdc_acm_session == cdc_acm_round_session) && (cdc_acm_stack_fatal == 0U)) {
 		if ((cdc_acm_stack_ready != 0U) && (cdc_acm_teardown == 0U)) {
-			return HAL_OK;
+			return RTK_SUCCESS;
 		}
 		rtos_time_delay_ms(USBH_CDC_ACM_READY_POLL_MS);
 	}
 
 	RTK_LOGS(TAG, RTK_LOG_ERROR, "Device not ready\n");
-	return HAL_ERR_HW;
+	return -RTK_ERR_IO;
 }
 
 /**
@@ -334,7 +334,7 @@ static void cdc_acm_free_resource(void)
 static int cdc_acm_cb_init(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "INIT\n");
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 static void cdc_acm_cb_deinit(void)
@@ -366,12 +366,12 @@ static void cdc_acm_cb_setup(void)
 }
 
 #ifdef CONFIG_USBH_CDC_ACM_NOTIFY
-static void cdc_acm_cb_notify(u8 *buf, u32 len, u8 status)
+static void cdc_acm_cb_notify(u8 *buf, u32 len, int status)
 {
 	UNUSED(buf);
 	UNUSED(len);
 
-	if (status != HAL_OK) {
+	if (status != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Notify fail: %d\n", status);
 	}
 	cdc_acm_notify_status = status;
@@ -379,10 +379,10 @@ static void cdc_acm_cb_notify(u8 *buf, u32 len, u8 status)
 }
 #endif
 
-static void cdc_acm_cb_received(u8 *buf, u32 len, u8 status)
+static void cdc_acm_cb_received(u8 *buf, u32 len, int status)
 {
 	UNUSED(buf);
-	if (status == HAL_OK) {
+	if (status == RTK_SUCCESS) {
 		u16 cdc_acm_bulk_in_mps = usbh_cdc_acm_get_bulk_ep_mps();
 		if ((len > 0) && ((cdc_acm_total_rx_len + len) <= USBH_CDC_ACM_LOOPBACK_BUF_SIZE)) {
 			//memcpy(cdc_acm_loopback_rx_buf + cdc_acm_total_rx_len, buf, len);
@@ -400,9 +400,9 @@ static void cdc_acm_cb_received(u8 *buf, u32 len, u8 status)
 	}
 }
 
-static void cdc_acm_cb_transmitted(u8 status)
+static void cdc_acm_cb_transmitted(int status)
 {
-	if (status == HAL_OK) {
+	if (status == RTK_SUCCESS) {
 		/*TX done*/
 		rtos_sema_give(cdc_acm_send_sema);
 	} else {
@@ -455,14 +455,14 @@ static void example_usbh_bulk_tx_thread(void *param)
 				   completion callback: the callback never comes for a device
 				   that was just unplugged, and the hotplug thread must not be
 				   blocked for the whole transfer budget. */
-				if (cdc_acm_lock_stack() != HAL_OK) {
+				if (cdc_acm_lock_stack() != RTK_SUCCESS) {
 					goto tx_exit;
 				}
 				cdc_acm_drain_sema(cdc_acm_send_sema);
 				ret = usbh_cdc_acm_transmit(cdc_acm_loopback_tx_buf, USBH_CDC_ACM_LOOPBACK_BUF_SIZE);
 				cdc_acm_unlock_stack();
 
-				if (ret == HAL_OK) {
+				if (ret == RTK_SUCCESS) {
 					if (rtos_sema_take(cdc_acm_send_sema, USBH_CDC_ACM_XFER_TIMEOUT_MS) != RTK_SUCCESS) {
 						/* No completion: the device is gone or wedged. Drop the
 						   round and let the checks above decide what to do. */
@@ -508,14 +508,14 @@ static void example_usbh_bulk_rx_thread(void *param)
 				}
 
 				/* Lock covers the submit only, see the tx thread for why. */
-				if (cdc_acm_lock_stack() != HAL_OK) {
+				if (cdc_acm_lock_stack() != RTK_SUCCESS) {
 					goto rx_exit;
 				}
 				cdc_acm_drain_sema(cdc_acm_receive_sema);
 				ret = usbh_cdc_acm_receive(cdc_acm_loopback_rx_buf, USBH_CDC_ACM_LOOPBACK_BUF_SIZE);
 				cdc_acm_unlock_stack();
 
-				if (ret == HAL_OK) {
+				if (ret == RTK_SUCCESS) {
 					if (rtos_sema_take(cdc_acm_receive_sema, USBH_CDC_ACM_XFER_TIMEOUT_MS) != RTK_SUCCESS) {
 						continue;
 					}
@@ -546,7 +546,7 @@ static void cdc_acm_speed_loopback_test(void)
 	rtos_task_t tx_task;
 	rtos_task_t rx_task;
 
-	if (cdc_acm_wait_ready() != HAL_OK) {
+	if (cdc_acm_wait_ready() != RTK_SUCCESS) {
 		return;
 	}
 
@@ -589,7 +589,7 @@ static void cdc_acm_loopback_test(void)
 
 	usb_os_memset((void *)cdc_acm_loopback_tx_buf, 0, USBH_CDC_ACM_LOOPBACK_BUF_SIZE);
 
-	if (cdc_acm_wait_ready() != HAL_OK) {
+	if (cdc_acm_wait_ready() != RTK_SUCCESS) {
 		return;
 	}
 
@@ -609,13 +609,13 @@ static void cdc_acm_loopback_test(void)
 			/* Submit under the lock, wait outside it: a device unplugged mid
 			   transfer never completes it, and the hotplug thread must not be
 			   held off for the whole transfer budget. */
-			if (cdc_acm_lock_stack() != HAL_OK) {
+			if (cdc_acm_lock_stack() != RTK_SUCCESS) {
 				return;
 			}
 			cdc_acm_drain_sema(cdc_acm_send_sema);
 			ret = usbh_cdc_acm_transmit(cdc_acm_loopback_tx_buf, USBH_CDC_ACM_LOOPBACK_BUF_SIZE);
 			cdc_acm_unlock_stack();
-			if (ret != HAL_OK) {
+			if (ret != RTK_SUCCESS) {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "TX fail: %d\n", ret);
 				return;
 			}
@@ -625,13 +625,13 @@ static void cdc_acm_loopback_test(void)
 				return;
 			}
 
-			if (cdc_acm_lock_stack() != HAL_OK) {
+			if (cdc_acm_lock_stack() != RTK_SUCCESS) {
 				return;
 			}
 			cdc_acm_drain_sema(cdc_acm_receive_sema);
 			ret = usbh_cdc_acm_receive(cdc_acm_loopback_rx_buf, USBH_CDC_ACM_LOOPBACK_BUF_SIZE);
 			cdc_acm_unlock_stack();
-			if (ret != HAL_OK) {
+			if (ret != RTK_SUCCESS) {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "RX fail: %d\n", ret);
 				return;
 			}
@@ -664,14 +664,14 @@ static void cdc_acm_loopback_test(void)
   */
 static void cdc_acm_notify_test(void)
 {
-	int ret = HAL_OK;
+	int ret = RTK_SUCCESS;
 	int i;
 
-	if (cdc_acm_wait_ready() != HAL_OK) {
+	if (cdc_acm_wait_ready() != RTK_SUCCESS) {
 		return;
 	}
 
-	if (cdc_acm_lock_stack() == HAL_OK) {
+	if (cdc_acm_lock_stack() == RTK_SUCCESS) {
 		usbh_cdc_acm_set_control_line_state(0x01U); /* DTR=1, RTS=0 */
 		cdc_acm_unlock_stack();
 	}
@@ -680,12 +680,12 @@ static void cdc_acm_notify_test(void)
 
 	for (i = 0; i < USBH_CDC_ACM_LOOPBACK_CNT; i++) {
 		if (cdc_acm_round_gone() != 0U) {
-			ret = HAL_ERR_UNKNOWN;
+			ret = RTK_FAIL;
 			break;
 		}
 		/* Lock covers the submit only, see cdc_acm_unlock_stack(). */
-		if (cdc_acm_lock_stack() != HAL_OK) {
-			ret = HAL_ERR_UNKNOWN;
+		if (cdc_acm_lock_stack() != RTK_SUCCESS) {
+			ret = RTK_FAIL;
 			break;
 		}
 		cdc_acm_drain_sema(cdc_acm_notify_sema);
@@ -693,14 +693,15 @@ static void cdc_acm_notify_test(void)
 		cdc_acm_unlock_stack();
 
 		if (rtos_sema_take(cdc_acm_notify_sema, USBH_CDC_ACM_XFER_TIMEOUT_MS) == RTK_SUCCESS) {
-			ret |= cdc_acm_notify_status;
-			if (cdc_acm_notify_status == HAL_OK) {
+			if (cdc_acm_notify_status != RTK_SUCCESS) {
+				ret = cdc_acm_notify_status;
+			} else {
 				/*Notify data received, for example, Serial State notification*/
 				RTK_LOGS(TAG, RTK_LOG_DEBUG, "Intr rx success(0x%02x 0x%02x)\n", cdc_acm_notify_rx_buf[USB_CDC_NOTIFY_HDR_LEN + 1],
 						 cdc_acm_notify_rx_buf[USB_CDC_NOTIFY_HDR_LEN]);
 			}
 		} else {
-			ret = HAL_ERR_UNKNOWN;
+			ret = RTK_FAIL;
 			break;
 		}
 	}
@@ -718,19 +719,19 @@ static void cdc_acm_request_test(void)
 	usb_cdc_acm_line_coding_t line_coding;
 	usb_cdc_acm_line_coding_t new_line_coding;
 
-	if (cdc_acm_wait_ready() != HAL_OK) {
+	if (cdc_acm_wait_ready() != RTK_SUCCESS) {
 		return;
 	}
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Control test start\n");
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "GET_LINE_CODING:");
-	if (cdc_acm_lock_stack() != HAL_OK) {
+	if (cdc_acm_lock_stack() != RTK_SUCCESS) {
 		return;
 	}
 	ret = usbh_cdc_acm_get_line_coding(&line_coding);
 	cdc_acm_unlock_stack();
-	if (ret == HAL_OK) {
+	if (ret == RTK_SUCCESS) {
 		RTK_LOGS(NOTAG, RTK_LOG_INFO, "DteRate: %u\nCharFormat: %d\nParityType: %d\nDataBits: %d\n",
 				 line_coding.b.dwDteRate, line_coding.b.bCharFormat, line_coding.b.bParityType, line_coding.b.bDataBits);
 	} else {
@@ -742,24 +743,24 @@ static void cdc_acm_request_test(void)
 	line_coding.b.bCharFormat = LINE_CODING_CHAR_FORMAT_1_STOP_BITS;
 	line_coding.b.bParityType = LINE_CODING_PARITY_NO;
 	line_coding.b.bDataBits = 8;
-	if (cdc_acm_lock_stack() != HAL_OK) {
+	if (cdc_acm_lock_stack() != RTK_SUCCESS) {
 		return;
 	}
 	ret = usbh_cdc_acm_set_line_coding(&line_coding);
 	cdc_acm_unlock_stack();
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "SET_LINE_CODING fail\n");
 	}
 
 	rtos_time_delay_ms(10); // delay for wait set line coding done
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "GET_LINE_CODING:");
-	if (cdc_acm_lock_stack() != HAL_OK) {
+	if (cdc_acm_lock_stack() != RTK_SUCCESS) {
 		return;
 	}
 	ret = usbh_cdc_acm_get_line_coding(&new_line_coding);
 	cdc_acm_unlock_stack();
-	if (ret == HAL_OK) {
+	if (ret == RTK_SUCCESS) {
 		RTK_LOGS(NOTAG, RTK_LOG_INFO, "DteRate: %u\nCharFormat: %d\nParityType: %d\nDataBits: %d\n",
 				 new_line_coding.b.dwDteRate, new_line_coding.b.bCharFormat, new_line_coding.b.bParityType, new_line_coding.b.bDataBits);
 	} else {
@@ -815,14 +816,14 @@ static void example_usbh_cdc_acm_hotplug_thread(void *param)
 			rtos_mutex_take(cdc_acm_state_mutex, RTOS_MAX_TIMEOUT);
 
 			ret = usbh_init(&usbh_cfg, &usbh_usr_cb);
-			if (ret != HAL_OK) {
+			if (ret != RTK_SUCCESS) {
 				rtos_mutex_give(cdc_acm_state_mutex);
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "Init USBH fail\n");
 				break;
 			}
 
 			ret = usbh_cdc_acm_init(&cdc_acm_usr_cb, &cdc_acm_class_cfg);
-			if (ret != HAL_OK) {
+			if (ret != RTK_SUCCESS) {
 				usbh_deinit();
 				rtos_mutex_give(cdc_acm_state_mutex);
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "Init CDC ACM fail\n");
@@ -914,12 +915,12 @@ static void example_usbh_cdc_acm_thread(void *param)
 	}
 #endif
 	ret = usbh_init(&usbh_cfg, &usbh_usr_cb);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		goto error_exit;
 	}
 
 	ret = usbh_cdc_acm_init(&cdc_acm_usr_cb, &cdc_acm_class_cfg);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		usbh_deinit();
 		goto error_exit;
 	}

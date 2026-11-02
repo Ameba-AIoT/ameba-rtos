@@ -3,7 +3,12 @@ set(CMAKE_SYSTEM_PROCESSOR arm)
 
 # set(CMAKE_TRY_COMPILE_TARGET_TYPE "STATIC_LIBRARY")
 set(ToolChainVerMajor asdk-${ASDK_VER})
-set(ToolChainVerMinor 4600)
+# CONFIG_* is not imported yet when this file is included, so use c_SOC_TYPE
+if(c_SOC_TYPE STREQUAL "amebasmart")
+    set(ToolChainVerMinor 4785) # dynamic reent build, required by SMP FreeRTOS (__DYNAMIC_REENT__)
+else()
+    set(ToolChainVerMinor 4600)
+endif()
 if(USE_SECOND_SOURCE OR "$ENV{USE_SECOND_SOURCE}")
 set(TOOLCHAINURL https://github.com/Ameba-AIoT/ameba-toolchain/releases/download/12.3.1_v4/)
 else()

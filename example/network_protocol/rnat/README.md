@@ -45,11 +45,15 @@ The example shows:
 
 2. Enable Optional Interfaces:
 
-   - **Ethernet**: Select `CONFIG ETHERNET`->`PHY SOURCE CLK (external 25M)`
+   - **Ethernet**:
+     - Enable `CONFIG ETHERNET`, then select `MAC CLOCK SOURCE`. With `Internal clock divided from PLL`, also select `PHY CLOCK SOURCE` according to how the PHY on your board is clocked (`50M from Ameba` / `25M from Ameba` / `PHY xtal`); with `External 50M from the EXTCLK pin` the PHY runs from its own crystal and there is no such option. See [ETH PHY CLK](https://aiot.realmcu.com/zh/latest/rtos/peripherals/ethernet/index.html#eth-phy-clk) for more details.
+     - Select the RMII pin group: menuconfig `CONFIG User Config` -> `Pinmux Group Configuration` -> `Ethernet(RMII) pinmux group` (`0`-`3`, default `2`) to match the RMII pins wired on your board. The pin mapping of each group is listed in `ETHERNET_PAD[]` in `component/soc/usrcfg/amebagreen2/ameba_intfcfg.c`.
    - **USB-ETH**: Enable one of the following USB ECM configurations:
      - USB Device mode: `CONFIG USB` -> select `Device` mode -> `CDC ECM`
      - USB Host mode: `CONFIG USB` -> select `Host` mode -> `CDC ECM` -> `USB Ethernet`
-   - **USB 4G Dongle**: `CONFIG USB` -> select `Host` mode -> `CDC ACM` -> `4G Dongle` and `CDC ECM` -> `USB Ethernet`
+   - **USB 4G Dongle**: `CONFIG USB` -> select `Host` mode -> `CDC ACM` -> `4G LTE dongle support` and `CDC ECM` -> `USB Ethernet`
+
+   For higher Ethernet throughput, refer to the "Throughput tuning" section of `example/ethernet/ethernet_high_tp/README.md`.
 
 3. Disable Fast Reconnect:
 
@@ -118,31 +122,35 @@ The example shows:
 
    **Flexible Role Configuration:**
 
-   ETH and USB-ETH interfaces can be independently configured as WAN or LAN by setting the `role` and `ip_method` fields:
+   By default, `g_rnat_eth_netif_config` (ETH) and `g_rnat_usb_eth_netif_config` (USB-ETH) in `example_rnat.c` are both configured as LAN with a DHCP server. Each of them can be independently changed to WAN or LAN by setting the `role` and `ip_method` fields, for example:
 
    ```c
    /* Example 1: ETH as WAN port (DHCP Client) */
-   const rnat_netif_config_t eth_wan_config = {
+   const rnat_netif_config_t g_rnat_eth_netif_config = {
        .role = RNAT_ROLE_WAN,
        .ip_method = RNAT_IP_METHOD_DHCP_CLIENT,
        .priority = RNAT_ROUTE_PRIO_WAN_ETH,
        .ip_info = NULL,
-       .if_desc = "ETH"
+       .if_desc = "ETH",
+       .status_callback = user_netif_status_cb,
+       .callback_user_data = NULL
    };
 
    /* Example 2: ETH as LAN port (DHCP Server) */
-   const rnat_netif_config_t eth_lan_config = {
+   const rnat_netif_config_t g_rnat_eth_netif_config = {
        .role = RNAT_ROLE_LAN,
        .ip_method = RNAT_IP_METHOD_DHCP_SERVER,
        .priority = RNAT_ROUTE_PRIO_LAN,
        .ip_info = NULL,
-       .if_desc = "ETH"
+       .if_desc = "ETH",
+       .status_callback = user_netif_status_cb,
+       .callback_user_data = NULL
    };
    ```
 
    **4G Dongle (USB WAN):**
 
-   The 4G dongle shares the same netif index (`NETIF_USB_ETH_INDEX`) and the same `rnat_netif_config_t` as the regular USB-ETH ECM adapter. The difference is purely in the Kconfig selection and the `ip_method` field — no change is needed to `rnat_netif_create()` or `rnat_netif_start()`. The driver selected by Kconfig (`CONFIG_USBH_CDC_ACM_4G_DONGLE`) automatically handles AT command dialing before handing the interface to rnat.
+   The 4G dongle shares the same netif index (`NETIF_USB_ETH_INDEX`) and the same `rnat_netif_config_t` (`g_rnat_usb_eth_netif_config` in the example) as the regular USB-ETH ECM adapter. The difference is purely in the Kconfig selection and the `role` / `ip_method` fields — no change is needed to `rnat_netif_create()` or `rnat_netif_start()`. The driver selected by Kconfig (`CONFIG_USBH_CDC_ACM_4G_DONGLE`) automatically handles AT command dialing before handing the interface to rnat.
 
    IP method depends on the dongle model:
 
@@ -151,7 +159,7 @@ The example shows:
 
    ```c
    /* 4G Dongle (WAN) - DHCP from dongle's built-in DHCP server */
-   const rnat_netif_config_t g_rnat_usb_netif_config = {
+   const rnat_netif_config_t g_rnat_usb_eth_netif_config = {
        .role     = RNAT_ROLE_WAN,
        .ip_method = RNAT_IP_METHOD_DHCP_CLIENT,   /* EG91 / LE271 / SIM767X */
        .priority  = RNAT_ROUTE_PRIO_WAN_USB,      /* 101 */
@@ -167,7 +175,7 @@ The example shows:
        .gw      = { .addr = 0 },
        .netmask = { .addr = 0 },
    };
-   const rnat_netif_config_t g_rnat_usb_netif_config = {
+   const rnat_netif_config_t g_rnat_usb_eth_netif_config = {
        .role      = RNAT_ROLE_WAN,
        .ip_method = RNAT_IP_METHOD_STATIC,         /* EG915 */
        .priority  = RNAT_ROUTE_PRIO_WAN_USB,       /* 101 */
@@ -180,7 +188,7 @@ The example shows:
 
    Start the interface (no extra argument needed; the driver manages dialing):
    ```c
-   rnat_netif_t *usb_netif = rnat_netif_create(NETIF_USB_ETH_INDEX, &g_rnat_usb_netif_config);
+   rnat_netif_t *usb_netif = rnat_netif_create(NETIF_USB_ETH_INDEX, &g_rnat_usb_eth_netif_config);
    rnat_netif_start(usb_netif, NULL);
    ```
 
@@ -387,8 +395,7 @@ The WiFi client receives IP 192.168.43.100 from AP's DHCP server.
 When Ethernet cable is plugged in:
 
 ```
-[ETH-I] Link Up
-[ETH-I] MAC Link Info: 100 Mb/s, Full Duplex
+[R-NAT-I] Link Up: 100M, Full Duplex
 [R-NAT-I] [ETH] LINK UP - ACTIVE
 [R-NAT-APP-A] [USER-CB] ETH Link UP
 [R-NAT-I] === ETH Link UP ===
@@ -485,4 +492,3 @@ NONE
 # Supported IC
 
 RTL8721F
-RTL8720F

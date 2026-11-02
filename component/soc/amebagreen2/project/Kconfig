@@ -484,6 +484,7 @@ endmenu
 config SHELL_TASK_STACK_BASIC_SIZE
     int
     default APPLICATION_SHELL_TASK_STACK_SIZE_MENU if WHC_HOST || WHC_NONE
+    default 872 if (WHC_DEV && !WHC_INTF_IPC)
     default 616
 
 rsource "../../../lwip/Kconfig"

@@ -151,12 +151,24 @@ static const usbh_msc_cb_t usbh_msc_usr_cb = {
 	.setup = usbh_msc_cb_setup,
 };
 
+static const usbh_msc_config_t usbh_msc_class_cfg = {
+	/* buf_size left 0 takes the class default. */
+};
+
 static const usbh_user_cb_t usbh_usr_cb = {
 	.process = usbh_msc_cb_process
 };
 
 /* Exported variables --------------------------------------------------------*/
 
+/* AT commands "AT+<cmd>=<p1>,<p2>": the command name is matched case-sensitively by the AT parser.
+AT+USBDMSC=init
+AT+USBDMSC=deinit
+AT+USBHMSC=init
+AT+USBHMSC=deinit
+AT+USBHMSC=rw_test[,<count>]
+*/
+ATCMD_TABLE_DATA_SECTION
 const log_item_t usb_drd_cmd_table[] = {
 	{"+USBHMSC", usbh_msc_cmd_test},
 	{"+USBDMSC", usbd_msc_cmd_test},
@@ -211,46 +223,53 @@ static void usbh_msc_cb_process(usb_host_t *host, u8 msg)
 static void usbd_msc_help(void)
 {
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\r\n");
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "AT+USBDMSC=<command>\r\n");
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<command>:\tinit: init device msc driver\r\n");
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<command>:\tdeinit: deinit device msc driver\r\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Usage: AT+USBDMSC=<cmd>\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "  init          Init the device MSC driver on the SD card, not while the host MSC is inited\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "  deinit        Deinit the device MSC driver\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "  help          Print this help\n");
 }
 
 static void usbd_msc_cmd_test(u16 argc, char **argv)
 {
-	int error_no = HAL_OK;
-	int ret = HAL_OK;
+	int error_no = RTK_SUCCESS;
+	int ret = RTK_SUCCESS;
 	const char *cmd;
 
 	if (argc < 2) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid USB argument\n");
-		error_no = HAL_ERR_PARA;
+		error_no = -RTK_ERR_BADARG;
 		goto end;
 	}
 
 	cmd = (const char *)argv[1];
 
+	if ((_stricmp(cmd, "help") == 0) || (_stricmp(cmd, "?") == 0)) {
+		usbd_msc_help();
+		at_printf(ATCMD_OK_END_STR);
+		return;
+	}
+
 	if (_stricmp(cmd, "init") == 0) {
 		if (usbd_msc_inited != 0) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "MSC device already inited\n");
-			error_no = HAL_ERR_PARA;
+			error_no = -RTK_ERR_BADARG;
 			goto end;
 		}
 		ret = usbd_msc_disk_init();
-		if (ret != HAL_OK) {
+		if (ret != RTK_SUCCESS) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to init disk: %d\n", ret);
 			error_no = ret;
 			goto end;
 		}
 		ret = usbd_init(&usbd_msc_cfg);
-		if (ret != HAL_OK) {
+		if (ret != RTK_SUCCESS) {
 			usbd_msc_disk_deinit();
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to init USBD: %d\n", ret);
 			error_no = ret;
 			goto end;
 		}
 		ret = usbd_msc_init(&usbd_msc_cb, &msc_class_cfg);
-		if (ret != HAL_OK) {
+		if (ret != RTK_SUCCESS) {
 			usbd_deinit();
 			usbd_msc_disk_deinit();
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to init MSC\n");
@@ -262,7 +281,7 @@ static void usbd_msc_cmd_test(u16 argc, char **argv)
 	} else if (_stricmp(cmd, "deinit") == 0) {
 		if (usbd_msc_inited == 0) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "MSC device not inited\n");
-			error_no = HAL_ERR_PARA;
+			error_no = -RTK_ERR_BADARG;
 			goto end;
 		}
 		usbd_msc_inited = 0;
@@ -271,11 +290,11 @@ static void usbd_msc_cmd_test(u16 argc, char **argv)
 		usbd_msc_disk_deinit();
 	} else {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Input cmd err\n");
-		error_no = HAL_ERR_PARA;
+		error_no = -RTK_ERR_BADARG;
 	}
 
 end:
-	if (error_no == HAL_OK) {
+	if (error_no == RTK_SUCCESS) {
 		at_printf(ATCMD_OK_END_STR);
 	} else {
 		usbd_msc_help();
@@ -289,13 +308,13 @@ end:
   *         still NULL before the first `usbh msc init`, and the flag is already
   *         cleared once a teardown is pending. A deinit right after this check is
   *         harmless, the mutex stays valid and the re-check under it catches it.
-  * @retval HAL_OK when the lock is held and the stack is usable, HAL_ERR_HW when
+  * @retval RTK_SUCCESS when the lock is held and the stack is usable, -RTK_ERR_IO when
   *         the caller must give up without unlocking
   */
 static int usbh_msc_lock_stack(void)
 {
 	if ((usbh_msc_stack_ready == 0U) || (usbh_msc_teardown != 0U) || (usbh_msc_state_mutex == NULL)) {
-		return HAL_ERR_HW;
+		return -RTK_ERR_IO;
 	}
 
 	rtos_mutex_take(usbh_msc_state_mutex, RTOS_MAX_TIMEOUT);
@@ -303,10 +322,10 @@ static int usbh_msc_lock_stack(void)
 	if ((usbh_msc_stack_ready == 0U) || (usbh_msc_teardown != 0U)) {
 		/* Lost the race against a teardown */
 		rtos_mutex_give(usbh_msc_state_mutex);
-		return HAL_ERR_HW;
+		return -RTK_ERR_IO;
 	}
 
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 /**
@@ -342,7 +361,7 @@ static FRESULT usbh_msc_fs_mount(FATFS *fs, const TCHAR *path, BYTE opt)
 {
 	FRESULT res;
 
-	if (usbh_msc_lock_stack() != HAL_OK) {
+	if (usbh_msc_lock_stack() != RTK_SUCCESS) {
 		return FR_DISK_ERR;
 	}
 	res = f_mount(fs, path, opt);
@@ -366,7 +385,7 @@ static FRESULT usbh_msc_fs_open(FIL *fp, const TCHAR *path, BYTE mode)
 {
 	FRESULT res;
 
-	if (usbh_msc_lock_stack() != HAL_OK) {
+	if (usbh_msc_lock_stack() != RTK_SUCCESS) {
 		return FR_DISK_ERR;
 	}
 	res = f_open(fp, path, mode);
@@ -391,7 +410,7 @@ static FRESULT usbh_msc_fs_lseek(FIL *fp, FSIZE_t ofs)
 {
 	FRESULT res;
 
-	if (usbh_msc_lock_stack() != HAL_OK) {
+	if (usbh_msc_lock_stack() != RTK_SUCCESS) {
 		return FR_DISK_ERR;
 	}
 	res = f_lseek(fp, ofs);
@@ -404,7 +423,7 @@ static FRESULT usbh_msc_fs_write(FIL *fp, const void *buf, UINT btw, UINT *bw)
 {
 	FRESULT res;
 
-	if (usbh_msc_lock_stack() != HAL_OK) {
+	if (usbh_msc_lock_stack() != RTK_SUCCESS) {
 		*bw = 0U;
 		return FR_DISK_ERR;
 	}
@@ -418,7 +437,7 @@ static FRESULT usbh_msc_fs_read(FIL *fp, void *buf, UINT btr, UINT *br)
 {
 	FRESULT res;
 
-	if (usbh_msc_lock_stack() != HAL_OK) {
+	if (usbh_msc_lock_stack() != RTK_SUCCESS) {
 		*br = 0U;
 		return FR_DISK_ERR;
 	}
@@ -598,7 +617,7 @@ next_file:
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "WR%d check err: %x-%x-%x-%x vs %x-%x-%x-%x\n", test_size,
 						 msc_wt_buf[0], msc_wt_buf[1], msc_wt_buf[test_size - 2], msc_wt_buf[test_size - 1],
 						 msc_rd_buf[0], msc_rd_buf[1], msc_rd_buf[test_size - 2], msc_rd_buf[test_size - 1]);
-				ret = HAL_ERR_HW;
+				ret = -RTK_ERR_IO;
 				break;
 			}
 #endif
@@ -642,33 +661,41 @@ exit:
 static void usbh_msc_help(void)
 {
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\r\n");
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "AT+USBHMSC=<command>[,<file_cnt>]\r\n");
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<command>:\tinit: init host msc driver\r\n");
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<command>:\tdeinit: deinit host msc driver\r\n");
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<command>:\trw_test: file read and write test\r\n");
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\t<file_cnt>:\trw test file cnt 1~255, default: 5\r\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Usage: AT+USBHMSC=<cmd>[,<args>]\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "  init          Init the host MSC driver, not while the device MSC is inited\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "  deinit        Deinit the host MSC driver\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "  rw_test[,<count>]\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "                File W/R test on the U-disk, after init; one run at a time\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "                count: file count 1..255, default 5, kept for later runs\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "  help          Print this help\n");
 }
 
 static void usbh_msc_cmd_test(u16 argc, char **argv)
 {
-	int error_no = HAL_OK;
-	int ret = HAL_OK;
+	int error_no = RTK_SUCCESS;
+	int ret = RTK_SUCCESS;
 	const char *cmd;
 	usb_os_task_t task;
 	u32 cnt;
 
 	if (argc < 2) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid USB argument\n");
-		error_no = HAL_ERR_PARA;
+		error_no = -RTK_ERR_BADARG;
 		goto end;
 	}
 
 	cmd = (const char *)argv[1];
 
+	if ((_stricmp(cmd, "help") == 0) || (_stricmp(cmd, "?") == 0)) {
+		usbh_msc_help();
+		at_printf(ATCMD_OK_END_STR);
+		return;
+	}
+
 	if (_stricmp(cmd, "init") == 0) {
 		if (usbh_msc_inited != 0) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "MSC host already inited\n");
-			error_no = HAL_ERR_PARA;
+			error_no = -RTK_ERR_BADARG;
 			goto end;
 		}
 		/* Created on the first init and never deleted, see the declaration */
@@ -676,7 +703,7 @@ static void usbh_msc_cmd_test(u16 argc, char **argv)
 			ret = rtos_mutex_create(&usbh_msc_state_mutex);
 			if (ret != RTK_SUCCESS) {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to create state mutex\n");
-				error_no = HAL_ERR_MEM;
+				error_no = -RTK_ERR_NOMEM;
 				goto end;
 			}
 		}
@@ -688,7 +715,7 @@ static void usbh_msc_cmd_test(u16 argc, char **argv)
 			ret = rtos_sema_create(&usbh_msc_attach_sema, 0U, 1U);
 			if (ret != RTK_SUCCESS) {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to create sema\n");
-				error_no = HAL_ERR_MEM;
+				error_no = -RTK_ERR_NOMEM;
 				goto end;
 			}
 		} else {
@@ -697,13 +724,13 @@ static void usbh_msc_cmd_test(u16 argc, char **argv)
 		}
 
 		ret = usbh_init(&usbh_cfg, &usbh_usr_cb);
-		if (ret != HAL_OK) {
+		if (ret != RTK_SUCCESS) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to init USBH: %d\n", ret);
 			error_no = ret;
 			goto end;
 		}
-		ret = usbh_msc_init(&usbh_msc_usr_cb);
-		if (ret != HAL_OK) {
+		ret = usbh_msc_init(&usbh_msc_usr_cb, &usbh_msc_class_cfg);
+		if (ret != RTK_SUCCESS) {
 			usbh_deinit();
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to init MSC: %d\n", ret);
 			error_no = ret;
@@ -723,7 +750,7 @@ static void usbh_msc_cmd_test(u16 argc, char **argv)
 	} else if (_stricmp(cmd, "deinit") == 0) {
 		if (usbh_msc_inited == 0) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "MSC host not inited\n");
-			error_no = HAL_ERR_PARA;
+			error_no = -RTK_ERR_BADARG;
 			goto end;
 		}
 		usbh_msc_inited = 0;
@@ -755,20 +782,22 @@ static void usbh_msc_cmd_test(u16 argc, char **argv)
 	} else if (_stricmp(cmd, "rw_test") == 0) {
 		if (usbh_msc_inited == 0) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "MSC host not inited\n");
-			error_no = HAL_ERR_PARA;
+			error_no = -RTK_ERR_BADARG;
 			goto end;
 		}
 		/* The shell is the only caller, so the check and the set below can not race */
 		if (usbh_msc_trx_running != 0U) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "R&W test already running\n");
-			error_no = HAL_ERR_PARA;
+			error_no = -RTK_ERR_BADARG;
 			goto end;
 		}
 		if ((argc > 2) && (argv[2] != NULL)) {
-			cnt = _strtoul((const char *)(argv[2]), (char **)NULL, 10);
-			if ((cnt == 0U) || (cnt > 0xFFU)) {
-				RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid file_cnt %u, 1~255\n", cnt);
-				error_no = HAL_ERR_PARA;
+			char *end_ptr = NULL;
+
+			cnt = ((argv[2][0] >= '0') && (argv[2][0] <= '9')) ? (u32)_strtoul((const char *)(argv[2]), &end_ptr, 10) : 0U;
+			if ((end_ptr == NULL) || (*end_ptr != '\0') || (cnt == 0U) || (cnt > 0xFFU)) {
+				RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid count %s, 1..255\n", argv[2]);
+				error_no = -RTK_ERR_BADARG;
 				goto end;
 			}
 			file_cnt = (u8)cnt;
@@ -782,7 +811,7 @@ static void usbh_msc_cmd_test(u16 argc, char **argv)
 		if (ret != RTK_SUCCESS) {
 			usbh_msc_trx_running = 0U;
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to create USB host MSC R&W test thread\n");
-			error_no = HAL_ERR_MEM;
+			error_no = -RTK_ERR_NOMEM;
 		}
 		/* The R/W thread is deliberately left unaffined: it is excluded from a
 		   teardown by usbh_msc_state_mutex, not by core.
@@ -792,10 +821,11 @@ static void usbh_msc_cmd_test(u16 argc, char **argv)
 		   effect. The lock is what makes the teardown safe here; the usual "pin the
 		   deinit thread to the ISR's core" trick is unavailable by construction. */
 	} else {
-		error_no = HAL_ERR_PARA;
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid cmd: %s\n", cmd);
+		error_no = -RTK_ERR_BADARG;
 	}
 end:
-	if (error_no == HAL_OK) {
+	if (error_no == RTK_SUCCESS) {
 		at_printf(ATCMD_OK_END_STR);
 	} else {
 		usbh_msc_help();
@@ -803,14 +833,6 @@ end:
 	}
 }
 
-/*
-AT+USBDMSC=init
-AT+USBDMSC=deinit
-AT+USBHMSC=init
-AT+USBHMSC=deinit
-AT+USBHMSC=rw_test[, <file_cnt>]
-*/
-ATCMD_TABLE_DATA_SECTION
 
 /* Exported functions --------------------------------------------------------*/
 

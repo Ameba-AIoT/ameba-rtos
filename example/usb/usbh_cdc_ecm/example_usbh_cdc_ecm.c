@@ -10,7 +10,11 @@
 #include <lwip/netdb.h>
 #include "os_wrapper.h"
 #include "wifi_api.h"
+#if defined(CONFIG_MBEDTLS_USE_LEGACY_API)
 #include "mbedtls/md5.h"
+#else
+#include "psa/crypto.h"
+#endif
 #include "lwip_netconf.h"
 #include "usbh_cdc_ecm.h"
 
@@ -84,7 +88,11 @@ static const char *const TAG = "ECM";
 
 #if CONFIG_USBH_CDC_ECM_ENABLE_REMOTE_FILE_DOWNLOAD
 static unsigned char dl_buf[CONFIG_USBH_CDC_ECM_BUFFER_SIZE + 1];
+#if defined(CONFIG_MBEDTLS_USE_LEGACY_API)
 static mbedtls_md5_context ctx;
+#else
+static psa_hash_operation_t ctx;
+#endif
 #if CONFIG_USBH_CDC_ECM_ENABLE_DUMP_FILE
 #define CONFIG_USBH_CDC_ECM_PSRAM_HEAP_SIZE_TEST                   (29000)
 static unsigned char dump_psRAMHeap[CONFIG_USBH_CDC_ECM_PSRAM_HEAP_SIZE_TEST];
@@ -197,7 +205,7 @@ static int cdc_ecm_cb_device_check(usb_host_t *host, u8 cfg_max)
 static int cdc_ecm_cb_init(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "INIT\n");
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 /**
@@ -273,13 +281,13 @@ static int cdc_ecm_do_init(void)
 	int ret = 0;
 
 	ret = usbh_init(&usbh_ecm_cfg, &usbh_ecm_usr_cb);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Init USBH fail\n");
 		return 0;
 	}
 
 	ret = usbh_cdc_ecm_init(&cdc_ecm_usb_cb, &ecm_class_cfg);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Init CDC ECM fail\n");
 		usbh_deinit();
 		return 0;
@@ -366,7 +374,11 @@ static void example_usbh_ecm_link_change_thread(void *param)
 					dhcp_done = 1;
 					RTK_LOGS(TAG, RTK_LOG_INFO, "Switch to link\n");
 				} else {
-					RTK_LOGS(TAG, RTK_LOG_ERROR, "DHCP fail\n");
+					/* Back to IDLE so the next round retries: a 4G dongle reports the link up for good,
+					   so no link-down edge would ever bring this branch back */
+					RTK_LOGS(TAG, RTK_LOG_ERROR, "DHCP fail, retry\n");
+					ethernet_state = ETH_STATUS_IDLE;
+					rtos_time_delay_ms(1000);
 				}
 			}
 		} else if (0 == link_is_up && (ethernet_state >= ETH_STATUS_INIT)) {	// link -> unlink
@@ -404,7 +416,11 @@ static int update_data_check(char *pdata, unsigned int length)
 		return 0;
 	}
 	save_to_memory(pdata, length);
+#if defined(CONFIG_MBEDTLS_USE_LEGACY_API)
 	mbedtls_md5_update(&ctx, (const unsigned char *)pdata, length);
+#else
+	psa_hash_update(&ctx, (const uint8_t *)pdata, length);
+#endif
 	return  0;
 }
 
@@ -485,8 +501,13 @@ static void example_usbh_ecm_download_thread(void *param)
 
 		write(server_fd, (char const *)dl_buf, strlen((char const *)dl_buf));
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Will call read\n");
+#if defined(CONFIG_MBEDTLS_USE_LEGACY_API)
 		mbedtls_md5_init(&ctx);
 		mbedtls_md5_starts(&ctx);
+#else
+		ctx = psa_hash_operation_init();
+		psa_hash_setup(&ctx, PSA_ALG_MD5);
+#endif
 
 		while (((content_len == 0) || (resource_size < content_len)) /**/
 			   && ((read_size = read(server_fd, dl_buf + pos, CONFIG_USBH_CDC_ECM_BUFFER_SIZE - pos)) > 0)) {
@@ -534,8 +555,13 @@ static void example_usbh_ecm_download_thread(void *param)
 		}
 
 		write_data_to_flash();
+#if defined(CONFIG_MBEDTLS_USE_LEGACY_API)
 		mbedtls_md5_finish(&ctx, output);
 		mbedtls_md5_free(&ctx);
+#else
+		size_t olen;
+		psa_hash_finish(&ctx, output, sizeof(output), &olen);
+#endif
 
 		RTK_LOGS(TAG, RTK_LOG_INFO, "mbedtls_md5_finish md5\n");
 		for (u8 hh = 0; hh < CONFIG_USBH_CDC_ECM_MD5_CHECK_BUFFER_LEN; hh++) {
@@ -666,13 +692,13 @@ int usb_ethernet_transmit(u8 *buf, u32 len, u8 block)
 	   teardown is pending. A hotplug right after this check is harmless, the mutex
 	   stays valid and the re-check under it skips the TX. */
 	if ((cdc_ecm_stack_ready == 0U) || (cdc_ecm_teardown != 0U)) {
-		return HAL_ERR_HW;
+		return -RTK_ERR_IO;
 	}
 
 	rtos_mutex_take(cdc_ecm_state_mutex, RTOS_MAX_TIMEOUT);
 	if ((cdc_ecm_stack_ready == 0U) || (cdc_ecm_teardown != 0U)) {
 		/* Lost the race against a teardown */
-		ret = HAL_ERR_HW;
+		ret = -RTK_ERR_IO;
 	} else {
 		ret = usbh_cdc_ecm_send_data(buf, len, block);
 	}
@@ -701,7 +727,7 @@ void example_usbh_cdc_ecm(void)
 	}
 
 	ret = usb_os_sema_create(&cdc_ecm_detach_sema);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create detach sema fail\n");
 		return;
 	}
