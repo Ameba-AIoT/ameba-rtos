@@ -157,6 +157,105 @@ uint8_t hci_update_uart_baudrate(bool use_default_rate)
 	return HCI_SUCCESS;
 }
 
+#if defined(HCI_BT_POWER_SAVE_MODE) && (HCI_BT_POWER_SAVE_MODE == 1)
+static bool first_wakeup = false;
+static bool bt_power_save_initialized = false;
+
+bool hci_get_first_wakeup(void)
+{
+	return first_wakeup;
+}
+
+void hci_set_first_wakeup(bool flag)
+{
+	first_wakeup = flag;
+}
+
+static bool hci_get_bt_wakelock_status(void)
+{
+	uint32_t lock_status = pmu_get_wakelock_status();
+
+	if (lock_status & ((0x01) << PMU_BT_CONTROLLER)) {
+		/* Already acquire bt wake lock */
+		return true;
+	} else {
+		/* Already release bt wake lock */
+		return false;
+	}
+}
+
+void hci_release_bt_wakelock(void)
+{
+	if (hci_get_bt_wakelock_status() == true) {
+		pmu_release_wakelock(PMU_BT_CONTROLLER);
+	}
+}
+
+void hci_acquire_bt_wakelock(void)
+{
+	if (hci_get_bt_wakelock_status() == false) {
+		pmu_acquire_wakelock(PMU_BT_CONTROLLER);
+	}
+}
+
+static uint32_t hci_bt_sleep_hook(uint32_t expected_idle_time, void *param)
+{
+	(void)expected_idle_time;
+	(void)param;
+
+	/* For AmebaDplus & AmebaGreen2 */
+	hci_uart_force_rts(true);
+
+	hci_uart_op_irq(false);
+
+	/* For AmebaLite */
+	hci_platform_op_bt_wake_host_irq(true);
+
+	hci_uart_op_host_wake_bt(false);
+
+	return 1;
+}
+
+static uint32_t hci_bt_wakeup_hook(uint32_t expected_idle_time, void *param)
+{
+	(void)expected_idle_time;
+	(void)param;
+
+	hci_set_first_wakeup(true);
+
+	/* For AmebaLite */
+	hci_platform_op_bt_wake_host_irq(false);
+
+	hci_uart_op_irq(true);
+
+	/* For AmebaDplus & AmebaGreen2 */
+	hci_uart_force_rts(false);
+
+	return 1;
+}
+
+void hci_bt_power_save_init(void)
+{
+	hci_set_first_wakeup(true);
+
+	/* Register hook function before entering sleep and after exiting sleep */
+	pmu_register_sleep_callback(PMU_BT_CONTROLLER, (PSM_HOOK_FUN)hci_bt_sleep_hook, NULL, (PSM_HOOK_FUN)hci_bt_wakeup_hook, NULL);
+
+	/* For AmebaLite */
+	hci_platform_register_bt_wake_host_irq();
+}
+
+void hci_bt_power_save_deinit(void)
+{
+	/* For AmebaLite */
+	hci_platform_unregister_bt_wake_host_irq();
+
+	pmu_unregister_sleep_callback(PMU_BT_CONTROLLER);
+
+	hci_set_first_wakeup(false);
+}
+#endif
+
 static bool _controller_is_opened = false;
 uint8_t hci_process(void);
 bool hci_controller_open(void)
@@ -198,6 +297,15 @@ bool hci_controller_open(void)
 		goto process_fail;
 	}
 
+#if defined(HCI_BT_POWER_SAVE_MODE) && (HCI_BT_POWER_SAVE_MODE == 1)
+	if (!bt_power_save_initialized) {
+		hci_bt_power_save_init();
+		bt_power_save_initialized = true;
+	}
+#elif defined(HCI_BT_POWER_SAVE_MODE) && (HCI_BT_POWER_SAVE_MODE == 2)
+	hci_uart_op_host_wake_bt(true);
+#endif
+
 	/* Recover WiFi powersave mode */
 	rtk_bt_post_enable();
 
@@ -221,6 +329,14 @@ sa_fail:
 
 void hci_controller_close(void)
 {
+#if defined(HCI_BT_POWER_SAVE_MODE) && (HCI_BT_POWER_SAVE_MODE == 1)
+	if (bt_power_save_initialized) {
+		hci_bt_power_save_deinit();
+		bt_power_save_initialized = false;
+	}
+#elif defined(HCI_BT_POWER_SAVE_MODE) && (HCI_BT_POWER_SAVE_MODE == 2)
+	hci_uart_op_host_wake_bt(false);
+#endif
 	hci_platform_close();   /* Platform Close First */
 	hci_transport_close();  /* HCI Transport Close */
 

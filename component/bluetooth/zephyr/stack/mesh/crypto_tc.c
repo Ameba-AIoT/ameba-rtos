@@ -6,11 +6,15 @@
  */
 
 #include <errno.h>
+#if defined(CONFIG_MBEDTLS_USE_LEGACY_API)
 #include "mbedtls/cmac.h"
 #include "mbedtls/cipher.h"
 #include "mbedtls/md.h"
 #include "mbedtls/ecp.h"
 #include "mbedtls/ecdh.h"
+#else
+#include "psa/crypto.h"
+#endif
 
 #include <zephyr/bluetooth/mesh.h>
 #include <zephyr/bluetooth/crypto.h>
@@ -29,11 +33,45 @@ static struct {
 	uint8_t public_key_be[PUB_KEY_SIZE];
 } dh_pair;
 
+#if defined(CONFIG_MBEDTLS_USE_LEGACY_API)
 static int bt_rand_wrapper(void *ctx, unsigned char *buf, size_t len)
 {
 	(void)ctx;
 	return bt_rand(buf, len);
 }
+#else
+static int mac_raw_key(psa_key_type_t type, psa_algorithm_t alg, const uint8_t *key, size_t key_len, struct bt_mesh_sg *sg, size_t sg_len,
+		       uint8_t *mac, size_t mac_len)
+{
+	psa_key_attributes_t attr = PSA_KEY_ATTRIBUTES_INIT;
+	psa_mac_operation_t op = PSA_MAC_OPERATION_INIT;
+	psa_key_id_t key_id;
+	psa_status_t status;
+	size_t olen;
+
+	psa_set_key_type(&attr, type);
+	psa_set_key_bits(&attr, key_len * 8);
+	psa_set_key_usage_flags(&attr, PSA_KEY_USAGE_SIGN_MESSAGE);
+	psa_set_key_algorithm(&attr, alg);
+	status = psa_import_key(&attr, key, key_len, &key_id);
+	if (status != PSA_SUCCESS) {
+		return -EIO;
+	}
+
+	status = psa_mac_sign_setup(&op, key_id, alg);
+	for (; status == PSA_SUCCESS && sg_len; sg_len--, sg++) {
+		if (sg->len) {
+			status = psa_mac_update(&op, sg->data, sg->len);
+		}
+	}
+	if (status == PSA_SUCCESS) {
+		status = psa_mac_sign_finish(&op, mac, mac_len, &olen);
+	}
+	psa_mac_abort(&op);
+	psa_destroy_key(key_id);
+	return status == PSA_SUCCESS ? 0 : -EIO;
+}
+#endif
 
 int bt_mesh_encrypt(const struct bt_mesh_key *key, const uint8_t plaintext[16],
 		    uint8_t enc_data[16])
@@ -55,6 +93,7 @@ int bt_mesh_ccm_decrypt(const struct bt_mesh_key *key, uint8_t nonce[13], const 
 	return bt_ccm_decrypt(key->key, nonce, enc_data, len, aad, aad_len, plaintext, mic_size);
 }
 
+#if defined(CONFIG_MBEDTLS_USE_LEGACY_API)
 int bt_mesh_aes_cmac_raw_key(const uint8_t key[16], struct bt_mesh_sg *sg, size_t sg_len,
 			     uint8_t mac[16])
 {
@@ -86,6 +125,13 @@ out:
 	mbedtls_cipher_free(&ctx);
 	return ret ? -EIO : 0;
 }
+#else
+int bt_mesh_aes_cmac_raw_key(const uint8_t key[16], struct bt_mesh_sg *sg, size_t sg_len,
+			     uint8_t mac[16])
+{
+	return mac_raw_key(PSA_KEY_TYPE_AES, PSA_ALG_CMAC, key, 16, sg, sg_len, mac, 16);
+}
+#endif
 
 int bt_mesh_aes_cmac_mesh_key(const struct bt_mesh_key *key, struct bt_mesh_sg *sg,
 			size_t sg_len, uint8_t mac[16])
@@ -93,6 +139,7 @@ int bt_mesh_aes_cmac_mesh_key(const struct bt_mesh_key *key, struct bt_mesh_sg *
 	return bt_mesh_aes_cmac_raw_key(key->key, sg, sg_len, mac);
 }
 
+#if defined(CONFIG_MBEDTLS_USE_LEGACY_API)
 int bt_mesh_sha256_hmac_raw_key(const uint8_t key[32], struct bt_mesh_sg *sg, size_t sg_len,
 				uint8_t mac[32])
 {
@@ -168,12 +215,52 @@ out:
 
 	return 0;
 }
+#else
+int bt_mesh_sha256_hmac_raw_key(const uint8_t key[32], struct bt_mesh_sg *sg, size_t sg_len,
+				uint8_t mac[32])
+{
+	return mac_raw_key(PSA_KEY_TYPE_HMAC, PSA_ALG_HMAC(PSA_ALG_SHA_256), key, 32, sg, sg_len, mac, 32);
+}
+
+int bt_mesh_pub_key_gen(void)
+{
+	psa_key_attributes_t attr = PSA_KEY_ATTRIBUTES_INIT;
+	psa_key_id_t key_id;
+	uint8_t tmp[1 + PUB_KEY_SIZE];
+	size_t olen;
+	psa_status_t status;
+
+	psa_set_key_type(&attr, PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1));
+	psa_set_key_bits(&attr, 256);
+	psa_set_key_usage_flags(&attr, PSA_KEY_USAGE_EXPORT);
+	status = psa_generate_key(&attr, &key_id);
+	if (status == PSA_SUCCESS) {
+		status = psa_export_key(key_id, dh_pair.private_key_be, PRIV_KEY_SIZE, &olen);
+		if (status == PSA_SUCCESS) {
+			status = psa_export_public_key(key_id, tmp, sizeof(tmp), &olen);
+		}
+		psa_destroy_key(key_id);
+	}
+
+	if (status != PSA_SUCCESS) {
+		dh_pair.is_ready = false;
+		LOG_ERR("Failed to create public/private pair");
+		return -EIO;
+	}
+
+	memcpy(dh_pair.public_key_be, tmp + 1, PUB_KEY_SIZE);
+	dh_pair.is_ready = true;
+
+	return 0;
+}
+#endif
 
 const uint8_t *bt_mesh_pub_key_get(void)
 {
 	return dh_pair.is_ready ? dh_pair.public_key_be : NULL;
 }
 
+#if defined(CONFIG_MBEDTLS_USE_LEGACY_API)
 int bt_mesh_dhkey_gen(const uint8_t *pub_key, const uint8_t *priv_key, uint8_t *dhkey)
 {
 	mbedtls_ecp_group grp;
@@ -221,6 +308,33 @@ out:
 
 	return ret ? -EIO : 0;
 }
+#else
+int bt_mesh_dhkey_gen(const uint8_t *pub_key, const uint8_t *priv_key, uint8_t *dhkey)
+{
+	psa_key_attributes_t attr = PSA_KEY_ATTRIBUTES_INIT;
+	psa_key_id_t key_id;
+	uint8_t tmp[1 + PUB_KEY_SIZE];
+	size_t olen;
+	psa_status_t status;
+
+	psa_set_key_type(&attr, PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1));
+	psa_set_key_bits(&attr, 256);
+	psa_set_key_usage_flags(&attr, PSA_KEY_USAGE_DERIVE);
+	psa_set_key_algorithm(&attr, PSA_ALG_ECDH);
+	status = psa_import_key(&attr, priv_key ? priv_key : dh_pair.private_key_be, PRIV_KEY_SIZE, &key_id);
+	if (status != PSA_SUCCESS) {
+		return -EIO;
+	}
+
+	/* pub_key is 64 bytes (x||y); prepend 0x04 for uncompressed point format */
+	tmp[0] = 0x04;
+	memcpy(tmp + 1, pub_key, PUB_KEY_SIZE);
+	status = psa_raw_key_agreement(PSA_ALG_ECDH, key_id, tmp, sizeof(tmp), dhkey, PRIV_KEY_SIZE, &olen);
+	psa_destroy_key(key_id);
+
+	return status == PSA_SUCCESS ? 0 : -EIO;
+}
+#endif
 
 int bt_mesh_crypto_init(void)
 {

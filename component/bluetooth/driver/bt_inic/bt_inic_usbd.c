@@ -24,7 +24,7 @@ static int inic_cb_setup(usb_setup_req_t *req, u8 *buf);
 static int inic_cb_set_config(void);
 static int inic_cb_clear_config(void);
 static int inic_cb_received(usbd_whc_ep_t *ep, u16 len);
-static void inic_cb_transmitted(usbd_whc_ep_t *ep, u8 status);
+static void inic_cb_transmitted(usbd_whc_ep_t *ep, int status);
 static void inic_cb_status_changed(u8 old_status, u8 status);
 
 /* Private variables ---------------------------------------------------------*/
@@ -143,7 +143,7 @@ static int inic_cb_received(usbd_whc_ep_t *out_ep, u16 len)
 	return bt_inic_usb_hci_acl_hdl(ep->xfer_buf, len);
 }
 
-static void inic_cb_transmitted(usbd_whc_ep_t *in_ep, u8 status)
+static void inic_cb_transmitted(usbd_whc_ep_t *in_ep, int status)
 {
 	(void)status;
 	usbd_ep_t *ep = &in_ep->ep;

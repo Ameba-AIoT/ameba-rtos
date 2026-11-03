@@ -86,7 +86,11 @@
 #endif*/
 
 /* pull in md5 of mbedtls/polarssl */
+#if defined(CONFIG_MBEDTLS_USE_LEGACY_API)
 #include <mbedtls/md5.h>
+#else
+#include "psa/crypto.h"
+#endif
 
 #ifndef LWIP_IPV4
 #define LWIP_IPV4 1
@@ -126,7 +130,11 @@ u32_t
 lwip_hook_tcp_isn(const ip_addr_t *local_ip, u16_t local_port,
     const ip_addr_t *remote_ip, u16_t remote_port)
 {
+#if defined(CONFIG_MBEDTLS_USE_LEGACY_API)
   mbedtls_md5_context ctx;
+#else
+  size_t olen;
+#endif
   u8_t output[16];
   u32_t isn;
 
@@ -179,9 +187,13 @@ lwip_hook_tcp_isn(const ip_addr_t *local_ip, u16_t local_port,
   /* The secret and padding are already filled in. */
 
   /* Generate the hash, using MD5. */
+#if defined(CONFIG_MBEDTLS_USE_LEGACY_API)
   mbedtls_md5_starts(&ctx);
   mbedtls_md5_update(&ctx, input, sizeof(input));
   mbedtls_md5_finish(&ctx, output);
+#else
+  psa_hash_compute(PSA_ALG_MD5, input, sizeof(input), output, sizeof(output), &olen);
+#endif
 
   /* Arbitrarily take the first 32 bits from the generated hash. */
   MEMCPY(&isn, output, sizeof(isn));

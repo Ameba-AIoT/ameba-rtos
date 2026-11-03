@@ -11,6 +11,9 @@
 #include "basic_types.h"
 #include "usbd_hid.h"
 #include "os_wrapper.h"
+#include "atcmd_service.h"
+#include "usb_app.h"
+#include "example_usbd_hid.h"
 
 /* Private defines -----------------------------------------------------------*/
 
@@ -57,6 +60,8 @@
 // corresponding callback never comes, never block forever on it
 #define HID_TX_TIMEOUT_MS                        1000U
 #define HID_CONNECT_TIMEOUT_MS                   1000U
+// Longest sleep slice of the xfer thread, bounds how long a stop waits for it
+#define HID_QUIT_POLL_MS                         100U
 
 /* Private types -------------------------------------------------------------*/
 
@@ -82,7 +87,7 @@ typedef struct {
 static void hid_cb_init(void);
 static void hid_cb_deinit(void);
 static void hid_cb_setup(void);
-static void hid_cb_transmitted(u8 status);
+static void hid_cb_transmitted(int status);
 #ifdef CONFIG_USBD_HID_KEYBOARD
 static void hid_cb_received(u8 *buf, u32 len);
 #endif
@@ -90,7 +95,8 @@ static void hid_cb_status_changed(u8 old_status, u8 status);
 
 #if HID_MOUSE_CMD
 #ifdef CONFIG_USBD_HID_MOUSE
-static u32 hid_cmd_mouse_data(u16 argc, u8  *argv[]);
+static int hid_cmd_mouse_data(u16 argc, u8  *argv[]);
+static void hid_cmd_mouse_data_at(u16 argc, char **argv);
 #endif
 #endif
 
@@ -103,8 +109,8 @@ static int hid_send_device_data(const void *data);
 static const char *const TAG = "HID";
 
 /* Serializes the USB stack bring up/tear down against the TX path, taken by
- * the hotplug thread, the xfer thread and the mouse command.
- * Created once and never deleted: the mouse command runs on the shell thread,
+ * the hotplug thread, the xfer thread, the mouse command and the stop entry.
+ * Created by the first start and never deleted: the mouse command runs on the shell thread,
  * which lives as long as the firmware and can not be joined by the example, so
  * there is no point in time at which this mutex is provably unreferenced.
  * hid_stack_ready is the gate that keeps callers off the stack instead. */
@@ -117,11 +123,13 @@ static volatile u8 hid_stack_ready;
 /* Written by the ISR, read by the hotplug thread, possibly on another core */
 static volatile u8 hid_attach_status;
 static rtos_sema_t hid_attach_status_changed_sema;
-/* 1: hotplug re-init failed, all example threads shall quit */
-static volatile u8 hid_stack_fatal;
 /* Increased on every successful (re)init, identifies one test session */
 static volatile u32 hid_session_id;
 #endif
+
+/* Start/stop state: the hotplug and xfer threads own the running stack, example_usbd_hid_stop()
+   (or the hotplug thread when re-init fails) sets quit and joins them */
+static usb_app_ctx_t hid_app;
 
 #if HID_CONSTANT_DATA
 static rtos_sema_t hid_connect_sema;
@@ -211,9 +219,23 @@ static const usbd_hid_usr_cb_t hid_usr_cb = {
 /* Exported variables --------------------------------------------------------*/
 
 #if HID_MOUSE_CMD && defined(CONFIG_USBD_HID_MOUSE)
-CMD_TABLE_DATA_SECTION
-const COMMAND_TABLE usbd_hid_mouse_data_cmd[] = {
-	{"mouse", hid_cmd_mouse_data},
+/* AT commands "AT+<cmd>=<p1>,<p2>...": the command name is case-sensitive, the parameters are not */
+#ifndef USB_APP_AGGREGATE
+ATCMD_TABLE_DATA_SECTION
+const log_item_t usbd_hid_mouse_data_cmd[] = {
+	{"+USBDHID", hid_cmd_mouse_data_at},
+};
+#else
+/* Forwarded by the usb_drd app manager while this app runs; the handler is gated on hid_stack_ready */
+const usb_app_cmd_t example_usbd_hid_cmds[] = {
+	{"+USBDHID", hid_cmd_mouse_data_at},
+	{NULL, NULL},
+};
+#endif
+#elif defined(USB_APP_AGGREGATE)
+/* No AT command in this configuration, the app table still references the symbols */
+const usb_app_cmd_t example_usbd_hid_cmds[] = {
+	{NULL, NULL},
 };
 #endif
 
@@ -221,39 +243,40 @@ const COMMAND_TABLE usbd_hid_mouse_data_cmd[] = {
 
 #if HID_CONSTANT_DATA
 /**
-  * @brief  Check whether the example shall abort
-  * @retval 1 if the USB stack can not be recovered any more else 0
-  */
-static u8 hid_stack_broken(void)
-{
-#if HID_HOTPLUG
-	return hid_stack_fatal;
-#else
-	return 0U;
-#endif
-}
-#endif
-
-#if HID_CONSTANT_DATA
-/**
   * @brief  Check whether the running test session is still the valid one
   * @param  session: Session id recorded when the test started
-  * @retval 1 if a hotplug happened or the stack is broken else 0
+  * @retval 1 if a hotplug happened or the example is stopping else 0
   */
 static u8 hid_session_changed(u32 session)
 {
 #if HID_HOTPLUG
-	return ((hid_stack_fatal != 0U) || (hid_session_id != session)) ? 1U : 0U;
+	return ((hid_app.quit != 0U) || (hid_session_id != session)) ? 1U : 0U;
 #else
 	UNUSED(session);
-	return 0U;
+	return hid_app.quit;
 #endif
+}
+
+/**
+  * @brief  Sleep in short slices so that the xfer thread sees a stop within HID_QUIT_POLL_MS
+  * @param  ms: Sleep time
+  * @retval None
+  */
+static void hid_xfer_sleep(u32 ms)
+{
+	u32 step;
+
+	while ((ms != 0U) && (hid_app.quit == 0U)) {
+		step = (ms > HID_QUIT_POLL_MS) ? HID_QUIT_POLL_MS : ms;
+		rtos_time_delay_ms(step);
+		ms -= step;
+	}
 }
 #endif // HID_CONSTANT_DATA
 
 /**
   * @brief  Free the objects shared by the example threads
-  * @note   Only called by the last running thread, after the USB stack is fully
+  * @note   Only called once every worker thread is gone and the USB stack is fully
   *         deinited, so that no ISR callback can touch these objects any more.
   *         hid_state_mutex is deliberately kept: the shell thread may be holding
   *         it inside hid_send_device_data(), and deleting a held mutex is UB
@@ -303,7 +326,7 @@ static void hid_cb_setup(void)
   * @param  status: Transfer completion status
   * @retval None
   */
-static void hid_cb_transmitted(u8 status)
+static void hid_cb_transmitted(int status)
 {
 	UNUSED(status);
 #if HID_CONSTANT_DATA
@@ -322,11 +345,9 @@ static void hid_cb_transmitted(u8 status)
   */
 static void hid_cb_received(u8 *buf, u32 len)
 {
+	/* ISR context: no logging per report, it would stretch the interrupt for every OUT packet */
 	UNUSED(buf);
 	UNUSED(len);
-	if (len > 0) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "RX %d byte(s): 0x%02x\n", len, buf[0]);
-	}
 }
 #endif
 
@@ -352,73 +373,108 @@ static void hid_cb_status_changed(u8 old_status, u8 status)
 
 #if HID_MOUSE_CMD
 #ifdef CONFIG_USBD_HID_MOUSE
-/* The mouse report declares LOGICAL_MINIMUM(-127)/LOGICAL_MAXIMUM(127) (Ref HID 1.11 6.2.2.7),
-   so clamp explicitly: narrowing the unsigned parse result to char would silently wrap */
-static char hid_mouse_axis(const u8 *str)
+/* Parse a whole-string decimal in [min, max], an optional leading '-' allowed for a negative min */
+static int hid_parse_s32(const u8 *str, s32 min, s32 max, s32 *val)
 {
-	s32 val = (s32)strtoul((const char *)str, (char **)NULL, 10);
+	const char *p = (const char *)str;
+	char *end = NULL;
+	u32 mag;
+	s32 num;
+	u8 neg = 0U;
 
-	if (val > 127) {
-		val = 127;
-	} else if (val < -127) {
-		val = -127;
+	if (p == NULL) {
+		return -RTK_ERR_BADARG;
+	}
+	if (*p == '-') {
+		neg = 1U;
+		p++;
+	}
+	if ((*p < '0') || (*p > '9')) {
+		return -RTK_ERR_BADARG;
+	}
+	mag = (u32)strtoul(p, &end, 10);
+	if ((end == NULL) || (*end != '\0') || (mag > 0x7FFFFFFFU)) {
+		return -RTK_ERR_BADARG;
+	}
+	num = (neg != 0U) ? -(s32)mag : (s32)mag;
+	if ((num < min) || (num > max)) {
+		return -RTK_ERR_BADARG;
 	}
 
-	return (char)val;
+	*val = num;
+	return RTK_SUCCESS;
 }
 
-/* Each button is a 1-bit field with LOGICAL_MINIMUM(0)/LOGICAL_MAXIMUM(1) (Ref HID 1.11 6.2.2.7), so
-   map any non-zero input to pressed: narrowing the unsigned parse result to u8 would drop high bits */
-static u8 hid_mouse_button(const u8 *str)
+static void hid_cmd_usage(void)
 {
-	u8 pressed = 0U;
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Usage: AT+USBDHID=<cmd>[,<args>]\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "  mouse,<left>[,<right>,<middle>,<x>,<y>,<wheel>]\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "        Send one mouse report. left/right/middle: 0|1 (1 = pressed)\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "        x/y/wheel: relative move -127..127; omitted args are 0. Needs the host to have configured the device\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "  help  Print this help\n");
+}
 
-	if (strtoul((const char *)str, (char **)NULL, 10) != 0UL) {
-		pressed = 1U;
+/* Fill a mouse report from "mouse <left> [<right> <middle> <x> <y> <wheel>]", argv[0] being "mouse" */
+static int hid_parse_mouse(u16 argc, u8 *argv[], usbd_hid_mouse_data_t *data)
+{
+	s32 val[6] = {0};
+	s32 min;
+	u16 i;
+
+	if ((argc < 2U) || (argc > 7U)) {
+		return -RTK_ERR_BADARG;
+	}
+	for (i = 1U; i < argc; i++) {
+		/* Buttons are 1-bit fields, the axes LOGICAL_MINIMUM(-127)/LOGICAL_MAXIMUM(127), Ref HID 1.11 6.2.2.7 */
+		min = (i <= 3U) ? 0 : -127;
+		if (hid_parse_s32(argv[i], min, (i <= 3U) ? 1 : 127, &val[i - 1U]) != RTK_SUCCESS) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid arg %d: %s\n", i, argv[i]);
+			return -RTK_ERR_BADARG;
+		}
 	}
 
-	return pressed;
+	usb_os_memset((void *)data, 0, sizeof(*data));
+	data->left = (u8)val[0];
+	data->right = (u8)val[1];
+	data->middle = (u8)val[2];
+	data->x_axis = (char)val[3];
+	data->y_axis = (char)val[4];
+	data->wheel = (char)val[5];
+	return RTK_SUCCESS;
 }
 
-static u32 hid_cmd_mouse_data(u16 argc, u8  *argv[])
+static int hid_cmd_mouse_data(u16 argc, u8  *argv[])
 {
 	usbd_hid_mouse_data_t data;
 
-	if (argc == 0U) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid arguments, usage:\n"
-				 "mouse <left> [<right> <middle> <x_axis> <y_axis> <wheel>]\n");
-		return HAL_ERR_PARA;
+	if ((argc == 0U) || (_stricmp((const char *)argv[0], "help") == 0) || (_stricmp((const char *)argv[0], "?") == 0)) {
+		hid_cmd_usage();
+		return (argc == 0U) ? -RTK_ERR_BADARG : RTK_SUCCESS;
 	}
-
-	usb_os_memset((void *)&data, 0, sizeof(data));
-
-	if (argc > 0) {
-		data.left = hid_mouse_button(argv[0]);
+	if (_stricmp((const char *)argv[0], "mouse") != 0) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid cmd: %s, try AT+USBDHID=help\n", argv[0]);
+		return -RTK_ERR_BADARG;
 	}
-
-	if (argc > 1) {
-		data.right = hid_mouse_button(argv[1]);
-	}
-
-	if (argc > 2) {
-		data.middle = hid_mouse_button(argv[2]);
-	}
-
-	if (argc > 3) {
-		data.x_axis = hid_mouse_axis(argv[3]);
-	}
-
-	if (argc > 4) {
-		data.y_axis = hid_mouse_axis(argv[4]);
-	}
-
-	if (argc > 5) {
-		data.wheel = hid_mouse_axis(argv[5]);
+	if (hid_parse_mouse(argc, argv, &data) != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Usage: AT+USBDHID=mouse,<left>[,<right>,<middle>,<x>,<y>,<wheel>]\n");
+		return -RTK_ERR_BADARG;
 	}
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Send mouse data\n");
 
 	return (u32)hid_send_device_data(&data);
+}
+
+/* AT entry: argv[0] is reserved by the AT parser and argv[1] holds the first parameter */
+static void hid_cmd_mouse_data_at(u16 argc, char **argv)
+{
+	int ret = hid_cmd_mouse_data((argc != 0U) ? (argc - 1U) : 0U, (u8 **)&argv[1]);
+
+	if (ret == RTK_SUCCESS) {
+		at_printf(ATCMD_OK_END_STR);
+	} else {
+		at_printf(ATCMD_ERROR_END_STR, (int)ret);
+	}
 }
 #endif
 #endif  //HID_MOUSE_CMD
@@ -430,9 +486,9 @@ static u32 hid_cmd_mouse_data(u16 argc, u8  *argv[])
   *         otherwise the hotplug thread could free the endpoint buffers between
   *         the check and the transfer
   * @note   Also reachable from the shell thread through the mouse command, i.e.
-  *         before the example is started and after it has aborted
+  *         before the example is started, while it stops and after it has stopped
   * @param  pdata: Mouse or keyboard data to send
-  * @retval Result of the operation: HAL_OK if success else fail
+  * @retval Result of the operation: RTK_SUCCESS if success else fail
   */
 static int hid_send_device_data(const void *pdata)
 {
@@ -476,17 +532,18 @@ static int hid_send_device_data(const void *pdata)
 	/* Gate on hid_stack_ready BEFORE touching the mutex: it is still NULL if the
 	 * example was never started, and already cleared if the init failed or the
 	 * stack is gone for good. A hotplug right after this check is harmless, the
-	 * mutex stays valid and the re-check below skips the TX */
-	if (hid_stack_ready == 0U) {
+	 * mutex stays valid and the re-check below skips the TX. quit: a stop is
+	 * tearing the example down, no new TX */
+	if ((hid_stack_ready == 0U) || (hid_app.quit != 0U)) {
 		RTK_LOGS(TAG, RTK_LOG_WARN, "Stack not ready, skip TX\n");
-		return HAL_ERR_HW;
+		return -RTK_ERR_IO;
 	}
 
 	rtos_mutex_take(hid_state_mutex, RTOS_MAX_TIMEOUT);
-	if (hid_stack_ready == 0U) {
-		/* Lost the race against a hotplug tear down */
+	if ((hid_stack_ready == 0U) || (hid_app.quit != 0U)) {
+		/* Lost the race against a hotplug or stop tear down */
 		RTK_LOGS(TAG, RTK_LOG_WARN, "Stack torn down, skip TX\n");
-		ret = HAL_ERR_HW;
+		ret = -RTK_ERR_IO;
 	} else {
 #ifdef CONFIG_USBD_HID_MOUSE
 		ret = usbd_hid_send_data((const u8 *)byte, 4);
@@ -504,12 +561,17 @@ static int hid_send_device_data(const void *pdata)
 static void example_usbd_hid_hotplug_thread(void *param)
 {
 	int ret = 0;
+	u8 fatal = 0U;
 
 	UNUSED(param);
 
 	for (;;) {
 		if (rtos_sema_take(hid_attach_status_changed_sema, RTOS_SEMA_MAX_COUNT) != RTK_SUCCESS) {
 			continue;
+		}
+		if (hid_app.quit != 0U) {
+			/* Stop requested: the stack is left as it is, the stop entry tears it down */
+			break;
 		}
 
 		if (hid_attach_status == USBD_ATTACH_STATUS_DETACHED) {
@@ -526,6 +588,10 @@ static void example_usbd_hid_hotplug_thread(void *param)
 
 			rtos_time_delay_ms(100);
 			RTK_LOGS(TAG, RTK_LOG_INFO, "Free heap: 0x%x\n", rtos_mem_get_free_heap_size());
+			if (hid_app.quit != 0U) {
+				/* Stop requested while the stack is down: skip the re-init, hid_stack_ready stays 0 */
+				break;
+			}
 
 			rtos_mutex_take(hid_state_mutex, RTOS_MAX_TIMEOUT);
 			ret = usbd_init(&hid_cfg);
@@ -555,6 +621,7 @@ static void example_usbd_hid_hotplug_thread(void *param)
 			rtos_mutex_give(hid_state_mutex);
 
 			if (ret != 0) {
+				fatal = 1U;
 				break;
 			}
 		} else if (hid_attach_status == USBD_ATTACH_STATUS_ATTACHED) {
@@ -564,13 +631,24 @@ static void example_usbd_hid_hotplug_thread(void *param)
 		}
 	}
 
-	/* The stack is fully deinited here, no more ISR callback. Notify the xfer
-	 * thread to quit, it frees the shared objects as the last thread standing */
-	hid_stack_fatal = 1U;
-#if !HID_CONSTANT_DATA
-	hid_free_resource();
+	if (fatal != 0U) {
+		/* The stack is fully deinited here, no more ISR callback */
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Hotplug thread fail\n");
+		if (usb_app_ctx_claim_stop(&hid_app) != 0U) {
+			/* No stop is in flight: this thread finishes the teardown on its own */
+#if HID_CONSTANT_DATA
+			/* The xfer thread polls quit, set by the claim above */
+			if (usb_app_ctx_join(&hid_app, 1U) != RTK_SUCCESS) {
+				/* The xfer thread may still touch the shared objects: leak them */
+				rtos_task_delete(NULL);
+			}
 #endif
-	RTK_LOGS(TAG, RTK_LOG_ERROR, "Hotplug thread fail\n");
+			hid_free_resource();
+			usb_app_ctx_end(&hid_app);
+			rtos_task_delete(NULL);
+		}
+	}
+	usb_app_ctx_leave(&hid_app);
 	rtos_task_delete(NULL);
 }
 #endif // HID_HOTPLUG
@@ -596,11 +674,11 @@ static void example_usbd_hid_xfer_thread(void *param)
 
 	for (;;) {
 		/* Wait for a usable session: stack inited and enumerated by the host */
-		while ((hid_stack_broken() == 0U)
+		while ((hid_app.quit == 0U)
 			   && ((hid_stack_ready == 0U) || (usbd_get_status() != USBD_ATTACH_STATUS_ATTACHED))) {
-			rtos_time_delay_ms(100);
+			rtos_time_delay_ms(HID_QUIT_POLL_MS);
 		}
-		if (hid_stack_broken() != 0U) {
+		if (hid_app.quit != 0U) {
 			break;
 		}
 
@@ -609,6 +687,9 @@ static void example_usbd_hid_xfer_thread(void *param)
 #endif
 		if (rtos_sema_take(hid_connect_sema, HID_CONNECT_TIMEOUT_MS) != RTK_SUCCESS) {
 			continue; /* Not configured by the host yet, re-check the state */
+		}
+		if (hid_app.quit != 0U) {
+			break;
 		}
 
 #ifdef CONFIG_USBD_HID_MOUSE
@@ -630,12 +711,12 @@ static void example_usbd_hid_xfer_thread(void *param)
 					RTK_LOGS(TAG, RTK_LOG_WARN, "TX timeout\n");
 					goto session_end;
 				}
-				if (hid_send_device_data(&mdata[i]) != HAL_OK) {
+				if (hid_send_device_data(&mdata[i]) != RTK_SUCCESS) {
 					goto session_end;
 				}
-				rtos_time_delay_ms(delaytime);
+				hid_xfer_sleep(delaytime);
 			}
-			rtos_time_delay_ms(5 * 1000); //next loop
+			hid_xfer_sleep(5 * 1000); //next loop
 		}
 
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Test done\n");
@@ -644,10 +725,10 @@ session_end:
 #if HID_HOTPLUG
 		/* Idle until the hotplug thread finishes the next re-init, the test is
 		 * restarted only on a brand new session */
-		while ((hid_stack_fatal == 0U) && (hid_session_id == session)) {
-			rtos_time_delay_ms(500);
+		while ((hid_app.quit == 0U) && (hid_session_id == session)) {
+			rtos_time_delay_ms(HID_QUIT_POLL_MS);
 		}
-		if (hid_stack_fatal != 0U) {
+		if (hid_app.quit != 0U) {
 			break;
 		}
 #else
@@ -655,33 +736,37 @@ session_end:
 #endif
 	}
 
-#if HID_HOTPLUG
-	if (hid_stack_fatal != 0U) {
-		/* The hotplug thread already deinited the stack and quit, free the
-		 * shared objects here as the last thread standing */
-		hid_free_resource();
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Xfer thread abort\n");
-	}
-#endif
+	/* Never deinits the stack: the stop owner does, once every worker is gone */
+	usb_app_ctx_leave(&hid_app);
 	rtos_task_delete(NULL);
 }
 #endif // HID_CONSTANT_DATA
 
-static void example_usbd_hid_thread(void *param)
+/**
+  * @brief  Bring the stack and the worker threads up
+  * @retval RTK_SUCCESS, or the first error, with everything already created rolled back
+  */
+static int hid_start(void)
 {
 	int ret;
+#if HID_CONSTANT_DATA
+	u32 workers = 0U;
+	rtos_task_t xfer_task;
+#endif
 #if HID_HOTPLUG
 	rtos_task_t hotplug_task;
 #endif
-#if HID_CONSTANT_DATA
-	rtos_task_t xfer_task;
-#endif
 
-	UNUSED(param);
-
-	ret = rtos_mutex_create(&hid_state_mutex);
+	ret = usb_app_ctx_begin(&hid_app);
 	if (ret != RTK_SUCCESS) {
-		goto exit_create_obj_fail;
+		return ret;
+	}
+
+	if (hid_state_mutex == NULL) {
+		ret = rtos_mutex_create(&hid_state_mutex);
+		if (ret != RTK_SUCCESS) {
+			goto exit_create_obj_fail;
+		}
 	}
 
 #if HID_CONSTANT_DATA
@@ -719,12 +804,24 @@ static void example_usbd_hid_thread(void *param)
 #endif
 	hid_stack_ready = 1U;
 
+#if HID_CONSTANT_DATA
+	// The priority of transfer thread shall be lower than USB isr priority
+	ret = rtos_task_create(&xfer_task, "usbd_hid_xfer_thread",
+						   example_usbd_hid_xfer_thread, NULL,
+						   HID_XFER_THREAD_STACK_SIZE, HID_XFER_THREAD_PRIORITY);
+	if (ret != RTK_SUCCESS) {
+		goto exit_create_task_fail;
+	}
+	workers++;
+#endif
+
 #if HID_HOTPLUG
+	/* Created last: it owns the stack once running, so nothing after it can fail */
 	ret = rtos_task_create(&hotplug_task, "usbd_hid_hotplug_thread",
 						   example_usbd_hid_hotplug_thread, NULL,
 						   HID_HOTPLUG_THREAD_STACK_SIZE, HID_HOTPLUG_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
-		goto exit_usbd_hid_init_fail;
+		goto exit_create_task_fail;
 	}
 #if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
 	/* C-2: the USB OTG ISR is delivered on CPU0 (GIC ITARGETSR pins every SPI to
@@ -736,45 +833,113 @@ static void example_usbd_hid_thread(void *param)
 #endif
 #endif // HID_HOTPLUG
 
+	return RTK_SUCCESS;
+
+#if HID_HOTPLUG || HID_CONSTANT_DATA
+exit_create_task_fail:
 #if HID_CONSTANT_DATA
-	// The priority of transfer thread shall be lower than USB isr priority
-	ret = rtos_task_create(&xfer_task, "usbd_hid_xfer_thread",
-						   example_usbd_hid_xfer_thread, NULL,
-						   HID_XFER_THREAD_STACK_SIZE, HID_XFER_THREAD_PRIORITY);
-	if (ret != RTK_SUCCESS) {
-		goto exit_create_hotplug_task_fail;
+	/* Wake and join the xfer thread if already running, it polls quit */
+	hid_app.quit = 1U;
+	if (usb_app_ctx_join(&hid_app, workers) != RTK_SUCCESS) {
+		/* The xfer thread may still run on the stack: keep it, the app stays not idle */
+		hid_app.state = USB_APP_STATE_STOPPING;
+		return -RTK_ERR_TIMEOUT;
 	}
 #endif
-
-	/* Device stays enumerated, the hotplug thread and the xfer thread own the
-	 * shared objects from now on and free them if the stack can not recover */
-	rtos_task_delete(NULL);
-	return;
-
-#if HID_CONSTANT_DATA
-exit_create_hotplug_task_fail:
-#if HID_HOTPLUG
-	rtos_task_delete(hotplug_task);
-#endif
-#endif
-
-#if HID_HOTPLUG
-exit_usbd_hid_init_fail:
-#endif
+	/* Same exclusion as the hotplug teardown: once the mutex is held no shell TX is inside
+	   the class API, so closing the gate and deiniting cannot race it */
+	rtos_mutex_take(hid_state_mutex, RTOS_MAX_TIMEOUT);
 	hid_stack_ready = 0U;
 	usbd_hid_deinit();
+	usbd_deinit();
+	rtos_mutex_give(hid_state_mutex);
+	goto exit_create_obj_fail;
+#endif
 
 exit_usbd_init_fail:
 	usbd_deinit();
 
 exit_create_obj_fail:
 	hid_free_resource();
-	RTK_LOGS(TAG, RTK_LOG_ERROR, "USBD HID demo aborted\n");
+	usb_app_ctx_end(&hid_app);
+
+	return ret;
+}
+
+static void example_usbd_hid_thread(void *param)
+{
+	UNUSED(param);
+
+	if (hid_start() != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Start fail\n");
+	}
 	rtos_task_delete(NULL);
 }
 
 /* Exported functions --------------------------------------------------------*/
 
+/**
+  * @brief  Start the HID device, used by the USB app manager
+  * @note   Task context only
+  * @retval RTK_SUCCESS, -RTK_ERR_BUSY if already running, or the init error
+  */
+int example_usbd_hid_start(void)
+{
+	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD HID demo start\n");
+
+	return hid_start();
+}
+
+/**
+  * @brief  Stop the HID device and release everything it owns
+  * @note   Task context only. Safe to call when not running.
+  * @retval RTK_SUCCESS once idle, -RTK_ERR_TIMEOUT if a worker did not leave in time
+  */
+int example_usbd_hid_stop(void)
+{
+	u32 workers = 0U;
+
+	if (usb_app_ctx_claim_stop(&hid_app) == 0U) {
+		/* Idle, or the hotplug thread found the stack dead and finishes the teardown itself */
+		return usb_app_ctx_wait_idle(&hid_app);
+	}
+
+#if HID_HOTPLUG
+	rtos_sema_give(hid_attach_status_changed_sema);
+	workers++;
+#endif
+#if HID_CONSTANT_DATA
+	/* The xfer thread polls quit, these only cut its bounded waits short */
+	rtos_sema_give(hid_connect_sema);
+	rtos_sema_give(hid_transmit_sema);
+	workers++;
+#endif
+	if (usb_app_ctx_join(&hid_app, workers) != RTK_SUCCESS) {
+		/* A worker is still on the stack: keep everything, the app stays STOPPING */
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Stop timeout\n");
+		return -RTK_ERR_TIMEOUT;
+	}
+
+	/* Every worker is gone. The stack is still up unless a hotplug left it down, the mutex
+	   keeps the shell TX out of the class API while the gate closes */
+	if (hid_stack_ready != 0U) {
+		rtos_mutex_take(hid_state_mutex, RTOS_MAX_TIMEOUT);
+		hid_stack_ready = 0U;
+		usbd_hid_deinit();
+		usbd_deinit();
+		rtos_mutex_give(hid_state_mutex);
+	}
+	hid_free_resource();
+	usb_app_ctx_end(&hid_app);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD HID demo stop\n");
+
+	return RTK_SUCCESS;
+}
+
+/**
+  * @brief  Example entry: start the HID device from its own thread
+  * @retval None
+  */
 void example_usbd_hid(void)
 {
 	int ret;

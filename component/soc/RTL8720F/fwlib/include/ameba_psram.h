@@ -487,7 +487,6 @@ _LONG_CALL_ void PSRAM_REG_Write(u32 type, u32 addr, u32 write_len, u8 *write_da
 _LONG_CALL_ void PSRAM_UPSRAM_REG_Read(u32 mr_addr, u8 *read_data);
 _LONG_CALL_ void PSRAM_UPSRAM_REG_Write(u32 mr_addr, u8 write_data);
 _LONG_CALL_ bool PSRAM_calibration(void);
-_LONG_CALL_ void PSRAM_InfoDump(void);
 _LONG_CALL_ void PSRAM_APM_DEVIC_Init(void);
 _LONG_CALL_ void PSRAM_WB_DEVIC_Init(void);
 _LONG_CALL_ void PSRAM_UPSRAM_DEVIC_Init(void);

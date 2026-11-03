@@ -35,7 +35,7 @@ static uint8_t def_ext_adv_data[RTK_BT_LE_MAX_EXT_ADV_DATA_LEN] = {
 	// Flags
 	0x02,
 	RTK_BT_LE_GAP_ADTYPE_FLAGS,
-	RTK_BT_LE_GAP_ADTYPE_FLAGS_LIMITED | RTK_BT_LE_GAP_ADTYPE_FLAGS_BREDR_NOT_SUPPORTED,
+	RTK_BT_LE_GAP_ADTYPE_FLAGS_GENERAL | RTK_BT_LE_GAP_ADTYPE_FLAGS_BREDR_NOT_SUPPORTED,
 	// Local name
 	0x12,
 	RTK_BT_LE_GAP_ADTYPE_LOCAL_NAME_COMPLETE,
@@ -43,7 +43,7 @@ static uint8_t def_ext_adv_data[RTK_BT_LE_MAX_EXT_ADV_DATA_LEN] = {
 	// Manufacturer Specific Data
 	0xd8,
 	RTK_BT_LE_GAP_ADTYPE_MANUFACTURER_SPECIFIC,
-	0xd5, 0x00,
+	0x5d, 0x00,
 	0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
 	0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1,
 	0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2,
@@ -96,7 +96,7 @@ static uint8_t def_pa_data[RTK_BT_LE_MAX_EXT_ADV_DATA_LEN] = {
 	// Flags
 	0x02,
 	RTK_BT_LE_GAP_ADTYPE_FLAGS,
-	RTK_BT_LE_GAP_ADTYPE_FLAGS_LIMITED | RTK_BT_LE_GAP_ADTYPE_FLAGS_BREDR_NOT_SUPPORTED,
+	RTK_BT_LE_GAP_ADTYPE_FLAGS_GENERAL | RTK_BT_LE_GAP_ADTYPE_FLAGS_BREDR_NOT_SUPPORTED,
 	// Local name
 	0x13,
 	RTK_BT_LE_GAP_ADTYPE_LOCAL_NAME_COMPLETE,
@@ -104,7 +104,7 @@ static uint8_t def_pa_data[RTK_BT_LE_MAX_EXT_ADV_DATA_LEN] = {
 	// Manufacturer Specific Data
 	0xe4,
 	RTK_BT_LE_GAP_ADTYPE_MANUFACTURER_SPECIFIC,
-	0xe1, 0x00,
+	0x5d, 0x00,
 	0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10,
 	0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
 	0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30,
@@ -2593,10 +2593,11 @@ static int atcmd_ble_gap_coc_get_param(int argc, char *argv[])
 	(void)argc;
 	uint16_t ret = 0;
 	uint8_t param_type = str_to_int(argv[0]);
-	uint16_t cid = str_to_int(argv[1]);
+	uint16_t conn_handle = str_to_int(argv[1]);
+	uint16_t cid = str_to_int(argv[2]);
 	uint16_t value = 0;
 
-	ret = rtk_bt_le_gap_coc_get_chan_param(param_type, cid, &value);
+	ret = rtk_bt_le_gap_coc_get_chan_param(param_type, conn_handle, cid, &value);
 	if (ret) {
 		BT_LOGE("GAP coc get chan param failed! err: 0x%x\r\n", ret);
 		return -1;
@@ -2628,9 +2629,10 @@ static int atcmd_ble_gap_coc_disconnect(int argc, char *argv[])
 {
 	(void)argc;
 	uint16_t ret = 0;
-	uint16_t cid = str_to_int(argv[0]);
+	uint16_t conn_handle = str_to_int(argv[0]);
+	uint16_t cid = str_to_int(argv[1]);
 
-	ret = rtk_bt_le_gap_coc_disconnect(cid);
+	ret = rtk_bt_le_gap_coc_disconnect(conn_handle, cid);
 	if (ret) {
 		BT_LOGE("GAP coc disconn failed! err: 0x%x\r\n", ret);
 		return -1;
@@ -2644,14 +2646,16 @@ static int atcmd_ble_gap_coc_send_data(int argc, char *argv[])
 {
 	(void)argc;
 	uint16_t ret = 0;
-	uint16_t cid = str_to_int(argv[0]);
-	uint16_t len = str_to_int(argv[1]);
+	uint16_t conn_handle = str_to_int(argv[0]);
+	uint16_t cid = str_to_int(argv[1]);
+	uint16_t len = str_to_int(argv[2]);
 	uint8_t *data = (uint8_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, len);
 
-	if (false == hexdata_str_to_array(argv[2], data, len)) {
+	if (false == hexdata_str_to_array(argv[3], data, len)) {
+		osif_mem_free(data);
 		return -1;
 	}
-	ret = rtk_bt_le_gap_coc_send_data(cid, len, data);
+	ret = rtk_bt_le_gap_coc_send_data(conn_handle, cid, len, data);
 	osif_mem_free(data);
 	if (ret) {
 		BT_LOGE("GAP coc send data failed! err: 0x%x\r\n", ret);
@@ -2915,10 +2919,10 @@ static const cmd_table_t le_gap_cmd_table[] = {
 	{"coc_reg_psm",  atcmd_ble_gap_coc_register_psm, 3, 3},
 	{"coc_set_sec",  atcmd_ble_gap_coc_set_psm_security, 5, 5},
 	{"coc_set_param",  atcmd_ble_gap_coc_set_param, 3, 3},
-	{"coc_get_param",  atcmd_ble_gap_coc_get_param, 3, 3},
+	{"coc_get_param",  atcmd_ble_gap_coc_get_param, 4, 4},
 	{"coc_conn",     atcmd_ble_gap_coc_connect, 3, 3},
-	{"coc_disconn",  atcmd_ble_gap_coc_disconnect, 2, 2},
-	{"coc_send",     atcmd_ble_gap_coc_send_data, 4, 4},
+	{"coc_disconn",  atcmd_ble_gap_coc_disconnect, 3, 3},
+	{"coc_send",     atcmd_ble_gap_coc_send_data, 5, 5},
 #endif
 	{"dtm_rx",       atcmd_ble_gap_dtm_rx_test,        2, 10},
 	{"dtm_tx",       atcmd_ble_gap_dtm_tx_test,        2, 11},

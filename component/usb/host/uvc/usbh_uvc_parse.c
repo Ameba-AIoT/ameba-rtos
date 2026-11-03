@@ -133,7 +133,7 @@ static int usbh_uvc_parse_entity(u8 *desc, u16 remain)
 
 	if (usbh_uvc_desc_len_ok(desc, remain, USBH_UVC_PARSE_HDR_MIN_LEN) == 0U) {
 		RTK_LOGS(TAG, RTK_LOG_WARN, "Short VC desc\n");
-		return HAL_OK;
+		return RTK_SUCCESS;
 	}
 
 	/* Per-subtype minimum bLength for the fields read below. SU/XU carry a
@@ -166,7 +166,7 @@ static int usbh_uvc_parse_entity(u8 *desc, u16 remain)
 
 	if (usbh_uvc_desc_len_ok(desc, remain, need) == 0U) {
 		RTK_LOGS(TAG, RTK_LOG_WARN, "Bad VC len %d s%d\n", desc[0], desc[2]);
-		return HAL_OK;
+		return RTK_SUCCESS;
 	}
 
 	/* baSourceID[] must also fit inside bLength before it is copied. */
@@ -179,7 +179,7 @@ static int usbh_uvc_parse_entity(u8 *desc, u16 remain)
 	}
 	if (usbh_uvc_desc_len_ok(desc, remain, need) == 0U) {
 		RTK_LOGS(TAG, RTK_LOG_WARN, "Bad VC pins %d\n", desc[0]);
-		return HAL_OK;
+		return RTK_SUCCESS;
 	}
 
 	switch (desc[2]) {
@@ -192,7 +192,7 @@ static int usbh_uvc_parse_entity(u8 *desc, u16 remain)
 		/* The start of the topology, no source */
 		entity = usbh_uvc_entity_alloc(desc, USBH_UVC_VC_INPUT_TERMINAL, NULL, 0U);
 		if (entity == NULL) {
-			return HAL_ERR_MEM;
+			return -RTK_ERR_NOMEM;
 		}
 		break;
 
@@ -201,7 +201,7 @@ static int usbh_uvc_parse_entity(u8 *desc, u16 remain)
 		/* bSourceID at offset 7, ref UVC 1.5 Table 3-5 */
 		entity = usbh_uvc_entity_alloc(desc, USBH_UVC_VC_OUTPUT_TERMINAL, &desc[7], 1U);
 		if (entity == NULL) {
-			return HAL_ERR_MEM;
+			return -RTK_ERR_NOMEM;
 		}
 		break;
 
@@ -210,7 +210,7 @@ static int usbh_uvc_parse_entity(u8 *desc, u16 remain)
 		/* baSourceID[bNrInPins] at offset 5, ref UVC 1.5 Table 3-7 */
 		entity = usbh_uvc_entity_alloc(desc, USBH_UVC_VC_SELECTOR_UNIT, &desc[5], desc[4]);
 		if (entity == NULL) {
-			return HAL_ERR_MEM;
+			return -RTK_ERR_NOMEM;
 		}
 		break;
 
@@ -219,7 +219,7 @@ static int usbh_uvc_parse_entity(u8 *desc, u16 remain)
 		/* bSourceID at offset 4, ref UVC 1.5 Table 3-8 */
 		entity = usbh_uvc_entity_alloc(desc, USBH_UVC_VC_PROCESSING_UNIT, &desc[4], 1U);
 		if (entity == NULL) {
-			return HAL_ERR_MEM;
+			return -RTK_ERR_NOMEM;
 		}
 		break;
 
@@ -228,7 +228,7 @@ static int usbh_uvc_parse_entity(u8 *desc, u16 remain)
 		/* baSourceID[bNrInPins] at offset 22, ref UVC 1.5 Table 3-10 */
 		entity = usbh_uvc_entity_alloc(desc, USBH_UVC_VC_EXTENSION_UNIT, &desc[22], desc[21]);
 		if (entity == NULL) {
-			return HAL_ERR_MEM;
+			return -RTK_ERR_NOMEM;
 		}
 		break;
 
@@ -237,7 +237,7 @@ static int usbh_uvc_parse_entity(u8 *desc, u16 remain)
 		/* bSourceID at offset 4, ref UVC 1.5 Table 3-11 */
 		entity = usbh_uvc_entity_alloc(desc, USBH_UVC_VC_ENCODING_UNIT, &desc[4], 1U);
 		if (entity == NULL) {
-			return HAL_ERR_MEM;
+			return -RTK_ERR_NOMEM;
 		}
 		break;
 
@@ -250,7 +250,7 @@ static int usbh_uvc_parse_entity(u8 *desc, u16 remain)
 		list_add_tail((struct list_head *)&entity->list, &uvc->entity_list);
 	}
 
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 /**
@@ -272,7 +272,7 @@ static int usbh_uvc_parse_vc(usbh_itf_data_t *itf_data)
 
 	desc = itf_data->raw_data;
 	if (desc == NULL) {
-		return HAL_ERR_HW;
+		return -RTK_ERR_IO;
 	}
 	/* save the first interface number */
 	vc_intf->bInterfaceNumber = desc[2];
@@ -299,7 +299,7 @@ static int usbh_uvc_parse_vc(usbh_itf_data_t *itf_data)
 		switch (type) {
 		case USBH_UVC_DESC_TYPE_CS_INTERFACE:
 			ret = usbh_uvc_parse_entity((u8 *)desc, (u16)(itf_data->raw_data_len - itf_total_len));
-			if (ret != HAL_OK) {
+			if (ret != RTK_SUCCESS) {
 				//RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to parse entity\n");
 				return ret;
 			}
@@ -313,14 +313,14 @@ static int usbh_uvc_parse_vc(usbh_itf_data_t *itf_data)
 			break;
 
 		case USB_DESC_TYPE_INTERFACE:
-			return HAL_OK;
+			return RTK_SUCCESS;
 
 		default:
 			RTK_LOGS(TAG, RTK_LOG_WARN, "Wrong desc t:%d\n", type);
-			return HAL_OK;
+			return RTK_SUCCESS;
 		}
 	}
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 /**
@@ -415,12 +415,12 @@ static int usbh_uvc_parse_format(usbh_uvc_vs_t *vs_intf, u8 *pbuf, u16 *length)
 
 	if (*length < 6U) {
 		//RTK_LOGS(TAG, RTK_LOG_DEBUG, "Desc too short\n");
-		return HAL_ERR_PARA;
+		return -RTK_ERR_BADARG;
 	}
 
 	if (desc[2] != USBH_UVC_VS_INPUT_HEADER) {
 		//RTK_LOGS(TAG, RTK_LOG_DEBUG, "Header is no vs input\n");
-		return HAL_ERR_PARA;
+		return -RTK_ERR_BADARG;
 	}
 
 	totallen = (u16)(desc[4] | (desc[5] << 8));
@@ -492,7 +492,7 @@ static int usbh_uvc_parse_format(usbh_uvc_vs_t *vs_intf, u8 *pbuf, u16 *length)
 	/* Nothing was consumed (bLength below the 3-byte class header): report an
 	 * error rather than returning 0, which would stall the caller's walk. */
 	if (real_len == 0U) {
-		return HAL_ERR_PARA;
+		return -RTK_ERR_BADARG;
 	}
 
 	desc = pbuf;
@@ -508,11 +508,11 @@ static int usbh_uvc_parse_format(usbh_uvc_vs_t *vs_intf, u8 *pbuf, u16 *length)
 				 (total_interval_num * sizeof(u32));
 	/* No FORMAT/FRAME descriptor at all: a malformed VS interface, not an allocation failure */
 	if (alloc_size == 0U) {
-		return HAL_ERR_PARA;
+		return -RTK_ERR_BADARG;
 	}
 	vs_intf->format = (usbh_uvc_vs_format_t *) usb_os_malloc(alloc_size);
 	if (vs_intf->format == NULL) {
-		return HAL_ERR_MEM;
+		return -RTK_ERR_NOMEM;
 	}
 	tmp_frame = (usbh_uvc_vs_frame_t *)(void *)(vs_intf->format + format_num);
 	interval_store = (u32 *)((u8 *)tmp_frame + frame_array_size);
@@ -631,7 +631,7 @@ static int usbh_uvc_parse_format(usbh_uvc_vs_t *vs_intf, u8 *pbuf, u16 *length)
 
 	*length = real_len;
 
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 /**
@@ -661,7 +661,7 @@ static int usbh_uvc_parse_vs(usbh_itf_data_t *itf_data)
 			RTK_LOGS(TAG, RTK_LOG_WARN, "Ovrl vs %d>%d, using 1st vs\n",
 					 vs_num + 1, USBH_UVC_VS_DESC_MAX_NUM);
 		}
-		return HAL_OK;
+		return RTK_SUCCESS;
 	}
 
 	vs_intf = &uvc->uvc_desc.vs_intf[vs_num];
@@ -700,7 +700,7 @@ static int usbh_uvc_parse_vs(usbh_itf_data_t *itf_data)
 			 * length it actually consumed in the same argument. */
 			len = (u16)(itf_data->raw_data_len - itf_total_len);
 			ret = usbh_uvc_parse_format(vs_intf, desc, &len);
-			if (ret != HAL_OK) {
+			if (ret != RTK_SUCCESS) {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "Parse format err: %d\n", ret);
 				return ret;
 			}
@@ -710,7 +710,7 @@ static int usbh_uvc_parse_vs(usbh_itf_data_t *itf_data)
 		case USB_DESC_TYPE_INTERFACE:
 			if (((usbh_itf_desc_t *)desc)->bInterfaceNumber != vs_intf->bInterfaceNumber) { //find another itf, maybe it is the as itf, should return
 				RTK_LOGS(TAG, RTK_LOG_DEBUG, "VC intf %d-%d\n\n", ((usbh_itf_desc_t *)desc)->bInterfaceNumber, vs_intf->bInterfaceNumber);
-				return HAL_OK;
+				return RTK_SUCCESS;
 			}
 			bAlternateSetting = ((usbh_itf_desc_t *)desc)->bAlternateSetting;
 			if (bAlternateSetting != 0U) {
@@ -739,7 +739,7 @@ static int usbh_uvc_parse_vs(usbh_itf_data_t *itf_data)
 							 bAlternateSetting, USBH_UVC_VS_ALTS_MAX_NUM);
 				}
 			} else {
-				return HAL_OK;
+				return RTK_SUCCESS;
 			}
 			desc += len;
 			break;
@@ -750,7 +750,7 @@ static int usbh_uvc_parse_vs(usbh_itf_data_t *itf_data)
 		}
 		itf_total_len += len;
 	}
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 /* Exported functions --------------------------------------------------------*/
@@ -776,11 +776,11 @@ u16 usbh_uvc_get_ctrl_len_by_version(u16 bcdUVC)
 int usbh_uvc_parse_cfgdesc(usb_host_t *host)
 {
 	usbh_itf_data_t *itf_data;
-	int ret = HAL_ERR_PARA;
+	int ret = -RTK_ERR_BADARG;
 	usbh_dev_id_t dev_id = {0,};
 
-	dev_id.bInterfaceClass = USBH_UVC_CLASS_CODE;
-	dev_id.bInterfaceSubClass = USBH_UVC_SUBCLASS_VIDEOCONTROL;
+	dev_id.bInterfaceClass = USB_VIDEO_CLASS_CODE;
+	dev_id.bInterfaceSubClass = USB_VIDEO_SUBCLASS_VIDEOCONTROL;
 	dev_id.mMatchFlags = USBH_DEV_ID_MATCH_ITF_INFO;
 	itf_data = usbh_get_interface_descriptor(host, &dev_id);
 	if (itf_data == NULL) {
@@ -788,32 +788,32 @@ int usbh_uvc_parse_cfgdesc(usb_host_t *host)
 		return ret;
 	} else {
 		ret = usbh_uvc_parse_vc(itf_data);
-		if (ret != HAL_OK) {
+		if (ret != RTK_SUCCESS) {
 			//RTK_LOGS(TAG, RTK_LOG_DEBUG, "Parse vc fail\n");
 			return ret;
 		}
 	}
 
-	dev_id.bInterfaceClass = USBH_UVC_CLASS_CODE;
-	dev_id.bInterfaceSubClass = USBH_UVC_SUBCLASS_VIDEOSTREAMING;
+	dev_id.bInterfaceClass = USB_VIDEO_CLASS_CODE;
+	dev_id.bInterfaceSubClass = USB_VIDEO_SUBCLASS_VIDEOSTREAMING;
 	dev_id.mMatchFlags = USBH_DEV_ID_MATCH_ITF_INFO;
 	itf_data = usbh_get_interface_descriptor(host, &dev_id);
 
 	if (itf_data == NULL) {
 		//RTK_LOGS(TAG, RTK_LOG_DEBUG, "No VS itf\n");
-		return HAL_ERR_PARA;
+		return -RTK_ERR_BADARG;
 	}
 
 	while (itf_data != NULL) {
 		ret = usbh_uvc_parse_vs(itf_data);
-		if (ret != HAL_OK) {
+		if (ret != RTK_SUCCESS) {
 			//RTK_LOGS(TAG, RTK_LOG_DEBUG, "Parse vs%d fail%d\n",
 			//		 itf_data->itf_desc_array[0].bInterfaceNumber);
 			return ret;
 		}
 		itf_data = itf_data->next;
 	}
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 /**
@@ -840,12 +840,12 @@ int usbh_uvc_desc_find_format_frame(usbh_uvc_stream_t *stream, usbh_uvc_s_ctx_t 
 	u32 dh;
 
 	if ((context == NULL) || (format_idx == NULL) || (frame_idx == NULL)) {
-		return HAL_ERR_PARA;
+		return -RTK_ERR_BADARG;
 	}
 
 	vs = stream->vs_intf;
 	if ((vs == NULL) || (vs->format == NULL)) {
-		return HAL_ERR_PARA;
+		return -RTK_ERR_BADARG;
 	}
 
 	w = context->width;
@@ -860,7 +860,7 @@ int usbh_uvc_desc_find_format_frame(usbh_uvc_stream_t *stream, usbh_uvc_s_ctx_t 
 		}
 	}
 	if ((format == NULL) || (format->frame == NULL)) {
-		return HAL_ERR_PARA;
+		return -RTK_ERR_BADARG;
 	}
 
 	/* Step 2: sync Linux UVC, pick frame minimizing |Δw| + |Δh|. */
@@ -884,7 +884,7 @@ int usbh_uvc_desc_find_format_frame(usbh_uvc_stream_t *stream, usbh_uvc_s_ctx_t 
 	}
 
 	if (best == NULL) {
-		return HAL_ERR_PARA;
+		return -RTK_ERR_BADARG;
 	}
 
 	*format_idx = format->index;
@@ -894,7 +894,7 @@ int usbh_uvc_desc_find_format_frame(usbh_uvc_stream_t *stream, usbh_uvc_s_ctx_t 
 	context->width  = best->wWidth;
 	context->height = best->wHeight;
 
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 /**
@@ -921,15 +921,15 @@ int usbh_uvc_desc_find_frame_rate(usbh_uvc_stream_t *stream, usbh_uvc_s_ctx_t *c
 
 	if ((context == NULL) || (interval == NULL) ||
 		(format_idx == NULL) || (frame_idx == NULL)) {
-		return HAL_ERR_PARA;
+		return -RTK_ERR_BADARG;
 	}
 	if (context->frame_rate == 0U) {
-		return HAL_ERR_PARA;
+		return -RTK_ERR_BADARG;
 	}
 
 	/* Guard against NULL vs_intf (e.g. called before attach or after detach). */
 	if ((stream->vs_intf == NULL) || (stream->vs_intf->format == NULL)) {
-		return HAL_ERR_PARA;
+		return -RTK_ERR_BADARG;
 	}
 
 	/* Locate format. */
@@ -941,7 +941,7 @@ int usbh_uvc_desc_find_frame_rate(usbh_uvc_stream_t *stream, usbh_uvc_s_ctx_t *c
 		}
 	}
 	if (format == NULL) {
-		return HAL_ERR_PARA;
+		return -RTK_ERR_BADARG;
 	}
 
 	/* Locate frame. */
@@ -953,7 +953,7 @@ int usbh_uvc_desc_find_frame_rate(usbh_uvc_stream_t *stream, usbh_uvc_s_ctx_t *c
 		}
 	}
 	if (frame == NULL) {
-		return HAL_ERR_PARA;
+		return -RTK_ERR_BADARG;
 	}
 
 	fps = USBH_UVC_FRAME_INTERVAL_UNIT_NS / context->frame_rate;
@@ -994,12 +994,12 @@ int usbh_uvc_desc_find_frame_rate(usbh_uvc_stream_t *stream, usbh_uvc_s_ctx_t *c
 
 	/* Guard against a malformed descriptor reporting a 0 interval (div-by-zero). */
 	if (fps == 0U) {
-		return HAL_ERR_PARA;
+		return -RTK_ERR_BADARG;
 	}
 
 	*interval = fps;
 	context->frame_rate = USBH_UVC_FRAME_INTERVAL_UNIT_NS / fps;
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 /**
@@ -1012,7 +1012,7 @@ int usbh_uvc_desc_init(void)
 	/* Release whatever a previous parse left behind before reusing the list */
 	usbh_uvc_desc_deinit();
 
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 /**

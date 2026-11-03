@@ -53,13 +53,13 @@ extern const usbh_class_driver_t usbh_uvc_driver;
 
 /**
  * @brief  Register the UVC class driver with the host core.
- * @return HAL_OK on success, a HAL error code otherwise.
+ * @return RTK_SUCCESS on success, a RTK error code otherwise.
  */
 int usbh_uvc_class_init(void);
 
 /**
  * @brief  Unregister the UVC class driver from the host core.
- * @return Result of usbh_unregister_class(): on anything but HAL_OK nothing was released.
+ * @return Result of usbh_unregister_class(): on anything but RTK_SUCCESS nothing was released.
  */
 int usbh_uvc_class_deinit(void);
 

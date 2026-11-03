@@ -24,6 +24,8 @@ extern "C" {
 /* Exported functions --------------------------------------------------------*/
 
 void example_usbd_vendor(void);
+int example_usbd_vendor_start(void);
+int example_usbd_vendor_stop(void);
 
 #ifdef __cplusplus
 }

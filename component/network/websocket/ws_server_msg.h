@@ -22,20 +22,32 @@ void ws_server_free(void *ptr);
 
 int ws_server_write(ws_conn *conn, uint8_t *buf, size_t buf_len);
 
+int ws_server_tx_lock_init(void);
+
+void ws_server_tx_lock(void);
+
+int ws_server_tx_trylock(void);
+
+void ws_server_tx_unlock(void);
+
+int ws_server_flush_pong(ws_conn *conn);
+
 int ws_server_read(ws_conn *conn, uint8_t *buf, size_t buf_len);
 
 void ws_server_response_too_many_requests(ws_conn *conn, char *msg);
 
 void ws_server_response_bad_request(ws_conn *conn, char *msg);
 
-/* Delay before retrying a write that made no progress, as done by the websocket client. */
-#define WS_SERVER_WRITE_RETRY_MS	25
+/* Max time to wait for socket writable when a write made no progress, then retry anyway */
+#define WS_SERVER_WRITE_WAIT_MS		100
+
+int ws_server_write_all(ws_conn *conn, uint8_t *buf, int len);
 
 int ws_server_handshake_read_header(ws_conn *conn);
 
 int ws_server_handshake_response(ws_conn *conn);
 
-void ws_server_sendData(uint8_t type, size_t message_size, uint8_t *message, int useMask, uint8_t send_mode, uint8_t fin_flag, ws_conn *conn);
+int ws_server_sendData(uint8_t type, size_t message_size, uint8_t *message, int useMask, uint8_t send_mode, uint8_t fin_flag, ws_conn *conn);
 
 void ws_server_dispatchBinary(ws_conn *conn);
 

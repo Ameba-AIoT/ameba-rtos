@@ -4,10 +4,40 @@
 # source ../../../tools/scripts/gnu_script/rtl_gdb_jtag_boot_com.txt
 eval "source %s/rtl_gdb_jtag_boot_com.txt", $SCRIPT_DIR
 
+# Reset and halt at reset vector: Secure state, TZ not configured yet, so ROM/SRAM are writable
+monitor reset 0
+monitor sleep 20
+monitor halt
+monitor waithalt 2000
+
+# Park main core in an SRAM "b ." so it never boots the stale flash image with the new ROM:
+#  - right after detach: PC is set to the loop below
+#  - after a later warm reset (e.g. km4ns session resets both cpus): new ROM takes RamPatchFun0
+#    from BOOT_ADDR_KM4TZ because LSYS_BIT_BOOT_PATCH_FUNC0 (bit28) is set, and jumps to the loop
+# The flash script overwrites the table with the flash loader and rewrites BOOT_CFG/BOOT_ADDR later.
+# By gdb -ex set: PARK_EN, PARK_ADDR, SYSTEM_CTRL_BASE, REG_LSYS_BOOT_CFG, REG_LSYS_BOOT_ADDR_TZ
+if ($PARK_EN == 1)
+    # loop code right after the 8-word RAM_FUNCTION_START_TABLE
+    set $PARK_LOOP = $PARK_ADDR + 0x20
+    set {short}($PARK_LOOP) = 0xE7FE
+
+    # all entries of RAM_FUNCTION_START_TABLE point to the loop (thumb bit set)
+    set $i = 0
+    while ($i < 8)
+        set {int}($PARK_ADDR + $i * 4) = $PARK_LOOP | 1
+        set $i = $i + 1
+    end
+
+    set {int}($SYSTEM_CTRL_BASE + $REG_LSYS_BOOT_ADDR_TZ) = $PARK_ADDR
+    set {int}($SYSTEM_CTRL_BASE + $REG_LSYS_BOOT_CFG) = {int}($SYSTEM_CTRL_BASE + $REG_LSYS_BOOT_CFG) | (0x01 << 28)
+    set $pc = $PARK_LOOP
+    printf "Park at 0x%x, insn=0x%x, BOOT_ADDR=0x%x, BOOT_CFG=0x%x\n", $PARK_LOOP, {short}($PARK_LOOP), {int}($SYSTEM_CTRL_BASE + $REG_LSYS_BOOT_ADDR_TZ), {int}($SYSTEM_CTRL_BASE + $REG_LSYS_BOOT_CFG)
+end
+
 eval "restore %s binary 0x%x", $ROM_BIN, $ROM_ADDR
+eval "x/4wx 0x%x", $ROM_ADDR
 
 #Only for kr4: workaround for KR4 default cache policies
 #dump binary memory ram_2_dump.bin 0x20022000 0x20030000
 
 quit
-

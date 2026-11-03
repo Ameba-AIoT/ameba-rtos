@@ -13,6 +13,9 @@
 #include "stdlib.h"
 //#include "FreeRTOS.h"
 #include "os_wrapper_specific.h"
+#ifdef CONFIG_CONSOLE_DEFERRED_SUPPORT
+#include "console_deferred.h"
+#endif
 #if (configGENERATE_RUN_TIME_STATS == 1)
 #include "task.h"
 #endif
@@ -386,7 +389,7 @@ static void at_log_help(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "\r\n");
 	RTK_LOGS(TAG, RTK_LOG_INFO, "AT+LOG=<get_set>,<module>[,<log_level>]\r\n");
-	RTK_LOGS(TAG, RTK_LOG_INFO, "\t<get_set>:\t0-get, 1-set, 2-print all, 3-clear all\r\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "\t<get_set>:\t0-get, 1-set, 2-print all, 3-clear all, 4-console dropped chars\r\n");
 	RTK_LOGS(TAG, RTK_LOG_INFO, "\t<module>:\t*-each module, others-specific module\r\n");
 	RTK_LOGS(TAG, RTK_LOG_INFO, "\t<log_level>:\t[0,5], only applicable for set mode\r\n");
 }
@@ -460,6 +463,18 @@ void at_log(u16 argc, char **argv)
 		}
 		rtk_log_array_clear();
 		break;
+
+#ifdef CONFIG_CONSOLE_DEFERRED_SUPPORT
+	/* Characters of this core's deferred console that were dropped because the ringbuf was full. */
+	case atcmd_log_type_console_drop:
+		if (argc != 2) {
+			RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "[LOG] Invalid parameter number.\r\n");
+			error_no = 1;
+			goto end;
+		}
+		at_printf("console dropped %u chars\r\n", (unsigned int)console_deferred_dropped());
+		break;
+#endif
 
 	/* Invalid. */
 	default:

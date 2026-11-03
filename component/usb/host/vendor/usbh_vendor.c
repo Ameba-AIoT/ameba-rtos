@@ -141,16 +141,16 @@ static int usbh_vendor_get_endpoints(usb_host_t *host, usbh_itf_desc_t *intf)
 			continue;
 		}
 
-		if (usbh_open_pipe(host, &xfer->pipe, ep_desc, &usbh_vendor_driver) != HAL_OK) {
+		if (usbh_open_pipe(host, &xfer->pipe, ep_desc, &usbh_vendor_driver) != RTK_SUCCESS) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Open %s pipe fail\n", xfer_type);
 			usbh_vendor_deinit_all_pipe();
-			return HAL_ERR_PARA;
+			return -RTK_ERR_BADARG;
 		}
 		xfer->pipe.max_timeout_tick = VENDOR_XFER_MAX_TIMEOUT_TICK;
 		RTK_LOGS(TAG, RTK_LOG_INFO, "%s EP%02x MPS %d intv %d\n", xfer_type, xfer->pipe.ep_addr, xfer->pipe.ep_mps, xfer->pipe.ep_interval);
 	}
 
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 /**
@@ -291,14 +291,14 @@ static int usbh_vendor_attach(usb_host_t *host)
 	if (itf_data == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Get itf desc fail\n");
 
-		return HAL_ERR_PARA;
+		return -RTK_ERR_BADARG;
 	} else {
 		vendor->host = host;
 
 		/* Get data in/out endpoints. An endpoint the interface lacks keeps pipe_num 0,
 		 * which the transfer API rejects, so a missing endpoint fails at the call. */
 		status = usbh_vendor_get_endpoints(host, itf_data->itf_desc_array);
-		if (status != HAL_OK) {
+		if (status != RTK_SUCCESS) {
 			vendor->host = NULL;
 			return status;
 		}
@@ -309,7 +309,7 @@ static int usbh_vendor_attach(usb_host_t *host)
 		if ((vendor->cb != NULL) && (vendor->cb->attached != NULL)) {
 			vendor->cb->attached();
 		}
-		return HAL_OK;
+		return RTK_SUCCESS;
 	}
 }
 
@@ -408,7 +408,7 @@ static int usbh_vendor_setup(usb_host_t *host)
 		vendor->cb->setup();
 	}
 
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 /**
@@ -435,7 +435,7 @@ static void usbh_vendor_isoc_rx_next(usb_host_t *host, usbh_vendor_xfer_t *xfer)
 #endif
 		usbh_vendor_release(xfer);
 		if ((vendor->cb != NULL) && (vendor->cb->received != NULL)) {
-			vendor->cb->received(pipe->ep_type, NULL, 0, HAL_OK);
+			vendor->cb->received(pipe->ep_type, NULL, 0, RTK_SUCCESS);
 		}
 	} else {
 		pipe->xfer_len = xfer->xfer_max_len;
@@ -590,7 +590,7 @@ static void usbh_vendor_bulk_process_rx(usb_host_t *host)
 
 	status = usbh_transfer_process(host, pipe);
 
-	if ((status == HAL_OK) && (pipe->xfer_state == USBH_EP_XFER_IDLE)) {
+	if ((status == RTK_SUCCESS) && (pipe->xfer_state == USBH_EP_XFER_IDLE)) {
 		len = usbh_get_last_transfer_size(host, pipe);
 		in_xfer->xfer_cnt++;
 		usbh_vendor_release(in_xfer);
@@ -630,7 +630,7 @@ static void usbh_vendor_bulk_process_tx(usb_host_t *host)
 
 	status = usbh_transfer_process(host, pipe);
 
-	if ((status == HAL_OK) && (pipe->xfer_state == USBH_EP_XFER_IDLE)) {
+	if ((status == RTK_SUCCESS) && (pipe->xfer_state == USBH_EP_XFER_IDLE)) {
 		out_xfer->xfer_cnt++;
 		usbh_vendor_release(out_xfer);
 		if (vendor->cb != NULL && vendor->cb->transmitted != NULL) {
@@ -667,7 +667,7 @@ static void usbh_vendor_intr_process_rx(usb_host_t *host)
 
 	status = usbh_transfer_process(host, pipe);
 
-	if ((status == HAL_OK) && (pipe->xfer_state == USBH_EP_XFER_IDLE)) {
+	if ((status == RTK_SUCCESS) && (pipe->xfer_state == USBH_EP_XFER_IDLE)) {
 		len = usbh_get_last_transfer_size(host, pipe);
 		in_xfer->xfer_cnt++;
 		usbh_vendor_release(in_xfer);
@@ -702,7 +702,7 @@ static void usbh_vendor_intr_process_tx(usb_host_t *host)
 
 	status = usbh_transfer_process(host, pipe);
 
-	if ((status == HAL_OK) && (pipe->xfer_state == USBH_EP_XFER_IDLE)) {
+	if ((status == RTK_SUCCESS) && (pipe->xfer_state == USBH_EP_XFER_IDLE)) {
 		out_xfer->xfer_cnt++;
 		usbh_vendor_release(out_xfer);
 		if (vendor->cb != NULL && vendor->cb->transmitted != NULL) {
@@ -741,7 +741,7 @@ static void usbh_vendor_isoc_process_rx(usb_host_t *host)
 
 	status = usbh_transfer_process(host, pipe);
 
-	if ((status == HAL_OK) && (pipe->xfer_state == USBH_EP_XFER_IDLE)) {
+	if ((status == RTK_SUCCESS) && (pipe->xfer_state == USBH_EP_XFER_IDLE)) {
 #if USBH_VENDOR_DEBUG
 		/* A 0-byte packet is a valid ISOC result and records 0, as the old pre-cleared buffer did */
 		len = usbh_get_last_transfer_size(host, pipe);
@@ -810,7 +810,7 @@ static void usbh_vendor_isoc_process_tx(usb_host_t *host)
 
 	status = usbh_transfer_process(host, pipe);
 
-	if ((status == HAL_OK) && (pipe->xfer_state == USBH_EP_XFER_IDLE)) {
+	if ((status == RTK_SUCCESS) && (pipe->xfer_state == USBH_EP_XFER_IDLE)) {
 		usb_os_enter_critical();
 		pipe->xfer_state = USBH_EP_XFER_WAIT_SOF;
 		usb_os_exit_critical();
@@ -882,8 +882,8 @@ static void usbh_vendor_process(usb_host_t *host, usbh_drv_msg_t *msg)
   * @param  buf: Data buffer
   * @param  len: Data length
   * @param  test_cnt: Test loop count
-  * @retval HAL_OK when started, HAL_ERR_PARA for a bad argument or an endpoint the device
-  *         does not have, HAL_BUSY while the pipe is still in use or no device is attached
+  * @retval RTK_SUCCESS when started, -RTK_ERR_BADARG for a bad argument or an endpoint the device
+  *         does not have, -RTK_ERR_BUSY while the pipe is still in use or no device is attached
   */
 static int usbh_vendor_start_xfer(usbh_vendor_xfer_t *xfer, u8 *buf, u32 len, u32 test_cnt)
 {
@@ -892,15 +892,15 @@ static int usbh_vendor_start_xfer(usbh_vendor_xfer_t *xfer, u8 *buf, u32 len, u3
 	usbh_pipe_t *pipe = &xfer->pipe;
 	u32 buf_len;
 	u32 isoc_max;
-	int ret = HAL_BUSY;
+	int ret = -RTK_ERR_BUSY;
 
 	/* An unopened pipe has pipe_num 0, which is EP0: arming it would never complete */
 	if ((host == NULL) || (buf == NULL) || (pipe->pipe_num == 0U)) {
-		return HAL_ERR_PARA;
+		return -RTK_ERR_BADARG;
 	}
 
 	if ((pipe->ep_type == USB_CH_EP_TYPE_ISOC) && (test_cnt == 0U)) {
-		return HAL_ERR_PARA;
+		return -RTK_ERR_BADARG;
 	}
 
 	if (pipe->ep_is_in != 0U) {
@@ -918,7 +918,7 @@ static int usbh_vendor_start_xfer(usbh_vendor_xfer_t *xfer, u8 *buf, u32 len, u3
 		}
 		if (len == 0U) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "RX buf %u < mps %u\n", buf_len, pipe->ep_mps);
-			return HAL_ERR_PARA;
+			return -RTK_ERR_BADARG;
 		}
 	} else {
 		buf_len = 0U;
@@ -931,10 +931,10 @@ static int usbh_vendor_start_xfer(usbh_vendor_xfer_t *xfer, u8 *buf, u32 len, u3
 #endif
 	   ) {
 		xfer->busy = 1U;
-		ret = HAL_OK;
+		ret = RTK_SUCCESS;
 	}
 	usb_os_exit_critical();
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		return ret;
 	}
 
@@ -945,7 +945,7 @@ static int usbh_vendor_start_xfer(usbh_vendor_xfer_t *xfer, u8 *buf, u32 len, u3
 		xfer->test_buf = (u8 *)usb_os_malloc(test_cnt);
 		if (xfer->test_buf == NULL) {
 			usbh_vendor_release(xfer);
-			return HAL_BUSY;
+			return -RTK_ERR_BUSY;
 		}
 	}
 #endif
@@ -954,7 +954,7 @@ static int usbh_vendor_start_xfer(usbh_vendor_xfer_t *xfer, u8 *buf, u32 len, u3
 	if (vendor->state != VENDOR_STATE_XFER) {
 		/* Detached while the claim was being prepared */
 		xfer->busy = 0U;
-		ret = HAL_BUSY;
+		ret = -RTK_ERR_BUSY;
 	} else {
 		pipe->xfer_buf = buf;
 		pipe->xfer_len = len;
@@ -976,7 +976,7 @@ static int usbh_vendor_start_xfer(usbh_vendor_xfer_t *xfer, u8 *buf, u32 len, u3
 	}
 	usb_os_exit_critical();
 
-	if (ret == HAL_OK) {
+	if (ret == RTK_SUCCESS) {
 		usbh_notify(host, pipe->pipe_num, &usbh_vendor_driver);
 	}
 
@@ -992,19 +992,19 @@ static int usbh_vendor_start_xfer(usbh_vendor_xfer_t *xfer, u8 *buf, u32 len, u3
   */
 int usbh_vendor_init(const usbh_vendor_cb_t *cb)
 {
-	int ret = HAL_OK;
+	int ret = RTK_SUCCESS;
 	usbh_vendor_host_t *vendor = &usbh_vendor_host;
 
 	if (cb == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid user CB\n");
-		return HAL_ERR_PARA;
+		return -RTK_ERR_BADARG;
 	}
 
 	usb_os_memset((void *)vendor, 0x00, sizeof(usbh_vendor_host_t));
 	vendor->cb = cb;
 	if (cb->init != NULL) {
 		ret = cb->init();
-		if (ret != HAL_OK) {
+		if (ret != RTK_SUCCESS) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "User init err %d\n", ret);
 			vendor->cb = NULL;
 			return ret;
@@ -1012,7 +1012,7 @@ int usbh_vendor_init(const usbh_vendor_cb_t *cb)
 	}
 
 	ret = usbh_register_class(&usbh_vendor_driver);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Register class fail %d\n", ret);
 		if (cb->deinit != NULL) {
 			cb->deinit();
@@ -1031,10 +1031,10 @@ void usbh_vendor_deinit(void)
 {
 	usbh_vendor_host_t *vendor = &usbh_vendor_host;
 
-	/* First, before anything is freed: on HAL_OK no attach/setup/process/detach of this
+	/* First, before anything is freed: on RTK_SUCCESS no attach/setup/process/detach of this
 	 * class runs any more, an EP0 request it left in flight is halted and a sof() still
 	 * running on another core is waited out. Anything else means nothing was released. */
-	if (usbh_unregister_class(&usbh_vendor_driver) != HAL_OK) {
+	if (usbh_unregister_class(&usbh_vendor_driver) != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Deinit refused\n");
 		return;
 	}

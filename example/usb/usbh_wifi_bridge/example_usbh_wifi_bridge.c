@@ -14,6 +14,8 @@
 #include "os_wrapper_time.h"
 #include "usbh_cdc_ecm.h"
 #include "wifi_api.h"
+#include "usb_app.h"
+#include "example_usbh_wifi_bridge.h"
 
 /* Private defines -----------------------------------------------------------*/
 
@@ -24,12 +26,14 @@
 #define ETH_ILEN		(6)
 
 // Thread priorities
+#define USBH_ECM_INIT_THREAD_PRIORITY           3
 #define USBH_ECM_MAIN_THREAD_PRIORITY           5
 #define USBH_ECM_HOTPLUG_THREAD_PRIORITY        6
 #define USBH_ECM_MONITOR_THREAD_PRIORITY        3
 #define USBH_ECM_BRIDGE_THREAD_PRIORITY         2
 // Thread stack sizes
-#define USBH_ECM_HOTPLUG_THREAD_STACK_SIZE        1024U
+#define USBH_ECM_INIT_THREAD_STACK_SIZE           1536U
+#define USBH_ECM_HOTPLUG_THREAD_STACK_SIZE        1536U
 #define USBH_ECM_MONITOR_THREAD_STACK_SIZE        (1024U * 2)
 #define USBH_ECM_BRIDGE_THREAD_STACK_SIZE         (1024U * 2)
 
@@ -88,7 +92,7 @@ static usb_os_sema_t cdc_ecm_detach_sema;
    The class driver already keeps usbh_cdc_ecm_send_data() off the buffers that
    usbh_cdc_ecm_deinit() frees; this lock is an application level guard on top of
    it, so the whole teardown and re-init window is closed to TX deterministically.
-   Created before the stack comes up and never deleted: TX is driven by the lwIP
+   Created by the first start and never deleted: TX is driven by the lwIP
    thread, which lives as long as the firmware and can not be joined by the
    example, so there is no point in time at which this mutex is provably
    unreferenced. cdc_ecm_stack_ready is the gate that keeps callers off the
@@ -103,9 +107,25 @@ static volatile u8 cdc_ecm_stack_ready = 0;
    gives up instead of re-taking the lock between lwIP packets and starving this
    thread out of a teardown it must perform. */
 static volatile u8 cdc_ecm_teardown = 0;
-#if ENABLE_USBH_CDC_ECM_HOT_PLUG
-static rtos_task_t 	            hotplug_task;
-#endif
+
+/* 1: usbh_init() and usbh_cdc_ecm_init() are done, the stack needs a deinit. Changed under
+   cdc_ecm_state_mutex by start, the rebuilding worker and the teardown owner only. */
+static u8 cdc_ecm_stack_up = 0;
+
+/* 1: the bridge input hooks are installed on pnetif_sta and pnetif_usb_eth. Set only if quit
+   was clear, under the same lock usb_app_ctx_claim_stop() sets quit with, so the teardown owner
+   either sees it and restores the hooks or the bridge thread sees quit and installs nothing. */
+static volatile u8 bridge_hooked = 0;
+/* The lwIP input functions the hooks replace, put back by the teardown */
+static netif_input_fn bridge_sta_input;
+static netif_input_fn bridge_eth_input;
+
+/* Number of worker threads created by start, all joined by the teardown */
+static u8 cdc_ecm_workers = 0;
+
+/* Start/stop state: example_usbh_wifi_bridge_stop(), or the hotplug thread when the stack can
+   not be rebuilt, sets quit, takes the bridge down, wakes and joins the workers */
+static usb_app_ctx_t cdc_ecm_app;
 
 static const usbh_config_t usbh_ecm_cfg = {
 	.speed = USB_SPEED_HIGH,
@@ -165,7 +185,7 @@ static int cdc_ecm_cb_device_check(usb_host_t *host, u8 cfg_max)
 static int cdc_ecm_cb_init(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "INIT\n");
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 static void cdc_ecm_cb_deinit(void)
@@ -217,7 +237,12 @@ static void cdc_ecm_cb_process(usb_host_t *host, u8 msg)
 	UNUSED(host);
 	switch (msg) {
 	case USBH_MSG_USER_SET_CONFIG:
-		usbh_cdc_ecm_choose_config(host);
+		/* Diagnostic only: the core goes on to SET_CONFIG whatever this returns, and a device
+		   without an ECM function is not reported here but silently mapped to config 0, on
+		   which attach then fails */
+		if (usbh_cdc_ecm_choose_config(host) != RTK_SUCCESS) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Choose config fail\n");
+		}
 		break;
 	case USBH_MSG_DISCONNECTED:
 		// usbh_cdc_ecm_host_user.cdc_ecm_is_ready = 0;
@@ -231,55 +256,120 @@ static void cdc_ecm_cb_process(usb_host_t *host, u8 msg)
 	}
 }
 
-static int cdc_ecm_do_init(void)
+/**
+  * @brief  Bring the USB stack up in the documented order, the TX gate stays closed
+  * @retval Status
+  */
+static int cdc_ecm_stack_init(void)
 {
-	int ret = 0;
+	int ret;
 
 	ret = usbh_init(&usbh_ecm_cfg, &usbh_ecm_usr_cb);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Init USBH fail\n");
-		return 0;
+		return ret;
 	}
 
 	ret = usbh_cdc_ecm_init(&cdc_ecm_usb_cb, NULL);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Init CDC ECM fail\n");
 		usbh_deinit();
-		return 0;
+		return ret;
 	}
 
 	/* All class drivers registered; start USB TRX so enumeration can run. */
-	usbh_start();
+	ret = usbh_start();
+	if (ret != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Start USBH fail\n");
+		usbh_cdc_ecm_deinit();
+		usbh_deinit();
+		return ret;
+	}
+	cdc_ecm_stack_up = 1U;
 
-	do {
-		if (usbh_cdc_ecm_usb_is_ready()) {
-			break;
-		}
-		rtos_time_delay_ms(1000);
-	} while (1); //wait usb init success
+	return RTK_SUCCESS;
+}
 
-	usbh_cdc_ecm_prepare_done();
+/**
+  * @brief  Tear the stack down with the TX gate closed under the lock
+  * @retval None
+  */
+static void cdc_ecm_stack_deinit(void)
+{
+	/* Announce the teardown BEFORE contending for the lock, so a TX queued
+	 * behind it gives up instead of re-taking the lock between lwIP packets
+	 * and starving this thread out of a teardown it must perform. */
+	cdc_ecm_teardown = 1U;
 
-	/* Open the gate as the very last step, so no TX runs against a half built
-	   stack. This routine is reused by the hotplug thread, so the re-attach path
-	   re-opens it here too; teardown is cleared alongside it because a TX that saw
-	   neither flag would slip through. */
 	rtos_mutex_take(cdc_ecm_state_mutex, RTOS_MAX_TIMEOUT);
-	cdc_ecm_stack_ready = 1U;
-	cdc_ecm_teardown = 0U;
+	/* Close the gate under the lock: no TX is in flight here, and any later
+	 * one gives up on the cleared flag. */
+	cdc_ecm_stack_ready = 0U;
+	if (cdc_ecm_stack_up != 0U) {
+		usbh_stop();
+		usbh_cdc_ecm_deinit();
+		usbh_deinit();
+		cdc_ecm_stack_up = 0U;
+	}
+	rtos_mutex_give(cdc_ecm_state_mutex);
+}
+
+/**
+  * @brief  Open the TX gate once the device is enumerated, polled by the monitor thread
+  * @retval None
+  */
+static void cdc_ecm_open_gate(void)
+{
+	rtos_mutex_take(cdc_ecm_state_mutex, RTOS_MAX_TIMEOUT);
+	if ((cdc_ecm_stack_ready == 0U) && (cdc_ecm_stack_up != 0U) && (cdc_ecm_teardown == 0U) && (cdc_ecm_app.quit == 0U) &&
+		(usbh_cdc_ecm_usb_is_ready() != 0U)) {
+		/* Without prepare_done() ready_to_xfer stays 0, so bulk-IN receive scheduling and
+		 * link status never start. Runs on the first bring up and on every hotplug re-init. */
+		usbh_cdc_ecm_prepare_done();
+		/* Open the gate as the very last step, so no TX runs against a half built stack */
+		cdc_ecm_stack_ready = 1U;
+	}
+	rtos_mutex_give(cdc_ecm_state_mutex);
+}
+
+#if ENABLE_USBH_CDC_ECM_HOT_PLUG
+/**
+  * @brief  Tear the stack down and bring it up again, unless a stop came in meanwhile
+  * @param  down_ms: Time the stack stays down
+  * @retval Status of the re-init, RTK_SUCCESS if skipped for a stop
+  */
+static int cdc_ecm_rebuild(u32 down_ms)
+{
+	int ret = RTK_SUCCESS;
+
+	cdc_ecm_stack_deinit();
+
+	rtos_time_delay_ms(down_ms);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Free heap: 0x%x\n", rtos_mem_get_free_heap_size());
+
+	/* Under the lock, so the stop owner either sees the stack up or this thread sees quit */
+	rtos_mutex_take(cdc_ecm_state_mutex, RTOS_MAX_TIMEOUT);
+	if ((cdc_ecm_app.quit == 0U) && (cdc_ecm_stack_up == 0U)) {
+		ret = cdc_ecm_stack_init();
+		if (ret == RTK_SUCCESS) {
+			/* The monitor thread opens the gate once the device is enumerated again */
+			cdc_ecm_teardown = 0U;
+		}
+	}
 	rtos_mutex_give(cdc_ecm_state_mutex);
 
-	return 1;
+	return ret;
 }
+#endif
 
 /**
   * @brief  Parse the attributes the bridge needs from an Ethernet frame
   * @param  p: received pbuf
-  * @param  pattrib: parsed attributes, only valid when ERR_OK is returned
-  * @retval ERR_OK on success, ERR_VAL if the frame is too short for any of the
+  * @param  pattrib: parsed attributes, only valid when RTK_SUCCESS is returned
+  * @retval RTK_SUCCESS on success, -RTK_ERR_BADARG if the frame is too short for any of the
   *         fixed offsets the bridge parses or rewrites, i.e. it must be dropped
   */
-static err_t get_packet_attrib(struct pbuf *p, pkt_attrib_t *pattrib)
+static int get_packet_attrib(struct pbuf *p, pkt_attrib_t *pattrib)
 {
 	u16_t protocol, src_port = 0, dst_port = 0;
 	u8_t type = 0;
@@ -293,7 +383,7 @@ static err_t get_packet_attrib(struct pbuf *p, pkt_attrib_t *pattrib)
 
 	/* Without a complete Ethernet header none of the fields below exist */
 	if (p->len < (u16_t)ETH_HLEN) {
-		return ERR_VAL;
+		return -RTK_ERR_BADARG;
 	}
 
 	dst_addr = (struct eth_addr *)((u8_t *)p->payload);
@@ -302,7 +392,7 @@ static err_t get_packet_attrib(struct pbuf *p, pkt_attrib_t *pattrib)
 
 	if (protocol == lwip_htons(ETHTYPE_IP)) {
 		if (p->len < (u16_t)(ETH_HLEN + sizeof(struct ip_hdr))) {
-			return ERR_VAL;
+			return -RTK_ERR_BADARG;
 		}
 		/* update src ip/mac mapping */
 		iph = (struct ip_hdr *)((u8 *)p->payload + ETH_HLEN);
@@ -313,7 +403,7 @@ static err_t get_packet_attrib(struct pbuf *p, pkt_attrib_t *pattrib)
 		switch (iph->_proto) {
 		case IP_PROTO_TCP://TCP
 			if (p->len < (u16_t)(ETH_HLEN + sizeof(struct ip_hdr) + sizeof(struct tcp_hdr))) {
-				return ERR_VAL;
+				return -RTK_ERR_BADARG;
 			}
 			tcph = (struct tcp_hdr *)((u8 *)p->payload + ETH_HLEN + sizeof(struct ip_hdr));
 			if (tcph != NULL) {
@@ -324,7 +414,7 @@ static err_t get_packet_attrib(struct pbuf *p, pkt_attrib_t *pattrib)
 			break;
 		case IP_PROTO_UDP://UDP
 			if (p->len < (u16_t)(ETH_HLEN + sizeof(struct ip_hdr) + sizeof(struct udp_hdr))) {
-				return ERR_VAL;
+				return -RTK_ERR_BADARG;
 			}
 			udph = (struct udp_hdr *)((u8 *)p->payload + ETH_HLEN + sizeof(struct ip_hdr));
 			if (udph != NULL) {
@@ -341,7 +431,7 @@ static err_t get_packet_attrib(struct pbuf *p, pkt_attrib_t *pattrib)
 		/* A full ARP packet is required: both bridge directions rewrite the
 		 * sender/target hardware address at offset 22/32 of the frame */
 		if (p->len < (u16_t)SIZEOF_ETHARP_PACKET) {
-			return ERR_VAL;
+			return -RTK_ERR_BADARG;
 		}
 		arph = (struct etharp_hdr *)((u8 *)p->payload + ETH_HLEN);
 		src_ip = (u8 *) & (arph->sipaddr);
@@ -368,10 +458,10 @@ static err_t get_packet_attrib(struct pbuf *p, pkt_attrib_t *pattrib)
 		usb_os_memcpy((void *)pattrib->dst_ip, (const void *)dst_ip, sizeof(pattrib->dst_ip));
 	}
 
-	return ERR_OK;
+	return RTK_SUCCESS;
 }
 
-static u32_t send_to_wifi(pkt_attrib_t *pattrib, struct pbuf *p)
+static int send_to_wifi(pkt_attrib_t *pattrib, struct pbuf *p)
 {
 	if (pattrib->protocol == lwip_htons(ETHTYPE_ARP)) {
 		usb_os_memcpy((void *)&host_mac, (const void *)((u8 *)p->payload + ETH_ALEN), ETH_ALEN);
@@ -393,18 +483,22 @@ static u32_t send_to_wifi(pkt_attrib_t *pattrib, struct pbuf *p)
 		usb_os_memcpy((void *)((u8 *)p->payload + ETH_ALEN + 16), (const void *)pnetif_sta->hwaddr, ETH_ALEN);
 	}
 
-	pnetif_sta->linkoutput(pnetif_sta, p);
+	if (pnetif_sta->linkoutput(pnetif_sta, p) != ERR_OK) {
+		return -RTK_ERR_IO;
+	}
 
-	return 0;
+	return RTK_SUCCESS;
 }
 
-static u32_t send_to_usb(pkt_attrib_t *pattrib, struct pbuf *p)
+static int send_to_usb(pkt_attrib_t *pattrib, struct pbuf *p)
 {
 	UNUSED(pattrib);
 
-	pnetif_usb_eth->linkoutput(pnetif_usb_eth, p);
+	if (pnetif_usb_eth->linkoutput(pnetif_usb_eth, p) != ERR_OK) {
+		return -RTK_ERR_IO;
+	}
 
-	return 0;
+	return RTK_SUCCESS;
 }
 
 static err_t usb_in_wifi_out(struct pbuf *p, struct netif *netif)
@@ -417,7 +511,7 @@ static err_t usb_in_wifi_out(struct pbuf *p, struct netif *netif)
 
 	/* Malformed/runt frame, drop it. The caller frees the pbuf on error, so
 	 * every path that already freed it must return ERR_OK. */
-	if (get_packet_attrib(p, &attrib) != ERR_OK) {
+	if (get_packet_attrib(p, &attrib) != RTK_SUCCESS) {
 		pbuf_free(p);
 		return ERR_OK;
 	}
@@ -435,7 +529,12 @@ static err_t usb_in_wifi_out(struct pbuf *p, struct netif *netif)
 	//			attrib.dst_mac.addr[3], attrib.dst_mac.addr[4], attrib.dst_mac.addr[5], attrib.src_mac.addr[0], attrib.src_mac.addr[1],
 	//			attrib.src_mac.addr[2], attrib.src_mac.addr[3], attrib.src_mac.addr[4], attrib.src_mac.addr[5]);
 
-	send_to_wifi(&attrib, p);
+	/* A frame that can not be sent is dropped like on any bridge. The log is DEBUG level on
+	   purpose, a per-frame log would flood the console under congestion, so it is only
+	   visible when COMPIL_LOG_LEVEL is raised to RTK_LOG_DEBUG */
+	if (send_to_wifi(&attrib, p) != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_DEBUG, "To WiFi drop\n");
+	}
 
 	pbuf_free(p);
 
@@ -452,7 +551,7 @@ static err_t wifi_in_usb_out(struct pbuf *p, struct netif *netif)
 
 	/* Malformed/runt frame, drop it. The caller frees the pbuf on error, so
 	 * every path that already freed it must return ERR_OK. */
-	if (get_packet_attrib(p, &attrib) != ERR_OK) {
+	if (get_packet_attrib(p, &attrib) != RTK_SUCCESS) {
 		pbuf_free(p);
 		return ERR_OK;
 	}
@@ -483,10 +582,80 @@ static err_t wifi_in_usb_out(struct pbuf *p, struct netif *netif)
 	//dst mac
 	usb_os_memcpy((void *)p->payload, (const void *)&host_mac, ETH_ALEN);
 
-	send_to_usb(&attrib, p);
+	/* Dropped the same way as in usb_in_wifi_out */
+	if (send_to_usb(&attrib, p) != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_DEBUG, "To USB drop\n");
+	}
 
 	pbuf_free(p);
 	return ERR_OK;
+}
+
+/**
+  * @brief  Take the bridge down so neither netif hands frames to this app any more
+  * @note   Called by the stop owner, quit is already set
+  * @retval None
+  */
+static void cdc_ecm_net_down(void)
+{
+	/* Give the Wi-Fi STA netif its lwIP input back, or every frame it receives would still be
+	   forwarded to the gone USB link. A frame already inside a hook finishes on the TX gate. */
+	if (bridge_hooked != 0U) {
+		pnetif_sta->input = bridge_sta_input;
+		pnetif_usb_eth->input = bridge_eth_input;
+		bridge_hooked = 0U;
+	}
+	netifapi_netif_set_link_down(pnetif_usb_eth);
+	netifapi_netif_set_down(pnetif_usb_eth);
+	if (netif_default == pnetif_usb_eth) {
+		netifapi_netif_set_default(pnetif_sta);
+	}
+}
+
+/**
+  * @brief  Finish a claimed stop: bridge down, workers joined, stack and OS objects released
+  * @note   cdc_ecm_state_mutex is kept, see its declaration
+  * @param  workers: Number of workers to join
+  * @retval RTK_SUCCESS, or -RTK_ERR_TIMEOUT with everything kept if a worker did not leave
+  */
+static int cdc_ecm_teardown_all(u32 workers)
+{
+	cdc_ecm_net_down();
+
+	/* The hotplug thread waits on the detach sema, the others poll quit */
+	usb_os_sema_give(cdc_ecm_detach_sema);
+	if (usb_app_ctx_join(&cdc_ecm_app, workers) != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Stop timeout\n");
+		return -RTK_ERR_TIMEOUT;
+	}
+
+	/* Every worker is gone. The stack is down already if the hotplug thread left mid-rebuild. */
+	cdc_ecm_stack_deinit();
+
+	usb_os_sema_delete(cdc_ecm_detach_sema);
+	cdc_ecm_detach_sema = NULL;
+	cdc_ecm_workers = 0U;
+	usb_app_ctx_end(&cdc_ecm_app);
+
+	return RTK_SUCCESS;
+}
+
+/**
+  * @brief  Last call of every worker
+  * @param  fatal: 1 if the stack can not be rebuilt, the app has to go down
+  * @retval None
+  */
+static void cdc_ecm_worker_exit(u8 fatal)
+{
+	if ((fatal != 0U) && (usb_app_ctx_claim_stop(&cdc_ecm_app) != 0U)) {
+		/* No stop is in flight: finish the teardown here, this thread is not joined */
+		if (cdc_ecm_teardown_all(cdc_ecm_workers - 1U) == RTK_SUCCESS) {
+			RTK_LOGS(TAG, RTK_LOG_INFO, "USBH WIFI BRIDGE demo stop\n");
+		}
+	} else {
+		usb_app_ctx_leave(&cdc_ecm_app);
+	}
+	rtos_task_delete(NULL);
 }
 
 static void example_usbh_bridge_monitor_thread(void *param)
@@ -496,97 +665,223 @@ static void example_usbh_bridge_monitor_thread(void *param)
 	u8 link_is_up = 0;
 	eth_state_t ethernet_unplug = ETH_STATUS_IDLE;
 
-	//todo: The usb will not be initialized at the beginning(need the cooperation of hw design)
-	if (cdc_ecm_do_init() == 0) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "USB init fail\n");
+	while (cdc_ecm_app.quit == 0U) {
+		/* Start and the hotplug thread only bring the stack up: open the TX gate here once the
+		   device is enumerated, so neither of them blocks on the attach */
+		cdc_ecm_open_gate();
 
-		rtos_task_delete(NULL);
-	}
-
-	while (1) {
 		link_is_up = usbh_cdc_ecm_get_link_status();
 
 		if (1 == link_is_up && (ethernet_unplug < ETH_STATUS_INIT)) {	// unlink -> link
 			ethernet_unplug = ETH_STATUS_INIT;
-			netif_set_link_up(pnetif_usb_eth);
+			/* Not the tcpip thread, so go through netifapi like the link down below */
+			netifapi_netif_set_link_up(pnetif_usb_eth);
 			RTK_LOGS(TAG, RTK_LOG_INFO, "Switch to link\n");
 		} else if (0 == link_is_up && (ethernet_unplug >= ETH_STATUS_INIT)) {	// link -> unlink
 			ethernet_unplug = ETH_STATUS_DEINIT;
-			netif_set_default(pnetif_sta);
+			netifapi_netif_set_default(pnetif_sta);
+			/* Clear the link flag and the ARP entries of the gone USB interface */
+			netifapi_netif_set_link_down(pnetif_usb_eth);
 			RTK_LOGS(TAG, RTK_LOG_INFO, "Switch to unlink\n");
 		} else {
 			rtos_time_delay_ms(1000);
 		}
 	}
+
+	cdc_ecm_worker_exit(0U);
 }
 
 static void example_usbh_wifi_bridge_init_thread(void *param)
 {
+	u32 i;
+
 	UNUSED(param);
 
-	while (lwip_check_connectivity(NETIF_WLAN_STA_INDEX) != CONNECTION_VALID) {
+	while (cdc_ecm_app.quit == 0U) {
+		if (lwip_check_connectivity(NETIF_WLAN_STA_INDEX) == CONNECTION_VALID) {
+			/* Hook both netifs only while no stop is claimed, see bridge_hooked */
+			usb_os_enter_critical();
+			if (cdc_ecm_app.quit == 0U) {
+				bridge_sta_input = pnetif_sta->input;
+				bridge_eth_input = pnetif_usb_eth->input;
+				pnetif_sta->input = wifi_in_usb_out;                    // station netif
+				pnetif_usb_eth->input = usb_in_wifi_out;                // ethernet netif
+				bridge_hooked = 1U;
+			}
+			usb_os_exit_critical();
+			break;
+		}
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Wait for WIFI connection\n");
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Please use AT+WLCONN=ssid,xx,pw,yy to connect AP first time\n");
-		rtos_time_delay_ms(2000);
+		/* 2 s between the checks, in slices so a stop is seen quickly */
+		for (i = 0U; (i < 20U) && (cdc_ecm_app.quit == 0U); i++) {
+			rtos_time_delay_ms(100);
+		}
 	}
 
-	pnetif_sta->input = wifi_in_usb_out;                    // station netif
-	pnetif_usb_eth->input = usb_in_wifi_out;                    // ethernet netif
-
-	rtos_task_delete(NULL);
+	cdc_ecm_worker_exit(0U);
 }
 
 #if ENABLE_USBH_CDC_ECM_HOT_PLUG
 static void example_usbh_bridge_hotplug_thread(void *param)
 {
+	u8 fatal = 0U;
+
 	UNUSED(param);
 
 	for (;;) {
 		usb_os_sema_take(cdc_ecm_detach_sema, USB_OS_SEMA_TIMEOUT);
-		//stop isr
-		/* Announce the teardown BEFORE contending for the lock, so a TX queued
-		 * behind it gives up instead of re-taking the lock between lwIP packets
-		 * and starving this thread out of a teardown it must perform. */
-		cdc_ecm_teardown = 1U;
+		if (cdc_ecm_app.quit != 0U) {
+			/* Stop requested: the stop owner tears the stack down */
+			break;
+		}
 
-		rtos_mutex_take(cdc_ecm_state_mutex, RTOS_MAX_TIMEOUT);
-		/* Close the gate under the lock: no TX is in flight here, and any later
-		 * one gives up on the cleared flag. */
-		cdc_ecm_stack_ready = 0U;
-
-		usbh_stop();
-		usbh_cdc_ecm_deinit();
-		usbh_deinit();
-		rtos_mutex_give(cdc_ecm_state_mutex);
-
-		rtos_time_delay_ms(10);
-		RTK_LOGS(TAG, RTK_LOG_INFO, "Free heap: 0x%x\n", rtos_mem_get_free_heap_size());
-
-		/*
-		 * Reuse the full init routine (init + start + wait-until-ready +
-		 * prepare_done) so the reattach path also opens the RX/link gate.
-		 * Without prepare_done() ready_to_xfer stays 0 after replug, so
-		 * bulk-IN receive scheduling and link status never resume.
-		 */
-		if (cdc_ecm_do_init() == 0) {
+		/* Re-run the init sequence used by start (usbh_init + ecm_init + usbh_start). The
+		 * monitor thread re-opens the TX gate once the device is enumerated again. */
+		if (cdc_ecm_rebuild(10U) != RTK_SUCCESS) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Reinit fail\n");
+			fatal = 1U;
+			break;
+		}
+		if (cdc_ecm_app.quit != 0U) {
+			/* Stop requested during the rebuild: the stop owner deinits whatever is up */
 			break;
 		}
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Reinit done\n");
 	}
 
-	/* A re-init failed, so the stack is gone for good: keep TX out from here on.
-	 * The detach sema is deliberately left alive, the class callback may still be
-	 * about to give it. */
-	cdc_ecm_stack_ready = 0U;
-	cdc_ecm_teardown = 1U;
-	RTK_LOGS(TAG, RTK_LOG_ERROR, "Hotplug thread exit\n");
-	rtos_task_delete(NULL);
+	if (fatal != 0U) {
+		/* A re-init failed, so the stack is gone for good: cdc_ecm_teardown keeps TX out */
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Hotplug thread exit\n");
+	}
+	cdc_ecm_worker_exit(fatal);
 }
 #endif
 
+/**
+  * @brief  Bring the stack and the worker threads up
+  * @retval RTK_SUCCESS, or the first error, with everything already created rolled back
+  */
+static int cdc_ecm_start(void)
+{
+	int ret;
+	rtos_task_t task;
+
+	ret = usb_app_ctx_begin(&cdc_ecm_app);
+	if (ret != RTK_SUCCESS) {
+		return ret;
+	}
+
+	cdc_ecm_stack_ready = 0U;
+	cdc_ecm_teardown = 0U;
+	bridge_hooked = 0U;
+	cdc_ecm_workers = 0U;
+	usb_os_memset((void *)&host_mac, 0, sizeof(host_mac));
+
+	/* Created by the first start and never deleted, see the declaration */
+	if (cdc_ecm_state_mutex == NULL) {
+		ret = rtos_mutex_create(&cdc_ecm_state_mutex);
+		if (ret != RTK_SUCCESS) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Create state mutex fail\n");
+			usb_app_ctx_end(&cdc_ecm_app);
+			return ret;
+		}
+	}
+
+	ret = usb_os_sema_create(&cdc_ecm_detach_sema);
+	if (ret != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create detach sema fail\n");
+		usb_app_ctx_end(&cdc_ecm_app);
+		return ret;
+	}
+
+	rltk_usb_eth_init();
+
+	ret = cdc_ecm_stack_init();
+	if (ret != RTK_SUCCESS) {
+		goto exit_stop;
+	}
+
+	ret = rtos_task_create(&task, "usbh_bridge_monitor_thread",
+						   example_usbh_bridge_monitor_thread, NULL,
+						   USBH_ECM_MONITOR_THREAD_STACK_SIZE, USBH_ECM_MONITOR_THREAD_PRIORITY);
+	if (ret != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create link thread fail: %d\n", ret);
+		goto exit_stop;
+	}
+	cdc_ecm_workers++;
+
+	ret = rtos_task_create(&task, "usbh_wifi_bridge_init_thread",
+						   example_usbh_wifi_bridge_init_thread, NULL,
+						   USBH_ECM_BRIDGE_THREAD_STACK_SIZE, USBH_ECM_BRIDGE_THREAD_PRIORITY);
+	if (ret != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create bridge thread fail\n");
+		goto exit_stop;
+	}
+	cdc_ecm_workers++;
+
+#if ENABLE_USBH_CDC_ECM_HOT_PLUG
+	/* Created last: it owns the stack once running, so nothing after it can fail */
+	ret = rtos_task_create(&task, "usbh_bridge_hotplug_thread",
+						   example_usbh_bridge_hotplug_thread, NULL,
+						   USBH_ECM_HOTPLUG_THREAD_STACK_SIZE, USBH_ECM_HOTPLUG_THREAD_PRIORITY);
+	if (ret != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create hotplug check task fail\n");
+		goto exit_stop;
+	}
+	cdc_ecm_workers++;
+#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
+	/* The USB OTG ISR is delivered on CPU0: the GIC pins every SPI to core 0
+	   (ITARGETSR is written to 0x01010101 in arm_gic.c gic_dist_init). Pinning the
+	   hotplug/deinit thread to CPU0 puts it on the same core as the ISR, so the
+	   local interrupt disables inside the teardown are meaningful again. The lwIP
+	   TX thread stays unaffined: a pending teardown is excluded from it by
+	   cdc_ecm_state_mutex, not by core. */
+	rtos_task_set_affinity(task, 0);
+#endif
+#endif
+
+	return RTK_SUCCESS;
+
+exit_stop:
+	/* No hotplug thread runs yet, so nothing else can claim the stop */
+	if (usb_app_ctx_claim_stop(&cdc_ecm_app) != 0U) {
+		if (cdc_ecm_teardown_all(cdc_ecm_workers) != RTK_SUCCESS) {
+			/* A worker may still run on the stack: keep it, the app stays not idle */
+			return -RTK_ERR_TIMEOUT;
+		}
+	} else if (usb_app_ctx_wait_idle(&cdc_ecm_app) != RTK_SUCCESS) {
+		return -RTK_ERR_TIMEOUT;
+	}
+#ifndef USB_APP_AGGREGATE
+	/* Not in the usb_drd image: another app may hold usb_eth_tx_mutex there */
+	rltk_usb_eth_deinit();
+#endif
+	RTK_LOGS(TAG, RTK_LOG_ERROR, "USBH WIFI BRIDGE demo aborted\n");
+
+	return ret;
+}
+
+/* Standalone entry thread: brings the demo up and leaves */
+static void example_usbh_wifi_bridge_thread(void *param)
+{
+	UNUSED(param);
+
+	if (cdc_ecm_start() != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Start fail\n");
+	}
+	rtos_task_delete(NULL);
+}
+
 /* Exported functions --------------------------------------------------------*/
 
+/**
+  * @brief  lwIP USB Ethernet TX
+  * @param  buf: Frame
+  * @param  len: Frame length in bytes
+  * @param  block: Wait for the transfer to complete
+  * @retval Status, -RTK_ERR_IO if the stack is not up or the app is stopping
+  */
 int usb_ethernet_transmit(u8 *buf, u32 len, u8 block)
 {
 	int ret;
@@ -595,14 +890,14 @@ int usb_ethernet_transmit(u8 *buf, u32 len, u8 block)
 	   NULL if the example never started, and the flag is already cleared if a
 	   teardown is pending. A hotplug right after this check is harmless, the mutex
 	   stays valid and the re-check under it skips the TX. */
-	if ((cdc_ecm_stack_ready == 0U) || (cdc_ecm_teardown != 0U)) {
-		return HAL_ERR_HW;
+	if ((cdc_ecm_stack_ready == 0U) || (cdc_ecm_teardown != 0U) || (cdc_ecm_app.quit != 0U)) {
+		return -RTK_ERR_IO;
 	}
 
 	rtos_mutex_take(cdc_ecm_state_mutex, RTOS_MAX_TIMEOUT);
-	if ((cdc_ecm_stack_ready == 0U) || (cdc_ecm_teardown != 0U)) {
+	if ((cdc_ecm_stack_ready == 0U) || (cdc_ecm_teardown != 0U) || (cdc_ecm_app.quit != 0U)) {
 		/* Lost the race against a teardown */
-		ret = HAL_ERR_HW;
+		ret = -RTK_ERR_IO;
 	} else {
 		ret = usbh_cdc_ecm_send_data(buf, len, block);
 	}
@@ -611,82 +906,54 @@ int usb_ethernet_transmit(u8 *buf, u32 len, u8 block)
 	return ret;
 }
 
+/**
+  * @brief  Start the USB host Wi-Fi bridge, used by the USB app manager
+  * @note   Task context only. Returns once the stack is up, the bridge is hooked in a worker
+  *         once the Wi-Fi STA is connected.
+  * @retval RTK_SUCCESS, -RTK_ERR_BUSY if already running, or the init error
+  */
+int example_usbh_wifi_bridge_start(void)
+{
+	RTK_LOGS(TAG, RTK_LOG_INFO, "USBH WIFI BRIDGE demo start\n");
+
+	return cdc_ecm_start();
+}
+
+/**
+  * @brief  Stop the USB host Wi-Fi bridge and release everything it owns
+  * @note   Task context only. Safe to call when not running. The netif input hooks are
+  *         restored and pnetif_usb_eth is taken down first.
+  * @retval RTK_SUCCESS once idle, -RTK_ERR_TIMEOUT if a worker did not leave in time
+  */
+int example_usbh_wifi_bridge_stop(void)
+{
+	int ret;
+
+	if (usb_app_ctx_claim_stop(&cdc_ecm_app) == 0U) {
+		/* Idle, or a worker found the stack dead and finishes the teardown itself */
+		return usb_app_ctx_wait_idle(&cdc_ecm_app);
+	}
+
+	ret = cdc_ecm_teardown_all(cdc_ecm_workers);
+	if (ret == RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_INFO, "USBH WIFI BRIDGE demo stop\n");
+	}
+
+	return ret;
+}
+
+/**
+  * @brief  Example entry: start the USB host Wi-Fi bridge from its own thread
+  * @retval None
+  */
 void example_usbh_wifi_bridge(void)
 {
 	int ret;
-	rtos_task_t monitor_task;
-	rtos_task_t bridge_task;
+	rtos_task_t task;
 
-	RTK_LOGS(TAG, RTK_LOG_INFO, "USBH WIFI BRIDGE demo start\n");
-
-	/* Created before the stack comes up and never deleted, see the declaration */
-	if (cdc_ecm_state_mutex == NULL) {
-		ret = rtos_mutex_create(&cdc_ecm_state_mutex);
-		if (ret != RTK_SUCCESS) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "Create state mutex fail\n");
-			goto exit;
-		}
-	}
-
-	ret = usb_os_sema_create(&cdc_ecm_detach_sema);
-	if (ret != HAL_OK) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create detach sema fail\n");
-		goto exit;
-	}
-
-	rltk_usb_eth_init();
-
-#if ENABLE_USBH_CDC_ECM_HOT_PLUG
-	ret = rtos_task_create(&hotplug_task, "usbh_bridge_hotplug_thread",
-						   example_usbh_bridge_hotplug_thread, NULL,
-						   USBH_ECM_HOTPLUG_THREAD_STACK_SIZE, USBH_ECM_HOTPLUG_THREAD_PRIORITY);
+	ret = rtos_task_create(&task, "usbh_bridge_init_thread", example_usbh_wifi_bridge_thread, NULL,
+						   USBH_ECM_INIT_THREAD_STACK_SIZE, USBH_ECM_INIT_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create hotplug check task fail\n");
-		goto exit_release;
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create init thread fail\n");
 	}
-#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
-	/* The USB OTG ISR is delivered on CPU0: the GIC pins every SPI to core 0
-	   (ITARGETSR is written to 0x01010101 in arm_gic.c gic_dist_init). Pinning the
-	   hotplug/deinit thread to CPU0 puts it on the same core as the ISR, so the
-	   local interrupt disables inside the teardown are meaningful again. The lwIP
-	   TX thread stays unaffined: a pending teardown is excluded from it by
-	   cdc_ecm_state_mutex, not by core. */
-	rtos_task_set_affinity(hotplug_task, 0);
-#endif
-#endif
-
-	ret = rtos_task_create(&monitor_task, "usbh_bridge_monitor_thread",
-						   example_usbh_bridge_monitor_thread, NULL,
-						   USBH_ECM_MONITOR_THREAD_STACK_SIZE, USBH_ECM_MONITOR_THREAD_PRIORITY);
-	if (ret != RTK_SUCCESS) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create link thread fail: %d\n", ret);
-		goto exit_release;
-	}
-
-	ret = rtos_task_create(&bridge_task, "usbh_wifi_bridge_init_thread",
-						   example_usbh_wifi_bridge_init_thread, NULL,
-						   USBH_ECM_BRIDGE_THREAD_STACK_SIZE, USBH_ECM_BRIDGE_THREAD_PRIORITY);
-	if (ret != RTK_SUCCESS) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create bridge thread fail\n");
-		goto exit_delete_monitor;
-	}
-
-	return;
-
-exit_delete_monitor:
-	rtos_task_delete(monitor_task);
-
-exit_release:
-	/* Stop the threads that reference the detach sema before it is freed. */
-#if ENABLE_USBH_CDC_ECM_HOT_PLUG
-	if (hotplug_task != NULL) {
-		rtos_task_delete(hotplug_task);
-		hotplug_task = NULL;
-	}
-#endif
-	rltk_usb_eth_deinit();
-	usb_os_sema_delete(cdc_ecm_detach_sema);
-	cdc_ecm_detach_sema = NULL;
-exit:
-	RTK_LOGS(TAG, RTK_LOG_ERROR, "USBH WIFI BRIDGE demo aborted\n");
 }

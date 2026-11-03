@@ -163,7 +163,8 @@ typedef struct {
 	const char *itf_str;     /**< iInterface string of the audio control interface, NULL for none. */
 	usbd_audio_cfg_t in;     /**< Audio format for record (device to host). */
 	usbd_audio_cfg_t out;    /**< Audio format for playback (host to device). */
-	u16 volume_min;          /**< Minimum volume reported to the host, 0 uses @ref USBD_UAC_DEFAULT_VOLUME_MIN. */
+	u16 volume_min;          /**< Minimum volume reported to the host, 0 uses @ref USBD_UAC_DEFAULT_VOLUME_MIN.
+	                              Keep the range within the defaults: a SET_CUR outside them is STALLed. */
 	u16 volume_max;          /**< Maximum volume reported to the host, 0 uses @ref USBD_UAC_DEFAULT_VOLUME_MAX. */
 	u16 volume_default;      /**< Initial volume, 0 uses @ref USBD_UAC_DEFAULT_VOLUME. */
 	u8 mute_default;         /**< Initial mute state (0: unmuted, 1: muted). */

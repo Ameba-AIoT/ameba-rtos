@@ -150,9 +150,6 @@ menu "CONFIG APPLICATION"
         if DSP_EN
             orsource "../../../aivoice/Kconfig"
         endif
-        if AIVOICE_EN_MENU
-            orsource "../../../application/speechmind/Kconfig"
-        endif
     endmenu
 
     orsource "../../../application/Kconfig"

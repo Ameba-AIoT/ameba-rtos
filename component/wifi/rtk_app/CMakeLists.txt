@@ -24,7 +24,6 @@ ameba_list_append(public_includes
     ${CMAKE_CURRENT_SOURCE_DIR}/wifi_fast_connect
     ${CMAKE_CURRENT_SOURCE_DIR}/wifi_auto_reconnect
     ${CMAKE_CURRENT_SOURCE_DIR}/wifi_tunnel_app
-    ${CMAKE_CURRENT_SOURCE_DIR}/wifi_radar
     ${CMAKE_CURRENT_SOURCE_DIR}/wifi_xmesh_app
 )
 
@@ -81,12 +80,8 @@ set(private_compile_options_open)         #private compile_options
 if(NOT CONFIG_MP_SHRINK)
     if(CONFIG_WHC_NONE OR CONFIG_WHC_HOST OR CONFIG_WHC_WPA_SUPPLICANT_OFFLOAD)
         ameba_list_append(private_sources wifi_acs/wifi_acs.c)
-        ameba_list_append_if(CONFIG_WIFI_RADAR_ENABLE private_sources wifi_radar/wifi_radar.c)
-        if (CONFIG_WIFI_RADAR_ENABLE AND CONFIG_TFLITE_MICRO_EN)
-            ameba_list_append(private_sources wifi_radar/nn_interface.cc)
-            ameba_list_append(private_sources wifi_radar/models/radar_int8.c)
-            ameba_list_append(private_definitions TF_LITE_STATIC_MEMORY)
-            ameba_list_append(private_compile_options -Wno-unused-parameter -Wno-undef)
+        if(CONFIG_WIFI_RADAR_ENABLE AND NOT EXISTS ${c_CMPT_SENSING_ALGO_DIR}/CMakeLists.txt)
+            message(FATAL_ERROR "CONFIG_WIFI_RADAR_ENABLE=y requires component/sensing_algo, please repo sync")
         endif()
     endif()
     if(NOT CONFIG_PLATFORM_ZEPHYR)

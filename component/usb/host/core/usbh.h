@@ -451,9 +451,9 @@ typedef struct {
 	*
 	*          The status is interpreted in exactly three ways, and a class must not
 	*          conflate them:
-	*          - HAL_OK: this class is fully set up. The core advances to the next
+	*          RTK_SUCCESS: this class is fully set up. The core advances to the next
 	*            class and, once all are done, enters CLASS_READY.
-	*          - HAL_BUSY: still in progress, call me again. This is the only status
+	*          -RTK_ERR_BUSY: still in progress, call me again. This is the only status
 	*            that requests a retry, and it must be returned whenever the class
 	*            intends to make further attempts - including when an optional request
 	*            failed but the sequence continues to its next step. A class that stays
@@ -468,7 +468,7 @@ typedef struct {
 	*            fall back to a default and keep going instead of failing the class.
 	*
 	* @param[in] host: USB host.
-	* @return HAL_OK when setup is complete, HAL_BUSY while in progress,
+	* @return RTK_SUCCESS when setup is complete, -RTK_ERR_BUSY while in progress,
 	*         another status to abandon this class.
 	*/
 	int (*setup)(struct _usb_host_t *host);
@@ -523,8 +523,8 @@ typedef struct {
 	 * @param[in] cfg_max: bNumConfigurations.
 	 * @note
 	 *    The class can get all the config descriptor and check the interface class.
-	 *	   if find the device, return HAL_OK, the enum process will use this device as the target device,
-	 *	   else return !HAL_OK, the enum process will discard this device, and switch to check next hub port.
+	 *	   if find the device, return RTK_SUCCESS, the enum process will use this device as the target device,
+	 *	   else return !RTK_SUCCESS, the enum process will discard this device, and switch to check next hub port.
 	 * @return 0 on success, non-zero on failure.
 	 */
 	int (*validate)(struct _usb_host_t *host, u8 cfg_max);
@@ -602,15 +602,15 @@ void usbh_deinit(void);
  *          A hub on the root port is reset with the device behind it.
  * @note  Asynchronous: only records the request and wakes the host task, so it may be called
  *        from any context, including a class process() or ISR-context callback. After it
- *        returns HAL_OK a class must not use its pipes; its detach() runs from the host task.
+ *        returns RTK_SUCCESS a class must not use its pipes; its detach() runs from the host task.
  * @note  At most USBH_REENUMERATE_MAX_CNT resets are allowed per physical attach and only an
  *        unplug renews them. Once they are spent the request is refused: @ref USBH_MSG_ERROR
  *        is reported, every class is detached and the device is left alone until it is
  *        replugged.
  * @warning Requires an initialized core: call only after a successful
  *          @ref usbh_init(), and never after @ref usbh_deinit().
- * @return HAL_OK if the reset was scheduled, HAL_BUSY if one is already pending,
- *         HAL_ERR_PARA if no device is attached, HAL_ERR_HW if the reenumerate budget is spent.
+ * @return RTK_SUCCESS if the reset was scheduled, -RTK_ERR_BUSY if one is already pending,
+ *         -RTK_ERR_BADARG if no device is attached, -RTK_ERR_IO if the reenumerate budget is spent.
  */
 int usbh_reenumerate(void);
 
@@ -632,8 +632,8 @@ int usbh_reenumerate(void);
  *        a fault, reported with an ERROR log every USBH_TEARDOWN_WAIT_LOG_MS, but waited out.
  * @param[in] timeout_ms: Wait after which an ERROR is logged; the wait itself goes on until the
  *        callback leaves. A callback normally ends within microseconds.
- * @return HAL_OK if no callback ran past timeout_ms, HAL_TIMEOUT if one did (it has left all the
- *         same), HAL_ERR_PARA in ISR context or without an initialized core.
+ * @return RTK_SUCCESS if no callback ran past timeout_ms, -RTK_ERR_TIMEOUT if one did (it has left all the
+ *         same), -RTK_ERR_BADARG in ISR context or without an initialized core.
  */
 int usbh_sync_isr(u32 timeout_ms);
 
@@ -705,7 +705,7 @@ int usbh_register_class(const usbh_class_driver_t *driver);
  *        hardware (usbh_stop()) or release core resources (usbh_deinit()).
  *        A driver that was never registered is silently ignored.
  * @details The slot is released by the host task between two driver messages, so on a
- *          HAL_OK return none of attach(), setup(), process() or detach() of this driver runs,
+ *          RTK_SUCCESS return none of attach(), setup(), process() or detach() of this driver runs,
  *          none will run again, and an EP0 request it left in flight is halted with its
  *          buffer dropped. Its sof()/completed() are waited out as well (@ref usbh_sync_isr()).
  *          So a class deinit() calls this first and may then free everything those callbacks
@@ -717,8 +717,8 @@ int usbh_register_class(const usbh_class_driver_t *driver);
  *        USBH_TEARDOWN_WAIT_LOG_MS is reported with an ERROR log at that period. The caller
  *        must therefore not hold a lock that a callback of any class takes.
  * @param[in] driver: USB class driver.
- * @return HAL_OK once the driver is out (also when it was not registered or the core is not
- *         initialized), HAL_ERR_PARA in ISR context or on the host task, where nothing was
+ * @return RTK_SUCCESS once the driver is out (also when it was not registered or the core is not
+ *         initialized), -RTK_ERR_BADARG in ISR context or on the host task, where nothing was
  *         released and the caller must not free anything.
  */
 int usbh_unregister_class(const usbh_class_driver_t *driver);
@@ -874,8 +874,8 @@ void usbh_notify(usb_host_t *host, u8 pipe_num, const usbh_class_driver_t *owner
  * @param[in] host: Host Handle.
  * @param[in] itf_num: Interface number.
  * @param[in] alt_setting: Interface alternate setting number.
- * @return HAL_BUSY while in progress, the owner is driven again; HAL_OK on success; HAL_ERR_PARA on
- *         STALL or a torn down host; HAL_ERR_UNKNOWN once the retry budget or the control
+ * @return -RTK_ERR_BUSY while in progress, the owner is driven again; RTK_SUCCESS on success; -RTK_ERR_BADARG on
+ *         STALL or a torn down host; RTK_FAIL once the retry budget or the control
  *         timeout is spent. A failure is reported only by this value, never by a USBH_MSG_*.
  */
 int usbh_ctrl_set_interface(usb_host_t *host, u8 itf_num, u8 alt_setting);
@@ -884,8 +884,8 @@ int usbh_ctrl_set_interface(usb_host_t *host, u8 itf_num, u8 alt_setting);
  * @brief  Send `SET_FEATURE` standard request to device (remote wakeup feature,..)
  * @param[in] host: Host handler.
  * @param[in] value: Feature value.
- * @return HAL_BUSY while in progress, the owner is driven again; HAL_OK on success; HAL_ERR_PARA on
- *         STALL or a torn down host; HAL_ERR_UNKNOWN once the retry budget or the control
+ * @return -RTK_ERR_BUSY while in progress, the owner is driven again; RTK_SUCCESS on success; -RTK_ERR_BADARG on
+ *         STALL or a torn down host; RTK_FAIL once the retry budget or the control
  *         timeout is spent. A failure is reported only by this value, never by a USBH_MSG_*.
  */
 int usbh_ctrl_set_feature(usb_host_t *host, u8 value);
@@ -894,8 +894,8 @@ int usbh_ctrl_set_feature(usb_host_t *host, u8 value);
  * @brief  Send `CLEAR_FEATURE` standard request to device.
  * @param[in] host: Host Handle.
  * @param[in] ep_num: Endpoint number.
- * @return HAL_BUSY while in progress, the owner is driven again; HAL_OK on success; HAL_ERR_PARA on
- *         STALL or a torn down host; HAL_ERR_UNKNOWN once the retry budget or the control
+ * @return -RTK_ERR_BUSY while in progress, the owner is driven again; RTK_SUCCESS on success; -RTK_ERR_BADARG on
+ *         STALL or a torn down host; RTK_FAIL once the retry budget or the control
  *         timeout is spent. A failure is reported only by this value, never by a USBH_MSG_*.
  */
 int usbh_ctrl_clear_feature(usb_host_t *host, u8 ep_num);
@@ -908,8 +908,8 @@ int usbh_ctrl_clear_feature(usb_host_t *host, u8 ep_num);
  * @param[in] host: Host Handle.
  * @param[in] req: Control request.
  * @param[in] buf: Data buffer.
- * @return HAL_BUSY while in progress, the owner is driven again; HAL_OK on success; HAL_ERR_PARA on
- *         STALL or a torn down host; HAL_ERR_UNKNOWN once the retry budget or the control
+ * @return -RTK_ERR_BUSY while in progress, the owner is driven again; RTK_SUCCESS on success; -RTK_ERR_BADARG on
+ *         STALL or a torn down host; RTK_FAIL once the retry budget or the control
  *         timeout is spent. A failure is reported only by this value, never by a USBH_MSG_*.
  */
 int usbh_ctrl_request(usb_host_t *host, usbh_setup_req_t *req, u8 *buf);

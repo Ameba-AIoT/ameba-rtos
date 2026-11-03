@@ -11,6 +11,9 @@
 #include "usbd_hid.h"
 #include "usbd_composite.h"
 #include "os_wrapper.h"
+#include "atcmd_service.h"
+#include "usb_app.h"
+#include "example_usbd_composite_cdc_acm_hid.h"
 
 /* Private defines -----------------------------------------------------------*/
 
@@ -46,8 +49,12 @@
 // and reset USB stack to avoid memory leak, only for example.
 #define COMP_HOTPLUG                                  1
 
-// Hotplug thread
+// Thread priorities
+#define COMP_INIT_THREAD_PRIORITY                     5
 #define COMP_HOTPLUG_THREAD_PRIORITY                  8
+
+// Thread stack sizes
+#define COMP_INIT_THREAD_STACK_SIZE                   1024U
 #define COMP_HOTPLUG_THREAD_STACK_SIZE                1024U
 
 #define HID_SET_PROTOCOL                              0x01
@@ -82,7 +89,8 @@ static int composite_cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf);
 static int composite_cdc_acm_cb_received(u8 *buf, u32 len);
 
 static void composite_hid_cb_setup(void);
-static u32 composite_cmd_mouse_data(u16 argc, u8 *argv[]);
+static int composite_cmd_mouse_data(u16 argc, u8 *argv[]);
+static void composite_cmd_mouse_data_at(u16 argc, char **argv);
 
 static int composite_init_stack(void);
 #if COMP_HOTPLUG
@@ -169,7 +177,8 @@ static usb_cdc_acm_line_coding_t composite_cdc_acm_line_coding;
    is the gate that keeps callers off the stack instead. */
 static rtos_mutex_t composite_state_lock = NULL;
 /* 1: the whole composite stack is up, the class APIs may be called. Cleared before any
-   tear down, so a non-zero value also implies the lock is valid.
+   tear down, so a non-zero value also implies the lock is valid. Also tells the stop
+   whether the stack still needs a deinit: a failed hotplug reinit leaves it down.
    usbd_hid_deinit() frees the EP xfer buffer that usbd_hid_send_data() memcpy into, and
    the class internal ready check only guards the entry; under SMP the shell thread on
    the other core can already be past it while the hotplug thread deinits, so it must be
@@ -177,7 +186,6 @@ static rtos_mutex_t composite_state_lock = NULL;
 static volatile u8 composite_stack_ready;
 
 #if COMP_HOTPLUG
-static rtos_task_t composite_hotplug_task;
 static rtos_sema_t composite_attach_status_changed_sema;
 /* Written by the ISR, read by the hotplug thread, possibly on another core */
 static volatile u8 composite_attach_status;
@@ -192,12 +200,25 @@ static const usbd_composite_cb_t composite_usr_cb = {
 #define COMP_CB NULL
 #endif
 
+/* Start/stop state: the hotplug thread (or, without hotplug, the start entry) owns the running
+   stack, example_usbd_composite_cdc_acm_hid_stop() asks it to leave through quit and joins it */
+static usb_app_ctx_t composite_app;
+
 /* Exported variables --------------------------------------------------------*/
 
-CMD_TABLE_DATA_SECTION
-const COMMAND_TABLE usbd_composite_mouse_data_cmd[] = {
-	{"mouse", composite_cmd_mouse_data},
+/* AT commands "AT+<cmd>=<p1>,<p2>...": the command name is case-sensitive, the parameters are not */
+#ifndef USB_APP_AGGREGATE
+ATCMD_TABLE_DATA_SECTION
+const log_item_t usbd_composite_mouse_data_cmd[] = {
+	{"+USBDHID", composite_cmd_mouse_data_at},
 };
+#else
+/* Forwarded by the usb_drd app manager while this app runs; the handler is gated on composite_stack_ready */
+const usb_app_cmd_t example_usbd_composite_cdc_acm_hid_cmds[] = {
+	{"+USBDHID", composite_cmd_mouse_data_at},
+	{NULL, NULL},
+};
+#endif
 
 /* Private functions ---------------------------------------------------------*/
 
@@ -241,7 +262,7 @@ static int composite_cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 	usb_cdc_acm_line_coding_t *lc = &composite_cdc_acm_line_coding;
 	/* Ref USB 2.0 9.2.7: anything not explicitly accepted below is a request error, so
 	   the default status makes the core STALL EP0 instead of ACKing the status stage. */
-	int ret = HAL_ERR_PARA;
+	int ret = -RTK_ERR_BADARG;
 
 	switch (req->bRequest) {
 	case USB_CDC_ACM_SET_LINE_CODING:
@@ -252,7 +273,7 @@ static int composite_cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 			lc->b.bCharFormat = buf[4];
 			lc->b.bParityType = buf[5];
 			lc->b.bDataBits = buf[6];
-			ret = HAL_OK;
+			ret = RTK_SUCCESS;
 		}
 		break;
 
@@ -264,7 +285,7 @@ static int composite_cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 		buf[4] = lc->b.bCharFormat;
 		buf[5] = lc->b.bParityType;
 		buf[6] = lc->b.bDataBits;
-		ret = HAL_OK;
+		ret = RTK_SUCCESS;
 		break;
 
 	case USB_CDC_ACM_SET_CONTROL_LINE_STATE:
@@ -282,13 +303,13 @@ static int composite_cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 				USB_DIAG(USB_LAYER_APP, USB_EVT_LINK, 0);
 				usbd_cdc_acm_notify_serial_state(USB_CDC_ACM_CTRL_DSR | USB_CDC_ACM_CTRL_DCD);
 			}
-			ret = HAL_OK;
+			ret = RTK_SUCCESS;
 		}
 		break;
 
 	case USB_CDC_ACM_SEND_BREAK:
 		/* Do nothing */
-		ret = HAL_OK;
+		ret = RTK_SUCCESS;
 		break;
 
 	default:
@@ -331,7 +352,7 @@ static void composite_hid_cb_setup(void)
 static int composite_hid_send_device_data(composite_hid_mouse_data_t *data)
 {
 	u8 byte[4];
-	int ret = HAL_ERR_HW;
+	int ret = -RTK_ERR_IO;
 
 	usb_os_memset((void *)byte, 0, 4);
 
@@ -375,67 +396,120 @@ static int composite_hid_send_device_data(composite_hid_mouse_data_t *data)
 	return ret;
 }
 
-/* The mouse report declares LOGICAL_MINIMUM(-127)/LOGICAL_MAXIMUM(127) (Ref HID 1.11 6.2.2.7),
-   so clamp explicitly: narrowing the unsigned parse result to char would silently wrap */
-static char composite_hid_mouse_axis(const u8 *str)
+/* Parse a whole-string decimal in [min, max], an optional leading '-' allowed for a negative min */
+static int composite_hid_parse_s32(const u8 *str, s32 min, s32 max, s32 *val)
 {
-	s32 val = (s32)_strtoul((const char *)str, (char **)NULL, 10);
+	const char *p = (const char *)str;
+	char *end = NULL;
+	u32 mag;
+	s32 num;
+	u8 neg = 0U;
 
-	if (val > 127) {
-		val = 127;
-	} else if (val < -127) {
-		val = -127;
+	if (p == NULL) {
+		return -RTK_ERR_BADARG;
+	}
+	if (*p == '-') {
+		neg = 1U;
+		p++;
+	}
+	if ((*p < '0') || (*p > '9')) {
+		return -RTK_ERR_BADARG;
+	}
+	mag = (u32)_strtoul(p, &end, 10);
+	if ((end == NULL) || (*end != '\0') || (mag > 0x7FFFFFFFU)) {
+		return -RTK_ERR_BADARG;
+	}
+	num = (neg != 0U) ? -(s32)mag : (s32)mag;
+	if ((num < min) || (num > max)) {
+		return -RTK_ERR_BADARG;
 	}
 
-	return (char)val;
+	*val = num;
+	return RTK_SUCCESS;
 }
 
-static u32 composite_cmd_mouse_data(u16 argc, u8 *argv[])
+static void composite_hid_cmd_usage(void)
+{
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Usage: AT+USBDHID=<cmd>[,<args>]\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "  mouse,<left>[,<right>,<middle>,<x>,<y>,<wheel>]\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "        Send one mouse report. left/right/middle: 0|1 (1 = pressed)\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "        x/y/wheel: relative move -127..127; omitted args are 0. Needs the host to have configured the device\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "  help  Print this help\n");
+}
+
+/* Fill a mouse report from "mouse <left> [<right> <middle> <x> <y> <wheel>]", argv[0] being "mouse" */
+static int composite_hid_parse_mouse(u16 argc, u8 *argv[], composite_hid_mouse_data_t *data)
+{
+	s32 val[6] = {0};
+	s32 min;
+	u16 i;
+
+	if ((argc < 2U) || (argc > 7U)) {
+		return -RTK_ERR_BADARG;
+	}
+	for (i = 1U; i < argc; i++) {
+		/* Buttons are 1-bit fields, the axes LOGICAL_MINIMUM(-127)/LOGICAL_MAXIMUM(127), Ref HID 1.11 6.2.2.7 */
+		min = (i <= 3U) ? 0 : -127;
+		if (composite_hid_parse_s32(argv[i], min, (i <= 3U) ? 1 : 127, &val[i - 1U]) != RTK_SUCCESS) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid arg %d: %s\n", i, argv[i]);
+			return -RTK_ERR_BADARG;
+		}
+	}
+
+	usb_os_memset((void *)data, 0, sizeof(*data));
+	data->left = (u8)val[0];
+	data->right = (u8)val[1];
+	data->middle = (u8)val[2];
+	data->x_axis = (char)val[3];
+	data->y_axis = (char)val[4];
+	data->wheel = (char)val[5];
+	return RTK_SUCCESS;
+}
+
+static int composite_cmd_mouse_data(u16 argc, u8 *argv[])
 {
 	composite_hid_mouse_data_t data;
 	int ret;
 
-	if (argc == 0U) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid arguments, usage:\n"
-				 "mouse <left> [<right> <middle> <x_axis> <y_axis> <wheel>]\n");
-		return (u32)HAL_ERR_PARA;
+	if ((argc == 0U) || (_stricmp((const char *)argv[0], "help") == 0) || (_stricmp((const char *)argv[0], "?") == 0)) {
+		composite_hid_cmd_usage();
+		return (argc == 0U) ? -RTK_ERR_BADARG : RTK_SUCCESS;
 	}
-
-	usb_os_memset((void *)&data, 0, sizeof(data));
-
-	if (argc > 0) {
-		data.left = _strtoul((const char *)argv[0], (char **)NULL, 10);
+	if (_stricmp((const char *)argv[0], "mouse") != 0) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid cmd: %s, try AT+USBDHID=help\n", argv[0]);
+		return -RTK_ERR_BADARG;
 	}
-	if (argc > 1) {
-		data.right = _strtoul((const char *)argv[1], (char **)NULL, 10);
-	}
-	if (argc > 2) {
-		data.middle = _strtoul((const char *)argv[2], (char **)NULL, 10);
-	}
-	if (argc > 3) {
-		data.x_axis = composite_hid_mouse_axis(argv[3]);
-	}
-	if (argc > 4) {
-		data.y_axis = composite_hid_mouse_axis(argv[4]);
-	}
-	if (argc > 5) {
-		data.wheel = composite_hid_mouse_axis(argv[5]);
+	if (composite_hid_parse_mouse(argc, argv, &data) != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Usage: AT+USBDHID=mouse,<left>[,<right>,<middle>,<x>,<y>,<wheel>]\n");
+		return -RTK_ERR_BADARG;
 	}
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Send mouse data\n");
 	ret = composite_hid_send_device_data(&data);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_WARN, "HID tx fail %d\n", ret);
 	}
 
 	return (u32)ret;
 }
 
+/* AT entry: argv[0] is reserved by the AT parser and argv[1] holds the first parameter */
+static void composite_cmd_mouse_data_at(u16 argc, char **argv)
+{
+	int ret = composite_cmd_mouse_data((argc != 0U) ? (argc - 1U) : 0U, (u8 **)&argv[1]);
+
+	if (ret == RTK_SUCCESS) {
+		at_printf(ATCMD_OK_END_STR);
+	} else {
+		at_printf(ATCMD_ERROR_END_STR, (int)ret);
+	}
+}
+
 
 /**
   * @brief  Bring up the whole composite stack (core + each class + framework).
   * @note   Reused by both the initial start-up and the hotplug re-init path.
-  * @retval HAL_OK on success, other HAL_Status code on failure (all partial resources rolled back)
+  * @retval RTK_SUCCESS on success, other HAL_Status code on failure (all partial resources rolled back)
   */
 static int composite_init_stack(void)
 {
@@ -443,32 +517,32 @@ static int composite_init_stack(void)
 
 	/* Step 1: Start USB device stack */
 	ret = usbd_init(&composite_cfg);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "usbd_init failed\r\n");
 		return ret;
 	}
 
 	/* Step 2: Initialize each class driver with its EP config */
 	ret = usbd_composite_cdc_acm_init(&composite_cdc_acm_usr_cb, &cdc_acm_class_cfg);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "CDC ACM init failed\r\n");
 		goto exit_usbd_init;
 	}
 
 	ret = usbd_composite_hid_init(&composite_hid_usr_cb, &hid_class_cfg);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "HID init failed\r\n");
 		goto exit_cdc_acm_init;
 	}
 
 	/* Step 3: Start composite framework (drivers already registered via composite_init calls above) */
 	ret = usbd_composite_init(COMP_CB);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Composite init failed\r\n");
 		goto exit_hid_init;
 	}
 
-	return HAL_OK;
+	return RTK_SUCCESS;
 
 exit_hid_init:
 	usbd_hid_deinit();
@@ -479,7 +553,6 @@ exit_usbd_init:
 	return ret;
 }
 
-#if COMP_HOTPLUG
 /**
   * @brief  Tear down the whole composite stack, in the reverse order of composite_init_stack():
   *         framework -> classes -> core.
@@ -496,6 +569,29 @@ static void composite_deinit_stack(void)
 }
 
 /**
+  * @brief  Release the stack if still up and the objects of one run
+  * @note   Only called once the hotplug thread is gone or was never created. The shell thread
+  *         may be inside the class API: take the lock, exactly as the hotplug thread does.
+  * @retval None
+  */
+static void composite_teardown(void)
+{
+	rtos_mutex_take(composite_state_lock, RTOS_MAX_TIMEOUT);
+	if (composite_stack_ready != 0U) {
+		composite_stack_ready = 0;
+		composite_deinit_stack();
+	}
+	rtos_mutex_give(composite_state_lock);
+
+#if COMP_HOTPLUG
+	/* The stack is down, no ISR callback can give the sema any more */
+	rtos_sema_delete(composite_attach_status_changed_sema);
+	composite_attach_status_changed_sema = NULL;
+#endif
+}
+
+#if COMP_HOTPLUG
+/**
   * @brief  Composite attach-status change notification (ISR context).
   * @note   time-consuming operations are not permitted here.
   */
@@ -510,10 +606,16 @@ static void composite_cb_status_changed(u8 old_status, u8 status)
    memory leak across repeated plug/unplug. */
 static void example_usbd_composite_hotplug_thread(void *param)
 {
+	u8 fatal = 0U;
+
 	UNUSED(param);
 
 	for (;;) {
 		if (rtos_sema_take(composite_attach_status_changed_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
+			if (composite_app.quit != 0U) {
+				/* Stop requested: the stop owner tears the stack down */
+				break;
+			}
 			if (composite_attach_status == USBD_ATTACH_STATUS_DETACHED) {
 				RTK_LOGS(TAG, RTK_LOG_INFO, "DETACHED\r\n");
 				/* Wait for the shell thread to leave the class API, then keep it out
@@ -522,8 +624,9 @@ static void example_usbd_composite_hotplug_thread(void *param)
 				composite_stack_ready = 0;
 				composite_deinit_stack();
 				RTK_LOGS(TAG, RTK_LOG_INFO, "Free heap: 0x%x\n", rtos_mem_get_free_heap_size());
-				if (composite_init_stack() != HAL_OK) {
+				if (composite_init_stack() != RTK_SUCCESS) {
 					rtos_mutex_give(composite_state_lock);
+					fatal = 1U;
 					break;
 				}
 				composite_stack_ready = 1;
@@ -536,24 +639,36 @@ static void example_usbd_composite_hotplug_thread(void *param)
 		}
 	}
 
-	/* composite_init_stack() rolled back everything it had brought up, so the
-	   stack is fully deinited and no ISR callback can give the sema any more.
-	   This thread is the only sema user left: free it as the last owner. */
-	rtos_sema_delete(composite_attach_status_changed_sema);
-	composite_attach_status_changed_sema = NULL;
-
-	RTK_LOGS(TAG, RTK_LOG_ERROR, "Hotplug thread fail\r\n");
+	if (fatal != 0U) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Hotplug thread fail\r\n");
+		if (usb_app_ctx_claim_stop(&composite_app) != 0U) {
+			/* No stop is in flight: composite_init_stack() rolled back everything it had
+			   brought up, so this thread finishes the teardown on its own */
+			composite_teardown();
+			usb_app_ctx_end(&composite_app);
+			rtos_task_delete(NULL);
+		}
+	}
+	usb_app_ctx_leave(&composite_app);
 	rtos_task_delete(NULL);
 }
 #endif // COMP_HOTPLUG
 
-/* Exported functions --------------------------------------------------------*/
-
-void example_usbd_composite(void)
+/**
+  * @brief  Bring the stack and the hotplug thread up
+  * @retval RTK_SUCCESS, or the first error, with everything already created rolled back
+  */
+static int composite_start(void)
 {
 	int ret;
+#if COMP_HOTPLUG
+	rtos_task_t hotplug_task;
+#endif
 
-	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD ACM+HID comp demo start\n");
+	ret = usb_app_ctx_begin(&composite_app);
+	if (ret != RTK_SUCCESS) {
+		return ret;
+	}
 
 	/* Created once and never deleted, see its declaration. */
 	if (composite_state_lock == NULL) {
@@ -573,18 +688,19 @@ void example_usbd_composite(void)
 #endif
 
 	ret = composite_init_stack();
-	if (ret != HAL_OK) {
-		goto exit_release_sema;
+	if (ret != RTK_SUCCESS) {
+		goto exit_teardown;
 	}
 	composite_stack_ready = 1;
 
 #if COMP_HOTPLUG
-	ret = rtos_task_create(&composite_hotplug_task, "usbd_composite_hotplug_thread",
+	/* Created last: it owns the stack once running, so nothing after it can fail */
+	ret = rtos_task_create(&hotplug_task, "usbd_composite_hotplug_thread",
 						   example_usbd_composite_hotplug_thread, NULL,
 						   COMP_HOTPLUG_THREAD_STACK_SIZE, COMP_HOTPLUG_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create hotplug thread fail\r\n");
-		goto exit_deinit_stack;
+		goto exit_teardown;
 	}
 #if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
 	/* C-2: the USB OTG ISR is delivered on CPU0 (GIC ITARGETSR pins every SPI to
@@ -592,27 +708,89 @@ void example_usbd_composite(void)
 	   single-core against the ISR, so deinit's local interrupt disable is
 	   meaningful under SMP. The shell thread stays unaffined: a pending deinit is
 	   excluded from it by composite_state_lock, not by core. */
-	rtos_task_set_affinity(composite_hotplug_task, 0);
+	rtos_task_set_affinity(hotplug_task, 0);
 #endif
 #endif
 
-	return;
+	return RTK_SUCCESS;
 
-#if COMP_HOTPLUG
-exit_deinit_stack:
-	/* The gate was already opened above, so the shell thread may be inside the class
-	   API right now: take the lock here too, exactly as the hotplug thread does. */
-	rtos_mutex_take(composite_state_lock, RTOS_MAX_TIMEOUT);
-	composite_stack_ready = 0;
-	composite_deinit_stack();
-	rtos_mutex_give(composite_state_lock);
-#endif
-
-exit_release_sema:
-#if COMP_HOTPLUG
-	rtos_sema_delete(composite_attach_status_changed_sema);
-	composite_attach_status_changed_sema = NULL;
-#endif
+exit_teardown:
+	/* The gate may already be open, composite_teardown() takes the lock before the deinit */
+	composite_teardown();
 exit:
 	RTK_LOGS(TAG, RTK_LOG_ERROR, "USBD ACM+HID comp demo aborted\n");
+	usb_app_ctx_end(&composite_app);
+
+	return ret;
+}
+
+static void example_usbd_composite_thread(void *param)
+{
+	UNUSED(param);
+
+	if (composite_start() != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Start fail\n");
+	}
+	rtos_task_delete(NULL);
+}
+
+/* Exported functions --------------------------------------------------------*/
+
+/**
+  * @brief  Start the ACM+HID composite device, used by the USB app manager
+  * @note   Task context only
+  * @retval RTK_SUCCESS, -RTK_ERR_BUSY if already running, or the init error
+  */
+int example_usbd_composite_cdc_acm_hid_start(void)
+{
+	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD ACM+HID comp demo start\n");
+
+	return composite_start();
+}
+
+/**
+  * @brief  Stop the ACM+HID composite device and release everything it owns
+  * @note   Task context only. Safe to call when not running.
+  * @retval RTK_SUCCESS once idle, -RTK_ERR_TIMEOUT if the hotplug thread did not leave in time
+  */
+int example_usbd_composite_cdc_acm_hid_stop(void)
+{
+	if (usb_app_ctx_claim_stop(&composite_app) == 0U) {
+		/* Idle, or the hotplug thread found the stack dead and finishes the teardown itself */
+		return usb_app_ctx_wait_idle(&composite_app);
+	}
+
+#if COMP_HOTPLUG
+	rtos_sema_give(composite_attach_status_changed_sema);
+	if (usb_app_ctx_join(&composite_app, 1U) != RTK_SUCCESS) {
+		/* The hotplug thread is still on the stack: keep everything, the app stays STOPPING */
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Stop timeout\n");
+		return -RTK_ERR_TIMEOUT;
+	}
+#endif
+
+	/* The hotplug thread is gone: only the shell thread may still reach the stack, through the lock */
+	composite_teardown();
+	usb_app_ctx_end(&composite_app);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD ACM+HID comp demo stop\n");
+
+	return RTK_SUCCESS;
+}
+
+/**
+  * @brief  Example entry: start the ACM+HID composite device from its own thread
+  * @retval None
+  */
+void example_usbd_composite_cdc_acm_hid(void)
+{
+	int ret;
+	rtos_task_t task;
+
+	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD ACM+HID comp demo start\n");
+
+	ret = rtos_task_create(&task, "usbd_composite_thread", example_usbd_composite_thread, NULL,
+						   COMP_INIT_THREAD_STACK_SIZE, COMP_INIT_THREAD_PRIORITY);
+	if (ret != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create USBD composite thread fail\n");
+	}
 }

@@ -29,11 +29,16 @@
 #include "ameba_soc.h"
 #include "secure_ecdsa_client_service.h"
 
-#include "mbedtls/ecdsa.h"    /* mbedtls_ecdsa_context, write_signature; pulls in ecp.h + bignum.h */
-
 #include <string.h>
 
 #ifdef CONFIG_TRUSTZONE_MBEDTLS
+
+#if defined(CONFIG_MBEDTLS_USE_LEGACY_API)
+#include "mbedtls/ecdsa.h"    /* mbedtls_ecdsa_context, write_signature; pulls in ecp.h + bignum.h */
+#else
+#include "psa/crypto.h"
+#include "mbedtls/psa_util.h"
+#endif
 
 extern size_t xPortGetFreeHeapSize(void);
 extern size_t xPortGetMinimumEverFreeHeapSize(void);
@@ -77,7 +82,11 @@ static const unsigned char s_cli_d[32] = {
 };
 
 /* ── Persistent ECDSA context in S-heap ─────────────────────────────────── */
+#if defined(CONFIG_MBEDTLS_USE_LEGACY_API)
 static mbedtls_ecdsa_context g_ecc;
+#else
+static psa_key_id_t          g_key = PSA_KEY_ID_NULL;
+#endif
 static int                   g_initialized = 0;
 
 /* ── NSC: import key and return client cert PEM ──────────────────────────── */
@@ -92,6 +101,7 @@ NS_ENTRY int secure_ecc_client_init(const secure_ecc_init_req_t *req)
 	}
 
 	if (!g_initialized) {
+#if defined(CONFIG_MBEDTLS_USE_LEGACY_API)
 		mbedtls_ecdsa_init(&g_ecc);
 
 		/*
@@ -116,6 +126,20 @@ NS_ENTRY int secure_ecc_client_init(const secure_ecc_init_req_t *req)
 			mbedtls_ecdsa_free(&g_ecc);
 			return ret;
 		}
+#else
+		psa_key_attributes_t attr = PSA_KEY_ATTRIBUTES_INIT;
+
+		psa_set_key_usage_flags(&attr, PSA_KEY_USAGE_SIGN_HASH);
+		psa_set_key_algorithm(&attr, PSA_ALG_ECDSA(PSA_ALG_ANY_HASH));
+		psa_set_key_type(&attr, PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1));
+		psa_set_key_bits(&attr, 256);
+		ret = psa_import_key(&attr, s_cli_d, sizeof(s_cli_d), &g_key);
+		psa_reset_key_attributes(&attr);
+		if (ret != PSA_SUCCESS) {
+			RTK_LOGE(TAG, "psa_import_key failed %d\n", ret);
+			return ret;
+		}
+#endif
 
 		RTK_LOGI(TAG, "ECDSA P-256 client key loaded into Secure World\n");
 		g_initialized = 1;
@@ -164,6 +188,7 @@ NS_ENTRY int secure_ecc_client_sign(const secure_ecc_sign_req_t *req)
 	 *
 	 * Output is DER-encoded (r, s): up to SEC_ECC_SIG_MAX_LEN bytes.
 	 */
+#if defined(CONFIG_MBEDTLS_USE_LEGACY_API)
 	ret = mbedtls_ecdsa_write_signature(&g_ecc,
 										(mbedtls_md_type_t)req->md_alg,
 										req->hash, req->hash_len,
@@ -173,6 +198,22 @@ NS_ENTRY int secure_ecc_client_sign(const secure_ecc_sign_req_t *req)
 		RTK_LOGE(TAG, "ecdsa_write_signature failed %d\n", ret);
 		return ret;
 	}
+#else
+	size_t raw_len = 0;
+
+	/* PSA emits raw r||s; convert in place to DER since the TLS peer expects DER. */
+	ret = psa_sign_hash(g_key, PSA_ALG_ECDSA(mbedtls_md_psa_alg_from_type((mbedtls_md_type_t)req->md_alg)),
+						req->hash, req->hash_len, req->sig, req->sig_size, &raw_len);
+	if (ret != PSA_SUCCESS) {
+		RTK_LOGE(TAG, "psa_sign_hash failed %d\n", ret);
+		return ret;
+	}
+	ret = mbedtls_ecdsa_raw_to_der(256, req->sig, raw_len, req->sig, req->sig_size, req->sig_len);
+	if (ret != 0) {
+		RTK_LOGE(TAG, "ecdsa_raw_to_der failed %d\n", ret);
+		return ret;
+	}
+#endif
 
 	RTK_LOGI(TAG, "S-side ECDSA sign OK, sig_len=%u B\n", (unsigned)*req->sig_len);
 

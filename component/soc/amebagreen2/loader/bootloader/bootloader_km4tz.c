@@ -120,7 +120,9 @@ int BOOT_PSRAM_Init(void)
 
 	/* psram calibration */
 	if ((SYSCFG_CHIPType_Get() == CHIP_TYPE_ASIC_POSTSIM) || (SYSCFG_CHIPType_Get() == CHIP_TYPE_FPGA)) {
-		PSRAM_calibration();
+		if (PSRAM_calibration() == FALSE) {
+			RTK_LOGE(TAG, "PSRAM calibration fail\n");
+		}
 	}
 
 	return RTK_SUCCESS;
@@ -265,6 +267,9 @@ __weak void BOOT_WakeFromPG(void)
 	if (FIH_NOT_EQ(fih_rc, FIH_SUCCESS)) {
 		goto exit;
 	}
+
+	/* Enable Secure/Usage/Mem/Bus/DivByZero Fault again, they are lost in PG */
+	BOOT_SCBConfig_HP();
 
 	/* Set non-secure main stack (MSP_NS) */
 	__TZ_set_MSP_NS(MSP_RAM_HP_NS);

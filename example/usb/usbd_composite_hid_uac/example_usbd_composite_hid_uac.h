@@ -9,6 +9,10 @@
 
 /* Includes ------------------------------------------------------------------*/
 
+#ifdef USB_APP_AGGREGATE
+#include "usb_app.h"
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -21,9 +25,15 @@ extern "C" {
 
 /* Exported variables --------------------------------------------------------*/
 
+#ifdef USB_APP_AGGREGATE
+extern const usb_app_cmd_t example_usbd_composite_hid_uac_cmds[];
+#endif
+
 /* Exported functions --------------------------------------------------------*/
 
-void example_usbd_composite(void);
+void example_usbd_composite_hid_uac(void);
+int example_usbd_composite_hid_uac_start(void);
+int example_usbd_composite_hid_uac_stop(void);
 
 #ifdef __cplusplus
 }

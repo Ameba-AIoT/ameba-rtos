@@ -6,6 +6,10 @@
 #include "os_wrapper.h"
 #ifdef CONFIG_MBEDTLS_ENABLED
 #include "threading_alt.h"
+#if !defined(CONFIG_MBEDTLS_USE_LEGACY_API)
+#include "psa/crypto.h"
+#include "rtk_assert.h"
+#endif
 #endif
 #ifdef CONFIG_BT_COEXIST
 #include "rtw_coex_ipc.h"
@@ -44,6 +48,10 @@ void app_mbedtls_rom_init(void)
 	ssl_function_map.ssl_snprintf = (int (*)(char *s, size_t n, const char *format, ...))DiagSnPrintf;
 #if defined(CONFIG_MBEDTLS_THREADING)
 	mbedtls_threading_init();
+#endif
+#if defined(CONFIG_MBEDTLS_ENABLED) && !defined(CONFIG_MBEDTLS_USE_LEGACY_API)
+	psa_status_t psa_ret = psa_crypto_init();
+	rtk_assert(psa_ret == PSA_SUCCESS, TAG);
 #endif
 	/* mbedtls calls into the HW crypto engine with interrupts disabled via the
 	 * IPC semaphore, so cache inconsistency cannot occur; suppress the

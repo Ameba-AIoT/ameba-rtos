@@ -20,10 +20,12 @@
 /* wLength of the GETSTATE response, ref DFU 1.1 6.1.5 */
 #define USBD_DFU_STATE_PKT_SIZE                         1U
 
-/* Values of write_state: state of the block write_task programs, consumed by GETSTATUS */
-#define USBD_DFU_WRITE_BUSY                             0U
-#define USBD_DFU_WRITE_OK                               1U
-#define USBD_DFU_WRITE_FAIL                             2U
+/* Values of write_state: state of the block write_task programs, consumed by GETSTATUS.
+   BUSY means write_task owns xfer_buf, so no DNLOAD/UPLOAD may reuse the buffer. */
+#define USBD_DFU_WRITE_IDLE                             0U
+#define USBD_DFU_WRITE_BUSY                             1U
+#define USBD_DFU_WRITE_OK                               2U
+#define USBD_DFU_WRITE_FAIL                             3U
 
 /* Period of the warning usbd_dfu_stop_task() logs while a worker callback does not return */
 #define USBD_DFU_STOP_TASK_WARN_MS                      1000U
@@ -38,7 +40,7 @@ static int usbd_dfu_set_config(usb_dev_t *dev, u8 config);
 static void usbd_dfu_clear_config(usb_dev_t *dev, u8 config);
 static int usbd_dfu_setup(usb_dev_t *dev, usb_setup_req_t *req);
 static u16 usbd_dfu_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16 buf_len);
-static int usbd_dfu_ep0_data_in(usb_dev_t *dev, u8 status);
+static int usbd_dfu_ep0_data_in(usb_dev_t *dev, int status);
 static int usbd_dfu_ep0_data_out(usb_dev_t *dev);
 static void usbd_dfu_status_changed(usb_dev_t *dev, u8 old_status, u8 status);
 static void usbd_dfu_reconf_task(void *param);
@@ -166,7 +168,7 @@ static int usbd_dfu_set_config(usb_dev_t *dev, u8 config)
 
 	/* Only the bConfigurationValue advertised in the config descriptor is valid */
 	if (config != 1U) {
-		return HAL_ERR_PARA;
+		return -RTK_ERR_BADARG;
 	}
 
 	dfu->dev = dev;
@@ -181,7 +183,7 @@ static int usbd_dfu_set_config(usb_dev_t *dev, u8 config)
 				 ? USB_DFU_STATE_APP_IDLE : USB_DFU_STATE_DFU_IDLE;
 	dfu->status = USBD_DFU_STATUS_OK;
 
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 /**
@@ -312,11 +314,12 @@ static u8 usbd_dfu_apply_write_state(usbd_dfu_dev_t *dfu)
 {
 	u8 result = dfu->write_state;
 
-	if (result == USBD_DFU_WRITE_BUSY) {
+	if ((result != USBD_DFU_WRITE_OK) && (result != USBD_DFU_WRITE_FAIL)) {
 		return 0U;
 	}
 
-	dfu->write_state = USBD_DFU_WRITE_BUSY;
+	/* Result consumed, write_task has released xfer_buf */
+	dfu->write_state = USBD_DFU_WRITE_IDLE;
 	if (result == USBD_DFU_WRITE_OK) {
 		dfu->state = USB_DFU_STATE_DNLOAD_IDLE;
 	} else {
@@ -338,7 +341,7 @@ static int usbd_dfu_stall_error(usb_dev_t *dev, usbd_dfu_dev_t *dfu, usbd_dfu_st
 	UNUSED(dev);
 	dfu->state  = USB_DFU_STATE_ERROR;
 	dfu->status = err;
-	return HAL_ERR_HW;
+	return -RTK_ERR_IO;
 }
 
 /**
@@ -388,7 +391,7 @@ static u8 usbd_dfu_req_is_valid(const usb_setup_req_t *req)
  */
 static int usbd_dfu_setup(usb_dev_t *dev, usb_setup_req_t *req)
 {
-	int ret = HAL_OK;
+	int ret = RTK_SUCCESS;
 	usbd_dfu_dev_t *dfu = &usbd_dfu_dev;
 	usbd_ep_t *ep0_in  = &dev->ep0_in;
 	usbd_ep_t *ep0_out = &dev->ep0_out;
@@ -402,53 +405,53 @@ static int usbd_dfu_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			   owns one interface with alternate setting 0 only, anything else is a request
 			   error, ref DFU 1.1 4.2.3. */
 			if (dev->dev_state != USBD_STATE_CONFIGURED) {
-				ret = HAL_ERR_HW;
-			} else if ((req->wIndex != USBD_DFU_ITF_NUM) || (USB_LOW_BYTE(req->wValue) != 0U)) {
-				ret = HAL_ERR_HW;
+				ret = -RTK_ERR_IO;
+			} else if ((req->wIndex != USBD_DFU_ITF_NUM) || (req->wValue != 0U) || (req->wLength != 0U)) {
+				ret = -RTK_ERR_IO;
 			} else {
 				dfu->alt_setting = 0U;
 			}
 			break;
 		case USB_REQ_GET_INTERFACE:
-			/* Ref USB 2.0 9.4.4 and Table 9-3: wLength is one, and a request for a
-			   non-existent interface is a request error. A wLength of 0 would also make the
+			/* Ref USB 2.0 9.4.4 and Table 9-3: wValue is zero, wLength is one, and a request for
+			   a non-existent interface is a request error. A wLength of 0 would also make the
 			   core add a status stage on top of this data stage. */
-			if ((dev->dev_state == USBD_STATE_CONFIGURED) && (req->wIndex == USBD_DFU_ITF_NUM) && (req->wLength == 1U)) {
+			if ((dev->dev_state == USBD_STATE_CONFIGURED) && (req->wValue == 0U) && (req->wIndex == USBD_DFU_ITF_NUM) && (req->wLength == 1U)) {
 				ep0_in->xfer_buf[0] = dfu->alt_setting;
 				ep0_in->xfer_len = 1U;
 				ret = usbd_ep_transmit(dev, ep0_in);
 			} else {
-				ret = HAL_ERR_HW;
+				ret = -RTK_ERR_IO;
 			}
 			break;
 		case USB_REQ_GET_STATUS:
 			/* Ref USB 2.0 9.4.5 and Table 9-3: an interface-recipient GET_STATUS returns two
-			   reserved zero bytes, wLength is two, and a request for a non-existent interface
-			   is a request error */
-			if ((dev->dev_state == USBD_STATE_CONFIGURED) && (req->wIndex == USBD_DFU_ITF_NUM) && (req->wLength == 2U)) {
+			   reserved zero bytes, wValue is zero, wLength is two, and a request for a non-existent
+			   interface is a request error */
+			if ((dev->dev_state == USBD_STATE_CONFIGURED) && (req->wValue == 0U) && (req->wIndex == USBD_DFU_ITF_NUM) && (req->wLength == 2U)) {
 				ep0_in->xfer_buf[0] = 0U;
 				ep0_in->xfer_buf[1] = 0U;
 				ep0_in->xfer_len = 2U;
 				ret = usbd_ep_transmit(dev, ep0_in);
 			} else {
-				ret = HAL_ERR_HW;
+				ret = -RTK_ERR_IO;
 			}
 			break;
 		default:
-			ret = HAL_ERR_HW;
+			ret = -RTK_ERR_IO;
 			break;
 		}
 		break;
 
 	case USB_REQ_TYPE_CLASS:
 		if ((req->bmRequestType & USB_REQ_RECIPIENT_MASK) != USB_REQ_RECIPIENT_INTERFACE) {
-			ret = HAL_ERR_HW;
+			ret = -RTK_ERR_IO;
 			break;
 		}
 		/* Ref DFU 1.1 3.1: wIndex of every DFU class request is the DFU interface number.
 		   Reject a foreign interface so composite dispatch can continue to its owner. */
 		if (req->wIndex != USBD_DFU_ITF_NUM) {
-			ret = HAL_ERR_HW;
+			ret = -RTK_ERR_IO;
 			break;
 		}
 		/* Ref DFU 1.1 Table 3.2 / USB 2.0 9.3.1: reject an unknown bRequest and any
@@ -456,7 +459,7 @@ static int usbd_dfu_setup(usb_dev_t *dev, usb_setup_req_t *req)
 		   can arm the wrong EP0 direction or leave the control transfer unanswered.
 		   A request error stalls and leaves the DFU state untouched (USB 2.0 9.2.7). */
 		if (usbd_dfu_req_is_valid(req) == 0U) {
-			ret = HAL_ERR_HW;
+			ret = -RTK_ERR_IO;
 			break;
 		}
 		/* DFU 1.1 §A.2.1/§A.2.2: Run-Time state guard.
@@ -468,14 +471,14 @@ static int usbd_dfu_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			if (req->bRequest != USB_DFU_REQ_DETACH   &&
 				req->bRequest != USB_DFU_REQ_GETSTATUS &&
 				req->bRequest != USB_DFU_REQ_GETSTATE) {
-				ret = HAL_ERR_HW;
+				ret = -RTK_ERR_IO;
 				break;
 			}
 		} else if (dfu->state == USB_DFU_STATE_APP_DETACH) {
 			if (req->bRequest != USB_DFU_REQ_GETSTATUS &&
 				req->bRequest != USB_DFU_REQ_GETSTATE) {
 				dfu->state = USB_DFU_STATE_APP_IDLE;
-				ret = HAL_ERR_HW;
+				ret = -RTK_ERR_IO;
 				break;
 			}
 		}
@@ -514,6 +517,12 @@ static int usbd_dfu_setup(usb_dev_t *dev, usb_setup_req_t *req)
 					ret = usbd_dfu_stall_error(dev, dfu, USBD_DFU_STATUS_ERR_STALLEDPKT);
 					break;
 				}
+				/* A block from before a bus reset or CLRSTATUS may still be programmed from
+				   xfer_buf, receiving into it would corrupt that block, ref DFU 1.1 A.2.4 */
+				if (dfu->write_state == USBD_DFU_WRITE_BUSY) {
+					ret = usbd_dfu_stall_error(dev, dfu, USBD_DFU_STATUS_ERR_STALLEDPKT);
+					break;
+				}
 				/* Block download */
 				if (dfu->state == USB_DFU_STATE_DFU_IDLE ||
 					dfu->state == USB_DFU_STATE_DNLOAD_IDLE) {
@@ -542,7 +551,7 @@ static int usbd_dfu_setup(usb_dev_t *dev, usb_setup_req_t *req)
 					ep0_out->xfer_buf     = dfu->xfer_buf;
 					ep0_out->xfer_buf_len = dfu->xfer_size;
 					ep0_out->xfer_len     = req->wLength;
-					if (usbd_ep_receive(dev, ep0_out) != HAL_OK) {
+					if (usbd_ep_receive(dev, ep0_out) != RTK_SUCCESS) {
 						/* ARM failed — ep0_data_out will never fire; restore buffer now */
 						ep0_out->xfer_buf     = dfu->ep0_default_buf;
 						ep0_out->xfer_buf_len = dfu->ep0_default_buf_len;
@@ -568,8 +577,8 @@ static int usbd_dfu_setup(usb_dev_t *dev, usb_setup_req_t *req)
 
 		case USB_DFU_REQ_UPLOAD:
 #ifdef CONFIG_USBD_DFU_CAN_UPLOAD
-			/* Reject oversized requests before using the buffer */
-			if (req->wLength > dfu->xfer_size) {
+			/* Reject oversized requests, and a buffer still owned by write_task, before using it */
+			if ((req->wLength > dfu->xfer_size) || (dfu->write_state == USBD_DFU_WRITE_BUSY)) {
 				ret = usbd_dfu_stall_error(dev, dfu, USBD_DFU_STATUS_ERR_STALLEDPKT);
 				break;
 			}
@@ -592,7 +601,7 @@ static int usbd_dfu_setup(usb_dev_t *dev, usb_setup_req_t *req)
 					/* This EP0 IN data stage belongs to DFU: only its completion may
 					 * restore the buffer and advance the UPLOAD state machine. */
 					dfu->ep0_in_owned = 1U;
-					if (usbd_ep_transmit(dev, ep0_in) != HAL_OK) {
+					if (usbd_ep_transmit(dev, ep0_in) != RTK_SUCCESS) {
 						/* ARM failed — ep0_data_in will never fire; restore buffer now */
 						ep0_in->xfer_buf     = dfu->ep0_default_buf;
 						ep0_in->xfer_buf_len = dfu->ep0_default_buf_len;
@@ -715,7 +724,7 @@ static int usbd_dfu_setup(usb_dev_t *dev, usb_setup_req_t *req)
 		break;
 
 	default:
-		ret = HAL_ERR_HW;
+		ret = -RTK_ERR_IO;
 		break;
 	}
 
@@ -726,7 +735,7 @@ static int usbd_dfu_setup(usb_dev_t *dev, usb_setup_req_t *req)
  * @brief  EP0 IN transfer complete (called from ISR).
  *         Restores the EP0 IN buffer and handles UPLOAD last-block state transition.
  */
-static int usbd_dfu_ep0_data_in(usb_dev_t *dev, u8 status)
+static int usbd_dfu_ep0_data_in(usb_dev_t *dev, int status)
 {
 	usbd_dfu_dev_t *dfu = &usbd_dfu_dev;
 
@@ -735,7 +744,7 @@ static int usbd_dfu_ep0_data_in(usb_dev_t *dev, u8 status)
 	 * else so the caller keeps looking for the owning function and DFU neither rewrites
 	 * dev->ep0_in nor enters dfuERROR on a foreign transfer's error. */
 	if (dfu->ep0_in_owned == 0U) {
-		return HAL_ERR_PARA;
+		return -RTK_ERR_BADARG;
 	}
 	dfu->ep0_in_owned = 0U;
 
@@ -743,11 +752,11 @@ static int usbd_dfu_ep0_data_in(usb_dev_t *dev, u8 status)
 	dev->ep0_in.xfer_buf     = dfu->ep0_default_buf;
 	dev->ep0_in.xfer_buf_len = dfu->ep0_default_buf_len;
 
-	if (status != HAL_OK) {
+	if (status != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "EP0 IN err: %d\n", status);
 		dfu->state  = USB_DFU_STATE_ERROR;
 		dfu->status = USBD_DFU_STATUS_ERR_STALLEDPKT;
-		return HAL_OK;
+		return RTK_SUCCESS;
 	}
 
 #ifdef CONFIG_USBD_DFU_CAN_UPLOAD
@@ -757,7 +766,7 @@ static int usbd_dfu_ep0_data_in(usb_dev_t *dev, u8 status)
 	}
 #endif
 
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 /**
@@ -775,7 +784,7 @@ static int usbd_dfu_ep0_data_out(usb_dev_t *dev)
 	dev->ep0_out.xfer_buf_len = dfu->ep0_default_buf_len;
 
 	if (dfu->state != USB_DFU_STATE_DNLOAD_SYNC) {
-		return HAL_ERR_HW;
+		return -RTK_ERR_IO;
 	}
 
 	/* Reset write_state before the block is programmed; GETSTATUS will report
@@ -785,7 +794,7 @@ static int usbd_dfu_ep0_data_out(usb_dev_t *dev)
 	/* Wake write_task; GETSTATUS reports DNBUSY until the result is posted. */
 	usb_os_sema_give(dfu->write_sema);
 
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 /**
@@ -799,7 +808,7 @@ static void usbd_dfu_write_task(void *param)
 	usbd_dfu_dev_t *dfu = (usbd_dfu_dev_t *)param;
 
 	for (;;) {
-		if (usb_os_sema_take(dfu->write_sema, USB_OS_SEMA_TIMEOUT) != HAL_OK) {
+		if (usb_os_sema_take(dfu->write_sema, USB_OS_SEMA_TIMEOUT) != RTK_SUCCESS) {
 			break;
 		}
 		if (dfu->write_stop) {
@@ -810,12 +819,14 @@ static void usbd_dfu_write_task(void *param)
 		 * on the other core, so writing them here would race it. GETSTATUS reads the result
 		 * whether the host's first poll arrived before or after write_task finished, and it
 		 * never overwrites a concurrent ABORT/CLRSTATUS state change. */
-		if (ret != HAL_OK) {
+		if (ret != RTK_SUCCESS) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Write blk %u err: %d\n", dfu->block_num, ret);
-			dfu->write_state = USBD_DFU_WRITE_FAIL;
-		} else {
-			dfu->write_state = USBD_DFU_WRITE_OK;
 		}
+		/* Published under the critical section, whose barrier orders every access of
+		   cb->write() to xfer_buf before the release seen by setup() on the other core */
+		usb_os_enter_critical();
+		dfu->write_state = (ret != RTK_SUCCESS) ? USBD_DFU_WRITE_FAIL : USBD_DFU_WRITE_OK;
+		usb_os_exit_critical();
 	}
 
 	/* Publish the exit last: usbd_dfu_stop_task() waits for it before releasing what this
@@ -841,7 +852,7 @@ static void usbd_dfu_manifest_task(void *param)
 	usbd_dfu_dev_t *dfu = (usbd_dfu_dev_t *)param;
 
 	for (;;) {
-		if (usb_os_sema_take(dfu->manifest_sema, USB_OS_SEMA_TIMEOUT) != HAL_OK) {
+		if (usb_os_sema_take(dfu->manifest_sema, USB_OS_SEMA_TIMEOUT) != RTK_SUCCESS) {
 			break;
 		}
 		if (dfu->manifest_stop) {
@@ -983,6 +994,17 @@ static void usbd_dfu_cleanup_write(usbd_dfu_dev_t *dfu)
 }
 
 /**
+ * @brief  Call the application deinit callback, if any (task context).
+ * @note   Teardown goes on regardless of the result, so a failure is only reported.
+ */
+static void usbd_dfu_cb_deinit(const usbd_dfu_cb_t *cb)
+{
+	if ((cb->deinit != NULL) && (cb->deinit() != RTK_SUCCESS)) {
+		RTK_LOGS(TAG, RTK_LOG_WARN, "CB deinit fail\n");
+	}
+}
+
+/**
  * @brief  Get descriptor callback (called from ISR).
  */
 static u16 usbd_dfu_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16 buf_len)
@@ -994,6 +1016,12 @@ static u16 usbd_dfu_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 	u8 is_cfg = 0;
 
 	UNUSED(dev);
+
+	/* Ref USB 2.0 9.4.3: the index only selects among string and configuration descriptors;
+	   with a single configuration, a non-string index other than 0 names no descriptor. */
+	if ((type != USB_DESC_TYPE_STRING) && (USB_LOW_BYTE(req->wValue) != 0U)) {
+		return 0;
+	}
 
 	switch (type) {
 
@@ -1118,7 +1146,7 @@ static void usbd_dfu_reconf_task(void *param)
 	usbd_dfu_dev_t *dfu = (usbd_dfu_dev_t *)param;
 
 	for (;;) {
-		if (usb_os_sema_take(dfu->reconf_sema, USB_OS_SEMA_TIMEOUT) != HAL_OK) {
+		if (usb_os_sema_take(dfu->reconf_sema, USB_OS_SEMA_TIMEOUT) != RTK_SUCCESS) {
 			break;
 		}
 		if (dfu->reconf_stop) {
@@ -1162,17 +1190,17 @@ static void usbd_dfu_reconf_task(void *param)
  */
 static int usbd_dfu_private_init(const usbd_dfu_cb_t *cb, const usbd_dfu_config_t *cfg)
 {
-	int ret = HAL_OK;
+	int ret = RTK_SUCCESS;
 	usbd_dfu_dev_t *dfu = &usbd_dfu_dev;
 
 	if (cb == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid CB\n");
-		return HAL_ERR_PARA;
+		return -RTK_ERR_BADARG;
 	}
 
 	if (cfg == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid cfg\n");
-		return HAL_ERR_PARA;
+		return -RTK_ERR_BADARG;
 	}
 
 	/* Preserve mode across a reconf reinit (CONFIG_USBD_DFU_WILL_DETACH=y).  On a fresh first
@@ -1194,7 +1222,7 @@ static int usbd_dfu_private_init(const usbd_dfu_cb_t *cb, const usbd_dfu_config_
 	if ((dfu->xfer_size > 0xFFFFU) || (dfu->detach_timeout_ms > 0xFFFFU)) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "xfer size %u / detach %u exceeds u16\n",
 				 dfu->xfer_size, dfu->detach_timeout_ms);
-		return HAL_ERR_PARA;
+		return -RTK_ERR_BADARG;
 	}
 
 	/* The core owns the string table, so the same call works in standalone and composite
@@ -1204,13 +1232,13 @@ static int usbd_dfu_private_init(const usbd_dfu_cb_t *cb, const usbd_dfu_config_
 	dfu->xfer_buf = (u8 *)usb_os_malloc(dfu->xfer_size);
 	if (dfu->xfer_buf == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "No mem for xfer_buf\n");
-		return HAL_ERR_MEM;
+		return -RTK_ERR_NOMEM;
 	}
 	if (!USB_IS_MEM_DMA_ALIGNED(dfu->xfer_buf)) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "xfer_buf not DMA-aligned\n");
 		usb_os_mfree((void *)dfu->xfer_buf);
 		dfu->xfer_buf = NULL;
-		return HAL_ERR_MEM;
+		return -RTK_ERR_NOMEM;
 	}
 
 	dfu->cb = cb;
@@ -1218,7 +1246,7 @@ static int usbd_dfu_private_init(const usbd_dfu_cb_t *cb, const usbd_dfu_config_
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "write cb required (CAN_DNLOAD=1)\n");
 		usb_os_mfree((void *)dfu->xfer_buf);
 		dfu->xfer_buf = NULL;
-		return HAL_ERR_PARA;
+		return -RTK_ERR_BADARG;
 	}
 	dfu->write_poll_ms = (cfg->write_poll_ms != 0U) ? cfg->write_poll_ms : USBD_DFU_DEFAULT_WRITE_POLL_MS;
 #ifdef CONFIG_USBD_DFU_CAN_UPLOAD
@@ -1226,7 +1254,7 @@ static int usbd_dfu_private_init(const usbd_dfu_cb_t *cb, const usbd_dfu_config_
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "read cb required (CAN_UPLOAD=1)\n");
 		usb_os_mfree((void *)dfu->xfer_buf);
 		dfu->xfer_buf = NULL;
-		return HAL_ERR_PARA;
+		return -RTK_ERR_BADARG;
 	}
 #endif
 	/* Restore DFU mode when reinitialising after a reconf callback; default to
@@ -1235,7 +1263,7 @@ static int usbd_dfu_private_init(const usbd_dfu_cb_t *cb, const usbd_dfu_config_
 				? USB_DFU_PROTOCOL_DFU : USB_DFU_PROTOCOL_RUNTIME;
 	if (cb->init != NULL) {
 		ret = cb->init();
-		if (ret != HAL_OK) {
+		if (ret != RTK_SUCCESS) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "CB init fail: %d\n", ret);
 			usb_os_mfree((void *)dfu->xfer_buf);
 			dfu->xfer_buf = NULL;
@@ -1244,14 +1272,12 @@ static int usbd_dfu_private_init(const usbd_dfu_cb_t *cb, const usbd_dfu_config_
 	}
 
 	ret = usb_os_sema_create(&dfu->write_sema);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "No mem for write_sema\n");
-		if (cb->deinit != NULL) {
-			cb->deinit();
-		}
+		usbd_dfu_cb_deinit(cb);
 		usb_os_mfree((void *)dfu->xfer_buf);
 		dfu->xfer_buf = NULL;
-		return HAL_ERR_MEM;
+		return -RTK_ERR_NOMEM;
 	}
 
 	ret = rtos_task_create(&dfu->write_task, "usbd_dfu_write_thread", usbd_dfu_write_task,
@@ -1262,17 +1288,15 @@ static int usbd_dfu_private_init(const usbd_dfu_cb_t *cb, const usbd_dfu_config_
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create write_task fail\n");
 		usb_os_sema_delete(dfu->write_sema);
 		dfu->write_sema = NULL;
-		if (cb->deinit != NULL) {
-			cb->deinit();
-		}
+		usbd_dfu_cb_deinit(cb);
 		usb_os_mfree((void *)dfu->xfer_buf);
 		dfu->xfer_buf = NULL;
-		return HAL_ERR_MEM;
+		return -RTK_ERR_NOMEM;
 	}
 
 	/* Create manifest task and timer for async manifest support */
 	ret = usb_os_sema_create(&dfu->manifest_sema);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create manifest_sema fail\n");
 		goto reconf_fail;
 	}
@@ -1295,7 +1319,7 @@ static int usbd_dfu_private_init(const usbd_dfu_cb_t *cb, const usbd_dfu_config_
 	}
 
 	ret = usb_os_sema_create(&dfu->reconf_sema);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "No mem for reconf_sema\n");
 		goto reconf_fail;
 	}
@@ -1329,17 +1353,15 @@ static int usbd_dfu_private_init(const usbd_dfu_cb_t *cb, const usbd_dfu_config_
 	dfu->status = USBD_DFU_STATUS_OK;
 
 
-	return HAL_OK;
+	return RTK_SUCCESS;
 
 reconf_fail:
 	usbd_dfu_cleanup_manifest(dfu);
 	usbd_dfu_cleanup_write(dfu);
-	if (cb->deinit != NULL) {
-		cb->deinit();
-	}
+	usbd_dfu_cb_deinit(cb);
 	usb_os_mfree((void *)dfu->xfer_buf);
 	dfu->xfer_buf = NULL;
-	return HAL_ERR_MEM;
+	return -RTK_ERR_NOMEM;
 }
 
 /* Exported functions --------------------------------------------------------*/
@@ -1387,9 +1409,13 @@ int usbd_dfu_init(const usbd_dfu_cb_t *cb, const usbd_dfu_config_t *cfg)
 	int ret;
 
 	ret = usbd_dfu_private_init(cb, cfg);
-	if (ret == HAL_OK) {
+	if (ret == RTK_SUCCESS) {
 		dfu->from_composite = 0;
-		usbd_register_class(&usbd_dfu_driver);
+		ret = usbd_register_class(&usbd_dfu_driver);
+		if (ret != RTK_SUCCESS) {
+			/* private_init completed, so deinit is its exact reverse */
+			usbd_dfu_deinit();
+		}
 	}
 	return ret;
 }
@@ -1401,10 +1427,10 @@ int usbd_composite_dfu_init(const usbd_dfu_cb_t *cb, const usbd_dfu_config_t *cf
 	int ret;
 
 	ret = usbd_dfu_private_init(cb, cfg);
-	if (ret == HAL_OK) {
+	if (ret == RTK_SUCCESS) {
 		dfu->from_composite = 1;
 		ret = usbd_composite_register_driver(&usbd_dfu_driver);
-		if (ret != HAL_OK) {
+		if (ret != RTK_SUCCESS) {
 			/* private_init completed, so deinit is its exact reverse. from_composite is
 			   already 1, so the unregister inside is a no-op for an unregistered driver. */
 			usbd_dfu_deinit();
@@ -1420,26 +1446,26 @@ int usbd_composite_dfu_init(const usbd_dfu_cb_t *cb, const usbd_dfu_config_t *cf
 void usbd_dfu_deinit(void)
 {
 	usbd_dfu_dev_t *dfu = &usbd_dfu_dev;
+	int ret;
 
+	/* Leave the core before anything is torn down. Composite: refused until
+	   usbd_composite_deinit() has blocked the ISR and cleared the configuration of every
+	   function. Standalone: refused in interrupt context. Either way nothing is released when
+	   refused, and once accepted no class callback runs any more and every endpoint of this
+	   class is deinitialized: ref USB 2.0 9.4.7, the transfers still pending are aborted. */
 #ifdef CONFIG_USBD_COMPOSITE
-	/* Leave the composite framework before anything is torn down: it is refused while the
-	   composite device is still registered on the core, and the class must then stay intact */
 	if (dfu->from_composite != 0U) {
-		if (usbd_composite_unregister_driver(&usbd_dfu_driver) != HAL_OK) {
-			return;
-		}
-	}
-#endif
-
-	/* Unregister first: no setup()/ep0 callback can run afterwards, so the GETSTATUS
-	 * branch that dereferences cb->get_write_poll_ms in ISR context cannot race the
-	 * teardown below. */
-#ifdef CONFIG_USBD_COMPOSITE
-	if (dfu->from_composite == 0U)
+		ret = usbd_composite_unregister_driver(&usbd_dfu_driver);
+	} else
 #endif
 	{
-		usbd_unregister_class();
+		ret = usbd_unregister_class();
 	}
+	if (ret != RTK_SUCCESS) {
+		return;
+	}
+	/* No setup()/ep0 callback runs from here on, so the GETSTATUS branch that dereferences
+	 * cb->get_write_poll_ms in ISR context cannot race the teardown below. */
 
 	/* reconf_task starts the detach timer, so it goes first. */
 	usbd_dfu_stop_task(&dfu->reconf_task, &dfu->reconf_stop, dfu->reconf_sema);
@@ -1463,9 +1489,7 @@ void usbd_dfu_deinit(void)
 	 * only remaining user of cb: releasing it here cannot be observed as a NULL
 	 * dereference by another context (MISRA-C:2012 Rule 1.3). */
 	if (dfu->cb != NULL) {
-		if (dfu->cb->deinit != NULL) {
-			dfu->cb->deinit();
-		}
+		usbd_dfu_cb_deinit(dfu->cb);
 		dfu->cb = NULL;
 	}
 

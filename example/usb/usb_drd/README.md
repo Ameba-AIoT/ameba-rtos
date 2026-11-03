@@ -1,6 +1,43 @@
 # Example Description
 
-In this application, Ameba is designed as an USB DRD (dual role device) which will switch role from MSC device to MSC host.
+In this application, Ameba is an USB DRD (dual role device) that builds several USB examples into one image and switches between them at runtime with the `AT+USBAPP` command, in any direction: device <-> host, host <-> host and device <-> device. Only one app owns the USB controller at a time.
+
+The apps built in are the examples whose class is enabled in `prj.conf`. By default only `usbd_msc` and `usbh_msc` are enabled; the others are listed there commented out, uncomment a group to add its app:
+
+| App | Role | Peer |
+|---|---|---|
+| `usbd_cdc_acm` | Device | PC or a board running `usbh_cdc_acm` |
+| `usbd_vendor` | Device | A board running `usbh_vendor` |
+| `usbd_dfu` | Device | PC (`dfu-util`) or a board running `usbh_dfu` |
+| `usbd_msc` | Device | PC or a board running `usbh_msc` |
+| `usbd_hid` | Device | PC (HID mouse) |
+| `usbd_uvc` | Device | PC (UVC camera viewer) |
+| `usbd_composite_cdc_acm_hid` | Device | PC |
+| `usbd_composite_cdc_acm_msc` | Device | PC |
+| `usbd_cdc_ecm` | Device | PC or a board running `usbh_cdc_ecm` |
+| `usbd_cdc_ncm` | Device | PC or a board running `usbh_cdc_ncm` |
+| `usbd_uac` | Device | PC (USB speaker) |
+| `usbd_composite_cdc_acm_uac` | Device | PC |
+| `usbd_composite_hid_uac` | Device | PC |
+| `usbh_cdc_acm` | Host | A board running `usbd_cdc_acm` |
+| `usbh_vendor` | Host | A board running `usbd_vendor` |
+| `usbh_dfu` | Host | A board running `usbd_dfu` |
+| `usbh_msc` | Host | U-disk, or a board running `usbd_msc` |
+| `usbh_hid` | Host | HID device (headset with media keys) |
+| `usbh_cdc_ecm` | Host | ECM dongle, or a board running `usbd_cdc_ecm` |
+| `usbh_cdc_ncm` | Host | NCM dongle, or a board running `usbd_cdc_ncm` |
+| `usbh_uac` | Host | USB headset or speaker |
+| `usbh_uvc` | Host | USB camera |
+| `usbh_composite_hid_uac` | Host | USB headset with media keys |
+| `usbh_composite_uvc_uac` | Host | USB camera with microphone |
+| `usbh_composite_cdc_acm_ecm` | Host | 4G LTE dongle (Quectel, Fibocom LE271, SIMCom SIM767X) |
+| `usbh_wifi_bridge` | Host | ECM dongle, bridged to the Wi-Fi STA |
+
+Each app behaves as its own example; see the README of that example for its test procedure and expected log. The AT commands of an app (e.g. `AT+USBDHID` of `usbd_hid` and `usbd_composite_cdc_acm_hid`, `AT+USBDUAC`, `AT+USBHUAC`, `AT+USB4G`) are accepted only while that app runs; otherwise they end with `ERROR`.
+
+At most one network app (`usbd_cdc_ecm`, `usbd_cdc_ncm`, `usbh_cdc_ecm`, `usbh_cdc_ncm`, `usbh_composite_cdc_acm_ecm` or `usbh_wifi_bridge`) can be built into an image: each one defines the TX hook of the lwIP USB netif, so the build stops with an error when two are enabled. The ECM host class builds one of its three apps: `usbh_wifi_bridge` in ECM bridge mode, otherwise `usbh_composite_cdc_acm_ecm` when the ACM host class has its 4G dongle option on (which also leaves `usbh_cdc_acm` out), otherwise `usbh_cdc_ecm`. A stop of the network app takes the netif down (DHCP server or client stopped, link down, default route back to the Wi-Fi netif, and for the bridge the Wi-Fi STA input hook restored) before the USB stack goes away, and a later start brings it up again from scratch. `usbh_wifi_bridge` needs an SoC with `SUPPORT_USBH_ECM_BRIDGE` (RTL8730E, RTL8721F).
+
+Classes with exclusive Kconfig choices can only take one value per image: the device HID type (mouse for `usbd_hid` and `usbd_composite_cdc_acm_hid`, vendor for `usbd_composite_hid_uac`), the UAC version, and the MSC media are the ones selected in `prj.conf`.
 
 # HW Configuration
 
@@ -27,23 +64,11 @@ Refer to the [EVB User Guide](https://aiot.realmcu.com/filelist?document_type=9)
 | RTL8721FL0-2V0   | R2       | Populate with 0Ohm resistor *(pre-reworked by default)* |
 
 # SW configuration
-
 1. Menuconfig
-	Use menuconfig and:
-	- Choose `CONFIG USB --->`:
-	```
-	[*] Enable USB
-			USB Mode (DRD)  --->
-			*** USB Device Class Selection ***
-	[*] 	MSC
-			*** USB Host Class Selection ***
-	[*] 	MSC
-	```
-	- Choose `CONFIG File System --->`:
-	```
-	[*] Enable VFS FATFS
-	```
-	Save and exit.
+
+	`prj.conf` of this example selects `USB Mode (DRD)` and groups the options of each app, with comments; it is applied automatically when building this example. Uncomment a group to add its app, comment it out to leave the app out. The class options (e.g. the MSC storage media) are those of the standalone examples, see their README.
+
+	`CONFIG_USB_APP_DEFAULT` (`CONFIG USB` > `Auto-start USB app`) names an app started at boot, e.g. `"usbd_cdc_acm"`; leave it empty to start none.
 
 2. Build and Download:
    * Refer to the SDK Examples section of the online documentation to generate images.
@@ -51,128 +76,37 @@ Refer to the [EVB User Guide](https://aiot.realmcu.com/filelist?document_type=9)
 
 # Expect result
 
-1. Reset the board, following log shall be printed on the LOGUART console, make sure there is no USB related error reported:
+1. Reset the board, following log shall be printed on the LOGUART console, listing the apps built in:
 	```
 	[DRD-I] USB DRD demo start
+	[APP-I] Apps (2):
+	  usbd_msc device
+	  usbh_msc host
 	```
 
-2. DRD Command Summary (by role)
+2. Commands
 
-	**Devide Mode**
-	- AT+USBDMSC=init
-	- AT+USBDMSC=deinit
+	| Command | Description |
+	| --- | --- |
+	| `AT+USBAPP=list` | List the apps built in, `*` marks the running one. |
+	| `AT+USBAPP=start,<app>` | Start an app; the controller must be free. |
+	| `AT+USBAPP=stop` | Stop the running app and release everything it owns. |
+	| `AT+USBAPP=switch,<app>[,<ms>]` | Stop the running app, wait `ms` (0..10000, default 500) so the peer sees the disconnect, then start `app`. |
+	| `AT+USBAPP=status` | Print the running app, the switch count and the free heap. |
+	| `AT+USBAPP=help` | Print the usage. |
 
-	**Host Mode**
-	- AT+USBHMSC=init
-	- AT+USBHMSC=rw_test
-	- AT+USBHMSC=deinit
+	Every command ends with `OK` or `ERROR: <code>`. Start and stop print the free heap, which shall stay stable across repeated switches:
+	```
+	[APP-I] Start usbd_cdc_acm (device), heap 0x...
+	[APP-I] Stop usbd_cdc_acm, heap 0x...->0x...
+	```
 
-	Follow the commands in sequence appropriate to the test different mode.
-
-3. Device mode (MSC class)
-
-	- Insert SD card to the SD slot of the board and reset the board, then enter the command `AT+USBDMSC=init`, following log shall be printed on the LOGUART console, make sure there is no USB related error reported:
-
-		```
-		[MSC-I] Disk init
-		[SDH-I] Card Detect
-		[SDH-I] Voltage match
-		[SDH-I] This is a SDHC/SDXC card...
-		[SDH-I] Keep 3.3V...
-		[SDH-I] Manufacturer ID:3
-		[SDH-I] OEM/Application ID:SD
-		[SDH-I] Manufacturing date:2021/5
-		[SDH-I] RCA = AAAA
-		[SDH-I] CSD Version:2.0
-		[SDH-I] User data area capacity: 14 GB
-		[SDH-I] Max. read data block length: 512 Bytes
-		[SDH-I] Max. write data block length: 512 Bytes
-		[SDH-I] SD specification version: 3.0X
-		[SDH-I] Data status after erase: 0
-		[SDH-I] SD card changes to the specified speed mode successfully
-		[SDH-I] SD card is initialized
-		[DRD-I] Init device driver
-		[USBD-A] INIT
-		[MSC-I] Init
-		[DRD-I] MSC device session start
-		```
-
-	- Connect the USB port of Ameba board to USB host (PC or another Ameba board as USB MSC host) with USB cable.
-	- USB host will recognize Ameba board as MSC device, and the data on SD card can be accessed.
-	- Aftet entering the command `AT+USBDMSC=deinit`, USB device mass storage class driver is de-initialized, following log shall be printed on the LOGUART console, make sure there is no USB related error reported:
-
-		```
-		[MSC-I] Deinit
-		[USBD-A] DEINIT
-		[MSC-I] Disk deinit
-		```
-
-3. Host mode (MSC class)
-
-	- Aftet entering the command `AT+USBHMSC=init`, following log shall be printed on the LOGUART console, make sure there is no USB related error reported:
-
-		```
-		[DRD-I] MSC host session start
-		```
-
-	- Disconnect the USB port of Ameba board from USB host (if previously connected), connect it to a UDisk formatted with FATFS with OTG cable, Ameba board will recoganize the MSC device, check the log on the LOGUART console and make sure there is no USB related error reported.
-
-		```
-		[USBH-A] Dev attach, speed 0
-		[USBH-A] PID 6545
-		[USBH-A] VID 0930
-		[USBH-A] Addr 1
-		[USBH-A] MFG: TOSHIBA
-		[USBH-A] PROD: TransMemory
-		[USBH-A] SN: C03FD5F7715FE3417000DE76
-		[USBH-A] Enum done, 1 cfg
-		[USBH-A] Switch to itf: 0
-		[USBH-A] Class: 0x08
-		[USBH-A] SubClass: 0x06
-		[USBH-A] Protocol: 0x50
-		[DRD-I] Host attach
-		[MSC-I] Max lun 1
-		[MSC-I] Lun 0
-		[DRD-I] Host setup
-		```
-
-	- Aftet entering the command `AT+USBHMSC=rw_test`, Ameba board will do write/read performance test, check the log on the LOGUART console and make sure there is no USB related error reported.
-
-		```
-		[DRD-I] USB host MSC R&W test started
-		[DRD-I] Register USB disk
-		[DRD-I] FatFS USB W/R performance test start...
-		...
-		[DRD-I] Open file: 0:/TEST0.DAT
-		[DRD-I] W test: size 512, round 20...
-		[DRD-I] W rate 204.0 KB/s for 20 round @ 49 ms
-		[DRD-I] R test: size = 512 round = 20...
-		[DRD-I] R rate 476.1 KB/s for 20 round @ 21 ms
-		[DRD-I] W test: size 1024, round 20...
-		[DRD-I] W rate 540.5 KB/s for 20 round @ 37 ms
-		[DRD-I] R test: size = 1024 round = 20...
-		[DRD-I] R rate 800.0 KB/s for 20 round @ 25 ms
-		[DRD-I] W test: size 2048, round 20...
-		[DRD-I] W rate 655.7 KB/s for 20 round @ 61 ms
-		[DRD-I] R test: size = 2048 round = 20...
-		[DRD-I] R rate 1212.1 KB/s for 20 round @ 33 ms
-		[DRD-I] W test: size 4096, round 20...
-		[DRD-I] W rate 1095.8 KB/s for 20 round @ 73 ms
-		[DRD-I] R test: size = 4096 round = 20...
-		[DRD-I] R rate 1600.0 KB/s for 20 round @ 50 ms
-		[DRD-I] FatFS USB W/R performance test done
-		[DRD-I] File close OK
-		```
-
-	- Aftet entering the command `AT+USBHMSC=deinit`, USB host mass storage class driver is de-initialized, following log shall be printed on the LOGUART console, make sure there is no USB related error reported:
-
-		```
-		[DRD-I] Deinit MSC host driver
-		```
+3. If a stop, or the rollback of a failed start, times out (an app thread does not leave in time) the app keeps its resources, `status` reports `broken` and no further app can be started until the board is reset.
 
 # Note
 
-The log in the expect result is only for reference.
+- Stop the running app before using the USB verify commands (`AT+USBDVERIFY`, `AT+USBHVERIFY`, ...): they drive the controller on their own.
+- Host apps need VBUS on the host port, see the board rework table above.
 
 # Supported IC
 

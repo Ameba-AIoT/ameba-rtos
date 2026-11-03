@@ -30,5 +30,5 @@
  */
 void app_example(void)
 {
-	example_usbd_composite();
+	example_usbd_composite_cdc_acm_msc();
 }

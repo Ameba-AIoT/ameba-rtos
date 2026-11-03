@@ -634,31 +634,31 @@ SSI_RXGDMA_Init(
 void SSI_SetIsrClean(SPI_TypeDef *spi_dev, u32 InterruptStatus)
 {
 	if (InterruptStatus & SPI_BIT_TXOIS) {
-		spi_dev->SPI_TXOICR;
+		(void)spi_dev->SPI_TXOICR;
 	}
 
 	if (InterruptStatus & SPI_BIT_RXUIS) {
-		spi_dev->SPI_RXUICR;
+		(void)spi_dev->SPI_RXUICR;
 	}
 
 	if (InterruptStatus & SPI_BIT_RXOIS) {
-		spi_dev->SPI_RXOICR;
+		(void)spi_dev->SPI_RXOICR;
 	}
 
 	if (InterruptStatus & SPI_BIT_MSTIS_FAEIS) {
 		/* Another master is actively transferring data */
 		/* TODO: Do reading data... */
-		spi_dev->SPI_MSTICR_FAEICR;
+		(void)spi_dev->SPI_MSTICR_FAEICR;
 	}
 
 	if (InterruptStatus & SPI_BIT_TXUIS) {
 		/* For slave only. This register is used as TXUICR in slave mode*/
-		spi_dev->SPI_TXUICR;
+		(void)spi_dev->SPI_TXUICR;
 	}
 
 	if (InterruptStatus & SPI_BIT_SSRIS) {
 		/* For slave only. This register is used as SSRICR in slave mode*/
-		spi_dev->SPI_SSRICR;
+		(void)spi_dev->SPI_SSRICR;
 	}
 
 }

@@ -43,7 +43,8 @@ macro(ameba_soc_project_create name)
     #NOTICE: Cache variable EXAMPLE will be deleted at the end.
     set(EXAMPLE ${EXAMPLE} CACHE STRING "Example Name. If EXAMPLE is specified by user,\
     the floder named <EXAMPLE> will be searched from components/example.\
-    e.g., EXAPMLE=ssl_client. Default example name is NULL")
+    e.g., EXAPMLE=ssl_client. EXAMPLE=pytest is reserved: it applies component/utils/pytest/soc/<soc>/prj.conf and\
+    builds the pytest firmware instead of an example. Default example name is NULL")
 
     #NOTICE: Cache variable USER_SRC_DIR will be deleted at the end.
     set(USER_SRC_DIR ${USER_SRC_DIR} CACHE PATH "User source code floader containing main.c\
@@ -93,8 +94,15 @@ macro(ameba_soc_project_create name)
     #NOTE: hook macro defined by user to add custom config
     # ameba_soc_project_custom_config()
 
+    #EXAMPLE=pytest builds the pytest firmware, it is not an example: EXAMPLEDIR stays empty, so no example is built on any core.
     #EXAMPLE can be a absolute path, relative path where contain a CMakeLists and source files, or can be a specific example name
-    if (EXAMPLE)
+    if (EXAMPLE STREQUAL "pytest")
+        set(PYTEST_BUILD TRUE)
+        set(PYTEST_PRJ_CONF ${c_BASEDIR}/component/utils/pytest/soc/${c_SOC_TYPE}/prj.conf)
+        if (NOT EXISTS "${PYTEST_PRJ_CONF}")
+            message(SEND_ERROR "No pytest config for ${c_SOC_TYPE}: ${PYTEST_PRJ_CONF} not found")
+        endif()
+    elseif (EXAMPLE)
         if(IS_ABSOLUTE EXAMPLE)
             set(EXAMPLEDIR ${EXAMPLE})
         else()
@@ -126,6 +134,12 @@ macro(ameba_soc_project_create name)
         execute_process(
             COMMAND ${CMAKE_COMMAND} -E copy ${EXAMPLEDIR}/prj.conf ${c_MENUCONFIG_DIR}/prj.conf
         )
+    elseif (PYTEST_BUILD AND EXISTS "${PYTEST_PRJ_CONF}")
+        file(MAKE_DIRECTORY "${c_MENUCONFIG_DIR}")
+        execute_process(
+            COMMAND ${CMAKE_COMMAND} -E copy "${PYTEST_PRJ_CONF}" "${c_MENUCONFIG_DIR}/prj.conf"
+            COMMAND_ERROR_IS_FATAL ANY
+        )
     endif()
 
     execute_process(
@@ -140,6 +154,13 @@ macro(ameba_soc_project_create name)
         if(NOT EXISTS FINAL_IMAGE_DIR)
             execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory ${FINAL_IMAGE_DIR})
         endif()
+    endif()
+
+    # Optional: SoC project opts in to take the ASDK version from the freshly (re)generated .config,
+    # so that a prj.conf selecting another toolchain takes effect in the very first configure.
+    if(v_ASDK_VER_FROM_KCONFIG)
+        import_kconfig("CONFIG_TOOLCHAIN_" ${c_MENUCONFIG_DIR}/.config)
+        ameba_set_if(CONFIG_TOOLCHAIN_ASDK_VER v_ASDK_VER ${CONFIG_TOOLCHAIN_ASDK_VER})
     endif()
 
     ameba_set(ASDK_VER ${v_ASDK_VER}) #NOTE: Only used in ameba-toolchain-asdk-${v_ASDK_VER}.cmake
@@ -225,7 +246,7 @@ macro(ameba_mcu_project_create name mcu_type)
     import_kconfig("CONFIG" ${c_MCU_KCONFIG_FILE})
 
     #NOTE: Determine whether build example for this mcu project
-    if(EXAMPLE) #By default, MCU as ap run example, but whc_dev boot from flash shall treat as iot
+    if(EXAMPLE AND NOT PYTEST_BUILD) #By default, MCU as ap run example, but whc_dev boot from flash shall treat as iot
         if(CONFIG_WHC_HOST OR CONFIG_WHC_NONE OR (CONFIG_WHC_DEV AND CONFIG_WHC_DEV_FLASH_BOOT))
             set(c_ENABLE_EXAMPLE TRUE)
         else()

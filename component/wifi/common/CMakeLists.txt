@@ -72,6 +72,8 @@ set(private_compile_options)         #private compile_options
 
 include(sources.cmake OPTIONAL)
 
+ameba_list_append_if(CONFIG_WIFI_RADAR_ENABLE private_sources rtw_radar_event.c)
+
 # Component private part, user config end
 #------------------------------#
 ameba_list_append(private_includes

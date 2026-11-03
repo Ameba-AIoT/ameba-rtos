@@ -124,6 +124,10 @@ extern u8 __km0_image2_entry_func_mp__[];
 
 extern u32 __km4_msp_ram_ns_limit__[];
 extern u32 __km0_msp_ram_limit__[];
+extern u8 __rtk_fixed_addr__[];
+extern u8 __img1_sram_size__[];
+extern u8 __sram_end__[];
+extern u8 __km4_romcom_ram_end__[];
 
 enum _BOOT_TYPE_ {
 	BOOT_FROM_FLASH = 0,
@@ -284,6 +288,30 @@ extern RAM_START_FUNCTION Img2EntryFun0; //RamWakeupFun
 
 #define IS_FLASH_ADDR(addr)			((addr >= SPI_FLASH_BASE) && (addr <= 0x0FFFFFFF))
 #define IS_BOOT_ADDR(addr)			((addr >= HS_BOOT_ADDR_START) && (addr <= HS_BOOT_ADDR_END))
+
+/**
+ * @brief   Check that [addr, addr + len) lies completely inside [region_start, region_limit).
+ * @details Immune to integer overflow: it compares len with (region_limit - addr)
+ *          instead of calculating (addr + len), which may wrap around.
+ * @param[in] addr          Start address of the buffer.
+ * @param[in] len           Length of the buffer in bytes, zero is not allowed.
+ * @param[in] region_start  Start of the region (inclusive).
+ * @param[in] region_limit  End of the region (exclusive).
+ * @return  true if the buffer is valid, false otherwise.
+ */
+__STATIC_FORCEINLINE bool is_memory_range_valid(u32 addr, size_t len, u32 region_start, u32 region_limit)
+{
+	if ((addr < region_start) || (addr >= region_limit)) {
+		return false;
+	}
+
+	if ((len == 0) || (len > (size_t)(region_limit - addr))) {
+		return false;
+	}
+
+	return true;
+}
+
 #define IS_HS_SRAM_S_ADDR(addr)		((addr >= HS_SRAM_S_ADDR_START) && (addr <= HS_SRAM_S_ADDR_END))
 #define IS_LS_SRAM_ADDR(addr)		((addr >= LS_SRAM_ADDR_START) && (addr <= LS_SRAM_ADDR_END))
 

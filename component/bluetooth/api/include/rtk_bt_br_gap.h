@@ -1,9 +1,9 @@
 /**
-* @file      rtk_bt_br_gap.h
-* @author    benling_xu@realsil.com.cn
-* @brief     Bluetooth LE GAP part type and function deffinition
-* @copyright Copyright (c) 2022. Realtek Semiconductor Corporation. All rights reserved.
-*/
+ * @file      rtk_bt_br_gap.h
+ * @author    sherman_sun@realsil.com.cn
+ * @brief     Bluetooth BR GAP part type and function definition
+ * @copyright Copyright (c) 2022. Realtek Semiconductor Corporation. All rights reserved.
+ */
 
 #ifndef __RTK_BT_BR_GAP_H__
 #define __RTK_BT_BR_GAP_H__
@@ -49,7 +49,7 @@ extern "C"
 
 #define RTK_BT_GAP_DEVICE_NAME_LEN      (39+1)//!< Max length of device name, if device name length exceeds it, it will be truncated.
 
-/* ------------------------------- Data Types ------------------------------- */
+/************************************** Data Types *************************************/
 typedef enum {
 	RTK_BT_BR_GAP_ROLE_MASTER  = 0,
 	RTK_BT_BR_GAP_ROLE_SLAVE,
@@ -116,8 +116,8 @@ typedef struct {
 	uint16_t            remote_hfp_brsf_capability;
 	bool                is_inband_ring;
 	uint8_t             streaming_fg;
-	uint16_t            rfc_spp_frame_size;         /**< spp tx/rx mtu size */
-	uint8_t             rfc_spp_credit;             /**< remained spp tx credit */
+	uint16_t            rfc_spp_frame_size;         /*!< Maximum SPP frame size, in octets. */
+	uint8_t             rfc_spp_credit;             /*!< Remaining SPP TX link credits. */
 	union {
 		struct {
 			uint8_t     sampling_frequency;
@@ -363,7 +363,7 @@ typedef struct {
 	int8_t      rssi;             /**< RSSI value read if success. */
 } rtk_bt_br_link_read_rssi_rsp;
 
-/* ------------------------------ Functions Declaration ------------------------------ */
+/********************************* Functions Declaration *******************************/
 /**
  * @defgroup  bt_br_gap BT BR GAP APIs
  * @brief     BT BR GAP related function APIs

@@ -1030,14 +1030,13 @@ int tlsf_check(tlsf_t tlsf)
 			/* Check that there is at least one free block. */
 			tlsf_insist(sl_list && "no free blocks in second-level map");
 
-			heapVALIDATE_BLOCK_POINTER(heapPROTECT_BLOCK_POINTER(block->prev_phys_block));
-			heapVALIDATE_BLOCK_POINTER(heapPROTECT_BLOCK_POINTER(block->next_free));
-			heapVALIDATE_BLOCK_POINTER(heapPROTECT_BLOCK_POINTER(block->prev_free));
-
 			tlsf_insist(block != &control->block_null && "block should not be null");
 
 			while (block != &control->block_null) {
 				int fli, sli;
+				/* prev_phys_block is not validated: the previous block of a free block is always used, so it holds stale data. */
+				heapVALIDATE_BLOCK_POINTER(heapPROTECT_BLOCK_POINTER(block->next_free));
+				heapVALIDATE_BLOCK_POINTER(heapPROTECT_BLOCK_POINTER(block->prev_free));
 				tlsf_insist(block_is_free(block) && "block should be free");
 				tlsf_insist(!block_is_prev_free(block) && "blocks should have coalesced");
 				tlsf_insist(!block_is_free(block_next(block)) && "blocks should have coalesced");
@@ -1048,9 +1047,6 @@ int tlsf_check(tlsf_t tlsf)
 				tlsf_insist(fli == i && sli == j && "block size indexed in wrong list");
 
 				block = heapPROTECT_BLOCK_POINTER(block->next_free);
-				heapVALIDATE_BLOCK_POINTER(heapPROTECT_BLOCK_POINTER(block->prev_phys_block));
-				heapVALIDATE_BLOCK_POINTER(heapPROTECT_BLOCK_POINTER(block->next_free));
-				heapVALIDATE_BLOCK_POINTER(heapPROTECT_BLOCK_POINTER(block->prev_free));
 			}
 		}
 	}
@@ -1392,7 +1388,17 @@ void *tlsf_memalign(tlsf_t tlsf, size_t align, size_t size)
 		}
 	}
 
-	return block_prepare_used(control, block, adjust);
+	{
+		void *ptr = block_prepare_used(control, block, adjust);
+
+#if defined(CONFIG_HEAP_TRACE) && (CONFIG_HEAP_TRACE == 1)
+		if (ptr != NULL) {
+			trace_malloc(ptr, (uint32_t)size);
+		}
+#endif
+
+		return ptr;
+	}
 }
 
 void tlsf_free(tlsf_t tlsf, void *ptr)

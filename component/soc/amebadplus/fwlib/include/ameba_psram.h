@@ -364,7 +364,6 @@ typedef struct {
 
 _LONG_CALL_ void PSRAM_PHY_StructInit(PSPHY_InitTypeDef *PSPHY_InitStruct);
 _LONG_CALL_ void PSRAM_PHY_Init(PSPHY_InitTypeDef *PSPHY_InitStruct);
-_LONG_CALL_ void PSRAM_InfoDump(void);
 _LONG_CALL_ void PSRAM_CTRL_Init(void);
 _LONG_CALL_ void PSRAM_REG_Read(u8 type, u32 addr, u32 read_len, u8 *read_data, u32 CR);
 _LONG_CALL_ void PSRAM_REG_Write(u8 type, u32 addr, u32 write_len, u8 *write_data);

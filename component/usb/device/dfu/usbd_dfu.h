@@ -257,7 +257,7 @@ typedef struct {
 	u8                 itf_str_idx;     /**< iInterface string index from usbd_add_string(), 0 for none. */
 
 	/* Async worker handshakes: ISR/task completion flags and deinit stop requests */
-	__IO u8            write_state;     /* Async write: block state set by write_task (0 busy, 1 ok, 2 failed), consumed by GETSTATUS */
+	__IO u8            write_state;     /* Async write: block state (0 idle, 1 busy, 2 ok, 3 failed), set by write_task, consumed by GETSTATUS */
 	__IO u8            manifest_done;   /* Async manifest: set by manifest_task, read by GETSTATUS/timer in MANIFEST states */
 	u8                 reconf_pending;  /* Run-Time/DFU mode reconf: 1 = DFU_DETACH seen, bus re-enumeration requested */
 	u8                 write_stop;      /* Async write: set to 1 on deinit to terminate write_task */
