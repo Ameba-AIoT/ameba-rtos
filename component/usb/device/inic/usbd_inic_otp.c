@@ -20,6 +20,8 @@ static const char *const TAG = "INIC";
 #define USB_OTP_OFFSET_PID         (0x2A2U - USB_OTP_START)
 #define USB_OTP_OFFSET_STR         (USB_OTP_STR_START - USB_OTP_START)
 #define USB_OTP_STR_LEN            (USB_OTP_END - USB_OTP_STR_START + 1U)
+#define USB_OTP_OFFSET_FLAG        (USB_OTP_UPHY_FLAG_OFFSET - USB_OTP_START)
+#define USB_OTP_HDR_LEN            (USB_OTP_OFFSET_FLAG + 1U)
 
 /* Private types -------------------------------------------------------------*/
 
@@ -30,6 +32,36 @@ static const char *const TAG = "INIC";
 /* Private variables ---------------------------------------------------------*/
 
 /* Private functions ---------------------------------------------------------*/
+
+/**
+  * @brief  Get the identity control byte: the autoload shadow, or the OTP flag bits when the shadow enables no OTP identity
+  * @retval Control byte, or the shadow value itself if the OTP read fails or VID, PID and flag are all 0xFF (unprogrammed)
+  */
+static u8 usbd_otp_get_ctrl(void)
+{
+	int ret;
+	u8 i;
+	u8 and_all = USB_OTP_UPHY_FLAG_BLANK;
+	u8 hdr[USB_OTP_HDR_LEN];
+	u8 ctrl = HAL_READ8(USB_ADDON_REG_AUTOLOAD_CTRL, 0U);
+
+	/* DESC_EN=0 and SQNUM_ROM=1 is also the reset state of a lost shadow, so consult the OTP flag */
+	if (((ctrl & USB_ADDON_REG_AUTOLOAD_CTRL_BIT_AUTOLOAD_DESC_EN) == 0U) && ((ctrl & USB_ADDON_REG_AUTOLOAD_CTRL_BIT_SQNUM_ROM) != 0U)) {
+		ret = OTP_LogicalRead(hdr, USB_OTP_START, USB_OTP_HDR_LEN);
+		if (ret == RTK_SUCCESS) {
+			RTK_LOGS(TAG, RTK_LOG_DEBUG, "OTP flag 0x%x\n", hdr[USB_OTP_OFFSET_FLAG]);
+			for (i = 0U; i < USB_OTP_HDR_LEN; i++) {
+				and_all &= hdr[i];
+			}
+			/* An unprogrammed byte reads 0xFF, so a 0xFF flag is a programmed value unless VID and PID are blank too */
+			if (and_all != USB_OTP_UPHY_FLAG_BLANK) {
+				ctrl = (u8)((ctrl & ~USB_OTP_FLAG_AUTOLOAD_CTRL_MASK) | (hdr[USB_OTP_OFFSET_FLAG] & USB_OTP_FLAG_AUTOLOAD_CTRL_MASK));
+			}
+		}
+	}
+
+	return ctrl;
+}
 
 static u8 usbd_otp_get_strlen(u8 *buf)
 {
@@ -71,7 +103,7 @@ static void usbd_otp_get_str_desc(u8 *desc, u8 *buf, u8 *len)
 int usbd_otp_init(usbd_otp_t *otp)
 {
 	int status;
-	u32 reg;
+	u8 ctrl;
 	u8 sn_len;
 	u8 mfg_len;
 	u8 prod_len;
@@ -121,18 +153,18 @@ int usbd_otp_init(usbd_otp_t *otp)
 		return HAL_ERR_MEM;
 	}
 
-	reg = HAL_READ32(USB_ADDON_REG_AUTOLOAD_CTRL, 0U);
-	otp->self_powered = ((reg & USB_ADDON_REG_AUTOLOAD_CTRL_BIT_SELF_POWER_EN) == 0) ? 0 : 1;
-	otp->remote_wakeup_en = ((reg & USB_ADDON_REG_AUTOLOAD_CTRL_BIT_REMOTE_WAKEUP) == 0) ? 0 : 1;
-	if (((reg & USB_ADDON_REG_AUTOLOAD_CTRL_BIT_AUTOLOAD_DESC_EN) != 0U) ||
-		((reg & USB_ADDON_REG_AUTOLOAD_CTRL_BIT_SQNUM_ROM) == 0U)) {
+	ctrl = usbd_otp_get_ctrl();
+	otp->self_powered = ((ctrl & USB_ADDON_REG_AUTOLOAD_CTRL_BIT_SELF_POWER_EN) == 0) ? 0 : 1;
+	otp->remote_wakeup_en = ((ctrl & USB_ADDON_REG_AUTOLOAD_CTRL_BIT_REMOTE_WAKEUP) == 0) ? 0 : 1;
+	if (((ctrl & USB_ADDON_REG_AUTOLOAD_CTRL_BIT_AUTOLOAD_DESC_EN) != 0U) ||
+		((ctrl & USB_ADDON_REG_AUTOLOAD_CTRL_BIT_SQNUM_ROM) == 0U)) {
 		status = OTP_LogicalRead(otp->otp_map, USB_OTP_START, USB_OTP_LEN);
 		if (status != RTK_SUCCESS) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "OTP read fail %d\n", status);
 			return HAL_ERR_HW;
 		}
 
-		if ((reg & USB_ADDON_REG_AUTOLOAD_CTRL_BIT_SQNUM_ROM) == 0U) {
+		if ((ctrl & USB_ADDON_REG_AUTOLOAD_CTRL_BIT_SQNUM_ROM) == 0U) {
 			// Mfg string
 			mfg_len = otp->otp_map[USB_OTP_OFFSET_STR];
 			if ((mfg_len < 2) || (mfg_len > USB_OTP_STR_LEN)) {
@@ -155,7 +187,7 @@ int usbd_otp_init(usbd_otp_t *otp)
 			otp->otp_sn = 1U;
 		}
 
-		if ((reg & USB_ADDON_REG_AUTOLOAD_CTRL_BIT_AUTOLOAD_DESC_EN) != 0U) {
+		if ((ctrl & USB_ADDON_REG_AUTOLOAD_CTRL_BIT_AUTOLOAD_DESC_EN) != 0U) {
 			// VID
 			otp->vid = otp->otp_map[USB_OTP_OFFSET_VID] | ((u16)otp->otp_map[USB_OTP_OFFSET_VID + 1] << 8);
 			// PID

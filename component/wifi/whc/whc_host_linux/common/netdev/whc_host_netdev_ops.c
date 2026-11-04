@@ -129,7 +129,15 @@ static u8 qos_acm(u8 acm_mask, u8 priority)
  * AC_BE -> queue 2
  * AC_BK -> queue 3
  */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 19, 0)
+u16 rtw_ndev_select_queue(struct net_device *pnetdev, struct sk_buff *skb,
+						  void *accel_priv, select_queue_fallback_t fallback)
+#elif LINUX_VERSION_CODE < KERNEL_VERSION(5, 2, 0)
+u16 rtw_ndev_select_queue(struct net_device *pnetdev, struct sk_buff *skb,
+						  struct net_device *sb_dev, select_queue_fallback_t fallback)
+#else
 u16 rtw_ndev_select_queue(struct net_device *pnetdev, struct sk_buff *skb, struct net_device *sb_dev)
+#endif
 {
 	/* int acm_mask = 0;*/
 	u16 rtw_1d_to_queue[8] = { 2, 3, 3, 2, 1, 1, 0, 0 };

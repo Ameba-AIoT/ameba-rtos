@@ -2544,6 +2544,7 @@ static uint16_t bt_stack_le_audio_broadcast_pa_sync_create(void *param)
 											  p_create_param->broadcast_id);
 		if (!sync_handle) {
 			BT_LOGE("%s: ble_audio_sync_allocate fail\r\n", __func__);
+			return RTK_BT_ERR_LOWER_STACK_API;
 		}
 		p_sync_dev_info = bt_stack_le_audio_sync_dev_add((void *)sync_handle);
 		if (!p_sync_dev_info) {

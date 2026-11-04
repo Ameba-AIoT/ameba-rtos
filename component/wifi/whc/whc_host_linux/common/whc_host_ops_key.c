@@ -78,7 +78,9 @@ static int whc_host_add_key_ops(struct wiphy *wiphy, struct net_device *ndev
 	}
 	dev_dbg(global_idev.pwhc_dev, "[whc]: key material. key len = %d.\n", params->key_len);
 	dev_dbg(global_idev.pwhc_dev, "[whc]: cipher suite = %08x", params->cipher);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 2, 0)
 	dev_dbg(global_idev.pwhc_dev, "[whc]: key mode = %d", params->mode);
+#endif
 
 	if (((params->cipher & 0xff) == 1) || ((params->cipher & 0xff) == 5)) {
 #ifdef CONFIG_IEEE80211R
@@ -222,10 +224,13 @@ static int whc_host_set_pmksa(struct wiphy *wiphy, struct net_device *ndev, stru
 		return -ENOMEM;
 	}
 
+	memset(pmksa_ops_vir, 0, sizeof(*pmksa_ops_vir));
 	memcpy(pmksa_ops_vir->pmkid, pmksa->pmkid, 16);
-	if (pmksa->pmk) {
-		memcpy(pmksa_ops_vir->pmk, pmksa->pmk, 32);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 12, 0)
+	if (pmksa->pmk && pmksa->pmk_len >= sizeof(pmksa_ops_vir->pmk)) {
+		memcpy(pmksa_ops_vir->pmk, pmksa->pmk, sizeof(pmksa_ops_vir->pmk));
 	}
+#endif
 	if (pmksa->bssid) {
 		dev_dbg(global_idev.pwhc_dev, "set [%02x:%02x:%02x:%02x:%02x:%02x] pmksa",
 				*pmksa->bssid, *(pmksa->bssid + 1), *(pmksa->bssid + 2), *(pmksa->bssid + 3), *(pmksa->bssid + 4), *(pmksa->bssid + 5));

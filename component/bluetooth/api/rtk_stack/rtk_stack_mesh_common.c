@@ -10,6 +10,7 @@
 #include <platform_utils.h>
 #include <health.h>
 #include <mesh_cmd.h>
+#include <mesh_service.h>
 #include <provision_client.h>
 #include <proxy_client.h>
 #include <blob_client_app.h>
@@ -1062,6 +1063,9 @@ static void rtk_bt_mesh_stack_init(void *data)
 	}
 
 	mesh_node_cfg(features, &node_cfg);
+	//Set mesh lib link num
+	uint8_t link_num = RTK_BLE_GAP_MAX_LINKS;
+	gap_sched_params_set(GAP_SCHED_PARAMS_LINK_NUM, &link_num, sizeof(link_num));
 #if defined(RTK_BLE_MESH_DEVICE_SUPPORT) && RTK_BLE_MESH_DEVICE_SUPPORT
 	if (MESH_ROLE_DEVICE == mesh_role) {
 		// Enable proxy service support Provisioning PDU for nrf mesh APP
@@ -1409,6 +1413,11 @@ static uint16_t rtk_stack_set_model_subscribe(rtk_bt_mesh_set_model_subscribe_t 
 	}
 }
 
+#if defined(RTK_BLE_MESH_PROVISIONER_SUPPORT) && RTK_BLE_MESH_PROVISIONER_SUPPORT
+/* The caller of the set prov param cmd may free its param after the cmd returns, so keep a copy */
+static rtk_bt_mesh_stack_act_set_prov_param_t prov_param_store;
+static bool prov_param_store_valid;
+#endif
 static void rtk_stack_prov_param_set(rtk_bt_mesh_stack_act_set_prov_param_t *p_data)
 {
 	uint16_t net_key_index;
@@ -1852,6 +1861,24 @@ static void rtk_stack_lpn_deinit(void)
 }
 
 #endif // end of RTK_BLE_MESH_LPN_SUPPORT
+
+extern void mesh_service_identity_adv_stop(void);
+extern void mesh_private_service_identity_adv_stop(void);
+static uint16_t rtk_stack_set_service_adv(rtk_bt_mesh_stack_act_set_service_adv_t *param)
+{
+	if (param->enable) {
+		mesh_service_adv_start();
+		mesh_private_service_adv_start();
+	} else {
+		mesh_service_adv_stop();
+		mesh_service_identity_adv_stop();
+		mesh_service_identity_adv_trigger(false);
+		mesh_private_service_adv_stop();
+		mesh_private_service_identity_adv_stop();
+	}
+
+	return RTK_BT_MESH_STACK_API_SUCCESS;
+}
 #endif // end of RTK_BLE_MESH_DEVICE_SUPPORT
 
 extern bool bt_stack_profile_check(rtk_bt_profile_t profile);
@@ -1866,6 +1893,11 @@ uint16_t bt_mesh_stack_act_handle(rtk_bt_cmd_t *p_cmd)
 	switch (p_cmd->act) {
 	case RTK_BT_MESH_STACK_ACT_NODE_RESET:
 		mesh_node_reset();
+#if defined(RTK_BLE_MESH_PROVISIONER_SUPPORT) && RTK_BLE_MESH_PROVISIONER_SUPPORT
+		if (prov_param_store_valid) {
+			rtk_stack_prov_param_set(&prov_param_store);
+		}
+#endif
 		ret = RTK_BT_MESH_STACK_API_SUCCESS;
 		break;
 	case RTK_BT_MESH_STACK_ACT_DEV_INFO_SWITCH:
@@ -1899,6 +1931,10 @@ uint16_t bt_mesh_stack_act_handle(rtk_bt_cmd_t *p_cmd)
 		break;
 #endif
 	case RTK_BT_MESH_STACK_ACT_SET_PROV_PARAM:
+#if defined(RTK_BLE_MESH_PROVISIONER_SUPPORT) && RTK_BLE_MESH_PROVISIONER_SUPPORT
+		prov_param_store = *(rtk_bt_mesh_stack_act_set_prov_param_t *)p_cmd->param;
+		prov_param_store_valid = true;
+#endif
 		rtk_stack_prov_param_set(p_cmd->param);
 		ret = RTK_BT_MESH_STACK_API_SUCCESS;
 		break;
@@ -1980,6 +2016,9 @@ uint16_t bt_mesh_stack_act_handle(rtk_bt_cmd_t *p_cmd)
 		ret = RTK_BT_MESH_STACK_API_SUCCESS;
 		break;
 #endif // end of RTK_BLE_MESH_LPN_SUPPORT
+	case RTK_BT_MESH_STACK_ACT_SET_SERVICE_ADV:
+		ret = rtk_stack_set_service_adv(p_cmd->param);
+		break;
 #endif // end of RTK_BLE_MESH_DEVICE_SUPPORT
 	default:
 		BT_LOGE("[%s] Unknown p_cmd->act:%d\r\n", __func__, p_cmd->act);
@@ -2011,6 +2050,7 @@ void bt_stack_mesh_deinit(void)
 	prov_client_deinit();
 #if defined(RTK_BLE_MESH_PROVISIONER_SUPPORT) && RTK_BLE_MESH_PROVISIONER_SUPPORT
 	proxy_client_deinit();
+	prov_param_store_valid = false;
 #endif
 }
 

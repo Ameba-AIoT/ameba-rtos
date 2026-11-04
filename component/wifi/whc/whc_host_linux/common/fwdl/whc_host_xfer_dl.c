@@ -623,7 +623,7 @@ static int whc_xfer_calculate_checksum(struct whc_xfer_adapter_t *adapter, int o
 int whc_xfer_write(struct whc_xfer_adapter_t *adapter, u8 *buf, u32 addr, u32 size, bool need_padding)
 {
 	int i;
-	int retry;
+	int retry = 0;
 	int ret = 0;
 	u32 page_num;
 	u32 remain_size;
