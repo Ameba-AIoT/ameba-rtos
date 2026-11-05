@@ -21,7 +21,13 @@
 	path = component/tflite_micro
 	url = ../../Ameba-AIoT/ameba-tflite-micro.git
 	branch = main
+
 [submodule "component/application/speechmind"]
 	path = component/application/speechmind
 	url = ../../Ameba-AIoT/speechmind.git
+	branch = master
+
+[submodule "component/sensing_algo"]
+	path = component/sensing_algo
+	url = ../../Ameba-AIoT/ameba-sensing-algo.git
 	branch = master
