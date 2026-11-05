@@ -68,8 +68,12 @@ extern "C" {
  *       (same byte layout as the ADDON autoload UPHY regs above)
  *   - flag @0x2A4 == 0xFF : OTP never programmed -> apply the fixed default set
  *   - BIT(3) clear or any unexpected value : OTP absent/corrupt -> apply the fixed default set
+ *   The flag also mirrors the AUTOLOAD_CTRL identity bits (USB_OTP_FLAG_AUTOLOAD_CTRL_MASK), used when the shadow lost them;
+ *   there a 0xFF flag counts as programmed unless VID @0x2A0 and PID @0x2A2 read 0xFF as well
  * @{
  **/
+#define USB_OTP_FLAG_AUTOLOAD_CTRL_MASK                     (USB_ADDON_REG_AUTOLOAD_CTRL_BIT_SQNUM_ROM | USB_ADDON_REG_AUTOLOAD_CTRL_BIT_REMOTE_WAKEUP | \
+                                                             USB_ADDON_REG_AUTOLOAD_CTRL_BIT_SELF_POWER_EN | USB_ADDON_REG_AUTOLOAD_CTRL_BIT_AUTOLOAD_DESC_EN)
 #define USB_OTP_UPHY_FLAG_OFFSET                            0x2A4U
 #define USB_OTP_UPHY_FLAG_AUTOLOAD_UPHY_EN_BIT              BIT(3)
 #define USB_OTP_UPHY_FLAG_BLANK                             0xFFU
@@ -93,8 +97,8 @@ extern "C" {
 #define USB_MAX_ENDPOINTS                                   8U
 #define USB_MAX_PIPES                                       12U
 
-#define USB_PIN_DM                                          _PA_4
-#define USB_PIN_DP                                          _PA_5
+#define USB_PIN_DP                                          _PA_4
+#define USB_PIN_DM                                          _PA_5
 /** @} */
 
 /** @defgroup USB_ID

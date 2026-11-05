@@ -19,6 +19,7 @@
  ******************************************************************************/
 
 #include "whc_host_xfer.h"
+#include <linux/version.h>
 #include <linux/fs.h>
 #include <linux/slab.h>
 #include <linux/delay.h>
@@ -295,7 +296,14 @@ int whc_xfer_read_file(struct file *file, u8 *buf, int size, loff_t *offset)
 		return -1;
 	}
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 14, 0)
+	bytes_read = kernel_read(file, *offset, buf, size);
+	if (bytes_read > 0) {
+		*offset += bytes_read;
+	}
+#else
 	bytes_read = kernel_read(file, buf, size, offset);
+#endif
 
 	return (int)bytes_read;
 }

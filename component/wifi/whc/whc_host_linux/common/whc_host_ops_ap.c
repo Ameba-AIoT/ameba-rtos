@@ -11,7 +11,12 @@
 #include <whc_host_linux.h>
 
 static struct wireless_dev *whc_host_add_virtual_intf(struct wiphy *wiphy, const char *name,
-		unsigned char name_assign_type, enum nl80211_iftype type, struct vif_params *params)
+		unsigned char name_assign_type,
+		enum nl80211_iftype type,
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 12, 0)
+		u32 *flags,
+#endif
+		struct vif_params *params)
 {
 	int ret = 0;
 	struct wireless_dev *wdev = NULL;
@@ -363,10 +368,13 @@ static int whc_host_start_ap_ops(struct wiphy *wiphy, struct net_device *ndev, s
 	dev_dbg(global_idev.pwhc_dev, "n_akm_suites=%d\n", settings->crypto.n_akm_suites);
 	dev_dbg(global_idev.pwhc_dev, "akm_suites=0x%x\n", settings->crypto.akm_suites[0]);
 	dev_dbg(global_idev.pwhc_dev, "cipher_group=0x%x\n", settings->crypto.cipher_group);
-#if (KERNEL_VERSION(6, 6, 0) > LINUX_VERSION_CODE)
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 5, 0)) && \
+	(LINUX_VERSION_CODE < KERNEL_VERSION(6, 6, 0))
 	dev_dbg(global_idev.pwhc_dev, "wep_tx_key=%d\n", settings->crypto.wep_tx_key);
 #endif
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 3, 0)
 	dev_dbg(global_idev.pwhc_dev, "sae_pwd_len=%d\n", settings->crypto.sae_pwd_len);
+#endif
 	dev_dbg(global_idev.pwhc_dev, "hidden_ssid=%d\n", settings->hidden_ssid);
 	global_idev.is_need_4way[wlan_idx] = 0;
 	global_idev.is_4way_ongoing[wlan_idx] = 0;

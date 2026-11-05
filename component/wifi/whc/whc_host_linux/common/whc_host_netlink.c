@@ -218,7 +218,7 @@ static int whc_host_dbg(struct genl_info *info)
 /* netlink cmd handler */
 static int whc_host_nl_cmd_process(struct sk_buff *skb, struct genl_info *info)
 {
-	u32 cmd = nla_get_u32(info->attrs[WHC_ATTR_API_ID]);
+	u32 cmd;
 	int ret = 0;
 	struct whc_host_netlink_command_entry *entry;
 
@@ -226,6 +226,7 @@ static int whc_host_nl_cmd_process(struct sk_buff *skb, struct genl_info *info)
 		printk("Missing required attributes in Netlink message\n");
 		return -EINVAL;
 	}
+	cmd = nla_get_u32(info->attrs[WHC_ATTR_API_ID]);
 
 	for (entry = netlink_cmd_table; entry->api_id != 0xFF; entry++) {
 		if (cmd == entry->api_id) {
@@ -256,6 +257,9 @@ static const struct genl_multicast_group whc_mcgrps[] = {
 static struct genl_ops whc_nl_cmd_ops[] = {
 	{
 		.cmd = WHC_CMD_ECHO,
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 2, 0)
+		.policy = whc_nl_cmd_policy,
+#endif
 #ifdef CONFIG_WHC_HCI_IPC
 		.doit = whc_host_ipc_nl_cmd_process,
 #else
@@ -264,6 +268,9 @@ static struct genl_ops whc_nl_cmd_ops[] = {
 	},
 	{
 		.cmd = WHC_CMD_CUSTOM_API,
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 2, 0)
+		.policy = whc_nl_cmd_policy,
+#endif
 		.doit = whc_host_nl_custom_api,
 	},
 };
@@ -273,7 +280,9 @@ struct genl_family whc_nl_family = {
 	.name = WHC_CMD_GENL_NAME,
 	.version = 1,
 	.maxattr = WHC_ATTR_MAX,
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 2, 0)
 	.policy = whc_nl_cmd_policy,
+#endif
 	.ops = whc_nl_cmd_ops,
 	.n_ops = ARRAY_SIZE(whc_nl_cmd_ops),
 	.mcgrps = whc_mcgrps,

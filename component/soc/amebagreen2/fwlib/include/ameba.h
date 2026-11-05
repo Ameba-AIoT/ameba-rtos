@@ -101,6 +101,7 @@
 #include "ameba_pmctimer.h"
 #include "ameba_thermal.h"
 #include "ameba_nandflash.h"
+#include "ameba_gspi.h"
 
 #include "ameba_rcc.h"
 #include "ameba_usrcfg.h"

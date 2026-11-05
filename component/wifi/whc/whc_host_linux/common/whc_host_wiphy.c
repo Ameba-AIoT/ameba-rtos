@@ -35,7 +35,9 @@ static const u32 rtw_akm_suites[] = {
 	WIFI_AKM_SUITE_SAE,
 	WIFI_AKM_SUITE_FT_SAE,
 	WIFI_AKM_SUITE_IEEE8021X_SUITE_B,
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 2, 0)
 	WIFI_AKM_SUITE_OWE,
+#endif
 };
 #else
 static const u32 rtw_akm_suites[] = {
@@ -45,7 +47,9 @@ static const u32 rtw_akm_suites[] = {
 	WIFI_AKM_SUITE_PSK_SHA256,
 	WIFI_AKM_SUITE_SAE,
 	WIFI_AKM_SUITE_IEEE8021X_SUITE_B,
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 2, 0)
 	WIFI_AKM_SUITE_OWE,
+#endif
 };
 #endif
 
@@ -199,6 +203,7 @@ struct ieee80211_iface_combination rtw_combinations[] = {
 int rtw_wiphy_band_init(struct wiphy *pwiphy, u32 band_type)
 {
 	int n_channels = 0, n_bitrates = 0;
+	size_t alloc_size;
 	struct ieee80211_supported_band *band = NULL;
 
 	if (band_type == NL80211_BAND_2GHZ) {
@@ -209,13 +214,13 @@ int rtw_wiphy_band_init(struct wiphy *pwiphy, u32 band_type)
 		n_bitrates = RTW_A_RATES_NUM;
 	}
 
-	band = (struct ieee80211_supported_band *)kzalloc(
-			   sizeof(struct ieee80211_supported_band)
-			   + sizeof(struct ieee80211_channel) * n_channels
-			   + sizeof(struct ieee80211_rate) * n_bitrates
-			   + sizeof(struct ieee80211_sband_iftype_data) * 2,
-			   in_interrupt() ? GFP_ATOMIC : GFP_KERNEL
-		   );
+	alloc_size = sizeof(struct ieee80211_supported_band) +
+				 sizeof(struct ieee80211_channel) * n_channels +
+				 sizeof(struct ieee80211_rate) * n_bitrates;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 19, 0)
+	alloc_size += sizeof(struct ieee80211_sband_iftype_data) * 2;
+#endif
+	band = kzalloc(alloc_size, in_interrupt() ? GFP_ATOMIC : GFP_KERNEL);
 
 	if (!band) {
 		dev_err(global_idev.pwhc_dev, "init wiphy band failed\n");
@@ -227,9 +232,11 @@ int rtw_wiphy_band_init(struct wiphy *pwiphy, u32 band_type)
 	band->band = NL80211_BAND_2GHZ;
 	band->n_channels = n_channels;
 	band->n_bitrates = n_bitrates;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 19, 0)
 	band->iftype_data = (struct ieee80211_sband_iftype_data *)(((u8 *)band->bitrates)
 						+ sizeof(struct ieee80211_rate) * n_bitrates);
 	band->n_iftype_data = 0;
+#endif
 
 	if (band_type == NL80211_BAND_2GHZ) {
 		memcpy((void *)band->channels, (void *)rtw_2ghz_channels, sizeof(rtw_2ghz_channels));
@@ -266,14 +273,23 @@ int rtw_wiphy_init_params(struct wiphy *pwiphy)
 							  ;
 	pwiphy->cipher_suites = rtw_cipher_suites;
 	pwiphy->n_cipher_suites = sizeof(rtw_cipher_suites) / sizeof((rtw_cipher_suites)[0]);
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 1, 0)
 	pwiphy->akm_suites = rtw_akm_suites;
 	pwiphy->n_akm_suites = ARRAY_SIZE(rtw_akm_suites);
+#endif
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 17, 0)
 	pwiphy->features |= NL80211_FEATURE_SAE;
+#endif
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 1, 0)
 	pwiphy->support_mbssid = true;
 	pwiphy->support_only_he_mbssid = false;
+#endif
 	pwiphy->max_num_csa_counters = 5;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 15, 0)
 	wiphy_ext_feature_set(pwiphy, NL80211_EXT_FEATURE_MFP_OPTIONAL);
+#endif
 
 #ifdef CONFIG_PM
 	pwiphy->wowlan = &rtw_wowlan_stub;

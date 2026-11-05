@@ -20,7 +20,15 @@ struct netdev_priv_t {
 
 int rtw_ndev_set_mac_address(struct net_device *pnetdev, void *p);
 struct net_device_stats *rtw_ndev_get_stats(struct net_device *pnetdev);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 19, 0)
+u16 rtw_ndev_select_queue(struct net_device *pnetdev, struct sk_buff *skb,
+						  void *accel_priv, select_queue_fallback_t fallback);
+#elif LINUX_VERSION_CODE < KERNEL_VERSION(5, 2, 0)
+u16 rtw_ndev_select_queue(struct net_device *pnetdev, struct sk_buff *skb,
+						  struct net_device *sb_dev, select_queue_fallback_t fallback);
+#else
 u16 rtw_ndev_select_queue(struct net_device *pnetdev, struct sk_buff *skb, struct net_device *sb_dev);
+#endif
 #if (KERNEL_VERSION(5, 15, 0) > LINUX_VERSION_CODE)
 int rtw_ndev_ioctl(struct net_device *ndev, struct ifreq *rq, int cmd_id);
 #else

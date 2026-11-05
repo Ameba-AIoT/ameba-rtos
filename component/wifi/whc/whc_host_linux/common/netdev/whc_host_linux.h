@@ -79,6 +79,29 @@
 #include <net/cfg80211.h>
 #include <linux/of_gpio.h>
 
+/* Element iterators appeared in 5.1, but older kernels may backport them. */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 1, 0)
+#ifndef for_each_element_id
+struct element {
+	u8 id;
+	u8 datalen;
+	u8 data[];
+} __packed;
+
+#define for_each_element(_elem, _data, _datalen) \
+	for ((_elem) = (const struct element *)(_data); \
+	     (const u8 *)(_data) + (_datalen) - (const u8 *)(_elem) >= \
+		(int)sizeof(*(_elem)) && \
+	     (const u8 *)(_data) + (_datalen) - (const u8 *)(_elem) >= \
+		(int)sizeof(*(_elem)) + (_elem)->datalen; \
+	     (_elem) = (const struct element *)((_elem)->data + (_elem)->datalen))
+
+#define for_each_element_id(_elem, _id, _data, _datalen) \
+	for_each_element(_elem, _data, _datalen) \
+		if ((_elem)->id == (_id))
+#endif
+#endif
+
 /* whc headers. */
 #include "autoconf.h"
 #include "whc_host_wiphy.h"
@@ -137,7 +160,25 @@
 #include "whc_host_hci.h"
 #include "whc_host_function.h"
 
+/* cfg80211_scan_done() took a bool before Linux 4.8. */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 8, 0)
+struct cfg80211_scan_info {
+	bool aborted;
+};
 
+static inline void whc_cfg80211_scan_done(struct cfg80211_scan_request *request,
+		struct cfg80211_scan_info *info)
+{
+	cfg80211_scan_done(request, info->aborted);
+}
+
+#define cfg80211_scan_done whc_cfg80211_scan_done
+#endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 14, 0)
+/* Completion lockdep annotations are unavailable before Linux 4.14. */
+#define complete_release(x) ((void)(x))
+#endif
 /******************************************************************/
 /********** Definitions between Linux and FULLMAC. **************/
 /******************************************************************/
