@@ -49,6 +49,34 @@ static uint8_t adv_data[] = {
 	RTK_BT_LE_GAP_ADTYPE_LOCAL_NAME_COMPLETE,
 	'R', 'T', 'K', '_', 'B', 'T', '_', 'M', 'E', 'S', 'H',
 };
+
+#if defined(RTK_BLE_5_0_USE_EXTENDED_ADV) && RTK_BLE_5_0_USE_EXTENDED_ADV
+static uint8_t app_eadv_handle = 0xFF;
+static bool app_eadv_started = false;   /* whether the APP ADV is on air right now */
+static bool app_eadv_paused = false;    /* stopped on purpose, do not bring it back by itself */
+
+static void app_eadv_state_reset(void)
+{
+	app_eadv_handle = 0xFF;
+	app_eadv_started = false;
+	app_eadv_paused = false;
+}
+
+static rtk_bt_le_ext_adv_param_t ext_adv_param = {
+	.adv_event_prop = RTK_BT_LE_EXT_ADV_LEGACY_ADV_CONN_SCAN_UNDIRECTED,
+	.primary_adv_interval_min = 352, //units of 0.625ms
+	.primary_adv_interval_max = 352,
+	.primary_adv_channel_map = RTK_BT_LE_ADV_CHNL_ALL,
+	.own_addr = {RTK_BT_LE_ADDR_TYPE_PUBLIC, {0}},
+	.peer_addr = {RTK_BT_LE_ADDR_TYPE_PUBLIC, {0}},
+	.filter_policy = RTK_BT_LE_ADV_FILTER_ALLOW_SCAN_ANY_CON_ANY,
+	.tx_power = 0x7F,
+	.primary_adv_phy = RTK_BT_LE_PHYS_PRIM_ADV_1M,
+	.secondary_adv_max_skip = 0,
+	.secondary_adv_phy = RTK_BT_LE_PHYS_1M,
+	.adv_sid = 0,
+};
+#else
 static rtk_bt_le_adv_param_t adv_param = {
 	.interval_min = 352, //units of 0.625ms
 	.interval_max = 352,
@@ -61,6 +89,7 @@ static rtk_bt_le_adv_param_t adv_param = {
 	.channel_map = RTK_BT_LE_ADV_CHNL_ALL,
 	.filter_policy = RTK_BT_LE_ADV_FILTER_ALLOW_SCAN_ANY_CON_ANY,
 };
+#endif
 
 static rtk_bt_le_security_param_t sec_param = {
 	.io_cap = RTK_IO_CAP_NO_IN_NO_OUT,
@@ -150,7 +179,8 @@ static rtk_bt_evt_cb_ret_t ble_mesh_gap_app_callback(uint8_t evt_code, void *par
 			BT_LOGA("[APP] Connected, handle: %d, role: %s, remote device: %s\r\n",
 					conn_ind->conn_handle, role, le_addr);
 			if (RTK_BT_LE_ROLE_SLAVE == conn_ind->role) {
-#if !(defined(RTK_BLE_MESH_BASED_ON_CODED_PHY) && RTK_BLE_MESH_BASED_ON_CODED_PHY)
+#if (!(defined(RTK_BLE_MESH_BASED_ON_CODED_PHY) && RTK_BLE_MESH_BASED_ON_CODED_PHY)) && \
+(!(defined(RTK_BLE_5_0_USE_EXTENDED_ADV) && RTK_BLE_5_0_USE_EXTENDED_ADV))
 				// If not enable mesh based on coded PHY, stop mesh customer one shot adv timer, otherwise upstack may auto stop extended connectionalbe legacy ADV so do nothing
 				rtk_bt_le_gap_stop_adv();
 #endif
@@ -190,7 +220,16 @@ static rtk_bt_evt_cb_ret_t ble_mesh_gap_app_callback(uint8_t evt_code, void *par
 					disconn_ind->reason, disconn_ind->conn_handle, role, le_addr);
 		if (RTK_BT_LE_ROLE_SLAVE == disconn_ind->role) {
 			// Start mesh custom ADV
+#if defined(RTK_BLE_5_0_USE_EXTENDED_ADV) && RTK_BLE_5_0_USE_EXTENDED_ADV
+			if (!app_eadv_started && !app_eadv_paused) {
+				uint16_t ret = rtk_bt_le_gap_start_ext_adv(app_eadv_handle, 0, 0);
+				if (RTK_BT_OK != ret) {
+					BT_LOGE("[APP] Restart ext ADV(%d) failed, err 0x%x\r\n", app_eadv_handle, ret);
+				}
+			}
+#else
 			rtk_bt_le_gap_start_adv(&adv_param);
+#endif
 			app_server_disconnect(disconn_ind->conn_handle);
 		}
 		/* gattc action */
@@ -381,6 +420,16 @@ static rtk_bt_evt_cb_ret_t ble_mesh_gap_app_callback(uint8_t evt_code, void *par
 #if defined(RTK_BLE_5_0_USE_EXTENDED_ADV) && RTK_BLE_5_0_USE_EXTENDED_ADV
 	case RTK_BT_LE_GAP_EVT_EXT_ADV_IND: {
 		rtk_bt_le_ext_adv_ind_t *ext_adv_ind = (rtk_bt_le_ext_adv_ind_t *)param;
+		if (ext_adv_ind->adv_handle == app_eadv_handle && !ext_adv_ind->err) {
+			/* Track whether the APP ADV is on air, mesh ADV sets have their own handles */
+			app_eadv_started = ext_adv_ind->is_start;
+			if (ext_adv_ind->is_start) {
+				app_eadv_paused = false;
+			} else if (RTK_BT_LE_ADV_STOP_BY_HOST == ext_adv_ind->stop_reason) {
+				/* Someone stopped it deliberately, keep it off until it is started again */
+				app_eadv_paused = true;
+			}
+		}
 		if (!ext_adv_ind->err) {
 			if (ext_adv_ind->is_start) {
 				BT_LOGA("[APP] Ext ADV(%d) started\r\n", ext_adv_ind->adv_handle);
@@ -3357,10 +3406,16 @@ int ble_mesh_device_scatternet_main(uint8_t enable)
 		BT_APP_PROCESS(gaps_client_add());
 		BT_APP_PROCESS(simple_ble_client_add());
 
+		BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_LE_GP_GAP, ble_mesh_gap_app_callback));
+
+#if defined(RTK_BLE_5_0_USE_EXTENDED_ADV) && RTK_BLE_5_0_USE_EXTENDED_ADV
+		BT_APP_PROCESS(rtk_bt_le_gap_create_ext_adv(&ext_adv_param, &app_eadv_handle));
+		BT_APP_PROCESS(rtk_bt_le_gap_set_ext_adv_data(app_eadv_handle, adv_data, sizeof(adv_data)));
+		BT_APP_PROCESS(rtk_bt_le_gap_start_ext_adv(app_eadv_handle, 0, 0));
+#else
 		BT_APP_PROCESS(rtk_bt_le_gap_set_adv_data(adv_data, sizeof(adv_data)));
 		BT_APP_PROCESS(rtk_bt_le_gap_start_adv(&adv_param));
-
-		BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_LE_GP_GAP, ble_mesh_gap_app_callback));
+#endif
 
 #if defined(BT_MESH_ENABLE_GENERIC_ON_OFF_SERVER_MODEL) && BT_MESH_ENABLE_GENERIC_ON_OFF_SERVER_MODEL
 		BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_LE_GP_MESH_GENERIC_ONOFF_SERVER_MODEL, ble_mesh_generic_onoff_server_app_callback));
@@ -3480,6 +3535,9 @@ int ble_mesh_device_scatternet_main(uint8_t enable)
 #endif
 		BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_LE_GP_MESH_HEALTH_SERVER_MODEL, ble_mesh_health_server_app_callback));
 	} else if (0 == enable) {
+#if defined(RTK_BLE_5_0_USE_EXTENDED_ADV) && RTK_BLE_5_0_USE_EXTENDED_ADV
+		app_eadv_state_reset();
+#endif
 		/* Disable BT */
 		BT_APP_PROCESS(rtk_bt_disable());
 

@@ -65,7 +65,9 @@ struct mlme_priv_t {
 	u8				assoc_rsp_ie[ASSOC_IE_MAX_LEN];
 	size_t				assoc_req_ie_len;
 	size_t				assoc_rsp_ie_len;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 17, 0)
 	struct cfg80211_external_auth_params auth_ext_para;
+#endif
 
 	/* disconnect parameters */
 	struct completion	disconnect_done_sema;

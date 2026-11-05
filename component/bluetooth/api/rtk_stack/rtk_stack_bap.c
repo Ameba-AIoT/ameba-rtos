@@ -1021,7 +1021,7 @@ static uint16_t rtk_stack_le_audio_bap_msg_cback(T_LE_AUDIO_MSG msg, void *buf)
 				}
 				p_sync_dev_info->adv_sid = p_data->p_brs_data->source_adv_sid;
 				p_sync_dev_info->adv_addr.type = (rtk_bt_le_addr_type_t)p_data->p_brs_data->source_address_type;
-				memcpy(&p_sync_dev_info->adv_addr.addr_val, &p_data->p_brs_data->source_address, sizeof(rtk_bt_le_addr_t));
+				memcpy(p_sync_dev_info->adv_addr.addr_val, p_data->p_brs_data->source_address, RTK_BD_ADDR_LEN);
 				memcpy(p_sync_dev_info->broadcast_id, p_data->p_brs_data->broadcast_id, RTK_BT_LE_AUDIO_BROADCAST_ID_LEN);
 			}
 		}
@@ -1743,7 +1743,7 @@ static uint16_t bt_stack_le_audio_acl_link_free(void *data)
 	return RTK_BT_OK;
 }
 
-static uint8_t bt_stack_le_audio_broadcast_gen_pbp_adv_data(uint8_t **p_audio_adv_data)
+static bool bt_stack_le_audio_broadcast_gen_pbp_adv_data(uint8_t **p_audio_adv_data, uint8_t *p_len)
 {
 	uint8_t idx = 0;
 	uint8_t broadcast_id_idx = 0;
@@ -1755,13 +1755,13 @@ static uint8_t bt_stack_le_audio_broadcast_gen_pbp_adv_data(uint8_t **p_audio_ad
 	memset(&src_info, 0, sizeof(src_info));
 	if (false == broadcast_source_get_info(bt_le_audio_priv_data.bsrc.source_handle, &src_info)) {
 		BT_LOGE("[LEA STACK] %s broadcast_source_get_info fail\r\n", __func__);
-		return RTK_BT_ERR_LOWER_STACK_API;
+		return false;
 	}
 	audio_data_len = 23 + device_name_len;
 	audio_adv_data = osif_mem_alloc(RAM_TYPE_DATA_ON, audio_data_len);
 	if (!audio_adv_data) {
 		BT_LOGE("[LEA STACK] %s allocate audio data fail \r\n", __func__);
-		return RTK_BT_FAIL;
+		return false;
 	}
 	audio_adv_data[idx++] = 0x03;
 	audio_adv_data[idx++] = RTK_BT_LE_GAP_ADTYPE_APPEARANCE;
@@ -1801,8 +1801,9 @@ static uint8_t bt_stack_le_audio_broadcast_gen_pbp_adv_data(uint8_t **p_audio_ad
 	}
 	audio_adv_data[announcements_idx] = feature;
 	*p_audio_adv_data = audio_adv_data;
+	*p_len = idx;
 
-	return idx;
+	return true;
 }
 
 static uint16_t bt_stack_le_audio_broadcast_config(void)
@@ -1816,9 +1817,8 @@ static uint16_t bt_stack_le_audio_broadcast_config(void)
 		BT_LOGE("[LEA STACK] %s source handle is NULL \r\n", __func__);
 		goto error;
 	}
-	broadcast_audio_announcements_len = bt_stack_le_audio_broadcast_gen_pbp_adv_data(&p_broadcast_audio_announcements);
-	if (broadcast_audio_announcements_len == 0) {
-		BT_LOGE("[LEA STACK] %s broadcast_audio_announcements_len is 0 \r\n", __func__);
+	if (!bt_stack_le_audio_broadcast_gen_pbp_adv_data(&p_broadcast_audio_announcements, &broadcast_audio_announcements_len)) {
+		BT_LOGE("[LEA STACK] %s gen pbp adv data fail \r\n", __func__);
 		goto error;
 	}
 
@@ -2544,6 +2544,7 @@ static uint16_t bt_stack_le_audio_broadcast_pa_sync_create(void *param)
 											  p_create_param->broadcast_id);
 		if (!sync_handle) {
 			BT_LOGE("%s: ble_audio_sync_allocate fail\r\n", __func__);
+			return RTK_BT_ERR_LOWER_STACK_API;
 		}
 		p_sync_dev_info = bt_stack_le_audio_sync_dev_add((void *)sync_handle);
 		if (!p_sync_dev_info) {
@@ -3556,6 +3557,10 @@ static bool bt_stack_le_audio_ready_to_start(rtk_bt_le_audio_group_info_t *p_gro
 		}
 	}
 	dev_num = ble_audio_group_get_dev_num(p_group_info->group_handle);
+	if (dev_num > RTK_BT_LE_AUDIO_MAX_SET_MEM_SIZE) {
+		BT_LOGE("%s: group device number %d exceeds max %d, clamp \r\n", __func__, dev_num, RTK_BT_LE_AUDIO_MAX_SET_MEM_SIZE);
+		dev_num = RTK_BT_LE_AUDIO_MAX_SET_MEM_SIZE;
+	}
 	if (dev_num) {
 		BT_LOGA("%s: group device number %d \r\n", __func__, dev_num);
 		p_dev_tbl = osif_mem_alloc(RAM_TYPE_DATA_ON, dev_num * sizeof(T_AUDIO_DEV_INFO));
@@ -3596,6 +3601,7 @@ static bool bt_stack_le_audio_ready_to_start(rtk_bt_le_audio_group_info_t *p_gro
 			}
 		} else {
 			BT_LOGE("%s: ble_audio_group_get_info fail \r\n", __func__);
+			osif_mem_free((void *)p_dev_tbl);
 			return false;
 		}
 		osif_mem_free((void *)p_dev_tbl);

@@ -65,10 +65,12 @@ static int whc_host_ops_get_station(struct wiphy *wiphy, struct net_device *ndev
 			sinfo->txrate.flags |= RATE_INFO_FLAGS_VHT_MCS;
 			sinfo->txrate.mcs = tx_rate - RTW_RATE_VHT1SS_MCS0;
 			sinfo->txrate.nss = 1;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 19, 0)
 		} else if ((tx_rate >= RTW_RATE_HE1SS_MCS0) && (tx_rate <= RTW_RATE_HE1SS_MCS9)) {
 			sinfo->txrate.flags |= RATE_INFO_FLAGS_HE_MCS;
 			sinfo->txrate.mcs = tx_rate - RTW_RATE_HE1SS_MCS0;
 			sinfo->txrate.nss = 1;
+#endif
 		} else {
 			sinfo->txrate.legacy = 540;
 		}
@@ -80,7 +82,12 @@ exit:
 	return ret;
 }
 
-static int whc_host_ops_change_iface(struct wiphy *wiphy, struct net_device *ndev, enum nl80211_iftype type, struct vif_params *params)
+static int whc_host_ops_change_iface(struct wiphy *wiphy, struct net_device *ndev,
+									 enum nl80211_iftype type,
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 12, 0)
+									 u32 *flags,
+#endif
+									 struct vif_params *params)
 {
 	u32 widx = rtw_netdev_idx(ndev);
 
@@ -633,6 +640,7 @@ void whc_host_disconnect_indicate(u16 reason, u8 locally_generated, u8 *bssid)
 	}
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 17, 0)
 void whc_host_external_auth_request(char *evt_info)
 {
 	struct cfg80211_external_auth_params *auth_ext_para = &global_idev.mlme_priv.auth_ext_para;
@@ -646,7 +654,14 @@ void whc_host_external_auth_request(char *evt_info)
 	cfg80211_external_auth_request(global_idev.pndev[0], auth_ext_para, GFP_ATOMIC);
 	dev_dbg(global_idev.pwhc_dev, "%s, ssid=%s, len=%d\n", __func__, auth_ext_para->ssid.ssid, auth_ext_para->ssid.ssid_len);
 }
+#else
+void whc_host_external_auth_request(char *evt_info)
+{
+	(void)evt_info;
+}
+#endif
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 2, 0)
 void whc_host_update_owe_info_event(char *evt_info)
 {
 	struct cfg80211_update_owe_info owe_info;
@@ -663,6 +678,12 @@ void whc_host_update_owe_info_event(char *evt_info)
 	owe_info.ie_len = RTW_OWE_KEY_LEN + 5;
 	cfg80211_update_owe_info_event(global_idev.pndev[0], &owe_info, GFP_ATOMIC);
 }
+#else
+void whc_host_update_owe_info_event(char *evt_info)
+{
+	(void)evt_info;
+}
+#endif
 
 static int whc_host_connect_ops(struct wiphy *wiphy, struct net_device *ndev, struct cfg80211_connect_params *sme)
 {
@@ -677,8 +698,12 @@ static int whc_host_connect_ops(struct wiphy *wiphy, struct net_device *ndev, st
 	u8 pmf_mode = 0, spp_opt = 0;
 	u8 *prsnx, *prsn;
 	struct element *target_ptr;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 2, 0)
 	struct rtw_owe_param_t owe_info;
+#endif
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 17, 0)
 	struct cfg80211_external_auth_params *auth_ext_para = &global_idev.mlme_priv.auth_ext_para;
+#endif
 	u8 is_mp = 0;
 
 	whc_host_dev_driver_is_mp(&is_mp);
@@ -695,6 +720,20 @@ static int whc_host_connect_ops(struct wiphy *wiphy, struct net_device *ndev, st
 		ret = -EINVAL;
 		goto exit;
 	}
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 17, 0)
+	if (sme->crypto.n_akm_suites &&
+		(sme->crypto.akm_suites[0] == WIFI_AKM_SUITE_SAE ||
+		 sme->crypto.akm_suites[0] == WIFI_AKM_SUITE_FT_SAE)) {
+		return -EOPNOTSUPP;
+	}
+#endif
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 2, 0)
+	if (sme->crypto.n_akm_suites &&
+		sme->crypto.akm_suites[0] == WIFI_AKM_SUITE_OWE) {
+		return -EOPNOTSUPP;
+	}
+#endif
 
 	if (ndev) {
 		wlan_idx = rtw_netdev_idx(ndev);
@@ -729,9 +768,11 @@ static int whc_host_connect_ops(struct wiphy *wiphy, struct net_device *ndev, st
 	global_idev.is_need_4way[wlan_idx] = 0;
 	global_idev.is_4way_ongoing[wlan_idx] = 0;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 3, 0)
 	if (sme->crypto.wpa_versions & NL80211_WPA_VERSION_3) {
 		connect_param->security_type |= WPA3_SECURITY;
 	}
+#endif
 	if (sme->crypto.wpa_versions & NL80211_WPA_VERSION_2) {
 		connect_param->security_type |= WPA2_SECURITY;
 		whc_host_set_wpa_mode(RTW_WPA2_ONLY_MODE);
@@ -757,7 +798,11 @@ static int whc_host_connect_ops(struct wiphy *wiphy, struct net_device *ndev, st
 		connect_param->security_type |= AES_CMAC_ENABLED;
 	}
 
-	if (sme->want_1x || (sme->auth_type == NL80211_AUTHTYPE_NETWORK_EAP) ||
+	if (
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 13, 0)
+		sme->want_1x ||
+#endif
+		(sme->auth_type == NL80211_AUTHTYPE_NETWORK_EAP) ||
 		(sme->crypto.akm_suites[0] == WIFI_AKM_SUITE_IEEE8021X) ||
 		(sme->crypto.akm_suites[0] == WIFI_AKM_SUITE_FT_IEEE8021X) ||
 		(sme->crypto.akm_suites[0] == WIFI_AKM_SUITE_IEEE8021X_SHA256) ||
@@ -776,6 +821,7 @@ static int whc_host_connect_ops(struct wiphy *wiphy, struct net_device *ndev, st
 	connect_param->ssid.len = sme->ssid_len;
 
 	memset(connect_param->prev_bssid.octet, 0, ETH_ALEN);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 5, 0)
 	if (sme->prev_bssid) {
 		dev_dbg(global_idev.pwhc_dev,
 				"Former AP [0x%x:0x%x:0x%x:0x%x:0x%x:0x%x], Re-Association Request to [0x%x:0x%x:0x%x:0x%x:0x%x:0x%x].\n",
@@ -791,7 +837,11 @@ static int whc_host_connect_ops(struct wiphy *wiphy, struct net_device *ndev, st
 	} else {
 		global_idev.b_in_roaming = false;
 	}
+#else
+	global_idev.b_in_roaming = false;
+#endif
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 2, 0)
 	if (sme->crypto.akm_suites[0] ==  WIFI_AKM_SUITE_OWE) {
 		connect_param->security_type = 0;
 		/* OWE don't need the key from host, RSWLANDIOT-11824 */
@@ -810,24 +860,34 @@ static int whc_host_connect_ops(struct wiphy *wiphy, struct net_device *ndev, st
 			}
 		}
 	} else {
+#else
+	{
+#endif
 		/* no OWE, set the key from sme->key, RSWLANDIOT-11824 */
-		if (sme->key_len) {
+		if (sme->key_len)
+		{
 			memcpy(ptr, (u8 *)sme->key, sme->key_len);
 			connect_param->password = (unsigned char *)ptr;
-		} else {
+		} else
+		{
 			connect_param->password = NULL;
 		}
 		connect_param->password_len = sme->key_len;
 		connect_param->key_id = sme->key_idx;
 	}
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 17, 0)
 	if (sme->crypto.akm_suites[0] ==  WIFI_AKM_SUITE_SAE ||
 		sme->crypto.akm_suites[0] ==  WIFI_AKM_SUITE_FT_SAE) {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 3, 0)
+		connect_param->security_type |= WPA3_SECURITY;
+#endif
 		/*SAE need request wpa_suppilcant to auth*/
 		memcpy(auth_ext_para->ssid.ssid, (u8 *)sme->ssid, sme->ssid_len);
 		auth_ext_para->ssid.ssid_len = sme->ssid_len;
 		whc_host_set_wpa_mode(RTW_WPA3_ONLY_MODE);
 	}
+#endif
 
 	/* set channel to let low level do scan on specific channel */
 	connect_param->channel = rtw_freq2ch(sme->channel->center_freq);
@@ -1109,6 +1169,7 @@ exit:
 	return ret;
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 17, 0)
 static int whc_host_external_auth_status(struct wiphy *wiphy, struct net_device *dev, struct cfg80211_external_auth_params *params)
 {
 	u8 is_mp = 0;
@@ -1132,6 +1193,7 @@ static int whc_host_external_auth_status(struct wiphy *wiphy, struct net_device 
 
 	return 0;
 }
+#endif
 
 #ifdef CONFIG_SUPPLICANT_SME
 static int whc_sme_host_auth(struct wiphy *wiphy, struct net_device *ndev, struct cfg80211_auth_request *req)
@@ -1666,7 +1728,9 @@ void whc_host_ops_sta_init(void)
 	ops->change_virtual_intf = whc_host_ops_change_iface;
 	ops->get_station = whc_host_ops_get_station;
 	ops->scan = whc_host_scan_ops;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 5, 0)
 	ops->abort_scan = whc_host_abort_scan;
+#endif
 	ops->set_wiphy_params = whc_host_set_wiphy_params;
 	ops->connect = whc_host_connect_ops;
 	ops->disconnect = whc_host_disconnect_ops;
@@ -1685,7 +1749,9 @@ void whc_host_ops_sta_init(void)
 #else
 	ops->update_mgmt_frame_registrations = whc_host_update_mgmt_frame_register;
 #endif
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 17, 0)
 	ops->external_auth = whc_host_external_auth_status;
+#endif
 #ifdef CONFIG_SUPPLICANT_SME
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 32))
 	ops->auth = whc_sme_host_auth;

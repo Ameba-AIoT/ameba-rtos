@@ -65,7 +65,7 @@ static rtk_bt_le_ext_adv_param_t ext_adv_param = {
 static uint8_t def_adv_data[] = {
 	0x02, //AD len
 	RTK_BT_LE_GAP_ADTYPE_FLAGS, //AD types
-	RTK_BT_LE_GAP_ADTYPE_FLAGS_LIMITED | RTK_BT_LE_GAP_ADTYPE_FLAGS_BREDR_NOT_SUPPORTED, //AD data
+	RTK_BT_LE_GAP_ADTYPE_FLAGS_GENERAL | RTK_BT_LE_GAP_ADTYPE_FLAGS_BREDR_NOT_SUPPORTED, //AD data
 	0x0C,
 	RTK_BT_LE_GAP_ADTYPE_LOCAL_NAME_COMPLETE,
 	'C', 'U', 'S', 'T', 'O', 'M', 'E', 'R', 'A', 'D', 'V',

@@ -75,7 +75,7 @@ uint16_t rtk_stack_df_paramerter_setting(rtk_bt_mesh_directed_control_param_sett
 extern bool bt_stack_profile_check(rtk_bt_profile_t profile);
 uint16_t bt_mesh_directed_forwarding_common_act_handle(rtk_bt_cmd_t *p_cmd)
 {
-	uint16_t ret = RTK_BT_MESH_MSG_SEND_CAUSE_FAIL;
+	uint16_t ret = RTK_BT_OK;
 	if (true != bt_stack_profile_check(RTK_BT_PROFILE_MESH)) {
 		BT_LOGE("Error: BLE MESH profile is not initiated\r\n");
 		ret = RTK_BT_ERR_UNSUPPORTED;
@@ -90,9 +90,11 @@ uint16_t bt_mesh_directed_forwarding_common_act_handle(rtk_bt_cmd_t *p_cmd)
 			} else {
 				BT_LOGE("wrong dependent elem num: %d\r\n", path_discovery->dependent_elem_num);
 				ret = RTK_BT_ERR_PARAM_INVALID;
+				goto end;
 			}
 		}
-		ret = df_path_discovery(path_discovery->master_key_index, path_discovery->target_addr, path_discovery->dependent_addr, path_discovery->dependent_elem_num);
+		ret = (df_path_discovery(path_discovery->master_key_index, path_discovery->target_addr, path_discovery->dependent_addr,
+								 path_discovery->dependent_elem_num)) ? RTK_BT_ERR_LOWER_STACK_API : RTK_BT_OK;
 		break;
 	}
 	case RTK_BT_MESH_DF_PATH_SOLICITATION: {
@@ -103,13 +105,13 @@ uint16_t bt_mesh_directed_forwarding_common_act_handle(rtk_bt_cmd_t *p_cmd)
 		}
 		df_path_solicitation(path_solicitation->master_key_index, addr_list, path_solicitation->addr_num);
 		plt_free(addr_list, RAM_TYPE_DATA_ON);
-		ret = RTK_BT_MESH_MSG_SEND_CAUSE_SUCCESS;
+		ret = RTK_BT_OK;
 		break;
 	}
 	case RTK_BT_MESH_DF_PATH_DEPENDENTS_UPDATE: {
 		rtk_bt_mesh_df_act_df_path_dependents_update_t *path_update = (rtk_bt_mesh_df_act_df_path_dependents_update_t *)p_cmd->param;
 		df_path_dependents_update(path_update->type, path_update->endpoint_addr, path_update->dependent_addr, path_update->dependent_elem_num);
-		ret = RTK_BT_MESH_MSG_SEND_CAUSE_SUCCESS;
+		ret = RTK_BT_OK;
 		break;
 	}
 	case RTK_BT_MESH_DF_DIRECTED_CONTROL_STATE_SET: {
@@ -119,14 +121,14 @@ uint16_t bt_mesh_directed_forwarding_common_act_handle(rtk_bt_cmd_t *p_cmd)
 								 };
 		uint16_t df_index = df_control_set(ctl_state->master_key_index, ctl);
 		mesh_flash_store(MESH_FLASH_PARAMS_DF_DIRECTED_CTL, &df_index);
-		ret = RTK_BT_MESH_MSG_SEND_CAUSE_SUCCESS;
+		ret = RTK_BT_OK;
 		break;
 	}
 	case RTK_BT_MESH_DF_DIRECTED_CONTROL_STATE_GET: {
 		rtk_bt_mesh_df_control_state_setting_t *ctl_state = (rtk_bt_mesh_df_control_state_setting_t *)p_cmd->param;
 		directed_control_t ctl = df_control_get(ctl_state->master_key_index);
 		memcpy(&ctl_state->ctl, &ctl, sizeof(directed_control_t));
-		ret = RTK_BT_MESH_MSG_SEND_CAUSE_SUCCESS;
+		ret = RTK_BT_OK;
 		break;
 	}
 	/*****-------------------------------------------*****/
@@ -134,60 +136,61 @@ uint16_t bt_mesh_directed_forwarding_common_act_handle(rtk_bt_cmd_t *p_cmd)
 		rtk_bt_mesh_df_path_metric_state_setting_t *pm_state = (rtk_bt_mesh_df_path_metric_state_setting_t *)p_cmd->param;
 		path_metric_t pm = df_path_metric_get(pm_state->master_key_index);
 		memcpy(&pm_state->metric, &pm, sizeof(path_metric_t));
-		ret = RTK_BT_MESH_MSG_SEND_CAUSE_SUCCESS;
+		ret = RTK_BT_OK;
 		break;
 	}
 	case RTK_BT_MESH_DF_PATH_METRIC_STATE_SET: {
 		rtk_bt_mesh_df_path_metric_state_setting_t *pm_state = (rtk_bt_mesh_df_path_metric_state_setting_t *)p_cmd->param;
 		path_metric_t pm = {pm_state->metric.metric_type, pm_state->metric.lifetime, pm_state->metric.prohibited};
-		ret = df_path_metric_set(pm_state->master_key_index, pm);
+		ret = (df_path_metric_set(pm_state->master_key_index, pm)) ? RTK_BT_ERR_LOWER_STACK_API : RTK_BT_OK;
 		break;
 	}
 	case RTK_BT_MESH_DF_DISCOVERY_TABLE_CAP_GET: {
 		rtk_bt_mesh_df_discovery_table_cap_state_setting_t *cap_state = (rtk_bt_mesh_df_discovery_table_cap_state_setting_t *)p_cmd->param;
 		discovery_table_capabilities_t cap = df_discovery_table_cap_get(cap_state->master_key_index);
 		memcpy(&cap_state->cap, &cap, sizeof(discovery_table_capabilities_t));
-		ret = RTK_BT_MESH_MSG_SEND_CAUSE_SUCCESS;
+		ret = RTK_BT_OK;
 		break;
 	}
 	case RTK_BT_MESH_DF_DISCOVERY_TABLE_CAP_SET: {
 		rtk_bt_mesh_df_discovery_table_cap_state_setting_t *cap_state = (rtk_bt_mesh_df_discovery_table_cap_state_setting_t *)p_cmd->param;
 		discovery_table_capabilities_t cap = {cap_state->cap.max_concurrent_init, cap_state->cap.max_discovery_table_entries_count};
-		ret = df_discovery_table_cap_set(cap_state->master_key_index, cap);
+		ret = (df_discovery_table_cap_set(cap_state->master_key_index, cap)) ? RTK_BT_ERR_LOWER_STACK_API : RTK_BT_OK;
 		break;
 	}
 	case RTK_BT_MESH_DF_WANTED_LANES_GET: {
 		rtk_bt_mesh_df_wanted_lanes_state_setting_t *wl_state = (rtk_bt_mesh_df_wanted_lanes_state_setting_t *)p_cmd->param;
 		wl_state->wanted_lanes = df_wanted_lanes_get(wl_state->master_key_index);
-		ret = RTK_BT_MESH_MSG_SEND_CAUSE_SUCCESS;
+		ret = RTK_BT_OK;
 		break;
 	}
 	case RTK_BT_MESH_DF_WANTED_LANES_SET: {
 		rtk_bt_mesh_df_wanted_lanes_state_setting_t *wl_state = (rtk_bt_mesh_df_wanted_lanes_state_setting_t *)p_cmd->param;
-		ret = df_wanted_lanes_set(wl_state->master_key_index, wl_state->wanted_lanes);
+		ret = (df_wanted_lanes_set(wl_state->master_key_index, wl_state->wanted_lanes)) ? RTK_BT_ERR_LOWER_STACK_API : RTK_BT_OK;
 		break;
 	}
 	case RTK_BT_MESH_DF_TWO_WAY_PATH_GET: {
 		rtk_bt_mesh_df_two_way_path_state_setting_t *twp_state = (rtk_bt_mesh_df_two_way_path_state_setting_t *)p_cmd->param;
 		twp_state->two_way_path = df_two_way_path_get(twp_state->master_key_index);
-		ret = RTK_BT_MESH_MSG_SEND_CAUSE_SUCCESS;
+		ret = RTK_BT_OK;
 		break;
 	}
 	case RTK_BT_MESH_DF_TWO_WAY_PATH_SET: {
 		rtk_bt_mesh_df_two_way_path_state_setting_t *twp_state = (rtk_bt_mesh_df_two_way_path_state_setting_t *)p_cmd->param;
-		ret = df_two_way_path_set(twp_state->master_key_index, twp_state->two_way_path);
+		ret = (df_two_way_path_set(twp_state->master_key_index, twp_state->two_way_path)) ? RTK_BT_ERR_LOWER_STACK_API : RTK_BT_OK;
 		break;
 	}
 	case RTK_BT_MESH_DF_PATH_ECHO_INTERVAL_GET: {
 		rtk_bt_mesh_df_echo_interval_state_setting_t *pei_state = (rtk_bt_mesh_df_echo_interval_state_setting_t *)p_cmd->param;
 		pei_state->unicast_echo_interval = df_unicast_echo_interval_get(pei_state->master_key_index);
 		pei_state->multicast_echo_interval = df_multicast_echo_interval_get(pei_state->master_key_index);
-		ret = RTK_BT_MESH_MSG_SEND_CAUSE_SUCCESS;
+		ret = RTK_BT_OK;
 		break;
 	}
 	case RTK_BT_MESH_DF_PATH_ECHO_INTERVAL_SET: {
 		rtk_bt_mesh_df_echo_interval_state_setting_t *pei_state = (rtk_bt_mesh_df_echo_interval_state_setting_t *)p_cmd->param;
-		ret = df_path_echo_interval_set(pei_state->master_key_index, pei_state->unicast_echo_interval, pei_state->multicast_echo_interval);
+		ret = (df_path_echo_interval_set(pei_state->master_key_index, pei_state->unicast_echo_interval,
+										 pei_state->multicast_echo_interval)) ? RTK_BT_ERR_LOWER_STACK_API : RTK_BT_OK;
 		break;
 	}
 	case RTK_BT_MESH_DF_PUBLISH_POLICY_SET: {
@@ -200,17 +203,18 @@ uint16_t bt_mesh_directed_forwarding_common_act_handle(rtk_bt_cmd_t *p_cmd)
 			mesh_model_pub_params_set(model, pub_param);
 			mesh_flash_store(MESH_FLASH_PARAMS_MODEL_PUB_PARAMS, model);
 		}
-		ret = RTK_BT_MESH_MSG_SEND_CAUSE_SUCCESS;
+		ret = RTK_BT_OK;
 		break;
 	}
 	case RTK_BT_MESH_DF_PARAMETER_SET: {
 		rtk_bt_mesh_directed_control_param_setting_t *param = (rtk_bt_mesh_directed_control_param_setting_t *)p_cmd->param;
-		ret = rtk_stack_df_paramerter_setting(param);
+		ret = (rtk_stack_df_paramerter_setting(param)) ? RTK_BT_ERR_LOWER_STACK_API : RTK_BT_OK;
 		break;
 	}
 	default:
 		BT_LOGE("[%s] Unknown p_cmd->act:%d\r\n", __func__, p_cmd->act);
-		break;
+		ret = RTK_BT_ERR_NO_CASE_ELEMENT;
+		goto end;
 	}
 end:
 	p_cmd->ret = ret;
@@ -246,7 +250,7 @@ uint8_t rtk_bt_mesh_directed_forwarding_client_model_indicate_event(uint32_t eve
 
 uint16_t bt_mesh_directed_forwarding_client_model_act_handle(rtk_bt_cmd_t *p_cmd)
 {
-	uint16_t ret = RTK_BT_MESH_MSG_SEND_CAUSE_FAIL;
+	uint16_t ret = RTK_BT_OK;
 	if (true != bt_stack_profile_check(RTK_BT_PROFILE_MESH)) {
 		BT_LOGE("Error: BLE MESH profile is not initiated\r\n");
 		ret = RTK_BT_ERR_UNSUPPORTED;
@@ -541,7 +545,12 @@ uint16_t bt_mesh_directed_forwarding_client_model_act_handle(rtk_bt_cmd_t *p_cmd
 	}
 	default:
 		BT_LOGE("[%s] Unknown p_cmd->act:%d\r\n", __func__, p_cmd->act);
-		break;
+		ret = RTK_BT_ERR_NO_CASE_ELEMENT;
+		goto end;
+	}
+	if (ret) {
+		BT_LOGE("[%s] return ret:%d\r\n", __func__, ret);
+		ret = RTK_BT_ERR_LOWER_STACK_API;
 	}
 end:
 	p_cmd->ret = ret;

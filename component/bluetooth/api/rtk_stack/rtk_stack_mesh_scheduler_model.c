@@ -54,7 +54,7 @@ bool scheduler_client_model_init(void)
 extern bool bt_stack_profile_check(rtk_bt_profile_t profile);
 uint16_t bt_mesh_scheduler_client_model_act_handle(rtk_bt_cmd_t *p_cmd)
 {
-	uint16_t ret = RTK_BT_MESH_MSG_SEND_CAUSE_FAIL;
+	uint16_t ret = RTK_BT_OK;
 	if (true != bt_stack_profile_check(RTK_BT_PROFILE_MESH)) {
 		BT_LOGE("Error: BLE MESH profile is not initiated\r\n");
 		ret = RTK_BT_ERR_UNSUPPORTED;
@@ -82,7 +82,12 @@ uint16_t bt_mesh_scheduler_client_model_act_handle(rtk_bt_cmd_t *p_cmd)
 	}
 	default:
 		BT_LOGE("[%s] Unknown p_cmd->act:%d\r\n", __func__, p_cmd->act);
-		break;
+		ret = RTK_BT_ERR_NO_CASE_ELEMENT;
+		goto end;
+	}
+	if (ret) {
+		BT_LOGE("[%s] return ret:%d\r\n", __func__, ret);
+		ret = RTK_BT_ERR_LOWER_STACK_API;
 	}
 end:
 	p_cmd->ret = ret;

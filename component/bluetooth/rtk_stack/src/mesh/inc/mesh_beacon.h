@@ -123,6 +123,9 @@ typedef enum
     BEACON_CFG_TYPE_PRB_RETRANS_INTERVAL = 5, //!< uint16_t, unit: ms
 #endif
     BEACON_CFG_TYPE_SNB_AVOID_OVERLOAD = 6, //!< bool
+#if MESH_DEVICE
+    BEACON_CFG_TYPE_UDB_REPORT_IN_DEVICE_ROLE = 7, //!< bool
+#endif
 } beacon_cfg_type_t;
 /** @} */
 
