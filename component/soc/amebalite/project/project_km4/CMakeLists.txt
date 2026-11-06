@@ -6,6 +6,11 @@ set(c_VERBOSE_MAKEFILE FALSE)
 
 ameba_mcu_project_create(km4 km4)
 ameba_mcu_project_check()
+
+ameba_install_directory("${CMAKE_CURRENT_SOURCE_DIR}/gnu_utility")
+ameba_install_directory("${CMAKE_CURRENT_SOURCE_DIR}/ld")
+ameba_install_directory("${CMAKE_CURRENT_SOURCE_DIR}/make")
+
 if(CONFIG_WHC_HOST)
     set(AP_IMAGEDIR ${KM4_BUILD_DIR}/image)
 else()
@@ -62,7 +67,10 @@ if(CONFIG_TRUSTZONE)
     add_dependencies(${image2_name} ${image3_name}_postbuild)
 endif()
 ameba_add_subdirectory(make/image_floader)
-ameba_add_subdirectory_ifnot(CONFIG_AMEBA_RLS make/image_imgtool_floader)
+# internal: not installed; !AMEBA_RLS: the shipped make/ copy must not be entered by the released SDK
+if(NOT CONFIG_AMEBA_RLS)
+    ameba_add_subdirectory_internal(make/image_imgtool_floader)
+endif()
 
 add_custom_target(
     ${c_MCU_PROJECT_NAME}

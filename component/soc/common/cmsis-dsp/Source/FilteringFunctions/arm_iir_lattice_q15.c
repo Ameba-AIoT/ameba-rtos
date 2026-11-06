@@ -1,15 +1,16 @@
-/* ----------------------------------------------------------------------
+﻿/* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
  * Title:        arm_iir_lattice_q15.c
  * Description:  Q15 IIR Lattice filter processing function
  *
- * $Date:        18. March 2019
- * $Revision:    V1.6.0
+ * $Date:        23 April 2021
+ * $Revision:    V1.9.0
  *
- * Target Processor: Cortex-M cores
+ * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
+
 /*
- * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -25,8 +26,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "arm_compiler_specific.h"
 
-#include "arm_math.h"
+
+#include "dsp/filtering_functions.h"
 
 /**
   @ingroup groupFilters
@@ -43,7 +46,6 @@
   @param[in]     pSrc       points to the block of input data
   @param[out]    pDst       points to the block of output data
   @param[in]     blockSize  number of samples to process
-  @return        none
 
   @par           Scaling and Overflow Behavior
                    The function is implemented using an internal 64-bit accumulator.
@@ -54,7 +56,7 @@
                    Lastly, the accumulator is saturated to yield a result in 1.15 format.
  */
 
-void arm_iir_lattice_q15(
+ARM_DSP_ATTRIBUTE void arm_iir_lattice_q15(
 	const arm_iir_lattice_instance_q15 *S,
 	const q15_t *pSrc,
 	q15_t *pDst,
@@ -63,7 +65,7 @@ void arm_iir_lattice_q15(
 	q15_t *pState = S->pState;                     /* State pointer */
 	q15_t *pStateCur;                              /* State current pointer */
 	q31_t fcurr, fnext = 0, gcurr = 0, gnext;      /* Temporary variables for lattice stages */
-	q63_t acc;                                     /* Accumlator */
+	q63_t acc;                                     /* Accumulator */
 	q15_t *px1, *px2, *pk, *pv;                    /* Temporary pointers for state and coef */
 	uint32_t numStages = S->numStages;             /* Number of stages */
 	uint32_t blkCnt, tapCnt;                       /* Temporary variables for counts */
@@ -138,7 +140,7 @@ void arm_iir_lattice_q15(
 			/* write gN-1(n) into state for next sample processing */
 			*px2++ = (q15_t) gnext1;
 
-			/* Process sample for 3nd, 7th ...taps */
+			/* Process sample for 3rd, 7th ...taps */
 			/* Read gN-3(n-1) from state buffer */
 			gcurr = *px1++;
 			/* Process sample for 3rd, 7th .. taps */
@@ -260,7 +262,7 @@ void arm_iir_lattice_q15(
 	}
 
 	/* Processing is complete. Now copy last S->numStages samples to start of the buffer
-	   for the preperation of next frame process */
+	   for the preparation of next frame process */
 
 	/* Points to the start of the state buffer */
 	pStateCur = &S->pState[0];
@@ -363,7 +365,7 @@ void arm_iir_lattice_q15(
 	}
 
 	/* Processing is complete. Now copy last S->numStages samples to start of the buffer
-	   for the preperation of next frame process */
+	   for the preparation of next frame process */
 
 	/* Points to the start of the state buffer */
 	pStateCur = &S->pState[0];

@@ -24,7 +24,7 @@ uint16_t bt_stack_gap_act_handle(rtk_bt_cmd_t *p_cmd);
 uint16_t bt_stack_le_gap_act_handle(rtk_bt_cmd_t *p_cmd);
 uint16_t bt_stack_gatts_act_handle(rtk_bt_cmd_t *p_cmd);
 uint16_t bt_stack_gattc_act_handle(rtk_bt_cmd_t *p_cmd);
-// uint16_t bt_stack_br_gap_act_handle(rtk_bt_cmd_t *p_cmd);
+uint16_t bt_stack_br_gap_act_handle(rtk_bt_cmd_t *p_cmd);
 // uint16_t bt_stack_a2dp_act_handle(rtk_bt_cmd_t *p_cmd);
 // uint16_t bt_stack_avrcp_act_handle(rtk_bt_cmd_t *p_cmd);
 
@@ -38,6 +38,8 @@ int zephyr_res_alloc(void);
 int zephyr_res_free(void);
 void zephyr_internal_res_free(void);
 void zephyr_builtin_gatt_svc_set(bool enable);
+void zephyr_work_reset(void);
+
 #ifdef __cplusplus
 }
 #endif

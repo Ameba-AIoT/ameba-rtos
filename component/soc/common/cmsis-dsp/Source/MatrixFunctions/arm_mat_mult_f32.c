@@ -1,15 +1,16 @@
-/* ----------------------------------------------------------------------
+﻿/* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
  * Title:        arm_mat_mult_f32.c
  * Description:  Floating-point matrix multiplication
  *
- * $Date:        18. March 2019
- * $Revision:    V1.6.0
+ * $Date:        23 April 2021
+ * $Revision:    V1.9.0
  *
- * Target Processor: Cortex-M cores
+ * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
+
 /*
- * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -25,8 +26,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "arm_compiler_specific.h"
 
-#include "arm_math.h"
+
+#include "dsp/matrix_functions.h"
+
+#if defined(ARM_MATH_NEON)
+#define GROUPOFROWS 8
+#endif
 
 /**
  * @ingroup groupMatrix
@@ -37,7 +44,27 @@
  *
  * Multiplies two matrices.
  *
- * \image html MatrixMultiplication.gif "Multiplication of two 3 x 3 matrices"
+ * @par Multiplication of two 3x3 matrices:
+ *
+ * \f[
+ * \begin{pmatrix}
+ *  a_{1,1} & a_{1,2} & a_{1,3} \\
+ *  a_{2,1} & a_{2,2} & a_{2,3} \\
+ *  a_{3,1} & a_{3,2} & a_{3,3} \\
+ * \end{pmatrix}
+ *
+ * \begin{pmatrix}
+ *  b_{1,1} & b_{1,2} & b_{1,3} \\
+ *  b_{2,1} & b_{2,2} & b_{2,3} \\
+ *  b_{3,1} & b_{3,2} & b_{3,3} \\
+ * \end{pmatrix}
+ * =
+ * \begin{pmatrix}
+ *  a_{1,1} b_{1,1}+a_{1,2} b_{2,1}+a_{1,3} b_{3,1} & a_{1,1} b_{1,2}+a_{1,2} b_{2,2}+a_{1,3} b_{3,2} & a_{1,1} b_{1,3}+a_{1,2} b_{2,3}+a_{1,3} b_{3,3} \\
+ *  a_{2,1} b_{1,1}+a_{2,2} b_{2,1}+a_{2,3} b_{3,1} & a_{2,1} b_{1,2}+a_{2,2} b_{2,2}+a_{2,3} b_{3,2} & a_{2,1} b_{1,3}+a_{2,2} b_{2,3}+a_{2,3} b_{3,3} \\
+ *  a_{3,1} b_{1,1}+a_{3,2} b_{2,1}+a_{3,3} b_{3,1} & a_{3,1} b_{1,2}+a_{3,2} b_{2,2}+a_{3,3} b_{3,2} & a_{3,1} b_{1,3}+a_{3,2} b_{2,3}+a_{3,3} b_{3,3} \\
+ * \end{pmatrix}
+ * \f]
 
  * Matrix multiplication is only defined if the number of columns of the
  * first matrix equals the number of rows of the second matrix.
@@ -54,21 +81,14 @@
  * @{
  */
 
-/**
- * @brief Floating-point matrix multiplication.
- * @param[in]       *pSrcA points to the first input matrix structure
- * @param[in]       *pSrcB points to the second input matrix structure
- * @param[out]      *pDst points to output matrix structure
- * @return     		The function returns either
- * <code>ARM_MATH_SIZE_MISMATCH</code> or <code>ARM_MATH_SUCCESS</code> based on the outcome of size checking.
- */
+
 
 #if defined(ARM_MATH_MVEF) && !defined(ARM_MATH_AUTOVECTORIZE)
 
 #define MATRIX_DIM3 3
 #define MATRIX_DIM4 4
 
-__STATIC_INLINE  arm_status arm_mat_mult_f32_2x2_mve(
+__STATIC_INLINE arm_status arm_mat_mult_f32_2x2_mve(
 	const arm_matrix_instance_f32 *pSrcA,
 	const arm_matrix_instance_f32 *pSrcB,
 	arm_matrix_instance_f32 *pDst)
@@ -120,7 +140,7 @@ __STATIC_INLINE  arm_status arm_mat_mult_f32_2x2_mve(
  *        {a10 b00 + a11 b10 + a12 b20, a10 b01 + a11 b11 + a12 b21, a10 b02 + a11 b12 + a12 b22},
  *        {a20 b00 + a21 b10 + a22 b20, a20 b01 + a21 b11 + a22 b21, a20 b02 + a21 b12 + a22 b22}}
  */
-__STATIC_INLINE  arm_status arm_mat_mult_f32_3x3_mve(
+__STATIC_INLINE arm_status arm_mat_mult_f32_3x3_mve(
 	const arm_matrix_instance_f32 *pSrcA,
 	const arm_matrix_instance_f32 *pSrcB,
 	arm_matrix_instance_f32 *pDst)
@@ -258,7 +278,15 @@ __STATIC_INLINE arm_status arm_mat_mult_f32_4x4_mve(
 }
 
 
-arm_status arm_mat_mult_f32(
+/**
+ * @brief Floating-point matrix multiplication.
+ * @param[in]       *pSrcA points to the first input matrix structure
+ * @param[in]       *pSrcB points to the second input matrix structure
+ * @param[out]      *pDst points to output matrix structure
+ * @return          The function returns either
+ * <code>ARM_MATH_SIZE_MISMATCH</code> or <code>ARM_MATH_SUCCESS</code> based on the outcome of size checking.
+ */
+ARM_DSP_ATTRIBUTE arm_status arm_mat_mult_f32(
 	const arm_matrix_instance_f32 *pSrcA,
 	const arm_matrix_instance_f32 *pSrcB,
 	arm_matrix_instance_f32 *pDst)
@@ -498,328 +526,68 @@ arm_status arm_mat_mult_f32(
 #else
 
 #if defined(ARM_MATH_NEON)
-
-#define GROUPOFROWS 8
-
-arm_status arm_mat_mult_f32(
-	const arm_matrix_instance_f32 *pSrcA,
-	const arm_matrix_instance_f32 *pSrcB,
-	arm_matrix_instance_f32 *pDst)
-{
-	float32_t *pIn1 = pSrcA->pData;                /* input data matrix pointer A */
-	float32_t *pIn2 = pSrcB->pData;                /* input data matrix pointer B */
-	float32_t *pInA = pSrcA->pData;                /* input data matrix pointer A  */
-	float32_t *pOut = pDst->pData;                 /* output data matrix pointer */
-	float32_t *px;                                 /* Temporary output data matrix pointer */
-	float32_t sum;                                 /* Accumulator */
-	uint16_t numRowsA = pSrcA->numRows;            /* number of rows of input matrix A */
-	uint16_t numColsB = pSrcB->numCols;            /* number of columns of input matrix B */
-	uint16_t numColsA = pSrcA->numCols;            /* number of columns of input matrix A */
-
-
-	uint16_t col, i = 0U, j, row = numRowsA, rowCnt, colCnt;      /* loop counters */
-	arm_status status;                             /* status of matrix multiplication */
-
-	float32x4_t a0V, a1V, a2V, a3V, a4V, a5V, a6V, a7V;
-	float32x4_t acc0, acc1, acc2, acc3, acc4, acc5, acc6, acc7, temp;
-	float32x2_t accum = vdup_n_f32(0);
-	float32_t *pIn1B = pSrcA->pData;
-	float32_t *pIn1C = pSrcA->pData;
-	float32_t *pIn1D = pSrcA->pData;
-	float32_t *pIn1E = pSrcA->pData;
-	float32_t *pIn1F = pSrcA->pData;
-	float32_t *pIn1G = pSrcA->pData;
-	float32_t *pIn1H = pSrcA->pData;
-
-	float32_t *pxB, *pxC, *pxD, *pxE, *pxF, *pxG, *pxH;                                /* Temporary output data matrix pointer */
-	float32_t sum0, sum1, sum2, sum3, sum4, sum5, sum6, sum7;
-
-#ifdef ARM_MATH_MATRIX_CHECK
-
-	/* Check for matrix mismatch condition */
-	if ((pSrcA->numCols != pSrcB->numRows) ||
-		(pSrcA->numRows != pDst->numRows) || (pSrcB->numCols != pDst->numCols)) {
-		/* Set status as ARM_MATH_SIZE_MISMATCH */
-		status = ARM_MATH_SIZE_MISMATCH;
-	} else
-#endif /*      #ifdef ARM_MATH_MATRIX_CHECK    */
-	{
-		/* The following loop performs the dot-product of each row in pSrcA with each column in pSrcB */
-		/* Row loop */
-		rowCnt = row >> 3;
-
-		while (rowCnt > 0) {
-			/* Output pointer is set to starting address of the row being processed */
-			px = pOut + GROUPOFROWS * i;
-			pxB = px + numColsB;
-			pxC = px + 2 * numColsB;
-			pxD = px + 3 * numColsB;
-			pxE = px + 4 * numColsB;
-			pxF = px + 5 * numColsB;
-			pxG = px + 6 * numColsB;
-			pxH = px + 7 * numColsB;
-
-			/* For every row wise process, the column loop counter is to be initiated */
-			col = numColsB;
-
-			/* For every row wise process, the pIn2 pointer is set
-			 ** to the starting address of the pSrcB data */
-			pIn2 = pSrcB->pData;
-
-			j = 0U;
-
-			/* Column loop */
-			do {
-				/* Set the variable sum, that acts as accumulator, to zero */
-				sum0 = 0.0f;
-				sum1 = 0.0f;
-				sum2 = 0.0f;
-				sum3 = 0.0f;
-				sum4 = 0.0f;
-				sum5 = 0.0f;
-				sum6 = 0.0f;
-				sum7 = 0.0f;
-
-				/* Initiate the pointer pIn1 to point to the starting address of the column being processed */
-				pIn1 = pInA;
-				pIn1B = pIn1 + numColsA;
-				pIn1C = pIn1 + 2 * numColsA;
-				pIn1D = pIn1 + 3 * numColsA;
-				pIn1E = pIn1 + 4 * numColsA;
-				pIn1F = pIn1 + 5 * numColsA;
-				pIn1G = pIn1 + 6 * numColsA;
-				pIn1H = pIn1 + 7 * numColsA;
-
-				acc0 = vdupq_n_f32(0.0);
-				acc1 = vdupq_n_f32(0.0);
-				acc2 = vdupq_n_f32(0.0);
-				acc3 = vdupq_n_f32(0.0);
-				acc4 = vdupq_n_f32(0.0);
-				acc5 = vdupq_n_f32(0.0);
-				acc6 = vdupq_n_f32(0.0);
-				acc7 = vdupq_n_f32(0.0);
-
-				/* Compute 4 MACs simultaneously. */
-				colCnt = numColsA >> 2U;
-
-				/* Matrix multiplication */
-				while (colCnt > 0U) {
-					/* c(m,n) = a(1,1)*b(1,1) + a(1,2)*b(2,1) + ... + a(m,p)*b(p,n) */
-					a0V = vld1q_f32(pIn1);
-					a1V = vld1q_f32(pIn1B);
-					a2V = vld1q_f32(pIn1C);
-					a3V = vld1q_f32(pIn1D);
-					a4V = vld1q_f32(pIn1E);
-					a5V = vld1q_f32(pIn1F);
-					a6V = vld1q_f32(pIn1G);
-					a7V = vld1q_f32(pIn1H);
-
-					pIn1 += 4;
-					pIn1B += 4;
-					pIn1C += 4;
-					pIn1D += 4;
-					pIn1E += 4;
-					pIn1F += 4;
-					pIn1G += 4;
-					pIn1H += 4;
-
-					temp = vsetq_lane_f32(*pIn2, temp, 0);
-					pIn2 += numColsB;
-					temp = vsetq_lane_f32(*pIn2, temp, 1);
-					pIn2 += numColsB;
-					temp = vsetq_lane_f32(*pIn2, temp, 2);
-					pIn2 += numColsB;
-					temp = vsetq_lane_f32(*pIn2, temp, 3);
-					pIn2 += numColsB;
-
-					acc0 = vmlaq_f32(acc0, a0V, temp);
-					acc1 = vmlaq_f32(acc1, a1V, temp);
-					acc2 = vmlaq_f32(acc2, a2V, temp);
-					acc3 = vmlaq_f32(acc3, a3V, temp);
-					acc4 = vmlaq_f32(acc4, a4V, temp);
-					acc5 = vmlaq_f32(acc5, a5V, temp);
-					acc6 = vmlaq_f32(acc6, a6V, temp);
-					acc7 = vmlaq_f32(acc7, a7V, temp);
-
-					/* Decrement the loop count */
-					colCnt--;
-				}
-
-				accum = vpadd_f32(vget_low_f32(acc0), vget_high_f32(acc0));
-				sum0 += vget_lane_f32(accum, 0) + vget_lane_f32(accum, 1);
-
-				accum = vpadd_f32(vget_low_f32(acc1), vget_high_f32(acc1));
-				sum1 += vget_lane_f32(accum, 0) + vget_lane_f32(accum, 1);
-
-				accum = vpadd_f32(vget_low_f32(acc2), vget_high_f32(acc2));
-				sum2 += vget_lane_f32(accum, 0) + vget_lane_f32(accum, 1);
-
-				accum = vpadd_f32(vget_low_f32(acc3), vget_high_f32(acc3));
-				sum3 += vget_lane_f32(accum, 0) + vget_lane_f32(accum, 1);
-
-				accum = vpadd_f32(vget_low_f32(acc4), vget_high_f32(acc4));
-				sum4 += vget_lane_f32(accum, 0) + vget_lane_f32(accum, 1);
-
-				accum = vpadd_f32(vget_low_f32(acc5), vget_high_f32(acc5));
-				sum5 += vget_lane_f32(accum, 0) + vget_lane_f32(accum, 1);
-
-				accum = vpadd_f32(vget_low_f32(acc6), vget_high_f32(acc6));
-				sum6 += vget_lane_f32(accum, 0) + vget_lane_f32(accum, 1);
-
-				accum = vpadd_f32(vget_low_f32(acc7), vget_high_f32(acc7));
-				sum7 += vget_lane_f32(accum, 0) + vget_lane_f32(accum, 1);
-
-				/* If the columns of pSrcA is not a multiple of 4, compute any remaining MACs here.
-				 ** No loop unrolling is used. */
-				colCnt = numColsA & 3;
-
-				while (colCnt > 0U) {
-					/* c(m,n) = a(1,1)*b(1,1) + a(1,2)*b(2,1) + ... + a(m,p)*b(p,n) */
-					sum0 += *pIn1++ * (*pIn2);
-					sum1 += *pIn1B++ * (*pIn2);
-					sum2 += *pIn1C++ * (*pIn2);
-					sum3 += *pIn1D++ * (*pIn2);
-					sum4 += *pIn1E++ * (*pIn2);
-					sum5 += *pIn1F++ * (*pIn2);
-					sum6 += *pIn1G++ * (*pIn2);
-					sum7 += *pIn1H++ * (*pIn2);
-					pIn2 += numColsB;
-
-					/* Decrement the loop counter */
-					colCnt--;
-				}
-
-				/* Store the result in the destination buffer */
-				*px++ = sum0;
-				*pxB++ = sum1;
-				*pxC++ = sum2;
-				*pxD++ = sum3;
-				*pxE++ = sum4;
-				*pxF++ = sum5;
-				*pxG++ = sum6;
-				*pxH++ = sum7;
-
-				/* Update the pointer pIn2 to point to the  starting address of the next column */
-				j++;
-				pIn2 = pSrcB->pData + j;
-
-				/* Decrement the column loop counter */
-				col--;
-
-			} while (col > 0U);
-
-			/* Update the pointer pInA to point to the  starting address of the next row */
-			i = i + numColsB;
-			pInA = pInA + GROUPOFROWS * numColsA;
-
-			/* Decrement the row loop counter */
-			rowCnt--;
-		}
-
-		/*
-
-		i was the index of a group of rows computed by previous loop.
-		Now i is the index of a row since below code is computing row per row
-		and no more group of row per group of rows.
-
-		*/
-
-		i = GROUPOFROWS * i;
-		rowCnt = row & 7;
-
-		while (rowCnt > 0) {
-			/* Output pointer is set to starting address of the row being processed */
-			px = pOut + i;
-
-			/* For every row wise process, the column loop counter is to be initiated */
-			col = numColsB;
-
-			/* For every row wise process, the pIn2 pointer is set
-			 ** to the starting address of the pSrcB data */
-			pIn2 = pSrcB->pData;
-
-			j = 0U;
-
-			/* Column loop */
-			do {
-				/* Set the variable sum, that acts as accumulator, to zero */
-				sum = 0.0f;
-
-				/* Initiate the pointer pIn1 to point to the starting address of the column being processed */
-				pIn1 = pInA;
-
-				acc0 = vdupq_n_f32(0.0);
-
-				/* Compute 4 MACs simultaneously. */
-				colCnt = numColsA >> 2U;
-
-				/* Matrix multiplication   */
-				while (colCnt > 0U) {
-					/* c(m,n) = a(1,1)*b(1,1) + a(1,2)*b(2,1) + ... + a(m,p)*b(p,n) */
-					a0V = vld1q_f32(pIn1);  // load & separate real/imag pSrcA (de-interleave 2)
-					pIn1 += 4;
-
-					temp = vsetq_lane_f32(*pIn2, temp, 0);
-					pIn2 += numColsB;
-					temp = vsetq_lane_f32(*pIn2, temp, 1);
-					pIn2 += numColsB;
-					temp = vsetq_lane_f32(*pIn2, temp, 2);
-					pIn2 += numColsB;
-					temp = vsetq_lane_f32(*pIn2, temp, 3);
-					pIn2 += numColsB;
-
-					acc0 = vmlaq_f32(acc0, a0V, temp);
-
-					/* Decrement the loop count */
-					colCnt--;
-				}
-
-				accum = vpadd_f32(vget_low_f32(acc0), vget_high_f32(acc0));
-				sum += vget_lane_f32(accum, 0) + vget_lane_f32(accum, 1);
-
-				/* If the columns of pSrcA is not a multiple of 4, compute any remaining MACs here.
-				 ** No loop unrolling is used. */
-				colCnt = numColsA % 0x4U;
-
-				while (colCnt > 0U) {
-					/* c(m,n) = a(1,1)*b(1,1) + a(1,2)*b(2,1) + ... + a(m,p)*b(p,n) */
-					sum += *pIn1++ * (*pIn2);
-					pIn2 += numColsB;
-
-					/* Decrement the loop counter */
-					colCnt--;
-				}
-
-				/* Store the result in the destination buffer */
-				*px++ = sum;
-
-				/* Update the pointer pIn2 to point to the  starting address of the next column */
-				j++;
-				pIn2 = pSrcB->pData + j;
-
-				/* Decrement the column loop counter */
-				col--;
-
-			} while (col > 0U);
-
-
-			/* Update the pointer pInA to point to the  starting address of the next row */
-			i = i + numColsB;
-			pInA = pInA + numColsA;
-
-			/* Decrement the row loop counter */
-			rowCnt--;
-
-		}
-		/* Set status as ARM_MATH_SUCCESS */
-		status = ARM_MATH_SUCCESS;
-	}
-
-	/* Return to application */
-	return (status);
-}
+/**
+ * @brief Floating-point matrix multiplication.
+ * @param[in]       *pSrcA points to the first input matrix structure
+ * @param[in]       *pSrcB points to the second input matrix structure
+ * @param[out]      *pDst points to output matrix structure
+ * @return          The function returns either
+ * <code>ARM_MATH_SIZE_MISMATCH</code> or <code>ARM_MATH_SUCCESS</code> based on the outcome of size checking.
+ */
+
+#define LANE 4
+#define DTYPE float32_t
+#define HEADERTYPE DTYPE
+#define VEC float32x4_t
+#define VECACC float32x4_t
+#define FLOATALGO
+
+#define CLEAR_ACC(tmp) tmp = vdupq_n_f32(0.0f)
+
+#define TMPLD
+#define TMPST
+#define TMPMAC
+
+
+#define SCALARACC float32_t
+#define SCALAR_LOAD_AND_WIDEN(DST,PTR) DST = (SCALARACC)(*(PTR))
+#define SCALAR_STORE_AND_NARROW(PTR,VAL) *(PTR) = (VAL)
+#define SCALAR_MAC_N(ACC,VEC,SCALAR) ACC += (VEC) * (SCALAR)
+
+#define HVEC float32x2_t
+#define VLOAD(DST,PTR) DST = vld1q_f32((PTR))
+#define VSTORE(PTR,VAL) vst1q_f32((PTR),(VAL))
+
+#define VLOAD_ACC(DST,PTR) DST = vld1q_f32((PTR))
+#define VSTORE_ACC(PTR,VAL) vst1q_f32((PTR),(VAL))
+
+#define VLOAD_AND_WIDEN(DST,PTR) DST = vld1q_f32((PTR))
+#define VSTORE_AND_NARROW(PTR,VAL) vst1q_f32((PTR),(VAL))
+
+#if defined(__ARM_FEATURE_FMA)
+#define VMAC_N(ACC,VEC,SCALAR) ACC = vfmaq_n_f32(ACC,(VEC),(SCALAR))
 #else
-arm_status arm_mat_mult_f32(
+#define VMAC_N(ACC,VEC,SCALAR) ACC = vmlaq_n_f32(ACC,(VEC),(SCALAR))
+#endif
+
+#define MATTYPE arm_matrix_instance_f32
+#define EXT(A) A##_f32
+
+#define FUNCNAME arm_mat_mult_f32
+
+
+#include "_arm_mat_mult_neon.c"
+
+#else
+/**
+ * @brief Floating-point matrix multiplication.
+ * @param[in]       *pSrcA points to the first input matrix structure
+ * @param[in]       *pSrcB points to the second input matrix structure
+ * @param[out]      *pDst points to output matrix structure
+ * @return          The function returns either
+ * <code>ARM_MATH_SIZE_MISMATCH</code> or <code>ARM_MATH_SUCCESS</code> based on the outcome of size checking.
+ */
+ARM_DSP_ATTRIBUTE arm_status arm_mat_mult_f32(
 	const arm_matrix_instance_f32 *pSrcA,
 	const arm_matrix_instance_f32 *pSrcB,
 	arm_matrix_instance_f32 *pDst)
@@ -877,7 +645,7 @@ arm_status arm_mat_mult_f32(
 
 				/* matrix multiplication */
 				while (colCnt > 0U) {
-					/* c(m,n) = a(1,1) * b(1,1) + a(1,2) * b(2,1) + .... + a(m,p) * b(p,n) */
+					/* c(m,p) = a(m,1) * b(1,p) + a(m,2) * b(2,p) + .... + a(m,n) * b(n,p) */
 
 					/* Perform the multiply-accumulates */
 					sum += *pIn1++ * *pIn2;
@@ -907,7 +675,7 @@ arm_status arm_mat_mult_f32(
 #endif /* #if defined (ARM_MATH_LOOPUNROLL) */
 
 				while (colCnt > 0U) {
-					/* c(m,n) = a(1,1) * b(1,1) + a(1,2) * b(2,1) + .... + a(m,p) * b(p,n) */
+					/* c(m,p) = a(m,1) * b(1,p) + a(m,2) * b(2,p) + .... + a(m,n) * b(n,p) */
 
 					/* Perform the multiply-accumulates */
 					sum += *pIn1++ * *pIn2;

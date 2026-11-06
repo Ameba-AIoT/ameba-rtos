@@ -1,15 +1,16 @@
-/* ----------------------------------------------------------------------
+﻿/* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
  * Title:        arm_fir_sparse_f32.c
  * Description:  Floating-point sparse FIR filter processing function
  *
- * $Date:        18. March 2019
- * $Revision:    V1.6.0
+ * $Date:        23 April 2021
+ * $Revision:    V1.9.0
  *
- * Target Processor: Cortex-M cores
+ * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
+
 /*
- * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -25,8 +26,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "arm_compiler_specific.h"
 
-#include "arm_math.h"
+
+#include "dsp/filtering_functions.h"
 
 /**
   @ingroup groupFilters
@@ -34,6 +37,9 @@
 
 /**
   @defgroup FIR_Sparse Finite Impulse Response (FIR) Sparse Filters
+
+  @deprecated Those functions are no more tested nor maintained and will be removed in
+              a future version.
 
   This group of functions implements sparse FIR filters.
   Sparse FIR filters are equivalent to standard FIR filters except that most of the coefficients are equal to zero.
@@ -104,10 +110,9 @@
   @param[out]    pDst        points to the block of output data
   @param[in]     pScratchIn  points to a temporary buffer of size blockSize
   @param[in]     blockSize   number of input samples to process
-  @return        none
  */
 
-void arm_fir_sparse_f32(
+ARM_DSP_ATTRIBUTE void arm_fir_sparse_f32(
 	arm_fir_sparse_instance_f32 *S,
 	const float32_t *pSrc,
 	float32_t *pDst,

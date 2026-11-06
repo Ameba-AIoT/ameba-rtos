@@ -1,15 +1,16 @@
-/* ----------------------------------------------------------------------
+﻿/* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
  * Title:        arm_conv_q15.c
  * Description:  Convolution of Q15 sequences
  *
- * $Date:        18. March 2019
- * $Revision:    V1.6.0
+ * $Date:        23 April 2021
+ * $Revision:    V1.9.0
  *
- * Target Processor: Cortex-M cores
+ * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
+
 /*
- * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -25,8 +26,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "arm_compiler_specific.h"
 
-#include "arm_math.h"
+
+#include "dsp/filtering_functions.h"
 
 /**
   @ingroup groupFilters
@@ -44,7 +47,6 @@
   @param[in]     pSrcB      points to the second input sequence
   @param[in]     srcBLen    length of the second input sequence
   @param[out]    pDst       points to the location where the output result is written.  Length srcALen+srcBLen-1.
-  @return        none
 
   @par           Scaling and Overflow Behavior
                    The function is implemented using a 64-bit internal accumulator.
@@ -58,11 +60,14 @@
   @remark
                    Refer to \ref arm_conv_opt_q15() for a faster implementation of this function using scratch buffers.
  */
-#if defined(ARM_MATH_MVEI)
+
+
+#if defined(ARM_MATH_MVEI) && !defined(ARM_MATH_AUTOVECTORIZE)
 #include "arm_helium_utils.h"
 #include "arm_vec_filtering.h"
 
-void arm_conv_q15(
+
+ARM_DSP_ATTRIBUTE void arm_conv_q15(
 	const q15_t *pSrcA,
 	uint32_t srcALen,
 	const q15_t *pSrcB,
@@ -80,6 +85,7 @@ void arm_conv_q15(
 	const q15_t    *pB;
 	int32_t   i = 0U, j = 0;    /* loop counters */
 	int32_t   block1, block2, block3;
+
 
 
 	uint16x8_t decrIdxVec = vddupq_u16(7, 1);
@@ -105,6 +111,7 @@ void arm_conv_q15(
 	block1 = srcBLen - 1;
 	block2 = srcALen - srcBLen + 1;
 	block3 = srcBLen - 1;
+
 
 	pA = pIn1;
 	pB = pIn2 - 7;
@@ -186,7 +193,7 @@ void arm_conv_q15(
 		pA++;
 	}
 
-	for (i = block3; i >= 1; i -= 2) {
+	for (i = block3; i >= 2; i -= 2) {
 		uint32_t  count = i;
 		int64_t   acc0 = 0LL;
 		int64_t   acc1 = 0LL;
@@ -199,7 +206,7 @@ void arm_conv_q15(
 		*pDst++ = (q15_t) acc1;
 		pA += 2;
 	}
-	for (; i >= 1; i--) {
+	for (; i > 0; i--) {
 		uint32_t  count = i;
 		int64_t   acc = 0LL;
 
@@ -210,9 +217,11 @@ void arm_conv_q15(
 		*pDst++ = (q15_t) acc;
 		pA++;
 	}
+
+
 }
 #else
-void arm_conv_q15(
+ARM_DSP_ATTRIBUTE void arm_conv_q15(
 	const q15_t *pSrcA,
 	uint32_t srcALen,
 	const q15_t *pSrcB,
@@ -232,6 +241,8 @@ void arm_conv_q15(
 	q31_t x0, x1, x2, x3, c0;                      /* Temporary input variables to hold state and coefficient values */
 	uint32_t blockSize1, blockSize2, blockSize3;   /* Loop counters */
 	uint32_t j, k, count, blkCnt;                  /* Loop counters */
+
+
 
 	/* The algorithm implementation is based on the lengths of the inputs. */
 	/* srcB is always made to slide across srcA. */
@@ -268,6 +279,9 @@ void arm_conv_q15(
 	   The loop counters of each stage is initiated here. */
 	blockSize1 = srcBLen - 1U;
 	blockSize2 = srcALen - (srcBLen - 1U);
+
+
+
 
 	/* --------------------------
 	 * Initializations of stage1
@@ -564,14 +578,19 @@ void arm_conv_q15(
 			}
 
 			/* Store the result in the accumulator in the destination buffer. */
+			{
+				int32_t sat0 = __SSAT((acc0 >> 15), 16);
+				int32_t sat1 = __SSAT((acc1 >> 15), 16);
+				int32_t sat2 = __SSAT((acc2 >> 15), 16);
+				int32_t sat3 = __SSAT((acc3 >> 15), 16);
 #ifndef  ARM_MATH_BIG_ENDIAN
-			write_q15x2_ia(&pOut, __PKHBT(__SSAT((acc0 >> 15), 16), __SSAT((acc1 >> 15), 16), 16));
-			write_q15x2_ia(&pOut, __PKHBT(__SSAT((acc2 >> 15), 16), __SSAT((acc3 >> 15), 16), 16));
+				write_q15x2_ia(&pOut, __PKHBT(sat0, sat1, 16));
+				write_q15x2_ia(&pOut, __PKHBT(sat2, sat3, 16));
 #else
-			write_q15x2_ia(&pOut, __PKHBT(__SSAT((acc1 >> 15), 16), __SSAT((acc0 >> 15), 16), 16));
-			write_q15x2_ia(&pOut, __PKHBT(__SSAT((acc3 >> 15), 16), __SSAT((acc2 >> 15), 16), 16));
+				write_q15x2_ia(&pOut, __PKHBT(sat1, sat0, 16));
+				write_q15x2_ia(&pOut, __PKHBT(sat3, sat2, 16));
 #endif /*      #ifndef  ARM_MATH_BIG_ENDIAN    */
-
+			}
 			/* Increment the pointer pIn1 index, count by 4 */
 			count += 4U;
 

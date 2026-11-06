@@ -20,8 +20,8 @@
 #define LEN_ALIGN32(size)   (((size) + 31) & (~31))
 
 #ifdef CONFIG_BT_SDN
-#if defined(CONFIG_BLE_LL_EXT_ADV_ENABLE) && BT_LL_FEATURE_BT50_LE_EXT_ADV
-#define SDN_INTF_MAX_BT_CMD_LEN        255    /* ext adv data */
+#if (defined(CONFIG_BLE_LL_EXT_ADV_ENABLE) || defined(CONFIG_BT_LL_CLASSIC_ENABLE))
+#define SDN_INTF_MAX_BT_CMD_LEN        255    /* ext adv data or 0xc13 */
 #define SDN_INTF_MAX_BT_EVT_LEN        257
 #else
 #define SDN_INTF_MAX_BT_CMD_LEN        42     /* cmd 0x2027 has the max length: 3 + 39 */
@@ -99,6 +99,7 @@ extern int rtk_ot_loop_exit(void);
 extern int rtk_zb_start(void);
 extern int rtk_zb_loop_exit(void);
 extern bool ble_ll_init(void);
+extern bool bt_ll_init(void);
 extern void ble_ll_deinit(void);
 extern void sdn_pwr_leave_suspend(void);
 extern void sdn_sche_init(void);
@@ -873,6 +874,9 @@ void sdn_add_protocol(uint8_t protocol)
 #ifdef CONFIG_BT_SDN
 	case SDN_INTF_BT:
 		ble_ll_init();
+#if BT_LL_BR_EDR_SUPPORT
+		bt_ll_init();
+#endif
 		g_sdn_client_intf.bt_on = true;
 		break;
 #endif

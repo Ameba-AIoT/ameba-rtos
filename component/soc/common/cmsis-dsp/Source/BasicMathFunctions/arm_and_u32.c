@@ -1,15 +1,16 @@
-/* ----------------------------------------------------------------------
+﻿/* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
  * Title:        arm_and_u32.c
  * Description:  uint32_t bitwise AND
  *
- * $Date:        14 November 2019
- * $Revision:    V1.6.0
+ * $Date:        23 April 2021
+ * $Revision:    V1.9.0
  *
- * Target Processor: Cortex-M cores
+ * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
+
 /*
- * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -25,8 +26,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "arm_compiler_specific.h"
 
-#include "arm_math.h"
+
+#include "dsp/basic_math_functions.h"
 
 /**
   @ingroup groupMath
@@ -43,10 +46,9 @@
   @param[in]     pSrcB      points to input vector B
   @param[out]    pDst       points to output vector
   @param[in]     blockSize  number of samples in each vector
-  @return        none
  */
 
-void arm_and_u32(
+ARM_DSP_ATTRIBUTE void arm_and_u32(
 	const uint32_t *pSrcA,
 	const uint32_t *pSrcB,
 	uint32_t *pDst,
@@ -84,7 +86,7 @@ void arm_and_u32(
 		vstrwq_p(pDst, vandq_u32(vecSrcA, vecSrcB), p0);
 	}
 #else
-#if defined(ARM_MATH_NEON) && !defined(ARM_MATH_AUTOVECTORIZE)
+#if defined(ARM_MATH_NEON)
 	uint32x4_t vecA, vecB;
 
 	/* Compute 4 outputs at a time */

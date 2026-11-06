@@ -7,6 +7,10 @@ set(c_VERBOSE_MAKEFILE FALSE)
 ameba_mcu_project_create(km55ns km55)
 ameba_mcu_project_check()
 
+ameba_install_directory("${CMAKE_CURRENT_SOURCE_DIR}/ld")
+ameba_install_directory("${CMAKE_CURRENT_SOURCE_DIR}/make")
+ameba_install_directory("${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+
 # km55ns hook for ameba_add_internal_library (seal / link prebuilt libs).
 # Defined here (after km55tz is already configured) so it applies to km55ns only.
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/cmake/soc_hooks.cmake")

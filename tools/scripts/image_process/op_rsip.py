@@ -53,6 +53,8 @@ class Rsip(OperationBase):
             rsip = lib_security.RSIP(output_file, input_file, section_addr, image_config)
             if context.soc_project == "amebad":
                 rsip.RSIP_ImageEncrypt_AMEBAD()
+            elif context.soc_project == "RLE1509" and image_config.rsip_mode == 1:
+                rsip.RSIP_ImageEncrypt_XTS()
             else:
                 rsip.RSIP_ImageEncrypt()
         else:

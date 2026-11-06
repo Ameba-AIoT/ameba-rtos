@@ -66,6 +66,12 @@ if(NOT TARGET diag_fmt)
   set_property(TARGET diag_fmt PROPERTY ADDITIONAL_CLEAN_FILES ${fmt_json} ${fmt_src})
 endif()
 
+# ameba_diagnose_hash.c.in is only referenced via generate_hash.cmake's
+# configure_file()/the diag_fmt custom command's DEPENDS, never added to
+# private_sources, so the normal per-source install path never picks it up.
+# Install it directly so release SDKs can still run diag_fmt.
+ameba_install_files("${CMAKE_CURRENT_SOURCE_DIR}/ameba_diagnose_hash.c.in")
+
 if (CONFIG_DIAGNOSE_EN)
     if(CONFIG_WHC_DEV OR CONFIG_WHC_NONE)
         #Core as NP(maybe also as AP: single core)

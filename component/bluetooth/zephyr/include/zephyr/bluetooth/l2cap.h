@@ -457,6 +457,14 @@ struct bt_l2cap_server {
 	/** Required minimum security level */
 	bt_security_t		sec_level;
 
+#if ZEPHYR_RTK_PATCH
+	/* If the server is dynamic allocated(e.g. for le coc), this callback shall be provided.
+	 * The server can be freed by this callback when bt is deinit.
+	 * If the server is static variable(e.g. eatt_l2cap in bt_eatt_init), do not set this callback.
+	 */
+	void (*free)(struct bt_l2cap_server *server);
+#endif
+
 	/** @brief Server accept callback
 	 *
 	 *  This callback is called whenever a new incoming connection requires
@@ -652,6 +660,14 @@ int bt_l2cap_chan_give_credits(struct bt_l2cap_chan *chan, uint16_t additional_c
  */
 int bt_l2cap_chan_recv_complete(struct bt_l2cap_chan *chan,
 				struct net_buf *buf);
+
+#if ZEPHYR_RTK_PATCH
+int bt_l2cap_server_unregister(struct bt_l2cap_server *server);
+
+/* Remove all the dynamic servers in l2cap le servers list，if the server is
+ * dynamic allocated, free it. */
+void bt_l2cap_dynamic_servers_free(void);
+#endif
 
 #ifdef __cplusplus
 }

@@ -1,15 +1,16 @@
-/* ----------------------------------------------------------------------
+﻿/* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
  * Title:        arm_shift_q15.c
  * Description:  Shifts the elements of a Q15 vector by a specified number of bits
  *
- * $Date:        18. March 2019
- * $Revision:    V1.6.0
+ * $Date:        23 April 2021
+ * $Revision:    V1.9.0
  *
- * Target Processor: Cortex-M cores
+ * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
+
 /*
- * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -25,8 +26,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "arm_compiler_specific.h"
 
-#include "arm_math.h"
+
+#include "dsp/basic_math_functions.h"
 
 /**
   @ingroup groupMath
@@ -43,18 +46,17 @@
   @param[in]     shiftBits  number of bits to shift.  A positive value shifts left; a negative value shifts right.
   @param[out]    pDst       points to the output vector
   @param[in]     blockSize  number of samples in each vector
-  @return        none
 
   @par           Scaling and Overflow Behavior
                    The function uses saturating arithmetic.
                    Results outside of the allowable Q15 range [0x8000 0x7FFF] are saturated.
  */
 
-#if defined(ARM_MATH_MVEI)
+#if defined(ARM_MATH_MVEI) && !defined(ARM_MATH_AUTOVECTORIZE)
 
 #include "arm_helium_utils.h"
 
-void arm_shift_q15(
+ARM_DSP_ATTRIBUTE void arm_shift_q15(
 	const q15_t *pSrc,
 	int8_t shiftBits,
 	q15_t *pDst,
@@ -97,7 +99,7 @@ void arm_shift_q15(
 }
 
 #else
-void arm_shift_q15(
+ARM_DSP_ATTRIBUTE void arm_shift_q15(
 	const q15_t *pSrc,
 	int8_t shiftBits,
 	q15_t *pDst,
@@ -127,11 +129,11 @@ void arm_shift_q15(
 
 			/* Shift the inputs and then store the results in the destination buffer. */
 #ifndef ARM_MATH_BIG_ENDIAN
-			write_q15x2_ia(&pDst, __PKHBT(__SSAT((in1 << shiftBits), 16),
-										  __SSAT((in2 << shiftBits), 16), 16));
+			write_q15x2_ia(&pDst, __PKHBT(__SSAT(((q31_t) in1 << shiftBits), 16),
+										  __SSAT(((q31_t) in2 << shiftBits), 16), 16));
 #else
-			write_q15x2_ia(&pDst, __PKHBT(__SSAT((in2 << shiftBits), 16),
-										  __SSAT((in1 << shiftBits), 16), 16));
+			write_q15x2_ia(&pDst, __PKHBT(__SSAT(((q31_t) in2 << shiftBits), 16),
+										  __SSAT(((q31_t) in1 << shiftBits), 16), 16));
 #endif /* #ifndef ARM_MATH_BIG_ENDIAN */
 
 			/* read 2 samples from source */
@@ -139,11 +141,11 @@ void arm_shift_q15(
 			in2 = *pSrc++;
 
 #ifndef ARM_MATH_BIG_ENDIAN
-			write_q15x2_ia(&pDst, __PKHBT(__SSAT((in1 << shiftBits), 16),
-										  __SSAT((in2 << shiftBits), 16), 16));
+			write_q15x2_ia(&pDst, __PKHBT(__SSAT(((q31_t) in1 << shiftBits), 16),
+										  __SSAT(((q31_t) in2 << shiftBits), 16), 16));
 #else
-			write_q15x2_ia(&pDst, __PKHBT(__SSAT((in2 << shiftBits), 16),
-										  __SSAT((in1 << shiftBits), 16), 16));
+			write_q15x2_ia(&pDst, __PKHBT(__SSAT(((q31_t) in2 << shiftBits), 16),
+										  __SSAT(((q31_t) in1 << shiftBits), 16), 16));
 #endif /* #ifndef ARM_MATH_BIG_ENDIAN */
 
 #else

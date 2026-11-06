@@ -1,15 +1,16 @@
-/* ----------------------------------------------------------------------
+﻿/* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
  * Title:        arm_lms_init_q15.c
  * Description:  Q15 LMS filter initialization function
  *
- * $Date:        18. March 2019
- * $Revision:    V1.6.0
+ * $Date:        23 April 2021
+ * $Revision:    V1.9.0
  *
- * Target Processor: Cortex-M cores
+ * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
+
 /*
- * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -25,8 +26,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "arm_compiler_specific.h"
 
-#include "arm_math.h"
+
+#include "dsp/filtering_functions.h"
 
 /**
   @ingroup groupFilters
@@ -46,7 +49,6 @@
   @param[in]     mu         step size that controls filter coefficient updates.
   @param[in]     blockSize  number of samples to process.
   @param[in]     postShift  bit shift applied to coefficients.
-  @return        none
 
   @par           Details
                    <code>pCoeffs</code> points to the array of filter coefficients stored in time reversed order:
@@ -59,7 +61,7 @@
                    input samples processed by each call to <code>arm_lms_q15()</code>.
  */
 
-void arm_lms_init_q15(
+ARM_DSP_ATTRIBUTE void arm_lms_init_q15(
 	arm_lms_instance_q15 *S,
 	uint16_t numTaps,
 	q15_t *pCoeffs,
@@ -75,7 +77,7 @@ void arm_lms_init_q15(
 	S->pCoeffs = pCoeffs;
 
 	/* Clear state buffer and size is always blockSize + numTaps - 1 */
-	memset(pState, 0, (numTaps + (blockSize - 1U)) * sizeof(q15_t));
+	_memset(pState, 0, (numTaps + (blockSize - 1U)) * sizeof(q15_t));
 
 	/* Assign state pointer */
 	S->pState = pState;

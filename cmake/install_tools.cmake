@@ -49,6 +49,8 @@ ameba_install_directory("${c_BASEDIR}/tools/DownloadServer(UART)")
 # ---------------------------------------------------------------------------
 ameba_install_directory("${c_BASEDIR}/tools/R-Mesh_Demo_Tool")
 
+ameba_install_directory("${c_BASEDIR}/tools/ameba/AmebaTxPowerTool")
+
 # ---------------------------------------------------------------------------
 # tools/ameba/DeviceProfileEditor: exclude (Internal) build variant
 # ---------------------------------------------------------------------------

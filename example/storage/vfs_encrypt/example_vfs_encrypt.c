@@ -1,7 +1,11 @@
 #include "ameba_soc.h"
 #include "os_wrapper.h"
+#if defined(CONFIG_MBEDTLS_USE_LEGACY_API)
 #include "mbedtls/aes.h"
 #include "ctr.h"
+#else
+#include "psa/crypto.h"
+#endif
 #include "vfs.h"
 #include "example_vfs_encrypt.h"
 
@@ -30,12 +34,52 @@ static void dump_buf(char *info, uint8_t *buf, uint32_t len)
 }
 #endif
 
+#if !defined(CONFIG_MBEDTLS_USE_LEGACY_API)
+static int vfs_psa_aes_ctr(const unsigned char *input, unsigned char *output, size_t len, size_t nc_off)
+{
+	psa_key_attributes_t attr = PSA_KEY_ATTRIBUTES_INIT;
+	psa_cipher_operation_t op = PSA_CIPHER_OPERATION_INIT;
+	psa_key_id_t key = PSA_KEY_ID_NULL;
+	size_t olen = 0;
+	psa_status_t status;
+
+	psa_set_key_usage_flags(&attr, PSA_KEY_USAGE_ENCRYPT);
+	psa_set_key_algorithm(&attr, PSA_ALG_CTR);
+	psa_set_key_type(&attr, PSA_KEY_TYPE_AES);
+	psa_set_key_bits(&attr, AES_KEY_LEN * 8);
+	status = psa_import_key(&attr, aeskey, AES_KEY_LEN, &key);
+	if (status != PSA_SUCCESS) {
+		return status;
+	}
+
+	status = psa_cipher_encrypt_setup(&op, key, PSA_ALG_CTR);
+	if (status == PSA_SUCCESS) {
+		status = psa_cipher_set_iv(&op, iv, 16);
+	}
+	/* Discard the keystream bytes before nc_off in the first block for random access. */
+	if (status == PSA_SUCCESS && nc_off > 0) {
+		status = psa_cipher_update(&op, stream_block, nc_off, stream_block, sizeof(stream_block), &olen);
+	}
+	if (status == PSA_SUCCESS) {
+		status = psa_cipher_update(&op, input, len, output, len, &olen);
+	}
+	if (status == PSA_SUCCESS) {
+		status = psa_cipher_finish(&op, output + olen, len - olen, &olen);
+	}
+
+	psa_cipher_abort(&op);
+	psa_destroy_key(key);
+	return status;
+}
+#endif
 
 // AES-CTR encryption - supports arbitrary length and random access
 // Uses file offset to calculate correct counter for random access support
 int vfs_mbedtls_aes_ctr_encrypt(unsigned char *input, unsigned char *output, unsigned int len, unsigned long offset)
 {
+#if defined(CONFIG_MBEDTLS_USE_LEGACY_API)
 	mbedtls_aes_context ctx;
+#endif
 	unsigned char *input_align;
 	unsigned char *output_align;
 	int msg_len = len < CACHE_LINE_SIZE ? CACHE_LINE_SIZE : (len / CACHE_LINE_SIZE + 1) * CACHE_LINE_SIZE;
@@ -62,6 +106,7 @@ int vfs_mbedtls_aes_ctr_encrypt(unsigned char *input, unsigned char *output, uns
 	iv[13] = (block_index >> 16) & 0xFF;
 	iv[12] = (block_index >> 24) & 0xFF;
 
+#if defined(CONFIG_MBEDTLS_USE_LEGACY_API)
 	mbedtls_aes_init(&ctx);
 	mbedtls_aes_setkey_enc(&ctx, aeskey, AES_KEY_LEN * 8);
 
@@ -73,6 +118,10 @@ int vfs_mbedtls_aes_ctr_encrypt(unsigned char *input, unsigned char *output, uns
 	}
 
 	ret = mbedtls_aes_crypt_ctr(&ctx, msg_len, &nc_off, iv, stream_block, input_align, output_align);
+	mbedtls_aes_free(&ctx);
+#else
+	ret = vfs_psa_aes_ctr(input_align, output_align, msg_len, nc_off);
+#endif
 
 	memcpy(output, output_align, len);
 
@@ -80,7 +129,6 @@ int vfs_mbedtls_aes_ctr_encrypt(unsigned char *input, unsigned char *output, uns
 	dump_buf("write encrypt after", output, len);
 #endif
 
-	mbedtls_aes_free(&ctx);
 	memset(iv, 0, 16);
 	memset(stream_block, 0, 16);
 	rtos_mem_free(input_align);
@@ -91,7 +139,9 @@ int vfs_mbedtls_aes_ctr_encrypt(unsigned char *input, unsigned char *output, uns
 // AES-CTR decryption - supports arbitrary length and random access
 int vfs_mbedtls_aes_ctr_decrypt(unsigned char *input, unsigned char *output, unsigned int len, unsigned long offset)
 {
+#if defined(CONFIG_MBEDTLS_USE_LEGACY_API)
 	mbedtls_aes_context ctx;
+#endif
 	unsigned char *input_align;
 	unsigned char *output_align;
 	int msg_len = len < CACHE_LINE_SIZE ? CACHE_LINE_SIZE : (len / CACHE_LINE_SIZE + 1) * CACHE_LINE_SIZE;
@@ -118,6 +168,7 @@ int vfs_mbedtls_aes_ctr_decrypt(unsigned char *input, unsigned char *output, uns
 	iv[13] = (block_index >> 16) & 0xFF;
 	iv[12] = (block_index >> 24) & 0xFF;
 
+#if defined(CONFIG_MBEDTLS_USE_LEGACY_API)
 	mbedtls_aes_init(&ctx);
 	mbedtls_aes_setkey_enc(&ctx, aeskey, AES_KEY_LEN * 8);
 
@@ -128,6 +179,10 @@ int vfs_mbedtls_aes_ctr_decrypt(unsigned char *input, unsigned char *output, uns
 	}
 
 	ret = mbedtls_aes_crypt_ctr(&ctx, msg_len, &nc_off, iv, stream_block, input_align, output_align);
+	mbedtls_aes_free(&ctx);
+#else
+	ret = vfs_psa_aes_ctr(input_align, output_align, msg_len, nc_off);
+#endif
 
 	memcpy(output, output_align, len);
 
@@ -135,7 +190,6 @@ int vfs_mbedtls_aes_ctr_decrypt(unsigned char *input, unsigned char *output, uns
 	dump_buf("read decrypt after", output, len);
 #endif
 
-	mbedtls_aes_free(&ctx);
 	memset(iv, 0, 16);
 	memset(stream_block, 0, 16);
 	rtos_mem_free(input_align);

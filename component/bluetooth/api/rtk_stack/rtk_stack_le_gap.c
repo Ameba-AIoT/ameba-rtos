@@ -6108,7 +6108,7 @@ static uint16_t bt_stack_le_gap_coc_connect(void *param)
 
 static uint16_t bt_stack_le_gap_coc_disconnect(void *param)
 {
-	uint16_t cid = *(uint16_t *)param;
+	uint16_t cid = ((rtk_bt_le_coc_disconnect_param_t *)param)->cid;
 	T_GAP_CAUSE cause;
 
 	cause = le_coc_disc(cid);
@@ -6983,7 +6983,7 @@ uint16_t bt_stack_le_gap_act_handle(rtk_bt_cmd_t *p_cmd)
 #endif
 #endif /* F_BT_LE_4_0_DTM_SUPPORT */
 	default:
-		BT_LOGE("bt_stack_le_act_handle: unknown act: %d \r\n", p_cmd->act);
+		BT_LOGE("%s: unknown act: %d \r\n", __func__, p_cmd->act);
 		ret = RTK_BT_ERR_NO_CASE_ELEMENT;
 		break;
 	}

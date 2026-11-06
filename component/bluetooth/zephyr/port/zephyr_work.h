@@ -111,7 +111,7 @@ typedef void (*k_work_handler_t)(struct k_work *work);
 struct k_work {
 	/* The function to be invoked by the work queue thread. */
 	k_work_handler_t handler;
-	
+
 	/* semaphore for waiting flush complete */
 	void *sem;
 
@@ -225,6 +225,9 @@ int k_work_cancel(struct k_work *work);
 void k_work_queue_init(struct k_work_q *queue);
 void k_work_queue_start(struct k_work_q *queue, size_t stack, size_t stack_size,  int prio,  const struct k_work_queue_config *cfg);
 void k_work_queue_delete(struct k_work_q *queue);
+void k_work_reset(struct k_work *work);
+void k_work_delayable_reset(struct k_work_delayable *dwork);
+
 #ifdef __cplusplus
 }
 #endif

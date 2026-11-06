@@ -1,15 +1,16 @@
-/* ----------------------------------------------------------------------
+﻿/* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
  * Title:        arm_cos_f32.c
  * Description:  Fast cosine calculation for floating-point values
  *
- * $Date:        18. March 2019
- * $Revision:    V1.6.0
+ * $Date:        23 April 2021
+ * $Revision:    V1.9.0
  *
- * Target Processor: Cortex-M cores
+ * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
+
 /*
- * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -25,8 +26,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "arm_compiler_specific.h"
 
-#include "arm_math.h"
+
+#include "dsp/fast_math_functions.h"
 #include "arm_common_tables.h"
 
 /**
@@ -44,7 +47,7 @@
   [0 +0.9999] mapping to [0 2*pi).  The fixed-point range is chosen so that a
   value of 2*pi wraps around to 0.
 
-  The implementation is based on table lookup using 256 values together with linear interpolation.
+  The implementation is based on table lookup using 512 values together with linear interpolation.
   The steps used are:
    -# Calculation of the nearest integer table index
    -# Compute the fractional portion (fract) of the table index.
@@ -67,7 +70,7 @@
   @param[in]     x  input value in radians
   @return        cos(x)
  */
-float32_t arm_cos_f32(
+ARM_DSP_ATTRIBUTE float32_t arm_cos_f32(
 	float32_t x)
 {
 	float32_t cosVal, fract, in;                   /* Temporary input, output variables */

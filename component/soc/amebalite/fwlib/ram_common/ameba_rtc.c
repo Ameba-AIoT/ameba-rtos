@@ -486,9 +486,13 @@ void RTC_GetTime(u32 RTC_Format, RTC_TimeTypeDef *RTC_TimeStruct)
   */
 u32 RTC_SetTimeDayYear(u32 RTC_TimeDay, u32 RTC_TimeYear)
 {
-	RTC_TypeDef *RTC = ((RTC_TypeDef *) RTC_BASE);
+	RTC_TypeDef *RTC = RTC_DEV;
 	u32 tmpreg = 0;
 	u32 status = 0;
+
+	if (TrustZone_IsSecure()) {
+		RTC = RTC_DEV_S;
+	}
 
 	/* Check the parameters */
 	assert_param(IS_RTC_TIME_DAY_THRES(RTC_TimeDay));

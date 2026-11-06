@@ -49,6 +49,24 @@ ameba_list_append(private_sources
 ameba_list_append(private_sources
     locks.c
 )
+
+# ASDK 12.3.1 libnosys stubs carry .gnu.warning sections, use warning-free stubs on LP/HP (AP has its own in fwlib/ap_core/cstub.c)
+if(CONFIG_TOOLCHAIN_ASDK_12_3_1 AND NOT CONFIG_ARM_CORE_CA32)
+    set(nosys_stubs
+        libnosys/close.c
+        libnosys/fstat.c
+        libnosys/getpid.c
+        libnosys/isatty.c
+        libnosys/kill.c
+        libnosys/lseek.c
+    )
+    # _read/_write are already provided by monitor/ram/low_level_io.c in hp image2
+    if(NOT (c_MCU_PROJECT_NAME STREQUAL "hp" AND c_CURRENT_IMAGE_TYPE STREQUAL "image2"))
+        list(APPEND nosys_stubs libnosys/read.c libnosys/write.c)
+    endif()
+    ameba_list_append(private_sources ${nosys_stubs})
+    set_source_files_properties(${nosys_stubs} PROPERTIES COMPILE_OPTIONS -Wno-unused-parameter)
+endif()
 # Component private part, user config end
 #------------------------------#
 

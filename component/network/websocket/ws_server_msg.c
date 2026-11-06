@@ -18,6 +18,82 @@ extern size_t ws_server_tmp_buf_size;
 
 void (*ws_server_receive_cb)(ws_conn *, int, enum opcode_type) = NULL;
 
+/* Serialize frame writes from AT task and conn thread, so a control frame never lands inside a data frame */
+static rtos_mutex_t ws_server_tx_mutex = NULL;
+
+int ws_server_tx_lock_init(void)
+{
+	if (ws_server_tx_mutex == NULL && rtos_mutex_create(&ws_server_tx_mutex) != RTK_SUCCESS) {
+		return -1;
+	}
+	return 0;
+}
+
+void ws_server_tx_lock(void)
+{
+	rtos_mutex_take(ws_server_tx_mutex, RTOS_MAX_TIMEOUT);
+}
+
+/* Return 0 if tx lock is taken without waiting */
+int ws_server_tx_trylock(void)
+{
+	return (rtos_mutex_take(ws_server_tx_mutex, 0) == RTK_SUCCESS) ? 0 : -1;
+}
+
+void ws_server_tx_unlock(void)
+{
+	rtos_mutex_give(ws_server_tx_mutex);
+}
+
+/* Write a whole frame, must hold tx lock. Return 0 on success, -1 on failure */
+int ws_server_write_all(ws_conn *conn, uint8_t *buf, int len)
+{
+	int ret;
+	fd_set wfds;
+	struct timeval tv;
+
+	while (len > 0) {
+		ret = ws_server_write(conn, buf, len);
+		if (ret == 0) {
+			/* No progress (full TCP send buffer, or TLS WANT_WRITE). The socket is non-blocking,
+			 * so wait until lwIP reports it writable (send buffer drained to low watermark)
+			 * instead of spinning or sleeping a fixed time. The timeout covers TLS WANT_READ. */
+			FD_ZERO(&wfds);
+			FD_SET(conn->sock, &wfds);
+			tv.tv_sec = 0;
+			tv.tv_usec = WS_SERVER_WRITE_WAIT_MS * 1000;
+			select(conn->sock + 1, NULL, &wfds, NULL, &tv);
+			continue;
+		} else if (ret < 0) {
+			return -1;
+		}
+		conn->last_data_comm_time = rtos_time_get_current_system_time_ms();
+		buf += ret;
+		len -= ret;
+	}
+	return 0;
+}
+
+/* Send the PONG deferred by conn thread, must hold tx lock. Return 0 on success, -1 on failure */
+int ws_server_flush_pong(ws_conn *conn)
+{
+	uint8_t frame[2 + WS_SERVER_MAX_CTRL_PAYLOAD];
+	uint8_t len;
+
+	if (!conn->pong_pending) {
+		return 0;
+	}
+	/* conn thread may update the payload on a new PING, take a consistent copy */
+	rtos_critical_enter(RTOS_CRITICAL_NETWORK);
+	conn->pong_pending = 0;
+	len = conn->pong_len;
+	memcpy(frame + 2, conn->pong_payload, len);
+	rtos_critical_exit(RTOS_CRITICAL_NETWORK);
+	frame[0] = 0x80 | PONG;
+	frame[1] = len;
+	return ws_server_write_all(conn, frame, 2 + len);
+}
+
 void *ws_server_malloc(size_t size)
 {
 	void *ptr = (void *)rtos_mem_malloc(size);
@@ -168,11 +244,20 @@ void ws_server_dispatchBinary(ws_conn *conn)
 			ws_server_log_verbose("Get PING\n");
 
 			int ret = 0;
-			if (ws.N > 0) {
-				ws_server_sendData(PONG, ws.N, &conn->rxbuf[ws.header_size], 0, WS_SERVER_SEND_DIRECTLY, 1, conn);
+			if (ws.N > WS_SERVER_MAX_CTRL_PAYLOAD) {
+				ws_server_log("ERROR: PING payload too long\n");
 			} else {
-				uint8_t pong_Frame[2] = {0x8a, 0x00};
-				ret = ws_server_write(conn, pong_Frame, sizeof(pong_Frame));
+				/* Queue the PONG, then send it if no other task is in the middle of a frame;
+				 * otherwise the task holding the tx lock sends it before its next frame */
+				rtos_critical_enter(RTOS_CRITICAL_NETWORK);
+				memcpy(conn->pong_payload, &conn->rxbuf[ws.header_size], ws.N);
+				conn->pong_len = (uint8_t)ws.N;
+				conn->pong_pending = 1;
+				rtos_critical_exit(RTOS_CRITICAL_NETWORK);
+				if (ws_server_tx_trylock() == 0) {
+					ret = ws_server_flush_pong(conn);
+					ws_server_tx_unlock();
+				}
 			}
 
 			if (ret < 0) {
@@ -200,11 +285,11 @@ void ws_server_dispatchBinary(ws_conn *conn)
 	}
 }
 
-void ws_server_sendData(uint8_t type, size_t message_size, uint8_t *message, int useMask, uint8_t send_mode, uint8_t fin_flag, ws_conn *conn)
+int ws_server_sendData(uint8_t type, size_t message_size, uint8_t *message, int useMask, uint8_t send_mode, uint8_t fin_flag, ws_conn *conn)
 {
 
-	if (conn->state == WSS_CLOSING || conn->state == WSS_CLOSED) {
-		return;
+	if (conn->close_req || conn->state == WSS_CLOSING || conn->state == WSS_CLOSED) {
+		return -1;
 	}
 
 	uint8_t masking_key[4];
@@ -218,6 +303,10 @@ void ws_server_sendData(uint8_t type, size_t message_size, uint8_t *message, int
 
 	header_len = (2 + (message_size >= 126 ? 2 : 0) + (message_size >= 65536 ? 6 : 0) + (useMask ? 4 : 0));
 	header = ws_server_malloc(header_len);
+	if (header == NULL) {
+		ws_server_log("ERROR: header malloc failed.\n");
+		return -1;
+	}
 	if (fin_flag) {
 		header[0] = 0x80 | type;
 	} else {
@@ -278,8 +367,9 @@ void ws_server_sendData(uint8_t type, size_t message_size, uint8_t *message, int
 		int ret;
 		ws_tmp_txbuf = (uint8_t *)ws_server_malloc(ws_server_tx_size + 16);
 		if (!ws_tmp_txbuf) {
+			ws_server_free(header);
 			ws_server_log("ERROR: ws_tmp_txbuf malloc failed.\n");
-			return;
+			return -1;
 		}
 		memset(ws_tmp_txbuf, 0, ws_server_tx_size + 16);
 		memcpy(ws_tmp_txbuf, header, header_len);
@@ -293,39 +383,42 @@ void ws_server_sendData(uint8_t type, size_t message_size, uint8_t *message, int
 			}
 		}
 
-		if (ws_tmp_txbuf_len > 0) {
-			int remain_len = ws_tmp_txbuf_len;
-			do {
-				ret = ws_server_write(conn, ws_tmp_txbuf + (ws_tmp_txbuf_len - remain_len), remain_len);
-				if (ret == 0) {
-					/* No progress (WANT_READ/WANT_WRITE on a full TCP window). The socket is
-					 * non-blocking, so sleep before retrying instead of spinning, otherwise
-					 * this loop starves the lwIP thread that has to advance the window. */
-					rtos_time_delay_ms(WS_SERVER_WRITE_RETRY_MS);
-					continue;
-				} else if (ret < 0) {
-					ws_server_conn_remove(conn);
-					ws_server_log("ERROR: ws_server_sendData send data failed!\n");
-					return;
-				} else {
-					ws_server_log_verbose("ws_server_sendData send %d bytes data to websocket server\n", ret);
-					conn->last_data_comm_time = rtos_time_get_current_system_time_ms();
-				}
-				remain_len -= ret;
-			} while (remain_len > 0);
+		/* Pending PONG goes out before and after this frame, never inside it */
+		ws_server_tx_lock();
+		ret = ws_server_flush_pong(conn);
+		if (ret == 0) {
+			ret = ws_server_write_all(conn, ws_tmp_txbuf, ws_tmp_txbuf_len);
 		}
+		if (ret == 0) {
+			ret = ws_server_flush_pong(conn);
+		}
+		ws_server_tx_unlock();
 		ws_server_free(ws_tmp_txbuf);
+
+		if (ret < 0) {
+			/* Let conn thread close the socket and report it, it may be using the socket now */
+			ws_server_log("ERROR: ws_server_sendData send data failed!\n");
+			ws_server_set_close_reason(conn, WSS_SEND_DATA_FAIL);
+			conn->state = WSS_CLOSED;
+			return -1;
+		}
 	} else {
 		ws_server_free(header);
 		ws_server_log("ERROR: ws_server_sendData message not sent\n");
+		return -1;
 	}
-	return;
+	return 0;
 }
 
 void ws_server_sendPing(ws_conn *conn)
 {
 	uint8_t ping_Frame[2] = {0x89, 0x00};
+	/* Skip if another task is sending a frame, conn thread retries next loop */
+	if (ws_server_tx_trylock() != 0) {
+		return;
+	}
 	ws_server_write(conn, ping_Frame, 2);
+	ws_server_tx_unlock();
 	conn->state = WSS_CONNECTED2;
 }
 
@@ -370,16 +463,17 @@ void ws_server_direct_sendText(char *message, size_t message_len, int use_mask, 
 
 void ws_server_sendClose(ws_conn *conn)
 {
-	if (conn->state == WSS_CLOSING || conn->state == WSS_CLOSED) {
+	if (conn->close_req || conn->state == WSS_CLOSING || conn->state == WSS_CLOSED) {
 		return;
 	}
-	conn->state = WSS_CLOSING;
 	uint8_t close_Frame[2] = {0x88, 0x00};
+	ws_server_tx_lock();
 	ws_server_write(conn, close_Frame, sizeof(close_Frame));
-	if (conn->state == WSS_CLOSING) {
-		ws_server_set_close_reason(conn, WSS_SERVER_SEND_CLOSE);
-		ws_server_conn_remove(conn);
-	}
+	ws_server_tx_unlock();
+	/* Only request the close: conn thread may be using the socket and buffers now,
+	 * it removes the connection and reports the disconnect itself */
+	ws_server_set_close_reason(conn, WSS_SERVER_SEND_CLOSE);
+	conn->close_req = 1;
 }
 
 int ws_response_write_header_start(ws_conn *conn, char *status, char *content_type, size_t content_len)

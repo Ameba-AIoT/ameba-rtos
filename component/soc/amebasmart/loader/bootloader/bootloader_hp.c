@@ -297,7 +297,9 @@ void BOOT_PSRAM_Init(void)
 		psram_phy->PSPHY_CAL_PAR = PSRAM_CAL_BK;
 	} else {
 		if ((SYSCFG_CHIPType_Get() == CHIP_TYPE_ASIC) || (SYSCFG_CHIPType_Get() == CHIP_TYPE_FPGA)) {
-			PSRAM_calibration();
+			if (PSRAM_calibration() == FALSE) {
+				RTK_LOGE(TAG, "PSRAM calibration fail\n");
+			}
 			PSRAM_CAL_BK = psram_phy->PSPHY_CAL_PAR;
 		}
 	}
@@ -569,9 +571,6 @@ void BOOT_SOC_ClkSet(void)
 	RTK_LOGI(TAG, "NP Freq %lu MHz\n", NPCLK);
 	RTK_LOGI(TAG, "AP Freq %lu MHz\n", APCLK);
 	RTK_LOGI(TAG, "LP Freq %lu MHz\n", LPCLK / MHZ_TICK_CNT);
-
-	/* Note that if no anti-rollback and warm reset continuously, clear BOOT_CNT to avoid boot from older bootloader */
-	BKUP_Write(BKUP_REG0, BKUP_Read(BKUP_REG0) & ~BOOT_CNT_MASK);
 }
 
 // 0x1 for core 0, 0x3 for core 0/1

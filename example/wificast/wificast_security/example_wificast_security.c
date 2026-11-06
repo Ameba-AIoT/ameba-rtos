@@ -1,7 +1,9 @@
 #include "example_wificast_security.h"
 
 static const char *const TAG = "example_main";
+#if defined(CONFIG_MBEDTLS_USE_LEGACY_API)
 static const char *pers = "wifi_cast_sec";
+#endif
 
 static serial_t g_uart_obj;
 static rtos_queue_t g_scan_report_q;
@@ -307,6 +309,7 @@ static void example_uart_init(void)
 	}
 }
 
+#if defined(CONFIG_MBEDTLS_USE_LEGACY_API)
 static int entropy_source(void *data, u8 *output, int len, int *olen)
 {
 	(void)data;
@@ -453,6 +456,84 @@ exit:
 	mbedtls_ecp_keypair_free(&ctx);
 	return ret;
 }
+
+#else
+static int compute_shared_key(u8 *pubkey, int pubkey_len)
+{
+	psa_status_t ret;
+	psa_key_id_t key = PSA_KEY_ID_NULL;
+	psa_key_attributes_t attr = PSA_KEY_ATTRIBUTES_INIT;
+	u8 buf[MBEDTLS_ECP_MAX_PT_LEN];
+	size_t olen = 0;
+
+	psa_set_key_type(&attr, PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1));
+	psa_set_key_bits(&attr, 256);
+	psa_set_key_usage_flags(&attr, PSA_KEY_USAGE_DERIVE);
+	psa_set_key_algorithm(&attr, PSA_ALG_ECDH);
+	ret = psa_import_key(&attr, g_keypair.privkey, g_keypair.privkey_len, &key);
+	if (ret != PSA_SUCCESS) {
+		RTK_LOGE(TAG, "%s, psa_import_key fail, ret: %d\n", __func__, ret);
+		return ret;
+	}
+
+	/* load pubkey: Q */
+	buf[0] = 0x04; 	/* format type */
+	memcpy(&buf[1], pubkey, pubkey_len);
+
+	memset(g_keypair.shared_key, 0, sizeof(g_keypair.shared_key));
+	ret = psa_raw_key_agreement(PSA_ALG_ECDH, key, buf, pubkey_len + 1, g_keypair.shared_key, sizeof(g_keypair.shared_key), &olen);
+	if (ret != PSA_SUCCESS) {
+		RTK_LOGE(TAG, "%s, psa_raw_key_agreement fail, ret: %d\n", __func__, ret);
+		goto exit;
+	}
+	g_keypair.shared_key_len = olen;
+
+	dump_buf("shared_key:", g_keypair.shared_key, g_keypair.shared_key_len);
+
+exit:
+	psa_destroy_key(key);
+	return ret;
+}
+
+static int generate_keypair(void)
+{
+	psa_status_t ret;
+	psa_key_id_t key = PSA_KEY_ID_NULL;
+	psa_key_attributes_t attr = PSA_KEY_ATTRIBUTES_INIT;
+	u8 buf[MBEDTLS_ECP_MAX_PT_LEN];
+	size_t olen = 0;
+
+	psa_set_key_type(&attr, PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1));
+	psa_set_key_bits(&attr, 256);
+	psa_set_key_usage_flags(&attr, PSA_KEY_USAGE_DERIVE | PSA_KEY_USAGE_EXPORT);
+	psa_set_key_algorithm(&attr, PSA_ALG_ECDH);
+	ret = psa_generate_key(&attr, &key);
+	if (ret != PSA_SUCCESS) {
+		RTK_LOGE(TAG, "%s, psa_generate_key fail, ret: %d\n", __func__, ret);
+		return ret;
+	}
+
+	ret = psa_export_public_key(key, buf, sizeof(buf), &olen);
+	if (ret != PSA_SUCCESS) {
+		RTK_LOGE(TAG, "%s, psa_export_public_key fail, ret: %d\n", __func__, ret);
+		goto exit;
+	}
+	memcpy(g_keypair.pubkey, buf + 1, olen - 1);
+	g_keypair.pubkey_len = olen - 1;
+
+	memset(g_keypair.privkey, 0, sizeof(g_keypair.privkey));
+	ret = psa_export_key(key, g_keypair.privkey, sizeof(g_keypair.privkey), &olen);
+	if (ret != PSA_SUCCESS) {
+		RTK_LOGE(TAG, "%s, psa_export_key fail, ret: %d\n", __func__, ret);
+		goto exit;
+	}
+	g_keypair.privkey_len = olen;
+
+exit:
+	psa_destroy_key(key);
+	return ret;
+}
+#endif
 
 static void example_security_initial_scan(struct example_scan_info **info_list, int *num, u32 wait_ms)
 {

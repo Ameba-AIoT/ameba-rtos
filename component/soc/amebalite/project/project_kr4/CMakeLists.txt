@@ -7,6 +7,9 @@ set(c_VERBOSE_MAKEFILE FALSE)
 ameba_mcu_project_create(kr4 kr4)
 ameba_mcu_project_check()
 
+ameba_install_directory("${CMAKE_CURRENT_SOURCE_DIR}/ld")
+ameba_install_directory("${CMAKE_CURRENT_SOURCE_DIR}/make")
+
 if(CONFIG_MP_SHRINK)
     if(CONFIG_WHC_HOST)
         message(FATAL_ERROR "Setting KR4 as AP is NOT ALLOWED in SHRINK MP.")

@@ -1,14 +1,17 @@
+﻿
 
 /* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
  * Title:        arm_cityblock_distance_f32.c
  * Description:  Cityblock (Manhattan) distance between two vectors
  *
+ * $Date:        23 April 2021
+ * $Revision:    V1.9.0
  *
- * Target Processor: Cortex-M cores
+ * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
 /*
- * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -24,13 +27,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "arm_compiler_specific.h"
 
-#include "arm_math.h"
+
+#include "dsp/distance_functions.h"
 #include <limits.h>
 #include <math.h>
 
 /**
-  @addtogroup FloatDist
+  @addtogroup Manhattan
   @{
  */
 
@@ -48,7 +53,7 @@
 #include "arm_helium_utils.h"
 #include "arm_vec_math.h"
 
-float32_t arm_cityblock_distance_f32(const float32_t *pA, const float32_t *pB, uint32_t blockSize)
+ARM_DSP_ATTRIBUTE float32_t arm_cityblock_distance_f32(const float32_t *pA, const float32_t *pB, uint32_t blockSize)
 {
 	uint32_t        blkCnt;
 	f32x4_t         a, b, accumV, tempV;
@@ -91,7 +96,7 @@ float32_t arm_cityblock_distance_f32(const float32_t *pA, const float32_t *pB, u
 
 #include "NEMath.h"
 
-float32_t arm_cityblock_distance_f32(const float32_t *pA, const float32_t *pB, uint32_t blockSize)
+ARM_DSP_ATTRIBUTE float32_t arm_cityblock_distance_f32(const float32_t *pA, const float32_t *pB, uint32_t blockSize)
 {
 	float32_t accum = 0.0f, tmpA, tmpB;
 	uint32_t blkCnt;
@@ -129,7 +134,7 @@ float32_t arm_cityblock_distance_f32(const float32_t *pA, const float32_t *pB, u
 }
 
 #else
-float32_t arm_cityblock_distance_f32(const float32_t *pA, const float32_t *pB, uint32_t blockSize)
+ARM_DSP_ATTRIBUTE float32_t arm_cityblock_distance_f32(const float32_t *pA, const float32_t *pB, uint32_t blockSize)
 {
 	float32_t accum, tmpA, tmpB;
 
@@ -148,5 +153,5 @@ float32_t arm_cityblock_distance_f32(const float32_t *pA, const float32_t *pB, u
 #endif
 
 /**
- * @} end of FloatDist group
+ * @} end of Manhattan group
  */

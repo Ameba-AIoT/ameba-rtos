@@ -106,11 +106,21 @@ ameba_list_append(private_sources
     bt/le/ble_llcp_past.c
 )
 
+ameba_list_append(private_sources
+    bt/br_edr/bt_ll_clock.c
+    bt/br_edr/bt_ll_hop.c
+    bt/br_edr/bt_ll_pkt.c
+    bt/br_edr/bt_ll_inq_scan.c
+    bt/br_edr/bt_ll_page_scan.c
+    bt/br_edr/bt_ll.c
+)
+
 ameba_list_append(private_includes
     ../verification
     bt
     bt/hci
     bt/le
+    bt/br_edr
     util
     hci
     hci/client

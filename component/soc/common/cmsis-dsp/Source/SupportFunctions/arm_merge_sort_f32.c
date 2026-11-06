@@ -1,15 +1,16 @@
-/* ----------------------------------------------------------------------
+﻿/* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
  * Title:        arm_merge_sort_f32.c
  * Description:  Floating point merge sort
  *
- * $Date:        2019
- * $Revision:    V1.6.0
+ * $Date:        23 April 2021
+ * $Revision:    V1.9.0
  *
  * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
+
 /*
- * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -25,8 +26,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "arm_compiler_specific.h"
 
-#include "arm_math.h"
+
+#include "dsp/support_functions.h"
 #include "arm_sorting.h"
 
 
@@ -95,7 +98,7 @@ static void arm_merge_sort_core_f32(float32_t *pB, uint32_t begin, uint32_t end,
    */
 
 
-void arm_merge_sort_f32(
+ARM_DSP_ATTRIBUTE void arm_merge_sort_f32(
 	const arm_merge_sort_instance_f32 *S,
 	float32_t *pSrc,
 	float32_t *pDst,
@@ -105,14 +108,14 @@ void arm_merge_sort_f32(
 
 	/* Out-of-place */
 	if (pSrc != pDst) {
-		memcpy(pDst, pSrc, blockSize * sizeof(float32_t));
+		_memcpy(pDst, pSrc, blockSize * sizeof(float32_t));
 		pA = pDst;
 	} else {
 		pA = pSrc;
 	}
 
 	/* A working buffer is needed */
-	memcpy(S->buffer, pSrc, blockSize * sizeof(float32_t));
+	_memcpy(S->buffer, pSrc, blockSize * sizeof(float32_t));
 
 	arm_merge_sort_core_f32(S->buffer, 0, blockSize, pA, S->dir);
 }

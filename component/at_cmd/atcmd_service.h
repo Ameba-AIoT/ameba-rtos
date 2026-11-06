@@ -70,6 +70,7 @@ extern char g_tt_mode_indicate_high_watermark;
 extern char g_tt_mode_indicate_low_watermark;
 extern RingBuffer *atcmd_tt_mode_rx_ring_buf;
 extern rtos_sema_t atcmd_tt_mode_sema;
+extern rtos_mutex_t atcmd_tt_mode_mutex;
 extern volatile char g_tt_mode_stop_flag;
 extern volatile u8 g_tt_mode_stop_char_cnt;
 extern rtos_timer_t xTimers_TT_Mode;

@@ -40,7 +40,7 @@ typedef struct {
 /** @defgroup BKUP_REG_Idx_definitions
   * @{
   */
-#define BKUP_REG0				((u32)0x00000000)	/*!< Bit[31,30,27-24,10,9] is used by system */
+#define BKUP_REG0				((u32)0x00000000)	/*!< Bit[31,30,27-24,15-8] is used by system */
 #define BKUP_REG1				((u32)0x00000001)	/*!< all bits can be used by user */
 #define BKUP_REG2				((u32)0x00000002)	/*!< all bits can be used by user */
 #define BKUP_REG3				((u32)0x00000003)	/*!< all bits can be used by user */

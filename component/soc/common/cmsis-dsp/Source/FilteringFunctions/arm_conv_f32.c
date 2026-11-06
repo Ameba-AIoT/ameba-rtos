@@ -1,15 +1,16 @@
-/* ----------------------------------------------------------------------
+﻿/* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
  * Title:        arm_conv_f32.c
  * Description:  Convolution of floating-point sequences
  *
- * $Date:        18. March 2019
- * $Revision:    V1.6.0
+ * $Date:        23 April 2021
+ * $Revision:    V1.9.0
  *
- * Target Processor: Cortex-M cores
+ * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
+
 /*
- * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -25,8 +26,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "arm_compiler_specific.h"
 
-#include "arm_math.h"
+
+#include "dsp/filtering_functions.h"
 
 /**
   @ingroup groupFilters
@@ -43,12 +46,14 @@
  @par            Algorithm
                    Let <code>a[n]</code> and <code>b[n]</code> be sequences of length <code>srcALen</code> and
                    <code>srcBLen</code> samples respectively. Then the convolution
-  <pre>
-     c[n] = a[n] * b[n]
-  </pre>
+                   \f[
+                      c[n] = a[n] * b[n]
+                   \f]
   @par
                    is defined as
-                   \image html ConvolutionEquation.gif
+                   \f[
+                   c[n] = \sum_{k=0}^{srcALen} a[k] b[n-k]
+                   \f]
   @par
                    Note that <code>c[n]</code> is of length <code>srcALen + srcBLen - 1</code> and is defined over the interval <code>n=0, 1, 2, ..., srcALen + srcBLen - 2</code>.
                    <code>pSrcA</code> points to the first input vector of length <code>srcALen</code> and
@@ -60,9 +65,9 @@
                    For each offset \c n, the overlapping portions of a[n] and b[n] are multiplied and summed together.
   @par
                    Note that convolution is a commutative operation:
-  <pre>
-     a[n] * b[n] = b[n] * a[n].
-  </pre>
+                   \f[
+                      a[n] * b[n] = b[n] * a[n].
+                   \f]
   @par
                    This means that switching the A and B arguments to the convolution functions has no effect.
 
@@ -78,6 +83,12 @@
   @par           Opt Versions
                    Opt versions are supported for Q15 and Q7. Design uses internal scratch buffer for getting good optimisation.
                    These versions are optimised in cycles and consumes more memory (Scratch memory) compared to Q15 and Q7 versions
+
+  @par           Long versions:
+                   For convolution of long vectors, those functions are
+                   no more adapted and will be very slow.
+                   An implementation based upon FFTs should be used.
+
  */
 
 /**
@@ -92,23 +103,21 @@
   @param[in]     pSrcB      points to the second input sequence
   @param[in]     srcBLen    length of the second input sequence
   @param[out]    pDst       points to the location where the output result is written.  Length srcALen+srcBLen-1.
-  @return        none
  */
 #if defined(ARM_MATH_MVEF) && !defined(ARM_MATH_AUTOVECTORIZE)
 
 #include "arm_helium_utils.h"
 #include "arm_vec_filtering.h"
 
-
-void arm_conv_f32(
+ARM_DSP_ATTRIBUTE void arm_conv_f32(
 	const float32_t *pSrcA,
 	uint32_t srcALen,
 	const float32_t *pSrcB,
 	uint32_t srcBLen,
 	float32_t *pDst)
 {
-	const float32_t *pIn1 = pSrcA;    /* inputA pointer               */
-	const float32_t *pIn2 = pSrcB;    /* inputB pointer               */
+	const float32_t *pIn1 = pSrcA; /* inputA pointer               */
+	const float32_t *pIn2 = pSrcB; /* inputB pointer               */
 	/*
 	 * Loop to perform MAC operations according to correlation equation
 	 */
@@ -116,9 +125,9 @@ void arm_conv_f32(
 	const float32_t *pY;
 	const float32_t *pA;
 	const float32_t *pB;
-	int32_t   i = 0U, j = 0;    /* loop counters */
-	int32_t   block1, block2, block3;
-	uint32_t  vddupStartIdx = 3;
+	int32_t i = 0U, j = 0; /* loop counters */
+	int32_t block1, block2, block3;
+	uint32_t vddupStartIdx = 3;
 	uint32x4_t decrIdxVec = vddupq_u32(vddupStartIdx, 1);
 
 	if (srcALen < srcBLen) {
@@ -146,7 +155,7 @@ void arm_conv_f32(
 	pB = pIn2 - 3;
 
 	for (i = 0; i <= block1 - 2; i += 2) {
-		uint32_t  count = i + 1;
+		uint32_t count = i + 1;
 		float32_t acc0;
 		float32_t acc1;
 
@@ -165,7 +174,7 @@ void arm_conv_f32(
 	}
 
 	for (; i < block1; i++) {
-		uint32_t  count = i + 1;
+		uint32_t count = i + 1;
 		float32_t acc;
 
 		pX = pA;
@@ -177,7 +186,7 @@ void arm_conv_f32(
 	}
 
 	for (i = 0; i <= block2 - 2; i += 2) {
-		uint32_t  count = srcBLen;
+		uint32_t count = srcBLen;
 		float32_t acc0 = 0;
 		float32_t acc1 = 0;
 
@@ -194,7 +203,7 @@ void arm_conv_f32(
 		pA += 2;
 	}
 	if (block2 & 1) {
-		uint32_t  count = srcBLen;
+		uint32_t count = srcBLen;
 		float32_t acc = 0;
 
 		pX = pA;
@@ -206,7 +215,7 @@ void arm_conv_f32(
 	}
 
 	for (i = block3; i >= 2; i -= 2) {
-		int32_t   count = i;
+		int32_t count = i;
 		float32_t acc0;
 		float32_t acc1;
 
@@ -224,7 +233,7 @@ void arm_conv_f32(
 		pA += 2;
 	}
 	for (; i >= 1; i--) {
-		int32_t   count = i;
+		int32_t count = i;
 		float32_t acc;
 
 		pX = pA;
@@ -236,7 +245,7 @@ void arm_conv_f32(
 	}
 }
 #else
-void arm_conv_f32(
+ARM_DSP_ATTRIBUTE void arm_conv_f32(
 	const float32_t *pSrcA,
 	uint32_t srcALen,
 	const float32_t *pSrcB,
@@ -244,23 +253,22 @@ void arm_conv_f32(
 	float32_t *pDst)
 {
 
-#if defined(ARM_MATH_DSP)
+#if defined(ARM_MATH_DSP) || defined(ARM_MATH_NEON)
 
-	const float32_t *pIn1;                               /* InputA pointer */
-	const float32_t *pIn2;                               /* InputB pointer */
-	float32_t *pOut = pDst;                        /* Output pointer */
-	const float32_t *px;                                 /* Intermediate inputA pointer */
-	const float32_t *py;                                 /* Intermediate inputB pointer */
-	const float32_t *pSrc1, *pSrc2;                      /* Intermediate pointers */
-	float32_t sum;                                 /* Accumulators */
-	uint32_t blockSize1, blockSize2, blockSize3;   /* Loop counters */
-	uint32_t j, k, count, blkCnt;                  /* Loop counters */
+	const float32_t *pIn1;                       /* InputA pointer */
+	const float32_t *pIn2;                       /* InputB pointer */
+	float32_t *pOut = pDst;                      /* Output pointer */
+	const float32_t *px;                         /* Intermediate inputA pointer */
+	const float32_t *py;                         /* Intermediate inputB pointer */
+	const float32_t *pSrc1, *pSrc2;              /* Intermediate pointers */
+	float32_t sum;                               /* Accumulators */
+	uint32_t blockSize1, blockSize2, blockSize3; /* Loop counters */
+	uint32_t j, k, count, blkCnt;                /* Loop counters */
 
-
-#if defined (ARM_MATH_LOOPUNROLL) || defined(ARM_MATH_NEON)
-	float32_t acc0, acc1, acc2, acc3, c0;              /* Accumulators */
+#if defined(ARM_MATH_LOOPUNROLL) || defined(ARM_MATH_NEON)
+	float32_t acc0, acc1, acc2, acc3, c0; /* Accumulators */
 #if !defined(ARM_MATH_NEON)
-	float32_t x0, x1, x2, x3;                  /* Temporary variables to hold state and coefficient values */
+	float32_t x0, x1, x2, x3; /* Temporary variables to hold state and coefficient values */
 #endif
 #endif
 
@@ -321,14 +329,13 @@ void arm_conv_f32(
 	/* Working pointer of inputB */
 	py = pIn2;
 
-
 	/* ------------------------
 	 * Stage1 process
 	 * ----------------------*/
 #if defined(ARM_MATH_NEON)
 	float32x4_t vec1;
 	float32x4_t vec2;
-	float32x4_t res = vdupq_n_f32(0) ;
+	float32x4_t res = vdupq_n_f32(0);
 	float32x2_t accum = vdup_n_f32(0);
 #endif /* #if defined(ARM_MATH_NEON) */
 
@@ -337,12 +344,12 @@ void arm_conv_f32(
 		/* Accumulator is made zero for every iteration */
 		sum = 0.0f;
 
-#if defined (ARM_MATH_LOOPUNROLL) || defined(ARM_MATH_NEON)
+#if defined(ARM_MATH_LOOPUNROLL) || defined(ARM_MATH_NEON)
 		/* Loop unrolling: Compute 4 outputs at a time */
 		k = count >> 2U;
 
 #if defined(ARM_MATH_NEON)
-		res = vdupq_n_f32(0) ;
+		res = vdupq_n_f32(0);
 		accum = vdup_n_f32(0);
 
 		/* Compute 4 MACs simultaneously. */
@@ -368,7 +375,7 @@ void arm_conv_f32(
 		}
 
 		accum = vpadd_f32(vget_low_f32(res), vget_high_f32(res));
-		sum += accum[0] + accum[1];
+		sum += vget_lane_f32(accum, 0) + vget_lane_f32(accum, 1);
 
 		/* If the count is not a multiple of 4, compute any remaining MACs here.
 		 ** No loop unrolling is used. */
@@ -458,10 +465,10 @@ void arm_conv_f32(
 		float32x4_t x1v;
 		float32x4_t x2v;
 		float32x4_t x;
-		float32x4_t res = vdupq_n_f32(0) ;
+		float32x4_t res = vdupq_n_f32(0);
 #endif /* #if defined(ARM_MATH_NEON) */
 
-#if defined (ARM_MATH_LOOPUNROLL) || defined(ARM_MATH_NEON)
+#if defined(ARM_MATH_LOOPUNROLL) || defined(ARM_MATH_NEON)
 
 		/* Loop unrolling: Compute 4 outputs at a time */
 		blkCnt = blockSize2 >> 2U;
@@ -477,7 +484,7 @@ void arm_conv_f32(
 			k = srcBLen >> 2U;
 
 #if defined(ARM_MATH_NEON)
-			res = vdupq_n_f32(0) ;
+			res = vdupq_n_f32(0);
 
 			x1v = vld1q_f32(px);
 			x2v = vld1q_f32(px + 4);
@@ -487,27 +494,26 @@ void arm_conv_f32(
 
 				px += 4;
 				x = x1v;
-				res = vmlaq_n_f32(res, x, c[3]);
+				res = vmlaq_n_f32(res, x, vgetq_lane_f32(c, 3));
 
 				x = vextq_f32(x1v, x2v, 1);
 
-				res = vmlaq_n_f32(res, x, c[2]);
+				res = vmlaq_n_f32(res, x, vgetq_lane_f32(c, 2));
 
 				x = vextq_f32(x1v, x2v, 2);
 
-				res = vmlaq_n_f32(res, x, c[1]);
+				res = vmlaq_n_f32(res, x, vgetq_lane_f32(c, 1));
 
 				x = vextq_f32(x1v, x2v, 3);
 
-				res = vmlaq_n_f32(res, x, c[0]);
+				res = vmlaq_n_f32(res, x, vgetq_lane_f32(c, 0));
 
 				py -= 4;
 
-				x1v = x2v ;
+				x1v = x2v;
 				x2v = vld1q_f32(px + 4);
 
 			} while (--k);
-
 
 			/* If the srcBLen is not a multiple of 4, compute any remaining MACs here.
 			 ** No loop unrolling is used. */
@@ -523,20 +529,20 @@ void arm_conv_f32(
 				res = vmlaq_n_f32(res, x1v, c0);
 
 				/* Reuse the present samples for the next MAC */
-				x1v[0] = x1v[1];
-				x1v[1] = x1v[2];
-				x1v[2] = x1v[3];
+				x1v = vsetq_lane_f32(vgetq_lane_f32(x1v, 1), x1v, 0);
+				x1v = vsetq_lane_f32(vgetq_lane_f32(x1v, 2), x1v, 1);
+				x1v = vsetq_lane_f32(vgetq_lane_f32(x1v, 3), x1v, 2);
 
-				x1v[3] = *(px++);
+				x1v = vsetq_lane_f32(*(px++), x1v, 3);
 
 				/* Decrement the loop counter */
 				k--;
 			}
 
-			acc0 = res[0];
-			acc1 = res[1];
-			acc2 = res[2];
-			acc3 = res[3];
+			acc0 = vgetq_lane_f32(res, 0);
+			acc1 = vgetq_lane_f32(res, 1);
+			acc2 = vgetq_lane_f32(res, 2);
+			acc3 = vgetq_lane_f32(res, 3);
 
 #else
 			/* read x[0], x[1], x[2] samples */
@@ -672,15 +678,15 @@ void arm_conv_f32(
 			/* Accumulator is made zero for every iteration */
 			sum = 0.0f;
 
-#if defined(ARM_MATH_NEON) || defined (ARM_MATH_LOOPUNROLL)
+#if defined(ARM_MATH_NEON) || defined(ARM_MATH_LOOPUNROLL)
 			/* Loop unrolling: Compute 4 outputs at a time */
 			k = srcBLen >> 2U;
 
-#if defined (ARM_MATH_NEON)
-			float32x4_t res = vdupq_n_f32(0) ;
-			float32x4_t x = vdupq_n_f32(0) ;
-			float32x4_t y = vdupq_n_f32(0) ;
-			float32x2_t accum = vdup_n_f32(0) ;
+#if defined(ARM_MATH_NEON)
+			float32x4_t res = vdupq_n_f32(0);
+			float32x4_t x = vdupq_n_f32(0);
+			float32x4_t y = vdupq_n_f32(0);
+			float32x2_t accum = vdup_n_f32(0);
 
 			/* First part of the processing.  Compute 4 MACs at a time.
 			 ** a second loop below computes MACs for the remaining 1 to 3 samples. */
@@ -693,15 +699,15 @@ void arm_conv_f32(
 
 				res = vmlaq_f32(res, x, y);
 
-				px += 4 ;
-				py -= 4 ;
+				px += 4;
+				py -= 4;
 
 				/* Decrement the loop counter */
 				k--;
 			}
 
 			accum = vpadd_f32(vget_low_f32(res), vget_high_f32(res));
-			sum += accum[0] + accum[1];
+			sum += vget_lane_f32(accum, 0) + vget_lane_f32(accum, 1);
 
 			/* If the srcBLen is not a multiple of 4, compute any remaining MACs here.
 			 ** No loop unrolling is used. */
@@ -785,7 +791,6 @@ void arm_conv_f32(
 		}
 	}
 
-
 	/* --------------------------
 	 * Initializations of stage3
 	 * -------------------------*/
@@ -815,15 +820,15 @@ void arm_conv_f32(
 		/* Accumulator is made zero for every iteration */
 		sum = 0.0f;
 
-#if defined (ARM_MATH_LOOPUNROLL) || defined(ARM_MATH_NEON)
+#if defined(ARM_MATH_LOOPUNROLL) || defined(ARM_MATH_NEON)
 		/* Loop unrolling: Compute 4 outputs at a time */
 		k = blockSize3 >> 2U;
 
 #if defined(ARM_MATH_NEON)
-		float32x4_t res = vdupq_n_f32(0) ;
-		float32x4_t x = vdupq_n_f32(0) ;
-		float32x4_t y = vdupq_n_f32(0) ;
-		float32x2_t accum = vdup_n_f32(0) ;
+		float32x4_t res = vdupq_n_f32(0);
+		float32x4_t x = vdupq_n_f32(0);
+		float32x4_t y = vdupq_n_f32(0);
+		float32x2_t accum = vdup_n_f32(0);
 
 		while (k > 0U) {
 			x = vld1q_f32(px);
@@ -834,15 +839,15 @@ void arm_conv_f32(
 
 			res = vmlaq_f32(res, x, y);
 
-			px += 4 ;
-			py -= 4 ;
+			px += 4;
+			py -= 4;
 
 			/* Decrement the loop counter */
 			k--;
 		}
 
 		accum = vpadd_f32(vget_low_f32(res), vget_high_f32(res));
-		sum += accum[0] + accum[1];
+		sum += vget_lane_f32(accum, 0) + vget_lane_f32(accum, 1);
 
 #else
 		while (k > 0U) {
@@ -896,10 +901,10 @@ void arm_conv_f32(
 #else
 	/* alternate version for CM0_FAMILY */
 
-	const float32_t *pIn1 = pSrcA;                       /* InputA pointer */
-	const float32_t *pIn2 = pSrcB;                       /* InputB pointer */
-	float32_t sum;                                 /* Accumulator */
-	uint32_t i, j;                                 /* Loop counters */
+	const float32_t *pIn1 = pSrcA; /* InputA pointer */
+	const float32_t *pIn2 = pSrcB; /* InputB pointer */
+	float32_t sum;                 /* Accumulator */
+	uint32_t i, j;                 /* Loop counters */
 
 	/* Loop to calculate convolution for output length number of times */
 	for (i = 0U; i < (srcALen + srcBLen - 1U); i++) {
@@ -920,7 +925,6 @@ void arm_conv_f32(
 	}
 
 #endif /* #if !defined(ARM_MATH_CM0_FAMILY) */
-
 }
 #endif /* defined(ARM_MATH_MVEF) && !defined(ARM_MATH_AUTOVECTORIZE) */
 

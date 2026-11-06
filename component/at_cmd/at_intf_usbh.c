@@ -43,8 +43,8 @@ static void cdc_acm_cb_deinit(void);
 static void cdc_acm_cb_attached(void);
 static void cdc_acm_cb_detached(void);
 static void cdc_acm_cb_setup(void);
-static void cdc_acm_cb_transmitted(usbh_urb_state_t state);
-static void cdc_acm_cb_received(u8 *pbuf, u32 Len, u8 status);
+static void cdc_acm_cb_transmitted(int state);
+static void cdc_acm_cb_received(u8 *pbuf, u32 Len, int status);
 static void cdc_acm_cb_line_coding_changed(usb_cdc_acm_line_coding_t *line_coding);
 static void cdc_acm_cb_process(usb_host_t *host, u8 id);
 
@@ -151,7 +151,7 @@ static void cdc_acm_cb_setup(void)
 	rtos_sema_give(atcmd_usbh_tx_sema);
 }
 
-static void cdc_acm_cb_received(u8 *buf, u32 len, u8 status)
+static void cdc_acm_cb_received(u8 *buf, u32 len, int status)
 {
 	UNUSED(buf);
 
@@ -171,7 +171,7 @@ static void cdc_acm_cb_received(u8 *buf, u32 len, u8 status)
 	}
 }
 
-static void cdc_acm_cb_transmitted(u8 state)
+static void cdc_acm_cb_transmitted(int state)
 {
 	if (state == HAL_OK) {
 		/*TX done*/
@@ -281,12 +281,18 @@ WAIT_CONNECT:
 		}
 
 		if (g_tt_mode) {
-			space = RingBuffer_Space(atcmd_tt_mode_rx_ring_buf);
+			/* hold mutex so atcmd_tt_mode_end can't destroy the ring buffer between check and use */
+			rtos_mutex_take(atcmd_tt_mode_mutex, MUTEX_WAIT_TIMEOUT);
+			if (atcmd_tt_mode_rx_ring_buf == NULL) {
+				rtos_mutex_give(atcmd_tt_mode_mutex);
+				continue;
+			}
 
 			if (atcmd_usbh_rx_len > RingBuffer_Size(atcmd_tt_mode_rx_ring_buf)) {
 				g_tt_mode_stop_flag = 1;
 				g_tt_mode_stop_char_cnt = 0;
 				rtos_sema_give(atcmd_tt_mode_sema);
+				rtos_mutex_give(atcmd_tt_mode_mutex);
 				RTK_LOGE(TAG, "recv_len is larger than tt mode buffer size\n");
 				continue;
 			}
@@ -297,25 +303,20 @@ WAIT_CONNECT:
 			} else {
 				g_tt_mode_stop_char_cnt = 0;
 
-				if (space >= atcmd_usbh_rx_len) {
-					RingBuffer_Write(atcmd_tt_mode_rx_ring_buf, cdc_acm_loopback_rx_buf, atcmd_usbh_rx_len);
-					rtos_sema_give(atcmd_tt_mode_sema);
-				} else {
-					while (1) {
-						rtos_time_delay_ms(1);
-						if (g_tt_mode) {
-							space = RingBuffer_Space(atcmd_tt_mode_rx_ring_buf);
-							if (space >= atcmd_usbh_rx_len) {
-								RingBuffer_Write(atcmd_tt_mode_rx_ring_buf, cdc_acm_loopback_rx_buf, atcmd_usbh_rx_len);
-								rtos_sema_give(atcmd_tt_mode_sema);
-								break;
-							}
-						} else {
-							break;
-						}
+				/* release mutex while waiting for space so the reader and atcmd_tt_mode_end can proceed */
+				while (atcmd_tt_mode_rx_ring_buf) {
+					space = RingBuffer_Space(atcmd_tt_mode_rx_ring_buf);
+					if (space >= atcmd_usbh_rx_len) {
+						RingBuffer_Write(atcmd_tt_mode_rx_ring_buf, cdc_acm_loopback_rx_buf, atcmd_usbh_rx_len);
+						rtos_sema_give(atcmd_tt_mode_sema);
+						break;
 					}
+					rtos_mutex_give(atcmd_tt_mode_mutex);
+					rtos_time_delay_ms(1);
+					rtos_mutex_take(atcmd_tt_mode_mutex, MUTEX_WAIT_TIMEOUT);
 				}
 			}
+			rtos_mutex_give(atcmd_tt_mode_mutex);
 
 			/*cancel tt mode stop timer if recv pkt before timeout*/
 			if (g_tt_mode_stop_flag == 0 && rtos_timer_is_timer_active(xTimers_TT_Mode)) {

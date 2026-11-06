@@ -87,9 +87,6 @@ static const char *const TAG = "NETIF_ADAPT";
 #if defined(CONFIG_LWIP_ETHERNET)
 extern struct netif *pnetif_eth;
 extern int eth_send(struct pbuf * p);
-
-/* Posted on every link change; runs the driver's handler in tcpip_thread */
-static struct tcpip_callback_msg *eth_link_msg;
 #endif
 
 #if defined(CONFIG_LWIP_USB_ETHERNET)
@@ -361,34 +358,6 @@ void netif_adapter_eth_recv(struct pbuf *p)
 	// Pass received packet to the interface
 	if (ERR_OK != netif->input(p, netif)) {
 		pbuf_free(p);
-	}
-}
-
-/* handler runs in tcpip_thread with the core lock held: it may call netif_adapter_eth_set_link() but must not block.
- * Call before the link interrupt is enabled, so the ISR never sees a half-made message. */
-int netif_adapter_eth_link_init(void (*handler)(void *ctx))
-{
-	eth_link_msg = tcpip_callbackmsg_new(handler, NULL);
-
-	return (eth_link_msg != NULL) ? 0 : -1;
-}
-
-/* Called from the ISR. The handler must read the link state afresh, so one queued message covers any number of changes.
- * A post that finds the mbox full is dropped. */
-void netif_adapter_eth_link_notify(void)
-{
-	if (eth_link_msg != NULL) {
-		tcpip_callbackmsg_trycallback_fromisr(eth_link_msg);
-	}
-}
-
-/* Called from the link handler only, in tcpip_thread */
-void netif_adapter_eth_set_link(int up)
-{
-	if (up) {
-		netif_set_link_up(pnetif_eth);
-	} else {
-		netif_set_link_down(pnetif_eth);
 	}
 }
 #endif

@@ -56,7 +56,7 @@ None
 			```
 		- If `HID_MOUSE_CMD` in `example_usbd_hid.c` is set to 1 (default), type following command from Ameba LOGUART console to control the PC cursor behavior:
 			```
-			# mouse <left> <right> <middle> <x_axis> <y_axis> <wheel>
+			# AT+USBDHID=mouse,<left>,<right>,<middle>,<x>,<y>,<wheel>
 			```
 			Each command prints `[HID-I] Send mouse data`.
 	- For HID keyboard:
@@ -96,7 +96,7 @@ None
 
 | Command | Description |
 | --- | --- |
-| `mouse <left> <right> <middle> <x_axis> <y_axis> <wheel>` | Send one HID mouse report to the host. Only `<left>` is mandatory, the remaining arguments default to 0. The axis values are clamped to the -127..127 range declared by the mouse report descriptor. Only registered on a mouse build with `HID_MOUSE_CMD` set to 1. |
+| `AT+USBDHID=mouse,<left>[,<right>,<middle>,<x>,<y>,<wheel>]` | Send one HID mouse report to the host. Only `<left>` is mandatory, the remaining arguments default to 0. `<left>`/`<right>`/`<middle>`: `0` or `1` (pressed); `<x>`/`<y>`/`<wheel>`: -127..127, the range the mouse report descriptor declares. Any other value is rejected. Only registered on a mouse build with `HID_MOUSE_CMD` set to 1. |
 
 # Note
 

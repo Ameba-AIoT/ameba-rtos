@@ -17,7 +17,6 @@ ameba_list_append(public_includes
     ${c_MBEDTLS_DIR}/hw_alt
     ${c_MBEDTLS_DIR}/library
     ${c_MBEDTLS_DIR}/thread_alt
-    rom/include
     # ${c_BASEDIR}/component/soc/common/include
     # ${c_BASEDIR}/component/soc/common/lzma
 )

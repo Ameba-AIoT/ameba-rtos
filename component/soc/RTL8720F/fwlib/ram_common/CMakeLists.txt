@@ -37,6 +37,7 @@ set(private_compile_options)         #private compile_options
 
 ameba_list_append(private_sources
     ameba_adc.c
+    ameba_ota_rollback.c
     ameba_thermal.c
     ameba_aontimer.c
     ameba_arch.c
@@ -53,6 +54,7 @@ ameba_list_append(private_sources
     ameba_ldo.c
     ameba_loguart.c
     ameba_mpu_ram.c
+    ameba_pinmux.c
     ameba_pll.c
     ameba_pmc_com.c
     ameba_pmctimer.c
@@ -68,6 +70,7 @@ ameba_list_append(private_sources
     ameba_uart.c
     ameba_ups.c
     ameba_wakepin.c
+    ameba_wdg.c
     crypto_sym_ccm.c
     crypto_sym_gcm.c
     crypto_aes_ccm.c

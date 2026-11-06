@@ -1,15 +1,16 @@
-/* ----------------------------------------------------------------------
+﻿/* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
  * Title:        arm_power_q7.c
  * Description:  Sum of the squares of the elements of a Q7 vector
  *
- * $Date:        18. March 2019
- * $Revision:    V1.6.0
+ * $Date:        23 April 2021
+ * $Revision:    V1.9.0
  *
- * Target Processor: Cortex-M cores
+ * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
+
 /*
- * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -25,8 +26,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "arm_compiler_specific.h"
 
-#include "arm_math.h"
+
+#include "dsp/statistics_functions.h"
 
 /**
   @ingroup groupStats
@@ -42,7 +45,6 @@
   @param[in]     pSrc       points to the input vector
   @param[in]     blockSize  number of samples in input vector
   @param[out]    pResult    sum of the squares value returned here
-  @return        none
 
   @par           Scaling and Overflow Behavior
                    The function is implemented using a 32-bit internal accumulator.
@@ -53,8 +55,8 @@
                    full precision of the intermediate multiplication is preserved.
                    Finally, the return result is in 18.14 format.
  */
-#if defined(ARM_MATH_MVEI)
-void arm_power_q7(
+#if defined(ARM_MATH_MVEI) && !defined(ARM_MATH_AUTOVECTORIZE)
+ARM_DSP_ATTRIBUTE void arm_power_q7(
 	const q7_t *pSrc,
 	uint32_t blockSize,
 	q31_t *pResult)
@@ -95,7 +97,7 @@ void arm_power_q7(
 	*pResult = sum;
 }
 #else
-void arm_power_q7(
+ARM_DSP_ATTRIBUTE void arm_power_q7(
 	const q7_t *pSrc,
 	uint32_t blockSize,
 	q31_t *pResult)
@@ -119,7 +121,7 @@ void arm_power_q7(
 
 		/* Compute Power and store result in a temporary variable, sum. */
 #if defined (ARM_MATH_DSP)
-		in32 = read_q7x4_ia((q7_t **) &pSrc);
+		in32 = read_q7x4_ia(&pSrc);
 
 		in1 = __SXTB16(__ROR(in32, 8));
 		in2 = __SXTB16(in32);

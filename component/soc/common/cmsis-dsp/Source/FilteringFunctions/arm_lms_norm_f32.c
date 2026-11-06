@@ -1,15 +1,16 @@
-/* ----------------------------------------------------------------------
+﻿/* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
  * Title:        arm_lms_norm_f32.c
  * Description:  Processing function for the floating-point NLMS filter
  *
- * $Date:        18. March 2019
- * $Revision:    V1.6.0
+ * $Date:        23 April 2021
+ * $Revision:    V1.9.0
  *
- * Target Processor: Cortex-M cores
+ * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
+
 /*
- * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -25,8 +26,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "arm_compiler_specific.h"
 
-#include "arm_math.h"
+
+#include "dsp/filtering_functions.h"
 
 /**
   @ingroup groupFilters
@@ -153,11 +156,10 @@
   @param[out]    pOut      points to the block of output data
   @param[out]    pErr      points to the block of error data
   @param[in]     blockSize number of samples to process
-  @return        none
  */
 
 #if defined(ARM_MATH_NEON)
-void arm_lms_norm_f32(
+ARM_DSP_ATTRIBUTE void arm_lms_norm_f32(
 	arm_lms_norm_instance_f32 *S,
 	const float32_t *pSrc,
 	float32_t *pRef,
@@ -339,7 +341,7 @@ void arm_lms_norm_f32(
 
 }
 #else
-void arm_lms_norm_f32(
+ARM_DSP_ATTRIBUTE void arm_lms_norm_f32(
 	arm_lms_norm_instance_f32 *S,
 	const float32_t *pSrc,
 	float32_t *pRef,

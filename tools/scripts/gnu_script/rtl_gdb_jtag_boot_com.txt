@@ -42,9 +42,6 @@ set debug parser off
 set debug remote 0
 
 #===============================================================================
-#CPU must in halt state for restore rom code
-#Type 0: Hardware, halt after reset (normal)
-monitor reset 0
-monitor sleep 20
+#Halt only, the caller script resets the cpu when needed (load rom / flash write)
 monitor halt
 monitor waithalt 2000

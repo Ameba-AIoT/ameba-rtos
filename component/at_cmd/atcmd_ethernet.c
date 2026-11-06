@@ -178,8 +178,34 @@ static void at_eth_link_callback(int link_up)
 			dhcps_stop(pnetif_eth);
 		}
 		netifapi_netif_set_link_down(pnetif_eth);
-		lwip_clear_ip(NETIF_ETH_INDEX);
+		lwip_dhcp_stop(NETIF_ETH_INDEX);
 		RTK_LOGI(TAG_ETH, "Ethernet IP released\r\n");
+	}
+}
+
+static void at_eth_link_thread(void *param)
+{
+	u32 speed, duplex;
+	int last = -1;
+
+	UNUSED(param);
+	for (;;) {
+		if (rtos_sema_take(eth_link_sema, RTOS_MAX_TIMEOUT) != RTK_SUCCESS) {
+			continue;
+		}
+
+		int up = Ethernet_GetLinkStatus() ? 1 : 0;
+		if (up == last) {
+			continue;
+		}
+		last = up;
+
+		if (up) {
+			Ethernet_GetSpeedDuplex(&speed, &duplex);
+			RTK_LOGI(TAG_ETH, "Link Up: %s, %s\r\n", (speed == ETH_SPEED_100M) ? "100M" : (speed == ETH_SPEED_10M) ? "10M" : "Unknown",
+					 (duplex == ETH_FULL_DUPLEX) ? "Full Duplex" : "Half Duplex");
+		}
+		at_eth_link_callback(up);
 	}
 }
 #endif /* CONFIG_LWIP_LAYER */
@@ -222,7 +248,18 @@ void at_ethstart(u16 argc, char **argv)
 	g_eth_mode = (u8)mode;
 
 	if (!g_eth_started) {
-		eth_register_link_cb(at_eth_link_callback);
+		if (rtos_sema_create_binary(&eth_link_sema) != RTK_SUCCESS) {
+			RTK_LOGE(TAG_ETH, "Create link sema failed\r\n");
+			error_no = 4;
+			goto end;
+		}
+		if (rtos_task_create(NULL, "ETH_LINK", at_eth_link_thread, NULL, 1536, 3) != RTK_SUCCESS) {
+			RTK_LOGE(TAG_ETH, "Create link thread failed\r\n");
+			rtos_sema_delete(eth_link_sema);
+			eth_link_sema = NULL;
+			error_no = 4;
+			goto end;
+		}
 		eth_init();
 		g_eth_started = 1;
 	}

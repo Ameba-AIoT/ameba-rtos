@@ -15,6 +15,7 @@
 #include "rtw_coex_ipc.h"
 #endif
 #include "ameba_diagnose.h"
+#include "ameba_ota_rollback.h"
 
 static const char *const TAG = "MAIN";
 u32 g_Boot_Status;
@@ -94,9 +95,7 @@ _WEAK void app_functional_chk_status_set(u32 Boot_Status)
 _WEAK void app_functional_chk_done_callback(void)
 {
 	/* g_Boot_Status is 0 by default, app_functional_chk_status_set shall be called to set g_Boot_Status  */
-	if (g_Boot_Status == 0) {
-		BKUP_Write(BKUP_REG0, BKUP_Read(BKUP_REG0) & (~BOOT_CNT_MASK));
-	} else {
+	if (g_Boot_Status != 0) {
 		//if function not work correctly, trigger reboot
 		System_Reset();
 	}
@@ -114,6 +113,13 @@ _WEAK void app_pre_example(void)
 _WEAK void app_example(void)
 {
 
+}
+
+/* OTA rollback: clear BootCnt once the application works. Override it to clear after the product's own self check.
+ * If the application runs on CA32, the product calls OTA_Rollback_Clear() on CA32 instead. */
+_WEAK void app_ota_rollback_ok_callback(void)
+{
+	OTA_Rollback_Clear();
 }
 
 #ifdef CONFIG_VFS_ENABLED
@@ -197,6 +203,7 @@ int main(void)
 
 	/* Execute application example */
 	app_example();
+	app_ota_rollback_ok_callback();
 	IPC_patch_function(&rtos_critical_enter, &rtos_critical_exit);
 	IPC_SEMDelayStub(DelayMs);
 

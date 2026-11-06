@@ -28,6 +28,8 @@ extern "C" {
  * @return None
  */
 void example_usbh_composite_uvc_uac(void);
+int example_usbh_composite_uvc_uac_start(void);
+int example_usbh_composite_uvc_uac_stop(void);
 
 #ifdef __cplusplus
 }

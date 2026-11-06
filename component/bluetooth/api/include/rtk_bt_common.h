@@ -483,33 +483,33 @@ typedef enum {
  * @brief     Bluetooth LE ISO management action.
  */
 typedef enum {
-	RTK_BT_LE_ISO_ACT_CIG_START_SETTING = 1,
-	RTK_BT_LE_ISO_ACT_CIG_SETUP_PATH,
-	RTK_BT_LE_ISO_ACT_CIG_REMOVE_PATH,
-	RTK_BT_LE_ISO_ACT_ISO_DATA_SEND,
-	RTK_BT_LE_ISO_ACT_CIG_GET_ISOCH_INFO,
-	RTK_BT_LE_ISO_ACT_CIG_READ_ISO_TX_SYNC,
-	RTK_BT_LE_ISO_ACT_CIG_READ_LINK_QUALITY,
-	RTK_BT_LE_ISO_ACT_CIG_INITIATOR_SET_CIS_ACL_LINK,
-	RTK_BT_LE_ISO_ACT_CIG_INITIATOR_CREATE_CIS_BY_CIG_ID,
-	RTK_BT_LE_ISO_ACT_CIG_INITIATOR_CREATE_CIS_BY_CIG_CONN_HANDLE,
-	RTK_BT_LE_ISO_ACT_CIG_DISCONNECT,
-	RTK_BT_LE_ISO_ACT_CIG_INITIATOR_REMOVE_CIG,
-	RTK_BT_LE_ISO_ACT_CIG_ACCEPTOR_ACCEPT_CIS,
-	RTK_BT_LE_ISO_ACT_CIG_ACCEPTOR_REJECT_CIS,
-	RTK_BT_LE_ISO_ACT_CIG_ACCEPTOR_CONFIG_CIS_REQ_ACTION,
-	RTK_BT_LE_ISO_ACT_CIG_ACCEPTOR_REGISTER_CALLBACK,
-	RTK_BT_LE_ISO_ACT_BIG_SETUP_PATH,
-	RTK_BT_LE_ISO_ACT_BIG_REMOVE_PATH,
-	RTK_BT_LE_ISO_ACT_BIG_BROADCASTER_CREATE,
-	RTK_BT_LE_ISO_ACT_BIG_BROADCASTER_TERMINATE,
-	RTK_BT_LE_ISO_ACT_BIG_BROADCASTER_READ_TX_SYNC,
-	RTK_BT_LE_ISO_ACT_BIG_RECEIVER_CREATE_SYNC,
-	RTK_BT_LE_ISO_ACT_BIG_RECEIVER_TERMINATE_SYNC,
-	RTK_BT_LE_ISO_ACT_BIG_RECEIVER_READ_LINK_QUALITY,
-	RTK_BT_LE_ISO_ACT_SYNC_INFO,
-	RTK_BT_LE_ISO_ACT_GET_ISO_CONN_HANDLE,
-	RTK_BT_LE_ISO_ACT_MAX
+	RTK_BT_LE_ISO_ACT_CIG_START_SETTING = 1,                          /*!< Configure a CIG and its CIS(es) on the central side. */
+	RTK_BT_LE_ISO_ACT_CIG_SETUP_PATH,                                 /*!< Set up the isochronous data path of a CIS. */
+	RTK_BT_LE_ISO_ACT_CIG_REMOVE_PATH,                                /*!< Remove the data path(s) of a CIS. */
+	RTK_BT_LE_ISO_ACT_ISO_DATA_SEND,                                  /*!< Send one ISO SDU over an established CIS or BIS data path. */
+	RTK_BT_LE_ISO_ACT_CIG_GET_ISOCH_INFO,                             /*!< Get the isochronous channel information of a CIS. */
+	RTK_BT_LE_ISO_ACT_CIG_READ_ISO_TX_SYNC,                           /*!< Read the timestamp, time offset and packet sequence number of the last sent SDU on a CIS. */
+	RTK_BT_LE_ISO_ACT_CIG_READ_LINK_QUALITY,                          /*!< Read the link quality counters of a CIS. */
+	RTK_BT_LE_ISO_ACT_CIG_INITIATOR_SET_CIS_ACL_LINK,                 /*!< Associate a CIS with an ACL connection on the central side. */
+	RTK_BT_LE_ISO_ACT_CIG_INITIATOR_CREATE_CIS_BY_CIG_ID,             /*!< Request creation of the CIS(es) of the specified CIG on the central side. */
+	RTK_BT_LE_ISO_ACT_CIG_INITIATOR_CREATE_CIS_BY_CIG_CONN_HANDLE,    /*!< Request creation of one or more CISes specified by their CIS connection handles. */
+	RTK_BT_LE_ISO_ACT_CIG_DISCONNECT,                                 /*!< Terminate a CIS connection. */
+	RTK_BT_LE_ISO_ACT_CIG_INITIATOR_REMOVE_CIG,                       /*!< Remove a CIG on the central side. */
+	RTK_BT_LE_ISO_ACT_CIG_ACCEPTOR_ACCEPT_CIS,                        /*!< Accept a CIS request received by the peripheral. */
+	RTK_BT_LE_ISO_ACT_CIG_ACCEPTOR_REJECT_CIS,                        /*!< Reject a CIS request received by the peripheral. */
+	RTK_BT_LE_ISO_ACT_CIG_ACCEPTOR_CONFIG_CIS_REQ_ACTION,             /*!< Configure how the peripheral handles an incoming CIS request. */
+	RTK_BT_LE_ISO_ACT_CIG_ACCEPTOR_REGISTER_CALLBACK,                 /*!< Register the CIG acceptor callback to the lower stack. */
+	RTK_BT_LE_ISO_ACT_BIG_SETUP_PATH,                                 /*!< Set up the isochronous data path of a BIS. */
+	RTK_BT_LE_ISO_ACT_BIG_REMOVE_PATH,                                /*!< Remove the data path(s) of a BIS. */
+	RTK_BT_LE_ISO_ACT_BIG_BROADCASTER_CREATE,                         /*!< Create a BIG as broadcaster on the specified periodic advertising set. */
+	RTK_BT_LE_ISO_ACT_BIG_BROADCASTER_TERMINATE,                      /*!< Terminate a BIG created as broadcaster. */
+	RTK_BT_LE_ISO_ACT_BIG_BROADCASTER_READ_TX_SYNC,                   /*!< Read the timestamp, time offset and packet sequence number of the last sent SDU on a BIS. */
+	RTK_BT_LE_ISO_ACT_BIG_RECEIVER_CREATE_SYNC,                       /*!< Synchronize to a BIG announced by a synchronized periodic advertising train. */
+	RTK_BT_LE_ISO_ACT_BIG_RECEIVER_TERMINATE_SYNC,                    /*!< Terminate synchronization to a BIG. */
+	RTK_BT_LE_ISO_ACT_BIG_RECEIVER_READ_LINK_QUALITY,                 /*!< Read the link quality counters of a BIS. */
+	RTK_BT_LE_ISO_ACT_SYNC_INFO,                                      /*!< Notify the ISO module of a periodic advertising sync state change or an ACL disconnection. */
+	RTK_BT_LE_ISO_ACT_GET_ISO_CONN_HANDLE,                            /*!< Get the active ISO connection handles of the specified ISO role. */
+	RTK_BT_LE_ISO_ACT_MAX                                             /*!< Reserved. */
 } rtk_bt_le_iso_act_t;
 
 /**
@@ -517,219 +517,274 @@ typedef enum {
  * @brief     Bluetooth LE ISO management event code definition.
  */
 typedef enum {
-	RTK_BT_LE_ISO_EVT_CIG_DISCONNECT_INFO = 1,                    /*!< Indicate a CIS disconnection, with msg @ref rtk_bt_le_iso_cig_disconnect_info_t. */
-	RTK_BT_LE_ISO_EVT_CIG_CIS_ESTABLISHED_INFO,                   /*!< Indicate the CIS establishment result, with msg @ref rtk_bt_le_iso_cig_cis_established_info_t. */
-	RTK_BT_LE_ISO_EVT_CIG_ACCEPTOR_REQUEST_CIS_IND,               /*!< Indicate a CIS establishment request received by the acceptor, with msg
-                                                                   *   @ref rtk_bt_le_iso_cig_acceptor_request_cis_ind_t. */
-	RTK_BT_LE_ISO_EVT_CIG_SETUP_DATA_PATH,                        /*!< Indicate the CIS data path setup completed, with msg @ref rtk_bt_le_iso_cig_setup_data_path_info_t. */
-	RTK_BT_LE_ISO_EVT_CIG_REMOVE_DATA_PATH,                       /*!< Indicate the CIS data path removal completed, with msg @ref rtk_bt_le_iso_cig_remove_data_path_info_t. */
-	RTK_BT_LE_ISO_EVT_CIG_START_SETTING_INFO,                     /*!< Indicate the CIG start setting completed, carrying the CIS connection handles, with msg
-                                                                   *   @ref rtk_bt_le_iso_cig_start_setting_info_t. */
-	RTK_BT_LE_ISO_EVT_BIG_BROADCASTER_CREATE_CMPL_INFO,           /*!< Indicate the BIG creation result of the broadcaster, with msg @ref rtk_bt_le_iso_big_broadcaster_create_cmpl_info_t. */
-	RTK_BT_LE_ISO_EVT_BIG_BROADCASTER_SYNC_STATE_IND,             /*!< Indicate the BIG synchronization state change of the broadcaster, with msg
-                                                                   *   @ref rtk_bt_le_iso_big_broadcaster_sync_state_ind_t. */
-	RTK_BT_LE_ISO_EVT_BIG_RECEIVER_SYNC_ESTABLISHED_INFO,         /*!< Indicate the BIG synchronization establishment result of the receiver, with msg
-                                                                   *   @ref rtk_bt_le_iso_big_receiver_sync_established_info_t. */
-	RTK_BT_LE_ISO_EVT_BIG_RECEIVER_SYNC_STATE_IND,                /*!< Indicate the BIG synchronization state change of the receiver, with msg @ref rtk_bt_le_iso_big_receiver_sync_state_ind_t. */
-	RTK_BT_LE_ISO_EVT_BIG_SETUP_DATA_PATH,                        /*!< Indicate the BIS data path setup completed, with msg @ref rtk_bt_le_iso_big_setup_data_path_info_t. */
-	RTK_BT_LE_ISO_EVT_BIG_REMOVE_DATA_PATH,                       /*!< Indicate the BIS data path removal completed, with msg @ref rtk_bt_le_iso_big_remove_data_path_info_t. */
-	RTK_BT_LE_ISO_EVT_DATA_RECEIVE_IND,                           /*!< Indicate ISO data received, with msg @ref rtk_bt_le_iso_direct_iso_data_ind_t.
-                                                                   *   Direct calling, BT API shall not be called in this event. */
-	RTK_BT_LE_ISO_EVT_MAX,                                        /*!< Reserved. */
+	RTK_BT_LE_ISO_EVT_CIG_DISCONNECT_INFO = 1,               /*!< Indicate a CIS disconnection, with msg @ref rtk_bt_le_iso_cig_disconnect_info_t. */
+	RTK_BT_LE_ISO_EVT_CIG_CIS_ESTABLISHED_INFO,              /*!< Indicate the CIS establishment result, with msg @ref rtk_bt_le_iso_cig_cis_established_info_t. */
+	RTK_BT_LE_ISO_EVT_CIG_ACCEPTOR_REQUEST_CIS_IND,          /*!< Indicate a CIS establishment request received by the acceptor, with msg
+                                                              *   @ref rtk_bt_le_iso_cig_acceptor_request_cis_ind_t. */
+	RTK_BT_LE_ISO_EVT_CIG_SETUP_DATA_PATH,                   /*!< Indicate the CIS data path setup completed, with msg @ref rtk_bt_le_iso_cig_setup_data_path_info_t. */
+	RTK_BT_LE_ISO_EVT_CIG_REMOVE_DATA_PATH,                  /*!< Indicate the CIS data path removal completed, with msg
+                                                              *   @ref rtk_bt_le_iso_cig_remove_data_path_info_t. */
+	RTK_BT_LE_ISO_EVT_CIG_START_SETTING_INFO,                /*!< Indicate the CIG start setting completed, carrying the CIS connection handles, with msg
+                                                              *   @ref rtk_bt_le_iso_cig_start_setting_info_t. */
+	RTK_BT_LE_ISO_EVT_BIG_BROADCASTER_CREATE_CMPL_INFO,      /*!< Indicate the BIG creation result of the broadcaster, with msg
+                                                              *   @ref rtk_bt_le_iso_big_broadcaster_create_cmpl_info_t. */
+	RTK_BT_LE_ISO_EVT_BIG_BROADCASTER_SYNC_STATE_IND,        /*!< Indicate the BIG synchronization state change of the broadcaster, with msg
+                                                              *   @ref rtk_bt_le_iso_big_broadcaster_sync_state_ind_t. */
+	RTK_BT_LE_ISO_EVT_BIG_RECEIVER_SYNC_ESTABLISHED_INFO,    /*!< Indicate the BIG synchronization establishment result of the receiver, with msg
+                                                              *   @ref rtk_bt_le_iso_big_receiver_sync_established_info_t. */
+	RTK_BT_LE_ISO_EVT_BIG_RECEIVER_SYNC_STATE_IND,           /*!< Indicate the BIG synchronization state change of the receiver, with msg
+                                                              *   @ref rtk_bt_le_iso_big_receiver_sync_state_ind_t. */
+	RTK_BT_LE_ISO_EVT_BIG_SETUP_DATA_PATH,                   /*!< Indicate the BIS data path setup completed, with msg @ref rtk_bt_le_iso_big_setup_data_path_info_t. */
+	RTK_BT_LE_ISO_EVT_BIG_REMOVE_DATA_PATH,                  /*!< Indicate the BIS data path removal completed, with msg
+                                                              *   @ref rtk_bt_le_iso_big_remove_data_path_info_t. */
+	RTK_BT_LE_ISO_EVT_DATA_RECEIVE_IND,                      /*!< Indicate ISO data received, with msg @ref rtk_bt_le_iso_direct_iso_data_ind_t.
+                                                              *   Direct calling, BT API shall not be called in this event. */
+	RTK_BT_LE_ISO_EVT_MAX,                                   /*!< Reserved. */
 } rtk_bt_le_iso_evt_code_t;
 
 /**
  * @typedef   rtk_bt_le_audio_bap_act_t
- * @brief     Bluetooth LE audio bap action.
+ * @brief     Bluetooth LE Audio BAP action.
  */
 typedef enum {
-	RTK_BT_LE_AUDIO_ACT_ISO_DATA_SEND = 1,
-	RTK_BT_LE_AUDIO_ACT_LINK_ALLOCATE,
-	RTK_BT_LE_AUDIO_ACT_LINK_FREE,
-	RTK_BT_LE_AUDIO_ACT_BROADCAST_SOURCE_CREATE,
-	RTK_BT_LE_AUDIO_ACT_BROADCAST_SOURCE_START,
-	RTK_BT_LE_AUDIO_ACT_BROADCAST_SOURCE_STOP,
-	RTK_BT_LE_AUDIO_ACT_EXT_SCAN_ACT,
-	RTK_BT_LE_AUDIO_ACT_BROADCAST_PA_SYNC_CREATE,
-	RTK_BT_LE_AUDIO_ACT_BROADCAST_PA_SYNC_TERMINATE,
-	RTK_BT_LE_AUDIO_ACT_BROADCAST_BIG_SYNC_CREATE,
-	RTK_BT_LE_AUDIO_ACT_BROADCAST_BIG_SYNC_CREATE_BY_HANDLE,
-	RTK_BT_LE_AUDIO_ACT_BROADCAST_BIG_SYNC_TERMINATE,
-	RTK_BT_LE_AUDIO_ACT_BROADCAST_BIG_SYNC_TERMINATE_BY_HANDLE,
-	RTK_BT_LE_AUDIO_ACT_BROADCAST_ASSISTANT_REMOTE_SCAN_ACT,
-	RTK_BT_LE_AUDIO_ACT_BROADCAST_ASSISTANT_RECEPTION_START,
-	RTK_BT_LE_AUDIO_ACT_BROADCAST_ASSISTANT_RECEPTION_STOP,
-	RTK_BT_LE_AUDIO_ACT_BROADCAST_ASSISTANT_RECEPTION_REMOVE,
-	RTK_BT_LE_AUDIO_ACT_GROUP_ALLOCATE,
-	RTK_BT_LE_AUDIO_ACT_GROUP_RELEASE,
-	RTK_BT_LE_AUDIO_ACT_CLIENT_START,
-	RTK_BT_LE_AUDIO_ACT_CLIENT_STOP,
-	RTK_BT_LE_AUDIO_ACT_CLIENT_RELEASE,
-	RTK_BT_LE_AUDIO_ACT_BAP_PARAM_CONFIG,
-	RTK_BT_LE_AUDIO_ACT_BAP_MAX,
+	RTK_BT_LE_AUDIO_ACT_ISO_DATA_SEND = 1,                         /*!< Send ISO data. */
+	RTK_BT_LE_AUDIO_ACT_LINK_ALLOCATE,                             /*!< Allocate the LE Audio link resources for an established LE connection. */
+	RTK_BT_LE_AUDIO_ACT_LINK_FREE,                                 /*!< Free the LE Audio link resources of a disconnected LE connection. */
+	RTK_BT_LE_AUDIO_ACT_BROADCAST_SOURCE_CREATE,                   /*!< Create the broadcast source with the given codec, QoS and encryption settings. */
+	RTK_BT_LE_AUDIO_ACT_BROADCAST_SOURCE_START,                    /*!< Start the broadcast source and begin streaming. */
+	RTK_BT_LE_AUDIO_ACT_BROADCAST_SOURCE_STOP,                     /*!< Stop the broadcast source and end streaming. */
+	RTK_BT_LE_AUDIO_ACT_EXT_SCAN_ACT,                              /*!< Start or stop the extended scan used to find broadcast sources. */
+	RTK_BT_LE_AUDIO_ACT_BROADCAST_PA_SYNC_CREATE,                  /*!< Create PA sync with a broadcast source. */
+	RTK_BT_LE_AUDIO_ACT_BROADCAST_PA_SYNC_TERMINATE,               /*!< Terminate PA sync with a broadcast source. */
+	RTK_BT_LE_AUDIO_ACT_BROADCAST_BIG_SYNC_CREATE,                 /*!< Create BIG sync with a broadcast source identified by address. */
+	RTK_BT_LE_AUDIO_ACT_BROADCAST_BIG_SYNC_CREATE_BY_HANDLE,       /*!< Create BIG sync with a broadcast source identified by sync handle. */
+	RTK_BT_LE_AUDIO_ACT_BROADCAST_BIG_SYNC_TERMINATE,              /*!< Terminate BIG sync with a broadcast source identified by address. */
+	RTK_BT_LE_AUDIO_ACT_BROADCAST_BIG_SYNC_TERMINATE_BY_HANDLE,    /*!< Terminate BIG sync with a broadcast source identified by sync handle. */
+	RTK_BT_LE_AUDIO_ACT_BROADCAST_ASSISTANT_REMOTE_SCAN_ACT,       /*!< Start or stop the remote scan of the Scan Delegators in a group,
+                                                                    *   on behalf of the broadcast assistant. */
+	RTK_BT_LE_AUDIO_ACT_BROADCAST_ASSISTANT_RECEPTION_START,       /*!< Add a broadcast source to the Scan Delegators in a group, and transfer the
+                                                                    *   synchronization information of the source to them. */
+	RTK_BT_LE_AUDIO_ACT_BROADCAST_ASSISTANT_RECEPTION_STOP,        /*!< Modify the broadcast source in the Broadcast Receive State characteristic of the
+                                                                    *   Scan Delegators in a group, so that they stop synchronizing to it. */
+	RTK_BT_LE_AUDIO_ACT_BROADCAST_ASSISTANT_RECEPTION_REMOVE,      /*!< Remove the broadcast source from the Broadcast Receive State characteristic of the
+                                                                    *   Scan Delegators in a group. */
+	RTK_BT_LE_AUDIO_ACT_GROUP_ALLOCATE,                            /*!< Allocate a group. */
+	RTK_BT_LE_AUDIO_ACT_GROUP_RELEASE,                             /*!< Release a group. */
+	RTK_BT_LE_AUDIO_ACT_CLIENT_START,                              /*!< Start the unicast audio stream of a group as a unicast client. */
+	RTK_BT_LE_AUDIO_ACT_CLIENT_STOP,                               /*!< Stop the unicast audio stream of a group as a unicast client. */
+	RTK_BT_LE_AUDIO_ACT_CLIENT_RELEASE,                            /*!< Release the unicast audio session of a group as a unicast client. */
+	RTK_BT_LE_AUDIO_ACT_BAP_PARAM_CONFIG,                          /*!< Configure BAP parameters, e.g. broadcast source parameters, broadcast code and unicast QoS. */
+	RTK_BT_LE_AUDIO_ACT_BAP_MAX,                                   /*!< Reserved. */
 } rtk_bt_le_audio_bap_act_t;
 
 /**
- * @typedef   rtk_bt_le_audio_evt_t
- * @brief     Bluetooth LE audio event indication.
+ * @typedef   rtk_bt_le_audio_bap_evt_t
+ * @brief     Bluetooth LE Audio BAP event indication.
  */
 typedef enum {
-	RTK_BT_LE_AUDIO_EVT_ISO_DATA_RECEIVE_IND = 1,
-	RTK_BT_LE_AUDIO_EVT_BAP_DISCOVERY_DONE_IND,
-	RTK_BT_LE_AUDIO_EVT_ASCS_CIS_CONN_INFO,
-	RTK_BT_LE_AUDIO_EVT_ASCS_SETUP_DATA_PATH_IND,
-	RTK_BT_LE_AUDIO_EVT_ASCS_REMOVE_DATA_PATH_IND,
-	RTK_BT_LE_AUDIO_EVT_ASCS_ASE_STATE_IND,
-	RTK_BT_LE_AUDIO_EVT_ASCS_CP_CODEC_CFG_IND,
-	RTK_BT_LE_AUDIO_EVT_ASCS_CP_QOS_CFG_IND,
-	RTK_BT_LE_AUDIO_EVT_ASCS_CP_ENABLE_IND,
-	RTK_BT_LE_AUDIO_EVT_ASCS_CP_DISABLE_IND,
-	RTK_BT_LE_AUDIO_EVT_ASCS_GET_PREFER_QOS_IND,
-	RTK_BT_LE_AUDIO_EVT_BASS_GET_PA_SYNC_PARAM_IND,
-	RTK_BT_LE_AUDIO_EVT_BASS_GET_BIG_SYNC_PARAM_IND,
-	RTK_BT_LE_AUDIO_EVT_PA_SYNC_STATE_IND,
-	RTK_BT_LE_AUDIO_EVT_BIG_SYNC_STATE_IND,
-	RTK_BT_LE_AUDIO_EVT_BIG_INFO_ADV_REPORT,
-	RTK_BT_LE_AUDIO_EVT_BIG_SETUP_DATA_PATH,
-	RTK_BT_LE_AUDIO_EVT_BIG_REMOVE_DATA_PATH,
-	RTK_BT_LE_AUDIO_EVT_BROADCAST_SOURCE_STATE_IND,
-	RTK_BT_LE_AUDIO_EVT_BROADCAST_SOURCE_SETUP_DATA_PATH_IND,
-	RTK_BT_LE_AUDIO_EVT_BROADCAST_SOURCE_REMOVE_DATA_PATH_IND,
-	RTK_BT_LE_AUDIO_EVT_GROUP_DEV_MSG_IND,
-	RTK_BT_LE_AUDIO_EVT_BAP_SETUP_DATA_PATH_IND,
-	RTK_BT_LE_AUDIO_EVT_BAP_REMOVE_DATA_PATH_IND,
-	RTK_BT_LE_AUDIO_EVT_BAP_MAX,
+	RTK_BT_LE_AUDIO_EVT_ISO_DATA_RECEIVE_IND = 1,                 /*!< Indicate ISO data received, with msg @ref rtk_bt_le_audio_direct_iso_data_ind_t.
+                                                                   *   Direct calling, BT API shall not be called in this event. */
+	RTK_BT_LE_AUDIO_EVT_BAP_DISCOVERY_DONE_IND,                   /*!< Indicate BAP service discovery done, with msg @ref rtk_bt_le_audio_bap_discovery_done_ind_t. */
+	RTK_BT_LE_AUDIO_EVT_ASCS_CIS_CONN_INFO,                       /*!< Indicate CIS connection information, with msg @ref rtk_bt_le_audio_ascs_cis_conn_info_t. */
+	RTK_BT_LE_AUDIO_EVT_ASCS_SETUP_DATA_PATH_IND,                 /*!< Indicate the ASE data path setup completed on the unicast server, with msg
+                                                                   *   @ref rtk_bt_le_audio_ascs_setup_data_path_ind_t. */
+	RTK_BT_LE_AUDIO_EVT_ASCS_REMOVE_DATA_PATH_IND,                /*!< Indicate the ASE data path removal completed on the unicast server, with msg
+                                                                   *   @ref rtk_bt_le_audio_ascs_remove_data_path_ind_t. */
+	RTK_BT_LE_AUDIO_EVT_ASCS_ASE_STATE_IND,                       /*!< Indicate the ASE state changed, with msg @ref rtk_bt_le_audio_ascs_ase_state_ind_t.
+                                                                   *   Direct calling, BT API shall not be called in this event. */
+	RTK_BT_LE_AUDIO_EVT_ASCS_CP_CODEC_CFG_IND,                    /*!< Indicate the ASE codec configuration requested by the remote client, with msg
+                                                                   *   @ref rtk_bt_le_audio_ascs_cp_codec_cfg_ind_t. */
+	RTK_BT_LE_AUDIO_EVT_ASCS_CP_QOS_CFG_IND,                      /*!< Indicate the ASE QoS configuration requested by the remote client, with msg
+                                                                   *   @ref rtk_bt_le_audio_ascs_cp_qos_cfg_ind_t. */
+	RTK_BT_LE_AUDIO_EVT_ASCS_CP_ENABLE_IND,                       /*!< Indicate the ASE enable requested by the remote client, with msg
+                                                                   *   @ref rtk_bt_le_audio_ascs_cp_enable_ind_t. */
+	RTK_BT_LE_AUDIO_EVT_ASCS_CP_DISABLE_IND,                      /*!< Indicate the ASE disable requested by the remote client, with msg
+                                                                   *   @ref rtk_bt_le_audio_ascs_cp_disable_ind_t. */
+	RTK_BT_LE_AUDIO_EVT_ASCS_GET_PREFER_QOS_IND,                  /*!< Indicate that the preferred ASE QoS is requested, with msg
+                                                                   *   @ref rtk_bt_le_audio_ascs_get_prefer_qos_ind_t.
+                                                                   *   Direct calling, BT API shall not be called in this event. */
+	RTK_BT_LE_AUDIO_EVT_BASS_GET_PA_SYNC_PARAM_IND,               /*!< Indicate that the PA sync parameters are requested, with msg
+                                                                   *   @ref rtk_bt_le_audio_bass_get_pa_sync_param_ind_t.
+                                                                   *   Direct calling, BT API shall not be called in this event. */
+	RTK_BT_LE_AUDIO_EVT_BASS_GET_BIG_SYNC_PARAM_IND,              /*!< Indicate that the BIG sync parameters are requested, with msg
+                                                                   *   @ref rtk_bt_le_audio_bass_get_big_sync_param_ind_t.
+                                                                   *   Direct calling, BT API shall not be called in this event. */
+	RTK_BT_LE_AUDIO_EVT_PA_SYNC_STATE_IND,                        /*!< Indicate the PA sync state changed, with msg @ref rtk_bt_le_audio_pa_sync_state_ind_t. */
+	RTK_BT_LE_AUDIO_EVT_BIG_SYNC_STATE_IND,                       /*!< Indicate the BIG sync state changed, with msg @ref rtk_bt_le_audio_big_sync_state_ind_t. */
+	RTK_BT_LE_AUDIO_EVT_BIG_INFO_ADV_REPORT,                      /*!< Indicate a BIG Info advertising report received, with msg
+                                                                   *   @ref rtk_bt_le_audio_big_info_adv_report_t. */
+	RTK_BT_LE_AUDIO_EVT_BIG_SETUP_DATA_PATH,                      /*!< Indicate the BIS data path setup completed, with msg
+                                                                   *   @ref rtk_bt_le_audio_big_setup_data_path_ind_t. */
+	RTK_BT_LE_AUDIO_EVT_BIG_REMOVE_DATA_PATH,                     /*!< Indicate the BIS data path removal completed, with msg
+                                                                   *   @ref rtk_bt_le_audio_big_remove_data_path_ind_t. */
+	RTK_BT_LE_AUDIO_EVT_BROADCAST_SOURCE_STATE_IND,               /*!< Indicate the broadcast source state changed, with msg
+                                                                   *   @ref rtk_bt_le_audio_broadcast_source_state_ind_t. */
+	RTK_BT_LE_AUDIO_EVT_BROADCAST_SOURCE_SETUP_DATA_PATH_IND,     /*!< Indicate the broadcast source BIS data path setup completed, with msg
+                                                                   *   @ref rtk_bt_le_audio_bap_big_setup_data_path_ind_t. */
+	RTK_BT_LE_AUDIO_EVT_BROADCAST_SOURCE_REMOVE_DATA_PATH_IND,    /*!< Indicate the broadcast source BIS data path removal completed, with msg
+                                                                   *   @ref rtk_bt_le_audio_bap_big_remove_data_path_ind_t. */
+	RTK_BT_LE_AUDIO_EVT_GROUP_DEV_MSG_IND,                        /*!< Indicate a group device message, with msg @ref rtk_bt_le_audio_group_dev_msg_ind_t. */
+	RTK_BT_LE_AUDIO_EVT_BAP_SETUP_DATA_PATH_IND,                  /*!< Indicate the unicast ASE data path setup completed, with msg
+                                                                   *   @ref rtk_bt_le_audio_bap_setup_data_path_ind_t. */
+	RTK_BT_LE_AUDIO_EVT_BAP_REMOVE_DATA_PATH_IND,                 /*!< Indicate the unicast ASE data path removal completed, with msg
+                                                                   *   @ref rtk_bt_le_audio_bap_remove_data_path_ind_t. */
+	RTK_BT_LE_AUDIO_EVT_BAP_MAX,                                  /*!< Reserved. */
 } rtk_bt_le_audio_bap_evt_t;
 
 /**
  * @typedef   rtk_bt_le_audio_cap_act_t
- * @brief     Bluetooth LE audio cap action.
+ * @brief     Bluetooth LE Audio CAP action.
  */
 typedef enum {
-	RTK_BT_LE_AUDIO_ACT_CSIS_GEN_RSI = 1,
-	RTK_BT_LE_AUDIO_ACT_CSIS_UPDATE_SIRK,
-	RTK_BT_LE_AUDIO_ACT_CSIS_UPDATE_SIZE,
-	RTK_BT_LE_AUDIO_ACT_CSIS_SET_COORDINATOR_CHECK_ADV_RSI,
-	RTK_BT_LE_AUDIO_ACT_CSIS_SET_COORDINATOR_CFG_DISCOVER,
-	RTK_BT_LE_AUDIO_ACT_CSIS_SET_COORDINATOR_ADD_GROUP,
-	RTK_BT_LE_AUDIO_ACT_CSIS_SET_COORDINATOR_ADD_DEVICE,
-	RTK_BT_LE_AUDIO_ACT_CSIS_SET_COORDINATOR_WRITE_LOCK,
-	RTK_BT_LE_AUDIO_ACT_MCP_SERVER_SEND_DATA,
-	RTK_BT_LE_AUDIO_ACT_MCP_SERVER_READ_CFM,
-	RTK_BT_LE_AUDIO_ACT_MCP_CLIENT_WRITE_MEDIA_CP,
-	RTK_BT_LE_AUDIO_ACT_MCP_CLIENT_READ_CHAR_VALUE,
-	RTK_BT_LE_AUDIO_ACT_MCP_CLIENT_CFG_CCCD,
-	RTK_BT_LE_AUDIO_ACT_VCS_SET_PARAM,
-	RTK_BT_LE_AUDIO_ACT_VCS_GET_PARAM,
-	RTK_BT_LE_AUDIO_ACT_VCS_WRITE_CP,
-	RTK_BT_LE_AUDIO_ACT_VCS_GET_VOLUME_STATE,
-	RTK_BT_LE_AUDIO_ACT_VCS_GET_VOLUME_FLAGS,
-	RTK_BT_LE_AUDIO_ACT_VCS_CHANGE_MUTE,
-	RTK_BT_LE_AUDIO_ACT_VCS_CHANGE_VOLUME,
-	RTK_BT_LE_AUDIO_ACT_MICS_CHANGE_MUTE,
-	RTK_BT_LE_AUDIO_ACT_MICS_SET_MUTE_VALUE,
-	RTK_BT_LE_AUDIO_ACT_MICS_GET_MUTE_VALUE,
-	RTK_BT_LE_AUDIO_ACT_MICS_SET_PARAM,
-	RTK_BT_LE_AUDIO_ACT_MICS_GET_PARAM,
-	RTK_BT_LE_AUDIO_ACT_VOCS_SET_PARAM,
-	RTK_BT_LE_AUDIO_ACT_VOCS_GET_PARAM,
-	RTK_BT_LE_AUDIO_ACT_VOCS_CFG_CCCD,
-	RTK_BT_LE_AUDIO_ACT_VOCS_READ_CHAR_VALUE,
-	RTK_BT_LE_AUDIO_ACT_VOCS_WRITE_CP,
-	RTK_BT_LE_AUDIO_ACT_VOCS_WRITE_CP_BY_GROUP,
-	RTK_BT_LE_AUDIO_ACT_VOCS_WRITE_AUDIO_LOCATION,
-	RTK_BT_LE_AUDIO_ACT_VOCS_WRITE_OUTPUT_DES,
-	RTK_BT_LE_AUDIO_ACT_VOCS_GET_SRV_DATA,
-	RTK_BT_LE_AUDIO_ACT_AICS_SET_PARAM,
-	RTK_BT_LE_AUDIO_ACT_AICS_GET_PARAM,
-	RTK_BT_LE_AUDIO_ACT_AICS_CFG_CCCD,
-	RTK_BT_LE_AUDIO_ACT_AICS_READ_CHAR_VALUE,
-	RTK_BT_LE_AUDIO_ACT_AICS_WRITE_CP,
-	RTK_BT_LE_AUDIO_ACT_AICS_WRITE_CP_BY_GROUP,
-	RTK_BT_LE_AUDIO_ACT_AICS_WRITE_INPUT_DES,
-	RTK_BT_LE_AUDIO_ACT_AICS_GET_SRV_DATA,
-	RTK_BT_LE_AUDIO_ACT_CAP_PARAM_CONFIG,
-	RTK_BT_LE_AUDIO_CAP_ACT_MAX,
+	RTK_BT_LE_AUDIO_ACT_CSIS_GEN_RSI = 1,                      /*!< Generate a Resolvable Set Identifier (RSI) from a Set Identity Resolving Key (SIRK). */
+	RTK_BT_LE_AUDIO_ACT_CSIS_UPDATE_SIRK,                      /*!< Update the SIRK of the local CSIS. */
+	RTK_BT_LE_AUDIO_ACT_CSIS_UPDATE_SIZE,                      /*!< Update the coordinated set size of the local CSIS. */
+	RTK_BT_LE_AUDIO_ACT_CSIS_SET_COORDINATOR_CHECK_ADV_RSI,    /*!< Check whether an advertising report carries an RSI matching a known coordinated set. */
+	RTK_BT_LE_AUDIO_ACT_CSIS_SET_COORDINATOR_CFG_DISCOVER,     /*!< Start or stop discovering the remaining members of a coordinated set. */
+	RTK_BT_LE_AUDIO_ACT_CSIS_SET_COORDINATOR_ADD_GROUP,        /*!< Create a coordinated set group and add the first set member to it. */
+	RTK_BT_LE_AUDIO_ACT_CSIS_SET_COORDINATOR_ADD_DEVICE,       /*!< Add a set member to an existing coordinated set group. */
+	RTK_BT_LE_AUDIO_ACT_CSIS_SET_COORDINATOR_WRITE_LOCK,       /*!< Lock or unlock the members of a coordinated set group. */
+	RTK_BT_LE_AUDIO_ACT_MCP_SERVER_SEND_DATA,                  /*!< Send a media control service characteristic value from the local MCP server to the connected
+                                                                *   client. */
+	RTK_BT_LE_AUDIO_ACT_MCP_SERVER_READ_CFM,                   /*!< Confirm a read request received by the local MCP server by supplying the value to return. */
+	RTK_BT_LE_AUDIO_ACT_MCP_CLIENT_WRITE_MEDIA_CP,             /*!< Write the Media Control Point of a remote media control service instance. */
+	RTK_BT_LE_AUDIO_ACT_MCP_CLIENT_READ_CHAR_VALUE,            /*!< Read a characteristic value of a remote media control service instance. */
+	RTK_BT_LE_AUDIO_ACT_MCP_CLIENT_CFG_CCCD,                   /*!< Enable or disable notifications of remote media control service characteristics. */
+	RTK_BT_LE_AUDIO_ACT_VCS_SET_PARAM,                         /*!< Set the parameters of the local VCS. */
+	RTK_BT_LE_AUDIO_ACT_VCS_GET_PARAM,                         /*!< Get the parameters of the local VCS. */
+	RTK_BT_LE_AUDIO_ACT_VCS_WRITE_CP,                          /*!< Write the Volume Control Point of a remote VCS. */
+	RTK_BT_LE_AUDIO_ACT_VCS_GET_VOLUME_STATE,                  /*!< Get the volume state of a remote VCS. */
+	RTK_BT_LE_AUDIO_ACT_VCS_GET_VOLUME_FLAGS,                  /*!< Get the volume flags of a remote VCS. */
+	RTK_BT_LE_AUDIO_ACT_VCS_CHANGE_MUTE,                       /*!< Change the mute state of the VCS on every member of a group. */
+	RTK_BT_LE_AUDIO_ACT_VCS_CHANGE_VOLUME,                     /*!< Change the volume setting of the VCS on every member of a group. */
+	RTK_BT_LE_AUDIO_ACT_MICS_CHANGE_MUTE,                      /*!< Change the microphone mute state of the MICS on every member of a group. */
+	RTK_BT_LE_AUDIO_ACT_MICS_SET_MUTE_VALUE,                   /*!< Write the mute value of a remote MICS. */
+	RTK_BT_LE_AUDIO_ACT_MICS_GET_MUTE_VALUE,                   /*!< Get the mute value of a remote MICS. */
+	RTK_BT_LE_AUDIO_ACT_MICS_SET_PARAM,                        /*!< Set the parameters of the local MICS. */
+	RTK_BT_LE_AUDIO_ACT_MICS_GET_PARAM,                        /*!< Get the parameters of the local MICS. */
+	RTK_BT_LE_AUDIO_ACT_VOCS_SET_PARAM,                        /*!< Set the parameters of a local VOCS instance. */
+	RTK_BT_LE_AUDIO_ACT_VOCS_GET_PARAM,                        /*!< Get the parameters of a local VOCS instance. */
+	RTK_BT_LE_AUDIO_ACT_VOCS_CFG_CCCD,                         /*!< Enable or disable notifications of remote VOCS characteristics. */
+	RTK_BT_LE_AUDIO_ACT_VOCS_READ_CHAR_VALUE,                  /*!< Read a characteristic value of a remote VOCS instance. */
+	RTK_BT_LE_AUDIO_ACT_VOCS_WRITE_CP,                         /*!< Write the Volume Offset Control Point of a remote VOCS instance. */
+	RTK_BT_LE_AUDIO_ACT_VOCS_WRITE_CP_BY_GROUP,                /*!< Write the Volume Offset Control Point of a VOCS instance on every member of a group. */
+	RTK_BT_LE_AUDIO_ACT_VOCS_WRITE_AUDIO_LOCATION,             /*!< Write the audio location of a remote VOCS instance. */
+	RTK_BT_LE_AUDIO_ACT_VOCS_WRITE_OUTPUT_DES,                 /*!< Write the audio output description of a VOCS instance. */
+	RTK_BT_LE_AUDIO_ACT_VOCS_GET_SRV_DATA,                     /*!< Get the service data of a VOCS instance. */
+	RTK_BT_LE_AUDIO_ACT_AICS_SET_PARAM,                        /*!< Set a parameter of a local AICS instance. */
+	RTK_BT_LE_AUDIO_ACT_AICS_GET_PARAM,                        /*!< Get a parameter of a local AICS instance. */
+	RTK_BT_LE_AUDIO_ACT_AICS_CFG_CCCD,                         /*!< Enable or disable notifications of remote AICS characteristics. */
+	RTK_BT_LE_AUDIO_ACT_AICS_READ_CHAR_VALUE,                  /*!< Read a characteristic value of a remote AICS instance. */
+	RTK_BT_LE_AUDIO_ACT_AICS_WRITE_CP,                         /*!< Write the Audio Input Control Point of a remote AICS instance. */
+	RTK_BT_LE_AUDIO_ACT_AICS_WRITE_CP_BY_GROUP,                /*!< Write the Audio Input Control Point of an AICS instance on every member of a group. */
+	RTK_BT_LE_AUDIO_ACT_AICS_WRITE_INPUT_DES,                  /*!< Write the audio input description of an AICS instance. */
+	RTK_BT_LE_AUDIO_ACT_AICS_GET_SRV_DATA,                     /*!< Get the service data of an AICS instance. */
+	RTK_BT_LE_AUDIO_ACT_CAP_PARAM_CONFIG,                      /*!< Configure the CAP parameters. */
+	RTK_BT_LE_AUDIO_CAP_ACT_MAX,                               /*!< Reserved. */
 } rtk_bt_le_audio_cap_act_t;
 
 /**
  * @typedef   rtk_bt_le_audio_cap_evt_t
- * @brief     Bluetooth LE audio cap event indication.
+ * @brief     Bluetooth LE Audio CAP event indication.
  */
 typedef enum {
-	RTK_BT_LE_AUDIO_EVT_CAP_DISCOVERY_DONE_IND = 1,
-	RTK_BT_LE_AUDIO_EVT_CSIS_CLIENT_DISCOVERY_DONE_IND,
-	RTK_BT_LE_AUDIO_EVT_CSIS_CLIENT_READ_RESULT_IND,
-	RTK_BT_LE_AUDIO_EVT_CSIS_CLIENT_SEARCH_DONE_IND,
-	RTK_BT_LE_AUDIO_EVT_CSIS_CLIENT_SET_MEM_FOUND_IND,
-	RTK_BT_LE_AUDIO_EVT_MCP_SERVER_WRITE_MEDIA_CP_IND,
-	RTK_BT_LE_AUDIO_EVT_MCP_SERVER_READ_IND,
-	RTK_BT_LE_AUDIO_EVT_MCP_CLIENT_DISCOVERY_DONE_IND,
-	RTK_BT_LE_AUDIO_EVT_MCP_CLIENT_READ_RESULT_IND,
-	RTK_BT_LE_AUDIO_EVT_MCP_CLIENT_NOTIFY_IND,
-	RTK_BT_LE_AUDIO_EVT_MCP_CLIENT_MEDIA_CP_NOTIFY_IND,
-	RTK_BT_LE_AUDIO_EVT_VCS_VOLUME_CP_IND,
-	RTK_BT_LE_AUDIO_EVT_VCS_CLIENT_DISCOVERY_DONE_IND,
-	RTK_BT_LE_AUDIO_EVT_VCS_CLIENT_VOLUME_STATE_IND,
-	RTK_BT_LE_AUDIO_EVT_VCS_CLIENT_VOLUME_FLAG_IND,
-	RTK_BT_LE_AUDIO_EVT_MICS_WRITE_MUTE_IND, //0x30
-	RTK_BT_LE_AUDIO_EVT_MICS_CLIENT_DISCOVERY_DONE_IND,
-	RTK_BT_LE_AUDIO_EVT_MICS_CLIENT_NOTIFY_IND,
-	RTK_BT_LE_AUDIO_EVT_VOCS_WRITE_OFFSET_STATE_IND,
-	RTK_BT_LE_AUDIO_EVT_VOCS_WRITE_AUDIO_LOCATION_IND,
-	RTK_BT_LE_AUDIO_EVT_VOCS_WRITE_OUTPUT_DES_IND,
-	RTK_BT_LE_AUDIO_EVT_VOCS_CLIENT_DISCOVERY_DONE_IND,
-	RTK_BT_LE_AUDIO_EVT_VOCS_CLIENT_READ_RESULT_IND,
-	RTK_BT_LE_AUDIO_EVT_VOCS_CLIENT_NOTIFY_IND,
-	RTK_BT_LE_AUDIO_EVT_VOCS_CLIENT_CP_RESULT_IND,
-	RTK_BT_LE_AUDIO_EVT_AICS_CP_IND,
-	RTK_BT_LE_AUDIO_EVT_AICS_WRITE_INPUT_DES_IND,
-	RTK_BT_LE_AUDIO_EVT_AICS_CLIENT_DISCOVERY_DONE_IND,
-	RTK_BT_LE_AUDIO_EVT_AICS_CLIENT_READ_RESULT_IND,
-	RTK_BT_LE_AUDIO_EVT_AICS_CLIENT_NOTIFY_IND,
-	RTK_BT_LE_AUDIO_EVT_AICS_CLIENT_CP_RESULT_IND,
-	RTK_BT_LE_AUDIO_CAP_EVT_MAX,
+	RTK_BT_LE_AUDIO_EVT_CAP_DISCOVERY_DONE_IND = 1,        /*!< Indicate CAP discovery completed, with msg @ref rtk_bt_le_audio_cap_discovery_done_ind_t. */
+	RTK_BT_LE_AUDIO_EVT_CSIS_CLIENT_DISCOVERY_DONE_IND,    /*!< Indicate CSIS client discovery completed, with msg
+                                                            *   @ref rtk_bt_le_audio_csis_client_discovery_done_ind_t. */
+	RTK_BT_LE_AUDIO_EVT_CSIS_CLIENT_READ_RESULT_IND,       /*!< Indicate the CSIS client read result, with msg @ref rtk_bt_le_audio_csis_client_read_result_ind_t. */
+	RTK_BT_LE_AUDIO_EVT_CSIS_CLIENT_SEARCH_DONE_IND,       /*!< Indicate the CSIS set member search finished or timed out, with msg
+                                                            *   @ref rtk_bt_le_audio_csis_client_search_done_ind_t. */
+	RTK_BT_LE_AUDIO_EVT_CSIS_CLIENT_SET_MEM_FOUND_IND,     /*!< Indicate a CSIS set member was found, with msg @ref rtk_bt_le_audio_csis_client_set_mem_found_ind_t. */
+	RTK_BT_LE_AUDIO_EVT_MCP_SERVER_WRITE_MEDIA_CP_IND,     /*!< Indicate a remote client wrote the Media Control Point of the local MCP server, with msg
+                                                            *   @ref rtk_bt_le_audio_mcp_server_write_media_cp_ind_t. */
+	RTK_BT_LE_AUDIO_EVT_MCP_SERVER_READ_IND,               /*!< Indicate a read request received from a remote client by the local MCP server, with msg
+                                                            *   @ref rtk_bt_le_audio_mcp_server_read_ind_t.
+                                                            *   Direct calling, BT API shall not be called in this event. */
+	RTK_BT_LE_AUDIO_EVT_MCP_CLIENT_DISCOVERY_DONE_IND,     /*!< Indicate MCP client media control service discovery completed, with msg
+                                                            *   @ref rtk_bt_le_audio_mcp_client_discovery_done_ind_t. */
+	RTK_BT_LE_AUDIO_EVT_MCP_CLIENT_READ_RESULT_IND,        /*!< Indicate the MCP client read result, with msg @ref rtk_bt_le_audio_mcp_client_read_result_ind_t. */
+	RTK_BT_LE_AUDIO_EVT_MCP_CLIENT_NOTIFY_IND,             /*!< Indicate an MCP client notification, with msg @ref rtk_bt_le_audio_mcp_client_notify_ind_t. */
+	RTK_BT_LE_AUDIO_EVT_MCP_CLIENT_MEDIA_CP_NOTIFY_IND,    /*!< Indicate an MCP client Media Control Point notification, with msg
+                                                            *   @ref rtk_bt_le_audio_mcs_media_cp_nodify_ind_t. */
+	RTK_BT_LE_AUDIO_EVT_VCS_VOLUME_CP_IND,                 /*!< Indicate a remote client wrote the Volume Control Point of the local VCS, with msg
+                                                            *   @ref rtk_bt_le_audio_vcs_volume_cp_ind_t. */
+	RTK_BT_LE_AUDIO_EVT_VCS_CLIENT_DISCOVERY_DONE_IND,     /*!< Indicate VCS client discovery completed, with msg @ref rtk_bt_le_audio_vcs_client_discovery_done_ind_t. */
+	RTK_BT_LE_AUDIO_EVT_VCS_CLIENT_VOLUME_STATE_IND,       /*!< Indicate the VCS client volume state, with msg @ref rtk_bt_le_audio_vcs_client_volume_state_ind_t. */
+	RTK_BT_LE_AUDIO_EVT_VCS_CLIENT_VOLUME_FLAG_IND,        /*!< Indicate the VCS client volume flags, with msg @ref rtk_bt_le_audio_vcs_client_volume_flag_ind_t. */
+	RTK_BT_LE_AUDIO_EVT_MICS_WRITE_MUTE_IND,               /*!< Indicate a remote client wrote the mute state of the local MICS, with msg
+                                                            *   @ref rtk_bt_le_audio_mics_write_mute_ind_t. */ //0x30
+	RTK_BT_LE_AUDIO_EVT_MICS_CLIENT_DISCOVERY_DONE_IND,    /*!< Indicate MICS client discovery completed, with msg
+                                                            *   @ref rtk_bt_le_audio_mics_client_discovery_done_ind_t. */
+	RTK_BT_LE_AUDIO_EVT_MICS_CLIENT_NOTIFY_IND,            /*!< Indicate a MICS client notification, with msg @ref rtk_bt_le_audio_mics_client_notify_ind_t. */
+	RTK_BT_LE_AUDIO_EVT_VOCS_WRITE_OFFSET_STATE_IND,       /*!< Indicate a remote client wrote the volume offset state of the local VOCS, with msg
+                                                            *   @ref rtk_bt_le_audio_vocs_write_offset_state_ind_t. */
+	RTK_BT_LE_AUDIO_EVT_VOCS_WRITE_AUDIO_LOCATION_IND,     /*!< Indicate a remote client wrote the audio location of the local VOCS, with msg
+                                                            *   @ref rtk_bt_le_audio_vocs_write_audio_location_ind_t. */
+	RTK_BT_LE_AUDIO_EVT_VOCS_WRITE_OUTPUT_DES_IND,         /*!< Indicate a remote client wrote the audio output description of the local VOCS, with msg
+                                                            *   @ref rtk_bt_le_audio_vocs_write_output_des_ind_t. */
+	RTK_BT_LE_AUDIO_EVT_VOCS_CLIENT_DISCOVERY_DONE_IND,    /*!< Indicate VOCS client discovery completed, with msg
+                                                            *   @ref rtk_bt_le_audio_vocs_client_discovery_done_ind_t. */
+	RTK_BT_LE_AUDIO_EVT_VOCS_CLIENT_READ_RESULT_IND,       /*!< Indicate the VOCS client read result, with msg @ref rtk_bt_le_audio_vocs_client_read_result_ind_t. */
+	RTK_BT_LE_AUDIO_EVT_VOCS_CLIENT_NOTIFY_IND,            /*!< Indicate a VOCS client notification, with msg @ref rtk_bt_le_audio_vocs_client_notify_ind_t. */
+	RTK_BT_LE_AUDIO_EVT_VOCS_CLIENT_CP_RESULT_IND,         /*!< Indicate the VOCS client control point write result, with msg
+                                                            *   @ref rtk_bt_le_audio_vocs_client_cp_result_ind_t. */
+	RTK_BT_LE_AUDIO_EVT_AICS_CP_IND,                       /*!< Indicate a remote client wrote the Audio Input Control Point of the local AICS, with msg
+                                                            *   @ref rtk_bt_le_audio_aics_cp_ind_t. */
+	RTK_BT_LE_AUDIO_EVT_AICS_WRITE_INPUT_DES_IND,          /*!< Indicate a remote client wrote the audio input description of the local AICS, with msg
+                                                            *   @ref rtk_bt_le_audio_aics_write_input_des_ind_t. */
+	RTK_BT_LE_AUDIO_EVT_AICS_CLIENT_DISCOVERY_DONE_IND,    /*!< Indicate AICS client discovery completed, with msg
+                                                            *   @ref rtk_bt_le_audio_aics_client_discovery_done_ind_t. */
+	RTK_BT_LE_AUDIO_EVT_AICS_CLIENT_READ_RESULT_IND,       /*!< Indicate the AICS client read result, with msg @ref rtk_bt_le_audio_aics_client_read_result_ind_t. */
+	RTK_BT_LE_AUDIO_EVT_AICS_CLIENT_NOTIFY_IND,            /*!< Indicate an AICS client notification, with msg @ref rtk_bt_le_audio_aics_client_notify_ind_t. */
+	RTK_BT_LE_AUDIO_EVT_AICS_CLIENT_CP_RESULT_IND,         /*!< Indicate the AICS client control point write result, with msg
+                                                            *   @ref rtk_bt_le_audio_aics_client_cp_result_ind_t. */
+	RTK_BT_LE_AUDIO_CAP_EVT_MAX,                           /*!< Reserved. */
 } rtk_bt_le_audio_cap_evt_t;
 
 /**
  * @typedef   rtk_bt_le_audio_tmap_act_t
- * @brief     Bluetooth LE audio tmap action.
+ * @brief     Bluetooth LE Audio TMAP action.
  */
 typedef enum {
-	RTK_BT_LE_AUDIO_ACT_TMAS_READ_ROLE = 1,
-	RTK_BT_LE_AUDIO_TMAP_ACT_MAX,
+	RTK_BT_LE_AUDIO_ACT_TMAS_READ_ROLE = 1,    /*!< Read the TMAP role of the remote device from its TMAS. */
+	RTK_BT_LE_AUDIO_TMAP_ACT_MAX,              /*!< Reserved. */
 } rtk_bt_le_audio_tmap_act_t;
 
 /**
  * @typedef   rtk_bt_le_audio_tmap_evt_t
- * @brief     Bluetooth LE audio tmap event indication.
+ * @brief     Bluetooth LE Audio TMAP event indication.
  */
 typedef enum {
-	RTK_BT_LE_AUDIO_EVT_TMAS_CLIENT_DISCOVERY_DONE_IND = 1,
-	RTK_BT_LE_AUDIO_EVT_TMAS_CLIENT_READ_ROLE_RESULT,
-	RTK_BT_LE_AUDIO_TMAP_EVT_MAX,
+	RTK_BT_LE_AUDIO_EVT_TMAS_CLIENT_DISCOVERY_DONE_IND = 1,    /*!< Indicate TMAS client discovery completed, with msg
+                                                                *   @ref rtk_bt_le_audio_tmas_client_discovery_done_ind_t. */
+	RTK_BT_LE_AUDIO_EVT_TMAS_CLIENT_READ_ROLE_RESULT,          /*!< Indicate the TMAP role read result of the remote device, with msg
+                                                                *   @ref rtk_bt_le_audio_tmas_read_role_result_t. */
+	RTK_BT_LE_AUDIO_TMAP_EVT_MAX,                              /*!< Reserved. */
 } rtk_bt_le_audio_tmap_evt_t;
 
 /**
  * @typedef   rtk_bt_le_audio_gmap_act_t
- * @brief     Bluetooth LE audio gmap action.
+ * @brief     Bluetooth LE Audio GMAP action.
  */
 typedef enum {
-	RTK_BT_LE_AUDIO_GMAS_ACT_READ_ROLE = 1,
-	RTK_BT_LE_AUDIO_GMAS_ACT_READ_FEATURES,
-	RTK_BT_LE_AUDIO_GMAP_ACT_MAX,
+	RTK_BT_LE_AUDIO_GMAS_ACT_READ_ROLE = 1,    /*!< Read the GMAP role of the remote device from its GMAS. */
+	RTK_BT_LE_AUDIO_GMAS_ACT_READ_FEATURES,    /*!< Read a GMAP features characteristic of the remote device from its GMAS. */
+	RTK_BT_LE_AUDIO_GMAP_ACT_MAX,              /*!< Reserved. */
 } rtk_bt_le_audio_gmap_act_t;
 
 /**
  * @typedef   rtk_bt_le_audio_gmap_evt_t
- * @brief     Bluetooth LE audio gmap event indication.
+ * @brief     Bluetooth LE Audio GMAP event indication.
  */
 typedef enum {
-	RTK_BT_LE_AUDIO_GMAS_EVT_READ_IND = 1,
-	RTK_BT_LE_AUDIO_GMAS_EVT_CLIENT_DISCOVERY_DONE_IND,
-	RTK_BT_LE_AUDIO_GMAS_EVT_CLIENT_READ_ROLE_RESULT,
-	RTK_BT_LE_AUDIO_GMAS_EVT_CLIENT_READ_FEATURES_RESULT,
-	RTK_BT_LE_AUDIO_GMAP_EVT_MAX,
+	RTK_BT_LE_AUDIO_GMAS_EVT_READ_IND = 1,                   /*!< Indicate a read request received from a remote client by the local GMAS, with msg
+                                                              *   @ref rtk_bt_le_audio_gmas_read_ind_t. */
+	RTK_BT_LE_AUDIO_GMAS_EVT_CLIENT_DISCOVERY_DONE_IND,      /*!< Indicate GMAS client discovery completed, with msg @ref rtk_bt_le_audio_gmas_client_dis_t. */
+	RTK_BT_LE_AUDIO_GMAS_EVT_CLIENT_READ_ROLE_RESULT,        /*!< Indicate the GMAP role read result of the remote device, with msg
+                                                              *   @ref rtk_bt_le_audio_gmas_client_read_role_result_t. */
+	RTK_BT_LE_AUDIO_GMAS_EVT_CLIENT_READ_FEATURES_RESULT,    /*!< Indicate the GMAP features read result of the remote device, with msg
+                                                              *   @ref rtk_bt_le_audio_gmas_client_read_features_result_t. */
+	RTK_BT_LE_AUDIO_GMAP_EVT_MAX,                            /*!< Reserved. */
 } rtk_bt_le_audio_gmap_evt_t;
 /************************************* BR/EDR group ************************************/
 
@@ -761,7 +816,7 @@ typedef enum {
 	RTK_BT_BR_GP_GAP = RTK_BT_API_BR_BASE,
 	RTK_BT_BR_GP_AVRCP,                           /*!< BR/EDR avrcp group. */
 	RTK_BT_BR_GP_A2DP,                            /*!< BR/EDR a2dp group. */
-	RTK_BT_BR_GP_SPP,                             /*!< BR/EDR spp group. */
+	RTK_BT_BR_GP_SPP,                             /*!< BR/EDR SPP group. */
 	RTK_BT_BR_GP_RFC,                             /*!< BR/EDR RFCOMM group. */
 	RTK_BT_BR_GP_HFP,                             /*!< BR/EDR hfp group. */
 	RTK_BT_BR_GP_SDP,                             /*!< BR/EDR sdp group. */
@@ -931,14 +986,14 @@ typedef enum {
  */
 
 typedef enum {
-	RTK_BT_SPP_ACT_INIT_CFG = 1,
-	RTK_BT_SPP_ACT_SRV_CFG,
-	RTK_BT_SPP_ACT_CONNECT,
-	RTK_BT_SPP_ACT_DISCONNECT,
-	RTK_BT_SPP_ACT_DISCONNECT_ALL,
-	RTK_BT_SPP_ACT_SEND_DATA,
-	RTK_BT_SPP_ACT_GIVE_CREDITS,
-	RTK_BT_SPP_ACT_MAX,
+	RTK_BT_SPP_ACT_INIT_CFG = 1,      /*!< Reserved, not dispatched. The SPP initialization parameters are set directly by @ref rtk_bt_spp_init_cfg. */
+	RTK_BT_SPP_ACT_SRV_CFG,           /*!< Reserved, not dispatched. The SPP service is registered directly by @ref rtk_bt_service_register_cfg. */
+	RTK_BT_SPP_ACT_CONNECT,           /*!< Connect to the SPP service of a remote device, requested by @ref rtk_bt_spp_connect. */
+	RTK_BT_SPP_ACT_DISCONNECT,        /*!< Disconnect the SPP connection on a server channel, requested by @ref rtk_bt_spp_disconnect. */
+	RTK_BT_SPP_ACT_DISCONNECT_ALL,    /*!< Disconnect all SPP connections with a remote device, requested by @ref rtk_bt_spp_disconnect_all. */
+	RTK_BT_SPP_ACT_SEND_DATA,         /*!< Send data on an SPP server channel, requested by @ref rtk_bt_spp_send_data. */
+	RTK_BT_SPP_ACT_GIVE_CREDITS,      /*!< Give SPP link credits to a remote device, requested by @ref rtk_bt_spp_credits_give. */
+	RTK_BT_SPP_ACT_MAX,               /*!< Reserved. */
 } rtk_bt_spp_act_t;
 
 /**
@@ -947,43 +1002,44 @@ typedef enum {
  */
 
 typedef enum {
-	RTK_BT_SPP_EVT_CONN_COMPL = 1,          /*!< SPP connection establishment completed. */
-	RTK_BT_SPP_EVT_CREDIT_RCVD,             /*!< SPP link credits received. */
-	RTK_BT_SPP_EVT_DATA_IND,                /*!< SPP data indication. */
-	RTK_BT_SPP_EVT_DATA_RSP,                /*!< SPP data response. */
-	RTK_BT_SPP_EVT_CONN_IND,                /*!< SPP connection indication. */
-	RTK_BT_SPP_EVT_DISCONN_CMPL,            /*!< SPP disconnection completed. */
-	RTK_BT_SPP_EVT_SDP_ATTR_INFO,           /*!< SPP get sdp attribute info. */
-	RTK_BT_SPP_EVT_SDP_DISCOV_CMPL,         /*!< SPP sdp discovery completed. */
-	RTK_BT_SPP_EVT_MAX,
+	RTK_BT_SPP_EVT_CONN_COMPL = 1,          /*!< Indicate the SPP connection establishment completed, with msg @ref rtk_bt_spp_conn_cmpl_t. */
+	RTK_BT_SPP_EVT_CREDIT_RCVD,             /*!< Indicate SPP link credits received from the remote device, with msg @ref rtk_bt_spp_credit_rcvd_t. */
+	RTK_BT_SPP_EVT_DATA_IND,                /*!< Indicate SPP data received from the remote device, with msg @ref rtk_bt_spp_data_ind_t. */
+	RTK_BT_SPP_EVT_DATA_RSP,                /*!< Reserved, not generated by the current stack.
+                                             *   Indicates the response of SPP data sent with the acknowledge flag, with msg @ref rtk_bt_spp_data_rsp_t. */
+	RTK_BT_SPP_EVT_CONN_IND,                /*!< Indicate an incoming SPP connection, with msg @ref rtk_bt_spp_conn_ind_t. */
+	RTK_BT_SPP_EVT_DISCONN_CMPL,            /*!< Indicate the SPP disconnection completed, with msg @ref rtk_bt_spp_disconn_ind_t. */
+	RTK_BT_SPP_EVT_SDP_ATTR_INFO,           /*!< Indicate the SDP attribute information of the remote SPP service, with msg @ref rtk_bt_spp_attr_info_t. */
+	RTK_BT_SPP_EVT_SDP_DISCOV_CMPL,         /*!< Indicate the SDP discovery of the remote SPP service completed, with msg @ref rtk_bt_spp_sdp_discov_cmpl_t. */
+	RTK_BT_SPP_EVT_MAX,                     /*!< Reserved. */
 } rtk_bt_spp_evt_t;
 
 /**
  * @typedef   rtk_bt_rfc_act_t
- * @brief     Bluetooth RFC action.
+ * @brief     Bluetooth RFCOMM action.
  */
 
 typedef enum {
-	RTK_BT_RFC_ACT_CONNECT = 1,
-	RTK_BT_RFC_ACT_DISCONNECT,
-	RTK_BT_RFC_ACT_SEND_DATA,
-	RTK_BT_RFC_ACT_CREDITS_GIVE,
-	RTK_BT_RFC_ACT_MAX,
+	RTK_BT_RFC_ACT_CONNECT = 1,     /*!< Connect to the RFCOMM service of a remote device, requested by @ref rtk_bt_rfc_connect. */
+	RTK_BT_RFC_ACT_DISCONNECT,      /*!< Disconnect the RFCOMM connection with a remote device, requested by @ref rtk_bt_rfc_disconnect. */
+	RTK_BT_RFC_ACT_SEND_DATA,       /*!< Send data on an RFCOMM server channel, requested by @ref rtk_bt_rfc_data_send. */
+	RTK_BT_RFC_ACT_CREDITS_GIVE,    /*!< Give RFCOMM credits to a remote device, requested by @ref rtk_bt_rfc_credits_give. */
+	RTK_BT_RFC_ACT_MAX,             /*!< Reserved. */
 } rtk_bt_rfc_act_t;
 
 /**
  * @typedef   rtk_bt_rfc_evt_t
- * @brief     Bluetooth RFC event indication.
+ * @brief     Bluetooth RFCOMM event indication.
  */
 
 typedef enum {
-	RTK_BT_RFC_EVT_RFC_ATTR_INFO = 1,        /*!< RFC get sdp attribute info. */
-	RTK_BT_RFC_EVT_CONN_IND,                 /*!< RFC connection establishment completed. */
-	RTK_BT_RFC_EVT_CONN_CMPL,                /*!< RFC link credits received. */
-	RTK_BT_RFC_EVT_DISCONN_CMPL,             /*!< RFC data indication. */
-	RTK_BT_RFC_EVT_DATA_IND,                 /*!< RFC data response. */
-	RTK_BT_RFC_EVT_CREDITS_INFO,             /*!< RFC credits information. */
-	RTK_BT_RFC_EVT_MAX,
+	RTK_BT_RFC_EVT_RFC_ATTR_INFO = 1,        /*!< Indicate the SDP attribute information of the remote RFCOMM service, with msg @ref rtk_bt_rfc_attr_info_t. */
+	RTK_BT_RFC_EVT_CONN_IND,                 /*!< Indicate an incoming RFCOMM connection, with msg @ref rtk_bt_rfc_conn_ind_t. */
+	RTK_BT_RFC_EVT_CONN_CMPL,                /*!< Indicate the RFCOMM connection establishment completed, with msg @ref rtk_bt_rfc_conn_cmpl_t. */
+	RTK_BT_RFC_EVT_DISCONN_CMPL,             /*!< Indicate the RFCOMM disconnection completed, with msg @ref rtk_bt_rfc_disconn_cmpl_t. */
+	RTK_BT_RFC_EVT_DATA_IND,                 /*!< Indicate RFCOMM data received from the remote device, with msg @ref rtk_bt_rfc_data_ind_t. */
+	RTK_BT_RFC_EVT_CREDITS_INFO,             /*!< Indicate RFCOMM credits information, with msg @ref rtk_bt_rfc_credit_info_t. */
+	RTK_BT_RFC_EVT_MAX,                      /*!< Reserved. */
 } rtk_bt_rfc_evt_t;
 
 /**

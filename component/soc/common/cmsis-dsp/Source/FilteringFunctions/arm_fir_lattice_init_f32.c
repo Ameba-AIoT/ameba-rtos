@@ -1,15 +1,16 @@
-/* ----------------------------------------------------------------------
+﻿/* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
  * Title:        arm_fir_lattice_init_f32.c
  * Description:  Floating-point FIR Lattice filter initialization function
  *
- * $Date:        18. March 2019
- * $Revision:    V1.6.0
+ * $Date:        23 April 2021
+ * $Revision:    V1.9.0
  *
- * Target Processor: Cortex-M cores
+ * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
+
 /*
- * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -25,12 +26,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "arm_compiler_specific.h"
 
-#include "arm_math.h"
+
+#include "dsp/filtering_functions.h"
 
 /**
   @ingroup groupFilters
  */
+
+/**
+
+  @deprecated Those functions are no more tested nor maintained and will be
+              removed in a future version.
+*/
 
 /**
   @addtogroup FIR_Lattice
@@ -43,10 +52,9 @@
   @param[in]     numStages  number of filter stages
   @param[in]     pCoeffs    points to the coefficient buffer.  The array is of length numStages
   @param[in]     pState     points to the state buffer.  The array is of length numStages
-  @return        none
  */
 
-void arm_fir_lattice_init_f32(
+ARM_DSP_ATTRIBUTE void arm_fir_lattice_init_f32(
 	arm_fir_lattice_instance_f32 *S,
 	uint16_t numStages,
 	const float32_t *pCoeffs,
@@ -59,7 +67,7 @@ void arm_fir_lattice_init_f32(
 	S->pCoeffs = pCoeffs;
 
 	/* Clear state buffer and size is always numStages */
-	memset(pState, 0, (numStages) * sizeof(float32_t));
+	_memset(pState, 0, (numStages) * sizeof(float32_t));
 
 	/* Assign state pointer */
 	S->pState = pState;

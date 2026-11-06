@@ -51,6 +51,13 @@ LOG_MODULE_REGISTER(bt_hci_ecc);
 static void ecc_process(struct k_work *work);
 K_WORK_DEFINE(ecc_work, ecc_process);
 
+#if ZEPHYR_RTK_PATCH
+void zephyr_hci_ecc_work_reset(void)
+{
+	k_work_reset(&ecc_work);
+}
+#endif
+
 /* based on Core Specification 4.2 Vol 3. Part H 2.3.5.6.1 */
 static const uint8_t debug_private_key_be[BT_PRIV_KEY_LEN] = {
 	0x3f, 0x49, 0xf6, 0xd4, 0xa3, 0xc5, 0x5f, 0x38,

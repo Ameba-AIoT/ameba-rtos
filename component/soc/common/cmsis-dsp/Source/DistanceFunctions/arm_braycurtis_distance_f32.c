@@ -1,14 +1,17 @@
+﻿
 
 /* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
  * Title:        arm_braycurtis_distance_f32.c
  * Description:  Bray-Curtis distance between two vectors
  *
+ * $Date:        23 April 2021
+ * $Revision:    V1.9.0
  *
- * Target Processor: Cortex-M cores
+ * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
 /*
- * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -24,26 +27,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "arm_compiler_specific.h"
 
-#include "arm_math.h"
+
+#include "dsp/distance_functions.h"
 #include <limits.h>
 #include <math.h>
 
 
 
 /**
- * @ingroup groupDistance
- * @{
- */
-
-/**
- * @defgroup FloatDist Float Distances
- *
- * Distances between two vectors of float values.
- */
-
-/**
-  @addtogroup FloatDist
+  @addtogroup braycurtis
   @{
  */
 
@@ -60,7 +54,7 @@
 
 #include "arm_helium_utils.h"
 
-float32_t arm_braycurtis_distance_f32(const float32_t *pA, const float32_t *pB, uint32_t blockSize)
+ARM_DSP_ATTRIBUTE float32_t arm_braycurtis_distance_f32(const float32_t *pA, const float32_t *pB, uint32_t blockSize)
 {
 	float32_t       accumDiff = 0.0f, accumSum = 0.0f;
 	uint32_t        blkCnt;
@@ -116,7 +110,7 @@ float32_t arm_braycurtis_distance_f32(const float32_t *pA, const float32_t *pB, 
 
 #include "NEMath.h"
 
-float32_t arm_braycurtis_distance_f32(const float32_t *pA, const float32_t *pB, uint32_t blockSize)
+ARM_DSP_ATTRIBUTE float32_t arm_braycurtis_distance_f32(const float32_t *pA, const float32_t *pB, uint32_t blockSize)
 {
 	float32_t accumDiff = 0.0f, accumSum = 0.0f;
 	uint32_t blkCnt;
@@ -164,7 +158,7 @@ float32_t arm_braycurtis_distance_f32(const float32_t *pA, const float32_t *pB, 
 }
 
 #else
-float32_t arm_braycurtis_distance_f32(const float32_t *pA, const float32_t *pB, uint32_t blockSize)
+ARM_DSP_ATTRIBUTE float32_t arm_braycurtis_distance_f32(const float32_t *pA, const float32_t *pB, uint32_t blockSize)
 {
 	float32_t accumDiff = 0.0f, accumSum = 0.0f, tmpA, tmpB;
 
@@ -188,9 +182,6 @@ float32_t arm_braycurtis_distance_f32(const float32_t *pA, const float32_t *pB, 
 
 
 /**
- * @} end of FloatDist group
+ * @} end of braycurtis group
  */
 
-/**
- * @} end of groupDistance group
- */

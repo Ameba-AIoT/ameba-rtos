@@ -1,15 +1,16 @@
-/* ----------------------------------------------------------------------
+﻿/* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
  * Title:        arm_conv_q31.c
  * Description:  Convolution of Q31 sequences
  *
- * $Date:        18. March 2019
- * $Revision:    V1.6.0
+ * $Date:        23 April 2021
+ * $Revision:    V1.9.0
  *
- * Target Processor: Cortex-M cores
+ * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
+
 /*
- * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -25,8 +26,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "arm_compiler_specific.h"
 
-#include "arm_math.h"
+
+#include "dsp/filtering_functions.h"
 
 /**
   @ingroup groupFilters
@@ -44,7 +47,6 @@
   @param[in]     pSrcB      points to the second input sequence
   @param[in]     srcBLen    length of the second input sequence
   @param[out]    pDst       points to the location where the output result is written.  Length srcALen+srcBLen-1.
-  @return        none
 
   @par           Scaling and Overflow Behavior
                    The function is implemented using an internal 64-bit accumulator.
@@ -59,11 +61,11 @@
   @remark
                    Refer to \ref arm_conv_fast_q31() for a faster but less precise implementation of this function.
  */
-#if defined(ARM_MATH_MVEI)
+#if defined(ARM_MATH_MVEI) && !defined(ARM_MATH_AUTOVECTORIZE)
 #include "arm_helium_utils.h"
 #include "arm_vec_filtering.h"
 
-void arm_conv_q31(
+ARM_DSP_ATTRIBUTE void arm_conv_q31(
 	const q31_t *pSrcA,
 	uint32_t srcALen,
 	const q31_t *pSrcB,
@@ -83,6 +85,7 @@ void arm_conv_q31(
 	int32_t   block1, block2, block3;
 	uint32_t  vddupStartIdx = 3;
 	uint32x4_t decrIdxVec = vddupq_u32(vddupStartIdx, 1);
+
 
 	if (srcALen < srcBLen) {
 		/*
@@ -211,11 +214,10 @@ void arm_conv_q31(
 		*pDst++ = (q31_t) acc;
 		pA++;
 	}
-
 }
 
 #else
-void arm_conv_q31(
+ARM_DSP_ATTRIBUTE void arm_conv_q31(
 	const q31_t *pSrcA,
 	uint32_t srcALen,
 	const q31_t *pSrcB,

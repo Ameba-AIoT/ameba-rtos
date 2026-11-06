@@ -26,13 +26,32 @@
  * limitations under the License.
  */
 
+
 #include "arm_cos_f32.c"
+
 #include "arm_cos_q15.c"
+
 #include "arm_cos_q31.c"
+
 #include "arm_sin_f32.c"
+
 #include "arm_sin_q15.c"
+
 #include "arm_sin_q31.c"
-#include "arm_sqrt_q15.c"
+
 #include "arm_sqrt_q31.c"
+
+#include "arm_sqrt_q15.c"
+
+
 #include "arm_vexp_f32.c"
+#include "arm_vexp_f64.c"
 #include "arm_vlog_f32.c"
+#include "arm_vlog_f64.c"
+#include "arm_divide_q15.c"
+#include "arm_divide_q31.c"
+#include "arm_vlog_q31.c"
+#include "arm_vlog_q15.c"
+#include "arm_atan2_f32.c"
+#include "arm_atan2_q31.c"
+#include "arm_atan2_q15.c"

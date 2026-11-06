@@ -98,9 +98,14 @@ __weak int write_fast_connect_data_to_flash(unsigned int offer_ip, unsigned int 
 #endif
 
 		rtw_psk_get_psk_info(&(data->PSK_info));
-		memcpy(data->wifi_data_to_flash.psk_essid, data->PSK_info.psk_essid, sizeof(data->wifi_data_to_flash.psk_essid));
-		memcpy(data->wifi_data_to_flash.psk_passphrase, data->PSK_info.psk_passphrase, sizeof(data->wifi_data_to_flash.psk_passphrase));
-		memcpy(data->wifi_data_to_flash.wpa_global_PSK, data->PSK_info.wpa_global_PSK, sizeof(data->wifi_data_to_flash.wpa_global_PSK));
+		if (strlen((const char *)data->PSK_info.psk_essid) > 0) {
+			memcpy(data->wifi_data_to_flash.psk_essid, data->PSK_info.psk_essid, sizeof(data->wifi_data_to_flash.psk_essid));
+			memcpy(data->wifi_data_to_flash.psk_passphrase, data->PSK_info.psk_passphrase, sizeof(data->wifi_data_to_flash.psk_passphrase));
+			memcpy(data->wifi_data_to_flash.wpa_global_PSK, data->PSK_info.wpa_global_PSK, sizeof(data->wifi_data_to_flash.wpa_global_PSK));
+		} else {
+			memcpy(data->wifi_data_to_flash.psk_essid, data->setting.ssid, strlen((const char *)data->setting.ssid));
+			memcpy(data->wifi_data_to_flash.psk_passphrase, data->setting.password, strlen((const char *)data->setting.password));
+		}
 		data->wifi_data_to_flash.security_type = data->setting.security_type;
 		data->wifi_data_to_flash.is_wps_trigger = data->setting.is_wps_trigger;
 		break;

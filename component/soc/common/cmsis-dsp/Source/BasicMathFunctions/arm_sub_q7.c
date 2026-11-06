@@ -1,15 +1,16 @@
-/* ----------------------------------------------------------------------
+﻿/* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
  * Title:        arm_sub_q7.c
  * Description:  Q7 vector subtraction
  *
- * $Date:        18. March 2019
- * $Revision:    V1.6.0
+ * $Date:        23 April 2021
+ * $Revision:    V1.9.0
  *
- * Target Processor: Cortex-M cores
+ * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
+
 /*
- * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -25,8 +26,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "arm_compiler_specific.h"
 
-#include "arm_math.h"
+
+#include "dsp/basic_math_functions.h"
 
 /**
   @ingroup groupMath
@@ -43,17 +46,16 @@
   @param[in]     pSrcB      points to the second input vector
   @param[out]    pDst       points to the output vector
   @param[in]     blockSize  number of samples in each vector
-  @return        none
 
   @par           Scaling and Overflow Behavior
                    The function uses saturating arithmetic.
                    Results outside of the allowable Q7 range [0x80 0x7F] will be saturated.
  */
-#if defined(ARM_MATH_MVEI)
+#if defined(ARM_MATH_MVEI) && !defined(ARM_MATH_AUTOVECTORIZE)
 
 #include "arm_helium_utils.h"
 
-void arm_sub_q7(
+ARM_DSP_ATTRIBUTE void arm_sub_q7(
 	const q7_t *pSrcA,
 	const q7_t *pSrcB,
 	q7_t *pDst,
@@ -96,7 +98,7 @@ void arm_sub_q7(
 	}
 }
 #else
-void arm_sub_q7(
+ARM_DSP_ATTRIBUTE void arm_sub_q7(
 	const q7_t *pSrcA,
 	const q7_t *pSrcB,
 	q7_t *pDst,
@@ -114,7 +116,7 @@ void arm_sub_q7(
 
 #if defined (ARM_MATH_DSP)
 		/* Subtract and store result in destination buffer (4 samples at a time). */
-		write_q7x4_ia(&pDst, __QSUB8(read_q7x4_ia((q7_t **) &pSrcA), read_q7x4_ia((q7_t **) &pSrcB)));
+		write_q7x4_ia(&pDst, __QSUB8(read_q7x4_ia(&pSrcA), read_q7x4_ia(&pSrcB)));
 #else
 		*pDst++ = (q7_t) __SSAT((q15_t) * pSrcA++ - *pSrcB++, 8);
 		*pDst++ = (q7_t) __SSAT((q15_t) * pSrcA++ - *pSrcB++, 8);

@@ -1,0 +1,2 @@
+ameba_add_subdirectory_if(CONFIG_IMQ_EN ipc)
+ameba_add_subdirectory_if(CONFIG_RPC_EN rpc)

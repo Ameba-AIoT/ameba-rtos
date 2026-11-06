@@ -396,6 +396,7 @@
 //#define MBEDTLS_SHA1_ALT
 #define MBEDTLS_SHA256_ALT
 #define MBEDTLS_SHA512_ALT
+#define MBEDTLS_SHA3_ALT
 
 /*
  * When replacing the elliptic curve module, please consider, that it is
@@ -3577,7 +3578,7 @@
  *
  * This module adds support for SHA3.
  */
-// #define MBEDTLS_SHA3_C
+#define MBEDTLS_SHA3_C
 
 /**
  * \def MBEDTLS_SHA512_USE_A64_CRYPTO_IF_PRESENT

@@ -38,7 +38,6 @@ set(private_compile_options)         #private compile_options
 # Component private part, user config begin
 
 ameba_list_append(private_sources main.c)
-ameba_list_append(private_includes ${c_CMPT_RTK_COEX_DIR})
 
 # Component private part, user config end
 #------------------------------#

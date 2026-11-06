@@ -158,7 +158,7 @@ typedef struct {
  * @}
  */
 
-#if defined(CONFIG_ARM_CORE_CM55_KM55TZ)
+#if defined(CONFIG_ARM_CORE_CM4_KM4TZ)
 #define MPU_MAX_REGION 6
 #else
 #define MPU_MAX_REGION 4

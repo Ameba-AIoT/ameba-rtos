@@ -5,7 +5,11 @@
 #include "mbedtls/ssl.h"
 #include "mbedtls/net_sockets.h"
 #include "mbedtls/base64.h"
+#if defined(CONFIG_MBEDTLS_USE_LEGACY_API)
 #include "mbedtls/sha1.h"
+#else
+#include "psa/crypto.h"
+#endif
 
 struct wss_tls {
 	mbedtls_ssl_context ctx;
@@ -217,5 +221,11 @@ int ws_server_base64_encode(uint8_t *data, size_t data_len, char *base64_buf, si
 
 void ws_server_sha1(const unsigned char *input, size_t ilen, unsigned char output[20])
 {
+#if defined(CONFIG_MBEDTLS_USE_LEGACY_API)
 	mbedtls_sha1(input, ilen, output);
+#else
+	size_t olen;
+
+	psa_hash_compute(PSA_ALG_SHA_1, input, ilen, output, 20, &olen);
+#endif
 }

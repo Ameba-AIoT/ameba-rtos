@@ -1,7 +1,7 @@
 /* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
  * Title:        CompexMathFunctions.c
- * Description:  Combination of all comlex math function source files.
+ * Description:  Combination of all complex math function source files.
  *
  * $Date:        18. March 2019
  * $Revision:    V1.0.0
@@ -33,12 +33,16 @@
 #include "arm_cmplx_dot_prod_q15.c"
 #include "arm_cmplx_dot_prod_q31.c"
 #include "arm_cmplx_mag_f32.c"
+#include "arm_cmplx_mag_f64.c"
 #include "arm_cmplx_mag_q15.c"
+#include "arm_cmplx_mag_fast_q15.c"
 #include "arm_cmplx_mag_q31.c"
 #include "arm_cmplx_mag_squared_f32.c"
+#include "arm_cmplx_mag_squared_f64.c"
 #include "arm_cmplx_mag_squared_q15.c"
 #include "arm_cmplx_mag_squared_q31.c"
 #include "arm_cmplx_mult_cmplx_f32.c"
+#include "arm_cmplx_mult_cmplx_f64.c"
 #include "arm_cmplx_mult_cmplx_q15.c"
 #include "arm_cmplx_mult_cmplx_q31.c"
 #include "arm_cmplx_mult_real_f32.c"
