@@ -27,7 +27,6 @@ extern "C"
 #if defined(CONFIG_BT_DUAL_MODE) && CONFIG_BT_DUAL_MODE // Defined in menuconfig
 #define RTK_BREDR_SUPPORT                   1
 #endif
-#define RTK_BT_POWER_CONTROL_SUPPORT        1
 #define RTK_BT_HC_CLOCK_OFFSET_SUPPORT      1
 #define RTK_BT_GET_LE_ISO_SYNC_REF_AP_INFO_SUPPORT 0
 #define RTK_BLE_SET_TX_QUEUE_NUM            0
@@ -82,7 +81,6 @@ extern "C"
 #if defined(CONFIG_BT_DUAL_MODE) && CONFIG_BT_DUAL_MODE // Defined in menuconfig
 #define RTK_BREDR_SUPPORT                   1
 #endif
-#define RTK_BT_POWER_CONTROL_SUPPORT        1
 #define RTK_BT_HC_CLOCK_OFFSET_SUPPORT      1
 
 #if defined(RTK_BLE_SUPPORT) && RTK_BLE_SUPPORT
@@ -128,7 +126,6 @@ extern "C"
 #elif defined(CONFIG_AMEBADPLUS) && CONFIG_AMEBADPLUS
 #define RTK_BLE_GAP_MAX_LINKS               4
 #define RTK_BLE_SUPPORT                     1
-#define RTK_BT_POWER_CONTROL_SUPPORT        1
 
 #if defined(RTK_BLE_SUPPORT) && RTK_BLE_SUPPORT
 #define RTK_BLE_GATTS_SUPPORT               1
@@ -159,7 +156,6 @@ extern "C"
 #elif defined(CONFIG_AMEBAGREEN2) && CONFIG_AMEBAGREEN2
 #define RTK_BLE_GAP_MAX_LINKS               4
 #define RTK_BLE_SUPPORT                     1
-#define RTK_BT_POWER_CONTROL_SUPPORT        1
 
 #if defined(RTK_BLE_SUPPORT) && RTK_BLE_SUPPORT
 #define RTK_BLE_GATTS_SUPPORT               1
@@ -190,8 +186,12 @@ extern "C"
 #elif defined(CONFIG_RTL8720F) && CONFIG_RTL8720F
 #define RTK_BLE_GAP_MAX_LINKS               4
 #define RTK_BLE_SUPPORT                     1
-#define RTK_BT_POWER_CONTROL_SUPPORT        0
-
+#if defined(CONFIG_BT_BLE_ONLY) && CONFIG_BT_BLE_ONLY   // Defined in menuconfig
+#define RTK_BREDR_SUPPORT                   0
+#endif
+#if defined(CONFIG_BT_DUAL_MODE) && CONFIG_BT_DUAL_MODE // Defined in menuconfig
+#define RTK_BREDR_SUPPORT                   1
+#endif
 #if defined(RTK_BLE_SUPPORT) && RTK_BLE_SUPPORT
 #define RTK_BLE_GATTS_SUPPORT               1
 #define RTK_BLE_GATTC_SUPPORT               1
@@ -205,7 +205,7 @@ extern "C"
 #endif /* RTK_BLE_SUPPORT */
 
 #if defined(RTK_BLE_4_2_SUPPORT) && RTK_BLE_4_2_SUPPORT
-#define RTK_BLE_PRIVACY_SUPPORT             0
+#define RTK_BLE_PRIVACY_SUPPORT             1
 #define RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT    1
 #endif /* RTK_BLE_4_2_SUPPORT */
 
@@ -229,7 +229,6 @@ extern "C"
 #elif defined(CONFIG_RLE1509) && CONFIG_RLE1509
 #define RTK_BLE_GAP_MAX_LINKS               4
 #define RTK_BLE_SUPPORT                     1
-#define RTK_BT_POWER_CONTROL_SUPPORT        0
 
 #if defined(RTK_BLE_SUPPORT) && RTK_BLE_SUPPORT
 #define RTK_BLE_GATTS_SUPPORT               1
@@ -244,7 +243,7 @@ extern "C"
 #endif /* RTK_BLE_SUPPORT */
 
 #if defined(RTK_BLE_4_2_SUPPORT) && RTK_BLE_4_2_SUPPORT
-#define RTK_BLE_PRIVACY_SUPPORT             0
+#define RTK_BLE_PRIVACY_SUPPORT             1
 #define RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT    1
 #endif /* RTK_BLE_4_2_SUPPORT */
 
@@ -262,7 +261,6 @@ extern "C"
 #elif defined(CONFIG_AMEBAPRO3) && CONFIG_AMEBAPRO3
 #define RTK_BLE_GAP_MAX_LINKS               4
 #define RTK_BLE_SUPPORT                     1
-#define RTK_BT_POWER_CONTROL_SUPPORT        1
 
 #if defined(RTK_BLE_SUPPORT) && RTK_BLE_SUPPORT
 #define RTK_BLE_GATTS_SUPPORT               1

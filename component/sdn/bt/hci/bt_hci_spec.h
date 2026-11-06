@@ -647,10 +647,62 @@ struct bt_hci_cp_set_event_mask {
 
 #define BT_HCI_OP_RESET                         BT_OP(BT_OGF_BASEBAND, 0x0003) /* 0x0c03 */
 
+#define BT_HCI_OP_WRITE_LOCAL_NAME              BT_OP(BT_OGF_BASEBAND, 0x0013) /* 0x0c13 */
+struct bt_hci_write_local_name {
+	uint8_t local_name[248];
+} __attribute__((packed));
+
+#define BT_HCI_OP_WRITE_PAGE_TIMEOUT            BT_OP(BT_OGF_BASEBAND, 0x0018) /* 0x0c18*/
+struct bt_hci_write_page_timeout {
+	uint16_t timeout;
+} __attribute__((packed));
+
+#define BT_HCI_OP_WRITE_SCAN_ENABLE             BT_OP(BT_OGF_BASEBAND, 0x001a) /* 0x0c1a */
+#define BT_BREDR_SCAN_DISABLED                  0x00
+#define BT_BREDR_SCAN_INQUIRY                   0x01
+#define BT_BREDR_SCAN_PAGE                      0x02
+
+#define BT_HCI_OP_WRITE_PAGE_SCAN_ACTIVITY      BT_OP(BT_OGF_BASEBAND, 0x001c) /* 0x0c1c */
+struct bt_hci_cp_write_page_scan_activity {
+	uint16_t interval;
+	uint16_t window;
+} __attribute__((packed));
+
+#define BT_HCI_OP_WRITE_INQUIRY_SCAN_ACTIVITY   BT_OP(BT_OGF_BASEBAND, 0x001e) /* 0x0c1e */
+struct bt_hci_cp_write_inquiry_scan_activity {
+	uint16_t interval;
+	uint16_t window;
+}  __attribute__((packed));
+
+#define BT_COD_MAJOR_AUDIO_VIDEO_MINOR_UNCATEGORIZED             0x00
+#define BT_COD_MAJOR_AUDIO_VIDEO_MINOR_WEARABLE_HEADSET          0x01
+#define BT_COD_MAJOR_AUDIO_VIDEO_MINOR_HANDS_FREE                0x02
+#define BT_COD_MAJOR_AUDIO_VIDEO_MINOR_RFU                       0x03
+#define BT_COD_MAJOR_AUDIO_VIDEO_MINOR_MICROPHONE                0x04
+#define BT_COD_MAJOR_AUDIO_VIDEO_MINOR_LOUDSPEAKER               0x05
+#define BT_COD_MAJOR_AUDIO_VIDEO_MINOR_HEADPHONES                0x06
+#define BT_COD_MAJOR_AUDIO_VIDEO_MINOR_PORTABLE_AUDIO            0x07
+#define BT_COD_MAJOR_AUDIO_VIDEO_MINOR_CAR_AUDIO                 0x08
+#define BT_COD_MAJOR_AUDIO_VIDEO_MINOR_SET_TOP_BOX               0x09
+#define BT_COD_MAJOR_AUDIO_VIDEO_MINOR_HIFI_AUDIO                0x0A
+#define BT_COD_MAJOR_AUDIO_VIDEO_MINOR_VCR                       0x0B
+#define BT_COD_MAJOR_AUDIO_VIDEO_MINOR_VIDEO_CAMERA              0x0C
+#define BT_COD_MAJOR_AUDIO_VIDEO_MINOR_CAMCORDER                 0x0D
+#define BT_COD_MAJOR_AUDIO_VIDEO_MINOR_VIDEO_MONITOR             0x0E
+#define BT_COD_MAJOR_AUDIO_VIDEO_MINOR_VIDEO_DISPLAY_LOUDSPEAKER 0x0F
+#define BT_COD_MAJOR_AUDIO_VIDEO_MINOR_VIDEO_CONFERENCING        0x10
+#define BT_COD_MAJOR_AUDIO_VIDEO_MINOR_RFU2                      0x11
+#define BT_COD_MAJOR_AUDIO_VIDEO_MINOR_GAME_TOY                  0x12
+
+#define BT_HCI_OP_WRITE_CLASS_OF_DEVICE         BT_OP(BT_OGF_BASEBAND, 0x0024) /* 0x0c24 */
+struct bt_hci_cp_write_class_of_device {
+	uint8_t  class_of_device[3];
+}  __attribute__((packed));
+
 #define BT_HCI_OP_SET_CTL_TO_HOST_FLOW          BT_OP(BT_OGF_BASEBAND, 0x0031) /* 0x0c31 */
 struct bt_hci_cp_set_ctl_to_host_flow {
 	uint8_t  flow_enable;
-} __packed;
+} __attribute__((packed));
 
 #define BT_HCI_OP_HOST_BUFFER_SIZE              BT_OP(BT_OGF_BASEBAND, 0x0033) /* 0x0c33 */
 struct bt_hci_cp_host_buffer_size {
@@ -658,18 +710,58 @@ struct bt_hci_cp_host_buffer_size {
 	uint8_t  sco_mtu;
 	uint16_t acl_pkts;
 	uint16_t sco_pkts;
-} __packed;
+} __attribute__((packed));
 
 struct bt_hci_handle_count {
 	uint16_t handle;
 	uint16_t count;
-} __packed;
+} __attribute__((packed));
 
 #define BT_HCI_OP_HOST_NUM_COMPLETED_PACKETS    BT_OP(BT_OGF_BASEBAND, 0x0035) /* 0x0c35 */
 struct bt_hci_cp_host_num_completed_packets {
 	uint8_t  num_handles;
 	struct bt_hci_handle_count h[0];
-} __packed;
+} __attribute__((packed));
+
+#define BT_HCI_OP_WRITE_INQUIRY_SCAN_TYPE       BT_OP(BT_OGF_BASEBAND, 0x0043) /* 0x0c43 */
+struct bt_hci_cp_write_inquiry_scan_type {
+	uint8_t type;
+} __attribute__((packed));
+
+#define BT_HCI_STANDARD_INQUIRY_RESULT			0
+#define BT_HCI_INQUIRY_RESULT_WITH_RSSI         1
+#define BT_HCI_EXTENSION_INQUIRY_RESULT         2
+#define BT_HCI_OP_WRITE_INQUIRY_MODE            BT_OP(BT_OGF_BASEBAND, 0x0045) /* 0x0c45 */
+struct bt_hci_cp_write_inquiry_mode {
+	uint8_t  mode;
+} __attribute__((packed));
+
+#define BT_HCI_OP_WRITE_PAGE_SCAN_TYPE          BT_OP(BT_OGF_BASEBAND, 0x0047) /* 0x0c47 */
+struct bt_hci_cp_write_page_scan_type {
+	uint8_t type;
+} __attribute__((packed));
+
+#define BT_HCI_OP_WRITE_EXT_INQUIRY_RSP         BT_OP(BT_OGF_BASEBAND, 0x0052) /* 0x0c52 */
+struct bt_hci_cp_write_ext_inquiry_rsp {
+	uint8_t fec_required;
+	uint8_t ext_response[240];
+} __attribute__((packed));
+
+#define BT_HCI_OP_WRITE_SSP_MODE                BT_OP(BT_OGF_BASEBAND, 0x0056) /* 0x0c56 */
+struct bt_hci_cp_write_ssp_mode {
+	uint8_t mode;
+} __attribute__((packed));
+
+#define BT_HCI_OP_LE_WRITE_LE_HOST_SUPP         BT_OP(BT_OGF_BASEBAND, 0x006d) /* 0x0c6d */
+struct bt_hci_cp_write_le_host_supp {
+	uint8_t  le;
+	uint8_t  simul;
+} __attribute__((packed));
+
+#define BT_HCI_OP_WRITE_SC_HOST_SUPP            BT_OP(BT_OGF_BASEBAND, 0x007a) /* 0x0c7a */
+struct bt_hci_cp_write_sc_host_supp {
+	uint8_t  sc_support;
+} __attribute__((packed));
 
 #define BT_HCI_OP_READ_LOCAL_VERSION_INFO       BT_OP(BT_OGF_INFO, 0x0001) /* 0x1001 */
 struct bt_hci_rp_read_local_version_info {
@@ -691,6 +783,15 @@ struct bt_hci_rp_read_supported_commands {
 struct bt_hci_rp_read_local_features {
 	uint8_t  status;
 	uint8_t  features[8];
+} __attribute__((packed));
+
+#define BT_HCI_OP_READ_BUFFER_SIZE              BT_OP(BT_OGF_INFO, 0x0005) /* 0x1005 */
+struct bt_hci_rp_read_buffer_size {
+	uint8_t  status;
+	uint16_t acl_max_len;
+	uint8_t  sco_max_len;
+	uint16_t acl_max_num;
+	uint16_t sco_max_num;
 } __attribute__((packed));
 
 #define BT_HCI_OP_READ_BD_ADDR                  BT_OP(BT_OGF_INFO, 0x0009) /* 0x1009 */

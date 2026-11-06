@@ -1077,7 +1077,7 @@ uint16_t bt_stack_br_gap_act_handle(rtk_bt_cmd_t *p_cmd)
 		break;
 
 	default:
-		BT_LOGE("bt_stack_le_act_handle: unknown act: %d \r\n", p_cmd->act);
+		BT_LOGE("%s: unknown act: %d \r\n", __func__, p_cmd->act);
 		ret = 0;
 		break;
 	}

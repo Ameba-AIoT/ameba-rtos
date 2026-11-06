@@ -40,10 +40,31 @@ static const struct bt_hci_cmd_func_hdl g_bt_hci_cmd_func_tbl[] = {
 	{BT_HCI_OP_HOST_BUFFER_SIZE, bt_hci_cmd_ofg_baseband_ocf_host_buffer_size},
 	{BT_HCI_OP_HOST_NUM_COMPLETED_PACKETS, bt_hci_cmd_ofg_baseband_ocf_host_num_completed_packets},
 #endif
+#if defined(CONFIG_BT_LL_CLASSIC_ENABLE) && BT_LL_BR_EDR_SUPPORT
+	{BT_HCI_OP_WRITE_LOCAL_NAME, bt_hci_cmd_ogf_baseband_ocf_write_local_name},
+	{BT_HCI_OP_WRITE_PAGE_TIMEOUT, bt_hci_cmd_ogf_baseband_ocf_write_page_timeout},
+	{BT_HCI_OP_WRITE_SCAN_ENABLE, bt_hci_cmd_ogf_baseband_ocf_write_scan_enable},
+	{BT_HCI_OP_WRITE_PAGE_SCAN_ACTIVITY, bt_hci_cmd_ogf_baseband_ocf_page_scan_activity},
+	{BT_HCI_OP_WRITE_INQUIRY_SCAN_ACTIVITY, bt_hci_cmd_ogf_baseband_ocf_write_inquiry_scan_activity},
+	{BT_HCI_OP_WRITE_CLASS_OF_DEVICE, bt_hci_cmd_ogf_baseband_ocf_write_dev_class},
+	{BT_HCI_OP_SET_CTL_TO_HOST_FLOW, bt_hci_cmd_ogf_baseband_ocf_c2h_flow_ctrl},
+	{BT_HCI_OP_HOST_BUFFER_SIZE, bt_hci_cmd_ogf_baseband_ocf_host_buf_size},
+	{BT_HCI_OP_WRITE_INQUIRY_SCAN_TYPE, bt_hci_cmd_ogf_baseband_ocf_wirte_inq_scan_type},
+	{BT_HCI_OP_WRITE_INQUIRY_MODE, bt_hci_cmd_ogf_baseband_ocf_write_inq_mode},
+	{BT_HCI_OP_WRITE_PAGE_SCAN_TYPE, bt_hci_cmd_ogf_baseband_ocf_write_scan_type},
+	{BT_HCI_OP_WRITE_EXT_INQUIRY_RSP, bt_hci_cmd_ogf_baseband_ocf_write_ext_inquiry_rsp},
+	{BT_HCI_OP_WRITE_SSP_MODE, bt_hci_cmd_ogf_baseband_ocf_write_ssp_mode},
+	{BT_HCI_OP_LE_WRITE_LE_HOST_SUPP, bt_hci_cmd_ogf_baseband_ocf_write_le_host_supp},
+	{BT_HCI_OP_WRITE_SC_HOST_SUPP, bt_hci_cmd_ogf_baseband_ocf_write_secure_connection_host},
+#endif
+
 	//BT_OGF_INFO
 	{BT_HCI_OP_READ_LOCAL_VERSION_INFO, bt_hci_cmd_ogf_info_ocf_read_local_version_info},
 	{BT_HCI_OP_READ_SUPPORTED_COMMANDS, bt_hci_cmd_ogf_info_ocf_read_supported_commands},
 	{BT_HCI_OP_READ_LOCAL_FEATURES, bt_hci_cmd_ogf_info_ocf_read_local_features},
+#if defined(CONFIG_BT_LL_CLASSIC_ENABLE) && BT_LL_BR_EDR_SUPPORT
+	{BT_HCI_OP_READ_BUFFER_SIZE, bt_hci_cmd_ogf_info_ocf_read_buf_size},
+#endif
 	{BT_HCI_OP_READ_BD_ADDR, bt_hci_cmd_ogf_info_ocf_read_bd_address},
 
 	//BT_OGF_STATUS

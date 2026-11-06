@@ -5,6 +5,10 @@
 #
 ifeq ($(OS),Windows_NT)
     SHELL := cmd.exe
+# build_env.mk picks helpers by MSYSTEM/OSTYPE (set by Git Bash/MSYS2/Cygwin), but SHELL is
+# forced to cmd.exe, so hide them to get windows.mk, the same as a plain cmd run
+    override MSYSTEM :=
+    override OSTYPE  :=
 # windows use '\' to seperate path
 	fixpath = $(subst /,\,$1)
 else

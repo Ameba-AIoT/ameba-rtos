@@ -43,6 +43,10 @@ ameba_list_append(private_sources
     bootloader_km4_lib.c
 )
 
+ameba_list_append(private_includes
+    ../../rom/include
+)
+
 # Component private part, user config end
 #------------------------------#
 

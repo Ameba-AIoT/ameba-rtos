@@ -556,6 +556,10 @@ u32 RTC_SetTimeDayYear(u32 RTC_TimeDay, u32 RTC_TimeYear)
 	u32 tmpreg = 0;
 	u32 status = 0;
 
+	if (TrustZone_IsSecure()) {
+		RTC = RTC_DEV_S;
+	}
+
 	/* Check the parameters */
 	assert_param(IS_RTC_TIME_DAY_THRES(RTC_TimeDay));
 	assert_param(IS_RTC_YEAR_THRES(RTC_TimeYear));

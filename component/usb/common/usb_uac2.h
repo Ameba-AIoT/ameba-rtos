@@ -51,7 +51,7 @@ extern "C" {
 #define USB_UAC2_FUNC_CATEGORY_CODE_DESKTOP_HEADSET                0x04U  /**<UAC Audio Function Headset. */
 
 /* A.9 Audio Class-Specific AC Interface Descriptor Subtype Codes (UAC2-specific) */
-#define USB_UAC2_AC_IF_DESC_SUBTYPE_CLOCK_SOURCE                   0x0AU  /**<UAC Audio Function Headset. */
+#define USB_UAC2_AC_IF_DESC_SUBTYPE_CLOCK_SOURCE                   0x0AU  /**<UAC Clock Source Descriptor subtype. */
 
 /* A.17.1 Clock Source Control Selectors */
 #define USB_UAC2_CS_CLK_VALID_CONTROL                              0x02U /**< UAC Audio Clock Source Clock Valid Control. */
@@ -93,26 +93,15 @@ typedef struct {
 
 /* 5.2.3.3 Layout 3 Parameter Block */
 /**
- * @brief Structure to define the frequency.
- * @details This is a packed structure used for sending notifications like SERIAL_STATE
- *          over the INTERRUPT IN endpoint.
+ * @brief One subrange of a Layout 3 RANGE parameter block.
+ * @details A RANGE response is wNumSubRanges followed by wNumSubRanges of these subranges,
+ *          e.g. for the Sampling Frequency Control of a Clock Source.
  */
 typedef struct {
 	u32 dMIN;
 	u32 dMAX;
 	u32 dRES;
 } usb_uac2_freq_t;
-
-/* 5.2.3.3 Layout 3 Parameter Block */
-/**
- * @brief Structure to define the frequency.
- * @details This is a packed structure used for sending notifications like SERIAL_STATE
- *          over the INTERRUPT IN endpoint.
- */
-typedef struct {
-	u16 wNumSubRanges;
-	usb_uac2_freq_t usb_uac2_sub_ranges[];
-} __PACKED usb_uac2_sampling_freq_ctrl_range_t;
 
 /** @} End of USB_Common_UAC2_Types group */
 /** @} End of USB_Common_Types group */

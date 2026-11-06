@@ -16,7 +16,7 @@
 
 #else
 
-#if defined(CONFIG_ARM_CORE_CM55_KM55TZ)
+#if defined(CONFIG_ARM_CORE_CM4_KM4TZ)
 
 #define SRAM_HEAP0_START					__bdram_heap_buffer_start__
 #define SRAM_HEAP0_SIZE						__bdram_heap_buffer_size__
@@ -26,7 +26,7 @@
 #define SRAM_HEAP0_SIZE						__bdram_heap_buffer_size__
 #endif
 
-#if defined(CONFIG_ARM_CORE_CM55_KM55TZ)
+#if defined(CONFIG_ARM_CORE_CM4_KM4TZ)
 /* AP(KM55TZ) core owns PSRAM heap, extend to runtime-measured top. When NP places
  * nothing in PSRAM the NP segment collapses to 0, so this spans the whole
  * non-secure PSRAM. */

@@ -43,10 +43,9 @@ endmacro()
 # Install the public/release headers for an external/internal library target.
 # Pops p_RELEASE_INCLUDES from <argn_var> and installs those directories;
 # falls back to ${public_includes} when p_RELEASE_INCLUDES is absent.
-# Only "*.h" files directly in each listed directory are installed —
-# subdirectories are not traversed. Additionally, any directory whose path
-# contains an "internal" component is skipped entirely, so callers need not
-# filter these out from public_includes / p_RELEASE_INCLUDES.
+# All "*.h" files under each listed directory (including subdirectories) are
+# installed, preserving the directory structure so that #include "sub/foo.h"
+# style includes work in the release package.
 macro(_ameba_install_public_headers _aiph_argn)
     _ameba_pop_release_includes(${_aiph_argn} _aiph_includes)
     if(NOT _aiph_includes)
@@ -55,10 +54,7 @@ macro(_ameba_install_public_headers _aiph_argn)
     foreach(_aiph_inc IN LISTS _aiph_includes)
         get_filename_component(_aiph_inc "${_aiph_inc}" ABSOLUTE
                                BASE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
-        if("${_aiph_inc}" MATCHES "(^|/)internal(/|$)")
-            continue()
-        endif()
-        ameba_install_directory_flat("${_aiph_inc}" p_GLOB "*.h")
+        ameba_install_directory("${_aiph_inc}" p_GLOB "*.h")
     endforeach()
     unset(_aiph_includes)
     unset(_aiph_inc)
@@ -279,7 +275,6 @@ function(ameba_add_internal_library name)
     # Install headers and open-source files declared via p_SOURCES.
     # - p_RELEASE_INCLUDES given: install only those dirs (explicit override).
     # - p_RELEASE_INCLUDES absent: install both public_includes and p_INCLUDES.
-    # In both cases, directories whose path contains "internal/" are skipped.
     set(_ail_argn ${ARGN})
     # Detect p_RELEASE_INCLUDES before _ameba_install_public_headers consumes it.
     if("p_RELEASE_INCLUDES" IN_LIST _ail_argn)
@@ -297,10 +292,7 @@ function(ameba_add_internal_library name)
         foreach(_ail_priv_inc IN LISTS _ail_private_incs)
             get_filename_component(_ail_priv_inc "${_ail_priv_inc}" ABSOLUTE
                                    BASE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
-            if("${_ail_priv_inc}" MATCHES "(^|/)internal(/|$)")
-                continue()
-            endif()
-            ameba_install_directory_flat("${_ail_priv_inc}" p_GLOB "*.h")
+            ameba_install_directory("${_ail_priv_inc}" p_GLOB "*.h")
         endforeach()
     endif()
     # Install p_SOURCES files (skip generated files under the build tree).
@@ -852,11 +844,6 @@ endfunction()
 #       p_EXCLUDE_REGEX "(^|/)lib($|/)" "(^|/)ld_ns($|/)"
 #   )
 #
-#   # Install only public headers, hide internal/ and secure/
-#   ameba_install_directory("${inc_dir}"
-#       p_GLOB "*.h"
-#       p_EXCLUDE_PATTERN "internal" "secure"
-#   )
 function(ameba_install_directory src_dir)
     cmake_parse_arguments(ARG "" "" "p_GLOB;p_EXCLUDE_PATTERN;p_EXCLUDE_REGEX" ${ARGN})
 
@@ -885,12 +872,33 @@ function(ameba_install_directory src_dir)
     list(APPEND _aid_args REGEX "/\\.git($|/)" EXCLUDE)
 
     # Additional regex-based excludes
+    # install(DIRECTORY) matches REGEX against the full absolute path (verified
+    # on CMake 3.22: a relative anchor like "^a/internal" never matches). So each
+    # entry is prefixed with the escaped absolute <src_dir>: this pins it below
+    # <src_dir> and keeps it from hitting the build machine's own path prefix
+    # (e.g. "ats" vs /home/stats/...). Do NOT replace the prefix with a bare "^".
+    string(REGEX REPLACE "([][+.*()^$?|\\{}])" "\\\\\\1" _aid_src_rex "${src_dir}")
     foreach(_aid_rex IN LISTS ARG_p_EXCLUDE_REGEX)
-        list(APPEND _aid_args REGEX "${_aid_rex}" EXCLUDE)
+        list(APPEND _aid_args REGEX "^${_aid_src_rex}(/.*)?(${_aid_rex})" EXCLUDE)
     endforeach()
 
     install(${_aid_args})
 
+endfunction()
+
+# ameba_install_directory_if_exist(<src_dir> [same options as ameba_install_directory])
+#
+# Same as ameba_install_directory, but silently skipped when <src_dir> does not
+# exist (e.g. an optional sub-repo that is not checked out).
+function(ameba_install_directory_if_exist src_dir)
+    set(_aidie_dir "${src_dir}")
+    if(NOT IS_ABSOLUTE "${_aidie_dir}")
+        set(_aidie_dir "${CMAKE_CURRENT_SOURCE_DIR}/${_aidie_dir}")
+    endif()
+    if(NOT IS_DIRECTORY "${_aidie_dir}")
+        return()
+    endif()
+    ameba_install_directory("${src_dir}" ${ARGN})
 endfunction()
 
 # ameba_install_files(<file> [<file>...])
@@ -962,6 +970,10 @@ function(ameba_add_subdirectory_internal dir)
     set(CMAKE_SKIP_INSTALL_RULES TRUE)
     get_filename_component(dir_name ${dir} NAME)
     add_subdirectory(${dir} ${CMAKE_CURRENT_BINARY_DIR}/${dir_name})
+    # The parent still emits include(<bin>/cmake_install.cmake) for this subdir, but
+    # SKIP_INSTALL_RULES stops CMake generating it; an empty stub keeps plain
+    # `cmake --install` from aborting on the missing file.
+    file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/${dir_name}/cmake_install.cmake "")
 endfunction()
 
 function(ameba_add_subdirectory_internal_if condition dir)
@@ -977,10 +989,7 @@ function(ameba_global_include)
     foreach(_agi_inc IN LISTS ARGN)
         get_filename_component(_agi_inc "${_agi_inc}" ABSOLUTE
                                BASE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
-        if("${_agi_inc}" MATCHES "(^|/)internal(/|$)")
-            continue()
-        endif()
-        ameba_install_directory_flat("${_agi_inc}" p_GLOB "*.h")
+        ameba_install_directory("${_agi_inc}" p_GLOB "*.h")
     endforeach()
 endfunction()
 

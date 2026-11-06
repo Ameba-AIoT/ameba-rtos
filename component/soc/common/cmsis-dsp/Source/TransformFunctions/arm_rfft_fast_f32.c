@@ -1,15 +1,16 @@
-/* ----------------------------------------------------------------------
+﻿/* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
- * Title:        arm_rfft_f32.c
+ * Title:        arm_rfft_fast_f32.c
  * Description:  RFFT & RIFFT Floating point process function
  *
- * $Date:        18. March 2019
- * $Revision:    V1.6.0
+ * $Date:        23 April 2021
+ * $Revision:    V1.9.0
  *
- * Target Processor: Cortex-M cores
+ * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
+
 /*
- * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -25,20 +26,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "arm_compiler_specific.h"
 
-#include "arm_math.h"
+
+#include "dsp/transform_functions.h"
 
 #if defined(ARM_MATH_MVEF) && !defined(ARM_MATH_AUTOVECTORIZE)
-void stage_rfft_f32(
+static void stage_rfft_f32(
 	const arm_rfft_fast_instance_f32 *S,
-	float32_t *p,
+	const float32_t *p,
 	float32_t *pOut)
 {
-	uint32_t  k;                                /* Loop Counter */
+	int32_t  k;                                /* Loop Counter */
 	float32_t twR, twI;                         /* RFFT Twiddle coefficients */
 	const float32_t *pCoeff = S->pTwiddleRFFT;        /* Points to RFFT Twiddle factors */
-	float32_t *pA = p;                          /* increasing pointer */
-	float32_t *pB = p;                          /* decreasing pointer */
+	const float32_t *pA = p;                          /* increasing pointer */
+	const float32_t *pB = p;                          /* decreasing pointer */
 	float32_t xAR, xAI, xBR, xBI;               /* temporary variables */
 	float32_t t1a, t1b;                         /* temporary variables */
 	float32_t p0, p1, p2, p3;                   /* temporary variables */
@@ -186,16 +189,16 @@ void stage_rfft_f32(
 }
 
 /* Prepares data for inverse cfft */
-void merge_rfft_f32(
+static void merge_rfft_f32(
 	const arm_rfft_fast_instance_f32 *S,
-	float32_t *p,
+	const float32_t *p,
 	float32_t *pOut)
 {
-	uint32_t  k;                                /* Loop Counter */
+	int32_t  k;                                /* Loop Counter */
 	float32_t twR, twI;                         /* RFFT Twiddle coefficients */
 	const float32_t *pCoeff = S->pTwiddleRFFT;        /* Points to RFFT Twiddle factors */
-	float32_t *pA = p;                          /* increasing pointer */
-	float32_t *pB = p;                          /* decreasing pointer */
+	const float32_t *pA = p;                          /* increasing pointer */
+	const float32_t *pB = p;                          /* decreasing pointer */
 	float32_t xAR, xAI, xBR, xBI;               /* temporary variables */
 	float32_t t1a, t1b, r, s, t, u;             /* temporary variables */
 
@@ -302,17 +305,23 @@ void merge_rfft_f32(
 	}
 
 }
+#elif defined(ARM_MATH_NEON)
+/*
+
+No stage merge functions defined here for Neon.
+
+*/
 #else
-void stage_rfft_f32(
+static void stage_rfft_f32(
 	const arm_rfft_fast_instance_f32 *S,
-	float32_t *p,
+	const float32_t *p,
 	float32_t *pOut)
 {
-	uint32_t  k;                                /* Loop Counter */
+	int32_t  k;                                /* Loop Counter */
 	float32_t twR, twI;                         /* RFFT Twiddle coefficients */
 	const float32_t *pCoeff = S->pTwiddleRFFT;        /* Points to RFFT Twiddle factors */
-	float32_t *pA = p;                          /* increasing pointer */
-	float32_t *pB = p;                          /* decreasing pointer */
+	const float32_t *pA = p;                          /* increasing pointer */
+	const float32_t *pB = p;                          /* decreasing pointer */
 	float32_t xAR, xAI, xBR, xBI;               /* temporary variables */
 	float32_t t1a, t1b;                         /* temporary variables */
 	float32_t p0, p1, p2, p3;                   /* temporary variables */
@@ -387,20 +396,20 @@ void stage_rfft_f32(
 		pA += 2;
 		pB -= 2;
 		k--;
-	} while (k > 0U);
+	} while (k > 0);
 }
 
 /* Prepares data for inverse cfft */
-void merge_rfft_f32(
+static void merge_rfft_f32(
 	const arm_rfft_fast_instance_f32 *S,
-	float32_t *p,
+	const float32_t *p,
 	float32_t *pOut)
 {
-	uint32_t  k;                                /* Loop Counter */
+	int32_t  k;                                /* Loop Counter */
 	float32_t twR, twI;                         /* RFFT Twiddle coefficients */
 	const float32_t *pCoeff = S->pTwiddleRFFT;        /* Points to RFFT Twiddle factors */
-	float32_t *pA = p;                          /* increasing pointer */
-	float32_t *pB = p;                          /* decreasing pointer */
+	const float32_t *pA = p;                          /* increasing pointer */
+	const float32_t *pB = p;                          /* decreasing pointer */
 	float32_t xAR, xAI, xBR, xBI;               /* temporary variables */
 	float32_t t1a, t1b, r, s, t, u;             /* temporary variables */
 
@@ -417,7 +426,7 @@ void merge_rfft_f32(
 	pB  =  p + 2 * k ;
 	pA +=  2	   ;
 
-	while (k > 0U) {
+	while (k > 0) {
 		/* G is half of the frequency complex spectrum */
 		//for k = 2:N
 		//    Xk(k) = 1/2 * (G(k) + conj(G(N-k+2)) + Tw(k)*( G(k) - conj(G(N-k+2))));
@@ -465,7 +474,7 @@ void merge_rfft_f32(
                    of the symmetry properties of the FFT and have a speed advantage over complex
                    algorithms of the same length.
   @par
-                   The Fast RFFT algorith relays on the mixed radix CFFT that save processor usage.
+                   The Fast RFFT algorithm relays on the mixed radix CFFT that save processor usage.
   @par
                    The real length N forward FFT of a sequence is computed using the steps shown below.
   @par
@@ -473,9 +482,8 @@ void merge_rfft_f32(
   @par
                    The real sequence is initially treated as if it were complex to perform a CFFT.
                    Later, a processing stage reshapes the data to obtain half of the frequency spectrum
-                   in complex format. Except the first complex number that contains the two real numbers
-                   X[0] and X[N/2] all the data is complex. In other words, the first complex sample
-                   contains two real values packed.
+                   in complex format.
+
   @par
                    The input for the inverse RFFT should keep the same format as the output of the
                    forward RFFT. A first processing stage pre-process the data to later perform an
@@ -487,21 +495,27 @@ void merge_rfft_f32(
                    and we describe each algorithm in turn.
   @par           Floating-point
                    The main functions are \ref arm_rfft_fast_f32() and \ref arm_rfft_fast_init_f32().
-                   The older functions \ref arm_rfft_f32() and \ref arm_rfft_init_f32() have been deprecated
-                   but are still documented.
+
+                   For f16, the functions are \ref arm_rfft_fast_f16() and \ref arm_rfft_fast_init_f16().
+                   For f64, the functions are \ref arm_rfft_fast_f64() and \ref arm_rfft_fast_init_f64().
   @par
                    The FFT of a real N-point sequence has even symmetry in the frequency domain.
                    The second half of the data equals the conjugate of the first half flipped in frequency.
-                   Looking at the data, we see that we can uniquely represent the FFT using only N/2 complex numbers.
-                   These are packed into the output array in alternating real and imaginary components:
+                   This conjugate part is not computed by the float RFFT. As consequence, the output of
+                   a N point real FFT should be a N//2 + 1 complex numbers so N + 2 floats.
   @par
-                   X = { real[0], imag[0], real[1], imag[1], real[2], imag[2] ...
-                   real[(N/2)-1], imag[(N/2)-1 }
+                   It happens that the first complex of number of the RFFT output is actually
+                   all real. Its real part represents the DC offset.
+                   The value at Nyquist frequency is also real.
+
   @par
-                   It happens that the first complex number (real[0], imag[0]) is actually
-                   all real. real[0] represents the DC offset, and imag[0] should be 0.
-                   (real[1], imag[1]) is the fundamental frequency, (real[2], imag[2]) is
-                   the first harmonic and so on.
+                   Those two complex numbers can be encoded with 2 floats rather than using two numbers
+                   with an imaginary part set to zero.
+  @par
+                   The implementation is using a trick so that the output buffer can be N float :
+                   the last real is packaged in the imaginary part of the first complex (since
+                   this imaginary part is not used and is zero).
+
   @par
                    The real FFT functions pack the frequency domain data in this fashion.
                    The forward transform outputs the data in this form and the inverse
@@ -512,6 +526,15 @@ void merge_rfft_f32(
   @par           Q15 and Q31
                    The real algorithms are defined in a similar manner and utilize N/2 complex
                    transforms behind the scenes.
+
+  @par
+                   But warning, contrary to the float version, the fixed point implementation
+                   RFFT is also computing the conjugate part (except for MVE version) so the
+                   output buffer must be bigger.
+                   Also the fixed point RFFTs are not using any trick to pack the DC and Nyquist
+                   frequency in the same complex number.
+                   The RIFFT is not using the conjugate part but it is still using the Nyquist
+                   frequency value. The details are given in the documentation for the functions.
   @par
                    The complex transforms used internally include scaling to prevent fixed-point
                    overflows.  The overall scaling equals 1/(fftLen/2).
@@ -548,10 +571,39 @@ void merge_rfft_f32(
 @par
                    Note that with MVE versions you can't initialize instance structures directly and **must
                    use the initialization function**.
+
+ @par Neon version
+                     The neon version has a different API.
+                     The input and output buffers must be
+                     different.
+                     There is a temporary buffer that is not optional.
+
+                     The bit reverse flag is not more
+                     available in Neon version.
+
+
+  @code
+        void arm_rfft_fast_f32(
+                const arm_rfft_fast_instance_f32 * S,
+                float32_t * p,
+                float32_t * pOut,
+                float32_t *tmpbuf,
+                uint8_t ifftFlag);
+  @endcode
+
+  @par Size of buffers according to the target architecture and datatype:
+       They are described on the page \ref transformbuffers "transform buffers".
  */
 
 /**
-  @addtogroup RealFFT
+  @defgroup DeprecatedRealFFT Deprecated Real FFT Functions
+*/
+
+/**
+  @defgroup RealFFTF32 Real FFT F32 Functions
+*/
+/**
+  @addtogroup RealFFTF32
   @{
 */
 
@@ -563,10 +615,58 @@ void merge_rfft_f32(
   @param[in]     ifftFlag
                    - value = 0: RFFT
                    - value = 1: RIFFT
-  @return        none
+
+  @par Neon version
+                     The neon version has a different API.
+                     The input and output buffers must be
+                     different.
+                     There is a temporary buffer.
+  @par
+                     The bit reverse flag is not more
+                     available in Neon version.
+
+  @par
+   @code
+        void arm_rfft_fast_f32(
+                const arm_rfft_fast_instance_f32 * S,
+                const float32_t * p,
+                float32_t * pOut,
+                float32_t *tmpbuf,
+                uint8_t ifftFlag);
+  @endcode
+
+  @par Size of buffers according to the target architecture and datatype:
+       They are described on the page \ref transformbuffers "transform buffers".
 */
 
-void arm_rfft_fast_f32(
+#if defined(ARM_MATH_NEON)
+
+#include "CMSIS_NE10_types.h"
+#include "CMSIS_NE10_fft.h"
+
+/*
+
+p size      : nfft   reals
+pOut size   : nfft   reals (nfft/2 complex)
+tmpBuf size : 2*nfft reals (nfft   complex)
+
+*/
+ARM_DSP_ATTRIBUTE void arm_rfft_fast_f32(
+	const arm_rfft_fast_instance_f32 *S,
+	const float32_t *p,
+	float32_t *pOut,
+	float32_t *tmpbuf,
+	uint8_t ifftFlag)
+{
+	/* Calculation of Real FFT */
+	if (!ifftFlag) {
+		arm_ne10_fft_r2c_1d_float32_neon(S, p, pOut, tmpbuf);
+	} else {
+		arm_ne10_fft_c2r_1d_float32_neon(S, p, pOut, tmpbuf);
+	}
+}
+#else
+ARM_DSP_ATTRIBUTE void arm_rfft_fast_f32(
 	const arm_rfft_fast_instance_f32 *S,
 	float32_t *p,
 	float32_t *pOut,
@@ -588,7 +688,7 @@ void arm_rfft_fast_f32(
 		stage_rfft_f32(S, p, pOut);
 	}
 }
-
+#endif
 /**
-* @} end of RealFFT group
+* @} end of RealFFTF32 group
 */

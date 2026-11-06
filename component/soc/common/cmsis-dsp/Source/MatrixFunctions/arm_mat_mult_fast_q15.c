@@ -1,15 +1,16 @@
-/* ----------------------------------------------------------------------
+﻿/* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
  * Title:        arm_mat_mult_fast_q15.c
  * Description:  Q15 matrix multiplication (fast variant)
  *
- * $Date:        18. March 2019
- * $Revision:    V1.6.0
+ * $Date:        23 April 2021
+ * $Revision:    V1.9.0
  *
- * Target Processor: Cortex-M cores
+ * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
+
 /*
- * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -25,8 +26,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "arm_compiler_specific.h"
 
-#include "arm_math.h"
+
+#include "dsp/matrix_functions.h"
 
 /**
   @ingroup groupMatrix
@@ -52,7 +55,7 @@
                    the fast variant use a 32-bit rather than a 64-bit accumulator.
                    The result of each 1.15 x 1.15 multiplication is truncated to
                    2.30 format. These intermediate results are accumulated in a 32-bit register in 2.30
-                   format. Finally, the accumulator is saturated and converted to a 1.15 result.
+                   format.
   @par
                    The fast version has the same overflow behavior as the standard version but provides
                    less precision since it discards the low 16 bits of each multiplication result.
@@ -63,8 +66,75 @@
                    Refer to \ref arm_mat_mult_q15() for a slower implementation of this function
                    which uses 64-bit accumulation to provide higher precision.
  */
+#if defined(ARM_MATH_NEON)
+#define LANE 8
+#define DTYPE q15_t
+#define HEADERTYPE DTYPE
+#define VEC int16x8_t
+#define VECACC int32x4x2_t
 
-arm_status arm_mat_mult_fast_q15(
+#define CLEAR_ACC(tmp) tmp.val[0] = vdupq_n_s32(0); \
+ tmp.val[1] = vdupq_n_s32(0);
+
+#define TMPMAC \
+ int32x4_t tmp;
+
+#define TMPLD \
+  VEC tmpld;
+
+#define TMPST       \
+  int16x4x2_t htmp;
+
+#if defined(ARM_DSP_TESTING)
+int cov_mat_mul_fast_q15[20] = {0};
+#define LOGKERNEL(A,B) cov_mat_mul_fast_q15[B]=1;
+#else
+#define LOGKERNEL(A,B)
+#endif
+
+#define SCALARACC int32_t
+#define SCALAR_LOAD_AND_WIDEN(DST,PTR) DST = (SCALARACC)(*(PTR))
+#define SCALAR_STORE_AND_NARROW(PTR,VAL) *(PTR) = (q15_t) __SSAT((VAL) >> 15, 16)
+#define SCALAR_MAC_N(ACC,VEC,SCALAR) ACC += (SCALARACC)(VEC) * (SCALARACC)(SCALAR)
+
+#define VLOAD(DST,PTR) DST = vld1q_s16((PTR))
+#define VSTORE(PTR,VAL) vst1q_s16((PTR),(VAL))
+
+#define VLOAD_ACC(DST,PTR)         \
+  DST.val[0] = vld1q_s32((PTR)+4*0); \
+  DST.val[1] = vld1q_s32((PTR)+4*1);
+
+#define VSTORE_ACC(PTR,VAL)        \
+  vst1q_s32((PTR)+4*0,(VAL).val[0]); \
+  vst1q_s32((PTR)+4*1,(VAL).val[1]);
+
+#define VLOAD_AND_WIDEN(DST,PTR)           \
+    tmpld = vld1q_s16((PTR));                    \
+    DST.val[0] = vmovl_s16(vget_low_s16(tmpld)); \
+    DST.val[1] = vmovl_s16(vget_high_s16(tmpld));
+
+#define VSTORE_AND_NARROW(PTR,VAL) \
+    htmp.val[0] = vqshrn_n_s32(VAL.val[0],15);    \
+    htmp.val[1] = vqshrn_n_s32(VAL.val[1],15);    \
+    vst1q_s16(PTR,vcombine_s16(htmp.val[0],htmp.val[1]));
+
+#define VMAC_N(ACC,VEC,SCALAR)                             \
+   tmp = vmull_s16(vget_low_s16(VEC),vdup_n_s16(SCALAR));  \
+   ACC.val[0] = vqaddq_s32(ACC.val[0],tmp);                \
+   tmp = vmull_s16(vget_high_s16(VEC),vdup_n_s16(SCALAR)); \
+   ACC.val[1] =vqaddq_s32(ACC.val[1],tmp);
+
+#define MATTYPE arm_matrix_instance_q15
+#define EXT(A) A##_fast_q15
+#define HAS_TEMP_BUFFER
+#define USE_TMP_REGISTER
+
+#define FUNCNAME arm_mat_mult_fast_q15
+
+#include "_arm_mat_mult_neon.c"
+
+#else
+ARM_DSP_ATTRIBUTE arm_status arm_mat_mult_fast_q15(
 	const arm_matrix_instance_q15 *pSrcA,
 	const arm_matrix_instance_q15 *pSrcB,
 	arm_matrix_instance_q15 *pDst,
@@ -78,7 +148,7 @@ arm_status arm_mat_mult_fast_q15(
 	uint16_t numRowsA = pSrcA->numRows;            /* Number of rows of input matrix A */
 	uint16_t numColsB = pSrcB->numCols;            /* Number of columns of input matrix B */
 	uint16_t numColsA = pSrcA->numCols;            /* Number of columns of input matrix A */
-	uint16_t numRowsB = pSrcB->numRows;            /* Number of rows of input matrix A */
+	uint16_t numRowsB = pSrcB->numRows;            /* Number of rows of input matrix B */
 	uint32_t col, i = 0U, row = numRowsB, colCnt;  /* Loop counters */
 	arm_status status;                             /* Status of matrix multiplication */
 
@@ -121,7 +191,7 @@ arm_status arm_mat_mult_fast_q15(
 #if defined (ARM_MATH_DSP)
 
 				/* Read two elements from row */
-				in = read_q15x2_ia((q15_t **) &pInB);
+				in = read_q15x2_ia(&pInB);
 
 				/* Unpack and store one element in destination */
 #ifndef ARM_MATH_BIG_ENDIAN
@@ -143,7 +213,7 @@ arm_status arm_mat_mult_fast_q15(
 				/* Update pointer px to point to next row of transposed matrix */
 				px += numRowsB;
 
-				in = read_q15x2_ia((q15_t **) &pInB);
+				in = read_q15x2_ia(&pInB);
 #ifndef ARM_MATH_BIG_ENDIAN
 				*px = (q15_t) in;
 #else
@@ -251,7 +321,7 @@ arm_status arm_mat_mult_fast_q15(
 				pInA2 = pInA + numColsA;
 				pInB2 = pInB + numRowsB;
 
-				/* Read in two elements at once - alows dual MAC instruction */
+				/* Read in two elements at once - allows dual MAC instruction */
 				colCnt = numColsA >> 1U;
 #else
 				colCnt = numColsA >> 2U;
@@ -263,13 +333,13 @@ arm_status arm_mat_mult_fast_q15(
 
 #if defined (ARM_MATH_DSP)
 					/* read real and imag values from pSrcA and pSrcB buffer */
-					inA1 = read_q15x2_ia((q15_t **) &pInA);
-					inB1 = read_q15x2_ia((q15_t **) &pInB);
+					inA1 = read_q15x2_ia(&pInA);
+					inB1 = read_q15x2_ia(&pInB);
 
-					inA2 = read_q15x2_ia((q15_t **) &pInA2);
-					inB2 = read_q15x2_ia((q15_t **) &pInB2);
+					inA2 = read_q15x2_ia(&pInA2);
+					inB2 = read_q15x2_ia(&pInB2);
 
-					/* Multiply and Accumlates */
+					/* Multiply and Accumulates */
 					sum  = __SMLAD(inA1, inB1, sum);
 					sum2 = __SMLAD(inA1, inB2, sum2);
 					sum3 = __SMLAD(inA2, inB1, sum3);
@@ -278,7 +348,7 @@ arm_status arm_mat_mult_fast_q15(
 					/* read real and imag values from pSrcA and pSrcB buffer */
 					inA1 = *pInA++;
 					inB1 = *pInB++;
-					/* Multiply and Accumlates */
+					/* Multiply and Accumulates */
 					sum += inA1 * inB1;
 
 					inA2 = *pInA++;
@@ -378,10 +448,10 @@ arm_status arm_mat_mult_fast_q15(
 
 				/* matrix multiplication */
 				while (colCnt > 0U) {
-					inA1 = read_q15x2_ia((q15_t **) &pInA);
-					inA2 = read_q15x2_ia((q15_t **) &pInA);
-					inB1 = read_q15x2_ia((q15_t **) &pInB);
-					inB2 = read_q15x2_ia((q15_t **) &pInB);
+					inA1 = read_q15x2_ia(&pInA);
+					inA2 = read_q15x2_ia(&pInA);
+					inB1 = read_q15x2_ia(&pInB);
+					inB2 = read_q15x2_ia(&pInB);
 
 					sum  = __SMLAD(inA1, inB1, sum);
 					sum  = __SMLAD(inA2, inB2, sum);
@@ -428,10 +498,10 @@ arm_status arm_mat_mult_fast_q15(
 
 				/* matrix multiplication */
 				while (colCnt > 0U) {
-					inA1 = read_q15x2_ia((q15_t **) &pInA);
-					inA2 = read_q15x2_ia((q15_t **) &pInA);
-					inB1 = read_q15x2_ia((q15_t **) &pInB);
-					inB2 = read_q15x2_ia((q15_t **) &pInB);
+					inA1 = read_q15x2_ia(&pInA);
+					inA2 = read_q15x2_ia(&pInA);
+					inB1 = read_q15x2_ia(&pInB);
+					inB2 = read_q15x2_ia(&pInB);
 
 					sum  = __SMLAD(inA1, inB1, sum);
 					sum  = __SMLAD(inA2, inB2, sum);
@@ -464,7 +534,7 @@ arm_status arm_mat_mult_fast_q15(
 	/* Return to application */
 	return (status);
 }
-
+#endif
 /**
   @} end of MatrixMult group
  */

@@ -424,7 +424,9 @@ config SHELL_TASK_STACK_BASIC_SIZE
 
 rsource "../../../lwip/Kconfig"
 
+if !AMEBA_RLS
 orsource "../../../wpan/Kconfig"
+endif
 
 rsource "../../../ssl/Kconfig"
 

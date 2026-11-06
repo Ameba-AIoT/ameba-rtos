@@ -19,6 +19,19 @@ extern StaticSemaphore_t *__reserved_get_mutex_from_pool(void);
 extern void __reserved_release_mutex_to_pool(void *buf);
 #endif
 
+/* Only "has the scheduler started" matters here. On SMP, xTaskGetSchedulerState()
+ * enters a kernel critical section, so read the port flag instead; it is set in
+ * xPortStartScheduler() after xSchedulerRunning. */
+static inline int rtos_mutex_sched_is_started(void)
+{
+#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
+	extern volatile uint32_t uxPortSchedulerStart[configNUM_CORES];
+	return uxPortSchedulerStart[portPrimaryCoreID] != pdFALSE;
+#else
+	return xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED;
+#endif
+}
+
 int rtos_mutex_create_static(rtos_mutex_t *pp_handle)
 {
 #if(configSUPPORT_STATIC_ALLOCATION == 1)
@@ -127,7 +140,7 @@ int rtos_mutex_take(rtos_mutex_t p_handle, uint32_t wait_ms)
 	BaseType_t ret;
 
 	/* Can't take mutex if shedular is not started */
-	if (rtos_sched_get_state() == RTOS_SCHED_NOT_STARTED) {
+	if (!rtos_mutex_sched_is_started()) {
 		return RTK_FAIL;
 	}
 
@@ -164,7 +177,7 @@ int rtos_mutex_give(rtos_mutex_t p_handle)
 	BaseType_t ret;
 
 	/* Can't give mutex if shedular is not started */
-	if (rtos_sched_get_state() == RTOS_SCHED_NOT_STARTED) {
+	if (!rtos_mutex_sched_is_started()) {
 		return RTK_FAIL;
 	}
 

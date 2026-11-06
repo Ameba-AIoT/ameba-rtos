@@ -55,7 +55,6 @@ ameba_list_append(private_sources
     stack/host/buf.c
     stack/host/hci_core.c
     stack/host/id.c
-    stack/host/crypto_tc.c
     stack/host/conn.c
     stack/host/scan.c
     stack/host/adv.c
@@ -71,6 +70,27 @@ ameba_list_append(private_sources
     stack/host/settings.c
     stack/host/aes_ccm.c
     stack/host/direction.c
+)
+
+ameba_list_append_if(CONFIG_BT_DUAL_MODE private_sources
+    stack/host/classic/br.c
+    stack/host/classic/sco.c
+    stack/host/classic/sdp.c
+    stack/host/classic/ssp.c
+    stack/host/classic/a2dp.c
+    stack/host/classic/avdtp.c
+    stack/host/classic/keys_br.c
+    stack/host/classic/l2cap_br.c
+    stack/host/classic/rfcomm.c
+    stack/host/classic/hfp_hf.c
+    stack/host/classic/hfp_ag.c
+    stack/host/classic/at.c
+    stack_ext/avctp.c
+    stack_ext/avrcp.c
+    stack_ext/spp.c
+    stack_ext/goep.c
+    stack_ext/opp.c
+    stack_ext/pbap.c
 )
 
 if (CONFIG_BT_MESH_PROVISIONER_SUPPORT OR CONFIG_BT_MESH_DEVICE_SUPPORT)
@@ -126,6 +146,12 @@ endif()
 ameba_list_append_if(CONFIG_BT_MESH_DEVICE_SUPPORT private_sources
     stack/mesh/lpn.c
 )
+
+if(CONFIG_MBEDTLS_USE_LEGACY_API)
+    ameba_list_append(private_sources stack/host/crypto_tc.c)
+else()
+    ameba_list_append(private_sources stack/host/crypto_psa.c)
+endif()
 
 ameba_list_append(private_sources
     port/zephyr_log.c

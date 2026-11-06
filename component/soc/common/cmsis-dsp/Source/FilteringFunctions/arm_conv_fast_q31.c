@@ -1,15 +1,16 @@
-/* ----------------------------------------------------------------------
+﻿/* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
  * Title:        arm_conv_fast_q31.c
  * Description:  Fast Q31 Convolution
  *
- * $Date:        18. March 2019
- * $Revision:    V1.6.0
+ * $Date:        23 April 2021
+ * $Revision:    V1.9.0
  *
- * Target Processor: Cortex-M cores
+ * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
+
 /*
- * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -25,8 +26,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "arm_compiler_specific.h"
 
-#include "arm_math.h"
+
+#include "dsp/filtering_functions.h"
 
 /**
   @ingroup groupFilters
@@ -44,7 +47,6 @@
   @param[in]     pSrcB      points to the second input sequence.
   @param[in]     srcBLen    length of the second input sequence.
   @param[out]    pDst       points to the location where the output result is written.  Length srcALen+srcBLen-1.
-  @return        none
 
   @par           Scaling and Overflow Behavior
                    This function is optimized for speed at the expense of fixed-point precision and overflow protection.
@@ -60,7 +62,7 @@
                    Refer to \ref arm_conv_q31() for a slower implementation of this function which uses 64-bit accumulation to provide higher precision.
  */
 
-void arm_conv_fast_q31(
+ARM_DSP_ATTRIBUTE void arm_conv_fast_q31(
 	const q31_t *pSrcA,
 	uint32_t srcALen,
 	const q31_t *pSrcB,

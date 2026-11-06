@@ -691,7 +691,7 @@ int usbd_uvc_parameter_init(void)
 	x_data.def = USBD_UVC_XU_DATA_CUR;
 	x_data.info = USBD_UVC_XU_DATA_INFO;
 	x_data.len = USBD_UVC_XU_DATA_LEN;
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 /**

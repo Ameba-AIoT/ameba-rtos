@@ -72,7 +72,39 @@ else()
         Source/SVMFunctions/SVMFunctions.c
         Source/TransformFunctions/TransformFunctions.c
         Source/TransformFunctions/arm_bitreversal2.S
+        Source/InterpolationFunctions/InterpolationFunctions.c
+        Source/QuaternionMathFunctions/QuaternionMathFunctions.c
+        Source/WindowFunctions/WindowFunctions.c
     )
+endif()
+
+# Optional Neon build for CA32 (Ne10 FFT etc). Off by default: with ARM_MATH_NEON the FFT instance
+# structures and arm_rfft_fast_f32()/arm_cfft_f32() signatures change, so every caller (including
+# prebuilt libraries) must be rebuilt against these headers. Enable with: build.py -D CMSIS_DSP_NEON=ON
+if(CMSIS_DSP_NEON AND "${c_MCU_TYPE}" STREQUAL "ca32" AND NOT ${c_CURRENT_IMAGE_IS_ROM})
+    ameba_list_append(private_sources
+        ComputeLibrary/Source/arm_cl_tables.c
+        Source/CommonTables/arm_neon_tables.c
+        Ne10/NE10_fft_float32.neonintrinsic.c
+        Ne10/NE10_fft_int32.neonintrinsic.c
+        Ne10/NE10_fft_int16.neonintrinsic.c
+        Ne10/NE10_rfft_float32.neonintrinsic.c
+        Ne10/CMSIS_NE10_fft_init.c
+        Ne10/CMSIS_NE10_fft_generic_float32.neonintrisic.c
+        Ne10/CMSIS_NE10_fft_generic_int32.neonintrisic.c
+    )
+    ameba_list_append(private_includes
+        Ne10
+    )
+    ameba_list_append(private_definitions
+        CMSIS_NE10_DSP_RIFFT_SCALING
+    )
+    ameba_list_append(private_compile_options
+        -flax-vector-conversions
+    )
+    # ARM_MATH_NEON changes public headers, so it must be seen by every user of arm_math.h
+    ameba_global_define(ARM_MATH_NEON)
+    ameba_global_include(${CMAKE_CURRENT_SOURCE_DIR}/ComputeLibrary/Include)
 endif()
 
 # Component private part, user config end

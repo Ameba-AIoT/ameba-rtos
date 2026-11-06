@@ -3,13 +3,13 @@
  * Title:        arm_bitreversal.c
  * Description:  Bitreversal functions
  *
- * $Date:        18. March 2019
- * $Revision:    V1.6.0
+ * $Date:        23 April 2021
+ * $Revision:    V1.9.0
  *
- * Target Processor: Cortex-M cores
+ * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
 /*
- * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -26,8 +26,14 @@
  * limitations under the License.
  */
 
-#include "arm_math.h"
+#include "dsp/transform_functions.h"
 #include "arm_common_tables.h"
+
+void arm_bitreversal_f32(
+	float32_t *pSrc,
+	uint16_t fftSize,
+	uint16_t bitRevFactor,
+	const uint16_t *pBitRevTab);
 
 /**
   @brief         In-place floating-point bit reversal function.
@@ -35,10 +41,9 @@
   @param[in]     fftSize      length of FFT
   @param[in]     bitRevFactor bit reversal modifier that supports different size FFTs with the same bit reversal table
   @param[in]     pBitRevTab   points to bit reversal table
-  @return        none
  */
 
-void arm_bitreversal_f32(
+ARM_DSP_ATTRIBUTE void arm_bitreversal_f32(
 	float32_t *pSrc,
 	uint16_t fftSize,
 	uint16_t bitRevFactor,
@@ -97,6 +102,11 @@ void arm_bitreversal_f32(
 	}
 }
 
+void arm_bitreversal_q31(
+	q31_t *pSrc,
+	uint32_t fftLen,
+	uint16_t bitRevFactor,
+	const uint16_t *pBitRevTab);
 
 /**
   @brief         In-place Q31 bit reversal function.
@@ -104,10 +114,9 @@ void arm_bitreversal_f32(
   @param[in]     fftLen       length of FFT.
   @param[in]     bitRevFactor bit reversal modifier that supports different size FFTs with the same bit reversal table
   @param[in]     pBitRevTab   points to bit reversal table
-  @return        none
 */
 
-void arm_bitreversal_q31(
+ARM_DSP_ATTRIBUTE void arm_bitreversal_q31(
 	q31_t *pSrc,
 	uint32_t fftLen,
 	uint16_t bitRevFactor,
@@ -165,6 +174,11 @@ void arm_bitreversal_q31(
 	}
 }
 
+void arm_bitreversal_q15(
+	q15_t *pSrc16,
+	uint32_t fftLen,
+	uint16_t bitRevFactor,
+	const uint16_t *pBitRevTab);
 
 
 /**
@@ -173,10 +187,9 @@ void arm_bitreversal_q31(
   @param[in]     fftLen       length of FFT
   @param[in]     bitRevFactor bit reversal modifier that supports different size FFTs with the same bit reversal table
   @param[in]     pBitRevTab   points to bit reversal table
-  @return        none
 */
 
-void arm_bitreversal_q15(
+ARM_DSP_ATTRIBUTE void arm_bitreversal_q15(
 	q15_t *pSrc16,
 	uint32_t fftLen,
 	uint16_t bitRevFactor,

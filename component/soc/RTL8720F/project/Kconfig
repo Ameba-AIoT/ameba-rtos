@@ -51,7 +51,6 @@ endmenu
 menu "CONFIG Link Option"
     choice
         prompt "IMG1(Bootloader) running on FLASH or SRAM?"
-        default IMG1_SRAM if SOLO
         default IMG1_FLASH
         config IMG1_FLASH
             bool "FLASH"
@@ -306,6 +305,8 @@ menu "CONFIG WIFI"
             bool "Enable RADAR"
             default n
 
+        orsource "../../../sensing_algo/Kconfig"
+
         config WHC_INTF_IPC_MENU
             bool
             select WHC_WIFI_API_PATH
@@ -394,6 +395,17 @@ menu "CONFIG BT"
         # IC BT capability
         config BT_HAS_MESH
             def_bool y
+        # config BT_HAS_BREDR
+        #     def_bool y
+
+        # choice
+        #     prompt "BT Mode Selection"
+        #     default BT_DUAL_MODE
+        #     config BT_BLE_ONLY
+        #         bool "BLE_ONLY"
+        #     config BT_DUAL_MODE
+        #         bool "DUAL_MODE"
+        # endchoice
 
         config BT_SDN    # controller is SDN
             def_bool y
@@ -418,7 +430,9 @@ config SHELL_TASK_STACK_BASIC_SIZE
 
 rsource "../../../lwip/Kconfig"
 
+if !AMEBA_RLS
 orsource "../../../wpan/Kconfig"
+endif
 
 rsource "../../../ssl/Kconfig"
 
@@ -432,6 +446,7 @@ menu "Verification and Test"
 endmenu
 endif
 
+if !AMEBA_RLS
 comment "--------Build Config---------"
 menu "Build Option"
 
@@ -444,16 +459,13 @@ config COMPILE_ROM
     depends on FPGA
 
 comment "Choose the build configuration"
-    choice
-        prompt "Link ROM Mode"
-        default LINK_ROM_SYMB
-        config LINK_ROM_LIB
-            bool "Link_ROM_Library"
-
-        config LINK_ROM_SYMB
-            bool "Link_ROM_Symbol"
-    endchoice
+config LINK_ROM_LIB
+    bool "Link_ROM_Library"
 endmenu
+endif
+
+config LINK_ROM_SYMB
+    def_bool !LINK_ROM_LIB
 
 comment "----end of MENUCONFIG FOR General------"
 

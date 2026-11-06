@@ -27,7 +27,6 @@
 #define _AMEBA_SOLO_CFG_H_
 
 #include "basic_types.h"
-#include "rom/fault_injection_hardening.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -111,7 +110,7 @@ extern const SOLO_REGION_TypeDef solo_km55ns_psram[SOLO_REGION_NUM];	/*!< PSRAM 
  *         reach KM55TZ's private memory or reserved peripherals.
  * @retval FIH_SUCCESS on success.
  */
-fih_ret BOOT_RAM_SoloCfg(void);
+int BOOT_RAM_SoloCfg(void);
 
 /** Number of SOLO MPU entries the user can populate in ameba_solocfg.c. */
 #define SOLO_MPU_ENTRY_NUM	2

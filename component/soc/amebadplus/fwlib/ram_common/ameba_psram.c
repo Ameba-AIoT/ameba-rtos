@@ -241,49 +241,6 @@ void PSRAM_PHY_Init(PSPHY_InitTypeDef *PSPHY_InitStruct)
 
 }
 
-void PSRAM_InfoDump(void)
-{
-	SPIC_TypeDef *psram_ctrl = PSRAMC_DEV;
-	PSPHY_TypeDef *psram_phy = PSRAMPHY_DEV;
-	RRAM_TypeDef *rram = RRAM_DEV;
-	u8 psramir0[2] = {0, 0};
-	u8 psramcr0[2] = {0, 0};
-	u8 psramcr1[2] = {0, 0};
-	u8 psram_type = rram->PSRAM_TYPE;
-
-	RTK_LOGI(TAG, "BDnum is 0x%x\n", ChipInfo_BDNum());
-
-	RTK_LOGI(TAG, "SSIENR\t0x%x=0x%x\n", &psram_ctrl->SSIENR, psram_ctrl->SSIENR);
-	RTK_LOGI(TAG, "CTRLR0\t0x%x=0x%x\n", &psram_ctrl->CTRLR0, psram_ctrl->CTRLR0);
-	RTK_LOGI(TAG, "BAUDR\t0x%x=0x%x\n", &psram_ctrl->BAUDR, psram_ctrl->BAUDR);
-	RTK_LOGI(TAG, "VALID_CMD\t0x%x=0x%x\n", &psram_ctrl->VALID_CMD, psram_ctrl->VALID_CMD);
-	RTK_LOGI(TAG, "CTRLR2\t0x%x=0x%x\n", &psram_ctrl->CTRLR2, psram_ctrl->CTRLR2);
-	RTK_LOGI(TAG, "DEVICE_INFO\t0x%x=0x%x\n", &psram_ctrl->DEVICE_INFO, psram_ctrl->DEVICE_INFO);
-	RTK_LOGI(TAG, "TPR0\t0x%x=0x%x\n", &psram_ctrl->TPR0, psram_ctrl->TPR0);
-	RTK_LOGI(TAG, "READ_FAST_SINGLE\t0x%x=0x%x\n", &psram_ctrl->READ_FAST_SINGLE, psram_ctrl->READ_FAST_SINGLE);
-	RTK_LOGI(TAG, "WRITE_SIGNLE\t0x%x=0x%x\n", &psram_ctrl->WRITE_SIGNLE, psram_ctrl->WRITE_SIGNLE);
-	RTK_LOGI(TAG, "AUTO_LENGTH\t0x%x=0x%x\n", &psram_ctrl->AUTO_LENGTH, psram_ctrl->AUTO_LENGTH);
-	RTK_LOGI(TAG, "USER_LENGTH\t0x%x=0x%x\n", &psram_ctrl->USER_LENGTH, psram_ctrl->USER_LENGTH);
-	RTK_LOGI(TAG, "AUTO_LENGTH2\t0x%x=0x%x\n", &psram_ctrl->AUTO_LENGTH2, psram_ctrl->AUTO_LENGTH2);
-	RTK_LOGI(TAG, "SR\t0x%x=0x%x\n", &psram_ctrl->SR, psram_ctrl->SR);
-
-	RTK_LOGI(TAG, "PSPHY_CAL_PAR\t0x%x=0x%x\n", &psram_phy->PSPHY_CAL_PAR, psram_phy->PSPHY_CAL_PAR);
-	RTK_LOGI(TAG, "PSPHY_PHY_CTRL\t0x%x=0x%x\n", &psram_phy->PSPHY_PHY_CTRL, psram_phy->PSPHY_PHY_CTRL);
-	RTK_LOGI(TAG, "PSPHY_DBG_SEL\t0x%x=0x%x\n", &psram_phy->PSPHY_DBG_SEL, psram_phy->PSPHY_DBG_SEL);
-
-	PSRAM_REG_Read(psram_type, 0x0, 2, psramir0, 0);
-	RTK_LOGI(TAG, "IR0[1]=0x%x\n", psramir0[1]);
-	RTK_LOGI(TAG, "IR0[0]=0x%x\n", psramir0[0]);
-	PSRAM_REG_Read(psram_type, 0x0, 2, psramcr0, 1);
-	RTK_LOGI(TAG, "CR0[1]=0x%x\n", psramcr0[1]);
-	RTK_LOGI(TAG, "CR0[0]=0x%x\n", psramcr0[0]);
-	PSRAM_REG_Read(psram_type, 0x1, 2, psramcr1, 1);
-	RTK_LOGI(TAG, "CR1[1]=0x%x\n", psramcr1[1]);
-	RTK_LOGI(TAG, "CR1[0]=0x%x\n", psramcr1[0]);
-
-}
-
-
 /**
   * @brief Initializes the PSRAM controller according to the specified
   *   parameters in the PSRAM_InitStruct

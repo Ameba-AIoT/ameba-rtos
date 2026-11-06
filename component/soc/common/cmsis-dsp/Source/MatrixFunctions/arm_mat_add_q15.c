@@ -1,15 +1,16 @@
-/* ----------------------------------------------------------------------
+﻿/* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
  * Title:        arm_mat_add_q15.c
  * Description:  Q15 matrix addition
  *
- * $Date:        18. March 2019
- * $Revision:    V1.6.0
+ * $Date:        23 April 2021
+ * $Revision:    V1.9.0
  *
- * Target Processor: Cortex-M cores
+ * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
+
 /*
- * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -25,8 +26,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "arm_compiler_specific.h"
 
-#include "arm_math.h"
+
+#include "dsp/matrix_functions.h"
 
 /**
   @ingroup groupMatrix
@@ -50,16 +53,16 @@
                    The function uses saturating arithmetic.
                    Results outside of the allowable Q15 range [0x8000 0x7FFF] are saturated.
  */
-#if defined(ARM_MATH_MVEI)
+#if defined(ARM_MATH_MVEI) && !defined(ARM_MATH_AUTOVECTORIZE)
 
-arm_status arm_mat_add_q15(
+ARM_DSP_ATTRIBUTE arm_status arm_mat_add_q15(
 	const arm_matrix_instance_q15 *pSrcA,
 	const arm_matrix_instance_q15 *pSrcB,
 	arm_matrix_instance_q15 *pDst)
 {
 	uint32_t        numSamples;       /* total number of elements in the matrix  */
 	q15_t          *pDataA, *pDataB, *pDataDst;
-	q15x8_t       vecA, vecB, vecDst;
+	q15x8_t       vecA, vecB, vecDst = { 0 };
 	q15_t const   *pSrcAVec;
 	q15_t const   *pSrcBVec;
 	uint32_t        blkCnt;           /* loop counters */
@@ -129,7 +132,7 @@ arm_status arm_mat_add_q15(
 }
 
 #else
-arm_status arm_mat_add_q15(
+ARM_DSP_ATTRIBUTE arm_status arm_mat_add_q15(
 	const arm_matrix_instance_q15 *pSrcA,
 	const arm_matrix_instance_q15 *pSrcB,
 	arm_matrix_instance_q15 *pDst)

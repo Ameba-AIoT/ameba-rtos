@@ -1,15 +1,16 @@
-/* ----------------------------------------------------------------------
+﻿/* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
  * Title:        arm_mat_scale_q15.c
  * Description:  Multiplies a Q15 matrix by a scalar
  *
- * $Date:        18. March 2019
- * $Revision:    V1.6.0
+ * $Date:        23 April 2021
+ * $Revision:    V1.9.0
  *
- * Target Processor: Cortex-M cores
+ * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
+
 /*
- * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -25,8 +26,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "arm_compiler_specific.h"
 
-#include "arm_math.h"
+
+#include "dsp/matrix_functions.h"
 
 /**
   @ingroup groupMatrix
@@ -51,8 +54,8 @@
                    The input data <code>*pSrc</code> and <code>scaleFract</code> are in 1.15 format.
                    These are multiplied to yield a 2.30 intermediate result and this is shifted with saturation to 1.15 format.
  */
-#if defined(ARM_MATH_MVEI)
-arm_status arm_mat_scale_q15(
+#if defined(ARM_MATH_MVEI) && !defined(ARM_MATH_AUTOVECTORIZE)
+ARM_DSP_ATTRIBUTE arm_status arm_mat_scale_q15(
 	const arm_matrix_instance_q15 *pSrc,
 	q15_t                     scaleFract,
 	int32_t                   shift,
@@ -129,7 +132,7 @@ arm_status arm_mat_scale_q15(
 }
 
 #else
-arm_status arm_mat_scale_q15(
+ARM_DSP_ATTRIBUTE arm_status arm_mat_scale_q15(
 	const arm_matrix_instance_q15 *pSrc,
 	q15_t                     scaleFract,
 	int32_t                   shift,
@@ -173,8 +176,8 @@ arm_status arm_mat_scale_q15(
 
 #if defined (ARM_MATH_DSP)
 			/* read 2 times 2 samples at a time from source */
-			inA1 = read_q15x2_ia((q15_t **) &pIn);
-			inA2 = read_q15x2_ia((q15_t **) &pIn);
+			inA1 = read_q15x2_ia(&pIn);
+			inA2 = read_q15x2_ia(&pIn);
 
 			/* Scale inputs and store result in temporary variables
 			 * in single cycle by packing the outputs */

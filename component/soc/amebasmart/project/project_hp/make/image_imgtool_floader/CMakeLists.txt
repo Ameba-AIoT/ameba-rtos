@@ -7,7 +7,7 @@ add_compile_definitions(
     CONFIG_NON_OS
 )
 
-ameba_add_subdirectory(${c_COMPONENT_DIR}/soc/common/flash_download/imgtool_floader)
+ameba_add_subdirectory_internal(${c_COMPONENT_DIR}/soc/common/flash_download/imgtool_floader)
 ameba_add_subdirectory(${c_COMPONENT_DIR}/soc/common/flash_wrapper)
 ameba_add_subdirectory(${c_CMPT_CRASHDUMP_DIR})
 ameba_add_subdirectory(${c_CMPT_CHIPINFO_DIR})

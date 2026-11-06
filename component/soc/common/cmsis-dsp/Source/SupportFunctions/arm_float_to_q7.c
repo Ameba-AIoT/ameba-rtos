@@ -1,15 +1,16 @@
-/* ----------------------------------------------------------------------
+﻿/* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
  * Title:        arm_float_to_q7.c
  * Description:  Converts the elements of the floating-point vector to Q7 vector
  *
- * $Date:        18. March 2019
- * $Revision:    V1.6.0
+ * $Date:        23 April 2021
+ * $Revision:    V1.9.0
  *
- * Target Processor: Cortex-M cores
+ * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
+
 /*
- * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -25,8 +26,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "arm_compiler_specific.h"
 
-#include "arm_math.h"
+
+#include "dsp/support_functions.h"
 
 /**
   @ingroup groupSupport
@@ -42,7 +45,6 @@
  * @param[in]       *pSrc points to the floating-point input vector
  * @param[out]      *pDst points to the Q7 output vector
  * @param[in]       blockSize length of the input vector
- * @return none.
  *
  *\par Description:
  * \par
@@ -59,7 +61,7 @@
  * defined in the preprocessor section of project options.
  */
 #if defined(ARM_MATH_MVEF) && !defined(ARM_MATH_AUTOVECTORIZE)
-void arm_float_to_q7(
+ARM_DSP_ATTRIBUTE void arm_float_to_q7(
 	const float32_t *pSrc,
 	q7_t *pDst,
 	uint32_t blockSize)
@@ -67,8 +69,8 @@ void arm_float_to_q7(
 	uint32_t         blkCnt;     /* loop counters */
 	float32_t       maxQ = powf(2.0, 7);
 	f32x4x4_t       tmp;
-	q15x8_t         evVec, oddVec;
-	q7x16_t         vecDst;
+	q15x8_t         evVec = { 0 }, oddVec = { 0 };
+	q7x16_t         vecDst = { 0 };
 	float32_t const *pSrcVec;
 #ifdef ARM_MATH_ROUNDING
 	float32_t in;
@@ -136,7 +138,7 @@ void arm_float_to_q7(
 }
 #else
 #if defined(ARM_MATH_NEON)
-void arm_float_to_q7(
+ARM_DSP_ATTRIBUTE void arm_float_to_q7(
 	const float32_t *pSrc,
 	q7_t *pDst,
 	uint32_t blockSize)
@@ -234,7 +236,7 @@ void arm_float_to_q7(
 
 }
 #else
-void arm_float_to_q7(
+ARM_DSP_ATTRIBUTE void arm_float_to_q7(
 	const float32_t *pSrc,
 	q7_t *pDst,
 	uint32_t blockSize)

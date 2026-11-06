@@ -67,8 +67,12 @@
 #include "altcp_tls_mbedtls_mem.h"
 
 /* @todo: which includes are really needed? */
+#if defined(CONFIG_MBEDTLS_USE_LEGACY_API)
 #include "mbedtls/entropy.h"
 #include "mbedtls/ctr_drbg.h"
+#else
+#include "mbedtls/psa_util.h"
+#endif
 #include "mbedtls/certs.h"
 #include "mbedtls/x509.h"
 #include "mbedtls/ssl.h"
@@ -97,8 +101,10 @@ extern const struct altcp_functions altcp_mbedtls_functions;
 /** Our global mbedTLS configuration (server-specific, not connection-specific) */
 struct altcp_tls_config {
   mbedtls_ssl_config conf;
+#if defined(CONFIG_MBEDTLS_USE_LEGACY_API)
   mbedtls_entropy_context entropy;
   mbedtls_ctr_drbg_context ctr_drbg;
+#endif
   mbedtls_x509_crt *cert;
   mbedtls_pk_context *pkey;
   mbedtls_x509_crt *ca;
@@ -713,6 +719,7 @@ altcp_tls_create_config(int is_server, int have_cert, int have_pkey, int have_ca
   }
 
   mbedtls_ssl_config_init(&conf->conf);
+#if defined(CONFIG_MBEDTLS_USE_LEGACY_API)
   mbedtls_entropy_init(&conf->entropy);
   mbedtls_ctr_drbg_init(&conf->ctr_drbg);
 
@@ -723,6 +730,7 @@ altcp_tls_create_config(int is_server, int have_cert, int have_pkey, int have_ca
     altcp_mbedtls_free_config(conf);
     return NULL;
   }
+#endif
 
   /* Setup ssl context (@todo: what's different for a client here? -> might better be done on listen/connect) */
   ret = mbedtls_ssl_config_defaults(&conf->conf, is_server ? MBEDTLS_SSL_IS_SERVER : MBEDTLS_SSL_IS_CLIENT,
@@ -734,7 +742,11 @@ altcp_tls_create_config(int is_server, int have_cert, int have_pkey, int have_ca
   }
   mbedtls_ssl_conf_authmode(&conf->conf, MBEDTLS_SSL_VERIFY_OPTIONAL);
 
+#if defined(CONFIG_MBEDTLS_USE_LEGACY_API)
   mbedtls_ssl_conf_rng(&conf->conf, mbedtls_ctr_drbg_random, &conf->ctr_drbg);
+#else
+  mbedtls_ssl_conf_rng(&conf->conf, mbedtls_psa_get_random, MBEDTLS_PSA_RANDOM_STATE);
+#endif
 #if ALTCP_MBEDTLS_DEBUG != LWIP_DBG_OFF
   mbedtls_ssl_conf_dbg(&conf->conf, altcp_mbedtls_debug, stdout);
 #endif

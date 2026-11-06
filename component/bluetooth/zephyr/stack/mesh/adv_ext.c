@@ -129,6 +129,15 @@ static struct bt_mesh_ext_adv advs[] = {
 BUILD_ASSERT(ARRAY_SIZE(advs) <= CONFIG_BT_EXT_ADV_MAX_ADV_SET,
 	     "Insufficient adv instances");
 
+#if ZEPHYR_RTK_PATCH
+void zephyr_mesh_adv_ext_work_reset(void)
+{
+	for (size_t i = 0; i < ARRAY_SIZE(advs); i++) {
+		k_work_reset(&advs[i].work);
+	}
+}
+#endif
+
 static inline struct bt_mesh_ext_adv *relay_adv_get(void)
 {
 	if (!!(CONFIG_BT_MESH_RELAY_ADV_SETS)) {

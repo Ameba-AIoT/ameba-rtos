@@ -1,15 +1,16 @@
-/* ----------------------------------------------------------------------
+﻿/* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
  * Title:        arm_biquad_cascade_df2T_f64.c
  * Description:  Processing function for floating-point transposed direct form II Biquad cascade filter
  *
- * $Date:        18. March 2019
- * $Revision:    V1.6.0
+ * $Date:        03 June 2022
+ * $Revision:    V1.9.1
  *
- * Target Processor: Cortex-M cores
+ * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
+
 /*
- * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -25,8 +26,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "arm_compiler_specific.h"
 
-#include "arm_math.h"
+
+#include "dsp/filtering_functions.h"
 
 /**
   @ingroup groupFilters
@@ -105,7 +108,7 @@
                    To do this manually without calling the init function, assign the follow subfields of the instance structure:
                    numStages, pCoeffs, pState. Also set all of the values in pState to zero.
   @par
-                   Use of the initialization function is optional.
+                   Use of the initialization function is optional except for the vectorized versions (Helium and Neon).
                    However, if the initialization function is used, then the instance structure cannot be placed into a const data section.
                    To place an instance structure into a const data section, the instance structure must be manually initialized.
                    Set the values in the state buffer to zeros before static initialization.
@@ -117,6 +120,13 @@
                    where <code>numStages</code> is the number of Biquad stages in the filter;
                    <code>pState</code> is the address of the state buffer.
                    <code>pCoeffs</code> is the address of the coefficient buffer;
+
+  @par           Neon version
+                  For Neon version, the function arm_biquad_cascade_df2T_compute_coefs_x must be
+                  used in addition to arm_biquad_cascade_df2T_init_x.
+
+                  See the documentation of arm_biquad_cascade_df2T_init_x for more details.
+
 */
 
 /**
@@ -125,16 +135,171 @@
  */
 
 /**
-  @brief         Processing function for the floating-point transposed direct form II Biquad cascade filter.
-  @param[in]     S         points to an instance of the filter data structure
-  @param[in]     pSrc      points to the block of input data
-  @param[out]    pDst      points to the block of output data
-  @param[in]     blockSize number of samples to process
-  @return        none
+ @brief         Processing function for the floating-point transposed direct form II Biquad cascade filter.
+ @param[in]     S         points to an instance of the filter data structure
+ @param[in]     pSrc      points to the block of input data
+ @param[out]    pDst      points to the block of output data
+ @param[in]     blockSize number of samples to process
  */
 
-LOW_OPTIMIZATION_ENTER
-void arm_biquad_cascade_df2T_f64(
+
+#if defined(ARM_MATH_NEON) && defined(__aarch64__)
+ARM_DSP_ATTRIBUTE void arm_biquad_cascade_df2T_f64(
+	const arm_biquad_cascade_df2T_instance_f64 *S,
+	const float64_t *pSrc,
+	float64_t *pDst,
+	uint32_t  blockSize)
+{
+
+
+
+	const float64_t *pIn = pSrc;                  /*  source pointer            */
+	float64_t Xn0;
+	float64_t acc0;
+	float64_t *pOut = pDst;                 /*  destination pointer       */
+	float64_t *pState = S->pState;          /*  State pointer             */
+	uint32_t  sample, stage = S->numStages; /*  loop counters             */
+	float64_t const *pCurCoeffs =          /*  coefficient pointer       */
+		(float64_t const *) S->pCoeffs;
+	float64x2_t b0Coeffs, a0Coeffs;           /*  Coefficients vector       */
+	float64x2_t state;                        /*  State vector*/
+	float64x2_t zeroV = vdupq_n_f64(0);
+
+	float64_t b0 ;
+
+
+	do {
+
+		/* Reading the coefficients */
+		b0 = *pCurCoeffs++ ;
+		b0Coeffs = vld1q_f64(pCurCoeffs);
+		pCurCoeffs += 2 ;
+		a0Coeffs = vld1q_f64(pCurCoeffs);
+		pCurCoeffs += 2 ;
+
+		state = vld1q_f64(pState);
+
+		sample = blockSize >> 1U;
+		while (sample > 0U) {
+
+			/* y[n] = b0 * x[n] + d1 */
+			/* d1 = b1 * x[n] + a1 * y[n] + d2 */
+			/* d2 = b2 * x[n] + a2 * y[n] */
+
+			Xn0 = *pIn++ ;
+
+			/* Calculation of acc0*/
+			acc0 = b0 * Xn0 + vgetq_lane_f64(state, 0);
+
+
+			/*
+			 *  final                  initial
+			 *  state   b0Coeffs        state  a0Coeffs
+			 *   |        |              |        |
+			 *   __       __             __       __
+			 *  /  \     /  \           /  \     /  \
+			 * | d1 | = | b1 | * Xn0 + | d2 | + | a1 | x acc0
+			 * | d2 |   | b2 |         | 0  |   | a2 |
+			 *  \__/     \__/           \__/     \__/
+			 */
+
+			/* state -> initial state (see above) */
+
+			state = vextq_f64(state, zeroV, 1);
+
+			/* Calculation of final state */
+			state = vfmaq_n_f64(state, b0Coeffs, Xn0);
+			state = vfmaq_n_f64(state, a0Coeffs, acc0);
+
+			*pOut++ = acc0 ;
+
+			/* y[n] = b0 * x[n] + d1 */
+			/* d1 = b1 * x[n] + a1 * y[n] + d2 */
+			/* d2 = b2 * x[n] + a2 * y[n] */
+
+			Xn0 = *pIn++ ;
+
+			/* Calculation of acc0*/
+			acc0 = b0 * Xn0 + vgetq_lane_f64(state, 0);
+
+
+			/*
+			 *  final                  initial
+			 *  state   b0Coeffs        state  a0Coeffs
+			 *   |        |              |        |
+			 *   __       __             __       __
+			 *  /  \     /  \           /  \     /  \
+			 * | d1 | = | b1 | * Xn0 + | d2 | + | a1 | x acc0
+			 * | d2 |   | b2 |         | 0  |   | a2 |
+			 *  \__/     \__/           \__/     \__/
+			 */
+
+			/* state -> initial state (see above) */
+
+			state = vextq_f64(state, zeroV, 1);
+
+			/* Calculation of final state */
+			state = vfmaq_n_f64(state, b0Coeffs, Xn0);
+			state = vfmaq_n_f64(state, a0Coeffs, acc0);
+
+			*pOut++ = acc0;
+			sample--;
+		}
+		sample = blockSize & 1 ;
+		while (sample > 0U) {
+
+			/* y[n] = b0 * x[n] + d1 */
+			/* d1 = b1 * x[n] + a1 * y[n] + d2 */
+			/* d2 = b2 * x[n] + a2 * y[n] */
+
+			Xn0 = *pIn++ ;
+
+			/* Calculation of acc0*/
+			acc0 = b0 * Xn0 + vgetq_lane_f64(state, 0);
+
+
+			/*
+			 *  final                  initial
+			 *  state   b0Coeffs        state  a0Coeffs
+			 *   |        |              |        |
+			 *   __       __             __       __
+			 *  /  \     /  \           /  \     /  \
+			 * | d1 | = | b1 | * Xn0 + | d2 | + | a1 | x acc0
+			 * | d2 |   | b2 |         | 0  |   | a2 |
+			 *  \__/     \__/           \__/     \__/
+			 */
+
+			/* state -> initial state (see above) */
+
+			state = vextq_f64(state, zeroV, 1);
+
+			/* Calculation of final state */
+			state = vfmaq_n_f64(state, b0Coeffs, Xn0);
+			state = vfmaq_n_f64(state, a0Coeffs, acc0);
+
+			*pOut++ = acc0 ;
+			sample--;
+		}
+		/* Store the updated state variables back into the state array */
+		pState[0] = vgetq_lane_f64(state, 0);
+		pState[1] = vgetq_lane_f64(state, 1);
+
+		pState += 2U;
+
+		/* The current stage output is given as the input to the next stage */
+		pIn = pDst;
+
+		/* Reset the output working pointer */
+		pOut = pDst;
+
+		stage--;
+
+	} while (stage > 0U);
+
+}
+#else
+
+ARM_DSP_ATTRIBUTE void arm_biquad_cascade_df2T_f64(
 	const arm_biquad_cascade_df2T_instance_f64 *S,
 	const float64_t *pSrc,
 	float64_t *pDst,
@@ -435,8 +600,10 @@ void arm_biquad_cascade_df2T_f64(
 	} while (stage > 0U);
 
 }
-LOW_OPTIMIZATION_EXIT
+#endif
+
+
 
 /**
-  @} end of BiquadCascadeDF2T group
+ @} end of BiquadCascadeDF2T group
  */

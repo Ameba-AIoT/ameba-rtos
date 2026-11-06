@@ -145,6 +145,13 @@ void rtw_ft_roam_reset(void)
 
 }
 
+int rtw_ft_reassoc_dbg(u16 argc, char **argv)
+{
+	UNUSED(argc);
+	UNUSED(argv);
+	return RTK_FAIL;
+}
+
 void rtw_ft_cap_update(void *a)
 {
 	UNUSED(a);

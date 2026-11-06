@@ -1,15 +1,16 @@
-/* ----------------------------------------------------------------------
+﻿/* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
  * Title:        arm_biquad_cascade_df1_q15.c
  * Description:  Processing function for the Q15 Biquad cascade DirectFormI(DF1) filter
  *
- * $Date:        18. March 2019
- * $Revision:    V1.6.0
+ * $Date:        23 April 2021
+ * $Revision:    V1.9.0
  *
- * Target Processor: Cortex-M cores
+ * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
+
 /*
- * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -25,8 +26,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "arm_compiler_specific.h"
 
-#include "arm_math.h"
+
+#include "dsp/filtering_functions.h"
 
 /**
   @ingroup groupFilters
@@ -43,7 +46,6 @@
   @param[in]     pSrc      points to the block of input data
   @param[out]    pDst      points to the location where the output result is written
   @param[in]     blockSize number of samples to process
-  @return        none
 
   @par           Scaling and Overflow Behavior
                    The function is implemented using a 64-bit internal accumulator.
@@ -56,9 +58,9 @@
                    Refer to \ref arm_biquad_cascade_df1_fast_q15() for a faster but less precise implementation of this filter.
  */
 
-#if defined(ARM_MATH_MVEI)
+#if defined(ARM_MATH_MVEI) && !defined(ARM_MATH_AUTOVECTORIZE)
 
-void arm_biquad_cascade_df1_q15(
+ARM_DSP_ATTRIBUTE void arm_biquad_cascade_df1_q15(
 	const arm_biquad_casd_df1_inst_q15 *S,
 	const q15_t *pSrc,
 	q15_t *pDst,
@@ -103,9 +105,9 @@ void arm_biquad_cascade_df1_q15(
 		bCoeffs1[6] = a1;
 
 		bCoeffs2 =
-			vsetq_lane_s32(vgetq_lane_s32((q31x4_t) bCoeffs0, 3), (q31x4_t) bCoeffs2, 3);
+			(q15x8_t)vsetq_lane_s32(vgetq_lane_s32((q31x4_t) bCoeffs0, 3), (q31x4_t) bCoeffs2, 3);
 		bCoeffs3 =
-			vsetq_lane_s32(vgetq_lane_s32((q31x4_t) bCoeffs1, 3), (q31x4_t) bCoeffs3, 3);
+			(q15x8_t)vsetq_lane_s32(vgetq_lane_s32((q31x4_t) bCoeffs1, 3), (q31x4_t) bCoeffs3, 3);
 
 
 		/* 2 first elements are garbage, will be updated with history */
@@ -309,7 +311,7 @@ void arm_biquad_cascade_df1_q15(
 	} while (--stages);
 }
 #else
-void arm_biquad_cascade_df1_q15(
+ARM_DSP_ATTRIBUTE void arm_biquad_cascade_df1_q15(
 	const arm_biquad_casd_df1_inst_q15 *S,
 	const q15_t *pSrc,
 	q15_t *pDst,

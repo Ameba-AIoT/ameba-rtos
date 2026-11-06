@@ -9,6 +9,10 @@
 
 /* Includes ------------------------------------------------------------------*/
 
+#ifdef USB_APP_AGGREGATE
+#include "basic_types.h"
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -28,7 +32,8 @@ extern "C" {
  * @return None
  */
 void example_usbh_cdc_ecm(void);
-
+int example_usbh_cdc_ecm_start(void);
+int example_usbh_cdc_ecm_stop(void);
 #ifdef __cplusplus
 }
 #endif

@@ -40,7 +40,7 @@ static const usbh_dev_id_t uvc_devs[] = {
 	{
 		.mMatchFlags = USBH_DEV_ID_MATCH_ITF_CLASS,
 		.idVendor = 0x0BDA,
-		.bInterfaceClass = USBH_UVC_CLASS_CODE,
+		.bInterfaceClass = USB_VIDEO_CLASS_CODE,
 	},
 	{
 	},
@@ -79,7 +79,7 @@ static int usbh_uvc_attach(usb_host_t *host)
 	usbh_uvc_vs_t *vs_intf = NULL;
 	usbh_ep_desc_t *ep = NULL;
 	usbh_pipe_t *pipe = NULL;
-	int status = HAL_OK;
+	int status = RTK_SUCCESS;
 	u32 xfer_len = 0;
 	u8 i;
 
@@ -87,7 +87,7 @@ static int usbh_uvc_attach(usb_host_t *host)
 
 	usbh_uvc_desc_init();
 	status = usbh_uvc_parse_cfgdesc(host);
-	if (status != HAL_OK) {
+	if (status != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Parse cfg desc fail\n");
 		/* Roll back whatever usbh_uvc_parse_cfgdesc() already built before it
 		 * failed (VC entity_list and any already-parsed VS format arrays).
@@ -351,7 +351,7 @@ static int usbh_uvc_setup(usb_host_t *host)
 		uvc->cb->setup();
 	}
 
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 /**
@@ -379,21 +379,21 @@ static void usbh_uvc_ctrl_set_alt_done(usbh_uvc_host_t *uvc, usbh_uvc_stream_t *
 		/* The URBs are sized from pipe->xfer_len of this alt: a negotiation freed the old ones,
 		 * a start() restart kept them. Allocated here, on every path to the streaming alt, so
 		 * that the SOF ISR never submits into a missing URB. */
-		if ((stream->urb_buffer == NULL) && (usbh_uvc_stream_alloc_urb_buffer(stream) != HAL_OK)) {
+		if ((stream->urb_buffer == NULL) && (usbh_uvc_stream_alloc_urb_buffer(stream) != RTK_SUCCESS)) {
 			stream->alt_active = 0U;
 			uvc->state = UVC_STATE_IDLE;
 			if ((uvc->cb != NULL) && (uvc->cb->set_param != NULL) && (restart == 0U)) {
-				uvc->cb->set_param(HAL_ERR_MEM);
+				uvc->cb->set_param(-RTK_ERR_NOMEM);
 			}
 			return;
 		}
 #endif
-		if (usbh_open_pipe(uvc->host, &cur_set->pipe, cur_set->altsetting->endpoint, &usbh_uvc_driver) != HAL_OK) {
+		if (usbh_open_pipe(uvc->host, &cur_set->pipe, cur_set->altsetting->endpoint, &usbh_uvc_driver) != RTK_SUCCESS) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Open isoc pipe fail\n");
 			stream->alt_active = 0U;
 			uvc->state = UVC_STATE_IDLE;
 			if ((uvc->cb != NULL) && (uvc->cb->set_param != NULL) && (restart == 0U)) {
-				uvc->cb->set_param(HAL_ERR_HW);
+				uvc->cb->set_param(-RTK_ERR_IO);
 			}
 			return;
 		}
@@ -413,11 +413,11 @@ static void usbh_uvc_ctrl_set_alt_done(usbh_uvc_host_t *uvc, usbh_uvc_stream_t *
 			/* Interface is back on its streaming alt: resume the data path that
 			 * usbh_uvc_stop() halted. Resources were kept, so this only re-arms it.
 			 * usbh_uvc_start() already returned, so a failure can only be reported here. */
-			if (usbh_uvc_stream_start(stream) != HAL_OK) {
+			if (usbh_uvc_stream_start(stream) != RTK_SUCCESS) {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "S%d restart fail\n", stream->stream_idx);
 			}
 		} else if ((uvc->cb != NULL) && (uvc->cb->set_param != NULL)) {
-			uvc->cb->set_param(HAL_OK);
+			uvc->cb->set_param(RTK_SUCCESS);
 		} else {
 			/* no consumer for the result */
 		}
@@ -427,7 +427,7 @@ static void usbh_uvc_ctrl_set_alt_done(usbh_uvc_host_t *uvc, usbh_uvc_stream_t *
 		uvc->state = UVC_STATE_IDLE;
 		stream->state = STREAM_STATE_CTRL_IDLE;
 		if ((uvc->cb != NULL) && (uvc->cb->set_param != NULL) && (restart == 0U)) {
-			uvc->cb->set_param(HAL_ERR_HW);
+			uvc->cb->set_param(-RTK_ERR_IO);
 		}
 	}
 }
@@ -451,7 +451,7 @@ static void usbh_uvc_ctrl_set_alt_error(usbh_uvc_host_t *uvc, usbh_uvc_stream_t 
 	stream->state = STREAM_STATE_CTRL_IDLE;
 	uvc->state = UVC_STATE_ERROR;
 	if ((uvc->cb != NULL) && (uvc->cb->set_param != NULL) && (stream->start_pending == 0U)) {
-		uvc->cb->set_param(HAL_ERR_HW);
+		uvc->cb->set_param(-RTK_ERR_IO);
 	}
 	stream->start_pending = 0U;
 }
@@ -463,8 +463,8 @@ static void usbh_uvc_ctrl_set_alt_error(usbh_uvc_host_t *uvc, usbh_uvc_stream_t 
   */
 static int usbh_uvc_process_ctrl(usb_host_t *host, usbh_drv_msg_t *msg)
 {
-	int ret = HAL_OK;
-	int ret_status = HAL_BUSY;
+	int ret = RTK_SUCCESS;
+	int ret_status = -RTK_ERR_BUSY;
 	usbh_uvc_host_t *uvc = &uvc_host;
 	usbh_uvc_stream_t *stream = NULL;
 	u32 ctrl_struct_size;
@@ -477,14 +477,14 @@ static int usbh_uvc_process_ctrl(usb_host_t *host, usbh_drv_msg_t *msg)
 
 	if (stream_idx >= uvc->uvc_desc.vs_num) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Err S[%d]\n", stream_idx);
-		return HAL_OK;
+		return RTK_SUCCESS;
 	}
 
 	stream = &uvc->stream[stream_idx];
 
 	switch (stream->state) {
 	case STREAM_STATE_CTRL_IDLE:
-		ret_status = HAL_OK;
+		ret_status = RTK_SUCCESS;
 		break;
 
 	/* For setting parameters and enabling the stream. */
@@ -511,7 +511,7 @@ static int usbh_uvc_process_ctrl(usb_host_t *host, usbh_drv_msg_t *msg)
 	case STREAM_STATE_RESET_ALT:
 		ret = usbh_ctrl_set_interface(host, stream->cur_setting.bInterfaceNumber, 0);
 
-		if (ret == HAL_OK) {
+		if (ret == RTK_SUCCESS) {
 			if (stream->set_alt == 1U) {
 				/* 2: now at alt0, start probe/commit */
 				stream->state = STREAM_STATE_PROBE_NEGOTIATE;
@@ -519,9 +519,9 @@ static int usbh_uvc_process_ctrl(usb_host_t *host, usbh_drv_msg_t *msg)
 				uvc->state = UVC_STATE_IDLE;
 				stream->state = STREAM_STATE_CTRL_IDLE;
 			}
-			ret_status = HAL_OK;
-		} else if (ret == HAL_BUSY) {
-			/* Request in flight. Not counted: HAL_BUSY is a poll, not a failure, and giving
+			ret_status = RTK_SUCCESS;
+		} else if (ret == -RTK_ERR_BUSY) {
+			/* Request in flight. Not counted: -RTK_ERR_BUSY is a poll, not a failure, and giving
 			   up on it would leave the request holding EP0 while the next one is built. The
 			   host core bounds it (USBH_CTRL_XFER_TIMEOUT_MS) and reports an error below. */
 		} else {
@@ -534,7 +534,7 @@ static int usbh_uvc_process_ctrl(usb_host_t *host, usbh_drv_msg_t *msg)
 				uvc->state = UVC_STATE_IDLE;
 				stream->state = STREAM_STATE_CTRL_IDLE;
 			}
-			ret_status = HAL_OK;
+			ret_status = RTK_SUCCESS;
 		}
 		break;
 
@@ -543,22 +543,22 @@ static int usbh_uvc_process_ctrl(usb_host_t *host, usbh_drv_msg_t *msg)
 		 * may all fail without indicating overall failure.  Execution continues to
 		 * the next state; the final SET_ALT result is the authoritative pass/fail
 		 * indicator.  Only SET_ALT retry exhaustion notifies the app layer via
-		 * set_param(HAL_ERR_HW). */
+		 * set_param(-RTK_ERR_IO). */
 		ret = usbh_uvc_stream_ctrl_set_video(stream, 1U);
-		if (ret == HAL_OK) {
+		if (ret == RTK_SUCCESS) {
 			stream->state = STREAM_STATE_PROBE_UPDATE;
-		} else if (ret != HAL_BUSY) {
+		} else if (ret != -RTK_ERR_BUSY) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "P1 err\n");
 			stream->state = STREAM_STATE_PROBE_UPDATE;
-			ret_status = HAL_OK;
+			ret_status = RTK_SUCCESS;
 		} else {
-			/* HAL_BUSY: request in progress, retry on next cycle */
+			/* -RTK_ERR_BUSY: request in progress, retry on next cycle */
 		}
 		break;
 
 	case STREAM_STATE_PROBE_UPDATE:
 		ret = usbh_uvc_stream_ctrl_get_video(stream, 1U, USBH_UVC_GET_CUR);
-		if (ret == HAL_OK) {
+		if (ret == RTK_SUCCESS) {
 			stream->state = STREAM_STATE_PROBE_FINAL;
 			usbh_uvc_stream_control_t *ctrl = &stream->stream_ctrl;
 			size = usbh_uvc_get_ctrl_len_by_version(uvc->uvc_desc.vc_intf.vcheader->bcdUVC);
@@ -569,7 +569,7 @@ static int usbh_uvc_process_ctrl(usb_host_t *host, usbh_drv_msg_t *msg)
 			rx_len = usbh_get_last_ctrl_in_size(host);
 			if (rx_len < USBH_UVC_PROBE_MIN_LEN) {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "P2 short %d\n", rx_len);
-				ret_status = HAL_OK;
+				ret_status = RTK_SUCCESS;
 			} else if (uvc->request_buf != NULL) {
 				copy_len = MIN(MIN(rx_len, (u32)size), ctrl_struct_size);
 				DCache_Invalidate((u32)uvc->request_buf, size);
@@ -594,32 +594,32 @@ static int usbh_uvc_process_ctrl(usb_host_t *host, usbh_drv_msg_t *msg)
 			} else {
 				/* No request buffer: the host values stay in ctrl */
 			}
-		} else if (ret != HAL_BUSY) {
+		} else if (ret != -RTK_ERR_BUSY) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "P2 err\n");
 			stream->state = STREAM_STATE_PROBE_FINAL;
-			ret_status = HAL_OK;
+			ret_status = RTK_SUCCESS;
 		} else {
-			/* HAL_BUSY: request in progress, retry on next cycle */
+			/* -RTK_ERR_BUSY: request in progress, retry on next cycle */
 		}
 		break;
 
 	case STREAM_STATE_PROBE_FINAL:
 		ret = usbh_uvc_stream_ctrl_set_video(stream, 1U);
-		if (ret == HAL_OK) {
+		if (ret == RTK_SUCCESS) {
 			stream->state = STREAM_STATE_COMMIT;
-		} else if (ret != HAL_BUSY) {
+		} else if (ret != -RTK_ERR_BUSY) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "P3 err\n");
 			stream->state = STREAM_STATE_COMMIT;
-			ret_status = HAL_OK;
+			ret_status = RTK_SUCCESS;
 		} else {
-			/* HAL_BUSY: request in progress, retry on next cycle */
+			/* -RTK_ERR_BUSY: request in progress, retry on next cycle */
 		}
 		break;
 
 	/* Commit flow */
 	case STREAM_STATE_COMMIT:
 		ret = usbh_uvc_stream_ctrl_set_video(stream, 0U);
-		if (ret == HAL_OK) {
+		if (ret == RTK_SUCCESS) {
 			/* The frame buffers were sized at usbh_uvc_init() time, long before the device
 			 * reported dwMaxVideoFrameSize in PROBE/COMMIT, so they can no longer grow here.
 			 * Warn only: many cameras over-report dwMaxVideoFrameSize and still stream fine,
@@ -632,18 +632,18 @@ static int usbh_uvc_process_ctrl(usb_host_t *host, usbh_drv_msg_t *msg)
 				stream->state = STREAM_STATE_FIND_ALT;
 			} else {
 				uvc->state = UVC_STATE_IDLE;
-				ret_status = HAL_OK;
+				ret_status = RTK_SUCCESS;
 			}
-		} else if (ret != HAL_BUSY) {
+		} else if (ret != -RTK_ERR_BUSY) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "C err\n");
 			if (stream->set_alt == 1U) {
 				stream->state = STREAM_STATE_FIND_ALT;
 			} else {
 				uvc->state = UVC_STATE_IDLE;
-				ret_status = HAL_OK;
+				ret_status = RTK_SUCCESS;
 			}
 		} else {
-			/* HAL_BUSY: request in progress, retry on next cycle */
+			/* -RTK_ERR_BUSY: request in progress, retry on next cycle */
 		}
 		break;
 
@@ -654,19 +654,19 @@ static int usbh_uvc_process_ctrl(usb_host_t *host, usbh_drv_msg_t *msg)
 		stream->state = STREAM_STATE_SET_ALT;
 		uvc->stream_ctrl_idx = stream->stream_idx;
 		usbh_notify(uvc->host, 0, &usbh_uvc_driver);
-		ret_status = HAL_OK;
+		ret_status = RTK_SUCCESS;
 		break;
 
 	/* Set Alt : interface / altesetting */
 	case STREAM_STATE_SET_ALT:
 		ret = usbh_ctrl_set_interface(host, stream->cur_setting.bInterfaceNumber,
 									  stream->cur_setting.bAlternateSetting);
-		if (ret == HAL_OK) {
+		if (ret == RTK_SUCCESS) {
 			stream->set_alt = 0;
 			stream->set_alt_retry = 0;
 			/* ctrl_set_alt_done is the sole URB allocation and pipe-open point for all paths */
 			usbh_uvc_ctrl_set_alt_done(uvc, stream);
-		} else if (ret != HAL_BUSY) {
+		} else if (ret != -RTK_ERR_BUSY) {
 			/* USB 2.0 spec 9.4.10: device with single altsetting may STALL SET_INTERFACE. */
 			/* Fallback for isoc in uvc device, bulk in device (bAlternateSetting =0) not support yet*/
 			if (stream->vs_intf->alt_num == 1U) {
@@ -685,13 +685,13 @@ static int usbh_uvc_process_ctrl(usb_host_t *host, usbh_drv_msg_t *msg)
 				}
 			}
 		} else {
-			/* HAL_BUSY: request in progress, retry on next cycle */
+			/* -RTK_ERR_BUSY: request in progress, retry on next cycle */
 		}
-		ret_status = HAL_OK;
+		ret_status = RTK_SUCCESS;
 		break;
 
 	default:
-		ret_status = HAL_OK;
+		ret_status = RTK_SUCCESS;
 		break;
 	}
 
@@ -774,7 +774,7 @@ static void usbh_uvc_completed(usb_host_t *host, u8 pipe_num)
   */
 int usbh_uvc_class_init(void)
 {
-	int ret = HAL_OK;
+	int ret = RTK_SUCCESS;
 	ret = usbh_register_class(&usbh_uvc_driver);
 
 	return ret;
@@ -782,7 +782,7 @@ int usbh_uvc_class_init(void)
 
 /**
   * @brief  Deinit UVC class
-  * @retval Result of usbh_unregister_class(): on anything but HAL_OK nothing was released
+  * @retval Result of usbh_unregister_class(): on anything but RTK_SUCCESS nothing was released
   */
 int usbh_uvc_class_deinit(void)
 {

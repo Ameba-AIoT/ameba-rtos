@@ -4343,7 +4343,12 @@ configTLS_BLOCK_TYPE * pxTaskGetReent( void )
     TCB_t * pxTCB;
 
     #if ( configNUMBER_OF_CORES > 1 )
+        /* Mask interrupts so the task cannot be switched to another core
+         * between reading the core ID and indexing pxCurrentTCBs[], otherwise
+         * it gets the reent of the task running on the other core. */
+        UBaseType_t uxSavedInterruptStatus = portSET_INTERRUPT_MASK();
         pxTCB = pxCurrentTCBs[ portGET_CORE_ID() ];
+        portCLEAR_INTERRUPT_MASK( uxSavedInterruptStatus );
     #else
         pxTCB = pxCurrentTCB;
     #endif

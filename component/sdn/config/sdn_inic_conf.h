@@ -6,7 +6,6 @@
 #ifdef CONFIG_RTL8720F
 #define RTK_BLE_GAP_MAX_LINKS               6
 #define RTK_BLE_SUPPORT                     1
-#define RTK_BT_POWER_CONTROL_SUPPORT        0
 
 #define RTK_BLE_GATTS_SUPPORT               1
 #define RTK_BLE_GATTC_SUPPORT               1

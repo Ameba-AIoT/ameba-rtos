@@ -1,15 +1,16 @@
-/* ----------------------------------------------------------------------
+﻿/* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
  * Title:        arm_correlate_fast_opt_q15.c
  * Description:  Fast Q15 Correlation
  *
- * $Date:        18. March 2019
- * $Revision:    V1.6.0
+ * $Date:        23 April 2021
+ * $Revision:    V1.9.0
  *
- * Target Processor: Cortex-M cores
+ * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
+
 /*
- * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -25,8 +26,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "arm_compiler_specific.h"
 
-#include "arm_math.h"
+
+#include "dsp/filtering_functions.h"
 
 /**
   @ingroup groupFilters
@@ -45,7 +48,6 @@
   @param[in]     srcBLen    length of the second input sequence.
   @param[out]    pDst       points to the location where the output result is written.  Length 2 * max(srcALen, srcBLen) - 1.
   @param[in]     pScratch   points to scratch buffer of size max(srcALen, srcBLen) + 2*min(srcALen, srcBLen) - 2.
-  @return        none
 
   @par           Scaling and Overflow Behavior
                    This fast version uses a 32-bit accumulator with 2.30 format.
@@ -61,7 +63,7 @@
                    Refer to \ref arm_correlate_q15() for a slower implementation of this function which uses a 64-bit accumulator to avoid wrap around distortion.
  */
 
-void arm_correlate_fast_opt_q15(
+ARM_DSP_ATTRIBUTE void arm_correlate_fast_opt_q15(
 	const q15_t *pSrcA,
 	uint32_t srcALen,
 	const q15_t *pSrcB,
@@ -170,10 +172,10 @@ void arm_correlate_fast_opt_q15(
 	blkCnt = (srcALen + srcBLen - 1U) >> 2;
 
 	while (blkCnt > 0) {
-		/* Initialze temporary scratch pointer as scratch1 */
+		/* Initialize temporary scratch pointer as scratch1 */
 		pScr1 = pScratch;
 
-		/* Clear Accumlators */
+		/* Clear Accumulators */
 		acc0 = 0;
 		acc1 = 0;
 		acc2 = 0;
@@ -192,7 +194,7 @@ void arm_correlate_fast_opt_q15(
 			y1 = read_q15x2_ia((q15_t **) &pIn2);
 			y2 = read_q15x2_ia((q15_t **) &pIn2);
 
-			/* multiply and accumlate */
+			/* multiply and accumulate */
 			acc0 = __SMLAD(x1, y1, acc0);
 			acc2 = __SMLAD(x2, y1, acc2);
 
@@ -203,13 +205,13 @@ void arm_correlate_fast_opt_q15(
 			x3 = __PKHBT(x1, x2, 0);
 #endif
 
-			/* multiply and accumlate */
+			/* multiply and accumulate */
 			acc1 = __SMLADX(x3, y1, acc1);
 
 			/* Read next two samples from scratch buffer */
 			x1 = read_q15x2_ia(&pScr1);
 
-			/* multiply and accumlate */
+			/* multiply and accumulate */
 			acc0 = __SMLAD(x2, y2, acc0);
 			acc2 = __SMLAD(x1, y2, acc2);
 
@@ -244,7 +246,7 @@ void arm_correlate_fast_opt_q15(
 		tapCnt = (srcBLen) & 3U;
 
 		while (tapCnt > 0U) {
-			/* accumlate the results */
+			/* accumulate the results */
 			acc0 += (*pScr1++ * *pIn2);
 			acc1 += (*pScr1++ * *pIn2);
 			acc2 += (*pScr1++ * *pIn2);
@@ -286,10 +288,10 @@ void arm_correlate_fast_opt_q15(
 
 	/* Calculate correlation for remaining samples of Bigger length sequence */
 	while (blkCnt > 0) {
-		/* Initialze temporary scratch pointer as scratch1 */
+		/* Initialize temporary scratch pointer as scratch1 */
 		pScr1 = pScratch;
 
-		/* Clear Accumlators */
+		/* Clear Accumulators */
 		acc0 = 0;
 
 		tapCnt = (srcBLen) >> 1U;
@@ -309,7 +311,7 @@ void arm_correlate_fast_opt_q15(
 		/* apply same above for remaining samples of smaller length sequence */
 		while (tapCnt > 0U) {
 
-			/* accumlate the results */
+			/* accumulate the results */
 			acc0 += (*pScr1++ * *pIn2++);
 
 			/* Decrement loop counter */

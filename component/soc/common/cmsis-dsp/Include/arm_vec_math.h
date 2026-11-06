@@ -1,11 +1,12 @@
 /******************************************************************************
  * @file     arm_vec_math.h
  * @brief    Public header file for CMSIS DSP Library
- * @version  V1.7.0
- * @date     15. October 2019
+ * @version  V1.10.0
+ * @date     08 July 2021
+ * Target Processor: Cortex-M and Cortex-A cores
  ******************************************************************************/
 /*
- * Copyright (c) 2010-2019 Arm Limited or its affiliates. All rights reserved.
+ * Copyright (c) 2010-2021 Arm Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -22,10 +23,10 @@
  * limitations under the License.
  */
 
-#ifndef _ARM_VEC_MATH_H
-#define _ARM_VEC_MATH_H
+#ifndef ARM_VEC_MATH_H
+#define ARM_VEC_MATH_H
 
-#include "arm_math.h"
+#include "arm_math_types.h"
 #include "arm_common_tables.h"
 #include "arm_helium_utils.h"
 
@@ -65,11 +66,11 @@ __STATIC_INLINE f32x4_t vrecip_medprec_f32(
 	b = 2.0f - xinv.f * ax;
 	xinv.f = xinv.f * b;
 
-	xinv.f = vdupq_m(xinv.f, INFINITY, vcmpeqq(x, 0.0f));
+	xinv.f = vdupq_m_n_f32(xinv.f, F32_MAX, vcmpeqq_n_f32(x, 0.0f));
 	/*
 	 * restore sign
 	 */
-	xinv.f = vnegq_m(xinv.f, xinv.f, vcmpltq(x, 0.0f));
+	xinv.f = vnegq_m_f32(xinv.f, xinv.f, vcmpltq_n_f32(x, 0.0f));
 
 	return xinv.f;
 }
@@ -102,11 +103,11 @@ __STATIC_INLINE f32x4_t vrecip_hiprec_f32(
 	b = 2.0f - xinv.f * ax;
 	xinv.f = xinv.f * b;
 
-	xinv.f = vdupq_m(xinv.f, INFINITY, vcmpeqq(x, 0.0f));
+	xinv.f = vdupq_m_n_f32(xinv.f, F32_MAX, vcmpeqq_n_f32(x, 0.0f));
 	/*
 	 * restore sign
 	 */
-	xinv.f = vnegq_m(xinv.f, xinv.f, vcmpltq(x, 0.0f));
+	xinv.f = vnegq_m_f32(xinv.f, xinv.f, vcmpltq_n_f32(x, 0.0f));
 
 	return xinv.f;
 }
@@ -114,7 +115,7 @@ __STATIC_INLINE f32x4_t vrecip_hiprec_f32(
 __STATIC_INLINE f32x4_t vdiv_f32(
 	f32x4_t num, f32x4_t den)
 {
-	return vmulq(num, vrecip_hiprec_f32(den));
+	return vmulq_f32(num, vrecip_hiprec_f32(den));
 }
 
 /**
@@ -128,13 +129,13 @@ __STATIC_INLINE f32x4_t vtaylor_polyq_f32(
 	f32x4_t           x,
 	const float32_t *coeffs)
 {
-	f32x4_t         A = vfmasq(vdupq_n_f32(coeffs[4]), x, coeffs[0]);
-	f32x4_t         B = vfmasq(vdupq_n_f32(coeffs[6]), x, coeffs[2]);
-	f32x4_t         C = vfmasq(vdupq_n_f32(coeffs[5]), x, coeffs[1]);
-	f32x4_t         D = vfmasq(vdupq_n_f32(coeffs[7]), x, coeffs[3]);
-	f32x4_t         x2 = vmulq(x, x);
-	f32x4_t         x4 = vmulq(x2, x2);
-	f32x4_t         res = vfmaq(vfmaq_f32(A, B, x2), vfmaq_f32(C, D, x2), x4);
+	f32x4_t         A = vfmasq_n_f32(vdupq_n_f32(coeffs[4]), x, coeffs[0]);
+	f32x4_t         B = vfmasq_n_f32(vdupq_n_f32(coeffs[6]), x, coeffs[2]);
+	f32x4_t         C = vfmasq_n_f32(vdupq_n_f32(coeffs[5]), x, coeffs[1]);
+	f32x4_t         D = vfmasq_n_f32(vdupq_n_f32(coeffs[7]), x, coeffs[3]);
+	f32x4_t         x2 = vmulq_f32(x, x);
+	f32x4_t         x4 = vmulq_f32(x2, x2);
+	f32x4_t         res = vfmaq_f32(vfmaq_f32(A, B, x2), vfmaq_f32(C, D, x2), x4);
 
 	return res;
 }
@@ -173,22 +174,22 @@ __STATIC_INLINE f32x4_t vlogq_f32(f32x4_t vecIn)
 	 * a = (__logf_lut_f32[4] * r.f) + (__logf_lut_f32[0]);
 	 */
 	vecAcc0 = vdupq_n_f32(__logf_lut_f32[0]);
-	vecAcc0 = vfmaq(vecAcc0, vecTmpFlt1, __logf_lut_f32[4]);
+	vecAcc0 = vfmaq_n_f32(vecAcc0, vecTmpFlt1, __logf_lut_f32[4]);
 	/*
 	 * b = (__logf_lut_f32[6] * r.f) + (__logf_lut_f32[2]);
 	 */
 	vecAcc1 = vdupq_n_f32(__logf_lut_f32[2]);
-	vecAcc1 = vfmaq(vecAcc1, vecTmpFlt1, __logf_lut_f32[6]);
+	vecAcc1 = vfmaq_n_f32(vecAcc1, vecTmpFlt1, __logf_lut_f32[6]);
 	/*
 	 * c = (__logf_lut_f32[5] * r.f) + (__logf_lut_f32[1]);
 	 */
 	vecAcc2 = vdupq_n_f32(__logf_lut_f32[1]);
-	vecAcc2 = vfmaq(vecAcc2, vecTmpFlt1, __logf_lut_f32[5]);
+	vecAcc2 = vfmaq_n_f32(vecAcc2, vecTmpFlt1, __logf_lut_f32[5]);
 	/*
 	 * d = (__logf_lut_f32[7] * r.f) + (__logf_lut_f32[3]);
 	 */
 	vecAcc3 = vdupq_n_f32(__logf_lut_f32[3]);
-	vecAcc3 = vfmaq(vecAcc3, vecTmpFlt1, __logf_lut_f32[7]);
+	vecAcc3 = vfmaq_n_f32(vecAcc3, vecTmpFlt1, __logf_lut_f32[7]);
 	/*
 	 * a = a + b * xx;
 	 */
@@ -205,14 +206,14 @@ __STATIC_INLINE f32x4_t vlogq_f32(f32x4_t vecIn)
 	/*
 	 * r.f = a + c * xx;
 	 */
-	vecAcc0 = vfmaq(vecAcc0, vecAcc2, vecTmpFlt0);
+	vecAcc0 = vfmaq_f32(vecAcc0, vecAcc2, vecTmpFlt0);
 	/*
 	 * add exponent
 	 * r.f = r.f + ((float32_t) m) * __logf_rng_f32;
 	 */
-	vecAcc0 = vfmaq(vecAcc0, vecExpUnBiasedFlt, __logf_rng_f32);
+	vecAcc0 = vfmaq_n_f32(vecAcc0, vecExpUnBiasedFlt, __logf_rng_f32);
 	// set log0 down to -inf
-	vecAcc0 = vdupq_m(vecAcc0, -INFINITY, vcmpeqq(vecIn, 0.0f));
+	vecAcc0 = vdupq_m(vecAcc0, -F32_MAX, vcmpeqq(vecIn, 0.0f));
 	return vecAcc0;
 }
 
@@ -266,7 +267,7 @@ __STATIC_INLINE f32x4_t vrecip_f32(f32x4_t vecIn)
 	vecTmp = vfmasq(vecW, vecTmp, 8.0f);
 	v.f = vmulq(v.f,  vecTmp);
 
-	v.f = vdupq_m(v.f, INFINITY, vcmpeqq(vecIn, 0.0f));
+	v.f = vdupq_m(v.f, F32_MAX, vcmpeqq(vecIn, 0.0f));
 	/*
 	 * restore sign
 	 */
@@ -295,10 +296,10 @@ __STATIC_INLINE f32x4_t vpowq_f32(
 
 #endif /* (defined(ARM_MATH_MVEF) || defined(ARM_MATH_HELIUM)) && !defined(ARM_MATH_AUTOVECTORIZE)*/
 
-#if (defined(ARM_MATH_MVEI) || defined(ARM_MATH_HELIUM))
+#if (defined(ARM_MATH_MVEI) || defined(ARM_MATH_HELIUM)) && !defined(ARM_MATH_AUTOVECTORIZE)
 #endif /* (defined(ARM_MATH_MVEI) || defined(ARM_MATH_HELIUM)) */
 
-#if (defined(ARM_MATH_NEON) || defined(ARM_MATH_NEON_EXPERIMENTAL)) && !defined(ARM_MATH_AUTOVECTORIZE)
+#if defined(ARM_MATH_NEON) || defined(ARM_MATH_NEON_EXPERIMENTAL)
 
 #include "NEMath.h"
 /**
@@ -356,7 +357,7 @@ __STATIC_INLINE int32x4_t __arm_vec_sqrt_q31_neon(int32x4_t vec)
 	return (vcvtq_n_s32_f32(temp, 31));
 }
 
-#endif /*  (defined(ARM_MATH_NEON) || defined(ARM_MATH_NEON_EXPERIMENTAL)) && !defined(ARM_MATH_AUTOVECTORIZE) */
+#endif /*  defined(ARM_MATH_NEON) || defined(ARM_MATH_NEON_EXPERIMENTAL)*/
 
 #ifdef   __cplusplus
 }

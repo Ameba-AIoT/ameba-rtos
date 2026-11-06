@@ -23,7 +23,9 @@ extern "C" {
 
 /* Exported functions --------------------------------------------------------*/
 
-void example_usbd_composite(void);
+void example_usbd_composite_cdc_acm_uac(void);
+int example_usbd_composite_cdc_acm_uac_start(void);
+int example_usbd_composite_cdc_acm_uac_stop(void);
 
 #ifdef __cplusplus
 }

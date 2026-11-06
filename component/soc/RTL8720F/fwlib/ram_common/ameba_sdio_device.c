@@ -323,8 +323,11 @@ void SPDIO_TxBd_DataReady_DeviceRx(SDIO_TypeDef *SDIO, PSPDIO_ADAPTER pSPDIODev,
 		} else {
 			pkt_len = *((u16 *)pkt_data);
 
-			if (pkt_len > pSPDIODev->device_rx_bufsz) {
-				RTK_LOGS(TAG, RTK_LOG_ERROR, "SDIO TX packet size is over tx buf size\n");
+			/* BT SDIO header is 3B len + 1B service id, so anything shorter than 4 is invalid */
+			if (pkt_len < 4 || pkt_len > pSPDIODev->device_rx_bufsz) {
+				RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid SDIO BT packet size %d, Just drop it\n", pkt_len);
+				ret = RTK_SUCCESS; // pretend we call the TX callback OK
+				valid = FALSE;
 			}
 		}
 

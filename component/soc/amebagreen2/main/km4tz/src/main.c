@@ -9,12 +9,17 @@
 #include "ssl_rom_to_ram_map.h"
 #ifdef CONFIG_MBEDTLS_ENABLED
 #include "threading_alt.h"
+#if !defined(CONFIG_MBEDTLS_USE_LEGACY_API)
+#include "psa/crypto.h"
+#include "rtk_assert.h"
+#endif
 #endif
 //#include "wifi_fast_connect.h"
 #if defined(CONFIG_BT_COEXIST)
 #include "rtw_coex_ipc.h"
 #endif
 #include "ameba_diagnose.h"
+#include "ameba_ota_rollback.h"
 
 static const char *const TAG = "MAIN";
 u32 use_hw_crypto_func;
@@ -66,6 +71,10 @@ void app_mbedtls_rom_init(void)
 	ssl_function_map.ssl_snprintf = (int (*)(char *s, size_t n, const char *format, ...))DiagSnPrintf;
 #if defined(CONFIG_MBEDTLS_THREADING)
 	mbedtls_threading_init();
+#endif
+#if defined(CONFIG_MBEDTLS_ENABLED) && !defined(CONFIG_MBEDTLS_USE_LEGACY_API)
+	psa_status_t psa_ret = psa_crypto_init();
+	rtk_assert(psa_ret == PSA_SUCCESS, TAG);
 #endif
 	/* mbedtls calls into the HW crypto engine with interrupts disabled via the
 	 * IPC semaphore, so cache inconsistency cannot occur; suppress the
@@ -143,6 +152,13 @@ _WEAK void app_example(void)
 {
 
 
+}
+
+/* OTA rollback: clear BootCnt once the application works. Override it to clear after the product's own self check.
+ * If the host is configured on km4ns instead, the product calls OTA_Rollback_Clear() on km4ns. */
+_WEAK void app_ota_rollback_ok_callback(void)
+{
+	OTA_Rollback_Clear();
 }
 
 void CPU1_WDG_RST_Handler(void)
@@ -223,6 +239,7 @@ int main(void)
 
 	/* Execute application example */
 	app_example();
+	app_ota_rollback_ok_callback();
 
 	RTK_LOGI(TAG, "AP START SCHEDULER \n");
 

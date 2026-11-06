@@ -35,9 +35,19 @@ set(KM4_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR}/project_km4)
 
 ###############################################################################
 # Add sub projects
-add_subdirectory(project_km4)
-add_subdirectory(project_km0)
+ameba_add_subdirectory(project_km4)
+ameba_add_subdirectory(project_km0)
 ###############################################################################
+ameba_install_files(
+    "${CMAKE_CURRENT_SOURCE_DIR}/default.conf"
+    "${CMAKE_CURRENT_SOURCE_DIR}/manifest.json5"
+    "${CMAKE_CURRENT_SOURCE_DIR}/ameba_layout.ld"
+    "${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.txt"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Kconfig"
+    "${CMAKE_CURRENT_SOURCE_DIR}/postbuild.cmake"
+    "${CMAKE_CURRENT_SOURCE_DIR}/AmebaDplus_Release_Note.txt"
+    "${c_BASEDIR}/component/soc/Kconfig"
+)
 
 ###############################################################################
 # Package final firmware

@@ -1,15 +1,16 @@
-/* ----------------------------------------------------------------------
+﻿/* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
  * Title:        arm_dot_prod_q15.c
  * Description:  Q15 dot product
  *
- * $Date:        18. March 2019
- * $Revision:    V1.6.0
+ * $Date:        23 April 2021
+ * $Revision:    V1.9.0
  *
- * Target Processor: Cortex-M cores
+ * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
+
 /*
- * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -25,8 +26,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "arm_compiler_specific.h"
 
-#include "arm_math.h"
+
+#include "dsp/basic_math_functions.h"
 
 /**
   @ingroup groupMath
@@ -43,7 +46,6 @@
   @param[in]     pSrcB      points to the second input vector
   @param[in]     blockSize  number of samples in each vector
   @param[out]    result     output result returned here
-  @return        none
 
   @par           Scaling and Overflow Behavior
                    The intermediate multiplications are in 1.15 x 1.15 = 2.30 format and these
@@ -52,11 +54,11 @@
                    there is no risk of overflow.
                    The return result is in 34.30 format.
  */
-#if defined(ARM_MATH_MVEI)
+#if defined(ARM_MATH_MVEI) && !defined(ARM_MATH_AUTOVECTORIZE)
 
 #include "arm_helium_utils.h"
 
-void arm_dot_prod_q15(
+ARM_DSP_ATTRIBUTE void arm_dot_prod_q15(
 	const q15_t *pSrcA,
 	const q15_t *pSrcB,
 	uint32_t blockSize,
@@ -102,7 +104,7 @@ void arm_dot_prod_q15(
 }
 
 #else
-void arm_dot_prod_q15(
+ARM_DSP_ATTRIBUTE void arm_dot_prod_q15(
 	const q15_t *pSrcA,
 	const q15_t *pSrcB,
 	uint32_t blockSize,
@@ -121,8 +123,8 @@ void arm_dot_prod_q15(
 
 #if defined (ARM_MATH_DSP)
 		/* Calculate dot product and store result in a temporary buffer. */
-		sum = __SMLALD(read_q15x2_ia((q15_t **) &pSrcA), read_q15x2_ia((q15_t **) &pSrcB), sum);
-		sum = __SMLALD(read_q15x2_ia((q15_t **) &pSrcA), read_q15x2_ia((q15_t **) &pSrcB), sum);
+		sum = __SMLALD(read_q15x2_ia(&pSrcA), read_q15x2_ia(&pSrcB), sum);
+		sum = __SMLALD(read_q15x2_ia(&pSrcA), read_q15x2_ia(&pSrcB), sum);
 #else
 		sum += (q63_t)((q31_t) * pSrcA++ * *pSrcB++);
 		sum += (q63_t)((q31_t) * pSrcA++ * *pSrcB++);
@@ -148,11 +150,7 @@ void arm_dot_prod_q15(
 		/* C = A[0]* B[0] + A[1]* B[1] + A[2]* B[2] + .....+ A[blockSize-1]* B[blockSize-1] */
 
 		/* Calculate dot product and store result in a temporary buffer. */
-//#if defined (ARM_MATH_DSP)
-//    sum  = __SMLALD(*pSrcA++, *pSrcB++, sum);
-//#else
 		sum += (q63_t)((q31_t) * pSrcA++ * *pSrcB++);
-//#endif
 
 		/* Decrement loop counter */
 		blkCnt--;

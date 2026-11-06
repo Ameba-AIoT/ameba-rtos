@@ -1,15 +1,16 @@
-/* ----------------------------------------------------------------------
+﻿/* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
  * Title:        arm_mat_cmplx_mult_q31.c
  * Description:  Floating-point matrix multiplication
  *
- * $Date:        18. March 2019
- * $Revision:    V1.6.0
+ * $Date:        23 April 2021
+ * $Revision:    V1.9.0
  *
- * Target Processor: Cortex-M cores
+ * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
+
 /*
- * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -25,8 +26,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "arm_compiler_specific.h"
 
-#include "arm_math.h"
+
+#include "dsp/matrix_functions.h"
 
 /**
   @ingroup groupMatrix
@@ -56,7 +59,7 @@
                    to avoid overflows, as a total of numColsA additions are performed internally.
                    The 2.62 accumulator is right shifted by 31 bits and saturated to 1.31 format to yield the final result.
  */
-#if defined(ARM_MATH_MVEI)
+#if defined(ARM_MATH_MVEI) && !defined(ARM_MATH_AUTOVECTORIZE)
 
 #include "arm_helium_utils.h"
 
@@ -514,7 +517,7 @@ __STATIC_INLINE arm_status arm_mat_cmplx_mult_q31_4x4_mve(
 }
 
 
-arm_status arm_mat_cmplx_mult_q31(
+ARM_DSP_ATTRIBUTE arm_status arm_mat_cmplx_mult_q31(
 	const arm_matrix_instance_q31 *pSrcA,
 	const arm_matrix_instance_q31 *pSrcB,
 	arm_matrix_instance_q31 *pDst)
@@ -822,7 +825,85 @@ arm_status arm_mat_cmplx_mult_q31(
 }
 
 #else
-arm_status arm_mat_cmplx_mult_q31(
+
+#if defined(ARM_MATH_NEON)
+/**
+  @brief         Q31 Complex matrix multiplication.
+  @param[in]     pSrcA      points to first input complex matrix structure
+  @param[in]     pSrcB      points to second input complex matrix structure
+  @param[out]    pDst       points to output complex matrix structure
+  @return        execution status
+                   - \ref ARM_MATH_SUCCESS       : Operation successful
+                   - \ref ARM_MATH_SIZE_MISMATCH : Matrix size check failed
+
+  */
+struct _arm_complex_q31 {
+	\
+	q31_t re;
+	\
+	q31_t im;
+	\
+};
+
+#define LANE 4
+#define DTYPE struct _arm_complex_q31
+#define HEADERTYPE q31_t
+#define VEC int32x4x2_t
+#define VECACC int32x4x2_t
+
+//#define LOGKERNEL(A,B) printf("%s\n", A)
+
+#define CLEAR_ACC(tmp) tmp.val[0] = vdupq_n_s32(0); \
+tmp.val[1] = vdupq_n_s32(0)
+
+#define SCALARACC struct _arm_complex_q31
+
+#define DEF_AND_CLEAR_SCALARACC(tmp) const SCALARACC tmp={.re=0, .im = 0}
+
+#define TMPLD
+#define TMPST
+#define TMPMAC
+
+
+#define SCALAR_LOAD_AND_WIDEN(DST,PTR) DST = *(PTR)
+
+#define SCALAR_STORE_AND_NARROW(PTR,VAL) *(PTR) = (VAL)
+
+// In this implementation, accumulators are on 32 bits to be similar to the real * real
+// neon matmul regarding accuracy.
+#define SCALAR_MAC_N(ACC,VEC,SCALAR) ACC.re =  __SSAT((((int64_t)ACC.re<<31) + \
+        (int64_t)(VEC).re * (int64_t)(SCALAR).re -                           \
+        (int64_t)(VEC).im * (int64_t)(SCALAR).im) >> 32,31)<<1;              \
+ACC.im =  __SSAT((((int64_t)ACC.im<<31) +                                      \
+        (int64_t)(VEC).re * (int64_t)(SCALAR).im +                           \
+        (int64_t)(VEC).im * (int64_t)(SCALAR).re) >> 32,31)<<1;
+
+#define HVEC int32x2x2_t
+#define VLOAD(DST,PTR) DST = vld2q_s32((q31_t*)(PTR))
+#define VSTORE(PTR,VAL) vst2q_s32((q31_t*)(PTR),(VAL))
+
+#define VLOAD_ACC(DST,PTR) DST = vld2q_s32((q31_t*)(PTR))
+#define VSTORE_ACC(PTR,VAL) vst2q_s32((q31_t*)(PTR),(VAL))
+
+#define VLOAD_AND_WIDEN(DST,PTR) DST = vld2q_s32((q31_t*)(PTR))
+#define VSTORE_AND_NARROW(PTR,VAL) vst2q_s32((q31_t*)(PTR),(VAL))
+
+#define VMAC_N(ACC,VEC,SCALAR) ACC.val[0] = vqaddq_s32(ACC.val[0],vqdmulhq_n_s32((VEC).val[0],(SCALAR).re)); \
+                               ACC.val[0] = vqsubq_s32(ACC.val[0],vqdmulhq_n_s32((VEC).val[1],(SCALAR).im)); \
+                               ACC.val[1] = vqaddq_s32(ACC.val[1],vqdmulhq_n_s32((VEC).val[0],(SCALAR).im)); \
+                               ACC.val[1] = vqaddq_s32(ACC.val[1],vqdmulhq_n_s32((VEC).val[1],(SCALAR).re));
+
+
+#define MATTYPE arm_matrix_instance_q31
+#define EXT(A) A##_cq31
+
+#define FUNCNAME arm_mat_cmplx_mult_q31
+
+
+#include "_arm_mat_mult_neon.c"
+
+#else
+ARM_DSP_ATTRIBUTE arm_status arm_mat_cmplx_mult_q31(
 	const arm_matrix_instance_q31 *pSrcA,
 	const arm_matrix_instance_q31 *pSrcB,
 	arm_matrix_instance_q31 *pDst)
@@ -901,7 +982,7 @@ arm_status arm_mat_cmplx_mult_q31(
 					/* Reading imaginary part of complex matrix B */
 					d0 = *(pIn2 + 1U);
 
-					/* Multiply and Accumlates */
+					/* Multiply and Accumulates */
 					sumReal += (q63_t) a0 * c0;
 					sumImag += (q63_t) b0 * c0;
 
@@ -909,7 +990,7 @@ arm_status arm_mat_cmplx_mult_q31(
 					pIn1 += 2U;
 					pIn2 += 2 * numColsB;
 
-					/* Multiply and Accumlates */
+					/* Multiply and Accumulates */
 					sumReal -= (q63_t) b0 * d0;
 					sumImag += (q63_t) a0 * d0;
 
@@ -921,7 +1002,7 @@ arm_status arm_mat_cmplx_mult_q31(
 					b1 = *(pIn1 + 1U);
 					d1 = *(pIn2 + 1U);
 
-					/* Multiply and Accumlates */
+					/* Multiply and Accumulates */
 					sumReal += (q63_t) a1 * c1;
 					sumImag += (q63_t) b1 * c1;
 
@@ -929,7 +1010,7 @@ arm_status arm_mat_cmplx_mult_q31(
 					pIn1 += 2U;
 					pIn2 += 2 * numColsB;
 
-					/* Multiply and Accumlates */
+					/* Multiply and Accumulates */
 					sumReal -= (q63_t) b1 * d1;
 					sumImag += (q63_t) a1 * d1;
 
@@ -938,7 +1019,7 @@ arm_status arm_mat_cmplx_mult_q31(
 					b0 = *(pIn1 + 1U);
 					d0 = *(pIn2 + 1U);
 
-					/* Multiply and Accumlates */
+					/* Multiply and Accumulates */
 					sumReal += (q63_t) a0 * c0;
 					sumImag += (q63_t) b0 * c0;
 
@@ -946,7 +1027,7 @@ arm_status arm_mat_cmplx_mult_q31(
 					pIn1 += 2U;
 					pIn2 += 2 * numColsB;
 
-					/* Multiply and Accumlates */
+					/* Multiply and Accumulates */
 					sumReal -= (q63_t) b0 * d0;
 					sumImag += (q63_t) a0 * d0;
 
@@ -957,7 +1038,7 @@ arm_status arm_mat_cmplx_mult_q31(
 					b1 = *(pIn1 + 1U);
 					d1 = *(pIn2 + 1U);
 
-					/* Multiply and Accumlates */
+					/* Multiply and Accumulates */
 					sumReal += (q63_t) a1 * c1;
 					sumImag += (q63_t) b1 * c1;
 
@@ -965,7 +1046,7 @@ arm_status arm_mat_cmplx_mult_q31(
 					pIn1 += 2U;
 					pIn2 += 2 * numColsB;
 
-					/* Multiply and Accumlates */
+					/* Multiply and Accumulates */
 					sumReal -= (q63_t) b1 * d1;
 					sumImag += (q63_t) a1 * d1;
 
@@ -991,7 +1072,7 @@ arm_status arm_mat_cmplx_mult_q31(
 					b1 = *(pIn1 + 1U);
 					d1 = *(pIn2 + 1U);
 
-					/* Multiply and Accumlates */
+					/* Multiply and Accumulates */
 					sumReal += (q63_t) a1 * c1;
 					sumImag += (q63_t) b1 * c1;
 
@@ -999,7 +1080,7 @@ arm_status arm_mat_cmplx_mult_q31(
 					pIn1 += 2U;
 					pIn2 += 2 * numColsB;
 
-					/* Multiply and Accumlates */
+					/* Multiply and Accumulates */
 					sumReal -= (q63_t) b1 * d1;
 					sumImag += (q63_t) a1 * d1;
 
@@ -1036,6 +1117,7 @@ arm_status arm_mat_cmplx_mult_q31(
 	/* Return to application */
 	return (status);
 }
+#endif /* #if defined(ARM_MATH_NEON) */
 #endif /* defined(ARM_MATH_MVEI) */
 
 /**

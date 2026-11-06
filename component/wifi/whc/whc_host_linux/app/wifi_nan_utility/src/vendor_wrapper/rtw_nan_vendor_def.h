@@ -298,6 +298,7 @@ struct rtw_nan_driver_capabilities {
 
 struct rtw_nan_enable {
 	uint8_t enable;   // 0=disable, 1=enable
+	uint8_t band;     // RTW_SUPPORT_BAND_*, 0=follow chip band (old 1-byte hosts leave it 0)
 };
 
 struct rtw_nan_cluster_id {

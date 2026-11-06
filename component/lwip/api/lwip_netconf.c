@@ -594,7 +594,14 @@ void lwip_autoip_ipv6(uint8_t idx)
 	if (pnetif == NULL) {
 		return;
 	}
+	/* Realtek add start: core call from an app task, hold the core lock like netifapi does.
+	 * The address change walks the TCP PCBs and wakes select() waiters, which races with a
+	 * socket task exiting at the same time (freed select_cb / semaphore).
+	 * Caller must not already hold the core lock (it is not recursive). */
+	LOCK_TCPIP_CORE();
 	netif_create_ip6_linklocal_address(pnetif, 1);
+	UNLOCK_TCPIP_CORE();
+	/* Realtek add end */
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\nIPv6 link-local address: ");
 	LwIP_DUMP_IPV6_ADDRESS(netif_ip6_addr(pnetif, 0)->addr);
 }
@@ -616,7 +623,12 @@ void lwip_add_ipv6_neighbor(uint8_t idx, const uint8_t *peer_mac)
 	ll.addr[3] = lwip_htonl((0xfeUL << 24) | ((u32_t)peer_mac[3] << 16) |
 							((u32_t)peer_mac[4] << 8) | (u32_t)peer_mac[5]);
 	ip6_addr_assign_zone(&ll, IP6_UNICAST, pnetif);
+	/* Realtek add start: hold the core lock, the neighbor cache is shared with tcpip_thread.
+	 * Caller must not already hold the core lock (it is not recursive). */
+	LOCK_TCPIP_CORE();
 	nd6_add_static_neighbor(pnetif, &ll, peer_mac);
+	UNLOCK_TCPIP_CORE();
+	/* Realtek add end */
 }
 #endif
 
@@ -693,6 +705,12 @@ uint8_t lwip_request_ip(uint8_t idx)
 #endif
 	{
 		ret = lwip_dhcp(idx, DHCP_START);
+#if defined(CONFIG_WHC_INTF_IPC) && defined(CONFIG_WHC_DEV) && defined(CONFIG_WHC_DEV_TCPIP_KEEPALIVE) && defined(CONFIG_WHC_WPA_SUPPLICANT_OFFLOAD)
+		if (ret == DHCP_ADDRESS_ASSIGNED) {
+			extern int whc_dev_api_sync_ip_info(u8 idx);
+			whc_dev_api_sync_ip_info(NETIF_WLAN_STA_INDEX);
+		}
+#endif
 	}
 #endif
 	return ret;

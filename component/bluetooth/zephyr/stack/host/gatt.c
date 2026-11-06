@@ -2532,6 +2532,13 @@ static void notify_mult_process(struct k_work *work)
 
 K_WORK_DELAYABLE_DEFINE(nfy_mult_work, notify_mult_process);
 
+#if ZEPHYR_RTK_PATCH
+void zephyr_gatt_work_reset(void)
+{
+	k_work_delayable_reset(&nfy_mult_work);
+}
+#endif
+
 static bool gatt_cf_notify_multi(struct bt_conn *conn)
 {
 	struct gatt_cf_cfg *cfg;

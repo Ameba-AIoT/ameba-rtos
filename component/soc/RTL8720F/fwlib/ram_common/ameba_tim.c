@@ -1101,11 +1101,9 @@ void RTIM_SetDeadzoneMAXChnID(RTIM_TypeDef *TIMx)
 void RTIM_EmgBrkDbcCmd(RTIM_TypeDef *TIMx, u32 NewState)
 {
 	if (NewState != DISABLE) {
-		/* Set the ARR Preload Bit */
-		TIMx->CR |= TIM_BIT_ARPE;
+		TIMx->CFG |= TIM_BIT_EMG_BRK_DBC_FEN;
 	} else {
-		/* Reset the ARR Preload Bit */
-		TIMx->CR &= ~TIM_BIT_ARPE;
+		TIMx->CFG &= ~TIM_BIT_EMG_BRK_DBC_FEN;
 	}
 }
 
@@ -1292,6 +1290,7 @@ bool PWM_TXGDMA_Init(
 		GDMA_InitStruct->GDMA_BlockSize = Length >> 1;
 	} else {
 		RTK_LOGE(TAG, "PWM_TXGDMA_Init: Aligment Err: pTXData=%p,  Length=%lu\n", pTXData, Length);
+		GDMA_ChnlFree(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
 		return FALSE;
 	}
 

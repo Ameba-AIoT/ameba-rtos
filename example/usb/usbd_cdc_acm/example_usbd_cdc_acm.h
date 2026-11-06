@@ -24,6 +24,8 @@ extern "C" {
 /* Exported functions --------------------------------------------------------*/
 
 void example_usbd_cdc_acm(void);
+int example_usbd_cdc_acm_start(void);
+int example_usbd_cdc_acm_stop(void);
 
 #ifdef __cplusplus
 }

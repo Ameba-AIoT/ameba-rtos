@@ -1,15 +1,16 @@
-/* ----------------------------------------------------------------------
+﻿/* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
  * Title:        arm_quick_sort_f32.c
  * Description:  Floating point quick sort
  *
- * $Date:        2019
- * $Revision:    V1.6.0
+ * $Date:        23 April 2021
+ * $Revision:    V1.9.0
  *
  * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
+
 /*
- * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -25,8 +26,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "arm_compiler_specific.h"
 
-#include "arm_math.h"
+
 #include "arm_sorting.h"
 
 static uint32_t arm_quick_sort_partition_f32(float32_t *pSrc, int32_t first, int32_t last, uint8_t dir)
@@ -134,7 +136,7 @@ static void arm_quick_sort_core_f32(float32_t *pSrc, int32_t first, int32_t last
    * @par
    *                In this implementation the Hoare partition scheme has been
    *                used [Hoare, C. A. R. (1 January 1962). "Quicksort". The Computer
-   *                Journal. 5 (1): 10–16.] The first element has always been chosen
+   *                Journal. 5 (1): 10...16.] The first element has always been chosen
    *                as the pivot. The partition algorithm guarantees that the returned
    *                pivot is never placed outside the vector, since it is returned only
    *                when the pointers crossed each other. In this way it isn't
@@ -145,7 +147,7 @@ static void arm_quick_sort_core_f32(float32_t *pSrc, int32_t first, int32_t last
    *                function, a memcpy of the source vector is performed.
    */
 
-void arm_quick_sort_f32(
+ARM_DSP_ATTRIBUTE void arm_quick_sort_f32(
 	const arm_sort_instance_f32 *S,
 	float32_t *pSrc,
 	float32_t *pDst,
@@ -155,7 +157,7 @@ void arm_quick_sort_f32(
 
 	/* Out-of-place */
 	if (pSrc != pDst) {
-		memcpy(pDst, pSrc, blockSize * sizeof(float32_t));
+		_memcpy(pDst, pSrc, blockSize * sizeof(float32_t));
 		pA = pDst;
 	} else {
 		pA = pSrc;

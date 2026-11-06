@@ -1,15 +1,16 @@
-/* ----------------------------------------------------------------------
+﻿/* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
  * Title:        arm_mat_sub_f32.c
  * Description:  Floating-point matrix subtraction
  *
- * $Date:        18. March 2019
- * $Revision:    V1.6.0
+ * $Date:        23 April 2021
+ * $Revision:    V1.9.0
  *
- * Target Processor: Cortex-M cores
+ * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
+
 /*
- * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -25,8 +26,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "arm_compiler_specific.h"
 
-#include "arm_math.h"
+
+#include "dsp/matrix_functions.h"
 
 /**
   @ingroup groupMatrix
@@ -36,8 +39,27 @@
   @defgroup MatrixSub Matrix Subtraction
 
   Subtract two matrices.
-  \image html MatrixSubtraction.gif "Subraction of two 3 x 3 matrices"
+  @par Subtraction of two 3 x 3 matrices
 
+  \f[
+  \begin{pmatrix}
+   a_{1,1} & a_{1,2} & a_{1,3} \\
+   a_{2,1} & a_{2,2} & a_{2,3} \\
+   a_{3,1} & a_{3,2} & a_{3,3} \\
+  \end{pmatrix}
+  -
+  \begin{pmatrix}
+   b_{1,1} & b_{1,2} & b_{1,3} \\
+   b_{2,1} & b_{2,2} & b_{2,3} \\
+   b_{3,1} & b_{3,2} & b_{3,3} \\
+  \end{pmatrix}
+  =
+  \begin{pmatrix}
+   a_{1,1}-b_{1,1} & a_{1,2}-b_{1,2} & a_{1,3}-b_{1,3} \\
+   a_{2,1}-b_{2,1} & a_{2,2}-b_{2,2} & a_{2,3}-b_{2,3} \\
+   a_{3,1}-b_{3,1} & a_{3,2}-b_{3,2} & a_{3,3}-b_{3,3} \\
+  \end{pmatrix}
+  \f]
   The functions check to make sure that
   <code>pSrcA</code>, <code>pSrcB</code>, and <code>pDst</code> have the same
   number of rows and columns.
@@ -58,7 +80,7 @@
                    - \ref ARM_MATH_SIZE_MISMATCH : Matrix size check failed
  */
 #if defined(ARM_MATH_MVEF) && !defined(ARM_MATH_AUTOVECTORIZE)
-arm_status arm_mat_sub_f32(
+ARM_DSP_ATTRIBUTE arm_status arm_mat_sub_f32(
 	const arm_matrix_instance_f32 *pSrcA,
 	const arm_matrix_instance_f32 *pSrcB,
 	arm_matrix_instance_f32 *pDst)
@@ -66,10 +88,10 @@ arm_status arm_mat_sub_f32(
 	arm_status status;                             /* status of matrix subtraction */
 	uint32_t  numSamples;       /* total number of elements in the matrix  */
 	float32_t *pDataA, *pDataB, *pDataDst;
-	f32x4_t vecA, vecB, vecDst;
+	f32x4_t vecA, vecB, vecDst = { 0 };
 	float32_t const *pSrcAVec;
 	float32_t const *pSrcBVec;
-	uint32_t  blkCnt;           /* loop counters */
+	int32_t  blkCnt;           /* loop counters */
 
 	pDataA = pSrcA->pData;
 	pDataB = pSrcB->pData;
@@ -91,34 +113,20 @@ arm_status arm_mat_sub_f32(
 		 * Total number of samples in the input matrix
 		 */
 		numSamples = (uint32_t) pSrcA->numRows * pSrcA->numCols;
-		blkCnt = numSamples >> 2;
-		while (blkCnt > 0U) {
-			/* C(m,n) = A(m,n) + B(m,n) */
-			/* sub and then store the results in the destination buffer. */
-			vecA = vld1q(pSrcAVec);
-			pSrcAVec += 4;
-			vecB = vld1q(pSrcBVec);
-			pSrcBVec += 4;
-			vecDst = vsubq(vecA, vecB);
-			vst1q(pDataDst, vecDst);
-			pDataDst += 4;
-			/*
-			 * Decrement the blockSize loop counter
-			 */
-			blkCnt--;
-		}
-		/*
-		 * tail
-		 * (will be merged thru tail predication)
-		 */
-		blkCnt = numSamples & 3;
-		if (blkCnt > 0U) {
+
+		blkCnt = (int32_t) numSamples;
+		do {
 			mve_pred16_t p0 = vctp32q(blkCnt);
 			vecA = vld1q(pSrcAVec);
 			vecB = vld1q(pSrcBVec);
 			vecDst = vsubq_m(vecDst, vecA, vecB, p0);
 			vstrwq_p(pDataDst, vecDst, p0);
-		}
+			pSrcAVec += 4;
+			pSrcBVec += 4;
+			pDataDst += 4;
+			blkCnt -= 4;
+		} while (blkCnt > 0);
+
 		status = ARM_MATH_SUCCESS;
 	}
 
@@ -126,9 +134,10 @@ arm_status arm_mat_sub_f32(
 	return (status);
 }
 
+
 #else
 #if defined(ARM_MATH_NEON)
-arm_status arm_mat_sub_f32(
+ARM_DSP_ATTRIBUTE arm_status arm_mat_sub_f32(
 	const arm_matrix_instance_f32 *pSrcA,
 	const arm_matrix_instance_f32 *pSrcB,
 	arm_matrix_instance_f32 *pDst)
@@ -203,7 +212,7 @@ arm_status arm_mat_sub_f32(
 	return (status);
 }
 #else
-arm_status arm_mat_sub_f32(
+ARM_DSP_ATTRIBUTE arm_status arm_mat_sub_f32(
 	const arm_matrix_instance_f32 *pSrcA,
 	const arm_matrix_instance_f32 *pSrcB,
 	arm_matrix_instance_f32 *pDst)

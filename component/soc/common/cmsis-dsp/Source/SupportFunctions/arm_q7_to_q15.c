@@ -1,15 +1,16 @@
-/* ----------------------------------------------------------------------
+﻿/* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
  * Title:        arm_q7_to_q15.c
  * Description:  Converts the elements of the Q7 vector to Q15 vector
  *
- * $Date:        18. March 2019
- * $Revision:    V1.6.0
+ * $Date:        23 April 2021
+ * $Revision:    V1.9.0
  *
- * Target Processor: Cortex-M cores
+ * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
+
 /*
- * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -25,8 +26,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "arm_compiler_specific.h"
 
-#include "arm_math.h"
+
+#include "dsp/support_functions.h"
 
 /**
   @ingroup groupSupport
@@ -42,7 +45,6 @@
   @param[in]     pSrc       points to the Q7 input vector
   @param[out]    pDst       points to the Q15 output vector
   @param[in]     blockSize  number of samples in each vector
-  @return        none
 
   @par           Details
                    The equation used for the conversion process is:
@@ -51,8 +53,8 @@
   </pre>
  */
 
-#if defined(ARM_MATH_MVEI)
-void arm_q7_to_q15(
+#if defined(ARM_MATH_MVEI) && !defined(ARM_MATH_AUTOVECTORIZE)
+ARM_DSP_ATTRIBUTE void arm_q7_to_q15(
 	const q7_t *pSrc,
 	q15_t *pDst,
 	uint32_t blockSize)
@@ -93,7 +95,7 @@ void arm_q7_to_q15(
 
 }
 #else
-void arm_q7_to_q15(
+ARM_DSP_ATTRIBUTE void arm_q7_to_q15(
 	const q7_t *pSrc,
 	q15_t *pDst,
 	uint32_t blockSize)
@@ -118,12 +120,12 @@ void arm_q7_to_q15(
 		/* Convert from q7 to q15 and store result in destination buffer */
 #if defined (ARM_MATH_DSP)
 
-		in = read_q7x4_ia((q7_t **) &pIn);
+		in = read_q7x4_ia(&pIn);
 
 		/* rotatate in by 8 and extend two q7_t values to q15_t values */
 		in1 = __SXTB16(__ROR(in, 8));
 
-		/* extend remainig two q7_t values to q15_t values */
+		/* extend remaining two q7_t values to q15_t values */
 		in2 = __SXTB16(in);
 
 		in1 = in1 << 8U;

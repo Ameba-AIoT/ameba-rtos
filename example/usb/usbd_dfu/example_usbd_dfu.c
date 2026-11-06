@@ -11,6 +11,8 @@
 #include "basic_types.h"
 #include "os_wrapper.h"
 #include "usbd_dfu.h"
+#include "usb_app.h"
+#include "example_usbd_dfu.h"
 
 /* Private defines -----------------------------------------------------------*/
 
@@ -77,7 +79,14 @@ static volatile u32 dfu_demo_fw_len;
 
 #ifdef CONFIG_USBD_DFU_WILL_DETACH
 static rtos_sema_t dfu_reconf_sema;
+/* Set by the reconf thread while the stack is torn down, so that a stop racing a failed
+   reinit does not deinit it twice */
+static volatile u8 dfu_stack_down;
 #endif
+
+/* Start/stop state: the reconf thread (or, without it, the start entry) owns the running
+   stack, example_usbd_dfu_stop() asks it to leave through quit and joins it */
+static usb_app_ctx_t dfu_app;
 
 static const usbd_dfu_cb_t dfu_cb = {
 	.init           = dfu_cb_init,
@@ -106,13 +115,13 @@ static int dfu_cb_init(void)
 	usb_os_memset((void *)dfu_demo_fw_buf, 0, USBD_DFU_DEMO_BUF_SIZE);
 	dfu_demo_fw_len = 0U;
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Init\n");
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 static int dfu_cb_deinit(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Deinit\n");
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 /*
@@ -125,7 +134,7 @@ static int dfu_cb_write(u16 block_num, u8 *buf, u32 len)
 
 	if (offset + len > USBD_DFU_DEMO_BUF_SIZE) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Write out of range: blk=%u len=%u\n", block_num, len);
-		return HAL_ERR_PARA;
+		return -RTK_ERR_BADARG;
 	}
 	usb_os_memcpy((void *)(dfu_demo_fw_buf + offset), (const void *)buf, len);
 	end = offset + len;
@@ -134,7 +143,7 @@ static int dfu_cb_write(u16 block_num, u8 *buf, u32 len)
 	}
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Write blk %u offset %u len %u (total %u B)\n",
 			 block_num, offset, len, dfu_demo_fw_len);
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 /*
@@ -153,8 +162,6 @@ static int dfu_cb_read(u16 block_num, u8 *buf, u32 max_len)
 		return 0;  /* EOF */
 	}
 	remaining = len - offset;
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Read blk %u offset %u max %u (remain %u B)\n",
-			 block_num, offset, max_len, remaining);
 	if (remaining > max_len) {
 		remaining = max_len;
 	}
@@ -172,7 +179,8 @@ static void dfu_cb_manifest(void)
 
 /*
  * detach() is called from ISR context when the host issues DFU_DETACH in
- * Run-Time mode (appIDLE).
+ * Run-Time mode (appIDLE), so it only records minimal state; nothing to do in this demo.
+ * reconf() logs the re-enumeration in task context.
  */
 static void dfu_cb_detach(void)
 {
@@ -200,48 +208,70 @@ static void usbd_dfu_reconf_thread(void *param)
 
 	for (;;) {
 		ret = rtos_sema_take(dfu_reconf_sema, RTOS_SEMA_MAX_COUNT);
+		if (dfu_app.quit != 0U) {
+			/* Stop requested: the stack is still up, example_usbd_dfu_stop() tears it down */
+			break;
+		}
 		if (ret != RTK_SUCCESS) {
 			/* Unexpected: tear the stack down here as well, so that the sema has
-			   no producer left when it is freed below */
+			   no producer left when it is freed */
 			usbd_dfu_deinit();
 			usbd_deinit();
+			dfu_stack_down = 1U;
 			break;
 		}
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Reconf: re-enumerating\n");
 		usbd_dfu_deinit();
 		usbd_deinit();
+		dfu_stack_down = 1U;
 		//RTK_LOGS(TAG, RTK_LOG_INFO, "Free heap: 0x%x\n", rtos_mem_get_free_heap_size());
 		ret = usbd_init(&dfu_cfg);
-		if (ret != HAL_OK) {
+		if (ret != RTK_SUCCESS) {
 			break;
 		}
 		ret = usbd_dfu_init(&dfu_cb, &dfu_class_cfg);
-		if (ret != HAL_OK) {
+		if (ret != RTK_SUCCESS) {
 			usbd_deinit();
 			break;
 		}
 		usbd_dfu_set_write_poll_ms(USBD_DFU_DEMO_WRITE_POLL_MS);
+		dfu_stack_down = 0U;
 	}
 
-	RTK_LOGS(TAG, RTK_LOG_ERROR, "Reconf thread fail\n");
-	/* The stack is fully deinited here, no reconf() can give the sema any more.
-	   This thread is its only user left: free it as the last owner. */
-	rtos_sema_delete(dfu_reconf_sema);
-	dfu_reconf_sema = NULL;
+	if (dfu_stack_down != 0U) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Reconf thread fail\n");
+		/* The stack is fully deinited here, no reconf() can give the sema any more */
+		if (usb_app_ctx_claim_stop(&dfu_app) != 0U) {
+			/* No stop is in flight: this thread is the only worker, finish the teardown */
+			rtos_sema_delete(dfu_reconf_sema);
+			dfu_reconf_sema = NULL;
+			usb_app_ctx_end(&dfu_app);
+			rtos_task_delete(NULL);
+		}
+	}
+	usb_app_ctx_leave(&dfu_app);
 	rtos_task_delete(NULL);
 }
 #endif /* CONFIG_USBD_DFU_WILL_DETACH */
 
-static void example_usbd_dfu_thread(void *param)
+/**
+  * @brief  Bring the stack and the worker thread up
+  * @retval RTK_SUCCESS, or the first error, with everything already created rolled back
+  */
+static int dfu_start(void)
 {
 	int ret;
 #ifdef CONFIG_USBD_DFU_WILL_DETACH
 	rtos_task_t reconf_task;
 #endif
 
-	UNUSED(param);
+	ret = usb_app_ctx_begin(&dfu_app);
+	if (ret != RTK_SUCCESS) {
+		return ret;
+	}
 
 #ifdef CONFIG_USBD_DFU_WILL_DETACH
+	dfu_stack_down = 0U;
 	ret = rtos_sema_create(&dfu_reconf_sema, 0U, 1U);
 	if (ret != RTK_SUCCESS) {
 		goto exit;
@@ -249,12 +279,12 @@ static void example_usbd_dfu_thread(void *param)
 #endif
 
 	ret = usbd_init(&dfu_cfg);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		goto exit;
 	}
 
 	ret = usbd_dfu_init(&dfu_cb, &dfu_class_cfg);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		usbd_deinit();
 		goto exit;
 	}
@@ -262,6 +292,7 @@ static void example_usbd_dfu_thread(void *param)
 	usbd_dfu_set_write_poll_ms(USBD_DFU_DEMO_WRITE_POLL_MS);
 
 #ifdef CONFIG_USBD_DFU_WILL_DETACH
+	/* Created last: it owns the stack once running, so nothing after it can fail */
 	ret = rtos_task_create(&reconf_task, "usbd_dfu_reconf_thread", usbd_dfu_reconf_thread, NULL,
 						   DFU_RECONF_THREAD_STACK_SIZE, DFU_RECONF_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
@@ -278,8 +309,7 @@ static void example_usbd_dfu_thread(void *param)
 #endif
 #endif
 
-	rtos_task_delete(NULL);
-	return;
+	return RTK_SUCCESS;
 
 exit:
 	RTK_LOGS(TAG, RTK_LOG_ERROR, "USBD DFU demo aborted\n");
@@ -287,11 +317,76 @@ exit:
 	rtos_sema_delete(dfu_reconf_sema);
 	dfu_reconf_sema = NULL;
 #endif
+	usb_app_ctx_end(&dfu_app);
+
+	return ret;
+}
+
+static void example_usbd_dfu_thread(void *param)
+{
+	UNUSED(param);
+
+	if (dfu_start() != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Start fail\n");
+	}
 	rtos_task_delete(NULL);
 }
 
 /* Exported functions --------------------------------------------------------*/
 
+/**
+  * @brief  Start the DFU device, used by the USB app manager
+  * @note   Task context only
+  * @retval RTK_SUCCESS, -RTK_ERR_BUSY if already running, or the init error
+  */
+int example_usbd_dfu_start(void)
+{
+	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD DFU demo start\n");
+
+	return dfu_start();
+}
+
+/**
+  * @brief  Stop the DFU device and release everything it owns
+  * @note   Task context only. Safe to call when not running.
+  * @retval RTK_SUCCESS once idle, -RTK_ERR_TIMEOUT if the worker did not leave in time
+  */
+int example_usbd_dfu_stop(void)
+{
+	if (usb_app_ctx_claim_stop(&dfu_app) == 0U) {
+		/* Idle, or the worker found the stack dead and finishes the teardown itself */
+		return usb_app_ctx_wait_idle(&dfu_app);
+	}
+
+#ifdef CONFIG_USBD_DFU_WILL_DETACH
+	rtos_sema_give(dfu_reconf_sema);
+	if (usb_app_ctx_join(&dfu_app, 1U) != RTK_SUCCESS) {
+		/* The worker is still on the stack: keep everything, the app stays STOPPING */
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Stop timeout\n");
+		return -RTK_ERR_TIMEOUT;
+	}
+	/* The worker lost the claim after a failed reinit: the stack is already down */
+	if (dfu_stack_down == 0U)
+#endif
+	{
+		/* Stops the driver's reconf_task, the last producer of dfu_reconf_sema */
+		usbd_dfu_deinit();
+		usbd_deinit();
+	}
+#ifdef CONFIG_USBD_DFU_WILL_DETACH
+	rtos_sema_delete(dfu_reconf_sema);
+	dfu_reconf_sema = NULL;
+#endif
+	usb_app_ctx_end(&dfu_app);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD DFU demo stop\n");
+
+	return RTK_SUCCESS;
+}
+
+/**
+  * @brief  Example entry: start the DFU device from its own thread
+  * @retval None
+  */
 void example_usbd_dfu(void)
 {
 	int status;

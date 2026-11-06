@@ -1,14 +1,17 @@
+﻿
 
 /* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
  * Title:        arm_minkowski_distance_f32.c
  * Description:  Minkowski distance between two vectors
  *
+ * $Date:        23 April 2021
+ * $Revision:    V1.9.0
  *
- * Target Processor: Cortex-M cores
+ * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
 /*
- * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -24,17 +27,39 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "arm_compiler_specific.h"
 
-#include "arm_math.h"
+
+#include "dsp/distance_functions.h"
 #include <limits.h>
 #include <math.h>
 
 
 /**
-  @addtogroup FloatDist
+  @addtogroup Minkowski
   @{
  */
 
+/* 6.14 bug */
+#if defined (__ARMCC_VERSION) && (__ARMCC_VERSION >= 6100100) && (__ARMCC_VERSION < 6150001)
+
+__attribute__((weak)) float __powisf2(float a, int b)
+{
+	const int recip = b < 0;
+	float r = 1;
+	while (1) {
+		if (b & 1) {
+			r *= a;
+		}
+		b /= 2;
+		if (b == 0) {
+			break;
+		}
+		a *= a;
+	}
+	return recip ? 1 / r : r;
+}
+#endif
 
 /**
  * @brief        Minkowski distance between two vectors
@@ -52,7 +77,7 @@
 #include "arm_helium_utils.h"
 #include "arm_vec_math.h"
 
-float32_t arm_minkowski_distance_f32(const float32_t *pA, const float32_t *pB, int32_t order, uint32_t blockSize)
+ARM_DSP_ATTRIBUTE float32_t arm_minkowski_distance_f32(const float32_t *pA, const float32_t *pB, int32_t order, uint32_t blockSize)
 {
 	uint32_t        blkCnt;
 	f32x4_t         a, b, tmpV, sumV;
@@ -97,7 +122,7 @@ float32_t arm_minkowski_distance_f32(const float32_t *pA, const float32_t *pB, i
 
 #include "NEMath.h"
 
-float32_t arm_minkowski_distance_f32(const float32_t *pA, const float32_t *pB, int32_t order, uint32_t blockSize)
+ARM_DSP_ATTRIBUTE float32_t arm_minkowski_distance_f32(const float32_t *pA, const float32_t *pB, int32_t order, uint32_t blockSize)
 {
 	float32_t sum;
 	uint32_t blkCnt;
@@ -141,7 +166,7 @@ float32_t arm_minkowski_distance_f32(const float32_t *pA, const float32_t *pB, i
 #else
 
 
-float32_t arm_minkowski_distance_f32(const float32_t *pA, const float32_t *pB, int32_t order, uint32_t blockSize)
+ARM_DSP_ATTRIBUTE float32_t arm_minkowski_distance_f32(const float32_t *pA, const float32_t *pB, int32_t order, uint32_t blockSize)
 {
 	float32_t sum;
 	uint32_t i;
@@ -160,5 +185,5 @@ float32_t arm_minkowski_distance_f32(const float32_t *pA, const float32_t *pB, i
 
 
 /**
- * @} end of FloatDist group
+ * @} end of Minkowski group
  */

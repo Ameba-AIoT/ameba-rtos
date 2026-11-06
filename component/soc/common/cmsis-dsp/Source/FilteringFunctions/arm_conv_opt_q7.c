@@ -1,15 +1,16 @@
-/* ----------------------------------------------------------------------
+﻿/* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
  * Title:        arm_conv_opt_q7.c
  * Description:  Convolution of Q7 sequences
  *
- * $Date:        18. March 2019
- * $Revision:    V1.6.0
+ * $Date:        23 April 2021
+ * $Revision:    V1.9.0
  *
- * Target Processor: Cortex-M cores
+ * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
+
 /*
- * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -25,8 +26,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "arm_compiler_specific.h"
 
-#include "arm_math.h"
+
+#include "dsp/filtering_functions.h"
 
 /**
   @ingroup groupFilters
@@ -46,7 +49,6 @@
   @param[out]    pDst       points to the location where the output result is written.  Length srcALen+srcBLen-1.
   @param[in]     pScratch1  points to scratch buffer(of type q15_t) of size max(srcALen, srcBLen) + 2*min(srcALen, srcBLen) - 2.
   @param[in]     pScratch2  points to scratch buffer (of type q15_t) of size min(srcALen, srcBLen).
-  @return        none
 
   @par           Scaling and Overflow Behavior
                    The function is implemented using a 32-bit internal accumulator.
@@ -56,7 +58,7 @@
                    The 18.14 result is then truncated to 18.7 format by discarding the low 7 bits and then saturated to 1.7 format.
  */
 
-void arm_conv_opt_q7(
+ARM_DSP_ATTRIBUTE void arm_conv_opt_q7(
 	const q7_t *pSrcA,
 	uint32_t srcALen,
 	const q7_t *pSrcB,
@@ -193,10 +195,10 @@ void arm_conv_opt_q7(
 	blkCnt = (srcALen + srcBLen - 1U) >> 2U;
 
 	while (blkCnt > 0) {
-		/* Initialze temporary scratch pointer as scratch1 */
+		/* Initialize temporary scratch pointer as scratch1 */
 		pScr1 = pScratch1;
 
-		/* Clear Accumlators */
+		/* Clear Accumulators */
 		acc0 = 0;
 		acc1 = 0;
 		acc2 = 0;
@@ -214,7 +216,7 @@ void arm_conv_opt_q7(
 			/* Read four samples from smaller buffer */
 			y1 = read_q15x2_ia(&pScr2);
 
-			/* multiply and accumlate */
+			/* multiply and accumulate */
 			acc0 = __SMLAD(x1, y1, acc0);
 			acc2 = __SMLAD(x2, y1, acc2);
 
@@ -225,7 +227,7 @@ void arm_conv_opt_q7(
 			x3 = __PKHBT(x1, x2, 0);
 #endif
 
-			/* multiply and accumlate */
+			/* multiply and accumulate */
 			acc1 = __SMLADX(x3, y1, acc1);
 
 			/* Read next two samples from scratch1 buffer */
@@ -270,7 +272,7 @@ void arm_conv_opt_q7(
 		tapCnt = (srcBLen) & 3U;
 
 		while (tapCnt > 0U) {
-			/* accumlate the results */
+			/* accumulate the results */
 			acc0 += (*pScr1++ * *pScr2);
 			acc1 += (*pScr1++ * *pScr2);
 			acc2 += (*pScr1++ * *pScr2);
@@ -302,10 +304,10 @@ void arm_conv_opt_q7(
 
 	/* Calculate convolution for remaining samples of Bigger length sequence */
 	while (blkCnt > 0) {
-		/* Initialze temporary scratch pointer as scratch1 */
+		/* Initialize temporary scratch pointer as scratch1 */
 		pScr1 = pScratch1;
 
-		/* Clear Accumlators */
+		/* Clear Accumulators */
 		acc0 = 0;
 
 		tapCnt = (srcBLen) >> 1U;
@@ -322,7 +324,7 @@ void arm_conv_opt_q7(
 
 		/* apply same above for remaining samples of smaller length sequence */
 		while (tapCnt > 0U) {
-			/* accumlate the results */
+			/* accumulate the results */
 			acc0 += (*pScr1++ * *pScr2++);
 
 			/* Decrement loop counter */

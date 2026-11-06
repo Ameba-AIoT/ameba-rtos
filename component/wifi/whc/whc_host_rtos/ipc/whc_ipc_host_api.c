@@ -290,6 +290,41 @@ static void whc_ipc_host_api_set_netif_info_handler(struct whc_ipc_host_unblk_ap
 #endif
 }
 
+#ifdef CONFIG_WHC_DEV_TCPIP_KEEPALIVE
+static void whc_ipc_host_api_sync_ip_info_handler(struct whc_ipc_host_unblk_api_node *p_unblk_api_node)
+{
+#if defined(CONFIG_LWIP_LAYER) && CONFIG_LWIP_LAYER
+	/* param_buf: {idx, ip, gw, netmask, dns}; ip == 0 clears the address */
+	u8 idx = (u8)p_unblk_api_node->param_buf[0];
+	u32 *ipinfo = &p_unblk_api_node->param_buf[1];
+
+	if (lwip_idx_get_netif(idx) == NULL) {
+		return;
+	}
+
+	if (ipinfo[0] == 0) {
+		lwip_clear_ip(idx);
+	} else {
+		lwip_netif_set_up(idx);
+		lwip_set_ip(idx, PP_HTONL(ipinfo[0]), PP_HTONL(ipinfo[2]), PP_HTONL(ipinfo[1]));
+		lwip_manage_subnet_conflict(idx);
+	}
+#if LWIP_DNS
+	/* mirror the dev dns; clear it only when the address is cleared, and do not
+	 * wipe a working host resolver with dns == 0 (the dev keeps it zero when its
+	 * LWIP_DNS is off or no server has been learned yet). */
+	if (ipinfo[0] == 0 || ipinfo[3] != 0) {
+		struct ip_addr dns;
+		ip_addr_set_ip4_u32(&dns, (ipinfo[0] == 0) ? 0 : ipinfo[3]);
+		lwip_set_dns(&dns);
+	}
+#endif
+#else
+	(void)p_unblk_api_node;
+#endif
+}
+#endif
+
 #ifdef CONFIG_WIFI_TUNNEL
 #if defined(CONFIG_WTN_SOCKET_APP)
 static void whc_ipc_host_api_wtn_socket_init(struct whc_ipc_host_unblk_api_node *p_unblk_api_node)
@@ -436,6 +471,12 @@ static struct whc_ipc_host_unblk_api_node *whc_ipc_host_api_unblk_api_msg_to_nod
 			p_unblk_api_node->param_buf[0] = (u32)buffer;
 		}
 		p_unblk_api_node->param_buf[1] = param_buf[1];
+		break;
+#endif
+#ifdef CONFIG_WHC_DEV_TCPIP_KEEPALIVE
+	case WHC_API_DEV_SYNC_IP_INFO:
+		/* {idx, ip, gw, netmask, dns} */
+		memcpy(p_unblk_api_node->param_buf, param_buf, 5 * sizeof(u32));
 		break;
 #endif
 	default:
@@ -595,6 +636,9 @@ const struct ipc_host_unblk_api_func_t whc_ipc_host_unblk_api_handlers[] = {
 	{WHC_API_AP_CH_SWITCH, whc_ipc_host_api_ap_ch_switch_handler, 0},
 	{WHC_API_WIFI_EVENT, whc_ipc_host_api_wifi_event_handler, BIT(1)},
 	{WHC_API_SET_NETIF_INFO, whc_ipc_host_api_set_netif_info_handler, BIT(1)},
+#ifdef CONFIG_WHC_DEV_TCPIP_KEEPALIVE
+	{WHC_API_DEV_SYNC_IP_INFO, whc_ipc_host_api_sync_ip_info_handler, 0},
+#endif
 #ifdef CONFIG_WIFI_TUNNEL
 #if defined(CONFIG_WTN_SOCKET_APP)
 	{WHC_API_WTN_SOCKET_INIT, whc_ipc_host_api_wtn_socket_init, 0},

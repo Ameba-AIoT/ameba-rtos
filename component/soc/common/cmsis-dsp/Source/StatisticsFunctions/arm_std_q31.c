@@ -1,15 +1,16 @@
-/* ----------------------------------------------------------------------
+﻿/* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
  * Title:        arm_std_q31.c
  * Description:  Standard deviation of the elements of a Q31 vector
  *
- * $Date:        18. March 2019
- * $Revision:    V1.6.0
+ * $Date:        23 April 2021
+ * $Revision:    V1.9.0
  *
- * Target Processor: Cortex-M cores
+ * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
+
 /*
- * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -25,8 +26,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "arm_compiler_specific.h"
 
-#include "arm_math.h"
+
+#include "dsp/statistics_functions.h"
 
 /**
   @ingroup groupStats
@@ -42,7 +45,6 @@
   @param[in]     pSrc       points to the input vector.
   @param[in]     blockSize  number of samples in input vector.
   @param[out]    pResult    standard deviation value returned here.
-  @return        none
 
   @par           Scaling and Overflow Behavior
                    The function is implemented using an internal 64-bit accumulator.
@@ -57,8 +59,8 @@
                    After division, internal variables should be Q18.46
                    Finally, the 18.46 accumulator is right shifted by 15 bits to yield a 1.31 format value.
  */
-#if defined(ARM_MATH_MVEI)
-void arm_std_q31(
+#if defined(ARM_MATH_MVEI) && !defined(ARM_MATH_AUTOVECTORIZE)
+ARM_DSP_ATTRIBUTE void arm_std_q31(
 	const q31_t *pSrc,
 	uint32_t blockSize,
 	q31_t *pResult)
@@ -69,7 +71,7 @@ void arm_std_q31(
 	arm_sqrt_q31(var, pResult);
 }
 #else
-void arm_std_q31(
+ARM_DSP_ATTRIBUTE void arm_std_q31(
 	const q31_t *pSrc,
 	uint32_t blockSize,
 	q31_t *pResult)

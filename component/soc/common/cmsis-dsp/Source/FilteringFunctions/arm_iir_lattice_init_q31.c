@@ -1,15 +1,16 @@
-/* ----------------------------------------------------------------------
+﻿/* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
  * Title:        arm_iir_lattice_init_q31.c
  * Description:  Initialization function for the Q31 IIR lattice filter
  *
- * $Date:        18. March 2019
- * $Revision:    V1.6.0
+ * $Date:        23 April 2021
+ * $Revision:    V1.9.0
  *
- * Target Processor: Cortex-M cores
+ * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
+
 /*
- * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -25,8 +26,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "arm_compiler_specific.h"
 
-#include "arm_math.h"
+
+#include "dsp/filtering_functions.h"
 
 /**
   @ingroup groupFilters
@@ -45,10 +48,9 @@
   @param[in]     pvCoeffs   points to ladder coefficient buffer.  The array is of length numStages+1
   @param[in]     pState     points to state buffer.  The array is of length numStages+blockSize
   @param[in]     blockSize  number of samples to process
-  @return        none
  */
 
-void arm_iir_lattice_init_q31(
+ARM_DSP_ATTRIBUTE void arm_iir_lattice_init_q31(
 	arm_iir_lattice_instance_q31 *S,
 	uint16_t numStages,
 	q31_t *pkCoeffs,
@@ -66,7 +68,7 @@ void arm_iir_lattice_init_q31(
 	S->pvCoeffs = pvCoeffs;
 
 	/* Clear state buffer and size is always blockSize + numStages */
-	memset(pState, 0, (numStages + blockSize) * sizeof(q31_t));
+	_memset(pState, 0, (numStages + blockSize) * sizeof(q31_t));
 
 	/* Assign state pointer */
 	S->pState = pState;

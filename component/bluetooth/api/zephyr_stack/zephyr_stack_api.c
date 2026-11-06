@@ -305,9 +305,10 @@ uint16_t bt_stack_act_handler(rtk_bt_cmd_t *p_cmd)
 		break;
 #endif
 #endif
+#if defined(RTK_BREDR_SUPPORT) && RTK_BREDR_SUPPORT
 	case RTK_BT_BR_GP_GAP:
 		BT_LOGD("RTK_BT_BR_GP_GAP group \r\n");
-		//bt_stack_br_gap_act_handle(p_cmd);
+		bt_stack_br_gap_act_handle(p_cmd);
 		break;
 	case RTK_BT_BR_GP_AVRCP:
 		BT_LOGD("RTK_BT_BR_GP_AVRCP group \r\n");
@@ -344,12 +345,13 @@ uint16_t bt_stack_act_handler(rtk_bt_cmd_t *p_cmd)
 		BT_LOGD("RTK_BT_LE_GP_AUDIO group \r\n");
 		//bt_stack_le_audio_act_handle(p_cmd);
 		break;
+#endif
 	case RTK_BT_COMMON_GP_GAP:
 		BT_LOGD("RTK_BT_COMMON_GP_GAP group \r\n");
 		bt_stack_gap_act_handle(p_cmd);
 		break;
 	default:
-		BT_LOGE("bt_stack_le_act_handle:unknown group: %d \r\n", p_cmd->group);
+		BT_LOGE("%s:unknown group: %d \r\n", __func__, p_cmd->group);
 		break;
 	}
 
@@ -570,8 +572,11 @@ void wait_bt_conn_cleanup(void)
 static uint16_t zephyr_bt_disable(void)
 {
 	bt_disable();
+	/* Must be before the work queues are deleted, otherwise work_timeout() submits to a deleted queue */
+	zephyr_timers_clean();
 	zephyr_internal_res_free();
 	zephyr_res_free();
+	zephyr_work_reset();
 
 	return 0;
 }

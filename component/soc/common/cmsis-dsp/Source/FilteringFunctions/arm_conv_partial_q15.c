@@ -1,15 +1,16 @@
-/* ----------------------------------------------------------------------
+﻿/* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
  * Title:        arm_conv_partial_q15.c
  * Description:  Partial convolution of Q15 sequences
  *
- * $Date:        18. March 2019
- * $Revision:    V1.6.0
+ * $Date:        23 April 2021
+ * $Revision:    V1.9.0
  *
- * Target Processor: Cortex-M cores
+ * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
+
 /*
- * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -25,8 +26,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "arm_compiler_specific.h"
 
-#include "arm_math.h"
+
+#include "dsp/filtering_functions.h"
 
 /**
   @ingroup groupFilters
@@ -56,7 +59,7 @@
                    Refer to \ref arm_conv_partial_opt_q15() for a faster implementation of this function using scratch buffers.
  */
 
-arm_status arm_conv_partial_q15(
+ARM_DSP_ATTRIBUTE arm_status arm_conv_partial_q15(
 	const q15_t *pSrcA,
 	uint32_t srcALen,
 	const q15_t *pSrcB,
@@ -76,7 +79,7 @@ arm_status arm_conv_partial_q15(
 	const q15_t *py;                                     /* Intermediate inputB pointer */
 	const q15_t *pSrc1, *pSrc2;                          /* Intermediate pointers */
 	q31_t x0, x1, x2, x3, c0;                      /* Temporary input variables to hold state and coefficient values */
-	uint32_t blockSize1, blockSize2, blockSize3;    /* Loop counters */
+	int32_t blockSize1, blockSize2, blockSize3;    /* Loop counters */
 	uint32_t j, k, count, blkCnt, check;
 	arm_status status;                             /* Status of Partial convolution */
 
@@ -113,7 +116,7 @@ arm_status arm_conv_partial_q15(
 		blockSize3 = ((int32_t)check > (int32_t)srcALen) ? (int32_t)check - (int32_t)srcALen : 0;
 		blockSize3 = ((int32_t)firstIndex > (int32_t)srcALen - 1) ? blockSize3 - (int32_t)firstIndex + (int32_t)srcALen : blockSize3;
 		blockSize1 = ((int32_t) srcBLen - 1) - (int32_t) firstIndex;
-		blockSize1 = (blockSize1 > 0) ? ((check > (srcBLen - 1U)) ? blockSize1 :  numPoints) : 0;
+		blockSize1 = (blockSize1 > 0) ? ((check > (srcBLen - 1U)) ? blockSize1 : (int32_t)numPoints) : 0;
 		blockSize2 = (int32_t) check - ((blockSize3 + blockSize1) + (int32_t) firstIndex);
 		blockSize2 = (blockSize2 > 0) ? blockSize2 : 0;
 
@@ -162,7 +165,7 @@ arm_status arm_conv_partial_q15(
 		/* Second part of this stage computes the MAC operations greater than or equal to 4 */
 
 		/* The first part of the stage starts here */
-		while ((count < 4U) && (blockSize1 > 0U)) {
+		while ((count < 4U) && (blockSize1 > 0)) {
 			/* Accumulator is made zero for every iteration */
 			sum = 0;
 
@@ -198,7 +201,7 @@ arm_status arm_conv_partial_q15(
 		 * y[srcBLen] and y[srcBLen-1] coefficients, py is decremented by 1 */
 		py = py - 1;
 
-		while (blockSize1 > 0U) {
+		while (blockSize1 > 0) {
 			/* Accumulator is made zero for every iteration */
 			sum = 0;
 
@@ -433,13 +436,19 @@ arm_status arm_conv_partial_q15(
 				}
 
 				/* Store the results in the accumulators in the destination buffer. */
-#ifndef ARM_MATH_BIG_ENDIAN
-				write_q15x2_ia(&pOut, __PKHBT(__SSAT((acc0 >> 15), 16), __SSAT((acc1 >> 15), 16), 16));
-				write_q15x2_ia(&pOut, __PKHBT(__SSAT((acc2 >> 15), 16), __SSAT((acc3 >> 15), 16), 16));
+				{
+					int32_t sat0 = __SSAT((acc0 >> 15), 16);
+					int32_t sat1 = __SSAT((acc1 >> 15), 16);
+					int32_t sat2 = __SSAT((acc2 >> 15), 16);
+					int32_t sat3 = __SSAT((acc3 >> 15), 16);
+#ifndef  ARM_MATH_BIG_ENDIAN
+					write_q15x2_ia(&pOut, __PKHBT(sat0, sat1, 16));
+					write_q15x2_ia(&pOut, __PKHBT(sat2, sat3, 16));
 #else
-				write_q15x2_ia(&pOut, __PKHBT(__SSAT((acc1 >> 15), 16), __SSAT((acc0 >> 15), 16), 16));
-				write_q15x2_ia(&pOut, __PKHBT(__SSAT((acc3 >> 15), 16), __SSAT((acc2 >> 15), 16), 16));
-#endif /* #ifndef  ARM_MATH_BIG_ENDIAN */
+					write_q15x2_ia(&pOut, __PKHBT(sat1, sat0, 16));
+					write_q15x2_ia(&pOut, __PKHBT(sat3, sat2, 16));
+#endif /*      #ifndef  ARM_MATH_BIG_ENDIAN    */
+				}
 
 				/* Increment the pointer pIn1 index, count by 4 */
 				count += 4U;
@@ -553,7 +562,11 @@ arm_status arm_conv_partial_q15(
 		count = srcBLen - 1U;
 
 		/* Working pointer of inputA */
-		pSrc1 = (pIn1 + srcALen) - (srcBLen - 1U);
+		if (firstIndex > srcALen) {
+			pSrc1 = (pIn1 + firstIndex) - (srcBLen - 1U);
+		} else {
+			pSrc1 = (pIn1 + srcALen) - (srcBLen - 1U);
+		}
 		px = pSrc1;
 
 		/* Working pointer of inputB */
@@ -572,7 +585,7 @@ arm_status arm_conv_partial_q15(
 		/* The first part of the stage starts here */
 		j = count >> 2U;
 
-		while ((j > 0U) && (blockSize3 > 0U)) {
+		while ((j > 0U) && (blockSize3 > 0)) {
 			/* Accumulator is made zero for every iteration */
 			sum = 0;
 
@@ -630,7 +643,7 @@ arm_status arm_conv_partial_q15(
 		 * so pointer py is updated to read only one sample at a time */
 		py = py + 1U;
 
-		while (blockSize3 > 0U) {
+		while (blockSize3 > 0) {
 			/* Accumulator is made zero for every iteration */
 			sum = 0;
 

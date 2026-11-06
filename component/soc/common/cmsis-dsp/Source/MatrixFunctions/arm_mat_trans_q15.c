@@ -1,15 +1,16 @@
-/* ----------------------------------------------------------------------
+﻿/* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
  * Title:        arm_mat_trans_q15.c
  * Description:  Q15 matrix transpose
  *
- * $Date:        18. March 2019
- * $Revision:    V1.6.0
+ * $Date:        23 April 2021
+ * $Revision:    V1.9.0
  *
- * Target Processor: Cortex-M cores
+ * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
+
 /*
- * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -25,8 +26,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "arm_compiler_specific.h"
 
-#include "arm_math.h"
+
+#include "dsp/matrix_functions.h"
 
 /**
   @ingroup groupMatrix
@@ -46,125 +49,13 @@
                    - \ref ARM_MATH_SIZE_MISMATCH : Matrix size check failed
  */
 
-#if defined(ARM_MATH_MVEI)
+#if defined(ARM_MATH_MVEI) && !defined(ARM_MATH_AUTOVECTORIZE)
 
-__STATIC_INLINE arm_status arm_mat_trans_16bit_2x2(uint16_t *pDataSrc, uint16_t *pDataDest)
-{
-	pDataDest[0] = pDataSrc[0];
-	pDataDest[3] = pDataSrc[3];
-	pDataDest[2] = pDataSrc[1];
-	pDataDest[1] = pDataSrc[2];
-
-	return (ARM_MATH_SUCCESS);
-}
-
-static arm_status arm_mat_trans_16bit_3x3_mve(uint16_t *pDataSrc, uint16_t *pDataDest)
-{
-	static const uint16_t stridesTr33[8] = { 0, 3, 6, 1, 4, 7, 2, 5 };
-	uint16x8_t    vecOffs1;
-	uint16x8_t    vecIn1;
-	/*
-	 *
-	 *  | 0   1   2 |       | 0   3   6 |  8 x 16 flattened version | 0   3   6   1   4   7   2   5 |
-	 *  | 3   4   5 | =>    | 1   4   7 |            =>             | 8   .   .   .   .   .   .   . |
-	 *  | 6   7   8 |       | 2   5   8 |       (row major)
-	 *
-	 */
-	vecOffs1 = vldrhq_u16((uint16_t const *) stridesTr33);
-	vecIn1 = vldrhq_u16((uint16_t const *) pDataSrc);
-
-	vstrhq_scatter_shifted_offset_u16(pDataDest, vecOffs1, vecIn1);
-
-	pDataDest[8] = pDataSrc[8];
-
-	return (ARM_MATH_SUCCESS);
-}
-
-
-static arm_status arm_mat_trans_16bit_4x4_mve(uint16_t *pDataSrc, uint16_t *pDataDest)
-{
-	static const uint16_t stridesTr44_1[8] = { 0, 4, 8, 12, 1, 5, 9, 13 };
-	static const uint16_t stridesTr44_2[8] = { 2, 6, 10, 14, 3, 7, 11, 15 };
-	uint16x8_t    vecOffs1, vecOffs2;
-	uint16x8_t    vecIn1, vecIn2;
-	uint16_t const *pDataSrcVec = (uint16_t const *) pDataSrc;
-
-	/*
-	 * 4x4 Matrix transposition
-	 *
-	 * | 0   1   2   3  |       | 0   4   8   12 |   8 x 16 flattened version
-	 * | 4   5   6   7  |  =>   | 1   5   9   13 |   =>      [0   4   8   12  1   5   9   13]
-	 * | 8   9   10  11 |       | 2   6   10  14 |           [2   6   10  14  3   7   11  15]
-	 * | 12  13  14  15 |       | 3   7   11  15 |
-	 */
-
-	vecOffs1 = vldrhq_u16((uint16_t const *) stridesTr44_1);
-	vecOffs2 = vldrhq_u16((uint16_t const *) stridesTr44_2);
-	vecIn1 = vldrhq_u16(pDataSrcVec);
-	pDataSrcVec += 8;
-	vecIn2 = vldrhq_u16(pDataSrcVec);
-
-	vstrhq_scatter_shifted_offset_u16(pDataDest, vecOffs1, vecIn1);
-	vstrhq_scatter_shifted_offset_u16(pDataDest, vecOffs2, vecIn2);
-
-
-	return (ARM_MATH_SUCCESS);
-}
+#include "arm_helium_utils.h"
 
 
 
-static arm_status arm_mat_trans_16bit_generic(
-	uint16_t    srcRows,
-	uint16_t    srcCols,
-	uint16_t   *pDataSrc,
-	uint16_t   *pDataDest)
-{
-	uint16x8_t    vecOffs;
-	uint32_t        i;
-	uint32_t        blkCnt;
-	uint16_t const *pDataC;
-	uint16_t       *pDataDestR;
-	uint16x8_t    vecIn;
-
-	vecOffs = vidupq_u16((uint32_t)0, 1);
-	vecOffs = vecOffs * srcCols;
-
-	i = srcCols;
-	while (i > 0U) {
-		pDataC = (uint16_t const *) pDataSrc;
-		pDataDestR = pDataDest;
-
-		blkCnt = srcRows >> 3;
-		while (blkCnt > 0U) {
-			vecIn = vldrhq_gather_shifted_offset_u16(pDataC, vecOffs);
-			vstrhq_u16(pDataDestR, vecIn);
-			pDataDestR += 8;
-			pDataC = pDataC + srcCols * 8;
-			/*
-			 * Decrement the blockSize loop counter
-			 */
-			blkCnt--;
-		}
-
-		/*
-		 * tail
-		 */
-		blkCnt = srcRows & 7;
-		if (blkCnt > 0U) {
-			mve_pred16_t p0 = vctp16q(blkCnt);
-			vecIn = vldrhq_gather_shifted_offset_u16(pDataC, vecOffs);
-			vstrhq_p_u16(pDataDestR, vecIn, p0);
-		}
-		pDataSrc += 1;
-		pDataDest += srcRows;
-		i--;
-	}
-
-	return (ARM_MATH_SUCCESS);
-}
-
-
-arm_status arm_mat_trans_q15(
+ARM_DSP_ATTRIBUTE arm_status arm_mat_trans_q15(
 	const arm_matrix_instance_q15 *pSrc,
 	arm_matrix_instance_q15 *pDst)
 {
@@ -207,7 +98,47 @@ arm_status arm_mat_trans_q15(
 	return (status);
 }
 #else
-arm_status arm_mat_trans_q15(
+
+#if defined(ARM_MATH_NEON)
+
+#define BLOCK_ROWS 8
+#define BLOCK_ROWS_SHIFT 3
+#define LANE 8
+#define LANE_SHIFT 3
+
+#include "_arm_mat_trans_neon.c"
+
+
+ARM_DSP_ATTRIBUTE arm_status arm_mat_trans_q15(
+	const arm_matrix_instance_q15 *pSrc,
+	arm_matrix_instance_q15 *pDst)
+{
+	ARM_MAT_TRANS_NEON_INIT_U16
+
+#ifdef ARM_MATH_MATRIX_CHECK
+
+	/* Check for matrix mismatch condition */
+	if ((pSrc->numRows != pDst->numCols) || (pSrc->numCols != pDst->numRows)) {
+		/* Set status as ARM_MATH_SIZE_MISMATCH */
+		status = ARM_MATH_SIZE_MISMATCH;
+	} else
+#endif /*    #ifdef ARM_MATH_MATRIX_CHECK    */
+
+	{
+		ARM_MAT_TRANS_NEON_U16
+
+		/* Set status as ARM_MATH_SUCCESS */
+		status = ARM_MATH_SUCCESS;
+	}
+
+	/* Return to application */
+	return (status);
+}
+
+#include "_arm_mat_trans_undef_neon.c"
+
+#else
+ARM_DSP_ATTRIBUTE arm_status arm_mat_trans_q15(
 	const arm_matrix_instance_q15 *pSrc,
 	arm_matrix_instance_q15 *pDst)
 {
@@ -247,7 +178,7 @@ arm_status arm_mat_trans_q15(
 
 			while (col > 0U) {      /* column loop */
 				/* Read two elements from row */
-				in = read_q15x2_ia((q15_t **) &pIn);
+				in = read_q15x2_ia(&pIn);
 
 				/* Unpack and store one element in  destination */
 #ifndef ARM_MATH_BIG_ENDIAN
@@ -270,7 +201,7 @@ arm_status arm_mat_trans_q15(
 				pOut += nRows;
 
 				/* Read two elements from row */
-				in = read_q15x2_ia((q15_t **) &pIn);
+				in = read_q15x2_ia(&pIn);
 
 				/* Unpack and store one element in destination */
 #ifndef ARM_MATH_BIG_ENDIAN
@@ -332,6 +263,7 @@ arm_status arm_mat_trans_q15(
 	/* Return to application */
 	return (status);
 }
+#endif /* #if defined(ARM_MATH_NEON)*/
 #endif /* defined(ARM_MATH_MVEI) */
 
 /**

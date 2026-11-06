@@ -46,6 +46,10 @@ ameba_list_append(private_sources
     zephyr_stack_gatts.c
 )
 
+ameba_list_append_if(CONFIG_BT_DUAL_MODE private_sources
+    zephyr_stack_br_gap.c
+)  
+
 if (CONFIG_BT_MESH_PROVISIONER_SUPPORT OR CONFIG_BT_MESH_DEVICE_SUPPORT)
     ameba_list_append(private_sources
         zephyr_stack_mesh_common.c

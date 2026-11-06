@@ -82,7 +82,7 @@ typedef struct {
 /** @defgroup BKUP_REG_Index
   * @{
   */
-#define BKUP_REG0				((u32)0x00000000)	/*!< Bit[10,9] is used by system */
+#define BKUP_REG0				((u32)0x00000000)	/*!< Bit[31,30,10,9,7-0] is used by system */
 #define BKUP_REG1				((u32)0x00000001)	/*!< all bits can be used by user */
 #define BKUP_REG2				((u32)0x00000002)	/*!< all bits can be used by user */
 #define BKUP_REG3				((u32)0x00000003)	/*!< all bits can be used by user */
@@ -124,15 +124,13 @@ _LONG_CALL_ void BKUP_Clear(u32 DwordIdx, u32 BitMask);
 
 #define BKUP_MASK_UARTBURN_BOOT				0
 
-/* BOOT_OTA_INFO */
-/* BIT 31 for bootcnt > 3 , means default version cannot work */
-/* BIT 30 for boot version, 0 for OTA1, 1 for OTA2 */
-/* BIT 0:7 for bootcnt */
+/*BOOT_OTA_INFO for roll-back*/
 /* User should set BOOT_OTA_INFO to zero when bootloader img can work normally */
-#define BOOT_OTA_INFO			0x420080E0
-#define BOOT_CNT_ERR			BIT31
-#define BOOT_VER_NUM			BIT30
-#define BOOT_CNT_MASK			0xFF
+#define BKUP_BIT_BOOT_CNT_ERR				BIT(31)                   /*!<R/W 0  Set when bootcnt > BOOT_CNT_TRY_LIMIT, means newer bootloader cannot work */
+#define BKUP_BIT_BOOT_VER_NUM				BIT(30)                   /*!<R/W 0  boot version, 0 for OTA1, 1 for OTA2 */
+#define BKUP_MASK_BOOT_CNT					((u32)0x000000FF)         /*!<R/W 0  [7:0] bootcnt value */
+#define BKUP_BOOT_CNT(x)					((u32)((x) & 0x000000FF))
+#define BKUP_GET_BOOT_CNT(x)				((u32)((x) & 0x000000FF))
 #define BOOT_CNT_TOTAL_LIMIT	0x6
 #define BOOT_CNT_TRY_LIMIT		0x4
 

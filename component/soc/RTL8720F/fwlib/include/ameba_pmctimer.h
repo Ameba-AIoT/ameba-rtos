@@ -131,7 +131,7 @@ extern "C" {
 /** @defgroup PMCTIMER_Device_Config PMCTIMER Device Config
   * @{
   */
-#if defined(CONFIG_ARM_CORE_CM55_KM55NS)
+#if defined(CONFIG_ARM_CORE_CM4_KM4NS)
 #define PMC_TIMER_DEV PMCTIMER_DEV0   /*!< PMC timer device instance for CM4/KM55NS core. */
 #define PMC_TIMER_IRQ PMC_TIMER0_IRQ   /*!< PMC timer IRQ number for CM4/KM55NS core. */
 #else

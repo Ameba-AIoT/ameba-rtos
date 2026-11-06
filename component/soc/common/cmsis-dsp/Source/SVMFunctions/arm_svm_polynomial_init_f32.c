@@ -1,13 +1,16 @@
-/* ----------------------------------------------------------------------
+﻿/* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
  * Title:        arm_svm_polynomial_init_f32.c
  * Description:  SVM Polynomial Instance Initialization
  *
+ * $Date:        23 April 2021
+ * $Revision:    V1.9.0
  *
  * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
+
 /*
- * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -23,17 +26,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "arm_compiler_specific.h"
 
-#include "arm_math.h"
+
+#include "dsp/svm_functions.h"
 #include <limits.h>
 #include <math.h>
 
-
 /**
- * @addtogroup groupSVM
- * @{
+  @ingroup groupSVM
  */
 
+/**
+  @defgroup polysvm Polynomial SVM
+
+  Polynomial SVM classifier
+ */
+
+/**
+ * @addtogroup polysvm
+ * @{
+ */
 
 
 /**
@@ -52,22 +65,21 @@
  * @param[in]    degree                 Polynomial degree
  * @param[in]    coef0                  coeff0 (scikit-learn terminology)
  * @param[in]    gamma                  gamma (scikit-learn terminology)
- * @return none.
  *
  */
 
 
-void arm_svm_polynomial_init_f32(arm_svm_polynomial_instance_f32 *S,
-								 uint32_t nbOfSupportVectors,
-								 uint32_t vectorDimension,
-								 float32_t intercept,
-								 const float32_t *dualCoefficients,
-								 const float32_t *supportVectors,
-								 const int32_t *classes,
-								 int32_t      degree,
-								 float32_t coef0,
-								 float32_t gamma
-								)
+ARM_DSP_ATTRIBUTE void arm_svm_polynomial_init_f32(arm_svm_polynomial_instance_f32 *S,
+		uint32_t nbOfSupportVectors,
+		uint32_t vectorDimension,
+		float32_t intercept,
+		const float32_t *dualCoefficients,
+		const float32_t *supportVectors,
+		const int32_t *classes,
+		int32_t      degree,
+		float32_t coef0,
+		float32_t gamma
+												  )
 {
 	S->nbOfSupportVectors = nbOfSupportVectors;
 	S->vectorDimension = vectorDimension;
@@ -83,5 +95,5 @@ void arm_svm_polynomial_init_f32(arm_svm_polynomial_instance_f32 *S,
 
 
 /**
- * @} end of groupSVM group
+ * @} end of polysvm group
  */

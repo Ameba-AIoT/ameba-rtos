@@ -1,15 +1,16 @@
-/* ----------------------------------------------------------------------
+﻿/* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
  * Title:        arm_biquad_cascade_stereo_df2T_init_f32.c
  * Description:  Initialization function for floating-point transposed direct form II Biquad cascade filter
  *
- * $Date:        18. March 2019
- * $Revision:    V1.6.0
+ * $Date:        23 April 2021
+ * $Revision:    V1.9.0
  *
- * Target Processor: Cortex-M cores
+ * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
+
 /*
- * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -25,8 +26,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "arm_compiler_specific.h"
 
-#include "arm_math.h"
+
+#include "dsp/filtering_functions.h"
 
 /**
   @ingroup groupFilters
@@ -43,7 +46,6 @@
   @param[in]     numStages   number of 2nd order stages in the filter.
   @param[in]     pCoeffs     points to the filter coefficients.
   @param[in]     pState      points to the state buffer.
-  @return        none
 
   @par           Coefficient and State Ordering
                    The coefficients are stored in the array <code>pCoeffs</code> in the following order:
@@ -62,7 +64,7 @@
                    The state variables are updated after each block of data is processed; the coefficients are untouched.
  */
 
-void arm_biquad_cascade_stereo_df2T_init_f32(
+ARM_DSP_ATTRIBUTE void arm_biquad_cascade_stereo_df2T_init_f32(
 	arm_biquad_cascade_stereo_df2T_instance_f32 *S,
 	uint8_t numStages,
 	const float32_t *pCoeffs,
@@ -75,7 +77,7 @@ void arm_biquad_cascade_stereo_df2T_init_f32(
 	S->pCoeffs = pCoeffs;
 
 	/* Clear state buffer and size is always 4 * numStages */
-	memset(pState, 0, (4U * (uint32_t) numStages) * sizeof(float32_t));
+	_memset(pState, 0, (4U * (uint32_t) numStages) * sizeof(float32_t));
 
 	/* Assign state pointer */
 	S->pState = pState;

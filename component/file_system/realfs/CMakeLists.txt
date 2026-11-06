@@ -61,4 +61,6 @@ ameba_add_internal_library(realfs
     p_COMPILE_OPTIONS
         ${private_compile_options}
 )
+
+ameba_install_directory("${CMAKE_CURRENT_SOURCE_DIR}/tools")
 ##########################################################################################

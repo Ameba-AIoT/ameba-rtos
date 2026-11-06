@@ -1,15 +1,16 @@
-/* ----------------------------------------------------------------------
+﻿/* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
  * Title:        arm_cfft_radix2_q31.c
  * Description:  Radix-2 Decimation in Frequency CFFT & CIFFT Fixed point processing function
  *
- * $Date:        18. March 2019
- * $Revision:    V1.6.0
+ * $Date:        23 April 2021
+ * $Revision:    V1.9.0
  *
- * Target Processor: Cortex-M cores
+ * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
+
 /*
- * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -25,33 +26,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "arm_compiler_specific.h"
 
-#include "arm_math.h"
 
-void arm_radix2_butterfly_q31(
+#include "dsp/transform_functions.h"
+
+ARM_DSP_ATTRIBUTE void arm_radix2_butterfly_q31(
 	q31_t *pSrc,
 	uint32_t fftLen,
 	const q31_t *pCoef,
 	uint16_t twidCoefModifier);
 
-void arm_radix2_butterfly_inverse_q31(
+ARM_DSP_ATTRIBUTE void arm_radix2_butterfly_inverse_q31(
 	q31_t *pSrc,
 	uint32_t fftLen,
 	const q31_t *pCoef,
 	uint16_t twidCoefModifier);
 
-void arm_bitreversal_q31(
+ARM_DSP_ATTRIBUTE void arm_bitreversal_q31(
 	q31_t *pSrc,
 	uint32_t fftLen,
 	uint16_t bitRevFactor,
 	const uint16_t *pBitRevTab);
 
-/**
-  @ingroup groupTransforms
- */
 
 /**
-  @addtogroup ComplexFFT
+  @addtogroup ComplexFFTDeprecated
   @{
  */
 
@@ -60,10 +60,9 @@ void arm_bitreversal_q31(
   @deprecated    Do not use this function. It has been superseded by \ref arm_cfft_q31 and will be removed in the future.
   @param[in]     S    points to an instance of the fixed-point CFFT/CIFFT structure
   @param[in,out] pSrc points to the complex data buffer of size <code>2*fftLen</code>. Processing occurs in-place
-  @return        none
  */
 
-void arm_cfft_radix2_q31(
+ARM_DSP_ATTRIBUTE void arm_cfft_radix2_q31(
 	const arm_cfft_radix2_instance_q31 *S,
 	q31_t *pSrc)
 {
@@ -80,10 +79,10 @@ void arm_cfft_radix2_q31(
 }
 
 /**
-  @} end of ComplexFFT group
+  @} end of ComplexFFTDeprecated group
  */
 
-void arm_radix2_butterfly_q31(
+ARM_DSP_ATTRIBUTE void arm_radix2_butterfly_q31(
 	q31_t *pSrc,
 	uint32_t fftLen,
 	const q31_t *pCoef,
@@ -206,7 +205,7 @@ void arm_radix2_butterfly_q31(
 }
 
 
-void arm_radix2_butterfly_inverse_q31(
+ARM_DSP_ATTRIBUTE void arm_radix2_butterfly_inverse_q31(
 	q31_t *pSrc,
 	uint32_t fftLen,
 	const q31_t *pCoef,

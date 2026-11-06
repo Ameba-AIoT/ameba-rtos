@@ -1,15 +1,14 @@
-/* ----------------------------------------------------------------------
+﻿/* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
  * Title:        arm_cfft_f32.c
  * Description:  Combined Radix Decimation in Frequency CFFT Floating point processing function
  *
- * $Date:        18. March 2019
- * $Revision:    V1.6.0
  *
- * Target Processor: Cortex-M cores
+ * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
+
 /*
- * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2024 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -25,9 +24,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "arm_compiler_specific.h"
 
-#include "arm_math.h"
+
+#include "dsp/transform_functions.h"
 #include "arm_common_tables.h"
+
+//#include <stdio.h>
 
 #if defined(ARM_MATH_MVEF) && !defined(ARM_MATH_AUTOVECTORIZE)
 
@@ -86,80 +89,48 @@ static float32_t arm_inverse_fft_length_f32(uint16_t fftLen)
 }
 
 
-static void arm_bitreversal_f32_inpl_mve(
-	uint32_t *pSrc,
-	const uint16_t  bitRevLen,
-	const uint16_t *pBitRevTab)
-
-{
-	uint64_t       *src = (uint64_t *) pSrc;
-	uint32_t        blkCnt;     /* loop counters */
-	uint32x4_t      bitRevTabOff;
-	uint32x4_t      one = vdupq_n_u32(1);
-
-	blkCnt = (bitRevLen / 2) / 2;
-	while (blkCnt > 0U) {
-		bitRevTabOff = vldrhq_u32(pBitRevTab);
-		pBitRevTab += 4;
-
-		uint64x2_t      bitRevOff1 = vmullbq_int_u32(bitRevTabOff, one);
-		uint64x2_t      bitRevOff2 = vmulltq_int_u32(bitRevTabOff, one);
-
-		uint64x2_t      in1 = vldrdq_gather_offset_u64(src, bitRevOff1);
-		uint64x2_t      in2 = vldrdq_gather_offset_u64(src, bitRevOff2);
-
-		vstrdq_scatter_offset_u64(src, bitRevOff1, in2);
-		vstrdq_scatter_offset_u64(src, bitRevOff2, in1);
-
-		/*
-		 * Decrement the blockSize loop counter
-		 */
-		blkCnt--;
-	}
-}
 
 
 static void _arm_radix4_butterfly_f32_mve(const arm_cfft_instance_f32 *S, float32_t *pSrc, uint32_t fftLen)
 {
-	f32x4_t vecTmp0, vecTmp1;
-	f32x4_t vecSum0, vecDiff0, vecSum1, vecDiff1;
-	f32x4_t vecA, vecB, vecC, vecD;
-	uint32_t  blkCnt;
-	uint32_t  n1, n2;
-	uint32_t  stage = 0;
-	int32_t  iter = 1;
-	static const uint32_t strides[4] = {
-		(0 - 16) *sizeof(q31_t *),
-		(1 - 16) *sizeof(q31_t *),
-		(8 - 16) *sizeof(q31_t *),
-		(9 - 16) *sizeof(q31_t *)
+	f32x4_t     vecTmp0, vecTmp1;
+	f32x4_t     vecSum0, vecDiff0, vecSum1, vecDiff1;
+	f32x4_t     vecA, vecB, vecC, vecD;
+	uint32_t    blkCnt;
+	uint32_t    n1, n2;
+	uint32_t    stage = 0;
+	int32_t     iter = 1;
+	static const int32_t strides[4] = {
+		(0 - 16) *(int32_t)sizeof(q31_t *),
+		(1 - 16) *(int32_t)sizeof(q31_t *),
+		(8 - 16) *(int32_t)sizeof(q31_t *),
+		(9 - 16) *(int32_t)sizeof(q31_t *)
 	};
 
 	n2 = fftLen;
 	n1 = n2;
 	n2 >>= 2u;
 	for (int k = fftLen / 4u; k > 1; k >>= 2) {
+		float32_t const     *p_rearranged_twiddle_tab_stride1 =
+			&S->rearranged_twiddle_stride1[
+		 S->rearranged_twiddle_tab_stride1_arr[stage]];
+		float32_t const     *p_rearranged_twiddle_tab_stride2 =
+			&S->rearranged_twiddle_stride2[
+		 S->rearranged_twiddle_tab_stride2_arr[stage]];
+		float32_t const     *p_rearranged_twiddle_tab_stride3 =
+			&S->rearranged_twiddle_stride3[
+		 S->rearranged_twiddle_tab_stride3_arr[stage]];
+
+		float32_t *pBase = pSrc;
 		for (int i = 0; i < iter; i++) {
-			float32_t const     *p_rearranged_twiddle_tab_stride1 =
-				&S->rearranged_twiddle_stride1[
-			S->rearranged_twiddle_tab_stride1_arr[stage]];
-			float32_t const     *p_rearranged_twiddle_tab_stride2 =
-				&S->rearranged_twiddle_stride2[
-			S->rearranged_twiddle_tab_stride2_arr[stage]];
-			float32_t const     *p_rearranged_twiddle_tab_stride3 =
-				&S->rearranged_twiddle_stride3[
-			S->rearranged_twiddle_tab_stride3_arr[stage]];
-			float32_t const    *pW1, *pW2, *pW3;
-			float32_t           *inA = pSrc + CMPLX_DIM * i * n1;
-			float32_t           *inB = inA + n2 * CMPLX_DIM;
-			float32_t           *inC = inB + n2 * CMPLX_DIM;
-			float32_t           *inD = inC + n2 * CMPLX_DIM;
+			float32_t    *inA = pBase;
+			float32_t    *inB = inA + n2 * CMPLX_DIM;
+			float32_t    *inC = inB + n2 * CMPLX_DIM;
+			float32_t    *inD = inC + n2 * CMPLX_DIM;
+			float32_t const *pW1 = p_rearranged_twiddle_tab_stride1;
+			float32_t const *pW2 = p_rearranged_twiddle_tab_stride2;
+			float32_t const *pW3 = p_rearranged_twiddle_tab_stride3;
 			f32x4_t            vecW;
-
-
-			pW1 = p_rearranged_twiddle_tab_stride1;
-			pW2 = p_rearranged_twiddle_tab_stride2;
-			pW3 = p_rearranged_twiddle_tab_stride3;
 
 			blkCnt = n2 / 2;
 			/*
@@ -227,6 +198,7 @@ static void _arm_radix4_butterfly_f32_mve(const arm_cfft_instance_f32 *S, float3
 
 				blkCnt--;
 			}
+			pBase +=  CMPLX_DIM * n1;
 		}
 		n1 = n2;
 		n2 >>= 2u;
@@ -237,7 +209,7 @@ static void _arm_radix4_butterfly_f32_mve(const arm_cfft_instance_f32 *S, float3
 	/*
 	 * start of Last stage process
 	 */
-	uint32x4_t vecScGathAddr = vld1q_u32(strides);
+	uint32x4_t vecScGathAddr = vld1q_u32((uint32_t *)strides);
 	vecScGathAddr = vecScGathAddr + (uint32_t) pSrc;
 
 	/* load scheduling */
@@ -327,41 +299,41 @@ static void _arm_radix4_butterfly_inverse_f32_mve(const arm_cfft_instance_f32 *S
 	f32x4_t vecTmp0, vecTmp1;
 	f32x4_t vecSum0, vecDiff0, vecSum1, vecDiff1;
 	f32x4_t vecA, vecB, vecC, vecD;
-	f32x4_t vecW;
 	uint32_t  blkCnt;
 	uint32_t  n1, n2;
 	uint32_t  stage = 0;
 	int32_t  iter = 1;
-	static const uint32_t strides[4] = {
-		(0 - 16) *sizeof(q31_t *),
-		(1 - 16) *sizeof(q31_t *),
-		(8 - 16) *sizeof(q31_t *),
-		(9 - 16) *sizeof(q31_t *)
+	static const int32_t strides[4] = {
+		(0 - 16) *(int32_t)sizeof(q31_t *),
+		(1 - 16) *(int32_t)sizeof(q31_t *),
+		(8 - 16) *(int32_t)sizeof(q31_t *),
+		(9 - 16) *(int32_t)sizeof(q31_t *)
 	};
 
 	n2 = fftLen;
 	n1 = n2;
 	n2 >>= 2u;
 	for (int k = fftLen / 4; k > 1; k >>= 2) {
-		for (int i = 0; i < iter; i++) {
-			float32_t const *p_rearranged_twiddle_tab_stride1 =
-				&S->rearranged_twiddle_stride1[
-			S->rearranged_twiddle_tab_stride1_arr[stage]];
-			float32_t const *p_rearranged_twiddle_tab_stride2 =
-				&S->rearranged_twiddle_stride2[
-			S->rearranged_twiddle_tab_stride2_arr[stage]];
-			float32_t const *p_rearranged_twiddle_tab_stride3 =
-				&S->rearranged_twiddle_stride3[
-			S->rearranged_twiddle_tab_stride3_arr[stage]];
-			float32_t const *pW1, *pW2, *pW3;
-			float32_t *inA = pSrc + CMPLX_DIM * i * n1;
-			float32_t *inB = inA + n2 * CMPLX_DIM;
-			float32_t *inC = inB + n2 * CMPLX_DIM;
-			float32_t *inD = inC + n2 * CMPLX_DIM;
+		float32_t const *p_rearranged_twiddle_tab_stride1 =
+			&S->rearranged_twiddle_stride1[
+		 S->rearranged_twiddle_tab_stride1_arr[stage]];
+		float32_t const *p_rearranged_twiddle_tab_stride2 =
+			&S->rearranged_twiddle_stride2[
+		 S->rearranged_twiddle_tab_stride2_arr[stage]];
+		float32_t const *p_rearranged_twiddle_tab_stride3 =
+			&S->rearranged_twiddle_stride3[
+		 S->rearranged_twiddle_tab_stride3_arr[stage]];
 
-			pW1 = p_rearranged_twiddle_tab_stride1;
-			pW2 = p_rearranged_twiddle_tab_stride2;
-			pW3 = p_rearranged_twiddle_tab_stride3;
+		float32_t *pBase = pSrc;
+		for (int i = 0; i < iter; i++) {
+			float32_t    *inA = pBase;
+			float32_t    *inB = inA + n2 * CMPLX_DIM;
+			float32_t    *inC = inB + n2 * CMPLX_DIM;
+			float32_t    *inD = inC + n2 * CMPLX_DIM;
+			float32_t const *pW1 = p_rearranged_twiddle_tab_stride1;
+			float32_t const *pW2 = p_rearranged_twiddle_tab_stride2;
+			float32_t const *pW3 = p_rearranged_twiddle_tab_stride3;
+			f32x4_t       vecW;
 
 			blkCnt = n2 / 2;
 			/*
@@ -428,6 +400,7 @@ static void _arm_radix4_butterfly_inverse_f32_mve(const arm_cfft_instance_f32 *S
 
 				blkCnt--;
 			}
+			pBase +=  CMPLX_DIM * n1;
 		}
 		n1 = n2;
 		n2 >>= 2u;
@@ -438,7 +411,7 @@ static void _arm_radix4_butterfly_inverse_f32_mve(const arm_cfft_instance_f32 *S
 	/*
 	 * start of Last stage process
 	 */
-	uint32x4_t vecScGathAddr = vld1q_u32(strides);
+	uint32x4_t vecScGathAddr = vld1q_u32((uint32_t *)strides);
 	vecScGathAddr = vecScGathAddr + (uint32_t) pSrc;
 
 	/*
@@ -529,25 +502,27 @@ static void arm_cfft_radix4by2_inverse_f32_mve(const arm_cfft_instance_f32 *S, f
 
 
 /**
-  @addtogroup ComplexFFT
+  @addtogroup ComplexFFTF32
   @{
  */
 
 /**
   @brief         Processing function for the floating-point complex FFT.
   @param[in]     S              points to an instance of the floating-point CFFT structure
-  @param[in,out] p1             points to the complex data buffer of size <code>2*fftLen</code>. Processing occurs in-place
+  @param[in,out] p1             points to the complex data buffer. Processing occurs in-place
   @param[in]     ifftFlag       flag that selects transform direction
                    - value = 0: forward transform
                    - value = 1: inverse transform
   @param[in]     bitReverseFlag flag that enables / disables bit reversal of output
                    - value = 0: disables bit reversal of output
                    - value = 1: enables bit reversal of output
-  @return        none
+
+  @par Size of buffers according to the target architecture and datatype:
+       They are described on the page \ref transformbuffers "transform buffers".
  */
 
 
-void arm_cfft_f32(
+ARM_DSP_ATTRIBUTE void arm_cfft_f32(
 	const arm_cfft_instance_f32 *S,
 	float32_t *pSrc,
 	uint8_t ifftFlag,
@@ -595,12 +570,64 @@ void arm_cfft_f32(
 
 	if (bitReverseFlag) {
 
-		arm_bitreversal_f32_inpl_mve((uint32_t *)pSrc, S->bitRevLength, S->pBitRevTable);
+		arm_bitreversal_32_inpl_mve((uint32_t *)pSrc, S->bitRevLength, S->pBitRevTable);
 
 	}
 }
 
 
+#elif defined(ARM_MATH_NEON)
+#include "CMSIS_NE10_types.h"
+#include "CMSIS_NE10_fft.h"
+
+
+
+ARM_DSP_ATTRIBUTE void arm_cfft_f32(
+	const arm_cfft_instance_f32 *S,
+	const float32_t *pIn,
+	float32_t *pOut,
+	float32_t *pBuffer,  /* When used, in is not modified */
+	uint8_t ifftFlag)
+{
+	if (S->algorithm_flag == ARM_MIXED_RADIX_FFT) {
+		if (ifftFlag) {
+			arm_ne10_mixed_radix_generic_butterfly_inverse_float32_neon(S,
+					(ne10_fft_cpx_float32_t *)pIn,
+					(ne10_fft_cpx_float32_t *)pOut,
+					(ne10_fft_cpx_float32_t *)pBuffer);
+		} else {
+			arm_ne10_mixed_radix_generic_butterfly_float32_neon(S,
+					(ne10_fft_cpx_float32_t *)pIn,
+					(ne10_fft_cpx_float32_t *)pOut,
+					(ne10_fft_cpx_float32_t *)pBuffer);
+		}
+	} else {
+		if (ifftFlag == 0) {
+			if (S->fftLen == 16) {
+				arm_ne10_fft16_forward_float32_neon(S,
+													(ne10_fft_cpx_float32_t *)pIn,
+													(ne10_fft_cpx_float32_t *)pOut
+												   );
+			} else {
+				arm_ne10_mixed_radix_fft_forward_float32_neon(S,
+						(ne10_fft_cpx_float32_t *)pIn,
+						(ne10_fft_cpx_float32_t *)pOut,
+						(ne10_fft_cpx_float32_t *)pBuffer);
+			}
+		} else {
+			if (S->fftLen == 16) {
+				arm_ne10_fft16_backward_float32_neon(S,
+													 (ne10_fft_cpx_float32_t *)pIn,
+													 (ne10_fft_cpx_float32_t *)pOut);
+			} else {
+				arm_ne10_mixed_radix_fft_backward_float32_neon(S,
+						(ne10_fft_cpx_float32_t *)pIn,
+						(ne10_fft_cpx_float32_t *)pOut,
+						(ne10_fft_cpx_float32_t *)pBuffer);
+			}
+		}
+	}
+}
 #else
 extern void arm_radix8_butterfly_f32(
 	float32_t *pSrc,
@@ -654,7 +681,7 @@ extern void arm_bitreversal_32(
                    needed FFTs.</b> Other FFT versions can continue to be initialized as
                    explained below.
   @par
-                   For not MVE versions, pre-initialized data structures containing twiddle factors
+                   For versions not targeting Helium or Neon, pre-initialized data structures containing twiddle factors
                    and bit reversal tables are provided and defined in <code>arm_const_structs.h</code>.  Include
                    this header in your function and then pass one of the constant structures as
                    an argument to arm_cfft_f32.  For example:
@@ -675,36 +702,37 @@ extern void arm_bitreversal_32(
   @code
                    const static arm_cfft_instance_f32 *S;
                    ...
-                     switch (length) {
-                       case 16:
-                         S = &arm_cfft_sR_f32_len16;
-                         break;
-                       case 32:
-                         S = &arm_cfft_sR_f32_len32;
-                         break;
-                       case 64:
-                         S = &arm_cfft_sR_f32_len64;
-                         break;
-                       case 128:
-                         S = &arm_cfft_sR_f32_len128;
-                         break;
-                       case 256:
-                         S = &arm_cfft_sR_f32_len256;
-                         break;
-                       case 512:
-                         S = &arm_cfft_sR_f32_len512;
-                         break;
-                       case 1024:
-                         S = &arm_cfft_sR_f32_len1024;
-                         break;
-                       case 2048:
-                         S = &arm_cfft_sR_f32_len2048;
-                         break;
-                       case 4096:
-                         S = &arm_cfft_sR_f32_len4096;
-                         break;
-                     }
+                   switch (length) {
+                     case 16:
+                       S = &arm_cfft_sR_f32_len16;
+                       break;
+                     case 32:
+                       S = &arm_cfft_sR_f32_len32;
+                       break;
+                     case 64:
+                       S = &arm_cfft_sR_f32_len64;
+                       break;
+                     case 128:
+                       S = &arm_cfft_sR_f32_len128;
+                       break;
+                     case 256:
+                       S = &arm_cfft_sR_f32_len256;
+                       break;
+                     case 512:
+                       S = &arm_cfft_sR_f32_len512;
+                       break;
+                     case 1024:
+                       S = &arm_cfft_sR_f32_len1024;
+                       break;
+                     case 2048:
+                       S = &arm_cfft_sR_f32_len2048;
+                       break;
+                     case 4096:
+                       S = &arm_cfft_sR_f32_len4096;
+                       break;
+                   }
   @endcode
+
   @par
                    The new arm_cfft_init_f32 can also be used.
   @par Q15 and Q31
@@ -721,7 +749,7 @@ extern void arm_bitreversal_32(
                    Pre-initialized data structures containing twiddle factors and bit reversal
                    tables are provided and defined in <code>arm_const_structs.h</code>.  Include
                    this header in your function and then pass one of the constant structures as
-                   an argument to arm_cfft_q31. For example:
+                   an argument to arm_cfft_q31 (except if you are targeting Helium or Neon). For example:
   @par
                    <code>arm_cfft_q31(arm_cfft_sR_q31_len64, pSrc, 1, 1)</code>
   @par
@@ -770,9 +798,28 @@ extern void arm_bitreversal_32(
                      }
   @endcode
 
+  @par Neon version
+                     The neon version has a different API.
+                     The input and output buffers must be
+                     different.
+                     There is a temporary buffer.
+                     The bit reverse flag is not more
+                     available in Neon version.
+
+  @code
+        void arm_cfft_f32(
+                const arm_cfft_instance_f32 * S,
+                      const float32_t * pIn,
+                      float32_t * pOut,
+                      float32_t * pBuffer,
+                      uint8_t ifftFlag);
+  @endcode
+
+  @par Size of buffers according to the target architecture and datatype:
+       They are described on the page \ref transformbuffers "transform buffers".
  */
 
-void arm_cfft_radix8by2_f32(arm_cfft_instance_f32 *S, float32_t *p1)
+static void arm_cfft_radix8by2_f32(arm_cfft_instance_f32 *S, float32_t *p1)
 {
 	uint32_t    L  = S->fftLen;
 	float32_t *pCol1, * pCol2, * pMid1, * pMid2;
@@ -885,7 +932,7 @@ void arm_cfft_radix8by2_f32(arm_cfft_instance_f32 *S, float32_t *p1)
 	arm_radix8_butterfly_f32(pCol2, L, (float32_t *) S->pTwiddle, 2U);
 }
 
-void arm_cfft_radix8by4_f32(arm_cfft_instance_f32 *S, float32_t *p1)
+static void arm_cfft_radix8by4_f32(arm_cfft_instance_f32 *S, float32_t *p1)
 {
 	uint32_t    L  = S->fftLen >> 1;
 	float32_t *pCol1, *pCol2, *pCol3, *pCol4, *pEnd1, *pEnd2, *pEnd3, *pEnd4;
@@ -1128,24 +1175,46 @@ void arm_cfft_radix8by4_f32(arm_cfft_instance_f32 *S, float32_t *p1)
 }
 
 /**
-  @addtogroup ComplexFFT
+  @addtogroup ComplexFFTF32
   @{
  */
 
 /**
   @brief         Processing function for the floating-point complex FFT.
   @param[in]     S              points to an instance of the floating-point CFFT structure
-  @param[in,out] p1             points to the complex data buffer of size <code>2*fftLen</code>. Processing occurs in-place
+  @param[in,out] p1             points to the complex data buffer. Processing occurs in-place
   @param[in]     ifftFlag       flag that selects transform direction
                    - value = 0: forward transform
                    - value = 1: inverse transform
   @param[in]     bitReverseFlag flag that enables / disables bit reversal of output
                    - value = 0: disables bit reversal of output
                    - value = 1: enables bit reversal of output
-  @return        none
+  @par Neon version
+                     The neon version has a different API.
+                     The input and output buffers must be
+                     different.
+                     There is an optional temporary buffer.
+                     If the temporary buffer is not used, the
+                     input buffer is modified.
+                     The bit reverse flag is not more
+                     available in Neon version.
+
+  @par
+   @code
+        void arm_cfft_f32(
+                const arm_cfft_instance_f32 * S,
+                      float32_t * pIn,
+                      float32_t * pOut,
+                      float32_t * pBuffer,
+                      uint8_t ifftFlag);
+  @endcode
+
+  @par Size of buffers according to the target architecture and datatype:
+       They are described on the page \ref transformbuffers "transform buffers".
+
  */
 
-void arm_cfft_f32(
+ARM_DSP_ATTRIBUTE void arm_cfft_f32(
 	const arm_cfft_instance_f32 *S,
 	float32_t *p1,
 	uint8_t ifftFlag,
@@ -1200,5 +1269,5 @@ void arm_cfft_f32(
 #endif /* defined(ARM_MATH_MVEF) && !defined(ARM_MATH_AUTOVECTORIZE) */
 
 /**
-  @} end of ComplexFFT group
+  @} end of ComplexFFTF32 group
  */

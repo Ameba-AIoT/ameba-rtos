@@ -49,6 +49,13 @@ static void node_reset_pending_handler(struct k_work *work)
 
 static K_WORK_DEFINE(node_reset_pending, node_reset_pending_handler);
 
+#if ZEPHYR_RTK_PATCH
+void zephyr_mesh_cfg_srv_work_reset(void)
+{
+	k_work_reset(&node_reset_pending);
+}
+#endif
+
 static int dev_comp_data_get(const struct bt_mesh_model *model,
 			     struct bt_mesh_msg_ctx *ctx,
 			     struct net_buf_simple *buf)

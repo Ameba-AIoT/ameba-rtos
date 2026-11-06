@@ -35,13 +35,17 @@ u32 UART_BAUD = 38400;
 static GDMA_InitTypeDef GDMA_InitStruct;
 static rtos_sema_t atcmd_uart_tx_sema;
 static rtos_sema_t atcmd_uart_rx_sema;
+static rtos_sema_t atcmd_uart_tt_sema;
 
 extern volatile UART_LOG_CTL shell_ctl;
 extern UART_LOG_BUF shell_rxbuf;
 
 #define UART_TT_BUF_LEN 1024
+#define UART_TT_TASK_PRIO 6	/* above the atcmd tasks (5) that consume the tt ring buffer */
 static u8 uart_tt_buf[UART_TT_BUF_LEN];
 static u16 uart_tt_buf_len;
+static volatile u8 uart_tt_rx_paused;
+static u8 uart_hw_flow_ctrl;
 extern char g_tt_mode;
 extern char g_tt_mode_check_watermark;
 extern char g_tt_mode_indicate_high_watermark;
@@ -132,6 +136,20 @@ void atio_uart_output(char *buf, int len)
 	}
 }
 
+/* atcmd_tt_mode_end clears the ring buffer in this critical section and may run on the other core under SMP; 0 once cleared */
+static u32 uart_tt_ring_space(void)
+{
+	u32 space = 0;
+
+	rtos_critical_enter(RTOS_CRITICAL_DEFAULT);
+	if (atcmd_tt_mode_rx_ring_buf != NULL) {
+		space = RingBuffer_Space(atcmd_tt_mode_rx_ring_buf);
+	}
+	rtos_critical_exit(RTOS_CRITICAL_DEFAULT);
+
+	return space;
+}
+
 u32 atio_uart_handler(void *data)
 {
 	(void)data;
@@ -188,26 +206,52 @@ u32 atio_uart_handler(void *data)
 tt_recv_again:
 
 	if (g_tt_mode) {
+		u32 room = UART_TT_BUF_LEN;
+
+		/* With RTS/CTS, never take more from the FIFO than the ring buffer can hold: the rest stays in
+		 * the FIFO, AFE deasserts RTS and the host stops. RX irq is re-enabled by atcmd_uart_tt_task. */
+		if (uart_hw_flow_ctrl) {
+			/* 0 also when tt mode just ended: atcmd_uart_tt_task then resumes RX right away */
+			u32 free = uart_tt_ring_space();
+			room = free < room ? free : room;
+			if (room == 0) {
+				uart_tt_rx_paused = 1;
+				UART_DEV->IER = uart_ier & ~(RUART_BIT_ERBI | RUART_BIT_ETOI);
+				rtos_sema_give(atcmd_uart_tt_sema);
+				return 0;
+			}
+		}
+
 		while (UART_Readable(UART_DEV)) {
-			if (uart_tt_buf_len == UART_TT_BUF_LEN) {
+			if (uart_tt_buf_len == room) {
 				break;
 			}
 			UART_CharGet(UART_DEV, &(uart_tt_buf[uart_tt_buf_len++]));
 		}
 
 		if (uart_tt_buf_len > 0) {
-			u32 space = RingBuffer_Space(atcmd_tt_mode_rx_ring_buf);
+			u32 space = 0;
+
+			/* check and write the ring buffer within the critical section in which atcmd_tt_mode_end clears it */
+			rtos_critical_enter(RTOS_CRITICAL_DEFAULT);
+			if (atcmd_tt_mode_rx_ring_buf != NULL) {
+				space = RingBuffer_Space(atcmd_tt_mode_rx_ring_buf);
+				if (space >= uart_tt_buf_len) {
+					RingBuffer_Write(atcmd_tt_mode_rx_ring_buf, uart_tt_buf, uart_tt_buf_len);
+				}
+			}
+			rtos_critical_exit(RTOS_CRITICAL_DEFAULT);
 
 			if (g_tt_mode_check_watermark) {
 				if (space - uart_tt_buf_len < MAX_TT_HEAP_SIZE * (1 - TT_MODE_HIGH_WATERMARK) && g_tt_mode_indicate_high_watermark == 0) {
 					g_tt_mode_indicate_high_watermark = 1;
 					g_tt_mode_indicate_low_watermark = 0;
-					at_printf(ATCMD_TT_MODE_HIGH_WATERMARK_STR);
+					/* at_printf is not ISR safe (mutex, DMA, malloc): let atcmd_uart_tt_task send it */
+					rtos_sema_give(atcmd_uart_tt_sema);
 				}
 			}
 
 			if (space >= uart_tt_buf_len) {
-				RingBuffer_Write(atcmd_tt_mode_rx_ring_buf, uart_tt_buf, uart_tt_buf_len);
 				rtos_sema_give(atcmd_tt_mode_sema);
 			} else {
 				RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "atcmd_tt_mode_rx_ring_buf is full, drop data\n");
@@ -293,6 +337,31 @@ void atcmd_uart_input_handler_task(void)
 	}
 }
 
+/* Task-context work posted by atio_uart_handler: RX resume (with RTS/CTS) or High Watermark (without) */
+static void atcmd_uart_tt_task(void *param)
+{
+	(void)param;
+
+	while (1) {
+		rtos_sema_take(atcmd_uart_tt_sema, 0xFFFFFFFF);
+
+		if (uart_tt_rx_paused) {
+			/* wait for the consumer to free space or tt mode to end */
+			while (g_tt_mode && uart_tt_ring_space() == 0) {
+				rtos_time_delay_ms(1);
+			}
+			uart_tt_rx_paused = 0;
+			/* FIFO still holds data, so the RX irq fires again right away */
+			UART_INTConfig(UART_DEV, RUART_BIT_ERBI | RUART_BIT_ETOI, ENABLE);
+		}
+
+		/* skip if the consumer already drained below the low watermark meanwhile */
+		if (g_tt_mode && g_tt_mode_indicate_high_watermark) {
+			at_printf(ATCMD_TT_MODE_HIGH_WATERMARK_STR);
+		}
+	}
+}
+
 int atio_uart_init(void)
 {
 	UART_InitTypeDef UART_InitStruct;
@@ -339,6 +408,7 @@ int atio_uart_init(void)
 #endif
 		UART_DEV_TABLE[uart_idx].UARTx->MCR |= RUART_BIT_AFE;
 		UART_DEV_TABLE[uart_idx].UARTx->MCR |= RUART_BIT_RTS;
+		uart_hw_flow_ctrl = 1;
 	}
 
 	InterruptRegister((IRQ_FUN)atio_uart_handler, UART_DEV_TABLE[uart_idx].IrqNum, (u32)UART_DEV, INT_PRI_MIDDLE);
@@ -347,6 +417,12 @@ int atio_uart_init(void)
 
 	if (rtos_task_create(NULL, ((const char *)"atcmd_uart_input_handler_task"), (rtos_task_t)atcmd_uart_input_handler_task, NULL, 6 * 1024, 5) != RTK_SUCCESS) {
 		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "\n\r%s rtos_task_create(atcmd_uart_input_handler_task) failed", __FUNCTION__);
+		return -1;
+	}
+
+	rtos_sema_create(&atcmd_uart_tt_sema, 0, 1);
+	if (rtos_task_create(NULL, ((const char *)"atcmd_uart_tt_task"), (rtos_task_t)atcmd_uart_tt_task, NULL, 1024, UART_TT_TASK_PRIO) != RTK_SUCCESS) {
+		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "\n\r%s create atcmd_uart_tt_task failed", __FUNCTION__);
 		return -1;
 	}
 

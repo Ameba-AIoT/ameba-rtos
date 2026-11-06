@@ -24,7 +24,7 @@ static const char *const TAG = "LOCKS";
 // __attribute__((constructor))
 static void init_retarget_locks(void)
 {
-#ifdef CONFIG_ARM_CORE_CM55_KM55TZ
+#ifdef CONFIG_ARM_CORE_CM4_KM4TZ
 	RTK_LOGI(TAG, "KM55TZ %s\n", __func__);
 #else
 	RTK_LOGI(TAG, "KM55NS %s\n", __func__);

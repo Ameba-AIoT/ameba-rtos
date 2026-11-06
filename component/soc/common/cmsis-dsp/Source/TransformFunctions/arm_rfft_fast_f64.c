@@ -1,15 +1,16 @@
-/* ----------------------------------------------------------------------
+﻿/* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
- * Title:        arm_rfft_f64.c
+ * Title:        arm_rfft_fast_f64.c
  * Description:  RFFT & RIFFT Double precision Floating point process function
  *
- * $Date:        29. November 2019
- * $Revision:    V1.0.0
+ * $Date:        23 April 2021
+ * $Revision:    V1.9.0
  *
- * Target Processor: Cortex-M cores
+ * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
+
 /*
- * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -25,19 +26,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "arm_compiler_specific.h"
 
-#include "arm_math.h"
 
-void stage_rfft_f64(
+#include "dsp/transform_functions.h"
+
+static void stage_rfft_f64(
 	const arm_rfft_fast_instance_f64 *S,
-	float64_t *p,
+	const float64_t *p,
 	float64_t *pOut)
 {
 	uint32_t  k;                                /* Loop Counter */
 	float64_t twR, twI;                         /* RFFT Twiddle coefficients */
 	const float64_t *pCoeff = S->pTwiddleRFFT;        /* Points to RFFT Twiddle factors */
-	float64_t *pA = p;                          /* increasing pointer */
-	float64_t *pB = p;                          /* decreasing pointer */
+	const float64_t *pA = p;                          /* increasing pointer */
+	const float64_t *pB = p;                          /* decreasing pointer */
 	float64_t xAR, xAI, xBR, xBI;               /* temporary variables */
 	float64_t t1a, t1b;                         /* temporary variables */
 	float64_t p0, p1, p2, p3;                   /* temporary variables */
@@ -114,16 +117,16 @@ void stage_rfft_f64(
 }
 
 /* Prepares data for inverse cfft */
-void merge_rfft_f64(
+static void merge_rfft_f64(
 	const arm_rfft_fast_instance_f64 *S,
-	float64_t *p,
+	const float64_t *p,
 	float64_t *pOut)
 {
 	uint32_t  k;                                /* Loop Counter */
 	float64_t twR, twI;                         /* RFFT Twiddle coefficients */
 	const float64_t *pCoeff = S->pTwiddleRFFT;        /* Points to RFFT Twiddle factors */
-	float64_t *pA = p;                          /* increasing pointer */
-	float64_t *pB = p;                          /* decreasing pointer */
+	const float64_t *pA = p;                          /* increasing pointer */
+	const float64_t *pB = p;                          /* decreasing pointer */
 	float64_t xAR, xAI, xBR, xBI;               /* temporary variables */
 	float64_t t1a, t1b, r, s, t, u;             /* temporary variables */
 
@@ -173,12 +176,15 @@ void merge_rfft_f64(
 }
 
 /**
-  @ingroup groupTransforms
+  @ingroup RealFFT
 */
 
+/**
+  @defgroup RealFFTF64 Real FFT F64 Functions
+*/
 
 /**
-  @addtogroup RealFFT
+  @addtogroup RealFFTF64
   @{
 */
 
@@ -190,10 +196,12 @@ void merge_rfft_f64(
   @param[in]     ifftFlag
                    - value = 0: RFFT
                    - value = 1: RIFFT
-  @return        none
+
+  @par Size of buffers according to the target architecture and datatype:
+       They are described on the page \ref transformbuffers "transform buffers".
 */
 
-void arm_rfft_fast_f64(
+ARM_DSP_ATTRIBUTE void arm_rfft_fast_f64(
 	arm_rfft_fast_instance_f64 *S,
 	float64_t *p,
 	float64_t *pOut,
@@ -219,5 +227,5 @@ void arm_rfft_fast_f64(
 }
 
 /**
-* @} end of RealFFT group
+* @} end of RealFFTF64 group
 */
