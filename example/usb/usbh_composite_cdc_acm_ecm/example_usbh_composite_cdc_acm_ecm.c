@@ -210,12 +210,9 @@ typedef struct {
 
 /* Private function prototypes -----------------------------------------------*/
 
-static int usbh_composite_cmd(u16 argc, u8 *argv[]);
+static int usbh_composite_cmd(u16 argc, char *argv[]);
 static void usbh_composite_cmd_at(u16 argc, char **argv);
 static int usbh_composite_hotplug_test(void);
-
-extern void rltk_usb_eth_init(void);
-extern void rltk_usb_eth_deinit(void);
 
 static int usbh_composite_cb_init(void);
 static void usbh_composite_cb_deinit(void);
@@ -1018,7 +1015,7 @@ static void usbh_composite_cmd_usage(void)
   * @param  argv: Arguments, argv[0] is the sub command
   * @retval RTK_SUCCESS, or the error of the sub command
   */
-static int usbh_composite_cmd(u16 argc, u8 *argv[])
+static int usbh_composite_cmd(u16 argc, char *argv[])
 {
 	u8 *cmd;
 	u32 cmd_len;
@@ -1027,7 +1024,7 @@ static int usbh_composite_cmd(u16 argc, u8 *argv[])
 	u8 enter = 0U;
 	int ret = -RTK_ERR_IO;
 
-	if ((argc == 0U) || (_stricmp((const char *)argv[0], "help") == 0) || (_stricmp((const char *)argv[0], "?") == 0)) {
+	if ((argc == 0U) || (_stricmp(argv[0], "help") == 0) || (_stricmp(argv[0], "?") == 0)) {
 		usbh_composite_cmd_usage();
 		return (argc == 0U) ? -RTK_ERR_BADARG : RTK_SUCCESS;
 	}
@@ -1039,7 +1036,7 @@ static int usbh_composite_cmd(u16 argc, u8 *argv[])
 		return -RTK_ERR_IO;
 	}
 
-	if (_stricmp((const char *)argv[0], "hotplug") == 0) {
+	if (_stricmp(argv[0], "hotplug") == 0) {
 		if (argc != 1U) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Usage: AT+USBHACMECM=hotplug\n");
 			return -RTK_ERR_BADARG;
@@ -1047,7 +1044,7 @@ static int usbh_composite_cmd(u16 argc, u8 *argv[])
 		return usbh_composite_hotplug_test();
 	}
 
-	if (_stricmp((const char *)argv[0], "send") != 0) {
+	if (_stricmp(argv[0], "send") != 0) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid cmd: %s, try AT+USBHACMECM=help\n", argv[0]);
 		return -RTK_ERR_BADARG;
 	}
@@ -1116,7 +1113,7 @@ static int usbh_composite_cmd(u16 argc, u8 *argv[])
 /* AT entry: argv[0] is reserved by the AT parser and argv[1] holds the first parameter */
 static void usbh_composite_cmd_at(u16 argc, char **argv)
 {
-	int ret = usbh_composite_cmd((argc != 0U) ? (argc - 1U) : 0U, (u8 **)&argv[1]);
+	int ret = usbh_composite_cmd((argc != 0U) ? (u16)(argc - 1U) : 0U, &argv[1]);
 
 	if (ret == RTK_SUCCESS) {
 		at_printf(ATCMD_OK_END_STR);

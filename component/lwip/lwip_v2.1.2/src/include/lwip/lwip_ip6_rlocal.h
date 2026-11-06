@@ -10,6 +10,9 @@ extern "C" {
 
 extern struct netif xnetif[];
 
+#define is_sta_ap()     (wifi_is_running(1) && wifi_is_running(0))
+#define is_sta_only()   (wifi_is_running(0) && !wifi_is_running(1))
+
 void handle_ip6(struct pbuf *p, struct ip6_hdr *iphdr, struct netif *inp);
 struct netif *nd6_find_nhb_netif(const ip6_addr_t *src, const ip6_addr_t *dest);
 void print_ipv6_addresses(void);

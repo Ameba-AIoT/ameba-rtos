@@ -95,7 +95,7 @@ static int usbd_ecm_data_alt_start(usb_dev_t *dev);
 static void usbd_ecm_data_alt_stop(usb_dev_t *dev);
 static int usbd_ecm_intr_in_send(void *data, u16 len);
 static int usbd_ecm_send_notification(void);
-static inline u8 usbd_ecm_char_to_hex(u8 value);
+static inline char usbd_ecm_char_to_hex(u8 value);
 static void usbd_ecm_mac_to_string(const u8 *mac, char *mac_str);
 static void usbd_ecm_set_mac(const u8 *mac);
 static int usbd_ecm_bulk_send(u8 *buf, u32 len);
@@ -115,9 +115,9 @@ static const u8 usbd_cdc_ecm_dev_desc[USB_LEN_DEV_DESC] = {
 	USB_LEN_DEV_DESC,                               /* bLength */
 	USB_DESC_TYPE_DEVICE,                           /* bDescriptorType */
 	0x00, 0x02,                                     /* bcdUSB: 2.0 */
-	USB_CDC_CLASS_CODE,                             /* bDeviceClass: CDC */
-	0x00,                                           /* bDeviceSubClass: 0x00 (must be 0x00 per CDC 1.2 5.1.1) */
-	0x00,                                           /* bDeviceProtocol */
+	0xEF,                                           /* bDeviceClass: MISC, the configuration carries an IAD (Ref USB IAD ECN 1.0) */
+	0x02,                                           /* bDeviceSubClass: Common Class */
+	0x01,                                           /* bDeviceProtocol: IAD */
 	USB_MAX_EP0_SIZE,                               /* bMaxPacketSize0 */
 	USB_LOW_BYTE(USB_VID),                          /* idVendor (patched by core from usbd_dev_info_t) */
 	USB_HIGH_BYTE(USB_VID),
@@ -136,9 +136,9 @@ static const u8 usbd_cdc_ecm_device_qualifier_desc[USB_LEN_DEV_QUALIFIER_DESC] =
 	USB_LEN_DEV_QUALIFIER_DESC,                     /* bLength */
 	USB_DESC_TYPE_DEVICE_QUALIFIER,                 /* bDescriptorType */
 	0x00, 0x02,                                     /* bcdUSB: 2.0 */
-	USB_CDC_CLASS_CODE,                             /* bDeviceClass: CDC, same as the device descriptor (USB 2.0 9.6.2) */
-	0x00,                                           /* bDeviceSubClass */
-	0x00,                                           /* bDeviceProtocol */
+	0xEF,                                           /* bDeviceClass: same as the device descriptor (Ref USB 2.0 9.6.2) */
+	0x02,                                           /* bDeviceSubClass */
+	0x01,                                           /* bDeviceProtocol */
 	USB_MAX_EP0_SIZE,                               /* bMaxPacketSize0 */
 	0x01,                                           /* bNumConfigurations */
 	0x00,                                           /* Reserved */
@@ -387,14 +387,14 @@ static usbd_cdc_ecm_dev_t usbd_cdc_ecm_dev;
  * @param value: Nibble value (0x0-0xF).
  * @retval ASCII character '0'-'9' or 'A'-'F'. Returns '0' for out-of-range input.
  */
-static inline u8 usbd_ecm_char_to_hex(u8 value)
+static inline char usbd_ecm_char_to_hex(u8 value)
 {
-	if (value <= 0x9) {
-		return 0x30 + value;
-	} else if (value <= 0xF) {
-		return 0x41 + (value - 0xA);
+	if (value <= 0x9U) {
+		return (char)('0' + value);
+	} else if (value <= 0xFU) {
+		return (char)('A' + (value - 0xAU));
 	} else {
-		return 0x30;
+		return '0';
 	}
 }
 
@@ -410,10 +410,10 @@ static void usbd_ecm_mac_to_string(const u8 *mac, char *mac_str)
 
 	for (i = 0; i < 6; i++) {
 		/* high 4 bits */
-		mac_str[str_index++] = usbd_ecm_char_to_hex((mac[i] >> 4) & 0x0F);
+		mac_str[str_index++] = usbd_ecm_char_to_hex((u8)((mac[i] >> 4) & 0x0FU));
 
 		/* low 4 bits */
-		mac_str[str_index++] = usbd_ecm_char_to_hex(mac[i] & 0x0F);
+		mac_str[str_index++] = usbd_ecm_char_to_hex((u8)(mac[i] & 0x0FU));
 	}
 
 	mac_str[str_index] = '\0';
@@ -820,7 +820,7 @@ static int usbd_ecm_tx_enqueue(const u8 *buf, u32 len, u8 block)
 	 *             as soon as a XFRC fires (typically within one USB microframe),
 	 *             then retries.  Bounded by usbd_cdc_ecm_config_t::bulk_tx_timeout_ms.
 	 * block == 0: non-blocking; drop immediately when full. */
-	if (block) {
+	if (block != 0U) {
 		tx_timeout_ms = (ecm->cfg->bulk_tx_timeout_ms != 0U) ? ecm->cfg->bulk_tx_timeout_ms : USBD_CDC_ECM_DEFAULT_BULK_TX_TIMEOUT_MS;
 		do {
 			ret = usb_ringbuf_add_tail(&ecm->bulk_tx_rb, buf, len, 1U);
@@ -1052,8 +1052,15 @@ static int usbd_ecm_setup(usb_dev_t *dev, usb_setup_req_t *req)
 				}
 
 				if ((ret == RTK_SUCCESS) && (ecm->cb != NULL) && (ecm->cb->setup != NULL)) {
-					/* Notification only: the request has already been applied above */
-					ecm->cb->setup(req, NULL);
+					int cb_ret;
+
+					/* Notification only: the request has already been applied above, so a
+					   failing callback can not undo it. A STALL now would leave the host and
+					   the device disagree on the alternate setting: only record it. */
+					cb_ret = ecm->cb->setup(req, NULL);
+					if (cb_ret != RTK_SUCCESS) {
+						USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_SETUP, (u8)req->wIndex);
+					}
 				}
 			}
 			break;
@@ -1145,6 +1152,8 @@ static int usbd_ecm_setup(usb_dev_t *dev, usb_setup_req_t *req)
 					 * request error instead of leaving the host waiting for a reply. */
 					ret = -RTK_ERR_BADARG;
 				} else {
+					usb_setup_req_t rsp_req;
+
 					if (rsp_len > (u16)ep0_in->xfer_buf_len) {
 						rsp_len = (u16)ep0_in->xfer_buf_len;
 					}
@@ -1152,12 +1161,16 @@ static int usbd_ecm_setup(usb_dev_t *dev, usb_setup_req_t *req)
 					 * response window: a callback writing fewer bytes must not leak stale
 					 * control-buffer contents to the host. */
 					usb_os_memset((void *)ep0_in->xfer_buf, 0, rsp_len);
-					ret = ecm->cb->setup(req, ep0_in->xfer_buf);
+					/* Ref USB 2.0 9.2.7: never return more than wLength bytes. The callback
+					 * sizes its answer by wLength: hand it a copy carrying the response length,
+					 * the request itself is left untouched for the core's ZLP decision. */
+					usb_os_memcpy((void *)&rsp_req, (const void *)req, sizeof(usb_setup_req_t));
+					rsp_req.wLength = (req->wLength < rsp_len) ? req->wLength : rsp_len;
+					ret = ecm->cb->setup(&rsp_req, ep0_in->xfer_buf);
 					if (ret == RTK_SUCCESS) {
-						/* Ref USB 2.0 9.2.7: never return more than wLength bytes; the core
-						 * STALLs EP0 on a non-RTK_SUCCESS return, so propagate a submit failure
-						 * instead of leaving the host in a control-transfer timeout. */
-						ep0_in->xfer_len = (req->wLength < rsp_len) ? req->wLength : rsp_len;
+						/* The core STALLs EP0 on a non-RTK_SUCCESS return, so propagate a submit
+						 * failure instead of leaving the host in a control-transfer timeout. */
+						ep0_in->xfer_len = rsp_req.wLength;
 						ret = usbd_ep_transmit(dev, ep0_in);
 					}
 				}
@@ -1306,7 +1319,7 @@ static int usbd_ecm_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len)
 	}
 
 	/* Invalidate cache if needed */
-	if (ep_bulk_out->skip_dcache_post_invalidate && len > 0) {
+	if ((ep_bulk_out->skip_dcache_post_invalidate != 0U) && (len > 0U)) {
 		DCache_Invalidate((u32)ep_bulk_out->xfer_buf, len);
 	}
 
@@ -1375,7 +1388,7 @@ static void usbd_ecm_sof(usb_dev_t *dev)
 	}
 
 	/* Retry a previously-failed notification when the endpoint is free. */
-	if (ecm->notify_retry && ep_intr_in->xfer_state == 0U) {
+	if ((ecm->notify_retry != 0U) && (ep_intr_in->xfer_state == 0U)) {
 		if (usbd_ecm_send_notification() == RTK_SUCCESS) {
 			ecm->notify_retry = 0U;
 		}
@@ -2137,7 +2150,7 @@ int usbd_cdc_ecm_transmit(const u8 *buf, u32 len, u8 block)
 	int ret;
 
 	if (usb_os_is_in_interrupt() != 0U) {
-		USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_XFER, 0U);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "TX in ISR\n");
 		return -RTK_ERR_BADARG;
 	}
 

@@ -23,7 +23,7 @@ extern "C" {
   * @brief  Identify the NOR flash chip and re-initialize flash_init_para accordingly.
   * @note   Reads the flash ID, looks it up in Flash_AVL and dispatches to the
   *         FLASH_StructInit_xxx matching its flash_class. Must be called before
-  *         flash_nor_set_status_register() and flash_nor_get_chip_info().
+  *         flash_nor_set_qe_register() and flash_nor_get_chip_info().
   * @retval None
   */
 void flash_nor_get_vendor(void);
@@ -33,7 +33,18 @@ void flash_nor_get_vendor(void);
   * @note   flash_nor_get_vendor() must be called first to get the status mask.
   * @retval None
   */
-void flash_nor_set_status_register(void);
+void flash_nor_set_qe_register(void);
+
+/**
+  * @brief  Get the CS timing the identified NOR flash requires, in ns.
+  * @param  tcss_ns: CS active setup time, tCSS.
+  * @param  tchsh_ns: CS active hold time, tCHSH.
+  * @param  tshsl_ns: CS high time, tSHSL.
+  * @note   Common datasheet worst case for now, flash_nor_get_vendor() should have run
+  *         so that per-flash values can be returned here.
+  * @retval None
+  */
+void flash_nor_get_cs_timing(u32 *tcss_ns, u32 *tchsh_ns, u32 *tshsl_ns);
 
 /**
   * @brief  Get the AVL entry of the identified NOR flash chip.
@@ -44,7 +55,7 @@ const FlashInfo_TypeDef *flash_nor_get_chip_info(void);
 /**
   * @brief  Set up the flash to be read at the given bitmode and clock.
   * @param  spic_mode: the bitmode about to be used, one of Spic1IOBitMode ... Spic4IOBitMode.
-  * @param  flash_clk: the flash clock in Hz that spic_mode will run at, 0 if the flash
+  * @param  flash_clk: the flash clock (spi_sclk) in Hz that spic_mode will run at, 0 if the flash
   *                    still runs on the boot clock (no High Performance Mode needed).
   * @note   Above FLASH_HPM_CLK_LIMIT the 4IO read needs extra dummy cycles, which is
   *         applied to flash_init_para for every flash. On top of that the vendors that

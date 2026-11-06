@@ -73,7 +73,10 @@ int usbh_uvc_init(const usbh_uvc_cb_t *cb, const usbh_uvc_config_t *cfg)
 		return -RTK_ERR_BADARG;
 	}
 
-	if (cfg->frame_buf_size == 0U) {
+	/* The size is rounded up to a cache line, then USBH_UVC_VIDEO_FRAME_NUMS of it are
+	 * allocated in one block: both steps shall stay within u32 */
+	if ((cfg->frame_buf_size == 0U) ||
+		(cfg->frame_buf_size > ((UINT32_MAX / USBH_UVC_VIDEO_FRAME_NUMS) - CACHE_LINE_SIZE))) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid buf size\n");
 		return -RTK_ERR_BADARG;
 	}
@@ -220,6 +223,14 @@ void usbh_uvc_deinit(void)
 	if (usbh_uvc_class_deinit() != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Deinit refused\n");
 		return;
+	}
+
+	/* Deinit with the device still attached: the core released the class slot without a
+	 * detach(), so its streaming channels are still enabled and its descriptor tree still
+	 * allocated. Halt the channels before stream_close() frees the buffers they DMA into. */
+	if (uvc->host != NULL) {
+		uvc->state = UVC_STATE_IDLE;
+		usbh_uvc_class_release_device(uvc);
 	}
 
 	/* Close every stream opened in usbh_uvc_init(). Use USBH_UVC_VS_DESC_MAX_NUM

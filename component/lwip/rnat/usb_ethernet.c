@@ -22,10 +22,6 @@
 
 /* ========== Common ========== */
 
-extern struct netif *pnetif_usb_eth;
-
-extern void rltk_usb_eth_init(void);
-
 extern void netif_adapter_usb_eth_recv(u8 *buf, u32 len);
 
 static void (*g_usb_eth_link_cb)(int link_up) = NULL;

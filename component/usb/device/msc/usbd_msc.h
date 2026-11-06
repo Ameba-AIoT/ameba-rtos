@@ -194,8 +194,8 @@ typedef struct {
 	                                                     usbd_msc_config_t::buf_size. */
 	u32 data_length;                                /**< Transfer data length. */
 	u32 blklen;                                     /**< The data length requested by the host. */
+	int tx_status;                                  /**< BULK Transmitted status, a RTK status code. */
 	u16 rx_data_length;                             /**< BULK Received data length. */
-	u8 tx_status;                                   /**< BULK Transmitted status. */
 
 	/* Disk and SCSI */
 	usbd_msc_disk_ops_t disk_ops;                   /**< Structure with disk operation function pointers. */

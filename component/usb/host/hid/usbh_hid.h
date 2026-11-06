@@ -249,6 +249,7 @@ typedef struct {
 	u8 alt_setting_count;                     /**< Number of alternate settings on this HID interface */
 	u8 halt_pending;                          /**< INTR IN STALLed, CLEAR_FEATURE(ENDPOINT_HALT) to be sent */
 	u8 halt_retry_cnt;                        /**< Failed CLEAR_FEATURE(ENDPOINT_HALT) attempts */
+	u8 report_cut_logged;                     /**< A report longer than a ring node was reported for this attach */
 
 	/* Descriptors */
 	usbh_dev_hid_desc_t hid_desc;             /**< HID Descriptor */
@@ -256,6 +257,8 @@ typedef struct {
 	usbh_ep_desc_t ep_desc_out;               /**< Interrupt OUT Endpoint Descriptor, optional */
 	u8 *report_desc;                          /**< Alias pointer into hid_ctrl_buf (zero-copy). Valid only until setup() ends:
 	                                               hid_ctrl_buf then becomes the INTR IN buffer and is overwritten by reports. */
+	u8 *report_desc_buf;                      /**< Report descriptor larger than hid_ctrl_buf: allocated for the fetch and
+	                                               freed once it is parsed, or by detach */
 	usbh_hid_ctrl_caps_t vol_caps;            /**< Volume capabilities detected; written with hid_ctrl under the USB
 	                                               critical section, read by the parse thread through caps_snap */
 

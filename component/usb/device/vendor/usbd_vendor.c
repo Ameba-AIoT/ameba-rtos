@@ -538,6 +538,7 @@ static int usbd_vendor_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			ret = -RTK_ERR_BADARG;
 		} else if (req->wLength != 0U) {
 			if ((req->bmRequestType & USB_REQ_DIR_MASK) == USB_D2H) {
+				usb_setup_req_t rsp_req;
 				u16 rsp_len = req->wLength;
 
 				/* Ref USB 2.0 9.3.4: wLength is the maximum the host accepts, never trust it
@@ -551,7 +552,11 @@ static int usbd_vendor_setup(usb_dev_t *dev, usb_setup_req_t *req)
 				   callback owns the whole window and shall reject any request it does not
 				   support, which makes the core STALL EP0. */
 				usb_os_memset((void *)ep0_in->xfer_buf, 0, rsp_len);
-				ret = cdev->cb->setup(req, ep0_in->xfer_buf);
+				/* The callback sizes its answer by wLength: hand it a copy carrying the clamped
+				   length, the request itself is left untouched for the core's ZLP decision */
+				usb_os_memcpy((void *)&rsp_req, (const void *)req, sizeof(usb_setup_req_t));
+				rsp_req.wLength = rsp_len;
+				ret = cdev->cb->setup(&rsp_req, ep0_in->xfer_buf);
 				if (ret == RTK_SUCCESS) {
 					ep0_in->xfer_len = rsp_len;
 					/* Propagate a submit failure so that the core stalls EP0 instead of

@@ -680,7 +680,7 @@ static void usbd_msc_tx_process(void)
 
 	/* Without the lock the TX thread could race the RX one on the medium and the BOT state */
 	if (usb_os_lock(usbd_msc_sd_lock) != RTK_SUCCESS) {
-		USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_XFER, cdev->cfg->bulk_in_addr);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "TX lock fail\n");
 		return;
 	}
 
@@ -763,7 +763,7 @@ static void usbd_msc_rx_process(void)
 
 	/* Without the lock the RX thread could race the TX one on the medium and the BOT state */
 	if (usb_os_lock(usbd_msc_sd_lock) != RTK_SUCCESS) {
-		USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_XFER, cdev->cfg->bulk_out_addr);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "RX lock fail\n");
 		return;
 	}
 

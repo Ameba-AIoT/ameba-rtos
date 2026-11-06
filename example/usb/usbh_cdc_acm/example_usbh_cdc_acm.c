@@ -754,6 +754,7 @@ static void cdc_acm_request_test(void)
 	usb_cdc_acm_line_coding_t new_line_coding;
 
 	if (cdc_acm_wait_ready() != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "NOT ready for CTRL test\n");
 		return;
 	}
 
@@ -761,6 +762,7 @@ static void cdc_acm_request_test(void)
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "GET_LINE_CODING:");
 	if (cdc_acm_lock_stack() != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "CTRL test FAIL\n");
 		return;
 	}
 	ret = usbh_cdc_acm_get_line_coding(&line_coding);
@@ -778,6 +780,7 @@ static void cdc_acm_request_test(void)
 	line_coding.b.bParityType = LINE_CODING_PARITY_NO;
 	line_coding.b.bDataBits = 8;
 	if (cdc_acm_lock_stack() != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "CTRL test FAIL\n");
 		return;
 	}
 	ret = usbh_cdc_acm_set_line_coding(&line_coding);
@@ -790,6 +793,7 @@ static void cdc_acm_request_test(void)
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "GET_LINE_CODING:");
 	if (cdc_acm_lock_stack() != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "CTRL test FAIL\n");
 		return;
 	}
 	ret = usbh_cdc_acm_get_line_coding(&new_line_coding);
@@ -798,16 +802,19 @@ static void cdc_acm_request_test(void)
 		RTK_LOGS(NOTAG, RTK_LOG_INFO, "DteRate: %u\nCharFormat: %d\nParityType: %d\nDataBits: %d\n",
 				 new_line_coding.b.dwDteRate, new_line_coding.b.bCharFormat, new_line_coding.b.bParityType, new_line_coding.b.bDataBits);
 	} else {
+		/* new_line_coding holds nothing to compare */
 		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "fail\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "CTRL test FAIL\n");
+		return;
 	}
 
 	if ((new_line_coding.b.dwDteRate == line_coding.b.dwDteRate) &&
 		(new_line_coding.b.bCharFormat == line_coding.b.bCharFormat) &&
 		(new_line_coding.b.bParityType == line_coding.b.bParityType) &&
 		(new_line_coding.b.bDataBits == line_coding.b.bDataBits)) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "Ctrl test PASS\n");
+		RTK_LOGS(TAG, RTK_LOG_INFO, "CTRL test PASS\n");
 	} else {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Ctrl test FAIL\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "CTRL test FAIL\n");
 	}
 }
 

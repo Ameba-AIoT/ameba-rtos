@@ -561,7 +561,7 @@ static void example_usbh_uac_play_thread(void *param)
 				if (usbh_uac_lock(usbh_uac_play_mutex) != RTK_SUCCESS) {
 					goto play_stop;
 				}
-				ret = usbh_uac_write((u8 *)(usbh_uac_audio_data_handle + offset), send_len, 10);
+				ret = usbh_uac_write(usbh_uac_audio_data_handle + offset, send_len, 10);
 				usbh_uac_unlock(usbh_uac_play_mutex);
 
 				if (ret < 0) {

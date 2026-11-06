@@ -1414,9 +1414,17 @@ static int usbd_whc_handle_setup(usb_setup_req_t *req, u8 *buf, u16 buf_len)
 		}
 	} else {
 		if ((idev->cb != NULL) && (idev->cb->setup != NULL)) {
-			/* Propagate the class callback status so an unsupported request is
-			 * STALLed by the core instead of being ACKed */
-			ret = idev->cb->setup(req, buf);
+			usb_setup_req_t app_req;
+
+			/* The callback sizes its answer by wLength: hand it a copy carrying the usable
+			 * length of buf, the request itself is left untouched for the core's ZLP decision.
+			 * Propagate the class callback status so an unsupported request is STALLed by the
+			 * core instead of being ACKed */
+			usb_os_memcpy((void *)&app_req, (const void *)req, sizeof(usb_setup_req_t));
+			if (app_req.wLength > buf_len) {
+				app_req.wLength = buf_len;
+			}
+			ret = idev->cb->setup(&app_req, buf);
 		}
 	}
 

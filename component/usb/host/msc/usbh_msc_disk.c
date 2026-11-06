@@ -18,15 +18,15 @@
 
 /* Private function prototypes -----------------------------------------------*/
 
-DSTATUS USB_disk_status(void);
-DSTATUS USB_disk_initialize(void);
-DSTATUS USB_disk_deinitialize(void);
-DRESULT USB_disk_read(BYTE *buff, DWORD sector, u32 count);
+static DSTATUS USB_disk_status(void);
+static DSTATUS USB_disk_initialize(void);
+static DSTATUS USB_disk_deinitialize(void);
+static DRESULT USB_disk_read(BYTE *buff, DWORD sector, u32 count);
 #if _USE_WRITE == 1
-DRESULT USB_disk_write(const BYTE *buff, DWORD sector, u32 count);
+static DRESULT USB_disk_write(const BYTE *buff, DWORD sector, u32 count);
 #endif
 #if _USE_IOCTL == 1
-DRESULT USB_disk_ioctl(BYTE cmd, void *buff);
+static DRESULT USB_disk_ioctl(BYTE cmd, void *buff);
 #endif
 
 /* Private variables ---------------------------------------------------------*/
@@ -88,9 +88,7 @@ static DRESULT USB_disk_error(u8 is_write)
 	return res;
 }
 
-/* Exported functions --------------------------------------------------------*/
-
-DSTATUS USB_disk_status(void)
+static DSTATUS USB_disk_status(void)
 {
 	DSTATUS stat;
 
@@ -103,7 +101,7 @@ DSTATUS USB_disk_status(void)
 	return stat;
 }
 
-DSTATUS USB_disk_initialize(void)
+static DSTATUS USB_disk_initialize(void)
 {
 	usbh_msc_lun_t info = {0};
 	DSTATUS stat;
@@ -119,13 +117,13 @@ DSTATUS USB_disk_initialize(void)
 	return stat;
 }
 
-DSTATUS USB_disk_deinitialize(void)
+static DSTATUS USB_disk_deinitialize(void)
 {
 	return 0U;
 }
 
 /* Read sector(s) --------------------------------------------*/
-DRESULT USB_disk_read(BYTE *buff, DWORD sector, u32 count)
+static DRESULT USB_disk_read(BYTE *buff, DWORD sector, u32 count)
 {
 	DRESULT res = RES_ERROR;
 	int status = RTK_SUCCESS;
@@ -159,7 +157,7 @@ DRESULT USB_disk_read(BYTE *buff, DWORD sector, u32 count)
 
 /* Write sector(s) --------------------------------------------*/
 #if _USE_WRITE == 1
-DRESULT USB_disk_write(const BYTE *buff, DWORD sector, u32 count)
+static DRESULT USB_disk_write(const BYTE *buff, DWORD sector, u32 count)
 {
 	DRESULT res = RES_ERROR;
 	int status = RTK_SUCCESS;
@@ -193,7 +191,7 @@ DRESULT USB_disk_write(const BYTE *buff, DWORD sector, u32 count)
 
 /* Write sector(s) --------------------------------------------*/
 #if _USE_IOCTL == 1
-DRESULT USB_disk_ioctl(BYTE cmd, void *buff)
+static DRESULT USB_disk_ioctl(BYTE cmd, void *buff)
 {
 	DRESULT res = RES_ERROR;
 	usbh_msc_lun_t info = {0};
@@ -243,3 +241,4 @@ DRESULT USB_disk_ioctl(BYTE cmd, void *buff)
 }
 #endif
 
+/* Exported functions --------------------------------------------------------*/

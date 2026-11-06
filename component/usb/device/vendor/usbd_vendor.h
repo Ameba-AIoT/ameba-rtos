@@ -115,7 +115,8 @@ typedef struct {
 	 * @param[in] req Pointer to the setup request packet.
 	 * @param[out] buf Pointer to a buffer for data stage of control transfers. For a D2H
 	 *         request it is the zero-initialized response window, min(wLength, EP0 buffer
-	 *         size) bytes, and all of it is sent to the host when the handler returns 0.
+	 *         size) bytes, which is the wLength the handler sees in req, and all of it is
+	 *         sent to the host when the handler returns 0.
 	 *         For an H2D request it holds the received payload, and it is NULL if the
 	 *         request has no data stage.
 	 * @return 0 on success, non-zero on failure.

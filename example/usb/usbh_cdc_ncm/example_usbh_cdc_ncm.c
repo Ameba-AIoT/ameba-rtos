@@ -70,9 +70,6 @@ static void usbh_cdc_ncm_cb_process(usb_host_t *host, u8 msg);
 static void usbh_cdc_ncm_cb_received(u8 *pbuf, u32 Len);
 static int usbh_cdc_ncm_cb_device_check(usb_host_t *host, u8 cfg_max);
 
-extern void rltk_usb_eth_init(void);
-extern void rltk_usb_eth_deinit(void);
-
 /* Private variables ---------------------------------------------------------*/
 
 static const char *const TAG = "NCM";

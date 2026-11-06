@@ -126,7 +126,9 @@ typedef struct {
 	 * @brief Called to handle class-specific SETUP requests.
 	 * @note   This function is called within an interrupt service routine (ISR) context;
 	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
-	 * @param[in] req: Pointer to the setup request packet.
+	 * @param[in] req: Pointer to the setup request packet. For a device-to-host request with a
+	 *            data stage, buf holds at least wLength bytes and wLength never exceeds the
+	 *            host's: write at most wLength bytes.
 	 * @param[out] buf: Pointer to a buffer for data stage of control transfers.
 	 * @return 0 on success, non-zero on failure.
 	 */
