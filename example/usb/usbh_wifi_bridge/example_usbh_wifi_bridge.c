@@ -75,16 +75,11 @@ static void cdc_ecm_cb_process(usb_host_t *host, u8 msg);
 static void cdc_ecm_cb_received(u8 *pbuf, u32 Len);
 static int cdc_ecm_cb_device_check(usb_host_t *host, u8 cfg_max);
 
-extern void rltk_usb_eth_init(void);
-extern void rltk_usb_eth_deinit(void);
-
 /* Private variables ---------------------------------------------------------*/
 
 static const char *const TAG = "ECMB";
 
 static struct eth_addr host_mac = {{0x00}}; // mac of device connected to usb
-
-extern struct netif *pnetif_usb_eth;
 
 static usb_os_sema_t cdc_ecm_detach_sema;
 

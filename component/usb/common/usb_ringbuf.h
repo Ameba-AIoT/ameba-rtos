@@ -114,6 +114,9 @@ int usb_ringbuf_manager_deinit(usb_ringbuf_manager_t *handle);
  *
  * Clears the buffer logically by resetting the head and tail pointers to zero.
  * This function does not free memory; it simply discards all existing data.
+ * It rewrites both indices without a lock: the caller shall keep the producer and the
+ * consumer quiet, or run it in the critical section they use. To discard data while the
+ * producer runs, use usb_ringbuf_drop_all() from the consumer instead.
  *
  * @param[in,out] handle  Pointer to the manager structure.
  * @return 0 on success.

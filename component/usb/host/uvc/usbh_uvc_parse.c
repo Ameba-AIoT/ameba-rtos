@@ -7,6 +7,7 @@
 /* Includes ------------------------------------------------------------------*/
 
 #include "usbh_uvc.h"
+#include "usbh_uvc_class.h"
 #include "usbh_uvc_parse.h"
 
 /* Private defines -----------------------------------------------------------*/
@@ -50,8 +51,6 @@
 /* Private variables ---------------------------------------------------------*/
 
 static const char *const TAG = "UVC";
-
-extern usbh_uvc_host_t uvc_host;
 
 /* Exported variables --------------------------------------------------------*/
 
@@ -423,7 +422,7 @@ static int usbh_uvc_parse_format(usbh_uvc_vs_t *vs_intf, u8 *pbuf, u16 *length)
 		return -RTK_ERR_BADARG;
 	}
 
-	totallen = (u16)(desc[4] | (desc[5] << 8));
+	totallen = ReadEF2Byte(desc + 4);
 
 	/*first scan to get total number of format and frame*/
 	while (real_len < *length) {

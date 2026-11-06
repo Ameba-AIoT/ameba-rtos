@@ -50,6 +50,7 @@ static int usbh_hid_parse_details(usbh_itf_data_t *itf_data);
 static int usbh_hid_parse_interface(usb_host_t *host);
 static int usbh_hid_process_get_hid_report_desc(usb_host_t *host);
 static int usbh_hid_handle_report_desc(usb_host_t *host);
+static void usbh_hid_free_report_desc_buf(usbh_hid_t *hid);
 static void usbh_hid_in_process(usb_host_t *host);
 static void usbh_hid_process_halt(usb_host_t *host);
 static int usbh_hid_attach(usb_host_t *host);
@@ -369,7 +370,7 @@ static void usbh_hid_settle_input_field(usbh_hid_parse_state *state, const usbh_
 	}
 
 	if ((item->data & USBH_HID_ITEM_DATA_VARIABLE) != 0U) {
-		if ((state->report_size != 1U) || (state->track_mask == 0U)) {
+		if (((u32)state->report_size != 1U) || ((u32)state->track_mask == 0U)) {
 			return;
 		}
 
@@ -595,7 +596,7 @@ static u32 usbh_hid_extract_bits(const u8 *data, u32 data_len, u32 bit_offset, u
 	u32 val = 0;
 	u32 bit;
 
-	if ((nbits == 0U) || (nbits > 32U)) {
+	if (((u32)nbits == 0U) || ((u32)nbits > 32U)) {
 		return 0;
 	}
 	/* Reject before reading: the whole field must lie within the report. */
@@ -930,9 +931,14 @@ static int usbh_hid_process_get_hid_report_desc(usb_host_t *host)
 		return -RTK_ERR_BADARG;
 	}
 
-	if (hid->hid_desc.wDescriptorLength > USBH_HID_CTRL_BUF_LEN) {
-		RTK_LOGS(TAG, RTK_LOG_WARN, "Report desc %dB > %dB, HID events off\n", hid->hid_desc.wDescriptorLength, USBH_HID_CTRL_BUF_LEN);
-		return -RTK_ERR_BADARG;
+	/* wDescriptorLength may reach 65535, Ref HID 1.11 6.2.1. A descriptor larger than hid_ctrl_buf
+	 * gets a buffer of its own, sized for the whole EP0 DMA window, kept only until it is parsed. */
+	if ((hid->hid_desc.wDescriptorLength > USBH_HID_CTRL_BUF_LEN) && (hid->report_desc_buf == NULL)) {
+		hid->report_desc_buf = (u8 *)usb_os_malloc(usb_get_dma_len(hid->hid_desc.wDescriptorLength, USB_MAX_EP0_SIZE));
+		if (hid->report_desc_buf == NULL) {
+			RTK_LOGS(TAG, RTK_LOG_WARN, "Report desc %dB no mem, HID events off\n", hid->hid_desc.wDescriptorLength);
+			return -RTK_ERR_NOMEM;
+		}
 	}
 
 	setup.req.bmRequestType = USB_D2H | USB_REQ_TYPE_STANDARD | USB_REQ_RECIPIENT_INTERFACE;
@@ -941,7 +947,25 @@ static int usbh_hid_process_get_hid_report_desc(usb_host_t *host)
 	setup.req.wIndex = hid->itf_idx;
 	setup.req.wLength = hid->hid_desc.wDescriptorLength;
 
-	return usbh_ctrl_request(host, &setup, hid->hid_ctrl_buf);
+	return usbh_ctrl_request(host, &setup, (hid->report_desc_buf != NULL) ? hid->report_desc_buf : hid->hid_ctrl_buf);
+}
+
+/**
+  * @brief  Free the buffer of a report descriptor larger than hid_ctrl_buf
+  * @note   Host task only. report_desc may alias the buffer until setup() ends, so it is
+  *         pointed back at hid_ctrl_buf, which nothing parses any more by then.
+  * @param  hid: HID handle
+  * @retval None
+  */
+static void usbh_hid_free_report_desc_buf(usbh_hid_t *hid)
+{
+	if (hid->report_desc_buf != NULL) {
+		if (hid->report_desc == hid->report_desc_buf) {
+			hid->report_desc = hid->hid_ctrl_buf;
+		}
+		usb_os_mfree((void *)hid->report_desc_buf);
+		hid->report_desc_buf = NULL;
+	}
 }
 
 /**
@@ -970,7 +994,6 @@ static int usbh_hid_handle_report_desc(usb_host_t *host)
 				 * rather than leaking the error to setup(), which the core would
 				 * read as a terminal failure of the whole HID class. */
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "HID set alt err %d\n", ret);
-				usb_os_sleep_ms(5);
 				hid->report_desc_status = USBH_HID_REPORT_GET_DESC;
 				ret = -RTK_ERR_BUSY;
 			}
@@ -979,7 +1002,7 @@ static int usbh_hid_handle_report_desc(usb_host_t *host)
 			if (ret == RTK_SUCCESS) {
 				hid->report_desc_status = USBH_HID_REPORT_MAX;
 				//parse report desc
-				hid->report_desc = hid->hid_ctrl_buf;
+				hid->report_desc = (hid->report_desc_buf != NULL) ? hid->report_desc_buf : hid->hid_ctrl_buf;
 				/* hid_ctrl is set by the parser together with the caps it publishes */
 				/* A short reply leaves stale bytes past what was received: parse only those received */
 				rx_len = usbh_get_last_ctrl_in_size(host);
@@ -992,8 +1015,11 @@ static int usbh_hid_handle_report_desc(usb_host_t *host)
 				} else {
 					usbh_hid_parse_hid_report_desc(hid->report_desc, (u16)rx_len);
 				}
+				/* Parsed into caps: a descriptor of its own buffer is not needed any more */
+				usbh_hid_free_report_desc_buf(hid);
 			} else if (ret != -RTK_ERR_BUSY) {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "HID get report err %d, no support\n", ret);
+				usbh_hid_free_report_desc_buf(hid);
 				hid->hid_ctrl = 0;
 				ret = RTK_SUCCESS;
 			}
@@ -1036,6 +1062,13 @@ static void usbh_hid_in_process(usb_host_t *host)
 		urb_state = usbh_get_urb_state(host, pipe);
 		if (urb_state == USBH_URB_DONE) {
 			len = usbh_get_last_transfer_size(host, pipe);
+			/* A ring node keeps USBH_HID_MSG_LENGTH bytes, enough for the consumer reports this
+			 * class parses: a longer report is cut there, so tell it apart from a lost one */
+			if ((len > USBH_HID_MSG_LENGTH) && (hid->report_cut_logged == 0U)) {
+				/* Once per attach, the device would repeat it on every poll */
+				hid->report_cut_logged = 1U;
+				RTK_LOGS(TAG, RTK_LOG_WARN, "Report %d cut to %d\n", len, USBH_HID_MSG_LENGTH);
+			}
 			/* save to ring buffer; a full ring means the parse thread fell behind */
 			if (usb_ringbuf_add_tail(&(hid->report_msg), pipe->xfer_buf, len, 1) != RTK_SUCCESS) {
 				RTK_LOGS(TAG, RTK_LOG_WARN, "Report drop\n");
@@ -1129,6 +1162,7 @@ static int usbh_hid_attach(usb_host_t *host)
 	hid->host = host;
 	hid->halt_pending = 0U;
 	hid->halt_retry_cnt = 0U;
+	hid->report_cut_logged = 0U;
 
 	status = usbh_hid_parse_interface(host);
 	if (status != RTK_SUCCESS) {
@@ -1146,7 +1180,7 @@ static int usbh_hid_attach(usb_host_t *host)
 		pipe = &(hid->pipe_in);
 		/* SET_INTERFACE is only required when more than one alt setting exists.
 		 * For the typical single-alt HID interface, skip it to avoid an unneeded
-		 * control transfer (and the 5 ms recovery on devices that STALL it). */
+		 * control transfer to devices that STALL it. */
 		hid->report_desc_status = (hid->alt_setting_count > 1U) ? USBH_HID_REPORT_SET_ALT
 								  : USBH_HID_REPORT_GET_DESC;
 
@@ -1198,6 +1232,8 @@ static void usbh_hid_detach(usb_host_t *host)
 	hid->hid_ctrl = 0U;
 	usb_os_memset(&(hid->vol_caps), 0, sizeof(hid->vol_caps));
 	usb_os_exit_critical();
+	/* A fetch the device left mid-way */
+	usbh_hid_free_report_desc_buf(hid);
 	hid->report_desc = NULL;
 	usb_os_memset(&(hid->hid_desc), 0, sizeof(hid->hid_desc));
 	usb_os_memset(&(hid->ep_desc_in), 0, sizeof(hid->ep_desc_in));
@@ -1205,8 +1241,12 @@ static void usbh_hid_detach(usb_host_t *host)
 	hid->itf_idx = 0;
 	hid->itf_alt_idx = 0;
 	hid->alt_setting_count = 0;
-	/* Fails only for a NULL handle, never the case for this static instance */
+	/* The parse thread keeps consuming on another core under SMP: reset under the lock it
+	   dequeues with, so it never writes back a head index from before the reset. The producer,
+	   usbh_hid_in_process(), runs in this same host task. */
+	usb_os_enter_critical();
 	usb_ringbuf_reset(&(hid->report_msg));
+	usb_os_exit_critical();
 
 	if ((hid->cb != NULL) && (hid->cb->detached != NULL)) {
 		hid->cb->detached();
@@ -1317,7 +1357,11 @@ static void usbh_hid_msg_parse_thread(void *param)
 	u8 ctrl_on;
 
 	while (hid->parse_task_exit == 0U) {
+		/* Serialized with the reset in usbh_hid_detach(), see there. A node is at most
+		   USBH_HID_MSG_LENGTH bytes, a short copy inside the lock. */
+		usb_os_enter_critical();
 		read_cnt = (u8)usb_ringbuf_remove_head(handle, hid->report_buf, USBH_HID_MSG_LENGTH, NULL);
+		usb_os_exit_critical();
 		if (read_cnt != 0U) {
 			/* Gate and caps are read together under the lock they are written with */
 			usb_os_enter_critical();
@@ -1512,13 +1556,18 @@ int usbh_hid_send_report(u8 *buf, u32 len)
 		return -RTK_ERR_BADARG;
 	}
 
+	/* Check and claim in one step: two callers, possibly on two cores, could both see the pipe
+	 * idle and overwrite each other's report, and the host task writes xfer_state as well */
+	usb_os_enter_critical();
 	if (pipe->xfer_state != USBH_EP_XFER_IDLE) {
+		usb_os_exit_critical();
 		return -RTK_ERR_BUSY;
 	}
-
 	pipe->xfer_buf = buf;
 	pipe->xfer_len = len;
 	pipe->xfer_state = USBH_EP_XFER_START;
+	usb_os_exit_critical();
+
 	usbh_notify(hid->host, pipe->pipe_num, &usbh_hid_driver);
 
 	return RTK_SUCCESS;

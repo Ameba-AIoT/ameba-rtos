@@ -95,7 +95,7 @@ static void hid_cb_status_changed(u8 old_status, u8 status);
 
 #if HID_MOUSE_CMD
 #ifdef CONFIG_USBD_HID_MOUSE
-static int hid_cmd_mouse_data(u16 argc, u8  *argv[]);
+static int hid_cmd_mouse_data(u16 argc, char *argv[]);
 static void hid_cmd_mouse_data_at(u16 argc, char **argv);
 #endif
 #endif
@@ -361,9 +361,9 @@ static void hid_cb_status_changed(u8 old_status, u8 status)
 #if HID_MOUSE_CMD
 #ifdef CONFIG_USBD_HID_MOUSE
 /* Parse a whole-string decimal in [min, max], an optional leading '-' allowed for a negative min */
-static int hid_parse_s32(const u8 *str, s32 min, s32 max, s32 *val)
+static int hid_parse_s32(const char *str, s32 min, s32 max, s32 *val)
 {
-	const char *p = (const char *)str;
+	const char *p = str;
 	char *end = NULL;
 	u32 mag;
 	s32 num;
@@ -402,7 +402,7 @@ static void hid_cmd_usage(void)
 }
 
 /* Fill a mouse report from "mouse <left> [<right> <middle> <x> <y> <wheel>]", argv[0] being "mouse" */
-static int hid_parse_mouse(u16 argc, u8 *argv[], usbd_hid_mouse_data_t *data)
+static int hid_parse_mouse(u16 argc, char *argv[], usbd_hid_mouse_data_t *data)
 {
 	s32 val[6] = {0};
 	s32 min;
@@ -430,11 +430,11 @@ static int hid_parse_mouse(u16 argc, u8 *argv[], usbd_hid_mouse_data_t *data)
 	return RTK_SUCCESS;
 }
 
-static int hid_cmd_mouse_data(u16 argc, u8  *argv[])
+static int hid_cmd_mouse_data(u16 argc, char *argv[])
 {
 	usbd_hid_mouse_data_t data;
 
-	if ((argc == 0U) || (_stricmp((const char *)argv[0], "help") == 0) || (_stricmp((const char *)argv[0], "?") == 0)) {
+	if ((argc == 0U) || (_stricmp(argv[0], "help") == 0) || (_stricmp(argv[0], "?") == 0)) {
 		hid_cmd_usage();
 		return (argc == 0U) ? -RTK_ERR_BADARG : RTK_SUCCESS;
 	}
@@ -443,7 +443,7 @@ static int hid_cmd_mouse_data(u16 argc, u8  *argv[])
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Not running\n");
 		return -RTK_ERR_IO;
 	}
-	if (_stricmp((const char *)argv[0], "mouse") != 0) {
+	if (_stricmp(argv[0], "mouse") != 0) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid cmd: %s, try AT+USBDHID=help\n", argv[0]);
 		return -RTK_ERR_BADARG;
 	}
@@ -454,13 +454,13 @@ static int hid_cmd_mouse_data(u16 argc, u8  *argv[])
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Send mouse data\n");
 
-	return (u32)hid_send_device_data(&data);
+	return hid_send_device_data(&data);
 }
 
 /* AT entry: argv[0] is reserved by the AT parser and argv[1] holds the first parameter */
 static void hid_cmd_mouse_data_at(u16 argc, char **argv)
 {
-	int ret = hid_cmd_mouse_data((argc != 0U) ? (argc - 1U) : 0U, (u8 **)&argv[1]);
+	int ret = hid_cmd_mouse_data((argc != 0U) ? (u16)(argc - 1U) : 0U, &argv[1]);
 
 	if (ret == RTK_SUCCESS) {
 		at_printf(ATCMD_OK_END_STR);
