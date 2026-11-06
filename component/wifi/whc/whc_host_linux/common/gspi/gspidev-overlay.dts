@@ -1,0 +1,35 @@
+/dts-v1/;
+/plugin/;
+
+/{
+	compatible = "brcm,bcm2835";
+
+        fragment@0 {
+	        target = <&spidev0>;
+	        __overlay__ {
+            		status = "disabled";
+			};
+        };
+
+        fragment@1 {
+	        target = <&spidev1>;
+        	__overlay__ {
+            		status = "disabled";
+        	};
+        };
+
+        fragment@3 {
+	        target = <&spi0>;
+	        __overlay__ {
+            		status = "okay";
+            		#address-cells = <1>;
+            		#size-cells = <0>;
+            		inic_spi: inic_spi@0 {
+					    compatible = "realtek,inic";
+					    reg = <0>;
+					    spi-max-frequency = <30000000>;
+					    status = "okay";
+				   };
+		   };
+	   };
+};
