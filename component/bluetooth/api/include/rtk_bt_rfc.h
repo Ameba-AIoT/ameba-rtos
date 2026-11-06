@@ -1,7 +1,7 @@
 /**
  * @file      rtk_bt_rfc.h
- * @author    benling_xu@realsil.com.cn
- * @brief     Bluetooth RFC part type and function definition
+ * @author    sherman_sun@realsil.com.cn
+ * @brief     Bluetooth RFCOMM type and function definitions.
  * @copyright Copyright (c) 2022. Realtek Semiconductor Corporation. All rights reserved.
  */
 
@@ -15,162 +15,179 @@ extern "C"
 {
 #endif /* __cplusplus */
 
-/* ------------------------------- Macros ------------------------------- */
+/**************************************** Macros ***************************************/
+/**
+ * @def       RTK_BT_RFC_DEMO_DEFAULT_MTU_SIZE
+ * @brief     Default RFCOMM MTU size, in octets, used when a connection is requested.
+ */
 #define RTK_BT_RFC_DEMO_DEFAULT_MTU_SIZE 1012
+/**
+ * @def       RTK_BT_RFC_DEMO_DEFAULT_CREDITS
+ * @brief     Default number of RFCOMM credits given to the remote device when a connection is requested.
+ */
 #define RTK_BT_RFC_DEMO_DEFAULT_CREDITS 10
-/* ------------------------------- Data Types ------------------------------- */
+/************************************** Data Types *************************************/
 
 /**
  * @typedef   rtk_bt_rfc_uuid_type_t
- * @brief     rfc uuid type
+ * @brief     Bluetooth RFCOMM UUID type.
  */
 typedef enum {
-	RFC_UUID16,                             /*!< UUID type 16 bits */
-	RFC_UUID32,                             /*!< UUID type 32 bits */
-	RFC_UUID128                             /*!< UUID type 128 bits */
+	RFC_UUID16,    /*!< 16-bit UUID. */
+	RFC_UUID32,    /*!< 32-bit UUID. */
+	RFC_UUID128    /*!< 128-bit UUID. */
 } rtk_bt_rfc_uuid_type_t;
 
 /**
  * @typedef   rtk_bt_rfc_uuid_data_t
- * @brief     rfc uuid data
+ * @brief     Bluetooth RFCOMM UUID data.
  */
 typedef union {
-	uint16_t    uuid_16;                    /*!< UUID data in 16 bits */
-	uint32_t    uuid_32;                    /*!< UUID data in 32 bits */
-	uint8_t     uuid_128[16];               /*!< UUID data in 128 bits */
+	uint16_t    uuid_16;                    /*!< 16-bit UUID value. */
+	uint32_t    uuid_32;                    /*!< 32-bit UUID value. */
+	uint8_t     uuid_128[16];               /*!< 128-bit UUID value. */
 } rtk_bt_rfc_uuid_data_t;
 
 /**
  * @struct    rtk_bt_rfc_attr_info_t
- * @brief     Bluetooth RFC SDP attribute information struct
+ * @brief     Bluetooth RFCOMM SDP attribute information of the remote device.
  */
 typedef struct {
-	uint8_t                     bd_addr[6];                 /**< Address */
-	rtk_bt_rfc_uuid_type_t      srv_class_uuid_type;        /**< Service class UUID type */
-	rtk_bt_rfc_uuid_data_t      srv_class_uuid_data;        /**< Service class UUID data */
-	uint16_t                    profile_version;            /**< Remote profile version */
-	uint16_t                    protocol_version;           /**< Remote protocol version */
-	uint8_t                     server_channel;             /**< Server channel number */
-	uint16_t                    supported_feat;             /**< Supported features */
-	uint16_t                    l2c_psm;                    /**< L2CAP PSM value */
-	uint8_t                     supported_repos;            /**< Supported repositories */
-	uint32_t                    pbap_supported_feat;        /**< PBAP supported features */
+	uint8_t                     bd_addr[6];             /*!< Remote device Bluetooth address. */
+	rtk_bt_rfc_uuid_type_t      srv_class_uuid_type;    /*!< Service class UUID type. */
+	rtk_bt_rfc_uuid_data_t      srv_class_uuid_data;    /*!< Service class UUID data. */
+	uint16_t                    profile_version;        /*!< Profile version of the remote service. */
+	uint16_t                    protocol_version;       /*!< Protocol version of the remote service. */
+	uint8_t                     server_channel;         /*!< Server channel number of the remote service. */
+	uint16_t                    supported_feat;         /*!< Features supported by the remote service. */
+	uint16_t                    l2c_psm;                /*!< L2CAP PSM of the remote service. */
+	uint8_t                     supported_repos;        /*!< Repositories supported by the remote service. */
+	uint32_t                    pbap_supported_feat;    /*!< PBAP features supported by the remote service. */
 } rtk_bt_rfc_attr_info_t;
 
 /**
  * @struct    rtk_bt_rfc_data_send_t
- * @brief     Bluetooth RFC data send struct.
+ * @brief     Parameters for sending RFCOMM data on a server channel.
  */
 typedef struct {
-	uint8_t bd_addr[6];                                /*!< address */
-	uint8_t server_chann;                              /*!< channel number */
-	uint8_t *p_data;                                   /*!< pointer to the data.*/
-	uint16_t data_len;                                 /*!< data length */
+	uint8_t bd_addr[6];      /*!< Remote device Bluetooth address. */
+	uint8_t server_chann;    /*!< Local server channel number. */
+	uint8_t *p_data;         /*!< Data to send. */
+	uint16_t data_len;       /*!< Length of the data to send, in octets. */
 } rtk_bt_rfc_data_send_t;
 
 /**
  * @struct    rtk_bt_rfc_conn_ind_t
- * @brief     rfc connection indication.
+ * @brief     RFCOMM incoming connection indication.
  */
 typedef struct {
-	uint8_t bd_addr[6];                                 /*!< address */
-	uint8_t local_server_chann;                         /*!< channel number */
-	uint16_t frame_size;                                /*!< frame size */
+	uint8_t bd_addr[6];            /*!< Remote device Bluetooth address. */
+	uint8_t local_server_chann;    /*!< Local server channel number. */
+	uint16_t frame_size;           /*!< Maximum RFCOMM frame size, in octets. */
 } rtk_bt_rfc_conn_ind_t;
 
 /**
  * @struct    rtk_bt_rfc_conn_cmpl_t
- * @brief     rfc connection completion indication.
+ * @brief     RFCOMM connection completion information.
  */
 typedef struct {
-	uint8_t bd_addr[6];                                 /*!< address */
-	uint8_t local_server_chann;                         /*!< channel number */
-	uint16_t frame_size;                                /*!< frame size */
-	uint8_t remain_credits;                             /*!< remain credits */
+	uint8_t bd_addr[6];            /*!< Remote device Bluetooth address. */
+	uint8_t local_server_chann;    /*!< Local server channel number. */
+	uint16_t frame_size;           /*!< Maximum RFCOMM frame size, in octets. */
+	uint8_t remain_credits;        /*!< Remaining RFCOMM TX credits. */
 } rtk_bt_rfc_conn_cmpl_t;
 
 /**
  * @struct    rtk_bt_rfc_disconn_cmpl_t
- * @brief     rfc disconnection completion indication.
+ * @brief     RFCOMM disconnection completion information.
  */
 typedef struct {
-	uint8_t bd_addr[6];                                 /*!< address */
-	uint8_t local_server_chann;                         /*!< channel number */
-	uint16_t cause;                                     /*!< disconnection cause */
+	uint8_t bd_addr[6];            /*!< Remote device Bluetooth address. */
+	uint8_t local_server_chann;    /*!< Local server channel number. */
+	uint16_t cause;                /*!< Disconnection reason code. */
 } rtk_bt_rfc_disconn_cmpl_t;
 
 /**
  * @struct    rtk_bt_rfc_data_ind_t
- * @brief     rfc data indication.
+ * @brief     RFCOMM data received from the remote device.
  */
 typedef struct {
-	uint8_t bd_addr[6];                                 /*!< address */
-	uint8_t local_server_chann;                         /*!< channel number */
-	uint8_t remain_credits;                             /*!< remain credits */
-	uint16_t length;                                    /*!< data length */
-	uint8_t *buf;                                       /*!< pointer of the data */
+	uint8_t bd_addr[6];            /*!< Remote device Bluetooth address. */
+	uint8_t local_server_chann;    /*!< Local server channel number. */
+	uint8_t remain_credits;        /*!< Remaining RFCOMM RX credits. */
+	uint16_t length;               /*!< Length of the received data, in octets. */
+	uint8_t *buf;                  /*!< Received data. */
 } rtk_bt_rfc_data_ind_t;
 
 /**
  * @struct    rtk_bt_rfc_credit_info_t
- * @brief     rfc receive credits infomation.
+ * @brief     RFCOMM credits information.
  */
 typedef struct {
-	uint8_t local_server_chann;                         /*!< channel number */
-	uint8_t remain_credits;                             /*!< remain credits */
+	uint8_t local_server_chann;    /*!< Local server channel number. */
+	uint8_t remain_credits;        /*!< Remaining RFCOMM TX credits. */
 } rtk_bt_rfc_credit_info_t;
 
 /**
  * @struct    rtk_bt_rfc_credits_give_t
- * @brief     rfc give credits struct.
+ * @brief     Parameters for giving RFCOMM credits to the remote device.
  */
 typedef struct {
-	uint8_t bd_addr[6];                                 /*!< address */
-	uint8_t local_server_chann;                         /*!< channel number */
-	uint8_t credits;                                    /*!< The number of credit */
+	uint8_t bd_addr[6];            /*!< Remote device Bluetooth address. */
+	uint8_t local_server_chann;    /*!< Local server channel number. */
+	uint8_t credits;               /*!< Number of RFCOMM credits the local device gives to the remote device. */
 } rtk_bt_rfc_credits_give_t;
 
-/* ------------------------- Functions Declaration ------------------------- */
+/********************************* Functions Declaration *******************************/
 /**
  * @defgroup  bt_rfc BT RFC APIs
- * @brief     BT RFC related function APIs
+ * @brief     BT RFC related function APIs.
  * @ingroup   BT_APIs
  * @{
  */
 
 /**
- * @brief     Send RFC connect request.
- * @param[in] bd_addr: bt address
+ * @brief     Connect to the RFCOMM service of a remote device.
+ *            The service of the remote device is discovered first, and the connection is then established on the discovered server channel.
+ *            The result is reported asynchronously via event @ref RTK_BT_RFC_EVT_CONN_CMPL.
+ * @param[in] bd_addr: Remote device Bluetooth address, 6 octets.
+ *                     Must not be NULL.
  * @return
- *            - 0  : Succeed
- *            - Others: Error code
+ *            - @ref rtk_bt_err_common
  */
 uint16_t rtk_bt_rfc_connect(uint8_t *bd_addr);
 
 /**
- * @brief     Send an RFC disconnection request
- * @param[in] bd_addr: bt address
+ * @brief     Disconnect the RFCOMM connection with a remote device.
+ *            The result is reported asynchronously via event @ref RTK_BT_RFC_EVT_DISCONN_CMPL.
+ * @param[in] bd_addr: Remote device Bluetooth address, 6 octets.
+ *                     Must not be NULL.
  * @return
- *            - 0  : Succeed
- *            - Others: Error code
+ *            - @ref rtk_bt_err_common
+ * @note
+ *            - It returns @ref RTK_BT_FAIL if there is no link to the remote device.
  */
 uint16_t rtk_bt_rfc_disconnect(uint8_t *bd_addr);
 
 /**
- * @brief     Send data to peer device on specific rfc channel
- * @param[in] p_data_send_t: RFC send data struct pointer
+ * @brief     Send data to the remote device on a server channel.
+ * @param[in] p_data_send_t: RFCOMM data sending parameters.
+ *                           Must not be NULL.
  * @return
- *            - 0  : Succeed
- *            - Others: Error code
+ *            - @ref rtk_bt_err_common
+ * @note
+ *            - It returns @ref RTK_BT_FAIL if there is no link to the remote device.
  */
 uint16_t rtk_bt_rfc_data_send(rtk_bt_rfc_data_send_t *p_data_send_t);
 
 /**
- * @brief     Send credits to peer device on specific rfc channel
- * @param[in] p_credits_give_t: RFC give credits struct pointer
+ * @brief     Give RFCOMM credits to the remote device on a server channel, allowing it to send more data.
+ * @param[in] p_credits_give_t: RFCOMM credits giving parameters.
+ *                              Must not be NULL.
  * @return
- *            - 0  : Succeed
- *            - Others: Error code
+ *            - @ref rtk_bt_err_common
+ * @note
+ *            - It returns @ref RTK_BT_FAIL if there is no link to the remote device.
  */
 uint16_t rtk_bt_rfc_credits_give(rtk_bt_rfc_credits_give_t *p_credits_give_t);
 
@@ -182,4 +199,4 @@ uint16_t rtk_bt_rfc_credits_give(rtk_bt_rfc_credits_give_t *p_credits_give_t);
 }
 #endif
 
-#endif /* __RTK_BT_SPP_H__ */
+#endif /* __RTK_BT_RFC_H__ */

@@ -1,15 +1,16 @@
-/* ----------------------------------------------------------------------
+﻿/* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
  * Title:        arm_correlate_fast_q15.c
  * Description:  Fast Q15 Correlation
  *
- * $Date:        18. March 2019
- * $Revision:    V1.6.0
+ * $Date:        23 April 2021
+ * $Revision:    V1.9.0
  *
- * Target Processor: Cortex-M cores
+ * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
+
 /*
- * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -25,8 +26,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "arm_compiler_specific.h"
 
-#include "arm_math.h"
+
+#include "dsp/filtering_functions.h"
 
 /**
   @ingroup groupFilters
@@ -44,7 +47,6 @@
   @param[in]     pSrcB      points to the second input sequence
   @param[in]     srcBLen    length of the second input sequence
   @param[out]    pDst       points to the location where the output result is written.  Length 2 * max(srcALen, srcBLen) - 1.
-  @return        none
 
   @par           Scaling and Overflow Behavior
                    This fast version uses a 32-bit accumulator with 2.30 format.
@@ -60,7 +62,7 @@
                    Refer to \ref arm_correlate_q15() for a slower implementation of this function which uses a 64-bit accumulator to avoid wrap around distortion.
  */
 
-void arm_correlate_fast_q15(
+ARM_DSP_ATTRIBUTE void arm_correlate_fast_q15(
 	const q15_t *pSrcA,
 	uint32_t srcALen,
 	const q15_t *pSrcB,

@@ -415,6 +415,13 @@ static void do_store_id(struct k_work *work)
 
 K_WORK_DEFINE(store_id_work, do_store_id);
 
+#if ZEPHYR_RTK_PATCH
+void zephyr_settings_id_work_reset(void)
+{
+	k_work_reset(&store_id_work);
+}
+#endif
+
 int bt_settings_store_id(void)
 {
 	k_work_submit(&store_id_work);
@@ -440,6 +447,13 @@ static void do_store_irk(struct k_work *work)
 }
 
 K_WORK_DEFINE(store_irk_work, do_store_irk);
+
+#if ZEPHYR_RTK_PATCH
+void zephyr_settings_irk_work_reset(void)
+{
+	k_work_reset(&store_irk_work);
+}
+#endif
 
 int bt_settings_store_irk(void)
 {

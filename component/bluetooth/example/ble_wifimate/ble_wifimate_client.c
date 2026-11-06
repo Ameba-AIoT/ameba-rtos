@@ -17,7 +17,11 @@
 #include <rtk_client_config.h>
 #include <ble_wifimate_service.h>
 #include <bt_utils.h>
+#if defined(CONFIG_MBEDTLS_USE_LEGACY_API)
 #include <mbedtls/aes.h>
+#else
+#include <psa/crypto.h>
+#endif
 #if defined(BT_AT_SYNC) && BT_AT_SYNC
 #include <atcmd_bt_cmd_sync.h>
 #endif
@@ -75,9 +79,16 @@ static uint16_t ble_wifimate_aes_ecb_encrypt(uint8_t src_len, uint8_t *src, uint
 		return RTK_BT_ERR_PARAM_INVALID;
 	}
 
+#if defined(CONFIG_MBEDTLS_USE_LEGACY_API)
 	mbedtls_aes_context ctx;
 	uint32_t key_bit = BLE_WIFIMATE_MBEDTLS_AES_KEY_BIT_128;
 	int i = 0;
+#else
+	psa_key_attributes_t attr = PSA_KEY_ATTRIBUTES_INIT;
+	psa_key_id_t key_id;
+	size_t olen = 0;
+	psa_status_t status;
+#endif
 
 	uint8_t *key_le = (uint8_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, key_len); //the array length need a constant value
 	if (!key_le) {
@@ -92,6 +103,7 @@ static uint16_t ble_wifimate_aes_ecb_encrypt(uint8_t src_len, uint8_t *src, uint
 	memcpy(key_le, key, key_len);
 	array_to_little_endian(key_le, key_len);
 
+#if defined(CONFIG_MBEDTLS_USE_LEGACY_API)
 	key_bit = ((key_len == 16) ? BLE_WIFIMATE_MBEDTLS_AES_KEY_BIT_128 :
 			   (key_len == 24) ? BLE_WIFIMATE_MBEDTLS_AES_KEY_BIT_192 : BLE_WIFIMATE_MBEDTLS_AES_KEY_BIT_256);
 
@@ -104,6 +116,7 @@ static uint16_t ble_wifimate_aes_ecb_encrypt(uint8_t src_len, uint8_t *src, uint
 		osif_mem_free(key_le);
 		return RTK_BT_FAIL;
 	}
+#endif
 
 	uint8_t message_len = (uint8_t)ceil(src_len / 16.0) * 16;
 	uint8_t *message = (uint8_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, message_len);
@@ -126,6 +139,7 @@ static uint16_t ble_wifimate_aes_ecb_encrypt(uint8_t src_len, uint8_t *src, uint
 
 	memcpy(message, src, src_len);
 
+#if defined(CONFIG_MBEDTLS_USE_LEGACY_API)
 	// excute AES encrypt
 	for (i = 0; i < message_len; i += 16) {
 		if (mbedtls_aes_crypt_ecb(&ctx, MBEDTLS_AES_ENCRYPT, message + i, encrypted + i) != 0) {
@@ -140,6 +154,24 @@ static uint16_t ble_wifimate_aes_ecb_encrypt(uint8_t src_len, uint8_t *src, uint
 		osif_mem_free(encrypted);
 		return RTK_BT_FAIL;
 	}
+#else
+	psa_set_key_usage_flags(&attr, PSA_KEY_USAGE_ENCRYPT);
+	psa_set_key_algorithm(&attr, PSA_ALG_ECB_NO_PADDING);
+	psa_set_key_type(&attr, PSA_KEY_TYPE_AES);
+	status = psa_import_key(&attr, key_le, key_len, &key_id);
+	if (status == PSA_SUCCESS) {
+		status = psa_cipher_encrypt(key_id, PSA_ALG_ECB_NO_PADDING, message, message_len, encrypted, message_len, &olen);
+		psa_destroy_key(key_id);
+	}
+
+	if (status != PSA_SUCCESS) {
+		BT_LOGE("%s: psa AES encryption failed, status = %d\r\n", __func__, (int)status);
+		osif_mem_free(key_le);
+		osif_mem_free(message);
+		osif_mem_free(encrypted);
+		return RTK_BT_FAIL;
+	}
+#endif
 
 	*result_len = message_len;
 	memcpy(result, encrypted, *result_len);

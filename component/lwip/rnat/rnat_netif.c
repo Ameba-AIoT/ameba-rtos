@@ -652,7 +652,7 @@ static void rnat_link_callback(rnat_netif_t *rnat_netif, int link_up)
 		netifapi_netif_set_link_down(rnat_netif->lwip_netif);
 
 		if (rnat_netif->ip_method == RNAT_IP_METHOD_DHCP_CLIENT) {
-			lwip_clear_ip(rnat_netif->idx);
+			lwip_dhcp_stop(rnat_netif->idx);
 			RTK_LOGS(TAG, RTK_LOG_INFO, "[%s] IP released\n", rnat_netif->if_desc);
 		} else if (rnat_netif->ip_method == RNAT_IP_METHOD_DHCP_SERVER) {
 			dhcps_stop(rnat_netif->lwip_netif);
@@ -671,6 +671,32 @@ static void rnat_eth_link_callback(int link_up)
 	rnat_link_callback(g_netif_array[NETIF_ETH_INDEX], link_up);
 }
 
+static void rnat_eth_link_thread(void *param)
+{
+	u32 speed, duplex;
+	int last = -1;
+
+	UNUSED(param);
+	for (;;) {
+		if (rtos_sema_take(eth_link_sema, RTOS_MAX_TIMEOUT) != RTK_SUCCESS) {
+			continue;
+		}
+
+		int up = Ethernet_GetLinkStatus() ? 1 : 0;
+		if (up == last) {
+			continue;
+		}
+		last = up;
+
+		if (up) {
+			Ethernet_GetSpeedDuplex(&speed, &duplex);
+			RTK_LOGS(TAG, RTK_LOG_INFO, "Link Up: %s, %s\n", (speed == ETH_SPEED_100M) ? "100M" : (speed == ETH_SPEED_10M) ? "10M" : "Unknown",
+					 (duplex == ETH_FULL_DUPLEX) ? "Full Duplex" : "Half Duplex");
+		}
+		rnat_eth_link_callback(up);
+	}
+}
+
 /**
  * @brief  Start Ethernet interface
  * @param  netif R-NAT object to start
@@ -678,11 +704,21 @@ static void rnat_eth_link_callback(int link_up)
  */
 static int rnat_netif_start_eth(rnat_netif_t *netif)
 {
-	/* Register eth link callback */
-	eth_register_link_cb(rnat_eth_link_callback);
+	if (rtos_sema_create_binary(&eth_link_sema) != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "[%s] Create link sema failed\n", netif->if_desc);
+		return -1;
+	}
+
+	if (rtos_task_create(NULL, "ETH_LINK", rnat_eth_link_thread, NULL, 1536, 3) != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "[%s] Create link thread failed\n", netif->if_desc);
+		rtos_sema_delete(eth_link_sema);
+		eth_link_sema = NULL;
+		return -1;
+	}
 
 	/* Initialize ETH */
 	eth_init();
+
 	RTK_LOGS(TAG, RTK_LOG_INFO, "[%s] Initialized\n", netif->if_desc);
 
 	return 0;

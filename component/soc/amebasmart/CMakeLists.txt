@@ -26,3 +26,6 @@ ameba_list_append(public_includes
 ameba_global_include(${public_includes})
 ameba_global_define(${public_definitions})
 ameba_global_library(${public_libraries}) #default: whole-achived
+
+ameba_install_directory("${c_CMPT_SOC_DIR}/atf")
+ameba_install_directory("${c_CMPT_SOC_DIR}/fwlib/ap_core/xlat_table")

@@ -1,13 +1,16 @@
-/* ----------------------------------------------------------------------
+﻿/* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
  * Title:        arm_logsumexp_f32.c
  * Description:  LogSumExp
  *
+ * $Date:        23 April 2021
+ * $Revision:    V1.9.0
  *
  * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
+
 /*
- * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -23,14 +26,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "arm_compiler_specific.h"
 
-#include "arm_math.h"
+
+#include "dsp/statistics_functions.h"
 #include <limits.h>
 #include <math.h>
 
 
 /**
- * @addtogroup groupStats
+ * @addtogroup LogSumExp
  * @{
  */
 
@@ -64,7 +69,7 @@
 #include "arm_helium_utils.h"
 #include "arm_vec_math.h"
 
-float32_t arm_logsumexp_f32(const float32_t *in, uint32_t blockSize)
+ARM_DSP_ATTRIBUTE float32_t arm_logsumexp_f32(const float32_t *in, uint32_t blockSize)
 {
 	float32_t       maxVal;
 	const float32_t *pIn;
@@ -109,16 +114,16 @@ float32_t arm_logsumexp_f32(const float32_t *in, uint32_t blockSize)
 
 	}
 
-	accum = maxVal + log(accum);
+	accum = maxVal + logf(accum);
 
 	return (accum);
 }
 
 #else
-#if defined(ARM_MATH_NEON) && !defined(ARM_MATH_AUTOVECTORIZE)
+#if defined(ARM_MATH_NEON)
 
 #include "NEMath.h"
-float32_t arm_logsumexp_f32(const float32_t *in, uint32_t blockSize)
+ARM_DSP_ATTRIBUTE float32_t arm_logsumexp_f32(const float32_t *in, uint32_t blockSize)
 {
 	float32_t maxVal;
 	float32_t tmp;
@@ -215,7 +220,7 @@ float32_t arm_logsumexp_f32(const float32_t *in, uint32_t blockSize)
 	return (accum);
 }
 #else
-float32_t arm_logsumexp_f32(const float32_t *in, uint32_t blockSize)
+ARM_DSP_ATTRIBUTE float32_t arm_logsumexp_f32(const float32_t *in, uint32_t blockSize)
 {
 	float32_t maxVal;
 	float32_t tmp;
@@ -256,5 +261,5 @@ float32_t arm_logsumexp_f32(const float32_t *in, uint32_t blockSize)
 #endif /* defined(ARM_MATH_MVEF) && !defined(ARM_MATH_AUTOVECTORIZE) */
 
 /**
- * @} end of groupStats group
+ * @} end of LogSumExp group
  */

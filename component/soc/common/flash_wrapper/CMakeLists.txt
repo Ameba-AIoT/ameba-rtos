@@ -39,10 +39,6 @@ set(private_compile_options)         #private compile_options
 #------------------------------#
 # Component private part, user config begin
 
-ameba_list_append(private_includes
-    ${c_COMPONENT_DIR}/soc/common/flash_download/imgtool_floader
-)
-
 ameba_list_append(private_sources
     src/ameba_nor_ftl.c
     src/ameba_flash_dev.c

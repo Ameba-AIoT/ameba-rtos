@@ -63,8 +63,6 @@
 /* AUTO_GEN_END */
 
 /* MANUAL_GEN_START */
-#include "fault_injection_hardening.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif

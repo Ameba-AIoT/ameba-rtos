@@ -303,6 +303,67 @@
 #define RXI300_BIT_MA_STATUS_CPU1  ((u32)0x00000001 << 0) /*!< RO 0x1  Status of master agent (CPU1). The master is: 0: enable 1: disable*/
 /** @} */
 
+/** @defgroup PLD0_S
+  * @brief Error log payload register0
+  * @{
+  */
+#define RXI300_MASK_ERR_PLD0_S   ((u32)0xFFFFFFFF << 0)           /*!< R 0x0  */
+#define RXI300_ERR_PLD0_S(x)     (((u32)((x) & 0xFFFFFFFF) << 0))
+#define RXI300_GET_ERR_PLD0_S(x) ((u32)(((x >> 0) & 0xFFFFFFFF)))
+/** @} */
+
+/** @defgroup PLD1_S
+  * @brief Error log payload register1
+  * @{
+  */
+#define RXI300_MASK_ERR_PLD1_S   ((u32)0xFFFFFFFF << 0)           /*!< R 0x0  */
+#define RXI300_ERR_PLD1_S(x)     (((u32)((x) & 0xFFFFFFFF) << 0))
+#define RXI300_GET_ERR_PLD1_S(x) ((u32)(((x >> 0) & 0xFFFFFFFF)))
+/** @} */
+
+/** @defgroup ID_S
+  * @brief Error log Id information register
+  * @{
+  */
+#define RXI300_MASK_ERR_ID_S   ((u32)0xFFFFFFFF << 0)           /*!< R 0x0  */
+#define RXI300_ERR_ID_S(x)     (((u32)((x) & 0xFFFFFFFF) << 0))
+#define RXI300_GET_ERR_ID_S(x) ((u32)(((x >> 0) & 0xFFFFFFFF)))
+/** @} */
+
+/** @defgroup ADR0_S
+  * @brief Error log low 32-bit address register
+  * @{
+  */
+#define RXI300_MASK_ERR_ADR0_S   ((u32)0xFFFFFFFF << 0)           /*!< R 0x0  */
+#define RXI300_ERR_ADR0_S(x)     (((u32)((x) & 0xFFFFFFFF) << 0))
+#define RXI300_GET_ERR_ADR0_S(x) ((u32)(((x >> 0) & 0xFFFFFFFF)))
+/** @} */
+
+/** @defgroup ADR1_S
+  * @brief Error log high 32-bit address register
+  * @{
+  */
+#define RXI300_MASK_ERR_ADR1_S   ((u32)0xFFFFFFFF << 0)           /*!< R 0x0  */
+#define RXI300_ERR_ADR1_S(x)     (((u32)((x) & 0xFFFFFFFF) << 0))
+#define RXI300_GET_ERR_ADR1_S(x) ((u32)(((x >> 0) & 0xFFFFFFFF)))
+/** @} */
+
+/** @defgroup CODE_S
+  * @brief Error log error code register
+  * @{
+  */
+#define RXI300_MASK_ERR_CODE_S   ((u32)0xFFFFFFFF << 0)           /*!< R 0x0  */
+#define RXI300_ERR_CODE_S(x)     (((u32)((x) & 0xFFFFFFFF) << 0))
+#define RXI300_GET_ERR_CODE_S(x) ((u32)(((x >> 0) & 0xFFFFFFFF)))
+/** @} */
+
+/** @defgroup INT_CLR_S
+  * @brief Interrupt clear register
+  * @{
+  */
+#define RXI300_BIT_ERR_INTR_CLR_S ((u32)0x00000001 << 0) /*!< W 0x0  Write 0x1 to clear interrupt and error log, self return to 0x0*/
+/** @} */
+
 /** @defgroup IDAU_BAx
   * @brief Base address register x in IDAU
   * @{
@@ -470,19 +531,29 @@ typedef struct {
 	__IO uint32_t MST_EN                        ;  /*!< MASER ENABLE REGISTER,  Address offset:0x40C */
 	__IO uint32_t RSVD7[4]                      ;  /*!< Reserved,  Address offset:0x410-0x41F */
 	__I  uint32_t MST_TIMEOUT_STATUS            ;  /*!< MASER TIMEOUT STATUS REGISTER,  Address offset:0x420 */
-	__IO uint32_t RSVD8[247]                    ;  /*!< Reserved,  Address offset:0x424-0x7FF */
+	__IO uint32_t RSVD8[55]                     ;  /*!< Reserved,  Address offset:0x424-0x4FF */
+	__I  uint32_t PLD0_S                        ;  /*!< ERROR LOG PAYLOAD REGISTER0 Register,  Address offset:0x500 */
+	__I  uint32_t PLD1_S                        ;  /*!< ERROR LOG PAYLOAD REGISTER1 Register,  Address offset:0x504 */
+	__I  uint32_t ID_S                          ;  /*!< ERROR LOG ID INFORMATION REGISTER,  Address offset:0x508 */
+	__I  uint32_t ADR0_S                        ;  /*!< ERROR LOG LOW 32-BIT ADDRESS REGISTER,  Address offset:0x50C */
+	__I  uint32_t ADR1_S                        ;  /*!< ERROR LOG HIGH 32-BIT ADDRESS REGISTER,  Address offset:0x510 */
+	__IO uint32_t RSVD9[7]                      ;  /*!< Reserved,  Address offset:0x514-0x52F */
+	__I  uint32_t CODE_S                        ;  /*!< ERROR LOG ERROR CODE REGISTER,  Address offset:0x530 */
+	__IO uint32_t RSVD10[2]                     ;  /*!< Reserved,  Address offset:0x534-0x53B */
+	__O  uint32_t INT_CLR_S                     ;  /*!< INTERRUPT CLEAR REGISTER,  Address offset:0x53C */
+	__IO uint32_t RSVD11[176]                   ;  /*!< Reserved,  Address offset:0x540-0x7FF */
 	MPC_EntryTypeDef MPC1_Entry[4]              ;  /*!< RXI300 IP have 4 ports,  Address offset:0x800-0x81C */
-	__IO uint32_t RSVD9[8]                      ;  /*!< Reserved,  Address offset:0x820-0x83F */
+	__IO uint32_t RSVD12[8]                     ;  /*!< Reserved,  Address offset:0x820-0x83F */
 	__IO uint32_t IDAU_CTRL                     ;  /*!< ENABLE CONTROL REGISTER IN IDAU Register,  Address offset:0x840 */
 	__IO uint32_t IDAU_LOCK                     ;  /*!< LOCK CONTROL REGISTER IN IDAU Register,  Address offset:0x844 */
-	__IO uint32_t RSVD10[46]                    ;  /*!< Reserved,  Address offset:0x848-0x8FF */
+	__IO uint32_t RSVD13[46]                    ;  /*!< Reserved,  Address offset:0x848-0x8FF */
 	MPC_EntryTypeDef MPC2_Entry[4]              ;  /*!< RXI300 IP have 4 ports,  Address offset:0x900-0x91C */
-	__IO uint32_t RSVD11[8]                     ;  /*!< Reserved,  Address offset:0x920-0x93F */
+	__IO uint32_t RSVD14[8]                     ;  /*!< Reserved,  Address offset:0x920-0x93F */
 	__IO uint32_t IDAU2_CTRL                    ;  /*!< ENABLE CONTROL REGISTER IN IDAU Register,  Address offset:0x940 */
 	__IO uint32_t IDAU2_LOCK                    ;  /*!< LOCK CONTROL REGISTER IN IDAU Register,  Address offset:0x944 */
-	__IO uint32_t RSVD12[46]                    ;  /*!< Reserved,  Address offset:0x948-0x9FF */
+	__IO uint32_t RSVD15[46]                    ;  /*!< Reserved,  Address offset:0x948-0x9FF */
 	MPC_EntryTypeDef MPC3_Entry[4]              ;  /*!< RXI300 IP have 4 ports,  Address offset:0xA00-0xA1C */
-	__IO uint32_t RSVD13[8]                     ;  /*!< Reserved,  Address offset:0xA20-0xA3F */
+	__IO uint32_t RSVD16[8]                     ;  /*!< Reserved,  Address offset:0xA20-0xA3F */
 	__IO uint32_t IDAU3_CTRL                    ;  /*!< ENABLE CONTROL REGISTER IN IDAU Register,  Address offset:0xA40 */
 	__IO uint32_t IDAU3_LOCK                    ;  /*!< LOCK CONTROL REGISTER IN IDAU Register,  Address offset:0xA44 */
 } RXI300_TypeDef;

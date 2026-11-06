@@ -1,3 +1,11 @@
+# linux_driver: Linux host BT INIC driver; not built by this cmake project but is part of the open-source release.
+# Keep the common files plus the ports of the current SoC only.
+if(CONFIG_AMEBADPLUS)
+    ameba_install_directory(example/bt_host/linux_driver p_EXCLUDE_REGEX "_green2($|/)")
+elseif(CONFIG_AMEBAGREEN2)
+    ameba_install_directory(example/bt_host/linux_driver p_EXCLUDE_REGEX "_dplus($|/)")
+endif()
+
 if(NOT CONFIG_BT)
     return()
 endif()

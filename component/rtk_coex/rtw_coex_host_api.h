@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2024 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #ifndef RTW_COEX_HOST_API_H
 #define RTW_COEX_HOST_API_H
 

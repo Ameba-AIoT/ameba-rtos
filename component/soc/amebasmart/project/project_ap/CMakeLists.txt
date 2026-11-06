@@ -8,6 +8,9 @@ set(c_VERBOSE_MAKEFILE FALSE)
 ameba_mcu_project_create(ap ca32)
 ameba_mcu_project_check()
 
+ameba_install_directory("${CMAKE_CURRENT_SOURCE_DIR}/ld")
+ameba_install_directory("${CMAKE_CURRENT_SOURCE_DIR}/make")
+
 ###############################################################################
 set(DAILY_BUILD 0 CACHE STRING "code analysis argument")
 message ("DAILY_BUILD = " ${DAILY_BUILD})

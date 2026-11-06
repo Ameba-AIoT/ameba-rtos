@@ -12,6 +12,7 @@
 #include "os_wrapper.h"
 #include "usbh.h"
 #include "usbh_hid.h"
+#include "usb_app.h"
 #include "example_usbh_hid.h"
 
 /* Private defines -----------------------------------------------------------*/
@@ -76,12 +77,20 @@ static usbh_hid_ctx_t usbh_hid_ctx;
    usbh_hid_send_report() on another core would be inside that API while this
    thread frees what it dereferences. Excluding such a caller has to be done by
    lock, not by core.
-   Created before the stack comes up and never deleted: a caller of the class API
-   can not be joined by the example, so there is no point in time at which this
+   Created by the first start and never deleted: a caller of the class API can
+   not be joined by the example, so there is no point in time at which this
    mutex is provably unreferenced. A caller added later (e.g. of
-   usbh_hid_send_report()) shall take this mutex and add a ready flag that the
-   bring up sets and every tear down clears under it, as usbh_msc does. */
+   usbh_hid_send_report()) shall take this mutex and check usbh_hid_stack_ready
+   under it, as usbh_msc does. */
 static rtos_mutex_t usbh_hid_state_mutex = NULL;
+
+/* 1: usbh_init(), usbh_hid_init() and usbh_start() are all done. Set by the bring up
+   and cleared by every tear down under usbh_hid_state_mutex. */
+static volatile u8 usbh_hid_stack_ready = 0U;
+
+/* Start/stop state: example_usbh_hid_stop(), or the hotplug thread when the stack can
+   not be rebuilt, sets quit, wakes the hotplug thread and joins it */
+static usb_app_ctx_t usbh_hid_app;
 
 /* USB host stack configuration */
 static const usbh_config_t usbh_cfg = {
@@ -202,6 +211,23 @@ static void usbh_hid_cb_process(usb_host_t *host, u8 msg)
 	UNUSED(msg);
 }
 
+/**
+  * @brief  Tear the stack down under the lock if it is up
+  * @note   Only called once no other thread can rebuild the stack
+  * @retval None
+  */
+static void usbh_hid_stack_deinit(void)
+{
+	rtos_mutex_take(usbh_hid_state_mutex, RTOS_MAX_TIMEOUT);
+	if (usbh_hid_stack_ready != 0U) {
+		usbh_hid_stack_ready = 0U;
+		usbh_stop();
+		usbh_hid_deinit();
+		usbh_deinit();
+	}
+	rtos_mutex_give(usbh_hid_state_mutex);
+}
+
 #if CONFIG_USBH_HID_HOTPLUG
 /**
   * @brief  Hot-plug worker thread.
@@ -216,6 +242,7 @@ static void example_usbh_hid_hotplug_thread(void *param)
 {
 	int ret;
 	u32 hotplug_count = 0;
+	u8 fatal = 0U;
 
 	UNUSED(param);
 
@@ -223,68 +250,86 @@ static void example_usbh_hid_hotplug_thread(void *param)
 		if (rtos_sema_take(usbh_hid_ctx.detach_sema, RTOS_SEMA_MAX_COUNT) != RTK_SUCCESS) {
 			continue;
 		}
+		if (usbh_hid_app.quit != 0U) {
+			/* Stop requested: the stack is still up, example_usbh_hid_stop() tears it down */
+			break;
+		}
 
 		hotplug_count++;
-		RTK_LOGS(TAG, RTK_LOG_INFO, "\n========== Hotplug #%d ==========\n", hotplug_count);
+		RTK_LOGS(TAG, RTK_LOG_INFO, "\n========== Hotplug #%u ==========\n", hotplug_count);
 
 		rtos_time_delay_ms(200);
 
 		/* Tear down under the lock, see usbh_hid_state_mutex */
-		rtos_mutex_take(usbh_hid_state_mutex, RTOS_MAX_TIMEOUT);
-		usbh_stop();
-		usbh_hid_deinit();
-		usbh_deinit();
-		rtos_mutex_give(usbh_hid_state_mutex);
+		usbh_hid_stack_deinit();
 
 		rtos_time_delay_ms(100);
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Free heap: 0x%x\n", rtos_mem_get_free_heap_size());
+
+		if (usbh_hid_app.quit != 0U) {
+			/* Stop requested: leave the stack down, stack_ready tells stop it is gone */
+			break;
+		}
 
 		/* Re-initialize */
 		rtos_mutex_take(usbh_hid_state_mutex, RTOS_MAX_TIMEOUT);
 
 		ret = usbh_init(&usbh_cfg, &usbh_usr_cb);
-		if (ret != HAL_OK) {
+		if (ret != RTK_SUCCESS) {
 			rtos_mutex_give(usbh_hid_state_mutex);
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Reinit fail: %d\n", ret);
+			fatal = 1U;
 			break;
 		}
 
 		ret = usbh_hid_init(&usbh_hid_cfg);
-		if (ret != HAL_OK) {
+		if (ret != RTK_SUCCESS) {
 			usbh_deinit();
 			rtos_mutex_give(usbh_hid_state_mutex);
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Reinit fail: %d\n", ret);
+			fatal = 1U;
 			break;
 		}
 
 		usbh_start();
+		usbh_hid_stack_ready = 1U;
 		rtos_mutex_give(usbh_hid_state_mutex);
 
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Reinit done\n");
 	}
 
-	/* A re-init failed, so the stack is gone for good. The detach sema is
-	   deliberately left alive - the class callback may still be about to give
-	   it, and freeing it here would pull it out from under that. */
-	RTK_LOGS(TAG, RTK_LOG_ERROR, "Hotplug thread exit\n");
 	usbh_hid_ctx.hotplug_task = NULL;
+	if (fatal != 0U) {
+		/* A re-init failed, so the stack is gone for good (stack_ready stays 0) */
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Hotplug thread exit\n");
+		if (usb_app_ctx_claim_stop(&usbh_hid_app) != 0U) {
+			/* No stop is in flight and no other worker exists: finish the teardown here.
+			   The stack is down, so the detach callback can no longer give the sema. */
+			rtos_sema_delete(usbh_hid_ctx.detach_sema);
+			usbh_hid_ctx.detach_sema = NULL;
+			usb_app_ctx_end(&usbh_hid_app);
+			rtos_task_delete(NULL);
+		}
+	}
+	usb_app_ctx_leave(&usbh_hid_app);
 	rtos_task_delete(NULL);
 }
 #endif /* CONFIG_USBH_HID_HOTPLUG */
 
 /**
-  * @brief  Bootstrap thread: creates synchronization primitives, brings up
-  *         the USB host stack, starts the hotplug thread, then self-deletes.
-  * @param  param: Unused.
-  * @retval None
+  * @brief  Bring up the USB host stack, then start the hotplug thread
+  * @retval RTK_SUCCESS, or the first error, with everything already created rolled back
   */
-static void example_usbh_hid_init_thread(void *param)
+static int usbh_hid_start(void)
 {
 	int ret;
 
-	UNUSED(param);
+	ret = usb_app_ctx_begin(&usbh_hid_app);
+	if (ret != RTK_SUCCESS) {
+		return ret;
+	}
 
-	/* Created before the stack comes up and never deleted, see the declaration */
+	/* Created by the first start and never deleted, see the declaration */
 	if (usbh_hid_state_mutex == NULL) {
 		ret = rtos_mutex_create(&usbh_hid_state_mutex);
 		if (ret != RTK_SUCCESS) {
@@ -302,27 +347,31 @@ static void example_usbh_hid_init_thread(void *param)
 #endif
 
 	ret = usbh_init(&usbh_cfg, &usbh_usr_cb);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "USB init fail: %d\n", ret);
 		goto free_sema_exit;
 	}
 
 	ret = usbh_hid_init(&usbh_hid_cfg);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "HID init fail: %d\n", ret);
 		goto usb_deinit_exit;
 	}
 
 	/* All class drivers registered; start USB TRX so enumeration can run. */
 	usbh_start();
+	usbh_hid_stack_ready = 1U;
 
 #if CONFIG_USBH_HID_HOTPLUG
+	/* Created last: it owns the stack once running, so nothing after it can fail */
 	ret = rtos_task_create(&usbh_hid_ctx.hotplug_task, "usbh_hid_hotplug_thread",
 						   example_usbh_hid_hotplug_thread, NULL,
 						   USBH_HID_HOTPLUG_THREAD_STACK_SIZE, USBH_HID_HOTPLUG_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create hotplug thread fail\n");
-		goto usbh_hid_deinit_exit;
+		/* Roll back under the lock, exactly as the hotplug thread does */
+		usbh_hid_stack_deinit();
+		goto free_sema_exit;
 	}
 #if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
 	/* The USB OTG ISR is delivered on CPU0: the GIC pins every SPI to core 0
@@ -335,20 +384,7 @@ static void example_usbh_hid_init_thread(void *param)
 #endif
 #endif
 
-	goto example_exit;
-
-#if CONFIG_USBH_HID_HOTPLUG
-usbh_hid_deinit_exit:
-	/* Roll back under the lock, exactly as the hotplug thread does. usbh_deinit() is
-	   called here rather than by falling through to usb_deinit_exit, so the whole
-	   teardown happens under one lock hold. */
-	rtos_mutex_take(usbh_hid_state_mutex, RTOS_MAX_TIMEOUT);
-	usbh_stop();
-	usbh_hid_deinit();
-	usbh_deinit();
-	rtos_mutex_give(usbh_hid_state_mutex);
-	goto free_sema_exit;
-#endif
+	return RTK_SUCCESS;
 
 usb_deinit_exit:
 	/* usbh_hid_init() failed, so only the host core is up and the gate was never
@@ -358,16 +394,78 @@ usb_deinit_exit:
 free_sema_exit:
 #if CONFIG_USBH_HID_HOTPLUG
 	rtos_sema_delete(usbh_hid_ctx.detach_sema);
+	usbh_hid_ctx.detach_sema = NULL;
 #endif
 
 abort_exit:
 	RTK_LOGS(TAG, RTK_LOG_ERROR, "USBH HID demo aborted\n");
+	usb_app_ctx_end(&usbh_hid_app);
 
-example_exit:
+	return ret;
+}
+
+/**
+  * @brief  Standalone entry thread: brings the demo up and leaves
+  * @param  param: Unused.
+  * @retval None
+  */
+static void example_usbh_hid_init_thread(void *param)
+{
+	UNUSED(param);
+
+	if (usbh_hid_start() != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Start fail\n");
+	}
 	rtos_task_delete(NULL);
 }
 
 /* Exported functions --------------------------------------------------------*/
+
+/**
+  * @brief  Start the HID host, used by the USB app manager
+  * @note   Task context only
+  * @retval RTK_SUCCESS, -RTK_ERR_BUSY if already running, or the init error
+  */
+int example_usbh_hid_start(void)
+{
+	RTK_LOGS(TAG, RTK_LOG_INFO, "USBH HID demo start\n");
+
+	return usbh_hid_start();
+}
+
+/**
+  * @brief  Stop the HID host and release everything it owns
+  * @note   Task context only. Safe to call when not running.
+  * @retval RTK_SUCCESS once idle, -RTK_ERR_TIMEOUT if the hotplug thread did not leave in time
+  */
+int example_usbh_hid_stop(void)
+{
+	if (usb_app_ctx_claim_stop(&usbh_hid_app) == 0U) {
+		/* Idle, or the hotplug thread found the stack dead and finishes the teardown itself */
+		return usb_app_ctx_wait_idle(&usbh_hid_app);
+	}
+
+#if CONFIG_USBH_HID_HOTPLUG
+	/* Hotplug thread: parked on detach, or inside a rebuild that checks quit */
+	rtos_sema_give(usbh_hid_ctx.detach_sema);
+	if (usb_app_ctx_join(&usbh_hid_app, 1U) != RTK_SUCCESS) {
+		/* The hotplug thread is still on the stack: keep everything, the app stays STOPPING */
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Stop timeout\n");
+		return -RTK_ERR_TIMEOUT;
+	}
+#endif
+
+	/* No worker is left. The stack is down already if the hotplug thread left mid-rebuild. */
+	usbh_hid_stack_deinit();
+#if CONFIG_USBH_HID_HOTPLUG
+	rtos_sema_delete(usbh_hid_ctx.detach_sema);
+	usbh_hid_ctx.detach_sema = NULL;
+#endif
+	usb_app_ctx_end(&usbh_hid_app);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "USBH HID demo stop\n");
+
+	return RTK_SUCCESS;
+}
 
 /**
   * @brief  USB Host HID example entry point.

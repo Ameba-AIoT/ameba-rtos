@@ -36,6 +36,7 @@ set(private_compile_options)         #private compile_options
 # Component private part, user config begin
 
 ameba_list_append(private_sources
+    ameba_ota_rollback.c
     ameba_psram.c
     ameba_clk.c
     ameba_swr.c
@@ -80,10 +81,6 @@ ameba_list_append(private_sources
     ameba_phy8201f.c
     ameba_gspi.c
     ameba_ethernet.c
-)
-
-ameba_list_append(private_includes
-    ${c_CMPT_DOWNLOAD_USB_DIR}
 )
 
 # Component private part, user config end

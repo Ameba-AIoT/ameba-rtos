@@ -1,15 +1,16 @@
-/* ----------------------------------------------------------------------
+﻿/* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
  * Title:        arm_sqrt_q31.c
  * Description:  Q31 square root function
  *
- * $Date:        18. March 2019
- * $Revision:    V1.6.0
+ * $Date:        23 April 2021
+ * $Revision:    V1.9.0
  *
- * Target Processor: Cortex-M cores
+ * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
+
 /*
- * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -25,9 +26,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "arm_compiler_specific.h"
 
-#include "arm_math.h"
+
+#include "dsp/fast_math_functions.h"
 #include "arm_common_tables.h"
+
+#define Q28QUARTER 0x20000000
 
 /**
   @ingroup groupFastMath
@@ -47,17 +52,11 @@
                    - \ref ARM_MATH_ARGUMENT_ERROR : input value is negative; *pOut is set to 0
  */
 
-arm_status arm_sqrt_q31(
+ARM_DSP_ATTRIBUTE arm_status arm_sqrt_q31(
 	q31_t in,
 	q31_t *pOut)
 {
-	q31_t bits_val1;
-	q31_t number, temp1, var1, signBits1, half;
-	float32_t temp_float1;
-	union {
-		q31_t fracval;
-		float32_t floatval;
-	} tempconv;
+	q31_t number, var1, signBits1, temp;
 
 	number = in;
 
@@ -72,45 +71,33 @@ arm_status arm_sqrt_q31(
 			number = number << (signBits1 - 1);
 		}
 
-		/* Calculate half value of the number */
-		half = number >> 1;
-		/* Store the number for later use */
-		temp1 = number;
+		/* Start value for 1/sqrt(x) for the Newton iteration */
+		var1 = sqrt_initial_lut_q31[(number >> 26) - (Q28QUARTER >> 26)];
 
-		/* Convert to float */
-		temp_float1 = number * 4.6566128731e-010f;
-		/* Store as integer */
-		tempconv.floatval = temp_float1;
-		bits_val1 = tempconv.fracval;
-		/* Subtract the shifted value from the magic number to give intial guess */
-		bits_val1 = 0x5f3759df - (bits_val1 >> 1);  /* gives initial guess */
-		/* Store as float */
-		tempconv.fracval = bits_val1;
-		temp_float1 = tempconv.floatval;
-		/* Convert to integer format */
-		var1 = (q31_t)(temp_float1 * 1073741824);
+		/* 0.5 var1 * (3 - number * var1 * var1) */
 
 		/* 1st iteration */
-		var1 = ((q31_t)((q63_t) var1 * (0x30000000 -
-										((q31_t)
-										 ((((q31_t)
-											(((q63_t) var1 * var1) >> 31)) *
-										   (q63_t) half) >> 31))) >> 31)) << 2;
+
+		temp = ((q63_t) var1 * var1) >> 28;
+		temp = ((q63_t) number * temp) >> 31;
+		temp = 0x30000000 - temp;
+		var1 = ((q63_t) var1 * temp) >> 29;
+
+
 		/* 2nd iteration */
-		var1 = ((q31_t)((q63_t) var1 * (0x30000000 -
-										((q31_t)
-										 ((((q31_t)
-											(((q63_t) var1 * var1) >> 31)) *
-										   (q63_t) half) >> 31))) >> 31)) << 2;
+		temp = ((q63_t) var1 * var1) >> 28;
+		temp = ((q63_t) number * temp) >> 31;
+		temp = 0x30000000 - temp;
+		var1 = ((q63_t) var1 * temp) >> 29;
+
 		/* 3rd iteration */
-		var1 = ((q31_t)((q63_t) var1 * (0x30000000 -
-										((q31_t)
-										 ((((q31_t)
-											(((q63_t) var1 * var1) >> 31)) *
-										   (q63_t) half) >> 31))) >> 31)) << 2;
+		temp = ((q63_t) var1 * var1) >> 28;
+		temp = ((q63_t) number * temp) >> 31;
+		temp = 0x30000000 - temp;
+		var1 = ((q63_t) var1 * temp) >> 29;
 
 		/* Multiply the inverse square root with the original value */
-		var1 = ((q31_t)(((q63_t) temp1 * var1) >> 31)) << 1;
+		var1 = ((q31_t)(((q63_t) number * var1) >> 28));
 
 		/* Shift the output down accordingly */
 		if ((signBits1 % 2) == 0) {
@@ -126,7 +113,11 @@ arm_status arm_sqrt_q31(
 	else {
 		*pOut = 0;
 
-		return (ARM_MATH_ARGUMENT_ERROR);
+		if (number == 0) {
+			return (ARM_MATH_SUCCESS);
+		} else {
+			return (ARM_MATH_ARGUMENT_ERROR);
+		}
 	}
 }
 

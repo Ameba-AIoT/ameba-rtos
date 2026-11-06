@@ -238,7 +238,7 @@ void pmu_pre_sleep_processing(uint32_t *tick_before_sleep)
 		return;
 	}
 // #if (!defined (CONFIG_WHC_INTF_IPC) && defined (CONFIG_WHC_DEV))
-// #ifdef CONFIG_ARM_CORE_CM55_KM55TZ
+// #ifdef CONFIG_ARM_CORE_CM4_KM4TZ
 // 	SOCPS_Sleep_FULLMAC(sleep_type);
 // #endif
 // #else

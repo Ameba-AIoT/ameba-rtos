@@ -41,6 +41,10 @@ ameba_list_append(private_sources
     dhcps.c
 )
 
+ameba_list_append(private_includes
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
 #WARNING: For toolchain version 12.3.1, code like this will cause a warning:
 #  ip_addr_isany(&cpcb->local_ip)
 ameba_list_append(private_compile_options

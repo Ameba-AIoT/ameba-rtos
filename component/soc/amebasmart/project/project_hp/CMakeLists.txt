@@ -7,6 +7,10 @@ set(c_VERBOSE_MAKEFILE FALSE)
 ameba_mcu_project_create(hp km4)
 ameba_mcu_project_check()
 
+ameba_install_directory("${CMAKE_CURRENT_SOURCE_DIR}/gnu_utility")
+ameba_install_directory("${CMAKE_CURRENT_SOURCE_DIR}/ld")
+ameba_install_directory("${CMAKE_CURRENT_SOURCE_DIR}/make")
+
 ###############################################################################
 
 set(DAILY_BUILD 0 CACHE STRING "code analysis argument")
@@ -36,7 +40,10 @@ ameba_list_append(c_LINK_ROM_SYMBOL_NS    ${c_SDK_LD_DIR}/ameba_rom_symbol_stdli
 ameba_add_subdirectory(make/image1)
 ameba_add_subdirectory(make/image2)
 ameba_add_subdirectory(make/image_floader)
-ameba_add_subdirectory_ifnot(CONFIG_AMEBA_RLS make/image_imgtool_floader)
+# internal: not installed; !AMEBA_RLS: the shipped make/ copy must not be entered by the released SDK
+if(NOT CONFIG_AMEBA_RLS)
+    ameba_add_subdirectory_internal(make/image_imgtool_floader)
+endif()
 
 if(CONFIG_TRUSTZONE)
     # Set image3 linker script for TrustZone secure image

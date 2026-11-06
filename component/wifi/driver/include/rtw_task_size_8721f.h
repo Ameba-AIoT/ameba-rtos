@@ -65,7 +65,11 @@
 
 #if defined (CONFIG_WHC_DEV)
 #if defined(CONFIG_WHC_INTF_IPC)
+#if defined(CONFIG_WHC_WPA_SUPPLICANT_OFFLOAD)
+#define WIFI_SINGLE_TASK_SIZE		                  ((4096 + WTN_SINGLE_TASK_SIZE + NAN_SINGLE_TASK_SIZE + CONTEXT_SAVE_SIZE_WITH_MARGIN) / 4)	/* rtw_if_wifi_create_task: size will *4 */
+#else
 #define WIFI_SINGLE_TASK_SIZE		                  ((1632 + WTN_SINGLE_TASK_SIZE + NAN_SINGLE_TASK_SIZE + CONTEXT_SAVE_SIZE_WITH_MARGIN) / 4)	/* rtw_if_wifi_create_task: size will *4 */
+#endif
 #else
 #define WIFI_SINGLE_TASK_SIZE		                  ((3056 + WTN_SINGLE_TASK_SIZE + NAN_SINGLE_TASK_SIZE + CONTEXT_SAVE_SIZE_WITH_MARGIN) / 4)	/* 1k: for sdio fullmac proxy */
 #endif

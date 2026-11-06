@@ -38,6 +38,10 @@ bool hci_controller_is_opened(void);
 
 /********** APIs called by hci uart ***********/
 void hci_uart_rx_irq_handler(bool from_irq);
+void hci_release_bt_wakelock(void);
+void hci_acquire_bt_wakelock(void);
+bool hci_get_first_wakeup(void);
+void hci_set_first_wakeup(bool flag);
 /**********************************************/
 
 #endif /* _HCI_CONTROLLER_H_ */

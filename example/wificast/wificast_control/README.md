@@ -52,12 +52,12 @@ Connect a LED with this GPIO to show the status.
     ```
     * Output sample from the controller:
     ```
-    [14:42:09:701]wifi_cast bind
+    [14:42:09:701]wificast bind
     [14:42:09:701][example_main-I] example_control_bind, status: bind
     ```
     * Output sample from the responser:
     ```
-    [14:47:02:080][example_main-I] 00:e0:4c:00:03:5d, len: 2, rssi: -17, type: 40
+    [14:47:02:080][example_main-I] 00:e0:4c:00:03:5d, len: 2, rssi: -17, type: 4000
     [14:47:02:081][example_main-I] 00:e0:4c:00:03:5d, status: bind
     [14:47:02:081][WIFI CAST-I] wifi_cast_add_node, node: 00:e0:4c:00:03:5d, set encrypt: 0
     [14:47:02:081][WIFI CAST-I] wifi_cast_add_node, 00:e0:4c:00:03:5d add success
@@ -70,16 +70,16 @@ Connect a LED with this GPIO to show the status.
     > Note: The device can only control the bound devices, so it must be bound before control.
     * Output sample from the controller:
     ```
-    [14:42:14:469]wifi_cast light
+    [14:42:14:469]wificast light
     [14:42:14:469][example_main-I] example_control_light, status: 0
-    [14:42:16:043]wifi_cast light
+    [14:42:16:043]wificast light
     [14:42:16:043][example_main-I] example_control_light, status: 1
     ```
     * Output sample from the response:
     ```
-    [14:47:10:707][example_main-I] 00:e0:4c:00:03:5d, len: 2, rssi: -17, type: 80
+    [14:47:10:707][example_main-I] 00:e0:4c:00:03:5d, len: 2, rssi: -17, type: 8000
     [14:47:10:707][example_main-I] 00:e0:4c:00:03:5d, status: off
-    [14:47:11:783][example_main-I] 00:e0:4c:00:03:5d, len: 2, rssi: -17, type: 80
+    [14:47:11:783][example_main-I] 00:e0:4c:00:03:5d, len: 2, rssi: -17, type: 8000
     [14:47:11:784][example_main-I] 00:e0:4c:00:03:5d, status: on
     ```
 4. The controller inputs shell command to send unbind command when test finished.
@@ -88,12 +88,12 @@ Connect a LED with this GPIO to show the status.
     ```
     * Output sample from the controller:
     ```
-    [14:47:21:663]wifi_cast unbind
+    [14:47:21:663]wificast unbind
     [14:47:21:663][example_main-I] example_control_bind, status: unbind
     ```
     * Output sample from the response:
     ```
-    [14:47:21:652][example_main-I] 00:e0:4c:00:03:5d, len: 2, rssi: -17, type: 40
+    [14:47:21:652][example_main-I] 00:e0:4c:00:03:5d, len: 2, rssi: -17, type: 4000
     [14:47:21:652][example_main-I] 00:e0:4c:00:03:5d, status: unbind
     [14:47:21:662][WIFI CAST-I] wifi_cast_del_node, 00:e0:4c:00:03:5d delete success
     [14:47:21:662][example_main-I] 00:e0:4c:00:03:5d, unbind success

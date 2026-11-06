@@ -1,15 +1,16 @@
-/* ----------------------------------------------------------------------
+﻿/* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
  * Title:        arm_mat_mult_q31.c
  * Description:  Q31 matrix multiplication
  *
- * $Date:        18. March 2019
- * $Revision:    V1.6.0
+ * $Date:        23 April 2021
+ * $Revision:    V1.9.0
  *
- * Target Processor: Cortex-M cores
+ * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
+
 /*
- * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -25,8 +26,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "arm_compiler_specific.h"
 
-#include "arm_math.h"
+
+#include "dsp/matrix_functions.h"
 
 /**
   @ingroup groupMatrix
@@ -58,7 +61,7 @@
   @remark
                    Refer to \ref arm_mat_mult_fast_q31() for a faster but less precise implementation of this function.
  */
-#if defined(ARM_MATH_MVEI)
+#if defined(ARM_MATH_MVEI) && !defined(ARM_MATH_AUTOVECTORIZE)
 
 #define MATRIX_DIM2 2
 #define MATRIX_DIM3 3
@@ -332,7 +335,7 @@ __STATIC_INLINE arm_status arm_mat_mult_q31_4x4_mve(
 	return (ARM_MATH_SUCCESS);
 }
 
-arm_status arm_mat_mult_q31(
+ARM_DSP_ATTRIBUTE arm_status arm_mat_mult_q31(
 	const arm_matrix_instance_q31 *pSrcA,
 	const arm_matrix_instance_q31 *pSrcB,
 	arm_matrix_instance_q31 *pDst)
@@ -621,7 +624,59 @@ arm_status arm_mat_mult_q31(
 }
 
 #else
-arm_status arm_mat_mult_q31(
+
+#if defined(ARM_MATH_NEON)
+
+/**
+  @brief         Q31 matrix multiplication.
+  @param[in]     pSrcA      points to the first input matrix structure
+  @param[in]     pSrcB      points to the second input matrix structure
+  @param[out]    pDst       points to output matrix structure
+  @return        execution status
+                   - \ref ARM_MATH_SUCCESS       : Operation successful
+                   - \ref ARM_MATH_SIZE_MISMATCH : Matrix size check failed
+**/
+
+#define LANE 4
+#define DTYPE q31_t
+#define HEADERTYPE DTYPE
+#define VEC int32x4_t
+#define VECACC int32x4_t
+
+#define CLEAR_ACC(tmp) tmp = vdupq_n_s32(0);
+
+#define TMPLD
+#define TMPST
+#define TMPMAC
+
+#define SCALARACC int32_t
+#define SCALAR_LOAD_AND_WIDEN(DST,PTR) DST = (SCALARACC)(*(PTR))
+#define SCALAR_STORE_AND_NARROW(PTR,VAL) *(PTR) = (VAL)
+#define SCALAR_MAC_N(ACC,VEC,SCALAR) ACC = __SSAT(((((int64_t)ACC << 31) + (int64_t)(VEC) * (int64_t)(SCALAR)) >> 32),31) << 1U
+
+#define VLOAD(DST,PTR) DST = vld1q_s32((PTR))
+#define VSTORE(PTR,VAL) vst1q_s32((PTR),(VAL))
+
+#define VLOAD_ACC(DST,PTR) DST = vld1q_s32((PTR))
+#define VSTORE_ACC(PTR,VAL) vst1q_s32((PTR),(VAL))
+
+
+#define VLOAD_AND_WIDEN(DST,PTR) DST = vld1q_s32((PTR))
+#define VSTORE_AND_NARROW(PTR,VAL) vst1q_s32((PTR),(VAL))
+
+
+#define VMAC_N(ACC,VEC,SCALAR) ACC = vqaddq_s32(ACC,vqdmulhq_n_s32((VEC),(SCALAR)))
+
+#define MATTYPE arm_matrix_instance_q31
+#define EXT(A) A##_q31
+
+#define FUNCNAME arm_mat_mult_q31
+
+
+#include "_arm_mat_mult_neon.c"
+
+#else
+ARM_DSP_ATTRIBUTE arm_status arm_mat_mult_q31(
 	const arm_matrix_instance_q31 *pSrcA,
 	const arm_matrix_instance_q31 *pSrcB,
 	arm_matrix_instance_q31 *pDst)
@@ -746,6 +801,7 @@ arm_status arm_mat_mult_q31(
 	/* Return to application */
 	return (status);
 }
+#endif /* #if defined(ARM_MATH_NEON) */
 #endif /* defined(ARM_MATH_MVEI) */
 
 /**

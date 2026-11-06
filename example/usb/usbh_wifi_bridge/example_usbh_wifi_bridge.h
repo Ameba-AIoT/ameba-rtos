@@ -28,6 +28,8 @@ extern "C" {
  * @return None
  */
 void example_usbh_wifi_bridge(void);
+int example_usbh_wifi_bridge_start(void);
+int example_usbh_wifi_bridge_stop(void);
 
 #ifdef __cplusplus
 }

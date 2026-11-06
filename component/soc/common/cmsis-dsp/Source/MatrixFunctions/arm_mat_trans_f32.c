@@ -1,15 +1,16 @@
-/* ----------------------------------------------------------------------
+﻿/* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
  * Title:        arm_mat_trans_f32.c
  * Description:  Floating-point matrix transpose
  *
- * $Date:        18. March 2019
- * $Revision:    V1.6.0
+ * $Date:        23 April 2021
+ * $Revision:    V1.9.0
  *
- * Target Processor: Cortex-M cores
+ * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
+
 /*
- * Copyright (C) 2010-2017 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -25,8 +26,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "arm_compiler_specific.h"
 
-#include "arm_math.h"
+
+#include "dsp/matrix_functions.h"
 
 /**
   @ingroup groupMatrix
@@ -35,10 +38,26 @@
 /**
   @defgroup MatrixTrans Matrix Transpose
 
-  Tranposes a matrix.
+  Transposes a matrix.
 
   Transposing an <code>M x N</code> matrix flips it around the center diagonal and results in an <code>N x M</code> matrix.
-  \image html MatrixTranspose.gif "Transpose of a 3 x 3 matrix"
+
+  @par Transpose of a 3 x 3 matrix
+
+  \f[
+  \begin{pmatrix}
+   a_{1,1} & a_{1,2} & a_{1,3} \\
+   a_{2,1} & a_{2,2} & a_{2,3} \\
+   a_{3,1} & a_{3,2} & a_{3,3} \\
+  \end{pmatrix}^T
+   =
+  \begin{pmatrix}
+   a_{1,1} & a_{2,1} & a_{3,1} \\
+   a_{1,2} & a_{2,2} & a_{3,2} \\
+   a_{1,3} & a_{2,3} & a_{3,3} \\
+  \end{pmatrix}
+  \f]
+
  */
 
 /**
@@ -58,7 +77,7 @@
 
 #include "arm_helium_utils.h"
 
-arm_status arm_mat_trans_f32(
+ARM_DSP_ATTRIBUTE arm_status arm_mat_trans_f32(
 	const arm_matrix_instance_f32 *pSrc,
 	arm_matrix_instance_f32 *pDst)
 {
@@ -97,18 +116,18 @@ arm_status arm_mat_trans_f32(
 #else
 #if defined(ARM_MATH_NEON)
 
-arm_status arm_mat_trans_f32(
+#define BLOCK_ROWS 4
+#define BLOCK_ROWS_SHIFT 2
+#define LANE 4
+#define LANE_SHIFT 2
+
+#include "_arm_mat_trans_neon.c"
+
+ARM_DSP_ATTRIBUTE arm_status arm_mat_trans_f32(
 	const arm_matrix_instance_f32 *pSrc,
 	arm_matrix_instance_f32 *pDst)
 {
-	float32_t *pIn = pSrc->pData;                  /* input data matrix pointer */
-	float32_t *pOut = pDst->pData;                 /* output data matrix pointer */
-	float32_t *px;                                 /* Temporary output data matrix pointer */
-	uint16_t nRows = pSrc->numRows;                /* number of rows */
-	uint16_t nColumns = pSrc->numCols;             /* number of columns */
-
-	uint16_t blkCnt, rowCnt, i = 0U, row = nRows;          /* loop counters */
-	arm_status status;                             /* status of matrix transpose  */
+	ARM_MAT_TRANS_NEON_INIT_U32
 
 #ifdef ARM_MATH_MATRIX_CHECK
 
@@ -120,93 +139,7 @@ arm_status arm_mat_trans_f32(
 #endif /*    #ifdef ARM_MATH_MATRIX_CHECK    */
 
 	{
-		/* Matrix transpose by exchanging the rows with columns */
-		/* Row loop */
-		rowCnt = row >> 2;
-		while (rowCnt > 0U) {
-			float32x4_t row0V, row1V, row2V, row3V;
-			float32x4x2_t ra0, ra1, rb0, rb1;
-
-			blkCnt = nColumns >> 2;
-
-			/* The pointer px is set to starting address of the column being processed */
-			px = pOut + i;
-
-			/* Compute 4 outputs at a time.
-			 ** a second loop below computes the remaining 1 to 3 samples. */
-			while (blkCnt > 0U) {      /* Column loop */
-				row0V = vld1q_f32(pIn);
-				row1V = vld1q_f32(pIn + 1 * nColumns);
-				row2V = vld1q_f32(pIn + 2 * nColumns);
-				row3V = vld1q_f32(pIn + 3 * nColumns);
-				pIn += 4;
-
-				ra0 = vzipq_f32(row0V, row2V);
-				ra1 = vzipq_f32(row1V, row3V);
-
-				rb0 = vzipq_f32(ra0.val[0], ra1.val[0]);
-				rb1 = vzipq_f32(ra0.val[1], ra1.val[1]);
-
-				vst1q_f32(px, rb0.val[0]);
-				px += nRows;
-
-				vst1q_f32(px, rb0.val[1]);
-				px += nRows;
-
-				vst1q_f32(px, rb1.val[0]);
-				px += nRows;
-
-				vst1q_f32(px, rb1.val[1]);
-				px += nRows;
-
-				/* Decrement the column loop counter */
-				blkCnt--;
-			}
-
-			/* Perform matrix transpose for last 3 samples here. */
-			blkCnt = nColumns % 0x4U;
-
-			while (blkCnt > 0U) {
-				/* Read and store the input element in the destination */
-				*px++ = *pIn;
-				*px++ = *(pIn + 1 * nColumns);
-				*px++ = *(pIn + 2 * nColumns);
-				*px++ = *(pIn + 3 * nColumns);
-
-				px += (nRows - 4);
-				pIn++;
-
-				/* Decrement the column loop counter */
-				blkCnt--;
-			}
-
-			i += 4;
-			pIn += 3 * nColumns;
-
-			/* Decrement the row loop counter */
-			rowCnt--;
-
-		}         /* Row loop end  */
-
-		rowCnt = row & 3;
-		while (rowCnt > 0U) {
-			blkCnt = nColumns ;
-			/* The pointer px is set to starting address of the column being processed */
-			px = pOut + i;
-
-			while (blkCnt > 0U) {
-				/* Read and store the input element in the destination */
-				*px = *pIn++;
-
-				/* Update the pointer px to point to the next row of the transposed matrix */
-				px += nRows;
-
-				/* Decrement the column loop counter */
-				blkCnt--;
-			}
-			i++;
-			rowCnt -- ;
-		}
+		ARM_MAT_TRANS_NEON_U32
 
 		/* Set status as ARM_MATH_SUCCESS */
 		status = ARM_MATH_SUCCESS;
@@ -215,8 +148,11 @@ arm_status arm_mat_trans_f32(
 	/* Return to application */
 	return (status);
 }
+
+#include "_arm_mat_trans_undef_neon.c"
+
 #else
-arm_status arm_mat_trans_f32(
+ARM_DSP_ATTRIBUTE arm_status arm_mat_trans_f32(
 	const arm_matrix_instance_f32 *pSrc,
 	arm_matrix_instance_f32 *pDst)
 {

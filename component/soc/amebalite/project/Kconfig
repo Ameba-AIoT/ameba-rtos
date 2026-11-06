@@ -118,6 +118,7 @@ menu "CONFIG Mass Production"
             config MP_EXPAND
                 bool "expand"
             config MP_SHRINK
+                depends on WHC_HOST_LOC_KM4_MENU && WHC_INTF_IPC_MENU
                 bool "shrink"
         endchoice
     endif
@@ -149,9 +150,6 @@ menu "CONFIG APPLICATION"
         orsource "../../../tflite_micro/Kconfig"
         if DSP_EN
             orsource "../../../aivoice/Kconfig"
-        endif
-        if AIVOICE_EN_MENU
-            orsource "../../../application/speechmind/Kconfig"
         endif
     endmenu
 

@@ -1,15 +1,16 @@
-/* ----------------------------------------------------------------------
+﻿/* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
  * Title:        arm_sin_cos_q31.c
  * Description:  Cosine & Sine calculation for Q31 values
  *
- * $Date:        18. March 2019
- * $Revision:    V1.6.0
+ * $Date:        23 April 2021
+ * $Revision:    V1.9.0
  *
- * Target Processor: Cortex-M cores
+ * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
+
 /*
- * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -25,8 +26,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "arm_compiler_specific.h"
 
-#include "arm_math.h"
+
+#include "dsp/controller_functions.h"
 #include "arm_common_tables.h"
 
 /**
@@ -43,12 +46,11 @@
   @param[in]     theta    scaled input value in degrees
   @param[out]    pSinVal  points to processed sine output
   @param[out]    pCosVal  points to processed cosine output
-  @return        none
 
   The Q31 input value is in the range [-1 0.999999] and is mapped to a degree value in the range [-180 179].
  */
 
-void arm_sin_cos_q31(
+ARM_DSP_ATTRIBUTE void arm_sin_cos_q31(
 	q31_t theta,
 	q31_t *pSinVal,
 	q31_t *pCosVal)

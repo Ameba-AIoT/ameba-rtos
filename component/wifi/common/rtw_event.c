@@ -414,10 +414,20 @@ void wifi_indication(u32 event, u8 *evt_info, s32 evt_len)
 {
 	(void)evt_len;
 
-	/* 1. ipc dev 2. WPAoH */
-#if defined(CONFIG_WHC_DEV) && !defined(CONFIG_WHC_WPA_SUPPLICANT_OFFLOAD) && defined(CONFIG_WHC_WIFI_API_PATH)
+	/* ipc dev */
+#if defined(CONFIG_WHC_DEV) && defined(CONFIG_WHC_WIFI_API_PATH)
 	extern void whc_dev_wifi_event_indicate(u32 event_cmd, u8 * evt_info, s32 evt_len);
+#if defined(CONFIG_WHC_INTF_IPC) && defined(CONFIG_WHC_WPA_SUPPLICANT_OFFLOAD)
+	/* WPAoD: internal events (>= RTW_EVENT_INTERNAL_BASE) are dev-private,
+	 * only forward external events (e.g. JOIN_STATUS) to host.
+	 */
+	if (event < RTW_EVENT_INTERNAL_BASE) {
+		whc_dev_wifi_event_indicate(event, evt_info, evt_len);
+	}
+#else
+	/* WPAoH: forward all events to host. */
 	whc_dev_wifi_event_indicate(event, evt_info, evt_len);
+#endif
 #endif
 
 #if defined(CONFIG_WPA_STD)

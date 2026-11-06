@@ -48,6 +48,7 @@ enum rtk_error_code {
 	RTK_ERR_NOMEM               = 4,    /**< <!-- DIAG: --> No Memory*/
 	RTK_ERR_TIMEOUT             = 5,    /**< <!-- DIAG: --> Timeout */
 	RTK_ERR_BUFFER_OVERFLOW     = 6,    /**< <!-- DIAG: --> Data exceeds allocated buffer size.*/
+	RTK_ERR_IO                  = 7,    /**< <!-- DIAG: --> I/O error */
 
 	RTK_ERR_DIAG_BASE               = 0x60,
 	RTK_ERR_DIAG_UNINIT             = RTK_ERR_DIAG_BASE + 0x01,     // diag uninitialize

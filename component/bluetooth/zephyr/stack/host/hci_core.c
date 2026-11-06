@@ -4981,6 +4981,15 @@ static void tx_processor(struct k_work *item)
 
 K_WORK_DELAYABLE_DEFINE(tx_work, tx_processor);
 
+#if ZEPHYR_RTK_PATCH
+void zephyr_hci_core_work_reset(void)
+{
+	k_work_reset(&rx_work);
+	k_work_delayable_reset(&tx_work);
+	k_work_reset(&bt_dev.init);
+}
+#endif
+
 void bt_tx_irq_raise(void)
 {
 	LOG_DBG("kick TX");

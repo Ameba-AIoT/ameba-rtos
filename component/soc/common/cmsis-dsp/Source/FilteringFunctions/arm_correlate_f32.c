@@ -1,15 +1,16 @@
-/* ----------------------------------------------------------------------
+﻿/* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
  * Title:        arm_correlate_f32.c
  * Description:  Correlation of floating-point sequences
  *
- * $Date:        18. March 2019
- * $Revision:    V1.6.0
+ * $Date:        23 April 2021
+ * $Revision:    V1.9.0
  *
- * Target Processor: Cortex-M cores
+ * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
+
 /*
- * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -25,8 +26,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "arm_compiler_specific.h"
 
-#include "arm_math.h"
+
+#include "dsp/filtering_functions.h"
 
 /**
   @ingroup groupFilters
@@ -46,16 +49,20 @@
   @par           Algorithm
                    Let <code>a[n]</code> and <code>b[n]</code> be sequences of length <code>srcALen</code> and <code>srcBLen</code> samples respectively.
                    The convolution of the two signals is denoted by
-  <pre>
-      c[n] = a[n] * b[n]
-  </pre>
+                   \f[
+                   c[n] = a[n] * b[n]
+                   \f]
+
                    In correlation, one of the signals is flipped in time
-  <pre>
-       c[n] = a[n] * b[-n]
-  </pre>
+
+                   \f[
+                   c[n] = a[n] * b[-n]
+                   \f]
   @par
                    and this is mathematically defined as
-                   \image html CorrelateEquation.gif
+                   \f[
+                   c[n] = \sum_{k=0}^{srcALen} a[k] b[k-n]
+                   \f]
   @par
                    The <code>pSrcA</code> points to the first input vector of length <code>srcALen</code> and <code>pSrcB</code> points to the second input vector of length <code>srcBLen</code>.
                    The result <code>c[n]</code> is of length <code>2 * max(srcALen, srcBLen) - 1</code> and is defined over the interval <code>n=0, 1, 2, ..., (2 * max(srcALen, srcBLen) - 2)</code>.
@@ -76,6 +83,11 @@
   @par           Opt Versions
                    Opt versions are supported for Q15 and Q7.  Design uses internal scratch buffer for getting good optimisation.
                    These versions are optimised in cycles and consumes more memory (Scratch memory) compared to Q15 and Q7 versions of correlate
+
+  @par           Long versions:
+                   For convolution of long vectors, those functions are
+                   no more adapted and will be very slow.
+                   An implementation based upon FFTs should be used.
  */
 
 /**
@@ -90,7 +102,6 @@
   @param[in]     pSrcB      points to the second input sequence
   @param[in]     srcBLen    length of the second input sequence
   @param[out]    pDst       points to the location where the output result is written.  Length 2 * max(srcALen, srcBLen) - 1.
-  @return        none
  */
 
 #if defined(ARM_MATH_MVEF) && !defined(ARM_MATH_AUTOVECTORIZE)
@@ -99,7 +110,7 @@
 #include "arm_vec_filtering.h"
 
 
-void arm_correlate_f32(
+ARM_DSP_ATTRIBUTE void arm_correlate_f32(
 	const float32_t *pSrcA,
 	uint32_t srcALen,
 	const float32_t *pSrcB,
@@ -251,7 +262,7 @@ void arm_correlate_f32(
 		pA++;
 	}
 
-	for (i = block3 - 1; i >= 0; i -= 2) {
+	for (i = block3 - 1; i > 0; i -= 2) {
 
 		uint32_t  count = (i + 1);
 		float32_t acc0;
@@ -288,7 +299,7 @@ void arm_correlate_f32(
 }
 
 #else
-void arm_correlate_f32(
+ARM_DSP_ATTRIBUTE void arm_correlate_f32(
 	const float32_t *pSrcA,
 	uint32_t srcALen,
 	const float32_t *pSrcB,
@@ -296,7 +307,7 @@ void arm_correlate_f32(
 	float32_t *pDst)
 {
 
-#if defined(ARM_MATH_DSP) && !defined(ARM_MATH_AUTOVECTORIZE)
+#if defined(ARM_MATH_DSP) || defined(ARM_MATH_NEON)
 
 	const float32_t *pIn1;                               /* InputA pointer */
 	const float32_t *pIn2;                               /* InputB pointer */
@@ -436,7 +447,7 @@ void arm_correlate_f32(
 		}
 
 		accum = vpadd_f32(vget_low_f32(res), vget_high_f32(res));
-		sum += accum[0] + accum[1];
+		sum += vget_lane_f32(accum, 0) + vget_lane_f32(accum, 1);
 
 		k = count & 0x3;
 #else
@@ -557,19 +568,19 @@ void arm_correlate_f32(
 				py += 4;
 
 				x = x1v;
-				res = vmlaq_n_f32(res, x, c[0]);
+				res = vmlaq_n_f32(res, x, vgetq_lane_f32(c, 0));
 
 				x = vextq_f32(x1v, x2v, 1);
 
-				res = vmlaq_n_f32(res, x, c[1]);
+				res = vmlaq_n_f32(res, x, vgetq_lane_f32(c, 1));
 
 				x = vextq_f32(x1v, x2v, 2);
 
-				res = vmlaq_n_f32(res, x, c[2]);
+				res = vmlaq_n_f32(res, x, vgetq_lane_f32(c, 2));
 
 				x = vextq_f32(x1v, x2v, 3);
 
-				res = vmlaq_n_f32(res, x, c[3]);
+				res = vmlaq_n_f32(res, x, vgetq_lane_f32(c, 3));
 
 				x1v = x2v;
 				px += 4;
@@ -586,11 +597,10 @@ void arm_correlate_f32(
 				res = vmlaq_n_f32(res, x1v, c0);
 
 				/* Reuse the present samples for the next MAC */
-				x1v[0] = x1v[1];
-				x1v[1] = x1v[2];
-				x1v[2] = x1v[3];
-
-				x1v[3] = *(px++);
+				x1v = vsetq_lane_f32(vgetq_lane_f32(x1v, 1), x1v, 0);
+				x1v = vsetq_lane_f32(vgetq_lane_f32(x1v, 2), x1v, 1);
+				x1v = vsetq_lane_f32(vgetq_lane_f32(x1v, 3), x1v, 2);
+				x1v = vsetq_lane_f32(*(px++), x1v, 3);
 
 				/* Decrement the loop counter */
 				k--;
@@ -598,10 +608,10 @@ void arm_correlate_f32(
 
 			px -= 1;
 
-			acc0 = res[0];
-			acc1 = res[1];
-			acc2 = res[2];
-			acc3 = res[3];
+			acc0 = vgetq_lane_f32(res, 0);
+			acc1 = vgetq_lane_f32(res, 1);
+			acc2 = vgetq_lane_f32(res, 2);
+			acc3 = vgetq_lane_f32(res, 3);
 #else
 			/* read x[0], x[1], x[2] samples */
 			x0 = *px++;
@@ -769,7 +779,7 @@ void arm_correlate_f32(
 			}
 
 			accum = vpadd_f32(vget_low_f32(res), vget_high_f32(res));
-			sum += accum[0] + accum[1];
+			sum += vget_lane_f32(accum, 0) + vget_lane_f32(accum, 1);
 #else
 			/* First part of the processing with loop unrolling.  Compute 4 MACs at a time.
 			 ** a second loop below computes MACs for the remaining 1 to 3 samples. */
@@ -910,7 +920,7 @@ void arm_correlate_f32(
 		}
 
 		accum = vpadd_f32(vget_low_f32(res), vget_high_f32(res));
-		sum += accum[0] + accum[1];
+		sum += vget_lane_f32(accum, 0) + vget_lane_f32(accum, 1);
 #else
 		/* First part of the processing with loop unrolling.  Compute 4 MACs at a time.
 		 ** a second loop below computes MACs for the remaining 1 to 3 samples. */
@@ -982,7 +992,7 @@ void arm_correlate_f32(
 	/* So srcBLen is always considered as shorter or equal to srcALen */
 	/* But CORR(x, y) is reverse of CORR(y, x) */
 	/* So, when srcBLen > srcALen, output pointer is made to point to the end of the output buffer */
-	/* and a varaible, inv is set to 1 */
+	/* and a variable, inv is set to 1 */
 	/* If lengths are not equal then zero pad has to be done to  make the two
 	 * inputs of same length. But to improve the performance, we assume zeroes
 	 * in the output instead of zero padding either of the the inputs*/
@@ -990,7 +1000,7 @@ void arm_correlate_f32(
 	 * starting of the output buffer */
 	/* If srcALen < srcBLen, (srcALen - srcBLen) zeroes has to included in the
 	 * ending of the output buffer */
-	/* Once the zero padding is done the remaining of the output is calcualted
+	/* Once the zero padding is done the remaining of the output is calculated
 	 * using convolution but with the shorter signal time shifted. */
 
 	/* Calculate the length of the remaining sequence */
@@ -1034,7 +1044,7 @@ void arm_correlate_f32(
 			/* Check the array limitations */
 			if ((((i - j) < srcBLen) && (j < srcALen))) {
 				/* z[i] += x[i-j] * y[j] */
-				sum += pIn1[j] * pIn2[-((int32_t) i - j)];
+				sum += pIn1[j] * pIn2[-((int32_t) i - (int32_t) j)];
 			}
 		}
 

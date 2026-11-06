@@ -1761,7 +1761,10 @@ void at_wssrvsend(u16 argc, char **argv)
 		}
 		memset(send_buf, 0, length + 1);
 		memcpy(send_buf, argv[4], length);
-		ws_server_sendData(opcode, length, send_buf, 0, 1, 1, cli_conn);
+		if (ws_server_sendData(opcode, length, send_buf, 0, 1, 1, cli_conn) < 0) {
+			RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "send data failed\r\n");
+			error_no = 3;
+		}
 	} else {
 		RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "data is empty\r\n");
 		error_no = 1;
@@ -1797,6 +1800,7 @@ void at_wssrvsendraw(u16 argc, char **argv)
 	struct wssrv_conn *cli_conn;
 	int frag_len, res, tt_get_len;
 	uint8_t is_first_frag = 0;
+	uint8_t send_fail = 0;
 
 
 	if (argc < 2) {
@@ -1861,7 +1865,9 @@ void at_wssrvsendraw(u16 argc, char **argv)
 				atcmd_tt_mode_end();
 				goto end;
 			}
-			ws_server_sendData(opcode, length, send_buf, 0, 1, 1, cli_conn);
+			if (ws_server_sendData(opcode, length, send_buf, 0, 1, 1, cli_conn) < 0) {
+				send_fail = 1;
+			}
 		} else {
 			while (length > 0) {
 				frag_len = (length <= wssrvcfg_tx_size) ? length : wssrvcfg_tx_size;
@@ -1875,13 +1881,19 @@ void at_wssrvsendraw(u16 argc, char **argv)
 				if (length > wssrvcfg_tx_size) {
 					if (is_first_frag == 0) {
 						is_first_frag = 1;
-						ws_server_sendData(opcode, frag_len, send_buf, 0, 1, 0, cli_conn);
+						if (ws_server_sendData(opcode, frag_len, send_buf, 0, 1, 0, cli_conn) < 0) {
+							send_fail = 1;
+						}
 					} else {
-						ws_server_sendData(CONTINUATION, frag_len, send_buf, 0, 1, 0, cli_conn);
+						if (ws_server_sendData(CONTINUATION, frag_len, send_buf, 0, 1, 0, cli_conn) < 0) {
+							send_fail = 1;
+						}
 					}
 
 				} else {
-					ws_server_sendData(CONTINUATION, frag_len, send_buf, 0, 1, 1, cli_conn);
+					if (ws_server_sendData(CONTINUATION, frag_len, send_buf, 0, 1, 1, cli_conn) < 0) {
+						send_fail = 1;
+					}
 				}
 
 				length -= frag_len;
@@ -1896,7 +1908,9 @@ void at_wssrvsendraw(u16 argc, char **argv)
 				atcmd_tt_mode_end();
 				goto end;
 			}
-			ws_server_sendData(opcode, length, send_buf, 0, 1, 1, cli_conn);
+			if (ws_server_sendData(opcode, length, send_buf, 0, 1, 1, cli_conn) < 0) {
+				send_fail = 1;
+			}
 		} else {
 			while (length > 0) {
 				frag_len = (length <= MAX_TT_BUF_LEN) ? length : MAX_TT_BUF_LEN;
@@ -1910,13 +1924,19 @@ void at_wssrvsendraw(u16 argc, char **argv)
 				if (length > MAX_TT_BUF_LEN) {
 					if (is_first_frag == 0) {
 						is_first_frag = 1;
-						ws_server_sendData(opcode, frag_len, send_buf, 0, 1, 0, cli_conn);
+						if (ws_server_sendData(opcode, frag_len, send_buf, 0, 1, 0, cli_conn) < 0) {
+							send_fail = 1;
+						}
 					} else {
-						ws_server_sendData(CONTINUATION, frag_len, send_buf, 0, 1, 0, cli_conn);
+						if (ws_server_sendData(CONTINUATION, frag_len, send_buf, 0, 1, 0, cli_conn) < 0) {
+							send_fail = 1;
+						}
 					}
 
 				} else {
-					ws_server_sendData(CONTINUATION, frag_len, send_buf, 0, 1, 1, cli_conn);
+					if (ws_server_sendData(CONTINUATION, frag_len, send_buf, 0, 1, 1, cli_conn) < 0) {
+						send_fail = 1;
+					}
 				}
 
 				length -= frag_len;
@@ -1925,6 +1945,11 @@ void at_wssrvsendraw(u16 argc, char **argv)
 	}
 
 	atcmd_tt_mode_end();
+	/* TT data is drained above even after a failure, report it now */
+	if (send_fail) {
+		RTK_LOGS(AT_WEBSOCKET_TAG, RTK_LOG_ERROR, "send data failed\r\n");
+		error_no = 4;
+	}
 end:
 	if (error_no == 0) {
 		at_printf(ATCMD_OK_END_STR);

@@ -1,15 +1,16 @@
-/* ----------------------------------------------------------------------
+﻿/* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
  * Title:        arm_vlog_f32.c
  * Description:  Fast vectorized log
  *
- * $Date:        15. Octoboer 2019
- * $Revision:    V1.6.0
+ * $Date:        23 April 2021
+ * $Revision:    V1.9.0
  *
- * Target Processor: Cortex-M cores
+ * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
+
 /*
- * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -25,15 +26,35 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "arm_compiler_specific.h"
 
-#include "arm_math.h"
+
+#include "dsp/fast_math_functions.h"
 #include "arm_common_tables.h"
 
-#if (defined(ARM_MATH_MVEF) || defined(ARM_MATH_HELIUM) || defined(ARM_MATH_NEON) || defined(ARM_MATH_NEON_EXPERIMENTAL)) && !defined(ARM_MATH_AUTOVECTORIZE)
+
+/**
+  @ingroup groupFastMath
+ */
+
+
+/**
+  @defgroup vlog Vector Log
+
+  Compute the log values of a vector of samples.
+
+ */
+
+/**
+  @addtogroup vlog
+  @{
+ */
+
+#if ((defined(ARM_MATH_MVEF) || defined(ARM_MATH_HELIUM)) && !defined(ARM_MATH_AUTOVECTORIZE)) || defined(ARM_MATH_NEON) || defined(ARM_MATH_NEON_EXPERIMENTAL)
 #include "arm_vec_math.h"
 #endif
 
-void arm_vlog_f32(
+ARM_DSP_ATTRIBUTE void arm_vlog_f32(
 	const float32_t *pSrc,
 	float32_t *pDst,
 	uint32_t blockSize)
@@ -59,7 +80,7 @@ void arm_vlog_f32(
 
 	blkCnt = blockSize & 3;
 #else
-#if (defined(ARM_MATH_NEON) || defined(ARM_MATH_NEON_EXPERIMENTAL)) && !defined(ARM_MATH_AUTOVECTORIZE)
+#if defined(ARM_MATH_NEON) || defined(ARM_MATH_NEON_EXPERIMENTAL)
 	f32x4_t src;
 	f32x4_t dst;
 
@@ -92,3 +113,7 @@ void arm_vlog_f32(
 		blkCnt--;
 	}
 }
+
+/**
+  @} end of vlog group
+ */

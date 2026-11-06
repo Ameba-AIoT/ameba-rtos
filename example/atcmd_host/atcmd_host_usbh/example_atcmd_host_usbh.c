@@ -43,9 +43,9 @@ static void cdc_acm_cb_deinit(void);
 static void cdc_acm_cb_attached(void);
 static void cdc_acm_cb_detached(void);
 static void cdc_acm_cb_setup(void);
-static void cdc_acm_cb_transmitted(usbh_urb_state_t state);
-static void cdc_acm_cb_received(u8 *pbuf, u32 Len, u8 status);
-static void cdc_acm_cb_notify(u8 *pbuf, u32 Len, u8 status);
+static void cdc_acm_cb_transmitted(int state);
+static void cdc_acm_cb_received(u8 *pbuf, u32 Len, int status);
+static void cdc_acm_cb_notify(u8 *pbuf, u32 Len, int status);
 static void cdc_acm_cb_line_coding_changed(usb_cdc_acm_line_coding_t *line_coding);
 static void cdc_acm_cb_process(usb_host_t *host, u8 id);
 
@@ -136,7 +136,7 @@ static const usbh_user_cb_t usbh_usr_cb = {
 static int cdc_acm_cb_init(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "INIT\n");
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 static void cdc_acm_cb_deinit(void)
@@ -162,11 +162,11 @@ static void cdc_acm_cb_setup(void)
 	cdc_acm_is_ready = 1;
 }
 
-static void cdc_acm_cb_received(u8 *buf, u32 len, u8 status)
+static void cdc_acm_cb_received(u8 *buf, u32 len, int status)
 {
 	UNUSED(buf);
 
-	if (status == HAL_OK) {
+	if (status == RTK_SUCCESS) {
 		u16 cdc_acm_bulk_in_mps = usbh_cdc_acm_get_bulk_ep_mps();
 		atcmd_cdc_acm_total_rx_len += len;
 
@@ -182,9 +182,9 @@ static void cdc_acm_cb_received(u8 *buf, u32 len, u8 status)
 	}
 }
 
-static void cdc_acm_cb_transmitted(u8 state)
+static void cdc_acm_cb_transmitted(int state)
 {
-	if (state == HAL_OK) {
+	if (state == RTK_SUCCESS) {
 		/*TX done*/
 		xSemaphoreGive(cdc_acm_send_sema);
 	} else {
@@ -192,11 +192,11 @@ static void cdc_acm_cb_transmitted(u8 state)
 	}
 }
 
-static void cdc_acm_cb_notify(u8 *buf, u32 length, u8 status)
+static void cdc_acm_cb_notify(u8 *buf, u32 length, int status)
 {
 	UNUSED(buf);
 
-	if (status == HAL_OK) {
+	if (status == RTK_SUCCESS) {
 		atcmd_usbh_notify_len = length > USBH_CDC_ACM_NOTIFY_BUF_SIZE ? USBH_CDC_ACM_NOTIFY_BUF_SIZE : length;
 		xSemaphoreGive(cdc_acm_notify_sema);
 	} else {
@@ -241,7 +241,7 @@ static void tt_mode_test_task(void *param)
 		xSemaphoreTake(tt_mode_tx_sema, 0xFFFFFFFF);
 		send_len = tt_len_tmp > (USBH_CDC_ACM_LOOPBACK_BUF_SIZE) ? (USBH_CDC_ACM_LOOPBACK_BUF_SIZE) : tt_len_tmp;
 		ret = usbh_cdc_acm_transmit(tt_tx_buf, send_len);
-		while (ret != HAL_OK) {
+		while (ret != RTK_SUCCESS) {
 			vTaskDelay(1);
 			ret = usbh_cdc_acm_transmit(tt_tx_buf, send_len);
 		}
@@ -287,7 +287,7 @@ WAIT_CONNECT:
 		}
 
 		ret = usbh_cdc_acm_transmit(cdc_acm_loopback_tx_buf, send_len);
-		while (ret != HAL_OK) {
+		while (ret != RTK_SUCCESS) {
 			vTaskDelay(1);
 			ret = usbh_cdc_acm_transmit(cdc_acm_loopback_tx_buf, send_len);
 		}
@@ -318,7 +318,7 @@ WAIT_CONNECT:
 		}
 
 		ret = usbh_cdc_acm_notify_receive(cdc_acm_notify_rx_buf, USBH_CDC_ACM_NOTIFY_BUF_SIZE);
-		while (ret != HAL_OK) {
+		while (ret != RTK_SUCCESS) {
 			vTaskDelay(1);
 			ret = usbh_cdc_acm_notify_receive(cdc_acm_notify_rx_buf, USBH_CDC_ACM_NOTIFY_BUF_SIZE);
 		}
@@ -364,7 +364,7 @@ WAIT_CONNECT:
 		memset(cdc_acm_loopback_rx_buf, 0, USBH_CDC_ACM_LOOPBACK_BUF_SIZE);
 
 		ret = usbh_cdc_acm_receive(cdc_acm_loopback_rx_buf, USBH_CDC_ACM_LOOPBACK_BUF_SIZE);
-		while (ret != HAL_OK) {
+		while (ret != RTK_SUCCESS) {
 			vTaskDelay(1);
 			ret = usbh_cdc_acm_receive(cdc_acm_loopback_rx_buf, USBH_CDC_ACM_LOOPBACK_BUF_SIZE);
 		}
@@ -460,7 +460,7 @@ static void cdc_acm_hotplug_thread(void *param)
 			vTaskDelay(10);
 
 			ret = usbh_init(&usbh_cfg, &usbh_usr_cb);
-			if (ret != HAL_OK) {
+			if (ret != RTK_SUCCESS) {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "Init USBH fail\n");
 				break;
 			}
@@ -491,12 +491,12 @@ static void atcmd_usbh_cdc_acm_task(void *param)
 	cdc_acm_notify_sema = (void *)xSemaphoreCreateCounting(0xFFFF, 0);
 
 	status = usbh_init(&usbh_cfg, &usbh_usr_cb);
-	if (status != HAL_OK) {
+	if (status != RTK_SUCCESS) {
 		goto error_exit;
 	}
 
 	status = usbh_cdc_acm_init(&cdc_acm_usr_cb, &cdc_acm_class_cfg);
-	if (status != HAL_OK) {
+	if (status != RTK_SUCCESS) {
 		usbh_deinit();
 		goto error_exit;
 	}

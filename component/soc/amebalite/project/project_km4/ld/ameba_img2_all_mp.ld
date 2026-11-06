@@ -167,7 +167,8 @@ __bdram_heap_buffer_size__ = ORIGIN(KM4_BD_RAM_MP) + LENGTH(KM4_BD_RAM_MP) - __b
 __sram_floader_mp_start__ = ORIGIN(KM4_FLOADER_RAM_MP) - IMAGE_HEADER_LEN - 0x10000000;
 __sram_floader_mp_size__ = LENGTH(KM4_FLOADER_RAM_MP) + IMAGE_HEADER_LEN;
 
-__psram_image2_start__ = .;
+/* the PSRAM sub-image is empty, its header has to be in PSRAM, the boot loader checks it (same as ameba_img2_all.ld) */
+__psram_image2_start__ = ORIGIN(KM4_BD_PSRAM);
 
-__psram_heap_buffer_start__ = .;
+__psram_heap_buffer_start__ = ORIGIN(KM4_BD_PSRAM);
 __psram_heap_buffer_size__ = 0;

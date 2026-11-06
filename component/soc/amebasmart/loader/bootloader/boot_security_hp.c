@@ -19,7 +19,7 @@ u8 BOOT_LoadSubImage(SubImgInfo_TypeDef *SubImgInfo, u32 StartAddr, u8 Num, char
 BOOT_RAM_TEXT_SECTION
 u8 BOOT_LoadRDPImg(Manifest_TypeDef *Manifest, SubImgInfo_TypeDef *SubImgInfo, u32 SrcAddr)
 {
-	IMAGE_HEADER *Hdr = NULL;
+	IMAGE_HEADER Hdr;
 	u8 InBuf[256], Outbuf[16];
 	u8 Key[32], TmpIV[16];
 	u32 DestAddr, TotalLen;
@@ -66,14 +66,14 @@ u8 BOOT_LoadRDPImg(Manifest_TypeDef *Manifest, SubImgInfo_TypeDef *SubImgInfo, u
 		BOOT_ImgCopy((void *)InBuf, (void *)SrcAddr, 16);
 		rtl_crypto_aes_cbc_decrypt(InBuf, 16, TmpIV, 16, Outbuf);
 
-		Hdr = (IMAGE_HEADER *)Outbuf;
-		if ((Hdr->signature[0] != APP_IMAGE_PATTERN_1) || (Hdr->signature[1] != APP_IMAGE_PATTERN_2)) {
+		_memcpy(&Hdr, Outbuf, sizeof(Outbuf));
+		if ((Hdr.signature[0] != APP_IMAGE_PATTERN_1) || (Hdr.signature[1] != APP_IMAGE_PATTERN_2)) {
 			RTK_LOGE(TAG, "%s Invalid\n", Km4Img3Label[i]);
 			return FALSE;
 		}
 
-		DestAddr = Hdr->image_addr - IMAGE_HEADER_LEN;
-		TotalLen = Hdr->image_size + IMAGE_HEADER_LEN;
+		DestAddr = Hdr.image_addr - IMAGE_HEADER_LEN;
+		TotalLen = Hdr.image_size + IMAGE_HEADER_LEN;
 		RTK_LOGI(TAG, "%s[%08x:%x]\n", Km4Img3Label[i], DestAddr, TotalLen);
 
 		if (SubImgInfo != NULL) {

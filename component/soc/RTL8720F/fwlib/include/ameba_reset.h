@@ -26,6 +26,10 @@ extern "C" {
 #define SYS_RESET_KEY 0x9696
 #define SYS_RESET_TRIG 0x6969
 
+#define IS_WDG_RESET(reason)	((reason) & (AON_BIT_RSTF_IWDG | AON_BIT_RSTF_WDG0_GLB | \
+												AON_BIT_RSTF_WDG1_GLB | AON_BIT_RSTF_WDG2_GLB))
+#define IS_SYS_RESET(reason)	((reason) & (AON_BIT_RSTF_SYS0_GLB | AON_BIT_RSTF_SYS1_GLB))
+
 extern u32 BOOT_Reason(void);
 extern void System_Reset(void);
 extern void Platform1_Reset(void);

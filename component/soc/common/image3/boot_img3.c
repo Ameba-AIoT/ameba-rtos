@@ -7,7 +7,11 @@
 /* this file is build in no secure img, function in this file will call NSC functions */
 
 #include "ameba_soc.h"
+#include "fault_injection_hardening.h"
 #include "ssl_rom_to_ram_map.h"
+#if defined(CONFIG_TRUSTZONE_MBEDTLS) && !defined(CONFIG_MBEDTLS_USE_LEGACY_API)
+#include "psa/crypto.h"
+#endif
 
 static const char *const TAG = "BOOT";
 
@@ -38,6 +42,14 @@ void app_mbedtls_image3_init(void)
 	ssl_function_map.ssl_free = (void (*)(void *))vPortFree;
 	ssl_function_map.ssl_printf = (long unsigned int (*)(const char *, ...))DiagPrintf;
 	ssl_function_map.ssl_snprintf = (int (*)(char *s, size_t n, const char *format, ...))DiagSnPrintf;
+
+#if defined(CONFIG_TRUSTZONE_MBEDTLS) && !defined(CONFIG_MBEDTLS_USE_LEGACY_API)
+	psa_status_t psa_ret = psa_crypto_init();
+	if (psa_ret != PSA_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "psa init %d\n", psa_ret);
+		while (1);
+	}
+#endif
 }
 
 extern const SAU_CFG_TypeDef sau_config[];

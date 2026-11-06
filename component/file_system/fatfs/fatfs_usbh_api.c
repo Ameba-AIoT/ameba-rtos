@@ -42,6 +42,10 @@ static const usbh_msc_cb_t fatfs_msc_usr_cb = {
 	.setup = fatfs_msc_cb_setup,
 };
 
+static const usbh_msc_config_t fatfs_msc_class_cfg = {
+	/* buf_size left 0 takes the class default. */
+};
+
 static const usbh_user_cb_t fatfs_usbh_usr_cb = {
 	.process = fatfs_usbh_cb_process
 };
@@ -108,7 +112,7 @@ int fatfs_usbh_init(void)
 		return -1;
 	}
 
-	usbh_msc_init(&fatfs_msc_usr_cb);
+	usbh_msc_init(&fatfs_msc_usr_cb, &fatfs_msc_class_cfg);
 	/* All class drivers registered; start USB TRX so enumeration can run. */
 	usbh_start();
 

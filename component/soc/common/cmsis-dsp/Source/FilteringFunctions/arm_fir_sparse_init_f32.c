@@ -1,15 +1,16 @@
-/* ----------------------------------------------------------------------
+﻿/* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
  * Title:        arm_fir_sparse_init_f32.c
  * Description:  Floating-point sparse FIR filter initialization function
  *
- * $Date:        18. March 2019
- * $Revision:    V1.6.0
+ * $Date:        23 April 2021
+ * $Revision:    V1.9.0
  *
- * Target Processor: Cortex-M cores
+ * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
+
 /*
- * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -25,12 +26,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "arm_compiler_specific.h"
 
-#include "arm_math.h"
+
+#include "dsp/filtering_functions.h"
 
 /**
   @ingroup groupFilters
  */
+
+/**
+  @defgroup FIR_Lattice Finite Impulse Response (FIR) Lattice Filters
+
+  @deprecated Those functions are no more tested nor maintained and will be removed in
+              a future version.
+*/
 
 /**
   @addtogroup FIR_Sparse
@@ -46,7 +56,6 @@
   @param[in]     pTapDelay  points to the array of offset times
   @param[in]     maxDelay   maximum offset time supported
   @param[in]     blockSize  number of samples that will be processed per block
-  @return        none
 
   @par           Details
                    <code>pCoeffs</code> holds the filter coefficients and has length <code>numTaps</code>.
@@ -57,7 +66,7 @@
                    number of samples processed by the <code>arm_fir_sparse_f32()</code> function.
  */
 
-void arm_fir_sparse_init_f32(
+ARM_DSP_ATTRIBUTE void arm_fir_sparse_init_f32(
 	arm_fir_sparse_instance_f32 *S,
 	uint16_t numTaps,
 	const float32_t *pCoeffs,
@@ -82,7 +91,7 @@ void arm_fir_sparse_init_f32(
 	S->stateIndex = 0U;
 
 	/* Clear state buffer and size is always maxDelay + blockSize */
-	memset(pState, 0, (maxDelay + blockSize) * sizeof(float32_t));
+	_memset(pState, 0, (maxDelay + blockSize) * sizeof(float32_t));
 
 	/* Assign state pointer */
 	S->pState = pState;

@@ -13,6 +13,12 @@
 extern "C" {
 #endif
 
+/** Uncompressed SECP256R1 public key: 0x04 || X(32) || Y(32). */
+#define ECDSA_SIGN_SERVICE_PUBKEY_LEN   65
+
+/** Signature buffer: PSA writes raw r||s (64 bytes), legacy API writes DER (<= 72 bytes). */
+#define ECDSA_SIGN_SERVICE_SIG_MAX_LEN  72
+
 /**
  * Structure for passing ECDSA sign request data between non-secure and secure worlds.
  * Used by the secure world ECDSA signing service.
@@ -20,9 +26,9 @@ extern "C" {
 typedef struct {
 	const unsigned char *message;      /* Input: Message to sign */
 	size_t message_len;                /* Input: Length of the message */
-	unsigned char *signature;          /* Output: Buffer for signature (MBEDTLS_ECDSA_MAX_LEN bytes) */
+	unsigned char *signature;          /* Output: Buffer for signature (ECDSA_SIGN_SERVICE_SIG_MAX_LEN bytes) */
 	size_t *sig_len;                   /* Output: Actual signature length */
-	unsigned char *public_key_raw;     /* Output: Buffer for raw public key (65 bytes) */
+	unsigned char *public_key_raw;     /* Output: Buffer for raw public key (ECDSA_SIGN_SERVICE_PUBKEY_LEN bytes) */
 	size_t *pub_key_len;               /* Output: Actual public key length */
 } ecdsa_sign_req_t;
 

@@ -81,7 +81,7 @@ void shell_loguratRx_ipc_int(void *Data, u32 IrqStatus, u32 ChanNum)
 	shell_cmd_inject((const char *)ptmpbuf->UARTLogBuf, ptmpbuf->BufCount);
 }
 
-#ifdef CONFIG_ARM_CORE_CM55_KM55NS
+#ifdef CONFIG_ARM_CORE_CM4_KM4NS
 u8 tmp_log_buf_array[CMD_BUFLEN];
 UART_LOG_BUF tmp_log_buf = {
 	.UARTLogBuf = tmp_log_buf_array,

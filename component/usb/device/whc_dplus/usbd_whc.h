@@ -115,7 +115,7 @@ typedef struct {
 	 * @param[in] in_ep: Pointer to the WHC IN endpoint.
 	 * @param[in] status: The status of the transmission.
 	 */
-	void (*transmitted)(usbd_whc_ep_t *in_ep, u8 status);
+	void (*transmitted)(usbd_whc_ep_t *in_ep, int status);
 
 	/**
 	 * @brief Called when non-control OUT transfer done, for application to handle the received host command/data.

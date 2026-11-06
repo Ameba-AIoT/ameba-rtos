@@ -1,15 +1,16 @@
-/* ----------------------------------------------------------------------
+﻿/* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
  * Title:        arm_biquad_cascade_df1_f32.c
  * Description:  Processing function for the floating-point Biquad cascade DirectFormI(DF1) filter
  *
- * $Date:        18. March 2019
- * $Revision:    V1.6.0
+ * $Date:        23 April 2021
+ * $Revision:    V1.9.0
  *
- * Target Processor: Cortex-M cores
+ * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
+
 /*
- * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -25,8 +26,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "arm_compiler_specific.h"
 
-#include "arm_math.h"
+
+#include "dsp/filtering_functions.h"
 
 /**
   @ingroup groupFilters
@@ -159,12 +162,11 @@
   @param[in]     pSrc      points to the block of input data
   @param[out]    pDst      points to the block of output data
   @param[in]     blockSize  number of samples to process
-  @return        none
  */
 
 #if defined(ARM_MATH_MVEF) && !defined(ARM_MATH_AUTOVECTORIZE)
 #include "arm_helium_utils.h"
-void arm_biquad_cascade_df1_f32(
+ARM_DSP_ATTRIBUTE void arm_biquad_cascade_df1_f32(
 	const arm_biquad_casd_df1_inst_f32 *S,
 	const float32_t *pSrc,
 	float32_t *pDst,
@@ -176,7 +178,7 @@ void arm_biquad_cascade_df1_f32(
 	const float32_t *pCoeffs = S->pCoeffs;    /*  coefficient pointer       */
 	float32_t Xn1, Xn2, Yn1, Yn2;       /*  Filter pState variables   */
 	float32_t lastX, lastY;             /*  X,Y history for tail handling */
-	float32_t X0, X1, X2, X3;           /*  temporary input           */
+	float32_t X0, X1, X2, X3 = 0;       /*  temporary input           */
 	f32x4_t coeffs;
 	f32x4_t accVec;                   /* accumultor vector */
 	uint32_t  sample, stage = S->numStages; /*  loop counters             */
@@ -254,25 +256,8 @@ void arm_biquad_cascade_df1_f32(
 			lastX = X3;
 			lastY = Yn1;
 
-			X0 = *pIn++;
-			X1 = *pIn++;
-			X2 = *pIn++;
-			X3 = *pIn++;
-
-			coeffs = vld1q(pCoeffs);
-			accVec = vmulq(coeffs, X3);
-
-			coeffs = vld1q(&pCoeffs[4]);
-			accVec = vfmaq(accVec, coeffs, X2);
-
-			coeffs = vld1q(&pCoeffs[8]);
-			accVec = vfmaq(accVec, coeffs, X1);
-
-			coeffs = vld1q(&pCoeffs[12]);
-			accVec = vfmaq(accVec, coeffs, X0);
-
 			coeffs = vld1q(&pCoeffs[16]);
-			accVec = vfmaq(accVec, coeffs, Xn1);
+			accVec = vmulq(coeffs, Xn1);
 
 			coeffs = vld1q(&pCoeffs[20]);
 			accVec = vfmaq(accVec, coeffs, Xn2);
@@ -284,12 +269,26 @@ void arm_biquad_cascade_df1_f32(
 			accVec = vfmaq(accVec, coeffs, Yn2);
 
 			if (sample == 1) {
+				X0 = *pIn++;
+
+				coeffs = vld1q(&pCoeffs[12]);
+				accVec = vfmaq(accVec, coeffs, X0);
+
 				*pOut++ = vgetq_lane(accVec, 0);
 				Xn1 = X0;
 				Xn2 = lastX;
 				Yn1 = vgetq_lane(accVec, 0);
 				Yn2 = lastY;
 			} else if (sample == 2) {
+				X0 = *pIn++;
+				X1 = *pIn++;
+
+				coeffs = vld1q(&pCoeffs[8]);
+				accVec = vfmaq(accVec, coeffs, X1);
+
+				coeffs = vld1q(&pCoeffs[12]);
+				accVec = vfmaq(accVec, coeffs, X0);
+
 				*pOut++ = vgetq_lane(accVec, 0);
 				*pOut++ = vgetq_lane(accVec, 1);
 				Xn1 = X1;
@@ -297,6 +296,19 @@ void arm_biquad_cascade_df1_f32(
 				Yn1 = vgetq_lane(accVec, 1);
 				Yn2 = vgetq_lane(accVec, 0);
 			} else {
+				X0 = *pIn++;
+				X1 = *pIn++;
+				X2 = *pIn++;
+
+				coeffs = vld1q(&pCoeffs[4]);
+				accVec = vfmaq(accVec, coeffs, X2);
+
+				coeffs = vld1q(&pCoeffs[8]);
+				accVec = vfmaq(accVec, coeffs, X1);
+
+				coeffs = vld1q(&pCoeffs[12]);
+				accVec = vfmaq(accVec, coeffs, X0);
+
 				*pOut++ = vgetq_lane(accVec, 0);
 				*pOut++ = vgetq_lane(accVec, 1);
 				*pOut++ = vgetq_lane(accVec, 2);
@@ -331,8 +343,8 @@ void arm_biquad_cascade_df1_f32(
 	} while (stage > 0U);
 }
 #else
-#if defined(ARM_MATH_NEON)  && !defined(ARM_MATH_AUTOVECTORIZE)
-void arm_biquad_cascade_df1_f32(
+#if defined(ARM_MATH_NEON)
+ARM_DSP_ATTRIBUTE void arm_biquad_cascade_df1_f32(
 	const arm_biquad_casd_df1_inst_f32 *S,
 	const float32_t *pSrc,
 	float32_t *pDst,
@@ -348,7 +360,7 @@ void arm_biquad_cascade_df1_f32(
 	uint32_t sample, stage = S->numStages;         /*  loop counters             */
 
 	float32x4_t Xn;
-	float32x2_t Yn;
+	float32x2_t Yn = vdup_n_f32(0.0f);
 	float32x2_t a;
 	float32x4_t b;
 
@@ -491,7 +503,7 @@ void arm_biquad_cascade_df1_f32(
 }
 
 #else
-void arm_biquad_cascade_df1_f32(
+ARM_DSP_ATTRIBUTE void arm_biquad_cascade_df1_f32(
 	const arm_biquad_casd_df1_inst_f32 *S,
 	const float32_t *pSrc,
 	float32_t *pDst,

@@ -3,8 +3,8 @@
  * Title:        SupportFunctions.c
  * Description:  Combination of all support function source files.
  *
- * $Date:        16. March 2020
- * $Revision:    V1.1.0
+ * $Date:        18 August 2022
+ * $Revision:    V1.1.1
  *
  * Target Processor: Cortex-M cores
  * -------------------------------------------------------------------- */
@@ -30,10 +30,12 @@
 #include "arm_bitonic_sort_f32.c"
 #include "arm_bubble_sort_f32.c"
 #include "arm_copy_f32.c"
+#include "arm_copy_f64.c"
 #include "arm_copy_q15.c"
 #include "arm_copy_q31.c"
 #include "arm_copy_q7.c"
 #include "arm_fill_f32.c"
+#include "arm_fill_f64.c"
 #include "arm_fill_q15.c"
 #include "arm_fill_q31.c"
 #include "arm_fill_q7.c"
@@ -45,19 +47,25 @@
 #include "arm_selection_sort_f32.c"
 #include "arm_sort_f32.c"
 #include "arm_sort_init_f32.c"
-#include "arm_spline_interp_f32.c"
-#include "arm_spline_interp_init_f32.c"
-#include "arm_weighted_sum_f32.c"
+#include "arm_weighted_average_f32.c"
 
+#include "arm_f64_to_float.c"
+#include "arm_f64_to_q31.c"
+#include "arm_f64_to_q15.c"
+#include "arm_f64_to_q7.c"
+#include "arm_float_to_f64.c"
 #include "arm_float_to_q15.c"
 #include "arm_float_to_q31.c"
 #include "arm_float_to_q7.c"
+#include "arm_q15_to_f64.c"
 #include "arm_q15_to_float.c"
 #include "arm_q15_to_q31.c"
 #include "arm_q15_to_q7.c"
+#include "arm_q31_to_f64.c"
 #include "arm_q31_to_float.c"
 #include "arm_q31_to_q15.c"
 #include "arm_q31_to_q7.c"
+#include "arm_q7_to_f64.c"
 #include "arm_q7_to_float.c"
 #include "arm_q7_to_q15.c"
 #include "arm_q7_to_q31.c"

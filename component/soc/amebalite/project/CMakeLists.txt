@@ -36,8 +36,22 @@ set(KR4_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR}/project_kr4)
 
 ###############################################################################
 # Add sub projects
-add_subdirectory(project_kr4)
-add_subdirectory(project_km4)
+ameba_add_subdirectory(project_kr4)
+ameba_add_subdirectory(project_km4)
+###############################################################################
+ameba_install_files(
+    "${CMAKE_CURRENT_SOURCE_DIR}/default.conf"
+    "${CMAKE_CURRENT_SOURCE_DIR}/manifest.json5"
+    "${CMAKE_CURRENT_SOURCE_DIR}/ameba_layout.ld"
+    "${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.txt"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Kconfig"
+    "${CMAKE_CURRENT_SOURCE_DIR}/postbuild.cmake"
+    "${CMAKE_CURRENT_SOURCE_DIR}/AmebaLite_Release_Note.txt"
+    "${c_BASEDIR}/component/soc/Kconfig"
+)
+# DSP-side assets: consumed by the external DSP project, never add_subdirectory'd by km4/kr4
+ameba_install_directory_if_exist("${c_CMPT_AIVOICE_DIR}")
+ameba_install_directory_if_exist("${c_CMPT_AUDIO_DIR}/audio_prebuilts/amebalite/hifi5")
 ###############################################################################
 
 ###############################################################################

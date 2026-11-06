@@ -33,6 +33,8 @@ void whc_dev_api_delete_filter_node(u32_t identity);
 void whc_dev_api_get_filter_node(struct whc_dev_pkt_filter *filter, u32_t identity);
 
 void whc_dev_pktfilter_init(void);
+
+int whc_dev_api_sync_ip_info(u8 idx);
 #endif
 
 void whc_dev_api_set_host_state(u8 state);

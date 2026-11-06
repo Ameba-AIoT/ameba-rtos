@@ -290,7 +290,7 @@ int usb_os_sema_create(usb_os_sema_t *sema);
  * @param[out] sema: Pointer to the semaphore handle to be created.
  * @param[in] init_count: Initial count, no greater than max_count.
  * @param[in] max_count: Maximum count, at least 1.
- * @return 0 on success, HAL_ERR_PARA on invalid counts, HAL_ERR_MEM if it cannot be created.
+ * @return 0 on success, -RTK_ERR_BADARG on invalid counts, -RTK_ERR_NOMEM if it cannot be created.
  */
 int usb_os_sema_create_with_count(usb_os_sema_t *sema, u32 init_count, u32 max_count);
 

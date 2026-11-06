@@ -16,6 +16,7 @@
 #define USBH_UAC_AUDIO_CTRL_BUF_MAX_LEN             CACHE_LINE_SIZE
 #define USBH_UAC_FU_IDX_NONE                        0xFFU  /* No feature unit picked for a direction */
 #define USBH_UAC_ISOC_BUF_LENGTH                    1024U
+#define USBH_UAC_RW_LEN_MAX                         0x7FFFFFFFU /**< Largest size usbh_uac_read()/write() can report in an int */
 #define USBH_UAC_SAMPLING_FREQ_CONTROL              0x100
 #define USBH_UAC_BIT_TO_BYTE                        8U
 #define USBH_UAC_ONE_KHZ                            1000U
@@ -23,6 +24,7 @@
 #define USBH_UAC_LEGACY_FS_SIZE_RATIO_MIN           4U    /**< wMaxPacketSize/compliant-size ratio that flags a legacy FS-style bInterval on a HS bus */
 /* Minimum bLength needed to safely read each AS class-specific descriptor's fields */
 #define USBH_UAC_FORMAT_TYPE_I_FIXED_LEN            (8U)  /**< fixed fields before tSamFreq[] */
+#define USBH_UAC_SUBFRAME_SIZE_MAX                  (4U)  /**< bSubframeSize is 1..4 bytes, Ref Audio Formats 1.0 2.2.5 */
 #define USBH_UAC_SAM_FREQ_ENTRY_SIZE                (3U)  /**< bytes per tSamFreq entry */
 #define USBH_UAC_SAM_FREQ_CONTINUOUS                (0U)  /**< bSamFreqType == 0 : continuous range (tLower/tUpperSamFreq) */
 #define USBH_UAC_SAM_FREQ_RANGE_CNT                 (2U)  /**< tLowerSamFreq + tUpperSamFreq entries */
@@ -42,8 +44,7 @@
 /* States for class */
 typedef enum {
 	UAC_STATE_IDLE = 0U,
-	UAC_STATE_TRANSFER,
-	UAC_STATE_ERROR
+	UAC_STATE_TRANSFER
 } usbh_uac_xfer_state_t;
 
 typedef enum {
@@ -81,7 +82,7 @@ typedef enum {
 /* Private macros ------------------------------------------------------------*/
 
 #define USBH_LE16(addr)                             (((u16)(addr)[0]) | ((u16)(((u32)(addr)[1]) << 8)))
-#define USBH_UAC_FREQ(freq)                         (((u32)freq[0]) | (((u32)freq[1]) << 8) | (((u32)freq[2]) << 16))
+#define USBH_UAC_FREQ(freq)                         (((u32)(freq)[0]) | (((u32)(freq)[1]) << 8) | (((u32)(freq)[2]) << 16))
 
 /* Private function prototypes -----------------------------------------------*/
 
@@ -99,8 +100,8 @@ static int usbh_uac_process_set_alt(usb_host_t *host);
 static int usbh_uac_process_set_freq(usb_host_t *host);
 static void usbh_uac_deinit_pipe(u8 dir);
 static void usbh_uac_deinit_all_pipe(void);
-static void usbh_uac_channel_deinit(usbh_uac_channel_t *ch);
-static void usbh_uac_free_as_itf(usbh_uac_channel_t *ch);
+static void usbh_uac_release_device(void);
+static void usbh_uac_free_resources(void);
 static int usbh_uac_parse_interface_desc(usb_host_t *host);
 static int usbh_uac_parse_ac(usbh_itf_data_t *ac_itf);
 static int usbh_uac_parse_as(usbh_itf_data_t *as_itf);
@@ -140,17 +141,17 @@ static usbh_uac_t usbh_uac;
 
 /**
   * @brief  Check whether the USB host connection is ready.
-  * @retval HAL_OK if connected and set up, HAL_BUSY otherwise.
+  * @retval RTK_SUCCESS if connected and set up, -RTK_ERR_BUSY otherwise.
   */
 static int usbh_uac_usb_status_check(void)
 {
 	usbh_uac_t *uac = &usbh_uac;
 
 	if ((uac->host != NULL) && (uac->host->connect_state >= USBH_STATE_SETUP)) {
-		return HAL_OK;
+		return RTK_SUCCESS;
 	}
 
-	return HAL_BUSY;
+	return -RTK_ERR_BUSY;
 }
 
 #if USBH_UAC_DEBUG
@@ -193,7 +194,7 @@ static void usbh_uac_status_dump(void)
 	usbh_uac_channel_t *uac_channel = NULL;
 	usbh_uac_buf_ctrl_t *buf_ctrl = NULL;
 
-	if (usbh_uac_usb_status_check() == HAL_OK) {
+	if (usbh_uac_usb_status_check() == RTK_SUCCESS) {
 		if (uac->isoc_out.as_itf != NULL) {
 			uac_channel = &(uac->isoc_out);
 			buf_ctrl = &(uac_channel->buf_ctrl);
@@ -217,10 +218,10 @@ static void usbh_uac_status_dump(void)
 		if (uac->host != NULL) {
 			usb_host_t *host = uac->host;
 
-			RTK_LOGS(NOTAG, RTK_LOG_INFO, "State %d-%d/IsrC %lld-%lld/isrT %lld-%lld\n\n",
+			RTK_LOGS(NOTAG, RTK_LOG_INFO, "State %d-%d/IsrC %u-%u/isrT %u-%u\n\n",
 					 uac->ctrl_state, uac->xfer_state,
-					 host->isr_process_time_max, host->isr_process_time,
-					 host->isr_enter_period_max, host->isr_enter_period);
+					 (u32)host->isr_process_time_max, (u32)host->isr_process_time,
+					 (u32)host->isr_enter_period_max, (u32)host->isr_enter_period);
 		}
 #endif
 
@@ -326,12 +327,31 @@ static inline u32 usbh_uac_frame_num_inc(u32 frame, u32 inc)
 }
 
 /**
+  * @brief  Convert a UAC1 16-bit little-endian control word to a signed value.
+  * @note   UAC1 5.2.2.4.3.2 carries the volume as a two's complement s16; going through s32
+  *         keeps the conversion defined for words above 0x7FFF (MISRA C:2012 Rule 10.3).
+  * @param  buf: Pointer to the two received bytes.
+  * @retval Signed volume in 1/256 dB.
+  */
+static s16 usbh_uac_le16_to_s16(const u8 *buf)
+{
+	s32 val = (s32)USBH_LE16(buf);
+
+	if (val > 0x7FFF) {
+		val -= 0x10000;
+	}
+
+	return (s16)val;
+}
+
+/**
   * @brief  Convert a 0-100 percent volume to raw device dB units by linear interpolation.
+  * @note   The caller shall pass a channel whose range_valid is set, so vol_min <= vol_max.
   * @param  uac_dev: Pointer to the volume info structure carrying vol_min/vol_max.
   * @param  percent: Volume percentage (0-100).
   * @retval Raw dB value clamped to [vol_min, vol_max].
   */
-static u16 usbh_uac_volume_to_db(usbh_uac_volume_info_t *uac_dev, u8 percent)
+static s16 usbh_uac_volume_to_db(const usbh_uac_volume_info_t *uac_dev, u8 percent)
 {
 	/* Use s32 for range/raw: vol_min/vol_max are s16 dB values, so a device
 	   reporting a wide range (e.g. vol_min=0x8001) makes vol_max-vol_min exceed
@@ -352,16 +372,18 @@ static u16 usbh_uac_volume_to_db(usbh_uac_volume_info_t *uac_dev, u8 percent)
 	// uac = vol_min + (percent / 100) x (vol_max - vol_min)
 	// Integer arithmetic only: avoids pulling in soft-float on FPU-less targets.
 	// The s64 intermediate prevents percent*range overflowing s32 for wide ranges.
-	range = uac_dev->vol_max - uac_dev->vol_min;
-	raw = uac_dev->vol_min + (s32)((s64)percent * range / 100);
+	range = (s32)uac_dev->vol_max - (s32)uac_dev->vol_min;
+	raw = (s32)uac_dev->vol_min + (s32)((s64)percent * range / 100);
 
-	if (raw < uac_dev->vol_min) {
-		raw = uac_dev->vol_min;
-	} else if (raw > uac_dev->vol_max) {
-		raw = uac_dev->vol_max;
+	if (raw < (s32)uac_dev->vol_min) {
+		raw = (s32)uac_dev->vol_min;
+	} else if (raw > (s32)uac_dev->vol_max) {
+		raw = (s32)uac_dev->vol_max;
+	} else {
+		/* within range */
 	}
 
-	return (u16)raw;
+	return (s16)raw;
 }
 
 /**
@@ -415,60 +437,37 @@ static usbh_uac_as_itf_info_t *usbh_uac_get_as_itf_instance(u8 dir)
 }
 
 /**
-  * @brief  Allocate and populate the flattened fmt_array from all alternate settings of an AS interface.
+  * @brief  Populate the flattened fmt_array from all alternate settings of an AS interface.
+  * @note   fmt_array holds USBH_UAC_ALT_SETTING_MAX * USBH_UAC_FREQ_FORMAT_MAX entries, the most
+  *         the parser can store, so every parsed format fits.
   * @param  as_info: Pointer to the AS interface info structure.
   * @retval void
   */
 static void usbh_uac_get_audio_format(usbh_uac_as_itf_info_t *as_info)
 {
-	usbh_uac_as_itf_alt_info_t *pasintf = NULL;
-	usbh_uac_format_cfg_t *fmt = NULL;
-	usbh_uac_audio_fmt_t *pfmt_info = NULL;
-	u8 fmt_cnt = 0;
-	u8 fmt_idx = 0;
-	u8 i, k;
+	const usbh_uac_format_cfg_t *fmt;
+	usbh_uac_audio_fmt_t *pfmt_info;
+	u8 fmt_idx = 0U;
+	u8 i;
+	u8 k;
 
 	if (as_info == NULL) {
 		return;
 	}
 
-	for (i = 0; i < as_info->alt_setting_cnt; i ++) {
-		pasintf = &(as_info->interface_array[i]);
-		fmt = &(pasintf->format_info);
-		fmt_cnt += fmt->freq_cnt;
-	}
-
-	as_info->fmt_array = (usbh_uac_audio_fmt_t *)usb_os_malloc(sizeof(usbh_uac_audio_fmt_t) * fmt_cnt);
-	if (as_info->fmt_array == NULL) {
-		return;
-	}
-	as_info->fmt_array_cnt = fmt_cnt;
-
-	fmt_idx = 0;
-	for (i = 0; i < as_info->alt_setting_cnt; i ++) {
+	for (i = 0U; i < as_info->alt_setting_cnt; i++) {
 		fmt = &(as_info->interface_array[i].format_info);
-		for (k = 0; k < fmt->freq_cnt; k++) {
-			pfmt_info = &(as_info->fmt_array[fmt_idx++]);
+		for (k = 0U; k < fmt->freq_cnt; k++) {
+			pfmt_info = &(as_info->fmt_array[fmt_idx]);
+			fmt_idx++;
 
 			pfmt_info->sampling_freq = fmt->freq[k];
 			pfmt_info->bit_width = fmt->bit_width;
 			pfmt_info->ch_cnt = fmt->channels;
+			pfmt_info->subframe_size = fmt->subframe_size;
 		}
 	}
-}
-
-/**
-  * @brief  Build the audio format arrays for both ISOC OUT and ISOC IN streaming interfaces.
-  * @retval HAL_OK.
-  */
-static u32 usbh_uac_get_audio_format_info(void)
-{
-	usbh_uac_t *uac = &usbh_uac;
-
-	usbh_uac_get_audio_format(uac->isoc_out.as_itf);
-	usbh_uac_get_audio_format(uac->isoc_in.as_itf);
-
-	return HAL_OK;
+	as_info->fmt_array_cnt = fmt_idx;
 }
 
 /**
@@ -660,7 +659,7 @@ static u8 usbh_uac_topo_reaches_fu(const usbh_uac_ac_itf_info_t *ac_info, u8 ent
   *         Priority is determined by terminal type (Headphones > Speaker > other for OUT;
   *         Microphone > Desktop Microphone > other for IN) and master channel support.
   *         Results are stored in ac_info->out_best_idx and ac_info->in_best_idx.
-  * @retval HAL_OK.
+  * @retval RTK_SUCCESS.
   */
 static int usbh_uac_find_best_ac(void)
 {
@@ -754,7 +753,7 @@ static int usbh_uac_find_best_ac(void)
 	}
 #endif
 
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 /**
@@ -902,189 +901,232 @@ static int usbh_uac_parse_ac(usbh_itf_data_t *itf_data)
 		itf_total_len += len;
 	}
 
-	return HAL_OK;
+	return RTK_SUCCESS;
+}
+
+/**
+  * @brief  Check whether a descriptor is an isochronous audio data endpoint.
+  * @note   UAC1 4.6.1.1: an audio data endpoint is isochronous; a synch (feedback) endpoint
+  *         carries usage type 01b in bmAttributes D5..4 and no audio samples.
+  * @param  desc: Pointer to an endpoint descriptor whose bLength fits the parsed buffer.
+  * @retval 1 for an isochronous data endpoint, 0 otherwise.
+  */
+static u8 usbh_uac_is_data_ep(const u8 *desc)
+{
+	const usbh_ep_desc_t *ep_desc = (const usbh_ep_desc_t *)desc;
+
+	if ((desc[0] < USB_LEN_EP_DESC) || ((ep_desc->bmAttributes & USB_EP_XFER_TYPE_MASK) != USB_CH_EP_TYPE_ISOC) ||
+		(((ep_desc->bmAttributes >> 4) & 0x03U) != 0U)) {
+		return 0U;
+	}
+
+	return 1U;
+}
+
+/**
+  * @brief  Get the direction of an AS interface from its first isochronous data endpoint.
+  * @note   UAC1 4.5/4.6.1.1: an AS interface has at most one data endpoint, so that endpoint
+  *         gives the direction of the whole interface.
+  * @param  itf_data: Interface descriptor buffer.
+  * @param  dir: Output, USBH_UAC_ISOC_OUT_DIR or USBH_UAC_ISOC_IN_DIR.
+  * @retval RTK_SUCCESS when a data endpoint is found, -RTK_ERR_BADARG otherwise.
+  */
+static int usbh_uac_get_as_dir(const usbh_itf_data_t *itf_data, u8 *dir)
+{
+	const u8 *desc = itf_data->raw_data;
+	u32 offset = 0U;
+	u8 len;
+
+	while ((offset + USB_LEN_DESC_HEADER) <= itf_data->raw_data_len) {
+		len = desc[offset];
+		if ((len < USB_LEN_DESC_HEADER) || ((offset + len) > itf_data->raw_data_len)) {
+			break;
+		}
+		if ((desc[offset + 1U] == USB_DESC_TYPE_INTERFACE) && (len >= USB_LEN_IF_DESC) && (desc[offset + 2U] != desc[2])) {
+			break;
+		}
+		if ((desc[offset + 1U] == USB_DESC_TYPE_ENDPOINT) && (usbh_uac_is_data_ep(&desc[offset]) != 0U)) {
+			*dir = USB_EP_IS_IN(desc[offset + 2U]) ? USBH_UAC_ISOC_IN_DIR : USBH_UAC_ISOC_OUT_DIR;
+			return RTK_SUCCESS;
+		}
+		offset += len;
+	}
+
+	return -RTK_ERR_BADARG;
+}
+
+/**
+  * @brief  Parse one Type I Format Type descriptor into an alternate setting.
+  * @param  format_info: Format of the alternate setting being parsed.
+  * @param  desc: Pointer to the descriptor, bLength >= USBH_UAC_FORMAT_TYPE_I_FIXED_LEN.
+  * @retval void
+  */
+static void usbh_uac_parse_format(usbh_uac_format_cfg_t *format_info, const u8 *desc)
+{
+	const usb_uac1_format_type_i_discrete_descriptor *psubtype = (const usb_uac1_format_type_i_discrete_descriptor *)desc;
+	u8 subframe = psubtype->bSubframeSize;
+	u8 k;
+
+	format_info->channels = psubtype->bNrChannels;
+	format_info->bit_width = psubtype->bBitResolution;
+
+	/* Audio Formats 1.0 2.2.5: a sample occupies bSubframeSize (1..4) bytes on the bus and
+	 * bBitResolution of them are significant, e.g. 24-bit audio in a 4-byte container */
+	if ((subframe == 0U) || (subframe > USBH_UAC_SUBFRAME_SIZE_MAX) || ((u32)format_info->bit_width > ((u32)subframe * USBH_UAC_BIT_TO_BYTE))) {
+		RTK_LOGS(TAG, RTK_LOG_WARN, "Bad subframe %d bits %d\n", subframe, format_info->bit_width);
+		subframe = (u8)(((u32)format_info->bit_width + USBH_UAC_BIT_TO_BYTE - 1U) / USBH_UAC_BIT_TO_BYTE);
+	}
+	format_info->subframe_size = subframe;
+
+	if (psubtype->bSamFreqType == USBH_UAC_SAM_FREQ_CONTINUOUS) {
+		/* Audio Formats 1.0 2.2.5: bSamFreqType==0 means a continuous range carried as
+		 * tLowerSamFreq followed by tUpperSamFreq; keep both bounds in freq[0]/freq[1]. */
+		format_info->freq_cnt = USBH_UAC_SAM_FREQ_RANGE_CNT;
+		format_info->freq_continuous = 1U;
+	} else {
+		format_info->freq_cnt = psubtype->bSamFreqType;
+		format_info->freq_continuous = 0U;
+
+		if (format_info->freq_cnt > USBH_UAC_FREQ_FORMAT_MAX) {
+			RTK_LOGS(TAG, RTK_LOG_WARN, "Freq cnt(%d) > cfg(%d) limit\n", format_info->freq_cnt, USBH_UAC_FREQ_FORMAT_MAX);
+			format_info->freq_cnt = USBH_UAC_FREQ_FORMAT_MAX;
+		}
+	}
+
+	if ((subframe == 0U) || (subframe > USBH_UAC_SUBFRAME_SIZE_MAX) ||
+		(desc[0] < (USBH_UAC_FORMAT_TYPE_I_FIXED_LEN + (u16)format_info->freq_cnt * USBH_UAC_SAM_FREQ_ENTRY_SIZE))) {
+		format_info->freq_cnt = 0;
+		format_info->freq_continuous = 0U;
+	} else {
+		/* tSamFreq[] is read by byte offset: the shared descriptor type declares fewer
+		 * entries than a device may report (MISRA C:2012 Rule 18.1) */
+		for (k = 0; k < format_info->freq_cnt; k++) {
+			format_info->freq[k] = USBH_UAC_FREQ(&desc[USBH_UAC_FORMAT_TYPE_I_FIXED_LEN + ((u32)k * USBH_UAC_SAM_FREQ_ENTRY_SIZE)]);
+		}
+		/* A degenerate or inverted range is unusable; drop the alt setting. */
+		if ((format_info->freq_continuous != 0U) && (format_info->freq[0] > format_info->freq[1])) {
+			format_info->freq_cnt = 0;
+			format_info->freq_continuous = 0U;
+		}
+	}
 }
 
 /**
   * @brief  Parse audio streaming interface
+  * @note   The interface is parsed into the storage of the direction its data endpoint gives,
+  *         and an alternate setting is kept only once its data endpoint is found, so the two
+  *         directions never share an AS interface and every kept alternate setting can stream.
   * @param  itf_data: interface descriptor buffer
   * @retval Status
   */
 static int usbh_uac_parse_as(usbh_itf_data_t *itf_data)
 {
 	usbh_uac_t *uac = &usbh_uac;
+	usbh_uac_channel_t *ch;
+	usbh_uac_as_itf_info_t *as_itf;
 	usbh_uac_as_itf_alt_info_t *alt_setting = NULL;
-	usbh_uac_format_cfg_t *format_info = NULL;
-	usbh_uac_as_itf_info_t *as_itf = NULL;
-	usbh_ep_desc_t *ep_cfg = NULL;
+	const usb_uac1_as_ep_desc_t *cs_ep_desc;
 	u8 *desc = itf_data->raw_data;
-	u16 itf_total_len = 0;
-	u16 len;
-	u8 alt_set_idx;
-	u8 k;
+	u32 itf_total_len = 0U;
+	u8 ep_found = 0U;
+	u8 dir = USBH_UAC_ISOC_OUT_DIR;
+	u8 len;
 
-	as_itf = (usbh_uac_as_itf_info_t *)usb_os_malloc(sizeof(usbh_uac_as_itf_info_t));
-	if (as_itf == NULL) {
-		return HAL_ERR_MEM;
+	if (usbh_uac_get_as_dir(itf_data, &dir) != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_WARN, "AS itf %d no data EP\n", desc[2]);
+		return RTK_SUCCESS;
 	}
 
+	ch = (dir == USBH_UAC_ISOC_IN_DIR) ? &(uac->isoc_in) : &(uac->isoc_out);
+	if (ch->as_itf_mem == NULL) {
+		RTK_LOGS(TAG, RTK_LOG_INFO, "Drop %s: cfg disable\n", (dir == USBH_UAC_ISOC_IN_DIR) ? "IN" : "OUT");
+		return RTK_SUCCESS;
+	}
+	if (ch->as_itf != NULL) {
+		/* The first AS interface of a direction is the one used */
+		return RTK_SUCCESS;
+	}
+
+	as_itf = ch->as_itf_mem;
+	usb_os_memset((void *)as_itf, 0x00, sizeof(usbh_uac_as_itf_info_t));
 	as_itf->as_itf_num = desc[2];
-	len = ((usbh_desc_header_t *) desc)->bLength;
-	desc += len;
-	itf_total_len += len;
 
-	while (1) {
-		if (desc == NULL || itf_total_len >= itf_data->raw_data_len) {
+	while ((itf_total_len + USB_LEN_DESC_HEADER) <= itf_data->raw_data_len) {
+		len = desc[0];
+		if (len < USB_LEN_DESC_HEADER) {
 			break;
 		}
-
-		if ((u16)(itf_data->raw_data_len - itf_total_len) < 2U) {
-			break;
-		}
-
-		if (((usbh_desc_header_t *) desc)->bLength == 0) {
-			break;
-		}
-
-		if ((u32)itf_total_len + ((usbh_desc_header_t *) desc)->bLength > itf_data->raw_data_len) {
+		if ((itf_total_len + len) > itf_data->raw_data_len) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "AS desc len OOB\n");
-			if (uac->isoc_in.as_itf != as_itf && uac->isoc_out.as_itf != as_itf) {
-				usb_os_mfree((void *)as_itf);
-			}
-			return HAL_ERR_PARA;
+			return -RTK_ERR_BADARG;
 		}
 
-		switch (((usbh_desc_header_t *) desc)->bDescriptorType) {
-		case USB_DESC_TYPE_INTERFACE:
-			if (((usbh_itf_desc_t *)desc)->bInterfaceNumber != as_itf->as_itf_num) {
-				if (uac->isoc_in.as_itf != as_itf && uac->isoc_out.as_itf != as_itf) {
-					usb_os_mfree((void *)as_itf);
-				}
-				return HAL_OK;
+		if (desc[1] == USB_DESC_TYPE_INTERFACE) {
+			if ((len < USB_LEN_IF_DESC) || (desc[2] != as_itf->as_itf_num)) {
+				break;
 			}
-
-			alt_set_idx = ((usbh_itf_desc_t *)desc)->bAlternateSetting;
-			if ((alt_set_idx != 0) && (as_itf->alt_setting_cnt < USBH_UAC_ALT_SETTING_MAX)) {
-				alt_setting = &(as_itf->interface_array[as_itf->alt_setting_cnt]);
-				alt_setting->alt_setting = alt_set_idx;
-
-				as_itf->alt_setting_cnt ++;
-				len = ((usbh_desc_header_t *) desc)->bLength;
-				desc += len;
-			} else {
+			ep_found = 0U;
+			if (desc[3] == 0U) {
+				/* Alt 0 is the zero-bandwidth setting, it carries no format */
+				alt_setting = NULL;
+			} else if (as_itf->alt_setting_cnt >= USBH_UAC_ALT_SETTING_MAX) {
 				RTK_LOGS(TAG, RTK_LOG_WARN, "As alt %d > cfg %d limit\n", as_itf->alt_setting_cnt, USBH_UAC_ALT_SETTING_MAX);
-				if (uac->isoc_in.as_itf != as_itf && uac->isoc_out.as_itf != as_itf) {
-					usb_os_mfree((void *)as_itf);
-				}
-				return HAL_OK;
+				break;
+			} else {
+				/* Reuse a slot an earlier alt setting without data endpoint left uncommitted */
+				alt_setting = &(as_itf->interface_array[as_itf->alt_setting_cnt]);
+				usb_os_memset((void *)alt_setting, 0x00, sizeof(usbh_uac_as_itf_alt_info_t));
+				alt_setting->alt_setting = desc[3];
 			}
-			break;
-
-		case USB_UAC_CS_INTERFACE: {
-			usb_uac1_format_type_i_discrete_descriptor *psubtype = (usb_uac1_format_type_i_discrete_descriptor *)desc;
-			/* Length check must precede the bDescriptorSubtype read below; FORMAT_TYPE_I_FIXED_LEN(8)
-			 * already covers the 3 bytes needed for that read, so no separate header-length check is needed. */
+		} else if (desc[1] == USB_UAC_CS_INTERFACE) {
 			/* Audio Formats 1.0 2.1.6/2.2/2.3: only a Type I Format Type descriptor lays out
 			 * bNrChannels/bSubframeSize/bBitResolution/bSamFreqType; Type II/III (and the extended
-			 * variants) use a different layout, so reading these fields there yields garbage. */
-			if ((alt_setting != NULL) && (desc[0] >= USBH_UAC_FORMAT_TYPE_I_FIXED_LEN) &&
-				(USB_UAC_AS_FORMAT_TYPE == psubtype->bDescriptorSubtype) &&
-				(USB_UAC1_FORMAT_TYPE_I == psubtype->bFormatType)) { /* get the format */
-				format_info = &(alt_setting->format_info);
-				format_info->channels = psubtype->bNrChannels;
-				format_info->bit_width = psubtype->bBitResolution;
-
-				if (psubtype->bSamFreqType == USBH_UAC_SAM_FREQ_CONTINUOUS) {
-					/* Audio Formats 1.0 2.2.5: bSamFreqType==0 means a continuous range carried as
-					 * tLowerSamFreq followed by tUpperSamFreq; keep both bounds in freq[0]/freq[1]. */
-					format_info->freq_cnt = USBH_UAC_SAM_FREQ_RANGE_CNT;
-					format_info->freq_continuous = 1U;
+			 * variants) use a different layout, so reading these fields there yields garbage.
+			 * FORMAT_TYPE_I_FIXED_LEN covers the bDescriptorSubtype and bFormatType reads. */
+			if ((alt_setting != NULL) && (len >= USBH_UAC_FORMAT_TYPE_I_FIXED_LEN) &&
+				(desc[2] == USB_UAC_AS_FORMAT_TYPE) && (desc[3] == USB_UAC1_FORMAT_TYPE_I)) {
+				usbh_uac_parse_format(&(alt_setting->format_info), desc);
+			}
+		} else if (desc[1] == USB_DESC_TYPE_ENDPOINT) {
+			if ((alt_setting != NULL) && (usbh_uac_is_data_ep(desc) != 0U)) {
+				if (ep_found != 0U) {
+					RTK_LOGS(TAG, RTK_LOG_WARN, "AS itf %d extra EP%02x\n", as_itf->as_itf_num, desc[2]);
+				} else if ((USB_EP_IS_IN(desc[2]) ? USBH_UAC_ISOC_IN_DIR : USBH_UAC_ISOC_OUT_DIR) != dir) {
+					RTK_LOGS(TAG, RTK_LOG_WARN, "AS itf %d EP%02x dir mismatch\n", as_itf->as_itf_num, desc[2]);
 				} else {
-					format_info->freq_cnt = psubtype->bSamFreqType;
-					format_info->freq_continuous = 0U;
-
-					if (format_info->freq_cnt > USBH_UAC_FREQ_FORMAT_MAX) {
-						RTK_LOGS(TAG, RTK_LOG_WARN, "Freq cnt(%d) > cfg(%d) limit\n", format_info->freq_cnt, USBH_UAC_FREQ_FORMAT_MAX);
-						format_info->freq_cnt = USBH_UAC_FREQ_FORMAT_MAX;
+					usb_os_memcpy((void *) & (alt_setting->ep_desc), (const void *)desc, sizeof(usbh_ep_desc_t));
+					/* wMaxPacketSize D12..11 count additional transactions only on a HS endpoint
+					 * and are reserved otherwise, Ref USB 2.0 9.6.6 */
+					if (uac->host->dev_speed != USB_SPEED_HIGH) {
+						alt_setting->ep_desc.wMaxPacketSize = (u16)(alt_setting->ep_desc.wMaxPacketSize & USB_EP_MPS_SIZE_MASK);
 					}
-				}
-
-				if (desc[0] < (USBH_UAC_FORMAT_TYPE_I_FIXED_LEN + (u16)format_info->freq_cnt * USBH_UAC_SAM_FREQ_ENTRY_SIZE)) {
-					format_info->freq_cnt = 0;
-					format_info->freq_continuous = 0U;
-				} else {
-					for (k = 0; k < format_info->freq_cnt; k++) {
-						format_info->freq[k] = USBH_UAC_FREQ(psubtype->tSamFreq[k]);
-					}
-					/* A degenerate or inverted range is unusable; drop the alt setting. */
-					if ((format_info->freq_continuous != 0U) && (format_info->freq[0] > format_info->freq[1])) {
-						format_info->freq_cnt = 0;
-						format_info->freq_continuous = 0U;
-					}
+					ep_found = 1U;
+					as_itf->alt_setting_cnt++;
 				}
 			}
-
-			len = ((usbh_desc_header_t *) desc)->bLength;
-			desc += len;
-		}
-		break;
-
-		case USB_DESC_TYPE_ENDPOINT: {
-			usbh_ep_desc_t *ep_desc = (usbh_ep_desc_t *)desc;
-			if (alt_setting != NULL) {
-				/* UAC1 3.7.2.2/4.6.1.1: only Data endpoints (usage_type==0) carry
-				 * audio samples. A following Feedback endpoint must not overwrite
-				 * the already-saved data endpoint descriptor. */
-				u8 usage_type = (ep_desc->bmAttributes >> 4) & 0x03U;
-				if (usage_type == 0U) {
-					ep_cfg = &(alt_setting->ep_desc);
-					usb_os_memcpy((void *)ep_cfg, (const void *)ep_desc, sizeof(usbh_ep_desc_t));
-
-					if (USB_EP_IS_IN(ep_desc->bEndpointAddress)) {
-						if (uac->isoc_in.as_itf == NULL) {
-							uac->isoc_in.as_itf = as_itf;
-						}
-					} else {
-						if (uac->isoc_out.as_itf == NULL) {
-							uac->isoc_out.as_itf = as_itf;
-						}
-					}
-				}
+		} else if (desc[1] == USB_UAC_CS_ENDPOINT) {
+			cs_ep_desc = (const usb_uac1_as_ep_desc_t *)desc;
+			if ((alt_setting != NULL) && (ep_found != 0U) && (len >= USBH_UAC_CS_EP_FIXED_LEN)) {
+				alt_setting->freq_ctrl_supported = ((cs_ep_desc->bmAttributes & USB_UAC1_EP_ATTR_SAMPLING_FREQ_CONTROL) != 0U) ? 1U : 0U;
 			}
+		} else {
+			/* not a descriptor this pass needs */
+		}
 
-			len = ((usbh_desc_header_t *) desc)->bLength;
-			desc += len;
-		}
-		break;
-
-		case USB_UAC_CS_ENDPOINT: {
-			usb_uac1_as_ep_desc_t *cs_ep_desc = (usb_uac1_as_ep_desc_t *)desc;
-			if ((alt_setting != NULL) && (desc[0] >= USBH_UAC_CS_EP_FIXED_LEN)) {
-				alt_setting->freq_ctrl_supported = (cs_ep_desc->bmAttributes & USB_UAC1_EP_ATTR_SAMPLING_FREQ_CONTROL) ? 1U : 0U;
-			}
-
-			len = ((usbh_desc_header_t *) desc)->bLength;
-			desc += len;
-		}
-		break;
-
-		default: {
-			len = ((usbh_desc_header_t *) desc)->bLength;
-			desc += len;
-		}
-		break;
-		}
-		if (len == 0) {
-			break;
-		}
+		desc += len;
 		itf_total_len += len;
 	}
 
-	if (uac->isoc_in.as_itf != as_itf && uac->isoc_out.as_itf != as_itf) {
-		usb_os_mfree((void *)as_itf);
+	if (as_itf->alt_setting_cnt == 0U) {
+		RTK_LOGS(TAG, RTK_LOG_WARN, "AS itf %d no alt\n", as_itf->as_itf_num);
+		return RTK_SUCCESS;
 	}
 
-	return HAL_OK;
+	/* Publish the content before the pointer: sof()/completed() and the API read it lock-free */
+	usb_os_mem_sync();
+	ch->as_itf = as_itf;
+
+	return RTK_SUCCESS;
 }
 
 /**
@@ -1099,7 +1141,7 @@ static int usbh_uac_parse_interface_desc(usb_host_t *host)
 	dev_id.bInterfaceSubClass = USB_UAC_SUBCLASS_AUDIOCONTROL;
 	dev_id.mMatchFlags = USBH_DEV_ID_MATCH_ITF_CLASS | USBH_DEV_ID_MATCH_ITF_SUBCLASS;
 	usbh_itf_data_t *itf_data = usbh_get_interface_descriptor(host, &dev_id);
-	int ret = HAL_OK;
+	int ret = RTK_SUCCESS;
 
 	if (itf_data) {
 		/* The standard AC interface bInterfaceProtocol encodes the Audio Class
@@ -1108,12 +1150,12 @@ static int usbh_uac_parse_interface_desc(usb_host_t *host)
 		   mis-parsed, so reject it early with a clear message. */
 		u8 proto = itf_data->itf_desc_array[0].bInterfaceProtocol;
 		if (proto != USB_UAC_IP_VERSION_1) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "Bad v%02X, v1.0 only\n", proto);
-			return HAL_ERR_PARA;
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Bad v%02x, v1.0 only\n", proto);
+			return -RTK_ERR_BADARG;
 		}
 
 		ret = usbh_uac_parse_ac(itf_data);
-		if (ret != HAL_OK) {
+		if (ret != RTK_SUCCESS) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "AC parse fail\n");
 			return ret;
 		} else {
@@ -1121,7 +1163,7 @@ static int usbh_uac_parse_interface_desc(usb_host_t *host)
 		}
 	} else {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "No AC itf\n");
-		return HAL_ERR_PARA;
+		return -RTK_ERR_BADARG;
 	}
 
 	dev_id.bInterfaceClass = USB_UAC_CLASS_CODE;
@@ -1131,7 +1173,7 @@ static int usbh_uac_parse_interface_desc(usb_host_t *host)
 	while (itf_data) {
 		if (itf_data->itf_desc_array[0].bAlternateSetting == 0) {
 			ret = usbh_uac_parse_as(itf_data);
-			if (ret != HAL_OK) {
+			if (ret != RTK_SUCCESS) {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "AS parse fail\n");
 				return ret;
 			}
@@ -1145,7 +1187,7 @@ static int usbh_uac_parse_interface_desc(usb_host_t *host)
 /**
   * @brief  Send a USB SET_INTERFACE request to switch the AS interface to the selected alternate setting.
   * @param  host: Pointer to the USB host handle.
-  * @retval HAL_OK on success, HAL_BUSY if transfer is pending, or an error code.
+  * @retval RTK_SUCCESS on success, -RTK_ERR_BUSY if transfer is pending, or an error code.
   */
 static int usbh_uac_process_set_alt(usb_host_t *host)
 {
@@ -1154,7 +1196,7 @@ static int usbh_uac_process_set_alt(usb_host_t *host)
 	usbh_uac_as_itf_info_t *as_itf = (uac->cur_dir == USBH_UAC_ISOC_OUT_DIR) ? uac->isoc_out.as_itf : uac->isoc_in.as_itf;
 
 	if ((as_itf == NULL) || (as_itf->alt_setting_cnt == 0)) {
-		return HAL_ERR_PARA;
+		return -RTK_ERR_BADARG;
 	}
 
 	setup.req.bmRequestType = USB_H2D | USB_REQ_TYPE_STANDARD | USB_REQ_RECIPIENT_INTERFACE;
@@ -1169,7 +1211,7 @@ static int usbh_uac_process_set_alt(usb_host_t *host)
 /**
   * @brief  Send a UAC1 SET_CUR request to program the sampling frequency on the isochronous endpoint.
   * @param  host: Pointer to the USB host handle.
-  * @retval HAL_OK on success, HAL_BUSY if transfer is pending, or an error code.
+  * @retval RTK_SUCCESS on success, -RTK_ERR_BUSY if transfer is pending, or an error code.
   */
 static int usbh_uac_process_set_freq(usb_host_t *host)
 {
@@ -1179,11 +1221,11 @@ static int usbh_uac_process_set_freq(usb_host_t *host)
 	const usbh_uac_buf_ctrl_t *pdata_ctrl = (uac->cur_dir == USBH_UAC_ISOC_OUT_DIR) ? &(uac->isoc_out.buf_ctrl) : &(uac->isoc_in.buf_ctrl);
 
 	if (as_itf == NULL) {
-		return HAL_ERR_PARA;
+		return -RTK_ERR_BADARG;
 	}
 
 	if (as_itf->interface_array[as_itf->choose_alt_idx].freq_ctrl_supported == 0U) {
-		return HAL_OK;
+		return RTK_SUCCESS;
 	}
 
 	setup.req.bmRequestType = USB_H2D | USB_REQ_TYPE_CLASS | USB_REQ_RECIPIENT_ENDPOINT;
@@ -1206,7 +1248,7 @@ static int usbh_uac_process_set_freq(usb_host_t *host)
   * @brief  Send a UAC1 SET_CUR request to set the volume level for a specific channel.
   * @param  host: Pointer to the USB host handle.
   * @param  ch: Channel number (0 = master, 1..N = individual channels).
-  * @retval HAL_OK on success, HAL_BUSY if transfer is pending, or an error code.
+  * @retval RTK_SUCCESS on success, -RTK_ERR_BUSY if transfer is pending, or an error code.
   */
 static int usbh_uac_process_set_ch_volume(usb_host_t *host, u8 ch)
 {
@@ -1214,12 +1256,12 @@ static int usbh_uac_process_set_ch_volume(usb_host_t *host, u8 ch)
 	usbh_uac_t *uac = &usbh_uac;
 	usbh_uac_ac_itf_info_t *ac_info = &(uac->ac_isoc_desc);
 	u8 idx = (uac->cur_dir == USBH_UAC_ISOC_IN_DIR) ? ac_info->in_best_idx : ac_info->out_best_idx;
-	usbh_uac_volume_info_t *volume_info;
+	const usbh_uac_volume_info_t *volume_info;
 	usbh_uac_fu_info_t *info;
-	u16 new_volume_db;
+	s16 new_volume_db;
 
 	if (idx == (u8) - 1) {
-		return HAL_OK;
+		return RTK_SUCCESS;
 	}
 	info = &(ac_info->fu_controls[idx]);
 
@@ -1237,28 +1279,29 @@ static int usbh_uac_process_set_ch_volume(usb_host_t *host, u8 ch)
 
 	new_volume_db = usbh_uac_volume_to_db(volume_info, uac->volume_value);
 
-	uac->audio_ctrl_buf[0] = (u8)(new_volume_db);
-	uac->audio_ctrl_buf[1] = (u8)((new_volume_db >> 8) & 0xFF);
+	uac->audio_ctrl_buf[0] = (u8)((u16)new_volume_db & 0xFFU);
+	uac->audio_ctrl_buf[1] = (u8)(((u16)new_volume_db >> 8) & 0xFFU);
 
 	return usbh_ctrl_request(host, &setup, uac->audio_ctrl_buf);
 }
 
 /**
   * @brief  Iteratively set the volume level on master and all individual channels that support it.
-  *         Advances uac->ch_idx on each successful transfer; returns HAL_OK when all channels are done.
+  *         Advances uac->ch_idx on each successful transfer; returns RTK_SUCCESS when all channels are done.
   * @param  host: Pointer to the USB host handle.
-  * @retval HAL_OK when the full sequence completes, HAL_BUSY while in progress, or an error code.
+  * @retval RTK_SUCCESS when the full sequence completes, -RTK_ERR_BUSY while in progress, or an error code.
   */
 static int usbh_uac_process_set_volume(usb_host_t *host)
 {
 	usbh_uac_t *uac = &usbh_uac;
 	usbh_uac_ac_itf_info_t *ac_info = &(uac->ac_isoc_desc);
 	u8 idx = (uac->cur_dir == USBH_UAC_ISOC_IN_DIR) ? ac_info->in_best_idx : ac_info->out_best_idx;
+	const usbh_uac_volume_info_t *volume_info = (uac->cur_dir == USBH_UAC_ISOC_IN_DIR) ? uac->isoc_in.volume_info : uac->isoc_out.volume_info;
 	usbh_uac_fu_info_t *info;
-	int ret = HAL_BUSY;
+	int ret = -RTK_ERR_BUSY;
 
 	if (idx == (u8) - 1) {
-		return HAL_OK;
+		return RTK_SUCCESS;
 	}
 	info = &(ac_info->fu_controls[idx]);
 
@@ -1266,19 +1309,23 @@ static int usbh_uac_process_set_volume(usb_host_t *host)
 	   bma_controls indexes 1:1 with the UAC1 bmaControls array, so master and
 	   per-channel use the same iteration. */
 	if (uac->ch_idx <= info->num_channels) {
-		if (info->bma_controls[uac->ch_idx] & USB_UAC1_CONTROL_VOLUME) {
+		if (((info->bma_controls[uac->ch_idx] & USB_UAC1_CONTROL_VOLUME) != 0U) && (volume_info[uac->ch_idx].range_valid == 0U)) {
+			/* No usable range to map the percent onto: leave this channel as it is */
+			RTK_LOGS(TAG, RTK_LOG_WARN, "Skip vol ch%d: no range\n", uac->ch_idx);
+			uac->ch_idx++;
+		} else if (info->bma_controls[uac->ch_idx] & USB_UAC1_CONTROL_VOLUME) {
 			ret = usbh_uac_process_set_ch_volume(host, uac->ch_idx);
-			if (ret == HAL_OK) {
+			if (ret == RTK_SUCCESS) {
 				uac->ch_idx++;
-				ret = HAL_BUSY;
-			} else if (ret != HAL_BUSY) {
+				ret = -RTK_ERR_BUSY;
+			} else if (ret != -RTK_ERR_BUSY) {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "Set volume ch%d err %d\n", uac->ch_idx, ret);
 			}
 		} else {
 			uac->ch_idx++;
 		}
 	} else {
-		ret = HAL_OK;
+		ret = RTK_SUCCESS;
 		uac->ch_idx = 0;
 	}
 
@@ -1289,7 +1336,7 @@ static int usbh_uac_process_set_volume(usb_host_t *host)
   * @brief  Send a UAC1 SET_CUR request to set the mute state for a specific channel.
   * @param  host: Pointer to the USB host handle.
   * @param  ch: Channel number (0 = master, 1..N = individual channels).
-  * @retval HAL_OK on success, HAL_BUSY if transfer is pending, or an error code.
+  * @retval RTK_SUCCESS on success, -RTK_ERR_BUSY if transfer is pending, or an error code.
   */
 static int usbh_uac_process_set_ch_mute(usb_host_t *host, u8 ch)
 {
@@ -1300,7 +1347,7 @@ static int usbh_uac_process_set_ch_mute(usb_host_t *host, u8 ch)
 	usbh_uac_fu_info_t *info;
 
 	if (idx == (u8) - 1) {
-		return HAL_OK;
+		return RTK_SUCCESS;
 	}
 	info = &(ac_info->fu_controls[idx]);
 
@@ -1317,9 +1364,9 @@ static int usbh_uac_process_set_ch_mute(usb_host_t *host, u8 ch)
 
 /**
   * @brief  Iteratively set the mute state on master and all individual channels that support it.
-  *         Advances uac->ch_idx on each successful transfer; returns HAL_OK when all channels are done.
+  *         Advances uac->ch_idx on each successful transfer; returns RTK_SUCCESS when all channels are done.
   * @param  host: Pointer to the USB host handle.
-  * @retval HAL_OK when the full sequence completes, HAL_BUSY while in progress, or an error code.
+  * @retval RTK_SUCCESS when the full sequence completes, -RTK_ERR_BUSY while in progress, or an error code.
   */
 static int usbh_uac_process_set_mute(usb_host_t *host)
 {
@@ -1327,10 +1374,10 @@ static int usbh_uac_process_set_mute(usb_host_t *host)
 	usbh_uac_ac_itf_info_t *ac_info = &(uac->ac_isoc_desc);
 	u8 idx = (uac->cur_dir == USBH_UAC_ISOC_IN_DIR) ? ac_info->in_best_idx : ac_info->out_best_idx;
 	usbh_uac_fu_info_t *info;
-	int ret = HAL_BUSY;
+	int ret = -RTK_ERR_BUSY;
 
 	if (idx == (u8) - 1) {
-		return HAL_OK;
+		return RTK_SUCCESS;
 	}
 	info = &(ac_info->fu_controls[idx]);
 
@@ -1338,17 +1385,17 @@ static int usbh_uac_process_set_mute(usb_host_t *host)
 	if (uac->ch_idx <= info->num_channels) {
 		if (info->bma_controls[uac->ch_idx] & USB_UAC1_CONTROL_MUTE) {
 			ret = usbh_uac_process_set_ch_mute(host, uac->ch_idx);
-			if (ret == HAL_OK) {
+			if (ret == RTK_SUCCESS) {
 				uac->ch_idx++;
-				ret = HAL_BUSY;
-			} else if (ret != HAL_BUSY) {
+				ret = -RTK_ERR_BUSY;
+			} else if (ret != -RTK_ERR_BUSY) {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "Set mute ch%d err %d\n", uac->ch_idx, ret);
 			}
 		} else {
 			uac->ch_idx++;
 		}
 	} else {
-		ret = HAL_OK;
+		ret = RTK_SUCCESS;
 		uac->ch_idx = 0;
 	}
 
@@ -1360,7 +1407,7 @@ static int usbh_uac_process_set_mute(usb_host_t *host)
   * @param  host: Pointer to the USB host handle.
   * @param  ch: Channel number (0 = master, 1..N = individual channels).
   * @param  dir: USBH_UAC_ISOC_OUT_DIR or USBH_UAC_ISOC_IN_DIR.
-  * @retval HAL_OK on success, HAL_BUSY if transfer is pending, or an error code.
+  * @retval RTK_SUCCESS on success, -RTK_ERR_BUSY if transfer is pending, or an error code.
   */
 static int usbh_uac_process_get_cur_mute(usb_host_t *host, u8 ch, u8 dir)
 {
@@ -1372,7 +1419,7 @@ static int usbh_uac_process_get_cur_mute(usb_host_t *host, u8 ch, u8 dir)
 
 	if (idx == (u8) - 1) {
 		/* No Feature Unit on this direction; avoid fu_controls[255] OOB. */
-		return HAL_ERR_PARA;
+		return -RTK_ERR_BADARG;
 	}
 	info = &(ac_info->fu_controls[idx]);
 
@@ -1390,7 +1437,7 @@ static int usbh_uac_process_get_cur_mute(usb_host_t *host, u8 ch, u8 dir)
   * @param  host: Pointer to the USB host handle.
   * @param  ch: Channel number (0 = master, 1..N = individual channels).
   * @param  dir: USBH_UAC_ISOC_OUT_DIR or USBH_UAC_ISOC_IN_DIR.
-  * @retval HAL_OK on success, HAL_BUSY if transfer is pending, or an error code.
+  * @retval RTK_SUCCESS on success, -RTK_ERR_BUSY if transfer is pending, or an error code.
   */
 static int usbh_uac_process_get_cur_volume(usb_host_t *host, u8 ch, u8 dir)
 {
@@ -1402,7 +1449,7 @@ static int usbh_uac_process_get_cur_volume(usb_host_t *host, u8 ch, u8 dir)
 
 	if (idx == (u8) - 1) {
 		/* No Feature Unit on this direction; avoid fu_controls[255] OOB. */
-		return HAL_ERR_PARA;
+		return -RTK_ERR_BADARG;
 	}
 	info = &(ac_info->fu_controls[idx]);
 
@@ -1421,7 +1468,7 @@ static int usbh_uac_process_get_cur_volume(usb_host_t *host, u8 ch, u8 dir)
   * @param  min:  1 to query GET_MIN, 0 to query GET_MAX.
   * @param  ch:   Channel number (0 = master, 1..N = individual channels).
   * @param  dir:  USBH_UAC_ISOC_OUT_DIR or USBH_UAC_ISOC_IN_DIR.
-  * @retval HAL_OK on success, HAL_BUSY if transfer is pending, or an error code.
+  * @retval RTK_SUCCESS on success, -RTK_ERR_BUSY if transfer is pending, or an error code.
   */
 static int usbh_uac_process_get_volume_range(usb_host_t *host, u8 min, u8 ch, u8 dir)
 {
@@ -1433,7 +1480,7 @@ static int usbh_uac_process_get_volume_range(usb_host_t *host, u8 min, u8 ch, u8
 
 	if (idx == (u8) - 1) {
 		/* No Feature Unit on this direction; avoid fu_controls[255] OOB. */
-		return HAL_ERR_PARA;
+		return -RTK_ERR_BADARG;
 	}
 	info = &(ac_info->fu_controls[idx]);
 
@@ -1447,19 +1494,39 @@ static int usbh_uac_process_get_volume_range(usb_host_t *host, u8 min, u8 ch, u8
 }
 
 /**
+  * @brief  Check that a completed GET request returned the whole control value.
+  * @note   A device may end the data stage early (USB 2.0 8.5.3.2); the bytes it did not send
+  *         would be read from what an earlier request left in audio_ctrl_buf.
+  * @param  host: Pointer to the USB host handle.
+  * @param  len:  Size of the control value, 1 for mute and 2 for volume (UAC1 5.2.2.4.3).
+  * @retval RTK_SUCCESS when len bytes were received, -RTK_ERR_BADARG otherwise.
+  */
+static int usbh_uac_check_ctrl_in_len(usb_host_t *host, u32 len)
+{
+	u32 rx_len = usbh_get_last_ctrl_in_size(host);
+
+	if (rx_len < len) {
+		RTK_LOGS(TAG, RTK_LOG_WARN, "Short ctrl rsp %d/%d\n", rx_len, len);
+		return -RTK_ERR_BADARG;
+	}
+
+	return RTK_SUCCESS;
+}
+
+/**
   * @brief  State machine that sequentially queries mute, current volume, min volume, and max volume
   *         for a single channel of the given Feature Unit via UAC1 GET_CUR/GET_MIN/GET_MAX requests.
   * @param  host:        Pointer to the USB host handle.
   * @param  bma_control: Bitmap of controls supported by this channel (USB_UAC_FU_MUTE, USB_UAC_FU_VOLUME).
   * @param  ch:          Channel number (0 = master, 1..N = individual channels).
   * @param  dir:         USBH_UAC_ISOC_OUT_DIR or USBH_UAC_ISOC_IN_DIR.
-  * @retval HAL_OK when the sequence for this channel completes, HAL_BUSY while in progress, or an error code.
+  * @retval RTK_SUCCESS when the sequence for this channel completes, -RTK_ERR_BUSY while in progress, or an error code.
   */
 static int usbh_uac_get_unit_ctrl(usb_host_t *host, u16 bma_control, u8 ch, u8 dir)
 {
 	usbh_uac_t *uac = &usbh_uac;
 	usbh_uac_volume_info_t *volume_handle;
-	int ret = HAL_BUSY;
+	int ret = -RTK_ERR_BUSY;
 
 	if (dir == USBH_UAC_ISOC_OUT_DIR) {
 		volume_handle = &(uac->isoc_out.volume_info[ch]);
@@ -1472,19 +1539,22 @@ static int usbh_uac_get_unit_ctrl(usb_host_t *host, u16 bma_control, u8 ch, u8 d
 	if (uac->ctrl_state == UAC_STATE_SCAN_MUTE) {
 		if (bma_control & USB_UAC1_CONTROL_MUTE) {
 			ret = usbh_uac_process_get_cur_mute(host, ch, dir);
-			if (ret == HAL_OK) {
+			if (ret == RTK_SUCCESS) {
+				ret = usbh_uac_check_ctrl_in_len(host, 1U);
+			}
+			if (ret == RTK_SUCCESS) {
 				//parse to get the buffer
 				uac->ctrl_state = UAC_STATE_SCAN_CUR_VOLUME;
 				volume_handle->mute = uac->audio_ctrl_buf[0];
-				ret = HAL_BUSY;
-			} else if (ret != HAL_BUSY) {
+				ret = -RTK_ERR_BUSY;
+			} else if (ret != -RTK_ERR_BUSY) {
 				/* The scan skips this optional control and carries on, so the
 				 * sequence is still in progress: report BUSY, not the error.
 				 * Leaking the error to setup() would make the core treat the
 				 * whole class as failed. */
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "Get mute err %d\n", ret);
 				uac->ctrl_state = UAC_STATE_SCAN_CUR_VOLUME;
-				ret = HAL_BUSY;
+				ret = -RTK_ERR_BUSY;
 			}
 		} else {
 			uac->ctrl_state = UAC_STATE_SCAN_CUR_VOLUME;
@@ -1492,16 +1562,19 @@ static int usbh_uac_get_unit_ctrl(usb_host_t *host, u16 bma_control, u8 ch, u8 d
 	} else if (uac->ctrl_state == UAC_STATE_SCAN_CUR_VOLUME) {
 		if (bma_control & USB_UAC1_CONTROL_VOLUME) {
 			ret = usbh_uac_process_get_cur_volume(host, ch, dir);
-			if (ret == HAL_OK) {
+			if (ret == RTK_SUCCESS) {
+				ret = usbh_uac_check_ctrl_in_len(host, 2U);
+			}
+			if (ret == RTK_SUCCESS) {
 				uac->ctrl_state = UAC_STATE_SCAN_MIN_VOLUME;
 				//parse to get the volume info
-				volume_handle->volume = USBH_LE16(uac->audio_ctrl_buf);
-				ret = HAL_BUSY;
-			} else if (ret != HAL_BUSY) {
+				volume_handle->volume = usbh_uac_le16_to_s16(uac->audio_ctrl_buf);
+				ret = -RTK_ERR_BUSY;
+			} else if (ret != -RTK_ERR_BUSY) {
 				/* Scan continues; see UAC_STATE_SCAN_MUTE. */
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "Get vol err %d\n", ret);
 				uac->ctrl_state = UAC_STATE_SCAN_MIN_VOLUME;
-				ret = HAL_BUSY;
+				ret = -RTK_ERR_BUSY;
 			}
 		} else {
 			uac->ctrl_state = UAC_STATE_SCAN_MIN_VOLUME;
@@ -1509,15 +1582,18 @@ static int usbh_uac_get_unit_ctrl(usb_host_t *host, u16 bma_control, u8 ch, u8 d
 	} else if (uac->ctrl_state == UAC_STATE_SCAN_MIN_VOLUME) {
 		if (bma_control & USB_UAC1_CONTROL_VOLUME) {
 			ret = usbh_uac_process_get_volume_range(host, 1, ch, dir);
-			if (ret == HAL_OK) {
+			if (ret == RTK_SUCCESS) {
+				ret = usbh_uac_check_ctrl_in_len(host, 2U);
+			}
+			if (ret == RTK_SUCCESS) {
 				uac->ctrl_state = UAC_STATE_SCAN_MAX_VOLUME;
-				volume_handle->vol_min = USBH_LE16(uac->audio_ctrl_buf);
-				ret = HAL_BUSY;
-			} else if (ret != HAL_BUSY) {
-				/* Scan continues; see UAC_STATE_SCAN_MUTE. */
+				volume_handle->vol_min = usbh_uac_le16_to_s16(uac->audio_ctrl_buf);
+				ret = -RTK_ERR_BUSY;
+			} else if (ret != -RTK_ERR_BUSY) {
+				/* Without a minimum the range is unusable: skip GET_MAX and end this channel */
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "Get vol min err %d\n", ret);
-				uac->ctrl_state = UAC_STATE_SCAN_MAX_VOLUME;
-				ret = HAL_BUSY;
+				uac->ctrl_state = UAC_STATE_CTRL_IDLE;
+				ret = RTK_SUCCESS;
 			}
 		} else {
 			uac->ctrl_state = UAC_STATE_SCAN_MAX_VOLUME;
@@ -1525,10 +1601,18 @@ static int usbh_uac_get_unit_ctrl(usb_host_t *host, u16 bma_control, u8 ch, u8 d
 	} else if (uac->ctrl_state == UAC_STATE_SCAN_MAX_VOLUME) {
 		if (bma_control & USB_UAC1_CONTROL_VOLUME) {
 			ret = usbh_uac_process_get_volume_range(host, 0, ch, dir);
-			if (ret == HAL_OK) {
+			if (ret == RTK_SUCCESS) {
+				ret = usbh_uac_check_ctrl_in_len(host, 2U);
+			}
+			if (ret == RTK_SUCCESS) {
 				uac->ctrl_state = UAC_STATE_CTRL_IDLE;
-				volume_handle->vol_max = USBH_LE16(uac->audio_ctrl_buf);
-				volume_handle->range_valid = 1;
+				volume_handle->vol_max = usbh_uac_le16_to_s16(uac->audio_ctrl_buf);
+				/* Valid only as an ordered pair: an inverted range would map every percent to vol_min */
+				if (volume_handle->vol_min <= volume_handle->vol_max) {
+					volume_handle->range_valid = 1;
+				} else {
+					RTK_LOGS(TAG, RTK_LOG_WARN, "Bad vol range ch%d\n", ch);
+				}
 #if USBH_UAC_DEBUG
 				RTK_LOGS(TAG, RTK_LOG_INFO, "Cur is %s, ch %d\n", ((dir) ? ("IN") : ("OUT")), ch);
 				RTK_LOGS(TAG, RTK_LOG_INFO, "\tmute %d\n", volume_handle->mute);
@@ -1536,16 +1620,16 @@ static int usbh_uac_get_unit_ctrl(usb_host_t *host, u16 bma_control, u8 ch, u8 d
 				RTK_LOGS(TAG, RTK_LOG_INFO, "\tvolume min 0x%04x\n", (u16)volume_handle->vol_min);
 				RTK_LOGS(TAG, RTK_LOG_INFO, "\tvolume max 0x%04x\n", (u16)volume_handle->vol_max);
 #endif
-			} else if (ret != HAL_BUSY) {
+			} else if (ret != -RTK_ERR_BUSY) {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "Get vol max err %d\n", ret);
 				uac->ctrl_state = UAC_STATE_CTRL_IDLE;
-				ret = HAL_OK;
+				ret = RTK_SUCCESS;
 			}
 		} else {
 			uac->ctrl_state = UAC_STATE_CTRL_IDLE;
 		}
 	} else {
-		ret = HAL_OK;
+		ret = RTK_SUCCESS;
 	}
 
 	return ret;
@@ -1587,7 +1671,7 @@ static void usbh_uac_isoc_out_process_xfer(usb_host_t *host, usbh_uac_as_itf_inf
 #endif
 			pipe->xfer_buf = uac->isoc_out.xfer_buf;
 			pipe->xfer_len = read_len;
-			if (usbh_transfer_data(host, pipe) == HAL_OK) {
+			if (usbh_transfer_data(host, pipe) == RTK_SUCCESS) {
 				pipe->xfer_state = USBH_EP_XFER_BUSY;
 			} else {
 				pipe->xfer_state = USBH_EP_XFER_START;
@@ -1637,7 +1721,7 @@ static void usbh_uac_isoc_in_process_xfer(usb_host_t *host, usbh_uac_as_itf_info
 	pipe->xfer_len = xfer_len;
 	pipe->xfer_buf_len = USBH_UAC_ISOC_BUF_LENGTH;
 
-	if (usbh_transfer_data(host, pipe) == HAL_OK) {
+	if (usbh_transfer_data(host, pipe) == RTK_SUCCESS) {
 		pipe->xfer_state = USBH_EP_XFER_BUSY;
 	} else {
 		pipe->xfer_state = USBH_EP_XFER_START;
@@ -1647,77 +1731,40 @@ static void usbh_uac_isoc_in_process_xfer(usb_host_t *host, usbh_uac_as_itf_info
   * @brief  Device attach callback: parse configuration descriptors, open isochronous pipes,
   *         and kick off the initialization control sequence (get volume/mute info for all channels).
   * @param  host: Pointer to the USB host handle.
-  * @retval HAL_OK on success, or an error code if descriptor parsing fails.
+  * @retval RTK_SUCCESS on success, or an error code if descriptor parsing fails.
   */
 static int usbh_uac_attach(usb_host_t *host)
 {
 	usbh_uac_t *uac = &usbh_uac;
-	usbh_uac_as_itf_info_t *as_itf = NULL;
-	usbh_ep_desc_t *ep_desc = NULL;
-	usbh_pipe_t *pipe = NULL;
+	usbh_uac_channel_t *ch;
+	usbh_uac_as_itf_info_t *as_itf;
+	int status;
+	u8 dir;
 
 	uac->host = host;
 
-	int status = HAL_ERR_UNKNOWN;
-
 	status = usbh_uac_parse_interface_desc(host);
-	if (status) {
+	if (status != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Cfg parse fail\n");
+		/* The core calls no detach() for a failed attach: unbind here, or the next attach
+		 * would find the slots taken and keep this device's descriptors */
+		usbh_uac_release_device();
 		return status;
 	}
 	usbh_uac_dump_cfgdesc();
 
-	usbh_uac_get_audio_format_info();
-
-	if ((uac->isoc_in.as_itf != NULL) && (uac->isoc_in.buf_ctrl.frame_cnt == 0)) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "Drop IN: device offers but cfg disable\n");
-		if (uac->isoc_in.as_itf == uac->isoc_out.as_itf) {
-			/* Shared with OUT, which still uses it: only unhook this direction */
-			uac->isoc_in.as_itf = NULL;
-		} else {
-			usbh_uac_free_as_itf(&(uac->isoc_in));
+	for (dir = USBH_UAC_ISOC_OUT_DIR; dir <= USBH_UAC_ISOC_IN_DIR; dir++) {
+		ch = (dir == USBH_UAC_ISOC_IN_DIR) ? &(uac->isoc_in) : &(uac->isoc_out);
+		as_itf = ch->as_itf;
+		if (as_itf == NULL) {
+			continue;
 		}
-	}
-
-	if ((uac->isoc_out.as_itf != NULL) && (uac->isoc_out.buf_ctrl.frame_cnt == 0)) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "Drop OUT: device offers but cfg disable\n");
-		if (uac->isoc_out.as_itf == uac->isoc_in.as_itf) {
-			/* Shared with IN, which still uses it: only unhook this direction */
-			uac->isoc_out.as_itf = NULL;
-		} else {
-			usbh_uac_free_as_itf(&(uac->isoc_out));
-		}
-	}
-
-	if (uac->isoc_in.as_itf) {
-		as_itf = uac->isoc_in.as_itf;
+		usbh_uac_get_audio_format(as_itf);
 		as_itf->choose_alt_idx = 0;
-
-		pipe = &(as_itf->pipe);
-		ep_desc = &(as_itf->interface_array[as_itf->choose_alt_idx].ep_desc);
-
-		if (usbh_open_pipe(host, pipe, ep_desc, &usbh_uac_driver) != HAL_OK) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "Open isoc in pipe fail\n");
-			usbh_uac_deinit_all_pipe();
-			usbh_uac_free_as_itf(&(uac->isoc_in));
-			usbh_uac_free_as_itf(&(uac->isoc_out));
-			return HAL_ERR_PARA;
-		}
-	}
-
-	if (uac->isoc_out.as_itf) {
-		as_itf = uac->isoc_out.as_itf;
-		as_itf->choose_alt_idx = 0;
-
-		pipe = &(as_itf->pipe);
-		ep_desc = &(as_itf->interface_array[as_itf->choose_alt_idx].ep_desc);
-
-		if (usbh_open_pipe(host, pipe, ep_desc, &usbh_uac_driver) != HAL_OK) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "Open isoc out pipe fail\n");
-			usbh_uac_deinit_all_pipe();
-			usbh_uac_free_as_itf(&(uac->isoc_in));
-			usbh_uac_free_as_itf(&(uac->isoc_out));
-			return HAL_ERR_PARA;
+		if (usbh_open_pipe(host, &(as_itf->pipe), &(as_itf->interface_array[0].ep_desc), &usbh_uac_driver) != RTK_SUCCESS) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Open isoc %d pipe fail\n", dir);
+			usbh_uac_release_device();
+			return -RTK_ERR_BADARG;
 		}
 	}
 
@@ -1730,7 +1777,7 @@ static int usbh_uac_attach(usb_host_t *host)
 	uac->init_state = UAC_INIT_OUT_GET_FU;
 	uac->ch_idx = 0;
 
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 /**
@@ -1745,40 +1792,21 @@ static void usbh_uac_detach(usb_host_t *host)
 
 	uac->xfer_state = UAC_STATE_IDLE;
 
-	/* Physical unplug reaches the driver only through detach() (the core does
-	 * not call deinit()). Release the per-device isoc descriptors here so a
-	 * re-attach parses fresh ones: stop transfers, close the isoc pipes (needs
-	 * uac->host, so do this before clearing it), then free + NULL as_itf and its
-	 * fmt_array for both directions. Keep buf_ctrl and xfer_buf (allocated once
-	 * in usbh_uac_init) so a re-attach still owns its ring buffer / DMA buffer.
-	 * parse_as() stores a freshly parsed as_itf only when the slot is NULL, so
-	 * leaving these set would make a re-attach reuse stale alt-setting/EP
-	 * descriptors and leak one fmt_array per reconnect. */
-	usbh_uac_stop_capture();
-	usbh_uac_stop_play();
-	usbh_uac_deinit_all_pipe();
-
-	usbh_uac_free_as_itf(&(uac->isoc_out));
-	usbh_uac_free_as_itf(&(uac->isoc_in));
-
-	/* Reset AC parse accumulators so a re-attach re-populates terminals / feature
-	 * units from index 0 instead of appending to the previous device's entries
-	 * (fixed in-struct arrays, so only the counts need clearing - no free). */
-	uac->ac_isoc_desc.terminal_count = 0;
-	uac->ac_isoc_desc.volume_ctrl_count = 0;
-	uac->ac_isoc_desc.unit_count = 0;
-
-	uac->host = NULL;
-
-	/* Wake any thread blocked inside set_alt_setting/set_volume/set_mute/get_mute/get_volume.
-	 * Once xfer_state is IDLE, ctrl_setting() will not run any more, so the
-	 * waiter would otherwise time out 1 s later. Surface the disconnect
-	 * promptly via ctrl_status. */
+	/* Wake any thread blocked inside set_alt_setting/set_volume/set_mute/get_mute/get_volume
+	 * first: it holds alt_set_mutex, which the release below takes. */
 	uac->ctrl_state = UAC_STATE_CTRL_IDLE;
 	if (uac->ctrl_waiting) {
-		uac->ctrl_status = HAL_ERR_UNKNOWN;
+		uac->ctrl_status = RTK_FAIL;
 		usb_os_sema_give(uac->ctrl_done_sema);
 	}
+
+	/* Physical unplug reaches the driver only through detach() (the core does not call
+	 * deinit()). Stop the streams and unbind this device so a re-attach parses fresh
+	 * descriptors. The AS interface storage itself lives until usbh_uac_deinit(): an
+	 * application thread may still hold a pointer into it at this point. */
+	usbh_uac_stop_capture();
+	usbh_uac_stop_play();
+	usbh_uac_release_device();
 
 	if ((uac->cb != NULL) && (uac->cb->detached != NULL)) {
 		uac->cb->detached();
@@ -1788,10 +1816,10 @@ static void usbh_uac_detach(usb_host_t *host)
 /**
   * @brief  Setup-stage callback invoked after each USB Setup transaction completes.
   *         Scans Feature Unit volume/mute range for all channels (OUT then IN)
-  *         via usbh_uac_get_volume_info(). Returns HAL_BUSY on each tick until
+  *         via usbh_uac_get_volume_info(). Returns -RTK_ERR_BUSY on each tick until
   *         the full init_state sequence completes, then fires cb->setup().
   * @param  host: Pointer to the USB host handle.
-  * @retval HAL_OK when setup is fully complete, HAL_BUSY while scanning.
+  * @retval RTK_SUCCESS when setup is fully complete, -RTK_ERR_BUSY while scanning.
   */
 static int usbh_uac_setup(usb_host_t *host)
 {
@@ -1799,12 +1827,12 @@ static int usbh_uac_setup(usb_host_t *host)
 	int ret;
 
 	/* Scan Feature Unit volume/mute range for all channels (OUT then IN).
-	 * Returns HAL_BUSY until the full init_state sequence completes.
+	 * Returns -RTK_ERR_BUSY until the full init_state sequence completes.
 	 * The SOF-triggered ctrl_setting() is blocked during this phase because
 	 * ctrl_state is set to UAC_STATE_SCAN_* which ctrl_setting() does not
 	 * handle - preventing it from hijacking the init control pipe. */
 	ret = usbh_uac_get_volume_info(host);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		return ret;
 	}
 
@@ -1812,7 +1840,7 @@ static int usbh_uac_setup(usb_host_t *host)
 		uac->cb->setup();
 	}
 
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 /**
@@ -1979,7 +2007,7 @@ static void usbh_uac_completed(usb_host_t *host, u8 pipe_num)
   *         All sync APIs (set_alt_setting / set_volume / set_mute / get_mute /
   *         get_volume) hold alt_set_mutex across the entire wait, so at most one
   *         waiter exists at a time and no pending-request queueing is needed.
-  * @param  status: HAL status the just-finished operation produced.
+  * @param  status: RTK status the just-finished operation produced.
   */
 static void usbh_uac_ctrl_finish(int status)
 {
@@ -2000,104 +2028,110 @@ static void usbh_uac_ctrl_finish(int status)
   *         queued ops.
   * @param  host: Pointer to the USB host handle.
   * @param  msg:  Unused message argument.
-  * @retval HAL_OK when the current operation has terminated (success or error),
-  *         HAL_BUSY while still in progress.
+  * @retval RTK_SUCCESS when the current operation has terminated (success or error),
+  *         -RTK_ERR_BUSY while still in progress.
   */
 static int usbh_uac_ctrl_setting(usb_host_t *host, u32 msg)
 {
 	usbh_uac_t *uac = &usbh_uac;
 	usbh_uac_volume_info_t *vi;
-	int ret = HAL_OK;
-	int ret_status = HAL_BUSY;
+	int ret = RTK_SUCCESS;
+	int ret_status = -RTK_ERR_BUSY;
 	UNUSED(msg);
 
 	switch (uac->ctrl_state) {
 	case UAC_STATE_CTRL_IDLE:
-		ret_status = HAL_OK;
+		ret_status = RTK_SUCCESS;
 		break;
 
 	case UAC_STATE_SET_ALT_SETTING:
 		ret = usbh_uac_process_set_alt(host);
-		if (ret == HAL_OK) {
+		if (ret == RTK_SUCCESS) {
 			uac->ctrl_state = UAC_STATE_SET_FREQ;
-		} else if (ret != HAL_BUSY) {
+		} else if (ret != -RTK_ERR_BUSY) {
 			/* Do NOT advance to SET_FREQ on alt-set failure: writing the new
 			 * sample rate to the old endpoint would either be silently accepted
 			 * (caller thinks alt was switched) or STALL on a different request,
 			 * confusing the diagnosis. Surface the real error. */
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Set alt err %d\n", ret);
 			usbh_uac_ctrl_finish(ret);
-			ret_status = HAL_OK;
+			ret_status = RTK_SUCCESS;
 		}
 		break;
 
 	case UAC_STATE_SET_FREQ:
 		ret = usbh_uac_process_set_freq(host);
-		if (ret == HAL_OK) {
-			usbh_uac_ctrl_finish(HAL_OK);
-			ret_status = HAL_OK;
-		} else if (ret != HAL_BUSY) {
+		if (ret == RTK_SUCCESS) {
+			usbh_uac_ctrl_finish(RTK_SUCCESS);
+			ret_status = RTK_SUCCESS;
+		} else if (ret != -RTK_ERR_BUSY) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Set(%d) freq err %d\n", uac->cur_dir, ret);
 			usbh_uac_ctrl_finish(ret);
-			ret_status = HAL_OK;
+			ret_status = RTK_SUCCESS;
 		}
 		break;
 
 	case UAC_STATE_SET_MUTE:
 		ret = usbh_uac_process_set_mute(host);
-		if (ret == HAL_OK) {
-			usbh_uac_ctrl_finish(HAL_OK);
-			ret_status = HAL_OK;
-		} else if (ret != HAL_BUSY) {
+		if (ret == RTK_SUCCESS) {
+			usbh_uac_ctrl_finish(RTK_SUCCESS);
+			ret_status = RTK_SUCCESS;
+		} else if (ret != -RTK_ERR_BUSY) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Set(%d) mute err %d\n", uac->cur_dir, ret);
 			usbh_uac_ctrl_finish(ret);
-			ret_status = HAL_OK;
+			ret_status = RTK_SUCCESS;
 		}
 		break;
 
 	case UAC_STATE_SET_VOLUME:
 		ret = usbh_uac_process_set_volume(host);
-		if (ret == HAL_OK) {
-			usbh_uac_ctrl_finish(HAL_OK);
-			ret_status = HAL_OK;
-		} else if (ret != HAL_BUSY) {
+		if (ret == RTK_SUCCESS) {
+			usbh_uac_ctrl_finish(RTK_SUCCESS);
+			ret_status = RTK_SUCCESS;
+		} else if (ret != -RTK_ERR_BUSY) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Set(%d) vol err %d\n", uac->cur_dir, ret);
 			usbh_uac_ctrl_finish(ret);
-			ret_status = HAL_OK;
+			ret_status = RTK_SUCCESS;
 		}
 		break;
 
 	case UAC_STATE_GET_MUTE:
 		ret = usbh_uac_process_get_cur_mute(host, uac->get_ch, uac->cur_dir);
-		if (ret == HAL_OK) {
+		if (ret == RTK_SUCCESS) {
+			ret = usbh_uac_check_ctrl_in_len(host, 1U);
+		}
+		if (ret == RTK_SUCCESS) {
 			vi = (uac->cur_dir == USBH_UAC_ISOC_OUT_DIR) ?
 				 &(uac->isoc_out.volume_info[uac->get_ch]) :
 				 &(uac->isoc_in.volume_info[uac->get_ch]);
 			uac->get_mute_result = uac->audio_ctrl_buf[0];
 			vi->mute = uac->get_mute_result;     /* keep cache in sync */
-			usbh_uac_ctrl_finish(HAL_OK);
-			ret_status = HAL_OK;
-		} else if (ret != HAL_BUSY) {
+			usbh_uac_ctrl_finish(RTK_SUCCESS);
+			ret_status = RTK_SUCCESS;
+		} else if (ret != -RTK_ERR_BUSY) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Get mute(%d) err %d\n", uac->cur_dir, ret);
 			usbh_uac_ctrl_finish(ret);
-			ret_status = HAL_OK;
+			ret_status = RTK_SUCCESS;
 		}
 		break;
 
 	case UAC_STATE_GET_VOLUME:
 		ret = usbh_uac_process_get_cur_volume(host, uac->get_ch, uac->cur_dir);
-		if (ret == HAL_OK) {
+		if (ret == RTK_SUCCESS) {
+			ret = usbh_uac_check_ctrl_in_len(host, 2U);
+		}
+		if (ret == RTK_SUCCESS) {
 			vi = (uac->cur_dir == USBH_UAC_ISOC_OUT_DIR) ?
 				 &(uac->isoc_out.volume_info[uac->get_ch]) :
 				 &(uac->isoc_in.volume_info[uac->get_ch]);
-			uac->get_volume_result = (s16)USBH_LE16(uac->audio_ctrl_buf);
+			uac->get_volume_result = usbh_uac_le16_to_s16(uac->audio_ctrl_buf);
 			vi->volume = uac->get_volume_result; /* keep cache in sync */
-			usbh_uac_ctrl_finish(HAL_OK);
-			ret_status = HAL_OK;
-		} else if (ret != HAL_BUSY) {
+			usbh_uac_ctrl_finish(RTK_SUCCESS);
+			ret_status = RTK_SUCCESS;
+		} else if (ret != -RTK_ERR_BUSY) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Get vol(%d) err %d\n", uac->cur_dir, ret);
 			usbh_uac_ctrl_finish(ret);
-			ret_status = HAL_OK;
+			ret_status = RTK_SUCCESS;
 		}
 		break;
 
@@ -2106,8 +2140,8 @@ static int usbh_uac_ctrl_setting(usb_host_t *host, u32 msg)
 		 * added but its case forgotten). Forcing IDLE + signaling waiters
 		 * keeps the host stack alive instead of silently hanging callers. */
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Unknown ctrl_state %d\n", uac->ctrl_state);
-		usbh_uac_ctrl_finish(HAL_ERR_UNKNOWN);
-		ret_status = HAL_OK;
+		usbh_uac_ctrl_finish(RTK_FAIL);
+		ret_status = RTK_SUCCESS;
 		break;
 	}
 
@@ -2117,7 +2151,6 @@ static int usbh_uac_ctrl_setting(usb_host_t *host, u32 msg)
 /**
   * @brief  Main UAC class process callback called by the USB host core on each driver message.
   *         In TRANSFER state, delegates pipe-0 messages to the control state machine.
-  *         In ERROR state, issues a ClearFeature to recover.
   * @param  host:  Pointer to the USB host handle.
   * @param  msg: Pointer to the driver message (contains pipe_num and message type).
   * @retval None
@@ -2125,7 +2158,6 @@ static int usbh_uac_ctrl_setting(usb_host_t *host, u32 msg)
 static void usbh_uac_process(usb_host_t *host, usbh_drv_msg_t *msg)
 {
 	usbh_uac_t *uac = &usbh_uac;
-	int ret;
 
 	switch (uac->xfer_state) {
 	case UAC_STATE_TRANSFER:
@@ -2133,14 +2165,6 @@ static void usbh_uac_process(usb_host_t *host, usbh_drv_msg_t *msg)
 		   serviced in the completed callback. */
 		if ((msg) && (msg->pipe_num == 0x00)) {
 			(void)usbh_uac_ctrl_setting(host, 0);
-		}
-		break;
-
-	case UAC_STATE_ERROR:
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "UAC err\n");
-		ret = usbh_ctrl_clear_feature(host, 0x00U);
-		if (ret == HAL_OK) {
-			uac->xfer_state = UAC_STATE_IDLE;
 		}
 		break;
 
@@ -2199,6 +2223,7 @@ static u32 usbh_uac_next_packet_size(usbh_uac_buf_ctrl_t *pdata_ctrl, u8 dir)
   * @param  buffer:     Pointer to input PCM data buffer.
   * @param  size:       Number of bytes to write.
   * @param  written_len: Accumulated number of bytes actually written (updated in-place).
+  * @note   Single writer: the ring buffer has one producer, this function, and one consumer, the ISR.
   * @retval 0 when all input was consumed, 1 when the ring buffer became full before consuming all input.
   */
 static int usbh_uac_write_ring_buf(usbh_uac_buf_ctrl_t *pdata_ctrl, u8 *buffer, u32 size, u32 *written_len)
@@ -2236,8 +2261,14 @@ static int usbh_uac_write_ring_buf(usbh_uac_buf_ctrl_t *pdata_ctrl, u8 *buffer, 
 		*written_len += copy_len;
 
 		if (size >= can_copy_len) {
+			/* The single writer saw room above and only the ISR consumes, so this can not
+			 * fail; undo the staged copy anyway if it does, so nothing is counted twice */
+			if (usb_ringbuf_add_tail(handle, uac->ringbuf_partial_write_buf, xfer_len, 1) != RTK_SUCCESS) {
+				pdata_ctrl->written -= copy_len;
+				*written_len -= copy_len;
+				return 1;
+			}
 			size -= copy_len;
-			usb_ringbuf_add_tail(handle, uac->ringbuf_partial_write_buf, xfer_len, 1);
 			pdata_ctrl->sample_accum = pdata_ctrl->last_sample_accum;
 			pdata_ctrl->written = 0;
 		} else {
@@ -2253,7 +2284,9 @@ static int usbh_uac_write_ring_buf(usbh_uac_buf_ctrl_t *pdata_ctrl, u8 *buffer, 
 		xfer_len = usbh_uac_next_packet_size(pdata_ctrl, USBH_UAC_ISOC_OUT_DIR);
 
 		if (size >= xfer_len) {
-			usb_ringbuf_add_tail(handle, buffer + offset, xfer_len, 1);
+			if (usb_ringbuf_add_tail(handle, buffer + offset, xfer_len, 1) != RTK_SUCCESS) {
+				return 1;
+			}
 
 			*written_len += xfer_len;
 			size -= xfer_len;
@@ -2376,46 +2409,84 @@ static void usbh_uac_ep_buf_ctrl_deinit(usbh_uac_buf_ctrl_t *buf_ctrl)
 }
 
 /**
-  * @brief  Free the AS interface cache of one channel.
-  * @note   parse_as() lets both directions share one as_itf when an AS interface carries
-  *         both an ISOC IN and an ISOC OUT endpoint, so every slot holding the same pointer
-  *         is cleared with it: freeing the slots one after the other would free it twice.
-  * @param  ch: Pointer to either uac->isoc_out or uac->isoc_in.
+  * @brief  Unbind the attached device: close its pipes and forget its descriptors.
+  * @note   Shared by detach() and a failed attach(). Runs under alt_set_mutex, so no sync API
+  *         is inside a control sequence that reads what is cleared here. The AS interface
+  *         storage is only unbound, never freed: usbh_uac_deinit() releases it once the
+  *         application has stopped calling the class API.
+  * @retval void
   */
-static void usbh_uac_free_as_itf(usbh_uac_channel_t *ch)
+static void usbh_uac_release_device(void)
 {
 	usbh_uac_t *uac = &usbh_uac;
-	usbh_uac_as_itf_info_t *as_itf = ch->as_itf;
+	usbh_uac_ac_itf_info_t *ac_info = &(uac->ac_isoc_desc);
 
-	if (as_itf == NULL) {
-		return;
+	if (uac->alt_set_mutex != NULL) {
+		usb_os_lock(uac->alt_set_mutex);
 	}
 
-	if (uac->isoc_in.as_itf == as_itf) {
-		uac->isoc_in.as_itf = NULL;
+	/* Close the pipes while host and as_itf still name them */
+	usbh_uac_deinit_all_pipe();
+	uac->isoc_out.as_itf = NULL;
+	uac->isoc_in.as_itf = NULL;
+
+	/* The next device may not support GET_MIN/GET_MAX: do not carry this one's range over */
+	usb_os_memset((void *)uac->isoc_out.volume_info, 0x00, sizeof(uac->isoc_out.volume_info));
+	usb_os_memset((void *)uac->isoc_in.volume_info, 0x00, sizeof(uac->isoc_in.volume_info));
+
+	/* Reset AC parse accumulators so a re-attach re-populates terminals / feature units from
+	 * index 0 (fixed in-struct arrays, so only the counts need clearing). out/in_best_idx are
+	 * left as they are: the sync APIs index fu_controls[] with them before taking the lock,
+	 * and find_best_ac() sets them again on the next attach. */
+	ac_info->terminal_count = 0;
+	ac_info->volume_ctrl_count = 0;
+	ac_info->unit_count = 0;
+
+	uac->host = NULL;
+
+	if (uac->alt_set_mutex != NULL) {
+		usb_os_unlock(uac->alt_set_mutex);
 	}
-	if (uac->isoc_out.as_itf == as_itf) {
-		uac->isoc_out.as_itf = NULL;
-	}
-	usb_os_mfree((void *)as_itf->fmt_array);
-	as_itf->fmt_array = NULL;
-	usb_os_mfree((void *)as_itf);
 }
 
 /**
-  * @brief  Tear down all per-direction resources of one isochronous channel
-  *         (buf_ctrl ring buffer, AS interface descriptor cache, DMA xfer buffer).
-  *         Safe to call on a channel that was never fully initialized.
-  * @param  ch: Pointer to either uac->isoc_out or uac->isoc_in.
+  * @brief  Release every class resource allocated by usbh_uac_init().
+  * @note   Safe on a partially initialized class: every member is NULL until allocated.
+  * @retval void
   */
-static void usbh_uac_channel_deinit(usbh_uac_channel_t *ch)
+static void usbh_uac_free_resources(void)
 {
-	usbh_uac_ep_buf_ctrl_deinit(&(ch->buf_ctrl));
+	usbh_uac_t *uac = &usbh_uac;
 
-	usbh_uac_free_as_itf(ch);
+	usbh_uac_ep_buf_ctrl_deinit(&(uac->isoc_out.buf_ctrl));
+	usbh_uac_ep_buf_ctrl_deinit(&(uac->isoc_in.buf_ctrl));
 
-	usb_os_mfree((void *)ch->xfer_buf);
-	ch->xfer_buf = NULL;
+	uac->isoc_out.as_itf = NULL;
+	uac->isoc_in.as_itf = NULL;
+	usb_os_mfree((void *)uac->isoc_out.as_itf_mem);
+	uac->isoc_out.as_itf_mem = NULL;
+	usb_os_mfree((void *)uac->isoc_in.as_itf_mem);
+	uac->isoc_in.as_itf_mem = NULL;
+
+	usb_os_mfree((void *)uac->isoc_out.xfer_buf);
+	uac->isoc_out.xfer_buf = NULL;
+	usb_os_mfree((void *)uac->isoc_in.xfer_buf);
+	uac->isoc_in.xfer_buf = NULL;
+
+	usb_os_mfree((void *)uac->ringbuf_partial_write_buf);
+	uac->ringbuf_partial_write_buf = NULL;
+
+	usb_os_mfree((void *)uac->audio_ctrl_buf);
+	uac->audio_ctrl_buf = NULL;
+
+	if (uac->alt_set_mutex != NULL) {
+		usb_os_lock_delete(uac->alt_set_mutex);
+		uac->alt_set_mutex = NULL;
+	}
+	if (uac->ctrl_done_sema != NULL) {
+		usb_os_sema_delete(uac->ctrl_done_sema);
+		uac->ctrl_done_sema = NULL;
+	}
 }
 
 /**
@@ -2427,7 +2498,7 @@ static void usbh_uac_channel_deinit(usbh_uac_channel_t *ch)
   */
 static int usbh_uac_ep_buf_ctrl_init(usbh_uac_buf_ctrl_t *buf_ctrl, usbh_pipe_t *pipe, u16 packet_size)
 {
-	int ret = HAL_ERR_MEM;
+	int ret = -RTK_ERR_NOMEM;
 	u8 buf_list_cnt;
 	u16 node_size;
 
@@ -2449,21 +2520,21 @@ static int usbh_uac_ep_buf_ctrl_init(usbh_uac_buf_ctrl_t *buf_ctrl, usbh_pipe_t 
 	buf_ctrl->node_size = node_size;
 
 	ret = usb_ringbuf_manager_init(&(buf_ctrl->buf_manager), buf_list_cnt, node_size, 1);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Ringbuf init fail\n");
 		return ret;
 	}
 
-	if (usb_os_sema_create(&(buf_ctrl->isoc_sema)) != HAL_OK) {
+	if (usb_os_sema_create(&(buf_ctrl->isoc_sema)) != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "ISOC sema create fail\n");
 		usb_ringbuf_manager_deinit(&(buf_ctrl->buf_manager));
 		buf_ctrl->isoc_sema = NULL;
 		buf_ctrl->sema_valid = 0;
-		return HAL_ERR_MEM;
+		return -RTK_ERR_NOMEM;
 	}
 	buf_ctrl->sema_valid = 1;
 
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 /**
@@ -2474,32 +2545,35 @@ static int usbh_uac_ep_buf_ctrl_init(usbh_uac_buf_ctrl_t *buf_ctrl, usbh_pipe_t 
   *                     Lets a caller that loops on this helper charge each wait against one
   *                     overall budget instead of granting the full timeout again per iteration.
   *                     May be NULL when the caller does not track a budget.
-  * @retval Status
+  * @retval RTK_SUCCESS once signaled, -RTK_ERR_TIMEOUT when timeout_ms ran out, -RTK_ERR_IO when the device
+  *         is gone and -RTK_ERR_BUSY when the stream was torn down during the wait.
   */
 static int usbh_uac_wait_isoc_with_status_check(usbh_uac_buf_ctrl_t *pdata_ctrl, uint32_t timeout_ms, u32 *waited_ms)
 {
-	int ret = HAL_ERR_PARA;
+	int ret = -RTK_ERR_TIMEOUT;
 	u32 elapsed = 0;
 	u32 wait_time = 0;
 
 	while (elapsed < timeout_ms) {
-		if (usbh_uac_usb_status_check() != HAL_OK) {
+		if (usbh_uac_usb_status_check() != RTK_SUCCESS) {
 			pdata_ctrl->wait_sema = 0;
+			ret = -RTK_ERR_IO;
 			goto exit;
 		}
 
 		wait_time = (timeout_ms - elapsed > USBH_UAC_WAIT_SLICE_MS) ? USBH_UAC_WAIT_SLICE_MS : (timeout_ms - elapsed);
 
 		pdata_ctrl->wait_sema = 1;
-		if (usb_os_sema_take(pdata_ctrl->isoc_sema, wait_time) == HAL_OK) {
+		if (usb_os_sema_take(pdata_ctrl->isoc_sema, wait_time) == RTK_SUCCESS) {
 			pdata_ctrl->wait_sema = 0;
 			/* Charge the whole slice: the semaphore may have been given at any point inside it
 			 * and the OS does not report when, so this over-counts by less than one slice. */
 			elapsed += wait_time;
 			if (!pdata_ctrl->sema_valid) {
+				ret = -RTK_ERR_BUSY;
 				goto exit;
 			}
-			ret = HAL_OK;
+			ret = RTK_SUCCESS;
 			goto exit;
 		}
 
@@ -2521,19 +2595,19 @@ exit:
   *         FU index, downstream process_set_* process_get_* helpers would
   *         dereference fu_controls[(u8)-1].
   * @param  dir: Direction to validate.
-  * @retval HAL_OK if usable, HAL_ERR_PARA otherwise.
+  * @retval RTK_SUCCESS if usable, -RTK_ERR_BADARG otherwise.
   */
 static int usbh_uac_check_dir(u8 dir)
 {
 	usbh_uac_t *uac = &usbh_uac;
-	int ret = HAL_OK;
+	int ret = RTK_SUCCESS;
 
 	if ((dir != USBH_UAC_ISOC_OUT_DIR) && (dir != USBH_UAC_ISOC_IN_DIR)) {
-		ret = HAL_ERR_PARA;
+		ret = -RTK_ERR_BADARG;
 	} else if ((dir == USBH_UAC_ISOC_OUT_DIR) && (uac->ac_isoc_desc.out_best_idx == (u8) - 1)) {
-		ret = HAL_ERR_PARA;
+		ret = -RTK_ERR_BADARG;
 	} else if ((dir == USBH_UAC_ISOC_IN_DIR) && (uac->ac_isoc_desc.in_best_idx == (u8) - 1)) {
-		ret = HAL_ERR_PARA;
+		ret = -RTK_ERR_BADARG;
 	} else {
 		/* Direction is valid and a Feature Unit was found */
 	}
@@ -2545,10 +2619,10 @@ static int usbh_uac_check_dir(u8 dir)
   * @brief  Verify the active Feature Unit advertises a given control bit on at
   *         least the master channel. Used by set/get_volume/mute to fail fast
   *         when the FU does not support the requested control instead of
-  *         silently returning HAL_OK without ever issuing a transfer.
+  *         silently returning RTK_SUCCESS without ever issuing a transfer.
   * @param  dir:         Direction to check.
   * @param  control_bit: USB_UAC1_CONTROL_VOLUME or USB_UAC1_CONTROL_MUTE.
-  * @retval HAL_OK if supported, HAL_ERR_PARA otherwise.
+  * @retval RTK_SUCCESS if supported, -RTK_ERR_BADARG otherwise.
   */
 static int usbh_uac_check_capability(u8 dir, u16 control_bit)
 {
@@ -2559,15 +2633,15 @@ static int usbh_uac_check_capability(u8 dir, u16 control_bit)
 	u8 i;
 
 	if (idx == (u8) - 1) {
-		return HAL_ERR_PARA;
+		return -RTK_ERR_BADARG;
 	}
 	fu = &ac->fu_controls[idx];
 	for (i = 0; i <= fu->num_channels; i++) {
 		if (fu->bma_controls[i] & control_bit) {
-			return HAL_OK;
+			return RTK_SUCCESS;
 		}
 	}
-	return HAL_ERR_PARA;
+	return -RTK_ERR_BADARG;
 }
 
 /**
@@ -2577,7 +2651,7 @@ static int usbh_uac_check_capability(u8 dir, u16 control_bit)
   *         volume_value, mute_value).
   *         Drains any stale give from a previous round, arms ctrl_waiting,
   *         notifies the USB task, then waits in slices so that a detach during
-  *         the wait surfaces as HAL_ERR_UNKNOWN within ~slice ms instead of
+  *         the wait surfaces as RTK_FAIL within ~slice ms instead of
   *         the full timeout.
   *         On timeout / disconnect ctrl_state is forced back to IDLE
   *         (ctrl_finish was never called); on success ctrl_state is already
@@ -2586,7 +2660,7 @@ static int usbh_uac_check_capability(u8 dir, u16 control_bit)
   *         race with start_play() / start_capture() which do not hold
   *         alt_set_mutex.
   * @param  timeout_ms: Total time to wait for completion.
-  * @retval Device's HAL result on completion, HAL_TIMEOUT, or HAL_ERR_UNKNOWN
+  * @retval Device's HAL result on completion, -RTK_ERR_TIMEOUT, or RTK_FAIL
   *         if the device disconnected (or the driver was torn down) during
   *         the wait.
   */
@@ -2594,16 +2668,16 @@ static int usbh_uac_sync_dispatch(u32 timeout_ms)
 {
 	usbh_uac_t *uac = &usbh_uac;
 	const u32 slice = 100;
-	int ret = HAL_TIMEOUT;
+	int ret = -RTK_ERR_TIMEOUT;
 	u32 elapsed = 0;
 
 	/* deinit could have torn these down between status_check and us. */
 	if ((uac->ctrl_done_sema == NULL) || (uac->host == NULL)) {
 		uac->ctrl_state = UAC_STATE_CTRL_IDLE;
-		return HAL_ERR_UNKNOWN;
+		return RTK_FAIL;
 	}
 
-	uac->ctrl_status = HAL_BUSY;
+	uac->ctrl_status = -RTK_ERR_BUSY;
 	uac->xfer_state = UAC_STATE_TRANSFER;
 	usb_os_sema_take(uac->ctrl_done_sema, 0); /* drain stale give from prior round */
 	uac->ctrl_waiting = 1;
@@ -2612,20 +2686,20 @@ static int usbh_uac_sync_dispatch(u32 timeout_ms)
 
 	while (elapsed < timeout_ms) {
 		u32 t = ((timeout_ms - elapsed) > slice) ? slice : (timeout_ms - elapsed);
-		if (usb_os_sema_take(uac->ctrl_done_sema, t) == HAL_OK) {
+		if (usb_os_sema_take(uac->ctrl_done_sema, t) == RTK_SUCCESS) {
 			ret = uac->ctrl_status;
 			break;
 		}
 		elapsed += t;
-		if (usbh_uac_usb_status_check() != HAL_OK) {
+		if (usbh_uac_usb_status_check() != RTK_SUCCESS) {
 			RTK_LOGS(TAG, RTK_LOG_WARN, "Sync dispatch aborted: device gone\n");
-			ret = HAL_ERR_UNKNOWN;
+			ret = RTK_FAIL;
 			break;
 		}
 	}
 
 	uac->ctrl_waiting = 0;
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		uac->ctrl_state = UAC_STATE_CTRL_IDLE;
 	}
 	return ret;
@@ -2636,7 +2710,7 @@ static int usbh_uac_sync_dispatch(u32 timeout_ms)
   *         Feature Units to read their mute state, current volume, min volume, and max volume.
   *         Advances init_state from UAC_INIT_OUT_GET_FU -> UAC_INIT_IN_GET_FU -> UAC_INIT_OUT_SET_ITF.
   * @param  host: Pointer to the USB host handle.
-  * @retval HAL_OK when the full sequence completes, HAL_BUSY while in progress, or an error code.
+  * @retval RTK_SUCCESS when the full sequence completes, -RTK_ERR_BUSY while in progress, or an error code.
   */
 static int usbh_uac_get_volume_info(usb_host_t *host)
 {
@@ -2644,7 +2718,7 @@ static int usbh_uac_get_volume_info(usb_host_t *host)
 	usbh_uac_ac_itf_info_t *ac_info = &(uac->ac_isoc_desc);
 	usbh_uac_fu_info_t *info = NULL;
 	usbh_uac_as_itf_info_t *as_itf = NULL;
-	int ret = HAL_BUSY;
+	int ret = -RTK_ERR_BUSY;
 
 	//loop usb out
 	//loop usb in
@@ -2660,9 +2734,9 @@ static int usbh_uac_get_volume_info(usb_host_t *host)
 		info = &(ac_info->fu_controls[ac_info->out_best_idx]);
 		if (uac->ch_idx <= info->num_channels) {
 			ret = usbh_uac_get_unit_ctrl(host, info->bma_controls[uac->ch_idx], uac->ch_idx, USBH_UAC_ISOC_OUT_DIR);
-			if (ret == HAL_OK) {
+			if (ret == RTK_SUCCESS) {
 				uac->ch_idx++;
-				ret = HAL_BUSY;
+				ret = -RTK_ERR_BUSY;
 				uac->ctrl_state = UAC_STATE_SCAN_MUTE;
 			}
 		} else {
@@ -2680,9 +2754,9 @@ static int usbh_uac_get_volume_info(usb_host_t *host)
 		info = &(ac_info->fu_controls[ac_info->in_best_idx]);
 		if (uac->ch_idx <= info->num_channels) {
 			ret = usbh_uac_get_unit_ctrl(host, info->bma_controls[uac->ch_idx], uac->ch_idx, USBH_UAC_ISOC_IN_DIR);
-			if (ret == HAL_OK) {
+			if (ret == RTK_SUCCESS) {
 				uac->ch_idx++;
-				ret = HAL_BUSY;
+				ret = -RTK_ERR_BUSY;
 				uac->ctrl_state = UAC_STATE_SCAN_MUTE;
 			}
 		} else {
@@ -2699,10 +2773,10 @@ static int usbh_uac_get_volume_info(usb_host_t *host)
 			 * here would push a streaming alt to the device before the
 			 * host is ready to receive isoc traffic. */
 			ret = usbh_ctrl_set_interface(host, as_itf->as_itf_num, 0);
-			if (ret == HAL_OK) {
-				ret = HAL_BUSY;
+			if (ret == RTK_SUCCESS) {
+				ret = -RTK_ERR_BUSY;
 				uac->init_state = UAC_INIT_IN_SET_ITF;
-			} else if (ret != HAL_BUSY) {
+			} else if (ret != -RTK_ERR_BUSY) {
 				/* SET_INTERFACE(alt 0) is confirmation, not a state change:
 				 * SET_CONFIGURATION already left every interface at alternate
 				 * setting 0 (USB 2.0 9.1.1.5/9.4.5), so a device that STALLs it
@@ -2710,13 +2784,13 @@ static int usbh_uac_get_volume_info(usb_host_t *host)
 				 * rejection as success and move on - retrying cannot change the
 				 * outcome and would stall the whole class. */
 				RTK_LOGS(TAG, RTK_LOG_WARN, "OUT set alt0 err %d, ignore\n", ret);
-				ret = HAL_BUSY;
+				ret = -RTK_ERR_BUSY;
 				uac->init_state = UAC_INIT_IN_SET_ITF;
 			} else {
-				/* HAL_BUSY: control transfer still running. */
+				/* -RTK_ERR_BUSY: control transfer still running. */
 			}
 		} else {
-			ret = HAL_BUSY;
+			ret = -RTK_ERR_BUSY;
 			uac->init_state = UAC_INIT_IN_SET_ITF;
 		}
 		break;
@@ -2725,19 +2799,19 @@ static int usbh_uac_get_volume_info(usb_host_t *host)
 		as_itf = uac->isoc_in.as_itf;
 		if (as_itf && as_itf->alt_setting_cnt > 0) {
 			ret = usbh_ctrl_set_interface(host, as_itf->as_itf_num, 0);
-			if (ret == HAL_OK) {
-				ret = HAL_BUSY;
+			if (ret == RTK_SUCCESS) {
+				ret = -RTK_ERR_BUSY;
 				uac->init_state = UAC_INIT_DONE;
-			} else if (ret != HAL_BUSY) {
+			} else if (ret != -RTK_ERR_BUSY) {
 				/* Idempotent request, see UAC_INIT_OUT_SET_ITF. */
 				RTK_LOGS(TAG, RTK_LOG_WARN, "IN set alt0 err %d, ignore\n", ret);
-				ret = HAL_BUSY;
+				ret = -RTK_ERR_BUSY;
 				uac->init_state = UAC_INIT_DONE;
 			} else {
-				/* HAL_BUSY: control transfer still running. */
+				/* -RTK_ERR_BUSY: control transfer still running. */
 			}
 		} else {
-			ret = HAL_BUSY;
+			ret = -RTK_ERR_BUSY;
 			uac->init_state = UAC_INIT_DONE;
 		}
 		break;
@@ -2749,9 +2823,9 @@ static int usbh_uac_get_volume_info(usb_host_t *host)
 		 * this, entering CLASS_READY with ctrl_state == SCAN_MUTE lets the async
 		 * pipe-0 dispatch (CLASS_READY-entry fan-out / SOF self-notify) drive
 		 * ctrl_setting() onto a stale SCAN state -> default -> spurious
-		 * ctrl_finish(HAL_ERR_UNKNOWN), which corrupts a waiting set_alt. */
+		 * ctrl_finish(RTK_FAIL), which corrupts a waiting set_alt. */
 		uac->ctrl_state = UAC_STATE_CTRL_IDLE;
-		ret = HAL_OK;
+		ret = RTK_SUCCESS;
 		break;
 	}
 
@@ -2761,51 +2835,65 @@ static int usbh_uac_get_volume_info(usb_host_t *host)
 /* Exported functions --------------------------------------------------------*/
 
 /**
+  * @brief  Classify why a stream can not move data right now.
+  * @param  buf_ctrl: Buffer control of the stream.
+  * @retval RTK_SUCCESS when the stream runs, -RTK_ERR_IO when the device is gone, -RTK_ERR_BUSY when the
+  *         stream is not started.
+  */
+static int usbh_uac_stream_status(const usbh_uac_buf_ctrl_t *buf_ctrl)
+{
+	if (usbh_uac_usb_status_check() != RTK_SUCCESS) {
+		return -RTK_ERR_IO;
+	}
+	if ((buf_ctrl->next_xfer == 0U) || (buf_ctrl->sema_valid == 0U)) {
+		return -RTK_ERR_BUSY;
+	}
+
+	return RTK_SUCCESS;
+}
+
+/**
   * @brief  Write PCM audio data to the playback ring buffer for isochronous OUT transmission.
   *         If the buffer is full and timeout_ms > 0, blocks until space is available or the
   *         timeout expires; if timeout_ms == 0, returns immediately when the buffer is full.
   * @param  buffer:     Pointer to the PCM data to transmit.
   * @param  size:       Number of bytes to write.
   * @param  timeout_ms: Maximum time to wait for buffer space, in milliseconds; 0 for non-blocking.
-  * @retval Actual number of bytes written.
+  * @retval Bytes queued, 0 when the buffer stayed full, or a negative RTK error, see usbh_uac1.h.
   */
-u32 usbh_uac_write(u8 *buffer, u32 size, u32 timeout_ms)
+int usbh_uac_write(u8 *buffer, u32 size, u32 timeout_ms)
 {
 	usbh_uac_t *uac = &usbh_uac;
 	usbh_uac_buf_ctrl_t *pdata_ctrl = &(uac->isoc_out.buf_ctrl);
 	u32 written_len = 0;
 	u32 try_len, just_written;
+	int status;
 	u8 need_wait = 0, last_zero = 0;
 
-	if (pdata_ctrl->mps == 0 || !pdata_ctrl->sema_valid) {
-		return 0;
+	if ((buffer == NULL) || (size > USBH_UAC_RW_LEN_MAX) || (uac->isoc_out.as_itf == NULL)) {
+		return -RTK_ERR_BADARG;
 	}
 
-	if (pdata_ctrl->next_xfer == 0) {
-		return 0;
+	status = usbh_uac_stream_status(pdata_ctrl);
+	if (status != RTK_SUCCESS) {
+		return -status;
 	}
 
-	if (usbh_uac_usb_status_check() != HAL_OK) {
-		return 0;
-	}
-
-	while (written_len < size && pdata_ctrl->next_xfer) {
+	while ((written_len < size) && (pdata_ctrl->next_xfer != 0U)) {
 		need_wait = 0;
 
-		if (timeout_ms) {
-			if (usb_ringbuf_is_full(&(pdata_ctrl->buf_manager)) || last_zero) {
-				need_wait = 1;
-			}
-		} else {
-			if (usb_ringbuf_is_full(&(pdata_ctrl->buf_manager)) || last_zero) {
+		if (usb_ringbuf_is_full(&(pdata_ctrl->buf_manager)) || last_zero) {
+			if (timeout_ms == 0U) {
 				break;
 			}
+			need_wait = 1;
 		}
 
 		if (need_wait) {
 			/* timeout_ms bounds each wait for ring space, not the whole call: a stream larger
 			 * than the ring is queued in full as long as the device keeps consuming */
-			if (usbh_uac_wait_isoc_with_status_check(pdata_ctrl, timeout_ms, NULL) != HAL_OK) {
+			status = usbh_uac_wait_isoc_with_status_check(pdata_ctrl, timeout_ms, NULL);
+			if (status != RTK_SUCCESS) {
 				break;
 			}
 			last_zero = 0;
@@ -2814,18 +2902,24 @@ u32 usbh_uac_write(u8 *buffer, u32 size, u32 timeout_ms)
 		try_len = size - written_len;
 		just_written = 0;
 
-		usbh_uac_write_ring_buf(pdata_ctrl, buffer + written_len, try_len, &just_written);
-
-		if (just_written > 0) {
-			written_len += just_written;
-			last_zero = 0;
-		} else {
-			//wait sema and retry
+		if ((usbh_uac_write_ring_buf(pdata_ctrl, buffer + written_len, try_len, &just_written) != 0) && (just_written == 0U)) {
+			//ring full: wait sema and retry
 			last_zero = 1;
+		}
+
+		written_len += just_written;
+	}
+
+	/* Report what was queued before the stream ended: the data is committed. Otherwise tell
+	 * a stall on a running stream (0) from one that stopped or lost its device. */
+	if (written_len == 0U) {
+		status = usbh_uac_stream_status(pdata_ctrl);
+		if (status != RTK_SUCCESS) {
+			return -status;
 		}
 	}
 
-	return written_len;
+	return (int)written_len;
 }
 /**
   * @brief  Read PCM audio data from the recording ring buffer captured by isochronous IN transfers.
@@ -2834,30 +2928,30 @@ u32 usbh_uac_write(u8 *buffer, u32 size, u32 timeout_ms)
   * @param  buffer:      Pointer to the destination buffer for received PCM data.
   * @param  size:        Capacity of the destination buffer in bytes.
   * @param  time_out_ms: Maximum time to wait for data, in milliseconds; 0 for non-blocking.
-  * @retval Actual number of bytes read.
+  * @retval Bytes read, 0 when no data arrived in time, or a negative RTK error, see usbh_uac1.h.
   */
-u32 usbh_uac_read(u8 *buffer, u32 size, u32 time_out_ms)
+int usbh_uac_read(u8 *buffer, u32 size, u32 time_out_ms)
 {
 	usbh_uac_t *uac = &usbh_uac;
 	usbh_uac_buf_ctrl_t *buf_ctrl = &(uac->isoc_in.buf_ctrl);
 	u32 zero_pkt_flag = 0;
 	u32 copy_len = 0;
 	u16 pkt_cnt = 0;
+	int status;
 
-	if (uac->isoc_in.as_itf == NULL) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "No ISOC IN interface\n");
-		return 0;
+	if ((buffer == NULL) || (size > USBH_UAC_RW_LEN_MAX) || (uac->isoc_in.as_itf == NULL)) {
+		return -RTK_ERR_BADARG;
 	}
 
-	if (buf_ctrl->next_xfer == 0) {
-		return 0;
+	status = usbh_uac_stream_status(buf_ctrl);
+	if (status != RTK_SUCCESS) {
+		return -status;
 	}
 
 	if (time_out_ms == 0) {
-		if (usb_ringbuf_is_empty(&(buf_ctrl->buf_manager))) {
-			return 0;
+		if (usb_ringbuf_is_empty(&(buf_ctrl->buf_manager)) == 0) {
+			usbh_uac_read_ring_buf(buf_ctrl, buffer, size, &copy_len, &pkt_cnt, &zero_pkt_flag);
 		}
-		usbh_uac_read_ring_buf(buf_ctrl, buffer, size, &copy_len, &pkt_cnt, &zero_pkt_flag);
 	} else {
 		u32 elapsed = 0;
 		u32 waited;
@@ -2872,11 +2966,11 @@ u32 usbh_uac_read(u8 *buffer, u32 size, u32 time_out_ms)
 					break;
 				}
 				waited = 0;
-				if (usbh_uac_wait_isoc_with_status_check(buf_ctrl, time_out_ms - elapsed, &waited) != HAL_OK) {
-					elapsed += waited;
+				status = usbh_uac_wait_isoc_with_status_check(buf_ctrl, time_out_ms - elapsed, &waited);
+				elapsed += waited;
+				if (status != RTK_SUCCESS) {
 					break;
 				}
-				elapsed += waited;
 				/* If deinit started while we waited, do not touch resources */
 				if (!buf_ctrl->sema_valid) {
 					break;
@@ -2895,7 +2989,15 @@ u32 usbh_uac_read(u8 *buffer, u32 size, u32 time_out_ms)
 		buf_ctrl->wait_sema = 0;
 	}
 
-	return copy_len;
+	/* Same reporting as usbh_uac_write(): data read is returned even if the stream ended */
+	if (copy_len == 0U) {
+		status = usbh_uac_stream_status(buf_ctrl);
+		if (status != RTK_SUCCESS) {
+			return -status;
+		}
+	}
+
+	return (int)copy_len;
 }
 /**
   * @brief  Start UAC device play
@@ -2908,7 +3010,7 @@ void usbh_uac_start_play(void)
 	usbh_uac_buf_ctrl_t *buf_ctrl = &(uac->isoc_out.buf_ctrl);
 	usbh_pipe_t *pipe;
 
-	if (usbh_uac_usb_status_check() != HAL_OK) {
+	if (usbh_uac_usb_status_check() != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Dev not ready\n");
 		return;
 	}
@@ -2964,7 +3066,7 @@ void usbh_uac_start_capture(void)
 	usbh_uac_buf_ctrl_t *buf_ctrl = &(uac->isoc_in.buf_ctrl);
 	usbh_pipe_t *pipe;
 
-	if (usbh_uac_usb_status_check() != HAL_OK) {
+	if (usbh_uac_usb_status_check() != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Dev not ready\n");
 		return;
 	}
@@ -3020,25 +3122,25 @@ void usbh_uac_stop_capture(void)
   *         clamped value, no error is returned.
   * @param  volume: Volume percentage, 0-100 (clamped if higher).
   * @param  dir:    USBH_UAC_ISOC_OUT_DIR for playback, USBH_UAC_ISOC_IN_DIR for recording.
-  * @retval HAL_OK on success, HAL_BUSY if the USB connection is not ready,
-  *         HAL_ERR_PARA on invalid direction or if the active Feature Unit
+  * @retval RTK_SUCCESS on success, -RTK_ERR_BUSY if the USB connection is not ready,
+  *         -RTK_ERR_BADARG on invalid direction or if the active Feature Unit
   *         does not advertise the Volume control,
-  *         HAL_TIMEOUT if the device did not respond,
-  *         HAL_ERR_UNKNOWN if the device disconnected mid-operation.
+  *         -RTK_ERR_TIMEOUT if the device did not respond,
+  *         RTK_FAIL if the device disconnected mid-operation.
   */
 int usbh_uac_set_volume(u8 volume, u8 dir)
 {
 	usbh_uac_t *uac = &usbh_uac;
 	int ret;
 
-	if (usbh_uac_check_dir(dir) != HAL_OK) {
-		return HAL_ERR_PARA;
+	if (usbh_uac_check_dir(dir) != RTK_SUCCESS) {
+		return -RTK_ERR_BADARG;
 	}
-	if (usbh_uac_check_capability(dir, USB_UAC1_CONTROL_VOLUME) != HAL_OK) {
-		return HAL_ERR_PARA;
+	if (usbh_uac_check_capability(dir, USB_UAC1_CONTROL_VOLUME) != RTK_SUCCESS) {
+		return -RTK_ERR_BADARG;
 	}
-	if (usbh_uac_usb_status_check() != HAL_OK) {
-		return HAL_BUSY;
+	if (usbh_uac_usb_status_check() != RTK_SUCCESS) {
+		return -RTK_ERR_BUSY;
 	}
 
 	usb_os_lock(uac->alt_set_mutex);
@@ -3048,7 +3150,7 @@ int usbh_uac_set_volume(u8 volume, u8 dir)
 	uac->cur_dir = dir;
 	uac->ctrl_state = UAC_STATE_SET_VOLUME;
 	ret = usbh_uac_sync_dispatch(USBH_UAC_CTRL_SYNC_TIMEOUT_MS);
-	if (ret == HAL_TIMEOUT) {
+	if (ret == -RTK_ERR_TIMEOUT) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Set vol timeout\n");
 	}
 
@@ -3062,25 +3164,25 @@ int usbh_uac_set_volume(u8 volume, u8 dir)
   * @note   Any non-zero value is normalized to 1; no error is returned.
   * @param  mute: 0 = unmute, non-zero = mute.
   * @param  dir:  USBH_UAC_ISOC_OUT_DIR for playback, USBH_UAC_ISOC_IN_DIR for recording.
-  * @retval HAL_OK on success, HAL_BUSY if the USB connection is not ready,
-  *         HAL_ERR_PARA on invalid direction or if the active Feature Unit
+  * @retval RTK_SUCCESS on success, -RTK_ERR_BUSY if the USB connection is not ready,
+  *         -RTK_ERR_BADARG on invalid direction or if the active Feature Unit
   *         does not advertise the Mute control,
-  *         HAL_TIMEOUT if the device did not respond,
-  *         HAL_ERR_UNKNOWN if the device disconnected mid-operation.
+  *         -RTK_ERR_TIMEOUT if the device did not respond,
+  *         RTK_FAIL if the device disconnected mid-operation.
   */
 int usbh_uac_set_mute(u8 mute, u8 dir)
 {
 	usbh_uac_t *uac = &usbh_uac;
 	int ret;
 
-	if (usbh_uac_check_dir(dir) != HAL_OK) {
-		return HAL_ERR_PARA;
+	if (usbh_uac_check_dir(dir) != RTK_SUCCESS) {
+		return -RTK_ERR_BADARG;
 	}
-	if (usbh_uac_check_capability(dir, USB_UAC1_CONTROL_MUTE) != HAL_OK) {
-		return HAL_ERR_PARA;
+	if (usbh_uac_check_capability(dir, USB_UAC1_CONTROL_MUTE) != RTK_SUCCESS) {
+		return -RTK_ERR_BADARG;
 	}
-	if (usbh_uac_usb_status_check() != HAL_OK) {
-		return HAL_BUSY;
+	if (usbh_uac_usb_status_check() != RTK_SUCCESS) {
+		return -RTK_ERR_BUSY;
 	}
 
 	usb_os_lock(uac->alt_set_mutex);
@@ -3090,7 +3192,7 @@ int usbh_uac_set_mute(u8 mute, u8 dir)
 	uac->cur_dir = dir;
 	uac->ctrl_state = UAC_STATE_SET_MUTE;
 	ret = usbh_uac_sync_dispatch(USBH_UAC_CTRL_SYNC_TIMEOUT_MS);
-	if (ret == HAL_TIMEOUT) {
+	if (ret == -RTK_ERR_TIMEOUT) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Set mute timeout\n");
 	}
 
@@ -3102,28 +3204,28 @@ int usbh_uac_set_mute(u8 mute, u8 dir)
   * @brief  Initialize the UAC class driver: allocate DMA-safe buffers, create synchronization
   *         primitives, set ring buffer depths from the callback structure, and invoke cb->init().
   * @param  cb:        Pointer to the user callback structure. Must be non-NULL.
-  * @retval HAL_OK on success, HAL_ERR_MEM if a buffer allocation fails.
+  * @retval RTK_SUCCESS on success, -RTK_ERR_NOMEM if a buffer allocation fails.
   */
 int usbh_uac_init(const usbh_uac_cb_t *cb, const usbh_uac_config_t *cfg)
 {
 	usbh_uac_t *uac = &usbh_uac;
-	int ret;
+	int ret = -RTK_ERR_NOMEM;
 
 	if (cb == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid user CB\n");
-		return HAL_ERR_PARA;
+		return -RTK_ERR_BADARG;
 	}
 
 	if (cfg == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid cfg\n");
-		return HAL_ERR_PARA;
+		return -RTK_ERR_BADARG;
 	}
 
 	/* A frame count of 0 disables that direction, so both being 0 would leave the class with
 	   no stream at all. */
 	if ((cfg->isoc_out_frm_cnt == 0U) && (cfg->isoc_in_frm_cnt == 0U)) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Pls cfg UAC frame cnt\n");
-		return HAL_ERR_PARA;
+		return -RTK_ERR_BADARG;
 	}
 
 	RTK_LOGS(TAG, RTK_LOG_DEBUG, "Config:\n");
@@ -3131,45 +3233,46 @@ int usbh_uac_init(const usbh_uac_cb_t *cb, const usbh_uac_config_t *cfg)
 	RTK_LOGS(TAG, RTK_LOG_DEBUG, "* isoc_out_frm_cnt: %d\n", cfg->isoc_out_frm_cnt);
 
 	usb_os_memset((void *)uac, 0x00, sizeof(usbh_uac_t));
+	uac->ac_isoc_desc.out_best_idx = USBH_UAC_FU_IDX_NONE;
+	uac->ac_isoc_desc.in_best_idx = USBH_UAC_FU_IDX_NONE;
 
 	uac->audio_ctrl_buf = (u8 *)usb_os_malloc(USBH_UAC_AUDIO_CTRL_BUF_MAX_LEN);
 	if (NULL == uac->audio_ctrl_buf) {
-		return HAL_ERR_MEM;
+		goto alloc_fail;
 	}
 
-	/* The isoc DMA buffers belong to the class lifetime: allocate them here for
-	 * every direction the configuration enables and release them only in
-	 * usbh_uac_deinit(). Sizing them from the (static) cb configuration - not from
-	 * what the currently attached device happens to offer - keeps a later hotplug
-	 * of a device that does use the direction from finding a NULL xfer_buf. */
+	/* The isoc DMA buffers and the AS interface storage belong to the class lifetime: allocate
+	 * them here for every direction the configuration enables and release them only in
+	 * usbh_uac_deinit(). Sizing them from the static configuration - not from what the
+	 * currently attached device happens to offer - keeps a later hotplug from finding them
+	 * missing, and keeps detach() from freeing memory an application thread may still read. */
 	if (cfg->isoc_in_frm_cnt != 0U) {
 		uac->isoc_in.xfer_buf = (u8 *)usb_os_malloc(USBH_UAC_ISOC_BUF_LENGTH);
-		if (NULL == uac->isoc_in.xfer_buf) {
-			goto get_rx_buf_fail;
+		uac->isoc_in.as_itf_mem = (usbh_uac_as_itf_info_t *)usb_os_malloc(sizeof(usbh_uac_as_itf_info_t));
+		if ((NULL == uac->isoc_in.xfer_buf) || (NULL == uac->isoc_in.as_itf_mem)) {
+			goto alloc_fail;
 		}
 	}
 
 	if (cfg->isoc_out_frm_cnt != 0U) {
 		uac->isoc_out.xfer_buf = (u8 *)usb_os_malloc(USBH_UAC_ISOC_BUF_LENGTH);
-		if (NULL == uac->isoc_out.xfer_buf) {
-			goto get_tx_buf_fail;
+		uac->isoc_out.as_itf_mem = (usbh_uac_as_itf_info_t *)usb_os_malloc(sizeof(usbh_uac_as_itf_info_t));
+		/* Staging buffer of the write path only */
+		uac->ringbuf_partial_write_buf = (u8 *)usb_os_malloc(USBH_UAC_ISOC_BUF_LENGTH);
+		if ((NULL == uac->isoc_out.xfer_buf) || (NULL == uac->isoc_out.as_itf_mem) || (NULL == uac->ringbuf_partial_write_buf)) {
+			goto alloc_fail;
 		}
 	}
 
-	uac->ringbuf_partial_write_buf = (u8 *)usb_os_malloc(USBH_UAC_ISOC_BUF_LENGTH);
-	if (NULL == uac->ringbuf_partial_write_buf) {
-		goto get_wd_buf_fail;
-	}
-
-	if (usb_os_lock_create(&uac->alt_set_mutex) != HAL_OK) {
+	if (usb_os_lock_create(&uac->alt_set_mutex) != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Mutex create fail\n");
 		uac->alt_set_mutex = NULL;
-		goto cb_init_fail;
+		goto alloc_fail;
 	}
-	if (usb_os_sema_create(&uac->ctrl_done_sema) != HAL_OK) {
+	if (usb_os_sema_create(&uac->ctrl_done_sema) != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Ctrl sema create fail\n");
 		uac->ctrl_done_sema = NULL;
-		goto cb_init_fail;
+		goto alloc_fail;
 	}
 
 	uac->isoc_out.buf_ctrl.frame_cnt = cfg->isoc_out_frm_cnt;
@@ -3184,9 +3287,9 @@ int usbh_uac_init(const usbh_uac_cb_t *cb, const usbh_uac_config_t *cfg)
 
 	if (cb->init != NULL) {
 		ret = cb->init();
-		if (ret != HAL_OK) {
+		if (ret != RTK_SUCCESS) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "UAC init fail\n");
-			goto cb_init_fail;
+			goto alloc_fail;
 		}
 	}
 
@@ -3200,14 +3303,14 @@ int usbh_uac_init(const usbh_uac_cb_t *cb, const usbh_uac_config_t *cfg)
 	uac->cb = cb;
 
 	ret = usbh_register_class(&usbh_uac_driver);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Register class fail %d\n", ret);
-		goto cb_init_fail;
+		goto register_fail;
 	}
 
-	return HAL_OK;
+	return RTK_SUCCESS;
 
-cb_init_fail:
+register_fail:
 #if USBH_UAC_DEBUG
 	if (uac->dump_status_task_alive) {
 		uac->dump_status_task_exit = 0;
@@ -3216,43 +3319,31 @@ cb_init_fail:
 		} while (uac->dump_status_task_alive);
 	}
 #endif
-	if (uac->alt_set_mutex != NULL) {
-		usb_os_lock_delete(uac->alt_set_mutex);
-		uac->alt_set_mutex = NULL;
+	/* cb->init() succeeded: undo what the application set up in it */
+	if (cb->deinit != NULL) {
+		cb->deinit();
 	}
-	if (uac->ctrl_done_sema != NULL) {
-		usb_os_sema_delete(uac->ctrl_done_sema);
-		uac->ctrl_done_sema = NULL;
-	}
-	usb_os_mfree((void *)uac->ringbuf_partial_write_buf);
-	uac->ringbuf_partial_write_buf = NULL;
+	uac->cb = NULL;
 
-get_wd_buf_fail:
-	usb_os_mfree((void *)uac->isoc_out.xfer_buf);
-	uac->isoc_out.xfer_buf = NULL;
+alloc_fail:
+	usbh_uac_free_resources();
 
-get_tx_buf_fail:
-	usb_os_mfree((void *)uac->isoc_in.xfer_buf);
-	uac->isoc_in.xfer_buf = NULL;
-
-get_rx_buf_fail:
-	usb_os_mfree((void *)uac->audio_ctrl_buf);
-	uac->audio_ctrl_buf = NULL;
-
-	return HAL_ERR_MEM;
+	return ret;
 }
 /**
   * @brief  De-initialize the UAC class driver: stop all transfers, invoke cb->deinit(),
   *         close isochronous pipes, destroy ring buffers, and free all allocated memory.
+  * @note   The application shall have stopped calling the class API, every pointer it took
+  *         from usbh_uac_get_alt_setting() included, before calling this.
   */
 void usbh_uac_deinit(void)
 {
 	usbh_uac_t *uac = &usbh_uac;
 
-	/* First, before anything is freed: on HAL_OK no attach/setup/process/detach of this
+	/* First, before anything is freed: on RTK_SUCCESS no attach/setup/process/detach of this
 	 * class runs any more, an EP0 request it left in flight is halted and a sof() still
 	 * running on another core is waited out. Anything else means nothing was released. */
-	if (usbh_unregister_class(&usbh_uac_driver) != HAL_OK) {
+	if (usbh_unregister_class(&usbh_uac_driver) != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Deinit refused\n");
 		return;
 	}
@@ -3273,89 +3364,78 @@ void usbh_uac_deinit(void)
 		uac->cb->deinit();
 	}
 
+	/* Close the pipes of a device still attached, then free: deinit_all_pipe needs host */
 	usbh_uac_deinit_all_pipe();
-	usbh_uac_channel_deinit(&(uac->isoc_out));
-	usbh_uac_channel_deinit(&(uac->isoc_in));
-
-	/* Symmetry with usbh_cdc_acm_deinit: clear host so a stale caller cannot
-	 * reach usbh_notify() with a freed hcd. (deinit_all_pipe above needs it.) */
 	uac->host = NULL;
-
-	usb_os_mfree((void *)uac->audio_ctrl_buf);
-	uac->audio_ctrl_buf = NULL;
-
-	usb_os_mfree((void *)uac->ringbuf_partial_write_buf);
-	uac->ringbuf_partial_write_buf = NULL;
-
-	if (uac->alt_set_mutex != NULL) {
-		usb_os_lock_delete(uac->alt_set_mutex);
-		uac->alt_set_mutex = NULL;
-	}
-	if (uac->ctrl_done_sema != NULL) {
-		usb_os_sema_delete(uac->ctrl_done_sema);
-		uac->ctrl_done_sema = NULL;
-	}
+	usbh_uac_free_resources();
 }
 /**
   * @brief  Find the alternate setting matching the requested format, open the isochronous pipe,
   *         initialize the ring buffer, and send SET_INTERFACE + SET_CUR(frequency) to the device.
   *         Blocks until the control sequence completes or times out (USBH_UAC_CTRL_SYNC_TIMEOUT_MS).
+  * @note   The new packet geometry is committed only once the pipe and the ring buffer are set
+  *         up; on failure the previous alternate setting keeps its pipe, as SET_INTERFACE has not
+  *         been sent and the device still streams with it.
   * @param  dir:           Direction (USBH_UAC_ISOC_OUT_DIR = Playback, USBH_UAC_ISOC_IN_DIR = Record).
   * @param  channels:      Requested channel count.
   * @param  bit_width:     Requested bit depth per sample.
   * @param  sampling_freq: Requested sampling frequency in Hz.
-  * @retval HAL_OK on success, HAL_ERR_PARA if no matching format is found, HAL_TIMEOUT on timeout.
+  * @retval RTK_SUCCESS on success, -RTK_ERR_BADARG if no matching format is found, -RTK_ERR_TIMEOUT on timeout,
+  *         -RTK_ERR_IO if the device is gone, -RTK_ERR_NOMEM if the pipe or ring buffer can not be set up.
   */
 int usbh_uac_set_alt_setting(u8 dir, u8 channels, u8 bit_width, u32 sampling_freq)
 {
-	usbh_uac_format_cfg_t *fmt = NULL;
+	const usbh_uac_format_cfg_t *fmt = NULL;
 	usbh_uac_t *uac = &usbh_uac;
 	usbh_uac_buf_ctrl_t *pdata_ctrl = NULL;
 	usbh_uac_as_itf_info_t *as_itf = NULL;
 	usbh_pipe_t *pipe = NULL;
 	usbh_ep_desc_t *ep_desc = NULL;
-	usb_host_t *host = uac->host;
-	int ret = HAL_ERR_PARA;
-	int set_flag = 0;
-	int i = 0;
-	int j = 0;
+	usb_host_t *host;
+	int ret = -RTK_ERR_BADARG;
+	u8 set_flag = 0U;
+	u8 i = 0U;
+	u8 j = 0U;
 	u32 ep_cap = 0U;
 	u32 binterval = 0U;
 	u32 compliant_rate = 0U;
 	u32 compliant_size = 0U;
+	u32 frame_bytes = 0U;
+	u32 size_small = 0U;
+	u32 size_large = 0U;
+	u16 packet_rate = 0U;
 	u16 ep_mps = 0U;
 	u16 ep_trans = 0U;
-	u8 alt_num = 0U;
+	u8 old_alt_idx = 0U;
 	u8 legal_interval = 0U;
 
-	/* Reject if the device is gone (detach nulled uac->host): host is used below
-	 * by usbh_open_pipe()/usbh_notify() and would otherwise be dereferenced NULL. */
-	if (usbh_uac_usb_status_check() != HAL_OK) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Dev not ready\n");
-		return HAL_ERR_HW;
+	if ((dir != USBH_UAC_ISOC_OUT_DIR) && (dir != USBH_UAC_ISOC_IN_DIR)) {
+		return -RTK_ERR_BADARG;
 	}
 
-	as_itf = usbh_uac_get_as_itf_instance(dir);
-	if (as_itf == NULL) {
-		return HAL_ERR_PARA;
+	if (usbh_uac_usb_status_check() != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Dev not ready\n");
+		return -RTK_ERR_IO;
 	}
 
 	usb_os_lock(uac->alt_set_mutex);
 
-	if (dir == USBH_UAC_ISOC_OUT_DIR) {
-		pdata_ctrl = &(uac->isoc_out.buf_ctrl);
-	} else {
-		pdata_ctrl = &(uac->isoc_in.buf_ctrl);
+	/* Read host and as_itf under the lock: detach() unbinds them under it, so both stay
+	 * those of the attached device until this returns */
+	host = uac->host;
+	as_itf = usbh_uac_get_as_itf_instance(dir);
+	if ((host == NULL) || (as_itf == NULL)) {
+		usb_os_unlock(uac->alt_set_mutex);
+		return (host == NULL) ? -RTK_ERR_IO : -RTK_ERR_BADARG;
 	}
-
-	alt_num = as_itf->alt_setting_cnt;
+	pdata_ctrl = (dir == USBH_UAC_ISOC_OUT_DIR) ? &(uac->isoc_out.buf_ctrl) : &(uac->isoc_in.buf_ctrl);
 
 	//actually search from alt 1
-	for (i = 0; i < alt_num; i++) {
+	for (i = 0U; i < as_itf->alt_setting_cnt; i++) {
 		fmt = &(as_itf->interface_array[i].format_info);
 
 		// Check format type, channels, and sample frequency
-		if (!fmt || fmt->bit_width != bit_width || fmt->channels != channels) {
+		if ((fmt->bit_width != bit_width) || (fmt->channels != channels)) {
 			continue;
 		}
 
@@ -3363,176 +3443,173 @@ int usbh_uac_set_alt_setting(u8 dir, u8 channels, u8 bit_width, u32 sampling_fre
 		if (fmt->freq_continuous != 0U) {
 			/* Audio Formats 1.0 2.2.5: any rate within [tLowerSamFreq, tUpperSamFreq] is legal. */
 			if ((fmt->freq_cnt >= USBH_UAC_SAM_FREQ_RANGE_CNT) && (sampling_freq >= fmt->freq[0]) && (sampling_freq <= fmt->freq[1])) {
-				set_flag = 1;
+				set_flag = 1U;
 			}
 		} else {
-			for (j = 0; j < fmt->freq_cnt; j++) {
+			for (j = 0U; j < fmt->freq_cnt; j++) {
 				if (fmt->freq[j] == sampling_freq) {
-					set_flag = 1;// Return as soon as we find a match
+					set_flag = 1U;// Return as soon as we find a match
 					break;
 				}
 			}
 		}
 
-		if (set_flag) {
+		if (set_flag != 0U) {
 			break;
 		}
 	}
 
-	if (set_flag) {
-		as_itf->choose_alt_idx = i;
-		pdata_ctrl->sample_freq = sampling_freq;
+	if (set_flag == 0U) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Alt not match %d %d %d\n", channels, bit_width, sampling_freq);
+		usb_os_unlock(uac->alt_set_mutex);
+		return -RTK_ERR_BADARG;
+	}
 
-		//update pipe
-		pipe = &(as_itf->pipe);
-		ep_desc = &(as_itf->interface_array[as_itf->choose_alt_idx].ep_desc);
+	pipe = &(as_itf->pipe);
+	ep_desc = &(as_itf->interface_array[i].ep_desc);
+	/* Bytes of one sample frame on the bus: bSubframeSize, not bBitResolution, sets the size
+	 * of each sample, Ref Audio Formats 1.0 2.2.5. At most 255 * 4. */
+	frame_bytes = (u32)channels * fmt->subframe_size;
 
-		/* An isochronous bInterval is an exponent on both speeds (period = 2^(bInterval-1) frames
-		 * on FS, microframes on HS), so the same 1..16 range applies to each; see
-		 * USB_ISOC_xS_BINTERVAL_MIN/MAX in usb_ch9.h. bInterval comes straight from the device
-		 * descriptor and is therefore untrusted, and an out-of-range value used as a shift count
-		 * would be undefined behaviour (MISRA C:2012 Rule 1.3).
-		 *
-		 * Clamp rather than reject, matching usbh_get_interval() in the host core: that function
-		 * derives pipe->ep_interval from this very descriptor when usbh_open_pipe() runs below,
-		 * and the packet rate computed here must describe the same service interval - one says
-		 * how many bytes per interval, the other how often the interval comes round. Deriving
-		 * them from different readings of the same field would silently drift the audio stream.
-		 * Clamping does not weaken validation: a bInterval of 16 is legal yet still yields a zero
-		 * packet rate, so the zero guards below reject both it and any clamped larger value. */
-		binterval = MIN((MAX((u32)ep_desc->bInterval, USB_EP_BINTERVAL_EXP_MIN)), USB_EP_BINTERVAL_EXP_MAX);
-		if (binterval != (u32)ep_desc->bInterval) {
-			RTK_LOGS(TAG, RTK_LOG_WARN, "Clamp isoc bInterval %d to %d\n", ep_desc->bInterval, binterval);
+	/* An isochronous bInterval is an exponent on both speeds (period = 2^(bInterval-1) frames
+	 * on FS, microframes on HS), so the same 1..16 range applies to each; see
+	 * USB_ISOC_xS_BINTERVAL_MIN/MAX in usb_ch9.h. bInterval comes straight from the device
+	 * descriptor and is therefore untrusted, and an out-of-range value used as a shift count
+	 * would be undefined behaviour (MISRA C:2012 Rule 1.3).
+	 *
+	 * Clamp rather than reject, matching usbh_get_interval() in the host core: that function
+	 * derives pipe->ep_interval from this very descriptor when usbh_open_pipe() runs below,
+	 * and the packet rate computed here must describe the same service interval - one says
+	 * how many bytes per interval, the other how often the interval comes round. Deriving
+	 * them from different readings of the same field would silently drift the audio stream.
+	 * Clamping does not weaken validation: a bInterval of 16 is legal yet still yields a zero
+	 * packet rate, so the zero guards below reject both it and any clamped larger value. */
+	binterval = MIN((MAX((u32)ep_desc->bInterval, USB_EP_BINTERVAL_EXP_MIN)), USB_EP_BINTERVAL_EXP_MAX);
+	if (binterval != (u32)ep_desc->bInterval) {
+		RTK_LOGS(TAG, RTK_LOG_WARN, "Clamp isoc bInterval %d to %d\n", ep_desc->bInterval, binterval);
+	}
+
+	ep_mps = ep_desc->wMaxPacketSize & USB_EP_MPS_SIZE_MASK;
+	/* wMaxPacketSize bits 12:11 encode *additional* transactions per microframe (0-2), so +1 gives the actual count */
+	ep_trans = ((ep_desc->wMaxPacketSize & USB_EP_MPS_TRANS_MASK) >> USB_EP_MPS_TRANS_POS) + 1U;
+	ep_cap = (u32)ep_mps * ep_trans;
+
+	if (host->dev_speed == USB_SPEED_HIGH) {
+		/* HS isoc: bInterval encodes interval = 2^(bInterval-1) microframes (8000/s) */
+		compliant_rate = (USBH_UAC_ONE_KHZ * USBH_UAC_HS_MICROFRAMES_PER_MS) >> (binterval - 1U);
+		/* A legal bInterval of 14..16 shifts 8000 down to 0, i.e. a service interval longer
+		 * than one second. No audio format this driver supports can be carried that way, and
+		 * the value is used as a divisor right below, so reject the alt setting instead of
+		 * dividing by zero. */
+		if (compliant_rate == 0U) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Isoc interval too long, bInterval %d\n", binterval);
+			usb_os_unlock(uac->alt_set_mutex);
+			return -RTK_ERR_BADARG;
 		}
+		/* Samples per packet first: sampling_freq is at most 0xFFFFFF, so this can not wrap */
+		compliant_size = frame_bytes * ((sampling_freq + (compliant_rate - 1U)) / compliant_rate);
 
-		ep_mps = ep_desc->wMaxPacketSize & USB_EP_MPS_SIZE_MASK;
-		/* wMaxPacketSize bits 12:11 encode *additional* transactions per microframe (0-2), so +1 gives the actual count */
-		ep_trans = ((ep_desc->wMaxPacketSize & USB_EP_MPS_TRANS_MASK) >> USB_EP_MPS_TRANS_POS) + 1U;
-		ep_cap = (u32)ep_mps * ep_trans;
+		/* A compliant HS isoc endpoint sizes wMaxPacketSize for the rate its own
+		 * bInterval implies (e.g. bInterval=4 -> 1 ms -> ~48 samples @48kHz). A
+		 * handful of non-compliant UAC1 devices keep an FS-style bInterval
+		 * (1..3 meaning 1/2/4 ms, not a 2^(n-1)-microframe exponent) even in
+		 * their HS descriptor; because the device itself scheduled the transfer
+		 * at that slower FS-style rate, its wMaxPacketSize then comes out ~8x
+		 * larger than what the compliant reading would need. A device that
+		 * legitimately uses bInterval=1..3 on HS (125/250/500 us service) does
+		 * not show this gap. Gate on that size mismatch, not on bInterval<4
+		 * alone, so a compliant device is never misdetected. */
+		legal_interval = ((binterval < USBH_UAC_LEGACY_FS_SIZE_RATIO_MIN) && (compliant_size > 0U) &&
+						  (ep_cap >= (compliant_size * USBH_UAC_LEGACY_FS_SIZE_RATIO_MIN))) ? 1U : 0U;
 
-		if (host->dev_speed == USB_SPEED_HIGH) {
-			/* HS isoc: bInterval encodes interval = 2^(bInterval-1) microframes (8000/s) */
-			compliant_rate = (USBH_UAC_ONE_KHZ * USBH_UAC_HS_MICROFRAMES_PER_MS) >> (binterval - 1U);
-			/* A legal bInterval of 14..16 shifts 8000 down to 0, i.e. a service interval longer
-			 * than one second. No audio format this driver supports can be carried that way, and
-			 * the value is used as a divisor right below, so reject the alt setting instead of
-			 * dividing by zero. */
-			if (compliant_rate == 0U) {
-				RTK_LOGS(TAG, RTK_LOG_ERROR, "Isoc interval too long, bInterval %d\n", binterval);
-				usb_os_unlock(uac->alt_set_mutex);
-				return HAL_ERR_PARA;
-			}
-			compliant_size = channels * bit_width / USBH_UAC_BIT_TO_BYTE *
-							 ((sampling_freq + (compliant_rate - 1U)) / compliant_rate);
-
-			/* A compliant HS isoc endpoint sizes wMaxPacketSize for the rate its own
-			 * bInterval implies (e.g. bInterval=4 -> 1 ms -> ~48 samples @48kHz). A
-			 * handful of non-compliant UAC1 devices keep an FS-style bInterval
-			 * (1..3 meaning 1/2/4 ms, not a 2^(n-1)-microframe exponent) even in
-			 * their HS descriptor; because the device itself scheduled the transfer
-			 * at that slower FS-style rate, its wMaxPacketSize then comes out ~8x
-			 * larger than what the compliant reading would need. A device that
-			 * legitimately uses bInterval=1..3 on HS (125/250/500 us service) does
-			 * not show this gap. Gate on that size mismatch, not on bInterval<4
-			 * alone, so a compliant device is never misdetected. */
-			legal_interval = ((binterval < USBH_UAC_LEGACY_FS_SIZE_RATIO_MIN) && (compliant_size > 0U) &&
-							  (ep_cap >= (compliant_size * USBH_UAC_LEGACY_FS_SIZE_RATIO_MIN))) ? 1U : 0U;
-
-			if (legal_interval != 0U) {
-				pdata_ctrl->packet_rate = USBH_UAC_ONE_KHZ / binterval;
-			} else {
-				pdata_ctrl->packet_rate = compliant_rate;
-			}
+		if (legal_interval != 0U) {
+			packet_rate = (u16)(USBH_UAC_ONE_KHZ / binterval);
 		} else {
-			pdata_ctrl->packet_rate = USBH_UAC_ONE_KHZ >> (binterval - 1U);
+			packet_rate = (u16)compliant_rate;
 		}
+	} else {
+		packet_rate = (u16)(USBH_UAC_ONE_KHZ >> (binterval - 1U));
+	}
 
-		/* packet_rate is the divisor of every packet-size term below. It can still be 0 for a
-		 * bInterval that is legal but implies a service interval longer than the 1 ms (FS) or
-		 * 1 s (HS) the rate is derived from, so it must be checked here rather than assumed
-		 * non-zero from the bInterval range alone. */
-		if (pdata_ctrl->packet_rate == 0U) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "Zero packet rate, bInterval %d\n", binterval);
-			usb_os_unlock(uac->alt_set_mutex);
-			return HAL_ERR_PARA;
-		}
+	/* packet_rate is the divisor of every packet-size term below. It can still be 0 for a
+	 * bInterval that is legal but implies a service interval longer than the 1 ms (FS) or
+	 * 1 s (HS) the rate is derived from, so it must be checked here rather than assumed
+	 * non-zero from the bInterval range alone. */
+	if (packet_rate == 0U) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Zero packet rate, bInterval %d\n", binterval);
+		usb_os_unlock(uac->alt_set_mutex);
+		return -RTK_ERR_BADARG;
+	}
 
-		pdata_ctrl->sample_rem = sampling_freq % pdata_ctrl->packet_rate;
-		//calculate accurate one frame size(byte)
-		as_itf->packet_size_small = channels * bit_width / USBH_UAC_BIT_TO_BYTE * (sampling_freq / pdata_ctrl->packet_rate);
-		as_itf->packet_size_large = channels * bit_width / USBH_UAC_BIT_TO_BYTE * ((sampling_freq + (pdata_ctrl->packet_rate - 1U)) / pdata_ctrl->packet_rate);
+	/* Bound the samples per packet before multiplying, so the byte count below stays far
+	 * from wrapping and fits the u16 fields it is stored in once accepted */
+	size_large = (sampling_freq + ((u32)packet_rate - 1U)) / packet_rate;
+	if (size_large > USBH_UAC_ISOC_BUF_LENGTH) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Rate %d too high\n", sampling_freq);
+		usb_os_unlock(uac->alt_set_mutex);
+		return -RTK_ERR_BADARG;
+	}
+	size_large *= frame_bytes;
+	size_small = frame_bytes * (sampling_freq / packet_rate);
 
-		/* Reject if the computed payload cannot fit the isoc xfer buffer or the
-		 * endpoint's actual per-service-interval transaction capacity. An IN transfer
-		 * reserves whole packets, each adjusted to the DWORD boundary, so its buffer
-		 * shall hold that window rather than the payload alone. */
-		if ((as_itf->packet_size_large > USBH_UAC_ISOC_BUF_LENGTH) || (as_itf->packet_size_large > ep_cap) ||
-			((dir == USBH_UAC_ISOC_IN_DIR) && (usb_get_dma_len(as_itf->packet_size_large, ep_mps) > USBH_UAC_ISOC_BUF_LENGTH))) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "Packet size %d exceeds buf/ep cap %d\n", as_itf->packet_size_large, ep_cap);
-			usb_os_unlock(uac->alt_set_mutex);
-			return HAL_ERR_PARA;
-		}
+	/* Reject if the computed payload cannot fit the isoc xfer buffer or the
+	 * endpoint's actual per-service-interval transaction capacity. An IN transfer
+	 * reserves whole packets, each adjusted to the DWORD boundary, so its buffer
+	 * shall hold that window rather than the payload alone. */
+	if ((size_large > USBH_UAC_ISOC_BUF_LENGTH) || (size_large > ep_cap) ||
+		((dir == USBH_UAC_ISOC_IN_DIR) && (usb_get_dma_len(size_large, ep_mps) > USBH_UAC_ISOC_BUF_LENGTH))) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Packet size %d exceeds buf/ep cap %d\n", size_large, ep_cap);
+		usb_os_unlock(uac->alt_set_mutex);
+		return -RTK_ERR_BADARG;
+	}
 
-		if (dir == USBH_UAC_ISOC_OUT_DIR) {
-			usbh_uac_stop_play();
-		} else {
-			usbh_uac_stop_capture();
-		}
+	if (dir == USBH_UAC_ISOC_OUT_DIR) {
+		usbh_uac_stop_play();
+	} else {
+		usbh_uac_stop_capture();
+	}
 
-		//reinit pipe
-		usbh_uac_deinit_pipe(dir);
-		if (usbh_open_pipe(host, pipe, ep_desc, &usbh_uac_driver) != HAL_OK) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "Open isoc pipe fail\n");
-			usb_os_unlock(uac->alt_set_mutex);
-			return HAL_ERR_PARA;
-		}
-
+	//reinit pipe
+	old_alt_idx = as_itf->choose_alt_idx;
+	usbh_uac_deinit_pipe(dir);
+	ret = usbh_open_pipe(host, pipe, ep_desc, &usbh_uac_driver);
+	if (ret == RTK_SUCCESS) {
 		if (legal_interval != 0U) {
 			/* usbh_open_pipe() derives pipe->ep_interval from the HS microframe
 			 * formula unconditionally; override it to the FS-style ms reading
 			 * this device actually uses (see legal_interval above). */
 			pipe->ep_interval = binterval * USBH_UAC_HS_MICROFRAMES_PER_MS;
 		}
-
-		if (dir == USBH_UAC_ISOC_OUT_DIR) {
-			usbh_uac_ep_buf_ctrl_deinit(&(uac->isoc_out.buf_ctrl));
-			ret = usbh_uac_ep_buf_ctrl_init(&(uac->isoc_out.buf_ctrl), pipe, as_itf->packet_size_large);
-		} else {
-			usbh_uac_ep_buf_ctrl_deinit(&(uac->isoc_in.buf_ctrl));
-			ret = usbh_uac_ep_buf_ctrl_init(&(uac->isoc_in.buf_ctrl), pipe, as_itf->packet_size_large);
-		}
-
-		if (ret != HAL_OK) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "Buf init fail\n");
+		usbh_uac_ep_buf_ctrl_deinit(pdata_ctrl);
+		ret = usbh_uac_ep_buf_ctrl_init(pdata_ctrl, pipe, (u16)size_large);
+		if (ret != RTK_SUCCESS) {
 			usbh_uac_deinit_pipe(dir);
-			usb_os_unlock(uac->alt_set_mutex);
-			return ret;
 		}
+	}
 
-		uac->cur_dir = dir;
-		uac->ctrl_status = HAL_BUSY;
-		uac->xfer_state = UAC_STATE_TRANSFER;
-		uac->ctrl_state = UAC_STATE_SET_ALT_SETTING;
-		/* Drop a give a timed-out earlier round left behind, as usbh_uac_sync_dispatch() does */
-		usb_os_sema_take(uac->ctrl_done_sema, 0U);
-		uac->ctrl_waiting = 1;
-
-		usbh_notify(host, 0, &usbh_uac_driver);
-
-		if (usb_os_sema_take(uac->ctrl_done_sema, USBH_UAC_CTRL_SYNC_TIMEOUT_MS) != HAL_OK) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "Set alt timeout\n");
-			uac->ctrl_waiting = 0;
-			uac->ctrl_state = UAC_STATE_CTRL_IDLE;
-			ret = HAL_TIMEOUT;
-		} else {
-			uac->ctrl_waiting = 0;
-			/* read the real outcome reported by ctrl_finish() without this the
-			 * caller would see HAL_OK even when SET_ALT or SET_FREQ failed. */
-			ret = uac->ctrl_status;
+	if (ret != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Isoc setup fail %d\n", ret);
+		/* Put the pipe of the alt setting the device still runs back in place */
+		if (usbh_open_pipe(host, pipe, &(as_itf->interface_array[old_alt_idx].ep_desc), &usbh_uac_driver) != RTK_SUCCESS) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Restore pipe fail\n");
 		}
-	} else {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Alt not match %d %d %d\n", channels, bit_width, sampling_freq);
-		ret = HAL_ERR_PARA;
+		usb_os_unlock(uac->alt_set_mutex);
+		return -RTK_ERR_NOMEM;
+	}
+
+	/* Commit the new geometry only now that the pipe and ring buffer accept it */
+	as_itf->choose_alt_idx = i;
+	as_itf->packet_size_small = (u16)size_small;
+	as_itf->packet_size_large = (u16)size_large;
+	pdata_ctrl->packet_rate = packet_rate;
+	pdata_ctrl->sample_freq = sampling_freq;
+	pdata_ctrl->sample_rem = sampling_freq % packet_rate;
+
+	uac->cur_dir = dir;
+	uac->ctrl_state = UAC_STATE_SET_ALT_SETTING;
+	ret = usbh_uac_sync_dispatch(USBH_UAC_CTRL_SYNC_TIMEOUT_MS);
+	if (ret == -RTK_ERR_TIMEOUT) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Set alt timeout\n");
 	}
 
 	usb_os_unlock(uac->alt_set_mutex);
@@ -3610,11 +3687,11 @@ u8 usbh_uac_support_record(void)
   * @param  dir:  USBH_UAC_ISOC_OUT_DIR or USBH_UAC_ISOC_IN_DIR.
   * @param  ch:   Channel index (0 = master, 1..N = individual channels).
   * @param  mute: Output pointer that receives the device's mute state.
-  * @return HAL_OK on success, HAL_BUSY if not ready,
-  *         HAL_TIMEOUT if the device did not respond,
-  *         HAL_ERR_PARA on invalid direction/channel or if the active Feature
+  * @return RTK_SUCCESS on success, -RTK_ERR_BUSY if not ready,
+  *         -RTK_ERR_TIMEOUT if the device did not respond,
+  *         -RTK_ERR_BADARG on invalid direction/channel or if the active Feature
   *         Unit does not advertise the Mute control on this channel,
-  *         HAL_ERR_UNKNOWN if the device disconnected mid-operation.
+  *         RTK_FAIL if the device disconnected mid-operation.
   */
 int usbh_uac_get_mute(u8 dir, u8 ch, u8 *mute)
 {
@@ -3624,19 +3701,19 @@ int usbh_uac_get_mute(u8 dir, u8 ch, u8 *mute)
 	int ret;
 
 	if ((mute == NULL) || (ch > USBH_UAC_MAX_CHANNEL)) {
-		return HAL_ERR_PARA;
+		return -RTK_ERR_BADARG;
 	}
-	if (usbh_uac_check_dir(dir) != HAL_OK) {
-		return HAL_ERR_PARA;
+	if (usbh_uac_check_dir(dir) != RTK_SUCCESS) {
+		return -RTK_ERR_BADARG;
 	}
 
 	info = &(ac_info->fu_controls[(dir == USBH_UAC_ISOC_IN_DIR) ? ac_info->in_best_idx : ac_info->out_best_idx]);
 	if (ch > info->num_channels || !(info->bma_controls[ch] & USB_UAC1_CONTROL_MUTE)) {
-		return HAL_ERR_PARA;
+		return -RTK_ERR_BADARG;
 	}
 
-	if (usbh_uac_usb_status_check() != HAL_OK) {
-		return HAL_BUSY;
+	if (usbh_uac_usb_status_check() != RTK_SUCCESS) {
+		return -RTK_ERR_BUSY;
 	}
 
 	usb_os_lock(uac->alt_set_mutex);
@@ -3645,9 +3722,9 @@ int usbh_uac_get_mute(u8 dir, u8 ch, u8 *mute)
 	uac->get_ch = ch;
 	uac->ctrl_state = UAC_STATE_GET_MUTE;
 	ret = usbh_uac_sync_dispatch(USBH_UAC_CTRL_SYNC_TIMEOUT_MS);
-	if (ret == HAL_OK) {
+	if (ret == RTK_SUCCESS) {
 		*mute = uac->get_mute_result;
-	} else if (ret == HAL_TIMEOUT) {
+	} else if (ret == -RTK_ERR_TIMEOUT) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Query mute timeout\n");
 	}
 
@@ -3667,11 +3744,11 @@ int usbh_uac_get_mute(u8 dir, u8 ch, u8 *mute)
   * @param  volume:  Output pointer that receives the current volume in raw dB units.
   * @param  vol_min: Output pointer for the cached minimum volume; may be NULL.
   * @param  vol_max: Output pointer for the cached maximum volume; may be NULL.
-  * @return HAL_OK on success, HAL_BUSY if not ready,
-  *         HAL_TIMEOUT if the device did not respond,
-  *         HAL_ERR_PARA on invalid direction/channel or if the active Feature
+  * @return RTK_SUCCESS on success, -RTK_ERR_BUSY if not ready,
+  *         -RTK_ERR_TIMEOUT if the device did not respond,
+  *         -RTK_ERR_BADARG on invalid direction/channel or if the active Feature
   *         Unit does not advertise the Volume control on this channel,
-  *         HAL_ERR_UNKNOWN if the device disconnected mid-operation.
+  *         RTK_FAIL if the device disconnected mid-operation.
   */
 int usbh_uac_get_volume(u8 dir, u8 ch, s16 *volume, s16 *vol_min, s16 *vol_max)
 {
@@ -3682,19 +3759,19 @@ int usbh_uac_get_volume(u8 dir, u8 ch, s16 *volume, s16 *vol_min, s16 *vol_max)
 	int ret;
 
 	if ((volume == NULL) || (ch > USBH_UAC_MAX_CHANNEL)) {
-		return HAL_ERR_PARA;
+		return -RTK_ERR_BADARG;
 	}
-	if (usbh_uac_check_dir(dir) != HAL_OK) {
-		return HAL_ERR_PARA;
+	if (usbh_uac_check_dir(dir) != RTK_SUCCESS) {
+		return -RTK_ERR_BADARG;
 	}
 
 	info = &(ac_info->fu_controls[(dir == USBH_UAC_ISOC_IN_DIR) ? ac_info->in_best_idx : ac_info->out_best_idx]);
 	if (ch > info->num_channels || !(info->bma_controls[ch] & USB_UAC1_CONTROL_VOLUME)) {
-		return HAL_ERR_PARA;
+		return -RTK_ERR_BADARG;
 	}
 
-	if (usbh_uac_usb_status_check() != HAL_OK) {
-		return HAL_BUSY;
+	if (usbh_uac_usb_status_check() != RTK_SUCCESS) {
+		return -RTK_ERR_BUSY;
 	}
 
 	usb_os_lock(uac->alt_set_mutex);
@@ -3703,7 +3780,7 @@ int usbh_uac_get_volume(u8 dir, u8 ch, s16 *volume, s16 *vol_min, s16 *vol_max)
 	uac->get_ch = ch;
 	uac->ctrl_state = UAC_STATE_GET_VOLUME;
 	ret = usbh_uac_sync_dispatch(USBH_UAC_CTRL_SYNC_TIMEOUT_MS);
-	if (ret == HAL_OK) {
+	if (ret == RTK_SUCCESS) {
 		/* ctrl_setting()'s GET_VOLUME case already wrote vi->volume,
 		 * so we just expose the result and the cached min/max range. */
 		*volume = uac->get_volume_result;
@@ -3727,7 +3804,7 @@ int usbh_uac_get_volume(u8 dir, u8 ch, s16 *volume, s16 *vol_min, s16 *vol_max)
 				*vol_max = 0;
 			}
 		}
-	} else if (ret == HAL_TIMEOUT) {
+	} else if (ret == -RTK_ERR_TIMEOUT) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Query vol timeout\n");
 	}
 

@@ -16,7 +16,7 @@ static uint32_t PrevIrqStatus = 0;
 #define WRITE_SYNC_UNLOCK  2
 #define WRITE_SYNC_PARKED  3	/* SOLO: KM55TZ has parked (off the flash bus), KM55NS may write */
 
-#ifdef CONFIG_ARM_CORE_CM55_KM55NS
+#ifdef CONFIG_ARM_CORE_CM4_KM4NS
 static u32 Start_Timer_Cnt = 0;
 static u32 Start_Systick_Cnt = 0;
 
@@ -133,7 +133,7 @@ static void Flash_Write_Lock_IPC(u8 sync_type)
 }
 #endif
 #else
-/* CONFIG_ARM_CORE_CM55_KM55TZ */
+/* CONFIG_ARM_CORE_CM4_KM4TZ */
 #ifdef CONFIG_SOLO
 /* SOLO: SRAM is isolation so put it into share sram. */
 SOLO_SHARE_SECTION
@@ -281,10 +281,10 @@ void FLASH_Write_Lock(void)
 	while (IPC_SEMTake(IPC_SEM_FLASH, 1000) != TRUE) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "FLASH_Write_Lock get hw sema fail\n");
 	}
-#ifdef CONFIG_ARM_CORE_CM55_KM55TZ
+#ifdef CONFIG_ARM_CORE_CM4_KM4TZ
 	/* Sent IPC to KM55NS */
 	Flash_Write_Lock_IPC(WRITE_SYNC_LOCK);
-#elif defined(CONFIG_ARM_CORE_CM55_KM55NS) && defined(CONFIG_SOLO)
+#elif defined(CONFIG_ARM_CORE_CM4_KM4NS) && defined(CONFIG_SOLO)
 	/* SOLO: KM55NS writes flash directly, pause KM55TZ XIP */
 	Flash_Write_Lock_IPC(WRITE_SYNC_LOCK);
 #endif
@@ -299,10 +299,10 @@ void FLASH_Write_Lock(void)
  */
 void FLASH_Write_Unlock(void)
 {
-#ifdef CONFIG_ARM_CORE_CM55_KM55TZ
+#ifdef CONFIG_ARM_CORE_CM4_KM4TZ
 	/* Sent IPC to KM55NS */
 	Flash_Write_Lock_IPC(WRITE_SYNC_UNLOCK);
-#elif defined(CONFIG_ARM_CORE_CM55_KM55NS) && defined(CONFIG_SOLO)
+#elif defined(CONFIG_ARM_CORE_CM4_KM4NS) && defined(CONFIG_SOLO)
 	/* SOLO: KM55NS writes flash directly, resume KM55TZ XIP */
 	Flash_Write_Lock_IPC(WRITE_SYNC_UNLOCK);
 #endif

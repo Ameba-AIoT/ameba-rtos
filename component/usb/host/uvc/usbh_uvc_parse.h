@@ -53,7 +53,7 @@ extern "C" {
 /**
  * @brief  Parse the configuration descriptor into the UVC descriptor tree.
  * @param  host: Host handle.
- * @return HAL_OK on success, a HAL error code otherwise.
+ * @return RTK_SUCCESS on success, a RTK error code otherwise.
  */
 int usbh_uvc_parse_cfgdesc(usb_host_t *host);
 
@@ -63,7 +63,7 @@ int usbh_uvc_parse_cfgdesc(usb_host_t *host);
  * @param  context: Requested configuration, carrying width, height and format type.
  * @param  format_idx: Output, receives the matching format index.
  * @param  frame_idx: Output, receives the matching frame index.
- * @return HAL_OK on success, a HAL error code when nothing matches.
+ * @return RTK_SUCCESS on success, a RTK error code when nothing matches.
  */
 int usbh_uvc_desc_find_format_frame(usbh_uvc_stream_t *stream, usbh_uvc_s_ctx_t *context, u8 *format_idx, u8 *frame_idx);
 
@@ -74,13 +74,13 @@ int usbh_uvc_desc_find_format_frame(usbh_uvc_stream_t *stream, usbh_uvc_s_ctx_t 
  * @param  interval: Output, receives the matching frame interval.
  * @param  format_idx: Output, receives the matching format index.
  * @param  frame_idx: Output, receives the matching frame index.
- * @return HAL_OK on success, a HAL error code when nothing matches.
+ * @return RTK_SUCCESS on success, a RTK error code when nothing matches.
  */
 int usbh_uvc_desc_find_frame_rate(usbh_uvc_stream_t *stream, usbh_uvc_s_ctx_t *context, u32 *interval, u8 *format_idx, u8 *frame_idx);
 
 /**
  * @brief  Allocate the UVC descriptor parser state.
- * @return HAL_OK on success, a HAL error code otherwise.
+ * @return RTK_SUCCESS on success, a RTK error code otherwise.
  */
 int usbh_uvc_desc_init(void);
 

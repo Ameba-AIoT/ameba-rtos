@@ -62,6 +62,7 @@ else()
         sdn_coex_intf.c
         sdn_coex_platform.c
         sdn_coex_wl_api.c
+        sdn_coex_wp_api.c
     )
 endif()
 

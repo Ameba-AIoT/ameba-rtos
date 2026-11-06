@@ -86,6 +86,24 @@ menu "CONFIG Link Option"
     endchoice
 endmenu
 
+menu "CONFIG Toolchain"
+    choice
+        prompt "ASDK toolchain version"
+        default TOOLCHAIN_ASDK_10_3_1
+        help
+            Select the ARM GCC (ASDK) toolchain version used to build this SoC.
+        config TOOLCHAIN_ASDK_10_3_1
+            bool "ASDK 10.3.1"
+        config TOOLCHAIN_ASDK_12_3_1
+            bool "ASDK 12.3.1"
+    endchoice
+
+    config TOOLCHAIN_ASDK_VER
+        string
+        default "10.3.1" if TOOLCHAIN_ASDK_10_3_1
+        default "12.3.1" if TOOLCHAIN_ASDK_12_3_1
+endmenu
+
 rsource "../../../soc/common/image3/Kconfig.trustzone"
 
 rsource "../../../soc/Kconfig"
@@ -139,9 +157,6 @@ menu "CONFIG APPLICATION"
     menu "AI Config"
         orsource "../../../tflite_micro/Kconfig"
         orsource "../../../aivoice/Kconfig"
-        if AIVOICE_EN_MENU
-            orsource "../../../application/speechmind/Kconfig"
-        endif
     endmenu
 
     orsource "../../../application/Kconfig"
@@ -330,7 +345,9 @@ config SHELL_TASK_STACK_BASIC_SIZE
 
 rsource "../../../lwip/Kconfig"
 
+if !AMEBA_RLS
 orsource "../../../wpan/Kconfig"
+endif
 
 rsource "../../../ssl/Kconfig"
 

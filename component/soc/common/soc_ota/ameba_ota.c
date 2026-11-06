@@ -25,7 +25,7 @@ u8 ota_get_cur_index(u8 img_id)
 	if (img_id == OTA_IMGID_BOOT) {
 		// Compatiable Nand and Nor Flash
 		u32 BootInfo = BKUP_Read(BKUP_REG0);
-		u32 BootVer = (BootInfo & BOOT_VER_NUM) >> 30;
+		u32 BootVer = (BootInfo & BKUP_BIT_BOOT_VER_NUM) >> 30;
 		return BootVer;
 	} else {
 		AddrStart = RRAM->OTA_APP_REMAP;

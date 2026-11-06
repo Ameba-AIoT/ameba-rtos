@@ -72,13 +72,13 @@ typedef struct {
  * Convert memory size from Megabits (Mb) to Bytes.
  * Example: If the code is 0x4, indecating in 32 Mbits, the conversion yields 0x400000 Bytes.
  */
-#define MCM_MEM_SIZE_IN_BYTES(code)			(MCM_MEM_SIZE_MBITS_CALC(code) * 1024 * 1024 / 8)
+#define MCM_MEM_SIZE_IN_BYTES(code)			((u32)MCM_MEM_SIZE_MBITS_CALC(code) * 1024 * 1024 / 8)
 
 /*
  * Convert memory size from Megabits (Mb) to KBytes.
  * Example: If the code is 0x4, indecating in 32 Mbits, the conversion yields 4096 KBytes.
  */
-#define MCM_MEM_SIZE_IN_KBYTES(code)		(MCM_MEM_SIZE_MBITS_CALC(code) * 1024 * 1024 / 8 / 1024)
+#define MCM_MEM_SIZE_IN_KBYTES(code)		((u32)MCM_MEM_SIZE_MBITS_CALC(code) * 1024 / 8)
 
 /******************* PSRAM Information Start *******************/
 

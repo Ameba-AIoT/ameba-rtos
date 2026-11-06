@@ -7,7 +7,10 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/../../../../cmake/ameba.cmake)
 
 ###############################################################################
 #NOTE: Configures, these parameter name is fixed and cannot be changed
+# Toolchain version follows Kconfig (menuconfig "CONFIG Toolchain"), resolved in ameba_soc_project_create after .config is (re)generated;
+# 10.3.1 is only the fallback.
 set(v_ASDK_VER 10.3.1)
+set(v_ASDK_VER_FROM_KCONFIG TRUE)
 set(v_FATFS_VER r0.14b)
 set(v_FREERTOS_VER v10.5.1)
 set(v_LITTLEFS_VER r2.50)
@@ -37,6 +40,17 @@ set(HP_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR}/project_hp)
 ameba_add_subdirectory(project_ap)
 ameba_add_subdirectory(project_hp)
 ameba_add_subdirectory(project_lp)
+###############################################################################
+ameba_install_files(
+    "${CMAKE_CURRENT_SOURCE_DIR}/default.conf"
+    "${CMAKE_CURRENT_SOURCE_DIR}/manifest.json5"
+    "${CMAKE_CURRENT_SOURCE_DIR}/ameba_layout.ld"
+    "${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.txt"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Kconfig"
+    "${CMAKE_CURRENT_SOURCE_DIR}/postbuild.cmake"
+    "${CMAKE_CURRENT_SOURCE_DIR}/AmebaSmart_Release_Note.txt"
+    "${c_BASEDIR}/component/soc/Kconfig"
+)
 ###############################################################################
 
 ###############################################################################

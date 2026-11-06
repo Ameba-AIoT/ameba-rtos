@@ -1,15 +1,16 @@
-/* ----------------------------------------------------------------------
+﻿/* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
  * Title:        arm_mean_q31.c
  * Description:  Mean value of a Q31 vector
  *
- * $Date:        18. March 2019
- * $Revision:    V1.6.0
+ * $Date:        23 April 2021
+ * $Revision:    V1.9.0
  *
- * Target Processor: Cortex-M cores
+ * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
+
 /*
- * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -25,8 +26,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "arm_compiler_specific.h"
 
-#include "arm_math.h"
+
+#include "dsp/statistics_functions.h"
 
 /**
   @ingroup groupStats
@@ -42,7 +45,6 @@
   @param[in]     pSrc       points to the input vector
   @param[in]     blockSize  number of samples in input vector
   @param[out]    pResult    mean value returned here
-  @return        none
 
   @par           Scaling and Overflow Behavior
                    The function is implemented using a 64-bit internal accumulator.
@@ -52,8 +54,8 @@
                    full precision of intermediate result is preserved.
                    Finally, the accumulator is truncated to yield a result of 1.31 format.
  */
-#if defined(ARM_MATH_MVEI)
-void arm_mean_q31(
+#if defined(ARM_MATH_MVEI) && !defined(ARM_MATH_AUTOVECTORIZE)
+ARM_DSP_ATTRIBUTE void arm_mean_q31(
 	const q31_t *pSrc,
 	uint32_t blockSize,
 	q31_t *pResult)
@@ -86,10 +88,10 @@ void arm_mean_q31(
 		blkCnt --;
 	}
 
-	*pResult = arm_div_q63_to_q31(sum, blockSize);
+	*pResult = arm_div_int64_to_int32(sum, blockSize);
 }
 #else
-void arm_mean_q31(
+ARM_DSP_ATTRIBUTE void arm_mean_q31(
 	const q31_t *pSrc,
 	uint32_t blockSize,
 	q31_t *pResult)

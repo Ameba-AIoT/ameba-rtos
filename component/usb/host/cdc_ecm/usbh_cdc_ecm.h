@@ -105,6 +105,8 @@ typedef struct {
 
 	/**
 	* @brief Callback invoked when a bulk IN data transfer (Receive) is complete.
+	* @note  Runs in the USB host task. buf is valid only until the callback returns: the class re-arms the
+	*        same buffer right after, so copy the frame out before returning, never keep the pointer.
 	* @param[in] buf: Pointer to the buffer containing received data.
 	* @param[in] len: Length of the valid received data in bytes.
 	*/
@@ -146,7 +148,6 @@ typedef struct {
 	u16 pid;                                         /**< Product ID */
 	u8 data_itf_id;                                  /**< Data Interface number */
 	u8 data_alt_set;                                 /**< Alternate Setting value for Data Interface */
-	u8 union_data_itf_id;                            /**< Data Interface number from Union Functional Descriptor, 0xFF if not found */
 
 	/* Pipes */
 	usbh_cdc_ecm_pipe_info_t intr_rx;                /**< Intr IN Endpoint Info */
@@ -196,7 +197,7 @@ typedef struct {
  * @param[in] cb: Pointer to the user-defined callback structure.
  * @param[in] cfg: Pointer to the class configuration, NULL to take every default.
  *                 See @ref usbh_cdc_ecm_config_t.
- * @return 0 (HAL_OK) on success, non-zero on failure.
+ * @return 0 (RTK_SUCCESS) on success, non-zero on failure.
  */
 int usbh_cdc_ecm_init(const usbh_cdc_ecm_state_cb_t *cb, const usbh_cdc_ecm_config_t *cfg);
 
@@ -208,14 +209,14 @@ void usbh_cdc_ecm_deinit(void);
 /**
  * @brief  Selects the appropriate configuration index for the device.
  * @param[in] host: USB Host Handle.
- * @return 0 (HAL_OK) on success, non-zero on failure.
+ * @return 0 (RTK_SUCCESS) on success, non-zero on failure.
  */
 int usbh_cdc_ecm_choose_config(usb_host_t *host);
 
 /**
  * @brief  Validates the configuration descriptor of the connected device.
  * @param[in] host: USB Host Handle.
- * @return 0 (HAL_OK) on success, non-zero on failure.
+ * @return 0 (RTK_SUCCESS) on success, non-zero on failure.
  */
 int usbh_cdc_ecm_check_config_desc(usb_host_t *host);
 
@@ -239,8 +240,10 @@ void usbh_cdc_ecm_prepare_done(void);
  * @param[in] len: Length of the data in bytes.
  * @param[in] block: Blocking mode flag (e.g., 0 for non-blocking, else for blocking).
  * @note   Task context only, one sender at a time. Safe against a concurrent deinit of the class:
- *         returns HAL_ERR_HW while the class is not initialized or is being de-initialized.
- * @return 0 (HAL_OK) on success, non-zero on failure.
+ *         returns -RTK_ERR_IO while the class is not initialized or is being de-initialized.
+ *         A blocking send waits until the transfer completes, so it shall not be called inside a critical
+ *         section or the PMU suspend flow, where the task can not block.
+ * @return 0 (RTK_SUCCESS) on success, non-zero on failure.
  */
 int usbh_cdc_ecm_send_data(u8 *buf, u32 len, u8 block);
 

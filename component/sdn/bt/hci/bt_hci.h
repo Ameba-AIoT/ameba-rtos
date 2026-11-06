@@ -26,6 +26,21 @@ uint8_t bt_hci_cmd_ogf_linkctrl_ocf_read_version(void *phci_cmd_param, uint8_t *
 //OGF: BT_OGF_BASEBAND
 uint8_t bt_hci_cmd_ogf_baseband_ocf_evt_mask(void *phci_cmd_param, uint8_t *rsp);
 uint8_t bt_hci_cmd_ofg_baseband_ocf_reset(void *phci_cmd_param, uint8_t *rsp);
+uint8_t bt_hci_cmd_ogf_baseband_ocf_write_local_name(void *phci_cmd_param, uint8_t *rsp);
+uint8_t bt_hci_cmd_ogf_baseband_ocf_write_page_timeout(void *phci_cmd_param, uint8_t *rsp);
+uint8_t bt_hci_cmd_ogf_baseband_ocf_write_scan_enable(void *phci_cmd_param, uint8_t *rsp);
+uint8_t bt_hci_cmd_ogf_baseband_ocf_page_scan_activity(void *phci_cmd_param, uint8_t *rsp);
+uint8_t bt_hci_cmd_ogf_baseband_ocf_write_inquiry_scan_activity(void *phci_cmd_param, uint8_t *rsp);
+uint8_t bt_hci_cmd_ogf_baseband_ocf_write_dev_class(void *phci_cmd_param, uint8_t *rsp);
+uint8_t bt_hci_cmd_ogf_baseband_ocf_c2h_flow_ctrl(void *phci_cmd_param, uint8_t *rsp);
+uint8_t bt_hci_cmd_ogf_baseband_ocf_host_buf_size(void *phci_cmd_param, uint8_t *rsp);
+uint8_t bt_hci_cmd_ogf_baseband_ocf_wirte_inq_scan_type(void *phci_cmd_param, uint8_t *rsp);
+uint8_t bt_hci_cmd_ogf_baseband_ocf_write_inq_mode(void *phci_cmd_param, uint8_t *rsp);
+uint8_t bt_hci_cmd_ogf_baseband_ocf_write_scan_type(void *phci_cmd_param, uint8_t *rsp);
+uint8_t bt_hci_cmd_ogf_baseband_ocf_write_ext_inquiry_rsp(void *phci_cmd_param, uint8_t *rsp);
+uint8_t bt_hci_cmd_ogf_baseband_ocf_write_ssp_mode(void *phci_cmd_param, uint8_t *rsp);
+uint8_t bt_hci_cmd_ogf_baseband_ocf_write_le_host_supp(void *phci_cmd_param, uint8_t *rsp);
+uint8_t bt_hci_cmd_ogf_baseband_ocf_write_secure_connection_host(void *phci_cmd_param, uint8_t *rsp);
 uint8_t bt_hci_cmd_ofg_baseband_ocf_ctrl_to_host_flow(void *phci_cmd_param, uint8_t *rsp);
 uint8_t bt_hci_cmd_ofg_baseband_ocf_host_buffer_size(void *phci_cmd_param, uint8_t *rsp);
 uint8_t bt_hci_cmd_ofg_baseband_ocf_host_num_completed_packets(void *phci_cmd_param, uint8_t *rsp);
@@ -34,6 +49,7 @@ uint8_t bt_hci_cmd_ofg_baseband_ocf_host_num_completed_packets(void *phci_cmd_pa
 uint8_t bt_hci_cmd_ogf_info_ocf_read_local_version_info(void *phci_cmd_para, uint8_t *rsp);
 uint8_t bt_hci_cmd_ogf_info_ocf_read_supported_commands(void *phci_cmd_para, uint8_t *prsp);
 uint8_t bt_hci_cmd_ogf_info_ocf_read_local_features(void *phci_cmd_para, uint8_t *rsp);
+uint8_t bt_hci_cmd_ogf_info_ocf_read_buf_size(void *phci_cmd_para, uint8_t *rsp);
 uint8_t bt_hci_cmd_ogf_info_ocf_read_bd_address(void *phci_cmd_para, uint8_t *rsp);
 
 //OGF: BT_OGF_STATUS

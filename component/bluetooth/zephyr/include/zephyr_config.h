@@ -66,6 +66,9 @@ extern "C" {
 /* bt_rand() from local HMAC-DRBG instead of a synchronous HCI LE_RAND,
  * which deadlocked the RX-drain thread once a burst had drained evt_pool */
 #define CONFIG_BT_HOST_CRYPTO_PRNG 1
+#if !defined(CONFIG_MBEDTLS_USE_LEGACY_API)
+#define CONFIG_BT_USE_PSA_API 1
+#endif
 
 /*----------------------------- BT adv and scan -----------------------------*/
 #define CONFIG_BT_FILTER_ACCEPT_LIST 1
@@ -102,6 +105,9 @@ extern "C" {
 #define CONFIG_BT_L2CAP_TX_MTU 262
 #define CONFIG_BT_L2CAP_TX_BUF_COUNT 8
 #define CONFIG_BT_L2CAP_TX_FRAG_COUNT 0
+#if defined(RTK_BLE_COC_SUPPORT) && RTK_BLE_COC_SUPPORT
+#define CONFIG_BT_L2CAP_DYNAMIC_CHANNEL 1
+#endif
 
 /*--------------------------------- BT gatt ---------------------------------*/
 #define CONFIG_BT_ATT_TX_COUNT 5
@@ -184,6 +190,43 @@ extern "C" {
 /*----------------------------- BT padv sync rsp ----------------------------*/
 #if defined(RTK_BLE_5_4_PA_SYNC_RSP_SUPPORT) && RTK_BLE_5_4_PA_SYNC_RSP_SUPPORT
 #define CONFIG_BT_PER_ADV_SYNC_RSP   1
+#endif
+
+/*----------------------------- BT classic ----------------------------------*/
+#ifdef CONFIG_BT_DUAL_MODE
+#define CONFIG_BT_CLASSIC 1
+
+#define CONFIG_BT_MAX_SCO_CONN 1
+#define CONFIG_BT_L2CAP_DYNAMIC_CHANNEL 1
+#define CONFIG_BT_L2CAP_RESCHED_MS  5
+#define CONFIG_BT_PAGE_TIMEOUT  0x4000
+#define CONFIG_BT_COD (0x18 | (0x04 << 8) | (0x24 << 16))
+
+#define CONFIG_BT_AVDTP 1
+#define CONFIG_BT_AVCTP 1
+#define CONFIG_BT_A2DP 1
+#define CONFIG_BT_A2DP_SINK 1
+#define CONFIG_BT_A2DP_SOURCE 1
+#define CONFIG_BT_AVRCP 1
+#define CONFIG_BT_RFCOMM 1
+#define CONFIG_BT_SPP 1
+
+#define CONFIG_BT_RFCOMM_L2CAP_MTU  252
+#define CONFIG_BT_AVDTP_TX_MTU  512
+#define CONFIG_BT_SCO_TX_BUF_COUNT  5
+#define CONFIG_BT_SCO_TX_MTU  200
+#define CONFIG_BT_SCO_RX_BUF_COUNT  5
+#define CONFIG_BT_SCO_RX_MTU  200
+#define CONFIG_BT_HFP_AG_TX_BUF_COUNT 5
+#define CONFIG_BT_HFP_AG_PHONE_NUMBER_MAX_LEN 20
+#define CONFIG_BT_HFP_AG_INCOMING_TIMEOUT 30
+#define CONFIG_BT_HFP_AG_OUTGOING_TIMEOUT 30
+#define CONFIG_BT_HFP_AG_ALERTING_TIMEOUT 30
+#define CONFIG_BT_HFP_AG_RING_NOTIFY_INTERVAL 3
+#define CONFIG_BT_HFP_AG_THREAD_PRIO  4
+
+#define CONFIG_BT_SCO_USE_TX_THREAD 0
+#define CONFIG_BT_INQUIRY_RESULT_COUNT  10
 #endif
 
 #ifdef __cplusplus

@@ -52,7 +52,7 @@ static int atcmd_usbd_init(void);
 static int atcmd_usbd_deinit(void);
 static int atcmd_usbd_setup(usb_setup_req_t *req, u8 *buf);
 static int atcmd_usbd_received(u8 *buf, u32 Len);
-static void atcmd_usbd_transmitted(u8 status);
+static void atcmd_usbd_transmitted(int status);
 static void atcmd_usbd_status_changed(u8 old_status, u8 status);
 
 /* Private variables ---------------------------------------------------------*/
@@ -102,6 +102,7 @@ static u8 usbd_tx_buf[ATCMD_USBD_MAX_SIZE] __attribute__((aligned(CACHE_LINE_SIZ
 static rtos_sema_t atcmd_usbd_tx_sema;
 
 static u8 atcmd_usbd_attach_status;
+static volatile u8 atcmd_usbd_high_watermark_pending;
 
 static rtos_sema_t atcmd_usbd_tx_done_sema;
 static rtos_sema_t atcmd_usbd_rx_sema;
@@ -156,9 +157,18 @@ static int atcmd_usbd_received(u8 *buf, u32 len)
 	u32 space = 0;
 
 	if (g_tt_mode) {
+		/* This ISR can't take atcmd_tt_mode_mutex, and atcmd_tt_mode_end may run on the other core under SMP:
+		   check and use the ring buffer within the critical section in which atcmd_tt_mode_end clears it */
+		rtos_critical_enter(RTOS_CRITICAL_DEFAULT);
+		if (atcmd_tt_mode_rx_ring_buf == NULL) {
+			rtos_critical_exit(RTOS_CRITICAL_DEFAULT);
+			return ret;
+		}
+
 		space = RingBuffer_Space(atcmd_tt_mode_rx_ring_buf);
 
 		if (len > RingBuffer_Size(atcmd_tt_mode_rx_ring_buf)) {
+			rtos_critical_exit(RTOS_CRITICAL_DEFAULT);
 			g_tt_mode_stop_flag = 1;
 			g_tt_mode_stop_char_cnt = 0;
 			rtos_sema_give(atcmd_tt_mode_sema);
@@ -166,11 +176,19 @@ static int atcmd_usbd_received(u8 *buf, u32 len)
 			return ret;
 		}
 
+		/* stop char is not stored */
+		if (!(len == 1 && buf[0] == '<') && (space > 0)) {
+			RingBuffer_Write(atcmd_tt_mode_rx_ring_buf, buf, (space >= len) ? len : space);
+		}
+		rtos_critical_exit(RTOS_CRITICAL_DEFAULT);
+
 		if (g_tt_mode_check_watermark) {
 			if (space - len < MAX_TT_HEAP_SIZE * (1 - TT_MODE_HIGH_WATERMARK) && g_tt_mode_indicate_high_watermark == 0) {
 				g_tt_mode_indicate_high_watermark = 1;
 				g_tt_mode_indicate_low_watermark = 0;
-				at_printf(ATCMD_TT_MODE_HIGH_WATERMARK_STR);
+				/* at_printf is not ISR safe (mutex, may wait for TX ring space): let atcmd_usbd_notify_task send it */
+				atcmd_usbd_high_watermark_pending = 1;
+				rtos_sema_give(atcmd_usbd_notify_sema);
 			}
 		}
 
@@ -181,10 +199,8 @@ static int atcmd_usbd_received(u8 *buf, u32 len)
 			g_tt_mode_stop_char_cnt = 0;
 
 			if (space >= len) {
-				RingBuffer_Write(atcmd_tt_mode_rx_ring_buf, buf, len);
 				rtos_sema_give(atcmd_tt_mode_sema);
 			} else if (space > 0) {
-				RingBuffer_Write(atcmd_tt_mode_rx_ring_buf, buf, space);
 				rtos_sema_give(atcmd_tt_mode_sema);
 				RTK_LOGW(TAG, "atcmd_tt_mode_rx_ring_buf is full, drop partial data\n");
 			} else {
@@ -219,13 +235,14 @@ static int atcmd_usbd_received(u8 *buf, u32 len)
 	return ret;
 }
 
-void atcmd_usbd_transmitted(u8 status)
+static void atcmd_usbd_transmitted(int status)
 {
-	if (status == HAL_OK) {
-		rtos_sema_give(atcmd_usbd_tx_done_sema);
-	} else {
+	if (status != HAL_OK) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "TX fail: %d\n", status);
 	}
+	/* Release the TX task whatever the outcome: it waits for every submitted transfer, and
+	   a failed one completes too, so withholding the give would block every later TX */
+	rtos_sema_give(atcmd_usbd_tx_done_sema);
 }
 
 /**
@@ -330,12 +347,19 @@ static void atcmd_usbd_tx_task(void *param)
 
 				RingBuffer_Read(at_usbd_tx_ring_buf, usbd_tx_buf, send_len);
 				ret = usbd_cdc_acm_transmit(usbd_tx_buf, send_len);
-				while (ret != HAL_OK) {
+				/* Retry only while the previous transfer is in flight; any other error, e.g. the
+				   host not configured, would never clear by retrying */
+				while (ret == -RTK_ERR_BUSY) {
 					RTK_LOGS(TAG, RTK_LOG_INFO, "Xfer busy, retry[2]\r\n");
 					rtos_time_delay_ms(1);
 					ret = usbd_cdc_acm_transmit(usbd_tx_buf, send_len);
 				}
-				rtos_sema_take(atcmd_usbd_tx_done_sema, RTOS_SEMA_MAX_COUNT);
+				if (ret == HAL_OK) {
+					/* Only a submitted transfer completes and gives this sema */
+					rtos_sema_take(atcmd_usbd_tx_done_sema, RTOS_SEMA_MAX_COUNT);
+				} else {
+					RTK_LOGS(TAG, RTK_LOG_WARN, "TX drop %d\n", ret);
+				}
 
 				remain_len -= send_len;
 			}
@@ -354,16 +378,29 @@ static void atcmd_usbd_notify_task(void *param)
 
 	for (;;) {
 		if (rtos_sema_take(atcmd_usbd_notify_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
+			/* High Watermark posted by atcmd_usbd_received, queued before draining to precede any Low Watermark.
+			   Skip it if tt mode ended (at_printf would send it as data) or Low Watermark was already reached */
+			if (atcmd_usbd_high_watermark_pending) {
+				atcmd_usbd_high_watermark_pending = 0;
+				if (g_tt_mode && g_tt_mode_indicate_high_watermark) {
+					at_printf(ATCMD_TT_MODE_HIGH_WATERMARK_STR);
+				}
+			}
+
 			remain_len = RingBuffer_Available(at_usbd_notify_ring_buf);
 			while (remain_len > 0) {
 				send_len = (remain_len > 2) ? 2 : remain_len;
 
 				RingBuffer_Read(at_usbd_notify_ring_buf, usbd_tx_buf, send_len);
 				ret = usbd_cdc_acm_notify_serial_state(*((u16 *)usbd_tx_buf));
-				while (ret != HAL_OK) {
+				/* Same retry rule as the TX path: only a busy endpoint clears by itself */
+				while (ret == -RTK_ERR_BUSY) {
 					RTK_LOGS(TAG, RTK_LOG_INFO, "Xfer busy, retry[2]\r\n");
 					rtos_time_delay_ms(1);
 					ret = usbd_cdc_acm_notify_serial_state(*((u16 *)usbd_tx_buf));
+				}
+				if (ret != HAL_OK) {
+					RTK_LOGS(TAG, RTK_LOG_WARN, "Notify drop %d\n", ret);
 				}
 				remain_len -= send_len;
 			}

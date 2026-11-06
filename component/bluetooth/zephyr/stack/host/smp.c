@@ -315,6 +315,8 @@ static bool sc_supported;
 #if ZEPHYR_RTK_PATCH
 static bool mitm_flag;
 static uint8_t min_enc_key_size_required = 0;
+static struct bt_le_oob_sc_data smp_local_sc_oob = {0};
+static struct bt_le_oob_sc_data smp_remote_sc_oob = {0};
 #endif
 static const uint8_t *sc_public_key;
 /* static */K_SEM_DEFINE(sc_local_pkey_ready, 0, 1);/* mask 'static' for create/deinit in zephyr_stack_resource.c, zephyr_patch */
@@ -3676,6 +3678,10 @@ static void le_sc_oob_config_set(struct bt_smp *smp,
 	info->lesc.oob_config = oob_config;
 }
 
+
+#if ZEPHYR_RTK_PATCH
+static int le_sc_oob_pairing_continue(struct bt_smp *smp);
+#endif
 static uint8_t smp_pairing_random(struct bt_smp *smp, struct net_buf *buf)
 {
 	const struct bt_conn_auth_cb *smp_auth_cb = latch_auth_cb(smp);
@@ -3800,8 +3806,22 @@ static uint8_t smp_pairing_random(struct bt_smp *smp, struct net_buf *buf)
 			smp->oobd_local = NULL;
 			smp->oobd_remote = NULL;
 
+#if ZEPHYR_RTK_PATCH
+			if (BT_CONN_OOB_LOCAL_ONLY == info.lesc.oob_config ||
+				BT_CONN_OOB_BOTH_PEERS == info.lesc.oob_config) {
+				smp->oobd_local = &smp_local_sc_oob;
+			}
+			if (BT_CONN_OOB_REMOTE_ONLY == info.lesc.oob_config ||
+				BT_CONN_OOB_BOTH_PEERS == info.lesc.oob_config) {
+				smp->oobd_remote = &smp_remote_sc_oob;
+			}
+			if (le_sc_oob_pairing_continue(smp)) {
+				return BT_SMP_ERR_UNSPECIFIED;
+			}
+#else
 			atomic_set_bit(smp->flags, SMP_FLAG_OOB_PENDING);
 			smp_auth_cb->oob_data_request(smp->chan.chan.conn, &info);
+#endif
 
 			return 0;
 		} else {
@@ -4373,9 +4393,23 @@ static uint8_t smp_public_key(struct bt_smp *smp, struct net_buf *buf)
 				smp->oobd_local = NULL;
 				smp->oobd_remote = NULL;
 
+#if ZEPHYR_RTK_PATCH
+				if (BT_CONN_OOB_LOCAL_ONLY == info.lesc.oob_config ||
+					BT_CONN_OOB_BOTH_PEERS == info.lesc.oob_config) {
+					smp->oobd_local = &smp_local_sc_oob;
+				}
+				if (BT_CONN_OOB_REMOTE_ONLY == info.lesc.oob_config ||
+					BT_CONN_OOB_BOTH_PEERS == info.lesc.oob_config) {
+					smp->oobd_remote = &smp_remote_sc_oob;
+				}
+				if (le_sc_oob_pairing_continue(smp)) {
+					return BT_SMP_ERR_UNSPECIFIED;
+				}
+#else
 				atomic_set_bit(smp->flags,
 					       SMP_FLAG_OOB_PENDING);
 				smp_auth_cb->oob_data_request(smp->chan.chan.conn, &info);
+#endif
 			} else {
 				return BT_SMP_ERR_OOB_NOT_AVAIL;
 			}
@@ -5686,6 +5720,10 @@ int bt_smp_le_oob_generate_sc_data(struct bt_le_oob_sc_data *le_sc_oob)
 		return err;
 	}
 
+#if ZEPHYR_RTK_PATCH
+	memcpy(&smp_local_sc_oob, le_sc_oob, sizeof(struct bt_le_oob_sc_data));
+#endif
+
 	return 0;
 }
 
@@ -5741,6 +5779,15 @@ static int le_sc_oob_pairing_continue(struct bt_smp *smp)
 
 	return smp_send_pairing_random(smp);
 }
+
+#if ZEPHYR_RTK_PATCH
+int bt_smp_le_oob_set_remote_sc_data(const struct bt_le_oob_sc_data *oobd_remote)
+{
+	memcpy(&smp_remote_sc_oob, oobd_remote, sizeof(struct bt_le_oob_sc_data));
+
+	return 0;
+}
+#endif
 
 int bt_smp_le_oob_set_sc_data(struct bt_conn *conn,
 			      const struct bt_le_oob_sc_data *oobd_local,

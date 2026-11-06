@@ -28,6 +28,8 @@ extern "C" {
  * @return None
  */
 void example_usbh_composite_cdc_acm_ecm(void);
+int example_usbh_composite_cdc_acm_ecm_start(void);
+int example_usbh_composite_cdc_acm_ecm_stop(void);
 
 #ifdef __cplusplus
 }

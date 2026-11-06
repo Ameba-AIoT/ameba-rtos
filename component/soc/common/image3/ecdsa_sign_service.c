@@ -6,14 +6,17 @@
 
 #include "ameba_soc.h"
 #include "ecdsa_sign_service.h"
+#include <string.h>
+
+#ifdef CONFIG_TRUSTZONE_MBEDTLS
+
+#if defined(CONFIG_MBEDTLS_USE_LEGACY_API)
+
 #include "mbedtls/ecdsa.h"
 #include "mbedtls/ecp.h"
 #include "mbedtls/entropy.h"
 #include "mbedtls/ctr_drbg.h"
 #include "mbedtls/sha256.h"
-#include <string.h>
-
-#ifdef CONFIG_TRUSTZONE_MBEDTLS
 
 static const char *const TAG = "SECURE";
 
@@ -60,6 +63,46 @@ static int ecdsa_secure_init(void)
 	return 0;
 }
 
+#else
+
+#include "psa/crypto.h"
+
+static const char *const TAG = "SECURE";
+
+/* SECP256R1 signing key, lives only in the secure world. */
+static psa_key_id_t g_key_sign = PSA_KEY_ID_NULL;
+static int g_initialized = 0;
+
+static int ecdsa_secure_init(void)
+{
+	psa_key_attributes_t attr = PSA_KEY_ATTRIBUTES_INIT;
+	psa_status_t status;
+
+	if (g_initialized) {
+		return 0;
+	}
+
+	psa_set_key_usage_flags(&attr, PSA_KEY_USAGE_SIGN_HASH | PSA_KEY_USAGE_EXPORT);
+	psa_set_key_algorithm(&attr, PSA_ALG_ECDSA(PSA_ALG_SHA_256));
+	psa_set_key_type(&attr, PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1));
+	psa_set_key_bits(&attr, 256);
+
+	/* Volatile key: no persistent storage is set up in image3. */
+	status = psa_generate_key(&attr, &g_key_sign);
+	psa_reset_key_attributes(&attr);
+	if (status != PSA_SUCCESS) {
+		RTK_LOGE(TAG, "ECDSA key generation failed: %d\n", (int)status);
+		return (int)status;
+	}
+
+	RTK_LOGI(TAG, "ECDSA key pair generated successfully\n");
+	g_initialized = 1;
+
+	return 0;
+}
+
+#endif
+
 /*
  * Internal implementation of ECDSA signing.
  * This function performs the actual signing operation.
@@ -82,6 +125,7 @@ static int ecdsa_do_sign(const unsigned char *message, size_t message_len,
 
 	RTK_LOGI(TAG, "Message to sign: %.*s\n", (int)message_len, message);
 
+#if defined(CONFIG_MBEDTLS_USE_LEGACY_API)
 	/* Compute hash of the message */
 	mbedtls_sha256(message, message_len, message_hash, 0);
 	RTK_LOGI(TAG, "SHA256 hash computed\n");
@@ -89,7 +133,7 @@ static int ecdsa_do_sign(const unsigned char *message, size_t message_len,
 	/* Sign the hash */
 	ret = mbedtls_ecdsa_write_signature(&g_ctx_sign, MBEDTLS_MD_SHA256,
 										message_hash, 32,
-										signature, MBEDTLS_ECDSA_MAX_LEN, sig_len,
+										signature, ECDSA_SIGN_SERVICE_SIG_MAX_LEN, sig_len,
 										mbedtls_ctr_drbg_random, &g_ctr_drbg);
 	if (ret != 0) {
 		RTK_LOGE(TAG, "ECDSA signature failed: -0x%04X\n", -ret);
@@ -101,11 +145,42 @@ static int ecdsa_do_sign(const unsigned char *message, size_t message_len,
 	/* Export the public key in raw uncompressed format (0x04 || X || Y) */
 	ret = mbedtls_ecp_point_write_binary(&g_ctx_sign.grp, &g_ctx_sign.Q,
 										 MBEDTLS_ECP_PF_UNCOMPRESSED, pub_key_len,
-										 public_key_raw, 65);
+										 public_key_raw, ECDSA_SIGN_SERVICE_PUBKEY_LEN);
 	if (ret != 0) {
 		RTK_LOGE(TAG, "Failed to export public key: -0x%04X\n", -ret);
 		return ret;
 	}
+#else
+	psa_status_t status;
+	size_t hash_len = 0;
+
+	status = psa_hash_compute(PSA_ALG_SHA_256, message, message_len,
+							  message_hash, sizeof(message_hash), &hash_len);
+	if (status != PSA_SUCCESS) {
+		RTK_LOGE(TAG, "SHA256 failed: %d\n", (int)status);
+		return (int)status;
+	}
+	RTK_LOGI(TAG, "SHA256 hash computed\n");
+
+	/* PSA emits raw r||s (64 bytes), legacy emits DER. */
+	status = psa_sign_hash(g_key_sign, PSA_ALG_ECDSA(PSA_ALG_SHA_256),
+						   message_hash, hash_len,
+						   signature, ECDSA_SIGN_SERVICE_SIG_MAX_LEN, sig_len);
+	if (status != PSA_SUCCESS) {
+		RTK_LOGE(TAG, "ECDSA signature failed: %d\n", (int)status);
+		return (int)status;
+	}
+
+	RTK_LOGI(TAG, "Signature created (len=%d)\n", (int)*sig_len);
+
+	/* Exports the uncompressed point 0x04 || X || Y (65 bytes). */
+	status = psa_export_public_key(g_key_sign, public_key_raw,
+								   ECDSA_SIGN_SERVICE_PUBKEY_LEN, pub_key_len);
+	if (status != PSA_SUCCESS) {
+		RTK_LOGE(TAG, "Failed to export public key: %d\n", (int)status);
+		return (int)status;
+	}
+#endif
 
 	RTK_LOGI(TAG, "Public key exported (len=%d)\n", (int)*pub_key_len);
 	RTK_LOGI(TAG, "=== Secure Sign Complete ===\n");

@@ -36,6 +36,17 @@ set(KM4TZ_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR}/project_km4tz)
 ameba_add_subdirectory(project_km4tz)
 ameba_add_subdirectory(project_km4ns)
 ###############################################################################
+ameba_install_files(
+    "${CMAKE_CURRENT_SOURCE_DIR}/default.conf"
+    "${CMAKE_CURRENT_SOURCE_DIR}/manifest.json5"
+    "${CMAKE_CURRENT_SOURCE_DIR}/section_placement.json5"
+    "${CMAKE_CURRENT_SOURCE_DIR}/ameba_layout.ld"
+    "${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.txt"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Kconfig"
+    "${CMAKE_CURRENT_SOURCE_DIR}/postbuild.cmake"
+    "${c_BASEDIR}/component/soc/Kconfig"
+)
+###############################################################################
 
 ###############################################################################
 # Package final firmware

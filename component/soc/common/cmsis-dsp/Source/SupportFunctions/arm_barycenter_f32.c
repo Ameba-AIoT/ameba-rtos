@@ -1,13 +1,16 @@
-/* ----------------------------------------------------------------------
+﻿/* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
  * Title:        arm_barycenter_f32.c
  * Description:  Barycenter
  *
+ * $Date:        23 April 2021
+ * $Revision:    V1.9.0
  *
  * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
+
 /*
- * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -23,14 +26,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "arm_compiler_specific.h"
 
-#include "arm_math.h"
+
+#include "dsp/support_functions.h"
 #include <limits.h>
 #include <math.h>
 
 
 /**
-  @ingroup groupSupport
+  @ingroup barycenter
+  @{
  */
 
 
@@ -43,16 +49,15 @@
  * @param[out]   *out        Barycenter
  * @param[in]    nbVectors   Number of vectors
  * @param[in]    vecDim      Dimension of space (vector dimension)
- * @return       None
  *
  */
 
 #if defined(ARM_MATH_MVEF) && !defined(ARM_MATH_AUTOVECTORIZE)
-void arm_barycenter_f32(const float32_t *in,
-						const float32_t *weights,
-						float32_t *out,
-						uint32_t nbVectors,
-						uint32_t vecDim)
+ARM_DSP_ATTRIBUTE void arm_barycenter_f32(const float32_t *in,
+		const float32_t *weights,
+		float32_t *out,
+		uint32_t nbVectors,
+		uint32_t vecDim)
 {
 	const float32_t *pIn, *pW;
 	const float32_t *pIn1, *pIn2, *pIn3, *pIn4;
@@ -188,7 +193,7 @@ void arm_barycenter_f32(const float32_t *in,
 #if defined(ARM_MATH_NEON)
 
 #include "NEMath.h"
-void arm_barycenter_f32(const float32_t *in, const float32_t *weights, float32_t *out, uint32_t nbVectors, uint32_t vecDim)
+ARM_DSP_ATTRIBUTE void arm_barycenter_f32(const float32_t *in, const float32_t *weights, float32_t *out, uint32_t nbVectors, uint32_t vecDim)
 {
 
 	const float32_t *pIn, *pW, *pIn1, *pIn2, *pIn3, *pIn4;
@@ -331,7 +336,7 @@ void arm_barycenter_f32(const float32_t *in, const float32_t *weights, float32_t
 
 }
 #else
-void arm_barycenter_f32(const float32_t *in, const float32_t *weights, float32_t *out, uint32_t nbVectors, uint32_t vecDim)
+ARM_DSP_ATTRIBUTE void arm_barycenter_f32(const float32_t *in, const float32_t *weights, float32_t *out, uint32_t nbVectors, uint32_t vecDim)
 {
 
 	const float32_t *pIn, *pW;
@@ -388,5 +393,5 @@ void arm_barycenter_f32(const float32_t *in, const float32_t *weights, float32_t
 #endif /* defined(ARM_MATH_MVEF) && !defined(ARM_MATH_AUTOVECTORIZE) */
 
 /**
- * @} end of groupSupport group
+ * @} end of barycenter group
  */

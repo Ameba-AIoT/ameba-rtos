@@ -12,7 +12,6 @@ set(public_libraries)               #public libraries(files), NOTE: linked with 
 # You may use if-else condition to set or update predefined variable above
 
 ameba_list_append(public_libraries ${c_SDK_LIB_SOC_DIR}/lib_chipinfo.a)
-ameba_list_append(public_includes ../include)
 
 # Component public part, user config end
 #----------------------------------------#
@@ -46,7 +45,7 @@ ameba_list_append(private_sources
 )
 
 ameba_list_append(private_includes
-    ../include
+    ../../rom/include
 )
 
 # Component private part, user config end

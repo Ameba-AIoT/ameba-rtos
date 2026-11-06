@@ -44,6 +44,11 @@
 #endif /* TCP_CA_NAME_MAX */
 #endif /* HAVE_TCP_CONGESTION */
 
+/* Realtek add start: upper bound of one client select() wait, so a stop request
+ * (g_client_terminate) is noticed even when no timer will fire soon */
+#define IPERF_CLIENT_TERM_POLL_SEC 1
+/* Realtek add end */
+
 int
 iperf_create_streams(struct iperf_test *test)
 {
@@ -479,6 +484,7 @@ iperf_run_client(struct iperf_test *test)
 	fd_set read_set, write_set;
 	struct timeval now;
 	struct timeval *timeout = NULL;
+	struct timeval term_poll;	/* Realtek add */
 	struct iperf_stream *sp;
 
 	if (test->affinity != -1)
@@ -517,6 +523,16 @@ iperf_run_client(struct iperf_test *test)
 		memcpy(&write_set, &test->write_set, sizeof(fd_set));
 		(void) gettimeofday(&now, NULL);
 		timeout = tmr_timeout(&now);
+		/* Realtek add start: cap the wait so a stop request (g_client_terminate) is seen when the
+		 * server never answers: no timer is left once the test is done (stats/reporter timers are
+		 * cancelled), and with -i 0 only the far-off duration timer is pending. Shorter timeouts
+		 * are kept as-is. */
+		if (timeout == NULL || timeout->tv_sec >= IPERF_CLIENT_TERM_POLL_SEC) {
+			term_poll.tv_sec = IPERF_CLIENT_TERM_POLL_SEC;
+			term_poll.tv_usec = 0;
+			timeout = &term_poll;
+		}
+		/* Realtek add end */
 
 		if (timeout != NULL && timeout->tv_sec == 0 && timeout->tv_usec == 0) {
 			rtos_time_delay_ms(1);

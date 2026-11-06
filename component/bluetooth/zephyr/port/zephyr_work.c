@@ -94,6 +94,7 @@ int k_work_submit_to_queue(struct k_work_q *queue,
 		key = k_spin_lock(&lock);
 
 		if (!sent) {
+			flag_clear(&work->flags, K_WORK_QUEUED_BIT);
 			ret = -1;
 		}
 	}
@@ -226,7 +227,7 @@ void k_work_init_delayable(struct k_work_delayable *dwork,
 	__ASSERT_NO_MSG(dwork != NULL);
 	__ASSERT_NO_MSG(handler != NULL);
 
-	dwork->work.handler = handler;
+	*dwork = (struct k_work_delayable)Z_WORK_DELAYABLE_INITIALIZER(handler);
 }
 
 int k_work_delayable_busy_get(const struct k_work_delayable *dwork)
@@ -393,6 +394,20 @@ void k_work_queue_start(struct k_work_q *queue,
 	osif_msg_queue_create(&queue->queue, 128, sizeof(void *));
 	/* bt_disable() aborts bt_workq.thread by k_thread_abort(), so Must use k_thread_create() here. */
 	k_thread_create(&queue->thread, stack_size, stack_size, work_queue_main, queue, NULL, NULL, prio, 0, K_NO_WAIT);
+}
+
+/* Restore a statically defined work to its initial state, used when BT is re-enabled after bt_disable() */
+void k_work_reset(struct k_work *work)
+{
+	flags_set(&work->flags, 0);
+}
+
+void k_work_delayable_reset(struct k_work_delayable *dwork)
+{
+	if (flag_test(&dwork->work.flags, K_WORK_DELAYED_BIT)) {
+		z_abort_timeout(&dwork->timeout);
+	}
+	flags_set(&dwork->work.flags, K_WORK_DELAYABLE);
 }
 
 void k_work_queue_delete(struct k_work_q *queue)

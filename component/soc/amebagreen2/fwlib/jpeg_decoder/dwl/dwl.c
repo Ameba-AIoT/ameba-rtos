@@ -484,6 +484,13 @@ u32 hx170dec_isr(void *dev_id)
 	u32 irq_status_dec;
 	u32 irq_status_pp;
 
+#ifdef __ZEPHYR__
+	/* The Zephyr MJPEG driver calls the ISR without a device context */
+	if (!dev) {
+		dev = &hx170dec_data;
+	}
+#endif
+
 	RTK_LOGS(TAG, RTK_LOG_DEBUG, "hx170dec_isr\n");
 
 	for (i = 0; i < dev->cores; i++) {

@@ -49,7 +49,9 @@ ameba_list_append(private_sources
 ameba_list_append_if(CONFIG_IMQ2_TEST private_sources
     ${c_SOC_TYPE}/tests/test_ipc.c
 )
-
+if(CONFIG_IMQ2_TEST)
+    ameba_install_files("${c_SOC_TYPE}/tests/README.md")
+endif()
 # Component private part, user config end
 #------------------------------#
 

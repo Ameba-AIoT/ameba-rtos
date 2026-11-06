@@ -7,7 +7,7 @@ add_compile_definitions(
     CONFIG_NAND_DOWNLOAD_EN
 )
 
-ameba_add_subdirectory(${c_COMPONENT_DIR}/soc/common/flash_download/imgtool_floader)
+ameba_add_subdirectory_internal(${c_COMPONENT_DIR}/soc/common/flash_download/imgtool_floader)
 ameba_add_subdirectory(${c_COMPONENT_DIR}/soc/common/flash_wrapper)
 ameba_add_subdirectory(${c_CMPT_CHIPINFO_DIR})
 ameba_add_subdirectory(${c_CMPT_SOC_DIR}/lib/bootloader lib_bootloader)
