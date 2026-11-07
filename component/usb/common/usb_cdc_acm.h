@@ -51,13 +51,13 @@ extern "C" {
 #define USB_CDC_ACM_NOTIFY_SERIAL_STATE                 0x20U /**< Notification: Serial State */
 
 /* Defines the bitmask for the SERIAL_STATE notification */
-#define USB_CDC_ACM_CTRL_DCD                            (1 << 0) /**< bRxCarrier: State of DCD signal. */
-#define USB_CDC_ACM_CTRL_DSR                            (1 << 1) /**< bTxCarrier: State of DSR signal. */
-#define USB_CDC_ACM_CTRL_BRK                            (1 << 2) /**< bBreak: Break condition detected. */
-#define USB_CDC_ACM_CTRL_RI                             (1 << 3) /**< bRingSignal: State of ring signal detection. */
-#define USB_CDC_ACM_CTRL_FRAMING                        (1 << 4) /**< bFraming: A framing error has occurred. */
-#define USB_CDC_ACM_CTRL_PARITY                         (1 << 5) /**< bParity: A parity error has occurred. */
-#define USB_CDC_ACM_CTRL_OVERRUN                        (1 << 6) /**< bOverRun: Received data has been discarded. */
+#define USB_CDC_ACM_CTRL_DCD                            (1U << 0) /**< bRxCarrier: State of DCD signal. */
+#define USB_CDC_ACM_CTRL_DSR                            (1U << 1) /**< bTxCarrier: State of DSR signal. */
+#define USB_CDC_ACM_CTRL_BRK                            (1U << 2) /**< bBreak: Break condition detected. */
+#define USB_CDC_ACM_CTRL_RI                             (1U << 3) /**< bRingSignal: State of ring signal detection. */
+#define USB_CDC_ACM_CTRL_FRAMING                        (1U << 4) /**< bFraming: A framing error has occurred. */
+#define USB_CDC_ACM_CTRL_PARITY                         (1U << 5) /**< bParity: A parity error has occurred. */
+#define USB_CDC_ACM_CTRL_OVERRUN                        (1U << 6) /**< bOverRun: Received data has been discarded. */
 
 /* Standard Packet Sizes and Lengths */
 #define USB_CDC_ACM_INTR_IN_PACKET_SIZE                 10U      /**< Maximum packet size for Interrupt IN endpoint */

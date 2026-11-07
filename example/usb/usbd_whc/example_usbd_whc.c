@@ -104,6 +104,11 @@ static const usbd_whc_cb_t whc_cb = {
 static usbd_whc_app_t usbd_whc_app;
 static rtos_sema_t whc_wifi_bulk_in_sema;
 static rtos_sema_t whc_bt_bulk_in_sema;
+/* Serializes the bulk IN threads with the hotplug teardown: the threads transmit only under
+   it and while whc_stack_ready is set, so none can hand the class a buffer whc_cb_deinit()
+   frees, nor re-arm an IN endpoint across usbd_whc_deinit()/usbd_whc_init(). */
+static rtos_mutex_t whc_xfer_lock;
+static __IO u8 whc_stack_ready;
 #ifdef CONFIG_WHC_ETH
 static rtos_sema_t whc_eth_bulk_in_sema;
 #endif
@@ -144,6 +149,8 @@ static void whc_free_resource(void)
 	whc_wifi_bulk_in_sema = NULL;
 	rtos_sema_delete(whc_bt_bulk_in_sema);
 	whc_bt_bulk_in_sema = NULL;
+	rtos_mutex_delete(whc_xfer_lock);
+	whc_xfer_lock = NULL;
 #if WHC_HOTPLUG
 	rtos_sema_delete(whc_attach_status_changed_sema);
 	whc_attach_status_changed_sema = NULL;
@@ -629,6 +636,35 @@ static void whc_cb_transmitted(usbd_whc_ep_t *in_ep, int status)
 	}
 }
 
+/**
+  * @brief  Loop back the last BULK OUT packet on a BULK IN endpoint
+  * @note   Task context. Done under whc_xfer_lock, so that the hotplug thread can not free the
+  *         buffer or re-init the stack meanwhile.
+  * @param  ep_addr: BULK IN endpoint address
+  * @param  ep: Application buffer of that endpoint
+  * @retval None
+  */
+static void whc_bulk_in_transmit(u8 ep_addr, const usbd_whc_app_ep_t *ep)
+{
+	int ret;
+
+	ret = rtos_mutex_take(whc_xfer_lock, MUTEX_WAIT_TIMEOUT);
+	if (ret != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "EP%02x lock fail\n", ep_addr);
+		return;
+	}
+
+	if ((whc_stack_ready != 0U) && (ep->buf != NULL) && (ep->buf_len != 0U)) {
+		ret = usbd_whc_transmit_data(ep_addr, ep->buf, ep->buf_len, NULL);
+		if ((ret != RTK_SUCCESS) && (ret != -RTK_ERR_IO)) {
+			/* -RTK_ERR_IO: not enumerated (yet), the host is not polling this endpoint */
+			RTK_LOGS(TAG, RTK_LOG_DEBUG, "EP%02x TX %d\n", ep_addr, ret);
+		}
+	}
+
+	rtos_mutex_give(whc_xfer_lock);
+}
+
 static void example_usbd_whc_wifi_bulk_in_thread(void *param)
 {
 	UNUSED(param);
@@ -646,9 +682,7 @@ static void example_usbd_whc_wifi_bulk_in_thread(void *param)
 				break;
 			}
 #endif
-			if ((ep->buf != NULL) && (ep->buf_len != 0)) {
-				usbd_whc_transmit_data(USBD_WHC_WIFI_EP_BULK_IN, ep->buf, ep->buf_len, NULL);
-			}
+			whc_bulk_in_transmit(USBD_WHC_WIFI_EP_BULK_IN, ep);
 		}
 	}
 	whc_wifi_bulk_in_task = NULL;
@@ -672,9 +706,7 @@ static void example_usbd_whc_bt_bulk_in_thread(void *param)
 				break;
 			}
 #endif
-			if ((ep->buf != NULL) && (ep->buf_len != 0)) {
-				usbd_whc_transmit_data(USBD_WHC_BT_EP_BULK_IN, ep->buf, ep->buf_len, NULL);
-			}
+			whc_bulk_in_transmit(USBD_WHC_BT_EP_BULK_IN, ep);
 		}
 	}
 	whc_bt_bulk_in_task = NULL;
@@ -699,9 +731,7 @@ static void example_usbd_whc_eth_bulk_in_thread(void *param)
 				break;
 			}
 #endif
-			if ((ep->buf != NULL) && (ep->buf_len != 0)) {
-				usbd_whc_transmit_data(USBD_WHC_ETH_EP_BULK_IN, ep->buf, ep->buf_len, NULL);
-			}
+			whc_bulk_in_transmit(USBD_WHC_ETH_EP_BULK_IN, ep);
 		}
 	}
 	whc_eth_bulk_in_task = NULL;
@@ -740,16 +770,30 @@ static void example_usbd_whc_hotplug_thread(void *param)
 		if (rtos_sema_take(whc_attach_status_changed_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
 			if (whc_attach_status == USBD_ATTACH_STATUS_DETACHED) {
 				RTK_LOGS(TAG, RTK_LOG_INFO, "DETACHED\n");
+				/* Wait out a bulk IN transmit in progress and keep the threads off the stack
+				   until it is re-initialized: whc_cb_deinit() frees their buffers */
+				ret = rtos_mutex_take(whc_xfer_lock, MUTEX_WAIT_TIMEOUT);
+				if (ret != RTK_SUCCESS) {
+					/* The stack is still up: leaving here would free what the ISR uses */
+					RTK_LOGS(TAG, RTK_LOG_ERROR, "Hotplug lock fail\n");
+					continue;
+				}
+				whc_stack_ready = 0U;
 				usbd_whc_deinit();
 				usbd_deinit();
 				RTK_LOGS(TAG, RTK_LOG_INFO, "Free heap: 0x%x\n", rtos_mem_get_free_heap_size());
 				ret = usbd_init(&whc_cfg);
-				if (ret != 0) {
-					break;
+				if (ret == RTK_SUCCESS) {
+					ret = usbd_whc_init(&whc_cb);
+					if (ret != RTK_SUCCESS) {
+						usbd_deinit();
+					}
 				}
-				ret = usbd_whc_init(&whc_cb);
-				if (ret != 0) {
-					usbd_deinit();
+				if (ret == RTK_SUCCESS) {
+					whc_stack_ready = 1U;
+				}
+				rtos_mutex_give(whc_xfer_lock);
+				if (ret != RTK_SUCCESS) {
 					break;
 				}
 			} else if (whc_attach_status == USBD_ATTACH_STATUS_ATTACHED) {
@@ -789,6 +833,11 @@ static void example_usbd_whc_thread(void *param)
 		goto exit;
 	}
 
+	ret = rtos_mutex_create(&whc_xfer_lock);
+	if (ret != RTK_SUCCESS) {
+		goto exit;
+	}
+
 	ret = rtos_sema_create(&whc_wifi_bulk_in_sema, 0, 1);
 	if (ret != RTK_SUCCESS) {
 		goto exit;
@@ -809,6 +858,8 @@ static void example_usbd_whc_thread(void *param)
 	if (ret != RTK_SUCCESS) {
 		goto clear_usb_driver_exit;
 	}
+	/* No bulk IN thread runs yet, the lock is not needed */
+	whc_stack_ready = 1U;
 
 	ret = rtos_task_create(&whc_wifi_bulk_in_task, "usbd_whc_wifi_bulk_in_thread",
 						   example_usbd_whc_wifi_bulk_in_thread, NULL,
@@ -875,6 +926,7 @@ clear_wifi_bulk_in_task:
 	whc_wifi_bulk_in_task = NULL;
 
 clear_class_exit:
+	whc_stack_ready = 0U;
 	usbd_whc_deinit();
 
 clear_usb_driver_exit:

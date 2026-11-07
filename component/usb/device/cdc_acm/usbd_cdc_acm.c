@@ -549,15 +549,22 @@ static int cdc_acm_setup(usb_dev_t *dev, usb_setup_req_t *req)
 					 * instead of waiting out the data stage */
 					ret = -RTK_ERR_BADARG;
 				} else {
+					usb_setup_req_t rsp_req;
+
 					if (rsp_len > ep0_in->xfer_buf_len) {
 						rsp_len = (u16)ep0_in->xfer_buf_len;
 					}
 					/* EP0 buffer is shared with descriptor and OUT traffic, clear the response
 					 * window so a callback writing fewer bytes cannot leak stale data */
 					usb_os_memset((void *)ep0_in->xfer_buf, 0, rsp_len);
-					ret = cdev->cb->setup(req, ep0_in->xfer_buf);
+					/* The callback sizes its answer by wLength, which the host may set up to 0xFFFF:
+					 * hand it a copy carrying the capacity of buf instead. The request itself is
+					 * left untouched, the core decides on the ZLP with the host's wLength. */
+					usb_os_memcpy((void *)&rsp_req, (const void *)req, sizeof(usb_setup_req_t));
+					rsp_req.wLength = (req->wLength < rsp_len) ? req->wLength : rsp_len;
+					ret = cdev->cb->setup(&rsp_req, ep0_in->xfer_buf);
 					if (ret == RTK_SUCCESS) {
-						ep0_in->xfer_len = (req->wLength < rsp_len) ? req->wLength : rsp_len;
+						ep0_in->xfer_len = rsp_req.wLength;
 						ret = usbd_ep_transmit(dev, ep0_in);
 					}
 				}
@@ -1289,10 +1296,16 @@ int usbd_cdc_acm_transmit(const u8 *buf, u32 len)
 	usbd_ep_t *ep_bulk_in = &cdev->ep_bulk_in;
 	u8 claimed;
 
+	/* A zero length is refused too: the core appends the ZLP a BULK transfer of a multiple of
+	   MPS needs, refer to usbd_ep_transmit() */
+	if ((buf == NULL) || (len == 0U)) {
+		return -RTK_ERR_BADARG;
+	}
+
 	/* cdev->dev is assigned in set_config, so it is NULL until the host has
-	   configured the device. */
+	   configured the device. cdev->cfg is NULL before the first init: log the endpoint copy. */
 	if ((dev == NULL) || (!dev->is_ready)) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "EP%02x TX not ready\n", cdev->cfg->bulk_in_addr);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "EP%02x TX not ready\n", ep_bulk_in->info.addr);
 		return ret;
 	}
 

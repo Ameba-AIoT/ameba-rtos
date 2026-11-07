@@ -10,8 +10,6 @@
 #include "dhcp/dhcps.h"
 #endif
 
-extern struct netif *pnetif_eth;
-
 enum eth_start_mode {
 	ETH_MODE_DHCP_CLIENT = 0,
 	ETH_MODE_DHCP_SERVER = 1,

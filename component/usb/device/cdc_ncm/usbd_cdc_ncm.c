@@ -145,7 +145,7 @@ static void usbd_cdc_ncm_set_interface_base(u8 base);
 #endif
 static int usbd_cdc_ncm_intr_in_send(void *data, u16 len);
 static int usbd_cdc_ncm_send_notification(void);
-static inline u8 usbd_cdc_ncm_char_to_hex(u8 value);
+static inline char usbd_cdc_ncm_char_to_hex(u8 value);
 static void usbd_cdc_ncm_mac_to_string(const u8 *mac, char *mac_str);
 static void usbd_cdc_ncm_set_mac(const u8 *mac);
 static int usbd_cdc_ncm_bulk_send(u8 *buf, u32 len);
@@ -180,9 +180,9 @@ static const u8 usbd_cdc_ncm_dev_desc[USB_LEN_DEV_DESC] = {
 	USB_LEN_DEV_DESC,                               /* bLength */
 	USB_DESC_TYPE_DEVICE,                           /* bDescriptorType */
 	0x00, 0x02,                                     /* bcdUSB: 2.0 */
-	USB_CDC_COMM_INTERFACE_CLASS_CODE,              /* bDeviceClass: Communications */
-	0x00,                                           /* bDeviceSubClass: 0 at device level; NCM subclass lives on the comm interface descriptor */
-	0x00,                                           /* bDeviceProtocol */
+	0xEF,                                           /* bDeviceClass: MISC, the configuration carries an IAD (Ref USB IAD ECN 1.0) */
+	0x02,                                           /* bDeviceSubClass: Common Class */
+	0x01,                                           /* bDeviceProtocol: IAD */
 	USB_MAX_EP0_SIZE,                               /* bMaxPacketSize0 */
 	USB_LOW_BYTE(USB_VID),                          /* idVendor (patched by core from usbd_dev_info_t) */
 	USB_HIGH_BYTE(USB_VID),
@@ -201,9 +201,9 @@ static const u8 usbd_cdc_ncm_device_qualifier_desc[USB_LEN_DEV_QUALIFIER_DESC] =
 	USB_LEN_DEV_QUALIFIER_DESC,                     /* bLength */
 	USB_DESC_TYPE_DEVICE_QUALIFIER,                 /* bDescriptorType */
 	0x00, 0x02,                                     /* bcdUSB: 2.0 */
-	USB_CDC_COMM_INTERFACE_CLASS_CODE,              /* bDeviceClass: same as the device descriptor (USB 2.0 9.6.2) */
-	0x00,                                           /* bDeviceSubClass */
-	0x00,                                           /* bDeviceProtocol */
+	0xEF,                                           /* bDeviceClass: same as the device descriptor (Ref USB 2.0 9.6.2) */
+	0x02,                                           /* bDeviceSubClass */
+	0x01,                                           /* bDeviceProtocol */
 	USB_MAX_EP0_SIZE,                               /* bMaxPacketSize0 */
 	0x01,                                           /* bNumConfigurations */
 	0x00,                                           /* Reserved */
@@ -997,14 +997,14 @@ static void usbd_cdc_ncm_tx_task_deinit(void)
  * @param value: Nibble value (0x0-0xF).
  * @retval ASCII character '0'-'9' or 'A'-'F'. Returns '0' for out-of-range input.
  */
-static inline u8 usbd_cdc_ncm_char_to_hex(u8 value)
+static inline char usbd_cdc_ncm_char_to_hex(u8 value)
 {
-	if (value <= 0x9) {
-		return 0x30 + value;
-	} else if (value <= 0xF) {
-		return 0x41 + (value - 0xA);
+	if (value <= 0x9U) {
+		return (char)('0' + value);
+	} else if (value <= 0xFU) {
+		return (char)('A' + (value - 0xAU));
 	} else {
-		return 0x30;
+		return '0';
 	}
 }
 
@@ -1020,10 +1020,10 @@ static void usbd_cdc_ncm_mac_to_string(const u8 *mac, char *mac_str)
 
 	for (i = 0; i < 6; i++) {
 		/* high 4 bits */
-		mac_str[str_index++] = usbd_cdc_ncm_char_to_hex((mac[i] >> 4) & 0x0F);
+		mac_str[str_index++] = usbd_cdc_ncm_char_to_hex((u8)((mac[i] >> 4) & 0x0FU));
 
 		/* low 4 bits */
-		mac_str[str_index++] = usbd_cdc_ncm_char_to_hex(mac[i] & 0x0F);
+		mac_str[str_index++] = usbd_cdc_ncm_char_to_hex((u8)(mac[i] & 0x0FU));
 	}
 
 	mac_str[str_index] = '\0';
@@ -1441,7 +1441,7 @@ static int usbd_cdc_ncm_tx_enqueue(const u8 *buf, u32 len, u8 block)
 	/* Aggregation path: lwIP task just enqueues the raw frame into tx_raw_rb.
 	 * The dedicated TX task (usbd_cdc_ncm_tx_task) dequeues frames, builds NTBs,
 	 * and advances tx_wd.  No NTB construction or critical sections here. */
-	if (block) {
+	if (block != 0U) {
 		do {
 			ret = usb_ringbuf_add_tail(&ncm->tx_raw_rb, buf, len, 1U);
 			if (ret == RTK_SUCCESS) {
@@ -1768,8 +1768,15 @@ static int usbd_cdc_ncm_setup(usb_dev_t *dev, usb_setup_req_t *req)
 				}
 
 				if ((ret == RTK_SUCCESS) && (ncm->cb != NULL) && (ncm->cb->setup != NULL)) {
-					/* Notification only: the request has already been applied above */
-					ncm->cb->setup(req, NULL);
+					int cb_ret;
+
+					/* Notification only: the request has already been applied above, so a
+					   failing callback can not undo it. A STALL now would leave the host and
+					   the device disagree on the alternate setting: only record it. */
+					cb_ret = ncm->cb->setup(req, NULL);
+					if (cb_ret != RTK_SUCCESS) {
+						USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_SETUP, (u8)req->wIndex);
+					}
 				}
 			}
 			break;
@@ -1931,6 +1938,8 @@ static int usbd_cdc_ncm_setup(usb_dev_t *dev, usb_setup_req_t *req)
 					 * request error instead of leaving the host waiting for a reply. */
 					ret = -RTK_ERR_BADARG;
 				} else {
+					usb_setup_req_t rsp_req;
+
 					if (rsp_len > (u16)ep0_in->xfer_buf_len) {
 						rsp_len = (u16)ep0_in->xfer_buf_len;
 					}
@@ -1938,12 +1947,16 @@ static int usbd_cdc_ncm_setup(usb_dev_t *dev, usb_setup_req_t *req)
 					 * response window: a callback writing fewer bytes must not leak stale
 					 * control-buffer contents to the host. */
 					usb_os_memset((void *)ep0_in->xfer_buf, 0, rsp_len);
-					ret = ncm->cb->setup(req, ep0_in->xfer_buf);
+					/* Ref USB 2.0 9.2.7: never return more than wLength bytes. The callback
+					 * sizes its answer by wLength: hand it a copy carrying the response length,
+					 * the request itself is left untouched for the core's ZLP decision. */
+					usb_os_memcpy((void *)&rsp_req, (const void *)req, sizeof(usb_setup_req_t));
+					rsp_req.wLength = (req->wLength < rsp_len) ? req->wLength : rsp_len;
+					ret = ncm->cb->setup(&rsp_req, ep0_in->xfer_buf);
 					if (ret == RTK_SUCCESS) {
-						/* Ref USB 2.0 9.2.7: never return more than wLength bytes; the core
-						 * STALLs EP0 on a non-RTK_SUCCESS return, so propagate a submit failure
-						 * instead of leaving the host in a control-transfer timeout. */
-						ep0_in->xfer_len = (req->wLength < rsp_len) ? req->wLength : rsp_len;
+						/* The core STALLs EP0 on a non-RTK_SUCCESS return, so propagate a submit
+						 * failure instead of leaving the host in a control-transfer timeout. */
+						ep0_in->xfer_len = rsp_req.wLength;
 						ret = usbd_ep_transmit(dev, ep0_in);
 					}
 				}
@@ -2194,7 +2207,7 @@ static int usbd_cdc_ncm_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len)
 	}
 
 	/* Invalidate cache if needed */
-	if (ep_bulk_out->skip_dcache_post_invalidate && len > 0) {
+	if ((ep_bulk_out->skip_dcache_post_invalidate != 0U) && (len > 0U)) {
 		DCache_Invalidate((u32)ep_bulk_out->xfer_buf, len);
 	}
 
@@ -2266,7 +2279,7 @@ static void usbd_cdc_ncm_sof(usb_dev_t *dev)
 	}
 
 	/* Retry a previously-failed notification when the endpoint is free. */
-	if (ncm->notify_retry && ep_intr_in->xfer_state == 0U) {
+	if ((ncm->notify_retry != 0U) && (ep_intr_in->xfer_state == 0U)) {
 		if (usbd_cdc_ncm_send_notification() == RTK_SUCCESS) {
 			ncm->notify_retry = 0U;
 		}
@@ -2893,14 +2906,14 @@ static int usbd_cdc_ncm_private_init(const usbd_cdc_ncm_cb_t *cb, const usbd_cdc
 	if (usb_os_sema_create(&ncm->tx_raw_sema) != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create TX raw sema fail\n");
 		ret = -RTK_ERR_NOMEM;
-		goto cleanup_tx_raw_rb;
+		goto cleanup_bulk_tx_slot_sema;
 	}
 	/* Separate from tx_raw_sema so that a producer waiting for room can never take the
 	 * "frame queued" signal meant for the TX task, and vice versa */
 	if (usb_os_sema_create(&ncm->tx_raw_free_sema) != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create TX raw free sema fail\n");
 		ret = -RTK_ERR_NOMEM;
-		goto cleanup_tx_raw_rb;
+		goto cleanup_bulk_tx_slot_sema;
 	}
 #endif
 
@@ -3242,7 +3255,7 @@ int usbd_cdc_ncm_transmit(const u8 *buf, u32 len, u8 block)
 #endif
 
 	if (usb_os_is_in_interrupt() != 0U) {
-		USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_XFER, 0U);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "TX in ISR\n");
 		return -RTK_ERR_BADARG;
 	}
 

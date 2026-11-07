@@ -20,6 +20,9 @@
 /* Private define ------------------------------------------------------------*/
 #define MAX_DHCP_TRIES 5
 
+#define NETWORK_SEGMENT_POOL_START    43
+#define NETWORK_SEGMENT_POOL_END      254
+
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 #ifdef CONFIG_WHC_HOST
@@ -101,14 +104,6 @@ void lwip_module_init(void)
 
 	/*  Registers the default network interface. */
 	netifapi_netif_set_default(pnetif_sta);
-
-	/*move these operations to wifi_on/wifi_off*/
-#if 0
-	/*  When the netif is fully configured this function must be called.*/
-	for (idx = 0; idx < NET_IF_NUM; idx++) {
-		netif_set_up(&xnetif[idx]);
-	}
-#endif
 
 	lwip_init_done = 1;
 #ifdef CONFIG_STANDARD_TICKLESS
@@ -401,10 +396,8 @@ void lwip_netif_set_link_up(uint8_t idx)
 
 void lwip_netif_set_link_down(uint8_t idx)
 {
-	struct netif *pnetif;
-	if (idx < NET_IF_NUM) {
-		pnetif = &xnetif[idx];
-	} else {
+	struct netif *pnetif = lwip_idx_get_netif(idx);
+	if (pnetif == NULL) {
 		return;
 	}
 	netifapi_netif_set_link_down(pnetif);

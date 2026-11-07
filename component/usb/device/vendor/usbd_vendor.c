@@ -20,6 +20,8 @@
 /* Private function prototypes -----------------------------------------------*/
 
 static u8 usbd_vendor_get_interval(u8 interval_hs, u8 interval_fs, u8 is_hs);
+static int usbd_vendor_check_interval(u8 interval, u8 max);
+static int usbd_vendor_check_out_buf_len(u32 buf_len, u32 hs_mps, u32 fs_mps);
 static int usbd_vendor_set_config(usb_dev_t *dev, u8 config);
 static void usbd_vendor_clear_config(usb_dev_t *dev, u8 config);
 static int usbd_vendor_setup(usb_dev_t *dev, usb_setup_req_t *req);
@@ -292,6 +294,39 @@ static u8 usbd_vendor_get_interval(u8 interval_hs, u8 interval_fs, u8 is_hs)
 }
 
 /**
+  * @brief  Check a configured bInterval against its legal range
+  * @note   Ref USB 2.0 9.6.6: the exponent form 2^(bInterval-1) of a HS interrupt endpoint and of
+  *         every isochronous one takes 1..16, the linear frame count of a FS interrupt endpoint
+  *         1..255. 0 selects the class default and is always accepted.
+  * @param  interval: Configured bInterval
+  * @param  max: Largest legal value for the endpoint type and speed
+  * @retval Status
+  */
+static int usbd_vendor_check_interval(u8 interval, u8 max)
+{
+	return (interval <= max) ? RTK_SUCCESS : -RTK_ERR_BADARG;
+}
+
+/**
+  * @brief  Check that an OUT buffer holds one packet at either speed
+  * @note   Each received packet takes a DWORD aligned slot, refer to
+  *         usbd_vendor_config_out_xfer_len(), so e.g. a 1023 byte buffer holds no 1023 byte FS ISOC
+  *         packet. Checked at init: found only at SET_CONFIGURATION it would fail the enumeration.
+  * @param  buf_len: Buffer size from the configuration
+  * @param  hs_mps: MPS of the endpoint at High Speed
+  * @param  fs_mps: MPS of the endpoint at Full Speed
+  * @retval Status
+  */
+static int usbd_vendor_check_out_buf_len(u32 buf_len, u32 hs_mps, u32 fs_mps)
+{
+	if ((usb_get_max_payload_len(buf_len, fs_mps) == 0U) || (usb_get_max_payload_len(buf_len, hs_mps) == 0U)) {
+		return -RTK_ERR_BADARG;
+	}
+
+	return RTK_SUCCESS;
+}
+
+/**
   * @brief  Set Vendor class configuration
   * @note   This function is called within an interrupt service routine (ISR) context;
   *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
@@ -310,8 +345,8 @@ static int usbd_vendor_set_config(usb_dev_t *dev, u8 config)
 	usbd_ep_t *ep_intr_in = &cdev->ep_intr_in;
 	usbd_ep_t *ep_intr_out = &cdev->ep_intr_out;
 	const usbd_vendor_config_t *cfg = cdev->cfg;
-	u8 speed = dev->dev_speed;
-	u8 is_hs = (speed == USB_SPEED_HIGH) ? 1U : 0U;
+	u8 speed = (u8)dev->dev_speed;
+	u8 is_hs = (speed == (u8)USB_SPEED_HIGH) ? 1U : 0U;
 	usb_ep_info_t *info;
 
 	/* Only the bConfigurationValue advertised in the config descriptor is valid */
@@ -538,6 +573,7 @@ static int usbd_vendor_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			ret = -RTK_ERR_BADARG;
 		} else if (req->wLength != 0U) {
 			if ((req->bmRequestType & USB_REQ_DIR_MASK) == USB_D2H) {
+				usb_setup_req_t rsp_req;
 				u16 rsp_len = req->wLength;
 
 				/* Ref USB 2.0 9.3.4: wLength is the maximum the host accepts, never trust it
@@ -551,7 +587,11 @@ static int usbd_vendor_setup(usb_dev_t *dev, usb_setup_req_t *req)
 				   callback owns the whole window and shall reject any request it does not
 				   support, which makes the core STALL EP0. */
 				usb_os_memset((void *)ep0_in->xfer_buf, 0, rsp_len);
-				ret = cdev->cb->setup(req, ep0_in->xfer_buf);
+				/* The callback sizes its answer by wLength: hand it a copy carrying the clamped
+				   length, the request itself is left untouched for the core's ZLP decision */
+				usb_os_memcpy((void *)&rsp_req, (const void *)req, sizeof(usb_setup_req_t));
+				rsp_req.wLength = rsp_len;
+				ret = cdev->cb->setup(&rsp_req, ep0_in->xfer_buf);
 				if (ret == RTK_SUCCESS) {
 					ep0_in->xfer_len = rsp_len;
 					/* Propagate a submit failure so that the core stalls EP0 instead of
@@ -802,6 +842,8 @@ static void usbd_vendor_patch_desc(u8 *desc, u16 len, usb_speed_type_t speed)
 			} else if ((dir == USB_H2D) && (type == USB_CH_EP_TYPE_ISOC)) {
 				desc[i + 2] = cfg->isoc_out_addr;
 				interval = usbd_vendor_get_interval(cfg->isoc_out_interval_hs, cfg->isoc_out_interval_fs, is_hs);
+			} else {
+				/* The templates hold one endpoint of each kind only, none is left unpatched */
 			}
 
 			/* BULK leaves bInterval 0 (ignored for BULK, Ref USB 2.0 9.6.6); the periodic
@@ -811,6 +853,8 @@ static void usbd_vendor_patch_desc(u8 *desc, u16 len, usb_speed_type_t speed)
 			}
 		} else if ((dtype == USB_DESC_TYPE_INTERFACE) && (dlen >= USB_LEN_IF_DESC)) {
 			desc[i + 8U] = cdev->itf_str_idx;         /* iInterface */
+		} else {
+			/* Neither an endpoint nor an interface descriptor: nothing to patch */
 		}
 		i += dlen;
 	}
@@ -827,7 +871,7 @@ static void usbd_vendor_patch_desc(u8 *desc, u16 len, usb_speed_type_t speed)
   */
 static u16 usbd_vendor_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16 buf_len)
 {
-	usb_speed_type_t speed = dev->dev_speed;
+	usb_speed_type_t speed = (usb_speed_type_t)dev->dev_speed;
 	/* Speed the returned configuration describes, which selects the bInterval encoding */
 	usb_speed_type_t desc_speed = speed;
 	const u8 *desc = NULL;
@@ -846,19 +890,19 @@ static u16 usbd_vendor_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *
 
 	case USB_DESC_TYPE_DEVICE:
 		desc = usbd_vendor_dev_desc;
-		len = sizeof(usbd_vendor_dev_desc);
+		len = (u16)sizeof(usbd_vendor_dev_desc);
 		break;
 
 	case USB_DESC_TYPE_CONFIGURATION:
 #ifndef CONFIG_SUPPORT_USB_FS_ONLY
 		if (speed == USB_SPEED_HIGH) {
 			desc = usbd_vendor_hs_config_desc;
-			len = sizeof(usbd_vendor_hs_config_desc);
+			len = (u16)sizeof(usbd_vendor_hs_config_desc);
 		} else
 #endif
 		{
 			desc = usbd_vendor_fs_config_desc;
-			len = sizeof(usbd_vendor_fs_config_desc);
+			len = (u16)sizeof(usbd_vendor_fs_config_desc);
 		}
 		is_cfg = 1;
 		break;
@@ -866,7 +910,7 @@ static u16 usbd_vendor_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *
 #ifndef CONFIG_SUPPORT_USB_FS_ONLY
 	case USB_DESC_TYPE_DEVICE_QUALIFIER:
 		desc = usbd_vendor_device_qualifier_desc;
-		len = sizeof(usbd_vendor_device_qualifier_desc);
+		len = (u16)sizeof(usbd_vendor_device_qualifier_desc);
 		break;
 
 	case USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION:
@@ -874,11 +918,11 @@ static u16 usbd_vendor_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *
 		   running at, so its bInterval is patched for that speed, not the current one */
 		if (speed == USB_SPEED_HIGH) {
 			desc = usbd_vendor_fs_config_desc;
-			len = sizeof(usbd_vendor_fs_config_desc);
+			len = (u16)sizeof(usbd_vendor_fs_config_desc);
 			desc_speed = USB_SPEED_FULL;
 		} else {
 			desc = usbd_vendor_hs_config_desc;
-			len = sizeof(usbd_vendor_hs_config_desc);
+			len = (u16)sizeof(usbd_vendor_hs_config_desc);
 			desc_speed = USB_SPEED_HIGH;
 		}
 		is_cfg = 1;
@@ -965,6 +1009,35 @@ static int usbd_vendor_private_init(const usbd_vendor_cb_t *cb, const usbd_vendo
 
 	if (cfg == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid cfg\n");
+		return -RTK_ERR_BADARG;
+	}
+
+	/* cb is only set by a successful init and cleared by deinit: a second init would overwrite
+	   the six endpoint buffers and leak them */
+	if (cdev->cb != NULL) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Already init\n");
+		return -RTK_ERR_BUSY;
+	}
+
+	/* The device may run at either speed, so each OUT buffer has to hold a packet of both */
+	if ((usbd_vendor_check_out_buf_len(cfg->bulk_out_xfer_size, USBD_VENDOR_HS_BULK_MPS, USBD_VENDOR_FS_BULK_MPS) != RTK_SUCCESS) ||
+		(usbd_vendor_check_out_buf_len(cfg->intr_out_xfer_size, USBD_VENDOR_HS_INTR_MPS, USBD_VENDOR_FS_INTR_MPS) != RTK_SUCCESS) ||
+		(usbd_vendor_check_out_buf_len(cfg->isoc_out_xfer_size, USBD_VENDOR_HS_ISOC_MPS, USBD_VENDOR_FS_ISOC_MPS) != RTK_SUCCESS)) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "OUT buf < aligned mps\n");
+		return -RTK_ERR_BADARG;
+	}
+
+	/* A bInterval outside its range would be reported to the host as is, refer to
+	   usbd_vendor_check_interval() */
+	if ((usbd_vendor_check_interval(cfg->intr_in_interval_hs, (u8)USB_INTR_HS_BINTERVAL_MAX) != RTK_SUCCESS) ||
+		(usbd_vendor_check_interval(cfg->intr_out_interval_hs, (u8)USB_INTR_HS_BINTERVAL_MAX) != RTK_SUCCESS) ||
+		(usbd_vendor_check_interval(cfg->intr_in_interval_fs, (u8)USB_INTR_FS_BINTERVAL_MAX) != RTK_SUCCESS) ||
+		(usbd_vendor_check_interval(cfg->intr_out_interval_fs, (u8)USB_INTR_FS_BINTERVAL_MAX) != RTK_SUCCESS) ||
+		(usbd_vendor_check_interval(cfg->isoc_in_interval_hs, (u8)USB_ISOC_HS_BINTERVAL_MAX) != RTK_SUCCESS) ||
+		(usbd_vendor_check_interval(cfg->isoc_out_interval_hs, (u8)USB_ISOC_HS_BINTERVAL_MAX) != RTK_SUCCESS) ||
+		(usbd_vendor_check_interval(cfg->isoc_in_interval_fs, (u8)USB_ISOC_FS_BINTERVAL_MAX) != RTK_SUCCESS) ||
+		(usbd_vendor_check_interval(cfg->isoc_out_interval_fs, (u8)USB_ISOC_FS_BINTERVAL_MAX) != RTK_SUCCESS)) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid bInterval\n");
 		return -RTK_ERR_BADARG;
 	}
 
@@ -1093,6 +1166,8 @@ static int usbd_vendor_private_init(const usbd_vendor_cb_t *cb, const usbd_vendo
 	return ret;
 
 init_clean_isoc_in_buf_exit:
+	/* cb marks a completed init, refer to the check above: a failed one may be retried */
+	cdev->cb = NULL;
 	usb_os_mfree((void *)ep_isoc_in->xfer_buf);
 	ep_isoc_in->xfer_buf = NULL;
 
@@ -1251,6 +1326,11 @@ int usbd_vendor_transmit_bulk_data(u8 *buf, u32 len)
 		return -RTK_ERR_IO;
 	}
 
+	/* The payload is copied into the endpoint buffer below */
+	if ((buf == NULL) && (len != 0U)) {
+		return -RTK_ERR_BADARG;
+	}
+
 	if (len > ep_bulk_in->xfer_buf_len) {
 		len = ep_bulk_in->xfer_buf_len;
 	}
@@ -1294,6 +1374,11 @@ int usbd_vendor_transmit_intr_data(u8 *buf, u32 len)
 		return -RTK_ERR_IO;
 	}
 
+	/* The payload is copied into the endpoint buffer below */
+	if ((buf == NULL) && (len != 0U)) {
+		return -RTK_ERR_BADARG;
+	}
+
 	if (len > ep_intr_in->xfer_buf_len) {
 		len = ep_intr_in->xfer_buf_len;
 	}
@@ -1332,8 +1417,19 @@ int usbd_vendor_transmit_isoc_data(u8 *buf, u32 len)
 		return -RTK_ERR_IO;
 	}
 
+	/* The payload is copied into the endpoint buffer below */
+	if ((buf == NULL) && (len != 0U)) {
+		return -RTK_ERR_BADARG;
+	}
+
 	if (len > ep_isoc_in->xfer_buf_len) {
 		len = ep_isoc_in->xfer_buf_len;
+	}
+
+	/* Ref USB 2.0 5.6.3: the descriptors declare one transaction per (micro)frame, the host
+	   schedules no slot for a second one, so a longer payload would be dropped on the bus */
+	if (len > ep_isoc_in->info.mps) {
+		return -RTK_ERR_BADARG;
 	}
 
 	/* Ref USB 2.0 5.6: ISOC is a timely, best-effort stream without retry, so no in-flight

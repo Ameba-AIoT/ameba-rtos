@@ -46,8 +46,6 @@ static const usbh_dev_id_t uvc_devs[] = {
 	},
 };
 
-extern usbh_uvc_host_t uvc_host;
-
 /* Exported variables --------------------------------------------------------*/
 
 /* USB Host UVC class driver */
@@ -180,13 +178,33 @@ static int usbh_uvc_attach(usb_host_t *host)
 static void usbh_uvc_detach(usb_host_t *host)
 {
 	usbh_uvc_host_t *uvc = &uvc_host;
-	usbh_uvc_stream_t *stream;
-	usbh_uvc_vs_t *vs_intf;
-	u8 vs_num;
-	u8 i;
+
+	UNUSED(host);
 
 	uvc->state = UVC_STATE_IDLE;
-	vs_num = uvc->uvc_desc.vs_num;
+	usbh_uvc_class_release_device(uvc);
+
+	if ((uvc->cb != NULL) && (uvc->cb->detached != NULL)) {
+		uvc->cb->detached();
+	}
+}
+
+/**
+  * @brief	Release what the attached device left in the class: halt and free the streaming
+  *         channels, then free the descriptor tree parsed at attach
+  * @note   Host task context from detach(), or the deinit caller once usbh_uvc_class_deinit()
+  *         succeeded: either way no callback of this class runs on any core. Every stream is
+  *         stopped before its channel is halted, and the channel before its URBs are freed,
+  *         since a transfer submitted just before may still be DMAing into one of them.
+  * @param	uvc: UVC host handle
+  * @retval None
+  */
+void usbh_uvc_class_release_device(usbh_uvc_host_t *uvc)
+{
+	usbh_uvc_stream_t *stream;
+	usbh_uvc_vs_t *vs_intf;
+	u8 vs_num = uvc->uvc_desc.vs_num;
+	u8 i;
 
 	for (i = 0U; i < vs_num; i ++) {
 		stream = &uvc->stream[i];
@@ -198,12 +216,11 @@ static void usbh_uvc_detach(usb_host_t *host)
 		if (stream->stream_state == UVC_STREAM_ACTIVE) {
 			usbh_uvc_stream_stop(stream);
 		}
-		/* Halt the streaming channel and free its slot after the stream (and the HW decoder)
-		 * stopped: on a re-enumeration the core closes only EP0, so the channel would stay
-		 * enabled. usbh_close_pipe() also zeroes pipe_num, so the next find_alt cannot close a
+		/* On a re-enumeration the core closes only EP0, so the channel would stay enabled.
+		 * usbh_close_pipe() also zeroes pipe_num, so the next find_alt cannot close a
 		 * recycled channel. */
 		if (stream->cur_setting.pipe.pipe_num != 0U) {
-			usbh_close_pipe(host, &stream->cur_setting.pipe);
+			usbh_close_pipe(uvc->host, &stream->cur_setting.pipe);
 		}
 #if (USBH_UVC_USE_HW == 0)
 		/* The URBs are sized for this device's alt: a later device must not inherit them,
@@ -232,14 +249,38 @@ static void usbh_uvc_detach(usb_host_t *host)
 	uvc->uvc_desc.vs_num = 0U;
 
 	uvc->host = NULL;
+}
 
-	if ((uvc->cb != NULL) && (uvc->cb->detached != NULL)) {
-		uvc->cb->detached();
+/**
+  * @brief	Get the bytes an isochronous endpoint moves per (micro)frame
+  * @param	host: Host handle
+  * @param	ep: Endpoint descriptor
+  * @retval Bytes per interval, 0 for an endpoint that cannot be used
+  */
+static u32 usbh_uvc_get_ep_xfer_len(const usb_host_t *host, const usbh_ep_desc_t *ep)
+{
+	u32 mps = ep->wMaxPacketSize;
+	u32 xfer_len;
+
+	if (host->dev_speed == USB_SPEED_HIGH) {
+		/* 11b additional transactions is reserved, Ref USB 2.0 9.6.6 Table 9-13 */
+		if ((mps & USB_EP_MPS_TRANS_MASK) == USB_EP_MPS_TRANS_MASK) {
+			xfer_len = 0U;
+		} else {
+			xfer_len = (mps & USB_EP_MPS_SIZE_MASK) * (1U + ((mps & USB_EP_MPS_TRANS_MASK) >> USB_EP_MPS_TRANS_POS));
+		}
+	} else {
+		xfer_len = mps & USB_EP_MPS_SIZE_MASK;
 	}
+
+	return xfer_len;
 }
 
 /**
   * @brief	Find out best alt setting
+  * @note   The smallest alt carrying dwMaxPayloadTransferSize is taken, Ref UVC 1.5 4.3.1.1.
+  *         When no alt carries it, or the device never reported it (GET_CUR(PROBE) failed,
+  *         leaving 0), the largest alt is taken, so the stream is never short of bandwidth.
   * @param	stream: uvc stream interface
   * @retval None
   */
@@ -248,85 +289,65 @@ static void usbh_uvc_find_alt(usbh_uvc_stream_t *stream)
 	usbh_uvc_host_t *uvc = &uvc_host;
 	usb_host_t *host = uvc->host;
 	usbh_uvc_setting_t *cur_set = &stream->cur_setting;
-	usbh_pipe_t *pipe = NULL;
+	usbh_pipe_t *pipe = &cur_set->pipe;
 	usbh_ep_desc_t *ep = NULL;
-	u32 xfer_len = 0;
-	u32 best_len;
+	u32 xfer_len;
+	u32 fit_len = UINT_MAX;
+	u32 max_len = 0U;
 	u32 XferSize = stream->stream_ctrl.dwMaxPayloadTransferSize;
-	u32 max_ep_size = UINT_MAX;
+	u8 fit_idx = 0U;
+	u8 max_idx = 0U;
+	u8 sel_idx;
 	u8 i;
 
 	cur_set->valid = 0;
 
 	for (i = 0U; i < stream->vs_intf->alt_num; i++) {
 		ep = stream->vs_intf->altsetting[i].endpoint;
-		/* Skip an alt whose 11b additional transactions is reserved, Ref USB 2.0 9.6.6 Table 9-13 */
-		if ((ep == NULL) || ((host->dev_speed == USB_SPEED_HIGH) && ((ep->wMaxPacketSize & USB_EP_MPS_TRANS_MASK) == USB_EP_MPS_TRANS_MASK))) {
+		if (ep == NULL) {
 			continue;
 		}
 
-		xfer_len = ep->wMaxPacketSize;
-
-		if (host->dev_speed == USB_SPEED_HIGH) {
-			xfer_len = (xfer_len & USB_EP_MPS_SIZE_MASK) * (1U + ((xfer_len & USB_EP_MPS_TRANS_MASK) >> USB_EP_MPS_TRANS_POS));
-		} else {
-			xfer_len = xfer_len & USB_EP_MPS_SIZE_MASK;
+		xfer_len = usbh_uvc_get_ep_xfer_len(host, ep);
+		if (xfer_len == 0U) {
+			continue;
 		}
 
-		if ((xfer_len >= XferSize) && (xfer_len <= max_ep_size)) {
-			cur_set->altsetting = &stream->vs_intf->altsetting[i];
-			cur_set->bAlternateSetting = ((usbh_itf_desc_t *)cur_set->altsetting->p)->bAlternateSetting;
-			cur_set->bInterfaceNumber = cur_set->cur_vs_intf->bInterfaceNumber;
-			cur_set->valid = 1U;
-
-			pipe = &cur_set->pipe;
-			pipe->ep_addr = ep->bEndpointAddress;
-			pipe->ep_mps = ep->wMaxPacketSize & USB_EP_MPS_SIZE_MASK;
-			pipe->ep_interval = ep->bInterval;
-			pipe->ep_type = ep->bmAttributes & USB_EP_XFER_TYPE_MASK;
-			pipe->xfer_len = xfer_len;
-
-			max_ep_size = xfer_len;
+		if ((XferSize != 0U) && (xfer_len >= XferSize) && (xfer_len <= fit_len)) {
+			fit_len = xfer_len;
+			fit_idx = i;
+		}
+		if (xfer_len > max_len) {
+			max_len = xfer_len;
+			max_idx = i;
 		}
 	}
 
-	/* Fallback: if no alt satisfies xfer_len >= XferSize, use the alt with the largest MPS
-	 * rather than proceeding with ep_mps=0 which would break the HW decoder. */
-	if (cur_set->valid == 0U) {
-		best_len = 0;
-		for (i = 0U; i < stream->vs_intf->alt_num; i++) {
-			ep = stream->vs_intf->altsetting[i].endpoint;
-			if ((ep == NULL) || ((host->dev_speed == USB_SPEED_HIGH) && ((ep->wMaxPacketSize & USB_EP_MPS_TRANS_MASK) == USB_EP_MPS_TRANS_MASK))) {
-				continue;
-			}
-			xfer_len = ep->wMaxPacketSize;
-			if (host->dev_speed == USB_SPEED_HIGH) {
-				xfer_len = (xfer_len & USB_EP_MPS_SIZE_MASK) * (1U + ((xfer_len & USB_EP_MPS_TRANS_MASK) >> USB_EP_MPS_TRANS_POS));
-			} else {
-				xfer_len = xfer_len & USB_EP_MPS_SIZE_MASK;
-			}
-			if (xfer_len > best_len) {
-				best_len = xfer_len;
-				cur_set->altsetting = &stream->vs_intf->altsetting[i];
-				cur_set->bAlternateSetting = ((usbh_itf_desc_t *)cur_set->altsetting->p)->bAlternateSetting;
-				cur_set->bInterfaceNumber = cur_set->cur_vs_intf->bInterfaceNumber;
-
-				pipe = &cur_set->pipe;
-				pipe->ep_addr = ep->bEndpointAddress;
-				pipe->ep_mps = ep->wMaxPacketSize & USB_EP_MPS_SIZE_MASK;
-				pipe->ep_interval = ep->bInterval;
-				pipe->ep_type = ep->bmAttributes & USB_EP_XFER_TYPE_MASK;
-				pipe->xfer_len = xfer_len;
-			}
-		}
-		if (best_len > 0U) {
-			cur_set->valid = 1;
-			RTK_LOGS(TAG, RTK_LOG_WARN, "Fallback alt %d req %u mps %u\n",
-					 cur_set->bAlternateSetting, XferSize, best_len);
-		}
+	/* No alt with an endpoint: valid stays 0 and set_alt_done() reports the failure */
+	if (max_len == 0U) {
+		return;
 	}
 
-	if ((pipe != NULL) && (pipe->pipe_num != 0U)) {
+	sel_idx = (fit_len != UINT_MAX) ? fit_idx : max_idx;
+
+	ep = stream->vs_intf->altsetting[sel_idx].endpoint;
+	cur_set->altsetting = &stream->vs_intf->altsetting[sel_idx];
+	cur_set->bAlternateSetting = ((usbh_itf_desc_t *)cur_set->altsetting->p)->bAlternateSetting;
+	cur_set->bInterfaceNumber = cur_set->cur_vs_intf->bInterfaceNumber;
+	cur_set->valid = 1U;
+
+	if (fit_len == UINT_MAX) {
+		RTK_LOGS(TAG, RTK_LOG_WARN, "Fallback alt %d req %u mps %u\n",
+				 cur_set->bAlternateSetting, XferSize, max_len);
+	}
+
+	pipe->ep_addr = ep->bEndpointAddress;
+	pipe->ep_mps = ep->wMaxPacketSize & USB_EP_MPS_SIZE_MASK;
+	pipe->ep_interval = ep->bInterval;
+	pipe->ep_type = ep->bmAttributes & USB_EP_XFER_TYPE_MASK;
+	pipe->xfer_len = usbh_uvc_get_ep_xfer_len(host, ep);
+
+	if (pipe->pipe_num != 0U) {
 		usbh_close_pipe(host, pipe);
 		pipe->pipe_num = 0U;
 	}
