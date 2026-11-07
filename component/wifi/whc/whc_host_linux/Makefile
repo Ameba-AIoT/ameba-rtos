@@ -7,6 +7,7 @@ export CONFIG_WHC_HCI_IPC = y
 export CONFIG_WHC_HCI_SDIO = n
 export CONFIG_WHC_HCI_SPI = n
 export CONFIG_WHC_HCI_USB = n
+export CONFIG_WHC_HCI_GSPI = n
 export CONFIG_IEEE80211R = n
 export CONFIG_SUPPLICANT_SME = n
 export CONFIG_WHC_CMD_PATH = y
@@ -84,6 +85,8 @@ else ifeq ($(CONFIG_WHC_HCI_USB),y)
 SUB := common/usb
 else ifeq ($(CONFIG_WHC_HCI_SDIO),y)
 SUB := common/sdio
+else ifeq ($(CONFIG_WHC_HCI_GSPI),y)
+SUB := common/gspi
 endif
 
 default:

@@ -11,8 +11,8 @@ mf_unset() { sed -i "s/$1 = y/$1 = n/g" Makefile; }
 INTF="$1"
 # Validate interface
 case "$INTF" in
-	sdio|spi|usb) ;;
-	*) echo "Error: invalid interface '$INTF', must be one of: sdio, spi, usb"; exit 1 ;;
+	sdio|spi|usb|gspi) ;;
+	*) echo "Error: invalid interface '$INTF', must be one of: sdio, spi, usb, gspi"; exit 1 ;;
 esac
 
 # --- Step 1: Disable IPC, will configure host-only mode ---
@@ -35,6 +35,7 @@ esac
 mf_unset CONFIG_WHC_HCI_SDIO
 mf_unset CONFIG_WHC_HCI_SPI
 mf_unset CONFIG_WHC_HCI_USB
+mf_unset CONFIG_WHC_HCI_GSPI
 mf_unset CONFIG_NAN
 mf_unset CONFIG_P2P
 mf_unset CONFIG_BT_INIC
@@ -76,6 +77,7 @@ case "$INTF" in
 	sdio) mf_set CONFIG_WHC_HCI_SDIO ; echo "  1) AMEBADPLUS"; echo "  2) AMEBAGREEN2"; echo "  3) AMEBAGREEN2 & FW_DOWNLOAD"; echo "  4) AMEBAX" ;;
 	spi)  mf_set CONFIG_WHC_HCI_SPI  ; echo "  1) AMEBADPLUS"; echo "  2) AMEBAGREEN2"; echo "  3) AMEBALITE" ;;
 	usb)  mf_set CONFIG_WHC_HCI_USB  ; echo "  1) AMEBADPLUS"; echo "  2) AMEBAGREEN2"; echo "  3) AMEBAGREEN2 & FW_DOWNLOAD" ;;
+	gspi) mf_set CONFIG_WHC_HCI_GSPI ; echo "  1) AMEBAGREEN2" ;;
 esac
 
 read -p "choose target IC: " choice
@@ -129,6 +131,12 @@ case "$INTF:$choice" in
 		echo "AMEBAGREEN2 with FW DOWNLOAD select"
 		ac_set CONFIG_AMEBAGREEN2
 		mf_set CONFIG_FW_DOWNLOAD
+		;;
+	# --- gspi ---
+	gspi:1)
+		echo "AMEBAGREEN2 select"
+		ac_set CONFIG_AMEBAGREEN2
+		cp ../../../soc/amebagreen2/fwlib/include/ameba_inic.h ./common/include
 		;;
 	*)
 		echo "Invalid selection"
