@@ -75,16 +75,11 @@ static void cdc_ecm_cb_process(usb_host_t *host, u8 msg);
 static void cdc_ecm_cb_received(u8 *pbuf, u32 Len);
 static int cdc_ecm_cb_device_check(usb_host_t *host, u8 cfg_max);
 
-extern void rltk_usb_eth_init(void);
-extern void rltk_usb_eth_deinit(void);
-
 /* Private variables ---------------------------------------------------------*/
 
 static const char *const TAG = "ECMB";
 
 static struct eth_addr host_mac = {{0x00}}; // mac of device connected to usb
-
-extern struct netif *pnetif_usb_eth;
 
 static usb_os_sema_t cdc_ecm_detach_sema;
 
@@ -145,16 +140,13 @@ static const usbh_config_t usbh_ecm_cfg = {
 	.rx_fifo_depth = 464,
 	.nptx_fifo_depth = 256,
 	.ptx_fifo_depth = 256,
-#elif defined (CONFIG_AMEBAL2)
-	/*FIFO total depth is 1024 DWORD, reserve 11 DWORD for DMA addr*/
-	.rx_fifo_depth = 501,
-	.nptx_fifo_depth = 256,
-	.ptx_fifo_depth = 256,
 #elif defined (CONFIG_AMEBAPRO3)
 	/*FIFO total depth is 2232 DWORD, resv 8 DWORD for DMA addr */
 	.rx_fifo_depth = 1712,
 	.nptx_fifo_depth = 256,
 	.ptx_fifo_depth = 256,
+#elif !defined(CONFIG_SUPPORT_USB_SHARED_DFIFO)
+#error "Set the USB host FIFO depths for this SoC"
 #endif
 };
 
@@ -388,7 +380,7 @@ static int get_packet_attrib(struct pbuf *p, pkt_attrib_t *pattrib)
 
 	dst_addr = (struct eth_addr *)((u8_t *)p->payload);
 	src_addr = (struct eth_addr *)(((u8_t *)p->payload) + sizeof(struct eth_addr));
-	protocol = *((unsigned short *)((u8 *)p->payload + 2 * ETH_ALEN));
+	protocol = ((const struct eth_hdr *)p->payload)->type;
 
 	if (protocol == lwip_htons(ETHTYPE_IP)) {
 		if (p->len < (u16_t)(ETH_HLEN + sizeof(struct ip_hdr))) {
@@ -449,6 +441,8 @@ static int get_packet_attrib(struct pbuf *p, pkt_attrib_t *pattrib)
 	pattrib->dst_port = dst_port;
 	pattrib->type = type;
 	pattrib->flags = flags;
+#if ECMBDEBUG
+	/* Only the debug dump reads the addresses: spare the copies on every frame otherwise */
 	usb_os_memcpy((void *)&pattrib->src_mac, (const void *)src_addr, sizeof(struct eth_addr));
 	usb_os_memcpy((void *)&pattrib->dst_mac, (const void *)dst_addr, sizeof(struct eth_addr));
 	if (src_ip != NULL) {
@@ -457,6 +451,12 @@ static int get_packet_attrib(struct pbuf *p, pkt_attrib_t *pattrib)
 	if (dst_ip != NULL) {
 		usb_os_memcpy((void *)pattrib->dst_ip, (const void *)dst_ip, sizeof(pattrib->dst_ip));
 	}
+#else
+	UNUSED(src_addr);
+	UNUSED(dst_addr);
+	UNUSED(src_ip);
+	UNUSED(dst_ip);
+#endif
 
 	return RTK_SUCCESS;
 }
@@ -730,7 +730,9 @@ static void example_usbh_bridge_hotplug_thread(void *param)
 	UNUSED(param);
 
 	for (;;) {
-		usb_os_sema_take(cdc_ecm_detach_sema, USB_OS_SEMA_TIMEOUT);
+		if (usb_os_sema_take(cdc_ecm_detach_sema, USB_OS_SEMA_TIMEOUT) != RTK_SUCCESS) {
+			continue;
+		}
 		if (cdc_ecm_app.quit != 0U) {
 			/* Stop requested: the stop owner tears the stack down */
 			break;

@@ -252,11 +252,14 @@ int flash_get_extend_addr(flash_t *obj);
 int flash_read_id(flash_t *obj, uint8_t *buf, uint8_t len);
 
 /**
-  * @brief  This function is only for Winbond flash to get unique ID (command: 0x4B).
+  * @brief  Get flash unique ID (command: 0x4B, 1IO, no address, 4 dummy bytes).
   * @param  obj: Flash object define in application software.
   * @param  buf: Pointer to a byte array to save the readback unique ID.
-  * @param  len: Specifies the length of the buf. It should be 8.
-  * @retval -1: Fail.
+  * @param  len: Length of the unique ID, 8 or 16 depending on the flash, at most 16.
+  * @note   Call it from task context only, not from an ISR. The unique ID can be read by anyone,
+  *         so use it as an identifier, not as a secret or a key.
+  * @retval Length of the unique ID that has been read (equal to len), or -1 if len is invalid
+  *         or the flash returned all 0xFF / all 0x00 (no response or 0x4B not supported).
   */
 int flash_read_unique_id(flash_t *obj, uint8_t *buf, uint8_t len);
 

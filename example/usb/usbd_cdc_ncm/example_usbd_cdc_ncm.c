@@ -72,11 +72,8 @@ typedef enum {
 
 /* Private function prototypes -----------------------------------------------*/
 
-static int usbd_cdc_ncm_cmd_link(u16 argc, u8 *argv[]);
+static int usbd_cdc_ncm_cmd_link(u16 argc, char *argv[]);
 static void usbd_cdc_ncm_cmd_link_at(u16 argc, char **argv);
-
-extern void rltk_usb_eth_init(void);
-extern void rltk_usb_eth_deinit(void);
 
 int usb_ethernet_transmit(u8 *buf, u32 len, u8 block);
 
@@ -90,7 +87,6 @@ static void usbd_cdc_ncm_cb_status_changed(u8 old_status, u8 status);
 
 static const char *const TAG = "NCM";
 
-extern struct netif *pnetif_usb_eth;
 static u8 cdc_ncm_dhcp_server_started = 0;
 /*
  * cdc_ncm_dongle_mac: MAC address reported to the USB host side of the CDC-NCM link.
@@ -254,14 +250,20 @@ static void usbd_ncm_link_change_thread(void *param)
 					RTK_LOGS(TAG, RTK_LOG_INFO, "Device IP: %d.%d.%d.%d\n", CDC_NCM_IP_ADDR0, CDC_NCM_IP_ADDR1, CDC_NCM_IP_ADDR2,
 							 CDC_NCM_IP_ADDR3);
 
-					// 4. Activate network interface link
+					// 4. Activate network interface link. The netifapi calls wrap void lwIP
+					//    netif functions, they always report ERR_OK
 					netifapi_netif_set_link_up(pnetif_usb_eth);
 					netifapi_netif_set_up(pnetif_usb_eth);
 					netifapi_netif_set_default(pnetif_usb_eth);
 
-					// 5. Initialize and start DHCP server
-					dhcps_init(pnetif_usb_eth);
-					dhcps_start(pnetif_usb_eth);
+					// 5. Initialize and start DHCP server. On failure nothing is marked started,
+					//    so the next poll retries the whole sequence: steps 3 and 4 are idempotent
+					if ((dhcps_init(pnetif_usb_eth) == NULL) || (dhcps_start(pnetif_usb_eth) != ERR_OK)) {
+						RTK_LOGS(TAG, RTK_LOG_ERROR, "DHCP Server start fail\n");
+						dhcps_deinit(pnetif_usb_eth);
+						rtos_time_delay_ms(1000);
+						continue;
+					}
 
 					cdc_ncm_dhcp_server_started = 1;
 					ethernet_state = ETH_STATUS_INIT;
@@ -494,7 +496,11 @@ static void usbd_ncm_hotplug_thread(void *param)
 				fatal = 1U;
 				break;
 			}
-			(void)usbd_cdc_ncm_set_link_status(1U);
+			ret = usbd_cdc_ncm_set_link_status(1U);
+			if (ret != RTK_SUCCESS) {
+				/* The host only sees the uplink down, the USB link itself is fine */
+				RTK_LOGS(TAG, RTK_LOG_WARN, "Set link fail %d\n", ret);
+			}
 
 			/* Open the gate at the very last step, so that no TX runs before the
 			 * re-init is fully done. */
@@ -612,7 +618,11 @@ static int usbd_ncm_start(void)
 	/* The class starts with the uplink down; this example serves the host locally
 	 * (DHCP server on the device), so report it up.  The USBDNCM link command can
 	 * still change it to exercise the link notification. */
-	(void)usbd_cdc_ncm_set_link_status(1U);
+	ret = usbd_cdc_ncm_set_link_status(1U);
+	if (ret != RTK_SUCCESS) {
+		/* The host only sees the uplink down, the USB link itself is fine */
+		RTK_LOGS(TAG, RTK_LOG_WARN, "Set link fail %d\n", ret);
+	}
 
 	/* The stack is fully up: allow TX */
 	cdc_ncm_stack_ready = 1;
@@ -691,10 +701,10 @@ static void usbd_ncm_init_thread(void *param)
 /* Shell command USBDNCM link <0|1> -- report the upper-layer network link state
  * to the host. Mirrors the ECM example's USBDECM. Edge-triggered:
  * calling repeatedly with the same value is a no-op inside the class driver. */
-static int usbd_cdc_ncm_cmd_link(u16 argc, u8 *argv[])
+static int usbd_cdc_ncm_cmd_link(u16 argc, char *argv[])
 {
-	const char *cmd = (argc != 0U) ? (const char *)argv[0] : NULL;
-	const char *val = (argc > 1U) ? (const char *)argv[1] : NULL;
+	const char *cmd = (argc != 0U) ? argv[0] : NULL;
+	const char *val = (argc > 1U) ? argv[1] : NULL;
 	u8 link_up;
 
 	if ((cmd == NULL) || (_stricmp(cmd, "help") == 0) || (_stricmp(cmd, "?") == 0)) {
@@ -719,13 +729,13 @@ static int usbd_cdc_ncm_cmd_link(u16 argc, u8 *argv[])
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Set NCM link status -> %s\n", link_up ? "UP" : "DOWN");
 
-	return (u32)usbd_cdc_ncm_set_link_status(link_up);
+	return usbd_cdc_ncm_set_link_status(link_up);
 }
 
 /* AT entry: argv[0] is reserved by the AT parser and argv[1] holds the first parameter */
 static void usbd_cdc_ncm_cmd_link_at(u16 argc, char **argv)
 {
-	int ret = usbd_cdc_ncm_cmd_link((argc != 0U) ? (argc - 1U) : 0U, (u8 **)&argv[1]);
+	int ret = usbd_cdc_ncm_cmd_link((argc != 0U) ? (u16)(argc - 1U) : 0U, &argv[1]);
 
 	if (ret == RTK_SUCCESS) {
 		at_printf(ATCMD_OK_END_STR);
@@ -748,7 +758,11 @@ int usb_ethernet_transmit(u8 *buf, u32 len, u8 block)
 		return -RTK_ERR_IO;
 	}
 
-	rtos_mutex_take(cdc_ncm_state_mutex, RTOS_MAX_TIMEOUT);
+	/* Never enter the gated section, nor give, without the mutex */
+	ret = rtos_mutex_take(cdc_ncm_state_mutex, RTOS_MAX_TIMEOUT);
+	if (ret != RTK_SUCCESS) {
+		return -RTK_ERR_BUSY;
+	}
 	if (cdc_ncm_stack_ready == 0U) {
 		/* Lost the race against a hotplug tear down */
 		ret = -RTK_ERR_IO;

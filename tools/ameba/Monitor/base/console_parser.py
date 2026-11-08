@@ -9,8 +9,8 @@ import textwrap
 from serial.tools import miniterm
 
 from . import __version__
-from .constants import (CMD_OUTPUT_TOGGLE, CMD_STOP, CMD_TOGGLE_LOGGING, CMD_TOGGLE_TIMESTAMPS, CTRL_H, TAG_CMD,
-                        TAG_KEY)
+from .constants import (CMD_HARD_RESET, CMD_OUTPUT_TOGGLE, CMD_STOP, CMD_TOGGLE_LOGGING, CMD_TOGGLE_TIMESTAMPS, CTRL_H,
+                        HARD_RESET_COMMAND, HARD_RESET_TOKEN, TAG_CMD, TAG_KEY)
 from .key_config import (COMMAND_KEYS, EXIT_KEY, EXIT_MENU_KEY, MENU_KEY, TOGGLE_LOG_KEY, TOGGLE_OUTPUT_KEY,
                          TOGGLE_TIMESTAMPS_KEY)
 from .color_output import print_red
@@ -35,7 +35,9 @@ class ConsoleParser(object):
         :return: the tag and the key
         """
         ret = None
-        if self._pressed_menu_key or key in COMMAND_KEYS:
+        if key.strip() == HARD_RESET_COMMAND or HARD_RESET_TOKEN in key:  # handled by the monitor, not sent to IC
+            ret = (TAG_CMD, CMD_HARD_RESET)
+        elif self._pressed_menu_key or key in COMMAND_KEYS:
             ret = self._handle_menu_key(key)
         elif key == MENU_KEY:
             self._pressed_menu_key = True
@@ -86,6 +88,8 @@ class ConsoleParser(object):
             ---    {key_description(TOGGLE_OUTPUT_KEY):14} Toggle output display
             ---    {key_description(TOGGLE_LOG_KEY):14} Toggle saving output into file
             ---    {key_description(TOGGLE_TIMESTAMPS_KEY) + ' (or I)':14} Toggle printing timestamps
-            ---    {key_description(EXIT_MENU_KEY) + ' (or X)':14} Exit program"""
+            ---    {key_description(EXIT_MENU_KEY) + ' (or X)':14} Exit program
+            --- Commands:
+            ---    {HARD_RESET_COMMAND:14} Hard reset the IC via DTR/RTS (CHIP_EN), without restarting monitor"""
 
         return textwrap.dedent(text)

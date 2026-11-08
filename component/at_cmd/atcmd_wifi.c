@@ -51,13 +51,6 @@ extern int rtw_ft_reassoc_dbg(u16 argc, char **argv);
 #endif
 extern void wifi_set_dbg_dp_log(char *buf);
 
-#if defined(CONFIG_LWIP_ETHERNET)
-extern struct netif *pnetif_eth;
-#endif
-#if defined(CONFIG_LWIP_USB_ETHERNET)
-extern struct netif *pnetif_usb_eth;
-#endif
-
 static void init_wifi_struct(void)
 {
 	memset(wifi.ssid.val, 0, sizeof(wifi.ssid.val));

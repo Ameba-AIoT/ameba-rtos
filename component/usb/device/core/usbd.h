@@ -127,7 +127,6 @@ typedef struct {
 	usb_ep_info_t info;                       /**< Endpoint information: addr, mps, type, binterval, interval. */
 	__IO u8 xfer_state;                       /**< Current state of the class transfer. */
 	__IO u8 tx_zlp;                           /**< Flag to indicate if a Zero-Length Packet should be sent. */
-	__IO u8 is_busy;                          /**< Flag indicating if the endpoint is currently busy. */
 	u8 dis_zlp : 1;                           /**< Flag to disable Zero-Length Packet for the current transfer. */
 	u8 skip_dcache_pre_clean : 1;             /**< Skip `DCache_Clean` in TRX API and it will be called in class. */
 	u8 skip_dcache_post_invalidate : 1;       /**< Skip `DCache_Invalidate` when RX complete and it will be called in class. */
@@ -148,8 +147,8 @@ typedef struct {
  *        reports the overwritten value. `usbd_whc` does so with its OTP parameters.
  */
 typedef struct {
-	const char *mfg_str;                      /**< iManufacturer string, NULL uses "Realtek". */
-	const char *prod_str;                     /**< iProduct string, NULL uses "Realtek USB Device". */
+	const char *mfg_str;                      /**< iManufacturer string, NULL uses "Realtek", empty reports none. */
+	const char *prod_str;                     /**< iProduct string, NULL uses "Realtek USB Device", empty reports none. */
 	/**
 	 * @brief iSerialNumber string, NULL or empty reports no serial number.
 	 * @note  There is deliberately no default: reading the chip UUID costs several kilobytes
@@ -602,8 +601,10 @@ int usbd_wake_host(void);
 
 /**
  * @brief Register a device class driver, called in class initialization function.
- * @param[in] driver: USB class driver.
- * @return 0 on success, non-zero on failure.
+ * @note  Call after @ref usbd_init, which clears the device context.
+ * @param[in] driver: USB class driver, its `get_descriptor` callback is mandatory.
+ * @return RTK_SUCCESS on success, -RTK_ERR_BADARG for a NULL driver or `get_descriptor`, or
+ *         before @ref usbd_init, otherwise the error starting the controller.
  */
 int usbd_register_class(const usbd_class_driver_t *driver);
 
@@ -738,15 +739,17 @@ usbd_dev_info_t *usbd_get_dev_info(void);
 /**
  * @brief Build a serial number string from the chip UUID.
  * @details Writes @ref USBD_SN_STR_LEN uppercase hex characters plus a terminator: UUID[0] in
- *          the first 8, UUID[1] in the last 8. An unprogrammed OTP falls back to a fixed value
- *          and logs a warning, so the result is always a valid string.
+ *          the first 8, UUID[1] in the last 8. An unprogrammed UUID (all zeroes or all ones)
+ *          logs a warning and returns 0 with nothing written: leave @ref usbd_dev_info_t::sn_str
+ *          NULL then, a fixed fallback would not be unique among devices of the same VID/PID.
  * @note  Reading the chip UUID costs several kilobytes of stack on some SoCs, which is why the
  *        core does not do it by itself. Call this from task context with enough stack, e.g. the
  *        application init thread, and assign the buffer to @ref usbd_dev_info_t::sn_str. The
  *        buffer is referenced by pointer, so it shall remain valid until @ref usbd_deinit.
  * @param[out] sn: Destination buffer.
  * @param[in] len: Capacity of `sn` in bytes, shall be greater than @ref USBD_SN_STR_LEN.
- * @return Number of characters written, 0 when `sn` is NULL or `len` is too small.
+ * @return Number of characters written, 0 when `sn` is NULL, `len` is too small or the UUID
+ *         is unprogrammed.
  */
 u8 usbd_get_uuid_sn(char *sn, u8 len);
 

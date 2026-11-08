@@ -116,7 +116,9 @@ typedef struct {
 	 * @brief Called to handle class-specific SETUP requests.
 	 * @note   This function is called within an interrupt service routine (ISR) context;
 	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
-	 * @param[in] req: Pointer to the setup request packet.
+	 * @param[in] req: Pointer to the setup request packet. For a device-to-host request with a
+	 *            data stage, buf holds at least wLength bytes and wLength never exceeds the
+	 *            host's: write at most wLength bytes.
 	 * @param[out] buf: Pointer to a buffer for data stage of control transfers.
 	 * @return 0 on success, non-zero on failure.
 	 */
@@ -226,10 +228,12 @@ void usbd_cdc_acm_deinit(void);
  * @brief Transmits data to the host over the BULK IN endpoint.
  * @note  At most @ref usbd_cdc_acm_config_t::bulk_in_xfer_size bytes are sent per call, a longer
  *        len is cut to that size.
- * @param[in] buf: Pointer to the data buffer to be transmitted.
- * @param[in] len: Length of the data in bytes.
- * @return 0 on success, -RTK_ERR_BUSY while the previous transfer is in flight, -RTK_ERR_IO when the
- *         device is not configured, other non-zero on failure.
+ *        The ZLP terminating a transfer of a multiple of the MPS is appended by the core.
+ * @param[in] buf: Pointer to the data buffer to be transmitted, not NULL.
+ * @param[in] len: Length of the data in bytes, not 0.
+ * @return 0 on success, -RTK_ERR_BADARG for a NULL buf or a zero len, -RTK_ERR_BUSY while the
+ *         previous transfer is in flight, -RTK_ERR_IO when the device is not configured, other
+ *         non-zero on failure.
  */
 int usbd_cdc_acm_transmit(const u8 *buf, u32 len);
 

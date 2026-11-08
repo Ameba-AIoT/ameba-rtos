@@ -408,6 +408,7 @@ typedef struct {
 	u8 cur_urb;                           // Index of the URB currently being filled by combine_urb
 	u8 cur_packet;                          // Index of the packet within the current URB
 	u8 last_fid;                            // Last Frame ID (toggled bit in UVC payloadheader)
+	u8 header_warned;                       /* Bad payload header already reported this round: throttles its log */
 
 	/* Free/ready frame lists */
 	usb_os_lock_t frame_mutex;              /* Mutex protecting frame lists */

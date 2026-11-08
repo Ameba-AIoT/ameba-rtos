@@ -43,8 +43,6 @@ static void usbh_uvc_dump_simple(usbh_uvc_stream_t *stream);
 
 static const char *const TAG = "UVC";
 
-extern usbh_uvc_host_t uvc_host;
-
 /* Exported variables --------------------------------------------------------*/
 
 /* Private functions ---------------------------------------------------------*/
@@ -601,7 +599,16 @@ static usbh_uvc_frame_t *usbh_uvc_next_frame_buffer(usbh_uvc_stream_t *stream, u
 		return NULL;
 	}
 
-	usb_os_lock(stream->frame_mutex);
+	/* The lock gives up at once while the OS cannot switch tasks (PMU suspend, critical
+	 * section). The lists are not touched then: this frame is dropped and its buffer kept
+	 * for the next one, so no buffer leaves the pool. */
+	if (usb_os_lock(stream->frame_mutex) != RTK_SUCCESS) {
+		usbh_uvc_reset_frame(buf);
+#if USBH_UVC_DEBUG
+		stream->drop_frame_cnt++;
+#endif
+		return buf;
+	}
 
 	// handle current frame
 	if ((buf->err == 1U) || (buf->byteused == 0U)) {
@@ -701,7 +708,13 @@ static void usbh_uvc_combine_urb(usbh_uvc_stream_t *stream, usbh_uvc_urb_t *urb)
 	/* avoid continue getting frame_buffer, only first enter combine urb should reach here */
 	frame_buffer = stream->cur_frame_buf;
 	if (frame_buffer == NULL) {
-		usb_os_lock(stream->frame_mutex);
+		/* No lock, no list access: drop this URB as when no buffer is free */
+		if (usb_os_lock(stream->frame_mutex) != RTK_SUCCESS) {
+#if USBH_UVC_DEBUG
+			stream->dec_no_buf_cnt++;
+#endif
+			return;
+		}
 
 		/* Check if empty list has available buffers */
 		if (list_empty(&stream->frame_empty)) {
@@ -746,7 +759,12 @@ static void usbh_uvc_combine_urb(usbh_uvc_stream_t *stream, usbh_uvc_urb_t *urb)
 		header = (usbh_uvc_vs_payload_header_t *)data;
 
 		if ((header_len < USBH_UVC_PAYLOAD_HEADER_MIN_LEN) || (length < header_len)) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "Err: payload len(%d) < header len(%d)\n", length, header_len);
+			/* Report once per streaming round: a device sending bad headers repeats them on
+			 * every packet, and logging each one would stall this thread on the console */
+			if (stream->header_warned == 0U) {
+				stream->header_warned = 1U;
+				RTK_LOGS(TAG, RTK_LOG_ERROR, "Err: payload len(%d) < header len(%d)\n", length, header_len);
+			}
 			continue;
 		}
 
@@ -1428,6 +1446,7 @@ int usbh_uvc_stream_open(usbh_uvc_stream_t *stream)
 	stream->cur_frame_buf = NULL;
 	stream->last_fid = 0xFFU;
 	stream->trunc_warned = 0U;
+	stream->header_warned = 0U;
 
 	/* init combine thread */
 	status = usbh_uvc_combine_thread_init(stream);
@@ -1654,6 +1673,7 @@ void usbh_uvc_stream_flush(usbh_uvc_stream_t *stream)
 	/* Re-arm the once-per-round truncation warning: a new round may use a different
 	 * resolution/format, so a previous round's warning must not silence this one. */
 	stream->trunc_warned = 0U;
+	stream->header_warned = 0U;
 
 	stream->is_resource_safe = 1;
 #else

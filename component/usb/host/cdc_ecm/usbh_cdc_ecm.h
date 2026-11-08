@@ -147,6 +147,7 @@ typedef struct {
 	u16 vid;                                         /**< Vendor ID */
 	u16 pid;                                         /**< Product ID */
 	u8 data_itf_id;                                  /**< Data Interface number */
+	u8 ctrl_itf_id;                                  /**< Communications Interface number, wIndex of class requests */
 	u8 data_alt_set;                                 /**< Alternate Setting value for Data Interface */
 
 	/* Pipes */
@@ -172,6 +173,7 @@ typedef struct {
 	u8 mac[USBH_CDC_ECM_MAC_STR_LEN];                /**< Buffer for saving MAC string */
 	u8 mac_valid;                                    /**< Flag indicating if MAC address is valid */
 	u8 mac_src_type;                                 /**< ECM dongle MAC source type, see usbh_cdc_ecm_dongle_mac_type_t */
+	u8 mac_write_failed;                             /**< Writing the user MAC into the dongle failed, its own MAC is used */
 	u8 iMACAddressStringId;                          /**< Index of the MAC address string descriptor */
 	u8 mac_ctrl_lock[USBH_CDC_ECM_CTRL_REG_BUF_LEN]; /**< Buffer for RTL8152 MAC change control */
 	u8 flow_ctrl[USBH_CDC_ECM_CTRL_REG_BUF_LEN];     /**< Buffer for RTL8152 flow control */
@@ -236,14 +238,15 @@ void usbh_cdc_ecm_prepare_done(void);
 
 /**
  * @brief  Transmits an Ethernet packet to the device via the Bulk OUT endpoint.
- * @param[in] buf: Pointer to the data buffer (Ethernet frame) to be transmitted.
- * @param[in] len: Length of the data in bytes.
+ * @param[in] buf: Pointer to the data buffer (Ethernet frame) to be transmitted, cache line aligned (DMA source).
+ * @param[in] len: Length of the data in bytes, non-zero.
  * @param[in] block: Blocking mode flag (e.g., 0 for non-blocking, else for blocking).
  * @note   Task context only, one sender at a time. Safe against a concurrent deinit of the class:
  *         returns -RTK_ERR_IO while the class is not initialized or is being de-initialized.
  *         A blocking send waits until the transfer completes, so it shall not be called inside a critical
  *         section or the PMU suspend flow, where the task can not block.
- * @return 0 (RTK_SUCCESS) on success, non-zero on failure.
+ * @return 0 (RTK_SUCCESS) on success, -RTK_ERR_BADARG for ISR context or a NULL, empty or unaligned buffer,
+ *         other non-zero values on failure.
  */
 int usbh_cdc_ecm_send_data(u8 *buf, u32 len, u8 block);
 

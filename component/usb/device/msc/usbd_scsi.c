@@ -242,7 +242,7 @@ static int usbd_scsi_read_capacity10(usbd_msc_dev_t *cdev, u8 *params)
 */
 static int usbd_scsi_read_format_capacity(usbd_msc_dev_t *cdev, u8 *params)
 {
-	UNUSED(params);
+	u32 alloc_len = ((u32)params[7] << 8) | (u32)params[8];
 
 	usb_os_memset((void *)cdev->data, 0U, READ_FORMAT_CAPACITY_DATA_LEN);
 
@@ -262,7 +262,8 @@ static int usbd_scsi_read_format_capacity(usbd_msc_dev_t *cdev, u8 *params)
 			cdev->data[10] = (u8)(USBD_MSC_BLK_SIZE >>  8);
 			cdev->data[11] = (u8)(USBD_MSC_BLK_SIZE);
 
-			cdev->data_length = READ_FORMAT_CAPACITY_DATA_LEN;
+			/* Ref SPC-4 4.2.5.6 / UFI 4.10: return no more than the ALLOCATION LENGTH (bytes 7-8) */
+			cdev->data_length = MIN(alloc_len, READ_FORMAT_CAPACITY_DATA_LEN);
 			return RTK_SUCCESS;
 		}
 	} else {
@@ -278,13 +279,13 @@ static int usbd_scsi_read_format_capacity(usbd_msc_dev_t *cdev, u8 *params)
 */
 static int usbd_scsi_mode_sense6(usbd_msc_dev_t *cdev, u8 *params)
 {
-	UNUSED(params);
-
-	cdev->data_length = MODE_SENSE6_DATA_LEN;
-	usb_os_memcpy((void *)cdev->data, (const void *)usbd_msc_mode_sense6_data, cdev->data_length);
+	usb_os_memcpy((void *)cdev->data, (const void *)usbd_msc_mode_sense6_data, MODE_SENSE6_DATA_LEN);
 	if (cdev->ro != 0U) {
 		cdev->data[2] |= 0x80U;  /* SPC-4: byte 2 bit 7 = WP */
 	}
+	/* Ref SPC-4 4.2.5.6: return no more than the ALLOCATION LENGTH (byte 4), this is not an error.
+	   Without it a host asking for less would see more data than it announced, a BOT Case 7 */
+	cdev->data_length = MIN((u32)params[4], MODE_SENSE6_DATA_LEN);
 
 	return RTK_SUCCESS;
 }
@@ -297,13 +298,14 @@ static int usbd_scsi_mode_sense6(usbd_msc_dev_t *cdev, u8 *params)
 */
 static int usbd_scsi_mode_sense10(usbd_msc_dev_t *cdev, u8 *params)
 {
-	UNUSED(params);
+	u32 alloc_len = ((u32)params[7] << 8) | (u32)params[8];
 
-	cdev->data_length = MODE_SENSE10_DATA_LEN;
-	usb_os_memcpy((void *)cdev->data, (const void *)usbd_msc_mode_sense10_data, cdev->data_length);
+	usb_os_memcpy((void *)cdev->data, (const void *)usbd_msc_mode_sense10_data, MODE_SENSE10_DATA_LEN);
 	if (cdev->ro != 0U) {
 		cdev->data[3] |= 0x80U;  /* SPC-4: byte 3 bit 7 = WP */
 	}
+	/* Ref SPC-4 4.2.5.6: return no more than the ALLOCATION LENGTH (bytes 7-8), see mode_sense6 */
+	cdev->data_length = MIN(alloc_len, MODE_SENSE10_DATA_LEN);
 
 	return RTK_SUCCESS;
 }
@@ -719,6 +721,15 @@ static int usbd_scsi_process_write(usbd_msc_dev_t *cdev)
 	u32 len = cdev->blklen * USBD_MSC_BLK_SIZE;
 
 	len = MIN(len, cdev->buf_size);
+
+	/* Ref MSC BOT 1.0 6.7.3: the host sends a short packet only at the end of the data stage, and the CBW was
+	   checked to carry exactly blklen blocks. A shorter chunk means the host sent less than it announced, Case
+	   13 (Ho < Do): the tail of the buffer holds stale data, so nothing is written and a phase error reported */
+	if (cdev->rx_data_length != len) {
+		RTK_LOGS(TAG, RTK_LOG_WARN, "Wr short %u/%u\n", cdev->rx_data_length, len);
+		cdev->phase_error = 1U;
+		return -RTK_ERR_BADARG;
+	}
 
 	if (cdev->disk_ops.disk_write(cdev->lba, cdev->data, (len >> USBD_MSC_BLK_BITS)) != 0) {
 		RTK_LOGS(TAG, RTK_LOG_WARN, "Wr err LBA %u cnt %u\n", cdev->lba, len >> USBD_MSC_BLK_BITS);
