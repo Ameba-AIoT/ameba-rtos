@@ -50,7 +50,7 @@ static uint8_t bt_le_iso_demo_broadcaster_pa_data[] = {
 	// Flags
 	0x02,
 	RTK_BT_LE_GAP_ADTYPE_FLAGS,
-	RTK_BT_LE_GAP_ADTYPE_FLAGS_LIMITED | RTK_BT_LE_GAP_ADTYPE_FLAGS_BREDR_NOT_SUPPORTED,
+	RTK_BT_LE_GAP_ADTYPE_FLAGS_GENERAL | RTK_BT_LE_GAP_ADTYPE_FLAGS_BREDR_NOT_SUPPORTED,
 	// Local name
 	0x14,
 	RTK_BT_LE_GAP_ADTYPE_LOCAL_NAME_COMPLETE,
@@ -85,7 +85,7 @@ static uint8_t bt_le_iso_demo_bis_broadcaster_ext_adv_data[] = {
 	// Flags
 	0x02,
 	RTK_BT_LE_GAP_ADTYPE_FLAGS,
-	RTK_BT_LE_GAP_ADTYPE_FLAGS_LIMITED | RTK_BT_LE_GAP_ADTYPE_FLAGS_BREDR_NOT_SUPPORTED,
+	RTK_BT_LE_GAP_ADTYPE_FLAGS_GENERAL | RTK_BT_LE_GAP_ADTYPE_FLAGS_BREDR_NOT_SUPPORTED,
 	// Local name
 	0x14,
 	RTK_BT_LE_GAP_ADTYPE_LOCAL_NAME_COMPLETE,
@@ -124,7 +124,7 @@ static uint8_t bt_le_iso_demo_cis_acceptor_ext_adv_data[] = {
 	// Flags
 	0x02,
 	RTK_BT_LE_GAP_ADTYPE_FLAGS,
-	RTK_BT_LE_GAP_ADTYPE_FLAGS_LIMITED | RTK_BT_LE_GAP_ADTYPE_FLAGS_BREDR_NOT_SUPPORTED,
+	RTK_BT_LE_GAP_ADTYPE_FLAGS_GENERAL | RTK_BT_LE_GAP_ADTYPE_FLAGS_BREDR_NOT_SUPPORTED,
 	// Local name
 	0x11,
 	RTK_BT_LE_GAP_ADTYPE_LOCAL_NAME_COMPLETE,
@@ -132,7 +132,7 @@ static uint8_t bt_le_iso_demo_cis_acceptor_ext_adv_data[] = {
 	// Manufacturer Specific Data
 	0xc3,
 	RTK_BT_LE_GAP_ADTYPE_MANUFACTURER_SPECIFIC,
-	0xc0, 0x00,
+	0x5d, 0x00,
 	0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
 	0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1,
 	0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2,
