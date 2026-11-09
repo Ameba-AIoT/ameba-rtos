@@ -877,12 +877,71 @@ static int whc_fullmac_host_set_txpower(struct wiphy *wiphy, struct wireless_dev
 	return -EPERM;
 }
 
-static int whc_fullmac_host_get_txpower(struct wiphy *wiphy, struct wireless_dev *wdev, int *dbm)
+static int whc_fullmac_host_get_txpower_ops(struct wiphy *wiphy, struct wireless_dev *wdev, int *dbm)
 {
+	int ret = 0;
+	s8 txpwr = 0;
+	u8 cur_tx_rate = RTW_RATE_UNKNOWN;
+	struct net_device *ndev;
+	struct rtw_wifi_setting *setting_vir;
+	union rtw_traffic_stats *traffic_stats_vir;
+	dma_addr_t setting_phy, stats_traffic;
+
 	dev_dbg(global_idev.fullmac_dev, "[fullmac]: %s", __func__);
 
-	/* Operation not permitted */
-	return -EPERM;
+	if (whc_fullmac_host_dev_driver_is_mp()) {
+		return -EPERM;
+	}
+
+	if (!wdev) {
+		return -ENODEV;
+	}
+
+	ndev = wdev_to_ndev(wdev);
+	if (!ndev) {
+		return -ENODEV;
+	}
+
+	if (rtw_netdev_idx(ndev) != WHC_STA_PORT) {
+		return -EPERM;
+	}
+
+	if (whc_fullmac_host_wifi_get_join_status() == RTW_JOINSTATUS_SUCCESS) {
+		traffic_stats_vir = rtw_malloc(sizeof(union rtw_traffic_stats), &stats_traffic);
+		if (!traffic_stats_vir) {
+			return -ENOMEM;
+		}
+		ret = whc_fullmac_host_get_traffic_stats(STA_WLAN_INDEX, stats_traffic);
+		if (!ret) {
+			cur_tx_rate = traffic_stats_vir->sta.cur_tx_data_rate;
+		}
+		rtw_mfree(sizeof(union rtw_traffic_stats), traffic_stats_vir, stats_traffic);
+	} else {
+		setting_vir = rtw_malloc(sizeof(struct rtw_wifi_setting), &setting_phy);
+		if (!setting_vir) {
+			return -ENOMEM;
+		}
+		ret = whc_fullmac_host_get_setting(STA_WLAN_INDEX, setting_phy);
+		if (!ret) {
+			if (setting_vir->channel >= 1 && setting_vir->channel <= 14) {
+				cur_tx_rate = RTW_RATE_1M;
+			} else if (setting_vir->channel >= 36 && setting_vir->channel <= 177) {
+				cur_tx_rate = RTW_RATE_6M;
+			}
+		}
+		rtw_mfree(sizeof(struct rtw_wifi_setting), setting_vir, setting_phy);
+	}
+	if (ret || cur_tx_rate == 0 || cur_tx_rate == RTW_RATE_UNKNOWN) {
+		return -ENOENT;
+	}
+
+	ret = whc_fullmac_host_get_txpower(cur_tx_rate, &txpwr);
+	if (ret != 0) {
+		return -ENOENT;
+	}
+
+	*dbm = (int)txpwr / 4;
+	return 0;
 }
 
 static int whc_fullmac_host_set_power_mgmt(struct wiphy *wiphy, struct net_device *ndev, bool enabled, int timeout)
@@ -1263,7 +1322,7 @@ void whc_fullmac_host_ops_sta_init(void)
 	ops->join_ibss = whc_fullmac_host_join_ibss;
 	ops->leave_ibss = whc_fullmac_host_leave_ibss;
 	ops->set_tx_power = whc_fullmac_host_set_txpower;
-	ops->get_tx_power = whc_fullmac_host_get_txpower;
+	ops->get_tx_power = whc_fullmac_host_get_txpower_ops;
 	ops->set_power_mgmt = whc_fullmac_host_set_power_mgmt;
 	ops->set_monitor_channel = whc_fullmac_host_set_monitor_channel;
 	ops->get_channel = whc_fullmac_host_get_channel_ops;
