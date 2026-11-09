@@ -1,12 +1,13 @@
-/*
-*******************************************************************************
-* Copyright(c) 2021, Realtek Semiconductor Corporation. All rights reserved.
-*******************************************************************************
-*/
+/**
+ * @file      bt_audio_debug.h
+ * @brief     BT Audio debug log macros.
+ * @copyright Copyright (c) 2021. Realtek Semiconductor Corporation. All rights reserved.
+ */
+
 #ifndef __BT_AUDIO_DEBUG_H__
 #define __BT_AUDIO_DEBUG_H__
 
-#define CONFIG_BT_AUDIO_DEBUG 0
+#define CONFIG_BT_AUDIO_DEBUG 0   /*!< BT Audio debug log switch. 1: DBG_BAD prints messages. 0: DBG_BAD expands to nothing. */
 
 #if defined(CONFIG_BT_AUDIO_DEBUG) && CONFIG_BT_AUDIO_DEBUG
 #define _dbgdump    BT_LOGA("\n\r"); BT_LOGA

@@ -33,6 +33,7 @@
 
 /* Report type in the high byte of the GET_REPORT/SET_REPORT wValue, Ref HID 1.11 7.2.1 */
 #define USBD_HID_REPORT_TYPE_INPUT           0x01U
+#define USBD_HID_REPORT_TYPE_OUTPUT          0x02U
 
 /* Length of the Input report each interface declares, Report ID included where one is declared */
 #if defined(CONFIG_USBD_HID_VENDOR)
@@ -42,6 +43,14 @@
 #define USBD_HID_PRIV_INPUT_REPORT_LEN       4U
 #else
 #define USBD_HID_PRIV_INPUT_REPORT_LEN       8U
+#endif
+
+/* Length of the Output report each interface declares, Report ID included where one is declared.
+   The mouse declares none. */
+#if defined(CONFIG_USBD_HID_VENDOR)
+#define USBD_HID_PRIV_OUTPUT_REPORT_LEN      (1U + USBD_HID_RX_PKT_SIZE)
+#elif defined(CONFIG_USBD_HID_KEYBOARD)
+#define USBD_HID_PRIV_OUTPUT_REPORT_LEN      1U
 #endif
 
 #ifdef CONFIG_USBD_HID_VENDOR
@@ -76,6 +85,7 @@ static u32 usbd_hid_ring_buf_cnt_internal(const usbd_hid_buf_ctrl_t *pdata_ctrl)
 static void hid_status_changed(usb_dev_t *dev, u8 old_status, u8 status);
 static u8 usbd_hid_is_own_itf(u16 itf);
 static u16 usbd_hid_get_input_report_len(u16 itf, u16 value);
+static u16 usbd_hid_get_output_report_len(u16 itf, u16 value);
 
 /* Private variables ---------------------------------------------------------*/
 
@@ -621,9 +631,9 @@ static int usbd_hid_ring_buf_ctrl_init(usbd_hid_buf_ctrl_t *pbuf_ctrl)
 
 static void usbd_hid_ring_buf_ctrl_deinit(usbd_hid_buf_ctrl_t *pbuf_ctrl)
 {
-	if (pbuf_ctrl->hid_sema_valid) {
+	if (pbuf_ctrl->hid_sema_valid != 0U) {
 		pbuf_ctrl->hid_sema_valid = 0U;
-		if (pbuf_ctrl->read_wait_sema) {
+		if (pbuf_ctrl->read_wait_sema != 0U) {
 			/* Release any thread blocked in usbd_hid_read(). */
 			usb_os_sema_give(pbuf_ctrl->rx_sema);
 		}
@@ -632,7 +642,7 @@ static void usbd_hid_ring_buf_ctrl_deinit(usbd_hid_buf_ctrl_t *pbuf_ctrl)
 		 * otherwise get starved of the CPU it needs to release the semaphore. */
 		do {
 			usb_os_sleep_ms(1U);
-		} while (pbuf_ctrl->read_wait_sema);
+		} while (pbuf_ctrl->read_wait_sema != 0U);
 		usb_os_sema_delete(pbuf_ctrl->rx_sema);
 	}
 	if (pbuf_ctrl->buf_array != NULL) {
@@ -750,7 +760,7 @@ static int hid_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len)
 				hid->cb->received(pbuf_ctrl->buf_array[pbuf_ctrl->write_idx].buf_raw, len);
 			}
 
-			if (!usbd_hid_ring_buf_is_full_internal(pbuf_ctrl)) {
+			if (usbd_hid_ring_buf_is_full_internal(pbuf_ctrl) == 0U) {
 				pbuf_ctrl->write_idx = (u8)(((u32)pbuf_ctrl->write_idx + 1U) % (u32)pbuf_ctrl->buf_array_cnt);
 				pbuf_ctrl->is_intr_out_busy = 1;
 				ret = usbd_hid_receive();
@@ -807,6 +817,41 @@ static u16 usbd_hid_get_input_report_len(u16 itf, u16 value)
 	if ((itf == USBD_HID_PRIV_ITF_NUM) && (id == 0U)) {
 		len = USBD_HID_PRIV_INPUT_REPORT_LEN;
 	}
+#endif
+
+	return len;
+}
+
+/**
+  * @brief  Get the length of the Output report a SET_REPORT names
+  * @param  itf: Class-local interface number, the whole wIndex of the request
+  * @param  value: wValue of the request, report type in the high byte and Report ID in the low
+  * @retval Report length in bytes, 0 when the interface declares no such Output report
+  */
+static u16 usbd_hid_get_output_report_len(u16 itf, u16 value)
+{
+	u16 len = 0U;
+	u8 id = USB_LOW_BYTE(value);
+
+	/* Ref HID 1.11 7.2.2: SET_REPORT may name an Input or Feature report too, but this device
+	   gives them no meaning, so only the Output report it declares is accepted */
+	if (USB_HIGH_BYTE(value) != USBD_HID_REPORT_TYPE_OUTPUT) {
+		return 0U;
+	}
+
+#if defined(CONFIG_USBD_HID_VENDOR)
+	/* Only the Priv interface declares an Output report, the Vendor one is Input only */
+	if ((itf == USBD_HID_PRIV_ITF_NUM) && (id == USBD_HID_REPORT_ID)) {
+		len = USBD_HID_PRIV_OUTPUT_REPORT_LEN;
+	}
+#elif defined(CONFIG_USBD_HID_KEYBOARD)
+	/* The LED report, no Report ID is declared so the ID is 0 (Ref HID 1.11 7.2.1) */
+	if ((itf == USBD_HID_PRIV_ITF_NUM) && (id == 0U)) {
+		len = USBD_HID_PRIV_OUTPUT_REPORT_LEN;
+	}
+#else
+	UNUSED(itf);
+	UNUSED(id);
 #endif
 
 	return len;
@@ -921,9 +966,14 @@ static int hid_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			}
 			break;
 		case USB_REQ_GET_DESCRIPTOR:
+			/* Ref HID 1.11 7.1.1: wIndex of a HID class descriptor request is the interface
+			   number, composite rebases it to the class-local one. Reject a foreign interface */
+			if (usbd_hid_is_own_itf(req->wIndex) == 0U) {
+				ret = -RTK_ERR_BADARG;
+				break;
+			}
 #ifdef CONFIG_USBD_HID_VENDOR
-			/* wIndex = local HID interface (composite rebases to 0-based), the whole
-			 * field is the interface number: 1 = Vendor, else Priv. */
+			/* The interface is validated above: 1 = Vendor, else Priv */
 			if (req->wIndex == USBD_HID_VENDOR_ITF_NUM) {
 				report_len = sizeof(hid_vendor_report_desc);
 				report_desc = hid_vendor_report_desc;
@@ -1033,7 +1083,12 @@ static int hid_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			ret = usbd_ep_transmit(dev, ep0_in);
 			break;
 		case USBD_HID_SET_REPORT:
-			if ((req->wLength != 0U) && ((req->bmRequestType & USB_REQ_DIR_MASK) == USB_H2D)) {
+			/* Ref HID 1.11 7.2.2: wValue carries the report type and ID. Only the Output report
+			   each interface declares exists here, so any other type or ID is a request error.
+			   A shorter report is accepted, hosts such as Linux hidraw may send one */
+			report_len = usbd_hid_get_output_report_len(req->wIndex, req->wValue);
+			if ((report_len != 0U) && (req->wLength != 0U) && (req->wLength <= report_len) &&
+				((req->bmRequestType & USB_REQ_DIR_MASK) == USB_H2D)) {
 				if (req->wLength > ep0_out->xfer_buf_len) {
 					/* Cannot accept the data stage: stall so the host recovers promptly */
 					ret = -RTK_ERR_BADARG;
@@ -1056,9 +1111,9 @@ static int hid_setup(usb_dev_t *dev, usb_setup_req_t *req)
 				}
 			} else {
 				/* Ref HID 1.11 7.2.2: SET_REPORT is host-to-device with a report in the data
-				 * stage. A D2H direction bit or wLength==0 is malformed, and nothing can be
-				 * armed on EP0 for it, so report a request error and let the core stall EP0
-				 * (ref USB 2.0 9.2.7) instead of leaving the transfer unanswered. */
+				 * stage. A D2H direction bit, wLength==0, a longer report or a report this
+				 * interface does not declare is malformed, so report a request error and let
+				 * the core stall EP0 (ref USB 2.0 9.2.7) instead of leaving it unanswered. */
 				ret = -RTK_ERR_BADARG;
 			}
 			break;
@@ -1141,6 +1196,12 @@ static int hid_set_config(usb_dev_t *dev, u8 config)
 	/* Init INTR OUT EP */
 	info = &ep_intr_out->info;
 	info->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_HID_HS_INT_MAX_PACKET_SIZE : USBD_HID_FS_INT_MAX_PACKET_SIZE;
+#ifndef CONFIG_USBD_HID_VENDOR
+	/* The controller receives whole DWORD aligned packets: request no more than the buffer holds
+	   at this MPS, so that usbd_ep_receive() accepts it. usbd_hid_private_init() made sure the
+	   buffer holds one packet at least. */
+	ep_intr_out->xfer_len = usb_get_max_payload_len(ep_intr_out->xfer_buf_len, info->mps);
+#endif
 	ret = usbd_ep_init(dev, ep_intr_out);
 	if (ret != RTK_SUCCESS) {
 		goto exit_clear_config;
@@ -1489,7 +1550,7 @@ static void hid_sof(usb_dev_t *dev)
 
 	UNUSED(dev);
 
-	if ((!ctrl->is_intr_out_busy) && (!usbd_hid_ring_buf_is_full_internal(ctrl))) {
+	if ((ctrl->is_intr_out_busy == 0U) && (usbd_hid_ring_buf_is_full_internal(ctrl) == 0U)) {
 		/* The ISR had left the current write slot un-advanced because the ring
 		 * was full; a reader has drained one now, so advance and re-arm. */
 		ctrl->write_idx = (u8)(((u32)ctrl->write_idx + 1U) % (u32)ctrl->buf_array_cnt);
@@ -1578,8 +1639,14 @@ static int usbd_hid_private_init(const usbd_hid_usr_cb_t *cb, const usbd_hid_con
 	ep_intr_out->xfer_len = 0U;
 #else
 	ep_intr_out->xfer_buf_len = (cfg->intr_out_xfer_size != 0U) ? cfg->intr_out_xfer_size : USBD_HID_INTR_OUT_BUF_SIZE;
+	/* The INTR OUT buffer receives whole packets, so it shall hold one at every speed, otherwise
+	   SET_CONFIGURATION fails, refer to hid_set_config() */
+	if ((usb_get_max_payload_len(ep_intr_out->xfer_buf_len, USBD_HID_HS_INT_MAX_PACKET_SIZE) == 0U) ||
+		(usb_get_max_payload_len(ep_intr_out->xfer_buf_len, USBD_HID_FS_INT_MAX_PACKET_SIZE) == 0U)) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "OUT buf %u < mps\n", ep_intr_out->xfer_buf_len);
+		return -RTK_ERR_BADARG;
+	}
 	ep_intr_out->xfer_buf = (u8 *)usb_os_malloc(ep_intr_out->xfer_buf_len);
-	ep_intr_out->xfer_len = ep_intr_out->xfer_buf_len;
 	if (ep_intr_out->xfer_buf == NULL) {
 		return -RTK_ERR_NOMEM;
 	}
@@ -1654,7 +1721,7 @@ static int usbd_hid_system_control(u8 cmd_bitmap)
 	u8 release[2] = {USBD_HID_VOLUME_REPORT_ID, 0x00U};
 	u8 claimed;
 
-	if ((dev == NULL) || (!dev->is_ready)) {
+	if ((dev == NULL) || (dev->is_ready == 0U)) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Vendor TX not ready\n");
 		return ret;
 	}
@@ -1691,7 +1758,7 @@ static int usbd_hid_system_control(u8 cmd_bitmap)
 		}
 	}
 
-	if (!dev->is_ready) {
+	if (dev->is_ready == 0U) {
 		return -RTK_ERR_IO;
 	}
 
@@ -1826,8 +1893,9 @@ int usbd_hid_send_data(const u8 *data, u32 len)
 #endif
 
 	/* hid->dev is assigned in set_config, so it is NULL until the host has configured the device */
-	if ((dev == NULL) || (!dev->is_ready)) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "EP%02x TX not ready\n", hid->cfg->intr_in_addr);
+	if ((dev == NULL) || (dev->is_ready == 0U)) {
+		/* hid->cfg is NULL before the first init: log the endpoint copy */
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "EP%02x TX not ready\n", ep_intr_in->info.addr);
 		return ret;
 	}
 
@@ -1854,7 +1922,7 @@ int usbd_hid_send_data(const u8 *data, u32 len)
 	usb_os_exit_critical();
 
 	if (claimed != 0U) {
-		if (dev->is_ready) { // In case deinit when plug out
+		if (dev->is_ready != 0U) { // In case deinit when plug out
 #ifdef CONFIG_USBD_HID_VENDOR
 			ep_intr_in->xfer_buf[0] = USBD_HID_REPORT_ID;
 			usb_os_memcpy((void *)(ep_intr_in->xfer_buf + hdr_len), (const void *)data, len);
@@ -1866,7 +1934,7 @@ int usbd_hid_send_data(const u8 *data, u32 len)
 #else
 			usb_os_memcpy((void *)ep_intr_in->xfer_buf, (const void *)data, len);
 #endif
-			if (dev->is_ready) { // In case deinit when plug out
+			if (dev->is_ready != 0U) { // In case deinit when plug out
 #ifdef CONFIG_USBD_HID_VENDOR
 				ep_intr_in->xfer_len = len + hdr_len;
 #else
@@ -1896,7 +1964,7 @@ int usbd_hid_send_data(const u8 *data, u32 len)
 #ifdef CONFIG_USBD_HID_VENDOR
 int usbd_hid_volume_ctrl(u8 vol_up)
 {
-	return usbd_hid_system_control(vol_up ? USBD_HID_CMD_VOLUME_UP : USBD_HID_CMD_VOLUME_DOWN);
+	return usbd_hid_system_control((vol_up != 0U) ? USBD_HID_CMD_VOLUME_UP : USBD_HID_CMD_VOLUME_DOWN);
 }
 
 int usbd_hid_power_ctrl(void)
@@ -1907,7 +1975,7 @@ int usbd_hid_power_ctrl(void)
 u32 usbd_hid_ring_buf_is_full(void)
 {
 	usbd_hid_t *hid = &hid_device;
-	if (!hid->rx_ctrl.hid_sema_valid) {
+	if (hid->rx_ctrl.hid_sema_valid == 0U) {
 		return 0U;
 	}
 	return usbd_hid_ring_buf_is_full_internal(&hid->rx_ctrl);
@@ -1916,7 +1984,7 @@ u32 usbd_hid_ring_buf_is_full(void)
 u32 usbd_hid_get_read_buf_cnt(void)
 {
 	usbd_hid_t *hid = &hid_device;
-	if (!hid->rx_ctrl.hid_sema_valid) {
+	if (hid->rx_ctrl.hid_sema_valid == 0U) {
 		return 0U;
 	}
 	return usbd_hid_ring_buf_cnt_internal(&hid->rx_ctrl);
@@ -1937,7 +2005,7 @@ u32 usbd_hid_read(u8 *buffer, u32 size, u32 time_out_ms)
 
 	/* A reader spawned before ring init sees zeroed rx_ctrl; bail out before
 	 * touching any field, else buf_array_cnt==0 faults as divide-by-zero. */
-	if (!ctrl->hid_sema_valid) {
+	if (ctrl->hid_sema_valid == 0U) {
 		usb_os_sleep_ms(time_out_ms);
 		return 0U;
 	}
@@ -1949,7 +2017,7 @@ u32 usbd_hid_read(u8 *buffer, u32 size, u32 time_out_ms)
 		ctrl->read_wait_sema = 1U;
 		/* Re-check hid_sema_valid after publishing read_wait_sema: pairs with
 		 * deinit's observe-read_wait_sema then give-then-delete ordering. */
-		if (!ctrl->hid_sema_valid) {
+		if (ctrl->hid_sema_valid == 0U) {
 			ctrl->read_wait_sema = 0U;
 			return 0U;
 		}
@@ -1958,7 +2026,7 @@ u32 usbd_hid_read(u8 *buffer, u32 size, u32 time_out_ms)
 			return 0U;
 		}
 		ctrl->read_wait_sema = 0U;
-		if (!ctrl->hid_sema_valid || (usbd_hid_ring_buf_cnt_internal(ctrl) == 0U)) {
+		if ((ctrl->hid_sema_valid == 0U) || (usbd_hid_ring_buf_cnt_internal(ctrl) == 0U)) {
 			return 0U;
 		}
 	}

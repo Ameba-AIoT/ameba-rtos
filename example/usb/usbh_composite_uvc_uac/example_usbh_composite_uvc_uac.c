@@ -218,6 +218,13 @@ static usbh_uvc_s_ctx_t usbh_uvc_s_ctx;
  */
 static __IO int usbh_uvc_uac_is_ready = 0;
 
+#ifdef CONFIG_SUPPORT_AUDIO_FOR_USB
+/* IN format the ctrl thread negotiated, ch_cnt 0 for none. Written before it gives
+   usbh_uac_record_start_sema and read by the record thread after taking it, so the
+   sema orders the access and no lock is needed. */
+static usbh_uac_audio_fmt_t usbh_uac_rec_fmt;
+#endif
+
 /* Serializes the USB stack bring up / tear down against the class API callers.
    usbh_uac_deinit() frees the ISOC ring buffers and the per-direction format
    tables, usbh_uvc_deinit() frees the video frame buffers that
@@ -636,6 +643,9 @@ static void usbh_uvc_uac_ctrl_thread(void *param)
 	while (usbh_comp_app.quit == 0U) {
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Ctrl wait setup\n");
 		do_ctrl_setup = 0U;
+#ifdef CONFIG_SUPPORT_AUDIO_FOR_USB
+		usbh_uac_rec_fmt.ch_cnt = 0U;
+#endif
 
 		if (rtos_sema_take(usbh_uvc_stream_start_sema, RTOS_SEMA_MAX_COUNT) != RTK_SUCCESS) {
 			continue;
@@ -780,6 +790,9 @@ static void usbh_uvc_uac_ctrl_thread(void *param)
 												 fmt_in[i].ch_cnt,
 												 fmt_in[i].bit_width,
 												 fmt_in[i].sampling_freq) == RTK_SUCCESS) {
+#ifdef CONFIG_SUPPORT_AUDIO_FOR_USB
+						usbh_uac_rec_fmt = fmt_in[i];
+#endif
 						/* 6. UAC capture start */
 						usbh_uac_start_capture();
 						is_recording = 1U;
@@ -1014,7 +1027,7 @@ static void usbh_uac_play_thread(void *param)
   *
   *         Resident thread that lives for the entire demo. Each iteration:
   *           1. Blocks on `usbh_uac_record_start_sema` until a device is set up.
-  *           2. Queries the IN alt-settings and selects the first one advertised.
+  *           2. Takes the IN format the ctrl thread negotiated.
   *           3. (Optional) Creates an `AudioTrack` so captured PCM is rendered
   *              locally for monitoring when `CONFIG_SUPPORT_AUDIO_FOR_USB` is on.
   *           4. Pulls isochronous IN data into `usbh_uac_record_buffer` until the
@@ -1034,14 +1047,12 @@ static void usbh_uac_record_thread(void *param)
 
 #ifdef CONFIG_SUPPORT_AUDIO_FOR_USB
 	AudioTrackConfig track_config = {0};
-	const usbh_uac_audio_fmt_t *fmt_info = NULL;
 	struct AudioTrack *audio_track = NULL;
 	u32 format = 0U;
 	s32 track_buf_size = 0;
 	u32 g_track_rate = 0U;
 	u32 g_track_channel = 0U;
 	u32 g_track_format = 0U;
-	u8 fmt_cnt = 0U;
 	u8 have_fmt = 0U;
 #endif
 
@@ -1070,17 +1081,13 @@ static void usbh_uac_record_thread(void *param)
 		frame_size = usbh_uac_get_frame_size(USBH_UAC_ISOC_IN_DIR);
 
 #ifdef CONFIG_SUPPORT_AUDIO_FOR_USB
-		/* Copy the format fields out while still holding the lock: fmt_info points
-		   into the class format table, which usbh_uac_deinit() frees. Everything
-		   below uses only the copies, so the AudioTrack setup can run unlocked. */
-		fmt_info = usbh_uac_get_alt_setting(USBH_UAC_ISOC_IN_DIR, &fmt_cnt);
-		have_fmt = ((fmt_info != NULL) && (fmt_cnt > 0U)) ? 1U : 0U;
+		/* Monitor in the format the ctrl thread negotiated, not the first one listed */
+		have_fmt = (usbh_uac_rec_fmt.ch_cnt != 0U) ? 1U : 0U;
 		if (have_fmt != 0U) {
-			g_track_rate = fmt_info[0].sampling_freq;
-			g_track_channel = fmt_info[0].ch_cnt;
-			g_track_format = fmt_info[0].bit_width;
+			g_track_rate = usbh_uac_rec_fmt.sampling_freq;
+			g_track_channel = usbh_uac_rec_fmt.ch_cnt;
+			g_track_format = usbh_uac_rec_fmt.bit_width;
 		}
-		fmt_info = NULL;
 #endif
 		/* Done with the class queries: release before the AudioTrack setup and the
 		   capture loop, which re-takes the lock per read. */

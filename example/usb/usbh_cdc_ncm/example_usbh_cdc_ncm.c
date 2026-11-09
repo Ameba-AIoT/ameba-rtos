@@ -6,6 +6,7 @@
 
 /* Includes ------------------------------------------------------------------ */
 #include <platform_autoconf.h>
+#include "platform_stdlib.h"
 #include <lwip/sockets.h>
 #include <lwip/netdb.h>
 #include "os_wrapper.h"
@@ -16,6 +17,7 @@
 #include "psa/crypto.h"
 #endif
 #include "lwip_netconf.h"
+#include "lwip/tcpip.h"
 #include "usbh_cdc_ncm.h"
 #include "usb_app.h"
 #include "example_usbh_cdc_ncm.h"
@@ -70,9 +72,6 @@ static void usbh_cdc_ncm_cb_process(usb_host_t *host, u8 msg);
 static void usbh_cdc_ncm_cb_received(u8 *pbuf, u32 Len);
 static int usbh_cdc_ncm_cb_device_check(usb_host_t *host, u8 cfg_max);
 
-extern void rltk_usb_eth_init(void);
-extern void rltk_usb_eth_deinit(void);
-
 /* Private variables ---------------------------------------------------------*/
 
 static const char *const TAG = "NCM";
@@ -96,7 +95,7 @@ static const u8 cdc_ncm_mac_valid[6] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55};
 
 static u8 cdc_ncm_dhcp_done = 0;
 static __IO u8 cdc_ncm_detach_pending = 0;
-static usb_os_sema_t cdc_ncm_detach_sema;
+static rtos_sema_t cdc_ncm_detach_sema;
 
 /* Serializes the USB stack bring up / tear down against the lwIP TX path.
    The class driver already keeps usbh_cdc_ncm_transmit() off the buffers that
@@ -154,16 +153,13 @@ static const usbh_config_t usbh_ncm_cfg = {
 	.rx_fifo_depth = 464,
 	.nptx_fifo_depth = 256,
 	.ptx_fifo_depth = 256,
-#elif defined (CONFIG_AMEBAL2)
-	/*FIFO total depth is 1024 DWORD, reserve 11 DWORD for DMA addr*/
-	.rx_fifo_depth = 501,
-	.nptx_fifo_depth = 256,
-	.ptx_fifo_depth = 256,
 #elif defined (CONFIG_AMEBAPRO3)
 	/*FIFO total depth is 2232 DWORD, resv 8 DWORD for DMA addr */
 	.rx_fifo_depth = 1712,
 	.nptx_fifo_depth = 256,
 	.ptx_fifo_depth = 256,
+#elif !defined(CONFIG_SUPPORT_USB_SHARED_DFIFO)
+#error "Set the USB host FIFO depths for this SoC"
 #endif
 };
 
@@ -244,7 +240,7 @@ static void usbh_cdc_ncm_cb_detached(void)
 
 	cdc_ncm_detach_pending = 1;
 #if CONFIG_USBH_CDC_NCM_HOTPLUG
-	usb_os_sema_give(cdc_ncm_detach_sema);
+	rtos_sema_give(cdc_ncm_detach_sema);
 #endif
 }
 
@@ -273,7 +269,9 @@ static void usbh_cdc_ncm_cb_process(usb_host_t *host, u8 msg)
 	UNUSED(host);
 	switch (msg) {
 	case USBH_MSG_USER_SET_CONFIG:
-		usbh_cdc_ncm_choose_config(host);
+		if (usbh_cdc_ncm_choose_config(host) != RTK_SUCCESS) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Choose config fail\n");
+		}
 		break;
 	case USBH_MSG_DISCONNECTED:
 		break;
@@ -308,7 +306,13 @@ static int usbh_cdc_ncm_stack_init(void)
 	}
 
 	/* All class drivers registered; start USB TRX so enumeration can run. */
-	usbh_start();
+	ret = usbh_start();
+	if (ret != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Start USBH fail\n");
+		usbh_cdc_ncm_deinit();
+		usbh_deinit();
+		return ret;
+	}
 	cdc_ncm_stack_up = 1U;
 
 	return RTK_SUCCESS;
@@ -385,7 +389,7 @@ static void usbh_ncm_net_down(u8 dhcp_ran)
 	netifapi_netif_set_down(pnetif_usb_eth);
 	if (dhcp_ran != 0U) {
 		/* As on detach: give the default route back to the STA netif */
-		netif_set_default(pnetif_sta);
+		netifapi_netif_set_default(pnetif_sta);
 	}
 	cdc_ncm_dhcp_done = 0;
 }
@@ -435,7 +439,9 @@ static void usbh_ncm_link_change_thread(void *param)
 			cdc_ncm_detach_pending = 0;
 			if (ethernet_state >= ETH_STATUS_INIT) {
 				ethernet_state = ETH_STATUS_IDLE;
-				netif_set_default(pnetif_sta);
+				/* Not the tcpip thread: netifapi takes the core lock */
+				netifapi_netif_set_default(pnetif_sta);
+				netifapi_netif_set_link_down(pnetif_usb_eth);
 				RTK_LOGS(TAG, RTK_LOG_INFO, "Switch to unlink (detach event)\n");
 			}
 		}
@@ -449,9 +455,12 @@ static void usbh_ncm_link_change_thread(void *param)
 			} else {
 				RTK_LOGS(TAG, RTK_LOG_INFO, "Do DHCP\n");
 				ethernet_state = ETH_STATUS_INIT;
-				usb_os_memcpy((void *)pnetif_usb_eth->hwaddr, (const void *)mac, 6);
+				/* hwaddr is read by the tcpip thread, written under its core lock */
+				LOCK_TCPIP_CORE();
+				memcpy((void *)pnetif_usb_eth->hwaddr, (const void *)mac, 6);
+				UNLOCK_TCPIP_CORE();
 				RTK_LOGS(TAG, RTK_LOG_INFO, "MAC[%02x %02x %02x %02x %02x %02x]\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-				netif_set_link_up(pnetif_usb_eth);
+				netifapi_netif_set_link_up(pnetif_usb_eth);
 
 				/* A stop meanwhile keeps stopping DHCP until this returns, see usbh_ncm_wait_link_exit() */
 				dhcp_ran = 1U;
@@ -475,7 +484,9 @@ static void usbh_ncm_link_change_thread(void *param)
 			}
 		} else if (0 == link_is_up && (ethernet_state >= ETH_STATUS_INIT)) {	// link -> unlink
 			ethernet_state = ETH_STATUS_IDLE;
-			netif_set_default(pnetif_sta);
+			netifapi_netif_set_default(pnetif_sta);
+			/* Clear the link flag and the ARP entries of the gone USB interface */
+			netifapi_netif_set_link_down(pnetif_usb_eth);
 			RTK_LOGS(TAG, RTK_LOG_INFO, "Switch to unlink\n");
 		} else {
 			rtos_time_delay_ms(1000);
@@ -496,7 +507,7 @@ static void usbh_cdc_ncm_save_to_memory(char *pdata, unsigned int length)
 #if CONFIG_USBH_CDC_NCM_DUMP_FILE
 	static unsigned int psram_pos = 0;
 	if (CONFIG_USBH_CDC_NCM_DUMP_PSRAM_HEAP_SIZE >= psram_pos + length) {
-		usb_os_memcpy((void *)&cdc_ncm_dump_psram_heap[psram_pos], (const void *)pdata, length);
+		memcpy((void *)&cdc_ncm_dump_psram_heap[psram_pos], (const void *)pdata, length);
 		psram_pos += length;
 	}
 #else
@@ -542,13 +553,13 @@ static void usbh_ncm_download_thread(void *param)
 	UNUSED(param);
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Enter download example\n");
-	usb_os_memset((void *)output, 0x00, 8 * MD5_CHECK_BUFFER_LEN);
+	memset((void *)output, 0x00, 8 * MD5_CHECK_BUFFER_LEN);
 
 	while ((0 == cdc_ncm_dhcp_done) && (cdc_ncm_app.quit == 0U)) {
 		if (++heart_beat % 30 == 0) {
 			RTK_LOGS(TAG, RTK_LOG_INFO, "Wait for ethernet connect ...\n");
 		}
-		usb_os_sleep_ms(1000);
+		rtos_time_delay_ms(1000);
 	}
 	if (cdc_ncm_app.quit != 0U) {
 		goto exit;
@@ -572,7 +583,7 @@ static void usbh_ncm_download_thread(void *param)
 
 	server_host = gethostbyname(SERVER_HOST);
 	if (server_host != NULL) {
-		usb_os_memcpy((void *) &server_addr.sin_addr, (const void *) server_host->h_addr, 4);
+		memcpy((void *) &server_addr.sin_addr, (const void *) server_host->h_addr, 4);
 	} else {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Server host\n");
 		goto exit;
@@ -692,7 +703,7 @@ static void usbh_ncm_mem_check_thread(void *param)
 
 	while (cdc_ncm_app.quit == 0U) {
 		status = usbh_cdc_ncm_stack_init();
-		RTK_LOGS(TAG, RTK_LOG_INFO, "Loop create %d: all_free:0x%08x\n", loop, usb_os_get_free_heap_size());
+		RTK_LOGS(TAG, RTK_LOG_INFO, "Loop create %d: all_free:0x%08x\n", loop, rtos_mem_get_free_heap_size());
 		usbh_ncm_mem_check_delay(5000U);
 
 		if (status != RTK_SUCCESS) {
@@ -702,7 +713,7 @@ static void usbh_ncm_mem_check_thread(void *param)
 			usbh_cdc_ncm_stack_down();
 
 			usbh_ncm_mem_check_delay(3000U);
-			RTK_LOGS(TAG, RTK_LOG_INFO, "Loop delete %d: all_free:0x%08x\n", loop, usb_os_get_free_heap_size());
+			RTK_LOGS(TAG, RTK_LOG_INFO, "Loop delete %d: all_free:0x%08x\n", loop, rtos_mem_get_free_heap_size());
 			loop++;
 		}
 	}
@@ -735,7 +746,7 @@ static int usbh_ncm_join_workers(u32 count)
 static void usbh_ncm_release(void)
 {
 	usbh_cdc_ncm_stack_down();
-	usb_os_sema_delete(cdc_ncm_detach_sema);
+	rtos_sema_delete(cdc_ncm_detach_sema);
 	cdc_ncm_detach_sema = NULL;
 	usb_app_ctx_end(&cdc_ncm_app);
 	RTK_LOGS(TAG, RTK_LOG_INFO, "USBH CDC NCM demo stop\n");
@@ -749,7 +760,7 @@ static void usbh_ncm_hotplug_thread(void *param)
 	UNUSED(param);
 
 	for (;;) {
-		if (usb_os_sema_take(cdc_ncm_detach_sema, USB_OS_SEMA_TIMEOUT) != RTK_SUCCESS) {
+		if (rtos_sema_take(cdc_ncm_detach_sema, RTOS_SEMA_MAX_COUNT) != RTK_SUCCESS) {
 			continue;
 		}
 		if (cdc_ncm_app.quit != 0U) {
@@ -837,7 +848,7 @@ static int usbh_ncm_start(void)
 		}
 	}
 
-	status = usb_os_sema_create(&cdc_ncm_detach_sema);
+	status = rtos_sema_create(&cdc_ncm_detach_sema, 0U, 1U);
 	if (status != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create detach sema fail\n");
 		goto exit_end;
@@ -922,7 +933,7 @@ exit_release:
 	/* Standalone only: in the usb_drd image lwIP may hold usb_eth_tx_mutex, which outlives the app */
 	rltk_usb_eth_deinit();
 #endif
-	usb_os_sema_delete(cdc_ncm_detach_sema);
+	rtos_sema_delete(cdc_ncm_detach_sema);
 	cdc_ncm_detach_sema = NULL;
 
 exit_end:
@@ -998,7 +1009,7 @@ int example_usbh_cdc_ncm_stop(void)
 	/* quit is set and TX refused: the link change thread stops DHCP, restores the default route and
 	   takes the netif down within its 1 s poll, before the stack goes; the others leave through quit */
 #if CONFIG_USBH_CDC_NCM_HOTPLUG && !CONFIG_USBH_CDC_NCM_MEM_CHECK
-	usb_os_sema_give(cdc_ncm_detach_sema);
+	rtos_sema_give(cdc_ncm_detach_sema);
 #endif
 	if (usbh_ncm_join_workers(cdc_ncm_workers) != RTK_SUCCESS) {
 		/* A worker is still on the stack or the netif: keep everything, the app stays STOPPING */

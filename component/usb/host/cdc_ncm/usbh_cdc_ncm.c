@@ -214,10 +214,10 @@ static u16 usbh_cdc_ncm_get_eth_status_check_time(void)
 	usbh_cdc_ncm_host_t *cdc = &usbh_cdc_ncm_host;
 
 	if ((cdc->host != NULL) && (cdc->host->dev_speed == USB_SPEED_HIGH)) {
-		return 8 * USBH_CDC_NCM_ETH_STATUS_CHECK_TIME;
+		return (u16)(8U * USBH_CDC_NCM_ETH_STATUS_CHECK_TIME);
 	}
 
-	return USBH_CDC_NCM_ETH_STATUS_CHECK_TIME;
+	return (u16)USBH_CDC_NCM_ETH_STATUS_CHECK_TIME;
 }
 
 /**
@@ -696,7 +696,8 @@ static int usbh_cdc_ncm_ctrl_setting(usb_host_t *host)
 			cdc->sub_status++;
 		} else if (state != -RTK_ERR_BUSY) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Get NTB params err\n");
-			/* Use defaults */
+			/* Use defaults, and drop the previous device's framing parameters: 0 selects the defaults too */
+			usb_os_memset((void *)&cdc->ntb_params, 0, sizeof(usb_cdc_ncm_ntb_parameters_t));
 			cdc->ntb_in_max_size = USB_CDC_NCM_DEFAULT_NTB_INPUT_SIZE;
 			cdc->ntb_out_max_size = USB_CDC_NCM_DEFAULT_NTB_INPUT_SIZE;
 			cdc->sub_status++;
@@ -1392,7 +1393,7 @@ static void usbh_cdc_ncm_detach(usb_host_t *host)
 	 * so a sender that has not published bulk_tx_block yet is covered too; it then sees the
 	 * cleared state, and a give nobody consumes is dropped by the next blocking send. */
 	cdc->bulk_tx_err = 1U;
-	(void)usb_os_sema_give(cdc->bulk_tx_sema);
+	usb_os_sema_give(cdc->bulk_tx_sema);
 
 	if ((cdc->cb != NULL) && (cdc->cb->detached != NULL)) {
 		cdc->cb->detached();
@@ -1505,7 +1506,7 @@ static void usbh_cdc_ncm_process_halt(usb_host_t *host)
 		cdc->halt_retry_cnt++;
 		if (cdc->halt_retry_cnt >= USBH_CDC_NCM_HALT_RETRY_MAX_CNT) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "EP%d clear halt fail, re-enum\n", cdc->halt_ep_addr);
-			(void)usbh_reenumerate();
+			usbh_reenumerate();
 		} else {
 			usbh_notify(host, 0U, &usbh_cdc_ncm_driver);
 		}
@@ -1596,7 +1597,7 @@ static void usbh_cdc_ncm_xfer_err(usb_host_t *host, const usbh_pipe_t *pipe, u16
 		(*err_cnt)++;
 		if (*err_cnt == USBH_CDC_NCM_XFER_ERR_MAX_CNT) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "EP%02x err, re-enum\n", pipe->ep_addr);
-			(void)usbh_reenumerate();
+			usbh_reenumerate();
 		}
 	}
 }
@@ -2012,7 +2013,7 @@ static u16 usbh_cdc_ncm_agg_finalize(u8 b)
 		return 0U;
 	}
 
-	ndp_off = (cdc->tx_agg_write_off[b] + (ndp_align - 1U)) & ~(ndp_align - 1U);
+	ndp_off = (u16)((cdc->tx_agg_write_off[b] + (ndp_align - 1U)) & ~(ndp_align - 1U));
 
 	ndp = (usb_cdc_ncm_ndp16_t *)(cdc->tx_agg_buf[b] + ndp_off);
 	ndp->dwSignature = USB_CDC_NCM_NDP16_NOCRC_SIGNATURE;
@@ -2036,7 +2037,7 @@ static u16 usbh_cdc_ncm_agg_finalize(u8 b)
 	nth->dwSignature = USB_CDC_NCM_NTH16_SIGNATURE;
 	nth->wHeaderLength = USB_CDC_NCM_NTH16_LENGTH;
 	nth->wSequence = cdc->ntb_sequence++;
-	nth->wBlockLength = ndp_off + ndp->wLength;
+	nth->wBlockLength = (u16)(ndp_off + ndp->wLength);
 	nth->wFpIndex = ndp_off;
 
 	return nth->wBlockLength;
@@ -2201,7 +2202,7 @@ static int usbh_cdc_ncm_cb_bulk_send(int state)
 	 * take consumes without waiting for the actual transfer to complete. */
 	if (cdc->bulk_tx_block) {
 		cdc->bulk_tx_err = (state == RTK_SUCCESS) ? 0U : 1U;
-		(void)usb_os_sema_give(cdc->bulk_tx_sema);
+		usb_os_sema_give(cdc->bulk_tx_sema);
 	}
 
 	return RTK_SUCCESS;
@@ -2219,7 +2220,7 @@ static int usbh_cdc_ncm_tx_status_check(void)
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Wait TX exit TO\n");
 			break;
 		}
-		(void)usb_os_sema_give(cdc->bulk_tx_sema);
+		usb_os_sema_give(cdc->bulk_tx_sema);
 		usb_os_sleep_ms(1U);
 		wait_ms++;
 	}
@@ -2352,7 +2353,15 @@ int usbh_cdc_ncm_init(const usbh_cdc_ncm_state_cb_t *cb, const usbh_cdc_ncm_conf
 		}
 	}
 
-	usb_os_lock_create(&cdc->tx_agg_lock);
+	ret = usb_os_lock_create(&cdc->tx_agg_lock);
+	if (ret != RTK_SUCCESS) {
+		/* Without the lock the two TX buffers would be filled and launched unserialized */
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create tx_agg_lock fail\n");
+		for (bi = 0U; bi < USBH_CDC_NCM_TX_AGG_NUM_BUF; bi++) {
+			USBH_CDC_NCM_FREE_MEM(cdc->tx_agg_buf[bi]);
+		}
+		goto tx_agg_buf_fail;
+	}
 	cdc->tx_agg_xfer_busy = 0U;
 	cdc->tx_agg_fill_idx = 0U;
 	usbh_cdc_ncm_agg_reset_buf(0U);
@@ -2464,6 +2473,12 @@ void usbh_cdc_ncm_deinit(void)
 #endif
 
 	usbh_cdc_ncm_tx_status_check();
+
+	/* The gate is closed and no TX caller is left, so nothing submits any more: halt the pipes
+	 * before the TX buffers go, a transfer submitted earlier (aggregation, a non-blocking send)
+	 * may still be read by the DMA */
+	usbh_cdc_ncm_deinit_all_pipe();
+
 	usb_os_sema_delete(cdc->bulk_tx_sema);
 
 #if defined(CONFIG_USBH_CDC_NCM_TX_AGGREGATION)
@@ -2475,8 +2490,6 @@ void usbh_cdc_ncm_deinit(void)
 #else
 	USBH_CDC_NCM_FREE_MEM(cdc->tx_ntb_buf);
 #endif
-
-	usbh_cdc_ncm_deinit_all_pipe();
 
 	USBH_CDC_NCM_FREE_MEM(cdc->dongle_ctrl_buf);
 
@@ -2583,7 +2596,7 @@ static int usbh_cdc_ncm_tx_frame(u8 *buf, u32 len, u8 block)
 		cdc->bulk_tx_err = 0U;
 		/* Drop a give left over from a TX nobody waited for (e.g. by detach), else the take
 		 * below would return before this TX completes */
-		(void)usb_os_sema_take(cdc->bulk_tx_sema, 0U);
+		usb_os_sema_take(cdc->bulk_tx_sema, 0U);
 		cdc->bulk_tx_block = 1;
 	}
 
@@ -2606,7 +2619,7 @@ static int usbh_cdc_ncm_tx_frame(u8 *buf, u32 len, u8 block)
 		 * earlier would hand the buffer back to the caller while the controller still reads it.
 		 * The caller shall be a task that can block, see usbh_cdc_ncm_transmit(): inside a critical section
 		 * or the PMU suspend flow the take fails at once. */
-		(void)usb_os_sema_take(cdc->bulk_tx_sema, USB_OS_SEMA_TIMEOUT);
+		usb_os_sema_take(cdc->bulk_tx_sema, USB_OS_SEMA_TIMEOUT);
 		if (cdc->bulk_tx_err != 0U) {
 			ret = -RTK_ERR_IO;
 		}

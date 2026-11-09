@@ -46,6 +46,24 @@ endmenu
 menu "CONFIG Memory Arch"
     config SECOND_FLASH_NOR
         bool "Second flash NOR"
+
+    config NOR_FLASH_NEW_STRATEGY
+        bool "New NOR flash driver"
+        default n
+        help
+            Use the table-driven NOR flash driver, which identifies the flash chip by
+            its ID and applies the matching read mode, dummy cycles and CS timing.
+            Disabled: use the original driver.
+
+            Note: unlike the original driver, it does not clear the flash block
+            protection bits at boot.
+
+    config NOR_FLASH_DTR
+        bool
+        depends on NOR_FLASH_NEW_STRATEGY
+        default n
+        help
+            Not supported on this chip.
 endmenu
 
 menu "CONFIG Link Option"

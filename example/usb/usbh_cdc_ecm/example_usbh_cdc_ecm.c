@@ -6,6 +6,7 @@
 
 /* Includes ------------------------------------------------------------------ */
 #include <platform_autoconf.h>
+#include "platform_stdlib.h"
 #include <lwip/sockets.h>
 #include <lwip/netdb.h>
 #include "os_wrapper.h"
@@ -16,6 +17,7 @@
 #include "psa/crypto.h"
 #endif
 #include "lwip_netconf.h"
+#include "lwip/tcpip.h"
 #include "usbh_cdc_ecm.h"
 #include "usb_app.h"
 #include "example_usbh_cdc_ecm.h"
@@ -84,9 +86,6 @@ static void cdc_ecm_cb_process(usb_host_t *host, u8 msg);
 static void cdc_ecm_cb_received(u8 *pbuf, u32 Len);
 static int cdc_ecm_cb_device_check(usb_host_t *host, u8 cfg_max);
 
-extern void rltk_usb_eth_init(void);
-extern void rltk_usb_eth_deinit(void);
-
 /* Private variables ---------------------------------------------------------*/
 
 static const char *const TAG = "ECM";
@@ -111,7 +110,7 @@ static const u8 mac_valid[6] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55};
 
 static volatile u8 dhcp_done = 0;
 static __IO u8 cdc_ecm_detach_pending = 0;
-static usb_os_sema_t cdc_ecm_detach_sema;
+static rtos_sema_t cdc_ecm_detach_sema;
 
 /* Serializes the USB stack bring up / tear down against the lwIP TX path.
    The class driver already keeps usbh_cdc_ecm_send_data() off the buffers that
@@ -169,16 +168,13 @@ static const usbh_config_t usbh_ecm_cfg = {
 	.rx_fifo_depth = 464,
 	.nptx_fifo_depth = 256,
 	.ptx_fifo_depth = 256,
-#elif defined (CONFIG_AMEBAL2)
-	/*FIFO total depth is 1024 DWORD, reserve 11 DWORD for DMA addr*/
-	.rx_fifo_depth = 501,
-	.nptx_fifo_depth = 256,
-	.ptx_fifo_depth = 256,
 #elif defined (CONFIG_AMEBAPRO3)
 	/*FIFO total depth is 2232 DWORD, resv 8 DWORD for DMA addr */
 	.rx_fifo_depth = 1712,
 	.nptx_fifo_depth = 256,
 	.ptx_fifo_depth = 256,
+#elif !defined(CONFIG_SUPPORT_USB_SHARED_DFIFO)
+#error "Set the USB host FIFO depths for this SoC"
 #endif
 };
 
@@ -253,7 +249,7 @@ static void cdc_ecm_cb_detached(void)
 
 	cdc_ecm_detach_pending = 1;
 #if CONFIG_USBH_CDC_ECM_HOT_PLUG
-	usb_os_sema_give(cdc_ecm_detach_sema);
+	rtos_sema_give(cdc_ecm_detach_sema);
 #endif
 }
 
@@ -282,7 +278,9 @@ static void cdc_ecm_cb_process(usb_host_t *host, u8 msg)
 	UNUSED(host);
 	switch (msg) {
 	case USBH_MSG_USER_SET_CONFIG:
-		usbh_cdc_ecm_choose_config(host);
+		if (usbh_cdc_ecm_choose_config(host) != RTK_SUCCESS) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Choose config fail\n");
+		}
 		break;
 	case USBH_MSG_DISCONNECTED:
 		// usbh_cdc_ecm_host_user.cdc_ecm_is_ready = 0;
@@ -318,7 +316,13 @@ static int cdc_ecm_stack_init(void)
 	}
 
 	/* All class drivers registered; start USB TRX so enumeration can run. */
-	usbh_start();
+	ret = usbh_start();
+	if (ret != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Start USBH fail\n");
+		usbh_cdc_ecm_deinit();
+		usbh_deinit();
+		return ret;
+	}
 	cdc_ecm_stack_up = 1U;
 
 	return RTK_SUCCESS;
@@ -437,7 +441,7 @@ static int cdc_ecm_teardown_all(u32 workers)
 	cdc_ecm_net_down();
 
 	/* The hotplug thread waits on the detach sema, the others poll quit */
-	usb_os_sema_give(cdc_ecm_detach_sema);
+	rtos_sema_give(cdc_ecm_detach_sema);
 	if (usb_app_ctx_join(&cdc_ecm_app, workers) != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Stop timeout\n");
 		return -RTK_ERR_TIMEOUT;
@@ -446,7 +450,7 @@ static int cdc_ecm_teardown_all(u32 workers)
 	/* Every worker is gone. The stack is down already if the hotplug thread left mid-rebuild. */
 	cdc_ecm_stack_deinit();
 
-	usb_os_sema_delete(cdc_ecm_detach_sema);
+	rtos_sema_delete(cdc_ecm_detach_sema);
 	cdc_ecm_detach_sema = NULL;
 	cdc_ecm_workers = 0U;
 	dhcp_done = 0U;
@@ -501,7 +505,9 @@ static void example_usbh_ecm_link_change_thread(void *param)
 			cdc_ecm_detach_pending = 0;
 			if (ethernet_state >= ETH_STATUS_INIT) {
 				ethernet_state = ETH_STATUS_IDLE;
-				netif_set_default(pnetif_sta);
+				/* Not the tcpip thread: netifapi takes the core lock */
+				netifapi_netif_set_default(pnetif_sta);
+				netifapi_netif_set_link_down(pnetif_usb_eth);
 				RTK_LOGS(TAG, RTK_LOG_INFO, "Switch to unlink (detach event)\n");
 			}
 		}
@@ -513,22 +519,25 @@ static void example_usbh_ecm_link_change_thread(void *param)
 			/* Enter the DHCP section only while no stop is claimed, see cdc_ecm_dhcp_busy */
 			enter = 0U;
 			if (mac != NULL) {
-				usb_os_enter_critical();
+				rtos_critical_enter(RTOS_CRITICAL_USB);
 				if (cdc_ecm_app.quit == 0U) {
 					cdc_ecm_dhcp_busy = 1U;
 					cdc_ecm_dhcp_ran = 1U;
 					enter = 1U;
 				}
-				usb_os_exit_critical();
+				rtos_critical_exit(RTOS_CRITICAL_USB);
 			}
 			if (mac == NULL) {
 				rtos_time_delay_ms(1000);
 			} else if (enter != 0U) {
 				RTK_LOGS(TAG, RTK_LOG_INFO, "Do DHCP\n");
 				ethernet_state = ETH_STATUS_INIT;
-				usb_os_memcpy((void *)pnetif_usb_eth->hwaddr, (const void *)mac, 6);
+				/* hwaddr is read by the tcpip thread, written under its core lock */
+				LOCK_TCPIP_CORE();
+				memcpy((void *)pnetif_usb_eth->hwaddr, (const void *)mac, 6);
+				UNLOCK_TCPIP_CORE();
 				RTK_LOGS(TAG, RTK_LOG_INFO, "MAC[%02x %02x %02x %02x %02x %02x]\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-				netif_set_link_up(pnetif_usb_eth);
+				netifapi_netif_set_link_up(pnetif_usb_eth);
 
 				dhcp_status = lwip_request_ip(NETIF_USB_ETH_INDEX);
 				if ((DHCP_ADDRESS_ASSIGNED == dhcp_status) && (cdc_ecm_app.quit == 0U)) {
@@ -548,7 +557,9 @@ static void example_usbh_ecm_link_change_thread(void *param)
 			}
 		} else if (0 == link_is_up && (ethernet_state >= ETH_STATUS_INIT)) {	// link -> unlink
 			ethernet_state = ETH_STATUS_IDLE;
-			netif_set_default(pnetif_sta);
+			netifapi_netif_set_default(pnetif_sta);
+			/* Clear the link flag and the ARP entries of the gone USB interface */
+			netifapi_netif_set_link_down(pnetif_usb_eth);
 			RTK_LOGS(TAG, RTK_LOG_INFO, "Switch to unlink\n");
 		} else {
 			if ((link_is_up == 0) && (++link_down_log_cnt % 10 == 1)) {
@@ -567,7 +578,7 @@ static void save_to_memory(char *pdata, unsigned int length)
 #if CONFIG_USBH_CDC_ECM_ENABLE_DUMP_FILE
 	static unsigned int psram_pos = 0;
 	if (CONFIG_USBH_CDC_ECM_PSRAM_HEAP_SIZE_TEST >= psram_pos + length) {
-		usb_os_memcpy((void *)&dump_psRAMHeap[psram_pos], (const void *)pdata, length);
+		memcpy((void *)&dump_psRAMHeap[psram_pos], (const void *)pdata, length);
 		psram_pos += length;
 	}
 #else
@@ -613,13 +624,13 @@ static void example_usbh_ecm_download_thread(void *param)
 	UNUSED(param);
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Enter donwload example\n");
-	usb_os_memset((void *)output, 0x00, 8 * CONFIG_USBH_CDC_ECM_MD5_CHECK_BUFFER_LEN);
+	memset((void *)output, 0x00, 8 * CONFIG_USBH_CDC_ECM_MD5_CHECK_BUFFER_LEN);
 
 	while ((0 == dhcp_done) && (cdc_ecm_app.quit == 0U)) {
 		if (++heart_beat % 30 == 0) {
 			RTK_LOGS(TAG, RTK_LOG_INFO, "Wait for ethernet connect ...\n");
 		}
-		usb_os_sleep_ms(1000);
+		rtos_time_delay_ms(1000);
 	}
 	if (cdc_ecm_app.quit != 0U) {
 		goto exit;
@@ -647,7 +658,7 @@ static void example_usbh_ecm_download_thread(void *param)
 	// Support CONFIG_USBH_CDC_ECM_SERVER_HOST in IP or domain name
 	server_host = gethostbyname(CONFIG_USBH_CDC_ECM_SERVER_HOST);
 	if (server_host != NULL) {
-		usb_os_memcpy((void *) &server_addr.sin_addr, (const void *) server_host->h_addr, 4);
+		memcpy((void *) &server_addr.sin_addr, (const void *) server_host->h_addr, 4);
 	} else {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Server host\n");
 		goto exit;
@@ -775,7 +786,7 @@ static void example_usbh_ecm_mem_check_thread(void *param)
 	UNUSED(param);
 
 	while (cdc_ecm_app.quit == 0U) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "Loop create %d: all_free:0x%08x\n", loop, usb_os_get_free_heap_size());
+		RTK_LOGS(TAG, RTK_LOG_INFO, "Loop create %d: all_free:0x%08x\n", loop, rtos_mem_get_free_heap_size());
 		for (i = 0U; (i < 50U) && (cdc_ecm_app.quit == 0U); i++) {
 			rtos_time_delay_ms(100);
 		}
@@ -789,7 +800,7 @@ static void example_usbh_ecm_mem_check_thread(void *param)
 			fatal = 1U;
 			break;
 		}
-		RTK_LOGS(TAG, RTK_LOG_INFO, "Loop delete %d: all_free:0x%08x\n", loop, usb_os_get_free_heap_size());
+		RTK_LOGS(TAG, RTK_LOG_INFO, "Loop delete %d: all_free:0x%08x\n", loop, rtos_mem_get_free_heap_size());
 		loop++;
 	}
 
@@ -805,7 +816,9 @@ static void example_usbh_ecm_hotplug_thread(void *param)
 	UNUSED(param);
 
 	for (;;) {
-		usb_os_sema_take(cdc_ecm_detach_sema, USB_OS_SEMA_TIMEOUT);
+		if (rtos_sema_take(cdc_ecm_detach_sema, RTOS_SEMA_MAX_COUNT) != RTK_SUCCESS) {
+			continue;
+		}
 		if (cdc_ecm_app.quit != 0U) {
 			/* Stop requested: the stop owner tears the stack down */
 			break;
@@ -867,7 +880,7 @@ static int cdc_ecm_start(void)
 		}
 	}
 
-	ret = usb_os_sema_create(&cdc_ecm_detach_sema);
+	ret = rtos_sema_create(&cdc_ecm_detach_sema, 0U, 1U);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create detach sema fail\n");
 		usb_app_ctx_end(&cdc_ecm_app);

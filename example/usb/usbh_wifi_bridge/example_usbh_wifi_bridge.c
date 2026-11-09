@@ -10,6 +10,7 @@
 #include <lwip/netdb.h>
 #include "lwip/prot/tcp.h"
 #include "lwip_netconf.h"
+#include "platform_stdlib.h"
 #include "os_wrapper.h"
 #include "os_wrapper_time.h"
 #include "usbh_cdc_ecm.h"
@@ -75,18 +76,13 @@ static void cdc_ecm_cb_process(usb_host_t *host, u8 msg);
 static void cdc_ecm_cb_received(u8 *pbuf, u32 Len);
 static int cdc_ecm_cb_device_check(usb_host_t *host, u8 cfg_max);
 
-extern void rltk_usb_eth_init(void);
-extern void rltk_usb_eth_deinit(void);
-
 /* Private variables ---------------------------------------------------------*/
 
 static const char *const TAG = "ECMB";
 
 static struct eth_addr host_mac = {{0x00}}; // mac of device connected to usb
 
-extern struct netif *pnetif_usb_eth;
-
-static usb_os_sema_t cdc_ecm_detach_sema;
+static rtos_sema_t cdc_ecm_detach_sema;
 
 /* Serializes the USB stack bring up / tear down against the lwIP TX path.
    The class driver already keeps usbh_cdc_ecm_send_data() off the buffers that
@@ -145,16 +141,13 @@ static const usbh_config_t usbh_ecm_cfg = {
 	.rx_fifo_depth = 464,
 	.nptx_fifo_depth = 256,
 	.ptx_fifo_depth = 256,
-#elif defined (CONFIG_AMEBAL2)
-	/*FIFO total depth is 1024 DWORD, reserve 11 DWORD for DMA addr*/
-	.rx_fifo_depth = 501,
-	.nptx_fifo_depth = 256,
-	.ptx_fifo_depth = 256,
 #elif defined (CONFIG_AMEBAPRO3)
 	/*FIFO total depth is 2232 DWORD, resv 8 DWORD for DMA addr */
 	.rx_fifo_depth = 1712,
 	.nptx_fifo_depth = 256,
 	.ptx_fifo_depth = 256,
+#elif !defined(CONFIG_SUPPORT_USB_SHARED_DFIFO)
+#error "Set the USB host FIFO depths for this SoC"
 #endif
 };
 
@@ -208,7 +201,7 @@ static void cdc_ecm_cb_detached(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "DETACH\n");
 #if ENABLE_USBH_CDC_ECM_HOT_PLUG
-	usb_os_sema_give(cdc_ecm_detach_sema);
+	rtos_sema_give(cdc_ecm_detach_sema);
 #endif
 }
 
@@ -388,7 +381,7 @@ static int get_packet_attrib(struct pbuf *p, pkt_attrib_t *pattrib)
 
 	dst_addr = (struct eth_addr *)((u8_t *)p->payload);
 	src_addr = (struct eth_addr *)(((u8_t *)p->payload) + sizeof(struct eth_addr));
-	protocol = *((unsigned short *)((u8 *)p->payload + 2 * ETH_ALEN));
+	protocol = ((const struct eth_hdr *)p->payload)->type;
 
 	if (protocol == lwip_htons(ETHTYPE_IP)) {
 		if (p->len < (u16_t)(ETH_HLEN + sizeof(struct ip_hdr))) {
@@ -449,14 +442,22 @@ static int get_packet_attrib(struct pbuf *p, pkt_attrib_t *pattrib)
 	pattrib->dst_port = dst_port;
 	pattrib->type = type;
 	pattrib->flags = flags;
-	usb_os_memcpy((void *)&pattrib->src_mac, (const void *)src_addr, sizeof(struct eth_addr));
-	usb_os_memcpy((void *)&pattrib->dst_mac, (const void *)dst_addr, sizeof(struct eth_addr));
+#if ECMBDEBUG
+	/* Only the debug dump reads the addresses: spare the copies on every frame otherwise */
+	memcpy((void *)&pattrib->src_mac, (const void *)src_addr, sizeof(struct eth_addr));
+	memcpy((void *)&pattrib->dst_mac, (const void *)dst_addr, sizeof(struct eth_addr));
 	if (src_ip != NULL) {
-		usb_os_memcpy((void *)pattrib->src_ip, (const void *)src_ip, sizeof(pattrib->src_ip));
+		memcpy((void *)pattrib->src_ip, (const void *)src_ip, sizeof(pattrib->src_ip));
 	}
 	if (dst_ip != NULL) {
-		usb_os_memcpy((void *)pattrib->dst_ip, (const void *)dst_ip, sizeof(pattrib->dst_ip));
+		memcpy((void *)pattrib->dst_ip, (const void *)dst_ip, sizeof(pattrib->dst_ip));
 	}
+#else
+	UNUSED(src_addr);
+	UNUSED(dst_addr);
+	UNUSED(src_ip);
+	UNUSED(dst_ip);
+#endif
 
 	return RTK_SUCCESS;
 }
@@ -464,10 +465,10 @@ static int get_packet_attrib(struct pbuf *p, pkt_attrib_t *pattrib)
 static int send_to_wifi(pkt_attrib_t *pattrib, struct pbuf *p)
 {
 	if (pattrib->protocol == lwip_htons(ETHTYPE_ARP)) {
-		usb_os_memcpy((void *)&host_mac, (const void *)((u8 *)p->payload + ETH_ALEN), ETH_ALEN);
+		memcpy((void *)&host_mac, (const void *)((u8 *)p->payload + ETH_ALEN), ETH_ALEN);
 	}
 
-	usb_os_memcpy((void *)((u8 *)p->payload + ETH_ALEN), (const void *)pnetif_sta->hwaddr, ETH_ALEN);
+	memcpy((void *)((u8 *)p->payload + ETH_ALEN), (const void *)pnetif_sta->hwaddr, ETH_ALEN);
 #if ECMBDEBUG
 	RTK_LOGS(TAG, RTK_LOG_INFO, "%s(%d) src_port = %d\n", __func__, __LINE__, pattrib->src_port);
 
@@ -480,7 +481,7 @@ static int send_to_wifi(pkt_attrib_t *pattrib, struct pbuf *p)
 	/* send to etharp_output */
 	if (pattrib->protocol == lwip_htons(ETHTYPE_IP)) {
 	} else if (pattrib->protocol == lwip_htons(ETHTYPE_ARP)) {
-		usb_os_memcpy((void *)((u8 *)p->payload + ETH_ALEN + 16), (const void *)pnetif_sta->hwaddr, ETH_ALEN);
+		memcpy((void *)((u8 *)p->payload + ETH_ALEN + 16), (const void *)pnetif_sta->hwaddr, ETH_ALEN);
 	}
 
 	if (pnetif_sta->linkoutput(pnetif_sta, p) != ERR_OK) {
@@ -576,11 +577,11 @@ static err_t wifi_in_usb_out(struct pbuf *p, struct netif *netif)
 #endif
 
 	if (attrib.protocol == lwip_htons(ETHTYPE_ARP)) {
-		usb_os_memcpy((void *)((u8 *)p->payload + ETH_HLEN + 18), (const void *)&host_mac, ETH_ALEN);
+		memcpy((void *)((u8 *)p->payload + ETH_HLEN + 18), (const void *)&host_mac, ETH_ALEN);
 	}
 
 	//dst mac
-	usb_os_memcpy((void *)p->payload, (const void *)&host_mac, ETH_ALEN);
+	memcpy((void *)p->payload, (const void *)&host_mac, ETH_ALEN);
 
 	/* Dropped the same way as in usb_in_wifi_out */
 	if (send_to_usb(&attrib, p) != RTK_SUCCESS) {
@@ -623,7 +624,7 @@ static int cdc_ecm_teardown_all(u32 workers)
 	cdc_ecm_net_down();
 
 	/* The hotplug thread waits on the detach sema, the others poll quit */
-	usb_os_sema_give(cdc_ecm_detach_sema);
+	rtos_sema_give(cdc_ecm_detach_sema);
 	if (usb_app_ctx_join(&cdc_ecm_app, workers) != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Stop timeout\n");
 		return -RTK_ERR_TIMEOUT;
@@ -632,7 +633,7 @@ static int cdc_ecm_teardown_all(u32 workers)
 	/* Every worker is gone. The stack is down already if the hotplug thread left mid-rebuild. */
 	cdc_ecm_stack_deinit();
 
-	usb_os_sema_delete(cdc_ecm_detach_sema);
+	rtos_sema_delete(cdc_ecm_detach_sema);
 	cdc_ecm_detach_sema = NULL;
 	cdc_ecm_workers = 0U;
 	usb_app_ctx_end(&cdc_ecm_app);
@@ -700,7 +701,7 @@ static void example_usbh_wifi_bridge_init_thread(void *param)
 	while (cdc_ecm_app.quit == 0U) {
 		if (lwip_check_connectivity(NETIF_WLAN_STA_INDEX) == CONNECTION_VALID) {
 			/* Hook both netifs only while no stop is claimed, see bridge_hooked */
-			usb_os_enter_critical();
+			rtos_critical_enter(RTOS_CRITICAL_USB);
 			if (cdc_ecm_app.quit == 0U) {
 				bridge_sta_input = pnetif_sta->input;
 				bridge_eth_input = pnetif_usb_eth->input;
@@ -708,7 +709,7 @@ static void example_usbh_wifi_bridge_init_thread(void *param)
 				pnetif_usb_eth->input = usb_in_wifi_out;                // ethernet netif
 				bridge_hooked = 1U;
 			}
-			usb_os_exit_critical();
+			rtos_critical_exit(RTOS_CRITICAL_USB);
 			break;
 		}
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Wait for WIFI connection\n");
@@ -730,7 +731,9 @@ static void example_usbh_bridge_hotplug_thread(void *param)
 	UNUSED(param);
 
 	for (;;) {
-		usb_os_sema_take(cdc_ecm_detach_sema, USB_OS_SEMA_TIMEOUT);
+		if (rtos_sema_take(cdc_ecm_detach_sema, RTOS_SEMA_MAX_COUNT) != RTK_SUCCESS) {
+			continue;
+		}
 		if (cdc_ecm_app.quit != 0U) {
 			/* Stop requested: the stop owner tears the stack down */
 			break;
@@ -776,7 +779,7 @@ static int cdc_ecm_start(void)
 	cdc_ecm_teardown = 0U;
 	bridge_hooked = 0U;
 	cdc_ecm_workers = 0U;
-	usb_os_memset((void *)&host_mac, 0, sizeof(host_mac));
+	memset((void *)&host_mac, 0, sizeof(host_mac));
 
 	/* Created by the first start and never deleted, see the declaration */
 	if (cdc_ecm_state_mutex == NULL) {
@@ -788,7 +791,7 @@ static int cdc_ecm_start(void)
 		}
 	}
 
-	ret = usb_os_sema_create(&cdc_ecm_detach_sema);
+	ret = rtos_sema_create(&cdc_ecm_detach_sema, 0U, 1U);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create detach sema fail\n");
 		usb_app_ctx_end(&cdc_ecm_app);

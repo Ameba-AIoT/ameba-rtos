@@ -259,6 +259,7 @@ typedef struct {
 	/* Async worker handshakes: ISR/task completion flags and deinit stop requests */
 	__IO u8            write_state;     /* Async write: block state (0 idle, 1 busy, 2 ok, 3 failed), set by write_task, consumed by GETSTATUS */
 	__IO u8            manifest_done;   /* Async manifest: set by manifest_task, read by GETSTATUS/timer in MANIFEST states */
+	__IO u8            manifest_busy;   /* Async manifest: 1 from the wakeup of manifest_task until cb->manifest() returns */
 	u8                 reconf_pending;  /* Run-Time/DFU mode reconf: 1 = DFU_DETACH seen, bus re-enumeration requested */
 	u8                 write_stop;      /* Async write: set to 1 on deinit to terminate write_task */
 	u8                 manifest_stop;   /* Async manifest: set to 1 on deinit to terminate manifest_task and mute its timer */
@@ -360,8 +361,8 @@ void usbd_dfu_set_write_poll_ms(u32 poll_ms);
  * @brief  Set the poll timeout (ms) reported to the host in bwPollTimeout
  *         during the MANIFEST state — the "Status poll timeout" period.
  *         After this interval the device transitions out of MANIFEST.
- * @param  poll_ms: Expected manifestation time in milliseconds.
- *                  Default is 100 ms.
+ * @param  poll_ms: Expected manifestation time in milliseconds, 0 is raised to 1 ms as it also
+ *                  is the period of the manifest timer. Default is 100 ms.
  */
 void usbd_dfu_set_manifest_poll_ms(u32 poll_ms);
 

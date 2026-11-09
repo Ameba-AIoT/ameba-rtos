@@ -164,7 +164,8 @@ typedef struct {
 	usbd_audio_cfg_t in;     /**< Audio format for record (device to host). */
 	usbd_audio_cfg_t out;    /**< Audio format for playback (host to device). */
 	u16 volume_min;          /**< Minimum volume reported to the host, 0 uses @ref USBD_UAC_DEFAULT_VOLUME_MIN.
-	                              Keep the range within the defaults: a SET_CUR outside them is STALLed. */
+	                              Keep the range within the defaults: a SET_CUR outside them is acknowledged
+	                              and ignored, the current volume is kept. */
 	u16 volume_max;          /**< Maximum volume reported to the host, 0 uses @ref USBD_UAC_DEFAULT_VOLUME_MAX. */
 	u16 volume_default;      /**< Initial volume, 0 uses @ref USBD_UAC_DEFAULT_VOLUME. */
 	u8 mute_default;         /**< Initial mute state (0: unmuted, 1: muted). */
@@ -192,7 +193,9 @@ typedef struct {
 	 * @brief Called to handle class-specific SETUP requests.
 	 * @note   This function is called within an interrupt service routine (ISR) context;
 	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
-	 * @param[in] req: Pointer to the setup request packet.
+	 * @param[in] req: Pointer to the setup request packet. For a device-to-host request with a
+	 *            data stage, buf holds at least wLength bytes and wLength never exceeds the
+	 *            host's: write at most wLength bytes.
 	 * @param[out] buf: Pointer to a buffer for data stage of control transfers.
 	 * @return 0 on success, non-zero on failure.
 	 */

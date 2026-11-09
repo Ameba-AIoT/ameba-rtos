@@ -607,6 +607,8 @@ int usbh_init(const usbh_config_t *cfg, const usbh_user_cb_t *cb);
 
 /**
  * @brief Deinitialize USB host core driver.
+ * @note  SMP: call from a task pinned to core 0, the core the USB IRQ is routed to, so no USB ISR
+ *        is still running on another core once the IRQ is disabled.
  */
 void usbh_deinit(void);
 
@@ -633,7 +635,10 @@ void usbh_deinit(void);
  * @warning Requires an initialized core: call only after a successful
  *          @ref usbh_init(), and never after @ref usbh_deinit().
  * @return RTK_SUCCESS if the reset was scheduled, -RTK_ERR_BUSY if one is already pending or running,
- *         -RTK_ERR_BADARG if no device is attached, -RTK_ERR_IO if the reset budget is spent.
+ *         -RTK_ERR_BADARG if no device is attached, -RTK_ERR_IO if the request is refused
+ *         (@ref USBH_MSG_ERROR follows). RTK_SUCCESS is also returned when the resets are spent
+ *         and the request is escalated to a power cycle (@ref USBH_MSG_POWER_CYCLE is reported
+ *         instead of @ref USBH_MSG_RESET), so it does not always mean a port reset.
  */
 int usbh_reenumerate(void);
 
@@ -702,11 +707,13 @@ u32 usbh_get_dev_address(void);
 
 /**
  * @brief  USB Host enter suspend.
+ * @note   No-op, with an error log, if the host is not initialized.
  */
 void usbh_suspend(void);
 
 /**
  * @brief  USB Host exit suspend.
+ * @note   No-op, with an error log, if the host is not initialized.
  */
 void usbh_resume(void);
 
@@ -728,7 +735,7 @@ void usbh_cg_unregister(void);
 /**
  * @brief  USB Host Port Test Control, for CTS test.
  * @param[in] mode: Test mode.
- * @return 0 on success, non-zero on failure.
+ * @return 0 on success, -RTK_ERR_BADARG on a bad mode or if the host is not initialized.
  */
 int usbh_select_test_mode(u8 mode);
 
@@ -780,8 +787,11 @@ int usbh_unregister_class(const usbh_class_driver_t *driver);
  *          Phase-1 driver match iterates over class_driver[] as it is
  *          at that instant - classes registered later can still bind on
  *          subsequent hot-plugs, but will miss the initial device.
- *          Idempotent (guarded by hcd->started); repeated calls are safe.
- * @return 0 on success, non-zero on failure.
+ *          Idempotent for the controller (guarded by hcd->started), but
+ *          @ref usbh_user_cb_t::set_vbus is called with 1 on every invocation,
+ *          except while a power cycle drives VBUS itself.
+ * @return 0 on success, -RTK_ERR_BADARG if not initialized, or the error
+ *         returned by set_vbus(1).
  */
 int usbh_start(void);
 

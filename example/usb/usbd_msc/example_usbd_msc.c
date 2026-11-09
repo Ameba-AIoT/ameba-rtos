@@ -128,7 +128,7 @@ static rtos_sema_t msc_usb_status_changed_sema;
 
 #if MSC_SD_HOTPLUG
 /* Written by the SD card-detect callback, read by the SD thread, possibly on another core */
-static volatile u8 msc_sd_status;
+static volatile SD_RESULT msc_sd_status;
 static rtos_sema_t msc_sd_status_changed_sema;
 #endif
 

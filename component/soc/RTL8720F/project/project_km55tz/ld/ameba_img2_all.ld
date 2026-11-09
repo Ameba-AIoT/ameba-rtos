@@ -68,7 +68,10 @@ SECTIONS
 	/* rom lib part */
 	.romlib.bss :
 	{
-		/* the first 0x70 byte are used to store rom_s/rom_ns common bss */
+		/* 0x00~0x3c : rom_s/rom_ns common bss, owned by ROM.
+		 * 0x3c~0x220: bss of log/shell/dump_stack. NS ROM has no copy of them: with TZ on, img2 links the
+		 *             lib_rom_tz.a objects and places their bss at secure ROM's fixed addresses so both
+		 *             worlds share one state; with TZ off, ROM symbols are used and this section is empty. */
 		. = 0x3c;
 		__romlib_bss_start__ = .;
 		KEEP(*log.o(.bss.rtk_log_tag_array))
@@ -239,7 +242,7 @@ SECTIONS
 	} > CTRACE
 }
 
-ASSERT(__image2_entry_func__ == ORIGIN(KM55TZ_BD_RAM), "__image2_entry_func__ is not KM55TZ_BD_RAM or FULLMAC_BD_RAM.")
+ASSERT(__image2_entry_func__ == ORIGIN(KM55TZ_BD_RAM), "__image2_entry_func__ is not ORIGIN(KM55TZ_BD_RAM).")
 ASSERT(__sram_image2_start__ == ORIGIN(KM55TZ_BD_RAM), "__sram_image2_start__ is changed.")
 ASSERT(__flash_text_start__ == ORIGIN(KM55TZ_IMG2_XIP), "__flash_text_start__ is changed.")
 ASSERT(__psram_image2_start__ == ORIGIN(KM55TZ_BD_PSRAM), "__psram_image2_start__ is changed.")

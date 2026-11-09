@@ -231,6 +231,8 @@ static int usbd_uac_setup(usb_dev_t *dev, usb_setup_req_t *req);
 static u16 usbd_uac_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16 buf_len);
 static void usbd_uac_handle_sof(usb_dev_t *dev);
 static void usbd_uac_append_data(usbd_uac_buf_ctrl_t *pdata_ctrl);
+static void usbd_uac_wake_reader(usbd_uac_buf_ctrl_t *pdata_ctrl);
+static s16 usbd_uac_le16_to_s16(const u8 *buf);
 static int usbd_uac_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, int status);
 static int usbd_uac_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len);
 static int usbd_uac_handle_ep0_data_out(usb_dev_t *dev);
@@ -2324,6 +2326,7 @@ static int usbd_uac_isoc_in_ep_open(usb_dev_t *dev)
 	usbd_uac_dev_t *cdev = &usbd_uac_dev;
 	usbd_ep_t *ep_isoc_in = &cdev->ep_isoc_in;
 	u16 mps;
+	int ret;
 
 	/* Defensive: SET_INTERFACE never selects an absent mic, refer to usbd_uac_mic_present() */
 	if (usbd_uac_ep_enable(&(cdev->cfg->in)) == 0U) {
@@ -2340,16 +2343,35 @@ static int usbd_uac_isoc_in_ep_open(usb_dev_t *dev)
 	usb_os_enter_critical();
 	usbd_ep_deinit(dev, ep_isoc_in);
 	ep_isoc_in->info.mps = mps;
-	usbd_ep_init(dev, ep_isoc_in);
+	/* A failed open leaves the interface on the previous setting, refer to the SET_INTERFACE caller */
+	ret = usbd_ep_init(dev, ep_isoc_in);
 	ep_isoc_in->xfer_state = 0U;
 	/* Audio queued while the host was not streaming is stale, start the new stream from now.
 	   is_closing is raised under this lock before the ring is freed, uac_sema_valid is not */
-	if ((cdev->uac_isoc_in.is_closing == 0U) && (cdev->uac_isoc_in.uac_sema_valid != 0U)) {
+	if ((ret == RTK_SUCCESS) && (cdev->uac_isoc_in.is_closing == 0U) && (cdev->uac_isoc_in.uac_sema_valid != 0U)) {
 		usb_ringbuf_reset(&(cdev->uac_isoc_in.buf_list));
 	}
 	usb_os_exit_critical();
 
-	return RTK_SUCCESS;
+	return ret;
+}
+
+/**
+  * @brief  Convert a 16-bit little-endian control word to a signed value
+  * @note   wCUR of a volume control is a two's complement 1/256 dB value; going through s32 keeps
+  *         the conversion defined for words above 0x7FFF (MISRA C:2012 Rule 10.3)
+  * @param  buf: The two received bytes
+  * @retval Signed volume
+  */
+static s16 usbd_uac_le16_to_s16(const u8 *buf)
+{
+	s32 value = (s32)buf[0] | ((s32)buf[1] << 8);
+
+	if (value > 0x7FFF) {
+		value -= 0x10000;
+	}
+
+	return (s16)value;
 }
 
 /**
@@ -2823,6 +2845,7 @@ static int usbd_uac_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			ret = -RTK_ERR_BADARG;
 		} else if (req->wLength != 0U) {
 			if ((req->bmRequestType & USB_REQ_DIR_MASK) == USB_D2H) {
+				usb_setup_req_t rsp_req;
 				u16 rsp_len = req->wLength;
 
 				/* Ref USB 2.0 9.3.4: wLength is the maximum the host accepts, never trust it
@@ -2834,7 +2857,11 @@ static int usbd_uac_setup(usb_dev_t *dev, usb_setup_req_t *req)
 				/* EP0 buffer is shared with descriptor and OUT traffic, clear the response
 				   window so a callback writing fewer bytes cannot leak stale data. */
 				usb_os_memset((void *)ep0_in->xfer_buf, 0, rsp_len);
-				ret = cb->setup(req, ep0_in->xfer_buf);
+				/* The callback sizes its answer by wLength: hand it a copy carrying the clamped
+				   length, the request itself is left untouched for the core's ZLP decision */
+				usb_os_memcpy((void *)&rsp_req, (const void *)req, sizeof(usb_setup_req_t));
+				rsp_req.wLength = rsp_len;
+				ret = cb->setup(&rsp_req, ep0_in->xfer_buf);
 				if (ret == RTK_SUCCESS) {
 					ep0_in->xfer_len = rsp_len;
 					/* Propagate a submit failure so that the core stalls EP0 instead of
@@ -2929,24 +2956,32 @@ static int usbd_uac_handle_ep0_data_out(usb_dev_t *dev)
 		&& (p_ctrl_req->bRequest == USB_UAC_REQ_CUR)) {
 		if (USB_HIGH_BYTE(p_ctrl_req->wIndex) == USBD_UAC_CTRL_ENTITYID_OUTPUTTERMINAL_FEATUREUNIT) {
 			if ((USB_HIGH_BYTE(p_ctrl_req->wValue) == USB_UAC_FU_MUTE) && (p_ctrl_req->wLength == 0x01)) {
+				/* Ref UAC 2.0 5.2.5.7.1: GET_CUR reports bCUR back, cache it whether or not the app listens */
+				cdev->cur_mute = (ep0_out->xfer_buf[0] != 0U) ? 1U : 0U;
 				if (cb->mute_changed != NULL) {
-					cdev->cur_mute = (ep0_out->xfer_buf[0]) ? 1 : 0;
 					cb->mute_changed(cdev->cur_mute);
 				}
 			} else if ((USB_HIGH_BYTE(p_ctrl_req->wValue) == USB_UAC_FU_VOLUME) && (p_ctrl_req->wLength == 0x02)) {
-				volume_value = (u16)ep0_out->xfer_buf[0] + ((u16)(ep0_out->xfer_buf[1]) << 8);
+				volume_value = usbd_uac_le16_to_s16(ep0_out->xfer_buf);
 
 				num_points = sizeof(usbd_uac_pc_vol_lvl) / sizeof(usbd_uac_pc_vol_lvl[0]);
 				if (num_points != sizeof(usbd_uac_drv_vol) / sizeof(usbd_uac_drv_vol[0])) {
 					RTK_LOGS(TAG, RTK_LOG_ERROR, "Volume arrays length err.\n");
 					ret = -RTK_ERR_BADARG;
 				} else {
-					target_volume = usbd_uac_volume_linear_interpolation(usbd_uac_pc_vol_lvl, usbd_uac_drv_vol, num_points, (int)volume_value);
+					target_volume = usbd_uac_volume_linear_interpolation(usbd_uac_pc_vol_lvl, usbd_uac_drv_vol, num_points, volume_value);
 				}
 
-				if ((target_volume != UABD_UAC_VOL_ERR_VAL) && (cb->volume_changed != NULL)) {
-					cdev->cur_volume = volume_value;
-					cb->volume_changed(target_volume);
+				if (target_volume != UABD_UAC_VOL_ERR_VAL) {
+					/* Ref UAC 2.0 5.2.5.7.2: GET_CUR reports wCUR back, cache it whether or not the app listens */
+					cdev->cur_volume = (u16)volume_value;
+					if (cb->volume_changed != NULL) {
+						cb->volume_changed(target_volume);
+					}
+				} else {
+					/* Outside the reported RANGE, or 0x8000 (-inf dB): UAC 2.0 5.2.5.7.2 defines no
+					   error for it, so the request is acknowledged and the volume kept; GET_CUR then
+					   reports the wCUR actually in use. A STALL would also reject the legal 0x8000. */
 				}
 			}
 		} else if (USB_HIGH_BYTE(p_ctrl_req->wIndex) == USBD_UAC_CTRL_ENTITYID_INPUTTERMINAL_FEATUREUNIT) {
@@ -3127,13 +3162,35 @@ static u8 usbd_uac_ringbuf_push(usbd_uac_buf_ctrl_t *pdata_ctrl, const u8 *buf, 
 }
 
 /**
+  * @brief  Wake the reader blocked in usbd_uac_read_locked() once the OUT ring holds a node
+  * @note   ISR context. The wait flag and the ring are tested in the critical section the reader
+  *         tests the ring and raises the flag in, so a node queued on one core while the reader on
+  *         the other core is going to sleep is never missed. The give does not block and runs
+  *         after the lock is dropped.
+  * @param  pdata_ctrl: OUT buffer control structure
+  * @retval void
+  */
+static void usbd_uac_wake_reader(usbd_uac_buf_ctrl_t *pdata_ctrl)
+{
+	u8 need_give = 0U;
+
+	usb_os_enter_critical();
+	if ((pdata_ctrl->read_wait_sema != 0U) && (usb_ringbuf_is_empty(&(pdata_ctrl->buf_list)) == 0)) {
+		need_give = 1U;
+	}
+	usb_os_exit_critical();
+
+	if (need_give != 0U) {
+		rtos_sema_give(pdata_ctrl->uac_isoc_sema);
+	}
+}
+
+/**
   * @brief  Append a filler node to the OUT ring buffer when the host stops sending data.
   * @note   ISR context (invoked from SOF path).
   */
 static void usbd_uac_append_data(usbd_uac_buf_ctrl_t *pdata_ctrl)
 {
-	usb_ringbuf_manager_t *buf_list = &(pdata_ctrl->buf_list);
-
 	if (usbd_uac_ringbuf_push(pdata_ctrl, NULL, pdata_ctrl->last_xfer_len, 0U) != 0U) {
 #if USBD_UAC_DEBUG
 		pdata_ctrl->append_overwrite_cnt++;
@@ -3143,16 +3200,13 @@ static void usbd_uac_append_data(usbd_uac_buf_ctrl_t *pdata_ctrl)
 	pdata_ctrl->append_zlp_cnt++;
 #endif
 
-	if ((pdata_ctrl->read_wait_sema != 0) && (usb_ringbuf_is_empty(buf_list) == 0)) {
-		rtos_sema_give(pdata_ctrl->uac_isoc_sema);
-	}
+	usbd_uac_wake_reader(pdata_ctrl);
 }
 
 static int usbd_uac_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len)
 {
 	usbd_uac_dev_t *cdev = &usbd_uac_dev;
 	usbd_uac_buf_ctrl_t *pdata_ctrl = &(cdev->uac_isoc_out);
-	usb_ringbuf_manager_t *buf_list = &(pdata_ctrl->buf_list);
 	usbd_ep_t *ep_isoc_out = &cdev->ep_isoc_out;
 	int ret = RTK_SUCCESS;
 
@@ -3201,9 +3255,7 @@ static int usbd_uac_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len)
 			ep_isoc_out->xfer_len = pdata_ctrl->isoc_mps;
 			ret = usbd_ep_receive(dev, ep_isoc_out);
 
-			if ((pdata_ctrl->read_wait_sema != 0) && (usb_ringbuf_is_empty(buf_list) == 0)) {
-				rtos_sema_give(pdata_ctrl->uac_isoc_sema);
-			}
+			usbd_uac_wake_reader(pdata_ctrl);
 		}
 	} else {
 		ep_isoc_out->xfer_buf = usbd_uac_rx_buf;
@@ -3800,6 +3852,7 @@ static u32 usbd_uac_read_locked(usbd_uac_buf_ctrl_t *pdata_ctrl, u8 *buffer, u32
 {
 	u32 copy_len = 0;
 	u16 pkt_cnt = 0;
+	u8 ring_empty;
 
 	if (pdata_ctrl->next_xfer == 0) {
 		return copy_len;
@@ -3813,9 +3866,17 @@ static u32 usbd_uac_read_locked(usbd_uac_buf_ctrl_t *pdata_ctrl, u8 *buffer, u32
 		usbd_uac_read_ring_buf(pdata_ctrl, buffer, size, &copy_len, &pkt_cnt, zero_pkt_flag);
 	} else {
 		do {
-			if (usb_ringbuf_is_empty(&(pdata_ctrl->buf_list))) {
-				//wait sema
-				pdata_ctrl->read_wait_sema = 1;
+			/* Test the ring and announce the wait under the lock the producer tests the flag with,
+			   refer to usbd_uac_wake_reader(), or a node queued in between on the other core is
+			   not signalled */
+			usb_os_enter_critical();
+			ring_empty = (usb_ringbuf_is_empty(&(pdata_ctrl->buf_list)) != 0) ? 1U : 0U;
+			if (ring_empty != 0U) {
+				pdata_ctrl->read_wait_sema = 1U;
+			}
+			usb_os_exit_critical();
+
+			if (ring_empty != 0U) {
 				/* is_closing: the buffer teardown waits for this call to leave */
 				if ((pdata_ctrl->uac_sema_valid == 0) || (pdata_ctrl->is_closing != 0U)) {
 					pdata_ctrl->read_wait_sema = 0;
@@ -3872,7 +3933,11 @@ int usbd_uac_init(const usbd_uac_cb_t *cb, const usbd_uac_config_t *cfg)
 	ret = usbd_uac_private_init(cb, cfg);
 	if (ret == RTK_SUCCESS) {
 		cdev->from_composite = 0;
-		usbd_register_class(&usbd_uac_driver);
+		ret = usbd_register_class(&usbd_uac_driver);
+		if (ret != RTK_SUCCESS) {
+			/* private_init completed, so deinit is its exact reverse, as on the composite path */
+			usbd_uac_deinit();
+		}
 	}
 	return ret;
 }
@@ -3973,7 +4038,7 @@ int usbd_uac_transmit_data(const u8 *buf, u32 len)
 
 		if (pktz->fill == pktz->target) {
 			if (usbd_uac_ringbuf_push(pdata_ctrl, pktz->buf, pktz->fill, 1U) != 0U) {
-				USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_XFER, cdev->cfg->isoc_in_addr);
+				RTK_LOGS(TAG, RTK_LOG_DEBUG, "EP%02x TX drop\n", cdev->cfg->isoc_in_addr);
 			}
 			usbd_uac_rec_pktz_next();
 		}

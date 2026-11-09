@@ -142,8 +142,6 @@ typedef struct {
 /*               Forward declarations (only for struct initializers)          */
 /* ========================================================================== */
 
-extern struct netif *pnetif_usb_eth;
-extern void rltk_usb_eth_init(void);
 extern void netif_adapter_usb_eth_recv(u8 *buf, u32 len);
 
 static void usbh_comp_detached(void);
@@ -743,7 +741,7 @@ static int usbh_comp_dongle_netif_init(void)
 	/* DNS before IP: mirrors lwIP DHCP order so rnat can cache
 	 * valid DNS in the LWIP_NSC_IPV4_ADDRESS_CHANGED callback. */
 	dns_setserver(0, (const ip_addr_t *)&dnsserver);
-	netif_set_addr(&xnetif[NET_IF_NUM - 1], &ipaddr, &netmask, &gw);
+	netif_set_addr(pnetif_usb_eth, &ipaddr, &netmask, &gw);
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Netif init ok\n");
 	return 0;
@@ -1553,8 +1551,8 @@ static void usb_4g_link_thread(void *param)
 				/* EG915: ECM MAC + static IP pre-set on netif (rnat skips DHCP) */
 				mac = (u8 *)usbh_cdc_ecm_process_mac_str();
 				if (mac) {
-					memcpy(xnetif[NET_IF_NUM - 1].hwaddr, mac, 6);
-					xnetif[NET_IF_NUM - 1].hwaddr_len = 6;
+					memcpy(pnetif_usb_eth->hwaddr, mac, 6);
+					pnetif_usb_eth->hwaddr_len = 6;
 				}
 				usbh_comp_dongle_netif_init();
 				RTK_LOGS(TAG, RTK_LOG_INFO, "EG915 static IP set\n");

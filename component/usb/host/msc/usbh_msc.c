@@ -37,6 +37,7 @@ static void usbh_msc_finish_cmd(usbh_msc_host_t *msc, int result);
 static u32 usbh_msc_fsm_snapshot(const usbh_msc_host_t *msc);
 static void usbh_msc_process_abort(usb_host_t *host, usbh_msc_host_t *msc);
 static int usbh_msc_clear_halt_failed(usbh_msc_host_t *msc);
+static int usbh_msc_clear_halt(usb_host_t *host, u8 ep_addr);
 static void usbh_msc_start_failed(usb_host_t *host, usbh_msc_host_t *msc, const usbh_pipe_t *pipe);
 static int usbh_msc_xfer(u8 lun, u32 address, u8 *rx_buf, const u8 *tx_buf, u32 length, u8 cmd);
 
@@ -47,8 +48,12 @@ static const char *const TAG = "MSC";
 /* USB MSC device identification */
 static const usbh_dev_id_t msc_devs[] = {
 	{
-		.mMatchFlags = USBH_DEV_ID_MATCH_ITF_CLASS,
+		/* Only SCSI transparent over Bulk-Only Transport is implemented: matching any other Mass
+		 * Storage interface (CBI, UAS) here would claim it and then fail it in attach() */
+		.mMatchFlags = USBH_DEV_ID_MATCH_ITF_INFO,
 		.bInterfaceClass = MSC_CLASS_CODE,
+		.bInterfaceSubClass = USBH_MSC_TRANSPARENT,
+		.bInterfaceProtocol = USBH_MSC_BOT,
 	},
 	{
 	},
@@ -100,9 +105,18 @@ static int usbh_msc_attach(usb_host_t *host)
 		msc->host = host;
 
 		/* Set data in/out endpoints. ep_desc_array holds exactly bNumEndpoints
-		   entries, so bound the loop by bNumEndpoints to avoid an out-of-bounds read. */
-		for (int i = 0; i < msc_itf_desc->bNumEndpoints && i < 2; i++) {
+		   entries, so bound the loop by bNumEndpoints to avoid an out-of-bounds read.
+		   Every entry is looked at, as the bulk pair need not come first. */
+		for (u32 i = 0U; i < (u32)msc_itf_desc->bNumEndpoints; i++) {
 			ep_desc = &msc_itf_desc->ep_desc_array[i];
+			/* BOT 1.0 3: the interface has one Bulk-In and one Bulk-Out endpoint. Any other
+			 * endpoint cannot carry a CBW/CSW, and a second one of a direction would leak the
+			 * pipe already opened for it. */
+			if (((ep_desc->bmAttributes & USB_EP_XFER_TYPE_MASK) != USB_CH_EP_TYPE_BULK) ||
+				((USB_EP_IS_IN(ep_desc->bEndpointAddress) != 0U) ? (bulk_in->pipe_num != 0U) : (bulk_out->pipe_num != 0U))) {
+				RTK_LOGS(TAG, RTK_LOG_WARN, "Skip EP%02x attr %02x\n", ep_desc->bEndpointAddress, ep_desc->bmAttributes);
+				continue;
+			}
 			if ((ep_desc->bEndpointAddress & USB_REQ_DIR_MASK) == USB_D2H) {
 				if (usbh_open_pipe(host, bulk_in, ep_desc, &usbh_msc_driver) != RTK_SUCCESS) {
 					RTK_LOGS(TAG, RTK_LOG_ERROR, "Open bulk in pipe fail\n");
@@ -119,7 +133,7 @@ static int usbh_msc_attach(usb_host_t *host)
 		}
 
 		/* BOT mandates both a bulk-in and a bulk-out endpoint */
-		if ((bulk_in->pipe_num == 0) || (bulk_out->pipe_num == 0)) {
+		if ((bulk_in->pipe_num == 0U) || (bulk_out->pipe_num == 0U)) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Missing bulk pipe\n");
 			goto open_fail;
 		}
@@ -155,10 +169,10 @@ static int usbh_msc_attach(usb_host_t *host)
 
 open_fail:
 	/* Roll back any pipe already opened (guard with pipe_num: only close open pipes) */
-	if (bulk_in->pipe_num) {
+	if (bulk_in->pipe_num != 0U) {
 		usbh_close_pipe(host, bulk_in);
 	}
-	if (bulk_out->pipe_num) {
+	if (bulk_out->pipe_num != 0U) {
 		usbh_close_pipe(host, bulk_out);
 	}
 	return status;
@@ -179,11 +193,11 @@ static void usbh_msc_detach(usb_host_t *host)
 		msc->cb->detached();
 	}
 
-	if (bulk_in->pipe_num) {
+	if (bulk_in->pipe_num != 0U) {
 		usbh_close_pipe(host, bulk_in);
 	}
 
-	if (bulk_out->pipe_num) {
+	if (bulk_out->pipe_num != 0U) {
 		usbh_close_pipe(host, bulk_out);
 	}
 
@@ -217,7 +231,6 @@ static int usbh_msc_setup(usb_host_t *host)
 	/* Switch MSC REQ state machine */
 	switch (msc->req_state) {
 	case MSC_REQ_IDLE:
-	case MSC_REQ_GET_MAX_LUN:
 		/* Issue GetMaxLUN request */
 		setup.req.bmRequestType = USB_D2H | USB_REQ_TYPE_CLASS
 								  | USB_REQ_RECIPIENT_INTERFACE;
@@ -249,13 +262,6 @@ static int usbh_msc_setup(usb_host_t *host)
 		}
 		break;
 
-	case MSC_REQ_ERROR :
-		/* a Clear Feature should be issued here */
-		if (usbh_ctrl_clear_feature(host, 0x00U) != RTK_SUCCESS) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "TX clear feature fail\n");
-		}
-		break;
-
 	default:
 		break;
 	}
@@ -279,7 +285,16 @@ static void usbh_msc_process(usb_host_t *host, usbh_drv_msg_t *msg)
 
 	switch (msc->state) {
 	case MSC_INIT:
-		if (msc->current_lun < msc->max_lun) {
+		if ((msc->current_lun < msc->max_lun) && ((msc->bulk_in.pipe_num == 0U) || (msc->bulk_out.pipe_num == 0U))) {
+			/* A failed reopen left no bulk pipe: pipe 0 is EP0, so no CBW may be sent. Retire
+			   this LUN as an exhausted recovery does, so the init still ends and setup() runs. */
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Lun %d no bulk pipe\n", msc->current_lun);
+			msc->unit[msc->current_lun].error = MSC_ERROR;
+			msc->unit[msc->current_lun].retired = 1U;
+			msc->unit[msc->current_lun].state = MSC_IDLE;
+			msc->current_lun++;
+			usbh_notify(host, 0, &usbh_msc_driver);
+		} else if (msc->current_lun < msc->max_lun) {
 			usbh_msc_lun_t *unit = &msc->unit[msc->current_lun];
 
 			/* Diagnostic only: name the BOT step a stuck LUN init is parked in, once per init. */
@@ -561,7 +576,11 @@ static void usbh_msc_init_failed(usb_host_t *host, usbh_msc_host_t *msc, usbh_ms
   */
 static u32 usbh_msc_fsm_snapshot(const usbh_msc_host_t *msc)
 {
-	return ((u32)msc->hbot.state) | ((u32)msc->hbot.cmd_state << 8U) | ((u32)msc->unit[msc->current_lun].state << 16U) |
+	/* LUN init steps current_lun past the last unit once it is done with it: there is no unit
+	   state to take then, and unit[] holds no more entries */
+	u32 unit_state = (msc->current_lun < msc->max_lun) ? (u32)msc->unit[msc->current_lun].state : 0U;
+
+	return ((u32)msc->hbot.state) | ((u32)msc->hbot.cmd_state << 8U) | (unit_state << 16U) |
 		   ((u32)msc->bulk_in.xfer_state << 24U) | ((u32)msc->bulk_out.xfer_state << 28U);
 }
 
@@ -703,6 +722,27 @@ static void usbh_msc_finish_cmd(usbh_msc_host_t *msc, int result)
 	if (pending != 0U) {
 		usb_os_sema_give(msc->hbot.cmd_done_sema);
 	}
+}
+
+/**
+  * @brief  Clear ENDPOINT_HALT of one bulk endpoint, Ref USB 2.0 9.4.1.
+  * @note   Sent through usbh_ctrl_request(), which rejects the call while another class of a
+  *         composite device owns EP0; usbh_ctrl_clear_feature() lacks that owner check.
+  * @param  host: Host handle
+  * @param  ep_addr: Endpoint address
+  * @retval RTK_SUCCESS once cleared, -RTK_ERR_BUSY while in progress, an error otherwise
+  */
+static int usbh_msc_clear_halt(usb_host_t *host, u8 ep_addr)
+{
+	usbh_setup_req_t setup;
+
+	setup.req.bmRequestType = USB_H2D | USB_REQ_TYPE_STANDARD | USB_REQ_RECIPIENT_ENDPOINT;
+	setup.req.bRequest = USB_REQ_CLEAR_FEATURE;
+	setup.req.wValue = USB_FEATURE_EP_HALT;
+	setup.req.wIndex = ep_addr;
+	setup.req.wLength = 0U;
+
+	return usbh_ctrl_request(host, &setup, NULL);
 }
 
 /**
@@ -1308,10 +1348,10 @@ int usbh_msc_bot_process(usb_host_t *host, u8 lun)
 		}
 		break;
 	case BOT_ERROR_IN:
-		error = usbh_ctrl_clear_feature(host, bulk_in->ep_addr);
+		error = usbh_msc_clear_halt(host, bulk_in->ep_addr);
 		if (error == RTK_SUCCESS) {
 			usbh_msc_reopen_pipe(host, bulk_in);
-			if (msc->hbot.reset_recovery) {
+			if (msc->hbot.reset_recovery != 0U) {
 				/* BOT 5.3.4: Reset Recovery clears Bulk-In first, then Bulk-Out. */
 				msc->hbot.state = BOT_ERROR_OUT;
 			} else {
@@ -1327,10 +1367,10 @@ int usbh_msc_bot_process(usb_host_t *host, u8 lun)
 		break;
 
 	case BOT_ERROR_OUT:
-		error = usbh_ctrl_clear_feature(host, bulk_out->ep_addr);
+		error = usbh_msc_clear_halt(host, bulk_out->ep_addr);
 		if (error == RTK_SUCCESS) {
 			usbh_msc_reopen_pipe(host, bulk_out);
-			if (msc->hbot.reset_recovery) {
+			if (msc->hbot.reset_recovery != 0U) {
 				/* BOT 5.3.4: both halts cleared, Reset Recovery is complete. */
 				msc->hbot.reset_recovery = 0U;
 				msc->hbot.state = BOT_SEND_CBW;
@@ -1611,11 +1651,11 @@ void usbh_msc_deinit(void)
 		return;
 	}
 
-	if (bulk_in->pipe_num) {
+	if (bulk_in->pipe_num != 0U) {
 		usbh_close_pipe(host, bulk_in);
 	}
 
-	if (bulk_out->pipe_num) {
+	if (bulk_out->pipe_num != 0U) {
 		usbh_close_pipe(host, bulk_out);
 	}
 
