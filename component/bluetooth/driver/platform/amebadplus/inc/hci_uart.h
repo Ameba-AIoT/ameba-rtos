@@ -15,5 +15,7 @@ uint8_t hci_uart_open(void);
 uint8_t hci_uart_close(void);
 uint8_t hci_uart_free(void);
 void hci_uart_force_rts(bool op);
+void hci_uart_op_irq(bool op);
+void hci_uart_op_host_wake_bt(bool op);
 
 #endif

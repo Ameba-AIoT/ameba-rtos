@@ -58,12 +58,13 @@ extern "C" {
  *        @ref usbd_vendor_deinit.
  */
 typedef struct {
-	u32 bulk_in_xfer_size;   /**< BULK IN transfer buffer size */
-	u32 bulk_out_xfer_size;  /**< BULK OUT transfer buffer size */
+	u32 bulk_in_xfer_size;   /**< BULK IN transfer buffer size, the largest payload of one usbd_vendor_transmit_bulk_data() */
+	u32 bulk_out_xfer_size;  /**< BULK OUT transfer buffer size, at least one DWORD aligned MPS of either speed */
 	u32 isoc_in_xfer_size;   /**< ISOC IN transfer buffer size */
-	u32 isoc_out_xfer_size;  /**< ISOC OUT transfer buffer size */
-	u32 intr_in_xfer_size;   /**< INTR IN transfer buffer size */
-	u32 intr_out_xfer_size;  /**< INTR OUT transfer buffer size */
+	u32 isoc_out_xfer_size;  /**< ISOC OUT transfer buffer size, at least one DWORD aligned MPS of either speed
+	                              (1024 for the FS MPS of 1023) */
+	u32 intr_in_xfer_size;   /**< INTR IN transfer buffer size, the largest payload of one usbd_vendor_transmit_intr_data() */
+	u32 intr_out_xfer_size;  /**< INTR OUT transfer buffer size, at least one DWORD aligned MPS of either speed */
 	const char *itf_str;     /**< iInterface string of the Vendor interface, NULL for none. */
 	u8 bulk_in_addr;    /**< BULK IN endpoint address */
 	u8 bulk_out_addr;   /**< BULK OUT endpoint address */
@@ -71,14 +72,14 @@ typedef struct {
 	u8 isoc_out_addr;   /**< ISOC OUT endpoint address */
 	u8 intr_in_addr;    /**< INTR IN endpoint address */
 	u8 intr_out_addr;   /**< INTR OUT endpoint address */
-	u8 intr_in_interval_hs;  /**< INTR IN bInterval at High Speed, 0 uses @ref USBD_VENDOR_DEFAULT_EP_INTERVAL. */
-	u8 intr_in_interval_fs;  /**< INTR IN bInterval at Full Speed, 0 uses @ref USBD_VENDOR_DEFAULT_EP_INTERVAL. */
-	u8 intr_out_interval_hs; /**< INTR OUT bInterval at High Speed, 0 uses @ref USBD_VENDOR_DEFAULT_EP_INTERVAL. */
-	u8 intr_out_interval_fs; /**< INTR OUT bInterval at Full Speed, 0 uses @ref USBD_VENDOR_DEFAULT_EP_INTERVAL. */
-	u8 isoc_in_interval_hs;  /**< ISOC IN bInterval at High Speed, 0 uses @ref USBD_VENDOR_DEFAULT_EP_INTERVAL. */
-	u8 isoc_in_interval_fs;  /**< ISOC IN bInterval at Full Speed, 0 uses @ref USBD_VENDOR_DEFAULT_EP_INTERVAL. */
-	u8 isoc_out_interval_hs; /**< ISOC OUT bInterval at High Speed, 0 uses @ref USBD_VENDOR_DEFAULT_EP_INTERVAL. */
-	u8 isoc_out_interval_fs; /**< ISOC OUT bInterval at Full Speed, 0 uses @ref USBD_VENDOR_DEFAULT_EP_INTERVAL. */
+	u8 intr_in_interval_hs;  /**< INTR IN bInterval at High Speed, 1..16, 0 uses @ref USBD_VENDOR_DEFAULT_EP_INTERVAL. */
+	u8 intr_in_interval_fs;  /**< INTR IN bInterval at Full Speed, 1..255, 0 uses @ref USBD_VENDOR_DEFAULT_EP_INTERVAL. */
+	u8 intr_out_interval_hs; /**< INTR OUT bInterval at High Speed, 1..16, 0 uses @ref USBD_VENDOR_DEFAULT_EP_INTERVAL. */
+	u8 intr_out_interval_fs; /**< INTR OUT bInterval at Full Speed, 1..255, 0 uses @ref USBD_VENDOR_DEFAULT_EP_INTERVAL. */
+	u8 isoc_in_interval_hs;  /**< ISOC IN bInterval at High Speed, 1..16, 0 uses @ref USBD_VENDOR_DEFAULT_EP_INTERVAL. */
+	u8 isoc_in_interval_fs;  /**< ISOC IN bInterval at Full Speed, 1..16, 0 uses @ref USBD_VENDOR_DEFAULT_EP_INTERVAL. */
+	u8 isoc_out_interval_hs; /**< ISOC OUT bInterval at High Speed, 1..16, 0 uses @ref USBD_VENDOR_DEFAULT_EP_INTERVAL. */
+	u8 isoc_out_interval_fs; /**< ISOC OUT bInterval at Full Speed, 1..16, 0 uses @ref USBD_VENDOR_DEFAULT_EP_INTERVAL. */
 } usbd_vendor_config_t;
 
 /** @addtogroup USB_Device_Types USB Device Types
@@ -115,7 +116,8 @@ typedef struct {
 	 * @param[in] req Pointer to the setup request packet.
 	 * @param[out] buf Pointer to a buffer for data stage of control transfers. For a D2H
 	 *         request it is the zero-initialized response window, min(wLength, EP0 buffer
-	 *         size) bytes, and all of it is sent to the host when the handler returns 0.
+	 *         size) bytes, which is the wLength the handler sees in req, and all of it is
+	 *         sent to the host when the handler returns 0.
 	 *         For an H2D request it holds the received payload, and it is NULL if the
 	 *         request has no data stage.
 	 * @return 0 on success, non-zero on failure.
@@ -166,7 +168,7 @@ typedef struct {
 	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	 * @param[in] status: The status of the transmission.
 	 */
-	void (*bulk_transmitted)(u8 status);
+	void (*bulk_transmitted)(int status);
 
 	/**
 	 * @brief Called when a data transmission to the host on the INTR IN endpoint is complete.
@@ -174,7 +176,7 @@ typedef struct {
 	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	 * @param[in] status: The status of the transmission.
 	 */
-	void (*intr_transmitted)(u8 status);
+	void (*intr_transmitted)(int status);
 
 	/**
 	 * @brief Called when a data transmission to the host on the ISOC IN endpoint is complete.
@@ -182,7 +184,7 @@ typedef struct {
 	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	 * @param[in] status: The status of the transmission.
 	 */
-	void (*isoc_transmitted)(u8 status);
+	void (*isoc_transmitted)(int status);
 
 	/**
 	 * @brief Called when USB attach status changes for application to support hot-plug events.
@@ -250,6 +252,9 @@ int usbd_composite_vendor_init(const usbd_vendor_cb_t *cb, const usbd_vendor_con
 
 /**
  * @brief De-initializes the Vendor class driver.
+ * @note  Call it in task context, once no other task is inside usbd_vendor_transmit_bulk_data(),
+ *        usbd_vendor_transmit_intr_data() or usbd_vendor_transmit_isoc_data(): the TX buffers
+ *        they write to are released here.
  * @note  Composite mode: call it after @ref usbd_composite_deinit. Before that the class is
  *        still reachable from the USB ISR, so the call returns at once and releases nothing.
  * @return None. This is a teardown path: apart from the composite case above, the class is always
@@ -259,6 +264,7 @@ void usbd_vendor_deinit(void);
 
 /**
  * @brief Transmits data to the host over the BULK IN endpoint.
+ * @note  A payload longer than bulk_in_xfer_size is cut to it, the rest is not sent.
  * @param[in] buf: Pointer to the data buffer to be transmitted.
  * @param[in] len: Length of the data in bytes.
  * @return 0 on success, non-zero on failure.
@@ -267,6 +273,7 @@ int usbd_vendor_transmit_bulk_data(u8 *buf, u32 len);
 
 /**
  * @brief Transmits data to the host over the INTR IN endpoint.
+ * @note  A payload longer than intr_in_xfer_size is cut to it, the rest is not sent.
  * @param[in] buf: Pointer to the data buffer to be transmitted.
  * @param[in] len: Length of the data in bytes.
  * @return 0 on success, non-zero on failure.
@@ -275,6 +282,11 @@ int usbd_vendor_transmit_intr_data(u8 *buf, u32 len);
 
 /**
  * @brief Transmits data to the host over the ISOC IN endpoint.
+ * @note  ISOC keeps no in-flight state: each call copies into the single ISOC IN buffer and arms
+ *        it at once, so a packet still pending is overwritten. Call it at most once per service
+ *        interval, e.g. from the isoc_transmitted callback, to keep every packet intact.
+ *        One call sends one packet: a payload above the endpoint MPS of the current speed is
+ *        rejected, after being cut to isoc_in_xfer_size.
  * @param[in] buf: Pointer to the data buffer to be transmitted.
  * @param[in] len: Length of the data in bytes.
  * @return 0 on success, non-zero on failure.

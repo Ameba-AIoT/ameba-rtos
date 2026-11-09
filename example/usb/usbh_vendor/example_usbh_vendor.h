@@ -28,6 +28,8 @@ extern "C" {
  * @return None
  */
 void example_usbh_vendor(void);
+int example_usbh_vendor_start(void);
+int example_usbh_vendor_stop(void);
 
 #ifdef __cplusplus
 }

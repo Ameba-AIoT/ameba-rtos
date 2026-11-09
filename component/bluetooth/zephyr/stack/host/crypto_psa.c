@@ -35,6 +35,13 @@ int prng_init(void)
 	return 0;
 }
 
+#if ZEPHYR_RTK_PATCH
+/* zephyr_patch: pair with prng_init(); PSA RNG is owned by the PSA core, nothing to free */
+void prng_deinit(void)
+{
+}
+#endif
+
 #if defined(CONFIG_BT_HOST_CRYPTO_PRNG)
 int bt_rand(void *buf, size_t len)
 {

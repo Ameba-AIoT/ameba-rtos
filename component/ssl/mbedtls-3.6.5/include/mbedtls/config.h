@@ -24,7 +24,7 @@
 /*
  * we select different Mbedtls configuration files according to different target.
  */
-#if defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_AMEBAL2)
+#if defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_AMEBAL2) || defined(CONFIG_AMEBAPRO3)
 #include "ameba.h"
 #include "mbedtls/mbedtls_config_green2.h"
 #elif defined(CONFIG_RTL8720F)
@@ -54,6 +54,10 @@
 #endif
 #else
 #undef MBEDTLS_SSL_PROTO_TLS1_3
+#endif
+
+#if !defined(CONFIG_MBEDTLS_USE_LEGACY_API) && !defined(MBEDTLS_PSA_CRYPTO_C)
+#define MBEDTLS_PSA_CRYPTO_C
 #endif
 
 #if defined(CONFIG_WPAN_THREAD_EN) && CONFIG_WPAN_THREAD_EN

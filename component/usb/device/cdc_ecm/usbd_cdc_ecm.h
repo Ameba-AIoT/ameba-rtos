@@ -126,7 +126,9 @@ typedef struct {
 	 * @brief Called to handle class-specific SETUP requests.
 	 * @note   This function is called within an interrupt service routine (ISR) context;
 	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
-	 * @param[in] req: Pointer to the setup request packet.
+	 * @param[in] req: Pointer to the setup request packet. For a device-to-host request with a
+	 *            data stage, buf holds at least wLength bytes and wLength never exceeds the
+	 *            host's: write at most wLength bytes.
 	 * @param[out] buf: Pointer to a buffer for data stage of control transfers.
 	 * @return 0 on success, non-zero on failure.
 	 */
@@ -295,7 +297,7 @@ void usbd_cdc_ecm_deinit(void);
 /**
  * @brief Transmits data to the host over the BULK IN endpoint.
  * @param[in] buf: Pointer to the data buffer to be transmitted.
- * @param[in] len: Length of the data in bytes.
+ * @param[in] len: Length of the data in bytes, at most USB_CDC_ECM_MAX_SEGMENT_SIZE (no FCS).
  * @param[in] block: Blocking mode flag (0 for non-blocking, else block up to
  *                   @ref usbd_cdc_ecm_config_t::bulk_tx_timeout_ms).
  * @return 0 on success, non-zero on failure.
@@ -304,7 +306,7 @@ void usbd_cdc_ecm_deinit(void);
  *         Task context only, a call in interrupt context is rejected. It may run concurrently
  *         with usbd_cdc_ecm_deinit(), which waits for it to leave before releasing resources.
  */
-int usbd_cdc_ecm_transmit(u8 *buf, u32 len, u8 block);
+int usbd_cdc_ecm_transmit(const u8 *buf, u32 len, u8 block);
 
 /**
  * @brief  Gets the link state last reported to the host.

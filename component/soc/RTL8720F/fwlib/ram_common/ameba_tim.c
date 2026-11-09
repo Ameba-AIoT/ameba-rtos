@@ -1292,6 +1292,7 @@ bool PWM_TXGDMA_Init(
 		GDMA_InitStruct->GDMA_BlockSize = Length >> 1;
 	} else {
 		RTK_LOGE(TAG, "PWM_TXGDMA_Init: Aligment Err: pTXData=%p,  Length=%lu\n", pTXData, Length);
+		GDMA_ChnlFree(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
 		return FALSE;
 	}
 

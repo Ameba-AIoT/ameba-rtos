@@ -28,6 +28,8 @@ extern "C" {
  * @return None
  */
 void example_usbh_dfu(void);
+int example_usbh_dfu_start(void);
+int example_usbh_dfu_stop(void);
 
 #ifdef __cplusplus
 }

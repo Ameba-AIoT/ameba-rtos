@@ -87,9 +87,9 @@ None
 
 | Command | Description |
 | --- | --- |
-| `usbd_uac_record` | Start the microphone (USB IN) replay, which feeds a synthetic 1 kHz tone to the host. Prints `[UAC-I] UAC record start`. |
+| `AT+USBDUAC=record` | Start the microphone (USB IN) replay, which feeds a synthetic 1 kHz tone to the host. Each call queues one more session. Prints `[UAC-I] UAC record start`. |
 
-Note: recording is only wired up in the UAC 2.0 class driver, so the command is only registered on a UAC 2.0 and non-FS-only build.
+Note: recording is only wired up in the UAC 2.0 class driver, so the command is only registered on a UAC 2.0 and non-FS-only build. The default `prj.conf` selects UAC 1.0 (`CONFIG_USBD_UAC1_MENU=y`), where the command does not exist.
 
 # Note
 

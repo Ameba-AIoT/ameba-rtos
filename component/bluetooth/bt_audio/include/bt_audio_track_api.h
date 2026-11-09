@@ -1,8 +1,9 @@
-/*
-*******************************************************************************
-* Copyright(c) 2021, Realtek Semiconductor Corporation. All rights reserved.
-*******************************************************************************
-*/
+/**
+ * @file      bt_audio_track_api.h
+ * @brief     Bluetooth audio track API definition.
+ * @copyright Copyright (c) 2021. Realtek Semiconductor Corporation. All rights reserved.
+ */
+
 #ifndef __BT_AUDIO_TRACK_API_H__
 #define __BT_AUDIO_TRACK_API_H__
 
@@ -12,21 +13,12 @@
 
 /**
  * @typedef   bt_audio_fmt_t
- * @brief     audio role
+ * @brief     Audio track and audio record PCM data bit format.
  */
 typedef enum {
-	/** audio track and audio record data bit format, 8bit per channel per frame*/
-	BT_AUDIO_FORMAT_PCM_8_BIT         = 0x1u,
-	/** audio track and audio record data bit format, 16bit per channel per frame*/
-	BT_AUDIO_FORMAT_PCM_16_BIT        = 0x2u,
-	/** audio track and audio record data bit format, 32bit per channel per frame*/
-	BT_AUDIO_FORMAT_PCM_32_BIT        = 0x4u,
-	// /** audio track and audio record data bit format, float per channel per frame*/
-	// BT_AUDIO_FORMAT_PCM_FLOAT         = 0x5u,
-	// /** audio track and audio record data bit format, 24bit packed per channel per frame*/
-	// BT_AUDIO_FORMAT_PCM_24_BIT = 0x6u,
-	// /** audio record and audio record data bit format, 24+8bit per channel per frame*/
-	// BT_AUDIO_FORMAT_PCM_8_24_BIT      = 0x7u,
+	BT_AUDIO_FORMAT_PCM_8_BIT         = 0x1u,    /*!< 8 bits per channel per frame. */
+	BT_AUDIO_FORMAT_PCM_16_BIT        = 0x2u,    /*!< 16 bits per channel per frame. */
+	BT_AUDIO_FORMAT_PCM_32_BIT        = 0x4u,    /*!< 32 bits per channel per frame. */
 } bt_audio_fmt_t;
 
 /**
@@ -37,18 +29,20 @@ typedef enum {
  */
 
 /**
- * @brief                       bt audio init
- * @param[in]                   channels: audio channel
- * @param[in]                   rate: audio rate
- * @param[in]                   format: audio format(ref bt_audio_fmt_t)
- * @param[in]                   period_size: period size
- * @param[in]                   period_count: period count
- * @param[in]                   duration: define duration time between two continuous audio packets
- *                                        this number should be 0 for common bt audio demo
- *                                        this number should be equal to ISO duration value(micro seconds) in le audio demo
+ * @brief     Create an audio track.
+ * @param[in] channels: Number of audio channels.
+ * @param[in] rate: Sample rate in Hz.
+ * @param[in] format: Audio data bit format.
+ *                    Range: @ref BT_AUDIO_FORMAT_PCM_8_BIT, @ref BT_AUDIO_FORMAT_PCM_16_BIT or @ref BT_AUDIO_FORMAT_PCM_32_BIT.
+ *                    Other values are handled as 16-bit PCM.
+ * @param[in] period_size: Period size. Unused.
+ * @param[in] period_count: Period count. Unused.
+ * @param[in] duration: Duration between two continuous audio packets, in microseconds.
+ *                      0: Common BT audio demo. The buffer size is derived from the minimum buffer size of the audio track.
+ *                      Others: Shall be equal to the ISO duration in the LE audio demo.
  * @return
- *                              - NULL  : Fail
- *                              - track_hdl: Success
+ *            - NULL: Fail
+ *            - track_hdl: Success
  */
 void *rtk_bt_audio_track_init(uint32_t channels,
 							  uint32_t rate,
@@ -58,184 +52,194 @@ void *rtk_bt_audio_track_init(uint32_t channels,
 							  uint32_t duration);
 
 /**
- * @brief     bt audio track deinit
-.* @param[in] track_hdl: audio track handle
+ * @brief     Pause, stop and destroy the audio track.
+ * @param[in] track_hdl: Audio track handle returned by @ref rtk_bt_audio_track_init.
  * @return
- *                              - 0  : Succeed
- *                              - 1: Fail
+ *            - 0: Succeed
+ *            - 1: Fail
  */
 uint16_t rtk_bt_audio_track_deinit(void *track_hdl);
 
 /**
- * @brief     bt audio track stop
- * @param[in] track_hdl: audio track handle
+ * @brief     Stop the audio track.
+ * @param[in] track_hdl: Audio track handle returned by @ref rtk_bt_audio_track_init.
  * @return
- *                              - 0  : Succeed
- *                              - 1: Fail
+ *            - 0: Succeed
+ *            - 1: Fail
  */
 uint16_t rtk_bt_audio_track_stop(void *track_hdl);
 
 /**
- * @brief     bt audio track pause
- * @param[in] track_hdl: audio track handle
+ * @brief     Pause the audio track and flush the buffered data.
+ * @param[in] track_hdl: Audio track handle returned by @ref rtk_bt_audio_track_init.
  * @return
- *                              - 0  : Succeed
- *                              - 1: Fail
+ *            - 0: Succeed
+ *            - 1: Fail
  */
 uint16_t rtk_bt_audio_track_pause(void *track_hdl);
 
 /**
- * @brief     bt audio track pause without flush track
- * @param[in] track_hdl: audio track handle
+ * @brief     Pause the audio track without flushing the buffered data.
+ * @param[in] track_hdl: Audio track handle returned by @ref rtk_bt_audio_track_init.
  * @return
- *                              - 0  : Succeed
- *                              - 1: Fail
+ *            - 0: Succeed
+ *            - 1: Fail
  */
 uint16_t rtk_bt_audio_track_pause_without_flush(void *track_hdl);
 
 /**
- * @brief     bt audio track resume
- * @param[in] track_hdl: audio track handle
+ * @brief     Resume the audio track.
+ * @param[in] track_hdl: Audio track handle returned by @ref rtk_bt_audio_track_init.
  * @return
- *                              - 0  : Succeed
- *                              - 1: Fail
+ *            - 0: Succeed
+ *            - 1: Fail
  */
 uint16_t rtk_bt_audio_track_resume(void *track_hdl);
 
 /**
- * @brief     bt audio track playback
- * @param[in] track_hdl: audio track handle
- * @param[in] buffer: pointer of audio data
- * @param[in] size: size of audio data
- * @return successfully written bytes
+ * @brief     Write audio data to the audio track for playback.
+ * @param[in] track_hdl: Audio track handle returned by @ref rtk_bt_audio_track_init.
+ * @param[in] buffer: Audio data to play.
+ * @param[in] size: Size of the audio data in bytes.
+ * @return
+ *            - Number of bytes written
  */
 int32_t rtk_bt_audio_track_play(void *track_hdl, void *buffer, uint32_t size);
 
 /**
- * @brief     set hardware volume
- * @param[in] left_volume: left audio volume
- * @param[in] right_volume: right audio volume
+ * @brief     Set the hardware volume.
+ * @param[in] left_volume: Left channel volume.
+ * @param[in] right_volume: Right channel volume.
  * @return
- *            - 0  : Succeed
- *            - others: Error code
+ *            - 0: Succeed
+ *            - Others: Error code
  */
 uint16_t rtk_bt_audio_track_set_hardware_volume(float left_volume, float right_volume);
 
 /**
- * @brief     get audio track volume
- * @param[in] left_volume: left audio volume which cannot be a null pointer
- * @param[in] right_volume: right audio volume which cannot be a null pointer
+ * @brief     Get the hardware volume.
+ * @param[out] left_volume: Left channel volume.
+ *                          Must not be NULL.
+ * @param[out] right_volume: Right channel volume.
+ *                           Must not be NULL.
  * @return
- *            - 0  : Succeed
- *            - others: Error code
+ *            - 0: Succeed
+ *            - Others: Error code
  */
 uint16_t rtk_bt_audio_track_get_volume(float *left_volume, float *right_volume);
 
 /**
- * @brief     set sotfware volume of audio track
- * @param[in] track_hdl: audio track handle
- * @param[in] left_volume: left audio volume
- * @param[in] right_volume: right audio volume
+ * @brief     Set the software volume of the audio track.
+ * @param[in] track_hdl: Audio track handle returned by @ref rtk_bt_audio_track_init.
+ * @param[in] left_volume: Left channel volume.
+ * @param[in] right_volume: Right channel volume.
  * @return
- *            - 0  : Succeed
- *            - others: Error code
+ *            - 0: Succeed
+ *            - Others: Error code
  */
 uint16_t rtk_bt_audio_track_set_software_volume(void *track_hdl, float left_volume, float right_volume);
 
 /**
- * @brief     audio track start
- * @param[in] track_hdl: audio track handle
- * @param[in] left_volume: left volume value
- * @param[in] right_volume: right volume value
+ * @brief     Start the audio track and set its software volume.
+ * @param[in] track_hdl: Audio track handle returned by @ref rtk_bt_audio_track_init.
+ * @param[in] left_volume: Left channel software volume.
+ * @param[in] right_volume: Right channel software volume.
  * @return
- *                              - 0  : Succeed
- *                              - 1: Fail
+ *            - 0: Succeed
+ *            - 1: Fail
  */
 uint16_t rtk_bt_audio_track_start(void *track_hdl, float left_volume, float right_volume);
 
 /**
- * @brief     audio track delay start
- * @param[in] track_hdl: audio track handle
- * @param[in] ctrl: true, enable delay start
- *                  false, disable delay start
+ * @brief     Enable or disable delayed start of the audio track.
+ * @param[in] track_hdl: Audio track handle returned by @ref rtk_bt_audio_track_init.
+ * @param[in] ctrl: Whether to delay the start of the audio track.
+ *                  - true: Enable delayed start.
+ *                  - false: Disable delayed start.
  * @return
- *                              - 0  : Succeed
- *                              - 1: Fail
+ *            - 0: Succeed
+ *            - 1: Fail
  */
 uint16_t rtk_bt_audio_track_delay_start(void *track_hdl, bool ctrl);
 
 /**
- * @brief     audio track hw start
- * @param[in] none
+ * @brief     Start the audio hardware transmission.
  * @return
- *                              - 0  : Succeed
- *                              - 1: Fail
+ *            - 0: Succeed
+ * @note
+ *            - This API shall be called when delayed start is enabled by @ref rtk_bt_audio_track_delay_start.
  */
 uint16_t rtk_bt_audio_track_hw_start(void);
 
 /**
- * @brief     audio track configure mute(Not ready)
- * @param[in] muted: mute flag, true means mute, false means unmute.
- * @return    none
+ * @brief     Mute or unmute the audio track playback.
+ * @param[in] muted: Whether to mute the playback.
+ *                   - true: Mute the playback.
+ *                   - false: Unmute the playback.
  */
 void rtk_bt_audio_track_set_mute(bool muted);
 
 /**
- * @brief     audio track get mute, true means mute, false means unmute.
- * @return    mute status
+ * @brief     Get the mute state of the audio track playback.
+ * @return
+ *            - true: Playback is muted
+ *            - false: Playback is not muted
  */
 bool rtk_bt_audio_track_get_muted(void);
 
 /**
- * @brief     audio track set sample rate
- * @param[in] track_hdl: audio track handle
- * @param[in] sample_rate: sample rate
+ * @brief     Set the sample rate of the audio track.
+ * @param[in] track_hdl: Audio track handle returned by @ref rtk_bt_audio_track_init.
+ * @param[in] sample_rate: Sample rate in Hz.
  * @return
- *                              - 0  : Succeed
- *                              - 1: Fail
+ *            - 0: Succeed
+ *            - 1: Fail
  */
 uint16_t rtk_bt_audio_track_set_sample_rate(void *track_hdl, uint32_t sample_rate);
 
 /**
- * @brief     audio track get sample rate
- * @param[in] track_hdl: audio track handle
+ * @brief     Get the sample rate of the audio track.
+ * @param[in] track_hdl: Audio track handle returned by @ref rtk_bt_audio_track_init.
  * @return
- *                              - 0  : Fail
- *                              - Others: Samplerate
+ *            - 0: Fail
+ *            - Others: Sample rate in Hz
  */
 uint32_t rtk_bt_audio_track_get_sample_rate(void *track_hdl);
 
 /**
- * @brief     audio track set channel count
- * @param[in] track_hdl: audio track handle
- * @param[in] channel_count: channel count
+ * @brief     Set the channel count of the audio track.
+ * @param[in] track_hdl: Audio track handle returned by @ref rtk_bt_audio_track_init.
+ * @param[in] channel_count: Number of audio channels.
  * @return
- *                              - 0  : Succeed
- *                              - 1: Fail
+ *            - 0: Succeed
+ *            - 1: Fail
  */
 uint16_t rtk_bt_audio_track_set_channel_count(void *track_hdl, uint32_t channel_count);
 
 /**
- * @brief     audio track get channel count
- * @param[in] track_hdl: audio track handle
+ * @brief     Get the channel count of the audio track.
+ * @param[in] track_hdl: Audio track handle returned by @ref rtk_bt_audio_track_init.
  * @return
- *                              - 0  : Fail
- *                              - Others: Channel count
+ *            - 0: Fail
+ *            - Others: Number of audio channels
  */
 uint32_t rtk_bt_audio_track_get_channel_count(void *track_hdl);
 
 /**
- * @brief     audio track get mixer start thresholdbytes
- * @param[in] track_hdl: audio track handle
+ * @brief     Get the start threshold of the audio track.
+ * @param[in] track_hdl: Audio track handle returned by @ref rtk_bt_audio_track_init.
  * @return
- *                              - 0  : Fail
- *                              - Others: thresholdbytes
+ *            - 0: Fail
+ *            - Others: Start threshold in bytes
  */
 int32_t rtk_bt_audio_track_get_start_thresholdbytes(void *track_hdl);
 
 /**
- * @brief     audio track get buffer size(Not ready)
- * @return    buffer size
+ * @brief     Get the buffer size of the audio track.
+ * @return
+ *            - Buffer size
+ * @note
+ *            - Not ready.
  */
 long rtk_bt_audio_track_get_buffer_size(void);
 
@@ -243,4 +247,4 @@ long rtk_bt_audio_track_get_buffer_size(void);
  * @}
  */
 
-#endif // __BT_AUDIO_TRACK_API_H__
+#endif /* __BT_AUDIO_TRACK_API_H__ */

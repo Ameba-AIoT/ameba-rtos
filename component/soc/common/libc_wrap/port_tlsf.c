@@ -445,20 +445,20 @@ void *pvPortCalloc(size_t xWantedCnt, size_t xWantedSize)
 
 void vPortFree(void *pv)
 {
-#if ( CONFIG_HEAP_CORRUPTION_DETECT_LITE == 1 )
-	pv = (void *)((uint8_t *)pv - HEAD_CANARY_SIZE);
-#endif /* CONFIG_HEAP_CORRUPTION_DETECT_LITE */
-
 #if( CONFIG_HEAP_CORRUPTION_DETECT_COMPREHENSIVE == 1 )
-	uint8_t *puc = (uint8_t *) pv;
+	uint8_t *puc = NULL;
 	uint8_t *pucBlockToFree = NULL;
 	size_t xBlockToFillSize = 0;
 #endif /* CONFIG_HEAP_CORRUPTION_DETECT_COMPREHENSIVE */
 
 	if (pv != NULL) {
-#if( CONFIG_HEAP_CORRUPTION_DETECT_LITE == 1)
+#if ( CONFIG_HEAP_CORRUPTION_DETECT_LITE == 1 )
+		pv = (void *)((uint8_t *)pv - HEAD_CANARY_SIZE);
 		configASSERT(xPortCanaryCheck(pv));
 #endif /* CONFIG_HEAP_CORRUPTION_DETECT_LITE */
+#if( CONFIG_HEAP_CORRUPTION_DETECT_COMPREHENSIVE == 1 )
+		puc = (uint8_t *) pv;
+#endif /* CONFIG_HEAP_CORRUPTION_DETECT_COMPREHENSIVE */
 
 		MALLOC_TYPES type = classify_addr((uint32_t)pv);
 		tlsf_inst_t *inst = &g_tlsf[type];
@@ -570,6 +570,12 @@ void *pvPortMallocCacheAlignedCore(size_t xWantedSize)
 #if ( CONFIG_HEAP_CORRUPTION_DETECT_LITE == 1 )
 	xWantedSize = xWantedSize + HEAD_CANARY_SIZE + TAIL_CANARY_SIZE;
 #endif
+
+	/* Pad to whole cache lines so a D-Cache invalidate cannot drop the next block's header or data. */
+	xWantedSize = align_up(xWantedSize, portBYTE_CACHE_ALIGNMENT);
+	if (xWantedSize == 0) {
+		return NULL;
+	}
 
 	vTaskSuspendAll();
 	{
@@ -845,7 +851,9 @@ void vPortGetTaskHeapInfo(void)
 
 	(void) xTaskResumeAll();
 }
+#endif /* CONFIG_HEAP_TRACE */
 
+#if ( CONFIG_HEAP_PROTECTOR == 1 )
 #if ( CONFIG_HEAP_CORRUPTION_DETECT_LITE == 1 )
 static void corrupt_detection_walker(void *ptr, size_t size, int used, void *user)
 {
@@ -917,7 +925,7 @@ uint32_t ulPortCheckHeapIntegrity(int COMPREHENSIVE_CHECK)
 
 	return pdTRUE;
 }
-#endif
+#endif /* CONFIG_HEAP_PROTECTOR */
 
 void vPortDefineHeapRegions(const HeapRegion_t *pxHeapRegions)
 {

@@ -11,6 +11,8 @@
 #include "usbd_msc.h"
 #include "usbd_composite.h"
 #include "os_wrapper.h"
+#include "usb_app.h"
+#include "example_usbd_composite_cdc_acm_msc.h"
 #if defined(CONFIG_AMEBASMART)
 #include "ameba_sd.h"
 #endif
@@ -70,8 +72,12 @@
 #error "SD hotplug needs COMP_HOTPLUG"
 #endif
 
-// Hotplug thread
+// Thread priorities
+#define COMP_INIT_THREAD_PRIORITY                     5
 #define COMP_HOTPLUG_THREAD_PRIORITY                  8
+
+// Thread stack sizes
+#define COMP_INIT_THREAD_STACK_SIZE                   1400U
 #define COMP_HOTPLUG_THREAD_STACK_SIZE                1024U
 
 /* Private types -------------------------------------------------------------*/
@@ -155,7 +161,6 @@ static const usbd_cdc_acm_cb_t composite_cdc_acm_usr_cb = {
 static usb_cdc_acm_line_coding_t composite_cdc_acm_line_coding;
 
 #if COMP_HOTPLUG
-static rtos_task_t composite_hotplug_task;
 static rtos_sema_t composite_attach_status_changed_sema;
 /* Written by the ISR, read by the hotplug thread, possibly on another core */
 static volatile u8 composite_attach_status;
@@ -174,6 +179,14 @@ static const usbd_composite_cb_t composite_usr_cb = {
 /* Written by the card-detect callback, read by the hotplug thread, possibly on another core */
 static volatile u8 composite_sd_status;
 #endif
+
+/* Whether composite_init_stack() is in effect. Written by the start entry and the hotplug
+   thread, read by the teardown once the hotplug thread is gone. */
+static u8 composite_stack_up;
+
+/* Start/stop state: the hotplug thread (or, without hotplug, the start entry) owns the running
+   stack, example_usbd_composite_cdc_acm_msc_stop() asks it to leave through quit and joins it */
+static usb_app_ctx_t composite_app;
 
 /* Exported variables --------------------------------------------------------*/
 
@@ -219,18 +232,18 @@ static int composite_cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 	usb_cdc_acm_line_coding_t *lc = &composite_cdc_acm_line_coding;
 	/* Ref USB 2.0 9.2.7: anything not explicitly accepted below is a request error, so
 	   the default status makes the core STALL EP0 instead of ACKing the status stage. */
-	int ret = HAL_ERR_PARA;
+	int ret = -RTK_ERR_BADARG;
 
 	switch (req->bRequest) {
 	case USB_CDC_ACM_SET_LINE_CODING:
 		/* Ref CDC PSTN 1.2 Table 17: the Line Coding structure is exactly 7 bytes, any
 		   other wLength must not update the cached line coding. */
 		if (req->wLength == USB_CDC_ACM_LINE_CODING_SIZE) {
-			lc->b.dwDteRate = (u32)(buf[0] | (buf[1] << 8) | (buf[2] << 16) | (buf[3] << 24));
+			lc->b.dwDteRate = (u32)buf[0] | ((u32)buf[1] << 8) | ((u32)buf[2] << 16) | ((u32)buf[3] << 24);
 			lc->b.bCharFormat = buf[4];
 			lc->b.bParityType = buf[5];
 			lc->b.bDataBits = buf[6];
-			ret = HAL_OK;
+			ret = RTK_SUCCESS;
 		}
 		break;
 
@@ -242,7 +255,7 @@ static int composite_cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 		buf[4] = lc->b.bCharFormat;
 		buf[5] = lc->b.bParityType;
 		buf[6] = lc->b.bDataBits;
-		ret = HAL_OK;
+		ret = RTK_SUCCESS;
 		break;
 
 	case USB_CDC_ACM_SET_CONTROL_LINE_STATE:
@@ -260,13 +273,15 @@ static int composite_cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 				USB_DIAG(USB_LAYER_APP, USB_EVT_LINK, 0);
 				usbd_cdc_acm_notify_serial_state(USB_CDC_ACM_CTRL_DSR | USB_CDC_ACM_CTRL_DCD);
 			}
-			ret = HAL_OK;
+			ret = RTK_SUCCESS;
 		}
 		break;
 
 	case USB_CDC_ACM_SEND_BREAK:
-		/* Do nothing */
-		ret = HAL_OK;
+		/* Ref CDC PSTN 1.2 6.3.13: no data stage, so wLength must be zero. Nothing to do */
+		if (req->wLength == 0U) {
+			ret = RTK_SUCCESS;
+		}
 		break;
 
 	default:
@@ -287,17 +302,19 @@ static int composite_cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
   */
 static int composite_cdc_acm_cb_received(u8 *buf, u32 len)
 {
-	if ((buf != NULL) && (len != 0U)) {
-		usbd_cdc_acm_transmit(buf, len);
+	if ((buf == NULL) || (len == 0U)) {
+		return RTK_SUCCESS;
 	}
-	return 0;
+
+	/* Loopback; -RTK_ERR_BUSY means the previous echo is still in flight and this one is dropped */
+	return usbd_cdc_acm_transmit(buf, len);
 }
 
 /**
   * @brief  Bring up the whole composite stack (disk + core + each class + framework).
   * @note   Reused by both the initial start-up and the hotplug re-init path.
   *         The storage disk must be initialised before usbd_init.
-  * @retval HAL_OK on success, other HAL_Status code on failure (all partial resources rolled back)
+  * @retval RTK_SUCCESS on success, other HAL_Status code on failure (all partial resources rolled back)
   */
 static int composite_init_stack(void)
 {
@@ -326,7 +343,7 @@ static int composite_init_stack(void)
 	}
 #endif
 	ret = usbd_msc_disk_init();
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "MSC disk init failed\r\n");
 #ifdef CONFIG_USBD_MSC_FLASH
 		vfs_user_unregister(COMP_MSC_VFS_PREFIX, VFS_FATFS, VFS_INF_FLASH);
@@ -338,32 +355,32 @@ static int composite_init_stack(void)
 
 	/* Step 2: Start USB device stack */
 	ret = usbd_init(&composite_cfg);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "usbd_init failed\r\n");
 		goto exit_disk_init;
 	}
 
 	/* Step 3: Initialize each class driver with its EP config */
 	ret = usbd_composite_cdc_acm_init(&composite_cdc_acm_usr_cb, &cdc_acm_class_cfg);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "CDC ACM init failed\r\n");
 		goto exit_usbd_init;
 	}
 
 	ret = usbd_composite_msc_init(&composite_msc_usr_cb, &msc_class_cfg);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "MSC init failed\r\n");
 		goto exit_cdc_acm_init;
 	}
 
 	/* Step 4: Start composite framework (drivers already registered via composite_init calls above) */
 	ret = usbd_composite_init(COMP_CB);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Composite init failed\r\n");
 		goto exit_msc_init;
 	}
 
-	return HAL_OK;
+	return RTK_SUCCESS;
 
 exit_msc_init:
 	usbd_msc_deinit();
@@ -381,7 +398,6 @@ exit_disk_init:
 	return ret;
 }
 
-#if COMP_HOTPLUG
 /**
   * @brief  Tear down the whole composite stack, in the reverse order of composite_init_stack():
   *         framework -> classes -> core -> disk.
@@ -403,6 +419,29 @@ static void composite_deinit_stack(void)
 #endif
 }
 
+/**
+  * @brief  Release everything the example owns: the stack if still up and the objects
+  * @note   Only called once the hotplug thread is gone, so that it is the only user left
+  * @retval None
+  */
+static void composite_teardown(void)
+{
+	if (composite_stack_up != 0U) {
+		composite_deinit_stack();
+		composite_stack_up = 0U;
+	}
+#if COMP_HOTPLUG
+#if MSC_SD_HOTPLUG
+	/* Card detect stays enabled after SD_DeInit(), so unhook it before its sema goes away */
+	SD_SetCdCallback(NULL);
+#endif
+	/* The stack is fully deinited, so no ISR can give the sema any more */
+	rtos_sema_delete(composite_attach_status_changed_sema);
+	composite_attach_status_changed_sema = NULL;
+#endif
+}
+
+#if COMP_HOTPLUG
 /**
   * @brief  Composite attach-status change notification (ISR context).
   * @note   time-consuming operations are not permitted here.
@@ -430,8 +469,7 @@ static void example_usbd_composite_hotplug_thread(void *param)
 	u8 status;
 #if MSC_SD_HOTPLUG
 	/* usb_status is the attach status handled last, so a card-detect wake-up does
-	   not replay it. stack_up is 1 only while the card is present. */
-	u8 stack_up = 1U;
+	   not replay it. composite_stack_up is 1 only while the card is present. */
 	u8 sd_present;
 	u8 usb_status = USBD_ATTACH_STATUS_INIT;
 #endif
@@ -440,28 +478,33 @@ static void example_usbd_composite_hotplug_thread(void *param)
 
 	for (;;) {
 		if (rtos_sema_take(composite_attach_status_changed_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
+			if (composite_app.quit != 0U) {
+				/* Stop requested: the stop owner tears the stack down */
+				break;
+			}
 			status = composite_attach_status;
 #if MSC_SD_HOTPLUG
 			sd_present = (composite_sd_status != SD_NODISK) ? 1U : 0U;
-			if (sd_present != stack_up) {
+			if (sd_present != composite_stack_up) {
 				if (sd_present == 0U) {
 					RTK_LOGS(TAG, RTK_LOG_INFO, "SD card removed\n");
 					composite_deinit_stack();
+					composite_stack_up = 0U;
 					RTK_LOGS(TAG, RTK_LOG_INFO, "Free heap: 0x%x\n", rtos_mem_get_free_heap_size());
 					/* deinit drops the core to DETACHED without a callback */
 					usb_status = USBD_ATTACH_STATUS_DETACHED;
 				} else {
 					RTK_LOGS(TAG, RTK_LOG_INFO, "SD card insert, re-init USB\n");
-					if (composite_init_stack() != HAL_OK) {
+					if (composite_init_stack() != RTK_SUCCESS) {
 						/* rolled back; stay down and retry on the next insertion */
 						continue;
 					}
+					composite_stack_up = 1U;
 				}
-				stack_up = sd_present;
 				continue;
 			}
 			/* Skip a USB status queued before the teardown, or already handled */
-			if ((stack_up == 0U) || (status == usb_status)) {
+			if ((composite_stack_up == 0U) || (status == usb_status)) {
 				continue;
 			}
 			usb_status = status;
@@ -469,10 +512,21 @@ static void example_usbd_composite_hotplug_thread(void *param)
 			if (status == USBD_ATTACH_STATUS_DETACHED) {
 				RTK_LOGS(TAG, RTK_LOG_INFO, "DETACHED\r\n");
 				composite_deinit_stack();
+				composite_stack_up = 0U;
 				RTK_LOGS(TAG, RTK_LOG_INFO, "Free heap: 0x%x\n", rtos_mem_get_free_heap_size());
-				if (composite_init_stack() != HAL_OK) {
+				if (composite_init_stack() != RTK_SUCCESS) {
+					/* Rolled back: the stack is fully down */
+					RTK_LOGS(TAG, RTK_LOG_ERROR, "Hotplug thread fail\r\n");
+					if (usb_app_ctx_claim_stop(&composite_app) != 0U) {
+						/* No stop is in flight: this thread finishes the teardown on its own */
+						composite_teardown();
+						usb_app_ctx_end(&composite_app);
+						rtos_task_delete(NULL);
+					}
+					/* A stop is in flight and joins this thread */
 					break;
 				}
+				composite_stack_up = 1U;
 			} else if (status == USBD_ATTACH_STATUS_ATTACHED) {
 				RTK_LOGS(TAG, RTK_LOG_INFO, "ATTACHED\r\n");
 			} else {
@@ -481,27 +535,26 @@ static void example_usbd_composite_hotplug_thread(void *param)
 		}
 	}
 
-#if MSC_SD_HOTPLUG
-	/* Card detect stays enabled after SD_DeInit(), so unhook it first */
-	SD_SetCdCallback(NULL);
-#endif
-	/* The stack is fully deinited, so no ISR can give the sema any more and this
-	   thread is the last owner. */
-	rtos_sema_delete(composite_attach_status_changed_sema);
-	composite_attach_status_changed_sema = NULL;
-
-	RTK_LOGS(TAG, RTK_LOG_ERROR, "Hotplug thread fail\r\n");
+	usb_app_ctx_leave(&composite_app);
 	rtos_task_delete(NULL);
 }
 #endif // COMP_HOTPLUG
 
-/* Exported functions --------------------------------------------------------*/
-
-void example_usbd_composite(void)
+/**
+  * @brief  Bring the stack and the hotplug thread up
+  * @retval RTK_SUCCESS, or the first error, with everything already created rolled back
+  */
+static int composite_start(void)
 {
 	int ret;
+#if COMP_HOTPLUG
+	rtos_task_t hotplug_task;
+#endif
 
-	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD ACM+MSC comp demo start\n");
+	ret = usb_app_ctx_begin(&composite_app);
+	if (ret != RTK_SUCCESS) {
+		return ret;
+	}
 
 #if COMP_HOTPLUG
 	ret = rtos_sema_create(&composite_attach_status_changed_sema, 0U, 1U);
@@ -512,46 +565,113 @@ void example_usbd_composite(void)
 #endif
 
 	ret = composite_init_stack();
-	if (ret != HAL_OK) {
-		goto exit_release_sema;
+	if (ret != RTK_SUCCESS) {
+		goto exit;
 	}
+	composite_stack_up = 1U;
 
 #if COMP_HOTPLUG
 #if MSC_SD_HOTPLUG
 	SD_SetCdCallback(composite_sd_cb_status_changed);
 #endif
-	ret = rtos_task_create(&composite_hotplug_task, "usbd_composite_hotplug_thread",
+	/* Created last: it owns the stack once running, so nothing after it can fail */
+	ret = rtos_task_create(&hotplug_task, "usbd_composite_hotplug_thread",
 						   example_usbd_composite_hotplug_thread, NULL,
 						   COMP_HOTPLUG_THREAD_STACK_SIZE, COMP_HOTPLUG_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create hotplug thread fail\r\n");
-		goto exit_deinit_stack;
+		goto exit;
 	}
 #if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
 	/* C-2: the USB OTG ISR is delivered on CPU0 (GIC ITARGETSR pins every SPI to
 	   core 0). Pinning the hotplug thread to CPU0 makes its deinit/reinit
 	   single-core against the ISR, so deinit's local interrupt disable is
 	   meaningful under SMP. */
-	rtos_task_set_affinity(composite_hotplug_task, 0);
+	rtos_task_set_affinity(hotplug_task, 0);
 #endif
 #endif
 
-	return;
+	return RTK_SUCCESS;
 
-#if COMP_HOTPLUG
-exit_deinit_stack:
-#if MSC_SD_HOTPLUG
-	/* Unhook card detect before its sema goes away */
-	SD_SetCdCallback(NULL);
-#endif
-	composite_deinit_stack();
-#endif
-
-exit_release_sema:
-#if COMP_HOTPLUG
-	rtos_sema_delete(composite_attach_status_changed_sema);
-	composite_attach_status_changed_sema = NULL;
 exit:
-#endif
+	/* No worker is running: deinits the stack only while composite_stack_up says it is up */
+	composite_teardown();
+	usb_app_ctx_end(&composite_app);
 	RTK_LOGS(TAG, RTK_LOG_ERROR, "USBD ACM+MSC comp demo aborted\n");
+
+	return ret;
+}
+
+static void example_usbd_composite_cdc_acm_msc_thread(void *param)
+{
+	UNUSED(param);
+
+	if (composite_start() != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Start fail\n");
+	}
+	rtos_task_delete(NULL);
+}
+
+/* Exported functions --------------------------------------------------------*/
+
+/**
+  * @brief  Start the ACM+MSC composite device, used by the USB app manager
+  * @note   Task context only
+  * @retval RTK_SUCCESS, -RTK_ERR_BUSY if already running, or the init error
+  */
+int example_usbd_composite_cdc_acm_msc_start(void)
+{
+	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD ACM+MSC comp demo start\n");
+
+	return composite_start();
+}
+
+/**
+  * @brief  Stop the ACM+MSC composite device and release everything it owns
+  * @note   Task context only. Safe to call when not running.
+  * @retval RTK_SUCCESS once idle, -RTK_ERR_TIMEOUT if the hotplug thread did not leave in time
+  */
+int example_usbd_composite_cdc_acm_msc_stop(void)
+{
+	u32 workers = 0U;
+
+	if (usb_app_ctx_claim_stop(&composite_app) == 0U) {
+		/* Idle, or the hotplug thread found the stack dead and finishes the teardown itself */
+		return usb_app_ctx_wait_idle(&composite_app);
+	}
+
+#if COMP_HOTPLUG
+	rtos_sema_give(composite_attach_status_changed_sema);
+	workers++;
+#endif
+	if (usb_app_ctx_join(&composite_app, workers) != RTK_SUCCESS) {
+		/* The hotplug thread is still on the stack: keep everything, the app stays STOPPING */
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Stop timeout\n");
+		return -RTK_ERR_TIMEOUT;
+	}
+
+	/* The hotplug thread is gone: this caller is the only one left on the stack */
+	composite_teardown();
+	usb_app_ctx_end(&composite_app);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD ACM+MSC comp demo stop\n");
+
+	return RTK_SUCCESS;
+}
+
+/**
+  * @brief  Example entry: start the ACM+MSC composite device from its own thread
+  * @retval None
+  */
+void example_usbd_composite_cdc_acm_msc(void)
+{
+	int ret;
+	rtos_task_t task;
+
+	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD ACM+MSC comp demo start\n");
+
+	ret = rtos_task_create(&task, "usbd_composite_thread", example_usbd_composite_cdc_acm_msc_thread, NULL,
+						   COMP_INIT_THREAD_STACK_SIZE, COMP_INIT_THREAD_PRIORITY);
+	if (ret != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create USBD ACM+MSC comp thread fail\n");
+	}
 }

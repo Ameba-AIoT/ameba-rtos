@@ -37,7 +37,6 @@ ameba_set(c_EMPTY_C_OBJECT_FILE)    # File used like empty_file.c
 
 # Define static dirs under component/
 ameba_set(c_CMPT_AIVOICE_DIR      ${c_COMPONENT_DIR}/aivoice)
-ameba_set(c_CMPT_APP_DIR          ${c_COMPONENT_DIR}/application)
 ameba_set(c_CMPT_AT_CMD_DIR       ${c_COMPONENT_DIR}/at_cmd)
 ameba_set(c_CMPT_AUDIO_DIR        ${c_COMPONENT_DIR}/audio)
 ameba_set(c_CMPT_BLUETOOTH_DIR    ${c_COMPONENT_DIR}/bluetooth)
@@ -51,6 +50,7 @@ ameba_set(c_CMPT_NETWORK_DIR      ${c_COMPONENT_DIR}/network)
 ameba_set(c_CMPT_OS_DIR           ${c_COMPONENT_DIR}/os)
 ameba_set(c_CMPT_RTK_COEX_DIR     ${c_COMPONENT_DIR}/rtk_coex)
 ameba_set(c_CMPT_SDIO_DIR         ${c_COMPONENT_DIR}/sdio)
+ameba_set(c_CMPT_SENSING_ALGO_DIR ${c_COMPONENT_DIR}/sensing_algo)
 ameba_set(c_CMPT_SSL_DIR          ${c_COMPONENT_DIR}/ssl)
 ameba_set(c_CMPT_UI_DIR           ${c_COMPONENT_DIR}/ui)
 ameba_set(c_CMPT_USB_DIR          ${c_COMPONENT_DIR}/usb)

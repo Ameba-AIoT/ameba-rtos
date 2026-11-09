@@ -92,13 +92,14 @@ typedef enum {
 /**
  * @brief Record a USB diagnostic event into the diag ring buffer.
  *
- * @warning For internal use inside USB interrupt handlers ONLY. It exists to
- *          capture diagnostic events from ISR context without printing there.
- *          Do NOT call it from task/thread context or any other code path: the
- *          ring buffer write is a non-atomic read-modify-write on a shared
- *          index, with no locking (locking is intentionally avoided to keep
- *          ISR latency minimal). A caller racing with the USB ISR writer will
- *          corrupt the buffer state. Use it exclusively within the USB ISR.
+ * @warning USB ISR context ONLY: the core interrupt handlers and the class driver
+ *          callbacks they call. It exists to capture diagnostic events from ISR
+ *          context without printing there. The ring buffer has a single writer
+ *          and no lock, to keep ISR latency minimal: a call from task context or
+ *          from another interrupt races the USB ISR and corrupts entries. Use
+ *          RTK_LOGS in task context instead.
+ *          The diag task is created before the USB IRQ is registered and deleted
+ *          after it is unregistered, so the context stays valid while the ISR runs.
  *
  * @param[in] layer  @ref usb_diag_layer_t
  * @param[in] event  @ref usb_diag_event_t

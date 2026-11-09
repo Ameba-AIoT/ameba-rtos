@@ -10,6 +10,8 @@
 #include "usbd_vendor.h"
 
 #include "os_wrapper.h"
+#include "usb_app.h"
+#include "example_usbd_vendor.h"
 
 /* Private defines -----------------------------------------------------------*/
 
@@ -50,6 +52,8 @@
 #define VENDOR_BULK_ASYNC_XFER                  0
 // Any loopback runs in a thread of its own, i.e. outside the USB ISR
 #define VENDOR_ASYNC_XFER                       (VENDOR_ISOC_ASYNC_XFER || VENDOR_INTR_ASYNC_XFER || VENDOR_BULK_ASYNC_XFER)
+// Number of async xfer threads
+#define VENDOR_XFER_THREAD_NUM                  (VENDOR_ISOC_ASYNC_XFER + VENDOR_INTR_ASYNC_XFER + VENDOR_BULK_ASYNC_XFER)
 
 // Thread priorities
 #define VENDOR_INIT_THREAD_PRIORITY             5
@@ -82,14 +86,14 @@ static void vendor_cb_status_changed(u8 old_status, u8 status);
 
 static const char *const TAG = "VND";
 
-/* Serial number built from the chip UUID in example_usbd_vendor_thread(). Referenced by
+/* Serial number built from the chip UUID in vendor_start(). Referenced by
    vendor_cfg.info.sn_str, so it has to outlive usbd_deinit(). */
 static char vendor_sn[USBD_SN_STR_LEN + 1];
 
 static usbd_config_t vendor_cfg = {
 	.info = {
 		.prod_str = "Realtek Vendor Device",
-		/* .sn_str is filled in at runtime, see example_usbd_vendor_thread() */
+		/* .sn_str is filled in at runtime, see vendor_start() */
 	},
 	.isr_priority = INT_PRI_MIDDLE,
 #if defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBAD) || defined(CONFIG_AMEBADPLUS)
@@ -162,20 +166,23 @@ static rtos_sema_t vendor_bulk_async_xfer_sema;
 /* Written by the ISR, read by the hotplug thread, possibly on another core */
 static volatile u8 vendor_attach_status;
 static rtos_sema_t vendor_attach_status_changed_sema;
-/* Raised by the hotplug thread when the stack can not be recovered: the async
-   xfer threads leave their loops so the semaphores can be freed safely. */
+/* Raised by the hotplug thread when the stack can not be recovered: it is already
+   deinited, so the stop owner must not deinit it again. */
 static volatile u8 vendor_stack_fatal;
 #endif
+
+/* Start/stop state: example_usbd_vendor_stop() (or the hotplug thread once the stack is
+   dead) owns the teardown, the worker threads leave through quit and are joined */
+static usb_app_ctx_t vendor_app;
 
 #if VENDOR_ASYNC_XFER
 /* Serialize the USB stack bring up/tear down against the async xfer threads: each
    of them holds vendor_xfer_lock while it is inside a class API, and the hotplug
    thread takes the lock before it deinits the stack. One lock for all three
    directions: a transmit only arms an EP, so the hold time is short.
-   Created once and never deleted: an xfer thread that misses its polling window is
-   force deleted by vendor_stop_xfer_threads(), so there is no point in time at
-   which this mutex is provably unreferenced. vendor_stack_ready is the gate that
-   keeps callers off the stack instead. */
+   Created once and kept across start/stop: a stop that times out leaves a worker
+   that may still take it. vendor_stack_ready is the gate that keeps callers off
+   the stack instead. */
 static rtos_mutex_t vendor_xfer_lock = NULL;
 /* 1: usbd_init() and usbd_vendor_init() both done, the class APIs may be called.
    Cleared before any tear down, so a non-zero value also implies the lock is valid.
@@ -186,26 +193,14 @@ static rtos_mutex_t vendor_xfer_lock = NULL;
 static volatile u8 vendor_stack_ready;
 #endif
 
-/* Async xfer thread handles. Each worker clears its own handle as its last
-   action, so the hotplug thread can tell when it is gone. */
-#if VENDOR_INTR_ASYNC_XFER
-static rtos_task_t vendor_intr_async_xfer_task;
-#endif
-#if VENDOR_ISOC_ASYNC_XFER
-static rtos_task_t vendor_isoc_async_xfer_task;
-#endif
-#if VENDOR_BULK_ASYNC_XFER
-static rtos_task_t vendor_bulk_async_xfer_task;
-#endif
-
 /* Exported variables --------------------------------------------------------*/
 
 /* Private functions ---------------------------------------------------------*/
 
 /**
   * @brief  Free the objects shared by the example threads
-  * @note   Only called by the last running thread, after the USB stack is fully
-  *         deinited, so that no ISR callback can touch these objects any more
+  * @note   Only called by the teardown owner, after every worker is joined and the
+  *         USB stack is fully deinited, so that nothing can touch these objects any more
   * @retval None
   */
 static void vendor_free_resource(void)
@@ -228,22 +223,14 @@ static void vendor_free_resource(void)
 #endif
 }
 
-#if VENDOR_HOTPLUG
+#if VENDOR_ASYNC_XFER
 /**
-  * @brief  Ask the async xfer threads to leave their loops, then wait for them to
-  *         delete themselves (each one clears its own handle as its last action)
-  * @note   Must run before vendor_free_resource(): those threads block on the
-  *         semaphores it frees. A thread that misses its polling window within
-  *         the grace period is force-deleted as a last resort.
+  * @brief  Wake the async xfer threads blocked on their semaphores, so that they
+  *         see vendor_app.quit and leave
   * @retval None
   */
-static void vendor_stop_xfer_threads(void)
+static void vendor_wake_xfer_threads(void)
 {
-#if VENDOR_INTR_ASYNC_XFER || VENDOR_ISOC_ASYNC_XFER || VENDOR_BULK_ASYNC_XFER
-	int wait_cnt;
-
-	vendor_stack_fatal = 1U;
-
 #if VENDOR_INTR_ASYNC_XFER
 	rtos_sema_give(vendor_intr_async_xfer_sema);
 #endif
@@ -253,48 +240,8 @@ static void vendor_stop_xfer_threads(void)
 #if VENDOR_BULK_ASYNC_XFER
 	rtos_sema_give(vendor_bulk_async_xfer_sema);
 #endif
-
-	for (wait_cnt = 0; wait_cnt < 50; wait_cnt++) { /* max wait 1s */
-		if (1
-#if VENDOR_INTR_ASYNC_XFER
-			&& (vendor_intr_async_xfer_task == NULL)
-#endif
-#if VENDOR_ISOC_ASYNC_XFER
-			&& (vendor_isoc_async_xfer_task == NULL)
-#endif
-#if VENDOR_BULK_ASYNC_XFER
-			&& (vendor_bulk_async_xfer_task == NULL)
-#endif
-		   ) {
-			return;
-		}
-		rtos_time_delay_ms(20);
-	}
-
-	RTK_LOGS(TAG, RTK_LOG_WARN, "Force delete xfer thread\n");
-#if VENDOR_INTR_ASYNC_XFER
-	if (vendor_intr_async_xfer_task != NULL) {
-		rtos_task_delete(vendor_intr_async_xfer_task);
-		vendor_intr_async_xfer_task = NULL;
-	}
-#endif
-#if VENDOR_ISOC_ASYNC_XFER
-	if (vendor_isoc_async_xfer_task != NULL) {
-		rtos_task_delete(vendor_isoc_async_xfer_task);
-		vendor_isoc_async_xfer_task = NULL;
-	}
-#endif
-#if VENDOR_BULK_ASYNC_XFER
-	if (vendor_bulk_async_xfer_task != NULL) {
-		rtos_task_delete(vendor_bulk_async_xfer_task);
-		vendor_bulk_async_xfer_task = NULL;
-	}
-#endif
-#else
-	vendor_stack_fatal = 1U;
-#endif
 }
-#endif // VENDOR_HOTPLUG
+#endif // VENDOR_ASYNC_XFER
 
 /**
   * @brief  Handle the vendor class control requests
@@ -303,7 +250,7 @@ static void vendor_stop_xfer_threads(void)
   *
   *         This demo defines no class/vendor command, so every nonstandard request is
   *         rejected and the USB stack STALLs EP0, as required by USB 2.0 9.2.6.1. Do not
-  *         return HAL_OK for an unhandled request: for a D2H request the class transmits
+  *         return RTK_SUCCESS for an unhandled request: for a D2H request the class transmits
   *         the whole response window, so accepting a request without filling the window
   *         would return meaningless data to the host.
   *
@@ -321,7 +268,7 @@ static int vendor_cb_setup(usb_setup_req_t *req, u8 *buf)
 	UNUSED(req);
 	UNUSED(buf);
 
-	return HAL_ERR_PARA;
+	return -RTK_ERR_BADARG;
 }
 
 /**
@@ -331,7 +278,7 @@ static int vendor_cb_setup(usb_setup_req_t *req, u8 *buf)
   */
 static int vendor_cb_init(void)
 {
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 /**
@@ -341,7 +288,7 @@ static int vendor_cb_init(void)
   */
 static int vendor_cb_deinit(void)
 {
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 /**
@@ -353,7 +300,7 @@ static int vendor_cb_deinit(void)
   */
 static int vendor_cb_set_config(void)
 {
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 /**
@@ -370,7 +317,7 @@ static int vendor_cb_intr_received(u8 *buf, u32 len)
 	vendor_intr_tx_buf = buf;
 	vendor_intr_tx_len = len;
 	rtos_sema_give(vendor_intr_async_xfer_sema);
-	return HAL_OK;
+	return RTK_SUCCESS;
 #else
 	return usbd_vendor_transmit_intr_data(buf, len);
 #endif // VENDOR_INTR_ASYNC_XFER
@@ -383,11 +330,10 @@ static void example_usbd_vendor_intr_xfer_thread(void *param)
 
 	for (;;) {
 		if (rtos_sema_take(vendor_intr_async_xfer_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
-#if VENDOR_HOTPLUG
-			if (vendor_stack_fatal != 0U) {
+			if (vendor_app.quit != 0U) {
+				/* Stop requested or the stack is dead: leave, the stop owner frees the objects */
 				break;
 			}
-#endif
 			/* Gate on vendor_stack_ready BEFORE touching the mutex: it is still NULL if
 			   the loopback got a request before init finished. Then recheck under the
 			   lock, the stack may have gone down while waiting for it. */
@@ -401,7 +347,7 @@ static void example_usbd_vendor_intr_xfer_thread(void *param)
 			rtos_mutex_give(vendor_xfer_lock);
 		}
 	}
-	vendor_intr_async_xfer_task = NULL;
+	usb_app_ctx_leave(&vendor_app);
 	rtos_task_delete(NULL);
 }
 #endif // VENDOR_INTR_ASYNC_XFER
@@ -421,7 +367,7 @@ static int vendor_cb_isoc_received(u8 *buf, u32 len)
 	vendor_isoc_tx_buf = buf;
 	vendor_isoc_tx_len = len;
 	rtos_sema_give(vendor_isoc_async_xfer_sema);
-	return HAL_OK;
+	return RTK_SUCCESS;
 #else
 	return usbd_vendor_transmit_isoc_data(buf, len);
 #endif // VENDOR_ISOC_ASYNC_XFER
@@ -434,11 +380,10 @@ static void example_usbd_vendor_isoc_xfer_thread(void *param)
 
 	for (;;) {
 		if (rtos_sema_take(vendor_isoc_async_xfer_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
-#if VENDOR_HOTPLUG
-			if (vendor_stack_fatal != 0U) {
+			if (vendor_app.quit != 0U) {
+				/* Stop requested or the stack is dead: leave, the stop owner frees the objects */
 				break;
 			}
-#endif
 			/* See the INTR thread for why the gate comes before the mutex. */
 			if (vendor_stack_ready == 0U) {
 				continue;
@@ -450,7 +395,7 @@ static void example_usbd_vendor_isoc_xfer_thread(void *param)
 			rtos_mutex_give(vendor_xfer_lock);
 		}
 	}
-	vendor_isoc_async_xfer_task = NULL;
+	usb_app_ctx_leave(&vendor_app);
 	rtos_task_delete(NULL);
 }
 #endif // VENDOR_ISOC_ASYNC_XFER
@@ -469,7 +414,7 @@ static int vendor_cb_bulk_received(u8 *buf, u32 len)
 	vendor_bulk_tx_buf = buf;
 	vendor_bulk_tx_len = len;
 	rtos_sema_give(vendor_bulk_async_xfer_sema);
-	return HAL_OK;
+	return RTK_SUCCESS;
 #else
 	return usbd_vendor_transmit_bulk_data(buf, len);
 #endif // VENDOR_BULK_ASYNC_XFER
@@ -482,11 +427,10 @@ static void example_usbd_vendor_bulk_xfer_thread(void *param)
 
 	for (;;) {
 		if (rtos_sema_take(vendor_bulk_async_xfer_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
-#if VENDOR_HOTPLUG
-			if (vendor_stack_fatal != 0U) {
+			if (vendor_app.quit != 0U) {
+				/* Stop requested or the stack is dead: leave, the stop owner frees the objects */
 				break;
 			}
-#endif
 			/* See the INTR thread for why the gate comes before the mutex. */
 			if (vendor_stack_ready == 0U) {
 				continue;
@@ -498,7 +442,7 @@ static void example_usbd_vendor_bulk_xfer_thread(void *param)
 			rtos_mutex_give(vendor_xfer_lock);
 		}
 	}
-	vendor_bulk_async_xfer_task = NULL;
+	usb_app_ctx_leave(&vendor_app);
 	rtos_task_delete(NULL);
 }
 #endif // VENDOR_BULK_ASYNC_XFER
@@ -552,11 +496,16 @@ static void vendor_xfer_lock_release(u8 ready)
 static void example_usbd_vendor_hotplug_thread(void *param)
 {
 	int ret = 0;
+	u8 fatal = 0U;
 
 	UNUSED(param);
 
 	for (;;) {
 		if (rtos_sema_take(vendor_attach_status_changed_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
+			if (vendor_app.quit != 0U) {
+				/* Stop requested: the stack is still up, example_usbd_vendor_stop() tears it down */
+				break;
+			}
 			if (vendor_attach_status == USBD_ATTACH_STATUS_DETACHED) {
 				RTK_LOGS(TAG, RTK_LOG_INFO, "DETACHED\n");
 				vendor_xfer_lock_acquire();
@@ -566,12 +515,14 @@ static void example_usbd_vendor_hotplug_thread(void *param)
 				ret = usbd_init(&vendor_cfg);
 				if (ret != 0) {
 					vendor_xfer_lock_release(0);
+					fatal = 1U;
 					break;
 				}
 				ret = usbd_vendor_init(&vendor_cb, &vendor_class_cfg);
 				if (ret != 0) {
 					usbd_deinit();
 					vendor_xfer_lock_release(0);
+					fatal = 1U;
 					break;
 				}
 				vendor_xfer_lock_release(1);
@@ -582,24 +533,51 @@ static void example_usbd_vendor_hotplug_thread(void *param)
 			}
 		}
 	}
-	RTK_LOGS(TAG, RTK_LOG_ERROR, "Hotplug thread fail\n");
 
-	/* The stack is fully deinited here, no more ISR callback: stop the async xfer
-	   threads blocked on the semaphores, then free them as the last thread standing. */
-	vendor_stop_xfer_threads();
-	vendor_free_resource();
+	if (fatal != 0U) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Hotplug thread fail\n");
+		/* The stack is fully deinited here, no more ISR callback: tell the stop owner not to deinit it again */
+		vendor_stack_fatal = 1U;
+		if (usb_app_ctx_claim_stop(&vendor_app) != 0U) {
+			/* No stop is in flight: this thread finishes the teardown on its own */
+#if VENDOR_ASYNC_XFER
+			vendor_wake_xfer_threads();
+			if (usb_app_ctx_join(&vendor_app, VENDOR_XFER_THREAD_NUM) != RTK_SUCCESS) {
+				/* An xfer thread may still touch the shared objects: leak them */
+				rtos_task_delete(NULL);
+			}
+#endif
+			vendor_free_resource();
+			usb_app_ctx_end(&vendor_app);
+			rtos_task_delete(NULL);
+		}
+	}
+	usb_app_ctx_leave(&vendor_app);
 	rtos_task_delete(NULL);
 }
 #endif // VENDOR_HOTPLUG
 
-static void example_usbd_vendor_thread(void *param)
+/**
+  * @brief  Bring the stack and the worker threads up
+  * @retval RTK_SUCCESS, or the first error, with everything already created rolled back
+  */
+static int vendor_start(void)
 {
-	int ret = 0;
+	int ret;
+#if VENDOR_HOTPLUG || VENDOR_ASYNC_XFER
+	u32 workers = 0U;
+#endif
 #if VENDOR_HOTPLUG
 	rtos_task_t check_status_task;
 #endif
+#if VENDOR_ASYNC_XFER
+	rtos_task_t xfer_task;
+#endif
 
-	UNUSED(param);
+	ret = usb_app_ctx_begin(&vendor_app);
+	if (ret != RTK_SUCCESS) {
+		return ret;
+	}
 
 #if VENDOR_ASYNC_XFER
 	/* Created once and never deleted, see its declaration. */
@@ -612,6 +590,7 @@ static void example_usbd_vendor_thread(void *param)
 #endif
 
 #if VENDOR_HOTPLUG
+	vendor_stack_fatal = 0U;
 	ret = rtos_sema_create(&vendor_attach_status_changed_sema, 0U, 1U);
 	if (ret != RTK_SUCCESS) {
 		goto exit;
@@ -652,24 +631,56 @@ static void example_usbd_vendor_thread(void *param)
 	}
 
 	ret = usbd_init(&vendor_cfg);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		goto exit;
 	}
 
 	ret = usbd_vendor_init(&vendor_cb, &vendor_class_cfg);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		goto clear_usb_driver_exit;
 	}
 #if VENDOR_ASYNC_XFER
 	vendor_stack_ready = 1;
 #endif
 
+#if VENDOR_INTR_ASYNC_XFER
+	// The priority of transfer thread shall be lower than USB isr priority
+	ret = rtos_task_create(&xfer_task, "usbd_vendor_intr_xfer_thread",
+						   example_usbd_vendor_intr_xfer_thread, NULL,
+						   VENDOR_XFER_THREAD_STACK_SIZE, VENDOR_XFER_THREAD_PRIORITY);
+	if (ret != RTK_SUCCESS) {
+		goto clear_task_exit;
+	}
+	workers++;
+#endif // VENDOR_INTR_ASYNC_XFER
+#if VENDOR_ISOC_ASYNC_XFER
+	// The priority of transfer thread shall be lower than USB isr priority
+	ret = rtos_task_create(&xfer_task, "usbd_vendor_isoc_xfer_thread",
+						   example_usbd_vendor_isoc_xfer_thread, NULL,
+						   VENDOR_XFER_THREAD_STACK_SIZE, VENDOR_XFER_THREAD_PRIORITY);
+	if (ret != RTK_SUCCESS) {
+		goto clear_task_exit;
+	}
+	workers++;
+#endif // VENDOR_ISOC_ASYNC_XFER
+#if VENDOR_BULK_ASYNC_XFER
+	// The priority of transfer thread shall be lower than USB isr priority
+	ret = rtos_task_create(&xfer_task, "usbd_vendor_bulk_xfer_thread",
+						   example_usbd_vendor_bulk_xfer_thread, NULL,
+						   VENDOR_XFER_THREAD_STACK_SIZE, VENDOR_XFER_THREAD_PRIORITY);
+	if (ret != RTK_SUCCESS) {
+		goto clear_task_exit;
+	}
+	workers++;
+#endif // VENDOR_BULK_ASYNC_XFER
+
 #if VENDOR_HOTPLUG
+	/* Created last: it owns the stack once running, so nothing after it can fail */
 	ret = rtos_task_create(&check_status_task, "usbd_vendor_hotplug_thread",
 						   example_usbd_vendor_hotplug_thread, NULL,
 						   VENDOR_HOTPLUG_THREAD_STACK_SIZE, VENDOR_HOTPLUG_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
-		goto clear_usb_class_exit;
+		goto clear_task_exit;
 	}
 #if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
 	/* C-2: the USB OTG ISR is delivered on CPU0 (GIC ITARGETSR pins every SPI to core 0).
@@ -680,63 +691,23 @@ static void example_usbd_vendor_thread(void *param)
 	rtos_task_set_affinity(check_status_task, 0);
 #endif
 #endif // VENDOR_HOTPLUG
-#if VENDOR_INTR_ASYNC_XFER
-	// The priority of transfer thread shall be lower than USB isr priority
-	ret = rtos_task_create(&vendor_intr_async_xfer_task, "usbd_vendor_intr_xfer_thread",
-						   example_usbd_vendor_intr_xfer_thread, NULL,
-						   VENDOR_XFER_THREAD_STACK_SIZE, VENDOR_XFER_THREAD_PRIORITY);
-	if (ret != RTK_SUCCESS) {
-		goto clear_check_status_task;
-	}
-#endif // VENDOR_INTR_ASYNC_XFER
-#if VENDOR_ISOC_ASYNC_XFER
-	// The priority of transfer thread shall be lower than USB isr priority
-	ret = rtos_task_create(&vendor_isoc_async_xfer_task, "usbd_vendor_isoc_xfer_thread",
-						   example_usbd_vendor_isoc_xfer_thread, NULL,
-						   VENDOR_XFER_THREAD_STACK_SIZE, VENDOR_XFER_THREAD_PRIORITY);
-	if (ret != RTK_SUCCESS) {
-		goto clear_intr_async_task;
-	}
-#endif // VENDOR_ISOC_ASYNC_XFER
-#if VENDOR_BULK_ASYNC_XFER
-	// The priority of transfer thread shall be lower than USB isr priority
-	ret = rtos_task_create(&vendor_bulk_async_xfer_task, "usbd_vendor_bulk_xfer_thread",
-						   example_usbd_vendor_bulk_xfer_thread, NULL,
-						   VENDOR_XFER_THREAD_STACK_SIZE, VENDOR_XFER_THREAD_PRIORITY);
-	if (ret != RTK_SUCCESS) {
-		goto clear_isoc_async_task;
-	}
-#endif // VENDOR_BULK_ASYNC_XFER
 
-	rtos_time_delay_ms(100);
+	return RTK_SUCCESS;
 
-	rtos_task_delete(NULL);
-
-	return;
-
-#if VENDOR_BULK_ASYNC_XFER
-clear_isoc_async_task:
+#if VENDOR_HOTPLUG || VENDOR_ASYNC_XFER
+clear_task_exit:
+	/* Wake and join the workers already running before the stack goes away */
+	vendor_app.quit = 1U;
+#if VENDOR_ASYNC_XFER
+	vendor_wake_xfer_threads();
 #endif
-
-#if VENDOR_ISOC_ASYNC_XFER
-	rtos_task_delete(vendor_isoc_async_xfer_task);
-	vendor_isoc_async_xfer_task = NULL;
-clear_intr_async_task:
-#endif
-
-#if VENDOR_INTR_ASYNC_XFER
-	rtos_task_delete(vendor_intr_async_xfer_task);
-	vendor_intr_async_xfer_task = NULL;
-clear_check_status_task:
-#endif
-
-#if VENDOR_HOTPLUG
-	rtos_task_delete(check_status_task);
-
-clear_usb_class_exit:
+	if (usb_app_ctx_join(&vendor_app, workers) != RTK_SUCCESS) {
+		/* A worker may still run on the stack: keep it, the app stays not idle */
+		vendor_app.state = USB_APP_STATE_STOPPING;
+		return -RTK_ERR_TIMEOUT;
+	}
 #endif
 #if VENDOR_ASYNC_XFER
-	/* The xfer threads are already gone here, but keep the gate consistent. */
 	vendor_stack_ready = 0;
 #endif
 	usbd_vendor_deinit();
@@ -745,13 +716,83 @@ clear_usb_driver_exit:
 	usbd_deinit();
 
 exit:
-	RTK_LOGS(TAG, RTK_LOG_ERROR, "USBD VENDOR demo aborted\n");
 	vendor_free_resource();
+	usb_app_ctx_end(&vendor_app);
+
+	return ret;
+}
+
+static void example_usbd_vendor_thread(void *param)
+{
+	UNUSED(param);
+
+	if (vendor_start() != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "USBD VENDOR demo aborted\n");
+	}
 	rtos_task_delete(NULL);
 }
 
 /* Exported functions --------------------------------------------------------*/
 
+/**
+  * @brief  Start the vendor device, used by the USB app manager
+  * @note   Task context only, the caller needs about 4KB of stack for usbd_get_uuid_sn()
+  * @retval RTK_SUCCESS, -RTK_ERR_BUSY if already running, or the init error
+  */
+int example_usbd_vendor_start(void)
+{
+	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD VENDOR demo start\n");
+
+	return vendor_start();
+}
+
+/**
+  * @brief  Stop the vendor device and release everything it owns
+  * @note   Task context only. Safe to call when not running.
+  * @retval RTK_SUCCESS once idle, -RTK_ERR_TIMEOUT if a worker did not leave in time
+  */
+int example_usbd_vendor_stop(void)
+{
+	if (usb_app_ctx_claim_stop(&vendor_app) == 0U) {
+		/* Idle, or the hotplug thread found the stack dead and finishes the teardown itself */
+		return usb_app_ctx_wait_idle(&vendor_app);
+	}
+
+#if VENDOR_HOTPLUG
+	rtos_sema_give(vendor_attach_status_changed_sema);
+#endif
+#if VENDOR_ASYNC_XFER
+	vendor_wake_xfer_threads();
+#endif
+	if (usb_app_ctx_join(&vendor_app, VENDOR_HOTPLUG + VENDOR_XFER_THREAD_NUM) != RTK_SUCCESS) {
+		/* A worker is still on the stack: keep everything, the app stays STOPPING */
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Stop timeout\n");
+		return -RTK_ERR_TIMEOUT;
+	}
+
+	/* Every worker is gone: this caller is the only one left on the stack */
+#if VENDOR_HOTPLUG
+	/* A reinit that failed while this stop was in flight already deinited the stack */
+	if (vendor_stack_fatal == 0U)
+#endif
+	{
+#if VENDOR_ASYNC_XFER
+		vendor_stack_ready = 0;
+#endif
+		usbd_vendor_deinit();
+		usbd_deinit();
+	}
+	vendor_free_resource();
+	usb_app_ctx_end(&vendor_app);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD VENDOR demo stop\n");
+
+	return RTK_SUCCESS;
+}
+
+/**
+  * @brief  Example entry: start the vendor device from its own thread
+  * @retval None
+  */
 void example_usbd_vendor(void)
 {
 	int ret;

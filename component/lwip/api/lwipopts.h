@@ -158,9 +158,7 @@ extern unsigned int sys_now(void);
 
 #if defined(CONFIG_IP6_RLOCAL) && (CONFIG_IP6_RLOCAL == 1)
 #define LWIP_IPV6_FORWARD               1
-#define LWIP_HOOK_IP6_ROUTE nd6_find_nhb_netif
-#define is_sta_ap() (wifi_is_running(1)&&wifi_is_running(0))
-#define is_sta_only() (wifi_is_running(0)&&(!wifi_is_running(1)))
+#define LWIP_HOOK_IP6_ROUTE             nd6_find_nhb_netif
 #endif
 
 #if defined(CONFIG_HIGH_TP_TEST)

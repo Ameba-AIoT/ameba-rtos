@@ -80,7 +80,7 @@ typedef struct {
  * @note   Allocates the identity string buffers; release them with @ref usbd_otp_deinit.
  *         On a partial failure the already allocated buffers are freed before returning.
  * @param  otp: OTP parameter block to fill in.
- * @return HAL_OK on success, HAL_ERR_MEM when a buffer cannot be allocated.
+ * @return RTK_SUCCESS on success, -RTK_ERR_NOMEM when a buffer cannot be allocated.
  */
 int usbd_otp_init(usbd_otp_t *otp);
 

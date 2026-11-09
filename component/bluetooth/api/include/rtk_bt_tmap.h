@@ -1,7 +1,7 @@
 /**
  * @file      rtk_bt_tmap.h
  * @author    atonio_liu@realsil.com.cn
- * @brief     Bluetooth LE Audio Public Broadcast Profile type and function definition
+ * @brief     Bluetooth LE Audio Telephony and Media Audio Profile type and function definition.
  * @copyright Copyright (c) 2023. Realtek Semiconductor Corporation. All rights reserved.
  */
 
@@ -20,55 +20,62 @@ extern "C"
 #endif
 
 #if defined(RTK_BLE_AUDIO_TMAP_SUPPORT) && RTK_BLE_AUDIO_TMAP_SUPPORT
-/* ---------------------------------- Date Types ------------------------------------- */
+/************************************** Data Types *************************************/
 /**
- * @typedef    rtk_bt_le_audio_tmap_role_t
- * @brief     Bluetooth LE AUDIO TMAP Role.
+ * @typedef   rtk_bt_le_audio_tmap_role_t
+ * @brief     Bluetooth LE Audio TMAP role bit mask of a device.
  */
 typedef enum {
-	RTK_BT_LE_AUDIO_TMAP_ROLE_UNKNOWN = 0,
-	RTK_BT_LE_AUDIO_TMAP_ROLE_CG = 0x01,                    /**< TMAP Call Gateway. */
-	RTK_BT_LE_AUDIO_TMAP_ROLE_CT = 0x02,                    /**< TMAP Call Terminal. */
-	RTK_BT_LE_AUDIO_TMAP_ROLE_UMS = 0x04,                   /**< TMAP Unicast Media Sender. */
-	RTK_BT_LE_AUDIO_TMAP_ROLE_UMR = 0x08,                   /**< TMAP Unicast Media Receiver. */
-	RTK_BT_LE_AUDIO_TMAP_ROLE_BMS = 0x10,                   /**< TMAP Broadcast Media Sender. */
-	RTK_BT_LE_AUDIO_TMAP_ROLE_BMR = 0x20,                   /**< TMAP Broadcast Media Receiver. */
+	RTK_BT_LE_AUDIO_TMAP_ROLE_UNKNOWN = 0,    /*!< Unknown TMAP role. */
+	RTK_BT_LE_AUDIO_TMAP_ROLE_CG = 0x01,      /*!< TMAP Call Gateway. */
+	RTK_BT_LE_AUDIO_TMAP_ROLE_CT = 0x02,      /*!< TMAP Call Terminal. */
+	RTK_BT_LE_AUDIO_TMAP_ROLE_UMS = 0x04,     /*!< TMAP Unicast Media Sender. */
+	RTK_BT_LE_AUDIO_TMAP_ROLE_UMR = 0x08,     /*!< TMAP Unicast Media Receiver. */
+	RTK_BT_LE_AUDIO_TMAP_ROLE_BMS = 0x10,     /*!< TMAP Broadcast Media Sender. */
+	RTK_BT_LE_AUDIO_TMAP_ROLE_BMR = 0x20,     /*!< TMAP Broadcast Media Receiver. */
 } rtk_bt_le_audio_tmap_role_t;
 
 /**
  * @typedef   rtk_bt_le_audio_tmas_client_discovery_done_ind_t
- * @brief     Bluetooth LE audio TMAS client discovery done indication
+ * @brief     Bluetooth LE Audio TMAS client discovery done indication.
  */
 typedef struct {
-	uint16_t conn_handle;                                      /**< connect handle. */
-	bool    is_found;                                          /**< Whether to find service. */
-	bool    load_from_ftl;                                     /**< Whether the service table is loaded from FTL. */
+	uint16_t conn_handle;     /*!< Connection handle of the ACL connection.
+                               *   Range: 0x0000 to 0x0EFF. */
+	bool    is_found;         /*!< Whether TMAS is found on the remote device.
+                               *   - true: TMAS is found.
+                               *   - false: TMAS is not found. */
+	bool    load_from_ftl;    /*!< Whether the service table is loaded from FTL.
+                               *   - true: The service table is restored from FTL.
+                               *   - false: The service table is obtained by discovery on the remote device. */
 } rtk_bt_le_audio_tmas_client_discovery_done_ind_t;
 
 /**
  * @typedef   rtk_bt_le_audio_tmas_read_role_result_t
- * @brief     Bluetooth LE audio TMAS client read TMAP role result
+ * @brief     Bluetooth LE Audio TMAS client read TMAP role result.
  */
 typedef struct {
-	uint16_t conn_handle;
-	uint16_t role;                                              /**< @ref rtk_bt_le_audio_tmap_role_t  */
-	uint16_t cause;
+	uint16_t conn_handle;    /*!< Connection handle of the ACL connection.
+                              *   Range: 0x0000 to 0x0EFF. */
+	uint16_t role;           /*!< TMAP role of the remote device, as a bit mask of @ref rtk_bt_le_audio_tmap_role_t. */
+	uint16_t cause;          /*!< Result code of the read operation. */
 } rtk_bt_le_audio_tmas_read_role_result_t;
 
-/* ------------------------------ Functions Declaration ------------------------------ */
+/********************************* Functions Declaration *******************************/
 /**
  * @defgroup  bt_tmap BT TMAP APIs
- * @brief     BT TMAP related function APIs
+ * @brief     BT TMAP related function APIs.
  * @ingroup   bt_le_audio
  * @{
  */
 
 /**
- * @brief     BLE AUDIO TMAS CLIENT READ ROLE.
- * @param[in] conn_handle:  connect handle.
+ * @brief     Read the TMAP role of the remote device from its TMAS. The result is reported asynchronously
+ *            via event @ref RTK_BT_LE_AUDIO_EVT_TMAS_CLIENT_READ_ROLE_RESULT.
+ * @param[in] conn_handle: Connection handle of the ACL connection.
+ *                         Range: 0x0000 to 0x0EFF.
  * @return
- *            - RTK_BT_OK  : Succeed
- *            - Others: Failed
+ *            - @ref rtk_bt_err_common
  */
 uint16_t rtk_bt_le_audio_tmas_client_read_role(uint16_t conn_handle);
 

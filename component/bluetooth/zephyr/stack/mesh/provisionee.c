@@ -374,6 +374,13 @@ static void prov_dh_key_gen_handler(struct k_work *work)
 
 static K_WORK_DEFINE(dh_gen_work, prov_dh_key_gen_handler);
 
+#if ZEPHYR_RTK_PATCH
+void zephyr_mesh_provisionee_work_reset(void)
+{
+	k_work_reset(&dh_gen_work);
+}
+#endif
+
 static void prov_pub_key(const uint8_t *data)
 {
 	LOG_DBG("Remote Public Key: %s", bt_hex(data, PUB_KEY_SIZE));

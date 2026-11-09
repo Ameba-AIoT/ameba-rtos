@@ -48,7 +48,6 @@ ameba_list_append(private_sources
 	rtk_bt_gap.c
 	rtk_bt_gatt.c
 	rtk_bt_vendor.c
-	rtk_bt_power_control.c
 )
 
 if(CONFIG_BT_HAS_BREDR)

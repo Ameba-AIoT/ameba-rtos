@@ -9,6 +9,8 @@
 #include <platform_autoconf.h>
 #include "usbd_msc.h"
 #include "os_wrapper.h"
+#include "usb_app.h"
+#include "example_usbd_msc.h"
 #if defined(CONFIG_AMEBASMART)
 #include "ameba_sd.h"
 #endif
@@ -126,16 +128,13 @@ static rtos_sema_t msc_usb_status_changed_sema;
 
 #if MSC_SD_HOTPLUG
 /* Written by the SD card-detect callback, read by the SD thread, possibly on another core */
-static volatile u8 msc_sd_status;
+static volatile SD_RESULT msc_sd_status;
 static rtos_sema_t msc_sd_status_changed_sema;
 #endif
 
 #if (MSC_SD_HOTPLUG == 1) || (MSC_USB_HOTPLUG == 1)
 /* Read from ISR/card-detect callback context, so it must not be cached. */
 static volatile usbd_msc_hotplug_type_t msc_hotplug_ongoing_type;
-/* Set by whichever hotplug thread hits an unrecoverable error, tells the other
-   one to quit so that the last thread standing frees the shared objects. */
-static volatile u8 msc_stack_fatal;
 #endif
 
 #if (MSC_SD_HOTPLUG == 1) && (MSC_USB_HOTPLUG == 1)
@@ -147,14 +146,23 @@ static volatile u8 msc_stack_fatal;
 static rtos_mutex_t msc_stack_lock;
 #endif
 
+/* Whether usbd_init() and usbd_msc_init() are in effect, and whether the disk still needs a
+   usbd_msc_disk_deinit(). Written by the start entry and the hotplug threads, read by the
+   teardown once they are all gone. */
+static u8 msc_stack_up;
+static u8 msc_disk_up;
+
+/* Start/stop state: the hotplug threads own the running stack, example_usbd_msc_stop() asks
+   them to leave through quit and joins them */
+static usb_app_ctx_t msc_app;
+
 /* Exported variables --------------------------------------------------------*/
 
 /* Private functions ---------------------------------------------------------*/
 
-#if (MSC_SD_HOTPLUG == 1) || (MSC_USB_HOTPLUG == 1)
 /**
   * @brief  Free the objects shared by the example threads
-  * @note   Only called by the last running thread, after the USB stack is fully
+  * @note   Only called once every hotplug thread is gone and the USB stack is fully
   *         deinited, so that no ISR callback can touch these objects any more
   * @retval None
   */
@@ -177,31 +185,51 @@ static void msc_free_resource(void)
 }
 
 /**
-  * @brief  Leave the example: the first thread to fail tears the stack down and
-  *         wakes its peer, the last one out frees the shared objects
-  * @note   The stack is already deinited by the caller, so no ISR callback can
-  *         give a semaphore any more
+  * @brief  Release everything the example owns: the stack and the disk if still up, the VFS volume and the objects
+  * @note   Only called once every hotplug thread is gone
   * @retval None
   */
-static void msc_hotplug_thread_exit(void)
+static void msc_teardown(void)
 {
-	u8 first = (msc_stack_fatal == 0U) ? 1U : 0U;
-
-	msc_stack_fatal = 1U;
-
-#if (MSC_SD_HOTPLUG == 1) && (MSC_USB_HOTPLUG == 1)
-	if (first != 0U) {
-		/* Wake the peer thread so it can observe the flag and quit; it frees the
-		   shared objects as the last thread standing. */
-		rtos_sema_give(msc_usb_status_changed_sema);
-		rtos_sema_give(msc_sd_status_changed_sema);
-	} else {
-		msc_free_resource();
+	if (msc_stack_up != 0U) {
+		usbd_msc_deinit();
+		usbd_deinit();
+		msc_stack_up = 0U;
 	}
-#else
-	UNUSED(first);
-	msc_free_resource();
+	if (msc_disk_up != 0U) {
+		usbd_msc_disk_deinit();
+		msc_disk_up = 0U;
+	}
+
+#ifdef CONFIG_USBD_MSC_FLASH
+	vfs_user_unregister(USBD_MSC_VFS_PREFIX, VFS_FATFS, VFS_INF_FLASH);
+#elif defined(CONFIG_USBD_MSC_RAM)
+	vfs_user_unregister(USBD_MSC_VFS_PREFIX, VFS_FATFS, VFS_INF_RAM);
 #endif
+
+	msc_free_resource();
+}
+
+#if (MSC_SD_HOTPLUG == 1) || (MSC_USB_HOTPLUG == 1)
+/**
+  * @brief  Finish the teardown claimed by a hotplug thread that found the stack dead
+  * @note   The stack is already down and the caller holds no lock. Does not return.
+  * @retval None
+  */
+static void msc_hotplug_fatal_teardown(void)
+{
+#if (MSC_SD_HOTPLUG == 1) && (MSC_USB_HOTPLUG == 1)
+	/* Wake the peer thread, it observes quit and leaves */
+	rtos_sema_give(msc_usb_status_changed_sema);
+	rtos_sema_give(msc_sd_status_changed_sema);
+	if (usb_app_ctx_join(&msc_app, 1U) != RTK_SUCCESS) {
+		/* The peer may still touch the shared objects: leak them */
+		rtos_task_delete(NULL);
+	}
+#endif
+	msc_teardown();
+	usb_app_ctx_end(&msc_app);
+	rtos_task_delete(NULL);
 }
 #endif // (MSC_SD_HOTPLUG == 1) || (MSC_USB_HOTPLUG == 1)
 
@@ -231,6 +259,7 @@ static void msc_cb_status_changed(u8 old_status, u8 status)
 static void example_usbd_msc_usb_hotplug_thread(void *param)
 {
 	int ret = 0;
+	u8 fatal = 0U;
 #if (MSC_SD_HOTPLUG == 1) && (MSC_USB_HOTPLUG == 1)
 	u8 lock_held = 0U;
 #endif
@@ -239,7 +268,8 @@ static void example_usbd_msc_usb_hotplug_thread(void *param)
 
 	for (;;) {
 		if (rtos_sema_take(msc_usb_status_changed_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
-			if (msc_stack_fatal != 0U) {
+			if (msc_app.quit != 0U) {
+				/* Stop requested, or the peer found the stack dead: the stop owner tears it down */
 				break;
 			}
 			if (msc_usb_attach_status == USBD_ATTACH_STATUS_DETACHED) {
@@ -247,21 +277,39 @@ static void example_usbd_msc_usb_hotplug_thread(void *param)
 				   gated even if it currently owns the stack. */
 				msc_hotplug_ongoing_type = USBD_MSC_USB_HOTPLUG;
 				MSC_STACK_LOCK();
+#if (MSC_SD_HOTPLUG == 1) && (MSC_USB_HOTPLUG == 1)
+				if (msc_app.quit != 0U) {
+					/* Stop requested while the peer owned the stack: leave it as it is */
+					break;
+				}
+#endif
 				RTK_LOGS(TAG, RTK_LOG_INFO, "DETACHED\n");
 				usbd_msc_deinit();
 				usbd_deinit();
+				msc_stack_up = 0U;
 				usbd_msc_disk_deinit();
+				msc_disk_up = 0U;
 				RTK_LOGS(TAG, RTK_LOG_INFO, "Free heap: 0x%x\n", rtos_mem_get_free_heap_size());
-				usbd_msc_disk_init();
+				ret = usbd_msc_disk_init();
+				if (ret != RTK_SUCCESS) {
+					/* No medium to expose: leave the stack down rather than enumerate a disk every access fails */
+					RTK_LOGS(TAG, RTK_LOG_ERROR, "Init disk fail %d\n", ret);
+					fatal = 1U;
+					break;
+				}
+				msc_disk_up = 1U;
 				ret = usbd_init(&msc_cfg);
 				if (ret != 0) {
+					fatal = 1U;
 					break;
 				}
 				ret = usbd_msc_init(&msc_cb, &msc_class_cfg);
 				if (ret != 0) {
 					usbd_deinit();
+					fatal = 1U;
 					break;
 				}
+				msc_stack_up = 1U;
 				msc_hotplug_ongoing_type = USBD_MSC_HOTPLUG_NONE;
 				MSC_STACK_UNLOCK();
 			} else if (msc_usb_attach_status == USBD_ATTACH_STATUS_ATTACHED) {
@@ -271,16 +319,22 @@ static void example_usbd_msc_usb_hotplug_thread(void *param)
 			}
 		}
 	}
-	RTK_LOGS(TAG, RTK_LOG_ERROR, "Hotplug thread fail\n");
-	/* The stack is down for good here. Release the lock BEFORE the hand-off so
-	   the peer never blocks on it and msc_free_resource() does not delete a mutex
-	   that is still held. */
+
+	if (fatal != 0U) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Hotplug thread fail\n");
+		/* Claimed before the lock is released, so the peer sees quit as soon as it gets the lock */
+		fatal = usb_app_ctx_claim_stop(&msc_app);
+	}
 #if (MSC_SD_HOTPLUG == 1) && (MSC_USB_HOTPLUG == 1)
 	if (lock_held != 0U) {
 		MSC_STACK_UNLOCK();
 	}
 #endif
-	msc_hotplug_thread_exit();
+	if (fatal != 0U) {
+		/* No stop is in flight: this thread finishes the teardown on its own */
+		msc_hotplug_fatal_teardown();
+	}
+	usb_app_ctx_leave(&msc_app);
 	rtos_task_delete(NULL);
 }
 #endif // MSC_USB_HOTPLUG
@@ -289,6 +343,7 @@ static void example_usbd_msc_usb_hotplug_thread(void *param)
 static void example_usbd_msc_sd_hotplug_thread(void *param)
 {
 	int ret = 0;
+	u8 fatal = 0U;
 #if (MSC_SD_HOTPLUG == 1) && (MSC_USB_HOTPLUG == 1)
 	u8 lock_held = 0U;
 #endif
@@ -297,7 +352,8 @@ static void example_usbd_msc_sd_hotplug_thread(void *param)
 
 	for (;;) {
 		if (rtos_sema_take(msc_sd_status_changed_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
-			if (msc_stack_fatal != 0U) {
+			if (msc_app.quit != 0U) {
+				/* Stop requested, or the peer found the stack dead: the stop owner tears it down */
 				break;
 			}
 			/* Publish before taking the lock so the peer's notifications are
@@ -307,39 +363,53 @@ static void example_usbd_msc_sd_hotplug_thread(void *param)
 #if (MSC_SD_HOTPLUG == 1) && (MSC_USB_HOTPLUG == 1)
 			if (lock_held == 0U) {
 				MSC_STACK_LOCK();
+				if (msc_app.quit != 0U) {
+					/* Stop requested while the peer owned the stack: leave it as it is */
+					break;
+				}
 			}
 #endif
 			if (msc_sd_status == SD_NODISK) {
 				RTK_LOGS(TAG, RTK_LOG_INFO, "SD card removed\n");
 				usbd_msc_deinit();
 				usbd_deinit();
+				msc_stack_up = 0U;
 				RTK_LOGS(TAG, RTK_LOG_INFO, "Free heap: 0x%x\n", rtos_mem_get_free_heap_size());
 			} else {
 				RTK_LOGS(TAG, RTK_LOG_INFO, "SD card insert, re-init USB\n");
 				SD_CardInit();
 				ret = usbd_init(&msc_cfg);
 				if (ret != 0) {
+					fatal = 1U;
 					break;
 				}
 				ret = usbd_msc_init(&msc_cb, &msc_class_cfg);
 				if (ret != 0) {
 					usbd_deinit();
+					fatal = 1U;
 					break;
 				}
+				msc_stack_up = 1U;
 				msc_hotplug_ongoing_type = USBD_MSC_HOTPLUG_NONE;
 				MSC_STACK_UNLOCK();
 			}
 		}
 	}
 
-	RTK_LOGS(TAG, RTK_LOG_ERROR, "SD card hotplug thread fail\n");
-	/* Release the lock before the hand-off, see the USB hotplug thread. */
+	/* Same exit sequence as the USB hotplug thread */
+	if (fatal != 0U) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "SD card hotplug thread fail\n");
+		fatal = usb_app_ctx_claim_stop(&msc_app);
+	}
 #if (MSC_SD_HOTPLUG == 1) && (MSC_USB_HOTPLUG == 1)
 	if (lock_held != 0U) {
 		MSC_STACK_UNLOCK();
 	}
 #endif
-	msc_hotplug_thread_exit();
+	if (fatal != 0U) {
+		msc_hotplug_fatal_teardown();
+	}
+	usb_app_ctx_leave(&msc_app);
 	rtos_task_delete(NULL);
 }
 
@@ -354,16 +424,28 @@ static void sd_intr_cb(SD_RESULT res)
 }
 #endif // MSC_SD_HOTPLUG
 
-static void example_usbd_msc_thread(void *param)
+/**
+  * @brief  Bring the disk, the stack and the hotplug threads up
+  * @retval RTK_SUCCESS, or the first error, with everything already created rolled back
+  */
+static int msc_start(void)
 {
-	int ret = 0;
+	int ret;
 #if MSC_USB_HOTPLUG
 	rtos_task_t usb_task;
 #endif
 #if MSC_SD_HOTPLUG
 	rtos_task_t sd_task;
 #endif
-	UNUSED(param);
+
+	ret = usb_app_ctx_begin(&msc_app);
+	if (ret != RTK_SUCCESS) {
+		return ret;
+	}
+
+#if (MSC_SD_HOTPLUG == 1) || (MSC_USB_HOTPLUG == 1)
+	msc_hotplug_ongoing_type = USBD_MSC_HOTPLUG_NONE;
+#endif
 
 #if MSC_USB_HOTPLUG
 	ret = rtos_sema_create(&msc_usb_status_changed_sema, 0U, 1U);
@@ -412,32 +494,37 @@ static void example_usbd_msc_thread(void *param)
 	}
 #endif
 
+	/* Set before the init: a failed one is unwound by usbd_msc_disk_deinit() too */
+	msc_disk_up = 1U;
 	ret = usbd_msc_disk_init();
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Init disk fail\n");
 		/* VFS FATFS volume is already registered above; unwind it too. */
 		goto exit_usbd_init_fail;
 	}
 
 	ret = usbd_init(&msc_cfg);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Init USBD fail\n");
 		goto exit_usbd_init_fail;
 	}
 
 	ret = usbd_msc_init(&msc_cb, &msc_class_cfg);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Init MSC class fail\n");
-		goto exit_usbd_msc_init_fail;
+		usbd_deinit();
+		goto exit_usbd_init_fail;
 	}
+	msc_stack_up = 1U;
 
+	/* The hotplug threads are created last: they own the stack once running */
 #if MSC_USB_HOTPLUG
 	ret = rtos_task_create(&usb_task, "usbd_msc_usb_hotplug_thread", example_usbd_msc_usb_hotplug_thread, NULL,
 						   MSC_USB_HOTPLUG_THREAD_STACK_SIZE,
 						   MSC_USB_HOTPLUG_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create hotplug thread fail\n");
-		goto exit_create_hotplug_fail;
+		goto exit_usbd_init_fail;
 	}
 #if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
 	/* C-2: the USB OTG ISR is delivered on CPU0 (GIC ITARGETSR pins every SPI to core 0).
@@ -463,45 +550,106 @@ static void example_usbd_msc_thread(void *param)
 #endif
 #endif // MSC_SD_HOTPLUG
 
-	rtos_task_delete(NULL);
-
-	return;
+	return RTK_SUCCESS;
 
 #if MSC_SD_HOTPLUG
 exit_create_msc_sd_hotplug_fail:
 #if MSC_USB_HOTPLUG
-	rtos_task_delete(usb_task);
+	if (usb_app_ctx_claim_stop(&msc_app) == 0U) {
+		/* The USB hotplug thread found the stack dead and owns the teardown: it joins its
+		   peer, so stand in for the SD hotplug thread that never ran */
+		usb_app_ctx_leave(&msc_app);
+		return ret;
+	}
+	/* Wake and join the USB hotplug thread before the stack goes away */
+	rtos_sema_give(msc_usb_status_changed_sema);
+	if (usb_app_ctx_join(&msc_app, 1U) != RTK_SUCCESS) {
+		/* It may still run on the stack: keep it, the app stays STOPPING */
+		return -RTK_ERR_TIMEOUT;
+	}
 #endif
 #endif
-
-#if MSC_USB_HOTPLUG
-exit_create_hotplug_fail:
-#endif
-	usbd_msc_deinit();
-
-exit_usbd_msc_init_fail:
-	usbd_deinit();
 
 exit_usbd_init_fail:
-	usbd_msc_disk_deinit();
+	RTK_LOGS(TAG, RTK_LOG_ERROR, "USBD MSC demo aborted\n");
+	/* Deinits the stack only while msc_stack_up says it is up: a joined hotplug thread may have left it down */
+	msc_teardown();
+	usb_app_ctx_end(&msc_app);
 
-#ifdef CONFIG_USBD_MSC_FLASH
-	vfs_user_unregister(USBD_MSC_VFS_PREFIX, VFS_FATFS, VFS_INF_FLASH);
-#elif defined(CONFIG_USBD_MSC_RAM)
-	vfs_user_unregister(USBD_MSC_VFS_PREFIX, VFS_FATFS, VFS_INF_RAM);
-#endif
+	return ret;
 
 exit_usbd_msc_disk_init_fail:
 	RTK_LOGS(TAG, RTK_LOG_ERROR, "USBD MSC demo aborted\n");
-#if (MSC_SD_HOTPLUG == 1) || (MSC_USB_HOTPLUG == 1)
 	msc_free_resource();
-#endif
+	usb_app_ctx_end(&msc_app);
 
+	return ret;
+}
+
+static void example_usbd_msc_thread(void *param)
+{
+	UNUSED(param);
+
+	if (msc_start() != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Start fail\n");
+	}
 	rtos_task_delete(NULL);
 }
 
 /* Exported functions --------------------------------------------------------*/
 
+/**
+  * @brief  Start the MSC device, used by the USB app manager
+  * @note   Task context only
+  * @retval RTK_SUCCESS, -RTK_ERR_BUSY if already running, or the init error
+  */
+int example_usbd_msc_start(void)
+{
+	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD MSC demo start\n");
+
+	return msc_start();
+}
+
+/**
+  * @brief  Stop the MSC device and release everything it owns
+  * @note   Task context only. Safe to call when not running.
+  * @retval RTK_SUCCESS once idle, -RTK_ERR_TIMEOUT if a hotplug thread did not leave in time
+  */
+int example_usbd_msc_stop(void)
+{
+	u32 workers = 0U;
+
+	if (usb_app_ctx_claim_stop(&msc_app) == 0U) {
+		/* Idle, or a hotplug thread found the stack dead and finishes the teardown itself */
+		return usb_app_ctx_wait_idle(&msc_app);
+	}
+
+#if MSC_USB_HOTPLUG
+	rtos_sema_give(msc_usb_status_changed_sema);
+	workers++;
+#endif
+#if MSC_SD_HOTPLUG
+	rtos_sema_give(msc_sd_status_changed_sema);
+	workers++;
+#endif
+	if (usb_app_ctx_join(&msc_app, workers) != RTK_SUCCESS) {
+		/* A hotplug thread is still on the stack: keep everything, the app stays STOPPING */
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Stop timeout\n");
+		return -RTK_ERR_TIMEOUT;
+	}
+
+	/* Every hotplug thread is gone: this caller is the only one left on the stack */
+	msc_teardown();
+	usb_app_ctx_end(&msc_app);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD MSC demo stop\n");
+
+	return RTK_SUCCESS;
+}
+
+/**
+  * @brief  Example entry: start the MSC device from its own thread
+  * @retval None
+  */
 void example_usbd_msc(void)
 {
 	int ret;

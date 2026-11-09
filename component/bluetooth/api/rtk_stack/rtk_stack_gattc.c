@@ -495,7 +495,7 @@ uint16_t bt_stack_gattc_act_handle(rtk_bt_cmd_t *p_cmd)
 		ret = bt_stack_gattc_update_cccd(p_cmd->param, false);
 		break;
 	default:
-		BT_LOGE("bt_stack_le_act_handle:unknown act: %d \r\n", p_cmd->act);
+		BT_LOGE("%s:unknown act: %d \r\n", __func__, p_cmd->act);
 		ret = RTK_BT_ERR_NO_CASE_ELEMENT;
 		break;
 	}
@@ -1886,7 +1886,7 @@ uint16_t bt_stack_gattc_act_handle(rtk_bt_cmd_t *p_cmd)
 		ret = bt_stack_gattc_update_cccd(p_cmd->param, false);
 		break;
 	default:
-		BT_LOGE("bt_stack_le_act_handle:unknown act: %d \r\n", p_cmd->act);
+		BT_LOGE("%s:unknown act: %d \r\n", __func__, p_cmd->act);
 		ret = RTK_BT_ERR_NO_CASE_ELEMENT;
 		break;
 	}

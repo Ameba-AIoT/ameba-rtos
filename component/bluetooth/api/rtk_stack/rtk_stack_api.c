@@ -1052,7 +1052,7 @@ uint16_t bt_stack_act_handler(rtk_bt_cmd_t *p_cmd)
 		bt_stack_gap_act_handle(p_cmd);
 		break;
 	default:
-		BT_LOGE("bt_stack_le_act_handle:unknown group: %d \r\n", p_cmd->group);
+		BT_LOGE("%s:unknown group: %d \r\n", __func__, p_cmd->group);
 		break;
 	}
 

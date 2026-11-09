@@ -2228,6 +2228,8 @@ typedef struct {
  */
 typedef struct {
 	rtk_bt_le_coc_chan_param_type_t param_type;    /*!< Channel parameter type to get. */
+	uint16_t conn_handle;                          /*!< Connection handle of the ACL connection to get COC channel parameter.
+                                                    *   Range: 0x0000 to 0x0EFF. */
 	uint16_t cid;                                  /*!< COC channel ID of the established channel. */
 	uint16_t *value;                               /*!< Output: the parameter value. */
 } rtk_bt_le_coc_chan_param_get_t;
@@ -2243,10 +2245,22 @@ typedef struct {
 } rtk_bt_le_coc_connect_param_t;
 
 /**
+ * @struct    rtk_bt_le_coc_disconnect_param_t
+ * @brief     Bluetooth LE COC disconnect parameter definition.
+ */
+typedef struct {
+	uint16_t conn_handle;                          /*!< Connection handle of the ACL connection to send COC disconnect request.
+                                                    *   Range: 0x0000 to 0x0EFF. */
+	uint16_t cid;                                  /*!< COC channel ID of the channel to disconnect. */
+} rtk_bt_le_coc_disconnect_param_t;
+
+/**
  * @struct    rtk_bt_le_coc_send_data_param_t
  * @brief     Bluetooth LE COC send data parameter definition.
  */
 typedef struct {
+	uint16_t conn_handle;                     /*!< Connection handle of the ACL connection to send COC data.
+                                               *   Range: 0x0000 to 0x0EFF. */
 	uint16_t cid;                             /*!< COC channel ID of the channel to send data. */
 	uint16_t len;                             /*!< Length of the data payload in bytes. */
 	uint8_t *data;                            /*!< Pointer to the data to transmit. */
@@ -3892,6 +3906,8 @@ uint16_t rtk_bt_le_gap_coc_set_param(rtk_bt_le_coc_param_type_t param_type, uint
 /**
  * @brief     Get a parameter from an established LE COC channel identified by its channel ID (cid) and return the value via @p value.
  * @param[in] param_type: Channel parameter type to get.
+ * @param[in] conn_handle: Connection handle of the ACL connection to get COC channel parameter.
+ *                         Range: 0x0000 to 0x0EFF.
  * @param[in] cid: COC channel ID of the established channel.
  * @param[out] value: Pointer to a variable that receives the parameter value.
  *                    Must not be NULL.
@@ -3899,7 +3915,7 @@ uint16_t rtk_bt_le_gap_coc_set_param(rtk_bt_le_coc_param_type_t param_type, uint
  *            - @ref rtk_bt_err_common
  */
 uint16_t rtk_bt_le_gap_coc_get_chan_param(rtk_bt_le_coc_chan_param_type_t param_type,
-										  uint16_t cid, uint16_t *value);
+										  uint16_t conn_handle, uint16_t cid, uint16_t *value);
 
 /**
  * @brief     Initiate an LE Credit Based COC connection request to a remote device over an existing ACL connection on the specified PSM. The result is reported
@@ -3917,6 +3933,8 @@ uint16_t rtk_bt_le_gap_coc_connect(uint16_t conn_handle, uint16_t le_psm);
 /**
  * @brief     Initiate disconnection of an established LE COC channel identified by @p cid.
  *            The result is reported asynchronously via event @ref RTK_BT_LE_GAP_EVT_COC_DISCONNECT_IND.
+ * @param[in] conn_handle: Connection handle of the ACL connection to send COC disconnect request.
+ *                         Range: 0x0000 to 0x0EFF.
  * @param[in] cid: COC channel ID of the channel to disconnect.
  * @return
  *            - @ref rtk_bt_err_common
@@ -3924,11 +3942,13 @@ uint16_t rtk_bt_le_gap_coc_connect(uint16_t conn_handle, uint16_t le_psm);
  *            - The underlying ACL connection is not affected; only the COC channel is closed.
  *            - After disconnection @p cid is no longer valid.
  */
-uint16_t rtk_bt_le_gap_coc_disconnect(uint16_t cid);
+uint16_t rtk_bt_le_gap_coc_disconnect(uint16_t conn_handle, uint16_t cid);
 
 /**
  * @brief     Send a data SDU over an established LE COC channel. The transmission result is reported asynchronously
  *            via event @ref RTK_BT_LE_GAP_EVT_COC_SEND_DATA_RESULT_IND.
+ * @param[in] conn_handle: Connection handle of the ACL connection to send COC data.
+ *                         Range: 0x0000 to 0x0EFF.
  * @param[in] cid: COC channel ID of the channel to send data.
  * @param[in] len: Length of the data payload in bytes.
  * @param[in] data: Pointer to the data buffer to transmit.
@@ -3936,7 +3956,7 @@ uint16_t rtk_bt_le_gap_coc_disconnect(uint16_t cid);
  * @return
  *            - @ref rtk_bt_err_common
  */
-uint16_t rtk_bt_le_gap_coc_send_data(uint16_t cid, uint16_t len, uint8_t *data);
+uint16_t rtk_bt_le_gap_coc_send_data(uint16_t conn_handle, uint16_t cid, uint16_t len, uint8_t *data);
 #endif /* RTK_BLE_COC_SUPPORT */
 
 /**

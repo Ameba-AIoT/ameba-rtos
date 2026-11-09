@@ -168,8 +168,6 @@ menu "CONFIG APPLICATION"
         orsource "../../../aivoice/Kconfig"
     endmenu
 
-    orsource "../../../application/Kconfig"
-
     orsource "${RTK_APP_DIR}/Kconfig"
 
     rsource "../../../soc/common/diagnose/Kconfig"

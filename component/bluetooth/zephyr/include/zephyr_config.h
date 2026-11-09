@@ -66,6 +66,9 @@ extern "C" {
 /* bt_rand() from local HMAC-DRBG instead of a synchronous HCI LE_RAND,
  * which deadlocked the RX-drain thread once a burst had drained evt_pool */
 #define CONFIG_BT_HOST_CRYPTO_PRNG 1
+#if !defined(CONFIG_MBEDTLS_USE_LEGACY_API)
+#define CONFIG_BT_USE_PSA_API 1
+#endif
 
 /*----------------------------- BT adv and scan -----------------------------*/
 #define CONFIG_BT_FILTER_ACCEPT_LIST 1
@@ -102,6 +105,9 @@ extern "C" {
 #define CONFIG_BT_L2CAP_TX_MTU 262
 #define CONFIG_BT_L2CAP_TX_BUF_COUNT 8
 #define CONFIG_BT_L2CAP_TX_FRAG_COUNT 0
+#if defined(RTK_BLE_COC_SUPPORT) && RTK_BLE_COC_SUPPORT
+#define CONFIG_BT_L2CAP_DYNAMIC_CHANNEL 1
+#endif
 
 /*--------------------------------- BT gatt ---------------------------------*/
 #define CONFIG_BT_ATT_TX_COUNT 5
