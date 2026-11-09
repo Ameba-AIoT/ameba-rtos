@@ -56,10 +56,9 @@ ameba-rtos/
 │   ├── ethernet/               #   以太网驱动及示例
 │   ├── at_cmd/                 #   AT 指令框架（UART / SPI / SDIO / USB）
 │   ├── dynamic_app/            #   动态应用加载框架
-│   ├── application/speechmind/ #   SpeechMind 应用                    [submodule]
 │   ├── os/                     #   FreeRTOS 内核与 OS 封装层
 │   ├── ota/                    #   OTA 空中升级框架
-│   ├── sensing_algo/           #   传感算法库                          [submodule]
+│   ├── sensing_algo/           #   感知算法库                          [submodule]
 │   ├── ui/                     #   LVGL 图形库                         [submodule]
 │   └── tflite_micro/           #   TensorFlow Lite Micro 端侧推理      [submodule]
 ├── example/                    # 开箱即用的应用示例
@@ -98,8 +97,7 @@ ameba-rtos/
 - **音频** — 音频框架及 Codec 驱动 *(XDK)*
 - **AI 语音** — AI 语音处理框架 *(XDK)*
 - **TFLite Micro** — TensorFlow Lite Micro 端侧推理 *(XDK)*
-- **SpeechMind** — SpeechMind 应用集成 *(XDK)*
-- **传感算法** — 传感算法库集成 *(XDK)*
+- **感知算法** — 感知算法库集成 *(XDK)*
 - **UI** — LVGL 图形库集成 *(XDK)*
 - **动态应用加载** — 支持运行时加载应用模块
 
@@ -119,7 +117,7 @@ ameba-rtos/
 git clone https://github.com/Ameba-AIoT/ameba-rtos.git
 ```
 
-**XDK（扩展版）** — 包含全部 submodule 的完整 SDK，音频、AI 语音、传感算法、UI、TFLite Micro 开发必需：
+**XDK（扩展版）** — 包含全部 submodule 的完整 SDK，音频、AI 语音、感知算法、UI、TFLite Micro 开发必需：
 
 ```bash
 git clone --recurse-submodules https://github.com/Ameba-AIoT/ameba-rtos.git
@@ -131,7 +129,7 @@ git clone --recurse-submodules https://github.com/Ameba-AIoT/ameba-rtos.git
 git submodule update --init --recursive
 ```
 
-> submodule 组件（`audio`、`aivoice`、`sensing_algo`、`ui`、`tflite_micro`、`application/speechmind`）托管于独立仓库，仅在使用对应功能时才需要初始化。
+> submodule 组件（`audio`、`aivoice`、`sensing_algo`、`ui`、`tflite_micro`）托管于独立仓库，仅在使用对应功能时才需要初始化。
 
 ## 🚀 快速开始
 

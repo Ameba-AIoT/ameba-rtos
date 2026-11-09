@@ -56,7 +56,6 @@ ameba-rtos/
 │   ├── ethernet/               #   Ethernet driver and examples
 │   ├── at_cmd/                 #   AT command framework (UART / SPI / SDIO / USB)
 │   ├── dynamic_app/            #   Dynamic application loading framework
-│   ├── application/speechmind/ #   SpeechMind application             [submodule]
 │   ├── os/                     #   FreeRTOS kernel and OS wrapper
 │   ├── ota/                    #   Over-the-air update framework
 │   ├── sensing_algo/           #   Sensing algorithm library           [submodule]
@@ -98,7 +97,6 @@ ameba-rtos/
 - **Audio** — audio framework with codec drivers *(XDK)*
 - **AI Voice** — AI voice processing framework *(XDK)*
 - **TFLite Micro** — TensorFlow Lite Micro for on-device inference *(XDK)*
-- **SpeechMind** — SpeechMind application integration *(XDK)*
 - **Sensing Algorithms** — sensing algorithm library integration *(XDK)*
 - **UI** — LVGL graphics library integration *(XDK)*
 - **Dynamic App** — runtime dynamic application loading
@@ -131,7 +129,7 @@ If you cloned without submodules and need them later:
 git submodule update --init --recursive
 ```
 
-> The submodule components (`audio`, `aivoice`, `sensing_algo`, `ui`, `tflite_micro`, `application/speechmind`) are hosted in separate repositories and only needed for the corresponding features.
+> The submodule components (`audio`, `aivoice`, `sensing_algo`, `ui`, `tflite_micro`) are hosted in separate repositories and only needed for the corresponding features.
 
 ## 🚀 Quick Start
 
