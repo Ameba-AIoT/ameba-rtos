@@ -57,6 +57,7 @@ int64_t sys_clock_tick_get(void);
 uint64_t sys_clock_timeout_end_calc(k_timeout_t timeout);
 void z_add_timeout(struct _timeout *to, _timeout_func_t fn, k_timeout_t timeout);
 int z_abort_timeout(struct _timeout *to);
+void zephyr_timers_clean(void);
 k_ticks_t z_timeout_remaining(const struct _timeout *timeout);
 int32_t k_sleep(k_timeout_t timeout);
 int64_t k_uptime_get(void);

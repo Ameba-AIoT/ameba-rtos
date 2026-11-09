@@ -8,10 +8,13 @@
 #include "os_wrapper.h"
 #include <stdio.h>
 #include <string.h>
+#include "ecdsa_sign_service.h"
+
+#if defined(CONFIG_MBEDTLS_USE_LEGACY_API)
+
 #include "mbedtls/ecdsa.h"
 #include "mbedtls/ecp.h"
 #include "mbedtls/sha256.h"
-#include "ecdsa_sign_service.h"
 
 static const char *const TAG = "ECDSA_TZ";
 
@@ -77,6 +80,61 @@ cleanup:
 	return ret;
 }
 
+#else
+
+#include "psa/crypto.h"
+
+static const char *const TAG = "ECDSA_TZ";
+
+/* ECDSA verification in non-secure world */
+static int ecdsa_ns_verify(const unsigned char *message, size_t message_len,
+						   const unsigned char *signature, size_t sig_len,
+						   const unsigned char *public_key_raw, size_t pub_key_len)
+{
+	psa_key_attributes_t attr = PSA_KEY_ATTRIBUTES_INIT;
+	psa_key_id_t key = PSA_KEY_ID_NULL;
+	psa_status_t status;
+	unsigned char message_hash[32];
+	size_t hash_len = 0;
+	int ret = -1;
+
+	/* Import the uncompressed point as a public key. */
+	psa_set_key_usage_flags(&attr, PSA_KEY_USAGE_VERIFY_HASH);
+	psa_set_key_algorithm(&attr, PSA_ALG_ECDSA(PSA_ALG_SHA_256));
+	psa_set_key_type(&attr, PSA_KEY_TYPE_ECC_PUBLIC_KEY(PSA_ECC_FAMILY_SECP_R1));
+
+	status = psa_import_key(&attr, public_key_raw, pub_key_len, &key);
+	psa_reset_key_attributes(&attr);
+	if (status != PSA_SUCCESS) {
+		RTK_LOGE(TAG, "Failed to import public key: %d\n", (int)status);
+		return -1;
+	}
+
+	status = psa_hash_compute(PSA_ALG_SHA_256, message, message_len,
+							  message_hash, sizeof(message_hash), &hash_len);
+	if (status != PSA_SUCCESS) {
+		RTK_LOGE(TAG, "SHA256 failed: %d\n", (int)status);
+		goto cleanup;
+	}
+
+	/* Signature is raw r||s here, not DER. */
+	status = psa_verify_hash(key, PSA_ALG_ECDSA(PSA_ALG_SHA_256),
+							 message_hash, hash_len, signature, sig_len);
+	if (status != PSA_SUCCESS) {
+		RTK_LOGE(TAG, "ECDSA verification failed: %d\n", (int)status);
+		goto cleanup;
+	}
+
+	RTK_LOGI(TAG, "Non-secure verification succeeded!\n");
+	ret = 0;
+
+cleanup:
+	psa_destroy_key(key);
+	return ret;
+}
+
+#endif
+
 void ecdsa_tz_demo(void)
 {
 	/* Wait for other CPU boot done */
@@ -86,15 +144,15 @@ void ecdsa_tz_demo(void)
 
 	int ret;
 	const char *message = "Hello from Non-Secure World!";
-	unsigned char signature[MBEDTLS_ECDSA_MAX_LEN];
+	unsigned char signature[ECDSA_SIGN_SERVICE_SIG_MAX_LEN];
 	size_t sig_len = 0;
-	unsigned char public_key_raw[65];  /* Uncompressed point: 0x04 || X (32) || Y (32) */
+	unsigned char public_key_raw[ECDSA_SIGN_SERVICE_PUBKEY_LEN];  /* 0x04 || X (32) || Y (32) */
 	size_t pub_key_len = 0;
 	ecdsa_sign_req_t req;
 
 	/* Allocate secure context for this task before calling secure functions */
 	RTK_LOGI(TAG, "Creating secure context for task...\n");
-#if defined (MBEDTLS_SHA256_ALT) && defined (MBEDTLS_ECDSA_VERIFY_ALT) && defined (MBEDTLS_ECDSA_SIGN_ALT) && defined (MBEDTLS_ECDSA_GENKEY_ALT)
+#if defined(CONFIG_MBEDTLS_USE_LEGACY_API) && defined (MBEDTLS_SHA256_ALT) && defined (MBEDTLS_ECDSA_VERIFY_ALT) && defined (MBEDTLS_ECDSA_SIGN_ALT) && defined (MBEDTLS_ECDSA_GENKEY_ALT)
 	rtos_create_secure_context(2048);
 #else
 	rtos_create_secure_context(4096);

@@ -10,7 +10,8 @@ struct task_struct	ws_server_tsk;
 #define WS_SERVER_DEFAULT_MAX_CONN			1
 #define WS_SERVER_DEFAULT_STACK_BYTES		4096
 #define WS_SERVER_PRIORITY					1
-#define WS_SERVER_DEFAULT_SELECT_TIMEOUT	50
+#define WS_SERVER_DEFAULT_SELECT_TIMEOUT	1	/* accept loop, also how often ws_server_running is checked */
+#define WS_SERVER_HANDSHAKE_TIMEOUT			10	/* wait for client handshake request */
 #define WS_SERVER_DEFAULT_POLL_TIMEOUT		1
 #define WS_SERVER_LISTEN_LEN				3
 #define WS_SERVER_RECV_TIMEOUT				5
@@ -159,7 +160,9 @@ static int ws_server_conn_init(ws_conn *conn)
 	memset(conn->txbuf, 0, ws_server_tx_size + 16);
 	memset(conn->rxbuf, 0, ws_server_rx_size + 16);
 	memset(conn->receivedData, 0, ws_server_rx_size);
-	conn->close_reason = 0;
+	if (!conn->close_req) {
+		conn->close_reason = 0;
+	}
 	return 0;
 }
 
@@ -280,26 +283,18 @@ static void ws_server_poll(ws_conn *conn)
 
 		if (FD_ISSET(conn->sock, &write_fds)) {
 			if (conn->tx_len > 0) {
-				int remain_len = conn->tx_len;
-				do {
-					ret = ws_server_write(conn, conn->txbuf + (conn->tx_len - remain_len), (remain_len > 1500 ? 1500 : remain_len));
-					if (ret == 0) {
-						/* No progress (WANT_READ/WANT_WRITE on a full TCP window). The socket is
-						 * non-blocking, so sleep before retrying instead of spinning, otherwise
-						 * this loop starves the lwIP thread that has to advance the window. */
-						rtos_time_delay_ms(WS_SERVER_WRITE_RETRY_MS);
-						continue;
-					} else if (ret < 0) {
-						ws_server_log("ERROR: Send data failed!\n");
-						ws_server_set_close_reason(conn, WSS_SEND_DATA_FAIL);
-						conn->state = WSS_CLOSED;
-						return;
-					} else {
-						ws_server_log_verbose("Send %d bytes data to websocket server\n", ret);
-						conn->last_data_comm_time = rtos_time_get_current_system_time_ms();
-					}
-					remain_len -= ret;
-				} while (remain_len > 0);
+				/* Retry next poll if another task is sending a frame, so this thread keeps reading */
+				if (ws_server_tx_trylock() != 0) {
+					return;
+				}
+				ret = ws_server_write_all(conn, conn->txbuf, conn->tx_len);
+				ws_server_tx_unlock();
+				if (ret < 0) {
+					ws_server_log("ERROR: Send data failed!\n");
+					ws_server_set_close_reason(conn, WSS_SEND_DATA_FAIL);
+					conn->state = WSS_CLOSED;
+					return;
+				}
 
 				memset(conn->txbuf, 0, ws_server_tx_size + 16);
 				conn->tx_len = 0;
@@ -377,7 +372,7 @@ static void ws_server_conn_thread(void *param)
 
 		memset(u.dummy, 0, sizeof(u.dummy));
 
-		timeout.tv_sec = ws_server_select_timeout;
+		timeout.tv_sec = WS_SERVER_HANDSHAKE_TIMEOUT;
 		timeout.tv_usec = 0;
 		FD_ZERO(&u.read_fds);
 		FD_SET(conn->sock, &u.read_fds);
@@ -408,6 +403,10 @@ static void ws_server_conn_thread(void *param)
 		}
 	}
 
+	if (conn->close_req) {
+		goto exit;
+	}
+
 	if (conn->state == WSS_CONNECTED1) {
 		ws_server_log_verbose("%s conn %d handshake ok, start polling", __FUNCTION__, conn->sock);
 		int flag = 1;
@@ -430,11 +429,22 @@ static void ws_server_conn_thread(void *param)
 			ws_server_connect_cb(conn);
 		}
 		//polling
-		while (conn->state != WSS_CLOSED) {
+		while (conn->state != WSS_CLOSED && !conn->close_req) {
 			ws_server_poll(conn);
-			if (conn->state == WSS_CLOSED) {
+			if (conn->state == WSS_CLOSED || conn->close_req) {
 				ws_server_log("Connection closed");
 				break;
+			}
+
+			/* Retry a deferred PONG in case the sender released tx lock before it was queued */
+			if (conn->pong_pending && ws_server_tx_trylock() == 0) {
+				ret = ws_server_flush_pong(conn);
+				ws_server_tx_unlock();
+				if (ret < 0) {
+					ws_server_log("ERROR: server send PONG failed\n");
+					ws_server_set_close_reason(conn, WSS_SEND_PONG_FAILED);
+					break;
+				}
 			}
 
 			//Check if ping got pong
@@ -449,8 +459,10 @@ static void ws_server_conn_thread(void *param)
 				cur_time = rtos_time_get_current_system_time_ms();
 				if ((cur_time - conn->last_ping_sent_time) >= ws_server_ping_interval) {
 					ws_server_sendPing(conn);
-					ws_server_log_verbose("Send ping to conn(%d) at %d", conn->sock, (int)cur_time);
-					conn->last_ping_sent_time = cur_time;
+					if (conn->state == WSS_CONNECTED2) {
+						ws_server_log_verbose("Send ping to conn(%d) at %d", conn->sock, (int)cur_time);
+						conn->last_ping_sent_time = cur_time;
+					}
 				}
 			}
 
@@ -470,6 +482,28 @@ exit:
 	ws_server_conn_remove(conn);
 	conn_task.task = 0;
 	rtos_task_delete(conn_task.task);
+}
+
+/* Ask every conn thread to quit and wait until all slots are released, conn threads use ws_server_connections */
+static void ws_server_wait_conn_exit(void)
+{
+	int i, busy;
+
+	if (ws_server_connections == NULL) {
+		return;
+	}
+	do {
+		busy = 0;
+		for (i = 0; i < ws_server_max_conn; i++) {
+			if (ws_server_connections[i].sock != -1) {
+				ws_server_connections[i].close_req = 1;
+				busy = 1;
+			}
+		}
+		if (busy) {
+			rtos_time_delay_ms(50);
+		}
+	} while (busy);
 }
 
 static void ws_server_thread(void *param)
@@ -581,6 +615,7 @@ static void ws_server_thread(void *param)
 		}
 	}
 exit:
+	ws_server_wait_conn_exit();
 	ws_server_deinit();
 	ws_server_log("%s stopped", __FUNCTION__);
 	ws_server_running = 0;
@@ -596,6 +631,11 @@ int ws_server_start(uint16_t port, uint8_t max_conn, uint32_t stack_bytes, uint8
 	ws_server_setup(port, max_conn, secure);
 	if (stack_bytes > 0) {
 		ws_server_stack_bytes = stack_bytes;
+	}
+
+	if (ws_server_tx_lock_init()) {
+		ws_server_log("ERROR: ws_server_tx_lock_init");
+		return -1;
 	}
 
 	if (ws_server_init()) {

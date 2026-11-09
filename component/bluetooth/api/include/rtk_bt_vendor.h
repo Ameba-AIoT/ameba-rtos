@@ -1,6 +1,6 @@
 /**
  * @file      rtk_bt_vendor.h
- * @author
+ * @author    sherman_sun@realsil.com.cn
  * @brief     Bluetooth vendor function definition.
  * @copyright Copyright (c) 2022. Realtek Semiconductor Corporation. All rights reserved.
  */
@@ -56,7 +56,8 @@ typedef struct {
 		} adv_tx_power;                                         /*!< Advertising TX power parameter, used when tx_power_type is 0. */
 
 		struct conn_tx_power_param {
-			uint16_t conn_handle;                               /*!< Connection handle of the ACL link to set the TX power. */
+			uint16_t conn_handle;                               /*!< Connection handle of the ACL connection to set the TX power.
+                                                                 *   Range: 0x0000 to 0x0EFF. */
 			rtk_bt_vendor_conn_tx_power_is_reset_t is_reset;    /*!< Whether to use the user TX power or reset it to the original value. */
 		} conn_tx_power;                                        /*!< Connection TX power parameter, used when tx_power_type is 1. */
 	};
@@ -74,7 +75,7 @@ typedef enum {
 
 /**
  * @struct    rtk_bt_vendor_free_run_clock_t
- * @brief     Free run clock samples of the host and the controller, used by @ref rtk_bt_get_hc_clock_offset.
+ * @brief     Free run clock samples of the host and the controller.
  */
 typedef struct {
 	uint64_t host_free_run_clock[3];          /*!< Free run clock samples of the host. */
@@ -89,28 +90,30 @@ typedef struct {
 
 /**
  * @struct    rtk_bt_le_iso_sync_ref_ap_info_t
- * @brief     Reference anchor point information of an ISO channel, used by @ref rtk_bt_get_le_iso_sync_ref_ap_info.
+ * @brief     Reference anchor point information of an ISO channel.
  */
 typedef struct {
-	uint32_t Valid: 1;                  /*!< bit[0]: whether the information is valid.
+	uint32_t Valid: 1;                  /*!< bit[0]: Whether the information is valid.
                                          *   1: Valid.
                                          *   0: Invalid. */
-	uint32_t Type: 1;                   /*!< bit[1]: link type.
+	uint32_t Type: 1;                   /*!< bit[1]: Link type.
+                                         *   Always 1 (ISO).
                                          *   1: ISO.
-                                         *   0: ACL.
-                                         *   Always 1. */
-	uint32_t Role: 1;                   /*!< bit[2]: role of the local device.
-                                         *   1: central.
-                                         *   0: peripheral. */
-	uint32_t Dir: 1;                    /*!< bit[3]: direction of the ISO path.
+                                         *   0: ACL. */
+	uint32_t Role: 1;                   /*!< bit[2]: Role of the local device.
+                                         *   1: Central.
+                                         *   0: Peripheral. */
+	uint32_t Dir: 1;                    /*!< bit[3]: Direction of the ISO path.
                                          *   1: TX.
                                          *   0: RX. */
-	uint32_t Cis: 1;                    /*!< bit[4]: iSO channel type.
+	uint32_t Cis: 1;                    /*!< bit[4]: ISO channel type.
                                          *   1: CIS.
                                          *   0: BIS. */
-	uint32_t Rsvd0: 3;                  /*!< bit[7:5]: reserved. */
-	uint32_t Status: 8;                 /*!< bit[15:8]: status. */
-	uint32_t Rsvd1: 16;                 /*!< bit[31:16]: reserved. */
+	uint32_t Rsvd0: 3;                  /*!< bit[7:5]: Reserved. */
+	uint32_t Status: 8;                 /*!< bit[15:8]: Status of the request.
+                                         *   0: Success.
+                                         *   Others: Failure cause reported by the controller. */
+	uint32_t Rsvd1: 16;                 /*!< bit[31:16]: Reserved. */
 	uint16_t Conn_Handle;               /*!< Connection handle of the ISO channel (CIS or BIS). */
 	uint16_t Sdu_Seq_Num;               /*!< SDU sequence number. */
 	uint32_t Sdu_Interval;              /*!< SDU interval.
@@ -123,7 +126,8 @@ typedef struct {
                                          *   Units: microseconds. */
 	uint32_t Iso_Interval_us;           /*!< ISO interval.
                                          *   Units: microseconds. */
-	uint32_t Group_Anchor_Point;        /*!< CIG or BIG anchor point. */
+	uint32_t Group_Anchor_Point;        /*!< CIG or BIG anchor point.
+                                         *   Units: microseconds. */
 	uint32_t Cur_SDU_Sync_Ref_Point;    /*!< Current SDU synchronization reference point.
                                          *   Units: microseconds. */
 } rtk_bt_le_iso_sync_ref_ap_info_t;
@@ -157,7 +161,8 @@ typedef enum {
 typedef struct {
 	uint64_t clock_counter;    /*!< Clock counter of the controller.
                                 *   Wraps around from 83886079999 to 0. */
-	uint16_t conn_handle;      /*!< Connection handle of the ACL link. */
+	uint16_t conn_handle;      /*!< Connection handle of the ACL connection.
+                                *   Range: 0x0000 to 0x0EFF. */
 	uint16_t event_counter;    /*!< Connection event counter.
                                 *   Wraps around from 65535 to 0. */
 	uint16_t ce_interval;      /*!< Connection interval used on this connection.
@@ -315,15 +320,20 @@ uint16_t rtk_bt_get_hc_clock_offset(int64_t *offset);
 
 /**
  * @brief     Get the ISO reference anchor point context shared with the stack.
+ *            The context is updated only while @ref rtk_bt_get_le_iso_sync_ref_ap_info is waiting for the controller response.
  * @return
  *            - Pointer to the ISO reference anchor point context.
  */
 rtk_bt_vendor_sync_ref_ap_info_t *rtk_bt_get_ref_ap_info(void);
 
 /**
- * @brief     Get the CIG or BIG reference anchor point from the BT controller.
+ * @brief     Get the CIG or BIG reference anchor point information of an ISO channel from the BT controller.
+ *            The information is written to the output parameter once it is reported by the controller.
  * @param[in]  conn_handle: Connection handle of the ISO channel (CIS or BIS).
+ *                          Range: 0x0000 to 0x0EFF.
  * @param[in]  dir: Direction of the ISO path.
+ *                  1: TX (host to controller).
+ *                  2: RX (controller to host).
  * @param[out] p_info: Reference anchor point information.
  *                     Must not be NULL.
  * @return
@@ -346,7 +356,8 @@ rtk_bt_vendor_conn_clock_info_t *rtk_bt_get_slave_clock_info(void);
 
 /**
  * @brief     Get the clock information of a connection link where the local device is the peripheral.
- * @param[in]  conn_handle: Connection handle of this ACL link.
+ * @param[in]  conn_handle: Connection handle of the ACL connection.
+ *                          Range: 0x0000 to 0x0EFF.
  * @param[out] clock_info: Clock information of the ACL link.
  *                         Must not be NULL.
  * @return

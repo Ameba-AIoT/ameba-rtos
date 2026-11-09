@@ -35,6 +35,7 @@ if TRUSTZONE
             Compile secure_ecdsa_client_service.c into image3.
             Required only by the rdp_mutual_auth_ecdsa example (ECDSA P-256 mTLS client).
             Leave disabled for all other examples to keep image3 smaller.
+
 endif
 
 endmenu

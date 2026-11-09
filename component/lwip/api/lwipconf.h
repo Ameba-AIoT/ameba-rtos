@@ -37,7 +37,6 @@
 #include "lwip/tcp.h"
 #include "lwip/tcpip.h"
 #include "lwip/udp.h"
-#include "lwip/tcpip.h"
 #include "lwip/ip.h"
 
 #include "lwip/pbuf.h"
@@ -51,11 +50,6 @@
 #include "lwip/ip_addr.h"
 
 #include "lwip/apps/sntp.h"
-#include "lwip/apps/sntp_opts.h"
-
-#include "netif/ppp/ppp_impl.h"
-#include "netif/ppp/pppapi.h"
-#include "netif/ppp/pppoe.h"
 
 #include "netif_adapter.h"
 

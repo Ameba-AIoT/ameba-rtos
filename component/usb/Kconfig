@@ -22,6 +22,15 @@ menu "CONFIG USB"
         endchoice
     endif
 
+    config USB_APP_DEFAULT
+        string "Auto-start USB app"
+        depends on USB_DRD_EN_MENU
+        default ""
+        help
+          Used by the usb_drd example, which builds several USB examples into one image and
+          switches between them with AT+USBAPP. Name of the app started at boot, e.g.
+          "usbd_cdc_acm"; empty to start none and wait for AT+USBAPP=start.
+
     if USB_DEVICE_EN_MENU || USB_DRD_EN_MENU
         orsource "device/Kconfig"
     endif

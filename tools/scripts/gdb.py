@@ -243,6 +243,15 @@ if FPGA == True:
         ex_list.append(fmt_gdb_arg('HOST_IP', host_ip))
         ex_list.append(fmt_gdb_arg('ROM_BIN', file_list[0]))
         ex_list.append(fmt_gdb_arg('ROM_ADDR', file_list[1]))
+        # Park the main core in an SRAM loop (via ROM PATCH_FUNC0) so the new ROM never boots the stale flash image
+        flash_params = CONFIG.get('FLASH_PARAMS', {})
+        park_en = 1 if (core == target_prj and flash_params.get('TZ_SETUP_EN', 0) == 1) else 0
+        ex_list.append(fmt_gdb_arg('PARK_EN', park_en))
+        if park_en:
+            ex_list.append(fmt_gdb_arg('PARK_ADDR', flash_params['FLOADER_ADDR']))
+            ex_list.append(fmt_gdb_arg('REG_LSYS_BOOT_ADDR_TZ', flash_params['REG_LSYS_BOOT_ADDR_TZ']))
+            for var_name, var_value in CONFIG.get('REG_VARS', {}).items():
+                ex_list.append(fmt_gdb_arg(var_name, var_value))
         ex_commands = "".join(ex_list)
 
         cmd = 'cd ' + LIB_PARENT +  ' && ' + CMAKE_GDB_FLASH + ex_commands + ' -x ' + ROM_SCRIPT

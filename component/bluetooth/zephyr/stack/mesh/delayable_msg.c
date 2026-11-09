@@ -46,6 +46,13 @@ static struct {
 	struct k_work_delayable random_delay;
 } access_delayable_msg = {.random_delay = Z_WORK_DELAYABLE_INITIALIZER(delayable_msg_handler)};
 
+#if ZEPHYR_RTK_PATCH
+void zephyr_mesh_delayable_msg_work_reset(void)
+{
+	k_work_delayable_reset(&access_delayable_msg.random_delay);
+}
+#endif
+
 static void put_ctx_to_busy_list(struct delayable_msg_ctx *ctx)
 {
 	struct delayable_msg_ctx *curr_ctx;

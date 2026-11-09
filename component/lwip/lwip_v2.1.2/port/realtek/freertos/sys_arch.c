@@ -35,19 +35,6 @@
 #include "lwip/stats.h"
 #include "lwip/timeouts.h"
 
-struct timeoutlist
-{
-    struct sys_timeouts timeouts;
-    rtos_task_t pid;
-};
-
-/* This is the number of threads that can be started with sys_thread_new() */
-#define SYS_THREAD_MAX 6
-
-static struct timeoutlist s_timeoutlist[SYS_THREAD_MAX];
-static u16_t s_nextthread = 0;
-
-
 /*-----------------------------------------------------------------------------------*/
 //  Creates an empty mailbox.
 err_t sys_mbox_new(sys_mbox_t *mbox, int size)
@@ -327,51 +314,8 @@ void sys_sem_set_invalid(sys_sem_t *sem)
 // Initialize sys arch
 void sys_init(void)
 {
-    int i;
-
-    // Initialize the the per-thread sys_timeouts structures
-    // make sure there are no valid pids in the list
-    for(i = 0; i < SYS_THREAD_MAX; i++)
-    {
-        s_timeoutlist[i].pid = 0;
-        s_timeoutlist[i].timeouts.next = NULL;
-    }
-
-    // keep track of how many threads have been created
-    s_nextthread = 0;
 }
 
-/*-----------------------------------------------------------------------------------*/
-/*
-  Returns a pointer to the per-thread sys_timeouts structure. In lwIP,
-  each thread has a list of timeouts which is represented as a linked
-  list of sys_timeout structures. The sys_timeouts structure holds a
-  pointer to a linked list of timeouts. This function is called by
-  the lwIP timeout scheduler and must not return a NULL value.
-
-  In a single threaded sys_arch implementation, this function will
-  simply return a pointer to a global sys_timeouts variable stored in
-  the sys_arch module.
-*/
-struct sys_timeouts *sys_arch_timeouts(void)
-{
-    int i;
-    rtos_task_t pid;
-    struct timeoutlist *tl;
-
-    pid =  rtos_task_handle_get();
-
-    for(i = 0; i < s_nextthread; i++)
-    {
-        tl = &(s_timeoutlist[i]);
-        if(tl->pid == pid)
-        {
-            return &(tl->timeouts);
-        }
-    }
-    // Error
-    return NULL;
-}
 /*-----------------------------------------------------------------------------------*/
                                       /* Mutexes*/
 /*-----------------------------------------------------------------------------------*/
@@ -434,71 +378,13 @@ void sys_mutex_unlock(sys_mutex_t *mutex)
 sys_thread_t sys_thread_new(const char *name, lwip_thread_fn thread , void *arg, int stacksize, int prio)
 {
     rtos_task_t CreatedTask;
-    int result;
 
-   if ( s_nextthread < SYS_THREAD_MAX )
-   {
-       result = rtos_task_create(&CreatedTask, (const char *) name, thread, arg, stacksize*4, prio);
-
-       // For each task created, store the task handle (pid) in the timers array.
-       // This scheme doesn't allow for threads to be deleted
-       s_timeoutlist[s_nextthread++].pid = CreatedTask;
-
-       if(result == RTK_SUCCESS)
-       {
-           return CreatedTask;
-       }
-       else
-       {
-           return NULL;
-       }
-   }
-   else
-   {
-      return NULL;
-   }
-}
-
-int sys_thread_delete(rtos_task_t pid)
-{
-    int i, isFind = 0;
-    struct timeoutlist *tl, *tend = NULL;
-
-    pid = (( pid == NULL)?(rtos_task_t) rtos_task_handle_get() : pid);
-
-    if (s_nextthread)
+    if (rtos_task_create(&CreatedTask, (const char *) name, thread, arg, stacksize*4, prio) != RTK_SUCCESS)
     {
-        tend = &(s_timeoutlist[s_nextthread-1]);//the last one
-        for(i = 0; i < s_nextthread; i++)
-        {
-            tl = &(s_timeoutlist[i]);
-            if(tl->pid == pid)
-            {//find the task, exchange with the last one
-                memcpy(tl, tend, sizeof(struct timeoutlist));
-                memset(tend, 0, sizeof(struct timeoutlist));
-                s_nextthread --;
-                isFind = 1;
-                break;
-            }
-        }
-
-        if (isFind) {
-            rtos_task_delete(pid);
-        }
-
-        if (isFind)
-        {
-            return 1;
-        }
-        else
-        {
-            return 0;
-        }
+        return NULL;
     }
-    else
-    {
-        return 0;
-    }
+
+    return CreatedTask;
 }
 
 /*

@@ -56,6 +56,17 @@ USB UAC specific log will be printed on loguart console, make sure there is no e
 [UAC-I] USBH UAC demo start
 ```
 
+# Shell commands
+
+Type the AT commands on the LOGUART console. Parameters are comma separated; the command name is case-sensitive, the parameters are not. `AT+<cmd>=help` prints the usage, every command ends with `OK` or `ERROR: <code>`.
+
+| Command | Description |
+| --- | --- |
+| `AT+USBHUAC=mute,<0\|1>` | Mute (`1`) or unmute (`0`) the playback (USB OUT) stream. |
+| `AT+USBHUAC=vol,<0..100\|up\|down>` | Set the playback volume in percent, or step it by 5. Starts at 50; the value is only kept when the device accepted it. |
+
+Both need an attached and set up device, else they report `Stack not ready` or `Set fail`.
+
 # Note
 
 For other chips, refer to the AN for setup guide.

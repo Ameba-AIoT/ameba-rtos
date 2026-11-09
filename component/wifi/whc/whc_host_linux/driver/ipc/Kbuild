@@ -13,9 +13,12 @@ ccflags-y += -I$(srctree)/../../firmware/component/wifi/whc
 ccflags-y += -I$(srctree)/../../firmware/component/wifi/whc/whc_common
 ccflags-y += -I$(srctree)/../../firmware/component/wifi/whc/whc_common/ipc
 ccflags-y += -I$(srctree)/../../firmware/component/wifi/whc/whc_dev
-ccflags-y += -I$(src)/driver/ipc
-ccflags-y += -I$(src)/driver
-ccflags-y += -I$(src)/driver/netdev
+# Normalize $(src) to a path relative to $(srctree), so the driver
+# include paths can be constructed consistently from the kernel source tree.
+drv_src := $(patsubst $(srctree)/%,%,$(src))
+ccflags-$(CONFIG_WHC_HCI_IPC) += -I$(srctree)/$(drv_src)/driver/ipc
+ccflags-$(CONFIG_WHC_HCI_IPC) += -I$(srctree)/$(drv_src)/driver
+ccflags-$(CONFIG_WHC_HCI_IPC) += -I$(srctree)/$(drv_src)/driver/netdev
 
 obj-$(CONFIG_WIFI_RTK_CFG80211_FULLMAC) += whc-ipc.o
 whc-ipc-objs := ./driver/netdev/whc_host_wiphy.o \

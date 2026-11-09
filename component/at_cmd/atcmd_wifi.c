@@ -46,17 +46,10 @@ static unsigned char password[129] = {0};
 static int security = -1;
 
 extern int wifi_set_ips_internal(u8 enable);
-#if defined(CONFIG_IEEE80211R) && (WIFI_LOGO_CERTIFICATION == 1)
+#if defined(CONFIG_IEEE80211R) && defined(CONFIG_WIFI_11R_ENABLE)
 extern int rtw_ft_reassoc_dbg(u16 argc, char **argv);
 #endif
 extern void wifi_set_dbg_dp_log(char *buf);
-
-#if defined(CONFIG_LWIP_ETHERNET)
-extern struct netif *pnetif_eth;
-#endif
-#if defined(CONFIG_LWIP_USB_ETHERNET)
-extern struct netif *pnetif_usb_eth;
-#endif
 
 static void init_wifi_struct(void)
 {
@@ -1309,9 +1302,12 @@ void at_wldbg(u16 argc, char **argv)
 	}
 
 #ifdef CONFIG_WHC_HOST
-#if defined(CONFIG_IEEE80211R) && (WIFI_LOGO_CERTIFICATION == 1)
+#if defined(CONFIG_IEEE80211R) && defined(CONFIG_WIFI_11R_ENABLE)
 	if (!strcmp("sta_reassoc", argv[1])) {
 		ret = rtw_ft_reassoc_dbg(argc - 2, &argv[2]);
+		if (ret != RTK_SUCCESS) {
+			error_no = RTW_AT_ERR_UNKNOWN_ERR;
+		}
 		goto end;
 	}
 #endif

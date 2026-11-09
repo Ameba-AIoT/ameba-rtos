@@ -38,6 +38,8 @@ int zephyr_res_alloc(void);
 int zephyr_res_free(void);
 void zephyr_internal_res_free(void);
 void zephyr_builtin_gatt_svc_set(bool enable);
+void zephyr_work_reset(void);
+
 #ifdef __cplusplus
 }
 #endif

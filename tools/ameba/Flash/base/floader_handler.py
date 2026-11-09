@@ -210,9 +210,14 @@ class FloaderHandler(object):
                     self.logger.debug(
                         f"Sense response: opcode={hex(sense_status.op_code)}, status=0x{format(sense_status.status, '02x')}, data={hex(sense_status.data)}")
                     if sense_status.status != ErrType.OK.value:
-                        ret = sense_status.status
-                        self.logger.warning(
-                            f"Sense fail: opcode={hex(sense_status.op_code)}, data={sense_status.data}, status={ret}")
+                        # Map the raw device status to ErrType so callers can compare against
+                        # members (e.g. DEV_NAND_BAD_BLOCK); keep the raw int for unknown codes
+                        try:
+                            ret = ErrType(sense_status.status)
+                        except ValueError:
+                            ret = sense_status.status
+                        self.logger.debug(
+                            f"Sense fail: opcode={hex(sense_status.op_code)}, data={hex(sense_status.data)}, status={ret}")
                     elif (op_code is not None) and (sense_status.op_code != op_code):
                         ret = ErrType.SYS_PROTO
                         self.logger.error(
@@ -516,7 +521,7 @@ class FloaderHandler(object):
         if sense:
             ret, sense_status = self.sense(timeout, op_code=FS_ERASE, data=start_addr)
             if ret != ErrType.OK:
-                self.logger.error(f"FS_ERASE start_addr={hex(start_addr)}, size={size} force={force} fail: {ret}")
+                self.logger.debug(f"FS_ERASE start_addr={hex(start_addr)}, size={size} force={force} fail: {ret}")
 
         return ret
 

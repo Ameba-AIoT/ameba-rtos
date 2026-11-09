@@ -54,6 +54,45 @@ IMAGE_HEADER *HCI_SelectEmptyHdr(u32 addr)
 }
 /* Private functions ---------------------------------------------------------*/
 
+/* the manifest is the last page of SRAM: 0x3007F000 ~ 0x30080000 (ameba_layout.ld KM55TZ_FLOADER_RAM_S), after the bootloader */
+#define HCI_MANIFEST_PAGE_SIZE	0x1000U
+
+/**
+  * @brief  Check that a host supplied range is memory the HCI download may access
+  * @param  addr : Start address, in the non-secure or the secure alias
+  * @param  size : Size in byte, shall be non-zero and a multiple of 4
+  * @retval TRUE if the range lies completely inside one of the allowed ranges below, FALSE otherwise
+  * @note   The secure alias is folded onto the non-secure one first. Allowed ranges:
+  *         - SRAM [__rtk_fixed_addr__, __km4tz_pqc_rom_msp_top__): after the ROM BSS and the MSP that the ROM hands
+  *           over in (ameba_layout.ld), before the bootloader. The end is the link address of the bootloader image
+  *           header, ORIGIN(KM55TZ_FLOADER_RAM_S) - IMAGE_HEADER_LEN in ameba_layout.ld,
+  *           which the layout asserts to be LOADER_DOWNLOAD_ADDR. Everything from there to the end of SRAM,
+  *           SRAM_END_ADDRESS_S (hal_platform.h), is refused, whether the bootloader fills it or not;
+  *         - SRAM [0x3007F000, SRAM_END_ADDRESS_S): the manifest page, the last page of that range, where the host
+  *           downloads the manifest;
+  *         - PSRAM [PSRAM_BASE, __non_secure_psram_end__) (PSRAM_END of ameba_layout.ld).
+  *         Peripherals, ROM and TCM are in none of them.
+  */
+static bool HCI_MemRangeIsValid(u32 addr, u32 size)
+{
+	const u32 SramEnd = (u32)SRAM_END_ADDRESS_S - TZ_IDAU_SEC_OFFSET;
+	const u32 LoaderStart = (u32)__km4tz_pqc_rom_msp_top__ - TZ_IDAU_SEC_OFFSET;
+	const u32 ManifestStart = SramEnd - HCI_MANIFEST_PAGE_SIZE;
+
+	if ((size & 0x3) != 0) {
+		return false;
+	}
+
+	if (is_memory_range_valid(addr, size, SRAM_BASE_S, (u32)SRAM_END_ADDRESS_S)
+		|| is_memory_range_valid(addr, size, PSRAM_BASE_S, (u32)__non_secure_psram_end__ + TZ_IDAU_SEC_OFFSET)) {
+		addr -= TZ_IDAU_SEC_OFFSET;
+	}
+
+	return is_memory_range_valid(addr, size, (u32)__rtk_fixed_addr__, LoaderStart)
+		   || is_memory_range_valid(addr, size, ManifestStart, SramEnd)
+		   || is_memory_range_valid(addr, size, PSRAM_BASE, (u32)__non_secure_psram_end__);
+}
+
 /**
   * @brief  Write image frame
   * @param  addr : Destination address
@@ -65,9 +104,12 @@ static int HCI_WriteImage(u32 addr, const u8 *src, u32 size)
 {
 	u32 i;
 
-	/* Host Send empty img header: redirect to the per-core empty slot */
+	/* Host Send empty img header: redirect to the per-core empty slot, which is the bootloader's own memory */
 	if (size == IMAGE_HEADER_LEN) {
 		addr = (u32)HCI_SelectEmptyHdr(addr);
+	} else if (!IS_FLASH_ADDR(addr) && !HCI_MemRangeIsValid(addr, size)) {
+		RTK_LOGD(TAG, "WRITE: addr 0x%08x invalid\n", addr);
+		return HAL_ERR_PARA;
 	}
 
 	if (IS_FLASH_ADDR(addr)) {
@@ -83,14 +125,6 @@ static int HCI_WriteImage(u32 addr, const u8 *src, u32 size)
 			nor_ftl_write_page(addr + i, src + i);
 		}
 	} else {
-		/* Only allow writes to km55tz FULLMAC region or km55ns BD RAM */
-#ifdef HCI_TARGET_ADDR_CHECK_TODO
-		if (!RANGE_IS_FULLMAC(addr, size - 1) &&
-			!is_memory_range_valid(addr, size, (u32)__km4ns_bd_ram_start__, (u32)__km4ns_bd_ram_end__)) {
-			return HAL_ERR_PARA;
-		}
-#endif
-
 		for (i = 0; i < size; i += 4) {
 			*((u32 *)(addr + i)) = (*((u32 *)(src + i)));
 		}
@@ -113,22 +147,18 @@ static int HCI_CalculateChecksum(u32 addr, u32 size, u32 *result)
 	u32 data;
 	u32 i;
 
-	/* Host Send empty img header: redirect to the per-core empty slot */
+	/* Host Send empty img header: redirect to the per-core empty slot, which is the bootloader's own memory */
 	if (size == IMAGE_HEADER_LEN) {
 		addr = (u32)HCI_SelectEmptyHdr(addr);
+	} else if (!IS_FLASH_ADDR(addr) && !HCI_MemRangeIsValid(addr, size)) {
+		RTK_LOGD(TAG, "CHECK: addr 0x%08x invalid\n", addr);
+		return HAL_ERR_PARA;
 	}
 
 	if (IS_FLASH_ADDR(addr)) {
 		if (!IS_FLASH_ADDR(addr + size - 1)) {
 			return HAL_ERR_PARA;
 		}
-	} else {
-#ifdef HCI_TARGET_ADDR_CHECK_TODO
-		/* Only allow to read hs sram, to avoid attack */
-		if (!RANGE_IS_FULLMAC(addr, size - 1)) {
-			return HAL_ERR_PARA;
-		}
-#endif
 	}
 
 	for (i = 0; i < size; i += 4) {

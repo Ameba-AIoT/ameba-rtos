@@ -20,17 +20,17 @@
 
 T_SPP_CHANN_DB spp_chann_db[SPP_CAHNN_DB_MAX_LINK_NUM];// SPP service register config database
 
-uint8_t spp_max_link_num; // SPP maximum link numbers
-uint8_t spp_rfc_max_service_num; // SPP maximum service numbers
-uint8_t default_mtu_size; // link default mtu size
-uint8_t default_credits; // link default credits
+extern uint8_t spp_max_link_num; // SPP maximum link numbers
+extern uint8_t spp_rfc_max_service_num; // SPP maximum service numbers
+extern uint8_t default_mtu_size; // link default mtu size
+extern uint8_t default_credits; // link default credits
 
 extern T_APP_BR_LINK *app_find_br_link(uint8_t *bd_addr);
 
 static uint8_t client_addr[6];// SPP client bd addr
 
 /* Register service and spp channel index in SPP service database */
-T_SPP_CHANN_DB *bt_stack_alloc_spp_chann(uint8_t server_chann, uint8_t *service_uuid, uint16_t uuid_length)
+uint16_t bt_stack_spp_src_cfg(uint8_t server_chann, uint8_t *service_uuid, uint16_t uuid_length)
 {
 	T_SPP_CHANN_DB *p_chann = NULL;
 	for (int i = 0; i < SPP_CAHNN_DB_MAX_LINK_NUM; i++) {
@@ -40,11 +40,12 @@ T_SPP_CHANN_DB *bt_stack_alloc_spp_chann(uint8_t server_chann, uint8_t *service_
 			p_chann->used = true;
 			p_chann->spp_chann_num = server_chann;
 			memcpy(p_chann->service_uuid.uuid_128, service_uuid, uuid_length);
-			break;
+			return RTK_BT_OK;
 		}
 	}
-	return p_chann;
+	return RTK_BT_FAIL;
 }
+
 /* Search the related element in SPP service database */
 static T_SPP_CHANN_DB *bt_stack_find_spp_chann(uint8_t server_chann)
 {

@@ -12,6 +12,8 @@
 #include "basic_types.h"
 #include "os_wrapper.h"
 #include "usbh_uvc.h"
+#include "atcmd_service.h"
+#include "usb_app.h"
 
 /* Private defines -----------------------------------------------------------*/
 
@@ -98,6 +100,7 @@
 #define CONFIG_USBH_UVC_MAX_FAIL_COUNT             5
 
 #define CONFIG_USBH_UVC_INIT_THREAD_PRIORITY           1
+#define CONFIG_USBH_UVC_ATTACH_THREAD_PRIORITY         1
 #define CONFIG_USBH_UVC_MAIN_THREAD_PRIORITY           3
 #define CONFIG_USBH_UVC_HOTPLUG_THREAD_PRIORITY        6
 #define CONFIG_USBH_UVC_TEST_THREAD_PRIORITY           4
@@ -105,6 +108,7 @@
 #define CONFIG_USBH_UVC_HTTPC_THREAD_PRIORITY          2
 // Thread stack sizes
 #define CONFIG_USBH_UVC_INIT_THREAD_STACK_SIZE           768U
+#define CONFIG_USBH_UVC_ATTACH_THREAD_STACK_SIZE         768U
 #define CONFIG_USBH_UVC_MAIN_TASK_STACK_SIZE             1024U
 #define CONFIG_USBH_UVC_HOTPLUG_THREAD_STACK_SIZE        768U
 #define CONFIG_USBH_UVC_TEST_THREAD_STACK_SIZE           768U
@@ -169,11 +173,21 @@
 #endif
 /* User Configurations */
 
-/* Bound for the error-path join of the frame worker. The normal hotplug join is
-   deliberately unbounded (freeing the stream under a live worker is a crash), but
-   an init rollback is already a failure path where hanging the example is worse
-   than proceeding. */
-#define USBH_UVC_WORKER_JOIN_TIMEOUT_MS         3000U
+/* Fixed workers joined through uvc_app: the attach thread, plus the hotplug thread */
+#if CONFIG_USBH_UVC_HOT_PLUG
+#define USBH_UVC_WORKERS                        2U
+#else
+#define USBH_UVC_WORKERS                        1U
+#endif
+
+/* Bound on joining one worker in a teardown. The frame worker joins its HTTPC upload thread,
+   which may sit in one connect or response read of USBH_UVC_HTTPC_TIMEOUT seconds, and the
+   hotplug thread may be joining the frame worker. */
+#if (CONFIG_USBH_UVC_APP == USBH_UVC_APP_HTTPC)
+#define USBH_UVC_TEST_JOIN_TIMEOUT_MS           (USB_APP_JOIN_TIMEOUT_MS + 2U * USBH_UVC_HTTPC_TIMEOUT * 1000U)
+#else
+#define USBH_UVC_TEST_JOIN_TIMEOUT_MS           USB_APP_JOIN_TIMEOUT_MS
+#endif
 
 /* Private types -------------------------------------------------------------*/
 
@@ -192,11 +206,20 @@ static void uvc_cb_setparam(int status);
 
 static const char *const TAG = "UVC";
 
-static rtos_sema_t uvc_attach_sema;
-static rtos_sema_t uvc_detach_sema;
-static rtos_sema_t uvc_start_sema;
-static rtos_sema_t uvc_setparam_sema;
+static rtos_sema_t uvc_attach_sema = NULL;
+static rtos_sema_t uvc_detach_sema = NULL;
+static rtos_sema_t uvc_start_sema = NULL;
+static rtos_sema_t uvc_setparam_sema = NULL;
 static rtos_mutex_t uvc_buf_mutex = NULL;
+
+/* Start/stop state: example_usbh_uvc_stop(), or a worker that can not go on, sets quit, wakes
+   the attach and hotplug threads and joins them, then stops and waits for the frame worker */
+static usb_app_ctx_t uvc_app;
+
+/* 1: usbh_init(), usbh_uvc_init() and usbh_start() are all done. Cleared by the hotplug thread
+   before it tears the stack down, set again by its re-init. The only class API caller, the frame
+   worker, is joined before any teardown, so this only tells a stop whether the stack is up. */
+static volatile u8 uvc_stack_ready = 0U;
 static usbh_uvc_s_ctx_t uvc_s_ctx;
 /* Join handle for the frame worker, doubling as its liveness flag: the worker
    clears it as its last action and the hotplug thread spins on it before calling
@@ -217,7 +240,7 @@ static volatile u8 uvc_task_alive;
 /* Written by uvc_cb_setparam (class/core context), read by the test thread after
    it takes uvc_setparam_sema. Under SMP those are different cores, so volatile
    keeps the reader from using a value cached before the callback ran. */
-static volatile u8 uvc_setparam_status;
+static volatile int uvc_setparam_status;
 static __IO u8 uvc_task_exiting = 0;
 
 static u64 rx_total_bytes;	/* total received bytes since rx_start; counted once per frame in the capture loop */
@@ -366,7 +389,7 @@ static const usbh_uvc_cb_t uvc_cb = {
 static int uvc_cb_init(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "INIT\n");
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 static void uvc_cb_deinit(void)
@@ -469,7 +492,7 @@ static void usbh_uvc_img_prepare(usbh_uvc_frame_t *frame)
 			((uvc_s_ctx.fmt_type == USBH_UVC_FORMAT_H264) ||
 			 (uvc_s_ctx.fmt_type == USBH_UVC_FORMAT_H265))) {
 			if (uvc_httpc_psramp_total_len + len <= USBH_UVC_HTTPC_PSRAM_BUF_SIZE) {
-				usb_os_memcpy((void *)uvc_httpc_psramp_write_ptr, (const void *)(frame->buf), len);
+				memcpy((void *)uvc_httpc_psramp_write_ptr, (const void *)(frame->buf), len);
 				uvc_httpc_psramp_write_ptr += len;
 				uvc_httpc_psramp_total_len += len;
 				uvc_httpc_psramp_frame_cnt++;
@@ -493,7 +516,7 @@ static void usbh_uvc_img_prepare(usbh_uvc_frame_t *frame)
 			}
 			rtos_mutex_give(uvc_buf_mutex);
 		} else if (uvc_s_ctx.fmt_type == USBH_UVC_FORMAT_MJPEG) {
-			usb_os_memcpy((void *)uvc_buf, (const void *)(frame->buf), len);
+			memcpy((void *)uvc_buf, (const void *)(frame->buf), len);
 			uvc_buf_size = len;
 			rtos_mutex_give(uvc_buf_mutex);
 			rtos_sema_give(uvc_httpc_save_img_sema);
@@ -509,7 +532,7 @@ static void usbh_uvc_img_prepare(usbh_uvc_frame_t *frame)
 			rtos_mutex_give(uvc_buf_mutex);
 
 		} else {
-			usb_os_memcpy((void *)uvc_buf, (const void *)(frame->buf), len);
+			memcpy((void *)uvc_buf, (const void *)(frame->buf), len);
 			uvc_buf_size = len;
 			rtos_mutex_give(uvc_buf_mutex);
 			rtos_sema_give(uvc_vfs_save_img_sema);
@@ -601,7 +624,7 @@ static void example_usbh_uvc_vfs_thread(void *param)
 
 	uvc_vfs_is_init = 1U;
 	uvc_rb = RingBuffer_Create(uvc_buf, CONFIG_USBH_UVC_FRAME_BUF_SIZE, LOCAL_RINGBUFF, 0);
-	buffer_h264 = usb_os_malloc(USBH_UVC_VFS_WRITE_SIZE);
+	buffer_h264 = rtos_mem_zmalloc(USBH_UVC_VFS_WRITE_SIZE);
 	if ((uvc_rb == NULL) || (buffer_h264 == NULL)) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "VFS buf alloc fail\n");
 		goto exit;
@@ -661,7 +684,7 @@ exit:
 	if (finfo != NULL) {
 		fclose(finfo);
 	}
-	usb_os_mfree((void *)buffer_h264);
+	rtos_mem_free((void *)buffer_h264);
 	if (uvc_rb != NULL) {
 		RingBuffer_Destroy(uvc_rb);
 		uvc_rb = NULL;
@@ -707,6 +730,10 @@ static int uvc_vfs_start(void)
 static void uvc_vfs_stop(void)
 {
 	while (uvc_vfs_thread_alive == 1U) {
+		if (uvc_task_exiting != 0U) {
+			/* A detach or a stop: the MJPEG writer may wait for an image that never comes */
+			rtos_sema_give(uvc_vfs_save_img_sema);
+		}
 		rtos_time_delay_ms(100U);
 	}
 	if (uvc_vfs_save_img_sema != NULL) {
@@ -786,10 +813,10 @@ static void example_usbh_uvc_httpc_thread(void *param)
 		snprintf(_boundary, sizeof(_boundary), "rtkBoundary%d", (int)ticknow);
 		snprintf(img_file, sizeof(img_file), "img%d.jpeg", uvc_httpc_img_file_no);
 		snprintf(type, sizeof(type), "multipart/form-data; boundary=%s", _boundary);
-		usb_os_memset((void *)post_end1, 0x0, sizeof(post_end1));
+		memset((void *)post_end1, 0x0, sizeof(post_end1));
 		content_length = snprintf(post_end1, sizeof(post_end1), body_end, _boundary);
 		post_end1_length = strlen(post_end1);
-		usb_os_memset((void *)post_end, 0x0, sizeof(post_end));
+		memset((void *)post_end, 0x0, sizeof(post_end));
 		content_length += snprintf(post_end, sizeof(post_end), upload_request, _boundary, img_file);
 
 		// start a header and add Host (added automatically), Content-Type and Content-Length (added by input param)
@@ -978,9 +1005,9 @@ static void example_usbh_uvc_httpc_thread(void *param)
 	ticknow = rtos_time_get_current_system_time_ms();
 	snprintf(_boundary, sizeof(_boundary), "rtkBoundary%d", (int)ticknow);
 	snprintf(type, sizeof(type), "multipart/form-data; boundary=%s", _boundary);
-	usb_os_memset((void *)post_end1, 0x0U, sizeof(post_end1));
+	memset((void *)post_end1, 0x0U, sizeof(post_end1));
 	post_end1_length = content_length = snprintf(post_end1, sizeof(post_end1), body_end, _boundary);
-	usb_os_memset((void *)post_end, 0x0U, sizeof(post_end));
+	memset((void *)post_end, 0x0U, sizeof(post_end));
 	content_length += snprintf(post_end, sizeof(post_end), upload_request, _boundary, filename);
 	post_end1_length = strlen(post_end1);
 
@@ -994,7 +1021,7 @@ static void example_usbh_uvc_httpc_thread(void *param)
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "%s: header write fail: %d\n", USBH_UVC_HTTP_TAG, ret);
 	}
 
-	send_buf = usb_os_malloc(USBH_UVC_HTTPC_WRITE_SIZE);
+	send_buf = rtos_mem_zmalloc(USBH_UVC_HTTPC_WRITE_SIZE);
 	if (send_buf == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "%s: send_buf malloc fail\n", USBH_UVC_HTTP_TAG);
 		goto exit;
@@ -1011,7 +1038,7 @@ static void example_usbh_uvc_httpc_thread(void *param)
 			chunk = USBH_UVC_HTTPC_WRITE_SIZE;
 		}
 
-		usb_os_memcpy((void *)send_buf, (const void *)(uvc_httpc_psramp_base + send_offset), chunk);
+		memcpy((void *)send_buf, (const void *)(uvc_httpc_psramp_base + send_offset), chunk);
 		ret = httpc_request_write_data(conn, send_buf, chunk);
 		if (ret < 0) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "%s: data write fail at offset %u: %d\n",
@@ -1039,14 +1066,14 @@ exit:
 		httpc_conn_close(conn);
 		conn = NULL;
 	}
-	usb_os_mfree((void *)send_buf);
+	rtos_mem_free((void *)send_buf);
 	uvc_httpc_thread_alive = 0;
 	rtos_task_delete(NULL);
 
 #else
 	/* Ringbuffer mode: stream upload frame by frame (H264) or image by image (non-H264) */
 	uvc_rb = RingBuffer_Create(uvc_buf, CONFIG_USBH_UVC_FRAME_BUF_SIZE, LOCAL_RINGBUFF, 0);
-	buffer_h264 = usb_os_malloc(USBH_UVC_HTTPC_WRITE_SIZE);
+	buffer_h264 = rtos_mem_zmalloc(USBH_UVC_HTTPC_WRITE_SIZE);
 	if ((uvc_rb == NULL) || (buffer_h264 == NULL)) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "%s: buf alloc fail\n", USBH_UVC_HTTP_TAG);
 		goto exit;
@@ -1089,9 +1116,9 @@ exit:
 	ticknow = rtos_time_get_current_system_time_ms();
 	snprintf(_boundary, sizeof(_boundary), "rtkBoundary%d", (int)ticknow);
 	snprintf(type, sizeof(type), "multipart/form-data; boundary=%s", _boundary);
-	usb_os_memset((void *)post_end1, 0x0, sizeof(post_end1));
+	memset((void *)post_end1, 0x0, sizeof(post_end1));
 	post_end1_length = content_length = snprintf(post_end1, sizeof(post_end1), body_end, _boundary);
-	usb_os_memset((void *)post_end, 0x0, sizeof(post_end));
+	memset((void *)post_end, 0x0, sizeof(post_end));
 #if (CONFIG_USBH_UVC_FORMAT_TYPE == USBH_UVC_FORMAT_H265)
 	content_length += snprintf(post_end, sizeof(post_end), upload_request, _boundary, "stream.h265");
 #else
@@ -1157,7 +1184,7 @@ exit:
 	goto exit;
 
 exit:
-	usb_os_mfree((void *)buffer_h264);
+	rtos_mem_free((void *)buffer_h264);
 	buffer_h264 = NULL;
 	/* Stop the capture loop from fetching more frames before the ring is torn down,
 	 * then destroy uvc_rb under uvc_buf_mutex so it cannot race with usbh_uvc_img_prepare,
@@ -1194,7 +1221,7 @@ static int uvc_httpc_start(void)
 	while (lwip_check_connectivity(NETIF_WLAN_STA_INDEX) != CONNECTION_VALID) {
 		/* A detach must not wait for WiFi, or the hotplug join never finishes */
 		if (uvc_task_exiting != 0U) {
-			return HAL_ERR_HW;
+			return -RTK_ERR_IO;
 		}
 		rtos_time_delay_ms(2000);
 	}
@@ -1205,12 +1232,12 @@ static int uvc_httpc_start(void)
 	 * uploaded this time. */
 	if (!ChipInfo_PsramExists()) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "%s: no PSRAM, upload skipped\n", USBH_UVC_HTTP_TAG);
-		return HAL_ERR_HW;
+		return -RTK_ERR_IO;
 	}
 	uvc_httpc_psramp_base = (u8 *)rtos_heap_types_malloc(USBH_UVC_HTTPC_PSRAM_BUF_SIZE, TYPE_DRAM);
 	if (uvc_httpc_psramp_base == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "%s: PSRAM buffer alloc fail, upload skipped\n", USBH_UVC_HTTP_TAG);
-		return HAL_ERR_MEM;
+		return -RTK_ERR_NOMEM;
 	}
 	ret = rtos_sema_create(&uvc_httpc_done_sema, 0U, 1U);
 	if (ret != RTK_SUCCESS) {
@@ -1265,6 +1292,10 @@ static int uvc_httpc_start(void)
 static void uvc_httpc_stop(void)
 {
 	while (uvc_httpc_thread_alive != 0U) {
+		if (uvc_task_exiting != 0U) {
+			/* A detach or a stop: the upload thread may wait for a capture that never ends */
+			rtos_sema_give(uvc_httpc_done_sema);
+		}
 		rtos_time_delay_ms(100);
 	}
 	if (uvc_httpc_done_sema != NULL) {
@@ -1287,6 +1318,10 @@ static void uvc_httpc_stop(void)
 	 * still owns uvc_rb. Waiting on connected here would return too early and let the caller
 	 * deinit / re-init on re-attach while the old thread is alive -> uvc_rb use-after-free. */
 	while (uvc_httpc_thread_alive != 0U) {
+		if (uvc_task_exiting != 0U) {
+			/* A detach or a stop: the MJPEG upload thread may wait for an image that never comes */
+			rtos_sema_give(uvc_httpc_save_img_sema);
+		}
 		rtos_time_delay_ms(100);
 	}
 	if (uvc_httpc_save_img_sema != NULL) {
@@ -1298,6 +1333,92 @@ static void uvc_httpc_stop(void)
 
 #endif
 
+/**
+  * @brief  Free the semas and the buffer mutex created by uvc_start()
+  * @retval None
+  */
+static void uvc_free_resource(void)
+{
+	if (uvc_buf_mutex != NULL) {
+		rtos_mutex_delete(uvc_buf_mutex);
+		uvc_buf_mutex = NULL;
+	}
+	if (uvc_attach_sema != NULL) {
+		rtos_sema_delete(uvc_attach_sema);
+		uvc_attach_sema = NULL;
+	}
+	if (uvc_detach_sema != NULL) {
+		rtos_sema_delete(uvc_detach_sema);
+		uvc_detach_sema = NULL;
+	}
+	if (uvc_start_sema != NULL) {
+		rtos_sema_delete(uvc_start_sema);
+		uvc_start_sema = NULL;
+	}
+	if (uvc_setparam_sema != NULL) {
+		rtos_sema_delete(uvc_setparam_sema);
+		uvc_setparam_sema = NULL;
+	}
+}
+
+/**
+  * @brief  Finish a teardown claimed through uvc_app: join every worker, deinit the stack and free
+  * @param  workers: Fixed workers (attach/hotplug thread) still to join, the caller excluded
+  * @retval RTK_SUCCESS, or -RTK_ERR_TIMEOUT if a worker did not leave, with everything kept
+  */
+static int uvc_teardown(u32 workers)
+{
+	u32 waited = 0U;
+	u32 i;
+
+	uvc_task_exiting = 1U;
+	/* Attach thread: parked on attach. Hotplug thread: parked on detach, or inside a rebuild that checks quit. */
+	rtos_sema_give(uvc_attach_sema);
+#if CONFIG_USBH_UVC_HOT_PLUG
+	rtos_sema_give(uvc_detach_sema);
+#endif
+	/* Not usb_app_ctx_join(): the hotplug thread may itself be joining the frame worker */
+	for (i = 0U; i < workers; i++) {
+		if (rtos_sema_take(uvc_app.join_sema, USBH_UVC_TEST_JOIN_TIMEOUT_MS) != RTK_SUCCESS) {
+			return -RTK_ERR_TIMEOUT;
+		}
+	}
+
+	/* Nothing can create a frame worker any more. Raised again: a rebuild may have cleared it. */
+	uvc_task_exiting = 1U;
+	if (uvc_task_alive != 0U) {
+		/* Same sequence as the hotplug thread: let the current frame finish, halt ISOC to wake
+		   usbh_uvc_get_frame(), then wake the start and set_param waits of the frame worker */
+		rtos_time_delay_ms(200);
+		if (uvc_stack_ready != 0U) {
+			usbh_uvc_stop(CONFIG_USBH_UVC_STREAM_INDEX);
+		}
+		rtos_sema_give(uvc_start_sema);
+		uvc_setparam_status = -RTK_ERR_IO;
+		rtos_sema_give(uvc_setparam_sema);
+		/* The frame worker wakes and joins its VFS/HTTPC thread before it leaves */
+		while (uvc_task_alive != 0U) {
+			if (waited >= USBH_UVC_TEST_JOIN_TIMEOUT_MS) {
+				return -RTK_ERR_TIMEOUT;
+			}
+			rtos_time_delay_ms(100);
+			waited += 100U;
+		}
+	}
+
+	/* Every worker is gone. The stack is down already if the hotplug thread left mid-rebuild. */
+	if (uvc_stack_ready != 0U) {
+		uvc_stack_ready = 0U;
+		usbh_stop();
+		usbh_uvc_deinit();
+		usbh_deinit();
+	}
+	uvc_free_resource();
+	uvc_task_exiting = 0U;
+	usb_app_ctx_end(&uvc_app);
+
+	return RTK_SUCCESS;
+}
 
 #if CONFIG_USBH_UVC_HOT_PLUG
 /**
@@ -1318,11 +1439,16 @@ static void uvc_httpc_stop(void)
 static void example_usbh_uvc_hotplug_thread(void *param)
 {
 	int ret = 0;
+	u8 fatal = 0U;
 
 	UNUSED(param);
 
 	while (1) {
 		if (rtos_sema_take(uvc_detach_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
+			if (uvc_app.quit != 0U) {
+				/* Stop requested: the stack is still up, the stop owner joins the frame worker and tears it down */
+				break;
+			}
 
 			uvc_task_exiting = 1;
 
@@ -1342,7 +1468,7 @@ static void example_usbh_uvc_hotplug_thread(void *param)
 			rtos_sema_give(uvc_start_sema);
 			/* Wake uvc_test if it is waiting for the set_param result, which a detached
 			   device never delivers: it would otherwise hold the join for up to 5 s. */
-			uvc_setparam_status = HAL_ERR_HW;
+			uvc_setparam_status = -RTK_ERR_IO;
 			rtos_sema_give(uvc_setparam_sema);
 #if (CONFIG_USBH_UVC_APP == USBH_UVC_APP_HTTPC) && (USBH_UVC_HTTPC_BUFFER_MODE == 0)
 			/* MJPEG upload thread runs while(1); give its sema so it checks uvc_task_exiting and exits. */
@@ -1363,6 +1489,7 @@ static void example_usbh_uvc_hotplug_thread(void *param)
 
 			RTK_LOGS(TAG, RTK_LOG_INFO, "Test thread exit\n");
 
+			uvc_stack_ready = 0U;
 			usbh_stop();
 			usbh_uvc_deinit();
 			usbh_deinit();
@@ -1380,40 +1507,55 @@ static void example_usbh_uvc_hotplug_thread(void *param)
 			rtos_time_delay_ms(10);
 			RTK_LOGS(TAG, RTK_LOG_INFO, "Free heap: 0x%x\n", rtos_mem_get_free_heap_size());
 
+			if (uvc_app.quit != 0U) {
+				/* Stop requested: leave the stack down, uvc_stack_ready tells the stop owner it is gone */
+				break;
+			}
+
 			uvc_task_exiting = 0;
 
 			ret = usbh_init(&usbh_cfg, NULL);
-			if (ret != HAL_OK) {
+			if (ret != RTK_SUCCESS) {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "Reinit fail\n");
+				fatal = 1U;
 				break;
 			}
 
 			ret = usbh_uvc_init(&uvc_cb, &uvc_cfg);
-			if (ret != HAL_OK) {
+			if (ret != RTK_SUCCESS) {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "Reinit fail\n");
 				usbh_deinit();
+				fatal = 1U;
 				break;
 			}
 
 			/* Re-arm USB TRX after the re-init. */
 			ret = usbh_start();
-			if (ret != HAL_OK) {
+			if (ret != RTK_SUCCESS) {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "Reinit fail\n");
 				usbh_uvc_deinit();
 				usbh_deinit();
+				fatal = 1U;
 				break;
 			}
+			uvc_stack_ready = 1U;
 			RTK_LOGS(TAG, RTK_LOG_INFO, "Reinit done\n");
 		}
 	}
 
-	/* A re-init failed, so the stack is gone for good. Keep the frame worker out
-	 * by leaving the exiting flag raised, and wake it in case it is parked waiting
-	 * for the next attach. */
-	uvc_task_exiting = 1;
-	rtos_sema_give(uvc_start_sema);
-
-	RTK_LOGS(TAG, RTK_LOG_ERROR, "Hotplug thread exit\n");
+	if (fatal != 0U) {
+		/* A re-init failed, so the stack is gone for good (uvc_stack_ready stays 0) */
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Hotplug thread exit\n");
+		if (usb_app_ctx_claim_stop(&uvc_app) != 0U) {
+			/* No stop is in flight: wake and join the attach thread and any frame worker, then free.
+			   On a timeout everything is kept, a worker may still touch it. */
+			if (uvc_teardown(USBH_UVC_WORKERS - 1U) != RTK_SUCCESS) {
+				RTK_LOGS(TAG, RTK_LOG_ERROR, "Teardown timeout\n");
+			}
+			rtos_task_delete(NULL);
+		}
+	}
+	usb_app_ctx_leave(&uvc_app);
 	rtos_task_delete(NULL);
 }
 #endif
@@ -1547,7 +1689,7 @@ static void example_usbh_uvc_test(void *param)
 
 		/* Wait for the semaphore indicating the setting is actually completed */
 		if (rtos_sema_take(uvc_setparam_sema, 5000) == RTK_SUCCESS) {
-			if (uvc_setparam_status != HAL_OK) {
+			if (uvc_setparam_status != RTK_SUCCESS) {
 				/* A detach wakes this wait with an error on purpose, refer to the hotplug thread */
 				if (uvc_task_exiting == 0U) {
 					RTK_LOGS(TAG, RTK_LOG_ERROR, "Set paras err: %s %d*%d@%dfps status=%d\n",
@@ -1611,7 +1753,7 @@ static void example_usbh_uvc_test(void *param)
 			/* Upload thread finished 2 MB and cleared uvc_httpc_connected: stop capturing now so
 			 * no frame is logged or counted after "Upload complete". Return this frame unused. */
 			if (uvc_httpc_connected == 0U) {
-				if (usbh_uvc_put_frame(buf, CONFIG_USBH_UVC_STREAM_INDEX) != HAL_OK) {
+				if (usbh_uvc_put_frame(buf, CONFIG_USBH_UVC_STREAM_INDEX) != RTK_SUCCESS) {
 					RTK_LOGS(TAG, RTK_LOG_ERROR, "Put frame fail\n");
 				}
 				break;
@@ -1631,7 +1773,7 @@ static void example_usbh_uvc_test(void *param)
 				usbh_uvc_img_prepare(buf);
 			}
 
-			if (usbh_uvc_put_frame(buf, CONFIG_USBH_UVC_STREAM_INDEX) != HAL_OK) {
+			if (usbh_uvc_put_frame(buf, CONFIG_USBH_UVC_STREAM_INDEX) != RTK_SUCCESS) {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "Put frame fail\n");
 			}
 
@@ -1727,13 +1869,63 @@ exit:
 	rtos_task_delete(NULL);
 }
 
-static void example_usbh_uvc_task(void *param) {
-#if CONFIG_USBH_UVC_HOT_PLUG
-	rtos_task_t hotplug_task;
-#endif
+/* Attach thread: creates one frame worker per attach until stopped */
+static void example_usbh_uvc_attach_thread(void *param) {
 	int ret = 0;
 
 	UNUSED(param);
+
+	while (uvc_app.quit == 0U) {
+		if (rtos_sema_take(uvc_attach_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
+			if (uvc_app.quit != 0U) {
+				break;
+			}
+			/* One worker at a time: an attach seen while the previous worker is still alive
+			   or the teardown is running belongs to the stack being torn down. The re-init
+			   re-enumerates a device still plugged in and attaches again. */
+			if ((uvc_task_alive != 0U) || (uvc_task_exiting != 0U)) {
+				RTK_LOGS(TAG, RTK_LOG_WARN, "Attach during teardown, skip\n");
+				continue;
+			}
+			/* Raised before the create, not inside the thread body: the new task may
+			   not run immediately, and a detach arriving in that window must still
+			   see a live worker and join it rather than tear the stream down. */
+			uvc_task_alive = 1U;
+			ret = rtos_task_create(&uvc_task, "usbh_uvc_test_thread", example_usbh_uvc_test, NULL,
+								   CONFIG_USBH_UVC_TEST_THREAD_STACK_SIZE, CONFIG_USBH_UVC_TEST_THREAD_PRIORITY);
+			if (ret != RTK_SUCCESS) {
+				uvc_task_alive = 0U;
+				RTK_LOGS(TAG, RTK_LOG_ERROR, "USBH UVC demo aborted\n");
+				if (usb_app_ctx_claim_stop(&uvc_app) != 0U) {
+					/* No stop is in flight: join the hotplug thread and tear the stack down here.
+					   On a timeout everything is kept, a worker may still touch it. */
+					if (uvc_teardown(USBH_UVC_WORKERS - 1U) != RTK_SUCCESS) {
+						RTK_LOGS(TAG, RTK_LOG_ERROR, "Teardown timeout\n");
+					}
+					rtos_task_delete(NULL);
+				}
+				break;
+			}
+		}
+	}
+
+	usb_app_ctx_leave(&uvc_app);
+	rtos_task_delete(NULL);
+}
+
+/**
+  * @brief  Bring the stack, the attach thread and the hotplug thread up
+  * @retval RTK_SUCCESS, -RTK_ERR_BUSY if running, or the first error, with everything already created rolled back
+  */
+static int uvc_start(void) {
+	rtos_task_t task;
+	int ret = 0;
+
+	ret = usb_app_ctx_begin(&uvc_app);
+	if (ret != RTK_SUCCESS) {
+		return ret;
+	}
+	uvc_task_exiting = 0U;
 
 	ret = rtos_sema_create(&uvc_attach_sema, 0U, 1U);
 	if (ret != RTK_SUCCESS) {
@@ -1761,24 +1953,46 @@ static void example_usbh_uvc_task(void *param) {
 	}
 
 	ret = usbh_init(&usbh_cfg, NULL);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		goto free_sema_exit;
 	}
 
 	ret = usbh_uvc_init(&uvc_cb, &uvc_cfg);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		goto usb_deinit_exit;
 	}
 
 	/* All class drivers registered; start USB TRX so enumeration can run. */
 	usbh_start();
+	uvc_stack_ready = 1U;
+
+	ret = rtos_task_create(&task, "usbh_uvc_attach_thread", example_usbh_uvc_attach_thread, NULL,
+						   CONFIG_USBH_UVC_ATTACH_THREAD_STACK_SIZE, CONFIG_USBH_UVC_ATTACH_THREAD_PRIORITY);
+	if (ret != RTK_SUCCESS) {
+		goto usbh_uvc_deinit_exit;
+	}
 
 #if CONFIG_USBH_UVC_HOT_PLUG
-	ret = rtos_task_create(&hotplug_task, "usbh_uvc_hotplug_thread",
+	/* Created last: it owns the stack once running, so nothing after it can fail */
+	ret = rtos_task_create(&task, "usbh_uvc_hotplug_thread",
 						   example_usbh_uvc_hotplug_thread, NULL,
 						   CONFIG_USBH_UVC_HOTPLUG_THREAD_STACK_SIZE, CONFIG_USBH_UVC_HOTPLUG_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
-		goto usbh_uvc_deinit_exit;
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "USBH UVC demo aborted\n");
+		if (usb_app_ctx_claim_stop(&uvc_app) == 0U) {
+			/* The attach thread found it can not go on and finishes the teardown itself.
+			   It joins the hotplug thread too: leave in place of the one never created. */
+			usb_app_ctx_leave(&uvc_app);
+			if (usb_app_ctx_wait_idle(&uvc_app) != RTK_SUCCESS) {
+				return -RTK_ERR_TIMEOUT;
+			}
+			return ret;
+		}
+		/* Join the attach thread and the frame worker it may have created, as a stop does */
+		if (uvc_teardown(1U) != RTK_SUCCESS) {
+			return -RTK_ERR_TIMEOUT;
+		}
+		return ret;
 	}
 #if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
 	/* The USB OTG ISR is delivered on CPU0: the GIC pins every SPI to core 0
@@ -1787,95 +2001,138 @@ static void example_usbh_uvc_task(void *param) {
 	   local interrupt disables inside the teardown are meaningful again. The frame
 	   worker stays unaffined: it is excluded from the teardown by the join above,
 	   not by core. */
-	rtos_task_set_affinity(hotplug_task, 0);
+	rtos_task_set_affinity(task, 0);
 #endif
 #endif
 
-	while (1) {
-		if (rtos_sema_take(uvc_attach_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
-			/* One worker at a time: an attach seen while the previous worker is still alive
-			   or the teardown is running belongs to the stack being torn down. The re-init
-			   re-enumerates a device still plugged in and attaches again. */
-			if ((uvc_task_alive != 0U) || (uvc_task_exiting != 0U)) {
-				RTK_LOGS(TAG, RTK_LOG_WARN, "Attach during teardown, skip\n");
-				continue;
-			}
-			/* Raised before the create, not inside the thread body: the new task may
-			   not run immediately, and a detach arriving in that window must still
-			   see a live worker and join it rather than tear the stream down. */
-			uvc_task_alive = 1U;
-			ret = rtos_task_create(&uvc_task, "usbh_uvc_test_thread", example_usbh_uvc_test, NULL,
-								   CONFIG_USBH_UVC_TEST_THREAD_STACK_SIZE, CONFIG_USBH_UVC_TEST_THREAD_PRIORITY);
-			if (ret != RTK_SUCCESS) {
-				uvc_task_alive = 0U;
-				goto delete_hotplug_task_exit;
-			}
-		}
-	}
+	return RTK_SUCCESS;
 
-	goto example_exit;
-
-delete_hotplug_task_exit:
-#if CONFIG_USBH_UVC_HOT_PLUG
-	rtos_task_delete(hotplug_task);
-#endif
-	/* The frame worker may be running: ask it to leave and wait for it, exactly as
-	   the hotplug thread does, so the deinit below does not free the stream from
-	   under it. Bounded here because this is already an error path - better to
-	   proceed than to hang the example. */
-	uvc_task_exiting = 1;
-	usbh_uvc_stop(CONFIG_USBH_UVC_STREAM_INDEX);
-	rtos_sema_give(uvc_start_sema);
-	uvc_setparam_status = HAL_ERR_HW;
-	rtos_sema_give(uvc_setparam_sema);
-	{
-		u32 waited = 0U;
-		while ((uvc_task_alive != 0U) && (waited < USBH_UVC_WORKER_JOIN_TIMEOUT_MS)) {
-			rtos_time_delay_ms(100);
-			waited += 100U;
-		}
-	}
-
-#if CONFIG_USBH_UVC_HOT_PLUG
 usbh_uvc_deinit_exit:
+	uvc_stack_ready = 0U;
 	usbh_stop();
-#endif
 	usbh_uvc_deinit();
 
 usb_deinit_exit:
 	usbh_deinit();
 
 free_sema_exit:
-	rtos_mutex_delete(uvc_buf_mutex);
-	rtos_sema_delete(uvc_attach_sema);
-	rtos_sema_delete(uvc_detach_sema);
-	rtos_sema_delete(uvc_start_sema);
-	rtos_sema_delete(uvc_setparam_sema);
+	uvc_free_resource();
 	RTK_LOGS(TAG, RTK_LOG_ERROR, "USBH UVC demo aborted\n");
-example_exit:
+	usb_app_ctx_end(&uvc_app);
+
+	return ret;
+}
+
+/* Standalone entry thread: brings the demo up and leaves */
+static void example_usbh_uvc_task(void *param) {
+	UNUSED(param);
+
+	if (uvc_start() != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Start fail\n");
+	}
 	rtos_task_delete(NULL);
 }
 
 #if (CONFIG_USBH_UVC_APP == USBH_UVC_APP_HTTPC)
-static u32 uvch_set_ip(u16 argc, u8 * argv[]) {
-	if (argc == 0 || argv[0] == NULL) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Usage: uvch_set_ip <ip>\n");
-		return HAL_ERR_PARA;
+/* Dotted-quad IPv4 check: four decimal fields 0..255, no leading sign, nothing else */
+static int uvch_check_ip(const char *ip) {
+	u32 field = 0U;
+	u32 digits = 0U;
+	u32 dots = 0U;
+	const char *p;
+
+	for (p = ip; *p != '\0'; p++) {
+		if ((*p >= '0') && (*p <= '9')) {
+			field = (field * 10U) + (u32)(*p - '0');
+			digits++;
+			if ((digits > 3U) || (field > 255U)) {
+				return -RTK_ERR_BADARG;
+			}
+		} else if ((*p == '.') && (digits != 0U) && (dots < 3U)) {
+			dots++;
+			field = 0U;
+			digits = 0U;
+		} else {
+			return -RTK_ERR_BADARG;
+		}
 	}
 
-	snprintf(uvc_httpc_server_ip, sizeof(uvc_httpc_server_ip), "%s", (const char *)argv[0]);
-	RTK_LOGS(TAG, RTK_LOG_INFO, "HTTPC server IP set to: %s\n", uvc_httpc_server_ip);
-
-	return HAL_OK;
+	return ((dots == 3U) && (digits != 0U)) ? RTK_SUCCESS : -RTK_ERR_BADARG;
 }
 
-CMD_TABLE_DATA_SECTION
-const COMMAND_TABLE uvc_httpc_test_cmd_table[] = {
-	{"uvch_set_ip", uvch_set_ip},
+static int uvch_set_ip(u16 argc, u8 * argv[]) {
+	const char *cmd = (argc != 0U) ? (const char *)argv[0] : NULL;
+
+	if ((cmd == NULL) || (_stricmp(cmd, "help") == 0) || (_stricmp(cmd, "?") == 0)) {
+		RTK_LOGS(TAG, RTK_LOG_INFO, "Usage: AT+USBHUVC=<cmd>[,<args>]\n");
+		RTK_LOGS(TAG, RTK_LOG_INFO, "  ip,<a.b.c.d>  IPv4 address of the HTTP server the frames are posted to,\n");
+		RTK_LOGS(TAG, RTK_LOG_INFO, "                default %s; set it before the WiFi/HTTPC connection is up\n", USBH_UVC_HTTPC_SERVER);
+		RTK_LOGS(TAG, RTK_LOG_INFO, "  help          Print this help\n");
+		return (cmd == NULL) ? -RTK_ERR_BADARG : RTK_SUCCESS;
+	}
+
+	if ((_stricmp(cmd, "ip") != 0) || (argc != 2U) || (uvch_check_ip((const char *)argv[1]) != RTK_SUCCESS)) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Usage: AT+USBHUVC=ip,<a.b.c.d>\n");
+		return -RTK_ERR_BADARG;
+	}
+
+	snprintf(uvc_httpc_server_ip, sizeof(uvc_httpc_server_ip), "%s", (const char *)argv[1]);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "HTTPC server IP set to: %s\n", uvc_httpc_server_ip);
+
+	return RTK_SUCCESS;
+}
+
+/* AT entry: argv[0] is reserved by the AT parser and argv[1] holds the first parameter */
+static void uvch_set_ip_at(u16 argc, char **argv) {
+	int ret = uvch_set_ip((argc != 0U) ? (argc - 1U) : 0U, (u8 **)&argv[1]);
+
+	if (ret == RTK_SUCCESS) {
+		at_printf(ATCMD_OK_END_STR);
+	} else {
+		at_printf(ATCMD_ERROR_END_STR, (int)ret);
+	}
+}
+
+/* AT commands "AT+<cmd>=<p1>,<p2>...": the command name is case-sensitive, the parameters are not */
+ATCMD_TABLE_DATA_SECTION
+const log_item_t uvc_httpc_test_cmd_table[] = {
+	{"+USBHUVC", uvch_set_ip_at},
 };
 #endif
 
 /* Exported functions --------------------------------------------------------*/
+
+/**
+  * @brief  Start the UVC host, used by the USB app manager
+  * @note   Task context only
+  * @retval RTK_SUCCESS, -RTK_ERR_BUSY if already running, or the init error
+  */
+int example_usbh_uvc_start(void) {
+	RTK_LOGS(TAG, RTK_LOG_INFO, "USBH UVC demo start\n");
+
+	return uvc_start();
+}
+
+/**
+  * @brief  Stop the UVC host and release everything it owns
+  * @note   Task context only. Safe to call when not running.
+  * @retval RTK_SUCCESS once idle, -RTK_ERR_TIMEOUT if a worker did not leave in time
+  */
+int example_usbh_uvc_stop(void) {
+	if (usb_app_ctx_claim_stop(&uvc_app) == 0U) {
+		/* Idle, or a worker found it can not go on and finishes the teardown itself */
+		return usb_app_ctx_wait_idle(&uvc_app);
+	}
+
+	if (uvc_teardown(USBH_UVC_WORKERS) != RTK_SUCCESS) {
+		/* A worker is still on the stack: keep everything, the app stays STOPPING */
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Stop timeout\n");
+		return -RTK_ERR_TIMEOUT;
+	}
+	RTK_LOGS(TAG, RTK_LOG_INFO, "USBH UVC demo stop\n");
+
+	return RTK_SUCCESS;
+}
 
 void example_usbh_uvc(void) {
 	int ret;

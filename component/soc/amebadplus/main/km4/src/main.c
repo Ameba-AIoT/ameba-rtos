@@ -15,6 +15,7 @@
 #include "rtw_coex_ipc.h"
 #endif
 #include "ameba_diagnose.h"
+#include "ameba_ota_rollback.h"
 
 static const char *const TAG = "MAIN";
 
@@ -170,6 +171,12 @@ _WEAK void app_example(void)
 
 }
 
+/* OTA rollback: clear BootCnt once the application works. Override it to clear after the product's own self check. */
+_WEAK void app_ota_rollback_ok_callback(void)
+{
+	OTA_Rollback_Clear();
+}
+
 //default main
 int main(void)
 {
@@ -228,6 +235,7 @@ int main(void)
 
 	/* Execute application example */
 	app_example();
+	app_ota_rollback_ok_callback();
 	IPC_patch_function(&rtos_critical_enter, &rtos_critical_exit);
 	IPC_SEMDelay(DelayMs);
 

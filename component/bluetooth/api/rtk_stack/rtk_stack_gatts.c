@@ -1365,7 +1365,7 @@ uint16_t bt_stack_gatts_act_handle(rtk_bt_cmd_t *p_cmd)
 		ret = bt_stack_gatts_get_attribute_handle(p_cmd->param);
 		break;
 	default:
-		BT_LOGE("bt_stack_le_act_handle:unknown act: %d \r\n", p_cmd->act);
+		BT_LOGE("%s:unknown act: %d \r\n", __func__, p_cmd->act);
 		ret = RTK_BT_ERR_NO_CASE_ELEMENT;
 		break;
 	}

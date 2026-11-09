@@ -349,7 +349,7 @@ uint16_t bt_stack_act_handler(rtk_bt_cmd_t *p_cmd)
 		bt_stack_gap_act_handle(p_cmd);
 		break;
 	default:
-		BT_LOGE("bt_stack_le_act_handle:unknown group: %d \r\n", p_cmd->group);
+		BT_LOGE("%s:unknown group: %d \r\n", __func__, p_cmd->group);
 		break;
 	}
 
@@ -570,8 +570,11 @@ void wait_bt_conn_cleanup(void)
 static uint16_t zephyr_bt_disable(void)
 {
 	bt_disable();
+	/* Must be before the work queues are deleted, otherwise work_timeout() submits to a deleted queue */
+	zephyr_timers_clean();
 	zephyr_internal_res_free();
 	zephyr_res_free();
+	zephyr_work_reset();
 
 	return 0;
 }

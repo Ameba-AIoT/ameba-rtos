@@ -22,8 +22,8 @@ static const char *const TAG = "ETH";
 #define ETH_RX_ZC               0
 #endif
 
-/* Configuration Flags */
-volatile int eth_link_is_up = 0;
+/* Set by the user before eth_init(); the ISR gives it on every link change. NULL means nobody is listening. */
+rtos_sema_t eth_link_sema = NULL;
 
 ETH_InitTypeDef eth_handle;
 
@@ -118,16 +118,10 @@ undo:
 
 /* Callbacks */
 eth_rx_prehandler_t eth_rx_preprocess_cb = NULL;
-link_up_down_callback eth_link_cb = NULL;
 
 void eth_register_rx_patch(eth_rx_prehandler_t pfunc1)
 {
 	eth_rx_preprocess_cb = pfunc1;
-}
-
-void eth_register_link_cb(link_up_down_callback pfunc)
-{
-	eth_link_cb = pfunc;
 }
 
 /**
@@ -255,9 +249,9 @@ u32 eth_isr_handler(void *data)
 		rtos_sema_give(eth_rx_sema);
 	}
 
-	/* 2. Link change. A failed post (mbox full) drops this event only; the handler reads MSR afresh each time. */
-	if (status & BIT_ISR_LINKCHG) {
-		netif_adapter_eth_link_notify();
+	/* 2. Link change. The listener reads the link state itself. */
+	if ((status & BIT_ISR_LINKCHG) && eth_link_sema) {
+		rtos_sema_give(eth_link_sema);
 	}
 
 	/* RX/TX errors and TX done need no action beyond the acknowledge above. */
@@ -368,38 +362,6 @@ void eth_rx_thread(void *param)
 	rtos_task_delete(NULL);
 }
 
-#ifndef CONFIG_RMII_VERIFY
-/**
- * @brief  Link change handler, runs in tcpip_thread with the core lock held.
- *         The netif may be touched directly, but nothing here may block or call netifapi.
- */
-static void eth_link_handler(void *ctx)
-{
-	u32 speed, duplex;
-	int link_up = Ethernet_GetLinkStatus() ? 1 : 0;
-
-	UNUSED(ctx);
-	/* The same message can be queued twice before it runs; report each state once. */
-	if (link_up == eth_link_is_up) {
-		return;
-	}
-	eth_link_is_up = link_up;
-
-	if (link_up) {
-		Ethernet_GetSpeedDuplex(&speed, &duplex);
-		RTK_LOGI(TAG, "Link Up: %s, %s\n", (speed == ETH_SPEED_100M) ? "100M" : (speed == ETH_SPEED_10M) ? "10M" : "Unknown",
-				 (duplex == ETH_FULL_DUPLEX) ? "Full Duplex" : "Half Duplex");
-	} else {
-		RTK_LOGI(TAG, "Link Down\n");
-	}
-	netif_adapter_eth_set_link(link_up);
-
-	if (eth_link_cb) {
-		eth_link_cb(link_up);
-	}
-}
-#endif
-
 /**
  * @brief  Hardware Initialization Task.
  *         Allocates memory, configures PHY, sets MAC, starts ETH controller.
@@ -508,13 +470,6 @@ static void eth_init_thread(void *param)
 	/* Sync Objects Creation, before the ISR and the netif can use them */
 	rtos_sema_create_binary(&eth_rx_sema);
 	rtos_mutex_create(&eth_tx_mutex);
-
-#ifndef CONFIG_RMII_VERIFY
-	/* Before the IRQ is enabled, so the ISR never sees a half-made message */
-	if (netif_adapter_eth_link_init(eth_link_handler) != 0) {
-		RTK_LOGE(TAG, "Link msg alloc failed\n");
-	}
-#endif
 
 	/* Interrupt Init */
 	InterruptRegister((IRQ_FUN)eth_isr_handler, (IRQn_Type)RMII_IRQ, (u32)&eth_handle, 5);

@@ -297,7 +297,9 @@ void BOOT_PSRAM_Init(void)
 		psram_phy->PSPHY_CAL_PAR = PSRAM_CAL_BK;
 	} else {
 		if ((SYSCFG_CHIPType_Get() == CHIP_TYPE_ASIC) || (SYSCFG_CHIPType_Get() == CHIP_TYPE_FPGA)) {
-			PSRAM_calibration();
+			if (PSRAM_calibration() == FALSE) {
+				RTK_LOGE(TAG, "PSRAM calibration fail\n");
+			}
 			PSRAM_CAL_BK = psram_phy->PSPHY_CAL_PAR;
 		}
 	}

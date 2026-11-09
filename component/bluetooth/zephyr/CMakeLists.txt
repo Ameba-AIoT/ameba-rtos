@@ -55,7 +55,6 @@ ameba_list_append(private_sources
     stack/host/buf.c
     stack/host/hci_core.c
     stack/host/id.c
-    stack/host/crypto_tc.c
     stack/host/conn.c
     stack/host/scan.c
     stack/host/adv.c
@@ -126,6 +125,12 @@ endif()
 ameba_list_append_if(CONFIG_BT_MESH_DEVICE_SUPPORT private_sources
     stack/mesh/lpn.c
 )
+
+if(CONFIG_MBEDTLS_USE_LEGACY_API)
+    ameba_list_append(private_sources stack/host/crypto_tc.c)
+else()
+    ameba_list_append(private_sources stack/host/crypto_psa.c)
+endif()
 
 ameba_list_append(private_sources
     port/zephyr_log.c

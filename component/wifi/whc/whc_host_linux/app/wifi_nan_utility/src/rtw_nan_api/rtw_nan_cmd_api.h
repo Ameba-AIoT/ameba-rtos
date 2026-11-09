@@ -23,7 +23,7 @@ extern void rtw_nan_api_register_evt_cb(rtw_nan_evt_cb cb);
 extern RTW_RET_STATUS rtw_nan_api_get_capability(char *intf, uint16_t *nan_cap);
 extern RTW_RET_STATUS rtw_nan_api_init(uint16_t phy_num, char *intf);
 extern RTW_RET_STATUS rtw_nan_api_deinit(uint16_t phy_num);
-extern RTW_RET_STATUS rtw_nan_api_start_nan(char *intf);
+extern RTW_RET_STATUS rtw_nan_api_start_nan(char *intf, uint8_t band);
 extern RTW_RET_STATUS rtw_nan_api_stop_nan(char *intf);
 extern RTW_RET_STATUS rtw_nan_api_config_nan();
 

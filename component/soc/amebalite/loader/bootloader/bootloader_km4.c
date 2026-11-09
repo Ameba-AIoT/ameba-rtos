@@ -153,7 +153,7 @@ u32 BOOT_PSRAM_Init(void)
 		/* psram calibration */
 		if ((SYSCFG_CHIPType_Get() == CHIP_TYPE_ASIC) || (SYSCFG_CHIPType_Get() == CHIP_TYPE_FPGA)) {
 			if (PSRAM_calibration() == FALSE) {
-				// PSRAM_InfoDump();
+				RTK_LOGE(TAG, "PSRAM calibration fail\n");
 				return FALSE;
 			}
 		}
