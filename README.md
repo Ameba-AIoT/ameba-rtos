@@ -59,6 +59,7 @@ ameba-rtos/
 │   ├── application/speechmind/ #   SpeechMind application             [submodule]
 │   ├── os/                     #   FreeRTOS kernel and OS wrapper
 │   ├── ota/                    #   Over-the-air update framework
+│   ├── sensing_algo/           #   Sensing algorithm library           [submodule]
 │   ├── ui/                     #   LVGL graphics library               [submodule]
 │   └── tflite_micro/           #   TensorFlow Lite for Microcontrollers [submodule]
 ├── example/                    # Ready-to-run application examples
@@ -98,6 +99,7 @@ ameba-rtos/
 - **AI Voice** — AI voice processing framework *(XDK)*
 - **TFLite Micro** — TensorFlow Lite Micro for on-device inference *(XDK)*
 - **SpeechMind** — SpeechMind application integration *(XDK)*
+- **Sensing Algorithms** — sensing algorithm library integration *(XDK)*
 - **UI** — LVGL graphics library integration *(XDK)*
 - **Dynamic App** — runtime dynamic application loading
 
@@ -117,7 +119,7 @@ We provide two download options depending on your needs:
 git clone https://github.com/Ameba-AIoT/ameba-rtos.git
 ```
 
-**XDK (Extended)** — full SDK including all submodules, required for audio, AI voice, UI and TFLite Micro:
+**XDK (Extended)** — full SDK including all submodules, required for audio, AI voice, sensing algorithms, UI and TFLite Micro:
 
 ```bash
 git clone --recurse-submodules https://github.com/Ameba-AIoT/ameba-rtos.git
@@ -129,7 +131,7 @@ If you cloned without submodules and need them later:
 git submodule update --init --recursive
 ```
 
-> The submodule components (`audio`, `aivoice`, `ui`, `tflite_micro`, `application/speechmind`) are hosted in separate repositories and only needed for the corresponding features.
+> The submodule components (`audio`, `aivoice`, `sensing_algo`, `ui`, `tflite_micro`, `application/speechmind`) are hosted in separate repositories and only needed for the corresponding features.
 
 ## 🚀 Quick Start
 

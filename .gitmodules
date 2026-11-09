@@ -5,29 +5,24 @@
 [submodule "component/audio"]
 	path = component/audio
 	url = ../../Ameba-AIoT/ameba-audio.git
-	branch = master
+	branch = release/v1.3
 
 [submodule "component/ui"]
 	path = component/ui
 	url = ../../Ameba-AIoT/ameba-ui.git
-	branch = master
+	branch = release/v1.3
 
 [submodule "component/aivoice"]
 	path = component/aivoice
 	url = ../../Ameba-AIoT/ameba-aivoice.git
-	branch = main
+	branch = release/v1.3
 
 [submodule "component/tflite_micro"]
 	path = component/tflite_micro
 	url = ../../Ameba-AIoT/ameba-tflite-micro.git
-	branch = main
-
-[submodule "component/application/speechmind"]
-	path = component/application/speechmind
-	url = ../../Ameba-AIoT/speechmind.git
-	branch = master
+	branch = release/v1.3
 
 [submodule "component/sensing_algo"]
 	path = component/sensing_algo
-	url = ../../Ameba-AIoT/ameba-sensing-algo.git
-	branch = master
+	url = https://github.com/Ameba-AIoT/ameba-sensing-algo.git
+	branch = release/v1.3
