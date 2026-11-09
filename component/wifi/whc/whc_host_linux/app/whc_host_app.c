@@ -493,8 +493,6 @@ int whc_host_nl_init(void)
 		return ret;
 	}
 
-	ret = whc_host_log_enable();
-
 	return ret;
 }
 
