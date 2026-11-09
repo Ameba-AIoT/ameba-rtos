@@ -95,12 +95,17 @@ u32 app_mpu_nocache_init(void)
  * top two directly (bypassing mpu_entry_alloc). */
 #define APP_SOLO_MPU_ENTRY_BASE		4
 
+extern u8 mpu_entry_register[MPU_MAX_REGION];
+
 static void app_solo_mpu_init(void)
 {
 	mpu_region_config mpu_cfg;
 	u32 i, size;
 
 	for (i = 0; i < SOLO_MPU_ENTRY_NUM; i++) {
+		/* Reserve the SOLO entries so a later mpu_entry_alloc() can not override the isolation region */
+		mpu_entry_register[APP_SOLO_MPU_ENTRY_BASE + i] = 1;
+
 		if (solo_km55tz_ro_sram[i].start == 0xFFFFFFFF) {
 			continue;
 		}

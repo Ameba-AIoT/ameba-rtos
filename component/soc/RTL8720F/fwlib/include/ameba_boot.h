@@ -90,6 +90,8 @@ extern u8 __km4ns_bd_psram_start__[];
 extern u8 __km4ns_bd_psram_end__[];
 extern u8 __km4tz_bd_psram_start__[];
 extern u8 __km4tz_bd_psram_end__[];
+extern u8 __img1_sram_size__[]; /* absolute symbol: size of the IMG1 (bootloader) RAM slot */
+extern u8 __rtk_fixed_addr__[]; /* absolute symbol: end of the RAM fixed for the ROM BSS and MSP, start of the IMG1 slot */
 extern u8 __non_secure_psram_start__[]; /* start of non-secure PSRAM (first segment after TZ) */
 extern u8 __non_secure_psram_end__[];
 

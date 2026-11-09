@@ -187,9 +187,9 @@ typedef struct {
 
 	/**
 	 * @brief Callback invoked when the UVC parameter-setting sequence
-	 *        (Probe/Commit/SET_INTERFACE) completes; status is HAL_OK
-	 *        on success, HAL_ERR_MEM if the streaming buffers cannot be
-	 *        allocated, or HAL_ERR_HW on any other failure.
+	 *        (Probe/Commit/SET_INTERFACE) completes; status is RTK_SUCCESS
+	 *        on success, -RTK_ERR_NOMEM if the streaming buffers cannot be
+	 *        allocated, or -RTK_ERR_IO on any other failure.
 	 */
 	void (*set_param)(int status);
 } usbh_uvc_cb_t;
@@ -408,6 +408,7 @@ typedef struct {
 	u8 cur_urb;                           // Index of the URB currently being filled by combine_urb
 	u8 cur_packet;                          // Index of the packet within the current URB
 	u8 last_fid;                            // Last Frame ID (toggled bit in UVC payloadheader)
+	u8 header_warned;                       /* Bad payload header already reported this round: throttles its log */
 
 	/* Free/ready frame lists */
 	usb_os_lock_t frame_mutex;              /* Mutex protecting frame lists */
@@ -571,7 +572,7 @@ usbh_uvc_frame_t *usbh_uvc_get_frame(u8 stream_index);
  * @param[in] stream_index  VideoStreaming stream index, range 0 .. USBH_UVC_VS_DESC_MAX_NUM-1
  *                     (must be 0 for a single-stream camera).
  * @note   Same single consumer thread per stream as usbh_uvc_get_frame().
- * @return 0 on success, HAL_ERR_PARA on invalid parameters, HAL_ERR_HW if the frame lock failed.
+ * @return 0 on success, -RTK_ERR_BADARG on invalid parameters, -RTK_ERR_IO if the frame lock failed.
  */
 int usbh_uvc_put_frame(usbh_uvc_frame_t *frame, u8 stream_index);
 

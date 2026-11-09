@@ -124,6 +124,29 @@ static int handle_dbg(int argc, char *argv[])
 	return rtw_nl_send_dbg(dbg_buf);
 }
 
+static int handle_shell(int argc, char *argv[])
+{
+	char shell_buf[1024];
+	int j, pos;
+
+	if (argc < 4) {
+		fprintf(stderr, "Usage: rtwpriv -n <ifname> shell <cmd> [args...]\n");
+		fprintf(stderr, "   e.g. rtwpriv -n wlan0 shell DW 40000000 4\n");
+		return -1;
+	}
+
+	pos = snprintf(shell_buf, sizeof(shell_buf), "%s", argv[3]);
+	for (j = 4; j < argc && pos < (int)sizeof(shell_buf); j++) {
+		pos += snprintf(shell_buf + pos, sizeof(shell_buf) - pos, " %s", argv[j]);
+	}
+	if (pos >= (int)sizeof(shell_buf)) {
+		fprintf(stderr, "Shell command too long\n");
+		return -1;
+	}
+
+	return rtw_nl_send_shell(shell_buf);
+}
+
 typedef int (*nl_handler_t)(int argc, char *argv[]);
 
 static const struct {
@@ -138,6 +161,7 @@ static const struct {
 	{"logoff",	handle_logoff,	"",			"Disable firmware log output"},
 	{"otaclear",	handle_clearota,	"",		"Clear signature of current image to switch to another image. Only valid for BOOT_FROM_FLASH ICs"},
 	{"dbg",		handle_dbg,	"<cmd> [args...]",	"Send a raw debug command string"},
+	{"shell",	handle_shell,	"<cmd> [args...]",	"Run a device shell command (AT+xxx -> stdout; DW/EW -> dmesg). Needs logon"},
 	{NULL, NULL, NULL, NULL}
 };
 

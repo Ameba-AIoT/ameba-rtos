@@ -29,6 +29,37 @@ static struct hci_uart_t {
 	void            *tx_done_sem;
 } *g_uart = NULL;
 
+void hci_uart_op_irq(bool op)
+{
+	if (op) {
+		/* Enable HCI uart irq */
+		InterruptEn(HCI_UART_IRQ, HCI_UART_IRQ_PRIO);
+	} else {
+		/* Disable HCI uart irq */
+		InterruptDis(HCI_UART_IRQ);
+	}
+}
+
+void hci_uart_op_host_wake_bt(bool op)
+{
+	if (op) {
+		/* Enable HOST_WAKE_BT */
+		set_reg_value(0x4100C280, BIT13, 1);
+	} else {
+		/* Disable HOST_WAKE_BT */
+		set_reg_value(0x4100C280, BIT13, 0);
+	}
+}
+
+void hci_wakeup_bt_controller(void)
+{
+	hci_uart_op_host_wake_bt(true);
+	osif_delay(2);    /* Ensure the high pulse >= 1ms */
+	hci_uart_op_host_wake_bt(false);
+	hci_uart_op_host_wake_bt(true);
+	osif_delay(8);
+}
+
 uint8_t hci_uart_set_bdrate(uint32_t baudrate)
 {
 	UART_SetBaud(HCI_UART_DEV, baudrate);
@@ -103,10 +134,14 @@ uint16_t hci_uart_send(uint8_t *buf, uint16_t len)
 	g_uart->tx_buf = buf;
 	g_uart->tx_len = len;
 
-	if (!HCI_BT_KEEP_AWAKE) {
-		/* acquire host wake bt */
-		set_reg_value(0x4100C280, BIT13, 1); /* enable HOST_WAKE_BT */
+#if defined(HCI_BT_POWER_SAVE_MODE) && (HCI_BT_POWER_SAVE_MODE == 1)
+	hci_acquire_bt_wakelock();
+
+	if (!hci_is_mp_mode() && hci_get_first_wakeup()) {
+		hci_wakeup_bt_controller();
+		hci_set_first_wakeup(false);
 	}
+#endif
 
 	UART_INTConfig(HCI_UART_DEV, RUART_BIT_ETBEI, ENABLE);
 
@@ -117,10 +152,9 @@ uint16_t hci_uart_send(uint8_t *buf, uint16_t len)
 		}
 	}
 
-	if (!HCI_BT_KEEP_AWAKE) {
-		/* release host wake bt */
-		set_reg_value(0x4100C280, BIT13, 0); /* disable HOST_WAKE_BT */
-	}
+#if defined(HCI_BT_POWER_SAVE_MODE) && (HCI_BT_POWER_SAVE_MODE == 1)
+	hci_release_bt_wakelock();
+#endif
 
 	/* Trigger TX Empty Interrrupt, so TX done here */
 	return len;

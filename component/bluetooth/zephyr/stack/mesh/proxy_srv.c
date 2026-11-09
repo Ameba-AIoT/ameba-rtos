@@ -958,6 +958,16 @@ static void svc_reg_work_handler(struct k_work *work);
 static struct k_work_delayable svc_reg_work = Z_WORK_DELAYABLE_INITIALIZER(svc_reg_work_handler);
 static uint32_t svc_reg_attempts;
 
+#if ZEPHYR_RTK_PATCH
+void zephyr_mesh_proxy_srv_work_reset(void)
+{
+	for (size_t i = 0; i < ARRAY_SIZE(clients); i++) {
+		k_work_reset(&clients[i].send_beacons);
+	}
+	k_work_delayable_reset(&svc_reg_work);
+}
+#endif
+
 static void svc_reg_work_handler(struct k_work *work)
 {
 	ARG_UNUSED(work);

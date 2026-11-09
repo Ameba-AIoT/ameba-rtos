@@ -88,6 +88,8 @@ extern "C" {
 #define USBH_HID_TRACK_USAGE_CNT               5U   /**< Tracked usages: volume up/down/mute, play-pause, stop */
 #define USBH_HID_ARRAY_ELEM_CNT                4U   /**< Max usage codes decoded from one Array field */
 #define USBH_HID_REPORT_MAX_LEN                64U  /**< Largest FS/LS INTR IN report kept per ring node (Ref USB 2.0 5.7.3) */
+#define USBH_HID_DESC_LEN                      9U   /**< HID descriptor length with one class descriptor, Ref HID 1.11 6.2.1 */
+#define USBH_HID_HALT_RETRY_MAX_CNT            3U   /**< CLEAR_FEATURE(ENDPOINT_HALT) attempts before the device is re-enumerated */
 
 /** @} End of Host_HID_Constants group */
 /** @} End of USB_Host_Constants group */
@@ -139,10 +141,13 @@ typedef enum {
 
 /**
  * @brief HID Event Structure.
+ * @note  Reported once per INTR IN report, also for a report repeating the previous one. Only presses are
+ *        decoded: a tracked control set in the report gives its type with is_press 1, a report with no tracked
+ *        control set, a key release included, gives VOLUME_EVENT_NONE with is_press 0.
  */
 typedef struct {
-	usbh_hid_event_type_t type; /**< Event type */
-	u8 is_press;                          /**< 1 if pressed, 0 if released */
+	usbh_hid_event_type_t type; /**< Event type, VOLUME_EVENT_NONE when no tracked control is set */
+	u8 is_press;                          /**< 1 if a tracked control is pressed, 0 for VOLUME_EVENT_NONE */
 } usbh_hid_event_t;
 
 /**
@@ -192,6 +197,7 @@ typedef struct {
 	} consumer_array;
 
 	u8 report_id_count;         /**< Number of report IDs found */
+	u8 report_id_zero;          /**< The descriptor declares the reserved Report ID 0, so its reports can not be framed */
 } usbh_hid_ctrl_caps_t;
 
 /**
@@ -228,7 +234,7 @@ typedef struct {
 	void (*attached)(void);    /**< Called when device is attached */
 	void (*detached)(void);    /**< Called when device is detached */
 	void (*setup)(void);       /**< Called during setup phase */
-	void (*report)(usbh_hid_event_t *event); /**< Called when a HID event occurs */
+	void (*report)(usbh_hid_event_t *event); /**< Called for every INTR IN report received, see usbh_hid_event_t */
 } usbh_hid_usr_cb_t;
 
 typedef struct {
@@ -241,6 +247,9 @@ typedef struct {
 	u8 itf_idx;                               /**< Interface Index */
 	u8 itf_alt_idx;                           /**< Interface Alternate Setting Index */
 	u8 alt_setting_count;                     /**< Number of alternate settings on this HID interface */
+	u8 halt_pending;                          /**< INTR IN STALLed, CLEAR_FEATURE(ENDPOINT_HALT) to be sent */
+	u8 halt_retry_cnt;                        /**< Failed CLEAR_FEATURE(ENDPOINT_HALT) attempts */
+	u8 report_cut_logged;                     /**< A report longer than a ring node was reported for this attach */
 
 	/* Descriptors */
 	usbh_dev_hid_desc_t hid_desc;             /**< HID Descriptor */
@@ -248,6 +257,8 @@ typedef struct {
 	usbh_ep_desc_t ep_desc_out;               /**< Interrupt OUT Endpoint Descriptor, optional */
 	u8 *report_desc;                          /**< Alias pointer into hid_ctrl_buf (zero-copy). Valid only until setup() ends:
 	                                               hid_ctrl_buf then becomes the INTR IN buffer and is overwritten by reports. */
+	u8 *report_desc_buf;                      /**< Report descriptor larger than hid_ctrl_buf: allocated for the fetch and
+	                                               freed once it is parsed, or by detach */
 	usbh_hid_ctrl_caps_t vol_caps;            /**< Volume capabilities detected; written with hid_ctrl under the USB
 	                                               critical section, read by the parse thread through caps_snap */
 
@@ -308,8 +319,8 @@ void usbh_hid_deinit(void);
  *         start on a cache line boundary (declare it with USB_DMA_ALIGNED, or take it from
  *         the heap) and stay valid and unchanged until the transfer completes.
  * @param  len: Length of the report data in bytes.
- * @return 0 (HAL_OK) on success, HAL_ERR_PARA if no OUT pipe is available or buf is NULL or
- *         not cache line aligned, HAL_BUSY if a transfer is already in progress.
+ * @return 0 (RTK_SUCCESS) on success, -RTK_ERR_BADARG if no OUT pipe is available or buf is NULL or
+ *         not cache line aligned, -RTK_ERR_BUSY if a transfer is already in progress.
  * @note   Only available when the HID interface exposes an Interrupt OUT endpoint.
  */
 int usbh_hid_send_report(u8 *buf, u32 len);

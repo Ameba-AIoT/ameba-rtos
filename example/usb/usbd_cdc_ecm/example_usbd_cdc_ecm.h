@@ -9,6 +9,8 @@
 
 /* Includes ------------------------------------------------------------------*/
 
+#include "basic_types.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -24,7 +26,8 @@ extern "C" {
 /* Exported functions --------------------------------------------------------*/
 
 void example_usbd_cdc_ecm(void);
-
+int example_usbd_cdc_ecm_start(void);
+int example_usbd_cdc_ecm_stop(void);
 #ifdef __cplusplus
 }
 #endif

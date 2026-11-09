@@ -11,6 +11,8 @@
 #include "basic_types.h"
 #include "os_wrapper.h"
 #include "usbh_cdc_acm.h"
+#include "usb_app.h"
+#include "example_usbh_cdc_acm.h"
 
 /* Private defines -----------------------------------------------------------*/
 
@@ -44,12 +46,14 @@
 
 // Thread Priorities
 #define CONFIG_USBH_CDC_ACM_INIT_THREAD_PRIORITY             1U
+#define CONFIG_USBH_CDC_ACM_TEST_THREAD_PRIORITY             1U
 #define CONFIG_USBH_CDC_ACM_MAIN_TASK_PRIORITY               5U
 #define CONFIG_USBH_CDC_ACM_HOTPLUG_THREAD_PRIORITY          6U
 #define CONFIG_USBH_CDC_ACM_BULK_XFER_THREAD_PRIORITY        3U
 
 // Thread Stack Sizes
 #define CONFIG_USBH_CDC_ACM_INIT_THREAD_STACK_SIZE             1024U
+#define CONFIG_USBH_CDC_ACM_TEST_THREAD_STACK_SIZE             1024U
 #define CONFIG_USBH_CDC_ACM_MAIN_TASK_STACK_SIZE               1024U
 #define CONFIG_USBH_CDC_ACM_HOTPLUG_THREAD_STACK_SIZE          1024U
 #define CONFIG_USBH_CDC_ACM_BULK_XFER_THREAD_STACK_SIZE        (1024U * 2)
@@ -65,12 +69,12 @@ static void cdc_acm_cb_deinit(void);
 static void cdc_acm_cb_attached(void);
 static void cdc_acm_cb_detached(void);
 static void cdc_acm_cb_setup(void);
-static void cdc_acm_cb_transmitted(u8 status);
-static void cdc_acm_cb_received(u8 *buf, u32 len, u8 status);
+static void cdc_acm_cb_transmitted(int status);
+static void cdc_acm_cb_received(u8 *buf, u32 len, int status);
 static void cdc_acm_cb_line_coding_changed(usb_cdc_acm_line_coding_t *line_coding);
 static void cdc_acm_cb_process(usb_host_t *host, u8 msg);
 #ifdef CONFIG_USBH_CDC_ACM_NOTIFY
-static void cdc_acm_cb_notify(u8 *buf, u32 len, u8 status);
+static void cdc_acm_cb_notify(u8 *buf, u32 len, int status);
 static void cdc_acm_notify_test(void);
 #endif
 #if CONFIG_USBH_CDC_ACM_SPEED_TEST
@@ -97,7 +101,7 @@ static u8 cdc_acm_loopback_rx_buf[USBH_CDC_ACM_LOOPBACK_BUF_SIZE] USB_DMA_ALIGNE
 static u8 cdc_acm_notify_rx_buf[USBH_CDC_ACM_NOTIFY_BUF_SIZE] USB_DMA_ALIGNED;
 static rtos_sema_t cdc_acm_notify_sema;
 /* Written by the class callback, read by the notify thread, possibly on another core */
-static volatile u8 cdc_acm_notify_status;
+static volatile int cdc_acm_notify_status;
 #endif
 static rtos_sema_t cdc_acm_detach_sema;
 /* Given once per completed class setup, i.e. once per enumerated device: each
@@ -126,10 +130,8 @@ static u32 cdc_acm_round_session = 0U;
    can be past that check and inside usbh_notify() while core 0 is freeing the
    very tables it walks. The workers must therefore be excluded by lock, not by
    core.
-   Created before the stack comes up and never deleted: the worker threads can
-   not be joined by the example, so there is no point in time at which this mutex
-   is provably unreferenced. cdc_acm_stack_ready is the gate that keeps callers
-   off the stack instead. */
+   Created by start before the stack comes up, deleted by the teardown owner only
+   after every worker is joined. */
 static rtos_mutex_t cdc_acm_state_mutex = NULL;
 
 /* 1: usbh_init() and usbh_cdc_acm_init() are both done and the class API may be
@@ -143,9 +145,9 @@ static volatile u8 cdc_acm_stack_ready = 0;
    the hotplug thread could be starved out of a teardown it must perform. */
 static volatile u8 cdc_acm_teardown = 0;
 
-/* Set by the hotplug thread when the stack can not be rebuilt. Tells every
-   worker to stop for good rather than spin against a stack that is gone. */
-static volatile u8 cdc_acm_stack_fatal = 0;
+/* Start/stop state. quit is set by the teardown owner: a stop, or the hotplug thread
+   when the stack can not be rebuilt. Every worker gives up its round and leaves. */
+static usb_app_ctx_t cdc_acm_app;
 
 static const usbh_cdc_acm_config_t cdc_acm_class_cfg = {
 	/* 115200 8N1 with DTR asserted; char_format/parity_type are left 0, which is the
@@ -220,24 +222,24 @@ static volatile u64 rx_loop_cnt = 0, rx_loop_sub_cnt = 0;
   *         cleared if a teardown is pending or the stack is gone for good. A
   *         hotplug right after this check is harmless - the mutex stays valid and
   *         the re-check under it catches the loss.
-  * @retval HAL_OK when the lock is held and the stack is usable, HAL_ERR_HW when
+  * @retval RTK_SUCCESS when the lock is held and the stack is usable, -RTK_ERR_IO when
   *         the caller must give up without unlocking
   */
 static int cdc_acm_lock_stack(void)
 {
-	if ((cdc_acm_stack_ready == 0U) || (cdc_acm_teardown != 0U)) {
-		return HAL_ERR_HW;
+	if ((cdc_acm_stack_ready == 0U) || (cdc_acm_teardown != 0U) || (cdc_acm_app.quit != 0U)) {
+		return -RTK_ERR_IO;
 	}
 
 	rtos_mutex_take(cdc_acm_state_mutex, RTOS_MAX_TIMEOUT);
 
-	if ((cdc_acm_stack_ready == 0U) || (cdc_acm_teardown != 0U)) {
+	if ((cdc_acm_stack_ready == 0U) || (cdc_acm_teardown != 0U) || (cdc_acm_app.quit != 0U)) {
 		/* Lost the race against a teardown */
 		rtos_mutex_give(cdc_acm_state_mutex);
-		return HAL_ERR_HW;
+		return -RTK_ERR_IO;
 	}
 
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 /**
@@ -279,7 +281,7 @@ static void cdc_acm_unlock_stack(void)
 static u8 cdc_acm_round_gone(void)
 {
 	return ((cdc_acm_is_ready == 0) || (cdc_acm_session != cdc_acm_round_session) || (cdc_acm_teardown != 0U) ||
-			(cdc_acm_stack_fatal != 0U)) ? 1U : 0U;
+			(cdc_acm_app.quit != 0U)) ? 1U : 0U;
 }
 
 /**
@@ -289,30 +291,63 @@ static u8 cdc_acm_round_gone(void)
   *         is gone. It must never wait for the NEXT device: that device's setup
   *         starts a round of its own, and running this round against it would
   *         run the tests twice for one enumeration.
-  * @retval HAL_OK when the class API may be used, HAL_ERR_HW otherwise
+  * @retval RTK_SUCCESS when the class API may be used, -RTK_ERR_IO otherwise
   */
 static int cdc_acm_wait_ready(void)
 {
-	while ((cdc_acm_is_ready != 0) && (cdc_acm_session == cdc_acm_round_session) && (cdc_acm_stack_fatal == 0U)) {
+	while ((cdc_acm_is_ready != 0) && (cdc_acm_session == cdc_acm_round_session) && (cdc_acm_app.quit == 0U)) {
 		if ((cdc_acm_stack_ready != 0U) && (cdc_acm_teardown == 0U)) {
-			return HAL_OK;
+			return RTK_SUCCESS;
 		}
 		rtos_time_delay_ms(USBH_CDC_ACM_READY_POLL_MS);
 	}
 
 	RTK_LOGS(TAG, RTK_LOG_ERROR, "Device not ready\n");
-	return HAL_ERR_HW;
+	return -RTK_ERR_IO;
+}
+
+/**
+  * @brief  Wake every worker parked on a sema, so that it sees quit and leaves
+  * @note   A stale count left on a completion sema is drained before the next transfer.
+  * @retval None
+  */
+static void cdc_acm_wake_workers(void)
+{
+	rtos_sema_give(cdc_acm_detach_sema);
+	rtos_sema_give(cdc_acm_ready_sema);
+	rtos_sema_give(cdc_acm_send_sema);
+	rtos_sema_give(cdc_acm_receive_sema);
+#ifdef CONFIG_USBH_CDC_ACM_NOTIFY
+	rtos_sema_give(cdc_acm_notify_sema);
+#endif
+}
+
+/**
+  * @brief  Deinit the USB stack if it is up
+  * @note   Only called by the teardown owner after every worker is joined. The stack is
+  *         already down if the hotplug thread left between its teardown and re-init.
+  * @retval None
+  */
+static void cdc_acm_stack_deinit(void)
+{
+	if (cdc_acm_stack_ready != 0U) {
+		cdc_acm_stack_ready = 0U;
+		usbh_stop();
+		usbh_cdc_acm_deinit();
+		usbh_deinit();
+	}
 }
 
 /**
   * @brief  Free the objects shared by the example threads
-  * @note   Only called by the last running thread, after the USB stack is fully
-  *         deinited, so that no class callback can touch these objects any more.
-  *         cdc_acm_state_mutex is deliberately kept, see its declaration.
+  * @note   Only called by the teardown owner, after every worker is joined and the
+  *         USB stack is fully deinited, so that nothing can touch these objects any more.
   * @retval None
   */
 static void cdc_acm_free_resource(void)
 {
+	rtos_mutex_delete(cdc_acm_state_mutex);
+	cdc_acm_state_mutex = NULL;
 	rtos_sema_delete(cdc_acm_detach_sema);
 	cdc_acm_detach_sema = NULL;
 	rtos_sema_delete(cdc_acm_ready_sema);
@@ -334,7 +369,7 @@ static void cdc_acm_free_resource(void)
 static int cdc_acm_cb_init(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "INIT\n");
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 static void cdc_acm_cb_deinit(void)
@@ -366,12 +401,12 @@ static void cdc_acm_cb_setup(void)
 }
 
 #ifdef CONFIG_USBH_CDC_ACM_NOTIFY
-static void cdc_acm_cb_notify(u8 *buf, u32 len, u8 status)
+static void cdc_acm_cb_notify(u8 *buf, u32 len, int status)
 {
 	UNUSED(buf);
 	UNUSED(len);
 
-	if (status != HAL_OK) {
+	if (status != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Notify fail: %d\n", status);
 	}
 	cdc_acm_notify_status = status;
@@ -379,10 +414,10 @@ static void cdc_acm_cb_notify(u8 *buf, u32 len, u8 status)
 }
 #endif
 
-static void cdc_acm_cb_received(u8 *buf, u32 len, u8 status)
+static void cdc_acm_cb_received(u8 *buf, u32 len, int status)
 {
 	UNUSED(buf);
-	if (status == HAL_OK) {
+	if (status == RTK_SUCCESS) {
 		u16 cdc_acm_bulk_in_mps = usbh_cdc_acm_get_bulk_ep_mps();
 		if ((len > 0) && ((cdc_acm_total_rx_len + len) <= USBH_CDC_ACM_LOOPBACK_BUF_SIZE)) {
 			//memcpy(cdc_acm_loopback_rx_buf + cdc_acm_total_rx_len, buf, len);
@@ -400,9 +435,9 @@ static void cdc_acm_cb_received(u8 *buf, u32 len, u8 status)
 	}
 }
 
-static void cdc_acm_cb_transmitted(u8 status)
+static void cdc_acm_cb_transmitted(int status)
 {
-	if (status == HAL_OK) {
+	if (status == RTK_SUCCESS) {
 		/*TX done*/
 		rtos_sema_give(cdc_acm_send_sema);
 	} else {
@@ -444,7 +479,7 @@ static void example_usbh_bulk_tx_thread(void *param)
 		while (1) {
 #endif
 			for (i = 0; i < USBH_CDC_ACM_LOOPBACK_CNT;) {
-				usb_os_memset((void *)cdc_acm_loopback_tx_buf, (u8)(cdc_acm_loopback_tx_idx & 0xFF), USBH_CDC_ACM_LOOPBACK_BUF_SIZE);
+				memset((void *)cdc_acm_loopback_tx_buf, (u8)(cdc_acm_loopback_tx_idx & 0xFF), USBH_CDC_ACM_LOOPBACK_BUF_SIZE);
 				*((u32 *)cdc_acm_loopback_tx_buf) = cdc_acm_loopback_tx_idx;
 				if (cdc_acm_round_gone() != 0U) {
 					RTK_LOGS(TAG, RTK_LOG_INFO, "Device disconnect\n");
@@ -455,14 +490,14 @@ static void example_usbh_bulk_tx_thread(void *param)
 				   completion callback: the callback never comes for a device
 				   that was just unplugged, and the hotplug thread must not be
 				   blocked for the whole transfer budget. */
-				if (cdc_acm_lock_stack() != HAL_OK) {
+				if (cdc_acm_lock_stack() != RTK_SUCCESS) {
 					goto tx_exit;
 				}
 				cdc_acm_drain_sema(cdc_acm_send_sema);
 				ret = usbh_cdc_acm_transmit(cdc_acm_loopback_tx_buf, USBH_CDC_ACM_LOOPBACK_BUF_SIZE);
 				cdc_acm_unlock_stack();
 
-				if (ret == HAL_OK) {
+				if (ret == RTK_SUCCESS) {
 					if (rtos_sema_take(cdc_acm_send_sema, USBH_CDC_ACM_XFER_TIMEOUT_MS) != RTK_SUCCESS) {
 						/* No completion: the device is gone or wedged. Drop the
 						   round and let the checks above decide what to do. */
@@ -472,7 +507,7 @@ static void example_usbh_bulk_tx_thread(void *param)
 					tx_loop_sub_cnt = i;
 					cdc_acm_loopback_tx_idx++;
 				} else {
-					usb_os_delay_us(1);
+					rtos_time_delay_us(1);
 				}
 			}
 
@@ -501,28 +536,28 @@ static void example_usbh_bulk_rx_thread(void *param)
 		while (1) {
 #endif
 			for (i = 0; i < USBH_CDC_ACM_LOOPBACK_CNT;) {
-				usb_os_memset((void *)cdc_acm_loopback_rx_buf, 0, USBH_CDC_ACM_LOOPBACK_BUF_SIZE);
+				memset((void *)cdc_acm_loopback_rx_buf, 0, USBH_CDC_ACM_LOOPBACK_BUF_SIZE);
 				if (cdc_acm_round_gone() != 0U) {
 					RTK_LOGS(TAG, RTK_LOG_INFO, "Device disconnect\n");
 					goto rx_exit;
 				}
 
 				/* Lock covers the submit only, see the tx thread for why. */
-				if (cdc_acm_lock_stack() != HAL_OK) {
+				if (cdc_acm_lock_stack() != RTK_SUCCESS) {
 					goto rx_exit;
 				}
 				cdc_acm_drain_sema(cdc_acm_receive_sema);
 				ret = usbh_cdc_acm_receive(cdc_acm_loopback_rx_buf, USBH_CDC_ACM_LOOPBACK_BUF_SIZE);
 				cdc_acm_unlock_stack();
 
-				if (ret == HAL_OK) {
+				if (ret == RTK_SUCCESS) {
 					if (rtos_sema_take(cdc_acm_receive_sema, USBH_CDC_ACM_XFER_TIMEOUT_MS) != RTK_SUCCESS) {
 						continue;
 					}
 					i++;
 					rx_loop_sub_cnt = i;
 				} else {
-					usb_os_delay_us(1);
+					rtos_time_delay_us(1);
 				}
 			}
 			rx_loop_sub_cnt = 0;
@@ -546,7 +581,7 @@ static void cdc_acm_speed_loopback_test(void)
 	rtos_task_t tx_task;
 	rtos_task_t rx_task;
 
-	if (cdc_acm_wait_ready() != HAL_OK) {
+	if (cdc_acm_wait_ready() != RTK_SUCCESS) {
 		return;
 	}
 
@@ -565,7 +600,10 @@ static void cdc_acm_speed_loopback_test(void)
 						   CONFIG_USBH_CDC_ACM_BULK_XFER_THREAD_STACK_SIZE, CONFIG_USBH_CDC_ACM_BULK_XFER_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create tx_task fail\n");
-		goto exit_delete_rx_task;
+		/* End the round so the rx worker leaves on its own, then join it: it may hold the stack lock */
+		cdc_acm_round_session--;
+		rtos_sema_take(cdc_acm_worker_exit_sema, RTOS_SEMA_MAX_COUNT);
+		return;
 	}
 
 	/* Join both workers. Each one leaves on its own once the device is gone
@@ -573,10 +611,6 @@ static void cdc_acm_speed_loopback_test(void)
 	   transfer budget after an unplug. */
 	(void)rtos_sema_take(cdc_acm_worker_exit_sema, RTOS_SEMA_MAX_COUNT);
 	(void)rtos_sema_take(cdc_acm_worker_exit_sema, RTOS_SEMA_MAX_COUNT);
-	return;
-
-exit_delete_rx_task:
-	rtos_task_delete(rx_task);
 }
 #else
 static void cdc_acm_loopback_test(void)
@@ -587,9 +621,9 @@ static void cdc_acm_loopback_test(void)
 	u8 j = 0;
 #endif
 
-	usb_os_memset((void *)cdc_acm_loopback_tx_buf, 0, USBH_CDC_ACM_LOOPBACK_BUF_SIZE);
+	memset((void *)cdc_acm_loopback_tx_buf, 0, USBH_CDC_ACM_LOOPBACK_BUF_SIZE);
 
-	if (cdc_acm_wait_ready() != HAL_OK) {
+	if (cdc_acm_wait_ready() != RTK_SUCCESS) {
 		return;
 	}
 
@@ -597,10 +631,10 @@ static void cdc_acm_loopback_test(void)
 
 #if CONFIG_USBH_CDC_ACM_STRESS_TEST
 	while (1) {
-		usb_os_memset((void *)cdc_acm_loopback_tx_buf, j, USBH_CDC_ACM_LOOPBACK_BUF_SIZE);
+		memset((void *)cdc_acm_loopback_tx_buf, j, USBH_CDC_ACM_LOOPBACK_BUF_SIZE);
 #endif
 		for (i = 0; i < USBH_CDC_ACM_LOOPBACK_CNT; i++) {
-			usb_os_memset((void *)cdc_acm_loopback_rx_buf, 0, USBH_CDC_ACM_LOOPBACK_BUF_SIZE);
+			memset((void *)cdc_acm_loopback_rx_buf, 0, USBH_CDC_ACM_LOOPBACK_BUF_SIZE);
 			if (cdc_acm_round_gone() != 0U) {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "Device disconnect\n");
 				return;
@@ -609,13 +643,13 @@ static void cdc_acm_loopback_test(void)
 			/* Submit under the lock, wait outside it: a device unplugged mid
 			   transfer never completes it, and the hotplug thread must not be
 			   held off for the whole transfer budget. */
-			if (cdc_acm_lock_stack() != HAL_OK) {
+			if (cdc_acm_lock_stack() != RTK_SUCCESS) {
 				return;
 			}
 			cdc_acm_drain_sema(cdc_acm_send_sema);
 			ret = usbh_cdc_acm_transmit(cdc_acm_loopback_tx_buf, USBH_CDC_ACM_LOOPBACK_BUF_SIZE);
 			cdc_acm_unlock_stack();
-			if (ret != HAL_OK) {
+			if (ret != RTK_SUCCESS) {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "TX fail: %d\n", ret);
 				return;
 			}
@@ -625,13 +659,13 @@ static void cdc_acm_loopback_test(void)
 				return;
 			}
 
-			if (cdc_acm_lock_stack() != HAL_OK) {
+			if (cdc_acm_lock_stack() != RTK_SUCCESS) {
 				return;
 			}
 			cdc_acm_drain_sema(cdc_acm_receive_sema);
 			ret = usbh_cdc_acm_receive(cdc_acm_loopback_rx_buf, USBH_CDC_ACM_LOOPBACK_BUF_SIZE);
 			cdc_acm_unlock_stack();
-			if (ret != HAL_OK) {
+			if (ret != RTK_SUCCESS) {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "RX fail: %d\n", ret);
 				return;
 			}
@@ -664,14 +698,14 @@ static void cdc_acm_loopback_test(void)
   */
 static void cdc_acm_notify_test(void)
 {
-	int ret = HAL_OK;
+	int ret = RTK_SUCCESS;
 	int i;
 
-	if (cdc_acm_wait_ready() != HAL_OK) {
+	if (cdc_acm_wait_ready() != RTK_SUCCESS) {
 		return;
 	}
 
-	if (cdc_acm_lock_stack() == HAL_OK) {
+	if (cdc_acm_lock_stack() == RTK_SUCCESS) {
 		usbh_cdc_acm_set_control_line_state(0x01U); /* DTR=1, RTS=0 */
 		cdc_acm_unlock_stack();
 	}
@@ -680,12 +714,12 @@ static void cdc_acm_notify_test(void)
 
 	for (i = 0; i < USBH_CDC_ACM_LOOPBACK_CNT; i++) {
 		if (cdc_acm_round_gone() != 0U) {
-			ret = HAL_ERR_UNKNOWN;
+			ret = RTK_FAIL;
 			break;
 		}
 		/* Lock covers the submit only, see cdc_acm_unlock_stack(). */
-		if (cdc_acm_lock_stack() != HAL_OK) {
-			ret = HAL_ERR_UNKNOWN;
+		if (cdc_acm_lock_stack() != RTK_SUCCESS) {
+			ret = RTK_FAIL;
 			break;
 		}
 		cdc_acm_drain_sema(cdc_acm_notify_sema);
@@ -693,14 +727,15 @@ static void cdc_acm_notify_test(void)
 		cdc_acm_unlock_stack();
 
 		if (rtos_sema_take(cdc_acm_notify_sema, USBH_CDC_ACM_XFER_TIMEOUT_MS) == RTK_SUCCESS) {
-			ret |= cdc_acm_notify_status;
-			if (cdc_acm_notify_status == HAL_OK) {
+			if (cdc_acm_notify_status != RTK_SUCCESS) {
+				ret = cdc_acm_notify_status;
+			} else {
 				/*Notify data received, for example, Serial State notification*/
 				RTK_LOGS(TAG, RTK_LOG_DEBUG, "Intr rx success(0x%02x 0x%02x)\n", cdc_acm_notify_rx_buf[USB_CDC_NOTIFY_HDR_LEN + 1],
 						 cdc_acm_notify_rx_buf[USB_CDC_NOTIFY_HDR_LEN]);
 			}
 		} else {
-			ret = HAL_ERR_UNKNOWN;
+			ret = RTK_FAIL;
 			break;
 		}
 	}
@@ -718,19 +753,21 @@ static void cdc_acm_request_test(void)
 	usb_cdc_acm_line_coding_t line_coding;
 	usb_cdc_acm_line_coding_t new_line_coding;
 
-	if (cdc_acm_wait_ready() != HAL_OK) {
+	if (cdc_acm_wait_ready() != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "NOT ready for CTRL test\n");
 		return;
 	}
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Control test start\n");
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "GET_LINE_CODING:");
-	if (cdc_acm_lock_stack() != HAL_OK) {
+	if (cdc_acm_lock_stack() != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "CTRL test FAIL\n");
 		return;
 	}
 	ret = usbh_cdc_acm_get_line_coding(&line_coding);
 	cdc_acm_unlock_stack();
-	if (ret == HAL_OK) {
+	if (ret == RTK_SUCCESS) {
 		RTK_LOGS(NOTAG, RTK_LOG_INFO, "DteRate: %u\nCharFormat: %d\nParityType: %d\nDataBits: %d\n",
 				 line_coding.b.dwDteRate, line_coding.b.bCharFormat, line_coding.b.bParityType, line_coding.b.bDataBits);
 	} else {
@@ -742,37 +779,42 @@ static void cdc_acm_request_test(void)
 	line_coding.b.bCharFormat = LINE_CODING_CHAR_FORMAT_1_STOP_BITS;
 	line_coding.b.bParityType = LINE_CODING_PARITY_NO;
 	line_coding.b.bDataBits = 8;
-	if (cdc_acm_lock_stack() != HAL_OK) {
+	if (cdc_acm_lock_stack() != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "CTRL test FAIL\n");
 		return;
 	}
 	ret = usbh_cdc_acm_set_line_coding(&line_coding);
 	cdc_acm_unlock_stack();
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "SET_LINE_CODING fail\n");
 	}
 
 	rtos_time_delay_ms(10); // delay for wait set line coding done
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "GET_LINE_CODING:");
-	if (cdc_acm_lock_stack() != HAL_OK) {
+	if (cdc_acm_lock_stack() != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "CTRL test FAIL\n");
 		return;
 	}
 	ret = usbh_cdc_acm_get_line_coding(&new_line_coding);
 	cdc_acm_unlock_stack();
-	if (ret == HAL_OK) {
+	if (ret == RTK_SUCCESS) {
 		RTK_LOGS(NOTAG, RTK_LOG_INFO, "DteRate: %u\nCharFormat: %d\nParityType: %d\nDataBits: %d\n",
 				 new_line_coding.b.dwDteRate, new_line_coding.b.bCharFormat, new_line_coding.b.bParityType, new_line_coding.b.bDataBits);
 	} else {
+		/* new_line_coding holds nothing to compare */
 		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "fail\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "CTRL test FAIL\n");
+		return;
 	}
 
 	if ((new_line_coding.b.dwDteRate == line_coding.b.dwDteRate) &&
 		(new_line_coding.b.bCharFormat == line_coding.b.bCharFormat) &&
 		(new_line_coding.b.bParityType == line_coding.b.bParityType) &&
 		(new_line_coding.b.bDataBits == line_coding.b.bDataBits)) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "Ctrl test PASS\n");
+		RTK_LOGS(TAG, RTK_LOG_INFO, "CTRL test PASS\n");
 	} else {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Ctrl test FAIL\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "CTRL test FAIL\n");
 	}
 }
 
@@ -780,11 +822,16 @@ static void cdc_acm_request_test(void)
 static void example_usbh_cdc_acm_hotplug_thread(void *param)
 {
 	int ret = 0;
+	u8 fatal = 0U;
 
 	UNUSED(param);
 
 	for (;;) {
 		if (rtos_sema_take(cdc_acm_detach_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
+			if (cdc_acm_app.quit != 0U) {
+				/* Stop requested: the stack is still up, example_usbh_cdc_acm_stop() tears it down */
+				break;
+			}
 			rtos_time_delay_ms(100);
 
 			/* Announce the teardown BEFORE contending for the lock, so a worker
@@ -812,25 +859,40 @@ static void example_usbh_cdc_acm_hotplug_thread(void *param)
 			rtos_time_delay_ms(10);
 			RTK_LOGS(TAG, RTK_LOG_INFO, "Free heap: 0x%x\n", rtos_mem_get_free_heap_size());
 
+			if (cdc_acm_app.quit != 0U) {
+				/* Stop requested: leave the stack down, stack_ready tells stop it is gone */
+				break;
+			}
+
 			rtos_mutex_take(cdc_acm_state_mutex, RTOS_MAX_TIMEOUT);
 
 			ret = usbh_init(&usbh_cfg, &usbh_usr_cb);
-			if (ret != HAL_OK) {
+			if (ret != RTK_SUCCESS) {
 				rtos_mutex_give(cdc_acm_state_mutex);
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "Init USBH fail\n");
+				fatal = 1U;
 				break;
 			}
 
 			ret = usbh_cdc_acm_init(&cdc_acm_usr_cb, &cdc_acm_class_cfg);
-			if (ret != HAL_OK) {
+			if (ret != RTK_SUCCESS) {
 				usbh_deinit();
 				rtos_mutex_give(cdc_acm_state_mutex);
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "Init CDC ACM fail\n");
+				fatal = 1U;
 				break;
 			}
 
 			/* Re-arm USB TRX after the re-init. */
-			usbh_start();
+			ret = usbh_start();
+			if (ret != RTK_SUCCESS) {
+				usbh_cdc_acm_deinit();
+				usbh_deinit();
+				rtos_mutex_give(cdc_acm_state_mutex);
+				RTK_LOGS(TAG, RTK_LOG_ERROR, "Start USBH fail\n");
+				fatal = 1U;
+				break;
+			}
 
 			/* Open the gate as the very last step, so no worker runs against a
 			   half-rebuilt stack. Clear teardown only after ready is set, or a
@@ -843,43 +905,90 @@ static void example_usbh_cdc_acm_hotplug_thread(void *param)
 		}
 	}
 
-	/* Either a re-init failed or the loop was asked to stop; in both cases the
-	   stack is gone for good. Keep the workers out and wake the ones parked on a
-	   completion sema so they observe the flag and quit. The semas are left alive
-	   on purpose: a worker may still be about to take one, and freeing them here
-	   would pull them out from under it. They are a fixed, bounded set of objects
-	   for the lifetime of the firmware, not a leak that grows. */
-	cdc_acm_stack_fatal = 1U;
-	cdc_acm_stack_ready = 0U;
-	cdc_acm_teardown = 1U;
-	rtos_sema_give(cdc_acm_send_sema);
-	rtos_sema_give(cdc_acm_receive_sema);
-	rtos_sema_give(cdc_acm_ready_sema);
-#ifdef CONFIG_USBH_CDC_ACM_NOTIFY
-	rtos_sema_give(cdc_acm_notify_sema);
-#endif
-	RTK_LOGS(TAG, RTK_LOG_ERROR, "Hotplug thread exit\n");
-
+	if (fatal != 0U) {
+		/* A re-init failed: the stack is gone for good (stack_ready stays 0) */
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Hotplug thread exit\n");
+		if (usb_app_ctx_claim_stop(&cdc_acm_app) != 0U) {
+			/* No stop is in flight: this thread finishes the teardown on its own */
+			cdc_acm_wake_workers();
+			if (usb_app_ctx_join(&cdc_acm_app, 1U) != RTK_SUCCESS) {
+				/* The test thread may still touch the shared objects: leak them */
+				rtos_task_delete(NULL);
+			}
+			cdc_acm_free_resource();
+			usb_app_ctx_end(&cdc_acm_app);
+			rtos_task_delete(NULL);
+		}
+	}
+	usb_app_ctx_leave(&cdc_acm_app);
 	rtos_task_delete(NULL);
 }
 #endif
 
-static void example_usbh_cdc_acm_thread(void *param)
+/**
+  * @brief  Test thread: one test round per enumerated device until quit
+  * @param  param: Unused
+  * @retval None
+  */
+static void example_usbh_cdc_acm_test_thread(void *param)
 {
-	int ret;
-#if CONFIG_USBH_CDC_ACM_HOT_PLUG_TEST
-	rtos_task_t task;
-#endif
-
 	UNUSED(param);
 
-	/* Created before the stack comes up and never deleted, see the declaration */
-	if (cdc_acm_state_mutex == NULL) {
-		ret = rtos_mutex_create(&cdc_acm_state_mutex);
-		if (ret != RTK_SUCCESS) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "Create state mutex fail\n");
-			goto error_exit;
+	/* One test round per enumerated device, until a stop or a fatal stack.
+	   The wait is unbounded and blocking, so no device plugged in costs no CPU;
+	   the teardown owner gives the sema to wake this thread. A count left by a
+	   device that was unplugged right after setup just yields a round whose
+	   tests see the device gone and return at once. */
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Wait for device attach\n");
+	for (;;) {
+		(void)rtos_sema_take(cdc_acm_ready_sema, RTOS_SEMA_MAX_COUNT);
+		if (cdc_acm_app.quit != 0U) {
+			break;
 		}
+		cdc_acm_round_session = cdc_acm_session;
+
+		cdc_acm_request_test();
+#if  CONFIG_USBH_CDC_ACM_SPEED_TEST
+		cdc_acm_speed_loopback_test();
+#else
+		cdc_acm_loopback_test();
+#endif
+#ifdef CONFIG_USBH_CDC_ACM_NOTIFY
+		cdc_acm_notify_test();
+#endif
+		if (cdc_acm_app.quit != 0U) {
+			break;
+		}
+		/* The device normally stays attached after a round, so say what is awaited next */
+		RTK_LOGS(TAG, RTK_LOG_INFO, "Test done, wait for device re-attach\n");
+	}
+
+	usb_app_ctx_leave(&cdc_acm_app);
+	rtos_task_delete(NULL);
+}
+
+/**
+  * @brief  Bring the stack and the worker threads up
+  * @retval RTK_SUCCESS, or the first error, with everything already created rolled back
+  */
+static int cdc_acm_start(void)
+{
+	int ret;
+	u32 workers = 0U;
+	rtos_task_t task;
+
+	ret = usb_app_ctx_begin(&cdc_acm_app);
+	if (ret != RTK_SUCCESS) {
+		return ret;
+	}
+
+	cdc_acm_teardown = 0U;
+	cdc_acm_is_ready = 0;
+
+	ret = rtos_mutex_create(&cdc_acm_state_mutex);
+	if (ret != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create state mutex fail\n");
+		goto error_exit;
 	}
 
 	ret = rtos_sema_create(&cdc_acm_detach_sema, 0U, 1U);
@@ -914,37 +1023,41 @@ static void example_usbh_cdc_acm_thread(void *param)
 	}
 #endif
 	ret = usbh_init(&usbh_cfg, &usbh_usr_cb);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		goto error_exit;
 	}
 
 	ret = usbh_cdc_acm_init(&cdc_acm_usr_cb, &cdc_acm_class_cfg);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		usbh_deinit();
 		goto error_exit;
 	}
 
 	/* All class drivers registered; start USB TRX so enumeration can run. */
-	usbh_start();
+	ret = usbh_start();
+	if (ret != RTK_SUCCESS) {
+		usbh_cdc_acm_deinit();
+		usbh_deinit();
+		goto error_exit;
+	}
 
 	/* The stack is fully up: allow the worker threads to call the class API. */
 	cdc_acm_stack_ready = 1U;
 
+	ret = rtos_task_create(&task, "usbh_acm_test_thread", example_usbh_cdc_acm_test_thread, NULL,
+						   CONFIG_USBH_CDC_ACM_TEST_THREAD_STACK_SIZE, CONFIG_USBH_CDC_ACM_TEST_THREAD_PRIORITY);
+	if (ret != RTK_SUCCESS) {
+		goto exit_create_task_fail;
+	}
+	workers++;
+
 #if CONFIG_USBH_CDC_ACM_HOT_PLUG_TEST
+	/* Created last: it owns the stack once running, so nothing after it can fail */
 	ret = rtos_task_create(&task, "usbh_acm_hotplug_thread",
 						   example_usbh_cdc_acm_hotplug_thread, NULL,
 						   CONFIG_USBH_CDC_ACM_HOTPLUG_THREAD_STACK_SIZE, CONFIG_USBH_CDC_ACM_HOTPLUG_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
-		/* The gate is already open, so hold it shut under the lock for this
-		   rollback too, exactly as the hotplug thread does. */
-		cdc_acm_teardown = 1U;
-		rtos_mutex_take(cdc_acm_state_mutex, RTOS_MAX_TIMEOUT);
-		cdc_acm_stack_ready = 0U;
-		usbh_stop();
-		usbh_cdc_acm_deinit();
-		usbh_deinit();
-		rtos_mutex_give(cdc_acm_state_mutex);
-		goto error_exit;
+		goto exit_create_task_fail;
 	}
 #if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
 	/* The USB OTG ISR is delivered on CPU0: the GIC pins every SPI to core 0
@@ -957,47 +1070,81 @@ static void example_usbh_cdc_acm_thread(void *param)
 #endif
 #endif
 
-	/* One test round per enumerated device, for as long as the firmware runs.
-	   The wait is unbounded and blocking, so no device plugged in costs no CPU;
-	   only a fatal stack ends the loop, and the hotplug thread gives the sema
-	   on that path to wake this thread. A count left by a device that was
-	   unplugged right after setup just yields a round whose tests see the device
-	   gone and return at once. */
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Wait for device attach\n");
-	for (;;) {
-		(void)rtos_sema_take(cdc_acm_ready_sema, RTOS_SEMA_MAX_COUNT);
-		if (cdc_acm_stack_fatal != 0U) {
-			break;
-		}
-		cdc_acm_round_session = cdc_acm_session;
+	return RTK_SUCCESS;
 
-		cdc_acm_request_test();
-#if  CONFIG_USBH_CDC_ACM_SPEED_TEST
-		cdc_acm_speed_loopback_test();
-#else
-		cdc_acm_loopback_test();
-#endif
-#ifdef CONFIG_USBH_CDC_ACM_NOTIFY
-		cdc_acm_notify_test();
-#endif
-		/* The device normally stays attached after a round, so say what is awaited next */
-		RTK_LOGS(TAG, RTK_LOG_INFO, "Test done, wait for device re-attach\n");
+exit_create_task_fail:
+	/* Wake and join the workers already running before the stack goes away */
+	cdc_acm_app.quit = 1U;
+	cdc_acm_wake_workers();
+	if (usb_app_ctx_join(&cdc_acm_app, workers) != RTK_SUCCESS) {
+		/* A worker may still run on the stack: keep it, the app stays not idle */
+		cdc_acm_app.state = USB_APP_STATE_STOPPING;
+		return -RTK_ERR_TIMEOUT;
 	}
+	cdc_acm_stack_deinit();
 
-	goto example_exit;
 error_exit:
-	/* Nothing was ever started, so no worker thread exists to race this: the
-	   semas can be released here. cdc_acm_state_mutex is deliberately kept, see
-	   its declaration. */
-	cdc_acm_stack_fatal = 1U;
 	cdc_acm_free_resource();
+	usb_app_ctx_end(&cdc_acm_app);
 	RTK_LOGS(TAG, RTK_LOG_ERROR, "USBH CDC ACM demo aborted\n");
-example_exit:
+
+	return ret;
+}
+
+static void example_usbh_cdc_acm_thread(void *param)
+{
+	UNUSED(param);
+
+	cdc_acm_start();
 	rtos_task_delete(NULL);
 }
 
 /* Exported functions --------------------------------------------------------*/
 
+/**
+  * @brief  Start the CDC ACM host, used by the USB app manager
+  * @note   Task context only
+  * @retval RTK_SUCCESS, -RTK_ERR_BUSY if already running, or the init error
+  */
+int example_usbh_cdc_acm_start(void)
+{
+	RTK_LOGS(TAG, RTK_LOG_INFO, "USBH CDC ACM demo start\n");
+
+	return cdc_acm_start();
+}
+
+/**
+  * @brief  Stop the CDC ACM host and release everything it owns
+  * @note   Task context only. Safe to call when not running.
+  * @retval RTK_SUCCESS once idle, -RTK_ERR_TIMEOUT if a worker did not leave in time
+  */
+int example_usbh_cdc_acm_stop(void)
+{
+	if (usb_app_ctx_claim_stop(&cdc_acm_app) == 0U) {
+		/* Idle, or the hotplug thread found the stack dead and finishes the teardown itself */
+		return usb_app_ctx_wait_idle(&cdc_acm_app);
+	}
+
+	cdc_acm_wake_workers();
+	if (usb_app_ctx_join(&cdc_acm_app, 1U + CONFIG_USBH_CDC_ACM_HOT_PLUG_TEST) != RTK_SUCCESS) {
+		/* A worker is still on the stack: keep everything, the app stays STOPPING */
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Stop timeout\n");
+		return -RTK_ERR_TIMEOUT;
+	}
+
+	/* Every worker is gone: this caller is the only one left on the stack */
+	cdc_acm_stack_deinit();
+	cdc_acm_free_resource();
+	usb_app_ctx_end(&cdc_acm_app);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "USBH CDC ACM demo stop\n");
+
+	return RTK_SUCCESS;
+}
+
+/**
+  * @brief  Example entry: start the CDC ACM host from its own thread
+  * @retval None
+  */
 void example_usbh_cdc_acm(void)
 {
 	int ret;

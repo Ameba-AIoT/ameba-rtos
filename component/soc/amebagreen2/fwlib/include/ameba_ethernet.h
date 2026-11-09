@@ -2452,9 +2452,10 @@ struct eth_mdio_ops;
 #define FEMAC_TX_W4_SHIFT_LGSEN     31
 #define FEMAC_TX_W4_BIT_LGSEN       ((u32)0x00000001 << FEMAC_TX_W4_SHIFT_LGSEN)
 
-/* LGMSS: Large Send MSS (Maximum Segment Size). */
-#define FEMAC_TX_W4_SHIFT_LGMSS     20
-#define FEMAC_TX_W4_MASK_LGMSS      ((u32)0x7FF << FEMAC_TX_W4_SHIFT_LGMSS)
+/* LGMTU: Large Send MTU. The IP total length of each segmented frame (MSS + L3 + L4 header length);
+ * hardware subtracts the L3/L4 header length to get the MSS. */
+#define FEMAC_TX_W4_SHIFT_LGMTU     20
+#define FEMAC_TX_W4_MASK_LGMTU      ((u32)0x7FF << FEMAC_TX_W4_SHIFT_LGMTU)
 
 
 /* ========================================================================== */
@@ -3253,7 +3254,7 @@ typedef struct {
 	u8  tx_lgsen;        /*!< TX: 1 = enable large send offload (TSO/LSO). */
 
 	/* --- Word 2 --- */
-	u16 tx_lgmss;        /*!< TX: Maximum segment size for large send offload. */
+	u16 tx_lgmtu;        /*!< TX: Large send MTU (IP total length of each segment). */
 	u8  csum_ip;         /*!< TX/RX: IP checksum offload control (TX) or error status (RX). */
 	u8  csum_l4;         /*!< TX/RX: L4 (TCP/UDP) checksum offload control (TX) or error status (RX). */
 

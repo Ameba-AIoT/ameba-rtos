@@ -84,8 +84,12 @@ int z_abort_timeout(struct _timeout *to)
     int idx;
 
 	to->to_ticks = 0;
-    osif_timer_stop(&to->handle);
-    osif_timer_delete(&to->handle);
+	/* handle is NULL if the timer was already released by zephyr_timers_clean() or fired */
+	if (to->handle) {
+		osif_timer_stop(&to->handle);
+		osif_timer_delete(&to->handle);
+		to->handle = NULL;
+	}
 
     key = k_spin_lock(&lock);
     for (idx = 0; idx < TIMER_ARRAY_MAX; idx++) {
@@ -97,6 +101,29 @@ int z_abort_timeout(struct _timeout *to)
     k_spin_unlock(&lock, key);
 
 	return 0;
+}
+
+/* Release all in-use timers, used when BT is disabled and the owners of the timeouts (works)
+ * are going to be re-initialized */
+void zephyr_timers_clean(void)
+{
+	struct _timeout *to;
+	k_spinlock_key_t key;
+	int idx;
+
+	for (idx = 0; idx < TIMER_ARRAY_MAX; idx++) {
+		key = k_spin_lock(&lock);
+		to = timer_array[idx];
+		timer_array[idx] = NULL;
+		k_spin_unlock(&lock, key);
+
+		if (to && to->handle) {
+			to->to_ticks = 0;
+			osif_timer_stop(&to->handle);
+			osif_timer_delete(&to->handle);
+			to->handle = NULL;
+		}
+	}
 }
 
 static bool z_is_inactive_timeout(const struct _timeout *timeout)

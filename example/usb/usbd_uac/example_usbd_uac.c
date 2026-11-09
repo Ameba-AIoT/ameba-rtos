@@ -12,6 +12,9 @@
 #include "platform_stdlib.h"
 #include "basic_types.h"
 #include "usbd_uac.h"
+#include "atcmd_service.h"
+#include "usb_app.h"
+#include "example_usbd_uac.h"
 
 /* This used to check the USB issue */
 /*
@@ -89,6 +92,9 @@
 #define USBD_UAC_RECORD_SLICE_LEN                 (USBD_UAC_RECORD_CHUNK_LEN / USBD_UAC_RECORD_SLICES_PER_MS)
 #endif
 
+/* Data worker threads joined by a stop: the player, plus the record thread */
+#define USBD_UAC_WORKER_CNT                       (1U + USBD_UAC_ENABLE_RECORD)
+
 #define AUDIO_BYTE_WIDTH_SIZE                   USBD_UAC_DEFAULT_BYTE_WIDTH
 #define AUDIO_SAMPLING_FREQ                     USBD_UAC_SAMPLING_FREQ_48K
 #define AUDIO_CHANNEL_NUM                       USBD_UAC_DEFAULT_CH_CNT
@@ -110,7 +116,8 @@
 /* Private function prototypes -----------------------------------------------*/
 
 #if USBD_UAC_ENABLE_RECORD
-static u32 uac_cmd_record(u16 argc, u8 *argv[]);
+static int uac_cmd_record(u16 argc, char *argv[]);
+static void uac_cmd_record_at(u16 argc, char **argv);
 #endif
 
 static int uac_cb_init(void);
@@ -128,15 +135,16 @@ static void uac_cb_format_changed(u32 sampling_freq, u8 ch_cnt, u8 byte_width);
 static const char *const TAG = "UAC";
 
 #if USBD_UAC_HOTPLUG
-static rtos_task_t check_status_task;
 static rtos_sema_t uac_attach_status_changed_sema;
 /* Written by the ISR, read by the hotplug thread, possibly on another core */
 static __IO u8 uac_attach_status;
+/* Set by the hotplug thread while the stack is torn down, so that a stop racing a failed
+   reinit does not deinit it twice */
+static __IO u8 uac_stack_down;
 #endif
-/* Raised by uac_stop_workers() when the stack is gone for good: the workers leave their
-   loops and the caller frees the shared objects. */
-static __IO u8 uac_stack_fatal = 0;
-static rtos_task_t uac_player_task;
+/* Start/stop state: example_usbd_uac_stop() raises quit, wakes every worker and joins them,
+   the workers leave their loops on quit */
+static usb_app_ctx_t uac_app;
 static rtos_sema_t uac_ready_sema;
 static __IO u8 uac_task_exiting = 0;
 static __IO u8 uac_player_stop = 0;
@@ -245,7 +253,6 @@ static const usbd_audio_cfg_t uac_record_cfg = {
 	.enable = 1,
 };
 static rtos_sema_t uac_record_start_sema;
-static rtos_task_t uac_record_task;
 /* 16-point sine LUT (one period), amplitude ~10000; drives a 1 kHz tone at 16 kHz */
 static const s16 uac_record_sine16[16] = {
 	0, 3827, 7071, 9239, 10000, 9239, 7071, 3827,
@@ -257,9 +264,10 @@ static u8 uac_record_chunk[USBD_UAC_RECORD_CHUNK_LEN] USB_DMA_ALIGNED;
 /* Exported variables --------------------------------------------------------*/
 
 #if USBD_UAC_ENABLE_RECORD
-CMD_TABLE_DATA_SECTION
-const COMMAND_TABLE usbd_uac_cmd_table[] = {
-	{"usbd_uac_record", uac_cmd_record},
+/* AT commands "AT+<cmd>=<p1>,<p2>...": the command name is case-sensitive, the parameters are not */
+ATCMD_TABLE_DATA_SECTION
+const log_item_t usbd_uac_cmd_table[] = {
+	{"+USBDUAC", uac_cmd_record_at},
 };
 #endif /* USBD_UAC_ENABLE_RECORD */
 
@@ -281,9 +289,8 @@ static void uac_state_unlock(void)
 
 /**
   * @brief  Free the objects shared by the example threads
-  * @note   Only called by the last running thread, after uac_stop_workers() and after the
-  *         USB stack is fully deinited, so that neither a worker nor an ISR callback can
-  *         touch these objects any more
+  * @note   Only called by the stop owner, after every worker has left and after the USB stack
+  *         is fully deinited, so that neither a worker nor an ISR callback can touch them
   * @retval None
   */
 static void uac_free_resource(void)
@@ -299,36 +306,14 @@ static void uac_free_resource(void)
 }
 
 /**
-  * @brief  Name the first worker thread that has not left yet
-  * @retval Thread name, NULL once every worker is gone
-  */
-static const char *uac_get_running_worker(void)
-{
-	if (uac_player_task != NULL) {
-		return "player";
-	}
-#if USBD_UAC_ENABLE_RECORD
-	if (uac_record_task != NULL) {
-		return "record";
-	}
-#endif
-	return NULL;
-}
-
-/**
-  * @brief  Ask the worker threads to leave for good and wait until they have
-  * @note   Each worker clears its handle as its last action and deletes itself. A worker is
-  *         never deleted from outside: it may be inside the class APIs or hold a lock, so the
-  *         wait is not bounded and a stuck worker is reported every 2s instead.
+  * @brief  Wake the worker threads so that they see quit and leave
+  * @note   Called with uac_app.quit already raised. A worker is never deleted from outside:
+  *         it may be inside the class APIs or hold a lock, it is joined instead.
   * @retval None
   */
-static void uac_stop_workers(void)
+static void uac_wake_workers(void)
 {
-	const char *name;
-	u32 wait_cnt = 0U;
-
 	uac_stack_ready = 0;
-	uac_stack_fatal = 1;
 	uac_task_exiting = 1;
 	usbd_uac_stop_play();
 #if USBD_UAC_ENABLE_RECORD
@@ -336,19 +321,6 @@ static void uac_stop_workers(void)
 	rtos_sema_give(uac_record_start_sema);
 #endif
 	rtos_sema_give(uac_ready_sema);
-
-	/* The playback loop needs the longest: usbd_uac_read() has a 500ms timeout and the
-	   AudioTrack teardown follows */
-	name = uac_get_running_worker();
-	while (name != NULL) {
-		rtos_time_delay_ms(20);
-		wait_cnt++;
-		if (wait_cnt >= 100U) {
-			RTK_LOGS(TAG, RTK_LOG_WARN, "Wait %s exit\n", name);
-			wait_cnt = 0U;
-		}
-		name = uac_get_running_worker();
-	}
 }
 
 /**
@@ -368,7 +340,7 @@ static int uac_cb_setup(usb_setup_req_t *req, u8 *buf)
 
 	/* No vendor request is implemented by this example, reject so that the class
 	   driver makes the core STALL EP0 instead of ACKing an unsupported request */
-	return HAL_ERR_PARA;
+	return -RTK_ERR_BADARG;
 }
 
 /**
@@ -378,7 +350,7 @@ static int uac_cb_setup(usb_setup_req_t *req, u8 *buf)
   */
 static int uac_cb_init(void)
 {
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 /**
@@ -388,7 +360,7 @@ static int uac_cb_init(void)
   */
 static int uac_cb_deinit(void)
 {
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 /**
@@ -401,7 +373,7 @@ static int uac_cb_deinit(void)
 static int uac_cb_set_config(void)
 {
 	//usb ready
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 /**
@@ -428,11 +400,16 @@ static void uac_cb_status_changed(u8 old_status, u8 status)
 static void example_usbd_uac_hotplug_thread(void *param)
 {
 	int ret = 0;
+	u8 fatal = 0U;
 
 	UNUSED(param);
 
 	for (;;) {
 		if (rtos_sema_take(uac_attach_status_changed_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
+			if (uac_app.quit != 0U) {
+				/* Stop requested: the stack is left as it is, the stop entry tears it down */
+				break;
+			}
 			if (uac_attach_status == USBD_ATTACH_STATUS_DETACHED) {
 				RTK_LOGS(TAG, RTK_LOG_INFO, "DETACHED\n");
 				/* Ask the workers to leave their loops first: stop_play()/stop_record()
@@ -457,19 +434,28 @@ static void example_usbd_uac_hotplug_thread(void *param)
 
 				usbd_uac_deinit();
 				usbd_deinit();
+				uac_stack_down = 1U;
+				if (uac_app.quit != 0U) {
+					/* Stop requested while the stack is down: skip the re-init, the stop sees uac_stack_down */
+					uac_state_unlock();
+					break;
+				}
 				uac_task_exiting = 0;
 				RTK_LOGS(TAG, RTK_LOG_INFO, "Free heap: 0x%x\n", rtos_mem_get_free_heap_size());
 				ret = usbd_init(&uac_cfg);
 				if (ret != 0) {
 					uac_state_unlock();
+					fatal = 1U;
 					break;
 				}
 				ret = usbd_uac_init(&uac_cb, &uac_class_cfg);
 				if (ret != 0) {
 					usbd_deinit();
 					uac_state_unlock();
+					fatal = 1U;
 					break;
 				}
+				uac_stack_down = 0U;
 				uac_stack_ready = 1;
 				uac_state_unlock();
 			} else if (uac_attach_status == USBD_ATTACH_STATUS_ATTACHED) {
@@ -479,12 +465,24 @@ static void example_usbd_uac_hotplug_thread(void *param)
 			}
 		}
 	}
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Hotplug thread fail\n");
-
-	/* The stack is fully deinited here, no more ISR callback: stop the workers
-	   blocked on the semaphores, then free them as the last thread standing. */
-	uac_stop_workers();
-	uac_free_resource();
+	if (fatal != 0U) {
+		RTK_LOGS(TAG, RTK_LOG_INFO, "Hotplug thread fail\n");
+		/* The stack is fully deinited here, no more ISR callback */
+		if (usb_app_ctx_claim_stop(&uac_app) != 0U) {
+			/* No stop is in flight: stop the workers blocked on the semaphores, then free
+			   the shared objects as the last thread standing */
+			uac_wake_workers();
+			if (usb_app_ctx_join(&uac_app, USBD_UAC_WORKER_CNT) != RTK_SUCCESS) {
+				/* A worker may still touch the shared objects: leak them */
+				RTK_LOGS(TAG, RTK_LOG_WARN, "Wait worker exit timeout\n");
+				rtos_task_delete(NULL);
+			}
+			uac_free_resource();
+			usb_app_ctx_end(&uac_app);
+			rtos_task_delete(NULL);
+		}
+	}
+	usb_app_ctx_leave(&uac_app);
 	rtos_task_delete(NULL);
 }
 #endif // USBD_UAC_HOTPLUG
@@ -582,15 +580,15 @@ static void example_audio_track_play(void)
 
 	/* Fails until the host has enumerated the device or for a format the class does not
 	   declare: wait for the next format change or attach instead of streaming unsized */
-	if (usbd_uac_config(&play_cfg, 0, 0) != HAL_OK) {
+	if (usbd_uac_config(&play_cfg, 0, 0) != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "UAC config fail\n");
 		return;
 	}
 	/* isoc_mps is cleared on deinit, so start_play() keeps failing once the stack is
 	   torn down: leave on any stop request instead of retrying forever. Nothing to
 	   unwind here, no AudioTrack has been created yet. */
-	while (usbd_uac_start_play() != HAL_OK) {
-		if ((uac_task_exiting != 0) || (uac_player_stop != 0) || (uac_stack_fatal != 0)) {
+	while (usbd_uac_start_play() != RTK_SUCCESS) {
+		if ((uac_task_exiting != 0) || (uac_player_stop != 0) || (uac_app.quit != 0U)) {
 			return;
 		}
 		rtos_time_delay_ms(5);
@@ -676,7 +674,7 @@ static void example_audio_track_play(void)
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "UAC stop %d\n", uac_player_stop);
 
-	while ((uac_task_exiting != 1) && (uac_player_stop != 1)) {
+	while ((uac_task_exiting != 1) && (uac_player_stop != 1) && (uac_app.quit == 0U)) {
 		read_dat_len = usbd_uac_read(recv_buf, USB_AUDIO_BUF_SIZE * 2, 500, NULL);
 		if (read_dat_len > 0) {
 #if USBD_UAC_DEMUX_CH_DEBUG
@@ -685,7 +683,7 @@ static void example_audio_track_play(void)
 			for (idx = 0, off = 0; idx < read_dat_len; idx += audio_src_step, off += audio_dst_step) {
 				// ch0 ch1 ch2 ch3 ch0 ch1 ch2 ch3 ch0 ch1 ch2 ch3
 				// 24  24  24  24  24  24  24  24  24  24  24  24
-				usb_os_memcpy((void *)(play_buf + off), (const void *)(recv_buf + idx), audio_dst_step);
+				memcpy((void *)(play_buf + off), (const void *)(recv_buf + idx), audio_dst_step);
 				play_data_size += audio_dst_step;
 			}
 
@@ -708,7 +706,7 @@ static void example_audio_track_play(void)
 #else
 	total_len = 0;
 	read_cnt = 0;
-	while ((uac_task_exiting != 1) && (uac_player_stop != 1)) {
+	while ((uac_task_exiting != 1) && (uac_player_stop != 1) && (uac_app.quit == 0U)) {
 		read_dat_len = usbd_uac_read(recv_buf, USB_AUDIO_BUF_SIZE * 2, 500, NULL);
 		read_cnt ++;
 		if (read_dat_len > 0) {
@@ -737,7 +735,7 @@ static void example_usbd_uac_audio_track_thread(void *param)
 		if (rtos_sema_take(uac_ready_sema, RTOS_SEMA_MAX_COUNT) != RTK_SUCCESS) {
 			break;
 		}
-		if (uac_stack_fatal != 0) {
+		if (uac_app.quit != 0U) {
 			break;
 		}
 		if (uac_task_exiting != 0) {
@@ -749,24 +747,24 @@ static void example_usbd_uac_audio_track_thread(void *param)
 		   uac_task_exiting before it asks for the lock, so the loop below always
 		   leaves and the wait is bounded. */
 		rtos_mutex_take(uac_play_lock, RTOS_MAX_TIMEOUT);
-		if (uac_stack_ready != 0U) {
+		if ((uac_stack_ready != 0U) && (uac_app.quit == 0U)) {
 			example_audio_track_play();
 		}
 		rtos_mutex_give(uac_play_lock);
 	} while (1);
 
-	/* Clear the handle last: uac_stop_workers() polls it to know this worker is
-	   gone before the semaphores are freed. */
-	uac_player_task = NULL;
+	/* Never deinits the stack: the stop owner does, once every worker is gone */
+	usb_app_ctx_leave(&uac_app);
 	rtos_task_delete(NULL);
 }
 
 #if USBD_UAC_ENABLE_RECORD
 /* Replays a synthetic 1 kHz tone as the microphone (USB IN) source, once triggered
- * by the "usbd_uac_record" console command. */
+ * by the "USBDUAC record" console command. */
 static void example_usbd_uac_record_thread(void *param)
 {
 	u32 i;
+	u32 tx_fail_cnt;
 	u32 frames = USBD_UAC_RECORD_CHUNK_LEN / (USBD_UAC_IN_DEFAULT_CH_CNT * USBD_UAC_IN_DEFAULT_BYTE_WIDTH);
 	s16 *frame = (s16 *)(void *)uac_record_chunk;
 
@@ -782,7 +780,7 @@ static void example_usbd_uac_record_thread(void *param)
 		if (rtos_sema_take(uac_record_start_sema, RTOS_SEMA_MAX_COUNT) != RTK_SUCCESS) {
 			break;
 		}
-		if (uac_stack_fatal != 0) {
+		if (uac_app.quit != 0U) {
 			break;
 		}
 
@@ -796,21 +794,31 @@ static void example_usbd_uac_record_thread(void *param)
 			continue;
 		}
 
-		if (usbd_uac_config(&uac_record_cfg, 1, 0) != HAL_OK) {
+		if (usbd_uac_config(&uac_record_cfg, 1, 0) != RTK_SUCCESS) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "UAC config fail\n");
 			rtos_mutex_give(uac_record_lock);
 			continue;
 		}
-		if (usbd_uac_start_record() != HAL_OK) {
+		if (usbd_uac_start_record() != RTK_SUCCESS) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "UAC start record fail\n");
 			rtos_mutex_give(uac_record_lock);
 			continue;
 		}
 
 		RTK_LOGS(TAG, RTK_LOG_INFO, "UAC record start\n");
-		while (uac_task_exiting == 0) {
+		tx_fail_cnt = 0U;
+		while ((uac_task_exiting == 0) && (uac_app.quit == 0U)) {
 			for (i = 0; i < USBD_UAC_RECORD_SLICES_PER_MS; i++) {
-				usbd_uac_transmit_data(&uac_record_chunk[i * USBD_UAC_RECORD_SLICE_LEN], USBD_UAC_RECORD_SLICE_LEN);
+				/* A live stream tolerates a lost slice, so keep the pace and only report the first
+				   failure of a run, to stay off the console at 8 kHz */
+				if (usbd_uac_transmit_data(&uac_record_chunk[i * USBD_UAC_RECORD_SLICE_LEN], USBD_UAC_RECORD_SLICE_LEN) != RTK_SUCCESS) {
+					if (tx_fail_cnt == 0U) {
+						RTK_LOGS(TAG, RTK_LOG_WARN, "UAC record tx fail\n");
+					}
+					tx_fail_cnt++;
+				} else {
+					tx_fail_cnt = 0U;
+				}
 			}
 			rtos_time_delay_ms(USBD_UAC_RECORD_CHUNK_DELAY_MS);
 		}
@@ -818,42 +826,72 @@ static void example_usbd_uac_record_thread(void *param)
 		rtos_mutex_give(uac_record_lock);
 	}
 
-	/* Clear the handle last: uac_stop_workers() polls it to know this worker is
-	   gone before the semaphores are freed. */
-	uac_record_task = NULL;
+	/* Never deinits the stack: the stop owner does, once every worker is gone */
+	usb_app_ctx_leave(&uac_app);
 	rtos_task_delete(NULL);
 }
 
-static u32 uac_cmd_record(u16 argc, u8 *argv[])
+static int uac_cmd_record(u16 argc, char *argv[])
 {
-	UNUSED(argc);
-	UNUSED(argv);
+	const char *cmd = (argc != 0U) ? argv[0] : NULL;
+
+	if ((cmd == NULL) || (_stricmp(cmd, "record") != 0) || (argc != 1U)) {
+		RTK_LOGS(TAG, RTK_LOG_INFO, "Usage: AT+USBDUAC=<cmd>\n");
+		RTK_LOGS(TAG, RTK_LOG_INFO, "  record   Replay the built-in clip on the mic (USB IN) stream once the host\n");
+		RTK_LOGS(TAG, RTK_LOG_INFO, "           configured it; each call queues one more session. UAC 2.0, non FS-only build only\n");
+		RTK_LOGS(TAG, RTK_LOG_INFO, "  help     Print this help\n");
+		return ((cmd != NULL) && ((_stricmp(cmd, "help") == 0) || (_stricmp(cmd, "?") == 0))) ? RTK_SUCCESS : -RTK_ERR_BADARG;
+	}
 
 	/* NULL only if the example never created it; once created it is never deleted, refer to
 	   uac_free_resource(), so the handle cannot be freed under this shell thread. */
-	if (uac_record_start_sema == NULL) {
-		return (u32)HAL_ERR_HW;
+	if ((uac_record_start_sema == NULL) || (uac_stack_ready == 0U) || (uac_app.quit != 0U)) {
+		/* Not running: a session queued now would only fire on the next start */
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Not running\n");
+		return -RTK_ERR_IO;
 	}
 
 	if (rtos_sema_give(uac_record_start_sema) != RTK_SUCCESS) {
-		return (u32)HAL_ERR_HW;
+		return -RTK_ERR_IO;
 	}
-	return (u32)HAL_OK;
+	return RTK_SUCCESS;
+}
+
+/* AT entry: argv[0] is reserved by the AT parser and argv[1] holds the first parameter */
+static void uac_cmd_record_at(u16 argc, char **argv)
+{
+	int ret = uac_cmd_record((argc != 0U) ? (u16)(argc - 1U) : 0U, &argv[1]);
+
+	if (ret == RTK_SUCCESS) {
+		at_printf(ATCMD_OK_END_STR);
+	} else {
+		at_printf(ATCMD_ERROR_END_STR, (int)ret);
+	}
 }
 
 #endif /* USBD_UAC_ENABLE_RECORD */
 
-static void example_usbd_uac_thread(void *param)
+/**
+  * @brief  Bring the stack and the worker threads up
+  * @retval RTK_SUCCESS, or the first error, with everything already created rolled back
+  */
+static int uac_start(void)
 {
-	UNUSED(param);
-	int ret = 0;
+	int ret;
+	u32 workers = 0U;
+	rtos_task_t task;
+
+	ret = usb_app_ctx_begin(&uac_app);
+	if (ret != RTK_SUCCESS) {
+		return ret;
+	}
 
 	/* Created before anything else and never deleted, see their declaration. */
 	if (uac_play_lock == NULL) {
 		ret = rtos_mutex_create(&uac_play_lock);
 		if (ret != RTK_SUCCESS) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Create play lock fail\n");
-			goto example_exit;
+			goto exit;
 		}
 	}
 #if USBD_UAC_ENABLE_RECORD
@@ -861,7 +899,7 @@ static void example_usbd_uac_thread(void *param)
 		ret = rtos_mutex_create(&uac_record_lock);
 		if (ret != RTK_SUCCESS) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Create record lock fail\n");
-			goto example_exit;
+			goto exit;
 		}
 	}
 #endif
@@ -869,7 +907,7 @@ static void example_usbd_uac_thread(void *param)
 	ret = rtos_sema_create(&uac_ready_sema, 0U, 1U);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create ready sema fail\n");
-		goto example_exit;
+		goto exit;
 	}
 
 #if USBD_UAC_ENABLE_RECORD
@@ -880,6 +918,11 @@ static void example_usbd_uac_thread(void *param)
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Create record sema fail\n");
 			goto exit;
 		}
+	} else {
+		/* Drop the sessions left queued by the previous run and its stop */
+		while (rtos_sema_take(uac_record_start_sema, 0U) == RTK_SUCCESS) {
+			/* drain */
+		}
 	}
 #endif
 
@@ -889,20 +932,20 @@ static void example_usbd_uac_thread(void *param)
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create detach sema fail\n");
 		goto exit;
 	}
+	uac_stack_down = 0U;
 #endif
 
-	/* A previous run ended in uac_stop_workers(), which leaves both raised */
-	uac_stack_fatal = 0;
+	/* A previous run ended in uac_wake_workers(), which leaves it raised */
 	uac_task_exiting = 0;
 
 	ret = usbd_init(&uac_cfg);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "USB init fail\n");
 		goto exit;
 	}
 
 	ret = usbd_uac_init(&uac_cb, &uac_class_cfg);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "UAC init fail\n");
 		goto clear_usb_driver_exit;
 	}
@@ -910,28 +953,28 @@ static void example_usbd_uac_thread(void *param)
 
 	/* Workers first and the hotplug thread last: the hotplug thread is the only one that
 	   tears the stack down on its own, so once it runs nothing is left to unwind here */
-	ret = rtos_task_create(&uac_player_task, "usbd_uac_audio_track_thread",
+	ret = rtos_task_create(&task, "usbd_uac_audio_track_thread",
 						   example_usbd_uac_audio_track_thread, NULL,
 						   USBD_UAC_PLAYER_THREAD_STACK_SIZE, USBD_UAC_PLAYER_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create audio track fail\n");
-		uac_player_task = NULL;
 		goto clear_workers_exit;
 	}
+	workers++;
 
 #if USBD_UAC_ENABLE_RECORD
-	ret = rtos_task_create(&uac_record_task, "usbd_uac_record_thread",
+	ret = rtos_task_create(&task, "usbd_uac_record_thread",
 						   example_usbd_uac_record_thread, NULL,
 						   USBD_UAC_RECORD_THREAD_STACK_SIZE, USBD_UAC_RECORD_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create record thread fail\n");
-		uac_record_task = NULL;
 		goto clear_workers_exit;
 	}
+	workers++;
 #endif
 
 #if USBD_UAC_HOTPLUG
-	ret = rtos_task_create(&check_status_task, "usbd_uac_hotplug_thread",
+	ret = rtos_task_create(&task, "usbd_uac_hotplug_thread",
 						   example_usbd_uac_hotplug_thread, NULL,
 						   USBD_UAC_HOTPLUG_THREAD_STACK_SIZE, USBD_UAC_HOTPLUG_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
@@ -944,18 +987,22 @@ static void example_usbd_uac_thread(void *param)
 	   so deinit's local interrupt disable is meaningful again under SMP. The player /
 	   record data threads stay unaffined: a pending deinit is excluded from them by
 	   uac_play_lock / uac_record_lock, not by core. */
-	rtos_task_set_affinity(check_status_task, 0);
+	rtos_task_set_affinity(task, 0);
 #endif
 #endif // USBD_UAC_HOTPLUG
 
-	rtos_time_delay_ms(100);
-
-	goto example_exit;
+	return RTK_SUCCESS;
 
 	/* Failure unwind, strictly one-way: the workers leave first (they block on the
 	   semaphores and call into the class), then the class, the core and the semaphores. */
 clear_workers_exit:
-	uac_stop_workers();
+	uac_app.quit = 1U;
+	uac_wake_workers();
+	if (usb_app_ctx_join(&uac_app, workers) != RTK_SUCCESS) {
+		/* A worker may still run on the stack: keep it, the app stays not idle */
+		uac_app.state = USB_APP_STATE_STOPPING;
+		return -RTK_ERR_TIMEOUT;
+	}
 	usbd_uac_deinit();
 
 clear_usb_driver_exit:
@@ -964,13 +1011,84 @@ clear_usb_driver_exit:
 exit:
 	RTK_LOGS(TAG, RTK_LOG_ERROR, "USBD UAC demo aborted\n");
 	uac_free_resource();
+	usb_app_ctx_end(&uac_app);
 
-example_exit:
+	return ret;
+}
+
+static void example_usbd_uac_thread(void *param)
+{
+	UNUSED(param);
+
+	if (uac_start() != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Start fail\n");
+	}
 	rtos_task_delete(NULL);
 }
 
 /* Exported functions --------------------------------------------------------*/
 
+/**
+  * @brief  Start the UAC device, used by the USB app manager
+  * @note   Task context only
+  * @retval RTK_SUCCESS, -RTK_ERR_BUSY if already running, or the init error
+  */
+int example_usbd_uac_start(void)
+{
+	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD UAC demo start\n");
+
+	return uac_start();
+}
+
+/**
+  * @brief  Stop the UAC device and release everything it owns
+  * @note   Task context only. Safe to call when not running.
+  * @retval RTK_SUCCESS once idle, -RTK_ERR_TIMEOUT if a worker did not leave in time
+  */
+int example_usbd_uac_stop(void)
+{
+	u32 workers = USBD_UAC_WORKER_CNT;
+
+	if (usb_app_ctx_claim_stop(&uac_app) == 0U) {
+		/* Idle, or the hotplug thread found the stack dead and finishes the teardown itself */
+		return usb_app_ctx_wait_idle(&uac_app);
+	}
+
+	/* The playback loop needs the longest: usbd_uac_read() has a 500ms timeout and the
+	   AudioTrack teardown follows */
+	uac_wake_workers();
+#if USBD_UAC_HOTPLUG
+	rtos_sema_give(uac_attach_status_changed_sema);
+	workers++;
+#endif
+	if (usb_app_ctx_join(&uac_app, workers) != RTK_SUCCESS) {
+		/* A worker is still on the stack: keep everything, the app stays STOPPING */
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Stop timeout\n");
+		return -RTK_ERR_TIMEOUT;
+	}
+
+	/* Every worker is gone: this caller is the only one left on the stack. A hotplug
+	   reinit racing the stop may have reopened the gate, close it again. */
+	uac_stack_ready = 0;
+#if USBD_UAC_HOTPLUG
+	/* The hotplug thread lost the claim after a failed reinit: the stack is already down */
+	if (uac_stack_down == 0U)
+#endif
+	{
+		usbd_uac_deinit();
+		usbd_deinit();
+	}
+	uac_free_resource();
+	usb_app_ctx_end(&uac_app);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD UAC demo stop\n");
+
+	return RTK_SUCCESS;
+}
+
+/**
+  * @brief  Example entry: start the UAC device from its own thread
+  * @retval None
+  */
 void example_usbd_uac(void)
 {
 	int ret;

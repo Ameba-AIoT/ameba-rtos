@@ -23,9 +23,9 @@ static int usbd_composite_set_config(usb_dev_t *dev, u8 config);
 static void usbd_composite_clear_config(usb_dev_t *dev, u8 config);
 static int usbd_composite_setup(usb_dev_t *dev, usb_setup_req_t *req);
 static void usbd_composite_sof(usb_dev_t *dev);
-static int usbd_composite_ep0_data_in(usb_dev_t *dev, u8 status);
+static int usbd_composite_ep0_data_in(usb_dev_t *dev, int status);
 static int usbd_composite_ep0_data_out(usb_dev_t *dev);
-static int usbd_composite_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status);
+static int usbd_composite_ep_data_in(usb_dev_t *dev, u8 ep_addr, int status);
 static int usbd_composite_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len);
 static void usbd_composite_status_changed(usb_dev_t *dev, u8 old_status, u8 status);
 static void usbd_composite_wakeup(usb_dev_t *dev);
@@ -123,11 +123,11 @@ static void usbd_composite_reset_active_func(void)
  * @param  min_if: Receives the lowest bInterfaceNumber, USBD_COMP_ITF_NONE if none found.
  * @param  max_if: Receives the highest bInterfaceNumber.
  * @param  iad_end: Receives the highest bFirstInterface + bInterfaceCount of the IADs, 0 if none found.
- * @retval HAL_OK, or HAL_ERR_PARA on a malformed block.
+ * @retval RTK_SUCCESS, or -RTK_ERR_BADARG on a malformed block.
  */
 static int usbd_composite_scan_func_desc(const u8 *desc, u16 len, u8 *min_if, u8 *max_if, u16 *iad_end)
 {
-	int ret = HAL_OK;
+	int ret = RTK_SUCCESS;
 	u16 i = 0U;
 	u16 end;
 	u8 dlen;
@@ -138,15 +138,15 @@ static int usbd_composite_scan_func_desc(const u8 *desc, u16 len, u8 *min_if, u8
 	*max_if = 0U;
 	*iad_end = 0U;
 
-	while ((i < len) && (ret == HAL_OK)) {
+	while ((i < len) && (ret == RTK_SUCCESS)) {
 		dlen = ((u16)(len - i) >= USB_LEN_DESC_HEADER) ? desc[i] : 0U;
 		if ((dlen < USB_LEN_DESC_HEADER) || ((u16)dlen > (u16)(len - i))) {
-			ret = HAL_ERR_PARA;
+			ret = -RTK_ERR_BADARG;
 		} else {
 			dtype = desc[i + 1U];
 			if (dtype == USB_DESC_TYPE_INTERFACE) {
 				if (dlen < USB_LEN_IF_DESC) {
-					ret = HAL_ERR_PARA;
+					ret = -RTK_ERR_BADARG;
 				} else {
 					itf = desc[i + 2U];
 					*min_if = (itf < *min_if) ? itf : *min_if;
@@ -154,7 +154,7 @@ static int usbd_composite_scan_func_desc(const u8 *desc, u16 len, u8 *min_if, u8
 				}
 			} else if (dtype == USB_DESC_TYPE_IAD) {
 				if (dlen < USB_LEN_IAD_DESC) {
-					ret = HAL_ERR_PARA;
+					ret = -RTK_ERR_BADARG;
 				} else {
 					/* bFirstInterface at offset 2, bInterfaceCount at offset 3 */
 					end = (u16)((u16)desc[i + 2U] + (u16)desc[i + 3U]);
@@ -192,7 +192,7 @@ static void usbd_composite_patch_if_numbers(u8 *desc, u16 len, u8 offset)
 	for (i = 0; i < len;) {
 		dlen = desc[i];
 		dtype = desc[i + 1];
-		if (dlen == 0) {
+		if (dlen == 0U) {
 			break;
 		}
 
@@ -259,7 +259,7 @@ static u16 usbd_composite_append_func_desc(usb_dev_t *dev, usb_setup_req_t *req,
 	src = dest + dest_off;
 	src_len = (u16)(total - USB_LEN_CFG_DESC);
 
-	if (usbd_composite_scan_func_desc(src, src_len, &min_if, &max_if, &iad_end) != HAL_OK) {
+	if (usbd_composite_scan_func_desc(src, src_len, &min_if, &max_if, &iad_end) != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Func %u desc malformed\n", func);
 		return 0;
 	}
@@ -346,7 +346,7 @@ static u16 usbd_composite_build_config_desc(usb_dev_t *dev, usb_setup_req_t *req
 	 * functions before it, whose interface counts are known by the time it is built. */
 	for (i = 0; i < cdev->func_count; i++) {
 		added = usbd_composite_append_func_desc(dev, req, buf, buf_len, total_len, i, if_base);
-		if (added == 0) {
+		if (added == 0U) {
 			return 0;
 		}
 		total_len = (u16)(total_len + added);
@@ -371,6 +371,12 @@ static u16 usbd_composite_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u
 	const u8 *desc = NULL;
 	u16 len = 0;
 	u8 type = USB_HIGH_BYTE(req->wValue);
+
+	/* Ref USB 2.0 9.4.3: the index only selects among string and configuration descriptors;
+	   with a single configuration, a non-string index other than 0 names no descriptor. */
+	if ((type != USB_DESC_TYPE_STRING) && (USB_LOW_BYTE(req->wValue) != 0U)) {
+		return 0;
+	}
 
 	switch (type) {
 	case USB_DESC_TYPE_DEVICE:
@@ -430,13 +436,13 @@ static int usbd_composite_set_config(usb_dev_t *dev, u8 config)
 {
 	usbd_composite_dev_t *cdev = &usbd_composite_dev;
 	const usbd_class_driver_t *driver;
-	int ret = HAL_OK;
+	int ret = RTK_SUCCESS;
 	int status;
 	u8 i;
 
 	/* Only the bConfigurationValue advertised in the config descriptor is valid */
 	if ((config != 1U) || (cdev->func_count == 0U)) {
-		return HAL_ERR_PARA;
+		return -RTK_ERR_BADARG;
 	}
 
 	usbd_composite_reset_active_func();
@@ -455,7 +461,7 @@ static int usbd_composite_set_config(usb_dev_t *dev, u8 config)
 			.wLength = 0U,
 		};
 		if (usbd_composite_build_config_desc(dev, &cfg_req, dev->ep0_in.xfer_buf, (u16)dev->ep0_in.xfer_buf_len) == 0U) {
-			return HAL_ERR_PARA;
+			return -RTK_ERR_BADARG;
 		}
 	}
 
@@ -468,16 +474,16 @@ static int usbd_composite_set_config(usb_dev_t *dev, u8 config)
 	 */
 	for (i = 0; i < cdev->func_count; i++) {
 		driver = cdev->drivers[i];
-		if (driver->set_config) {
+		if (driver->set_config != NULL) {
 			status = driver->set_config(dev, config);
-			if (status != HAL_OK) {
+			if (status != RTK_SUCCESS) {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "Func %d set_config fail\n", i);
 				ret = status;
 			}
 		}
 	}
 
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		/* Roll back the functions that did come up (clear_config iterates
 		 * unconditionally), so a failed set_config leaves nothing initialized */
 		usbd_composite_clear_config(dev, config);
@@ -504,7 +510,7 @@ static void usbd_composite_clear_config(usb_dev_t *dev, u8 config)
 	 */
 	for (i = 0; i < cdev->func_count; i++) {
 		driver = cdev->drivers[i];
-		if (driver->clear_config) {
+		if (driver->clear_config != NULL) {
 			driver->clear_config(dev, config);
 		}
 	}
@@ -550,14 +556,14 @@ static u8 usbd_composite_find_owner_func(usbd_composite_dev_t *cdev, u16 target_
  *             wIndex is consumed inside setup(), so the mutate/restore is safe.
  *           - Class requests with INTERFACE recipient: routed ONLY to the
  *             sub-function that owns the interface in the low byte of wIndex.
- *             This removes the reliance on the fragile "return non-HAL_OK for
+ *             This removes the reliance on the fragile "return non-RTK_SUCCESS for
  *             foreign requests" first-accept contract. For Audio Class the low
  *             byte of wIndex is still the AC interface number (the high byte is
  *             the Entity ID), so interface routing is correct; UAC dispatches
  *             internally by Entity ID.
  *           - Class requests with ENDPOINT/DEVICE recipient, vendor requests,
  *             and other standard requests: iterated across all sub-functions
- *             (first one to return HAL_OK wins). The standard endpoint halt
+ *             (first one to return RTK_SUCCESS wins). The standard endpoint halt
  *             requests offered by the core (SET_FEATURE/CLEAR_FEATURE with
  *             ENDPOINT_HALT) also land here: wIndex carries an endpoint address,
  *             not an interface number, so there is nothing to rebase and no
@@ -575,7 +581,7 @@ static int usbd_composite_setup(usb_dev_t *dev, usb_setup_req_t *req)
 {
 	usbd_composite_dev_t *cdev = &usbd_composite_dev;
 	const usbd_class_driver_t *driver;
-	int ret = HAL_ERR_PARA;
+	int ret = -RTK_ERR_BADARG;
 	u8 has_data_out;
 	u8 has_data_in;
 	u8 if_base;
@@ -584,8 +590,8 @@ static int usbd_composite_setup(usb_dev_t *dev, usb_setup_req_t *req)
 	u16 saved_windex;
 	u8 i;
 
-	has_data_out = ((req->bmRequestType & USB_REQ_DIR_MASK) == USB_H2D) && (req->wLength > 0);
-	has_data_in = ((req->bmRequestType & USB_REQ_DIR_MASK) == USB_D2H) && (req->wLength > 0);
+	has_data_out = (((req->bmRequestType & USB_REQ_DIR_MASK) == USB_H2D) && (req->wLength > 0U)) ? 1U : 0U;
+	has_data_in = (((req->bmRequestType & USB_REQ_DIR_MASK) == USB_D2H) && (req->wLength > 0U)) ? 1U : 0U;
 	recipient = req->bmRequestType & USB_REQ_RECIPIENT_MASK;
 
 	usbd_composite_reset_active_func();
@@ -599,12 +605,12 @@ static int usbd_composite_setup(usb_dev_t *dev, usb_setup_req_t *req)
 		i = usbd_composite_find_owner_func(cdev, req->wIndex, &if_base);
 		if (i < cdev->func_count) {
 			driver = cdev->drivers[i];
-			if (driver->setup) {
+			if (driver->setup != NULL) {
 				saved_windex = req->wIndex;
 				req->wIndex -= if_base;      /* absolute -> sub-function local */
 				ret = driver->setup(dev, req);
 				req->wIndex = saved_windex;  /* restore */
-				if ((ret == HAL_OK) && has_data_in) {
+				if ((ret == RTK_SUCCESS) && (has_data_in != 0U)) {
 					cdev->active_func_in = i;
 				}
 			}
@@ -631,17 +637,17 @@ static int usbd_composite_setup(usb_dev_t *dev, usb_setup_req_t *req)
 		i = usbd_composite_find_owner_func(cdev, target_if, &if_base);
 		if (i < cdev->func_count) {
 			driver = cdev->drivers[i];
-			if (driver->setup) {
+			if (driver->setup != NULL) {
 				saved_windex = req->wIndex;
 				/* if_base <= target_if is guaranteed by the owner lookup, so the low
 				 * byte cannot borrow into the Entity ID. */
 				req->wIndex = (u16)((saved_windex & 0xFF00U) | (u16)(target_if - if_base));
 				ret = driver->setup(dev, req);
 				req->wIndex = saved_windex;  /* restore */
-				if (ret == HAL_OK) {
-					if (has_data_out) {
+				if (ret == RTK_SUCCESS) {
+					if (has_data_out != 0U) {
 						cdev->active_func = i;
-					} else if (has_data_in) {
+					} else if (has_data_in != 0U) {
 						cdev->active_func_in = i;
 					} else {
 						/* No data stage, nothing to route */
@@ -657,12 +663,12 @@ static int usbd_composite_setup(usb_dev_t *dev, usb_setup_req_t *req)
 	 * (e.g. UAC sampling-rate control addressed to an endpoint). */
 	for (i = 0; i < cdev->func_count; i++) {
 		driver = cdev->drivers[i];
-		if (driver->setup) {
+		if (driver->setup != NULL) {
 			ret = driver->setup(dev, req);
-			if (ret == HAL_OK) {
-				if (has_data_out) {
+			if (ret == RTK_SUCCESS) {
+				if (has_data_out != 0U) {
 					cdev->active_func = i;
-				} else if (has_data_in) {
+				} else if (has_data_in != 0U) {
 					cdev->active_func_in = i;
 				} else {
 					/* No data stage, nothing to route */
@@ -679,19 +685,19 @@ static int usbd_composite_setup(usb_dev_t *dev, usb_setup_req_t *req)
  * @brief  Class driver ep_data_in callback.
  *         Called within ISR context; time-consuming operations not permitted.
  */
-static int usbd_composite_ep_data_in(usb_dev_t *dev, u8 ep_addr, u8 status)
+static int usbd_composite_ep_data_in(usb_dev_t *dev, u8 ep_addr, int status)
 {
 	usbd_composite_dev_t *cdev = &usbd_composite_dev;
 	const usbd_class_driver_t *driver;
-	int ret = HAL_ERR_PARA;
+	int ret = -RTK_ERR_BADARG;
 	u8 i;
 
 	/* Dispatch to each sub-function */
 	for (i = 0; i < cdev->func_count; i++) {
 		driver = cdev->drivers[i];
-		if (driver->ep_data_in) {
+		if (driver->ep_data_in != NULL) {
 			ret = driver->ep_data_in(dev, ep_addr, status);
-			if (ret == HAL_OK) {
+			if (ret == RTK_SUCCESS) {
 				break;
 			}
 		}
@@ -708,15 +714,15 @@ static int usbd_composite_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len)
 {
 	usbd_composite_dev_t *cdev = &usbd_composite_dev;
 	const usbd_class_driver_t *driver;
-	int ret = HAL_ERR_PARA;
+	int ret = -RTK_ERR_BADARG;
 	u8 i;
 
 	/* Dispatch to each sub-function */
 	for (i = 0; i < cdev->func_count; i++) {
 		driver = cdev->drivers[i];
-		if (driver->ep_data_out) {
+		if (driver->ep_data_out != NULL) {
 			ret = driver->ep_data_out(dev, ep_addr, len);
-			if (ret == HAL_OK) {
+			if (ret == RTK_SUCCESS) {
 				break;
 			}
 		}
@@ -738,14 +744,14 @@ static void usbd_composite_status_changed(usb_dev_t *dev, u8 old_status, u8 stat
 	/* First: dispatch to each sub-function's status_changed callback */
 	for (i = 0; i < cdev->func_count; i++) {
 		driver = cdev->drivers[i];
-		if (driver->status_changed) {
+		if (driver->status_changed != NULL) {
 			driver->status_changed(dev, old_status, status);
 		}
 	}
 
 	/* Then: notify the composite-level user callback */
 	cb = cdev->cb;
-	if (cb && cb->status_changed) {
+	if ((cb != NULL) && (cb->status_changed != NULL)) {
 		cb->status_changed(old_status, status);
 	}
 }
@@ -754,7 +760,7 @@ static void usbd_composite_status_changed(usb_dev_t *dev, u8 old_status, u8 stat
  * @brief  SOF callback — broadcast to all sub-functions.
  * @note   SOF is a broadcast event: EVERY sub-function that registered a SOF
  *         handler must receive it (e.g. UAC needs SOF for clock synchronisation).
- *         Do NOT stop on the first HAL_OK.
+ *         Do NOT stop on the first RTK_SUCCESS.
  */
 static void usbd_composite_sof(usb_dev_t *dev)
 {
@@ -764,7 +770,7 @@ static void usbd_composite_sof(usb_dev_t *dev)
 
 	for (i = 0; i < cdev->func_count; i++) {
 		driver = cdev->drivers[i];
-		if (driver->sof) {
+		if (driver->sof != NULL) {
 			driver->sof(dev);
 		}
 	}
@@ -778,18 +784,18 @@ static void usbd_composite_sof(usb_dev_t *dev)
  *         stage belongs to exactly one request, and a class may have redirected
  *         dev->ep0_in.xfer_buf for it, which only its own handler can restore.
  */
-static int usbd_composite_ep0_data_in(usb_dev_t *dev, u8 status)
+static int usbd_composite_ep0_data_in(usb_dev_t *dev, int status)
 {
 	usbd_composite_dev_t *cdev = &usbd_composite_dev;
 	u8 idx;
 
 	idx = cdev->active_func_in;
 	if ((idx < cdev->func_count) &&
-		(cdev->drivers[idx]->ep0_data_in)) {
+		(cdev->drivers[idx]->ep0_data_in != NULL)) {
 		cdev->active_func_in = USBD_COMP_ITF_NONE;
 		return cdev->drivers[idx]->ep0_data_in(dev, status);
 	}
-	return HAL_ERR_PARA;
+	return -RTK_ERR_BADARG;
 }
 
 /**
@@ -805,11 +811,11 @@ static int usbd_composite_ep0_data_out(usb_dev_t *dev)
 
 	idx = cdev->active_func;
 	if ((idx < cdev->func_count) &&
-		(cdev->drivers[idx]->ep0_data_out)) {
+		(cdev->drivers[idx]->ep0_data_out != NULL)) {
 		usbd_composite_reset_active_func();
 		return cdev->drivers[idx]->ep0_data_out(dev);
 	}
-	return HAL_ERR_PARA;
+	return -RTK_ERR_BADARG;
 }
 
 /**
@@ -823,7 +829,7 @@ static void usbd_composite_wakeup(usb_dev_t *dev)
 
 	for (i = 0; i < cdev->func_count; i++) {
 		driver = cdev->drivers[i];
-		if (driver->wakeup) {
+		if (driver->wakeup != NULL) {
 			driver->wakeup(dev);
 		}
 	}
@@ -843,24 +849,24 @@ int usbd_composite_register_driver(const usbd_class_driver_t *driver)
 	/* get_descriptor is the only callback invoked without a NULL check */
 	if ((driver == NULL) || (driver->get_descriptor == NULL)) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid driver\n");
-		return HAL_ERR_PARA;
+		return -RTK_ERR_BADARG;
 	}
 
 	/* Avoid duplicate registration, before the capacity check so that it stays idempotent on a full table */
 	for (u8 i = 0; i < cdev->func_count; i++) {
 		if (cdev->drivers[i] == driver) {
-			return HAL_OK;
+			return RTK_SUCCESS;
 		}
 	}
 
 	if (cdev->func_count >= USBD_COMP_MAX_FUNCS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Too many funcs (%u)\n", cdev->func_count);
-		return HAL_ERR_PARA;
+		return -RTK_ERR_BADARG;
 	}
 
 	cdev->drivers[cdev->func_count] = driver;
 	cdev->func_count++;
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 /**
@@ -870,7 +876,7 @@ int usbd_composite_register_driver(const usbd_class_driver_t *driver)
  *         Refused while the composite device is registered with the core: the ISR walks
  *         drivers[] and if_counts[] on any core, so they are only changed while it is off.
  *         The class deinit then returns without releasing anything, refer to the header.
- * @retval HAL_OK on success, HAL_BUSY while usbd_composite_deinit() has not been called
+ * @retval RTK_SUCCESS on success, -RTK_ERR_BUSY while usbd_composite_deinit() has not been called
  */
 int usbd_composite_unregister_driver(const usbd_class_driver_t *driver)
 {
@@ -879,11 +885,11 @@ int usbd_composite_unregister_driver(const usbd_class_driver_t *driver)
 
 	if (cdev->registered != 0U) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Unreg func while running\n");
-		return HAL_BUSY;
+		return -RTK_ERR_BUSY;
 	}
 
 	if (driver == NULL) {
-		return HAL_OK;
+		return RTK_SUCCESS;
 	}
 
 	for (i = 0; i < cdev->func_count; i++) {
@@ -901,17 +907,18 @@ int usbd_composite_unregister_driver(const usbd_class_driver_t *driver)
 		}
 	}
 
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 int usbd_composite_init(const usbd_composite_cb_t *cb)
 {
 	usbd_composite_dev_t *cdev = &usbd_composite_dev;
+	int unregister_ret;
 	int ret;
 
-	if (cdev->func_count == 0) {
+	if (cdev->func_count == 0U) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "No funcs registered\n");
-		return HAL_ERR_PARA;
+		return -RTK_ERR_BADARG;
 	}
 
 	cdev->cb = cb;
@@ -922,19 +929,29 @@ int usbd_composite_init(const usbd_composite_cb_t *cb)
 	cdev->registered = 1U;
 
 	ret = usbd_register_class(&usbd_composite_driver);
-	if (ret != HAL_OK) {
-		usbd_unregister_class();
-		cdev->registered = 0U;
+	if (ret != RTK_SUCCESS) {
+		/* The guard is only dropped once the core really let the framework go, refer to
+		   usbd_composite_unregister_driver() */
+		unregister_ret = usbd_unregister_class();
+		if (unregister_ret == RTK_SUCCESS) {
+			cdev->registered = 0U;
+		}
 	}
 
 	return ret;
 }
 
-void usbd_composite_deinit(void)
+int usbd_composite_deinit(void)
 {
 	usbd_composite_dev_t *cdev = &usbd_composite_dev;
+	int ret;
 
-	usbd_unregister_class();
+	/* Refused in interrupt context: the ISR may still dispatch to the functions, so the
+	   framework, and registered with it, is kept for the class deinit APIs to refuse too */
+	ret = usbd_unregister_class();
+	if (ret == RTK_SUCCESS) {
+		usb_os_memset((void *)cdev, 0, sizeof(usbd_composite_dev_t));
+	}
 
-	usb_os_memset((void *)cdev, 0, sizeof(usbd_composite_dev_t));
+	return ret;
 }

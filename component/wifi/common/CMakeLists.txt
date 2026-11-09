@@ -97,6 +97,7 @@ ameba_add_external_app_library(${TARGET_LIB}
     p_SOURCES
         rtw_event.c
         rtw_task_size.c
+        rtw_radar_event.c
     p_INCLUDES
         ${private_includes}
     p_DEFINITIONS
@@ -111,6 +112,7 @@ ameba_add_internal_library(rtw_event
     p_SOURCES
         rtw_event.c
         rtw_task_size.c
+        rtw_radar_event.c
     p_INCLUDES
         ${private_includes}
     p_DEFINITIONS

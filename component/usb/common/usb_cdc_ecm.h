@@ -135,7 +135,7 @@ typedef struct {
 	u8  bNotificationCode;      /**< NETWORK_CONNECTION or CONNECTION_SPEED_CHANGE */
 	u16 wValue;                 /**< Connection status or Reserved (0) */
 	u16 wIndex;                 /**< Interface number */
-	u16 wLength;                /**< Data length (8) */
+	u16 wLength;                /**< Data length: 0 for NETWORK_CONNECTION, 8 for CONNECTION_SPEED_CHANGE */
 	usb_cdc_ecm_speed_change_data_t data; /**< Speed change data */
 } __PACKED usb_cdc_ecm_notify_t;
 

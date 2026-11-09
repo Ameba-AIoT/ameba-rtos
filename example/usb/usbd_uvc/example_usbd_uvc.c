@@ -10,6 +10,8 @@
 #include "usbd.h"
 #include "usbd_uvc.h"
 #include "os_wrapper.h"
+#include "usb_app.h"
+#include "example_usbd_uvc.h"
 #include "example_usbd_uvc_sample_h264.h"
 
 /* Private defines -----------------------------------------------------------*/
@@ -53,6 +55,10 @@ static const usbd_uvc_ep_cfg_t uvc_ep = {
 	.iso_in_addr = USBD_UVC_ISO_IN_EP,
 	.iso_in_xfer_size = USBD_UVC_IN_BUF_SIZE,
 };
+
+/* Start/stop state: the video thread streams on the running stack, example_usbd_uvc_stop() asks
+   it to leave through quit and joins it */
+static usb_app_ctx_t uvc_app;
 
 static usbd_config_t uvc_cfg = {
 	.info = {
@@ -117,6 +123,9 @@ static void example_usbd_uvc_video_thread(void *param)
 
 	while (1) {
 		rtos_time_delay_ms(USBD_UVC_FRAME_INTERVAL_MS);
+		if (uvc_app.quit != 0U) {
+			break;
+		}
 		if (usbd_uvc_get_status() == 0) {
 			continue;
 		}
@@ -135,35 +144,57 @@ static void example_usbd_uvc_video_thread(void *param)
 		do {
 			payload = usbd_uvc_video_out_stream_queue();
 			if (payload == NULL) {
+				if (uvc_app.quit != 0U) {
+					break;
+				}
 				rtos_time_delay_ms(1);
 			}
 		} while (payload == NULL);
+		if (payload == NULL) {
+			/* Stop requested while waiting for a free buffer */
+			break;
+		}
 
 		payload->mem = video_data->data + video_data->data_offset;
 		payload->bytesused = video_data->size;
 		video_data->data_offset += video_data->size;
 
 		usbd_uvc_video_put_in_stream_queue(payload);
+		/* Woken by the frame task once the frame is queued, or by example_usbd_uvc_stop() */
 		usbd_uvc_wait_frame_down();
+		if (uvc_app.quit != 0U) {
+			break;
+		}
 	}
+
+	/* Stop requested: the stack is still up, example_usbd_uvc_stop() tears it down */
+	usb_app_ctx_leave(&uvc_app);
+	rtos_task_delete(NULL);
 }
 
-static void example_usbd_uvc_thread(void *param)
+/**
+  * @brief  Bring the stack and the video thread up
+  * @retval RTK_SUCCESS, or the first error, with everything already created rolled back
+  */
+static int uvc_start(void)
 {
-	int ret = HAL_OK;
+	int ret = RTK_SUCCESS;
 	rtos_task_t task;
 	u32 i = 0U;
 
-	UNUSED(param);
+	ret = usb_app_ctx_begin(&uvc_app);
+	if (ret != RTK_SUCCESS) {
+		return ret;
+	}
 
 	ret = usbd_init(&uvc_cfg);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Init USBD fail\n");
 		goto exit_usbd_init_fail;
 	}
 
 	ret = usbd_uvc_init(&uvc_ep);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Init UVC class fail\n");
 		goto exit_usbd_uvc_init_fail;
 	}
@@ -175,6 +206,9 @@ static void example_usbd_uvc_thread(void *param)
 	video.h264_nal_size = USBD_UVC_H264_NAL_SIZE;
 
 	for (i = 0U; i < USBD_UVC_VIDEO_BUF_NUM; i++) {
+		/* After a stop the buffer may still link a queue of the previous run, which the class
+		   reset: detach it, or put_out_stream_queue() skips it and no buffer is ever free */
+		INIT_LIST_HEAD(&uvc_payload[i].buffer_list);
 		usbd_uvc_video_put_out_stream_queue(&uvc_payload[i]);
 	}
 
@@ -185,8 +219,7 @@ static void example_usbd_uvc_thread(void *param)
 		goto exit_create_video_task_fail;
 	}
 
-	rtos_task_delete(NULL);
-	return;
+	return RTK_SUCCESS;
 
 exit_create_video_task_fail:
 exit_usbd_uvc_init_fail:
@@ -194,11 +227,70 @@ exit_usbd_uvc_init_fail:
 	usbd_deinit();
 exit_usbd_init_fail:
 	RTK_LOGS(TAG, RTK_LOG_ERROR, "USBD UVC demo aborted\n");
+	usb_app_ctx_end(&uvc_app);
+
+	return ret;
+}
+
+static void example_usbd_uvc_thread(void *param)
+{
+	UNUSED(param);
+
+	if (uvc_start() != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Start fail\n");
+	}
 	rtos_task_delete(NULL);
 }
 
 /* Exported functions --------------------------------------------------------*/
 
+/**
+  * @brief  Start the UVC device, used by the USB app manager
+  * @note   Task context only
+  * @retval RTK_SUCCESS, -RTK_ERR_BUSY if already running, or the init error
+  */
+int example_usbd_uvc_start(void)
+{
+	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD UVC demo start\n");
+
+	return uvc_start();
+}
+
+/**
+  * @brief  Stop the UVC device and release everything it owns
+  * @note   Task context only. Safe to call when not running.
+  * @retval RTK_SUCCESS once idle, -RTK_ERR_TIMEOUT if the video thread did not leave in time
+  */
+int example_usbd_uvc_stop(void)
+{
+	if (usb_app_ctx_claim_stop(&uvc_app) == 0U) {
+		/* Not running */
+		return usb_app_ctx_wait_idle(&uvc_app);
+	}
+
+	/* The video thread may wait in usbd_uvc_wait_frame_down() for a frame the host no longer
+	   pulls: wake it while the semaphore still exists. The count left behind when it is not
+	   waiting there makes its next wait return at once, it then observes quit and leaves. */
+	rtos_sema_give(get_private_usbd_uvcd()->video.output_frame_sema);
+	if (usb_app_ctx_join(&uvc_app, 1U) != RTK_SUCCESS) {
+		/* The video thread is still on the stack: keep everything, the app stays STOPPING */
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Stop timeout\n");
+		return -RTK_ERR_TIMEOUT;
+	}
+
+	/* The video thread is gone: this caller is the only one left on the stack */
+	usbd_uvc_deinit();
+	usbd_deinit();
+	usb_app_ctx_end(&uvc_app);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD UVC demo stop\n");
+
+	return RTK_SUCCESS;
+}
+
+/**
+  * @brief  Example entry: start the UVC device from its own thread
+  * @retval None
+  */
 void example_usbd_uvc(void)
 {
 	int ret;

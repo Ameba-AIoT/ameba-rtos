@@ -9,6 +9,8 @@
 
 /* Includes ------------------------------------------------------------------*/
 
+#include "basic_types.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -28,7 +30,8 @@ extern "C" {
  * @return None
  */
 void example_usbh_cdc_ncm(void);
-
+int example_usbh_cdc_ncm_start(void);
+int example_usbh_cdc_ncm_stop(void);
 #ifdef __cplusplus
 }
 #endif

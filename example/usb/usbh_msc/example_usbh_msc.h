@@ -28,6 +28,8 @@ extern "C" {
  * @return None
  */
 void example_usbh_msc(void);
+int example_usbh_msc_start(void);
+int example_usbh_msc_stop(void);
 
 #ifdef __cplusplus
 }

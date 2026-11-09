@@ -571,7 +571,7 @@ static void ots_coc_send_chunk(uint8_t conn_id)
 		return;
 	}
 
-	if (rtk_bt_le_gap_coc_get_chan_param(RTK_BT_LE_COC_CHAN_PARAM_MTU,
+	if (rtk_bt_le_gap_coc_get_chan_param(RTK_BT_LE_COC_CHAN_PARAM_MTU, ots_coc[conn_id].conn_handle,
 										 ots_coc[conn_id].cid, &mtu) != RTK_BT_OK || mtu == 0) {
 		mtu = 23;
 	}
@@ -586,7 +586,7 @@ static void ots_coc_send_chunk(uint8_t conn_id)
 		ots_coc_txbuf[i] = (uint8_t)(ots_coc[conn_id].offset + i);
 	}
 
-	if (rtk_bt_le_gap_coc_send_data(ots_coc[conn_id].cid, (uint16_t)chunk, ots_coc_txbuf) != RTK_BT_OK) {
+	if (rtk_bt_le_gap_coc_send_data(ots_coc[conn_id].conn_handle, ots_coc[conn_id].cid, (uint16_t)chunk, ots_coc_txbuf) != RTK_BT_OK) {
 		BT_LOGE("[APP] OTS coc send data failed, cid: 0x%x\r\n", ots_coc[conn_id].cid);
 		ots_coc_transfer_stop(conn_id);
 		return;
@@ -643,7 +643,7 @@ static void ots_timeout_task_entry(void *param)
 			ots_timeout_pending[i] = 0;
 			BT_LOGE("[APP] OTS object transfer timeout, close channel cid: 0x%x\r\n", ots_coc[i].cid);
 			if (ots_coc[i].open) {
-				rtk_bt_le_gap_coc_disconnect(ots_coc[i].cid);
+				rtk_bt_le_gap_coc_disconnect(ots_coc[i].conn_handle, ots_coc[i].cid);
 			}
 			ots_coc[i].state = OTS_XFER_IDLE;
 			ots_coc[i].remaining = 0;

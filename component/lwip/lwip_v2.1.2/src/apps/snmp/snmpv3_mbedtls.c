@@ -42,12 +42,17 @@
 
 #if LWIP_SNMP && LWIP_SNMP_V3 && LWIP_SNMP_V3_MBEDTLS
 
+#if defined(CONFIG_MBEDTLS_USE_LEGACY_API)
 #include "mbedtls/md.h"
 #include "mbedtls/cipher.h"
 
 #include "mbedtls/md5.h"
 #include "mbedtls/sha1.h"
+#else
+#include "psa/crypto.h"
+#endif
 
+#if defined(CONFIG_MBEDTLS_USE_LEGACY_API)
 err_t
 snmpv3_auth(struct snmp_pbuf_stream *stream, u16_t length,
             const u8_t *key, snmpv3_auth_algo_t algo, u8_t *hmac_out)
@@ -101,9 +106,62 @@ free_md:
   mbedtls_md_free(&ctx);
   return ERR_ARG;
 }
+#else
+err_t
+snmpv3_auth(struct snmp_pbuf_stream *stream, u16_t length,
+            const u8_t *key, snmpv3_auth_algo_t algo, u8_t *hmac_out)
+{
+  u32_t i;
+  u8_t key_len;
+  psa_algorithm_t alg;
+  psa_key_attributes_t attr = PSA_KEY_ATTRIBUTES_INIT;
+  psa_mac_operation_t op = PSA_MAC_OPERATION_INIT;
+  psa_key_id_t key_id;
+  psa_status_t status;
+  size_t olen;
+  struct snmp_pbuf_stream read_stream;
+  snmp_pbuf_stream_init(&read_stream, stream->pbuf, stream->offset, stream->length);
+
+  if (algo == SNMP_V3_AUTH_ALGO_MD5) {
+    alg = PSA_ALG_HMAC(PSA_ALG_MD5);
+    key_len = SNMP_V3_MD5_LEN;
+  } else if (algo == SNMP_V3_AUTH_ALGO_SHA) {
+    alg = PSA_ALG_HMAC(PSA_ALG_SHA_1);
+    key_len = SNMP_V3_SHA_LEN;
+  } else {
+    return ERR_ARG;
+  }
+
+  psa_set_key_type(&attr, PSA_KEY_TYPE_HMAC);
+  psa_set_key_usage_flags(&attr, PSA_KEY_USAGE_SIGN_MESSAGE);
+  psa_set_key_algorithm(&attr, alg);
+  if (psa_import_key(&attr, key, key_len, &key_id) != PSA_SUCCESS) {
+    return ERR_ARG;
+  }
+
+  status = psa_mac_sign_setup(&op, key_id, alg);
+  for (i = 0; status == PSA_SUCCESS && i < length; i++) {
+    u8_t byte;
+
+    if (snmp_pbuf_stream_read(&read_stream, &byte)) {
+      status = PSA_ERROR_GENERIC_ERROR;
+      break;
+    }
+    status = psa_mac_update(&op, &byte, 1);
+  }
+  if (status == PSA_SUCCESS) {
+    status = psa_mac_sign_finish(&op, hmac_out, key_len, &olen);
+  }
+
+  psa_mac_abort(&op);
+  psa_destroy_key(key_id);
+  return (status == PSA_SUCCESS) ? ERR_OK : ERR_ARG;
+}
+#endif
 
 #if LWIP_SNMP_V3_CRYPTO
 
+#if defined(CONFIG_MBEDTLS_USE_LEGACY_API)
 err_t
 snmpv3_crypt(struct snmp_pbuf_stream *stream, u16_t length,
              const u8_t *key, const u8_t *priv_param, const u32_t engine_boots,
@@ -230,9 +288,76 @@ error:
   mbedtls_cipher_free(&ctx);
   return ERR_OK;
 }
+#else
+err_t
+snmpv3_crypt(struct snmp_pbuf_stream *stream, u16_t length,
+             const u8_t *key, const u8_t *priv_param, const u32_t engine_boots,
+             const u32_t engine_time, snmpv3_priv_algo_t algo, snmpv3_priv_mode_t mode)
+{
+  psa_key_attributes_t attr = PSA_KEY_ATTRIBUTES_INIT;
+  psa_cipher_operation_t op = PSA_CIPHER_OPERATION_INIT;
+  psa_key_id_t key_id;
+  psa_status_t status;
+  u8_t iv_local[16];
+  u8_t in_byte, out_byte;
+  size_t out_len, i;
+
+  struct snmp_pbuf_stream read_stream;
+  struct snmp_pbuf_stream write_stream;
+  snmp_pbuf_stream_init(&read_stream, stream->pbuf, stream->offset, stream->length);
+  snmp_pbuf_stream_init(&write_stream, stream->pbuf, stream->offset, stream->length);
+
+  /* DES is not available through PSA, only AES-CFB is supported */
+  if (algo != SNMP_V3_PRIV_ALGO_AES) {
+    return ERR_ARG;
+  }
+
+  /*
+   * IV is the big endian concatenation of boots,
+   * uptime and priv param - see RFC3826.
+   */
+  iv_local[0 + 0] = (engine_boots >> 24) & 0xFF;
+  iv_local[0 + 1] = (engine_boots >> 16) & 0xFF;
+  iv_local[0 + 2] = (engine_boots >>  8) & 0xFF;
+  iv_local[0 + 3] = (engine_boots >>  0) & 0xFF;
+  iv_local[4 + 0] = (engine_time  >> 24) & 0xFF;
+  iv_local[4 + 1] = (engine_time  >> 16) & 0xFF;
+  iv_local[4 + 2] = (engine_time  >>  8) & 0xFF;
+  iv_local[4 + 3] = (engine_time  >>  0) & 0xFF;
+  SMEMCPY(iv_local + 8, priv_param, 8);
+
+  psa_set_key_type(&attr, PSA_KEY_TYPE_AES);
+  psa_set_key_usage_flags(&attr, (mode == SNMP_V3_PRIV_MODE_ENCRYPT) ? PSA_KEY_USAGE_ENCRYPT : PSA_KEY_USAGE_DECRYPT);
+  psa_set_key_algorithm(&attr, PSA_ALG_CFB);
+  if (psa_import_key(&attr, key, 16, &key_id) != PSA_SUCCESS) {
+    return ERR_ARG;
+  }
+
+  status = (mode == SNMP_V3_PRIV_MODE_ENCRYPT) ? psa_cipher_encrypt_setup(&op, key_id, PSA_ALG_CFB) : psa_cipher_decrypt_setup(&op, key_id, PSA_ALG_CFB);
+  if (status == PSA_SUCCESS) {
+    status = psa_cipher_set_iv(&op, iv_local, sizeof(iv_local));
+  }
+
+  for (i = 0; status == PSA_SUCCESS && i < length; i++) {
+    if (snmp_pbuf_stream_read(&read_stream, &in_byte) != ERR_OK) {
+      goto error;
+    }
+    status = psa_cipher_update(&op, &in_byte, 1, &out_byte, 1, &out_len);
+    if (status == PSA_SUCCESS && snmp_pbuf_stream_writebuf(&write_stream, &out_byte, (u16_t)out_len) != ERR_OK) {
+      goto error;
+    }
+  }
+
+error:
+  psa_cipher_abort(&op);
+  psa_destroy_key(key_id);
+  return ERR_OK;
+}
+#endif
 
 #endif /* LWIP_SNMP_V3_CRYPTO */
 
+#if defined(CONFIG_MBEDTLS_USE_LEGACY_API)
 /* A.2.1. Password to Key Sample Code for MD5 */
 void
 snmpv3_password_to_key_md5(
@@ -338,5 +463,59 @@ snmpv3_password_to_key_sha(
   mbedtls_sha1_free(&SH);
   return;
 }
+#else
+static void
+snmpv3_password_to_key_psa(psa_algorithm_t alg, u8_t key_len, const u8_t *password, size_t passwordlen,
+                           const u8_t *engineID, u8_t engineLength, u8_t *key)
+{
+  psa_hash_operation_t op = PSA_HASH_OPERATION_INIT;
+  u8_t *cp, password_buf[72];
+  u32_t password_index = 0;
+  u8_t i;
+  u32_t count = 0;
+  size_t olen;
+
+  psa_hash_setup(&op, alg);
+  while (count < 1048576) {
+    cp = password_buf;
+    for (i = 0; i < 64; i++) {
+      *cp++ = password[password_index++ % passwordlen];
+    }
+    psa_hash_update(&op, password_buf, 64);
+    count += 64;
+  }
+  psa_hash_finish(&op, key, key_len, &olen);
+
+  SMEMCPY(password_buf, key, key_len);
+  MEMCPY(password_buf + key_len, engineID, engineLength);
+  SMEMCPY(password_buf + key_len + engineLength, key, key_len);
+
+  psa_hash_compute(alg, password_buf, 2 * key_len + engineLength, key, key_len, &olen);
+}
+
+/* A.2.1. Password to Key Sample Code for MD5 */
+void
+snmpv3_password_to_key_md5(
+  const u8_t *password,    /* IN */
+  size_t      passwordlen, /* IN */
+  const u8_t *engineID,    /* IN  - pointer to snmpEngineID  */
+  u8_t        engineLength,/* IN  - length of snmpEngineID */
+  u8_t       *key)         /* OUT - pointer to caller 16-octet buffer */
+{
+  snmpv3_password_to_key_psa(PSA_ALG_MD5, 16, password, passwordlen, engineID, engineLength, key);
+}
+
+/* A.2.2. Password to Key Sample Code for SHA */
+void
+snmpv3_password_to_key_sha(
+  const u8_t *password,    /* IN */
+  size_t      passwordlen, /* IN */
+  const u8_t *engineID,    /* IN  - pointer to snmpEngineID  */
+  u8_t        engineLength,/* IN  - length of snmpEngineID */
+  u8_t       *key)         /* OUT - pointer to caller 20-octet buffer */
+{
+  snmpv3_password_to_key_psa(PSA_ALG_SHA_1, 20, password, passwordlen, engineID, engineLength, key);
+}
+#endif
 
 #endif /* LWIP_SNMP && LWIP_SNMP_V3 && LWIP_SNMP_V3_MBEDTLS */

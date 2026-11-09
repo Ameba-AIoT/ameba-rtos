@@ -843,6 +843,40 @@ class RSIP():
         if self.image_config.rsip_mode == 2:
             fw_tag.close()
         return 0
+
+    # Standard XTS with one tweak per sector: T0 = E_K2(iv || (sector_addr[27:0] >> 5) || 0), T_j = T0 * alpha^j per 16B,
+    # C = E_K1(P ^ T_j) ^ T_j. alpha multiply is on the 128-bit big-endian value (0x87 into the last byte), not IEEE 1619 LE.
+    # RLE1509 RSIP HW takes the 2nd key of rsip_xts_gX (e.g. 0x220) as data key K1 and the 1st (e.g. 0x200) as tweak key K2.
+    def RSIP_ImageEncrypt_XTS(self, sector_size:int = 4096) -> int:
+        ecb_cryptor = AES.new(bytes.fromhex(self.image_config.rsip_key[1]), AES.MODE_ECB)
+        tweak_cryptor = AES.new(bytes.fromhex(self.image_config.rsip_key[0]), AES.MODE_ECB)
+        iv_prefix = bytes.fromhex(self.image_config.rsip_iv)
+        tag_name = os.path.join(os.path.dirname(self.output_file), os.path.splitext(os.path.basename(self.output_file))[0] + '_tag.bin')
+        if os.path.exists(tag_name):
+            os.remove(tag_name)
+
+        def mul_alpha(t):
+            return ((t << 1) & ((1 << 128) - 1)) ^ (0x87 if t >> 127 else 0)
+
+        addr = self.address & 0x0FFFFFFF
+        tweak = None
+        with open(self.input_file, 'rb') as f, open(self.output_file, 'wb') as fw:
+            buf = f.read(16)
+            while buf:
+                if tweak is None or addr % sector_size == 0:
+                    sector_addr = addr & ~(sector_size - 1)
+                    iv = iv_prefix + (sector_addr >> 5).to_bytes(4, 'big') + bytes(4)
+                    tweak = int.from_bytes(tweak_cryptor.encrypt(iv), 'big')
+                    for _ in range((addr - sector_addr) // 16):
+                        tweak = mul_alpha(tweak)
+                t = tweak.to_bytes(16, 'big')
+                blk = bytes(a ^ b for a, b in zip(buf.ljust(16, b'\0'), t))
+                fw.write(bytes(a ^ b for a, b in zip(ecb_cryptor.encrypt(blk), t)))
+                tweak = mul_alpha(tweak)
+                buf = f.read(16)
+                addr += 16
+        return 0
+
     def RSIP_ImageEncrypt_AMEBAD(self):
         iv = [int(i) for i in bytes.fromhex(self.image_config.rsip_iv)]
         ctrkey_bytes = bytes.fromhex(self.image_config.ctr_key)

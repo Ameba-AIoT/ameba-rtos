@@ -86,7 +86,9 @@ typedef struct {
 	 * @brief Called during control transfer SETUP/DATA phases to handle application-specific control requests.
 	 * @note   This function is called within an interrupt service routine (ISR) context;
 	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
-	 * @param[in] req: Pointer to the setup request packet.
+	 * @param[in] req: Pointer to the setup request packet. For a device-to-host request with a
+	 *            data stage, buf holds at least wLength bytes and wLength never exceeds the
+	 *            host's: write at most wLength bytes.
 	 * @param[out] buf: Pointer to a buffer for data stage of control transfers.
 	 * @return 0 on success, non-zero on failure.
 	 */
@@ -115,7 +117,7 @@ typedef struct {
 	 * @param[in] in_ep: Pointer to the WHC IN endpoint.
 	 * @param[in] status: The status of the transmission.
 	 */
-	void (*transmitted)(usbd_whc_ep_t *in_ep, u8 status);
+	void (*transmitted)(usbd_whc_ep_t *in_ep, int status);
 
 	/**
 	 * @brief Called when non-control OUT transfer done, for application to handle the received host command/data.

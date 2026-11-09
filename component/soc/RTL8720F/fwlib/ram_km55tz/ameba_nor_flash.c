@@ -9,6 +9,9 @@
 static const char *const TAG = "FLASH";
 static FlashInfo_TypeDef *current_IC;
 
+/* RAM copy of the flash vendor ID: the SRAM-only code must not read the XIP-resident Flash_AVL while probing read modes */
+static u8 current_vendor_id;
+
 /* Flag to check configuration register or not. Necessary for wide-range VCC MXIC flash */
 static u8 check_config_reg = 0;
 
@@ -30,6 +33,7 @@ void flash_nor_get_vendor(void)
 		RTK_LOGW(TAG, "This flash type is not supported!\n");
 		assert_param(0);
 	}
+	current_vendor_id = (u8)current_IC->flash_id;
 
 	/* Re-initialize flash init structure according to classification */
 	switch (current_IC->flash_class) {
@@ -79,7 +83,7 @@ void flash_nor_get_vendor(void)
 
 }
 
-void flash_nor_set_status_register(void)
+void flash_nor_set_qe_register(void)
 {
 	u8 StatusLen = 1;
 	u32 data = 0;
@@ -120,6 +124,15 @@ void flash_nor_set_status_register(void)
 	}
 }
 
+SRAMDRAM_ONLY_TEXT_SECTION
+void flash_nor_get_cs_timing(u32 *tcss_ns, u32 *tchsh_ns, u32 *tshsl_ns)
+{
+	/* Some full voltage range Flash e.g.GD25WQ64E need tCSS 10ns, HW recommend at least 10ns */
+	*tcss_ns = 10;
+	*tchsh_ns = 5;
+	*tshsl_ns = 60;
+}
+
 const FlashInfo_TypeDef *flash_nor_get_chip_info(void)
 {
 	return current_IC;
@@ -142,12 +155,14 @@ void flash_nor_set_hpm_mode(u32 spic_mode, u32 flash_clk)
 		FLASH_RxCmd(0x85, 1, &status);
 		status = (status & 0x0f) | (FLASH_InitStruct->FLASH_rd_dummy_cycle[spic_mode] << 4);
 		FLASH_SetStatus(0x81, 1, &status);
-	} else if (current_IC->flash_id == 0x85) {	/* PUYA */
+	} else if (current_vendor_id == 0x85) {	/* PUYA */
 		if (flash_clk > FLASH_HPM_CLK_LIMIT) {
-			/* set FLASH DC bit in configuration register */
+			/* set FLASH DC bit in configuration register, skip the write if already set */
 			FLASH_RxCmd(FLASH_CMD_RDCR, 1, &status);
-			status |= BIT1;	// DC bit of PY25Q32H
-			FLASH_SetStatus(FLASH_CMD_WRCR, 1, &status);
+			if (!(status & BIT1)) {	// DC bit of PY25Q32H
+				status |= BIT1;
+				FLASH_SetStatus(FLASH_CMD_WRCR, 1, &status);
+			}
 		}
 	}
 }

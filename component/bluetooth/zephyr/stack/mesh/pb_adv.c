@@ -152,6 +152,13 @@ static void close_link(enum prov_bearer_link_status status);
 static void tx_work_handler(struct k_work *work);
 static K_WORK_DELAYABLE_DEFINE(tx_work, tx_work_handler);
 
+#if ZEPHYR_RTK_PATCH
+void zephyr_mesh_pb_adv_work_reset(void)
+{
+	k_work_delayable_reset(&tx_work);
+}
+#endif
+
 static void tx_schedule(void)
 {
 	uint16_t random_delay;

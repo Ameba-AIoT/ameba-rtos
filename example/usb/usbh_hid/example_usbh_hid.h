@@ -30,6 +30,8 @@ extern "C" {
   * @retval void
   */
 void example_usbh_hid(void);
+int example_usbh_hid_start(void);
+int example_usbh_hid_stop(void);
 
 #ifdef __cplusplus
 }

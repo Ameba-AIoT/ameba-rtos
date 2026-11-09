@@ -7,9 +7,12 @@
 /* Includes ------------------------------------------------------------------*/
 
 #include <platform_autoconf.h>
+#include "platform_stdlib.h"
 #include "basic_types.h"
 #include "usbd_cdc_acm.h"
 #include "os_wrapper.h"
+#include "usb_app.h"
+#include "example_usbd_cdc_acm.h"
 
 /* Private defines -----------------------------------------------------------*/
 
@@ -116,9 +119,16 @@ static rtos_sema_t cdc_acm_async_xfer_sema;
 /* Written by the ISR, read by the hotplug thread, possibly on another core */
 static volatile u8 cdc_acm_attach_status;
 static rtos_sema_t cdc_acm_attach_status_changed_sema;
-/* Set by the hotplug thread when the stack can not be recovered, tells the xfer
-   thread to quit so that the last thread standing frees the shared objects. */
-static volatile u8 cdc_acm_stack_fatal;
+#endif
+
+/* Start/stop state: the hotplug thread (or, without hotplug, the start entry) owns the running
+   stack, example_usbd_cdc_acm_stop() asks it to leave through quit and joins it */
+static usb_app_ctx_t cdc_acm_app;
+
+#if CDC_ACM_HOTPLUG
+/* Set by the hotplug thread while the stack is torn down, so that a stop racing a failed
+   reinit does not deinit it twice */
+static volatile u8 cdc_acm_stack_down;
 #endif
 
 #if CDC_ACM_HOTPLUG && CDC_ACM_ASYNC_XFER
@@ -176,7 +186,7 @@ static int cdc_acm_cb_init(void)
 	cdc_acm_async_xfer_busy = 0;
 #endif
 
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 /**
@@ -190,7 +200,7 @@ static int cdc_acm_cb_deinit(void)
 	cdc_acm_async_xfer_buf_pos = 0;
 	cdc_acm_async_xfer_busy = 0;
 #endif
-	return HAL_OK;
+	return RTK_SUCCESS;
 }
 
 /**
@@ -204,13 +214,13 @@ static int cdc_acm_cb_deinit(void)
 static int cdc_acm_cb_received(u8 *buf, u32 len)
 {
 #if CDC_ACM_ASYNC_XFER
-	int ret = HAL_OK;
+	int ret = RTK_SUCCESS;
 	if (0 == cdc_acm_async_xfer_busy) {
 		if ((cdc_acm_async_xfer_buf_pos + len) > CDC_ACM_ASYNC_BUF_SIZE) {
 			len = CDC_ACM_ASYNC_BUF_SIZE - cdc_acm_async_xfer_buf_pos;  // extra data discarded
 		}
 
-		usb_os_memcpy((void *)((u32)cdc_acm_async_xfer_buf + cdc_acm_async_xfer_buf_pos), (const void *)buf, len);
+		memcpy((void *)((u32)cdc_acm_async_xfer_buf + cdc_acm_async_xfer_buf_pos), (const void *)buf, len);
 		cdc_acm_async_xfer_buf_pos += len;
 		if (cdc_acm_async_xfer_buf_pos >= CDC_ACM_ASYNC_BUF_SIZE) {
 			cdc_acm_async_xfer_buf_pos = 0;
@@ -221,7 +231,7 @@ static int cdc_acm_cb_received(u8 *buf, u32 len)
 		}
 	} else {
 		// RTK_LOGS(TAG, RTK_LOG_WARN, "Busy, discard %dB\n", len);
-		ret = HAL_BUSY;
+		ret = -RTK_ERR_BUSY;
 	}
 
 	return ret;
@@ -244,25 +254,27 @@ static int cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 	usb_cdc_acm_line_coding_t *lc = &cdc_acm_line_coding;
 	/* Ref USB 2.0 9.2.7: anything not explicitly accepted below is a request error, so
 	   the default status makes the core STALL EP0 instead of ACKing the status stage. */
-	int ret = HAL_ERR_PARA;
+	int ret = -RTK_ERR_BADARG;
 
 	switch (req->bRequest) {
 	/* Ref CDC PSTN 1.2 Table 4: bmCapabilities 0x02 declares no Comm Feature support and no
 	   encapsulated protocol is implemented, so those requests fall to default and are STALLed */
 	case USB_CDC_ACM_SEND_BREAK:
-		/* Do nothing */
-		ret = HAL_OK;
+		/* Ref CDC PSTN 1.2 6.3.13: no data stage, so wLength must be zero. Nothing to do */
+		if (req->wLength == 0U) {
+			ret = RTK_SUCCESS;
+		}
 		break;
 
 	case USB_CDC_ACM_SET_LINE_CODING:
 		/* Ref CDC PSTN 1.2 Table 17: the Line Coding structure is exactly 7 bytes, any
 		   other wLength must not update the cached line coding. */
 		if (req->wLength == USB_CDC_ACM_LINE_CODING_SIZE) {
-			lc->b.dwDteRate = (u32)(buf[0] | (buf[1] << 8) | (buf[2] << 16) | (buf[3] << 24));
+			lc->b.dwDteRate = (u32)buf[0] | ((u32)buf[1] << 8) | ((u32)buf[2] << 16) | ((u32)buf[3] << 24);
 			lc->b.bCharFormat = buf[4];
 			lc->b.bParityType = buf[5];
 			lc->b.bDataBits = buf[6];
-			ret = HAL_OK;
+			ret = RTK_SUCCESS;
 		}
 		break;
 
@@ -274,7 +286,7 @@ static int cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 		buf[4] = lc->b.bCharFormat;
 		buf[5] = lc->b.bParityType;
 		buf[6] = lc->b.bDataBits;
-		ret = HAL_OK;
+		ret = RTK_SUCCESS;
 		break;
 
 	case USB_CDC_ACM_SET_CONTROL_LINE_STATE:
@@ -293,7 +305,7 @@ static int cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 				USB_DIAG(USB_LAYER_APP, USB_EVT_LINK, 0);
 				usbd_cdc_acm_notify_serial_state(USB_CDC_ACM_CTRL_DSR | USB_CDC_ACM_CTRL_DCD);
 			}
-			ret = HAL_OK;
+			ret = RTK_SUCCESS;
 		}
 		break;
 
@@ -338,32 +350,41 @@ static void cdc_acm_cb_status_changed(u8 old_status, u8 status)
 static void example_usbd_cdc_acm_hotplug_thread(void *param)
 {
 	int ret = 0;
+	u8 fatal = 0U;
 
 	UNUSED(param);
 
 	for (;;) {
 		if (rtos_sema_take(cdc_acm_attach_status_changed_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
+			if (cdc_acm_app.quit != 0U) {
+				/* Stop requested: the stack is still up, example_usbd_cdc_acm_stop() tears it down */
+				break;
+			}
 			if (cdc_acm_attach_status == USBD_ATTACH_STATUS_DETACHED) {
 				RTK_LOGS(TAG, RTK_LOG_INFO, "DETACHED\n");
-#if CDC_ACM_HOTPLUG && CDC_ACM_ASYNC_XFER
+#if CDC_ACM_ASYNC_XFER
 				/* Set teardown before taking the lock so an in-flight xfer yields
-				   instead of spinning on HAL_BUSY while we free the stack. */
+				   instead of spinning on -RTK_ERR_BUSY while we free the stack. */
 				cdc_acm_teardown = 1U;
 				rtos_mutex_take(cdc_acm_xfer_lock, RTOS_SEMA_MAX_COUNT);
 #endif
 				usbd_cdc_acm_deinit();
 				usbd_deinit();
+				cdc_acm_stack_down = 1U;
 				RTK_LOGS(TAG, RTK_LOG_INFO, "Free heap: 0x%x\n", rtos_mem_get_free_heap_size());
 				ret = usbd_init(&cdc_acm_cfg);
 				if (ret != 0) {
+					fatal = 1U;
 					break;
 				}
 				ret = usbd_cdc_acm_init(&cdc_acm_cb, &cdc_acm_class_cfg);
 				if (ret != 0) {
 					usbd_deinit();
+					fatal = 1U;
 					break;
 				}
-#if CDC_ACM_HOTPLUG && CDC_ACM_ASYNC_XFER
+				cdc_acm_stack_down = 0U;
+#if CDC_ACM_ASYNC_XFER
 				/* Stack rebuilt: release the lock and let xfer resume. */
 				cdc_acm_teardown = 0U;
 				rtos_mutex_give(cdc_acm_xfer_lock);
@@ -375,24 +396,30 @@ static void example_usbd_cdc_acm_hotplug_thread(void *param)
 			}
 		}
 	}
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Hotplug thread exit\n");
 
-	/* The stack is fully deinited here, no more ISR callback. */
-#if CDC_ACM_HOTPLUG && CDC_ACM_ASYNC_XFER
-	/* The lock is still held (we broke out before the give above). Release it
-	   FIRST, then wake xfer: xfer checks stack_fatal before ever taking the
-	   lock, so once woken it goes straight to freeing the shared objects as the
-	   last thread standing — deleting a lock that is still held would be UB. */
-	rtos_mutex_give(cdc_acm_xfer_lock);
-#endif
+	if (fatal != 0U) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Hotplug thread exit\n");
+		/* The stack is fully deinited here, no more ISR callback. */
 #if CDC_ACM_ASYNC_XFER
-	/* Notify the xfer thread to quit, it frees the shared objects as the last
-	   thread standing. */
-	cdc_acm_stack_fatal = 1U;
-	rtos_sema_give(cdc_acm_async_xfer_sema);
-#else
-	cdc_acm_free_resource();
+		/* The lock is still held (we broke out before the give above). Release it
+		   so the xfer thread, woken through quit below, can leave. */
+		rtos_mutex_give(cdc_acm_xfer_lock);
 #endif
+		if (usb_app_ctx_claim_stop(&cdc_acm_app) != 0U) {
+			/* No stop is in flight: this thread finishes the teardown on its own */
+#if CDC_ACM_ASYNC_XFER
+			rtos_sema_give(cdc_acm_async_xfer_sema);
+			if (usb_app_ctx_join(&cdc_acm_app, 1U) != RTK_SUCCESS) {
+				/* The xfer thread may still touch the shared objects: leak them */
+				rtos_task_delete(NULL);
+			}
+#endif
+			cdc_acm_free_resource();
+			usb_app_ctx_end(&cdc_acm_app);
+			rtos_task_delete(NULL);
+		}
+	}
+	usb_app_ctx_leave(&cdc_acm_app);
 	rtos_task_delete(NULL);
 }
 #endif // CDC_ACM_HOTPLUG
@@ -403,7 +430,7 @@ static void example_usbd_cdc_acm_xfer_thread(void *param)
 	int ret;
 	u8 *xfer_buf;
 	u32 xfer_len;
-#if CDC_ACM_HOTPLUG && CDC_ACM_ASYNC_XFER
+#if CDC_ACM_HOTPLUG
 	/* Whether cdc_acm_xfer_lock is currently held by this thread, so the batch
 	   is released exactly once on every exit path (normal, teardown, fatal). */
 	u8 lock_held = 0U;
@@ -413,17 +440,14 @@ static void example_usbd_cdc_acm_xfer_thread(void *param)
 
 	for (;;) {
 		if (rtos_sema_take(cdc_acm_async_xfer_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
-#if CDC_ACM_HOTPLUG
-			if (cdc_acm_stack_fatal != 0U) {
-				/* Fatal hand-off: quit without touching the shared stack, the
-				   hotplug thread frees the objects as the last thread standing. */
+			if (cdc_acm_app.quit != 0U) {
+				/* Stop requested or the stack is dead: leave, the stop owner frees the objects */
 				break;
 			}
-#endif
-#if CDC_ACM_HOTPLUG && CDC_ACM_ASYNC_XFER
+#if CDC_ACM_HOTPLUG
 			/* Take the batch lock. A pending hotplug (teardown) is checked inside
 			   the loop below so we yield promptly instead of holding the lock
-			   across a HAL_BUSY retry while the stack is being freed. */
+			   across a -RTK_ERR_BUSY retry while the stack is being freed. */
 			rtos_mutex_take(cdc_acm_xfer_lock, RTOS_SEMA_MAX_COUNT);
 			lock_held = 1U;
 #endif
@@ -434,10 +458,9 @@ static void example_usbd_cdc_acm_xfer_thread(void *param)
 			cdc_acm_async_xfer_busy = 1;
 			RTK_LOGS(TAG, RTK_LOG_DEBUG, "Start xfer(%dB) idx(%d)\n", CDC_ACM_ASYNC_BUF_SIZE, cdc_acm_xfer_idx);
 			while (xfer_len > 0) {
-#if CDC_ACM_HOTPLUG && CDC_ACM_ASYNC_XFER
-				if (cdc_acm_stack_fatal != 0U) {
-					/* Reinit failed while we were mid-batch: release the lock and
-					   quit; hotplug frees the shared objects. */
+#if CDC_ACM_HOTPLUG
+				if (cdc_acm_app.quit != 0U) {
+					/* Stop requested mid-batch: release the lock and leave */
 					cdc_acm_async_xfer_busy = 0;
 					rtos_mutex_give(cdc_acm_xfer_lock);
 					lock_held = 0U;
@@ -454,28 +477,28 @@ static void example_usbd_cdc_acm_xfer_thread(void *param)
 #endif
 				if (xfer_len > cdc_acm_class_cfg.bulk_in_xfer_size) {
 					ret = usbd_cdc_acm_transmit(xfer_buf, cdc_acm_class_cfg.bulk_in_xfer_size);
-					if (ret == HAL_OK) {
+					if (ret == RTK_SUCCESS) {
 						xfer_len -= cdc_acm_class_cfg.bulk_in_xfer_size;
 						xfer_buf += cdc_acm_class_cfg.bulk_in_xfer_size;
-					} else { // HAL_BUSY
+					} else { // -RTK_ERR_BUSY
 						RTK_LOGS(TAG, RTK_LOG_INFO, "Xfer busy, retry[1]\n");
 						rtos_time_delay_us(200);
 					}
 				} else {
 					ret = usbd_cdc_acm_transmit(xfer_buf, xfer_len);
-					if (ret == HAL_OK) {
+					if (ret == RTK_SUCCESS) {
 						xfer_len = 0;
 						cdc_acm_async_xfer_busy = 0;
 						cdc_acm_xfer_idx++;
 						RTK_LOGS(TAG, RTK_LOG_DEBUG, "Xfer done\n");
 						break;
-					} else { // HAL_BUSY
+					} else { // -RTK_ERR_BUSY
 						RTK_LOGS(TAG, RTK_LOG_INFO, "Xfer busy, retry[2]\n");
 						rtos_time_delay_us(200);
 					}
 				}
 			}
-#if CDC_ACM_HOTPLUG && CDC_ACM_ASYNC_XFER
+#if CDC_ACM_HOTPLUG
 			if (lock_held) {
 				/* Normal completion still holds the lock; the teardown and fatal
 				   paths above already released it. */
@@ -488,18 +511,20 @@ static void example_usbd_cdc_acm_xfer_thread(void *param)
 
 #if CDC_ACM_HOTPLUG
 xfer_abort:
-	/* The hotplug thread already deinited the stack and quit, free the shared
-	   objects here as the last thread standing. */
-	cdc_acm_free_resource();
-	RTK_LOGS(TAG, RTK_LOG_ERROR, "Xfer thread abort\n");
 #endif
+	usb_app_ctx_leave(&cdc_acm_app);
 	rtos_task_delete(NULL);
 }
 #endif
 
-static void example_usbd_cdc_acm_thread(void *param)
+/**
+  * @brief  Bring the stack and the worker threads up
+  * @retval RTK_SUCCESS, or the first error, with everything already created rolled back
+  */
+static int cdc_acm_start(void)
 {
-	int ret = 0;
+	int ret;
+	u32 workers = 0U;
 #if CDC_ACM_HOTPLUG
 	rtos_task_t check_task;
 #endif
@@ -507,7 +532,10 @@ static void example_usbd_cdc_acm_thread(void *param)
 	rtos_task_t xfer_task;
 #endif
 
-	UNUSED(param);
+	ret = usb_app_ctx_begin(&cdc_acm_app);
+	if (ret != RTK_SUCCESS) {
+		return ret;
+	}
 
 #if CDC_ACM_ASYNC_XFER
 	ret = rtos_sema_create(&cdc_acm_async_xfer_sema, 0, 1);
@@ -517,6 +545,7 @@ static void example_usbd_cdc_acm_thread(void *param)
 #endif
 
 #if CDC_ACM_HOTPLUG
+	cdc_acm_stack_down = 0U;
 	ret = rtos_sema_create(&cdc_acm_attach_status_changed_sema, 0, 1);
 	if (ret != RTK_SUCCESS) {
 		goto exit_usbd_init_fail;
@@ -528,25 +557,37 @@ static void example_usbd_cdc_acm_thread(void *param)
 	if (ret != RTK_SUCCESS) {
 		goto exit_usbd_init_fail;
 	}
+	cdc_acm_teardown = 0U;
 #endif
 
 	ret = usbd_init(&cdc_acm_cfg);
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		goto exit_usbd_init_fail;
 	}
 
 	ret = usbd_cdc_acm_init(&cdc_acm_cb, &cdc_acm_class_cfg);
-
-	if (ret != HAL_OK) {
+	if (ret != RTK_SUCCESS) {
 		goto exit_usbd_cdc_acm_init_fail;
 	}
 
+#if CDC_ACM_ASYNC_XFER
+	// The priority of transfer thread shall be lower than USB isr priority
+	ret = rtos_task_create(&xfer_task, "usbd_cdc_acm_xfer_thread",
+						   example_usbd_cdc_acm_xfer_thread, NULL,
+						   CDC_ACM_XFER_THREAD_STACK_SIZE, CDC_ACM_XFER_THREAD_PRIORITY);
+	if (ret != RTK_SUCCESS) {
+		goto exit_create_task_fail;
+	}
+	workers++;
+#endif
+
 #if CDC_ACM_HOTPLUG
+	/* Created last: it owns the stack once running, so nothing after it can fail */
 	ret = rtos_task_create(&check_task, "usbd_cdc_acm_hotplug_thread",
 						   example_usbd_cdc_acm_hotplug_thread, NULL,
 						   CDC_ACM_HOTPLUG_THREAD_STACK_SIZE, CDC_ACM_HOTPLUG_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
-		goto exit_create_check_task_fail;
+		goto exit_create_task_fail;
 	}
 #if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
 	/* C-2: the USB OTG ISR is delivered on CPU0 (GIC ITARGETSR pins every SPI to
@@ -558,33 +599,20 @@ static void example_usbd_cdc_acm_thread(void *param)
 #endif
 #endif
 
+	return RTK_SUCCESS;
+
+exit_create_task_fail:
+	/* Wake and join the workers already running before the stack goes away */
+	cdc_acm_app.quit = 1U;
 #if CDC_ACM_ASYNC_XFER
-	// The priority of transfer thread shall be lower than USB isr priority
-	ret = rtos_task_create(&xfer_task, "usbd_cdc_acm_xfer_thread",
-						   example_usbd_cdc_acm_xfer_thread, NULL,
-						   CDC_ACM_XFER_THREAD_STACK_SIZE, CDC_ACM_XFER_THREAD_PRIORITY);
-	if (ret != RTK_SUCCESS) {
-		goto exit_create_xfer_task_fail;
+	rtos_sema_give(cdc_acm_async_xfer_sema);
+#endif
+	if (usb_app_ctx_join(&cdc_acm_app, workers) != RTK_SUCCESS) {
+		/* A worker may still run on the stack: keep it, the app stays not idle */
+		cdc_acm_app.state = USB_APP_STATE_STOPPING;
+		return -RTK_ERR_TIMEOUT;
 	}
-#endif
-
-	rtos_time_delay_ms(100);
-
-	rtos_task_delete(NULL);
-
-	return;
-
-#if CDC_ACM_ASYNC_XFER
-exit_create_xfer_task_fail:
-#if CDC_ACM_HOTPLUG
-	rtos_task_delete(check_task);
-#endif
-#endif
-
-#if CDC_ACM_HOTPLUG
-exit_create_check_task_fail:
 	usbd_cdc_acm_deinit();
-#endif
 
 exit_usbd_cdc_acm_init_fail:
 	usbd_deinit();
@@ -592,16 +620,82 @@ exit_usbd_cdc_acm_init_fail:
 exit_usbd_init_fail:
 	RTK_LOGS(TAG, RTK_LOG_ERROR, "USBD CDC ACM demo aborted\n");
 	cdc_acm_free_resource();
+	usb_app_ctx_end(&cdc_acm_app);
 
+	return ret;
+}
+
+static void example_usbd_cdc_acm_thread(void *param)
+{
+	UNUSED(param);
+
+	if (cdc_acm_start() != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Start fail\n");
+	}
 	rtos_task_delete(NULL);
 }
 
 /* Exported functions --------------------------------------------------------*/
 
 /**
-  * @brief  USB download de-initialize
-  * @param  None
-  * @retval Result of the operation: 0 if success else fail
+  * @brief  Start the CDC ACM device, used by the USB app manager
+  * @note   Task context only
+  * @retval RTK_SUCCESS, -RTK_ERR_BUSY if already running, or the init error
+  */
+int example_usbd_cdc_acm_start(void)
+{
+	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD CDC ACM demo start\n");
+
+	return cdc_acm_start();
+}
+
+/**
+  * @brief  Stop the CDC ACM device and release everything it owns
+  * @note   Task context only. Safe to call when not running.
+  * @retval RTK_SUCCESS once idle, -RTK_ERR_TIMEOUT if a worker did not leave in time
+  */
+int example_usbd_cdc_acm_stop(void)
+{
+	u32 workers = 0U;
+
+	if (usb_app_ctx_claim_stop(&cdc_acm_app) == 0U) {
+		/* Idle, or a worker found the stack dead and finishes the teardown itself */
+		return usb_app_ctx_wait_idle(&cdc_acm_app);
+	}
+
+#if CDC_ACM_HOTPLUG
+	rtos_sema_give(cdc_acm_attach_status_changed_sema);
+	workers++;
+#endif
+#if CDC_ACM_ASYNC_XFER
+	rtos_sema_give(cdc_acm_async_xfer_sema);
+	workers++;
+#endif
+	if (usb_app_ctx_join(&cdc_acm_app, workers) != RTK_SUCCESS) {
+		/* A worker is still on the stack: keep everything, the app stays STOPPING */
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Stop timeout\n");
+		return -RTK_ERR_TIMEOUT;
+	}
+
+	/* Every worker is gone: this caller is the only one left on the stack */
+#if CDC_ACM_HOTPLUG
+	/* The hotplug thread lost the claim after a failed reinit: the stack is already down */
+	if (cdc_acm_stack_down == 0U)
+#endif
+	{
+		usbd_cdc_acm_deinit();
+		usbd_deinit();
+	}
+	cdc_acm_free_resource();
+	usb_app_ctx_end(&cdc_acm_app);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD CDC ACM demo stop\n");
+
+	return RTK_SUCCESS;
+}
+
+/**
+  * @brief  Example entry: start the CDC ACM device from its own thread
+  * @retval None
   */
 void example_usbd_cdc_acm(void)
 {

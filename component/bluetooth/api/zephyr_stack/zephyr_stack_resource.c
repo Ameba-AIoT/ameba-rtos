@@ -33,6 +33,10 @@ STRUCT_ARRAY_SIZE_DECLARE(init_entry) = sizeof(STRUCT_ARRAY(init_entry)) / sizeo
 extern struct k_mem_slab att_slab;
 extern struct k_mem_slab chan_slab;
 extern struct k_mem_slab req_slab;
+#if defined(RTK_BLE_COC_SUPPORT) && RTK_BLE_COC_SUPPORT
+extern struct k_mem_slab le_coc_server_pool;
+extern struct k_mem_slab le_coc_chan_slab;
+#endif
 #if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT
 extern struct k_mem_slab loopback_buf_pool;
 extern struct k_mem_slab segs;
@@ -48,6 +52,10 @@ STRUCT_ARRAY_DECLARE(k_mem_slab) = {
 	&att_slab,
 	&chan_slab,
 	&req_slab,
+#if defined(RTK_BLE_COC_SUPPORT) && RTK_BLE_COC_SUPPORT
+	&le_coc_server_pool,
+	&le_coc_chan_slab,
+#endif
 #if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT
 	&loopback_buf_pool,
 	&segs,
@@ -443,4 +451,53 @@ void zephyr_builtin_gatt_svc_set(bool enable)
 	}
 
 	STRUCT_ARRAY_SIZE(bt_gatt_service_static) = enable ? default_size : 0;
+}
+
+extern void zephyr_hci_core_work_reset(void);
+extern void zephyr_hci_ecc_work_reset(void);
+extern void zephyr_settings_id_work_reset(void);
+extern void zephyr_settings_irk_work_reset(void);
+#if defined(CONFIG_BT_GATT_NOTIFY_MULTIPLE)
+extern void zephyr_gatt_work_reset(void);
+#endif
+#if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT
+extern void zephyr_mesh_pb_adv_work_reset(void);
+extern void zephyr_mesh_cfg_srv_work_reset(void);
+extern void zephyr_mesh_provisioner_work_reset(void);
+extern void zephyr_mesh_provisionee_work_reset(void);
+extern void zephyr_mesh_delayable_msg_work_reset(void);
+#if defined(CONFIG_BT_MESH_ADV_EXT) && CONFIG_BT_MESH_ADV_EXT
+extern void zephyr_mesh_adv_ext_work_reset(void);
+#endif
+#if defined(CONFIG_BT_MESH_GATT_PROXY) && CONFIG_BT_MESH_GATT_PROXY
+extern void zephyr_mesh_proxy_srv_work_reset(void);
+#endif
+#endif
+
+/* Statically defined works may be left flags QUEUED/DELAYED after bt_disable(), restore them to initial state.
+ * Must be called after all work queues are deleted, otherwise works may be re-submitted after reset.
+ * When a new static k_work/k_work_delayable is initiated by K_WORK_DEFINE/K_WORK_DELAYABLE_DEFINE/
+ * Z_WORK_INITIALIZER/Z_WORK_DELAYABLE_INITIALIZER, add its reset function here too. */
+void zephyr_work_reset(void)
+{
+	zephyr_hci_core_work_reset();
+	zephyr_hci_ecc_work_reset();
+	zephyr_settings_id_work_reset();
+	zephyr_settings_irk_work_reset();
+#if defined(CONFIG_BT_GATT_NOTIFY_MULTIPLE)
+	zephyr_gatt_work_reset();
+#endif
+#if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT
+	zephyr_mesh_pb_adv_work_reset();
+	zephyr_mesh_cfg_srv_work_reset();
+	zephyr_mesh_provisioner_work_reset();
+	zephyr_mesh_provisionee_work_reset();
+	zephyr_mesh_delayable_msg_work_reset();
+#if defined(CONFIG_BT_MESH_ADV_EXT) && CONFIG_BT_MESH_ADV_EXT
+	zephyr_mesh_adv_ext_work_reset();
+#endif
+#if defined(CONFIG_BT_MESH_GATT_PROXY) && CONFIG_BT_MESH_GATT_PROXY
+	zephyr_mesh_proxy_srv_work_reset();
+#endif
+#endif
 }

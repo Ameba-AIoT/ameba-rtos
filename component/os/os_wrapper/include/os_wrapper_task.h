@@ -196,6 +196,22 @@ void rtos_task_set_time_out_state(rtos_time_out_t *const p_rtos_time_out);
 int rtos_task_check_for_time_out(rtos_time_out_t *const p_rtos_time_out, uint32_t *p_ms_to_wait);
 
 /**
+ * @brief  Notify a task: increment its notification value, which wakes it if it waits in rtos_task_notify_take().
+ *         Cheaper than a semaphore, but only that one task can wait for it. Callable from a task or an interrupt.
+ * @param  p_handle: Handle of the task to notify.
+ * @retval RTK_SUCCESS, or RTK_FAIL if p_handle is NULL
+ */
+int rtos_task_notify_give(rtos_task_t p_handle);
+
+/**
+ * @brief  Wait for a notification of the calling task, and clear its notification value on return (several notifications count as one).
+ *         Task context only. It does not block (wait 0) in a critical section or while the OS cannot switch tasks.
+ * @param  wait_ms: Max time to wait in milliseconds. RTOS_MAX_DELAY waits forever.
+ * @retval RTK_SUCCESS if a notification was received, RTK_FAIL on timeout or when called from an interrupt
+ */
+int rtos_task_notify_take(uint32_t wait_ms);
+
+/**
  * @brief  Get idle task handle.
  * @retval Idle task handle pointer.
  */
