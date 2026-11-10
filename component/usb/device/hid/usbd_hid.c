@@ -19,6 +19,18 @@
 #define USBD_HID_PRIV_ITF_NUM                0x00U /**< Priv/data interface. */
 #define USBD_HID_VENDOR_ITF_NUM              0x01U /**< Vendor interface. */
 
+/* Device level class codes: the vendor mode spans two interfaces under an IAD, which a device
+   reports as MISC/Common/IAD, Ref USB IAD ECN 1.0. Otherwise the class is set per interface. */
+#ifdef CONFIG_USBD_HID_VENDOR
+#define USBD_HID_DEV_CLASS                   0xEFU
+#define USBD_HID_DEV_SUBCLASS                0x02U
+#define USBD_HID_DEV_PROTOCOL                0x01U
+#else
+#define USBD_HID_DEV_CLASS                   0x00U
+#define USBD_HID_DEV_SUBCLASS                0x00U
+#define USBD_HID_DEV_PROTOCOL                0x00U
+#endif
+
 // HID request
 #define USBD_HID_GET_REPORT						0x01
 #define USBD_HID_GET_IDLE						0x02
@@ -97,9 +109,9 @@ static const u8 usbd_hid_dev_desc[USB_LEN_DEV_DESC] = {
 	USB_DESC_TYPE_DEVICE,							/* bDescriptorType */
 	0x00,											/* bcdUSB */
 	0x02,
-	0x00,											/* bDeviceClass */
-	0x00,											/* bDeviceSubClass */
-	0x00,											/* bDeviceProtocol */
+	USBD_HID_DEV_CLASS,								/* bDeviceClass */
+	USBD_HID_DEV_SUBCLASS,							/* bDeviceSubClass */
+	USBD_HID_DEV_PROTOCOL,							/* bDeviceProtocol */
 	USB_MAX_EP0_SIZE,								/* bMaxPacketSize */
 	USB_LOW_BYTE(USB_VID),							/* idVendor (patched by core from usbd_dev_info_t) */
 	USB_HIGH_BYTE(USB_VID),
@@ -120,9 +132,9 @@ static const u8 usbd_hid_device_qualifier_desc[USB_LEN_DEV_QUALIFIER_DESC] = {
 	USB_DESC_TYPE_DEVICE_QUALIFIER,                 /* bDescriptorType */
 	0x00,                                           /* bcdUSB */
 	0x02,
-	0x00,                                           /* bDeviceClass */
-	0x00,                                           /* bDeviceSubClass */
-	0x00,                                           /* bDeviceProtocol */
+	USBD_HID_DEV_CLASS,                             /* bDeviceClass */
+	USBD_HID_DEV_SUBCLASS,                          /* bDeviceSubClass */
+	USBD_HID_DEV_PROTOCOL,                          /* bDeviceProtocol */
 	0x40,                                           /* bMaxPacketSize */
 	0x01,                                           /* bNumConfigurations */
 	0x00,                                           /* Reserved */
@@ -1038,6 +1050,12 @@ static int hid_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			ret = -RTK_ERR_BADARG;
 			break;
 		}
+		/* Ref USB 2.0 9.4.2: the HID interfaces exist only once configured, and the core never
+		   delivers the data stage of an H2D request before, which would leave it pending */
+		if (dev->dev_state != USBD_STATE_CONFIGURED) {
+			ret = -RTK_ERR_BADARG;
+			break;
+		}
 		/* Ref HID 1.11 7.2: wIndex of every HID class request is the interface number. */
 		if (usbd_hid_is_own_itf(req->wIndex) == 0U) {
 			ret = -RTK_ERR_BADARG;
@@ -1196,6 +1214,12 @@ static int hid_set_config(usb_dev_t *dev, u8 config)
 	/* Init INTR OUT EP */
 	info = &ep_intr_out->info;
 	info->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USBD_HID_HS_INT_MAX_PACKET_SIZE : USBD_HID_FS_INT_MAX_PACKET_SIZE;
+#ifndef CONFIG_USBD_HID_VENDOR
+	/* The controller receives whole DWORD aligned packets: request no more than the buffer holds
+	   at this MPS, so that usbd_ep_receive() accepts it. usbd_hid_private_init() made sure the
+	   buffer holds one packet at least. */
+	ep_intr_out->xfer_len = usb_get_max_payload_len(ep_intr_out->xfer_buf_len, info->mps);
+#endif
 	ret = usbd_ep_init(dev, ep_intr_out);
 	if (ret != RTK_SUCCESS) {
 		goto exit_clear_config;
@@ -1633,8 +1657,14 @@ static int usbd_hid_private_init(const usbd_hid_usr_cb_t *cb, const usbd_hid_con
 	ep_intr_out->xfer_len = 0U;
 #else
 	ep_intr_out->xfer_buf_len = (cfg->intr_out_xfer_size != 0U) ? cfg->intr_out_xfer_size : USBD_HID_INTR_OUT_BUF_SIZE;
+	/* The INTR OUT buffer receives whole packets, so it shall hold one at every speed, otherwise
+	   SET_CONFIGURATION fails, refer to hid_set_config() */
+	if ((usb_get_max_payload_len(ep_intr_out->xfer_buf_len, USBD_HID_HS_INT_MAX_PACKET_SIZE) == 0U) ||
+		(usb_get_max_payload_len(ep_intr_out->xfer_buf_len, USBD_HID_FS_INT_MAX_PACKET_SIZE) == 0U)) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "OUT buf %u < mps\n", ep_intr_out->xfer_buf_len);
+		return -RTK_ERR_BADARG;
+	}
 	ep_intr_out->xfer_buf = (u8 *)usb_os_malloc(ep_intr_out->xfer_buf_len);
-	ep_intr_out->xfer_len = ep_intr_out->xfer_buf_len;
 	if (ep_intr_out->xfer_buf == NULL) {
 		return -RTK_ERR_NOMEM;
 	}

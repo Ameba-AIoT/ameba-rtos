@@ -337,6 +337,10 @@ static int cdc_acm_set_config(usb_dev_t *dev, u8 config)
 	/* Init BULK OUT EP */
 	info = &ep_bulk_out->info;
 	info->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USB_BULK_HS_MAX_MPS : USB_BULK_FS_MAX_MPS;
+	/* The controller receives whole DWORD aligned packets: request no more than the buffer holds
+	   at this MPS, so that usbd_ep_receive() accepts it. usbd_cdc_acm_private_init() made sure
+	   the buffer holds one packet at least. */
+	ep_bulk_out->xfer_len = usb_get_max_payload_len(ep_bulk_out->xfer_buf_len, info->mps);
 	ret = usbd_ep_init(dev, ep_bulk_out);
 	if (ret != RTK_SUCCESS) {
 		goto exit_clear_config;
@@ -1098,6 +1102,14 @@ static int usbd_cdc_acm_private_init(const usbd_cdc_acm_cb_t *cb,
 		return -RTK_ERR_BADARG;
 	}
 
+	/* The BULK OUT buffer receives whole packets, so it shall hold one at every speed the device
+	   may run at, otherwise SET_CONFIGURATION fails, refer to cdc_acm_set_config() */
+	if ((usb_get_max_payload_len(cfg->bulk_out_xfer_size, USB_BULK_HS_MAX_MPS) == 0U) ||
+		(usb_get_max_payload_len(cfg->bulk_out_xfer_size, USB_BULK_FS_MAX_MPS) == 0U)) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "OUT buf %u < mps\n", cfg->bulk_out_xfer_size);
+		return -RTK_ERR_BADARG;
+	}
+
 	/* No H2D class request is waiting for its data stage yet. The device context is a static
 	   object, so a re-init after deinit must not inherit a stale pending flag. */
 	cdc->ctrl_req_pending = 0U;
@@ -1114,7 +1126,6 @@ static int usbd_cdc_acm_private_init(const usbd_cdc_acm_cb_t *cb,
 	info->type = USB_CH_EP_TYPE_BULK;
 	ep_bulk_out->xfer_buf_len = cfg->bulk_out_xfer_size;
 	ep_bulk_out->xfer_buf = (u8 *)usb_os_malloc(ep_bulk_out->xfer_buf_len);
-	ep_bulk_out->xfer_len = ep_bulk_out->xfer_buf_len;
 	if (ep_bulk_out->xfer_buf == NULL) {
 		ret = -RTK_ERR_NOMEM;
 		goto USBD_CDC_Init_exit;

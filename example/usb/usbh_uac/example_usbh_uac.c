@@ -420,7 +420,6 @@ static void example_usbh_uac_play_thread(void *param)
 	u32 offset = 0;
 	u32 debug_time = 0;
 	int ret;
-	u8 playback_format_find = 0;
 	u8 is_playing = 0;
 	u8 fmt_cnt;
 	u8 i = 0;
@@ -471,28 +470,15 @@ static void example_usbh_uac_play_thread(void *param)
 			continue;
 		}
 
-		playback_format_find = 0;
-
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Play fmt list:\n");
 		for (i = 0; i < fmt_cnt; i++) {
 			audio_fmt = &(fmt_info[i]);
 			RTK_LOGS(TAG, RTK_LOG_INFO, "[%d] CH=%d BW=%d FREQ=%d\n",
 					 i, audio_fmt->ch_cnt, audio_fmt->bit_width, audio_fmt->sampling_freq);
-
-			if ((playback_format_find == 0)
-				&& (audio_fmt->sampling_freq == USBH_UAC_PLAY_SAMPLING_FREQ)
-				&& (audio_fmt->bit_width    == USBH_UAC_PLAY_BITWIDTH)
-				&& (audio_fmt->ch_cnt       == USBH_UAC_PLAY_CHANNELS)) {
-				playback_format_find = 1;
-			}
 		}
 
-		if (playback_format_find == 0) {
-			usbh_uac_unlock(usbh_uac_play_mutex);
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "Play fmt mismatch\n");
-			continue;
-		}
-
+		/* No exact match on the list above: a continuous rate range is listed by its two bounds
+		   only, so the class matches the format, discrete or ranged, and fails on a mismatch */
 		if (usbh_uac_set_alt_setting(USBH_UAC_ISOC_OUT_DIR,
 									 USBH_UAC_PLAY_CHANNELS,
 									 USBH_UAC_PLAY_BITWIDTH,

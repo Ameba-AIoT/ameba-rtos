@@ -53,10 +53,6 @@
 /* CLEAR_FEATURE(ENDPOINT_HALT) attempts before the device is re-enumerated */
 #define USBH_CDC_ECM_HALT_RETRY_MAX_CNT              3U
 
-/* Upper bound for deinit to wait for the tasks inside usbh_cdc_ecm_send_data() to leave. A
- * woken caller leaves within microseconds, only a starved one takes longer. */
-#define USBH_CDC_ECM_TX_EXIT_TIMEOUT_MS              500U
-
 /* Private types -------------------------------------------------------------*/
 
 typedef enum {
@@ -139,7 +135,7 @@ static int usbh_cdc_ecm_bulk_tx(void);
 static int usbh_cdc_ecm_cb_intr_receive(u8 *buf, u32 length);
 static int usbh_cdc_ecm_cb_bulk_send(int state);
 static int usbh_cdc_ecm_intr_receive(void);
-static int usbh_cdc_ecm_tx_status_check(void);
+static void usbh_cdc_ecm_tx_status_check(void);
 static int usbh_cdc_ecm_bulk_send(u8 *buf, u32 len);
 static void usbh_cdc_ecm_deinit_all_pipe(void);
 static void usbh_cdc_ecm_halt(usb_host_t *host, const usbh_pipe_t *pipe);
@@ -285,10 +281,11 @@ static int usbh_cdc_ecm_cb_intr_receive(u8 *buf, u32 length)
 	usbh_cdc_ecm_host_t *cdc = &usbh_cdc_ecm_host;
 	if (buf && length >= 8) {
 		/*A1 00 00 00 01 00 00 00 */
-		/* wValue is 0 (disconnect) or 1 (connect) and wIndex names the Communications interface,
-		 * Ref CDC 1.2 6.3.1: a notification of another interface or value is not ours to take */
+		/* wValue is 0 (disconnect) or 1 (connect), Ref CDC 1.2 6.3.1. wIndex is not checked: the notification
+		 * arrives on this function's own interrupt endpoint, and a RTL8152 names its data interface in it
+		 * rather than the Communications interface, so the check only drops a working device's link state. */
 		if ((length == 8U) && (buf[0] == 0xA1U) && (buf[1] == USB_CDC_NOTIFY_NETWORK_CONNECTION) &&
-			(buf[2] <= 1U) && (buf[3] == 0U) && (buf[4] == cdc->ctrl_itf_id) && (buf[5] == 0U)) {
+			(buf[2] <= 1U) && (buf[3] == 0U)) {
 			cdc->eth_hw_connect = buf[2];
 			if (cdc->eth_hw_connect && (cdc->intr_check_tick != usbh_cdc_ecm_get_eth_status_check_time())) {
 				cdc->intr_check_tick = usbh_cdc_ecm_get_eth_status_check_time();
@@ -1995,24 +1992,25 @@ static int usbh_cdc_ecm_cb_bulk_send(int state)
 	return RTK_SUCCESS;
 }
 
-static int usbh_cdc_ecm_tx_status_check(void)
+static void usbh_cdc_ecm_tx_status_check(void)
 {
 	usbh_cdc_ecm_host_t *cdc = &usbh_cdc_ecm_host;
 	u32 wait_ms = 0U;
 
 	/* Wake a sender blocked on the sema and wait for every task inside the TX API to leave
-	 * before the sema and buffers go away; bounded so a starved caller cannot hang the teardown */
+	 * before the sema and buffers go away. No upper bound: the gate is closed, so a woken
+	 * caller leaves within microseconds, and freeing under a starved one would be the use
+	 * after free this wait exists for. A wait that long is reported after
+	 * USBH_TEARDOWN_WAIT_FIRST_LOG_MS, then every USBH_TEARDOWN_WAIT_LOG_MS. */
 	while ((cdc->bulk_tx_block != 0U) || (cdc->tx_users != 0U)) {
-		if (wait_ms >= USBH_CDC_ECM_TX_EXIT_TIMEOUT_MS) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "Wait TX exit TO\n");
-			break;
-		}
 		usb_os_sema_give(cdc->bulk_tx_sema);
 		usb_os_sleep_ms(1U);
 		wait_ms++;
+		if ((wait_ms >= USBH_TEARDOWN_WAIT_FIRST_LOG_MS) &&
+			(((wait_ms - USBH_TEARDOWN_WAIT_FIRST_LOG_MS) % USBH_TEARDOWN_WAIT_LOG_MS) == 0U)) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Wait TX exit %dms\n", wait_ms);
+		}
 	}
-
-	return RTK_SUCCESS;
 }
 
 static void usbh_cdc_ecm_deinit_all_pipe(void)

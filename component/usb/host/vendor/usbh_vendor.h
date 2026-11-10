@@ -161,8 +161,11 @@ typedef struct {
 
 /**
  * @brief  Initialize the Vendor Class driver.
+ * @note   The class relies on the SOF interrupt to pace the ISOC OUT loop and to re-drive a NAKed INTR transfer,
+ *         so the host shall run with usbh_config_t::tick_source = USBH_SOF_TICK, or with USBH_SOF_INTR set in
+ *         usbh_config_t::ext_intr_enable.
  * @param  cb: Pointer to the application callback structure.
- * @return 0 on success, non-zero on failure.
+ * @return 0 on success, -RTK_ERR_BADARG for a NULL cb or an init without a prior deinit, other non-zero on failure.
  */
 int usbh_vendor_init(const usbh_vendor_cb_t *cb);
 

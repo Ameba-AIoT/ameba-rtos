@@ -454,6 +454,12 @@ static int usbd_dfu_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			ret = -RTK_ERR_IO;
 			break;
 		}
+		/* Ref USB 2.0 9.4.2: the DFU interface exists only once configured, a DETACH before would
+		   re-enumerate in the middle of the enumeration */
+		if (dev->dev_state != USBD_STATE_CONFIGURED) {
+			ret = -RTK_ERR_IO;
+			break;
+		}
 		/* Ref DFU 1.1 3.1: wIndex of every DFU class request is the DFU interface number.
 		   Reject a foreign interface so composite dispatch can continue to its owner. */
 		if (req->wIndex != USBD_DFU_ITF_NUM) {

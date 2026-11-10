@@ -205,6 +205,8 @@ int usbh_cdc_ecm_init(const usbh_cdc_ecm_state_cb_t *cb, const usbh_cdc_ecm_conf
 
 /**
  * @brief  De-initializes the CDC ECM host class driver and releases resources.
+ * @note   Task context only. Closes the TX gate first, then waits without an upper bound for every
+ *         task inside usbh_cdc_ecm_send_data() to leave before its semaphore and buffers go away.
  */
 void usbh_cdc_ecm_deinit(void);
 

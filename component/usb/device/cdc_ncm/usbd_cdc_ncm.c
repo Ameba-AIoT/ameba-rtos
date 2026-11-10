@@ -1838,6 +1838,12 @@ static int usbd_cdc_ncm_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			ret = -RTK_ERR_BADARG;
 			break;
 		}
+		/* Ref USB 2.0 9.4.2: the NCM functions exist only once configured, and the core never
+		   delivers the data stage of an H2D request before, which would leave it pending */
+		if (dev->dev_state != USBD_STATE_CONFIGURED) {
+			ret = -RTK_ERR_BADARG;
+			break;
+		}
 		/* Ref NCM 1.0 6.2: every NCM class request is addressed to the communication
 		 * interface, so a wrong wIndex cannot make the device answer a GET or apply a SET
 		 * the host should not have sent.
@@ -2047,8 +2053,11 @@ static int usbd_cdc_ncm_setup(usb_dev_t *dev, usb_setup_req_t *req)
 				break;
 
 			default:
-				/* Forward to upper layer with data stage if needed */
-				if (req->wLength > 0U) {
+				/* Ref USB 2.0 9.2.7: a request nobody handles is a request error, never ACKed.
+				   Forward to upper layer with data stage if needed */
+				if ((ncm->cb == NULL) || (ncm->cb->setup == NULL)) {
+					ret = -RTK_ERR_BADARG;
+				} else if (req->wLength > 0U) {
 					usb_os_memcpy((void *)&ncm->ctrl_req, (const void *)req, sizeof(usb_setup_req_t));
 					ncm->ctrl_req_pending = 1U;
 					ep0_out->xfer_len = req->wLength;
@@ -2059,9 +2068,7 @@ static int usbd_cdc_ncm_setup(usb_dev_t *dev, usb_setup_req_t *req)
 						ncm->ctrl_req_pending = 0U;
 					}
 				} else {
-					if ((ncm->cb != NULL) && (ncm->cb->setup != NULL)) {
-						ret = ncm->cb->setup(req, NULL);
-					}
+					ret = ncm->cb->setup(req, NULL);
 				}
 				break;
 			}
