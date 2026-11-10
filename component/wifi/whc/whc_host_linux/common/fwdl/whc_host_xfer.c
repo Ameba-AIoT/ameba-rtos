@@ -25,7 +25,7 @@
 #include <linux/delay.h>
 #include <linux/jiffies.h>
 #include <linux/namei.h>
-#ifdef CONFIG_WHC_HCI_SDIO
+#if defined(CONFIG_WHC_HCI_SDIO) || defined(CONFIG_WHC_HCI_GSPI)
 #include "ameba_inic.h"
 #endif
 
@@ -70,7 +70,6 @@ struct whc_xfer_adapter_t *whc_xfer_adapter_alloc(void *interface, const struct 
 	adapter->hash_size = hal_config->hash_size;
 	adapter->xfer_page_size = hal_config->xfer_page_size;
 	adapter->read_buf_size = hal_config->read_buf_size;
-	adapter->manifest_pos = hal_config->manifest_pos;
 	adapter->chip_id = hal_config->chip_id;
 	adapter->min_protocol_version = hal_config->min_protocol_version;
 	adapter->max_protocol_version = hal_config->max_protocol_version;
@@ -79,8 +78,8 @@ struct whc_xfer_adapter_t *whc_xfer_adapter_alloc(void *interface, const struct 
 	adapter->image_dir = (char *)hal_config->image_dir;
 
 	/* Allocate TX buffer (DESC + page_size for firmware write data) */
-	/* SDIO: extra INIC_TX_DESC space needed by whc_sdio_send (memmove prepends it) */
-#ifdef CONFIG_WHC_HCI_SDIO
+	/* SDIO/GSPI: extra INIC_TX_DESC space needed by send (memmove prepends it before the payload) */
+#if defined(CONFIG_WHC_HCI_SDIO) || defined(CONFIG_WHC_HCI_GSPI)
 	buf = (u8 *)kzalloc(WHC_XFER_DESC_SIZE + adapter->xfer_page_size + sizeof(INIC_TX_DESC) + WHC_XFER_DMA_ALIGNMENT, GFP_KERNEL);
 #else
 	buf = (u8 *)kzalloc(WHC_XFER_DESC_SIZE + adapter->xfer_page_size + WHC_XFER_DMA_ALIGNMENT, GFP_KERNEL);
