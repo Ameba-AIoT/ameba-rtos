@@ -52,14 +52,35 @@
 #define WHC_XFER_CFG_WRITE_CHK_MASK			0x01
 
 #define WHC_XFER_MANIFEST_SIZE				4096
+#define PAGE_SIZE_4K					0x1000U /* Flash sector / 4KB page size for address alignment */
 
 #define WHC_XFER_MANIFEST_POS_HEAD			0
 #define WHC_XFER_MANIFEST_POS_TAIL			1
 
+/*
+ * manifest_target_addr packs three questions into one u32:
+ *   1. Has manifest?  2. Where in file?  3. Where on device?
+ *
+ * Sentinels 0-4 (all real addresses are even and >= 0x1000):
+ *             | written AFTER content | written BEFORE content (at flash_target_addr) |
+ *  File HEAD  |  HEAD_AFTER  (1)      |  HEAD_BEFORE  (3)                             |
+ *  File TAIL  |  TAIL_AFTER  (2)      |  TAIL_BEFORE  (4)                             |
+ *
+ * Explicit address: >= 0x1000, bit0=1 → HEAD, bit0=0 → TAIL
+ */
+#define WHC_MANIFEST_NONE            0U
+#define WHC_MANIFEST_HEAD_AFTER      1U
+#define WHC_MANIFEST_TAIL_AFTER      2U
+#define WHC_MANIFEST_HEAD_BEFORE     3U
+#define WHC_MANIFEST_TAIL_BEFORE     4U
+#define WHC_MANIFEST_HEAD(addr)      ((u32)(addr) | 1U)
+#define WHC_MANIFEST_TAIL(addr)      ((u32)(addr))
+
 #define WHC_XFER_FLASH_PAGE_SIZE				1024
 
-#define WHC_XFER_DEFAULT_TIMEOUT				5
-#define WHC_XFER_QUERY_TIMEOUT				5
+/* BOOT/QUERY device processing is sub-ms; 50ms is a safe upper bound. */
+#define WHC_XFER_DEFAULT_TIMEOUT			50
+#define WHC_XFER_QUERY_TIMEOUT				50
 
 /* Memory types (must match fullmac) */
 #define WHC_XFER_MEM_TYPE_TCM_VAL			0
@@ -67,17 +88,16 @@
 #define WHC_XFER_MEM_TYPE_SRAM_VAL			2
 #define WHC_XFER_MEM_TYPE_PSRAM_VAL			3
 
-/* Max 4KB sector erase time: typical 70ms for GD25Q256D, max 400ms for GD25Q256D */
-#define WHC_XFER_FLASH_ERASE_4KB_TIMEOUT		600
+/* 4KB sector erase: max ~500ms; 1000ms/4KB gives >=2x margin. */
+#define WHC_XFER_FLASH_ERASE_4KB_TIMEOUT		1000
 
-/* Max page program time: typical 0.5ms for GD25Q128E, max 3ms for W25Q256JV */
-/* Take 0.5ms * 10 = 5ms */
-#define WHC_XFER_PAGE_WRITE_TIMEOUT			5
+/* 1KB XFER page = 4x256B flash pages; max page-program ~3ms → worst-case 12ms/KB.
+ * 50ms/KB gives >=4x margin, covering host scheduling jitter (e.g. Raspberry Pi). */
+#define WHC_XFER_PAGE_WRITE_TIMEOUT			50
 
-/* Read flash with 1IO@10MHz(10Mbps), ~0.8ms/KB */
-/* Take 2ms/KB */
-#define WHC_XFER_FLASH_HASH_1KB_TIMEOUT		2
-#define WHC_XFER_FLASH_CHECKSUM_1KB_TIMEOUT	2
+/* Flash read ~0.8ms/KB (1IO@10MHz) + hash/checksum compute; 4ms/KB gives >=4x margin. */
+#define WHC_XFER_FLASH_HASH_1KB_TIMEOUT		4
+#define WHC_XFER_FLASH_CHECKSUM_1KB_TIMEOUT	4
 
 #define CONFIG_WHC_WRITE_CHK_EN				1
 #define CONFIG_WHC_DOWNLOAD_CHK_EN			1
@@ -150,13 +170,12 @@ struct whc_xfer_adapter_t {
 	int read_buf_size;
 	int hash_size;
 	int xfer_page_size;
-	int manifest_pos;
 	u16 chip_id;
 	u16 min_protocol_version;
 	u16 max_protocol_version;
 
-#ifdef CONFIG_WHC_HCI_SDIO
-	/* SDIO XFER specific fields for interrupt-driven RX */
+#if defined(CONFIG_WHC_HCI_SDIO) || defined(CONFIG_WHC_HCI_GSPI)
+	/* Interrupt-driven RX synchronisation (SDIO and GSPI) */
 	wait_queue_head_t sdio_rx_wq;
 	u8 sdio_rx_ready;
 #endif
@@ -179,7 +198,8 @@ struct whc_xfer_ops_t {
 
 enum whc_image_type_t {
 	WHC_IMAGE_TYPE_BOOTLOADER = 0,
-	WHC_IMAGE_TYPE_APPLICATION
+	WHC_IMAGE_TYPE_APPLICATION,
+	WHC_IMAGE_TYPE_RAW,		/* Write entire file verbatim to flash_target_addr; signature verified first */
 };
 
 enum whc_mem_type_t {
@@ -216,18 +236,30 @@ struct whc_mem_region_t {
 	.end_addr = _end_addr, \
 	.mem_type = _mem_type
 
-struct whc_image_t {
-	char *image_name;
-	u32 signature[2];
-	u32 flash_target_addr;
-	u32 manifest_target_addr;
-	enum whc_image_type_t image_type;
-	enum whc_post_process_t post_process;
+/*
+ * Image signature identifiers — index into whc_signatures[] table.
+ * Using an enum avoids repeating raw magic bytes in every image entry.
+ */
+enum whc_sig_t {
+	WHC_SIG_LOADER = 0,	/* {0x96969999, 0xFC66CC3F} — bootloader/loader images */
+	WHC_SIG_APP,		/* {0x35393138, 0x31313738} — application images       */
 };
 
-#define WHC_DEFINE_IMAGE(_image_name, _signature0, _signature1, _flash_target_addr, _manifest_target_addr, _image_type, _post_process) \
+/* Signature lookup table, indexed by enum whc_sig_t */
+extern const u32 whc_signatures[][2];
+
+struct whc_image_t {
+	char *image_name;
+	enum whc_sig_t sig;
+	u32 flash_target_addr;
+	u32 manifest_target_addr;	/* WHC_MANIFEST_* encoding */
+	enum whc_image_type_t image_type;
+	enum whc_post_process_t post_process;	/* NONE = optional */
+};
+
+#define WHC_DEFINE_IMAGE(_image_name, _sig, _flash_target_addr, _manifest_target_addr, _image_type, _post_process) \
 	.image_name = _image_name, \
-	.signature = {_signature0, _signature1}, \
+	.sig = _sig, \
 	.flash_target_addr = _flash_target_addr, \
 	.manifest_target_addr = _manifest_target_addr, \
 	.image_type = _image_type, \

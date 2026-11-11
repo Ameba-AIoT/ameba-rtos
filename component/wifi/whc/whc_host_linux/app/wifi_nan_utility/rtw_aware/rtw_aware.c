@@ -141,7 +141,7 @@ struct nan_service_mgnt {
 #define NAN_BAND_2G_5G	0x3
 
 struct basic_config {
-	char device_mac[MAC_STR_LEN];
+	char device_mac[MAC_STR_LEN + 1];	/* +1 for the NUL that strcpy() writes */
 	uint8_t band;
 };
 
