@@ -11,8 +11,8 @@ None
 # SW configuration
 1. Fixed Parameters for USB Registration:
    When registering FATFS on usb device using:
-   `vfs_user_register("usbh", VFS_FATFS, VFS_INF_USBH, VFS_REGION_4, VFS_RW);`
-   the arguments `VFS_FATFS`, `VFS_INF_USBH` and `VFS_REGION_4` must remain unchanged.
+   `vfs_target_register("usbh", VFS_TARGET_USBH, VFS_RW);`
+   the argument `VFS_TARGET_USBH` must remain unchanged. The file system (FATFS) is decided by Kconfig (`CONFIG_VFS_USB_HOST`), not by the caller.
 
 2. Build and Download:
    * Refer to the SDK Examples section of the online documentation to generate images.

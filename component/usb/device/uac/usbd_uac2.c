@@ -263,6 +263,7 @@ static u32 usbd_uac_get_mic_sampling_freq(const usbd_uac_dev_t *cdev);
 static int usbd_uac_check_mic_fmt(const usbd_audio_cfg_t *fmt);
 static int usbd_uac_isoc_in_ep_open(usb_dev_t *dev);
 static bool usbd_uac_is_valid_sample_rate(u32 freq, u8 speed);
+static u8 usbd_uac_is_valid_ep_num(u8 ep_addr);
 static void usbd_uac_isoc_in_process_xfer(usb_dev_t *dev);
 static void usbd_uac_isoc_in_process_complete(usb_dev_t *dev);
 static int usbd_uac_rec_pktz_init(const usbd_audio_cfg_t *fmt, u8 speed, u16 mps);
@@ -1803,7 +1804,11 @@ static void usbd_uac_ep_buf_ctrl_deinit(usbd_uac_buf_ctrl_t *buf_ctrl)
 	buf_ctrl->last_xfer_len = 0;
 
 	if (buf_ctrl->uac_sema_valid != 0) {
+		/* Cleared under the lock the ISR gives the semaphore in, refer to usbd_uac_wake_reader(): once
+		   it is 0 no ISR gives it any more, so it can be deleted after the users below are gone */
+		usb_os_enter_critical();
 		buf_ctrl->uac_sema_valid = 0;
+		usb_os_exit_critical();
 
 		/* Wait for every task still inside usbd_uac_read() or usbd_uac_transmit_data() on this
 		   ring to leave. Not bounded: freeing the semaphore or the ring under such a task would be
@@ -2188,6 +2193,19 @@ static void usbd_uac_clear_config(usb_dev_t *dev, u8 config)
 	}
 
 	usb_os_exit_critical();
+}
+
+/**
+  * @brief  Check the number of an application supplied endpoint address
+  * @note   USB_EP_NUM() keeps the reserved bits D6..D4, so a reserved address is out of range as well
+  * @param  ep_addr: Endpoint address, direction bit included
+  * @retval 1 for a non-control endpoint the controller has, else 0
+  */
+static u8 usbd_uac_is_valid_ep_num(u8 ep_addr)
+{
+	u8 ep_num = USB_EP_NUM(ep_addr);
+
+	return ((ep_num != 0U) && (ep_num < USB_MAX_ENDPOINTS)) ? 1U : 0U;
 }
 
 /**
@@ -2588,6 +2606,12 @@ static int usbd_uac_setup(usb_dev_t *dev, usb_setup_req_t *req)
 		break;/* case USB_REQ_TYPE_STANDARD */
 
 	case USB_REQ_TYPE_CLASS :
+		/* Ref USB 2.0 9.4.2: the audio interfaces exist only once configured, and the core never
+		   delivers the data stage of an H2D request before, which would leave it pending */
+		if (dev->dev_state != USBD_STATE_CONFIGURED) {
+			ret = -RTK_ERR_BADARG;
+			break;
+		}
 		if ((req->bmRequestType & USB_REQ_RECIPIENT_MASK) != USB_REQ_RECIPIENT_INTERFACE) {
 			ret = -RTK_ERR_BADARG;
 			break;
@@ -3165,24 +3189,20 @@ static u8 usbd_uac_ringbuf_push(usbd_uac_buf_ctrl_t *pdata_ctrl, const u8 *buf, 
   * @brief  Wake the reader blocked in usbd_uac_read_locked() once the OUT ring holds a node
   * @note   ISR context. The wait flag and the ring are tested in the critical section the reader
   *         tests the ring and raises the flag in, so a node queued on one core while the reader on
-  *         the other core is going to sleep is never missed. The give does not block and runs
-  *         after the lock is dropped.
+  *         the other core is going to sleep is never missed. The give does not block and stays in
+  *         the lock, the one usbd_uac_ep_buf_ctrl_deinit() clears uac_sema_valid in before deleting
+  *         the semaphore.
   * @param  pdata_ctrl: OUT buffer control structure
   * @retval void
   */
 static void usbd_uac_wake_reader(usbd_uac_buf_ctrl_t *pdata_ctrl)
 {
-	u8 need_give = 0U;
-
 	usb_os_enter_critical();
-	if ((pdata_ctrl->read_wait_sema != 0U) && (usb_ringbuf_is_empty(&(pdata_ctrl->buf_list)) == 0)) {
-		need_give = 1U;
-	}
-	usb_os_exit_critical();
-
-	if (need_give != 0U) {
+	if ((pdata_ctrl->uac_sema_valid != 0U) && (pdata_ctrl->read_wait_sema != 0U) &&
+		(usb_ringbuf_is_empty(&(pdata_ctrl->buf_list)) == 0)) {
 		rtos_sema_give(pdata_ctrl->uac_isoc_sema);
 	}
+	usb_os_exit_critical();
 }
 
 /**
@@ -3553,9 +3573,12 @@ static void usbd_uac_status_changed(usb_dev_t *dev, u8 old_status, u8 status)
 		   ISR context here: only rtos_sema_give is allowed (no malloc/sema_take). */
 		usbd_uac_stop_play();
 		usbd_uac_stop_record();
-		if ((cdev->uac_isoc_out.uac_sema_valid != 0) && (cdev->uac_isoc_out.read_wait_sema != 0)) {
+		/* Same lock as usbd_uac_wake_reader(), the semaphore cannot be deleted under the give */
+		usb_os_enter_critical();
+		if ((cdev->uac_isoc_out.uac_sema_valid != 0U) && (cdev->uac_isoc_out.read_wait_sema != 0U)) {
 			rtos_sema_give(cdev->uac_isoc_out.uac_isoc_sema);
 		}
+		usb_os_exit_critical();
 	}
 
 	/* cb is released by usbd_uac_deinit(), which may run concurrently with this ISR: read once */
@@ -3702,9 +3725,9 @@ static int usbd_uac_private_init(const usbd_uac_cb_t *cb, const usbd_uac_config_
 
 	/* A direction that is enabled needs its endpoint, with the right direction bit. */
 	if (((cfg->in.enable != 0) && (((cfg->isoc_in_addr & USB_REQ_DIR_MASK) != USB_D2H) ||
-								   ((cfg->isoc_in_addr & (~USB_REQ_DIR_MASK)) == 0U))) ||
+								   (usbd_uac_is_valid_ep_num(cfg->isoc_in_addr) == 0U))) ||
 		((cfg->out.enable != 0) && (((cfg->isoc_out_addr & USB_REQ_DIR_MASK) != USB_H2D) ||
-									((cfg->isoc_out_addr & (~USB_REQ_DIR_MASK)) == 0U)))) {
+									(usbd_uac_is_valid_ep_num(cfg->isoc_out_addr) == 0U)))) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid EP addr %02x/%02x\n", cfg->isoc_in_addr, cfg->isoc_out_addr);
 		return -RTK_ERR_BADARG;
 	}
@@ -3822,10 +3845,12 @@ static int usbd_uac_receive_data(void)
 			 * which fits every declared format. deinit+init is idempotent. */
 			ep_isoc_out->info.mps = pbuf_ctrl->isoc_mps;
 			usbd_ep_deinit(dev, ep_isoc_out);
-			usbd_ep_init(dev, ep_isoc_out);
-			ep_isoc_out->xfer_buf = usbd_uac_rx_buf;
-			ep_isoc_out->xfer_len = pbuf_ctrl->isoc_mps;
-			ret = usbd_ep_receive(dev, ep_isoc_out);
+			ret = usbd_ep_init(dev, ep_isoc_out);
+			if (ret == RTK_SUCCESS) {
+				ep_isoc_out->xfer_buf = usbd_uac_rx_buf;
+				ep_isoc_out->xfer_len = pbuf_ctrl->isoc_mps;
+				ret = usbd_ep_receive(dev, ep_isoc_out);
+			}
 		} else {
 			/* Nothing armed, the stream did not start: let usbd_uac_start_play() fail so that the
 			   caller retries instead of reading a stream that never comes */

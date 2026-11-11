@@ -395,7 +395,9 @@ static void usbh_msc_dump_boot_sector(void)
 	u32 i;
 	DRESULT res;
 
-	sec = (u8 *)rtos_mem_zmalloc(512);
+	/* One logical block is read, and it may be up to USBH_MSC_MAX_BLOCK_SIZE: the driver copies
+	   a whole block back, so a 512 byte buffer would overflow on a 2K/4K sector disk */
+	sec = (u8 *)rtos_mem_zmalloc(USBH_MSC_MAX_BLOCK_SIZE);
 	if (sec == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Diag: alloc fail\n");
 		return;

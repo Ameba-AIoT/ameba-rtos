@@ -172,7 +172,7 @@
 / Drive/Volume Configurations
 /---------------------------------------------------------------------------*/
 
-#if defined(CONFIG_VFS_RAM) && !defined(CONFIG_FATFS_READ_ONLY)
+#if defined(CONFIG_VFS_RAM_FATFS) && !defined(CONFIG_FATFS_READ_ONLY)
 #define FF_VOLUMES		3	/* +1 for the VFS RAM disk */
 #else
 #define FF_VOLUMES		2

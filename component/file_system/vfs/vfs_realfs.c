@@ -636,34 +636,53 @@ static int realfs_vfs_closedir(void *fs, vfs_file *finfo)
 	return 0;
 }
 
-static int realfs_vfs_get_interface(int interface)
+static int realfs_vfs_get_interface(int target)
 {
-	return interface;
+	switch (target) {
+#if defined(CONFIG_REALFS_FLASH)
+	case VFS_TARGET_FLASH_VFS1:
+		return target;
+#endif
+#if defined(CONFIG_REALFS_SD_MODE)
+	case VFS_TARGET_SD:
+		return target;
+#endif
+#if defined(CONFIG_REALFS_SECOND_FLASH_NAND)
+	case VFS_TARGET_SECOND_FLASH:
+		return target;
+#endif
+#if defined(VFS_RAM_REALFS)
+	case VFS_TARGET_RAM:
+		return target;
+#endif
+	default:
+		return -1;
+	}
 }
 
 /* Track which backend the active bdev came from so unmount tears down the
  * right one. -1 = none. */
-static int g_bdev_inf = -1;
+static int g_bdev_target = -1;
 
-/* Open a backend for the requested interface.
+/* Open a backend for the requested target.
  * On NAND targets (SHOULD_USE_NAND()) the erase-device path is taken and
  * realfs_ea_mount() is called directly; the bdev pointer is not used.
  * On NOR / SD targets the existing bdev path is used unchanged. */
-static int realfs_open_bdev(int interface, struct realfs_bdev *bdev, int for_format)
+static int realfs_open_bdev(int target, struct realfs_bdev *bdev, int for_format)
 {
 #if defined(VFS_RAM_REALFS)
-	if (interface == VFS_INF_RAM) {
+	if (target == VFS_TARGET_RAM) {
 		(void)for_format;
 		return realfs_bdev_ram_open(bdev, CONFIG_VFS_RAM_REALFS_BLOCK_SIZE);
 	}
 #endif
 #if defined(CONFIG_REALFS_SD_MODE)
-	if (interface == VFS_INF_SD) {
+	if (target == VFS_TARGET_SD) {
 		return realfs_bdev_sd_open(bdev, RFS_BLOCK_SIZE);
 	}
 #endif
 #if defined(CONFIG_REALFS_SECOND_FLASH_NAND)
-	if (interface == VFS_INF_SECOND_FLASH) {
+	if (target == VFS_TARGET_SECOND_FLASH) {
 		/* external SPI NAND, erase-aware (edev) path over its own LBM context */
 		if (realfs_erasedev_lbm_second_open(&g_edev) != 0) {
 			VFS_DBG(VFS_ERROR, "REALFS: second nand LBM init failed");
@@ -675,7 +694,7 @@ static int realfs_open_bdev(int interface, struct realfs_bdev *bdev, int for_for
 	}
 #endif
 #if defined(CONFIG_REALFS_FLASH)
-	if (interface == VFS_INF_FLASH) {
+	if (target == VFS_TARGET_FLASH_VFS1) {
 #if defined(CONFIG_REALFS_FLASH_NAND_LBM)
 		/* Runtime selection: NAND vs NOR (mirrors littlefs_adapter.c) */
 		if (SHOULD_USE_NAND()) {
@@ -714,23 +733,23 @@ static int realfs_open_bdev(int interface, struct realfs_bdev *bdev, int for_for
 	}
 #endif
 	(void)for_format;
-	VFS_DBG(VFS_ERROR, "REALFS: unsupported interface %d", interface);
+	VFS_DBG(VFS_ERROR, "REALFS: unsupported target %d", target);
 	return -1;
 }
 
 #if defined(REALFS_EDEV_MODE)
-/* Returns non-zero if `interface` uses the erase-aware (route-B) edev path
+/* Returns non-zero if `target` uses the erase-aware (route-B) edev path
  * (raw NAND via LBM, or NOR@512B map) rather than the rewritable-block bdev.
  * Only referenced under REALFS_EDEV_MODE; guarded so a bdev-only build (e.g.
  * SD card) does not trip -Werror=unused-function. */
-static int realfs_is_edev(int interface)
+static int realfs_is_edev(int target)
 {
 #if defined(CONFIG_REALFS_SECOND_FLASH_NAND)
-	if (interface == VFS_INF_SECOND_FLASH) {
+	if (target == VFS_TARGET_SECOND_FLASH) {
 		return 1;   /* external SPI NAND always uses the erase-aware path */
 	}
 #endif
-	if (interface != VFS_INF_FLASH) {
+	if (target != VFS_TARGET_FLASH_VFS1) {
 		return 0;
 	}
 #if defined(CONFIG_REALFS_FLASH_NAND_LBM)
@@ -746,12 +765,12 @@ static int realfs_is_edev(int interface)
 #endif  /* REALFS_EDEV_MODE */
 
 #if defined(REALFS_EDEV_MODE)
-/* Tear down whichever erase-device backend realfs_open_bdev opened for `interface`. */
-static void realfs_edev_close(int interface)
+/* Tear down whichever erase-device backend realfs_open_bdev opened for `target`. */
+static void realfs_edev_close(int target)
 {
-	(void)interface;
+	(void)target;
 #if defined(CONFIG_REALFS_SECOND_FLASH_NAND)
-	if (interface == VFS_INF_SECOND_FLASH) {
+	if (target == VFS_TARGET_SECOND_FLASH) {
 		realfs_erasedev_lbm_second_close(&g_edev);
 		return;
 	}
@@ -768,29 +787,29 @@ static void realfs_edev_close(int interface)
 }
 #endif
 
-static void realfs_close_bdev(int interface, struct realfs_bdev *bdev)
+static void realfs_close_bdev(int target, struct realfs_bdev *bdev)
 {
 	/* Not called for the external-NAND edev path (see realfs_edev_close); in a
 	 * second-NAND-only build no branch below is compiled, so mark params used. */
-	(void)interface;
+	(void)target;
 	(void)bdev;
 #if defined(VFS_RAM_REALFS)
-	if (interface == VFS_INF_RAM) {
+	if (target == VFS_TARGET_RAM) {
 		realfs_bdev_ram_close(bdev);		/* frees the RAM disk, clears ram_mount_flag */
 		return;
 	}
 #endif
 #if defined(CONFIG_REALFS_SD_MODE)
-	if (interface == VFS_INF_SD) {
+	if (target == VFS_TARGET_SD) {
 		realfs_bdev_sd_close(bdev);
 		return;
 	}
 #endif
 #if defined(CONFIG_REALFS_FLASH)
-	if (interface == VFS_INF_FLASH) {
+	if (target == VFS_TARGET_FLASH_VFS1) {
 #if defined(REALFS_EDEV_MODE)
-		if (realfs_is_edev(interface)) {
-			realfs_edev_close(interface);
+		if (realfs_is_edev(target)) {
+			realfs_edev_close(target);
 			return;
 		}
 #endif
@@ -799,25 +818,29 @@ static void realfs_close_bdev(int interface, struct realfs_bdev *bdev)
 #endif
 }
 
-static int realfs_vfs_mount(int interface)
+static int realfs_vfs_mount(int target)
 {
+	if (realfs_vfs_get_interface(target) < 0) {
+		return -1;
+	}
 	if (realfs_mount_flag) {
-		return 0;
+		return target == g_bdev_target ? 0 : -1;
 	}
 	rfs_lock_init();
 	rfs_lock();
 	if (realfs_mount_flag) {          /* mounted by another thread while we waited */
+		int ret = target == g_bdev_target ? 0 : -1;
 		rfs_unlock();
-		return 0;
+		return ret;
 	}
-	if (realfs_open_bdev(interface, &g_bdev, 0) != 0) {
+	if (realfs_open_bdev(target, &g_bdev, 0) != 0) {
 		rfs_unlock();
 		return -1;
 	}
 
 	int rc;
 #if defined(REALFS_EDEV_MODE)
-	if (realfs_is_edev(interface)) {
+	if (realfs_is_edev(target)) {
 		rc = realfs_ea_mount(&g_rfs, &g_edev);
 		if (rc == REALFS_ERR_CORRUPT) {
 			/* Unformatted / no valid superblock: format once and retry, matching
@@ -833,18 +856,18 @@ static int realfs_vfs_mount(int interface)
 		}
 		if (rc) {
 			VFS_DBG(VFS_ERROR, "realfs edev mount failed (%d)", rc);
-			realfs_edev_close(interface);
+			realfs_edev_close(target);
 			rfs_unlock();
 			return -1;
 		}
-		g_bdev_inf = interface;
+		g_bdev_target = target;
 		realfs_mount_flag = 1;
 		rfs_unlock();
 		return 0;
 	}
 #endif
 #if defined(VFS_RAM_REALFS)
-	if (interface == VFS_INF_RAM) {
+	if (target == VFS_TARGET_RAM) {
 		/* volatile disk: always start from a fresh format */
 		rc = realfs_format(&g_bdev, 0);
 		if (rc == REALFS_ERR_INVAL) {
@@ -855,11 +878,11 @@ static int realfs_vfs_mount(int interface)
 		}
 		if (rc) {
 			RTK_LOGE("VFS", "ram mkfs fail %d\n", rc);
-			realfs_close_bdev(interface, &g_bdev);
+			realfs_close_bdev(target, &g_bdev);
 			rfs_unlock();
 			return -1;
 		}
-		g_bdev_inf = interface;
+		g_bdev_target = target;
 		realfs_mount_flag = 1;
 		ram_mount_flag = 1;
 		rfs_unlock();
@@ -877,42 +900,49 @@ static int realfs_vfs_mount(int interface)
 	}
 	if (rc) {
 		VFS_DBG(VFS_ERROR, "realfs_mount failed (%d)", rc);
-		realfs_close_bdev(interface, &g_bdev);
+		realfs_close_bdev(target, &g_bdev);
 		rfs_unlock();
 		return -1;
 	}
-	g_bdev_inf = interface;
+	g_bdev_target = target;
 	realfs_mount_flag = 1;
 	rfs_unlock();
 	return 0;
 }
 
-static int realfs_vfs_unmount(int interface)
+static int realfs_vfs_unmount(int target)
 {
-	(void)interface;
+	if (realfs_vfs_get_interface(target) < 0) {
+		return -1;
+	}
 	rfs_lock();
 	if (realfs_mount_flag) {
+		if (target != g_bdev_target) {
+			rfs_unlock();
+			return -1;
+		}
 #if defined(REALFS_EDEV_MODE)
-		if (realfs_is_edev(g_bdev_inf)) {
+		if (realfs_is_edev(g_bdev_target)) {
 			realfs_ea_unmount(&g_rfs);
-			realfs_edev_close(g_bdev_inf);
-			g_bdev_inf = -1;
+			realfs_edev_close(g_bdev_target);
+			g_bdev_target = -1;
 			realfs_mount_flag = 0;
 			rfs_unlock();
 			return 0;
 		}
 #endif
 		realfs_unmount(&g_rfs);
-		realfs_close_bdev(g_bdev_inf, &g_bdev);
-		g_bdev_inf = -1;
+		realfs_close_bdev(g_bdev_target, &g_bdev);
+		g_bdev_target = -1;
 		realfs_mount_flag = 0;
 	}
 	rfs_unlock();
 	return 0;
 }
 
-/* Format the device behind `interface` (VFS_INF_SD / VFS_INF_FLASH). */
-static int realfs_format_inf(int interface, unsigned int hash_buckets)
+#if defined(CONFIG_REALFS_SD_MODE) || defined(CONFIG_REALFS_FLASH)
+/* Format the device behind `target` (VFS_TARGET_SD / VFS_TARGET_FLASH_VFS1). */
+static int realfs_format_target(int target, unsigned int hash_buckets)
 {
 	rfs_lock_init();
 	rfs_lock();
@@ -921,35 +951,38 @@ static int realfs_format_inf(int interface, unsigned int hash_buckets)
 		rfs_unlock();
 		return -1;
 	}
-	if (realfs_open_bdev(interface, &g_bdev, 1) != 0) {
+	if (realfs_open_bdev(target, &g_bdev, 1) != 0) {
 		rfs_unlock();
 		return -1;
 	}
 #if defined(REALFS_EDEV_MODE)
-	if (realfs_is_edev(interface)) {
+	if (realfs_is_edev(target)) {
 		int rc = realfs_ea_format(&g_edev, (uint32_t)hash_buckets);
-		realfs_edev_close(interface);
+		realfs_edev_close(target);
 		rfs_unlock();
 		return rc ? -1 : 0;
 	}
 #endif
 	int rc = realfs_format(&g_bdev, hash_buckets);
-	realfs_close_bdev(interface, &g_bdev);
+	realfs_close_bdev(target, &g_bdev);
 	rfs_unlock();
 	return rc ? -1 : 0;
 }
+#endif
 
 #if defined(CONFIG_REALFS_SD_MODE)
 int realfs_sd_format(unsigned int hash_buckets)
 {
-	return realfs_format_inf(VFS_INF_SD, hash_buckets);
+	return realfs_format_target(VFS_TARGET_SD, hash_buckets);
 }
 #endif
 
+#if defined(CONFIG_REALFS_FLASH)
 int realfs_flash_format(unsigned int hash_buckets)
 {
-	return realfs_format_inf(VFS_INF_FLASH, hash_buckets);
+	return realfs_format_target(VFS_TARGET_FLASH_VFS1, hash_buckets);
 }
+#endif
 
 #ifdef REALFS_ENABLE_DEBUG
 /* DiagPrintf (declared u32-returning in diag.h via ameba.h) is ABI-compatible

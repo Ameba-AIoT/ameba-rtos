@@ -211,7 +211,22 @@ void example_vfs_encrypt_thread(void *param)
 
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\r\n====================Example: VFS_ENCRYPT====================\r\n");
 
-	prefix = find_vfs_tag(VFS_REGION_1);
+#if defined(CONFIG_VFS_SD_FATFS)
+	res = vfs_target_register("sdcard", VFS_TARGET_SD, VFS_RW);
+	if (res != 0) {
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "VFS-SD init fail\n");
+		goto exit;
+	}
+	prefix = vfs_get_prefix(VFS_TARGET_SD);
+#elif defined(CONFIG_VFS2_FATFS)
+	prefix = vfs_get_prefix(VFS_TARGET_FLASH_VFS2);
+#else
+	prefix = vfs_get_prefix(VFS_TARGET_FLASH_VFS1);
+#endif
+	if (prefix == NULL) {
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "VFS target unavailable\n");
+		goto exit;
+	}
 
 	vfs_set_user_encrypt_callback(prefix, vfs_mbedtls_aes_ctr_encrypt, vfs_mbedtls_aes_ctr_decrypt, 16);
 

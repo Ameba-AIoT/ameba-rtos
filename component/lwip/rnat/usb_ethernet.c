@@ -161,8 +161,6 @@ static int cdc_ecm_cb_setup(usb_setup_req_t *req, u8 *buf)
 		case USB_CDC_SET_ETHERNET_MULTICAST_FILTERS:
 			RTK_LOGS(TAG, RTK_LOG_INFO, "Set mul filter\n");
 			break;
-		/* GET_ETHERNET_STATISTIC falls to default: the class reports bmEthernetStatistics
-		 * = 0, so the request must be STALLed (Ref USB 2.0 9.2.7), not answered with zeros. */
 		default:
 			RTK_LOGS(TAG, RTK_LOG_WARN, "Unknown req 0x%02x\n", req_code);
 			ret = HAL_ERR_UNKNOWN;

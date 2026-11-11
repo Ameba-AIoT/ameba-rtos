@@ -11,8 +11,8 @@ None
 # SW configuration
 1. Fixed Parameters for SD Card Registration:
    When registering FATFS on SD Card using:
-   `vfs_user_register("sdcard", VFS_FATFS, VFS_INF_SD, VFS_REGION_4, VFS_RW);`
-   the arguments `VFS_FATFS`, `VFS_INF_SD` and `VFS_REGION_4` must remain unchanged.
+   `vfs_target_register("sdcard", VFS_TARGET_SD, VFS_RW);`
+   the argument `VFS_TARGET_SD` must remain unchanged. The file system (FATFS) is decided by Kconfig (`CONFIG_VFS_SD_FATFS`), not by the caller.
 
 2. Build and Download:
    * Refer to the SDK Examples section of the online documentation to generate images.

@@ -1017,6 +1017,13 @@ int usbh_vendor_init(const usbh_vendor_cb_t *cb)
 		return -RTK_ERR_BADARG;
 	}
 
+	/* cb is only set by a successful init and cleared by deinit: a second init would wipe the pipes
+	   still bound to host channels and register the driver twice */
+	if (vendor->cb != NULL) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Already init\n");
+		return -RTK_ERR_BADARG;
+	}
+
 	usb_os_memset((void *)vendor, 0x00, sizeof(usbh_vendor_host_t));
 	vendor->cb = cb;
 	if (cb->init != NULL) {
@@ -1063,6 +1070,8 @@ void usbh_vendor_deinit(void)
 
 	usbh_vendor_deinit_all_pipe();
 	usbh_vendor_deinit_all_xfer();
+	vendor->host = NULL;
+	vendor->cb = NULL;
 }
 
 /**

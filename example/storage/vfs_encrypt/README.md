@@ -19,30 +19,20 @@ None
 
 # SW configuration
 
-1. Modify the interface function `app_filesystem_init()` located in `amebaXXX_gcc_project/project_<core>/src/main.c` to config your expected test mode.
-Test Mode: (`VFS_LITTLEFS`/`VFS_FATFS`, `VFS_INF_FLASH`/`VFS_INF_SD`)
-   - For `VFS_LITTLEFS` with `VFS_INF_FLASH`:
+1. The tested target is chosen by Kconfig in `example_vfs_encrypt.c`; the caller never passes a file system type.
+Test Mode: (target, file system)
+   - `VFS_TARGET_FLASH_VFS1` with LittleFS (default, registered at boot by `vfs_auto_register()`)
+   - `VFS_TARGET_FLASH_VFS2` with FATFS (`CONFIG_VFS2_FATFS=y`)
+   - `VFS_TARGET_SD` with FATFS (`CONFIG_VFS_SD_CARD=y`, `CONFIG_VFS_SD_FATFS=y`), registered by the example:
 		```C
-		ret = vfs_user_register(VFS_PREFIX, VFS_LITTLEFS, VFS_INF_FLASH, VFS_REGION_1, VFS_RW);
+		ret = vfs_target_register("sdcard", VFS_TARGET_SD, VFS_RW);
 		```
+   The prefix used by the example is obtained with `vfs_get_prefix(<target>)`.
 
-   - For `VFS_FATFS` with `VFS_INF_FLASH`:
-		```C
-		ret = vfs_user_register(VFS_PREFIX, VFS_FATFS, VFS_INF_FLASH, VFS_REGION_1, VFS_RW);
-		```
-
-2. Use menuconfig and choose `CONFIG File System`
-   - For `VFS_LITTLEFS`:
-		```
-		[*] Enable VFS LITTLEFS
-		[ ] Enable VFS FATFS
-		```
-
-   - For `VFS_FATFS` with `VFS_INF_FLASH`:
-		```
-		[ ] Enable VFS LITTLEFS
-		[*] Enable VFS FATFS
-		```
+2. Use menuconfig and choose `CONFIG File System`, or apply a ready-made config:
+   - VFS1 LittleFS: no extra config needed
+   - VFS2 FATFS: `fatfs.conf`
+   - SD FATFS: `fatfs_sd.conf`
 
 3. Build and Download:
    * Refer to the SDK Examples section of the online documentation to generate images.

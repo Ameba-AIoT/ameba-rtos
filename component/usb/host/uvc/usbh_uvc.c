@@ -472,7 +472,10 @@ usbh_uvc_frame_t *usbh_uvc_get_frame(u8 stream_index)
 		frame->byteused = frame_done_size;
 		/* The buffer was locked in the ISR at hand-off (buf_locked[frame_done_idx]).
 		 * It stays locked until the app returns it via usbh_uvc_put_frame(), which
-		 * guarantees the HW never overwrites the frame while the app reads it. */
+		 * guarantees the HW never overwrites the frame while the app reads it.
+		 * INUSE tells usbh_uvc_start() the application holds it, unlike a buffer the
+		 * ISR locked for a hand-off a stop cut short. */
+		frame->state = UVC_FRAME_INUSE;
 
 		/* cache invalidate — HW decoder writes to PSRAM, CPU cache stale */
 		DCache_Invalidate((u32)frame->buf, CACHE_LINE_ALIGNMENT(frame->byteused));
@@ -595,6 +598,7 @@ int usbh_uvc_put_frame(usbh_uvc_frame_t *frame, u8 stream_index)
 			frame->err = 0U;
 			frame->byteused = 0U;
 			frame->timestamp = 0U;
+			frame->state = UVC_FRAME_INIT;
 			usbh_hw_uvc_release_buf(uvc_dec, idx);
 		}
 	}
@@ -685,10 +689,12 @@ int usbh_uvc_start(u8 stream_index)
 
 #if USBH_UVC_USE_HW
 	/* The start re-arms every HW buffer and drops the locks: a frame the application still
-	 * holds would be overwritten while it reads it, so it shall be put back first */
+	 * holds would be overwritten while it reads it, so it shall be put back first. Only a
+	 * frame handed out counts: the ISR also locks a buffer for a hand-off that the stop then
+	 * cuts short, which no get_frame delivers, so no put_frame would ever release it. */
 	if ((stream->stream_state == UVC_STREAM_READY) && (stream->uvc_dec != NULL)) {
 		for (i = 0U; i < (u32)USBH_HW_UVC_MAX_BUF_NUM; i++) {
-			if (stream->uvc_dec->buf_locked[i] != 0U) {
+			if (stream->frame_buffer[i].state == UVC_FRAME_INUSE) {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "S%d frm not put\n", stream_index);
 				return -RTK_ERR_BUSY;
 			}

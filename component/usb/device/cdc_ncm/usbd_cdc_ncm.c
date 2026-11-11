@@ -173,7 +173,7 @@ static void usbd_cdc_ncm_trace_task_deinit(void);
 /* Private variables ---------------------------------------------------------*/
 
 static const char *const TAG = "NCM";
-static u8 usbd_cdc_ncm_default_mac[6] = {0x11, 0x22, 0x33, 0x44, 0x55, 0x66};  /**< Default MAC address */
+static const u8 usbd_cdc_ncm_default_mac[6] = {0x11, 0x22, 0x33, 0x44, 0x55, 0x66};  /**< Default MAC address */
 
 /* USB Standard Device Descriptor */
 static const u8 usbd_cdc_ncm_dev_desc[USB_LEN_DEV_DESC] = {
@@ -549,7 +549,6 @@ static void usbd_cdc_ncm_agg_begin(ncm_tx_ntb_t *slot, u16 sequence)
 	nth16->wBlockLength = 0; /* Finalised by usbd_cdc_ncm_agg_finalize() */
 	nth16->wFpIndex = (u16)USBD_CDC_NCM_AGG_NDP_OFFSET;
 
-	slot->sequence = sequence;
 	slot->frame_count = 0;
 	slot->data_offset = ncm->agg_data_offset;
 }
@@ -563,23 +562,18 @@ static void usbd_cdc_ncm_agg_begin(ncm_tx_ntb_t *slot, u16 sequence)
  */
 static int usbd_cdc_ncm_agg_append(ncm_tx_ntb_t *slot, const u8 *frame, u32 frame_len)
 {
-	const usbd_cdc_ncm_dev_t *ncm = &usbd_cdc_ncm_dev;
 	usb_cdc_ncm_ndp16_entry_t *entry;
 	u32 aligned_frame_len;
+	u32 ntb_limit;
 
-	if (slot->frame_count >= ncm->ntb_in_max_datagrams) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "AGG: max frames reached\n");
-		return -RTK_ERR_BADARG;
-	}
-
-	/* Align frame length to 4 bytes */
+	/* Both callers keep frame_count below ntb_in_max_datagrams. Align frame length to 4 bytes */
 	aligned_frame_len = (frame_len + USB_CDC_NCM_DATAGRAM_ALIGN - 1) & ~(USB_CDC_NCM_DATAGRAM_ALIGN - 1);
 
 	/* Check the frame against BOTH the slot capacity and the NTB size the host
-	 * agreed to accept - see usbd_cdc_ncm_tx_ntb_limit(). */
-	if ((slot->data_offset + aligned_frame_len) > usbd_cdc_ncm_tx_ntb_limit()) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "AGG: NTB full (off %u + %u > %u)\n",
-				 slot->data_offset, aligned_frame_len, usbd_cdc_ncm_tx_ntb_limit());
+	 * agreed to accept - see usbd_cdc_ncm_tx_ntb_limit(). A full NTB is normal flow while
+	 * aggregating, and the caller reports the single-frame case, so nothing is logged here. */
+	ntb_limit = usbd_cdc_ncm_tx_ntb_limit();
+	if ((slot->data_offset + aligned_frame_len) > ntb_limit) {
 		return -RTK_ERR_BADARG;
 	}
 
@@ -1031,16 +1025,12 @@ static void usbd_cdc_ncm_mac_to_string(const u8 *mac, char *mac_str)
 
 /**
  * @brief Set the device MAC address from an external source.
- * @param mac: Pointer to a 6-byte MAC address buffer. NULL is ignored.
+ * @param mac: Pointer to a 6-byte MAC address buffer, never NULL: the only caller falls back
+ *             to the default MAC.
  */
 static void usbd_cdc_ncm_set_mac(const u8 *mac)
 {
 	usbd_cdc_ncm_dev_t *ncm = &usbd_cdc_ncm_dev;
-
-	if (NULL == mac) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "No Param\n");
-		return;
-	}
 
 	usb_os_memcpy((void *) & (ncm->mac[0]), (const void *)mac, USBD_CDC_NCM_MAC_STR_LEN);
 
@@ -1054,7 +1044,7 @@ static void usbd_cdc_ncm_set_mac(const u8 *mac)
  * @param buf:    Pointer to the received data buffer containing an NTB.
  * @param length: Length of the received data in bytes.
  */
-static int usbd_cdc_ncm_bulk_receive(u8 *buf, u32 length)
+static void usbd_cdc_ncm_bulk_receive(u8 *buf, u32 length)
 {
 	usbd_cdc_ncm_dev_t *ncm = &usbd_cdc_ncm_dev;
 	usb_cdc_ncm_nth16_t *nth16;
@@ -1091,7 +1081,7 @@ static int usbd_cdc_ncm_bulk_receive(u8 *buf, u32 length)
 
 	if (length < sizeof(usb_cdc_ncm_nth16_t)) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "RX too short for NTH16: %d\n", length);
-		return -RTK_ERR_BADARG;
+		return;
 	}
 
 	nth16 = (usb_cdc_ncm_nth16_t *)buf;
@@ -1099,7 +1089,7 @@ static int usbd_cdc_ncm_bulk_receive(u8 *buf, u32 length)
 	/* Verify NTH16 signature */
 	if (nth16->dwSignature != USB_CDC_NCM_NTH16_SIGNATURE) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Bad NTH16 sig: 0x%08x\n", nth16->dwSignature);
-		return -RTK_ERR_BADARG;
+		return;
 	}
 
 	/* wHeaderLength is the offset of the first byte after the NTH16 (Ref NCM 1.0
@@ -1108,7 +1098,7 @@ static int usbd_cdc_ncm_bulk_receive(u8 *buf, u32 length)
 	header_length = nth16->wHeaderLength;
 	if ((header_length < USB_CDC_NCM_NTH16_LENGTH) || (header_length > length)) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Bad NTH16 hdr len: %d, rx=%d\n", header_length, length);
-		return -RTK_ERR_BADARG;
+		return;
 	}
 
 	/* wBlockLength is the total size of the NTB (Ref NCM 1.0 Table 3-1).  A value
@@ -1117,7 +1107,7 @@ static int usbd_cdc_ncm_bulk_receive(u8 *buf, u32 length)
 	if ((nth16->wBlockLength != 0U) && ((u32)nth16->wBlockLength > length)) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "NTB truncated: wBlockLength=%d, rx=%d\n",
 				 nth16->wBlockLength, length);
-		return -RTK_ERR_BADARG;
+		return;
 	}
 
 	/* Walk the NDP chain (wFpIndex -> wNextFpIndex, 0 terminates).
@@ -1234,8 +1224,6 @@ static int usbd_cdc_ncm_bulk_receive(u8 *buf, u32 length)
 		}
 		ndp_offset = next_offset;
 	}
-
-	return RTK_SUCCESS;
 }
 
 /**
@@ -1316,32 +1304,24 @@ static int usbd_cdc_ncm_intr_in_send(void *data, u16 len)
 	usbd_ep_t *ep_intr_in = &ncm->ep_intr_in;
 	int ret = -RTK_ERR_IO;
 
+	/* ISR context only (SETUP and SOF), so is_ready cannot change under this function.
+	 * The callers pass 8 or 16 bytes, which fit the INTR IN buffer. */
 	if (!dev->is_ready) {
 		return ret;
 	}
 
-	if (len > USBD_CDC_NCM_INTR_IN_PACKET_SIZE) {
-		len = USBD_CDC_NCM_INTR_IN_PACKET_SIZE;
+	if (ep_intr_in->xfer_state != 0U) {
+		return -RTK_ERR_BUSY;
 	}
 
-	if (ep_intr_in->xfer_state == 0U) {
-		ep_intr_in->xfer_state = 1U;
-
-		if (dev->is_ready) {
-			usb_os_memcpy((void *)ep_intr_in->xfer_buf, (const void *)data, len);
-			ep_intr_in->xfer_len = len;
-			ret = usbd_ep_transmit(dev, ep_intr_in);
-			if (ret != RTK_SUCCESS) {
-				/* Transfer never started - no XFRC will fire to clear xfer_state.
-				 * Reset it here, otherwise the INTR IN path wedges permanently. */
-				ep_intr_in->xfer_state = 0U;
-			}
-		} else {
-			ep_intr_in->xfer_state = 0U;
-		}
-	} else {
-		/* TX busy */
-		ret = -RTK_ERR_BUSY;
+	ep_intr_in->xfer_state = 1U;
+	usb_os_memcpy((void *)ep_intr_in->xfer_buf, (const void *)data, len);
+	ep_intr_in->xfer_len = len;
+	ret = usbd_ep_transmit(dev, ep_intr_in);
+	if (ret != RTK_SUCCESS) {
+		/* Transfer never started - no XFRC will fire to clear xfer_state.
+		 * Reset it here, otherwise the INTR IN path wedges permanently. */
+		ep_intr_in->xfer_state = 0U;
 	}
 
 	return ret;
@@ -1360,33 +1340,20 @@ static int usbd_cdc_ncm_bulk_send(u8 *buf, u32 len)
 	usb_dev_t *dev = ncm->dev;
 	int ret = -RTK_ERR_IO;
 
+	/* ISR context only, called by usbd_cdc_ncm_tx_kick() with a finalised slot (non-NULL buf,
+	 * non-zero length) while no NTB is in flight, so is_ready cannot change under this function */
 	if (!dev->is_ready) {
 		return ret;
 	}
 
-	if (buf == NULL || len == 0) {
-		return -RTK_ERR_BADARG;
-	}
-
-	if (ep_bulk_in->xfer_state == 0U) {
-		ep_bulk_in->xfer_state = 1U;
-
-		ep_bulk_in->xfer_buf = buf;
-
-		/* Transmit */
-		if (dev->is_ready) {
-			ep_bulk_in->xfer_len = len;
-			ret = usbd_ep_transmit(dev, ep_bulk_in);
-			if (ret != RTK_SUCCESS) {
-				/* Transfer never started - no XFRC will fire to clear xfer_state.
-				 * Reset it here, otherwise the BULK IN path wedges permanently. */
-				ep_bulk_in->xfer_state = 0U;
-			}
-		} else {
-			ep_bulk_in->xfer_state = 0U;
-		}
-	} else {
-		ret = -RTK_ERR_BUSY;
+	ep_bulk_in->xfer_state = 1U;
+	ep_bulk_in->xfer_buf = buf;
+	ep_bulk_in->xfer_len = len;
+	ret = usbd_ep_transmit(dev, ep_bulk_in);
+	if (ret != RTK_SUCCESS) {
+		/* Transfer never started - no XFRC will fire to clear xfer_state.
+		 * Reset it here, otherwise the BULK IN path wedges permanently. */
+		ep_bulk_in->xfer_state = 0U;
 	}
 
 	return ret;
@@ -1838,6 +1805,12 @@ static int usbd_cdc_ncm_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			ret = -RTK_ERR_BADARG;
 			break;
 		}
+		/* Ref USB 2.0 9.4.2: the NCM functions exist only once configured, and the core never
+		   delivers the data stage of an H2D request before, which would leave it pending */
+		if (dev->dev_state != USBD_STATE_CONFIGURED) {
+			ret = -RTK_ERR_BADARG;
+			break;
+		}
 		/* Ref NCM 1.0 6.2: every NCM class request is addressed to the communication
 		 * interface, so a wrong wIndex cannot make the device answer a GET or apply a SET
 		 * the host should not have sent.
@@ -1879,7 +1852,7 @@ static int usbd_cdc_ncm_setup(usb_dev_t *dev, usb_setup_req_t *req)
 
 			case USB_CDC_NCM_GET_NTB_FORMAT:
 				/* wNtbFormatSelected: 16-bit value */
-				ep0_in->xfer_buf[0] = ncm->ntb_format;
+				ep0_in->xfer_buf[0] = 0U; /* Only NTB16 is supported */
 				ep0_in->xfer_buf[1] = 0U;
 				ep0_in->xfer_len = 2U;
 				ret = usbd_ep_transmit(dev, ep0_in);
@@ -1905,63 +1878,14 @@ static int usbd_cdc_ncm_setup(usb_dev_t *dev, usb_setup_req_t *req)
 				ret = usbd_ep_transmit(dev, ep0_in);
 				break;
 
-			default: {
-				/* The response length is defined by the request (Ref NCM 1.0 6.2 and
-				 * CDC 1.2 6.2), not by the host: scheduling wLength bytes would transmit
-				 * whatever the callback did not write. */
-				u16 rsp_len;
-
-				switch (req->bRequest) {
-				case USB_CDC_NCM_GET_NET_ADDRESS:
-					/* Ref NCM 1.0 6.2.2: the 6-byte EUI-48 address */
-					rsp_len = USB_CDC_NCM_NET_ADDRESS_RSP_LEN;
-					break;
-				case USB_CDC_NCM_GET_CRC_MODE:
-					/* Ref NCM 1.0 6.2.10: a 16-bit bmCrcMode */
-					rsp_len = USB_CDC_NCM_CRC_MODE_RSP_LEN;
-					break;
-				case USB_CDC_GET_ETHERNET_STATISTIC:
-					/* Ref CDC 1.2 6.2.6: a single 32-bit counter */
-					rsp_len = USB_CDC_ETHERNET_STATISTIC_RESPONSE_LEN;
-					break;
-				case USB_CDC_GET_ETHERNET_POWER_MANAGEMENT:
-					/* Ref CDC 1.2 6.2.4: a 16-bit boolean */
-					rsp_len = USB_CDC_ETHERNET_POWER_MANAGEMENT_RESPONSE_LEN;
-					break;
-				default:
-					rsp_len = 0U;
-					break;
-				}
-
-				if ((rsp_len == 0U) || (ncm->cb == NULL) || (ncm->cb->setup == NULL)) {
-					/* Unsupported request or nobody can produce the data stage: report a
-					 * request error instead of leaving the host waiting for a reply. */
-					ret = -RTK_ERR_BADARG;
-				} else {
-					usb_setup_req_t rsp_req;
-
-					if (rsp_len > (u16)ep0_in->xfer_buf_len) {
-						rsp_len = (u16)ep0_in->xfer_buf_len;
-					}
-					/* The EP0 buffer is shared with descriptor and OUT traffic, so clear the
-					 * response window: a callback writing fewer bytes must not leak stale
-					 * control-buffer contents to the host. */
-					usb_os_memset((void *)ep0_in->xfer_buf, 0, rsp_len);
-					/* Ref USB 2.0 9.2.7: never return more than wLength bytes. The callback
-					 * sizes its answer by wLength: hand it a copy carrying the response length,
-					 * the request itself is left untouched for the core's ZLP decision. */
-					usb_os_memcpy((void *)&rsp_req, (const void *)req, sizeof(usb_setup_req_t));
-					rsp_req.wLength = (req->wLength < rsp_len) ? req->wLength : rsp_len;
-					ret = ncm->cb->setup(&rsp_req, ep0_in->xfer_buf);
-					if (ret == RTK_SUCCESS) {
-						/* The core STALLs EP0 on a non-RTK_SUCCESS return, so propagate a submit
-						 * failure instead of leaving the host in a control-transfer timeout. */
-						ep0_in->xfer_len = rsp_req.wLength;
-						ret = usbd_ep_transmit(dev, ep0_in);
-					}
-				}
+			default:
+				/* GET_NET_ADDRESS and GET_CRC_MODE are optional and bmNetworkCapabilities
+				 * advertises neither (Ref NCM 1.0 Table 6-2). GET_ETHERNET_STATISTIC and
+				 * GET_ETHERNET_POWER_MANAGEMENT_PATTERN_FILTER have no valid selector, as
+				 * bmEthernetStatistics and bNumberPowerFilters are 0 (Ref ECM 1.2 6.2.4/6.2.5).
+				 * Every other D2H request is unsupported too, so all are a request error. */
+				ret = -RTK_ERR_BADARG;
 				break;
-			}
 			}
 		} else {
 			/* Host-to-Device */
@@ -1971,7 +1895,6 @@ static int usbd_cdc_ncm_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			case USB_CDC_NCM_SET_NTB_FORMAT:
 				/* wValue: 0=NTB16, 1=NTB32.  Ref NCM 1.0 6.2.8: no data stage, wLength is zero */
 				if ((wValue == 0U) && (req->wLength == 0U)) {
-					ncm->ntb_format = 0;
 					ret = RTK_SUCCESS;
 				} else {
 					/* Only NTB16 supported */
@@ -1990,11 +1913,9 @@ static int usbd_cdc_ncm_setup(usb_dev_t *dev, usb_setup_req_t *req)
 				 * unconditionally reads 4 bytes out of the EP0 buffer, so a request
 				 * with a shorter wLength would previously have been parsed from
 				 * whatever residue the previous control transfer left behind. */
-				if ((req->wLength != 4U) || (req->wValue != 0U) ||
-					(req->wIndex != USBD_CDC_NCM_COMM_INTERFACE_NUM)) {
-					RTK_LOGS(TAG, RTK_LOG_ERROR,
-							 "Bad SET_NTB_INPUT_SIZE: wLen=%d wVal=%d wIdx=%d\n",
-							 req->wLength, req->wValue, req->wIndex);
+				if ((req->wLength != 4U) || (req->wValue != 0U)) {
+					RTK_LOGS(TAG, RTK_LOG_ERROR, "Bad SET_NTB_INPUT_SIZE: wLen=%d wVal=%d\n",
+							 req->wLength, req->wValue);
 					ret = -RTK_ERR_BADARG;
 				} else {
 					/* Stash the request and arm EP0 OUT; the payload is validated and
@@ -2039,7 +1960,6 @@ static int usbd_cdc_ncm_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			case USB_CDC_NCM_SET_CRC_MODE:
 				/* Only no-CRC (mode 0) supported.  Ref NCM 1.0 6.2.11: no data stage, wLength is zero */
 				if ((wValue == USB_CDC_NCM_CRC_MODE_NONE) && (req->wLength == 0U)) {
-					ncm->crc_mode = 0;
 					ret = RTK_SUCCESS;
 				} else {
 					ret = -RTK_ERR_BADARG;
@@ -2047,8 +1967,11 @@ static int usbd_cdc_ncm_setup(usb_dev_t *dev, usb_setup_req_t *req)
 				break;
 
 			default:
-				/* Forward to upper layer with data stage if needed */
-				if (req->wLength > 0U) {
+				/* Ref USB 2.0 9.2.7: a request nobody handles is a request error, never ACKed.
+				   Forward to upper layer with data stage if needed */
+				if ((ncm->cb == NULL) || (ncm->cb->setup == NULL)) {
+					ret = -RTK_ERR_BADARG;
+				} else if (req->wLength > 0U) {
 					usb_os_memcpy((void *)&ncm->ctrl_req, (const void *)req, sizeof(usb_setup_req_t));
 					ncm->ctrl_req_pending = 1U;
 					ep0_out->xfer_len = req->wLength;
@@ -2059,9 +1982,7 @@ static int usbd_cdc_ncm_setup(usb_dev_t *dev, usb_setup_req_t *req)
 						ncm->ctrl_req_pending = 0U;
 					}
 				} else {
-					if ((ncm->cb != NULL) && (ncm->cb->setup != NULL)) {
-						ret = ncm->cb->setup(req, NULL);
-					}
+					ret = ncm->cb->setup(req, NULL);
 				}
 				break;
 			}
@@ -2343,53 +2264,39 @@ static int usbd_cdc_ncm_handle_ep0_data_out(usb_dev_t *dev)
 		ncm->ctrl_req_pending = 0U;
 
 		if (ncm->ctrl_req.bRequest == USB_CDC_NCM_SET_NTB_INPUT_SIZE) {
-			/* dwNtbInMaxSize: 4-byte little-endian payload from the DATA stage.
-			 *
-			 * The SETUP stage already rejected any wLength != 4 and cleared the four
-			 * bytes, so a short data stage leaves zeros rather than residue from a
-			 * previous control transfer.  Re-assert the length here: the core does
-			 * not hand the received length to this callback, so the stashed request
-			 * is the only place that knowledge exists. */
-			if (ncm->ctrl_req.wLength != 4U) {
-				RTK_LOGS(TAG, RTK_LOG_ERROR, "SET_NTB_INPUT_SIZE bad wLength %d\n",
-						 ncm->ctrl_req.wLength);
-				ret = -RTK_ERR_BADARG;
-			} else {
-				u32 ntb_in = ((u32)ep0_out->xfer_buf[0]) |
-							 ((u32)ep0_out->xfer_buf[1] << 8) |
-							 ((u32)ep0_out->xfer_buf[2] << 16) |
-							 ((u32)ep0_out->xfer_buf[3] << 24);
+			/* dwNtbInMaxSize: 4-byte little-endian payload from the DATA stage. The SETUP
+			 * stage only stashes this request with wLength == 4 and cleared the four bytes,
+			 * so a short data stage leaves zeros rather than residue. */
+			u32 ntb_in = ((u32)ep0_out->xfer_buf[0]) |
+						 ((u32)ep0_out->xfer_buf[1] << 8) |
+						 ((u32)ep0_out->xfer_buf[2] << 16) |
+						 ((u32)ep0_out->xfer_buf[3] << 24);
 
-				/* Accept the whole range the spec requires a device to support:
-				 * from USB_CDC_NCM_MIN_NTB_INPUT_SIZE (2048 for NTB-16, Ref NCM 1.0
-				 * Table 6-3) up to the dwNtbInMaxSize advertised in
-				 * GET_NTB_PARAMETERS.  The old lower bound used
-				 * USB_CDC_NCM_DEFAULT_NTB_INPUT_SIZE (4096), which equals the upper
-				 * bound and therefore collapsed the window to the single value 4096
-				 * - a host legitimately shrinking the NTB to 2048 (Linux cdc_ncm
-				 * does) was rejected.
-				 *
-				 * The upper bound is exactly what GET_NTB_PARAMETERS advertised, so the
-				 * device never accepts a size it did not offer.  It may exceed one slot
-				 * buffer: the accepted value only lowers the cap, and every emitted NTB is
-				 * clamped to the slot capacity by usbd_cdc_ncm_tx_ntb_limit(). */
-				if ((ntb_in >= USB_CDC_NCM_MIN_NTB_INPUT_SIZE) &&
-					(ntb_in <= ncm->ntb_in_max_size_cap)) {
-					ncm->ntb_in_max_size = ntb_in;
-					ret = RTK_SUCCESS;
-				} else {
-					RTK_LOGS(TAG, RTK_LOG_ERROR, "SET_NTB_INPUT_SIZE out of range: %u\n", ntb_in);
-					ret = -RTK_ERR_BADARG;
-				}
+			/* Accept the whole range the spec requires a device to support:
+			 * from USB_CDC_NCM_MIN_NTB_INPUT_SIZE (2048 for NTB-16, Ref NCM 1.0
+			 * Table 6-3) up to the dwNtbInMaxSize advertised in
+			 * GET_NTB_PARAMETERS.  The old lower bound used
+			 * USB_CDC_NCM_DEFAULT_NTB_INPUT_SIZE (4096), which equals the upper
+			 * bound and therefore collapsed the window to the single value 4096
+			 * - a host legitimately shrinking the NTB to 2048 (Linux cdc_ncm
+			 * does) was rejected.
+			 *
+			 * The upper bound is exactly what GET_NTB_PARAMETERS advertised, so the
+			 * device never accepts a size it did not offer.  It may exceed one slot
+			 * buffer: the accepted value only lowers the cap, and every emitted NTB is
+			 * clamped to the slot capacity by usbd_cdc_ncm_tx_ntb_limit(). */
+			if ((ntb_in >= USB_CDC_NCM_MIN_NTB_INPUT_SIZE) &&
+				(ntb_in <= ncm->ntb_in_max_size_cap)) {
+				ncm->ntb_in_max_size = ntb_in;
+				ret = RTK_SUCCESS;
+			} else {
+				RTK_LOGS(TAG, RTK_LOG_ERROR, "SET_NTB_INPUT_SIZE out of range: %u\n", ntb_in);
+				ret = -RTK_ERR_BADARG;
 			}
-		} else if ((ncm->cb != NULL) && (ncm->cb->setup != NULL)) {
-			/* cb is released by usbd_cdc_ncm_deinit(), which may run between the setup and the
-			   data stage of an H2D request, so both the structure and the handler are checked. */
+		} else {
+			/* Any other request is only stashed when cb->setup exists, refer to the SETUP stage */
 			ret = ncm->cb->setup(&ncm->ctrl_req, ep0_out->xfer_buf);
 		}
-		/* An application without a setup handler simply ignores class-specific requests and the
-		   data stage itself was received correctly, so ret stays RTK_SUCCESS: stalling would make the
-		   host give up on the interface. */
 	}
 
 	return ret;
@@ -2486,12 +2393,6 @@ static u16 usbd_cdc_ncm_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 
 	const u8 *desc = NULL;
 	u16 len = 0;
 	u8 is_cfg = 0;
-
-	/* Ref USB 2.0 9.4.3: the index only selects among string and configuration descriptors;
-	   with a single configuration, a non-string index other than 0 names no descriptor. */
-	if ((desc_type != USB_DESC_TYPE_STRING) && (USB_LOW_BYTE(req->wValue) != 0U)) {
-		return 0;
-	}
 
 	switch (desc_type) {
 	case USB_DESC_TYPE_DEVICE:
@@ -2740,15 +2641,10 @@ static int usbd_cdc_ncm_private_init(const usbd_cdc_ncm_cb_t *cb, const usbd_cdc
 		((cfg->intr_in_addr & USB_REQ_DIR_MASK) != USB_D2H) ||
 		((cfg->bulk_in_addr & (~USB_REQ_DIR_MASK)) == 0U) ||
 		((cfg->bulk_out_addr & (~USB_REQ_DIR_MASK)) == 0U) ||
-		((cfg->intr_in_addr & (~USB_REQ_DIR_MASK)) == 0U)) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid EP addr %02x/%02x/%02x\n",
-				 cfg->bulk_in_addr, cfg->bulk_out_addr, cfg->intr_in_addr);
-		return -RTK_ERR_BADARG;
-	}
-
-	/* Ref USB 2.0 9.6.6: the endpoint numbers must exist on the controller, and the two IN
-	   endpoints must differ, otherwise two endpoints would share one hardware endpoint */
-	if (((cfg->bulk_in_addr & (u8)(~USB_REQ_DIR_MASK)) >= USB_MAX_ENDPOINTS) ||
+		((cfg->intr_in_addr & (~USB_REQ_DIR_MASK)) == 0U) ||
+		/* Ref USB 2.0 9.6.6: the endpoint numbers must exist on the controller, and the two IN
+		   endpoints must differ, otherwise two endpoints would share one hardware endpoint */
+		((cfg->bulk_in_addr & (u8)(~USB_REQ_DIR_MASK)) >= USB_MAX_ENDPOINTS) ||
 		((cfg->bulk_out_addr & (u8)(~USB_REQ_DIR_MASK)) >= USB_MAX_ENDPOINTS) ||
 		((cfg->intr_in_addr & (u8)(~USB_REQ_DIR_MASK)) >= USB_MAX_ENDPOINTS) ||
 		(cfg->bulk_in_addr == cfg->intr_in_addr)) {
@@ -2835,7 +2731,6 @@ static int usbd_cdc_ncm_private_init(const usbd_cdc_ncm_cb_t *cb, const usbd_cdc
 			}
 			ncm->tx_slot[i].frame_count = 0;
 			ncm->tx_slot[i].data_offset = 0;
-			ncm->tx_slot[i].sequence = 0;
 		}
 		ncm->tx_wd = 0;
 		ncm->tx_rd = 0;
@@ -2846,8 +2741,6 @@ static int usbd_cdc_ncm_private_init(const usbd_cdc_ncm_cb_t *cb, const usbd_cdc
 	   advertised capability until a host shrinks it with SET_NTB_INPUT_SIZE. */
 	ncm->ntb_in_max_size = ncm->ntb_in_max_size_cap;
 	ncm->sequence = 0;
-	ncm->ntb_format = 0; /* NTB16 */
-	ncm->crc_mode = 0;   /* No CRC */
 
 	/* Start from the data interface default setting: the BULK endpoints only come
 	 * up when the host selects alt 1.  Explicit here because this instance is
@@ -3013,7 +2906,6 @@ cleanup_bulk_tx_slot_sema:
 	ncm->tx_buf_free_sema = NULL;
 
 #ifdef CONFIG_USBD_CDC_NCM_TX_AGGREGATION
-cleanup_tx_raw_rb:
 	if (ncm->tx_raw_free_sema != NULL) {
 		usb_os_sema_delete(ncm->tx_raw_free_sema);
 		ncm->tx_raw_free_sema = NULL;

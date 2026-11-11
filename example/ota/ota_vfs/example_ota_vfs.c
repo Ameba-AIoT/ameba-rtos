@@ -32,7 +32,7 @@ void ota_task(void *param)
 
 	memset(ctx, 0, sizeof(ota_context_t));
 
-	prefix = find_vfs_tag(VFS_REGION_3);
+	prefix = vfs_get_prefix(VFS_TARGET_FLASH_APP_FATFS);
 	if (prefix == NULL) {
 		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "[%s] fatfs region is not exist\n", __FUNCTION__);
 		goto exit;

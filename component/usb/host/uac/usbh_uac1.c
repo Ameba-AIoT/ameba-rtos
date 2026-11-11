@@ -12,8 +12,9 @@
 
 #define USBH_UAC_WAIT_SLICE_MS                      5
 /* EP0 data of every UAC1 class request issued here: 3 B SET_CUR sampling frequency is the
-   largest. One cache line, the DMA granule, holds it */
-#define USBH_UAC_AUDIO_CTRL_BUF_MAX_LEN             CACHE_LINE_SIZE
+   largest. A D2H request still reserves one whole EP0 packet as its DMA window, refer to
+   usb_get_dma_len(), so the buffer holds one maximum EP0 packet */
+#define USBH_UAC_AUDIO_CTRL_BUF_MAX_LEN             USB_MAX_EP0_SIZE
 #define USBH_UAC_FU_IDX_NONE                        0xFFU  /* No feature unit picked for a direction */
 #define USBH_UAC_ISOC_BUF_LENGTH                    1024U
 #define USBH_UAC_RW_LEN_MAX                         0x7FFFFFFFU /**< Largest size usbh_uac_read()/write() can report in an int */

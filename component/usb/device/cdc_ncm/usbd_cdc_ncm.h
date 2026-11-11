@@ -185,7 +185,6 @@ typedef struct {
 typedef struct {
 	u8 *buf;                /**< DMA-aligned NTB scratch buffer (size usbd_cdc_ncm_dev_t::ntb_tx_buf_size). */
 	u32 data_offset;        /**< Total NTB length (bytes) once finalised; DMA transfer length. */
-	u16 sequence;           /**< NTH16 wSequence value for this NTB. */
 	u8 frame_count;         /**< Datagrams aggregated into this NTB so far. */
 } ncm_tx_ntb_t;
 
@@ -214,9 +213,8 @@ typedef struct {
 	 * @brief Called to handle class-specific SETUP requests.
 	 * @note   This function is called within an interrupt service routine (ISR) context;
 	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
-	 * @param[in] req: Pointer to the setup request packet. For a device-to-host request with a
-	 *            data stage, buf holds at least wLength bytes and wLength never exceeds the
-	 *            host's: write at most wLength bytes.
+	 * @param[in] req: Pointer to the setup request packet. A device-to-host class request with a
+	 *            data stage is rejected by the class and never reaches this callback.
 	 * @param[out] buf: Pointer to a buffer for data stage of control transfers.
 	 * @return 0 on success, non-zero on failure.
 	 */
@@ -351,8 +349,6 @@ typedef struct {
 	 *          from ntb_in_max_size and also serves as the upper bound that request accepts.
 	 */
 	u32 ntb_in_max_size_cap;
-	u8 ntb_format;                  /**< NTB format: 0=NTB16, currently only NTB16 supported. */
-	u8 crc_mode;                    /**< CRC mode: 0=none, currently only no-CRC supported. */
 
 	/* Endpoints and EP0 */
 	usbd_ep_t ep_bulk_in;           /**< BULK IN endpoint. */
@@ -381,8 +377,6 @@ typedef struct {
 	u32 dbg_intr_in_done_cnt;       /**< INTR IN completion ISR count. */
 	u32 dbg_rx_deliver_cnt;         /**< NTBs delivered to upper-layer callback. */
 	u32 dbg_rx_loop_cnt;            /**< RX thread heartbeat; frozen => thread wedged. */
-	u32 dbg_tx_bytes;               /**< Bytes successfully submitted to BULK IN (speed calc). */
-	u32 dbg_rx_bytes;               /**< Bytes delivered to upper layer via received() (speed calc). */
 	u8 trace_task_running;          /**< State-trace thread loop guard; cleared to request exit. */
 #endif
 } usbd_cdc_ncm_dev_t;

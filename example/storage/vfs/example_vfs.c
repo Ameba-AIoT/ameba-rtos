@@ -3,28 +3,22 @@
 #include "vfs.h"
 #include "example_vfs.h"
 
-void example_vfs_thread(void *param)
+static void example_vfs_rw(const char *prefix)
 {
-	rtos_time_delay_ms(3000);
 	char filename[] = "vfs_file_1";
 	char content[] = "VFS module works normally !!!";
 	char path[128] = {0};
 	char buffer[32] = {0};
-	char *prefix;
 	FILE *finfo;
 	int res = 0;
 
-	(void)param;
-
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\r\n====================Example: VFS====================\r\n");
-
-	prefix = find_vfs_tag(VFS_REGION_1);
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "[%s] test on %s\r\n", __FUNCTION__, prefix);
 	DiagSnPrintf(path, sizeof(path), "%s:%s", prefix, filename);
 
 	finfo = fopen(path, "w");
 	if (finfo == NULL) {
 		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "[%s] fopen() failed\r\n", __FUNCTION__);
-		goto exit;
+		return;
 	}
 
 	res = fwrite(content, strlen(content), 1, finfo);
@@ -37,6 +31,10 @@ void example_vfs_thread(void *param)
 	fclose(finfo);
 
 	finfo = fopen(path, "r");
+	if (finfo == NULL) {
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "[%s] fopen() failed\r\n", __FUNCTION__);
+		return;
+	}
 	res = fread(buffer, strlen(content), 1, finfo);
 	if (res < 0) {
 		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "[%s] fread() failed, err is %d\r\n", __FUNCTION__, res);
@@ -56,8 +54,30 @@ void example_vfs_thread(void *param)
 	} else {
 		RTK_LOGS(NOTAG, RTK_LOG_INFO, "[%s] remove() file succeeded\r\n", __FUNCTION__);
 	}
+}
 
-exit:
+void example_vfs_thread(void *param)
+{
+	/* On-chip flash targets registered at boot by vfs_auto_register(); VFS2 only when enabled in menuconfig */
+	static const int targets[] = {VFS_TARGET_FLASH_VFS1, VFS_TARGET_FLASH_VFS2};
+	char *prefix;
+
+	(void)param;
+	rtos_time_delay_ms(3000);
+
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\r\n====================Example: VFS====================\r\n");
+
+	for (u32 i = 0; i < sizeof(targets) / sizeof(targets[0]); i++) {
+		prefix = vfs_get_prefix(targets[i]);
+		if (prefix == NULL) {
+			if (targets[i] == VFS_TARGET_FLASH_VFS1) {
+				RTK_LOGS(NOTAG, RTK_LOG_ERROR, "VFS1 not mounted\r\n");
+			}
+			continue;
+		}
+		example_vfs_rw(prefix);
+	}
+
 	rtos_task_delete(NULL);
 }
 

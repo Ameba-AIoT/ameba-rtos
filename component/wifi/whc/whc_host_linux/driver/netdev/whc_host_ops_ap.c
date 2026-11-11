@@ -248,6 +248,144 @@ static int whc_host_change_beacon(struct wiphy *wiphy, struct net_device *ndev, 
 	return 0;
 }
 
+static struct rtw_event_ch_switch whc_host_ch_switch_info[WHC_MAX_NET_PORT_NUM];	/* latest softap channel from device */
+static bool whc_host_ch_switch_stopped;	/* true from whc_host_ch_switch_deinit until next whc_host_ch_switch_init */
+static DEFINE_MUTEX(whc_host_ch_switch_mutex);
+static void whc_host_ch_switch_hdl(struct rtw_event_ch_switch *ch_info)
+{
+	struct net_device *ndev = NULL;
+	struct wireless_dev *wdev = NULL;
+	struct ieee80211_channel *chan;
+	struct cfg80211_chan_def chandef = {0};
+	u8 wlan_idx, channel, bwmode, ch_offset;
+	enum nl80211_channel_type type = NL80211_CHAN_HT20;
+
+	wlan_idx = ch_info->iface;
+	channel = ch_info->channel;
+	bwmode = ch_info->bwmode;
+	ch_offset = ch_info->ch_offset;
+	ndev = global_idev.pndev[wlan_idx];
+	wdev = ndev ? ndev->ieee80211_ptr : NULL;
+	if (!wdev || channel == 0) {
+		return;
+	}
+
+	dev_dbg(global_idev.pwhc_dev, "[whc]: %s port %d switch to channel %d - bw %d - offset %d\n",
+			__func__, ch_info->iface, ch_info->channel, bwmode, ch_offset);
+
+	chan = ieee80211_get_channel(wdev->wiphy, rtw_ch2freq(channel));
+	if (!chan) {
+		return;
+	}
+
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 7, 0))
+	wiphy_lock((wdev)->wiphy);
+#else
+	mutex_lock(&(wdev)->mtx);
+#endif
+
+	switch (wdev->iftype) {
+	case NL80211_IFTYPE_AP:
+		/* bwmode 1: 40MHz; ch_offset 1: secondary above, 3: secondary below */
+		if (bwmode == 1 && (ch_offset == 1 || ch_offset == 3)) {
+			type = (ch_offset == 1) ? NL80211_CHAN_HT40PLUS : NL80211_CHAN_HT40MINUS;
+		}
+
+		cfg80211_chandef_create(&chandef, chan, type);
+		if (!cfg80211_chandef_valid(&chandef)) {
+			cfg80211_chandef_create(&chandef, chan, NL80211_CHAN_HT20);
+		}
+
+		/* nothing changed */
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 2))
+		if (cfg80211_chandef_identical(&chandef, &((wdev)->links[0].ap.chandef))) {
+#else
+		if (cfg80211_chandef_identical(&chandef, &((wdev)->chandef))) {
+#endif
+			dev_dbg(global_idev.pwhc_dev, "[whc]: %s cfg80211_chandef_identical return\n", __func__);
+			goto out_unlock;
+		}
+		dev_dbg(global_idev.pwhc_dev, "%s: softap switch to channel %d\n", __func__, channel);
+		break;
+	/* add NL80211_IFTYPE_STATION here when device reports sta channel (e.g. CSA) */
+	default:
+		goto out_unlock;
+	}
+
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 9, 0))
+	cfg80211_ch_switch_notify(ndev, &chandef, 0);
+#elif (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0))
+	cfg80211_ch_switch_notify(ndev, &chandef, 0, 0);
+#elif (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 2))
+	cfg80211_ch_switch_notify(ndev, &chandef, 0);
+#else
+	cfg80211_ch_switch_notify(ndev, &chandef);
+#endif
+out_unlock:
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 7, 0))
+	wiphy_unlock((wdev)->wiphy);
+#else
+	mutex_unlock(&(wdev)->mtx);
+#endif
+}
+
+static void whc_host_ch_switch_work_hdl(struct work_struct *work)
+{
+	struct rtw_event_ch_switch ch_info[WHC_MAX_NET_PORT_NUM];
+	u8 i;
+
+	dev_dbg(global_idev.pwhc_dev, "[whc]: %s", __func__);
+	mutex_lock(&whc_host_ch_switch_mutex);
+	memcpy(ch_info, whc_host_ch_switch_info, sizeof(ch_info));
+	memset(whc_host_ch_switch_info, 0, sizeof(whc_host_ch_switch_info));
+	mutex_unlock(&whc_host_ch_switch_mutex);
+
+	for (i = 0; i < WHC_MAX_NET_PORT_NUM; i++) {
+		whc_host_ch_switch_hdl(&ch_info[i]);
+	}
+}
+
+/* statically initialized, so schedule/cancel are safe regardless of init order */
+static DECLARE_WORK(whc_host_ch_switch_work, whc_host_ch_switch_work_hdl);
+void whc_host_ch_switch_indicate(struct rtw_event_ch_switch *ch_info)
+{
+	if (!ch_info || (ch_info->iface != WHC_AP_PORT && ch_info->iface != WHC_STA_PORT)) {
+		return;
+	}
+
+	dev_dbg(global_idev.pwhc_dev, "[whc]: %s port %d switch to channel %d",
+			__func__, ch_info->iface, ch_info->channel);
+
+	mutex_lock(&whc_host_ch_switch_mutex);
+	if (!whc_host_ch_switch_stopped) {
+		memcpy((u8 *)&whc_host_ch_switch_info[ch_info->iface], (u8 *)ch_info, sizeof(struct rtw_event_ch_switch));
+		schedule_work(&whc_host_ch_switch_work);
+	}
+	mutex_unlock(&whc_host_ch_switch_mutex);
+}
+
+/* call on probe, before the event path is up */
+void whc_host_ch_switch_init(void)
+{
+	dev_dbg(global_idev.pwhc_dev, "[whc]: %s", __func__);
+	mutex_lock(&whc_host_ch_switch_mutex);
+	whc_host_ch_switch_stopped = false;
+	memset(whc_host_ch_switch_info, 0, sizeof(whc_host_ch_switch_info));
+	mutex_unlock(&whc_host_ch_switch_mutex);
+}
+
+/* call before netdev is freed */
+void whc_host_ch_switch_deinit(void)
+{
+	dev_dbg(global_idev.pwhc_dev, "[whc]: %s", __func__);
+	mutex_lock(&whc_host_ch_switch_mutex);
+	whc_host_ch_switch_stopped = true;
+	mutex_unlock(&whc_host_ch_switch_mutex);
+
+	/* no new schedule after the flag is set, so this cancel cannot be undone */
+	cancel_work_sync(&whc_host_ch_switch_work);
+}
+
 static int whc_host_channel_switch_ops(struct wiphy *wiphy, struct net_device *dev, struct cfg80211_csa_settings *params)
 {
 	int ret;

@@ -150,8 +150,8 @@ static volatile u8 cdc_acm_teardown = 0;
 static usb_app_ctx_t cdc_acm_app;
 
 static const usbh_cdc_acm_config_t cdc_acm_class_cfg = {
-	/* 115200 8N1 with DTR asserted; char_format/parity_type are left 0, which is the
-	 * valid encoding for 1 stop bit / no parity. */
+	/* 115200 8N1 with DTR asserted, sent by the class before the setup callback; char_format/parity_type
+	 * are left 0, which is the valid encoding for 1 stop bit / no parity. */
 	.dte_rate        = 115200U,
 	.data_bits       = 8U,
 	.ctrl_line_state = 0x01U,
@@ -609,8 +609,8 @@ static void cdc_acm_speed_loopback_test(void)
 	/* Join both workers. Each one leaves on its own once the device is gone
 	   (every wait in its loop is bounded), so this returns at the latest one
 	   transfer budget after an unplug. */
-	(void)rtos_sema_take(cdc_acm_worker_exit_sema, RTOS_SEMA_MAX_COUNT);
-	(void)rtos_sema_take(cdc_acm_worker_exit_sema, RTOS_SEMA_MAX_COUNT);
+	rtos_sema_take(cdc_acm_worker_exit_sema, RTOS_SEMA_MAX_COUNT);
+	rtos_sema_take(cdc_acm_worker_exit_sema, RTOS_SEMA_MAX_COUNT);
 }
 #else
 static void cdc_acm_loopback_test(void)
@@ -705,12 +705,7 @@ static void cdc_acm_notify_test(void)
 		return;
 	}
 
-	if (cdc_acm_lock_stack() == RTK_SUCCESS) {
-		usbh_cdc_acm_set_control_line_state(0x01U); /* DTR=1, RTS=0 */
-		cdc_acm_unlock_stack();
-	}
-	//wait for set control line finish
-	rtos_time_delay_ms(2000);
+	/* DTR is already asserted: the class sends cdc_acm_class_cfg.ctrl_line_state before the setup callback */
 
 	for (i = 0; i < USBH_CDC_ACM_LOOPBACK_CNT; i++) {
 		if (cdc_acm_round_gone() != 0U) {
@@ -723,8 +718,13 @@ static void cdc_acm_notify_test(void)
 			break;
 		}
 		cdc_acm_drain_sema(cdc_acm_notify_sema);
-		(void)usbh_cdc_acm_notify_receive(cdc_acm_notify_rx_buf, USBH_CDC_ACM_NOTIFY_BUF_SIZE);
+		ret = usbh_cdc_acm_notify_receive(cdc_acm_notify_rx_buf, USBH_CDC_ACM_NOTIFY_BUF_SIZE);
 		cdc_acm_unlock_stack();
+		if (ret != RTK_SUCCESS) {
+			/* Nothing was armed, so no notification can come */
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Notify rx fail: %d\n", ret);
+			break;
+		}
 
 		if (rtos_sema_take(cdc_acm_notify_sema, USBH_CDC_ACM_XFER_TIMEOUT_MS) == RTK_SUCCESS) {
 			if (cdc_acm_notify_status != RTK_SUCCESS) {
@@ -941,7 +941,7 @@ static void example_usbh_cdc_acm_test_thread(void *param)
 	   tests see the device gone and return at once. */
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Wait for device attach\n");
 	for (;;) {
-		(void)rtos_sema_take(cdc_acm_ready_sema, RTOS_SEMA_MAX_COUNT);
+		rtos_sema_take(cdc_acm_ready_sema, RTOS_SEMA_MAX_COUNT);
 		if (cdc_acm_app.quit != 0U) {
 			break;
 		}

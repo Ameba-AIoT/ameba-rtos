@@ -91,7 +91,9 @@ enum  {
 
 	RTW_EVENT_DFS_CAC_DONE				= 127, /**< DFS master: CAC passed, host brings AP netif link up */
 
-	RTW_EVENT_RADAR_PROC_RPT				= 128, /**< Radar report ready */
+	RTW_EVENT_RADAR_PROC_RPT			= 128, /**< Radar report ready */
+
+	RTW_EVENT_OPERATION_CH_SWITCH		= 129, /**< STA/SOFTAP operating channel may change in driver; notify host, which is unaware */
 
 	RTW_EVENT_INTERNAL_MAX,
 };
@@ -244,6 +246,12 @@ struct rtw_event_report_frame {
 	u8 frame[];
 };
 
+struct rtw_event_ch_switch {
+	u8 iface;
+	u8 channel;		/* primary channel */
+	u8 bwmode;		/* 0: 20MHz, 1: 40MHz */
+	u8 ch_offset;	/* secondary channel offset, 0: none, 1: upper, 3: lower */
+};
 
 struct rtw_event_radar_proc_rpt_info {
 	u8 rpt_type : 3;

@@ -700,6 +700,7 @@ int rtw_netdev_probe(struct device *pdev)
 	global_idev.pwhc_dev = pdev;
 
 #if defined(CONFIG_WHC_WIFI_API_PATH)
+	whc_host_ch_switch_init();
 	/*step1: alloc and init wiphy */
 	ret = rtw_wiphy_init();
 	if (ret == false) {
@@ -755,6 +756,9 @@ int rtw_netdev_probe(struct device *pdev)
 	return 0; /* probe success */
 
 os_ndevs_deinit:
+#if defined(CONFIG_WHC_WIFI_API_PATH)
+	whc_host_ch_switch_deinit();
+#endif
 	rtw_ndev_unregister();
 #if defined(CONFIG_WHC_WIFI_API_PATH)
 	rtw_wiphy_deinit();
@@ -770,6 +774,7 @@ int rtw_netdev_remove(struct device *pdev)
 
 #if defined(CONFIG_WHC_WIFI_API_PATH)
 	rtw_drv_proc_deinit();
+	whc_host_ch_switch_deinit();
 #endif
 	rtw_ndev_unregister();
 	dev_dbg(global_idev.pwhc_dev, "unregister netdev done.");

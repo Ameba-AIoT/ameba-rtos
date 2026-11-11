@@ -437,6 +437,7 @@ static int usbd_msc_set_config(usb_dev_t *dev, u8 config)
 	cdev->bot_reset_pending = 0U;
 	cdev->wedged = 0U;
 	cdev->csw_pending = 0U;
+	cdev->csw_in_flight = 0U;
 
 	/* Prepare to receive next BULK OUT packet. Without it the device would enumerate but never see a CBW, so
 	   fail the configuration and let the core stall SET_CONFIGURATION instead. */
@@ -541,7 +542,9 @@ static int usbd_msc_setup(usb_dev_t *dev, usb_setup_req_t *req)
 				   CSW is sent; the MSC threads do not touch Bulk-In or the CSW meanwhile. */
 				cdev->csw_pending = 0U;
 				usbd_ep_clear_stall(dev, &cdev->ep_bulk_in);
+				cdev->csw_in_flight = 1U;
 				if (usbd_msc_bulk_transmit(dev, (u8 *)cdev->csw, USB_MSC_CSW_LEN) != RTK_SUCCESS) {
+					cdev->csw_in_flight = 0U;
 					USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_XFER, cdev->cfg->bulk_in_addr);
 				}
 				ret = RTK_SUCCESS;
@@ -627,6 +630,7 @@ static int usbd_msc_setup(usb_dev_t *dev, usb_setup_req_t *req)
 				cdev->wedged = 0U;
 				/* Ref BOT 3.1: the reset aborts the current command, so its deferred CSW is dropped */
 				cdev->csw_pending = 0U;
+				cdev->csw_in_flight = 0U;
 				/* Prepare to receive BOT cmd. On failure stall the reset so the host escalates to a port reset.
 				   Known issue: an RX/TX thread still processing the aborted command may re-arm its data stage
 				   right after this, replacing the CBW receive. To be decided after the CV Reset Recovery test:
@@ -670,6 +674,13 @@ static int usbd_msc_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, int status)
 	 * dispatcher can continue iterating to the correct sub-function. */
 	if (ep_addr != cdev->cfg->bulk_in_addr) {
 		return -RTK_ERR_BADARG;
+	}
+
+	/* Ref MSC BOT 1.0 6.3: the CSW ends the command, nothing is left for the TX thread. Waking it would make it
+	   continue the next command, which the RX thread may already have started, as if this were its data. */
+	if (cdev->csw_in_flight != 0U) {
+		cdev->csw_in_flight = 0U;
+		return RTK_SUCCESS;
 	}
 
 	cdev->tx_status = status;
@@ -717,11 +728,16 @@ static void usbd_msc_tx_process(void)
 
 		case USBD_MSC_SEND_DATA:
 		case USBD_MSC_LAST_DATA_IN:
-			if (cdev->phase_error != 0U) {
-				usbd_msc_send_csw(dev, BOT_CSW_PHASE_ERROR);
-				cdev->phase_error = 0U;
+			csw_status = (cdev->phase_error != 0U) ? BOT_CSW_PHASE_ERROR : BOT_CSW_CMD_PASSED;
+			cdev->phase_error = 0U;
+			/* Ref MSC BOT 1.0 6.7.2 Case 5 (Hi > Di): the host still reads Bulk-In for the residue. A last packet
+			   of MPS bytes, e.g. a READ shorter than dCBWDataTransferLength, does not end the data stage, ZLP being
+			   disabled on Bulk-In, so a CSW sent now would be read as data: halt Bulk-In instead. */
+			if ((cdev->csw->field.dCSWDataResidue != 0U) && (cdev->ep_bulk_in.info.mps != 0U) &&
+				((cdev->ep_bulk_in.xfer_len % cdev->ep_bulk_in.info.mps) == 0U)) {
+				usbd_msc_defer_csw(dev, csw_status);
 			} else {
-				usbd_msc_send_csw(dev, BOT_CSW_CMD_PASSED);
+				usbd_msc_send_csw(dev, csw_status);
 			}
 			break;
 
@@ -1591,7 +1607,9 @@ void usbd_msc_send_csw(usb_dev_t *dev, u8 status)
 	cdev->bot_state = USBD_MSC_IDLE;
 	cdev->bot_status = USBD_MSC_STATUS_NORMAL;
 
+	cdev->csw_in_flight = 1U;
 	if (usbd_msc_bulk_transmit(dev, (u8 *)csw, USB_MSC_CSW_LEN) != RTK_SUCCESS) {
+		cdev->csw_in_flight = 0U;
 		RTK_LOGS(TAG, RTK_LOG_WARN, "EP%02x xfer err\n", cdev->cfg->bulk_in_addr);
 	}
 

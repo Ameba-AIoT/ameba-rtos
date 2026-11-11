@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include "time.h"
 #include "diag.h"
-#include "vfs.h"
+#include "vfs_internal.h"
 #include "os_wrapper.h"
 
 #ifdef CONFIG_VFS_ENABLED
@@ -52,7 +52,7 @@ FILE *__wrap_fopen(const char *filename, const char *mode)
 		return NULL;
 	}
 
-	ret = vfs_check_mount_flag(vfs.drv[vfs_id]->vfs_type, vfs.user[user_id].vfs_interface_type, vfs.user[user_id].vfs_region, "fopen");
+	ret = vfs_check_mount_flag(user_id, "fopen");
 	if (ret) {
 		return NULL;
 	}
@@ -144,6 +144,11 @@ size_t __wrap_fwrite(const void *ptr, size_t size, size_t count, FILE *stream)
 	}
 #endif
 
+	/* write ops are NULL in a read-only build (FATFS_READ_ONLY) */
+	if (vfs.drv[finfo->vfs_id]->write == NULL) {
+		return 0;
+	}
+
 	if (vfs.user[finfo->user_id].vfs_enc_callback != NULL) {
 		unsigned char *aesencsw;
 		unsigned int data_len = size * count;
@@ -228,6 +233,9 @@ int  __wrap_fflush(FILE *stream)
 		return 0;
 	}
 #endif
+	if (vfs.drv[finfo->vfs_id]->fflush == NULL) {
+		return -1;
+	}
 	ret = vfs.drv[finfo->vfs_id]->fflush(vfs.user[finfo->user_id].fs, (vfs_file *)stream);
 	return ret;
 }
@@ -243,12 +251,12 @@ int __wrap_remove(const char *filename)
 		return -1;
 	}
 
-	ret = vfs_check_mount_flag(vfs.drv[vfs_id]->vfs_type, vfs.user[user_id].vfs_interface_type, vfs.user[user_id].vfs_region, "remove");
+	ret = vfs_check_mount_flag(user_id, "remove");
 	if (ret) {
 		return -1;
 	}
 
-	if (vfs.user[user_id].vfs_ro_flag) {
+	if (vfs.user[user_id].vfs_ro_flag || vfs.drv[vfs_id]->remove == NULL) {
 		VFS_DBG(VFS_WARNING, "Vfs is read-only when initializing!");
 		return -1;
 	}
@@ -277,12 +285,12 @@ int __wrap_rename(const char *oldname, const char *newname)
 		return -1;
 	}
 
-	ret = vfs_check_mount_flag(vfs.drv[vfs_id]->vfs_type, vfs.user[user_id].vfs_interface_type, vfs.user[user_id].vfs_region, "rename");
+	ret = vfs_check_mount_flag(user_id, "rename");
 	if (ret) {
 		return -1;
 	}
 
-	if (vfs.user[user_id].vfs_ro_flag) {
+	if (vfs.user[user_id].vfs_ro_flag || vfs.drv[vfs_id]->rename == NULL) {
 		VFS_DBG(VFS_WARNING, "Vfs is read-only when initializing!");
 		return -1;
 	}
@@ -347,7 +355,7 @@ int __wrap_ftruncate(int stream, off_t length)
 {
 	int ret = 0;
 	vfs_file *finfo = (vfs_file *)stream;
-	if (is_stdio((FILE *)stream)) {
+	if (is_stdio((FILE *)stream) || vfs.drv[finfo->vfs_id]->ftruncate == NULL) {
 		return -1;
 	}
 
@@ -394,7 +402,7 @@ void *__wrap_opendir(const char *name)
 		return NULL;
 	}
 
-	ret = vfs_check_mount_flag(vfs.drv[vfs_id]->vfs_type, vfs.user[user_id].vfs_interface_type, vfs.user[user_id].vfs_region, "opendir");
+	ret = vfs_check_mount_flag(user_id, "opendir");
 	if (ret) {
 		return NULL;
 	}
@@ -455,12 +463,12 @@ int __wrap_rmdir(const char *path)
 		return -1;
 	}
 
-	ret = vfs_check_mount_flag(vfs.drv[vfs_id]->vfs_type, vfs.user[user_id].vfs_interface_type, vfs.user[user_id].vfs_region, "rmdir");
+	ret = vfs_check_mount_flag(user_id, "rmdir");
 	if (ret) {
 		return -1;
 	}
 
-	if (vfs.user[user_id].vfs_ro_flag) {
+	if (vfs.user[user_id].vfs_ro_flag || vfs.drv[vfs_id]->rmdir == NULL) {
 		VFS_DBG(VFS_WARNING, "Vfs is read-only when initializing!");
 		return -1;
 	}
@@ -490,12 +498,12 @@ int __wrap_mkdir(const char *pathname, mode_t mode)
 		return -1;
 	}
 
-	ret = vfs_check_mount_flag(vfs.drv[vfs_id]->vfs_type, vfs.user[user_id].vfs_interface_type, vfs.user[user_id].vfs_region, "mkdir");
+	ret = vfs_check_mount_flag(user_id, "mkdir");
 	if (ret) {
 		return -1;
 	}
 
-	if (vfs.user[user_id].vfs_ro_flag) {
+	if (vfs.user[user_id].vfs_ro_flag || vfs.drv[vfs_id]->mkdir == NULL) {
 		VFS_DBG(VFS_WARNING, "Vfs is read-only when initializing!");
 		return -1;
 	}
@@ -524,7 +532,7 @@ int __wrap_access(const char *pathname, int mode)
 		return -1;
 	}
 
-	ret = vfs_check_mount_flag(vfs.drv[vfs_id]->vfs_type, vfs.user[user_id].vfs_interface_type, vfs.user[user_id].vfs_region, "access");
+	ret = vfs_check_mount_flag(user_id, "access");
 	if (ret) {
 		return -1;
 	}
@@ -553,7 +561,7 @@ int __wrap_stat(const char *path, struct stat *buf)
 		return -1;
 	}
 
-	ret = vfs_check_mount_flag(vfs.drv[vfs_id]->vfs_type, vfs.user[user_id].vfs_interface_type, vfs.user[user_id].vfs_region, "stat");
+	ret = vfs_check_mount_flag(user_id, "stat");
 	if (ret) {
 		return -1;
 	}
@@ -773,17 +781,9 @@ int __wrap_stat(const char *path, struct stat *buf)
 /* atcmd_service.c checks these directly; keep them "not mounted" */
 volatile uint8_t lfs_mount_flag = 0;
 
-static const char *const TAG = "VFS";
-
-/* stdio stubs above must not log: printf/getopt reach them via fflush/fputs */
-void vfs_stub_log(void)
+char *vfs_get_prefix(int target)
 {
-	RTK_LOGW(TAG, "VFS not enabled\n");
-}
-
-char *find_vfs_tag(char region)
-{
-	(void)region;
+	(void)target;
 	vfs_stub_log();
 	return NULL;
 }
@@ -798,24 +798,40 @@ void vfs_deinit(void)
 	vfs_stub_log();
 }
 
-int vfs_user_register(const char *prefix, int vfs_type, int interface, char region, char flag)
+int vfs_target_register(const char *prefix, int target, char flag)
 {
 	(void)prefix;
-	(void)vfs_type;
-	(void)interface;
-	(void)region;
+	(void)target;
 	(void)flag;
 	vfs_stub_log();
 	return -1;
 }
 
-int vfs_user_unregister(const char *prefix, int vfs_type, int interface)
+int vfs_target_unregister(const char *prefix)
 {
 	(void)prefix;
-	(void)vfs_type;
-	(void)interface;
 	vfs_stub_log();
 	return -1;
+}
+
+int vfs_auto_register(void)
+{
+	vfs_stub_log();
+	return -1;
+}
+
+int vfs_target_fs(int target)
+{
+	(void)target;
+	return -1;
+}
+
+/* Shared by the VFS-disabled stubs here and by the KV / FTL / AT stubs. Only needed while VFS is off: with VFS on, VFS1 is
+ * always LittleFS so KV / FTL are real. Make it unconditional again once VFS1_REALFS is opened and they turn into stubs.
+ * stdio stubs must not log: printf/getopt reach them via fflush/fputs */
+void vfs_stub_log(void)
+{
+	RTK_LOGW("VFS", "VFS not enabled\n");
 }
 
 #endif /* CONFIG_VFS_ENABLED */

@@ -391,97 +391,86 @@ int littlefs_stat(void *fs, char *path, struct stat *buf)
 	return ret;
 }
 
-int littlefs_mount(int interface)
+int littlefs_mount(int target)
 {
-	int ret = 0;
+	int ret;
+	volatile uint8_t *mount_flag;
 
-#if defined(VFS_RAM_LITTLEFS)
-	if (interface == VFS_INF_RAM) {
-		ret = rt_lfs_ram_init();
-		ram_mount_flag = (ret == 0) ? 1 : 0;
-		return ret;
-	}
-#endif
-
-	if (interface == VFS_INF_FLASH) {
+	switch (target) {
+	case VFS_TARGET_FLASH_VFS1:
+	case VFS_TARGET_FLASH_VFS2:
 		ret = rt_lfs_init(&g_lfs);
-	}
-#ifdef CONFIG_LITTLEFS_SECOND_FLASH
-	if (interface == VFS_INF_SECOND_FLASH) {
-		ret = rt_lfs_init(&g_second_lfs);
-	}
-#endif
-
-	if (ret) {
-		VFS_DBG(VFS_ERROR, "Littlefs mount fail, ret is %d", ret);
-		if (interface == VFS_INF_SECOND_FLASH) {
-			lfs2_mount_flag = 0;
-		} else if (interface == VFS_INF_FLASH) {
-			lfs_mount_flag = 0;
-		}
-		return ret;
-	}
-	VFS_DBG(VFS_INFO, "Littlefs mount");
-	if (interface == VFS_INF_SECOND_FLASH) {
-		lfs2_mount_flag = 1;
-	} else if (interface == VFS_INF_FLASH) {
-		lfs_mount_flag = 1;
-	}
-
-	return ret;
-}
-
+		mount_flag = &lfs_mount_flag;
+		break;
 #if defined(CONFIG_LITTLEFS_WITHIN_APP_IMG)
-/* read-only ROLFS image mount: separate lfs instance, never formats. */
-int littlefs_rolfs_mount(void)
-{
-	int ret = rt_lfs_init(&g_rolfs_lfs);
-	if (ret) {
-		VFS_DBG(VFS_ERROR, "Littlefs rolfs mount fail, ret is %d", ret);
-		lfs_rolfs_mount_flag = 0;
-		return ret;
-	}
-	VFS_DBG(VFS_INFO, "Littlefs rolfs mount");
-	lfs_rolfs_mount_flag = 1;
-	return ret;
-}
-
-int littlefs_rolfs_unmount(void)
-{
-	int ret = lfs_unmount(&g_rolfs_lfs);
-	lfs_rolfs_mount_flag = 0;
-	VFS_DBG(VFS_INFO, "Littlefs rolfs unmount");
-	return ret;
-}
+	case VFS_TARGET_FLASH_APP_LFS:
+		/* Separate read-only instance; rt_lfs_init never formats this image. */
+		ret = rt_lfs_init(&g_rolfs_lfs);
+		mount_flag = &lfs_rolfs_mount_flag;
+		break;
 #endif
-
-int littlefs_unmount(int interface)
-{
-	(void) interface;
-	int ret = 0;
-
-#if defined(VFS_RAM_LITTLEFS)
-	if (interface == VFS_INF_RAM) {
-		return rt_lfs_ram_deinit();		/* also clears ram_mount_flag */
-	}
-#endif
-
-	if (interface == VFS_INF_FLASH) {
-		ret = lfs_unmount(&g_lfs);
-	}
 #ifdef CONFIG_LITTLEFS_SECOND_FLASH
-	if (interface == VFS_INF_SECOND_FLASH) {
-		ret = lfs_unmount(&g_second_lfs);
-	}
+	case VFS_TARGET_SECOND_FLASH:
+		ret = rt_lfs_init(&g_second_lfs);
+		mount_flag = &lfs2_mount_flag;
+		break;
 #endif
-
-	VFS_DBG(VFS_INFO, "Littlefs unmount");
-	if (interface == VFS_INF_SECOND_FLASH) {
-		lfs2_mount_flag = 0;
-	} else if (interface == VFS_INF_FLASH) {
-		lfs_mount_flag = 0;
+#if defined(VFS_RAM_LITTLEFS)
+	case VFS_TARGET_RAM:
+		ret = rt_lfs_ram_init();
+		mount_flag = &ram_mount_flag;
+		break;
+#endif
+	default:
+		VFS_DBG(VFS_ERROR, "Unsupported LITTLEFS target %d", target);
+		return -1;
 	}
 
+	*mount_flag = (ret == 0) ? 1 : 0;
+	if (ret) {
+		VFS_DBG(VFS_ERROR, "Littlefs target %d mount fail, ret is %d", target, ret);
+	} else {
+		VFS_DBG(VFS_INFO, "Littlefs target %d mount", target);
+	}
+	return ret;
+}
+
+int littlefs_unmount(int target)
+{
+	int ret;
+	volatile uint8_t *mount_flag;
+
+	switch (target) {
+	case VFS_TARGET_FLASH_VFS1:
+	case VFS_TARGET_FLASH_VFS2:
+		ret = lfs_unmount(&g_lfs);
+		mount_flag = &lfs_mount_flag;
+		break;
+#if defined(CONFIG_LITTLEFS_WITHIN_APP_IMG)
+	case VFS_TARGET_FLASH_APP_LFS:
+		ret = lfs_unmount(&g_rolfs_lfs);
+		mount_flag = &lfs_rolfs_mount_flag;
+		break;
+#endif
+#ifdef CONFIG_LITTLEFS_SECOND_FLASH
+	case VFS_TARGET_SECOND_FLASH:
+		ret = lfs_unmount(&g_second_lfs);
+		mount_flag = &lfs2_mount_flag;
+		break;
+#endif
+#if defined(VFS_RAM_LITTLEFS)
+	case VFS_TARGET_RAM:
+		ret = rt_lfs_ram_deinit();
+		mount_flag = &ram_mount_flag;
+		break;
+#endif
+	default:
+		VFS_DBG(VFS_ERROR, "Unsupported LITTLEFS target %d", target);
+		return -1;
+	}
+
+	*mount_flag = 0;
+	VFS_DBG(VFS_INFO, "Littlefs target %d unmount", target);
 	return ret;
 }
 
