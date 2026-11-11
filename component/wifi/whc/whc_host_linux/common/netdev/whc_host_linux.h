@@ -78,6 +78,8 @@
 #include <linux/ieee80211.h>
 #include <net/cfg80211.h>
 #include <linux/of_gpio.h>
+#include <linux/gpio.h>
+#include <linux/device.h>
 
 /* Element iterators appeared in 5.1, but older kernels may backport them. */
 #if LINUX_VERSION_CODE < KERNEL_VERSION(5, 1, 0)
@@ -137,6 +139,10 @@ struct element {
 #include <linux/usb.h>
 #include "whc_dev.h"
 #include "whc_usb_host.h"
+#elif defined(CONFIG_WHC_HCI_GSPI)
+#include <linux/spi/spi.h>
+#include "whc_dev.h"
+#include "whc_gspi_host.h"
 #endif
 
 #if !defined(CONFIG_WHC_HCI_IPC)
