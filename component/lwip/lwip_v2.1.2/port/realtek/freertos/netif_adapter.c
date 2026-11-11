@@ -187,7 +187,7 @@ static err_t low_level_output_wifi(struct netif *netif, struct pbuf *p)
 			return ERR_IF;
 		}
 #else
-		ret = rltk_wlan_send(lwip_netif_get_idx(netif), sg_list, sg_len, p->tot_len, is_special_pkt);
+		ret = wifi_netif_send(lwip_netif_get_idx(netif), sg_list, sg_len, p->tot_len, is_special_pkt);
 #endif
 #endif
 		if (ret != 0) {
@@ -383,7 +383,7 @@ void netif_adapter_wifi_recv(uint8_t idx, int total_len)
 
 	// Copy received packet to scatter list from wrapper rx skb
 #if CONFIG_WLAN
-	rltk_wlan_recv(idx, sg_list, sg_len);
+	wifi_netif_recv(idx, sg_list, sg_len);
 #endif
 	// Pass received packet to the interface
 	if (ERR_OK != netif->input(p, netif)) {

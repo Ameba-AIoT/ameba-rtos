@@ -15,24 +15,19 @@
 #define USB_INTR_MAX_TIMEOUT_TICK              1000
 #define USB_INTR_RETRY_MAX_CNT                 10
 
-/* Line coding assumed when the device does not report its own: 115200 8N1. */
-#define USBH_CDC_ACM_DEFAULT_DTE_RATE               115200U
-#define USBH_CDC_ACM_DEFAULT_DATA_BITS              8U
-
 /* SET_CONTROL_LINE_STATE wValue: D0 = DTR, D1 = RTS, D15..D2 reserved (Ref PSTN 1.2 6.3.12) */
 #define USBH_CDC_ACM_CTRL_LINE_STATE_MASK           0x0003U
 
 /* Private types -------------------------------------------------------------*/
 
-#if CONFIG_USBH_CDC_ACM_4G_DONGLE
-/* 4G-dongle control-setting sub-states (SET_INTERFACE + line coding). */
+/* setup() control sub-states: SET_INTERFACE (4G dongle only), then the line coding and the control lines */
 typedef enum {
 	USBH_CDC_ACM_CTRL_IDLE = 0U,
 	USBH_CDC_ACM_CTRL_ALT_SETTING,
 	USBH_CDC_ACM_CTRL_SET_LINE_CODING,
 	USBH_CDC_ACM_CTRL_GET_LINE_CODING,
+	USBH_CDC_ACM_CTRL_SET_CONTROL_LINE_STATE,
 } usbh_cdc_acm_ctrl_state_t;
-#endif
 
 /* Private macros ------------------------------------------------------------*/
 
@@ -43,7 +38,6 @@ static void usbh_cdc_acm_detach(usb_host_t *host);
 static void usbh_cdc_acm_process(usb_host_t *host, usbh_drv_msg_t *msg);
 static void usbh_cdc_acm_sof(usb_host_t *host);
 #ifdef CONFIG_USBH_CDC_ACM_NOTIFY
-static void usbh_cdc_acm_completed(usb_host_t *host, u8 pipe_num);
 static void usbh_cdc_acm_process_intr_rx(usb_host_t *host);
 #endif
 static int usbh_cdc_acm_setup(usb_host_t *host);
@@ -57,11 +51,6 @@ static void usbh_cdc_acm_process_rx(usb_host_t *host);
 /* Private variables ---------------------------------------------------------*/
 
 static const char *const TAG = "ACMH";
-
-#if CONFIG_USBH_CDC_ACM_4G_DONGLE
-
-#define USBH_CDC_ACM_INTR_MAX_TIMEOUT_TICK          USB_INTR_MAX_TIMEOUT_TICK
-#endif
 
 /* USB CDC ACM device identification */
 static const usbh_dev_id_t cdc_acm_devs[] = {
@@ -106,9 +95,6 @@ static const usbh_class_driver_t usbh_cdc_acm_driver = {
 	.setup = usbh_cdc_acm_setup,
 	.process = usbh_cdc_acm_process,
 	.sof = usbh_cdc_acm_sof,
-#ifdef CONFIG_USBH_CDC_ACM_NOTIFY
-	.completed = usbh_cdc_acm_completed,
-#endif
 };
 
 static usbh_cdc_acm_host_t usbh_cdc_acm_host;
@@ -189,6 +175,25 @@ static void usbh_cdc_acm_set_default_line_coding(void)
 	lc->b.bCharFormat = LINE_CODING_CHAR_FORMAT_1_STOP_BITS;
 	lc->b.bParityType = LINE_CODING_PARITY_NO;
 	lc->b.bDataBits = USBH_CDC_ACM_DEFAULT_DATA_BITS;
+}
+
+/**
+  * @brief  Load the line coding and the control line state setup() applies from the configuration
+  * @note   Called by init and again by every attach: a new device starts from the configuration, not from
+  *         what an API call set for the previous one, and detach clears the control line state.
+  *         char_format/parity_type are used as given because 0 is a valid encoding for both.
+  * @retval None
+  */
+static void usbh_cdc_acm_load_config(void)
+{
+	usbh_cdc_acm_host_t *cdc = &usbh_cdc_acm_host;
+	const usbh_cdc_acm_config_t *cfg = cdc->cfg;
+
+	cdc->user_line_coding->b.dwDteRate = (cfg->dte_rate != 0U) ? cfg->dte_rate : USBH_CDC_ACM_DEFAULT_DTE_RATE;
+	cdc->user_line_coding->b.bCharFormat = cfg->char_format;
+	cdc->user_line_coding->b.bParityType = cfg->parity_type;
+	cdc->user_line_coding->b.bDataBits = (cfg->data_bits != 0U) ? cfg->data_bits : USBH_CDC_ACM_DEFAULT_DATA_BITS;
+	cdc->ctrl_line_state = cfg->ctrl_line_state;
 }
 
 /**
@@ -491,7 +496,7 @@ static int usbh_cdc_acm_open_quectel_eps(usb_host_t *host, usbh_cdc_acm_host_t *
 					RTK_LOGS(TAG, RTK_LOG_ERROR, "Open intr in pipe fail\n");
 					return -RTK_ERR_BADARG;
 				}
-				cdc->intr_in.max_timeout_tick = USBH_CDC_ACM_INTR_MAX_TIMEOUT_TICK;
+				cdc->intr_in.max_timeout_tick = USB_INTR_MAX_TIMEOUT_TICK;
 			}
 #else
 			UNUSED(cdc);
@@ -551,7 +556,7 @@ static int usbh_cdc_acm_attach_acm_4g(usb_host_t *host, usbh_cdc_acm_host_t *cdc
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Open intr in pipe fail\n");
 			return -RTK_ERR_BADARG;
 		}
-		intr_in->max_timeout_tick = USBH_CDC_ACM_INTR_MAX_TIMEOUT_TICK;
+		intr_in->max_timeout_tick = USB_INTR_MAX_TIMEOUT_TICK;
 	}
 #endif
 
@@ -614,14 +619,21 @@ static int usbh_cdc_acm_attach_quectel(usb_host_t *host, usbh_cdc_acm_host_t *cd
 	return usbh_cdc_acm_open_quectel_eps(host, cdc, itf_desc);
 }
 
+#endif /* CONFIG_USBH_CDC_ACM_4G_DONGLE */
+
 /**
-  * @brief  Run the 4G-dongle control-setting sequence: SET_INTERFACE (data alt),
-  *         SET_LINE_CODING, GET_LINE_CODING. Driven from setup() until RTK_SUCCESS.
+  * @brief  Run the setup() control sequence: SET_INTERFACE (data alt, 4G dongle only), SET_LINE_CODING,
+  *         GET_LINE_CODING and SET_CONTROL_LINE_STATE. Driven from setup() until RTK_SUCCESS.
   * @note   A refused SET_INTERFACE of a non-zero alternate setting is terminal: the BULK endpoints live in that
   *         setting and stay inactive without it. Alternate setting 0 is the one already selected by
   *         SET_CONFIGURATION, and an interface with no other setting may STALL the request (Ref USB 2.0
-  *         9.4.10), so it is no error. A refused SET/GET_LINE_CODING is optional for an AT port and leaves the
-  *         default line coding, as in usbh_cdc_acm_setup().
+  *         9.4.10), so it is no error. The line coding and control line requests are only required of a device
+  *         that manages a real serial line (Ref PSTN 1.2 6.3.10 - 6.3.12): a refused one is reported and the
+  *         sequence goes on, a refused GET_LINE_CODING leaving the default line coding.
+  *         SET_LINE_CODING is sent by the 4G path always, by the standard path only for a configured dte_rate,
+  *         so a device otherwise keeps the line coding it runs with. SET_CONTROL_LINE_STATE is sent only for a
+  *         configured non-zero bitmap: both lines deasserted is the state a device starts in, and deasserting DTR
+  *         may end a data call on a 4G module.
   * @param  host: Host handle
   * @retval RTK_SUCCESS when done, -RTK_ERR_BUSY while running, -RTK_ERR_BADARG when the data interface can not be selected
   */
@@ -636,6 +648,7 @@ static int usbh_cdc_acm_ctrl_setting(usb_host_t *host)
 	int state = RTK_SUCCESS;
 
 	switch (cdc->sub_status) {
+#if CONFIG_USBH_CDC_ACM_4G_DONGLE
 	case USBH_CDC_ACM_CTRL_ALT_SETTING:
 		state = usbh_ctrl_set_interface(host, cdc->data_itf_num, cdc->data_itf_alt);
 		if ((state == RTK_SUCCESS) || ((state != -RTK_ERR_BUSY) && (cdc->data_itf_alt == 0U))) {
@@ -648,6 +661,7 @@ static int usbh_cdc_acm_ctrl_setting(usb_host_t *host)
 			/* Control transfer still in flight */
 		}
 		break;
+#endif
 
 	case USBH_CDC_ACM_CTRL_SET_LINE_CODING:
 		state = usbh_cdc_acm_process_set_line_coding(host, cdc->user_line_coding);
@@ -673,6 +687,21 @@ static int usbh_cdc_acm_ctrl_setting(usb_host_t *host)
 			} else {
 				/* No user to tell */
 			}
+			if (cdc->ctrl_line_state != 0U) {
+				cdc->sub_status = USBH_CDC_ACM_CTRL_SET_CONTROL_LINE_STATE;
+			} else {
+				cdc->sub_status = USBH_CDC_ACM_CTRL_IDLE;
+				ret_state = RTK_SUCCESS;
+			}
+		}
+		break;
+
+	case USBH_CDC_ACM_CTRL_SET_CONTROL_LINE_STATE:
+		state = usbh_cdc_acm_process_set_control_line_state(host);
+		if (state != -RTK_ERR_BUSY) {
+			if (state != RTK_SUCCESS) {
+				RTK_LOGS(TAG, RTK_LOG_WARN, "Set ctrl line state err %d\n", state);
+			}
 			cdc->sub_status = USBH_CDC_ACM_CTRL_IDLE;
 			ret_state = RTK_SUCCESS;
 		}
@@ -690,7 +719,6 @@ static int usbh_cdc_acm_ctrl_setting(usb_host_t *host)
 
 	return ret_state;
 }
-#endif /* CONFIG_USBH_CDC_ACM_4G_DONGLE */
 
 /**
   * @brief  Attach callback.
@@ -840,9 +868,14 @@ static int usbh_cdc_acm_attach(usb_host_t *host)
 	if (status != RTK_SUCCESS) {
 		goto open_fail;
 	}
+
+	/* No SET_INTERFACE: the data endpoints are those of the default setting. The line coding is
+	   only sent when the configuration asks for one, see usbh_cdc_acm_ctrl_setting(). */
+	cdc->sub_status = (cdc->cfg->dte_rate != 0U) ? USBH_CDC_ACM_CTRL_SET_LINE_CODING : USBH_CDC_ACM_CTRL_GET_LINE_CODING;
 #endif
 
 	/* Common tail: shared by the 4G-dongle and the standard CDC-ACM paths. */
+	usbh_cdc_acm_load_config();
 	cdc->host = host;
 	cdc->state = USBH_CDC_ACM_STATE_IDLE;
 	cdc->bulk_out_busy = 0U;
@@ -903,9 +936,9 @@ static void usbh_cdc_acm_detach(usb_host_t *host)
 	cdc->comm_itf_num = 0U;
 	cdc->ctrl_line_state = 0U;
 	cdc->break_duration = 0U;
+	cdc->sub_status = USBH_CDC_ACM_CTRL_IDLE;
 #if CONFIG_USBH_CDC_ACM_4G_DONGLE
 	cdc->param_item = NULL;
-	cdc->sub_status = 0U;
 #endif
 }
 
@@ -916,48 +949,21 @@ static void usbh_cdc_acm_detach(usb_host_t *host)
   */
 static int usbh_cdc_acm_setup(usb_host_t *host)
 {
-	int status = RTK_FAIL;
+	int status;
 	usbh_cdc_acm_host_t *cdc = &usbh_cdc_acm_host;
 
-#if CONFIG_USBH_CDC_ACM_4G_DONGLE
-	/* 4G dongle: run SET_INTERFACE + line-coding sequence before signalling ready. */
-	if (cdc->param_item != NULL) {
-		status = usbh_cdc_acm_ctrl_setting(host);
-		if (status == RTK_SUCCESS) {
-			usbh_cdc_acm_set_line_coding_valid();
-			if ((cdc->cb != NULL) && (cdc->cb->setup != NULL)) {
-				cdc->cb->setup();
-			}
+	/* The line coding and the control lines are applied before signalling ready, see
+	 * usbh_cdc_acm_ctrl_setting(). A refused GET_LINE_CODING is not fatal: ACM-like interfaces
+	 * commonly STALL it, and retrying cannot make an unsupported request supported. */
+	status = usbh_cdc_acm_ctrl_setting(host);
+	if (status == RTK_SUCCESS) {
+		usbh_cdc_acm_set_line_coding_valid();
+		if ((cdc->cb != NULL) && (cdc->cb->setup != NULL)) {
+			cdc->cb->setup();
 		}
-		return status;
-	}
-#endif
-
-	/*Issue the get line coding request*/
-	status = usbh_cdc_acm_process_get_line_coding(host, cdc->line_coding);
-	if (status == -RTK_ERR_BUSY) {
-		/* Control transfer still running; the core re-invokes setup(). */
-		return status;
 	}
 
-	if (status != RTK_SUCCESS) {
-		/* GET_LINE_CODING is only required of a device that actually manages a
-		 * serial line (CDC PSTN 1.2 6.3.11); ACM-like interfaces commonly STALL
-		 * it. Retrying cannot make an unsupported request supported, so keep the
-		 * defaults already in line_coding and report the class ready - the same
-		 * "optional request refused means use a default" handling that MSC
-		 * applies to GET_MAX_LUN. */
-		RTK_LOGS(TAG, RTK_LOG_WARN, "Get line coding err %d, use default\n", status);
-		usbh_cdc_acm_set_default_line_coding();
-	}
-
-	usbh_cdc_acm_set_line_coding_valid();
-
-	if ((cdc->cb != NULL) && (cdc->cb->setup != NULL)) {
-		cdc->cb->setup();
-	}
-
-	return RTK_SUCCESS;
+	return status;
 }
 
 /**
@@ -1033,30 +1039,6 @@ static void usbh_cdc_acm_sof(usb_host_t *host)
 	}
 }
 
-#ifdef CONFIG_USBH_CDC_ACM_NOTIFY
-/**
-  * @brief  Transfer completion callback: handle the end of an interrupt IN transfer,
-  * @note   This function is called within an interrupt service routine (ISR) context;
-  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
-  * @param[in] host: Pointer to the USB host handle.
-  * @param[in] pipe_num: Pipe number of the completed transfer.
-  * @retval None
-  */
-static void usbh_cdc_acm_completed(usb_host_t *host, u8 pipe_num)
-{
-	usbh_cdc_acm_host_t *cdc = &usbh_cdc_acm_host;
-	usbh_pipe_t *intr_in = &cdc->intr_in;
-
-	/* The core routes a completion to the pipe's owning driver only, so the
-	 * pipe check is a defensive guard against a stale/closed INTR pipe. */
-	if ((intr_in->pipe_num != 0U) && (pipe_num == intr_in->pipe_num)) {
-		if (intr_in->xfer_state == USBH_EP_XFER_BUSY) {
-			usbh_notify(host, intr_in->pipe_num, &usbh_cdc_acm_driver);
-		}
-	}
-}
-#endif
-
 /**
 * @brief  State machine handling callback
 * @param  host:Host handle
@@ -1123,6 +1105,16 @@ static void usbh_cdc_acm_process(usb_host_t *host, usbh_drv_msg_t *msg)
 
 	case USBH_CDC_ACM_STATE_GET_LINE_CODING:
 		req_status = usbh_cdc_acm_process_get_line_coding(host, cdc->line_coding);
+		if (req_status == -RTK_ERR_IO) {
+			/* The device took the SET_LINE_CODING just before but reported no usable line coding back,
+			   and a short reply may have overwritten part of line_coding: what it runs with is the
+			   line coding it accepted */
+			cdc->line_coding->b.dwDteRate = cdc->user_line_coding->b.dwDteRate;
+			cdc->line_coding->b.bCharFormat = cdc->user_line_coding->b.bCharFormat;
+			cdc->line_coding->b.bParityType = cdc->user_line_coding->b.bParityType;
+			cdc->line_coding->b.bDataBits = cdc->user_line_coding->b.bDataBits;
+			req_status = RTK_SUCCESS;
+		}
 		if (req_status == RTK_SUCCESS) {
 			/* Report what the device now runs with, which it may have adjusted from the request (Ref PSTN 1.2
 			   6.3.11), so the user always learns the line coding actually in effect */
@@ -1155,27 +1147,34 @@ static void usbh_cdc_acm_process(usb_host_t *host, usbh_drv_msg_t *msg)
   * @brief  Get line coding
   * @param  host: Host handle
   * @param  linecoding: Line coding data pointer
-  * @retval Status
+  * @retval RTK_SUCCESS with a whole line coding, -RTK_ERR_BUSY while running, -RTK_ERR_IO for a reply
+  *         shorter than a line coding, another error when the request failed
   */
 static int usbh_cdc_acm_process_get_line_coding(usb_host_t *host, usb_cdc_acm_line_coding_t *linecoding)
 {
 	usbh_setup_req_t setup;
 	usbh_cdc_acm_host_t *cdc = &usbh_cdc_acm_host;
-	u16 windex = cdc->comm_itf_num;
-
-#if CONFIG_USBH_CDC_ACM_4G_DONGLE
-	if (cdc->param_item != NULL) {
-		windex = cdc->param_item->at_line_idx;
-	}
-#endif
+	u32 len;
+	int ret;
 
 	setup.req.bmRequestType = USB_D2H | USB_REQ_TYPE_CLASS | USB_REQ_RECIPIENT_INTERFACE;
 	setup.req.bRequest = USB_CDC_ACM_GET_LINE_CODING;
 	setup.req.wValue = 0U;
-	setup.req.wIndex = windex;
+	setup.req.wIndex = cdc->comm_itf_num;
 	setup.req.wLength = USB_CDC_ACM_LINE_CODING_SIZE;
 
-	return usbh_ctrl_request(host, &setup, linecoding->d8);
+	ret = usbh_ctrl_request(host, &setup, linecoding->d8);
+	if (ret == RTK_SUCCESS) {
+		/* A short reply or a ZLP completes the request too, but leaves the fields it did not carry unset:
+		   a line coding is 7 bytes (Ref PSTN 1.2 6.3.11), anything shorter reports none */
+		len = usbh_get_last_ctrl_in_size(host);
+		if (len < USB_CDC_ACM_LINE_CODING_SIZE) {
+			RTK_LOGS(TAG, RTK_LOG_WARN, "Line coding len %d\n", len);
+			ret = -RTK_ERR_IO;
+		}
+	}
+
+	return ret;
 }
 
 /**
@@ -1188,18 +1187,11 @@ static int usbh_cdc_acm_process_set_line_coding(usb_host_t *host, usb_cdc_acm_li
 {
 	usbh_setup_req_t setup;
 	usbh_cdc_acm_host_t *cdc = &usbh_cdc_acm_host;
-	u16 windex = cdc->comm_itf_num;
-
-#if CONFIG_USBH_CDC_ACM_4G_DONGLE
-	if (cdc->param_item != NULL) {
-		windex = cdc->param_item->at_line_idx;
-	}
-#endif
 
 	setup.req.bmRequestType = USB_H2D | USB_REQ_TYPE_CLASS | USB_REQ_RECIPIENT_INTERFACE;
 	setup.req.bRequest = USB_CDC_ACM_SET_LINE_CODING;
 	setup.req.wValue = 0U;
-	setup.req.wIndex = windex;
+	setup.req.wIndex = cdc->comm_itf_num;
 	setup.req.wLength = USB_CDC_ACM_LINE_CODING_SIZE;
 
 	return usbh_ctrl_request(host, &setup, linecoding->d8);
@@ -1472,14 +1464,7 @@ int usbh_cdc_acm_init(const usbh_cdc_acm_cb_t *cb, const usbh_cdc_acm_config_t *
 		goto init_fail;
 	}
 
-	/* init user_line_coding from the configuration; char_format/parity_type are used as
-	   given because 0 is a valid encoding for both. */
-	cdc->user_line_coding->b.dwDteRate = (cfg->dte_rate != 0U) ? cfg->dte_rate : USBH_CDC_ACM_DEFAULT_DTE_RATE;
-	cdc->user_line_coding->b.bCharFormat = cfg->char_format;
-	cdc->user_line_coding->b.bParityType = cfg->parity_type;
-	cdc->user_line_coding->b.bDataBits = (cfg->data_bits != 0U) ? cfg->data_bits : USBH_CDC_ACM_DEFAULT_DATA_BITS;
-
-	cdc->ctrl_line_state = cfg->ctrl_line_state;
+	usbh_cdc_acm_load_config();
 	cdc->cb = cb;
 
 #if CONFIG_USBH_CDC_ACM_4G_DONGLE

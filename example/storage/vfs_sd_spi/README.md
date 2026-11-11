@@ -10,8 +10,8 @@ None
 
 1. Fixed Parameters for SPI-compatible SD NAND Flash Registration:
    When registering FATFS on SPI-compatible SD NAND Flash using:
-   `vfs_user_register("sd_spi", VFS_FATFS, VFS_INF_SD_SPI, VFS_REGION_4, VFS_RW);`
-   the arguments `VFS_FATFS`, `VFS_INF_SD_SPI` and `VFS_REGION_4` must remain unchanged.
+   `vfs_target_register("sd_spi", VFS_TARGET_SD_SPI, VFS_RW);`
+   the argument `VFS_TARGET_SD_SPI` must remain unchanged. The file system (FATFS) is decided by Kconfig (`CONFIG_VFS_SD_SPI`), not by the caller.
 
 2. Build and Download:
    * Refer to the SDK Examples section of the online documentation to generate images.

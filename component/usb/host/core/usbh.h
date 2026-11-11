@@ -607,6 +607,8 @@ int usbh_init(const usbh_config_t *cfg, const usbh_user_cb_t *cb);
 
 /**
  * @brief Deinitialize USB host core driver.
+ * @note  SMP: call from a task pinned to core 0, the core the USB IRQ is routed to, so no USB ISR
+ *        is still running on another core once the IRQ is disabled.
  */
 void usbh_deinit(void);
 
@@ -705,11 +707,13 @@ u32 usbh_get_dev_address(void);
 
 /**
  * @brief  USB Host enter suspend.
+ * @note   No-op, with an error log, if the host is not initialized.
  */
 void usbh_suspend(void);
 
 /**
  * @brief  USB Host exit suspend.
+ * @note   No-op, with an error log, if the host is not initialized.
  */
 void usbh_resume(void);
 
@@ -731,7 +735,7 @@ void usbh_cg_unregister(void);
 /**
  * @brief  USB Host Port Test Control, for CTS test.
  * @param[in] mode: Test mode.
- * @return 0 on success, non-zero on failure.
+ * @return 0 on success, -RTK_ERR_BADARG on a bad mode or if the host is not initialized.
  */
 int usbh_select_test_mode(u8 mode);
 

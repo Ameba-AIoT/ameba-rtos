@@ -653,6 +653,9 @@ static void example_usbd_composite_hid_uac_hid_rx_thread(void *param)
 		if (rx_len > 0U) {
 			RTK_LOGS(TAG, RTK_LOG_INFO, "HID RX %u bytes, first byte:%02x\n", rx_len, hid_rx_buf[0]);
 		}
+		/* Yield before taking the lock again: this thread outranks the AT shell, so without a
+		   pause it would win the lock back at once and starve the tx/vol commands waiting on it */
+		rtos_time_delay_ms(1);
 	}
 
 	usb_app_ctx_leave(&composite_app);

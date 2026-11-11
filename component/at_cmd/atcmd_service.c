@@ -355,7 +355,11 @@ int atcmd_wifi_config_setting(void)
 		goto EXIT;
 	}
 
-	char *prefix = find_vfs_tag(VFS_REGION_1);
+	char *prefix = vfs_get_prefix(VFS_TARGET_FLASH_VFS1);
+	if (prefix == NULL) {
+		ret = -1;
+		goto EXIT;
+	}
 	path = (char *)rtos_mem_zmalloc(MAX_KEY_LENGTH + 2);
 	stat_buf = (struct stat *)rtos_mem_zmalloc(sizeof(struct stat));
 	DiagSnPrintf(path, MAX_KEY_LENGTH + 2, "%s:%s", prefix, "wifi_config.json");
@@ -443,7 +447,10 @@ int atcmd_host_control_config_setting(void)
 		goto DEFAULT;
 	}
 
-	char *prefix = find_vfs_tag(VFS_REGION_1);
+	char *prefix = vfs_get_prefix(VFS_TARGET_FLASH_VFS1);
+	if (prefix == NULL) {
+		goto DEFAULT;
+	}
 	path = (char *)rtos_mem_zmalloc(MAX_KEY_LENGTH + 2);
 	stat_buf = (struct stat *)rtos_mem_zmalloc(sizeof(struct stat));
 	DiagSnPrintf(path, MAX_KEY_LENGTH + 2, "%s:%s", prefix, "atcmd_config.json");
@@ -661,8 +668,12 @@ void atcmd_host_control_mode_init_thread(void *param)
 		goto exit;
 	}
 
+	char *prefix = vfs_get_prefix(VFS_TARGET_FLASH_VFS1);
+	if (prefix == NULL) {
+		RTK_LOGE(TAG, "VFS1 not mounted\n");
+		goto exit;
+	}
 	char *path = rtos_mem_zmalloc(MAX_KEY_LENGTH);
-	char *prefix = find_vfs_tag(VFS_REGION_1);
 	DiagSnPrintf(path, MAX_KEY_LENGTH, "%s:AT", prefix);
 	mkdir(path, 0);
 	rtos_mem_free(path);

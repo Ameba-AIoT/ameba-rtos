@@ -1163,6 +1163,11 @@ static int usbh_hid_attach(usb_host_t *host)
 	hid->halt_pending = 0U;
 	hid->halt_retry_cnt = 0U;
 	hid->report_cut_logged = 0U;
+	/* The core runs no detach() after a failed attach(), so what a failed one parsed is still here: parse_details()
+	   keeps an endpoint already set, and would hand the previous device's endpoints to this one */
+	usb_os_memset(&(hid->hid_desc), 0, sizeof(hid->hid_desc));
+	usb_os_memset(&(hid->ep_desc_in), 0, sizeof(hid->ep_desc_in));
+	usb_os_memset(&(hid->ep_desc_out), 0, sizeof(hid->ep_desc_out));
 
 	status = usbh_hid_parse_interface(host);
 	if (status != RTK_SUCCESS) {
@@ -1500,16 +1505,18 @@ void usbh_hid_deinit(void)
 		return;
 	}
 
-	if ((hid->cb != NULL) && (hid->cb->deinit != NULL)) {
-		hid->cb->deinit();
-	}
-
+	/* Stop the parse thread before cb->deinit(): it calls cb->report(), so the user resources it reaches shall
+	   outlive it, as in the init failure path */
 	if (hid->parse_task_alive != 0U) {
 		hid->parse_task_exit = 1;
 		usb_os_sema_give(hid->report_sema);
 		do {
 			rtos_time_delay_ms(1);
 		} while (hid->parse_task_alive != 0U);
+	}
+
+	if ((hid->cb != NULL) && (hid->cb->deinit != NULL)) {
+		hid->cb->deinit();
 	}
 
 	if (hid->report_sema != NULL) {

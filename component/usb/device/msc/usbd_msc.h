@@ -180,6 +180,7 @@ typedef struct {
 	u8 bot_status;                                  /**< BOT status. */
 	u8 phase_error;                                 /**< SCSI check status. */
 	u8 csw_pending;                                 /**< Failed Data-In command whose CSW waits for the Bulk-In halt to be cleared. */
+	u8 csw_in_flight;                               /**< The Bulk-In transfer in flight is a CSW, its completion ends the command. */
 	u8 is_open;                                     /**< MSC is ready for data transfer. */
 	u8 prevent_removal;                             /**< Medium removal prevented by PREVENT ALLOW MEDIUM REMOVAL. */
 	u8 wedged;                                      /**< Bulk endpoints halted on an invalid CBW until Reset Recovery. */

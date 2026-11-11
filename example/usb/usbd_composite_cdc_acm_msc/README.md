@@ -121,7 +121,7 @@ SD card hotplug is supported but disabled by default. Set `MSC_SD_HOTPLUG` to 1 
 ```
 
 This is independent of `SD card hotplug (FATFS)` under `CONFIG File System`,
-which only re-inits the FATFS disk layer of an app-mounted `VFS_INF_SD` volume.
+which only re-inits the FATFS disk layer of an app-mounted `VFS_TARGET_SD` volume.
 Do not enable both: the SD driver holds a single card-detect callback, so the
 second `SD_SetCdCallback()` replaces the first.
 

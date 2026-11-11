@@ -555,7 +555,7 @@ static void example_usbh_uvc_vfs_thread(void *param)
 
 	UNUSED(param);
 
-	res = vfs_user_register("sdcard", VFS_FATFS, VFS_INF_SD, VFS_REGION_4, VFS_RW);
+	res = vfs_target_register("sdcard", VFS_TARGET_SD, VFS_RW);
 	if (res == 0) {
 		RTK_LOGS(TAG, RTK_LOG_INFO, "VFS-SDcard init done\n");
 	} else {
@@ -565,7 +565,7 @@ static void example_usbh_uvc_vfs_thread(void *param)
 
 	uvc_vfs_is_init = 1;
 
-	prefix = find_vfs_tag(VFS_REGION_4);
+	prefix = vfs_get_prefix(VFS_TARGET_SD);
 
 	while (uvc_vfs_is_init != 0U) {
 		if (rtos_sema_take(uvc_vfs_save_img_sema, RTOS_SEMA_MAX_COUNT) != RTK_SUCCESS) {
@@ -630,7 +630,7 @@ static void example_usbh_uvc_vfs_thread(void *param)
 		goto exit;
 	}
 
-	res = vfs_user_register("sdcard", VFS_FATFS, VFS_INF_SD, VFS_REGION_4, VFS_RW);
+	res = vfs_target_register("sdcard", VFS_TARGET_SD, VFS_RW);
 	if (res == 0) {
 		RTK_LOGS(TAG, RTK_LOG_INFO, "VFS-SDcard init done\n");
 	} else {
@@ -638,7 +638,7 @@ static void example_usbh_uvc_vfs_thread(void *param)
 		goto exit;
 	}
 
-	prefix = find_vfs_tag(VFS_REGION_4);
+	prefix = vfs_get_prefix(VFS_TARGET_SD);
 
 #if (CONFIG_USBH_UVC_FORMAT_TYPE == USBH_UVC_FORMAT_H265)
 	snprintf(filename, sizeof(filename), "stream.h265");

@@ -24,7 +24,7 @@ void example_vfs_second_flash_thread(void *param)
 	second_flash_get_id();
 #endif
 
-	res = vfs_user_register("Second", VFS_FATFS, VFS_INF_SECOND_FLASH, VFS_REGION_4, VFS_RW);
+	res = vfs_target_register("Second", VFS_TARGET_SECOND_FLASH, VFS_RW);
 	if (res == 0) {
 		RTK_LOGS(NOTAG, RTK_LOG_INFO, "VFS-SECOND-FLASH Init Success \n");
 	} else {
@@ -32,7 +32,7 @@ void example_vfs_second_flash_thread(void *param)
 		goto exit;
 	}
 
-	prefix = find_vfs_tag(VFS_REGION_4);
+	prefix = vfs_get_prefix(VFS_TARGET_SECOND_FLASH);
 	DiagSnPrintf(path, sizeof(path), "%s:%s", prefix, filename);
 
 	finfo = fopen(path, "w");

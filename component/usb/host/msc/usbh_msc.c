@@ -1425,13 +1425,16 @@ int usbh_msc_bot_process(usb_host_t *host, u8 lun)
 int usbh_msc_is_ready(void)
 {
 	usbh_msc_host_t *msc = &usbh_msc_host;
+	usb_host_t *host;
 	int res;
 
-	if (msc->host == NULL) {
+	/* Read once: a detach or deinit on another task may clear it between two reads */
+	host = msc->host;
+	if (host == NULL) {
 		return 0;
 	}
 
-	if ((msc->host->connect_state == USBH_STATE_SETUP) && (msc->state == MSC_IDLE)) {
+	if ((host->connect_state == USBH_STATE_SETUP) && (msc->state == MSC_IDLE)) {
 		res = 1;
 	} else {
 		res = 0;
@@ -1447,12 +1450,15 @@ int usbh_msc_is_ready(void)
 u32 usbh_msc_get_max_lun(void)
 {
 	usbh_msc_host_t *msc = &usbh_msc_host;
+	usb_host_t *host;
 
-	if (msc->host == NULL) {
+	/* Read once: a detach or deinit on another task may clear it between two reads */
+	host = msc->host;
+	if (host == NULL) {
 		return 0;
 	}
 
-	if ((msc->host->connect_state == USBH_STATE_SETUP) && (msc->state == MSC_IDLE)) {
+	if ((host->connect_state == USBH_STATE_SETUP) && (msc->state == MSC_IDLE)) {
 		return msc->max_lun;
 	}
 
@@ -1467,17 +1473,20 @@ u32 usbh_msc_get_max_lun(void)
 int usbh_msc_unit_is_ready(u8 lun)
 {
 	usbh_msc_host_t *msc = &usbh_msc_host;
+	usb_host_t *host;
 	int res;
 
 	if (lun >= USBH_MSC_MAX_LUN) {
 		return 0;
 	}
 
-	if (msc->host == NULL) {
+	/* Read once: a detach or deinit on another task may clear it between two reads */
+	host = msc->host;
+	if (host == NULL) {
 		return 0;
 	}
 
-	if ((msc->host->connect_state == USBH_STATE_SETUP) && (msc->unit[lun].error == MSC_OK)) {
+	if ((host->connect_state == USBH_STATE_SETUP) && (msc->unit[lun].error == MSC_OK)) {
 		res = 1;
 	} else {
 		res = 0;
@@ -1495,16 +1504,19 @@ int usbh_msc_unit_is_ready(u8 lun)
 int usbh_msc_get_lun_info(u8 lun, usbh_msc_lun_t *info)
 {
 	usbh_msc_host_t *msc = &usbh_msc_host;
+	usb_host_t *host;
 
 	if (info == NULL) {
 		return -RTK_ERR_BADARG;
 	}
 
-	if (msc->host == NULL) {
+	/* Read once: a detach or deinit on another task may clear it between two reads */
+	host = msc->host;
+	if (host == NULL) {
 		return RTK_FAIL;
 	}
 
-	if ((msc->host->connect_state == USBH_STATE_SETUP) && (USBH_MSC_MAX_LUN > lun)) {
+	if ((host->connect_state == USBH_STATE_SETUP) && (USBH_MSC_MAX_LUN > lun)) {
 		usb_os_memcpy((void *)info, (const void *)&msc->unit[lun], sizeof(usbh_msc_lun_t));
 		return RTK_SUCCESS;
 	} else {

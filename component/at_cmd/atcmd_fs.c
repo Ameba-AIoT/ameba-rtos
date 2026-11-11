@@ -6,7 +6,14 @@
 #include "vfs.h"
 
 static const char *const TAG = "AT-FS";
-static char g_cert_fs = VFS_REGION_1;
+static char g_cert_fs = VFS_TARGET_FLASH_VFS1;
+
+/* AT protocol numbers are independent of VFS target values; append new entries. */
+static const u8 fsrgn_target[] = {
+	VFS_TARGET_MAX,
+	VFS_TARGET_FLASH_VFS1, VFS_TARGET_FLASH_VFS2, VFS_TARGET_SECOND_FLASH,
+	VFS_TARGET_SD, VFS_TARGET_SD_SPI, VFS_TARGET_USBH, VFS_TARGET_RAM
+};
 
 #define MAX_CERT_LEN 4096
 
@@ -14,7 +21,7 @@ int32_t at_fs_delete(const char *key)
 {
 	int res;
 	char *path = NULL;
-	char *prefix = find_vfs_tag(g_cert_fs);
+	char *prefix = vfs_get_prefix(g_cert_fs);
 	if (prefix == NULL) {
 		return -1;
 	}
@@ -35,7 +42,7 @@ int32_t at_fs_size(const char *key)
 	struct stat *stat_buf;
 	int res = -1;
 	char *path = NULL;
-	char *prefix = find_vfs_tag(g_cert_fs);
+	char *prefix = vfs_get_prefix(g_cert_fs);
 
 	if ((path = rtos_mem_zmalloc(MAX_KEY_LENGTH + 2)) == NULL) {
 		RTK_LOGE(TAG, "malloc fail\r\n");
@@ -83,7 +90,7 @@ int32_t at_fs_get_offset(const char *key, void *buffer, int32_t len, int32_t off
 	FILE *finfo;
 	int res = -1;
 	char *path = NULL;
-	char *prefix = find_vfs_tag(g_cert_fs);
+	char *prefix = vfs_get_prefix(g_cert_fs);
 
 	if ((path = rtos_mem_zmalloc(MAX_KEY_LENGTH + 2)) == NULL) {
 		RTK_LOGE(TAG, "malloc fail\r\n");
@@ -134,7 +141,7 @@ int32_t at_fs_set_offset(const char *key, const void *val, int32_t len, int32_t 
 	FILE *finfo;
 	int res = -1;
 	char *path = NULL;
-	char *prefix = find_vfs_tag(g_cert_fs);
+	char *prefix = vfs_get_prefix(g_cert_fs);
 
 	if ((path = rtos_mem_zmalloc(MAX_KEY_LENGTH + 2)) == NULL) {
 		RTK_LOGE(TAG, "malloc fail\r\n");
@@ -189,7 +196,7 @@ int at_fs_list(char *buf, int32_t len)
 	void *dir;
 	char *path = NULL;
 	char *name_str = NULL;
-	char *prefix = find_vfs_tag(g_cert_fs);
+	char *prefix = vfs_get_prefix(g_cert_fs);
 	int ret = -1;
 
 	if (prefix == NULL) {
@@ -417,7 +424,7 @@ int atcmd_get_ssl_certificate_size(CERT_TYPE cert_type, int index)
 	}
 
 	struct stat stat_buf;
-	prefix = find_vfs_tag(g_cert_fs);
+	prefix = vfs_get_prefix(g_cert_fs);
 	if (prefix == NULL) {
 		RTK_LOGW(TAG, "VFS region is not exist\r\n");
 		return -1;
@@ -476,7 +483,7 @@ int atcmd_get_ssl_certificate(char *buffer, CERT_TYPE cert_type, int index)
 
 	FILE *finfo;
 	struct stat stat_buf;
-	prefix = find_vfs_tag(g_cert_fs);
+	prefix = vfs_get_prefix(g_cert_fs);
 	if (prefix == NULL) {
 		RTK_LOGW(TAG, "VFS region is not exist\r\n");
 		return -1;
@@ -573,7 +580,7 @@ void at_cert(u16 argc, char **argv)
 		goto end;
 	}
 	memset(buffer, 0, MAX_CERT_LEN + 1);
-	prefix = find_vfs_tag(g_cert_fs);
+	prefix = vfs_get_prefix(g_cert_fs);
 	if (prefix == NULL) {
 		RTK_LOGW(TAG, "VFS region is not exist\r\n");
 		error_no = 2;
@@ -682,7 +689,7 @@ void at_certset(u16 argc, char **argv)
 		goto end;
 	}
 
-	prefix = find_vfs_tag(g_cert_fs);
+	prefix = vfs_get_prefix(g_cert_fs);
 	if (prefix == NULL) {
 		RTK_LOGW(TAG, "VFS region is not exist\r\n");
 		error_no = 2;
@@ -754,12 +761,15 @@ static void at_fs_region_help(void)
 {
 	RTK_LOGI(TAG, "\r\n");
 	RTK_LOGI(TAG, "AT+FSRGN=<fs region>\r\n");
-	RTK_LOGI(TAG, "\t<fs region>:\t1=region1, 2=region2\r\n");
+	RTK_LOGI(TAG, "\t1=VFS1, 2=VFS2, 3=SECOND_FLASH, 4=SD\r\n");
+	RTK_LOGI(TAG, "\t5=SD_SPI, 6=USBH, 7=RAM (lost on reboot)\r\n");
 }
 
 void at_fs_region(u16 argc, char **argv)
 {
-	u8 error_no = 0, region;
+	u8 error_no = 0;
+	unsigned region = 0;
+	const char *param;
 
 	if (argc == 1) {
 		RTK_LOGW(TAG, "The parameters can not be ignored\r\n");
@@ -773,20 +783,28 @@ void at_fs_region(u16 argc, char **argv)
 		goto end;
 	}
 
-	region = atoi(argv[1]);
-	if (region == 1) {
-		g_cert_fs = VFS_REGION_1;
-	} else if (region == 2) {
-		g_cert_fs = VFS_REGION_2;
-	} else if (region == 3) {
-		g_cert_fs = VFS_REGION_3;
-	} else if (region == 4) {
-		g_cert_fs = VFS_REGION_4;
-	} else {
-		RTK_LOGW(TAG, "Parameter value is wrong\r\n");
+	param = argv[1];
+	if (param == NULL || *param == '\0') {
 		error_no = 1;
 		goto end;
 	}
+	while (*param != '\0') {
+		if (*param < '0' || *param > '9') {
+			error_no = 1;
+			goto end;
+		}
+		region = region * 10 + (unsigned)(*param++ - '0');
+		if (region >= sizeof(fsrgn_target) / sizeof(fsrgn_target[0])) {
+			error_no = 1;
+			goto end;
+		}
+	}
+	if (region == 0 || vfs_get_prefix(fsrgn_target[region]) == NULL) {
+		RTK_LOGW(TAG, "VFS target unavailable\r\n");
+		error_no = 1;
+		goto end;
+	}
+	g_cert_fs = fsrgn_target[region];
 
 end:
 	if (error_no == 0) {

@@ -25,12 +25,6 @@
 #define USBH_CDC_ECM_RX_SPEED_CHECK                  0     /* CDC ECM rx speed test */
 #define USBH_CDC_ECM_TX_SPEED_CHECK                  0     /* CDC ECM tx speed test */
 
-#define USBH_CDC_ECM_ENABLE_PACKETFILTER             0
-
-#define USBH_CDC_ECM_QUECTEL_DONGLE_VID             (0x2C7C)
-#define USBH_CDC_ECM_QUECTEL_DONGLE_EG915_PID       (0x0901)
-#define USBH_CDC_ECM_QUECTEL_DONGLE_EG91_PID        (0x0191)
-
 /* tick count */
 /* in ms*/
 #define USBH_CDC_ECM_BULK_OUT_IDLE_MAX_CNT           (8U * 50U) //send total 16k data
@@ -52,10 +46,6 @@
 
 /* CLEAR_FEATURE(ENDPOINT_HALT) attempts before the device is re-enumerated */
 #define USBH_CDC_ECM_HALT_RETRY_MAX_CNT              3U
-
-/* Upper bound for deinit to wait for the tasks inside usbh_cdc_ecm_send_data() to leave. A
- * woken caller leaves within microseconds, only a starved one takes longer. */
-#define USBH_CDC_ECM_TX_EXIT_TIMEOUT_MS              500U
 
 /* Private types -------------------------------------------------------------*/
 
@@ -79,12 +69,6 @@ typedef enum {
 	CDC_ECM_STATE_AT_SETTING_IDLE = 0U,
 	CDC_ECM_STATE_GET_MAC_STR,
 	CDC_ECM_STATE_CTRL_ALT_SETTING,
-
-#if USBH_CDC_ECM_ENABLE_PACKETFILTER
-	CDC_ECM_STATE_CTRL_SET_ETHERNET_MULTICAST_FILTER,
-	CDC_ECM_STATE_CTRL_SET_ETHERNET_PACKET_FILTER,
-	CDC_ECM_STATE_CTRL_GET_ETHERNET_STATISTIC,
-#endif
 
 	CDC_ECM_STATE_CTRL_RCR_GET,
 	CDC_ECM_STATE_CTRL_RCR_SET,
@@ -139,7 +123,7 @@ static int usbh_cdc_ecm_bulk_tx(void);
 static int usbh_cdc_ecm_cb_intr_receive(u8 *buf, u32 length);
 static int usbh_cdc_ecm_cb_bulk_send(int state);
 static int usbh_cdc_ecm_intr_receive(void);
-static int usbh_cdc_ecm_tx_status_check(void);
+static void usbh_cdc_ecm_tx_status_check(void);
 static int usbh_cdc_ecm_bulk_send(u8 *buf, u32 len);
 static void usbh_cdc_ecm_deinit_all_pipe(void);
 static void usbh_cdc_ecm_halt(usb_host_t *host, const usbh_pipe_t *pipe);
@@ -285,10 +269,11 @@ static int usbh_cdc_ecm_cb_intr_receive(u8 *buf, u32 length)
 	usbh_cdc_ecm_host_t *cdc = &usbh_cdc_ecm_host;
 	if (buf && length >= 8) {
 		/*A1 00 00 00 01 00 00 00 */
-		/* wValue is 0 (disconnect) or 1 (connect) and wIndex names the Communications interface,
-		 * Ref CDC 1.2 6.3.1: a notification of another interface or value is not ours to take */
+		/* wValue is 0 (disconnect) or 1 (connect), Ref CDC 1.2 6.3.1. wIndex is not checked: the notification
+		 * arrives on this function's own interrupt endpoint, and a RTL8152 names its data interface in it
+		 * rather than the Communications interface, so the check only drops a working device's link state. */
 		if ((length == 8U) && (buf[0] == 0xA1U) && (buf[1] == USB_CDC_NOTIFY_NETWORK_CONNECTION) &&
-			(buf[2] <= 1U) && (buf[3] == 0U) && (buf[4] == cdc->ctrl_itf_id) && (buf[5] == 0U)) {
+			(buf[2] <= 1U) && (buf[3] == 0U)) {
 			cdc->eth_hw_connect = buf[2];
 			if (cdc->eth_hw_connect && (cdc->intr_check_tick != usbh_cdc_ecm_get_eth_status_check_time())) {
 				cdc->intr_check_tick = usbh_cdc_ecm_get_eth_status_check_time();
@@ -469,65 +454,6 @@ static int usbh_cdc_ecm_process_set_alt(usb_host_t *host)
 	return usbh_ctrl_request(host, &setup, NULL);
 }
 
-#if USBH_CDC_ECM_ENABLE_PACKETFILTER
-/**
-  * @brief  Set Ethernet Packet Filter
-  * @param  host: Host handle
-  * @retval Status
-  */
-static int usbh_cdc_ecm_process_set_packet_filter(usb_host_t *host)
-{
-	usbh_setup_req_t setup;
-	usbh_cdc_ecm_host_t *cdc = &usbh_cdc_ecm_host;
-
-	setup.req.bmRequestType = USB_H2D | USB_REQ_TYPE_CLASS | USB_REQ_RECIPIENT_INTERFACE;
-	setup.req.bRequest = USB_CDC_SET_ETHERNET_PACKET_FILTER;
-	setup.req.wValue = cdc->packet_filter;
-	setup.req.wIndex = cdc->ctrl_itf_id;
-	setup.req.wLength = 0;
-
-	return usbh_ctrl_request(host, &setup, NULL);
-}
-
-/**
-  * @brief  Set Ethernet Multicast Filter
-  * @param  host: Host handle
-  * @retval Status
-  */
-static int usbh_cdc_ecm_process_set_multicast_filter(usb_host_t *host)
-{
-	usbh_setup_req_t setup;
-	usbh_cdc_ecm_host_t *cdc = &usbh_cdc_ecm_host;
-
-	setup.req.bmRequestType = USB_H2D | USB_REQ_TYPE_CLASS | USB_REQ_RECIPIENT_INTERFACE;
-	setup.req.bRequest = USB_CDC_SET_ETHERNET_MULTICAST_FILTERS;
-	setup.req.wValue = 1;
-	setup.req.wIndex = cdc->ctrl_itf_id;
-	setup.req.wLength = cdc->multicast_filter_len;
-
-	return usbh_ctrl_request(host, &setup, cdc->dongle_ctrl_buf);
-}
-
-/**
-  * @brief  Get Ethernet Statistic
-  * @param  host: Host handle
-  * @retval Status
-  */
-static int usbh_cdc_ecm_process_get_statistic(usb_host_t *host)
-{
-	usbh_setup_req_t setup;
-	usbh_cdc_ecm_host_t *cdc = &usbh_cdc_ecm_host;
-
-	setup.req.bmRequestType = USB_D2H | USB_REQ_TYPE_CLASS | USB_REQ_RECIPIENT_INTERFACE;
-	setup.req.bRequest = USB_CDC_GET_ETHERNET_STATISTIC;
-	setup.req.wValue = cdc->feature_selector;
-	setup.req.wIndex = cdc->ctrl_itf_id;
-	setup.req.wLength = 4;
-
-	return usbh_ctrl_request(host, &setup, cdc->dongle_ctrl_buf);
-}
-#endif
-
 //for 8156
 /**
   * @brief  Get 8156 rcr params
@@ -706,28 +632,6 @@ static void usbh_cdc_ecm_set_dongle_mac(const u8 *mac)
 	cdc->mac_src_type = CDC_ECM_MAC_UPPER_LAYER_SET;
 }
 
-static void usbh_cdc_ecm_set_dongle_led_array(const u16 *led, u8 len)
-{
-	usbh_cdc_ecm_host_t *cdc = &usbh_cdc_ecm_host;
-
-	if (led == NULL || len == 0) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Param error,led is NULL or len %d\n", len);
-		return ;
-	}
-
-	USBH_CDC_ECM_FREE_MEM(cdc->led_array);
-
-	cdc->led_array = (u16 *)usb_os_malloc(len * sizeof(u16));
-	if (cdc->led_array == NULL) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Malloc led array fail\n");
-		cdc->led_cnt = 0;
-		return ;
-	}
-	usb_os_memcpy((void *)cdc->led_array, (const void *)led, len * sizeof(u16));
-
-	cdc->led_cnt = len;
-}
-
 static void usbh_cdc_ecm_config_dongle_mac(usb_host_t *host, u16 vid, u16 pid)
 {
 	usbh_cdc_ecm_host_t *cdc = &usbh_cdc_ecm_host;
@@ -843,10 +747,6 @@ static int usbh_cdc_ecm_ctrl_setting(usb_host_t *host)
 	u16 vid = cdc->vid;
 	u16 pid = cdc->pid;
 
-#if USBH_CDC_ECM_ENABLE_PACKETFILTER
-	u8 mac_str[6] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
-#endif
-
 	switch (cdc->sub_status) {
 	case CDC_ECM_STATE_AT_SETTING_IDLE:
 		/* No Ethernet Networking Functional Descriptor: iMACAddressStringId stays 0, which GET_MAC_STR settles
@@ -856,16 +756,6 @@ static int usbh_cdc_ecm_ctrl_setting(usb_host_t *host)
 		break;
 
 	case CDC_ECM_STATE_GET_MAC_STR:
-		/* Quectel EG91 does not provide iMACAddress in its ECM functional
-		 * descriptor (iMACAddress = 0), so GET_DESCRIPTOR(STRING) would fail
-		 * or return garbage. The MAC is instead supplied via a proprietary AT
-		 * command (AT+QNETDEVMAC) at the example layer. Skip this state so the
-		 * ctrl_setting sequence can continue without stalling. */
-		if ((vid == USBH_CDC_ECM_QUECTEL_DONGLE_VID) && (pid == USBH_CDC_ECM_QUECTEL_DONGLE_EG91_PID)) {
-			RTK_LOGS(TAG, RTK_LOG_INFO, "EG91:skip GET_MAC_STR\n");
-			cdc->sub_status++;
-			break;
-		}
 		/* Returns RTK_SUCCESS once the MAC is settled, a random one on any failure */
 		if (usbh_cdc_ecm_get_mac_str(host) == RTK_SUCCESS) {
 			cdc->sub_status++;
@@ -885,46 +775,6 @@ static int usbh_cdc_ecm_ctrl_setting(usb_host_t *host)
 			/* in flight */
 		}
 		break;
-
-#if USBH_CDC_ECM_ENABLE_PACKETFILTER
-	case CDC_ECM_STATE_CTRL_SET_ETHERNET_MULTICAST_FILTER:
-		usb_os_memcpy((void *)cdc->multicast_filter, (const void *)mac_str, 6);
-		cdc->multicast_filter_len = 6;
-		state = usbh_cdc_ecm_process_set_multicast_filter(host);
-		if (state == RTK_SUCCESS) {
-			usb_os_memcpy((void *)cdc->multicast_filter, (const void *)cdc->dongle_ctrl_buf, cdc->multicast_filter_len);
-			cdc->sub_status++;
-		} else if (state != -RTK_ERR_BUSY) {
-			/* Optional, a refusal only loses the feature: go on */
-			RTK_LOGS(TAG, RTK_LOG_WARN, "ECM set eth multicast filter err %d\n", state);
-			cdc->sub_status++;
-		}
-		break;
-
-	case CDC_ECM_STATE_CTRL_SET_ETHERNET_PACKET_FILTER:
-		cdc->packet_filter = USB_CDC_ECM_PACKET_TYPE_DIRECTED;
-		state = usbh_cdc_ecm_process_set_packet_filter(host);
-		if (state == RTK_SUCCESS) {
-			cdc->sub_status++;
-		} else if (state != -RTK_ERR_BUSY) {
-			/* Optional, a refusal only loses the feature: go on */
-			RTK_LOGS(TAG, RTK_LOG_WARN, "ECM set eth packet filter err %d\n", state);
-			cdc->sub_status++;
-		}
-		break;
-
-	case CDC_ECM_STATE_CTRL_GET_ETHERNET_STATISTIC:
-		state = usbh_cdc_ecm_process_get_statistic(host);
-		if (state == RTK_SUCCESS) {
-			usb_os_memcpy((void *) & (cdc->eth_statistic_count), (const void *)cdc->dongle_ctrl_buf, USBH_CDC_ECM_CTRL_REG_BUF_LEN);
-			cdc->sub_status++;
-		} else if (state != -RTK_ERR_BUSY) {
-			/* Optional, a refusal only loses the feature: go on */
-			RTK_LOGS(TAG, RTK_LOG_WARN, "ECM get eth statistic err %d\n", state);
-			cdc->sub_status++;
-		}
-		break;
-#endif
 
 	case CDC_ECM_STATE_CTRL_RCR_GET:
 		if ((vid != USBH_CDC_ECM_DEVICE_VID) || (usbh_cdc_ecm_support_feature(pid, CDC_ECM_CAP_RCR_CMD) != RTK_SUCCESS)) {
@@ -1016,12 +866,12 @@ static int usbh_cdc_ecm_ctrl_setting(usb_host_t *host)
 		break;
 
 	case CDC_ECM_STATE_CTRL_LED_COLOR_SET:
-		if ((vid != USBH_CDC_ECM_DEVICE_VID) || (cdc->led_cnt == 0) || (cdc->led_array == NULL) ||
+		if ((vid != USBH_CDC_ECM_DEVICE_VID) || (cdc->led_cnt == 0) ||
 			(usbh_cdc_ecm_support_feature(pid, CDC_ECM_CAP_MODIFY_LED) != RTK_SUCCESS)) {
 			cdc->sub_status++;
 		} else {
 			usb_os_memset((void *)cdc->dongle_ctrl_buf, 0xFF, 4);
-			usb_os_memcpy((void *)cdc->dongle_ctrl_buf, (const void *) & (cdc->led_array[0]), 2);
+			usb_os_memcpy((void *)cdc->dongle_ctrl_buf, (const void *) & (cdc->led_value), 2);
 			state = usbh_cdc_ecm_process_led_set_ctrl(host);
 			if (state == RTK_SUCCESS) {
 				cdc->sub_status++;
@@ -1995,24 +1845,25 @@ static int usbh_cdc_ecm_cb_bulk_send(int state)
 	return RTK_SUCCESS;
 }
 
-static int usbh_cdc_ecm_tx_status_check(void)
+static void usbh_cdc_ecm_tx_status_check(void)
 {
 	usbh_cdc_ecm_host_t *cdc = &usbh_cdc_ecm_host;
 	u32 wait_ms = 0U;
 
 	/* Wake a sender blocked on the sema and wait for every task inside the TX API to leave
-	 * before the sema and buffers go away; bounded so a starved caller cannot hang the teardown */
+	 * before the sema and buffers go away. No upper bound: the gate is closed, so a woken
+	 * caller leaves within microseconds, and freeing under a starved one would be the use
+	 * after free this wait exists for. A wait that long is reported after
+	 * USBH_TEARDOWN_WAIT_FIRST_LOG_MS, then every USBH_TEARDOWN_WAIT_LOG_MS. */
 	while ((cdc->bulk_tx_block != 0U) || (cdc->tx_users != 0U)) {
-		if (wait_ms >= USBH_CDC_ECM_TX_EXIT_TIMEOUT_MS) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "Wait TX exit TO\n");
-			break;
-		}
 		usb_os_sema_give(cdc->bulk_tx_sema);
 		usb_os_sleep_ms(1U);
 		wait_ms++;
+		if ((wait_ms >= USBH_TEARDOWN_WAIT_FIRST_LOG_MS) &&
+			(((wait_ms - USBH_TEARDOWN_WAIT_FIRST_LOG_MS) % USBH_TEARDOWN_WAIT_LOG_MS) == 0U)) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Wait TX exit %dms\n", wait_ms);
+		}
 	}
-
-	return RTK_SUCCESS;
 }
 
 static void usbh_cdc_ecm_deinit_all_pipe(void)
@@ -2199,7 +2050,9 @@ int usbh_cdc_ecm_init(const usbh_cdc_ecm_state_cb_t *cb, const usbh_cdc_ecm_conf
 			usbh_cdc_ecm_set_dongle_mac(cfg->mac_value);
 		}
 		if ((cfg->led_array != NULL) && (cfg->led_cnt > 0U)) {
-			usbh_cdc_ecm_set_dongle_led_array(cfg->led_array, cfg->led_cnt);
+			/* The dongle has one LED register: only the first value is ever written */
+			cdc->led_value = cfg->led_array[0];
+			cdc->led_cnt = 1U;
 		}
 	}
 
@@ -2238,7 +2091,6 @@ user_deinit:
 	}
 user_init_fail:
 	USBH_CDC_ECM_FREE_MEM(cdc->dongle_ctrl_buf);
-	USBH_CDC_ECM_FREE_MEM(cdc->led_array);
 ctrl_buf_fail:
 	usb_os_sema_delete(cdc->bulk_tx_sema);
 
@@ -2280,7 +2132,6 @@ void usbh_cdc_ecm_deinit(void)
 	cdc->host = NULL;
 
 	USBH_CDC_ECM_FREE_MEM(cdc->dongle_ctrl_buf);
-	USBH_CDC_ECM_FREE_MEM(cdc->led_array);
 	cdc->led_cnt = 0;
 
 	if ((cdc->cb != NULL) && (cdc->cb->deinit != NULL)) {

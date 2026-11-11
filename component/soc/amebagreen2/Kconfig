@@ -36,7 +36,7 @@ menu "CONFIG FUNCTION TEST"
                     select USB_OTG_EN if WHC_HOST
                     select USB_HOST_EN if WHC_HOST
                     select USBH_MSC if WHC_HOST
-                    select VFS_FATFS_INCLUDED if WHC_HOST
+                    select VFS_USB_HOST if WHC_HOST
                 config CORNER
                     bool "Corner_Test"
                     select USB_DEVICE_EN

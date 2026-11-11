@@ -18,7 +18,7 @@ void example_vfs_sd_spi_thread(void *param)
 
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\r\n====================Example: VFS SD SPI====================\r\n");
 
-	res = vfs_user_register("sd_spi", VFS_FATFS, VFS_INF_SD_SPI, VFS_REGION_4, VFS_RW);
+	res = vfs_target_register("sd_spi", VFS_TARGET_SD_SPI, VFS_RW);
 	if (res == 0) {
 		RTK_LOGS(NOTAG, RTK_LOG_INFO, "VFS-SD-SPI Init Success \n");
 	} else {
@@ -26,7 +26,7 @@ void example_vfs_sd_spi_thread(void *param)
 		goto exit;
 	}
 
-	prefix = find_vfs_tag(VFS_REGION_4);
+	prefix = vfs_get_prefix(VFS_TARGET_SD_SPI);
 	DiagSnPrintf(path, sizeof(path), "%s:%s", prefix, filename);
 
 	finfo = fopen(path, "w");

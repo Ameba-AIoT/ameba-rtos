@@ -9,11 +9,11 @@ None
 # SW configuration
 1. Fixed Parameters for Second Flash Registration:
    When registering FATFS on the secondary flash using:
-   `vfs_user_register("Second", VFS_FATFS, VFS_INF_SECOND_FLASH, VFS_REGION_4, VFS_RW);`
-   the arguments `VFS_INF_SECOND_FLASH` and `VFS_REGION_4` must remain unchanged.
+   `vfs_target_register("Second", VFS_TARGET_SECOND_FLASH, VFS_RW);`
+   the argument `VFS_TARGET_SECOND_FLASH` must remain unchanged.
 
 2. Filesystem-Specific Configuration Dependencies:
-   If selecting `VFS_FATFS` or `VFS_LITTLEFS` as the filesystem type, corresponding adjustments must be made to the settings in `prj.conf` to ensure compatibility.
+   The file system on the second flash is selected in `prj.conf` (`CONFIG_VFS_SECOND_FLASH_FATFS` or `CONFIG_VFS_SECOND_FLASH_LITTLEFS`), not by the caller.
 
 3. Build and Download:
    * Refer to the SDK Examples section of the online documentation to generate images.

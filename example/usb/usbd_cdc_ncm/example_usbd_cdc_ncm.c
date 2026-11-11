@@ -62,13 +62,6 @@
 
 /* Private types -------------------------------------------------------------*/
 
-typedef enum {
-	ETH_STATUS_IDLE = 0U,
-	ETH_STATUS_DEINIT,
-	ETH_STATUS_INIT,
-	ETH_STATUS_MAX,
-} eth_state_t;
-
 /* Private macros ------------------------------------------------------------*/
 
 /* Private function prototypes -----------------------------------------------*/
@@ -212,7 +205,6 @@ static void usbd_ncm_net_down(void)
 
 static void usbd_ncm_link_change_thread(void *param)
 {
-	eth_state_t ethernet_state = ETH_STATUS_IDLE;
 	u8 link_is_up = 0;
 
 	UNUSED(param);
@@ -226,64 +218,52 @@ static void usbd_ncm_link_change_thread(void *param)
 			link_is_up = 0;
 		}
 
-		if (1 == link_is_up && (ethernet_state < ETH_STATUS_INIT)) {
+		if ((1 == link_is_up) && (!cdc_ncm_dhcp_server_started)) {
 			if (pnetif_usb_eth == NULL) {
 				rtos_time_delay_ms(1000);
 			} else {
-				if (!cdc_ncm_dhcp_server_started) {
-					// RTK_LOGS(TAG, RTK_LOG_INFO, "Starting USB NCM DHCP Server...\n");
+				// RTK_LOGS(TAG, RTK_LOG_INFO, "Starting USB NCM DHCP Server...\n");
 
-					// 1. Set netif MAC address
-					memcpy((void *)pnetif_usb_eth->hwaddr, (const void *)cdc_ncm_dhcp_server_mac, 6);
-					pnetif_usb_eth->hwaddr_len = ETHARP_HWADDR_LEN;
-					RTK_LOGS(TAG, RTK_LOG_INFO, "DHCP Server MAC: " MAC_FMT "\n", MAC_ARG(pnetif_usb_eth->hwaddr));
+				// 1. Set netif MAC address
+				memcpy((void *)pnetif_usb_eth->hwaddr, (const void *)cdc_ncm_dhcp_server_mac, 6);
+				pnetif_usb_eth->hwaddr_len = ETHARP_HWADDR_LEN;
+				RTK_LOGS(TAG, RTK_LOG_INFO, "DHCP Server MAC: " MAC_FMT "\n", MAC_ARG(pnetif_usb_eth->hwaddr));
 
-					// 2. Deinit DHCP server
+				// 2. Deinit DHCP server
+				dhcps_deinit(pnetif_usb_eth);
+
+				// 3. Set Device IP address
+				u32 ip_addr = CONCAT_TO_UINT32(CDC_NCM_IP_ADDR0, CDC_NCM_IP_ADDR1, CDC_NCM_IP_ADDR2, CDC_NCM_IP_ADDR3);
+				u32 netmask = CONCAT_TO_UINT32(CDC_NCM_NETMASK_ADDR0, CDC_NCM_NETMASK_ADDR1, CDC_NCM_NETMASK_ADDR2,
+											   CDC_NCM_NETMASK_ADDR3);
+				u32 gw = CONCAT_TO_UINT32(CDC_NCM_GW_ADDR0, CDC_NCM_GW_ADDR1, CDC_NCM_GW_ADDR2, CDC_NCM_GW_ADDR3);
+				lwip_set_ip(NETIF_USB_ETH_INDEX, ip_addr, netmask, gw);
+
+				RTK_LOGS(TAG, RTK_LOG_INFO, "Device IP: %d.%d.%d.%d\n", CDC_NCM_IP_ADDR0, CDC_NCM_IP_ADDR1, CDC_NCM_IP_ADDR2,
+						 CDC_NCM_IP_ADDR3);
+
+				// 4. Activate network interface link. The netifapi calls wrap void lwIP
+				//    netif functions, they always report ERR_OK
+				netifapi_netif_set_link_up(pnetif_usb_eth);
+				netifapi_netif_set_up(pnetif_usb_eth);
+				netifapi_netif_set_default(pnetif_usb_eth);
+
+				// 5. Initialize and start DHCP server. On failure nothing is marked started,
+				//    so the next poll retries the whole sequence: steps 3 and 4 are idempotent
+				if ((dhcps_init(pnetif_usb_eth) == NULL) || (dhcps_start(pnetif_usb_eth) != ERR_OK)) {
+					RTK_LOGS(TAG, RTK_LOG_ERROR, "DHCP Server start fail\n");
 					dhcps_deinit(pnetif_usb_eth);
-
-					// 3. Set Device IP address
-					u32 ip_addr = CONCAT_TO_UINT32(CDC_NCM_IP_ADDR0, CDC_NCM_IP_ADDR1, CDC_NCM_IP_ADDR2, CDC_NCM_IP_ADDR3);
-					u32 netmask = CONCAT_TO_UINT32(CDC_NCM_NETMASK_ADDR0, CDC_NCM_NETMASK_ADDR1, CDC_NCM_NETMASK_ADDR2,
-												   CDC_NCM_NETMASK_ADDR3);
-					u32 gw = CONCAT_TO_UINT32(CDC_NCM_GW_ADDR0, CDC_NCM_GW_ADDR1, CDC_NCM_GW_ADDR2, CDC_NCM_GW_ADDR3);
-					lwip_set_ip(NETIF_USB_ETH_INDEX, ip_addr, netmask, gw);
-
-					RTK_LOGS(TAG, RTK_LOG_INFO, "Device IP: %d.%d.%d.%d\n", CDC_NCM_IP_ADDR0, CDC_NCM_IP_ADDR1, CDC_NCM_IP_ADDR2,
-							 CDC_NCM_IP_ADDR3);
-
-					// 4. Activate network interface link. The netifapi calls wrap void lwIP
-					//    netif functions, they always report ERR_OK
-					netifapi_netif_set_link_up(pnetif_usb_eth);
-					netifapi_netif_set_up(pnetif_usb_eth);
-					netifapi_netif_set_default(pnetif_usb_eth);
-
-					// 5. Initialize and start DHCP server. On failure nothing is marked started,
-					//    so the next poll retries the whole sequence: steps 3 and 4 are idempotent
-					if ((dhcps_init(pnetif_usb_eth) == NULL) || (dhcps_start(pnetif_usb_eth) != ERR_OK)) {
-						RTK_LOGS(TAG, RTK_LOG_ERROR, "DHCP Server start fail\n");
-						dhcps_deinit(pnetif_usb_eth);
-						rtos_time_delay_ms(1000);
-						continue;
-					}
-
-					cdc_ncm_dhcp_server_started = 1;
-					ethernet_state = ETH_STATUS_INIT;
-
-					RTK_LOGS(TAG, RTK_LOG_INFO, "DHCP Server started\n");
-				} else {
-					RTK_LOGS(TAG, RTK_LOG_INFO, "DHCP Server already started\n");
 					rtos_time_delay_ms(1000);
+					continue;
 				}
+
+				cdc_ncm_dhcp_server_started = 1;
+
+				RTK_LOGS(TAG, RTK_LOG_INFO, "DHCP Server started\n");
 			}
-		} else if (0 == link_is_up && (ethernet_state >= ETH_STATUS_INIT)) {
-			ethernet_state = ETH_STATUS_DEINIT;
+		} else if ((0 == link_is_up) && cdc_ncm_dhcp_server_started) {
 			// USB disconnected, stop DHCP server
-			if (cdc_ncm_dhcp_server_started) {
-				usbd_ncm_net_down();
-			} else {
-				RTK_LOGS(TAG, RTK_LOG_INFO, "DHCP Server not started\n");
-				rtos_time_delay_ms(1000);
-			}
+			usbd_ncm_net_down();
 		} else {
 			rtos_time_delay_ms(1000);
 		}
@@ -325,22 +305,8 @@ static int usbd_cdc_ncm_cb_deinit(void)
   */
 static int usbd_cdc_ncm_cb_received(u8 *buf, u32 length)
 {
-	if (buf == NULL || length == 0) {
-		return -RTK_ERR_BADARG;
-	}
-
-#if 0
-	RTK_LOGS(TAG, RTK_LOG_INFO, "RX Len = %d\n", length);
-	// for (u32 i = 0; i < length; i++) {
-	// 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "%02x ", (u8)buf[i]);
-	// }
-	// RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n");
-#endif
-
-	/* Forward to network stack */
-	if (length > 0) {
-		netif_adapter_usb_eth_recv(buf, length);
-	}
+	/* Forward to network stack. The class only delivers a non-empty datagram */
+	netif_adapter_usb_eth_recv(buf, length);
 
 	return RTK_SUCCESS;
 }
@@ -358,10 +324,6 @@ static int usbd_cdc_ncm_cb_setup(usb_setup_req_t *req, u8 *buf)
 	int ret = RTK_SUCCESS;
 	UNUSED(buf);
 
-	if (req == NULL) {
-		return -RTK_ERR_BADARG;
-	}
-
 	u8 req_type = req->bmRequestType & USB_REQ_TYPE_MASK;
 	u8 req_code = req->bRequest;
 
@@ -376,18 +338,9 @@ static int usbd_cdc_ncm_cb_setup(usb_setup_req_t *req, u8 *buf)
 			/* Accepted and ignored: no multicast filter table on this device. */
 			break;
 		default:
-			/*
-			 * NCM-specific requests (GET/SET NTB_PARAMETERS, SET_NTB_FORMAT, ...)
-			 * never reach this callback: the class driver answers them itself and
-			 * only forwards what it does not recognise.
-			 *
-			 * Anything left here is unsupported and must be answered with a request
-			 * error so the core STALLs EP0 (Ref USB 2.0 9.2.7).  Returning RTK_SUCCESS
-			 * used to be actively harmful for a device-to-host request such as
-			 * GET_ETHERNET_STATISTIC: the class driver would then transmit
-			 * req->wLength bytes of whatever the EP0 buffer happened to hold,
-			 * leaking stale buffer content to the host instead of stalling.
-			 */
+			/* NCM-specific requests never reach this callback: the class driver answers
+			 * them itself. Anything left here is unsupported and must be answered with a
+			 * request error so the core STALLs EP0 (Ref USB 2.0 9.2.7). */
 			ret = -RTK_ERR_BADARG;
 			break;
 		}

@@ -26,7 +26,7 @@
 #ifdef CONFIG_USBD_MSC_FLASH
 /* On-chip flash region for the MSC U-disk, overridable by editing this macro.
    Defaults to VFS2 because VFS1 is usually taken by the system LITTLEFS/KV. */
-#define COMP_MSC_FLASH_VFS_REGION VFS_REGION_2
+#define COMP_MSC_FLASH_VFS_TARGET VFS_TARGET_FLASH_VFS2
 #endif
 
 /* Private defines -----------------------------------------------------------*/
@@ -329,14 +329,14 @@ static int composite_init_stack(void)
 #endif
 #ifdef CONFIG_USBD_MSC_FLASH
 	/* Mount FATFS on the selected on-chip flash region. */
-	ret = vfs_user_register(COMP_MSC_VFS_PREFIX, VFS_FATFS, VFS_INF_FLASH, COMP_MSC_FLASH_VFS_REGION, VFS_RW);
+	ret = vfs_target_register(COMP_MSC_VFS_PREFIX, COMP_MSC_FLASH_VFS_TARGET, VFS_RW);
 	if (ret != 0) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "VFS register FATFS/FLASH fail: %d\r\n", ret);
 		return ret;
 	}
 #elif defined(CONFIG_USBD_MSC_RAM)
 	/* Mount FATFS on the VFS RAM disk (volatile, formatted fresh on every register). */
-	ret = vfs_user_register(COMP_MSC_VFS_PREFIX, VFS_FATFS, VFS_INF_RAM, VFS_REGION_RAM, VFS_RW);
+	ret = vfs_target_register(COMP_MSC_VFS_PREFIX, VFS_TARGET_RAM, VFS_RW);
 	if (ret != 0) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "VFS register FATFS/RAM fail: %d\r\n", ret);
 		return ret;
@@ -346,9 +346,9 @@ static int composite_init_stack(void)
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "MSC disk init failed\r\n");
 #ifdef CONFIG_USBD_MSC_FLASH
-		vfs_user_unregister(COMP_MSC_VFS_PREFIX, VFS_FATFS, VFS_INF_FLASH);
+		vfs_target_unregister(COMP_MSC_VFS_PREFIX);
 #elif defined(CONFIG_USBD_MSC_RAM)
-		vfs_user_unregister(COMP_MSC_VFS_PREFIX, VFS_FATFS, VFS_INF_RAM);
+		vfs_target_unregister(COMP_MSC_VFS_PREFIX);
 #endif
 		return ret;
 	}
@@ -391,9 +391,9 @@ exit_usbd_init:
 exit_disk_init:
 	usbd_msc_disk_deinit();
 #ifdef CONFIG_USBD_MSC_FLASH
-	vfs_user_unregister(COMP_MSC_VFS_PREFIX, VFS_FATFS, VFS_INF_FLASH);
+	vfs_target_unregister(COMP_MSC_VFS_PREFIX);
 #elif defined(CONFIG_USBD_MSC_RAM)
-	vfs_user_unregister(COMP_MSC_VFS_PREFIX, VFS_FATFS, VFS_INF_RAM);
+	vfs_target_unregister(COMP_MSC_VFS_PREFIX);
 #endif
 	return ret;
 }
@@ -413,9 +413,9 @@ static void composite_deinit_stack(void)
 	usbd_deinit();
 	usbd_msc_disk_deinit();
 #ifdef CONFIG_USBD_MSC_FLASH
-	vfs_user_unregister(COMP_MSC_VFS_PREFIX, VFS_FATFS, VFS_INF_FLASH);
+	vfs_target_unregister(COMP_MSC_VFS_PREFIX);
 #elif defined(CONFIG_USBD_MSC_RAM)
-	vfs_user_unregister(COMP_MSC_VFS_PREFIX, VFS_FATFS, VFS_INF_RAM);
+	vfs_target_unregister(COMP_MSC_VFS_PREFIX);
 #endif
 }
 

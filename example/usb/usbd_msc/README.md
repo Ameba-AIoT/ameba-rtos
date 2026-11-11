@@ -32,8 +32,8 @@ Attach SD card to the SDIOH slot on the board (only for the SD card media).
 	For `RAM disk`, select the medium and size in `prj.conf` (they live under
 	`CONFIG File System`, applied automatically when building this example):
 	```
-	CONFIG_VFS_FATFS_INCLUDED=y
 	CONFIG_VFS_RAM=y
+	CONFIG_VFS_RAM_FATFS=y
 	CONFIG_VFS_RAM_SRAM=y
 	CONFIG_VFS_RAM_SIZE_KB=64
 	```
@@ -47,27 +47,25 @@ Attach SD card to the SDIOH slot on the board (only for the SD card media).
 	`#error`.
 
 	For the `FLASH (on-chip)` media, the example mounts a FATFS volume on an
-	on-chip flash region through VFS and exposes it as a U-disk. The region is
-	chosen by modifying the macro below in `example_usbd_msc.c`:
+	on-chip flash target through VFS and exposes it as a U-disk. The target is
+	set by the macro below in `example_usbd_msc.c`:
 
 	```C
-	/* choose VFS_REGION_1 or VFS_REGION_2 */
-	#define USBD_MSC_FLASH_VFS_REGION VFS_REGION_2
+	#define USBD_MSC_FLASH_VFS_TARGET VFS_TARGET_FLASH_VFS2
 	...
-	ret = vfs_user_register(USBD_MSC_VFS_PREFIX, VFS_FATFS, VFS_INF_FLASH, USBD_MSC_FLASH_VFS_REGION, VFS_RW);
+	ret = vfs_target_register(USBD_MSC_VFS_PREFIX, USBD_MSC_FLASH_VFS_TARGET, VFS_RW);
 	```
 
-	1. Change `USBD_MSC_FLASH_VFS_REGION` to `VFS_REGION_1` if that region is free
-	   (see the note below), otherwise keep `VFS_REGION_2`.
+	1. Enable FATFS on VFS2 in menuconfig (`CONFIG_VFS2_FATFS=y`). VFS1 only
+	   offers LittleFS (used by KV / BT FTL), so it cannot be used for the U-disk.
 
-	2. Configure the chosen region's offset and size in the SoC flash layout
+	2. Configure the VFS2 offset and size in the SoC flash layout
 	   menuconfig (`CONFIG User Config → Flash Layout Configuration`). The region
 	   must be enabled and lie inside the physical flash, without overlapping the
-	   BOOT/OTA/system or another VFS region.
+	   BOOT/OTA/system or VFS1 region.
 
-	The chosen region is dedicated to the MSC U-disk: it must not be registered
-	by another filesystem (e.g. `app_filesystem_init()` may already register
-	LITTLEFS on `VFS_REGION_1`, so use `VFS_REGION_2` in that case).
+	The VFS2 target is dedicated to the MSC U-disk: it must not be registered
+	under another prefix by the application.
 
 2. Build and Download:
    * Refer to the SDK Examples section of the online documentation to generate images.
@@ -122,7 +120,7 @@ SD card hotplug is supported but disabled by default. Set `MSC_SD_HOTPLUG` to 1 
 ```
 
 This is independent of `SD card hotplug (FATFS)` under `CONFIG File System`,
-which only re-inits the FATFS disk layer of an app-mounted `VFS_INF_SD` volume.
+which only re-inits the FATFS disk layer of an app-mounted `VFS_TARGET_SD` volume.
 Do not enable both: the SD driver holds a single card-detect callback, so the
 second `SD_SetCdCallback()` replaces the first.
 

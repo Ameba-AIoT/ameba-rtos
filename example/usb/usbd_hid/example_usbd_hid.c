@@ -163,19 +163,6 @@ static usbd_hid_keyboard_data_t mdata[] = {
 #endif
 #endif
 
-#if HID_MOUSE_CMD
-#ifdef CONFIG_USBD_HID_MOUSE
-/*exmaple cmd: mouse  0   0   0   50   0   0
-	left button release,
-	right button release,
-	middle button release,
-	x_axis: move the cursor 50 pixels to the right,
-	y_axos: no movement,
-	wheel: no scrolling.
-*/
-#endif
-#endif  //HID_MOUSE_CMD
-
 static const usbd_config_t hid_cfg = {
 	.info = {
 		.prod_str = "Realtek HID Device",

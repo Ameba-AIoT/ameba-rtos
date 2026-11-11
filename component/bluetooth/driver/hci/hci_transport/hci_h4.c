@@ -144,7 +144,7 @@ void hci_uart_rx_irq_handler(bool from_irq)
 			h4->body_len = hci_get_body_len(h4->hdr, h4->type);
 			if ((h4->body_len + h4->hlen) > hci_rx_buf_size(h4->type)) {
 				BT_LOGE("ERROR!!!, type %d, len %d\r\n", h4->type, h4->body_len);
-				h4->remain = h4->body_len;
+				h4->remain = h4->body_len - (h4->is_le_meta_evt ? 1 : 0); /* subevent of le_meta_event has been read already */
 				h4->state = ST_DISCARD;
 				break;
 			}

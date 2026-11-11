@@ -38,25 +38,26 @@ void wifi_if_tx_inc(int idx);
 void wifi_if_tx_dec(int idx);
 struct sk_buff *wifi_if_get_recv_skb(int idx);
 struct sk_buff *wifi_if_alloc_skb(unsigned int total_len);
-void rltk_wlan_set_netif_info(int idx_wlan, void *dev, unsigned char *dev_addr);
+void wifi_netif_set_info(int idx_wlan, void *dev, unsigned char *dev_addr);
 void wifi_if_send_skb(int idx, struct sk_buff *skb);	//struct sk_buff as defined above comment line
 void wifi_if_netif_rx(struct sk_buff *skb, void *preorder_ctrl);
+void wifi_if_set_wowlan_ipv6_wake(u8 en);
+u8 wifi_if_is_netdev_enable(int idx);
 #if defined(CONFIG_LWIP_LAYER) && CONFIG_LWIP_LAYER
-int rltk_wlan_send(int idx, struct eth_drv_sg *sg_list, int sg_len, int total_len, u8 is_special_pkt);
-void rltk_wlan_recv(int idx, struct eth_drv_sg *sg_list, int sg_len);
+int wifi_netif_send(int idx, struct eth_drv_sg *sg_list, int sg_len, int total_len, u8 is_special_pkt);
+void wifi_netif_recv(int idx, struct eth_drv_sg *sg_list, int sg_len);
 #endif
 
 //----- ------------------------------------------------------------------
 // Network Interface provided
 //----- ------------------------------------------------------------------
 
-int netif_is_valid_IP(int idx, unsigned char *ip_dest);
-unsigned char *netif_get_hwaddr(int idx_wlan);
-void netif_rx(int idx, unsigned int len);
+unsigned char *wifi_netif_get_hwaddr(int idx_wlan);
+int wifi_netif_rx(int idx, unsigned int len);
 
-extern unsigned char *rltk_wlan_get_ip(int idx);
-extern unsigned char *rltk_wlan_get_gw(int idx);
-extern unsigned char *rltk_wlan_get_gwmask(int idx);
+extern unsigned char *wifi_netif_get_ip(int idx);
+extern unsigned char *wifi_netif_get_gw(int idx);
+extern unsigned char *wifi_netif_get_mask(int idx);
 
 #ifdef	__cplusplus
 }
