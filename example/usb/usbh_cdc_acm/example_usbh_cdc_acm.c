@@ -150,8 +150,8 @@ static volatile u8 cdc_acm_teardown = 0;
 static usb_app_ctx_t cdc_acm_app;
 
 static const usbh_cdc_acm_config_t cdc_acm_class_cfg = {
-	/* 115200 8N1 with DTR asserted; char_format/parity_type are left 0, which is the
-	 * valid encoding for 1 stop bit / no parity. */
+	/* 115200 8N1 with DTR asserted, sent by the class before the setup callback; char_format/parity_type
+	 * are left 0, which is the valid encoding for 1 stop bit / no parity. */
 	.dte_rate        = 115200U,
 	.data_bits       = 8U,
 	.ctrl_line_state = 0x01U,
@@ -479,7 +479,7 @@ static void example_usbh_bulk_tx_thread(void *param)
 		while (1) {
 #endif
 			for (i = 0; i < USBH_CDC_ACM_LOOPBACK_CNT;) {
-				usb_os_memset((void *)cdc_acm_loopback_tx_buf, (u8)(cdc_acm_loopback_tx_idx & 0xFF), USBH_CDC_ACM_LOOPBACK_BUF_SIZE);
+				memset((void *)cdc_acm_loopback_tx_buf, (u8)(cdc_acm_loopback_tx_idx & 0xFF), USBH_CDC_ACM_LOOPBACK_BUF_SIZE);
 				*((u32 *)cdc_acm_loopback_tx_buf) = cdc_acm_loopback_tx_idx;
 				if (cdc_acm_round_gone() != 0U) {
 					RTK_LOGS(TAG, RTK_LOG_INFO, "Device disconnect\n");
@@ -507,7 +507,7 @@ static void example_usbh_bulk_tx_thread(void *param)
 					tx_loop_sub_cnt = i;
 					cdc_acm_loopback_tx_idx++;
 				} else {
-					usb_os_delay_us(1);
+					rtos_time_delay_us(1);
 				}
 			}
 
@@ -536,7 +536,7 @@ static void example_usbh_bulk_rx_thread(void *param)
 		while (1) {
 #endif
 			for (i = 0; i < USBH_CDC_ACM_LOOPBACK_CNT;) {
-				usb_os_memset((void *)cdc_acm_loopback_rx_buf, 0, USBH_CDC_ACM_LOOPBACK_BUF_SIZE);
+				memset((void *)cdc_acm_loopback_rx_buf, 0, USBH_CDC_ACM_LOOPBACK_BUF_SIZE);
 				if (cdc_acm_round_gone() != 0U) {
 					RTK_LOGS(TAG, RTK_LOG_INFO, "Device disconnect\n");
 					goto rx_exit;
@@ -557,7 +557,7 @@ static void example_usbh_bulk_rx_thread(void *param)
 					i++;
 					rx_loop_sub_cnt = i;
 				} else {
-					usb_os_delay_us(1);
+					rtos_time_delay_us(1);
 				}
 			}
 			rx_loop_sub_cnt = 0;
@@ -609,8 +609,8 @@ static void cdc_acm_speed_loopback_test(void)
 	/* Join both workers. Each one leaves on its own once the device is gone
 	   (every wait in its loop is bounded), so this returns at the latest one
 	   transfer budget after an unplug. */
-	(void)rtos_sema_take(cdc_acm_worker_exit_sema, RTOS_SEMA_MAX_COUNT);
-	(void)rtos_sema_take(cdc_acm_worker_exit_sema, RTOS_SEMA_MAX_COUNT);
+	rtos_sema_take(cdc_acm_worker_exit_sema, RTOS_SEMA_MAX_COUNT);
+	rtos_sema_take(cdc_acm_worker_exit_sema, RTOS_SEMA_MAX_COUNT);
 }
 #else
 static void cdc_acm_loopback_test(void)
@@ -621,7 +621,7 @@ static void cdc_acm_loopback_test(void)
 	u8 j = 0;
 #endif
 
-	usb_os_memset((void *)cdc_acm_loopback_tx_buf, 0, USBH_CDC_ACM_LOOPBACK_BUF_SIZE);
+	memset((void *)cdc_acm_loopback_tx_buf, 0, USBH_CDC_ACM_LOOPBACK_BUF_SIZE);
 
 	if (cdc_acm_wait_ready() != RTK_SUCCESS) {
 		return;
@@ -631,10 +631,10 @@ static void cdc_acm_loopback_test(void)
 
 #if CONFIG_USBH_CDC_ACM_STRESS_TEST
 	while (1) {
-		usb_os_memset((void *)cdc_acm_loopback_tx_buf, j, USBH_CDC_ACM_LOOPBACK_BUF_SIZE);
+		memset((void *)cdc_acm_loopback_tx_buf, j, USBH_CDC_ACM_LOOPBACK_BUF_SIZE);
 #endif
 		for (i = 0; i < USBH_CDC_ACM_LOOPBACK_CNT; i++) {
-			usb_os_memset((void *)cdc_acm_loopback_rx_buf, 0, USBH_CDC_ACM_LOOPBACK_BUF_SIZE);
+			memset((void *)cdc_acm_loopback_rx_buf, 0, USBH_CDC_ACM_LOOPBACK_BUF_SIZE);
 			if (cdc_acm_round_gone() != 0U) {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "Device disconnect\n");
 				return;
@@ -705,12 +705,7 @@ static void cdc_acm_notify_test(void)
 		return;
 	}
 
-	if (cdc_acm_lock_stack() == RTK_SUCCESS) {
-		usbh_cdc_acm_set_control_line_state(0x01U); /* DTR=1, RTS=0 */
-		cdc_acm_unlock_stack();
-	}
-	//wait for set control line finish
-	rtos_time_delay_ms(2000);
+	/* DTR is already asserted: the class sends cdc_acm_class_cfg.ctrl_line_state before the setup callback */
 
 	for (i = 0; i < USBH_CDC_ACM_LOOPBACK_CNT; i++) {
 		if (cdc_acm_round_gone() != 0U) {
@@ -723,8 +718,13 @@ static void cdc_acm_notify_test(void)
 			break;
 		}
 		cdc_acm_drain_sema(cdc_acm_notify_sema);
-		(void)usbh_cdc_acm_notify_receive(cdc_acm_notify_rx_buf, USBH_CDC_ACM_NOTIFY_BUF_SIZE);
+		ret = usbh_cdc_acm_notify_receive(cdc_acm_notify_rx_buf, USBH_CDC_ACM_NOTIFY_BUF_SIZE);
 		cdc_acm_unlock_stack();
+		if (ret != RTK_SUCCESS) {
+			/* Nothing was armed, so no notification can come */
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Notify rx fail: %d\n", ret);
+			break;
+		}
 
 		if (rtos_sema_take(cdc_acm_notify_sema, USBH_CDC_ACM_XFER_TIMEOUT_MS) == RTK_SUCCESS) {
 			if (cdc_acm_notify_status != RTK_SUCCESS) {
@@ -754,6 +754,7 @@ static void cdc_acm_request_test(void)
 	usb_cdc_acm_line_coding_t new_line_coding;
 
 	if (cdc_acm_wait_ready() != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "NOT ready for CTRL test\n");
 		return;
 	}
 
@@ -761,6 +762,7 @@ static void cdc_acm_request_test(void)
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "GET_LINE_CODING:");
 	if (cdc_acm_lock_stack() != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "CTRL test FAIL\n");
 		return;
 	}
 	ret = usbh_cdc_acm_get_line_coding(&line_coding);
@@ -778,6 +780,7 @@ static void cdc_acm_request_test(void)
 	line_coding.b.bParityType = LINE_CODING_PARITY_NO;
 	line_coding.b.bDataBits = 8;
 	if (cdc_acm_lock_stack() != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "CTRL test FAIL\n");
 		return;
 	}
 	ret = usbh_cdc_acm_set_line_coding(&line_coding);
@@ -790,6 +793,7 @@ static void cdc_acm_request_test(void)
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "GET_LINE_CODING:");
 	if (cdc_acm_lock_stack() != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "CTRL test FAIL\n");
 		return;
 	}
 	ret = usbh_cdc_acm_get_line_coding(&new_line_coding);
@@ -798,16 +802,19 @@ static void cdc_acm_request_test(void)
 		RTK_LOGS(NOTAG, RTK_LOG_INFO, "DteRate: %u\nCharFormat: %d\nParityType: %d\nDataBits: %d\n",
 				 new_line_coding.b.dwDteRate, new_line_coding.b.bCharFormat, new_line_coding.b.bParityType, new_line_coding.b.bDataBits);
 	} else {
+		/* new_line_coding holds nothing to compare */
 		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "fail\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "CTRL test FAIL\n");
+		return;
 	}
 
 	if ((new_line_coding.b.dwDteRate == line_coding.b.dwDteRate) &&
 		(new_line_coding.b.bCharFormat == line_coding.b.bCharFormat) &&
 		(new_line_coding.b.bParityType == line_coding.b.bParityType) &&
 		(new_line_coding.b.bDataBits == line_coding.b.bDataBits)) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "Ctrl test PASS\n");
+		RTK_LOGS(TAG, RTK_LOG_INFO, "CTRL test PASS\n");
 	} else {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Ctrl test FAIL\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "CTRL test FAIL\n");
 	}
 }
 
@@ -877,7 +884,15 @@ static void example_usbh_cdc_acm_hotplug_thread(void *param)
 			}
 
 			/* Re-arm USB TRX after the re-init. */
-			usbh_start();
+			ret = usbh_start();
+			if (ret != RTK_SUCCESS) {
+				usbh_cdc_acm_deinit();
+				usbh_deinit();
+				rtos_mutex_give(cdc_acm_state_mutex);
+				RTK_LOGS(TAG, RTK_LOG_ERROR, "Start USBH fail\n");
+				fatal = 1U;
+				break;
+			}
 
 			/* Open the gate as the very last step, so no worker runs against a
 			   half-rebuilt stack. Clear teardown only after ready is set, or a
@@ -926,7 +941,7 @@ static void example_usbh_cdc_acm_test_thread(void *param)
 	   tests see the device gone and return at once. */
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Wait for device attach\n");
 	for (;;) {
-		(void)rtos_sema_take(cdc_acm_ready_sema, RTOS_SEMA_MAX_COUNT);
+		rtos_sema_take(cdc_acm_ready_sema, RTOS_SEMA_MAX_COUNT);
 		if (cdc_acm_app.quit != 0U) {
 			break;
 		}
@@ -1019,7 +1034,12 @@ static int cdc_acm_start(void)
 	}
 
 	/* All class drivers registered; start USB TRX so enumeration can run. */
-	usbh_start();
+	ret = usbh_start();
+	if (ret != RTK_SUCCESS) {
+		usbh_cdc_acm_deinit();
+		usbh_deinit();
+		goto error_exit;
+	}
 
 	/* The stack is fully up: allow the worker threads to call the class API. */
 	cdc_acm_stack_ready = 1U;

@@ -177,9 +177,9 @@ typedef struct {
 	 * The flags below are written from both the USB ISR and the MSC threads, so each one is a whole byte: bit-fields
 	 * sharing a byte would be updated by read-modify-write and could lose a concurrent write on SMP. */
 	u8 bot_state;                                   /**< BOT state. */
-	u8 bot_status;                                  /**< BOT status. */
 	u8 phase_error;                                 /**< SCSI check status. */
 	u8 csw_pending;                                 /**< Failed Data-In command whose CSW waits for the Bulk-In halt to be cleared. */
+	u8 csw_in_flight;                               /**< The Bulk-In transfer in flight is a CSW, its completion ends the command. */
 	u8 is_open;                                     /**< MSC is ready for data transfer. */
 	u8 prevent_removal;                             /**< Medium removal prevented by PREVENT ALLOW MEDIUM REMOVAL. */
 	u8 wedged;                                      /**< Bulk endpoints halted on an invalid CBW until Reset Recovery. */
@@ -194,8 +194,8 @@ typedef struct {
 	                                                     usbd_msc_config_t::buf_size. */
 	u32 data_length;                                /**< Transfer data length. */
 	u32 blklen;                                     /**< The data length requested by the host. */
-	u16 rx_data_length;                             /**< BULK Received data length. */
-	u8 tx_status;                                   /**< BULK Transmitted status. */
+	int tx_status;                                  /**< BULK Transmitted status, a RTK status code. */
+	u32 rx_data_length;                             /**< Length of the last Bulk-Out transfer, as received. */
 
 	/* Disk and SCSI */
 	usbd_msc_disk_ops_t disk_ops;                   /**< Structure with disk operation function pointers. */
@@ -212,10 +212,12 @@ typedef struct {
 	u8 inquiry_data[INQUIRY_DATA_LEN];
 
 	/* RX / TX threads */
-	rtos_task_t rx_task;                           /**< RTOS task handle for data reception. */
+	rtos_task_t rx_task;                            /**< RTOS task handle for data reception, cleared by the task as it exits. */
 	usb_os_sema_t rx_sema;                          /**< Semaphore to signal data reception. */
-	rtos_task_t tx_task;                            /**< RTOS task handle for data transmission. */
+	rtos_task_t tx_task;                            /**< RTOS task handle for data transmission, cleared by the task as it exits. */
 	usb_os_sema_t tx_sema;                          /**< Semaphore to signal data transmission. */
+	u8 rx_stop;                                     /**< Set by deinit to make the RX thread exit. */
+	u8 tx_stop;                                     /**< Set by deinit to make the TX thread exit. */
 
 	/* Endpoints */
 	usbd_ep_t ep_bulk_in;                           /**< Structure for the Bulk IN endpoint. */

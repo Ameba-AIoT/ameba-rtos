@@ -58,6 +58,8 @@
 #define BT_HCI_ERROR_LIMIT_REACHED                              0x43
 #define BT_HCI_ERROR_OPERATION_CANCELLED_BY_HOST                0x44
 #define BT_HCI_ERROR_PACKET_TOO_LONG                            0x45
+#define BT_HCI_ERROR_TOO_LATE                                   0x46
+#define BT_HCI_ERROR_TOO_EARLY                                  0x47
 
 
 /*============================ HCI SUPPORTED COMMANDS DEFINE ===================*/
@@ -426,7 +428,7 @@
 #define COMMAND_46_HCI_LE_SET_EXTENDED_ADVERTISING_PARAMETERS_V2                    BIT2
 #define COMMAND_46_HCI_LE_SET_DECISION_DATA                                         BIT3
 #define COMMAND_46_HCI_LE_DECISION_INSTRICTIONS                                     BIT4
-#define COMMAND_46_HCI_LE_SET_PERIODIC_ADVERTISING_SIBEVENT_DATA                    BIT5
+#define COMMAND_46_HCI_LE_SET_PERIODIC_ADVERTISING_SUBEVENT_DATA                    BIT5
 #define COMMAND_46_HCI_LE_SET_PERIODIC_ADVERTISING_RESPONSE_DATA                    BIT6
 #define COMMAND_46_HCI_LE_SET_PERIODIC_SYNC_SUBEVENT                                BIT7
 
@@ -594,8 +596,9 @@
 #define BT_LL_LE_FEATURE_CHANNEL_CLASSIFICATION                 BIT64(39)
 #define BT_LL_LE_FEATURE_ADV_CODING_SEL                         BIT64(40)
 #define BT_LL_LE_FEATURE_ADV_CODING_SEL_HOST_SUPPORT            BIT64(41)
-#define BT_LL_LE_FEATURE_PAWR_ADVERTISER                        BIT64(42)
-#define BT_LL_LE_FEATURE_PAWR_SCANNER                           BIT64(43)
+#define BT_LL_LE_FEATURE_DECISION_BASED_ADV_FILTER              BIT64(42)
+#define BT_LL_LE_FEATURE_PAWR_ADVERTISER                        BIT64(43)
+#define BT_LL_LE_FEATURE_PAWR_SCANNER                           BIT64(44)
 
 
 #define LE_HCI_PHY_1M                                        0x01
@@ -1369,6 +1372,8 @@ struct bt_hci_cp_le_remove_adv_set {
 } __attribute__((packed));
 
 /* LE Periodic Advertising HCI Commands (BT 5.0) */
+#define BT_HCI_LE_PA_ENABLE                     BIT(0)
+#define BT_HCI_LE_PA_ENABLE_INCLUDE_ADI         BIT(1)
 #define BT_HCI_LE_PA_PROP_TX_POWER              BIT(6)
 #define BT_HCI_OP_LE_SET_PERIODIC_ADV_PARAM_V1  BT_OP(BT_OGF_LE, 0x003E) /* 0x203E */
 struct bt_hci_cp_le_set_periodic_adv_param_v1 {
@@ -1376,6 +1381,45 @@ struct bt_hci_cp_le_set_periodic_adv_param_v1 {
 	uint16_t min_interval;
 	uint16_t max_interval;
 	uint16_t props;
+} __attribute__((packed));
+
+/* LE Periodic Advertising with Responses HCI Commands (BT 5.4) */
+#define BT_HCI_OP_LE_SET_PERIODIC_ADV_PARAM_V2  BT_OP(BT_OGF_LE, 0x0086) /* 0x2086 */
+struct bt_hci_cp_le_set_periodic_adv_param_v2 {
+	uint8_t  handle;
+	uint16_t min_interval;
+	uint16_t max_interval;
+	uint16_t props;
+	uint8_t  num_subevents;
+	uint8_t  subevent_interval;
+	uint8_t  rsp_slot_delay;
+	uint8_t  rsp_slot_spacing;
+	uint8_t  num_rsp_slots;
+} __attribute__((packed));
+
+struct bt_hci_rp_le_set_periodic_adv_param_v2 {
+	uint8_t status;
+	uint8_t handle;
+} __attribute__((packed));
+
+#define BT_HCI_OP_LE_SET_PA_SUBEVENT_DATA       BT_OP(BT_OGF_LE, 0x0082) /* 0x2082 */
+struct bt_hci_le_pa_subevent_data_elem {
+	uint8_t  subevent;
+	uint8_t  rsp_slot_start;
+	uint8_t  rsp_slot_count;
+	uint8_t  len;
+	uint8_t  data[0];
+} __attribute__((packed));
+
+struct bt_hci_cp_le_set_pa_subevent_data {
+	uint8_t  handle;
+	uint8_t  num_subevents;
+	uint8_t  subevents[0];      /* num_subevents x struct bt_hci_le_pa_subevent_data_elem, variable length, walk by byte offset */
+} __attribute__((packed));
+
+struct bt_hci_rp_le_set_pa_subevent_data {
+	uint8_t status;
+	uint8_t handle;
 } __attribute__((packed));
 
 #define BT_HCI_OP_LE_SET_PERIODIC_ADV_DATA      BT_OP(BT_OGF_LE, 0x003F) /* 0x203F */
@@ -2196,6 +2240,36 @@ struct bt_hci_evt_le_ext_advertising_report {
 	uint8_t subevent;
 	uint8_t num_reports;
 	struct bt_hci_evt_le_ext_advertising_info adv_info[0];
+} __attribute__((packed));
+
+#define BT_HCI_EVT_LE_PA_SUBEVENT_DATA_REQUEST  0x27
+struct bt_hci_evt_le_pa_subevent_data_request {
+	uint8_t  subevent;
+	uint8_t  adv_handle;
+	uint8_t  subevent_start;
+	uint8_t  subevent_data_count;
+} __attribute__((packed));
+
+#define BT_HCI_EVT_LE_PA_RESPONSE_REPORT        0x28
+#define BT_HCI_LE_PA_RSP_TX_STATUS_SENT         0x00
+#define BT_HCI_LE_PA_RSP_TX_STATUS_NOT_SENT     0x01
+struct bt_hci_evt_le_pa_response_info {
+	int8_t   tx_power;
+	int8_t   rssi;
+	uint8_t  cte_type;
+	uint8_t  rsp_slot;
+	uint8_t  data_status;
+	uint8_t  data_len;
+	uint8_t  data[0];
+} __attribute__((packed));
+
+struct bt_hci_evt_le_pa_response_report {
+	uint8_t  subevent;
+	uint8_t  adv_handle;
+	uint8_t  pa_subevent;
+	uint8_t  tx_status;
+	uint8_t  num_responses;
+	struct bt_hci_evt_le_pa_response_info responses[0];   /* one response per event here */
 } __attribute__((packed));
 
 #endif

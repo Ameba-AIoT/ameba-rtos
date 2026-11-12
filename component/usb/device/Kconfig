@@ -60,31 +60,27 @@ config USBD_MSC_MENU
             default USBD_MSC_SD_CARD
             config USBD_MSC_FLASH
                 bool "FLASH (on-chip)"
-                depends on VFS_MENU
-                select VFS_FATFS_INCLUDED if WHC_HOST || WHC_NONE
+                depends on VFS_MENU && VFS2_FATFS
             config USBD_MSC_SECOND_FLASH
                 bool "Second FLASH (NOR)"
-                depends on VFS_MENU
-                select VFS_FATFS_INCLUDED if WHC_HOST || WHC_NONE
-                select VFS_SECOND_FLASH if WHC_HOST || WHC_NONE
+                depends on VFS_MENU && VFS_SECOND_FLASH_FATFS
                 help
-                  Needs a NOR second flash: keep "Second flash is external SPI NAND"
-                  unchecked under CONFIG File System. A NAND selection fails the build.
+                  Configure the second flash as FATFS under CONFIG File System.
+                  Only a NOR second flash supports FATFS.
             config USBD_MSC_SD_CARD
                 bool "SD card, SDIO mode"
-                depends on SUPPORT_SDIOH && VFS_MENU
-                select VFS_FATFS_INCLUDED if WHC_HOST || WHC_NONE
-                select VFS_SD_CARD if WHC_HOST || WHC_NONE
+                depends on SUPPORT_SDIOH && VFS_MENU && VFS_SD_FATFS
             config USBD_MSC_SD_SPI
                 bool "SD card, SPI mode"
                 depends on VFS_MENU
-                select VFS_FATFS_INCLUDED if WHC_HOST || WHC_NONE
+                # VFS_SD_SPI is a plain medium switch with FATFS as its only file system, not an FS choice member, so it is selected here
                 select VFS_SD_SPI if WHC_HOST || WHC_NONE
             config USBD_MSC_RAM
                 bool "RAM disk"
-                depends on VFS_MENU
-                select VFS_FATFS_INCLUDED if WHC_HOST || WHC_NONE
+                depends on VFS_MENU && !FATFS_READ_ONLY
                 select VFS_RAM if WHC_HOST || WHC_NONE
+                help
+                  The RAM disk is exposed as FATFS: leave "File system on RAM disk" at FATFS under CONFIG File System.
         endchoice
     endif
 

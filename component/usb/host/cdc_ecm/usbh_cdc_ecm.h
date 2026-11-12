@@ -42,7 +42,6 @@ extern "C" {
 
 #define USBH_CDC_ECM_MAC_STR_LEN                                     (6)      /**< Length of the MAC address in bytes. */
 #define USBH_CDC_ECM_CTRL_REG_BUF_LEN                                (4)      /**< Length of the ECM dongle control register buffer. */
-#define USBH_CDC_ECM_MULTICAST_FILTER_STR_LEN                        (20)     /**< Length of the ECM multicast filter control buffer. */
 
 /** @} End of Host_CDC_ECM_Constants group */
 /** @} End of USB_Host_Constants group */
@@ -61,13 +60,13 @@ extern "C" {
  * @details Carries every CDC ECM host option: the MAC address to program into a Realtek
  *          dongle and the dongle LED pattern. Host-global parameters (speed, FIFO depths,
  *          main task stack and priority, ISR priority) live in @ref usbh_config_t instead.
- * @note  The structure is stored by pointer, but both arrays are copied at init, so the
- *        arrays themselves need not outlive the init call.
+ * @note  The structure is stored by pointer, but the MAC and the LED value are copied at init,
+ *        so the arrays themselves need not outlive the init call.
  */
 typedef struct {
-	const u16 *led_array;    /**< LED state array, NULL for none; each u16 element is one LED state. */
+	const u16 *led_array;    /**< LED register value of a Realtek dongle, NULL for none; only led_array[0] is used. */
 	const u8 *mac_value;     /**< MAC address to program, 6 bytes, NULL to keep the dongle default. */
-	u8 led_cnt;              /**< Number of valid elements in `led_array`; 0 disables LED setup. */
+	u8 led_cnt;              /**< Number of elements in `led_array`; 0 disables LED setup. */
 } usbh_cdc_ecm_config_t;
 
 /* CDC ECM user callback interface */
@@ -119,7 +118,6 @@ typedef struct {
 	u32 trigger_cnt;                          /**< Debug trigger counter. */
 #endif
 	usbh_ep_desc_t ep_desc;                   /**< Endpoint descriptor (byte-packed). */
-	u8 valid;                                 /**< Validity flag for this pipe info. */
 } usbh_cdc_ecm_pipe_info_t;
 
 /** @} End of Host_CDC_ECM_Types group */
@@ -132,7 +130,6 @@ typedef struct {
 	const usbh_cdc_ecm_state_cb_t  *cb;              /**< User callback structure */
 	usb_host_t *host;                                /**< USB Host core handle */
 	u8  *dongle_ctrl_buf;                            /**< Buffer for control transfers (cache aligned) */
-	u16 *led_array;                                  /**< Pointer to LED array */
 
 	/* Class state */
 	u16 sub_status;                                  /**< ECM sub-status, see usbh_cdc_ecm_at_set_state_t */
@@ -147,6 +144,7 @@ typedef struct {
 	u16 vid;                                         /**< Vendor ID */
 	u16 pid;                                         /**< Product ID */
 	u8 data_itf_id;                                  /**< Data Interface number */
+	u8 ctrl_itf_id;                                  /**< Communications Interface number, wIndex of class requests */
 	u8 data_alt_set;                                 /**< Alternate Setting value for Data Interface */
 
 	/* Pipes */
@@ -161,22 +159,15 @@ typedef struct {
 	__IO u8 tx_open;                                 /**< Set by init once the TX resources exist, cleared first by deinit */
 	__IO u8 tx_users;                                /**< Tasks inside the TX API; deinit waits for 0 before freeing TX resources */
 
-	/* Ethernet filters and statistics */
-	u32 eth_statistic_count;                         /**< Feature selector parameter: Statistic count */
-	u16 feature_selector;                            /**< Feature selector parameter */
-	u16 packet_filter;                               /**< Packet filter configuration */
-	u16 multicast_filter_len;                         /**< Length of multicast filter parameters */
-	u8 multicast_filter[USBH_CDC_ECM_MULTICAST_FILTER_STR_LEN]; /**< Buffer for multicast filer control */
-
 	/* MAC address, dongle registers and LED */
-	u8 mac[USBH_CDC_ECM_MAC_STR_LEN];                /**< Buffer for saving MAC string */
+	u16 led_value;                                   /**< LED register value written to a Realtek dongle, valid if led_cnt != 0 */
+	u8 mac[USBH_CDC_ECM_MAC_STR_LEN];               /**< Buffer for saving MAC string */
 	u8 mac_valid;                                    /**< Flag indicating if MAC address is valid */
 	u8 mac_src_type;                                 /**< ECM dongle MAC source type, see usbh_cdc_ecm_dongle_mac_type_t */
+	u8 mac_write_failed;                             /**< Writing the user MAC into the dongle failed, its own MAC is used */
 	u8 iMACAddressStringId;                          /**< Index of the MAC address string descriptor */
-	u8 mac_ctrl_lock[USBH_CDC_ECM_CTRL_REG_BUF_LEN]; /**< Buffer for RTL8152 MAC change control */
-	u8 flow_ctrl[USBH_CDC_ECM_CTRL_REG_BUF_LEN];     /**< Buffer for RTL8152 flow control */
 	u8 rcr[USBH_CDC_ECM_CTRL_REG_BUF_LEN];           /**< Buffer for RTL8156 RCR register */
-	u8 led_cnt;                                      /**< Number of LEDs */
+	u8 led_cnt;                                      /**< 1 if led_value is to be written, 0 keeps the dongle default */
 } usbh_cdc_ecm_host_t;
 
 /* Exported macros -----------------------------------------------------------*/
@@ -203,6 +194,8 @@ int usbh_cdc_ecm_init(const usbh_cdc_ecm_state_cb_t *cb, const usbh_cdc_ecm_conf
 
 /**
  * @brief  De-initializes the CDC ECM host class driver and releases resources.
+ * @note   Task context only. Closes the TX gate first, then waits without an upper bound for every
+ *         task inside usbh_cdc_ecm_send_data() to leave before its semaphore and buffers go away.
  */
 void usbh_cdc_ecm_deinit(void);
 
@@ -236,14 +229,15 @@ void usbh_cdc_ecm_prepare_done(void);
 
 /**
  * @brief  Transmits an Ethernet packet to the device via the Bulk OUT endpoint.
- * @param[in] buf: Pointer to the data buffer (Ethernet frame) to be transmitted.
- * @param[in] len: Length of the data in bytes.
+ * @param[in] buf: Pointer to the data buffer (Ethernet frame) to be transmitted, cache line aligned (DMA source).
+ * @param[in] len: Length of the data in bytes, non-zero.
  * @param[in] block: Blocking mode flag (e.g., 0 for non-blocking, else for blocking).
  * @note   Task context only, one sender at a time. Safe against a concurrent deinit of the class:
  *         returns -RTK_ERR_IO while the class is not initialized or is being de-initialized.
  *         A blocking send waits until the transfer completes, so it shall not be called inside a critical
  *         section or the PMU suspend flow, where the task can not block.
- * @return 0 (RTK_SUCCESS) on success, non-zero on failure.
+ * @return 0 (RTK_SUCCESS) on success, -RTK_ERR_BADARG for ISR context or a NULL, empty or unaligned buffer,
+ *         other non-zero values on failure.
  */
 int usbh_cdc_ecm_send_data(u8 *buf, u32 len, u8 block);
 

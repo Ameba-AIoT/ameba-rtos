@@ -236,16 +236,14 @@ int usb_os_unlock(usb_os_lock_t lock);
  * @brief Enters the USB critical section (disables interrupts, and takes the USB spinlock under SMP).
  * @note  Usable in task and ISR context. Nests on the same core: calling it again while
  *        already inside, e.g. from a class callback of an ISR running with isr_in_critical,
- *        only counts the nesting.
- * @return 0 on success, non-zero on failure
+ *        only counts the nesting. It cannot fail.
  */
-int usb_os_enter_critical(void);
+void usb_os_enter_critical(void);
 
 /**
  * @brief Exits the USB critical section, restoring interrupts on the outermost level only.
- * @return 0 on success, non-zero on failure
  */
-int usb_os_exit_critical(void);
+void usb_os_exit_critical(void);
 
 /**
  * @brief Tells whether the caller runs in interrupt context.

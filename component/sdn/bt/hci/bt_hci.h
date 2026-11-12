@@ -122,6 +122,8 @@ uint8_t bt_hci_cmd_ogf_le_ocf_ext_create_connection_v2(void *phci_cmd_param, uin
 uint8_t bt_hci_cmd_ogf_le_ocf_set_periodic_adv_param_v1(void *phci_cmd_param, uint8_t *rsp);
 uint8_t bt_hci_cmd_ogf_le_ocf_set_periodic_adv_data(void *phci_cmd_param, uint8_t *rsp);
 uint8_t bt_hci_cmd_ogf_le_ocf_set_periodic_adv_enable(void *phci_cmd_param, uint8_t *rsp);
+uint8_t bt_hci_cmd_ogf_le_ocf_set_periodic_adv_param_v2(void *phci_cmd_param, uint8_t *rsp);
+uint8_t bt_hci_cmd_ogf_le_ocf_set_pa_subevent_data(void *phci_cmd_param, uint8_t *rsp);
 uint8_t bt_hci_cmd_ogf_le_ocf_pa_create_sync(void *phci_cmd_param, uint8_t *rsp);
 uint8_t bt_hci_cmd_ogf_le_ocf_pa_create_sync_cancel(void *phci_cmd_param, uint8_t *rsp);
 uint8_t bt_hci_cmd_ogf_le_ocf_pa_terminate_sync(void *phci_cmd_param, uint8_t *rsp);
@@ -190,6 +192,8 @@ void bt_hci_evt_le_pa_report(uint16_t sync_handle, void *aux_sync_ind,
 							 uint8_t chain_num, void *chain_ind_list);
 
 void bt_hci_evt_le_pa_sync_lost(uint16_t sync_handle);
+bool bt_hci_evt_le_pa_subevent_data_request(uint8_t adv_handle, uint8_t subevent_start, uint8_t subevent_data_count);
+void bt_hci_evt_le_pa_response_report(uint8_t adv_handle, uint8_t subevent, uint8_t tx_status, uint8_t rsp_slot, void *prsp_rx);
 
 void bt_hci_evt_le_past_received(uint8_t status, uint16_t conn_handle, uint16_t service_data,
 								 uint16_t sync_handle, uint8_t sid, uint8_t adv_addr_type, uint8_t *adv_addr,

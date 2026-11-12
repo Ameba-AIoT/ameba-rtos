@@ -200,6 +200,7 @@ extern "C"
 #define RTK_BLE_5_0_SUPPORT                 1
 #define RTK_BLE_5_1_SUPPORT                 1
 #define RTK_BLE_5_2_SUPPORT                 0
+#define RTK_BLE_5_4_SUPPORT                 1
 #define RTK_BLE_SMP_OOB_SUPPORT             1
 #define RTK_BLE_COC_SUPPORT                 0
 #endif /* RTK_BLE_SUPPORT */
@@ -222,6 +223,11 @@ extern "C"
 #define RTK_BLE_5_1_PAST_RECIPIENT_SUPPORT  0
 #define RTK_BLE_5_1_CTE_SUPPORT             0
 #endif /* RTK_BLE_5_1_SUPPORT */
+
+#if defined(RTK_BLE_5_4_SUPPORT) && RTK_BLE_5_4_SUPPORT
+#define RTK_BLE_5_4_PAWR_ADV_SUPPORT       (0 && RTK_BLE_5_0_PA_ADV_SUPPORT)
+#define RTK_BLE_5_4_PAWR_SCAN_SUPPORT      (0 && RTK_BLE_5_0_PA_SYNC_SUPPORT)
+#endif /* RTK_BLE_5_4_SUPPORT */
 
 /*
  * RLE1509

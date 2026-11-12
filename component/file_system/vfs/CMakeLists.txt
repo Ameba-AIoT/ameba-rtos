@@ -48,8 +48,10 @@ ameba_list_append(private_sources
 
 if(CONFIG_VFS_ENABLED)
 ameba_list_append(private_sources
-    vfs_littlefs.c
     vfs.c
+)
+ameba_list_append_if(CONFIG_VFS_LITTLEFS_INCLUDED private_sources
+    vfs_littlefs.c
 )
 
 ameba_list_append_if(CONFIG_FATFS_SD_SPI_MODE private_sources

@@ -595,14 +595,29 @@ typedef struct {
 	uint16_t pa_prop;                 /*!< Periodic_Advertising_Properties, @ref rtk_bt_le_pa_prop_t. */
 	uint8_t *pa_data;                 /*!< Advertising Data. */
 	uint16_t pa_len;                  /*!< Advertising Data Len. */
-#if defined(RTK_BLE_5_4_PA_RSP_SUPPORT) && RTK_BLE_5_4_PA_RSP_SUPPORT
-	uint8_t num_subevents;            /*!< Number of subevents.
-                                       *   If zero, the periodic advertiser will be a broadcaster, without responses. */
-	uint8_t subevent_interval;        /*!< Interval between subevents (N * 1.25 ms), shall be between 7.5ms and 318.75ms. */
-	uint8_t response_slot_delay;      /*!< Time between the advertising packet in a subevent and the first response slot (N * 1.25 ms). */
-	uint8_t response_slot_spacing;    /*!< Time between response slots (N * 0.125 ms), shall be between 0.25 and 31.875ms. */
-	uint8_t num_response_slots;       /*!< Number of subevent response slots.
-                                       *   If zero, response_slot_delay and response_slot_spacing are ignored. */
+#if defined(RTK_BLE_5_4_PAWR_ADV_SUPPORT) && RTK_BLE_5_4_PAWR_ADV_SUPPORT
+	uint8_t num_subevents;            /*!< Number of subevents in each periodic advertising event.
+                                       *   0x00: Periodic advertising without responses, the periodic advertiser will be a broadcaster.
+                                       *   0x01 to 0x80: Number of subevents. */
+	uint8_t subevent_interval;        /*!< Time between consecutive subevents.
+                                       *   Range: 0x06 to 0xFF.
+                                       *   Time = N * 1.25 ms.
+                                       *   Time Range: 7.5 ms to 318.75 ms.
+                                       *   Ignored when num_subevents is 0x00 or 0x01. */
+	uint8_t response_slot_delay;      /*!< Time between the advertising packet in a subevent and the first response slot.
+                                       *   Range: 0x01 to 0xFE.
+                                       *   Time = N * 1.25 ms.
+                                       *   Time Range: 1.25 ms to 317.5 ms.
+                                       *   Ignored when num_subevents is 0x00 or num_response_slots is 0x00. */
+	uint8_t response_slot_spacing;    /*!< Time between consecutive response slots within a subevent.
+                                       *   Range: 0x02 to 0xFF.
+                                       *   Time = N * 0.125 ms.
+                                       *   Time Range: 0.25 ms to 31.875 ms.
+                                       *   Ignored when num_subevents is 0x00 or num_response_slots is 0x00. */
+	uint8_t num_response_slots;       /*!< Number of response slots in each subevent.
+                                       *   Range: 0x00 to 0xFF.
+                                       *   0x00: No response slots, response_slot_delay and response_slot_spacing are ignored.
+                                       *   Ignored when num_subevents is 0x00. */
 #endif
 } rtk_bt_le_pa_param_t;
 
@@ -1211,7 +1226,7 @@ typedef struct {
                                                                     *   Range: 0x0006 to 0xFFFF.
                                                                     *   Time = N * 1.25 ms.
                                                                     *   Time Range: 7.5 ms to 81.91875 s. */
-#if defined(RTK_BLE_5_4_PA_SYNC_RSP_SUPPORT) && RTK_BLE_5_4_PA_SYNC_RSP_SUPPORT
+#if defined(RTK_BLE_5_4_PAWR_SCAN_SUPPORT) && RTK_BLE_5_4_PAWR_SCAN_SUPPORT
 	uint8_t num_subevents;                                         /*!< Number of subevents in each periodic advertising event.
                                                                     *   0x00: Periodic advertising without responses.
                                                                     *   0x01 to 0x80: Number of subevents. */
@@ -1277,7 +1292,7 @@ typedef struct {
 
 /**
  * @struct    rtk_bt_le_gap_pawr_rsp_ind_t
- * @brief     Bluetooth LE periodic adv subevent data request indication msg.
+ * @brief     Bluetooth LE periodic adv subevent response indication msg.
  */
 typedef struct {
 	uint8_t adv_handle;                 /*!< Identify an advertising set, assigned by @ref rtk_bt_le_gap_create_ext_adv. */
@@ -1326,7 +1341,7 @@ typedef struct {
                                          *   0x7F: RSSI is unavailable. */
 	uint8_t cte_type;                   /*!< Constant Tone Extension type present in this packet; see @ref rtk_bt_le_gap_cte_type_t. */
 	uint8_t data_status;                /*!< Data status for this periodic advertising report; see @ref rtk_bt_le_pa_sync_report_data_status_t. */
-#if defined(RTK_BLE_5_4_PA_SYNC_RSP_SUPPORT) && RTK_BLE_5_4_PA_SYNC_RSP_SUPPORT
+#if defined(RTK_BLE_5_4_PAWR_SCAN_SUPPORT) && RTK_BLE_5_4_PAWR_SCAN_SUPPORT
 	uint16_t periodic_event_counter;    /*!< Event counter value of the periodic advertising event in which this subevent indication was received. */
 	uint8_t subevent;                   /*!< Subevent index within the periodic advertising event where this indication was received.
                                          *   Range: 0x00 to 0x7F.
@@ -2581,6 +2596,71 @@ typedef struct {
 } rtk_bt_le_gap_antenna_info_t;
 
 #endif /* RTK_BLE_5_1_CTE_SUPPORT */
+
+#if defined(RTK_BLE_5_4_PAWR_ADV_SUPPORT) && RTK_BLE_5_4_PAWR_ADV_SUPPORT
+/**
+ * @struct    rtk_bt_le_gap_pawr_subevent_element_t
+ * @brief     Bluetooth LE periodic advertising with responses (PAwR) data of one subevent.
+ */
+typedef struct {
+	uint8_t subevent;                   /*!< Index of the subevent to set data for.
+                                         *   Range: 0x00 to 0x7F. */
+	uint8_t response_slot_start;        /*!< Index of the first response slot to listen to.
+                                         *   Range: 0x00 to 0xFF. */
+	uint8_t response_slot_count;        /*!< Number of response slots to listen to.
+                                         *   Range: 0x00 to 0xFF. */
+	uint8_t len;                        /*!< Length of the subevent data to send in bytes.
+                                         *   Range: 0 to 251. */
+	uint8_t *data;                      /*!< Pointer to the subevent data to send. */
+} rtk_bt_le_gap_pawr_subevent_element_t;
+
+/**
+ * @struct    rtk_bt_le_gap_pawr_subevent_data_t
+ * @brief     Bluetooth LE periodic advertising with responses (PAwR) subevent data setting parameter.
+ */
+typedef struct {
+	uint8_t adv_handle;                              /*!< Identify an advertising set, assigned by @ref rtk_bt_le_gap_create_ext_adv. */
+	uint8_t num_subs;                                /*!< Number of subevent data in sub_arr.
+                                                      *   Range: 0x01 to 0x0F. */
+	rtk_bt_le_gap_pawr_subevent_element_t *sub_arr;  /*!< Array of subevent data element. */
+} rtk_bt_le_gap_pawr_subevent_data_t;
+
+#endif /* RTK_BLE_5_4_PAWR_ADV_SUPPORT */
+
+#if defined(RTK_BLE_5_4_PAWR_SCAN_SUPPORT) && RTK_BLE_5_4_PAWR_SCAN_SUPPORT
+/**
+ * @struct    rtk_bt_le_gap_pawr_set_response_t
+ * @brief     Bluetooth LE periodic advertising with responses (PAwR) response data setting parameter.
+ */
+typedef struct {
+	uint8_t sync_id;                    /*!< Identify the synchronization with a periodic advertising train. */
+	uint16_t request_event;             /*!< Periodic event counter of the request the response is sent to. */
+	uint8_t request_subevent;           /*!< Subevent counter of the request the response is sent to.
+                                         *   Range: 0x00 to 0x7F. */
+	uint8_t response_subevent;          /*!< Subevent in which the response shall be sent.
+                                         *   Range: 0x00 to 0x7F. */
+	uint8_t response_slot;              /*!< Response slot in which the response shall be sent.
+                                         *   Range: 0x00 to 0xFF. */
+	uint8_t len;                       /*!< Length of the response data to send in bytes.
+                                         *   Range: 0 to 251. */
+	uint8_t *data;                      /*!< Pointer to the response data to send. */
+} rtk_bt_le_gap_pawr_set_response_t;
+
+/**
+ * @struct    rtk_bt_le_gap_pawr_sync_subevent_t
+ * @brief     Bluetooth LE periodic advertising with responses (PAwR) sync subevent setting parameter.
+ */
+typedef struct {
+	uint8_t sync_id;                    /*!< Identify the synchronization with a periodic advertising train. */
+	uint16_t properties;                /*!< Periodic advertising properties.
+                                         *   bit 6: Include TxPower in the advertising PDU.
+                                         *   Other bits: Reserved for future use. */
+	uint8_t num_subevents;              /*!< Number of subevents to synchronize with.
+                                         *   Range: 0x01 to 0x80. */
+	uint8_t *subevents;                 /*!< Subevent index array to synchronize with.
+                                         *   The first num_subevents elements are used, each in range 0x00 to 0x7F. */
+} rtk_bt_le_gap_pawr_sync_subevent_t;
+#endif /* RTK_BLE_5_4_PAWR_SCAN_SUPPORT */
 
 /**
  * @typedef   rtk_bt_le_dtm_rx_version_t
@@ -3861,6 +3941,41 @@ uint16_t rtk_bt_le_gap_conn_cte_rx_start(uint16_t conn_handle,
  */
 uint16_t rtk_bt_le_gap_conn_cte_rx_stop(uint16_t conn_handle);
 #endif /* RTK_BLE_5_1_CTE_SUPPORT */
+
+#if defined(RTK_BLE_5_4_PAWR_ADV_SUPPORT) && RTK_BLE_5_4_PAWR_ADV_SUPPORT
+/**
+ * @brief     Set the data of one or more subevents of a Periodic Advertising with Responses (PAwR) train, and select the response slots
+ *            to listen to in each subevent. Used by the PAwR advertiser, normally in reply to the data request event
+ *            @ref RTK_BT_LE_GAP_EVT_PAWR_DATA_REQ_IND. Responses from synchronized devices are reported via event
+ *            @ref RTK_BT_LE_GAP_EVT_PAWR_RSP_IND.
+ * @param[in] param: Pointer to the subevent data parameters, see @ref rtk_bt_le_gap_pawr_subevent_data_t.
+ *                   Must not be NULL.
+ * @return
+ *            - @ref rtk_bt_err_common
+ */
+uint16_t rtk_bt_le_gap_pawr_set_subevent_data(rtk_bt_le_gap_pawr_subevent_data_t *param);
+#endif /* RTK_BLE_5_4_PAWR_ADV_SUPPORT */
+
+#if defined(RTK_BLE_5_4_PAWR_SCAN_SUPPORT) && RTK_BLE_5_4_PAWR_SCAN_SUPPORT
+/**
+ * @brief     Set the response data to send in a response slot of a subevent of a Periodic Advertising with Responses (PAwR) train.
+ *            Used by the synchronized device (PAwR scanner).
+ * @param[in] param: Pointer to the response data parameters, see @ref rtk_bt_le_gap_pawr_set_response_t.
+ *                   Must not be NULL.
+ * @return
+ *            - @ref rtk_bt_err_common
+ */
+uint16_t rtk_bt_le_gap_pawr_set_response_data(rtk_bt_le_gap_pawr_set_response_t *param);
+
+/**
+ * @brief     Synchronize with a subset of subevents of a Periodic Advertising with Responses (PAwR) train.
+ * @param[in] param: Pointer to the subevent selection parameters, see @ref rtk_bt_le_gap_pawr_sync_subevent_t.
+ *                   Must not be NULL.
+ * @return
+ *            - @ref rtk_bt_err_common
+ */
+uint16_t rtk_bt_le_gap_pawr_sync_subevent(rtk_bt_le_gap_pawr_sync_subevent_t *param);
+#endif /* RTK_BLE_5_4_PAWR_SCAN_SUPPORT */
 
 #if defined(RTK_BLE_COC_SUPPORT) && RTK_BLE_COC_SUPPORT
 /**

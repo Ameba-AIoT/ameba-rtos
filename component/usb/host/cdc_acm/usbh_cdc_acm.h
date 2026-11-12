@@ -102,7 +102,8 @@ typedef struct {
 /**
  * @brief Configuration for the CDC ACM host class.
  * @details Carries every CDC ACM host option: the initial line coding and control line state
- *          the driver applies to the attached device, plus the optional 4G-dongle
+ *          the driver applies to every attached device during setup, before the setup callback,
+ *          plus the optional 4G-dongle
  *          identification table. Host-global parameters (speed,
  *          FIFO depths, main task stack and priority, ISR priority) live in
  *          @ref usbh_config_t instead, and application-level options such as hotplug or
@@ -117,7 +118,12 @@ typedef struct {
 	 *          `CONFIG_USBH_CDC_ACM_4G_DONGLE` is enabled.
 	 */
 	const usbh_cdc_acm_param_t *dongle_param;
-	u32 dte_rate;           /**< dwDteRate, 0 uses @ref USBH_CDC_ACM_DEFAULT_DTE_RATE (Ref PSTN 1.2 6.3.11). */
+	/**
+	 * @brief dwDteRate sent with data_bits/char_format/parity_type in SET_LINE_CODING (Ref PSTN 1.2 6.3.10).
+	 * @details 0 sends no SET_LINE_CODING to a standard CDC ACM device, which keeps the line coding
+	 *          it runs with. A 4G dongle always gets one, with @ref USBH_CDC_ACM_DEFAULT_DTE_RATE for 0.
+	 */
+	u32 dte_rate;
 	u8  data_bits;          /**< bDataBits, 0 uses @ref USBH_CDC_ACM_DEFAULT_DATA_BITS. */
 	/**
 	 * @brief bCharFormat, one of the `LINE_CODING_CHAR_FORMAT_*` values.
@@ -132,7 +138,8 @@ typedef struct {
 	u8  parity_type;
 	/**
 	 * @brief Initial SET_CONTROL_LINE_STATE bitmap: D0 = DTR, D1 = RTS (Ref PSTN 1.2 6.3.12).
-	 * @details 0 is a valid state (both lines deasserted), so it is used as given.
+	 * @details 0 sends no SET_CONTROL_LINE_STATE: both lines deasserted is the state a device
+	 *          starts in.
 	 */
 	u8  ctrl_line_state;
 } usbh_cdc_acm_config_t;
@@ -166,6 +173,8 @@ typedef struct {
 
 	/**
 	 * @brief Called to handle class-specific SETUP requests completion.
+	 * @details By then the configured line coding and control line state have been sent, see
+	 *          @ref usbh_cdc_acm_config_t, and the device line coding has been read back.
 	 */
 	void (*setup)(void);
 
@@ -232,8 +241,8 @@ typedef struct {
 	const usbh_cdc_acm_param_t *param_item;     /**< Matched 4G dongle param entry for the attached device. */
 	u8 data_itf_num;                          /**< Data interface number for SET_INTERFACE. */
 	u8 data_itf_alt;                            /**< Data interface alternate setting carrying BULK endpoints. */
-	u8 sub_status;                              /**< 4G control-setting sub-state. */
 #endif
+	u8 sub_status;                              /**< setup() control sub-state. */
 } usbh_cdc_acm_host_t;
 
 /** @} End of Host_CDC_ACM_Types group */

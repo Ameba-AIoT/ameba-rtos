@@ -12,6 +12,7 @@ static rtos_sema_t xTxSemaphore = NULL;
 static rtos_sema_t xRxSemaphore = NULL;
 static rtos_mutex_t device_lock = NULL;
 static spi_t spi_master;
+static u8 second_flash_inited = 0;
 
 flash_model_t current_flash_model = {0};
 
@@ -441,6 +442,9 @@ void second_flash_get_id(void)
 
 void second_flash_spi_init(void)
 {
+	if (second_flash_inited) {
+		return;
+	}
 	spi_master.spi_idx = MBED_SPI0;
 	RTK_LOGI(TAG, "%s, spi idx: %X, freq: %d Hz\n", __func__, spi_master.spi_idx & 0x01, SCLK_FREQ);
 	spi_init(&spi_master, SPI0_MOSI, SPI0_MISO, SPI0_SCLK, SPI0_CS);
@@ -459,11 +463,22 @@ void second_flash_spi_init(void)
 	}
 
 	spi_flush_rx_fifo(&spi_master);
+	second_flash_inited = 1;
 }
 
 void second_flash_spi_free(void)
 {
+	if (!second_flash_inited) {
+		return;
+	}
 	spi_free(&spi_master);
+	rtos_sema_delete(xRxSemaphore);
+	rtos_sema_delete(xTxSemaphore);
+	rtos_mutex_delete(device_lock);
+	xRxSemaphore = NULL;
+	xTxSemaphore = NULL;
+	device_lock = NULL;
+	second_flash_inited = 0;
 }
 
 void second_flash_flush_rx_fifo(void)

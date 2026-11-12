@@ -84,7 +84,7 @@ const IPC_INIT_TABLE ipc_flashpg_table[] = {
 	}
 };
 
-#ifdef CONFIG_SOLO
+#ifdef CONFIG_IOT_MCU_COMBINED
 /* SOLO: KM55NS also writes/erases flash directly (iot OTA). As the writer it must
  * keep KM55TZ off the flash bus while KM55NS drives the SPIC in user mode, so
  * KM55NS needs the sender side (NP->AP).
@@ -134,7 +134,7 @@ static void Flash_Write_Lock_IPC(u8 sync_type)
 #endif
 #else
 /* CONFIG_ARM_CORE_CM4_KM4TZ */
-#ifdef CONFIG_SOLO
+#ifdef CONFIG_IOT_MCU_COMBINED
 /* SOLO: SRAM is isolation so put it into share sram. */
 SOLO_SHARE_SECTION
 ALIGNMTO(CACHE_LINE_SIZE) static u8 Flash_Sync_Flag[CACHE_LINE_SIZE];
@@ -165,7 +165,7 @@ static void Flash_Write_Lock_IPC(u8 sync_type)
 // #endif
 }
 
-#ifdef CONFIG_SOLO
+#ifdef CONFIG_IOT_MCU_COMBINED
 /* SOLO: KM55NS writes/erases flash directly (iot OTA). As the peer, KM55TZ must
  * PARK off the flash bus for the whole KM55NS user-mode window, otherwise its XIP
  * fetches return garbage (KM55NS is not the SPIC owner -> no HW stall for KM55TZ).
@@ -284,7 +284,7 @@ void FLASH_Write_Lock(void)
 #ifdef CONFIG_ARM_CORE_CM4_KM4TZ
 	/* Sent IPC to KM55NS */
 	Flash_Write_Lock_IPC(WRITE_SYNC_LOCK);
-#elif defined(CONFIG_ARM_CORE_CM4_KM4NS) && defined(CONFIG_SOLO)
+#elif defined(CONFIG_ARM_CORE_CM4_KM4NS) && defined(CONFIG_IOT_MCU_COMBINED)
 	/* SOLO: KM55NS writes flash directly, pause KM55TZ XIP */
 	Flash_Write_Lock_IPC(WRITE_SYNC_LOCK);
 #endif
@@ -302,7 +302,7 @@ void FLASH_Write_Unlock(void)
 #ifdef CONFIG_ARM_CORE_CM4_KM4TZ
 	/* Sent IPC to KM55NS */
 	Flash_Write_Lock_IPC(WRITE_SYNC_UNLOCK);
-#elif defined(CONFIG_ARM_CORE_CM4_KM4NS) && defined(CONFIG_SOLO)
+#elif defined(CONFIG_ARM_CORE_CM4_KM4NS) && defined(CONFIG_IOT_MCU_COMBINED)
 	/* SOLO: KM55NS writes flash directly, resume KM55TZ XIP */
 	Flash_Write_Lock_IPC(WRITE_SYNC_UNLOCK);
 #endif

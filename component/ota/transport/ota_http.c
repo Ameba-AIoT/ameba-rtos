@@ -281,6 +281,11 @@ static int ota_http_connect_server(ota_context_t *ctx)
 		return OTA_ERR;
 	}
 
+	struct timeval timeout = {OTA_RECV_TIMEOUT_SEC, 0};
+	if (setsockopt(ctx->fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) != 0) {
+		RTK_LOGW(OTA_TAG, "[HTTP] Set receive timeout failed\n");
+	}
+
 	RTK_LOGI(OTA_TAG, "[HTTP] Connect success!\n");
 
 	if (ctx->type == OTA_HTTPS) {

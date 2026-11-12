@@ -32,8 +32,14 @@ rsource "../../../soc/common/image3/Kconfig.trustzone"
 rsource "../../../soc/Kconfig"
 
 menu "CONFIG Chip Arch"
-    config SOLO
-        bool "Enable SOLO mode"
+    config IOT_MCU_COMBINED
+        bool "Enable IoT and MCU combined mode"
+        help
+            KM55TZ is reserved for user MCU application development.
+            Wi-Fi, BT and the network protocol stack run on KM55NS.
+            The bootloader isolates the two cores; edit the isolation user config in usrcfg to choose
+            the memory regions and peripherals each core may access.
+            Each core has its own application image with independent OTA slots.
 endmenu
 
 
@@ -46,6 +52,27 @@ endmenu
 menu "CONFIG Memory Arch"
     config SECOND_FLASH_NOR
         bool "Second flash NOR"
+        depends on NOR_FLASH_NEW_STRATEGY
+        help
+            The second flash is driven by the new NOR flash driver only.
+
+    config NOR_FLASH_NEW_STRATEGY
+        bool "New NOR flash driver"
+        default n
+        help
+            Use the table-driven NOR flash driver, which identifies the flash chip by
+            its ID and applies the matching read mode, dummy cycles and CS timing.
+            Disabled: use the original driver.
+
+            Note: unlike the original driver, it does not clear the flash block
+            protection bits at boot.
+
+    config NOR_FLASH_DTR
+        bool
+        depends on NOR_FLASH_NEW_STRATEGY
+        default n
+        help
+            Not supported on this chip.
 endmenu
 
 menu "CONFIG Link Option"
@@ -153,24 +180,24 @@ menu "CONFIG WHC INTF"
         prompt "WHC MODE"
         # SOLO: km55ns is the network core running the full single-core wifi stack
         # (WHC_NONE), km55tz is the minimal MCU core; so default to SINGLE CORE.
-        default WIFI_SINGLE_CORE_MENU if SOLO
+        default WIFI_SINGLE_CORE_MENU if IOT_MCU_COMBINED
         default WHC_INTF_IPC_MENU
             config WHC_INTF_IPC_MENU
                 select WHC_INTF_IPC
                 bool "WHC_IPC"
-                depends on !SOLO
+                depends on !IOT_MCU_COMBINED
             config WIFI_SINGLE_CORE_MENU
                 bool "SINGLE CORE"
             config WHC_DEV_MENU
                 bool "WHC_DEV"
                 select WIFI_HOST_CONTROL
                 select WHC_DEV_FOR_KM55TZ
-                depends on !SOLO
+                depends on !IOT_MCU_COMBINED
             config WHC_HOST_MENU
                 bool "WHC_HOST"
                 select WHC_HOST_IMPL
                 select WHC_HOST_FOR_KM55TZ
-                depends on !SOLO
+                depends on !IOT_MCU_COMBINED
     endchoice
 
     if !WHC_INTF_IPC_MENU && !WIFI_SINGLE_CORE_MENU
@@ -261,11 +288,11 @@ menu "CONFIG WHC INTF"
         choice
             prompt "WHC Host Location"
             # SOLO single-core: put the wifi stack on km55ns (selects WHC_NONE_FOR_KM55NS).
-            default WHC_HOST_LOC_KM55NS_MENU if SOLO
+            default WHC_HOST_LOC_KM55NS_MENU if IOT_MCU_COMBINED
             default WHC_HOST_LOC_KM55TZ_MENU
             config WHC_HOST_LOC_KM55TZ_MENU
                 bool "KM55TZ"
-                depends on !SOLO
+                depends on !IOT_MCU_COMBINED
                 select WHC_HOST_FOR_KM55TZ if WHC_INTF_IPC_MENU
                 select WHC_DEV_FOR_KM55NS if WHC_INTF_IPC_MENU
                 select WHC_NONE_FOR_KM55TZ if WIFI_SINGLE_CORE_MENU

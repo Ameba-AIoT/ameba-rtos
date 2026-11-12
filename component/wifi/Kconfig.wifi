@@ -62,6 +62,11 @@ if RMESH_EN
         bool "Enable R-NAT"
         default n
 
+    config RNAT_AUTOSEL_EN
+        bool "Enable R-NAT auto selection"
+        depends on RNAT_EN
+        default n
+
     config RMESH_SOCKET_EN
         bool "Enable R-mesh Socket"
         default n
@@ -72,7 +77,7 @@ if RMESH_SOCKET_EN
         default n
 endif
 
-if !RNAT_EN
+if !RNAT_EN || RNAT_AUTOSEL_EN
     config WIFI_RMESH_MAX_REFUGEE_NUM
         int "Rmesh maximum refugee number"
         depends on AMEBAGREEN2 || AMEBADPLUS || RTL8720F

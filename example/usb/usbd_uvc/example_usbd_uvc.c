@@ -271,7 +271,7 @@ int example_usbd_uvc_stop(void)
 	/* The video thread may wait in usbd_uvc_wait_frame_down() for a frame the host no longer
 	   pulls: wake it while the semaphore still exists. The count left behind when it is not
 	   waiting there makes its next wait return at once, it then observes quit and leaves. */
-	usb_os_sema_give(get_private_usbd_uvcd()->video.output_frame_sema);
+	rtos_sema_give(get_private_usbd_uvcd()->video.output_frame_sema);
 	if (usb_app_ctx_join(&uvc_app, 1U) != RTK_SUCCESS) {
 		/* The video thread is still on the stack: keep everything, the app stays STOPPING */
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Stop timeout\n");

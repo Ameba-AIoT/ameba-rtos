@@ -112,7 +112,7 @@ static const usbd_dfu_config_t dfu_class_cfg = {
 
 static int dfu_cb_init(void)
 {
-	usb_os_memset((void *)dfu_demo_fw_buf, 0, USBD_DFU_DEMO_BUF_SIZE);
+	memset((void *)dfu_demo_fw_buf, 0, USBD_DFU_DEMO_BUF_SIZE);
 	dfu_demo_fw_len = 0U;
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Init\n");
 	return RTK_SUCCESS;
@@ -136,7 +136,7 @@ static int dfu_cb_write(u16 block_num, u8 *buf, u32 len)
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Write out of range: blk=%u len=%u\n", block_num, len);
 		return -RTK_ERR_BADARG;
 	}
-	usb_os_memcpy((void *)(dfu_demo_fw_buf + offset), (const void *)buf, len);
+	memcpy((void *)(dfu_demo_fw_buf + offset), (const void *)buf, len);
 	end = offset + len;
 	if (end > dfu_demo_fw_len) {
 		dfu_demo_fw_len = end;
@@ -165,7 +165,7 @@ static int dfu_cb_read(u16 block_num, u8 *buf, u32 max_len)
 	if (remaining > max_len) {
 		remaining = max_len;
 	}
-	usb_os_memcpy((void *)buf, (const void *)(dfu_demo_fw_buf + offset), remaining);
+	memcpy((void *)buf, (const void *)(dfu_demo_fw_buf + offset), remaining);
 	return (int)remaining;
 }
 

@@ -7,7 +7,7 @@
 #include "platform_autoconf.h"
 #include "kv.h"
 
-#ifdef CONFIG_VFS_ENABLED
+#if defined(CONFIG_VFS_ENABLED) && defined(CONFIG_VFS1_LITTLEFS)
 #include "vfs.h"
 #ifdef CONFIG_VFS_FATFS_INCLUDED
 #include "ff.h"
@@ -33,7 +33,7 @@ int vfs_kv_init(void)
 		goto exit;
 	}
 
-	prefix = find_vfs_tag(VFS_REGION_1);
+	prefix = vfs_get_prefix(VFS_TARGET_FLASH_VFS1);
 	if (prefix == NULL) {
 		goto exit;
 	}
@@ -431,7 +431,7 @@ exit:
 	return ret;
 }
 
-#else /* !CONFIG_VFS_ENABLED: VFS disabled in menuconfig, every KV op fails */
+#else /* No LittleFS on VFS1: VFS disabled in menuconfig, every KV op fails */
 
 /* atcmd_service.c checks this directly; keep it "not initialized" */
 int kv_init_done = -1;
@@ -504,4 +504,4 @@ int rt_kv_list(char *buf, int32_t len)
 	return -1;
 }
 
-#endif /* CONFIG_VFS_ENABLED */
+#endif /* CONFIG_VFS_ENABLED && CONFIG_VFS1_LITTLEFS */

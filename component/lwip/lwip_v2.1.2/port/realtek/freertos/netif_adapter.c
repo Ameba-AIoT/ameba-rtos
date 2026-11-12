@@ -50,10 +50,6 @@
 #include <wifi_intf_drv_to_lwip.h>
 #endif
 
-#if defined(CONFIG_INIC_HOST) && CONFIG_INIC_HOST
-#include "freertos/inic_intf.h"
-#endif
-
 #if defined(CONFIG_WHC_HOST)
 #if defined(CONFIG_WHC_INTF_SPI)
 #include "whc_spi_host_trx.h"
@@ -70,28 +66,22 @@
 extern unsigned char get_bridge_portnum(void);
 #endif
 
-static const char *const TAG = "NETIF_ADAPT";
-#define NETIF_ADAPT_DEBUG		(0)
+static const char *const TAG = "NETIF-ADP";
+
+#define NETIF_ADAPT_DEBUG		0
 #define NETIF_ADAPT_LOG(format, ...) do {               \
-        if ( NETIF_ADAPT_DEBUG ) DiagPrintf(format, ##__VA_ARGS__); \
-    } while(0);
+        if (NETIF_ADAPT_DEBUG) RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, format, ##__VA_ARGS__); \
+    } while (0)
 
 #if (defined(CONFIG_LWIP_USB_ETHERNET) || defined(CONFIG_LWIP_ETHERNET))
 #define MAX_BUFFER_SIZE		(1536)
-#define DST_MAC_LEN			(6)
-#define SRC_MAC_LEN			(6)
-#define PROTO_TYPE_LEN		(2)  // protocol type
-#define IP_LEN_OFFSET		(2)  // offset of total length field in IP packet
 #endif
 
 #if defined(CONFIG_LWIP_ETHERNET)
-extern struct netif *pnetif_eth;
 extern int eth_send(struct pbuf * p);
 #endif
 
 #if defined(CONFIG_LWIP_USB_ETHERNET)
-extern struct netif *pnetif_usb_eth;
-
 static rtos_mutex_t usb_eth_tx_mutex;
 static u8 TX_BUFFER[MAX_BUFFER_SIZE] __attribute__((aligned(CACHE_LINE_SIZE)));
 static u8 RX_BUFFER[MAX_BUFFER_SIZE];
@@ -162,9 +152,7 @@ static err_t low_level_output_wifi(struct netif *netif, struct pbuf *p)
 	struct eth_hdr *ethhdr = NULL;
 	u8 is_special_pkt = 0;
 	u8 *addr = (u8 *)p->payload;
-#if defined(CONFIG_WHC_HOST)
 	int ret = 0;
-#endif
 
 #if CONFIG_WLAN
 #ifndef CONFIG_WHC_HOST
@@ -195,28 +183,18 @@ static err_t low_level_output_wifi(struct netif *netif, struct pbuf *p)
 #if CONFIG_WLAN
 #if defined(CONFIG_WHC_HOST)
 		ret = whc_host_send(lwip_netif_get_idx(netif), sg_list, sg_len, p->tot_len, NULL, is_special_pkt);
-		if (ret == ERR_IF) {
-			return ret;
+		if (ret == -RTK_ERR_WIFI_NOT_INIT) {
+			return ERR_IF;
 		}
-		if (ret == 0)
 #else
-		if (rltk_wlan_send(lwip_netif_get_idx(netif), sg_list, sg_len, p->tot_len, is_special_pkt) == 0)
+		ret = wifi_netif_send(lwip_netif_get_idx(netif), sg_list, sg_len, p->tot_len, is_special_pkt);
 #endif
-#elif CONFIG_INIC_HOST
-		if (rltk_inic_send(sg_list, sg_len, p->tot_len) == 0)
-#else
-		if (1)
 #endif
-		{
-			NETIF_ADAPT_LOG("%s[%d] ok\n", __func__, __LINE__);
-			return ERR_OK;
-		}
-		else {
-			NETIF_ADAPT_LOG("%s[%d] fail\n", __func__, __LINE__);
+		if (ret != 0) {
+			NETIF_ADAPT_LOG("%s tx fail\n", __func__);
 			return ERR_BUF;    // return a non-fatal error
 		}
 	}
-	NETIF_ADAPT_LOG("%s[%d] ok\n", __func__, __LINE__);
 	return ERR_OK;
 }
 
@@ -225,7 +203,6 @@ static err_t low_level_output_wifi(struct netif *netif, struct pbuf *p)
 static err_t low_level_output_eth(struct netif *netif, struct pbuf *p)
 {
 	UNUSED(netif);
-	NETIF_ADAPT_LOG("%s %d \n", __func__, __LINE__);
 
 	if (p->tot_len) {
 		if (eth_send(p) != 0) {
@@ -247,8 +224,6 @@ static err_t low_level_output_usb_eth(struct netif *netif, struct pbuf *p)
 	u32 size = 0;
 	int ret = 0;
 
-	NETIF_ADAPT_LOG("%s %d \n", __func__, __LINE__);
-
 	memset(TX_BUFFER, 0, MAX_BUFFER_SIZE);
 	for (q = p; q != NULL; q = q->next) {
 		memcpy((unsigned int *)pdata, (unsigned int *) q->payload, q->len);
@@ -261,7 +236,7 @@ static err_t low_level_output_usb_eth(struct netif *netif, struct pbuf *p)
 	rtos_mutex_give(usb_eth_tx_mutex);
 
 	if (ret != 0) {
-		NETIF_ADAPT_LOG("%s error = %d\n", __func__, ret);
+		NETIF_ADAPT_LOG("%s err %d\n", __func__, ret);
 		return ERR_BUF;    // return a non-fatal error
 	}
 
@@ -283,7 +258,7 @@ void rltk_usb_eth_deinit(void)
 	}
 }
 
-void rltk_usb_eth_recv(struct eth_drv_sg *sg_list, int sg_len)
+static void rltk_usb_eth_recv(struct eth_drv_sg *sg_list, int sg_len)
 {
 	struct eth_drv_sg *last_sg;
 	u8 *pbuf = RX_BUFFER;
@@ -296,7 +271,7 @@ void rltk_usb_eth_recv(struct eth_drv_sg *sg_list, int sg_len)
 	}
 }
 
-u8 rltk_usb_eth_recv_data_check(u8 *mac)
+static u8 rltk_usb_eth_recv_data_check(u8 *mac)
 {
 	UNUSED(mac);
 	u8 check_res = TRUE;
@@ -324,7 +299,7 @@ struct pbuf * netif_adapter_eth_buf_copy(u32 frame_len, u8 *src_buf)
 	int sg_len = 0;
 
 	if (frame_len > MAX_BUFFER_SIZE) {
-		RTK_LOGS(TAG, RTK_LOG_ALWAYS, "recv data len error, len=%d\n", frame_len);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "%s rx len err %d\n", __func__, frame_len);
 		return NULL;
 	}
 
@@ -333,7 +308,7 @@ struct pbuf * netif_adapter_eth_buf_copy(u32 frame_len, u8 *src_buf)
 	 * then strip them. The IP header then sits at payload + 14 = 16, word aligned too. */
 	p = pbuf_alloc(PBUF_RAW, frame_len + 2, PBUF_POOL);
 	if (p == NULL) {
-		RTK_LOGS(TAG, RTK_LOG_WARN, "\n\r[%s]Cannot allocate pbuf to receive packet(%d)\n", __func__, frame_len);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "%s pbuf alloc failed, len=%d\n", __func__, frame_len);
 		return NULL;
 	}
 
@@ -393,7 +368,7 @@ void netif_adapter_wifi_recv(uint8_t idx, int total_len)
 	// Allocate buffer to store received packet
 	p = pbuf_alloc(PBUF_RAW, total_len, PBUF_POOL);
 	if (p == NULL) {
-		RTK_LOGW(TAG, "\n\r[%s]Cannot allocate pbuf to receive packet(%d)\n", __func__, total_len);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "%s pbuf alloc failed, len=%d\n", __func__, total_len);
 		return;
 	}
 
@@ -407,11 +382,8 @@ void netif_adapter_wifi_recv(uint8_t idx, int total_len)
 	}
 
 	// Copy received packet to scatter list from wrapper rx skb
-	//RTK_LOGW(TAG, "\n\rwlan:%c: Recv sg_len: %d, tot_len:%d", netif->name[1],sg_len, total_len);
 #if CONFIG_WLAN
-	rltk_wlan_recv(idx, sg_list, sg_len);
-#elif CONFIG_INIC_HOST
-	rltk_inic_recv(sg_list, sg_len);
+	wifi_netif_recv(idx, sg_list, sg_len);
 #endif
 	// Pass received packet to the interface
 	if (ERR_OK != netif->input(p, netif)) {
@@ -447,35 +419,25 @@ void netif_adapter_usb_eth_recv(u8 *buf, u32 frame_len)
 	struct netif *netif = pnetif_usb_eth;
 	u8 *macstr = (u8 *)(netif->hwaddr);
 
-	if (frame_len > MAX_BUFFER_SIZE) {
-		RTK_LOGS(TAG, RTK_LOG_ALWAYS, "recv data len is %d\n", frame_len);
-		return;
-	}
-
-	if(0 == frame_len) {
-		RTK_LOGS(TAG, RTK_LOG_ALWAYS, "recv data len is 0\n");
+	if (frame_len == 0 || frame_len > MAX_BUFFER_SIZE) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "%s rx len err %d\n", __func__, frame_len);
 		return;
 	}
 	total_len = frame_len;
 	memcpy((u8*)RX_BUFFER, buf, frame_len);
 
 	if (FALSE == rltk_usb_eth_recv_data_check(macstr)) {
-		NETIF_ADAPT_LOG("rltk_usb_eth_recv_data_check fail\n");
-		for(u32 i = 0; i < total_len; i++)
-		{
-			NETIF_ADAPT_LOG("%02x ", *((u8*)RX_BUFFER + i));
-		}
-		NETIF_ADAPT_LOG("\n");
+		NETIF_ADAPT_LOG("%s drop, dst mac mismatch\n", __func__);
+#if NETIF_ADAPT_DEBUG
+		rtk_log_memory_dump_byte(RX_BUFFER, total_len > 64 ? 64 : total_len);
+#endif
 		return;
 	}
-
-
-	NETIF_ADAPT_LOG("%s %d rltk_usb_eth_recv_data_check ok\n", __func__, __LINE__);
 
 	// Allocate buffer to store received packet
 	p = pbuf_alloc(PBUF_RAW, total_len, PBUF_POOL);
 	if (p == NULL) {
-		RTK_LOGW(TAG, "\n\r[%s]Cannot allocate pbuf to receive packet(%d)\n", __func__, total_len);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "%s pbuf alloc failed, len=%d\n", __func__, total_len);
 		return;
 	}
 

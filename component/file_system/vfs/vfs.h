@@ -45,33 +45,31 @@ extern "C" {
 #define VFS_REALFS	0x02
 #define VFS_FS_MAX	0x03
 
-/*vfs_interface_type*/
-#define VFS_INF_FLASH			0x00
-#define VFS_INF_SECOND_FLASH	0x01
-#define VFS_INF_SD				0x02
-#define VFS_INF_SD_SPI			0x03
-#define VFS_INF_USBH				0x04
-#define VFS_INF_RAM				0x05	//volatile RAM disk, medium (SRAM/PSRAM) chosen by Kconfig
+/* One physical volume; its file system is selected in Kconfig. */
+#define VFS_TARGET_FLASH_VFS1		0x00
+#define VFS_TARGET_FLASH_VFS2		0x01
+#define VFS_TARGET_FLASH_APP_FATFS	0x02
+#define VFS_TARGET_FLASH_APP_LFS		0x03
+#define VFS_TARGET_SECOND_FLASH		0x04
+#define VFS_TARGET_SD				0x05
+#define VFS_TARGET_SD_SPI			0x06
+#define VFS_TARGET_USBH				0x07
+#define VFS_TARGET_RAM				0x08
+#define VFS_TARGET_MAX				0x09
 
 /*vfs read-write permission when initializing*/
 #define VFS_RW 0x00
 #define VFS_RO 0x01
 
-#define VFS_REGION_1	0x00	//flash layout vfs1 region
-#define VFS_REGION_2	0x01	//flash layout vfs2 region
-#define VFS_REGION_3	0x02	//fatfs with app image region
-#define VFS_REGION_4	0x03	//second flash , SD card or SPI-compatible SD NAND
 #if defined(CONFIG_LITTLEFS_WITHIN_APP_IMG)
-#define VFS_REGION_ROLFS	0x04	//read-only littlefs blob embedded within app image
-#define VFS_USER_REGION_BASE 0x05
+#define VFS_USER_BASE 5
 #else
-#define VFS_USER_REGION_BASE 0x04
+#define VFS_USER_BASE 4
 #endif
-#define VFS_REGION_RAM	0x05	//RAM disk (label only, no flash address)
 #if defined(CONFIG_VFS_RAM)
-#define VFS_USER_REGION_MAX (VFS_USER_REGION_BASE + 1)	//number of supported file system regions
+#define VFS_USER_MAX (VFS_USER_BASE + 1)
 #else
-#define VFS_USER_REGION_MAX VFS_USER_REGION_BASE		//number of supported file system regions
+#define VFS_USER_MAX VFS_USER_BASE
 #endif
 
 /* related to op_prepend_header.py */
@@ -88,6 +86,7 @@ extern "C" {
 #endif
 
 #define VFS_PREFIX "vfs"
+#define VFS2_PREFIX "vfs2"
 #define VFS_R3_PREFIX "fat1"
 #if defined(CONFIG_LITTLEFS_WITHIN_APP_IMG)
 #define VFS_ROLFS_PREFIX "rolfs"
@@ -183,9 +182,9 @@ typedef struct {
 	int (*mkdir)(void *fs, const char *pathname);
 	int (*access)(void *fs, const char *pathname, int mode);
 	int (*stat)(void *fs, char *path, struct stat *buf);
-	int (*mount)(int interface);
-	int (*unmount)(int interface);
-	int (*get_interface)(int interface);
+	int (*mount)(int target);
+	int (*unmount)(int target);
+	int (*get_interface)(int target);
 	const char	*TAG;
 	unsigned char drv_num;
 	int vfs_type;
@@ -197,9 +196,8 @@ typedef int (*vfs_dec_callback_t)(unsigned char *input, unsigned char *output, u
 typedef struct {
 	int vfs_type;
 	int vfs_type_id;		//used to match vfs.drv index
-	int vfs_interface_type;
 	char vfs_ro_flag;		//0:rw; 1: read only
-	char vfs_region;
+	char vfs_target;
 	const char *tag;
 	vfs_enc_callback_t vfs_enc_callback;
 	vfs_dec_callback_t vfs_dec_callback;
@@ -211,7 +209,7 @@ typedef struct {
 	unsigned int drv_num;
 	unsigned int user_num;
 	const vfs_opt *drv[VFS_FS_MAX];
-	user_config user[VFS_USER_REGION_MAX];
+	user_config user[VFS_USER_MAX];
 } vfs_drv;
 
 extern vfs_drv vfs;
@@ -228,14 +226,14 @@ extern volatile uint8_t fatfs_mount_flag;
 extern volatile uint8_t fatfs2_mount_flag;
 #if defined(CONFIG_VFS_RAM)
 extern volatile uint8_t ram_mount_flag;
-/* which file systems can be mounted on VFS_INF_RAM in this build */
-#if defined(CONFIG_VFS_LITTLEFS_INCLUDED)
+/* RAM target's selected file system. */
+#if defined(CONFIG_VFS_RAM_LITTLEFS)
 #define VFS_RAM_LITTLEFS	1
 #endif
-#if defined(CONFIG_VFS_FATFS_INCLUDED) && !defined(CONFIG_FATFS_READ_ONLY)
+#if defined(CONFIG_VFS_RAM_FATFS) && !defined(CONFIG_FATFS_READ_ONLY)
 #define VFS_RAM_FATFS		1
 #endif
-#if defined(CONFIG_REALFS_RAM)
+#if defined(CONFIG_VFS_RAM_REALFS)
 #define VFS_RAM_REALFS		1
 #endif
 #endif
@@ -245,14 +243,15 @@ extern u32 vfs_nand_flash_pagenum;
 
 void vfs_init(void);
 void vfs_deinit(void);
-int vfs_user_register(const char *prefix, int vfs_type, int interface, char region, char flag);
-int vfs_user_unregister(const char *prefix, int vfs_type, int interface);
+/* Task context only. FS type is taken from Kconfig; prefix must outlive the registration. */
+int vfs_target_register(const char *prefix, int target, char flag);
+int vfs_target_unregister(const char *prefix);
+char *vfs_get_prefix(int target);
+int vfs_auto_register(void);
 int vfs_scan_vfs(int vfs_type);
 int vfs_register(const vfs_opt *drv);
 int find_vfs_number(const char *name, int *prefix_len, int *user_id);
 int vfs_user_mount(const char *prefix);
-char *find_vfs_tag(char region);
-int vfs_check_mount_flag(int vfs_type, int vfs_interface_type, char region, char *operation);
 void vfs_build_filename(int vfs_id, int user_id, const char *filename, int prefix_len, char *out_name, size_t out_size);
 
 void *opendir(const char *name);

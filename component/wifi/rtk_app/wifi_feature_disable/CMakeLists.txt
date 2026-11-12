@@ -71,6 +71,9 @@ endif()
 
 ameba_list_append(private_sources wifi_feature_dis_wtn.c)
 
+ameba_list_append_ifnot(CONFIG_RNAT_AUTOSEL_EN private_sources
+    wifi_feature_dis_wtn_rnat.c)
+
 if(CONFIG_WHC_DEV AND CONFIG_WHC_INTF_IPC)
     if(NOT CONFIG_AMEBALITE)
         if(NOT CONFIG_PLATFORM_ZEPHYR)

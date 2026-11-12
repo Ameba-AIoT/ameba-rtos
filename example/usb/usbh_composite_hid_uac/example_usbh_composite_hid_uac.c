@@ -32,7 +32,11 @@
  */
 #define CONFIG_USBH_COMP_HID_UAC_HOTPLUG              1
 
-#define CONFIG_USBH_COMP_HID_UAC_VOLUME_STEP                20
+#define CONFIG_USBH_COMP_HID_UAC_VOLUME_STEP                20U
+/* usbh_composite_vol_change() modes */
+#define USBH_COMP_VOL_UP                                    0U
+#define USBH_COMP_VOL_DOWN                                  1U
+#define USBH_COMP_VOL_SET                                   2U
 /* Volume in percent each stream starts from, matching the usbh_composite_uvc_uac example */
 #define USBH_COMP_HID_UAC_VOLUME_INIT                       50U
 
@@ -175,8 +179,7 @@ typedef struct {
 
 static int usbh_composite_hid_cmd(u16 argc, u8 *argv[]);
 static void usbh_composite_hid_cmd_at(u16 argc, char **argv);
-static int usbh_composite_volup(u8 *vol);
-static int usbh_composite_voldown(u8 *vol);
+static int usbh_composite_vol_change(u8 mode, u8 val, u8 *dir, u8 *vol);
 
 static void usbh_hid_cb_attached(void);
 static void usbh_hid_cb_report(usbh_hid_event_t *event);
@@ -399,7 +402,7 @@ static void gpio_power_init(uint32_t GPIO_Pin)
   */
 static void gpio_power_trigger(u8 level)
 {
-	level = level & BIT0;
+	level = (u8)(level & 0x01U);
 	GPIO_WriteBit(USB_DEV_PWR_CTRL_GPIO, level);
 }
 
@@ -419,7 +422,7 @@ static void gpio_init(void)
 		gpio_power_init(USB_DEV_PWR_CTRL_GPIO);
 
 		gpio_power_trigger(0);      /* power off */
-		usb_os_sleep_ms(20);        /* let the power rail discharge */
+		rtos_time_delay_ms(20);        /* let the power rail discharge */
 		gpio_power_trigger(1);      /* power on */
 	}
 }
@@ -533,8 +536,9 @@ static void usbh_composite_key_mute(void)
   */
 static void example_usbh_composite_key_thread(void *param)
 {
-	uac_chan_ctx_t *chan;
 	u8 key;
+	u8 dir;
+	u8 vol;
 
 	UNUSED(param);
 
@@ -546,16 +550,15 @@ static void example_usbh_composite_key_thread(void *param)
 			continue;
 		}
 
-		chan = (usbh_uac_ctx.ctrl_dir == USBH_UAC_ISOC_IN_DIR) ? &usbh_uac_ctx.record : &usbh_uac_ctx.play;
 		switch (key) {
 		case VOLUME_EVENT_CONSUMER_UP:
-			if (usbh_composite_volup(&chan->cur_volume) == RTK_SUCCESS) {
-				RTK_LOGS(TAG, RTK_LOG_INFO, "Vol %d\n", chan->cur_volume);
+			if (usbh_composite_vol_change(USBH_COMP_VOL_UP, 0U, &dir, &vol) == RTK_SUCCESS) {
+				RTK_LOGS(TAG, RTK_LOG_INFO, "Vol %d\n", vol);
 			}
 			break;
 		case VOLUME_EVENT_CONSUMER_DOWN:
-			if (usbh_composite_voldown(&chan->cur_volume) == RTK_SUCCESS) {
-				RTK_LOGS(TAG, RTK_LOG_INFO, "Vol %d\n", chan->cur_volume);
+			if (usbh_composite_vol_change(USBH_COMP_VOL_DOWN, 0U, &dir, &vol) == RTK_SUCCESS) {
+				RTK_LOGS(TAG, RTK_LOG_INFO, "Vol %d\n", vol);
 			}
 			break;
 		case VOLUME_EVENT_CONSUMER_MUTE:
@@ -747,10 +750,10 @@ static int usbh_composite_play_pause(u32 *offset)
   */
 static void example_usbh_composite_play_thread(void *param)
 {
-	const unsigned char *usbh_uac_audio_data_2ch_handle = usbh_uac_audio_data_2ch;
+	const u8 *usbh_uac_audio_data_2ch_handle = usbh_uac_audio_data_2ch;
 	const usbh_uac_audio_fmt_t *fmt_info = NULL;
 	const usbh_uac_audio_fmt_t *audio_fmt = NULL;
-	u8 *buffer = NULL;
+	const u8 *buffer = NULL;
 	u32 audio_total_data_len = usbh_uac_audio_data_2ch_len;
 	u32 play_loop_count = 0;
 	u32 frame_size = 0;
@@ -759,7 +762,6 @@ static void example_usbh_composite_play_thread(void *param)
 	u32 offset = 0;
 	u32 debug_time = 0;
 	int ret;
-	u8 playback_format_find = 0;
 	u8 is_playing = 0;
 	u8 fmt_cnt;
 	u8 i = 0;
@@ -815,31 +817,17 @@ static void example_usbh_composite_play_thread(void *param)
 			continue;
 		}
 
-		/* Reset per-connection flag before scanning */
-		playback_format_find = 0;
-
 		/* Log all available formats */
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Play fmt list:\n");
 		for (i = 0; i < fmt_cnt; i++) {
 			audio_fmt = &(fmt_info[i]);
 			RTK_LOGS(TAG, RTK_LOG_INFO, "[%d] CH=%d BW=%d FREQ=%d\n",
 					 i, audio_fmt->ch_cnt, audio_fmt->bit_width, audio_fmt->sampling_freq);
-
-			if ((playback_format_find == 0)
-				&& (audio_fmt->sampling_freq == CONFIG_USBH_COMP_HID_UAC_PLAY_SAMPLING_FREQ)
-				&& (audio_fmt->bit_width == CONFIG_USBH_COMP_HID_UAC_PLAY_BITWIDTH)
-				&& (audio_fmt->ch_cnt == CONFIG_USBH_COMP_HID_UAC_PLAY_CHANNELS)) {
-				playback_format_find = 1;
-			}
 		}
 
-		if (playback_format_find == 0) {
-			usbh_comp_unlock(usbh_comp_play_mutex);
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "Play fmt mismatch\n");
-			continue;
-		}
-
-		/* Select matching audio format */
+		/* Select matching audio format. No exact match on the list above: a continuous rate range is
+		   listed by its two bounds only, so the class matches the format, discrete or ranged, and fails
+		   on a mismatch */
 		if (usbh_uac_set_alt_setting(USBH_UAC_ISOC_OUT_DIR, CONFIG_USBH_COMP_HID_UAC_PLAY_CHANNELS,
 									 CONFIG_USBH_COMP_HID_UAC_PLAY_BITWIDTH, CONFIG_USBH_COMP_HID_UAC_PLAY_SAMPLING_FREQ) != RTK_SUCCESS) {
 			usbh_comp_unlock(usbh_comp_play_mutex);
@@ -858,7 +846,7 @@ static void example_usbh_composite_play_thread(void *param)
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Play start, data=%d frame=%d\n", audio_total_data_len, frame_size);
 
 #if CONFIG_USBH_COMP_HID_UAC_XFER_CHECK
-		usb_os_memset((void *)usbh_uac_audio_data_2ch, 0x00, usbh_uac_audio_data_2ch_len);
+		memset((void *)usbh_uac_audio_data_2ch, 0x00, usbh_uac_audio_data_2ch_len);
 #endif
 
 		/*
@@ -866,7 +854,7 @@ static void example_usbh_composite_play_thread(void *param)
 		 **/
 
 		/* Start the audio stream */
-		if (usbh_uac_ctx.is_ready) {
+		if (usbh_uac_ctx.is_ready != 0U) {
 			if (usbh_comp_lock(usbh_comp_play_mutex) != RTK_SUCCESS) {
 				continue;
 			}
@@ -903,7 +891,7 @@ static void example_usbh_composite_play_thread(void *param)
 				if (TRNG_get_random_bytes(&send_len, 2) != RTK_SUCCESS) {
 					send_len = 0;
 				}
-				send_len = send_len & 0x0FFF;
+				send_len = send_len & 0x0FFFU;
 
 				/* A failed or zero draw falls back to one packet, so every round moves data
 				   instead of spinning without a delay */
@@ -916,7 +904,7 @@ static void example_usbh_composite_play_thread(void *param)
 					send_len = total_len - offset;
 				}
 
-				buffer = (u8 *)(usbh_uac_audio_data_2ch_handle + offset);
+				buffer = usbh_uac_audio_data_2ch_handle + offset;
 
 				/* Send audio data with timeout */
 				if (usbh_comp_lock(usbh_comp_play_mutex) != RTK_SUCCESS) {
@@ -1131,12 +1119,18 @@ static void example_usbh_composite_record_thread(void *param)
 			track_config.format = format;
 			track_config.channel_count = g_track_channel;
 			track_config.buffer_bytes = track_buf_size;
-			AudioTrack_Init(audio_track, &track_config, AUDIO_OUTPUT_FLAG_NONE);
+			if (AudioTrack_Init(audio_track, &track_config, AUDIO_OUTPUT_FLAG_NONE) != AUDIO_OK) {
+				RTK_LOGS(TAG, RTK_LOG_ERROR, "Rec track init fail, drain without output\n");
+				AudioTrack_Destroy(audio_track);
+				audio_track = NULL;
+			} else {
+				AudioTrack_SetVolume(audio_track, 1.0, 1.0);
+				AudioTrack_SetStartThresholdBytes(audio_track, track_buf_size);
+			}
 
-			AudioTrack_SetVolume(audio_track, 1.0, 1.0);
-			AudioTrack_SetStartThresholdBytes(audio_track, track_buf_size);
-
-			if (AudioTrack_Start(audio_track) != AUDIO_OK) {
+			if (audio_track == NULL) {
+				/* Init failed, nothing to start */
+			} else if (AudioTrack_Start(audio_track) != AUDIO_OK) {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "Rec track start fail, drain without output\n");
 				AudioTrack_Destroy(audio_track);
 				audio_track = NULL;
@@ -1148,7 +1142,7 @@ static void example_usbh_composite_record_thread(void *param)
 
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Rec start, frame=%d\n", frame_size);
 
-		if (usbh_uac_ctx.is_ready) {
+		if (usbh_uac_ctx.is_ready != 0U) {
 			if (usbh_comp_lock(usbh_comp_record_mutex) == RTK_SUCCESS) {
 				usbh_uac_start_capture();
 				usbh_comp_unlock(usbh_comp_record_mutex);
@@ -1297,11 +1291,11 @@ exit_usbh_init:
 /**
   * @brief  Tear down the USB host stack, in the reverse order of
   *         usbh_composite_init_stack(): TRX -> classes -> core.
-  * @note   No return value: a teardown failure has no recoverable path, so the
-  *         only sequence of release calls in this example lives here.
-  * @retval None
+  * @note   The only sequence of release calls in this example lives here.
+  * @retval RTK_SUCCESS once the stack is down, -RTK_ERR_IO when a lock could not be taken:
+  *         the stack is then left up, as a worker may still be inside a class API
   */
-static void usbh_composite_deinit_stack(void)
+static int usbh_composite_deinit_stack(void)
 {
 	/* Announce the teardown BEFORE contending for the locks, so a worker inside a
 	   playback or capture loop gives up its round instead of re-taking a lock
@@ -1311,9 +1305,21 @@ static void usbh_composite_deinit_stack(void)
 	/* All three locks, always in this order (play, record, ctrl). The workers and
 	   the shell each take exactly one, never two, so a fixed order here is enough
 	   to rule out a cycle. */
-	rtos_mutex_take(usbh_comp_play_mutex, RTOS_MAX_TIMEOUT);
-	rtos_mutex_take(usbh_comp_record_mutex, RTOS_MAX_TIMEOUT);
-	rtos_mutex_take(usbh_comp_ctrl_mutex, RTOS_MAX_TIMEOUT);
+	if (rtos_mutex_take(usbh_comp_play_mutex, RTOS_MAX_TIMEOUT) != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Play lock fail\n");
+		return -RTK_ERR_IO;
+	}
+	if (rtos_mutex_take(usbh_comp_record_mutex, RTOS_MAX_TIMEOUT) != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Record lock fail\n");
+		rtos_mutex_give(usbh_comp_play_mutex);
+		return -RTK_ERR_IO;
+	}
+	if (rtos_mutex_take(usbh_comp_ctrl_mutex, RTOS_MAX_TIMEOUT) != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Ctrl lock fail\n");
+		rtos_mutex_give(usbh_comp_record_mutex);
+		rtos_mutex_give(usbh_comp_play_mutex);
+		return -RTK_ERR_IO;
+	}
 	/* Close the gate under the locks: no class API call is in flight here, and any
 	   later one gives up on the cleared flag. */
 	usbh_comp_stack_ready = 0U;
@@ -1326,6 +1332,8 @@ static void usbh_composite_deinit_stack(void)
 	rtos_mutex_give(usbh_comp_ctrl_mutex);
 	rtos_mutex_give(usbh_comp_record_mutex);
 	rtos_mutex_give(usbh_comp_play_mutex);
+
+	return RTK_SUCCESS;
 }
 
 /**
@@ -1399,8 +1407,10 @@ static void example_usbh_composite_hotplug_thread(void *param)
 
 			rtos_time_delay_ms(200);
 
-			/* Cleanup USB resources */
-			usbh_composite_deinit_stack();
+			/* Cleanup USB resources. On a failure the stack stays up: leave it to the stop */
+			if (usbh_composite_deinit_stack() != RTK_SUCCESS) {
+				break;
+			}
 
 			rtos_time_delay_ms(100);
 			RTK_LOGS(TAG, RTK_LOG_INFO, "Free heap: 0x%x\n", rtos_mem_get_free_heap_size());
@@ -1591,7 +1601,12 @@ static int usbh_comp_start(void)
 
 #if CONFIG_USBH_COMP_HID_UAC_HOTPLUG
 deinit_stack_exit:
-	usbh_composite_deinit_stack();
+	if (usbh_composite_deinit_stack() != RTK_SUCCESS) {
+		/* The stack is still up and a worker may be on it: keep every resource, the app
+		   stays not idle as for a join timeout below */
+		usbh_comp_app.state = USB_APP_STATE_STOPPING;
+		return -RTK_ERR_IO;
+	}
 #endif
 
 stop_workers_exit:
@@ -1685,14 +1700,15 @@ static void usbh_composite_verify_mute(u8 dir, u8 expected_mute)
 	u8 fail = 0;
 	u8 ch;
 
-	/* Shell context: the reads are excluded from a teardown like the set is, and the
-	   lock is held across the settle delay so the stack can not go away in between. */
+	/* Let the device settle before reading back. Outside the lock, so a teardown is not held
+	   up by it; the lock then re-checks the stack, and the reads are excluded from a teardown
+	   like the set is. */
+	rtos_time_delay_ms(CONFIG_USBH_COMP_HID_UAC_VERIFY_SETTLE_MS);
+
 	if (usbh_comp_lock(usbh_comp_ctrl_mutex) != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Stack not ready\n");
 		return;
 	}
-
-	rtos_time_delay_ms(CONFIG_USBH_COMP_HID_UAC_VERIFY_SETTLE_MS);
 
 	info = usbh_uac_get_volume_ctrl_info(dir);
 	if (info == NULL) {
@@ -1759,13 +1775,13 @@ static void usbh_composite_verify_volume(u8 dir, u8 expected_percent)
 	u8 err = 0;
 	u8 ch;
 
-	/* Same locking as usbh_composite_verify_mute() */
+	/* Same settle and locking as usbh_composite_verify_mute() */
+	rtos_time_delay_ms(CONFIG_USBH_COMP_HID_UAC_VERIFY_SETTLE_MS);
+
 	if (usbh_comp_lock(usbh_comp_ctrl_mutex) != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Stack not ready\n");
 		return;
 	}
-
-	rtos_time_delay_ms(CONFIG_USBH_COMP_HID_UAC_VERIFY_SETTLE_MS);
 
 	info = usbh_uac_get_volume_ctrl_info(dir);
 	if (info == NULL) {
@@ -1817,71 +1833,42 @@ static void usbh_composite_verify_volume(u8 dir, u8 expected_percent)
 }
 
 /**
-  * @brief  Increase the volume by CONFIG_USBH_COMP_HID_UAC_VOLUME_STEP percent, clamped at 100%.
-  * @param  vol: Pointer to the current volume value; updated in place.
-  * @retval RTK_SUCCESS on success, -RTK_ERR_BADARG if vol is NULL.
+  * @brief  Change the volume of the channel selected by ctrl_dir.
+  * @note   Shell or key thread: excluded from a concurrent teardown like the workers
+  *         are, and from each other. ctrl_dir and the channel volume are read and written
+  *         under the lock, so an init switching the direction meanwhile can not make the set
+  *         land on one channel and the stored volume on the other.
+  * @param  mode: USBH_COMP_VOL_UP / USBH_COMP_VOL_DOWN step by CONFIG_USBH_COMP_HID_UAC_VOLUME_STEP,
+  *               USBH_COMP_VOL_SET sets val.
+  * @param  val: New volume for USBH_COMP_VOL_SET, 0..100, ignored otherwise.
+  * @param  dir: Direction the volume was set on, written on success.
+  * @param  vol: New volume, written on success.
+  * @retval RTK_SUCCESS on success, -RTK_ERR_IO when the stack is gone or the device refused it.
   */
-static int usbh_composite_volup(u8 *vol)
+static int usbh_composite_vol_change(u8 mode, u8 val, u8 *dir, u8 *vol)
 {
+	uac_chan_ctx_t *chan;
 	int ret;
+	u8 cur_dir;
 	u8 cur_vol;
 
-	if (vol == NULL) {
-		return -RTK_ERR_BADARG;
-	}
-
-	/* Shell or key thread: excluded from a concurrent teardown like the workers
-	   are, and from each other, so *vol is read and written under the lock too */
 	if (usbh_comp_lock(usbh_comp_ctrl_mutex) != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Stack not ready\n");
 		return -RTK_ERR_IO;
 	}
-	cur_vol = *vol;
-	cur_vol += CONFIG_USBH_COMP_HID_UAC_VOLUME_STEP;
-	if (cur_vol > 100) {
-		cur_vol = 100;
-	}
-	ret = usbh_uac_set_volume(cur_vol, usbh_uac_ctx.ctrl_dir);
-	if (ret == RTK_SUCCESS) {
-		*vol = cur_vol;
-	}
-	usbh_comp_unlock(usbh_comp_ctrl_mutex);
-	if (ret != RTK_SUCCESS) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Set vol fail: %d\n", ret);
-		return -RTK_ERR_IO;
-	}
-
-	return RTK_SUCCESS;
-}
-
-/**
-  * @brief  Decrease the volume by CONFIG_USBH_COMP_HID_UAC_VOLUME_STEP percent, clamped at 0%.
-  * @param  vol: Pointer to the current volume value; updated in place.
-  * @retval RTK_SUCCESS on success, -RTK_ERR_BADARG if vol is NULL.
-  */
-static int usbh_composite_voldown(u8 *vol)
-{
-	int ret;
-	u8 cur_vol;
-
-	if (vol == NULL) {
-		return -RTK_ERR_BADARG;
-	}
-
-	/* See usbh_composite_volup() */
-	if (usbh_comp_lock(usbh_comp_ctrl_mutex) != RTK_SUCCESS) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Stack not ready\n");
-		return -RTK_ERR_IO;
-	}
-	cur_vol = *vol;
-	if (cur_vol < CONFIG_USBH_COMP_HID_UAC_VOLUME_STEP) {
-		cur_vol = 0;
+	cur_dir = usbh_uac_ctx.ctrl_dir;
+	chan = (cur_dir == USBH_UAC_ISOC_IN_DIR) ? &usbh_uac_ctx.record : &usbh_uac_ctx.play;
+	cur_vol = chan->cur_volume;
+	if (mode == USBH_COMP_VOL_UP) {
+		cur_vol = (cur_vol > (100U - CONFIG_USBH_COMP_HID_UAC_VOLUME_STEP)) ? 100U : (u8)(cur_vol + CONFIG_USBH_COMP_HID_UAC_VOLUME_STEP);
+	} else if (mode == USBH_COMP_VOL_DOWN) {
+		cur_vol = (cur_vol < CONFIG_USBH_COMP_HID_UAC_VOLUME_STEP) ? 0U : (u8)(cur_vol - CONFIG_USBH_COMP_HID_UAC_VOLUME_STEP);
 	} else {
-		cur_vol -= CONFIG_USBH_COMP_HID_UAC_VOLUME_STEP;
+		cur_vol = val;
 	}
-	ret = usbh_uac_set_volume(cur_vol, usbh_uac_ctx.ctrl_dir);
+	ret = usbh_uac_set_volume(cur_vol, cur_dir);
 	if (ret == RTK_SUCCESS) {
-		*vol = cur_vol;
+		chan->cur_volume = cur_vol;
 	}
 	usbh_comp_unlock(usbh_comp_ctrl_mutex);
 	if (ret != RTK_SUCCESS) {
@@ -1889,6 +1876,8 @@ static int usbh_composite_voldown(u8 *vol)
 		return -RTK_ERR_IO;
 	}
 
+	*dir = cur_dir;
+	*vol = cur_vol;
 	return RTK_SUCCESS;
 }
 
@@ -1897,7 +1886,7 @@ static int usbh_composite_voldown(u8 *vol)
   *         GPIO: drop power for 500 ms, then restore it. This forces a real
   *         detach/attach so the hot-plug re-enumeration path can be exercised.
   *         Only available when CONFIG_USBH_COMP_HID_UAC_GPIO_POWER_CTRL is enabled.
-  * @retval RTK_SUCCESS
+  * @retval RTK_SUCCESS, or -RTK_ERR_BADARG when GPIO power control is not built in
   */
 static int usbh_hotplug_test(void)
 {
@@ -1905,39 +1894,13 @@ static int usbh_hotplug_test(void)
 	gpio_power_trigger(0);
 	rtos_time_delay_ms(500);
 	gpio_power_trigger(1);
+
+	return RTK_SUCCESS;
 #else
 	RTK_LOGS(TAG, RTK_LOG_ERROR, "Not support\n");
+
+	return -RTK_ERR_BADARG;
 #endif
-
-	return RTK_SUCCESS;
-}
-
-/**
-  * @brief  Set the volume to an absolute percentage.
-  * @param  vol: Pointer to the current volume value; updated only on success.
-  * @param  val: New volume, 0..100.
-  * @retval RTK_SUCCESS on success, -RTK_ERR_IO when the stack is gone or the device refused it.
-  */
-static int usbh_composite_volset(u8 *vol, u8 val)
-{
-	int ret;
-
-	/* See usbh_composite_volup() */
-	if (usbh_comp_lock(usbh_comp_ctrl_mutex) != RTK_SUCCESS) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Stack not ready\n");
-		return -RTK_ERR_IO;
-	}
-	ret = usbh_uac_set_volume(val, usbh_uac_ctx.ctrl_dir);
-	if (ret == RTK_SUCCESS) {
-		*vol = val;
-	}
-	usbh_comp_unlock(usbh_comp_ctrl_mutex);
-	if (ret != RTK_SUCCESS) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Set vol fail: %d\n", ret);
-		return -RTK_ERR_IO;
-	}
-
-	return RTK_SUCCESS;
 }
 
 /**
@@ -1980,11 +1943,11 @@ static void usbh_composite_hid_cmd_usage(void)
 static int usbh_composite_hid_cmd(u16 argc, u8 *argv[])
 {
 	const char *cmd;
-	u8 *cur_vol;
 	int vol_ret;
 	int ret;
 	u8 mute = 0;
 	u8 vol = 0;
+	u8 dir = USBH_UAC_ISOC_OUT_DIR;
 
 	if ((argc == 0U) || (_stricmp((const char *)argv[0], "help") == 0) || (_stricmp((const char *)argv[0], "?") == 0)) {
 		usbh_composite_hid_cmd_usage();
@@ -2001,15 +1964,22 @@ static int usbh_composite_hid_cmd(u16 argc, u8 *argv[])
 
 	if (_stricmp(cmd, "init") == 0) {
 		if ((argc == 2U) && (_stricmp((const char *)argv[1], "record") == 0)) {
-			usbh_uac_ctx.ctrl_dir = USBH_UAC_ISOC_IN_DIR;
-			RTK_LOGS(TAG, RTK_LOG_INFO, "Record Control\n");
+			dir = USBH_UAC_ISOC_IN_DIR;
 		} else if ((argc == 1U) || ((argc == 2U) && (_stricmp((const char *)argv[1], "play") == 0))) {
-			usbh_uac_ctx.ctrl_dir = USBH_UAC_ISOC_OUT_DIR;
-			RTK_LOGS(TAG, RTK_LOG_INFO, "Playback Control\n");
+			dir = USBH_UAC_ISOC_OUT_DIR;
 		} else {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Usage: AT+USBHHIDUAC=init[,<play|record>]\n");
 			return -RTK_ERR_BADARG;
 		}
+		/* ctrl_dir is read under this lock by every volume and mute change. Taken directly,
+		   not through usbh_comp_lock(): selecting the direction needs no stack, and the lock
+		   lives as long as the app does, which is RUNNING here. */
+		if (rtos_mutex_take(usbh_comp_ctrl_mutex, RTOS_MAX_TIMEOUT) != RTK_SUCCESS) {
+			return -RTK_ERR_IO;
+		}
+		usbh_uac_ctx.ctrl_dir = dir;
+		rtos_mutex_give(usbh_comp_ctrl_mutex);
+		RTK_LOGS(TAG, RTK_LOG_INFO, "%s Control\n", (dir == USBH_UAC_ISOC_IN_DIR) ? "Record" : "Playback");
 	} else if (_stricmp(cmd, "mute") == 0) {
 		if ((argc != 2U) || (usbh_composite_parse_arg(argv[1], 1U, &mute) != RTK_SUCCESS)) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Usage: AT+USBHHIDUAC=mute,<0|1>\n");
@@ -2021,10 +1991,11 @@ static int usbh_composite_hid_cmd(u16 argc, u8 *argv[])
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Stack not ready\n");
 			return -RTK_ERR_IO;
 		}
-		ret = usbh_uac_set_mute(mute, usbh_uac_ctx.ctrl_dir);
+		dir = usbh_uac_ctx.ctrl_dir;
+		ret = usbh_uac_set_mute(mute, dir);
 		if (ret == RTK_SUCCESS) {
 			/* Keep the state the Mute key toggles from in step, under the same lock */
-			if (usbh_uac_ctx.ctrl_dir == USBH_UAC_ISOC_IN_DIR) {
+			if (dir == USBH_UAC_ISOC_IN_DIR) {
 				usbh_uac_ctx.record.mute = mute;
 			} else {
 				usbh_uac_ctx.play.mute = mute;
@@ -2037,18 +2008,16 @@ static int usbh_composite_hid_cmd(u16 argc, u8 *argv[])
 		}
 		RTK_LOGS(TAG, RTK_LOG_INFO, "%s\n", ((mute) ? ("Mute") : ("UnMute")));
 
-		usbh_composite_verify_mute(usbh_uac_ctx.ctrl_dir, mute);
+		usbh_composite_verify_mute(dir, mute);
 	} else if (_stricmp(cmd, "vol") == 0) {
-		cur_vol = (usbh_uac_ctx.ctrl_dir == USBH_UAC_ISOC_IN_DIR) ? &usbh_uac_ctx.record.cur_volume : &usbh_uac_ctx.play.cur_volume;
-
 		if (argc != 2U) {
 			vol_ret = -RTK_ERR_BADARG;
 		} else if (_stricmp((const char *)argv[1], "up") == 0) {
-			vol_ret = usbh_composite_volup(cur_vol);
+			vol_ret = usbh_composite_vol_change(USBH_COMP_VOL_UP, 0U, &dir, &vol);
 		} else if (_stricmp((const char *)argv[1], "down") == 0) {
-			vol_ret = usbh_composite_voldown(cur_vol);
+			vol_ret = usbh_composite_vol_change(USBH_COMP_VOL_DOWN, 0U, &dir, &vol);
 		} else if (usbh_composite_parse_arg(argv[1], 100U, &vol) == RTK_SUCCESS) {
-			vol_ret = usbh_composite_volset(cur_vol, vol);
+			vol_ret = usbh_composite_vol_change(USBH_COMP_VOL_SET, vol, &dir, &vol);
 		} else {
 			vol_ret = -RTK_ERR_BADARG;
 		}
@@ -2059,13 +2028,16 @@ static int usbh_composite_hid_cmd(u16 argc, u8 *argv[])
 			return vol_ret;
 		}
 
-		usbh_composite_verify_volume(usbh_uac_ctx.ctrl_dir, *cur_vol);
+		usbh_composite_verify_volume(dir, vol);
 	} else if (_stricmp(cmd, "hotplug") == 0) {
 		if (argc != 1U) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Usage: AT+USBHHIDUAC=hotplug\n");
 			return -RTK_ERR_BADARG;
 		}
-		usbh_hotplug_test();
+		ret = usbh_hotplug_test();
+		if (ret != RTK_SUCCESS) {
+			return ret;
+		}
 	} else {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid cmd: %s, try AT+USBHHIDUAC=help\n", cmd);
 		return -RTK_ERR_BADARG;
@@ -2136,8 +2108,9 @@ int example_usbh_composite_hid_uac_stop(void)
 	}
 
 	/* Every worker is gone. The stack is down already if the hotplug thread left mid-rebuild. */
-	if (usbh_comp_stack_ready != 0U) {
-		usbh_composite_deinit_stack();
+	if ((usbh_comp_stack_ready != 0U) && (usbh_composite_deinit_stack() != RTK_SUCCESS)) {
+		/* Stack still up: keep everything, the app stays STOPPING */
+		return -RTK_ERR_IO;
 	}
 	usbh_comp_free_resource();
 	usb_app_ctx_end(&usbh_comp_app);

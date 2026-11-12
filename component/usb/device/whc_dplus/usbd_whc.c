@@ -331,17 +331,25 @@ static int usbd_whc_setup(usb_dev_t *dev, usb_setup_req_t *req)
 		if ((req->bmRequestType & USB_REQ_DIR_MASK) == USB_D2H) {
 			if (req->wLength != 0U) {
 				// SETUP + DATA IN + STATUS
+				usb_setup_req_t rsp_req;
+
 				ret = -RTK_ERR_BADARG;
+				/* Cap the IN data stage to the control buffer, a short response is legal as per
+				 * USB 2.0 9.3.5 while an oversized xfer_len is rejected by the core and would leave
+				 * the control transfer unanswered. The callback sizes its answer by wLength: hand
+				 * it a copy carrying that cap, the request itself is left untouched for the core's
+				 * ZLP decision. */
+				usb_os_memcpy((void *)&rsp_req, (const void *)req, sizeof(usb_setup_req_t));
+				if (rsp_req.wLength > ep0_in->xfer_buf_len) {
+					rsp_req.wLength = (u16)ep0_in->xfer_buf_len;
+				}
 				if ((idev->cb != NULL) && (idev->cb->setup != NULL)) {
 					/* Propagate the class callback status so an unsupported request is
 					 * STALLed by the core instead of being ACKed */
-					ret = idev->cb->setup(req, ep0_in->xfer_buf);
+					ret = idev->cb->setup(&rsp_req, ep0_in->xfer_buf);
 				}
 				if (ret == RTK_SUCCESS) {
-					/* Cap the IN data stage to the control buffer, a short response is legal
-					 * as per USB 2.0 9.3.5 while an oversized xfer_len is rejected by the core
-					 * and would leave the control transfer unanswered */
-					ep0_in->xfer_len = (req->wLength < ep0_in->xfer_buf_len) ? (u32)req->wLength : ep0_in->xfer_buf_len;
+					ep0_in->xfer_len = rsp_req.wLength;
 					ret = usbd_ep_transmit(dev, ep0_in);
 				}
 			} else {

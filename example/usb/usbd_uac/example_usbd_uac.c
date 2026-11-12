@@ -116,7 +116,7 @@
 /* Private function prototypes -----------------------------------------------*/
 
 #if USBD_UAC_ENABLE_RECORD
-static int uac_cmd_record(u16 argc, u8 *argv[]);
+static int uac_cmd_record(u16 argc, char *argv[]);
 static void uac_cmd_record_at(u16 argc, char **argv);
 #endif
 
@@ -683,7 +683,7 @@ static void example_audio_track_play(void)
 			for (idx = 0, off = 0; idx < read_dat_len; idx += audio_src_step, off += audio_dst_step) {
 				// ch0 ch1 ch2 ch3 ch0 ch1 ch2 ch3 ch0 ch1 ch2 ch3
 				// 24  24  24  24  24  24  24  24  24  24  24  24
-				usb_os_memcpy((void *)(play_buf + off), (const void *)(recv_buf + idx), audio_dst_step);
+				memcpy((void *)(play_buf + off), (const void *)(recv_buf + idx), audio_dst_step);
 				play_data_size += audio_dst_step;
 			}
 
@@ -831,9 +831,9 @@ static void example_usbd_uac_record_thread(void *param)
 	rtos_task_delete(NULL);
 }
 
-static int uac_cmd_record(u16 argc, u8 *argv[])
+static int uac_cmd_record(u16 argc, char *argv[])
 {
-	const char *cmd = (argc != 0U) ? (const char *)argv[0] : NULL;
+	const char *cmd = (argc != 0U) ? argv[0] : NULL;
 
 	if ((cmd == NULL) || (_stricmp(cmd, "record") != 0) || (argc != 1U)) {
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Usage: AT+USBDUAC=<cmd>\n");
@@ -860,7 +860,7 @@ static int uac_cmd_record(u16 argc, u8 *argv[])
 /* AT entry: argv[0] is reserved by the AT parser and argv[1] holds the first parameter */
 static void uac_cmd_record_at(u16 argc, char **argv)
 {
-	int ret = uac_cmd_record((argc != 0U) ? (argc - 1U) : 0U, (u8 **)&argv[1]);
+	int ret = uac_cmd_record((argc != 0U) ? (u16)(argc - 1U) : 0U, &argv[1]);
 
 	if (ret == RTK_SUCCESS) {
 		at_printf(ATCMD_OK_END_STR);

@@ -37,6 +37,10 @@ ameba_add_subdirectory(${c_CMPT_SOC_DIR})
 ameba_add_subdirectory(${c_CMPT_SOC_OTA_DIR})
 ameba_add_subdirectory(${c_CMPT_OTA_DIR})
 ameba_add_subdirectory(${c_COMPONENT_DIR}/soc/common/flash_wrapper)
+# Security Register OTP API of the NOR flash driver - see CONFIG_NOR_FLASH_NEW_STRATEGY.
+if (CONFIG_NOR_FLASH_NEW_STRATEGY)
+    ameba_add_subdirectory(${c_COMPONENT_DIR}/soc/common/nor_flash)
+endif()
 ameba_add_subdirectory(${c_COMPONENT_DIR}/soc/common/log_forward)
 ameba_add_subdirectory(${c_MCU_SRC_DIR})
 

@@ -346,6 +346,13 @@ static void whc_ipc_host_api_wtn_rnat_ap_init(struct whc_ipc_host_unblk_api_node
 	wtn_rnat_ap_init((u8)p_unblk_api_node->param_buf[0]);
 }
 
+#ifdef CONFIG_RNAT_AUTOSEL_EN
+static void whc_ipc_host_api_wtn_rnat_join_group(struct whc_ipc_host_unblk_api_node *p_unblk_api_node)
+{
+	wtn_rnat_join_group((u8 *)p_unblk_api_node->param_buf[0]);
+}
+#endif
+
 static int whc_ipc_host_api_wtn_ota_callback_handler(struct whc_ipc_dev_req_msg *p_ipc_msg)
 {
 	u8 *buf = (u8 *)p_ipc_msg->param_buf[0];
@@ -452,6 +459,14 @@ static struct whc_ipc_host_unblk_api_node *whc_ipc_host_api_unblk_api_msg_to_nod
 		p_unblk_api_node->param_buf[0] = param_buf[0];
 
 		break;
+#ifdef CONFIG_RNAT_AUTOSEL_EN
+	case WHC_API_WTN_RNAT_JOIN_GROUP:
+		/* {bssid_addr, len} -> copy into host-owned buf */
+		buffer = whc_ipc_host_api_unblk_api_copy((u8 *)param_buf[0], param_buf[1]);
+		p_unblk_api_node->param_buf[0] = (u32)buffer;
+		p_unblk_api_node->param_buf[1] = param_buf[1];
+		break;
+#endif
 #ifdef CONFIG_WIFI_NAN_HOST_APP
 	case WHC_API_CFG80211_NAN_CFGVENDOR_EVENT:
 		/* {event_id, event_addr, len} -> copy payload into host-owned buf */
@@ -644,6 +659,9 @@ const struct ipc_host_unblk_api_func_t whc_ipc_host_unblk_api_handlers[] = {
 	{WHC_API_WTN_SOCKET_INIT, whc_ipc_host_api_wtn_socket_init, 0},
 #endif
 	{WHC_API_WTN_RNAT_AP_INIT, whc_ipc_host_api_wtn_rnat_ap_init, 0},
+#ifdef CONFIG_RNAT_AUTOSEL_EN
+	{WHC_API_WTN_RNAT_JOIN_GROUP, whc_ipc_host_api_wtn_rnat_join_group, BIT(0)},
+#endif
 #endif
 #ifdef CONFIG_WIFI_NAN_HOST_APP
 	{WHC_API_CFG80211_NAN_CFGVENDOR_EVENT, whc_ipc_host_api_nan_cfgvendor_event_handler, BIT(1)},

@@ -38,6 +38,9 @@ extern "C" {
 /** @brief The UVC host class driver, registered with the core by @ref usbh_uvc_class_init. */
 extern const usbh_class_driver_t usbh_uvc_driver;
 
+/** @brief The singleton UVC host handle, defined in usbh_uvc.c and shared by the UVC translation units. */
+extern usbh_uvc_host_t uvc_host;
+
 /** @} End of Host_UVC_Class_Variables group */
 /** @} End of USB_Host_Variables group */
 
@@ -62,6 +65,15 @@ int usbh_uvc_class_init(void);
  * @return Result of usbh_unregister_class(): on anything but RTK_SUCCESS nothing was released.
  */
 int usbh_uvc_class_deinit(void);
+
+/**
+ * @brief  Halt the streaming channels and free the descriptor tree of the attached device.
+ * @note   Only while no callback of the class can run: from detach(), or after
+ *         usbh_uvc_class_deinit() returned RTK_SUCCESS.
+ * @param  uvc: UVC host handle.
+ * @return None
+ */
+void usbh_uvc_class_release_device(usbh_uvc_host_t *uvc);
 
 /** @} End of Host_UVC_Class_Functions group */
 /** @} End of USB_Host_Functions group */

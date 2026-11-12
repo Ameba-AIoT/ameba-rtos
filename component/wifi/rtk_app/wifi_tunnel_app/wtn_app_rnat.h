@@ -72,6 +72,9 @@ struct rmesh_rnat_intercom_priv {
 };
 
 void wtn_rnat_ap_init(u8 enable);
+#ifdef CONFIG_RNAT_AUTOSEL_EN
+void wtn_rnat_join_group(u8 *bssid);
+#endif
 u8 wtn_rnat_search_client_ip(u8 *src_mac);
 int wtn_rnat_intercom_start(void);
 void wtn_rnat_intercom_set_self_gw(void);

@@ -123,18 +123,20 @@ static uint8_t def_pa_data[RTK_BT_LE_MAX_EXT_ADV_DATA_LEN] = {
 };
 
 static rtk_bt_le_pa_param_t def_pa_param = {
-	0,
-	64,
-	80,
-	RTK_BT_LE_PA_ADV_PROP_INCLUDE_TX_POWER,
-	(uint8_t *)def_pa_data,
-	PA_ADV_DATA_DEFAULT_LEN,
-#if defined(RTK_BLE_5_4_PA_RSP_SUPPORT) && RTK_BLE_5_4_PA_RSP_SUPPORT
-	2,
-	20,
-	5,
-	10,
-	2
+	.adv_handle = 0,
+	.pa_interval_min = 64,
+	.pa_interval_max = 80,
+	.pa_prop = RTK_BT_LE_PA_ADV_PROP_INCLUDE_TX_POWER,
+	.pa_data = (uint8_t *)def_pa_data,
+	.pa_len = PA_ADV_DATA_DEFAULT_LEN,
+#if defined(RTK_BLE_5_4_PAWR_ADV_SUPPORT) && RTK_BLE_5_4_PAWR_ADV_SUPPORT
+	/* num_subevents default set 0, so that although RTK_BLE_5_4_PAWR_ADV_SUPPORT is enabled,
+	 * atcmd "pa_adv" still default start PA without subevent */
+	.num_subevents = 0,
+	.subevent_interval = 20,
+	.response_slot_delay = 5,
+	.response_slot_spacing = 10,
+	.num_response_slots = 4
 #endif
 };
 #endif
@@ -852,6 +854,28 @@ static int atcmd_ble_gap_pa_adv(int argc, char **argv)
 			}
 			param.pa_len = input_len;
 		}
+
+#if defined(RTK_BLE_5_4_PAWR_ADV_SUPPORT) && RTK_BLE_5_4_PAWR_ADV_SUPPORT
+		if (argc > 5) {
+			param.num_subevents = str_to_int(argv[5]);
+		}
+
+		if (argc > 6) {
+			param.subevent_interval = str_to_int(argv[6]);
+		}
+
+		if (argc > 7) {
+			param.response_slot_delay = str_to_int(argv[7]);
+		}
+
+		if (argc > 8) {
+			param.response_slot_spacing = str_to_int(argv[8]);
+		}
+
+		if (argc > 9) {
+			param.num_response_slots = str_to_int(argv[9]);
+		}
+#endif
 
 		ret = rtk_bt_le_gap_start_pa(&param);
 		if (RTK_BT_OK != ret) {
@@ -2821,6 +2845,102 @@ static int atcmd_ble_gap_dtm_end_test(int argc, char **argv)
 	return 0;
 }
 
+#if defined(RTK_BLE_5_4_PAWR_ADV_SUPPORT) && RTK_BLE_5_4_PAWR_ADV_SUPPORT
+static int atcmd_ble_gap_pawr_set_subevent_data(int argc, char **argv)
+{
+	uint16_t ret = 0;
+	uint8_t num_subs;
+	rtk_bt_le_gap_pawr_subevent_element_t sub_arr[4] = {0};
+	rtk_bt_le_gap_pawr_subevent_data_t param = {0};
+
+	param.adv_handle = str_to_int(argv[0]);
+	num_subs = str_to_int(argv[1]);
+	if (num_subs < 1 || num_subs > 4 || argc < (2 + num_subs * 4)) {
+		BT_LOGE("GAP PAwR subevent data args number wrong!\r\n");
+		return BT_AT_ERR_PARAM_INVALID;
+	}
+
+	param.num_subs = num_subs;
+	param.sub_arr = sub_arr;
+	for (uint8_t i = 0; i < num_subs; i++) {
+		sub_arr[i].subevent = str_to_int(argv[2 + i * 4]);
+		sub_arr[i].response_slot_start = str_to_int(argv[3 + i * 4]);
+		sub_arr[i].response_slot_count = str_to_int(argv[4 + i * 4]);
+		sub_arr[i].len = str_to_int(argv[5 + i * 4]);
+		sub_arr[i].data = def_pa_data; //reuse sample def_pa_data as pawr subevent data;
+	}
+
+	ret = rtk_bt_le_gap_pawr_set_subevent_data(&param);
+	if (RTK_BT_OK != ret) {
+		BT_LOGE("GAP PAwR set subevent data failed! err: 0x%x\r\n", ret);
+		return -1;
+	}
+
+	BT_LOGA("GAP PAwR set subevent data success\r\n");
+	return 0;
+}
+#endif /* RTK_BLE_5_4_PAWR_ADV_SUPPORT */
+
+#if defined(RTK_BLE_5_4_PAWR_SCAN_SUPPORT) && RTK_BLE_5_4_PAWR_SCAN_SUPPORT
+static int atcmd_ble_gap_pawr_set_response_data(int argc, char **argv)
+{
+	uint16_t ret = 0;
+	rtk_bt_le_gap_pawr_set_response_t param = {0};
+
+	param.sync_id = str_to_int(argv[0]);
+	param.request_event = str_to_int(argv[1]);
+	param.request_subevent = str_to_int(argv[2]);
+	param.response_subevent = str_to_int(argv[3]);
+	param.response_slot = str_to_int(argv[4]);
+	param.len = 251;
+	param.data = def_pa_data;
+
+	if (argc > 5) {
+		param.len = str_to_int(argv[5]);
+	}
+
+	ret = rtk_bt_le_gap_pawr_set_response_data(&param);
+	if (RTK_BT_OK != ret) {
+		BT_LOGE("GAP PAwR set response data failed! err: 0x%x\r\n", ret);
+		return -1;
+	}
+
+	BT_LOGA("GAP PAwR set response data success\r\n");
+	return 0;
+}
+
+static int atcmd_ble_gap_pawr_sync_subevent(int argc, char **argv)
+{
+	uint16_t ret = 0;
+	uint8_t num_sub;
+	uint8_t subevents[10] = {0};
+	rtk_bt_le_gap_pawr_sync_subevent_t param = {0};
+
+	param.sync_id = str_to_int(argv[0]);
+	param.properties = str_to_int(argv[1]) ? RTK_BT_LE_PA_ADV_PROP_INCLUDE_TX_POWER : 0;
+	num_sub = str_to_int(argv[2]);
+	if (num_sub < 1 || num_sub > 10 || argc < (3 + num_sub)) {
+		BT_LOGE("GAP PAwR subevent list args number wrong!\r\n");
+		return BT_AT_ERR_PARAM_INVALID;
+	}
+
+	for (uint8_t i = 0; i < num_sub; i++) {
+		subevents[i] = str_to_int(argv[3 + i]);
+	}
+	param.num_subevents = num_sub;
+	param.subevents = subevents;
+
+	ret = rtk_bt_le_gap_pawr_sync_subevent(&param);
+	if (RTK_BT_OK != ret) {
+		BT_LOGE("GAP PAwR sync subevent failed! err: 0x%x\r\n", ret);
+		return -1;
+	}
+
+	BT_LOGA("GAP PAwR sync subevent success\r\n");
+	return 0;
+}
+#endif /* RTK_BLE_5_4_PAWR_SCAN_SUPPORT */
+
 static const cmd_table_t le_gap_cmd_table[] = {
 	{"version",      atcmd_ble_gap_get_version,        1, 1},
 	{"addr",         atcmd_ble_gap_get_bd_addr,        1, 1},
@@ -2892,7 +3012,7 @@ static const cmd_table_t le_gap_cmd_table[] = {
 	{"econn",        atcmd_ble_gap_ext_connect,        4, 12},
 #endif
 #if defined(RTK_BLE_5_0_PA_ADV_SUPPORT) && RTK_BLE_5_0_PA_ADV_SUPPORT
-	{"pa_adv",       atcmd_ble_gap_pa_adv,             2, 6},
+	{"pa_adv",       atcmd_ble_gap_pa_adv,             2, 11},
 	{"pa_update",    atcmd_ble_gap_pa_adv_update,      2, 4},
 #endif
 #if defined(RTK_BLE_5_0_PA_SYNC_SUPPORT) && RTK_BLE_5_0_PA_SYNC_SUPPORT
@@ -2927,6 +3047,13 @@ static const cmd_table_t le_gap_cmd_table[] = {
 	{"dtm_rx",       atcmd_ble_gap_dtm_rx_test,        2, 10},
 	{"dtm_tx",       atcmd_ble_gap_dtm_tx_test,        2, 11},
 	{"dtm_end",      atcmd_ble_gap_dtm_end_test,       1, 1},
+#if defined(RTK_BLE_5_4_PAWR_ADV_SUPPORT) && RTK_BLE_5_4_PAWR_ADV_SUPPORT
+	{"pawr_set_sub", atcmd_ble_gap_pawr_set_subevent_data, 7, 19},
+#endif
+#if defined(RTK_BLE_5_4_PAWR_SCAN_SUPPORT) && RTK_BLE_5_4_PAWR_SCAN_SUPPORT
+	{"pawr_set_rsp", atcmd_ble_gap_pawr_set_response_data, 6, 7},
+	{"pawr_sync_sub", atcmd_ble_gap_pawr_sync_subevent,    5, 14},
+#endif
 	{NULL,},
 };
 

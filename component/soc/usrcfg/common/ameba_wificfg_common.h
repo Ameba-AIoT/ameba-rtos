@@ -76,7 +76,8 @@ struct wifi_user_conf {
 
 	/*!	Power save status:
 		- \b RTW_IPS_WIFI_OFF: The WIFI is powered off during the IPS;
-		- \b RTW_IPS_WIFI_PG: The WIFI enters the PG state during the IPS, and therefore it exits the IPS faster. Only dplus support this status. */
+		- \b RTW_IPS_WIFI_PG: The WIFI enters the PG state during the IPS, and therefore it exits the IPS faster. Only dplus support this status.
+		- \b RTW_IPS_WIFI_CG: The WIFI enters the CG state during the IPS, and therefore it exits the IPS fastest. Only green2 support this status. */
 	u8 ips_level;
 
 	/*!	The driver does not enter the IPS due to 2s disconnection. Instead, API wifi_set_ips_internal() controls the IPS.\n
@@ -287,8 +288,11 @@ struct wifi_user_conf {
 	/*! 0: Disable R-mesh NAT feature, 1: Enable R-mesh NAT feature.*/
 	u8 wtn_rnat_en;
 
-	/*! 0: Determine whether to become RNAT node based on the rssi to AP, 1: Become RNAT node regardless of the rssi to AP.*/
+	/*! 0: Auto select the role (RNAT or connect to an RNAT group), 1: Become RNAT node regardless of the rssi to AP.*/
 	u8 wtn_fixed_rnat_node;
+
+	/*! Max strong R-NAT (its own hop to AP above the start threshold) heard in join scan before this node stops being R-NAT and joins the best group, 0: no limit.*/
+	u8 wtn_rnat_max_strong;
 
 	/*! 0: This device can connect to R-Mesh group or R-NAT group, 1: this device will only connect to R-NAT group.*/
 	u8 wtn_connect_only_to_rnat;

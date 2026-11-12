@@ -192,7 +192,18 @@ static const struct flash_ops nor_flash_ops = {
   */
 u8 nor_dev_init(struct flash_dev *dev)
 {
+#if !defined(CONFIG_NON_OS)
+	/* nor_ftl_init() reads the flash ID with the bare FLASH_RxCmd(), which keeps SPIC in user mode
+	 * (XIP unavailable) for the whole command. If an interrupt lands in that window, its handler
+	 * cannot fetch from flash and SPIC is never switched back to auto mode, so neither core can fetch
+	 * code any more. Take the multi-core flash lock (irq off, peer core parked) around it, the same
+	 * as the FLASH_*XIP helpers used elsewhere in this file. */
+	FLASH_Write_Lock();
+#endif
 	nor_ftl_init(&dev->info);
+#if !defined(CONFIG_NON_OS)
+	FLASH_Write_Unlock();
+#endif
 
 	dev->ops = &nor_flash_ops;
 	dev->media = FLASH_MEDIA_NOR;

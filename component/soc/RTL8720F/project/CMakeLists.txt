@@ -53,7 +53,7 @@ ameba_install_files(
 configure_file(${c_MENUCONFIG_DIR}/.config ${CMAKE_CURRENT_BINARY_DIR}/.config COPYONLY)
 import_kconfig("CONFIG" ${CMAKE_CURRENT_BINARY_DIR}/.config)
 
-if (CONFIG_SOLO)
+if (CONFIG_IOT_MCU_COMBINED)
     ameba_set_if(CONFIG_MP_INCLUDED app_name mcu_app_mp.bin p_ELSE mcu_app.bin)
 else()
     ameba_set_if(CONFIG_MP_INCLUDED app_name app_mp.bin p_ELSE app.bin)

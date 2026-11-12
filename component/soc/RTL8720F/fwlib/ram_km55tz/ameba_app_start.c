@@ -89,7 +89,7 @@ u32 app_mpu_nocache_init(void)
 	return 0;
 }
 
-#ifdef CONFIG_SOLO
+#ifdef CONFIG_IOT_MCU_COMBINED
 /* KM55TZ implements 6 secure MPU regions (index 0~5; MPU_TYPE.DREGION==6). The dynamic
  * app_mpu_nocache_init() takes the lower ones (0~3 with IMG2_FLASH), so SOLO uses the
  * top two directly (bypassing mpu_entry_alloc). */
@@ -180,7 +180,9 @@ void app_start(void)
 
 	app_testmode_status();
 
+#if defined(CONFIG_SECOND_FLASH_NOR)
 	data_flash_highspeed_setup();
+#endif
 
 	SystemCoreClockUpdate();
 	RTK_LOGI(TAG, "AP CPU CLK: %lu Hz \n", SystemCoreClock);
@@ -206,7 +208,7 @@ void app_start(void)
 	mpu_init();
 	app_mpu_nocache_init();
 
-#ifdef CONFIG_SOLO
+#ifdef CONFIG_IOT_MCU_COMBINED
 	/* SOLO: apply the "KM55TZ must not write" SRAM regions from ameba_solocfg.c. */
 	app_solo_mpu_init();
 #endif

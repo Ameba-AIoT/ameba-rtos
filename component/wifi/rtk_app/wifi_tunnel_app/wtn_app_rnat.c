@@ -184,6 +184,62 @@ u8 wtn_rnat_search_client_ip(u8 *src_mac)
 
 #endif
 
+/* join the group chosen by the np rnat selection; wifi_connect disconnects the current ap itself (WITHOUT_DISCONN).
+ * Connect param comes from the setting of the current connection, sta is still connected to the ap when the request arrives.
+ * A failed join is recovered by auto reconnect with the backup of the user's connect param.
+ */
+#ifdef CONFIG_RNAT_AUTOSEL_EN
+static void rnat_join_group_thread(void *param)
+{
+	u8 *bssid = (u8 *)param;
+	struct rtw_network_info info = {0};
+	struct rtw_wifi_setting setting;
+	int ret;
+
+	/*sta already disconnected: the call still succeeds with an all zero setting, nothing to connect with*/
+	if (wifi_get_setting(STA_WLAN_INDEX, &setting) != RTK_SUCCESS || setting.ssid[0] == 0) {
+		goto exit;
+	}
+	/*security type not recognized (open is alg _NO_PRIVACY_) or wep (stored key is converted): no valid password to connect with*/
+	if ((setting.security_type == RTW_SECURITY_OPEN && setting.alg != _NO_PRIVACY_) || (setting.security_type & WEP_ENABLED)) {
+		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "join rnat group abort: security 0x%x\n", setting.security_type);
+		goto exit;
+	}
+
+	info.ssid.len = strlen((char *)setting.ssid);
+	memcpy(info.ssid.val, setting.ssid, info.ssid.len);
+	memcpy(info.bssid.octet, bssid, ETH_ALEN);
+	info.security_type = setting.security_type;
+	info.password = setting.password;
+	info.password_len = strlen((char *)setting.password);
+	info.channel = setting.channel; /*group is on the channel of the ap this node is still connected to*/
+	info.by_reconn = 1; /*keep the user's backup untouched*/
+	ret = wifi_connect(&info, 1);
+	if (ret != RTK_SUCCESS) {
+		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "join rnat group fail:-0x%x, auto reconnect to original ap\n", -ret);
+	} else {
+		lwip_request_ip(NETIF_WLAN_STA_INDEX); /*dhcp was stopped and ip cleared by the disconnect*/
+	}
+
+exit:
+	rtos_mem_free(bssid);
+	rtos_task_delete(NULL);
+}
+
+void wtn_rnat_join_group(u8 *bssid)
+{
+	u8 *grp = (u8 *)rtos_mem_zmalloc(ETH_ALEN);
+
+	if (grp == NULL) {
+		return;
+	}
+	memcpy(grp, bssid, ETH_ALEN);
+	if (rtos_task_create(NULL, "rnat_join_grp", rnat_join_group_thread, grp, 1024 * 4, 1) != RTK_SUCCESS) {
+		rtos_mem_free(grp);
+	}
+}
+#endif
+
 void wtn_rnat_ap_init(u8 enable)
 {
 #ifdef CONFIG_RNAT_EN
@@ -200,11 +256,6 @@ void wtn_rnat_ap_init(u8 enable)
 		}
 #endif
 	} else {
-#ifdef CONFIG_WTN_RNAT_INTERCOM
-		if (wifi_user_config.wtn_rnat_intercom_en) {
-			return;
-		}
-#endif
 		rnat_wifi_stop_ap();
 	}
 #else

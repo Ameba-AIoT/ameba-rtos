@@ -26,7 +26,7 @@ void example_vfs_usbh_thread(void *param)
 
 	fatfs_set_hotplug_usr_cb(fatfs_usr_cb);
 
-	res = vfs_user_register("usbh", VFS_FATFS, VFS_INF_USBH, VFS_REGION_4, VFS_RW);
+	res = vfs_target_register("usbh", VFS_TARGET_USBH, VFS_RW);
 	if (res == 0) {
 		RTK_LOGS(NOTAG, RTK_LOG_INFO, "VFS-USBH Init Success \n");
 	} else {
@@ -34,7 +34,7 @@ void example_vfs_usbh_thread(void *param)
 		goto exit;
 	}
 
-	prefix = find_vfs_tag(VFS_REGION_4);
+	prefix = vfs_get_prefix(VFS_TARGET_USBH);
 	DiagSnPrintf(path, sizeof(path), "%s:%s", prefix, filename);
 
 	finfo = fopen(path, "w");

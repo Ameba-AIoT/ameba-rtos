@@ -88,3 +88,4 @@ After booting, an HTTP download example thread will be started automatically. Th
 * RTL8721Dx
 * RTL8721F
 * RTL8720F
+* RTL8735C

@@ -53,7 +53,7 @@ ameba_execute_process(
     OUTPUT_FILE ${c_SDK_IMAGE_TARGET_DIR}/${c_MCU_PROJECT_NAME}_image2_all.bin
 )
 
-if(CONFIG_SOLO)
+if(CONFIG_IOT_MCU_COMBINED)
     ameba_axf2bin_fw_pack(
         ${c_SDK_IMAGE_TARGET_DIR}/iot_app.bin
         p_IMAGE2 ${c_SDK_IMAGE_TARGET_DIR}/${c_MCU_PROJECT_NAME}_image2_all.bin

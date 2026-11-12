@@ -78,7 +78,7 @@ ameba_list_append_if(CONFIG_FATFS_USB_HOST private_sources
     fatfs_usbh_api.c
 )
 
-ameba_list_append_if(CONFIG_VFS_RAM private_sources
+ameba_list_append_if(CONFIG_VFS_RAM_FATFS private_sources
     fatfs_ram.c
 )
 

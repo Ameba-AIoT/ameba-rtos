@@ -108,6 +108,7 @@ ameba_list_append(private_sources
 
 ameba_list_append(private_sources
     bt/br_edr/bt_ll_clock.c
+    bt/br_edr/bt_ll_conn.c
     bt/br_edr/bt_ll_hop.c
     bt/br_edr/bt_ll_pkt.c
     bt/br_edr/bt_ll_inq_scan.c

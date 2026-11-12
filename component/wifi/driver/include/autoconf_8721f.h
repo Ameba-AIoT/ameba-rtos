@@ -21,8 +21,10 @@
 #define STATIC_RXRING_POOL 1
 
 #define CONFIG_WIFI_TUNNEL
+#define CONFIG_WTN_RNAT_AUTOSEL
 #ifdef CONFIG_AMEBAPRO3
 #undef CONFIG_WIFI_TUNNEL
+#undef CONFIG_WTN_RNAT_AUTOSEL
 #endif
 #if defined(CONFIG_WHC_DEV) || defined(CONFIG_WHC_INTF_IPC)
 #define CONFIG_WTN_SOCKET_APP
@@ -51,6 +53,7 @@
 
 #if defined(CONFIG_PLATFORM_ZEPHYR)
 #undef CONFIG_WIFI_TUNNEL
+#undef CONFIG_WTN_RNAT_AUTOSEL
 #undef CONFIG_WTN_SOCKET_APP
 #endif
 /**************** configurations for concurrent mode end **********************/
@@ -204,6 +207,7 @@
 #undef CONFIG_WIFI_EDCCA
 #undef CONFIG_WIFI_ANTDIV
 #undef CONFIG_WIFI_TUNNEL
+#undef CONFIG_WTN_RNAT_AUTOSEL
 #undef CONFIG_WTN_SOCKET_APP
 #define DISABLE_FW
 #endif

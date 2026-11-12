@@ -183,12 +183,12 @@ extern "C" {
 #endif
 
 /*------------------------------- BT padv rsp -------------------------------*/
-#if defined(RTK_BLE_5_4_PA_RSP_SUPPORT) && RTK_BLE_5_4_PA_RSP_SUPPORT
+#if defined(RTK_BLE_5_4_PAWR_ADV_SUPPORT) && RTK_BLE_5_4_PAWR_ADV_SUPPORT
 #define CONFIG_BT_PER_ADV_RSP   1
 #endif
 
 /*----------------------------- BT padv sync rsp ----------------------------*/
-#if defined(RTK_BLE_5_4_PA_SYNC_RSP_SUPPORT) && RTK_BLE_5_4_PA_SYNC_RSP_SUPPORT
+#if defined(RTK_BLE_5_4_PAWR_SCAN_SUPPORT) && RTK_BLE_5_4_PAWR_SCAN_SUPPORT
 #define CONFIG_BT_PER_ADV_SYNC_RSP   1
 #endif
 

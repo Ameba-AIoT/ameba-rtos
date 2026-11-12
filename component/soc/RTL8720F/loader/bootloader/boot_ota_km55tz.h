@@ -30,7 +30,7 @@ void BOOT_OTFMaskConfig(void);
 void BOOT_RSIPIvSet(Manifest_TypeDef *Manifest, u32 IV_index);
 fih_ret BOOT_LoadSubImage(SubImgInfo_TypeDef *SubImgInfo, u32 StartAddr, u8 Num, char **ImgName, u8 ErrLog);
 u8 BOOT_OTA_IMG(void);
-#ifdef CONFIG_SOLO
+#ifdef CONFIG_IOT_MCU_COMBINED
 int BOOT_OTA_LoadNP(void);
 #endif
 

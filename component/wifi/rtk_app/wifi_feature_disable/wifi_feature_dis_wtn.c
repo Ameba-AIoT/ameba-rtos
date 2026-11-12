@@ -20,7 +20,7 @@
 #ifdef CONFIG_WIFI_TUNNEL
 #ifndef CONFIG_WHC_HOST
 
-#if !defined(CONFIG_RMESH_EN) || defined(CONFIG_RNAT_EN)
+#if !defined(CONFIG_RMESH_EN) || (defined(CONFIG_RNAT_EN) && !defined(CONFIG_RNAT_AUTOSEL_EN))
 void rtw_macid_wtn_mgt_init(void *pmacid_mgt)
 {
 	UNUSED(pmacid_mgt);
@@ -109,6 +109,12 @@ int wifi_tunnelapi_rnat_wtn_bcn_bypass(void *precv_frame)
 void wifi_tunnelapi_setkey(void *pparm)
 {
 	UNUSED(pparm);
+}
+
+void wifi_tunnelapi_scan_helper_mark(void *scan_network, void *pattrib)
+{
+	UNUSED(scan_network);
+	UNUSED(pattrib);
 }
 
 void wifi_tunnelapi_scan_original_rssi_record(void *new_network, u8 is_wtn_bcn)

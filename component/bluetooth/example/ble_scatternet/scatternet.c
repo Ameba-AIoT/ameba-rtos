@@ -752,22 +752,62 @@ static rtk_bt_evt_cb_ret_t ble_scatternet_gap_app_callback(uint8_t evt_code, voi
 		if (pa_sync_ind->state == RTK_BT_LE_PA_SYNC_STATE_SYNCHRONIZED) {
 			rtk_bt_le_pa_synced_info_t *p_info = &pa_sync_ind->info;
 			rtk_bt_le_addr_to_str(&p_info->addr, le_addr, sizeof(le_addr));
-			BT_LOGA("[APP] PA SYNCHRONIZED PARAM: [Device]: %s, sync_handle:0x%x, adv_sid: %d, past_received: %d\r\n",
-					le_addr, p_info->sync_handle, p_info->adv_sid, p_info->past_received);
-			BT_AT_PRINT("+BLEGAP:pa_sync,%s,0x%x,%d,%d\r\n",
+#if defined(RTK_BLE_5_4_PAWR_SCAN_SUPPORT) && RTK_BLE_5_4_PAWR_SCAN_SUPPORT
+			if (p_info->num_subevents) {
+				BT_LOGA("[APP] PAwR SYNCHRONIZED PARAM: [Device]: %s, sync_handle: 0x%x, adv_sid: %d, "  \
+						"past_received: %d, num_subevent: %d, subevent_interval: %d\r\n",
+						le_addr, p_info->sync_handle, p_info->adv_sid, p_info->past_received,
+						p_info->num_subevents, p_info->subevent_interval);
+			} else
+#endif
+			{
+				BT_LOGA("[APP] PA SYNCHRONIZED PARAM: [Device]: %s, sync_handle:0x%x, adv_sid: %d, past_received: %d\r\n",
 						le_addr, p_info->sync_handle, p_info->adv_sid, p_info->past_received);
+				BT_AT_PRINT("+BLEGAP:pa_sync,%s,0x%x,%d,%d\r\n",
+							le_addr, p_info->sync_handle, p_info->adv_sid, p_info->past_received);
+			}
 		}
 		break;
 	}
 
 	case RTK_BT_LE_GAP_EVT_PA_ADV_REPORT_IND: {
 		rtk_bt_le_pa_adv_report_ind_t *pa_report = (rtk_bt_le_pa_adv_report_ind_t *)param;
-		BT_LOGA("[APP] PA sync ADV report: sync_id %d, sync_handle 0x%x, tx_power %d, rssi %d, cte_type %d, data_status 0x%x, data_len %d\r\n",
-				pa_report->sync_id, pa_report->sync_handle, pa_report->tx_power, pa_report->rssi,
-				pa_report->cte_type, pa_report->data_status, pa_report->data_len);
-		BT_AT_PRINT("+BLEGAP:pa_report,%d,0x%x,%d,%d,%d,0x%x,%d\r\n",
+#if defined(RTK_BLE_5_4_PAWR_SCAN_SUPPORT) && RTK_BLE_5_4_PAWR_SCAN_SUPPORT
+		if (pa_report->subevent != 0xFF) {
+			BT_LOGA("[APP] PAwR subevent report: sync_id %d, sync_handle 0x%x, tx_power %d, rssi %d, "  \
+					"cte_type %d, per_evt_cnt %d, subevent %d, data_status 0x%x, data_len %d\r\n",
+					pa_report->sync_id, pa_report->sync_handle, pa_report->tx_power, pa_report->rssi,
+					pa_report->cte_type, pa_report->periodic_event_counter, pa_report->subevent,
+					pa_report->data_status, pa_report->data_len);
+			if (pa_report->data_status == RTK_BT_LE_PA_REPORT_DATA_STATUS_COMPLETE) {
+				rtk_bt_le_gap_pawr_set_response_t rsp = {0};
+				static uint8_t pawr_rsp_data[220];
+
+				/* PAwR rsp data loopback subevent data */
+				memset(pawr_rsp_data, 0, sizeof(pawr_rsp_data));
+				memcpy(pawr_rsp_data, pa_report->p_data, MIN(220, pa_report->data_len));
+				rsp.sync_id = pa_report->sync_id;
+				rsp.request_event = pa_report->periodic_event_counter;
+				rsp.request_subevent = pa_report->subevent;
+				rsp.response_subevent = pa_report->subevent;
+				rsp.response_slot = 1;
+				rsp.len = sizeof(pawr_rsp_data);
+				rsp.data = pawr_rsp_data;
+				if (RTK_BT_OK == rtk_bt_le_gap_pawr_set_response_data(&rsp)) {
+					BT_LOGA("[APP] PAwR set response data success\r\n");
+				}
+			}
+		} else
+#endif
+		{
+			BT_LOGA("[APP] PA sync ADV report: sync_id %d, sync_handle 0x%x, tx_power %d, rssi %d, "  \
+					"cte_type %d, data_status 0x%x, data_len %d\r\n",
 					pa_report->sync_id, pa_report->sync_handle, pa_report->tx_power, pa_report->rssi,
 					pa_report->cte_type, pa_report->data_status, pa_report->data_len);
+			BT_AT_PRINT("+BLEGAP:pa_report,%d,0x%x,%d,%d,%d,0x%x,%d\r\n",
+						pa_report->sync_id, pa_report->sync_handle, pa_report->tx_power, pa_report->rssi,
+						pa_report->cte_type, pa_report->data_status, pa_report->data_len);
+		}
 		break;
 	}
 #endif
@@ -885,6 +925,54 @@ static rtk_bt_evt_cb_ret_t ble_scatternet_gap_app_callback(uint8_t evt_code, voi
 		break;
 	}
 #endif /* RTK_BLE_5_1_CTE_SUPPORT */
+
+#if defined(RTK_BLE_5_4_PAWR_ADV_SUPPORT) && RTK_BLE_5_4_PAWR_ADV_SUPPORT
+	case RTK_BT_LE_GAP_EVT_PAWR_DATA_REQ_IND: {
+		rtk_bt_le_gap_pawr_data_req_ind_t *req = (rtk_bt_le_gap_pawr_data_req_ind_t *)param;
+		static uint8_t pawr_sub_data[4][60];
+		static uint32_t pawr_cycle = 0;
+		rtk_bt_le_gap_pawr_subevent_element_t sub_ele[4] = {0};
+		rtk_bt_le_gap_pawr_subevent_data_t sub_data = {0};
+		uint8_t num = 0;
+
+		BT_LOGA("[APP] PAwR(%d) request subevent data, start: %d num: %d\r\n",
+				req->adv_handle, req->start, req->count);
+
+		if (!req->count) {
+			BT_LOGE("[APP] Invalid PAwR request subevent data number!\r\n");
+			break;
+		}
+
+		num = MIN(4, req->count);
+		sub_data.adv_handle = req->adv_handle;
+		sub_data.num_subs = num;
+		sub_data.sub_arr = sub_ele;
+		for (uint8_t i = 0; i < num; i++) {
+			sub_ele[i].subevent = req->start + i;
+			sub_ele[i].response_slot_start = 0;
+			sub_ele[i].response_slot_count = 1;
+			sub_ele[i].len = 60;
+			/* Byte0-3: subevent set cycles in uint32_t, Byte4-N: uint8_t subevent index in PA */
+			memcpy(&pawr_sub_data[i][0], &pawr_cycle, 4);
+			memset(&pawr_sub_data[i][4], sub_ele[i].subevent, 56);
+			sub_ele[i].data = pawr_sub_data[i];
+		}
+		pawr_cycle++;
+
+		if (RTK_BT_OK == rtk_bt_le_gap_pawr_set_subevent_data(&sub_data)) {
+			BT_LOGA("[APP] PAwR set subevent data success\r\n");
+		}
+		break;
+	}
+
+	case RTK_BT_LE_GAP_EVT_PAWR_RSP_IND: {
+		rtk_bt_le_gap_pawr_rsp_ind_t *rsp = (rtk_bt_le_gap_pawr_rsp_ind_t *)param;
+		BT_LOGA("[APP] PAwR(%d) rsp subevent: %d, tx_status: %d, slot: %d, rssi: %d len: %d\r\n",
+				rsp->adv_handle, rsp->subevent, rsp->tx_status, rsp->response_slot, rsp->rssi, rsp->len);
+		BT_AT_PRINT("+BLEGAP:pawr_rsp,%d,%d,%d,%d,%d\r\n", rsp->adv_handle, rsp->subevent, rsp->response_slot, rsp->rssi, rsp->len);
+		break;
+	}
+#endif
 
 #if defined(RTK_BLE_COC_SUPPORT) && RTK_BLE_COC_SUPPORT
 	case RTK_BT_LE_GAP_EVT_COC_CONNECT_IND: {

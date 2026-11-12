@@ -20,7 +20,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/net/buf.h>
 #include <zephyr/sys/__assert.h>
 
-#include <zephyr_config.h> //ping_yan revised for buf
+#include <zephyr_config.h>
 
 #if defined(CONFIG_NET_BUF_LOG)
 #define NET_BUF_DBG(fmt, ...) LOG_DBG("(%p) " fmt, k_current_get(), \
@@ -101,7 +101,7 @@ extern struct net_buf_pool iso_rx_pool;
 extern struct net_buf_pool iso_tx_pool;
 #endif
 
-static struct net_buf_pool *_net_buf_pool_list[] = { //ping_yan revised for buf
+static struct net_buf_pool *_net_buf_pool_list[] = {
 				&discardable_pool,
 				&hci_cmd_pool,
 #if defined(CONFIG_BT_ATT_PREPARE_COUNT) && (CONFIG_BT_ATT_PREPARE_COUNT > 0)
@@ -170,17 +170,17 @@ void zephyr_net_buf_pool_init(void)
 	}
 }
 
-struct net_buf_pool *net_buf_pool_get(int id) //ping_yan revised for buf
+struct net_buf_pool *net_buf_pool_get(int id)
 {
 	int size = sizeof(_net_buf_pool_list) / sizeof(struct net_buf_pool *);
 
 	if (id < size)
 		return _net_buf_pool_list[id];
-	
+
 	return NULL;
 }
 
-static int pool_id(struct net_buf_pool *pool) //ping_yan revised for buf
+static int pool_id(struct net_buf_pool *pool)
 {
 	int i = 0;
 	int size = sizeof(_net_buf_pool_list) / sizeof(struct net_buf_pool *);

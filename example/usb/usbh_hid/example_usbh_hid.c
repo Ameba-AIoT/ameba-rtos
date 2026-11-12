@@ -291,7 +291,15 @@ static void example_usbh_hid_hotplug_thread(void *param)
 			break;
 		}
 
-		usbh_start();
+		ret = usbh_start();
+		if (ret != RTK_SUCCESS) {
+			usbh_hid_deinit();
+			usbh_deinit();
+			rtos_mutex_give(usbh_hid_state_mutex);
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Reinit fail: %d\n", ret);
+			fatal = 1U;
+			break;
+		}
 		usbh_hid_stack_ready = 1U;
 		rtos_mutex_give(usbh_hid_state_mutex);
 
@@ -359,7 +367,12 @@ static int usbh_hid_start(void)
 	}
 
 	/* All class drivers registered; start USB TRX so enumeration can run. */
-	usbh_start();
+	ret = usbh_start();
+	if (ret != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "USB start fail: %d\n", ret);
+		usbh_hid_deinit();
+		goto usb_deinit_exit;
+	}
 	usbh_hid_stack_ready = 1U;
 
 #if CONFIG_USBH_HID_HOTPLUG
@@ -387,8 +400,8 @@ static int usbh_hid_start(void)
 	return RTK_SUCCESS;
 
 usb_deinit_exit:
-	/* usbh_hid_init() failed, so only the host core is up and the gate was never
-	   opened: no lock needed here. */
+	/* usbh_hid_init() or usbh_start() failed, so only the host core is up and the gate was
+	   never opened: no lock needed here. */
 	usbh_deinit();
 
 free_sema_exit:

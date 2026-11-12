@@ -33,3 +33,11 @@ uint8_t g_ble_ll_pa_sync_chain_num = BLE_LL_MAX_PA_SYNC_CHAIN_NUM;
 uint8_t g_ble_ll_max_pa_sync_set_num = 0;
 uint8_t g_ble_ll_pa_sync_chain_num = 0;
 #endif
+
+#ifdef CONFIG_BT_LL_CLASSIC_ENABLE
+uint8_t g_bt_ll_max_link_num = BT_LL_MAX_CONN_NUM;
+uint8_t g_bt_ll_max_conn_rx_num = (BT_LL_MAX_CONN_NUM *BLE_LL_RX_DATA_NUM_PER_LINK);
+#else
+uint8_t g_bt_ll_max_link_num = 0;
+uint8_t g_bt_ll_max_conn_rx_num = 0;
+#endif

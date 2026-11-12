@@ -1,23 +1,28 @@
 #include "ameba_soc.h"
 #include "os_wrapper.h"
 #include "vfs.h"
+#if defined(CONFIG_VFS_SD_FATFS)
 #include "vfs_fatfs.h"
+#endif
 #include "example_vfs_sdcard.h"
 
+#if defined(CONFIG_VFS_SD_FATFS)
 void fatfs_usr_cb(int status)
 {
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "Fatfs hotplug user callback works, status : %d\n", status);
 
 	if (status == HOTPULG_IN) {
 		if (fatfs2_mount_flag != 1) {
-			vfs_user_register("sdcard", VFS_FATFS, VFS_INF_SD, VFS_REGION_4, VFS_RW);
+			vfs_target_register("sdcard", VFS_TARGET_SD, VFS_RW);
 		}
 	} else {
 		if (fatfs2_mount_flag == 1) {
-			vfs_user_unregister("sdcard", VFS_FATFS, VFS_INF_SD);
+			vfs_target_unregister("sdcard");
 		}
 	}
 }
+
+#endif
 
 void example_vfs_sdcard_thread(void *param)
 {
@@ -34,9 +39,11 @@ void example_vfs_sdcard_thread(void *param)
 
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\r\n====================Example: VFS SDcard====================\r\n");
 
+#if defined(CONFIG_VFS_SD_FATFS)
 	fatfs_set_hotplug_usr_cb(fatfs_usr_cb);
+#endif
 
-	res = vfs_user_register("sdcard", VFS_FATFS, VFS_INF_SD, VFS_REGION_4, VFS_RW);
+	res = vfs_target_register("sdcard", VFS_TARGET_SD, VFS_RW);
 	if (res == 0) {
 		RTK_LOGS(NOTAG, RTK_LOG_INFO, "VFS-SDcard Init Success \n");
 	} else {
@@ -44,7 +51,7 @@ void example_vfs_sdcard_thread(void *param)
 		goto exit;
 	}
 
-	prefix = find_vfs_tag(VFS_REGION_4);
+	prefix = vfs_get_prefix(VFS_TARGET_SD);
 	DiagSnPrintf(path, sizeof(path), "%s:%s", prefix, filename);
 
 	finfo = fopen(path, "w");

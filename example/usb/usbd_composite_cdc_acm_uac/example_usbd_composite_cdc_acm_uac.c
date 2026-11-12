@@ -303,7 +303,7 @@ static int composite_cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 		/* Ref CDC PSTN 1.2 Table 17: the Line Coding structure is exactly 7 bytes, any
 		   other wLength must not update the cached line coding. */
 		if (req->wLength == USB_CDC_ACM_LINE_CODING_SIZE) {
-			lc->b.dwDteRate = (u32)(buf[0] | (buf[1] << 8) | (buf[2] << 16) | (buf[3] << 24));
+			lc->b.dwDteRate = (u32)buf[0] | ((u32)buf[1] << 8) | ((u32)buf[2] << 16) | ((u32)buf[3] << 24);
 			lc->b.bCharFormat = buf[4];
 			lc->b.bParityType = buf[5];
 			lc->b.bDataBits = buf[6];
@@ -342,8 +342,10 @@ static int composite_cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 		break;
 
 	case USB_CDC_ACM_SEND_BREAK:
-		/* Do nothing */
-		ret = RTK_SUCCESS;
+		/* Ref CDC PSTN 1.2 6.3.13: no data stage, so wLength must be zero. Nothing to do */
+		if (req->wLength == 0U) {
+			ret = RTK_SUCCESS;
+		}
 		break;
 
 	default:
@@ -480,7 +482,7 @@ static void example_audio_track_play(void)
 				for (idx = 0, off = 0; idx < read_dat_len; idx += audio_src_step, off += audio_dst_step) {
 					// ch0 ch1 ch2 ch3 ch0 ch1 ch2 ch3 ch0 ch1 ch2 ch3
 					// 24  24  24  24  24  24  24  24  24  24  24  24
-					usb_os_memcpy((void *)(play_buf + off), (const void *)(recv_buf + idx), audio_dst_step);
+					memcpy((void *)(play_buf + off), (const void *)(recv_buf + idx), audio_dst_step);
 					play_data_size += audio_dst_step;
 				}
 

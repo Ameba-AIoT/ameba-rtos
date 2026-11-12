@@ -24,7 +24,7 @@
 #ifdef CONFIG_USBD_MSC_FLASH
 /* On-chip flash region for the MSC U-disk, overridable by editing this macro.
    Defaults to VFS2 because VFS1 is usually taken by the system LITTLEFS/KV. */
-#define USBD_MSC_FLASH_VFS_REGION VFS_REGION_2
+#define USBD_MSC_FLASH_VFS_TARGET VFS_TARGET_FLASH_VFS2
 #endif
 
 /* Private defines -----------------------------------------------------------*/
@@ -128,7 +128,7 @@ static rtos_sema_t msc_usb_status_changed_sema;
 
 #if MSC_SD_HOTPLUG
 /* Written by the SD card-detect callback, read by the SD thread, possibly on another core */
-static volatile u8 msc_sd_status;
+static volatile SD_RESULT msc_sd_status;
 static rtos_sema_t msc_sd_status_changed_sema;
 #endif
 
@@ -202,9 +202,9 @@ static void msc_teardown(void)
 	}
 
 #ifdef CONFIG_USBD_MSC_FLASH
-	vfs_user_unregister(USBD_MSC_VFS_PREFIX, VFS_FATFS, VFS_INF_FLASH);
+	vfs_target_unregister(USBD_MSC_VFS_PREFIX);
 #elif defined(CONFIG_USBD_MSC_RAM)
-	vfs_user_unregister(USBD_MSC_VFS_PREFIX, VFS_FATFS, VFS_INF_RAM);
+	vfs_target_unregister(USBD_MSC_VFS_PREFIX);
 #endif
 
 	msc_free_resource();
@@ -480,14 +480,14 @@ static int msc_start(void)
 
 #ifdef CONFIG_USBD_MSC_FLASH
 	/* Mount FATFS on the selected on-chip flash region. */
-	ret = vfs_user_register(USBD_MSC_VFS_PREFIX, VFS_FATFS, VFS_INF_FLASH, USBD_MSC_FLASH_VFS_REGION, VFS_RW);
+	ret = vfs_target_register(USBD_MSC_VFS_PREFIX, USBD_MSC_FLASH_VFS_TARGET, VFS_RW);
 	if (ret != 0) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "VFS register FATFS/FLASH fail: %d\n", ret);
 		goto exit_usbd_msc_disk_init_fail;
 	}
 #elif defined(CONFIG_USBD_MSC_RAM)
 	/* Mount FATFS on the VFS RAM disk (volatile, formatted fresh on every register). */
-	ret = vfs_user_register(USBD_MSC_VFS_PREFIX, VFS_FATFS, VFS_INF_RAM, VFS_REGION_RAM, VFS_RW);
+	ret = vfs_target_register(USBD_MSC_VFS_PREFIX, VFS_TARGET_RAM, VFS_RW);
 	if (ret != 0) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "VFS register FATFS/RAM fail: %d\n", ret);
 		goto exit_usbd_msc_disk_init_fail;

@@ -53,6 +53,8 @@ static int whc_gspi_recv_timeout(struct whc_xfer_adapter_t *adapter, u8 *pbuf, i
 		ret = -ETIMEDOUT;
 		goto out;
 	}
+	/* wait_event_timeout() returns remaining jiffies on success */
+	ret = 0;
 
 	adapter->sdio_rx_ready = false;
 

@@ -1,7 +1,6 @@
 /**
  * @file      rtk_bt_hid.h
- * @author    benling_xu@realsil.com.cn
- * @brief     Bluetooth hid type and function deffinition
+ * @brief     Bluetooth BR/EDR HID type and function definition.
  * @copyright Copyright (c) 2022. Realtek Semiconductor Corporation. All rights reserved.
  */
 
@@ -15,103 +14,117 @@ extern "C"
 {
 #endif
 
-#define RTK_BT_HID_MAX_DESCRIPTOR_LENGTH 400
-#define RTK_BT_HID_MAX_INPUT_DATA_LENGTH 20
+#define RTK_BT_HID_MAX_DESCRIPTOR_LENGTH 400       /*!< HID maximum descriptor length. */
+#define RTK_BT_HID_MAX_INPUT_DATA_LENGTH 20        /*!< HID maximum input data length. */
 
 /**
  * @typedef   rtk_bt_hid_role_t
- * @brief     hid role
+ * @brief     Bluetooth BR/EDR HID device role.
  */
 typedef enum {
-	RTK_BT_HID_ROLE_GAMEPAD = 0x00,                 /*!< BT HID GAMEPAD */
-	RTK_BT_HID_ROLE_MOUSE = 0x01,                   /*!< BT HID MOUSE */
+	RTK_BT_HID_ROLE_GAMEPAD = 0x00,    /*!< HID gamepad device. */
+	RTK_BT_HID_ROLE_MOUSE = 0x01,      /*!< HID mouse device. */
 } rtk_bt_hid_role_t;
 
-/* ------------------------------- Data Types ------------------------------- */
+/************************************** Data Types *************************************/
 
 /**
  * @struct    rtk_bt_hid_des_t
- * @brief     hid descriptor struct.
+ * @brief     Bluetooth BR/EDR HID report descriptor.
  */
 typedef struct {
-	uint8_t des[RTK_BT_HID_MAX_DESCRIPTOR_LENGTH];  /*!< descriptor */
-	uint32_t len;                                   /*!< descriptor data length */
+	uint8_t des[RTK_BT_HID_MAX_DESCRIPTOR_LENGTH];    /*!< HID report descriptor data. */
+	uint32_t len;                                     /*!< Length of the descriptor data in octets.
+                                                       *   Range: 0 to @ref RTK_BT_HID_MAX_DESCRIPTOR_LENGTH. */
 } rtk_bt_hid_des_t;
 
 /**
  * @struct    rtk_bt_hid_input_data_t
- * @brief     hid interrupt input data struct.
+ * @brief     Bluetooth BR/EDR HID interrupt input report data.
  */
 typedef struct {
-	uint8_t bd_addr[6];                                 /*!< address */
-	uint8_t data[RTK_BT_HID_MAX_INPUT_DATA_LENGTH];     /*!< data */
-	uint32_t len;                                       /*!< indicate data length */
+	uint8_t bd_addr[6];                                /*!< Bluetooth address of the remote device, 6 octets. */
+	uint8_t data[RTK_BT_HID_MAX_INPUT_DATA_LENGTH];    /*!< Input report data. */
+	uint32_t len;                                      /*!< Length of the input report data in octets.
+                                                        *   Range: 0 to @ref RTK_BT_HID_MAX_INPUT_DATA_LENGTH. */
 } rtk_bt_hid_input_data_t;
 
 /**
  * @struct    rtk_bt_hid_conn_ind_t
- * @brief     hid connection indication.
+ * @brief     Bluetooth BR/EDR HID connection information.
  */
 typedef struct {
-	uint8_t bd_addr[6];                                 /*!< address */
+	uint8_t bd_addr[6];    /*!< Bluetooth address of the remote device, 6 octets. */
 } rtk_bt_hid_conn_ind_t;
 
 /**
  * @struct    rtk_bt_hid_disconn_ind_t
- * @brief     hid disconnection indication.
+ * @brief     Bluetooth BR/EDR HID disconnection information.
  */
 typedef struct {
-	uint8_t bd_addr[6];                                 /*!< address */
-	uint16_t cause;                                     /*!< disconnection cause */
+	uint8_t bd_addr[6];    /*!< Bluetooth address of the remote device, 6 octets. */
+	uint16_t cause;        /*!< Disconnection cause code. */
 } rtk_bt_hid_disconn_ind_t;
 
-/* ------------------------------ Functions Declaration ------------------------------ */
+/********************************* Functions Declaration *******************************/
+/**
+ * @defgroup  bt_hid BT HID APIs
+ * @brief     BT HID related function APIs
+ * @ingroup   BT_APIs
+ * @{
+ */
 
 /**
- * @brief     set hid descriptor data.
- * @param[in] des: descriptor data pointer
- * @param[in] length: data length
+ * @brief     Add the HID report descriptor that is published in the HID SDP record.
+ * @param[in] des: HID report descriptor data.
+ *                 Must not be NULL.
+ * @param[in] length: Length of the descriptor data in octets.
+ *                    Range: 0 to @ref RTK_BT_HID_MAX_DESCRIPTOR_LENGTH.
  * @return
- *            - 0  : Succeed
- *            - Others: Error code
+ *            - @ref rtk_bt_err_common
+ * @note
+ *            - This API shall be called before BT is enabled.
+ *            - Only one descriptor can be added.
  */
 uint16_t rtk_hid_descriptor_add(void *des, uint32_t length);
 
 /**
- * @brief     connect hid.
- * @param[in] bd_addr: bt address
+ * @brief     Initiate a HID connection to the remote device. The result is reported asynchronously via event @ref RTK_BT_HID_EVT_CONN_CMPL.
+ * @param[in] bd_addr: Bluetooth address of the remote device, 6 octets.
+ *                     Must not be NULL.
  * @return
- *            - 0  : Succeed
- *            - Others: Error code
+ *            - @ref rtk_bt_err_common
  */
 uint16_t rtk_bt_hid_connect(uint8_t *bd_addr);
 
 /**
- * @brief     disconnect hid.
- * @param[in] bd_addr: bt address
+ * @brief     Disconnect the HID connection with the remote device. The result is reported asynchronously via event @ref RTK_BT_HID_EVT_DISCONN_CMPL.
+ * @param[in] bd_addr: Bluetooth address of the remote device, 6 octets.
+ *                     Must not be NULL.
  * @return
- *            - 0  : Succeed
- *            - Others: Error code
+ *            - @ref rtk_bt_err_common
  */
 uint16_t rtk_bt_hid_disconnect(uint8_t *bd_addr);
 
 /**
- * @brief     get report response.
- * @param[in] bd_addr: bt address
+ * @brief     Send the response to a HID get report request from the remote device.
+ * @param[in] bd_addr: Bluetooth address of the remote device, 6 octets.
+ *                     Must not be NULL.
  * @return
- *            - 0  : Succeed
- *            - Others: Error code
+ *            - @ref rtk_bt_err_common
  */
 uint16_t rtk_bt_hid_get_report_rsp(uint8_t *bd_addr);
 
 /**
- * @brief     hid input data send.
- * @param[in] bd_addr: bt address
- * @param[in] data: pointer to input data
- * @param[in] len: input data length
+ * @brief     Send an input report to the remote device over the HID interrupt channel.
+ * @param[in] bd_addr: Bluetooth address of the remote device, 6 octets.
+ *                     Must not be NULL.
+ * @param[in] data: Input report data.
+ *                  Must not be NULL.
+ * @param[in] len: Length of the input report data in octets.
+ *                 Range: 0 to @ref RTK_BT_HID_MAX_INPUT_DATA_LENGTH.
  * @return
- *            - 0  : Succeed
- *            - Others: Error code
+ *            - @ref rtk_bt_err_common
  */
 uint16_t rtk_bt_hid_input_data_send(uint8_t *bd_addr, uint8_t *data, uint32_t len);
 
@@ -123,4 +136,4 @@ uint16_t rtk_bt_hid_input_data_send(uint8_t *bd_addr, uint8_t *data, uint32_t le
 }
 #endif
 
-#endif /* __RTK_BT_A2DP_H__ */
+#endif /* __RTK_BT_HID_H__ */

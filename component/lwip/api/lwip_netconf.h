@@ -25,6 +25,9 @@ extern "C" {
 extern struct netif xnetif[];
 extern struct netif *pnetif_sta;
 extern struct netif *pnetif_ap;
+#if defined(CONFIG_WIFI_NAN_ENABLE)
+extern struct netif *pnetif_nan;
+#endif
 #if defined(CONFIG_LWIP_ETHERNET)
 extern struct netif *pnetif_eth;
 #endif
@@ -92,9 +95,6 @@ extern struct static_ip_config user_static_ip;
 #define CONNECTION_VALID 0
 #define CONNECTION_INVALID 1
 
-#define NETWORK_SEGMENT_POOL_START    43
-#define NETWORK_SEGMENT_POOL_END      254
-
 enum {
 #if defined(CONFIG_WLAN)
 	NETIF_WLAN_STA_INDEX = STA_WLAN_INDEX,
@@ -131,7 +131,6 @@ struct static_ip_config {
 
 
 /* Exported types ------------------------------------------------------------*/
-extern struct netif *pnetif_eth;
 extern int lwip_init_done;
 /* Exported constants --------------------------------------------------------*/
 /* Exported macro ------------------------------------------------------------*/

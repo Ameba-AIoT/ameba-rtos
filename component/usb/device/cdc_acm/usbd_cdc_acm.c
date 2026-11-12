@@ -337,6 +337,10 @@ static int cdc_acm_set_config(usb_dev_t *dev, u8 config)
 	/* Init BULK OUT EP */
 	info = &ep_bulk_out->info;
 	info->mps = (dev->dev_speed == USB_SPEED_HIGH) ? USB_BULK_HS_MAX_MPS : USB_BULK_FS_MAX_MPS;
+	/* The controller receives whole DWORD aligned packets: request no more than the buffer holds
+	   at this MPS, so that usbd_ep_receive() accepts it. usbd_cdc_acm_private_init() made sure
+	   the buffer holds one packet at least. */
+	ep_bulk_out->xfer_len = usb_get_max_payload_len(ep_bulk_out->xfer_buf_len, info->mps);
 	ret = usbd_ep_init(dev, ep_bulk_out);
 	if (ret != RTK_SUCCESS) {
 		goto exit_clear_config;
@@ -549,15 +553,22 @@ static int cdc_acm_setup(usb_dev_t *dev, usb_setup_req_t *req)
 					 * instead of waiting out the data stage */
 					ret = -RTK_ERR_BADARG;
 				} else {
+					usb_setup_req_t rsp_req;
+
 					if (rsp_len > ep0_in->xfer_buf_len) {
 						rsp_len = (u16)ep0_in->xfer_buf_len;
 					}
 					/* EP0 buffer is shared with descriptor and OUT traffic, clear the response
 					 * window so a callback writing fewer bytes cannot leak stale data */
 					usb_os_memset((void *)ep0_in->xfer_buf, 0, rsp_len);
-					ret = cdev->cb->setup(req, ep0_in->xfer_buf);
+					/* The callback sizes its answer by wLength, which the host may set up to 0xFFFF:
+					 * hand it a copy carrying the capacity of buf instead. The request itself is
+					 * left untouched, the core decides on the ZLP with the host's wLength. */
+					usb_os_memcpy((void *)&rsp_req, (const void *)req, sizeof(usb_setup_req_t));
+					rsp_req.wLength = (req->wLength < rsp_len) ? req->wLength : rsp_len;
+					ret = cdev->cb->setup(&rsp_req, ep0_in->xfer_buf);
 					if (ret == RTK_SUCCESS) {
-						ep0_in->xfer_len = (req->wLength < rsp_len) ? req->wLength : rsp_len;
+						ep0_in->xfer_len = rsp_req.wLength;
 						ret = usbd_ep_transmit(dev, ep0_in);
 					}
 				}
@@ -844,13 +855,6 @@ static u16 cdc_acm_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf,
 	/* Speed the returned configuration describes, which selects the bInterval encoding */
 	usb_speed_type_t desc_speed = speed;
 
-	/* Ref USB 2.0 9.4.3: the low byte of wValue is the descriptor index. This function has one
-	   configuration and one of each of the other descriptors, so only index 0 exists: a request
-	   for any other index is a request error. Strings are owned by the core. */
-	if ((type != USB_DESC_TYPE_STRING) && (USB_LOW_BYTE(req->wValue) != 0U)) {
-		return 0U;
-	}
-
 	switch (type) {
 
 	case USB_DESC_TYPE_DEVICE:
@@ -1003,16 +1007,16 @@ static int usbd_acm_cdc_notify(u8 type, u16 value, void *data, u16 len)
 	usbd_cdc_acm_ntf_t *ntf = (usbd_cdc_acm_ntf_t *)ep_intr_in->xfer_buf;
 	u8 claimed;
 
+	/* cdev->dev is assigned in set_config, so it is NULL until the host has
+	   configured the device. cdev->cfg is NULL before the first init: log the endpoint copy. */
+	if ((dev == NULL) || (!dev->is_ready)) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "EP%02x TX not ready\n", ep_intr_in->info.addr);
+		return ret;
+	}
+
 	if (cdev->cfg->notify_en == 0U) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Notify disabled\n");
 		return -RTK_ERR_BADARG;
-	}
-
-	/* cdev->dev is assigned in set_config, so it is NULL until the host has
-	   configured the device. */
-	if ((dev == NULL) || (!dev->is_ready)) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "EP%02x TX not ready\n", cdev->cfg->intr_in_addr);
-		return ret;
 	}
 
 	if (len > USB_CDC_ACM_INTR_IN_DATA_SIZE) {
@@ -1026,37 +1030,29 @@ static int usbd_acm_cdc_notify(u8 type, u16 value, void *data, u16 len)
 	ep_intr_in->xfer_state = 1U;
 	usb_os_exit_critical();
 
-	if (claimed != 0U) {
-		if (dev->is_ready) {
-			ntf->bmRequestType = USB_D2H | USB_REQ_TYPE_CLASS | USB_REQ_RECIPIENT_INTERFACE;
-			ntf->bNotificationType = type;
-			ntf->wValue = value;
-			/* Ref CDC 1.2 6.3: wIndex names the communication interface the notification
-			   is emitted on, so it must carry the composite-assigned interface number.
-			   if_base is 0 in standalone mode. */
-			ntf->wIndex = (u16)(cdev->if_base + USBD_CDC_ACM_COMM_ITF_NUM);
-			ntf->wLength = len;
+	if (claimed == 0U) {
+		return -RTK_ERR_BUSY;
+	}
 
-			usb_os_memcpy((void *)ntf->buf, (const void *)data, len);
+	ntf->bmRequestType = USB_D2H | USB_REQ_TYPE_CLASS | USB_REQ_RECIPIENT_INTERFACE;
+	ntf->bNotificationType = type;
+	ntf->wValue = value;
+	/* Ref CDC 1.2 6.3: wIndex names the communication interface the notification
+	   is emitted on, so it must carry the composite-assigned interface number.
+	   if_base is 0 in standalone mode. */
+	ntf->wIndex = (u16)(cdev->if_base + USBD_CDC_ACM_COMM_ITF_NUM);
+	ntf->wLength = len;
 
-			if (dev->is_ready) {
-				ep_intr_in->xfer_len = USB_CDC_ACM_INTR_IN_REQUEST_SIZE + len;
-				ret = usbd_ep_transmit(dev, ep_intr_in);
-				if (ret != RTK_SUCCESS) {
-					/* The transfer was not armed, so no ep_data_in completion will ever release
-					   the EP: release it here or every later notification stays -RTK_ERR_BUSY */
-					ep_intr_in->xfer_state = 0U;
-				}
-			} else {
-				ep_intr_in->xfer_state = 0U;
-			}
-		} else  {
-			/*TX not ready: give the endpoint back*/
-			ep_intr_in->xfer_state = 0U;
-		}
-	} else {
-		/*TX busy*/
-		ret = -RTK_ERR_BUSY;
+	usb_os_memcpy((void *)ntf->buf, (const void *)data, len);
+
+	/* A disconnect after the check above is caught by the core: the endpoint is closed and the
+	   transmit fails, so the rollback below gives the endpoint back */
+	ep_intr_in->xfer_len = USB_CDC_ACM_INTR_IN_REQUEST_SIZE + len;
+	ret = usbd_ep_transmit(dev, ep_intr_in);
+	if (ret != RTK_SUCCESS) {
+		/* The transfer was not armed, so no ep_data_in completion will ever release
+		   the EP: release it here or every later notification stays -RTK_ERR_BUSY */
+		ep_intr_in->xfer_state = 0U;
 	}
 
 	return ret;
@@ -1080,6 +1076,7 @@ static int usbd_cdc_acm_private_init(const usbd_cdc_acm_cb_t *cb,
 	usbd_ep_t *ep_bulk_out = &cdc->ep_bulk_out;
 	usbd_ep_t *ep_intr_in = &cdc->ep_intr_in;
 	usb_ep_info_t *info;
+	u32 max_len;
 
 	if (cb == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid user CB\n");
@@ -1088,6 +1085,15 @@ static int usbd_cdc_acm_private_init(const usbd_cdc_acm_cb_t *cb,
 
 	if (cfg == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid cfg\n");
+		return -RTK_ERR_BADARG;
+	}
+
+	/* The BULK OUT buffer receives whole packets, so it shall hold one at every speed the device
+	   may run at, otherwise SET_CONFIGURATION fails, refer to cdc_acm_set_config(). The HS MPS
+	   is the larger one, so a buffer holding it also holds a FS packet */
+	max_len = usb_get_max_payload_len(cfg->bulk_out_xfer_size, USB_BULK_HS_MAX_MPS);
+	if (max_len == 0U) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "OUT buf %u < mps\n", cfg->bulk_out_xfer_size);
 		return -RTK_ERR_BADARG;
 	}
 
@@ -1107,7 +1113,6 @@ static int usbd_cdc_acm_private_init(const usbd_cdc_acm_cb_t *cb,
 	info->type = USB_CH_EP_TYPE_BULK;
 	ep_bulk_out->xfer_buf_len = cfg->bulk_out_xfer_size;
 	ep_bulk_out->xfer_buf = (u8 *)usb_os_malloc(ep_bulk_out->xfer_buf_len);
-	ep_bulk_out->xfer_len = ep_bulk_out->xfer_buf_len;
 	if (ep_bulk_out->xfer_buf == NULL) {
 		ret = -RTK_ERR_NOMEM;
 		goto USBD_CDC_Init_exit;
@@ -1289,10 +1294,16 @@ int usbd_cdc_acm_transmit(const u8 *buf, u32 len)
 	usbd_ep_t *ep_bulk_in = &cdev->ep_bulk_in;
 	u8 claimed;
 
+	/* A zero length is refused too: the core appends the ZLP a BULK transfer of a multiple of
+	   MPS needs, refer to usbd_ep_transmit() */
+	if ((buf == NULL) || (len == 0U)) {
+		return -RTK_ERR_BADARG;
+	}
+
 	/* cdev->dev is assigned in set_config, so it is NULL until the host has
-	   configured the device. */
+	   configured the device. cdev->cfg is NULL before the first init: log the endpoint copy. */
 	if ((dev == NULL) || (!dev->is_ready)) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "EP%02x TX not ready\n", cdev->cfg->bulk_in_addr);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "EP%02x TX not ready\n", ep_bulk_in->info.addr);
 		return ret;
 	}
 
@@ -1313,34 +1324,31 @@ int usbd_cdc_acm_transmit(const u8 *buf, u32 len)
 		return -RTK_ERR_BUSY;
 	}
 
-	if (dev->is_ready) {
-		if (cdev->cfg->bulk_in_zero_copy != 0U) {
-			/* The controller only reads the buffer of an IN transfer: the const is dropped for
-			   the shared endpoint descriptor, the data is never written */
-			ep_bulk_in->xfer_buf = (u8 *)(uintptr_t)buf;
-		} else {
-			usb_os_memcpy((void *)ep_bulk_in->xfer_buf, (const void *)buf, len);
-		}
-
-		/* Class-side cache maintenance demo, refer to cdc_acm_set_config() */
-		if ((ep_bulk_in->skip_dcache_pre_clean != 0U) && (ep_bulk_in->xfer_buf != NULL) && (len != 0U)) {
-			if (USB_IS_MEM_DMA_ALIGNED(ep_bulk_in->xfer_buf)) {
-				DCache_Clean((u32)ep_bulk_in->xfer_buf, len);
-			} else {
-				RTK_LOGS(TAG, RTK_LOG_ERROR, "EP TX buf align err\n");
-				ep_bulk_in->xfer_state = 0U;
-				return -RTK_ERR_NOMEM;
-			}
-		}
-
-		ep_bulk_in->xfer_len = len;
-		ret = usbd_ep_transmit(dev, ep_bulk_in);
-		if (ret != RTK_SUCCESS) {
-			/* Same rollback as the INTR IN path: no completion will release the EP */
-			ep_bulk_in->xfer_state = 0U;
-		}
+	if (cdev->cfg->bulk_in_zero_copy != 0U) {
+		/* The controller only reads the buffer of an IN transfer: the const is dropped for
+		   the shared endpoint descriptor, the data is never written */
+		ep_bulk_in->xfer_buf = (u8 *)(uintptr_t)buf;
 	} else {
-		/*TX not ready: give the endpoint back*/
+		usb_os_memcpy((void *)ep_bulk_in->xfer_buf, (const void *)buf, len);
+	}
+
+	/* Class-side cache maintenance demo, refer to cdc_acm_set_config() */
+	if ((ep_bulk_in->skip_dcache_pre_clean != 0U) && (ep_bulk_in->xfer_buf != NULL) && (len != 0U)) {
+		if (USB_IS_MEM_DMA_ALIGNED(ep_bulk_in->xfer_buf)) {
+			DCache_Clean((u32)ep_bulk_in->xfer_buf, len);
+		} else {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "EP TX buf align err\n");
+			ep_bulk_in->xfer_state = 0U;
+			return -RTK_ERR_NOMEM;
+		}
+	}
+
+	/* A disconnect after the is_ready check is caught by the core: the endpoint is closed and
+	   the transmit fails, so the rollback below gives the endpoint back */
+	ep_bulk_in->xfer_len = len;
+	ret = usbd_ep_transmit(dev, ep_bulk_in);
+	if (ret != RTK_SUCCESS) {
+		/* Same rollback as the INTR IN path: no completion will release the EP */
 		ep_bulk_in->xfer_state = 0U;
 	}
 
@@ -1354,16 +1362,5 @@ int usbd_cdc_acm_transmit(const u8 *buf, u32 len)
  */
 int usbd_cdc_acm_notify_serial_state(u16 serial_state)
 {
-	/* Not configured: the notification is not queued, report it like usbd_acm_cdc_notify() */
-	int ret = -RTK_ERR_IO;
-	usbd_cdc_acm_dev_t *cdev = &usbd_cdc_acm_dev;
-	usb_dev_t *dev = cdev->dev;
-
-	/* cdev->dev is assigned in set_config, so it is NULL until the host has
-	   configured the device. */
-	if ((dev != NULL) && (dev->is_ready)) {
-		ret = usbd_acm_cdc_notify(USB_CDC_ACM_NOTIFY_SERIAL_STATE, 0, &serial_state, sizeof(serial_state));
-	}
-
-	return ret;
+	return usbd_acm_cdc_notify(USB_CDC_ACM_NOTIFY_SERIAL_STATE, 0, &serial_state, sizeof(serial_state));
 }

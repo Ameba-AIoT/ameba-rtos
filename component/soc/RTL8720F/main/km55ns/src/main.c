@@ -107,25 +107,14 @@ extern uint32_t vfs_ftl_init(void);
 extern int vfs_kv_init(void);
 void app_filesystem_init(void)
 {
-	int ret = 0;
 	vfs_init();
+	vfs_auto_register();
 
-	vfs_user_register(VFS_PREFIX, VFS_LITTLEFS, VFS_INF_FLASH, VFS_REGION_1, VFS_RW);
-	ret = vfs_kv_init();
-	if (ret == 0) {
+	if (vfs_kv_init() == 0) {
 		RTK_LOGI(TAG, "File System Init Success \n");
 	} else {
 		RTK_LOGE(TAG, "File System Init Fail \n");
 	}
-
-#ifdef CONFIG_FATFS_WITHIN_APP_IMG
-	ret = vfs_user_register(VFS_R3_PREFIX, VFS_FATFS, VFS_INF_FLASH, VFS_REGION_3, VFS_RO);
-	if (ret == 0) {
-		RTK_LOGI(TAG, "VFS-FAT Init Success \n");
-	} else {
-		RTK_LOGI(TAG, "VFS-FAT Init Fail \n");
-	}
-#endif
 
 #if defined(CONFIG_FTL_ENABLED) && CONFIG_FTL_ENABLED
 	vfs_ftl_init();
@@ -158,7 +147,7 @@ int main(void)
 	InterruptRegister(IPC_INTHandler, IPC_KM4NS_IRQ, (u32)IPCNP_DEV, INT_PRI_MIDDLE);
 	InterruptEn(IPC_KM4NS_IRQ, INT_PRI_MIDDLE);
 
-#ifndef CONFIG_SOLO
+#ifndef CONFIG_IOT_MCU_COMBINED
 	app_pmu_init();
 #endif
 
@@ -195,7 +184,7 @@ int main(void)
 	LOGUART_INTCoreConfig(LOGUART_DEV, LOGUART_BIT_INTR_MASK_AP, DISABLE);
 #endif
 
-#ifndef CONFIG_SOLO
+#ifndef CONFIG_IOT_MCU_COMBINED
 	app_IWDG_init();
 #endif
 

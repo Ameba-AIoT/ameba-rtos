@@ -81,6 +81,7 @@ _WEAK void wifi_set_user_config(void)
 	/* IPS(Inactive Power Save), power save when wifi unconnected */
 	wifi_user_config.ips_enable = 1;
 	wifi_user_config.ips_level = RTW_IPS_WIFI_OFF;
+	wifi_user_config.ips_ctrl_by_usr = 0;
 
 	/* LPS(Legacy Power Save), power save when wifi connected */
 	wifi_user_config.lps_enable = 1;
@@ -134,7 +135,7 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.wtn_fixed_rnat_node = 0;
 	wifi_user_config.wtn_connect_only_to_rnat = 0;
 	wifi_user_config.wtn_max_node_num = 32;
-#if defined(CONFIG_RMESH_EN) && !defined(CONFIG_RNAT_EN)
+#if defined(CONFIG_RMESH_EN) && (!defined(CONFIG_RNAT_EN) || defined(CONFIG_RNAT_AUTOSEL_EN))
 	wifi_user_config.wtn_max_refugee_num = CONFIG_WIFI_RMESH_MAX_REFUGEE_NUM;
 #endif
 

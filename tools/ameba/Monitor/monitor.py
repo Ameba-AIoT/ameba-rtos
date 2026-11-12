@@ -23,7 +23,7 @@ from base.console_parser import ConsoleParser
 from base.console_reader import ConsoleReader
 from base.stdin_cmd_reader import StdinCmdReader
 from base.constants import CTRL_C, CTRL_H, EVENT_QUEUE_TIMEOUT, LAST_LINE_THREAD_INTERVAL, TAG_CMD, TAG_KEY, TAG_SERIAL, \
-    TAG_SERIAL_FLUSH, CMD_STOP
+    TAG_SERIAL_FLUSH, CMD_STOP, CMD_HARD_RESET, HARD_RESET_SHUTDOWN_TIMEOUT
 from base.key_config import EXIT_KEY, EXIT_MENU_KEY, MENU_KEY
 from base.log_handler import LogHandler
 from base.chip_info import IC_LIST, normalize_chip_name as _normalize_chip_name
@@ -144,11 +144,38 @@ class Monitor():
         self.console_reader.start()
         self.serial_reader.start()
         self.log_handler.start()
+    def _finish_pending_hard_reset(self):
+        """Input ended (e.g. stdin EOF in --no-console): send lines still queued, then run a hard reset queued with
+        them, and let it finish, before the port is closed."""
+        pending = []
+        while True:
+            try:
+                pending.append(self.cmd_queue.get_nowait())
+            except queue.Empty:
+                break
+        # Lines (TAG_KEY) go through event_queue, not cmd_queue; write the ones still queued, in order, so commands
+        # piped before the reset reach the port first.
+        while self.serial_reader.alive:
+            try:
+                event_tag, data = self.event_queue.get_nowait()
+            except queue.Empty:
+                break
+            if event_tag == TAG_KEY:
+                try:
+                    self.serial_write(data)
+                except Exception as e:  # e.g. target pipe closed (LinuxMonitor); do not skip the reset below
+                    print_red(f"Could not send queued input at exit: {e}")
+                    break
+        if any(item == (TAG_CMD, CMD_HARD_RESET) for item in pending) and self.serial_reader.alive:
+            self.serial_handler.handle_commands(CMD_HARD_RESET, self.console_reader, self.serial_reader)
+        self.serial_handler.wait_hard_reset(HARD_RESET_SHUTDOWN_TIMEOUT)
+
     def main_loop(self):
         self._pre_start()
         try:
             while self.console_reader.alive and self.serial_reader.alive:
                 self._main_loop()
+            self._finish_pending_hard_reset()
         except SerialStopException:
             print_normal("Stopping condition has been received\n")
         except KeyboardInterrupt:
@@ -241,14 +268,6 @@ class SerialMonitor(Monitor):
         self.serial_handler.start_cmd_sent = False
 
     def serial_write(self, data):
-        # Intercept: hard reset command — not forwarded to device
-        if isinstance(data, str) and "__HARD_RESET__" in data:
-            ok = self.serial_reader.hard_reset()
-            if ok:
-                print_yellow("Hard reset SUCCESS.")
-            else:
-                print_red("Hard reset FAILED.")
-            return
         try:
             data_to_send = data.encode('utf-8')
             # Display raw byte data in debug mode
@@ -258,7 +277,12 @@ class SerialMonitor(Monitor):
             serial_obj = getattr(self.serial_reader, "serial", None)
             if serial_obj is None:
                 return
-            serial_obj.write(data_to_send)
+            if self.serial_reader.remote_server:
+                # RemoteSerial commands must not overlap with the hard-reset worker's reset_device()
+                with self.serial_reader.io_lock:
+                    serial_obj.write(data_to_send)
+            else:
+                serial_obj.write(data_to_send)
             self.timeout_cnt = 0
         except serial.SerialTimeoutException:
             if not self.timeout_cnt:
@@ -394,7 +418,8 @@ def get_parser():
     parser.add_argument("--toolchain-dir", help="Set toolchain dir. If not set, will get from config.")
 
     parser.add_argument('--reset', action='store_true',
-                       help='Enable reset mode: send "reboot", if soft reset fails then try hardware reset via DTR/RTS')
+                       help='Enable reset mode: send "reboot", if soft reset fails then try hardware reset via DTR/RTS. '
+                            'To reset again while running, type "!reset" (also accepted from stdin with --no-console)')
     parser.add_argument('--debug', action='store_true',
                        help='Enable debug mode: Display raw hexadecimal data of sent and received bytes')
     parser.add_argument('--remote-server', type=str, help='remote serial server IP address')

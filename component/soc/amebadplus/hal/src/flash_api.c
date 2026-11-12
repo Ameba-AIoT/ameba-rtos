@@ -20,6 +20,10 @@
 #include "ameba_soc.h"
 #include "flash_api.h"
 
+#define FLASH_CMD_RUID			0x4B	/* read unique ID */
+#define FLASH_UID_DUMMY_LEN		4		/* 32 dummy clocks after 0x4B */
+#define FLASH_UID_MAX_LEN		16
+
 
 /** @addtogroup Ameba_Mbed_API
   * @{
@@ -321,6 +325,44 @@ int flash_read_id(flash_t *obj, uint8_t *buf, uint8_t len)
 	assert_param(len >= 3);
 
 	FLASH_RxCmdXIP(flash_init_para.FLASH_cmd_rd_id, len, buf);
+
+	return len;
+}
+
+/**
+  * @brief  Get flash unique ID (command: 0x4B, 1IO, no address, 4 dummy bytes).
+  * @param  obj: Flash object define in application software.
+  * @param  buf: Pointer to a byte array to save the readback unique ID.
+  * @param  len: Length of the unique ID, 8 or 16 depending on the flash, at most 16.
+  * @retval Length of the unique ID that has been read (equal to len), or -1 on failure.
+  */
+int flash_read_unique_id(flash_t *obj, uint8_t *buf, uint8_t len)
+{
+	u8 temp[FLASH_UID_DUMMY_LEN + FLASH_UID_MAX_LEN];
+	u8 all_ff = 1, all_00 = 1;
+	u8 i;
+
+	/* To avoid gcc warnings */
+	(void) obj;
+
+	if (buf == NULL || len == 0 || len > FLASH_UID_MAX_LEN) {
+		return -1;
+	}
+
+	/* The 4 dummy bytes are clocked in as data and dropped */
+	FLASH_RxCmdXIP(FLASH_CMD_RUID, FLASH_UID_DUMMY_LEN + len, temp);
+
+	for (i = 0; i < len; i++) {
+		all_ff &= (temp[FLASH_UID_DUMMY_LEN + i] == 0xFF);
+		all_00 &= (temp[FLASH_UID_DUMMY_LEN + i] == 0x00);
+	}
+
+	/* No response, or the flash does not support 0x4B */
+	if (all_ff || all_00) {
+		return -1;
+	}
+
+	_memcpy(buf, &temp[FLASH_UID_DUMMY_LEN], len);
 
 	return len;
 }
