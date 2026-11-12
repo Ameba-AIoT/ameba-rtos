@@ -224,7 +224,7 @@ typedef struct {
 	uint8_t   bt_mesh_role;            /*!< Default bt mesh profile role */
 	uint8_t   bt_mesh_uuid[16];        /*!< Default bt mesh device UUID */
 	uint32_t  bt_mesh_flash_size;      /*!< FTL size for mesh */
-	uint8_t   bt_mesh_rpl_num;         /*!< Message replay protection list num */
+	uint16_t   bt_mesh_rpl_num;         /*!< Message replay protection list num */
 	uint8_t   trans_retrans_count;     /*!< Transport Transmit Count */
 	uint8_t   net_trans_count: 3;        /*!< Network Transmit Count */
 	uint8_t   net_trans_interval_step: 5; /*!< Network Transmit Interval Step */
@@ -232,7 +232,7 @@ typedef struct {
 	uint8_t   relay_retrans_interval_step: 5;    /*!< Relay Retransmit Interval step */
 	uint8_t   ttl;                     /*!< Default TTL */
 #if defined(RTK_BLE_MESH_PROVISIONER_SUPPORT) && RTK_BLE_MESH_PROVISIONER_SUPPORT
-	uint8_t   bt_mesh_dev_key_num;      /*!< Device key num for provisioner */
+	uint16_t   bt_mesh_dev_key_num;      /*!< Device key num for provisioner */
 #endif
 } rtk_bt_mesh_app_conf_t;
 

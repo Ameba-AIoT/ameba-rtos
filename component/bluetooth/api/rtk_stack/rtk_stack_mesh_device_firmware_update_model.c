@@ -69,6 +69,10 @@ static uint16_t dfu_initiator_cb(uint8_t type, void *pdata)
 		rtk_bt_evt_t *p_evt = NULL;
 		rtk_bt_mesh_dfu_evt_initiator_transfer_t *trans = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_DFU_INITIATOR_MODEL, RTK_BT_MESH_DFU_EVT_INITIATOR_TRANSFER, sizeof(rtk_bt_mesh_dfu_evt_initiator_transfer_t));
+		if (!p_evt) {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+			break;
+		}
 		trans = (rtk_bt_mesh_dfu_evt_initiator_transfer_t *)p_evt->data;
 		trans->type = ptransfer->type;
 		trans->init_phase = ptransfer->init_phase;
@@ -89,6 +93,10 @@ static uint16_t dfu_initiator_cb(uint8_t type, void *pdata)
 		rtk_bt_mesh_dfu_evt_distributor_or_initiator_blob_param_t *blob;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_DFU_INITIATOR_MODEL, RTK_BT_MESH_DFU_EVT_INITIATOR_BLOB_PARAM,
 									sizeof(rtk_bt_mesh_dfu_evt_distributor_or_initiator_blob_param_t));
+		if (!p_evt) {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+			break;
+		}
 		blob = (rtk_bt_mesh_dfu_evt_distributor_or_initiator_blob_param_t *)p_evt->data;
 		blob->blob_size = pparam->blob_size;
 		blob->block_size = pparam->block_size;
@@ -125,6 +133,10 @@ static uint16_t dfu_initiator_cb(uint8_t type, void *pdata)
 			rtk_bt_mesh_dfu_initiator_evt_dist_client_recvs_status *pstatus = NULL;
 			p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_DFU_INITIATOR_MODEL, RTK_BT_MESH_DFU_EVT_INITIATOR_DIST_CLIENT_RECEIVES_STATUS,
 										sizeof(rtk_bt_mesh_dfu_initiator_evt_dist_client_recvs_status));
+			if (!p_evt) {
+				BT_LOGE("[%s] Create event fail\r\n", __func__);
+				break;
+			}
 			pstatus = (rtk_bt_mesh_dfu_initiator_evt_dist_client_recvs_status *)p_evt->data;
 			pstatus->src = pdata->src;
 			pstatus->status = pdata->status;
@@ -145,7 +157,11 @@ static uint16_t dfu_initiator_cb(uint8_t type, void *pdata)
 			BT_LOGD("[%s] Receive Firmware Distribution Status message, status:%d.\r\n", __func__, pdata->status);
 			rtk_bt_evt_t *p_evt = NULL;
 			p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_DFU_INITIATOR_MODEL, RTK_BT_MESH_DFU_EVT_INITIATOR_DIST_CLIENT_DISTRIBUTION_STATUS, sizeof(uint8_t));
-			*(uint8_t *)p_evt->data = pdata->status;
+			if (!p_evt) {
+				BT_LOGE("[%s] Create event fail\r\n", __func__);
+				break;
+			}
+			*(uint8_t *)p_evt->data = pdist_status->status;
 			rtk_bt_evt_indicate(p_evt, NULL);
 			break;
 		}
@@ -154,7 +170,11 @@ static uint16_t dfu_initiator_cb(uint8_t type, void *pdata)
 			BT_LOGD("[%s] Receive Firmware Distribution Upload Status message, status:%d.\r\n", __func__, pdata->status);
 			rtk_bt_evt_t *p_evt = NULL;
 			p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_DFU_INITIATOR_MODEL, RTK_BT_MESH_DFU_EVT_INITIATOR_DIST_CLIENT_UPLOAD_STATUS, sizeof(uint8_t));
-			*(uint8_t *)p_evt->data = pdata->status;
+			if (!p_evt) {
+				BT_LOGE("[%s] Create event fail\r\n", __func__);
+				break;
+			}
+			*(uint8_t *)p_evt->data = pupload_status->status;
 			rtk_bt_evt_indicate(p_evt, NULL);
 			break;
 		}
@@ -329,6 +349,10 @@ static uint16_t dfu_standalone_updater_or_distributor_cb(uint8_t type, void *pda
 		case DFU_DIST_CB_TYPE_NODE_FAIL: {
 			rtk_bt_mesh_dfu_evt_distributor_transfer_node_fail_t *node_fail = NULL;
 			p_evt = rtk_bt_event_create(group, RTK_BT_MESH_DFU_EVT_DISTRIBUTOR_BLOB_TRANSFER_NODE_FAIL, sizeof(rtk_bt_mesh_dfu_evt_distributor_transfer_node_fail_t));
+			if (!p_evt) {
+				BT_LOGE("[%s] Create event fail\r\n", __func__);
+				break;
+			}
 			node_fail = (rtk_bt_mesh_dfu_evt_distributor_transfer_node_fail_t *)p_evt->data;
 			node_fail->dist_phase = ptransfer->dist_phase;
 			node_fail->addr = ptransfer->paddr[0];
@@ -337,6 +361,10 @@ static uint16_t dfu_standalone_updater_or_distributor_cb(uint8_t type, void *pda
 		case DFU_DIST_CB_TYPE_TRANSFER_PROGRESS: {
 			rtk_bt_mesh_dfu_evt_distributor_transfer_progress_t *trans_progress = NULL;
 			p_evt = rtk_bt_event_create(group, RTK_BT_MESH_DFU_EVT_DISTRIBUTOR_BLOB_TRANSFER_PROGRESS, sizeof(rtk_bt_mesh_dfu_evt_distributor_transfer_progress_t));
+			if (!p_evt) {
+				BT_LOGE("[%s] Create event fail\r\n", __func__);
+				break;
+			}
 			trans_progress = (rtk_bt_mesh_dfu_evt_distributor_transfer_progress_t *)p_evt->data;
 			trans_progress->dist_phase = ptransfer->dist_phase;
 			trans_progress->progress = ptransfer->progress;
@@ -361,6 +389,10 @@ static uint16_t dfu_standalone_updater_or_distributor_cb(uint8_t type, void *pda
 			rtk_bt_mesh_dfu_evt_distributor_transfer_other_t *trans_other = NULL;
 			uint16_t num_of_addr = ptransfer->addr_num;
 			p_evt = rtk_bt_event_create(group, event, sizeof(rtk_bt_mesh_dfu_evt_distributor_transfer_other_t) + num_of_addr * sizeof(uint16_t));
+			if (!p_evt) {
+				BT_LOGE("[%s] Create event fail\r\n", __func__);
+				break;
+			}
 			trans_other = (rtk_bt_mesh_dfu_evt_distributor_transfer_other_t *)p_evt->data;
 			trans_other->dist_phase = ptransfer->dist_phase;
 			trans_other->addr_num = num_of_addr;
@@ -390,9 +422,17 @@ static uint16_t dfu_standalone_updater_or_distributor_cb(uint8_t type, void *pda
 #if defined(BT_MESH_ENABLE_DFU_STANDALONE_UPDATER_ROLE) && BT_MESH_ENABLE_DFU_STANDALONE_UPDATER_ROLE
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_DFU_STANDALONE_UPDATER_MODEL, RTK_BT_MESH_DFU_EVT_DISTRIBUTOR_BLOB_PARAM,
 									sizeof(rtk_bt_mesh_dfu_evt_distributor_or_initiator_blob_param_t));
+		if (!p_evt) {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+			break;
+		}
 #elif defined(BT_MESH_ENABLE_DFU_DISTRIBUTOR_ROLE) && BT_MESH_ENABLE_DFU_DISTRIBUTOR_ROLE
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_DFU_DISTRIBUTOR_MODEL, RTK_BT_MESH_DFU_EVT_DISTRIBUTOR_BLOB_PARAM,
 									sizeof(rtk_bt_mesh_dfu_evt_distributor_or_initiator_blob_param_t));
+		if (!p_evt) {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+			break;
+		}
 #endif
 		blob = (rtk_bt_mesh_dfu_evt_distributor_or_initiator_blob_param_t *)p_evt->data;
 		blob->blob_size = pparam->blob_size;
@@ -431,6 +471,10 @@ static uint16_t dfu_standalone_updater_or_distributor_cb(uint8_t type, void *pda
 			rtk_bt_evt_t *p_evt = NULL;
 #if 1
 			p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_DFU_DISTRIBUTOR_MODEL, RTK_BT_MESH_DFU_EVT_DISTRIBUTOR_UPLOAD_START, 0);
+			if (!p_evt) {
+				BT_LOGE("[%s] Create event fail\r\n", __func__);
+				break;
+			}
 			rtk_bt_evt_indicate(p_evt, NULL);
 #else
 			// Should report this event through directed calling, because there is point in data struct
@@ -438,6 +482,10 @@ static uint16_t dfu_standalone_updater_or_distributor_cb(uint8_t type, void *pda
 			rtk_bt_mesh_dfu_evt_distributor_server_upload_start_t *start;
 			p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_DFU_DISTRIBUTOR_MODEL, RTK_BT_MESH_DFU_EVT_DISTRIBUTOR_UPLOAD_START,
 										sizeof(rtk_bt_mesh_dfu_evt_distributor_server_upload_start_t));
+			if (!p_evt) {
+				BT_LOGE("[%s] Create event fail\r\n", __func__);
+				break;
+			}
 			start = (rtk_bt_mesh_dfu_evt_distributor_server_upload_start_t *)p_evt->data;
 			start->upload_ttl = pdata->upload_ttl;
 			start->upload_timeout_base = pdata->upload_timeout_base;
@@ -468,6 +516,10 @@ static uint16_t dfu_standalone_updater_or_distributor_cb(uint8_t type, void *pda
 				BT_LOGD("[%s] Receive a block data, block num:%d.\r\n", __func__, pblock->block_num);
 				rtk_bt_evt_t *p_evt = NULL;
 				p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_DFU_DISTRIBUTOR_MODEL, RTK_BT_MESH_DFU_EVT_DISTRIBUTOR_UPLOAD_BLOCK_DATA, sizeof(uint16_t));
+				if (!p_evt) {
+					BT_LOGE("[%s] Create event fail\r\n", __func__);
+					break;
+				}
 				*(uint16_t *)(p_evt->data) = pblock->block_num;
 				rtk_bt_evt_indicate(p_evt, NULL);
 			}
@@ -477,6 +529,10 @@ static uint16_t dfu_standalone_updater_or_distributor_cb(uint8_t type, void *pda
 			BT_LOGD("[%s] Case distributor server upload complete.\r\n", __func__);
 			rtk_bt_evt_t *p_evt = NULL;
 			p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_DFU_DISTRIBUTOR_MODEL, RTK_BT_MESH_DFU_EVT_DISTRIBUTOR_UPLOAD_COMPLETE, 0);
+			if (!p_evt) {
+				BT_LOGE("[%s] Create event fail\r\n", __func__);
+				break;
+			}
 			rtk_bt_evt_indicate(p_evt, NULL);
 			break;
 		}
@@ -489,6 +545,10 @@ static uint16_t dfu_standalone_updater_or_distributor_cb(uint8_t type, void *pda
 			rtk_bt_evt_t *p_evt = NULL;
 			p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_DFU_DISTRIBUTOR_MODEL, RTK_BT_MESH_DFU_EVT_DISTRIBUTOR_UPLOAD_COMPLETE,
 										sizeof(rtk_bt_mesh_dfu_evt_distributor_server_upload_fail_t));
+			if (!p_evt) {
+				BT_LOGE("[%s] Create event fail\r\n", __func__);
+				break;
+			}
 			fail = (rtk_bt_mesh_dfu_evt_distributor_server_upload_fail_t *)p_evt->data;
 			fail->reason = pdata->reason;
 			rtk_bt_evt_indicate(p_evt, NULL);
@@ -637,6 +697,10 @@ static int32_t dfu_fw_update_server_data(const mesh_model_info_p pmodel_info, ui
 		rtk_bt_evt_t *p_evt = NULL;
 		rtk_bt_mesh_dfu_evt_target_meatdata_t *meta;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_DFU_TARGET_MODEL, RTK_BT_MESH_DFU_EVT_TARGET_METADATA_CHECK, sizeof(rtk_bt_mesh_dfu_evt_target_meatdata_t));
+		if (!p_evt) {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+			break;
+		}
 		meta = (rtk_bt_mesh_dfu_evt_target_meatdata_t *)p_evt->data;
 		meta->fw_image_idx = pdata->fw_image_idx;
 		meta->pmetadata = pdata->pmetadata;
@@ -664,6 +728,10 @@ static int32_t dfu_fw_update_server_data(const mesh_model_info_p pmodel_info, ui
 		// Should direct forwarding event
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_DFU_TARGET_MODEL, RTK_BT_MESH_DFU_EVT_TARGET_START, sizeof(uint8_t));
+		if (!p_evt) {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+			break;
+		}
 		*(uint8_t *)(p_evt->data) = pdata->fw_image_idx;
 		rtk_bt_evt_indicate(p_evt, &ready_start);
 
@@ -684,6 +752,10 @@ static int32_t dfu_fw_update_server_data(const mesh_model_info_p pmodel_info, ui
 #if 0
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_DFU_TARGET_MODEL, RTK_BT_MESH_DFU_EVT_TARGET_VERIFY, 0);
+		if (!p_evt) {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+			break;
+		}
 		rtk_bt_evt_indicate(p_evt, NULL);
 #endif
 		break;
@@ -693,6 +765,10 @@ static int32_t dfu_fw_update_server_data(const mesh_model_info_p pmodel_info, ui
 #if 0
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_DFU_TARGET_MODEL, RTK_BT_MESH_DFU_EVT_TARGET_VERIFY_CANCEL, 0);
+		if (!p_evt) {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+			break;
+		}
 		rtk_bt_evt_indicate(p_evt, NULL);
 #endif
 		break;
@@ -701,7 +777,11 @@ static int32_t dfu_fw_update_server_data(const mesh_model_info_p pmodel_info, ui
 		BT_LOGD("[%s] APPLY.\r\n", __func__);
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_DFU_TARGET_MODEL, RTK_BT_MESH_DFU_EVT_TARGET_APPLY, 0);
-		rtk_bt_evt_indicate(p_evt, NULL);
+		if (p_evt) {
+			rtk_bt_evt_indicate(p_evt, NULL);
+		} else {
+			BT_LOGE("[%s] Create apply event fail\r\n", __func__);
+		}
 		rtk_bt_dfu_updater_server_apply();
 		break;
 	}
@@ -713,6 +793,10 @@ static int32_t dfu_fw_update_server_data(const mesh_model_info_p pmodel_info, ui
 		BT_LOGD("[%s] Receive a block data.\r\n", __func__);
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_DFU_TARGET_MODEL, RTK_BT_MESH_DFU_EVT_TARGET_BLOCK_DATA, sizeof(uint16_t));
+		if (!p_evt) {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+			break;
+		}
 		*(uint16_t *)(p_evt->data) = pblock->block_num;
 		rtk_bt_evt_indicate(p_evt, NULL);
 		break;
@@ -724,6 +808,10 @@ static int32_t dfu_fw_update_server_data(const mesh_model_info_p pmodel_info, ui
 		rtk_bt_evt_t *p_evt = NULL;
 		rtk_bt_mesh_dfu_evt_target_fw_update_server_fail_t *fail = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_DFU_TARGET_MODEL, RTK_BT_MESH_DFU_EVT_TARGET_FAIL, sizeof(rtk_bt_mesh_dfu_evt_target_fw_update_server_fail_t));
+		if (!p_evt) {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+			break;
+		}
 		fail = (rtk_bt_mesh_dfu_evt_target_fw_update_server_fail_t *)p_evt->data;
 		fail->fw_image_index = pdata->fw_image_index;
 		fail->reason = pdata->reason;
