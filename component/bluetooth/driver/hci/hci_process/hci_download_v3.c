@@ -67,7 +67,7 @@ static uint8_t hci_vendor_write(uint32_t addr, uint32_t value)
 
 	BT_DUMPD("hci_vendor_write HCI CMD: ", buf, buf[2] + 3);
 
-	return hci_sa_send_cmd_sync(0xFC62, buf, 12);
+	return hci_sa_send_cmd_sync(0xFC62, buf, 12, sizeof(buf_raw) - RESERVE_LEN);
 }
 
 static uint32_t _parse_section(uint8_t *section)
@@ -183,7 +183,7 @@ static uint8_t _send_payload(uint8_t *data, uint32_t len)
 		remain -= send;
 		cmd[2] = send + 1;
 		cmd[3] = idx;
-		if (HCI_SUCCESS != hci_sa_send_cmd_sync(0xFC20, cmd, send + 4)) {
+		if (HCI_SUCCESS != hci_sa_send_cmd_sync(0xFC20, cmd, send + 4, sizeof(buf_raw) - RESERVE_LEN)) {
 			return HCI_FAIL;
 		}
 	}
@@ -280,7 +280,7 @@ uint8_t hci_patch_download_v3(uint8_t *p_patch)
 				image_total_len = 0;
 				cmd[3] = 1;
 				cmd[4] = 0x80;
-				if (HCI_SUCCESS != hci_sa_send_cmd_sync(0xFC20, cmd + 1, 4)) {
+				if (HCI_SUCCESS != hci_sa_send_cmd_sync(0xFC20, cmd + 1, 4, sizeof(cmd) - 1)) {
 					goto dl_patch_done;
 				}
 			}
@@ -292,12 +292,12 @@ uint8_t hci_patch_download_v3(uint8_t *p_patch)
 		_write_reg_for_security_verify();
 		cmd[3] = 1;
 		cmd[4] = 0x80;
-		ret = hci_sa_send_cmd_sync(0xFC20, cmd + 1, 4);
+		ret = hci_sa_send_cmd_sync(0xFC20, cmd + 1, 4, sizeof(cmd) - 1);
 	} else if (opcode == OPCODE_PATCH_IMAGE_KR4) {
 		cmd[3] = 2;
 		cmd[4] = 0x3;
 		cmd[5] = 0xB2;
-		ret = hci_sa_send_cmd_sync(0xFC8E, cmd + 1, 5);
+		ret = hci_sa_send_cmd_sync(0xFC8E, cmd + 1, 5, sizeof(cmd) - 1);
 	}
 
 dl_patch_done:

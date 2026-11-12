@@ -36,6 +36,6 @@ void hci_transport_free(void);
 extern struct hci_transport_cb hci_sa_cb;
 uint8_t hci_sa_open(void);
 void hci_sa_free(void);
-uint8_t hci_sa_send(uint8_t type, uint8_t *buf, uint16_t len, bool is_sync);
-uint8_t hci_sa_send_cmd_sync(uint16_t opcode, uint8_t *buf, uint16_t len);
+uint8_t hci_sa_send(uint8_t type, uint8_t *buf, uint16_t len, uint16_t buf_size, bool is_sync);
+uint8_t hci_sa_send_cmd_sync(uint16_t opcode, uint8_t *buf, uint16_t len, uint16_t buf_size);
 #endif

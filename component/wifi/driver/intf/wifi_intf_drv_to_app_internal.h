@@ -87,6 +87,7 @@ enum  {
 	RTW_EVENT_WPA_P2P_CHANNEL_RDY		= 124, /**< STA mode: inform host channel switch ready */
 	RTW_EVENT_WTN_ZRPP_GET_AP_INFO		= 125,
 
+	RTW_EVENT_OPERATION_CH_SWITCH		= 129, /**< STA/SOFTAP operating channel may change in driver; notify host, which is unaware */
 	RTW_EVENT_INTERNAL_MAX,
 };
 
@@ -236,6 +237,13 @@ struct rtw_event_nb_resp_recv {
 struct rtw_event_report_frame {
 	u32 frame_len;
 	u8 frame[];
+};
+
+struct rtw_event_ch_switch {
+	u8 iface;
+	u8 channel;		/* primary channel */
+	u8 bwmode;		/* 0: 20MHz, 1: 40MHz */
+	u8 ch_offset;	/* secondary channel offset, 0: none, 1: upper, 3: lower */
 };
 
 struct rtw_task_size {
