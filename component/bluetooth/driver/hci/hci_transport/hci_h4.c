@@ -126,6 +126,11 @@ static void h4_rx_thread(void *context)
 			break;
 		}
 
+		if (hdr_len + body_len > 0xFFFF) {
+			BT_LOGE("Hci RX: pkt too long, type %d, hdr %d, body %d\r\n", type, hdr_len, body_len);
+			break;
+		}
+
 		buf = h4_get_buf(type, hdr, hdr_len + body_len, discardable ? 0 : BT_TIMEOUT_FOREVER);
 		if (!buf) {
 			if (discardable) {

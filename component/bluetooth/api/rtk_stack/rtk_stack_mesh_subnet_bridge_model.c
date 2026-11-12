@@ -17,7 +17,17 @@
 uint8_t rtk_bt_mesh_subnet_bridge_client_model_indicate_event(uint32_t event_code, void *pdata, uint32_t len)
 {
 	rtk_bt_evt_t *p_evt = NULL;
+	if (event_code == RTK_BT_MESH_SUBNET_BRIDGE_BRIDGED_SUBNETS_CLIENT_MODEL_LIST && len < sizeof(rtk_bt_mesh_bridged_subnets_list_t)) {
+		return RTK_BT_ERR_PARAM_INVALID;
+	}
+	if (event_code == RTK_BT_MESH_SUBNET_BRIDGE_BRIDGING_TABLE_CLIENT_MODEL_LIST && len < sizeof(rtk_bt_mesh_bridging_table_list_t)) {
+		return RTK_BT_ERR_PARAM_INVALID;
+	}
 	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_SUBNET_BRIDGE_CLIENT_MODEL, event_code, len);
+	if (!p_evt) {
+		BT_LOGE("[%s] Create event fail\r\n", __func__);
+		return RTK_BT_ERR_NO_MEMORY;
+	}
 	if (len) {
 		if (event_code == RTK_BT_MESH_SUBNET_BRIDGE_BRIDGED_SUBNETS_CLIENT_MODEL_LIST) {
 			memcpy(p_evt->data, pdata, sizeof(rtk_bt_mesh_bridged_subnets_list_t));
