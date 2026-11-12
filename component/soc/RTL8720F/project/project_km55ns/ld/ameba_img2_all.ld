@@ -155,7 +155,7 @@ SECTIONS
 		__bss_end__ = .;
 	} > IMG2_DATA_LMA_REGION
 
-#if defined(CONFIG_SOLO)
+#if defined(CONFIG_IOT_MCU_COMBINED)
 	/* SOLO: KM55TZ<->KM55NS shared SRAM (own region, outside km55ns private .bss).
 	 * KM55TZ must be able to write these even when km55ns SRAM is isolated. */
 	.solo_share_ram (NOLOAD):

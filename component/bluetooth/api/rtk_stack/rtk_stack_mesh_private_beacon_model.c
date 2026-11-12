@@ -18,6 +18,10 @@ uint8_t rtk_bt_mesh_private_beacon_client_model_indicate_event(uint32_t event_co
 {
 	rtk_bt_evt_t *p_evt = NULL;
 	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_PRIVATE_BEACON_CLIENT_MODEL, event_code, len);
+	if (!p_evt) {
+		BT_LOGE("[%s] Create event fail\r\n", __func__);
+		return RTK_BT_ERR_NO_MEMORY;
+	}
 	if (len) {
 		memcpy(p_evt->data, pdata, len);
 	}

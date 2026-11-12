@@ -44,7 +44,7 @@
   { func: "wififw_wlan_int_handle",                     section: ".flash.only.text",   core: "km55ns" },
 
   // lwip.udp.rx (km55ns)
-  { func: "netif_rx",                                   section: ".sram.only.text",   core: "km55ns" },
+  { func: "wifi_netif_rx",                              section: ".sram.only.text",   core: "km55ns" },
 
   // wlan.drv.rx (km55ns)
   { func: "ATOMIC_DEC",                                 section: ".sram.only.text",  core: "km55ns" },

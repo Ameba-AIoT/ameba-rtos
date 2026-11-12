@@ -113,7 +113,7 @@ void ipc_table_init(IPC_TypeDef *IPCx)
 		if (IPC_IMR & BIT(IPC_ChShift)) {
 			/* overwrite the old call back func for cpu reset happens */
 			RTK_LOGW(TAG, "Channel Conflict for CPU %lu Channel %lu ! Ignore If CPU Has Reset\r\n", SYS_CPUID(), IPC_ChShift);
-#ifndef CONFIG_SOLO
+#ifndef CONFIG_IOT_MCU_COMBINED
 			/* SOLO: after a plfm1 reset km55ns re-inits and must re-register the
 			 * freshly-loaded image's handler, so fall through to overwrite here.
 			 * Non-SOLO keeps the original skip-on-conflict behavior. */

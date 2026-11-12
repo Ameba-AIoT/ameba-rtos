@@ -45,11 +45,11 @@ static void fatfs_sd_hotplug_thread(void *param)
 	}
 }
 
-static void fatfs_sd_hotplug_enable(int interface)
+static void fatfs_sd_hotplug_enable(int target)
 {
 	int ret = 0;
 
-	if (interface == VFS_INF_SD && fatfs_sd_hotplug_flag == 0) {
+	if (target == VFS_TARGET_SD && fatfs_sd_hotplug_flag == 0) {
 		ret |= rtos_sema_create(&fatfs_sd_hotplug_sema, 0U, 1U);
 		ret |= rtos_task_create(NULL, "fatfs_sd_hotplug_thread", fatfs_sd_hotplug_thread, NULL, 1024U, 8);
 		if (ret) {
@@ -78,29 +78,36 @@ int fatfs_sd_close(void)
 	return 0;
 }
 
-int fatfs_sd_init(int interface)
+int fatfs_sd_init(int target)
 {
 	int ret = 0;
 	FRESULT res;
+	ll_diskio_drv *disk_drv;
+
+	switch (target) {
+#ifdef CONFIG_FATFS_SD_SPI_MODE
+	case VFS_TARGET_SD_SPI:
+		disk_drv = &SD_disk_spi_Driver;
+		break;
+#endif
+#ifdef CONFIG_FATFS_SD_MODE
+	case VFS_TARGET_SD:
+		disk_drv = &SD_disk_Driver;
+		break;
+#endif
+	default:
+		return -1;
+	}
 
 #ifdef CONFIG_FATFS_SD_HOTPLUG
-	fatfs_sd_hotplug_enable(interface);
+	fatfs_sd_hotplug_enable(target);
 #endif
 
 	if (fatfs2_mount_flag != 1) {
 		// Register disk driver to Fatfs
 		VFS_DBG(VFS_INFO, "Register sd driver to Fatfs.");
 
-#ifdef CONFIG_FATFS_SD_SPI_MODE
-		if (interface == VFS_INF_SD_SPI) {
-			fatfs_second_flash_param.drv_num = FATFS_RegisterDiskDriver(&SD_disk_spi_Driver);
-		}
-#endif
-#ifdef CONFIG_FATFS_SD_MODE
-		if (interface == VFS_INF_SD) {
-			fatfs_second_flash_param.drv_num = FATFS_RegisterDiskDriver(&SD_disk_Driver);
-		}
-#endif
+		fatfs_second_flash_param.drv_num = FATFS_RegisterDiskDriver(disk_drv);
 
 		if (fatfs_second_flash_param.drv_num < 0) {
 			VFS_DBG(VFS_ERROR, "Rigester sd driver to FATFS fail.");

@@ -43,8 +43,8 @@ extern "C" {
 
 /* Set to 1 to enable the periodic state-trace thread (default off).
  * When enabled, a low-priority thread prints link/endpoint/TX-ring-buffer state,
- * per-path completion counters (including an RX thread heartbeat) and TX/RX
- * throughput once per USBD_CDC_ECM_TRACE_INTERVAL_MS so stalls can be diagnosed
+ * and per-path completion counters (including an RX thread heartbeat) once per
+ * USBD_CDC_ECM_TRACE_INTERVAL_MS so stalls can be diagnosed
  * without a debugger.  Zero-cost when disabled: every dbg_* counter field and
  * all instrumentation is compiled out. */
 #define USBD_CDC_ECM_STATE_TRACE_ENABLE 0
@@ -126,7 +126,8 @@ typedef struct {
 	 * @brief Called to handle class-specific SETUP requests.
 	 * @note   This function is called within an interrupt service routine (ISR) context;
 	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
-	 * @param[in] req: Pointer to the setup request packet.
+	 * @param[in] req: Pointer to the setup request packet. A device-to-host class request with a
+	 *            data stage is rejected by the class and never reaches this callback.
 	 * @param[out] buf: Pointer to a buffer for data stage of control transfers.
 	 * @return 0 on success, non-zero on failure.
 	 */
@@ -240,8 +241,6 @@ typedef struct {
 	u32 dbg_intr_in_done_cnt;               /**< INTR IN completion ISR count. */
 	u32 dbg_rx_deliver_cnt;                 /**< Frames delivered to upper-layer callback. */
 	u32 dbg_rx_loop_cnt;                    /**< RX thread heartbeat; frozen => thread wedged. */
-	u32 dbg_tx_bytes;                       /**< Bytes successfully submitted to BULK IN (speed calc). */
-	u32 dbg_rx_bytes;                       /**< Bytes delivered to upper layer via received() (speed calc). */
 	u8 trace_task_running;                  /**< State-trace thread loop guard; cleared to request exit. */
 #endif
 } usbd_cdc_ecm_dev_t;

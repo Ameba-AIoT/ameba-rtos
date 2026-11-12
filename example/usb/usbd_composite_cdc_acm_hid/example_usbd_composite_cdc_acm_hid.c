@@ -7,6 +7,7 @@
 /* Includes ------------------------------------------------------------------*/
 
 #include <platform_autoconf.h>
+#include "platform_stdlib.h"
 #include "usbd_cdc_acm.h"
 #include "usbd_hid.h"
 #include "usbd_composite.h"
@@ -88,8 +89,7 @@ static int composite_cdc_acm_cb_deinit(void);
 static int composite_cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf);
 static int composite_cdc_acm_cb_received(u8 *buf, u32 len);
 
-static void composite_hid_cb_setup(void);
-static int composite_cmd_mouse_data(u16 argc, u8 *argv[]);
+static int composite_cmd_mouse_data(u16 argc, char *argv[]);
 static void composite_cmd_mouse_data_at(u16 argc, char **argv);
 
 static int composite_init_stack(void);
@@ -160,7 +160,7 @@ static const usbd_cdc_acm_cb_t composite_cdc_acm_usr_cb = {
 static const usbd_hid_usr_cb_t composite_hid_usr_cb = {
 	.init            = NULL,
 	.deinit          = NULL,
-	.setup           = composite_hid_cb_setup,
+	.setup           = NULL,
 	.transmitted     = NULL,
 	.status_changed  = NULL,
 };
@@ -261,7 +261,7 @@ static int composite_cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 		/* Ref CDC PSTN 1.2 Table 17: the Line Coding structure is exactly 7 bytes, any
 		   other wLength must not update the cached line coding. */
 		if (req->wLength == USB_CDC_ACM_LINE_CODING_SIZE) {
-			lc->b.dwDteRate = (u32)(buf[0] | (buf[1] << 8) | (buf[2] << 16) | (buf[3] << 24));
+			lc->b.dwDteRate = (u32)buf[0] | ((u32)buf[1] << 8) | ((u32)buf[2] << 16) | ((u32)buf[3] << 24);
 			lc->b.bCharFormat = buf[4];
 			lc->b.bParityType = buf[5];
 			lc->b.bDataBits = buf[6];
@@ -300,8 +300,10 @@ static int composite_cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 		break;
 
 	case USB_CDC_ACM_SEND_BREAK:
-		/* Do nothing */
-		ret = RTK_SUCCESS;
+		/* Ref CDC PSTN 1.2 6.3.13: no data stage, so wLength must be zero. Nothing to do */
+		if (req->wLength == 0U) {
+			ret = RTK_SUCCESS;
+		}
 		break;
 
 	default:
@@ -322,22 +324,12 @@ static int composite_cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
   */
 static int composite_cdc_acm_cb_received(u8 *buf, u32 len)
 {
-	if ((buf != NULL) && (len != 0U)) {
-		usbd_cdc_acm_transmit(buf, len);
+	if ((buf == NULL) || (len == 0U)) {
+		return RTK_SUCCESS;
 	}
-	return 0;
-}
 
-/**
-  * @brief  Handle the HID class control (setup) requests for the composite device
-  * @note   This function is called within an interrupt service routine (ISR) context;
-  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
-  * @param  req: USB setup request
-  * @param  buf: Buffer containing the setup data payload
-  * @retval None
-  */
-static void composite_hid_cb_setup(void)
-{
+	/* Loopback; -RTK_ERR_BUSY means the previous echo is still in flight and this one is dropped */
+	return usbd_cdc_acm_transmit(buf, len);
 }
 
 /*brief: send device data.(wrapper function usbd_hid_send_data())*/
@@ -346,7 +338,7 @@ static int composite_hid_send_device_data(composite_hid_mouse_data_t *data)
 	u8 byte[4];
 	int ret = -RTK_ERR_IO;
 
-	usb_os_memset((void *)byte, 0, 4);
+	memset((void *)byte, 0, 4);
 
 	/* mouse protocol:
 		BYTE0
@@ -389,9 +381,9 @@ static int composite_hid_send_device_data(composite_hid_mouse_data_t *data)
 }
 
 /* Parse a whole-string decimal in [min, max], an optional leading '-' allowed for a negative min */
-static int composite_hid_parse_s32(const u8 *str, s32 min, s32 max, s32 *val)
+static int composite_hid_parse_s32(const char *str, s32 min, s32 max, s32 *val)
 {
-	const char *p = (const char *)str;
+	const char *p = str;
 	char *end = NULL;
 	u32 mag;
 	s32 num;
@@ -430,7 +422,7 @@ static void composite_hid_cmd_usage(void)
 }
 
 /* Fill a mouse report from "mouse <left> [<right> <middle> <x> <y> <wheel>]", argv[0] being "mouse" */
-static int composite_hid_parse_mouse(u16 argc, u8 *argv[], composite_hid_mouse_data_t *data)
+static int composite_hid_parse_mouse(u16 argc, char *argv[], composite_hid_mouse_data_t *data)
 {
 	s32 val[6] = {0};
 	s32 min;
@@ -448,7 +440,7 @@ static int composite_hid_parse_mouse(u16 argc, u8 *argv[], composite_hid_mouse_d
 		}
 	}
 
-	usb_os_memset((void *)data, 0, sizeof(*data));
+	memset((void *)data, 0, sizeof(*data));
 	data->left = (u8)val[0];
 	data->right = (u8)val[1];
 	data->middle = (u8)val[2];
@@ -458,12 +450,12 @@ static int composite_hid_parse_mouse(u16 argc, u8 *argv[], composite_hid_mouse_d
 	return RTK_SUCCESS;
 }
 
-static int composite_cmd_mouse_data(u16 argc, u8 *argv[])
+static int composite_cmd_mouse_data(u16 argc, char *argv[])
 {
 	composite_hid_mouse_data_t data;
 	int ret;
 
-	if ((argc == 0U) || (_stricmp((const char *)argv[0], "help") == 0) || (_stricmp((const char *)argv[0], "?") == 0)) {
+	if ((argc == 0U) || (_stricmp(argv[0], "help") == 0) || (_stricmp(argv[0], "?") == 0)) {
 		composite_hid_cmd_usage();
 		return (argc == 0U) ? -RTK_ERR_BADARG : RTK_SUCCESS;
 	}
@@ -472,7 +464,7 @@ static int composite_cmd_mouse_data(u16 argc, u8 *argv[])
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Not running\n");
 		return -RTK_ERR_IO;
 	}
-	if (_stricmp((const char *)argv[0], "mouse") != 0) {
+	if (_stricmp(argv[0], "mouse") != 0) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid cmd: %s, try AT+USBDACMHID=help\n", argv[0]);
 		return -RTK_ERR_BADARG;
 	}
@@ -487,13 +479,13 @@ static int composite_cmd_mouse_data(u16 argc, u8 *argv[])
 		RTK_LOGS(TAG, RTK_LOG_WARN, "HID tx fail %d\n", ret);
 	}
 
-	return (u32)ret;
+	return ret;
 }
 
 /* AT entry: argv[0] is reserved by the AT parser and argv[1] holds the first parameter */
 static void composite_cmd_mouse_data_at(u16 argc, char **argv)
 {
-	int ret = composite_cmd_mouse_data((argc != 0U) ? (argc - 1U) : 0U, (u8 **)&argv[1]);
+	int ret = composite_cmd_mouse_data((argc != 0U) ? (u16)(argc - 1U) : 0U, &argv[1]);
 
 	if (ret == RTK_SUCCESS) {
 		at_printf(ATCMD_OK_END_STR);

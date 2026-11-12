@@ -300,6 +300,8 @@ typedef struct {
 	usbh_uac_channel_t isoc_out;          /**< OUT channel state (Playback/Speaker) */
 	usbh_uac_channel_t isoc_in;           /**< IN channel state (Record/Microphone) */
 	usbh_uac_ac_itf_info_t ac_isoc_desc;  /**< Audio Control interface topology (Feature Units + Terminals) */
+	__IO u8 alt_applied;                  /**< 1 once the device accepted SET_INTERFACE of the running set_alt_setting;
+	                                           placed here to reuse the tail padding of ac_isoc_desc */
 
 #if USBH_UAC_DEBUG
 	rtos_task_t dump_status_task;         /**< Handle for the periodic status-dump debug task. */
@@ -460,7 +462,7 @@ void usbh_uac_stop_play(void);
   *         -RTK_ERR_BUSY: playback is not started;
   *         -RTK_ERR_IO: the device is not connected.
   */
-int usbh_uac_write(u8 *buffer, u32 size, u32 timeout_ms);
+int usbh_uac_write(const u8 *buffer, u32 size, u32 timeout_ms);
 
 /**
   * @brief  Start the audio capture process (microphone recording).

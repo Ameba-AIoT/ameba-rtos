@@ -115,11 +115,13 @@ typedef struct wifi_cast_frame_info {
  */
 typedef struct wifi_cast_config {
 	u8	channel;			/* initial channel */
+	u8	rx_dis;			/* 0 = rx of wifi cast frames and ACKs enabled (default), 1 = send only; with 1 an ACK never arrives, do not set ack=1 in frame info */
 } wifi_cast_config_t;
 
 #define WIFI_CAST_INIT_CONFIG_DEFAULT() \
     { \
         .channel = 6, \
+        .rx_dis = 0, \
     }
 
 /**

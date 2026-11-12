@@ -1326,6 +1326,22 @@ extern u32 valid_img1_addr;
 
 #define SPIC_VALID_CMD_MASK		(0xffff)
 
+/* Convert a time in ns to SPIC clock cycles (round up). Tclk is the SPIC bus clock bus_clk (Hz),
+ * spi_sclk = bus_clk / (2 * FLASH_baud_rate). TPR0/TPR1 timing fields all count bus_clk cycles. */
+#define SPIC_NS_TO_CYCLES_CEIL(ns, bus_clk)	(((ns) * ((bus_clk) / 1000) + 999999) / 1000000)
+
+/* CS_ACTIVE_SETUP = round_up(tCSS / Tclk) - BAUDR + 1 (Tclk: bus clock period) */
+#define SPIC_CS_SETUP_CYCLES(tcss_ns, bus_clk, baud)	\
+	((SPIC_NS_TO_CYCLES_CEIL(tcss_ns, bus_clk) + 1 > (baud)) ? (SPIC_NS_TO_CYCLES_CEIL(tcss_ns, bus_clk) + 1 - (baud)) : 0)
+
+/* CS_ACTIVE_HOLD = (tCHSH - Tsclk) / Tclk, Tsclk = 2 * BAUDR * Tclk (flash clock period) */
+#define SPIC_CS_HOLD_CYCLES(tchsh_ns, bus_clk, baud)	\
+	((SPIC_NS_TO_CYCLES_CEIL(tchsh_ns, bus_clk) > 2 * (baud)) ? (SPIC_NS_TO_CYCLES_CEIL(tchsh_ns, bus_clk) - 2 * (baud)) : 0)
+
+/* CS_H_RD_DUM_LEN / CS_H_WR_DUM_LEN >= tSHSL / Tclk - 2 */
+#define SPIC_CS_HIGH_CYCLES(tshsl_ns, bus_clk)	\
+	((SPIC_NS_TO_CYCLES_CEIL(tshsl_ns, bus_clk) > 2) ? (SPIC_NS_TO_CYCLES_CEIL(tshsl_ns, bus_clk) - 2) : 0)
+
 #define SPIC_DR_DEPTH		(32)//32*8Bit
 #define U32BLOCKSIZE		(sizeof(u32))
 #define UNALIGNED32(X)		((u32)(X) & (U32BLOCKSIZE - 1))

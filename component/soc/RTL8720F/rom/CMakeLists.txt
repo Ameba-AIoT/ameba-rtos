@@ -18,7 +18,7 @@ if(${c_MCU_PROJECT_NAME} STREQUAL "km55tz" AND CONFIG_TRUSTZONE)
     ameba_list_append(public_libraries
         ${c_SDK_LIB_SOC_DIR}/lib_rom_tz.a
     )
-elseif(${c_MCU_PROJECT_NAME} STREQUAL "km55ns" AND CONFIG_SOLO)
+elseif(${c_MCU_PROJECT_NAME} STREQUAL "km55ns" AND CONFIG_IOT_MCU_COMBINED)
     # SOLO: km55ns owns a direct flash driver, so its rom lib is a distinct variant.
     ameba_list_append(public_libraries
         ${c_SDK_LIB_SOC_DIR}/lib_rom_solo.a
@@ -150,7 +150,7 @@ if(${c_CURRENT_IMAGE_TYPE} STREQUAL "image2")
         )
 
         # SOLO only: km55ns owns a direct flash driver. 
-        if(CONFIG_SOLO)
+        if(CONFIG_IOT_MCU_COMBINED)
             ameba_list_append(private_sources
                 rom_common/ameba_flash_rom.c
             )
@@ -174,7 +174,7 @@ if((${c_MCU_PROJECT_NAME} STREQUAL "km55tz") AND CONFIG_TRUSTZONE)
         p_COMPILE_OPTIONS
             ${private_compile_options}
     )
-elseif((${c_MCU_PROJECT_NAME} STREQUAL "km55ns") AND CONFIG_SOLO)
+elseif((${c_MCU_PROJECT_NAME} STREQUAL "km55ns") AND CONFIG_IOT_MCU_COMBINED)
     ameba_add_external_soc_library(rom_solo
         p_SOURCES
             ${private_sources}

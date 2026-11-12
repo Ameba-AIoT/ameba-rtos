@@ -84,7 +84,7 @@ typedef struct {
 	__IO u32 frame_done_idx;   /**< Buffer index (0..MAX_BUF_NUM-1) of the last completed frame. */
 	__IO u32 frame_done_size;  /**< Byte size of the last completed frame. */
 	__IO u32 frame_rx_cnt;     /**< Total frames the HW decoder completed (produced). */
-	__IO u32 frame_drop_cnt;   /**< Frames overwritten before usbh_uvc_get_frame() consumed them. */
+	__IO u32 frame_drop_cnt;   /**< Frames dropped: no free buffer to hand off, or larger than their buffer. */
 
 	/* frame hand-off */
 	usb_os_sema_t dec_sema;    /**< Frame-done signal: given by the decoder ISR, taken by usbh_uvc_get_frame(). */

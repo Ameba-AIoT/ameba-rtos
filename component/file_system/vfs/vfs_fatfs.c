@@ -76,27 +76,35 @@ int FATFS_getDrivernum(const char *TAG)
 }
 
 
-int fatfs_get_interface(int interface)
+int fatfs_get_interface(int target)
 {
-	int drv_id = 0;
-	if (interface == VFS_INF_SD) {
-		drv_id = FATFS_getDrivernum("SD");
-	} else if (interface == VFS_INF_FLASH) {
-		drv_id = FATFS_getDrivernum("FLASH");
-	} else if (interface == VFS_INF_SECOND_FLASH) {
-		drv_id = FATFS_getDrivernum("SECOND_FLASH");
-	} else if (interface == VFS_INF_SD_SPI) {
-		drv_id = FATFS_getDrivernum("SD_SPI");
-	} else if (interface == VFS_INF_USBH) {
-		drv_id = FATFS_getDrivernum("USB");
-#if defined(VFS_RAM_FATFS)
-	} else if (interface == VFS_INF_RAM) {
-		drv_id = FATFS_getDrivernum("RAM");
+	switch (target) {
+	case VFS_TARGET_FLASH_VFS2:
+	case VFS_TARGET_FLASH_APP_FATFS:
+		return FATFS_getDrivernum("FLASH");
+#if defined(CONFIG_FATFS_SD_MODE)
+	case VFS_TARGET_SD:
+		return FATFS_getDrivernum("SD");
 #endif
-	} else {
+#if defined(CONFIG_FATFS_SECOND_FLASH)
+	case VFS_TARGET_SECOND_FLASH:
+		return FATFS_getDrivernum("SECOND_FLASH");
+#endif
+#if defined(CONFIG_FATFS_SD_SPI_MODE)
+	case VFS_TARGET_SD_SPI:
+		return FATFS_getDrivernum("SD_SPI");
+#endif
+#if defined(CONFIG_FATFS_USB_HOST)
+	case VFS_TARGET_USBH:
+		return FATFS_getDrivernum("USB");
+#endif
+#if defined(VFS_RAM_FATFS)
+	case VFS_TARGET_RAM:
+		return FATFS_getDrivernum("RAM");
+#endif
+	default:
 		return -1;
 	}
-	return drv_id;
 }
 
 int fatfs_open(void *fs, const char *filename, const char *mode, vfs_file *finfo)
@@ -494,74 +502,103 @@ int fatfs_stat(void *fs, char *path, struct stat *buf)
 	return 0;
 }
 
-int fatfs_mount(int interface)
+int fatfs_mount(int target)
 {
-	int ret = -1;
-#if defined(VFS_RAM_FATFS)
-	if (interface == VFS_INF_RAM) {
-		return fatfs_ram_init();		/* sets ram_mount_flag */
-	}
+	int ret;
+	/* External FATFS targets share fatfs2_mount_flag. */
+	volatile uint8_t *mount_flag = &fatfs2_mount_flag;
+
+	switch (target) {
+	case VFS_TARGET_FLASH_VFS2:
+	case VFS_TARGET_FLASH_APP_FATFS:
+		ret = fatfs_flash_init(target);
+		mount_flag = &fatfs_mount_flag;
+		break;
+#if defined(CONFIG_FATFS_SECOND_FLASH)
+	case VFS_TARGET_SECOND_FLASH:
+		ret = fatfs_flash_init(target);
+		break;
 #endif
-	if (interface == VFS_INF_SD || interface == VFS_INF_SD_SPI) {
-		VFS_DBG(VFS_INFO, "sd mount");
+#if defined(CONFIG_FATFS_SD_MODE)
+	case VFS_TARGET_SD:
+#endif
+#if defined(CONFIG_FATFS_SD_SPI_MODE)
+	case VFS_TARGET_SD_SPI:
+#endif
 #if defined(CONFIG_FATFS_SD_MODE) || defined(CONFIG_FATFS_SD_SPI_MODE)
-		ret = fatfs_sd_init(interface);
+		ret = fatfs_sd_init(target);
+		break;
 #endif
-	} else if (interface == VFS_INF_FLASH || interface == VFS_INF_SECOND_FLASH) {
-		VFS_DBG(VFS_INFO, "flash mount");
-		ret = fatfs_flash_init(interface);
-	} else if (interface == VFS_INF_USBH) {
-		VFS_DBG(VFS_INFO, "usbh mount");
 #if defined(CONFIG_FATFS_USB_HOST)
+	case VFS_TARGET_USBH:
 		ret = fatfs_usbh_init();
+		break;
 #endif
-	} else {
-		VFS_DBG(VFS_ERROR, "It don't support the interface %d", interface);
-	}
-
-	if (interface == VFS_INF_SD || interface == VFS_INF_SECOND_FLASH || interface == VFS_INF_SD_SPI || interface == VFS_INF_USBH) {
-		fatfs2_mount_flag = (ret == 0 ? 1 : 0);
-	} else if (interface == VFS_INF_FLASH) {
-		fatfs_mount_flag = (ret == 0 ? 1 : 0);
-	}
-
-	return ret;
-}
-
-int fatfs_ummount(int interface)
-{
-	int ret = 0;
 #if defined(VFS_RAM_FATFS)
-	if (interface == VFS_INF_RAM) {
-		return fatfs_ram_close();		/* clears ram_mount_flag */
-	}
+	case VFS_TARGET_RAM:
+		ret = fatfs_ram_init();
+		mount_flag = &ram_mount_flag;
+		break;
 #endif
-	if (interface == VFS_INF_SD || interface == VFS_INF_SD_SPI) {
-		VFS_DBG(VFS_INFO, "sd unmount");
-#if defined(CONFIG_FATFS_SD_MODE) || defined(CONFIG_FATFS_SD_SPI_MODE)
-		ret = fatfs_sd_close();
-#endif
-	} else if (interface == VFS_INF_FLASH || interface == VFS_INF_SECOND_FLASH) {
-		VFS_DBG(VFS_INFO, "flash unmount");
-		ret = fatfs_flash_close(interface);
-	} else if (interface == VFS_INF_USBH) {
-		VFS_DBG(VFS_INFO, "usbh unmount");
-#if defined(CONFIG_FATFS_USB_HOST)
-		ret = fatfs_usbh_close();
-#endif
-	} else {
-		VFS_DBG(VFS_ERROR, "It don't support the interface %d", interface);
+	default:
+		VFS_DBG(VFS_ERROR, "Unsupported FATFS target %d", target);
 		return -1;
 	}
 
-	/* all non-flash interfaces share fatfs2_mount_flag (see fatfs_mount) */
-	if (interface == VFS_INF_FLASH) {
-		fatfs_mount_flag = 0;
+	*mount_flag = (ret == 0) ? 1 : 0;
+	if (ret) {
+		VFS_DBG(VFS_ERROR, "Fatfs target %d mount fail, ret is %d", target, ret);
 	} else {
-		fatfs2_mount_flag = 0;
+		VFS_DBG(VFS_INFO, "Fatfs target %d mount", target);
+	}
+	return ret;
+}
+
+int fatfs_ummount(int target)
+{
+	int ret;
+	/* External FATFS targets share fatfs2_mount_flag. */
+	volatile uint8_t *mount_flag = &fatfs2_mount_flag;
+
+	switch (target) {
+	case VFS_TARGET_FLASH_VFS2:
+	case VFS_TARGET_FLASH_APP_FATFS:
+		ret = fatfs_flash_close(target);
+		mount_flag = &fatfs_mount_flag;
+		break;
+#if defined(CONFIG_FATFS_SECOND_FLASH)
+	case VFS_TARGET_SECOND_FLASH:
+		ret = fatfs_flash_close(target);
+		break;
+#endif
+#if defined(CONFIG_FATFS_SD_MODE)
+	case VFS_TARGET_SD:
+#endif
+#if defined(CONFIG_FATFS_SD_SPI_MODE)
+	case VFS_TARGET_SD_SPI:
+#endif
+#if defined(CONFIG_FATFS_SD_MODE) || defined(CONFIG_FATFS_SD_SPI_MODE)
+		ret = fatfs_sd_close();
+		break;
+#endif
+#if defined(CONFIG_FATFS_USB_HOST)
+	case VFS_TARGET_USBH:
+		ret = fatfs_usbh_close();
+		break;
+#endif
+#if defined(VFS_RAM_FATFS)
+	case VFS_TARGET_RAM:
+		ret = fatfs_ram_close();
+		mount_flag = &ram_mount_flag;
+		break;
+#endif
+	default:
+		VFS_DBG(VFS_ERROR, "Unsupported FATFS target %d", target);
+		return -1;
 	}
 
-
+	*mount_flag = 0;
+	VFS_DBG(VFS_INFO, "Fatfs target %d unmount", target);
 	return ret;
 }
 

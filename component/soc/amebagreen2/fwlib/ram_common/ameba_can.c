@@ -483,6 +483,9 @@ void CAN_SetRxMsgBuf(CAN_TypeDef *CANx, CAN_RxMsgTypeDef *RxMsg)
 
 	CANx->CAN_RAM_MASK = can_ram_mask;
 
+	/* CAN_RAM_CS is shared by all message buffers and keeps what CAN_WriteMsg() left in it; clear it so that this buffer is a plain receive buffer */
+	CANx->CAN_RAM_CS = 0;
+
 	/* Write RX setting info in register into the ram message buffer */
 	can_ram_cmd |= CAN_BIT_RAM_START;
 	CANx->CAN_RAM_CMD = can_ram_cmd;
@@ -1051,28 +1054,21 @@ void CAN_TxMsgTriggerConfig(CAN_TypeDef *CANx, u32 CloseOffset, u32 Begin)
 }
 
 /**
-  * @brief    CAN control register configure.
+  * @brief    Enable or disable RX DMA of a receive message buffer.
   * @param  CANx Where CANx can be CAN0 or CAN1.
   * @param  MsgIdx Message buffer index.
-  * @param  RxDmaEn RX DMA enable.
-  * @param  DmaOffset DMA offset.
+  * @param  NewState ENABLE or DISABLE.
+  * @note   Hardware clears the enable bit after the buffer has been read out by DMA, enable it again for the next frame.
   */
-void CAN_MsgCtrlRegConfig(CAN_TypeDef *CANx, u32 MsgIdx, u32 RxDmaEn, u32 DmaOffset)
+void CAN_RxMsgBufDMACmd(CAN_TypeDef *CANx, u32 MsgIdx, u32 NewState)
 {
-	u32 MsgBufferCtrl;
+	assert_param(MsgIdx <= 15);
 
-	MsgBufferCtrl = CANx->CAN_MBx_CTRL[MsgIdx];
-
-	MsgBufferCtrl &= (~(CAN_BIT_MSGx_RXDMA_EN | CAN_MASK_MSGx_BA));
-
-	if (RxDmaEn == DISABLE) {
-		MsgBufferCtrl &= (~CAN_BIT_MSGx_RXDMA_EN);
+	if (NewState == DISABLE) {
+		CANx->CAN_MBx_CTRL[MsgIdx] &= (~CAN_BIT_MSGx_RXDMA_EN);
 	} else {
-		MsgBufferCtrl |= CAN_BIT_MSGx_RXDMA_EN;
+		CANx->CAN_MBx_CTRL[MsgIdx] |= CAN_BIT_MSGx_RXDMA_EN;
 	}
-
-	MsgBufferCtrl |= (DmaOffset << 10);
-	CANx->CAN_MBx_CTRL[MsgIdx] = MsgBufferCtrl;
 }
 
 /**
@@ -1084,6 +1080,8 @@ void CAN_MsgCtrlRegConfig(CAN_TypeDef *CANx, u32 MsgIdx, u32 RxDmaEn, u32 DmaOff
 void CAN_MsgBaseAddrConfig(CAN_TypeDef *CANx, u32 MsgIdx, u32 BaseAddr)
 {
 	u32 MsgBufferCtrl;
+
+	assert_param(MsgIdx <= 15);
 
 	MsgBufferCtrl = CANx->CAN_MBx_CTRL[MsgIdx];
 
@@ -1107,6 +1105,41 @@ void CAN_MsgBaseAddrEndReg(CAN_TypeDef *CANx, u32 EndAddr)
 }
 
 /**
+  * @brief    Configure CAN RX DMA: who controls the transfer and the burst size.
+  * @param  CANx Where CANx can be CAN0 or CAN1.
+  * @param  Owner 0: GDMA, 1: CAN.
+  * @param  RxDmaBurstSize Burst size in words: 0:1, 1:4, 2:8, 3:16. It must match the GDMA source burst size.
+  * @note   Configure before the frame arrives. The bit enabled by CAN_RxMsgBufDMACmd() is cleared by hardware after each
+  *         DMA transfer, so enable it again before every frame.
+  */
+void CAN_RXDMAConfig(CAN_TypeDef *CANx, u32 Owner, u32 RxDmaBurstSize)
+{
+	u32 Temp;
+
+	Temp = CANx->CAN_RXDMA_CFG;
+	Temp &= ~(CAN_BIT_RXDMA_OWNER | CAN_MASK_RXDMA_SRC_MSIZE);
+	if (Owner) {
+		Temp |= CAN_BIT_RXDMA_OWNER;
+	}
+	Temp |= CAN_RXDMA_SRC_MSIZE(RxDmaBurstSize);
+	CANx->CAN_RXDMA_CFG = Temp;
+}
+
+/**
+  * @brief    Enable or disable CAN RX DMA.
+  * @param  CANx Where CANx can be CAN0 or CAN1.
+  * @param  NewState ENABLE or DISABLE.
+  */
+void CAN_RXDMACmd(CAN_TypeDef *CANx, u32 NewState)
+{
+	if (NewState != DISABLE) {
+		CANx->CAN_CTL |= CAN_BIT_RXDMA_EN;
+	} else {
+		CANx->CAN_CTL &= ~CAN_BIT_RXDMA_EN;
+	}
+}
+
+/**
   * @brief    Init and Enable CAN RX GDMA.
   * @param  Index 0 or 1.
   * @param  GDMA_InitStruct Pointer to a GDMA_InitTypeDef structure that contains
@@ -1118,6 +1151,8 @@ void CAN_MsgBaseAddrEndReg(CAN_TypeDef *CANx, u32 EndAddr)
   * @return Initialization result:
   *         - TRUE: DMA channel allocated and initialized successfully.
   *         - FALSE: No available DMA channel.
+  * @note   The CAN side is not touched here: configure the owner and the burst size with CAN_RXDMAConfig() before calling it.
+  *         The GDMA source burst here is one word and must equal the CAN burst size.
   */
 bool CAN_RXGDMA_Init(
 	u8 Index,
@@ -1142,7 +1177,7 @@ bool CAN_RXGDMA_Init(
 	GDMA_InitStruct->GDMA_Index = 0;
 	GDMA_InitStruct->GDMA_ChNum = GdmaChnl;
 	GDMA_InitStruct->GDMA_DIR = TTFCPeriToMem;
-	GDMA_InitStruct->GDMA_SrcAddr = CAN_DEV_TABLE[Index].CANx->CAN_RX_DMA_DATA;
+	GDMA_InitStruct->GDMA_SrcAddr = (u32)&CAN_DEV_TABLE[Index].CANx->CAN_RX_DMA_DATA;
 	GDMA_InitStruct->GDMA_DstAddr = (u32)pRxBuf;
 	GDMA_InitStruct->GDMA_DstInc = IncType;
 	GDMA_InitStruct->GDMA_SrcInc = NoChange;
@@ -1154,7 +1189,6 @@ bool CAN_RXGDMA_Init(
 		/*	4-bytes aligned, move 4 bytes each DMA transaction */
 		GDMA_InitStruct->GDMA_DstMsize	 = MsizeOne;
 		GDMA_InitStruct->GDMA_DstDataWidth = TrWidthFourBytes;
-		RTK_LOGW(TAG, "Dst is 4-bytes aligned...\n");
 	} else {
 		/*	move 1 byte each DMA transaction */
 		GDMA_InitStruct->GDMA_DstMsize	 = MsizeFour;
@@ -1170,16 +1204,6 @@ bool CAN_RXGDMA_Init(
 }
 
 
-
-/**
-  * @brief    CAN DMA destination base address configure.
-  * @param  CANx Where CANx can be CAN0 or CAN1.
-  * @param  Addr Base address.
-  */
-void CAN_RxDmaDestBaseAddrConfig(CAN_TypeDef *CANx, u32 Addr)
-{
-	CANx->CAN_RXDMA_CFG = Addr;
-}
 
 /**
   * @brief    CAN get RX DMA data.

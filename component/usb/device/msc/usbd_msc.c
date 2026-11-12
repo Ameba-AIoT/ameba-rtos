@@ -33,10 +33,8 @@
 /* Interface number of the single Mass Storage interface */
 #define USBD_MSC_ITF_NUM               0U
 
-/* BOT status */
-#define USBD_MSC_STATUS_NORMAL         0U          /**< Normal working status */
-#define USBD_MSC_STATUS_RECOVERY       1U          /**< Get MSC Reset request for recovery */
-#define USBD_MSC_STATUS_ERROR          2U          /**< Error status */
+/* Period of the warning while deinit waits for an MSC thread to exit */
+#define USBD_MSC_STOP_TASK_WARN_MS     1000U
 
 /* Private types -------------------------------------------------------------*/
 
@@ -217,8 +215,6 @@ static int usbd_msc_media_init(void)
 #elif defined CONFIG_USBD_MSC_RAM
 	/* FATFS is mounted by the app; MSC only does raw I/O. */
 	return RAM_disk_Driver.disk_initialize();
-#else
-	return -RTK_ERR_BADARG;		/* unreachable: a media is enforced at the top of the file */
 #endif
 }
 
@@ -238,8 +234,6 @@ static void usbd_msc_media_deinit(void)
 	status = SD_disk_spi_Driver.disk_deinitialize();
 #elif defined CONFIG_USBD_MSC_RAM
 	status = RAM_disk_Driver.disk_deinitialize();
-#else
-	status = -RTK_ERR_BADARG;	/* unreachable: a media is enforced at the top of the file */
 #endif
 
 	/* Best effort: a backend that cannot unmount cleanly is reported here. Nothing can be done
@@ -268,8 +262,6 @@ static int usbd_msc_media_getcapacity(u32 *sector_count)
 	ret = SD_disk_spi_Driver.disk_ioctl(GET_SECTOR_COUNT, &count);
 #elif defined CONFIG_USBD_MSC_RAM
 	ret = RAM_disk_Driver.disk_ioctl(GET_SECTOR_COUNT, &count);
-#else
-	ret = -RTK_ERR_BADARG;		/* unreachable: a media is enforced at the top of the file */
 #endif
 	if (ret == 0) {
 		*sector_count = (u32)count;
@@ -290,8 +282,6 @@ static int usbd_msc_media_readblocks(u32 sector, u8 *data, u32 count)
 	return SD_disk_spi_Driver.disk_read(data, sector, count);
 #elif defined CONFIG_USBD_MSC_RAM
 	return RAM_disk_Driver.disk_read(data, sector, count);
-#else
-	return -RTK_ERR_BADARG;		/* unreachable: a media is enforced at the top of the file */
 #endif
 }
 
@@ -307,8 +297,6 @@ static int usbd_msc_media_writeblocks(u32 sector, const u8 *data, u32 count)
 	return SD_disk_spi_Driver.disk_write(data, sector, count);
 #elif defined CONFIG_USBD_MSC_RAM
 	return RAM_disk_Driver.disk_write(data, sector, count);
-#else
-	return -RTK_ERR_BADARG;		/* unreachable: a media is enforced at the top of the file */
 #endif
 }
 
@@ -322,29 +310,27 @@ static void usbd_msc_abort(usb_dev_t *dev)
 	usbd_msc_dev_t *cdev = &usbd_msc_dev;
 	usb_msc_bot_cbw_t *cbw = cdev->cbw;
 
-	/* BOT §6.6.1: stall OUT on any write-phase mismatch OR on invalid CBW (RECOVERY). For an invalid CBW the
-	 * caller has also set `wedged`, so the halt survives a plain CLEAR_FEATURE and only Reset Recovery, a
-	 * Bulk-Only Mass Storage Reset followed by CLEAR_FEATURE on both endpoints, resumes communication. */
-	if (((cbw->field.bmCBWFlags == 0U) &&
-		 (cbw->field.dCBWDataTransferLength != 0U) &&
-		 (cdev->bot_status == USBD_MSC_STATUS_NORMAL)) ||
-		(cdev->bot_status == USBD_MSC_STATUS_RECOVERY)) {
-		usbd_ep_set_stall(dev, &cdev->ep_bulk_out);
-		/* Arm OUT while halted, as send_csw() does: the controller keeps answering
-		 * STALL until the host clears the halt, then this transfer picks up the next
-		 * CBW. Without it the EP is neither stalled nor listening once the halt is
-		 * cleared by CLEAR_FEATURE or SET_CONFIGURATION. A failure means the device is no longer ready
-		 * (suspend/disconnect), the host then recovers by reset. */
-		if (usbd_msc_bulk_receive(dev, (u8 *)cbw, USB_MSC_CBW_LEN, USBD_MSC_CBW_BUF_LEN) != RTK_SUCCESS) {
-			RTK_LOGS(TAG, RTK_LOG_WARN, "EP%02x xfer err\n", cdev->cfg->bulk_out_addr);
-		}
+	int ret;
+
+	/* BOT §6.6.1: the only caller handles an invalid CBW, so stall both endpoints. The caller has also set
+	 * `wedged`, so the halt survives a plain CLEAR_FEATURE and only Reset Recovery, a Bulk-Only Mass Storage
+	 * Reset followed by CLEAR_FEATURE on both endpoints, resumes communication. */
+	usbd_ep_set_stall(dev, &cdev->ep_bulk_out);
+	/* Arm OUT while halted, as send_csw() does: the controller keeps answering
+	 * STALL until the host clears the halt, then this transfer picks up the next
+	 * CBW. Without it the EP is neither stalled nor listening once the halt is
+	 * cleared by CLEAR_FEATURE or SET_CONFIGURATION. A failure means the device is no longer ready
+	 * (suspend/disconnect), the host then recovers by reset. */
+	ret = usbd_msc_bulk_receive(dev, (u8 *)cbw, USB_MSC_CBW_LEN, USBD_MSC_CBW_BUF_LEN);
+	if (ret != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_WARN, "EP%02x xfer err\n", cdev->cfg->bulk_out_addr);
 	}
 
 	usbd_ep_set_stall(dev, &cdev->ep_bulk_in);
 }
 
 /**
-  * @brief  Fail a Data-In command whose data stage cannot be completed, deferring its CSW
+  * @brief  End a Data-In command whose data stage cannot be completed, deferring its CSW
   * @note   Ref MSC BOT 1.0 6.7.2 Case 4 (Hi > Dn) and 6.7.2 Case 5/7 cut short by a medium error: Bulk-In
   *         carries both the data and the CSW, so a CSW sent now would be read by the host as data. Bulk-In is
   *         halted instead to end the data stage, and the CSW is kept until the host clears the halt, see the
@@ -358,7 +344,8 @@ static void usbd_msc_abort(usb_dev_t *dev)
   *         halt: the host can only clear a halt it has seen, and the critical section of the stall path orders
   *         the stores before the halt on SMP, so the ISR always sees a complete CSW.
   * @param  dev: USB device instance
-  * @param  status: bCSWStatus to report once the halt is cleared, BOT_CSW_CMD_FAILED or BOT_CSW_PHASE_ERROR
+  * @param  status: bCSWStatus to report once the halt is cleared. BOT_CSW_CMD_PASSED for a successful
+  *         command without data that the host read for (Case 4), else BOT_CSW_CMD_FAILED or BOT_CSW_PHASE_ERROR
   * @retval None
   */
 static void usbd_msc_defer_csw(usb_dev_t *dev, u8 status)
@@ -367,12 +354,11 @@ static void usbd_msc_defer_csw(usb_dev_t *dev, u8 status)
 	usb_msc_bot_csw_t *csw = cdev->csw;
 
 	/* Logged before Bulk-Out is re-armed below, the DMA may overwrite the CBW with the next one afterwards */
-	RTK_LOGS(TAG, RTK_LOG_WARN, "Cmd %02x fail, CSW %d deferred\n", cdev->cbw->field.CBWCB[0], status);
+	RTK_LOGS(TAG, RTK_LOG_WARN, "Cmd %02x CSW %d deferred\n", cdev->cbw->field.CBWCB[0], status);
 
 	csw->field.dCSWSignature = USB_MSC_CSW_SIGN;
 	csw->field.bCSWStatus = status;
 	cdev->bot_state = USBD_MSC_IDLE;
-	cdev->bot_status = USBD_MSC_STATUS_NORMAL;
 	cdev->csw_pending = 1U;
 	usbd_ep_set_stall(dev, &cdev->ep_bulk_in);
 
@@ -424,7 +410,6 @@ static int usbd_msc_set_config(usb_dev_t *dev, u8 config)
 	}
 
 	cdev->bot_state = USBD_MSC_IDLE;
-	cdev->bot_status = USBD_MSC_STATUS_NORMAL;
 	usb_os_memset((void *)&cdev->scsi_sense, 0U, sizeof(cdev->scsi_sense));
 	cdev->is_open = 1U;
 	cdev->prevent_removal = 0U;
@@ -433,6 +418,7 @@ static int usbd_msc_set_config(usb_dev_t *dev, u8 config)
 	cdev->bot_reset_pending = 0U;
 	cdev->wedged = 0U;
 	cdev->csw_pending = 0U;
+	cdev->csw_in_flight = 0U;
 
 	/* Prepare to receive next BULK OUT packet. Without it the device would enumerate but never see a CBW, so
 	   fail the configuration and let the core stall SET_CONFIGURATION instead. */
@@ -537,7 +523,9 @@ static int usbd_msc_setup(usb_dev_t *dev, usb_setup_req_t *req)
 				   CSW is sent; the MSC threads do not touch Bulk-In or the CSW meanwhile. */
 				cdev->csw_pending = 0U;
 				usbd_ep_clear_stall(dev, &cdev->ep_bulk_in);
+				cdev->csw_in_flight = 1U;
 				if (usbd_msc_bulk_transmit(dev, (u8 *)cdev->csw, USB_MSC_CSW_LEN) != RTK_SUCCESS) {
+					cdev->csw_in_flight = 0U;
 					USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_XFER, cdev->cfg->bulk_in_addr);
 				}
 				ret = RTK_SUCCESS;
@@ -555,8 +543,7 @@ static int usbd_msc_setup(usb_dev_t *dev, usb_setup_req_t *req)
 				   for an interface with the default setting only, hosts do send the
 				   request in that case. The BOT state machine is left alone on purpose:
 				   the OUT endpoint is already armed with the next CBW, see
-				   usbd_msc_abort(), and a RECOVERY status is only cleared by a
-				   Bulk-Only Mass Storage Reset as per BOT 3.1.
+				   usbd_msc_abort().
 				   Ref USB 2.0 Table 9-10: the whole wIndex is the interface number, so a
 				   foreign interface or a non-zero high byte leaves the endpoints untouched.
 				   The halts are cleared here regardless of an invalid CBW, so drop the
@@ -584,6 +571,11 @@ static int usbd_msc_setup(usb_dev_t *dev, usb_setup_req_t *req)
 		break;
 	/* Class request */
 	case USB_REQ_TYPE_CLASS:
+		/* The interface, hence its class requests, exists in the Configured state only, ref USB 2.0 9.1.1.5 */
+		if (dev->dev_state != USBD_STATE_CONFIGURED) {
+			ret = -RTK_ERR_BADARG;
+			break;
+		}
 		if ((req->bmRequestType & USB_REQ_RECIPIENT_MASK) != USB_REQ_RECIPIENT_INTERFACE) {
 			ret = -RTK_ERR_BADARG;
 			break;
@@ -611,14 +603,18 @@ static int usbd_msc_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			if ((req->wValue  == 0U) && (req->wLength == 0U) &&
 				((req->bmRequestType & USB_REQ_DIR_MASK) != USB_D2H)) {
 				cdev->bot_state  = USBD_MSC_IDLE;
-				cdev->bot_status = USBD_MSC_STATUS_RECOVERY;
 				cdev->bot_reset_pending = 1U;
 				/* Ref BOT 5.3.4: the reset is the first step of Reset Recovery, the CLEAR_FEATURE requests
 				   that follow shall now clear the halts again */
 				cdev->wedged = 0U;
 				/* Ref BOT 3.1: the reset aborts the current command, so its deferred CSW is dropped */
 				cdev->csw_pending = 0U;
-				/* Prepare to receive BOT cmd. On failure stall the reset so the host escalates to a port reset. */
+				cdev->csw_in_flight = 0U;
+				/* Prepare to receive BOT cmd. On failure stall the reset so the host escalates to a port reset.
+				   Known issue: an RX/TX thread still processing the aborted command may re-arm its data stage
+				   right after this, replacing the CBW receive. To be decided after the CV Reset Recovery test:
+				   either the ISR only flags the reset and the RX thread re-arms the CBW, or each thread checks
+				   bot_state under the critical section of usbd_msc_bulk_receive/transmit before submitting. */
 				ret = usbd_msc_bulk_receive(dev, (u8 *)cdev->cbw, USB_MSC_CBW_LEN, USBD_MSC_CBW_BUF_LEN);
 			} else {
 				ret = -RTK_ERR_BADARG;
@@ -659,8 +655,18 @@ static int usbd_msc_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, int status)
 		return -RTK_ERR_BADARG;
 	}
 
+	/* Ref MSC BOT 1.0 6.3: the CSW ends the command, nothing is left for the TX thread. Waking it would make it
+	   continue the next command, which the RX thread may already have started, as if this were its data. */
+	if (cdev->csw_in_flight != 0U) {
+		cdev->csw_in_flight = 0U;
+		return RTK_SUCCESS;
+	}
+
 	cdev->tx_status = status;
-	usb_os_sema_give(cdev->tx_sema);
+	if (usb_os_sema_give(cdev->tx_sema) != RTK_SUCCESS) {
+		/* The TX thread misses this completion and the command stalls until the host resets it */
+		USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_XFER, ep_addr);
+	}
 
 	return RTK_SUCCESS;
 }
@@ -680,7 +686,7 @@ static void usbd_msc_tx_process(void)
 
 	/* Without the lock the TX thread could race the RX one on the medium and the BOT state */
 	if (usb_os_lock(usbd_msc_sd_lock) != RTK_SUCCESS) {
-		USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_XFER, cdev->cfg->bulk_in_addr);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "TX lock fail\n");
 		return;
 	}
 
@@ -701,11 +707,16 @@ static void usbd_msc_tx_process(void)
 
 		case USBD_MSC_SEND_DATA:
 		case USBD_MSC_LAST_DATA_IN:
-			if (cdev->phase_error != 0U) {
-				usbd_msc_send_csw(dev, BOT_CSW_PHASE_ERROR);
-				cdev->phase_error = 0U;
+			csw_status = (cdev->phase_error != 0U) ? BOT_CSW_PHASE_ERROR : BOT_CSW_CMD_PASSED;
+			cdev->phase_error = 0U;
+			/* Ref MSC BOT 1.0 6.7.2 Case 5 (Hi > Di): the host still reads Bulk-In for the residue. A last packet
+			   of MPS bytes, e.g. a READ shorter than dCBWDataTransferLength, does not end the data stage, ZLP being
+			   disabled on Bulk-In, so a CSW sent now would be read as data: halt Bulk-In instead. */
+			if ((cdev->csw->field.dCSWDataResidue != 0U) &&
+				((cdev->ep_bulk_in.xfer_len % cdev->ep_bulk_in.info.mps) == 0U)) {
+				usbd_msc_defer_csw(dev, csw_status);
 			} else {
-				usbd_msc_send_csw(dev, BOT_CSW_CMD_PASSED);
+				usbd_msc_send_csw(dev, csw_status);
 			}
 			break;
 
@@ -739,10 +750,13 @@ static int usbd_msc_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len)
 		return -RTK_ERR_BADARG;
 	}
 
-	/* Only a CBW is ever checked against this length, and the Bulk-Out window never exceeds the CBW or
-	   data buffer: a longer value cannot be a CBW, so it is saturated to one that never matches */
-	cdev->rx_data_length = (len > USBD_MSC_CBW_BUF_LEN) ? (u16)USBD_MSC_CBW_BUF_LEN : (u16)len;
-	usb_os_sema_give(cdev->rx_sema);
+	/* The actual length: a CBW is checked against it, and a WRITE chunk ended by a short packet must not be
+	   written as a whole one, see usbd_scsi_process_write(). The core already bounds it by the DMA window. */
+	cdev->rx_data_length = len;
+	if (usb_os_sema_give(cdev->rx_sema) != RTK_SUCCESS) {
+		/* The RX thread misses this transfer and the command stalls until the host resets it */
+		USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_XFER, ep_addr);
+	}
 
 	return RTK_SUCCESS;
 }
@@ -763,7 +777,7 @@ static void usbd_msc_rx_process(void)
 
 	/* Without the lock the RX thread could race the TX one on the medium and the BOT state */
 	if (usb_os_lock(usbd_msc_sd_lock) != RTK_SUCCESS) {
-		USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_XFER, cdev->cfg->bulk_out_addr);
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "RX lock fail\n");
 		return;
 	}
 
@@ -787,14 +801,12 @@ static void usbd_msc_rx_process(void)
 			(cbw->field.bCBWLUN != 0U) ||  /* Only LUN 0 exists (GET_MAX_LUN reports 0) */
 			(cbw->field.bCBWCBLength < 1U) || (cbw->field.bCBWCBLength > 16U)) {
 			usbd_scsi_sense_code(cdev, SCSI_SENSE_KEY_ILLEGAL_REQUEST, SCSI_ASC_INVALID_COMMAND_OPERATION_CODE);
-			/* BOT §6.6.1: invalid CBW — use RECOVERY so abort() stalls both endpoints, and wedge them so the
-			 * halts hold until Reset Recovery. Set before the stalls: the host can only send the CLEAR_FEATURE
-			 * that reads the flag after it has seen a STALL, and the stall critical section orders the store. */
-			cdev->bot_status = USBD_MSC_STATUS_RECOVERY;
+			/* BOT §6.6.1: invalid CBW — abort() stalls both endpoints, and wedge them so the halts hold until
+			 * Reset Recovery. Set before the stalls: the host can only send the CLEAR_FEATURE that reads the
+			 * flag after it has seen a STALL, and the stall critical section orders the store. */
 			cdev->wedged = 1U;
 			usbd_msc_abort(dev);
 		} else {
-			cdev->bot_status = USBD_MSC_STATUS_NORMAL;
 			/* A valid CBW proves the host has already cleared the halts, e.g. by SET_CONFIGURATION, which the
 			   core handles without the class, so an older wedge no longer applies. */
 			cdev->wedged = 0U;
@@ -832,26 +844,48 @@ static void usbd_msc_rx_process(void)
 					 (cdev->bot_state != USBD_MSC_DATA_OUT) &&
 					 (cdev->bot_state != USBD_MSC_LAST_DATA_IN)) {
 				if (cdev->data_length > 0U) {
-					length = MIN(cbw_data_len, cdev->data_length);
-					/* Residue reflects bytes actually sent (clamped), not the SCSI payload size */
-					csw->field.dCSWDataResidue -= length;
-					csw->field.bCSWStatus = BOT_CSW_CMD_PASSED;
-					cdev->bot_state = USBD_MSC_SEND_DATA;
+					if ((cbw_data_len == 0U) || ((cbw->field.bmCBWFlags & 0x80U) == 0U)) {
+						/* Case 2 (Hn < Di) and Case 10 (Ho <> Di): the device has data to send but the
+						 * host expects none, or expects to send. Ref BOT 6.7.1 and 6.7.3: phase error,
+						 * nothing is sent on Bulk-In. For Case 10 STALL Bulk-Out so the host data is not
+						 * mis-read as the next CBW, as for Case 13. */
+						if (cbw_data_len != 0U) {
+							usbd_ep_set_stall(dev, &cdev->ep_bulk_out);
+						}
+						usbd_msc_send_csw(dev, BOT_CSW_PHASE_ERROR);
+					} else {
+						length = MIN(cbw_data_len, cdev->data_length);
+						/* Case 7 (Hi < Di): only Hi bytes fit, ref BOT 6.7.2 the CSW then reports a
+						 * phase error, see usbd_msc_tx_process() */
+						if (cdev->data_length > cbw_data_len) {
+							cdev->phase_error = 1U;
+						}
+						/* Residue reflects bytes actually sent (clamped), not the SCSI payload size */
+						csw->field.dCSWDataResidue -= length;
+						csw->field.bCSWStatus = BOT_CSW_CMD_PASSED;
+						cdev->bot_state = USBD_MSC_SEND_DATA;
 
-					if (usbd_msc_bulk_transmit(dev, cdev->data, length) != RTK_SUCCESS) {
-						RTK_LOGS(TAG, RTK_LOG_WARN, "EP%02x xfer err\n", cdev->cfg->bulk_in_addr);
+						if (usbd_msc_bulk_transmit(dev, cdev->data, length) != RTK_SUCCESS) {
+							RTK_LOGS(TAG, RTK_LOG_WARN, "EP%02x xfer err\n", cdev->cfg->bulk_in_addr);
+						}
 					}
-				} else if (cdev->data_length == 0U) {
+				} else {
 					if ((cbw_data_len != 0U) && ((cbw->field.bmCBWFlags & 0x80U) == 0U)) {
 						/* Case 9: Ho > Dn — command produced no data but the host
-						 * declared an OUT transfer (e.g. a stubbed MODE SELECT); STALL
+						 * declared an OUT transfer (e.g. a TEST UNIT READY with data); STALL
 						 * Bulk-Out so its parameter bytes are not mis-read as the next
 						 * CBW. The CSW flows on the un-stalled Bulk-In pipe below. */
 						usbd_ep_set_stall(dev, &cdev->ep_bulk_out);
+						usbd_msc_send_csw(dev, BOT_CSW_CMD_PASSED);
+					} else if (cbw_data_len != 0U) {
+						/* Case 4: Hi > Dn — the host reads Bulk-In for data that does not exist, a CSW
+						 * sent now would be taken as that data. Ref BOT 6.7.2: STALL Bulk-In, the CSW
+						 * follows once the host clears the halt. */
+						usbd_msc_defer_csw(dev, BOT_CSW_CMD_PASSED);
+					} else {
+						/* Case 1: Hn = Dn */
+						usbd_msc_send_csw(dev, BOT_CSW_CMD_PASSED);
 					}
-					usbd_msc_send_csw(dev, BOT_CSW_CMD_PASSED);
-				} else {
-					usbd_msc_abort(dev);
 				}
 			}
 		}
@@ -859,14 +893,21 @@ static void usbd_msc_rx_process(void)
 
 	case USBD_MSC_DATA_OUT:
 		if (usbd_scsi_process_cmd(cdev, cbwcb) != RTK_SUCCESS) {
-			/* Ref MSC BOT 1.0 6.7.3: the medium failed on a chunk while the host still owns the rest of the OUT
-			   data stage. STALL Bulk-Out so those bytes are not read as the next CBW, as for Case 9/13 above; the
-			   CSW flows on the un-stalled Bulk-In pipe. Not when the failing chunk was the last one: the host
-			   has sent everything, and a halt would only fail its next CBW. */
-			if (usbd_scsi_out_data_pending(cdev) != 0U) {
-				usbd_ep_set_stall(dev, &cdev->ep_bulk_out);
+			if (cdev->phase_error != 0U) {
+				/* Ref MSC BOT 1.0 6.7.3 Case 13: the host ended the data stage early with a short packet, see
+				   usbd_scsi_process_write(). It sends nothing more, so Bulk-Out is not halted. */
+				cdev->phase_error = 0U;
+				usbd_msc_send_csw(dev, BOT_CSW_PHASE_ERROR);
+			} else {
+				/* Ref MSC BOT 1.0 6.7.3: the medium failed on a chunk while the host still owns the rest of the
+				   OUT data stage. STALL Bulk-Out so those bytes are not read as the next CBW, as for Case 9/13
+				   above; the CSW flows on the un-stalled Bulk-In pipe. Not when the failing chunk was the last
+				   one: the host has sent everything, and a halt would only fail its next CBW. */
+				if (usbd_scsi_out_data_pending(cdev) != 0U) {
+					usbd_ep_set_stall(dev, &cdev->ep_bulk_out);
+				}
+				usbd_msc_send_csw(dev, BOT_CSW_CMD_FAILED);
 			}
-			usbd_msc_send_csw(dev, BOT_CSW_CMD_FAILED);
 		}
 
 		break;
@@ -1047,11 +1088,18 @@ static void usbd_msc_rx_thread(void *param)
 
 	UNUSED(param);
 
-	for (;;) {
+	while (cdev->rx_stop == 0U) {
 		if (usb_os_sema_take(cdev->rx_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
+			if (cdev->rx_stop != 0U) {
+				break;
+			}
 			usbd_msc_rx_process();
 		}
 	}
+
+	/* Publish the exit last: usbd_msc_stop_task() waits for it before releasing what this task uses */
+	cdev->rx_task = NULL;
+	rtos_task_delete(NULL);
 }
 
 static void usbd_msc_tx_thread(void *param)
@@ -1060,10 +1108,87 @@ static void usbd_msc_tx_thread(void *param)
 
 	UNUSED(param);
 
-	for (;;) {
+	while (cdev->tx_stop == 0U) {
 		if (usb_os_sema_take(cdev->tx_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
+			if (cdev->tx_stop != 0U) {
+				break;
+			}
 			usbd_msc_tx_process();
 		}
+	}
+
+	/* Publish the exit last: usbd_msc_stop_task() waits for it before releasing what this task uses */
+	cdev->tx_task = NULL;
+	rtos_task_delete(NULL);
+}
+
+/**
+  * @brief  Ask an MSC thread to exit and wait until it has
+  * @note   Task context only. Never deletes the thread from outside: it may hold usbd_msc_sd_lock or be inside
+  *         a medium access. The wait has no upper bound, as the buffers and the lock are released right after
+  *         and releasing them under a running thread would be a use after free.
+  * @param  task: Thread handle, cleared by the thread itself as it exits, NULL if never created
+  * @param  stop: Exit request flag polled by the thread after each wakeup
+  * @param  sema: Semaphore the thread blocks on
+  * @retval None
+  */
+static void usbd_msc_stop_task(rtos_task_t *task, u8 *stop, usb_os_sema_t sema)
+{
+	u32 wait_ms = 0U;
+	int ret;
+
+	if (*task == NULL) {
+		return;
+	}
+
+	*stop = 1U;
+	ret = usb_os_sema_give(sema);
+	if (ret != RTK_SUCCESS) {
+		/* Already given: the thread wakes up anyway and sees the flag */
+		RTK_LOGS(TAG, RTK_LOG_DEBUG, "Stop give %d\n", ret);
+	}
+	while (*task != NULL) {
+		usb_os_sleep_ms(1U);
+		wait_ms++;
+		if (wait_ms >= USBD_MSC_STOP_TASK_WARN_MS) {
+			RTK_LOGS(TAG, RTK_LOG_WARN, "Wait MSC task exit\n");
+			wait_ms = 0U;
+		}
+	}
+}
+
+/**
+  * @brief  Delete an MSC semaphore and clear its handle, a NULL handle is skipped
+  * @param  sema: Semaphore handle
+  * @retval None
+  */
+static void usbd_msc_delete_sema(usb_os_sema_t *sema)
+{
+	int ret;
+
+	if (*sema != NULL) {
+		ret = usb_os_sema_delete(*sema);
+		if (ret != RTK_SUCCESS) {
+			RTK_LOGS(TAG, RTK_LOG_WARN, "Del sema %d\n", ret);
+		}
+		*sema = NULL;
+	}
+}
+
+/**
+  * @brief  Delete the medium access lock and clear its handle, a NULL handle is skipped
+  * @retval None
+  */
+static void usbd_msc_delete_lock(void)
+{
+	int ret;
+
+	if (usbd_msc_sd_lock != NULL) {
+		ret = usb_os_lock_delete(usbd_msc_sd_lock);
+		if (ret != RTK_SUCCESS) {
+			RTK_LOGS(TAG, RTK_LOG_WARN, "Del lock %d\n", ret);
+		}
+		usbd_msc_sd_lock = NULL;
 	}
 }
 
@@ -1219,6 +1344,10 @@ static int usbd_msc_private_init(const usbd_msc_cb_t *cb, const usbd_msc_config_
 		goto create_tx_sema_fail;
 	}
 
+	/* Reset on every init, a previous deinit left them set */
+	cdev->rx_stop = 0U;
+	cdev->tx_stop = 0U;
+
 	ret = rtos_task_create(&cdev->rx_task, "usbd_msc_rx_thread", usbd_msc_rx_thread, NULL,
 						   (cfg->trx_task_stack_size != 0U) ? cfg->trx_task_stack_size : USBD_MSC_DEFAULT_TRX_TASK_STACK_SIZE,
 						   (cfg->rx_task_priority != 0U) ? cfg->rx_task_priority : USBD_MSC_DEFAULT_RX_TASK_PRIORITY);
@@ -1250,16 +1379,13 @@ static int usbd_msc_private_init(const usbd_msc_cb_t *cb, const usbd_msc_config_
 	return RTK_SUCCESS;
 
 create_tx_thread_fail:
-	rtos_task_delete(cdev->rx_task);
-	cdev->rx_task = NULL;
+	usbd_msc_stop_task(&cdev->rx_task, &cdev->rx_stop, cdev->rx_sema);
 
 create_rx_thread_fail:
-	usb_os_sema_delete(cdev->tx_sema);
-	cdev->tx_sema = NULL;
+	usbd_msc_delete_sema(&cdev->tx_sema);
 
 create_tx_sema_fail:
-	usb_os_sema_delete(cdev->rx_sema);
-	cdev->rx_sema = NULL;
+	usbd_msc_delete_sema(&cdev->rx_sema);
 
 create_rx_sema_fail:
 	usb_os_mfree((void *)cdev->csw);
@@ -1274,8 +1400,7 @@ cbw_fail:
 	cdev->data = NULL;
 
 data_buf_fail:
-	usb_os_lock_delete(usbd_msc_sd_lock);
-	usbd_msc_sd_lock = NULL;
+	usbd_msc_delete_lock();
 	return ret;
 }
 
@@ -1356,28 +1481,15 @@ void usbd_msc_deinit(void)
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Deinit\n");
 
-	/* Both threads hold the lock while they process a command. Taking it waits for a command in
-	   progress to finish, so neither thread is deleted while it owns the lock or uses the buffers
-	   freed below. A thread blocked on its semaphore or on the lock itself can be deleted safely.
-	   The lock is created first and released last by private_init, so without it no thread exists. */
-	if (usbd_msc_sd_lock != NULL) {
-		usb_os_lock(usbd_msc_sd_lock);
-		rtos_task_delete(cdev->tx_task);
-		cdev->tx_task = NULL;
-		rtos_task_delete(cdev->rx_task);
-		cdev->rx_task = NULL;
-		usb_os_unlock(usbd_msc_sd_lock);
-	}
+	/* Let each thread finish the command in progress and exit by itself, so none is deleted while it
+	   holds usbd_msc_sd_lock or uses the buffers freed below. A NULL handle is skipped, so a repeated
+	   deinit does nothing. */
+	usbd_msc_stop_task(&cdev->tx_task, &cdev->tx_stop, cdev->tx_sema);
+	usbd_msc_stop_task(&cdev->rx_task, &cdev->rx_stop, cdev->rx_sema);
 
 	/* Cleared once deleted, so that a repeated deinit does not delete them again */
-	if (cdev->tx_sema != NULL) {
-		usb_os_sema_delete(cdev->tx_sema);
-		cdev->tx_sema = NULL;
-	}
-	if (cdev->rx_sema != NULL) {
-		usb_os_sema_delete(cdev->rx_sema);
-		cdev->rx_sema = NULL;
-	}
+	usbd_msc_delete_sema(&cdev->tx_sema);
+	usbd_msc_delete_sema(&cdev->rx_sema);
 
 	usb_os_mfree((void *)cdev->csw);
 	cdev->csw = NULL;
@@ -1388,10 +1500,7 @@ void usbd_msc_deinit(void)
 	usb_os_mfree((void *)cdev->data);
 	cdev->data = NULL;
 
-	if (usbd_msc_sd_lock != NULL) {
-		usb_os_lock_delete(usbd_msc_sd_lock);
-		usbd_msc_sd_lock = NULL;
-	}
+	usbd_msc_delete_lock();
 }
 
 /**
@@ -1407,11 +1516,16 @@ int usbd_msc_bulk_transmit(usb_dev_t *dev, u8 *buf, u32 len)
 	usbd_msc_dev_t *cdev = &usbd_msc_dev;
 	usbd_ep_t *ep_bulk_in = &cdev->ep_bulk_in;
 
+	/* The descriptor fields and the submit form one step: the ISR also transmits on Bulk-In, the deferred
+	   CSW of a CLEAR_FEATURE, and must never interleave with a thread midway through them. Nests with the
+	   critical section of the core submit, and is safe from the ISR. */
+	usb_os_enter_critical();
 	if (dev->is_ready != 0U) {
 		ep_bulk_in->xfer_buf = buf;
 		ep_bulk_in->xfer_len = len;
 		ret = usbd_ep_transmit(dev, ep_bulk_in);
 	}
+	usb_os_exit_critical();
 
 	return ret;
 }
@@ -1430,12 +1544,20 @@ int usbd_msc_bulk_receive(usb_dev_t *dev, u8 *buf, u32 len, u32 buf_len)
 	usbd_msc_dev_t *cdev = &usbd_msc_dev;
 	usbd_ep_t *ep_bulk_out = &cdev->ep_bulk_out;
 
+	/* The descriptor fields and the submit form one step: a BOT reset in the ISR re-arms Bulk-Out with the CBW
+	   buffer, possibly between a thread's stores of the data buffer and of its length. The DMA would then run
+	   a data length into the CBW buffer. Nests with the critical section of the core submit, and is safe from
+	   the ISR.
+	   Known limitation: a thread may still re-arm a data stage right after the ISR has reset the BOT state,
+	   the host Reset Recovery then fails and escalates to a port reset. */
+	usb_os_enter_critical();
 	if (dev->is_ready != 0U) {
 		ep_bulk_out->xfer_buf = buf;
 		ep_bulk_out->xfer_len = len;
 		ep_bulk_out->xfer_buf_len = buf_len;
 		ret = usbd_ep_receive(dev, ep_bulk_out);
 	}
+	usb_os_exit_critical();
 
 	return ret;
 }
@@ -1458,9 +1580,10 @@ void usbd_msc_send_csw(usb_dev_t *dev, u8 status)
 	csw->field.dCSWSignature = USB_MSC_CSW_SIGN;
 	csw->field.bCSWStatus = status;
 	cdev->bot_state = USBD_MSC_IDLE;
-	cdev->bot_status = USBD_MSC_STATUS_NORMAL;
 
+	cdev->csw_in_flight = 1U;
 	if (usbd_msc_bulk_transmit(dev, (u8 *)csw, USB_MSC_CSW_LEN) != RTK_SUCCESS) {
+		cdev->csw_in_flight = 0U;
 		RTK_LOGS(TAG, RTK_LOG_WARN, "EP%02x xfer err\n", cdev->cfg->bulk_in_addr);
 	}
 
@@ -1475,10 +1598,9 @@ void usbd_msc_send_csw(usb_dev_t *dev, u8 status)
 
 	/* Prepare EP to Receive next Cmd. A failure here means the device is no longer ready
 	 * (suspend/disconnect); the endpoint is left un-armed and the controller NAKs, which is
-	 * the correct flow control, ref USB 2.0 8.4.6. Keep bot_status in RECOVERY so the next
-	 * Bulk-Only Mass Storage Reset re-arms Bulk-Out instead of resuming a lost BOT phase. */
+	 * the correct flow control, ref USB 2.0 8.4.6. The host recovers with a Bulk-Only Mass Storage
+	 * Reset, which re-arms Bulk-Out. */
 	if (usbd_msc_bulk_receive(dev, (u8 *)cbw, USB_MSC_CBW_LEN, USBD_MSC_CBW_BUF_LEN) != RTK_SUCCESS) {
-		cdev->bot_status = USBD_MSC_STATUS_RECOVERY;
 		RTK_LOGS(TAG, RTK_LOG_WARN, "EP%02x xfer err\n", cdev->cfg->bulk_out_addr);
 	}
 }

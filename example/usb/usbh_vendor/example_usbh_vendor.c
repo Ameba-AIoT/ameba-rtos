@@ -381,13 +381,13 @@ static void vendor_intr_loopback_test(void)
 	RTK_LOGS(TAG, RTK_LOG_INFO, "INTR loopback test start, times:%d, size: %d\n", USBH_VENDOR_INTR_LOOPBACK_CNT, USBH_VENDOR_INTR_LOOPBACK_BUF_SIZE);
 
 	for (i = 0; i < USBH_VENDOR_INTR_LOOPBACK_CNT; i++) {
-		usb_os_memset((void *)vendor_intr_loopback_rx_buf, 0, USBH_VENDOR_INTR_LOOPBACK_BUF_SIZE);
+		memset((void *)vendor_intr_loopback_rx_buf, 0, USBH_VENDOR_INTR_LOOPBACK_BUF_SIZE);
 		if ((!vendor_is_ready) || (vendor_teardown != 0U) || (vendor_app.quit != 0U)) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Device disconnect\n");
 			break;
 		}
 
-		usb_os_memset((void *)vendor_intr_loopback_tx_buf, i, USBH_VENDOR_INTR_LOOPBACK_BUF_SIZE);
+		memset((void *)vendor_intr_loopback_tx_buf, i, USBH_VENDOR_INTR_LOOPBACK_BUF_SIZE);
 
 		/* Arm under the lock, then release it before waiting for the completion
 		   callback: the callback never comes for a device that was just
@@ -455,13 +455,13 @@ static void vendor_bulk_loopback_test(void)
 	RTK_LOGS(TAG, RTK_LOG_INFO, "BULK loopback test start, times:%d, size: %d\n", USBH_VENDOR_BULK_LOOPBACK_CNT, USBH_VENDOR_BULK_LOOPBACK_BUF_SIZE);
 
 	for (i = 0; i < USBH_VENDOR_BULK_LOOPBACK_CNT; i++) {
-		usb_os_memset((void *)vendor_bulk_loopback_rx_buf, 0, USBH_VENDOR_BULK_LOOPBACK_BUF_SIZE);
+		memset((void *)vendor_bulk_loopback_rx_buf, 0, USBH_VENDOR_BULK_LOOPBACK_BUF_SIZE);
 		if ((!vendor_is_ready) || (vendor_teardown != 0U) || (vendor_app.quit != 0U)) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Device disconnect\n");
 			break;
 		}
 
-		usb_os_memset((void *)vendor_bulk_loopback_tx_buf, i, USBH_VENDOR_BULK_LOOPBACK_BUF_SIZE);
+		memset((void *)vendor_bulk_loopback_tx_buf, i, USBH_VENDOR_BULK_LOOPBACK_BUF_SIZE);
 
 		/* Lock covers the arming only, see the INTR test for why. */
 		if (vendor_lock_stack() != RTK_SUCCESS) {
@@ -728,7 +728,14 @@ static void example_usbh_vendor_hotplug_thread(void *param)
 			}
 
 			/* Re-arm USB TRX after the re-init. */
-			usbh_start();
+			ret = usbh_start();
+			if (ret != RTK_SUCCESS) {
+				usbh_vendor_deinit();
+				usbh_deinit();
+				rtos_mutex_give(vendor_state_mutex);
+				RTK_LOGS(TAG, RTK_LOG_ERROR, "Reinit fail: %d\n", ret);
+				break;
+			}
 
 			/* Open the gate as the very last step, so no test thread runs against
 			   a half-rebuilt stack. Clear teardown only after ready is set, or a
@@ -922,7 +929,12 @@ static int vendor_start(void)
 	}
 
 	/* All class drivers registered; start USB TRX so enumeration can run. */
-	usbh_start();
+	ret = usbh_start();
+	if (ret != RTK_SUCCESS) {
+		usbh_vendor_deinit();
+		usbh_deinit();
+		goto error_exit;
+	}
 
 	/* The stack is fully up: allow the test threads to call the class API. */
 	vendor_stack_ready = 1U;

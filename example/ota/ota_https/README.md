@@ -107,3 +107,4 @@ Save and exit, then rebuild and test again.
 * RTL8721Dx
 * RTL8721F
 * RTL8720F
+* RTL8735C

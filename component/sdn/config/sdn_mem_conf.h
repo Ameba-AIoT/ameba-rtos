@@ -34,4 +34,8 @@
 #define SDN_CONF_CLIENT_154_RX_NUM                   4
 #define SDN_INTF_MAX_154_LEN                         255
 
+/* TRX packet number for each bt classic link */
+#define BT_LL_RX_DATA_NUM_PER_LINK                   5
+#define BT_LL_TX_ACL_NUM_PER_LINK                    5
+
 #endif

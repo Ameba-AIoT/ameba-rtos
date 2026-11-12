@@ -443,7 +443,6 @@ typedef struct {
 
 typedef struct {
 	u32 chn_num;
-	u32 ep_auto_en;
 	u32 ep_num;
 	u32 frame_buf0_start_addr;
 	u32 frame_buf0_end_addr;

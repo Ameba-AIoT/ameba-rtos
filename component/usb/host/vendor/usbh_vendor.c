@@ -12,6 +12,8 @@
 /* Private defines -----------------------------------------------------------*/
 
 #define VENDOR_XFER_MAX_TIMEOUT_TICK    100
+/* Saturation of the ISOC OUT frame count: ep_interval is a u16, so it never waits past this */
+#define VENDOR_FRAME_ELAPSED_MAX        0xFFFFU
 
 /* Private types -------------------------------------------------------------*/
 
@@ -236,7 +238,7 @@ static void usbh_vendor_deinit_transfer(usb_host_t *host, usbh_vendor_xfer_t *xf
 {
 	usbh_pipe_t *pipe = &xfer->pipe;
 
-	if (pipe->pipe_num && host != NULL) {
+	if ((pipe->pipe_num != 0U) && (host != NULL)) {
 		usbh_close_pipe(host, pipe);
 	}
 
@@ -244,6 +246,7 @@ static void usbh_vendor_deinit_transfer(usb_host_t *host, usbh_vendor_xfer_t *xf
 	xfer->xfer_cnt = 0;
 	xfer->xfer_max_cnt = 0;
 	xfer->cur_frame = 0;
+	xfer->frame_elapsed = 0U;
 	xfer->xfer_bk_buf = NULL;
 	xfer->busy = 0U;
 #if USBH_VENDOR_DEBUG
@@ -296,7 +299,11 @@ static int usbh_vendor_attach(usb_host_t *host)
 		vendor->host = host;
 
 		/* Get data in/out endpoints. An endpoint the interface lacks keeps pipe_num 0,
-		 * which the transfer API rejects, so a missing endpoint fails at the call. */
+		 * which the transfer API rejects, so a missing endpoint fails at the call.
+		 * Only alternate setting 0 is used: the usbd_vendor peer puts every endpoint there,
+		 * and SET_CONFIGURATION already left the interface on it (USB 2.0 9.4.5), so no
+		 * SET_INTERFACE is sent. A device streaming on another alternate setting only is not
+		 * supported. */
 		status = usbh_vendor_get_endpoints(host, itf_data->itf_desc_array);
 		if (status != RTK_SUCCESS) {
 			vendor->host = NULL;
@@ -329,27 +336,27 @@ static void usbh_vendor_deinit_all_pipe(void)
 	}
 
 	pipe = &vendor->bulk_in_xfer.pipe;
-	if (pipe->pipe_num) {
+	if (pipe->pipe_num != 0U) {
 		usbh_close_pipe(host, pipe);
 	}
 	pipe = &vendor->bulk_out_xfer.pipe;
-	if (pipe->pipe_num) {
+	if (pipe->pipe_num != 0U) {
 		usbh_close_pipe(host, pipe);
 	}
 	pipe = &vendor->intr_in_xfer.pipe;
-	if (pipe->pipe_num) {
+	if (pipe->pipe_num != 0U) {
 		usbh_close_pipe(host, pipe);
 	}
 	pipe = &vendor->intr_out_xfer.pipe;
-	if (pipe->pipe_num) {
+	if (pipe->pipe_num != 0U) {
 		usbh_close_pipe(host, pipe);
 	}
 	pipe = &vendor->isoc_in_xfer.pipe;
-	if (pipe->pipe_num) {
+	if (pipe->pipe_num != 0U) {
 		usbh_close_pipe(host, pipe);
 	}
 	pipe = &vendor->isoc_out_xfer.pipe;
-	if (pipe->pipe_num) {
+	if (pipe->pipe_num != 0U) {
 		usbh_close_pipe(host, pipe);
 	}
 }
@@ -523,11 +530,16 @@ static void usbh_vendor_sof(usb_host_t *host)
 	}
 
 	if (pipe->xfer_state == USBH_EP_XFER_WAIT_SOF) {
-		/* FRNUM is a 14-bit wrapping counter: mask the unsigned difference so the pacing
-		 * survives a wrap, instead of yielding a negative remainder that skips submits. */
+		/* FRNUM is a 14-bit wrapping counter, while an ISOC interval reaches 2^15 (micro)frames
+		 * (bInterval 16, Ref USB 2.0 9.6.6): add up the masked step since the last SOF and
+		 * submit once a whole interval went by. A SOF serviced late then only delays this
+		 * packet, instead of skipping to the next multiple of the interval. cur_frame only
+		 * moves here, so the time the task spent sending the previous packet is counted. */
 		frame_diff = (cur_frame - (u32)out_xfer->cur_frame) & USB_FRAME_NUM_MASK;
-		if ((pipe->ep_interval != 0U) && ((frame_diff % (u32)pipe->ep_interval) == 0U)) {
-			//isoc tx in 2^(ep_interval -1) sof
+		out_xfer->cur_frame = (u16)cur_frame;
+		out_xfer->frame_elapsed = (u16)MIN((u32)out_xfer->frame_elapsed + frame_diff, (u32)VENDOR_FRAME_ELAPSED_MAX);
+		if ((pipe->ep_interval != 0U) && ((u32)out_xfer->frame_elapsed >= (u32)pipe->ep_interval)) {
+			out_xfer->frame_elapsed = 0U;
 			out_xfer->xfer_cnt++;
 			if (out_xfer->xfer_cnt >= out_xfer->xfer_max_cnt) {
 				pipe->xfer_state = USBH_EP_XFER_IDLE;
@@ -543,7 +555,6 @@ static void usbh_vendor_sof(usb_host_t *host)
 				pipe->xfer_state = USBH_EP_XFER_START;
 				out_pipe = pipe->pipe_num;
 			}
-			out_xfer->cur_frame = (u16)cur_frame;
 		}
 	}
 
@@ -798,9 +809,6 @@ static void usbh_vendor_isoc_process_tx(usb_host_t *host)
 		if (out_xfer->xfer_cnt != 0U) {
 			usb_os_memset((void *)pipe->xfer_buf, (u8)(out_xfer->xfer_cnt & 0xFFU), out_xfer->xfer_max_len);
 		}
-		if (host->dev_speed != USB_SPEED_HIGH) {
-			pipe->xfer_len = (pipe->xfer_len >= pipe->ep_mps) ? pipe->ep_mps : pipe->xfer_len;
-		}
 #if USBH_VENDOR_DEBUG
 		if (out_xfer->xfer_cnt < out_xfer->xfer_max_cnt) {
 			out_xfer->test_buf[out_xfer->xfer_cnt] = pipe->xfer_buf[0];
@@ -882,8 +890,9 @@ static void usbh_vendor_process(usb_host_t *host, usbh_drv_msg_t *msg)
   * @param  buf: Data buffer
   * @param  len: Data length
   * @param  test_cnt: Test loop count
-  * @retval RTK_SUCCESS when started, -RTK_ERR_BADARG for a bad argument or an endpoint the device
-  *         does not have, -RTK_ERR_BUSY while the pipe is still in use or no device is attached
+  * @retval RTK_SUCCESS when started, -RTK_ERR_BADARG for a bad argument, a buffer not cache line
+  *         aligned or an endpoint the device does not have, -RTK_ERR_BUSY while the pipe is still
+  *         in use or no device is attached
   */
 static int usbh_vendor_start_xfer(usbh_vendor_xfer_t *xfer, u8 *buf, u32 len, u32 test_cnt)
 {
@@ -899,6 +908,12 @@ static int usbh_vendor_start_xfer(usbh_vendor_xfer_t *xfer, u8 *buf, u32 len, u3
 		return -RTK_ERR_BADARG;
 	}
 
+	/* The HAL would only fail the DMA later, on every loop, as an opaque transfer error */
+	if (!USB_IS_MEM_DMA_ALIGNED(buf)) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Buf unaligned\n");
+		return -RTK_ERR_BADARG;
+	}
+
 	if ((pipe->ep_type == USB_CH_EP_TYPE_ISOC) && (test_cnt == 0U)) {
 		return -RTK_ERR_BADARG;
 	}
@@ -908,20 +923,21 @@ static int usbh_vendor_start_xfer(usbh_vendor_xfer_t *xfer, u8 *buf, u32 len, u3
 		/* The controller receives whole packets, each adjusted to the DWORD boundary: ask for no
 		 * more than the packets that fit in buf */
 		len = usb_get_max_payload_len(buf_len, pipe->ep_mps);
-		/* One ISOC IN transfer is one service interval, of up to ep_trans packets at HS and of a
-		 * single packet otherwise, Ref USB 2.0 5.6.3 */
-		if (pipe->ep_type == USB_CH_EP_TYPE_ISOC) {
-			isoc_max = (u32)pipe->ep_mps * ((host->dev_speed == USB_SPEED_HIGH) ? (u32)pipe->ep_trans : 1U);
-			if (len > isoc_max) {
-				len = isoc_max;
-			}
-		}
 		if (len == 0U) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "RX buf %u < mps %u\n", buf_len, pipe->ep_mps);
 			return -RTK_ERR_BADARG;
 		}
 	} else {
 		buf_len = 0U;
+	}
+
+	/* One ISOC transfer is one service interval, of up to ep_trans packets at HS and of a single
+	 * packet otherwise, Ref USB 2.0 5.6.3: a longer request is cut to it in both directions */
+	if (pipe->ep_type == USB_CH_EP_TYPE_ISOC) {
+		isoc_max = (u32)pipe->ep_mps * ((host->dev_speed == USB_SPEED_HIGH) ? (u32)pipe->ep_trans : 1U);
+		if (len > isoc_max) {
+			len = isoc_max;
+		}
 	}
 
 	usb_os_enter_critical();
@@ -967,6 +983,7 @@ static int usbh_vendor_start_xfer(usbh_vendor_xfer_t *xfer, u8 *buf, u32 len, u3
 		 * frame baseline instead of keeping the previous run's frame number. */
 		xfer->xfer_cnt = 0;
 		xfer->cur_frame = 0;
+		xfer->frame_elapsed = 0U;
 		if ((len > 0U) && ((len % pipe->ep_mps) == 0U) && (pipe->ep_type == USB_CH_EP_TYPE_BULK)) { //ZLP
 			pipe->trx_zlp = 1;
 		} else {
@@ -997,6 +1014,13 @@ int usbh_vendor_init(const usbh_vendor_cb_t *cb)
 
 	if (cb == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid user CB\n");
+		return -RTK_ERR_BADARG;
+	}
+
+	/* cb is only set by a successful init and cleared by deinit: a second init would wipe the pipes
+	   still bound to host channels and register the driver twice */
+	if (vendor->cb != NULL) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Already init\n");
 		return -RTK_ERR_BADARG;
 	}
 
@@ -1046,6 +1070,8 @@ void usbh_vendor_deinit(void)
 
 	usbh_vendor_deinit_all_pipe();
 	usbh_vendor_deinit_all_xfer();
+	vendor->host = NULL;
+	vendor->cb = NULL;
 }
 
 /**

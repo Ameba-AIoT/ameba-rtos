@@ -492,7 +492,7 @@ static void usbh_uvc_img_prepare(usbh_uvc_frame_t *frame)
 			((uvc_s_ctx.fmt_type == USBH_UVC_FORMAT_H264) ||
 			 (uvc_s_ctx.fmt_type == USBH_UVC_FORMAT_H265))) {
 			if (uvc_httpc_psramp_total_len + len <= USBH_UVC_HTTPC_PSRAM_BUF_SIZE) {
-				usb_os_memcpy((void *)uvc_httpc_psramp_write_ptr, (const void *)(frame->buf), len);
+				memcpy((void *)uvc_httpc_psramp_write_ptr, (const void *)(frame->buf), len);
 				uvc_httpc_psramp_write_ptr += len;
 				uvc_httpc_psramp_total_len += len;
 				uvc_httpc_psramp_frame_cnt++;
@@ -516,7 +516,7 @@ static void usbh_uvc_img_prepare(usbh_uvc_frame_t *frame)
 			}
 			rtos_mutex_give(uvc_buf_mutex);
 		} else if (uvc_s_ctx.fmt_type == USBH_UVC_FORMAT_MJPEG) {
-			usb_os_memcpy((void *)uvc_buf, (const void *)(frame->buf), len);
+			memcpy((void *)uvc_buf, (const void *)(frame->buf), len);
 			uvc_buf_size = len;
 			rtos_mutex_give(uvc_buf_mutex);
 			rtos_sema_give(uvc_httpc_save_img_sema);
@@ -532,7 +532,7 @@ static void usbh_uvc_img_prepare(usbh_uvc_frame_t *frame)
 			rtos_mutex_give(uvc_buf_mutex);
 
 		} else {
-			usb_os_memcpy((void *)uvc_buf, (const void *)(frame->buf), len);
+			memcpy((void *)uvc_buf, (const void *)(frame->buf), len);
 			uvc_buf_size = len;
 			rtos_mutex_give(uvc_buf_mutex);
 			rtos_sema_give(uvc_vfs_save_img_sema);
@@ -555,7 +555,7 @@ static void example_usbh_uvc_vfs_thread(void *param)
 
 	UNUSED(param);
 
-	res = vfs_user_register("sdcard", VFS_FATFS, VFS_INF_SD, VFS_REGION_4, VFS_RW);
+	res = vfs_target_register("sdcard", VFS_TARGET_SD, VFS_RW);
 	if (res == 0) {
 		RTK_LOGS(TAG, RTK_LOG_INFO, "VFS-SDcard init done\n");
 	} else {
@@ -565,7 +565,7 @@ static void example_usbh_uvc_vfs_thread(void *param)
 
 	uvc_vfs_is_init = 1;
 
-	prefix = find_vfs_tag(VFS_REGION_4);
+	prefix = vfs_get_prefix(VFS_TARGET_SD);
 
 	while (uvc_vfs_is_init != 0U) {
 		if (rtos_sema_take(uvc_vfs_save_img_sema, RTOS_SEMA_MAX_COUNT) != RTK_SUCCESS) {
@@ -624,13 +624,13 @@ static void example_usbh_uvc_vfs_thread(void *param)
 
 	uvc_vfs_is_init = 1U;
 	uvc_rb = RingBuffer_Create(uvc_buf, CONFIG_USBH_UVC_FRAME_BUF_SIZE, LOCAL_RINGBUFF, 0);
-	buffer_h264 = usb_os_malloc(USBH_UVC_VFS_WRITE_SIZE);
+	buffer_h264 = rtos_mem_zmalloc(USBH_UVC_VFS_WRITE_SIZE);
 	if ((uvc_rb == NULL) || (buffer_h264 == NULL)) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "VFS buf alloc fail\n");
 		goto exit;
 	}
 
-	res = vfs_user_register("sdcard", VFS_FATFS, VFS_INF_SD, VFS_REGION_4, VFS_RW);
+	res = vfs_target_register("sdcard", VFS_TARGET_SD, VFS_RW);
 	if (res == 0) {
 		RTK_LOGS(TAG, RTK_LOG_INFO, "VFS-SDcard init done\n");
 	} else {
@@ -638,7 +638,7 @@ static void example_usbh_uvc_vfs_thread(void *param)
 		goto exit;
 	}
 
-	prefix = find_vfs_tag(VFS_REGION_4);
+	prefix = vfs_get_prefix(VFS_TARGET_SD);
 
 #if (CONFIG_USBH_UVC_FORMAT_TYPE == USBH_UVC_FORMAT_H265)
 	snprintf(filename, sizeof(filename), "stream.h265");
@@ -684,7 +684,7 @@ exit:
 	if (finfo != NULL) {
 		fclose(finfo);
 	}
-	usb_os_mfree((void *)buffer_h264);
+	rtos_mem_free((void *)buffer_h264);
 	if (uvc_rb != NULL) {
 		RingBuffer_Destroy(uvc_rb);
 		uvc_rb = NULL;
@@ -813,10 +813,10 @@ static void example_usbh_uvc_httpc_thread(void *param)
 		snprintf(_boundary, sizeof(_boundary), "rtkBoundary%d", (int)ticknow);
 		snprintf(img_file, sizeof(img_file), "img%d.jpeg", uvc_httpc_img_file_no);
 		snprintf(type, sizeof(type), "multipart/form-data; boundary=%s", _boundary);
-		usb_os_memset((void *)post_end1, 0x0, sizeof(post_end1));
+		memset((void *)post_end1, 0x0, sizeof(post_end1));
 		content_length = snprintf(post_end1, sizeof(post_end1), body_end, _boundary);
 		post_end1_length = strlen(post_end1);
-		usb_os_memset((void *)post_end, 0x0, sizeof(post_end));
+		memset((void *)post_end, 0x0, sizeof(post_end));
 		content_length += snprintf(post_end, sizeof(post_end), upload_request, _boundary, img_file);
 
 		// start a header and add Host (added automatically), Content-Type and Content-Length (added by input param)
@@ -1005,9 +1005,9 @@ static void example_usbh_uvc_httpc_thread(void *param)
 	ticknow = rtos_time_get_current_system_time_ms();
 	snprintf(_boundary, sizeof(_boundary), "rtkBoundary%d", (int)ticknow);
 	snprintf(type, sizeof(type), "multipart/form-data; boundary=%s", _boundary);
-	usb_os_memset((void *)post_end1, 0x0U, sizeof(post_end1));
+	memset((void *)post_end1, 0x0U, sizeof(post_end1));
 	post_end1_length = content_length = snprintf(post_end1, sizeof(post_end1), body_end, _boundary);
-	usb_os_memset((void *)post_end, 0x0U, sizeof(post_end));
+	memset((void *)post_end, 0x0U, sizeof(post_end));
 	content_length += snprintf(post_end, sizeof(post_end), upload_request, _boundary, filename);
 	post_end1_length = strlen(post_end1);
 
@@ -1021,7 +1021,7 @@ static void example_usbh_uvc_httpc_thread(void *param)
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "%s: header write fail: %d\n", USBH_UVC_HTTP_TAG, ret);
 	}
 
-	send_buf = usb_os_malloc(USBH_UVC_HTTPC_WRITE_SIZE);
+	send_buf = rtos_mem_zmalloc(USBH_UVC_HTTPC_WRITE_SIZE);
 	if (send_buf == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "%s: send_buf malloc fail\n", USBH_UVC_HTTP_TAG);
 		goto exit;
@@ -1038,7 +1038,7 @@ static void example_usbh_uvc_httpc_thread(void *param)
 			chunk = USBH_UVC_HTTPC_WRITE_SIZE;
 		}
 
-		usb_os_memcpy((void *)send_buf, (const void *)(uvc_httpc_psramp_base + send_offset), chunk);
+		memcpy((void *)send_buf, (const void *)(uvc_httpc_psramp_base + send_offset), chunk);
 		ret = httpc_request_write_data(conn, send_buf, chunk);
 		if (ret < 0) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "%s: data write fail at offset %u: %d\n",
@@ -1066,14 +1066,14 @@ exit:
 		httpc_conn_close(conn);
 		conn = NULL;
 	}
-	usb_os_mfree((void *)send_buf);
+	rtos_mem_free((void *)send_buf);
 	uvc_httpc_thread_alive = 0;
 	rtos_task_delete(NULL);
 
 #else
 	/* Ringbuffer mode: stream upload frame by frame (H264) or image by image (non-H264) */
 	uvc_rb = RingBuffer_Create(uvc_buf, CONFIG_USBH_UVC_FRAME_BUF_SIZE, LOCAL_RINGBUFF, 0);
-	buffer_h264 = usb_os_malloc(USBH_UVC_HTTPC_WRITE_SIZE);
+	buffer_h264 = rtos_mem_zmalloc(USBH_UVC_HTTPC_WRITE_SIZE);
 	if ((uvc_rb == NULL) || (buffer_h264 == NULL)) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "%s: buf alloc fail\n", USBH_UVC_HTTP_TAG);
 		goto exit;
@@ -1116,9 +1116,9 @@ exit:
 	ticknow = rtos_time_get_current_system_time_ms();
 	snprintf(_boundary, sizeof(_boundary), "rtkBoundary%d", (int)ticknow);
 	snprintf(type, sizeof(type), "multipart/form-data; boundary=%s", _boundary);
-	usb_os_memset((void *)post_end1, 0x0, sizeof(post_end1));
+	memset((void *)post_end1, 0x0, sizeof(post_end1));
 	post_end1_length = content_length = snprintf(post_end1, sizeof(post_end1), body_end, _boundary);
-	usb_os_memset((void *)post_end, 0x0, sizeof(post_end));
+	memset((void *)post_end, 0x0, sizeof(post_end));
 #if (CONFIG_USBH_UVC_FORMAT_TYPE == USBH_UVC_FORMAT_H265)
 	content_length += snprintf(post_end, sizeof(post_end), upload_request, _boundary, "stream.h265");
 #else
@@ -1184,7 +1184,7 @@ exit:
 	goto exit;
 
 exit:
-	usb_os_mfree((void *)buffer_h264);
+	rtos_mem_free((void *)buffer_h264);
 	buffer_h264 = NULL;
 	/* Stop the capture loop from fetching more frames before the ring is torn down,
 	 * then destroy uvc_rb under uvc_buf_mutex so it cannot race with usbh_uvc_img_prepare,
@@ -1379,7 +1379,7 @@ static int uvc_teardown(u32 workers)
 #endif
 	/* Not usb_app_ctx_join(): the hotplug thread may itself be joining the frame worker */
 	for (i = 0U; i < workers; i++) {
-		if (usb_os_sema_take(uvc_app.join_sema, USBH_UVC_TEST_JOIN_TIMEOUT_MS) != RTK_SUCCESS) {
+		if (rtos_sema_take(uvc_app.join_sema, USBH_UVC_TEST_JOIN_TIMEOUT_MS) != RTK_SUCCESS) {
 			return -RTK_ERR_TIMEOUT;
 		}
 	}

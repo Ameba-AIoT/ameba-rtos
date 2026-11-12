@@ -49,11 +49,12 @@ typedef struct fatfs_flash_param_s {
 extern fatfs_params_t fatfs_flash_param;
 extern fatfs_params_t fatfs_second_flash_param;
 
-int fatfs_sd_init(int interface);
+/* Backend lifecycle parameters are VFS_TARGET_* values, not legacy interfaces. */
+int fatfs_sd_init(int target);
 int fatfs_sd_close(void);
 
-int fatfs_flash_init(int interface);
-int fatfs_flash_close(int interface);
+int fatfs_flash_init(int target);
+int fatfs_flash_close(int target);
 
 int fatfs_usbh_init(void);
 int fatfs_usbh_close(void);

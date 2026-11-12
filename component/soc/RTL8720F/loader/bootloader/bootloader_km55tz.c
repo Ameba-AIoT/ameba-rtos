@@ -9,7 +9,7 @@
 #include "ameba_dump_stack.h"
 #include "ameba_secure_boot.h"
 #include "boot_ota_km55tz.h"
-#ifdef CONFIG_SOLO
+#ifdef CONFIG_IOT_MCU_COMBINED
 #include "ameba_solo_cfg.h"
 #endif
 
@@ -157,7 +157,7 @@ u32 BOOT_LoadImages(void)
 	/* Load from OTA and ECC check for Certificate and IMG2/IMG3*/
 	BOOT_OTA_IMG();
 
-#ifdef CONFIG_SOLO
+#ifdef CONFIG_IOT_MCU_COMBINED
 	/* SOLO: also load & verify the independent iot(km55ns) image2 from IMG_NP_OTA slots. */
 	if (BOOT_OTA_LoadNP() == RTK_FAIL) {
 		return FALSE;	/* NP stays halted, AP continues */
@@ -210,7 +210,7 @@ void BOOT_ReasonSet(void)
 	}
 }
 
-#ifdef CONFIG_SOLO
+#ifdef CONFIG_IOT_MCU_COMBINED
 /* Enable SOLO function. */
 void BOOT_SOLO_Enable(void)
 {
@@ -449,7 +449,7 @@ void BOOT_Image1(void)
 	This function should be called before NP startup to avoid secure issue
 	Also should be called after psram init, to avoid secure function block psram init
 	*/
-#ifdef CONFIG_SOLO
+#ifdef CONFIG_IOT_MCU_COMBINED
 	FIH_CALL(BOOT_RAM_SoloCfg, fih_rc);
 #else
 	FIH_CALL(BOOT_RAM_TZCfg, fih_rc);
@@ -458,7 +458,7 @@ void BOOT_Image1(void)
 		goto exit;
 	}
 
-#ifdef CONFIG_SOLO
+#ifdef CONFIG_IOT_MCU_COMBINED
 	BOOT_SOLO_Enable();
 	extern FLASH_InitTypeDef flash_init_para;
 	DCache_Clean((u32)&flash_init_para, sizeof(FLASH_InitTypeDef));

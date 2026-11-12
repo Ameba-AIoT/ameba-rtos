@@ -43,7 +43,7 @@ void System_Reset(void)
 	if (CPUID == KM4TZ_CPU_ID) {
 		Trig |= LSYS_BIT_KM4TZ_SYS_RST;
 	} else if (CPUID == KM4NS_CPU_ID) {
-#ifdef CONFIG_SOLO
+#ifdef CONFIG_IOT_MCU_COMBINED
 		/* SOLO: km55ns(iot) cannot reset the whole chip. A "system reset" from iot means reset only the iot(platform1) subsystem */
 		Platform1_Reset();
 		return;

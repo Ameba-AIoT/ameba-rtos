@@ -111,8 +111,8 @@ static const usbh_cdc_acm_cb_t cdc_acm_usr_cb = {
 };
 
 static const usbh_cdc_acm_config_t cdc_acm_class_cfg = {
-	/* Every field left 0 takes the class default: 115200 8N1, both control lines
-	 * deasserted, and no notification pipe. */
+	/* Every field left 0: the device keeps its own line coding, both control lines
+	 * stay deasserted, and no notification pipe. */
 };
 
 static const usbh_user_cb_t usbh_usr_cb = {

@@ -84,6 +84,7 @@
 
 #ifdef CONFIG_WIFI_TUNNEL
 #define whc_dev_wtn_rnat_ap_init                         whc_ipc_dev_wtn_rnat_ap_init
+#define whc_dev_wtn_rnat_join_group                      whc_ipc_dev_wtn_rnat_join_group
 #define whc_dev_wtn_ota_callback_indicate                whc_ipc_dev_wtn_ota_callback_indicate
 #ifdef CONFIG_WTN_RNAT_INTERCOM
 #define whc_dev_wtn_rnat_adv_callback_indicate           whc_ipc_dev_wtn_rnat_adv_callback_indicate
@@ -210,6 +211,7 @@ void whc_ipc_dev_cfg80211_indicate_channel_ready(void *scan_userdata);
 int whc_ipc_dev_ip_in_table_indicate(u8 gate, u8 ip);
 #ifdef CONFIG_WIFI_TUNNEL
 void whc_ipc_dev_wtn_rnat_ap_init(u8 enable);
+void whc_ipc_dev_wtn_rnat_join_group(u8 *bssid);
 int whc_ipc_dev_wtn_ota_callback_indicate(u8 *buf, u16 len);
 #ifdef CONFIG_WTN_RNAT_INTERCOM
 int whc_ipc_dev_wtn_rnat_adv_callback_indicate(u8 *buf, u16 len);

@@ -1833,6 +1833,66 @@ uint16_t rtk_bt_le_gap_connless_cte_tx_stop(uint8_t adv_handle)
 
 #endif /* RTK_BLE_5_1_CTE_SUPPORT */
 
+#if defined(RTK_BLE_5_4_PAWR_ADV_SUPPORT) && RTK_BLE_5_4_PAWR_ADV_SUPPORT
+uint16_t rtk_bt_le_gap_pawr_set_subevent_data(rtk_bt_le_gap_pawr_subevent_data_t *param)
+{
+	if (!param || !param->sub_arr) {
+		return RTK_BT_ERR_POINTER_INVALID;
+	}
+
+	if (param->num_subs < 1 || param->num_subs > 0xF) {
+		return RTK_BT_ERR_PARAM_INVALID;
+	}
+
+	for (uint8_t i = 0; i < param->num_subs; i++) {
+		if (param->sub_arr[i].subevent > 0x7F || param->sub_arr[i].len > 251 ||
+			(param->sub_arr[i].len && !param->sub_arr[i].data)) {
+			return RTK_BT_ERR_PARAM_INVALID;
+		}
+	}
+
+	return rtk_bt_send_cmd(RTK_BT_LE_GP_GAP, RTK_BT_LE_GAP_ACT_PAWR_SET_SUBEVENT_DATA,
+						   param, sizeof(rtk_bt_le_gap_pawr_subevent_data_t));
+}
+#endif /* RTK_BLE_5_4_PAWR_ADV_SUPPORT */
+
+#if defined(RTK_BLE_5_4_PAWR_SCAN_SUPPORT) && RTK_BLE_5_4_PAWR_SCAN_SUPPORT
+uint16_t rtk_bt_le_gap_pawr_set_response_data(rtk_bt_le_gap_pawr_set_response_t *param)
+{
+	if (!param) {
+		return RTK_BT_ERR_POINTER_INVALID;
+	}
+
+	if (param->request_subevent > 0x7F || param->response_subevent > 0x7F ||
+		param->len > 251 || (param->len && !param->data)) {
+		return RTK_BT_ERR_PARAM_INVALID;
+	}
+
+	return rtk_bt_send_cmd(RTK_BT_LE_GP_GAP, RTK_BT_LE_GAP_ACT_PAWR_SET_RESPONSE_DATA,
+						   param, sizeof(rtk_bt_le_gap_pawr_set_response_t));
+}
+
+uint16_t rtk_bt_le_gap_pawr_sync_subevent(rtk_bt_le_gap_pawr_sync_subevent_t *param)
+{
+	if (!param || !param->subevents) {
+		return RTK_BT_ERR_POINTER_INVALID;
+	}
+
+	if (param->num_subevents < 1 || param->num_subevents > 0x80) {
+		return RTK_BT_ERR_PARAM_INVALID;
+	}
+
+	for (uint8_t i = 0; i < param->num_subevents; i++) {
+		if (param->subevents[i] > 0x7F) {
+			return RTK_BT_ERR_PARAM_INVALID;
+		}
+	}
+
+	return rtk_bt_send_cmd(RTK_BT_LE_GP_GAP, RTK_BT_LE_GAP_ACT_PAWR_SYNC_SUBEVENT,
+						   param, sizeof(rtk_bt_le_gap_pawr_sync_subevent_t));
+}
+#endif /* RTK_BLE_5_4_PAWR_SCAN_SUPPORT */
+
 #if defined(RTK_BLE_COC_SUPPORT) && RTK_BLE_COC_SUPPORT
 uint16_t rtk_bt_le_gap_coc_register_psm(uint8_t is_register, uint16_t le_psm)
 {

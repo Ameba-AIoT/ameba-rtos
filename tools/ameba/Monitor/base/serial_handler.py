@@ -4,12 +4,15 @@
 # Copyright (c) 2024 Realtek Semiconductor Corp.
 # SPDX-License-Identifier: Apache-2.0
 
+import threading
 from typing import List, Union
 import serial
 
 from .console_reader import ConsoleReader
 from .serial_reader import SerialReader, LinuxReader
-from .constants import CMD_OUTPUT_TOGGLE, CMD_STOP, CMD_TOGGLE_LOGGING, CMD_TOGGLE_TIMESTAMPS, CONSOLE_STATUS_QUERY
+from .constants import CMD_HARD_RESET, CMD_OUTPUT_TOGGLE, CMD_STOP, CMD_TOGGLE_LOGGING, CMD_TOGGLE_TIMESTAMPS, \
+    CONSOLE_STATUS_QUERY
+from .color_output import print_red, print_yellow
 from .log_handler import LogHandler
 
 
@@ -28,6 +31,18 @@ class SerialHandler:
         self.log_handler = logger
         self.target = target_os
         self.elf_file = elf_file
+        self._hard_reset_thread = None
+
+    def _run_hard_reset(self, serial_reader: SerialReader):
+        if serial_reader.hard_reset():
+            print_yellow("Hard reset SUCCESS.")
+        else:
+            print_red("Hard reset FAILED.")
+
+    def wait_hard_reset(self, timeout):
+        """Wait for a hard reset started by handle_commands() to finish (used at shutdown)."""
+        if self._hard_reset_thread and self._hard_reset_thread.is_alive():
+            self._hard_reset_thread.join(timeout)
 
     def split_data(self, data: str, pathnum: int) -> List[str]:
         """
@@ -94,6 +109,17 @@ class SerialHandler:
             self.log_handler.toggle_logging()
         elif cmd == CMD_TOGGLE_TIMESTAMPS:
             self.log_handler.toggle_timestamps()
+        elif cmd == CMD_HARD_RESET:
+            if not isinstance(serial_reader, SerialReader):
+                print_red("Hard reset is only supported on serial targets.")
+            elif self._hard_reset_thread and self._hard_reset_thread.is_alive():
+                print_yellow("Hard reset already in progress.")
+            else:
+                # hard_reset() can block for seconds; the main loop must keep writing queued keys to the port
+                # meanwhile (AT+LIST probe, --reset "reboot"), so run it off the main thread.
+                self._hard_reset_thread = threading.Thread(target=self._run_hard_reset, args=(serial_reader,),
+                                                           daemon=True)
+                self._hard_reset_thread.start()
         else:
             raise RuntimeError('Bad command data %d' % cmd)  # type: ignore
 

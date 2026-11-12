@@ -118,8 +118,6 @@ typedef enum {
 typedef enum {
 	MSC_REQ_IDLE = 0,           /**< No control request active. */
 	MSC_REQ_RESET,              /**< Processing a Bulk-Only Mass Storage Reset request. */
-	MSC_REQ_GET_MAX_LUN,        /**< Processing a Get Max LUN request. */
-	MSC_REQ_ERROR,              /**< An error occurred during a control request. */
 } usbh_msc_req_state_t;
 
 /**

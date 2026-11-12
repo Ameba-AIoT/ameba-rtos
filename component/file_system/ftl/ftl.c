@@ -3,7 +3,7 @@
 #include "basic_types.h"
 #include "ftl.h"
 
-#ifdef CONFIG_VFS_ENABLED
+#if defined(CONFIG_VFS_ENABLED) && defined(CONFIG_VFS1_LITTLEFS)
 #include "vfs.h"
 #include "lfs.h"
 
@@ -30,14 +30,9 @@ uint32_t ftl_save_to_storage(u8 *pdata_tmp, uint16_t offset, uint16_t size)
 
 	rtos_mutex_take(ftl_op_mux, MUTEX_WAIT_TIMEOUT);
 
-	finfo = fopen(path_trace, "rx");
+	/* vfs_ftl_init() creates the file at boot; "r+" never creates, so a missing file means init failed */
+	finfo = fopen(path_trace, "r+");
 	if (finfo == NULL) {
-		finfo = fopen(path_trace, "+");
-		if (finfo == NULL) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "ftl open file error\r\n");
-			return FTL_WRITE_ERROR_NOT_INIT;
-		}
-	} else {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "ftl init file error\r\n");
 		rtos_mutex_give(ftl_op_mux);
 		return FTL_WRITE_ERROR_NOT_INIT;
@@ -90,14 +85,8 @@ uint32_t ftl_save_to_storage(u8 *pdata_tmp, uint16_t offset, uint16_t size)
 	buffer = NULL;
 	fclose(finfo);
 
-	finfo = fopen(path, "rx");
+	finfo = fopen(path, "r+");
 	if (finfo == NULL) {
-		finfo = fopen(path, "+");
-		if (finfo == NULL) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "ftl open file error\r\n");
-			return FTL_WRITE_ERROR_NOT_INIT;
-		}
-	} else {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "ftl init file error\r\n");
 		rtos_mutex_give(ftl_op_mux);
 		return FTL_WRITE_ERROR_NOT_INIT;
@@ -256,7 +245,7 @@ uint32_t vfs_ftl_init(void)
 		return FTL_INIT_ERROR_ERASE_FAIL;
 	}
 
-	prefix = find_vfs_tag(VFS_REGION_1);
+	prefix = vfs_get_prefix(VFS_TARGET_FLASH_VFS1);
 	if (prefix == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "littlefs init fail\r\n");
 		return FTL_INIT_ERROR_ERASE_FAIL;
@@ -293,7 +282,7 @@ uint32_t vfs_ftl_init(void)
 	return 0;
 }
 
-#else /* !CONFIG_VFS_ENABLED: VFS disabled in menuconfig, BT bond info is not persisted */
+#else /* No LittleFS on VFS1: VFS disabled in menuconfig, BT bond info is not persisted */
 
 extern void vfs_stub_log(void);
 
@@ -321,4 +310,4 @@ uint32_t vfs_ftl_init(void)
 	return FTL_INIT_ERROR_ERASE_FAIL;
 }
 
-#endif /* CONFIG_VFS_ENABLED */
+#endif /* CONFIG_VFS_ENABLED && CONFIG_VFS1_LITTLEFS */

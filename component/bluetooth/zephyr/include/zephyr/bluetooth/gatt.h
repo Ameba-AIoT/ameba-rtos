@@ -409,6 +409,15 @@ struct bt_gatt_cpf {
  */
 void bt_gatt_cb_register(struct bt_gatt_cb *cb);
 
+#if ZEPHYR_RTK_PATCH
+/** Callback for notification/indication that matches no bt_gatt_subscribe_params. */
+typedef void (*bt_gatt_common_notify_cb_t)(struct bt_conn *conn, uint16_t handle,
+					      const void *data, uint16_t length, bool is_indicate);
+
+/** @brief Register callback for notifications/indications without a matching subscription. */
+void bt_gatt_set_common_notify_cb(bt_gatt_common_notify_cb_t cb);
+#endif
+
 /** @brief Register GATT authorization callbacks.
  *
  *  Register callbacks to perform application-specific authorization of GATT

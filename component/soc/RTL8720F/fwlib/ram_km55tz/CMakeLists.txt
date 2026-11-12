@@ -38,11 +38,19 @@ set(private_compile_options)         #private compile_options
 ameba_list_append(private_sources
     ameba_app_start.c
     ameba_data_flash.c
-    ameba_data_flashclk.c
     ameba_flashclk.c
-    ameba_nor_flash.c
     ameba_npcap.c
     ameba_pinmap.c
+)
+
+ameba_list_append_if(CONFIG_SECOND_FLASH_NOR private_sources
+    ameba_data_flashclk.c
+)
+
+# NOR chip handling. The strategy-based driver in soc/common/nor_flash provides the
+# same four flash_nor_* entry points, so only one of the two can be built.
+ameba_list_append_ifnot(CONFIG_NOR_FLASH_NEW_STRATEGY private_sources
+    ameba_nor_flash.c
 )
 
 ameba_list_append_ifnot(CONFIG_TRUSTZONE private_sources

@@ -223,7 +223,10 @@ static void usbd_dfu_clear_config(usb_dev_t *dev, u8 config)
 	/* USB Reset arrived before wDetachTimeOut: stop the one-shot timer early so
 	 * it doesn't fire needlessly after the re-enumeration is already complete. */
 	if ((dfu->mode == USB_DFU_PROTOCOL_DFU) && (dfu->detach_timer != NULL)) {
-		rtos_timer_stop(dfu->detach_timer, 0U);
+		/* A timer still running only fires once more, as a no-op: the state is no longer appDETACH */
+		if (rtos_timer_stop(dfu->detach_timer, 0U) != RTK_SUCCESS) {
+			USB_DIAG(USB_LAYER_CLASS, USB_EVT_DEFAULT, 0U);
+		}
 	}
 #endif
 }
@@ -297,6 +300,9 @@ static u8 usbd_dfu_manifest_advance(usbd_dfu_dev_t *dfu)
 
 #if !defined(CONFIG_USBD_DFU_MANIFESTATION_TOLERANT) && defined(CONFIG_USBD_DFU_WILL_DETACH)
 	if (advanced != 0U) {
+		/* Not checked: called from the ISR and from the timer task, so neither a log nor USB_DIAG fits
+		   both, and a failure only means the semaphore is already given, reconf_task still wakes up
+		   and sees reconf_pending. */
 		usb_os_sema_give(dfu->reconf_sema);
 	}
 #endif
@@ -448,6 +454,12 @@ static int usbd_dfu_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			ret = -RTK_ERR_IO;
 			break;
 		}
+		/* Ref USB 2.0 9.4.2: the DFU interface exists only once configured, a DETACH before would
+		   re-enumerate in the middle of the enumeration */
+		if (dev->dev_state != USBD_STATE_CONFIGURED) {
+			ret = -RTK_ERR_IO;
+			break;
+		}
 		/* Ref DFU 1.1 3.1: wIndex of every DFU class request is the DFU interface number.
 		   Reject a foreign interface so composite dispatch can continue to its owner. */
 		if (req->wIndex != USBD_DFU_ITF_NUM) {
@@ -504,7 +516,10 @@ static int usbd_dfu_setup(usb_dev_t *dev, usb_setup_req_t *req)
 				 * the actual re-enumeration to reconf_task (off ISR context). */
 				dfu->mode = USB_DFU_PROTOCOL_DFU;
 				dfu->reconf_pending = 1U;
-				usb_os_sema_give(dfu->reconf_sema);
+				if (usb_os_sema_give(dfu->reconf_sema) != RTK_SUCCESS) {
+					/* Already given: reconf_task wakes up anyway and sees reconf_pending */
+					USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_SETUP, req->bRequest);
+				}
 			} else {
 				ret = usbd_dfu_stall_error(dev, dfu, USBD_DFU_STATUS_ERR_STALLEDPKT);
 			}
@@ -518,8 +533,9 @@ static int usbd_dfu_setup(usb_dev_t *dev, usb_setup_req_t *req)
 					break;
 				}
 				/* A block from before a bus reset or CLRSTATUS may still be programmed from
-				   xfer_buf, receiving into it would corrupt that block, ref DFU 1.1 A.2.4 */
-				if (dfu->write_state == USBD_DFU_WRITE_BUSY) {
+				   xfer_buf, receiving into it would corrupt that block, ref DFU 1.1 A.2.4. Nor may a
+				   new image be written while cb->manifest() still activates the previous one. */
+				if ((dfu->write_state == USBD_DFU_WRITE_BUSY) || (dfu->manifest_busy != 0U)) {
 					ret = usbd_dfu_stall_error(dev, dfu, USBD_DFU_STATUS_ERR_STALLEDPKT);
 					break;
 				}
@@ -563,11 +579,21 @@ static int usbd_dfu_setup(usb_dev_t *dev, usb_setup_req_t *req)
 					ret = usbd_dfu_stall_error(dev, dfu, USBD_DFU_STATUS_ERR_STALLEDPKT);
 				}
 			} else {
-				/* Zero-length DNLOAD = manifest trigger */
-				if (dfu->state == USB_DFU_STATE_DNLOAD_IDLE) {
+				/* Zero-length DNLOAD = manifest trigger. Ref DFU 1.1 6.1.2: every download is manifested,
+				   so a manifestation interrupted by a bus reset or CLRSTATUS must neither run on nor leave
+				   a stale manifest_done that the first GETSTATUS would take for this one. Tested and
+				   cleared under the critical section that manifest_task publishes its result in. */
+				u8 accepted = 0U;
+
+				usb_os_enter_critical();
+				if ((dfu->state == USB_DFU_STATE_DNLOAD_IDLE) && (dfu->manifest_busy == 0U)) {
+					dfu->manifest_done = 0U;
 					dfu->state = USB_DFU_STATE_MANIFEST_SYNC;
 					/* Manifest is called when host polls GETSTATUS in MANIFEST_SYNC */
-				} else {
+					accepted = 1U;
+				}
+				usb_os_exit_critical();
+				if (accepted == 0U) {
 					/* DFU 1.1 Table 3: zero-length DNLOAD in dfuIDLE → stall → dfuERROR;
 					 * all other states are equally invalid. */
 					ret = usbd_dfu_stall_error(dev, dfu, USBD_DFU_STATUS_ERR_STALLEDPKT);
@@ -597,7 +623,7 @@ static int usbd_dfu_setup(usb_dev_t *dev, usb_setup_req_t *req)
 					 * the ZLP is physically sent, firing ep0_data_in to complete UPLOAD. */
 					ep0_in->xfer_buf     = dfu->xfer_buf;
 					ep0_in->xfer_buf_len = dfu->xfer_size;
-					ep0_in->xfer_len     = MIN(len, req->wLength);
+					ep0_in->xfer_len     = MIN((u32)len, (u32)req->wLength);
 					/* This EP0 IN data stage belongs to DFU: only its completion may
 					 * restore the buffer and advance the UPLOAD state machine. */
 					dfu->ep0_in_owned = 1U;
@@ -626,7 +652,7 @@ static int usbd_dfu_setup(usb_dev_t *dev, usb_setup_req_t *req)
 				/* Async manifest (§6.1.2): first GETSTATUS after zero-length
 				 * DNLOAD wakes manifest_task and enters MANIFEST; subsequent
 				 * polls wait for manifest_done (set by the timer callback). */
-				if (dfu->manifest_done) {
+				if (dfu->manifest_done != 0U) {
 					/* Timer transitioned MANIFEST -> MANIFEST_SYNC with
 					 * work done (TOL=1 path).  Advance to dfuIDLE now. */
 					dfu->manifest_done = 0U;
@@ -636,7 +662,11 @@ static int usbd_dfu_setup(usb_dev_t *dev, usb_setup_req_t *req)
 				} else {
 					/* Enter MANIFEST, wake manifest_task, return bwPollTimeout. */
 					dfu->state = USB_DFU_STATE_MANIFEST;
-					usb_os_sema_give(dfu->manifest_sema);
+					dfu->manifest_busy = 1U;
+					if (usb_os_sema_give(dfu->manifest_sema) != RTK_SUCCESS) {
+						/* Already given: manifest_task runs once anyway */
+						USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_SETUP, req->bRequest);
+					}
 					ret = usbd_dfu_send_status(dev, dfu, dfu->manifest_poll_ms);
 				}
 				break;
@@ -760,7 +790,7 @@ static int usbd_dfu_ep0_data_in(usb_dev_t *dev, int status)
 	}
 
 #ifdef CONFIG_USBD_DFU_CAN_UPLOAD
-	if (dfu->upload_last) {
+	if (dfu->upload_last != 0U) {
 		dfu->upload_last = 0U;
 		dfu->state = USB_DFU_STATE_DFU_IDLE;
 	}
@@ -792,7 +822,10 @@ static int usbd_dfu_ep0_data_out(usb_dev_t *dev)
 	dfu->write_state = USBD_DFU_WRITE_BUSY;
 
 	/* Wake write_task; GETSTATUS reports DNBUSY until the result is posted. */
-	usb_os_sema_give(dfu->write_sema);
+	if (usb_os_sema_give(dfu->write_sema) != RTK_SUCCESS) {
+		/* Already given: write_task programs this block anyway, DNLOAD is refused while it is busy */
+		USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_XFER, 0U);
+	}
 
 	return RTK_SUCCESS;
 }
@@ -811,7 +844,7 @@ static void usbd_dfu_write_task(void *param)
 		if (usb_os_sema_take(dfu->write_sema, USB_OS_SEMA_TIMEOUT) != RTK_SUCCESS) {
 			break;
 		}
-		if (dfu->write_stop) {
+		if (dfu->write_stop != 0U) {
 			break;
 		}
 		int ret = dfu->cb->write(dfu->block_num, dfu->xfer_buf, dfu->block_len);
@@ -855,19 +888,26 @@ static void usbd_dfu_manifest_task(void *param)
 		if (usb_os_sema_take(dfu->manifest_sema, USB_OS_SEMA_TIMEOUT) != RTK_SUCCESS) {
 			break;
 		}
-		if (dfu->manifest_stop) {
+		if (dfu->manifest_stop != 0U) {
 			break;
 		}
 
-		/* Start the "Status poll timeout" timer with the current poll period. */
-		rtos_timer_change_period(dfu->manifest_timer, dfu->manifest_poll_ms, 0U);
+		/* Start the "Status poll timeout" timer with the current poll period. Without it only the
+		 * host GETSTATUS polls advance the state, which still works. */
+		if (rtos_timer_change_period(dfu->manifest_timer, dfu->manifest_poll_ms, 0U) != RTK_SUCCESS) {
+			RTK_LOGS(TAG, RTK_LOG_WARN, "Manifest timer start fail\n");
+		}
 
 		/* Application callback -- may block (e.g. wait for OTA completion) */
 		if (dfu->cb->manifest != NULL) {
 			dfu->cb->manifest();
 		}
 
+		/* One step for the zero-length DNLOAD on the other core, see usbd_dfu_setup() */
+		usb_os_enter_critical();
 		dfu->manifest_done = 1U;
+		dfu->manifest_busy = 0U;
+		usb_os_exit_critical();
 	}
 
 	/* Publish the exit last, refer to usbd_dfu_write_task() */
@@ -906,8 +946,11 @@ static void usbd_dfu_manifest_timer_cb(void *timer)
 #endif
 		}
 	} else {
-		/* Work still in progress -> extend the poll period */
-		rtos_timer_change_period(dfu->manifest_timer, dfu->manifest_poll_ms, 0U);
+		/* Work still in progress -> extend the poll period. Without it only the host GETSTATUS polls
+		 * advance the state, which still works. */
+		if (rtos_timer_change_period(dfu->manifest_timer, dfu->manifest_poll_ms, 0U) != RTK_SUCCESS) {
+			RTK_LOGS(TAG, RTK_LOG_WARN, "Manifest timer restart fail\n");
+		}
 	}
 }
 
@@ -930,7 +973,10 @@ static void usbd_dfu_stop_task(usb_os_task_t *task, u8 *stop, usb_os_sema_t sema
 
 	if (*task != NULL) {
 		*stop = 1U;
-		usb_os_sema_give(sema);
+		if (usb_os_sema_give(sema) != RTK_SUCCESS) {
+			/* Already given: the task wakes up anyway and sees the flag */
+			RTK_LOGS(TAG, RTK_LOG_DEBUG, "Stop give fail\n");
+		}
 		while (*task != NULL) {
 			usb_os_sleep_ms(1U);
 			wait_ms++;
@@ -948,7 +994,38 @@ static void usbd_dfu_stop_task(usb_os_task_t *task, u8 *stop, usb_os_sema_t sema
 static void usbd_dfu_timer_sync(void *param, u32 unused)
 {
 	UNUSED(unused);
+	/* Not checked: deinit is the only user of the semaphore at this point and waits for this one
+	   give, so it cannot already be given, and the timer task has nobody to report a failure to. */
 	usb_os_sema_give((usb_os_sema_t)param);
+}
+
+/**
+ * @brief  Delete a DFU semaphore and clear its handle, a NULL handle is skipped (task context).
+ */
+static void usbd_dfu_delete_sema(usb_os_sema_t *sema)
+{
+	if (*sema != NULL) {
+		if (usb_os_sema_delete(*sema) != RTK_SUCCESS) {
+			RTK_LOGS(TAG, RTK_LOG_WARN, "Del sema fail\n");
+		}
+		*sema = NULL;
+	}
+}
+
+/**
+ * @brief  Stop and delete a DFU timer and clear its handle, a NULL handle is skipped (task context).
+ */
+static void usbd_dfu_delete_timer(rtos_timer_t *timer)
+{
+	if (*timer != NULL) {
+		if (rtos_timer_stop(*timer, 0U) != RTK_SUCCESS) {
+			RTK_LOGS(TAG, RTK_LOG_WARN, "Stop timer fail\n");
+		}
+		if (rtos_timer_delete(*timer, 0U) != RTK_SUCCESS) {
+			RTK_LOGS(TAG, RTK_LOG_WARN, "Del timer fail\n");
+		}
+		*timer = NULL;
+	}
 }
 
 /**
@@ -968,16 +1045,15 @@ static void usbd_dfu_cleanup_manifest(usbd_dfu_dev_t *dfu)
 		 * This also covers a detach timer callback, the caller deletes that timer first. */
 		dfu->manifest_stop = 1U;
 		if (rtos_timer_pend_function_call(usbd_dfu_timer_sync, dfu->manifest_sema, 0U, RTOS_TIMER_MAX_DELAY) == RTK_SUCCESS) {
-			usb_os_sema_take(dfu->manifest_sema, USB_OS_SEMA_TIMEOUT);
+			if (usb_os_sema_take(dfu->manifest_sema, USB_OS_SEMA_TIMEOUT) != RTK_SUCCESS) {
+				RTK_LOGS(TAG, RTK_LOG_WARN, "Timer sync fail\n");
+			}
+		} else {
+			RTK_LOGS(TAG, RTK_LOG_WARN, "Timer sync post fail\n");
 		}
-		rtos_timer_stop(dfu->manifest_timer, 0U);
-		rtos_timer_delete(dfu->manifest_timer, 0U);
-		dfu->manifest_timer = NULL;
+		usbd_dfu_delete_timer(&dfu->manifest_timer);
 	}
-	if (dfu->manifest_sema != NULL) {
-		usb_os_sema_delete(dfu->manifest_sema);
-		dfu->manifest_sema = NULL;
-	}
+	usbd_dfu_delete_sema(&dfu->manifest_sema);
 }
 
 /**
@@ -987,10 +1063,7 @@ static void usbd_dfu_cleanup_manifest(usbd_dfu_dev_t *dfu)
 static void usbd_dfu_cleanup_write(usbd_dfu_dev_t *dfu)
 {
 	usbd_dfu_stop_task(&dfu->write_task, &dfu->write_stop, dfu->write_sema);
-	if (dfu->write_sema != NULL) {
-		usb_os_sema_delete(dfu->write_sema);
-		dfu->write_sema = NULL;
-	}
+	usbd_dfu_delete_sema(&dfu->write_sema);
 }
 
 /**
@@ -1149,10 +1222,10 @@ static void usbd_dfu_reconf_task(void *param)
 		if (usb_os_sema_take(dfu->reconf_sema, USB_OS_SEMA_TIMEOUT) != RTK_SUCCESS) {
 			break;
 		}
-		if (dfu->reconf_stop) {
+		if (dfu->reconf_stop != 0U) {
 			break;
 		}
-		if (!dfu->reconf_pending) {
+		if (dfu->reconf_pending == 0U) {
 			continue;
 		}
 		dfu->reconf_pending = 0U;
@@ -1175,8 +1248,11 @@ static void usbd_dfu_reconf_task(void *param)
 		 * Run-Time mode. */
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Detach: waiting for host USB Reset (%ums timeout)\n",
 				 dfu->detach_wait_ms);
-		/* Changing the period also starts a dormant timer */
-		rtos_timer_change_period(dfu->detach_timer, dfu->detach_wait_ms, 0U);
+		/* Changing the period also starts a dormant timer. Without it the device stays in appDETACH
+		 * until the host resets it. */
+		if (rtos_timer_change_period(dfu->detach_timer, dfu->detach_wait_ms, 0U) != RTK_SUCCESS) {
+			RTK_LOGS(TAG, RTK_LOG_WARN, "Detach timer start fail\n");
+		}
 #endif /* CONFIG_USBD_DFU_WILL_DETACH */
 	}
 
@@ -1241,7 +1317,6 @@ static int usbd_dfu_private_init(const usbd_dfu_cb_t *cb, const usbd_dfu_config_
 		return -RTK_ERR_NOMEM;
 	}
 
-	dfu->cb = cb;
 	if (cb->write == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "write cb required (CAN_DNLOAD=1)\n");
 		usb_os_mfree((void *)dfu->xfer_buf);
@@ -1286,8 +1361,7 @@ static int usbd_dfu_private_init(const usbd_dfu_cb_t *cb, const usbd_dfu_config_
 						   (cfg->write_task_priority != 0U) ? cfg->write_task_priority : USBD_DFU_DEFAULT_WRITE_TASK_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create write_task fail\n");
-		usb_os_sema_delete(dfu->write_sema);
-		dfu->write_sema = NULL;
+		usbd_dfu_delete_sema(&dfu->write_sema);
 		usbd_dfu_cb_deinit(cb);
 		usb_os_mfree((void *)dfu->xfer_buf);
 		dfu->xfer_buf = NULL;
@@ -1307,8 +1381,7 @@ static int usbd_dfu_private_init(const usbd_dfu_cb_t *cb, const usbd_dfu_config_
 						   (cfg->manifest_task_priority != 0U) ? cfg->manifest_task_priority : USBD_DFU_DEFAULT_MANIFEST_TASK_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create manifest_task fail\n");
-		usb_os_sema_delete(dfu->manifest_sema);
-		dfu->manifest_sema = NULL;
+		usbd_dfu_delete_sema(&dfu->manifest_sema);
 		goto reconf_fail;
 	}
 	ret = rtos_timer_create(&dfu->manifest_timer, "dfu_mftmr", 0U,
@@ -1330,8 +1403,7 @@ static int usbd_dfu_private_init(const usbd_dfu_cb_t *cb, const usbd_dfu_config_
 						   (cfg->reenum_task_priority != 0U) ? cfg->reenum_task_priority : USBD_DFU_DEFAULT_REENUM_TASK_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create reconf_task fail\n");
-		usb_os_sema_delete(dfu->reconf_sema);
-		dfu->reconf_sema = NULL;
+		usbd_dfu_delete_sema(&dfu->reconf_sema);
 		goto reconf_fail;
 	}
 
@@ -1343,15 +1415,17 @@ static int usbd_dfu_private_init(const usbd_dfu_cb_t *cb, const usbd_dfu_config_
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create detach_timer fail\n");
 		usbd_dfu_stop_task(&dfu->reconf_task, &dfu->reconf_stop, dfu->reconf_sema);
-		usb_os_sema_delete(dfu->reconf_sema);
-		dfu->reconf_sema = NULL;
+		usbd_dfu_delete_sema(&dfu->reconf_sema);
 		goto reconf_fail;
 	}
 #endif /* !CONFIG_USBD_DFU_WILL_DETACH */
 
 	dfu->state  = USB_DFU_STATE_APP_IDLE;
 	dfu->status = USBD_DFU_STATUS_OK;
-
+	/* Published last: a failed init leaves it NULL after the memset, so a later usbd_dfu_deinit()
+	   neither calls cb->deinit() for an application that was never initialised nor calls it twice.
+	   The tasks only use it once woken up, which needs the class registered. */
+	dfu->cb = cb;
 
 	return RTK_SUCCESS;
 
@@ -1385,7 +1459,8 @@ void usbd_dfu_set_write_poll_ms(u32 poll_ms)
  */
 void usbd_dfu_set_manifest_poll_ms(u32 poll_ms)
 {
-	usbd_dfu_dev.manifest_poll_ms = poll_ms;
+	/* Also the manifest timer period, which shall not be 0 */
+	usbd_dfu_dev.manifest_poll_ms = (poll_ms == 0U) ? 1U : poll_ms;
 }
 
 /**
@@ -1470,19 +1545,12 @@ void usbd_dfu_deinit(void)
 	/* reconf_task starts the detach timer, so it goes first. */
 	usbd_dfu_stop_task(&dfu->reconf_task, &dfu->reconf_stop, dfu->reconf_sema);
 #ifndef CONFIG_USBD_DFU_WILL_DETACH
-	if (dfu->detach_timer != NULL) {
-		rtos_timer_stop(dfu->detach_timer, 0U);
-		rtos_timer_delete(dfu->detach_timer, 0U);
-		dfu->detach_timer = NULL;
-	}
+	usbd_dfu_delete_timer(&dfu->detach_timer);
 #endif /* !CONFIG_USBD_DFU_WILL_DETACH */
 	/* The manifest timer callback gives reconf_sema, so the timers are drained before it is
 	 * deleted, refer to usbd_dfu_cleanup_manifest(). */
 	usbd_dfu_cleanup_manifest(dfu);
-	if (dfu->reconf_sema != NULL) {
-		usb_os_sema_delete(dfu->reconf_sema);
-		dfu->reconf_sema = NULL;
-	}
+	usbd_dfu_delete_sema(&dfu->reconf_sema);
 	usbd_dfu_cleanup_write(dfu);
 
 	/* write_task/manifest_task are gone and the class is unregistered, so this is the

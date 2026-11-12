@@ -7,6 +7,7 @@
 /* Includes ------------------------------------------------------------------*/
 
 #include <platform_autoconf.h>
+#include "platform_stdlib.h"
 #include "basic_types.h"
 #include "usbd_cdc_acm.h"
 #include "os_wrapper.h"
@@ -219,7 +220,7 @@ static int cdc_acm_cb_received(u8 *buf, u32 len)
 			len = CDC_ACM_ASYNC_BUF_SIZE - cdc_acm_async_xfer_buf_pos;  // extra data discarded
 		}
 
-		usb_os_memcpy((void *)((u32)cdc_acm_async_xfer_buf + cdc_acm_async_xfer_buf_pos), (const void *)buf, len);
+		memcpy((void *)((u32)cdc_acm_async_xfer_buf + cdc_acm_async_xfer_buf_pos), (const void *)buf, len);
 		cdc_acm_async_xfer_buf_pos += len;
 		if (cdc_acm_async_xfer_buf_pos >= CDC_ACM_ASYNC_BUF_SIZE) {
 			cdc_acm_async_xfer_buf_pos = 0;
@@ -259,15 +260,17 @@ static int cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
 	/* Ref CDC PSTN 1.2 Table 4: bmCapabilities 0x02 declares no Comm Feature support and no
 	   encapsulated protocol is implemented, so those requests fall to default and are STALLed */
 	case USB_CDC_ACM_SEND_BREAK:
-		/* Do nothing */
-		ret = RTK_SUCCESS;
+		/* Ref CDC PSTN 1.2 6.3.13: no data stage, so wLength must be zero. Nothing to do */
+		if (req->wLength == 0U) {
+			ret = RTK_SUCCESS;
+		}
 		break;
 
 	case USB_CDC_ACM_SET_LINE_CODING:
 		/* Ref CDC PSTN 1.2 Table 17: the Line Coding structure is exactly 7 bytes, any
 		   other wLength must not update the cached line coding. */
 		if (req->wLength == USB_CDC_ACM_LINE_CODING_SIZE) {
-			lc->b.dwDteRate = (u32)(buf[0] | (buf[1] << 8) | (buf[2] << 16) | (buf[3] << 24));
+			lc->b.dwDteRate = (u32)buf[0] | ((u32)buf[1] << 8) | ((u32)buf[2] << 16) | ((u32)buf[3] << 24);
 			lc->b.bCharFormat = buf[4];
 			lc->b.bParityType = buf[5];
 			lc->b.bDataBits = buf[6];

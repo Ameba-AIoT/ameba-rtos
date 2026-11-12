@@ -3,31 +3,35 @@
 #include "vfs_fatfs.h"
 #include "os_wrapper.h"
 
-int fatfs_flash_close(int interface)
+int fatfs_flash_close(int target)
 {
 	fatfs_params_t *fatfs_param;
-	if (interface == VFS_INF_FLASH) {
-		fatfs_param = &fatfs_flash_param;
-	}
-#if defined(CONFIG_FATFS_SECOND_FLASH) && CONFIG_FATFS_SECOND_FLASH
-	if (interface == VFS_INF_SECOND_FLASH) {
-		fatfs_param = &fatfs_second_flash_param;
-	}
-#endif
+	ll_diskio_drv *disk_drv;
+	volatile uint8_t *mount_flag;
 
-	if ((interface == VFS_INF_FLASH && fatfs_mount_flag == 1) || (interface == VFS_INF_SECOND_FLASH && fatfs2_mount_flag == 1)) {
+	switch (target) {
+	case VFS_TARGET_FLASH_VFS2:
+	case VFS_TARGET_FLASH_APP_FATFS:
+		fatfs_param = &fatfs_flash_param;
+		disk_drv = &FLASH_disk_Driver;
+		mount_flag = &fatfs_mount_flag;
+		break;
+#if defined(CONFIG_FATFS_SECOND_FLASH) && CONFIG_FATFS_SECOND_FLASH
+	case VFS_TARGET_SECOND_FLASH:
+		fatfs_param = &fatfs_second_flash_param;
+		disk_drv = &FLASH_second_disk_Driver;
+		mount_flag = &fatfs2_mount_flag;
+		break;
+#endif
+	default:
+		return -1;
+	}
+
+	if (*mount_flag == 1) {
 		if (f_unmount(fatfs_param->drv) != FR_OK) {
 			VFS_DBG(VFS_ERROR, "FATFS unmount flash logical drive fail.");
 		}
-
-		if (interface == VFS_INF_FLASH) {
-			FLASH_disk_Driver.disk_deinitialize();
-		}
-#if defined(CONFIG_FATFS_SECOND_FLASH) && CONFIG_FATFS_SECOND_FLASH
-		if (interface == VFS_INF_SECOND_FLASH) {
-			FLASH_second_disk_Driver.disk_deinitialize();
-		}
-#endif
+		disk_drv->disk_deinitialize();
 	}
 
 	if (FATFS_UnRegisterDiskDriver(fatfs_param->drv_num)) {
@@ -37,32 +41,35 @@ int fatfs_flash_close(int interface)
 	return 0;
 }
 
-int fatfs_flash_init(int interface)
+int fatfs_flash_init(int target)
 {
 	int ret = 0;
-	FRESULT res;
 	fatfs_params_t *fatfs_param;
+	ll_diskio_drv *disk_drv;
+	volatile uint8_t *mount_flag;
 
-	if (interface == VFS_INF_FLASH) {
+	switch (target) {
+	case VFS_TARGET_FLASH_VFS2:
+	case VFS_TARGET_FLASH_APP_FATFS:
 		fatfs_param = &fatfs_flash_param;
-	}
+		disk_drv = &FLASH_disk_Driver;
+		mount_flag = &fatfs_mount_flag;
+		break;
 #if defined(CONFIG_FATFS_SECOND_FLASH) && CONFIG_FATFS_SECOND_FLASH
-	if (interface == VFS_INF_SECOND_FLASH) {
+	case VFS_TARGET_SECOND_FLASH:
 		fatfs_param = &fatfs_second_flash_param;
-	}
+		disk_drv = &FLASH_second_disk_Driver;
+		mount_flag = &fatfs2_mount_flag;
+		break;
 #endif
+	default:
+		return -1;
+	}
 
-	if ((interface == VFS_INF_FLASH && fatfs_mount_flag != 1) || (interface == VFS_INF_SECOND_FLASH && fatfs2_mount_flag != 1)) {
+	if (*mount_flag != 1) {
 		// Register disk driver to Fatfs
 		VFS_DBG(VFS_INFO, "Register flash disk driver to Fatfs.");
-#if defined(CONFIG_FATFS_SECOND_FLASH) && CONFIG_FATFS_SECOND_FLASH
-		if (interface == VFS_INF_SECOND_FLASH) {
-			fatfs_param->drv_num = FATFS_RegisterDiskDriver(&FLASH_second_disk_Driver);
-		}
-#endif
-		if (interface == VFS_INF_FLASH) {
-			fatfs_param->drv_num = FATFS_RegisterDiskDriver(&FLASH_disk_Driver);
-		}
+		fatfs_param->drv_num = FATFS_RegisterDiskDriver(disk_drv);
 
 		if (fatfs_param->drv_num < 0) {
 			VFS_DBG(VFS_ERROR, "Register flash disk driver to FATFS fail.");
@@ -76,9 +83,12 @@ int fatfs_flash_init(int interface)
 			VFS_DBG(VFS_INFO, "Flash drive path: %s ", fatfs_param->drv);
 		}
 
-		res = f_mount(&fatfs_param->fs, fatfs_param->drv, 1);
-
-		if (res) {
+		ret = f_mount(&fatfs_param->fs, fatfs_param->drv, 1);
+		if (ret) {
+			/* APP images are read-only even in a writable FATFS build. */
+			if (target == VFS_TARGET_FLASH_APP_FATFS) {
+				goto fatfs_init_err;
+			}
 #if FF_FS_READONLY
 			goto fatfs_init_err;
 #else
@@ -103,12 +113,17 @@ int fatfs_flash_init(int interface)
 			VFS_DBG(VFS_INFO, "flash mount OK");
 		}
 	} else {
-		VFS_DBG(VFS_INFO, "FATFS interface : %d already initialized\r\n", interface);
+		VFS_DBG(VFS_INFO, "FATFS target %d already initialized\r\n", target);
 	}
 
 	return 0;
 
 fatfs_init_err:
-	fatfs_flash_close(interface);
+	if (fatfs_param->drv_num >= 0) {
+		/* f_mount registers the volume even when its immediate mount fails. */
+		f_unmount(fatfs_param->drv);
+		disk_drv->disk_deinitialize();
+	}
+	fatfs_flash_close(target);
 	return ret;
 }

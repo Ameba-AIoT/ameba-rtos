@@ -19,7 +19,7 @@
 /* SOLO has no application slot pair to roll back. */
 static u8 OTA_Rollback_Support(void)
 {
-#if defined(CONFIG_SOLO)
+#if defined(CONFIG_IOT_MCU_COMBINED)
 	return FALSE;
 #else
 	return SYSCFG_OTP_BOOT_CNT_LMT_EN() ? TRUE : FALSE;

@@ -69,9 +69,9 @@ typedef struct {
 	u8 left;			//left button. 0: release, 1: press
 	u8 right;			//right button. 0: release, 1: press
 	u8 middle;			//wheel button. 0: release, 1: press
-	char x_axis;		//x-axis pixels. relative value from -127 to 127, positive for right and negative for left
-	char y_axis;		//y-axis pixels. relative value from -127 to 127, positive for up and negative for down
-	char wheel;			//scrolling units. relative value from -127 to 127, positive for up and negative for down.
+	s8 x_axis;			//x-axis pixels. relative value from -127 to 127, positive for right and negative for left
+	s8 y_axis;			//y-axis pixels. relative value from -127 to 127, positive for up and negative for down
+	s8 wheel;			//scrolling units. relative value from -127 to 127, positive for up and negative for down.
 } usbd_hid_mouse_data_t;
 
 typedef struct {
@@ -95,7 +95,7 @@ static void hid_cb_status_changed(u8 old_status, u8 status);
 
 #if HID_MOUSE_CMD
 #ifdef CONFIG_USBD_HID_MOUSE
-static int hid_cmd_mouse_data(u16 argc, u8  *argv[]);
+static int hid_cmd_mouse_data(u16 argc, char *argv[]);
 static void hid_cmd_mouse_data_at(u16 argc, char **argv);
 #endif
 #endif
@@ -162,19 +162,6 @@ static usbd_hid_keyboard_data_t mdata[] = {
 };
 #endif
 #endif
-
-#if HID_MOUSE_CMD
-#ifdef CONFIG_USBD_HID_MOUSE
-/*exmaple cmd: mouse  0   0   0   50   0   0
-	left button release,
-	right button release,
-	middle button release,
-	x_axis: move the cursor 50 pixels to the right,
-	y_axos: no movement,
-	wheel: no scrolling.
-*/
-#endif
-#endif  //HID_MOUSE_CMD
 
 static const usbd_config_t hid_cfg = {
 	.info = {
@@ -361,9 +348,9 @@ static void hid_cb_status_changed(u8 old_status, u8 status)
 #if HID_MOUSE_CMD
 #ifdef CONFIG_USBD_HID_MOUSE
 /* Parse a whole-string decimal in [min, max], an optional leading '-' allowed for a negative min */
-static int hid_parse_s32(const u8 *str, s32 min, s32 max, s32 *val)
+static int hid_parse_s32(const char *str, s32 min, s32 max, s32 *val)
 {
-	const char *p = (const char *)str;
+	const char *p = str;
 	char *end = NULL;
 	u32 mag;
 	s32 num;
@@ -402,7 +389,7 @@ static void hid_cmd_usage(void)
 }
 
 /* Fill a mouse report from "mouse <left> [<right> <middle> <x> <y> <wheel>]", argv[0] being "mouse" */
-static int hid_parse_mouse(u16 argc, u8 *argv[], usbd_hid_mouse_data_t *data)
+static int hid_parse_mouse(u16 argc, char *argv[], usbd_hid_mouse_data_t *data)
 {
 	s32 val[6] = {0};
 	s32 min;
@@ -420,21 +407,21 @@ static int hid_parse_mouse(u16 argc, u8 *argv[], usbd_hid_mouse_data_t *data)
 		}
 	}
 
-	usb_os_memset((void *)data, 0, sizeof(*data));
+	memset((void *)data, 0, sizeof(*data));
 	data->left = (u8)val[0];
 	data->right = (u8)val[1];
 	data->middle = (u8)val[2];
-	data->x_axis = (char)val[3];
-	data->y_axis = (char)val[4];
-	data->wheel = (char)val[5];
+	data->x_axis = (s8)val[3];
+	data->y_axis = (s8)val[4];
+	data->wheel = (s8)val[5];
 	return RTK_SUCCESS;
 }
 
-static int hid_cmd_mouse_data(u16 argc, u8  *argv[])
+static int hid_cmd_mouse_data(u16 argc, char *argv[])
 {
 	usbd_hid_mouse_data_t data;
 
-	if ((argc == 0U) || (_stricmp((const char *)argv[0], "help") == 0) || (_stricmp((const char *)argv[0], "?") == 0)) {
+	if ((argc == 0U) || (_stricmp(argv[0], "help") == 0) || (_stricmp(argv[0], "?") == 0)) {
 		hid_cmd_usage();
 		return (argc == 0U) ? -RTK_ERR_BADARG : RTK_SUCCESS;
 	}
@@ -443,7 +430,7 @@ static int hid_cmd_mouse_data(u16 argc, u8  *argv[])
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Not running\n");
 		return -RTK_ERR_IO;
 	}
-	if (_stricmp((const char *)argv[0], "mouse") != 0) {
+	if (_stricmp(argv[0], "mouse") != 0) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid cmd: %s, try AT+USBDHID=help\n", argv[0]);
 		return -RTK_ERR_BADARG;
 	}
@@ -454,13 +441,13 @@ static int hid_cmd_mouse_data(u16 argc, u8  *argv[])
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Send mouse data\n");
 
-	return (u32)hid_send_device_data(&data);
+	return hid_send_device_data(&data);
 }
 
 /* AT entry: argv[0] is reserved by the AT parser and argv[1] holds the first parameter */
 static void hid_cmd_mouse_data_at(u16 argc, char **argv)
 {
-	int ret = hid_cmd_mouse_data((argc != 0U) ? (argc - 1U) : 0U, (u8 **)&argv[1]);
+	int ret = hid_cmd_mouse_data((argc != 0U) ? (u16)(argc - 1U) : 0U, &argv[1]);
 
 	if (ret == RTK_SUCCESS) {
 		at_printf(ATCMD_OK_END_STR);
@@ -489,7 +476,7 @@ static int hid_send_device_data(const void *pdata)
 	u8 byte[4];
 	const usbd_hid_mouse_data_t *data = (const usbd_hid_mouse_data_t *)pdata;
 
-	usb_os_memset((void *)byte, 0, 4);
+	memset((void *)byte, 0, 4);
 
 	/* mouse protocol:
 		BYTE0
@@ -513,9 +500,10 @@ static int hid_send_device_data(const void *pdata)
 	}
 
 	byte[0] |= USBD_HID_MOUSE_BUTTON_RESERVED;
-	byte[1] = data->x_axis;
-	byte[2] = data->y_axis;
-	byte[3] = data->wheel;
+	/* Two's complement on the wire, Ref HID 1.11 Appendix B.2 */
+	byte[1] = (u8)data->x_axis;
+	byte[2] = (u8)data->y_axis;
+	byte[3] = (u8)data->wheel;
 
 #else /* CONFIG_USBD_HID_KEYBOARD */
 	const usbd_hid_keyboard_data_t *data = (const usbd_hid_keyboard_data_t *)pdata;
@@ -531,7 +519,11 @@ static int hid_send_device_data(const void *pdata)
 		return -RTK_ERR_IO;
 	}
 
-	rtos_mutex_take(hid_state_mutex, RTOS_MAX_TIMEOUT);
+	/* Never enter the gated section, nor give, without the mutex */
+	ret = rtos_mutex_take(hid_state_mutex, RTOS_MAX_TIMEOUT);
+	if (ret != RTK_SUCCESS) {
+		return -RTK_ERR_BUSY;
+	}
 	if ((hid_stack_ready == 0U) || (hid_app.quit != 0U)) {
 		/* Lost the race against a hotplug or stop tear down */
 		RTK_LOGS(TAG, RTK_LOG_WARN, "Stack torn down, skip TX\n");

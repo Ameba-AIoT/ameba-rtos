@@ -119,7 +119,7 @@ static void composite_uac_cb_mute_changed(u8 mute);
 static void composite_uac_cb_volume_changed(u8 volume);
 
 #if defined(CONFIG_USBD_HID_VENDOR) || COMP_UAC_ENABLE_RECORD
-static int composite_cmd(u16 argc, u8 *argv[]);
+static int composite_cmd(u16 argc, char *argv[]);
 static void composite_cmd_at(u16 argc, char **argv);
 #endif
 
@@ -547,7 +547,7 @@ static void example_audio_track_play(void)
 				for (idx = 0, off = 0; idx < read_dat_len; idx += audio_src_step, off += audio_dst_step) {
 					// ch0 ch1 ch2 ch3 ch0 ch1 ch2 ch3 ch0 ch1 ch2 ch3
 					// 24  24  24  24  24  24  24  24  24  24  24  24
-					usb_os_memcpy((void *)(play_buf + off), (const void *)(recv_buf + idx), audio_dst_step);
+					memcpy((void *)(play_buf + off), (const void *)(recv_buf + idx), audio_dst_step);
 					play_data_size += audio_dst_step;
 				}
 
@@ -624,6 +624,7 @@ static void example_usbd_composite_hid_uac_audio_track_thread(void *param)
 static void example_usbd_composite_hid_uac_hid_rx_thread(void *param)
 {
 	u32 rx_len;
+	int ret;
 
 	UNUSED(param);
 
@@ -637,7 +638,12 @@ static void example_usbd_composite_hid_uac_hid_rx_thread(void *param)
 			rtos_time_delay_ms(20);
 			continue;
 		}
-		rtos_mutex_take(composite_hid_lock, RTOS_MAX_TIMEOUT);
+		/* Never enter the gated section, nor give, without the mutex */
+		ret = rtos_mutex_take(composite_hid_lock, RTOS_MAX_TIMEOUT);
+		if (ret != RTK_SUCCESS) {
+			rtos_time_delay_ms(20);
+			continue;
+		}
 		if (composite_stack_ready == 0U) {
 			rtos_mutex_give(composite_hid_lock);
 			continue;
@@ -647,6 +653,9 @@ static void example_usbd_composite_hid_uac_hid_rx_thread(void *param)
 		if (rx_len > 0U) {
 			RTK_LOGS(TAG, RTK_LOG_INFO, "HID RX %u bytes, first byte:%02x\n", rx_len, hid_rx_buf[0]);
 		}
+		/* Yield before taking the lock again: this thread outranks the AT shell, so without a
+		   pause it would win the lock back at once and starve the tx/vol commands waiting on it */
+		rtos_time_delay_ms(1);
 	}
 
 	usb_app_ctx_leave(&composite_app);
@@ -654,15 +663,15 @@ static void example_usbd_composite_hid_uac_hid_rx_thread(void *param)
 }
 
 /* Whole-string decimal in [min, max] */
-static int composite_parse_u32(const u8 *str, u32 min, u32 max, u32 *val)
+static int composite_parse_u32(const char *str, u32 min, u32 max, u32 *val)
 {
 	char *end = NULL;
 	u32 num;
 
-	if ((str == NULL) || (str[0] < (u8)'0') || (str[0] > (u8)'9')) {
+	if ((str == NULL) || (str[0] < '0') || (str[0] > '9')) {
 		return -RTK_ERR_BADARG;
 	}
-	num = (u32)_strtoul((const char *)str, &end, 10);
+	num = (u32)_strtoul(str, &end, 10);
 	if ((end == NULL) || (*end != '\0') || (num < min) || (num > max)) {
 		return -RTK_ERR_BADARG;
 	}
@@ -670,7 +679,7 @@ static int composite_parse_u32(const u8 *str, u32 min, u32 max, u32 *val)
 	return RTK_SUCCESS;
 }
 
-static int composite_hid_cmd_tx(u16 argc, u8 *argv[])
+static int composite_hid_cmd_tx(u16 argc, char *argv[])
 {
 	u16 size = 10U;
 	u32 val;
@@ -693,7 +702,11 @@ static int composite_hid_cmd_tx(u16 argc, u8 *argv[])
 	if (composite_stack_ready == 0U) {
 		return -RTK_ERR_IO;
 	}
-	rtos_mutex_take(composite_hid_lock, RTOS_MAX_TIMEOUT);
+	/* Never enter the gated section, nor give, without the mutex */
+	ret = rtos_mutex_take(composite_hid_lock, RTOS_MAX_TIMEOUT);
+	if (ret != RTK_SUCCESS) {
+		return -RTK_ERR_BUSY;
+	}
 	if (composite_stack_ready == 0U) {
 		ret = -RTK_ERR_IO;
 	} else {
@@ -704,7 +717,7 @@ static int composite_hid_cmd_tx(u16 argc, u8 *argv[])
 		RTK_LOGS(TAG, RTK_LOG_WARN, "HID tx fail %d\n", ret);
 	}
 
-	return (u32)ret;
+	return ret;
 }
 
 /**
@@ -719,7 +732,12 @@ static int composite_hid_volume_ctrl(u8 up)
 	if (composite_stack_ready == 0U) {
 		return -RTK_ERR_IO;
 	}
-	rtos_mutex_take(composite_hid_lock, RTOS_MAX_TIMEOUT);
+	/* Never enter the gated section, nor give, without the mutex */
+	ret = rtos_mutex_take(composite_hid_lock, RTOS_MAX_TIMEOUT);
+	if (ret != RTK_SUCCESS) {
+		return -RTK_ERR_BUSY;
+	}
+	ret = -RTK_ERR_IO;
 	if (composite_stack_ready != 0U) {
 		ret = usbd_hid_volume_ctrl(up);
 	}
@@ -728,7 +746,7 @@ static int composite_hid_volume_ctrl(u8 up)
 		RTK_LOGS(TAG, RTK_LOG_WARN, "HID vol fail %d\n", ret);
 	}
 
-	return (u32)ret;
+	return ret;
 }
 #endif /* CONFIG_USBD_HID_VENDOR */
 
@@ -817,11 +835,11 @@ static void composite_cmd_usage(void)
 	RTK_LOGS(TAG, RTK_LOG_INFO, "All need the app running and the host to have configured the device\n");
 }
 
-static int composite_cmd(u16 argc, u8 *argv[])
+static int composite_cmd(u16 argc, char *argv[])
 {
-	const char *cmd = (argc != 0U) ? (const char *)argv[0] : NULL;
+	const char *cmd = (argc != 0U) ? argv[0] : NULL;
 #ifdef CONFIG_USBD_HID_VENDOR
-	const char *dir = (argc > 1U) ? (const char *)argv[1] : NULL;
+	const char *dir = (argc > 1U) ? argv[1] : NULL;
 #endif
 
 	if ((cmd == NULL) || (_stricmp(cmd, "help") == 0) || (_stricmp(cmd, "?") == 0)) {
@@ -841,7 +859,7 @@ static int composite_cmd(u16 argc, u8 *argv[])
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Usage: AT+USBDHIDUAC=tx[,<len>]\n");
 			return -RTK_ERR_BADARG;
 		}
-		return composite_hid_cmd_tx(argc - 1U, argv + 1);
+		return composite_hid_cmd_tx((u16)(argc - 1U), argv + 1);
 	}
 	if (_stricmp(cmd, "vol") == 0) {
 		if ((argc == 2U) && (_stricmp(dir, "up") == 0)) {
@@ -876,7 +894,7 @@ static int composite_cmd(u16 argc, u8 *argv[])
 /* AT entry: argv[0] is reserved by the AT parser and argv[1] holds the first parameter */
 static void composite_cmd_at(u16 argc, char **argv)
 {
-	int ret = composite_cmd((argc != 0U) ? (argc - 1U) : 0U, (u8 **)&argv[1]);
+	int ret = composite_cmd((argc != 0U) ? (u16)(argc - 1U) : 0U, &argv[1]);
 
 	if (ret == RTK_SUCCESS) {
 		at_printf(ATCMD_OK_END_STR);
@@ -941,7 +959,15 @@ exit_usbd_init:
   */
 static void composite_deinit_stack(void)
 {
-	usbd_composite_deinit();
+	int ret;
+
+	/* Refused only from interrupt context: the classes stay registered and their deinit would
+	   refuse as well, so stop here rather than pull the core from under the composite device */
+	ret = usbd_composite_deinit();
+	if (ret != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Comp deinit fail %d\n", ret);
+		return;
+	}
 	usbd_uac_deinit();
 	usbd_hid_deinit();
 	usbd_deinit();

@@ -175,6 +175,10 @@ void whc_host_connect_indicate(unsigned int join_status, void *evt_info)
 	struct ieee80211_mgmt *mgmt = NULL;
 #endif
 	struct rtw_wpa_4way_status	rpt_4way = {0};
+#ifndef CONFIG_SUPPLICANT_SME
+	struct ieee80211_channel *notify_channel = NULL;
+	struct cfg80211_bss *bss = NULL;
+#endif
 
 	mlme_priv->rtw_join_status = join_status;
 
@@ -236,13 +240,21 @@ void whc_host_connect_indicate(unsigned int join_status, void *evt_info)
 #ifndef CONFIG_SUPPLICANT_SME /* no need to report connect_result when using userspace sme */
 				/* Inform connect information. */
 				/* Different between cfg80211_connect_result and cfg80211_connect_bss are described in net/cfg80211.h. */
-				/* if connect_result warning, that means get_bss fail (need check), one reason is WPA_S calls disconnect ops, which resulting in wdev->ssid_len = 0 */
-				cfg80211_connect_result(global_idev.pndev[wlan_idx], mlme_priv->assoc_rsp_ie + 16,
-										mlme_priv->assoc_req_ie + WLAN_HDR_A3_LEN + 4/* fixed parameters */
-										+ (*(u8 *)mlme_priv->assoc_req_ie == 0 ? 0 : 6)/* re-assoc: current ap */,
-										mlme_priv->assoc_req_ie_len - WLAN_HDR_A3_LEN - 4 - (*(u8 *)mlme_priv->assoc_req_ie == 0 ? 0 : 6),
-										mlme_priv->assoc_rsp_ie + WLAN_HDR_A3_LEN + 6, mlme_priv->assoc_rsp_ie_len -  WLAN_HDR_A3_LEN - 6,
-										WLAN_STATUS_SUCCESS, GFP_ATOMIC);
+				/* cfg80211 keeps one bss entry per (bssid, channel). After the AP switches channel the stale entry may
+				 * still be in the list, and a channel-less lookup in cfg80211 may bind it as current_bss, so wpa_supplicant
+				 * reports the old freq. Look up the entry on the channel actually joined and pass it explicitly. */
+				if (join_status_info->channel) {
+					notify_channel = ieee80211_get_channel(global_idev.pwiphy_global, rtw_ch2freq(join_status_info->channel));
+				}
+				bss = cfg80211_get_bss(global_idev.pwiphy_global, notify_channel, mlme_priv->assoc_rsp_ie + 16, NULL, 0,
+									   IEEE80211_BSS_TYPE_ESS, IEEE80211_PRIVACY_ANY);
+				/* if bss is NULL, cfg80211 looks it up by bssid as cfg80211_connect_result does */
+				cfg80211_connect_bss(global_idev.pndev[wlan_idx], mlme_priv->assoc_rsp_ie + 16, bss,
+									 mlme_priv->assoc_req_ie + WLAN_HDR_A3_LEN + 4/* fixed parameters */
+									 + (*(u8 *)mlme_priv->assoc_req_ie == 0 ? 0 : 6)/* re-assoc: current ap */,
+									 mlme_priv->assoc_req_ie_len - WLAN_HDR_A3_LEN - 4 - (*(u8 *)mlme_priv->assoc_req_ie == 0 ? 0 : 6),
+									 mlme_priv->assoc_rsp_ie + WLAN_HDR_A3_LEN + 6, mlme_priv->assoc_rsp_ie_len -  WLAN_HDR_A3_LEN - 6,
+									 WLAN_STATUS_SUCCESS, GFP_ATOMIC, NL80211_TIMEOUT_UNSPECIFIED);
 #endif
 			}
 #ifdef CONFIG_WHCH

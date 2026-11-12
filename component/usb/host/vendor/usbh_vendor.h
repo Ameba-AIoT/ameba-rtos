@@ -120,6 +120,7 @@ typedef struct {
 	u32 xfer_cnt;              /**< Current transfer count (for test loops), same width as the test_cnt API argument */
 	u32 xfer_max_cnt;          /**< Target transfer count (for test loops), same width as the test_cnt API argument */
 	u16 cur_frame;             /**< Current frame number (for ISOC synchronization), 14-bit HFNUM value */
+	u16 frame_elapsed;         /**< (Micro)frames since the last ISOC OUT packet, paces it to ep_interval */
 	u8 busy;                   /**< Transfer claimed by the API and its completion not yet reported */
 #if USBH_VENDOR_DEBUG
 	u8 xfer_done;              /**< Test loop finished, latched in ISR context and reported by the class task */
@@ -160,8 +161,11 @@ typedef struct {
 
 /**
  * @brief  Initialize the Vendor Class driver.
+ * @note   The class relies on the SOF interrupt to pace the ISOC OUT loop and to re-drive a NAKed INTR transfer,
+ *         so the host shall run with usbh_config_t::tick_source = USBH_SOF_TICK, or with USBH_SOF_INTR set in
+ *         usbh_config_t::ext_intr_enable.
  * @param  cb: Pointer to the application callback structure.
- * @return 0 on success, non-zero on failure.
+ * @return 0 on success, -RTK_ERR_BADARG for a NULL cb or an init without a prior deinit, other non-zero on failure.
  */
 int usbh_vendor_init(const usbh_vendor_cb_t *cb);
 
@@ -174,7 +178,7 @@ void usbh_vendor_deinit(void);
  * @brief  Start a BULK transmission.
  * @param  buf: Pointer to the data buffer to be transmitted.
  * @param  len: Length of the data in bytes.
- * @param  test_cnt: Count of transfer for test. (usually 1 for normal use).
+ * @param  test_cnt: Ignored: one call moves one transfer. Only ISOC loops test_cnt times.
  * @retval Status.
  */
 int usbh_vendor_bulk_transmit(u8 *buf, u32 len, u32 test_cnt);
@@ -183,7 +187,7 @@ int usbh_vendor_bulk_transmit(u8 *buf, u32 len, u32 test_cnt);
  * @brief  Start a BULK reception.
  * @param  buf: Pointer to the buffer where received data will be stored.
  * @param  len: Expected length of data in bytes.
- * @param  test_cnt: Count of transfer for test.(usually 1 for normal use).
+ * @param  test_cnt: Ignored: one call moves one transfer. Only ISOC loops test_cnt times.
  * @return 0 on success, non-zero on failure.
  */
 int usbh_vendor_bulk_receive(u8 *buf, u32 len, u32 test_cnt);
@@ -192,7 +196,7 @@ int usbh_vendor_bulk_receive(u8 *buf, u32 len, u32 test_cnt);
  * @brief  Start an INTERRUPT transmission.
  * @param  buf: Pointer to the data buffer to be transmitted.
  * @param  len: Length of the data in bytes.
- * @param  test_cnt: Count of transfer for test.(usually 1 for normal use).
+ * @param  test_cnt: Ignored: one call moves one transfer. Only ISOC loops test_cnt times.
  * @return 0 on success, non-zero on failure.
  */
 int usbh_vendor_intr_transmit(u8 *buf, u32 len, u32 test_cnt);
@@ -201,7 +205,7 @@ int usbh_vendor_intr_transmit(u8 *buf, u32 len, u32 test_cnt);
  * @brief  Start an INTERRUPT reception.
  * @param  buf: Pointer to the buffer where received data will be stored.
  * @param  len: Expected length of data in bytes.
- * @param  test_cnt: Count of transfer for test.(usually 1 for normal use).
+ * @param  test_cnt: Ignored: one call moves one transfer. Only ISOC loops test_cnt times.
  * @return 0 on success, non-zero on failure.
  */
 int usbh_vendor_intr_receive(u8 *buf, u32 len, u32 test_cnt);
@@ -210,7 +214,7 @@ int usbh_vendor_intr_receive(u8 *buf, u32 len, u32 test_cnt);
  * @brief  Start an ISOCHRONOUS transmission.
  * @param  buf: Pointer to the data buffer to be transmitted.
  * @param  len: Length of the data in bytes.
- * @param  test_cnt: Count of transfer for test.(usually 1 for normal use).
+ * @param  test_cnt: Number of service intervals to send, one packet each; 0 is rejected.
  * @return 0 on success, non-zero on failure.
  */
 int usbh_vendor_isoc_transmit(u8 *buf, u32 len, u32 test_cnt);
@@ -219,7 +223,7 @@ int usbh_vendor_isoc_transmit(u8 *buf, u32 len, u32 test_cnt);
  * @brief  Start an ISOCHRONOUS reception.
  * @param  buf: Pointer to the buffer where received data will be stored.
  * @param  len: Expected length of data in bytes.
- * @param  test_cnt: Count of transfer for test.(usually 1 for normal use).
+ * @param  test_cnt: Number of service intervals to receive, one packet each; 0 is rejected.
  * @return 0 on success, non-zero on failure.
  */
 int usbh_vendor_isoc_receive(u8 *buf, u32 len, u32 test_cnt);

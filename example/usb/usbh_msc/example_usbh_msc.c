@@ -395,7 +395,9 @@ static void usbh_msc_dump_boot_sector(void)
 	u32 i;
 	DRESULT res;
 
-	sec = (u8 *)usb_os_malloc(512);
+	/* One logical block is read, and it may be up to USBH_MSC_MAX_BLOCK_SIZE: the driver copies
+	   a whole block back, so a 512 byte buffer would overflow on a 2K/4K sector disk */
+	sec = (u8 *)rtos_mem_zmalloc(USBH_MSC_MAX_BLOCK_SIZE);
 	if (sec == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Diag: alloc fail\n");
 		return;
@@ -436,7 +438,7 @@ static void usbh_msc_dump_boot_sector(void)
 				 sec[8], sec[9], sec[10], sec[11], sec[12], sec[13], sec[14], sec[15]);
 	}
 
-	usb_os_mfree((void *)sec);
+	rtos_mem_free((void *)sec);
 }
 
 /*  I/O test routine (10 files, each with W/R of multiple sizes) */
@@ -517,7 +519,7 @@ static int usbh_msc_file_test(void)
 	logical_drv[1] = ':';
 	logical_drv[2] = '/';
 	logical_drv[3] = 0;
-	strcpy(path, logical_drv);
+	memcpy((void *)path, (const void *)logical_drv, sizeof(logical_drv));
 
 	res = msc_fs_mount(&fs, logical_drv, 1);
 	if (res != FR_OK) {
@@ -557,7 +559,7 @@ static int usbh_msc_file_test(void)
 		}
 
 		data = _rand() % 0xFF;
-		usb_os_memset((void *)msc_wt_buf, data, USBH_MSC_TEST_BUF_SIZE);
+		memset((void *)msc_wt_buf, data, USBH_MSC_TEST_BUF_SIZE);
 
 		for (i = 0; i < sizeof(test_sizes) / sizeof(test_sizes[0]); ++i) {
 			test_size = test_sizes[i];
@@ -577,7 +579,6 @@ static int usbh_msc_file_test(void)
 				}
 #endif
 				if (res || (bw < test_size)) {
-					(void)msc_fs_lseek(&f, 0);
 					RTK_LOGS(TAG, RTK_LOG_ERROR, "W err bw=%d, rc=%d\n", bw, res);
 					ret = RTK_FAIL;
 					break;
@@ -596,8 +597,13 @@ static int usbh_msc_file_test(void)
 			perf = (round * test_size * 10000 / 1024) / elapse;
 			RTK_LOGS(TAG, RTK_LOG_INFO, "W rate %d.%d KB/s for %d round @ %d ms\n", perf / 10, perf % 10, round, elapse);
 
-			/* Read */
-			(void)msc_fs_lseek(&f, 0);
+			/* Read back from the file head: from anywhere else the check below would compare unrelated data */
+			res = msc_fs_lseek(&f, 0);
+			if (res != FR_OK) {
+				RTK_LOGS(TAG, RTK_LOG_ERROR, "Seek err rc=%d\n", res);
+				ret = RTK_FAIL;
+				break;
+			}
 			RTK_LOGS(TAG, RTK_LOG_INFO, "R test: size = %d round = %d...\n", test_size, USBH_MSC_TEST_ROUNDS);
 			start = SYSTIMER_TickGet();
 			for (round = 0; round < USBH_MSC_TEST_ROUNDS; ++round) {
@@ -609,7 +615,6 @@ static int usbh_msc_file_test(void)
 				}
 #endif
 				if (res || (br < test_size)) {
-					(void)msc_fs_lseek(&f, 0);
 					RTK_LOGS(TAG, RTK_LOG_ERROR, "R err br=%d, rc=%d\n", br, res);
 					ret = RTK_FAIL;
 					break;
@@ -627,7 +632,13 @@ static int usbh_msc_file_test(void)
 			elapse = SYSTIMER_GetPassTime(start);
 			perf = (round * test_size * 10000 / 1024) / elapse;
 			RTK_LOGS(TAG, RTK_LOG_INFO, "R rate %d.%d KB/s for %d round @ %d ms\n", perf / 10, perf % 10, round, elapse);
-			(void)msc_fs_lseek(&f, 0);
+			/* The next test size writes from the file head again */
+			res = msc_fs_lseek(&f, 0);
+			if (res != FR_OK) {
+				RTK_LOGS(TAG, RTK_LOG_ERROR, "Seek err rc=%d\n", res);
+				ret = RTK_FAIL;
+				break;
+			}
 
 #if USBH_MSC_CHECK_DATA
 			if (!(memcmp(msc_wt_buf, msc_rd_buf, test_size) == 0)) {
@@ -692,9 +703,9 @@ static void msc_deinit_stack(void)
   */
 static void msc_free_resource(void)
 {
-	usb_os_mfree((void *)msc_wt_buf);
+	rtos_mem_free((void *)msc_wt_buf);
 	msc_wt_buf = NULL;
-	usb_os_mfree((void *)msc_rd_buf);
+	rtos_mem_free((void *)msc_rd_buf);
 	msc_rd_buf = NULL;
 	if (msc_attach_sema != NULL) {
 		rtos_sema_delete(msc_attach_sema);
@@ -789,7 +800,15 @@ static void example_usbh_msc_hotplug_thread(void *param)
 			}
 
 			/* Re-arm USB TRX after the re-init. */
-			usbh_start();
+			ret = usbh_start();
+			if (ret != RTK_SUCCESS) {
+				usbh_msc_deinit();
+				usbh_deinit();
+				rtos_mutex_give(msc_state_mutex);
+				RTK_LOGS(TAG, RTK_LOG_ERROR, "Reinit fail\n");
+				fatal = 1U;
+				break;
+			}
 
 			/* Open the gate as the very last step, so no FatFs operation runs
 			   against a half-rebuilt stack. Clear teardown only after ready is
@@ -923,8 +942,8 @@ static int msc_start(void)
 	}
 #endif
 
-	msc_wt_buf = (u8 *)usb_os_malloc(USBH_MSC_TEST_BUF_SIZE);
-	msc_rd_buf = (u8 *)usb_os_malloc(USBH_MSC_TEST_BUF_SIZE);
+	msc_wt_buf = (u8 *)rtos_mem_zmalloc(USBH_MSC_TEST_BUF_SIZE);
+	msc_rd_buf = (u8 *)rtos_mem_zmalloc(USBH_MSC_TEST_BUF_SIZE);
 	if (!msc_wt_buf || !msc_rd_buf) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Alloc test buf fail\n");
 		ret = -RTK_ERR_NOMEM;
@@ -946,7 +965,11 @@ static int msc_start(void)
 	}
 
 	/* All class drivers registered; start USB TRX so enumeration can run. */
-	usbh_start();
+	ret = usbh_start();
+	if (ret != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "USBH start fail\n");
+		goto exit_deinit;
+	}
 
 	/* The stack is fully up: allow the FatFs path to reach the class. */
 	msc_stack_ready = 1U;

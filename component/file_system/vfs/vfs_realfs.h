@@ -18,7 +18,7 @@ int realfs_sd_format(unsigned int hash_buckets);
 #endif
 
 #if defined(CONFIG_REALFS_FLASH)
-/* Format the NOR-flash REALFS partition (VFS flash-layout region). Same rules
+/* Format the REALFS partition on VFS_TARGET_FLASH_VFS1. Same rules
  * as realfs_sd_format (pass 0 to auto-size). 0 on success. */
 int realfs_flash_format(unsigned int hash_buckets);
 #endif

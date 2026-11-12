@@ -15,7 +15,7 @@
 #define BT_LL_FEATURE_CONN_PARAM_REQ                                0
 #define BT_LL_FEATURE_C2H_FLOWCTRL                                  1
 
-#define BT_LL_BR_EDR_SUPPORT                                        0
+#define BT_LL_BR_EDR_SUPPORT                                        1
 
 //BT 4.2
 #define BT_LL_FEATURE_BT42_LE_DATA_LENGTH_EXTENSION                 1
@@ -47,6 +47,11 @@
 //BT 5.3
 #define BT_LL_FEATURE_BT53_LE_SUBRATE                               0
 
+//BT 5.4
+#define BT_LL_FEATURE_BT54_LE_PAWR                                  0
+#define BT_LL_FEATURE_BT54_LE_PAWR_ADV                              (BT_LL_FEATURE_BT54_LE_PAWR && BT_LL_FEATURE_BT50_LE_PA_ADV)
+#define BT_LL_FEATURE_BT54_LE_PAWR_SCAN                             (BT_LL_FEATURE_BT54_LE_PAWR && BT_LL_FEATURE_BT50_LE_PA_SYNC)
+
 //BLE Role
 #define BT_LL_LE_CENTRAL                                            1
 #define BT_LL_LE_SCAN                                               1
@@ -67,5 +72,7 @@
 #define BT_LL_LE_MAX_PA_SYNC_LIST_SIZE                              8
 
 #define BT_LL_LE_PA_SYNC_LIST_SIZE                                  8
+
+#define BT_LL_LE_PAWR_SUBDATA_POOL_SIZE                             4
 
 #endif

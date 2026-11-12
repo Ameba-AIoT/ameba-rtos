@@ -758,7 +758,7 @@ static void bt_zephyr_le_per_adv_synced(struct bt_le_per_adv_sync *sync, struct 
 	p_ind->info.adv_phy = (rtk_bt_le_phy_type_t)info->phy;
 	p_ind->info.adv_clock_accuracy = sync->clock_accuracy;
 	p_ind->info.periodic_adv_interval = info->interval;
-#if defined(RTK_BLE_5_4_PA_SYNC_RSP_SUPPORT) && RTK_BLE_5_4_PA_SYNC_RSP_SUPPORT
+#if defined(RTK_BLE_5_4_PAWR_SCAN_SUPPORT) && RTK_BLE_5_4_PAWR_SCAN_SUPPORT
 	p_ind->info.num_subevents = info->num_subevents;
 	p_ind->info.subevent_interval = info->subevent_interval;
 	p_ind->info.response_slot_delay = info->response_slot_delay;
@@ -817,7 +817,7 @@ static void bt_zephyr_le_per_adv_recv_info(struct bt_le_per_adv_sync *sync, cons
 	pa_report->tx_power = info->tx_power;
 	pa_report->rssi = info->rssi;
 	pa_report->cte_type = (rtk_bt_le_gap_cte_type_t)info->cte_type;
-#if defined(RTK_BLE_5_4_PA_SYNC_RSP_SUPPORT) && RTK_BLE_5_4_PA_SYNC_RSP_SUPPORT
+#if defined(RTK_BLE_5_4_PAWR_SCAN_SUPPORT) && RTK_BLE_5_4_PAWR_SCAN_SUPPORT
 	pa_report->periodic_event_counter = info->periodic_event_counter;
 	pa_report->subevent = info->subevent;
 #endif
@@ -1284,7 +1284,7 @@ bool ext_adv_rpa_expired(struct bt_le_ext_adv *adv)
 }
 #endif
 
-#if defined(CONFIG_BT_PER_ADV_RSP) && defined(RTK_BLE_5_4_PA_SYNC_RSP_SUPPORT) && RTK_BLE_5_4_PA_SYNC_RSP_SUPPORT
+#if defined(CONFIG_BT_PER_ADV_RSP) && defined(RTK_BLE_5_4_PAWR_ADV_SUPPORT) && RTK_BLE_5_4_PAWR_ADV_SUPPORT
 void ext_adv_pawr_data_request(struct bt_le_ext_adv *adv, const struct bt_le_per_adv_data_request *request)
 {
 	rtk_bt_le_gap_pawr_data_req_ind_t *p_ind = NULL;
@@ -1343,7 +1343,7 @@ static struct bt_le_ext_adv_cb bt_zephyr_ext_adv_cb = {
 #if defined(CONFIG_BT_PRIVACY)
 	.rpa_expired = ext_adv_rpa_expired,
 #endif
-#if defined(CONFIG_BT_PER_ADV_RSP) && defined(RTK_BLE_5_4_PA_SYNC_RSP_SUPPORT) && RTK_BLE_5_4_PA_SYNC_RSP_SUPPORT
+#if defined(CONFIG_BT_PER_ADV_RSP) && defined(RTK_BLE_5_4_PAWR_ADV_SUPPORT) && RTK_BLE_5_4_PAWR_ADV_SUPPORT
 	.pawr_data_request = ext_adv_pawr_data_request,
 	.pawr_response = ext_adv_pawr_response,
 #endif
@@ -1822,7 +1822,7 @@ static uint16_t bt_stack_le_gap_start_pa(void *p_param)
 
 	per_adv_param.options |= BT_LE_PER_ADV_OPT_INCLUDE_ADI;
 
-#if defined(RTK_BLE_5_4_PA_RSP_SUPPORT) && RTK_BLE_5_4_PA_RSP_SUPPORT
+#if defined(RTK_BLE_5_4_PAWR_ADV_SUPPORT) && RTK_BLE_5_4_PAWR_ADV_SUPPORT
 	per_adv_param.num_subevents = param->num_subevents;
 	per_adv_param.subevent_interval = param->subevent_interval;
 	per_adv_param.response_slot_delay = param->response_slot_delay;
@@ -3975,53 +3975,61 @@ exit:
 }
 #endif /* RTK_BLE_COC_SUPPORT */
 
-#if defined(RTK_BLE_5_4_PA_RSP_SUPPORT) && RTK_BLE_5_4_PA_RSP_SUPPORT
+#if defined(RTK_BLE_5_4_PAWR_ADV_SUPPORT) && RTK_BLE_5_4_PAWR_ADV_SUPPORT
+#define BT_PAWR_SET_SUBEVENT_MAX  4
 static uint16_t bt_stack_le_pawr_set_subevent_data(void *param)
 {
 	int err;
-	struct bt_le_per_adv_subevent_data_params sub;
+	struct bt_le_per_adv_subevent_data_params sub[BT_PAWR_SET_SUBEVENT_MAX];
+	struct net_buf_simple buf[BT_PAWR_SET_SUBEVENT_MAX];
 	struct bt_le_ext_adv *adv;
-	rtk_bt_le_gap_pawr_subevent_data_t *ptr = (rtk_bt_le_gap_pawr_subevent_data_t *)param;
+	rtk_bt_le_gap_pawr_subevent_data_t *pawr_sub = (rtk_bt_le_gap_pawr_subevent_data_t *)param;
 
-	if (!bt_stack_le_gap_ext_adv_handle_valid(ptr->adv_handle)) {
+	if (!bt_stack_le_gap_ext_adv_handle_valid(pawr_sub->adv_handle) ||
+		pawr_sub->num_subs > BT_PAWR_SET_SUBEVENT_MAX) {
 		return RTK_BT_ERR_PARAM_INVALID;
 	}
 
-	adv = _ext_adv_tbl[ptr->adv_handle].adv;
+	adv = _ext_adv_tbl[pawr_sub->adv_handle].adv;
 
-	sub.subevent = ptr->subevent;
-	sub.response_slot_start = ptr->response_slot_start;
-	sub.response_slot_count = ptr->response_slot_count;
+	for (uint8_t i = 0; i < pawr_sub->num_subs; i++) {
+		sub[i].subevent = pawr_sub->sub_arr[i].subevent;
+		sub[i].response_slot_start = pawr_sub->sub_arr[i].response_slot_start;
+		sub[i].response_slot_count = pawr_sub->sub_arr[i].response_slot_count;
+		net_buf_simple_init_with_data(&buf[i], pawr_sub->sub_arr[i].data, pawr_sub->sub_arr[i].len);
+		sub[i].data = &buf[i];
+	}
 
-	err = bt_le_per_adv_set_subevent_data(adv, 1, &sub);
+	err = bt_le_per_adv_set_subevent_data(adv, pawr_sub->num_subs, sub);
 	if (err) {
-		BT_LOGE("set subevent data fail, err=%d\r\n", err);
 		return RTK_BT_ERR_LOWER_STACK_API;
 	}
 	return 0;
 }
 #endif
 
-#if defined(RTK_BLE_5_4_PA_SYNC_RSP_SUPPORT) && RTK_BLE_5_4_PA_SYNC_RSP_SUPPORT
+#if defined(RTK_BLE_5_4_PAWR_SCAN_SUPPORT) && RTK_BLE_5_4_PAWR_SCAN_SUPPORT
 static uint16_t bt_stack_le_pawr_set_response_data(void *param)
 {
 	rtk_bt_le_gap_pawr_set_response_t *rsp = (rtk_bt_le_gap_pawr_set_response_t *)param;
 	struct bt_le_per_adv_sync *sync;
 	struct bt_le_per_adv_response_params rsp_param;
-	NET_BUF_SIMPLE_DEFINE(data, rsp->len);
+	struct net_buf_simple buf;
 	int err;
 
 	sync = bt_le_per_adv_sync_lookup_index(rsp->sync_id);
+	if (!sync) {
+		return RTK_BT_ERR_NO_ENTRY;
+	}
 
 	rsp_param.request_event = rsp->request_event;
 	rsp_param.request_subevent = rsp->request_subevent;
 	rsp_param.response_subevent = rsp->response_subevent;
 	rsp_param.response_slot = rsp->response_slot;
+	net_buf_simple_init_with_data(&buf, rsp->data, rsp->len);
 
-	net_buf_simple_add_mem(&data, rsp->rsp, rsp->len);
-	err = bt_le_per_adv_set_response_data(sync, &rsp_param, &data);
+	err = bt_le_per_adv_set_response_data(sync, &rsp_param, &buf);
 	if (err) {
-		BT_LOGE("set subevent response fail, err=%d\r\n", err);
 		return RTK_BT_ERR_LOWER_STACK_API;
 	}
 	return 0;
@@ -4039,9 +4047,12 @@ static uint16_t bt_stack_le_pawr_sync_subevent(void *param)
 	sub_param.subevents = sub->subevents;
 
 	sync = bt_le_per_adv_sync_lookup_index(sub->sync_id);
+	if (!sync) {
+		return RTK_BT_ERR_NO_ENTRY;
+	}
+
 	err = bt_le_per_adv_sync_subevent(sync, &sub_param);
 	if (err) {
-		BT_LOGE("sync subevent fail, err=%d\r\n", err);
 		return RTK_BT_ERR_LOWER_STACK_API;
 	}
 	return 0;
@@ -4461,6 +4472,27 @@ uint16_t bt_stack_le_gap_act_handle(rtk_bt_cmd_t *p_cmd)
 #endif
 #endif
 
+#if defined(RTK_BLE_5_4_PAWR_ADV_SUPPORT) && RTK_BLE_5_4_PAWR_ADV_SUPPORT
+	case RTK_BT_LE_GAP_ACT_PAWR_SET_SUBEVENT_DATA: {
+		BT_LOGD("RTK_BT_LE_GAP_ACT_PAWR_SET_SUBEVENT_DATA\r\n");
+		ret = bt_stack_le_pawr_set_subevent_data(p_cmd->param);
+		break;
+	}
+#endif
+
+#if defined(RTK_BLE_5_4_PAWR_SCAN_SUPPORT) && RTK_BLE_5_4_PAWR_SCAN_SUPPORT
+	case RTK_BT_LE_GAP_ACT_PAWR_SET_RESPONSE_DATA: {
+		BT_LOGD("RTK_BT_LE_GAP_ACT_PAWR_SET_RESPONSE_DATA\r\n");
+		ret = bt_stack_le_pawr_set_response_data(p_cmd->param);
+		break;
+	}
+	case RTK_BT_LE_GAP_ACT_PAWR_SYNC_SUBEVENT: {
+		BT_LOGD("RTK_BT_LE_GAP_ACT_PAWR_SYNC_SUBEVENT\r\n");
+		ret = bt_stack_le_pawr_sync_subevent(p_cmd->param);
+		break;
+	}
+#endif
+
 #if defined(RTK_BLE_COC_SUPPORT) && RTK_BLE_COC_SUPPORT
 	case RTK_BT_LE_GAP_ACT_COC_REG_PSM: {
 		BT_LOGD("RTK_BT_LE_GAP_ACT_COC_REG_PSM \r\n");
@@ -4495,27 +4527,6 @@ uint16_t bt_stack_le_gap_act_handle(rtk_bt_cmd_t *p_cmd)
 	case RTK_BT_LE_GAP_ACT_COC_SEND_DATA: {
 		BT_LOGD("RTK_BT_LE_GAP_ACT_COC_SEND_DATA \r\n");
 		ret = bt_stack_le_gap_coc_send_data(p_cmd->param);
-		break;
-	}
-#endif
-
-#if defined(RTK_BLE_5_4_PA_RSP_SUPPORT) && RTK_BLE_5_4_PA_RSP_SUPPORT
-	case RTK_BT_LE_GAP_ACT_PAWR_SET_SUBEVENT_DATA: {
-		BT_LOGD("RTK_BT_LE_GAP_ACT_PAWR_SET_SUBEVENT_DATA\r\n");
-		ret = bt_stack_le_pawr_set_subevent_data(p_cmd->param);
-		break;
-	}
-#endif
-
-#if defined(RTK_BLE_5_4_PA_SYNC_RSP_SUPPORT) && RTK_BLE_5_4_PA_SYNC_RSP_SUPPORT
-	case RTK_BT_LE_GAP_ACT_PAWR_SET_RESPONSE_DATA: {
-		BT_LOGD("RTK_BT_LE_GAP_ACT_PAWR_SET_RESPONSE_DATA\r\n");
-		ret = bt_stack_le_pawr_set_response_data(p_cmd->param);
-		break;
-	}
-	case RTK_BT_LE_GAP_ACT_PAWR_SYNC_SUBEVENT: {
-		BT_LOGD("RTK_BT_LE_GAP_ACT_PAWR_SYNC_SUBEVENT\r\n");
-		ret = bt_stack_le_pawr_sync_subevent(p_cmd->param);
 		break;
 	}
 #endif

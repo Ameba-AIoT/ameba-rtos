@@ -345,12 +345,6 @@ static void bt_stack_le_gap_handle_pa_sync_state_evt(uint8_t sync_id, uint16_t s
 		p_ind->info.adv_phy = (rtk_bt_le_phy_type_t)param.adv_phy;
 		p_ind->info.adv_clock_accuracy = param.adv_clock_accuracy;
 		p_ind->info.periodic_adv_interval = param.periodic_adv_interval;
-#if defined(RTK_BLE_5_4_PA_SYNC_RSP_SUPPORT) && RTK_BLE_5_4_PA_SYNC_RSP_SUPPORT
-		// p_ind->info.num_subevents = param.num_subevents;
-		// p_ind->info.subevent_interval = param.subevent_interval;
-		// p_ind->info.response_slot_delay = param.response_slot_delay;
-		// p_ind->info.response_slot_spacing = param.response_slot_spacing;
-#endif
 	}
 
 #if (defined(RTK_BLE_5_1_PAST_RECIPIENT_SUPPORT) && RTK_BLE_5_1_PAST_RECIPIENT_SUPPORT) && (defined(F_BT_LE_5_1_PAST_RECIPIENT_SUPPORT) && F_BT_LE_5_1_PAST_RECIPIENT_SUPPORT)

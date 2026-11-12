@@ -7,6 +7,7 @@
 /* Includes ------------------------------------------------------------------*/
 
 #include <platform_autoconf.h>
+#include "platform_stdlib.h"
 #include "basic_types.h"
 #include "usbd_cdc_ncm.h"
 #include "os_wrapper.h"
@@ -61,22 +62,12 @@
 
 /* Private types -------------------------------------------------------------*/
 
-typedef enum {
-	ETH_STATUS_IDLE = 0U,
-	ETH_STATUS_DEINIT,
-	ETH_STATUS_INIT,
-	ETH_STATUS_MAX,
-} eth_state_t;
-
 /* Private macros ------------------------------------------------------------*/
 
 /* Private function prototypes -----------------------------------------------*/
 
-static int usbd_cdc_ncm_cmd_link(u16 argc, u8 *argv[]);
+static int usbd_cdc_ncm_cmd_link(u16 argc, char *argv[]);
 static void usbd_cdc_ncm_cmd_link_at(u16 argc, char **argv);
-
-extern void rltk_usb_eth_init(void);
-extern void rltk_usb_eth_deinit(void);
 
 int usb_ethernet_transmit(u8 *buf, u32 len, u8 block);
 
@@ -90,7 +81,6 @@ static void usbd_cdc_ncm_cb_status_changed(u8 old_status, u8 status);
 
 static const char *const TAG = "NCM";
 
-extern struct netif *pnetif_usb_eth;
 static u8 cdc_ncm_dhcp_server_started = 0;
 /*
  * cdc_ncm_dongle_mac: MAC address reported to the USB host side of the CDC-NCM link.
@@ -215,7 +205,6 @@ static void usbd_ncm_net_down(void)
 
 static void usbd_ncm_link_change_thread(void *param)
 {
-	eth_state_t ethernet_state = ETH_STATUS_IDLE;
 	u8 link_is_up = 0;
 
 	UNUSED(param);
@@ -229,58 +218,52 @@ static void usbd_ncm_link_change_thread(void *param)
 			link_is_up = 0;
 		}
 
-		if (1 == link_is_up && (ethernet_state < ETH_STATUS_INIT)) {
+		if ((1 == link_is_up) && (!cdc_ncm_dhcp_server_started)) {
 			if (pnetif_usb_eth == NULL) {
 				rtos_time_delay_ms(1000);
 			} else {
-				if (!cdc_ncm_dhcp_server_started) {
-					// RTK_LOGS(TAG, RTK_LOG_INFO, "Starting USB NCM DHCP Server...\n");
+				// RTK_LOGS(TAG, RTK_LOG_INFO, "Starting USB NCM DHCP Server...\n");
 
-					// 1. Set netif MAC address
-					usb_os_memcpy((void *)pnetif_usb_eth->hwaddr, (const void *)cdc_ncm_dhcp_server_mac, 6);
-					pnetif_usb_eth->hwaddr_len = ETHARP_HWADDR_LEN;
-					RTK_LOGS(TAG, RTK_LOG_INFO, "DHCP Server MAC: " MAC_FMT "\n", MAC_ARG(pnetif_usb_eth->hwaddr));
+				// 1. Set netif MAC address
+				memcpy((void *)pnetif_usb_eth->hwaddr, (const void *)cdc_ncm_dhcp_server_mac, 6);
+				pnetif_usb_eth->hwaddr_len = ETHARP_HWADDR_LEN;
+				RTK_LOGS(TAG, RTK_LOG_INFO, "DHCP Server MAC: " MAC_FMT "\n", MAC_ARG(pnetif_usb_eth->hwaddr));
 
-					// 2. Deinit DHCP server
+				// 2. Deinit DHCP server
+				dhcps_deinit(pnetif_usb_eth);
+
+				// 3. Set Device IP address
+				u32 ip_addr = CONCAT_TO_UINT32(CDC_NCM_IP_ADDR0, CDC_NCM_IP_ADDR1, CDC_NCM_IP_ADDR2, CDC_NCM_IP_ADDR3);
+				u32 netmask = CONCAT_TO_UINT32(CDC_NCM_NETMASK_ADDR0, CDC_NCM_NETMASK_ADDR1, CDC_NCM_NETMASK_ADDR2,
+											   CDC_NCM_NETMASK_ADDR3);
+				u32 gw = CONCAT_TO_UINT32(CDC_NCM_GW_ADDR0, CDC_NCM_GW_ADDR1, CDC_NCM_GW_ADDR2, CDC_NCM_GW_ADDR3);
+				lwip_set_ip(NETIF_USB_ETH_INDEX, ip_addr, netmask, gw);
+
+				RTK_LOGS(TAG, RTK_LOG_INFO, "Device IP: %d.%d.%d.%d\n", CDC_NCM_IP_ADDR0, CDC_NCM_IP_ADDR1, CDC_NCM_IP_ADDR2,
+						 CDC_NCM_IP_ADDR3);
+
+				// 4. Activate network interface link. The netifapi calls wrap void lwIP
+				//    netif functions, they always report ERR_OK
+				netifapi_netif_set_link_up(pnetif_usb_eth);
+				netifapi_netif_set_up(pnetif_usb_eth);
+				netifapi_netif_set_default(pnetif_usb_eth);
+
+				// 5. Initialize and start DHCP server. On failure nothing is marked started,
+				//    so the next poll retries the whole sequence: steps 3 and 4 are idempotent
+				if ((dhcps_init(pnetif_usb_eth) == NULL) || (dhcps_start(pnetif_usb_eth) != ERR_OK)) {
+					RTK_LOGS(TAG, RTK_LOG_ERROR, "DHCP Server start fail\n");
 					dhcps_deinit(pnetif_usb_eth);
-
-					// 3. Set Device IP address
-					u32 ip_addr = CONCAT_TO_UINT32(CDC_NCM_IP_ADDR0, CDC_NCM_IP_ADDR1, CDC_NCM_IP_ADDR2, CDC_NCM_IP_ADDR3);
-					u32 netmask = CONCAT_TO_UINT32(CDC_NCM_NETMASK_ADDR0, CDC_NCM_NETMASK_ADDR1, CDC_NCM_NETMASK_ADDR2,
-												   CDC_NCM_NETMASK_ADDR3);
-					u32 gw = CONCAT_TO_UINT32(CDC_NCM_GW_ADDR0, CDC_NCM_GW_ADDR1, CDC_NCM_GW_ADDR2, CDC_NCM_GW_ADDR3);
-					lwip_set_ip(NETIF_USB_ETH_INDEX, ip_addr, netmask, gw);
-
-					RTK_LOGS(TAG, RTK_LOG_INFO, "Device IP: %d.%d.%d.%d\n", CDC_NCM_IP_ADDR0, CDC_NCM_IP_ADDR1, CDC_NCM_IP_ADDR2,
-							 CDC_NCM_IP_ADDR3);
-
-					// 4. Activate network interface link
-					netifapi_netif_set_link_up(pnetif_usb_eth);
-					netifapi_netif_set_up(pnetif_usb_eth);
-					netifapi_netif_set_default(pnetif_usb_eth);
-
-					// 5. Initialize and start DHCP server
-					dhcps_init(pnetif_usb_eth);
-					dhcps_start(pnetif_usb_eth);
-
-					cdc_ncm_dhcp_server_started = 1;
-					ethernet_state = ETH_STATUS_INIT;
-
-					RTK_LOGS(TAG, RTK_LOG_INFO, "DHCP Server started\n");
-				} else {
-					RTK_LOGS(TAG, RTK_LOG_INFO, "DHCP Server already started\n");
 					rtos_time_delay_ms(1000);
+					continue;
 				}
+
+				cdc_ncm_dhcp_server_started = 1;
+
+				RTK_LOGS(TAG, RTK_LOG_INFO, "DHCP Server started\n");
 			}
-		} else if (0 == link_is_up && (ethernet_state >= ETH_STATUS_INIT)) {
-			ethernet_state = ETH_STATUS_DEINIT;
+		} else if ((0 == link_is_up) && cdc_ncm_dhcp_server_started) {
 			// USB disconnected, stop DHCP server
-			if (cdc_ncm_dhcp_server_started) {
-				usbd_ncm_net_down();
-			} else {
-				RTK_LOGS(TAG, RTK_LOG_INFO, "DHCP Server not started\n");
-				rtos_time_delay_ms(1000);
-			}
+			usbd_ncm_net_down();
 		} else {
 			rtos_time_delay_ms(1000);
 		}
@@ -322,22 +305,8 @@ static int usbd_cdc_ncm_cb_deinit(void)
   */
 static int usbd_cdc_ncm_cb_received(u8 *buf, u32 length)
 {
-	if (buf == NULL || length == 0) {
-		return -RTK_ERR_BADARG;
-	}
-
-#if 0
-	RTK_LOGS(TAG, RTK_LOG_INFO, "RX Len = %d\n", length);
-	// for (u32 i = 0; i < length; i++) {
-	// 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "%02x ", (u8)buf[i]);
-	// }
-	// RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n");
-#endif
-
-	/* Forward to network stack */
-	if (length > 0) {
-		netif_adapter_usb_eth_recv(buf, length);
-	}
+	/* Forward to network stack. The class only delivers a non-empty datagram */
+	netif_adapter_usb_eth_recv(buf, length);
 
 	return RTK_SUCCESS;
 }
@@ -355,10 +324,6 @@ static int usbd_cdc_ncm_cb_setup(usb_setup_req_t *req, u8 *buf)
 	int ret = RTK_SUCCESS;
 	UNUSED(buf);
 
-	if (req == NULL) {
-		return -RTK_ERR_BADARG;
-	}
-
 	u8 req_type = req->bmRequestType & USB_REQ_TYPE_MASK;
 	u8 req_code = req->bRequest;
 
@@ -373,18 +338,9 @@ static int usbd_cdc_ncm_cb_setup(usb_setup_req_t *req, u8 *buf)
 			/* Accepted and ignored: no multicast filter table on this device. */
 			break;
 		default:
-			/*
-			 * NCM-specific requests (GET/SET NTB_PARAMETERS, SET_NTB_FORMAT, ...)
-			 * never reach this callback: the class driver answers them itself and
-			 * only forwards what it does not recognise.
-			 *
-			 * Anything left here is unsupported and must be answered with a request
-			 * error so the core STALLs EP0 (Ref USB 2.0 9.2.7).  Returning RTK_SUCCESS
-			 * used to be actively harmful for a device-to-host request such as
-			 * GET_ETHERNET_STATISTIC: the class driver would then transmit
-			 * req->wLength bytes of whatever the EP0 buffer happened to hold,
-			 * leaking stale buffer content to the host instead of stalling.
-			 */
+			/* NCM-specific requests never reach this callback: the class driver answers
+			 * them itself. Anything left here is unsupported and must be answered with a
+			 * request error so the core STALLs EP0 (Ref USB 2.0 9.2.7). */
 			ret = -RTK_ERR_BADARG;
 			break;
 		}
@@ -494,7 +450,11 @@ static void usbd_ncm_hotplug_thread(void *param)
 				fatal = 1U;
 				break;
 			}
-			(void)usbd_cdc_ncm_set_link_status(1U);
+			ret = usbd_cdc_ncm_set_link_status(1U);
+			if (ret != RTK_SUCCESS) {
+				/* The host only sees the uplink down, the USB link itself is fine */
+				RTK_LOGS(TAG, RTK_LOG_WARN, "Set link fail %d\n", ret);
+			}
 
 			/* Open the gate at the very last step, so that no TX runs before the
 			 * re-init is fully done. */
@@ -612,7 +572,11 @@ static int usbd_ncm_start(void)
 	/* The class starts with the uplink down; this example serves the host locally
 	 * (DHCP server on the device), so report it up.  The USBDNCM link command can
 	 * still change it to exercise the link notification. */
-	(void)usbd_cdc_ncm_set_link_status(1U);
+	ret = usbd_cdc_ncm_set_link_status(1U);
+	if (ret != RTK_SUCCESS) {
+		/* The host only sees the uplink down, the USB link itself is fine */
+		RTK_LOGS(TAG, RTK_LOG_WARN, "Set link fail %d\n", ret);
+	}
 
 	/* The stack is fully up: allow TX */
 	cdc_ncm_stack_ready = 1;
@@ -691,10 +655,10 @@ static void usbd_ncm_init_thread(void *param)
 /* Shell command USBDNCM link <0|1> -- report the upper-layer network link state
  * to the host. Mirrors the ECM example's USBDECM. Edge-triggered:
  * calling repeatedly with the same value is a no-op inside the class driver. */
-static int usbd_cdc_ncm_cmd_link(u16 argc, u8 *argv[])
+static int usbd_cdc_ncm_cmd_link(u16 argc, char *argv[])
 {
-	const char *cmd = (argc != 0U) ? (const char *)argv[0] : NULL;
-	const char *val = (argc > 1U) ? (const char *)argv[1] : NULL;
+	const char *cmd = (argc != 0U) ? argv[0] : NULL;
+	const char *val = (argc > 1U) ? argv[1] : NULL;
 	u8 link_up;
 
 	if ((cmd == NULL) || (_stricmp(cmd, "help") == 0) || (_stricmp(cmd, "?") == 0)) {
@@ -719,13 +683,13 @@ static int usbd_cdc_ncm_cmd_link(u16 argc, u8 *argv[])
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Set NCM link status -> %s\n", link_up ? "UP" : "DOWN");
 
-	return (u32)usbd_cdc_ncm_set_link_status(link_up);
+	return usbd_cdc_ncm_set_link_status(link_up);
 }
 
 /* AT entry: argv[0] is reserved by the AT parser and argv[1] holds the first parameter */
 static void usbd_cdc_ncm_cmd_link_at(u16 argc, char **argv)
 {
-	int ret = usbd_cdc_ncm_cmd_link((argc != 0U) ? (argc - 1U) : 0U, (u8 **)&argv[1]);
+	int ret = usbd_cdc_ncm_cmd_link((argc != 0U) ? (u16)(argc - 1U) : 0U, &argv[1]);
 
 	if (ret == RTK_SUCCESS) {
 		at_printf(ATCMD_OK_END_STR);
@@ -748,7 +712,11 @@ int usb_ethernet_transmit(u8 *buf, u32 len, u8 block)
 		return -RTK_ERR_IO;
 	}
 
-	rtos_mutex_take(cdc_ncm_state_mutex, RTOS_MAX_TIMEOUT);
+	/* Never enter the gated section, nor give, without the mutex */
+	ret = rtos_mutex_take(cdc_ncm_state_mutex, RTOS_MAX_TIMEOUT);
+	if (ret != RTK_SUCCESS) {
+		return -RTK_ERR_BUSY;
+	}
 	if (cdc_ncm_stack_ready == 0U) {
 		/* Lost the race against a hotplug tear down */
 		ret = -RTK_ERR_IO;
