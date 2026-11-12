@@ -16,12 +16,93 @@ extern u8 nor_dev_init(struct flash_dev *dev);
 extern u8 nand_dev_init(struct flash_dev *dev);
 #endif
 
+/* Private defines -----------------------------------------------------------*/
+
+/* Plausible NOR capacity code (JEDEC ID byte 3): log2(bytes) from 64KB, up to the
+ * Micron/ISSI style codes 0x20..0x22 used for 512Mb..2Gb (see nor_ftl_get_capacity()) */
+#define NOR_CAPACITY_EXP_MIN	0x10U
+#define NOR_CAPACITY_EXP_MAX	0x22U
+
+/* NAND ready probe: 100 x 100us = 10ms, longer than the SPI NAND reset/power-up busy time */
+#define NAND_PROBE_POLL_CNT		100U
+#define NAND_PROBE_POLL_US		100U
+
 /* Private variables ---------------------------------------------------------*/
 
 static struct flash_dev nor_dev_inst;
 #if defined(CONFIG_SUPPORT_NAND_FLASH)
 static struct flash_dev nand_dev_inst;
 #endif
+
+/* Private functions ---------------------------------------------------------*/
+
+#if defined(CONFIG_NAND_DOWNLOAD_EN) && defined(CONFIG_SUPPORT_NAND_FLASH)
+/* Set up SPIC for NOR or NAND the way the ROM does it in BOOT_ROM_InitSpic()/
+ * BOOT_ROM_InitFlash(), keeping the pinmux and the baudrate the ROM selected.
+ * Flashloader only (CONFIG_NAND_DOWNLOAD_EN): application images do not switch the
+ * flash type, and the SPIC ROM API used here differs between SoCs. */
+static void flash_dev_reinit_spic(enum flash_media media)
+{
+	u8 baud_rate = flash_init_para.FLASH_baud_rate;
+	u8 baud_boot = flash_init_para.FLASH_baud_boot;
+	u8 pinmux = flash_init_para.FLASH_pinmux;
+
+	if (media == FLASH_MEDIA_NAND) {
+		NAND_StructInit(&flash_init_para);
+		flash_init_para.FLASH_pinmux = pinmux;
+		flash_init_para.FLASH_baud_rate = baud_rate;
+		flash_init_para.FLASH_baud_boot = baud_boot;
+		flash_init_para.FLASH_pagesize_main_bit_exp = (SYSCFG_OTP_BigPageNand() != 0U) ?
+				NAND_PAGE_SIZE_MAIN_4K_BIT_EXP : NAND_PAGE_SIZE_MAIN_2K_BIT_EXP;
+		NAND_Init(0); /* 1-bit SPI mode, same as ROM */
+	} else {
+		FLASH_StructInit(&flash_init_para);
+		flash_init_para.FLASH_pinmux = pinmux;
+		flash_init_para.FLASH_baud_rate = baud_rate;
+		flash_init_para.FLASH_baud_boot = baud_boot;
+		if (SYSCFG_OTP_SPICAddr4ByteEn() != 0U) {
+			flash_init_para.FLASH_addr_phase_len = ADDR_4_BYTE;
+		}
+		/* NAND_Init() sets DEVICE_INFO for NAND and FLASH_Init() does not touch it: restore the
+		 * reset value a NOR boot keeps (NOR flash, WR_PAGE_EN, 256B page) */
+		SPIC->DEVICE_INFO = BIT_NOR_FLASH | BIT_WR_PAGE_EN | PAGE_SIZE(8);
+		FLASH_Init(0); /* 1-bit SPI mode, same as ROM */
+		/* The NOR may sit in deep power down: ROM releases it only when it booted from NOR */
+		FLASH_DeepPowerDown(DISABLE);
+		if (flash_init_para.FLASH_addr_phase_len == ADDR_4_BYTE) {
+#if defined(CONFIG_AMEBAGREEN2)
+			FLASH_Addr4ByteEn();
+#else
+			FLASH_WriteEn();
+			FLASH_TxCmd(FLASH_CMD_ENT_ADDR4B, 0, NULL);
+			FLASH_WaitBusy(WAIT_FLASH_BUSY);
+#endif
+		}
+	}
+}
+
+/* Without a SPI NAND (e.g. a NOR board the trap pin booted as NAND) the status reads busy,
+ * so every NAND_WaitBusy() in nand_ftl_init() would poll 0x200000 times and the floader
+ * would not answer the host. Check the NAND gets ready within a bounded time first. */
+static u8 flash_dev_nand_ready(void)
+{
+	u32 i;
+
+	for (i = 0; i < NAND_PROBE_POLL_CNT; i++) {
+		if ((NAND_GetStatus(NAND_REG_STATUS) & flash_init_para.FLASH_Busy_bit) == 0U) {
+			return 1U;
+		}
+		DelayUs(NAND_PROBE_POLL_US);
+	}
+
+	return 0U;
+}
+#endif
+
+static u8 flash_id_is_blank(u8 mid, u8 did)
+{
+	return ((mid == 0x00U) && (did == 0x00U)) || ((mid == 0xFFU) && (did == 0xFFU));
+}
 
 /* Exported functions --------------------------------------------------------*/
 
@@ -33,6 +114,11 @@ struct flash_dev *flash_dev_get(enum flash_media media)
 #if defined(CONFIG_SUPPORT_NAND_FLASH)
 		dev = &nand_dev_inst;
 		if (!dev->initialized) {
+#if defined(CONFIG_NAND_DOWNLOAD_EN)
+			if (!flash_dev_nand_ready()) {
+				return NULL;
+			}
+#endif
 			if (nand_dev_init(dev) != ERR_NONE) {
 				return NULL;
 			}
@@ -59,6 +145,59 @@ enum flash_media flash_dev_probe_media(void)
 	return (SYSCFG_OTP_BootFromNor() != 0U) ? FLASH_MEDIA_NOR : FLASH_MEDIA_NAND;
 #else
 	return FLASH_MEDIA_NOR;
+#endif
+}
+
+u8 flash_dev_check_valid(const struct flash_dev *dev)
+{
+	const struct ameba_flash_info *info;
+
+	if ((dev == NULL) || (!dev->initialized)) {
+		return ERR_HARDWARE;
+	}
+
+	info = &dev->info;
+	/* No device answers: the data lines float high or are pulled low */
+	if (flash_id_is_blank(info->mid, info->did)) {
+		return ERR_HARDWARE;
+	}
+
+	if (dev->media == FLASH_MEDIA_NAND) {
+		/* nand_ftl_init() already rejected a bad ONFI parameter page; check the geometry */
+		if ((info->page_size == 0U) || (info->pages_per_block == 0U) || (info->blocks_per_lun == 0U) ||
+			(info->capacity == 0U)) {
+			return ERR_HARDWARE;
+		}
+	} else {
+		/* A SPI NAND answers the NOR RDID (9Fh) only after a dummy byte, so the MID read
+		 * here is the undriven bus (0x00/0xFF) and the NAND MID/DID shift into did/ext_did */
+		if ((info->mid == 0x00U) || (info->mid == 0xFFU) ||
+			(info->ext_did < NOR_CAPACITY_EXP_MIN) || (info->ext_did > NOR_CAPACITY_EXP_MAX)) {
+			return ERR_HARDWARE;
+		}
+	}
+
+	return ERR_NONE;
+}
+
+struct flash_dev *flash_dev_reinit(enum flash_media media)
+{
+#if defined(CONFIG_NAND_DOWNLOAD_EN) && defined(CONFIG_SUPPORT_NAND_FLASH)
+	struct flash_dev *dev = (media == FLASH_MEDIA_NAND) ? &nand_dev_inst : &nor_dev_inst;
+
+	flash_dev_reinit_spic(media);
+
+	dev->initialized = 0U;
+	if (flash_dev_check_valid(flash_dev_get(media)) != ERR_NONE) {
+		/* Do not leave a device with bogus ID/geometry marked usable */
+		dev->initialized = 0U;
+		return NULL;
+	}
+
+	return dev;
+#else
+	UNUSED(media);
+	return NULL;
 #endif
 }
 

@@ -259,22 +259,14 @@ static usbd_vendor_dev_t usbd_vendor_dev;
   *         stride is 1024), the length is clamped to @ref usb_get_max_payload_len so that the
   *         window never exceeds the buffer, refer to @ref usbd_ep_receive.
   *         Shall be called after usbd_ep_init(), which fills info.mps for the negotiated speed.
+  *         usbd_vendor_private_init() already checked that the buffer holds one packet at either
+  *         speed, see usbd_vendor_check_out_buf_len(), so the length is never 0.
   * @param  ep: OUT endpoint
-  * @retval Status
+  * @retval None
   */
-static int usbd_vendor_config_out_xfer_len(usbd_ep_t *ep)
+static void usbd_vendor_config_out_xfer_len(usbd_ep_t *ep)
 {
-	u32 xfer_len = usb_get_max_payload_len(ep->xfer_buf_len, ep->info.mps);
-
-	/* A buffer too small for a single padded packet leaves nothing to request */
-	if ((ep->info.mps == 0U) || (xfer_len == 0U)) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "EP%02x buf_len %u < mps %u\n", ep->info.addr, ep->xfer_buf_len, ep->info.mps);
-		return -RTK_ERR_BADARG;
-	}
-
-	ep->xfer_len = xfer_len;
-
-	return RTK_SUCCESS;
+	ep->xfer_len = usb_get_max_payload_len(ep->xfer_buf_len, ep->info.mps);
 }
 
 /**
@@ -356,7 +348,6 @@ static int usbd_vendor_set_config(usb_dev_t *dev, u8 config)
 
 	cdev->dev = dev;
 
-	cdev->alt_setting = 0U;
 	/* Init INTR IN EP */
 	info = &ep_intr_in->info;
 	info->mps = (speed == USB_SPEED_HIGH) ? USBD_VENDOR_HS_INTR_MPS : USBD_VENDOR_FS_INTR_MPS;
@@ -375,10 +366,7 @@ static int usbd_vendor_set_config(usb_dev_t *dev, u8 config)
 	if (ret != RTK_SUCCESS) {
 		goto exit_clear_config;
 	}
-	ret = usbd_vendor_config_out_xfer_len(ep_intr_out);
-	if (ret != RTK_SUCCESS) {
-		goto exit_clear_config;
-	}
+	usbd_vendor_config_out_xfer_len(ep_intr_out);
 	ret = usbd_ep_receive(dev, ep_intr_out);
 	if (ret != RTK_SUCCESS) {
 		goto exit_clear_config;
@@ -400,10 +388,7 @@ static int usbd_vendor_set_config(usb_dev_t *dev, u8 config)
 	if (ret != RTK_SUCCESS) {
 		goto exit_clear_config;
 	}
-	ret = usbd_vendor_config_out_xfer_len(ep_bulk_out);
-	if (ret != RTK_SUCCESS) {
-		goto exit_clear_config;
-	}
+	usbd_vendor_config_out_xfer_len(ep_bulk_out);
 	ret = usbd_ep_receive(dev, ep_bulk_out);
 	if (ret != RTK_SUCCESS) {
 		goto exit_clear_config;
@@ -426,10 +411,7 @@ static int usbd_vendor_set_config(usb_dev_t *dev, u8 config)
 	if (ret != RTK_SUCCESS) {
 		goto exit_clear_config;
 	}
-	ret = usbd_vendor_config_out_xfer_len(ep_isoc_out);
-	if (ret != RTK_SUCCESS) {
-		goto exit_clear_config;
-	}
+	usbd_vendor_config_out_xfer_len(ep_isoc_out);
 	ret = usbd_ep_receive(dev, ep_isoc_out);
 	if (ret != RTK_SUCCESS) {
 		goto exit_clear_config;
@@ -518,8 +500,6 @@ static int usbd_vendor_setup(usb_dev_t *dev, usb_setup_req_t *req)
 				   interface are valid, interface 0 describes bAlternateSetting 0 only,
 				   so any other wValue is a request error. Ref USB 2.0 Table 9-3: wLength is zero */
 				if ((req->wIndex == 0U) && (req->wValue == 0U) && (req->wLength == 0U)) {
-					cdev->alt_setting = 0U;
-
 					/* Ref USB 2.0 9.4.10: the endpoints of the selected interface return
 					   to their default state, not halted and data toggle DATA0. This holds
 					   even for an interface with the default setting only, hosts do send
@@ -540,7 +520,7 @@ static int usbd_vendor_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			/* Ref USB 2.0 9.4.4 and Table 9-3: wValue is zero, wLength is one, and a request for
 			   a non-existent interface is a request error */
 			if ((dev->dev_state == USBD_STATE_CONFIGURED) && (req->wValue == 0U) && (req->wIndex == 0U) && (req->wLength == 1U)) {
-				ep0_in->xfer_buf[0] = cdev->alt_setting;
+				ep0_in->xfer_buf[0] = 0U; /* The only alternate setting */
 				ep0_in->xfer_len = 1U;
 				ret = usbd_ep_transmit(dev, ep0_in);
 			} else {
@@ -1028,11 +1008,10 @@ static int usbd_vendor_private_init(const usbd_vendor_cb_t *cb, const usbd_vendo
 	}
 
 	/* A bInterval outside its range would be reported to the host as is, refer to
-	   usbd_vendor_check_interval() */
+	   usbd_vendor_check_interval(). Every u8 is a legal FS interrupt bInterval (1..255, 0 for the
+	   default), so those two are not checked. */
 	if ((usbd_vendor_check_interval(cfg->intr_in_interval_hs, (u8)USB_INTR_HS_BINTERVAL_MAX) != RTK_SUCCESS) ||
 		(usbd_vendor_check_interval(cfg->intr_out_interval_hs, (u8)USB_INTR_HS_BINTERVAL_MAX) != RTK_SUCCESS) ||
-		(usbd_vendor_check_interval(cfg->intr_in_interval_fs, (u8)USB_INTR_FS_BINTERVAL_MAX) != RTK_SUCCESS) ||
-		(usbd_vendor_check_interval(cfg->intr_out_interval_fs, (u8)USB_INTR_FS_BINTERVAL_MAX) != RTK_SUCCESS) ||
 		(usbd_vendor_check_interval(cfg->isoc_in_interval_hs, (u8)USB_ISOC_HS_BINTERVAL_MAX) != RTK_SUCCESS) ||
 		(usbd_vendor_check_interval(cfg->isoc_out_interval_hs, (u8)USB_ISOC_HS_BINTERVAL_MAX) != RTK_SUCCESS) ||
 		(usbd_vendor_check_interval(cfg->isoc_in_interval_fs, (u8)USB_ISOC_FS_BINTERVAL_MAX) != RTK_SUCCESS) ||

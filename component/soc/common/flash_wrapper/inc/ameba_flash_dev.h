@@ -109,6 +109,24 @@ u8 flash_dev_mark_bad(struct flash_dev *dev, u32 offset);
 u8 flash_dev_get_status(struct flash_dev *dev, u8 cmd, u8 addr, u8 *value);
 u8 flash_dev_set_status(struct flash_dev *dev, u8 cmd, u8 addr, u8 value);
 
+/**
+  * @brief  Check whether a probed device looks like a real flash of its media.
+  * @param  dev : flash device returned by flash_dev_get()/flash_dev_reinit()
+  * @retval ERR_NONE if the ID/geometry is plausible, ERR_HARDWARE otherwise
+  */
+u8 flash_dev_check_valid(const struct flash_dev *dev);
+
+/**
+  * @brief  Re-initialize SPIC for the given media and re-probe the device, regardless
+  *         of the media the ROM booted from (OTP boot select / trap pin). Used to auto
+  *         detect the flash type when the boot select does not match the board.
+  *         Pinmux and SPIC baudrate set up by the ROM are kept.
+  * @param  media : FLASH_MEDIA_NOR or FLASH_MEDIA_NAND
+  * @retval Pointer to the re-initialized device, or NULL if the media is unsupported
+  *         or no valid flash answers on it.
+  */
+struct flash_dev *flash_dev_reinit(enum flash_media media);
+
 #ifdef __cplusplus
 }
 #endif

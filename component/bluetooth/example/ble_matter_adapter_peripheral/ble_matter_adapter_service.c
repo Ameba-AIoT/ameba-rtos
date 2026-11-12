@@ -71,38 +71,53 @@ void ble_matter_adapter_ble_service_callback(uint8_t event, void *data)
 			BT_LOGA("[APP] ble matter service register succeed!\r\n");
 		} else
 			BT_LOGE("[APP] ble matter service register failed, err: 0x%x\r\n",
-						p_gatts_reg_ind->reg_status);
+					p_gatts_reg_ind->reg_status);
 		break;
 	}
 	case RTK_BT_GATTS_EVT_READ_IND: {
 		rtk_bt_gatts_read_ind_t *p_read_ind = (rtk_bt_gatts_read_ind_t *)data;
 		uint16_t offset = p_read_ind->offset;
 		uint16_t actual_len = BLE_MATTER_READ_MAX_LEN - p_read_ind->offset;
+		if (offset > BLE_MATTER_READ_MAX_LEN) {
+			rtk_bt_gatts_read_resp_param_t err_resp = {
+				.app_id         = p_read_ind->app_id,
+				.conn_handle    = p_read_ind->conn_handle,
+				.cid            = p_read_ind->cid,
+				.index          = p_read_ind->index,
+				.err_code       = RTK_BT_ATT_ERR_INVALID_OFFSET,
+			};
+			ret = rtk_bt_gatts_read_resp(&err_resp);
+			if (RTK_BT_OK != ret) {
+				BT_LOGE("[APP] ble matter respond for client read failed, err: 0x%x\r\n", ret);
+			}
+			break;
+		}
 		if (BLE_MATTER_SERVICE_C3_INDEX == p_read_ind->index) {
 			BLE_MATTER_APP_READ_CB_ARG gap_read_cb_arg;
 			uint8_t *ptr = ble_matter_read_val;
 			gap_read_cb_arg.pp_value = &ptr;
 			gap_read_cb_arg.p_len = &actual_len;
 
-			if(matter_blemgr_callback_func) {
+			if (matter_blemgr_callback_func) {
 				matter_blemgr_callback_func(matter_blemgr_callback_data, MATTER_BLEMGR_C3_CHAR_READ_CB, &gap_read_cb_arg);
 			}
 
 			if ((*gap_read_cb_arg.p_len) > offset) {
 				//send data to matter, connected msg require conn_id/length/*p_value
-				if ((*gap_read_cb_arg.p_len) < offset + 1)
+				if ((*gap_read_cb_arg.p_len) < offset + 1) {
 					break;
+				}
 
 				actual_len = actual_len - offset;
 				rtk_bt_gatts_read_resp_param_t read_resp = {
-					.app_id			= p_read_ind->app_id,
-					.conn_handle	= p_read_ind->conn_handle,
-					.cid			= p_read_ind->cid,
-					.index			= p_read_ind->index,
-					.data			= (*gap_read_cb_arg.pp_value) + offset,
-					.len			= actual_len,
-					.err_code		= 0,
-					.seq			= 0,
+					.app_id         = p_read_ind->app_id,
+					.conn_handle    = p_read_ind->conn_handle,
+					.cid            = p_read_ind->cid,
+					.index          = p_read_ind->index,
+					.data           = (*gap_read_cb_arg.pp_value) + offset,
+					.len            = actual_len,
+					.err_code       = 0,
+					.seq            = 0,
 				};
 				ret = rtk_bt_gatts_read_resp(&read_resp);
 				if (RTK_BT_OK == ret) {
@@ -115,20 +130,21 @@ void ble_matter_adapter_ble_service_callback(uint8_t event, void *data)
 			}
 		} else if (BLE_MATTER_SERVICE_CHAR_TX_INDEX == p_read_ind->index) {
 			rtk_bt_gatts_read_resp_param_t read_resp = {
-				.app_id			= p_read_ind->app_id,
-				.conn_handle	= p_read_ind->conn_handle,
-				.cid			= p_read_ind->cid,
-				.index			= p_read_ind->index,
-				.data			= &ble_matter_read_val[offset],
-				.len			= actual_len,
-				.err_code		= 0,
-				.seq			= 0,
+				.app_id         = p_read_ind->app_id,
+				.conn_handle    = p_read_ind->conn_handle,
+				.cid            = p_read_ind->cid,
+				.index          = p_read_ind->index,
+				.data           = &ble_matter_read_val[offset],
+				.len            = actual_len,
+				.err_code       = 0,
+				.seq            = 0,
 			};
 			ret = rtk_bt_gatts_read_resp(&read_resp);
-			if (RTK_BT_OK == ret)
+			if (RTK_BT_OK == ret) {
 				BT_LOGA("[APP] ble matter respond for client read success, offset: %d\r\n", offset);
-			else
+			} else {
 				BT_LOGE("[APP] ble matter respond for client read failed, err: 0x%x\r\n", ret);
+			}
 		} else {
 			BT_LOGE("[APP] ble matter read event unknown index: %d\r\n", p_read_ind->index);
 		}
@@ -139,7 +155,7 @@ void ble_matter_adapter_ble_service_callback(uint8_t event, void *data)
 		rtk_bt_gatts_write_resp_param_t write_resp = {0};
 		if (BLE_MATTER_SERVICE_CHAR_RX_INDEX == p_write_ind->index) {
 			BT_LOGD("[APP] ble matter write event, len: %d, type: %d, data: \r\n",
-						p_write_ind->len, p_write_ind->type);
+					p_write_ind->len, p_write_ind->type);
 
 			write_resp.app_id = p_write_ind->app_id;
 			write_resp.conn_handle = p_write_ind->conn_handle;
@@ -236,7 +252,7 @@ void ble_matter_adapter_ble_service_callback(uint8_t event, void *data)
 				memset(send_complete_msg_matter, 0, sizeof(BLE_MATTER_APP_SEND_COMPLETE_CB_ARG));
 				send_complete_msg_matter->conn_handle = p_ind_ind->conn_handle;
 				if (ble_matter_adapter_send_callback_msg(BLE_MATTER_MSG_SEND_COMPLETE, NULL, send_complete_msg_matter) == false) {
-						BT_LOGE("[APP] send callback msg failed\r\n");
+					BT_LOGE("[APP] send callback msg failed\r\n");
 					osif_mem_free(send_complete_msg_matter);
 					send_complete_msg_matter = NULL;
 				}

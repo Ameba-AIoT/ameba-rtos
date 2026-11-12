@@ -135,4 +135,56 @@ menu "CONFIG LWIP"
         default 508
         range 508 1536
 
+    config LWIP_MAX_SOCKETS
+        int "Maximum number of sockets"
+        default 20
+        range 1 253
+        help
+            Upper limit of lwIP netconns (MEMP_NUM_NETCONN), i.e. how many
+            sockets can exist at the same time.
+            The socket table is statically allocated, so each extra socket
+            adds to the RAM usage fixed at build time.
+            UDP and TCP sockets are also bounded by LWIP_MAX_UDP_PCBS and
+            LWIP_MAX_ACTIVE_TCP, raise them together with this option.
+            Adjusting it is not recommended. If it must be changed, do not
+            use the MQTT and WebSocket functionalities.
+
+    config LWIP_MAX_UDP_PCBS
+        int "Maximum number of UDP PCBs"
+        default 16
+        range 1 1024
+        help
+            Upper limit of UDP protocol control blocks (MEMP_NUM_UDP_PCB).
+            Each UDP socket uses one. The blocks are allocated from the heap
+            on demand, so the limit is also bounded by the free heap.
+
+    config LWIP_MAX_ACTIVE_TCP
+        int "Maximum number of active TCP PCBs"
+        default 16
+        range 1 1024
+        help
+            Upper limit of TCP protocol control blocks in use by
+            connections (MEMP_NUM_TCP_PCB). The blocks are allocated from
+            the heap on demand, so raising the limit alone does not increase
+            RAM usage, it only allows more connections to be opened.
+
+    config LWIP_MAX_LISTENING_TCP
+        int "Maximum number of listening TCP PCBs"
+        default 16
+        range 1 1024
+        help
+            Upper limit of TCP control blocks in listen state
+            (MEMP_NUM_TCP_PCB_LISTEN), i.e. how many server sockets can
+            listen at the same time. The blocks are allocated from the heap
+            on demand.
+
+    config LWIP_TCP_SACK_OUT
+        bool "Send TCP selective acknowledgements"
+        default n
+        help
+            Report out-of-order data to the peer with SACK options
+            (LWIP_TCP_SACK_OUT), so that only the missing segments need to
+            be retransmitted. It relies on out-of-order queueing
+            (TCP_QUEUE_OOSEQ), which is enabled by default in lwIP.
+
 endmenu

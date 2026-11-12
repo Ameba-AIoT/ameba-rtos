@@ -33,18 +33,38 @@
 // Send mouse data through monitor
 #define HID_MOUSE_CMD                            1
 
+#ifdef CONFIG_USBD_HID_VENDOR
+// Vendor reports carry no fixed data table: every Output report from the host is echoed back
+// as an Input report instead, and the "tx" command sends one on demand
+#define HID_CONSTANT_DATA                        0
+#define HID_VENDOR_LOOPBACK                      1
+#define HID_VENDOR_CMD                           1
+#else
 // Send hid device data table. Once connected to PC, cursor of PC will do
 // process according to array mdata[].
 #define HID_CONSTANT_DATA                        1
+#define HID_VENDOR_LOOPBACK                      0
+#define HID_VENDOR_CMD                           0
+#endif
 #define HID_CONSTANT_LOOP                        10
 
-// hid_send_device_data() is referenced by the mouse command and by the constant
-// data test only
-#if HID_CONSTANT_DATA || (HID_MOUSE_CMD && defined(CONFIG_USBD_HID_MOUSE))
+// The AT command: the mouse report or the vendor report, headset and keyboard have none
+#if (HID_MOUSE_CMD && defined(CONFIG_USBD_HID_MOUSE)) || HID_VENDOR_CMD
+#define HID_SHELL_CMD_EN                         1
+#else
+#define HID_SHELL_CMD_EN                         0
+#endif
+
+// hid_send_device_data() is referenced by the shell commands, by the constant
+// data test and by the vendor loopback only
+#if HID_CONSTANT_DATA || HID_SHELL_CMD_EN || HID_VENDOR_LOOPBACK
 #define HID_TX_EN                                1
 #else
 #define HID_TX_EN                                0
 #endif
+
+// The constant data test or the vendor loopback, one worker thread either way
+#define HID_XFER_THREAD_EN                       (HID_CONSTANT_DATA || HID_VENDOR_LOOPBACK)
 
 // Thread priorities
 #define HID_INIT_THREAD_PRIORITY                 5
@@ -80,6 +100,10 @@ typedef struct {
 	u8 cmd[6];				//6 command key values
 } usbd_hid_keyboard_data_t;
 
+typedef struct {
+	u8 keys;				//pressed headset buttons, USBD_HID_HEADSET_KEY_*, 0: all released
+} usbd_hid_headset_data_t;
+
 /* Private macros ------------------------------------------------------------*/
 
 /* Private function prototypes -----------------------------------------------*/
@@ -88,16 +112,14 @@ static void hid_cb_init(void);
 static void hid_cb_deinit(void);
 static void hid_cb_setup(void);
 static void hid_cb_transmitted(int status);
-#ifdef CONFIG_USBD_HID_KEYBOARD
+#if defined(CONFIG_USBD_HID_KEYBOARD) || defined(CONFIG_USBD_HID_VENDOR)
 static void hid_cb_received(u8 *buf, u32 len);
 #endif
 static void hid_cb_status_changed(u8 old_status, u8 status);
 
-#if HID_MOUSE_CMD
-#ifdef CONFIG_USBD_HID_MOUSE
-static int hid_cmd_mouse_data(u16 argc, char *argv[]);
-static void hid_cmd_mouse_data_at(u16 argc, char **argv);
-#endif
+#if HID_SHELL_CMD_EN
+static int hid_cmd(u16 argc, char *argv[]);
+static void hid_cmd_at(u16 argc, char **argv);
 #endif
 
 #if HID_TX_EN
@@ -134,7 +156,14 @@ static usb_app_ctx_t hid_app;
 #if HID_CONSTANT_DATA
 static rtos_sema_t hid_connect_sema;
 static rtos_sema_t hid_transmit_sema;
-#ifdef CONFIG_USBD_HID_MOUSE
+#if defined(CONFIG_USBD_HID_HEADSET)
+static const usbd_hid_headset_data_t mdata[] = {
+	{USBD_HID_HEADSET_KEY_VOLUME_UP},	//Volume Up pressed
+	{0},								//released
+	{USBD_HID_HEADSET_KEY_VOLUME_DOWN},	//Volume Down pressed
+	{0},								//released
+};
+#elif defined(CONFIG_USBD_HID_MOUSE)
 static const usbd_hid_mouse_data_t mdata[] = {
 	{0,   0,   0,  50,   0,   0},	//move the cursor 50 pixels to the right
 	{0,   0,   0,   0,  50,   0},	//move the cursor down 50 pixels
@@ -150,7 +179,7 @@ static const usbd_hid_mouse_data_t mdata[] = {
 	{1,   0,   0,   0,   0,   0},	//left button pressed
 	{0,   0,   0,   0,   0,   0},	//left button released
 };
-#else
+#else /* CONFIG_USBD_HID_KEYBOARD */
 static usbd_hid_keyboard_data_t mdata[] = {
 	{0,   0,   {0,	0,	0,	0,	0,	0} },	//all released
 
@@ -161,6 +190,14 @@ static usbd_hid_keyboard_data_t mdata[] = {
 	{0,   0,   {0,	0,	0,	0,	0,	0} },	//left Shift & a released
 };
 #endif
+#endif
+
+#if HID_VENDOR_LOOPBACK
+/* Last Output report from the host, Report ID first: filled by the ISR, emptied by the
+   loopback thread, possibly on another core. 0 length means empty. */
+static u8 hid_rx_report[USBD_HID_VENDOR_REPORT_LEN];
+static volatile u32 hid_rx_report_len;
+static rtos_sema_t hid_rx_sema;
 #endif
 
 static const usbd_config_t hid_cfg = {
@@ -187,7 +224,7 @@ static const usbd_config_t hid_cfg = {
 static const usbd_hid_config_t hid_class_cfg = {
 	.intr_in_xfer_size = USBD_HID_INTR_IN_BUF_SIZE,
 	.intr_in_addr  = HID_INTR_IN_EP,
-#ifdef CONFIG_USBD_HID_KEYBOARD
+#if defined(CONFIG_USBD_HID_KEYBOARD) || defined(CONFIG_USBD_HID_VENDOR)
 	.intr_out_addr = HID_INTR_OUT_EP,
 #endif
 };
@@ -197,7 +234,7 @@ static const usbd_hid_usr_cb_t hid_usr_cb = {
 	.deinit = hid_cb_deinit,
 	.setup = hid_cb_setup,
 	.transmitted = hid_cb_transmitted,
-#ifdef CONFIG_USBD_HID_KEYBOARD
+#if defined(CONFIG_USBD_HID_KEYBOARD) || defined(CONFIG_USBD_HID_VENDOR)
 	.received = hid_cb_received,
 #endif
 	.status_changed = hid_cb_status_changed,
@@ -205,11 +242,11 @@ static const usbd_hid_usr_cb_t hid_usr_cb = {
 
 /* Exported variables --------------------------------------------------------*/
 
-#if HID_MOUSE_CMD && defined(CONFIG_USBD_HID_MOUSE)
+#if HID_SHELL_CMD_EN
 /* AT commands "AT+<cmd>=<p1>,<p2>...": the command name is case-sensitive, the parameters are not */
 ATCMD_TABLE_DATA_SECTION
-const log_item_t usbd_hid_mouse_data_cmd[] = {
-	{"+USBDHID", hid_cmd_mouse_data_at},
+const log_item_t usbd_hid_cmd_table[] = {
+	{"+USBDHID", hid_cmd_at},
 };
 #endif
 
@@ -264,6 +301,10 @@ static void hid_free_resource(void)
 	hid_connect_sema = NULL;
 	hid_transmit_sema = NULL;
 #endif
+#if HID_VENDOR_LOOPBACK
+	rtos_sema_delete(hid_rx_sema);
+	hid_rx_sema = NULL;
+#endif
 #if HID_HOTPLUG
 	rtos_sema_delete(hid_attach_status_changed_sema);
 	hid_attach_status_changed_sema = NULL;
@@ -308,20 +349,36 @@ static void hid_cb_transmitted(int status)
 #endif
 }
 
-#ifdef CONFIG_USBD_HID_KEYBOARD
+#if defined(CONFIG_USBD_HID_KEYBOARD) || defined(CONFIG_USBD_HID_VENDOR)
 /**
-  * @brief  Data received over USB HID OUT endpoint
+  * @brief  Data received over USB HID OUT endpoint, or the data stage of a SET_REPORT
   * @note   This function is called within an interrupt service routine (ISR) context;
   *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
-  * @param  buf: RX buffer
+  * @param  buf: RX buffer, the vendor Output report starts with its Report ID
   * @param  len: RX data length (in bytes)
   * @retval None
   */
 static void hid_cb_received(u8 *buf, u32 len)
 {
+#if HID_VENDOR_LOOPBACK
+	/* Ref HID 1.11 5.6: the report descriptor declares the Report ID, a report with any other
+	   leading byte is not one of ours. A report arriving before the previous one is echoed is
+	   dropped: the loopback keeps a single slot, a customer protocol queues as it needs. */
+	if ((len == 0U) || (buf[0] != USBD_HID_VENDOR_OUT_REPORT_ID) || (hid_rx_report_len != 0U)) {
+		return;
+	}
+	len = (len > USBD_HID_VENDOR_REPORT_LEN) ? USBD_HID_VENDOR_REPORT_LEN : len;
+	/* The loopback thread copies the slot under the same lock, possibly on another core */
+	rtos_critical_enter(RTOS_CRITICAL_USB);
+	memcpy((void *)hid_rx_report, (const void *)buf, len);
+	hid_rx_report_len = len;
+	rtos_critical_exit(RTOS_CRITICAL_USB);
+	rtos_sema_give(hid_rx_sema);
+#else
 	/* ISR context: no logging per report, it would stretch the interrupt for every OUT packet */
 	UNUSED(buf);
 	UNUSED(len);
+#endif
 }
 #endif
 
@@ -379,14 +436,29 @@ static int hid_parse_s32(const char *str, s32 min, s32 max, s32 *val)
 	return RTK_SUCCESS;
 }
 
+#endif
+#endif  //HID_MOUSE_CMD
+
+#if HID_SHELL_CMD_EN
 static void hid_cmd_usage(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Usage: AT+USBDHID=<cmd>[,<args>]\n");
+#ifdef CONFIG_USBD_HID_MOUSE
 	RTK_LOGS(TAG, RTK_LOG_INFO, "  mouse,<left>[,<right>,<middle>,<x>,<y>,<wheel>]\n");
 	RTK_LOGS(TAG, RTK_LOG_INFO, "        Send one mouse report. left/right/middle: 0|1 (1 = pressed)\n");
 	RTK_LOGS(TAG, RTK_LOG_INFO, "        x/y/wheel: relative move -127..127; omitted args are 0. Needs the host to have configured the device\n");
+#else
+	RTK_LOGS(TAG, RTK_LOG_INFO, "  tx[,<len>]  Send one vendor Input report, Report ID 0x%02x, carrying len bytes of value len & 0xFF\n",
+			 USBD_HID_VENDOR_IN_REPORT_ID);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "        len: 1..%d, default 10, the rest of the report is 0. Needs the host to have configured the device\n",
+			 USBD_HID_VENDOR_REPORT_PAYLOAD_LEN);
+#endif
 	RTK_LOGS(TAG, RTK_LOG_INFO, "  help  Print this help\n");
 }
+#endif // HID_SHELL_CMD_EN
+
+#if HID_MOUSE_CMD
+#ifdef CONFIG_USBD_HID_MOUSE
 
 /* Fill a mouse report from "mouse <left> [<right> <middle> <x> <y> <wheel>]", argv[0] being "mouse" */
 static int hid_parse_mouse(u16 argc, char *argv[], usbd_hid_mouse_data_t *data)
@@ -421,19 +493,6 @@ static int hid_cmd_mouse_data(u16 argc, char *argv[])
 {
 	usbd_hid_mouse_data_t data;
 
-	if ((argc == 0U) || (_stricmp(argv[0], "help") == 0) || (_stricmp(argv[0], "?") == 0)) {
-		hid_cmd_usage();
-		return (argc == 0U) ? -RTK_ERR_BADARG : RTK_SUCCESS;
-	}
-	/* Refused while the app is not running, a hotplug reinit is fine */
-	if (hid_app.state != USB_APP_STATE_RUNNING) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Not running\n");
-		return -RTK_ERR_IO;
-	}
-	if (_stricmp(argv[0], "mouse") != 0) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid cmd: %s, try AT+USBDHID=help\n", argv[0]);
-		return -RTK_ERR_BADARG;
-	}
 	if (hid_parse_mouse(argc, argv, &data) != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Usage: AT+USBDHID=mouse,<left>[,<right>,<middle>,<x>,<y>,<wheel>]\n");
 		return -RTK_ERR_BADARG;
@@ -443,11 +502,80 @@ static int hid_cmd_mouse_data(u16 argc, char *argv[])
 
 	return hid_send_device_data(&data);
 }
+#endif
+#endif  //HID_MOUSE_CMD
+
+#if HID_VENDOR_CMD
+/* Whole-string decimal in [min, max] */
+static int hid_parse_u32(const char *str, u32 min, u32 max, u32 *val)
+{
+	char *end = NULL;
+	u32 num;
+
+	if ((str == NULL) || (str[0] < '0') || (str[0] > '9')) {
+		return -RTK_ERR_BADARG;
+	}
+	num = (u32)strtoul(str, &end, 10);
+	if ((end == NULL) || (*end != '\0') || (num < min) || (num > max)) {
+		return -RTK_ERR_BADARG;
+	}
+	*val = num;
+	return RTK_SUCCESS;
+}
+
+/* Send one vendor Input report from "tx [<len>]", argv[0] being "tx" */
+static int hid_cmd_vendor_tx(u16 argc, char *argv[])
+{
+	u8 report[USBD_HID_VENDOR_REPORT_LEN];
+	u32 len = 10U;
+
+	if ((argc > 2U) ||
+		((argc == 2U) && (hid_parse_u32(argv[1], 1U, USBD_HID_VENDOR_REPORT_PAYLOAD_LEN, &len) != RTK_SUCCESS))) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Usage: AT+USBDHID=tx[,<len>], len: 1..%d\n", USBD_HID_VENDOR_REPORT_PAYLOAD_LEN);
+		return -RTK_ERR_BADARG;
+	}
+
+	/* Ref HID 1.11 5.6: every report has the fixed length its descriptor declares */
+	memset((void *)report, 0, sizeof(report));
+	report[0] = USBD_HID_VENDOR_IN_REPORT_ID;
+	memset((void *)&report[1], (int)(len & 0xFFU), len);
+
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Send vendor report, %u bytes of payload\n", len);
+
+	return hid_send_device_data(report);
+}
+#endif // HID_VENDOR_CMD
+
+#if HID_SHELL_CMD_EN
+static int hid_cmd(u16 argc, char *argv[])
+{
+	if ((argc == 0U) || (_stricmp(argv[0], "help") == 0) || (_stricmp(argv[0], "?") == 0)) {
+		hid_cmd_usage();
+		return (argc == 0U) ? -RTK_ERR_BADARG : RTK_SUCCESS;
+	}
+	/* Refused while the app is not running, a hotplug reinit is fine */
+	if (hid_app.state != USB_APP_STATE_RUNNING) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Not running\n");
+		return -RTK_ERR_IO;
+	}
+#ifdef CONFIG_USBD_HID_MOUSE
+	if (_stricmp(argv[0], "mouse") == 0) {
+		return hid_cmd_mouse_data(argc, argv);
+	}
+#else
+	if (_stricmp(argv[0], "tx") == 0) {
+		return hid_cmd_vendor_tx(argc, argv);
+	}
+#endif
+
+	RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid cmd: %s, try AT+USBDHID=help\n", argv[0]);
+	return -RTK_ERR_BADARG;
+}
 
 /* AT entry: argv[0] is reserved by the AT parser and argv[1] holds the first parameter */
-static void hid_cmd_mouse_data_at(u16 argc, char **argv)
+static void hid_cmd_at(u16 argc, char **argv)
 {
-	int ret = hid_cmd_mouse_data((argc != 0U) ? (u16)(argc - 1U) : 0U, &argv[1]);
+	int ret = hid_cmd((argc != 0U) ? (u16)(argc - 1U) : 0U, &argv[1]);
 
 	if (ret == RTK_SUCCESS) {
 		at_printf(ATCMD_OK_END_STR);
@@ -455,8 +583,7 @@ static void hid_cmd_mouse_data_at(u16 argc, char **argv)
 		at_printf(ATCMD_ERROR_END_STR, (int)ret);
 	}
 }
-#endif
-#endif  //HID_MOUSE_CMD
+#endif // HID_SHELL_CMD_EN
 
 #if HID_TX_EN
 /**
@@ -464,15 +591,15 @@ static void hid_cmd_mouse_data_at(u16 argc, char **argv)
   * @note   The stack status check and the transfer share one critical section,
   *         otherwise the hotplug thread could free the endpoint buffers between
   *         the check and the transfer
-  * @note   Also reachable from the shell thread through the mouse command, i.e.
+  * @note   Also reachable from the shell thread through the AT command, i.e.
   *         before the example is started, while it stops and after it has stopped
-  * @param  pdata: Mouse or keyboard data to send
+  * @param  pdata: Mouse, keyboard or headset data, or a whole vendor Input report, to send
   * @retval Result of the operation: RTK_SUCCESS if success else fail
   */
 static int hid_send_device_data(const void *pdata)
 {
 	int ret;
-#ifdef CONFIG_USBD_HID_MOUSE
+#if defined(CONFIG_USBD_HID_MOUSE)
 	u8 byte[4];
 	const usbd_hid_mouse_data_t *data = (const usbd_hid_mouse_data_t *)pdata;
 
@@ -505,6 +632,10 @@ static int hid_send_device_data(const void *pdata)
 	byte[2] = (u8)data->y_axis;
 	byte[3] = (u8)data->wheel;
 
+#elif defined(CONFIG_USBD_HID_HEADSET)
+	const usbd_hid_headset_data_t *data = (const usbd_hid_headset_data_t *)pdata;
+#elif defined(CONFIG_USBD_HID_VENDOR)
+	const u8 *data = (const u8 *)pdata;
 #else /* CONFIG_USBD_HID_KEYBOARD */
 	const usbd_hid_keyboard_data_t *data = (const usbd_hid_keyboard_data_t *)pdata;
 #endif
@@ -529,8 +660,12 @@ static int hid_send_device_data(const void *pdata)
 		RTK_LOGS(TAG, RTK_LOG_WARN, "Stack torn down, skip TX\n");
 		ret = -RTK_ERR_IO;
 	} else {
-#ifdef CONFIG_USBD_HID_MOUSE
+#if defined(CONFIG_USBD_HID_MOUSE)
 		ret = usbd_hid_send_data((const u8 *)byte, 4);
+#elif defined(CONFIG_USBD_HID_HEADSET)
+		ret = usbd_hid_send_data(&data->keys, USBD_HID_HEADSET_REPORT_LEN);
+#elif defined(CONFIG_USBD_HID_VENDOR)
+		ret = usbd_hid_send_data(data, USBD_HID_VENDOR_REPORT_LEN);
 #else
 		ret = usbd_hid_send_data((const u8 *)data, 8);
 #endif
@@ -597,6 +732,10 @@ static void example_usbd_hid_hotplug_thread(void *param)
 				}
 				rtos_sema_give(hid_transmit_sema);
 #endif
+#if HID_VENDOR_LOOPBACK
+				/* A report of the last session is not echoed into the new one */
+				hid_rx_report_len = 0U;
+#endif
 				/* Open the gate at the very last step, so that the xfer thread
 				 * never runs before the re-init is fully done */
 				hid_session_id++;
@@ -620,7 +759,7 @@ static void example_usbd_hid_hotplug_thread(void *param)
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Hotplug thread fail\n");
 		if (usb_app_ctx_claim_stop(&hid_app) != 0U) {
 			/* No stop is in flight: this thread finishes the teardown on its own */
-#if HID_CONSTANT_DATA
+#if HID_XFER_THREAD_EN
 			/* The xfer thread polls quit, set by the claim above */
 			if (usb_app_ctx_join(&hid_app, 1U) != RTK_SUCCESS) {
 				/* The xfer thread may still touch the shared objects: leak them */
@@ -648,11 +787,10 @@ static void example_usbd_hid_xfer_thread(void *param)
 
 	UNUSED(param);
 
-#ifdef CONFIG_USBD_HID_MOUSE
-	array_len = sizeof(mdata) / sizeof(usbd_hid_mouse_data_t);
+	array_len = sizeof(mdata) / sizeof(mdata[0]);
+#if defined(CONFIG_USBD_HID_MOUSE) || defined(CONFIG_USBD_HID_HEADSET)
 	delaytime = 1000;
 #else
-	array_len = sizeof(mdata) / sizeof(usbd_hid_keyboard_data_t);
 	delaytime = 50;
 #endif
 
@@ -676,8 +814,10 @@ static void example_usbd_hid_xfer_thread(void *param)
 			break;
 		}
 
-#ifdef CONFIG_USBD_HID_MOUSE
+#if defined(CONFIG_USBD_HID_MOUSE)
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Mouse data TX test start\n");
+#elif defined(CONFIG_USBD_HID_HEADSET)
+		RTK_LOGS(TAG, RTK_LOG_INFO, "Headset key TX test start\n");
 #else
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Keyboard data TX test start\n");
 #endif
@@ -726,6 +866,52 @@ session_end:
 }
 #endif // HID_CONSTANT_DATA
 
+#if HID_VENDOR_LOOPBACK
+/* Echo every vendor Output report back to the host as an Input report, payload unchanged */
+static void example_usbd_hid_xfer_thread(void *param)
+{
+	u8 report[USBD_HID_VENDOR_REPORT_LEN];
+	u32 len;
+	int ret;
+
+	UNUSED(param);
+
+	while (hid_app.quit == 0U) {
+		/* Bounded wait: polls quit, a stop also gives the semaphore to cut it short */
+		if (rtos_sema_take(hid_rx_sema, HID_QUIT_POLL_MS) != RTK_SUCCESS) {
+			continue;
+		}
+		if (hid_app.quit != 0U) {
+			continue;
+		}
+
+		/* Take the report out of the slot and hand the slot back to the ISR in one go */
+		memset((void *)report, 0, sizeof(report));
+		rtos_critical_enter(RTOS_CRITICAL_USB);
+		len = hid_rx_report_len;
+		memcpy((void *)report, (const void *)hid_rx_report, len);
+		hid_rx_report_len = 0U;
+		rtos_critical_exit(RTOS_CRITICAL_USB);
+		if (len == 0U) {
+			continue;
+		}
+
+		RTK_LOGS(TAG, RTK_LOG_INFO, "RX report ID 0x%02x, %u bytes, payload[0] 0x%02x\n", report[0], len, report[1]);
+
+		/* Same payload, Input Report ID: the host reads back what it wrote */
+		report[0] = USBD_HID_VENDOR_IN_REPORT_ID;
+		ret = hid_send_device_data(report);
+		if (ret != RTK_SUCCESS) {
+			RTK_LOGS(TAG, RTK_LOG_WARN, "Echo fail %d\n", ret);
+		}
+	}
+
+	/* Never deinits the stack: the stop owner does, once every worker is gone */
+	usb_app_ctx_leave(&hid_app);
+	rtos_task_delete(NULL);
+}
+#endif // HID_VENDOR_LOOPBACK
+
 /**
   * @brief  Bring the stack and the worker threads up
   * @retval RTK_SUCCESS, or the first error, with everything already created rolled back
@@ -733,7 +919,7 @@ session_end:
 static int hid_start(void)
 {
 	int ret;
-#if HID_CONSTANT_DATA
+#if HID_XFER_THREAD_EN
 	u32 workers = 0U;
 	rtos_task_t xfer_task;
 #endif
@@ -766,6 +952,14 @@ static int hid_start(void)
 	rtos_sema_give(hid_transmit_sema);
 #endif
 
+#if HID_VENDOR_LOOPBACK
+	ret = rtos_sema_create(&hid_rx_sema, 0U, 1U);
+	if (ret != RTK_SUCCESS) {
+		goto exit_create_obj_fail;
+	}
+	hid_rx_report_len = 0U;
+#endif
+
 #if HID_HOTPLUG
 	ret = rtos_sema_create(&hid_attach_status_changed_sema, 0U, 1U);
 	if (ret != RTK_SUCCESS) {
@@ -788,7 +982,7 @@ static int hid_start(void)
 #endif
 	hid_stack_ready = 1U;
 
-#if HID_CONSTANT_DATA
+#if HID_XFER_THREAD_EN
 	// The priority of transfer thread shall be lower than USB isr priority
 	ret = rtos_task_create(&xfer_task, "usbd_hid_xfer_thread",
 						   example_usbd_hid_xfer_thread, NULL,
@@ -819,9 +1013,9 @@ static int hid_start(void)
 
 	return RTK_SUCCESS;
 
-#if HID_HOTPLUG || HID_CONSTANT_DATA
+#if HID_HOTPLUG || HID_XFER_THREAD_EN
 exit_create_task_fail:
-#if HID_CONSTANT_DATA
+#if HID_XFER_THREAD_EN
 	/* Wake and join the xfer thread if already running, it polls quit */
 	hid_app.quit = 1U;
 	if (usb_app_ctx_join(&hid_app, workers) != RTK_SUCCESS) {
@@ -896,6 +1090,11 @@ int example_usbd_hid_stop(void)
 	/* The xfer thread polls quit, these only cut its bounded waits short */
 	rtos_sema_give(hid_connect_sema);
 	rtos_sema_give(hid_transmit_sema);
+	workers++;
+#endif
+#if HID_VENDOR_LOOPBACK
+	/* The loopback thread polls quit, this only cuts its bounded wait short */
+	rtos_sema_give(hid_rx_sema);
 	workers++;
 #endif
 	if (usb_app_ctx_join(&hid_app, workers) != RTK_SUCCESS) {

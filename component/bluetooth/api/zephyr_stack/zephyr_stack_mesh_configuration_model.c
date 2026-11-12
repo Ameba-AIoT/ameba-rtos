@@ -33,7 +33,13 @@
 uint8_t rtk_bt_mesh_config_client_model_indicate_event(uint32_t event_code, void *pdata, uint32_t len)
 {
 	rtk_bt_evt_t *p_evt = NULL;
+	if (event_code == RTK_BT_MESH_CONFIG_MODEL_COMPO_DATA_STAT && len < 10) {
+		return RTK_BT_ERR_PARAM_INVALID;
+	}
 	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_CONFIG_CLIENT_MODEL, event_code, len);
+	if (!p_evt) {
+		return RTK_BT_ERR_NO_MEMORY;
+	}
 	if (len) {
 		if (event_code == RTK_BT_MESH_CONFIG_MODEL_COMPO_DATA_STAT) {
 			memcpy(p_evt->data, pdata, 10);

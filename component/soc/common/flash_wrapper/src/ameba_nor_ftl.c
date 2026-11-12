@@ -31,6 +31,24 @@
 
 /* Private functions ---------------------------------------------------------*/
 
+/**
+  * @brief  NOR capacity from the JEDEC capacity code (ID byte 3), same as AmebaPro3
+  * @param  code : capacity code
+  * @retval Capacity in bytes, 0 for a code it cannot represent
+  */
+static u32 nor_ftl_get_capacity(u8 code)
+{
+	if ((code >= 0x10U) && (code <= 0x1FU)) {
+		/* log2(bytes): 64KB .. 2GB */
+		return (u32)1U << code;
+	} else if ((code >= 0x20U) && (code <= 0x22U)) {
+		/* 512Mb .. 2Gb (Micron/Winbond/GD/XMC/ISSI): 1U << code would shift by 32 or more */
+		return (u32)1U << (code - 0x20U + 0x1AU);
+	} else {
+		return 0U;
+	}
+}
+
 /* Exported functions --------------------------------------------------------*/
 
 /**
@@ -53,7 +71,7 @@ void nor_ftl_init(struct ameba_flash_info *info)
 	info->ext_did = flash_id[2];
 	info->page_size = 1024;
 	info->pages_per_block = 4;
-	info->capacity = (u32)1U << flash_id[2];
+	info->capacity = nor_ftl_get_capacity(flash_id[2]);
 }
 
 /**

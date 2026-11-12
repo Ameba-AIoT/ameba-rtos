@@ -40,9 +40,19 @@ config USBD_HID_MENU
                 bool "Mouse"
             config USBD_HID_KEYBOARD
                 bool "Keyboard"
+            config USBD_HID_HEADSET
+                bool "Headset buttons"
+                help
+                  Button interface of a USB Type-C headset: Consumer Control
+                  Play/Pause, Volume Up/Down, Voice Command and Mute, as the
+                  Android USB headset specification defines. Combine it with
+                  UAC in a composite device.
             config USBD_HID_VENDOR
                 bool "Vendor"
-                depends on USBD_COMPOSITE_MENU
+                help
+                  Vendor defined reports with Report ID on INTR IN and OUT,
+                  reachable from generic HID tools (hidapi). A reference for
+                  customer HID protocols.
         endchoice
     endif
 
