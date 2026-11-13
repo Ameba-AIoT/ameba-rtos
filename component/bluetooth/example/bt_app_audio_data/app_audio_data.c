@@ -347,7 +347,6 @@ bool demo_usb_deinit(void)
 #define DEMO_UART_RX_DISABLE_SIZE (128)       /* Only 128 left to write */
 #endif
 #define DEMO_UART_DMA_TX_BURST_SIZE 8
-#define DEMO_UART_DMA_RX_BURST_SIZE 16 // RX_BURST_SIZE >= RX GDMA_SrcMsize
 #define DEMO_UART_RX_TO_BIT 10
 
 static uint8_t demo_uart_run = 1;
@@ -481,7 +480,6 @@ uint32_t demo_uart_dma_recv_done(void *data)
 	} else {
 		UART_INTConfig(DEMO_UART_DEV, RUART_BIT_ETOI, ENABLE);
 		UART_INTConfig(DEMO_UART_DEV, (RUART_BIT_ERBI | RUART_BIT_ELSI), DISABLE);
-		UART_RXDMAConfig(DEMO_UART_DEV, DEMO_UART_DMA_RX_BURST_SIZE);
 		UART_RXDMACmd(DEMO_UART_DEV, ENABLE);
 		UART_RXGDMA_Init(DEMO_UART_INDEX, &demo_uart->GDMA_InitStruct, DEMO_UART_DEV, (IRQ_FUN)demo_uart_dma_recv_done, demo_dma_uart_recv_buff, SRX_BUF_SZ);
 	}
@@ -588,7 +586,6 @@ uint16_t demo_uart_read(uint8_t *buf, uint16_t len)
 		demo_uart->rx_disabled = 0;
 #if defined(DEMO_UART_USING_DMA) && DEMO_UART_USING_DMA
 		UART_INTConfig(DEMO_UART_DEV, (RUART_BIT_ERBI | RUART_BIT_ELSI), DISABLE);
-		UART_RXDMAConfig(DEMO_UART_DEV, DEMO_UART_DMA_RX_BURST_SIZE);
 		UART_RXDMACmd(DEMO_UART_DEV, ENABLE);
 		UART_RXGDMA_Init(DEMO_UART_INDEX, &demo_uart->GDMA_InitStruct, DEMO_UART_DEV, (IRQ_FUN)demo_uart_dma_recv_done, demo_dma_uart_recv_buff, SRX_BUF_SZ);
 		UART_INTConfig(DEMO_UART_DEV, RUART_BIT_ETOI, ENABLE);
@@ -701,7 +698,6 @@ bool demo_uart_init(void)
 	}
 	// UART_RxDMADummyDataConfig(DEMO_UART_DEV, 0x55);
 	UART_RxByteCntClear(DEMO_UART_DEV);
-	UART_RXDMAConfig(DEMO_UART_DEV, DEMO_UART_DMA_RX_BURST_SIZE);
 	UART_RXDMACmd(DEMO_UART_DEV, ENABLE);
 	UART_RXGDMA_Init(DEMO_UART_INDEX, &demo_uart->GDMA_InitStruct, DEMO_UART_DEV, (IRQ_FUN)demo_uart_dma_recv_done, demo_dma_uart_recv_buff, SRX_BUF_SZ);
 #else

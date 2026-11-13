@@ -195,7 +195,7 @@ void Boot_Fullmac_LoadIMGAll(void)
 			FLASH_TxData(0, sizeof(SPIC_CALIB_PATTERN), (u8 *)SPIC_CALIB_PATTERN);
 		}
 
-		flash_highspeed_setup();
+		flash_highspeed_setup(flash_get_readmode(Flash_ReadMode), CLK_LIMIT_SPIC);
 
 		Boot_Fullmac_ImgDownload();
 		Boot_Fullmac_Secure_Check(TRUE, FALSE);

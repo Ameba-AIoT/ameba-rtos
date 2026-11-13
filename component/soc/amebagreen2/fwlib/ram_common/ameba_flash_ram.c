@@ -14,6 +14,8 @@ static uint32_t PrevIrqStatus = 0;
 #define WRITE_SYNC_CLEAR   0
 #define WRITE_SYNC_LOCK    1
 #define WRITE_SYNC_UNLOCK  2
+#define WRITE_SYNC_PARKED  3	/* KM4TZ (SOLO) or KM4NS (FLASH_Freeze_NP) has parked off the flash bus, the other core may use the SPIC */
+#define WRITE_SYNC_FREEZE  4	/* KM4TZ asks KM4NS to freeze in an SRAM loop until UNLOCK (see FLASH_Freeze_NP) */
 
 #ifdef CONFIG_ARM_CORE_CM4_KM4NS
 static u32 Start_Timer_Cnt = 0;
@@ -21,6 +23,58 @@ static u32 Start_Systick_Cnt = 0;
 
 u32 xTaskIncrementTick(void);
 u32 xTaskGetTickCountFromISR(void);
+
+/* Compensate the RTOS tick for the interval KM4TZ held the flash, set the flag to CLEAR, then pend the context
+ * switch. This is the body of the original UNLOCK branch, unchanged; the caller cleans the flag to memory. */
+static void Flash_Tick_Compensate_Clear(u8 *pflag)
+{
+	u32 time_pass_ms = SYSTIMER_GetPassTime(Start_Timer_Cnt);
+	u32 End_Systick_Cnt = xTaskGetTickCountFromISR();
+	u32 systick_pass_tick = 0;
+	u8 xSwitchRequired = FALSE;
+
+	if (End_Systick_Cnt >= Start_Systick_Cnt) {
+		systick_pass_tick = End_Systick_Cnt - Start_Systick_Cnt;
+	} else {
+		systick_pass_tick = 0xffffffff - (Start_Systick_Cnt - End_Systick_Cnt);
+	}
+
+	u32 step_tick = (time_pass_ms > (systick_pass_tick + 1)) ? (time_pass_ms - (systick_pass_tick + 1)) : 0;
+	/*  update kernel tick */
+	while (step_tick > 0) {
+		/* Increment the RTOS tick. */
+		if (xTaskIncrementTick() != FALSE) {
+			xSwitchRequired = TRUE;
+		}
+		step_tick --;
+	}
+
+	*pflag = WRITE_SYNC_CLEAR;
+	/* Pend a context switch. */
+	portEND_SWITCHING_ISR(xSwitchRequired);
+}
+
+/* Freeze until KM4TZ sets UNLOCK. KM4TZ is about to put the SPIC in user mode, so the loop
+ * must run from the I-cache and keep clear of flash. */
+__NO_INLINE
+static void Flash_Freeze_Loop(u8 *pflag)
+{
+	volatile u8 *flag = pflag;
+	u32 prev_irq = irq_disable_save();
+
+	while (1) {
+		/* Clean publishes our PARKED ack (KM4TZ may then switch the SPIC to user mode),
+		 * Invalidate makes the next read come from memory */
+		DCache_CleanInvalidate((u32)pflag, CACHE_LINE_SIZE);
+		if (*flag == WRITE_SYNC_UNLOCK) {
+			break;
+		}
+		if (*flag != WRITE_SYNC_PARKED) {
+			*flag = WRITE_SYNC_PARKED;
+		}
+	}
+	irq_enable_restore(prev_irq);
+}
 
 void FLASH_Write_IPC_Int(void *Data, u32 IrqStatus, u32 ChanNum)
 {
@@ -39,32 +93,14 @@ void FLASH_Write_IPC_Int(void *Data, u32 IrqStatus, u32 ChanNum)
 		Start_Timer_Cnt = SYSTIMER_TickGet();
 		Start_Systick_Cnt = xTaskGetTickCountFromISR();
 		*pflag = WRITE_SYNC_CLEAR;
+	} else if (*pflag == WRITE_SYNC_FREEZE) {
+		/* Km4 in FLASH_Freeze_NP: record the tick, freeze in SRAM until FLASH_Unfreeze_NP */
+		Start_Timer_Cnt = SYSTIMER_TickGet();
+		Start_Systick_Cnt = xTaskGetTickCountFromISR();
+		Flash_Freeze_Loop(pflag);
 	} else if (*pflag == WRITE_SYNC_UNLOCK) {
 		/* Km4 in FLASH_Write_Unlock, waiting for Km0 to compensate systick value */
-		u32 time_pass_ms = SYSTIMER_GetPassTime(Start_Timer_Cnt);
-		u32 End_Systick_Cnt = xTaskGetTickCountFromISR();
-		u32 systick_pass_tick = 0;
-		u8 xSwitchRequired = FALSE;
-
-		if (End_Systick_Cnt >= Start_Systick_Cnt) {
-			systick_pass_tick = End_Systick_Cnt - Start_Systick_Cnt;
-		} else {
-			systick_pass_tick = 0xffffffff - (Start_Systick_Cnt - End_Systick_Cnt);
-		}
-
-		u32 step_tick = (time_pass_ms > (systick_pass_tick + 1)) ? (time_pass_ms - (systick_pass_tick + 1)) : 0;
-		/*  update kernel tick */
-		while (step_tick > 0) {
-			/* Increment the RTOS tick. */
-			if (xTaskIncrementTick() != FALSE) {
-				xSwitchRequired = TRUE;
-			}
-			step_tick --;
-		}
-
-		*pflag = WRITE_SYNC_CLEAR;
-		/* Pend a context switch. */
-		portEND_SWITCHING_ISR(xSwitchRequired);
+		Flash_Tick_Compensate_Clear(pflag);
 	}
 	DCache_Clean((u32)pflag, sizeof(pflag));
 
@@ -108,6 +144,72 @@ static void Flash_Write_Lock_IPC(u8 sync_type)
 	}
 #endif
 }
+
+#if defined(CONFIG_WHC_INTF_IPC)
+/* Only in IPC dual-core mode (same condition as Flash_Write_Lock_IPC). */
+/**
+ * @brief  Freeze KM4NS in an SRAM loop, so KM4TZ can change the flash read mode, clock or QE bit.
+ * @note   Unlike FLASH_Write_Lock(), this keeps KM4NS frozen across several flash operations (the SPIC may be
+ *         in user mode, or quad reads may be invalid, meanwhile).
+ *         It holds IPC_SEM_FLASH until FLASH_Unfreeze_NP(), so another task cannot start a normal flash write
+ *         or erase meanwhile (it would wait on the semaphore instead of overwriting Flash_Sync_Flag). The scheduler
+ *         is not suspended, so the caller must keep other tasks from running its window (e.g. interrupts off).
+ *         The caller must not call FLASH_Write_Lock(), the XIP write/erase APIs or anything that sleeps between
+ *         freeze and unfreeze; only lock-free flash primitives (user mode access, nor_sr_*) are allowed, and the
+ *         caller disables its own interrupts around them. Every FLASH_Freeze_NP() needs a FLASH_Unfreeze_NP()
+ *         on the same task. KM4NS acknowledges with WRITE_SYNC_PARKED, so there is no fixed delay.
+ *         Runtime AP task only, with shared IPC and KM4NS IPC/RTOS already running; not for boot or fault recovery.
+ *         While XIP is unusable, all caller code and data accesses, including error paths, must stay off XIP.
+ *         A primitive being lock-free does not establish this XIP safety.
+ * @retval None
+ */
+void FLASH_Freeze_NP(void)
+{
+	/* Get core-to-core hardware semphone, the same exclusion FLASH_Write_Lock() takes */
+	while (IPC_SEMTake(IPC_SEM_FLASH, 1000) != TRUE) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "FLASH_Freeze_NP get hw sema fail\n");
+	}
+
+	Flash_Sync_Flag[0] = WRITE_SYNC_FREEZE;
+	IPC_MSG_STRUCT ipc_msg_temp;
+	DCache_Clean((u32)Flash_Sync_Flag, sizeof(Flash_Sync_Flag));
+
+	ipc_msg_temp.msg_type = IPC_USER_POINT;
+	ipc_msg_temp.msg = (u32)Flash_Sync_Flag;
+	ipc_msg_temp.msg_len = 1;
+	ipc_msg_temp.rsvd = 0;
+	ipc_send_message(IPC_AP_TO_NP, IPC_A2N_FLASHPG_REQ, &ipc_msg_temp);
+
+	while (1) {
+		DCache_Invalidate((u32)Flash_Sync_Flag, sizeof(Flash_Sync_Flag));
+		if (Flash_Sync_Flag[0] == WRITE_SYNC_PARKED) {
+			break;
+		}
+	}
+}
+
+/**
+ * @brief  Release KM4NS frozen by FLASH_Freeze_NP(), then release the flash exclusion.
+ * @note   XIP must be usable again before the call (SPIC in auto mode, quad enabled).
+ * @retval None
+ */
+void FLASH_Unfreeze_NP(void)
+{
+	Flash_Sync_Flag[0] = WRITE_SYNC_UNLOCK;
+	DCache_Clean((u32)Flash_Sync_Flag, sizeof(Flash_Sync_Flag));
+
+	/* KM4NS compensates its tick, then sets CLEAR */
+	while (1) {
+		DCache_Invalidate((u32)Flash_Sync_Flag, sizeof(Flash_Sync_Flag));
+		if (Flash_Sync_Flag[0] == WRITE_SYNC_CLEAR) {
+			break;
+		}
+	}
+
+	/* Free core-to-core hardware semphone */
+	IPC_SEMFree(IPC_SEM_FLASH);
+}
+#endif /* CONFIG_WHC_INTF_IPC */
 #endif
 
 /**

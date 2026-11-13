@@ -24,7 +24,7 @@ Required Components: Oscilloscope.
 	- Connect `UART_TX(_PA_21)` to oscilloscope
 	- Connect `GND` to `GND` of oscilloscope
 * On RTL8735C
-	- Connect `UART_TX(_PF_11)` to oscilloscope
+	- Connect `UART_TX(_PF_10)` to oscilloscope
 	- Connect `GND` to `GND` of oscilloscope
 
 # SW Configuration

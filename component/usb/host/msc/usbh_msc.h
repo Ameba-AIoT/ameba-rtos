@@ -99,7 +99,6 @@ typedef enum {
 	MSC_READ,                   /**< Processing READ command. */
 	MSC_WRITE,                  /**< Processing WRITE command. */
 	MSC_UNRECOVERED_ERROR,      /**< Unrecoverable error state. */
-	MSC_PERIODIC_CHECK,         /**< Periodic check state for device status. */
 	MSC_ABORT,                  /**< A timed-out READ/WRITE is being abandoned through BOT Reset Recovery. */
 } usbh_msc_state_t;
 
@@ -181,8 +180,6 @@ typedef struct {
 	usbh_scsi_inquiry_t inquiry;        /**< Identity reported by INQUIRY. */
 	u8 state;                           /**< Current state of the per-unit state machine, @ref usbh_msc_state_t. */
 	u8 error;                           /**< Stores the last occurred error, @ref usbh_msc_error_t. */
-	u8 prev_ready;                      /**< 1 if the previous TEST UNIT READY passed, used to detect a ready-state change. */
-	u8 state_changed;                   /**< 1 if the last TEST UNIT READY changed the ready state, else 0. */
 	u8 retired;                         /**< 1 once a timed-out init or a failed Reset Recovery left the unit unusable; READ/WRITE are
 	                                         refused until re-attach. Unlike error, a single failed command never sets it. */
 } usbh_msc_lun_t;
@@ -235,7 +232,6 @@ typedef struct {
 	u8 current_lun;                        /**< The currently active logical unit number. */
 	u8 max_lun;                            /**< Number of LUNs in use: GET MAX LUN + 1, clamped to USBH_MSC_MAX_LUN. */
 	u8 itf_num;                            /**< MSC interface number; used as wIndex in class requests (BOT §3.1). */
-	u8 init_diag_done;                     /**< 1 once the stuck LUN init diagnostic has been printed for this attach. */
 	u8 init_recovery;                      /**< Recovery steps a stuck LUN init has used this attach: 1 after BOT Reset Recovery. */
 
 	/* BOT transport and pipes */
@@ -247,7 +243,6 @@ typedef struct {
 	u8 *max_lun_buf;                       /**< Buffer to hold the result of GET MAX LUN request. */
 	u32 sof_tick;                          /**< Host tick of the last SOF wakeup of the BOT FSM, see usbh_msc_sof(). */
 	u32 lun_ms;                            /**< OS time in ms when the current LUN init step began, base of its budget. */
-	u32 init_ms;                           /**< OS time in ms at attach, diagnostic base for a stuck LUN init. */
 
 	usbh_msc_lun_t unit[USBH_MSC_MAX_LUN]; /**< Array to hold information for each LUN. */
 } usbh_msc_host_t;

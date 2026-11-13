@@ -307,7 +307,6 @@ int at_http_create_connection(int conn_type, struct httpc_conn **conn_ptr, char 
 		error_no = 2;
 		goto end;
 	}
-	httpc_enable_ignore_content_len(*conn_ptr);
 
 	if (http_server_port == 0)  {
 		if (conn_type == HTTP_OVER_TCP) {

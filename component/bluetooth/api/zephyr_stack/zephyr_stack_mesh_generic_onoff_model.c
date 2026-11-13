@@ -90,6 +90,10 @@ static int gen_onoff_status(const struct bt_mesh_model *model,
 	rtk_bt_evt_t *p_evt = NULL;
 	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_GENERIC_ONOFF_CLIENT_MODEL, RTK_BT_MESH_GENERIC_ONOFF_CLIENT_MODEL_EVT_STATUS,
 								sizeof(rtk_bt_mesh_generic_onoff_client_evt_status_t));
+	if (!p_evt) {
+		BT_LOGE("[%s] Create event fail\r\n", __func__);
+		return -1;
+	}
 	onoff_status = (rtk_bt_mesh_generic_onoff_client_evt_status_t *)p_evt->data;
 	onoff_status->src = ctx->addr;
 	onoff_status->present_on_off = present;
@@ -231,20 +235,24 @@ static void indicate_generic_onoff_status(rtk_bt_mesh_generic_on_off_t onoff, ui
 	rtk_bt_evt_t *p_evt = NULL;
 	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_GENERIC_ONOFF_SERVER_MODEL, RTK_BT_MESH_GENERIC_ONOFF_SERVER_MODEL_EVT_SET,
 								sizeof(rtk_bt_mesh_generic_onoff_server_evt_set_t));
-	onoff_set = (rtk_bt_mesh_generic_onoff_server_evt_set_t *)p_evt->data;
-	onoff_set->on_off = onoff;
+	if (p_evt) {
+		onoff_set = (rtk_bt_mesh_generic_onoff_server_evt_set_t *)p_evt->data;
+		onoff_set->on_off = onoff;
 
-	val = model_time_encode(total);
-	time.num_steps = BIT_MASK(6) & val;
-	time.step_resolution = BIT_MASK(2) & (val >> 6);
-	onoff_set->total_time = time;
+		val = model_time_encode(total);
+		time.num_steps = BIT_MASK(6) & val;
+		time.step_resolution = BIT_MASK(2) & (val >> 6);
+		onoff_set->total_time = time;
 
-	val = model_time_encode(remain);
-	time.num_steps = BIT_MASK(6) & val;
-	time.step_resolution = BIT_MASK(2) & (val >> 6);
-	onoff_set->remaining_time = time;
+		val = model_time_encode(remain);
+		time.num_steps = BIT_MASK(6) & val;
+		time.step_resolution = BIT_MASK(2) & (val >> 6);
+		onoff_set->remaining_time = time;
 
-	rtk_bt_evt_indicate(p_evt, NULL);
+		rtk_bt_evt_indicate(p_evt, NULL);
+	} else {
+		BT_LOGE("[%s] Create event fail\r\n", __func__);
+	}
 }
 
 // Get the newest on off value from app
@@ -255,9 +263,13 @@ static uint8_t get_generic_onoff_status_from_app(void)
 	rtk_bt_evt_t *p_evt = NULL;
 	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_GENERIC_ONOFF_SERVER_MODEL, RTK_BT_MESH_GENERIC_ONOFF_SERVER_MODEL_EVT_GET,
 								sizeof(rtk_bt_mesh_generic_onoff_server_evt_get_t));
-	get_onoff = (rtk_bt_mesh_generic_onoff_server_evt_get_t *)p_evt->data;
-	get_onoff->on_off = &value;
-	rtk_bt_evt_indicate(p_evt, NULL);
+	if (p_evt) {
+		get_onoff = (rtk_bt_mesh_generic_onoff_server_evt_get_t *)p_evt->data;
+		get_onoff->on_off = &value;
+		rtk_bt_evt_indicate(p_evt, NULL);
+	} else {
+		BT_LOGE("[%s] Create event fail\r\n", __func__);
+	}
 
 	return (RTK_BT_MESH_GENERIC_ON == value) ? 1 : 0;
 }

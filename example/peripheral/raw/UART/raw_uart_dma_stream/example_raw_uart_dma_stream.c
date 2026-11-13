@@ -15,7 +15,9 @@
 #define UART_BAUD	38400
 
 #define DMA_TX_BURST_SIZE	8
+#if defined (CONFIG_AMEBAPRO3)
 #define DMA_RX_BURST_SIZE	16 // RX_BURST_SIZE >= RX GDMA_SrcMsize
+#endif
 
 #define CACHE_LINE_SIZE_	32
 /* NOTE: DMA buffer size must be a multiple of 32 bytes with D-Cache enabled */
@@ -203,7 +205,9 @@ bool uart_dma_recv(char *pstr, u32 len)
 	bool ret;
 
 	UART_INTConfig(UART_DEV, (RUART_BIT_ERBI | RUART_BIT_ELSI), DISABLE);
+#if defined (CONFIG_AMEBAPRO3)
 	UART_RXDMAConfig(UART_DEV, DMA_RX_BURST_SIZE);
+#endif
 	UART_RXDMACmd(UART_DEV, ENABLE);
 
 	ret = UART_RXGDMA_Init(uart_idx, &GDMA_InitStruct, UART_DEV, (IRQ_FUN)uart_recv_string_done, (u8 *)pstr, len);

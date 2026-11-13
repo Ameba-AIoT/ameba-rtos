@@ -40,9 +40,19 @@ config USBD_HID_MENU
                 bool "Mouse"
             config USBD_HID_KEYBOARD
                 bool "Keyboard"
+            config USBD_HID_HEADSET
+                bool "Headset buttons"
+                help
+                  Button interface of a USB Type-C headset: Consumer Control
+                  Play/Pause, Volume Up/Down, Voice Command and Mute, as the
+                  Android USB headset specification defines. Combine it with
+                  UAC in a composite device.
             config USBD_HID_VENDOR
                 bool "Vendor"
-                depends on USBD_COMPOSITE_MENU
+                help
+                  Vendor defined reports with Report ID on INTR IN and OUT,
+                  reachable from generic HID tools (hidapi). A reference for
+                  customer HID protocols.
         endchoice
     endif
 
@@ -69,7 +79,11 @@ config USBD_MSC_MENU
                   Only a NOR second flash supports FATFS.
             config USBD_MSC_SD_CARD
                 bool "SD card, SDIO mode"
-                depends on SUPPORT_SDIOH && VFS_MENU && VFS_SD_FATFS
+                depends on SUPPORT_SDIOH && VFS_MENU
+                select VFS_SD_CARD if WHC_HOST || WHC_NONE
+                help
+                  The SD disk driver is FATFS only: keep "File system on SD card" at FATFS under CONFIG File System.
+                  Selecting REALFS fails the build.
             config USBD_MSC_SD_SPI
                 bool "SD card, SPI mode"
                 depends on VFS_MENU
@@ -81,6 +95,7 @@ config USBD_MSC_MENU
                 select VFS_RAM if WHC_HOST || WHC_NONE
                 help
                   The RAM disk is exposed as FATFS: leave "File system on RAM disk" at FATFS under CONFIG File System.
+                  Selecting LittleFS or REALFS fails the build.
         endchoice
     endif
 

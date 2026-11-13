@@ -47,26 +47,29 @@ static int datatrans_write_unack_receive(const struct bt_mesh_model *model,
 	(void)model;
 	(void)ctx;
 	uint8_t p_data[DATA_TRANS_DATA_MAX_LEN] = {};
-	if (buf->len) {
-		datatrans_write_len = buf->len;
-		rtk_bt_evt_t *p_evt = NULL;
-		rtk_bt_mesh_datatrans_server_write_event_t *p_data_write;
-		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_DATATRANS_MODEL, RTK_BT_MESH_DATATRANS_MODEL_EVT_SERVER_WRITE,
-									sizeof(rtk_bt_mesh_datatrans_server_write_event_t));
-		p_data_write = (rtk_bt_mesh_datatrans_server_write_event_t *)p_evt->data;
-		p_data_write->status = RTK_BT_MESH_DATATRANS_SUCCESS;
-		if (buf->len > DATA_TRANS_DATA_MAX_LEN) {
-			BT_LOGA("[%s] The len of datatrans receive data is %d, extend max DATA_TRANS_DATA_MAX_LEN:%d\r\n", __func__, buf->len, DATA_TRANS_DATA_MAX_LEN);
-			p_data_write->data_len = DATA_TRANS_DATA_MAX_LEN;
-		} else {
-			p_data_write->data_len = buf->len;
-		}
-		for (int i = 0; i < p_data_write->data_len; i++) {
-			p_data[i] = net_buf_simple_pull_u8(buf);
-		}
-		memcpy(p_data_write->data, p_data, p_data_write->data_len);
-		rtk_bt_evt_indicate(p_evt, NULL);
+	rtk_bt_evt_t *p_evt = NULL;
+	rtk_bt_mesh_datatrans_server_write_event_t *p_data_write;
+
+	datatrans_write_len = buf->len;
+	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_DATATRANS_MODEL, RTK_BT_MESH_DATATRANS_MODEL_EVT_SERVER_WRITE,
+								sizeof(rtk_bt_mesh_datatrans_server_write_event_t));
+	if (!p_evt) {
+		BT_LOGE("[%s] Create event fail\r\n", __func__);
+		return -1;
 	}
+	p_data_write = (rtk_bt_mesh_datatrans_server_write_event_t *)p_evt->data;
+	p_data_write->status = RTK_BT_MESH_DATATRANS_SUCCESS;
+	if (buf->len > DATA_TRANS_DATA_MAX_LEN) {
+		BT_LOGA("[%s] The len of datatrans receive data is %d, extend max DATA_TRANS_DATA_MAX_LEN:%d\r\n", __func__, buf->len, DATA_TRANS_DATA_MAX_LEN);
+		p_data_write->data_len = DATA_TRANS_DATA_MAX_LEN;
+	} else {
+		p_data_write->data_len = buf->len;
+	}
+	for (int i = 0; i < p_data_write->data_len; i++) {
+		p_data[i] = net_buf_simple_pull_u8(buf);
+	}
+	memcpy(p_data_write->data, p_data, p_data_write->data_len);
+	rtk_bt_evt_indicate(p_evt, NULL);
 
 	return 0;
 }
@@ -106,10 +109,14 @@ static int datatrans_read_data_receive(const struct bt_mesh_model *model,
 	rtk_bt_mesh_datatrans_server_read_event_t *server_read;
 	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_DATATRANS_MODEL, RTK_BT_MESH_DATATRANS_MODEL_EVT_SERVER_READ,
 								sizeof(rtk_bt_mesh_datatrans_server_read_event_t) + data_len);
-	server_read = (rtk_bt_mesh_datatrans_server_read_event_t *)p_evt->data;
-	server_read->data_len = data_len;
-	server_read->data = p_data;
-	rtk_bt_evt_indicate(p_evt, &cb_ret);
+	if (p_evt) {
+		server_read = (rtk_bt_mesh_datatrans_server_read_event_t *)p_evt->data;
+		server_read->data_len = data_len;
+		server_read->data = p_data;
+		rtk_bt_evt_indicate(p_evt, &cb_ret);
+	} else {
+		BT_LOGE("[%s] Create event fail\r\n", __func__);
+	}
 
 	BT_MESH_MODEL_BUF_DEFINE(buf_rsp, OP_DATATRANS_DATA, data_len);
 	bt_mesh_model_msg_init(&buf_rsp, OP_DATATRANS_DATA);
@@ -129,9 +136,13 @@ static int datatrans_write_status_receive(const struct bt_mesh_model *model,
 	rtk_bt_evt_t *p_evt = NULL;
 	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_DATATRANS_MODEL, RTK_BT_MESH_DATATRANS_MODEL_EVT_CLIENT_WRITE_STATUS,
 								sizeof(rtk_bt_mesh_datatrans_client_write_event_t));
-	memcpy(p_evt->data, &p_data, sizeof(rtk_bt_mesh_datatrans_client_write_event_t));
+	if (p_evt) {
+		memcpy(p_evt->data, &p_data, sizeof(rtk_bt_mesh_datatrans_client_write_event_t));
 
-	rtk_bt_evt_indicate(p_evt, NULL);
+		rtk_bt_evt_indicate(p_evt, NULL);
+	} else {
+		BT_LOGE("[%s] Create event fail\r\n", __func__);
+	}
 	return 0;
 }
 
@@ -144,6 +155,10 @@ static int datatrans_read_data_rsp_receive(const struct bt_mesh_model *model,
 	rtk_bt_evt_t *p_evt = NULL;
 	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_DATATRANS_MODEL, RTK_BT_MESH_DATATRANS_MODEL_EVT_CLIENT_READ_RESULT,
 								sizeof(rtk_bt_mesh_datatrans_client_read_event_t));
+	if (!p_evt) {
+		BT_LOGE("[%s] Create event fail\r\n", __func__);
+		return -1;
+	}
 	p_data = (rtk_bt_mesh_datatrans_client_read_event_t *)p_evt->data;
 	p_data->src = ctx->addr;
 	p_data->data_len = buf->len;

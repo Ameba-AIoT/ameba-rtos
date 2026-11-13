@@ -58,7 +58,7 @@ extern "C" {
 /**
  * @brief Configuration for the CDC ECM host class.
  * @details Carries every CDC ECM host option: the MAC address to program into a Realtek
- *          dongle and the dongle LED pattern. Host-global parameters (speed, FIFO depths,
+ *          dongle, the dongle LED pattern and its RX filter. Host-global parameters (speed, FIFO depths,
  *          main task stack and priority, ISR priority) live in @ref usbh_config_t instead.
  * @note  The structure is stored by pointer, but the MAC and the LED value are copied at init,
  *        so the arrays themselves need not outlive the init call.
@@ -67,6 +67,8 @@ typedef struct {
 	const u16 *led_array;    /**< LED register value of a Realtek dongle, NULL for none; only led_array[0] is used. */
 	const u8 *mac_value;     /**< MAC address to program, 6 bytes, NULL to keep the dongle default. */
 	u8 led_cnt;              /**< Number of elements in `led_array`; 0 disables LED setup. */
+	u8 promiscuous;          /**< 1: a Realtek dongle accepts every frame, needed by a bridge whose peers own other MACs;
+	                              0: only its own unicast and broadcast. */
 } usbh_cdc_ecm_config_t;
 
 /* CDC ECM user callback interface */
@@ -168,6 +170,7 @@ typedef struct {
 	u8 iMACAddressStringId;                          /**< Index of the MAC address string descriptor */
 	u8 rcr[USBH_CDC_ECM_CTRL_REG_BUF_LEN];           /**< Buffer for RTL8156 RCR register */
 	u8 led_cnt;                                      /**< 1 if led_value is to be written, 0 keeps the dongle default */
+	u8 promiscuous;                                  /**< 1: RCR accepts every frame, see usbh_cdc_ecm_config_t */
 } usbh_cdc_ecm_host_t;
 
 /* Exported macros -----------------------------------------------------------*/

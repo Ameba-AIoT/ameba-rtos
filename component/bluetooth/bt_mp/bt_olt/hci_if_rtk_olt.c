@@ -10,21 +10,21 @@
 #define IS_ALIGNED(ptr, align) (((uintptr_t)(ptr)) % (align) == 0)
 
 static uint8_t *hci_olt_buf;
+static uint16_t hci_olt_buf_size;
 void *olt_recv_sem = NULL;
 
 static void olt_recv(struct hci_rx_packet_t *pkt)
 {
-	if (!pkt) {
-		BT_LOGE("pkt is NULL \n\r");
-		return;
-	}
-
 	if (!IS_ALIGNED(pkt->buf, 4)) {
 		BT_LOGE("rx buf not aligned \n\r");
 		goto end;
 	}
 
 	if (HCI_EVT == pkt->type && BT_HCI_EVT_CMD_STATUS == (*(pkt->buf))) {  /* command status event */
+		if (!hci_olt_buf || (pkt->len > hci_olt_buf_size)) {
+			BT_LOGE("OLT: rx pkt too long (%d) \n\r", pkt->len);
+			goto end;
+		}
 		memcpy(hci_olt_buf, pkt->buf, pkt->len);
 		osif_sem_give(olt_recv_sem);
 	}
@@ -57,20 +57,24 @@ failed:
 }
 
 /*command status*/
-bool hci_if_olt_send_status(uint16_t opcode, uint8_t *buf, uint16_t len)
+bool hci_if_olt_send_status(uint16_t opcode, uint8_t *buf, uint16_t len, uint16_t buf_size)
 {
 	buf[0] = (uint8_t)(opcode >> 0);
 	buf[1] = (uint8_t)(opcode >> 8);
 
 	hci_olt_buf = buf;
+	hci_olt_buf_size = buf_size;
 
 	if (len != hci_transport_send(HCI_CMD, buf, len, true)) {
 		BT_LOGE("OLT:hci_transport_send fail\n\r");
+		hci_olt_buf = NULL;
+		hci_olt_buf_size = 0;
 		return false;
 	}
 
 	osif_sem_take(olt_recv_sem, BT_TIMEOUT_FOREVER);
 	hci_olt_buf = NULL;
+	hci_olt_buf_size = 0;
 
 	/* Check Resp: OpCode and Status */
 	if (buf[4] != (uint8_t)(opcode >> 0) || buf[5] != (uint8_t)(opcode >> 8) || buf[2] != 0x00) {

@@ -267,14 +267,15 @@ static void gatt_connected(struct bt_conn *conn, uint8_t conn_err)
 	if (conn_err) {
 		LOG_ERR("Failed to connect GATT Services(%u)", conn_err);
 
-		bt_conn_unref(server->conn);
-		server->conn = NULL;
 #if ZEPHYR_RTK_PATCH
 		if (server->manual) {
+			/* No reference is held while the connection is pending */
 			server->manual = false;
 			return;
 		}
 #endif
+		bt_conn_unref(server->conn);
+		server->conn = NULL;
 
 		(void)bt_mesh_scan_enable();
 
@@ -286,6 +287,7 @@ static void gatt_connected(struct bt_conn *conn, uint8_t conn_err)
 #if ZEPHYR_RTK_PATCH
 	if (server->manual) {
 		/* The service is unknown until discovery is requested */
+		server->conn = bt_conn_ref(conn);
 		return;
 	}
 
@@ -334,7 +336,9 @@ static void gatt_disconnected(struct bt_conn *conn, uint8_t reason)
 	server->gatt->disconnected(conn);
 #endif
 
-	bt_conn_unref(server->conn);
+	if (server->conn) {
+		bt_conn_unref(server->conn);
+	}
 
 	(void)memset(server, 0, sizeof(struct bt_mesh_gatt_server));
 }
@@ -435,9 +439,12 @@ int bt_mesh_gatt_cli_connect_manual(const bt_addr_le_t *addr,
 		return err;
 	}
 
+	/* Do not hold the reference while pending, otherwise bt_disable() waits for it forever.
+	 * It is taken in gatt_connected() once the link is up.
+	 */
 	server = get_server(conn);
-	server->conn = conn;
 	server->manual = true;
+	bt_conn_unref(conn);
 
 	return 0;
 }
@@ -607,6 +614,14 @@ static void scan_recv(const struct bt_le_scan_recv_info *info,
 static struct bt_le_scan_cb scan_cb = {
 	.recv = scan_recv,
 };
+
+#if ZEPHYR_RTK_PATCH
+/* Called after bt_disable(): no connection is left, drop the state of the pending manual ones */
+void bt_mesh_gatt_cli_reset(void)
+{
+	(void)memset(servers, 0, sizeof(servers));
+}
+#endif
 
 void bt_mesh_gatt_client_init(void)
 {

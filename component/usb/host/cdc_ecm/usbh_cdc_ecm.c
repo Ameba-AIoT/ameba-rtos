@@ -681,9 +681,15 @@ static int usbh_cdc_ecm_ctrl_setting(usb_host_t *host)
 		if ((vid != USBH_CDC_ECM_DEVICE_VID) || (usbh_cdc_ecm_support_feature(pid, CDC_ECM_CAP_RCR_CMD) != RTK_SUCCESS)) {
 			cdc->sub_status++;
 		} else {
-			/* Own unicast and broadcast, Ref r8152 rtl8152_set_rx_mode() without promiscuous or multicast mode:
+			/* Ref r8152 rtl8152_set_rx_mode(). Promiscuous accepts every frame, as a bridge forwards
+			 * frames to and from MACs other than the dongle's. Otherwise own unicast and broadcast:
 			 * the multicast hash table (PLA_MAR) is never programmed, so RCR_AM is left off */
-			cdc->rcr[0] = (u8)((cdc->rcr[0] & ~USB_RTL815X_RCR_ACPT_ALL) | USB_RTL815X_RCR_AB | USB_RTL815X_RCR_APM);
+			cdc->rcr[0] &= (u8)~USB_RTL815X_RCR_ACPT_ALL;
+			if (cdc->promiscuous != 0U) {
+				cdc->rcr[0] |= (u8)USB_RTL815X_RCR_ACPT_ALL;
+			} else {
+				cdc->rcr[0] |= (u8)(USB_RTL815X_RCR_AB | USB_RTL815X_RCR_APM);
+			}
 			usb_os_memcpy((void *)cdc->dongle_ctrl_buf, (const void *)cdc->rcr, USBH_CDC_ECM_CTRL_REG_BUF_LEN);
 			state = usbh_cdc_ecm_rtl_reg_write(host, USB_RTL815X_PLA_RCR, USB_RTL815X_BYTE_EN_DWORD);
 			if (state == RTK_SUCCESS) {
@@ -1919,10 +1925,11 @@ int usbh_cdc_ecm_init(const usbh_cdc_ecm_state_cb_t *cb, const usbh_cdc_ecm_conf
 
 	cdc->mac_valid = 0;
 
-	/* cfg == NULL is valid (e.g. usbh_wifi_bridge passes NULL): mac_valid is set later during
-	 * enumeration, and led_cnt == 0 makes LED setup skip gracefully. */
+	/* cfg == NULL is valid: mac_valid is set later during enumeration, led_cnt == 0 makes
+	 * LED setup skip gracefully and promiscuous == 0 keeps the dongle RX filter on. */
 	cdc->led_cnt = 0;
 	if (cfg != NULL) {
+		cdc->promiscuous = (cfg->promiscuous != 0U) ? 1U : 0U;
 		if (cfg->mac_value != NULL) {
 			usbh_cdc_ecm_set_dongle_mac(cfg->mac_value);
 		}

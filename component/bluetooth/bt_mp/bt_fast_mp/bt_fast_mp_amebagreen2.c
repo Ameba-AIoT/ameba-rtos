@@ -107,13 +107,13 @@ void bt_fast_mp_golden_map_func(uint16_t efuse_offset, uint8_t *p_efuse)
 	}
 }
 
-static bool _hci_dtm_send(uint8_t subcmd, uint8_t *buf, uint16_t params_len)
+static bool _hci_dtm_send(uint8_t subcmd, uint8_t *buf, uint16_t params_len, uint16_t buf_size)
 {
 	buf[2] = (uint8_t)(params_len + 2);
 	buf[3] = MODULE_PHY;
 	buf[4] = subcmd;
 
-	if (false == hci_dtm_send(HCI_VENDOR_MP, buf, params_len + 5)) {
+	if (false == hci_dtm_send(HCI_VENDOR_MP, buf, params_len + 5, buf_size)) {
 		return false;
 	}
 
@@ -136,7 +136,7 @@ bool rtk_bt_mp_dtm_get_rx_report(int8_t *p_rssi)
 	uint16_t *p_ber = NULL;
 	uint16_t *p_cfo = NULL;
 
-	if (false == _hci_dtm_send(subcmd, buf, params_len)) {
+	if (false == _hci_dtm_send(subcmd, buf, params_len, sizeof(buf))) {
 		return false;
 	}
 
@@ -185,7 +185,7 @@ bool rtk_bt_mp_dtm_set_tx_count(uint8_t tx_pkt_cnt)
 	}
 	buf[10] = prbs_fix;
 
-	return hci_dtm_send(0xFCDC, buf, 11);
+	return hci_dtm_send(0xFCDC, buf, 11, sizeof(buf));
 }
 
 bool rtk_bt_mp_dtm_set_tx_power_index(uint8_t ble_1m, uint8_t ble_2m)
@@ -208,7 +208,7 @@ bool rtk_bt_mp_dtm_set_tx_power_index(uint8_t ble_1m, uint8_t ble_2m)
 	buf[16] = ble_2m;
 	buf[17] = ble_2m;
 
-	return _hci_dtm_send(subcmd, buf, params_len);
+	return _hci_dtm_send(subcmd, buf, params_len, sizeof(buf));
 }
 
 bool rtk_bt_mp_dtm_set_tx_gaink(uint8_t tx_gain_k)
@@ -220,7 +220,7 @@ bool rtk_bt_mp_dtm_set_tx_gaink(uint8_t tx_gain_k)
 	buf[5] = VALUE_SET;
 	buf[6] = tx_gain_k;
 
-	return _hci_dtm_send(subcmd, buf, params_len);
+	return _hci_dtm_send(subcmd, buf, params_len, sizeof(buf));
 }
 
 bool rtk_bt_mp_dtm_set_tx_flatnessk(uint32_t tx_flatness_k)
@@ -235,7 +235,7 @@ bool rtk_bt_mp_dtm_set_tx_flatnessk(uint32_t tx_flatness_k)
 	buf[8] = (uint8_t)(tx_flatness_k >> 16);
 	buf[9] = (uint8_t)(tx_flatness_k >> 24);
 
-	return _hci_dtm_send(subcmd, buf, params_len);
+	return _hci_dtm_send(subcmd, buf, params_len, sizeof(buf));
 }
 
 bool rtk_bt_mp_dtm_read_thermal(uint8_t *p_thermal_value)
@@ -251,7 +251,7 @@ bool rtk_bt_mp_dtm_read_thermal(uint8_t *p_thermal_value)
 
 	buf[5] = VALUE_GET;
 
-	if (false == _hci_dtm_send(subcmd, buf, params_len)) {
+	if (false == _hci_dtm_send(subcmd, buf, params_len, sizeof(buf))) {
 		return false;
 	}
 
@@ -280,7 +280,7 @@ bool rtk_bt_mp_dtm_set_disable_tx_power_tracking(void)
 		params_len = 1;
 	}
 
-	if (false == _hci_dtm_send(subcmd, buf, params_len)) {
+	if (false == _hci_dtm_send(subcmd, buf, params_len, sizeof(buf))) {
 		return false;
 	}
 

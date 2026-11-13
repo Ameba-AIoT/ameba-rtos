@@ -1236,6 +1236,9 @@ typedef struct {
 	struct bt_le_ext_adv *adv;
 	bt_zephyr_adv_data ad;
 	bt_zephyr_adv_data sd;
+#if defined(RTK_BLE_5_4_PAWR_ADV_SUPPORT) && RTK_BLE_5_4_PAWR_ADV_SUPPORT
+	uint8_t num_subevents;
+#endif
 } _ext_adv_info_t;
 
 static _ext_adv_info_t _ext_adv_tbl[CONFIG_BT_EXT_ADV_MAX_ADV_SET] = {0};
@@ -1300,6 +1303,7 @@ void ext_adv_pawr_data_request(struct bt_le_ext_adv *adv, const struct bt_le_per
 	p_ind->adv_handle = adv->handle;
 	p_ind->start = request->start;
 	p_ind->count = request->count;
+	p_ind->num_subevents = _ext_adv_tbl[bt_le_ext_adv_get_index(adv)].num_subevents;
 
 	rtk_bt_evt_indicate(p_evt, NULL);
 }
@@ -1802,9 +1806,10 @@ static uint16_t bt_stack_le_gap_start_pa(void *p_param)
 	struct bt_data ad_data;
 	struct bt_le_ext_adv *p_ext_adv = NULL;
 	struct bt_le_per_adv_param per_adv_param = {0};
-	int err = 0;
 	rtk_bt_le_pa_ind_t *p_pa_ind = NULL;
 	rtk_bt_evt_t *p_evt = NULL;
+	int err = 0;
+	bool padv_data_flag = true;
 
 	if (!bt_stack_le_gap_ext_adv_handle_valid(param->adv_handle)) {
 		return RTK_BT_ERR_PARAM_INVALID;
@@ -1828,6 +1833,10 @@ static uint16_t bt_stack_le_gap_start_pa(void *p_param)
 	per_adv_param.response_slot_delay = param->response_slot_delay;
 	per_adv_param.response_slot_spacing = param->response_slot_spacing;
 	per_adv_param.num_response_slots = param->num_response_slots;
+	_ext_adv_tbl[param->adv_handle].num_subevents = param->num_subevents;
+	if (per_adv_param.num_subevents) {
+		padv_data_flag = false;
+	}
 #endif
 
 	err = bt_le_per_adv_set_param(p_ext_adv, &per_adv_param);
@@ -1835,9 +1844,11 @@ static uint16_t bt_stack_le_gap_start_pa(void *p_param)
 		return zephyr_err_to_rtk(err);
 	}
 
-	err = bt_le_per_adv_set_data(p_ext_adv, &ad_data, 1);
-	if (err) {
-		return zephyr_err_to_rtk(err);
+	if (padv_data_flag) {
+		err = bt_le_per_adv_set_data(p_ext_adv, &ad_data, 1);
+		if (err) {
+			return zephyr_err_to_rtk(err);
+		}
 	}
 
 	err = bt_le_per_adv_start(p_ext_adv);
@@ -3976,17 +3987,16 @@ exit:
 #endif /* RTK_BLE_COC_SUPPORT */
 
 #if defined(RTK_BLE_5_4_PAWR_ADV_SUPPORT) && RTK_BLE_5_4_PAWR_ADV_SUPPORT
-#define BT_PAWR_SET_SUBEVENT_MAX  4
 static uint16_t bt_stack_le_pawr_set_subevent_data(void *param)
 {
 	int err;
-	struct bt_le_per_adv_subevent_data_params sub[BT_PAWR_SET_SUBEVENT_MAX];
-	struct net_buf_simple buf[BT_PAWR_SET_SUBEVENT_MAX];
+	struct bt_le_per_adv_subevent_data_params sub[RTK_BLE_PAWR_SET_SUBEVENT_DATA_MAX];
+	struct net_buf_simple buf[RTK_BLE_PAWR_SET_SUBEVENT_DATA_MAX];
 	struct bt_le_ext_adv *adv;
 	rtk_bt_le_gap_pawr_subevent_data_t *pawr_sub = (rtk_bt_le_gap_pawr_subevent_data_t *)param;
 
 	if (!bt_stack_le_gap_ext_adv_handle_valid(pawr_sub->adv_handle) ||
-		pawr_sub->num_subs > BT_PAWR_SET_SUBEVENT_MAX) {
+		pawr_sub->num_subs > RTK_BLE_PAWR_SET_SUBEVENT_DATA_MAX) {
 		return RTK_BT_ERR_PARAM_INVALID;
 	}
 
@@ -4062,6 +4072,9 @@ static uint16_t bt_stack_le_pawr_sync_subevent(void *param)
 uint16_t bt_stack_le_gap_deinit(void)
 {
 	memset((void *)bt_stack_le_conn_handle, 0, sizeof(uint16_t) * CONFIG_BT_MAX_CONN);
+#if defined(RTK_BLE_5_0_USE_EXTENDED_ADV) && RTK_BLE_5_0_USE_EXTENDED_ADV
+	memset(_ext_adv_tbl, 0, sizeof(_ext_adv_tbl));
+#endif
 #if defined(RTK_BLE_COC_SUPPORT) && RTK_BLE_COC_SUPPORT
 	bt_l2cap_dynamic_servers_free();
 	le_coc_local_mtu = BT_L2CAP_SDU_RX_MTU;

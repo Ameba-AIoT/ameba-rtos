@@ -133,8 +133,8 @@ SECTIONS
 		__ipc_table_start__ = .;
 		KEEP(*(*.ipc.table.data*))
 		__ipc_table_end__ = .;
-#if defined(CONFIG_SECOND_FLASH_NOR) && defined(CONFIG_NOR_FLASH_NEW_STRATEGY)
-		/* Device table of the second flash driver. KEEP() is required: nothing
+#if defined(CONFIG_NOR_FLASH_NEW_STRATEGY)
+		/* Device table of the NOR flash driver. KEEP() is required: nothing
 		 * references the entries by symbol, so --gc-sections would drop them. */
 		. = ALIGN (4);
 		__nor_flash_table_start__ = .;

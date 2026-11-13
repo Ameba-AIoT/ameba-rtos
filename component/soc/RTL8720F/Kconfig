@@ -57,6 +57,9 @@ menu "CONFIG FUNCTION TEST"
         bool "Timer_Verify_Mode"
         config FLASH_AVL
         bool "Flash_AVL"
+        select NOR_FLASH_NEW_STRATEGY
+        select VFS_MENU
+        select VFS_LITTLEFS_INCLUDED
         config AUDIO_VERIFY
         bool "Audio_Verify_Mode"
         config PRS_VERIFY

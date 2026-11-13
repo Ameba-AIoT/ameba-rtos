@@ -32,7 +32,7 @@
   * @brief SPORT Tx data register
   * @{
   */
-#define SP_MASK_TX_DR   ((u32)0xFFFFFFFF << 0)           /*!< W 32’h0  It's Tx data window between SW/GDMA and SPORT.*/
+#define SP_MASK_TX_DR   ((u32)0xFFFFFFFF << 0)           /*!< W 32'h0  It's Tx data window between SW/GDMA and SPORT.*/
 #define SP_TX_DR(x)     (((u32)((x) & 0xFFFFFFFF) << 0))
 #define SP_GET_TX_DR(x) ((u32)(((x >> 0) & 0xFFFFFFFF)))
 /** @} */
@@ -41,56 +41,61 @@
   * @brief SPORT control 0 register
   * @{
   */
-#define SP_BIT_LONG_FRAME_SYNC    ((u32)0x00000001 << 31)           /*!< R/W 1’b0  1'b0: Short frame sync  1'b1: Long frame sync*/
-#define SP_MASK_SEL_I2S_RX_CH     ((u32)0x00000003 << 28)           /*!< R/W 2’b00  2'b00: L/R    2'b01: R/L    2'b10: L/L   2'b11: R/R  x ADC path*/
+#define SP_BIT_LONG_FRAME_SYNC    ((u32)0x00000001 << 31)           /*!< R/W 1'b0  1'b0: Short frame sync  1'b1: Long frame sync*/
+#define SP_MASK_SEL_I2S_RX_CH     ((u32)0x00000003 << 28)           /*!< R/W 2'b00  2'b00: L/R    2'b01: R/L    2'b10: L/L   2'b11: R/R  x ADC path*/
 #define SP_SEL_I2S_RX_CH(x)       (((u32)((x) & 0x00000003) << 28))
 #define SP_GET_SEL_I2S_RX_CH(x)   ((u32)(((x >> 28) & 0x00000003)))
-#define SP_BIT_START_RX           ((u32)0x00000001 << 25)           /*!< R/W 1’b0  1'b0: Rx is disabled              1'b1: Rx is started*/
-#define SP_BIT_RX_DISABLE         ((u32)0x00000001 << 24)           /*!< R/W 1’b1  1'b1: SPORT Rx is disabled    1'b0: SPORT Rx is enabled*/
-#define SP_BIT_RX_LSB_FIRST       ((u32)0x00000001 << 23)           /*!< R/W 1’b0  1'b0: MSB first when Rx   1'b1: LSB first*/
-#define SP_BIT_TX_LSB_FIRST       ((u32)0x00000001 << 22)           /*!< R/W 1’b0  1'b0: MSB first when Tx  1'b1: LSB first*/
-#define SP_MASK_SEL_I2S_TX_CH     ((u32)0x00000003 << 20)           /*!< R/W 2’b00  2'b00: L/R    2'b01: R/L    2'b10: L/L    2'b11: R/R  x DAC path*/
+#define SP_BIT_START_RX           ((u32)0x00000001 << 25)           /*!< R/W 1'b0  1'b0: Rx is disabled              1'b1: Rx is started*/
+#define SP_BIT_RX_DISABLE         ((u32)0x00000001 << 24)           /*!< R/W 1'b1  1'b1: SPORT Rx is disabled    1'b0: SPORT Rx is enabled*/
+#define SP_BIT_RX_LSB_FIRST       ((u32)0x00000001 << 23)           /*!< R/W 1'b0  1'b0: MSB first when Rx   1'b1: LSB first*/
+#define SP_BIT_TX_LSB_FIRST       ((u32)0x00000001 << 22)           /*!< R/W 1'b0  1'b0: MSB first when Tx  1'b1: LSB first*/
+#define SP_MASK_SEL_I2S_TX_CH     ((u32)0x00000003 << 20)           /*!< R/W 2'b00  2'b00: L/R    2'b01: R/L    2'b10: L/L    2'b11: R/R  x DAC path*/
 #define SP_SEL_I2S_TX_CH(x)       (((u32)((x) & 0x00000003) << 20))
 #define SP_GET_SEL_I2S_TX_CH(x)   ((u32)(((x >> 20) & 0x00000003)))
-#define SP_BIT_START_TX           ((u32)0x00000001 << 17)           /*!< R/W 1’b0  1'b0: Tx is disabled  1'b1: Tx is started*/
-#define SP_BIT_TX_DISABLE         ((u32)0x00000001 << 16)           /*!< R/W 1’b1  1'b1: SPORT TX is disabled  1'b0: SPORT TX is enabled*/
-#define SP_BIT_I2S_SELF_LPBK_EN   ((u32)0x00000001 << 15)           /*!< R/W 1’b0  1'b1: Internal loopback mode is enabled 1'b0: Internal loopback mode is disabled*/
-#define SP_BIT_INV_I2S_SCLK       ((u32)0x00000001 << 14)           /*!< R/W 1’b0  1'b1: I2S/PCM bit clock is inverted 1'b0: I2S/PCM bit clock is not inverted*/
-#define SP_MASK_DATA_LEN_SEL      ((u32)0x00000003 << 12)           /*!< R/W 2’b00  2'b00: 16 bits    2'b10: 24 bits    2'b11: 8 bits*/
+#define SP_BIT_START_TX           ((u32)0x00000001 << 17)           /*!< R/W 1'b0  1'b0: Tx is disabled  1'b1: Tx is started*/
+#define SP_BIT_TX_DISABLE         ((u32)0x00000001 << 16)           /*!< R/W 1'b1  1'b1: SPORT TX is disabled  1'b0: SPORT TX is enabled*/
+#define SP_BIT_I2S_SELF_LPBK_EN   ((u32)0x00000001 << 15)           /*!< R/W 1'b0  1'b1: Internal loopback mode is enabled 1'b0: Internal loopback mode is disabled*/
+#define SP_BIT_INV_I2S_SCLK       ((u32)0x00000001 << 14)           /*!< R/W 1'b0  1'b1: I2S/PCM bit clock is inverted 1'b0: I2S/PCM bit clock is not inverted*/
+#define SP_MASK_DATA_LEN_SEL      ((u32)0x00000003 << 12)           /*!< R/W 2'b00  2'b00: 16 bits    2'b10: 24 bits    2'b11: 8 bits*/
 #define SP_DATA_LEN_SEL(x)        (((u32)((x) & 0x00000003) << 12))
 #define SP_GET_DATA_LEN_SEL(x)    ((u32)(((x >> 12) & 0x00000003)))
-#define SP_BIT_EN_I2S_MONO        ((u32)0x00000001 << 11)           /*!< R/W 1’b0  1'b1: Mono   1'b0: Stereo*/
-#define SP_BIT_EN_PCM_N_MODE      ((u32)0x00000001 << 10)           /*!< R/W 1’b0  1'b1: PCM negative mode 1'b0: PCM normal mode*/
-#define SP_MASK_DATA_FORMAT_SEL   ((u32)0x00000003 << 8)            /*!< R/W 2’b00  3'b000: I2S                 3'b001: Left-Justified    3'b010: PCM mode A          3'b011: PCM mode B    3'b110: PCM mode A-N         3'b111: PCM mode B-N*/
+#define SP_BIT_EN_I2S_MONO        ((u32)0x00000001 << 11)           /*!< R/W 1'b0  1'b1: Mono   1'b0: Stereo*/
+#define SP_BIT_EN_PCM_N_MODE      ((u32)0x00000001 << 10)           /*!< R/W 1'b0  1'b1: PCM negative mode 1'b0: PCM normal mode*/
+#define SP_MASK_DATA_FORMAT_SEL   ((u32)0x00000003 << 8)            /*!< R/W 2'b00  2'b00: I2S                 2'b01: Left-Justified    2'b10: PCM mode A          2'b11: PCM mode B*/
 #define SP_DATA_FORMAT_SEL(x)     (((u32)((x) & 0x00000003) << 8))
 #define SP_GET_DATA_FORMAT_SEL(x) ((u32)(((x >> 8) & 0x00000003)))
-#define SP_BIT_DSP_CTL_MODE       ((u32)0x00000001 << 7)            /*!< R/W 1’b0  1'b1: DSP and SPORT handshaking is enabled. 1'b0: GDMA and SPORT handshaking is enabled*/
-#define SP_BIT_LOOPBACK           ((u32)0x00000001 << 6)            /*!< R/W 1’b0  1'b1: Self loopback mode*/
-#define SP_BIT_WCLK_INVERSE       ((u32)0x00000001 << 5)            /*!< R/W 1’b0  1'b1: I2S/PCM word clock is inverted*/
-#define SP_BIT_SLAVE_DATA_SEL     ((u32)0x00000001 << 4)            /*!< R/W 1’b0  1'b1: To be an I2S or PCM slave (data path)*/
-#define SP_BIT_SLAVE_CLK_SEL      ((u32)0x00000001 << 3)            /*!< R/W 1’b0  1'b1: To be an I2S or PCM slave (CLK path)*/
-#define SP_BIT_RX_INV_I2S_SCLK    ((u32)0x00000001 << 2)            /*!< R/W 1’b0  1'b1: SCLK to Rx path (ADC path) is inverted.*/
-#define SP_BIT_TX_INV_I2S_SCLK    ((u32)0x00000001 << 1)            /*!< R/W 1’b0  1'b1: SCLK to Tx path (DAC path) is inverted.*/
-#define SP_BIT_RESET              ((u32)0x00000001 << 0)            /*!< R/W 1’b0  1'b1: Reset SPORT module, remember to write 1 first and then write 0.*/
+#define SP_BIT_DSP_CTL_MODE       ((u32)0x00000001 << 7)            /*!< R/W 1'b0  1'b1: DSP and SPORT handshaking is enabled. 1'b0: GDMA and SPORT handshaking is enabled*/
+#define SP_BIT_LOOPBACK           ((u32)0x00000001 << 6)            /*!< R/W 1'b0  1'b1: Self loopback mode*/
+#define SP_BIT_WCLK_INVERSE       ((u32)0x00000001 << 5)            /*!< R/W 1'b0  1'b1: I2S/PCM word clock is inverted*/
+#define SP_BIT_SLAVE_DATA_SEL     ((u32)0x00000001 << 4)            /*!< R/W 1'b0  1'b1: To be an I2S or PCM slave (data path)*/
+#define SP_BIT_SLAVE_CLK_SEL      ((u32)0x00000001 << 3)            /*!< R/W 1'b0  1'b1: To be an I2S or PCM slave (CLK path)*/
+#define SP_BIT_RX_INV_I2S_SCLK    ((u32)0x00000001 << 2)            /*!< R/W 1'b0  1'b1: SCLK to Rx path (ADC path) is inverted.*/
+#define SP_BIT_TX_INV_I2S_SCLK    ((u32)0x00000001 << 1)            /*!< R/W 1'b0  1'b1: SCLK to Tx path (DAC path) is inverted.*/
+#define SP_BIT_RESET              ((u32)0x00000001 << 0)            /*!< R/W 1'b0  1'b1: Reset SPORT module, remember to write 1 first and then write 0.*/
 /** @} */
 
 /** @defgroup SP_CTRLR1
   * @brief SPORT control 1 register
   * @{
   */
-#define SP_MASK_INT_ENABLE          ((u32)0x000000FF << 24)           /*!< R/W 8’h0  bit[24]: For the interrupt of 'SP_READY_TO_TX' bit[25]: For the interrupt of 'SP_READY_TO_RX'*/
+#define SP_MASK_INT_ENABLE          ((u32)0x000000FF << 24)           /*!< R/W 8'h0  bit[24]: For the interrupt of 'SP_READY_TO_TX' bit[25]: For the interrupt of 'SP_READY_TO_RX'*/
 #define SP_INT_ENABLE(x)            (((u32)((x) & 0x000000FF) << 24))
 #define SP_GET_INT_ENABLE(x)        ((u32)(((x >> 24) & 0x000000FF)))
-#define SP_BIT_RX_SNK_LR_SWAP       ((u32)0x00000001 << 23)           /*!< R/W 1’b0  1'b1: Swap L/R audio samples written to the sink memory*/
-#define SP_BIT_RX_SNK_BYTE_SWAP     ((u32)0x00000001 << 22)           /*!< R/W 1’b0  1'b1: Swap H/L bytes written to the sink memory*/
-#define SP_BIT_TX_SRC_LR_SWAP       ((u32)0x00000001 << 21)           /*!< R/W 1’b0  1'b1: Swap L/R audio samples read from the source memory*/
-#define SP_BIT_TX_SRC_BYTE_SWAP     ((u32)0x00000001 << 20)           /*!< R/W 1’b0  1'b1: Swap H/L bytes read from the source memory*/
-#define SP_BIT_CLEAR_RX_ERR_CNT     ((u32)0x00000001 << 13)           /*!< R/W 1’b0  Write 1'b1 and then write 1'b0 to clear Rx error counter.*/
-#define SP_BIT_CLEAR_TX_ERR_CNT     ((u32)0x00000001 << 12)           /*!< R/W 1’b0  Write 1'b1 and then write 1'b0 to clear Tx error counter.*/
-#define SP_MASK_DEBUG_BUS_SEL       ((u32)0x00000007 << 8)            /*!< R/W 3’h0  3'b000: debug_bus_a 3'b001: debug_bus_b ....   3'b111: debug_bus_h*/
+#define SP_BIT_RX_SNK_LR_SWAP       ((u32)0x00000001 << 23)           /*!< R/W 1'b0  1'b1: Swap L/R audio samples written to the sink memory*/
+#define SP_BIT_RX_SNK_BYTE_SWAP     ((u32)0x00000001 << 22)           /*!< R/W 1'b0  1'b1: Swap H/L bytes written to the sink memory*/
+#define SP_BIT_TX_SRC_LR_SWAP       ((u32)0x00000001 << 21)           /*!< R/W 1'b0  1'b1: Swap L/R audio samples read from the source memory*/
+#define SP_BIT_TX_SRC_BYTE_SWAP     ((u32)0x00000001 << 20)           /*!< R/W 1'b0  1'b1: Swap H/L bytes read from the source memory*/
+#define SP_BIT_MODE_128FS           ((u32)0x00000001 << 17)           /*!< R/W 1'b0  1'b1: Clock source is 128*fs 1'b0: Clock source is 256*fs*/
+#define SP_BIT_MODE_40MHZ           ((u32)0x00000001 << 16)           /*!< R/W 1'b0  1'b1: Clock source is 40MHz    1'b0: Clock source is 128*fs or 256*fs*/
+#define SP_BIT_SYNC_RX_DAC_WREQ     ((u32)0x00000001 << 15)           /*!< R/W 1'b1  use rx_dac_wreq_d1t instead of rx_dac_wreq*/
+#define SP_BIT_SYNC_TX_PCM_RREQ     ((u32)0x00000001 << 14)           /*!< R/W 1'b1  use tx_pcm_rreq_d1t instead of tx_pcm_rreq*/
+#define SP_BIT_CLEAR_RX_ERR_CNT     ((u32)0x00000001 << 13)           /*!< R/W 1'b0  Write 1'b1 and then write 1'b0 to clear Rx error counter.*/
+#define SP_BIT_CLEAR_TX_ERR_CNT     ((u32)0x00000001 << 12)           /*!< R/W 1'b0  Write 1'b1 and then write 1'b0 to clear Tx error counter.*/
+#define SP_BIT_SELF_PROTECT         ((u32)0x00000001 << 11)           /*!< R/W 1'b1  ensuring asserting sport tx_fifo write during sport txdma progress*/
+#define SP_MASK_DEBUG_BUS_SEL       ((u32)0x00000007 << 8)            /*!< R/W 3'h0  3'b000: debug_bus_a 3'b001: debug_bus_b ....   3'b111: debug_bus_h*/
 #define SP_DEBUG_BUS_SEL(x)         (((u32)((x) & 0x00000007) << 8))
 #define SP_GET_DEBUG_BUS_SEL(x)     ((u32)(((x >> 8) & 0x00000007)))
-#define SP_MASK_FRAME_SYNC_OFFSET   ((u32)0x000000FF << 0)            /*!< R/W 8’h81  To control the length of 'long_frame_sync' signal when it is ON. It is set to 50% of the period of the sampling rate by default.*/
+#define SP_MASK_FRAME_SYNC_OFFSET   ((u32)0x000000FF << 0)            /*!< R/W 8'h81  To control the length of 'long_frame_sync' signal when it is ON. It is set to 50% of the period of the sampling rate by default.*/
 #define SP_FRAME_SYNC_OFFSET(x)     (((u32)((x) & 0x000000FF) << 0))
 #define SP_GET_FRAME_SYNC_OFFSET(x) ((u32)(((x >> 0) & 0x000000FF)))
 /** @} */
@@ -101,9 +106,11 @@
   */
 #define SP_BIT_READY_TO_RX            ((u32)0x00000001 << 25) /*!< R 0x0  1: It is ready to receive data (MIC path)*/
 #define SP_BIT_READY_TO_TX            ((u32)0x00000001 << 24) /*!< R 0x0  1: It is ready to send data out (SPK path)*/
+#define SP_BIT_RX_DMA_SINGLE_LOW      ((u32)0x00000001 << 19) /*!< R/W 1'b1  disable rx_dma_single*/
+#define SP_BIT_TX_DMA_SINGLE_LOW      ((u32)0x00000001 << 18) /*!< R/W 1'b1  disable tx_dma_single*/
 #define SP_BIT_ENABLE_MCLK            ((u32)0x00000001 << 16) /*!< R/W 1'b0  enable mclk fraction divider, will take precedence over MCLK_SEL settings*/
-#define SP_BIT_RX_FIFO_DEPTH_HALF_SEL ((u32)0x00000001 << 5)  /*!< R/W 1’b0  1'b1: Rx FIFO depth will reduce to half. It can reduce the data path latency.*/
-#define SP_BIT_TX_FIFO_DEPTH_HALF_SEL ((u32)0x00000001 << 4)  /*!< R/W 1’b0  1'b1: Tx FIFO depth will reduce to half. It can reduce the data path latency.*/
+#define SP_BIT_RX_FIFO_DEPTH_HALF_SEL ((u32)0x00000001 << 5)  /*!< R/W 1'b0  1'b1: Rx FIFO depth will reduce to half. It can reduce the data path latency.*/
+#define SP_BIT_TX_FIFO_DEPTH_HALF_SEL ((u32)0x00000001 << 4)  /*!< R/W 1'b0  1'b1: Tx FIFO depth will reduce to half. It can reduce the data path latency.*/
 #define SP_BIT_RX_DSP_CLEAR_INT       ((u32)0x00000001 << 1)  /*!< R/W 0x0  For DSP mode (bypass GDMA), F/W writes 1'b1 and then 1'b0 to clear RX interrupt. Note: RX interrupt is to indicate that DSP can get audio data from RX FIFO_0*/
 #define SP_BIT_TX_DSP_CLEAR_INT       ((u32)0x00000001 << 0)  /*!< R/W 0x0  For DSP mode (bypass GDMA), F/W writes 1'b1 and then 1'b0 to clear TX interrupt. Note: TX interrupt is to indicate that DSP can write audio data to TX FIFO_0*/
 /** @} */
@@ -112,7 +119,7 @@
   * @brief SPORT Rx data register
   * @{
   */
-#define SP_MASK_RX_DR   ((u32)0xFFFFFFFF << 0)           /*!< R 32’h0  It's Rx data window between SW/GDMA and SPORT.*/
+#define SP_MASK_RX_DR   ((u32)0xFFFFFFFF << 0)           /*!< R 32'h0  It's Rx data window between SW/GDMA and SPORT.*/
 #define SP_RX_DR(x)     (((u32)((x) & 0xFFFFFFFF) << 0))
 #define SP_GET_RX_DR(x) ((u32)(((x >> 0) & 0xFFFFFFFF)))
 /** @} */
@@ -121,16 +128,16 @@
   * @brief SPORT FIFO status register
   * @{
   */
-#define SP_MASK_RX1_RCNT_BUS   ((u32)0x000000FF << 24)           /*!< R 8’h0  Rx1 FIFO read counter status (MIC path)*/
+#define SP_MASK_RX1_RCNT_BUS   ((u32)0x000000FF << 24)           /*!< R 8'h0  Rx1 FIFO read counter status (MIC path)*/
 #define SP_RX1_RCNT_BUS(x)     (((u32)((x) & 0x000000FF) << 24))
 #define SP_GET_RX1_RCNT_BUS(x) ((u32)(((x >> 24) & 0x000000FF)))
-#define SP_MASK_RX0_RCNT_BUS   ((u32)0x000000FF << 16)           /*!< R 8’h0  Rx0 FIFO read counter status (MIC path)*/
+#define SP_MASK_RX0_RCNT_BUS   ((u32)0x000000FF << 16)           /*!< R 8'h0  Rx0 FIFO read counter status (MIC path)*/
 #define SP_RX0_RCNT_BUS(x)     (((u32)((x) & 0x000000FF) << 16))
 #define SP_GET_RX0_RCNT_BUS(x) ((u32)(((x >> 16) & 0x000000FF)))
-#define SP_MASK_TX1_WCNT_BUS   ((u32)0x000000FF << 8)            /*!< R 8’h0  Tx1 FIFO write counter status (SPK path)*/
+#define SP_MASK_TX1_WCNT_BUS   ((u32)0x000000FF << 8)            /*!< R 8'h0  Tx1 FIFO write counter status (SPK path)*/
 #define SP_TX1_WCNT_BUS(x)     (((u32)((x) & 0x000000FF) << 8))
 #define SP_GET_TX1_WCNT_BUS(x) ((u32)(((x >> 8) & 0x000000FF)))
-#define SP_MASK_TX0_WCNT_BUS   ((u32)0x000000FF << 0)            /*!< R 8’h0  Tx0 FIFO write counter status (SPK path)*/
+#define SP_MASK_TX0_WCNT_BUS   ((u32)0x000000FF << 0)            /*!< R 8'h0  Tx0 FIFO write counter status (SPK path)*/
 #define SP_TX0_WCNT_BUS(x)     (((u32)((x) & 0x000000FF) << 0))
 #define SP_GET_TX0_WCNT_BUS(x) ((u32)(((x >> 0) & 0x000000FF)))
 /** @} */
@@ -139,10 +146,10 @@
   * @brief SPORT error counter register
   * @{
   */
-#define SP_MASK_RX_ERR_CNT   ((u32)0x000000FF << 8)           /*!< R 8’h0  Rx error counter (MIC path) Note: This counter should always be zero if everything works well.*/
+#define SP_MASK_RX_ERR_CNT   ((u32)0x000000FF << 8)           /*!< R 8'h0  Rx error counter (MIC path) Note: This counter should always be zero if everything works well.*/
 #define SP_RX_ERR_CNT(x)     (((u32)((x) & 0x000000FF) << 8))
 #define SP_GET_RX_ERR_CNT(x) ((u32)(((x >> 8) & 0x000000FF)))
-#define SP_MASK_TX_ERR_CNT   ((u32)0x000000FF << 0)           /*!< R 8’h0  Tx error counter (SPK path) Note: This counter should always be zero if everything works well.*/
+#define SP_MASK_TX_ERR_CNT   ((u32)0x000000FF << 0)           /*!< R 8'h0  Tx error counter (SPK path) Note: This counter should always be zero if everything works well.*/
 #define SP_TX_ERR_CNT(x)     (((u32)((x) & 0x000000FF) << 0))
 #define SP_GET_TX_ERR_CNT(x) ((u32)(((x >> 0) & 0x000000FF)))
 /** @} */
@@ -151,11 +158,11 @@
   * @brief SPORT frequency synthesizer register
   * @{
   */
-#define SP_BIT_MI_NI_UPDATE ((u32)0x00000001 << 31)           /*!< R/W 1’b0  1'b1: to update 'MI' and 'NI' to get the new clock rate. This bit is reset automatically when the update is done.*/
-#define SP_MASK_NI          ((u32)0x00007FFF << 16)           /*!< R/W 15’d48  BCLK = 40MHz * (NI/MI)      For example: BCLK = 3.072MHz = 40MHz * (48/625)*/
+#define SP_BIT_MI_NI_UPDATE ((u32)0x00000001 << 31)           /*!< R/W 1'b0  1'b1: to update 'MI' and 'NI' to get the new clock rate. This bit is reset automatically when the update is done.*/
+#define SP_MASK_NI          ((u32)0x00007FFF << 16)           /*!< R/W 15'd48  BCLK = 40MHz * (NI/MI)      For example: BCLK = 3.072MHz = 40MHz * (48/625)*/
 #define SP_NI(x)            (((u32)((x) & 0x00007FFF) << 16))
 #define SP_GET_NI(x)        ((u32)(((x >> 16) & 0x00007FFF)))
-#define SP_MASK_MI          ((u32)0x0000FFFF << 0)            /*!< R/W 16’d625  BCLK = 40MHz * (NI/MI)      For example: BCLK = 3.072MHz = 40MHz * (48/625)*/
+#define SP_MASK_MI          ((u32)0x0000FFFF << 0)            /*!< R/W 16'd625  BCLK = 40MHz * (NI/MI)      For example: BCLK = 3.072MHz = 40MHz * (48/625)*/
 #define SP_MI(x)            (((u32)((x) & 0x0000FFFF) << 0))
 #define SP_GET_MI(x)        ((u32)(((x >> 0) & 0x0000FFFF)))
 /** @} */
@@ -164,11 +171,11 @@
   * @brief SPORT mclk frequency synthesizer register
   * @{
   */
-#define SP_BIT_MCLK_MI_NI_UPDATE ((u32)0x00000001 << 31)           /*!< R/W 1’b0  1'b1: to update 'MI' and 'NI' to get the new clock rate. This bit is reset automatically when the update is done.*/
-#define SP_MASK_MCLK_NI          ((u32)0x00007FFF << 16)           /*!< R/W 15’d192  BCLK = 40MHz * (NI/MI)      For example: BCLK = 12.288MHz = 40MHz * (192/625)*/
+#define SP_BIT_MCLK_MI_NI_UPDATE ((u32)0x00000001 << 31)           /*!< R/W 1'b0  1'b1: to update 'MI' and 'NI' to get the new clock rate. This bit is reset automatically when the update is done.*/
+#define SP_MASK_MCLK_NI          ((u32)0x00007FFF << 16)           /*!< R/W 15'd192  BCLK = 40MHz * (NI/MI)      For example: BCLK = 12.288MHz = 40MHz * (192/625)*/
 #define SP_MCLK_NI(x)            (((u32)((x) & 0x00007FFF) << 16))
 #define SP_GET_MCLK_NI(x)        ((u32)(((x >> 16) & 0x00007FFF)))
-#define SP_MASK_MCLK_MI          ((u32)0x0000FFFF << 0)            /*!< R/W 16’d625  BCLK = 40MHz * (NI/MI)      For example: BCLK = 12.288MHz = 40MHz * (192/625)*/
+#define SP_MASK_MCLK_MI          ((u32)0x0000FFFF << 0)            /*!< R/W 16'd625  BCLK = 40MHz * (NI/MI)      For example: BCLK = 12.288MHz = 40MHz * (192/625)*/
 #define SP_MCLK_MI(x)            (((u32)((x) & 0x0000FFFF) << 0))
 #define SP_GET_MCLK_MI(x)        ((u32)(((x >> 0) & 0x0000FFFF)))
 /** @} */

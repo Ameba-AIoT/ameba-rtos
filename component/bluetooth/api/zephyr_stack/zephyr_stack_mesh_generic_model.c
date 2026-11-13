@@ -88,8 +88,12 @@ void generic_level_timeout(struct k_work *work)
 	rtk_bt_evt_t *p_evt = NULL;
 	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_GENERIC_LEVEL_SERVER_MODEL, RTK_BT_MESH_GENERIC_LEVEL_SERVER_MODEL_SET,
 								sizeof(rtk_bt_mesh_generic_level_server_set_t));
-	memcpy(p_evt->data, &level_set, sizeof(rtk_bt_mesh_generic_level_server_set_t));
-	rtk_bt_evt_indicate(p_evt, NULL);
+	if (p_evt) {
+		memcpy(p_evt->data, &level_set, sizeof(rtk_bt_mesh_generic_level_server_set_t));
+		rtk_bt_evt_indicate(p_evt, NULL);
+	} else {
+		BT_LOGE("[%s] Create event fail\r\n", __func__);
+	}
 	if (generic_level_pa.remain_time.num_steps) {
 		generic_level_pa.remain_time.num_steps--;
 		k_work_reschedule(&generic_level_pa.work, K_MSEC(trans));
@@ -131,9 +135,13 @@ static int16_t get_present_level(void)
 	rtk_bt_evt_t *p_evt = NULL;
 	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_GENERIC_LEVEL_SERVER_MODEL, RTK_BT_MESH_GENERIC_LEVEL_SERVER_MODEL_GET,
 								sizeof(rtk_bt_mesh_generic_level_server_get_t));
-	p_get_data = (rtk_bt_mesh_generic_level_server_get_t *)p_evt->data;
-	p_get_data->level = &get_data;
-	rtk_bt_evt_indicate(p_evt, NULL);
+	if (p_evt) {
+		p_get_data = (rtk_bt_mesh_generic_level_server_get_t *)p_evt->data;
+		p_get_data->level = &get_data;
+		rtk_bt_evt_indicate(p_evt, NULL);
+	} else {
+		BT_LOGE("[%s] Create event fail\r\n", __func__);
+	}
 
 	return get_data;
 }
@@ -241,8 +249,12 @@ static int generic_level_srv_set_unack(const struct bt_mesh_model *model,
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_GENERIC_LEVEL_SERVER_MODEL, RTK_BT_MESH_GENERIC_LEVEL_SERVER_MODEL_SET,
 									sizeof(rtk_bt_mesh_generic_level_server_set_t));
-		memcpy(p_evt->data, &level_set, sizeof(rtk_bt_mesh_generic_level_server_set_t));
-		rtk_bt_evt_indicate(p_evt, NULL);
+		if (p_evt) {
+			memcpy(p_evt->data, &level_set, sizeof(rtk_bt_mesh_generic_level_server_set_t));
+			rtk_bt_evt_indicate(p_evt, NULL);
+		} else {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+		}
 		k_mutex_unlock(&mutex_level);
 		return 0;
 	}
@@ -318,8 +330,12 @@ static int generic_level_srv_delta_set_unack(const struct bt_mesh_model *model,
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_GENERIC_LEVEL_SERVER_MODEL, RTK_BT_MESH_GENERIC_LEVEL_SERVER_MODEL_SET,
 									sizeof(rtk_bt_mesh_generic_level_server_set_t));
-		memcpy(p_evt->data, &level_set, sizeof(rtk_bt_mesh_generic_level_server_set_t));
-		rtk_bt_evt_indicate(p_evt, NULL);
+		if (p_evt) {
+			memcpy(p_evt->data, &level_set, sizeof(rtk_bt_mesh_generic_level_server_set_t));
+			rtk_bt_evt_indicate(p_evt, NULL);
+		} else {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+		}
 		k_mutex_unlock(&mutex_level);
 		return 0;
 	}
@@ -401,8 +417,12 @@ static int generic_level_srv_move_set_unack(const struct bt_mesh_model *model,
 	rtk_bt_evt_t *p_evt = NULL;
 	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_GENERIC_LEVEL_SERVER_MODEL, RTK_BT_MESH_GENERIC_LEVEL_SERVER_MODEL_SET_MOVE,
 								sizeof(rtk_bt_mesh_generic_level_server_set_move_t));
-	memcpy(p_evt->data, &move_set, sizeof(rtk_bt_mesh_generic_level_server_set_move_t));
-	rtk_bt_evt_indicate(p_evt, NULL);
+	if (p_evt) {
+		memcpy(p_evt->data, &move_set, sizeof(rtk_bt_mesh_generic_level_server_set_move_t));
+		rtk_bt_evt_indicate(p_evt, NULL);
+	} else {
+		BT_LOGE("[%s] Create event fail\r\n", __func__);
+	}
 
 	/*****Need add timeout handler*****/
 	if (trans_flag) {
@@ -473,6 +493,10 @@ static int generic_level_cli_status(const struct bt_mesh_model *model,
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_GENERIC_LEVEL_CLIENT_MODEL, RTK_BT_MESH_GENERIC_LEVEL_CLIENT_MODEL_STATUS,
 									sizeof(rtk_bt_mesh_generic_level_client_status_t));
+		if (!p_evt) {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+			return -1;
+		}
 		memcpy(p_evt->data, &level_status, sizeof(rtk_bt_mesh_generic_level_client_status_t));
 		return rtk_bt_evt_indicate(p_evt, NULL);
 	}
@@ -643,9 +667,13 @@ static rtk_bt_mesh_generic_on_power_up_t get_present_power_on_off(void)
 	rtk_bt_evt_t *p_evt = NULL;
 	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_GENERIC_POWER_ON_OFF_SERVER_MODEL, RTK_BT_MESH_GENERIC_POWER_ON_OFF_SERVER_MODEL_GET,
 								sizeof(rtk_bt_mesh_generic_power_on_off_server_get_t));
-	p_get_data = (rtk_bt_mesh_generic_power_on_off_server_get_t *)p_evt->data;
-	p_get_data->on_power_up = &get_data;
-	rtk_bt_evt_indicate(p_evt, NULL);
+	if (p_evt) {
+		p_get_data = (rtk_bt_mesh_generic_power_on_off_server_get_t *)p_evt->data;
+		p_get_data->on_power_up = &get_data;
+		rtk_bt_evt_indicate(p_evt, NULL);
+	} else {
+		BT_LOGE("[%s] Create event fail\r\n", __func__);
+	}
 	return get_data;
 }
 
@@ -707,6 +735,10 @@ static int generic_power_onoff_srv_set_unack(const struct bt_mesh_model *model,
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_GENERIC_POWER_ON_OFF_SETUP_SERVER_MODEL, RTK_BT_MESH_GENERIC_POWER_ON_OFF_SETUP_SERVER_MODEL_SET,
 									sizeof(rtk_bt_mesh_generic_power_on_off_server_set_t));
+		if (!p_evt) {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+			return -1;
+		}
 		memcpy(p_evt->data, &on_power_up, sizeof(rtk_bt_mesh_generic_power_on_off_server_set_t));
 		return rtk_bt_evt_indicate(p_evt, NULL);
 	}
@@ -755,6 +787,10 @@ static int generic_power_onoff_cli_status(const struct bt_mesh_model *model,
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_GENERIC_POWER_ON_OFF_CLIENT_MODEL, RTK_BT_MESH_GENERIC_ON_POWER_UP_CLIENT_MODEL_STATUS,
 									sizeof(rtk_bt_mesh_generic_power_on_off_client_status_t));
+		if (!p_evt) {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+			return -1;
+		}
 		memcpy(p_evt->data, &status, sizeof(rtk_bt_mesh_generic_power_on_off_client_status_t));
 		return rtk_bt_evt_indicate(p_evt, NULL);
 	}
@@ -895,8 +931,12 @@ void generic_power_timeout(struct k_work *work)
 	rtk_bt_evt_t *p_evt = NULL;
 	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_GENERIC_POWER_LEVEL_SERVER_MODEL, RTK_BT_MESH_GENERIC_POWER_LEVEL_SERVER_MODEL_SET,
 								sizeof(rtk_bt_mesh_generic_power_level_server_set_t));
-	memcpy(p_evt->data, &level_set, sizeof(rtk_bt_mesh_generic_power_level_server_set_t));
-	rtk_bt_evt_indicate(p_evt, NULL);
+	if (p_evt) {
+		memcpy(p_evt->data, &level_set, sizeof(rtk_bt_mesh_generic_power_level_server_set_t));
+		rtk_bt_evt_indicate(p_evt, NULL);
+	} else {
+		BT_LOGE("[%s] Create event fail\r\n", __func__);
+	}
 	if (generic_power_pa.remain_time.num_steps) {
 		generic_power_pa.remain_time.num_steps--;
 		k_work_reschedule(&generic_power_pa.work, K_MSEC(trans));
@@ -938,9 +978,13 @@ static uint16_t get_present_power_level(void)
 	rtk_bt_evt_t *p_evt = NULL;
 	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_GENERIC_POWER_LEVEL_SERVER_MODEL, RTK_BT_MESH_GENERIC_POWER_LEVEL_SERVER_MODEL_GET,
 								sizeof(rtk_bt_mesh_generic_power_level_server_get_t));
-	p_get_data = (rtk_bt_mesh_generic_power_level_server_get_t *)p_evt->data;
-	p_get_data->power = &power;
-	rtk_bt_evt_indicate(p_evt, NULL);
+	if (p_evt) {
+		p_get_data = (rtk_bt_mesh_generic_power_level_server_get_t *)p_evt->data;
+		p_get_data->power = &power;
+		rtk_bt_evt_indicate(p_evt, NULL);
+	} else {
+		BT_LOGE("[%s] Create event fail\r\n", __func__);
+	}
 	return power;
 }
 
@@ -1013,9 +1057,13 @@ static int generic_power_level_srv_set_unack(const struct bt_mesh_model *model,
 	rtk_bt_evt_t *p_evt = NULL;
 	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_GENERIC_POWER_LEVEL_SERVER_MODEL, RTK_BT_MESH_GENERIC_POWER_LEVEL_SERVER_MODEL_RANGE_GET,
 								sizeof(rtk_bt_mesh_generic_power_level_server_direct_get_range_t));
-	p_get_data = (rtk_bt_mesh_generic_power_level_server_direct_get_range_t *)p_evt->data;
-	p_get_data->value = &range;
-	rtk_bt_evt_indicate(p_evt, NULL);
+	if (p_evt) {
+		p_get_data = (rtk_bt_mesh_generic_power_level_server_direct_get_range_t *)p_evt->data;
+		p_get_data->value = &range;
+		rtk_bt_evt_indicate(p_evt, NULL);
+	} else {
+		BT_LOGE("[%s] Create event fail\r\n", __func__);
+	}
 
 	if ((0 != range.range_min) && (0 != range.range_max)) {
 		power = CLAMP(power, range.range_min, range.range_max);
@@ -1038,8 +1086,12 @@ static int generic_power_level_srv_set_unack(const struct bt_mesh_model *model,
 
 	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_GENERIC_POWER_LEVEL_SERVER_MODEL, RTK_BT_MESH_GENERIC_POWER_LEVEL_SERVER_MODEL_LAST_SET,
 								sizeof(rtk_bt_mesh_generic_power_level_server_set_last_t));
-	memcpy(p_evt->data, &power, sizeof(rtk_bt_mesh_generic_power_level_server_set_last_t));
-	rtk_bt_evt_indicate(p_evt, NULL);
+	if (p_evt) {
+		memcpy(p_evt->data, &power, sizeof(rtk_bt_mesh_generic_power_level_server_set_last_t));
+		rtk_bt_evt_indicate(p_evt, NULL);
+	} else {
+		BT_LOGE("[%s] Create event fail\r\n", __func__);
+	}
 
 	generic_power_pa.power = power;
 	generic_power_pa.target_power = power;
@@ -1067,8 +1119,12 @@ static int generic_power_level_srv_set_unack(const struct bt_mesh_model *model,
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_GENERIC_POWER_LEVEL_SERVER_MODEL, RTK_BT_MESH_GENERIC_POWER_LEVEL_SERVER_MODEL_SET,
 									sizeof(rtk_bt_mesh_generic_power_level_server_set_t));
-		memcpy(p_evt->data, &power_set, sizeof(rtk_bt_mesh_generic_power_level_server_set_t));
-		rtk_bt_evt_indicate(p_evt, NULL);
+		if (p_evt) {
+			memcpy(p_evt->data, &power_set, sizeof(rtk_bt_mesh_generic_power_level_server_set_t));
+			rtk_bt_evt_indicate(p_evt, NULL);
+		} else {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+		}
 		k_mutex_unlock(&mutex_power);
 		return 0;
 	}
@@ -1103,14 +1159,18 @@ static int generic_power_level_srv_last_get(const struct bt_mesh_model *model,
 											struct net_buf_simple *buf)
 {
 	if (!buf->len) {
-		uint16_t last_power;
+		uint16_t last_power = 0;
 		rtk_bt_mesh_generic_power_level_server_get_t *p_get_data;
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_GENERIC_POWER_LEVEL_SERVER_MODEL, RTK_BT_MESH_GENERIC_POWER_LEVEL_SERVER_MODEL_LAST_GET,
 									sizeof(rtk_bt_mesh_generic_power_level_server_get_t));
-		p_get_data = (rtk_bt_mesh_generic_power_level_server_get_t *)p_evt->data;
-		p_get_data->power = &last_power;
-		rtk_bt_evt_indicate(p_evt, NULL);
+		if (p_evt) {
+			p_get_data = (rtk_bt_mesh_generic_power_level_server_get_t *)p_evt->data;
+			p_get_data->power = &last_power;
+			rtk_bt_evt_indicate(p_evt, NULL);
+		} else {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+		}
 
 		BT_MESH_MODEL_BUF_DEFINE(pmsg, OP_GENERIC_POWER_LAST_STATUS, 2);
 		bt_mesh_model_msg_init(&pmsg, OP_GENERIC_POWER_LAST_STATUS);
@@ -1126,13 +1186,17 @@ static int generic_power_level_srv_default_get(const struct bt_mesh_model *model
 {
 	if (!buf->len) {
 		rtk_bt_mesh_generic_power_level_server_get_t *p_get_data;
-		uint16_t power;
+		uint16_t power = 0;
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_GENERIC_POWER_LEVEL_SERVER_MODEL, RTK_BT_MESH_GENERIC_POWER_LEVEL_SERVER_MODEL_DEFAULT_GET,
 									sizeof(rtk_bt_mesh_generic_power_level_server_get_t));
-		p_get_data = (rtk_bt_mesh_generic_power_level_server_get_t *)p_evt->data;
-		p_get_data->power = &power;
-		rtk_bt_evt_indicate(p_evt, NULL);
+		if (p_evt) {
+			p_get_data = (rtk_bt_mesh_generic_power_level_server_get_t *)p_evt->data;
+			p_get_data->power = &power;
+			rtk_bt_evt_indicate(p_evt, NULL);
+		} else {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+		}
 
 		return generic_power_default_stat(model, ctx, power);
 	}
@@ -1145,13 +1209,17 @@ static int generic_power_level_srv_range_get(const struct bt_mesh_model *model,
 {
 	if (!buf->len) {
 		rtk_bt_mesh_generic_power_level_server_direct_get_range_t *p_get_data;
-		rtk_bt_mesh_generic_power_level_server_get_range_t range;
+		rtk_bt_mesh_generic_power_level_server_get_range_t range = {0};
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_GENERIC_POWER_LEVEL_SERVER_MODEL, RTK_BT_MESH_GENERIC_POWER_LEVEL_SERVER_MODEL_RANGE_GET,
 									sizeof(rtk_bt_mesh_generic_power_level_server_direct_get_range_t));
-		p_get_data = (rtk_bt_mesh_generic_power_level_server_direct_get_range_t *)p_evt->data;
-		p_get_data->value = &range;
-		rtk_bt_evt_indicate(p_evt, NULL);
+		if (p_evt) {
+			p_get_data = (rtk_bt_mesh_generic_power_level_server_direct_get_range_t *)p_evt->data;
+			p_get_data->value = &range;
+			rtk_bt_evt_indicate(p_evt, NULL);
+		} else {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+		}
 
 		return generic_power_range_stat(model, ctx, MESH_GENERIC_STAT_SUCCESS, range.range_min, range.range_max);
 	}
@@ -1196,6 +1264,10 @@ static int generic_power_level_setup_srv_default_set_unack(const struct bt_mesh_
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_GENERIC_POWER_LEVEL_SETUP_SERVER_MODEL, RTK_BT_MESH_GENERIC_POWER_LEVEL_SETUP_SERVER_MODEL_DEFAULT_SET,
 									sizeof(rtk_bt_mesh_generic_power_level_server_set_default_t));
+		if (!p_evt) {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+			return -1;
+		}
 		memcpy(p_evt->data, &default_power, sizeof(rtk_bt_mesh_generic_power_level_server_set_default_t));
 		return rtk_bt_evt_indicate(p_evt, NULL);
 	}
@@ -1224,6 +1296,10 @@ static int generic_power_level_setup_srv_range_set_unack(const struct bt_mesh_mo
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_GENERIC_POWER_LEVEL_SETUP_SERVER_MODEL, RTK_BT_MESH_GENERIC_POWER_LEVEL_SETUP_SERVER_MODEL_RANGE_SET,
 									sizeof(rtk_bt_mesh_generic_power_level_server_set_range_t));
+		if (!p_evt) {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+			return -1;
+		}
 		memcpy(p_evt->data, &range_power, sizeof(rtk_bt_mesh_generic_power_level_server_set_range_t));
 		return rtk_bt_evt_indicate(p_evt, NULL);
 	}
@@ -1281,6 +1357,10 @@ static int generic_power_level_cli_status(const struct bt_mesh_model *model,
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_GENERIC_POWER_LEVEL_CLIENT_MODEL, RTK_BT_MESH_GENERIC_POWER_LEVEL_CLIENT_MODEL_STATUS,
 									sizeof(rtk_bt_mesh_generic_power_level_client_status_t));
+		if (!p_evt) {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+			return -1;
+		}
 		memcpy(p_evt->data, &power_status, sizeof(rtk_bt_mesh_generic_power_level_client_status_t));
 		return rtk_bt_evt_indicate(p_evt, NULL);
 	}
@@ -1300,6 +1380,10 @@ static int generic_power_level_cli_last_status(const struct bt_mesh_model *model
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_GENERIC_POWER_LEVEL_CLIENT_MODEL, RTK_BT_MESH_GENERIC_POWER_LEVEL_CLIENT_MODEL_LAST_STATUS,
 									sizeof(rtk_bt_mesh_generic_power_level_client_status_simple_t));
+		if (!p_evt) {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+			return -1;
+		}
 		memcpy(p_evt->data, &last_status, sizeof(rtk_bt_mesh_generic_power_level_client_status_simple_t));
 		return rtk_bt_evt_indicate(p_evt, NULL);
 	}
@@ -1319,6 +1403,10 @@ static int generic_power_level_cli_default_status(const struct bt_mesh_model *mo
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_GENERIC_POWER_LEVEL_CLIENT_MODEL, RTK_BT_MESH_GENERIC_POWER_LEVEL_CLIENT_MODEL_DEFAULT_STATUS,
 									sizeof(rtk_bt_mesh_generic_power_level_client_status_simple_t));
+		if (!p_evt) {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+			return -1;
+		}
 		memcpy(p_evt->data, &default_status, sizeof(rtk_bt_mesh_generic_power_level_client_status_simple_t));
 		return rtk_bt_evt_indicate(p_evt, NULL);
 	}
@@ -1340,6 +1428,10 @@ static int generic_power_level_cli_range_status(const struct bt_mesh_model *mode
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_GENERIC_POWER_LEVEL_CLIENT_MODEL, RTK_BT_MESH_GENERIC_POWER_LEVEL_CLIENT_MODEL_RANGE_STATUS,
 									sizeof(rtk_bt_mesh_generic_power_level_client_status_range_t));
+		if (!p_evt) {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+			return -1;
+		}
 		memcpy(p_evt->data, &range_status, sizeof(rtk_bt_mesh_generic_power_level_client_status_range_t));
 		return rtk_bt_evt_indicate(p_evt, NULL);
 	}
@@ -1535,14 +1627,18 @@ static int generic_battery_stat(const struct bt_mesh_model *model,
 
 int generic_battery_publish(const struct bt_mesh_model *model)
 {
-	rtk_bt_mesh_generic_battery_server_get_t battery;
+	rtk_bt_mesh_generic_battery_server_get_t battery = {0};
 	rtk_bt_mesh_generic_battery_server_direct_get_t *p_get_data;
 	rtk_bt_evt_t *p_evt = NULL;
 	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_GENERIC_BATTERY_SERVER_MODEL, RTK_BT_MESH_GENERIC_BATTERY_SERVER_MODEL_GET,
 								sizeof(rtk_bt_mesh_generic_battery_server_direct_get_t));
-	p_get_data = (rtk_bt_mesh_generic_battery_server_direct_get_t *)p_evt->data;
-	p_get_data->value = &battery;
-	rtk_bt_evt_indicate(p_evt, NULL);
+	if (p_evt) {
+		p_get_data = (rtk_bt_mesh_generic_battery_server_direct_get_t *)p_evt->data;
+		p_get_data->value = &battery;
+		rtk_bt_evt_indicate(p_evt, NULL);
+	} else {
+		BT_LOGE("[%s] Create event fail\r\n", __func__);
+	}
 
 	return generic_battery_stat(model, NULL, battery.battery_level, battery.time_to_discharge,
 								battery.time_to_charge, battery.flags);
@@ -1552,14 +1648,18 @@ int generic_battery_srv_update_publish(const struct bt_mesh_model *model)
 {
 	net_buf_simple_reset(model->pub->msg);
 	struct net_buf_simple *msg = model->pub->msg;
-	rtk_bt_mesh_generic_battery_server_get_t battery;
+	rtk_bt_mesh_generic_battery_server_get_t battery = {0};
 	rtk_bt_mesh_generic_battery_server_direct_get_t *p_get_data;
 	rtk_bt_evt_t *p_evt = NULL;
 	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_GENERIC_BATTERY_SERVER_MODEL, RTK_BT_MESH_GENERIC_BATTERY_SERVER_MODEL_GET,
 								sizeof(rtk_bt_mesh_generic_battery_server_direct_get_t));
-	p_get_data = (rtk_bt_mesh_generic_battery_server_direct_get_t *)p_evt->data;
-	p_get_data->value = &battery;
-	rtk_bt_evt_indicate(p_evt, NULL);
+	if (p_evt) {
+		p_get_data = (rtk_bt_mesh_generic_battery_server_direct_get_t *)p_evt->data;
+		p_get_data->value = &battery;
+		rtk_bt_evt_indicate(p_evt, NULL);
+	} else {
+		BT_LOGE("[%s] Create event fail\r\n", __func__);
+	}
 
 	bt_mesh_model_msg_init(msg, OP_GENERIC_BATTERY_STATUS);
 	uint8_t discharge[4], charge[4];
@@ -1577,14 +1677,18 @@ static int generic_battery_srv_get(const struct bt_mesh_model *model,
 								   struct net_buf_simple *buf)
 {
 	if (!buf->len) {
-		rtk_bt_mesh_generic_battery_server_get_t battery;
+		rtk_bt_mesh_generic_battery_server_get_t battery = {0};
 		rtk_bt_mesh_generic_battery_server_direct_get_t *p_get_data;
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_GENERIC_BATTERY_SERVER_MODEL, RTK_BT_MESH_GENERIC_BATTERY_SERVER_MODEL_GET,
 									sizeof(rtk_bt_mesh_generic_battery_server_direct_get_t));
-		p_get_data = (rtk_bt_mesh_generic_battery_server_direct_get_t *)p_evt->data;
-		p_get_data->value = &battery;
-		rtk_bt_evt_indicate(p_evt, NULL);
+		if (p_evt) {
+			p_get_data = (rtk_bt_mesh_generic_battery_server_direct_get_t *)p_evt->data;
+			p_get_data->value = &battery;
+			rtk_bt_evt_indicate(p_evt, NULL);
+		} else {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+		}
 
 		return generic_battery_stat(model, ctx, battery.battery_level, battery.time_to_discharge,
 									battery.time_to_charge, battery.flags);
@@ -1639,6 +1743,10 @@ static int generic_battery_cli_status(const struct bt_mesh_model *model,
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_GENERIC_BATTERY_CLIENT_MODEL, RTK_BT_MESH_GENERIC_BATTERY_CLIENT_MODEL_STATUS,
 									sizeof(rtk_bt_mesh_generic_battery_client_status_t));
+		if (!p_evt) {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+			return -1;
+		}
 		memcpy(p_evt->data, &battery_status, sizeof(rtk_bt_mesh_generic_battery_client_status_t));
 		return rtk_bt_evt_indicate(p_evt, NULL);
 	}
@@ -1734,13 +1842,17 @@ rtk_bt_mesh_generic_location_global_t get_present_global(const struct bt_mesh_mo
 		group = RTK_BT_LE_GP_MESH_GENERIC_LOCATION_SETUP_SERVER_MODEL;
 		evt = RTK_BT_MESH_GENERIC_LOCATION_SETUP_SERVER_MODEL_GLOBAL_GET;
 	}
-	rtk_bt_mesh_generic_location_global_t global;
+	rtk_bt_mesh_generic_location_global_t global = {0};
 	rtk_bt_mesh_generic_location_server_direct_get_global_t *p_get_data;
 	rtk_bt_evt_t *p_evt = NULL;
 	p_evt = rtk_bt_event_create(group, evt, sizeof(rtk_bt_mesh_generic_location_server_direct_get_global_t));
-	p_get_data = (rtk_bt_mesh_generic_location_server_direct_get_global_t *)p_evt->data;
-	p_get_data->value = &global;
-	rtk_bt_evt_indicate(p_evt, NULL);
+	if (p_evt) {
+		p_get_data = (rtk_bt_mesh_generic_location_server_direct_get_global_t *)p_evt->data;
+		p_get_data->value = &global;
+		rtk_bt_evt_indicate(p_evt, NULL);
+	} else {
+		BT_LOGE("[%s] Create event fail\r\n", __func__);
+	}
 	return global;
 }
 
@@ -1752,14 +1864,18 @@ rtk_bt_mesh_generic_location_local_t get_present_local(const struct bt_mesh_mode
 		group = RTK_BT_LE_GP_MESH_GENERIC_LOCATION_SETUP_SERVER_MODEL;
 		evt = RTK_BT_MESH_GENERIC_LOCATION_SETUP_SERVER_MODEL_LOCAL_GET;
 	}
-	rtk_bt_mesh_generic_location_local_t local;
+	rtk_bt_mesh_generic_location_local_t local = {0};
 	rtk_bt_mesh_generic_location_server_direct_get_local_t *p_get_data;
 	rtk_bt_evt_t *p_evt = NULL;
 	p_evt = rtk_bt_event_create(group, evt,
 								sizeof(rtk_bt_mesh_generic_location_server_direct_get_local_t));
-	p_get_data = (rtk_bt_mesh_generic_location_server_direct_get_local_t *)p_evt->data;
-	p_get_data->value = &local;
-	rtk_bt_evt_indicate(p_evt, NULL);
+	if (p_evt) {
+		p_get_data = (rtk_bt_mesh_generic_location_server_direct_get_local_t *)p_evt->data;
+		p_get_data->value = &local;
+		rtk_bt_evt_indicate(p_evt, NULL);
+	} else {
+		BT_LOGE("[%s] Create event fail\r\n", __func__);
+	}
 	return local;
 }
 #endif
@@ -1861,6 +1977,10 @@ static int generic_location_setup_srv_global_set_unack(const struct bt_mesh_mode
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_GENERIC_LOCATION_SETUP_SERVER_MODEL, RTK_BT_MESH_GENERIC_LOCATION_SETUP_SERVER_MODEL_GLOBAL_SET,
 									sizeof(rtk_bt_mesh_generic_location_server_set_global_t));
+		if (!p_evt) {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+			return -1;
+		}
 		memcpy(p_evt->data, &global, sizeof(rtk_bt_mesh_generic_location_server_set_global_t));
 		return rtk_bt_evt_indicate(p_evt, NULL);
 	}
@@ -1894,6 +2014,10 @@ static int generic_location_setup_srv_local_set_unack(const struct bt_mesh_model
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_GENERIC_LOCATION_SETUP_SERVER_MODEL, RTK_BT_MESH_GENERIC_LOCATION_SETUP_SERVER_MODEL_LOCAL_SET,
 									sizeof(rtk_bt_mesh_generic_location_server_set_local_t));
+		if (!p_evt) {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+			return -1;
+		}
 		memcpy(p_evt->data, &local, sizeof(rtk_bt_mesh_generic_location_server_set_local_t));
 		return rtk_bt_evt_indicate(p_evt, NULL);
 	}
@@ -1947,6 +2071,10 @@ static int generic_location_cli_global_status(const struct bt_mesh_model *model,
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_GENERIC_LOCATION_CLIENT_MODEL, RTK_BT_MESH_GENERIC_LOCATION_CLIENT_MODEL_GLOBAL_STATUS,
 									sizeof(rtk_bt_mesh_generic_location_client_status_global_t));
+		if (!p_evt) {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+			return -1;
+		}
 		memcpy(p_evt->data, &global_status, sizeof(rtk_bt_mesh_generic_location_client_status_global_t));
 		return rtk_bt_evt_indicate(p_evt, NULL);
 	}
@@ -1970,6 +2098,10 @@ static int generic_location_cli_local_status(const struct bt_mesh_model *model,
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_GENERIC_LOCATION_CLIENT_MODEL, RTK_BT_MESH_GENERIC_LOCATION_CLIENT_MODEL_LOCAL_STATUS,
 									sizeof(rtk_bt_mesh_generic_location_client_status_local_t));
+		if (!p_evt) {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+			return -1;
+		}
 		memcpy(p_evt->data, &local_status, sizeof(rtk_bt_mesh_generic_location_client_status_local_t));
 		return rtk_bt_evt_indicate(p_evt, NULL);
 	}
@@ -2202,15 +2334,19 @@ static int generic_admin_property_srv_props_get(const struct bt_mesh_model *mode
 #if 0
 static int generic_admin_property_srv_get_para_from_app(uint16_t property_id)
 {
-	rtk_bt_mesh_generic_property_server_para_t para_get;
+	rtk_bt_mesh_generic_property_server_para_t para_get = {0};
 	rtk_bt_mesh_generic_property_server_para_get_t *p_get_data;
 	rtk_bt_evt_t *p_evt = NULL;
 	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_GENERIC_ADMIN_PROPERTY_SERVER_MODEL, RTK_BT_MESH_GENERIC_ADMIN_PROPERTY_SERVER_MODEL_PARAMETER_GET,
 								sizeof(rtk_bt_mesh_generic_property_server_para_get_t));
-	p_get_data = (rtk_bt_mesh_generic_property_server_para_get_t *)p_evt->data;
-	p_get_data->property_id = property_id;
-	p_get_data->pvalue = &para_get;
-	rtk_bt_evt_indicate(p_evt, NULL);
+	if (p_evt) {
+		p_get_data = (rtk_bt_mesh_generic_property_server_para_get_t *)p_evt->data;
+		p_get_data->property_id = property_id;
+		p_get_data->pvalue = &para_get;
+		rtk_bt_evt_indicate(p_evt, NULL);
+	} else {
+		BT_LOGE("[%s] Create event fail\r\n", __func__);
+	}
 	BT_LOGA("pdb is NULL?%d, property access %d, value len %d \r\n", para_get.pdb, para_get.property_access, para_get.value_len);
 
 	uint8_t admin_pvalue_store[GENERIC_PROPERTY_DATA_MAX_LEN] = {0};
@@ -2230,13 +2366,17 @@ static int generic_admin_property_srv_get_para_from_app(uint16_t property_id)
 
 	BT_DUMPA("", admin_pvalue_store, val_get->value_len);
 
-	rtk_bt_mesh_generic_property_server_num_ids_t num_get;
+	rtk_bt_mesh_generic_property_server_num_ids_t num_get = {0};
 	rtk_bt_mesh_generic_property_server_num_ids_get_t *p_get_id_num;
 	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_GENERIC_ADMIN_PROPERTY_SERVER_MODEL, RTK_BT_MESH_GENERIC_ADMIN_PROPERTY_SERVER_MODEL_NUM_IDS_GET,
 								sizeof(rtk_bt_mesh_generic_property_server_num_ids_get_t));
-	p_get_id_num = (rtk_bt_mesh_generic_property_server_num_ids_get_t *)p_evt->data;
-	p_get_id_num->pvalue = &num_get;
-	rtk_bt_evt_indicate(p_evt, NULL);
+	if (p_evt) {
+		p_get_id_num = (rtk_bt_mesh_generic_property_server_num_ids_get_t *)p_evt->data;
+		p_get_id_num->pvalue = &num_get;
+		rtk_bt_evt_indicate(p_evt, NULL);
+	} else {
+		BT_LOGE("[%s] Create event fail\r\n", __func__);
+	}
 	BT_LOGA("pdb is NULL?%d, num ids %d \r\n", num_get.pdb, num_get.num_ids);
 
 	rtk_bt_mesh_generic_property_server_num_ids_value_get_t *ids_get;
@@ -2294,6 +2434,10 @@ static int generic_admin_property_srv_prop_set_unack(const struct bt_mesh_model 
 				rtk_bt_evt_t *p_evt = NULL;
 				p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_GENERIC_ADMIN_PROPERTY_SERVER_MODEL, RTK_BT_MESH_GENERIC_ADMIN_PROPERTY_SERVER_MODEL_PROPERTY_SET,
 											5 + value_len);
+				if (!p_evt) {
+					BT_LOGE("[%s] Create event fail\r\n", __func__);
+					return -1;
+				}
 				memcpy(p_evt->data, &property_id, 2);
 				memcpy((uint8_t *)(p_evt->data) + 2, &property_access, 1);
 				memcpy((uint8_t *)(p_evt->data) + 3, &value_len, 2);
@@ -2416,15 +2560,19 @@ static int generic_manu_property_status(const struct bt_mesh_model *model,
 #if 0
 static int generic_manu_property_srv_get_para_from_app(uint16_t property_id)
 {
-	rtk_bt_mesh_generic_property_server_para_t para_get;
+	rtk_bt_mesh_generic_property_server_para_t para_get = {0};
 	rtk_bt_mesh_generic_property_server_para_get_t *p_get_data;
 	rtk_bt_evt_t *p_evt = NULL;
 	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_GENERIC_MANU_PROPERTY_SERVER_MODEL, RTK_BT_MESH_GENERIC_MANU_PROPERTY_SERVER_MODEL_PARAMETER_GET,
 								sizeof(rtk_bt_mesh_generic_property_server_para_get_t));
-	p_get_data = (rtk_bt_mesh_generic_property_server_para_get_t *)p_evt->data;
-	p_get_data->property_id = property_id;
-	p_get_data->pvalue = &para_get;
-	rtk_bt_evt_indicate(p_evt, NULL);
+	if (p_evt) {
+		p_get_data = (rtk_bt_mesh_generic_property_server_para_get_t *)p_evt->data;
+		p_get_data->property_id = property_id;
+		p_get_data->pvalue = &para_get;
+		rtk_bt_evt_indicate(p_evt, NULL);
+	} else {
+		BT_LOGE("[%s] Create event fail\r\n", __func__);
+	}
 	BT_LOGA("pdb is NULL?%d, property access %d, value len %d \r\n", para_get.pdb, para_get.property_access, para_get.value_len);
 
 	uint8_t manu_pvalue_store[GENERIC_PROPERTY_DATA_MAX_LEN] = {0};
@@ -2444,13 +2592,17 @@ static int generic_manu_property_srv_get_para_from_app(uint16_t property_id)
 
 	BT_DUMPA("", manu_pvalue_store, val_get->value_len);
 
-	rtk_bt_mesh_generic_property_server_num_ids_t num_get;
+	rtk_bt_mesh_generic_property_server_num_ids_t num_get = {0};
 	rtk_bt_mesh_generic_property_server_num_ids_get_t *p_get_id_num;
 	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_GENERIC_MANU_PROPERTY_SERVER_MODEL, RTK_BT_MESH_GENERIC_MANU_PROPERTY_SERVER_MODEL_NUM_IDS_GET,
 								sizeof(rtk_bt_mesh_generic_property_server_num_ids_get_t));
-	p_get_id_num = (rtk_bt_mesh_generic_property_server_num_ids_get_t *)p_evt->data;
-	p_get_id_num->pvalue = &num_get;
-	rtk_bt_evt_indicate(p_evt, NULL);
+	if (p_evt) {
+		p_get_id_num = (rtk_bt_mesh_generic_property_server_num_ids_get_t *)p_evt->data;
+		p_get_id_num->pvalue = &num_get;
+		rtk_bt_evt_indicate(p_evt, NULL);
+	} else {
+		BT_LOGE("[%s] Create event fail\r\n", __func__);
+	}
 	BT_LOGA("pdb is NULL?%d, num ids %d \r\n", num_get.pdb, num_get.num_ids);
 
 	rtk_bt_mesh_generic_property_server_num_ids_value_get_t *ids_get;
@@ -2517,6 +2669,10 @@ static int generic_manu_property_srv_prop_set_unack(const struct bt_mesh_model *
 				rtk_bt_evt_t *p_evt = NULL;
 				p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_GENERIC_MANU_PROPERTY_SERVER_MODEL, RTK_BT_MESH_GENERIC_MANU_PROPERTY_SERVER_MODEL_PROPERTY_SET,
 											sizeof(rtk_bt_mesh_generic_manu_property_server_set_t));
+				if (!p_evt) {
+					BT_LOGE("[%s] Create event fail\r\n", __func__);
+					return -1;
+				}
 				memcpy(p_evt->data, &settings, sizeof(rtk_bt_mesh_generic_manu_property_server_set_t));
 				return rtk_bt_evt_indicate(p_evt, NULL);
 			}
@@ -2646,15 +2802,19 @@ static int generic_user_property_status(const struct bt_mesh_model *model,
 #if 0
 static int generic_user_property_srv_get_para_from_app(uint16_t property_id)
 {
-	rtk_bt_mesh_generic_property_server_para_t para_get;
+	rtk_bt_mesh_generic_property_server_para_t para_get = {0};
 	rtk_bt_mesh_generic_property_server_para_get_t *p_get_data;
 	rtk_bt_evt_t *p_evt = NULL;
 	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_GENERIC_USER_PROPERTY_SERVER_MODEL, RTK_BT_MESH_GENERIC_USER_PROPERTY_SERVER_MODEL_PARAMETER_GET,
 								sizeof(rtk_bt_mesh_generic_property_server_para_get_t));
-	p_get_data = (rtk_bt_mesh_generic_property_server_para_get_t *)p_evt->data;
-	p_get_data->property_id = property_id;
-	p_get_data->pvalue = &para_get;
-	rtk_bt_evt_indicate(p_evt, NULL);
+	if (p_evt) {
+		p_get_data = (rtk_bt_mesh_generic_property_server_para_get_t *)p_evt->data;
+		p_get_data->property_id = property_id;
+		p_get_data->pvalue = &para_get;
+		rtk_bt_evt_indicate(p_evt, NULL);
+	} else {
+		BT_LOGE("[%s] Create event fail\r\n", __func__);
+	}
 	BT_LOGA("pdb is NULL?%d, property access %d, value len %d \r\n", para_get.pdb, para_get.property_access, para_get.value_len);
 
 	uint8_t user_pvalue_store[GENERIC_PROPERTY_DATA_MAX_LEN] = {0};
@@ -2674,13 +2834,17 @@ static int generic_user_property_srv_get_para_from_app(uint16_t property_id)
 
 	BT_DUMPA("", user_pvalue_store, val_get->value_len);
 
-	rtk_bt_mesh_generic_property_server_num_ids_t num_get;
+	rtk_bt_mesh_generic_property_server_num_ids_t num_get = {0};
 	rtk_bt_mesh_generic_property_server_num_ids_get_t *p_get_id_num;
 	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_GENERIC_USER_PROPERTY_SERVER_MODEL, RTK_BT_MESH_GENERIC_USER_PROPERTY_SERVER_MODEL_NUM_IDS_GET,
 								sizeof(rtk_bt_mesh_generic_property_server_num_ids_get_t));
-	p_get_id_num = (rtk_bt_mesh_generic_property_server_num_ids_get_t *)p_evt->data;
-	p_get_id_num->pvalue = &num_get;
-	rtk_bt_evt_indicate(p_evt, NULL);
+	if (p_evt) {
+		p_get_id_num = (rtk_bt_mesh_generic_property_server_num_ids_get_t *)p_evt->data;
+		p_get_id_num->pvalue = &num_get;
+		rtk_bt_evt_indicate(p_evt, NULL);
+	} else {
+		BT_LOGE("[%s] Create event fail\r\n", __func__);
+	}
 	BT_LOGA("pdb is NULL?%d, num ids %d \r\n", num_get.pdb, num_get.num_ids);
 
 	rtk_bt_mesh_generic_property_server_num_ids_value_get_t *ids_get;
@@ -2750,10 +2914,14 @@ static int generic_user_property_srv_prop_set_unack(const struct bt_mesh_model *
 				rtk_bt_evt_t *p_evt = NULL;
 				p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_GENERIC_USER_PROPERTY_SERVER_MODEL, RTK_BT_MESH_GENERIC_USER_PROPERTY_SERVER_MODEL_PROPERTY_SET,
 											sizeof(rtk_bt_mesh_generic_user_property_server_set_t) + value_len);
-				memcpy(p_evt->data, &property_id, 2);
-				memcpy((uint8_t *)(p_evt->data) + 2, &value_len, 2);
-				memcpy((uint8_t *)(p_evt->data) + 4, pdb->pproperty_value, value_len);
-				rtk_bt_evt_indicate(p_evt, NULL);
+				if (p_evt) {
+					memcpy(p_evt->data, &property_id, 2);
+					memcpy((uint8_t *)(p_evt->data) + 2, &value_len, 2);
+					memcpy((uint8_t *)(p_evt->data) + 4, pdb->pproperty_value, value_len);
+					rtk_bt_evt_indicate(p_evt, NULL);
+				} else {
+					BT_LOGE("[%s] Create event fail\r\n", __func__);
+				}
 				user_send_value = TRUE;
 				user_property_id = property_id;
 			}
@@ -2848,10 +3016,14 @@ static int generic_property_cli_manu_props_status(const struct bt_mesh_model *mo
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_GENERIC_CLIENT_PROPERTY_SERVER_MODEL, RTK_BT_MESH_GENERIC_CLIENT_PROPERTY_SERVER_MODEL_PROPERTY_GET,
 									2 * GENERIC_PROPERTY_DATA_MAX_LEN + 3);
-		p_get_data = (rtk_bt_mesh_generic_client_property_server_direct_get_t *)p_evt->data;
-		p_get_data->property_id_start = property_id;
-		p_get_data->value = client_ids_stores;
-		rtk_bt_evt_indicate(p_evt, NULL);
+		if (p_evt) {
+			p_get_data = (rtk_bt_mesh_generic_client_property_server_direct_get_t *)p_evt->data;
+			p_get_data->property_id_start = property_id;
+			p_get_data->value = client_ids_stores;
+			rtk_bt_evt_indicate(p_evt, NULL);
+		} else {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+		}
 		uint8_t num_ids = client_ids_stores[0];
 		memcpy(client_ids_value_store, &client_ids_stores[1], 2 * num_ids);
 		return generic_client_properties_status(model, ctx, client_ids_value_store, num_ids);
@@ -2891,6 +3063,10 @@ static int generic_property_cli_manu_props_status(const struct bt_mesh_model *mo
 	rtk_bt_evt_t *p_evt = NULL;
 	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_GENERIC_PROPERTY_CLIENT_MODEL, RTK_BT_MESH_GENERIC_PROPERTY_CLIENT_MODEL_MANU_PROPERTIES_STATUS,
 								sizeof(rtk_bt_mesh_generic_properties_client_status_t) + num_ids * sizeof(uint16_t));
+	if (!p_evt) {
+		BT_LOGE("[%s] Create event fail\r\n", __func__);
+		return -1;
+	}
 	memcpy(p_evt->data, &(ctx->addr), 2);
 	memcpy((uint8_t *)(p_evt->data) + 2, &num_ids, 1);
 	memcpy((uint8_t *)(p_evt->data) + 3, buf->data, 2 * num_ids);
@@ -2913,6 +3089,10 @@ static int generic_property_cli_manu_prop_status(const struct bt_mesh_model *mod
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_GENERIC_PROPERTY_CLIENT_MODEL, RTK_BT_MESH_GENERIC_PROPERTY_CLIENT_MODEL_MANU_PROPERTY_STATUS,
 									sizeof(rtk_bt_mesh_generic_property_client_status_t) + value_len);
+		if (!p_evt) {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+			return -1;
+		}
 		memcpy(p_evt->data, &(ctx->addr), 2);
 		memcpy((uint8_t *)(p_evt->data) + 2, &property_id, 2);
 		memcpy((uint8_t *)(p_evt->data) + 4, &property_access, 1);
@@ -2936,6 +3116,10 @@ static int generic_property_cli_admin_props_status(const struct bt_mesh_model *m
 	rtk_bt_evt_t *p_evt = NULL;
 	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_GENERIC_PROPERTY_CLIENT_MODEL, RTK_BT_MESH_GENERIC_PROPERTY_CLIENT_MODEL_ADMIN_PROPERTIES_STATUS,
 								sizeof(rtk_bt_mesh_generic_properties_client_status_t) + num_ids * sizeof(uint16_t));
+	if (!p_evt) {
+		BT_LOGE("[%s] Create event fail\r\n", __func__);
+		return -1;
+	}
 	memcpy(p_evt->data, &(ctx->addr), 2);
 	memcpy((uint8_t *)(p_evt->data) + 2, &num_ids, 1);
 	memcpy((uint8_t *)(p_evt->data) + 3, buf->data, 2 * num_ids);
@@ -2958,6 +3142,10 @@ static int generic_property_cli_admin_prop_status(const struct bt_mesh_model *mo
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_GENERIC_PROPERTY_CLIENT_MODEL, RTK_BT_MESH_GENERIC_PROPERTY_CLIENT_MODEL_ADMIN_PROPERTY_STATUS,
 									sizeof(rtk_bt_mesh_generic_property_client_status_t) + value_len);
+		if (!p_evt) {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+			return -1;
+		}
 		memcpy(p_evt->data, &(ctx->addr), 2);
 		memcpy((uint8_t *)(p_evt->data) + 2, &property_id, 2);
 		memcpy((uint8_t *)(p_evt->data) + 4, &property_access, 1);
@@ -2981,6 +3169,10 @@ static int generic_property_cli_user_props_status(const struct bt_mesh_model *mo
 	rtk_bt_evt_t *p_evt = NULL;
 	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_GENERIC_PROPERTY_CLIENT_MODEL, RTK_BT_MESH_GENERIC_PROPERTY_CLIENT_MODEL_USER_PROPERTIES_STATUS,
 								sizeof(rtk_bt_mesh_generic_properties_client_status_t) + num_ids * sizeof(uint16_t));
+	if (!p_evt) {
+		BT_LOGE("[%s] Create event fail\r\n", __func__);
+		return -1;
+	}
 	memcpy(p_evt->data, &(ctx->addr), 2);
 	memcpy((uint8_t *)(p_evt->data) + 2, &num_ids, 1);
 	memcpy((uint8_t *)(p_evt->data) + 3, buf->data, 2 * num_ids);
@@ -3003,6 +3195,10 @@ static int generic_property_cli_user_prop_status(const struct bt_mesh_model *mod
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_GENERIC_PROPERTY_CLIENT_MODEL, RTK_BT_MESH_GENERIC_PROPERTY_CLIENT_MODEL_USER_PROPERTY_STATUS,
 									sizeof(rtk_bt_mesh_generic_property_client_status_t) + value_len);
+		if (!p_evt) {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+			return -1;
+		}
 		memcpy(p_evt->data, &(ctx->addr), 2);
 		memcpy((uint8_t *)(p_evt->data) + 2, &property_id, 2);
 		memcpy((uint8_t *)(p_evt->data) + 4, &property_access, 1);
@@ -3026,6 +3222,10 @@ static int generic_property_cli_client_props_status(const struct bt_mesh_model *
 	rtk_bt_evt_t *p_evt = NULL;
 	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_GENERIC_PROPERTY_CLIENT_MODEL, RTK_BT_MESH_GENERIC_PROPERTY_CLIENT_MODEL_CLIENT_PROPERTY_STATUS,
 								sizeof(rtk_bt_mesh_generic_properties_client_status_t) + num_ids * sizeof(uint16_t));
+	if (!p_evt) {
+		BT_LOGE("[%s] Create event fail\r\n", __func__);
+		return -1;
+	}
 	memcpy(p_evt->data, &(ctx->addr), 2);
 	memcpy((uint8_t *)(p_evt->data) + 2, &num_ids, 1);
 	memcpy((uint8_t *)(p_evt->data) + 3, buf->data, 2 * num_ids);

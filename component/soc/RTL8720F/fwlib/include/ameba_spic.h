@@ -1295,6 +1295,10 @@ _LONG_CALL_ int FLASH_WriteStream(u32 address, u32 len, u8 *data);
 void FLASH_Write_Lock(void);
 void FLASH_Write_Unlock(void);
 void FLASH_Write_IPC_Int(void *Data, u32 IrqStatus, u32 ChanNum);
+/* Runtime AP, non-SOLO/shared IPC with NP IPC/RTOS running. Pair on the same task;
+ * the caller owns AP IRQ and XIP code/data safety, including error paths. */
+void FLASH_Freeze_NP(void);
+void FLASH_Unfreeze_NP(void);
 void FLASH_RxCmd(u8 cmd, u32 read_len, u8 *read_data);
 void FLASH_RxCmdXIP(u8 cmd, u32 read_len, u8 *read_data);
 void FLASH_SetStatusXIP(u8 Cmd, u32 Len, u8 *Status);

@@ -57,6 +57,22 @@ ameba_list_append(private_sources
     transport/ota_https.c
     transport/ota_vfs.c
 )
+
+# OTA_USB transport: the FIFO depths in ota_usb.c are per-SoC, and SoCs without a branch would end
+# up with a zero-depth config, so USB DFU OTA is limited to AmebaPro3.
+if(CONFIG_USBD_DFU_MENU AND CONFIG_USBD_DFU AND CONFIG_AMEBAPRO3)
+    ameba_list_append(private_sources
+        transport/ota_usb.c
+    )
+    ameba_list_append(private_includes
+        ${c_CMPT_USB_DIR}/common
+        ${c_CMPT_USB_DIR}/device/core
+        ${c_CMPT_USB_DIR}/device/dfu
+    )
+    ameba_list_append(private_definitions
+        OTA_USB_TRANSPORT
+    )
+endif()
 # Component private part, user config end
 #------------------------------#
 
