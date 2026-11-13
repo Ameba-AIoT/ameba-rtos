@@ -304,7 +304,10 @@ static void hids_read_hdl(void *data)
 		uint16_t total_len = sizeof(hids_report_descriptor);
 		uint16_t offset = p_read_ind->offset;
 		uint16_t actual_len = total_len - p_read_ind->offset;
-
+		if (offset > total_len) {
+			read_resp.err_code = RTK_BT_ATT_ERR_INVALID_OFFSET;
+			break;
+		}
 		// if (total_len - evt_read->offset < (mtu_size -1)) {
 		//     actual_len = total_len - evt_read->offset;
 		// } else {

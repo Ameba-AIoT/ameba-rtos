@@ -25,6 +25,10 @@ static int32_t generic_on_off_client_data(const mesh_model_info_p pmodel_info, u
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_GENERIC_ONOFF_CLIENT_MODEL, RTK_BT_MESH_GENERIC_ONOFF_CLIENT_MODEL_EVT_STATUS,
 									sizeof(generic_on_off_client_status_t));
+		if (!p_evt) {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+			break;
+		}
 		memcpy(p_evt->data, pargs, sizeof(generic_on_off_client_status_t));
 		rtk_bt_evt_indicate(p_evt, NULL);
 	}
@@ -90,6 +94,10 @@ static int32_t generic_on_off_server_data(const mesh_model_info_p pmodel_info, u
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_GENERIC_ONOFF_SERVER_MODEL, RTK_BT_MESH_GENERIC_ONOFF_SERVER_MODEL_EVT_SET,
 									sizeof(rtk_bt_mesh_generic_onoff_server_evt_set_t));
+		if (!p_evt) {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+			break;
+		}
 		memcpy(p_evt->data, pargs, sizeof(generic_on_off_server_set_t));
 		rtk_bt_evt_indicate(p_evt, NULL);
 		break;
@@ -99,6 +107,10 @@ static int32_t generic_on_off_server_data(const mesh_model_info_p pmodel_info, u
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_GENERIC_ONOFF_SERVER_MODEL, RTK_BT_MESH_GENERIC_ONOFF_SERVER_MODEL_EVT_GET,
 									sizeof(rtk_bt_mesh_generic_onoff_server_evt_get_t));
+		if (!p_evt) {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+			break;
+		}
 		get_onoff = (rtk_bt_mesh_generic_onoff_server_evt_get_t *)p_evt->data;
 		get_onoff->on_off = &(((generic_on_off_server_get_t *)pargs)->on_off);
 		rtk_bt_evt_indicate(p_evt, NULL);
