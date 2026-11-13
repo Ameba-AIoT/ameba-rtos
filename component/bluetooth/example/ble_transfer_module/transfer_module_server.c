@@ -155,8 +155,12 @@ static void transfer_module_server_read_hdl(void *data)
 	read_resp.cid = p_read_ind->cid;
 	read_resp.index = p_read_ind->index;
 	if (TRANSFER_MODULE_READ_VAL_INDEX == p_read_ind->index) {
-		read_resp.data = &transfer_module_read_val.buf[offset];
-		read_resp.len = actual_len;
+		if (offset > transfer_module_read_val.len) {
+			read_resp.err_code = RTK_BT_ATT_ERR_INVALID_OFFSET;
+		} else {
+			read_resp.data = &transfer_module_read_val.buf[offset];
+			read_resp.len = actual_len;
+		}
 	} else {
 		BT_LOGE("[APP] Transfer module read event unknown index: %d\r\n", p_read_ind->index);
 		read_resp.err_code = RTK_BT_ATT_ERR_ATTR_NOT_FOUND;

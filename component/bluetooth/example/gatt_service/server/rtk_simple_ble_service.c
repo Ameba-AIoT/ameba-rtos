@@ -99,8 +99,12 @@ void simple_ble_service_callback(uint8_t event, void *data)
 		read_resp.cid = p_read_ind->cid;
 		read_resp.index = p_read_ind->index;
 		if (SIMPLE_BLE_READ_INDEX == p_read_ind->index) {
-			read_resp.data = &simple_ble_read_val[offset];
-			read_resp.len = actual_len;
+			if (offset > SIMPLE_BLE_READ_MAX_LEN) {
+				read_resp.err_code = RTK_BT_ATT_ERR_INVALID_OFFSET;
+			} else {
+				read_resp.data = &simple_ble_read_val[offset];
+				read_resp.len = actual_len;
+			}
 		} else {
 			BT_LOGE("[APP] Simple BLE read event unknown index: %d\r\n", p_read_ind->index);
 			read_resp.err_code = RTK_BT_ATT_ERR_ATTR_NOT_FOUND;
