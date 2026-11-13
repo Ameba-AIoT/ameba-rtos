@@ -26,6 +26,10 @@ static int32_t generic_default_transition_time_client_data(const mesh_model_info
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_GENERIC_DEFAULT_TRANSITION_TIME_CLIENT_MODEL, RTK_BT_MESH_GENERIC_DEFAULT_TRANSITION_TIME_CLIENT_MODEL_STATUS,
 									sizeof(generic_default_transition_time_client_status_t));
+		if (!p_evt) {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+			break;
+		}
 		memcpy(p_evt->data, pargs, sizeof(generic_default_transition_time_client_status_t));
 		rtk_bt_evt_indicate(p_evt, NULL);
 	}
@@ -98,6 +102,10 @@ static int32_t generic_default_transition_time_server_data(const mesh_model_info
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_GENERIC_DEFAULT_TRANSITION_TIME_SERVER_MODEL, RTK_BT_MESH_GENERIC_DEFAULT_TRANSITION_TIME_SERVER_MODEL_GET,
 									sizeof(rtk_bt_mesh_generic_default_transition_time_server_get_t));
+		if (!p_evt) {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+			break;
+		}
 		p_get_data = (rtk_bt_mesh_generic_default_transition_time_server_get_t *)p_evt->data;
 		p_get_data->trans_time = (rtk_bt_mesh_generic_transition_time_t *) & (((generic_default_transition_time_server_get_t *)pargs)->trans_time);
 		rtk_bt_evt_indicate(p_evt, NULL);
@@ -110,6 +118,10 @@ static int32_t generic_default_transition_time_server_data(const mesh_model_info
 			rtk_bt_evt_t *p_evt = NULL;
 			p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_GENERIC_DEFAULT_TRANSITION_TIME_SERVER_MODEL, RTK_BT_MESH_GENERIC_DEFAULT_TRANSITION_TIME_SERVER_MODEL_SET,
 										sizeof(generic_default_transition_time_server_set_t));
+			if (!p_evt) {
+				BT_LOGE("[%s] Create event fail\r\n", __func__);
+				break;
+			}
 			memcpy(p_evt->data, p_get_data, sizeof(generic_default_transition_time_server_set_t));
 			rtk_bt_evt_indicate(p_evt, NULL);
 		}

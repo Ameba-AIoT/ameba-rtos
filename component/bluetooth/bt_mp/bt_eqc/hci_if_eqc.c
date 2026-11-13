@@ -18,6 +18,7 @@
 extern void *eqc_event_sem;
 extern void *eqc_evt_queue_handle;  //!< Event queue handle
 static uint8_t *hci_eqc_buf;
+static uint16_t hci_eqc_buf_size;
 void *eqc_recv_sem = NULL;
 
 struct tx_packet_t {
@@ -29,10 +30,6 @@ static void eqc_recv(struct hci_rx_packet_t *pkt)
 {
 	E_EVENT_MSG event_msg;
 
-	if (!pkt) {
-		return;
-	}
-
 	if (!IS_ALIGNED(pkt->buf, 4)) {
 		BT_LOGE("rx buf not aligned\r\n");
 		goto failed;
@@ -40,6 +37,10 @@ static void eqc_recv(struct hci_rx_packet_t *pkt)
 
 	if (HCI_EVT == pkt->type && (BT_HCI_EVT_CMD_COMPLETE == (*(pkt->buf)) ||
 								 BT_HCI_EVT_CMD_STATUS == (*(pkt->buf)))) {  /* command complete && command status event */
+		if (!hci_eqc_buf || (pkt->len > hci_eqc_buf_size)) {
+			BT_LOGE("EQC: rx pkt too long (%d)\r\n", pkt->len);
+			goto failed;
+		}
 		memcpy(hci_eqc_buf, pkt->buf, pkt->len);
 		osif_sem_give(eqc_recv_sem);
 	} else {
@@ -94,6 +95,8 @@ void hci_eqc_close(void)
 {
 	osif_sem_delete(eqc_recv_sem);
 	eqc_recv_sem = NULL;
+	hci_eqc_buf = NULL;
+	hci_eqc_buf_size = 0;
 
 	hci_controller_close();
 	hci_controller_free();
@@ -101,19 +104,23 @@ void hci_eqc_close(void)
 }
 
 /*command status*/
-bool hci_if_eqc_send_status(uint16_t opcode, uint8_t *buf, uint16_t len)
+bool hci_if_eqc_send_status(uint16_t opcode, uint8_t *buf, uint16_t len, uint16_t buf_size)
 {
 	buf[0] = (uint8_t)(opcode >> 0);
 	buf[1] = (uint8_t)(opcode >> 8);
 
 	hci_eqc_buf = buf;
+	hci_eqc_buf_size = buf_size;
 
 	if (len != hci_transport_send(HCI_CMD, buf, len, true)) {
+		hci_eqc_buf = NULL;
+		hci_eqc_buf_size = 0;
 		return false;
 	}
 
 	osif_sem_take(eqc_recv_sem, BT_TIMEOUT_FOREVER);
 	hci_eqc_buf = NULL;
+	hci_eqc_buf_size = 0;
 
 	/* Check Resp: OpCode and Status */
 	if (buf[4] != (uint8_t)(opcode >> 0) || buf[5] != (uint8_t)(opcode >> 8) || buf[2] != 0x00) {
@@ -125,19 +132,23 @@ bool hci_if_eqc_send_status(uint16_t opcode, uint8_t *buf, uint16_t len)
 }
 
 /*command complete*/
-bool hci_if_eqc_send_comple(uint16_t opcode, uint8_t *buf, uint16_t len)
+bool hci_if_eqc_send_comple(uint16_t opcode, uint8_t *buf, uint16_t len, uint16_t buf_size)
 {
 	buf[0] = (uint8_t)(opcode >> 0);
 	buf[1] = (uint8_t)(opcode >> 8);
 
 	hci_eqc_buf = buf;
+	hci_eqc_buf_size = buf_size;
 
 	if (len != hci_transport_send(HCI_CMD, buf, len, true)) {
+		hci_eqc_buf = NULL;
+		hci_eqc_buf_size = 0;
 		return false;
 	}
 
 	osif_sem_take(eqc_recv_sem, BT_TIMEOUT_FOREVER);
 	hci_eqc_buf = NULL;
+	hci_eqc_buf_size = 0;
 
 	/* Check Resp: OpCode and Status */
 	if (buf[3] != (uint8_t)(opcode >> 0) || buf[4] != (uint8_t)(opcode >> 8) || buf[5] != 0x00) {

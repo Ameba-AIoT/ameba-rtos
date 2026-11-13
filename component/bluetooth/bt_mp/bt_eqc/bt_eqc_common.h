@@ -17,7 +17,7 @@ typedef struct {
 
 void hci_eqc_open(void);
 void hci_eqc_close(void);
-bool hci_if_eqc_send_comple(uint16_t opcode, uint8_t *buf, uint16_t len);
-bool hci_if_eqc_send_status(uint16_t opcode, uint8_t *buf, uint16_t len);
+bool hci_if_eqc_send_comple(uint16_t opcode, uint8_t *buf, uint16_t len, uint16_t buf_size);
+bool hci_if_eqc_send_status(uint16_t opcode, uint8_t *buf, uint16_t len, uint16_t buf_size);
 
 #endif

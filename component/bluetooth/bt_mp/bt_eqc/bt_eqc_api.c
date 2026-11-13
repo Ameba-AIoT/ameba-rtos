@@ -39,7 +39,7 @@ bool rtk_bt_eqc_set_event_mask(void)
 	buf[9] = event_mask[6];
 	buf[10] = event_mask[7];
 
-	if (HCI_SUCCESS != hci_if_eqc_send_comple(0x0C01, buf, buf[2] + 3)) {
+	if (HCI_SUCCESS != hci_if_eqc_send_comple(0x0C01, buf, buf[2] + 3, sizeof(buf))) {
 		return false;
 	}
 	//recieved command complete event & status == 0
@@ -52,7 +52,7 @@ bool rtk_bt_eqc_read_bt_address(uint8_t *bt_address)
 
 	buf[2] = (uint8_t)0;
 
-	if (HCI_SUCCESS != hci_if_eqc_send_comple(0x1009, buf, buf[2] + 3)) {
+	if (HCI_SUCCESS != hci_if_eqc_send_comple(0x1009, buf, buf[2] + 3, sizeof(buf))) {
 		return false;
 	}
 
@@ -75,7 +75,7 @@ bool rtk_bt_eqc_le_start_advertising(bool enable)
 		buf[3] = 0x0;
 	}
 
-	if (HCI_SUCCESS != hci_if_eqc_send_comple(0x200A, buf, buf[2] + 3)) {
+	if (HCI_SUCCESS != hci_if_eqc_send_comple(0x200A, buf, buf[2] + 3, sizeof(buf))) {
 		return false;
 	}
 
@@ -128,7 +128,7 @@ bool rtk_bt_eqc_le_connect(uint8_t *bt_address)
 	buf[26] = 0x50;  //ce_lengh
 	buf[27] = 0x00;  //ce_lengh
 
-	if (HCI_SUCCESS != hci_if_eqc_send_status(0x200D, buf, buf[2] + 3)) {
+	if (HCI_SUCCESS != hci_if_eqc_send_status(0x200D, buf, buf[2] + 3, sizeof(buf))) {
 		return false;
 	}
 	//recieved command status event & status == 0
@@ -141,7 +141,7 @@ bool rtk_bt_eqc_le_connect_cancel(void)
 
 	buf[2] = (uint8_t)0;
 
-	if (HCI_SUCCESS != hci_if_eqc_send_comple(0x200E, buf, buf[2] + 3)) {
+	if (HCI_SUCCESS != hci_if_eqc_send_comple(0x200E, buf, buf[2] + 3, sizeof(buf))) {
 		return false;
 	}
 	//recieved command complete event & status == 0
@@ -157,7 +157,7 @@ bool rtk_bt_eqc_le_disconnect(uint16_t conn_handle, uint8_t disc_reason)
 	buf[4] = conn_handle >> 8 & 0xFF;
 	buf[5] = disc_reason;
 
-	if (HCI_SUCCESS != hci_if_eqc_send_status(0x0406, buf, buf[2] + 3)) {
+	if (HCI_SUCCESS != hci_if_eqc_send_status(0x0406, buf, buf[2] + 3, sizeof(buf))) {
 		return false;
 	}
 	//recieved command status event & status == 0
@@ -173,7 +173,7 @@ bool rtk_bt_eqc_le_read_current_channel_map(uint16_t conn_handle)
 	buf[3] = conn_handle & 0xFF;
 	buf[4] = conn_handle >> 8 & 0xFF;
 
-	if (HCI_SUCCESS != hci_if_eqc_send_comple(0x2015, buf, buf[2] + 3)) {
+	if (HCI_SUCCESS != hci_if_eqc_send_comple(0x2015, buf, buf[2] + 3, sizeof(buf))) {
 		return false;
 	}
 	//recieved command status event & status == 0
