@@ -176,14 +176,19 @@ static int sensor_descriptor_status(const struct bt_mesh_model *model,
 
 		/**Event test**/
 		rtk_bt_mesh_sensor_server_get_descriptor_num_t *p_get_data_num; //property id == 0 means get all
+		uint16_t d_num = 0;
+		rtk_bt_mesh_sensor_descriptor_t sensor_descriptors[SENSOR_GET_DATA_MAX_LEN] = {0};
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_SENSOR_SERVER_MODEL, RTK_BT_MESH_SENSOR_SERVER_MODEL_DESCRIPTOR_NUM_GET,
 									sizeof(rtk_bt_mesh_sensor_server_get_descriptor_num_t));
-		p_get_data_num = (rtk_bt_mesh_sensor_server_get_descriptor_num_t *)p_evt->data;
-		p_get_data_num->property_id = property_id;
-		uint16_t d_num = 0;
-		p_get_data_num->descriptor_num = &d_num;
-		rtk_bt_evt_indicate(p_evt, NULL);
+		if (p_evt) {
+			p_get_data_num = (rtk_bt_mesh_sensor_server_get_descriptor_num_t *)p_evt->data;
+			p_get_data_num->property_id = property_id;
+			p_get_data_num->descriptor_num = &d_num;
+			rtk_bt_evt_indicate(p_evt, NULL);
+		} else {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+		}
 		/******Get descriptor number******/
 		rtk_bt_mesh_sensor_server_get_descriptor_t des_get = {property_id, d_num, NULL};
 		if (d_num > SENSOR_GET_DATA_MAX_LEN) {
@@ -192,13 +197,16 @@ static int sensor_descriptor_status(const struct bt_mesh_model *model,
 		}
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_SENSOR_SERVER_MODEL, RTK_BT_MESH_SENSOR_SERVER_MODEL_DESCRIPTOR_GET,
 									sizeof(rtk_bt_mesh_sensor_server_get_descriptor_t) + d_num * sizeof(rtk_bt_mesh_sensor_descriptor_t));
-		rtk_bt_mesh_sensor_descriptor_t sensor_descriptors[SENSOR_GET_DATA_MAX_LEN];
-		rtk_bt_mesh_sensor_server_get_descriptor_t *p_get_data_d;
-		p_get_data_d = (rtk_bt_mesh_sensor_server_get_descriptor_t *)p_evt->data;
-		p_get_data_d->property_id = property_id;
-		p_get_data_d->descriptor_num = d_num;
-		p_get_data_d->descriptor = sensor_descriptors;
-		rtk_bt_evt_indicate(p_evt, NULL);
+		if (p_evt) {
+			rtk_bt_mesh_sensor_server_get_descriptor_t *p_get_data_d;
+			p_get_data_d = (rtk_bt_mesh_sensor_server_get_descriptor_t *)p_evt->data;
+			p_get_data_d->property_id = property_id;
+			p_get_data_d->descriptor_num = d_num;
+			p_get_data_d->descriptor = sensor_descriptors;
+			rtk_bt_evt_indicate(p_evt, NULL);
+		} else {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+		}
 		des_get.descriptor = sensor_descriptors;
 		for (int i = 0; i < d_num; i++) {
 			BT_LOGD("property_id: %d, positive_tolerance: %d, negative_tolerance: %d, sampling_function: %d, measurement_period: %d, update_interval: %d \r\n",
@@ -257,10 +265,14 @@ static int sensor_status_internal(const struct bt_mesh_model *model,
 			rtk_bt_evt_t *p_evt = NULL;
 			p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_SENSOR_SERVER_MODEL, RTK_BT_MESH_SENSOR_SERVER_MODEL_GET,
 										sizeof(rtk_bt_mesh_sensor_server_get_t) + SENSOR_GET_DATA_MAX_LEN * 2 + 2);
-			sensor_value = (rtk_bt_mesh_sensor_server_get_t *)p_evt->data;
-			sensor_value->property_id = pinfo->sensors[i].descriptor.property_id;
-			sensor_value->raw_data = sensor_get_value;
-			rtk_bt_evt_indicate(p_evt, NULL);
+			if (p_evt) {
+				sensor_value = (rtk_bt_mesh_sensor_server_get_t *)p_evt->data;
+				sensor_value->property_id = pinfo->sensors[i].descriptor.property_id;
+				sensor_value->raw_data = sensor_get_value;
+				rtk_bt_evt_indicate(p_evt, NULL);
+			} else {
+				BT_LOGE("[%s] Create event fail\r\n", __func__);
+			}
 			if (LE_TO_U16(sensor_get_value)) {
 				p_get_data.raw_data = &sensor_get_value[2];
 			} else {
@@ -339,10 +351,14 @@ static int sensor_status_internal(const struct bt_mesh_model *model,
 			rtk_bt_evt_t *p_evt = NULL;
 			p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_SENSOR_SERVER_MODEL, RTK_BT_MESH_SENSOR_SERVER_MODEL_GET,
 										sizeof(rtk_bt_mesh_sensor_server_get_t) + SENSOR_GET_DATA_MAX_LEN * 2 + 2);
-			sensor_value = (rtk_bt_mesh_sensor_server_get_t *)p_evt->data;
-			sensor_value->property_id = p_get_data.property_id;
-			sensor_value->raw_data = sensor_get_value;
-			rtk_bt_evt_indicate(p_evt, NULL);
+			if (p_evt) {
+				sensor_value = (rtk_bt_mesh_sensor_server_get_t *)p_evt->data;
+				sensor_value->property_id = p_get_data.property_id;
+				sensor_value->raw_data = sensor_get_value;
+				rtk_bt_evt_indicate(p_evt, NULL);
+			} else {
+				BT_LOGE("[%s] Create event fail\r\n", __func__);
+			}
 			if (LE_TO_U16(sensor_get_value)) {
 				p_get_data.raw_data = &sensor_get_value[2];
 			} else {
@@ -466,12 +482,16 @@ static int sensor_srv_colu_get(const struct bt_mesh_model *model,
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_SENSOR_SERVER_MODEL, RTK_BT_MESH_SENSOR_SERVER_MODEL_COLUMN_GET,
 									sizeof(rtk_bt_mesh_sensor_server_direct_get_column_t) + p_get_data.raw_value_x_len + 4 + SENSOR_GET_COLUMN_MAX_LEN * 2);
-		column_get = (rtk_bt_mesh_sensor_server_direct_get_column_t *)p_evt->data;
-		column_get->property_id = p_get_data.property_id;
-		column_get->raw_value_x_len = raw_value_x_len;
-		memcpy(column_get->raw_value_x, p_get_data.raw_value_x, raw_value_x_len);
-		column_get->value = sensor_column_get_value;
-		rtk_bt_evt_indicate(p_evt, NULL);
+		if (p_evt) {
+			column_get = (rtk_bt_mesh_sensor_server_direct_get_column_t *)p_evt->data;
+			column_get->property_id = p_get_data.property_id;
+			column_get->raw_value_x_len = raw_value_x_len;
+			memcpy(column_get->raw_value_x, p_get_data.raw_value_x, raw_value_x_len);
+			column_get->value = sensor_column_get_value;
+			rtk_bt_evt_indicate(p_evt, NULL);
+		} else {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+		}
 		p_get_data.column_len = LE_TO_U16(sensor_column_get_value);
 		p_get_data.column = (uint8_t *)sensor_column_get_value + 2;
 
@@ -507,13 +527,17 @@ static int sensor_srv_series_get(const struct bt_mesh_model *model,
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_SENSOR_SERVER_MODEL, RTK_BT_MESH_SENSOR_SERVER_MODEL_SERIES_GET,
 									sizeof(rtk_bt_mesh_sensor_server_direct_get_series_t) + 2 * SENSOR_GET_SERIES_MAX_LEN + 2);
-		series_get = (rtk_bt_mesh_sensor_server_direct_get_series_t *)p_evt->data;
-		series_get->property_id = p_get_data.property_id;
-		series_get->raw_value_x_len = raw_value_x_len;
-		memcpy(series_get->raw_value_x1, p_get_data.raw_value_x1, raw_value_x_len);
-		memcpy(series_get->raw_value_x2, p_get_data.raw_value_x2, raw_value_x_len);
-		series_get->value = sensor_series_get_value;
-		rtk_bt_evt_indicate(p_evt, NULL);
+		if (p_evt) {
+			series_get = (rtk_bt_mesh_sensor_server_direct_get_series_t *)p_evt->data;
+			series_get->property_id = p_get_data.property_id;
+			series_get->raw_value_x_len = raw_value_x_len;
+			memcpy(series_get->raw_value_x1, p_get_data.raw_value_x1, raw_value_x_len);
+			memcpy(series_get->raw_value_x2, p_get_data.raw_value_x2, raw_value_x_len);
+			series_get->value = sensor_series_get_value;
+			rtk_bt_evt_indicate(p_evt, NULL);
+		} else {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+		}
 		p_get_data.series_len = LE_TO_U16(sensor_series_get_value);
 		p_get_data.series = (uint8_t *)sensor_series_get_value + 2;
 		sensor_series_status(model, ctx, p_get_data.property_id, p_get_data.series_len, p_get_data.series);
@@ -610,10 +634,14 @@ int sensor_status_publish(const struct bt_mesh_model *model)
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_SENSOR_SERVER_MODEL, RTK_BT_MESH_SENSOR_SERVER_MODEL_GET,
 									sizeof(rtk_bt_mesh_sensor_server_get_t) + SENSOR_GET_DATA_MAX_LEN * 2 + 2);
-		sensor_value = (rtk_bt_mesh_sensor_server_get_t *)p_evt->data;
-		sensor_value->property_id = pinfo->sensors[i].descriptor.property_id;
-		sensor_value->raw_data = sensor_get_value;
-		rtk_bt_evt_indicate(p_evt, NULL);
+		if (p_evt) {
+			sensor_value = (rtk_bt_mesh_sensor_server_get_t *)p_evt->data;
+			sensor_value->property_id = pinfo->sensors[i].descriptor.property_id;
+			sensor_value->raw_data = sensor_get_value;
+			rtk_bt_evt_indicate(p_evt, NULL);
+		} else {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+		}
 		if (LE_TO_U16(sensor_get_value)) {
 			p_get_data.raw_data = &sensor_get_value[2];
 		} else {
@@ -788,6 +816,11 @@ static bool sensor_check_msg(const struct bt_mesh_model *model, const sensor_cad
 		trigger_len = TRIGGER_DELTA_UNITLESS_LEN;
 	}
 	pdata += (trigger_len * 2);
+
+	/* msg_len is the length after the header, the min interval byte must be inside it */
+	if ((trigger_len * 2) >= msg_len) {
+		return FALSE;
+	}
 
 	if (!IS_STATUS_MIN_INTERVAL_VALID(*pdata)) {
 		return FALSE;
@@ -1040,10 +1073,14 @@ static int sensor_setup_srv_cadence_get(const struct bt_mesh_model *model,
 	rtk_bt_evt_t *p_evt = NULL;
 	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_SENSOR_SETUP_SERVER_MODEL, RTK_BT_MESH_SENSOR_SERVER_MODEL_CADENCE_GET,
 								sizeof(rtk_bt_mesh_sensor_server_get_cadence_t) + 4 * SENSOR_CADENCE_DATA_MAX_LEN);
-	p_get_data = (rtk_bt_mesh_sensor_server_get_cadence_t *)p_evt->data;
-	p_get_data->property_id = get_data.property_id;
-	p_get_data->cadence = cadence_value;
-	rtk_bt_evt_indicate(p_evt, &cb_ret);
+	if (p_evt) {
+		p_get_data = (rtk_bt_mesh_sensor_server_get_cadence_t *)p_evt->data;
+		p_get_data->property_id = get_data.property_id;
+		p_get_data->cadence = cadence_value;
+		rtk_bt_evt_indicate(p_evt, &cb_ret);
+	} else {
+		BT_LOGE("[%s] Create event fail\r\n", __func__);
+	}
 	// uint16_t len = LE_TO_U16(&cadence_value[0]);
 	/****dump cadence data to p_data*****/
 	/*reserve 2 bytes to store msg length for ipc and direct calling*/
@@ -1109,7 +1146,11 @@ static int sensor_setup_srv_cadence_set_unack(const struct bt_mesh_model *model,
 {
 	(void)ctx;
 	sensor_cadence_set_t *pmsg = (sensor_cadence_set_t *)buf->data;
-	if (sensor_check_msg(model, pmsg, buf->len)) {
+	if (buf->len < sizeof(sensor_cadence_set_t)) {
+		return -1;
+	}
+	uint16_t msg_len = buf->len - sizeof(sensor_cadence_set_t);
+	if (sensor_check_msg(model, pmsg, msg_len)) {
 		rtk_bt_mesh_sensor_cadence_t *cadence = sensor_get_cadence(model, pmsg->property_id);
 		if (NULL != cadence) {
 			uint8_t *pdata = pmsg->cadence;
@@ -1123,6 +1164,10 @@ static int sensor_setup_srv_cadence_set_unack(const struct bt_mesh_model *model,
 				cadence->raw_value_len = raw_value_len;
 				trigger_len = cadence->raw_value_len;
 			} else {
+				/* property id(2) + divisor/trigger type(1) + two unitless deltas + min interval(1) */
+				if (buf->len < 3 + 2 * TRIGGER_DELTA_UNITLESS_LEN + sizeof(uint8_t)) {
+					return -1;
+				}
 				raw_value_len = (buf->len - sizeof(uint8_t) - 2 * TRIGGER_DELTA_UNITLESS_LEN - 3) / 2;
 				cadence->raw_value_len = raw_value_len;
 				trigger_len = TRIGGER_DELTA_UNITLESS_LEN;
@@ -1157,14 +1202,18 @@ static int sensor_setup_srv_cadence_set_unack(const struct bt_mesh_model *model,
 			rtk_bt_evt_t *p_evt = NULL;
 			p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_SENSOR_SETUP_SERVER_MODEL, RTK_BT_MESH_SENSOR_SERVER_MODEL_CADENCE_SET,
 										len);
-			memcpy(p_evt->data, &p_set_data.property_id, 2);
-			memcpy((uint8_t *)(p_evt->data) + 2, p_set_data.cadence, 2);
-			memcpy((uint8_t *)(p_evt->data) + 4, (p_set_data.cadence)->status_trigger_delta_down, trigger_len);
-			memcpy((uint8_t *)(p_evt->data) + 4 + trigger_len, (p_set_data.cadence)->status_trigger_delta_up, trigger_len);
-			memcpy((uint8_t *)(p_evt->data) + 4 + 2 * trigger_len, &(p_set_data.cadence)->status_min_interval, 1);
-			memcpy((uint8_t *)(p_evt->data) + 5 + 2 * trigger_len, (p_set_data.cadence)->fast_cadence_low, raw_value_len);
-			memcpy((uint8_t *)(p_evt->data) + 5 + 2 * trigger_len + raw_value_len, (p_set_data.cadence)->fast_cadence_high, raw_value_len);
-			rtk_bt_evt_indicate(p_evt, NULL);
+			if (p_evt) {
+				memcpy(p_evt->data, &p_set_data.property_id, 2);
+				memcpy((uint8_t *)(p_evt->data) + 2, p_set_data.cadence, 2);
+				memcpy((uint8_t *)(p_evt->data) + 4, (p_set_data.cadence)->status_trigger_delta_down, trigger_len);
+				memcpy((uint8_t *)(p_evt->data) + 4 + trigger_len, (p_set_data.cadence)->status_trigger_delta_up, trigger_len);
+				memcpy((uint8_t *)(p_evt->data) + 4 + 2 * trigger_len, &(p_set_data.cadence)->status_min_interval, 1);
+				memcpy((uint8_t *)(p_evt->data) + 5 + 2 * trigger_len, (p_set_data.cadence)->fast_cadence_low, raw_value_len);
+				memcpy((uint8_t *)(p_evt->data) + 5 + 2 * trigger_len + raw_value_len, (p_set_data.cadence)->fast_cadence_high, raw_value_len);
+				rtk_bt_evt_indicate(p_evt, NULL);
+			} else {
+				BT_LOGE("[%s] Create event fail\r\n", __func__);
+			}
 		}
 		return 0;
 	}
@@ -1221,10 +1270,14 @@ static int sensor_setup_srv_settings_get(const struct bt_mesh_model *model,
 	rtk_bt_evt_t *p_evt = NULL;
 	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_SENSOR_SETUP_SERVER_MODEL, RTK_BT_MESH_SENSOR_SERVER_MODEL_SETTINGS_GET,
 								sizeof(rtk_bt_mesh_sensor_server_get_settings_t) + SENSOR_SETTINGS_DATA_MAX_LEN);
-	p_get_data = (rtk_bt_mesh_sensor_server_get_settings_t *)p_evt->data;
-	p_get_data->property_id = settings_get.property_id;
-	p_get_data->settings_data = settings_store;
-	rtk_bt_evt_indicate(p_evt, &cb_ret);
+	if (p_evt) {
+		p_get_data = (rtk_bt_mesh_sensor_server_get_settings_t *)p_evt->data;
+		p_get_data->property_id = settings_get.property_id;
+		p_get_data->settings_data = settings_store;
+		rtk_bt_evt_indicate(p_evt, &cb_ret);
+	} else {
+		BT_LOGE("[%s] Create event fail\r\n", __func__);
+	}
 	settings_get.settings_data = settings_store;
 
 	uint16_t settings_num = settings_get.settings_data[0];
@@ -1263,11 +1316,15 @@ static int sensor_setup_srv_setting_get(const struct bt_mesh_model *model,
 			rtk_bt_evt_t *p_evt = NULL;
 			p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_SENSOR_SETUP_SERVER_MODEL, RTK_BT_MESH_SENSOR_SERVER_MODEL_SETTING_GET,
 										sizeof(rtk_bt_mesh_sensor_server_get_setting_t) + SENSOR_SETTING_DATA_MAX_LEN);
-			p_get_data = (rtk_bt_mesh_sensor_server_get_setting_t *)p_evt->data;
-			p_get_data->property_id = property_id;
-			p_get_data->setting_property_id = setting_property_id;
-			p_get_data->setting_data = setting_store;
-			rtk_bt_evt_indicate(p_evt, &cb_ret);
+			if (p_evt) {
+				p_get_data = (rtk_bt_mesh_sensor_server_get_setting_t *)p_evt->data;
+				p_get_data->property_id = property_id;
+				p_get_data->setting_property_id = setting_property_id;
+				p_get_data->setting_data = setting_store;
+				rtk_bt_evt_indicate(p_evt, &cb_ret);
+			} else {
+				BT_LOGE("[%s] Create event fail\r\n", __func__);
+			}
 
 			setting_get_value.setting_access = setting_store[0];
 			setting_get_value.setting_raw_len = setting_store[1];
@@ -1312,12 +1369,16 @@ static int sensor_setup_srv_setting_set_unack(const struct bt_mesh_model *model,
 				rtk_bt_evt_t *p_evt = NULL;
 				p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_SENSOR_SETUP_SERVER_MODEL, RTK_BT_MESH_SENSOR_SERVER_MODEL_SETTING_SET,
 											len);
-				memcpy(p_evt->data, &p_set_data.property_id, 2);
-				memcpy((uint8_t *)(p_evt->data) + 2, &(p_set_data.setting->setting_property_id), 2);
-				memcpy((uint8_t *)(p_evt->data) + 4, &(p_set_data.setting->setting_access), 1);
-				memcpy((uint8_t *)(p_evt->data) + 5, &(p_set_data.setting->setting_raw_len), 1);
-				memcpy((uint8_t *)(p_evt->data) + 6, p_set_data.setting->setting_raw, (p_set_data.setting)->setting_raw_len);
-				rtk_bt_evt_indicate(p_evt, NULL);
+				if (p_evt) {
+					memcpy(p_evt->data, &p_set_data.property_id, 2);
+					memcpy((uint8_t *)(p_evt->data) + 2, &(p_set_data.setting->setting_property_id), 2);
+					memcpy((uint8_t *)(p_evt->data) + 4, &(p_set_data.setting->setting_access), 1);
+					memcpy((uint8_t *)(p_evt->data) + 5, &(p_set_data.setting->setting_raw_len), 1);
+					memcpy((uint8_t *)(p_evt->data) + 6, p_set_data.setting->setting_raw, (p_set_data.setting)->setting_raw_len);
+					rtk_bt_evt_indicate(p_evt, NULL);
+				} else {
+					BT_LOGE("[%s] Create event fail\r\n", __func__);
+				}
 			} else {
 				// set_read_only = TRUE;
 			}
@@ -1426,9 +1487,13 @@ static int sensor_cli_desc_status(const struct bt_mesh_model *model,
 		uint32_t len = 6 + status.num_descriptors * sizeof(rtk_bt_mesh_sensor_descriptor_t);
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_SENSOR_CLIENT_MODEL, RTK_BT_MESH_SENSOR_DESCRIPTOR_CLIENT_MODEL_STATUS,
 									len);
-		memcpy(p_evt->data, &status, 6);
-		memcpy((uint8_t *)p_evt->data + 6, status.descriptors, status.num_descriptors * sizeof(rtk_bt_mesh_sensor_descriptor_t));
-		rtk_bt_evt_indicate(p_evt, NULL);
+		if (p_evt) {
+			memcpy(p_evt->data, &status, 6);
+			memcpy((uint8_t *)p_evt->data + 6, status.descriptors, status.num_descriptors * sizeof(rtk_bt_mesh_sensor_descriptor_t));
+			rtk_bt_evt_indicate(p_evt, NULL);
+		} else {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+		}
 	}
 
 	return 0;
@@ -1444,9 +1509,13 @@ static int sensor_cli_status(const struct bt_mesh_model *model,
 	uint32_t len = status_data.marshalled_sensor_data_len + 4;
 	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_SENSOR_CLIENT_MODEL, RTK_BT_MESH_SENSOR_CLIENT_MODEL_STATUS,
 								len);
-	memcpy(p_evt->data, &status_data, 4);
-	memcpy((uint8_t *)p_evt->data + 4, status_data.marshalled_sensor_data, len - 4);
-	rtk_bt_evt_indicate(p_evt, NULL);
+	if (p_evt) {
+		memcpy(p_evt->data, &status_data, 4);
+		memcpy((uint8_t *)p_evt->data + 4, status_data.marshalled_sensor_data, len - 4);
+		rtk_bt_evt_indicate(p_evt, NULL);
+	} else {
+		BT_LOGE("[%s] Create event fail\r\n", __func__);
+	}
 	return 0;
 }
 
@@ -1463,9 +1532,13 @@ static int sensor_cli_column_status(const struct bt_mesh_model *model,
 	uint32_t len = colum_stat.column_raw_value_len + 6;
 	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_SENSOR_CLIENT_MODEL, RTK_BT_MESH_SENSOR_COLUMN_CLIENT_MODEL_STATUS,
 								len);
-	memcpy(p_evt->data, &colum_stat, 6);
-	memcpy((uint8_t *)p_evt->data + 6, colum_stat.column_raw_value, len - 6);
-	rtk_bt_evt_indicate(p_evt, NULL);
+	if (p_evt) {
+		memcpy(p_evt->data, &colum_stat, 6);
+		memcpy((uint8_t *)p_evt->data + 6, colum_stat.column_raw_value, len - 6);
+		rtk_bt_evt_indicate(p_evt, NULL);
+	} else {
+		BT_LOGE("[%s] Create event fail\r\n", __func__);
+	}
 	return 0;
 }
 
@@ -1482,9 +1555,13 @@ static int sensor_cli_series_status(const struct bt_mesh_model *model,
 	uint32_t len = status_data.series_raw_value_len + 6;
 	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_SENSOR_CLIENT_MODEL, RTK_BT_MESH_SENSOR_SERIES_CLIENT_MODEL_STATUS,
 								len);
-	memcpy(p_evt->data, &status_data, 6);
-	memcpy((uint8_t *)p_evt->data + 6, status_data.series_raw_value, len - 6);
-	rtk_bt_evt_indicate(p_evt, NULL);
+	if (p_evt) {
+		memcpy(p_evt->data, &status_data, 6);
+		memcpy((uint8_t *)p_evt->data + 6, status_data.series_raw_value, len - 6);
+		rtk_bt_evt_indicate(p_evt, NULL);
+	} else {
+		BT_LOGE("[%s] Create event fail\r\n", __func__);
+	}
 	return 0;
 }
 
@@ -1507,6 +1584,9 @@ static int sensor_cli_cadence_status(const struct bt_mesh_model *model,
 			cadence.raw_value_len = trigger_len;
 		} else {
 			trigger_len = TRIGGER_DELTA_UNITLESS_LEN;
+			if (buf->len < 1 + trigger_len * 2) {
+				return -1;
+			}
 			cadence.raw_value_len = (buf->len - 1 - trigger_len * 2) / 2;
 		}
 		cadence.status_trigger_delta_down = buf->data;
@@ -1533,25 +1613,33 @@ static int sensor_cli_cadence_status(const struct bt_mesh_model *model,
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_SENSOR_CLIENT_MODEL, RTK_BT_MESH_SENSOR_CADENCE_CLIENT_MODEL_STATUS,
 									len);
-		memcpy(p_evt->data, & status_data.src, 2);
-		memcpy((uint8_t *)p_evt->data + 2, &status_data.property_id, 2);
-		memcpy((bool *)p_evt->data + 4, &status_data.flag, 1);
-		memcpy((uint8_t *)p_evt->data + 5, & status_data.cadence->raw_value_len, 2);
-		memcpy((uint8_t *)p_evt->data + 7, status_data.cadence->status_trigger_delta_down, trigger_len);
-		memcpy((uint8_t *)p_evt->data + 7 + trigger_len, status_data.cadence->status_trigger_delta_up, trigger_len);
-		memcpy((uint8_t *)p_evt->data + 7 + 2 * trigger_len, &status_data.cadence->status_min_interval, 1);
-		memcpy((uint8_t *)p_evt->data + 8 + 2 * trigger_len, status_data.cadence->fast_cadence_low, raw_value_len);
-		memcpy((uint8_t *)p_evt->data + 8 + 2 * trigger_len + raw_value_len, status_data.cadence->fast_cadence_high, raw_value_len);
-		rtk_bt_evt_indicate(p_evt, NULL);
+		if (p_evt) {
+			memcpy(p_evt->data, & status_data.src, 2);
+			memcpy((uint8_t *)p_evt->data + 2, &status_data.property_id, 2);
+			memcpy((bool *)p_evt->data + 4, &status_data.flag, 1);
+			memcpy((uint8_t *)p_evt->data + 5, & status_data.cadence->raw_value_len, 2);
+			memcpy((uint8_t *)p_evt->data + 7, status_data.cadence->status_trigger_delta_down, trigger_len);
+			memcpy((uint8_t *)p_evt->data + 7 + trigger_len, status_data.cadence->status_trigger_delta_up, trigger_len);
+			memcpy((uint8_t *)p_evt->data + 7 + 2 * trigger_len, &status_data.cadence->status_min_interval, 1);
+			memcpy((uint8_t *)p_evt->data + 8 + 2 * trigger_len, status_data.cadence->fast_cadence_low, raw_value_len);
+			memcpy((uint8_t *)p_evt->data + 8 + 2 * trigger_len + raw_value_len, status_data.cadence->fast_cadence_high, raw_value_len);
+			rtk_bt_evt_indicate(p_evt, NULL);
+		} else {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+		}
 	} else {
 		uint32_t len = 5;
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_SENSOR_CLIENT_MODEL, RTK_BT_MESH_SENSOR_CADENCE_CLIENT_MODEL_STATUS,
 									len);
-		memcpy(p_evt->data, &status_data.src, 2);
-		memcpy((uint8_t *)p_evt->data + 2, &status_data.property_id, 2);
-		memcpy((bool *)p_evt->data + 4, &status_data.flag, 1);
-		rtk_bt_evt_indicate(p_evt, NULL);
+		if (p_evt) {
+			memcpy(p_evt->data, &status_data.src, 2);
+			memcpy((uint8_t *)p_evt->data + 2, &status_data.property_id, 2);
+			memcpy((bool *)p_evt->data + 4, &status_data.flag, 1);
+			rtk_bt_evt_indicate(p_evt, NULL);
+		} else {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+		}
 	}
 	return 0;
 }
@@ -1569,9 +1657,13 @@ static int sensor_cli_settings_status(const struct bt_mesh_model *model,
 	uint32_t len = settings_stat.num_ids * 2 + 6;
 	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_SENSOR_CLIENT_MODEL, RTK_BT_MESH_SENSOR_SETTINGS_CLIENT_MODEL_STATUS,
 								len);
-	memcpy(p_evt->data, &settings_stat, 6);
-	memcpy((uint8_t *)p_evt->data + 6, settings_stat.setting_ids, len - 6);
-	rtk_bt_evt_indicate(p_evt, NULL);
+	if (p_evt) {
+		memcpy(p_evt->data, &settings_stat, 6);
+		memcpy((uint8_t *)p_evt->data + 6, settings_stat.setting_ids, len - 6);
+		rtk_bt_evt_indicate(p_evt, NULL);
+	} else {
+		BT_LOGE("[%s] Create event fail\r\n", __func__);
+	}
 	return 0;
 }
 
@@ -1602,6 +1694,10 @@ static int sensor_cli_setting_status(const struct bt_mesh_model *model,
 	}
 	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_SENSOR_CLIENT_MODEL, RTK_BT_MESH_SENSOR_SETTING_CLIENT_MODEL_STATUS,
 								len);
+	if (!p_evt) {
+		BT_LOGE("[%s] Create event fail\r\n", __func__);
+		return -1;
+	}
 	memcpy(p_evt->data, &status_data, 7);
 	// memcpy((bool *)p_evt->data + 6, &flag, 1);
 	if (status_data.flag) {

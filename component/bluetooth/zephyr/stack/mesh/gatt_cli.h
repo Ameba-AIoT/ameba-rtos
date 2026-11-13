@@ -53,6 +53,7 @@ int bt_mesh_gatt_cli_discover(struct bt_conn *conn, const struct bt_mesh_gatt_cl
 			      void *user_data, bt_mesh_gatt_cli_dis_cb result);
 int bt_mesh_gatt_cli_reuse(const bt_addr_le_t *addr, const struct bt_mesh_gatt_cli *gatt, void *user_data);
 int bt_mesh_gatt_cli_set_notify(struct bt_conn *conn, bool enable);
+void bt_mesh_gatt_cli_reset(void);
 #endif
 
 void bt_mesh_gatt_client_init(void);

@@ -181,6 +181,7 @@ static const usbh_cdc_ecm_config_t usbh_comp_ecm_class_cfg = {
 	NULL,
 	NULL,
 	0,
+	0,
 };
 
 static const usbh_config_t usbh_cfg = {

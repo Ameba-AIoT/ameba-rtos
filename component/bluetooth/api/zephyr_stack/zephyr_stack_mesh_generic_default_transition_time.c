@@ -55,9 +55,13 @@ static rtk_bt_mesh_generic_transition_time_t get_present_transition_time(void)
 	rtk_bt_evt_t *p_evt = NULL;
 	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_GENERIC_DEFAULT_TRANSITION_TIME_SERVER_MODEL, RTK_BT_MESH_GENERIC_DEFAULT_TRANSITION_TIME_SERVER_MODEL_GET,
 								sizeof(rtk_bt_mesh_generic_default_transition_time_server_get_t));
-	p_get_data = (rtk_bt_mesh_generic_default_transition_time_server_get_t *)p_evt->data;
-	p_get_data->trans_time = &get_data;
-	rtk_bt_evt_indicate(p_evt, NULL);
+	if (p_evt) {
+		p_get_data = (rtk_bt_mesh_generic_default_transition_time_server_get_t *)p_evt->data;
+		p_get_data->trans_time = &get_data;
+		rtk_bt_evt_indicate(p_evt, NULL);
+	} else {
+		BT_LOGE("[%s] Create event fail\r\n", __func__);
+	}
 
 	return get_data;
 }
@@ -109,8 +113,12 @@ static int generic_default_transition_time_srv_set_unack(const struct bt_mesh_mo
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_GENERIC_DEFAULT_TRANSITION_TIME_SERVER_MODEL, RTK_BT_MESH_GENERIC_DEFAULT_TRANSITION_TIME_SERVER_MODEL_SET,
 									sizeof(rtk_bt_mesh_generic_transition_time_t));
-		memcpy(p_evt->data, time, sizeof(rtk_bt_mesh_generic_transition_time_t));
-		rtk_bt_evt_indicate(p_evt, NULL);
+		if (p_evt) {
+			memcpy(p_evt->data, time, sizeof(rtk_bt_mesh_generic_transition_time_t));
+			rtk_bt_evt_indicate(p_evt, NULL);
+		} else {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+		}
 		return 0;
 	}
 	return -1;
@@ -161,8 +169,12 @@ static int generic_default_transition_time_cli_status(const struct bt_mesh_model
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_GENERIC_DEFAULT_TRANSITION_TIME_CLIENT_MODEL, RTK_BT_MESH_GENERIC_DEFAULT_TRANSITION_TIME_CLIENT_MODEL_STATUS,
 									sizeof(rtk_bt_mesh_generic_transition_time_client_status_t));
-		memcpy(p_evt->data, &status, sizeof(rtk_bt_mesh_generic_transition_time_client_status_t));
-		rtk_bt_evt_indicate(p_evt, NULL);
+		if (p_evt) {
+			memcpy(p_evt->data, &status, sizeof(rtk_bt_mesh_generic_transition_time_client_status_t));
+			rtk_bt_evt_indicate(p_evt, NULL);
+		} else {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+		}
 		return 0;
 	}
 	return -1;

@@ -884,7 +884,6 @@ int32_t serial_recv_stream_dma(serial_t *obj, char *prxbuf, uint32_t len)
 		}
 	}
 
-	UART_RXDMAConfig(puart_adapter->UARTx, 1);
 	UART_RXDMACmd(puart_adapter->UARTx, ENABLE);
 
 	return (ret);

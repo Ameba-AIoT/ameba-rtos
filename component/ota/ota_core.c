@@ -561,8 +561,9 @@ static int ota_core_prepare(ota_context_t *ctx)
 	/* Transport connect */
 	ret = ota_transport_connect(ctx);
 	if (ret != OTA_OK) {
+		/* redirect is only allocated for HTTP/HTTPS; OTA_USB and the others leave it NULL */
 		/* redirect.port != 0 means there is redirect URL can be downloaded*/
-		if (redirect->port != 0) {
+		if ((redirect != NULL) && (redirect->port != 0)) {
 			RTK_LOGI(OTA_TAG, "[CORE] Redirect host: %s, port: %d, resource: %s\r\n", ctx->host, ctx->port, ctx->resource);
 			ota_transport_disconnect(ctx);
 			ret = ota_transport_connect(ctx);

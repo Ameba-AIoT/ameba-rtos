@@ -1105,27 +1105,6 @@ void CAN_MsgBaseAddrEndReg(CAN_TypeDef *CANx, u32 EndAddr)
 }
 
 /**
-  * @brief    Configure CAN RX DMA: who controls the transfer and the burst size.
-  * @param  CANx Where CANx can be CAN0 or CAN1.
-  * @param  Owner 0: GDMA, 1: CAN.
-  * @param  RxDmaBurstSize Burst size in words: 0:1, 1:4, 2:8, 3:16. It must match the GDMA source burst size.
-  * @note   Configure before the frame arrives. The bit enabled by CAN_RxMsgBufDMACmd() is cleared by hardware after each
-  *         DMA transfer, so enable it again before every frame.
-  */
-void CAN_RXDMAConfig(CAN_TypeDef *CANx, u32 Owner, u32 RxDmaBurstSize)
-{
-	u32 Temp;
-
-	Temp = CANx->CAN_RXDMA_CFG;
-	Temp &= ~(CAN_BIT_RXDMA_OWNER | CAN_MASK_RXDMA_SRC_MSIZE);
-	if (Owner) {
-		Temp |= CAN_BIT_RXDMA_OWNER;
-	}
-	Temp |= CAN_RXDMA_SRC_MSIZE(RxDmaBurstSize);
-	CANx->CAN_RXDMA_CFG = Temp;
-}
-
-/**
   * @brief    Enable or disable CAN RX DMA.
   * @param  CANx Where CANx can be CAN0 or CAN1.
   * @param  NewState ENABLE or DISABLE.
@@ -1147,12 +1126,13 @@ void CAN_RXDMACmd(CAN_TypeDef *CANx, u32 NewState)
   * @param  CallbackData GDMA callback data.
   * @param  CallbackFunc GDMA callback function.
   * @param  pRxBuf Pointer to RX buffer.
-  * @param  RxCount Number of bytes to receive.
+  * @param  RxCount Number of bytes to receive, 0 means using CAN as DMA flow controller.
   * @return Initialization result:
   *         - TRUE: DMA channel allocated and initialized successfully.
   *         - FALSE: No available DMA channel.
-  * @note   The CAN side is not touched here: configure the owner and the burst size with CAN_RXDMAConfig() before calling it.
-  *         The GDMA source burst here is one word and must equal the CAN burst size.
+  * @note   The CAN RX DMA is set here too: the burst size is one word, the same as the GDMA source burst, and the owner is GDMA when
+  *         RxCount is not 0, CAN when it is 0.
+  *         One word is the only burst that works for every frame length (3 or 4 words) on both kinds of DMAC.
   */
 bool CAN_RXGDMA_Init(
 	u8 Index,
@@ -1164,6 +1144,7 @@ bool CAN_RXGDMA_Init(
 )
 {
 	u8 GdmaChnl;
+	u32 Temp;
 
 	assert_param(GDMA_InitStruct != NULL);
 
@@ -1176,13 +1157,25 @@ bool CAN_RXGDMA_Init(
 	}
 	GDMA_InitStruct->GDMA_Index = 0;
 	GDMA_InitStruct->GDMA_ChNum = GdmaChnl;
-	GDMA_InitStruct->GDMA_DIR = TTFCPeriToMem;
 	GDMA_InitStruct->GDMA_SrcAddr = (u32)&CAN_DEV_TABLE[Index].CANx->CAN_RX_DMA_DATA;
 	GDMA_InitStruct->GDMA_DstAddr = (u32)pRxBuf;
 	GDMA_InitStruct->GDMA_DstInc = IncType;
 	GDMA_InitStruct->GDMA_SrcInc = NoChange;
 	GDMA_InitStruct->GDMA_SrcHandshakeInterface = CAN_DEV_TABLE[Index].Rx_HandshakeInterface;
 	GDMA_InitStruct->GDMA_IsrType = (BlockType | TransferType | ErrType);
+	/* The CAN RX watermark has to equal the GDMA source burst: one word per request */
+	Temp = CAN_DEV_TABLE[Index].CANx->CAN_RXDMA_CFG;
+	Temp &= ~(CAN_BIT_RXDMA_OWNER | CAN_MASK_RXDMA_SRC_MSIZE);
+	Temp |= CAN_RXDMA_SRC_MSIZE(0);
+	if (RxCount == 0) {
+		/* if length is 0, configure can as the flow controller */
+		GDMA_InitStruct->GDMA_DIR = TTFCPeriToMem_PerCtrl;
+		Temp |= CAN_BIT_RXDMA_OWNER;
+	} else {
+		/* if length isn't 0, configure GDMA as the flow controller */
+		GDMA_InitStruct->GDMA_DIR = TTFCPeriToMem;
+	}
+	CAN_DEV_TABLE[Index].CANx->CAN_RXDMA_CFG = Temp;
 	GDMA_InitStruct->GDMA_SrcMsize = MsizeOne;
 	GDMA_InitStruct->GDMA_SrcDataWidth = TrWidthFourBytes;
 	if (((u32)(pRxBuf) & 0x03) == 0) {

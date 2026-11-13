@@ -137,11 +137,13 @@ static int handle_link_report(const struct bt_mesh_model *mod, struct bt_mesh_ms
 	struct bt_mesh_rpr_cli *cli = mod->rt->user_data;
 	struct bt_mesh_rpr_link link;
 	uint8_t reason = PROV_BEARER_LINK_STATUS_SUCCESS;
+	bool has_reason = false;
 
 	link.status = net_buf_simple_pull_u8(buf);
 	link.state = net_buf_simple_pull_u8(buf);
 	if (buf->len == 1) {
 		reason = net_buf_simple_pull_u8(buf);
+		has_reason = true;
 	} else if (buf->len) {
 		LOG_WRN("Invalid link report len");
 		return -EINVAL;
@@ -166,7 +168,7 @@ static int handle_link_report(const struct bt_mesh_model *mod, struct bt_mesh_ms
 	link_report(cli, &cli->link.srv, &link);
 	// zephyr_patch add link report callback for app
 	if (cli->link_report) {
-		cli->link_report(cli, &srv, &link, reason);
+		cli->link_report(cli, &srv, &link, has_reason ? &reason : NULL);
 	}
 	return 0;
 }

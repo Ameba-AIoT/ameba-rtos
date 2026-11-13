@@ -29,7 +29,7 @@ Required Components: USBtoTTL adapter.
 	- Connect `UART_RX(_PA_22)` to `TXD` of adapter
 	- Connect `GND` to `GND` of adapter
 * On RTL8735C
-	- Connect `UART_TX(_PF_8)` to `RXD` of adapter
+	- Connect `UART_TX(_PF_10)` to `RXD` of adapter
 	- Connect `UART_RX(_PF_11)` to `TXD` of adapter
 	- Connect `GND` to `GND` of adapter
 

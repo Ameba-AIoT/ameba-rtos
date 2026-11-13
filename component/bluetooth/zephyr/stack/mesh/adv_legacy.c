@@ -181,7 +181,7 @@ static void adv_thread(void *p1, void *p2, void *p3)
 				 * to bt_mesh_adv_gatt_start:
 				 */
 				adv_timeout = SYS_FOREVER_MS;
-#if ZEPHYR_RTK_PATCH
+#if ZEPHYR_RTK_PATCH && defined(CONFIG_BT_MESH_GATT_SERVER) && CONFIG_BT_MESH_GATT_SERVER
 				/* zephyr_patch: gate only the connectable GATT ADV */
 				if (!gatt_adv_disabled)
 #endif

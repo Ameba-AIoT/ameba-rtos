@@ -440,7 +440,6 @@ void whc_uart_host_init(void)
 	DCache_Invalidate((u32)whc_uart_priv->rx_buf, UART_BUFSZ);
 	whc_uart_host_rxdma_init(whc_uart_idx, &whc_uart_priv->UARTRxGdmaInitStruct, WHC_UART_DEV,
 							 (IRQ_FUN)whc_uart_host_rxdma_irq_handler, whc_uart_priv->rx_buf, UART_BUFSZ);
-	UART_RXDMAConfig(WHC_UART_DEV, WHC_UART_RX_BURST_SIZE);
 	UART_ClearRxFifo(WHC_UART_DEV);
 
 	if (rtos_task_create(NULL, "UART_HOST_RX_TASK", whc_uart_host_rx_process_task, (void *)whc_uart_priv, 1200, WHC_UART_RX_TASK_PRIO) != RTK_SUCCESS) {

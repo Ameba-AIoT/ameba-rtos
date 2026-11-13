@@ -340,10 +340,15 @@ s32 wifi_ap_del_client(u8 *hwaddr)
 {
 	int ret = 0;
 	u32 param_buf[2];
+	u8 *hwaddr_temp;
 
-	u8 *hwaddr_temp = (u8 *)rtos_mem_zmalloc(ETH_ALEN);
+	if (hwaddr == NULL) {
+		return -RTK_ERR_BADARG;
+	}
+
+	hwaddr_temp = (u8 *)rtos_mem_zmalloc(ETH_ALEN);
 	if (hwaddr_temp == NULL) {
-		return -1;
+		return -RTK_ERR_NOMEM;
 	}
 	memcpy(hwaddr_temp, hwaddr, ETH_ALEN);
 

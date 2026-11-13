@@ -436,7 +436,7 @@ void BOOT_Image1(void)
 #ifndef CONFIG_WHC_DEV_HCI_BOOT
 	BOOT_Data_Flash_Init();
 
-	flash_highspeed_setup();
+	flash_highspeed_setup(flash_get_readmode(Flash_ReadMode), CLK_LIMIT_SPIC);
 	np_valid = BOOT_LoadImages();
 #endif
 

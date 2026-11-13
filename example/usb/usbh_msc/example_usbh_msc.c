@@ -384,63 +384,6 @@ static void msc_cb_process(usb_host_t *host, u8 msg)
 	}
 }
 
-/* TEMP DIAG: dump what FatFs sees at sector 0 and at the first MBR partition.
- * check_fs() rejects a sector unless win[510:511] == 0x55AA plus a valid
- * JmpBoot/BPB, so these bytes tell FAT32-vs-garbage apart. Remove once the
- * mount failure is understood. */
-static void usbh_msc_dump_boot_sector(void)
-{
-	u8 *sec;
-	u32 lba;
-	u32 i;
-	DRESULT res;
-
-	/* One logical block is read, and it may be up to USBH_MSC_MAX_BLOCK_SIZE: the driver copies
-	   a whole block back, so a 512 byte buffer would overflow on a 2K/4K sector disk */
-	sec = (u8 *)rtos_mem_zmalloc(USBH_MSC_MAX_BLOCK_SIZE);
-	if (sec == NULL) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Diag: alloc fail\n");
-		return;
-	}
-
-	for (i = 0; i < 2U; i++) {
-		lba = 0U;
-		if (i == 1U) {
-			/* MBR partition 1 start LBA: little-endian at offset 0x1C6 */
-			lba = ((u32)sec[0x1C9] << 24) | ((u32)sec[0x1C8] << 16) | ((u32)sec[0x1C7] << 8) | (u32)sec[0x1C6];
-			RTK_LOGS(TAG, RTK_LOG_INFO, "Diag: PTE1 type %02x lba %d\n", sec[0x1C2], lba);
-			if (lba == 0U) {
-				break;
-			}
-		}
-
-		/* Reaches usbh_msc_read() through the disk driver, so it needs the same
-		   exclusion as the FatFs path. */
-		if (msc_lock_stack() != RTK_SUCCESS) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "Diag: stack gone\n");
-			break;
-		}
-		res = USB_disk_Driver.disk_read(sec, lba, 1);
-		msc_unlock_stack();
-		if (res != RES_OK) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "Diag: read lba %d fail\n", lba);
-			break;
-		}
-
-		RTK_LOGS(TAG, RTK_LOG_INFO, "Diag: lba %d sig %02x%02x jmp %02x fstype %c%c%c%c%c%c%c%c\n",
-				 lba, sec[510], sec[511], sec[0],
-				 sec[82], sec[83], sec[84], sec[85], sec[86], sec[87], sec[88], sec[89]);
-		RTK_LOGS(TAG, RTK_LOG_INFO, "Diag: bps %02x%02x spc %02x rsvd %02x%02x nfat %02x\n",
-				 sec[12], sec[11], sec[13], sec[15], sec[14], sec[16]);
-		/* First 16 bytes: tells a zeroed/garbage buffer from a real boot sector */
-		RTK_LOGS(TAG, RTK_LOG_INFO, "Diag: %02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x\n",
-				 sec[0], sec[1], sec[2], sec[3], sec[4], sec[5], sec[6], sec[7],
-				 sec[8], sec[9], sec[10], sec[11], sec[12], sec[13], sec[14], sec[15]);
-	}
-
-	rtos_mem_free((void *)sec);
-}
-
 /*  I/O test routine (10 files, each with W/R of multiple sizes) */
 static int usbh_msc_file_test(void)
 {
@@ -525,10 +468,10 @@ static int usbh_msc_file_test(void)
 	if (res != FR_OK) {
 		/* rc: 1 FR_DISK_ERR, 3 FR_NOT_READY, 13 FR_NO_FILESYSTEM */
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Mount logical drive fail, rc=%d\n", res);
-		/* A device that left during the mount explains the failure by itself, and its
-		   sectors can not be read any more. */
-		if ((msc_is_ready != 0) && (msc_teardown == 0U)) {
-			usbh_msc_dump_boot_sector();
+		/* f_mount() registers fs before it reads the volume, so a failed mount still leaves
+		   FatFs pointing at this stack frame. Drop it as the success path does. */
+		if (msc_fs_unmount(logical_drv) != FR_OK) {
+			RTK_LOGS(TAG, RTK_LOG_WARN, "Unmount fail\n");
 		}
 		FATFS_UnRegisterDiskDriver(drv_num);
 		/* A disk without a FAT/exFAT volume is a media problem, not an I/O one: rebuilding

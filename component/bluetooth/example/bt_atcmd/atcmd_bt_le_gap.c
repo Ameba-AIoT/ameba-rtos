@@ -2855,7 +2855,7 @@ static int atcmd_ble_gap_pawr_set_subevent_data(int argc, char **argv)
 
 	param.adv_handle = str_to_int(argv[0]);
 	num_subs = str_to_int(argv[1]);
-	if (num_subs < 1 || num_subs > 4 || argc < (2 + num_subs * 4)) {
+	if (num_subs < 1 || num_subs > RTK_BLE_PAWR_SET_SUBEVENT_DATA_MAX || argc < (2 + num_subs * 4)) {
 		BT_LOGE("GAP PAwR subevent data args number wrong!\r\n");
 		return BT_AT_ERR_PARAM_INVALID;
 	}
@@ -2892,8 +2892,8 @@ static int atcmd_ble_gap_pawr_set_response_data(int argc, char **argv)
 	param.request_subevent = str_to_int(argv[2]);
 	param.response_subevent = str_to_int(argv[3]);
 	param.response_slot = str_to_int(argv[4]);
-	param.len = 251;
-	param.data = def_pa_data;
+	param.len = 240;
+	param.data = def_ext_scan_data; //reuse sample def_ext_scan_data as pawr rsp data
 
 	if (argc > 5) {
 		param.len = str_to_int(argv[5]);

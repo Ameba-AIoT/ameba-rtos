@@ -567,7 +567,6 @@ typedef struct {
 } rtk_bt_le_ext_create_conn_param_t;
 #endif
 
-#if defined(RTK_BLE_5_0_PA_ADV_SUPPORT) && RTK_BLE_5_0_PA_ADV_SUPPORT
 /**
  * @typedef   rtk_bt_le_pa_prop_t
  * @brief     Periodic Advertising Properties flag. Use the combination of enum definitions to indicate which fields should be included in the advertising packet.
@@ -575,6 +574,8 @@ typedef struct {
 typedef enum {
 	RTK_BT_LE_PA_ADV_PROP_INCLUDE_TX_POWER = 0x0040    /*!< Include TxPower in the periodic header of the advertising PDU. */
 } rtk_bt_le_pa_prop_t;
+
+#if defined(RTK_BLE_5_0_PA_ADV_SUPPORT) && RTK_BLE_5_0_PA_ADV_SUPPORT
 
 /**
  * @struct    rtk_bt_le_pa_param_t
@@ -1279,41 +1280,6 @@ typedef struct {
 	uint16_t cause;                                                /*!< Status of the periodic adv synchronization procedure; 0x00 on success. */
 	rtk_bt_le_pa_synced_info_t info;                               /*!< Synchronization info; only valid when state == RTK_BT_LE_PA_SYNC_STATE_SYNCHRONIZED. */
 } rtk_bt_le_pa_sync_ind_t;
-
-/**
- * @struct    rtk_bt_le_gap_pawr_data_req_ind_t
- * @brief     Bluetooth LE periodic adv subevent data request indication msg.
- */
-typedef struct {
-	uint8_t adv_handle;                 /*!< Identify an advertising set, assigned by @ref rtk_bt_le_gap_create_ext_adv. */
-	uint8_t start;                      /*!< Index of the first subevent for which data can be set. */
-	uint8_t count;                      /*!< Number of consecutive subevents for which data can be set. */
-} rtk_bt_le_gap_pawr_data_req_ind_t;
-
-/**
- * @struct    rtk_bt_le_gap_pawr_rsp_ind_t
- * @brief     Bluetooth LE periodic adv subevent response indication msg.
- */
-typedef struct {
-	uint8_t adv_handle;                 /*!< Identify an advertising set, assigned by @ref rtk_bt_le_gap_create_ext_adv. */
-	uint8_t subevent;                   /*!< Subevent index in which the response was received.
-                                         *   Range: 0x00 to 0x7F. */
-	uint8_t tx_status;                  /*!< Transmission status of the AUX_SYNC_SUBEVENT_IND packet.
-                                         *   0x00: AUX_SYNC_SUBEVENT_IND packet was transmitted.
-                                         *   0x01: AUX_SYNC_SUBEVENT_IND packet was not transmitted.
-                                         *   All bigger values are reserved for future use. */
-	int8_t tx_power;                    /*!< TX power of the response PDU.
-                                         *   Range: -127 to +20 dBm.
-                                         *   0x7F: TX power information is unavailable. */
-	int8_t rssi;                        /*!< RSSI of the received response PDU.
-                                         *   Range: -127 to +20 dBm.
-                                         *   0x7F: RSSI is unavailable. */
-	uint8_t cte_type;                   /*!< Constant Tone Extension type of the response; see @ref rtk_bt_le_gap_cte_type_t. */
-	uint8_t response_slot;              /*!< Response slot index within the subevent in which the response was received.
-                                         *   Range: 0x00 to 0xFF. */
-	uint16_t len;                       /*!< Length of the received response data. */
-	uint8_t *data;                      /*!< Pointer to the received Periodic advertising response data. */
-} rtk_bt_le_gap_pawr_rsp_ind_t;
 
 /**
  * @typedef   rtk_bt_le_pa_sync_report_data_status_t
@@ -2597,7 +2563,42 @@ typedef struct {
 
 #endif /* RTK_BLE_5_1_CTE_SUPPORT */
 
-#if defined(RTK_BLE_5_4_PAWR_ADV_SUPPORT) && RTK_BLE_5_4_PAWR_ADV_SUPPORT
+/**
+ * @struct    rtk_bt_le_gap_pawr_data_req_ind_t
+ * @brief     Bluetooth LE periodic adv subevent data request indication msg.
+ */
+typedef struct {
+	uint8_t adv_handle;                 /*!< Identify an advertising set, assigned by @ref rtk_bt_le_gap_create_ext_adv. */
+	uint8_t start;                      /*!< Index of the first subevent for which data can be set. */
+	uint8_t count;                      /*!< Number of consecutive subevents for which data can be set. */
+	uint8_t num_subevents;              /*!< Num_Subevents of the PAwR train, subevent numbers wrap from num_subevents - 1 to 0. */
+} rtk_bt_le_gap_pawr_data_req_ind_t;
+
+/**
+ * @struct    rtk_bt_le_gap_pawr_rsp_ind_t
+ * @brief     Bluetooth LE periodic adv subevent response indication msg.
+ */
+typedef struct {
+	uint8_t adv_handle;                 /*!< Identify an advertising set, assigned by @ref rtk_bt_le_gap_create_ext_adv. */
+	uint8_t subevent;                   /*!< Subevent index in which the response was received.
+                                         *   Range: 0x00 to 0x7F. */
+	uint8_t tx_status;                  /*!< Transmission status of the AUX_SYNC_SUBEVENT_IND packet.
+                                         *   0x00: AUX_SYNC_SUBEVENT_IND packet was transmitted.
+                                         *   0x01: AUX_SYNC_SUBEVENT_IND packet was not transmitted.
+                                         *   All bigger values are reserved for future use. */
+	int8_t tx_power;                    /*!< TX power of the response PDU.
+                                         *   Range: -127 to +20 dBm.
+                                         *   0x7F: TX power information is unavailable. */
+	int8_t rssi;                        /*!< RSSI of the received response PDU.
+                                         *   Range: -127 to +20 dBm.
+                                         *   0x7F: RSSI is unavailable. */
+	uint8_t cte_type;                   /*!< Constant Tone Extension type of the response; see @ref rtk_bt_le_gap_cte_type_t. */
+	uint8_t response_slot;              /*!< Response slot index within the subevent in which the response was received.
+                                         *   Range: 0x00 to 0xFF. */
+	uint16_t len;                       /*!< Length of the received response data. */
+	uint8_t *data;                      /*!< Pointer to the received Periodic advertising response data. */
+} rtk_bt_le_gap_pawr_rsp_ind_t;
+
 /**
  * @struct    rtk_bt_le_gap_pawr_subevent_element_t
  * @brief     Bluetooth LE periodic advertising with responses (PAwR) data of one subevent.
@@ -2614,6 +2615,8 @@ typedef struct {
 	uint8_t *data;                      /*!< Pointer to the subevent data to send. */
 } rtk_bt_le_gap_pawr_subevent_element_t;
 
+#define RTK_BLE_PAWR_SET_SUBEVENT_DATA_MAX    4
+
 /**
  * @struct    rtk_bt_le_gap_pawr_subevent_data_t
  * @brief     Bluetooth LE periodic advertising with responses (PAwR) subevent data setting parameter.
@@ -2621,13 +2624,10 @@ typedef struct {
 typedef struct {
 	uint8_t adv_handle;                              /*!< Identify an advertising set, assigned by @ref rtk_bt_le_gap_create_ext_adv. */
 	uint8_t num_subs;                                /*!< Number of subevent data in sub_arr.
-                                                      *   Range: 0x01 to 0x0F. */
+                                                      *   Range: 0x01 to RTK_BLE_PAWR_SET_SUBEVENT_DATA_MAX. */
 	rtk_bt_le_gap_pawr_subevent_element_t *sub_arr;  /*!< Array of subevent data element. */
 } rtk_bt_le_gap_pawr_subevent_data_t;
 
-#endif /* RTK_BLE_5_4_PAWR_ADV_SUPPORT */
-
-#if defined(RTK_BLE_5_4_PAWR_SCAN_SUPPORT) && RTK_BLE_5_4_PAWR_SCAN_SUPPORT
 /**
  * @struct    rtk_bt_le_gap_pawr_set_response_t
  * @brief     Bluetooth LE periodic advertising with responses (PAwR) response data setting parameter.
@@ -2641,7 +2641,7 @@ typedef struct {
                                          *   Range: 0x00 to 0x7F. */
 	uint8_t response_slot;              /*!< Response slot in which the response shall be sent.
                                          *   Range: 0x00 to 0xFF. */
-	uint8_t len;                       /*!< Length of the response data to send in bytes.
+	uint8_t len;                        /*!< Length of the response data to send in bytes.
                                          *   Range: 0 to 251. */
 	uint8_t *data;                      /*!< Pointer to the response data to send. */
 } rtk_bt_le_gap_pawr_set_response_t;
@@ -2660,7 +2660,6 @@ typedef struct {
 	uint8_t *subevents;                 /*!< Subevent index array to synchronize with.
                                          *   The first num_subevents elements are used, each in range 0x00 to 0x7F. */
 } rtk_bt_le_gap_pawr_sync_subevent_t;
-#endif /* RTK_BLE_5_4_PAWR_SCAN_SUPPORT */
 
 /**
  * @typedef   rtk_bt_le_dtm_rx_version_t

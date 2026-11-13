@@ -196,7 +196,12 @@ int bt_mesh_priv_beacon_cli_set(uint16_t net_idx, uint16_t addr, struct bt_mesh_
 	bt_mesh_model_msg_init(&buf, OP_PRIV_BEACON_SET);
 
 	net_buf_simple_add_u8(&buf, val->enabled);
+// zephyr_patch carry rand_interval by the flag, so that 0 (update for every beacon) can be sent
+#if ZEPHYR_RTK_PATCH
+	if (val->has_rand_interval) {
+#else
 	if (val->rand_interval) {
+#endif
 		net_buf_simple_add_u8(&buf, val->rand_interval);
 	}
 

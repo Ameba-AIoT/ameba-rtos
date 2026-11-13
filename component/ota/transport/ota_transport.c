@@ -52,6 +52,12 @@ int ota_transport_read(ota_context_t *ctx, u8 *buf, int len)
 	case OTA_VFS:
 		bytes_read = ota_vfs_read(ctx, buf, len);
 		break;
+
+#ifdef OTA_USB_TRANSPORT
+	case OTA_USB:
+		bytes_read = ota_usb_read(ctx, buf, len);
+		break;
+#endif
 	case OTA_USER:
 		if (ctx->user_read_func) {
 			bytes_read = ctx->user_read_func(buf, len);
@@ -90,6 +96,12 @@ int ota_transport_connect(ota_context_t *ctx)
 	case OTA_VFS:
 		ret = ota_vfs_open(ctx);
 		break;
+
+#ifdef OTA_USB_TRANSPORT
+	case OTA_USB:
+		ret = ota_usb_open(ctx);
+		break;
+#endif
 
 	case OTA_USER:
 		ret = OTA_OK;
@@ -130,6 +142,12 @@ void ota_transport_disconnect(ota_context_t *ctx)
 	case OTA_VFS:
 		ota_vfs_close(ctx);
 		break;
+
+#ifdef OTA_USB_TRANSPORT
+	case OTA_USB:
+		/* The result is reported by the caller through ota_usb_finish() */
+		break;
+#endif
 
 	case OTA_USER:
 		if (ctx->user_close_func) {

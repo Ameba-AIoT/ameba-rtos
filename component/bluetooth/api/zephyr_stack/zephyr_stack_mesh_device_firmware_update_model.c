@@ -41,6 +41,10 @@ static void stand_dfu_cli_ended(struct bt_mesh_dfu_cli *cli, enum bt_mesh_dfu_st
 			uint32_t num_of_addr = dfu_tx.target_cnt;
 			p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_DFU_STANDALONE_UPDATER_MODEL, RTK_BT_MESH_DFU_EVT_DISTRIBUTOR_BLOB_TRANSFER_VERIFY,
 										sizeof(rtk_bt_mesh_dfu_evt_distributor_transfer_other_t) + num_of_addr * sizeof(uint16_t));
+			if (!p_evt) {
+				BT_LOGE("[%s] Create event fail\r\n", __func__);
+				return;
+			}
 			trans = (rtk_bt_mesh_dfu_evt_distributor_transfer_other_t *)p_evt->data;
 			trans->dist_phase = RTK_BT_MESH_DFU_DIST_PHASE_APPLY;
 			trans->addr_num = num_of_addr;
@@ -78,10 +82,14 @@ static void stand_dfu_cli_lost_target(struct bt_mesh_dfu_cli *cli, struct bt_mes
 	rtk_bt_mesh_dfu_evt_distributor_transfer_node_fail_t *node_fail = NULL;
 	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_DFU_STANDALONE_UPDATER_MODEL, RTK_BT_MESH_DFU_EVT_DISTRIBUTOR_BLOB_TRANSFER_NODE_FAIL,
 								sizeof(rtk_bt_mesh_dfu_evt_distributor_transfer_node_fail_t));
-	node_fail = (rtk_bt_mesh_dfu_evt_distributor_transfer_node_fail_t *)p_evt->data;
-	node_fail->dist_phase = RTK_BT_MESH_DFU_DIST_PHASE_UNKNOWN;
-	node_fail->addr = target->blob.addr;
-	rtk_bt_evt_indicate(p_evt, NULL);
+	if (p_evt) {
+		node_fail = (rtk_bt_mesh_dfu_evt_distributor_transfer_node_fail_t *)p_evt->data;
+		node_fail->dist_phase = RTK_BT_MESH_DFU_DIST_PHASE_UNKNOWN;
+		node_fail->addr = target->blob.addr;
+		rtk_bt_evt_indicate(p_evt, NULL);
+	} else {
+		BT_LOGE("[%s] Create event fail\r\n", __func__);
+	}
 }
 
 const struct bt_mesh_dfu_cli_cb stand_dfu_cli_cb = {
@@ -213,12 +221,16 @@ static int stand_blob_io_open(const struct bt_mesh_blob_io *io, const struct bt_
 	rtk_bt_mesh_dfu_evt_distributor_or_initiator_blob_param_t *blob;
 	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_DFU_STANDALONE_UPDATER_MODEL, RTK_BT_MESH_DFU_EVT_DISTRIBUTOR_BLOB_PARAM,
 								sizeof(rtk_bt_mesh_dfu_evt_distributor_or_initiator_blob_param_t));
-	blob = (rtk_bt_mesh_dfu_evt_distributor_or_initiator_blob_param_t *)p_evt->data;
-	blob->blob_size = xfer->size;
-	blob->block_size = block_size;
-	blob->total_blocks = xfer->size / block_size + (xfer->size % block_size ? 1 : 0);
-	blob->chunk_size = xfer->chunk_size;
-	rtk_bt_evt_indicate(p_evt, NULL);
+	if (p_evt) {
+		blob = (rtk_bt_mesh_dfu_evt_distributor_or_initiator_blob_param_t *)p_evt->data;
+		blob->blob_size = xfer->size;
+		blob->block_size = block_size;
+		blob->total_blocks = xfer->size / block_size + (xfer->size % block_size ? 1 : 0);
+		blob->chunk_size = xfer->chunk_size;
+		rtk_bt_evt_indicate(p_evt, NULL);
+	} else {
+		BT_LOGE("[%s] Create event fail\r\n", __func__);
+	}
 
 	rtk_bt_dfu_standalone_updater_resource_init();
 
@@ -236,6 +248,10 @@ static void stand_blob_io_close(const struct bt_mesh_blob_io *io, const struct b
 	uint32_t num_of_addr = dfu_tx.target_cnt;
 	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_DFU_STANDALONE_UPDATER_MODEL, RTK_BT_MESH_DFU_EVT_DISTRIBUTOR_BLOB_TRANSFER_SUCCESS,
 								sizeof(rtk_bt_mesh_dfu_evt_distributor_transfer_other_t) + num_of_addr * sizeof(uint16_t));
+	if (!p_evt) {
+		BT_LOGE("[%s] Create event fail\r\n", __func__);
+		return;
+	}
 	trans = (rtk_bt_mesh_dfu_evt_distributor_transfer_other_t *)p_evt->data;
 	trans->dist_phase = RTK_BT_MESH_DFU_DIST_PHASE_VERIFY;
 	trans->addr_num = num_of_addr;
@@ -255,10 +271,14 @@ static void stand_blob_block_end(const struct bt_mesh_blob_io *io, const struct 
 	rtk_bt_mesh_dfu_evt_distributor_transfer_progress_t *trans_progress = NULL;
 	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_DFU_STANDALONE_UPDATER_MODEL, RTK_BT_MESH_DFU_EVT_DISTRIBUTOR_BLOB_TRANSFER_PROGRESS,
 								sizeof(rtk_bt_mesh_dfu_evt_distributor_transfer_progress_t));
-	trans_progress = (rtk_bt_mesh_dfu_evt_distributor_transfer_progress_t *)p_evt->data;
-	trans_progress->dist_phase = RTK_BT_MESH_DFU_DIST_PHASE_BLOB_TRANSFER;
-	trans_progress->progress = (block->offset + block->size) * 100 / xfer->size;
-	rtk_bt_evt_indicate(p_evt, NULL);
+	if (p_evt) {
+		trans_progress = (rtk_bt_mesh_dfu_evt_distributor_transfer_progress_t *)p_evt->data;
+		trans_progress->dist_phase = RTK_BT_MESH_DFU_DIST_PHASE_BLOB_TRANSFER;
+		trans_progress->progress = (block->offset + block->size) * 100 / xfer->size;
+		rtk_bt_evt_indicate(p_evt, NULL);
+	} else {
+		BT_LOGE("[%s] Create event fail\r\n", __func__);
+	}
 }
 
 static int stand_blob_chunk_wr(const struct bt_mesh_blob_io *io, const struct bt_mesh_blob_xfer *xfer,
@@ -630,8 +650,12 @@ static int target_blob_chunk_wr(const struct bt_mesh_blob_io *io, const struct b
 			// Report a event to app
 			rtk_bt_evt_t *p_evt = NULL;
 			p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_DFU_TARGET_MODEL, RTK_BT_MESH_DFU_EVT_TARGET_BLOCK_DATA, sizeof(uint16_t));
-			*(uint16_t *)(p_evt->data) = block->number;
-			rtk_bt_evt_indicate(p_evt, NULL);
+			if (p_evt) {
+				*(uint16_t *)(p_evt->data) = block->number;
+				rtk_bt_evt_indicate(p_evt, NULL);
+			} else {
+				BT_LOGE("[%s] Create event fail\r\n", __func__);
+			}
 
 			// Receive a whole BLOB data, free the memory
 			if (xfer->size == block->offset + block->size) {
@@ -688,7 +712,11 @@ static int target_dfu_apply(struct bt_mesh_dfu_srv *srv, const struct bt_mesh_df
 	BT_LOGD("[%s] Start apply new image.\r\n", __func__);
 	rtk_bt_evt_t *p_evt = NULL;
 	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_DFU_TARGET_MODEL, RTK_BT_MESH_DFU_EVT_TARGET_APPLY, 0);
-	rtk_bt_evt_indicate(p_evt, NULL);
+	if (p_evt) {
+		rtk_bt_evt_indicate(p_evt, NULL);
+	} else {
+		BT_LOGE("[%s] Create event fail\r\n", __func__);
+	}
 
 	if (!rtk_bt_dfu_updater_server_apply()) {
 		BT_LOGE("[%s] Apply for new firmware fail.\r\n", __func__);

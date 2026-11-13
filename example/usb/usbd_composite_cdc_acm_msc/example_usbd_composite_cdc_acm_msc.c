@@ -302,10 +302,6 @@ static int composite_cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
   */
 static int composite_cdc_acm_cb_received(u8 *buf, u32 len)
 {
-	if ((buf == NULL) || (len == 0U)) {
-		return RTK_SUCCESS;
-	}
-
 	/* Loopback; -RTK_ERR_BUSY means the previous echo is still in flight and this one is dropped */
 	return usbd_cdc_acm_transmit(buf, len);
 }

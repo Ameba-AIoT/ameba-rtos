@@ -1,5 +1,4 @@
 import os
-import re
 import sys
 import time
 
@@ -459,21 +458,14 @@ class MPFlashToolMain(QMainWindow):
         }
         had_rows = bool(self._port_rows)
         try:
-            import serial.tools.list_ports
-            all_ports = serial.tools.list_ports.comports()
+            from base import port_scanner
         except ImportError:
             self.status_bar.showMessage("Error: pyserial not installed.")
             return
 
-        RTK_USB_VID = 0x0BDA  # 与 download_handler.py 保持一致
-
         use_usb = self.usb_download_checkbox.isChecked()
-        if use_usb:
-            available_ports = [p for p in all_ports if p.vid == RTK_USB_VID]
-            port_type = "USB"
-        else:
-            available_ports = [p for p in all_ports if p.vid != RTK_USB_VID]
-            port_type = "UART"
+        port_type = port_scanner.PORT_TYPE_USB if use_usb else port_scanner.PORT_TYPE_UART
+        available_ports = port_scanner.scan_serial_ports(port_type)
 
         if filter_ports is not None:
             allowed = set(filter_ports)
@@ -482,8 +474,8 @@ class MPFlashToolMain(QMainWindow):
         def port_sort_key(port_info):
             slot_id = self._port_slot_map.get(port_info.device)
             if isinstance(slot_id, int) and slot_id > 0:
-                return (0, slot_id, self._natural_port_key(port_info.device))
-            return (1, 0, self._natural_port_key(port_info.device))
+                return (0, slot_id, port_scanner.natural_port_key(port_info.device))
+            return (1, 0, port_scanner.natural_port_key(port_info.device))
 
         available_ports.sort(key=port_sort_key)
 
@@ -495,14 +487,7 @@ class MPFlashToolMain(QMainWindow):
         self._port_rows = []
 
         for port_info in available_ports:
-            desc = port_info.description or ""
-            # Strip trailing " (COMxx)" that duplicates the device name.
-            desc = re.sub(r'\s*\(COM\d+\)\s*$', '', desc, flags=re.IGNORECASE).strip()
-            label = (
-                f"{port_info.device}  ({desc})"
-                if desc and desc.lower() != "n/a"
-                else port_info.device
-            )
+            label = port_scanner.format_port_label(port_info)
 
             row_widget = QWidget()
             # Smaller font so 20 rows fit in the default window height without scrolling.
@@ -541,11 +526,6 @@ class MPFlashToolMain(QMainWindow):
         self.status_bar.showMessage(
             self.image_line_edit.text().strip() or "No image selected"
         )
-
-    @staticmethod
-    def _natural_port_key(port_name):
-        match = re.search(r"(\d+)$", port_name or "")
-        return (int(match.group(1)), port_name) if match else (sys.maxsize, port_name or "")
 
     def _on_detect_layout_clicked(self):
         if self._detect_layout_worker is not None and self._detect_layout_worker.isRunning():
