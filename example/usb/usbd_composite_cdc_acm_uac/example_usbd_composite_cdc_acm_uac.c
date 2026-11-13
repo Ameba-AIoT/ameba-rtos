@@ -95,6 +95,7 @@ static int composite_cdc_acm_cb_init(void);
 static int composite_cdc_acm_cb_deinit(void);
 static int composite_cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf);
 static int composite_cdc_acm_cb_received(u8 *buf, u32 Len);
+static void composite_uac_cb_format_changed(u32 sampling_freq, u8 ch_cnt, u8 byte_width);
 
 static int composite_init_stack(void);
 #if COMP_HOTPLUG
@@ -173,7 +174,7 @@ static usbd_uac_cb_t composite_uac_cb = {
 	.status_changed = NULL,
 	.mute_changed = NULL,
 	.volume_changed = NULL,
-	.format_changed = NULL,
+	.format_changed = composite_uac_cb_format_changed,
 	.sof = NULL,
 };
 
@@ -274,10 +275,6 @@ static int composite_cdc_acm_cb_deinit(void)
   */
 static int composite_cdc_acm_cb_received(u8 *buf, u32 len)
 {
-	if ((buf == NULL) || (len == 0U)) {
-		return RTK_SUCCESS;
-	}
-
 	/* Loopback; -RTK_ERR_BUSY means the previous echo is still in flight and this one is dropped */
 	return usbd_cdc_acm_transmit(buf, len);
 }
@@ -479,7 +476,9 @@ static void example_audio_track_play(void)
 #if COMP_UAC_DEMUX_CH_DEBUG
 				play_data_size = 0;
 				//get the 2 channel data from the 4 channel
-				for (idx = 0, off = 0; idx < read_dat_len; idx += audio_src_step, off += audio_dst_step) {
+				/* Whole frames only, and never past play_buf: a short ISOC packet may end mid-frame */
+				for (idx = 0, off = 0; ((idx + audio_src_step) <= read_dat_len) && ((off + audio_dst_step) <= sizeof(play_buf));
+					 idx += audio_src_step, off += audio_dst_step) {
 					// ch0 ch1 ch2 ch3 ch0 ch1 ch2 ch3 ch0 ch1 ch2 ch3
 					// 24  24  24  24  24  24  24  24  24  24  24  24
 					memcpy((void *)(play_buf + off), (const void *)(recv_buf + idx), audio_dst_step);
@@ -794,8 +793,6 @@ static int composite_start(void)
 		goto exit_teardown;
 	}
 #endif
-
-	composite_uac_cb.format_changed = composite_uac_cb_format_changed;
 
 	ret = composite_init_stack();
 	if (ret != RTK_SUCCESS) {

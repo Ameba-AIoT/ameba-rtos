@@ -116,7 +116,6 @@ typedef struct {
 	u32 trigger_cnt;                          /**< Debug trigger counter. */
 #endif
 	usbh_ep_desc_t ep_desc;                   /**< Endpoint descriptor (byte-packed). */
-	u8 valid;                                 /**< Validity flag for this pipe info. */
 } usbh_cdc_ncm_pipe_info_t;
 
 /** @} End of Host_CDC_NCM_Types group*/
@@ -251,7 +250,6 @@ typedef struct {
 	u8 mac_valid;                                    /**< Flag indicating if MAC address is valid */
 	u8 mac_src_type;                                 /**< NCM dongle MAC source type */
 	u8 iMACAddressStringId;                          /**< Index of the MAC address string descriptor */
-	u8 mac_ctrl_lock[CDC_NCM_CTRL_REG_BUF_LEN];      /**< Buffer for MAC lock register readback */
 	u8 rcr[CDC_NCM_CTRL_REG_BUF_LEN];                /**< RCR (Receive Configuration Register) value */
 
 #if USBH_CDC_NCM_STATE_TRACE_ENABLE
@@ -284,6 +282,8 @@ int usbh_cdc_ncm_init(const usbh_cdc_ncm_state_cb_t *cb, const usbh_cdc_ncm_conf
 
 /**
  * @brief  De-initializes the CDC NCM host class driver and releases resources.
+ * @note   Task context only. Closes the TX gate first, then waits without an upper bound for every
+ *         task inside usbh_cdc_ncm_transmit() to leave before its semaphore and buffers go away.
  */
 void usbh_cdc_ncm_deinit(void);
 

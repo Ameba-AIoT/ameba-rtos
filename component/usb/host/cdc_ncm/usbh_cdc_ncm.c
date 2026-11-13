@@ -8,6 +8,7 @@
 
 #include "usb_os.h"
 #include "usbh_cdc_ncm.h"
+#include "usb_rtl815x.h"
 
 /* Private defines -----------------------------------------------------------*/
 
@@ -67,10 +68,6 @@
 /* ncm ethernet connect status check */
 #define USBH_CDC_NCM_ETH_STATUS_CHECK_TIME                  300U           /* 300 ms */
 
-/* Upper bound for deinit to wait for the tasks inside usbh_cdc_ncm_transmit() to leave. A
- * woken caller leaves within microseconds, only a starved one takes longer. */
-#define USBH_CDC_NCM_TX_EXIT_TIMEOUT_MS                    500U
-
 /* CLEAR_FEATURE(ENDPOINT_HALT) attempts before the device is re-enumerated */
 #define USBH_CDC_NCM_HALT_RETRY_MAX_CNT                    3U
 
@@ -89,7 +86,6 @@ typedef enum {
 	CDC_NCM_MAC_DONGLE_SUPPLY,      /**< Extracted from dongle iMACAddress string */
 	CDC_NCM_MAC_UPPER_LAYER_SET,    /**< Provided by app via usbh_cdc_ncm_config_t::mac_value */
 	CDC_NCM_MAC_RANDOM_SET,         /**< Randomly generated (dongle has no valid MAC) */
-	CDC_NCM_MAC_TYPE_MAX,
 } usbh_cdc_ncm_dongle_mac_type_t;
 
 /**
@@ -104,11 +100,10 @@ typedef enum {
 	/* Realtek vendor-specific initialization */
 	CDC_NCM_STATE_CTRL_RCR_GET,             /**< Read RCR register */
 	CDC_NCM_STATE_CTRL_RCR_SET,             /**< Write RCR register */
-	CDC_NCM_STATE_CTRL_MAC_GET_LOCK,        /**< Get MAC lock register */
-	CDC_NCM_STATE_CTRL_MAC_DISABLE_LOCK,    /**< Disable MAC lock */
+	CDC_NCM_STATE_CTRL_MAC_DISABLE_LOCK,    /**< Unlock PLA_IDR */
 	CDC_NCM_STATE_CTRL_MAC_SET_MAC1,        /**< Write MAC[0..3] to chip */
 	CDC_NCM_STATE_CTRL_MAC_SET_MAC2,        /**< Write MAC[4..5] to chip */
-	CDC_NCM_STATE_CTRL_MAC_ENABLE_LOCK,     /**< Enable MAC lock (MAC write done) */
+	CDC_NCM_STATE_CTRL_MAC_ENABLE_LOCK,     /**< Lock PLA_IDR again (MAC write done) */
 	CDC_NCM_STATE_AT_SETTING_MAX,           /**< Finished, proceed to TRANSFER */
 } usbh_cdc_ncm_at_set_state_t;
 
@@ -148,7 +143,7 @@ static int usbh_cdc_ncm_bulk_send(u8 *buf, u32 len);
 static int usbh_cdc_ncm_cb_intr_receive(u8 *buf, u32 length);
 static int usbh_cdc_ncm_cb_bulk_send(int state);
 static int usbh_cdc_ncm_intr_receive(void);
-static int usbh_cdc_ncm_tx_status_check(void);
+static void usbh_cdc_ncm_tx_status_check(void);
 static void usbh_cdc_ncm_deinit_all_pipe(void);
 static void usbh_cdc_ncm_halt(usb_host_t *host, const usbh_pipe_t *pipe);
 static void usbh_cdc_ncm_process_halt(usb_host_t *host);
@@ -274,10 +269,7 @@ static int usbh_cdc_ncm_cb_intr_receive(u8 *buf, u32 length)
 			}
 			cdc->intr_rx.pipe.max_timeout_tick = cdc->intr_check_tick;
 		}
-		/* A1 2A 00 00 01 00 00 08  00 00 00 00 00 00 00 00 - Connection Speed Change */
-		else if (length == 16 && buf[0] == 0xA1 && buf[1] == USB_CDC_NOTIFY_CONNECTION_SPEED_CHANGE) {
-			/* Speed change notification - could be parsed if needed */
-		}
+		/* A1 2A 00 00 01 00 00 08  00 00 00 00 00 00 00 00 - Connection Speed Change: not used */
 	}
 
 	return RTK_SUCCESS;
@@ -476,89 +468,77 @@ static int usbh_cdc_ncm_process_set_ntb_input_size(usb_host_t *host)
 
 /******************Realtek vendor-specific register access*********************/
 /**
-  * @brief  Read a 4-byte register from the Realtek chip via vendor control request.
+  * @brief  Read one dword register of a Realtek dongle, Ref r8152 get_registers()
+  * @param  host: Host handle
+  * @param  reg: PLA register address, dword aligned
+  * @retval Status, the value lands in dongle_ctrl_buf
   */
-static int usbh_cdc_ncm_vendor_reg_read(usb_host_t *host, u16 reg_addr, u16 port_sel)
+static int usbh_cdc_ncm_rtl_reg_read(usb_host_t *host, u16 reg)
 {
 	usbh_setup_req_t setup;
 
-	setup.req.bmRequestType = USB_D2H | USB_REQ_TYPE_VENDOR | USB_REQ_RECIPIENT_DEVICE;
-	setup.req.bRequest = 0x05;
-	setup.req.wValue = reg_addr;
-	setup.req.wIndex = port_sel;
-	setup.req.wLength = 4;
+	setup.req.bmRequestType = USB_RTL815X_REQT_READ;
+	setup.req.bRequest = USB_RTL815X_REQ_GET_REGS;
+	setup.req.wValue = reg;
+	setup.req.wIndex = USB_RTL815X_MCU_TYPE_PLA;
+	setup.req.wLength = USB_RTL815X_REG_DWORD_LEN;
 
 	return usbh_ctrl_request(host, &setup, usbh_cdc_ncm_host.dongle_ctrl_buf);
 }
 
 /**
-  * @brief  Write a 4-byte register to the Realtek chip via vendor control request.
+  * @brief  Write the enabled bytes of one dword register of a Realtek dongle, Ref r8152 set_registers()
+  * @param  host: Host handle
+  * @param  reg: PLA register address, dword aligned
+  * @param  byte_en: USB_RTL815X_BYTE_EN_x, the bytes of dongle_ctrl_buf actually written
+  * @retval Status
   */
-static int usbh_cdc_ncm_vendor_reg_write(usb_host_t *host, u16 reg_addr, u16 port_sel)
+static int usbh_cdc_ncm_rtl_reg_write(usb_host_t *host, u16 reg, u16 byte_en)
 {
 	usbh_setup_req_t setup;
 
-	setup.req.bmRequestType = 0x40;  /* H2D | Vendor | Device */
-	setup.req.bRequest = 0x05;
-	setup.req.wValue = reg_addr;
-	setup.req.wIndex = port_sel;
-	setup.req.wLength = 4;
+	setup.req.bmRequestType = USB_RTL815X_REQT_WRITE;
+	setup.req.bRequest = USB_RTL815X_REQ_SET_REGS;
+	setup.req.wValue = reg;
+	setup.req.wIndex = USB_RTL815X_MCU_TYPE_PLA | byte_en;
+	setup.req.wLength = USB_RTL815X_REG_DWORD_LEN;
 
 	return usbh_ctrl_request(host, &setup, usbh_cdc_ncm_host.dongle_ctrl_buf);
 }
 
-/******************Set MAC for Realtek dongle *****************************/
-static int usbh_cdc_ncm_process_mac_get_lock(usb_host_t *host)
-{
-	usbh_cdc_ncm_host_t *cdc = &usbh_cdc_ncm_host;
-	int ret;
-
-	ret = usbh_cdc_ncm_vendor_reg_read(host, 0xE81C, 0x010F);
-	if (ret == RTK_SUCCESS) {
-		usb_os_memcpy((void *)cdc->mac_ctrl_lock, (const void *)cdc->dongle_ctrl_buf, CDC_NCM_CTRL_REG_BUF_LEN);
-	}
-	return ret;
-}
-
-static int usbh_cdc_ncm_process_mac_set_dis_lock(usb_host_t *host)
+/******************Set MAC for Realtek dongle, Ref r8152 __rtl8152_set_mac_address() *****************/
+/**
+  * @brief  Write one byte of PLA_CRWECR
+  * @param  host: Host handle
+  * @param  value: USB_RTL815X_CRWECR_CONFIG to unlock PLA_IDR, USB_RTL815X_CRWECR_NORMAL to lock it
+  * @retval Status
+  */
+static int usbh_cdc_ncm_rtl_set_crwecr(usb_host_t *host, u8 value)
 {
 	usbh_cdc_ncm_host_t *cdc = &usbh_cdc_ncm_host;
 
-	cdc->dongle_ctrl_buf[0] = 0xD0;
-	cdc->dongle_ctrl_buf[1] = 0;
-	cdc->dongle_ctrl_buf[2] = 0;
-	cdc->dongle_ctrl_buf[3] = 0;
-	return usbh_cdc_ncm_vendor_reg_write(host, 0xE81C, 0x010F);
+	/* Only byte 0 is enabled: the rest of the dword, CONFIG1/CONFIG2 included, is left alone */
+	usb_os_memset((void *)cdc->dongle_ctrl_buf, 0, USB_RTL815X_REG_DWORD_LEN);
+	cdc->dongle_ctrl_buf[0] = value;
+	return usbh_cdc_ncm_rtl_reg_write(host, USB_RTL815X_PLA_CRWECR, USB_RTL815X_BYTE_EN_BYTE);
 }
 
 static int usbh_cdc_ncm_process_mac_set_mac1(usb_host_t *host)
 {
 	usbh_cdc_ncm_host_t *cdc = &usbh_cdc_ncm_host;
 
-	usb_os_memcpy((void *)cdc->dongle_ctrl_buf, (const void *)cdc->mac, CDC_NCM_CTRL_REG_BUF_LEN);
-	return usbh_cdc_ncm_vendor_reg_write(host, 0xC000, 0x010F);
+	usb_os_memcpy((void *)cdc->dongle_ctrl_buf, (const void *)cdc->mac, USB_RTL815X_REG_DWORD_LEN);
+	return usbh_cdc_ncm_rtl_reg_write(host, USB_RTL815X_PLA_IDR, USB_RTL815X_BYTE_EN_DWORD);
 }
 
 static int usbh_cdc_ncm_process_mac_set_mac2(usb_host_t *host)
 {
 	usbh_cdc_ncm_host_t *cdc = &usbh_cdc_ncm_host;
 
+	usb_os_memset((void *)cdc->dongle_ctrl_buf, 0, USB_RTL815X_REG_DWORD_LEN);
 	cdc->dongle_ctrl_buf[0] = cdc->mac[4];
 	cdc->dongle_ctrl_buf[1] = cdc->mac[5];
-	cdc->dongle_ctrl_buf[2] = 0xFF;
-	cdc->dongle_ctrl_buf[3] = 0xFF;
-	return usbh_cdc_ncm_vendor_reg_write(host, 0xC004, 0x0103);
-}
-
-static int usbh_cdc_ncm_process_mac_en_lock(usb_host_t *host)
-{
-	usbh_cdc_ncm_host_t *cdc = &usbh_cdc_ncm_host;
-
-	cdc->dongle_ctrl_buf[0] = 0x10;
-	cdc->dongle_ctrl_buf[1] = 0;
-	cdc->dongle_ctrl_buf[2] = 0;
-	cdc->dongle_ctrl_buf[3] = 0;
-	return usbh_cdc_ncm_vendor_reg_write(host, 0xE81C, 0x010F);
+	return usbh_cdc_ncm_rtl_reg_write(host, USB_RTL815X_PLA_IDR_HIGH, USB_RTL815X_BYTE_EN_WORD);
 }
 
 static void usbh_cdc_ncm_config_dongle_mac(usb_host_t *host)
@@ -575,18 +555,8 @@ static void usbh_cdc_ncm_config_dongle_mac(usb_host_t *host)
 	}
 
 	switch (cdc->sub_status) {
-	case CDC_NCM_STATE_CTRL_MAC_GET_LOCK:
-		state = usbh_cdc_ncm_process_mac_get_lock(host);
-		if (state == RTK_SUCCESS) {
-			cdc->sub_status++;
-		} else if (state != -RTK_ERR_BUSY) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "Get MAC lock err\n");
-			usb_os_sleep_ms(100);
-		}
-		break;
-
 	case CDC_NCM_STATE_CTRL_MAC_DISABLE_LOCK:
-		state = usbh_cdc_ncm_process_mac_set_dis_lock(host);
+		state = usbh_cdc_ncm_rtl_set_crwecr(host, USB_RTL815X_CRWECR_CONFIG);
 		if (state == RTK_SUCCESS) {
 			cdc->sub_status++;
 		} else if (state != -RTK_ERR_BUSY) {
@@ -616,7 +586,7 @@ static void usbh_cdc_ncm_config_dongle_mac(usb_host_t *host)
 		break;
 
 	case CDC_NCM_STATE_CTRL_MAC_ENABLE_LOCK:
-		state = usbh_cdc_ncm_process_mac_en_lock(host);
+		state = usbh_cdc_ncm_rtl_set_crwecr(host, USB_RTL815X_CRWECR_NORMAL);
 		if (state == RTK_SUCCESS) {
 			cdc->sub_status++;
 			cdc->mac_valid = 1;
@@ -716,11 +686,11 @@ static int usbh_cdc_ncm_ctrl_setting(usb_host_t *host)
 		break;
 	case CDC_NCM_STATE_CTRL_RCR_GET:
 		if (usbh_cdc_ncm_support_feature(cdc->pid, CDC_NCM_CAP_RCR_CMD) != RTK_SUCCESS) {
-			cdc->sub_status = CDC_NCM_STATE_CTRL_MAC_GET_LOCK;
+			cdc->sub_status = CDC_NCM_STATE_CTRL_MAC_DISABLE_LOCK;
 			break;
 		}
 		usb_os_memset((void *)cdc->rcr, 0, 4);
-		state = usbh_cdc_ncm_vendor_reg_read(host, 0xC010, 0x0100);
+		state = usbh_cdc_ncm_rtl_reg_read(host, USB_RTL815X_PLA_RCR);
 		if (state == RTK_SUCCESS) {
 			usb_os_memcpy((void *)cdc->rcr, (const void *)cdc->dongle_ctrl_buf, CDC_NCM_CTRL_REG_BUF_LEN);
 			cdc->sub_status++;
@@ -732,13 +702,14 @@ static int usbh_cdc_ncm_ctrl_setting(usb_host_t *host)
 
 	case CDC_NCM_STATE_CTRL_RCR_SET:
 		if (usbh_cdc_ncm_support_feature(cdc->pid, CDC_NCM_CAP_RCR_CMD) != RTK_SUCCESS) {
-			cdc->sub_status = CDC_NCM_STATE_CTRL_MAC_GET_LOCK;
+			cdc->sub_status = CDC_NCM_STATE_CTRL_MAC_DISABLE_LOCK;
 			break;
 		}
-		/* set bit 0~3 set 1 will enable PING & UDP transfer */
-		cdc->rcr[0] = cdc->rcr[0] | 0x0F;
+		/* Own unicast and broadcast, Ref r8152 rtl8152_set_rx_mode() without promiscuous or multicast mode:
+		 * the multicast hash table (PLA_MAR) is never programmed, so RCR_AM is left off */
+		cdc->rcr[0] = (u8)((cdc->rcr[0] & ~USB_RTL815X_RCR_ACPT_ALL) | USB_RTL815X_RCR_AB | USB_RTL815X_RCR_APM);
 		usb_os_memcpy((void *)cdc->dongle_ctrl_buf, (const void *)cdc->rcr, CDC_NCM_CTRL_REG_BUF_LEN);
-		state = usbh_cdc_ncm_vendor_reg_write(host, 0xC010, 0x010F);
+		state = usbh_cdc_ncm_rtl_reg_write(host, USB_RTL815X_PLA_RCR, USB_RTL815X_BYTE_EN_DWORD);
 		if (state == RTK_SUCCESS) {
 			cdc->sub_status++;
 		} else if (state != -RTK_ERR_BUSY) {
@@ -747,7 +718,6 @@ static int usbh_cdc_ncm_ctrl_setting(usb_host_t *host)
 		}
 		break;
 
-	case CDC_NCM_STATE_CTRL_MAC_GET_LOCK:
 	case CDC_NCM_STATE_CTRL_MAC_DISABLE_LOCK:
 	case CDC_NCM_STATE_CTRL_MAC_SET_MAC1:
 	case CDC_NCM_STATE_CTRL_MAC_SET_MAC2:
@@ -976,9 +946,6 @@ static int usbh_cdc_ncm_parse_interface_desc(usb_host_t *host)
 	cdc->pid = host->dev_desc->idProduct;
 	cdc->sub_status = CDC_NCM_STATE_AT_SETTING_IDLE;
 	cdc->iMACAddressStringId = 0U;
-	cdc->intr_rx.valid = 0U;
-	cdc->bulk_rx.valid = 0U;
-	cdc->bulk_tx.valid = 0U;
 
 	if (usbh_cdc_ncm_find_function(host, &ctrl_itf, &data_itf_desc) != RTK_SUCCESS) {
 		return -RTK_ERR_BADARG;
@@ -1010,16 +977,13 @@ static int usbh_cdc_ncm_parse_interface_desc(usb_host_t *host)
 	}
 
 	usb_os_memcpy((void *)&cdc->intr_rx.ep_desc, (const void *)&ctrl_itf->itf_desc_array[0].ep_desc_array[0], sizeof(usbh_ep_desc_t));
-	cdc->intr_rx.valid = 1U;
 
 	/* Already passed in usbh_cdc_ncm_find_function(), called again for the endpoint pointers */
 	if (usbh_cdc_ncm_check_data_eps(data_itf_desc, &bulk_in, &bulk_out) != RTK_SUCCESS) {
 		return -RTK_ERR_BADARG;
 	}
 	usb_os_memcpy((void *)&cdc->bulk_rx.ep_desc, (const void *)bulk_in, sizeof(usbh_ep_desc_t));
-	cdc->bulk_rx.valid = 1U;
 	usb_os_memcpy((void *)&cdc->bulk_tx.ep_desc, (const void *)bulk_out, sizeof(usbh_ep_desc_t));
-	cdc->bulk_tx.valid = 1U;
 
 	cdc->data_itf_id = data_itf_desc->bInterfaceNumber;
 	cdc->data_alt_set = data_itf_desc->bAlternateSetting;
@@ -2208,24 +2172,25 @@ static int usbh_cdc_ncm_cb_bulk_send(int state)
 	return RTK_SUCCESS;
 }
 
-static int usbh_cdc_ncm_tx_status_check(void)
+static void usbh_cdc_ncm_tx_status_check(void)
 {
 	usbh_cdc_ncm_host_t *cdc = &usbh_cdc_ncm_host;
 	u32 wait_ms = 0U;
 
 	/* Wake a sender blocked on the sema and wait for every task inside the TX API to leave
-	 * before the sema and buffers go away; bounded so a starved caller cannot hang the teardown */
+	 * before the sema and buffers go away. No upper bound: the gate is closed, so a woken
+	 * caller leaves within microseconds, and freeing under a starved one would be the use
+	 * after free this wait exists for. A wait that long is reported after
+	 * USBH_TEARDOWN_WAIT_FIRST_LOG_MS, then every USBH_TEARDOWN_WAIT_LOG_MS. */
 	while ((cdc->bulk_tx_block != 0U) || (cdc->tx_users != 0U)) {
-		if (wait_ms >= USBH_CDC_NCM_TX_EXIT_TIMEOUT_MS) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "Wait TX exit TO\n");
-			break;
-		}
 		usb_os_sema_give(cdc->bulk_tx_sema);
 		usb_os_sleep_ms(1U);
 		wait_ms++;
+		if ((wait_ms >= USBH_TEARDOWN_WAIT_FIRST_LOG_MS) &&
+			(((wait_ms - USBH_TEARDOWN_WAIT_FIRST_LOG_MS) % USBH_TEARDOWN_WAIT_LOG_MS) == 0U)) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Wait TX exit %dms\n", wait_ms);
+		}
 	}
-
-	return RTK_SUCCESS;
 }
 
 static void usbh_cdc_ncm_deinit_all_pipe(void)

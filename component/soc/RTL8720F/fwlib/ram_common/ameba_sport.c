@@ -247,6 +247,9 @@ void AUDIO_SP_SetLRClkDiv(u32 index, u32 clock, u32 sr, u32 tdm, u32 chn_len)
 	Tmp &= ~(SP_MASK_MI | SP_MASK_NI | SP_BIT_MI_NI_UPDATE);
 	Tmp |= (SP_MI(MI) | SP_NI(NI) | SP_BIT_MI_NI_UPDATE);
 	SPORTx->SP_CLK_DIV = Tmp;
+
+	/* BCLK/LRCLK come from the MI/NI fractional divider, which only works in MODE_40MHZ */
+	SPORTx->SP_CTRLR1 |= SP_BIT_MODE_40MHZ;
 }
 
 /**
@@ -446,7 +449,7 @@ bool AUDIO_SP_TXGDMA_Init(
 	assert_param(GDMA_InitStruct != NULL);
 	/*obtain a DMA channel and register DMA interrupt handler*/
 	GdmaChnl = GDMA_ChnlAlloc(0, CallbackFunc, (u32)CallbackData, INT_PRI7);
- 
+
 	if (GdmaChnl == 0xFF) {
 		// No Available DMA channel
 		return FALSE;
@@ -542,7 +545,7 @@ bool AUDIO_SP_RXGDMA_Init(
 	assert_param(GDMA_InitStruct != NULL);
 	/*obtain a DMA channel and register DMA interrupt handler*/
 	GdmaChnl = GDMA_ChnlAlloc(0, CallbackFunc, (u32)CallbackData, INT_PRI7);
- 
+
 	if (GdmaChnl == 0xFF) {
 		// No Available DMA channel
 		return FALSE;

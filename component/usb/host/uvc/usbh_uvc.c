@@ -11,6 +11,10 @@
 #include "usbh_uvc_parse.h"
 #include "usbh_uvc_stream.h"
 
+#if USBH_UVC_USE_HW && USBH_HW_UVC_DEBUG && !USBH_UVC_DEBUG
+#error "USBH_HW_UVC_DEBUG needs USBH_UVC_DEBUG: the HW status dump thread is built only with it"
+#endif
+
 /* Private defines -----------------------------------------------------------*/
 
 #define USBH_UVC_REQUEST_BUF_LEN                48U /**< Length of the UVC control request buffer. */
@@ -492,6 +496,14 @@ usbh_uvc_frame_t *usbh_uvc_get_frame(u8 stream_index)
 exit:
 	if (stream->stream_state == UVC_STREAM_ACTIVE) {
 		RTK_LOGS(TAG, RTK_LOG_WARN, "Get fail\n");
+#if (USBH_UVC_USE_HW == 1) && (USBH_HW_UVC_DEBUG == 1)
+		/* Request one register snapshot per streaming round; the HW status dump
+		 * thread takes it. A stuck state is stable, so the delay does not matter, and
+		 * repeated snapshots only spam logs and can obscure the original failure. */
+		if (stream->get_fail_dumped == 0U) {
+			stream->get_fail_dumped = 1U;
+		}
+#endif
 	}
 	/* Last access to the stream objects, refer to usbh_uvc_exit_get_frame() */
 	usb_os_mem_sync();

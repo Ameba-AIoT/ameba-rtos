@@ -22,7 +22,7 @@ bool rtk_bt_olt_enable_inquiry(void)
 	buf[6] = 0x0f;
 	buf[7] = 0x00;
 
-	if (true != hci_if_olt_send_status(0x0401, buf, buf[2] + 3)) {
+	if (true != hci_if_olt_send_status(0x0401, buf, buf[2] + 3, sizeof(buf))) {
 		BT_LOGE("hci_if_olt_send_status fail\n\r");
 		return false;
 	}

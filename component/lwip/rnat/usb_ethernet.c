@@ -315,6 +315,7 @@ static const usbh_cdc_ecm_config_t ecm_class_cfg = {
 	led_color,
 	mac_valid,
 	sizeof(led_color) / sizeof(led_color[0]),
+	0,
 };
 
 static const usbh_config_t usbh_ecm_cfg = {
