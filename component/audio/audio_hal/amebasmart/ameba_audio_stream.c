@@ -150,7 +150,11 @@ void ameba_audio_reset_audio_ip_status(Stream *stream)
 	//keep power on and lineout analog on, even if tx close.
 	//ameba_audio_set_audio_ip_use_status(stream->direction, POWER, false);
 	//ameba_audio_set_audio_ip_use_status(stream->direction, LINEOUTANA, false);
-	if (!ameba_audio_is_audio_ip_in_use(CODEC) && !ameba_audio_is_audio_ip_in_use(POWER)) {
+	//I2S streams never set CODEC/POWER, but SPORT also works under audio clock,
+	//so keep it on while any sport is still in use, otherwise the other running stream stops.
+	if (!ameba_audio_is_audio_ip_in_use(CODEC) && !ameba_audio_is_audio_ip_in_use(POWER) &&
+		!ameba_audio_is_audio_ip_in_use(SPORT0) && !ameba_audio_is_audio_ip_in_use(SPORT1) &&
+		!ameba_audio_is_audio_ip_in_use(SPORT2) && !ameba_audio_is_audio_ip_in_use(SPORT3)) {
 		RCC_PeriphClockCmd(APBPeriph_AUDIO, APBPeriph_CLOCK_NULL, DISABLE);
 		RCC_PeriphClockCmd(APBPeriph_AC, APBPeriph_AC_CLOCK, DISABLE);
 	}

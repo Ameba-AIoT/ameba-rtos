@@ -10,9 +10,14 @@
 
 static void *recv_sem = NULL;
 static uint8_t *hci_buf;
+static uint16_t hci_buf_size;
 
 void hci_sa_recv(struct hci_rx_packet_t *pkt)
 {
+	if (!hci_buf || (pkt->len > hci_buf_size)) {
+		return;
+	}
+
 	memcpy(hci_buf, pkt->buf, pkt->len);
 	osif_sem_give(recv_sem);
 }
@@ -21,7 +26,7 @@ struct hci_transport_cb hci_sa_cb = {
 	.recv = hci_sa_recv,
 };
 
-uint8_t hci_sa_send(uint8_t type, uint8_t *buf, uint16_t len, bool is_sync)
+uint8_t hci_sa_send(uint8_t type, uint8_t *buf, uint16_t len, uint16_t buf_size, bool is_sync)
 {
 	if (!is_sync) {
 		if (len != hci_transport_send(type, buf, len, true)) {
@@ -33,8 +38,13 @@ uint8_t hci_sa_send(uint8_t type, uint8_t *buf, uint16_t len, bool is_sync)
 
 	osif_sem_create(&recv_sem, 0, 1);
 	hci_buf = buf;
+	hci_buf_size = buf_size;
 
 	if (len != hci_transport_send(type, buf, len, true)) {
+		osif_sem_delete(recv_sem);
+		recv_sem = NULL;
+		hci_buf = NULL;
+		hci_buf_size = 0;
 		return HCI_FAIL;
 	}
 
@@ -42,18 +52,19 @@ uint8_t hci_sa_send(uint8_t type, uint8_t *buf, uint16_t len, bool is_sync)
 	osif_sem_delete(recv_sem);
 	recv_sem = NULL;
 	hci_buf = NULL;
+	hci_buf_size = 0;
 
 	/* Then We can process Response */
 	return HCI_SUCCESS;
 }
 
 /* 1 byte must be reserved ahead 'buf' */
-uint8_t hci_sa_send_cmd_sync(uint16_t opcode, uint8_t *buf, uint16_t len)
+uint8_t hci_sa_send_cmd_sync(uint16_t opcode, uint8_t *buf, uint16_t len, uint16_t buf_size)
 {
 	buf[0] = (uint8_t)(opcode >> 0);
 	buf[1] = (uint8_t)(opcode >> 8);
 
-	if (HCI_SUCCESS != hci_sa_send(HCI_CMD, buf, len, true)) {
+	if (HCI_SUCCESS != hci_sa_send(HCI_CMD, buf, len, buf_size, true)) {
 		return HCI_FAIL;
 	}
 
