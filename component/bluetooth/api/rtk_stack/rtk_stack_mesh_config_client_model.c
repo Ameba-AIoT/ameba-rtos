@@ -17,15 +17,32 @@
 uint8_t rtk_bt_mesh_config_client_model_indicate_event(uint32_t event_code, void *pdata, uint32_t len)
 {
 	rtk_bt_evt_t *p_evt = NULL;
-	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_CONFIG_CLIENT_MODEL, event_code, len);
-	if (len) {
-		if (event_code == RTK_BT_MESH_CONFIG_MODEL_COMPO_DATA_STAT) {
-			memcpy(p_evt->data, pdata, 10);
-			rtk_bt_mesh_cfg_compo_data_stat_call_t *data_test = (rtk_bt_mesh_cfg_compo_data_stat_call_t *) pdata;
-			memcpy((uint8_t *)(p_evt->data) + 10, data_test->data, len - 10);
-		} else {
-			memcpy(p_evt->data, pdata, len);
+	if (event_code == RTK_BT_MESH_CONFIG_MODEL_COMPO_DATA_STAT) {
+		rtk_bt_mesh_cfg_compo_data_stat_call_t *data_test = (rtk_bt_mesh_cfg_compo_data_stat_call_t *) pdata;
+		/* parse failed: only flag is valid in pdata, len and data are not, so report an all-zero (flag = 0) event */
+		if (!data_test->flag) {
+			len = 10;
+		} else if (len < 10) {
+			return RTK_BT_ERR_PARAM_INVALID;
 		}
+		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_CONFIG_CLIENT_MODEL, event_code, len);
+		if (!p_evt) {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+			return RTK_BT_ERR_NO_MEMORY;
+		}
+		if (data_test->flag) {
+			memcpy(p_evt->data, pdata, 10);
+			memcpy((uint8_t *)(p_evt->data) + 10, data_test->data, len - 10);
+		}
+		return rtk_bt_evt_indicate(p_evt, NULL);
+	}
+	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_CONFIG_CLIENT_MODEL, event_code, len);
+	if (!p_evt) {
+		BT_LOGE("[%s] Create event fail\r\n", __func__);
+		return RTK_BT_ERR_NO_MEMORY;
+	}
+	if (len) {
+		memcpy(p_evt->data, pdata, len);
 	}
 	return rtk_bt_evt_indicate(p_evt, NULL);
 }

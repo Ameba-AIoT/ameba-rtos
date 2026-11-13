@@ -544,6 +544,8 @@ bool cfg_client_receive(mesh_msg_p pmesh_msg)
                 uint8_t element_index = 0;
                 uint8_t *pdata = pmsg->data;
                 uint8_t *pend = pbuffer + pmesh_msg->msg_len;
+                cfg_compo_data_stat_call_t pdata_test = {0};
+                uint32_t length = sizeof(cfg_compo_data_stat_call_t); //length is ignored by glue when flag == 0
                 if (pmesh_msg->msg_len < (MEMBER_OFFSET(cfg_compo_data_stat_t, data) + 10))
                 {
                     goto compo_data_end;
@@ -592,18 +594,17 @@ bool cfg_client_receive(mesh_msg_p pmesh_msg)
                     }
                     element_index++;
                 }
-			cfg_compo_data_stat_call_t pdata_test;
-			pdata_test.page = pmsg->page;
-			pdata_test.msg_len = pmesh_msg->msg_len;
-			pdata_test.src = pmesh_msg->src;
-			pdata_test.flag = 0;
-			uint32_t length = pmesh_msg->msg_len + 9; //for ipc test
-			pdata_test.length = length - ACCESS_OPCODE_SIZE(MESH_MSG_CFG_COMPO_DATA_STAT);
-			pdata_test.flag = 1;
-			pdata_test.data = (uint8_t *) & (pmsg->data);
-			rtk_bt_mesh_config_client_model_indicate_event(RTK_BT_MESH_CONFIG_MODEL_COMPO_DATA_STAT,
-					(uint8_t *)(&pdata_test) + ACCESS_OPCODE_SIZE(MESH_MSG_CFG_COMPO_DATA_STAT),
-					length - ACCESS_OPCODE_SIZE(MESH_MSG_CFG_COMPO_DATA_STAT));
+                pdata_test.page = pmsg->page;
+                pdata_test.msg_len = pmesh_msg->msg_len;
+                pdata_test.src = pmesh_msg->src;
+                pdata_test.flag = 0;
+                length = pmesh_msg->msg_len + 9; //for ipc test
+                pdata_test.length = length - ACCESS_OPCODE_SIZE(MESH_MSG_CFG_COMPO_DATA_STAT);
+                pdata_test.flag = 1;
+                pdata_test.data = (uint8_t *) & (pmsg->data);
+                rtk_bt_mesh_config_client_model_indicate_event(RTK_BT_MESH_CONFIG_MODEL_COMPO_DATA_STAT,
+                        (uint8_t *)(&pdata_test) + ACCESS_OPCODE_SIZE(MESH_MSG_CFG_COMPO_DATA_STAT),
+                        length - ACCESS_OPCODE_SIZE(MESH_MSG_CFG_COMPO_DATA_STAT));
                 break;
 compo_data_end:
                 parse = FALSE;
@@ -682,13 +683,18 @@ compo_data_end:
     case MESH_MSG_CFG_VENDOR_MODEL_SUB_LIST:
         {
             cfg_model_sub_list_t *pmsg = (cfg_model_sub_list_t *)pbuffer;
-		uint32_t event_code;
-		if (pmesh_msg->access_opcode == MESH_MSG_CFG_SIG_MODEL_SUB_LIST) {
-			event_code = RTK_BT_MESH_CONFIG_MODEL_SIG_MODEL_SUB_LIST;
-		} else {
-			event_code = RTK_BT_MESH_CONFIG_MODEL_VENDOR_MODEL_SUB_LIST;
-		}
-		if (pmsg->stat == MESH_MSG_STAT_SUCCESS) {
+            uint32_t event_code;
+            uint16_t min_len = MEMBER_OFFSET(cfg_model_sub_list_t,
+                                             model_id) + (pmesh_msg->access_opcode == MESH_MSG_CFG_SIG_MODEL_SUB_LIST ? 2 : 4);
+            if (pmesh_msg->msg_len < min_len) {
+                break;
+            }
+            if (pmesh_msg->access_opcode == MESH_MSG_CFG_SIG_MODEL_SUB_LIST) {
+                event_code = RTK_BT_MESH_CONFIG_MODEL_SIG_MODEL_SUB_LIST;
+            } else {
+                event_code = RTK_BT_MESH_CONFIG_MODEL_VENDOR_MODEL_SUB_LIST;
+            }
+            if (pmsg->stat == MESH_MSG_STAT_SUCCESS) {
                 parse = TRUE;
                 uint32_t model_id = pmesh_msg->access_opcode == MESH_MSG_CFG_SIG_MODEL_SUB_LIST ?
                                     MESH_MODEL_TRANSFORM(pmsg->model_id) : pmsg->model_id;
@@ -697,21 +703,23 @@ compo_data_end:
                 uint16_t len = MEMBER_OFFSET(cfg_model_sub_list_t,
                                              model_id) + (pmesh_msg->access_opcode == MESH_MSG_CFG_SIG_MODEL_SUB_LIST ? 2 : 4);
                 pbuffer += len;
-			uint16_t addr_count = (pmesh_msg->msg_len - len + 1) / 2;
 
-			uint16_t model_sub_list[addr_count + 8];
-			model_sub_list[0] = pmsg->stat;
-			model_sub_list[1] = pmesh_msg->src;
-			uint32_t *len_call = (uint32_t *) & model_sub_list[2];
-			*len_call = sizeof(uint16_t) * (addr_count + 8);
-			uint32_t *model_id_pointer = (uint32_t *) &model_sub_list[4];
-			*model_id_pointer = model_id;
-			model_sub_list[6] = pmsg->element_addr - pmesh_msg->src;
-			model_sub_list[7] = addr_count;
-			uint8_t count = 0;
-			for (uint8_t loop = 0; loop < pmesh_msg->msg_len - len; loop += 2, count++) {
-				// BT_LOGA(" 0x%04x", LE_EXTRN2WORD(pbuffer + loop));
-				model_sub_list[count + 8] = LE_EXTRN2WORD(pbuffer + loop); 
+                uint16_t addr_count = (pmesh_msg->msg_len - len + 1) / 2;
+
+                uint16_t model_sub_list[addr_count + 8];
+                model_sub_list[0] = pmsg->stat;
+                model_sub_list[1] = pmesh_msg->src;
+                uint32_t *len_call = (uint32_t *) & model_sub_list[2];
+                *len_call = sizeof(uint16_t) * (addr_count + 8);
+                uint32_t *model_id_pointer = (uint32_t *) &model_sub_list[4];
+                *model_id_pointer = model_id;
+                model_sub_list[6] = pmsg->element_addr - pmesh_msg->src;
+                model_sub_list[7] = addr_count;
+                uint16_t count = 0;
+                for (uint16_t loop = 0; loop < pmesh_msg->msg_len - len; loop += 2, count++)
+                {
+                    model_sub_list[count + 8] = LE_EXTRN2WORD(pbuffer + loop);
+                    // data_uart_debug(" 0x%04x", LE_EXTRN2WORD(pbuffer + loop));
                 }
 			uint32_t length = sizeof(uint16_t) * (addr_count + 8); 
 			rtk_bt_mesh_config_client_model_indicate_event(event_code, &model_sub_list, length);
@@ -810,6 +818,9 @@ compo_data_end:
     case MESH_MSG_CFG_APP_KEY_LIST:
         {
             cfg_app_key_list_t *pmsg = (cfg_app_key_list_t *)pbuffer;
+            if (pmesh_msg->msg_len < MEMBER_OFFSET(cfg_app_key_list_t, app_key_indexes)) {
+                break;
+            }
             pbuffer += MEMBER_OFFSET(cfg_app_key_list_t, app_key_indexes);
             uint16_t len = pmesh_msg->msg_len - MEMBER_OFFSET(cfg_app_key_list_t, app_key_indexes);
             uint8_t remainder = len % 3;
@@ -889,12 +900,16 @@ compo_data_end:
     case MESH_MSG_CFG_VENDOR_MODEL_APP_LIST:
         {
             cfg_model_app_list_t *pmsg = (cfg_model_app_list_t *)pbuffer;
-		uint32_t event_code;
-		if (pmesh_msg->access_opcode == MESH_MSG_CFG_SIG_MODEL_APP_LIST) {
-			event_code = RTK_BT_MESH_CONFIG_MODEL_SIG_MODEL_APP_LIST;
-		} else {
-			event_code = RTK_BT_MESH_CONFIG_MODEL_VENDOR_MODEL_APP_LIST;
-		}
+            uint32_t event_code;
+            if (pmesh_msg->msg_len < MEMBER_OFFSET(cfg_model_app_list_t,
+                                                   model_id) + (pmesh_msg->access_opcode == MESH_MSG_CFG_SIG_MODEL_APP_LIST ? 2 : 4)) {
+                break;
+            }
+            if (pmesh_msg->access_opcode == MESH_MSG_CFG_SIG_MODEL_APP_LIST) {
+                event_code = RTK_BT_MESH_CONFIG_MODEL_SIG_MODEL_APP_LIST;
+            } else {
+                event_code = RTK_BT_MESH_CONFIG_MODEL_VENDOR_MODEL_APP_LIST;
+            }
             uint32_t model_id = pmesh_msg->access_opcode == MESH_MSG_CFG_SIG_MODEL_APP_LIST ?
                                 MESH_MODEL_TRANSFORM(pmsg->model_id) : pmsg->model_id;
             uint8_t header_len = MEMBER_OFFSET(cfg_model_app_list_t,
