@@ -25,7 +25,7 @@ static int usbh_vendor_attach(usb_host_t *host);
 static void usbh_vendor_detach(usb_host_t *host);
 static void usbh_vendor_process(usb_host_t *host, usbh_drv_msg_t *msg);
 static int usbh_vendor_setup(usb_host_t *host);
-static void usbh_vendor_deinit_all_pipe(void);
+static void usbh_vendor_deinit_all_xfer(void);
 static void usbh_vendor_sof(usb_host_t *host);
 
 /* Private variables ---------------------------------------------------------*/
@@ -145,7 +145,7 @@ static int usbh_vendor_get_endpoints(usb_host_t *host, usbh_itf_desc_t *intf)
 
 		if (usbh_open_pipe(host, &xfer->pipe, ep_desc, &usbh_vendor_driver) != RTK_SUCCESS) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Open %s pipe fail\n", xfer_type);
-			usbh_vendor_deinit_all_pipe();
+			usbh_vendor_deinit_all_xfer();
 			return -RTK_ERR_BADARG;
 		}
 		xfer->pipe.max_timeout_tick = VENDOR_XFER_MAX_TIMEOUT_TICK;
@@ -321,47 +321,6 @@ static int usbh_vendor_attach(usb_host_t *host)
 }
 
 /**
-  * @brief  Deinit all pipe.
-  * @param  None.
-  * @retval None.
-  */
-static void usbh_vendor_deinit_all_pipe(void)
-{
-	usbh_vendor_host_t *vendor = &usbh_vendor_host;
-	usb_host_t *host = vendor->host;
-	usbh_pipe_t *pipe;
-
-	if (host == NULL) {
-		return;
-	}
-
-	pipe = &vendor->bulk_in_xfer.pipe;
-	if (pipe->pipe_num != 0U) {
-		usbh_close_pipe(host, pipe);
-	}
-	pipe = &vendor->bulk_out_xfer.pipe;
-	if (pipe->pipe_num != 0U) {
-		usbh_close_pipe(host, pipe);
-	}
-	pipe = &vendor->intr_in_xfer.pipe;
-	if (pipe->pipe_num != 0U) {
-		usbh_close_pipe(host, pipe);
-	}
-	pipe = &vendor->intr_out_xfer.pipe;
-	if (pipe->pipe_num != 0U) {
-		usbh_close_pipe(host, pipe);
-	}
-	pipe = &vendor->isoc_in_xfer.pipe;
-	if (pipe->pipe_num != 0U) {
-		usbh_close_pipe(host, pipe);
-	}
-	pipe = &vendor->isoc_out_xfer.pipe;
-	if (pipe->pipe_num != 0U) {
-		usbh_close_pipe(host, pipe);
-	}
-}
-
-/**
   * @brief  Deinit all xfer.
   * @param  None.
   * @retval None.
@@ -391,7 +350,6 @@ static void usbh_vendor_detach(usb_host_t *host)
 
 	usbh_vendor_stop_xfer();
 
-	usbh_vendor_deinit_all_pipe();
 	usbh_vendor_deinit_all_xfer();
 	vendor->host = NULL;
 
@@ -1068,7 +1026,6 @@ void usbh_vendor_deinit(void)
 	}
 	usbh_vendor_stop_xfer();
 
-	usbh_vendor_deinit_all_pipe();
 	usbh_vendor_deinit_all_xfer();
 	vendor->host = NULL;
 	vendor->cb = NULL;

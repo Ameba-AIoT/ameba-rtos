@@ -29,6 +29,10 @@ static int32_t scene_client_data(const mesh_model_info_p pmodel_info,
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_SCENE_CLIENT_MODEL, RTK_BT_MESH_SCENE_CLIENT_MODEL_STATUS,
 									sizeof(scene_client_status_t));
+		if (!p_evt) {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+			break;
+		}
 		memcpy(p_evt->data, pargs, sizeof(scene_client_status_t));
 		rtk_bt_evt_indicate(p_evt, NULL);
 	}
@@ -39,6 +43,10 @@ static int32_t scene_client_data(const mesh_model_info_p pmodel_info,
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_SCENE_CLIENT_MODEL, RTK_BT_MESH_SCENE_CLIENT_MODEL_REGISTER_STATUS,
 									len);
+		if (!p_evt) {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+			break;
+		}
 		memcpy(p_evt->data, &(pdata->src), 2);
 		memcpy((uint8_t *)(p_evt->data) + 2, &(pdata->status), 1);
 		memcpy((uint8_t *)(p_evt->data) + 3, &(pdata->current_scene), 2);
@@ -139,6 +147,10 @@ static int32_t scene_server_data(const mesh_model_info_p pmodel_info, uint32_t t
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_SCENE_SERVER_MODEL, RTK_BT_MESH_SCENE_SERVER_MODEL_GET,
 									sizeof(rtk_bt_mesh_scene_server_get_t));
+		if (!p_evt) {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+			break;
+		}
 		p_get_data = (rtk_bt_mesh_scene_server_get_t *)p_evt->data;
 		p_get_data->current_scene = &(((scene_server_get_t *)pargs)->current_scene);
 		rtk_bt_evt_indicate(p_evt, NULL);
@@ -150,6 +162,10 @@ static int32_t scene_server_data(const mesh_model_info_p pmodel_info, uint32_t t
 		if (p_get_data) {
 			rtk_bt_evt_t *p_evt = NULL;
 			p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_SCENE_SERVER_MODEL, RTK_BT_MESH_SCENE_SERVER_MODEL_RECALL, SCENE_DATA_MAX_LEN + 6);
+			if (!p_evt) {
+				BT_LOGE("[%s] Create event fail\r\n", __func__);
+				break;
+			}
 			memcpy((uint8_t *)p_evt->data, p_get_data, 2);
 			memcpy((uint8_t *)(p_evt->data) + 2, &p_get_data->total_time, 1);
 			memcpy((uint8_t *)(p_evt->data) + 3, &p_get_data->remaining_time, 1);
@@ -166,6 +182,10 @@ static int32_t scene_server_data(const mesh_model_info_p pmodel_info, uint32_t t
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_SCENE_SERVER_MODEL, RTK_BT_MESH_SCENE_SERVER_MODEL_GET_REGISTER_STATUS,
 									sizeof(rtk_bt_mesh_scene_server_get_register_status_t));
+		if (!p_evt) {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+			break;
+		}
 		p_get_data = (rtk_bt_mesh_scene_server_get_register_status_t *)p_evt->data;
 		p_get_data->status = (rtk_bt_mesh_scene_status_code_t *)(&(((scene_server_get_register_status_t *)pargs)->status));
 		rtk_bt_evt_indicate(p_evt, NULL);
@@ -176,6 +196,10 @@ static int32_t scene_server_data(const mesh_model_info_p pmodel_info, uint32_t t
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_SCENE_SERVER_MODEL, RTK_BT_MESH_SCENE_SERVER_MODEL_GET_SCENES_NUM,
 									sizeof(rtk_bt_mesh_scene_server_get_scenes_num_t));
+		if (!p_evt) {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+			break;
+		}
 		p_get_data = (rtk_bt_mesh_scene_server_get_scenes_num_t *)p_evt->data;
 		p_get_data->num_scenes = &(((scene_server_get_scenes_num_t *)pargs)->num_scenes);
 		rtk_bt_evt_indicate(p_evt, NULL);
@@ -187,6 +211,10 @@ static int32_t scene_server_data(const mesh_model_info_p pmodel_info, uint32_t t
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_SCENE_SERVER_MODEL, RTK_BT_MESH_SCENE_SERVER_MODEL_GET_SCENES,
 									sizeof(rtk_bt_mesh_scene_server_get_scenes_t) + p_data->num_scenes * sizeof(uint16_t));
+		if (!p_evt) {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+			break;
+		}
 		p_get_data = (rtk_bt_mesh_scene_server_get_scenes_t *)p_evt->data;
 		p_get_data->num_scenes = p_data->num_scenes;
 		p_get_data->scenes = sample_datas;
@@ -200,6 +228,10 @@ static int32_t scene_server_data(const mesh_model_info_p pmodel_info, uint32_t t
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_SCENE_SERVER_MODEL, RTK_BT_MESH_SCENE_SERVER_MODEL_GET_STATUS_RECALL,
 									sizeof(rtk_bt_mesh_scene_server_get_status_recall_t));
+		if (!p_evt) {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+			break;
+		}
 		p_get_data = (rtk_bt_mesh_scene_server_get_status_recall_t *)p_evt->data;
 		p_get_data->scene_number = p_data->scene_number;
 		p_get_data->status_recall = (rtk_bt_mesh_scene_status_code_t *)(&(((scene_server_get_status_recall_t *)pargs)->status_recall));
@@ -274,6 +306,10 @@ static int32_t scene_setup_server_data(const mesh_model_info_p pmodel_info, uint
 			rtk_bt_evt_t *p_evt = NULL;
 			p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_SCENE_SETUP_SERVER_MODEL, RTK_BT_MESH_SCENE_SETUP_SERVER_MODEL_STORE,
 										SCENE_DATA_MAX_LEN + sizeof(rtk_bt_mesh_scene_server_store_t));
+			if (!p_evt) {
+				BT_LOGE("[%s] Create event fail\r\n", __func__);
+				break;
+			}
 			scene_store = (rtk_bt_mesh_scene_server_store_t *)p_evt->data;
 			scene_store->status = (rtk_bt_mesh_scene_status_code_t)p_get_data->status;
 			scene_store->scene_number = p_get_data->scene_number;
@@ -291,6 +327,10 @@ static int32_t scene_setup_server_data(const mesh_model_info_p pmodel_info, uint
 			deleted_scene = p_get_data->scene_number;
 			rtk_bt_evt_t *p_evt = NULL;
 			p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_SCENE_SETUP_SERVER_MODEL, RTK_BT_MESH_SCENE_SETUP_SERVER_MODEL_DELETE, sizeof(scene_server_delete_t));
+			if (!p_evt) {
+				BT_LOGE("[%s] Create event fail\r\n", __func__);
+				break;
+			}
 			memcpy(p_evt->data, p_get_data, sizeof(scene_server_delete_t));
 			rtk_bt_evt_indicate(p_evt, NULL);
 		}
@@ -301,6 +341,10 @@ static int32_t scene_setup_server_data(const mesh_model_info_p pmodel_info, uint
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_SCENE_SETUP_SERVER_MODEL, RTK_BT_MESH_SCENE_SETUP_SERVER_MODEL_GET,
 									sizeof(rtk_bt_mesh_scene_server_get_t));
+		if (!p_evt) {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+			break;
+		}
 		p_get_data = (rtk_bt_mesh_scene_server_get_t *)p_evt->data;
 		p_get_data->current_scene = &(((scene_server_get_t *)pargs)->current_scene);
 		rtk_bt_evt_indicate(p_evt, NULL);
@@ -311,6 +355,10 @@ static int32_t scene_setup_server_data(const mesh_model_info_p pmodel_info, uint
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_SCENE_SETUP_SERVER_MODEL, RTK_BT_MESH_SCENE_SETUP_SERVER_MODEL_GET_SCENES_NUM,
 									sizeof(rtk_bt_mesh_scene_server_get_scenes_num_t));
+		if (!p_evt) {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+			break;
+		}
 		p_get_data = (rtk_bt_mesh_scene_server_get_scenes_num_t *)p_evt->data;
 		p_get_data->num_scenes = &(((scene_server_get_scenes_num_t *)pargs)->num_scenes);
 		rtk_bt_evt_indicate(p_evt, NULL);
@@ -322,6 +370,10 @@ static int32_t scene_setup_server_data(const mesh_model_info_p pmodel_info, uint
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_SCENE_SETUP_SERVER_MODEL, RTK_BT_MESH_SCENE_SETUP_SERVER_MODEL_GET_SCENES,
 									sizeof(rtk_bt_mesh_scene_server_get_scenes_t) + p_data->num_scenes * sizeof(uint16_t));
+		if (!p_evt) {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+			break;
+		}
 		p_get_data = (rtk_bt_mesh_scene_server_get_scenes_t *)p_evt->data;
 		p_get_data->num_scenes = p_data->num_scenes;
 		p_get_data->scenes = sample_datas;
@@ -335,6 +387,10 @@ static int32_t scene_setup_server_data(const mesh_model_info_p pmodel_info, uint
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_SCENE_SETUP_SERVER_MODEL, RTK_BT_MESH_SCENE_SETUP_SERVER_MODEL_GET_STATUS_REGISTER,
 									sizeof(rtk_bt_mesh_scene_server_get_register_status_t));
+		if (!p_evt) {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+			break;
+		}
 		p_get_data = (rtk_bt_mesh_scene_setup_server_get_register_status_t *)p_evt->data;
 		p_get_data->scene_number = p_data->scene_number;
 		p_get_data->status = (rtk_bt_mesh_scene_status_code_t *)(&(((scene_setup_server_get_register_status_t *)pargs)->status));

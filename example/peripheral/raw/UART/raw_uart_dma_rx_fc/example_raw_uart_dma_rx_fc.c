@@ -13,7 +13,9 @@
 #define UART_DEV	UART0_DEV
 #define UART_BAUD	38400
 #define DMA_TX_BURST_SIZE	8
+#if defined (CONFIG_AMEBAPRO3)
 #define DMA_RX_BURST_SIZE	16 // RX_BURST_SIZE >= RX GDMA_SrcMsize
+#endif
 /* note that timeout(second) = RX_TO_BIT / baudrate. The recommended value is 64~65535. */
 #define RX_TO_BIT	6000
 
@@ -124,7 +126,9 @@ bool uart_dma_recv_flow_controller(char *pstr)
 	bool ret = TRUE;
 	wait_rx = 1;
 
+#if defined (CONFIG_AMEBAPRO3)
 	UART_RXDMAConfig(UART_DEV, DMA_RX_BURST_SIZE);
+#endif
 	UART_RXDMACmd(UART_DEV, ENABLE);
 
 	/* RxCount = 0, set UART as dma flow controller */

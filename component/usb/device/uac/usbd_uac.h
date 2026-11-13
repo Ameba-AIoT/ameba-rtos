@@ -320,7 +320,6 @@ typedef struct {
 	u32 cur_record_sampling_freq;      /**< Current record (microphone) sample frequency, UAC 2.0 only. */
 	u8 cur_byte_width;                /**< Current Audio byte width. */
 	u8 cur_ch_cnt;                     /**< Current Audio channel count. */
-	u8 cur_clk_valid;                  /**< Current Clock valid flag. */
 
 	__IO u8 is_configured;             /**< 1 from a successful set_config() to clear_config(), written under
 	                                        the USB critical section. The task APIs arm an EP only while it is

@@ -109,6 +109,10 @@ static int32_t remote_prov_client_data(const mesh_model_info_p pmodel_info, uint
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_REMOTE_PROV_CLIENT_MODEL, RTK_BT_MESH_REMOTE_PROV_CLIENT_EVT_SCAN_CAPA_STATUS,
 									sizeof(rtk_bt_mesh_rmt_prov_client_scan_capa_status_t));
+		if (!p_evt) {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+			break;
+		}
 		scan_capa_status = (rtk_bt_mesh_rmt_prov_client_scan_capa_status_t *)p_evt->data;
 		scan_capa_status->src = pdata->src;
 		scan_capa_status->max_scan_items = pdata->max_scanned_items;
@@ -122,6 +126,10 @@ static int32_t remote_prov_client_data(const mesh_model_info_p pmodel_info, uint
 		rtk_bt_mesh_rmt_prov_client_scan_status_t *scan_status = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_REMOTE_PROV_CLIENT_MODEL, RTK_BT_MESH_REMOTE_PROV_CLIENT_EVT_SCAN_STATUS,
 									sizeof(rtk_bt_mesh_rmt_prov_client_scan_status_t));
+		if (!p_evt) {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+			break;
+		}
 		scan_status = (rtk_bt_mesh_rmt_prov_client_scan_status_t *)p_evt->data;
 		scan_status->src = pdata->src;
 		scan_status->prov_status = (rtk_bt_mesh_rmt_prov_status_t)pdata->status;
@@ -146,6 +154,10 @@ static int32_t remote_prov_client_data(const mesh_model_info_p pmodel_info, uint
 		rtk_bt_mesh_rmt_prov_client_scan_report_t *scan_report = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_REMOTE_PROV_CLIENT_MODEL, RTK_BT_MESH_REMOTE_PROV_CLIENT_EVT_SCAN_REPORT,
 									sizeof(rtk_bt_mesh_rmt_prov_client_scan_report_t));
+		if (!p_evt) {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+			break;
+		}
 		scan_report = (rtk_bt_mesh_rmt_prov_client_scan_report_t *)p_evt->data;
 		scan_report->src = pdata->src;
 		scan_report->rssi = pdata->rssi;
@@ -165,6 +177,10 @@ static int32_t remote_prov_client_data(const mesh_model_info_p pmodel_info, uint
 		rtk_bt_mesh_rmt_prov_client_extended_scan_report_t *escan_report = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_REMOTE_PROV_CLIENT_MODEL, RTK_BT_MESH_REMOTE_PROV_CLIENT_EVT_EXTENDED_SCAN_REPORT,
 									sizeof(rtk_bt_mesh_rmt_prov_client_extended_scan_report_t) + pdata->adv_structs_len);
+		if (!p_evt) {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+			break;
+		}
 		escan_report = (rtk_bt_mesh_rmt_prov_client_extended_scan_report_t *)p_evt->data;
 		escan_report->src = pdata->src;
 		memcpy(escan_report->uuid, pdata->uuid, 16);
@@ -179,6 +195,10 @@ static int32_t remote_prov_client_data(const mesh_model_info_p pmodel_info, uint
 		rtk_bt_mesh_rmt_prov_client_link_status_t *link_status = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_REMOTE_PROV_CLIENT_MODEL, RTK_BT_MESH_REMOTE_PROV_CLIENT_EVT_LINK_STATUS,
 									sizeof(rtk_bt_mesh_rmt_prov_client_link_status_t));
+		if (!p_evt) {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+			break;
+		}
 		link_status = (rtk_bt_mesh_rmt_prov_client_link_status_t *)p_evt->data;
 		link_status->src = pdata->src;
 		link_status->prov_status = (rtk_bt_mesh_rmt_prov_status_t)pdata->status;
@@ -192,6 +212,10 @@ static int32_t remote_prov_client_data(const mesh_model_info_p pmodel_info, uint
 		rtk_bt_mesh_rmt_prov_client_link_report_t *link_report;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_REMOTE_PROV_CLIENT_MODEL, RTK_BT_MESH_REMOTE_PROV_CLIENT_EVT_LINK_REPORT,
 									sizeof(rtk_bt_mesh_rmt_prov_client_link_report_t));
+		if (!p_evt) {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+			break;
+		}
 		link_report = (rtk_bt_mesh_rmt_prov_client_link_report_t *)p_evt->data;
 		link_report->src = pdata->src;
 		link_report->prov_status = (rtk_bt_mesh_rmt_prov_status_t)pdata->status;

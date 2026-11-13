@@ -8,6 +8,7 @@
 
 #include "usb_os.h"
 #include "usbh_cdc_ecm.h"
+#include "usb_rtl815x.h"
 #if USBH_CDC_ECM_STATE_TRACE_ENABLE
 #include <stdint.h>
 #include <inttypes.h>
@@ -75,8 +76,7 @@ typedef enum {
 	CDC_ECM_STATE_FLOW_CTRL1,
 	CDC_ECM_STATE_FLOW_CTRL2,
 
-	/*RTL8152, set mac address */
-	CDC_ECM_STATE_CTRL_MAC_GET_LOCK,
+	/* Realtek dongle, set mac address, Ref r8152 __rtl8152_set_mac_address() */
 	CDC_ECM_STATE_CTRL_MAC_DISABLE_LOCK,
 	CDC_ECM_STATE_CTRL_MAC_SET_MAC1,
 	CDC_ECM_STATE_CTRL_MAC_SET_MAC2,
@@ -454,169 +454,73 @@ static int usbh_cdc_ecm_process_set_alt(usb_host_t *host)
 	return usbh_ctrl_request(host, &setup, NULL);
 }
 
-//for 8156
 /**
-  * @brief  Get 8156 rcr params
-  * @param  host: Host handle
-  * @retval Status
+  * @brief  Store a register value little endian, as the dongle takes it
+  * @param  buf: Destination, USB_RTL815X_REG_DWORD_LEN bytes
+  * @param  value: Register value
+  * @retval None
   */
-static int usbh_cdc_ecm_process_get_rcr(usb_host_t *host)
+static void usbh_cdc_ecm_put_le32(u8 *buf, u32 value)
 {
-	usbh_setup_req_t setup;
-	usbh_cdc_ecm_host_t *cdc = &usbh_cdc_ecm_host;
-
-	setup.req.bmRequestType = USB_D2H | USB_REQ_TYPE_VENDOR | USB_REQ_RECIPIENT_DEVICE;
-	setup.req.bRequest = 0x05;
-	setup.req.wValue = 0xc010;
-	setup.req.wIndex = 0x0100;
-	setup.req.wLength = 4;
-
-	return usbh_ctrl_request(host, &setup, cdc->dongle_ctrl_buf);
+	buf[0] = (u8)(value & 0xFFU);
+	buf[1] = (u8)((value >> 8) & 0xFFU);
+	buf[2] = (u8)((value >> 16) & 0xFFU);
+	buf[3] = (u8)((value >> 24) & 0xFFU);
 }
 
 /**
-  * @brief  Set 8156 rcr params
+  * @brief  Read one dword register of a Realtek dongle, Ref r8152 get_registers()
   * @param  host: Host handle
-  * @retval Status
+  * @param  reg: PLA register address, dword aligned
+  * @retval Status, the value lands in dongle_ctrl_buf
   */
-static int usbh_cdc_ecm_process_set_rcr(usb_host_t *host)
+static int usbh_cdc_ecm_rtl_reg_read(usb_host_t *host, u16 reg)
 {
 	usbh_setup_req_t setup;
-	usbh_cdc_ecm_host_t *cdc = &usbh_cdc_ecm_host;
 
-	setup.req.bmRequestType = USB_H2D | USB_REQ_TYPE_VENDOR | USB_REQ_RECIPIENT_DEVICE;
-	setup.req.bRequest = 0x05;
-	setup.req.wValue = 0xc010;
-	setup.req.wIndex = 0x010F;
-	setup.req.wLength = 4;
+	setup.req.bmRequestType = USB_RTL815X_REQT_READ;
+	setup.req.bRequest = USB_RTL815X_REQ_GET_REGS;
+	setup.req.wValue = reg;
+	setup.req.wIndex = USB_RTL815X_MCU_TYPE_PLA;
+	setup.req.wLength = USB_RTL815X_REG_DWORD_LEN;
 
-	return usbh_ctrl_request(host, &setup, cdc->dongle_ctrl_buf);
-}
-
-//for 8152
-/**
-  * @brief  Set 8152 flow ctrl params1
-  * @param  host: Host handle
-  * @retval Status
-  */
-static int usbh_cdc_ecm_process_set_flow_ctrl1(usb_host_t *host)
-{
-	usbh_setup_req_t setup;
-	usbh_cdc_ecm_host_t *cdc = &usbh_cdc_ecm_host;
-
-	setup.req.bmRequestType = 0x40;
-	setup.req.bRequest = 0x05;
-	setup.req.wValue = 0xC0A4;
-	setup.req.wIndex = 0x0103;
-	setup.req.wLength = 4;
-	return usbh_ctrl_request(host, &setup, (u8 *)cdc->dongle_ctrl_buf);
-}
-/**
-  * @brief  Set 8152 flow ctrl params2
-  * @param  host: Host handle
-  * @retval Status
-  */
-static int usbh_cdc_ecm_process_set_flow_ctrl2(usb_host_t *host)
-{
-	usbh_setup_req_t setup;
-	usbh_cdc_ecm_host_t *cdc = &usbh_cdc_ecm_host;
-
-	setup.req.bmRequestType = 0x40;
-	setup.req.bRequest = 0x05;
-	setup.req.wValue = 0xC0A8;
-	setup.req.wIndex = 0x0103;
-	setup.req.wLength = 4;
-	return usbh_ctrl_request(host, &setup, (u8 *)cdc->dongle_ctrl_buf);
-}
-
-/******************Set MAC for 8152 *****************************/
-/**
-  * @brief  Set 8152 mac flow ctrl
-  * @param  host: Host handle
-  * @retval Status
-  */
-static int usbh_cdc_ecm_process_mac_get_lock(usb_host_t *host)
-{
-	usbh_setup_req_t setup;
-	usbh_cdc_ecm_host_t *cdc = &usbh_cdc_ecm_host;
-
-	setup.req.bmRequestType = USB_D2H | USB_REQ_TYPE_VENDOR | USB_REQ_RECIPIENT_DEVICE;
-	setup.req.bRequest = 0x05;
-	setup.req.wValue = 0xE81C;
-	setup.req.wIndex = 0x010F;
-	setup.req.wLength = 4;
-
-	return usbh_ctrl_request(host, &setup, cdc->dongle_ctrl_buf);
-}
-
-static int usbh_cdc_ecm_process_mac_set_dis_lock(usb_host_t *host)
-{
-	usbh_setup_req_t setup;
-	usbh_cdc_ecm_host_t *cdc = &usbh_cdc_ecm_host;
-
-	setup.req.bmRequestType = 0x40;
-	setup.req.bRequest = 0x05;
-	setup.req.wValue = 0xE81C;
-	setup.req.wIndex = 0x010F;
-	setup.req.wLength = 4;
-	return usbh_ctrl_request(host, &setup, cdc->dongle_ctrl_buf);
-}
-
-static int usbh_cdc_ecm_process_mac_set_mac1(usb_host_t *host)
-{
-	usbh_setup_req_t setup;
-	usbh_cdc_ecm_host_t *cdc = &usbh_cdc_ecm_host;
-
-	setup.req.bmRequestType = 0x40;
-	setup.req.bRequest = 0x05;
-	setup.req.wValue = 0xC000;
-	setup.req.wIndex = 0x010F;
-	setup.req.wLength = 4;
-	return usbh_ctrl_request(host, &setup, cdc->dongle_ctrl_buf);
-}
-
-static int usbh_cdc_ecm_process_mac_set_mac2(usb_host_t *host)
-{
-	usbh_setup_req_t setup;
-	usbh_cdc_ecm_host_t *cdc = &usbh_cdc_ecm_host;
-
-	setup.req.bmRequestType = 0x40;
-	setup.req.bRequest = 0x05;
-	setup.req.wValue = 0xC004;
-	setup.req.wIndex = 0x0103;
-	setup.req.wLength = 4;
-	return usbh_ctrl_request(host, &setup, cdc->dongle_ctrl_buf);
-}
-
-static int usbh_cdc_ecm_process_mac_en_lock(usb_host_t *host)
-{
-	usbh_setup_req_t setup;
-	usbh_cdc_ecm_host_t *cdc = &usbh_cdc_ecm_host;
-
-	setup.req.bmRequestType = 0x40;
-	setup.req.bRequest = 0x05;
-	setup.req.wValue = 0xE81C;
-	setup.req.wIndex = 0x010F;
-	setup.req.wLength = 4;
-	return usbh_ctrl_request(host, &setup, cdc->dongle_ctrl_buf);
+	return usbh_ctrl_request(host, &setup, usbh_cdc_ecm_host.dongle_ctrl_buf);
 }
 
 /**
-  * @brief  Set led color for 8152
+  * @brief  Write the enabled bytes of one dword register of a Realtek dongle, Ref r8152 set_registers()
   * @param  host: Host handle
+  * @param  reg: PLA register address, dword aligned
+  * @param  byte_en: USB_RTL815X_BYTE_EN_x, the bytes of dongle_ctrl_buf actually written
   * @retval Status
   */
-static int usbh_cdc_ecm_process_led_set_ctrl(usb_host_t *host)
+static int usbh_cdc_ecm_rtl_reg_write(usb_host_t *host, u16 reg, u16 byte_en)
 {
 	usbh_setup_req_t setup;
+
+	setup.req.bmRequestType = USB_RTL815X_REQT_WRITE;
+	setup.req.bRequest = USB_RTL815X_REQ_SET_REGS;
+	setup.req.wValue = reg;
+	setup.req.wIndex = USB_RTL815X_MCU_TYPE_PLA | byte_en;
+	setup.req.wLength = USB_RTL815X_REG_DWORD_LEN;
+
+	return usbh_ctrl_request(host, &setup, usbh_cdc_ecm_host.dongle_ctrl_buf);
+}
+
+/**
+  * @brief  Write one byte of PLA_CRWECR, Ref r8152 __rtl8152_set_mac_address()
+  * @param  host: Host handle
+  * @param  value: USB_RTL815X_CRWECR_CONFIG to unlock PLA_IDR, USB_RTL815X_CRWECR_NORMAL to lock it
+  * @retval Status
+  */
+static int usbh_cdc_ecm_rtl_set_crwecr(usb_host_t *host, u8 value)
+{
 	usbh_cdc_ecm_host_t *cdc = &usbh_cdc_ecm_host;
 
-	setup.req.bmRequestType = 0x40;
-	setup.req.bRequest = 0x05;
-	setup.req.wValue = 0xDD90;
-	setup.req.wIndex = 0x0103;
-	setup.req.wLength = 4;
-	return usbh_ctrl_request(host, &setup, cdc->dongle_ctrl_buf);
+	/* Only byte 0 is enabled: the rest of the dword, CONFIG1/CONFIG2 included, is left alone */
+	usb_os_memset((void *)cdc->dongle_ctrl_buf, 0, USB_RTL815X_REG_DWORD_LEN);
+	cdc->dongle_ctrl_buf[0] = value;
+	return usbh_cdc_ecm_rtl_reg_write(host, USB_RTL815X_PLA_CRWECR, USB_RTL815X_BYTE_EN_BYTE);
 }
 
 static void usbh_cdc_ecm_set_dongle_mac(const u8 *mac)
@@ -643,26 +547,9 @@ static void usbh_cdc_ecm_config_dongle_mac(usb_host_t *host, u16 vid, u16 pid)
 	}
 
 	switch (cdc->sub_status) {
-	case CDC_ECM_STATE_CTRL_MAC_GET_LOCK: //8152 mac
-		usb_os_memset((void *)cdc->mac_ctrl_lock, 0, 4);
+	case CDC_ECM_STATE_CTRL_MAC_DISABLE_LOCK:
 		cdc->mac_write_failed = 0U;
-		state = usbh_cdc_ecm_process_mac_get_lock(host);
-		if (state == RTK_SUCCESS) {
-			usb_os_memcpy((void *)cdc->mac_ctrl_lock, (const void *)cdc->dongle_ctrl_buf, USBH_CDC_ECM_CTRL_REG_BUF_LEN);
-			cdc->sub_status++;
-		} else if (state != -RTK_ERR_BUSY) {
-			/* Nothing written yet: the dongle keeps its own MAC, read it back */
-			RTK_LOGS(TAG, RTK_LOG_WARN, "Get MAC lock err %d\n", state);
-			cdc->mac_write_failed = 1U;
-			cdc->sub_status = CDC_ECM_STATE_CTRL_MAC_READ_BACK;
-		}
-
-		break;
-
-	case CDC_ECM_STATE_CTRL_MAC_DISABLE_LOCK: //8152 mac
-		cdc->mac_ctrl_lock[0] = 0xD0;
-		usb_os_memcpy((void *)cdc->dongle_ctrl_buf, (const void *)cdc->mac_ctrl_lock, USBH_CDC_ECM_CTRL_REG_BUF_LEN);
-		state = usbh_cdc_ecm_process_mac_set_dis_lock(host);
+		state = usbh_cdc_ecm_rtl_set_crwecr(host, USB_RTL815X_CRWECR_CONFIG);
 		if (state == RTK_SUCCESS) {
 			cdc->sub_status++;
 		} else if (state != -RTK_ERR_BUSY) {
@@ -673,9 +560,9 @@ static void usbh_cdc_ecm_config_dongle_mac(usb_host_t *host, u16 vid, u16 pid)
 		}
 		break;
 
-	case CDC_ECM_STATE_CTRL_MAC_SET_MAC1: //8152 mac
-		usb_os_memcpy((void *)cdc->dongle_ctrl_buf, (const void *) & (cdc->mac[0]), USBH_CDC_ECM_CTRL_REG_BUF_LEN);
-		state = usbh_cdc_ecm_process_mac_set_mac1(host);
+	case CDC_ECM_STATE_CTRL_MAC_SET_MAC1:
+		usb_os_memcpy((void *)cdc->dongle_ctrl_buf, (const void *) & (cdc->mac[0]), USB_RTL815X_REG_DWORD_LEN);
+		state = usbh_cdc_ecm_rtl_reg_write(host, USB_RTL815X_PLA_IDR, USB_RTL815X_BYTE_EN_DWORD);
 		if (state == RTK_SUCCESS) {
 			cdc->sub_status++;
 		} else if (state != -RTK_ERR_BUSY) {
@@ -686,12 +573,11 @@ static void usbh_cdc_ecm_config_dongle_mac(usb_host_t *host, u16 vid, u16 pid)
 		}
 		break;
 
-	case CDC_ECM_STATE_CTRL_MAC_SET_MAC2: //8152 mac
+	case CDC_ECM_STATE_CTRL_MAC_SET_MAC2:
+		usb_os_memset((void *)cdc->dongle_ctrl_buf, 0, USB_RTL815X_REG_DWORD_LEN);
 		cdc->dongle_ctrl_buf[0] = cdc->mac[4];
 		cdc->dongle_ctrl_buf[1] = cdc->mac[5];
-		cdc->dongle_ctrl_buf[2] = 0xFF;
-		cdc->dongle_ctrl_buf[3] = 0xFF;
-		state = usbh_cdc_ecm_process_mac_set_mac2(host);
+		state = usbh_cdc_ecm_rtl_reg_write(host, USB_RTL815X_PLA_IDR_HIGH, USB_RTL815X_BYTE_EN_WORD);
 		if (state == RTK_SUCCESS) {
 			cdc->sub_status++;
 		} else if (state != -RTK_ERR_BUSY) {
@@ -702,10 +588,8 @@ static void usbh_cdc_ecm_config_dongle_mac(usb_host_t *host, u16 vid, u16 pid)
 		}
 		break;
 
-	case CDC_ECM_STATE_CTRL_MAC_ENABLE_LOCK: //8152 mac
-		cdc->mac_ctrl_lock[0] = 0x10;
-		usb_os_memcpy((void *)cdc->dongle_ctrl_buf, (const void *)cdc->mac_ctrl_lock, USBH_CDC_ECM_CTRL_REG_BUF_LEN);
-		state = usbh_cdc_ecm_process_mac_en_lock(host);
+	case CDC_ECM_STATE_CTRL_MAC_ENABLE_LOCK:
+		state = usbh_cdc_ecm_rtl_set_crwecr(host, USB_RTL815X_CRWECR_NORMAL);
 		if ((state == RTK_SUCCESS) && (cdc->mac_write_failed == 0U)) {
 			cdc->sub_status = CDC_ECM_STATE_CTRL_LED_COLOR_SET;
 			cdc->mac_valid = 1;
@@ -781,7 +665,7 @@ static int usbh_cdc_ecm_ctrl_setting(usb_host_t *host)
 			cdc->sub_status++;
 		} else {
 			usb_os_memset((void *)cdc->rcr, 0, 4);
-			state = usbh_cdc_ecm_process_get_rcr(host);
+			state = usbh_cdc_ecm_rtl_reg_read(host, USB_RTL815X_PLA_RCR);
 			if (state == RTK_SUCCESS) {
 				usb_os_memcpy((void *)cdc->rcr, (const void *)cdc->dongle_ctrl_buf, USBH_CDC_ECM_CTRL_REG_BUF_LEN);
 				cdc->sub_status++;
@@ -797,10 +681,17 @@ static int usbh_cdc_ecm_ctrl_setting(usb_host_t *host)
 		if ((vid != USBH_CDC_ECM_DEVICE_VID) || (usbh_cdc_ecm_support_feature(pid, CDC_ECM_CAP_RCR_CMD) != RTK_SUCCESS)) {
 			cdc->sub_status++;
 		} else {
-			//set bit 0~3 set 1 will enable PING & UDP transfer
-			cdc->rcr[0] = cdc->rcr[0] | 0x0F;
+			/* Ref r8152 rtl8152_set_rx_mode(). Promiscuous accepts every frame, as a bridge forwards
+			 * frames to and from MACs other than the dongle's. Otherwise own unicast and broadcast:
+			 * the multicast hash table (PLA_MAR) is never programmed, so RCR_AM is left off */
+			cdc->rcr[0] &= (u8)~USB_RTL815X_RCR_ACPT_ALL;
+			if (cdc->promiscuous != 0U) {
+				cdc->rcr[0] |= (u8)USB_RTL815X_RCR_ACPT_ALL;
+			} else {
+				cdc->rcr[0] |= (u8)(USB_RTL815X_RCR_AB | USB_RTL815X_RCR_APM);
+			}
 			usb_os_memcpy((void *)cdc->dongle_ctrl_buf, (const void *)cdc->rcr, USBH_CDC_ECM_CTRL_REG_BUF_LEN);
-			state = usbh_cdc_ecm_process_set_rcr(host);
+			state = usbh_cdc_ecm_rtl_reg_write(host, USB_RTL815X_PLA_RCR, USB_RTL815X_BYTE_EN_DWORD);
 			if (state == RTK_SUCCESS) {
 				cdc->sub_status++;
 			} else if (state != -RTK_ERR_BUSY) {
@@ -815,10 +706,10 @@ static int usbh_cdc_ecm_ctrl_setting(usb_host_t *host)
 		if ((vid != USBH_CDC_ECM_DEVICE_VID) || (usbh_cdc_ecm_support_feature(pid, CDC_ECM_CAP_FIFO_CTRL) != RTK_SUCCESS)) {
 			cdc->sub_status++;
 		} else {
-			usb_os_memset((void *)cdc->flow_ctrl, 0, 4);
-			cdc->flow_ctrl[0] = 0x60;
-			usb_os_memcpy((void *)cdc->dongle_ctrl_buf, (const void *)cdc->flow_ctrl, USBH_CDC_ECM_CTRL_REG_BUF_LEN);
-			state = usbh_cdc_ecm_process_set_flow_ctrl1(host);
+			/* RX FIFO near full threshold by bus speed, Ref r8152 r8152b_exit_oob() */
+			usbh_cdc_ecm_put_le32(cdc->dongle_ctrl_buf, (host->dev_speed == USB_SPEED_HIGH) ?
+								  USB_RTL815X_RXFIFO_THR2_HIGH : USB_RTL815X_RXFIFO_THR2_FULL);
+			state = usbh_cdc_ecm_rtl_reg_write(host, USB_RTL815X_PLA_RXFIFO_CTRL1, USB_RTL815X_BYTE_EN_DWORD);
 			if (state == RTK_SUCCESS) {
 				cdc->sub_status++;
 			} else if (state != -RTK_ERR_BUSY) {
@@ -833,10 +724,9 @@ static int usbh_cdc_ecm_ctrl_setting(usb_host_t *host)
 		if ((vid != USBH_CDC_ECM_DEVICE_VID) || (usbh_cdc_ecm_support_feature(pid, CDC_ECM_CAP_FIFO_CTRL) != RTK_SUCCESS)) {
 			cdc->sub_status++;
 		} else {
-			usb_os_memset((void *)cdc->flow_ctrl, 0, 4);
-			cdc->flow_ctrl[0] = 0xa0;
-			usb_os_memcpy((void *)cdc->dongle_ctrl_buf, (const void *)cdc->flow_ctrl, USBH_CDC_ECM_CTRL_REG_BUF_LEN);
-			state = usbh_cdc_ecm_process_set_flow_ctrl2(host);
+			usbh_cdc_ecm_put_le32(cdc->dongle_ctrl_buf, (host->dev_speed == USB_SPEED_HIGH) ?
+								  USB_RTL815X_RXFIFO_THR3_HIGH : USB_RTL815X_RXFIFO_THR3_FULL);
+			state = usbh_cdc_ecm_rtl_reg_write(host, USB_RTL815X_PLA_RXFIFO_CTRL2, USB_RTL815X_BYTE_EN_DWORD);
 			if (state == RTK_SUCCESS) {
 				cdc->sub_status++;
 			} else if (state != -RTK_ERR_BUSY) {
@@ -847,7 +737,6 @@ static int usbh_cdc_ecm_ctrl_setting(usb_host_t *host)
 		}
 		break;
 
-	case CDC_ECM_STATE_CTRL_MAC_GET_LOCK:
 	case CDC_ECM_STATE_CTRL_MAC_DISABLE_LOCK:
 	case CDC_ECM_STATE_CTRL_MAC_SET_MAC1:
 	case CDC_ECM_STATE_CTRL_MAC_SET_MAC2:
@@ -870,9 +759,9 @@ static int usbh_cdc_ecm_ctrl_setting(usb_host_t *host)
 			(usbh_cdc_ecm_support_feature(pid, CDC_ECM_CAP_MODIFY_LED) != RTK_SUCCESS)) {
 			cdc->sub_status++;
 		} else {
-			usb_os_memset((void *)cdc->dongle_ctrl_buf, 0xFF, 4);
-			usb_os_memcpy((void *)cdc->dongle_ctrl_buf, (const void *) & (cdc->led_value), 2);
-			state = usbh_cdc_ecm_process_led_set_ctrl(host);
+			usb_os_memset((void *)cdc->dongle_ctrl_buf, 0, USB_RTL815X_REG_DWORD_LEN);
+			usb_os_memcpy((void *)cdc->dongle_ctrl_buf, (const void *) & (cdc->led_value), sizeof(cdc->led_value));
+			state = usbh_cdc_ecm_rtl_reg_write(host, USB_RTL815X_PLA_LEDSEL, USB_RTL815X_BYTE_EN_WORD);
 			if (state == RTK_SUCCESS) {
 				cdc->sub_status++;
 			} else if (state != -RTK_ERR_BUSY) {
@@ -1101,9 +990,6 @@ static int usbh_cdc_ecm_parse_interface_desc(usb_host_t *host)
 	cdc->pid = host->dev_desc->idProduct;
 	cdc->sub_status = CDC_ECM_STATE_AT_SETTING_IDLE;
 	cdc->iMACAddressStringId = 0U;
-	cdc->intr_rx.valid = 0U;
-	cdc->bulk_rx.valid = 0U;
-	cdc->bulk_tx.valid = 0U;
 
 	if (usbh_cdc_ecm_find_function(host, &ctrl_itf, &data_itf_desc) != RTK_SUCCESS) {
 		return -RTK_ERR_BADARG;
@@ -1126,16 +1012,13 @@ static int usbh_cdc_ecm_parse_interface_desc(usb_host_t *host)
 	}
 
 	usb_os_memcpy((void *)&cdc->intr_rx.ep_desc, (const void *)&ctrl_itf->itf_desc_array[0].ep_desc_array[0], sizeof(usbh_ep_desc_t));
-	cdc->intr_rx.valid = 1U;
 
 	/* Already passed in usbh_cdc_ecm_find_function(), called again for the endpoint pointers */
 	if (usbh_cdc_ecm_check_data_eps(data_itf_desc, &bulk_in, &bulk_out) != RTK_SUCCESS) {
 		return -RTK_ERR_BADARG;
 	}
 	usb_os_memcpy((void *)&cdc->bulk_rx.ep_desc, (const void *)bulk_in, sizeof(usbh_ep_desc_t));
-	cdc->bulk_rx.valid = 1U;
 	usb_os_memcpy((void *)&cdc->bulk_tx.ep_desc, (const void *)bulk_out, sizeof(usbh_ep_desc_t));
-	cdc->bulk_tx.valid = 1U;
 
 	cdc->data_itf_id = data_itf_desc->bInterfaceNumber;
 	cdc->data_alt_set = data_itf_desc->bAlternateSetting;
@@ -2042,10 +1925,11 @@ int usbh_cdc_ecm_init(const usbh_cdc_ecm_state_cb_t *cb, const usbh_cdc_ecm_conf
 
 	cdc->mac_valid = 0;
 
-	/* cfg == NULL is valid (e.g. usbh_wifi_bridge passes NULL): mac_valid is set later during
-	 * enumeration, and led_cnt == 0 makes LED setup skip gracefully. */
+	/* cfg == NULL is valid: mac_valid is set later during enumeration, led_cnt == 0 makes
+	 * LED setup skip gracefully and promiscuous == 0 keeps the dongle RX filter on. */
 	cdc->led_cnt = 0;
 	if (cfg != NULL) {
+		cdc->promiscuous = (cfg->promiscuous != 0U) ? 1U : 0U;
 		if (cfg->mac_value != NULL) {
 			usbh_cdc_ecm_set_dongle_mac(cfg->mac_value);
 		}

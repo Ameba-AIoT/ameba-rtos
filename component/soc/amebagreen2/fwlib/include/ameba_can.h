@@ -917,10 +917,10 @@ void CAN_MsgBufRxDoneStatusClear(CAN_TypeDef *CANx, u32 MsgBufIdx);
 void CAN_TxMsgTriggerCmd(CAN_TypeDef *CANx, u32 State);
 void CAN_TxMsgTriggerConfig(CAN_TypeDef *CANx, u32 CloseOffset, u32 Begin);
 
-void CAN_RxDmaDestBaseAddrConfig(CAN_TypeDef *CANx, u32 Addr);
+void CAN_RXDMACmd(CAN_TypeDef *CANx, u32 NewState);
 u32 CAN_GetRxDmaData(CAN_TypeDef *CANx);
 
-void CAN_MsgCtrlRegConfig(CAN_TypeDef *CANx, u32 MsgIdx, u32 RxDmaEn, u32 DmaOffset);
+void CAN_RxMsgBufDMACmd(CAN_TypeDef *CANx, u32 MsgIdx, u32 NewState);
 void CAN_MsgBaseAddrConfig(CAN_TypeDef *CANx, u32 MsgIdx, u32 BaseAddr);
 void CAN_MsgBaseAddrEndReg(CAN_TypeDef *CANx, u32 EndAddr);
 

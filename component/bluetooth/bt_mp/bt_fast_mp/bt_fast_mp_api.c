@@ -47,7 +47,7 @@ bool rtk_bt_mp_dtm_rx_test_v1(uint8_t rx_chann)
 	buf[2] = (uint8_t)(1);
 	buf[3] = rx_chann;
 
-	return hci_dtm_send(0x201D, buf, 4);
+	return hci_dtm_send(0x201D, buf, 4, sizeof(buf));
 }
 
 bool rtk_bt_mp_dtm_rx_test_v2(uint8_t rx_chann, uint8_t phy, uint8_t mod_idx)
@@ -73,7 +73,7 @@ bool rtk_bt_mp_dtm_rx_test_v2(uint8_t rx_chann, uint8_t phy, uint8_t mod_idx)
 	buf[4] = phy;
 	buf[5] = mod_idx;
 
-	return hci_dtm_send(0x2033, buf, 6);
+	return hci_dtm_send(0x2033, buf, 6, sizeof(buf));
 }
 
 bool rtk_bt_mp_dtm_rx_test_v3(uint8_t rx_chann, uint8_t phy, uint8_t mod_idx,
@@ -132,7 +132,7 @@ bool rtk_bt_mp_dtm_rx_test_v3(uint8_t rx_chann, uint8_t phy, uint8_t mod_idx,
 		}
 	}
 
-	return hci_dtm_send(0x204F, buf, 10 + sw_pattern_len);
+	return hci_dtm_send(0x204F, buf, 10 + sw_pattern_len, sizeof(buf));
 }
 
 bool rtk_bt_mp_dtm_tx_test_v1(uint8_t tx_chann, uint8_t data_len, uint8_t pkt_pl)
@@ -154,7 +154,7 @@ bool rtk_bt_mp_dtm_tx_test_v1(uint8_t tx_chann, uint8_t data_len, uint8_t pkt_pl
 	buf[4] = data_len;
 	buf[5] = pkt_pl;
 
-	return hci_dtm_send(0x201E, buf, 6);
+	return hci_dtm_send(0x201E, buf, 6, sizeof(buf));
 }
 
 bool rtk_bt_mp_dtm_tx_test_v2(uint8_t tx_chann, uint8_t data_len, uint8_t pkt_pl, uint8_t phy)
@@ -181,7 +181,7 @@ bool rtk_bt_mp_dtm_tx_test_v2(uint8_t tx_chann, uint8_t data_len, uint8_t pkt_pl
 	buf[5] = pkt_pl;
 	buf[6] = phy;
 
-	return hci_dtm_send(0x2034, buf, 7);
+	return hci_dtm_send(0x2034, buf, 7, sizeof(buf));
 }
 
 bool rtk_bt_mp_dtm_tx_test_v3(uint8_t tx_chann, uint8_t data_len, uint8_t pkt_pl, uint8_t phy,
@@ -234,7 +234,7 @@ bool rtk_bt_mp_dtm_tx_test_v3(uint8_t tx_chann, uint8_t data_len, uint8_t pkt_pl
 		}
 	}
 
-	return hci_dtm_send(0x2050, buf, 10 + sw_pattern_len);
+	return hci_dtm_send(0x2050, buf, 10 + sw_pattern_len, sizeof(buf));
 }
 
 bool rtk_bt_mp_dtm_tx_test_v4(uint8_t tx_chann, uint8_t data_len, uint8_t pkt_pl, uint8_t phy,
@@ -289,7 +289,7 @@ bool rtk_bt_mp_dtm_tx_test_v4(uint8_t tx_chann, uint8_t data_len, uint8_t pkt_pl
 	}
 	buf[10 + i] = (uint8_t)tx_power_level;
 
-	return hci_dtm_send(0x207B, buf, 11 + sw_pattern_len);
+	return hci_dtm_send(0x207B, buf, 11 + sw_pattern_len, sizeof(buf));
 }
 
 bool rtk_bt_mp_dtm_test_end(uint16_t *p_num_pkts)
@@ -304,7 +304,7 @@ bool rtk_bt_mp_dtm_test_end(uint16_t *p_num_pkts)
 
 	buf[2] = (uint8_t)(0);
 
-	if (false == hci_dtm_send(0x201F, buf, 3)) {
+	if (false == hci_dtm_send(0x201F, buf, 3, sizeof(buf))) {
 		return false;
 	}
 

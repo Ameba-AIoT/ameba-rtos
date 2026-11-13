@@ -177,7 +177,6 @@ typedef struct {
 	 * The flags below are written from both the USB ISR and the MSC threads, so each one is a whole byte: bit-fields
 	 * sharing a byte would be updated by read-modify-write and could lose a concurrent write on SMP. */
 	u8 bot_state;                                   /**< BOT state. */
-	u8 bot_status;                                  /**< BOT status. */
 	u8 phase_error;                                 /**< SCSI check status. */
 	u8 csw_pending;                                 /**< Failed Data-In command whose CSW waits for the Bulk-In halt to be cleared. */
 	u8 csw_in_flight;                               /**< The Bulk-In transfer in flight is a CSW, its completion ends the command. */

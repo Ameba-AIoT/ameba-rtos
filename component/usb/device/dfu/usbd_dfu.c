@@ -171,9 +171,6 @@ static int usbd_dfu_set_config(usb_dev_t *dev, u8 config)
 		return -RTK_ERR_BADARG;
 	}
 
-	dfu->dev = dev;
-
-	dfu->alt_setting = 0U;
 	/* Save the default EP0 buffer and its capacity (shared by IN/OUT endpoints). */
 	dfu->ep0_default_buf         = dev->ep0_in.xfer_buf;
 	dfu->ep0_default_buf_len = dev->ep0_out.xfer_buf_len;
@@ -290,7 +287,6 @@ static u8 usbd_dfu_manifest_advance(usbd_dfu_dev_t *dfu)
 		 * the device re-enumerates in Run-Time mode after deinit/init (booting the new
 		 * firmware). */
 		dfu->mode = USB_DFU_PROTOCOL_RUNTIME;
-		dfu->reconf_pending = 1U;
 #endif
 #endif
 		dfu->status = USBD_DFU_STATUS_OK;
@@ -301,8 +297,7 @@ static u8 usbd_dfu_manifest_advance(usbd_dfu_dev_t *dfu)
 #if !defined(CONFIG_USBD_DFU_MANIFESTATION_TOLERANT) && defined(CONFIG_USBD_DFU_WILL_DETACH)
 	if (advanced != 0U) {
 		/* Not checked: called from the ISR and from the timer task, so neither a log nor USB_DIAG fits
-		   both, and a failure only means the semaphore is already given, reconf_task still wakes up
-		   and sees reconf_pending. */
+		   both, and a failure only means the semaphore is already given, reconf_task still wakes up. */
 		usb_os_sema_give(dfu->reconf_sema);
 	}
 #endif
@@ -374,7 +369,10 @@ static u8 usbd_dfu_req_is_valid(const usb_setup_req_t *req)
 		valid = (dir == USB_H2D) ? 1U : 0U;
 		break;
 	case USB_DFU_REQ_UPLOAD:
-		valid = (dir == USB_D2H) ? 1U : 0U;
+		/* Ref DFU 1.1 6.2: wLength is the block length the host reads. A wLength of 0 has no
+		   data stage, so the IN completion that gives the EP0 buffer back would never come and
+		   the core would add a second status stage on top of the class one. */
+		valid = ((dir == USB_D2H) && (req->wLength != 0U)) ? 1U : 0U;
 		break;
 	case USB_DFU_REQ_GETSTATUS:
 		/* Any other wLength would truncate the response, or for 0 leave the core to add a
@@ -415,7 +413,7 @@ static int usbd_dfu_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			} else if ((req->wIndex != USBD_DFU_ITF_NUM) || (req->wValue != 0U) || (req->wLength != 0U)) {
 				ret = -RTK_ERR_IO;
 			} else {
-				dfu->alt_setting = 0U;
+				/* Alternate setting 0 only, nothing to switch */
 			}
 			break;
 		case USB_REQ_GET_INTERFACE:
@@ -423,7 +421,7 @@ static int usbd_dfu_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			   a non-existent interface is a request error. A wLength of 0 would also make the
 			   core add a status stage on top of this data stage. */
 			if ((dev->dev_state == USBD_STATE_CONFIGURED) && (req->wValue == 0U) && (req->wIndex == USBD_DFU_ITF_NUM) && (req->wLength == 1U)) {
-				ep0_in->xfer_buf[0] = dfu->alt_setting;
+				ep0_in->xfer_buf[0] = 0U; /* The only alternate setting */
 				ep0_in->xfer_len = 1U;
 				ret = usbd_ep_transmit(dev, ep0_in);
 			} else {
@@ -451,12 +449,6 @@ static int usbd_dfu_setup(usb_dev_t *dev, usb_setup_req_t *req)
 
 	case USB_REQ_TYPE_CLASS:
 		if ((req->bmRequestType & USB_REQ_RECIPIENT_MASK) != USB_REQ_RECIPIENT_INTERFACE) {
-			ret = -RTK_ERR_IO;
-			break;
-		}
-		/* Ref USB 2.0 9.4.2: the DFU interface exists only once configured, a DETACH before would
-		   re-enumerate in the middle of the enumeration */
-		if (dev->dev_state != USBD_STATE_CONFIGURED) {
 			ret = -RTK_ERR_IO;
 			break;
 		}
@@ -515,9 +507,8 @@ static int usbd_dfu_setup(usb_dev_t *dev, usb_setup_req_t *req)
 				/* DFU 1.1 §5: Switch the descriptor set to DFU mode and defer
 				 * the actual re-enumeration to reconf_task (off ISR context). */
 				dfu->mode = USB_DFU_PROTOCOL_DFU;
-				dfu->reconf_pending = 1U;
 				if (usb_os_sema_give(dfu->reconf_sema) != RTK_SUCCESS) {
-					/* Already given: reconf_task wakes up anyway and sees reconf_pending */
+					/* Already given: reconf_task wakes up anyway */
 					USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_SETUP, req->bRequest);
 				}
 			} else {
@@ -685,29 +676,18 @@ static int usbd_dfu_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			} else if (dfu->state == USB_DFU_STATE_MANIFEST_WAIT_RESET) {
 				/* Non-tolerant: waiting for USB bus reset to activate firmware */
 				ret = usbd_dfu_send_status(dev, dfu, 0U);
-			} else if (dfu->state == USB_DFU_STATE_DNLOAD_SYNC) {
-				/* DFU 1.1 §A.2.4: in dfuDNLOAD-SYNC the GETSTATUS response depends
-				 * on whether the previous block has finished programming.  The
-				 * write_state (set by write_task) is the authoritative source
-				 * and is race-free regardless of whether write_task completed
-				 * before or after this request arrived. */
+			} else if ((dfu->state == USB_DFU_STATE_DNLOAD_SYNC) || (dfu->state == USB_DFU_STATE_DNBUSY)) {
+				/* DFU 1.1 §A.2.4/§A.2.5: the response depends on whether the previous block has
+				 * finished programming. The write_state (set by write_task) is the authoritative
+				 * source and is race-free regardless of whether write_task completed before or
+				 * after this request arrived. */
 				if (usbd_dfu_apply_write_state(dfu) != 0U) {
-					/* Block finished: dfuDNLOAD-IDLE, or dfuERROR with errWRITE. */
+					/* Block finished: dfuDNLOAD-IDLE, or dfuERROR with errWRITE, with no forced wait. */
 					ret = usbd_dfu_send_status(dev, dfu, 0U);
 				} else {
-					/* write_task still running: report dfuDNBUSY so the host
-					 * backs off before polling again. */
+					/* write_task still running: report dfuDNBUSY so the host backs off
+					 * before polling again. */
 					dfu->state = USB_DFU_STATE_DNBUSY;
-					ret = usbd_dfu_send_status(dev, dfu, usbd_dfu_get_busy_poll_ms(dfu));
-				}
-			} else if (dfu->state == USB_DFU_STATE_DNBUSY) {
-				if (usbd_dfu_apply_write_state(dfu) != 0U) {
-					/* bwPollTimeout has elapsed and programming has finished:
-					 * report the result with no forced wait. */
-					ret = usbd_dfu_send_status(dev, dfu, 0U);
-				} else {
-					/* Still busy; tell the host to wait before polling
-					 * again (DFU 1.1 §A.2.5), with the same timeout as dfuDNLOAD-SYNC. */
 					ret = usbd_dfu_send_status(dev, dfu, usbd_dfu_get_busy_poll_ms(dfu));
 				}
 			} else {
@@ -1222,13 +1202,11 @@ static void usbd_dfu_reconf_task(void *param)
 		if (usb_os_sema_take(dfu->reconf_sema, USB_OS_SEMA_TIMEOUT) != RTK_SUCCESS) {
 			break;
 		}
+		/* Only DFU_DETACH and the manifest advance give the semaphore besides the stop request,
+		   and the semaphore is created anew at each init: every other wakeup is a reconf */
 		if (dfu->reconf_stop != 0U) {
 			break;
 		}
-		if (dfu->reconf_pending == 0U) {
-			continue;
-		}
-		dfu->reconf_pending = 0U;
 
 #ifdef CONFIG_USBD_DFU_WILL_DETACH
 		/* Let the DFU_DETACH status stage (EP0 IN ZLP) complete before the
@@ -1279,6 +1257,17 @@ static int usbd_dfu_private_init(const usbd_dfu_cb_t *cb, const usbd_dfu_config_
 		return -RTK_ERR_BADARG;
 	}
 
+	if (cb->write == NULL) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "write cb required (CAN_DNLOAD=1)\n");
+		return -RTK_ERR_BADARG;
+	}
+#ifdef CONFIG_USBD_DFU_CAN_UPLOAD
+	if (cb->read == NULL) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "read cb required (CAN_UPLOAD=1)\n");
+		return -RTK_ERR_BADARG;
+	}
+#endif
+
 	/* Preserve mode across a reconf reinit (CONFIG_USBD_DFU_WILL_DETACH=y).  On a fresh first
 	 * init the struct is zero-initialised (BSS), so saved_mode is 0 which is
 	 * neither RUNTIME nor DFU — default to RUNTIME below. */
@@ -1287,7 +1276,6 @@ static int usbd_dfu_private_init(const usbd_dfu_cb_t *cb, const usbd_dfu_config_
 
 	/* Resolved after the memset so the defaults survive it, and before the allocation and the
 	   descriptor patch path that both read them. */
-	dfu->cfg = cfg;
 	dfu->xfer_size = (cfg->xfer_size != 0U) ? cfg->xfer_size : (u32)USBD_DFU_DEFAULT_XFER_SIZE;
 	dfu->detach_timeout_ms = (cfg->detach_timeout_ms != 0U) ? cfg->detach_timeout_ms : (u32)USBD_DFU_DEFAULT_DETACH_TIMEOUT;
 	dfu->detach_status_delay_ms = (cfg->detach_status_delay_ms != 0U) ?
@@ -1317,21 +1305,7 @@ static int usbd_dfu_private_init(const usbd_dfu_cb_t *cb, const usbd_dfu_config_
 		return -RTK_ERR_NOMEM;
 	}
 
-	if (cb->write == NULL) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "write cb required (CAN_DNLOAD=1)\n");
-		usb_os_mfree((void *)dfu->xfer_buf);
-		dfu->xfer_buf = NULL;
-		return -RTK_ERR_BADARG;
-	}
 	dfu->write_poll_ms = (cfg->write_poll_ms != 0U) ? cfg->write_poll_ms : USBD_DFU_DEFAULT_WRITE_POLL_MS;
-#ifdef CONFIG_USBD_DFU_CAN_UPLOAD
-	if (cb->read == NULL) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "read cb required (CAN_UPLOAD=1)\n");
-		usb_os_mfree((void *)dfu->xfer_buf);
-		dfu->xfer_buf = NULL;
-		return -RTK_ERR_BADARG;
-	}
-#endif
 	/* Restore DFU mode when reinitialising after a reconf callback; default to
 	 * Run-Time on all other init paths (first boot or plain hotplug reinit). */
 	dfu->mode = (saved_mode == USB_DFU_PROTOCOL_DFU)
@@ -1561,19 +1535,8 @@ void usbd_dfu_deinit(void)
 		dfu->cb = NULL;
 	}
 
-	if (dfu->xfer_buf != NULL) {
-		/* ep0_data_in/out restore pointers on normal completion, but a disconnect
-		 * or error can leave ep0_in/out.xfer_buf dangling into xfer_buf.
-		 * Restore both to the saved default before freeing. */
-		if (dfu->dev != NULL) {
-			if (dfu->dev->ep0_in.xfer_buf == dfu->xfer_buf) {
-				dfu->dev->ep0_in.xfer_buf = dfu->ep0_default_buf;
-			}
-			if (dfu->dev->ep0_out.xfer_buf == dfu->xfer_buf) {
-				dfu->dev->ep0_out.xfer_buf = dfu->ep0_default_buf;
-			}
-		}
-		usb_os_mfree((void *)dfu->xfer_buf);
-		dfu->xfer_buf = NULL;
-	}
+	/* The EP0 buffers no longer point into xfer_buf: the unregistration above ran clear_config(),
+	   which restores both, see usbd_dfu_clear_config() */
+	usb_os_mfree((void *)dfu->xfer_buf);
+	dfu->xfer_buf = NULL;
 }

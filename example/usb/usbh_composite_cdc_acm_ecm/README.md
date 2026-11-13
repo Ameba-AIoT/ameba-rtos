@@ -63,7 +63,7 @@ Refer to the [EVB User Guide](https://aiot.realmcu.com/filelist?document_type=9)
 
 4. After get the ip address, type command "AT+PING=XX", XX is the Router Ip Address, make sure the ping success and no packet losted
 
-5. The example also support iperf test, type "AT+IPERF=-s" to act as a TCP iperf server, type "AT+IPERF=-c,xx.xx.xx.x,-i,1,-t,10" to act as a TCP client. of course it also support UDP test, type "AT+IPERF" to get more information about the iperf
+5. The example also supports throughput tests with iperf, run as described in the "Throughput test" section of `example/usb/usbh_cdc_ecm/README.md`. With iperf3 (`AT+IPERF3`), always set `-l` on both the board and the PC side, at most 2920 bytes, 1460 recommended: without it the board refuses the test as server and transfers no data as client.
 
 # Shell commands
 

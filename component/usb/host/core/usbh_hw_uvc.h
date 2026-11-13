@@ -31,20 +31,29 @@ extern "C" {
  *  @{
  */
 
+#define USBH_HW_UVC_DEBUG           0U    /**< 1: build usbh_hw_uvc_dump() into the USB host lib (debug only). */
+
 #define USBH_HW_UVC_MAX_BUF_NUM     3     /**< Number of frame buffers rotated per channel. */
 
 #define USBH_HW_UVC_ISOC_MPS        1024  /**< Isochronous IN maximum packet size the decoder expects. */
 
 #define USBH_HW_UVC_HCDMA_TAG_ADDR                     0x20060000U  /**< HCDMA placeholder the decoder matches against HCDMAi, never written: not a buffer. */
 
-#define USBH_HW_UVC_CH0_BUF0_OVERSIZE   BIT0  /**< Channel 0 buffer 0 frame exceeded the buffer size. */
-#define USBH_HW_UVC_CH0_BUF1_OVERSIZE   BIT1  /**< Channel 0 buffer 1 frame exceeded the buffer size. */
+#define USBH_HW_UVC_CH0_BUF0_OVERSIZE   BIT0  /**< Channel 0 buffer 0: the decoder raised its frame oversize interrupt. */
+#define USBH_HW_UVC_CH0_BUF1_OVERSIZE   BIT1  /**< Channel 0 buffer 1: the decoder raised its frame oversize interrupt. */
 #define USBH_HW_UVC_CH0_BUF0_HEADER     BIT2  /**< Channel 0 buffer 0 payload header error. */
 #define USBH_HW_UVC_CH0_BUF1_HEADER     BIT3  /**< Channel 0 buffer 1 payload header error. */
-#define USBH_HW_UVC_CH1_BUF0_OVERSIZE   BIT4  /**< Channel 1 buffer 0 frame exceeded the buffer size. */
-#define USBH_HW_UVC_CH1_BUF1_OVERSIZE   BIT5  /**< Channel 1 buffer 1 frame exceeded the buffer size. */
+#define USBH_HW_UVC_CH1_BUF0_OVERSIZE   BIT4  /**< Channel 1 buffer 0: the decoder raised its frame oversize interrupt. */
+#define USBH_HW_UVC_CH1_BUF1_OVERSIZE   BIT5  /**< Channel 1 buffer 1: the decoder raised its frame oversize interrupt. */
 #define USBH_HW_UVC_CH1_BUF0_HEADER     BIT6  /**< Channel 1 buffer 0 payload header error. */
 #define USBH_HW_UVC_CH1_BUF1_HEADER     BIT7  /**< Channel 1 buffer 1 payload header error. */
+
+/* Frame done with FRM_SIZE past the slot's buffer: a different event from the oversize interrupt above,
+ * which the decoder raises on its own. Reported through err_cb so both reach the same statistics. */
+#define USBH_HW_UVC_CH0_BUF0_FRM_LEN    BIT8  /**< Channel 0 buffer 0: frame done reported a size past the buffer. */
+#define USBH_HW_UVC_CH0_BUF1_FRM_LEN    BIT9  /**< Channel 0 buffer 1: frame done reported a size past the buffer. */
+#define USBH_HW_UVC_CH1_BUF0_FRM_LEN    BIT10 /**< Channel 1 buffer 0: frame done reported a size past the buffer. */
+#define USBH_HW_UVC_CH1_BUF1_FRM_LEN    BIT11 /**< Channel 1 buffer 1: frame done reported a size past the buffer. */
 
 #define USBH_HW_UVC_CH_IDX_STREAM0             (0U)      /**< Channel index for stream 0. */
 #define USBH_HW_UVC_CH_IDX_STREAM1             (1U)      /**< Channel index for stream 1. */
@@ -77,7 +86,7 @@ typedef struct {
 	 * @brief Called when the HW UVC decoder reports an error condition.
 	 * @note   This function is called within an interrupt service routine (ISR) context;
 	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
-	 * @param[in] err: Bitmask of HW UVC error flags (USBH_HW_UVC_CHx_BUFx_OVERSIZE / _HEADER).
+	 * @param[in] err: Bitmask of HW UVC error flags (USBH_HW_UVC_CHx_BUFx_OVERSIZE / _HEADER / _FRM_LEN).
 	 */
 	void (*err_cb)(u32 err);
 
@@ -85,6 +94,8 @@ typedef struct {
 	__IO u32 frame_done_size;  /**< Byte size of the last completed frame. */
 	__IO u32 frame_rx_cnt;     /**< Total frames the HW decoder completed (produced). */
 	__IO u32 frame_drop_cnt;   /**< Frames dropped: no free buffer to hand off, or larger than their buffer. */
+	__IO u32 frame_oversize_cnt;   /**< Frames dropped because the HW reported a size past their buffer. */
+	__IO u32 frame_oversize_size;  /**< Size the HW reported for the last such frame, in bytes. */
 
 	/* frame hand-off */
 	usb_os_sema_t dec_sema;    /**< Frame-done signal: given by the decoder ISR, taken by usbh_uvc_get_frame(). */
@@ -195,6 +206,15 @@ void usbh_hw_uvc_irq_en(u8 irq_pri);
  * @return None
  */
 void usbh_hw_uvc_irq_dis(void);
+
+#if (USBH_HW_UVC_DEBUG == 1)
+/**
+ * @brief  Dump UVC decoder CMD registers and the bound HC channel registers.
+ * @param  dec: Pointer to usbh_hw_uvc_dec_t structure.
+ * @return None
+ */
+void usbh_hw_uvc_dump(usbh_hw_uvc_dec_t *dec);
+#endif
 
 /** @} End of Host_HW_UVC_Functions group */
 /** @} End of USB_Host_Functions group */

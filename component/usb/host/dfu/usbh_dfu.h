@@ -37,15 +37,6 @@ extern "C" {
 
 /* Protocol defines come from common/usb_dfu.h — use USB_DFU_* names directly */
 
-/*
- * Run-Time / DFU Mode dual-descriptor support (DFU 1.1 §5 Reconfiguration Phase).
- *
- *   1 — Host matches both Run-Time (Protocol=0x01) and DFU (Protocol=0x02) devices.
- *       When a Run-Time device connects, the host issues DFU_DETACH and waits for the
- *       device to re-enumerate in DFU mode before calling cb->attached().
- *   0 — Legacy behaviour: host only matches DFU mode devices (Protocol=0x02).
- */
-
 /* Maximum consecutive write-block retries (CLRSTATUS path) before aborting */
 #define USBH_DFU_MAX_RETRY                  3U
 /* Largest device-reported bwPollTimeout (ms) the host accepts. DFU 1.1 6.1.2 makes bwPollTimeout
@@ -64,14 +55,11 @@ extern "C" {
 /* Floor applied to bwPollTimeout. DFU 1.1 6.1.2 lets a device report 0; honouring that
  * literally would turn the DNBUSY poll into a back-to-back GETSTATUS loop. */
 #define USBH_DFU_POLL_MIN_MS                1U
-/* Bounds on how long the host waits for ONE block to finish programming. DFU 1.1 sets no
+/* Bound on how long the host waits for ONE block to finish programming. DFU 1.1 sets no
  * upper limit on device programming time, so timing out a device that never leaves
- * dfuDNBUSY is the host's responsibility. Two bounds, whichever trips first:
- *   - poll count, mirroring USBH_DFU_MAX_MANIFEST_RETRY, catches a device that keeps
- *     answering with bwPollTimeout = 0;
- *   - wall-clock budget, which the count alone cannot bound because each poll waits up
- *     to USBH_DFU_MAX_POLL_TIMEOUT. It equals that bound, so one maximal poll still fits. */
-#define USBH_DFU_MAX_DNLOAD_POLL            100U
+ * dfuDNBUSY is the host's responsibility. A wall-clock budget, not a poll count: a device may
+ * legally report a bwPollTimeout shorter than its programming time and answer dfuDNBUSY
+ * again (DFU 1.1 A.2.5). It equals USBH_DFU_MAX_POLL_TIMEOUT, so one maximal poll still fits. */
 #define USBH_DFU_DNLOAD_POLL_BUDGET_MS      USBH_DFU_MAX_POLL_TIMEOUT
 /* Maximum GETSTATUS polls while device reports dfuMANIFEST or dfuMANIFEST-SYNC; each poll
  * waits at least bwPollTimeout ms. Unlike the per-block DNBUSY poll above this has no
@@ -175,8 +163,7 @@ typedef struct {
  * @brief Configuration for the DFU host class.
  * @details Carries every DFU host option. Host-global parameters (speed, FIFO depths, main
  *          task stack and priority, ISR priority) live in @ref usbh_config_t instead.
- * @note  The structure is stored by pointer, not copied, so it shall remain valid until
- *        @ref usbh_dfu_deinit.
+ * @note  Only read by @ref usbh_dfu_init, so it need not outlive the call.
  */
 typedef struct {
 	/**
@@ -196,7 +183,6 @@ typedef struct {
 typedef struct {
 	usb_host_t          *host;            /**< Pointer to the USB host handle (set on attach). */
 	const usbh_dfu_cb_t *cb;              /**< Pointer to the user-supplied callback table. */
-	const usbh_dfu_config_t *cfg;         /**< Pointer to the class configuration (set by init). */
 
 	/* DFU state */
 	usbh_dfu_state_t     state;           /**< Current host-side DFU state machine state. */
@@ -204,7 +190,6 @@ typedef struct {
 	u8                   dev_status;      /**< Latest device-side bStatus from GETSTATUS. */
 	u8                   itf_num;         /**< Matched DFU interface number (set on attach; used as wIndex for all DFU class requests). */
 	u8                   is_download;     /**< 1 = download operation in progress; 0 = upload. */
-	u8                   is_runtime;      /**< 1 = device attached in Run-Time mode (Protocol=0x01). */
 	u8                   reconf_pending;  /**< 1 = attached in Run-Time mode and cb->attached() has not
 	                                           been delivered; suppresses cb->detached() until the
 	                                           device re-enumerates in DFU mode. */
@@ -225,9 +210,6 @@ typedef struct {
 	u16                  xfer_len;        /**< Byte count of the block currently being downloaded;
 	                                           saved before the ctrl transfer starts so the DMA
 	                                           buffer is not re-filled while the transfer is live. */
-	u8                   upload_phase;    /**< Sub-phase inside UPLOAD_BLOCK:
-	                                           0 = DFU_UPLOAD ctrl transfer in progress;
-	                                           1 = follow-up DFU_GETSTATUS in progress. */
 	u8                   retry_cnt;       /**< Consecutive write failures at the same block;
 	                                           reset to 0 on each confirmed write. */
 
@@ -240,8 +222,6 @@ typedef struct {
 	u32                  dnload_poll_ms;  /**< Timestamp (ms) at which the current block's DNBUSY
 	                                           poll started, bounding it against the wall-clock
 	                                           budget; 0 = not started yet. */
-	u16                  dnload_poll_cnt; /**< GETSTATUS polls spent on the current block while the
-	                                           device reports dfuDNBUSY/dfuDNLOAD-SYNC. */
 	u8                   manifest_retry_cnt; /**< GETSTATUS polls while device reports dfuMANIFEST;
 	                                              independent of write retry_cnt. */
 } usbh_dfu_host_t;
@@ -290,8 +270,8 @@ int usbh_dfu_download(void);
 
 /**
  * @brief Starts a DFU firmware upload (device → host).
- * @details Transitions the state machine to USBH_DFU_STATE_UPLOAD_BLOCK and
- *          triggers the first process() call.  The driver calls cb->recv_block()
+ * @details Transitions the state machine to USBH_DFU_STATE_GET_STATUS, which confirms
+ *          dfuIDLE before the first DFU_UPLOAD, and triggers the first process() call.  The driver calls cb->recv_block()
  *          for every block received.  The upload ends when the device returns a
  *          short (or zero-length) block. Every accepted upload ends with exactly one
  *          upload_done(), also when the device is detached, the transfer is aborted or

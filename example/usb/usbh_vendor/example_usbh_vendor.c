@@ -110,12 +110,6 @@ static rtos_mutex_t vendor_state_mutex = NULL;
    vendor_state_mutex is valid. */
 static volatile u8 vendor_stack_ready = 0;
 
-/* Set by the hotplug thread BEFORE it takes the lock, so a test thread inside a
-   loop sees it, gives up its round and stops contending. Without that ordering a
-   test thread would keep re-taking the lock between its own rounds and the
-   hotplug thread could be starved out of a teardown it must perform. */
-static volatile u8 vendor_teardown = 0;
-
 /* Start/stop state. Workers joined through it: the test thread (which joins its
    bulk/intr test threads through vendor_done_sema) and the hotplug thread.
    vendor_app.quit tells every thread to leave, set by whoever owns the stop:
@@ -183,13 +177,13 @@ static const usbh_user_cb_t usbh_usr_cb = {
   */
 static int vendor_lock_stack(void)
 {
-	if ((vendor_stack_ready == 0U) || (vendor_teardown != 0U) || (vendor_app.quit != 0U)) {
+	if ((vendor_stack_ready == 0U) || (vendor_app.quit != 0U)) {
 		return -RTK_ERR_IO;
 	}
 
 	rtos_mutex_take(vendor_state_mutex, RTOS_MAX_TIMEOUT);
 
-	if ((vendor_stack_ready == 0U) || (vendor_teardown != 0U) || (vendor_app.quit != 0U)) {
+	if ((vendor_stack_ready == 0U) || (vendor_app.quit != 0U)) {
 		/* Lost the race against a teardown */
 		rtos_mutex_give(vendor_state_mutex);
 		return -RTK_ERR_IO;
@@ -300,10 +294,6 @@ static void vendor_cb_received(u8 ep_type, u8 *buf, u32 len, int status)
 	switch (ep_type) {
 	case USB_CH_EP_TYPE_BULK:
 		if (status == RTK_SUCCESS) {
-			//limited the copy len
-			if ((len > 0) && ((vendor_bulk_total_rx_len + len) <= USBH_VENDOR_BULK_LOOPBACK_BUF_SIZE)) {
-				//memcpy(vendor_bulk_loopback_rx_buf + vendor_bulk_total_rx_len, buf, len);
-			}
 			vendor_bulk_total_rx_len += len;
 			//ZLP or short packet
 			if ((len == 0) || (len % vendor_bulk_in_mps)
@@ -313,17 +303,9 @@ static void vendor_cb_received(u8 ep_type, u8 *buf, u32 len, int status)
 				rtos_sema_give(vendor_bulk_receive_sema);
 			}
 		}
-		//else {
-		//	RTK_LOGS(TAG, RTK_LOG_ERROR, "%d RX fail: %d\n", ep_type, status);
-		//}
-
 		break;
 	case USB_CH_EP_TYPE_INTR:
 		if (status == RTK_SUCCESS) {
-			//limited the copy len
-			if ((len > 0) && ((vendor_intr_total_rx_len + len) <= USBH_VENDOR_INTR_LOOPBACK_BUF_SIZE)) {
-				//memcpy(vendor_intr_loopback_rx_buf + vendor_intr_total_rx_len, buf, len);
-			}
 			vendor_intr_total_rx_len += len;
 
 			//transaction size > 0 and short packet
@@ -382,7 +364,7 @@ static void vendor_intr_loopback_test(void)
 
 	for (i = 0; i < USBH_VENDOR_INTR_LOOPBACK_CNT; i++) {
 		memset((void *)vendor_intr_loopback_rx_buf, 0, USBH_VENDOR_INTR_LOOPBACK_BUF_SIZE);
-		if ((!vendor_is_ready) || (vendor_teardown != 0U) || (vendor_app.quit != 0U)) {
+		if ((!vendor_is_ready) || (vendor_app.quit != 0U)) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Device disconnect\n");
 			break;
 		}
@@ -456,7 +438,7 @@ static void vendor_bulk_loopback_test(void)
 
 	for (i = 0; i < USBH_VENDOR_BULK_LOOPBACK_CNT; i++) {
 		memset((void *)vendor_bulk_loopback_rx_buf, 0, USBH_VENDOR_BULK_LOOPBACK_BUF_SIZE);
-		if ((!vendor_is_ready) || (vendor_teardown != 0U) || (vendor_app.quit != 0U)) {
+		if ((!vendor_is_ready) || (vendor_app.quit != 0U)) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Device disconnect\n");
 			break;
 		}
@@ -685,11 +667,6 @@ static void example_usbh_vendor_hotplug_thread(void *param)
 				goto hotplug_leave;
 			}
 
-			/* Announce the teardown BEFORE contending for the lock, so a test
-			   thread inside a loop gives up its round instead of re-taking the
-			   lock between rounds and starving this thread out. */
-			vendor_teardown = 1U;
-
 			rtos_mutex_take(vendor_state_mutex, RTOS_MAX_TIMEOUT);
 			/* Close the gate under the lock: no class API call is in flight here,
 			   and any later one gives up on the cleared flag. */
@@ -738,18 +715,16 @@ static void example_usbh_vendor_hotplug_thread(void *param)
 			}
 
 			/* Open the gate as the very last step, so no test thread runs against
-			   a half-rebuilt stack. Clear teardown only after ready is set, or a
-			   thread could slip through seeing neither flag. */
+			   a half-rebuilt stack. */
 			vendor_stack_ready = 1U;
-			vendor_teardown = 0U;
 			rtos_mutex_give(vendor_state_mutex);
 
 			RTK_LOGS(TAG, RTK_LOG_INFO, "Reinit done\n");
 		}
 	}
 
-	/* A re-init failed, so the stack is gone for good: vendor_stack_ready stays 0
-	   and vendor_teardown 1, which keeps the test threads out. */
+	/* A re-init failed, so the stack is gone for good: vendor_stack_ready stays 0,
+	   which keeps the test threads out. */
 	RTK_LOGS(TAG, RTK_LOG_ERROR, "Hotplug thread exit\n");
 	if (usb_app_ctx_claim_stop(&vendor_app) != 0U) {
 		/* No stop is in flight: wake and join the other workers, then free on our own */
@@ -861,7 +836,6 @@ static int vendor_start(void)
 		return ret;
 	}
 	vendor_workers = 0U;
-	vendor_teardown = 0U;
 	vendor_is_ready = 0;
 	vendor_bulk_total_rx_len = 0;
 	vendor_intr_total_rx_len = 0;

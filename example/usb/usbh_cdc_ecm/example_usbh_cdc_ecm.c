@@ -7,15 +7,8 @@
 /* Includes ------------------------------------------------------------------ */
 #include <platform_autoconf.h>
 #include "platform_stdlib.h"
-#include <lwip/sockets.h>
-#include <lwip/netdb.h>
 #include "os_wrapper.h"
 #include "wifi_api.h"
-#if defined(CONFIG_MBEDTLS_USE_LEGACY_API)
-#include "mbedtls/md5.h"
-#else
-#include "psa/crypto.h"
-#endif
 #include "lwip_netconf.h"
 #include "lwip/tcpip.h"
 #include "usbh_cdc_ecm.h"
@@ -26,43 +19,22 @@
 
 /* Private defines -----------------------------------------------------------*/
 
-
 #define CONFIG_USBH_CDC_ECM_HOT_PLUG                               1     /* Hot plug */
-
-/*enable this used to check ecm init/deinit memory leakage*/
-#define CONFIG_USBH_CDC_ECM_MEM_CHECK                              0
-
-#define CONFIG_USBH_CDC_ECM_ENABLE_DUMP_FILE                       0
-#define CONFIG_USBH_CDC_ECM_ENABLE_REMOTE_FILE_DOWNLOAD            0
 
 // Thread priorities
 #define CONFIG_USBH_CDC_ECM_INIT_THREAD_PRIORITY                   3
 #define CONFIG_USBH_CDC_ECM_MAIN_THREAD_PRIORITY                   5
 #define CONFIG_USBH_CDC_ECM_HOTPLUG_THREAD_PRIORITY                6
 #define CONFIG_USBH_CDC_ECM_MONITOR_THREAD_PRIORITY                3
-#define CONFIG_USBH_CDC_ECM_DOWNLOAD_THREAD_PRIORITY               2
 
 // Thread stack sizes
 #define CONFIG_USBH_CDC_ECM_INIT_THREAD_STACK_SIZE                 1536U
 #define CONFIG_USBH_CDC_ECM_HOTPLUG_THREAD_STACK_SIZE              1536U
 #define CONFIG_USBH_CDC_ECM_MONITOR_THREAD_STACK_SIZE              1600U
-#if CONFIG_USBH_CDC_ECM_ENABLE_REMOTE_FILE_DOWNLOAD
-#define CONFIG_USBH_CDC_ECM_DOWNLOAD_THREAD_STACK_SIZE             (1024U * 5)
-#endif
 
 #define CONFIG_USBH_CDC_ECM_MAIN_TASK_STACK_SIZE                   1280U
 
 #define CONFIG_USBH_CDC_ECM_ENABLE_USER_SET_DONGLE_MAC             1
-
-#if CONFIG_USBH_CDC_ECM_ENABLE_REMOTE_FILE_DOWNLOAD
-#define CONFIG_USBH_CDC_ECM_MD5_CHECK_BUFFER_LEN                   (2)
-/* socket server info */
-#define CONFIG_USBH_CDC_ECM_SERVER_HOST                            "www.baidu.com"
-#define CONFIG_USBH_CDC_ECM_SERVER_PORT                            80
-#define CONFIG_USBH_CDC_ECM_RESOURCE                               "/"
-#define CONFIG_USBH_CDC_ECM_BUFFER_SIZE                            1000      //download test buffer length
-#define CONFIG_USBH_CDC_ECM_RECV_TO                                60*1000   // ms
-#endif
 
 /* Private types -------------------------------------------------------------*/
 
@@ -70,7 +42,6 @@
 typedef enum {
 	ETH_STATUS_IDLE = 0U,
 	ETH_STATUS_INIT,
-	ETH_STATUS_MAX,
 } eth_state_t;
 
 /* Private macros ------------------------------------------------------------*/
@@ -90,25 +61,11 @@ static int cdc_ecm_cb_device_check(usb_host_t *host, u8 cfg_max);
 
 static const char *const TAG = "ECM";
 
-#if CONFIG_USBH_CDC_ECM_ENABLE_REMOTE_FILE_DOWNLOAD
-static unsigned char dl_buf[CONFIG_USBH_CDC_ECM_BUFFER_SIZE + 1];
-#if defined(CONFIG_MBEDTLS_USE_LEGACY_API)
-static mbedtls_md5_context ctx;
-#else
-static psa_hash_operation_t ctx;
-#endif
-#if CONFIG_USBH_CDC_ECM_ENABLE_DUMP_FILE
-#define CONFIG_USBH_CDC_ECM_PSRAM_HEAP_SIZE_TEST                   (29000)
-static unsigned char dump_psRAMHeap[CONFIG_USBH_CDC_ECM_PSRAM_HEAP_SIZE_TEST];
-#endif
-#endif  //CONFIG_USBH_CDC_ECM_ENABLE_REMOTE_FILE_DOWNLOAD
-
 #if CONFIG_USBH_CDC_ECM_ENABLE_USER_SET_DONGLE_MAC
 static const u16 led_color[1] = {0x1122};
 static const u8 mac_valid[6] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55};
 #endif
 
-static volatile u8 dhcp_done = 0;
 static __IO u8 cdc_ecm_detach_pending = 0;
 static rtos_sema_t cdc_ecm_detach_sema;
 
@@ -202,6 +159,7 @@ static const usbh_cdc_ecm_config_t ecm_class_cfg = {
 	NULL,
 	0,
 #endif
+	0,
 };
 
 /* Exported variables --------------------------------------------------------*/
@@ -268,14 +226,11 @@ static void cdc_ecm_cb_setup(void)
   */
 static void cdc_ecm_cb_received(u8 *buf, u32 length)
 {
-	if (length > 0) {
-		netif_adapter_usb_eth_recv(buf, length);
-	}
+	netif_adapter_usb_eth_recv(buf, length);
 }
 
 static void cdc_ecm_cb_process(usb_host_t *host, u8 msg)
 {
-	UNUSED(host);
 	switch (msg) {
 	case USBH_MSG_USER_SET_CONFIG:
 		if (usbh_cdc_ecm_choose_config(host) != RTK_SUCCESS) {
@@ -373,7 +328,7 @@ static void cdc_ecm_open_gate(void)
 	rtos_mutex_give(cdc_ecm_state_mutex);
 }
 
-#if CONFIG_USBH_CDC_ECM_HOT_PLUG || CONFIG_USBH_CDC_ECM_MEM_CHECK
+#if CONFIG_USBH_CDC_ECM_HOT_PLUG
 /**
   * @brief  Tear the stack down and bring it up again, unless a stop came in meanwhile
   * @param  down_ms: Time the stack stays down
@@ -453,7 +408,6 @@ static int cdc_ecm_teardown_all(u32 workers)
 	rtos_sema_delete(cdc_ecm_detach_sema);
 	cdc_ecm_detach_sema = NULL;
 	cdc_ecm_workers = 0U;
-	dhcp_done = 0U;
 	cdc_ecm_detach_pending = 0U;
 	cdc_ecm_dhcp_busy = 0U;
 	usb_app_ctx_end(&cdc_ecm_app);
@@ -542,7 +496,8 @@ static void example_usbh_ecm_link_change_thread(void *param)
 				dhcp_status = lwip_request_ip(NETIF_USB_ETH_INDEX);
 				if ((DHCP_ADDRESS_ASSIGNED == dhcp_status) && (cdc_ecm_app.quit == 0U)) {
 					netifapi_netif_set_default(pnetif_usb_eth);	//Set default gw to ether netif
-					dhcp_done = 1;
+					/* From here AT+IPERF/AT+IPERF3 run over the dongle. iperf3 needs -l (at most 2920, 1460
+					 * recommended) on both the board and the PC side, see README "Throughput test" */
 					RTK_LOGS(TAG, RTK_LOG_INFO, "Switch to link\n");
 				}
 				/* Left the DHCP section: a stop owner waiting for it takes the netif down now */
@@ -571,242 +526,6 @@ static void example_usbh_ecm_link_change_thread(void *param)
 
 	cdc_ecm_worker_exit(0U);
 }
-
-#if CONFIG_USBH_CDC_ECM_ENABLE_REMOTE_FILE_DOWNLOAD
-static void save_to_memory(char *pdata, unsigned int length)
-{
-#if CONFIG_USBH_CDC_ECM_ENABLE_DUMP_FILE
-	static unsigned int psram_pos = 0;
-	if (CONFIG_USBH_CDC_ECM_PSRAM_HEAP_SIZE_TEST >= psram_pos + length) {
-		memcpy((void *)&dump_psRAMHeap[psram_pos], (const void *)pdata, length);
-		psram_pos += length;
-	}
-#else
-	UNUSED(length);
-	UNUSED(pdata);
-#endif
-}
-
-static int update_data_check(char *pdata, unsigned int length)
-{
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Data len %d\n", length);
-	if (0 == length) {
-		return 0;
-	}
-	save_to_memory(pdata, length);
-#if defined(CONFIG_MBEDTLS_USE_LEGACY_API)
-	mbedtls_md5_update(&ctx, (const unsigned char *)pdata, length);
-#else
-	psa_hash_update(&ctx, (const uint8_t *)pdata, length);
-#endif
-	return  0;
-}
-
-static void write_data_to_flash(void)
-{
-#if CONFIG_USBH_CDC_ECM_ENABLE_DUMP_FILE
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Dump mem to flash start\n");
-	FLASH_WriteStream(0x100000, CONFIG_USBH_CDC_ECM_PSRAM_HEAP_SIZE_TEST, dump_psRAMHeap);
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Dump mem to flash done\n");
-#endif
-}
-
-static void example_usbh_ecm_download_thread(void *param)
-{
-	int server_fd = -1;
-	u8 heart_beat = 0;
-	struct sockaddr_in server_addr;
-	struct hostent *server_host;
-	u32 resource_size = 0;
-	u32 content_len = 0;
-	unsigned char output[8 * CONFIG_USBH_CDC_ECM_MD5_CHECK_BUFFER_LEN];
-	int pos = 0, read_size = 0,  header_removed = 0;
-	UNUSED(param);
-
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Enter donwload example\n");
-	memset((void *)output, 0x00, 8 * CONFIG_USBH_CDC_ECM_MD5_CHECK_BUFFER_LEN);
-
-	while ((0 == dhcp_done) && (cdc_ecm_app.quit == 0U)) {
-		if (++heart_beat % 30 == 0) {
-			RTK_LOGS(TAG, RTK_LOG_INFO, "Wait for ethernet connect ...\n");
-		}
-		rtos_time_delay_ms(1000);
-	}
-	if (cdc_ecm_app.quit != 0U) {
-		goto exit;
-	}
-
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Start HTTP download\n");
-
-	if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Socket\n");
-		goto exit;
-	} else {
-		int recv_timeout_ms = CONFIG_USBH_CDC_ECM_RECV_TO;
-		// lwip 1.5.0
-		struct timeval recv_timeout;
-		recv_timeout.tv_sec = recv_timeout_ms / 1000;
-		recv_timeout.tv_usec = recv_timeout_ms % 1000 * 1000;
-		setsockopt(server_fd, SOL_SOCKET, SO_RCVTIMEO, &recv_timeout, sizeof(recv_timeout));
-		// lwip 1.4.1
-		//setsockopt(server_fd, SOL_SOCKET, SO_RCVTIMEO, &recv_timeout_ms, sizeof(recv_timeout_ms));
-	}
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Server_fd=%d\n", server_fd);
-	server_addr.sin_family = AF_INET;
-	server_addr.sin_port = htons(CONFIG_USBH_CDC_ECM_SERVER_PORT);
-
-	// Support CONFIG_USBH_CDC_ECM_SERVER_HOST in IP or domain name
-	server_host = gethostbyname(CONFIG_USBH_CDC_ECM_SERVER_HOST);
-	if (server_host != NULL) {
-		memcpy((void *) &server_addr.sin_addr, (const void *) server_host->h_addr, 4);
-	} else {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Server host\n");
-		goto exit;
-	}
-
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Will do connect %s\n", CONFIG_USBH_CDC_ECM_SERVER_HOST);
-	if (connect(server_fd, (struct sockaddr *)(void *) &server_addr, sizeof(server_addr)) == 0) {
-		pos = 0, read_size = 0, resource_size = 0, content_len = 0, header_removed = 0;
-		RTK_LOGS(TAG, RTK_LOG_INFO, "Connect success\n");
-		sprintf((char *)dl_buf, "GET %s HTTP/1.1\r\nHost: %s\r\n\r\n", CONFIG_USBH_CDC_ECM_RESOURCE, CONFIG_USBH_CDC_ECM_SERVER_HOST);
-		u32 max = strlen((char const *)dl_buf);
-
-		if (0) {
-			u32 index = 0;
-			RTK_LOGS(TAG, RTK_LOG_INFO, "Get Msg %d", max);
-			for (index = 0; index < max; index++) {
-				RTK_LOGS(NOTAG, RTK_LOG_INFO, "0x%x ", dl_buf[index]);
-			}
-			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\n\n");
-		}
-
-		write(server_fd, (char const *)dl_buf, strlen((char const *)dl_buf));
-		RTK_LOGS(TAG, RTK_LOG_INFO, "Will call read\n");
-#if defined(CONFIG_MBEDTLS_USE_LEGACY_API)
-		mbedtls_md5_init(&ctx);
-		mbedtls_md5_starts(&ctx);
-#else
-		ctx = psa_hash_operation_init();
-		psa_hash_setup(&ctx, PSA_ALG_MD5);
-#endif
-
-		/* A stop clears the netif address, which aborts this connection and ends the read */
-		while ((cdc_ecm_app.quit == 0U) && ((content_len == 0) || (resource_size < content_len)) /**/
-			   && ((read_size = read(server_fd, dl_buf + pos, CONFIG_USBH_CDC_ECM_BUFFER_SIZE - pos)) > 0)) {
-			if (header_removed == 0) {
-				char *header = NULL;
-
-				pos += read_size;
-				dl_buf[pos] = 0;
-				header = strstr((char const *)dl_buf, "\r\n\r\n");
-
-				if (header) {
-					char *body, *content_len_pos;
-
-					body = header + strlen("\r\n\r\n");
-					*(body - 2) = 0;
-					header_removed = 1;
-					RTK_LOGS(TAG, RTK_LOG_INFO, "HTTP Header: %s\n", dl_buf);
-
-					// Remove header size to get first read size of data from body head
-					read_size = pos - ((unsigned char *) body - dl_buf);
-					update_data_check(body, read_size);
-					RTK_LOGS(TAG, RTK_LOG_INFO, "Body=0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x\n", body[0], body[1], body[2], body[3], body[4], body[5], body[6], body[7]);
-					pos = 0;
-					content_len_pos = strstr((char const *)dl_buf, "Content-Length: ");
-					if (content_len_pos) {
-						content_len_pos += strlen("Content-Length: ");
-						*(char *)(strstr(content_len_pos, "\r\n")) = 0;
-						content_len = atoi(content_len_pos);
-						RTK_LOGS(TAG, RTK_LOG_INFO, "Content len: %d\n", content_len);
-					}
-				} else {
-					if (pos >= CONFIG_USBH_CDC_ECM_BUFFER_SIZE) {
-						RTK_LOGS(TAG, RTK_LOG_ERROR, "HTTP header\n");
-						goto exit;
-					}
-					continue;
-				}
-			} else {
-				update_data_check((char *)(dl_buf + pos), (unsigned int)read_size);
-			}
-
-			resource_size += read_size;
-			RTK_LOGS(TAG, RTK_LOG_INFO, "Read resource %dB/rx=%d/total=%d\n",
-					 read_size, resource_size, content_len);
-		}
-
-		write_data_to_flash();
-#if defined(CONFIG_MBEDTLS_USE_LEGACY_API)
-		mbedtls_md5_finish(&ctx, output);
-		mbedtls_md5_free(&ctx);
-#else
-		size_t olen;
-		psa_hash_finish(&ctx, output, sizeof(output), &olen);
-#endif
-
-		RTK_LOGS(TAG, RTK_LOG_INFO, "mbedtls_md5_finish md5\n");
-		for (u8 hh = 0; hh < CONFIG_USBH_CDC_ECM_MD5_CHECK_BUFFER_LEN; hh++) {
-			RTK_LOGS(NOTAG, RTK_LOG_INFO, "md5 %d=%02x%02x%02x%02x%02x%02x%02x%02x\n\n", hh,
-					 output[8 * hh + 0], output[8 * hh + 1], output[8 * hh + 2], output[8 * hh + 3],
-					 output[8 * hh + 4], output[8 * hh + 5], output[8 * hh + 6], output[8 * hh + 7]);
-		}
-
-		RTK_LOGS(TAG, RTK_LOG_INFO, "Exit read. ret = %d\n", read_size);
-		RTK_LOGS(TAG, RTK_LOG_INFO, "Http content-len = %dB, download resource size = %dB\n", content_len, resource_size);
-		if (0) {
-			u32 index = 0;
-			RTK_LOGS(TAG, RTK_LOG_INFO, "2get Msg %d", max);
-			for (index = 0; index < max; index++) {
-				RTK_LOGS(NOTAG, RTK_LOG_INFO, "0x%x ", dl_buf[index]);
-			}
-			RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n\nWill call write\n");
-		}
-	} else {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Connect fail\n");
-	}
-
-exit:
-	if (server_fd >= 0) {
-		close(server_fd);
-	}
-
-	cdc_ecm_worker_exit(0U);
-}
-#endif
-
-#if CONFIG_USBH_CDC_ECM_MEM_CHECK
-static void example_usbh_ecm_mem_check_thread(void *param)
-{
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Mem check start\n");
-	int loop = 0;
-	u32 i;
-	u8 fatal = 0U;
-
-	UNUSED(param);
-
-	while (cdc_ecm_app.quit == 0U) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "Loop create %d: all_free:0x%08x\n", loop, rtos_mem_get_free_heap_size());
-		for (i = 0U; (i < 50U) && (cdc_ecm_app.quit == 0U); i++) {
-			rtos_time_delay_ms(100);
-		}
-		if (cdc_ecm_app.quit != 0U) {
-			break;
-		}
-
-		/* Same teardown as the hotplug thread: gate TX off, then release in reverse init order */
-		if (cdc_ecm_rebuild(3000U) != RTK_SUCCESS) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "Reinit fail\n");
-			fatal = 1U;
-			break;
-		}
-		RTK_LOGS(TAG, RTK_LOG_INFO, "Loop delete %d: all_free:0x%08x\n", loop, rtos_mem_get_free_heap_size());
-		loop++;
-	}
-
-	cdc_ecm_worker_exit(fatal);
-}
-#endif
 
 #if CONFIG_USBH_CDC_ECM_HOT_PLUG
 static void example_usbh_ecm_hotplug_thread(void *param)
@@ -862,7 +581,6 @@ static int cdc_ecm_start(void)
 		return ret;
 	}
 
-	dhcp_done = 0U;
 	cdc_ecm_detach_pending = 0U;
 	cdc_ecm_stack_ready = 0U;
 	cdc_ecm_teardown = 0U;
@@ -903,26 +621,6 @@ static int cdc_ecm_start(void)
 	}
 	cdc_ecm_workers++;
 
-#if CONFIG_USBH_CDC_ECM_MEM_CHECK
-	ret = rtos_task_create(&task, "usbh_ecm_mem_check_thread",
-						   example_usbh_ecm_mem_check_thread, NULL,
-						   CONFIG_USBH_CDC_ECM_MONITOR_THREAD_STACK_SIZE, CONFIG_USBH_CDC_ECM_MONITOR_THREAD_PRIORITY);
-	if (ret != RTK_SUCCESS) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create mem check thread fail\n");
-		goto exit_stop;
-	}
-	cdc_ecm_workers++;
-#elif CONFIG_USBH_CDC_ECM_ENABLE_REMOTE_FILE_DOWNLOAD
-	ret = rtos_task_create(&task, "usbh_ecm_download_thread",
-						   example_usbh_ecm_download_thread, NULL,
-						   CONFIG_USBH_CDC_ECM_DOWNLOAD_THREAD_STACK_SIZE, CONFIG_USBH_CDC_ECM_DOWNLOAD_THREAD_PRIORITY);
-	if (ret != RTK_SUCCESS) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create download thread fail\n");
-		goto exit_stop;
-	}
-	cdc_ecm_workers++;
-#endif
-
 #if CONFIG_USBH_CDC_ECM_HOT_PLUG
 	/* Created last: it owns the stack once running, so nothing after it can fail */
 	ret = rtos_task_create(&task, "usbh_ecm_hotplug_thread",
@@ -947,8 +645,8 @@ static int cdc_ecm_start(void)
 	return RTK_SUCCESS;
 
 exit_stop:
-	/* No hotplug thread runs yet, so the claim is only lost to a mem check rebuild that failed:
-	   that worker finishes the teardown on its own */
+	/* No hotplug thread runs yet, the only worker that can claim the stop on a fatal error,
+	   so this claim is normally won here */
 	if (usb_app_ctx_claim_stop(&cdc_ecm_app) != 0U) {
 		if (cdc_ecm_teardown_all(cdc_ecm_workers) != RTK_SUCCESS) {
 			/* A worker may still run on the stack: keep it, the app stays not idle */

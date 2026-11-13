@@ -1203,6 +1203,14 @@ static void usbh_uvc_err_record(u32 err)
 			curr->err_ch0_buf1_h++;
 			err_flag = 1U;
 		}
+		if (err & USBH_HW_UVC_CH0_BUF0_FRM_LEN) {
+			curr->err_ch0_buf0_fl++;
+			err_flag = 1U;
+		}
+		if (err & USBH_HW_UVC_CH0_BUF1_FRM_LEN) {
+			curr->err_ch0_buf1_fl++;
+			err_flag = 1U;
+		}
 	}
 
 	if (ch1_active != 0U) {
@@ -1220,6 +1228,14 @@ static void usbh_uvc_err_record(u32 err)
 		}
 		if (err & USBH_HW_UVC_CH1_BUF1_HEADER) {
 			curr->err_ch1_buf1_h++;
+			err_flag = 1U;
+		}
+		if (err & USBH_HW_UVC_CH1_BUF0_FRM_LEN) {
+			curr->err_ch1_buf0_fl++;
+			err_flag = 1U;
+		}
+		if (err & USBH_HW_UVC_CH1_BUF1_FRM_LEN) {
+			curr->err_ch1_buf1_fl++;
 			err_flag = 1U;
 		}
 	}
@@ -1242,15 +1258,29 @@ static void usbh_uvc_hw_status_dump(void)
 	usbh_hw_uvc_dec_t *dec = NULL;
 	u8 i;
 
+	/* Print only between stream start and stream stop: idle rounds would just
+	 * repeat the last counters. */
+	for (i = 0U; i < uvc->uvc_desc.vs_num; i++) {
+		if (uvc->stream[i].stream_state == UVC_STREAM_ACTIVE) {
+			break;
+		}
+	}
+	if (i >= uvc->uvc_desc.vs_num) {
+		return;
+	}
+
 	curr = &uvc->hw_stats;
 	last = &uvc->hw_stats_shadow;
 
+	/* ov: the decoder's own oversize interrupt; fl: frame done reported a size past the buffer */
 	RTK_LOGS(TAG, RTK_LOG_WARN,
-			 "CH0 ERR %d-%d-%d-%d, CH1 ERR %d-%d-%d-%d\n",
+			 "CH0 ERR ov %d-%d h %d-%d fl %d-%d, CH1 ERR ov %d-%d h %d-%d fl %d-%d\n",
 			 curr->err_ch0_buf0_ov, curr->err_ch0_buf1_ov,
 			 curr->err_ch0_buf0_h,  curr->err_ch0_buf1_h,
+			 curr->err_ch0_buf0_fl, curr->err_ch0_buf1_fl,
 			 curr->err_ch1_buf0_ov, curr->err_ch1_buf1_ov,
-			 curr->err_ch1_buf0_h,  curr->err_ch1_buf1_h);
+			 curr->err_ch1_buf0_h,  curr->err_ch1_buf1_h,
+			 curr->err_ch1_buf0_fl, curr->err_ch1_buf1_fl);
 	*last = *curr;
 
 	/* Per-stream frame stats so the customer can perceive dropped frames.
@@ -1258,9 +1288,20 @@ static void usbh_uvc_hw_status_dump(void)
 	 * drops are counted by the ISR safe-drop path in usbh_hw_uvc.c (R4). */
 	for (i = 0U; i < uvc->uvc_desc.vs_num; i++) {
 		dec = uvc->stream[i].uvc_dec;
-		if (dec != NULL) {
+		if ((dec != NULL) && (uvc->stream[i].stream_state == UVC_STREAM_ACTIVE)) {
 			RTK_LOGS(TAG, RTK_LOG_INFO, "S%d frm rx=%d drop=%d\n",
 					 i, dec->frame_rx_cnt, dec->frame_drop_cnt);
+			if (dec->frame_oversize_cnt != 0U) {
+				RTK_LOGS(TAG, RTK_LOG_WARN, "S%d oversize=%u last=%u\n",
+						 i, dec->frame_oversize_cnt, dec->frame_oversize_size);
+			}
+#if (USBH_HW_UVC_DEBUG == 1)
+			/* Get fail requested a register snapshot: take it once for this round. */
+			if (uvc->stream[i].get_fail_dumped == 1U) {
+				uvc->stream[i].get_fail_dumped = 2U;
+				usbh_hw_uvc_dump(dec);
+			}
+#endif
 		}
 	}
 }
@@ -1677,6 +1718,11 @@ void usbh_uvc_stream_flush(usbh_uvc_stream_t *stream)
 
 	stream->is_resource_safe = 1;
 #else
+#if (USBH_HW_UVC_DEBUG == 1)
+	/* A new streaming round deserves one fresh first-failure snapshot. */
+	stream->get_fail_dumped = 0U;
+#endif
+
 	/* HW path: per-round state reset only. The HW decode buffers must be reset to a
 	 * known 3-buffer layout so the rotation in usbh_hw_uvc_handle_frame_done()
 	 * starts from a known position, and stale dec_sema tokens are drained. */
