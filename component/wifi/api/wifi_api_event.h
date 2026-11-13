@@ -72,6 +72,7 @@ enum rtw_event_id {
 	RTW_EVENT_WPA_EAPOL_START,        /**< STA mode: WPA enterprise authentication started */
 	RTW_EVENT_WPA_EAPOL_RECVD,        /**< STA mode: EAPOL packet received during WPA enterprise authentication  */
 	RTW_EVENT_DHCP_STATUS,            /**< STA mode: DHCP status report (see @ref rtw_event_dhcp_status)  */
+	RTW_EVENT_DFS_RADAR_DETECTED,     /**< SoftAP DFS master: radar detected on the operating channel (see @ref rtw_event_dfs_radar_detected_info) */
 
 	RTW_EVENT_MAX,
 };
@@ -194,6 +195,13 @@ struct rtw_event_csi_report_info {
 	u8 csi_data[];              /**< CSI raw data head address */
 };
 #pragma pack()
+
+/**
+  * @brief  Report info for event @ref RTW_EVENT_DFS_RADAR_DETECTED
+  */
+struct rtw_event_dfs_radar_detected_info {
+	u8 channel;                    /**< DFS channel the radar was detected on (now vacated and put into NOP) */
+};
 
 /** @} End of WIFI_Exported_Structure_Types group*/
 /** @} End of WIFI_Exported_Types group*/
