@@ -1126,12 +1126,6 @@ static int usbd_uac_setup(usb_dev_t *dev, usb_setup_req_t *req)
 		break;/* case USB_REQ_TYPE_STANDARD */
 
 	case USB_REQ_TYPE_CLASS :
-		/* Ref USB 2.0 9.4.2: the audio interfaces exist only once configured, and the core never
-		   delivers the data stage of an H2D request before, which would leave it pending */
-		if (dev->dev_state != USBD_STATE_CONFIGURED) {
-			ret = -RTK_ERR_BADARG;
-			break;
-		}
 		/* Ref UAC 1.0 5.2.1: the low byte of wIndex addresses the interface or the endpoint the
 		   control belongs to. Reject anything owned by another function, otherwise a composite
 		   device may route a foreign request here, ref USB 2.0 Table 9-2. */

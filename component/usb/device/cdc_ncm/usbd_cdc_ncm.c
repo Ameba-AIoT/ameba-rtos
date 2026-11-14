@@ -208,124 +208,11 @@ static const u8 usbd_cdc_ncm_device_qualifier_desc[USB_LEN_DEV_QUALIFIER_DESC] =
 	0x01,                                           /* bNumConfigurations */
 	0x00,                                           /* Reserved */
 };
-
-/* USB CDC NCM High Speed Configuration Descriptor */
-static const u8 usbd_cdc_ncm_hs_config_desc[] = {
-	/* Configuration Descriptor */
-	USB_LEN_CFG_DESC,                               /* bLength */
-	USB_DESC_TYPE_CONFIGURATION,                    /* bDescriptorType */
-	0x00, 0x00,                                     /* wTotalLength (calculated later) */
-	0x02,                                           /* bNumInterfaces */
-	0x01,                                           /* bConfigurationValue */
-	0x00,                                           /* iConfiguration */
-	0x80,                                           /* bmAttributes (patched at runtime for self_powered/remote_wakeup) */
-	0x32,                                           /* bMaxPower: 100mA */
-
-	/* IAD for CDC NCM (Communication + Data) */
-	USB_LEN_IAD_DESC,                               /* bLength */
-	USB_DESC_TYPE_IAD,                              /* bDescriptorType */
-	0x00,                                           /* bFirstInterface (patched by composite) */
-	0x02,                                           /* bInterfaceCount */
-	USB_CDC_COMM_INTERFACE_CLASS_CODE,              /* bFunctionClass: CDC */
-	USB_CDC_NCM_SUBCLASS_CODE,                      /* bFunctionSubClass: NCM */
-	USB_CDC_CTRL_PROTOCOL_NO_CLASS_SPECIFIC,        /* bFunctionProtocol */
-	0x00,                                           /* iFunction */
-
-	/* Communication Interface Descriptor */
-	USB_LEN_IF_DESC,                                /* bLength */
-	USB_DESC_TYPE_INTERFACE,                        /* bDescriptorType */
-	USBD_CDC_NCM_COMM_INTERFACE_NUM,                /* bInterfaceNumber */
-	0x00,                                           /* bAlternateSetting */
-	0x01,                                           /* bNumEndpoints */
-	USB_CDC_COMM_INTERFACE_CLASS_CODE,              /* bInterfaceClass: CDC */
-	USB_CDC_NCM_SUBCLASS_CODE,                           /* bInterfaceSubClass: NCM */
-	USB_CDC_CTRL_PROTOCOL_NO_CLASS_SPECIFIC,        /* bInterfaceProtocol */
-	0x00,                                           /* iInterface */
-
-	/* CDC Header Functional Descriptor */
-	0x05,                                           /* bFunctionLength */
-	USB_CDC_CS_INTERFACE,                           /* bDescriptorType */
-	USB_CDC_FUNC_DESC_HEADER,                       /* bDescriptorSubtype */
-	0x10, 0x01,                                     /* bcdCDC: 1.10 */
-
-	/* CDC Union Functional Descriptor */
-	0x05,                                           /* bFunctionLength */
-	USB_CDC_CS_INTERFACE,                           /* bDescriptorType */
-	USB_CDC_FUNC_DESC_UNION,                        /* bDescriptorSubtype */
-	USBD_CDC_NCM_COMM_INTERFACE_NUM,                /* bControlInterface */
-	USBD_CDC_NCM_DATA_INTERFACE_NUM,                /* bSubordinateInterface0 */
-
-	/* CDC Ethernet Networking Functional Descriptor */
-	USBD_CDC_NCM_ETHERNET_FUNC_DESC_SIZE,           /* bFunctionLength */
-	USB_CDC_CS_INTERFACE,                           /* bDescriptorType */
-	USB_CDC_FUNC_DESC_ETHERNET_NETWORKING,          /* bDescriptorSubtype */
-	0x00,                                           /* iMACAddress, runtime patched */
-	0x00, 0x00, 0x00, 0x00,                         /* bmEthernetStatistics */
-	USB_LOW_BYTE(USB_CDC_NCM_MAX_ETHERNET_FRAME_SIZE), /* wMaxSegmentSize */
-	USB_HIGH_BYTE(USB_CDC_NCM_MAX_ETHERNET_FRAME_SIZE),
-	0x00, 0x00,                                     /* wNumberMCFilters */
-	0x00,                                           /* bNumberPowerFilters */
-
-	/* CDC NCM Functional Descriptor */
-	USBD_CDC_NCM_FUNC_DESC_SIZE,                    /* bFunctionLength: 6 */
-	USB_CDC_CS_INTERFACE,                           /* bDescriptorType: CS_INTERFACE (0x24) */
-	USB_CDC_NCM_FUNC_DESC,                          /* bDescriptorSubtype: NCM (0x1A) */
-	0x00, 0x01,                                     /* bcdNcmVersion: 1.00 */
-	USBD_CDC_NCM_NETWORK_CAPABILITIES,              /* bmNetworkCapabilities: no optional capability */
-
-	/* INTR IN Endpoint Descriptor */
-	USB_LEN_EP_DESC,                                /* bLength */
-	USB_DESC_TYPE_ENDPOINT,                         /* bDescriptorType */
-	USB_D2H,                                        /* bEndpointAddress: dir IN (placeholder) */
-	USB_CH_EP_TYPE_INTR,                            /* bmAttributes */
-	USB_LOW_BYTE(USBD_CDC_NCM_INTR_IN_PACKET_SIZE),  /* wMaxPacketSize (reuse same size as ECM) */
-	USB_HIGH_BYTE(USBD_CDC_NCM_INTR_IN_PACKET_SIZE),
-	USBD_CDC_NCM_DEFAULT_INTR_IN_INTERVAL,          /* bInterval (patched at runtime) */
-
-	/* Data Interface Descriptor (Alt 0 - No endpoints) */
-	USB_LEN_IF_DESC,                                /* bLength */
-	USB_DESC_TYPE_INTERFACE,                        /* bDescriptorType */
-	USBD_CDC_NCM_DATA_INTERFACE_NUM,                /* bInterfaceNumber */
-	0x00,                                           /* bAlternateSetting */
-	0x00,                                           /* bNumEndpoints */
-	USB_CDC_DATA_INTERFACE_CLASS_CODE,              /* bInterfaceClass */
-	USB_CDC_SUBCLASS_RESERVED,                      /* bInterfaceSubClass */
-	USB_CDC_DATA_PROTOCOL_NETWORK_TRANSFER_BLOCK,   /* bInterfaceProtocol: NCM */
-	0x00,                                           /* iInterface */
-
-	/* Data Interface Descriptor (Alt 1 - Active) */
-	USB_LEN_IF_DESC,                                /* bLength */
-	USB_DESC_TYPE_INTERFACE,                        /* bDescriptorType */
-	USBD_CDC_NCM_DATA_INTERFACE_NUM,                /* bInterfaceNumber */
-	0x01,                                           /* bAlternateSetting */
-	0x02,                                           /* bNumEndpoints */
-	USB_CDC_DATA_INTERFACE_CLASS_CODE,              /* bInterfaceClass */
-	USB_CDC_SUBCLASS_RESERVED,                      /* bInterfaceSubClass */
-	USB_CDC_DATA_PROTOCOL_NETWORK_TRANSFER_BLOCK,   /* bInterfaceProtocol: NCM */
-	0x00,                                           /* iInterface */
-
-	/* BULK IN Endpoint Descriptor */
-	USB_LEN_EP_DESC,                                /* bLength */
-	USB_DESC_TYPE_ENDPOINT,                         /* bDescriptorType */
-	USB_D2H,                                    /* bEndpointAddress: dir IN (placeholder) */
-	USB_CH_EP_TYPE_BULK,                            /* bmAttributes */
-	USB_LOW_BYTE(USB_BULK_HS_MAX_MPS),              /* wMaxPacketSize */
-	USB_HIGH_BYTE(USB_BULK_HS_MAX_MPS),
-	0x00,                                           /* bInterval */
-
-	/* BULK OUT Endpoint Descriptor */
-	USB_LEN_EP_DESC,                                /* bLength */
-	USB_DESC_TYPE_ENDPOINT,                         /* bDescriptorType */
-	USB_H2D,                                    /* bEndpointAddress: dir OUT (placeholder) */
-	USB_CH_EP_TYPE_BULK,                            /* bmAttributes */
-	USB_LOW_BYTE(USB_BULK_HS_MAX_MPS),              /* wMaxPacketSize */
-	USB_HIGH_BYTE(USB_BULK_HS_MAX_MPS),
-	0x00                                            /* bInterval */
-};
 #endif
 
-/* USB CDC NCM Full Speed Configuration Descriptor */
-static const u8 usbd_cdc_ncm_fs_config_desc[] = {
+/* USB CDC NCM Configuration Descriptor, the BULK wMaxPacketSize is patched for the speed it
+   describes, refer to usbd_cdc_ncm_patch_desc() */
+static const u8 usbd_cdc_ncm_config_desc[] = {
 	/* Configuration Descriptor */
 	USB_LEN_CFG_DESC,                               /* bLength */
 	USB_DESC_TYPE_CONFIGURATION,                    /* bDescriptorType */
@@ -424,8 +311,8 @@ static const u8 usbd_cdc_ncm_fs_config_desc[] = {
 	USB_DESC_TYPE_ENDPOINT,                         /* bDescriptorType */
 	USB_D2H,                                    /* bEndpointAddress: dir IN (placeholder) */
 	USB_CH_EP_TYPE_BULK,                            /* bmAttributes */
-	USB_LOW_BYTE(USB_BULK_FS_MAX_MPS),              /* wMaxPacketSize */
-	USB_HIGH_BYTE(USB_BULK_FS_MAX_MPS),
+	USB_LOW_BYTE(USB_BULK_HS_MAX_MPS),              /* wMaxPacketSize (patched at runtime) */
+	USB_HIGH_BYTE(USB_BULK_HS_MAX_MPS),
 	0x00,                                           /* bInterval */
 
 	/* BULK OUT Endpoint Descriptor */
@@ -433,8 +320,8 @@ static const u8 usbd_cdc_ncm_fs_config_desc[] = {
 	USB_DESC_TYPE_ENDPOINT,                         /* bDescriptorType */
 	USB_H2D,                                    /* bEndpointAddress: dir OUT (placeholder) */
 	USB_CH_EP_TYPE_BULK,                            /* bmAttributes */
-	USB_LOW_BYTE(USB_BULK_FS_MAX_MPS),              /* wMaxPacketSize */
-	USB_HIGH_BYTE(USB_BULK_FS_MAX_MPS),
+	USB_LOW_BYTE(USB_BULK_HS_MAX_MPS),              /* wMaxPacketSize (patched at runtime) */
+	USB_HIGH_BYTE(USB_BULK_HS_MAX_MPS),
 	0x00                                            /* bInterval */
 };
 
@@ -1805,12 +1692,6 @@ static int usbd_cdc_ncm_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			ret = -RTK_ERR_BADARG;
 			break;
 		}
-		/* Ref USB 2.0 9.4.2: the NCM functions exist only once configured, and the core never
-		   delivers the data stage of an H2D request before, which would leave it pending */
-		if (dev->dev_state != USBD_STATE_CONFIGURED) {
-			ret = -RTK_ERR_BADARG;
-			break;
-		}
 		/* Ref NCM 1.0 6.2: every NCM class request is addressed to the communication
 		 * interface, so a wrong wIndex cannot make the device answer a GET or apply a SET
 		 * the host should not have sent.
@@ -2305,14 +2186,15 @@ static int usbd_cdc_ncm_handle_ep0_data_out(usb_dev_t *dev)
 /**
  * @brief Patch the runtime-assigned fields in a configuration descriptor block
  * @note   Replaces direction-only EP placeholders (USB_D2H/USB_H2D) with actual
- *         EP addresses from the class configuration, applies the configured INTR IN
+ *         EP addresses from the class configuration, writes the BULK wMaxPacketSize of the
+ *         speed the descriptor describes, applies the configured INTR IN
  *         interval, rewrites the iMACAddress and iInterface string indices with the indices
  *         the core assigned, and rebases the Union FD interface cross-references with the
  *         current interface base, which is the standalone default unless the composite
  *         framework rebased it.
  * @param  desc: Pointer to config descriptor body (starting after config header)
  * @param  len: Length of the descriptor block
- * @param  speed: Speed the descriptor describes, selects the INTR IN interval
+ * @param  speed: Speed the descriptor describes, selects the BULK wMaxPacketSize and INTR IN interval
  * @retval None
  */
 static void usbd_cdc_ncm_patch_desc(u8 *desc, u16 len, usb_speed_type_t speed)
@@ -2320,6 +2202,7 @@ static void usbd_cdc_ncm_patch_desc(u8 *desc, u16 len, usb_speed_type_t speed)
 	usbd_cdc_ncm_dev_t *ncm = &usbd_cdc_ncm_dev;
 	const usbd_cdc_ncm_config_t *cfg = ncm->cfg;
 	u8 interval;
+	u16 bulk_mps = (speed == USB_SPEED_HIGH) ? USB_BULK_HS_MAX_MPS : USB_BULK_FS_MAX_MPS;
 
 	interval = (speed == USB_SPEED_HIGH) ? cfg->intr_in_interval_hs : cfg->intr_in_interval_fs;
 	if (interval == 0U) {
@@ -2344,10 +2227,10 @@ static void usbd_cdc_ncm_patch_desc(u8 *desc, u16 len, usb_speed_type_t speed)
 			u8 dir   = addr & USB_REQ_DIR_MASK;
 			u8 type  = desc[i + 3] & USB_EP_XFER_TYPE_MASK;
 
-			if ((dir == USB_D2H) && (type == USB_CH_EP_TYPE_BULK)) {
-				desc[i + 2] = cfg->bulk_in_addr;
-			} else if ((dir == USB_H2D) && (type == USB_CH_EP_TYPE_BULK)) {
-				desc[i + 2] = cfg->bulk_out_addr;
+			if (type == USB_CH_EP_TYPE_BULK) {
+				desc[i + 2] = (dir == USB_D2H) ? cfg->bulk_in_addr : cfg->bulk_out_addr;
+				desc[i + 4] = USB_LOW_BYTE(bulk_mps);   /* wMaxPacketSize */
+				desc[i + 5] = USB_HIGH_BYTE(bulk_mps);
 			} else if ((dir == USB_D2H) && (type == USB_CH_EP_TYPE_INTR)) {
 				desc[i + 2] = cfg->intr_in_addr;
 				desc[i + 6] = interval;             /* bInterval */
@@ -2387,7 +2270,7 @@ static void usbd_cdc_ncm_patch_desc(u8 *desc, u16 len, usb_speed_type_t speed)
 static u16 usbd_cdc_ncm_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16 buf_len)
 {
 	usb_speed_type_t speed = dev->dev_speed;
-	/* Speed the returned configuration describes, which selects the bInterval encoding */
+	/* Speed the returned configuration describes, which selects the wMaxPacketSize and bInterval */
 	usb_speed_type_t desc_speed = speed;
 	u8 desc_type = USB_HIGH_BYTE(req->wValue);
 	const u8 *desc = NULL;
@@ -2401,16 +2284,8 @@ static u16 usbd_cdc_ncm_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 
 		break;
 
 	case USB_DESC_TYPE_CONFIGURATION:
-#ifndef CONFIG_SUPPORT_USB_FS_ONLY
-		if (speed == USB_SPEED_HIGH) {
-			desc = usbd_cdc_ncm_hs_config_desc;
-			len = sizeof(usbd_cdc_ncm_hs_config_desc);
-		} else
-#endif
-		{
-			desc = usbd_cdc_ncm_fs_config_desc;
-			len = sizeof(usbd_cdc_ncm_fs_config_desc);
-		}
+		desc = usbd_cdc_ncm_config_desc;
+		len = sizeof(usbd_cdc_ncm_config_desc);
 		is_cfg = 1;
 		break;
 
@@ -2422,11 +2297,9 @@ static u16 usbd_cdc_ncm_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 
 
 	case USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION:
 		/* Ref USB 2.0 9.6.4: describes the configuration at the speed the device is not
-		   running at, so its bInterval is patched for that speed, not the current one */
-		desc = (speed == USB_SPEED_HIGH) ?
-			   usbd_cdc_ncm_fs_config_desc : usbd_cdc_ncm_hs_config_desc;
-		len = (speed == USB_SPEED_HIGH) ?
-			  sizeof(usbd_cdc_ncm_fs_config_desc) : sizeof(usbd_cdc_ncm_hs_config_desc);
+		   running at, so its wMaxPacketSize and bInterval are patched for that speed, not the current one */
+		desc = usbd_cdc_ncm_config_desc;
+		len = sizeof(usbd_cdc_ncm_config_desc);
 		desc_speed = (speed == USB_SPEED_HIGH) ? USB_SPEED_FULL : USB_SPEED_HIGH;
 		is_cfg = 1;
 		break;
@@ -2457,7 +2330,7 @@ static u16 usbd_cdc_ncm_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 
 		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN] = USB_LOW_BYTE(len);
 		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN + 1] = USB_HIGH_BYTE(len);
 
-		/* Patch EP addresses, interval and the class string indices to actual values */
+		/* Patch EP addresses, wMaxPacketSize, interval and the class string indices to actual values */
 		usbd_cdc_ncm_patch_desc(buf + USB_LEN_CFG_DESC, len - USB_LEN_CFG_DESC, desc_speed);
 	}
 

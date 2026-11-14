@@ -12,7 +12,7 @@
 /* Private defines -----------------------------------------------------------*/
 
 /* String descriptor index placeholders. The real indices are handed out by usbd_add_string()
- * at init, so these values only mark the descriptor fields that usbd_whc_patch_str_idx()
+ * at init, so these values only mark the descriptor fields that usbd_whc_patch_desc()
  * rewrites at runtime. They must stay outside the range the core assigns. */
 #define USBD_WHC_IDX_BT_STR              0xF0U
 #ifdef CONFIG_WHC_ETH
@@ -66,6 +66,10 @@
 #define USBD_WHC_DEV_SUBCLASS            0x02U
 #define USBD_WHC_DEV_PROTOCOL            0x01U
 #endif
+
+/* Full Speed INTR/ISOC bInterval: 1 frame, the same 1 ms period as bInterval 4 of the High Speed
+   templates, i.e. 2^(4-1) microframes */
+#define USBD_WHC_FS_EP_INTERVAL          1U
 
 #define USBD_WHC_EP_STATE_IDLE           0U
 #define USBD_WHC_EP_STATE_BUSY           1U
@@ -163,7 +167,8 @@ static const u8 usbd_whc_dev_qualifier_desc[USB_LEN_DEV_QUALIFIER_DESC] = {
 	0x00,
 };
 
-/* USB Configuration Descriptor */
+/* USB Configuration Descriptor, describes High Speed. The BULK wMaxPacketSize and the INTR/ISOC
+   bInterval are patched when it describes Full Speed, refer to usbd_whc_patch_desc() */
 static const u8 usbd_whc_config_desc[] = {
 	/* Configuration Descriptor */
 	USB_LEN_CFG_DESC,						// bLength: Configuration Descriptor size
@@ -488,332 +493,7 @@ static const u8 usbd_whc_config_desc[] = {
 	0x00,									// bInterval
 };
 
-/* USB Full Speed Configuration Descriptor */
-static const u8 usbd_whc_full_speed_config_desc[] = {
-	/* Configuration Descriptor */
-	USB_LEN_CFG_DESC,						// bLength: Configuration Descriptor size
-	USB_DESC_TYPE_CONFIGURATION,			// bDescriptorType: Configuration
-	0x00,									// wTotalLength: number of returned bytes, runtime assigned
-	0x00,
-	USBD_WHC_ITF_NUM,						// bNumInterfaces
-	0x01,									// bConfigurationValue
-	0x00,									// iConfiguration
-	0x80,									// bmAttributes: decided by eFuse
-	0xFA,									// MaxPower 500 mA
-
-	/*---------------------------------------------------------------------------*/
-
-#ifndef CONFIG_WHC_ETH
-	/* IAD Descriptor */
-	USB_LEN_IAD_DESC,						// bLength: IAD Descriptor size
-	USB_DESC_TYPE_IAD,						// bDescriptorType: IAD
-	USBD_WHC_ITF_BT,						// bFirstInterface
-	0x02,									// bInterfaceCount
-	USBD_WHC_BT_ITF_CLASS,					// bFunctionClass: Wireless Controller
-	USBD_WHC_BT_ITF_SUBCLASS,				// bFunctionSubClass
-	USBD_WHC_BT_ITF_PROTOCOL,				// bFunctionProtocol
-	USBD_WHC_IDX_BT_STR,					// iFunction: USBD_WHC_BT_STRING
-#endif
-
-	/*---------------------------------------------------------------------------*/
-
-	/* Interface Descriptor */
-	USB_LEN_IF_DESC,						// bLength: Interface Descriptor size
-	USB_DESC_TYPE_INTERFACE,				// bDescriptorType: Interface
-	USBD_WHC_ITF_BT,						// bInterfaceNumber: Number of Interface
-	0x00,									// bAlternateSetting: Alternate setting
-	0x03,									// bNumEndpoints: 3 endpoints
-	USBD_WHC_BT_ITF_CLASS,					// bInterfaceClass: Wireless Controller
-	USBD_WHC_BT_ITF_SUBCLASS,				// bInterfaceSubClass
-	USBD_WHC_BT_ITF_PROTOCOL,				// bInterfaceProtocol: Bluetooth Programming Interface
-	USBD_WHC_IDX_BT_STR,					// iInterface: USBD_WHC_BT_STRING
-
-	/* Endpoint Descriptor */
-	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
-	USB_DESC_TYPE_ENDPOINT,					// bDescriptorType: Endpoint
-	USBD_WHC_BT_EP_INTR_IN,				// bEndpointAddress: BT INTR IN
-	USB_CH_EP_TYPE_INTR,					// bmAttributes: INTR
-	0x10,									// wMaxPacketSize: 16 bytes
-	0x00,
-	0x01,									// bInterval
-
-	/* Endpoint Descriptor */
-	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
-	USB_DESC_TYPE_ENDPOINT,					// bDescriptorType: Endpoint
-	USBD_WHC_BT_EP_BULK_OUT,				// bEndpointAddress: BT BULK OUT
-	USB_CH_EP_TYPE_BULK,					// bmAttributes: BULK
-	USB_LOW_BYTE(USBD_WHC_FS_BULK_MPS),	// wMaxPacketSize: 64 bytes
-	USB_HIGH_BYTE(USBD_WHC_FS_BULK_MPS),
-	0x00,									// bInterval
-
-	/* Endpoint Descriptor */
-	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
-	USB_DESC_TYPE_ENDPOINT,					// bDescriptorType: Endpoint
-	USBD_WHC_BT_EP_BULK_IN,				// bEndpointAddress: BT BULK IN
-	USB_CH_EP_TYPE_BULK,					// bmAttributes: BULK
-	USB_LOW_BYTE(USBD_WHC_FS_BULK_MPS),	// wMaxPacketSize: 64 bytes
-	USB_HIGH_BYTE(USBD_WHC_FS_BULK_MPS),
-	0x00,									// bInterval
-
-	/*---------------------------------------------------------------------------*/
-
-#ifdef CONFIG_WHC_ETH
-	/* WHC Ethernet Interface Descriptor */
-	USB_LEN_IF_DESC,						// bLength: Interface Descriptor size
-	USB_DESC_TYPE_INTERFACE,				// bDescriptorType: Interface
-	USBD_WHC_ITF_ETH,						// bInterfaceNumber: Number of Interface
-	0x00,									// bAlternateSetting: Alternate setting
-	0x02,									// bNumEndpoints: 2 endpoints
-	USBD_WHC_ETH_ITF_CLASS,				// bInterfaceClass: Vendor Specific
-	USBD_WHC_ETH_ITF_SUBCLASS,				// bInterfaceSubClass
-	USBD_WHC_ETH_ITF_PROTOCOL,				// bInterfaceProtocol
-	USBD_WHC_IDX_ETH_STR,					// iInterface: USBD_WHC_ETH_STRING
-
-	/* Endpoint Descriptor */
-	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
-	USB_DESC_TYPE_ENDPOINT,					// bDescriptorType: Endpoint
-	USBD_WHC_ETH_EP_BULK_OUT,				// bEndpointAddress: Ethernet BULK OUT
-	USB_CH_EP_TYPE_BULK,					// bmAttributes: BULK
-	USB_LOW_BYTE(USBD_WHC_FS_BULK_MPS),	// wMaxPacketSize: 64 bytes
-	USB_HIGH_BYTE(USBD_WHC_FS_BULK_MPS),
-	0x00,									// bInterval
-
-	/* Endpoint Descriptor */
-	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
-	USB_DESC_TYPE_ENDPOINT,					// bDescriptorType: Endpoint
-	USBD_WHC_ETH_EP_BULK_IN,				// bEndpointAddress: Ethernet BULK IN
-	USB_CH_EP_TYPE_BULK,					// bmAttributes: BULK
-	USB_LOW_BYTE(USBD_WHC_FS_BULK_MPS),	// wMaxPacketSize: 64 bytes
-	USB_HIGH_BYTE(USBD_WHC_FS_BULK_MPS),
-	0x00,									// bInterval
-#else
-	/* Interface Descriptor */
-	USB_LEN_IF_DESC,						// bLength: Interface Descriptor size
-	USB_DESC_TYPE_INTERFACE,				// bDescriptorType: Interface
-	USBD_WHC_ITF_BT_SCO,					// bInterfaceNumber: Number of Interface
-	0x00,									// bAlternateSetting: Alternate setting
-	0x02,									// bNumEndpoints: 2 endpoints
-	USBD_WHC_BT_ITF_CLASS,					// bInterfaceClass: Wireless Controller
-	USBD_WHC_BT_ITF_SUBCLASS,				// bInterfaceSubClass
-	USBD_WHC_BT_ITF_PROTOCOL,				// bInterfaceProtocol: Bluetooth Programming Interface
-	USBD_WHC_IDX_BT_STR,					// iInterface: USBD_WHC_BT_STRING
-
-	/* Endpoint Descriptor */
-	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
-	USB_DESC_TYPE_ENDPOINT, 				// bDescriptorType: Endpoint
-	USBD_WHC_BT_EP_ISOC_OUT,				// bEndpointAddress: BT SCO ISOC OUT
-	USB_CH_EP_TYPE_ISOC,					// bmAttributes: ISOC
-	0x00,									// wMaxPacketSize: 0 bytes
-	0x00,
-	0x01,									// bInterval
-
-	/* Endpoint Descriptor */
-	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
-	USB_DESC_TYPE_ENDPOINT, 				// bDescriptorType: Endpoint
-	USBD_WHC_BT_EP_ISOC_IN,				// bEndpointAddress: BT SCO ISOC IN
-	USB_CH_EP_TYPE_ISOC,					// bmAttributes: ISOC
-	0x00,									// wMaxPacketSize: 0 bytes
-	0x00,
-	0x01,									// bInterval
-
-	/* Interface Descriptor */
-	USB_LEN_IF_DESC,						// bLength: Interface Descriptor size
-	USB_DESC_TYPE_INTERFACE,				// bDescriptorType: Interface
-	USBD_WHC_ITF_BT_SCO,					// bInterfaceNumber: Number of Interface
-	0x01,									// bAlternateSetting: Alternate setting
-	0x02,									// bNumEndpoints: 2 endpoints
-	USBD_WHC_BT_ITF_CLASS,					// bInterfaceClass: Wireless Controller
-	USBD_WHC_BT_ITF_SUBCLASS,				// bInterfaceSubClass
-	USBD_WHC_BT_ITF_PROTOCOL,				// bInterfaceProtocol: Bluetooth Programming Interface
-	USBD_WHC_IDX_BT_STR,					// iInterface: USBD_WHC_BT_STRING
-
-	/* Endpoint Descriptor */
-	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
-	USB_DESC_TYPE_ENDPOINT, 				// bDescriptorType: Endpoint
-	USBD_WHC_BT_EP_ISOC_OUT,				// bEndpointAddress: BT SCO ISOC OUT
-	USB_CH_EP_TYPE_ISOC,					// bmAttributes: ISOC
-	0x09,									// wMaxPacketSize: 9 bytes
-	0x00,
-	0x01,									// bInterval
-
-	/* Endpoint Descriptor */
-	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
-	USB_DESC_TYPE_ENDPOINT, 				// bDescriptorType: Endpoint
-	USBD_WHC_BT_EP_ISOC_IN,				// bEndpointAddress: BT SCO ISOC IN
-	USB_CH_EP_TYPE_ISOC,					// bmAttributes: ISOC
-	0x09,									// wMaxPacketSize: 9 bytes
-	0x00,
-	0x01,									// bInterval
-
-	/* Interface Descriptor */
-	USB_LEN_IF_DESC,						// bLength: Interface Descriptor size
-	USB_DESC_TYPE_INTERFACE,				// bDescriptorType: Interface
-	USBD_WHC_ITF_BT_SCO,					// bInterfaceNumber: Number of Interface
-	0x02,									// bAlternateSetting: Alternate setting
-	0x02,									// bNumEndpoints: 2 endpoints
-	USBD_WHC_BT_ITF_CLASS,					// bInterfaceClass: Wireless Controller
-	USBD_WHC_BT_ITF_SUBCLASS,				// bInterfaceSubClass
-	USBD_WHC_BT_ITF_PROTOCOL,				// bInterfaceProtocol: Bluetooth Programming Interface
-	USBD_WHC_IDX_BT_STR,					// iInterface: USBD_WHC_BT_STRING
-
-	/* Endpoint Descriptor */
-	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
-	USB_DESC_TYPE_ENDPOINT, 				// bDescriptorType: Endpoint
-	USBD_WHC_BT_EP_ISOC_OUT,				// bEndpointAddress: BT SCO ISOC OUT
-	USB_CH_EP_TYPE_ISOC,					// bmAttributes: ISOC
-	0x11,									// wMaxPacketSize: 17 bytes
-	0x00,
-	0x01,									// bInterval
-
-	/* Endpoint Descriptor */
-	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
-	USB_DESC_TYPE_ENDPOINT, 				// bDescriptorType: Endpoint
-	USBD_WHC_BT_EP_ISOC_IN,				// bEndpointAddress: BT SCO ISOC IN
-	USB_CH_EP_TYPE_ISOC,					// bmAttributes: ISOC
-	0x11,									// wMaxPacketSize: 17 bytes
-	0x00,
-	0x01,									// bInterval
-
-	/* Interface Descriptor */
-	USB_LEN_IF_DESC,						// bLength: Interface Descriptor size
-	USB_DESC_TYPE_INTERFACE,				// bDescriptorType: Interface
-	USBD_WHC_ITF_BT_SCO,					// bInterfaceNumber: Number of Interface
-	0x03,									// bAlternateSetting: Alternate setting
-	0x02,									// bNumEndpoints: 2 endpoints
-	USBD_WHC_BT_ITF_CLASS,					// bInterfaceClass: Wireless Controller
-	USBD_WHC_BT_ITF_SUBCLASS,				// bInterfaceSubClass
-	USBD_WHC_BT_ITF_PROTOCOL,				// bInterfaceProtocol: Bluetooth Programming Interface
-	USBD_WHC_IDX_BT_STR,					// iInterface: USBD_WHC_BT_STRING
-
-	/* Endpoint Descriptor */
-	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
-	USB_DESC_TYPE_ENDPOINT, 				// bDescriptorType: Endpoint
-	USBD_WHC_BT_EP_ISOC_OUT,				// bEndpointAddress: BT SCO ISOC OUT
-	USB_CH_EP_TYPE_ISOC,					// bmAttributes: ISOC
-	0x19,									// wMaxPacketSize: 25 bytes
-	0x00,
-	0x01,									// bInterval
-
-	/* Endpoint Descriptor */
-	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
-	USB_DESC_TYPE_ENDPOINT, 				// bDescriptorType: Endpoint
-	USBD_WHC_BT_EP_ISOC_IN,				// bEndpointAddress: BT SCO ISOC IN
-	USB_CH_EP_TYPE_ISOC,					// bmAttributes: ISOC
-	0x19,									// wMaxPacketSize: 25 bytes
-	0x00,
-	0x01,									// bInterval
-
-	/* Interface Descriptor */
-	USB_LEN_IF_DESC,						// bLength: Interface Descriptor size
-	USB_DESC_TYPE_INTERFACE,				// bDescriptorType: Interface
-	USBD_WHC_ITF_BT_SCO,					// bInterfaceNumber: Number of Interface
-	0x04,									// bAlternateSetting: Alternate setting
-	0x02,									// bNumEndpoints: 2 endpoints
-	USBD_WHC_BT_ITF_CLASS,					// bInterfaceClass: Wireless Controller
-	USBD_WHC_BT_ITF_SUBCLASS,				// bInterfaceSubClass
-	USBD_WHC_BT_ITF_PROTOCOL,				// bInterfaceProtocol: Bluetooth Programming Interface
-	USBD_WHC_IDX_BT_STR,					// iInterface: USBD_WHC_BT_STRING
-
-	/* Endpoint Descriptor */
-	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
-	USB_DESC_TYPE_ENDPOINT, 				// bDescriptorType: Endpoint
-	USBD_WHC_BT_EP_ISOC_OUT,				// bEndpointAddress: BT SCO ISOC OUT
-	USB_CH_EP_TYPE_ISOC,					// bmAttributes: ISOC
-	0x21,									// wMaxPacketSize: 33 bytes
-	0x00,
-	0x01,									// bInterval
-
-	/* Endpoint Descriptor */
-	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
-	USB_DESC_TYPE_ENDPOINT, 				// bDescriptorType: Endpoint
-	USBD_WHC_BT_EP_ISOC_IN,				// bEndpointAddress: BT SCO ISOC IN
-	USB_CH_EP_TYPE_ISOC,					// bmAttributes: ISOC
-	0x21,									// wMaxPacketSize: 33 bytes
-	0x00,
-	0x01,									// bInterval
-
-	/* Interface Descriptor */
-	USB_LEN_IF_DESC,						// bLength: Interface Descriptor size
-	USB_DESC_TYPE_INTERFACE,				// bDescriptorType: Interface
-	USBD_WHC_ITF_BT_SCO,					// bInterfaceNumber: Number of Interface
-	0x05,									// bAlternateSetting: Alternate setting
-	0x02,									// bNumEndpoints: 2 endpoints
-	USBD_WHC_BT_ITF_CLASS,					// bInterfaceClass: Wireless Controller
-	USBD_WHC_BT_ITF_SUBCLASS,				// bInterfaceSubClass
-	USBD_WHC_BT_ITF_PROTOCOL,				// bInterfaceProtocol: Bluetooth Programming Interface
-	USBD_WHC_IDX_BT_STR,					// iInterface: USBD_WHC_BT_STRING
-
-	/* Endpoint Descriptor */
-	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
-	USB_DESC_TYPE_ENDPOINT, 				// bDescriptorType: Endpoint
-	USBD_WHC_BT_EP_ISOC_OUT,				// bEndpointAddress: BT SCO ISOC OUT
-	USB_CH_EP_TYPE_ISOC,					// bmAttributes: ISOC
-	0x31,									// wMaxPacketSize: 49 bytes
-	0x00,
-	0x01,									// bInterval
-
-	/* Endpoint Descriptor */
-	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
-	USB_DESC_TYPE_ENDPOINT, 				// bDescriptorType: Endpoint
-	USBD_WHC_BT_EP_ISOC_IN,				// bEndpointAddress: BT SCO ISOC IN
-	USB_CH_EP_TYPE_ISOC,					// bmAttributes: ISOC
-	0x31,									// wMaxPacketSize: 49 bytes
-	0x00,
-	0x01,									// bInterval
-
-#endif
-
-	/*---------------------------------------------------------------------------*/
-
-	/* Interface Descriptor */
-	USB_LEN_IF_DESC,						// bLength: Interface Descriptor size
-	USB_DESC_TYPE_INTERFACE,				// bDescriptorType: Interface
-	USBD_WHC_ITF_WIFI,						// bInterfaceNumber: Number of Interface
-	0x00,									// bAlternateSetting: Alternate setting
-	0x04,									// bNumEndpoints: 4 endpoints
-	USBD_WHC_WIFI_ITF_CLASS,				// bInterfaceClass: Vendor Specific
-	USBD_WHC_WIFI_ITF_SUBCLASS,			// bInterfaceSubClass
-	USBD_WHC_WIFI_ITF_PROTOCOL,			// bInterfaceProtocol
-	USBD_IDX_PRODUCT_STR,					// iInterface: device product string
-
-	/* Endpoint Descriptor */
-	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
-	USB_DESC_TYPE_ENDPOINT, 				// bDescriptorType: Endpoint
-	USBD_WHC_WIFI_EP_BULK_IN,				// bEndpointAddress: WiFi BULK IN
-	USB_CH_EP_TYPE_BULK,					// bmAttributes: BULK
-	USB_LOW_BYTE(USBD_WHC_FS_BULK_MPS),	// wMaxPacketSize: 64 bytes
-	USB_HIGH_BYTE(USBD_WHC_FS_BULK_MPS),
-	0x00,									// bInterval
-
-	/* Endpoint Descriptor */
-	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
-	USB_DESC_TYPE_ENDPOINT, 				// bDescriptorType: Endpoint
-	USBD_WHC_WIFI_EP_BULK_OUT_1,				// bEndpointAddress: WiFi BULK OUT 1
-	USB_CH_EP_TYPE_BULK,					// bmAttributes: BULK
-	USB_LOW_BYTE(USBD_WHC_FS_BULK_MPS),	// wMaxPacketSize: 64 bytes
-	USB_HIGH_BYTE(USBD_WHC_FS_BULK_MPS),
-	0x00,									// bInterval
-
-	/* Endpoint Descriptor */
-	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
-	USB_DESC_TYPE_ENDPOINT, 				// bDescriptorType: Endpoint
-	USBD_WHC_WIFI_EP_BULK_OUT_2,				// bEndpointAddress: WiFi BULK OUT 2
-	USB_CH_EP_TYPE_BULK,					// bmAttributes: BULK
-	USB_LOW_BYTE(USBD_WHC_FS_BULK_MPS),	// wMaxPacketSize: 64 bytes
-	USB_HIGH_BYTE(USBD_WHC_FS_BULK_MPS),
-	0x00,									// bInterval
-
-	/* Endpoint Descriptor */
-	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
-	USB_DESC_TYPE_ENDPOINT, 				// bDescriptorType: Endpoint
-	USBD_WHC_WIFI_EP_BULK_OUT_3,				// bEndpointAddress: WiFi BULK OUT 3
-	USB_CH_EP_TYPE_BULK,					// bmAttributes: BULK
-	USB_LOW_BYTE(USBD_WHC_FS_BULK_MPS),	// wMaxPacketSize: 64 bytes
-	USB_HIGH_BYTE(USBD_WHC_FS_BULK_MPS),
-	0x00,									// bInterval
-};
-
-/* USB Configuration Descriptor for WiFi-only mode */
+/* USB Configuration Descriptor for WiFi-only mode, patched for Full Speed as usbd_whc_config_desc */
 static const u8 usbd_whc_single_wifi_mode_config_desc[] = {
 	/* Configuration Descriptor */
 	USB_LEN_CFG_DESC,						// bLength: Configuration Descriptor size
@@ -903,100 +583,6 @@ static const u8 usbd_whc_single_wifi_mode_config_desc[] = {
 	USB_CH_EP_TYPE_BULK,					// bmAttributes: BULK
 	USB_LOW_BYTE(USBD_WHC_ETH_HS_IN_MPS),	// wMaxPacketSize
 	USB_HIGH_BYTE(USBD_WHC_ETH_HS_IN_MPS),
-	0x00,									// bInterval
-#endif
-};
-
-/* USB Full Speed Configuration Descriptor for WiFi-only mode */
-static const u8 usbd_whc_wifi_only_mode_full_speed_config_desc[] = {
-	/* Configuration Descriptor */
-	USB_LEN_CFG_DESC,						// bLength: Configuration Descriptor size
-	USB_DESC_TYPE_CONFIGURATION,			// bDescriptorType: Configuration
-	0x00,									// wTotalLength: number of returned bytes
-	0x00,
-	USBD_WHC_WIFI_ONLY_ITF_NUM,			// bNumInterfaces
-	0x01,									// bConfigurationValue
-	0x00,									// iConfiguration
-	0x80,									// bmAttributes: decided by eFuse
-	0xFA,									// MaxPower 500 mA
-
-	/*---------------------------------------------------------------------------*/
-
-	/* Interface Descriptor */
-	USB_LEN_IF_DESC,						// bLength: Interface Descriptor size
-	USB_DESC_TYPE_INTERFACE,				// bDescriptorType: Interface
-	USBD_WHC_WIFI_ONLY_ITF_WIFI,			// bInterfaceNumber: Number of Interface
-	0x00,									// bAlternateSetting: Alternate setting
-	0x04,									// bNumEndpoints: 4 endpoints
-	USBD_WHC_WIFI_ITF_CLASS,				// bInterfaceClass: Vendor Specific
-	USBD_WHC_WIFI_ITF_SUBCLASS,			// bInterfaceSubClass
-	USBD_WHC_WIFI_ITF_PROTOCOL,			// bInterfaceProtocol
-	USBD_IDX_PRODUCT_STR,					// iInterface: device product string
-
-	/* Endpoint Descriptor */
-	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
-	USB_DESC_TYPE_ENDPOINT, 				// bDescriptorType: Endpoint
-	USBD_WHC_WIFI_EP_BULK_IN,				// bEndpointAddress: WiFi BULK IN
-	USB_CH_EP_TYPE_BULK,					// bmAttributes: BULK
-	USB_LOW_BYTE(USBD_WHC_FS_BULK_MPS),	// wMaxPacketSize: 64 bytes
-	USB_HIGH_BYTE(USBD_WHC_FS_BULK_MPS),
-	0x00,									// bInterval
-
-	/* Endpoint Descriptor */
-	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
-	USB_DESC_TYPE_ENDPOINT, 				// bDescriptorType: Endpoint
-	USBD_WHC_WIFI_EP_BULK_OUT_1,				// bEndpointAddress: WiFi BULK OUT 1
-	USB_CH_EP_TYPE_BULK,					// bmAttributes: BULK
-	USB_LOW_BYTE(USBD_WHC_FS_BULK_MPS),	// wMaxPacketSize: 64 bytes
-	USB_HIGH_BYTE(USBD_WHC_FS_BULK_MPS),
-	0x00,									// bInterval
-
-	/* Endpoint Descriptor */
-	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
-	USB_DESC_TYPE_ENDPOINT, 				// bDescriptorType: Endpoint
-	USBD_WHC_WIFI_EP_BULK_OUT_2,				// bEndpointAddress: WiFi BULK OUT 2
-	USB_CH_EP_TYPE_BULK,					// bmAttributes: BULK
-	USB_LOW_BYTE(USBD_WHC_FS_BULK_MPS),	// wMaxPacketSize: 64 bytes
-	USB_HIGH_BYTE(USBD_WHC_FS_BULK_MPS),
-	0x00,									// bInterval
-
-	/* Endpoint Descriptor */
-	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
-	USB_DESC_TYPE_ENDPOINT, 				// bDescriptorType: Endpoint
-	USBD_WHC_WIFI_EP_BULK_OUT_3,				// bEndpointAddress: WiFi BULK OUT 3
-	USB_CH_EP_TYPE_BULK,					// bmAttributes: BULK
-	USB_LOW_BYTE(USBD_WHC_FS_BULK_MPS),	// wMaxPacketSize: 64 bytes
-	USB_HIGH_BYTE(USBD_WHC_FS_BULK_MPS),
-	0x00,									// bInterval
-
-#ifdef CONFIG_WHC_ETH
-	/* WHC Ethernet Interface Descriptor */
-	USB_LEN_IF_DESC,						// bLength: Interface Descriptor size
-	USB_DESC_TYPE_INTERFACE,				// bDescriptorType: Interface
-	USBD_WHC_WIFI_ONLY_ITF_ETH,			// bInterfaceNumber: Number of Interface
-	0x00,									// bAlternateSetting: Alternate setting
-	0x02,									// bNumEndpoints: 2 endpoints
-	USBD_WHC_ETH_ITF_CLASS,				// bInterfaceClass: Vendor Specific
-	USBD_WHC_ETH_ITF_SUBCLASS,				// bInterfaceSubClass
-	USBD_WHC_ETH_ITF_PROTOCOL,				// bInterfaceProtocol
-	USBD_WHC_IDX_ETH_STR,					// iInterface: USBD_WHC_ETH_STRING
-
-	/* Endpoint Descriptor */
-	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
-	USB_DESC_TYPE_ENDPOINT,					// bDescriptorType: Endpoint
-	USBD_WHC_ETH_EP_BULK_OUT,				// bEndpointAddress: Ethernet BULK OUT
-	USB_CH_EP_TYPE_BULK,					// bmAttributes: BULK
-	USB_LOW_BYTE(USBD_WHC_FS_BULK_MPS),	// wMaxPacketSize: 64 bytes
-	USB_HIGH_BYTE(USBD_WHC_FS_BULK_MPS),
-	0x00,									// bInterval
-
-	/* Endpoint Descriptor */
-	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
-	USB_DESC_TYPE_ENDPOINT,					// bDescriptorType: Endpoint
-	USBD_WHC_ETH_EP_BULK_IN,				// bEndpointAddress: Ethernet BULK IN
-	USB_CH_EP_TYPE_BULK,					// bmAttributes: BULK
-	USB_LOW_BYTE(USBD_WHC_FS_BULK_MPS),	// wMaxPacketSize: 64 bytes
-	USB_HIGH_BYTE(USBD_WHC_FS_BULK_MPS),
 	0x00,									// bInterval
 #endif
 };
@@ -1770,16 +1356,20 @@ static void usbd_whc_apply_dev_info(const usbd_otp_t *otp)
 }
 
 /**
-  * @brief  Replace the string index placeholders in a configuration descriptor block
-  * @note   Only the iInterface field of an Interface descriptor and the iFunction field of an
-  *         IAD are rewritten, so a placeholder value appearing in an unrelated byte, e.g. an
-  *         endpoint address or an MPS, is left untouched. An unregistered string resolves to 0,
-  *         which is the Chapter 9 encoding for "no string".
+  * @brief  Patch the runtime-assigned fields in a configuration descriptor block
+  * @note   Replaces the string index placeholders: only the iInterface field of an Interface
+  *         descriptor and the iFunction field of an IAD are rewritten, so a placeholder value
+  *         appearing in an unrelated byte, e.g. an endpoint address or an MPS, is left untouched.
+  *         An unregistered string resolves to 0, which is the Chapter 9 encoding for "no string".
+  *         The templates describe High Speed, so when the block describes Full Speed the BULK
+  *         wMaxPacketSize is lowered to the Full Speed limit and the INTR/ISOC bInterval is
+  *         re-encoded for the same 1 ms period (Ref USB 2.0 5.8.3, 9.6.6).
   * @param  desc: Pointer to the config descriptor body, starting after the config header
   * @param  len: Length of the descriptor block
+  * @param  speed: Speed the descriptor describes
   * @retval None
   */
-static void usbd_whc_patch_str_idx(u8 *desc, u16 len)
+static void usbd_whc_patch_desc(u8 *desc, u16 len, usb_speed_type_t speed)
 {
 	usbd_whc_dev_t *idev = &usbd_whc_dev;
 	u16 i = 0U;
@@ -1809,6 +1399,15 @@ static void usbd_whc_patch_str_idx(u8 *desc, u16 len)
 			} else {
 				/* Names no string of this class, or none at all */
 			}
+		} else if ((dtype == USB_DESC_TYPE_ENDPOINT) && (dlen >= USB_LEN_EP_DESC) && (speed != USB_SPEED_HIGH)) {
+			if ((desc[i + 3U] & USB_EP_XFER_TYPE_MASK) == USB_CH_EP_TYPE_BULK) {
+				desc[i + 4U] = USB_LOW_BYTE(USBD_WHC_FS_BULK_MPS);     /* wMaxPacketSize */
+				desc[i + 5U] = USB_HIGH_BYTE(USBD_WHC_FS_BULK_MPS);
+			} else {
+				desc[i + 6U] = USBD_WHC_FS_EP_INTERVAL;               /* bInterval */
+			}
+		} else {
+			/* Nothing else differs between the speeds */
 		}
 		i += dlen;
 	}
@@ -1817,6 +1416,8 @@ static void usbd_whc_patch_str_idx(u8 *desc, u16 len)
 static u16 usbd_whc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16 buf_len)
 {
 	usb_speed_type_t speed = dev->dev_speed;
+	/* Speed the returned configuration describes, which selects the wMaxPacketSize and bInterval */
+	usb_speed_type_t desc_speed = speed;
 	usbd_whc_dev_t *idev = &usbd_whc_dev;
 	usbd_otp_t *otp = &idev->otp;
 	const u8 *desc = NULL;
@@ -1844,22 +1445,18 @@ static u16 usbd_whc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 		break;
 
 	case USB_DESC_TYPE_CONFIGURATION:
+	case USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION:
 		if (otp->bt_en != 0U) {
-			if (speed == USB_SPEED_HIGH) {
-				desc = usbd_whc_config_desc;
-				len = sizeof(usbd_whc_config_desc);
-			} else {
-				desc = usbd_whc_full_speed_config_desc;
-				len = sizeof(usbd_whc_full_speed_config_desc);
-			}
+			desc = usbd_whc_config_desc;
+			len = sizeof(usbd_whc_config_desc);
 		} else {
-			if (speed == USB_SPEED_HIGH) {
-				desc = usbd_whc_single_wifi_mode_config_desc;
-				len = sizeof(usbd_whc_single_wifi_mode_config_desc);
-			} else {
-				desc = usbd_whc_wifi_only_mode_full_speed_config_desc;
-				len = sizeof(usbd_whc_wifi_only_mode_full_speed_config_desc);
-			}
+			desc = usbd_whc_single_wifi_mode_config_desc;
+			len = sizeof(usbd_whc_single_wifi_mode_config_desc);
+		}
+		/* Ref USB 2.0 9.6.4: an other speed configuration describes the speed the device is
+		   not running at, so it is patched for that speed, not the current one */
+		if (type == USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION) {
+			desc_speed = (speed == USB_SPEED_HIGH) ? USB_SPEED_FULL : USB_SPEED_HIGH;
 		}
 		is_cfg = 1;
 		break;
@@ -1867,27 +1464,6 @@ static u16 usbd_whc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 	case USB_DESC_TYPE_DEVICE_QUALIFIER:
 		desc = usbd_whc_dev_qualifier_desc;
 		len = USB_LEN_DEV_QUALIFIER_DESC;
-		break;
-
-	case USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION:
-		if (otp->bt_en != 0U) {
-			if (speed == USB_SPEED_HIGH) {
-				desc = usbd_whc_full_speed_config_desc;
-				len = sizeof(usbd_whc_full_speed_config_desc);
-			} else {
-				desc = usbd_whc_config_desc;
-				len = sizeof(usbd_whc_config_desc);
-			}
-		} else {
-			if (speed == USB_SPEED_HIGH) {
-				desc = usbd_whc_wifi_only_mode_full_speed_config_desc;
-				len = sizeof(usbd_whc_wifi_only_mode_full_speed_config_desc);
-			} else {
-				desc = usbd_whc_single_wifi_mode_config_desc;
-				len = sizeof(usbd_whc_single_wifi_mode_config_desc);
-			}
-		}
-		is_cfg = 1;
 		break;
 
 	case USB_DESC_TYPE_STRING:
@@ -1923,9 +1499,10 @@ static u16 usbd_whc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN] = USB_LOW_BYTE(len);
 		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN + 1] = USB_HIGH_BYTE(len);
 
-		/* Emit the runtime string indices the core assigned. bmAttributes, bMaxPower and the
-		   device descriptor VID/PID/string indices are patched by the core itself. */
-		usbd_whc_patch_str_idx(buf + USB_LEN_CFG_DESC, (u16)(len - USB_LEN_CFG_DESC));
+		/* Emit the runtime string indices the core assigned and the per-speed EP fields.
+		   bmAttributes, bMaxPower and the device descriptor VID/PID/string indices are
+		   patched by the core itself. */
+		usbd_whc_patch_desc(buf + USB_LEN_CFG_DESC, (u16)(len - USB_LEN_CFG_DESC), desc_speed);
 	}
 
 	return (u16)len;

@@ -40,6 +40,13 @@ struct bt_mesh_priv_beacon {
 	 *  value.
 	 */
 	uint8_t rand_interval;
+// zephyr_patch add a flag so that rand_interval 0 can be sent in Private Beacon Set
+#if ZEPHYR_RTK_PATCH
+	/** Whether rand_interval is carried in Private Beacon Set.
+	 *  If carried, rand_interval 0 means Random field is updated for every Mesh Private beacon.
+	 */
+	bool has_rand_interval;
+#endif
 };
 
 /** Private Node Identity */

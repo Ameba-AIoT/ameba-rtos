@@ -43,7 +43,8 @@
 /**
  * @brief Enable GPIO-driven power control for the attached USB device
  * When enabled, a GPIO pin (USB_DEV_PWR_CTRL_GPIO) is wired to the device's power switch
- * so firmware can power-cycle the device to physically trigger a hot-plug.
+ * and registered as usbh_user_cb_t::set_vbus: the host core then owns VBUS and power cycles a device that
+ * no longer answers a port reset. AT+USBHHIDUAC=hotplug requests such a power cycle.
  * This is distinct from CONFIG_USBH_COMP_HID_UAC_HOTPLUG, which only re-initializes the
  * host stack in software after a detach event.
  */
@@ -56,9 +57,8 @@
 #define CONFIG_USBH_COMP_HID_UAC_DEBUG_TRACE_STEP           1000
 
 /**
- * @brief Time to wait after an async set_mute/set_volume before issuing the
- *        sync read-back. The set path is event-driven via SOF, so we give the
- *        state machine a few SOFs to flush before querying.
+ * @brief Time to wait after a set_mute/set_volume before the GET_CUR read-back,
+ *        giving the device time to apply the new value before it is queried.
  */
 #define CONFIG_USBH_COMP_HID_UAC_VERIFY_SETTLE_MS           50
 
@@ -189,6 +189,9 @@ static void usbh_uac_cb_attached(void);
 static void usbh_uac_cb_detached(void);
 static void usbh_uac_cb_setup(void);
 static void usbh_uac_cb_process(usb_host_t *host, u8 msg);
+#if CONFIG_USBH_COMP_HID_UAC_GPIO_POWER_CTRL
+static int usbh_composite_set_vbus(usb_host_t *host, u8 on);
+#endif
 
 /* Private variables ---------------------------------------------------------*/
 
@@ -246,6 +249,14 @@ static volatile u8 usbh_comp_stack_ready = 0;
    playback or capture loop gives up its round instead of re-taking a lock between
    its own buffers and starving the teardown out. */
 static volatile u8 usbh_comp_teardown = 0;
+
+#if CONFIG_USBH_COMP_HID_UAC_HOTPLUG
+/* 1 from USBH_MSG_RESET / USBH_MSG_POWER_CYCLE / USBH_MSG_ERROR until the hotplug thread takes the
+   detach it causes: the core brings the device back itself or waits for a replug, so the stack is
+   kept, not rebuilt. A rebuild would cut VBUS again and renew the core reset budgets. Cleared by
+   USBH_MSG_DISCONNECTED, a real unplug. Written by the host task, read by the hotplug thread. */
+static volatile u8 usbh_comp_keep_stack = 0;
+#endif
 
 /* Start/stop state: example_usbh_composite_hid_uac_stop(), or the hotplug thread when the
    stack can not be rebuilt, sets quit, wakes the play, record, key and hotplug threads and
@@ -308,7 +319,10 @@ static const usbh_hid_usr_cb_t usbh_hid_cfg = {
 };
 
 static const usbh_user_cb_t usbh_usr_cb = {
-	.process = usbh_uac_cb_process
+	.process = usbh_uac_cb_process,
+#if CONFIG_USBH_COMP_HID_UAC_GPIO_POWER_CTRL
+	.set_vbus = usbh_composite_set_vbus,
+#endif
 };
 
 /* Exported variables --------------------------------------------------------*/
@@ -333,14 +347,12 @@ const log_item_t usbh_uac_test_cmd_table[] = {
   */
 static int usbh_comp_lock(rtos_mutex_t lock)
 {
-	if ((usbh_comp_stack_ready == 0U) || (usbh_comp_teardown != 0U) || (usbh_comp_app.quit != 0U) || (lock == NULL)) {
+	if ((usbh_comp_stack_ready == 0U) || (usbh_comp_teardown != 0U) || (usbh_comp_app.quit != 0U)) {
 		return -RTK_ERR_IO;
 	}
 
-	if (rtos_mutex_take(lock, RTOS_MAX_TIMEOUT) != RTK_SUCCESS) {
-		/* Not held: the caller gives up and must not unlock */
-		return -RTK_ERR_IO;
-	}
+	/* An infinite wait from task context does not fail */
+	rtos_mutex_take(lock, RTOS_MAX_TIMEOUT);
 
 	if ((usbh_comp_stack_ready == 0U) || (usbh_comp_teardown != 0U) || (usbh_comp_app.quit != 0U)) {
 		/* Lost the race against a teardown */
@@ -360,23 +372,6 @@ static void usbh_comp_unlock(rtos_mutex_t lock)
 {
 	rtos_mutex_give(lock);
 }
-
-/**
- * @brief USB host controller configuration
- * Defines hardware parameters and priorities
- */
-
-/**
- * @brief UAC (USB Audio Class) callback configuration
- */
-
-/**
- * @brief HID (Human Interface Device) callback configuration
- */
-
-/**
- * @brief General USB host event callbacks
- */
 
 #if CONFIG_USBH_COMP_HID_UAC_GPIO_POWER_CTRL
 #define USB_DEV_PWR_CTRL_GPIO  _PA_3
@@ -407,10 +402,10 @@ static void gpio_power_trigger(u8 level)
 }
 
 /**
-  * @brief  One-time init of the power-control GPIO. Configures the pin, then
-  *         power-cycles the device once (off -> settle -> on) so it always
-  *         starts from a known powered state. Guarded by a static flag so
-  *         repeated calls are no-ops.
+  * @brief  One-time init of the power-control GPIO, with the device unpowered.
+  *         VBUS is switched on by usbh_start() through usbh_composite_set_vbus(),
+  *         so the device always starts from a power-on reset. Guarded by a static
+  *         flag so repeated calls are no-ops.
   * @retval None
   */
 static void gpio_init(void)
@@ -420,11 +415,24 @@ static void gpio_init(void)
 		init_ok = 1;
 		RTK_LOGS(TAG, RTK_LOG_INFO, "GPIO init\n");
 		gpio_power_init(USB_DEV_PWR_CTRL_GPIO);
-
-		gpio_power_trigger(0);      /* power off */
-		rtos_time_delay_ms(20);        /* let the power rail discharge */
-		gpio_power_trigger(1);      /* power on */
+		gpio_power_trigger(0);
 	}
+}
+
+/**
+  * @brief  VBUS switch of the host core, see usbh_user_cb_t::set_vbus
+  * @param  host: USB host handle
+  * @param  on: 1 to power the device, 0 to cut its power
+  * @retval RTK_SUCCESS
+  */
+static int usbh_composite_set_vbus(usb_host_t *host, u8 on)
+{
+	UNUSED(host);
+
+	RTK_LOGS(TAG, RTK_LOG_INFO, "VBUS %d\n", on);
+	gpio_power_trigger(on);
+
+	return RTK_SUCCESS;
 }
 #endif
 
@@ -445,10 +453,6 @@ static void usbh_hid_cb_attached(void)
 static void usbh_hid_cb_report(usbh_hid_event_t *event)
 {
 	u8 key;
-
-	if (event == NULL) {
-		return;
-	}
 
 	/* Every INTR IN report is delivered, a held key included: act on the press edge only */
 	if (event->type == usbh_hid_last_type) {
@@ -678,7 +682,18 @@ static void usbh_uac_cb_process(usb_host_t *host, u8 msg)
 	UNUSED(host);
 
 	switch (msg) {
+#if CONFIG_USBH_COMP_HID_UAC_HOTPLUG
+	case USBH_MSG_RESET:
+	case USBH_MSG_POWER_CYCLE:
+	case USBH_MSG_ERROR:
+		/* Reported before the class detach it causes, see usbh_comp_keep_stack */
+		usbh_comp_keep_stack = 1U;
+		break;
+#endif
 	case USBH_MSG_DISCONNECTED:
+#if CONFIG_USBH_COMP_HID_UAC_HOTPLUG
+		usbh_comp_keep_stack = 0U;
+#endif
 		usbh_uac_ctx.is_ready = 0;
 		break;
 
@@ -787,10 +802,6 @@ static void example_usbh_composite_play_thread(void *param)
 		/* Check if device was removed during setup */
 		if (usbh_uac_ctx.is_ready == 0) {
 			RTK_LOGS(TAG, RTK_LOG_WARN, "Play not ready\n");
-			continue;
-		}
-
-		if (usbh_comp_teardown != 0U) {
 			continue;
 		}
 
@@ -953,14 +964,6 @@ play_stop:
 		}
 	}
 
-	/* Force stop if somehow still playing */
-	if (is_playing != 0) {
-		if (usbh_comp_lock(usbh_comp_play_mutex) == RTK_SUCCESS) {
-			usbh_uac_stop_play();
-			usbh_comp_unlock(usbh_comp_play_mutex);
-		}
-	}
-
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Play exit\n");
 
 	usbh_uac_ctx.play.task = NULL;
@@ -1020,10 +1023,6 @@ static void example_usbh_composite_record_thread(void *param)
 
 		if (usbh_uac_ctx.is_ready == 0) {
 			RTK_LOGS(TAG, RTK_LOG_WARN, "Rec not ready\n");
-			continue;
-		}
-
-		if (usbh_comp_teardown != 0U) {
 			continue;
 		}
 
@@ -1217,23 +1216,6 @@ static void example_usbh_composite_record_thread(void *param)
 #endif
 	}
 
-	if (is_recording != 0) {
-		if (usbh_comp_lock(usbh_comp_record_mutex) == RTK_SUCCESS) {
-			usbh_uac_stop_capture();
-			usbh_comp_unlock(usbh_comp_record_mutex);
-		}
-	}
-
-#ifdef CONFIG_SUPPORT_AUDIO_FOR_USB
-	if (audio_track != NULL) {
-		AudioTrack_Pause(audio_track);
-		AudioTrack_Flush(audio_track);
-		AudioTrack_Stop(audio_track);
-		AudioTrack_Destroy(audio_track);
-		audio_track = NULL;
-	}
-#endif
-
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Rec exit\n");
 
 	usbh_uac_ctx.record.task = NULL;
@@ -1246,7 +1228,7 @@ static void example_usbh_composite_record_thread(void *param)
   * @note   Reused by both the initial start-up and the hotplug re-init path.
   *         usbh_start() is issued only after every class driver is registered,
   *         so the Phase-1 match sees both drivers and enumeration can proceed.
-  * @retval RTK_SUCCESS on success, other HAL_Status code on failure (all partial resources rolled back)
+  * @retval RTK_SUCCESS on success, the error code of the failed step otherwise (all partial resources rolled back)
   */
 static int usbh_composite_init_stack(void)
 {
@@ -1292,10 +1274,9 @@ exit_usbh_init:
   * @brief  Tear down the USB host stack, in the reverse order of
   *         usbh_composite_init_stack(): TRX -> classes -> core.
   * @note   The only sequence of release calls in this example lives here.
-  * @retval RTK_SUCCESS once the stack is down, -RTK_ERR_IO when a lock could not be taken:
-  *         the stack is then left up, as a worker may still be inside a class API
+  * @retval None
   */
-static int usbh_composite_deinit_stack(void)
+static void usbh_composite_deinit_stack(void)
 {
 	/* Announce the teardown BEFORE contending for the locks, so a worker inside a
 	   playback or capture loop gives up its round instead of re-taking a lock
@@ -1304,22 +1285,10 @@ static int usbh_composite_deinit_stack(void)
 
 	/* All three locks, always in this order (play, record, ctrl). The workers and
 	   the shell each take exactly one, never two, so a fixed order here is enough
-	   to rule out a cycle. */
-	if (rtos_mutex_take(usbh_comp_play_mutex, RTOS_MAX_TIMEOUT) != RTK_SUCCESS) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Play lock fail\n");
-		return -RTK_ERR_IO;
-	}
-	if (rtos_mutex_take(usbh_comp_record_mutex, RTOS_MAX_TIMEOUT) != RTK_SUCCESS) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Record lock fail\n");
-		rtos_mutex_give(usbh_comp_play_mutex);
-		return -RTK_ERR_IO;
-	}
-	if (rtos_mutex_take(usbh_comp_ctrl_mutex, RTOS_MAX_TIMEOUT) != RTK_SUCCESS) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Ctrl lock fail\n");
-		rtos_mutex_give(usbh_comp_record_mutex);
-		rtos_mutex_give(usbh_comp_play_mutex);
-		return -RTK_ERR_IO;
-	}
+	   to rule out a cycle. An infinite wait from task context does not fail. */
+	rtos_mutex_take(usbh_comp_play_mutex, RTOS_MAX_TIMEOUT);
+	rtos_mutex_take(usbh_comp_record_mutex, RTOS_MAX_TIMEOUT);
+	rtos_mutex_take(usbh_comp_ctrl_mutex, RTOS_MAX_TIMEOUT);
 	/* Close the gate under the locks: no class API call is in flight here, and any
 	   later one gives up on the cleared flag. */
 	usbh_comp_stack_ready = 0U;
@@ -1332,8 +1301,6 @@ static int usbh_composite_deinit_stack(void)
 	rtos_mutex_give(usbh_comp_ctrl_mutex);
 	rtos_mutex_give(usbh_comp_record_mutex);
 	rtos_mutex_give(usbh_comp_play_mutex);
-
-	return RTK_SUCCESS;
 }
 
 /**
@@ -1402,15 +1369,20 @@ static void example_usbh_composite_hotplug_thread(void *param)
 				/* Stop requested: the stack is still up, the stop tears it down */
 				break;
 			}
+			if (usbh_comp_keep_stack != 0U) {
+				/* The core resets the device and enumerates it again, or waits for a replug: the
+				   stack is kept, the UAC setup callback restarts play and record */
+				usbh_comp_keep_stack = 0U;
+				RTK_LOGS(TAG, RTK_LOG_INFO, "Reset, stack kept\n");
+				continue;
+			}
 			hotplug_count++;
 			RTK_LOGS(TAG, RTK_LOG_INFO, "\n========== Hotplug #%d ==========\n", hotplug_count);
 
 			rtos_time_delay_ms(200);
 
-			/* Cleanup USB resources. On a failure the stack stays up: leave it to the stop */
-			if (usbh_composite_deinit_stack() != RTK_SUCCESS) {
-				break;
-			}
+			/* Cleanup USB resources */
+			usbh_composite_deinit_stack();
 
 			rtos_time_delay_ms(100);
 			RTK_LOGS(TAG, RTK_LOG_INFO, "Free heap: 0x%x\n", rtos_mem_get_free_heap_size());
@@ -1568,7 +1540,9 @@ static int usbh_comp_start(void)
 	}
 	workers++;
 
-	rtos_time_delay_ms(1000);
+#if CONFIG_USBH_COMP_HID_UAC_GPIO_POWER_CTRL
+	gpio_init();
+#endif
 
 	/* Initialize USB host stack */
 	ret = usbh_composite_init_stack();
@@ -1601,12 +1575,7 @@ static int usbh_comp_start(void)
 
 #if CONFIG_USBH_COMP_HID_UAC_HOTPLUG
 deinit_stack_exit:
-	if (usbh_composite_deinit_stack() != RTK_SUCCESS) {
-		/* The stack is still up and a worker may be on it: keep every resource, the app
-		   stays not idle as for a join timeout below */
-		usbh_comp_app.state = USB_APP_STATE_STOPPING;
-		return -RTK_ERR_IO;
-	}
+	usbh_composite_deinit_stack();
 #endif
 
 stop_workers_exit:
@@ -1882,20 +1851,30 @@ static int usbh_composite_vol_change(u8 mode, u8 val, u8 *dir, u8 *vol)
 }
 
 /**
-  * @brief  Physically power-cycle the attached USB device via the power-control
-  *         GPIO: drop power for 500 ms, then restore it. This forces a real
-  *         detach/attach so the hot-plug re-enumeration path can be exercised.
+  * @brief  Have the host core power-cycle the attached USB device through VBUS,
+  *         the recovery it falls back on for a device no longer answering a port
+  *         reset. The device drops off the bus and is enumerated again; the stack
+  *         is kept, see usbh_comp_keep_stack.
   *         Only available when CONFIG_USBH_COMP_HID_UAC_GPIO_POWER_CTRL is enabled.
-  * @retval RTK_SUCCESS, or -RTK_ERR_BADARG when GPIO power control is not built in
+  * @retval RTK_SUCCESS if the power cycle was scheduled, an error otherwise
   */
 static int usbh_hotplug_test(void)
 {
 #if CONFIG_USBH_COMP_HID_UAC_GPIO_POWER_CTRL
-	gpio_power_trigger(0);
-	rtos_time_delay_ms(500);
-	gpio_power_trigger(1);
+	int ret;
 
-	return RTK_SUCCESS;
+	/* Under the ctrl lock, so a hotplug teardown can not deinit the core under this call */
+	if (usbh_comp_lock(usbh_comp_ctrl_mutex) != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Stack not ready\n");
+		return -RTK_ERR_IO;
+	}
+	ret = usbh_power_cycle();
+	usbh_comp_unlock(usbh_comp_ctrl_mutex);
+	if (ret != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "VBUS cycle fail %d\n", ret);
+	}
+
+	return ret;
 #else
 	RTK_LOGS(TAG, RTK_LOG_ERROR, "Not support\n");
 
@@ -1935,7 +1914,7 @@ static void usbh_composite_hid_cmd_usage(void)
 	RTK_LOGS(TAG, RTK_LOG_INFO, "  mute,<0|1>             Mute the selected stream, 1: mute, 0: unmute\n");
 	RTK_LOGS(TAG, RTK_LOG_INFO, "  vol,<0..100|up|down>   Volume of the selected stream in percent, or step it by %d; start value %d\n",
 			 CONFIG_USBH_COMP_HID_UAC_VOLUME_STEP, USBH_COMP_HID_UAC_VOLUME_INIT);
-	RTK_LOGS(TAG, RTK_LOG_INFO, "  hotplug                Power-cycle the device via GPIO, needs GPIO power control\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "  hotplug                Power-cycle the device via VBUS, needs GPIO power control\n");
 	RTK_LOGS(TAG, RTK_LOG_INFO, "  help                   Print this help\n");
 	RTK_LOGS(TAG, RTK_LOG_INFO, "mute/vol need an attached and set up device\n");
 }
@@ -2049,13 +2028,7 @@ static int usbh_composite_hid_cmd(u16 argc, u8 *argv[])
 /* AT entry: argv[0] is reserved by the AT parser and argv[1] holds the first parameter */
 static void usbh_composite_hid_cmd_at(u16 argc, char **argv)
 {
-	int ret = -RTK_ERR_IO;
-
-	/* Not running: the shell must not reach a stack that is down or being torn down.
-	   mute/vol also re-check usbh_comp_stack_ready under the ctrl lock. */
-	if (usbh_comp_app.state == USB_APP_STATE_RUNNING) {
-		ret = usbh_composite_hid_cmd((argc != 0U) ? (argc - 1U) : 0U, (u8 **)&argv[1]);
-	}
+	int ret = usbh_composite_hid_cmd((argc != 0U) ? (argc - 1U) : 0U, (u8 **)&argv[1]);
 
 	if (ret == RTK_SUCCESS) {
 		at_printf(ATCMD_OK_END_STR);
@@ -2074,11 +2047,6 @@ static void usbh_composite_hid_cmd_at(u16 argc, char **argv)
 int example_usbh_composite_hid_uac_start(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "USBH HID+UAC comp demo start\n");
-
-#if CONFIG_USBH_COMP_HID_UAC_GPIO_POWER_CTRL
-	/* As the standalone entry does, so the hotplug command can power-cycle the device */
-	gpio_init();
-#endif
 
 	return usbh_comp_start();
 }
@@ -2108,9 +2076,8 @@ int example_usbh_composite_hid_uac_stop(void)
 	}
 
 	/* Every worker is gone. The stack is down already if the hotplug thread left mid-rebuild. */
-	if ((usbh_comp_stack_ready != 0U) && (usbh_composite_deinit_stack() != RTK_SUCCESS)) {
-		/* Stack still up: keep everything, the app stays STOPPING */
-		return -RTK_ERR_IO;
+	if (usbh_comp_stack_ready != 0U) {
+		usbh_composite_deinit_stack();
 	}
 	usbh_comp_free_resource();
 	usb_app_ctx_end(&usbh_comp_app);
@@ -2140,14 +2107,4 @@ void example_usbh_composite_hid_uac(void)
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create USBH HID+UAC comp thread fail\n");
 	}
 
-#if CONFIG_USBH_COMP_HID_UAC_GPIO_POWER_CTRL
-	/* Bring up the device power-control GPIO so the `uach hotplug` command can power-cycle the device */
-	gpio_init();
-#endif
 }
-
-/*
-uach init record/playback
-uach mute 1/0     # set mute, then sync GET_CUR(MUTE) to verify the device accepted it
-uach vol down/up  # adjust volume, then sync GET_CUR(VOLUME) to verify
- */

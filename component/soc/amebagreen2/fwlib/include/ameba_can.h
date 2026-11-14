@@ -917,7 +917,6 @@ void CAN_MsgBufRxDoneStatusClear(CAN_TypeDef *CANx, u32 MsgBufIdx);
 void CAN_TxMsgTriggerCmd(CAN_TypeDef *CANx, u32 State);
 void CAN_TxMsgTriggerConfig(CAN_TypeDef *CANx, u32 CloseOffset, u32 Begin);
 
-void CAN_RXDMAConfig(CAN_TypeDef *CANx, u32 Owner, u32 RxDmaBurstSize);
 void CAN_RXDMACmd(CAN_TypeDef *CANx, u32 NewState);
 u32 CAN_GetRxDmaData(CAN_TypeDef *CANx);
 

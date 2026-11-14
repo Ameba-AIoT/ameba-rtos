@@ -73,10 +73,15 @@ QUERY_DATA_OFFSET_FLASH_TARGETS = 60
 QUERY_DATA_OFFSET_FLASH_CAPACITY = 61
 QUERY_DATA_OFFSET_WIFI_MAC = 71
 QUERY_DATA_OFFSET_UUID = 77
+# CONFIG config[2] bit0: request the flashloader to re-initialize SPIC with the other
+# flash type (NOR <-> NAND), checked by the flash info of the next QUERY. Since CmdSetVersion 2.2
+CONFIG_AUTO_DETECT_FLASH_TYPE_EN = 0x01
 
 # Read otp logical map time:26ms, physical map time: 170ms
 # Program otp logical map time: 7ms
 OTP_READ_TIMEOUT_IN_SECONDS = 10
+# Delay between an OTP write request and its SENSE
+OTP_WRITE_DELAY_IN_SECONDS = 0.05
 
 
 class FloaderHandler(object):
@@ -88,9 +93,12 @@ class FloaderHandler(object):
         self.setting = ameba_obj.setting
         super().__init__()
 
-    def send_request(self, request, length, timeout, is_sync=True):
+    def send_request(self, request, length, timeout, is_sync=True, full_timeout=None):
         ret = ErrType.SYS_UNKNOWN
         response_bytes = None
+        # A frame rejected with ERR_FULL (frame buffer full) was not queued by the floader, so it is resent
+        # until the floader drains a slot (it may be erasing a block for seconds), without using up the retries
+        full_deadline = time.monotonic() + (timeout if full_timeout is None else full_timeout)
 
         len_l = length & 0xFF
         len_h = (length >> 8) & 0xFF
@@ -162,20 +170,24 @@ class FloaderHandler(object):
                         ret = ret_byte
                         self.logger.debug(f"Negative response 0x{ret_byte.hex()}: ")
                         if ret_byte[0] == ErrType.DEV_FULL.value:
-                            time.sleep(self.setting.request_retry_interval_second)
+                            ret = ErrType.DEV_FULL
+                            if time.monotonic() < full_deadline:
+                                retry -= 1
                     else:
                         ret = ErrType.SYS_PROTO
                         self.logger.debug(f"Unexpected response opcode {ret_byte.hex()}")
                 else:
                     if ret_byte[0] == ACK_BUF_FULL:
-                        # Frame was accepted (queue full). Break out as success.
+                        # Frame accepted, but it took the last free slot: let the floader drain first
                         self.logger.debug(f"ACK: Rx buffer full (frame accepted)")
                         ret = ErrType.OK
-                    elif ret_byte[0] == 0xE4:
-                        # FIFO overflow — frame was NOT processed. Must retry (do not break).
-                        self.logger.debug(f"ERR_FULL (0xE4): UART FIFO overflow, retrying")
                         time.sleep(self.setting.request_retry_interval_second)
-                        # Leave ret as non-OK so the while loop retries the frame
+                    elif ret_byte[0] == ErrType.DEV_FULL.value:
+                        # Frame NOT accepted (frame buffer full, or UART FIFO overflow): resend the same frame
+                        self.logger.debug(f"ERR_FULL (0xE4): frame rejected, retrying")
+                        ret = ErrType.DEV_FULL
+                        if time.monotonic() < full_deadline:
+                            retry -= 1
                     elif ret_byte[0] == ACK_BUF_EMPTY:
                         self.logger.debug(f"Response: ACK")
                         ret = ErrType.OK
@@ -221,7 +233,7 @@ class FloaderHandler(object):
                     elif (op_code is not None) and (sense_status.op_code != op_code):
                         ret = ErrType.SYS_PROTO
                         self.logger.error(
-                            f"Sense protocol error: expect opcode-data {op_code.hex()}-{hex(data)}, get {hex(sense_status.op_code)}-{hex(sense_status.data)}")
+                            f"Sense protocol error: expect opcode-data {hex(op_code)}-{data if data is None else hex(data)}, get {hex(sense_status.op_code)}-{hex(sense_status.data)}")
                     elif (data is not None) and sense_status.data != data:
                         # Silent-loss guard: when a WRITE frame is dropped (e.g. UART FIFO
                         # overflow on the device), floader's last-processed addr lags
@@ -341,7 +353,12 @@ class FloaderHandler(object):
 
         return ret, device_info
 
-    def config(self, configs):
+    def config(self, configs, auto_detect_flash_type=False):
+        if auto_detect_flash_type:
+            # config[2] is the low word of ProgramConfig2
+            word = int.from_bytes(configs[1], byteorder="little") | CONFIG_AUTO_DETECT_FLASH_TYPE_EN
+            configs = [configs[0], word.to_bytes(8, byteorder="little")]
+
         config_data = [(CONFIG)]
 
         config_data.append(configs[0][0])
@@ -397,7 +414,8 @@ class FloaderHandler(object):
         write_array += src[:size]
 
         self.logger.debug(f"WRITE: addr={hex(addr)}, size={size}, mem_type={mem_type}, need_sense={need_sense}")
-        ret, _ = self.send_request(write_array, len(write_array), self.setting.write_response_timeout_in_second, is_sync=False)
+        ret, _ = self.send_request(write_array, len(write_array), self.setting.write_response_timeout_in_second, is_sync=False,
+                                   full_timeout=timeout)
         if ret == ErrType.OK:
             if need_sense:
                 ret, sense_ack = self.sense(timeout, op_code=WRITE, data=addr)
@@ -667,11 +685,18 @@ class FloaderHandler(object):
         request_data.extend(list(size.to_bytes(4, byteorder="little")))
 
         for idx in range(size):
-            request_data.append(data[address + idx])
+            request_data.append(data[idx])
 
         request_bytes = bytearray(request_data)
 
         ret, _ = self.send_request(request_bytes, len(request_bytes), self.setting.async_response_timeout_in_second, is_sync=False)
+        if ret != ErrType.OK:
+            return ret
+
+        # The ACK only means the frame is received: the floader programs the OTP (and prints
+        # its OTP log) afterwards, so wait before the SENSE, then check the execute status
+        time.sleep(OTP_WRITE_DELAY_IN_SECONDS)
+        ret, _ = self.sense(self.setting.sync_response_timeout_in_second, op_code=cmd, data=0)
 
         return ret
 
@@ -699,9 +724,8 @@ class FloaderHandler(object):
         return ret
 
     def otp_write_physical_byte(self, address, byte_value):
-        """Write a single physical-OTP byte directly (OTP_WRAW), without the
-        address-relative indexing that otp_write_map() expects of its buffer.
-        OTP programs 1->0 only, so callers wanting to change individual bits must
+        """Write a single physical-OTP byte directly (OTP_WRAW) and wait for its
+        SENSE. OTP programs 1->0 only, so callers wanting to change individual bits must
         read the byte first and pass the full intended value (see
         burn_security_enable_bit)."""
         self.logger.debug(f"OTP_WRAW: addr={hex(address)}, byte=0x{byte_value:02x}")

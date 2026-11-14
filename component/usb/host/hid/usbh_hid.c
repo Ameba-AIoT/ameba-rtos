@@ -764,11 +764,10 @@ static int usbh_hid_parse_hid_report_desc(u8 *pbuf, u16 buf_length)
 	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n");
 #endif
 
-	/* Parse outside the lock, then publish the result and the gate in one step: the parse
-	 * thread on another core never sees half-filled caps with hid_ctrl set */
-	usbh_hid_parse_hid_report_descriptor(pbuf, buf_length, &(hid->caps_build));
+	/* hid_ctrl is 0 while report_desc is NULL, so the parse thread does not read vol_caps: fill it in place,
+	 * then open the gate under the lock, which makes the caps visible to the other core first */
+	usbh_hid_parse_hid_report_descriptor(pbuf, buf_length, &(hid->vol_caps));
 	usb_os_enter_critical();
-	hid->vol_caps = hid->caps_build;
 	hid->hid_ctrl = 1U;
 	usb_os_exit_critical();
 
@@ -825,10 +824,6 @@ static int usbh_hid_parse_details(usbh_itf_data_t *itf_data)
 
 	hid->itf_idx = desc[2];
 	hid->itf_alt_idx = desc[3];
-	/* Number of alt settings is already computed by the USB core when it
-	 * built itf_data_array (see usbh_hcd_xfer.c). Use it directly instead
-	 * of re-counting INTERFACE descriptors here. */
-	hid->alt_setting_count = itf_data->alt_setting_cnt;
 
 	while (desc != NULL) {
 		/* Validate the descriptor at the *current* offset before dereferencing
@@ -980,49 +975,30 @@ static int usbh_hid_handle_report_desc(usb_host_t *host)
 	int ret = RTK_SUCCESS;
 
 	if ((hid->pipe_in.ep_addr != 0U) && (hid->report_desc == NULL)) {
-		//1. set itf
-		//2. set idle
-		//3. get report desc
-		if (hid->report_desc_status == USBH_HID_REPORT_SET_ALT) {
-			ret = usbh_ctrl_set_interface(host, hid->itf_idx, hid->itf_alt_idx);
-			if (ret == RTK_SUCCESS) {
-				hid->report_desc_status = USBH_HID_REPORT_GET_DESC;
-				ret = -RTK_ERR_BUSY;
-			} else if (ret != -RTK_ERR_BUSY) {
-				/* SET_INTERFACE failed but the report descriptor fetch below can
-				 * still succeed, so the sequence is in progress: report BUSY
-				 * rather than leaking the error to setup(), which the core would
-				 * read as a terminal failure of the whole HID class. */
-				RTK_LOGS(TAG, RTK_LOG_ERROR, "HID set alt err %d\n", ret);
-				hid->report_desc_status = USBH_HID_REPORT_GET_DESC;
-				ret = -RTK_ERR_BUSY;
+		/* No SET_INTERFACE first: SET_CONFIGURATION already put the interface in its default alt 0 (Ref USB 2.0
+		 * 9.1.1.5, 9.6.5), which is the setting parsed */
+		ret = usbh_hid_process_get_hid_report_desc(host);
+		if (ret == RTK_SUCCESS) {
+			hid->report_desc = (hid->report_desc_buf != NULL) ? hid->report_desc_buf : hid->hid_ctrl_buf;
+			/* hid_ctrl is set by the parser together with the caps it publishes */
+			/* A short reply leaves stale bytes past what was received: parse only those received */
+			rx_len = usbh_get_last_ctrl_in_size(host);
+			if (rx_len > hid->hid_desc.wDescriptorLength) {
+				rx_len = hid->hid_desc.wDescriptorLength;
 			}
-		} else if (hid->report_desc_status == USBH_HID_REPORT_GET_DESC) {
-			ret = usbh_hid_process_get_hid_report_desc(host);
-			if (ret == RTK_SUCCESS) {
-				hid->report_desc_status = USBH_HID_REPORT_MAX;
-				//parse report desc
-				hid->report_desc = (hid->report_desc_buf != NULL) ? hid->report_desc_buf : hid->hid_ctrl_buf;
-				/* hid_ctrl is set by the parser together with the caps it publishes */
-				/* A short reply leaves stale bytes past what was received: parse only those received */
-				rx_len = usbh_get_last_ctrl_in_size(host);
-				if (rx_len > hid->hid_desc.wDescriptorLength) {
-					rx_len = hid->hid_desc.wDescriptorLength;
-				}
-				if (rx_len == 0U) {
-					/* Nothing to parse: keep the gate closed, as for a refused GET_DESCRIPTOR */
-					RTK_LOGS(TAG, RTK_LOG_WARN, "Empty report desc, HID events off\n");
-				} else {
-					usbh_hid_parse_hid_report_desc(hid->report_desc, (u16)rx_len);
-				}
-				/* Parsed into caps: a descriptor of its own buffer is not needed any more */
-				usbh_hid_free_report_desc_buf(hid);
-			} else if (ret != -RTK_ERR_BUSY) {
-				RTK_LOGS(TAG, RTK_LOG_ERROR, "HID get report err %d, no support\n", ret);
-				usbh_hid_free_report_desc_buf(hid);
-				hid->hid_ctrl = 0;
-				ret = RTK_SUCCESS;
+			if (rx_len == 0U) {
+				/* Nothing to parse: keep the gate closed, as for a refused GET_DESCRIPTOR */
+				RTK_LOGS(TAG, RTK_LOG_WARN, "Empty report desc, HID events off\n");
+			} else {
+				usbh_hid_parse_hid_report_desc(hid->report_desc, (u16)rx_len);
 			}
+			/* Parsed into caps: a descriptor of its own buffer is not needed any more */
+			usbh_hid_free_report_desc_buf(hid);
+		} else if (ret != -RTK_ERR_BUSY) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "HID get report err %d, no support\n", ret);
+			usbh_hid_free_report_desc_buf(hid);
+			hid->hid_ctrl = 0;
+			ret = RTK_SUCCESS;
 		}
 	} else {
 		hid->hid_ctrl = 0;
@@ -1138,7 +1114,10 @@ static void usbh_hid_process_halt(usb_host_t *host)
 		hid->halt_retry_cnt++;
 		if (hid->halt_retry_cnt >= USBH_HID_HALT_RETRY_MAX_CNT) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "EP%02x clear halt fail, re-enum\n", hid->pipe_in.ep_addr);
-			(void)usbh_reenumerate();
+			ret = usbh_reenumerate();
+			if (ret != RTK_SUCCESS) {
+				RTK_LOGS(TAG, RTK_LOG_ERROR, "Re-enum err %d\n", ret);
+			}
 		} else {
 			usbh_notify(host, 0U, &usbh_hid_driver);
 		}
@@ -1183,12 +1162,6 @@ static int usbh_hid_attach(usb_host_t *host)
 			return -RTK_ERR_BADARG;
 		}
 		pipe = &(hid->pipe_in);
-		/* SET_INTERFACE is only required when more than one alt setting exists.
-		 * For the typical single-alt HID interface, skip it to avoid an unneeded
-		 * control transfer to devices that STALL it. */
-		hid->report_desc_status = (hid->alt_setting_count > 1U) ? USBH_HID_REPORT_SET_ALT
-								  : USBH_HID_REPORT_GET_DESC;
-
 		if (usbh_open_pipe(host, pipe, &(hid->ep_desc_in), &usbh_hid_driver) != RTK_SUCCESS) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Open intr in pipe fail\n");
 			return -RTK_ERR_BADARG;
@@ -1232,10 +1205,9 @@ static void usbh_hid_detach(usb_host_t *host)
 	hid->halt_pending = 0U;
 	hid->halt_retry_cnt = 0U;
 
-	/* Close the gate and clear the caps in one step, see usbh_hid_parse_hid_report_desc() */
+	/* Close the gate under the lock, so no caps snapshot is left half taken, see usbh_hid_parse_hid_report_desc() */
 	usb_os_enter_critical();
 	hid->hid_ctrl = 0U;
-	usb_os_memset(&(hid->vol_caps), 0, sizeof(hid->vol_caps));
 	usb_os_exit_critical();
 	/* A fetch the device left mid-way */
 	usbh_hid_free_report_desc_buf(hid);
@@ -1245,7 +1217,6 @@ static void usbh_hid_detach(usb_host_t *host)
 	usb_os_memset(&(hid->ep_desc_out), 0, sizeof(hid->ep_desc_out));
 	hid->itf_idx = 0;
 	hid->itf_alt_idx = 0;
-	hid->alt_setting_count = 0;
 	/* The parse thread keeps consuming on another core under SMP: reset under the lock it
 	   dequeues with, so it never writes back a head index from before the reset. The producer,
 	   usbh_hid_in_process(), runs in this same host task. */

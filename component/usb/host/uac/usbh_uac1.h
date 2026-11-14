@@ -163,13 +163,11 @@ typedef struct {
 } usbh_uac_buf_ctrl_t;
 
 /**
-  * @brief  Audio Volume Status Information.
+  * @brief  Volume range of one Feature Unit channel, read at attach.
   */
 typedef struct {
-	s16 volume;    /**< Current volume in device units (1/256 dB steps; 0x8000 = silence) */
-	s16 vol_min;   /**< Minimum volume supported by the device */
-	s16 vol_max;   /**< Maximum volume supported by the device */
-	u8  mute;      /**< Current mute state (1: Muted, 0: Unmuted) */
+	s16 vol_min;   /**< Minimum volume supported by the device, in 1/256 dB steps */
+	s16 vol_max;   /**< Maximum volume supported by the device, in 1/256 dB steps */
 	u8  range_valid; /**< 1 once vol_min/vol_max have been successfully read at attach */
 } usbh_uac_volume_info_t;
 
@@ -234,9 +232,9 @@ typedef struct {
 	void (*deinit)(void);                             /**< Called once when the UAC driver is de-initialized */
 	void (*attached)(void);                           /**< Called when a UAC device is enumerated and pipes are opened */
 	void (*detached)(void);                           /**< Called when a UAC device is removed */
-	void (*setup)(void);                              /**< Called on each USB Setup-stage transaction */
-	void (*transmitted)(usbh_urb_state_t state);      /**< Reserved: registered by application but not currently invoked by the driver */
-	void (*received)(u8 *buf, u32 len);               /**< Reserved: registered by application but not currently invoked by the driver */
+	void (*setup)(void);                              /**< Called once the class setup (volume range scan, AS interfaces at alt 0) is done */
+	void (*transmitted)(usbh_urb_state_t state);      /**< Reserved, never called by the driver: playback progress is paced by usbh_uac_write() */
+	void (*received)(u8 *buf, u32 len);               /**< Reserved, never called by the driver: recorded data is taken with usbh_uac_read() */
 } usbh_uac_cb_t;
 
 /**
@@ -275,7 +273,6 @@ typedef struct {
 	u8 *ringbuf_partial_write_buf;        /**< Staging buffer that accumulates partial writes until a full packet is ready */
 
 	/* State machines */
-	__IO u8 xfer_state;        /**< Isochronous data transfer state (UAC_STATE_IDLE / UAC_STATE_TRANSFER) */
 	__IO u8 ctrl_state;        /**< USB control transfer state machine state (UAC_STATE_CTRL_IDLE, SET_ALT, SET_FREQ, ...) */
 	__IO u8 init_state;        /**< Initialization sequence state (UAC_INIT_OUT_GET_FU -> UAC_INIT_IN_GET_FU -> UAC_INIT_OUT_SET_ITF -> UAC_INIT_DONE) */
 	u8 cur_dir;                    /**< Direction being operated on by the current ctrl_state sequence */
@@ -300,8 +297,6 @@ typedef struct {
 	usbh_uac_channel_t isoc_out;          /**< OUT channel state (Playback/Speaker) */
 	usbh_uac_channel_t isoc_in;           /**< IN channel state (Record/Microphone) */
 	usbh_uac_ac_itf_info_t ac_isoc_desc;  /**< Audio Control interface topology (Feature Units + Terminals) */
-	__IO u8 alt_applied;                  /**< 1 once the device accepted SET_INTERFACE of the running set_alt_setting;
-	                                           placed here to reuse the tail padding of ac_isoc_desc */
 
 #if USBH_UAC_DEBUG
 	rtos_task_t dump_status_task;         /**< Handle for the periodic status-dump debug task. */

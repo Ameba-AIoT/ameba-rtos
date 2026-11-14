@@ -40,15 +40,19 @@ void fault_status_handle(struct bt_mesh_health_cli *cli, uint16_t addr,
 	rtk_bt_evt_t *p_evt = NULL;
 	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_HEALTH_CLIENT_MODEL, RTK_BT_MESH_HEALTH_CLIENT_MODEL_FAULT_STATUS,
 								sizeof(rtk_bt_mesh_health_client_status_t) + fault_count);
-	rtk_bt_mesh_health_client_status_t status;
-	status.src = addr;
-	status.test_id = test_id;
-	status.company_id = cid;
-	status.fault_array_len = fault_count;
-	status.fault_array = faults;
-	memcpy(p_evt->data, &status, sizeof(rtk_bt_mesh_health_client_status_t));
-	memcpy((uint8_t *)p_evt->data + sizeof(rtk_bt_mesh_health_client_status_t), faults, fault_count);
-	rtk_bt_evt_indicate(p_evt, NULL);
+	if (p_evt) {
+		rtk_bt_mesh_health_client_status_t status;
+		status.src = addr;
+		status.test_id = test_id;
+		status.company_id = cid;
+		status.fault_array_len = fault_count;
+		status.fault_array = faults;
+		memcpy(p_evt->data, &status, sizeof(rtk_bt_mesh_health_client_status_t));
+		memcpy((uint8_t *)p_evt->data + sizeof(rtk_bt_mesh_health_client_status_t), faults, fault_count);
+		rtk_bt_evt_indicate(p_evt, NULL);
+	} else {
+		BT_LOGE("[%s] Create event fail\r\n", __func__);
+	}
 }
 
 void current_status_handle(struct bt_mesh_health_cli *cli, uint16_t addr,
@@ -59,15 +63,19 @@ void current_status_handle(struct bt_mesh_health_cli *cli, uint16_t addr,
 	rtk_bt_evt_t *p_evt = NULL;
 	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_HEALTH_CLIENT_MODEL, RTK_BT_MESH_HEALTH_CLIENT_MODEL_CURT_STATUS,
 								sizeof(rtk_bt_mesh_health_client_status_t) + fault_count);
-	rtk_bt_mesh_health_client_status_t status;
-	status.src = addr;
-	status.test_id = test_id;
-	status.company_id = cid;
-	status.fault_array_len = fault_count;
-	status.fault_array = faults;
-	memcpy(p_evt->data, &status, sizeof(rtk_bt_mesh_health_client_status_t));
-	memcpy((uint8_t *)p_evt->data + sizeof(rtk_bt_mesh_health_client_status_t), faults, fault_count);
-	rtk_bt_evt_indicate(p_evt, NULL);
+	if (p_evt) {
+		rtk_bt_mesh_health_client_status_t status;
+		status.src = addr;
+		status.test_id = test_id;
+		status.company_id = cid;
+		status.fault_array_len = fault_count;
+		status.fault_array = faults;
+		memcpy(p_evt->data, &status, sizeof(rtk_bt_mesh_health_client_status_t));
+		memcpy((uint8_t *)p_evt->data + sizeof(rtk_bt_mesh_health_client_status_t), faults, fault_count);
+		rtk_bt_evt_indicate(p_evt, NULL);
+	} else {
+		BT_LOGE("[%s] Create event fail\r\n", __func__);
+	}
 }
 
 void period_status_handle(struct bt_mesh_health_cli *cli, uint16_t addr,
@@ -78,8 +86,12 @@ void period_status_handle(struct bt_mesh_health_cli *cli, uint16_t addr,
 	rtk_bt_evt_t *p_evt = NULL;
 	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_HEALTH_CLIENT_MODEL, RTK_BT_MESH_HEALTH_CLIENT_MODEL_PERIOD_STATUS,
 								sizeof(rtk_bt_mesh_health_client_status_period_t));
-	memcpy(p_evt->data, &divisor, sizeof(rtk_bt_mesh_health_client_status_period_t));
-	rtk_bt_evt_indicate(p_evt, NULL);
+	if (p_evt) {
+		memcpy(p_evt->data, &divisor, sizeof(rtk_bt_mesh_health_client_status_period_t));
+		rtk_bt_evt_indicate(p_evt, NULL);
+	} else {
+		BT_LOGE("[%s] Create event fail\r\n", __func__);
+	}
 }
 
 void attention_status_handle(struct bt_mesh_health_cli *cli, uint16_t addr,
@@ -90,8 +102,12 @@ void attention_status_handle(struct bt_mesh_health_cli *cli, uint16_t addr,
 	rtk_bt_evt_t *p_evt = NULL;
 	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_HEALTH_CLIENT_MODEL, RTK_BT_MESH_HEALTH_CLIENT_MODEL_ATTN_STATUS,
 								sizeof(rtk_bt_mesh_health_client_status_attention_t));
-	memcpy(p_evt->data, &attention, sizeof(rtk_bt_mesh_health_client_status_attention_t));
-	rtk_bt_evt_indicate(p_evt, NULL);
+	if (p_evt) {
+		memcpy(p_evt->data, &attention, sizeof(rtk_bt_mesh_health_client_status_attention_t));
+		rtk_bt_evt_indicate(p_evt, NULL);
+	} else {
+		BT_LOGE("[%s] Create event fail\r\n", __func__);
+	}
 }
 
 struct bt_mesh_health_cli health_cli = {
@@ -357,7 +373,7 @@ static void attention_off(const struct bt_mesh_model *mod)
 	BT_LOGA("[%s] Enter\r\n", __func__);
 }
 
-static uint8_t fault_store[HEALTH_FAULT_MAX_NUM + 2];
+static uint8_t fault_store[HEALTH_FAULT_ARRAY_LEN + 2];
 static int health_fault_get_reg(const struct bt_mesh_model *model, uint16_t company_id,
 								uint8_t *test_id, uint8_t *faults,
 								uint8_t *fault_count)
@@ -374,11 +390,15 @@ static int health_fault_get_reg(const struct bt_mesh_model *model, uint16_t comp
 	rtk_bt_mesh_health_server_fault_get_t *fault_get;
 	rtk_bt_evt_t *p_evt = NULL;
 	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_HEALTH_SERVER_MODEL, RTK_BT_MESH_HEALTH_SERVER_MODEL_FAULT_GET,
-								sizeof(rtk_bt_mesh_health_server_fault_get_t) + HEALTH_FAULT_MAX_NUM + 2);
-	fault_get = (rtk_bt_mesh_health_server_fault_get_t *)p_evt->data;
-	fault_get->company_id = company_id;
-	fault_get->fault_array = fault_store;
-	rtk_bt_evt_indicate(p_evt, NULL);
+								sizeof(rtk_bt_mesh_health_server_fault_get_t));
+	if (p_evt) {
+		fault_get = (rtk_bt_mesh_health_server_fault_get_t *)p_evt->data;
+		fault_get->company_id = company_id;
+		fault_get->fault_array = fault_store;
+		rtk_bt_evt_indicate(p_evt, NULL);
+	} else {
+		BT_LOGE("[%s] Create event fail\r\n", __func__);
+	}
 	// fault_store style: 1 byte(length) + 1 byte(test id) + n bytes(faults)
 	// faults length = length - 1
 
@@ -389,7 +409,7 @@ static int health_fault_get_reg(const struct bt_mesh_model *model, uint16_t comp
 	return 0;
 }
 
-static uint8_t fault_clear_status[HEALTH_FAULT_MAX_NUM + 2];
+static uint8_t fault_clear_status[HEALTH_FAULT_ARRAY_LEN + 2];
 static int health_fault_clear(const struct bt_mesh_model *model, uint16_t company_id)
 {
 	(void)model;
@@ -398,18 +418,22 @@ static int health_fault_clear(const struct bt_mesh_model *model, uint16_t compan
 	rtk_bt_mesh_health_server_fault_clear_t *fault_clear;
 	rtk_bt_evt_t *p_evt = NULL;
 	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_HEALTH_SERVER_MODEL, RTK_BT_MESH_HEALTH_SERVER_MODEL_FAULT_CLEAR,
-								sizeof(rtk_bt_mesh_health_server_fault_clear_t) + HEALTH_FAULT_MAX_NUM + 2);
-	fault_clear = (rtk_bt_mesh_health_server_fault_clear_t *)p_evt->data;
-	fault_clear->company_id = company_id;
-	fault_clear->fault_array = fault_clear_status;
-	// fault_store style: 1 byte(length) + 1 byte(test id) + n bytes(faults)
-	// faults length = length - 1
-	rtk_bt_evt_indicate(p_evt, NULL);
+								sizeof(rtk_bt_mesh_health_server_fault_clear_t));
+	if (p_evt) {
+		fault_clear = (rtk_bt_mesh_health_server_fault_clear_t *)p_evt->data;
+		fault_clear->company_id = company_id;
+		fault_clear->fault_array = fault_clear_status;
+		// fault_store style: 1 byte(length) + 1 byte(test id) + n bytes(faults)
+		// faults length = length - 1
+		rtk_bt_evt_indicate(p_evt, NULL);
+	} else {
+		BT_LOGE("[%s] Create event fail\r\n", __func__);
+	}
 
 	return 0;
 }
 
-static uint8_t fault_test_status[HEALTH_FAULT_MAX_NUM + 2];
+static uint8_t fault_test_status[HEALTH_FAULT_ARRAY_LEN + 2];
 static int health_fault_test(const struct bt_mesh_model *model, uint8_t test_id,
 							 uint16_t company_id)
 {
@@ -432,16 +456,20 @@ static int health_fault_test(const struct bt_mesh_model *model, uint8_t test_id,
 	rtk_bt_mesh_health_server_fault_test_t *fault_test;
 	rtk_bt_evt_t *p_evt = NULL;
 	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_HEALTH_SERVER_MODEL, RTK_BT_MESH_HEALTH_SERVER_MODEL_FAULT_TEST,
-								sizeof(rtk_bt_mesh_health_server_fault_test_t) + HEALTH_FAULT_MAX_NUM + 2);
-	fault_test = (rtk_bt_mesh_health_server_fault_test_t *)p_evt->data;
-	fault_test->company_id = company_id;
-	fault_test->test_id = test_id;
-	fault_test->fault_array = fault_test_status;
-	rtk_bt_evt_indicate(p_evt, NULL);
+								sizeof(rtk_bt_mesh_health_server_fault_test_t));
+	if (p_evt) {
+		fault_test = (rtk_bt_mesh_health_server_fault_test_t *)p_evt->data;
+		fault_test->company_id = company_id;
+		fault_test->test_id = test_id;
+		fault_test->fault_array = fault_test_status;
+		rtk_bt_evt_indicate(p_evt, NULL);
+	} else {
+		BT_LOGE("[%s] Create event fail\r\n", __func__);
+	}
 	return 0;
 }
 
-static uint8_t current_store[4 + HEALTH_FAULT_MAX_NUM];
+static uint8_t current_store[4 + HEALTH_FAULT_ARRAY_LEN];
 static int health_fault_get_cur(const struct bt_mesh_model *model, uint8_t *test_id,
 								uint16_t *company_id, uint8_t *faults,
 								uint8_t *fault_count)
@@ -456,9 +484,13 @@ static int health_fault_get_cur(const struct bt_mesh_model *model, uint8_t *test
 
 	rtk_bt_evt_t *p_evt = NULL;
 	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_HEALTH_SERVER_MODEL, RTK_BT_MESH_HEALTH_SERVER_MODEL_CURRENT_GET,
-								4 + HEALTH_FAULT_MAX_NUM);
-	p_evt->data = current_store;
-	rtk_bt_evt_indicate(p_evt, NULL);
+								4 + HEALTH_FAULT_ARRAY_LEN);
+	if (p_evt) {
+		p_evt->data = current_store;
+		rtk_bt_evt_indicate(p_evt, NULL);
+	} else {
+		BT_LOGE("[%s] Create event fail\r\n", __func__);
+	}
 	// current_store style: 1 byte(length) + 1 byte(test id) + 2 byte(company id) + n bytes(faults)
 	// faults length = length - 1
 
@@ -491,20 +523,28 @@ void health_srv_indicate_attention_to_app(uint8_t attn)
 {
 	rtk_bt_evt_t *p_evt = NULL;
 	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_HEALTH_SERVER_MODEL, RTK_BT_MESH_HEALTH_SERVER_MODEL_ATTN_SET, sizeof(rtk_bt_mesh_health_server_attn_set_t));
-	memcpy(p_evt->data, &attn, sizeof(rtk_bt_mesh_health_server_attn_set_t));
-	rtk_bt_evt_indicate(p_evt, NULL);
+	if (p_evt) {
+		memcpy(p_evt->data, &attn, sizeof(rtk_bt_mesh_health_server_attn_set_t));
+		rtk_bt_evt_indicate(p_evt, NULL);
+	} else {
+		BT_LOGE("[%s] Create event fail\r\n", __func__);
+	}
 }
 
 uint8_t health_srv_indicate_attention_from_app(void)
 {
 	rtk_bt_mesh_health_server_attn_get_t *attn_get;
+	uint8_t attn = 0;
 	rtk_bt_evt_t *p_evt = NULL;
 	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_HEALTH_SERVER_MODEL, RTK_BT_MESH_HEALTH_SERVER_MODEL_ATTN_GET,
 								sizeof(rtk_bt_mesh_health_server_attn_get_t));
-	uint8_t attn = 0;
-	attn_get = (rtk_bt_mesh_health_server_attn_get_t *)p_evt->data;
-	attn_get->attn = &attn;
-	rtk_bt_evt_indicate(p_evt, NULL);
+	if (p_evt) {
+		attn_get = (rtk_bt_mesh_health_server_attn_get_t *)p_evt->data;
+		attn_get->attn = &attn;
+		rtk_bt_evt_indicate(p_evt, NULL);
+	} else {
+		BT_LOGE("[%s] Create event fail\r\n", __func__);
+	}
 	return attn;
 }
 
@@ -512,20 +552,28 @@ void health_srv_indicate_period_to_app(uint8_t fast_period_divisor)
 {
 	rtk_bt_evt_t *p_evt = NULL;
 	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_HEALTH_SERVER_MODEL, RTK_BT_MESH_HEALTH_SERVER_MODEL_PERIOD_SET, sizeof(rtk_bt_mesh_health_server_period_set_t));
-	memcpy(p_evt->data, &fast_period_divisor, sizeof(rtk_bt_mesh_health_server_period_set_t));
-	rtk_bt_evt_indicate(p_evt, NULL);
+	if (p_evt) {
+		memcpy(p_evt->data, &fast_period_divisor, sizeof(rtk_bt_mesh_health_server_period_set_t));
+		rtk_bt_evt_indicate(p_evt, NULL);
+	} else {
+		BT_LOGE("[%s] Create event fail\r\n", __func__);
+	}
 }
 
 uint8_t health_srv_indicate_period_from_app(void)
 {
 	rtk_bt_mesh_health_server_period_get_t *period_get;
+	uint8_t fast_period_divisor = 0;
 	rtk_bt_evt_t *p_evt = NULL;
 	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_HEALTH_SERVER_MODEL, RTK_BT_MESH_HEALTH_SERVER_MODEL_PERIOD_GET,
 								sizeof(rtk_bt_mesh_health_server_period_get_t));
-	period_get = (rtk_bt_mesh_health_server_period_get_t *)p_evt->data;
-	uint8_t fast_period_divisor = 0;
-	period_get->fast_period_divisor = &fast_period_divisor;
-	rtk_bt_evt_indicate(p_evt, NULL);
+	if (p_evt) {
+		period_get = (rtk_bt_mesh_health_server_period_get_t *)p_evt->data;
+		period_get->fast_period_divisor = &fast_period_divisor;
+		rtk_bt_evt_indicate(p_evt, NULL);
+	} else {
+		BT_LOGE("[%s] Create event fail\r\n", __func__);
+	}
 	return fast_period_divisor;
 }
 

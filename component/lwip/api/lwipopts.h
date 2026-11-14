@@ -30,10 +30,26 @@ extern unsigned int sys_now(void);
 #define MEM_ALIGNMENT                   4
 /* Internal Memory Pool Sizes */
 #define MEMP_NUM_RAW_PCB                16
+#if defined(CONFIG_LWIP_MAX_UDP_PCBS)
+#define MEMP_NUM_UDP_PCB                CONFIG_LWIP_MAX_UDP_PCBS
+#else
 #define MEMP_NUM_UDP_PCB                16
+#endif
+#if defined(CONFIG_LWIP_MAX_ACTIVE_TCP)
+#define MEMP_NUM_TCP_PCB                CONFIG_LWIP_MAX_ACTIVE_TCP
+#else
 #define MEMP_NUM_TCP_PCB                16
+#endif
+#if defined(CONFIG_LWIP_MAX_LISTENING_TCP)
+#define MEMP_NUM_TCP_PCB_LISTEN         CONFIG_LWIP_MAX_LISTENING_TCP
+#else
 #define MEMP_NUM_TCP_PCB_LISTEN         16
-#define MEMP_NUM_NETCONN                20	//It is recommended not to make adjustments. If adjustments are necessary, avoid using the MQTT and WebSocket functionalities.
+#endif
+#if defined(CONFIG_LWIP_MAX_SOCKETS)
+#define MEMP_NUM_NETCONN                CONFIG_LWIP_MAX_SOCKETS
+#else
+#define MEMP_NUM_NETCONN                20
+#endif
 /* ARP options */
 #define LWIP_ARP                        1
 #define ETHARP_SUPPORT_STATIC_ENTRIES   1
@@ -56,6 +72,11 @@ extern unsigned int sys_now(void);
 #define LWIP_UDP                        1
 /* TCP options */
 #define LWIP_TCP                        1
+#if defined(CONFIG_LWIP_TCP_SACK_OUT)
+#define LWIP_TCP_SACK_OUT               1
+#else
+#define LWIP_TCP_SACK_OUT               0
+#endif
 #define TCP_MSS                         (1500 - 40) //TCP_MSS = (Ethernet MTU - IP header size - TCP header size)
 /* TCP Minimum segment size. (Realtek add) */
 #define TCP_MSS_MIN 536

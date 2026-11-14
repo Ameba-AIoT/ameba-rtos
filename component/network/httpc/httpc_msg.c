@@ -486,14 +486,6 @@ int httpc_response_read_header(struct httpc_conn *conn)
 					ptr ++;
 				}
 
-				if (length_ptr && (conn->response.content_len == 0)) {
-					if (conn->ignore_content_len == 0) {
-						ret = -1;
-						goto exit;
-					} else {
-						httpc_log("WARNING: Content-Length eqauls 0!");
-					}
-				}
 			}
 			// get Transfer-Encoding
 			ptr = conn->response.status + conn->response.status_len;

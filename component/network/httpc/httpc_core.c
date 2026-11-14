@@ -272,15 +272,6 @@ void httpc_setup_debug(uint8_t debug)
 	httpc_debug = debug;
 }
 
-void httpc_enable_ignore_content_len(struct httpc_conn *conn)
-{
-	if (conn == NULL) {
-		httpc_log("ERROR: Invalid null connection handle");
-		return;
-	}
-	conn->ignore_content_len = 1;
-}
-
 void httpc_set_http_1_0_request_used(uint8_t used)
 {
 	if (used) {

@@ -480,8 +480,6 @@ void whc_uart_dev_init(void)
 	/* default enable rx dma */
 	whc_uart_dev_rxdma_init(whc_uart_idx, &whc_uart_priv->UARTRxGdmaInitStruct, WHC_UART_DEV, (IRQ_FUN)whc_uart_dev_rxdma_irq_handler, whc_uart_priv->rx_skb->data,
 							UART_BUFSZ);
-	/* Configure UART RX DMA burst size */
-	UART_RXDMAConfig(WHC_UART_DEV, WHC_UART_RX_BURST_SIZE);
 	UART_ClearRxFifo(WHC_UART_DEV);
 
 	/* todo */

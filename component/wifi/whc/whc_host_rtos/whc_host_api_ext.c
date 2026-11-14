@@ -257,6 +257,10 @@ s32 wifi_ap_del_client(u8 *hwaddr)
 	int ret = 0;
 	u32 param_buf[3];
 
+	if (hwaddr == NULL) {
+		return -RTK_ERR_BADARG;
+	}
+
 	param_buf[0] = (u32)IFACE_PORT1;
 	memcpy((void *)(&param_buf[1]), (void *)hwaddr, 6);
 	whc_host_api_message_send(WHC_API_WIFI_AP_DEL_CLIENT, (u8 *)param_buf, 12, (u8 *)&ret, sizeof(ret));

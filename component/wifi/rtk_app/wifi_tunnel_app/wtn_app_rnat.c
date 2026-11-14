@@ -31,6 +31,9 @@
 
 #ifdef CONFIG_RNAT_EN
 rtos_task_t rnat_ap_start_task_hdl = NULL;
+/* np's latest request. Written by the ipc handler, read by the start thread (single writer, single reader).
+ * wifi_start_ap/wifi_stop_ap have no mutual exclusion: while the start thread is alive it is the only one that stops the ap */
+static volatile u8 rnat_ap_want;
 
 static rnat_ip_info_t g_ap_custom_ip = {
 	.ip = { .addr = PP_HTONL(LWIP_MAKEU32(10, 200, 1, 1)) },
@@ -87,10 +90,16 @@ static void rnat_ap_start_thread(void *param)
 
 	/*step1: check if STA port connected to AP successfully*/
 	while (1) {
+		if (!rnat_ap_want) {
+			goto exit;
+		}
 		if (lwip_check_connectivity(NETIF_WLAN_STA_INDEX) == CONNECTION_VALID) {
 			break;
 		}
 		rtos_time_delay_ms(200);
+	}
+	if (!rnat_ap_want) {
+		goto exit;
 	}
 
 	/* softap already running with the same ssid/password as the STA's connected AP: nothing to start */
@@ -158,8 +167,14 @@ restart_ap:
 			}
 		}
 	}
+	if (!rnat_ap_want) {
+		goto exit;
+	}
 	if (rnat_netif_start(ap_netif, (void *)&g_ap_wifi_config) < 0) {
 		RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "\n\r%s(%d)ERROR: Start AP failed!\n", __FUNCTION__, __LINE__);
+		goto exit;
+	}
+	if (!rnat_ap_want) { /*np withdrew rnat while the ap was starting, exit stops it*/
 		goto exit;
 	}
 
@@ -174,6 +189,9 @@ restart_ap:
 
 exit:
 	rnat_ap_start_task_hdl = NULL;
+	if (!rnat_ap_want) {
+		rnat_wifi_stop_ap();
+	}
 	rtos_task_delete(NULL);
 }
 
@@ -244,6 +262,7 @@ void wtn_rnat_ap_init(u8 enable)
 {
 #ifdef CONFIG_RNAT_EN
 	RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, "RNAT AP INIT=%d\n", enable);
+	rnat_ap_want = enable;
 	if (enable) {
 		if (rnat_ap_start_task_hdl == NULL) {
 			if (rtos_task_create(&rnat_ap_start_task_hdl, ((const char *)"rnat_start_thread"), rnat_ap_start_thread, NULL, 1024 * 4, 1) != RTK_SUCCESS) {
@@ -255,7 +274,7 @@ void wtn_rnat_ap_init(u8 enable)
 			wtn_rnat_intercom_start();
 		}
 #endif
-	} else {
+	} else if (rnat_ap_start_task_hdl == NULL) { /*start thread alive: it stops the ap when it exits*/
 		rnat_wifi_stop_ap();
 	}
 #else

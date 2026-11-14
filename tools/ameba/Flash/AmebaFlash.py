@@ -17,6 +17,7 @@ import threading
 from copy import deepcopy
 
 from base import *
+from base import port_scanner
 import version_info
 
 MinSupportedDeviceProfileMajorVersion = 1
@@ -178,12 +179,10 @@ def flash_process_entry(profile_info, serial_port, serial_baudrate, image_dir, s
     if active_handlers is not None:
         with active_handlers_lock:
             active_handlers[str(serial_port)] = ameba
-    if download:
-        # download
-        if not ameba.check_protocol_for_download():
-            ret = ErrType.SYS_PROTO
-            sys_exit(logger, False, ret)
 
+    def prepare_with_flash_size_check(ameba, operation):
+        # NOR: check the SPIC address mode in OTP against the flash size, and reburn
+        # if it was programmed (by check_supported_flash_size() or set_boot_flash_type())
         if memory_type == MemoryInfo.MEMORY_TYPE_NOR:
             ret, is_reburn = ameba.check_supported_flash_size()
             if ret != ErrType.OK:
@@ -209,18 +208,27 @@ def flash_process_entry(profile_info, serial_port, serial_baudrate, image_dir, s
                 logger.info(f"Re-prepare for reburn...")
                 ret = ameba.prepare()
                 if ret != ErrType.OK:
-                    logger.error("Download prepare fail")
+                    logger.error(f"{operation} prepare fail")
                     sys_exit(logger, False, ret)
             else:
                 ret = ameba.show_device_info()
                 if ret != ErrType.OK:
                     sys_exit(logger, False, ret)
         else:
-            logger.info(f"Prepare for download...")
+            logger.info(f"Prepare for {operation.lower()}...")
             ret = ameba.prepare()
             if ret != ErrType.OK:
-                logger.error("Download prepare fail")
+                logger.error(f"{operation} prepare fail")
                 sys_exit(logger, False, ret)
+        return ameba
+
+    if download:
+        # download
+        if not ameba.check_protocol_for_download():
+            ret = ErrType.SYS_PROTO
+            sys_exit(logger, False, ret)
+
+        ameba = prepare_with_flash_size_check(ameba, "Download")
 
         # Merged single-session KEY_PROG: program the key(s) in the SAME floader
         # session as the encrypted download.  The floader caches each key in RAM
@@ -306,10 +314,8 @@ def flash_process_entry(profile_info, serial_port, serial_baudrate, image_dir, s
                 sys_exit(logger, False, ret)
     else:
         # erase
-        ret = ameba.prepare()
-        if ret != ErrType.OK:
-            logger.error("Erase prepare fail")
-            sys_exit(logger, False, ret)
+        ameba.enable_auto_flash_type_detect()
+        ameba = prepare_with_flash_size_check(ameba, "Erase")
 
         if chip_erase:
             ret = ameba.erase_flash_chip()
@@ -385,6 +391,18 @@ def flash_thread_runner(result_holder, index, port_name, logger, entry_args,
             watchdog.finish(port_name)
 
 
+def print_serial_ports(usb):
+    # Same filter as the GUI Scan button and its USB Download checkbox: USB or UART ports
+    port_type = port_scanner.PORT_TYPE_USB if usb else port_scanner.PORT_TYPE_UART
+    ports = port_scanner.scan_serial_ports(port_type)
+    if not ports:
+        print(f"No {port_type} port found")
+        return
+    print(f"Found {len(ports)} {port_type} port(s):")
+    for port in ports:
+        print(f"  {port_scanner.format_port_label(port)}")
+
+
 def main(argc, argv):
     parser = argparse.ArgumentParser(description=None)
     parser.add_argument('-d', '--download', action='store_true', help='download images')
@@ -402,6 +420,9 @@ def main(argc, argv):
     parser.add_argument('-v', '--version', action='version', version=f'%(prog)s {version_info.version}')
 
     parser.add_argument('--chip-erase', action='store_true', help='chip erase')
+    parser.add_argument('--scan', action='store_true', help='scan and print serial ports of current PC, '
+                             'UART ports by default, USB ports with --usb')
+    parser.add_argument('--usb', action='store_true', help='used with --scan to list USB ports instead of UART ports')
     parser.add_argument('--log-level', default='info', help='log level')
     parser.add_argument('--log-file', type=str,
                         help='append the default log to the specified file when the process exits')
@@ -450,6 +471,10 @@ def main(argc, argv):
                         help='override Settings.json WatchdogTimeoutInSeconds; 0 disables it')
 
     args = parser.parse_args()
+    if args.scan:
+        print_serial_ports(args.usb)
+        sys.exit(0)
+
     download = args.download
     profile = args.profile
     image = args.image
@@ -697,11 +722,21 @@ def main(argc, argv):
                 "enc_data": parse_hex_bytes("key-enc-data", enc_list[i].strip() if i < len(enc_list) else None),
             })
 
+    def log_auto_flash_type_detect():
+        if settings.auto_flash_type_detect and not Ameba.is_auto_flash_type_detect_supported(profile_info):
+            logger.info(f"Auto flash type detect: not supported by {profile_info.device_name}, ignored")
+        elif settings.auto_flash_type_detect and \
+                (memory_type not in (MemoryInfo.MEMORY_TYPE_NOR, MemoryInfo.MEMORY_TYPE_NAND)):
+            logger.info(f"Auto flash type detect: not needed for RAM, ignored")
+        else:
+            logger.info(f"Auto flash type detect: {'enabled' if settings.auto_flash_type_detect else 'disabled'}")
+
     memory_info = None
     images_info = None
     if download:
         # download
         logger.info(f"Boot guard burn: {'disabled' if settings.dis_boot_guard_burn else 'enabled'}")
+        log_auto_flash_type_detect()
         if (image is None) and (image_dir is None) and (partition_table is None):
             logger.error('Invalid arguments, no image or image_dir input')
             parser.print_usage()
@@ -787,6 +822,7 @@ def main(argc, argv):
         pass
     else:
         # erase
+        log_auto_flash_type_detect()
         if all([chip_erase, erase]):
             logger.warning(f"Both chip erase and erase are enabled, do chip erase only")
         if not chip_erase:
