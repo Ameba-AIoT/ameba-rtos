@@ -37,7 +37,7 @@ Each app behaves as its own example; see the README of that example for its test
 
 At most one network app (`usbd_cdc_ecm`, `usbd_cdc_ncm`, `usbh_cdc_ecm`, `usbh_cdc_ncm`, `usbh_composite_cdc_acm_ecm` or `usbh_wifi_bridge`) can be built into an image: each one defines the TX hook of the lwIP USB netif, so the build stops with an error when two are enabled. The ECM host class builds one of its three apps: `usbh_wifi_bridge` in ECM bridge mode, otherwise `usbh_composite_cdc_acm_ecm` when the ACM host class has its 4G dongle option on (which also leaves `usbh_cdc_acm` out), otherwise `usbh_cdc_ecm`. A stop of the network app takes the netif down (DHCP server or client stopped, link down, default route back to the Wi-Fi netif, and for the bridge the Wi-Fi STA input hook restored) before the USB stack goes away, and a later start brings it up again from scratch. `usbh_wifi_bridge` needs an SoC with `SUPPORT_USBH_ECM_BRIDGE` (RTL8730E, RTL8721F).
 
-Classes with exclusive Kconfig choices can only take one value per image: the device HID type (mouse for `usbd_hid` and `usbd_composite_cdc_acm_hid`, vendor for `usbd_composite_hid_uac`), the UAC version, and the MSC media are the ones selected in `prj.conf`.
+Classes with exclusive Kconfig choices can only take one value per image: the device HID type (mouse for `usbd_hid` and `usbd_composite_cdc_acm_hid`, headset buttons for `usbd_composite_hid_uac`), the UAC version, and the MSC media are the ones selected in `prj.conf`.
 
 # HW Configuration
 

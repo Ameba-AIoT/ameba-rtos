@@ -34,15 +34,16 @@
 
 /* Private defines -----------------------------------------------------------*/
 
-/* HID endpoint addresses */
+/* The HID function is the button interface of a Type-C headset, refer to README.md */
+#ifndef CONFIG_USBD_HID_HEADSET
+#error "usbd_composite_hid_uac needs the HID device type Headset buttons (CONFIG_USBD_HID_HEADSET)"
+#endif
+
+/* HID endpoint address: the headset buttons only report to the host */
 #if defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RLE1509)
 #define COMP_HID_INTR_IN_EP                           0x82U
-#define COMP_HID_INTR_OUT_EP                          0x02U
-#define COMP_HID_VENDOR_INTR_IN_EP                    0x83U
 #else
 #define COMP_HID_INTR_IN_EP                           0x81U
-#define COMP_HID_INTR_OUT_EP                          0x02U
-#define COMP_HID_VENDOR_INTR_IN_EP                    0x85U
 #endif
 
 /* UAC endpoint addresses */
@@ -54,8 +55,11 @@
 #define COMP_UAC_ISOC_OUT_EP                          0x04U
 #endif
 
-/* HID EP tx buffer size */
+/* HID EP tx buffer size: one max packet, the key report is a single byte */
 #define HID_INTR_IN_XFER_SIZE                         64U
+
+/* Longest wait for the previous key report to complete: a few bIntervals */
+#define COMP_HID_KEY_REPORT_TIMEOUT_MS                100U
 
 #define COMP_UAC_DEMUX_CH_DEBUG                      1
 
@@ -87,14 +91,6 @@
 #define COMP_HOTPLUG_THREAD_STACK_SIZE                1024U
 #define COMP_UAC_STATE_THREAD_STACK_SIZE              1024U
 
-#ifdef CONFIG_USBD_HID_VENDOR
-/* HID RX thread + console TX/volume commands */
-#define COMP_HID_RX_THREAD_PRIORITY                   4U
-#define COMP_HID_RX_THREAD_STACK_SIZE                 1024U
-/* One vendor IN report, refer to usbd_hid_send_data(): a longer request is truncated */
-#define COMP_HID_TX_BUF_LEN                           USBD_HID_TX_PKT_SIZE
-#endif
-
 #if COMP_UAC_ENABLE_RECORD
 /* Mic loopback record thread, triggered by the "USBDUAC record" console command */
 #define COMP_UAC_RECORD_THREAD_PRIORITY               4U
@@ -110,6 +106,12 @@ _Static_assert((sizeof(usbd_uac_record_audio_data) % COMP_UAC_RECORD_CHUNK_LEN) 
 
 /* Private types -------------------------------------------------------------*/
 
+/* Console name of a headset button */
+typedef struct {
+	const char *name;
+	u8 key;
+} composite_hid_key_t;
+
 /* Private macros ------------------------------------------------------------*/
 
 /* Private function prototypes -----------------------------------------------*/
@@ -117,11 +119,10 @@ _Static_assert((sizeof(usbd_uac_record_audio_data) % COMP_UAC_RECORD_CHUNK_LEN) 
 /* UAC user callbacks */
 static void composite_uac_cb_mute_changed(u8 mute);
 static void composite_uac_cb_volume_changed(u8 volume);
+static void composite_uac_cb_format_changed(u32 sampling_freq, u8 ch_cnt, u8 byte_width);
 
-#if defined(CONFIG_USBD_HID_VENDOR) || COMP_UAC_ENABLE_RECORD
 static int composite_cmd(u16 argc, char *argv[]);
 static void composite_cmd_at(u16 argc, char **argv);
-#endif
 
 static int composite_init_stack(void);
 #if COMP_HOTPLUG
@@ -185,12 +186,6 @@ static const usbd_config_t composite_cfg = {
 static const usbd_hid_config_t hid_class_cfg = {
 	.intr_in_xfer_size = HID_INTR_IN_XFER_SIZE,
 	.intr_in_addr  = COMP_HID_INTR_IN_EP,
-#if defined(CONFIG_USBD_HID_KEYBOARD) || defined(CONFIG_USBD_HID_VENDOR)
-	.intr_out_addr = COMP_HID_INTR_OUT_EP,
-#endif
-#ifdef CONFIG_USBD_HID_VENDOR
-	.vendor_intr_in_addr = COMP_HID_VENDOR_INTR_IN_EP,
-#endif
 };
 
 /* UAC endpoint configuration */
@@ -200,7 +195,7 @@ static const usbd_uac_config_t uac_class_cfg = {
 	 * SET_CUR SAMPLING_FREQ (usbd_uac1.c ~1236) to ep_init a phantom IN EP
 	 * the host never saw — on amebasmart shared DFIFO this perturbs the IN
 	 * nextep_seq/EPMISCNT chain and breaks isoc-OUT playback in the
-	 * HID+UAC1 combo (HID vendor periodic EPs amplify the pressure). */
+	 * HID+UAC1 combo. */
 #if COMP_UAC_ENABLE_RECORD
 	.in = {
 		.enable = 1,
@@ -226,10 +221,14 @@ static const usbd_hid_usr_cb_t composite_hid_usr_cb = {
 	.transmitted = NULL,
 };
 
-#ifdef CONFIG_USBD_HID_VENDOR
-static u8 hid_tx_buf[COMP_HID_TX_BUF_LEN];
-static u8 hid_rx_buf[USBD_HID_MAX_BUF_SIZE];
-#endif
+/* Headset buttons the "key" console command accepts */
+static const composite_hid_key_t composite_hid_keys[] = {
+	{"play", USBD_HID_HEADSET_KEY_PLAY_PAUSE},
+	{"volup", USBD_HID_HEADSET_KEY_VOLUME_UP},
+	{"voldown", USBD_HID_HEADSET_KEY_VOLUME_DOWN},
+	{"voice", USBD_HID_HEADSET_KEY_VOICE_COMMAND},
+	{"mute", USBD_HID_HEADSET_KEY_MUTE},
+};
 
 static usbd_uac_cb_t composite_uac_cb = {
 	.init = NULL,
@@ -239,7 +238,7 @@ static usbd_uac_cb_t composite_uac_cb = {
 	.status_changed = NULL,
 	.mute_changed = composite_uac_cb_mute_changed,
 	.volume_changed = composite_uac_cb_volume_changed,
-	.format_changed = NULL, /* set to composite_uac_cb_format_changed in init thread */
+	.format_changed = composite_uac_cb_format_changed,
 	.sof = NULL,
 };
 
@@ -260,8 +259,8 @@ static rtos_sema_t uac_ready_sema;
 static volatile u8 audio_task_stop;
 
 /* Serialize the composite stack bring up/tear down against everything that calls into
- * it: the playback thread holds composite_play_lock for a session, the HID path holds
- * composite_hid_lock around each usbd_hid_* call, the record thread holds
+ * it: the playback thread holds composite_play_lock for a session, the key command holds
+ * composite_hid_lock around its usbd_hid_* calls, the record thread holds
  * composite_record_lock for a session, and the hotplug thread takes them all before it
  * touches the stack. One lock per path rather than a single one, so that playback,
  * record and HID still run at the same time.
@@ -270,17 +269,14 @@ static volatile u8 audio_task_stop;
  * time at which these mutexes are provably unreferenced. composite_stack_ready is the
  * gate that keeps callers off the stack instead. */
 static rtos_mutex_t composite_play_lock = NULL;
-#ifdef CONFIG_USBD_HID_VENDOR
 static rtos_mutex_t composite_hid_lock = NULL;
-#endif
 #if COMP_UAC_ENABLE_RECORD
 static rtos_mutex_t composite_record_lock = NULL;
 #endif
 /* 1: the whole composite stack is up, the class APIs may be called. Cleared before any
  * tear down, so a non-zero value also implies the locks are valid.
- * usbd_uac_deinit()/usbd_hid_deinit() free the ring buffers and semaphores that
- * usbd_uac_read(), usbd_uac_transmit_data(), usbd_hid_read() and usbd_hid_send_data()
- * dereference; the bounded wait this replaces only covered playback, and could time out
+ * usbd_uac_deinit()/usbd_hid_deinit() free the ring buffers, semaphores and TX buffer that
+ * usbd_uac_read(), usbd_uac_transmit_data() and usbd_hid_send_data() dereference; the bounded wait this replaces only covered playback, and could time out
  * anyway, which is what happens on SMP where the workers run on the other core. */
 static volatile u8 composite_stack_ready;
 /* Raised before the hotplug thread asks for the locks, so every worker session loop
@@ -332,12 +328,10 @@ static rtos_sema_t uac_record_start_sema;
 /* Exported variables --------------------------------------------------------*/
 
 /* AT commands "AT+<cmd>=<p1>,<p2>...": the command name is case-sensitive, the parameters are not */
-#if defined(CONFIG_USBD_HID_VENDOR) || COMP_UAC_ENABLE_RECORD
 ATCMD_TABLE_DATA_SECTION
 const log_item_t composite_hid_uac_cmd_table[] = {
 	{"+USBDHIDUAC", composite_cmd_at},
 };
-#endif
 
 /* Private functions ---------------------------------------------------------*/
 
@@ -544,7 +538,9 @@ static void example_audio_track_play(void)
 #if COMP_UAC_DEMUX_CH_DEBUG
 				play_data_size = 0;
 				//get the 2 channel data from the 4 channel
-				for (idx = 0, off = 0; idx < read_dat_len; idx += audio_src_step, off += audio_dst_step) {
+				/* Whole frames only, and never past play_buf: a short ISOC packet may end mid-frame */
+				for (idx = 0, off = 0; ((idx + audio_src_step) <= read_dat_len) && ((off + audio_dst_step) <= sizeof(play_buf));
+					 idx += audio_src_step, off += audio_dst_step) {
 					// ch0 ch1 ch2 ch3 ch0 ch1 ch2 ch3 ch0 ch1 ch2 ch3
 					// 24  24  24  24  24  24  24  24  24  24  24  24
 					memcpy((void *)(play_buf + off), (const void *)(recv_buf + idx), audio_dst_step);
@@ -619,82 +615,39 @@ static void example_usbd_composite_hid_uac_audio_track_thread(void *param)
 	rtos_task_delete(NULL);
 }
 
-#ifdef CONFIG_USBD_HID_VENDOR
-/* Blocking HID OUT reader: dispatches whatever the host sends on the vendor INTR OUT EP */
-static void example_usbd_composite_hid_uac_hid_rx_thread(void *param)
+/**
+  * @brief  Send one headset key report, waiting for the previous one to complete
+  * @note   The class keeps one IN transfer in flight and copies the report into its own TX
+  *         buffer, so a busy endpoint only needs a few bIntervals. Called with composite_hid_lock held.
+  * @param  report: Key bitmap, USBD_HID_HEADSET_KEY_* or 0 for all released
+  * @retval Status
+  */
+static int composite_hid_send_key_report(u8 report)
 {
-	u32 rx_len;
+	u32 wait_ms = 0U;
 	int ret;
 
-	UNUSED(param);
-
-	/* usbd_hid_read() has a 500ms timeout, so the loop is a natural polling
-	   point for the exit flag; no forced task delete is needed. */
-	while (composite_app.quit == 0U) {
-		/* Gate on composite_teardown first so a pending deinit is not made to wait a
-		   whole read timeout, then hold the lock across the call: usbd_hid_deinit()
-		   frees the RX ring buffer and semaphore that usbd_hid_read() dereferences. */
-		if ((composite_teardown != 0U) || (composite_stack_ready == 0U)) {
-			rtos_time_delay_ms(20);
-			continue;
+	for (;;) {
+		ret = usbd_hid_send_data(&report, USBD_HID_HEADSET_REPORT_LEN);
+		if ((ret != -RTK_ERR_BUSY) || (wait_ms >= COMP_HID_KEY_REPORT_TIMEOUT_MS)) {
+			break;
 		}
-		/* Never enter the gated section, nor give, without the mutex */
-		ret = rtos_mutex_take(composite_hid_lock, RTOS_MAX_TIMEOUT);
-		if (ret != RTK_SUCCESS) {
-			rtos_time_delay_ms(20);
-			continue;
-		}
-		if (composite_stack_ready == 0U) {
-			rtos_mutex_give(composite_hid_lock);
-			continue;
-		}
-		rx_len = usbd_hid_read(hid_rx_buf, USBD_HID_MAX_BUF_SIZE, 500U);
-		rtos_mutex_give(composite_hid_lock);
-		if (rx_len > 0U) {
-			RTK_LOGS(TAG, RTK_LOG_INFO, "HID RX %u bytes, first byte:%02x\n", rx_len, hid_rx_buf[0]);
-		}
-		/* Yield before taking the lock again: this thread outranks the AT shell, so without a
-		   pause it would win the lock back at once and starve the tx/vol commands waiting on it */
-		rtos_time_delay_ms(1);
+		rtos_time_delay_ms(1U);
+		wait_ms++;
 	}
 
-	usb_app_ctx_leave(&composite_app);
-	rtos_task_delete(NULL);
+	return ret;
 }
 
-/* Whole-string decimal in [min, max] */
-static int composite_parse_u32(const char *str, u32 min, u32 max, u32 *val)
+/**
+  * @brief  Click a headset button: report it pressed, then released
+  * @note   Excluded from a pending stack teardown by composite_hid_lock
+  * @param  key: One of USBD_HID_HEADSET_KEY_*
+  * @retval Status
+  */
+static int composite_hid_key_click(u8 key)
 {
-	char *end = NULL;
-	u32 num;
-
-	if ((str == NULL) || (str[0] < '0') || (str[0] > '9')) {
-		return -RTK_ERR_BADARG;
-	}
-	num = (u32)_strtoul(str, &end, 10);
-	if ((end == NULL) || (*end != '\0') || (num < min) || (num > max)) {
-		return -RTK_ERR_BADARG;
-	}
-	*val = num;
-	return RTK_SUCCESS;
-}
-
-static int composite_hid_cmd_tx(u16 argc, char *argv[])
-{
-	u16 size = 10U;
-	u32 val;
 	int ret;
-
-	if (argc != 0U) {
-		if (composite_parse_u32(argv[0], 1U, COMP_HID_TX_BUF_LEN, &val) != RTK_SUCCESS) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "Usage: AT+USBDHIDUAC=tx[,<len>]\n");
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "  len: 1..%d\n", COMP_HID_TX_BUF_LEN);
-			return -RTK_ERR_BADARG;
-		}
-		size = (u16)val;
-	}
-
-	memset(hid_tx_buf, (u8)(size & 0xFFU), size);
 
 	/* Gate on composite_stack_ready BEFORE touching the mutex: it is still NULL if
 	   the example never got far enough to create it, and it is deliberately never
@@ -707,48 +660,21 @@ static int composite_hid_cmd_tx(u16 argc, char *argv[])
 	if (ret != RTK_SUCCESS) {
 		return -RTK_ERR_BUSY;
 	}
-	if (composite_stack_ready == 0U) {
-		ret = -RTK_ERR_IO;
-	} else {
-		ret = usbd_hid_send_data(hid_tx_buf, size);
-	}
-	rtos_mutex_give(composite_hid_lock);
-	if (ret != RTK_SUCCESS) {
-		RTK_LOGS(TAG, RTK_LOG_WARN, "HID tx fail %d\n", ret);
-	}
-
-	return ret;
-}
-
-/**
-  * @brief  Send a vendor volume key, excluded from a pending stack teardown
-  * @param  up: 1 for volume up, 0 for volume down
-  * @retval Status
-  */
-static int composite_hid_volume_ctrl(u8 up)
-{
-	int ret = -RTK_ERR_IO;
-
-	if (composite_stack_ready == 0U) {
-		return -RTK_ERR_IO;
-	}
-	/* Never enter the gated section, nor give, without the mutex */
-	ret = rtos_mutex_take(composite_hid_lock, RTOS_MAX_TIMEOUT);
-	if (ret != RTK_SUCCESS) {
-		return -RTK_ERR_BUSY;
-	}
 	ret = -RTK_ERR_IO;
 	if (composite_stack_ready != 0U) {
-		ret = usbd_hid_volume_ctrl(up);
+		ret = composite_hid_send_key_report(key);
+		if (ret == RTK_SUCCESS) {
+			/* All buttons released, else the host keeps the key held and repeats it */
+			ret = composite_hid_send_key_report(0U);
+		}
 	}
 	rtos_mutex_give(composite_hid_lock);
 	if (ret != RTK_SUCCESS) {
-		RTK_LOGS(TAG, RTK_LOG_WARN, "HID vol fail %d\n", ret);
+		RTK_LOGS(TAG, RTK_LOG_WARN, "HID key fail %d\n", ret);
 	}
 
 	return ret;
 }
-#endif /* CONFIG_USBD_HID_VENDOR */
 
 #if COMP_UAC_ENABLE_RECORD
 /* Mic loopback record: replays usbd_uac_record_audio_data[] as the mic input, once triggered */
@@ -818,15 +744,11 @@ static void example_usbd_composite_hid_uac_record_thread(void *param)
 }
 #endif /* COMP_UAC_ENABLE_RECORD */
 
-#if defined(CONFIG_USBD_HID_VENDOR) || COMP_UAC_ENABLE_RECORD
 static void composite_cmd_usage(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Usage: AT+USBDHIDUAC=<cmd>[,<args>]\n");
-#ifdef CONFIG_USBD_HID_VENDOR
-	RTK_LOGS(TAG, RTK_LOG_INFO, "  tx[,<len>]     Send len bytes on the HID interrupt IN EP, len: 1..%d, default 10\n", COMP_HID_TX_BUF_LEN);
-	RTK_LOGS(TAG, RTK_LOG_INFO, "                 Every byte holds len & 0xFF\n");
-	RTK_LOGS(TAG, RTK_LOG_INFO, "  vol,<up|down>  Send a vendor volume up/down key\n");
-#endif
+	RTK_LOGS(TAG, RTK_LOG_INFO, "  key,<play|volup|voldown|voice|mute>\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "                 Click a headset button: Play/Pause, Volume Up/Down, Voice Command, Mute\n");
 #if COMP_UAC_ENABLE_RECORD
 	RTK_LOGS(TAG, RTK_LOG_INFO, "  record         Replay the built-in clip on the mic (USB IN) stream once the host\n");
 	RTK_LOGS(TAG, RTK_LOG_INFO, "                 configured it; each call queues one more session\n");
@@ -838,9 +760,7 @@ static void composite_cmd_usage(void)
 static int composite_cmd(u16 argc, char *argv[])
 {
 	const char *cmd = (argc != 0U) ? argv[0] : NULL;
-#ifdef CONFIG_USBD_HID_VENDOR
-	const char *dir = (argc > 1U) ? argv[1] : NULL;
-#endif
+	u32 i;
 
 	if ((cmd == NULL) || (_stricmp(cmd, "help") == 0) || (_stricmp(cmd, "?") == 0)) {
 		composite_cmd_usage();
@@ -853,25 +773,17 @@ static int composite_cmd(u16 argc, char *argv[])
 		return -RTK_ERR_IO;
 	}
 
-#ifdef CONFIG_USBD_HID_VENDOR
-	if (_stricmp(cmd, "tx") == 0) {
-		if (argc > 2U) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "Usage: AT+USBDHIDUAC=tx[,<len>]\n");
-			return -RTK_ERR_BADARG;
+	if (_stricmp(cmd, "key") == 0) {
+		if (argc == 2U) {
+			for (i = 0U; i < (sizeof(composite_hid_keys) / sizeof(composite_hid_keys[0])); i++) {
+				if (_stricmp(argv[1], composite_hid_keys[i].name) == 0) {
+					return composite_hid_key_click(composite_hid_keys[i].key);
+				}
+			}
 		}
-		return composite_hid_cmd_tx((u16)(argc - 1U), argv + 1);
-	}
-	if (_stricmp(cmd, "vol") == 0) {
-		if ((argc == 2U) && (_stricmp(dir, "up") == 0)) {
-			return composite_hid_volume_ctrl(1);
-		}
-		if ((argc == 2U) && (_stricmp(dir, "down") == 0)) {
-			return composite_hid_volume_ctrl(0);
-		}
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Usage: AT+USBDHIDUAC=vol,<up|down>\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Usage: AT+USBDHIDUAC=key,<play|volup|voldown|voice|mute>\n");
 		return -RTK_ERR_BADARG;
 	}
-#endif
 #if COMP_UAC_ENABLE_RECORD
 	if (_stricmp(cmd, "record") == 0) {
 		if (argc != 1U) {
@@ -902,7 +814,6 @@ static void composite_cmd_at(u16 argc, char **argv)
 		at_printf(ATCMD_ERROR_END_STR, (int)ret);
 	}
 }
-#endif
 
 /**
   * @brief  Bring up the whole composite stack (core + each class + framework).
@@ -919,30 +830,32 @@ static int composite_init_stack(void)
 		return ret;
 	}
 
-	ret = usbd_composite_hid_init(&composite_hid_usr_cb, &hid_class_cfg);
-	if (ret != RTK_SUCCESS) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "HID init fail\n");
-		goto exit_usbd_init;
-	}
-
+	/* Registered in interface order: UAC first and the HID buttons last, the layout of a Type-C
+	   headset, so the audio interfaces keep the numbers they have in the standalone UAC device */
 	ret = usbd_composite_uac_init(&composite_uac_cb, &uac_class_cfg);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "UAC init fail\n");
-		goto exit_hid_init;
+		goto exit_usbd_init;
+	}
+
+	ret = usbd_composite_hid_init(&composite_hid_usr_cb, &hid_class_cfg);
+	if (ret != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "HID init fail\n");
+		goto exit_uac_init;
 	}
 
 	ret = usbd_composite_init(COMP_CB);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Composite init fail\n");
-		goto exit_uac_init;
+		goto exit_hid_init;
 	}
 
 	return RTK_SUCCESS;
 
-exit_uac_init:
-	usbd_uac_deinit();
 exit_hid_init:
 	usbd_hid_deinit();
+exit_uac_init:
+	usbd_uac_deinit();
 exit_usbd_init:
 	usbd_deinit();
 	return ret;
@@ -968,8 +881,8 @@ static void composite_deinit_stack(void)
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Comp deinit fail %d\n", ret);
 		return;
 	}
-	usbd_uac_deinit();
 	usbd_hid_deinit();
+	usbd_uac_deinit();
 	usbd_deinit();
 }
 
@@ -984,9 +897,7 @@ static void composite_state_lock_all(void)
 	/* Tells the worker session loops to leave so they release their locks. */
 	composite_teardown = 1;
 	rtos_mutex_take(composite_play_lock, RTOS_MAX_TIMEOUT);
-#ifdef CONFIG_USBD_HID_VENDOR
 	rtos_mutex_take(composite_hid_lock, RTOS_MAX_TIMEOUT);
-#endif
 #if COMP_UAC_ENABLE_RECORD
 	rtos_mutex_take(composite_record_lock, RTOS_MAX_TIMEOUT);
 #endif
@@ -1002,9 +913,7 @@ static void composite_state_unlock_all(void)
 #if COMP_UAC_ENABLE_RECORD
 	rtos_mutex_give(composite_record_lock);
 #endif
-#ifdef CONFIG_USBD_HID_VENDOR
 	rtos_mutex_give(composite_hid_lock);
-#endif
 	rtos_mutex_give(composite_play_lock);
 }
 
@@ -1120,16 +1029,12 @@ static int composite_stop_workers(u32 count)
   */
 static void composite_release_stack(void)
 {
-#ifdef CONFIG_USBD_HID_VENDOR
 	rtos_mutex_take(composite_hid_lock, RTOS_MAX_TIMEOUT);
-#endif
 	if (composite_stack_ready != 0U) {
 		composite_stack_ready = 0;
 		composite_deinit_stack();
 	}
-#ifdef CONFIG_USBD_HID_VENDOR
 	rtos_mutex_give(composite_hid_lock);
-#endif
 }
 
 /**
@@ -1178,7 +1083,6 @@ static int composite_start(void)
 			goto exit;
 		}
 	}
-#ifdef CONFIG_USBD_HID_VENDOR
 	if (composite_hid_lock == NULL) {
 		ret = rtos_mutex_create(&composite_hid_lock);
 		if (ret != RTK_SUCCESS) {
@@ -1186,7 +1090,6 @@ static int composite_start(void)
 			goto exit;
 		}
 	}
-#endif
 #if COMP_UAC_ENABLE_RECORD
 	if (composite_record_lock == NULL) {
 		ret = rtos_mutex_create(&composite_record_lock);
@@ -1234,27 +1137,11 @@ static int composite_start(void)
 	}
 #endif
 
-	composite_uac_cb.format_changed = composite_uac_cb_format_changed;
-
 	ret = composite_init_stack();
 	if (ret != RTK_SUCCESS) {
 		goto exit_release_sema;
 	}
 	composite_stack_ready = 1;
-
-#ifdef CONFIG_USBD_HID_VENDOR
-	/* Start the HID RX poll thread only after usbd core/class init has
-	 * fully succeeded, instead of racing it against usb_chip_init(). */
-	/* Counted first: the new thread may preempt this one and need the count, refer to the hotplug thread */
-	composite_worker_cnt++;
-	ret = rtos_task_create(&task, "usbd_composite_hid_rx_thread", example_usbd_composite_hid_uac_hid_rx_thread, NULL, COMP_HID_RX_THREAD_STACK_SIZE,
-						   COMP_HID_RX_THREAD_PRIORITY);
-	if (ret != RTK_SUCCESS) {
-		composite_worker_cnt--;
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create hid_rx thread fail\n");
-		goto exit_stop_workers;
-	}
-#endif
 
 	/* Created here (after the init thread's own CPU1-bring-up delay has already
 	 * elapsed) rather than from example_usbd_composite_hid_uac(), because a task's

@@ -157,9 +157,8 @@ if VFS_MENU
     config VFS_USB_HOST
         bool "USB host mass storage (FATFS)"
         depends on SUPPORT_FATFS_USB
-        select USB_OTG_EN if WHC_HOST || WHC_NONE
-        select USB_HOST_EN if WHC_HOST || WHC_NONE
-        select USBH_MSC if WHC_HOST || WHC_NONE
+        # The USB mode (host or DRD) and the MSC class are chosen under CONFIG USB, never selected here:
+        # a select of USB_HOST_EN also fired in a DRD image, linking lib_usbh.a on top of lib_usb_drd.a
         default n
         help
             USB mass-storage device on the USB host port. Only FATFS is supported.

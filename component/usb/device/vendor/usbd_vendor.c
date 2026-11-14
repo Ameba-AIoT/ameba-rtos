@@ -71,89 +71,11 @@ static const u8 usbd_vendor_device_qualifier_desc[USB_LEN_DEV_QUALIFIER_DESC] = 
 	0x01,                                           /* bNumConfigurations */
 	0x00,                                           /* Reserved */
 };  /* usbd_vendor_device_qualifier_desc */
-
-/* USB Vendor Device High Speed Configuration Descriptor */
-static const u8 usbd_vendor_hs_config_desc[] = {
-	/* USB Standard Configuration Descriptor */
-	USB_LEN_CFG_DESC,								/* bLength */
-	USB_DESC_TYPE_CONFIGURATION,					/* bDescriptorType */
-	0x00,											/* wTotalLength */
-	0x00,
-	0x01,                                           /* bNumInterfaces */
-	0x01,                                           /* bConfigurationValue */
-	0x00,                                           /* iConfiguration */
-	0x80,                                           /* bmAttributes (patched at runtime for self_powered/remote_wakeup) */
-	0x32,                                           /* bMaxPower */
-
-	/* Interface Descriptor */
-	USB_LEN_IF_DESC,                                /* bLength */
-	USB_DESC_TYPE_INTERFACE,                        /* bDescriptorType */
-	0x00,                                           /* bInterfaceNumber */
-	0x00,                                           /* bAlternateSetting */
-	0x06,                                           /* bNumEndpoints */
-	USBD_VENDOR_CLASS_CODE,                         /* bInterfaceClass: Vendor */
-	USBD_VENDOR_SUBCLASS_CODE,                      /* bInterfaceSubClass */
-	USBD_VENDOR_PROTOCOL,                 			/* bInterfaceProtocol */
-	0x00,                                           /* iInterface */
-
-	/* BULK OUT Endpoint Descriptor */
-	USB_LEN_EP_DESC,								/* bLength */
-	USB_DESC_TYPE_ENDPOINT,							/* bDescriptorType */
-	USB_H2D,						/* bEndpointAddress: BULK OUT (placeholder) */
-	USB_CH_EP_TYPE_BULK,							/* bmAttributes: BULK */
-	USB_LOW_BYTE(USBD_VENDOR_HS_BULK_MPS),			/* wMaxPacketSize: */
-	USB_HIGH_BYTE(USBD_VENDOR_HS_BULK_MPS),
-	0x00,											/* bInterval */
-
-	/* BULK IN Endpoint Descriptor */
-	USB_LEN_EP_DESC,                                /* bLength */
-	USB_DESC_TYPE_ENDPOINT,                         /* bDescriptorType */
-	USB_D2H,							/* bEndpointAddress: BULK IN (placeholder) */
-	USB_CH_EP_TYPE_BULK,							/* bmAttributes: BULK */
-	USB_LOW_BYTE(USBD_VENDOR_HS_BULK_MPS),			/* wMaxPacketSize: */
-	USB_HIGH_BYTE(USBD_VENDOR_HS_BULK_MPS),
-	0x00,											/* bInterval */
-
-	/* INTR OUT Endpoint Descriptor */
-	USB_LEN_EP_DESC,                                /* bLength */
-	USB_DESC_TYPE_ENDPOINT,                         /* bDescriptorType */
-	USB_H2D,						/* bEndpointAddress: INTR OUT (placeholder) */
-	USB_CH_EP_TYPE_INTR,							/* bmAttributes: INTR */
-	USB_LOW_BYTE(USBD_VENDOR_HS_INTR_MPS),			/* wMaxPacketSize: */
-	USB_HIGH_BYTE(USBD_VENDOR_HS_INTR_MPS),
-	USBD_VENDOR_DEFAULT_EP_INTERVAL,				/* bInterval (patched at runtime) */
-
-	/* INTR IN Endpoint Descriptor */
-	USB_LEN_EP_DESC,                                /* bLength */
-	USB_DESC_TYPE_ENDPOINT,                         /* bDescriptorType */
-	USB_D2H,							/* bEndpointAddress: INTR IN (placeholder) */
-	USB_CH_EP_TYPE_INTR,							/* bmAttributes: INTR */
-	USB_LOW_BYTE(USBD_VENDOR_HS_INTR_MPS),			/* wMaxPacketSize: */
-	USB_HIGH_BYTE(USBD_VENDOR_HS_INTR_MPS),
-	USBD_VENDOR_DEFAULT_EP_INTERVAL,				/* bInterval (patched at runtime) */
-
-	/* ISOC OUT Endpoint Descriptor */
-	USB_LEN_EP_DESC,                                /* bLength */
-	USB_DESC_TYPE_ENDPOINT,                         /* bDescriptorType */
-	USB_H2D,						/* bEndpointAddress: ISOC OUT (placeholder) */
-	USB_CH_EP_TYPE_ISOC,							/* bmAttributes: ISOC */
-	USB_LOW_BYTE(USBD_VENDOR_HS_ISOC_MPS),			/* wMaxPacketSize: */
-	USB_HIGH_BYTE(USBD_VENDOR_HS_ISOC_MPS),
-	USBD_VENDOR_DEFAULT_EP_INTERVAL,				/* bInterval (patched at runtime) */
-
-	/* ISOC IN Endpoint Descriptor */
-	USB_LEN_EP_DESC,                                /* bLength */
-	USB_DESC_TYPE_ENDPOINT,                         /* bDescriptorType */
-	USB_D2H,							/* bEndpointAddress: ISOC IN (placeholder) */
-	USB_CH_EP_TYPE_ISOC,							/* bmAttributes: ISOC */
-	USB_LOW_BYTE(USBD_VENDOR_HS_ISOC_MPS),			/* wMaxPacketSize: */
-	USB_HIGH_BYTE(USBD_VENDOR_HS_ISOC_MPS),
-	USBD_VENDOR_DEFAULT_EP_INTERVAL,				/* bInterval (patched at runtime) */
-};  /* usbd_vendor_hs_config_desc */
 #endif
 
-/* USB Vendor Device Full Speed Configuration Descriptor */
-static const u8 usbd_vendor_fs_config_desc[] = {
+/* USB Vendor Device Configuration Descriptor, wMaxPacketSize is patched for the speed it describes,
+   refer to usbd_vendor_patch_desc() */
+static const u8 usbd_vendor_config_desc[] = {
 	/* USB Standard Configuration Descriptor */
 	USB_LEN_CFG_DESC,                               /* bLength */
 	USB_DESC_TYPE_CONFIGURATION,                    /* bDescriptorType */
@@ -181,8 +103,8 @@ static const u8 usbd_vendor_fs_config_desc[] = {
 	USB_DESC_TYPE_ENDPOINT,							/* bDescriptorType */
 	USB_H2D,						/* bEndpointAddress: BULK OUT (placeholder) */
 	USB_CH_EP_TYPE_BULK,							/* bmAttributes: BULK */
-	USB_LOW_BYTE(USBD_VENDOR_FS_BULK_MPS),			/* wMaxPacketSize: */
-	USB_HIGH_BYTE(USBD_VENDOR_FS_BULK_MPS),
+	USB_LOW_BYTE(USBD_VENDOR_HS_BULK_MPS),			/* wMaxPacketSize, patched at runtime */
+	USB_HIGH_BYTE(USBD_VENDOR_HS_BULK_MPS),
 	0x00,											/* bInterval */
 
 	/* BULK IN Endpoint Descriptor */
@@ -190,8 +112,8 @@ static const u8 usbd_vendor_fs_config_desc[] = {
 	USB_DESC_TYPE_ENDPOINT,							/* bDescriptorType */
 	USB_D2H,							/* bEndpointAddress: BULK IN (placeholder) */
 	USB_CH_EP_TYPE_BULK,							/* bmAttributes: BULK */
-	USB_LOW_BYTE(USBD_VENDOR_FS_BULK_MPS),			/* wMaxPacketSize: */
-	USB_HIGH_BYTE(USBD_VENDOR_FS_BULK_MPS),
+	USB_LOW_BYTE(USBD_VENDOR_HS_BULK_MPS),			/* wMaxPacketSize, patched at runtime */
+	USB_HIGH_BYTE(USBD_VENDOR_HS_BULK_MPS),
 	0x00,											/* bInterval */
 
 	/* INTR OUT Endpoint Descriptor */
@@ -199,8 +121,8 @@ static const u8 usbd_vendor_fs_config_desc[] = {
 	USB_DESC_TYPE_ENDPOINT,                         /* bDescriptorType */
 	USB_H2D,                        /* bEndpointAddress: INTR OUT (placeholder) */
 	USB_CH_EP_TYPE_INTR,							/* bmAttributes: INTR */
-	USB_LOW_BYTE(USBD_VENDOR_FS_INTR_MPS),          /* wMaxPacketSize: */
-	USB_HIGH_BYTE(USBD_VENDOR_FS_INTR_MPS),
+	USB_LOW_BYTE(USBD_VENDOR_HS_INTR_MPS),          /* wMaxPacketSize, patched at runtime */
+	USB_HIGH_BYTE(USBD_VENDOR_HS_INTR_MPS),
 	USBD_VENDOR_DEFAULT_EP_INTERVAL,				/* bInterval (patched at runtime) */
 
 	/* INTR IN Endpoint Descriptor */
@@ -208,8 +130,8 @@ static const u8 usbd_vendor_fs_config_desc[] = {
 	USB_DESC_TYPE_ENDPOINT,                         /* bDescriptorType */
 	USB_D2H,                         /* bEndpointAddress: INTR IN (placeholder) */
 	USB_CH_EP_TYPE_INTR,							/* bmAttributes: INTR */
-	USB_LOW_BYTE(USBD_VENDOR_FS_INTR_MPS),          /* wMaxPacketSize: */
-	USB_HIGH_BYTE(USBD_VENDOR_FS_INTR_MPS),
+	USB_LOW_BYTE(USBD_VENDOR_HS_INTR_MPS),          /* wMaxPacketSize, patched at runtime */
+	USB_HIGH_BYTE(USBD_VENDOR_HS_INTR_MPS),
 	USBD_VENDOR_DEFAULT_EP_INTERVAL,				/* bInterval (patched at runtime) */
 
 	/* ISOC OUT Endpoint Descriptor */
@@ -217,19 +139,19 @@ static const u8 usbd_vendor_fs_config_desc[] = {
 	USB_DESC_TYPE_ENDPOINT,                         /* bDescriptorType */
 	USB_H2D,                        /* bEndpointAddress: ISOC OUT (placeholder) */
 	USB_CH_EP_TYPE_ISOC,                            /* bmAttributes: ISOC */
-	USB_LOW_BYTE(USBD_VENDOR_FS_ISOC_MPS),          /* wMaxPacketSize: */
-	USB_HIGH_BYTE(USBD_VENDOR_FS_ISOC_MPS),
-	USBD_VENDOR_DEFAULT_EP_INTERVAL,               /* bInterval */
+	USB_LOW_BYTE(USBD_VENDOR_HS_ISOC_MPS),          /* wMaxPacketSize, patched at runtime */
+	USB_HIGH_BYTE(USBD_VENDOR_HS_ISOC_MPS),
+	USBD_VENDOR_DEFAULT_EP_INTERVAL,				/* bInterval (patched at runtime) */
 
 	/* ISOC IN Endpoint Descriptor */
 	USB_LEN_EP_DESC,                                /* bLength */
 	USB_DESC_TYPE_ENDPOINT,                         /* bDescriptorType */
 	USB_D2H,                         /* bEndpointAddress: ISOC IN (placeholder) */
 	USB_CH_EP_TYPE_ISOC,                            /* bmAttributes: ISOC */
-	USB_LOW_BYTE(USBD_VENDOR_FS_ISOC_MPS),          /* wMaxPacketSize: */
-	USB_HIGH_BYTE(USBD_VENDOR_FS_ISOC_MPS),
-	USBD_VENDOR_DEFAULT_EP_INTERVAL,                /* bInterval */
-};  /* usbd_vendor_fs_config_desc */
+	USB_LOW_BYTE(USBD_VENDOR_HS_ISOC_MPS),          /* wMaxPacketSize, patched at runtime */
+	USB_HIGH_BYTE(USBD_VENDOR_HS_ISOC_MPS),
+	USBD_VENDOR_DEFAULT_EP_INTERVAL,				/* bInterval (patched at runtime) */
+};  /* usbd_vendor_config_desc */
 
 /* Vendor Class Driver */
 static const usbd_class_driver_t usbd_vendor_driver = {
@@ -259,22 +181,14 @@ static usbd_vendor_dev_t usbd_vendor_dev;
   *         stride is 1024), the length is clamped to @ref usb_get_max_payload_len so that the
   *         window never exceeds the buffer, refer to @ref usbd_ep_receive.
   *         Shall be called after usbd_ep_init(), which fills info.mps for the negotiated speed.
+  *         usbd_vendor_private_init() already checked that the buffer holds one packet at either
+  *         speed, see usbd_vendor_check_out_buf_len(), so the length is never 0.
   * @param  ep: OUT endpoint
-  * @retval Status
+  * @retval None
   */
-static int usbd_vendor_config_out_xfer_len(usbd_ep_t *ep)
+static void usbd_vendor_config_out_xfer_len(usbd_ep_t *ep)
 {
-	u32 xfer_len = usb_get_max_payload_len(ep->xfer_buf_len, ep->info.mps);
-
-	/* A buffer too small for a single padded packet leaves nothing to request */
-	if ((ep->info.mps == 0U) || (xfer_len == 0U)) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "EP%02x buf_len %u < mps %u\n", ep->info.addr, ep->xfer_buf_len, ep->info.mps);
-		return -RTK_ERR_BADARG;
-	}
-
-	ep->xfer_len = xfer_len;
-
-	return RTK_SUCCESS;
+	ep->xfer_len = usb_get_max_payload_len(ep->xfer_buf_len, ep->info.mps);
 }
 
 /**
@@ -356,7 +270,6 @@ static int usbd_vendor_set_config(usb_dev_t *dev, u8 config)
 
 	cdev->dev = dev;
 
-	cdev->alt_setting = 0U;
 	/* Init INTR IN EP */
 	info = &ep_intr_in->info;
 	info->mps = (speed == USB_SPEED_HIGH) ? USBD_VENDOR_HS_INTR_MPS : USBD_VENDOR_FS_INTR_MPS;
@@ -375,10 +288,7 @@ static int usbd_vendor_set_config(usb_dev_t *dev, u8 config)
 	if (ret != RTK_SUCCESS) {
 		goto exit_clear_config;
 	}
-	ret = usbd_vendor_config_out_xfer_len(ep_intr_out);
-	if (ret != RTK_SUCCESS) {
-		goto exit_clear_config;
-	}
+	usbd_vendor_config_out_xfer_len(ep_intr_out);
 	ret = usbd_ep_receive(dev, ep_intr_out);
 	if (ret != RTK_SUCCESS) {
 		goto exit_clear_config;
@@ -400,10 +310,7 @@ static int usbd_vendor_set_config(usb_dev_t *dev, u8 config)
 	if (ret != RTK_SUCCESS) {
 		goto exit_clear_config;
 	}
-	ret = usbd_vendor_config_out_xfer_len(ep_bulk_out);
-	if (ret != RTK_SUCCESS) {
-		goto exit_clear_config;
-	}
+	usbd_vendor_config_out_xfer_len(ep_bulk_out);
 	ret = usbd_ep_receive(dev, ep_bulk_out);
 	if (ret != RTK_SUCCESS) {
 		goto exit_clear_config;
@@ -426,10 +333,7 @@ static int usbd_vendor_set_config(usb_dev_t *dev, u8 config)
 	if (ret != RTK_SUCCESS) {
 		goto exit_clear_config;
 	}
-	ret = usbd_vendor_config_out_xfer_len(ep_isoc_out);
-	if (ret != RTK_SUCCESS) {
-		goto exit_clear_config;
-	}
+	usbd_vendor_config_out_xfer_len(ep_isoc_out);
 	ret = usbd_ep_receive(dev, ep_isoc_out);
 	if (ret != RTK_SUCCESS) {
 		goto exit_clear_config;
@@ -518,8 +422,6 @@ static int usbd_vendor_setup(usb_dev_t *dev, usb_setup_req_t *req)
 				   interface are valid, interface 0 describes bAlternateSetting 0 only,
 				   so any other wValue is a request error. Ref USB 2.0 Table 9-3: wLength is zero */
 				if ((req->wIndex == 0U) && (req->wValue == 0U) && (req->wLength == 0U)) {
-					cdev->alt_setting = 0U;
-
 					/* Ref USB 2.0 9.4.10: the endpoints of the selected interface return
 					   to their default state, not halted and data toggle DATA0. This holds
 					   even for an interface with the default setting only, hosts do send
@@ -540,7 +442,7 @@ static int usbd_vendor_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			/* Ref USB 2.0 9.4.4 and Table 9-3: wValue is zero, wLength is one, and a request for
 			   a non-existent interface is a request error */
 			if ((dev->dev_state == USBD_STATE_CONFIGURED) && (req->wValue == 0U) && (req->wIndex == 0U) && (req->wLength == 1U)) {
-				ep0_in->xfer_buf[0] = cdev->alt_setting;
+				ep0_in->xfer_buf[0] = 0U; /* The only alternate setting */
 				ep0_in->xfer_len = 1U;
 				ret = usbd_ep_transmit(dev, ep0_in);
 			} else {
@@ -796,10 +698,11 @@ static int usbd_vendor_handle_ep0_data_out(usb_dev_t *dev)
 /**
   * @brief  Patch endpoint addresses in a configuration descriptor to use runtime EP config.
   * @note   Replaces direction-only placeholders (USB_D2H/USB_H2D) with actual
-  *         EP addresses from the EP configuration structure.
+  *         EP addresses from the EP configuration structure, and writes the wMaxPacketSize
+  *         and bInterval of the speed the descriptor describes.
   * @param  desc: Pointer to config descriptor body (starting after config header)
   * @param  len: Length of the descriptor block
-  * @param  speed: Speed the descriptor describes, selects the INTR/ISOC intervals
+  * @param  speed: Speed the descriptor describes, selects the wMaxPacketSize and INTR/ISOC intervals
   * @retval None
   */
 static void usbd_vendor_patch_desc(u8 *desc, u16 len, usb_speed_type_t speed)
@@ -825,25 +728,37 @@ static void usbd_vendor_patch_desc(u8 *desc, u16 len, usb_speed_type_t speed)
 			u8 type  = desc[i + 3U] & USB_EP_XFER_TYPE_MASK;
 
 			u8 interval = USBD_VENDOR_DEFAULT_EP_INTERVAL;
+			u16 mps = 0U;
 
 			if ((dir == USB_D2H) && (type == USB_CH_EP_TYPE_BULK)) {
 				desc[i + 2] = cfg->bulk_in_addr;
+				mps = (is_hs != 0U) ? USBD_VENDOR_HS_BULK_MPS : USBD_VENDOR_FS_BULK_MPS;
 			} else if ((dir == USB_H2D) && (type == USB_CH_EP_TYPE_BULK)) {
 				desc[i + 2] = cfg->bulk_out_addr;
+				mps = (is_hs != 0U) ? USBD_VENDOR_HS_BULK_MPS : USBD_VENDOR_FS_BULK_MPS;
 			} else if ((dir == USB_D2H) && (type == USB_CH_EP_TYPE_INTR)) {
 				desc[i + 2] = cfg->intr_in_addr;
+				mps = (is_hs != 0U) ? USBD_VENDOR_HS_INTR_MPS : USBD_VENDOR_FS_INTR_MPS;
 				interval = usbd_vendor_get_interval(cfg->intr_in_interval_hs, cfg->intr_in_interval_fs, is_hs);
 			} else if ((dir == USB_H2D) && (type == USB_CH_EP_TYPE_INTR)) {
 				desc[i + 2] = cfg->intr_out_addr;
+				mps = (is_hs != 0U) ? USBD_VENDOR_HS_INTR_MPS : USBD_VENDOR_FS_INTR_MPS;
 				interval = usbd_vendor_get_interval(cfg->intr_out_interval_hs, cfg->intr_out_interval_fs, is_hs);
 			} else if ((dir == USB_D2H) && (type == USB_CH_EP_TYPE_ISOC)) {
 				desc[i + 2] = cfg->isoc_in_addr;
+				mps = (is_hs != 0U) ? USBD_VENDOR_HS_ISOC_MPS : USBD_VENDOR_FS_ISOC_MPS;
 				interval = usbd_vendor_get_interval(cfg->isoc_in_interval_hs, cfg->isoc_in_interval_fs, is_hs);
 			} else if ((dir == USB_H2D) && (type == USB_CH_EP_TYPE_ISOC)) {
 				desc[i + 2] = cfg->isoc_out_addr;
+				mps = (is_hs != 0U) ? USBD_VENDOR_HS_ISOC_MPS : USBD_VENDOR_FS_ISOC_MPS;
 				interval = usbd_vendor_get_interval(cfg->isoc_out_interval_hs, cfg->isoc_out_interval_fs, is_hs);
 			} else {
-				/* The templates hold one endpoint of each kind only, none is left unpatched */
+				/* The template holds one endpoint of each kind only, none is left unpatched */
+			}
+
+			if (mps != 0U) {
+				desc[i + 4U] = USB_LOW_BYTE(mps);   /* wMaxPacketSize */
+				desc[i + 5U] = USB_HIGH_BYTE(mps);
 			}
 
 			/* BULK leaves bInterval 0 (ignored for BULK, Ref USB 2.0 9.6.6); the periodic
@@ -894,16 +809,8 @@ static u16 usbd_vendor_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *
 		break;
 
 	case USB_DESC_TYPE_CONFIGURATION:
-#ifndef CONFIG_SUPPORT_USB_FS_ONLY
-		if (speed == USB_SPEED_HIGH) {
-			desc = usbd_vendor_hs_config_desc;
-			len = (u16)sizeof(usbd_vendor_hs_config_desc);
-		} else
-#endif
-		{
-			desc = usbd_vendor_fs_config_desc;
-			len = (u16)sizeof(usbd_vendor_fs_config_desc);
-		}
+		desc = usbd_vendor_config_desc;
+		len = (u16)sizeof(usbd_vendor_config_desc);
 		is_cfg = 1;
 		break;
 
@@ -915,16 +822,10 @@ static u16 usbd_vendor_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *
 
 	case USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION:
 		/* Ref USB 2.0 9.6.4: describes the configuration at the speed the device is not
-		   running at, so its bInterval is patched for that speed, not the current one */
-		if (speed == USB_SPEED_HIGH) {
-			desc = usbd_vendor_fs_config_desc;
-			len = (u16)sizeof(usbd_vendor_fs_config_desc);
-			desc_speed = USB_SPEED_FULL;
-		} else {
-			desc = usbd_vendor_hs_config_desc;
-			len = (u16)sizeof(usbd_vendor_hs_config_desc);
-			desc_speed = USB_SPEED_HIGH;
-		}
+		   running at, so its wMaxPacketSize and bInterval are patched for that speed, not the current one */
+		desc = usbd_vendor_config_desc;
+		len = (u16)sizeof(usbd_vendor_config_desc);
+		desc_speed = (speed == USB_SPEED_HIGH) ? USB_SPEED_FULL : USB_SPEED_HIGH;
 		is_cfg = 1;
 		break;
 #endif
@@ -954,7 +855,7 @@ static u16 usbd_vendor_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *
 		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN] = USB_LOW_BYTE(len);
 		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN + 1] = USB_HIGH_BYTE(len);
 
-		/* Patch EP addresses, intervals and the class string index to actual values */
+		/* Patch EP addresses, wMaxPacketSize, intervals and the class string index to actual values */
 		usbd_vendor_patch_desc(buf + USB_LEN_CFG_DESC, len - USB_LEN_CFG_DESC, desc_speed);
 	}
 
@@ -1028,11 +929,10 @@ static int usbd_vendor_private_init(const usbd_vendor_cb_t *cb, const usbd_vendo
 	}
 
 	/* A bInterval outside its range would be reported to the host as is, refer to
-	   usbd_vendor_check_interval() */
+	   usbd_vendor_check_interval(). Every u8 is a legal FS interrupt bInterval (1..255, 0 for the
+	   default), so those two are not checked. */
 	if ((usbd_vendor_check_interval(cfg->intr_in_interval_hs, (u8)USB_INTR_HS_BINTERVAL_MAX) != RTK_SUCCESS) ||
 		(usbd_vendor_check_interval(cfg->intr_out_interval_hs, (u8)USB_INTR_HS_BINTERVAL_MAX) != RTK_SUCCESS) ||
-		(usbd_vendor_check_interval(cfg->intr_in_interval_fs, (u8)USB_INTR_FS_BINTERVAL_MAX) != RTK_SUCCESS) ||
-		(usbd_vendor_check_interval(cfg->intr_out_interval_fs, (u8)USB_INTR_FS_BINTERVAL_MAX) != RTK_SUCCESS) ||
 		(usbd_vendor_check_interval(cfg->isoc_in_interval_hs, (u8)USB_ISOC_HS_BINTERVAL_MAX) != RTK_SUCCESS) ||
 		(usbd_vendor_check_interval(cfg->isoc_out_interval_hs, (u8)USB_ISOC_HS_BINTERVAL_MAX) != RTK_SUCCESS) ||
 		(usbd_vendor_check_interval(cfg->isoc_in_interval_fs, (u8)USB_ISOC_FS_BINTERVAL_MAX) != RTK_SUCCESS) ||

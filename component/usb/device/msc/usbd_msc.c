@@ -10,6 +10,14 @@
 #ifdef CONFIG_USBD_COMPOSITE
 #include "usbd_composite.h"
 #endif
+#if defined(CONFIG_USBD_MSC_SD_CARD) && !defined(CONFIG_FATFS_SD_MODE)
+/* The SD disk driver is FATFS only; a Kconfig dep would cycle through the VFS_SD_CARD file system choice. */
+#error "USBD_MSC_SD_CARD needs FATFS on the SD card (CONFIG File System: File system on SD card = FATFS)"
+#endif
+#if defined(CONFIG_USBD_MSC_RAM) && !defined(CONFIG_VFS_RAM_FATFS)
+/* The RAM disk driver is FATFS only; a Kconfig dep would cycle through the VFS_RAM file system choice. */
+#error "USBD_MSC_RAM needs FATFS on the RAM disk (CONFIG File System: File system on RAM disk = FATFS)"
+#endif
 #include "usbd_scsi.h"
 #include "os_wrapper.h"
 #include "vfs.h"
@@ -32,11 +40,6 @@
 
 /* Interface number of the single Mass Storage interface */
 #define USBD_MSC_ITF_NUM               0U
-
-/* BOT status */
-#define USBD_MSC_STATUS_NORMAL         0U          /**< Normal working status */
-#define USBD_MSC_STATUS_RECOVERY       1U          /**< Get MSC Reset request for recovery */
-#define USBD_MSC_STATUS_ERROR          2U          /**< Error status */
 
 /* Period of the warning while deinit waits for an MSC thread to exit */
 #define USBD_MSC_STOP_TASK_WARN_MS     1000U
@@ -95,53 +98,11 @@ static const u8 usbd_msc_device_qualifier_desc[USB_LEN_DEV_QUALIFIER_DESC] = {
 	0x01,                                           /* bNumConfigurations */
 	0x00,                                           /* Reserved */
 };  /* usbd_msc_device_qualifier_desc */
-
-/* USB MSC Device High Speed Configuration Descriptor */
-static const u8 usbd_msc_hs_config_desc[] = {
-	/* USB Standard Configuration Descriptor */
-	USB_LEN_CFG_DESC,                               /* bLength */
-	USB_DESC_TYPE_CONFIGURATION,                    /* bDescriptorType */
-	0x00,                                           /* wTotalLength, runtime assigned */
-	0x00,
-	0x01,                                           /* bNumInterfaces */
-	0x01,                                           /* bConfigurationValue */
-	0x00,                                           /* iConfiguration */
-	0x80,                                           /* bmAttributes (patched at runtime for self_powered/remote_wakeup) */
-	0x32,                                           /* bMaxPower */
-
-	/********************  Mass Storage interface ********************/
-	USB_LEN_IF_DESC,			/* bLength: Interface Descriptor size */
-	USB_DESC_TYPE_INTERFACE,	/* bDescriptorType: */
-	0x00,						/* bInterfaceNumber: Number of Interface */
-	0x00,						/* bAlternateSetting: Alternate setting */
-	0x02,						/* bNumEndpoints*/
-	0x08,						/* bInterfaceClass: MSC Class */
-	0x06,						/* bInterfaceSubClass : SCSI transparent*/
-	0x50,						/* nInterfaceProtocol */
-	0x00,						/* iInterface: */
-
-	/* BULK OUT Endpoint Descriptor */
-	USB_LEN_EP_DESC,			/* bLength */
-	USB_DESC_TYPE_ENDPOINT,	/* bDescriptorType */
-	USB_H2D,                                    /* bEndpointAddress: dir OUT (placeholder) */
-	USB_CH_EP_TYPE_BULK,                            /* bmAttributes: BULK */
-	USB_LOW_BYTE(USBD_MSC_HS_MAX_PACKET_SIZE),  /* wMaxPacketSize: */
-	USB_HIGH_BYTE(USBD_MSC_HS_MAX_PACKET_SIZE),
-	0x00,						/* bInterval */
-
-	/* BULK IN Endpoint Descriptor */
-	USB_LEN_EP_DESC,			/* bLength */
-	USB_DESC_TYPE_ENDPOINT,	/* bDescriptorType */
-	USB_D2H,                                    /* bEndpointAddress: dir IN (placeholder) */
-	USB_CH_EP_TYPE_BULK,                            /* bmAttributes: BULK */
-	USB_LOW_BYTE(USBD_MSC_HS_MAX_PACKET_SIZE),  /* wMaxPacketSize: */
-	USB_HIGH_BYTE(USBD_MSC_HS_MAX_PACKET_SIZE),
-	0x00                                            /* bInterval */
-};  /* usbd_msc_hs_config_desc */
 #endif
 
-/* USB MSC Device Full Speed Configuration Descriptor */
-static const u8 usbd_msc_fs_config_desc[] = {
+/* USB MSC Device Configuration Descriptor, wMaxPacketSize is patched for the speed it describes,
+   refer to usbd_msc_patch_desc() */
+static const u8 usbd_msc_config_desc[] = {
 	/* USB Standard Configuration Descriptor */
 	USB_LEN_CFG_DESC,                               /* bLength */
 	USB_DESC_TYPE_CONFIGURATION,                    /* bDescriptorType */
@@ -169,8 +130,8 @@ static const u8 usbd_msc_fs_config_desc[] = {
 	USB_DESC_TYPE_ENDPOINT,	/* bDescriptorType */
 	USB_H2D,                                    /* bEndpointAddress: dir OUT (placeholder) */
 	USB_CH_EP_TYPE_BULK,                            /* bmAttributes: BULK */
-	USB_LOW_BYTE(USBD_MSC_FS_MAX_PACKET_SIZE),  /* wMaxPacketSize: */
-	USB_HIGH_BYTE(USBD_MSC_FS_MAX_PACKET_SIZE),
+	USB_LOW_BYTE(USBD_MSC_HS_MAX_PACKET_SIZE),  /* wMaxPacketSize, patched at runtime */
+	USB_HIGH_BYTE(USBD_MSC_HS_MAX_PACKET_SIZE),
 	0x00,						/* bInterval */
 
 	/* BULK IN Endpoint Descriptor */
@@ -178,10 +139,10 @@ static const u8 usbd_msc_fs_config_desc[] = {
 	USB_DESC_TYPE_ENDPOINT,	/* bDescriptorType */
 	USB_D2H,                                    /* bEndpointAddress: dir IN (placeholder) */
 	USB_CH_EP_TYPE_BULK,                            /* bmAttributes: BULK */
-	USB_LOW_BYTE(USBD_MSC_FS_MAX_PACKET_SIZE),  /* wMaxPacketSize: */
-	USB_HIGH_BYTE(USBD_MSC_FS_MAX_PACKET_SIZE),
+	USB_LOW_BYTE(USBD_MSC_HS_MAX_PACKET_SIZE),  /* wMaxPacketSize, patched at runtime */
+	USB_HIGH_BYTE(USBD_MSC_HS_MAX_PACKET_SIZE),
 	0x00                                            /* bInterval */
-};  /* usbd_msc_fs_config_desc */
+};  /* usbd_msc_config_desc */
 
 /* MSC Class Driver */
 static const usbd_class_driver_t usbd_msc_driver = {
@@ -220,8 +181,6 @@ static int usbd_msc_media_init(void)
 #elif defined CONFIG_USBD_MSC_RAM
 	/* FATFS is mounted by the app; MSC only does raw I/O. */
 	return RAM_disk_Driver.disk_initialize();
-#else
-	return -RTK_ERR_BADARG;		/* unreachable: a media is enforced at the top of the file */
 #endif
 }
 
@@ -241,8 +200,6 @@ static void usbd_msc_media_deinit(void)
 	status = SD_disk_spi_Driver.disk_deinitialize();
 #elif defined CONFIG_USBD_MSC_RAM
 	status = RAM_disk_Driver.disk_deinitialize();
-#else
-	status = -RTK_ERR_BADARG;	/* unreachable: a media is enforced at the top of the file */
 #endif
 
 	/* Best effort: a backend that cannot unmount cleanly is reported here. Nothing can be done
@@ -271,8 +228,6 @@ static int usbd_msc_media_getcapacity(u32 *sector_count)
 	ret = SD_disk_spi_Driver.disk_ioctl(GET_SECTOR_COUNT, &count);
 #elif defined CONFIG_USBD_MSC_RAM
 	ret = RAM_disk_Driver.disk_ioctl(GET_SECTOR_COUNT, &count);
-#else
-	ret = -RTK_ERR_BADARG;		/* unreachable: a media is enforced at the top of the file */
 #endif
 	if (ret == 0) {
 		*sector_count = (u32)count;
@@ -293,8 +248,6 @@ static int usbd_msc_media_readblocks(u32 sector, u8 *data, u32 count)
 	return SD_disk_spi_Driver.disk_read(data, sector, count);
 #elif defined CONFIG_USBD_MSC_RAM
 	return RAM_disk_Driver.disk_read(data, sector, count);
-#else
-	return -RTK_ERR_BADARG;		/* unreachable: a media is enforced at the top of the file */
 #endif
 }
 
@@ -310,8 +263,6 @@ static int usbd_msc_media_writeblocks(u32 sector, const u8 *data, u32 count)
 	return SD_disk_spi_Driver.disk_write(data, sector, count);
 #elif defined CONFIG_USBD_MSC_RAM
 	return RAM_disk_Driver.disk_write(data, sector, count);
-#else
-	return -RTK_ERR_BADARG;		/* unreachable: a media is enforced at the top of the file */
 #endif
 }
 
@@ -325,22 +276,20 @@ static void usbd_msc_abort(usb_dev_t *dev)
 	usbd_msc_dev_t *cdev = &usbd_msc_dev;
 	usb_msc_bot_cbw_t *cbw = cdev->cbw;
 
-	/* BOT §6.6.1: stall OUT on any write-phase mismatch OR on invalid CBW (RECOVERY). For an invalid CBW the
-	 * caller has also set `wedged`, so the halt survives a plain CLEAR_FEATURE and only Reset Recovery, a
-	 * Bulk-Only Mass Storage Reset followed by CLEAR_FEATURE on both endpoints, resumes communication. */
-	if (((cbw->field.bmCBWFlags == 0U) &&
-		 (cbw->field.dCBWDataTransferLength != 0U) &&
-		 (cdev->bot_status == USBD_MSC_STATUS_NORMAL)) ||
-		(cdev->bot_status == USBD_MSC_STATUS_RECOVERY)) {
-		usbd_ep_set_stall(dev, &cdev->ep_bulk_out);
-		/* Arm OUT while halted, as send_csw() does: the controller keeps answering
-		 * STALL until the host clears the halt, then this transfer picks up the next
-		 * CBW. Without it the EP is neither stalled nor listening once the halt is
-		 * cleared by CLEAR_FEATURE or SET_CONFIGURATION. A failure means the device is no longer ready
-		 * (suspend/disconnect), the host then recovers by reset. */
-		if (usbd_msc_bulk_receive(dev, (u8 *)cbw, USB_MSC_CBW_LEN, USBD_MSC_CBW_BUF_LEN) != RTK_SUCCESS) {
-			RTK_LOGS(TAG, RTK_LOG_WARN, "EP%02x xfer err\n", cdev->cfg->bulk_out_addr);
-		}
+	int ret;
+
+	/* BOT §6.6.1: the only caller handles an invalid CBW, so stall both endpoints. The caller has also set
+	 * `wedged`, so the halt survives a plain CLEAR_FEATURE and only Reset Recovery, a Bulk-Only Mass Storage
+	 * Reset followed by CLEAR_FEATURE on both endpoints, resumes communication. */
+	usbd_ep_set_stall(dev, &cdev->ep_bulk_out);
+	/* Arm OUT while halted, as send_csw() does: the controller keeps answering
+	 * STALL until the host clears the halt, then this transfer picks up the next
+	 * CBW. Without it the EP is neither stalled nor listening once the halt is
+	 * cleared by CLEAR_FEATURE or SET_CONFIGURATION. A failure means the device is no longer ready
+	 * (suspend/disconnect), the host then recovers by reset. */
+	ret = usbd_msc_bulk_receive(dev, (u8 *)cbw, USB_MSC_CBW_LEN, USBD_MSC_CBW_BUF_LEN);
+	if (ret != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_WARN, "EP%02x xfer err\n", cdev->cfg->bulk_out_addr);
 	}
 
 	usbd_ep_set_stall(dev, &cdev->ep_bulk_in);
@@ -376,7 +325,6 @@ static void usbd_msc_defer_csw(usb_dev_t *dev, u8 status)
 	csw->field.dCSWSignature = USB_MSC_CSW_SIGN;
 	csw->field.bCSWStatus = status;
 	cdev->bot_state = USBD_MSC_IDLE;
-	cdev->bot_status = USBD_MSC_STATUS_NORMAL;
 	cdev->csw_pending = 1U;
 	usbd_ep_set_stall(dev, &cdev->ep_bulk_in);
 
@@ -428,7 +376,6 @@ static int usbd_msc_set_config(usb_dev_t *dev, u8 config)
 	}
 
 	cdev->bot_state = USBD_MSC_IDLE;
-	cdev->bot_status = USBD_MSC_STATUS_NORMAL;
 	usb_os_memset((void *)&cdev->scsi_sense, 0U, sizeof(cdev->scsi_sense));
 	cdev->is_open = 1U;
 	cdev->prevent_removal = 0U;
@@ -562,8 +509,7 @@ static int usbd_msc_setup(usb_dev_t *dev, usb_setup_req_t *req)
 				   for an interface with the default setting only, hosts do send the
 				   request in that case. The BOT state machine is left alone on purpose:
 				   the OUT endpoint is already armed with the next CBW, see
-				   usbd_msc_abort(), and a RECOVERY status is only cleared by a
-				   Bulk-Only Mass Storage Reset as per BOT 3.1.
+				   usbd_msc_abort().
 				   Ref USB 2.0 Table 9-10: the whole wIndex is the interface number, so a
 				   foreign interface or a non-zero high byte leaves the endpoints untouched.
 				   The halts are cleared here regardless of an invalid CBW, so drop the
@@ -591,11 +537,6 @@ static int usbd_msc_setup(usb_dev_t *dev, usb_setup_req_t *req)
 		break;
 	/* Class request */
 	case USB_REQ_TYPE_CLASS:
-		/* The interface, hence its class requests, exists in the Configured state only, ref USB 2.0 9.1.1.5 */
-		if (dev->dev_state != USBD_STATE_CONFIGURED) {
-			ret = -RTK_ERR_BADARG;
-			break;
-		}
 		if ((req->bmRequestType & USB_REQ_RECIPIENT_MASK) != USB_REQ_RECIPIENT_INTERFACE) {
 			ret = -RTK_ERR_BADARG;
 			break;
@@ -623,7 +564,6 @@ static int usbd_msc_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			if ((req->wValue  == 0U) && (req->wLength == 0U) &&
 				((req->bmRequestType & USB_REQ_DIR_MASK) != USB_D2H)) {
 				cdev->bot_state  = USBD_MSC_IDLE;
-				cdev->bot_status = USBD_MSC_STATUS_RECOVERY;
 				cdev->bot_reset_pending = 1U;
 				/* Ref BOT 5.3.4: the reset is the first step of Reset Recovery, the CLEAR_FEATURE requests
 				   that follow shall now clear the halts again */
@@ -733,7 +673,7 @@ static void usbd_msc_tx_process(void)
 			/* Ref MSC BOT 1.0 6.7.2 Case 5 (Hi > Di): the host still reads Bulk-In for the residue. A last packet
 			   of MPS bytes, e.g. a READ shorter than dCBWDataTransferLength, does not end the data stage, ZLP being
 			   disabled on Bulk-In, so a CSW sent now would be read as data: halt Bulk-In instead. */
-			if ((cdev->csw->field.dCSWDataResidue != 0U) && (cdev->ep_bulk_in.info.mps != 0U) &&
+			if ((cdev->csw->field.dCSWDataResidue != 0U) &&
 				((cdev->ep_bulk_in.xfer_len % cdev->ep_bulk_in.info.mps) == 0U)) {
 				usbd_msc_defer_csw(dev, csw_status);
 			} else {
@@ -822,14 +762,12 @@ static void usbd_msc_rx_process(void)
 			(cbw->field.bCBWLUN != 0U) ||  /* Only LUN 0 exists (GET_MAX_LUN reports 0) */
 			(cbw->field.bCBWCBLength < 1U) || (cbw->field.bCBWCBLength > 16U)) {
 			usbd_scsi_sense_code(cdev, SCSI_SENSE_KEY_ILLEGAL_REQUEST, SCSI_ASC_INVALID_COMMAND_OPERATION_CODE);
-			/* BOT §6.6.1: invalid CBW — use RECOVERY so abort() stalls both endpoints, and wedge them so the
-			 * halts hold until Reset Recovery. Set before the stalls: the host can only send the CLEAR_FEATURE
-			 * that reads the flag after it has seen a STALL, and the stall critical section orders the store. */
-			cdev->bot_status = USBD_MSC_STATUS_RECOVERY;
+			/* BOT §6.6.1: invalid CBW — abort() stalls both endpoints, and wedge them so the halts hold until
+			 * Reset Recovery. Set before the stalls: the host can only send the CLEAR_FEATURE that reads the
+			 * flag after it has seen a STALL, and the stall critical section orders the store. */
 			cdev->wedged = 1U;
 			usbd_msc_abort(dev);
 		} else {
-			cdev->bot_status = USBD_MSC_STATUS_NORMAL;
 			/* A valid CBW proves the host has already cleared the halts, e.g. by SET_CONFIGURATION, which the
 			   core handles without the class, so an older wedge no longer applies. */
 			cdev->wedged = 0U;
@@ -892,10 +830,10 @@ static void usbd_msc_rx_process(void)
 							RTK_LOGS(TAG, RTK_LOG_WARN, "EP%02x xfer err\n", cdev->cfg->bulk_in_addr);
 						}
 					}
-				} else if (cdev->data_length == 0U) {
+				} else {
 					if ((cbw_data_len != 0U) && ((cbw->field.bmCBWFlags & 0x80U) == 0U)) {
 						/* Case 9: Ho > Dn — command produced no data but the host
-						 * declared an OUT transfer (e.g. a stubbed MODE SELECT); STALL
+						 * declared an OUT transfer (e.g. a TEST UNIT READY with data); STALL
 						 * Bulk-Out so its parameter bytes are not mis-read as the next
 						 * CBW. The CSW flows on the un-stalled Bulk-In pipe below. */
 						usbd_ep_set_stall(dev, &cdev->ep_bulk_out);
@@ -909,8 +847,6 @@ static void usbd_msc_rx_process(void)
 						/* Case 1: Hn = Dn */
 						usbd_msc_send_csw(dev, BOT_CSW_CMD_PASSED);
 					}
-				} else {
-					usbd_msc_abort(dev);
 				}
 			}
 		}
@@ -949,16 +885,18 @@ static void usbd_msc_rx_process(void)
 /**
   * @brief  Patch the runtime-assigned fields in a configuration descriptor block
   * @note   Replaces direction-only placeholders (USB_D2H/USB_H2D) with actual EP addresses from
-  *         the class configuration, and rewrites the iInterface string index with the index the
-  *         core assigned.
+  *         the class configuration, writes the BULK wMaxPacketSize of the speed the descriptor
+  *         describes, and rewrites the iInterface string index with the index the core assigned.
   * @param  desc: Pointer to config descriptor body (starting after config header)
   * @param  len: Length of the descriptor block
+  * @param  speed: Speed the descriptor describes, selects the BULK wMaxPacketSize
   * @retval None
   */
-static void usbd_msc_patch_desc(u8 *desc, u16 len)
+static void usbd_msc_patch_desc(u8 *desc, u16 len, usb_speed_type_t speed)
 {
 	usbd_msc_dev_t *cdev = &usbd_msc_dev;
 	const usbd_msc_config_t *cfg = cdev->cfg;
+	u16 mps = (speed == USB_SPEED_HIGH) ? USBD_MSC_HS_MAX_PACKET_SIZE : USBD_MSC_FS_MAX_PACKET_SIZE;
 
 	for (u16 i = 0U; i < len;) {
 		u8 dlen;
@@ -979,10 +917,10 @@ static void usbd_msc_patch_desc(u8 *desc, u16 len)
 			u8 dir   = addr & USB_REQ_DIR_MASK;
 			u8 type  = desc[i + 3] & USB_EP_XFER_TYPE_MASK;
 
-			if ((dir == USB_D2H) && (type == USB_CH_EP_TYPE_BULK)) {
-				desc[i + 2] = cfg->bulk_in_addr;
-			} else if ((dir == USB_H2D) && (type == USB_CH_EP_TYPE_BULK)) {
-				desc[i + 2] = cfg->bulk_out_addr;
+			if (type == USB_CH_EP_TYPE_BULK) {
+				desc[i + 2] = (dir == USB_D2H) ? cfg->bulk_in_addr : cfg->bulk_out_addr;
+				desc[i + 4] = USB_LOW_BYTE(mps);    /* wMaxPacketSize */
+				desc[i + 5] = USB_HIGH_BYTE(mps);
 			}
 		} else if ((dtype == USB_DESC_TYPE_INTERFACE) && (dlen >= USB_LEN_IF_DESC)) {
 			desc[i + 8] = cdev->itf_str_idx;         /* iInterface */
@@ -1004,17 +942,13 @@ static void usbd_msc_patch_desc(u8 *desc, u16 len)
   */
 static u16 usbd_msc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16 buf_len)
 {
-#ifndef CONFIG_SUPPORT_USB_FS_ONLY
 	usb_speed_type_t speed = dev->dev_speed;
-#endif
+	/* Speed the returned configuration describes, which selects the wMaxPacketSize */
+	usb_speed_type_t desc_speed = speed;
 	const u8 *desc = NULL;
 	u16 len = 0;
 	u8 type = USB_HIGH_BYTE(req->wValue);
 	u8 is_cfg = 0;
-
-#ifdef CONFIG_SUPPORT_USB_FS_ONLY
-	UNUSED(dev);
-#endif
 
 	switch (type) {
 
@@ -1024,16 +958,8 @@ static u16 usbd_msc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 		break;
 
 	case USB_DESC_TYPE_CONFIGURATION:
-#ifndef CONFIG_SUPPORT_USB_FS_ONLY
-		if (speed == USB_SPEED_HIGH) {
-			desc = usbd_msc_hs_config_desc;
-			len = sizeof(usbd_msc_hs_config_desc);
-		} else
-#endif
-		{
-			desc = usbd_msc_fs_config_desc;
-			len = sizeof(usbd_msc_fs_config_desc);
-		}
+		desc = usbd_msc_config_desc;
+		len = sizeof(usbd_msc_config_desc);
 		is_cfg = 1;
 		break;
 
@@ -1044,13 +970,11 @@ static u16 usbd_msc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 		break;
 
 	case USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION:
-		if (speed == USB_SPEED_HIGH) {
-			desc = usbd_msc_fs_config_desc;
-			len = sizeof(usbd_msc_fs_config_desc);
-		} else {
-			desc = usbd_msc_hs_config_desc;
-			len = sizeof(usbd_msc_hs_config_desc);
-		}
+		/* Ref USB 2.0 9.6.4: describes the configuration at the speed the device is not
+		   running at, so its wMaxPacketSize is patched for that speed, not the current one */
+		desc = usbd_msc_config_desc;
+		len = sizeof(usbd_msc_config_desc);
+		desc_speed = (speed == USB_SPEED_HIGH) ? USB_SPEED_FULL : USB_SPEED_HIGH;
 		is_cfg = 1;
 		break;
 #endif
@@ -1080,8 +1004,8 @@ static u16 usbd_msc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN] = USB_LOW_BYTE(len);
 		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN + 1] = USB_HIGH_BYTE(len);
 
-		/* Patch EP addresses and the class string index to actual values */
-		usbd_msc_patch_desc(buf + USB_LEN_CFG_DESC, len - USB_LEN_CFG_DESC);
+		/* Patch EP addresses, wMaxPacketSize and the class string index to actual values */
+		usbd_msc_patch_desc(buf + USB_LEN_CFG_DESC, len - USB_LEN_CFG_DESC, desc_speed);
 	}
 
 	return len;
@@ -1605,7 +1529,6 @@ void usbd_msc_send_csw(usb_dev_t *dev, u8 status)
 	csw->field.dCSWSignature = USB_MSC_CSW_SIGN;
 	csw->field.bCSWStatus = status;
 	cdev->bot_state = USBD_MSC_IDLE;
-	cdev->bot_status = USBD_MSC_STATUS_NORMAL;
 
 	cdev->csw_in_flight = 1U;
 	if (usbd_msc_bulk_transmit(dev, (u8 *)csw, USB_MSC_CSW_LEN) != RTK_SUCCESS) {
@@ -1624,10 +1547,9 @@ void usbd_msc_send_csw(usb_dev_t *dev, u8 status)
 
 	/* Prepare EP to Receive next Cmd. A failure here means the device is no longer ready
 	 * (suspend/disconnect); the endpoint is left un-armed and the controller NAKs, which is
-	 * the correct flow control, ref USB 2.0 8.4.6. Keep bot_status in RECOVERY so the next
-	 * Bulk-Only Mass Storage Reset re-arms Bulk-Out instead of resuming a lost BOT phase. */
+	 * the correct flow control, ref USB 2.0 8.4.6. The host recovers with a Bulk-Only Mass Storage
+	 * Reset, which re-arms Bulk-Out. */
 	if (usbd_msc_bulk_receive(dev, (u8 *)cbw, USB_MSC_CBW_LEN, USBD_MSC_CBW_BUF_LEN) != RTK_SUCCESS) {
-		cdev->bot_status = USBD_MSC_STATUS_RECOVERY;
 		RTK_LOGS(TAG, RTK_LOG_WARN, "EP%02x xfer err\n", cdev->cfg->bulk_out_addr);
 	}
 }

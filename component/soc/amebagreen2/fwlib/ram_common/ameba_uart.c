@@ -68,9 +68,9 @@ void UART_TXDMAConfig(UART_TypeDef *UARTx, u32 TxDmaBurstSize)
  * @param UARTx UART device pointer, which can be any UARTx_DEV defined in Peripheral Declarations.
  * @param RxDmaBurstSize UART RX DMA burst size.
  * @note
- * 		- RxDmaBurstSize should not be more than half of rxfifo depth.
- * 		- RxDmaBurstSize should not be smaller than GDMA_SrcMsize in function UART_RXGDMA_Init().
- * 		- For better performance, it is suggested to make RxDmaBurstSize be equal to GDMA_SrcMsize, which is 16.
+ * 		- RxDmaBurstSize should not be more than half of rxfifo depth, which depends on the UART, check the UART user manual.
+ * 		- UART_RXGDMA_Init() already sets it to 16 bytes, the same as its GDMA_SrcMsize, so there is no need to call this function.
+ * 		- If it is called after UART_RXGDMA_Init(), it must be 16, otherwise it no longer equals GDMA_SrcMsize.
  */
 void UART_RXDMAConfig(UART_TypeDef *UARTx, u32 RxDmaBurstSize)
 {
@@ -236,7 +236,9 @@ bool UART_RXGDMA_Init(
 	GDMA_InitStruct->GDMA_Index   = 0;
 	GDMA_InitStruct->GDMA_ChNum   = GdmaChnl;
 	GDMA_InitStruct->GDMA_IsrType = (BlockType | TransferType | ErrType);
-	GDMA_InitStruct->GDMA_SrcMsize = MsizeOne;
+	/* The UART RX watermark has to equal the GDMA source burst, 16 bytes fits the rxfifo of every UART */
+	UART_RXDMAConfig(UARTx, 16);
+	GDMA_InitStruct->GDMA_SrcMsize = MsizeSixteen;
 	GDMA_InitStruct->GDMA_SrcDataWidth = TrWidthOneByte;
 	GDMA_InitStruct->GDMA_DstMsize = MsizeOne;
 	GDMA_InitStruct->GDMA_DstDataWidth = TrWidthOneByte;
