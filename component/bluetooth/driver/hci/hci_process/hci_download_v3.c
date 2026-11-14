@@ -82,7 +82,7 @@ static uint8_t hci_vendor_read(uint32_t addr, uint32_t *value)
 
 	BT_DUMPD("hci_vendor_read HCI CMD: ", buf, buf[2] + 3);
 
-	if (HCI_SUCCESS != hci_sa_send(HCI_CMD, buf, 8, true)) {
+	if (HCI_SUCCESS != hci_sa_send(HCI_CMD, buf, 8, sizeof(buf_raw) - RESERVE_LEN, true)) {
 		return HCI_FAIL;
 	}
 
@@ -114,7 +114,7 @@ static uint8_t hci_vendor_write(uint32_t addr, uint32_t value)
 
 	BT_DUMPD("hci_vendor_write HCI CMD: ", buf, buf[2] + 3);
 
-	if (HCI_SUCCESS != hci_sa_send(HCI_CMD, buf, 12, true)) {
+	if (HCI_SUCCESS != hci_sa_send(HCI_CMD, buf, 12, sizeof(buf_raw) - RESERVE_LEN, true)) {
 		return HCI_FAIL;
 	}
 
@@ -480,7 +480,7 @@ uint8_t hci_patch_download_v3(uint16_t opcode, uint8_t *p_patch, uint32_t patch_
 			}
 		}
 
-		ret = hci_sa_send(HCI_CMD, buf, buf[2] + 3, true);
+		ret = hci_sa_send(HCI_CMD, buf, buf[2] + 3, sizeof(buf_raw) - RESERVE_LEN, true);
 		if (HCI_SUCCESS != ret) {
 			goto dl_patch_done;
 		}
