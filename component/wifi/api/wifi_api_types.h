@@ -74,6 +74,11 @@ enum rtw_wlan_if_index {
 #define RTW_MAX_PSK_LEN		RTW_WPA3_MAX_PSK_LEN /**< Maximum PSK length used. */
 #define RTW_MIN_PSK_LEN		(8)		/**< Minimum PSK length. */
 
+/** wifi_start_ap() positive return: SoftAP started on a DFS channel; the AP is not
+ *  beaconing yet, CAC is running and the netif link-up is deferred until CAC passes
+ *  (driven by the RTW_EVENT_DFS_CAC_DONE handler). Not an error. DFS master only. */
+#define RTW_DFS_CAC_PENDING		1
+
 #define MAC_ARG(x)		((u8*)(x))[0],((u8*)(x))[1],\
 				((u8*)(x))[2],((u8*)(x))[3],\
 				((u8*)(x))[4],((u8*)(x))[5]      /**< Formats MAC address for printing. Usage Example: RTK_LOGS(NOTAG, RTK_LOG_INFO, "MAC addr="MAC_FMT"\n", MAC_ARG(mac_addr));*/

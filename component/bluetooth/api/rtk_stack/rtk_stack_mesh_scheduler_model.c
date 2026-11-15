@@ -25,6 +25,10 @@ static int32_t scheduler_client_data(const mesh_model_info_p pmodel_info,
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_SCHEDULER_CLIENT_MODEL, RTK_BT_MESH_SCHEDULER_CLIENT_MODEL_STATUS,
 									sizeof(scheduler_client_status_t));
+		if (!p_evt) {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+			break;
+		}
 		memcpy(p_evt->data, pargs, sizeof(scheduler_client_status_t));
 		rtk_bt_evt_indicate(p_evt, NULL);
 	}
@@ -33,6 +37,10 @@ static int32_t scheduler_client_data(const mesh_model_info_p pmodel_info,
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_SCHEDULER_CLIENT_MODEL, RTK_BT_MESH_SCHEDULER_ACTION_CLIENT_MODEL_STATUS,
 									sizeof(scheduler_client_status_action_t));
+		if (!p_evt) {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+			break;
+		}
 		memcpy(p_evt->data, pargs, sizeof(scheduler_client_status_action_t));
 		rtk_bt_evt_indicate(p_evt, NULL);
 	}
@@ -112,6 +120,10 @@ static int32_t scheduler_server_data(const mesh_model_info_p pmodel_info,
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_SCHEDULER_SERVER_MODEL, RTK_BT_MESH_SCHEDULER_SERVER_MODEL_GET,
 									sizeof(rtk_bt_mesh_scheduler_server_get_t));
+		if (!p_evt) {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+			break;
+		}
 		p_get_data = (rtk_bt_mesh_scheduler_server_get_t *)p_evt->data;
 		p_get_data->schedulers = &(((scheduler_server_get_t *)pargs)->schedulers);
 		rtk_bt_evt_indicate(p_evt, &cb_ret);
@@ -123,6 +135,10 @@ static int32_t scheduler_server_data(const mesh_model_info_p pmodel_info,
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_SCHEDULER_SERVER_MODEL, RTK_BT_MESH_SCHEDULER_ACTION_SERVER_MODEL_GET,
 									sizeof(rtk_bt_mesh_scheduler_server_get_action_t));
+		if (!p_evt) {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+			break;
+		}
 		p_get_data = (rtk_bt_mesh_scheduler_server_get_action_t *)p_evt->data;
 		p_get_data->index = ((scheduler_server_get_action_t *)pargs)->index;
 		p_get_data->scheduler = (rtk_bt_mesh_scheduler_register_t *) & (((scheduler_server_get_action_t *)pargs)->scheduler);
@@ -162,6 +178,10 @@ static int32_t scheduler_setup_server_data(const mesh_model_info_p pmodel_info,
 			rtk_bt_evt_t *p_evt = NULL;
 			p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_SCHEDULER_SETUP_SERVER_MODEL, RTK_BT_MESH_SCHEDULER_ACTION_SERVER_MODEL_SET,
 										sizeof(scheduler_server_set_action_t));
+			if (!p_evt) {
+				BT_LOGE("[%s] Create event fail\r\n", __func__);
+				break;
+			}
 			memcpy(p_evt->data, p_get_data, sizeof(scheduler_server_set_action_t));
 			rtk_bt_evt_indicate(p_evt, NULL);
 		}
@@ -172,6 +192,10 @@ static int32_t scheduler_setup_server_data(const mesh_model_info_p pmodel_info,
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_SCHEDULER_SETUP_SERVER_MODEL, RTK_BT_MESH_SCHEDULER_SETUP_SERVER_MODEL_GET_ACTION,
 									sizeof(rtk_bt_mesh_scheduler_server_get_action_t));
+		if (!p_evt) {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+			break;
+		}
 		p_get_data = (rtk_bt_mesh_scheduler_server_get_action_t *)p_evt->data;
 		p_get_data->index = ((scheduler_server_get_action_t *)pargs)->index;
 		p_get_data->scheduler = (rtk_bt_mesh_scheduler_register_t *) & (((scheduler_server_get_action_t *)pargs)->scheduler);
