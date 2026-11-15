@@ -85,7 +85,7 @@
 #define USB_APP_COMP_ACM_UAC
 #include "example_usbd_composite_cdc_acm_uac.h"
 #endif
-#if defined(CONFIG_USBD_COMPOSITE) && defined(CONFIG_USBD_HID_VENDOR) && defined(CONFIG_USBD_UAC)
+#if defined(CONFIG_USBD_COMPOSITE) && defined(CONFIG_USBD_HID_HEADSET) && defined(CONFIG_USBD_UAC)
 #define USB_APP_COMP_HID_UAC
 #include "example_usbd_composite_hid_uac.h"
 #endif

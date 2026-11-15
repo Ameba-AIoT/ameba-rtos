@@ -8,6 +8,7 @@
 #define _AMEBA_SPIC_H_
 
 #include "ameba_flashclk.h"
+#include "ameba_nor_flash.h"
 
 /* AUTO_GEN_START */
 
@@ -1054,6 +1055,10 @@ _LONG_CALL_ int FLASH_ReadStream(u32 address, u32 len, u8 *data);
   */
 void FLASH_Write_Lock(void);
 void FLASH_Write_Unlock(void);
+/* Runtime AP, non-SOLO/shared IPC with NP IPC/RTOS running. Pair on the same task;
+ * the caller owns AP IRQ and XIP code/data safety, including error paths. */
+void FLASH_Freeze_NP(void);
+void FLASH_Unfreeze_NP(void);
 void FLASH_RxCmdXIP(u8 cmd, u32 read_len, u8 *read_data);
 void FLASH_SetStatusXIP(u8 Cmd, u32 Len, u8 *Status);
 void FLASH_SetStatusBitsXIP(u32 SetBits, u32 NewState);
@@ -1075,6 +1080,22 @@ extern u32 SPIC_CALIB_PATTERN[2];
 #define QUAD_DUM_CYCLE_NUM		2
 
 #define SPIC_VALID_CMD_MASK		(0xffff)
+
+/* Convert a time in ns to SPIC clock cycles (round up). Tclk is the SPIC bus clock bus_clk (Hz),
+ * spi_sclk = bus_clk / (2 * FLASH_baud_rate). TPR0/TPR1 timing fields all count bus_clk cycles. */
+#define SPIC_NS_TO_CYCLES_CEIL(ns, bus_clk)	(((ns) * ((bus_clk) / 1000) + 999999) / 1000000)
+
+/* CS_ACTIVE_SETUP = round_up(tCSS / Tclk) - BAUDR + 1 (Tclk: bus clock period) */
+#define SPIC_CS_SETUP_CYCLES(tcss_ns, bus_clk, baud)	\
+	((SPIC_NS_TO_CYCLES_CEIL(tcss_ns, bus_clk) + 1 > (baud)) ? (SPIC_NS_TO_CYCLES_CEIL(tcss_ns, bus_clk) + 1 - (baud)) : 0)
+
+/* CS_ACTIVE_HOLD = (tCHSH - Tsclk) / Tclk, Tsclk = 2 * BAUDR * Tclk (flash clock period) */
+#define SPIC_CS_HOLD_CYCLES(tchsh_ns, bus_clk, baud)	\
+	((SPIC_NS_TO_CYCLES_CEIL(tchsh_ns, bus_clk) > 2 * (baud)) ? (SPIC_NS_TO_CYCLES_CEIL(tchsh_ns, bus_clk) - 2 * (baud)) : 0)
+
+/* CS_H_RD_DUM_LEN / CS_H_WR_DUM_LEN >= tSHSL / Tclk - 2 */
+#define SPIC_CS_HIGH_CYCLES(tshsl_ns, bus_clk)	\
+	((SPIC_NS_TO_CYCLES_CEIL(tshsl_ns, bus_clk) > 2) ? (SPIC_NS_TO_CYCLES_CEIL(tshsl_ns, bus_clk) - 2) : 0)
 
 #define SPIC_DR_DEPTH		(32)//32*8Bit
 #define U32BLOCKSIZE		(sizeof(u32))

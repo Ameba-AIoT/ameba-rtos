@@ -13,6 +13,12 @@ ameba_add_subdirectory(${c_CMPT_SWLIB_DIR})
 ameba_add_subdirectory(${c_CMPT_USRCFG_DIR})
 ameba_add_subdirectory(${c_CMPT_SOC_DIR}/../common/pqc)
 
+# Replaces fwlib/ram_km4/ameba_nor_flash.c - see CONFIG_NOR_FLASH_NEW_STRATEGY.
+# Needed in image1 because flash_nor_* is called from flash_highspeed_setup().
+if (CONFIG_NOR_FLASH_NEW_STRATEGY)
+    ameba_add_subdirectory(${c_COMPONENT_DIR}/soc/common/nor_flash)
+endif()
+
 ###############################  GENERATE IMAGE  ###################################
 #---------------- PRE LINK -------------------#
 

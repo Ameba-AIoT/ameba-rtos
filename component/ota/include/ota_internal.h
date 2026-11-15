@@ -50,6 +50,7 @@ typedef enum {
 	OTA_HTTP = 1,  /* HTTP transport */
 	OTA_HTTPS = 2, /* HTTPS transport */
 	OTA_VFS = 3,   /* VFS file system */
+	OTA_USB = 4,   /* USB DFU, the host downloads the OTA file with dfu-util */
 } ota_type_t;
 
 /**
@@ -348,6 +349,14 @@ int ota_http_tls_read(ota_context_t *ctx, u8 *buf, int len);
 int ota_vfs_open(ota_context_t *ctx);
 void ota_vfs_close(ota_context_t *ctx);
 int ota_vfs_read(ota_context_t *ctx, u8 *buf, int len);
+
+/* USB DFU */
+int ota_usb_open(ota_context_t *ctx);
+int ota_usb_read(ota_context_t *ctx, u8 *buf, int len);
+/* Called by the caller of ota_start(): finish after every ota_start() to report the result to
+ * the host and stop USB; abort (repeat until ota_start() returns) makes a waiting read return EOF */
+void ota_usb_finish(int result);
+void ota_usb_abort(void);
 
 void *rtos_mem_malloc(uint32_t size);
 void *rtos_mem_zmalloc(uint32_t size);

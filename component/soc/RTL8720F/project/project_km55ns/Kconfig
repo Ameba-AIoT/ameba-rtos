@@ -1,9 +1,5 @@
 comment "----------CPU config----------"
 
-menu "CONFIG Chip Arch"
-    # Adding the suffix _FOR_KM55NS is not allowed here
-endmenu
-
 menu "CONFIG CHIP"
     choice
         prompt "ArmCore"

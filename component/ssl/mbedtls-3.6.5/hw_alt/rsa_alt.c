@@ -77,15 +77,36 @@ cleanup:
     return ret;
 }
 
+/* ceil(2^31.5): a candidate whose top 32 bits reach this is >= 2^(nbits - 0.5) (FIPS 186-4 B.3.3), as CEIL_MAXUINT_DIV_SQRT2 in bignum.c */
+#define PKE_RSA_CEIL_2_31_5		0xb504f334U
+
+/* Miller-Rabin base uniform in 1 < A < W = n - 1 by rejection sampling, as mpi_miller_rabin (which also gives up after ~30 tries);
+ * a TRNG failure returns MBEDTLS_ERR_RSA_RNG_FAILED so the caller stops instead of taking it for a composite */
+static int pke_rsa_pick_base(uint8_t *a_buf, size_t prime_bytes, const mbedtls_mpi *W, mbedtls_mpi *A)
+{
+	for (int count = 0; count < 32; count++) {
+		if (TRNG_get_random_bytes(a_buf, prime_bytes) != RTK_SUCCESS) {
+			return MBEDTLS_ERR_RSA_RNG_FAILED;
+		}
+		mbedtls_mpi_read_binary_le(A, a_buf, prime_bytes);
+		if (mbedtls_mpi_cmp_int(A, 1) > 0 && mbedtls_mpi_cmp_mpi(A, W) < 0) {
+			return RTK_SUCCESS;
+		}
+	}
+	return RTK_FAIL;
+}
+
 static int pke_rsa_prime_generate(size_t nbits, uint8_t *num_buf, int flags)
 {
-	uint32_t max_loop = 10000;
-	uint32_t loops = max_loop;
+	uint32_t loops = 10000;
+	int ret = RTK_FAIL;
 	uint8_t a_buf[256];
 	size_t rounds = 0;
 	size_t prime_bytes = nbits / 8;
+	size_t round_t;
+	int base;
 
-	if (prime_bytes > sizeof(a_buf)) {
+	if (prime_bytes > sizeof(a_buf) || prime_bytes < 4) {
 		return MBEDTLS_ERR_RSA_BAD_INPUT_DATA;
 	}
 
@@ -107,58 +128,50 @@ static int pke_rsa_prime_generate(size_t nbits, uint8_t *num_buf, int flags)
 				  (nbits >=  250) ? 28 : (nbits >=   150) ? 40 : 51);
 	}
 
-	mbedtls_mpi N;
+	mbedtls_mpi N, W, A;
 	mbedtls_mpi_init(&N);
+	mbedtls_mpi_init(&W);
+	mbedtls_mpi_init(&A);
 
 	while (loops > 0) {
-		/* generate _rand n: The highest four bits are not zero,
-			which facilitates the subsequent generation of a.
-			And the lowest bit cannot be 0 */
-		while (1) {
-			TRNG_get_random_bytes(num_buf, prime_bytes);
-			if ((num_buf[0] & 0x1) && (num_buf[prime_bytes - 1] & 0xf0)) {
+		/* candidate n >= 2^(nbits - 0.5) by rejection sampling, as mbedtls_mpi_gen_prime, so P * Q has exactly 2 * nbits bits; then make it odd */
+		do {
+			if (TRNG_get_random_bytes(num_buf, prime_bytes) != RTK_SUCCESS) {
+				ret = MBEDTLS_ERR_RSA_RNG_FAILED;
+				goto exit;
+			}
+		} while (((uint32_t)num_buf[prime_bytes - 1] << 24 | (uint32_t)num_buf[prime_bytes - 2] << 16 |
+				  (uint32_t)num_buf[prime_bytes - 3] << 8 | num_buf[prime_bytes - 4]) < PKE_RSA_CEIL_2_31_5);
+		num_buf[0] |= 0x1;
+		loops--;
+
+		/* small factors once per candidate, then Miller-Rabin with a fresh base each round */
+		mbedtls_mpi_read_binary_le(&N, num_buf, prime_bytes);
+		if (mpi_check_small_factors(&N) != 0 || mbedtls_mpi_sub_int(&W, &N, 1) != 0) {
+			continue;
+		}
+		for (round_t = 0; round_t < rounds; round_t++) {
+			base = pke_rsa_pick_base(a_buf, prime_bytes, &W, &A);
+			if (base == MBEDTLS_ERR_RSA_RNG_FAILED) {
+				ret = base;
+				goto exit;
+			}
+			if (base != RTK_SUCCESS || pke_rsa_witness(a_buf, nbits, num_buf, nbits) != RTK_SUCCESS) {
 				break;
 			}
 		}
-
-		size_t round_t = rounds;
-		while (round_t > 0) {
-			/* generate _rand a: 2 <= a <= n - 2 */
-			while (1) {
-				TRNG_get_random_bytes(a_buf, prime_bytes);
-				if (a_buf[prime_bytes - 1] < num_buf[prime_bytes - 1]) {
-					break;
-				}
-			}
-
-			/* check small factors */
-			mbedtls_mpi_read_binary_le(&N, num_buf, nbits / 8);
-			if (mpi_check_small_factors(&N) == MBEDTLS_ERR_MPI_NOT_ACCEPTABLE) {
-				break;
-			}
-
-			/* witness(a, n) */
-			if (pke_rsa_witness(a_buf, nbits, num_buf, nbits) != RTK_SUCCESS) {
-				break;
-			}
-			round_t -= 1;
-		}
-
-		if (round_t == 0) {
+		if (round_t == rounds) {
 			/* gen prime success */
+			ret = RTK_SUCCESS;
 			break;
 		}
-		loops -= 1;
 	}
+exit:
 	mbedtls_mpi_free(&N);
+	mbedtls_mpi_free(&W);
+	mbedtls_mpi_free(&A);
 
-	// printf("[%s] try loop: %d\n", __func__, max_loop - loops);
-
-	if (loops > 0) {
-		return RTK_SUCCESS;
-	} else {
-		return RTK_FAIL;
-	}
+	return ret;
 }
 
 /* PKE generate prime number */
@@ -185,8 +198,9 @@ static int mbedtls_mpi_gen_prime_pke(mbedtls_mpi *X, size_t nbits, int flags,
 	if (num_buf == NULL) {
 		return MBEDTLS_ERR_MPI_ALLOC_FAILED;
 	}
-	if (RTK_SUCCESS != pke_rsa_prime_generate(nbits, num_buf, flags)) {
-		ret = MBEDTLS_ERR_MPI_NOT_ACCEPTABLE;
+	ret = pke_rsa_prime_generate(nbits, num_buf, flags);
+	if (ret != RTK_SUCCESS) {
+		ret = (ret == MBEDTLS_ERR_RSA_RNG_FAILED) ? ret : MBEDTLS_ERR_MPI_NOT_ACCEPTABLE;
 		goto cleanup;
 	}
 	mbedtls_mpi_read_binary_le(X, num_buf, nbits / 8);

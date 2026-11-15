@@ -7,6 +7,7 @@ from ctypes import *
 from enum import Enum, unique
 from typing import Union, List
 import copy
+import hashlib
 from cryptography.hazmat.primitives.asymmetric import ed25519
 from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.primitives import serialization
@@ -245,6 +246,39 @@ class ManifestManager(ABC):
         'ml_dsa_65': 3309,
         'ml_dsa_87': 4627
     }
+    pqc_key_size_mapping = {'ml_dsa_44': 1312, 'ml_dsa_65': 1952, 'ml_dsa_87': 2592}
+    pqc_private_key_size_mapping = {'ml_dsa_44': 2560, 'ml_dsa_65': 4032, 'ml_dsa_87': 4896}
+
+    @staticmethod
+    def pqc_enabled(config) -> bool:
+        return config.version >= 2 and bool(getattr(config, 'sboot_pqc_algorithm', None))
+
+    def _validate_pqc_keys(self, config: dict):
+        algorithm = config.get('sboot_pqc_algorithm')
+        if algorithm not in self.pqc_alg_mapping:
+            raise ValueError(f'Unsupported PQC algorithm: {algorithm}')
+        public_key = self.lib_security.ml_dsa_hex(config.get('sboot_pqc_public_key'), self.pqc_key_size_mapping[algorithm], 'PQC public key')
+        self.lib_security.ml_dsa_hex(config.get('sboot_pqc_private_key'), self.pqc_private_key_size_mapping[algorithm], 'PQC private key')
+        key_hash = self.lib_security.ml_dsa_hex(config.get('sboot_pqc_public_key_hash'), 32, 'PQC public key hash')
+        if hashlib.sha256(public_key).digest() != key_hash:
+            raise ValueError('PQC public key SHA256 does not match configured trust hash')
+        return public_key
+
+    def _sign_pqc(self, target, config, msg: bytes) -> Error:
+        try:
+            # Preprocessing already applied section > inherit_from > global precedence.
+            public_key = self._validate_pqc_keys(vars(config))
+            algorithm = config.sboot_pqc_algorithm
+            ret = self.sboot.ml_dsa_sign(algorithm, config.sboot_pqc_private_key, msg, len(msg), target.PQCSignature, config.sboot_pqc_public_key)
+            if ret != 0:
+                return Error(ErrorType.UNKNOWN_ERROR, f'{algorithm} signature generation/verification failed')
+            target.PQC_AuthAlg = self.pqc_alg_mapping[algorithm]
+            target.PQC_KeySize = self.pqc_key_size_mapping[algorithm]
+            target.PQC_SigSize = self.pqc_sig_size_mapping[algorithm]
+            memmove(addressof(target.PQCPubKey), public_key, len(public_key))
+            return Error.success()
+        except (ValueError, TypeError) as e:
+            return Error(ErrorType.INVALID_ARGS, str(e))
 
     def __init__(self, context: Context) -> None:
         super().__init__()
@@ -292,6 +326,45 @@ class ManifestManager(ABC):
 
     def validate_pqc_config(self, data: dict) -> bool:
         """Validate PQC configuration based on manifest version for each section"""
+        if self.context.soc_project == 'RLE1509':
+            # Validate effective image sections, not partial global defaults. PQC is
+            # selected independently of classical sboot_enable by its algorithm.
+            sections = [data[k] for k in ['image1', 'image2', 'cert', 'vbmeta'] if k in data and isinstance(data[k], dict)]
+            if not sections and 'version' in data:
+                sections = [data]
+            try:
+                for section in sections:
+                    if type(section.get('version', 1)) is not int or section.get('version', 1) not in [MANIFEST_VERSION_4KB, MANIFEST_VERSION_8KB]:
+                        raise ValueError('RLE1509 manifest version must be 1 or 2')
+                    if section.get('sboot_enable', section.get('secure_boot_en', False)):
+                        algorithm = section.get('sboot_algorithm', section.get('algorithm', ''))
+                        if algorithm in self.pqc_alg_mapping:
+                            raise ValueError('Use sboot_pqc_algorithm for ML-DSA, not the classical sboot_algorithm')
+                    if section.get('version', 1) >= 2:
+                        if section.get('sboot_pqc_algorithm'):
+                            self._validate_pqc_keys(section)
+                        elif 'sboot_pqc_algorithm' not in section and any(k.startswith('sboot_pqc_') for k in section):
+                            raise ValueError('PQC keys require sboot_pqc_algorithm')
+                    elif any(k.startswith('sboot_pqc_') for k in section):
+                        self.context.logger.warning('Version 1 ignores PQC fields; use version 2 to enable PQC')
+                if 'image2' in data and 'cert' in data and data['cert']['version'] != data['image2']['version']:
+                    raise ValueError('Certificate and image2 must use the same manifest version')
+                image1 = data.get('image1', {})
+                image2 = data.get('image2', {})
+                cert = data.get('cert', image2)
+                chain_pqc = [c.get('version', 1) >= 2 and bool(c.get('sboot_pqc_algorithm')) for c in [image1, cert, image2]]
+                if any(chain_pqc) and not all(chain_pqc):
+                    self.context.logger.warning('Partial PQC configuration cannot boot with PQC OTP enabled; image1, cert and image2 must all be signed')
+                if all(chain_pqc[:2]):
+                    # ROM IMG1 and the certificate share OTP SEC_PKKEY_PK2_0.
+                    # IMG2 may use a different mode/key via its certificate entry.
+                    if image1['sboot_pqc_public_key_hash'].upper() != cert['sboot_pqc_public_key_hash'].upper():
+                        raise ValueError('IMG1 and certificate PQC keys must share the OTP root hash')
+            except (ValueError, TypeError, KeyError) as e:
+                self.context.logger.error(str(e))
+                return False
+            return True
+
         # List of all PQC fields to check
         pqc_fields = [
             "sboot_pqc_algorithm",
@@ -491,6 +564,8 @@ class ManifestManager(ABC):
         entries = []
 
         # step-1: Add provided entry pairs (backward compatibility)
+        if len(entry_pairs) % 2:
+            return Error(ErrorType.INVALID_ARGS, 'Certificate entries must be KeyID/name pairs')
         for i in range(0, len(entry_pairs), 2):
             entries.append((int(entry_pairs[i]), entry_pairs[i+1]))
             print(f"Added entry pair: KeyID={entry_pairs[i]}, name={entry_pairs[i+1]}")
@@ -498,7 +573,8 @@ class ManifestManager(ABC):
         # step-2: Add PQC entry if version >= 2 and not already added
         if self.image2.version >= 2:
             has_pqc = any(e[1] == 'image2_pqc' for e in entries)
-            if not has_pqc and hasattr(self.image2, 'sboot_pqc_public_key_hash'):
+            add_pqc = self.pqc_enabled(self.image2) if self.context.soc_project == 'RLE1509' else hasattr(self.image2, 'sboot_pqc_public_key_hash')
+            if not has_pqc and add_pqc:
                 entries.append((1, 'image2_pqc'))
                 print(f"Auto-added PQC entry: KeyID=1, name=image2_pqc")
 
@@ -515,6 +591,13 @@ class ManifestManager(ABC):
         print(f"Total entries: {len(entries)}")
         for i, (key_id, name) in enumerate(entries):
             print(f"  Entry[{i}]: KeyID={key_id}, name={name}")
+
+        if self.context.soc_project == 'RLE1509':
+            key_ids = [entry[0] for entry in entries]
+            if len(entries) > CERT_MAX_KEYINFO or len(set(key_ids)) != len(key_ids) or any(k < 0 or k > 0xFFFFFFFF for k in key_ids):
+                return Error(ErrorType.INVALID_ARGS, 'Certificate requires at most five unique uint32 KeyIDs')
+            if self.pqc_enabled(self.image2) and (1, 'image2_pqc') not in entries:
+                return Error(ErrorType.INVALID_ARGS, 'IMG2 PQC trust hash must use certificate KeyID 1')
 
         # Check entry limit (Certificate structure supports max CERT_MAX_KEYINFO entries)
         if len(entries) > CERT_MAX_KEYINFO:
@@ -540,6 +623,11 @@ class ManifestManager(ABC):
             # Handle special case for PQC key hash
             if entry_name == 'image2_pqc':
                 if hasattr(self.image2, 'sboot_pqc_public_key_hash'):
+                    if self.pqc_enabled(self.image2):
+                        try:
+                            self._validate_pqc_keys(vars(self.image2))
+                        except (ValueError, TypeError) as e:
+                            return Error(ErrorType.INVALID_ARGS, str(e))
                     hash_bytes = bytes.fromhex(self.image2.sboot_pqc_public_key_hash)
                     memmove(addressof(cert_entries[i].Hash), hash_bytes, min(len(hash_bytes), 32))
             # Handle user-defined keys
@@ -554,23 +642,32 @@ class ManifestManager(ABC):
                     hash_bytes = bytes.fromhex(entry_config.sboot_public_key_hash)
                     memmove(addressof(cert_entries[i].Hash), hash_bytes, min(len(hash_bytes), 32))
 
-        if self.image2.sboot_enable:
+        # Entries are signed by PQC even in a pure-PQC certificate.
+        pkinfo_offset = addressof(basic_cert_part) + cert_size
+        for i in range(0, entry_num):
+            memmove(pkinfo_offset + i * sizeof(cert_entries[i]), addressof(cert_entries[i]), sizeof(cert_entries[i]))
+
+        classical_enable = self.image2.sboot_enable or (self.context.soc_project == 'RLE1509' and self.cert.sboot_enable)
+        if self.context.soc_project == 'RLE1509' and not classical_enable and self.pqc_enabled(self.cert):
+            self.sboot.IsHMAC = 0
+            if self.sboot.gen_hash_id(basic_cert_part, self.image2.sboot_hash_alg or 'sha256') != 0:
+                return Error(ErrorType.UNKNOWN_ERROR, "self.sboot gen hash id failed")
+        if classical_enable:
+            if self.cert.sboot_algorithm in self.pqc_alg_mapping:
+                return Error(ErrorType.INVALID_ARGS, 'ML-DSA must use the PQC extension, not classical authentication')
             # parse signing key json
             pubkey_bytes = bytes.fromhex(self.cert.sboot_public_key)
+            if len(pubkey_bytes) > PKEY_MAX_LEN:
+                return Error(ErrorType.INVALID_ARGS, 'Classical public key exceeds its fixed slot')
             memmove(addressof(basic_cert_part.SBPubKey), pubkey_bytes, len(pubkey_bytes))
 
             basic_cert_part.AuthAlg = self.sboot.gen_auth_id(self.cert.sboot_algorithm)
             if basic_cert_part.AuthAlg == -1:
                 return Error(ErrorType.UNKNOWN_ERROR, "self.sboot gen auth id failed")
 
+            self.sboot.IsHMAC = 0
             if self.sboot.gen_hash_id(basic_cert_part, self.image2.sboot_hash_alg) != 0:
                 return Error(ErrorType.UNKNOWN_ERROR, "self.sboot gen hash id failed")
-
-            # Copy certificate entries to PKInfo field
-            pkinfo_offset = addressof(basic_cert_part) + cert_size  # After SBPubKey field
-            for i in range(0, entry_num):
-                entry_offset = pkinfo_offset + i * sizeof(cert_entries[i])
-                memmove(entry_offset, addressof(cert_entries[i]), sizeof(cert_entries[i]))
 
             # gen ECC signature
             self.sboot.HmacKey = self.image2.sboot_hmac_key
@@ -580,66 +677,10 @@ class ManifestManager(ABC):
             if ret != 0:
                 return Error(ErrorType.UNKNOWN_ERROR, f"self.sboot gen signature failed: {ret}")
 
-            if use_extended_cert:
-                # Set PQC fields
-                # Get PQC algorithm from cert section (or global as fallback)
-                if hasattr(self.cert, 'sboot_pqc_algorithm'):
-                    pqc_algorithm = self.cert.sboot_pqc_algorithm
-                else:
-                    pqc_algorithm = self.new_json_data.get('sboot_pqc_algorithm', 'ml_dsa_65')
-
-                if pqc_algorithm in self.pqc_alg_mapping:
-                    cert.PQC_AuthAlg = self.pqc_alg_mapping[pqc_algorithm]
-                    cert.PQC_SigSize = self.pqc_sig_size_mapping[pqc_algorithm]
-                    print(f"PQC AuthAlg set to: {cert.PQC_AuthAlg}, SigSize: {cert.PQC_SigSize}")
-                else:
-                    return Error(ErrorType.UNKNOWN_ERROR, f"Unsupported PQC algorithm: {pqc_algorithm}")
-
-                # Get PQC keys: priority is cert section > global config
-                # Note: Certificate should use its own PQC keys, not image1 or image2's keys
-                if hasattr(self.cert, 'sboot_pqc_private_key') and hasattr(self.cert, 'sboot_pqc_public_key'):
-                    pqc_private_key = self.cert.sboot_pqc_private_key
-                    pqc_public_key = self.cert.sboot_pqc_public_key
-                    key_source = "cert section"
-                else:
-                    # Fallback to global config if cert section doesn't have PQC keys
-                    pqc_private_key = self.new_json_data.get('sboot_pqc_private_key', None)
-                    pqc_public_key = self.new_json_data.get('sboot_pqc_public_key', None)
-                    key_source = "global config"
-
-                if not pqc_public_key or not pqc_private_key:
-                    return Error(ErrorType.UNKNOWN_ERROR, f"PQC keys not found in cert section or global config")
-
-                # Debug output: PQC keys being used
-                print(f"\n[Certificate PQC Signing]")
-                print(f"  Key source: {key_source}")
-                print(f"  Algorithm: {pqc_algorithm}")
-                print(f"  Public Key (first 32 bytes): {pqc_public_key[:64]}...")
-                print(f"  Private Key (first 32 bytes): {pqc_private_key[:64]}...")
-
-                # Copy PQC public key
-                pqc_pubkey_bytes = bytes.fromhex(pqc_public_key)
-                cert.PQC_KeySize = len(pqc_pubkey_bytes)
-                memmove(addressof(cert.PQCPubKey), pqc_pubkey_bytes, cert.PQC_KeySize)
-
-                # Generate PQC signature for the same message as ECC
-                msg_buffer = (c_uint8 * basic_cert_part.TableSize)()
-                memmove(msg_buffer, addressof(cert), basic_cert_part.TableSize)
-
-                # Message should be passed as bytes
-                msg_bytes = bytes(msg_buffer)
-                ret = self.sboot.ml_dsa_65_sign(pqc_private_key, msg_bytes, basic_cert_part.TableSize, cert.PQCSignature)
-
-                if ret != 0:
-                    print(f"ERROR: PQC certificate signature generation failed, ret={ret}")
-                    return Error(ErrorType.UNKNOWN_ERROR, f"PQC certificate signature generation failed: {ret}")
-
-                # Debug output: PQC signature result
-                sig_bytes = bytes(cert.PQCSignature)
-                print(f"  Signature generated successfully")
-                print(f"  Signature size: {len(sig_bytes)} bytes")
-                print(f"  Signature (first 64 bytes): {sig_bytes[:64].hex()}...")
-                print(f"[Certificate PQC Signing Complete]\n")
+        if use_extended_cert and self.pqc_enabled(self.cert):
+            ret = self._sign_pqc(cert, self.cert, string_at(addressof(cert), basic_cert_part.TableSize))
+            if ret:
+                return ret
 
         # Write certificate to file
         with open(output_file, 'wb') as f:
@@ -747,6 +788,8 @@ class ManifestManager(ABC):
         basic_manifest_part.ImgSize = os.path.getsize(input_file)
 
         if image_config.sboot_enable:
+            if image_config.sboot_algorithm in self.pqc_alg_mapping:
+                return Error(ErrorType.INVALID_ARGS, 'ML-DSA must use the PQC extension, not classical authentication')
             if (ImagePattern[0] == CompressFlag[0]) and (ImagePattern[1] == CompressFlag[1]):
                 #NOTE: compress use cert keys
                 public_key = self.cert.sboot_public_key
@@ -756,11 +799,14 @@ class ManifestManager(ABC):
                 private_key = image_config.sboot_private_key
 
             pubkey_bytes = bytes.fromhex(public_key)
+            if len(pubkey_bytes) > PKEY_MAX_LEN:
+                return Error(ErrorType.INVALID_ARGS, 'Classical public key exceeds its fixed slot')
             memmove(addressof(basic_manifest_part.SBPubKey), pubkey_bytes, len(pubkey_bytes))
 
             basic_manifest_part.AuthAlg = self.sboot.gen_auth_id(image_config.sboot_algorithm)
             if basic_manifest_part.AuthAlg == -1:
                 return Error(ErrorType.UNKNOWN_ERROR, "self.sboot gen auth id failed")
+            self.sboot.IsHMAC = 0
             if self.sboot.gen_hash_id(basic_manifest_part, image_config.sboot_hash_alg) != 0:
                 return Error(ErrorType.UNKNOWN_ERROR, "self.sboot gen hash id failed")
             self.sboot.HmacKey = image_config.sboot_hmac_key
@@ -777,7 +823,7 @@ class ManifestManager(ABC):
             ret = self.sboot.gen_signature(basic_manifest_part.AuthAlg, private_key, basic_manifest_part.SBPubKey, basic_manifest_part, sizeof(Manifest_TypeDef) - SIGN_MAX_LEN, basic_manifest_part.Signature)
             if ret != 0:
                 return Error(ErrorType.UNKNOWN_ERROR, f"self.sboot gen signature failed: {ret}")
-        elif image_type in ([ImageType.IMAGE1, ImageType.IMAGE2, ImageType.APP_ALL]
+        elif self.pqc_enabled(image_config) or image_type in ([ImageType.IMAGE1, ImageType.IMAGE2, ImageType.APP_ALL]
                              if self.context.soc_project in ['RLE1509', 'RTL8720F', 'amebagreen2']
                              else [ImageType.IMAGE2, ImageType.APP_ALL]):
             # Always populate the image hash (plain SHA-256) even when secure boot
@@ -789,89 +835,23 @@ class ManifestManager(ABC):
             # IMG1 HashAlg/ImgHash when secure boot is off. Other SoCs run a production
             # mask ROM that would misbehave on a non-0xFF IMG1 HashAlg when sboot is off.
             self.sboot.IsHMAC = 0
-            if self.sboot.gen_hash_id(basic_manifest_part, "sha256") != 0:
+            hash_alg = (image_config.sboot_hash_alg or 'sha256') if self.pqc_enabled(image_config) else 'sha256'
+            self.sboot.HmacKey = image_config.sboot_hmac_key
+            self.sboot.HmacKeyLen = len(image_config.sboot_hmac_key) // 2
+            if self.sboot.gen_hash_id(basic_manifest_part, hash_alg) != 0:
                 return Error(ErrorType.UNKNOWN_ERROR, "self.sboot gen hash id failed")
             hash_file = hash_input_file if hash_input_file else input_file
             ret = self.sboot.gen_image_hash(hash_file, basic_manifest_part.ImgHash, hash_skip_bytes)
             if ret != 0:
                 return Error(ErrorType.UNKNOWN_ERROR, f"self.sboot gen image hash failed: {ret}")
 
-        # Handle PQC fields for extended manifest
-        if use_extended_manifest:
-            # Get PQC algorithm: priority is image_config > global config
-            if hasattr(image_config, 'sboot_pqc_algorithm'):
-                pqc_algorithm = image_config.sboot_pqc_algorithm
-            else:
-                pqc_algorithm = self.new_json_data.get('sboot_pqc_algorithm', None)
-
-            if pqc_algorithm:
-                print(f"PQC algorithm detected: {pqc_algorithm}")
-
-                if pqc_algorithm in self.pqc_alg_mapping:
-                    # Set PQC algorithm ID and SigSize
-                    manifest.PQC_AuthAlg = self.pqc_alg_mapping[pqc_algorithm]
-                    manifest.PQC_SigSize = self.pqc_sig_size_mapping[pqc_algorithm]
-
-                    # Get PQC keys: priority is image_config > global config
-                    # Note: Each image should use its own PQC keys, not cert or other images' keys
-                    if hasattr(image_config, 'sboot_pqc_private_key') and hasattr(image_config, 'sboot_pqc_public_key'):
-                        pqc_private_key = image_config.sboot_pqc_private_key
-                        pqc_public_key = image_config.sboot_pqc_public_key
-                        print(f"Using PQC keys from {image_type.name} section")
-                    else:
-                        # Fallback to global config if image_config doesn't have PQC keys
-                        pqc_private_key = self.new_json_data.get('sboot_pqc_private_key', None)
-                        pqc_public_key = self.new_json_data.get('sboot_pqc_public_key', None)
-                        print(f"Using PQC keys from global config")
-
-                    if pqc_public_key:
-                        # Convert hex string to bytes and copy to manifest
-                        pqc_pubkey_bytes = bytes.fromhex(pqc_public_key)
-                        pqc_key_size = len(pqc_pubkey_bytes)
-
-                        if pqc_key_size <= PKEY_MAX_LEN_EXT:
-                            manifest.PQC_KeySize = pqc_key_size
-                            memmove(addressof(manifest.PQCPubKey), pqc_pubkey_bytes, pqc_key_size)
-                            print(f"PQC public key size: {pqc_key_size}")
-                        else:
-                            return Error(ErrorType.UNKNOWN_ERROR, f"PQC public key too large: {pqc_key_size} > {PKEY_MAX_LEN_EXT}")
-
-                    # Generate PQC signature if private key is available
-                    if pqc_private_key:
-                        # Debug output: PQC keys being used for manifest signing
-                        key_source_str = f"{image_type.name} section" if hasattr(image_config, 'sboot_pqc_private_key') else "global config"
-                        print(f"\n[Manifest PQC Signing - {image_type.name}]")
-                        print(f"  Key source: {key_source_str}")
-                        print(f"  Algorithm: {pqc_algorithm}")
-                        print(f"  Public Key (first 32 bytes): {pqc_public_key[:64]}...")
-                        print(f"  Private Key (first 32 bytes): {pqc_private_key[:64]}...")
-
-                        # PQC signature should cover same content as ECC signature (base manifest only)
-                        # Exclude PQCSignature and PQC metadata from signature
-                        pqc_msg_length = sizeof(Manifest_TypeDef) - SIGN_MAX_LEN  # Same as ECC signature
-
-                        # Create message buffer for PQC signature
-                        msg_buffer = (c_uint8 * pqc_msg_length)()
-                        memmove(msg_buffer, addressof(manifest), pqc_msg_length)
-
-                        # Generate PQC signature
-                        if pqc_algorithm == 'ml_dsa_65':
-                            # Convert ctypes array to bytes for PQC library
-                            msg_bytes = bytes(msg_buffer)
-                            ret = self.sboot.ml_dsa_65_sign(pqc_private_key, msg_bytes, pqc_msg_length, manifest.PQCSignature)
-                            if ret == 0:
-                                # Debug output: PQC signature result
-                                sig_bytes = bytes(manifest.PQCSignature)
-                                print(f"  Signature generated successfully")
-                                print(f"  Signature size: {manifest.PQC_SigSize} bytes")
-                                print(f"  Signature (first 64 bytes): {sig_bytes[:64].hex()}...")
-                                print(f"[Manifest PQC Signing Complete - {image_type.name}]\n")
-                            else:
-                                return Error(ErrorType.UNKNOWN_ERROR, f"Failed to generate PQC signature: {ret}")
-                        else:
-                            return Error(ErrorType.UNKNOWN_ERROR, f"Unsupported PQC algorithm: {pqc_algorithm}")
-
-                    print(f"PQC fields populated - AuthAlg: {manifest.PQC_AuthAlg}, KeySize: {manifest.PQC_KeySize}, SigSize: {manifest.PQC_SigSize}")
+        if self.pqc_enabled(image_config):
+            # PQC authenticates the same base bytes as classical ECC, not the
+            # extension metadata or either signature slot (ROM wire format).
+            msg = string_at(addressof(manifest), sizeof(Manifest_TypeDef) - SIGN_MAX_LEN)
+            ret = self._sign_pqc(manifest, image_config, msg)
+            if ret:
+                return ret
 
         with open(output_file, 'wb') as f:
             # Write the correct manifest structure
@@ -941,16 +921,16 @@ class ManifestManager(ABC):
             print("Fail to create keypair, ret: %d"%auth_alg_id)
             return Error(ErrorType.UNKNOWN_ERROR, f"Fail to create keypair for {algorithm}, ret: {auth_alg_id}")
 
-        # Use PQC field names for ml_dsa_65 algorithm
-        if algorithm == "ml_dsa_65":
+        # ML-DSA keys belong only to the PQC extension.
+        if algorithm in ManifestManager.pqc_alg_mapping:
             key_info = {'sboot_pqc_algorithm': algorithm}
         else:
             key_info = {'sboot_algorithm': algorithm}
 
-        if algorithm == "ml_dsa_65":
-            ret = sboot.ml_dsa_65_genkey(key_info)
+        if algorithm in ManifestManager.pqc_alg_mapping:
+            ret = sboot.ml_dsa_genkey(algorithm, key_info)
             if ret != 0:
-                return Error(ErrorType.UNKNOWN_ERROR, f"Failed to generate ML-DSA-65 keypair, ret: {ret}")
+                return Error(ErrorType.UNKNOWN_ERROR, f"Failed to generate {algorithm} keypair, ret: {ret}")
         elif auth_alg_id == AuthAlg.AuthID_ED25519.value:
             sboot.ed25519_genkey(key_info)
         else:

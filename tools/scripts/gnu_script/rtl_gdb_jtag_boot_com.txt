@@ -45,3 +45,17 @@ set debug remote 0
 #Halt only, the caller script resets the cpu when needed (load rom / flash write)
 monitor halt
 monitor waithalt 2000
+
+#===============================================================================
+# Warm reset (monitor reset 0) does not reset peripherals: if crypto (AES/SHA/PKE) held its HW mutex
+# when the cpu was reset, ROM CRYPTO_Init + pke_engine_init can never take the mutex again.
+# Call this right after reset while the cpu is halted: clear crypto function/clock enable to reset the IP,
+# ROM CRYPTO_Init enables it again from a clean state.
+# By gdb -ex set: CRYPTO_RST_EN, and if enabled SYSTEM_CTRL_BASE, REG_LSYS_FEN_GRP0, REG_LSYS_CKE_GRP0, CRYPTO_RCC_MASK
+define crypto_rcc_clear
+    if ($CRYPTO_RST_EN == 1)
+        set {int}($SYSTEM_CTRL_BASE + $REG_LSYS_FEN_GRP0) = {int}($SYSTEM_CTRL_BASE + $REG_LSYS_FEN_GRP0) & ~$CRYPTO_RCC_MASK
+        set {int}($SYSTEM_CTRL_BASE + $REG_LSYS_CKE_GRP0) = {int}($SYSTEM_CTRL_BASE + $REG_LSYS_CKE_GRP0) & ~$CRYPTO_RCC_MASK
+        printf "Crypto RCC clear, FEN_GRP0=0x%x, CKE_GRP0=0x%x\n", {int}($SYSTEM_CTRL_BASE + $REG_LSYS_FEN_GRP0), {int}($SYSTEM_CTRL_BASE + $REG_LSYS_CKE_GRP0)
+    end
+end

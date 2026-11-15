@@ -62,3 +62,6 @@ ChangeLog:
                   (2) Fix entering download mode fail issue when the download baudrate differs from handshake baudrate
                   (3) Remove the restriction of NAND flash ECC capability check
                   (4) Fixed full-chip erase failed issue when a bad block was encountered
+                  (5) Support auto detect flash type
+                  (6) Support USB download on macOS
+                  (7) Add --scan to list serial ports, UART ports by default or USB ports with --usb

@@ -929,32 +929,37 @@ static rtk_bt_evt_cb_ret_t ble_scatternet_gap_app_callback(uint8_t evt_code, voi
 #if defined(RTK_BLE_5_4_PAWR_ADV_SUPPORT) && RTK_BLE_5_4_PAWR_ADV_SUPPORT
 	case RTK_BT_LE_GAP_EVT_PAWR_DATA_REQ_IND: {
 		rtk_bt_le_gap_pawr_data_req_ind_t *req = (rtk_bt_le_gap_pawr_data_req_ind_t *)param;
-		static uint8_t pawr_sub_data[4][60];
+		static uint8_t pawr_sub_data[RTK_BLE_PAWR_SET_SUBEVENT_DATA_MAX][50];
 		static uint32_t pawr_cycle = 0;
-		rtk_bt_le_gap_pawr_subevent_element_t sub_ele[4] = {0};
+		rtk_bt_le_gap_pawr_subevent_element_t sub_ele[RTK_BLE_PAWR_SET_SUBEVENT_DATA_MAX] = {0};
 		rtk_bt_le_gap_pawr_subevent_data_t sub_data = {0};
 		uint8_t num = 0;
 
-		BT_LOGA("[APP] PAwR(%d) request subevent data, start: %d num: %d\r\n",
+		BT_LOGA("[APP] PAwR(%d) request subevent data, start: %d, count: %d\r\n",
 				req->adv_handle, req->start, req->count);
 
-		if (!req->count) {
+		if (!req->count || !req->num_subevents) {
 			BT_LOGE("[APP] Invalid PAwR request subevent data number!\r\n");
 			break;
 		}
 
-		num = MIN(4, req->count);
+		num = MIN(RTK_BLE_PAWR_SET_SUBEVENT_DATA_MAX, req->count);
 		sub_data.adv_handle = req->adv_handle;
 		sub_data.num_subs = num;
 		sub_data.sub_arr = sub_ele;
 		for (uint8_t i = 0; i < num; i++) {
-			sub_ele[i].subevent = req->start + i;
+			sub_ele[i].subevent = (req->start + i) % req->num_subevents;
 			sub_ele[i].response_slot_start = 0;
-			sub_ele[i].response_slot_count = 1;
-			sub_ele[i].len = 60;
-			/* Byte0-3: subevent set cycles in uint32_t, Byte4-N: uint8_t subevent index in PA */
-			memcpy(&pawr_sub_data[i][0], &pawr_cycle, 4);
-			memset(&pawr_sub_data[i][4], sub_ele[i].subevent, 56);
+			sub_ele[i].response_slot_count = 2;
+			sub_ele[i].len = sizeof(pawr_sub_data[i]);
+			/* Byte0-3: manufacturer specific AD structure, Byte4-7: subevent set cycles in uint32_t,
+			 * Byte8-N: uint8_t subevent index in PA, fill up remaining memory. */
+			memset(pawr_sub_data[i], sub_ele[i].subevent, sizeof(pawr_sub_data[i]));
+			pawr_sub_data[i][0] = sub_ele[i].len - 1;
+			pawr_sub_data[i][1] = RTK_BT_LE_GAP_ADTYPE_MANUFACTURER_SPECIFIC;
+			pawr_sub_data[i][2] = 0x5d;
+			pawr_sub_data[i][3] = 0x00;
+			memcpy(&pawr_sub_data[i][4], &pawr_cycle, 4);
 			sub_ele[i].data = pawr_sub_data[i];
 		}
 		pawr_cycle++;
@@ -967,7 +972,7 @@ static rtk_bt_evt_cb_ret_t ble_scatternet_gap_app_callback(uint8_t evt_code, voi
 
 	case RTK_BT_LE_GAP_EVT_PAWR_RSP_IND: {
 		rtk_bt_le_gap_pawr_rsp_ind_t *rsp = (rtk_bt_le_gap_pawr_rsp_ind_t *)param;
-		BT_LOGA("[APP] PAwR(%d) rsp subevent: %d, tx_status: %d, slot: %d, rssi: %d len: %d\r\n",
+		BT_LOGA("[APP] PAwR(%d) rsp subevent: %d, tx_status: %d, slot: %d, rssi: %d, len: %d\r\n",
 				rsp->adv_handle, rsp->subevent, rsp->tx_status, rsp->response_slot, rsp->rssi, rsp->len);
 		BT_AT_PRINT("+BLEGAP:pawr_rsp,%d,%d,%d,%d,%d\r\n", rsp->adv_handle, rsp->subevent, rsp->response_slot, rsp->rssi, rsp->len);
 		break;

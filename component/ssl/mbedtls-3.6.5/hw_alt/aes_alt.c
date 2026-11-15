@@ -291,6 +291,7 @@ int mbedtls_aes_crypt_xts( mbedtls_aes_xts_context *ctx,
                            unsigned char *output )
 {
     int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
+    unsigned char tweak[16];
 
     AES_VALIDATE_RET( ctx != NULL );
     AES_VALIDATE_RET( mode == MBEDTLS_AES_ENCRYPT ||
@@ -329,13 +330,61 @@ int mbedtls_aes_crypt_xts( mbedtls_aes_xts_context *ctx,
     if(ret != 0)
         goto exit;
 
-    ret = crypto_aes_xts(key_id, xts_key2_id, ctx->crypt.key_len_bits, mode, input, length, (uint8_t *)data_unit, output);
+    // the driver writes the next tweak back, but data_unit is const in the mbedTLS API
+    memcpy(tweak, data_unit, 16);
+    ret = crypto_aes_xts(key_id, xts_key2_id, ctx->crypt.key_len_bits, mode, input, length, tweak, output);
 
 exit:
     IPC_SEMFree(IPC_SEM_CRYPTO_AES_SW_KEY);
     return map_hw_to_mbedtls_error(ret, MBEDTLS_ALT_ALGO_AES);
 }
 #endif /* MBEDTLS_CIPHER_MODE_XTS */
+
+#if defined(MBEDTLS_CIPHER_MODE_CFB) || defined(MBEDTLS_CIPHER_MODE_OFB) || defined(MBEDTLS_CIPHER_MODE_CTR)
+#define AES_ALT_CFB 0
+#define AES_ALT_OFB 1
+#define AES_ALT_CTR 2
+
+/*
+ * Byte path for the part of a stream that is not a whole block: uses the keystream left in iv (CFB / OFB) or ks (CTR)
+ * at offset *n and refills it with one ECB block when *n wraps to 0, so *iv_off / *nc_off carry over like in mbedTLS.
+ * Called with IPC_SEM_CRYPTO_AES_SW_KEY held and the key already in key_id.
+ */
+static int aes_alt_stream_bytes( mbedtls_aes_context *ctx, u32 key_id, int kind, int mode, size_t len, size_t *n,
+                                 unsigned char iv[16], unsigned char ks[16], const unsigned char **in, unsigned char **out )
+{
+    int ret = 0;
+    unsigned char c, o;
+    int i;
+
+    while( len-- )
+    {
+        if( *n == 0 )
+        {
+#if (defined(CONFIG_RTL8720F) || defined(CONFIG_RLE1509))
+            ret = crypto_aes_ecb_slave(key_id, ctx->key_len_bits, ctx->key_val, MBEDTLS_AES_ENCRYPT, iv, ks);
+#else
+            ret = crypto_aes_ecb_slave(key_id, ctx->key_len_bits, MBEDTLS_AES_ENCRYPT, iv, ks);
+#endif
+            if( ret != 0 )
+                return ret;
+            if( kind == AES_ALT_CTR )
+            {
+                for( i = 16; i > 0; i-- )
+                    if( ++iv[i - 1] != 0 )
+                        break;
+            }
+        }
+        c = *(*in)++;
+        o = c ^ ks[*n];
+        if( kind == AES_ALT_CFB )
+            ks[*n] = ( mode == MBEDTLS_AES_ENCRYPT ) ? o : c;
+        *(*out)++ = o;
+        *n = ( *n + 1 ) & 0x0F;
+    }
+    return ret;
+}
+#endif
 
 #if defined(MBEDTLS_CIPHER_MODE_CFB)
 /*
@@ -349,7 +398,7 @@ int mbedtls_aes_crypt_cfb128( mbedtls_aes_context *ctx,
                        const unsigned char *input,
                        unsigned char *output )
 {
-    size_t n;
+    size_t n, head, bulk;
     size_t key_id = 0;
     int ret = 0;
 
@@ -376,7 +425,18 @@ int mbedtls_aes_crypt_cfb128( mbedtls_aes_context *ctx,
     if(ret != 0)
         goto exit;
 
-    ret = crypto_aes_cfb(key_id, ctx->key_len_bits, mode, input, length, iv, output);
+    // finish the partly used block, run whole blocks on the engine, then start a new block for the tail
+    head = n ? ( ( length < 16 - n ) ? length : 16 - n ) : 0;
+    ret = aes_alt_stream_bytes(ctx, key_id, AES_ALT_CFB, mode, head, &n, iv, iv, &input, &output);
+    bulk = ( length - head ) & ~(size_t)0x0F;
+    if( ret == 0 && bulk > 0 )
+    {
+        ret = crypto_aes_cfb(key_id, ctx->key_len_bits, mode, input, bulk, iv, output);
+        input += bulk;
+        output += bulk;
+    }
+    if( ret == 0 )
+        ret = aes_alt_stream_bytes(ctx, key_id, AES_ALT_CFB, mode, length - head - bulk, &n, iv, iv, &input, &output);
 
     *iv_off = n;
 
@@ -439,7 +499,7 @@ int mbedtls_aes_crypt_ofb( mbedtls_aes_context *ctx,
                            unsigned char *output )
 {
     int ret = 0;
-    size_t n;
+    size_t n, head, bulk;
     size_t key_id = 0;
 
     AES_VALIDATE_RET( ctx != NULL );
@@ -462,8 +522,17 @@ int mbedtls_aes_crypt_ofb( mbedtls_aes_context *ctx,
     ret = crypto_aes_set_sw_key(key_id, ctx->key_len_bits, ctx->key_val);
     if(ret != 0)
         goto exit;
-    ret = crypto_aes_ofb(key_id, ctx->key_len_bits, MBEDTLS_AES_ENCRYPT, input, length, iv, output);
-
+    head = n ? ( ( length < 16 - n ) ? length : 16 - n ) : 0;
+    ret = aes_alt_stream_bytes(ctx, key_id, AES_ALT_OFB, MBEDTLS_AES_ENCRYPT, head, &n, iv, iv, &input, &output);
+    bulk = ( length - head ) & ~(size_t)0x0F;
+    if( ret == 0 && bulk > 0 )
+    {
+        ret = crypto_aes_ofb(key_id, ctx->key_len_bits, MBEDTLS_AES_ENCRYPT, input, bulk, iv, output);
+        input += bulk;
+        output += bulk;
+    }
+    if( ret == 0 )
+        ret = aes_alt_stream_bytes(ctx, key_id, AES_ALT_OFB, MBEDTLS_AES_ENCRYPT, length - head - bulk, &n, iv, iv, &input, &output);
 
     *iv_off = n;
 
@@ -485,7 +554,7 @@ int mbedtls_aes_crypt_ctr( mbedtls_aes_context *ctx,
                        const unsigned char *input,
                        unsigned char *output )
 {
-    size_t n;
+    size_t n, head, bulk;
     int ret = 0;
     size_t key_id = 0;
 
@@ -510,8 +579,19 @@ int mbedtls_aes_crypt_ctr( mbedtls_aes_context *ctx,
     ret = crypto_aes_set_sw_key(key_id, ctx->key_len_bits, ctx->key_val);
     if(ret != 0)
         goto exit;
-    ret = crypto_aes_ctr(key_id, ctx->key_len_bits, MBEDTLS_AES_ENCRYPT, input, length, nonce_counter, output);
-    _memcpy(stream_block, nonce_counter, 16);
+    // stream_block keeps the keystream of the partly used block; after whole blocks n is 0 and it is not read
+    head = n ? ( ( length < 16 - n ) ? length : 16 - n ) : 0;
+    ret = aes_alt_stream_bytes(ctx, key_id, AES_ALT_CTR, MBEDTLS_AES_ENCRYPT, head, &n, nonce_counter, stream_block, &input, &output);
+    bulk = ( length - head ) & ~(size_t)0x0F;
+    if( ret == 0 && bulk > 0 )
+    {
+        ret = crypto_aes_ctr(key_id, ctx->key_len_bits, MBEDTLS_AES_ENCRYPT, input, bulk, nonce_counter, output);
+        input += bulk;
+        output += bulk;
+    }
+    if( ret == 0 )
+        ret = aes_alt_stream_bytes(ctx, key_id, AES_ALT_CTR, MBEDTLS_AES_ENCRYPT, length - head - bulk, &n, nonce_counter, stream_block,
+                                   &input, &output);
 
     *nc_off = n;
 

@@ -80,9 +80,9 @@ The board runs iperf2 with `AT+IPERF` and iperf3 with `AT+IPERF3`; the PC shall 
 
 The block size is the length of one read or write, one TCP segment or one UDP datagram:
 
-* iperf3: **always set `-l` on both sides, 1 to 2920 bytes, 1460 recommended** (one TCP MSS). The board defaults to 1460 bytes to save RAM, while a PC iperf3 defaults to 128 KB for TCP and sends that size to the board when the test starts. Without `-l`:
-	* board as server: the board refuses the test and prints `blksize is too large, this test may fail` and `Please set the appropriate size by using '-l ' option`;
-	* board as client: the test connects but transfers no data.
+* iperf3: **set `-l` on the client side, 1 to 2920 bytes, 1460 recommended** (one TCP MSS). The client sends its size to the server when the test starts. The board defaults to 1460 bytes to save RAM, while a PC iperf3 defaults to 128 KB for TCP:
+	* board as server: a PC client without `-l` is refused, the board prints `blksize is too large, this test may fail` and `Please set the appropriate size by using '-l ' option`;
+	* board as client: `-l` is optional, without it the board sends 1460 bytes. Setting it keeps the size explicit and the same as in the PC client tests.
 * iperf2: the board defaults to 1460 bytes as client and 1500 bytes as server, and the PC does not pass its own size to the board, so `-l` is optional. Keep it at most 1460 for TCP, and at most 1472 for UDP so a datagram fits one Ethernet frame without IP fragmentation.
 
 ## Commands

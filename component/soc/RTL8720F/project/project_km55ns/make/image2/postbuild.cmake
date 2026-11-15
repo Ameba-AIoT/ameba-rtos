@@ -87,7 +87,6 @@ endif()
 
 message("========== Image manipulating end ==========")
 
-
 if((NOT CONFIG_AMEBA_RLS) AND (NOT DEFINED ENV{AMEBA_SKIP_IMAGE_ANALYZE}))
     message("========== Image analyze start ==========")
     ameba_execute_process(p_SHOW_OUTPUT

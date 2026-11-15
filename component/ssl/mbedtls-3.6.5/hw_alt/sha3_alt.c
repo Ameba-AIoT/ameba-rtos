@@ -113,7 +113,7 @@ int mbedtls_sha3_finish(mbedtls_sha3_context *ctx,
 {
     int ret;
 
-    if (olen < ctx->digest_len) {
+    if ((ctx == NULL) || (output == NULL) || (olen < ctx->digest_len)) {
         ret = MBEDTLS_ERR_SHA3_BAD_INPUT_DATA;
         goto exit;
     }

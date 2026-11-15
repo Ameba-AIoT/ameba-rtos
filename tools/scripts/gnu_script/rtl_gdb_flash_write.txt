@@ -103,6 +103,7 @@ monitor reset 0
 monitor sleep 20
 monitor reset 0
 monitor sleep 20
+crypto_rcc_clear
 
 # 1. Preparation (Vector Table Offset / Debug register)
 set $Temp = {int}(0xE000EE08)

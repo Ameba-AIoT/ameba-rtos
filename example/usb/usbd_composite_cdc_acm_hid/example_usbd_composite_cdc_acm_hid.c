@@ -58,16 +58,9 @@
 #define COMP_INIT_THREAD_STACK_SIZE                   1024U
 #define COMP_HOTPLUG_THREAD_STACK_SIZE                1024U
 
-#define HID_SET_PROTOCOL                              0x01
-#define HID_GET_PROTOCOL                              0x03
-#define HID_SET_REPORT                                0x09
-#define HID_SET_IDLE                                  0x0A
-#define HID_GET_IDLE                                  0x02
-
 #define HID_MOUSE_BUTTON_LEFT                         0x01
 #define HID_MOUSE_BUTTON_RIGHT                        0x02
 #define HID_MOUSE_BUTTON_MIDDLE                       0x04
-#define HID_MOUSE_BUTTON_RESERVED                     0x00
 
 /* Private types -------------------------------------------------------------*/
 
@@ -324,10 +317,6 @@ static int composite_cdc_acm_cb_setup(usb_setup_req_t *req, u8 *buf)
   */
 static int composite_cdc_acm_cb_received(u8 *buf, u32 len)
 {
-	if ((buf == NULL) || (len == 0U)) {
-		return RTK_SUCCESS;
-	}
-
 	/* Loopback; -RTK_ERR_BUSY means the previous echo is still in flight and this one is dropped */
 	return usbd_cdc_acm_transmit(buf, len);
 }
@@ -360,7 +349,6 @@ static int composite_hid_send_device_data(composite_hid_mouse_data_t *data)
 		byte[0] |= HID_MOUSE_BUTTON_MIDDLE;
 	}
 
-	byte[0] |= HID_MOUSE_BUTTON_RESERVED;
 	byte[1] = data->x_axis;
 	byte[2] = data->y_axis;
 	byte[3] = data->wheel;
@@ -440,7 +428,6 @@ static int composite_hid_parse_mouse(u16 argc, char *argv[], composite_hid_mouse
 		}
 	}
 
-	memset((void *)data, 0, sizeof(*data));
 	data->left = (u8)val[0];
 	data->right = (u8)val[1];
 	data->middle = (u8)val[2];
