@@ -117,16 +117,6 @@ typedef struct {
 } __PACKED usbh_dev_hid_desc_t;
 
 /**
- * @brief HID Report Descriptor State Machine states.
- */
-typedef enum {
-	USBH_HID_REPORT_IDLE,       /**< Idle state */
-	USBH_HID_REPORT_SET_ALT,    /**< Setting Interface Alternate Setting */
-	USBH_HID_REPORT_GET_DESC,   /**< Getting Report Descriptor */
-	USBH_HID_REPORT_MAX,        /**< Max state guard */
-} usbh_hid_get_report_desc_t;
-
-/**
  * @brief HID Event Types.
  * Abstracted events generated from HID reports.
  */
@@ -243,10 +233,8 @@ typedef struct {
 
 	/* Class and interface state */
 	__IO u8 hid_ctrl;                         /**< HID control state */
-	u8 report_desc_status;                  /**< Status of report descriptor retrieval */
 	u8 itf_idx;                               /**< Interface Index */
 	u8 itf_alt_idx;                           /**< Interface Alternate Setting Index */
-	u8 alt_setting_count;                     /**< Number of alternate settings on this HID interface */
 	u8 halt_pending;                          /**< INTR IN STALLed, CLEAR_FEATURE(ENDPOINT_HALT) to be sent */
 	u8 halt_retry_cnt;                        /**< Failed CLEAR_FEATURE(ENDPOINT_HALT) attempts */
 	u8 report_cut_logged;                     /**< A report longer than a ring node was reported for this attach */
@@ -259,8 +247,8 @@ typedef struct {
 	                                               hid_ctrl_buf then becomes the INTR IN buffer and is overwritten by reports. */
 	u8 *report_desc_buf;                      /**< Report descriptor larger than hid_ctrl_buf: allocated for the fetch and
 	                                               freed once it is parsed, or by detach */
-	usbh_hid_ctrl_caps_t vol_caps;            /**< Volume capabilities detected; written with hid_ctrl under the USB
-	                                               critical section, read by the parse thread through caps_snap */
+	usbh_hid_ctrl_caps_t vol_caps;            /**< Volume capabilities detected; filled while hid_ctrl is 0, read by the
+	                                               parse thread through caps_snap once hid_ctrl is set under the USB lock */
 
 	/* Interrupt pipes */
 	usbh_pipe_t pipe_in;                      /**< Interrupt IN pipe handle */
@@ -277,7 +265,6 @@ typedef struct {
 	__IO u8 parse_task_exit;                  /**< Flag to indicate signal parse task is exit */
 	u8 report_buf[USBH_HID_REPORT_MAX_LEN];   /**< Parse thread copy of one report, kept off its 768 B stack */
 	usbh_hid_ctrl_caps_t caps_snap;           /**< Parse thread copy of vol_caps for one report, taken under the lock */
-	usbh_hid_ctrl_caps_t caps_build;          /**< Main task scratch the report descriptor is parsed into before publish */
 
 #if USBH_HID_DEBUG
 	__IO u32 event_cnt;                       /**< Debug: Event counter */

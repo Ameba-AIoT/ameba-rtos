@@ -13,9 +13,15 @@
 
 static void *dtm_sem = NULL;
 static uint8_t *dtm_buf;
+static uint16_t dtm_buf_size;
 
 static void hci_dtm_recv(struct hci_rx_packet_t *pkt)
 {
+	if (!dtm_buf || (pkt->len > dtm_buf_size)) {
+		hci_rx_pkt_free(pkt);
+		return;
+	}
+
 	memcpy(dtm_buf, pkt->buf, pkt->len);
 	osif_sem_give(dtm_sem);
 	hci_rx_pkt_free(pkt);
@@ -48,25 +54,32 @@ void hci_dtm_close(void)
 {
 	osif_sem_delete(dtm_sem);
 	dtm_sem = NULL;
+	dtm_buf = NULL;
+	dtm_buf_size = 0;
 
 	hci_controller_close();
 	hci_controller_free();
 	hci_set_mp(false);
 }
 
-bool hci_dtm_send(uint16_t opcode, uint8_t *buf, uint16_t len)
+bool hci_dtm_send(uint16_t opcode, uint8_t *buf, uint16_t len, uint16_t buf_size)
 {
 	buf[0] = (uint8_t)(opcode >> 0);
 	buf[1] = (uint8_t)(opcode >> 8);
 
 	dtm_buf = buf;
+	dtm_buf_size = buf_size;
+
 	if (len != hci_transport_send(HCI_CMD, buf, len, false)) {
 		BT_LOGE("DTM: hci_transport_send fail!\r\n");
+		dtm_buf = NULL;
+		dtm_buf_size = 0;
 		return false;
 	}
 
 	osif_sem_take(dtm_sem, BT_TIMEOUT_FOREVER);
 	dtm_buf = NULL;
+	dtm_buf_size = 0;
 
 	/* Check Resp: OpCode and Status */
 	if (buf[3] != (uint8_t)(opcode >> 0) || buf[4] != (uint8_t)(opcode >> 8) || buf[5] != 0x00) {

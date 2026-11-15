@@ -103,8 +103,8 @@ extern "C" {
  *          parameters (VID/PID, strings, power attributes) live in @ref usbd_dev_info_t instead.
  *          The bmAttributes feature bits are compile-time Kconfig options, not fields here,
  *          because they select which code and which device members exist at all.
- * @note  The structure is stored by pointer, not copied, so it shall remain valid until
- *        @ref usbd_dfu_deinit.
+ * @note  The structure is read at init only, except @ref usbd_dfu_config_t::itf_str: the string
+ *        is kept by pointer, so it shall remain valid until @ref usbd_dfu_deinit.
  */
 typedef struct {
 	/**
@@ -244,15 +244,12 @@ typedef struct {
  * @brief Internal DFU device instance (opaque to application).
  */
 typedef struct {
-	usb_dev_t         *dev;
 	const usbd_dfu_cb_t *cb;
-	const usbd_dfu_config_t *cfg;       /**< Pointer to the class configuration (set by init). */
 
 	/* DFU state */
 	usb_dfu_state_t    state;
 	usbd_dfu_status_t  status;
 	u8                 mode;            /* Run-Time/DFU mode reconf: current descriptor set, USBD_DFU_PROTOCOL_RUNTIME or _DFU */
-	u8                 alt_setting;
 	u8                 from_composite;  /**< Flag indicating if part of a composite device. */
 	u8                 itf_str_idx;     /**< iInterface string index from usbd_add_string(), 0 for none. */
 
@@ -260,7 +257,6 @@ typedef struct {
 	__IO u8            write_state;     /* Async write: block state (0 idle, 1 busy, 2 ok, 3 failed), set by write_task, consumed by GETSTATUS */
 	__IO u8            manifest_done;   /* Async manifest: set by manifest_task, read by GETSTATUS/timer in MANIFEST states */
 	__IO u8            manifest_busy;   /* Async manifest: 1 from the wakeup of manifest_task until cb->manifest() returns */
-	u8                 reconf_pending;  /* Run-Time/DFU mode reconf: 1 = DFU_DETACH seen, bus re-enumeration requested */
 	u8                 write_stop;      /* Async write: set to 1 on deinit to terminate write_task */
 	u8                 manifest_stop;   /* Async manifest: set to 1 on deinit to terminate manifest_task and mute its timer */
 	u8                 reconf_stop;     /* Run-Time/DFU mode reconf: set to 1 on deinit to terminate reconf_task */
