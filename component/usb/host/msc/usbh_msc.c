@@ -11,10 +11,8 @@
 
 /* Private defines -----------------------------------------------------------*/
 
-#define USBH_MSC_DEBUG 0
 #define MSC_XFER_MAX_TIMEOUT_TICK            100  //sof
 #define MSC_CMD_TIMEOUT_PER_BLOCK_MS         10000U  /**< READ/WRITE budget per block before the caller abandons it */
-#define MSC_INIT_STALL_DIAG_MS               5000U   /**< LUN init without progress for this long gets one diagnostic line */
 #define MSC_LUN_INIT_TIMEOUT_MS              10000U  /**< Bound of one LUN's INQUIRY / TEST UNIT READY / READ CAPACITY sequence */
 
 /* Private types -------------------------------------------------------------*/
@@ -143,8 +141,6 @@ static int usbh_msc_attach(usb_host_t *host)
 		msc->state = MSC_INIT;
 		msc->sof_tick = usbh_get_tick(host);
 		msc->lun_ms = usb_os_get_timestamp_ms();
-		msc->init_ms = msc->lun_ms;
-		msc->init_diag_done = 0U;
 		msc->init_recovery = 0U;
 		msc->req_state = MSC_REQ_IDLE;
 
@@ -226,44 +222,30 @@ static int usbh_msc_setup(usb_host_t *host)
 	int status = -RTK_ERR_BUSY;
 	usbh_setup_req_t setup;
 	usbh_msc_host_t *msc = &usbh_msc_host;
-	u8 i;
 
-	/* Switch MSC REQ state machine */
-	switch (msc->req_state) {
-	case MSC_REQ_IDLE:
-		/* Issue GetMaxLUN request */
-		setup.req.bmRequestType = USB_D2H | USB_REQ_TYPE_CLASS
-								  | USB_REQ_RECIPIENT_INTERFACE;
-		setup.req.bRequest = USB_MSC_REQUEST_GET_MAX_LUN;
-		setup.req.wValue = 0U;
-		setup.req.wIndex = msc->itf_num;
-		setup.req.wLength = 1U;
-		status = usbh_ctrl_request(host, &setup, msc->max_lun_buf);
-		/* When devices do not support the GetMaxLun request, this should
-		   be considered as only one logical unit is supported */
-		if (status == -RTK_ERR_BADARG) {
-			msc->max_lun = 0U;
-			status = RTK_SUCCESS;
-		}
+	/* Issue GetMaxLUN request */
+	setup.req.bmRequestType = USB_D2H | USB_REQ_TYPE_CLASS
+							  | USB_REQ_RECIPIENT_INTERFACE;
+	setup.req.bRequest = USB_MSC_REQUEST_GET_MAX_LUN;
+	setup.req.wValue = 0U;
+	setup.req.wIndex = msc->itf_num;
+	setup.req.wLength = 1U;
+	status = usbh_ctrl_request(host, &setup, msc->max_lun_buf);
+	/* When devices do not support the GetMaxLun request, this should
+	   be considered as only one logical unit is supported */
+	if (status == -RTK_ERR_BADARG) {
+		msc->max_lun_buf[0] = 0U;
+		status = RTK_SUCCESS;
+	}
 
-		if (status == RTK_SUCCESS) {
-			msc->max_lun = *(msc->max_lun_buf);
-			/* GetMaxLUN returns the highest 0-based LUN index, so the LUN count is
-			   bMaxLUN + 1. Clamp the count to the unit[] capacity. Using >= is
-			   required: at bMaxLUN == USBH_MSC_MAX_LUN, bMaxLUN + 1 would overflow
-			   the array. This evaluates to min(bMaxLUN + 1, USBH_MSC_MAX_LUN). */
-			msc->max_lun = (msc->max_lun >= USBH_MSC_MAX_LUN) ? USBH_MSC_MAX_LUN : (msc->max_lun + 1U);
-			RTK_LOGS(TAG, RTK_LOG_INFO, "Max lun %d\n", msc->max_lun);
-
-			for (i = 0U; i < msc->max_lun; i++) {
-				msc->unit[i].prev_ready = 0U;
-				msc->unit[i].state_changed = 0U;
-			}
-		}
-		break;
-
-	default:
-		break;
+	if (status == RTK_SUCCESS) {
+		msc->max_lun = *(msc->max_lun_buf);
+		/* GetMaxLUN returns the highest 0-based LUN index, so the LUN count is
+		   bMaxLUN + 1. Clamp the count to the unit[] capacity. Using >= is
+		   required: at bMaxLUN == USBH_MSC_MAX_LUN, bMaxLUN + 1 would overflow
+		   the array. This evaluates to min(bMaxLUN + 1, USBH_MSC_MAX_LUN). */
+		msc->max_lun = (msc->max_lun >= USBH_MSC_MAX_LUN) ? USBH_MSC_MAX_LUN : (msc->max_lun + 1U);
+		RTK_LOGS(TAG, RTK_LOG_INFO, "Max lun %d\n", msc->max_lun);
 	}
 
 	return status;
@@ -297,18 +279,12 @@ static void usbh_msc_process(usb_host_t *host, usbh_drv_msg_t *msg)
 		} else if (msc->current_lun < msc->max_lun) {
 			usbh_msc_lun_t *unit = &msc->unit[msc->current_lun];
 
-			/* Diagnostic only: name the BOT step a stuck LUN init is parked in, once per init. */
-			if ((msc->init_diag_done == 0U) && ((u32)(usb_os_get_timestamp_ms() - msc->init_ms) > MSC_INIT_STALL_DIAG_MS)) {
-				msc->init_diag_done = 1U;
-				RTK_LOGS(TAG, RTK_LOG_ERROR, "Lun init stall, unit %d, bot %d/%d, in %d/%d, out %d/%d\n", unit->state, msc->hbot.state,
-						 msc->hbot.cmd_state, msc->bulk_in.xfer_state, usbh_get_urb_state(host, &msc->bulk_in),
-						 msc->bulk_out.xfer_state, usbh_get_urb_state(host, &msc->bulk_out));
-			}
-
 			/* A device that keeps NAKing or failing one of these commands must not hold the
 			   attach forever: escalate the recovery, see usbh_msc_recover_init(). */
 			if ((u32)(usb_os_get_timestamp_ms() - msc->lun_ms) > MSC_LUN_INIT_TIMEOUT_MS) {
-				RTK_LOGS(TAG, RTK_LOG_ERROR, "Lun %d init timeout, unit %d\n", msc->current_lun, unit->state);
+				RTK_LOGS(TAG, RTK_LOG_ERROR, "Lun %d init timeout, unit %d, bot %d/%d, in %d/%d, out %d/%d\n", msc->current_lun, unit->state,
+						 msc->hbot.state, msc->hbot.cmd_state, msc->bulk_in.xfer_state, usbh_get_urb_state(host, &msc->bulk_in),
+						 msc->bulk_out.xfer_state, usbh_get_urb_state(host, &msc->bulk_out));
 				usbh_msc_recover_init(host, msc, unit);
 				break;
 			}
@@ -326,11 +302,6 @@ static void usbh_msc_process(usb_host_t *host, usbh_drv_msg_t *msg)
 				scsi_status = usbh_scsi_inquiry(msc, (u8)msc->current_lun, &unit->inquiry);
 
 				if (scsi_status == RTK_SUCCESS) {
-#if USBH_MSC_DEBUG
-					RTK_LOGS(TAG, RTK_LOG_INFO, "Inq ven %s\n", unit->inquiry.vendor_id);
-					RTK_LOGS(TAG, RTK_LOG_INFO, "Inq prod %s\n", unit->inquiry.product_id);
-					RTK_LOGS(TAG, RTK_LOG_INFO, "Inq ver %s\n", unit->inquiry.revision_id);
-#endif
 					unit->state = MSC_TEST_UNIT_READY;
 				}
 				if (scsi_status == RTK_FAIL) {
@@ -346,27 +317,13 @@ static void usbh_msc_process(usb_host_t *host, usbh_drv_msg_t *msg)
 				scsi_status = usbh_scsi_test_unit_ready(msc, (u8)msc->current_lun);
 
 				if (scsi_status == RTK_SUCCESS) {
-					if (unit->prev_ready == 0U) {
-						unit->state_changed = 1U;
-						//RTK_LOGS(TAG, RTK_LOG_INFO, "Device ready\n");
-					} else {
-						unit->state_changed = 0U;
-					}
 					unit->state = MSC_READ_CAPACITY10;
 					unit->error = MSC_OK;
-					unit->prev_ready = 1U;
 				}
 				if (scsi_status == RTK_FAIL) {
 					/* Media not ready, so try to check again during 10s */
-					if (unit->prev_ready != 0U) {
-						unit->state_changed = 1U;
-						RTK_LOGS(TAG, RTK_LOG_WARN, "Device not ready\n");
-					} else {
-						unit->state_changed = 0U;
-					}
 					unit->state = MSC_REQUEST_SENSE;
 					unit->error = MSC_NOT_READY;
-					unit->prev_ready = 0U;
 				} else {
 					if (scsi_status == -RTK_ERR_IO) {
 						usbh_msc_init_failed(host, msc, unit);
@@ -378,14 +335,6 @@ static void usbh_msc_process(usb_host_t *host, usbh_drv_msg_t *msg)
 				scsi_status = usbh_scsi_read_capacity(msc, (u8)msc->current_lun, &unit->capacity);
 
 				if (scsi_status == RTK_SUCCESS) {
-					if (unit->state_changed == 1U) {
-#if USBH_MSC_DEBUG
-						RTK_LOGS(TAG, RTK_LOG_INFO, "Capacity %dB\n",
-								 (unit->capacity.block_nbr * unit->capacity.block_size));
-						RTK_LOGS(TAG, RTK_LOG_INFO, "Block num %d\n", unit->capacity.block_nbr);
-						RTK_LOGS(TAG, RTK_LOG_INFO, "Block size %d\n", unit->capacity.block_size);
-#endif
-					}
 					unit->state = MSC_IDLE;
 					unit->error = MSC_OK;
 					msc->current_lun++;
@@ -418,11 +367,6 @@ static void usbh_msc_process(usb_host_t *host, usbh_drv_msg_t *msg)
 						}
 					}
 
-#if USBH_MSC_DEBUG
-					RTK_LOGS(TAG, RTK_LOG_INFO, "Sense key %x\n", unit->sense.key);
-					RTK_LOGS(TAG, RTK_LOG_INFO, "Sense code %x\n", unit->sense.asc);
-					RTK_LOGS(TAG, RTK_LOG_INFO, "Sense code qua %x\n", unit->sense.ascq);
-#endif
 					unit->state = MSC_IDLE;
 					msc->current_lun++;
 				}
@@ -448,7 +392,7 @@ static void usbh_msc_process(usb_host_t *host, usbh_drv_msg_t *msg)
 			   a transfer is woken by its completion or by the SOF tick, not by spinning here. */
 			if ((scsi_status != -RTK_ERR_BUSY) || (usbh_msc_fsm_snapshot(msc) != snap) || (msc->current_lun >= msc->max_lun)) {
 				if (msc->current_lun < msc->max_lun) {
-					/* A new LUN starts its own budget. */
+					/* A step that moved restarts the stall budget */
 					msc->lun_ms = usb_os_get_timestamp_ms();
 				}
 				usbh_notify(host, 0, &usbh_msc_driver);
@@ -588,9 +532,9 @@ static u32 usbh_msc_fsm_snapshot(const usbh_msc_host_t *msc)
   * @brief  Abandon the in-flight READ/WRITE through BOT Reset Recovery.
   * @note   Ref BOT 5.3.4: Bulk-Only Mass Storage Reset, then CLEAR_FEATURE(ENDPOINT_HALT) on
   *         Bulk-In and then on Bulk-Out. The first pass halts both bulk channels, so no DMA is
-  *         left on the bounce buffer, and releases the caller at once: the recovery runs on EP0 only, which has no
-  *         timeout in the host core, so a device that keeps NAKing it must not keep the caller
-  *         waiting. The recovery then goes on in the background, with req_state = MSC_REQ_RESET
+  *         left on the bounce buffer, and releases the caller at once: the recovery takes three EP0 requests, each
+  *         bounded only by USBH_CTRL_XFER_TIMEOUT_MS of the host core, so a device that keeps NAKing them must not
+  *         keep the caller waiting that long. The recovery then goes on in the background, with req_state = MSC_REQ_RESET
   *         marking the caller as released and msc->state left at MSC_ABORT, so a new command is
   *         refused until the device is back in a known state.
   *         An EP0 request of the abandoned command may still be in flight, and EP0 carries one
@@ -888,11 +832,6 @@ static int usbh_msc_process_rw(u8 lun)
 		scsi_status = usbh_scsi_request_sense(msc, lun, &unit->sense);
 
 		if (scsi_status == RTK_SUCCESS) {
-#if USBH_MSC_DEBUG
-			RTK_LOGS(TAG, RTK_LOG_INFO, "Sense key: %x\n", unit->sense.key);
-			RTK_LOGS(TAG, RTK_LOG_INFO, "Sense code: %x\n", unit->sense.asc);
-			RTK_LOGS(TAG, RTK_LOG_INFO, "Sense code qua: %x\n", unit->sense.ascq);
-#endif
 			unit->state = MSC_IDLE;
 			unit->error = MSC_ERROR;
 

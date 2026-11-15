@@ -339,6 +339,10 @@ typedef struct {
 	u8 err_ch1_buf1_ov;
 	u8 err_ch1_buf0_h;
 	u8 err_ch1_buf1_h;
+	u8 err_ch0_buf0_fl;
+	u8 err_ch0_buf1_fl;
+	u8 err_ch1_buf0_fl;
+	u8 err_ch1_buf1_fl;
 } usbh_uvc_err_t;
 #endif
 
@@ -366,6 +370,9 @@ typedef struct {
 
 #if USBH_UVC_USE_HW
 	usbh_hw_uvc_dec_t *uvc_dec;                    /* Handle for UVC hardware combiner */
+#if (USBH_HW_UVC_DEBUG == 1)
+	__IO u8 get_fail_dumped;                // Get-fail register snapshot of this streaming round: 0 none, 1 requested, 2 taken.
+#endif
 #else
 	/*
 	* Data Structure Hierarchy for (USBH_UVC_USE_HW == 0)

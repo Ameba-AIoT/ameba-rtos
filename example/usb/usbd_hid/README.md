@@ -1,6 +1,8 @@
 # Example Description
 
-In this application, Ameba is designed as a USB HID mouse or keyboard device, PC will recognize Ameba as a mouse or keyboard.
+In this application, Ameba is designed as a USB HID mouse, keyboard, headset buttons or vendor device, PC will recognize Ameba as a mouse, a keyboard, the buttons of a Type-C headset, or a vendor defined HID device.
+
+The vendor device is a reference for a customer HID protocol: one interface on the Vendor Defined usage page 0xFF00 with an INTR IN and an INTR OUT endpoint, one 64-byte Input report with Report ID 0x01 and one 64-byte Output report with Report ID 0x02 (Report ID included, 63 bytes of payload each). The host OS binds no driver of its own to it, so generic HID tools built on hidapi reach it directly. Add or resize reports in `hid_vendor_report_desc[]` of `usbd_hid.c` and the `USBD_HID_VENDOR_*` defines of `usbd_hid.h`.
 
 # HW Configuration
 
@@ -10,7 +12,7 @@ None
 
 1. Menuconfig
 	Use menuconfig and choose `CONFIG USB`, then select the HID device type under `HID`
-	(Mouse is the default; Mouse and Keyboard are mutually exclusive):
+	(Mouse is the default; Mouse, Keyboard, Headset buttons and Vendor are mutually exclusive):
 	```
 	[*] Enable USB
 			USB Mode (Device)  --->
@@ -80,6 +82,27 @@ None
 			[HID-I] RX 1 byte(s): 0x01
 			```
 
+	- For HID headset buttons:
+		- If `HID_CONSTANT_DATA` in `example_usbd_hid.c` is set to 1 (default), a Volume Up then a Volume Down click is reported once Ameba board is connected, the OS volume bar pops up.
+			```
+			[HID-I] Headset key TX test start
+			[HID-I] Test round 1/10
+			...
+			[HID-I] Test done
+			```
+		- The headset buttons are meant to be combined with UAC, refer to the `usbd_composite_hid_uac` example.
+	- For HID vendor, use HIDPyToy tool (download address https://github.com/todbot/hidpytoy) or any other hidapi based HID tool:
+		- Connect the HID device: click rescan, choose "Realtek HID Device" device, and click connect.
+		- Loopback: type "2,1,2,3,4" (Report ID 2 first) in the HIDPyToy, and click "Send Out Report". The board echoes the payload back as an Input report with Report ID 1, click "Read In Reports" to get it. The LOGUART console prints:
+			```
+			[HID-I] RX report ID 0x02, <n> bytes, payload[0] 0x01
+			```
+			`<n>` is 64 when the tool pads the Output report to the length the report descriptor declares, as hidapi on Windows does.
+		- Device TX: type `AT+USBDHID=tx,<len>` in the LOGUART console, then click "Read In Reports" in the HIDPyToy, an Input report with Report ID 1 and `len` bytes of value `len` is read.
+			```
+			[HID-I] Send vendor report, <len> bytes of payload
+			```
+
 4. Hotplug check: the example tears down and re-inits the USB stack on every detach, so unplug and re-plug the cable, following log shall be printed for each cycle:
 	```
 	[HID-I] DETACHED
@@ -97,6 +120,7 @@ None
 | Command | Description |
 | --- | --- |
 | `AT+USBDHID=mouse,<left>[,<right>,<middle>,<x>,<y>,<wheel>]` | Send one HID mouse report to the host. Only `<left>` is mandatory, the remaining arguments default to 0. `<left>`/`<right>`/`<middle>`: `0` or `1` (pressed); `<x>`/`<y>`/`<wheel>`: -127..127, the range the mouse report descriptor declares. Any other value is rejected. Only registered on a mouse build with `HID_MOUSE_CMD` set to 1. |
+| `AT+USBDHID=tx[,<len>]` | Send one vendor Input report to the host: Report ID 0x01, then `len` bytes of value `len & 0xFF`, the rest of the 63-byte payload is 0. `len`: 1..63, default 10; any other value is rejected. Only registered on a vendor build. |
 
 # Note
 

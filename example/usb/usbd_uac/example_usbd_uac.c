@@ -680,7 +680,9 @@ static void example_audio_track_play(void)
 #if USBD_UAC_DEMUX_CH_DEBUG
 			play_data_size = 0;
 			//get the 2 channel data from the 4 channel
-			for (idx = 0, off = 0; idx < read_dat_len; idx += audio_src_step, off += audio_dst_step) {
+			/* Whole frames only, and never past play_buf: a short ISOC packet may end mid-frame */
+			for (idx = 0, off = 0; ((idx + audio_src_step) <= read_dat_len) && ((off + audio_dst_step) <= sizeof(play_buf));
+				 idx += audio_src_step, off += audio_dst_step) {
 				// ch0 ch1 ch2 ch3 ch0 ch1 ch2 ch3 ch0 ch1 ch2 ch3
 				// 24  24  24  24  24  24  24  24  24  24  24  24
 				memcpy((void *)(play_buf + off), (const void *)(recv_buf + idx), audio_dst_step);

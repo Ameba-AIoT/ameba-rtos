@@ -66,28 +66,6 @@ UART_TXDMAConfig(UART_TypeDef *UARTx, u32 TxDmaBurstSize)
 }
 
 /**
-  * @brief Configure UART RX DMA burst size.
-  * @param UARTx UART device pointer, which can be any UARTx_DEV defined in Peripheral Declarations.
-  * @param RxDmaBurstSize UART RX DMA burst size.
-  * @note
-  * 		- RxDmaBurstSize should not be more than half of rxfifo depth.
-  * 		- RxDmaBurstSize should not be smaller than GDMA_SrcMsize in function UART_RXGDMA_Init().
-  * 		- For better performance, it is suggested to make RxDmaBurstSize be equal to GDMA_SrcMsize, which is 16.
-  */
-void
-UART_RXDMAConfig(UART_TypeDef *UARTx, u32 RxDmaBurstSize)
-{
-	u32 TempMiscr;
-
-	/* Set UART Rx DMA burst size */
-	TempMiscr = UARTx->MISCR;
-	TempMiscr &= ~(RUART_MASK_RXDMA_BURSTSIZE);
-	TempMiscr |= RUART_RXDMA_BURSTSIZE(RxDmaBurstSize);
-
-	UARTx->MISCR = TempMiscr;
-}
-
-/**
   * @brief Enable or disable UART TX DMA.
   * @param  UARTx UART device pointer, which can be any UARTx_DEV defined in Peripheral Declarations.
   * @param  NewState New state of UART TX DMA.
@@ -215,6 +193,7 @@ bool UART_RXGDMA_Init(
 {
 	u8 GdmaChnl;
 	UART_TypeDef *UARTx;
+	u32 TempMiscr;
 
 	assert_param(GDMA_InitStruct != NULL);
 
@@ -244,7 +223,12 @@ bool UART_RXGDMA_Init(
 	GDMA_InitStruct->GDMA_Index   = 0;
 	GDMA_InitStruct->GDMA_ChNum   = GdmaChnl;
 	GDMA_InitStruct->GDMA_IsrType = (BlockType | TransferType | ErrType);
-	GDMA_InitStruct->GDMA_SrcMsize = MsizeSixteen;//for better performance
+	/* The UART RX watermark has to equal the GDMA source burst, 16 bytes fits the rxfifo of every UART */
+	TempMiscr = UARTx->MISCR;
+	TempMiscr &= ~RUART_MASK_RXDMA_BURSTSIZE;
+	TempMiscr |= RUART_RXDMA_BURSTSIZE(16);
+	UARTx->MISCR = TempMiscr;
+	GDMA_InitStruct->GDMA_SrcMsize = MsizeSixteen;
 	GDMA_InitStruct->GDMA_SrcDataWidth = TrWidthOneByte;
 	GDMA_InitStruct->GDMA_DstInc = IncType;
 	GDMA_InitStruct->GDMA_SrcInc = NoChange;

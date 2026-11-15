@@ -6,9 +6,6 @@
 
 /* Includes ------------------------------------------------------------------*/
 
-#include <lwip/sockets.h>
-#include <lwip/netdb.h>
-#include "lwip/prot/tcp.h"
 #include "lwip_netconf.h"
 #include "platform_stdlib.h"
 #include "os_wrapper.h"
@@ -21,10 +18,6 @@
 /* Private defines -----------------------------------------------------------*/
 
 #define ENABLE_USBH_CDC_ECM_HOT_PLUG            1     /* Hot plug */
-
-#define ECMBDEBUG  0
-
-#define ETH_ILEN		(6)
 
 // Thread priorities
 #define USBH_ECM_INIT_THREAD_PRIORITY           3
@@ -45,23 +38,8 @@
 /* Ethernet State */
 typedef enum {
 	ETH_STATUS_IDLE = 0U,
-	ETH_STATUS_DEINIT,
 	ETH_STATUS_INIT,
-	ETH_STATUS_MAX,
 } eth_state_t;
-
-typedef struct pkt_attrib_s {
-	u16_t protocol;
-	u16_t src_port;
-	u16_t dst_port;
-	u8_t src_ip[4];
-	u8_t dst_ip[4];
-	u8_t flags;
-	u8_t type;
-	struct eth_addr src_mac;
-	struct eth_addr dst_mac;
-	u8_t port_idx;
-} pkt_attrib_t;
 
 /* Private macros ------------------------------------------------------------*/
 
@@ -160,6 +138,12 @@ static const usbh_cdc_ecm_state_cb_t cdc_ecm_usb_cb = {
 	.received = cdc_ecm_cb_received,
 };
 
+/* The USB side peer talks to the router MAC and is answered on its own MAC, neither is the
+   dongle's, so the dongle shall not filter unicast frames */
+static const usbh_cdc_ecm_config_t cdc_ecm_class_cfg = {
+	.promiscuous = 1U,
+};
+
 static const usbh_user_cb_t usbh_ecm_usr_cb = {
 	.process = cdc_ecm_cb_process,
 	.validate = cdc_ecm_cb_device_check,
@@ -220,14 +204,11 @@ static void cdc_ecm_cb_setup(void)
   */
 static void cdc_ecm_cb_received(u8 *buf, u32 length)
 {
-	if (length > 0) {
-		netif_adapter_usb_eth_recv(buf, length);
-	}
+	netif_adapter_usb_eth_recv(buf, length);
 }
 
 static void cdc_ecm_cb_process(usb_host_t *host, u8 msg)
 {
-	UNUSED(host);
 	switch (msg) {
 	case USBH_MSG_USER_SET_CONFIG:
 		/* Diagnostic only: the core goes on to SET_CONFIG whatever this returns, and a device
@@ -263,7 +244,7 @@ static int cdc_ecm_stack_init(void)
 		return ret;
 	}
 
-	ret = usbh_cdc_ecm_init(&cdc_ecm_usb_cb, NULL);
+	ret = usbh_cdc_ecm_init(&cdc_ecm_usb_cb, &cdc_ecm_class_cfg);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Init CDC ECM fail\n");
 		usbh_deinit();
@@ -356,133 +337,37 @@ static int cdc_ecm_rebuild(u32 down_ms)
 #endif
 
 /**
-  * @brief  Parse the attributes the bridge needs from an Ethernet frame
+  * @brief  Read the EtherType of a frame and check it is long enough for the bridge
+  * @note   The bridge overrides netif->input and bypasses the ethernet_input length check, so
+  *         p->len comes straight from the device: it shall cover every offset rewritten below,
+  *         the Ethernet header, and for ARP the sender/target hardware address at 22/32.
+  *         Only the first pbuf is touched, hence p->len and not tot_len.
   * @param  p: received pbuf
-  * @param  pattrib: parsed attributes, only valid when RTK_SUCCESS is returned
-  * @retval RTK_SUCCESS on success, -RTK_ERR_BADARG if the frame is too short for any of the
-  *         fixed offsets the bridge parses or rewrites, i.e. it must be dropped
+  * @param  protocol: EtherType in network order, only valid when RTK_SUCCESS is returned
+  * @retval RTK_SUCCESS on success, -RTK_ERR_BADARG for a frame too short, to be dropped
   */
-static int get_packet_attrib(struct pbuf *p, pkt_attrib_t *pattrib)
+static int get_packet_protocol(struct pbuf *p, u16_t *protocol)
 {
-	u16_t protocol, src_port = 0, dst_port = 0;
-	u8_t type = 0;
-	u8_t flags = 0;
-	struct ip_hdr  *iph = NULL;
-	struct etharp_hdr *arph = NULL;
-	struct tcp_hdr *tcph = NULL;
-	struct udp_hdr *udph = NULL;
-	u8_t *src_ip = NULL, *dst_ip = NULL;
-	struct eth_addr *src_addr, *dst_addr;
-
-	/* Without a complete Ethernet header none of the fields below exist */
 	if (p->len < (u16_t)ETH_HLEN) {
 		return -RTK_ERR_BADARG;
 	}
 
-	dst_addr = (struct eth_addr *)((u8_t *)p->payload);
-	src_addr = (struct eth_addr *)(((u8_t *)p->payload) + sizeof(struct eth_addr));
-	protocol = ((const struct eth_hdr *)p->payload)->type;
-
-	if (protocol == lwip_htons(ETHTYPE_IP)) {
-		if (p->len < (u16_t)(ETH_HLEN + sizeof(struct ip_hdr))) {
-			return -RTK_ERR_BADARG;
-		}
-		/* update src ip/mac mapping */
-		iph = (struct ip_hdr *)((u8 *)p->payload + ETH_HLEN);
-		src_ip = (u8_t *) & (iph->src.addr);
-		dst_ip = (u8_t *) & (iph->dest.addr);
-		type = iph->_proto;
-
-		switch (iph->_proto) {
-		case IP_PROTO_TCP://TCP
-			if (p->len < (u16_t)(ETH_HLEN + sizeof(struct ip_hdr) + sizeof(struct tcp_hdr))) {
-				return -RTK_ERR_BADARG;
-			}
-			tcph = (struct tcp_hdr *)((u8 *)p->payload + ETH_HLEN + sizeof(struct ip_hdr));
-			if (tcph != NULL) {
-				src_port = PP_NTOHS(tcph->src);
-				dst_port = PP_NTOHS(tcph->dest);
-				flags = TCPH_FLAGS(tcph);
-			}
-			break;
-		case IP_PROTO_UDP://UDP
-			if (p->len < (u16_t)(ETH_HLEN + sizeof(struct ip_hdr) + sizeof(struct udp_hdr))) {
-				return -RTK_ERR_BADARG;
-			}
-			udph = (struct udp_hdr *)((u8 *)p->payload + ETH_HLEN + sizeof(struct ip_hdr));
-			if (udph != NULL) {
-				src_port = PP_NTOHS(udph->src);
-				dst_port = PP_NTOHS(udph->dest);
-			}
-			break;
-		default: //ICMP
-			src_port = 0;
-			dst_port = 0;
-			break;
-		}
-	} else if (protocol == lwip_htons(ETHTYPE_ARP)) {
-		/* A full ARP packet is required: both bridge directions rewrite the
-		 * sender/target hardware address at offset 22/32 of the frame */
-		if (p->len < (u16_t)SIZEOF_ETHARP_PACKET) {
-			return -RTK_ERR_BADARG;
-		}
-		arph = (struct etharp_hdr *)((u8 *)p->payload + ETH_HLEN);
-		src_ip = (u8 *) & (arph->sipaddr);
-		dst_ip = (u8 *) & (arph->dipaddr);
-		//RTK_LOGS(TAG, RTK_LOG_INFO, "%s(%d), dstip:%d,%d,%d,%d\n", __func__, __LINE__, (uint8_t) * (dst_ip + 0), (uint8_t) * (dst_ip + 1), (uint8_t) * (dst_ip + 2),
-		//			(uint8_t) * (dst_ip + 3));
+	*protocol = ((const struct eth_hdr *)p->payload)->type;
+	if ((*protocol == lwip_htons(ETHTYPE_ARP)) && (p->len < (u16_t)SIZEOF_ETHARP_PACKET)) {
+		return -RTK_ERR_BADARG;
 	}
-
-	//RTK_LOGS(TAG, RTK_LOG_INFO, "%s(%d)flags=%x, smac:%02x:%02x:%02x:%02x:%02x:%02x, dmac:%02x:%02x:%02x:%02x:%02x:%02x, p->len = %d\n", __func__, __LINE__, flags,
-	//			src_addr->addr[0], src_addr->addr[1], src_addr->addr[2], src_addr->addr[3], src_addr->addr[4], src_addr->addr[5],
-	//			dst_addr->addr[0], dst_addr->addr[1], dst_addr->addr[2], dst_addr->addr[3], dst_addr->addr[4], dst_addr->addr[5], p->len);
-
-	pattrib->protocol = protocol;
-	pattrib->src_port = src_port;
-	pattrib->dst_port = dst_port;
-	pattrib->type = type;
-	pattrib->flags = flags;
-#if ECMBDEBUG
-	/* Only the debug dump reads the addresses: spare the copies on every frame otherwise */
-	memcpy((void *)&pattrib->src_mac, (const void *)src_addr, sizeof(struct eth_addr));
-	memcpy((void *)&pattrib->dst_mac, (const void *)dst_addr, sizeof(struct eth_addr));
-	if (src_ip != NULL) {
-		memcpy((void *)pattrib->src_ip, (const void *)src_ip, sizeof(pattrib->src_ip));
-	}
-	if (dst_ip != NULL) {
-		memcpy((void *)pattrib->dst_ip, (const void *)dst_ip, sizeof(pattrib->dst_ip));
-	}
-#else
-	UNUSED(src_addr);
-	UNUSED(dst_addr);
-	UNUSED(src_ip);
-	UNUSED(dst_ip);
-#endif
 
 	return RTK_SUCCESS;
 }
 
-static int send_to_wifi(pkt_attrib_t *pattrib, struct pbuf *p)
+static int send_to_wifi(u16_t protocol, struct pbuf *p)
 {
-	if (pattrib->protocol == lwip_htons(ETHTYPE_ARP)) {
+	if (protocol == lwip_htons(ETHTYPE_ARP)) {
 		memcpy((void *)&host_mac, (const void *)((u8 *)p->payload + ETH_ALEN), ETH_ALEN);
+		memcpy((void *)((u8 *)p->payload + ETH_ALEN + 16), (const void *)pnetif_sta->hwaddr, ETH_ALEN);
 	}
 
 	memcpy((void *)((u8 *)p->payload + ETH_ALEN), (const void *)pnetif_sta->hwaddr, ETH_ALEN);
-#if ECMBDEBUG
-	RTK_LOGS(TAG, RTK_LOG_INFO, "%s(%d) src_port = %d\n", __func__, __LINE__, pattrib->src_port);
-
-	for (int i = 0; i < p->len; i++) {
-		RTK_LOGS(NOTAG, RTK_LOG_INFO, "%02x ", *((u8 *)p->payload + i));
-	}
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n");
-#endif
-
-	/* send to etharp_output */
-	if (pattrib->protocol == lwip_htons(ETHTYPE_IP)) {
-	} else if (pattrib->protocol == lwip_htons(ETHTYPE_ARP)) {
-		memcpy((void *)((u8 *)p->payload + ETH_ALEN + 16), (const void *)pnetif_sta->hwaddr, ETH_ALEN);
-	}
 
 	if (pnetif_sta->linkoutput(pnetif_sta, p) != ERR_OK) {
 		return -RTK_ERR_IO;
@@ -491,10 +376,8 @@ static int send_to_wifi(pkt_attrib_t *pattrib, struct pbuf *p)
 	return RTK_SUCCESS;
 }
 
-static int send_to_usb(pkt_attrib_t *pattrib, struct pbuf *p)
+static int send_to_usb(struct pbuf *p)
 {
-	UNUSED(pattrib);
-
 	if (pnetif_usb_eth->linkoutput(pnetif_usb_eth, p) != ERR_OK) {
 		return -RTK_ERR_IO;
 	}
@@ -504,36 +387,23 @@ static int send_to_usb(pkt_attrib_t *pattrib, struct pbuf *p)
 
 static err_t usb_in_wifi_out(struct pbuf *p, struct netif *netif)
 {
-	pkt_attrib_t attrib;
+	u16_t protocol;
 
 	if (p == NULL || netif == NULL) {
 		return ERR_VAL;
 	}
 
-	/* Malformed/runt frame, drop it. The caller frees the pbuf on error, so
+	/* Malformed/runt frame or IPv6, drop it. The caller frees the pbuf on error, so
 	 * every path that already freed it must return ERR_OK. */
-	if (get_packet_attrib(p, &attrib) != RTK_SUCCESS) {
+	if ((get_packet_protocol(p, &protocol) != RTK_SUCCESS) || (protocol == lwip_htons(ETHTYPE_IPV6))) {
 		pbuf_free(p);
 		return ERR_OK;
 	}
-
-	//RTK_LOGS(TAG, RTK_LOG_INFO, "%s(%d) portnum=%d, protocol=0x%x\n", __FUNCTION__, __LINE__, netif->num, lwip_ntohs(attrib.protocol));
-
-	if (attrib.protocol == lwip_htons(ETHTYPE_IPV6)) {
-		pbuf_free(p);
-		return ERR_OK;
-	}
-	attrib.port_idx = netif->num;
-
-	//RTK_LOGS(TAG, RTK_LOG_INFO, "%s(%d): port_num:%d, protocol:%x, dst:%02x:%02x:%02x:%02x:%02x:%02x, src:%02x:%02x:%02x:%02x:%02x:%02x\n",
-	//			__func__, __LINE__, attrib.port_idx, attrib.protocol, attrib.dst_mac.addr[0], attrib.dst_mac.addr[1], attrib.dst_mac.addr[2],
-	//			attrib.dst_mac.addr[3], attrib.dst_mac.addr[4], attrib.dst_mac.addr[5], attrib.src_mac.addr[0], attrib.src_mac.addr[1],
-	//			attrib.src_mac.addr[2], attrib.src_mac.addr[3], attrib.src_mac.addr[4], attrib.src_mac.addr[5]);
 
 	/* A frame that can not be sent is dropped like on any bridge. The log is DEBUG level on
 	   purpose, a per-frame log would flood the console under congestion, so it is only
 	   visible when COMPIL_LOG_LEVEL is raised to RTK_LOG_DEBUG */
-	if (send_to_wifi(&attrib, p) != RTK_SUCCESS) {
+	if (send_to_wifi(protocol, p) != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_DEBUG, "To WiFi drop\n");
 	}
 
@@ -544,47 +414,26 @@ static err_t usb_in_wifi_out(struct pbuf *p, struct netif *netif)
 
 static err_t wifi_in_usb_out(struct pbuf *p, struct netif *netif)
 {
-	pkt_attrib_t attrib;
+	u16_t protocol;
 
 	if (p == NULL || netif == NULL) {
 		return ERR_VAL;
 	}
 
-	/* Malformed/runt frame, drop it. The caller frees the pbuf on error, so
-	 * every path that already freed it must return ERR_OK. */
-	if (get_packet_attrib(p, &attrib) != RTK_SUCCESS) {
+	/* Dropped the same way as in usb_in_wifi_out */
+	if ((get_packet_protocol(p, &protocol) != RTK_SUCCESS) || (protocol == lwip_htons(ETHTYPE_IPV6))) {
 		pbuf_free(p);
 		return ERR_OK;
 	}
-	//RTK_LOGS(TAG, RTK_LOG_INFO, "%s(%d) portnum=%d, protocol=0x%x\n", __FUNCTION__, __LINE__, netif->num, lwip_ntohs(attrib.protocol));
 
-	if (attrib.protocol == lwip_htons(ETHTYPE_IPV6)) {
-		pbuf_free(p);
-		return ERR_OK;
-	}
-	attrib.port_idx = netif->num;
-
-#if ECMBDEBUG
-	RTK_LOGS(TAG, RTK_LOG_INFO, "%s(%d): port_num:%d, protocol:%x, dst:%02x:%02x:%02x:%02x:%02x:%02x, src:%02x:%02x:%02x:%02x:%02x:%02x\n",
-			 __func__, __LINE__, attrib.port_idx, attrib.protocol, attrib.dst_mac.addr[0], attrib.dst_mac.addr[1], attrib.dst_mac.addr[2],
-			 attrib.dst_mac.addr[3], attrib.dst_mac.addr[4], attrib.dst_mac.addr[5], attrib.src_mac.addr[0], attrib.src_mac.addr[1],
-			 attrib.src_mac.addr[2], attrib.src_mac.addr[3], attrib.src_mac.addr[4], attrib.src_mac.addr[5]);
-
-	for (int i = 0; i < p->len; i++) {
-		RTK_LOGS(NOTAG, RTK_LOG_INFO, "%02x ", *((u8 *)p->payload + i));
-	}
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n");
-#endif
-
-	if (attrib.protocol == lwip_htons(ETHTYPE_ARP)) {
+	if (protocol == lwip_htons(ETHTYPE_ARP)) {
 		memcpy((void *)((u8 *)p->payload + ETH_HLEN + 18), (const void *)&host_mac, ETH_ALEN);
 	}
 
 	//dst mac
 	memcpy((void *)p->payload, (const void *)&host_mac, ETH_ALEN);
 
-	/* Dropped the same way as in usb_in_wifi_out */
-	if (send_to_usb(&attrib, p) != RTK_SUCCESS) {
+	if (send_to_usb(p) != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_DEBUG, "To USB drop\n");
 	}
 
@@ -679,7 +528,7 @@ static void example_usbh_bridge_monitor_thread(void *param)
 			netifapi_netif_set_link_up(pnetif_usb_eth);
 			RTK_LOGS(TAG, RTK_LOG_INFO, "Switch to link\n");
 		} else if (0 == link_is_up && (ethernet_unplug >= ETH_STATUS_INIT)) {	// link -> unlink
-			ethernet_unplug = ETH_STATUS_DEINIT;
+			ethernet_unplug = ETH_STATUS_IDLE;
 			netifapi_netif_set_default(pnetif_sta);
 			/* Clear the link flag and the ARP entries of the gone USB interface */
 			netifapi_netif_set_link_down(pnetif_usb_eth);

@@ -660,7 +660,6 @@ _LONG_CALL_ void UART_WaitBusy(UART_TypeDef *UARTx, u32 PollTimes);
 
 /* UART_DMA_functions UART DMA Functions */
 _LONG_CALL_ void UART_TXDMAConfig(UART_TypeDef *UARTx, u32 TxDmaBurstSize);
-_LONG_CALL_ void UART_RXDMAConfig(UART_TypeDef *UARTx, u32 RxDmaBurstSize);
 _LONG_CALL_ void UART_TXDMACmd(UART_TypeDef *UARTx, u32 NewState);
 _LONG_CALL_ void UART_RXDMACmd(UART_TypeDef *UARTx, u32 NewState);
 _LONG_CALL_ bool UART_TXGDMA_Init(u8 UartIndex, GDMA_InitTypeDef *GDMA_InitStruct, void *CallbackData,
