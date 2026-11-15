@@ -102,6 +102,7 @@ int whc_fullmac_host_del_custom_ie(unsigned char wlan_idx);
 int whc_fullmac_host_update_custom_ie(u8 *ie, int ie_index, u8 type);
 int whc_fullmac_host_set_edcca_mode(struct rtw_edcca_param_t *p);
 int whc_fullmac_host_get_edcca_mode(u8 *edcca_mode);
+int whc_fullmac_host_get_txpower(u8 rate, s8 *txpwr);
 int whc_fullmac_host_get_ant_info(u8 *antdiv_mode, u8 *curr_ant);
 int whc_fullmac_host_set_country_code(char *cc);
 int whc_fullmac_host_get_country_code(struct rtw_country_code_table *table);

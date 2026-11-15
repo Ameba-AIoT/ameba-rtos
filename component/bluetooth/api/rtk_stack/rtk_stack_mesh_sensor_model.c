@@ -29,6 +29,10 @@ static int32_t sensor_client_data(const mesh_model_info_p pmodel_info,
 		uint32_t len = 6 + pdata->num_descriptors * sizeof(sensor_descriptor_t);
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_SENSOR_CLIENT_MODEL, RTK_BT_MESH_SENSOR_DESCRIPTOR_CLIENT_MODEL_STATUS,
 									len);
+		if (!p_evt) {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+			break;
+		}
 		memcpy(p_evt->data, pargs, 6);
 		memcpy((uint8_t *)p_evt->data + 6, pdata->descriptors, pdata->num_descriptors * sizeof(sensor_descriptor_t));
 		rtk_bt_evt_indicate(p_evt, NULL);
@@ -51,6 +55,10 @@ static int32_t sensor_client_data(const mesh_model_info_p pmodel_info,
 			uint32_t len = 9 + 2 * pdata->cadence->raw_value_len + 2 * trigger_len;
 			p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_SENSOR_CLIENT_MODEL, RTK_BT_MESH_SENSOR_CADENCE_CLIENT_MODEL_STATUS,
 										len);
+			if (!p_evt) {
+				BT_LOGE("[%s] Create event fail\r\n", __func__);
+				break;
+			}
 			memcpy(p_evt->data, & pdata->src, 2);
 			memcpy((uint8_t *)p_evt->data + 2, & pdata->property_id, 2);
 			memcpy((bool *)p_evt->data + 4, &flag, 1);
@@ -65,6 +73,10 @@ static int32_t sensor_client_data(const mesh_model_info_p pmodel_info,
 			uint32_t len = 5;
 			p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_SENSOR_CLIENT_MODEL, RTK_BT_MESH_SENSOR_CADENCE_CLIENT_MODEL_STATUS,
 										len);
+			if (!p_evt) {
+				BT_LOGE("[%s] Create event fail\r\n", __func__);
+				break;
+			}
 			memcpy(p_evt->data, & pdata->src, 2);
 			memcpy((uint8_t *)p_evt->data + 2, & pdata->property_id, 2);
 			memcpy((bool *)p_evt->data + 4, &flag, 1);
@@ -78,6 +90,10 @@ static int32_t sensor_client_data(const mesh_model_info_p pmodel_info,
 		uint32_t len = pdata->num_ids * 2 + 6;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_SENSOR_CLIENT_MODEL, RTK_BT_MESH_SENSOR_SETTINGS_CLIENT_MODEL_STATUS,
 									len);
+		if (!p_evt) {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+			break;
+		}
 		memcpy(p_evt->data, pargs, 6);
 		memcpy((uint8_t *)p_evt->data + 6, pdata->setting_ids, len - 6);
 		rtk_bt_evt_indicate(p_evt, NULL);
@@ -96,6 +112,10 @@ static int32_t sensor_client_data(const mesh_model_info_p pmodel_info,
 		}
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_SENSOR_CLIENT_MODEL, RTK_BT_MESH_SENSOR_SETTING_CLIENT_MODEL_STATUS,
 									len);
+		if (!p_evt) {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+			break;
+		}
 		memcpy(p_evt->data, pdata, 6);
 		memcpy((bool *)p_evt->data + 6, &flag, 1);
 		if (pdata->setting != NULL) {
@@ -111,6 +131,10 @@ static int32_t sensor_client_data(const mesh_model_info_p pmodel_info,
 		uint32_t len = pdata->marshalled_sensor_data_len + 4;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_SENSOR_CLIENT_MODEL, RTK_BT_MESH_SENSOR_CLIENT_MODEL_STATUS,
 									len);
+		if (!p_evt) {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+			break;
+		}
 		memcpy(p_evt->data, pargs, 4);
 		memcpy((uint8_t *)p_evt->data + 4, pdata->marshalled_sensor_data, len - 4);
 		rtk_bt_evt_indicate(p_evt, NULL);
@@ -122,6 +146,10 @@ static int32_t sensor_client_data(const mesh_model_info_p pmodel_info,
 		uint32_t len = pdata->column_raw_value_len + 6;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_SENSOR_CLIENT_MODEL, RTK_BT_MESH_SENSOR_COLUMN_CLIENT_MODEL_STATUS,
 									len);
+		if (!p_evt) {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+			break;
+		}
 		memcpy(p_evt->data, pargs, 6);
 		memcpy((uint8_t *)p_evt->data + 6, pdata->column_raw_value, len - 6);
 		rtk_bt_evt_indicate(p_evt, NULL);
@@ -133,6 +161,10 @@ static int32_t sensor_client_data(const mesh_model_info_p pmodel_info,
 		uint32_t len = pdata->series_raw_value_len + 6;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_SENSOR_CLIENT_MODEL, RTK_BT_MESH_SENSOR_SERIES_CLIENT_MODEL_STATUS,
 									len);
+		if (!p_evt) {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+			break;
+		}
 		memcpy(p_evt->data, pargs, 6);
 		memcpy((uint8_t *)p_evt->data + 6, pdata->series_raw_value, len - 6);
 		rtk_bt_evt_indicate(p_evt, NULL);
@@ -306,6 +338,10 @@ static int32_t sensor_server_data(const mesh_model_info_p pmodel_info, uint32_t 
 			rtk_bt_evt_t *p_evt = NULL;
 			p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_SENSOR_SERVER_MODEL, RTK_BT_MESH_SENSOR_SERVER_MODEL_GET,
 										sizeof(rtk_bt_mesh_sensor_server_get_t) + SENSOR_GET_DATA_MAX_LEN + 2);
+			if (!p_evt) {
+				BT_LOGE("[%s] Create event fail\r\n", __func__);
+				break;
+			}
 			sensor_value = (rtk_bt_mesh_sensor_server_get_t *)p_evt->data;
 			sensor_value->property_id = p_get_data->property_id;
 			sensor_value->raw_data = sensor_get_value;
@@ -327,6 +363,10 @@ static int32_t sensor_server_data(const mesh_model_info_p pmodel_info, uint32_t 
 			rtk_bt_evt_t *p_evt = NULL;
 			p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_SENSOR_SERVER_MODEL, RTK_BT_MESH_SENSOR_SERVER_MODEL_COLUMN_GET,
 										sizeof(rtk_bt_mesh_sensor_server_direct_get_column_t) + raw_value_x_len + 4 + SENSOR_GET_COLUMN_MAX_LEN);
+			if (!p_evt) {
+				BT_LOGE("[%s] Create event fail\r\n", __func__);
+				break;
+			}
 			column_get = (rtk_bt_mesh_sensor_server_direct_get_column_t *)p_evt->data;
 			column_get->property_id = p_get_data->property_id;
 			column_get->raw_value_x_len = raw_value_x_len;
@@ -351,6 +391,10 @@ static int32_t sensor_server_data(const mesh_model_info_p pmodel_info, uint32_t 
 			rtk_bt_evt_t *p_evt = NULL;
 			p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_SENSOR_SERVER_MODEL, RTK_BT_MESH_SENSOR_SERVER_MODEL_SERIES_GET,
 										sizeof(rtk_bt_mesh_sensor_server_direct_get_series_t) + 2 * SENSOR_GET_SERIES_MAX_LEN + 2);
+			if (!p_evt) {
+				BT_LOGE("[%s] Create event fail\r\n", __func__);
+				break;
+			}
 			series_get = (rtk_bt_mesh_sensor_server_direct_get_series_t *)p_evt->data;
 			series_get->property_id = p_get_data->property_id;
 			series_get->raw_value_x_len = raw_value_x_len;
@@ -369,6 +413,10 @@ static int32_t sensor_server_data(const mesh_model_info_p pmodel_info, uint32_t 
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_SENSOR_SERVER_MODEL, RTK_BT_MESH_SENSOR_SERVER_MODEL_COMPARE_CADENCE,
 									sizeof(rtk_bt_mesh_sensor_server_compare_cadence_t));
+		if (!p_evt) {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+			break;
+		}
 		p_get_data = (rtk_bt_mesh_sensor_server_compare_cadence_t *)p_evt->data;
 		p_get_data->property_id = ((sensor_server_compare_cadence_t *)pargs)->property_id;
 		p_get_data->need_fast_divisor = &(((sensor_server_compare_cadence_t *)pargs)->need_fast_divisor);
@@ -382,6 +430,10 @@ static int32_t sensor_server_data(const mesh_model_info_p pmodel_info, uint32_t 
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_SENSOR_SERVER_MODEL, RTK_BT_MESH_SENSOR_SERVER_MODEL_DESCRIPTOR_NUM_GET,
 									sizeof(rtk_bt_mesh_sensor_server_get_descriptor_num_t));
+		if (!p_evt) {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+			break;
+		}
 		p_get_data = (rtk_bt_mesh_sensor_server_get_descriptor_num_t *)p_evt->data;
 		p_get_data->property_id = descriptor_num_get->property_id;
 		p_get_data->descriptor_num = &descriptor_num_get->descriptor_num;
@@ -395,6 +447,10 @@ static int32_t sensor_server_data(const mesh_model_info_p pmodel_info, uint32_t 
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_SENSOR_SERVER_MODEL, RTK_BT_MESH_SENSOR_SERVER_MODEL_DESCRIPTOR_GET,
 									sizeof(rtk_bt_mesh_sensor_server_get_descriptor_t) + descriptor_get->descriptor_num * sizeof(rtk_bt_mesh_sensor_descriptor_t));
+		if (!p_evt) {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+			break;
+		}
 		p_get_data = (rtk_bt_mesh_sensor_server_get_descriptor_t *)p_evt->data;
 		p_get_data->property_id = descriptor_get->property_id;
 		if (descriptor_get->descriptor_num > SENSOR_GET_DATA_MAX_LEN) {
@@ -486,6 +542,10 @@ static int32_t sensor_setup_server_data(const mesh_model_info_p pmodel_info, uin
 			rtk_bt_evt_t *p_evt = NULL;
 			p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_SENSOR_SETUP_SERVER_MODEL, RTK_BT_MESH_SENSOR_SERVER_MODEL_CADENCE_SET,
 										len);
+			if (!p_evt) {
+				BT_LOGE("[%s] Create event fail\r\n", __func__);
+				break;
+			}
 			memcpy(p_evt->data, pargs, 2);
 			memcpy((uint8_t *)(p_evt->data) + 2, p_set_data->cadence, 2);
 			memcpy((uint8_t *)(p_evt->data) + 4, (p_set_data->cadence)->status_trigger_delta_down, trigger_len);
@@ -508,6 +568,10 @@ static int32_t sensor_setup_server_data(const mesh_model_info_p pmodel_info, uin
 			rtk_bt_evt_t *p_evt = NULL;
 			p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_SENSOR_SETUP_SERVER_MODEL, RTK_BT_MESH_SENSOR_SERVER_MODEL_SETTING_SET,
 										len);
+			if (!p_evt) {
+				BT_LOGE("[%s] Create event fail\r\n", __func__);
+				break;
+			}
 			memcpy(p_evt->data, &p_set_data->property_id, 2);
 			memcpy((uint8_t *)(p_evt->data) + 2, &(p_set_data->setting->setting_property_id), 2);
 			memcpy((uint8_t *)(p_evt->data) + 4, &(p_set_data->setting->setting_access), 1);
@@ -524,6 +588,10 @@ static int32_t sensor_setup_server_data(const mesh_model_info_p pmodel_info, uin
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_SENSOR_SETUP_SERVER_MODEL, RTK_BT_MESH_SENSOR_SERVER_MODEL_CADENCE_GET,
 									sizeof(rtk_bt_mesh_sensor_server_get_cadence_t) + 4 * SENSOR_CADENCE_DATA_MAX_LEN);
+		if (!p_evt) {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+			break;
+		}
 		p_get_data = (rtk_bt_mesh_sensor_server_get_cadence_t *)p_evt->data;
 		p_get_data->property_id = p_data->property_id;
 		p_get_data->cadence = cadence_value;
@@ -560,6 +628,10 @@ static int32_t sensor_setup_server_data(const mesh_model_info_p pmodel_info, uin
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_SENSOR_SETUP_SERVER_MODEL, RTK_BT_MESH_SENSOR_SERVER_MODEL_SETTINGS_GET,
 									sizeof(rtk_bt_mesh_sensor_server_get_settings_t) + SENSOR_SETTINGS_DATA_MAX_LEN);
+		if (!p_evt) {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+			break;
+		}
 		p_get_data = (rtk_bt_mesh_sensor_server_get_settings_t *)p_evt->data;
 		p_get_data->property_id = p_data->property_id;
 		p_get_data->settings_data = settings_store;
@@ -574,6 +646,10 @@ static int32_t sensor_setup_server_data(const mesh_model_info_p pmodel_info, uin
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_SENSOR_SETUP_SERVER_MODEL, RTK_BT_MESH_SENSOR_SERVER_MODEL_SETTING_GET,
 									sizeof(rtk_bt_mesh_sensor_server_get_setting_t) + SENSOR_SETTING_DATA_MAX_LEN);
+		if (!p_evt) {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+			break;
+		}
 		p_get_data = (rtk_bt_mesh_sensor_server_get_setting_t *)p_evt->data;
 		p_get_data->property_id = p_data->property_id;
 		p_get_data->setting_property_id = p_data->setting->setting_property_id;
