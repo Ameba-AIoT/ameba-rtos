@@ -110,6 +110,29 @@ SIGN_MAX_LEN = 144
 PKEY_MAX_LEN = 144
 HASH_MAX_LEN = 64
 
+# ROM authentication ID, public key, secret key and signature lengths (FIPS 204).
+ML_DSA_PARAMETERS = {
+    'ml_dsa_44': (240, 1312, 2560, 2420),
+    'ml_dsa_65': (241, 1952, 4032, 3309),
+    'ml_dsa_87': (242, 2592, 4896, 4627),
+}
+
+
+def ml_dsa_hex(value, size, field):
+    if not isinstance(value, str) or len(value) != size * 2 or any(c not in '0123456789abcdefABCDEF' for c in value):
+        raise ValueError(f'{field} must contain exactly {size} bytes of hex')
+    return bytes.fromhex(value)
+
+
+def ml_dsa_module(algorithm):
+    if algorithm not in ML_DSA_PARAMETERS:
+        raise ValueError(f'Unsupported PQC algorithm: {algorithm}')
+    module = __import__('pqcrypto.sign.' + algorithm, fromlist=[algorithm])
+    _, pk_size, sk_size, sig_size = ML_DSA_PARAMETERS[algorithm]
+    if (module.PUBLIC_KEY_SIZE, module.SECRET_KEY_SIZE, module.SIGNATURE_SIZE) != (pk_size, sk_size, sig_size):
+        raise ValueError(f'{algorithm}: pqcrypto key/signature sizes do not match FIPS 204')
+    return module
+
 def init_list(length):
     return [0] * length
 
@@ -300,7 +323,7 @@ class HashID(Enum):
 
 class secure_boot():
     # valid input for gen_auth_id
-    valid_algorithm = [name.split('_')[-1].lower() for name in mbedtls_ecp_group_id.__members__] + ["ed25519"] + ["ml_dsa_65"]
+    valid_algorithm = [name.split('_')[-1].lower() for name in mbedtls_ecp_group_id.__members__] + ["ed25519"] + list(ML_DSA_PARAMETERS)
 
     def __init__(self):
         self.PrivKey = ''
@@ -328,8 +351,8 @@ class secure_boot():
     def gen_auth_id(self, strs:str):
         if strs == "ed25519":
             return Sec_AuthAlg.Sec_AuthID_ED25519.value
-        elif strs == "ml_dsa_65":
-            return Sec_AuthAlg.Sec_AuthID_MLDSA65.value
+        elif strs in ML_DSA_PARAMETERS:
+            return ML_DSA_PARAMETERS[strs][0]
         else:
             name = f"MBEDTLS_ECP_DP_{strs.split('_')[-1].upper()}"
             if hasattr(mbedtls_ecp_group_id, name):
@@ -393,76 +416,66 @@ class secure_boot():
         keyinfo['sboot_public_key_hash'] = pubkey_hash
         return
 
-    def ml_dsa_65_genkey(self, keyinfo):
+    def ml_dsa_genkey(self, algorithm, keyinfo):
         try:
-            import pqcrypto.sign.ml_dsa_65 as ml_dsa_65
-        except ImportError:
-            print("ML-DSA-65 module not available. Please install pqcrypto.")
-            return -1
-
-        # Generate ML-DSA-65 keypair
-        public_key, secret_key = ml_dsa_65.generate_keypair()
-
-        # generate public key hash
-        hash = hashlib.sha256()
-        hash.update(public_key)
-        pubkey_hash = hash.hexdigest().upper()
-
-        # Convert to hex strings
-        privkey_hex = list_to_hex_str(secret_key)
-        pubkey_hex = list_to_hex_str(public_key)
-
-        keyinfo['sboot_pqc_private_key'] = privkey_hex
-        keyinfo['sboot_pqc_public_key'] = pubkey_hex
-        keyinfo['sboot_pqc_public_key_hash'] = pubkey_hash
-        return 0
-
-    def ml_dsa_65_sign(self, privkey_hex, msg, mlen, sig):
-        """Generate ML-DSA-65 signature
-        Args:
-            privkey_hex: Private key in hex string format
-            msg: Message bytes to sign
-            mlen: Message length
-            sig: Signature buffer to fill
-        Returns:
-            0 on success, -1 on failure
-        """
-        try:
-            import pqcrypto.sign.ml_dsa_65 as ml_dsa_65
-        except ImportError:
-            print("ML-DSA-65 module not available. Please install pqcrypto.")
-            return -1
-
-        try:
-            # Convert private key from hex to bytes
-            privkey_bytes = bytes.fromhex(privkey_hex)
-
-            # Convert message to bytes if it's not already
-            if hasattr(msg, 'cast'):  # ctypes array
-                # Convert ctypes array to bytes
-                msg_bytes = bytes(msg)
-            elif isinstance(msg, (list, tuple)):
-                msg_bytes = bytes(msg)
-            else:
-                msg_bytes = msg
-
-            # Ensure we only use the specified length
-            msg_bytes = msg_bytes[:mlen]
-
-            # Generate signature
-            signature = ml_dsa_65.sign(privkey_bytes, msg_bytes)
-
-            # Copy signature to output buffer
-            sig_len = min(len(signature), len(sig))
-            for i in range(sig_len):
-                sig[i] = signature[i]
-
-            print(f"ML-DSA-65 signature generated, length: {sig_len}")
+            module = ml_dsa_module(algorithm)
+            # pqcrypto 0.4 uses generate_keypair; 1.0 uses keygen.
+            keygen = getattr(module, 'generate_keypair', None) or module.keygen
+            public_key, secret_key = keygen()
+            _, pk_size, sk_size, _ = ML_DSA_PARAMETERS[algorithm]
+            if len(public_key) != pk_size or len(secret_key) != sk_size:
+                raise ValueError('Invalid ML-DSA keypair lengths')
+            keyinfo['sboot_pqc_algorithm'] = algorithm
+            keyinfo['sboot_pqc_private_key'] = secret_key.hex().upper()
+            keyinfo['sboot_pqc_public_key'] = public_key.hex().upper()
+            keyinfo['sboot_pqc_public_key_hash'] = hashlib.sha256(public_key).hexdigest().upper()
             return 0
-
         except Exception as e:
-            print(f"Error generating ML-DSA-65 signature: {e}")
+            print(f'Error generating {algorithm} keypair: {e}')
             return -1
+
+    def ml_dsa_verify(self, algorithm, pubkey_hex, msg, signature):
+        """Normalize pqcrypto's True/False and None-on-success/exception APIs."""
+        try:
+            module = ml_dsa_module(algorithm)
+            _, pk_size, _, sig_size = ML_DSA_PARAMETERS[algorithm]
+            public_key = ml_dsa_hex(pubkey_hex, pk_size, 'PQC public key')
+            if len(signature) != sig_size:
+                raise ValueError('Invalid ML-DSA signature length')
+            result = module.verify(public_key, bytes(msg), bytes(signature))
+            return 0 if result is None or result is True else -1
+        except Exception:
+            return -1
+
+    def ml_dsa_sign(self, algorithm, privkey_hex, msg, mlen, sig, pubkey_hex=None):
+        """Sign without truncation; verify against the configured public key before copying."""
+        try:
+            module = ml_dsa_module(algorithm)
+            _, _, sk_size, sig_size = ML_DSA_PARAMETERS[algorithm]
+            private_key = ml_dsa_hex(privkey_hex, sk_size, 'PQC private key')
+            msg_bytes = bytes(msg)
+            if mlen < 0 or mlen > len(msg_bytes):
+                raise ValueError('Invalid ML-DSA message length')
+            if len(sig) < sig_size:
+                raise ValueError('ML-DSA signature buffer too small')
+            msg_bytes = msg_bytes[:mlen]
+            signature = module.sign(private_key, msg_bytes)
+            if len(signature) != sig_size:
+                raise ValueError('Invalid ML-DSA signature length')
+            if pubkey_hex is not None and self.ml_dsa_verify(algorithm, pubkey_hex, msg_bytes, signature) != 0:
+                raise ValueError('ML-DSA signature does not verify with configured public key')
+            for i, value in enumerate(signature):
+                sig[i] = value
+            return 0
+        except Exception as e:
+            print(f'Error generating {algorithm} signature: {e}')
+            return -1
+
+    def ml_dsa_65_genkey(self, keyinfo):
+        return self.ml_dsa_genkey('ml_dsa_65', keyinfo)
+
+    def ml_dsa_65_sign(self, privkey_hex, msg, mlen, sig, pubkey_hex=None):
+        return self.ml_dsa_sign('ml_dsa_65', privkey_hex, msg, mlen, sig, pubkey_hex)
 
     def ed25519_sign(self, privkey, pubkey, msg, mlen, sig):
         privkey_bytes = bytes.fromhex(privkey)
@@ -709,6 +722,9 @@ class secure_boot():
         return 0
 
     def gen_signature(self, auth_alg_id, privkey, pubkey, msg, mlen, sig):
+        if auth_alg_id in [parameters[0] for parameters in ML_DSA_PARAMETERS.values()]:
+            print('ML-DSA requires the PQC signature helper, not the classical signature slot')
+            return -1
         if auth_alg_id == Sec_AuthAlg.Sec_AuthID_ED25519.value:
             ret = self.ed25519_sign(privkey, pubkey, msg, mlen, sig)
         else:

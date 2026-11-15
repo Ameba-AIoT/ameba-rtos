@@ -138,6 +138,12 @@ static const usbh_cdc_ecm_state_cb_t cdc_ecm_usb_cb = {
 	.received = cdc_ecm_cb_received,
 };
 
+/* The USB side peer talks to the router MAC and is answered on its own MAC, neither is the
+   dongle's, so the dongle shall not filter unicast frames */
+static const usbh_cdc_ecm_config_t cdc_ecm_class_cfg = {
+	.promiscuous = 1U,
+};
+
 static const usbh_user_cb_t usbh_ecm_usr_cb = {
 	.process = cdc_ecm_cb_process,
 	.validate = cdc_ecm_cb_device_check,
@@ -238,7 +244,7 @@ static int cdc_ecm_stack_init(void)
 		return ret;
 	}
 
-	ret = usbh_cdc_ecm_init(&cdc_ecm_usb_cb, NULL);
+	ret = usbh_cdc_ecm_init(&cdc_ecm_usb_cb, &cdc_ecm_class_cfg);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Init CDC ECM fail\n");
 		usbh_deinit();

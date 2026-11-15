@@ -1,6 +1,8 @@
 # Example Description
 
-In this application, Ameba is designed as a USB UAC and HID composite device, USB host can recognize Ameba as a audio speaker and a HID vendor. 
+In this application, Ameba is designed as a USB Type-C headset: a USB UAC and HID composite device. The USB host recognizes Ameba as an audio speaker (and a microphone with UAC 2.0) plus the standard headset buttons on the HID Consumer Control page, Play/Pause, Volume Up/Down, Voice Command and Mute, as the Android USB headset specification defines. They work with the inbox drivers of Windows, macOS, Linux, Android and iOS, no vendor tool is needed.
+
+The interfaces are laid out as on a Type-C headset: the UAC interfaces come first, the HID button interface last.
 
 # HW Configuration
 
@@ -18,7 +20,7 @@ None
 	[*] Composite function enable
 		*** USB Device Class Selection ***
 	[*] HID
-			Select HID device type (Vendor)  --->
+			Select HID device type (Headset buttons)  --->
 	[*] UAC
 			Select UAC Version (UAC 2.0)  --->
 	```
@@ -89,23 +91,17 @@ None
 	[COMP-I] UAC record start
 	```
 
-5. Use HIDPyToy tool to test the HID message(download address https://github.com/todbot/hidpytoy)
-   	```
-	- Connect the HID device
-		click rescan ,choose "Realtek HID+UAC Composite Device" device,and click connect
-	- Test
-		USBD RX:type "0x1F,1,2,3,4" in the HIDPyToy,and click "Send Out Report", the LOGUART console will print the message
-		USBD TX:type "AT+USBDHIDUAC=tx,xx" in the LOGUART console, and click "Read In Reports" in the HIDPyToy, you will get a message from the ameba device
-		Notice:please trigger USBD RX first
+5. Headset button check: type the commands below in the LOGUART console, each clicks one button (press, then release), the host reacts as to the buttons of a Type-C headset:
 	```
-	Each Out Report received from the host prints:
+	AT+USBDHIDUAC=key,volup      # Volume Up: the OS volume bar pops up and the volume goes up
+	AT+USBDHIDUAC=key,voldown    # Volume Down
+	AT+USBDHIDUAC=key,mute       # Mute toggle
+	AT+USBDHIDUAC=key,play       # Play/Pause the media player, on a phone it also answers / hangs up a call
+	AT+USBDHIDUAC=key,voice      # Voice Command: launches the voice assistant on Android, ignored by most PCs
 	```
-	[COMP-I] HID RX <len> bytes, first byte:1f
-	```
+	A headset that lacks a button just never reports it, the host needs nothing more.
 
-6. Type "AT+USBDHIDUAC=vol,up"/"AT+USBDHIDUAC=vol,down" in the LOGUART console, the windows volume control bar will pop-up, and the volume will up/down
-
-7. Hotplug check: the example tears down and re-inits the whole composite stack on every detach, so unplug and re-plug the cable, following log shall be printed for each cycle:
+6. Hotplug check: the example tears down and re-inits the whole composite stack on every detach, so unplug and re-plug the cable, following log shall be printed for each cycle:
 	```
 	[COMP-I] DETACHED
 	[USBD-A] DEINIT
@@ -119,15 +115,16 @@ None
 
 | Command | Description |
 | --- | --- |
-| `AT+USBDHIDUAC=tx[,<len>]` | Send `len` bytes on the HID interrupt IN endpoint, every byte holding `len & 0xFF`. `len`: 1..60 (the TX buffer length), default 10; any other value is rejected. |
-| `AT+USBDHIDUAC=vol,<up\|down>` | Send a HID vendor volume-up / volume-down report to the host. |
+| `AT+USBDHIDUAC=key,<play\|volup\|voldown\|voice\|mute>` | Click one headset button: report it pressed, then released. `play`: Play/Pause, `volup`/`voldown`: Volume Up/Down, `voice`: Voice Command, `mute`: Mute. |
 | `AT+USBDHIDUAC=record` | Start the microphone (USB IN) replay, which feeds the built-in audio sample to the host. Each call queues one more session. Only on a UAC 2.0 and non-FS-only build. |
 
-Note: the `tx` / `vol` sub commands are only available when the HID device type is `Vendor` (`CONFIG_USBD_HID_VENDOR`); `record` only on a UAC 2.0 and non-FS-only build.
+Note: `record` is only available on a UAC 2.0 and non-FS-only build.
 
 # Note
 
-Windows caches the descriptors of a device per VID/PID. After a firmware update that changes the UAC descriptors (e.g. channel count, microphone enabled or not), uninstall the device in Device Manager (with its driver) and replug it, otherwise the host may keep using the old layout and the audio endpoints do not work.
+The example needs the HID device type `Headset buttons` (`CONFIG_USBD_HID_HEADSET`), the build stops with an error otherwise. For a vendor defined HID protocol refer to the `usbd_hid` example instead.
+
+Windows caches the descriptors of a device per VID/PID. After a firmware update that changes the UAC or HID descriptors (e.g. channel count, microphone enabled or not), uninstall the device in Device Manager (with its driver) and replug it, otherwise the host may keep using the old layout and the audio endpoints do not work.
 
 # Supported IC
 

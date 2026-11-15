@@ -670,7 +670,6 @@ _LONG_CALL_ u32 UART_ModemStatusGet(UART_TypeDef *UARTx);
 _LONG_CALL_ u32 UART_LineStatusGet(UART_TypeDef *UARTx);
 _LONG_CALL_ void UART_WaitBusy(UART_TypeDef *UARTx, u32 PollTimes);
 _LONG_CALL_ void UART_TXDMAConfig(UART_TypeDef *UARTx, u32 TxDmaBurstSize);
-_LONG_CALL_ void UART_RXDMAConfig(UART_TypeDef *UARTx, u32 RxDmaBurstSize);
 _LONG_CALL_ void UART_TXDMACmd(UART_TypeDef *UARTx, u32 NewState);
 _LONG_CALL_ void UART_RXDMACmd(UART_TypeDef *UARTx, u32 NewState);
 _LONG_CALL_ bool UART_TXGDMA_Init(u8 UartIndex, GDMA_InitTypeDef *GDMA_InitStruct, void *CallbackData,

@@ -351,6 +351,9 @@ int mbedtls_ecdh_compute_shared(mbedtls_ecp_group *grp, mbedtls_mpi *z,
 
 	mbedtls_ecp_point_init(&P);
 
+	/* pke_ecp_mul does not validate the peer point; do it here as ecp.c does */
+	MBEDTLS_MPI_CHK(mbedtls_ecp_check_privkey(grp, d));
+	MBEDTLS_MPI_CHK(mbedtls_ecp_check_pubkey(grp, Q));
 	MBEDTLS_MPI_CHK(ecp_mul_restartable_internal(grp, &P, d, Q,
 					f_rng, p_rng, NULL));
 	if (mbedtls_ecp_is_zero(&P)) {

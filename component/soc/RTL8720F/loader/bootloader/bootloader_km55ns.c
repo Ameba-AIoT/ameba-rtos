@@ -8,7 +8,6 @@
 #include "rom/ameba_dump_stack.h"
 #include "rom/ameba_v8m_crashdump.h"
 
-
 #ifdef CONFIG_IOT_MCU_COMBINED
 /* SOLO: KM55NS is not the SPIC owner and never calibrates flash. Before it can
  * drive the SPIC itself (iot OTA), it must adopt KM55TZ's ROM-calibrated

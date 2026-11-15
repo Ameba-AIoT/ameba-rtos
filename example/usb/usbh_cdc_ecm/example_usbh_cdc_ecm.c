@@ -159,6 +159,7 @@ static const usbh_cdc_ecm_config_t ecm_class_cfg = {
 	NULL,
 	0,
 #endif
+	0,
 };
 
 /* Exported variables --------------------------------------------------------*/

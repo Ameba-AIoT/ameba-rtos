@@ -384,24 +384,14 @@ static u16 usbd_composite_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u
 		len = USB_LEN_DEV_DESC;
 		break;
 
+	/* The core stalls DEVICE_QUALIFIER and OTHER_SPEED_CONFIGURATION unless configured for HS */
 	case USB_DESC_TYPE_CONFIGURATION:
+	case USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION:
 		return usbd_composite_build_config_desc(dev, req, buf, buf_len);
 
-	/* Ref USB 2.0 9.6.2 and 9.6.4: only a high-speed capable device has a device qualifier and
-	   an other speed configuration, a single speed one answers them with a request error. The
-	   configured speed counts, not the negotiated one: an HS device behind an FS hub is still
-	   high-speed capable, while an HS PHY driven in Full-Speed mode never chirps. */
-	case USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION:
-		if (dev->info.speed == (u8)USB_SPEED_HIGH) {
-			return usbd_composite_build_config_desc(dev, req, buf, buf_len);
-		}
-		break;
-
 	case USB_DESC_TYPE_DEVICE_QUALIFIER:
-		if (dev->info.speed == (u8)USB_SPEED_HIGH) {
-			desc = usbd_composite_dev_qualifier_desc;
-			len = USB_LEN_DEV_QUALIFIER_DESC;
-		}
+		desc = usbd_composite_dev_qualifier_desc;
+		len = USB_LEN_DEV_QUALIFIER_DESC;
 		break;
 
 	case USB_DESC_TYPE_STRING:

@@ -22,6 +22,13 @@ ENTRY(Reset_Handler)
 #endif
 #endif
 
+#define NOR_FLASH_TABLE_INPUT \
+	. = ALIGN(4); \
+	__nor_flash_table_start__ = .; \
+	KEEP(*(.nor.flash.table.data*)) \
+	__nor_flash_table_end__ = .; \
+	. = ALIGN(4);
+
 #if defined(GENERATE_FLOADER_LD) || \
 	(!defined (CONFIG_WHC_INTF_IPC) && defined (CONFIG_WHC_DEV)) || \
 	!defined(CONFIG_IMG1_FLASH)
@@ -33,6 +40,8 @@ ENTRY(Reset_Handler)
 	#define	FLASH_INPUT_NON_DRAM
 	#define FLASH_INPUT_BOOT_RODATA
 	#define FLASH_INPUT_RODATA
+	#define FLASH_INPUT_NOR_TABLE
+	#define SRAM_INPUT_NOR_TABLE		NOR_FLASH_TABLE_INPUT
 #else
 	#define SRAM_INPUT_TEXT_SECTION
 	#define	SRAM_INPUT_NON_DRAM
@@ -42,6 +51,8 @@ ENTRY(Reset_Handler)
 	#define	FLASH_INPUT_NON_DRAM	*(.non.dram.text*)
 	#define FLASH_INPUT_BOOT_RODATA	*(.boot.rodata*)
 	#define FLASH_INPUT_RODATA		*(.rodata*)
+	#define FLASH_INPUT_NOR_TABLE	NOR_FLASH_TABLE_INPUT
+	#define SRAM_INPUT_NOR_TABLE
 #endif
 
 SECTIONS
@@ -66,6 +77,7 @@ SECTIONS
 		SRAM_INPUT_BOOT_RODATA
 		SRAM_INPUT_RODATA
 		*(.sramdram.only.text*)
+		SRAM_INPUT_NOR_TABLE
 	} > IMG1_LMA_REGION
 
 	.ram_image1.data . :
@@ -97,6 +109,7 @@ SECTIONS
 		FLASH_INPUT_NON_DRAM
 		FLASH_INPUT_BOOT_RODATA
 		FLASH_INPUT_RODATA
+		FLASH_INPUT_NOR_TABLE
 	} > KM4TZ_BOOT_XIP
 
 	/* image2: normal image start */

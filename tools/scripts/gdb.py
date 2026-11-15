@@ -198,6 +198,18 @@ def fmt_gdb_arg(var_name, value):
     else:
         return f" -ex '{gdb_cmd}'"
 
+def crypto_rcc_args(core):
+    '''
+    gdb -ex args for crypto_rcc_clear in rtl_gdb_jtag_boot_com.txt, only for the main core of a SoC with CRYPTO_RCC config
+    '''
+    crypto_rcc = CONFIG.get('CRYPTO_RCC', {})
+    crypto_rst_en = 1 if (core == target_prj and crypto_rcc) else 0
+    ex_list = [fmt_gdb_arg('CRYPTO_RST_EN', crypto_rst_en)]
+    if crypto_rst_en:
+        for var_name, var_value in {**CONFIG.get('REG_VARS', {}), **crypto_rcc}.items():
+            ex_list.append(fmt_gdb_arg(var_name, var_value))
+    return ex_list
+
 #===================implement the specified action===================#
 FLASH_SCRIPT   = fmt_path(os.path.join(GNU_SCRIPT, 'rtl_gdb_flash_write.txt'))
 DEBUG_SCRIPT   = fmt_path(os.path.join(GNU_SCRIPT, 'rtl_gdb_debug.txt'))
@@ -252,6 +264,8 @@ if FPGA == True:
             ex_list.append(fmt_gdb_arg('REG_LSYS_BOOT_ADDR_TZ', flash_params['REG_LSYS_BOOT_ADDR_TZ']))
             for var_name, var_value in CONFIG.get('REG_VARS', {}).items():
                 ex_list.append(fmt_gdb_arg(var_name, var_value))
+        # Reset crypto after warm reset, so ROM can take crypto mutex again
+        ex_list.extend(crypto_rcc_args(core))
         ex_commands = "".join(ex_list)
 
         cmd = 'cd ' + LIB_PARENT +  ' && ' + CMAKE_GDB_FLASH + ex_commands + ' -x ' + ROM_SCRIPT
@@ -291,6 +305,8 @@ for var_name, var_value in reg_vars.items():
 flash_params = CONFIG.get('FLASH_PARAMS', {})
 for param_name, param_value in flash_params.items():
     ex_list.append(fmt_gdb_arg(param_name, param_value))
+
+ex_list.extend(crypto_rcc_args(target_prj))
 
 if BIN_PATHS.get('FlashFileSize'):
     ex_list.append(fmt_gdb_arg('BIN_IMG2_ALL', BIN_PATHS["FlashFileSize"]))

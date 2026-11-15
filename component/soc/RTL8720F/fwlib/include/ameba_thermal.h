@@ -96,6 +96,16 @@ typedef enum {
  * @}
  */
 
+/** @defgroup TM_INTR_CTRL
+  * @brief Thermal Meter Interrupt Control Register
+  * @{
+  */
+#define TM_BIT_IMR_TM_HIGH_WT ADC_BIT_IT_TM_HIGH_WT_EN
+#define TM_BIT_IMR_TM_LOW_WT  ADC_BIT_IT_TM_LOW_WT_EN
+/**
+ * @}
+ */
+
 /**
  * @}
  */

@@ -154,5 +154,11 @@
       TZ_SETUP_EN: 1,
       REG_LSYS_BOOT_ADDR_TZ: '0x02F0',
     },
+    // Clear crypto RCC after warm reset, see crypto_rcc_clear in rtl_gdb_jtag_boot_com.txt
+    CRYPTO_RCC: {
+      REG_LSYS_FEN_GRP0: '0x0204',
+      REG_LSYS_CKE_GRP0: '0x0210',
+      CRYPTO_RCC_MASK: '0x0100', // APBPeriph_CRYPTO / APBPeriph_CRYPTO_CLOCK, bit8 in both
+    },
   },
 }

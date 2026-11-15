@@ -9,6 +9,7 @@ monitor reset 0
 monitor sleep 20
 monitor halt
 monitor waithalt 2000
+crypto_rcc_clear
 
 # Park main core in an SRAM "b ." so it never boots the stale flash image with the new ROM:
 #  - right after detach: PC is set to the loop below

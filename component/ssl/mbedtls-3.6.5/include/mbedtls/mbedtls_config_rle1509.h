@@ -1516,7 +1516,7 @@
  * Uncomment this macro to disable the use of CRT in RSA.
  *
  */
-//#define MBEDTLS_RSA_NO_CRT
+#define MBEDTLS_RSA_NO_CRT
 
 /**
  * \def MBEDTLS_SELF_TEST

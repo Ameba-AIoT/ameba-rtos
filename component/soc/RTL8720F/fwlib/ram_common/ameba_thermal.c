@@ -418,7 +418,7 @@ void TM_MinTempClr(void)
 static u16 TM_GetTempCode(float TempC)
 {
 	/* sync with HW: T = 0.480828f * ADC_data - 288.768 */
-	return (u16)((TempC + 288.768) / 0.480828f);
+	return (u16)((TempC + 288.768f) / 0.480828f);
 }
 
 /**

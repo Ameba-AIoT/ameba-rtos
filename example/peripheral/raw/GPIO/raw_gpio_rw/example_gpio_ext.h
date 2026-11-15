@@ -32,7 +32,7 @@
 
 #elif defined (CONFIG_AMEBAPRO3)
 #define GPIO_LED_PIN		_PF_4
-#define GPIO_PUSHBT_PIN		_PF_2
+#define GPIO_PUSHBT_PIN		_PF_9
 
 
 #elif defined (CONFIG_RTL8720F)

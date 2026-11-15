@@ -58,6 +58,8 @@ void wifi_netif_set_up(u8 idx);
 void wifi_netif_set_down(u8 idx);
 void wifi_netif_link_up(u8 idx);
 void wifi_netif_link_down(u8 idx);
+int wifi_netif_dhcps_ip_check(u8 gate, u8 ip);
+void wifi_netif_get_ip_gw(u8 wowlan_mode, u8 *ip, u8 *gw);
 
 extern unsigned char *wifi_netif_get_ip(int idx);
 extern unsigned char *wifi_netif_get_gw(int idx);

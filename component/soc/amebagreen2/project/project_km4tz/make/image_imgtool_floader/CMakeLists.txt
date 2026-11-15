@@ -30,6 +30,16 @@ target_sources(${c_CURRENT_IMAGE} PRIVATE
 
 target_include_directories(${c_CURRENT_IMAGE} PRIVATE ${c_CMPT_USB_DIR}/common)
 
+# NOR chip handling: this image picks single fwlib sources by name, so it needs
+# the same either/or as fwlib/ram_km4tz/CMakeLists.txt.
+if (CONFIG_NOR_FLASH_NEW_STRATEGY)
+    ameba_add_subdirectory(${c_COMPONENT_DIR}/soc/common/nor_flash)
+else()
+    target_sources(${c_CURRENT_IMAGE} PRIVATE
+        ${c_CMPT_FWLIB_DIR}/ram_km4tz/ameba_nor_flash.c
+    )
+endif()
+
 ###############################  GENERATE IMAGE  ###################################
 
 #---------------- PRE LINK -------------------#
