@@ -60,7 +60,6 @@ static wcast_err_t example_set_key(u8 *mac, u8 *key)
 static wcast_err_t example_send(u16 type, const wifi_cast_addr_t dst_mac, u8 *data, u16 data_len)
 {
 	wifi_cast_node_t node = {0};
-	wifi_cast_node_t *dst_node;
 	struct example_frame_head *hdr;
 	u8 *tx_buf;
 	wcast_err_t ret = WIFI_CAST_OK;
@@ -82,8 +81,9 @@ static wcast_err_t example_send(u16 type, const wifi_cast_addr_t dst_mac, u8 *da
 	info.ack = 0;
 	memcpy(node.mac, dst_mac, ETH_ALEN);
 
-	if ((dst_node = wifi_cast_get_node_info(&node)) != NULL) {
-		ret = wifi_cast_send(dst_node, tx_buf, sizeof(struct example_frame_head) + data_len, &info);
+	ret = wifi_cast_send(&node, tx_buf, sizeof(struct example_frame_head) + data_len, &info);
+	if (ret != WIFI_CAST_OK) {
+		RTK_LOGD(TAG, "%s, send failed, ret: %d\n", __func__, ret);
 	}
 	rtos_mem_free(tx_buf);
 	return ret;

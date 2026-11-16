@@ -333,6 +333,7 @@ typedef enum {
 	RTK_BT_LE_GAP_ACT_PAWR_SET_SUBEVENT_DATA,               /*!< Set the subevent data of Periodic Advertising with Responses. */
 	RTK_BT_LE_GAP_ACT_PAWR_SET_RESPONSE_DATA,               /*!< Set the response data of Periodic Advertising with Responses. */
 	RTK_BT_LE_GAP_ACT_PAWR_SYNC_SUBEVENT,                   /*!< Set the subevents to synchronize with in Periodic Advertising with Responses. */
+	RTK_BT_LE_GAP_ACT_PAWR_CONN,                            /*!< Initiate a connection on a PAwR train. */
 	RTK_BT_LE_GAP_ACT_COC_REG_PSM,                          /*!< Register or unregister an LE COC PSM. */
 	RTK_BT_LE_GAP_ACT_COC_SET_PSM_SECURITY,                 /*!< Set the security requirements of an LE COC PSM. */
 	RTK_BT_LE_GAP_ACT_COC_SET_PARAM,                        /*!< Set an LE COC protocol parameter. */

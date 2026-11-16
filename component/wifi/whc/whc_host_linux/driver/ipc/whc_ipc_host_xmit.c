@@ -103,7 +103,15 @@ int whc_host_xmit_entry(int idx, struct sk_buff *pskb)
 	ipc_msg.event_num = IPC_WIFI_CMD_XIMT_PKTS;
 	ipc_msg.msg_addr = (u32)skb_phy;
 	ipc_msg.wlan_idx = idx;
-	whc_ipc_host_send_packet(&ipc_msg);
+	if (whc_ipc_host_send_packet(&ipc_msg) < 0) {
+		spin_lock(&(global_idev.xmit_priv.skb_lock));
+		skb->busy = 0;
+		spin_unlock(&(global_idev.xmit_priv.skb_lock));
+		whc_ipc_host_xmit_done(idx);
+		/* drop instead of NETDEV_TX_BUSY to avoid requeue busy loop while queue is not stopped */
+		pstats->tx_dropped++;
+		goto func_exit;
+	}
 	pstats->tx_bytes += pskb->len;
 
 func_exit:

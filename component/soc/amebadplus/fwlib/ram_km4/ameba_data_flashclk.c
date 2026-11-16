@@ -6,14 +6,27 @@
 
 #include "ameba_soc.h"
 
+/* The common NOR driver reaches the data flash through data_flash, which exists only with a second flash */
+#if defined(CONFIG_NOR_FLASH_NEW_STRATEGY) && defined(CONFIG_SECOND_FLASH_NOR)
+#define DATA_FLASH_NEW_DRIVER	1
+#else
+#define DATA_FLASH_NEW_DRIVER	0
+#endif
+
+#if DATA_FLASH_NEW_DRIVER
+#include "nor_flash.h"
+#endif
+
 #define FLASH_CALIBRATION_DEBUG		0
 
 static const char *const TAG = "DFLASHCLK";
 
+#if !DATA_FLASH_NEW_DRIVER
 static FlashInfo_TypeDef *current_IC;
 
 /* Flag to check configuration register or not. Necessary for wide-range VCC MXIC flash */
 static u8 check_config_reg = 0;
+#endif
 
 static u32 SPIC_DATA_FLASH_CALIB_PATTERN[2] = {0};
 
@@ -501,6 +514,19 @@ int data_flash_handshake_highspeed(FlashDivInt_E div)
 	return Ret;
 }
 
+#if DATA_FLASH_NEW_DRIVER
+/* The flash is identified and its status register set by the common NOR driver, data_flash is its handle. The
+ * capacity is read here only for DATA_FLASH_SIZE, which the file system and the tests use. */
+static void data_flash_get_vendor(void)
+{
+	u8 flash_ID[4];
+
+	DATA_FLASH_RxCmd(data_flash_init_para.FLASH_cmd_rd_id, 3, flash_ID);
+	DATA_FLASH_SIZE = (1 << (flash_ID[2] - 0x11));
+
+	nor_flash_get_vendor(&data_flash);
+}
+#else
 static void data_flash_get_vendor(void)
 {
 	u8 flash_ID[4];
@@ -595,11 +621,14 @@ static void data_flash_set_status_register(void)
 		}
 	}
 }
+#endif
 
 int data_flash_rx_mode_switch(u32 spic_mode)
 {
 	int Ret = RTK_SUCCESS;
+#if !DATA_FLASH_NEW_DRIVER
 	u8 status = 0;
+#endif
 	char *str[] = {"1IO", "2O", "2IO", "4O", "4IO"};
 	FLASH_InitTypeDef *FLASH_InitStruct = &data_flash_init_para;
 
@@ -612,12 +641,17 @@ int data_flash_rx_mode_switch(u32 spic_mode)
 			FLASH_InitStruct->FLASH_dum_en = 0;
 		}
 
+#if DATA_FLASH_NEW_DRIVER
+		/* Dummy cycles of the default profile, before every attempt */
+		nor_flash_set_default_dummy(&data_flash);
+#else
 		if (FLASH_InitStruct->FLASH_Id == FLASH_ID_MICRON) {
 			DATA_FLASH_RxCmd(0x85, 1, &status);
 
 			status = (status & 0x0f) | (FLASH_InitStruct->FLASH_rd_dummy_cycle[spic_mode] << 4);
 			DATA_FLASH_SetStatus(0x81, 1, &status);
 		}
+#endif
 
 		DATA_FLASH_Init(spic_mode);
 
@@ -671,8 +705,13 @@ void data_flash_highspeed_setup(void)
 	/* Get flash ID to reinitialize FLASH_InitTypeDef structure */
 	data_flash_get_vendor();
 
+#if DATA_FLASH_NEW_DRIVER
+	/* Set QE if a quad read mode is asked for, block protection is left as is */
+	nor_flash_set_qe(&data_flash, read_mode);
+#else
 	/* Set flash status register: set QE, clear protection bits */
 	data_flash_set_status_register();
+#endif
 
 	/* read data from data flash address0 as calib data when flash is in 1io 20M*/
 	DCache_Invalidate(DATA_FLASH_BASE, 8);

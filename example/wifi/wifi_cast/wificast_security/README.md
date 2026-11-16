@@ -115,5 +115,11 @@ Both sender and receiver can start scan.
 
 # Supported IC
 
-RTL8721F
+RTL8730E
+RTL8726E
+RTL8720E
+RTL8713E
+RTL8710E
 RTL8720F
+RTL8721Dx
+RTL8721F

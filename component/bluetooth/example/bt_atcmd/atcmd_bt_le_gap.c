@@ -2879,6 +2879,54 @@ static int atcmd_ble_gap_pawr_set_subevent_data(int argc, char **argv)
 	BT_LOGA("GAP PAwR set subevent data success\r\n");
 	return 0;
 }
+
+static int atcmd_ble_gap_pawr_connect(int argc, char **argv)
+{
+	char addr_str[30] = {0};
+	uint16_t ret = 0;
+	rtk_bt_le_gap_pawr_create_conn_param_t pawr_conn = {
+		.adv_handle = 0,
+		.subevent = 0,
+		.own_addr_type = 0,
+		.peer_addr = {0},
+		.conn_interval_min = 0x60,
+		.conn_interval_max = 0x60,
+		.conn_latency = 0,
+		.supv_timeout = 0x100,
+		.create_conn_timeout = 1000,
+	};
+
+	if (argc != 5 && argc != 9) {
+		BT_LOGE("GAP PAwR connect failed! wrong args num!\r\n");
+		return -1;
+	}
+
+	pawr_conn.adv_handle = str_to_int(argv[0]);
+	pawr_conn.subevent = str_to_int(argv[1]);
+	pawr_conn.own_addr_type = str_to_int(argv[2]);
+	pawr_conn.peer_addr.type = str_to_int(argv[3]);
+	if (false == hexdata_str_to_bd_addr(argv[4], pawr_conn.peer_addr.addr_val, RTK_BD_ADDR_LEN)) {
+		return -1;
+	}
+
+	if (argc == 9) {
+		pawr_conn.conn_interval_min = str_to_int(argv[5]);
+		pawr_conn.conn_interval_max = str_to_int(argv[6]);
+		pawr_conn.conn_latency = str_to_int(argv[7]);
+		pawr_conn.supv_timeout = str_to_int(argv[8]);
+	}
+
+	ret = rtk_bt_le_gap_pawr_connect(&pawr_conn);
+	if (ret != RTK_BT_OK) {
+		BT_LOGE("GAP PAwR connect failed! err: 0x%x\r\n", ret);
+		return -1;
+	}
+
+	rtk_bt_le_addr_to_str(&pawr_conn.peer_addr, addr_str, sizeof(addr_str));
+	BT_LOGA("GAP PAwR connecting to device %s ...\r\n", addr_str);
+
+	return 0;
+}
 #endif /* RTK_BLE_5_4_PAWR_ADV_SUPPORT */
 
 #if defined(RTK_BLE_5_4_PAWR_SCAN_SUPPORT) && RTK_BLE_5_4_PAWR_SCAN_SUPPORT
@@ -3049,6 +3097,7 @@ static const cmd_table_t le_gap_cmd_table[] = {
 	{"dtm_end",      atcmd_ble_gap_dtm_end_test,       1, 1},
 #if defined(RTK_BLE_5_4_PAWR_ADV_SUPPORT) && RTK_BLE_5_4_PAWR_ADV_SUPPORT
 	{"pawr_set_sub", atcmd_ble_gap_pawr_set_subevent_data, 7, 19},
+	{"pawr_conn",    atcmd_ble_gap_pawr_connect,       6, 10},
 #endif
 #if defined(RTK_BLE_5_4_PAWR_SCAN_SUPPORT) && RTK_BLE_5_4_PAWR_SCAN_SUPPORT
 	{"pawr_set_rsp", atcmd_ble_gap_pawr_set_response_data, 6, 7},

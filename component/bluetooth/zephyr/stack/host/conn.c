@@ -3209,10 +3209,12 @@ static void create_param_setup(const struct bt_conn_le_create_param *param)
 {
 	bt_dev.create_param = *param;
 
+#if !ZEPHYR_RTK_PATCH
 	bt_dev.create_param.timeout =
 		(bt_dev.create_param.timeout != 0) ?
 		bt_dev.create_param.timeout :
 		(MSEC_PER_SEC / 10) * CONFIG_BT_CREATE_CONN_TIMEOUT;
+#endif
 
 	bt_dev.create_param.interval_coded =
 		(bt_dev.create_param.interval_coded != 0) ?
@@ -3501,12 +3503,17 @@ int bt_conn_le_create_synced(const struct bt_le_ext_adv *adv,
 		return -ENOMEM;
 	}
 
+#if ZEPHYR_RTK_PATCH
+	bt_dev.create_param.own_addr_type = synced_param->own_addr_type;
+	bt_dev.create_param.timeout = synced_param->timeout;
+#else
 	/* The connection creation timeout is not really useful for PAwR.
 	 * The controller will give a result for the connection attempt
 	 * within a periodic interval. We do not know the periodic interval
 	 * used, so disable the timeout.
 	 */
 	bt_dev.create_param.timeout = 0;
+#endif
 	bt_conn_set_state(conn, BT_CONN_INITIATING);
 
 	err = bt_le_create_conn_synced(conn, adv, synced_param->subevent);
