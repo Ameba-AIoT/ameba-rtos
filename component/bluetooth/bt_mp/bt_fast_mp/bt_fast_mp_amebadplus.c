@@ -118,7 +118,7 @@ bool rtk_bt_mp_dtm_get_rx_report(int8_t *p_rssi)
 
 	buf[2] = (uint8_t)(0);
 
-	if (false == hci_dtm_send(0xFCE5, buf, 3)) {
+	if (false == hci_dtm_send(0xFCE5, buf, 3, sizeof(buf))) {
 		return false;
 	}
 
@@ -166,7 +166,7 @@ bool rtk_bt_mp_dtm_set_tx_count(uint8_t tx_pkt_cnt)
 	}
 	buf[10] = prbs_fix;
 
-	return hci_dtm_send(0xFCDC, buf, 11);
+	return hci_dtm_send(0xFCDC, buf, 11, sizeof(buf));
 }
 
 bool rtk_bt_mp_dtm_set_tx_power_index(uint8_t ble_1m, uint8_t ble_2m)
@@ -185,7 +185,7 @@ bool rtk_bt_mp_dtm_set_tx_power_index(uint8_t ble_1m, uint8_t ble_2m)
 	buf[6] = ble_1m;
 	buf[7] = ble_2m;
 
-	return hci_dtm_send(0xFCE7, buf, 8);
+	return hci_dtm_send(0xFCE7, buf, 8, sizeof(buf));
 }
 
 bool rtk_bt_mp_dtm_set_tx_gaink(uint8_t tx_gain_k)
@@ -217,7 +217,7 @@ bool rtk_bt_mp_dtm_set_tx_gaink(uint8_t tx_gain_k)
 		len = 8;
 	}
 
-	if (false == hci_dtm_send(0xFD14, buf, len)) {
+	if (false == hci_dtm_send(0xFD14, buf, len, sizeof(buf))) {
 		return false;
 	}
 
@@ -265,7 +265,7 @@ bool rtk_bt_mp_dtm_set_tx_flatnessk(uint32_t tx_flastness_k)
 		len = 8;
 	}
 
-	if (false == hci_dtm_send(0xFD14, buf, len)) {
+	if (false == hci_dtm_send(0xFD14, buf, len, sizeof(buf))) {
 		return false;
 	}
 
@@ -296,7 +296,7 @@ bool rtk_bt_mp_dtm_read_thermal(uint8_t *p_thermal_value)
 
 	buf[2] = (uint8_t)(0);
 
-	if (false == hci_dtm_send(0xFC40, buf, 3)) {
+	if (false == hci_dtm_send(0xFC40, buf, 3, sizeof(buf))) {
 		return false;
 	}
 
@@ -327,7 +327,7 @@ bool rtk_bt_mp_dtm_set_disable_tx_power_tracking(void)
 		len = 4;
 	}
 
-	if (false == hci_dtm_send(0xFCE8, buf, len)) {
+	if (false == hci_dtm_send(0xFCE8, buf, len, sizeof(buf))) {
 		return false;
 	}
 
