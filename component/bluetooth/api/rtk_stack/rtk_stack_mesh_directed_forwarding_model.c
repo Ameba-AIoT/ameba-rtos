@@ -230,6 +230,10 @@ uint8_t rtk_bt_mesh_directed_forwarding_client_model_indicate_event(uint32_t eve
 {
 	rtk_bt_evt_t *p_evt = NULL;
 	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_DIRECTED_FORWARDING_CLIENT_MODEL, event_code, len);
+	if (!p_evt) {
+		BT_LOGE("[%s] Create event fail\r\n", __func__);
+		return RTK_BT_ERR_NO_MEMORY;
+	}
 	if (len) {
 		if (event_code == RTK_BT_MESH_DF_MODEL_FORWARDING_TABLE_ENTRIES_STAT) {
 			memcpy(p_evt->data, pdata, sizeof(rtk_bt_mesh_forwarding_table_entries_status_for_call_t));

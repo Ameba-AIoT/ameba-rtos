@@ -94,3 +94,5 @@ ChangeLog:
                   (2) Pause log view while text is selected or scrolled up, add auto-scroll indicator
                   (3) Count line limit by log lines, apply it on all tabs, remove blank top line
                   (4) Fix Clear Log dropping data from the file log
+20261112  v3.0.0  (1) Rework for cross-platform support, only the Windows executable is available for now
+                  (2) New GUI with dark and day mode (Option > Global Settings > Dark Mode)
