@@ -233,8 +233,8 @@ typedef struct {
  */
 typedef struct {
 	uint16_t unicast_addr;
-	uint8_t net_key_index;
-	uint8_t app_key_index;
+	uint16_t net_key_index;
+	uint16_t app_key_index;
 } rtk_bt_mesh_config_client_add_app_key_t;
 
 /**
