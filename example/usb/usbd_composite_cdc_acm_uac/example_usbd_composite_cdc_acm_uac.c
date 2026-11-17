@@ -405,7 +405,7 @@ static void example_audio_track_play(void)
 		const uint32_t audio_dst_step = play_track_channel * g_track_format / 8;
 #endif
 
-		//user should set sdk/component/soc/**/usrcfg/include/ameba_audio_hw_usrcfg.h's AUDIO_HW_AMPLIFIER_PIN to make sure amp is enabled.
+		//user should set sdk/component/audio/audio_hal/<soc>/ameba_audio_hw_usrcfg.h's AUDIO_HW_AMPLIFIER_PIN to make sure amp is enabled.
 		AudioService_Init();
 
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Audio ch:%u,rate:%u,bits=%u\n", g_track_channel, g_track_rate, g_track_format);

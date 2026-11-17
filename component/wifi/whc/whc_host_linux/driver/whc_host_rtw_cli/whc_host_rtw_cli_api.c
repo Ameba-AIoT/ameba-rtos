@@ -427,6 +427,30 @@ int pre_process_buf_data(u8 *buf, u16 size)
 					printk("DISCONNECT: reason=%d\n", disconn_reason);
 				}
 			}
+		} else if (wpa_cmd_id == WHC_WPA_STD_EVENT_EAP) {
+			/* size >= 14: 4(cat) + 2(cmd_id+idx) + 8(dir,eapol_type,code,id,eap_type,wsc_op,wsc_flags,wsc_msg_type) */
+			if (size < 14) {
+				printk("EAP: truncated payload\n");
+			} else if (extra == 3) {
+				/* EAPOL-Key: buf_p[4]=msg_num (1..4 4-way, 5/6 group key, 0 unknown), [5][6]=key_info, [7]=replay counter low byte */
+				u8 msg = buf_p[4];
+
+				if (msg >= 1 && msg <= 4) {
+					printk("EAPOL-Key %s 4-way M%d key_info=0x%02x%02x replay=%d\n", sub_event ? "RX" : "TX", msg, buf_p[5], buf_p[6], buf_p[7]);
+				} else if (msg == 5 || msg == 6) {
+					printk("EAPOL-Key %s group M%d key_info=0x%02x%02x replay=%d\n", sub_event ? "RX" : "TX", msg - 4, buf_p[5], buf_p[6], buf_p[7]);
+				} else {
+					printk("EAPOL-Key %s unknown key_info=0x%02x%02x replay=%d\n", sub_event ? "RX" : "TX", buf_p[5], buf_p[6], buf_p[7]);
+				}
+			} else {
+				printk("EAP %s eapol=%d code=%d id=%d type=%d wsc_op=%d flags=0x%02x wsc_msg=0x%02x\n",
+					   sub_event ? "RX" : "TX", extra, buf_p[4], buf_p[5], buf_p[6], buf_p[7], buf_p[8], buf_p[9]);
+			}
+		} else if (wpa_cmd_id == WHC_WPA_STD_EVENT_WPS) {
+			/* [cat 4][cmd_id][idx][WPS-xxx text, NUL terminated by device; bound it anyway] */
+			if (size > 6) {
+				printk("WPS(idx: %d): %.*s\n", dev_idx, size - 6, buf_p + 2);
+			}
 		} else if (wpa_cmd_id == WHC_WPA_STD_EVENT_WPAS_STATE) {
 			/* Only manage carrier for the AP interface (idx=1) */
 			if (dev_idx == 1 && global_idev.pndev[1]) {

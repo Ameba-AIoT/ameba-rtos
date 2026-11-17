@@ -127,5 +127,11 @@ The built-in python HTTP server locates in [tools\DownloadServer(HTTP)](tools/Do
 
 # Supported IC
 
-RTL8721F
+RTL8730E
+RTL8726E
+RTL8720E
+RTL8713E
+RTL8710E
 RTL8720F
+RTL8721Dx
+RTL8721F

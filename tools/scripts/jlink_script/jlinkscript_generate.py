@@ -711,6 +711,207 @@ def gen_swd_script(config, output_file):
         sys.exit(1)
 
 
+TEMPLATE_SWD_KEY = """/*********************************************************************
+*  Auto Generated J-Link Script for SWD key compare (debug-auth scheme 2)
+*
+*  With SW_PROT_EN=1 the SWD AP compares the key against REF0~3 written by the CPU:
+*  AP 0x04/0x08/0x0C/0x10 <-> REF0/1/2/3 (data), AP 0x00 bit1 trigger / bit3 PASS / bit4 LOCK.
+*
+*  MODE 0: right key, expect PASS and CPUID readable
+*  MODE 1: one wrong key (word0 bit0 flipped), expect FAIL, PASS bit not forgeable, CPUID unreadable
+*  MODE 2: 4 wrong keys then the right one, expect LOCK, right key rejected, CPUID unreadable
+*********************************************************************/
+
+U32 KEY_0 = %KEY_0%;
+U32 KEY_1 = %KEY_1%;
+U32 KEY_2 = %KEY_2%;
+U32 KEY_3 = %KEY_3%;
+int KEY_MODE = %KEY_MODE%;
+
+int ConfigTargetSettings(void) {
+    CORESIGHT_AHBAPCSWDefaultSettings = 0x03000002;
+}
+
+void SetupTarget(void) {
+    Report("J-Link script: SetupTarget()");
+}
+
+/* returns 0: PASS, 1: FAIL, 2: LOCKED, 3: trigger bit never cleared */
+int SWDKEY_Try(U32 w0, U32 w1, U32 w2, U32 w3) {
+    int tmp;
+    int n;
+
+    JLINK_CORESIGHT_WriteAP(JLINK_CORESIGHT_AP_REG_ADDR, 0x0004);
+    JLINK_CORESIGHT_WriteAP(JLINK_CORESIGHT_AP_REG_DATA, w0);
+    JLINK_CORESIGHT_WriteAP(JLINK_CORESIGHT_AP_REG_ADDR, 0x0008);
+    JLINK_CORESIGHT_WriteAP(JLINK_CORESIGHT_AP_REG_DATA, w1);
+    JLINK_CORESIGHT_WriteAP(JLINK_CORESIGHT_AP_REG_ADDR, 0x000C);
+    JLINK_CORESIGHT_WriteAP(JLINK_CORESIGHT_AP_REG_DATA, w2);
+    JLINK_CORESIGHT_WriteAP(JLINK_CORESIGHT_AP_REG_ADDR, 0x0010);
+    JLINK_CORESIGHT_WriteAP(JLINK_CORESIGHT_AP_REG_DATA, w3);
+
+    JLINK_CORESIGHT_WriteAP(JLINK_CORESIGHT_AP_REG_ADDR, 0x0000);
+    JLINK_CORESIGHT_WriteAP(JLINK_CORESIGHT_AP_REG_DATA, (1<<1));
+
+    JLINK_CORESIGHT_WriteAP(JLINK_CORESIGHT_AP_REG_ADDR, 0x0000);
+    tmp = JLINK_CORESIGHT_ReadAP(JLINK_CORESIGHT_AP_REG_DATA);
+    n = 0;
+    while ((tmp & (1<<1)) && (n < 1000)) {
+        JLINK_CORESIGHT_WriteAP(JLINK_CORESIGHT_AP_REG_ADDR, 0x0000);
+        tmp = JLINK_CORESIGHT_ReadAP(JLINK_CORESIGHT_AP_REG_DATA);
+        n = n + 1;
+    }
+    Report1("SWD_PRTET_CTRL:", tmp);
+    if (tmp & (1<<1)) {
+        Report("[KEY] trigger bit not cleared, HW did not finish compare");
+        return 3;
+    }
+
+    if (tmp & (1<<3)) {
+        return 0;
+    }
+    if (tmp & (1<<4)) {
+        return 2;
+    }
+    return 1;
+}
+
+/* PASS/LOCK bits are RO: writing bit3 must not forge PASS, and the write (bit4 = 0) must not clear LOCK.
+   expect_lock: 1 if LOCK is currently set. returns 0 if neither can be tampered with */
+int SWDKEY_ForgePass(int expect_lock) {
+    int tmp;
+
+    JLINK_CORESIGHT_WriteAP(JLINK_CORESIGHT_AP_REG_ADDR, 0x0000);
+    JLINK_CORESIGHT_WriteAP(JLINK_CORESIGHT_AP_REG_DATA, (1<<3));
+    JLINK_CORESIGHT_WriteAP(JLINK_CORESIGHT_AP_REG_ADDR, 0x0000);
+    tmp = JLINK_CORESIGHT_ReadAP(JLINK_CORESIGHT_AP_REG_DATA);
+    if (tmp & (1<<3)) {
+        Report1("[KEY] PASS bit forged, SWD_PRTET_CTRL:", tmp);
+        return 1;
+    }
+    if (expect_lock && ((tmp & (1<<4)) == 0)) {
+        Report1("[KEY] LOCK bit cleared by write, SWD_PRTET_CTRL:", tmp);
+        return 1;
+    }
+    return 0;
+}
+
+int SWDKEY_Run(void) {
+    int r;
+    int i;
+    int ret;
+    int wrong_ok;
+
+    ret = 1;
+    if (KEY_MODE == 0) {
+        r = SWDKEY_Try(KEY_0, KEY_1, KEY_2, KEY_3);
+        if (r == 0) { Report("[KEY] right key PASS"); ret = 0; }
+        else { Report1("[KEY] right key rejected, result:", r); }
+    } else if (KEY_MODE == 1) {
+        r = SWDKEY_Try(KEY_0 ^ 1, KEY_1, KEY_2, KEY_3);
+        if (r == 1) {
+            Report("[KEY] wrong key FAIL as expected");
+            if (SWDKEY_ForgePass(0) == 0) { ret = 0; }
+        } else { Report1("[KEY] wrong key unexpected result:", r); }
+    } else {
+        wrong_ok = 1;
+        i = 0;
+        while (i < 4) {
+            r = SWDKEY_Try(KEY_0 ^ (1 << i), KEY_1, KEY_2, KEY_3);
+            Report1("[KEY] wrong try", i + 1);
+            Report1("[KEY]   result (1=FAIL 2=LOCKED):", r);
+            if ((r != 1) && (r != 2)) {
+                Report("[KEY]   unexpected result for a wrong key");
+                wrong_ok = 0;
+            }
+            i = i + 1;
+        }
+        r = SWDKEY_Try(KEY_0, KEY_1, KEY_2, KEY_3);
+        if (r == 2) {
+            Report("[KEY] LOCKED, right key rejected as expected");
+            if ((SWDKEY_ForgePass(1) == 0) && wrong_ok) { ret = 0; }
+        }
+        else { Report1("[KEY] right key after 4 wrong: unexpected result:", r); }
+    }
+    return ret;
+}
+
+void ResetTarget(void) {
+    int v;
+    int Speed;
+    int Ctrl;
+    int result;
+
+    Report("J-Link script: ResetTarget() key compare");
+    Speed = JTAG_Speed;
+    JTAG_Speed = 3000;
+    JTAG_WriteClocks(1);
+
+    JLINK_CORESIGHT_WriteDP(JLINK_CORESIGHT_DP_REG_SELECT, (%SECURE_AP_IDX% << 24) | (0 << 4));
+    Ctrl = 0x23800052;
+    JLINK_CORESIGHT_WriteAP(JLINK_CORESIGHT_AP_REG_CTRL, Ctrl);
+
+    result = SWDKEY_Run();
+
+    JLINK_CORESIGHT_WriteDP(JLINK_CORESIGHT_DP_REG_SELECT, (%CPU_AP_IDX% << 24) | (0 << 4));
+    Ctrl = 0x23800052;
+    JLINK_CORESIGHT_WriteAP(JLINK_CORESIGHT_AP_REG_CTRL, Ctrl);
+    JLINK_CORESIGHT_WriteAP(JLINK_CORESIGHT_AP_REG_ADDR, 0xE000ED00);
+    v = JLINK_CORESIGHT_ReadAP(JLINK_CORESIGHT_AP_REG_DATA);
+    Report1("CPUID is: ", v);
+
+    /* debug port must really be open (mode 0) or really be closed (mode 1/2) */
+    if (KEY_MODE == 0) {
+        if (v == 0xFFFFFFFF) { Report("[KEY] PASS but CPUID unreadable"); result = 1; }
+    } else {
+        if (v != 0xFFFFFFFF) { Report("[KEY] rejected but CPUID readable, debug port not protected"); result = 1; }
+    }
+
+    if (result == 0) {
+        Report("[KEY] RESULT: AS EXPECTED");
+    } else {
+        Report("[KEY] RESULT: UNEXPECTED");
+    }
+}
+
+void InitTarget(void) {
+    Report("J-Link script");
+
+%ADD_AP_BLOCK%
+
+    CORESIGHT_IndexAHBAPToUse = %INIT_AP_IDX%;
+
+    JTAG_WriteClocks(1);
+    JTAG_Speed = 1000;
+    ResetTarget();
+}
+"""
+def gen_swd_key_script(config, output_file, key_words, mode):
+    ap_add = config['AP_ADD']
+    init_ap_idx, secure_ap_idx, cpu_ap_idx = config['AP_USE']['swd']
+
+    add_ap_lines = []
+    for idx_str, type_str in ap_add.items():
+        ap_type = "CORESIGHT_AHB_AP" if type_str == "AHB" else "CORESIGHT_APB_AP"
+        add_ap_lines.append(f"\tCORESIGHT_AddAP({idx_str}, {ap_type});")
+
+    content = TEMPLATE_SWD_KEY.replace("%ADD_AP_BLOCK%", "\n".join(add_ap_lines))
+    for i, w in enumerate(key_words):
+        content = content.replace(f"%KEY_{i}%", f"0x{w:08x}")
+    content = content.replace("%KEY_MODE%", str(mode))
+    content = content.replace("%INIT_AP_IDX%", str(init_ap_idx))
+    content = content.replace("%SECURE_AP_IDX%", str(secure_ap_idx))
+    content = content.replace("%CPU_AP_IDX%", str(cpu_ap_idx))
+
+    try:
+        with open(output_file, 'w') as f:
+            f.write(content)
+        print(f"\nGenerate '{output_file}' successfully.")
+    except IOError as e:
+        print(f"Error writing JLinkScript: {e}")
+        sys.exit(1)
+
+
 OZONE_TEMPLATE = """/*********************************************************************
 *  Auto Generated Ozone Debug J-Link Script for %CORE%
 *********************************************************************/

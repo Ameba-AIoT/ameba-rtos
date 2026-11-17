@@ -858,6 +858,9 @@ int bt_le_create_conn_synced(const struct bt_conn *conn, const struct bt_le_ext_
 	cp->filter_policy = BT_HCI_LE_CREATE_CONN_FP_NO_FILTER;
 	cp->own_addr_type = own_addr_type;
 
+#if ZEPHYR_RTK_PATCH
+	cp->phys = BIT(adv->secondary_phy - BT_HCI_LE_PHY_1M);
+#else
 	/* The Initiating_PHY is the secondary phy of the corresponding ext adv set */
 	if (adv->options & BT_LE_ADV_OPT_CODED) {
 		cp->phys = BT_HCI_LE_EXT_SCAN_PHY_CODED;
@@ -866,6 +869,7 @@ int bt_le_create_conn_synced(const struct bt_conn *conn, const struct bt_le_ext_
 	} else {
 		cp->phys = BT_HCI_LE_EXT_SCAN_PHY_2M;
 	}
+#endif
 
 	phy = net_buf_add(buf, sizeof(*phy));
 	(void)memset(phy, 0, sizeof(*phy));

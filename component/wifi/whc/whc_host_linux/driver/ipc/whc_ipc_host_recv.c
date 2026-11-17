@@ -68,7 +68,9 @@ recv_done:
 	ipc_msg.event_num = IPC_WIFI_MSG_RECV_DONE;
 	ipc_msg.msg_addr = (u32)skb_phy;
 
-	whc_ipc_host_send_packet(&ipc_msg);
+	if (whc_ipc_host_send_packet(&ipc_msg) < 0) {
+		dev_err(global_idev.pwhc_dev, "%s: send recv done fail, skb %08x\n", __func__, (u32)skb_phy);
+	}
 
 func_exit:
 	return;

@@ -2571,7 +2571,7 @@ typedef struct {
 	uint8_t adv_handle;                 /*!< Identify an advertising set, assigned by @ref rtk_bt_le_gap_create_ext_adv. */
 	uint8_t start;                      /*!< Index of the first subevent for which data can be set. */
 	uint8_t count;                      /*!< Number of consecutive subevents for which data can be set. */
-	uint8_t num_subevents;              /*!< Num_Subevents of the PAwR train, subevent numbers wrap from num_subevents - 1 to 0. */
+	uint8_t num_subevents;              /*!< Num_Subevents of the PAwR train, subevent numbers wrap from (num_subevents - 1) to 0. */
 } rtk_bt_le_gap_pawr_data_req_ind_t;
 
 /**
@@ -2627,6 +2627,37 @@ typedef struct {
                                                       *   Range: 0x01 to RTK_BLE_PAWR_SET_SUBEVENT_DATA_MAX. */
 	rtk_bt_le_gap_pawr_subevent_element_t *sub_arr;  /*!< Array of subevent data element. */
 } rtk_bt_le_gap_pawr_subevent_data_t;
+
+/**
+ * @struct    rtk_bt_le_gap_pawr_create_conn_param_t
+ * @brief     Bluetooth LE periodic advertising with responses (PAwR) create connection parameter.
+ */
+typedef struct {
+	uint8_t adv_handle;                   /*!< Identify the PAwR advertising set, assigned by @ref rtk_bt_le_gap_create_ext_adv.
+                                           *   The initiating PHY is the secondary advertising PHY of this set. */
+	uint8_t subevent;                     /*!< Subevent in which the connection request is sent.
+                                           *   Range: 0x00 to 0x7F. */
+	rtk_bt_le_addr_type_t own_addr_type;  /*!< Own Address Type used in the connection request. */
+	rtk_bt_le_addr_t peer_addr;           /*!< Address of the synchronized device to connect to. */
+	uint16_t conn_interval_min;           /*!< Minimum value for the connection interval. This shall be less than or equal to conn_interval_max.
+                                           *   Range: 0x0006 to 0x0C80.
+                                           *   Time = N * 1.25 ms.
+                                           *   Time Range: 7.5 ms to 4 s. */
+	uint16_t conn_interval_max;           /*!< Maximum value for the connection interval. This shall be greater than or equal to conn_interval_min.
+                                           *   Range: 0x0006 to 0x0C80.
+                                           *   Time = N * 1.25 ms.
+                                           *   Time Range: 7.5 ms to 4 s. */
+	uint16_t conn_latency;                /*!< Peripheral latency for the connection in number of connection events.
+                                           *   Range: 0x0000 to 0x01F3. */
+	uint16_t supv_timeout;                /*!< Supervision timeout for the LE connection.
+                                           *   Range: 0x000A to 0x0C80.
+                                           *   Time = N * 10 ms.
+                                           *   Time Range: 100 ms to 32 s. */
+	uint16_t create_conn_timeout;         /*!< Create connection timeout value.
+                                           *   If time has expired before connection has been established, stack will auto cancel connection.
+                                           *   Time = N * 10 ms.
+                                           *   0: stack will not cancel create connection forever. */
+} rtk_bt_le_gap_pawr_create_conn_param_t;
 
 /**
  * @struct    rtk_bt_le_gap_pawr_set_response_t
@@ -3953,6 +3984,16 @@ uint16_t rtk_bt_le_gap_conn_cte_rx_stop(uint16_t conn_handle);
  *            - @ref rtk_bt_err_common
  */
 uint16_t rtk_bt_le_gap_pawr_set_subevent_data(rtk_bt_le_gap_pawr_subevent_data_t *param);
+
+/**
+ * @brief     Initiate an LE connection to a device synchronized to a Periodic Advertising with Responses (PAwR) train. The connection request is sent
+ *            in the specified subevent of the PAwR advertiser. The result is reported asynchronously via event @ref RTK_BT_LE_GAP_EVT_CONNECT_IND.
+ * @param[in] param: Pointer to the create connection parameters, see @ref rtk_bt_le_gap_pawr_create_conn_param_t.
+ *                   Must not be NULL.
+ * @return
+ *            - @ref rtk_bt_err_common
+ */
+uint16_t rtk_bt_le_gap_pawr_connect(rtk_bt_le_gap_pawr_create_conn_param_t *param);
 #endif /* RTK_BLE_5_4_PAWR_ADV_SUPPORT */
 
 #if defined(RTK_BLE_5_4_PAWR_SCAN_SUPPORT) && RTK_BLE_5_4_PAWR_SCAN_SUPPORT

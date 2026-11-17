@@ -45,6 +45,8 @@ Call `wifi_cast_init()` to initialize WIFI-CAST and `wifi_cast_deinit()` to de-i
 
 A device with a broadcast MAC address will be added during initialization. The range of the channel is from 1 to 14. If the channel is set to 0 and device is not connected to a router, the initialization will be aborted and returns an error code. And if the device is connected to a router, the channel will be set to the current channel. Otherwise, the channel will be set as user defined. All the devices need communicate through WIFI-CAST must be set at the same channel.
 
+By default WIFI-CAST receives frames and ACKs. Set `rx_dis` in `wifi_cast_config_t` to 1 for a send-only device (e.g. a low power sender): the promisc rx is not enabled and the ACK task is not created, so no ACK is sent or received. Do not set `ack` to 1 in `wifi_cast_frame_info_t` then, the send would wait for an ACK until `wait_ms` times out and return `WIFI_CAST_ERR_WAIT_TIMEOUT`. Leaving `rx_dis` at 0 (e.g. `WIFI_CAST_INIT_CONFIG_DEFAULT()`) keeps the receive behavior.
+
 When `wifi_cast_deinit()` is called, all of the information of paired devices are deleted.
 
 ## Device Management
@@ -70,15 +72,18 @@ In order to ensure the application layer can receive the data, the `struct wifi_
 
 ## Receiving WIFI-CAST Data
 
-Call `wifi_cast_register_recv_cb()` to register receiving callback function. Call the receiving callback function when receiving WIFI-CAST data. The receiving callback function runs from the Wi-Fi task. So, do not do block operations in the callback function. Instead, post the necessary data to a queue and handle it from a lower priority task.
+This requires `rx_dis` = 0 (default). Call `wifi_cast_register_recv_cb()` to register receiving callback function. Call the receiving callback function when receiving WIFI-CAST data. The receiving callback function runs from the Wi-Fi task. So, do not do block operations in the callback function. Instead, post the necessary data to a queue and handle it from a lower priority task.
 
 ## Application Examples
 
 Examples of sending and receiving WIFI-CAST data between two devices:
 * [control](wificast_control)
-* [security](wificast_secruity)
+* [security](wificast_security)
 * [uart](wificast_uart)
 * [ota](wificast_ota)
+* [debug](wificast_debug)
+* [throughput](wificast_throughput)
+* [tx_sleep](wificast_tx_sleep): periodic send-only (`rx_dis` = 1) with wifi in IPS/wowlan between transmissions
 
 ## API Reference
 ### Header file
@@ -133,6 +138,7 @@ WIFI-CAST config parameters.
 ```
 typedef struct wifi_cast_config {
 	unsigned char 	channel; /* all wifi cast nodes need set in the same channel */
+	unsigned char 	rx_dis;  /* 0 = rx of wifi cast frames and ACKs enabled (default), 1 = send only; with 1 an ACK never arrives, do not set ack=1 in frame info */
 } wifi_cast_config_t;
 ```
 ### Definitions

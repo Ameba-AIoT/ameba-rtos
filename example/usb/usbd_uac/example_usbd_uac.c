@@ -612,7 +612,7 @@ static void example_audio_track_play(void)
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Audio track demo begin\n");
 
-	//user should set sdk/component/soc/**/usrcfg/include/ameba_audio_hw_usrcfg.h's AUDIO_HW_AMPLIFIER_PIN to make sure amp is enabled.
+	//user should set sdk/component/audio/audio_hal/<soc>/ameba_audio_hw_usrcfg.h's AUDIO_HW_AMPLIFIER_PIN to make sure amp is enabled.
 	AudioService_Init();
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Audio ch:%d,rate:%d,bits=%d\n", track_channel, track_rate, track_format);

@@ -1095,7 +1095,9 @@ bool I2C_RXGDMA_Init(
 	GDMA_InitStruct->GDMA_Index = 0;
 	GDMA_InitStruct->GDMA_ChNum       = GdmaChnl;
 	GDMA_InitStruct->GDMA_IsrType = (BlockType | TransferType | ErrType);
-	GDMA_InitStruct->GDMA_SrcMsize = MsizeFour;
+	/* IC_DMA_RDLR = n requests DMA at n + 1 entries, equal to the source burst of 8 bytes */
+	I2C_DEV_TABLE[Index].I2Cx->IC_DMA_RDLR = 7;
+	GDMA_InitStruct->GDMA_SrcMsize = MsizeEight;
 	GDMA_InitStruct->GDMA_SrcDataWidth = TrWidthOneByte;
 	GDMA_InitStruct->GDMA_DstInc = IncType;
 	GDMA_InitStruct->GDMA_SrcInc = NoChange;

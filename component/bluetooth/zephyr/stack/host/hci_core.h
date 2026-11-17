@@ -176,6 +176,8 @@ struct bt_le_ext_adv {
 
 #if ZEPHYR_RTK_PATCH
 	uint8_t                 own_addr_type;
+
+	uint8_t                 secondary_phy;
 #endif
 
 /* Current local Random Address */
