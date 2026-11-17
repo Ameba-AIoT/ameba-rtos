@@ -76,7 +76,7 @@ static u32 ota_image_slot_end(u8 img_id, u8 slot_idx)
 	} else if (img_id == OTA_IMGID_APIMG) {
 		region = (slot_idx == OTA_INDEX_1) ? IMG_APIMG_OTA1 : IMG_APIMG_OTA2;
 #endif
-#ifdef CONFIG_SOLO
+#ifdef CONFIG_IOT_MCU_COMBINED
 	} else if (img_id == OTA_IMGID_NP) {
 		region = (slot_idx == OTA_INDEX_1) ? IMG_NP_OTA1 : IMG_NP_OTA2;
 #endif
@@ -204,7 +204,7 @@ int ota_storage_init(void)
 		flash_get_layout_info(IMG_APIMG_OTA1, &IMG_ADDR[OTA_IMGID_APIMG][OTA_INDEX_1], NULL);
 		flash_get_layout_info(IMG_APIMG_OTA2, &IMG_ADDR[OTA_IMGID_APIMG][OTA_INDEX_2], NULL);
 #endif
-#ifdef CONFIG_SOLO
+#ifdef CONFIG_IOT_MCU_COMBINED
 		flash_get_layout_info(IMG_NP_OTA1, &IMG_ADDR[OTA_IMGID_NP][OTA_INDEX_1], NULL);
 		flash_get_layout_info(IMG_NP_OTA2, &IMG_ADDR[OTA_IMGID_NP][OTA_INDEX_2], NULL);
 #endif

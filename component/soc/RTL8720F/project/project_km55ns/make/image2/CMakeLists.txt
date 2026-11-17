@@ -39,7 +39,7 @@ endif()
 # Defensive only: AMEBA_RLS is already n during a seal, so Step 1 leaves
 # PREBUILT false anyway. This block is removed by the release strip step.
 
-if(CONFIG_SOLO)
+if(CONFIG_IOT_MCU_COMBINED)
 ameba_add_image(target_img2 p_IMAGE_ALL ${c_MCU_PROJECT_NAME}_image2_all.bin p_TYPE image2 p_HIDE_FROM_ALL_PATH)
 else()
 ameba_add_image(target_img2 p_IMAGE_ALL ${c_MCU_PROJECT_NAME}_image2_all.bin)

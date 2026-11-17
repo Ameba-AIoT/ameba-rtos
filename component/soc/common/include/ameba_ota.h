@@ -26,7 +26,7 @@ extern "C" {
 #elif defined(CONFIG_AMEBALITE)
 #define OTA_IMGID_DSP   2  /* Linux AP Image */
 #define OTA_IMGID_MAX   3
-#elif defined(CONFIG_SOLO)
+#elif defined(CONFIG_IOT_MCU_COMBINED)
 #define OTA_IMGID_NP    2  /* SOLO: km4ns (iot) app image, independent dual OTA slots */
 #define OTA_IMGID_MAX   3
 #else

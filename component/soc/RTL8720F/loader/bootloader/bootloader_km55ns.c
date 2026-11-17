@@ -9,7 +9,7 @@
 #include "rom/ameba_v8m_crashdump.h"
 
 
-#ifdef CONFIG_SOLO
+#ifdef CONFIG_IOT_MCU_COMBINED
 /* SOLO: KM55NS is not the SPIC owner and never calibrates flash. Before it can
  * drive the SPIC itself (iot OTA), it must adopt KM55TZ's ROM-calibrated
  * flash_init_para, which is fix at 0x20001000*/
@@ -25,7 +25,7 @@ void BOOT_Start(void)
 {
 	PRAM_START_FUNCTION Image2EntryFun = (PRAM_START_FUNCTION)__image2_entry_func__;
 
-#ifdef CONFIG_SOLO
+#ifdef CONFIG_IOT_MCU_COMBINED
 	Solo_FlashParaAdopt();
 #endif
 

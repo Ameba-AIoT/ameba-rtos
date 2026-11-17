@@ -160,14 +160,18 @@ s32 wifi_get_autoreconnect(u8 *enable);
 s32 wifi_ap_get_connected_clients(struct rtw_client_list	*client_list_buffer);
 
 /**
- * @brief  Disconnect a client from the SoftAP.
- * @param[in]  hwaddr: Pointer to the MAC address of the client to be disconnected.
+ * @brief  Disconnect a client or all clients from the SoftAP by sending deauth.
+ * @param[in]  hwaddr: MAC address of the client, unicast or broadcast (ff:ff:ff:ff:ff:ff).
  * @return
  *    - @ref RTK_SUCCESS : The API executed successfully.
- *    - @ref RTK_FAIL : SoftAP is not enabled or no clients are currently connected to SoftAP.
- *    - -@ref RTK_ERR_BADARG :
- *      - `hwaddr` is brodcast MAC address (ff:ff:ff:ff:ff:ff).
- *      - The client with the specified MAC address `hwaddr` not connected to the SoftAP.
+ *    - @ref RTK_FAIL : SoftAP is not enabled or driver internal error.
+ *    - -@ref RTK_ERR_BADARG : NULL pointer or multicast address (except broadcast) passed for `hwaddr`.
+ *    - -@ref RTK_ERR_NOMEM : Memory malloc fail.
+ * @note
+ *    - Unicast: associated STA is deauthenticated and released, STA unknown to SoftAP only gets a deauth frame.
+ *    - Broadcast: all associated STAs are deauthenticated and released, then a broadcast deauth frame is sent.
+ *    - Deauth to STAs unknown to SoftAP (e.g. still holding the link before SoftAP reboot) only takes effect with the same BSSID and channel.
+ *    - STAs unknown to SoftAP with PMF enabled will ignore the deauth.
  */
 s32 wifi_ap_del_client(u8 *hwaddr);
 
