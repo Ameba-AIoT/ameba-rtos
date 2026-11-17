@@ -87,7 +87,7 @@ typedef enum {
  */
 typedef enum {
 	RTK_BT_MESH_RMT_PROV_LINK_CLOSE_SUCCESS,
-	RTK_BT_MESH_RMT_PROV_LINK_CLOSE_PROHIBITED,
+	RTK_BT_MESH_RMT_PROV_LINK_CLOSE_TIMEOUT,
 	RTK_BT_MESH_RMT_PROV_LINK_CLOSE_FAIL,
 	RTK_BT_MESH_RMT_PROV_LINK_NOT_CLOSE,
 } rtk_bt_mesh_rmt_prov_link_close_reason_t;
@@ -165,7 +165,7 @@ typedef struct {
 typedef struct {
 	uint16_t src;
 	uint8_t uuid[16];
-	uint8_t oob;
+	uint16_t oob;
 	uint16_t adv_structs_len;
 } rtk_bt_mesh_rmt_prov_client_extended_scan_report_t;
 
