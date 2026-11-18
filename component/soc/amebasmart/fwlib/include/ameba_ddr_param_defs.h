@@ -85,6 +85,15 @@ struct rxi316_dram_info rxi316_lpddr1_dev = {
 	10  // dram_colu_bits
 }; // rxi316_lpddr1_dev
 
+/* Self refresh at the extended temperature rate for the DDR test image only: DDR2 A7 (SRF), DDR3 A7 (SRT) and A6 (ASR) */
+#ifdef CONFIG_DDR_VERIFY
+#define DDR_MR2_DDR2_OR_VAL		BIT7
+#define DDR_MR2_DDR3_OR_VAL		(BIT6 | BIT7)
+#else
+#define DDR_MR2_DDR2_OR_VAL		0
+#define DDR_MR2_DDR3_OR_VAL		0
+#endif
+
 //****************************************************
 //              DRAM DEVICE MODE REG INFO
 //****************************************************
@@ -97,7 +106,7 @@ struct rxi316_dram_mode_reg_info rxi316_ddr2_mode_reg_800mhz = {
 	5,   // tphy_rd=(DFI_RATIO == 2)? ((rl+1-AC_SHARE) / DFI_RATIO) : (rl  / DFI_RATIO)
 	0,   // mode reg 0 or value
 	0,   // mode reg 1 or value
-	0,   // mode reg 2 or value
+	DDR_MR2_DDR2_OR_VAL, // mode reg 2 or value
 	0,   // mode reg 3 or value
 	0,   // mode reg 4 or value
 	0,   // mode reg 5 or value
@@ -118,7 +127,7 @@ struct rxi316_dram_mode_reg_info rxi316_ddr2_mode_reg_1066mhz = {
 	2,   // =DFI_RATIO*tphy_rd=CAS+phy_cmd_dly–phy_rd_dly
 	0,   // mode reg 0 or value
 	0,   // mode reg 1 or value
-	0,   // mode reg 2 or value
+	DDR_MR2_DDR2_OR_VAL, // mode reg 2 or value
 	0,   // mode reg 3 or value
 	0,   // mode reg 4 or value
 	0,   // mode reg 5 or value
@@ -139,7 +148,7 @@ struct rxi316_dram_mode_reg_info rxi316_ddr3_mode_reg_800mhz = {
 	6,   // tphy_rd=(DFI_RATIO == 2)? ((rl+1-AC_SHARE) / DFI_RATIO) : (rl  / DFI_RATIO)
 	0,   // mode reg 0 or value
 	0,   // mode reg 1 or value
-	0,   // mode reg 2 or value
+	DDR_MR2_DDR3_OR_VAL, // mode reg 2 or value
 	0,   // mode reg 3 or value
 	0,   // mode reg 4 or value
 	0,   // mode reg 5 or value
@@ -160,7 +169,7 @@ struct rxi316_dram_mode_reg_info rxi316_ddr3_mode_reg_1066mhz = {
 	2,   // =DFI_RATIO*tphy_rd=CAS+phy_cmd_dly–phy_rd_dly
 	0,   // mode reg 0 or value
 	0,   // mode reg 1 or value
-	0,   // mode reg 2 or value
+	DDR_MR2_DDR3_OR_VAL, // mode reg 2 or value
 	0,   // mode reg 3 or value
 	0,   // mode reg 4 or value
 	0,   // mode reg 5 or value

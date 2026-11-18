@@ -958,7 +958,7 @@ __weak void BOOT_Image1(void)
 	//RRAM->IPC_Share_Mem = (u32) __km0_ipc_memory_start__;
 	RRAM->IMQ_INIT_DONE = 0;
 
-	flash_highspeed_setup();
+	flash_highspeed_setup(flash_get_readmode(Flash_ReadMode), SPIC_CLK_LIMIT);
 	RTK_LOGI(TAG, "(meminfo.mem_type==0x%x\n", meminfo.mem_type);
 
 	if ((meminfo.mem_type & MCM_TYPE_PSRAM) == MCM_TYPE_PSRAM) {

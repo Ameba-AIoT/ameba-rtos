@@ -18,7 +18,7 @@
 /* -------------------------------- Includes -------------------------------- */
 #include "rtw_autoconf.h"
 
-#if defined(CONFIG_RNAT_EN) && defined(CONFIG_WTN_RNAT_INTERCOM)
+#if defined(CONFIG_RNAT_EN) && defined(CONFIG_RNAT_INTERCOM_EN) && defined(CONFIG_WIFI_TUNNEL)
 #include "wifi_api.h"
 #include "lwip_netconf.h"
 #include "wtn_app_rnat.h"
@@ -668,4 +668,4 @@ int wtn_rnat_intercom_start(void)
 	return RTK_SUCCESS;
 }
 
-#endif /* CONFIG_RNAT_EN && CONFIG_WTN_RNAT_INTERCOM */
+#endif /* CONFIG_RNAT_EN && CONFIG_RNAT_INTERCOM_EN && CONFIG_WIFI_TUNNEL */

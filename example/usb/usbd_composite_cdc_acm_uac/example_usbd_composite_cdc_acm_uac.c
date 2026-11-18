@@ -58,13 +58,6 @@
 
 #define COMP_UAC_DEMUX_CH_DEBUG                      1
 
-/* Only UAC 1.0 has to pick a speed: its spec supports Full Speed only, so an HS-capable
- * PHY is driven in Full-Speed mode. Otherwise the speed is left to the core, which clamps
- * to Full Speed by itself on an FS-only SoC. */
-#ifdef CONFIG_USBD_UAC1
-#define COMP_USB_SPEED                                USB_SPEED_HIGH_IN_FULL
-#endif
-
 // This configuration is used to enable a thread to check hotplug event
 // and reset USB stack to avoid memory leak, only for example.
 #define COMP_HOTPLUG                                  1
@@ -111,9 +104,6 @@ static const char *const TAG = "COMP";
 static const usbd_config_t composite_cfg = {
 	.info = {
 		.prod_str = "Realtek ACM+UAC Composite Device",
-#ifdef COMP_USB_SPEED
-		.speed = COMP_USB_SPEED,
-#endif
 	},
 	.isr_priority = INT_PRI_MIDDLE,
 	/* Enlarge this value if composite configuration descriptor is larger than 512B */
@@ -405,7 +395,7 @@ static void example_audio_track_play(void)
 		const uint32_t audio_dst_step = play_track_channel * g_track_format / 8;
 #endif
 
-		//user should set sdk/component/soc/**/usrcfg/include/ameba_audio_hw_usrcfg.h's AUDIO_HW_AMPLIFIER_PIN to make sure amp is enabled.
+		//user should set sdk/component/audio/audio_hal/<soc>/ameba_audio_hw_usrcfg.h's AUDIO_HW_AMPLIFIER_PIN to make sure amp is enabled.
 		AudioService_Init();
 
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Audio ch:%u,rate:%u,bits=%u\n", g_track_channel, g_track_rate, g_track_format);
@@ -639,6 +629,17 @@ static void example_usbd_composite_hotplug_thread(void *param)
 
 	UNUSED(param);
 
+#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
+	/* C-2: the USB OTG ISR is delivered on CPU0 (GIC ITARGETSR pins every SPI to core 0).
+	   Pinning the hotplug/deinit thread to CPU0 puts it on the same core as the ISR,
+	   so deinit's local interrupt disable is meaningful again under SMP. The playback
+	   data thread stays unaffined: a pending deinit is excluded from it by
+	   composite_state_lock, not by core.
+	   Done by the thread itself, first: a created thread may already run on another core, and its
+	   creator pinning it afterwards could come too late or reach a task that has deleted itself. */
+	rtos_task_set_affinity(rtos_task_handle_get(), 0);
+#endif
+
 	while (composite_app.quit == 0U) {
 		if (rtos_sema_take(composite_attach_status_changed_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
 			if (composite_app.quit != 0U) {
@@ -832,14 +833,6 @@ static int composite_start(void)
 		}
 		goto exit_teardown;
 	}
-#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
-	/* C-2: the USB OTG ISR is delivered on CPU0 (GIC ITARGETSR pins every SPI to core 0).
-	   Pinning the hotplug/deinit thread to CPU0 puts it on the same core as the ISR,
-	   so deinit's local interrupt disable is meaningful again under SMP. The playback
-	   data thread stays unaffined: a pending deinit is excluded from it by
-	   composite_state_lock, not by core. */
-	rtos_task_set_affinity(task, 0);
-#endif
 #endif
 
 	return RTK_SUCCESS;
@@ -857,6 +850,14 @@ exit:
 static void example_usbd_composite_acm_uac_init_thread(void *param)
 {
 	UNUSED(param);
+
+#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
+	/* A start that fails rolls back through usbd_deinit(), which waits for no ISR on another
+	   core: run it on CPU0, where the USB IRQ is delivered, as the hotplug thread does.
+	   Done by the thread itself, first: a created thread may already run on another core, and its
+	   creator pinning it afterwards could come too late or reach a task that has deleted itself. */
+	rtos_task_set_affinity(rtos_task_handle_get(), 0);
+#endif
 
 	if (composite_start() != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Start fail\n");

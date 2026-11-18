@@ -174,6 +174,7 @@ enum SLEEP_TYPE {
   */
 #define FW_NPWAP_IPC			0
 #define TIMER_NPWAP_IPC			1
+#define FREEZE_NPWAP_IPC		2	/*!< KM4 asks KR4 to park in SRAM until BKUP_REG1 BIT10 is set (flash AVL) */
 
 /**
   * @}

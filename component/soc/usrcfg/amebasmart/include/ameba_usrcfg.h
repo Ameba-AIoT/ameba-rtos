@@ -10,7 +10,6 @@
 #include "ameba_userheapcfg.h"
 
 /* Soc configuration */
-#include "ameba_audio_hw_usrcfg.h"
 #include "ameba_bootcfg.h"
 #include "ameba_flashcfg.h"
 #include "ameba_pinmapcfg.h"

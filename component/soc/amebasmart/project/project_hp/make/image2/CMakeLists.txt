@@ -30,6 +30,10 @@ ameba_add_subdirectory(${c_CMPT_WIFI_DIR})
 ameba_add_subdirectory(${c_CMPT_USB_DIR})
 
 ameba_add_subdirectory_third_party(${c_COMPONENT_DIR}/soc/common/cmsis-dsp)
+# Security Register OTP API and the flash AVL test of the NOR flash driver - see CONFIG_NOR_FLASH_NEW_STRATEGY.
+if (CONFIG_NOR_FLASH_NEW_STRATEGY)
+    ameba_add_subdirectory(${c_COMPONENT_DIR}/soc/common/nor_flash)
+endif()
 ameba_add_subdirectory_internal(${c_CMPT_SOC_DIR}/verification)
 ameba_add_subdirectory_internal(${c_CMPT_PYTEST_DIR})
 ameba_add_subdirectory(${c_CMPT_CRASHDUMP_DIR})

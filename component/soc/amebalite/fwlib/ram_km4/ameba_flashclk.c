@@ -8,11 +8,33 @@
 
 #define FLASH_CALIBRATION_DEBUG		0
 
-static const char *const TAG = "FLASH";
-static const FlashInfo_TypeDef *current_IC;
+#define FLASH_CS_HIGH_MIN			12
 
-/* Flag to check configuration register or not. Necessary for wide-range VCC MXIC flash */
-static u8 check_config_reg = 0;
+static const char *const TAG = "FLASH";
+
+/**
+  * @brief  Set the SPIC CS timing for the given SPIC bus clock from the NOR flash CS timing.
+  * @param  bus_clk: the SPIC bus clock in Hz it is going to run at, spi_sclk = bus_clk / (2 * BAUDR).
+  * @note   Must be set before switching to that clock. CS high keeps at least the original 12 SPIC
+  *         cycles. Values beyond the register field are clamped: hold 0~15, CS high 0~63.
+  * @retval None
+  */
+static void flash_cs_timing_config(u32 bus_clk)
+{
+	u32 tcss_ns, tchsh_ns, tshsl_ns;
+	u32 cs_hold, cs_high;
+
+	flash_nor_get_cs_timing(&tcss_ns, &tchsh_ns, &tshsl_ns);
+
+	cs_hold = SPIC_CS_HOLD_CYCLES(tchsh_ns, bus_clk, flash_init_para.FLASH_baud_rate);
+	cs_high = SPIC_CS_HIGH_CYCLES(tshsl_ns, bus_clk);
+
+	cs_hold = MIN(cs_hold, GET_CS_ACTIVE_HOLD(MASK_CS_ACTIVE_HOLD));
+	cs_high = MIN(MAX(cs_high, FLASH_CS_HIGH_MIN), GET_CS_H_RD_DUM_LEN(MASK_CS_H_RD_DUM_LEN));
+
+	SPIC->TPR0 = (SPIC->TPR0 & ~(MASK_CS_ACTIVE_HOLD | MASK_CS_H_WR_DUM_LEN | MASK_CS_H_RD_DUM_LEN)) |
+				 CS_ACTIVE_HOLD(cs_hold) | CS_H_WR_DUM_LEN(cs_high) | CS_H_RD_DUM_LEN(cs_high);
+}
 
 void flash_clksrc_sel(FlashDivInt_E div, u8 isCPUPLL, u8 is_handshake)
 {
@@ -52,11 +74,18 @@ void flash_clksrc_sel(FlashDivInt_E div, u8 isCPUPLL, u8 is_handshake)
 }
 
 SRAMDRAM_ONLY_TEXT_SECTION
-int flash_handshake_highspeed(FlashDivInt_E div)
+int flash_handshake_highspeed(FlashDivInt_E div, u32 flash_clk)
 {
 	int Ret = RTK_SUCCESS;
 	u8 spic_mode = flash_init_para.FLASH_cur_bitmode;
 	u8 Dphy_Dly_Cnt = 3; /* DD recommend this value */
+
+	/* The flash side of HPM has to be in place before the clock is raised. If it
+	 * cannot be set the flash stays on the boot clock. */
+	if (flash_nor_set_dc(flash_clk) != RTK_SUCCESS) {
+		RTK_LOGE(TAG, "Flash HPM set fail, use XTAL\n");
+		return RTK_FAIL;
+	}
 
 	flash_init_para.debug = FLASH_CALIBRATION_DEBUG;
 	flash_clksrc_sel(div, BIT_LSYS_CKSL_SPIC_CPUPLL, TRUE);
@@ -115,154 +144,28 @@ static u8 flash_get_option(u32 sys_data, bool is_speed)
 	return cnt;
 }
 
-static const FlashInfo_TypeDef *flash_get_chip_info(u32 flash_id)
-{
-	u32 i = 0;
-	u32 temp;
-	const FlashInfo_TypeDef *pAVL;
-	pAVL = Flash_AVL;
-
-	while (pAVL[i].flash_class != FlashClassNone) {
-		temp = flash_id & pAVL[i].id_mask;
-		if (pAVL[i].flash_id == temp) {
-			return &pAVL[i];
-		}
-
-		i++;
-	}
-
-	return NULL;
-}
-
-static void flash_get_vendor(void)
-{
-	u8 flash_ID[4];
-	u32 flash_capacity = 0;
-
-	/* Read flash ID */
-	FLASH_RxCmd(flash_init_para.FLASH_cmd_rd_id, 3, flash_ID);
-	/* Byte -> Mbits: 10 + 10 - 3 = 17 (0x11) */
-	flash_capacity = (1 << (flash_ID[2] - 0x11));
-	RTK_LOGI(TAG, "Flash ID: %x-%x-%x (Capacity: %dM-bit)\n", flash_ID[0], flash_ID[1], flash_ID[2], flash_capacity);
-
-	/* Get flash chip information */
-	current_IC = flash_get_chip_info((flash_ID[2] << 16) | (flash_ID[1] << 8) | flash_ID[0]);
-	if (current_IC == NULL) {
-		RTK_LOGE(TAG, "This flash type is not supported!\n");
-		assert_param(0);
-	}
-
-	/* Re-initialize flash init structure according to classification */
-	switch (current_IC->flash_class) {
-	case FlashClass1:
-		FLASH_StructInit(&flash_init_para);
-		break;
-	case FlashClass2:
-		FLASH_StructInit_GD(&flash_init_para);
-		/* GD flash */
-		if (flash_ID[0] == 0xC8) {
-			/* 3.3v flash_id[1] = 40h or 1.8v ~ 3.3v flash_id[1] = 65h */
-			if ((flash_ID[1] == 0x40) || (flash_ID[1] == 0x65)) {
-				/* GD capacity more than 2MB, need 31h cmd to write SR2 */
-				if (flash_ID[2] >= 0x16) {
-					flash_init_para.FLASH_cmd_wr_status2 = 0x31;
-				}
-			}
-		} else {
-			flash_init_para.FLASH_cmd_wr_status2 = 0x31;
-		}
-		break;
-	case FlashClass3:
-		FLASH_StructInit_MXIC(&flash_init_para);
-		break;
-	case FlashClass4:	/* EON without QE bit */
-		FLASH_StructInit_MXIC(&flash_init_para);
-		flash_init_para.FLASH_QuadEn_bit = 0;
-		break;
-	case FlashClass5:
-		FLASH_StructInit_Micron(&flash_init_para);
-		break;
-	case FlashClass6:	/* MXIC wide-range VCC chip */
-		FLASH_StructInit_MXIC(&flash_init_para);
-		check_config_reg = 1;
-		break;
-	case FlashClassUser:
-		assert_param(current_IC->FlashInitHandler != NULL);
-		current_IC->FlashInitHandler();
-		break;
-	default:
-		break;
-	}
-
-	if (SYSCFG_OTP_SPICAddr4ByteEn()) {
-		flash_init_para.FLASH_addr_phase_len = ADDR_4_BYTE;
-	}
-
-}
-
-static void flash_set_status_register(void)
-{
-	u8 StatusLen = 1;
-	u32 data = 0;
-	u32 status = 0;
-	u32 mask = current_IC->sta_mask;
-
-	if (flash_init_para.FLASH_QuadEn_bit != 0) {
-		data |= flash_init_para.FLASH_QuadEn_bit;
-	}
-
-	/* read status1 register */
-	FLASH_RxCmd(flash_init_para.FLASH_cmd_rd_status, 1, (u8 *)&status);
-
-	/* check if status2 exist */
-	if (flash_init_para.FLASH_Status2_exist) {
-		StatusLen = 2;
-		FLASH_RxCmd(flash_init_para.FLASH_cmd_rd_status2, 1, ((u8 *)&status) + 1);
-
-	} else if (check_config_reg) {	/* for MXIC wide-range flash, 1 status register + 2 config register */
-		/* Read configuration register */
-		FLASH_RxCmd(0x15, 2, ((u8 *)&status) + 1);
-		StatusLen = 3;
-
-		/* L/H Switch */
-		data |= (BIT(9) << 8);
-	}
-
-	status &= mask;
-	if (_memcmp((void *)&status, (void *)&data, StatusLen)) {
-		if (!flash_init_para.FLASH_cmd_wr_status2) {
-			FLASH_SetStatus(flash_init_para.FLASH_cmd_wr_status, StatusLen, (u8 *)&data);
-		} else {
-			FLASH_SetStatus(flash_init_para.FLASH_cmd_wr_status, 1, (u8 *)&data);
-			FLASH_SetStatus(flash_init_para.FLASH_cmd_wr_status2, 1, ((u8 *)&data) + 1);
-		}
-		RTK_LOGI(TAG, "Flash status register changed:0x%x -> 0x%x\n", status, data);
-	}
-}
-
+/**
+  * @brief  Switch the flash read bitmode, falling back until the data reads back correctly.
+  * @param  spic_mode: the bitmode to try first, degraded down to Spic1IOBitMode on failure.
+  * @param  flash_clk: the flash clock in Hz spic_mode will run at. Passed on to flash_nor_set_hpm_mode().
+  * @retval RTK_SUCCESS if the flash reads back in spic_mode, RTK_FAIL otherwise
+  */
 SRAMDRAM_ONLY_TEXT_SECTION
-int flash_rx_mode_switch(u8 read_mode)
+int flash_rx_mode_switch(u32 spic_mode, u32 flash_clk)
 {
-	int Ret = RTK_SUCCESS;
-	u8 status = 0, spic_mode = 0, i;
+	u32 req_mode = spic_mode;
 	u32 pdata[2];
 	char *str[] = {"1IO", "2O", "2IO", "4O", "4IO"};
 
-	for (i = read_mode; i < 5; i++) {
-		/* Try sequentially: 4IO, 4O, 2IO, 2O, 1bit */
-		spic_mode = 4 - i;
-
+	/* Try sequentially: 4IO, 4O, 2IO, 2O, 1bit */
+	do {
 		/* 4IO or 2IO should enable dummy byte function */
 		if ((spic_mode == SpicQuadIOBitMode) || (spic_mode == SpicDualIOBitMode)) {
 			flash_init_para.FLASH_dum_en = 1;
 		}
 
-		if (flash_init_para.FLASH_Id == FLASH_ID_MICRON) {
-			FLASH_RxCmd(0x85, 1, &status);
-
-			status = (status & 0x0f) | (flash_init_para.FLASH_rd_dummy_cycle[spic_mode] << 4);
-			FLASH_SetStatus(0x81, 1, &status);
-		}
+		/* Apply the vendor setting this bitmode & clock needs before probing it */
+		flash_nor_set_hpm_mode(spic_mode, flash_clk);
 
 		flash_init_para.FLASH_rd_sample_dly_cycle = SPIC_LOWSPEED_SAMPLE_PHASE;
 		FLASH_Init(spic_mode);
@@ -273,38 +176,39 @@ int flash_rx_mode_switch(u8 read_mode)
 		pdata[1] = HAL_READ32(SPI_FLASH_BASE, 0x04);
 
 		if (_memcmp(pdata, SPIC_CALIB_PATTERN, 8) == 0) {
-			RTK_LOGI(TAG, "Flash Read %s\n", str[spic_mode]);
 			break;
-		} else {
-			if (flash_init_para.debug) {
-				RTK_LOGI(TAG, "Flash Read %s, FAIL\n", str[spic_mode]);
-			}
 		}
+	} while (spic_mode--);
+
+	if (spic_mode != req_mode) {
+		RTK_LOGE(TAG, "Flash Read %s not reached\n", str[req_mode]);
+		return RTK_FAIL;
 	}
 
-	if (i == 5) {
-		RTK_LOGE(TAG, "Flash Switch Read Mode FAIL\n");
-		Ret = RTK_FAIL;
-	}
-
-	return Ret;
+	RTK_LOGI(TAG, "Flash Read %s\n", str[spic_mode]);
+	return RTK_SUCCESS;
 }
 
-void flash_highspeed_setup(void)
+/**
+  * @brief  Set the flash read mode and clock.
+  * @param  read_mode: the read bitmode to set.
+  * @param  spic_max: the SPIC bus clock upper limit in Hz. The fastest PLL divider not above it is used.
+  * @note   Fail leaves the flash readable (fallback bitmode and/or boot clock), the request is not met.
+  * @retval RTK_SUCCESS if the flash is in read_mode and calibrated at the selected clock, RTK_FAIL otherwise
+  */
+int flash_highspeed_setup(u32 read_mode, u32 spic_max)
 {
 	uint32_t irq_status;
-	u8 read_mode, flash_speed;
+	u8 flash_speed;
 	u8 spic_ckd;
+	int Ret;
 	u32 pllm_clk = PLL_ClkGet(CLK_CPU_MPLL);
+	u32 flash_clk;
 
-	read_mode = flash_get_option(Flash_ReadMode, FALSE);
 	flash_speed = flash_get_option(Flash_Speed, TRUE);
 
-	spic_ckd = CLKDIV_ROUND_UP(pllm_clk, SPIC_CLK_LIMIT) - 1;
+	spic_ckd = CLKDIV_ROUND_UP(pllm_clk, spic_max) - 1;
 	flash_speed = MAX(flash_speed, spic_ckd);
-
-	RTK_LOGI(TAG, "FLASH CLK: %d Hz\n", pllm_clk / (2 * (flash_speed + 1)));
-
 
 	irq_status = irq_disable_save();
 
@@ -326,17 +230,37 @@ void flash_highspeed_setup(void)
 	HAL_READ32(SPI_FLASH_BASE, 0x00);
 
 	/* Get flash ID to reinitialize FLASH_InitTypeDef structure */
-	flash_get_vendor();
+	flash_nor_get_vendor();
 
-	/* Set flash status register: set QE, clear protection bits */
-	flash_set_status_register();
+	/* Set flash status register: set QE, the 4IO read mode below needs it */
+	flash_nor_set_qe_register();
 
-	/* Set flash I/O mode and high-speed calibration */
-	flash_rx_mode_switch(read_mode);
+	/* Set flash I/O mode on the boot clock. The flash still runs on the boot clock here, so no High Performance Mode yet */
+	Ret = flash_rx_mode_switch(read_mode, 0);
 
-	if (SYSCFG_CHIPType_Get() != CHIP_TYPE_FPGA) {
-		flash_handshake_highspeed(flash_speed);
+	if (SYSCFG_CHIPType_Get() == CHIP_TYPE_FPGA) {
+		goto exit;
 	}
 
+	flash_clk = pllm_clk / (2 * (flash_speed + 1));
+	RTK_LOGI(TAG, "FLASH CLK: %d Hz\n", flash_clk);
+
+	/* The flash cannot run at that clock even with its DC bit set: stay on the boot clock */
+	if (flash_nor_check_clk(flash_clk) != RTK_SUCCESS) {
+		RTK_LOGE(TAG, "Flash out of spec at %d Hz, use boot clock\n", flash_clk);
+		Ret = RTK_FAIL;
+		goto exit;
+	}
+
+	/* CS timing for the PLL clock, in place before the clock is switched */
+	flash_cs_timing_config(flash_clk * 2 * flash_init_para.FLASH_baud_rate);
+
+	/* A failure leaves the flash on the boot clock */
+	if (flash_handshake_highspeed(flash_speed, flash_clk) != RTK_SUCCESS) {
+		Ret = RTK_FAIL;
+	}
+
+exit:
 	irq_enable_restore(irq_status);
+	return Ret;
 }

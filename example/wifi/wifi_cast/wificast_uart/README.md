@@ -93,5 +93,11 @@ Choose one board as the sender and connect the user-defined serial port with PC 
 
 # Supported IC
 
-RTL8721F
+RTL8730E
+RTL8726E
+RTL8720E
+RTL8713E
+RTL8710E
 RTL8720F
+RTL8721Dx
+RTL8721F

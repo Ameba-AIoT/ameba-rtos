@@ -63,6 +63,12 @@ SECTIONS
 		KEEP(*(*.ipc.table.data*))
 		__ipc_table_end__ = .;
 		. = ALIGN (4);
+		/* Device table of the NOR flash driver. KEEP() is required: nothing
+		 * references the entries by symbol, so --gc-sections would drop them. */
+		__nor_flash_table_start__ = .;
+		KEEP(*(.nor.flash.table.data*))
+		__nor_flash_table_end__ = .;
+		. = ALIGN (4);
 		__git_ver_table_start__ = .;
 		KEEP(*(.git.ver.data))
 		__git_ver_table_end__ = .;

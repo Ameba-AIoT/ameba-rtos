@@ -947,7 +947,7 @@ static void proxy_dis_result(struct bt_conn *conn, enum bt_mesh_gatt_cli_dis_res
 
 static uint16_t zephyr_stack_pb_gatt_con(rtk_bt_mesh_stack_act_pb_gatt_con_t *pgatt_con)
 {
-	int ret;
+	int ret = -ENOENT;
 
 #if ZEPHYR_RTK_PATCH && defined(CONFIG_BT_MESH_PB_GATT_CLIENT)
 	/* Manual mode, same as the rtk mesh stack: connect by address. Whether it is used for
@@ -972,14 +972,6 @@ static uint16_t zephyr_stack_pb_gatt_con(rtk_bt_mesh_stack_act_pb_gatt_con_t *pg
 	conn_param.timeout = p->supv_timeout;
 
 	ret = bt_mesh_gatt_cli_connect_manual(&peer_addr, &create_param, &conn_param);
-#else
-	if (pgatt_con->param.is_prov_link) {
-		memcpy(gatt_target_uuid, pgatt_con->param.u.uuid, 16);
-		pb_gatt_link_opening = true;
-		ret = RTK_BT_OK;
-	} else {
-		ret = bt_mesh_proxy_connect(pgatt_con->param.u.net_idx);
-	}
 #endif
 	if (-EALREADY == ret) {
 		// BT_LOGA("[%s] Proxy link is already connect\r\n", __func__);
@@ -1110,8 +1102,7 @@ static uint16_t zephyr_stack_proxy_service_set_notify(rtk_bt_mesh_stack_act_prox
 
 static uint16_t zephyr_stack_pb_gatt_discon(rtk_bt_mesh_stack_act_pb_gatt_discon_t *pgatt_discon)
 {
-	int ret;
-
+	int ret = -ENOENT;
 #if ZEPHYR_RTK_PATCH && defined(CONFIG_BT_MESH_PB_GATT_CLIENT)
 	/* Manual mode, same as the rtk mesh stack: disconnect the connection of the given handle */
 	struct bt_conn *conn = bt_conn_lookup_handle(pgatt_discon->conn_handle, BT_CONN_TYPE_LE);
@@ -1121,14 +1112,6 @@ static uint16_t zephyr_stack_pb_gatt_discon(rtk_bt_mesh_stack_act_pb_gatt_discon
 	}
 	ret = bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 	bt_conn_unref(conn);
-#else
-	ret = RTK_BT_OK;
-	if (pgatt_discon->param.is_prov_link) {
-		pb_gatt_link_opening = false;
-		memset(gatt_target_uuid, 0, 16);
-	} else {
-		ret = bt_mesh_proxy_disconnect(pgatt_discon->param.net_idx);
-	}
 #endif
 	if (-EALREADY == ret) {
 		// BT_LOGA("[%s] Proxy link is already disconnect\r\n", __func__);

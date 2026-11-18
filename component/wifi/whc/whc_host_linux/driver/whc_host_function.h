@@ -129,7 +129,7 @@ int whc_host_send_connect(struct rtw_network_info *connect_param);
 int whc_ipc_host_msg_q_init(struct device *pdev, void (*task_hdl)(u8 event_num, u32 msg_addr, u8 wlan_idx));
 int whc_ipc_host_msg_enqueue(struct whc_ipc_ex_msg *p_ipc_msg);
 void whc_ipc_host_msg_q_deinit(void);
-void whc_ipc_host_send_packet(struct whc_ipc_ex_msg *p_ipc_msg);
+int whc_ipc_host_send_packet(struct whc_ipc_ex_msg *p_ipc_msg);
 void whc_ipc_host_recv_task_hdl(u8 event_num, u32 msg_addr, u8 wlan_idx);
 void whc_host_event_task(struct work_struct *data);
 int whc_host_xmit_init(void);

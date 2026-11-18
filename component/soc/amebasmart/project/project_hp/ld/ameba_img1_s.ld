@@ -25,6 +25,15 @@ SECTIONS
 		*(.text*)
 		*(.boot.rodata*)
 		*(.rodata*)
+
+		/* NOR flash device tables (CONFIG_NOR_FLASH_NEW_STRATEGY). KEEP() is required:
+		 * nothing references the entries by symbol, so --gc-sections would drop them
+		 * and silently unmatch every device. */
+		. = ALIGN(4);
+		__nor_flash_table_start__ = .;
+		KEEP(*(.nor.flash.table.data*))
+		__nor_flash_table_end__ = .;
+		. = ALIGN(4);
 	} > KM4_BOOTLOADER_RAM_S
 
 	.ram_image1.data . :

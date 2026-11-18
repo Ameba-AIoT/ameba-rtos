@@ -485,7 +485,10 @@ u32 whc_host_update_ip_addr(void)
 	event_priv->api_ipc_msg.msg_type = IPC_USER_POINT;
 	event_priv->api_ipc_msg.msg_len = sizeof(struct whc_ipc_host_req_msg);
 
-	ameba_ipc_channel_send(global_idev.event_ch, &(event_priv->api_ipc_msg));
+	ret = ameba_ipc_channel_send(global_idev.event_ch, &(event_priv->api_ipc_msg));
+	if (ret < 0) {
+		goto unlock_ip;
+	}
 
 	while (try_cnt) {
 		if (event_priv->preq_msg->api_id != WHC_API_PROCESS_DONE) {
@@ -498,10 +501,12 @@ u32 whc_host_update_ip_addr(void)
 
 	if (try_cnt == 0) {
 		dev_err(global_idev.pwhc_dev, "wowlan update ip address fail");
+		ret = -ETIMEDOUT;
+	} else {
+		ret = event_priv->preq_msg->ret;
 	}
 
-	ret = event_priv->preq_msg->ret;
-
+unlock_ip:
 	mutex_unlock(&(event_priv->iiha_send_mutex));
 
 	if (ip_addr) {
@@ -643,13 +648,13 @@ int whc_host_iwpriv_cmd(dma_addr_t cmd_phy, unsigned int cmd_len, unsigned char 
 	return ret;
 }
 
-void whc_ipc_host_send_packet(struct whc_ipc_ex_msg *p_ipc_msg)
+int whc_ipc_host_send_packet(struct whc_ipc_ex_msg *p_ipc_msg)
 {
 	struct ipc_msg_q_priv *msg_priv = &global_idev.msg_priv;
 	struct whc_ipc_ex_msg *pmsg = msg_priv->p_inic_ipc_msg;
 	ipc_msg_struct_t ipc_msg = {0};
 	int try_cnt = 100000;
-
+	int ret = 0;
 	/* Get the warning of queue's depth not enough in peer, delay send the
 	 * the next message.
 	 */
@@ -666,7 +671,9 @@ void whc_ipc_host_send_packet(struct whc_ipc_ex_msg *p_ipc_msg)
 		try_cnt--;
 		if (try_cnt == 0) {
 			dev_warn(global_idev.pwhc_dev, "[AP] inic ipc wait timeout %d\n", pmsg->event_num);
-			break;
+			/* NP may still read pmsg, do not overwrite it */
+			ret = -EBUSY;
+			goto unlock;
 		}
 	}
 
@@ -680,8 +687,15 @@ void whc_ipc_host_send_packet(struct whc_ipc_ex_msg *p_ipc_msg)
 	ipc_msg.msg = msg_priv->ipc_msg_phy_addr;
 	ipc_msg.msg_len = sizeof(struct whc_ipc_ex_msg);
 
-	ameba_ipc_channel_send(global_idev.data_ch, &ipc_msg);
+	ret = ameba_ipc_channel_send(global_idev.data_ch, &ipc_msg);
+	if (ret < 0) {
+		/* NP is not notified, release the shared msg for next send */
+		pmsg->event_num = IPC_WIFI_MSG_READ_DONE;
+	}
+
+unlock:
 	spin_unlock_bh(&msg_priv->ipc_send_msg_lock);
+	return ret;
 }
 
 u64 whc_host_get_tsft(u8 iface_type)
