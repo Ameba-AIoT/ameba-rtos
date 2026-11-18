@@ -1226,8 +1226,6 @@ static void usbh_cdc_ecm_process_halt(usb_host_t *host)
 		return;
 	}
 
-	/* Sent through usbh_ctrl_request(), which rejects the call while another class of a
-	 * composite device owns EP0; usbh_ctrl_clear_feature() lacks that owner check */
 	setup.req.bmRequestType = USB_H2D | USB_REQ_TYPE_STANDARD | USB_REQ_RECIPIENT_ENDPOINT;
 	setup.req.bRequest = USB_REQ_CLEAR_FEATURE;
 	setup.req.wValue = USB_FEATURE_EP_HALT;

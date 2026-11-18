@@ -55,7 +55,7 @@ ameba_list_append(private_sources
 
 # SOLO isolation user config (KM55TZ-private peripherals + KM55NS-allowed memory
 # regions), consumed by BOOT_RAM_SoloCfg (lib/solo) in the km55tz bootloader.
-if(CONFIG_SOLO)
+if(CONFIG_IOT_MCU_COMBINED)
     ameba_list_append(private_sources
         ameba_solocfg.c
     )

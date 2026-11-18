@@ -444,7 +444,6 @@ bool AUDIO_SP_TXGDMA_Init(
 )
 {
 	u8 GdmaChnl;
-	u32 WordLen = AUDIO_SP_GetWordLen(Index);
 
 	assert_param(GDMA_InitStruct != NULL);
 	/*obtain a DMA channel and register DMA interrupt handler*/
@@ -471,39 +470,23 @@ bool AUDIO_SP_TXGDMA_Init(
 	GDMA_InitStruct->GDMA_SrcInc = IncType;
 
 	/*  Cofigure GDMA transfer */
-	if (WordLen == SP_WL_8) {
-		/*  8bits mode */
-		if (((Length & 0x03) == 0) && (((u32)(pTxData) & 0x03) == 0)) {
-			/*  4-bytes aligned, move 4 bytes each transfer */
-			GDMA_InitStruct->GDMA_SrcMsize   = MsizeOne;
-			GDMA_InitStruct->GDMA_SrcDataWidth = TrWidthFourBytes;
-			GDMA_InitStruct->GDMA_BlockSize = Length >> 2;
-		} else {
-			GDMA_InitStruct->GDMA_SrcMsize   = MsizeFour;
-			GDMA_InitStruct->GDMA_SrcDataWidth = TrWidthOneByte;
-			GDMA_InitStruct->GDMA_BlockSize = Length;
-		}
-		GDMA_InitStruct->GDMA_DstMsize = MsizeFour;
-		GDMA_InitStruct->GDMA_DstDataWidth = TrWidthOneByte;
-	} else  {
-		/*  24bits or 16bits mode */
-		if (((Length & 0x03) == 0) && (((u32)(pTxData) & 0x03) == 0)) {
-			/*  4-bytes aligned, move 4 bytes each transfer */
-			GDMA_InitStruct->GDMA_SrcMsize   = MsizeFour;
-			GDMA_InitStruct->GDMA_SrcDataWidth = TrWidthFourBytes;
-			GDMA_InitStruct->GDMA_BlockSize = Length >> 2;
-		} else if (((Length & 0x01) == 0) && (((u32)(pTxData) & 0x01) == 0)) {
-			/*  2-bytes aligned, move 2 bytes each transfer */
-			GDMA_InitStruct->GDMA_SrcMsize   = MsizeEight;
-			GDMA_InitStruct->GDMA_SrcDataWidth = TrWidthTwoBytes;
-			GDMA_InitStruct->GDMA_BlockSize = Length >> 1;
-		} else {
-			RTK_LOGE(TAG, "AUDIO_SP_TXGDMA_Init: Aligment Err: pTxData=0x%x,  Length=%d\n", pTxData, Length);
-			return FALSE;
-		}
-		GDMA_InitStruct->GDMA_DstMsize = MsizeFour;
-		GDMA_InitStruct->GDMA_DstDataWidth = TrWidthFourBytes;
+	/*  24bits or 16bits mode */
+	if (((Length & 0x03) == 0) && (((u32)(pTxData) & 0x03) == 0)) {
+		/*  4-bytes aligned, move 4 bytes each transfer */
+		GDMA_InitStruct->GDMA_SrcMsize   = MsizeFour;
+		GDMA_InitStruct->GDMA_SrcDataWidth = TrWidthFourBytes;
+		GDMA_InitStruct->GDMA_BlockSize = Length >> 2;
+	} else if (((Length & 0x01) == 0) && (((u32)(pTxData) & 0x01) == 0)) {
+		/*  2-bytes aligned, move 2 bytes each transfer */
+		GDMA_InitStruct->GDMA_SrcMsize   = MsizeEight;
+		GDMA_InitStruct->GDMA_SrcDataWidth = TrWidthTwoBytes;
+		GDMA_InitStruct->GDMA_BlockSize = Length >> 1;
+	} else {
+		RTK_LOGE(TAG, "AUDIO_SP_TXGDMA_Init: Aligment Err: pTxData=0x%x,  Length=%d\n", pTxData, Length);
+		return FALSE;
 	}
+	GDMA_InitStruct->GDMA_DstMsize = MsizeSixteen;
+	GDMA_InitStruct->GDMA_DstDataWidth = TrWidthFourBytes;
 
 	/*check GDMA block size*/
 	assert_param(GDMA_InitStruct->GDMA_BlockSize <= 4096);
@@ -540,7 +523,6 @@ bool AUDIO_SP_RXGDMA_Init(
 )
 {
 	u8 GdmaChnl;
-	u32 WordLen = AUDIO_SP_GetWordLen(Index);
 
 	assert_param(GDMA_InitStruct != NULL);
 	/*obtain a DMA channel and register DMA interrupt handler*/
@@ -567,21 +549,12 @@ bool AUDIO_SP_RXGDMA_Init(
 	GDMA_InitStruct->GDMA_SrcInc = NoChange;
 
 	/*  Cofigure GDMA transfer */
-	if (WordLen == SP_WL_8)  {
-		GDMA_InitStruct->GDMA_SrcDataWidth = TrWidthOneByte;
-		GDMA_InitStruct->GDMA_SrcMsize = MsizeFour;
+	GDMA_InitStruct->GDMA_SrcDataWidth = TrWidthFourBytes;
+	GDMA_InitStruct->GDMA_SrcMsize = MsizeSixteen;
 
-		GDMA_InitStruct->GDMA_DstMsize = MsizeOne;
-		GDMA_InitStruct->GDMA_DstDataWidth = TrWidthFourBytes;
-		GDMA_InitStruct->GDMA_BlockSize = Length;
-	} else {
-		GDMA_InitStruct->GDMA_SrcDataWidth = TrWidthFourBytes;
-		GDMA_InitStruct->GDMA_SrcMsize = MsizeEight;
-
-		GDMA_InitStruct->GDMA_DstMsize = MsizeEight;
-		GDMA_InitStruct->GDMA_DstDataWidth = TrWidthFourBytes;
-		GDMA_InitStruct->GDMA_BlockSize = Length >> 2;
-	}
+	GDMA_InitStruct->GDMA_DstMsize = MsizeEight;
+	GDMA_InitStruct->GDMA_DstDataWidth = TrWidthFourBytes;
+	GDMA_InitStruct->GDMA_BlockSize = Length >> 2;
 
 	/*check GDMA block size*/
 	assert_param(GDMA_InitStruct->GDMA_BlockSize <= 4096);
@@ -691,7 +664,7 @@ bool AUDIO_SP_LLPTXGDMA_Init(
 	GDMA_InitStruct->MaxMuliBlock = MaxLLP;
 	GDMA_InitStruct->GDMA_DIR = TTFCMemToPeri;
 	GDMA_InitStruct->GDMA_IsrType = (BlockType | TransferType | ErrType);
-	GDMA_InitStruct->GDMA_DstMsize = MsizeFour;
+	GDMA_InitStruct->GDMA_DstMsize = MsizeSixteen;
 	GDMA_InitStruct->GDMA_DstDataWidth = TrWidthFourBytes;
 	GDMA_InitStruct->GDMA_DstInc = NoChange;
 	GDMA_InitStruct->GDMA_SrcInc = IncType;
@@ -794,7 +767,7 @@ bool AUDIO_SP_LLPRXGDMA_Init(
 
 	/*  Cofigure GDMA transfer */
 	GDMA_InitStruct->GDMA_SrcDataWidth = TrWidthFourBytes;
-	GDMA_InitStruct->GDMA_SrcMsize = MsizeEight;
+	GDMA_InitStruct->GDMA_SrcMsize = MsizeSixteen;
 
 	GDMA_InitStruct->GDMA_DstMsize = MsizeEight;
 	GDMA_InitStruct->GDMA_DstDataWidth = TrWidthFourBytes;

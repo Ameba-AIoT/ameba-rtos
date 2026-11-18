@@ -24,6 +24,10 @@
 #define USBD_UAC_FS_ISOC_MPS                        1023U   /* Full speed ISOC IN & OUT max packet size */
 #define USBD_UAC_FS_ISOC_MPS_ALIGNED                1024U   /* USBD_UAC_FS_ISOC_MPS adjusted to the DWORD boundary, refer to usb_get_dword_aligned_mps */
 #define USBD_UAC_FS_DEFAULT_BINTERVAL               1U      /**< FS ISOC bInterval used in EP descriptors */
+/* Ref UAC 1.0 4.6.1.1: one packet per ms. At High Speed bInterval counts 2^(n-1) microframes, so 4 is 1 ms */
+#define USBD_UAC_HS_DEFAULT_BINTERVAL               4U      /**< HS ISOC bInterval used in EP descriptors */
+/* 1ms 8 frame in high speed */
+#define USBD_UAC_HS_SOF_COUNT_PER_MS                8U
 #define USBD_UAC_ONE_KHZ                            1000U
 /* sample sampling freq max count */
 #define USBD_UAC_SAMPLING_FREQ_MAX_COUNT            2U
@@ -135,6 +139,7 @@ static int usbd_uac_check_play_fmt(const usbd_audio_cfg_t *fmt, u8 speed);
 static int usbd_uac_receive_data(void);
 static u8 usbd_uac_is_owned_interface(u16 interface_number);
 static int usbd_uac_receive_control_data(usb_dev_t *dev, const usb_setup_req_t *req, u16 expected_length);
+static u8 usbd_uac_get_binterval(u8 speed);
 static u32 usbd_uac_read_locked(usbd_uac_buf_ctrl_t *pdata_ctrl, u8 *buffer, u32 size, u32 time_out_ms, u32 *zero_pkt_flag);
 
 /* Private variables ---------------------------------------------------------*/
@@ -146,6 +151,8 @@ static const u32 usbd_uac_sampling_rates[USBD_UAC_SAMPLING_FREQ_MAX_COUNT] = {US
 /* Cache-line-aligned scratch buffer used by the ISOC OUT engine as the destination for each usbd_ep_receive() before the payload is copied into the ring buffer.
    Sized to the DWORD aligned MPS: the controller pads every received packet up to the DWORD boundary, so a 1023 byte MPS occupies 1024 bytes in memory. */
 static u8 usbd_uac_rx_buf[USBD_UAC_FS_ISOC_MPS_ALIGNED] USB_DMA_ALIGNED;
+/* High Speed microframe SOFs since the last 1 ms frame, refer to usbd_uac_handle_sof() */
+static u8 usbd_uac_sof_cnt;
 /* USB Standard Device Descriptor */
 static const u8 usbd_uac_dev_desc[USB_LEN_DEV_DESC] = {
 	USB_LEN_DEV_DESC,            /* bLength */
@@ -167,7 +174,25 @@ static const u8 usbd_uac_dev_desc[USB_LEN_DEV_DESC] = {
 	0x01                         /* bNumConfigurations */
 }; /* usbd_uac_dev_desc */
 
-static const u8 usbd_uac_fs_config_desc[] = {
+#ifndef CONFIG_SUPPORT_USB_FS_ONLY
+/* USB Standard Device Qualifier Descriptor */
+static const u8 usbd_uac_device_qualifier_desc[USB_LEN_DEV_QUALIFIER_DESC] = {
+	USB_LEN_DEV_QUALIFIER_DESC,        /* bLength */
+	USB_DESC_TYPE_DEVICE_QUALIFIER,    /* bDescriptorType */
+	0x00,                              /* bcdUSB */
+	0x02,
+	0x00,                              /* bDeviceClass */
+	0x00,                              /* bDeviceSubClass */
+	0x00,                              /* bDeviceProtocol */
+	0x40,                              /* bMaxPacketSize */
+	0x01,                              /* bNumConfigurations */
+	0x00,                              /* Reserved */
+}; /* usbd_uac_device_qualifier_desc */
+#endif
+
+/* The same template describes both speeds: the ISOC bInterval is patched for the speed it
+   describes, refer to usbd_uac_patch_desc() */
+static const u8 usbd_uac_config_desc[] = {
 	/* USB UAC Device Configuration Descriptor */
 	/* USB Standard Configuration Descriptor */
 	USB_LEN_CFG_DESC,                  /* bLength */
@@ -545,7 +570,7 @@ static const u8 usbd_uac_fs_config_desc[] = {
 };
 /* The length is computed by USBD_UAC_FS_CFG_DESC_BUF_LEN() from the channel count and the template is trimmed by
    #if on the same count: a mismatch would leave zero padding counted in wTotalLength */
-_Static_assert(sizeof(usbd_uac_fs_config_desc) == USBD_UAC_FS_CFG_DESC_BUF_LEN(USBD_UAC_DEFAULT_CH_CNT), "UAC cfg desc len");
+_Static_assert(sizeof(usbd_uac_config_desc) == USBD_UAC_FS_CFG_DESC_BUF_LEN(USBD_UAC_DEFAULT_CH_CNT), "UAC cfg desc len");
 
 /* UAC Class Driver */
 static const usbd_class_driver_t usbd_uac_driver = {
@@ -665,9 +690,10 @@ static void usbd_uac_ep_buf_ctrl_deinit(usbd_uac_buf_ctrl_t *buf_ctrl)
 /**
   * @brief  Initialize UAC endpoint buffer control structure
   * @param  buf_ctrl: Pointer to the UAC buffer control structure
+  * @param  speed: USB connection speed
   * @retval Status
   */
-static int usbd_uac_ep_buf_ctrl_init(usbd_uac_buf_ctrl_t *buf_ctrl)
+static int usbd_uac_ep_buf_ctrl_init(usbd_uac_buf_ctrl_t *buf_ctrl, u8 speed)
 {
 	const usbd_uac_dev_t *cdev = &usbd_uac_dev;
 	/* Ref UAC 1.0 4.6.1.2: the host may switch the alt setting and the rate at any time and then
@@ -676,10 +702,13 @@ static int usbd_uac_ep_buf_ctrl_init(usbd_uac_buf_ctrl_t *buf_ctrl)
 	   a packet of any declared format fits a node. The descriptors are checked against the FS
 	   limit at build time, refer to USBD_UAC_PLAY_MPS. */
 	u16 mps = USBD_UAC_PLAY_MPS;
-	/* Full Speed with bInterval 1: one node per frame */
+	/* One packet per ms at both speeds: one node per ms */
 	u8 cnt = (u8)((cdev->cfg->rx_buf_cnt != 0U) ? cdev->cfg->rx_buf_cnt : USBD_UAC_DEFAULT_RX_BUF_CNT);
 
-	/* The ring only depends on the speed, not on the format: keep it while it fits */
+	/* Read by usbd_uac_get_read_frame_time_in_us() only, the ring does not depend on it */
+	buf_ctrl->binterval = usbd_uac_get_binterval(speed);
+
+	/* The ring depends neither on the speed nor on the format: keep it while it fits */
 	if ((buf_ctrl->uac_sema_valid != 0U) && (buf_ctrl->isoc_mps == mps) && (buf_ctrl->buf_list_cnt == cnt)) {
 		return RTK_SUCCESS;
 	}
@@ -687,7 +716,6 @@ static int usbd_uac_ep_buf_ctrl_init(usbd_uac_buf_ctrl_t *buf_ctrl)
 	usbd_uac_ep_buf_ctrl_deinit(buf_ctrl);
 	buf_ctrl->isoc_mps = mps;
 	buf_ctrl->buf_list_cnt = cnt;
-	buf_ctrl->binterval = USBD_UAC_FS_DEFAULT_BINTERVAL;
 
 	if (usb_ringbuf_manager_init(&(buf_ctrl->buf_list), buf_ctrl->buf_list_cnt, buf_ctrl->isoc_mps, 1) != RTK_SUCCESS) {
 		return -RTK_ERR_NOMEM;
@@ -797,6 +825,8 @@ static int usbd_uac_set_config(usb_dev_t *dev, u8 config)
 	}
 
 	cdev->dev = dev;
+	/* The speed is only known once enumerated, the EP is opened later by usbd_uac_receive_data() */
+	cdev->ep_isoc_out.info.binterval = usbd_uac_get_binterval(dev->dev_speed);
 
 	cdev->alt_setting = 0U;
 
@@ -857,6 +887,7 @@ static void usbd_uac_clear_config(usb_dev_t *dev, u8 config)
 	cdev->uac_isoc_out.xfer_cnt = 0U;
 	cdev->uac_isoc_out.sof_idx = 0U;
 	cdev->uac_isoc_out.data_idx = 0U;
+	usbd_uac_sof_cnt = 0U;
 	/* A control transfer cut by the reset never gets its data stage */
 	cdev->ctrl_req_pending = 0U;
 
@@ -878,6 +909,16 @@ static u8 usbd_uac_is_valid_ep_num(u8 ep_addr)
 	u8 ep_num = USB_EP_NUM(ep_addr);
 
 	return ((ep_num != 0U) && (ep_num < USB_MAX_ENDPOINTS)) ? 1U : 0U;
+}
+
+/**
+  * @brief  Get the ISOC bInterval of one packet per ms at a speed
+  * @param  speed: USB connection speed
+  * @retval bInterval
+  */
+static u8 usbd_uac_get_binterval(u8 speed)
+{
+	return (speed == USB_SPEED_HIGH) ? USBD_UAC_HS_DEFAULT_BINTERVAL : USBD_UAC_FS_DEFAULT_BINTERVAL;
 }
 
 /**
@@ -1324,12 +1365,21 @@ static void usbd_uac_handle_sof(usb_dev_t *dev)
 	usbd_uac_dev_t *cdev = &usbd_uac_dev;
 	const usbd_uac_cb_t *cb = cdev->cb;
 	usbd_uac_buf_ctrl_t *pdata_ctrl = &(cdev->uac_isoc_out);
+	u8 is_frame = 1U;
 
-	UNUSED(dev);
+	/* High Speed raises a SOF every microframe, the stream carries one packet per ms */
+	if (dev->dev_speed == USB_SPEED_HIGH) {
+		usbd_uac_sof_cnt++;
+		if (usbd_uac_sof_cnt < USBD_UAC_HS_SOF_COUNT_PER_MS) {
+			is_frame = 0U;
+		} else {
+			usbd_uac_sof_cnt = 0U;
+		}
+	}
 
 	/* Track OUT stream underrun: if host stalls the ISOC pipe, synthesise
 	 * ZLP filler nodes so blocked readers do not stall forever. */
-	if ((pdata_ctrl->next_xfer != 0) && (pdata_ctrl->xfer_cnt > 0)) {
+	if ((is_frame != 0U) && (pdata_ctrl->next_xfer != 0) && (pdata_ctrl->xfer_cnt > 0)) {
 		if (pdata_ctrl->sof_idx == 0) {
 			pdata_ctrl->sof_idx = 1;
 			pdata_ctrl->data_idx = 0;
@@ -1594,9 +1644,10 @@ static int usbd_uac_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len)
   *         the standard Interface and IAD descriptors.
   * @param  desc: Pointer to the descriptor buffer (after configuration descriptor header)
   * @param  len: Total length of descriptor data
+  * @param  speed: Speed the descriptor describes, the other speed for an Other-Speed descriptor
   * @retval void
   */
-static void usbd_uac_patch_desc(u8 *desc, u16 len)
+static void usbd_uac_patch_desc(u8 *desc, u16 len, u8 speed)
 {
 	u16 i;
 	usbd_uac_dev_t *cdev = &usbd_uac_dev;
@@ -1621,6 +1672,8 @@ static void usbd_uac_patch_desc(u8 *desc, u16 len)
 			/* Playback only: the AS OUT endpoint is the single ISOC one */
 			if ((dir == USB_H2D) && (type == USB_CH_EP_TYPE_ISOC)) {
 				desc[i + 2] = cfg->isoc_out_addr;
+				/* Ref UAC 1.0 4.6.1.1: one packet per ms whatever the speed, the wMaxPacketSize stays */
+				desc[i + 6] = usbd_uac_get_binterval(speed);   /* bInterval */
 			}
 		} else if ((dtype == USB_DESC_TYPE_INTERFACE) && (dlen >= USB_LEN_IF_DESC) &&
 				   (desc[i + 6] == USB_UAC_SUBCLASS_AUDIOCONTROL)) {
@@ -1659,10 +1712,11 @@ static u16 usbd_uac_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 	u16 len = 0;
 	u8 type = USB_HIGH_BYTE(req->wValue);
 	u8 is_cfg = 0;
+	u8 desc_speed = USB_SPEED_FULL;
 
-	/* Full Speed only: usbd_uac_private_init() rejects a High Speed setup, and the core stalls the
-	   device qualifier and other speed configuration requests of a device that is not HS capable */
+#ifdef CONFIG_SUPPORT_USB_FS_ONLY
 	UNUSED(dev);
+#endif
 
 	switch (type) {
 
@@ -1674,10 +1728,30 @@ static u16 usbd_uac_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 	case USB_DESC_TYPE_CONFIGURATION:
 		/* Built from the const template only: isoc_mps is sized once by usbd_uac_config(),
 		   rewriting it here would race the OUT ISR that arms the EP with it */
-		desc = usbd_uac_fs_config_desc;
-		len = sizeof(usbd_uac_fs_config_desc);
+		desc = usbd_uac_config_desc;
+		len = sizeof(usbd_uac_config_desc);
 		is_cfg = 1;
+#ifndef CONFIG_SUPPORT_USB_FS_ONLY
+		desc_speed = dev->dev_speed;
+#endif
 		break;
+
+#ifndef CONFIG_SUPPORT_USB_FS_ONLY
+	/* The core stalls both unless the device is configured for High Speed */
+	case USB_DESC_TYPE_DEVICE_QUALIFIER:
+		desc = usbd_uac_device_qualifier_desc;
+		len = sizeof(usbd_uac_device_qualifier_desc);
+		break;
+
+	case USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION:
+		/* Ref USB 2.0 9.6.4: describes the configuration at the speed the device is not
+		   running at, so its bInterval is patched for that speed, not the current one */
+		desc = usbd_uac_config_desc;
+		len = sizeof(usbd_uac_config_desc);
+		is_cfg = 1;
+		desc_speed = (dev->dev_speed == USB_SPEED_HIGH) ? USB_SPEED_FULL : USB_SPEED_HIGH;
+		break;
+#endif
 
 	case USB_DESC_TYPE_STRING:
 		/* Every string this class owns is registered with usbd_add_string() and answered by
@@ -1704,7 +1778,7 @@ static u16 usbd_uac_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN] = USB_LOW_BYTE(len);
 		buf[USB_CFG_DESC_OFFSET_TOTAL_LEN + 1] = USB_HIGH_BYTE(len);
 
-		usbd_uac_patch_desc(buf + USB_LEN_CFG_DESC, len - USB_LEN_CFG_DESC);
+		usbd_uac_patch_desc(buf + USB_LEN_CFG_DESC, len - USB_LEN_CFG_DESC, desc_speed);
 	}
 
 	return len;
@@ -1895,13 +1969,6 @@ static int usbd_uac_private_init(const usbd_uac_cb_t *cb, const usbd_uac_config_
 		return -RTK_ERR_BADARG;
 	}
 
-	/* UAC 1.0 has Full Speed descriptors only, refer to usbd_uac_get_descriptor(): reject a High Speed
-	   setup here, else the device enumerates nothing. usbd_init() already lowered it on an FS-only SoC. */
-	if (usbd_get_dev_info()->speed == USB_SPEED_HIGH) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "UAC1 needs FS, pls set speed\n");
-		return -RTK_ERR_BADARG;
-	}
-
 	/* The OUT endpoint needs the right direction bit. */
 	if (((cfg->isoc_out_addr & USB_REQ_DIR_MASK) != USB_H2D) || (usbd_uac_is_valid_ep_num(cfg->isoc_out_addr) == 0U)) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid EP addr %02x\n", cfg->isoc_out_addr);
@@ -1938,6 +2005,7 @@ static int usbd_uac_private_init(const usbd_uac_cb_t *cb, const usbd_uac_config_
 	info = &ep_isoc_out->info;
 	info->addr = cfg->isoc_out_addr;
 	info->type = USB_CH_EP_TYPE_ISOC;
+	/* Set for the negotiated speed by usbd_uac_set_config() */
 	info->binterval = USBD_UAC_FS_DEFAULT_BINTERVAL;
 	ep_isoc_out->xfer_buf_len = (u32)sizeof(usbd_uac_rx_buf);
 
@@ -1951,7 +2019,7 @@ static int usbd_uac_private_init(const usbd_uac_cb_t *cb, const usbd_uac_config_
 	}
 
 #if UABD_UAC_DESC_DUMP
-	usbd_uac_desc_dump(usbd_uac_fs_config_desc, sizeof(usbd_uac_fs_config_desc) / sizeof(u8));
+	usbd_uac_desc_dump(usbd_uac_config_desc, sizeof(usbd_uac_config_desc) / sizeof(u8));
 #endif
 
 #if USBD_UAC_DEBUG
@@ -2216,7 +2284,7 @@ int usbd_uac_config(const usbd_audio_cfg_t *uac_cfg, u8 is_record, u32 flag)
 		pbuf_ctrl->next_xfer = 0;
 
 		/* Allocates the ring on the first call only, refer to usbd_uac_ep_buf_ctrl_init() */
-		ret = usbd_uac_ep_buf_ctrl_init(pbuf_ctrl);
+		ret = usbd_uac_ep_buf_ctrl_init(pbuf_ctrl, cdev->dev->dev_speed);
 	}
 
 	return ret;
@@ -2334,6 +2402,7 @@ u32 usbd_uac_get_read_frame_time_in_us(void)
 	usbd_uac_dev_t *cdev = &usbd_uac_dev;
 	usbd_uac_buf_ctrl_t *pdata_ctrl = &(cdev->uac_isoc_out);
 	u8 binterval = pdata_ctrl->binterval;
+	u32 base_us = USBD_UAC_ONE_KHZ;
 
 	/* An isochronous bInterval is 1..16, Ref USB 2.0 9.6.6: any other value would make the shift
 	   below undefined */
@@ -2341,6 +2410,10 @@ u32 usbd_uac_get_read_frame_time_in_us(void)
 		binterval = USBD_UAC_FS_DEFAULT_BINTERVAL;
 	}
 
-	/* FS: one microframe per bInterval == USBD_UAC_ONE_KHZ us at bInterval=1 */
-	return (u32)usb_ringbuf_get_count(&(pdata_ctrl->buf_list)) * USBD_UAC_ONE_KHZ * USBD_UAC_POW2(binterval - 1U);
+	/* bInterval counts 1 ms frames at Full Speed, 125 us microframes at High Speed */
+	if ((cdev->dev != NULL) && (cdev->dev->dev_speed == USB_SPEED_HIGH)) {
+		base_us = USBD_UAC_ONE_KHZ / USBD_UAC_HS_SOF_COUNT_PER_MS;
+	}
+
+	return (u32)usb_ringbuf_get_count(&(pdata_ctrl->buf_list)) * base_us * USBD_UAC_POW2(binterval - 1U);
 }

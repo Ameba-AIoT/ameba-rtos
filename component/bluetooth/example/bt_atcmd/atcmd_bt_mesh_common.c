@@ -273,36 +273,14 @@ static int atcmd_ble_mesh_pbadv_discon(int argc, char **argv)
 
 static int atcmd_ble_mesh_pb_gatt_con(int argc, char **argv)
 {
+	(void)argc;
 #if defined(RTK_BLE_MESH_PROVISIONER_SUPPORT) && RTK_BLE_MESH_PROVISIONER_SUPPORT
 	uint16_t ret = 0;
 	rtk_bt_mesh_stack_act_pb_gatt_con_t gatt_con = {0};
-	switch (argc) {
-	case 0: {
-		// For zephyr mesh stack, establish a BLE GATT link with any provisioned device for T/R mesh message use mesh proxy service
-		gatt_con.param.is_prov_link = 0;
-		gatt_con.param.u.net_idx = 0;
-		break;
-	}
-	case 1: {
-		// For zephyr mesh stack, use UUID to establish PB GATT link and start provisioning
-		gatt_con.param.is_prov_link = 1;
-		if (!hexdata_str_to_array(argv[0], gatt_con.param.u.uuid, 16)) {
-			BT_LOGE("[%s] String to hex for UUID fail!\r\n", __func__);
-			return -1;
-		}
-		break;
-	}
-	case 2: {
-		// For RTK mesh stack, use BT address to establish GATT link
-		memcpy(&gatt_con.conn_param, &def_conn_param, sizeof(rtk_bt_le_create_conn_param_t));
-		gatt_con.conn_param.peer_addr.type = (rtk_bt_le_addr_type_t)str_to_int(argv[0]);
-		if (false == hexdata_str_to_bd_addr(argv[1], gatt_con.conn_param.peer_addr.addr_val, RTK_BD_ADDR_LEN)) {
-			return -2;
-		}
-		break;
-	}
-	default:
-		break;
+	memcpy(&gatt_con.conn_param, &def_conn_param, sizeof(rtk_bt_le_create_conn_param_t));
+	gatt_con.conn_param.peer_addr.type = (rtk_bt_le_addr_type_t)str_to_int(argv[0]);
+	if (false == hexdata_str_to_bd_addr(argv[1], gatt_con.conn_param.peer_addr.addr_val, RTK_BD_ADDR_LEN)) {
+		return -2;
 	}
 	ret = rtk_bt_mesh_stack_prov_pb_gatt_con(&gatt_con);
 	if (ret) {
@@ -311,7 +289,6 @@ static int atcmd_ble_mesh_pb_gatt_con(int argc, char **argv)
 	}
 	return 0;
 #else
-	(void)argc;
 	(void)argv;
 	BT_LOGE("Is not provisioner role, do not support this function.\r\n");
 	return -1;
@@ -320,29 +297,17 @@ static int atcmd_ble_mesh_pb_gatt_con(int argc, char **argv)
 
 static int atcmd_ble_mesh_pb_gatt_discon(int argc, char **argv)
 {
+	(void)argc;
 #if defined(RTK_BLE_MESH_PROVISIONER_SUPPORT) && RTK_BLE_MESH_PROVISIONER_SUPPORT
 	uint16_t ret = 0;
 	rtk_bt_mesh_stack_act_pb_gatt_discon_t gatt_discon = {0};
-	switch (argc) {
-	case 0:
-		// For zephyr mesh stack, disconnect with the provisioned mesh device use net idx
-		gatt_discon.param.is_prov_link = 0;
-		gatt_discon.param.net_idx = 0;
-		break;
-	case 1:
-		// For RTK mesh stack, disconnect a BLE GATT link use conn handle
-		gatt_discon.conn_handle = str_to_int(argv[0]);
-		break;
-	default:
-		break;
-	}
+	gatt_discon.conn_handle = str_to_int(argv[0]);
 	if ((ret = rtk_bt_mesh_stack_prov_pb_gatt_discon(&gatt_discon)) != 0) {
 		BT_LOGE("Pb gatt disconnect failed! err: 0x%x\r\n", ret);
 		return -1;
 	}
 	return 0;
 #else
-	(void)argc;
 	(void)argv;
 	BT_LOGE("Is not provisioner role, do not support this function.\r\n");
 	return -1;
@@ -510,26 +475,16 @@ static int atcmd_ble_mesh_lpn_init(int argc, char **argv)
 
 static int atcmd_ble_mesh_lpn_req(int argc, char **argv)
 {
+	(void)argc;
 #if defined(RTK_BLE_MESH_LPN_SUPPORT) && RTK_BLE_MESH_LPN_SUPPORT
 	uint16_t ret = 0;
 	rtk_bt_mesh_stack_act_lpn_req_t lpn_request = {0};
-	switch (argc) {
-	case 0:
-		// For zephyr mesh stack, do not need any param
-		break;
-	case 6: {
-		// For RTK mesh stack
-		lpn_request.fn_index = str_to_int(argv[0]);
-		lpn_request.net_key_index = str_to_int(argv[1]);
-		lpn_request.poll_interval = str_to_int(argv[2]);
-		lpn_request.poll_timeout = str_to_int(argv[3]);
-		lpn_request.frnd_rx_delay = str_to_int(argv[4]);
-		lpn_request.frnd_rx_widen = str_to_int(argv[5]);
-		break;
-	}
-	default:
-		break;
-	}
+	lpn_request.fn_index = str_to_int(argv[0]);
+	lpn_request.net_key_index = str_to_int(argv[1]);
+	lpn_request.poll_interval = str_to_int(argv[2]);
+	lpn_request.poll_timeout = str_to_int(argv[3]);
+	lpn_request.frnd_rx_delay = str_to_int(argv[4]);
+	lpn_request.frnd_rx_widen = str_to_int(argv[5]);
 	ret = rtk_bt_mesh_stack_lpn_req(&lpn_request);
 	if (ret) {
 		BT_LOGE("[%s] Low power node request friendship failed! reason: 0x%x\r\n", __func__, ret);
@@ -537,7 +492,6 @@ static int atcmd_ble_mesh_lpn_req(int argc, char **argv)
 	}
 	return 0;
 #else
-	(void)argc;
 	(void)argv;
 	BT_LOGE("Is not device role or not suppport low power feature, do not support this function.\r\n");
 	return -1;
@@ -659,8 +613,8 @@ static const cmd_table_t mesh_stack_cmd_table[] = {
 	{"fn_deinit",   atcmd_ble_mesh_fn_deinit,                 1, 1},
 	{"pbadvcon",    atcmd_ble_mesh_pbadvcon,                  2, 2},
 	{"pbadvdiscon", atcmd_ble_mesh_pbadv_discon,              1, 1},
-	{"gatt_con",    atcmd_ble_mesh_pb_gatt_con,               1, 3},
-	{"gatt_discon", atcmd_ble_mesh_pb_gatt_discon,            1, 2},
+	{"gatt_con",    atcmd_ble_mesh_pb_gatt_con,               3, 3},
+	{"gatt_discon", atcmd_ble_mesh_pb_gatt_discon,            2, 2},
 	{"prov",        atcmd_ble_mesh_start_provisioning,        1, 2},
 	{"prov_choose", atcmd_ble_mesh_method_choose_for_prov,    1, 6},
 	{"prov_dis",    atcmd_ble_mesh_prov_service_disvery,      2, 2},
@@ -668,7 +622,7 @@ static const cmd_table_t mesh_stack_cmd_table[] = {
 	{"proxy_dis",   atcmd_ble_mesh_proxy_service_disvery,     2, 2},
 	{"proxy_notify", atcmd_ble_mesh_proxy_service_set_notify,  2, 2},
 	{"lpn_init",    atcmd_ble_mesh_lpn_init,                  2, 2},
-	{"lpn_req",     atcmd_ble_mesh_lpn_req,                   1, 7},
+	{"lpn_req",     atcmd_ble_mesh_lpn_req,                   7, 7},
 	{"lpn_sub",     atcmd_ble_mesh_lpn_sub,                   4, 4},
 	{"lpn_clear",   atcmd_ble_mesh_lpn_clear,                 2, 2},
 	{"lpn_deinit",  atcmd_ble_mesh_lpn_deinit,                1, 1},

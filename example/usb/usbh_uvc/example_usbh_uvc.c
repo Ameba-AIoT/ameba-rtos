@@ -893,9 +893,8 @@ static void example_usbh_uvc_httpc_thread(void *param)
 	}
 
 exit:
-	if (conn != NULL) {
-		httpc_conn_close(conn);
-	}
+	/* Free, not just close: the conn and its header buffers were allocated by httpc_conn_new() */
+	httpc_conn_free(conn);
 	uvc_httpc_connected = 0U;
 	uvc_httpc_thread_alive = 0U;
 	rtos_task_delete(NULL);
@@ -1062,10 +1061,9 @@ static void example_usbh_uvc_httpc_thread(void *param)
 	}
 
 exit:
-	if (conn != NULL) {
-		httpc_conn_close(conn);
-		conn = NULL;
-	}
+	/* Free, not just close: the conn and its header buffers were allocated by httpc_conn_new() */
+	httpc_conn_free(conn);
+	conn = NULL;
 	rtos_mem_free((void *)send_buf);
 	uvc_httpc_thread_alive = 0;
 	rtos_task_delete(NULL);
@@ -1198,10 +1196,9 @@ exit:
 		}
 		rtos_mutex_give(uvc_buf_mutex);
 	}
-	if (conn != NULL) {
-		httpc_conn_close(conn);
-	}
-	/* Cleared LAST -- after uvc_rb is destroyed and the conn closed -- so uvc_httpc_stop()'s
+	/* Free, not just close: the conn and its header buffers were allocated by httpc_conn_new() */
+	httpc_conn_free(conn);
+	/* Cleared LAST -- after uvc_rb is destroyed and the conn freed -- so uvc_httpc_stop()'s
 	 * "while thread_alive" only returns once every resource this thread owned is released. */
 	uvc_httpc_thread_alive = 0U;
 	rtos_task_delete(NULL);
@@ -1442,6 +1439,18 @@ static void example_usbh_uvc_hotplug_thread(void *param)
 	u8 fatal = 0U;
 
 	UNUSED(param);
+
+#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
+	/* The USB OTG ISR is delivered on CPU0: the GIC pins every SPI to core 0
+	   (ITARGETSR is written to 0x01010101 in arm_gic.c gic_dist_init). Pinning the
+	   hotplug/deinit thread to CPU0 puts it on the same core as the ISR, so the
+	   local interrupt disables inside the teardown are meaningful again. The frame
+	   worker stays unaffined: it is excluded from the teardown by the join above,
+	   not by core.
+	   Done by the thread itself, first: a created thread may already run on another core, and its
+	   creator pinning it afterwards could come too late or reach a task that has deleted itself. */
+	rtos_task_set_affinity(rtos_task_handle_get(), 0);
+#endif
 
 	while (1) {
 		if (rtos_sema_take(uvc_detach_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
@@ -1994,15 +2003,6 @@ static int uvc_start(void) {
 		}
 		return ret;
 	}
-#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
-	/* The USB OTG ISR is delivered on CPU0: the GIC pins every SPI to core 0
-	   (ITARGETSR is written to 0x01010101 in arm_gic.c gic_dist_init). Pinning the
-	   hotplug/deinit thread to CPU0 puts it on the same core as the ISR, so the
-	   local interrupt disables inside the teardown are meaningful again. The frame
-	   worker stays unaffined: it is excluded from the teardown by the join above,
-	   not by core. */
-	rtos_task_set_affinity(task, 0);
-#endif
 #endif
 
 	return RTK_SUCCESS;
@@ -2026,6 +2026,14 @@ free_sema_exit:
 /* Standalone entry thread: brings the demo up and leaves */
 static void example_usbh_uvc_task(void *param) {
 	UNUSED(param);
+
+#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
+	/* A start that fails rolls back through usbh_deinit(), which waits for no ISR on another
+	   core: run it on CPU0, where the USB IRQ is delivered, as the hotplug thread does.
+	   Done by the thread itself, first: a created thread may already run on another core, and its
+	   creator pinning it afterwards could come too late or reach a task that has deleted itself. */
+	rtos_task_set_affinity(rtos_task_handle_get(), 0);
+#endif
 
 	if (uvc_start() != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Start fail\n");

@@ -50,15 +50,6 @@
 // while enable this configuration,choose the first ch to play
 #define USBD_UAC_DEMUX_CH_DEBUG                   1
 
-// USB speed. Only UAC 1.0 needs to ask: its spec supports Full Speed only, so an
-// HS-capable PHY has to be driven in Full-Speed mode. UAC 2.0 leaves the speed to
-// the core, which clamps to Full Speed by itself on an FS-only SoC.
-#ifdef CONFIG_USBD_UAC1
-#define USBD_UAC_USB_SPEED                        USB_SPEED_HIGH_IN_FULL
-#else
-#define USBD_UAC_USB_SPEED                        USB_SPEED_HIGH
-#endif
-
 // Thread priorities
 #define USBD_UAC_INIT_THREAD_PRIORITY             6
 #define USBD_UAC_HOTPLUG_THREAD_PRIORITY          8
@@ -190,7 +181,8 @@ static const usbd_config_t uac_cfg = {
 #else
 		.prod_str = "Realtek UAC2.0 Device",
 #endif
-		.speed = USBD_UAC_USB_SPEED,
+		/* High Speed, clamped to Full Speed by the core on an FS-only SoC */
+		.speed = USB_SPEED_HIGH,
 	},
 	.isr_priority = INT_PRI_MIDDLE,
 #if defined(CONFIG_AMEBAGREEN2)
@@ -403,6 +395,17 @@ static void example_usbd_uac_hotplug_thread(void *param)
 	u8 fatal = 0U;
 
 	UNUSED(param);
+
+#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
+	/* C-2: the USB OTG ISR is delivered on CPU0 (GIC ITARGETSR pins every SPI to core 0).
+	   Pinning the hotplug/deinit thread to CPU0 puts it on the same core as the ISR,
+	   so deinit's local interrupt disable is meaningful again under SMP. The player /
+	   record data threads stay unaffined: a pending deinit is excluded from them by
+	   uac_play_lock / uac_record_lock, not by core.
+	   Done by the thread itself, first: a created thread may already run on another core, and its
+	   creator pinning it afterwards could come too late or reach a task that has deleted itself. */
+	rtos_task_set_affinity(rtos_task_handle_get(), 0);
+#endif
 
 	for (;;) {
 		if (rtos_sema_take(uac_attach_status_changed_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
@@ -983,14 +986,6 @@ static int uac_start(void)
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create hotplug task fail\n");
 		goto clear_workers_exit;
 	}
-#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
-	/* C-2: the USB OTG ISR is delivered on CPU0 (GIC ITARGETSR pins every SPI to core 0).
-	   Pinning the hotplug/deinit thread to CPU0 puts it on the same core as the ISR,
-	   so deinit's local interrupt disable is meaningful again under SMP. The player /
-	   record data threads stay unaffined: a pending deinit is excluded from them by
-	   uac_play_lock / uac_record_lock, not by core. */
-	rtos_task_set_affinity(task, 0);
-#endif
 #endif // USBD_UAC_HOTPLUG
 
 	return RTK_SUCCESS;
@@ -1021,6 +1016,14 @@ exit:
 static void example_usbd_uac_thread(void *param)
 {
 	UNUSED(param);
+
+#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
+	/* A start that fails rolls back through usbd_deinit(), which waits for no ISR on another
+	   core: run it on CPU0, where the USB IRQ is delivered, as the hotplug thread does.
+	   Done by the thread itself, first: a created thread may already run on another core, and its
+	   creator pinning it afterwards could come too late or reach a task that has deleted itself. */
+	rtos_task_set_affinity(rtos_task_handle_get(), 0);
+#endif
 
 	if (uac_start() != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Start fail\n");
