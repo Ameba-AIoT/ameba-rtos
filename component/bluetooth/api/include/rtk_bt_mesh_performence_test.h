@@ -12,8 +12,8 @@
 
 /******************Opcode define***********************/
 /**
- * @typedef   rtk_bt_mesh_performence_test_act_t
- * @brief     BLE MESH performence test act definition.
+ * @typedef   rtk_bt_mesh_performence_test_opcode_t
+ * @brief     BLE MESH performence test opcode definition.
  */
 typedef enum {
 	RTK_BT_MESH_PERFORMENCE_TEST_PARAM_SET = 1,
