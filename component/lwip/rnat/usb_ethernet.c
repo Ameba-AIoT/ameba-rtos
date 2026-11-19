@@ -202,6 +202,14 @@ static void usb_eth_hotplug_thread(void *param)
 	u8 current_status;
 	UNUSED(param);
 
+#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
+	/* This thread may run usbd_deinit(), which waits for no ISR on another core: run it on CPU0, where the
+	   USB IRQ is delivered (arm_gic.c pins every SPI to core 0).
+	   Pinned by the thread itself, first: a created thread may already run on another core. */
+	rtos_task_set_affinity(rtos_task_handle_get(), 0);
+#endif
+
+
 	cdc_ecm_hotplug_running = 1;
 
 	while (cdc_ecm_hotplug_running) {
@@ -436,6 +444,14 @@ static void usb_eth_hotplug_thread(void *param)
 	int ret;
 	UNUSED(param);
 
+#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
+	/* This thread may run usbh_deinit(), which waits for no ISR on another core: run it on CPU0, where the
+	   USB IRQ is delivered (arm_gic.c pins every SPI to core 0).
+	   Pinned by the thread itself, first: a created thread may already run on another core. */
+	rtos_task_set_affinity(rtos_task_handle_get(), 0);
+#endif
+
+
 	for (;;) {
 		usb_os_sema_take(cdc_ecm_detach_sema, USB_OS_SEMA_TIMEOUT);
 
@@ -486,6 +502,14 @@ static void usb_eth_link_change_thread(void *param)
 	usb_eth_state_t state = ETH_STATUS_IDLE;
 
 	UNUSED(param);
+
+#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1) && defined(CONFIG_USBH_CDC_ECM)
+	/* In host mode this thread brings the USB host up, whose failure path runs usbh_deinit(), which waits
+	   for no ISR on another core: run it on CPU0, where the USB IRQ is delivered (arm_gic.c pins every SPI
+	   to core 0). Pinned by the thread itself, first: a created thread may already run on another core. */
+	rtos_task_set_affinity(rtos_task_handle_get(), 0);
+#endif
+
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Enter link status task\n");
 
 #if defined(CONFIG_USBH_CDC_ECM)

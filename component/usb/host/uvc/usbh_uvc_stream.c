@@ -1468,7 +1468,9 @@ int usbh_uvc_stream_open(usbh_uvc_stream_t *stream)
 #endif
 
 	/*init frame buffer*/
-	stream->frame_buf = (u8 *)usb_os_malloc(USBH_UVC_VIDEO_FRAME_NUMS * frame_buf_size);
+	/* Frame data is always written by the receive path and read only up to
+	 * byteused, so the buffers need no zero-fill. Freed by usb_os_mfree(). */
+	stream->frame_buf = (u8 *)rtos_mem_malloc(USBH_UVC_VIDEO_FRAME_NUMS * frame_buf_size);
 	if (stream->frame_buf == NULL) {
 		goto exit;
 	}

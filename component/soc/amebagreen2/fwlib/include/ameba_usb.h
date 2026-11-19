@@ -41,12 +41,18 @@ extern "C" {
 
 #define USB_ADDON_REG_AUTOLOAD_CTRL                         (USB_ADDON_REG_BASE + 0xA4UL)
 
-#define USB_ADDON_REG_AUTOLOAD_CTRL_BIT_SQNUM_ROM           BIT(0)
+/* 0: the serial number comes from OTP, 1: the ROM default one is used */
+#define USB_ADDON_REG_AUTOLOAD_CTRL_BIT_SN_FROM_ROM         BIT(0)
 #define USB_ADDON_REG_AUTOLOAD_CTRL_BIT_REMOTE_WAKEUP       BIT(1)
 #define USB_ADDON_REG_AUTOLOAD_CTRL_BIT_SELF_POWER_EN       BIT(2)
 #define USB_ADDON_REG_AUTOLOAD_CTRL_BIT_AUTOLOAD_UPHY_EN    BIT(3)
 #define USB_ADDON_REG_AUTOLOAD_CTRL_BIT_AUTOLOAD_DESC_EN    BIT(4)
 #define USB_ADDON_REG_AUTOLOAD_CTRL_BIT_BT_INTR_INTERVAL    BIT(5)
+
+/* The bits above are the ones the register defines; [7:6] are reserved and must not take part in any comparison */
+#define USB_ADDON_REG_AUTOLOAD_CTRL_BIT_MASK                (USB_ADDON_REG_AUTOLOAD_CTRL_BIT_SN_FROM_ROM | USB_ADDON_REG_AUTOLOAD_CTRL_BIT_REMOTE_WAKEUP | \
+															 USB_ADDON_REG_AUTOLOAD_CTRL_BIT_SELF_POWER_EN | USB_ADDON_REG_AUTOLOAD_CTRL_BIT_AUTOLOAD_UPHY_EN | \
+															 USB_ADDON_REG_AUTOLOAD_CTRL_BIT_AUTOLOAD_DESC_EN | USB_ADDON_REG_AUTOLOAD_CTRL_BIT_BT_INTR_INTERVAL)
 
 /* USB OTG addon autoload registers */
 #define USB_ADDON_REG_AUTOLOAD_UPHY_P0E0                    (USB_ADDON_REG_BASE + 0xE0UL)
@@ -63,19 +69,16 @@ extern "C" {
  * @brief USB PHY parameters sourced directly from the OTP logical area, used when the
  *        HW autoload shadow registers above are unavailable: FT-unprogrammed parts, or
  *        after the system returns from PG (PG resets the autoload registers).
- *   - flag @0x2A4 has BIT(3) set (USB_OTP_UPHY_FLAG_AUTOLOAD_UPHY_EN_BIT) and != 0xFF:
- *       params programmed -> apply the 32-byte packed block @0x2E0
+ *   The byte at 0x2A4 is the AUTOLOAD_CTRL value both shadows were loaded from, so it is compared against
+ *   AUTOLOAD_CTRL over the defined bits (reserved [7:6] ignored): equal means the shadows still hold it, any
+ *   difference means they lost their content and this byte decides instead. With that value:
+ *   - BIT(3) set and != 0xFF: params programmed -> apply the 32-byte packed block @0x2E0
  *       (same byte layout as the ADDON autoload UPHY regs above)
- *   - flag @0x2A4 == 0xFF : OTP never programmed -> apply the fixed default set
- *   - BIT(3) clear or any unexpected value : OTP absent/corrupt -> apply the fixed default set
- *   The flag also mirrors the AUTOLOAD_CTRL identity bits (USB_OTP_FLAG_AUTOLOAD_CTRL_MASK), used when the shadow lost them;
- *   there a 0xFF flag counts as programmed unless VID @0x2A0 and PID @0x2A2 read 0xFF as well
+ *   - == 0xFF, or BIT(3) clear, or any unexpected value : OTP absent/corrupt -> apply the fixed default set
+ *   The flag alone decides here, so a burn that left the VID/PID blank still gets its factory calibration.
  * @{
  **/
-#define USB_OTP_FLAG_AUTOLOAD_CTRL_MASK                     (USB_ADDON_REG_AUTOLOAD_CTRL_BIT_SQNUM_ROM | USB_ADDON_REG_AUTOLOAD_CTRL_BIT_REMOTE_WAKEUP | \
-                                                             USB_ADDON_REG_AUTOLOAD_CTRL_BIT_SELF_POWER_EN | USB_ADDON_REG_AUTOLOAD_CTRL_BIT_AUTOLOAD_DESC_EN)
 #define USB_OTP_UPHY_FLAG_OFFSET                            0x2A4U
-#define USB_OTP_UPHY_FLAG_AUTOLOAD_UPHY_EN_BIT              BIT(3)
 #define USB_OTP_UPHY_FLAG_BLANK                             0xFFU
 #define USB_OTP_UPHY_PARA_OFFSET                            0x2E0U
 #define USB_OTP_UPHY_PARA_LEN                               32U

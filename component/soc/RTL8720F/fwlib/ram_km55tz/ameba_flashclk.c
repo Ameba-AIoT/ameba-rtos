@@ -8,7 +8,7 @@
 
 static const char *const TAG = "FLASH";
 
-static u32 FLASH_PLLGet_ClockFreq(void)
+static u32 FLASH_PLLGet_ClockFreq(u32 spic_max)
 {
 	u8 spic_ckd;
 	u32 flash_clk;
@@ -16,7 +16,7 @@ static u32 FLASH_PLLGet_ClockFreq(void)
 	u32 sys_pll_clk = GBSS_DEV->clk_info_bk.SYSPLL_CLK;
 
 	/* set spic clock src and div */
-	spic_ckd = PLL_ClkSrcGet(sys_pll_clk, usb_pll_clk, CLK_LIMIT_SPIC);
+	spic_ckd = PLL_ClkSrcGet(sys_pll_clk, usb_pll_clk, spic_max);
 	if (spic_ckd & IS_SYS_PLL) {
 		flash_clk = sys_pll_clk / (2 * GET_CLK_DIV(spic_ckd));
 	} else {
@@ -57,6 +57,27 @@ static void flash_cs_timing_config(u32 bus_clk)
 				 CS_ACTIVE_HOLD(cs_hold) | CS_H_WR_DUM_LEN(cs_high) | CS_H_RD_DUM_LEN(cs_high);
 }
 
+/**
+  * @brief  Set the SPIC pads at the given location to the weakest driving, E2 = 0.
+  * @param  PinLocation: PINMUX_EXTERNAL or PINMUX_INTERNAL.
+  * @note   Runs from flash while the flash is still on the boot clock.
+  * @retval None
+  */
+static void flash_pad_drv_config(u32 PinLocation)
+{
+	u8 int_pin[6] = {FLASH_PIN_INTERNAL_CSN, FLASH_PIN_INTERNAL_CLK, FLASH_PIN_INTERNAL_D0,
+					 FLASH_PIN_INTERNAL_D1, FLASH_PIN_INTERNAL_D2, FLASH_PIN_INTERNAL_D3
+					};
+	u8 ext_pin[6] = {FLASH_PIN_EXTERNAL_CSN, FLASH_PIN_EXTERNAL_CLK, FLASH_PIN_EXTERNAL_D0,
+					 FLASH_PIN_EXTERNAL_D1, FLASH_PIN_EXTERNAL_D2, FLASH_PIN_EXTERNAL_D3
+					};
+	u8 *pin = (PinLocation == PINMUX_INTERNAL) ? int_pin : ext_pin;
+
+	for (int i = 0; i < 6; i++) {
+		PAD_DrvStrength(pin[i], PAD_DRV_ABILITITY_LOW);
+	}
+}
+
 SRAMDRAM_ONLY_TEXT_SECTION
 static void FLASH_PLLInit_ClockDiv(void)
 {
@@ -72,10 +93,17 @@ static void FLASH_PLLInit_ClockDiv(void)
 }
 
 SRAMDRAM_ONLY_TEXT_SECTION
-int flash_handshake_highspeed(void)
+int flash_handshake_highspeed(u32 flash_clk)
 {
 	u8 Dphy_Dly_Cnt = 3; /* DD recommend this value */
 	int Ret = RTK_FAIL;
+
+	/* The flash side of HPM has to be in place before the clock is raised. If it
+	 * cannot be set the flash stays on the boot clock. */
+	if (flash_nor_set_dc(flash_clk) != RTK_SUCCESS) {
+		RTK_LOGE(TAG, "Flash HPM set fail, use XTAL\n");
+		return RTK_FAIL;
+	}
 
 	/* Open handshake function */
 	FLASH_Read_HandShake_Cmd(Dphy_Dly_Cnt, ENABLE);
@@ -101,46 +129,49 @@ int flash_handshake_highspeed(void)
   * @param  spic_mode: the bitmode to try first, degraded down to Spic1IOBitMode on failure.
   * @param  flash_clk: the flash clock in Hz spic_mode will run at, 0 if the flash still
   *                    runs on the boot clock. Passed on to flash_nor_set_hpm_mode().
-  * @retval RTK_SUCCESS or RTK_FAIL
+  * @retval RTK_SUCCESS if the flash reads back in spic_mode, RTK_FAIL otherwise
   */
 SRAMDRAM_ONLY_TEXT_SECTION
 int flash_rx_mode_switch(u32 spic_mode, u32 flash_clk)
 {
-	int Ret = RTK_SUCCESS;
+	u32 req_mode = spic_mode;
 	char *str[] = {"1IO", "2O", "2IO", "4O", "4IO"};
 
 	/* Try sequentially: 4IO, 4O, 2IO, 2O, 1bit */
-	while (1) {
+	do {
 		/* Apply the vendor setting this bitmode & clock needs before probing it */
 		flash_nor_set_hpm_mode(spic_mode, flash_clk);
 
 		FLASH_Init(spic_mode);
 
-		if (spic_mode == Spic1IOBitMode) {
-			RTK_LOGE(TAG, "Flash Switch Read Mode FAIL\n");
-			Ret = RTK_FAIL;
-			break;
-		}
-
 		if (FLASH_Read_DataIsRight(valid_img1_addr)) {
-			RTK_LOGI(TAG, "Flash Read %s\n", str[spic_mode]);
 			break;
 		}
+	} while (spic_mode--);
 
-		spic_mode--;
+	if (spic_mode != req_mode) {
+		RTK_LOGE(TAG, "Flash Read %s not reached\n", str[req_mode]);
+		return RTK_FAIL;
 	}
 
-	return Ret;
+	RTK_LOGI(TAG, "Flash Read %s\n", str[spic_mode]);
+	return RTK_SUCCESS;
 }
 
-
+/**
+  * @brief  Set the flash read mode and clock.
+  * @param  read_mode: the read bitmode to set.
+  * @param  spic_max: the SPIC clock upper limit in Hz. The fastest PLL clock not above it is used.
+  * @note   Fail leaves the flash readable (fallback bitmode and/or boot clock), the request is not met.
+  * @retval RTK_SUCCESS if the flash is in read_mode and calibrated at the selected clock, RTK_FAIL otherwise
+  */
 SRAMDRAM_ONLY_TEXT_SECTION
-void flash_highspeed_setup(void)
+int flash_highspeed_setup(u32 read_mode, u32 spic_max)
 {
 	uint32_t irq_status;
-	u32 read_mode, Temp;
-	u32 flash_clk = 0;
-	read_mode = flash_get_readmode(Flash_ReadMode);
+	int Ret;
+	/* Boot clock first: the flash runs at XTAL / 2 until the PLL clock is taken */
+	u32 flash_clk = XTAL_ClkGet() / 2;
 
 	irq_status = irq_disable_save();
 
@@ -149,43 +180,44 @@ void flash_highspeed_setup(void)
 	 */
 	SPIC->CTRLR0 |= BIT_SPI_DREIR_R_DIS;
 
+	/* Weakest pad driving before the read mode is probed and calibrated */
+	flash_pad_drv_config(flash_init_para.FLASH_pinmux);
+
 	/* Get flash ID to reinitialize FLASH_InitTypeDef structure */
 	flash_nor_get_vendor();
 
-	/* Set flash status register: set QE, clear protection bits */
+	/* Set flash status register: set QE, the 4IO read mode below needs it */
 	flash_nor_set_qe_register();
 
-	if (SYSCFG_CHIPType_Get() != CHIP_TYPE_FPGA) {
-		/* Calculate flash actual freq according to CLK_LIMIT_SPIC. The dummy cycle and
-		   the flash side setting it implies are handled by flash_nor_set_hpm_mode() */
-		flash_clk = FLASH_PLLGet_ClockFreq();
+	/* Set flash I/O mode and high-speed calibration on the boot clock, FPGA works in 4IO as well */
+	Ret = flash_rx_mode_switch(read_mode, flash_clk);
 
-		/* CS timing for the PLL clock, in place before the clock is switched */
-		flash_cs_timing_config(flash_clk * 2 * flash_init_para.FLASH_baud_rate);
+	if (SYSCFG_CHIPType_Get() == CHIP_TYPE_FPGA) {
+		goto exit;
 	}
 
-	/* Set flash I/O mode and high-speed calibration */
-	flash_rx_mode_switch(read_mode, flash_clk);
+	/* Calculate flash actual freq according to spic_max. The DC bit and the
+	   dummy cycle it implies are set by flash_nor_set_dc() in the handshake */
+	flash_clk = FLASH_PLLGet_ClockFreq(spic_max);
 
-	/* Two SPIC in Dplus, SPIC0(Boot) Can connect to S0 or S1, when SPIC0 select one, SPIC1(Combo) use another one */
-	Temp = HAL_READ32(SYSTEM_CTRL_BASE, REG_LSYS_PSRAMC_FLASH_CTRL);
-
-	/* RL6955 LSYS_BIT_FLASH_FEEDBACK_LOC bit define is different from rl7005 project */
-	if (PINMUX_EXTERNAL == flash_init_para.FLASH_pinmux) {
-		HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_PSRAMC_FLASH_CTRL, Temp | LSYS_BIT_FLASH_FEEDBACK_LOC);
-	} else {
-		HAL_WRITE32(SYSTEM_CTRL_BASE, REG_LSYS_PSRAMC_FLASH_CTRL, Temp & ~LSYS_BIT_FLASH_FEEDBACK_LOC);
+	/* The flash cannot run at that clock even with its DC bit set: stay on XTAL */
+	if (flash_nor_check_clk(flash_clk) != RTK_SUCCESS) {
+		RTK_LOGE(TAG, "Flash out of spec at %d Hz, use XTAL\n", flash_clk);
+		Ret = RTK_FAIL;
+		goto exit;
 	}
 
-	/* Enable handshake to speed up simulation */
-	if (SYSCFG_CHIPType_Get() != CHIP_TYPE_FPGA) {
-		if (flash_handshake_highspeed() != RTK_SUCCESS) {
-			/* fell back to XTAL */
-			flash_cs_timing_config(XTAL_ClkGet());
-		}
+	/* CS timing for the PLL clock, in place before the clock is switched */
+	flash_cs_timing_config(flash_clk * 2 * flash_init_para.FLASH_baud_rate);
+
+	/* Enable handshake to speed up simulation, a failure leaves the flash on XTAL */
+	if (flash_handshake_highspeed(flash_clk) != RTK_SUCCESS) {
+		Ret = RTK_FAIL;
 	}
 
+exit:
 	irq_enable_restore(irq_status);
+	return Ret;
 }
 
 /* init psramc for flash r/w if needed */
@@ -207,8 +239,10 @@ void Combo_SPIC_Init(void)
 	/*2. ComboSpic pinmux set which is contrary to bootSpic */
 	if (PINMUX_EXTERNAL == FLASH_InitStruct->FLASH_pinmux) {
 		Pinmux_ComboSpicCtrl(PINMUX_INTERNAL, ON);
+		flash_pad_drv_config(PINMUX_INTERNAL);
 	} else {
 		Pinmux_ComboSpicCtrl(PINMUX_EXTERNAL, ON);
+		flash_pad_drv_config(PINMUX_EXTERNAL);
 	}
 
 	/*3. use bootSpic para to config ComboSpic(Default NorFlash Config) where 1IO autoread is common for all flash */

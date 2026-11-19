@@ -42,10 +42,14 @@ static void prb_priv_beacon_status(struct bt_mesh_priv_beacon_cli *cli, uint16_t
 	rtk_bt_evt_t *p_evt = NULL;
 	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_PRIVATE_BEACON_CLIENT_MODEL, RTK_BT_MESH_PRIVATE_BEACON_CLIENT_MODEL_EVT_STATUS,
 								sizeof(rtk_bt_mesh_private_beacon_status_t));
-	status = (rtk_bt_mesh_private_beacon_status_t *)p_evt->data;
-	status->private_beacon = priv_beacon->enabled;
-	status->random_update_interval_steps = priv_beacon->rand_interval;
-	rtk_bt_evt_indicate(p_evt, NULL);
+	if (p_evt) {
+		status = (rtk_bt_mesh_private_beacon_status_t *)p_evt->data;
+		status->private_beacon = priv_beacon->enabled;
+		status->random_update_interval_steps = priv_beacon->rand_interval;
+		rtk_bt_evt_indicate(p_evt, NULL);
+	} else {
+		BT_LOGE("[%s] Create event fail\r\n", __func__);
+	}
 }
 
 static void prb_priv_gatt_proxy_status(struct bt_mesh_priv_beacon_cli *cli, uint16_t addr, uint8_t gatt_proxy)
@@ -56,9 +60,13 @@ static void prb_priv_gatt_proxy_status(struct bt_mesh_priv_beacon_cli *cli, uint
 	rtk_bt_evt_t *p_evt = NULL;
 	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_PRIVATE_BEACON_CLIENT_MODEL, RTK_BT_MESH_PRIVATE_BEACON_CLIENT_MODEL_EVT_GATT_PROXY_STATUS,
 								sizeof(rtk_bt_mesh_private_gatt_proxy_status_t));
-	status = (rtk_bt_mesh_private_gatt_proxy_status_t *)p_evt->data;
-	status->private_gatt_proxy = gatt_proxy;
-	rtk_bt_evt_indicate(p_evt, NULL);
+	if (p_evt) {
+		status = (rtk_bt_mesh_private_gatt_proxy_status_t *)p_evt->data;
+		status->private_gatt_proxy = gatt_proxy;
+		rtk_bt_evt_indicate(p_evt, NULL);
+	} else {
+		BT_LOGE("[%s] Create event fail\r\n", __func__);
+	}
 }
 
 static void prb_priv_node_id_status(struct bt_mesh_priv_beacon_cli *cli, uint16_t addr, struct bt_mesh_priv_node_id *priv_node_id)
@@ -69,11 +77,15 @@ static void prb_priv_node_id_status(struct bt_mesh_priv_beacon_cli *cli, uint16_
 	rtk_bt_evt_t *p_evt = NULL;
 	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_PRIVATE_BEACON_CLIENT_MODEL, RTK_BT_MESH_PRIVATE_BEACON_CLIENT_MODEL_EVT_NODE_IDENTITY_STATUS,
 								sizeof(rtk_bt_mesh_private_node_identity_status_t));
-	status = (rtk_bt_mesh_private_node_identity_status_t *)p_evt->data;
-	status->status = priv_node_id->status;
-	status->net_key_index = priv_node_id->net_idx;
-	status->private_identity = priv_node_id->state;
-	rtk_bt_evt_indicate(p_evt, NULL);
+	if (p_evt) {
+		status = (rtk_bt_mesh_private_node_identity_status_t *)p_evt->data;
+		status->status = priv_node_id->status;
+		status->net_key_index = priv_node_id->net_idx;
+		status->private_identity = priv_node_id->state;
+		rtk_bt_evt_indicate(p_evt, NULL);
+	} else {
+		BT_LOGE("[%s] Create event fail\r\n", __func__);
+	}
 }
 
 const struct bt_mesh_priv_beacon_cli_cb prb_cb = {
@@ -105,11 +117,8 @@ uint16_t bt_mesh_private_beacon_client_model_act_handle(rtk_bt_cmd_t *p_cmd)
 		rtk_bt_mesh_private_beacon_set_t *param = (rtk_bt_mesh_private_beacon_set_t *)p_cmd->param;
 		struct bt_mesh_priv_beacon val;
 		val.enabled = param->private_beacon;
-		if (param->has_random_update) {
-			val.rand_interval = param->random_update_interval_steps;
-		} else {
-			val.rand_interval = 0;
-		}
+		val.has_rand_interval = param->has_random_update;
+		val.rand_interval = param->has_random_update ? param->random_update_interval_steps : 0;
 		ret = (uint16_t)bt_mesh_priv_beacon_cli_set(param->net_key_index, param->dst, &val, NULL);
 		break;
 	}

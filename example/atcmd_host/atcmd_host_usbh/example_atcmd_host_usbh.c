@@ -452,6 +452,14 @@ static void cdc_acm_hotplug_thread(void *param)
 
 	UNUSED(param);
 
+#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
+	/* This thread may run usbh_deinit(), which waits for no ISR on another core: run it on CPU0, where the
+	   USB IRQ is delivered (arm_gic.c pins every SPI to core 0).
+	   Pinned by the thread itself, first: a created thread may already run on another core. */
+	rtos_task_set_affinity(rtos_task_handle_get(), 0);
+#endif
+
+
 	for (;;) {
 		if (xSemaphoreTake(cdc_acm_detach_sema, 0xFFFFFFFF) == pdPASS) {
 			vTaskDelay(100);
@@ -483,6 +491,14 @@ static void atcmd_usbh_cdc_acm_task(void *param)
 	int status;
 
 	UNUSED(param);
+
+#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
+	/* This thread may run usbh_deinit(), which waits for no ISR on another core: run it on CPU0, where the
+	   USB IRQ is delivered (arm_gic.c pins every SPI to core 0).
+	   Pinned by the thread itself, first: a created thread may already run on another core. */
+	rtos_task_set_affinity(rtos_task_handle_get(), 0);
+#endif
+
 
 	cdc_acm_detach_sema = (void *)xSemaphoreCreateCounting(0xFFFF, 0);
 	cdc_acm_attach_sema = (void *)xSemaphoreCreateCounting(0xFFFF, 0);

@@ -1,6 +1,6 @@
 # Example Description
 
-In this application, Ameba is designed as a USB Type-C headset: a USB UAC and HID composite device. The USB host recognizes Ameba as an audio speaker (and a microphone with UAC 2.0) plus the standard headset buttons on the HID Consumer Control page, Play/Pause, Volume Up/Down, Voice Command and Mute, as the Android USB headset specification defines. They work with the inbox drivers of Windows, macOS, Linux, Android and iOS, no vendor tool is needed.
+In this application, Ameba is designed as a USB Type-C headset: a USB UAC and HID composite device. The USB host recognizes Ameba as an audio speaker (and a microphone with the record option) plus the standard headset buttons on the HID Consumer Control page, Play/Pause, Volume Up/Down, Voice Command and Mute, as the Android USB headset specification defines. They work with the inbox drivers of Windows, macOS, Linux, Android and iOS, no vendor tool is needed.
 
 The interfaces are laid out as on a Type-C headset: the UAC interfaces come first, the HID button interface last.
 
@@ -10,10 +10,11 @@ None
 
 # SW configuration
 
-1. Menuconfig
-	Use menuconfig and :
-	- Choose `CONFIG USB --->`:
+1. Default configuration
+
+	The `prj.conf` of this example sets the options below by default, no menuconfig is needed to run it:
 	```
+	CONFIG USB --->
 	[*] Enable USB
 			USB Mode (Device)  --->
 		*** USB Device Global Settings ***
@@ -23,27 +24,45 @@ None
 			Select HID device type (Headset buttons)  --->
 	[*] UAC
 			Select UAC Version (UAC 2.0)  --->
+	[*]     Enable record (microphone)
 	```
-	- Choose `CONFIG APPLICATION --->` -> `Audio Config --->`:
+
+2. Build
+
+	```
+	./ameba.py build -a usbd_composite_hid_uac -p
+	```
+	`-p` (pristine) drops the previous configuration and applies the `prj.conf` of this example.
+
+3. (Optional) Change the configuration
+
+	Only needed when the default configuration does not fit:
+	1. Build once with `-p` as in step 2, so that the configuration starts from `prj.conf`.
+	2. Run `./ameba.py menuconfig` and change the options.
+	3. Rebuild without `-p`: `./ameba.py build -a usbd_composite_hid_uac`.
+
+	To keep a change permanently, add its `CONFIG_XXX=y` lines to `prj.conf` instead and build with `-p`.
+
+	The `prj.conf` of this example selects UAC 2.0 (`CONFIG_USBD_UAC2_MENU=y`); the playback is 2 channels, 16-bit and 48 kHz max by default.
+
+	The microphone is on by default (`CONFIG_USBD_UAC_RECORD=y` in `prj.conf`, menuconfig `Enable record (microphone)`): it is reported to the host and `AT+USBDHIDUAC=record` is registered. Remove the line to build playback only. UAC 1.0 and UAC 2.0 both support it, and both run at High Speed on an HS-capable SoC. The microphone streams the single format chosen under `Enable record (microphone)`: `Record channels`, `Record bit width` and `Record sampling rate`, 16 kHz, 2 channels, 16-bit by default. The built-in clip of the example is in that format, so the build stops with an error for any other one.
+
+	On the SoCs whose audio driver supports USB audio (RTL8730E, RTL8721Dx), selecting `UAC` also enables the audio framework (`CONFIG APPLICATION ---> Audio Config ---> Enable Audio Framework`), keep its default interface:
 	```
 	[*] Enable Audio Framework
 			Select Audio Interfaces (Mixer)  --->
 
 	Note: For details on audio configuration, please refer to https://aiot.realmcu.com/en/latest/rtos/multimedia/audio/index.html
 	```
+	On RTL8721F the example is built without the audio framework (the SoC has no `SUPPORT_AUDIO_FOR_USB`), so no OS change is needed: the received audio stream is only drained and counted, see step 4 of Expect result.
 
-	If the development board model is RTL8721F, please follow the steps below to select FREERTOS via menuconfig.
-	Use menuconfig and :
-	- Choose `CONFIG OS --->`:
-	```
-	[*] Enable Kernel
-			Kernel Selecte (FREERTOS)--->
-	```
-	Save and exit.
+4. Download
 
-2. Build and Download:
-   * Refer to the SDK Examples section of the online documentation to generate images.
-   * `Download` images to board by Ameba Image Tool.
+	Flash the images to the board with any of the tools below:
+	* VS Code extension: https://aiot.realmcu.com/en/latest/tools/vscode/index.html
+	* Image Tool (Windows): https://aiot.realmcu.com/en/latest/tools/image_tool/index.html
+	* Flash Tool (cross-platform): https://aiot.realmcu.com/en/latest/tools/flash/index.html
+	* Web flash tool: https://aiot.realmcu.com/en/resource/web_flash_tool.html
 
 # Expect result
 
@@ -67,9 +86,12 @@ None
 	[COMP-I] Audio track demo begin
 	[COMP-I] Audio ch:2,rate:48000,bits=16
 	[COMP-I] Track buf size:<value>
+	[COMP-I] Track buf size:<value>
 	[COMP-I] UAC stop 0
 	```
-	The reported channel count, sample rate and bit width shall match the format selected on the host side. The playback data path itself prints no log. Every mute/volume change issued by the host prints `[COMP-I] Mute:<0|1> vol:<value>`.
+	The reported channel count, sample rate and bit width shall match the format selected on the host side: playback is 44.1 kHz or 48 kHz, 2 channels, 16-bit with the default `UAC` menu. `Track buf size` is printed twice, once when the size is computed and once after the track is initialized; if the audio framework reports no minimum size, the first line reads `Track buf resize to <value>` instead. With `COMP_UAC_DEMUX_CH_DEBUG` set to 1 in `example_usbd_composite_hid_uac.c` (default), only the first channel of the stream is played on the board, set it to 0 to play every channel. The playback data path itself prints no log. Every mute/volume change issued by the host prints `[COMP-I] Mute:<0|1> vol:<value>`.
+
+	On SoCs without `SUPPORT_AUDIO_FOR_USB` (RTL8721F) the audio track is not created: only `[COMP-I] Audio track demo begin` is printed, then a `[COMP-I] Audio track get <len> <total>` line every 200 reads, `<total>` shall keep growing while the host plays.
 
 	Play music on a PC, if you connect a speaker to the board, sound will come out
    ```
@@ -79,17 +101,31 @@ None
 	- If you connect a speaker to the board, sound will play.
    ```
 
-	UAC2.0 supports audio recording by default. The following guide demonstrates how to capture and verify the recording data path using Windows 11 and Audacity as the test environment.
+	On a Linux PC, find the card with `aplay -l` / `arecord -l` (`Realtek HID+UAC Composite Device`), then play a file or a test tone on it:
+	```
+	aplay -D plughw:<card>,0 test.wav
+	speaker-test -D plughw:<card>,0 -c 2 -r 48000 -F S16_LE -t sine
+	```
+	Change the volume or mute the `Realtek HID+UAC Composite Device` card in `alsamixer -c <card>`, each change prints `[COMP-I] Mute:<0|1> vol:<value>`.
+
+	With the record option built (`CONFIG_USBD_UAC_RECORD=y`, on by default), on any supported SoC, the microphone streams 16 kHz, 2 channels, 16-bit. The following guide demonstrates how to capture and verify the recording data path using Windows 11 and Audacity as the test environment.
 	```
 	- Configure Recording Software: Launch Audacity. Navigate to Audio Setup > Recording Device and select the target device: Microphone (Realtek HID+UAC Composite Device).
 	- Initialize Data Stream: Click the Record button on the Audacity toolbar to prepare the Host to receive audio frames.
 	- Execute Test Command: In the device's serial console (UART), execute "AT+USBDHIDUAC=record" command to trigger data transmission.
-	- Verify Output: Audacity will begin receiving a continuous, looping data stream. Once sufficient data has been captured, click the Stop button and play back the track to verify audio integrity; a clear, looping audio signal should be heard.
+	- Verify Output: Audacity receives the spoken word "Realtek" repeated once per second. Stop, then play back the track: each repetition shall sound the same, a click, a gap or a pitch shift indicates lost or misplaced packets.
+	```
+	On a Linux PC, start the capture first, then trigger the replay on the board:
+	```
+	arecord -D plughw:<card>,0 -c 2 -r 16000 -f S16_LE -d 10 rec.wav     # on the PC
+	AT+USBDHIDUAC=record                                                    # on the board
+	aplay rec.wav                                                           # on the PC, the looping clip shall be heard
 	```
 	Triggering the record command prints:
 	```
 	[COMP-I] UAC record start
 	```
+	If the host has not configured the device yet, `[COMP-E] UAC start record fail` is printed instead and the session is dropped.
 
 5. Headset button check: type the commands below in the LOGUART console, each clicks one button (press, then release), the host reacts as to the buttons of a Type-C headset:
 	```
@@ -100,6 +136,8 @@ None
 	AT+USBDHIDUAC=key,voice      # Voice Command: launches the voice assistant on Android, ignored by most PCs
 	```
 	A headset that lacks a button just never reports it, the host needs nothing more.
+
+	On a Linux PC, run `sudo evtest` and select the event device of `Realtek HID+UAC Composite Device`: each command prints a press (value 1) then a release (value 0) of `KEY_PLAYPAUSE`, `KEY_VOLUMEUP`, `KEY_VOLUMEDOWN`, `KEY_VOICECOMMAND` or `KEY_MUTE`.
 
 6. Hotplug check: the example tears down and re-inits the whole composite stack on every detach, so unplug and re-plug the cable, following log shall be printed for each cycle:
 	```
@@ -115,10 +153,19 @@ None
 
 | Command | Description |
 | --- | --- |
+| `AT+USBDHIDUAC=help` | Print the usage, also when the example is not running. |
 | `AT+USBDHIDUAC=key,<play\|volup\|voldown\|voice\|mute>` | Click one headset button: report it pressed, then released. `play`: Play/Pause, `volup`/`voldown`: Volume Up/Down, `voice`: Voice Command, `mute`: Mute. |
-| `AT+USBDHIDUAC=record` | Start the microphone (USB IN) replay, which feeds the built-in audio sample to the host. Each call queues one more session. Only on a UAC 2.0 and non-FS-only build. |
+| `AT+USBDHIDUAC=record` | Start the microphone (USB IN) replay, which loops a built-in 1 s clip of the spoken word "Realtek" (16 kHz, 2 ch, 16-bit) to the host. Each call queues one more session. Only with the record option built. |
 
-Note: `record` is only available on a UAC 2.0 and non-FS-only build.
+Note: `record` is only registered when `CONFIG_USBD_UAC_RECORD=y`, on in the default `prj.conf`.
+
+Errors:
+* `AT+USBDHIDUAC` without a parameter prints the help and ends with `ERROR: -2`.
+* Any sub command other than `help` while the example is not running prints `[COMP-E] Not running` and ends with `ERROR: -7`.
+* A bad or missing key name prints `[COMP-E] Usage: AT+USBDHIDUAC=key,<play|volup|voldown|voice|mute>`, `record` with an argument prints `[COMP-E] Usage: AT+USBDHIDUAC=record`, both end with `ERROR: -2`.
+* An unknown sub command, also `record` on a build without it, prints `[COMP-E] Invalid cmd: <cmd>, try AT+USBDHIDUAC=help` and ends with `ERROR: -2`.
+* If a key report can not be sent (e.g. the host has not configured the device, or the stack is being re-initialized after a detach), `[COMP-W] HID key fail <ret>` is printed and the command ends with `ERROR: <ret>`.
+* `record` ends with `OK` once the session is queued; a session that can not start prints `[COMP-E] UAC start record fail` later.
 
 # Note
 

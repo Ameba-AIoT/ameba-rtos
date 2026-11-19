@@ -1378,7 +1378,7 @@ void ble_mesh_handle_io_msg(T_IO_MSG *io_msg)
 }
 
 /* =============================================== bt mesh stack releate API functions ======================================= */
-static void rtk_stack_set_device_info_display(rkt_bt_mesh_stack_act_device_info_set_t *p_data)
+static void rtk_stack_set_device_info_display(rtk_bt_mesh_stack_act_device_info_set_t *p_data)
 {
 	if (p_data->dev_info_dis) {
 		dev_info_switch_flag = true;

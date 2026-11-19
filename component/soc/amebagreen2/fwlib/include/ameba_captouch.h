@@ -818,7 +818,6 @@ void CapTouch_DbgDumpReg(CAPTOUCH_TypeDef *CapTouch);
 void CapTouch_DbgDumpETC(CAPTOUCH_TypeDef *CapTouch, u32 ch);
 u32 CapTouch_DbgRawData(CAPTOUCH_TypeDef *CapTouch);
 
-void CapTouch_RXDMAConfig(CAPTOUCH_TypeDef *CapTouch, u32 RxDmaBurstSize);
 void CapTouch_RXDMACmd(CAPTOUCH_TypeDef *CapTouch, u32 NewState);
 u8 CapTouch_RXGDMA_Init(CAPTOUCH_TypeDef *CapTouch, GDMA_InitTypeDef *GDMA_InitStruct,
 						void *CallbackData, IRQ_FUN CallbackFunc, u8 *pRxBuf, u32 RxCount);

@@ -54,8 +54,24 @@ function(ameba_soc_internal_library_hook name original_args out_handled)
     endif()
 
     # Path 1: seal build - compile and copy .a to lib/internal/.
-    # Single-condition if() so the release strip step removes this whole block
-    # cleanly from the released SDK.
+    # SEAL_LIB is passed by release.py (-D SEAL_LIB=1) only when releasing the pseudo single core SDK.
+    if(SEAL_LIB)
+        ameba_add_external_module_library(${name}${_psc_mp_suffix} ${_internal_dir} ${_fwd_args})
+        if(c_CURRENT_IMAGE AND c_CURRENT_TARGET_NAME)
+            if(HOOK_p_NO_WHOLE_ARCHIVE)
+                ameba_target_get_output_info(${c_CURRENT_TARGET_NAME} o_path o_name)
+                set_property(TARGET ${c_MCU_PROJ_CONFIG} APPEND PROPERTY
+                    ${c_CURRENT_IMAGE}_no_whole_archive_libs "${o_path}/${o_name}")
+            else()
+                set_property(TARGET ${c_MCU_PROJ_CONFIG} APPEND PROPERTY
+                    ${c_CURRENT_IMAGE}_libraries "${c_CURRENT_TARGET_NAME}")
+            endif()
+        endif()
+        set(c_CURRENT_TARGET_NAME "${c_CURRENT_TARGET_NAME}" PARENT_SCOPE)
+        set(c_CURRENT_TARGET_FILE "${c_CURRENT_TARGET_FILE}" PARENT_SCOPE)
+        set(${out_handled} TRUE PARENT_SCOPE)
+        return()
+    endif()
 
     # Path 2: released prebuilt SDK - register the exact prebuilt lib from lib/internal/.
     # MP suffix selects the correct variant strictly from menuconfig, no fallback.

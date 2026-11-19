@@ -48,11 +48,11 @@
 
 /* UAC endpoint addresses */
 #if defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RLE1509)
-#define COMP_UAC_ISOC_IN_EP                           0x84U
-#define COMP_UAC_ISOC_OUT_EP                          0x05U
+#define COMP_UAC_RECORD_EP                            0x84U
+#define COMP_UAC_PLAY_EP                              0x05U
 #else
-#define COMP_UAC_ISOC_IN_EP                           0x83U
-#define COMP_UAC_ISOC_OUT_EP                          0x04U
+#define COMP_UAC_RECORD_EP                            0x83U
+#define COMP_UAC_PLAY_EP                              0x04U
 #endif
 
 /* HID EP tx buffer size: one max packet, the key report is a single byte */
@@ -63,17 +63,11 @@
 
 #define COMP_UAC_DEMUX_CH_DEBUG                      1
 
-/* Only UAC 1.0 has to pick a speed: its spec supports Full Speed only, so an HS-capable
- * PHY is driven in Full-Speed mode. Otherwise the speed is left to the core, which clamps
- * to Full Speed by itself on an FS-only SoC. */
-#if defined(CONFIG_SUPPORT_USB_FS_ONLY) || defined(CONFIG_USBD_UAC1)
-#ifdef CONFIG_USBD_UAC1
-#define COMP_USB_SPEED                                USB_SPEED_HIGH_IN_FULL
-#endif
-/* Mic recording is only wired up in the UAC 2.0 class driver, and needs High Speed. */
-#define COMP_UAC_ENABLE_RECORD                        0
-#else
+/* Mic recording, built with the class record path: CONFIG USB > UAC > Enable record (microphone) */
+#ifdef CONFIG_USBD_UAC_RECORD
 #define COMP_UAC_ENABLE_RECORD                        1
+#else
+#define COMP_UAC_ENABLE_RECORD                        0
 #endif
 
 // This configuration is used to enable a thread to check hotplug event
@@ -100,6 +94,12 @@
 #define COMP_UAC_RECORD_CHUNK_DELAY_MS                1U
 #include "example_usbd_composite_hid_uac_record_audio_data.h"
 
+/* The clip and COMP_UAC_RECORD_CHUNK_LEN are 16kHz/2ch/16bit, the format the mic reports shall match */
+#if (USBD_UAC_RECORD_SAMPLING_FREQ != USBD_UAC_SAMPLING_FREQ_16K) || (USBD_UAC_RECORD_CHANNEL_COUNT != USBD_UAC_CHANNEL_COUNT_2) || \
+	(USBD_UAC_RECORD_BYTE_WIDTH != USBD_UAC_BYTE_WIDTH_2)
+#error "The built-in record clip is 16 kHz, 2 channels, 16-bit: select this record format in menuconfig, or replace the clip"
+#endif
+
 /* The record thread reads the table in whole chunks, refer to example_usbd_composite_hid_uac_record_thread() */
 _Static_assert((sizeof(usbd_uac_record_audio_data) % COMP_UAC_RECORD_CHUNK_LEN) == 0U, "UAC record data len");
 #endif
@@ -112,6 +112,13 @@ typedef struct {
 	u8 key;
 } composite_hid_key_t;
 
+/* Playback format selected by the host, refer to composite_uac_cb_format_changed() */
+typedef struct {
+	u32 sampling_freq;
+	u8 byte_width;
+	u8 channel_count;
+} composite_uac_play_format_t;
+
 /* Private macros ------------------------------------------------------------*/
 
 /* Private function prototypes -----------------------------------------------*/
@@ -119,7 +126,7 @@ typedef struct {
 /* UAC user callbacks */
 static void composite_uac_cb_mute_changed(u8 mute);
 static void composite_uac_cb_volume_changed(u8 volume);
-static void composite_uac_cb_format_changed(u32 sampling_freq, u8 ch_cnt, u8 byte_width);
+static void composite_uac_cb_format_changed(u32 sampling_freq, u8 channel_count, u8 byte_width);
 
 static int composite_cmd(u16 argc, char *argv[]);
 static void composite_cmd_at(u16 argc, char **argv);
@@ -140,9 +147,6 @@ static const char *const TAG = "COMP";
 static const usbd_config_t composite_cfg = {
 	.info = {
 		.prod_str = "Realtek HID+UAC Composite Device",
-#ifdef COMP_USB_SPEED
-		.speed = COMP_USB_SPEED,
-#endif
 	},
 	/* MIDDLE not HIGHEST: USB ISR at INT_PRI_HIGHEST would preempt audio
 	 * hardware (sport/GDMA use INT_PRI_MIDDLE) — starving I2S DMA completion
@@ -190,25 +194,8 @@ static const usbd_hid_config_t hid_class_cfg = {
 
 /* UAC endpoint configuration */
 static const usbd_uac_config_t uac_class_cfg = {
-	/* in.enable must track record. UAC1's FS config desc declares no ISOC-IN EP
-	 * (IAD bInterfaceCount=2, AS_OUT only); leaving in.enable=1 causes
-	 * SET_CUR SAMPLING_FREQ (usbd_uac1.c ~1236) to ep_init a phantom IN EP
-	 * the host never saw — on amebasmart shared DFIFO this perturbs the IN
-	 * nextep_seq/EPMISCNT chain and breaks isoc-OUT playback in the
-	 * HID+UAC1 combo. */
-#if COMP_UAC_ENABLE_RECORD
-	.in = {
-		.enable = 1,
-		.sampling_freq = USBD_UAC_IN_DEFAULT_SAMPLING_FREQ,
-		.byte_width = USBD_UAC_IN_DEFAULT_BYTE_WIDTH,
-		.ch_cnt = USBD_UAC_IN_DEFAULT_CH_CNT
-	},
-#else
-	.in = {.enable = 0, },
-#endif
-	.out = {.enable = 1, },
-	.isoc_in_addr  = COMP_UAC_ISOC_IN_EP,
-	.isoc_out_addr = COMP_UAC_ISOC_OUT_EP,
+	.play_ep_addr = COMP_UAC_PLAY_EP,
+	.record_ep_addr = COMP_UAC_RECORD_EP,
 };
 
 /* HID user callbacks */
@@ -307,21 +294,13 @@ static const usbd_composite_cb_t composite_usr_cb = {
 #endif
 
 /* UAC format info updated by format_changed callback */
-static usbd_audio_cfg_t uac_play_cfg = {
+static composite_uac_play_format_t uac_play_format = {
 	.sampling_freq = USBD_UAC_SAMPLING_FREQ_48K,
 	.byte_width = USBD_UAC_BYTE_WIDTH_2,
-	.ch_cnt = USBD_UAC_CH_CNT_2,
-	.enable = 1,
+	.channel_count = USBD_UAC_CHANNEL_COUNT_2,
 };
 
 #if COMP_UAC_ENABLE_RECORD
-/* Mic record format: fixed to match usbd_uac_record_audio_data[] (16bit/16000Hz/2ch) */
-static const usbd_audio_cfg_t uac_record_cfg = {
-	.sampling_freq = USBD_UAC_IN_DEFAULT_SAMPLING_FREQ,
-	.byte_width = USBD_UAC_IN_DEFAULT_BYTE_WIDTH,
-	.ch_cnt = USBD_UAC_IN_DEFAULT_CH_CNT,
-	.enable = 1,
-};
 static rtos_sema_t uac_record_start_sema;
 #endif
 
@@ -340,26 +319,26 @@ const log_item_t composite_hid_uac_cmd_table[] = {
   * @note   This function is called within an interrupt service routine (ISR) context;
   *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  sampling_freq: New sampling frequency
-  * @param  ch_cnt: New channel count
+  * @param  channel_count: New channel count
   * @param  byte_width: New sample byte width
   * @retval void
   */
-static void composite_uac_cb_format_changed(u32 sampling_freq, u8 ch_cnt, u8 byte_width)
+static void composite_uac_cb_format_changed(u32 sampling_freq, u8 channel_count, u8 byte_width)
 {
 	/* The player thread snapshots the format under the same lock, refer to example_audio_track_play() */
 	rtos_critical_enter(RTOS_CRITICAL_USB);
 	if (sampling_freq != 0U) {
-		uac_play_cfg.sampling_freq = sampling_freq;
+		uac_play_format.sampling_freq = sampling_freq;
 	}
-	if (ch_cnt != 0U) {
-		uac_play_cfg.ch_cnt = ch_cnt;
+	if (channel_count != 0U) {
+		uac_play_format.channel_count = channel_count;
 	}
 	if (byte_width != 0U) {
-		uac_play_cfg.byte_width = byte_width;
+		uac_play_format.byte_width = byte_width;
 	}
 	rtos_critical_exit(RTOS_CRITICAL_USB);
 
-	if (sampling_freq && ch_cnt && byte_width) {
+	if (sampling_freq && channel_count && byte_width) {
 		/* Stop the current stream so usbd_uac_read returns at once (next_xfer=0) and the
 		 * player thread restarts with the new format, re-arming the ISOC OUT EP. Without
 		 * this the read loop live-locks on stale data after a mid-stream rate change. */
@@ -417,7 +396,9 @@ static void example_usbd_composite_hid_uac_state_thread(void *param)
 /* playback , USB OUT */
 static void example_audio_track_play(void)
 {
-	usbd_audio_cfg_t play_cfg;
+#ifdef CONFIG_SUPPORT_AUDIO_FOR_USB
+	composite_uac_play_format_t play_format;
+#endif
 	u32 read_dat_len = 0;
 #ifndef CONFIG_SUPPORT_AUDIO_FOR_USB
 	u32 total_len = 0;
@@ -426,18 +407,15 @@ static void example_audio_track_play(void)
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Audio track demo begin\n");
 
-	/* Sizes the ISOC OUT ring buffer / mps and arms the endpoint. Required on every
-	   build: without it isoc_mps stays 0, usbd_uac_receive_data() bails out and no
-	   OUT packet is ever received, so it must not depend on the audio framework. */
+#ifdef CONFIG_SUPPORT_AUDIO_FOR_USB
 	/* One consistent snapshot: format_changed() rewrites the fields from the ISR */
 	rtos_critical_enter(RTOS_CRITICAL_USB);
-	play_cfg = uac_play_cfg;
+	play_format = uac_play_format;
 	rtos_critical_exit(RTOS_CRITICAL_USB);
+#endif
 
-	if (usbd_uac_config(&play_cfg, 0, 0) != RTK_SUCCESS) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "UAC config fail\n");
-		return;
-	}
+	/* Sizes the ISOC OUT ring buffer and arms the endpoint. Required on every build: without
+	   it no OUT packet is ever received, so it must not depend on the audio framework. */
 	while (usbd_uac_start_play() != RTK_SUCCESS) {
 		if (audio_task_stop || composite_teardown || composite_app.quit) {
 			return;
@@ -451,9 +429,9 @@ static void example_audio_track_play(void)
 		uint32_t format;
 		int32_t track_buf_size;
 
-		uint32_t g_track_rate = play_cfg.sampling_freq;
-		uint32_t g_track_channel = play_cfg.ch_cnt;
-		uint32_t g_track_format = play_cfg.byte_width * 8;
+		uint32_t g_track_rate = play_format.sampling_freq;
+		uint32_t g_track_channel = play_format.channel_count;
+		uint32_t g_track_format = play_format.byte_width * 8;
 
 		uint32_t play_track_channel = g_track_channel;
 
@@ -703,11 +681,6 @@ static void example_usbd_composite_hid_uac_record_thread(void *param)
 		}
 
 		/* Fails before the host has configured the device: the record ring would stay unsized */
-		if (usbd_uac_config(&uac_record_cfg, 1, 0) != RTK_SUCCESS) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "UAC record cfg fail\n");
-			rtos_mutex_give(composite_record_lock);
-			continue;
-		}
 		if (usbd_uac_start_record() != RTK_SUCCESS) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "UAC start record fail\n");
 			rtos_mutex_give(composite_record_lock);
@@ -750,7 +723,7 @@ static void composite_cmd_usage(void)
 	RTK_LOGS(TAG, RTK_LOG_INFO, "  key,<play|volup|voldown|voice|mute>\n");
 	RTK_LOGS(TAG, RTK_LOG_INFO, "                 Click a headset button: Play/Pause, Volume Up/Down, Voice Command, Mute\n");
 #if COMP_UAC_ENABLE_RECORD
-	RTK_LOGS(TAG, RTK_LOG_INFO, "  record         Replay the built-in clip on the mic (USB IN) stream once the host\n");
+	RTK_LOGS(TAG, RTK_LOG_INFO, "  record         Loop the built-in \"Realtek\" clip on the mic (USB IN) stream once the host\n");
 	RTK_LOGS(TAG, RTK_LOG_INFO, "                 configured it; each call queues one more session\n");
 #endif
 	RTK_LOGS(TAG, RTK_LOG_INFO, "  help           Print this help\n");
@@ -936,6 +909,17 @@ static void example_usbd_composite_hotplug_thread(void *param)
 	u8 fatal = 0U;
 
 	UNUSED(param);
+
+#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
+	/* C-2: the USB OTG ISR is delivered on CPU0 (GIC ITARGETSR pins every SPI to core 0).
+	   Pinning the threads that touch the device stack to CPU0 makes task<->ISR access
+	   single-core, so deinit's local interrupt disable is meaningful again under SMP.
+	   The worker threads stay unaffined: a pending deinit is excluded from them by
+	   composite_play_lock / composite_hid_lock / composite_record_lock, not by core.
+	   Done by the thread itself, first: a created thread may already run on another core, and its
+	   creator pinning it afterwards could come too late or reach a task that has deleted itself. */
+	rtos_task_set_affinity(rtos_task_handle_get(), 0);
+#endif
 
 	while (composite_app.quit == 0U) {
 		if (rtos_sema_take(composite_attach_status_changed_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
@@ -1191,14 +1175,6 @@ static int composite_start(void)
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create hotplug thread fail\n");
 		goto exit_stop_workers;
 	}
-#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
-	/* C-2: the USB OTG ISR is delivered on CPU0 (GIC ITARGETSR pins every SPI to core 0).
-	   Pinning the threads that touch the device stack to CPU0 makes task<->ISR access
-	   single-core, so deinit's local interrupt disable is meaningful again under SMP.
-	   The worker threads stay unaffined: a pending deinit is excluded from them by
-	   composite_play_lock / composite_hid_lock / composite_record_lock, not by core. */
-	rtos_task_set_affinity(task, 0);
-#endif
 #endif
 
 	return RTK_SUCCESS;
@@ -1228,6 +1204,14 @@ exit:
 static void example_usbd_composite_hid_uac_init_thread(void *param)
 {
 	UNUSED(param);
+
+#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
+	/* A start that fails rolls back through usbd_deinit(), which waits for no ISR on another
+	   core: run it on CPU0, where the USB IRQ is delivered, as the hotplug thread does.
+	   Done by the thread itself, first: a created thread may already run on another core, and its
+	   creator pinning it afterwards could come too late or reach a task that has deleted itself. */
+	rtos_task_set_affinity(rtos_task_handle_get(), 0);
+#endif
 
 	if (composite_start() != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Start fail\n");

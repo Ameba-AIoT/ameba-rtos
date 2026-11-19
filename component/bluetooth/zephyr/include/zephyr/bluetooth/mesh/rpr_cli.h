@@ -85,7 +85,7 @@ struct bt_mesh_rpr_cli {
 	void (*link_report)(struct bt_mesh_rpr_cli *cli,
 						const struct bt_mesh_rpr_node *srv,
 						struct bt_mesh_rpr_link *link,
-						uint8_t reason);
+						const uint8_t *reason);
 
 	/* Internal parameters */
 
