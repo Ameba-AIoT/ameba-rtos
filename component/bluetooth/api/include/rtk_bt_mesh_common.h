@@ -150,12 +150,12 @@ typedef struct {
 } rtk_bt_mesh_stack_act_set_prov_param_t;
 
 /**
- * @typedef   rkt_bt_mesh_stack_act_device_info_set_t
+ * @typedef   rtk_bt_mesh_stack_act_device_info_set_t
  * @brief     BLE MESH device info display switch param structure.
  */
 typedef struct {
 	uint8_t dev_info_dis;
-} rkt_bt_mesh_stack_act_device_info_set_t;
+} rtk_bt_mesh_stack_act_device_info_set_t;
 
 /**
  * @typedef   rtk_bt_mesh_stack_act_pb_adv_con_t
@@ -1056,7 +1056,7 @@ uint16_t rtk_bt_mesh_stack_node_reset(void);
  *            - 0  : Succeed
  *            - Others: Error code
  */
-uint16_t rtk_bt_mesh_stack_set_device_info_display(rkt_bt_mesh_stack_act_device_info_set_t *p_data);
+uint16_t rtk_bt_mesh_stack_set_device_info_display(rtk_bt_mesh_stack_act_device_info_set_t *p_data);
 
 /**
  * @brief     Print user list info, will cause event @ref RTK_BT_MESH_STACK_ACT_USER_LIST_INFO
