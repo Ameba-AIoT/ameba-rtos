@@ -542,11 +542,7 @@ u8 BOOT_OTA_AP(SubImgInfo_TypeDef *SubImgInfo, u8 Index, u8 ImgIndex)
 	u32 LogAddr;
 	u32 ImgAddr;
 	//AP XIP IMG is BL33(RTOS), place at First for MMU remap
-#ifdef CONFIG_DYNAMIC_APP_LOAD_EN
-	char *APLabel[] = {"AP XIP IMG", "AP BL1 SRAM", "AP BL1 DRAM", "AP FIP", "AP DYNAMIC APP"};
-#else
 	char *APLabel[] = {"AP XIP IMG", "AP BL1 SRAM", "AP BL1 DRAM", "AP FIP"};
-#endif
 
 	/* calculate ap phy addr */
 	PhyAddr = Img2Addr;
