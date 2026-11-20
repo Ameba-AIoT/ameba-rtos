@@ -259,7 +259,7 @@ typedef struct {
 
 /**
  * @struct    rtk_bt_hfp_ag_features_ind_t
- * @brief     hfp audio gating features indication sturct.
+ * @brief     hfp audio gating features indication struct.
  */
 typedef struct {
 	uint16_t capability;                                /*!< features */
@@ -311,7 +311,7 @@ typedef struct {
 	union {
 		struct {
 			uint8_t     channel_mode;                   /*!< indicate channel mode */
-			int         sample_rate;                    /*!< indicate sample frequence */
+			int         sample_rate;                    /*!< indicate sample frequency */
 			uint8_t     bitpool;                        /*!< indicate min bitpool */
 			uint8_t     allocation_method;              /*!< indicate allocation method */
 			uint8_t     subbands;                       /*!< indicate subbands */
@@ -319,7 +319,7 @@ typedef struct {
 		} msbc;
 		struct {
 			uint8_t     channel_num;                    /*!< indicate channel number */
-			int         sample_rate;                    /*!< indicate sample frequence */
+			int         sample_rate;                    /*!< indicate sample frequency */
 			uint8_t     frame_duration;                 /*!< indicate frame duration */
 		} cvsd;
 	};
@@ -395,7 +395,7 @@ typedef struct {
 
 /**
  * @struct    rtk_bt_hfp_ag_call_answer_req_ind_t
- * @brief     Bluetooth hfp ag call answer requset indication.
+ * @brief     Bluetooth hfp ag call answer request indication.
  */
 typedef struct {
 	uint8_t bd_addr[6];                                 /*!< address */
@@ -403,7 +403,7 @@ typedef struct {
 
 /**
  * @struct    rtk_bt_hfp_ag_call_terminate_req_ind_t
- * @brief     Bluetooth hfp ag call terminate requset indication.
+ * @brief     Bluetooth hfp ag call terminate request indication.
  */
 typedef struct {
 	uint8_t bd_addr[6];                                 /*!< address */
