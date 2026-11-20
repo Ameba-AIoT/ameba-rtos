@@ -175,7 +175,7 @@ static uint16_t zephyr_stack_dfu_add_receiver(rtk_bt_mesh_dfu_standalone_updater
 	uint16_t dst_addr = rec->addr;
 
 	if (dfu_tx.target_cnt == ARRAY_SIZE(dfu_tx.targets)) {
-		BT_LOGE("[%s] There is no memory for save new reicever.\r\n", __func__);
+		BT_LOGE("[%s] There is no memory for save new receiver.\r\n", __func__);
 		return 2;
 	}
 
@@ -500,7 +500,7 @@ struct block_buffer_t {
 	uint32_t buff_size;
 	uint32_t target_data_len;
 	uint32_t actual_data_len;
-	uint16_t block_num;  // Block number the data belone to
+	uint16_t block_num;  // Block number the data belongs to
 };
 static struct block_buffer_t buffer_block = {0};
 
@@ -573,7 +573,7 @@ static bool save_data_to_block_buffer(uint32_t chunk_offset, uint8_t *pdata, uin
 	}
 
 	if (buffer_block.block_num != block_number) {
-		BT_LOGE("[%s] Unexpect block num, input:%d, actual process:%d.\r\n", __func__, block_number, buffer_block.block_num);
+		BT_LOGE("[%s] Unexpected block num, input:%d, actual process:%d.\r\n", __func__, block_number, buffer_block.block_num);
 		return false;
 	}
 

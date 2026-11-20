@@ -51,7 +51,7 @@ extern bool rtk_ble_mesh_scan_enable_flag;
 
 /* -------------------------------------------------MESH init relate function---------------------------------------------------------- */
 
-// Provisioning OOB releate verible and function
+// Provisioning OOB relate variable and function
 #if (defined(RTK_BLE_MESH_PROVISIONER_SUPPORT) && RTK_BLE_MESH_PROVISIONER_SUPPORT) || PROV_SUPPORT_STATIC_OOB
 static const uint8_t static_oob_value[16] = STATIC_OOB_VALUE_FOR_AUTHENTICATION;
 #endif
@@ -480,7 +480,7 @@ static int output_number(bt_mesh_output_action_t action, uint32_t number)
 	}
 	break;
 	default: {
-		BT_LOGE("[%s] Unsupport action:0x%x\r\n", __func__, action);
+		BT_LOGE("[%s] Unsupported action:0x%x\r\n", __func__, action);
 		return -EINVAL;
 	}
 	break;
@@ -589,6 +589,28 @@ uint16_t bt_stack_mesh_init(void *data)
 {
 	int err;
 	rtk_bt_mesh_app_conf_t *pmesh_app_conf = &((rtk_bt_app_conf_t *)data)->bt_mesh_app_conf;
+
+	/* Only the parameters set in param_mask are overridden, the others keep the default (or the value restored from flash) */
+	err = bt_mesh_cfg_params_set(pmesh_app_conf->param_mask, pmesh_app_conf->trans_retrans_count, pmesh_app_conf->net_trans_count,
+								 pmesh_app_conf->net_trans_interval_step, pmesh_app_conf->relay_retrans_count,
+								 pmesh_app_conf->relay_retrans_interval_step, pmesh_app_conf->ttl);
+	if (err) {
+		BT_LOGE("[%s] Invalid retrans/ttl params:%d\r\n", __func__, err);
+		return err;
+	}
+	err = bt_mesh_rpl_num_set(pmesh_app_conf->bt_mesh_rpl_num);
+	if (err) {
+		BT_LOGE("[%s] Set rpl num fail:%d\r\n", __func__, err);
+		return err;
+	}
+#if defined(RTK_BLE_MESH_PROVISIONER_SUPPORT) && RTK_BLE_MESH_PROVISIONER_SUPPORT
+	err = bt_mesh_cdb_node_num_set(pmesh_app_conf->bt_mesh_dev_key_num);
+	if (err) {
+		BT_LOGE("[%s] Set dev key num fail:%d\r\n", __func__, err);
+		return err;
+	}
+#endif
+
 	switch (pmesh_app_conf->bt_mesh_role) {
 #if defined(RTK_BLE_MESH_PROVISIONER_SUPPORT) && RTK_BLE_MESH_PROVISIONER_SUPPORT
 	case RTK_BT_MESH_ROLE_PROVISIONER:
@@ -789,17 +811,17 @@ static uint16_t zephyr_stack_set_prov_param(rtk_bt_mesh_stack_act_set_prov_param
 		app_key = bt_mesh_cdb_app_key_get(global_app_idx);
 		if (net_key && app_key) {
 			if (memcmp(p_data->net_key, net_key->keys[0].net_key.key, 16)) {
-				BT_LOGE("[%s] The new net key is not equal to old net key(stored in flash last time), you should input the reset AT command and push the reset butten\r\n",
+				BT_LOGE("[%s] The new net key is not equal to old net key(stored in flash last time), you should input the reset AT command and push the reset button\r\n",
 						__func__);
 				return err;
 			}
 			if (memcmp(p_data->app_key, app_key->keys[0].app_key.key, 16)) {
-				BT_LOGE("[%s] The new app key is not equal to old app key(stored in flash last time), you should input the reset AT command and push the reset butten\r\n",
+				BT_LOGE("[%s] The new app key is not equal to old app key(stored in flash last time), you should input the reset AT command and push the reset button\r\n",
 						__func__);
 				return err;
 			}
 		} else {
-			BT_LOGE("[%s] Get net key or app key fail, you should input the reset AT command and push the reset butten\r\n", __func__);
+			BT_LOGE("[%s] Get net key or app key fail, you should input the reset AT command and push the reset button\r\n", __func__);
 			return err;
 		}
 	} else if (err) {
@@ -947,7 +969,7 @@ static void proxy_dis_result(struct bt_conn *conn, enum bt_mesh_gatt_cli_dis_res
 
 static uint16_t zephyr_stack_pb_gatt_con(rtk_bt_mesh_stack_act_pb_gatt_con_t *pgatt_con)
 {
-	int ret;
+	int ret = -ENOENT;
 
 #if ZEPHYR_RTK_PATCH && defined(CONFIG_BT_MESH_PB_GATT_CLIENT)
 	/* Manual mode, same as the rtk mesh stack: connect by address. Whether it is used for
@@ -972,14 +994,6 @@ static uint16_t zephyr_stack_pb_gatt_con(rtk_bt_mesh_stack_act_pb_gatt_con_t *pg
 	conn_param.timeout = p->supv_timeout;
 
 	ret = bt_mesh_gatt_cli_connect_manual(&peer_addr, &create_param, &conn_param);
-#else
-	if (pgatt_con->param.is_prov_link) {
-		memcpy(gatt_target_uuid, pgatt_con->param.u.uuid, 16);
-		pb_gatt_link_opening = true;
-		ret = RTK_BT_OK;
-	} else {
-		ret = bt_mesh_proxy_connect(pgatt_con->param.u.net_idx);
-	}
 #endif
 	if (-EALREADY == ret) {
 		// BT_LOGA("[%s] Proxy link is already connect\r\n", __func__);
@@ -1110,8 +1124,7 @@ static uint16_t zephyr_stack_proxy_service_set_notify(rtk_bt_mesh_stack_act_prox
 
 static uint16_t zephyr_stack_pb_gatt_discon(rtk_bt_mesh_stack_act_pb_gatt_discon_t *pgatt_discon)
 {
-	int ret;
-
+	int ret = -ENOENT;
 #if ZEPHYR_RTK_PATCH && defined(CONFIG_BT_MESH_PB_GATT_CLIENT)
 	/* Manual mode, same as the rtk mesh stack: disconnect the connection of the given handle */
 	struct bt_conn *conn = bt_conn_lookup_handle(pgatt_discon->conn_handle, BT_CONN_TYPE_LE);
@@ -1121,14 +1134,6 @@ static uint16_t zephyr_stack_pb_gatt_discon(rtk_bt_mesh_stack_act_pb_gatt_discon
 	}
 	ret = bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 	bt_conn_unref(conn);
-#else
-	ret = RTK_BT_OK;
-	if (pgatt_discon->param.is_prov_link) {
-		pb_gatt_link_opening = false;
-		memset(gatt_target_uuid, 0, 16);
-	} else {
-		ret = bt_mesh_proxy_disconnect(pgatt_discon->param.net_idx);
-	}
 #endif
 	if (-EALREADY == ret) {
 		// BT_LOGA("[%s] Proxy link is already disconnect\r\n", __func__);
@@ -1300,7 +1305,7 @@ static uint16_t zephyr_stack_method_choose_for_prov(rtk_bt_mesh_stack_prov_start
 	return ret;
 }
 
-static void zephyr_stack_set_device_info_display(rkt_bt_mesh_stack_act_device_info_set_t *p_data)
+static void zephyr_stack_set_device_info_display(rtk_bt_mesh_stack_act_device_info_set_t *p_data)
 {
 	if (p_data->dev_info_dis) {
 		dev_info_switch_flag = true;
@@ -1478,7 +1483,7 @@ static bool get_device_key_from_mesh_stack(uint8_t *p, uint8_t len)
  * @param   p_start : start point of data to save one block data
  * @param   info_type : the type of block data type
  * @param   p_val : source data point
- * @param   val_len : lenth of source data
+ * @param   val_len : length of source data
  * @return  The end of data saved
  */
 static uint8_t *add_list_info_one_block(uint8_t *p_start, rtk_bt_mesh_stack_user_list_type_t info_type, const uint8_t *p_val, uint8_t val_len)
@@ -1718,7 +1723,7 @@ static void get_normal_vals_list_info(uint8_t **pp_data)
 	const struct bt_mesh_comp *comp;
 	p = normal_vals_info;
 
-	*p++ = 0;  // iv update falg
+	*p++ = 0;  // iv update flag
 
 	*(uint32_t *)p = get_iv_index_from_mesh_stack();  // Add iv index
 	p += sizeof(uint32_t);
@@ -1951,8 +1956,8 @@ static uint16_t zephyr_stack_retrans_param_set(rtk_bt_mesh_stack_set_retrans_par
 		bt_mesh_net_transmit_set(BT_MESH_TRANSMIT(param->net_retrans_count, int_ms));
 	}
 
-	if (param->trans_retrans_count > 15) {
-		BT_LOGE("[%s] Transport retrans count %d > 15, set fail\r\n", __func__, param->trans_retrans_count);
+	if (param->trans_retrans_count > 10) {
+		BT_LOGE("[%s] Transport retrans count %d > 10, set fail\r\n", __func__, param->trans_retrans_count);
 		ret = RTK_BT_FAIL;
 	} else {
 		bt_mesh.sar_tx.unicast_retrans_count = param->trans_retrans_count;

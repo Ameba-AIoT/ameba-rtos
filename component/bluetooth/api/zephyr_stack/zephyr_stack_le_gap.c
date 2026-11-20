@@ -1331,6 +1331,7 @@ void ext_adv_pawr_response(struct bt_le_ext_adv *adv, struct bt_le_per_adv_respo
 	p_ind->tx_power = info->tx_power;
 	p_ind->rssi = info->rssi;
 	p_ind->cte_type = info->cte_type;
+	p_ind->response_slot = info->response_slot;
 	p_ind->len = len;
 	if (len) {
 		p_ind->data = (uint8_t *)p_evt->data + sizeof(rtk_bt_le_gap_pawr_rsp_ind_t);
@@ -1502,6 +1503,7 @@ static uint16_t bt_stack_le_gap_create_ext_adv(void *param)
 		memcpy(own_addr.val, padv_param->own_addr.addr_val, BT_ADDR_SIZE);
 		err = bt_id_set_adv_random_addr(adv, &own_addr);
 		if (err) {
+			bt_le_ext_adv_delete(adv);
 			return zephyr_err_to_rtk(err);
 		}
 	}
@@ -1833,7 +1835,6 @@ static uint16_t bt_stack_le_gap_start_pa(void *p_param)
 	per_adv_param.response_slot_delay = param->response_slot_delay;
 	per_adv_param.response_slot_spacing = param->response_slot_spacing;
 	per_adv_param.num_response_slots = param->num_response_slots;
-	_ext_adv_tbl[param->adv_handle].num_subevents = param->num_subevents;
 	if (per_adv_param.num_subevents) {
 		padv_data_flag = false;
 	}
@@ -1843,6 +1844,10 @@ static uint16_t bt_stack_le_gap_start_pa(void *p_param)
 	if (err) {
 		return zephyr_err_to_rtk(err);
 	}
+
+#if defined(RTK_BLE_5_4_PAWR_ADV_SUPPORT) && RTK_BLE_5_4_PAWR_ADV_SUPPORT
+	_ext_adv_tbl[param->adv_handle].num_subevents = param->num_subevents;
+#endif
 
 	if (padv_data_flag) {
 		err = bt_le_per_adv_set_data(p_ext_adv, &ad_data, 1);
@@ -3550,7 +3555,7 @@ K_MEM_SLAB_DEFINE(le_coc_server_pool, sizeof(struct bt_l2cap_server),
 K_MEM_SLAB_DEFINE(le_coc_chan_slab, sizeof(struct bt_l2cap_le_coc_chan),
 				  GAP_MAX_LE_COC_CHANN_NUM, __alignof__(struct bt_l2cap_le_coc_chan));
 
-/* send conn_req ======> connected cb   | connect OK, err=0 (coc conn intiator)
+/* send conn_req ======> connected cb   | connect OK, err=0 (coc conn initiator)
  *          idle ======> connected cb   | connect OK, err=0 (coc conn receiver) */
 static void le_coc_chan_connected(struct bt_l2cap_chan *chan)
 {
@@ -3569,8 +3574,8 @@ static void le_coc_chan_connected(struct bt_l2cap_chan *chan)
 	rtk_bt_evt_indicate(p_evt, NULL);
 }
 
-/* send conn_req ======> disconnected cb   | connect failed, err!=0 (coc conn intiator)
- * coc connected ======> disconnected cb   | disconnect OK, err=0 (both coc conn intiator and receiver) */
+/* send conn_req ======> disconnected cb   | connect failed, err!=0 (coc conn initiator)
+ * coc connected ======> disconnected cb   | disconnect OK, err=0 (both coc conn initiator and receiver) */
 static void le_coc_chan_disconnected(struct bt_l2cap_chan *chan)
 {
 	rtk_bt_evt_t *p_evt;
@@ -3579,7 +3584,7 @@ static void le_coc_chan_disconnected(struct bt_l2cap_chan *chan)
 
 	if (BT_L2CAP_CONNECTING == BT_L2CAP_LE_CHAN(chan)->state) {
 		/* When le coc send connect request, state changes to BT_L2CAP_CONNECTING.
-		 * Then, disconnect callback comes, regart it as coc connect failed instead
+		 * Then, disconnect callback comes, regard it as coc connect failed instead
 		 * of coc disconnected. */
 		evt_code = RTK_BT_LE_GAP_EVT_COC_CONNECT_IND;
 		err = RTK_BT_FAIL;
@@ -3987,7 +3992,7 @@ exit:
 #endif /* RTK_BLE_COC_SUPPORT */
 
 #if defined(RTK_BLE_5_4_PAWR_ADV_SUPPORT) && RTK_BLE_5_4_PAWR_ADV_SUPPORT
-static uint16_t bt_stack_le_pawr_set_subevent_data(void *param)
+static uint16_t bt_stack_le_gap_pawr_set_subevent_data(void *param)
 {
 	int err;
 	struct bt_le_per_adv_subevent_data_params sub[RTK_BLE_PAWR_SET_SUBEVENT_DATA_MAX];
@@ -4016,10 +4021,54 @@ static uint16_t bt_stack_le_pawr_set_subevent_data(void *param)
 	}
 	return 0;
 }
+
+static uint16_t bt_stack_le_gap_pawr_connect(void *param)
+{
+#if !defined(CONFIG_BT_CENTRAL)
+	(void)param;
+	return RTK_BT_ERR_UNSUPPORTED;
+#else
+	rtk_bt_le_gap_pawr_create_conn_param_t *pawr_conn = (rtk_bt_le_gap_pawr_create_conn_param_t *)param;
+	struct bt_le_ext_adv *adv;
+	struct bt_conn *conn = NULL;
+	bt_addr_le_t peer_addr = {0};
+	struct bt_conn_le_create_synced_param sync_param = {0};
+	struct bt_le_conn_param conn_param = {0};
+	int err = 0;
+
+	if (!bt_stack_le_gap_ext_adv_handle_valid(pawr_conn->adv_handle)) {
+		return RTK_BT_ERR_PARAM_INVALID;
+	}
+
+	adv = _ext_adv_tbl[pawr_conn->adv_handle].adv;
+
+	peer_addr.type = pawr_conn->peer_addr.type;
+	memcpy(peer_addr.a.val, pawr_conn->peer_addr.addr_val, BT_ADDR_SIZE);
+	sync_param.peer = &peer_addr;
+	sync_param.subevent = pawr_conn->subevent;
+	sync_param.own_addr_type = pawr_conn->own_addr_type;
+	sync_param.timeout = pawr_conn->create_conn_timeout;
+	conn_param.interval_min = pawr_conn->conn_interval_min;
+	conn_param.interval_max = pawr_conn->conn_interval_max;
+	conn_param.latency = pawr_conn->conn_latency;
+	conn_param.timeout = pawr_conn->supv_timeout;
+
+	err = bt_conn_le_create_synced(adv, &sync_param, &conn_param, &conn);
+	if (err) {
+		return zephyr_err_to_rtk(err);
+	}
+
+	if (conn) {
+		bt_conn_unref(conn);
+	}
+
+	return 0;
+#endif
+}
 #endif
 
 #if defined(RTK_BLE_5_4_PAWR_SCAN_SUPPORT) && RTK_BLE_5_4_PAWR_SCAN_SUPPORT
-static uint16_t bt_stack_le_pawr_set_response_data(void *param)
+static uint16_t bt_stack_le_gap_pawr_set_response_data(void *param)
 {
 	rtk_bt_le_gap_pawr_set_response_t *rsp = (rtk_bt_le_gap_pawr_set_response_t *)param;
 	struct bt_le_per_adv_sync *sync;
@@ -4045,7 +4094,7 @@ static uint16_t bt_stack_le_pawr_set_response_data(void *param)
 	return 0;
 }
 
-static uint16_t bt_stack_le_pawr_sync_subevent(void *param)
+static uint16_t bt_stack_le_gap_pawr_sync_subevent(void *param)
 {
 	rtk_bt_le_gap_pawr_sync_subevent_t *sub = (rtk_bt_le_gap_pawr_sync_subevent_t *)param;
 	struct bt_le_per_adv_sync *sync;
@@ -4488,7 +4537,12 @@ uint16_t bt_stack_le_gap_act_handle(rtk_bt_cmd_t *p_cmd)
 #if defined(RTK_BLE_5_4_PAWR_ADV_SUPPORT) && RTK_BLE_5_4_PAWR_ADV_SUPPORT
 	case RTK_BT_LE_GAP_ACT_PAWR_SET_SUBEVENT_DATA: {
 		BT_LOGD("RTK_BT_LE_GAP_ACT_PAWR_SET_SUBEVENT_DATA\r\n");
-		ret = bt_stack_le_pawr_set_subevent_data(p_cmd->param);
+		ret = bt_stack_le_gap_pawr_set_subevent_data(p_cmd->param);
+		break;
+	}
+	case RTK_BT_LE_GAP_ACT_PAWR_CONN: {
+		BT_LOGD("RTK_BT_LE_GAP_ACT_PAWR_CONN\r\n");
+		ret = bt_stack_le_gap_pawr_connect(p_cmd->param);
 		break;
 	}
 #endif
@@ -4496,12 +4550,12 @@ uint16_t bt_stack_le_gap_act_handle(rtk_bt_cmd_t *p_cmd)
 #if defined(RTK_BLE_5_4_PAWR_SCAN_SUPPORT) && RTK_BLE_5_4_PAWR_SCAN_SUPPORT
 	case RTK_BT_LE_GAP_ACT_PAWR_SET_RESPONSE_DATA: {
 		BT_LOGD("RTK_BT_LE_GAP_ACT_PAWR_SET_RESPONSE_DATA\r\n");
-		ret = bt_stack_le_pawr_set_response_data(p_cmd->param);
+		ret = bt_stack_le_gap_pawr_set_response_data(p_cmd->param);
 		break;
 	}
 	case RTK_BT_LE_GAP_ACT_PAWR_SYNC_SUBEVENT: {
 		BT_LOGD("RTK_BT_LE_GAP_ACT_PAWR_SYNC_SUBEVENT\r\n");
-		ret = bt_stack_le_pawr_sync_subevent(p_cmd->param);
+		ret = bt_stack_le_gap_pawr_sync_subevent(p_cmd->param);
 		break;
 	}
 #endif

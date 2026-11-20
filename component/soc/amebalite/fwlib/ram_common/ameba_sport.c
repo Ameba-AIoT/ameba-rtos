@@ -837,10 +837,6 @@ void AUDIO_SP_Init(u32 index, u32 direction, SP_InitTypeDef *SP_InitStruct)
 			SPORTx->SP_CTRL1 &= ~(SP_BIT_MULTI_IO_EN_TX);
 		}
 
-		/*set DMA burstsize: 8*/
-		SPORTx->SP_TX_LRCLK &= ~(SP_MASK_TXDMA_BURSTSIZE);
-		SPORTx->SP_TX_LRCLK |= SP_TXDMA_BURSTSIZE(8);
-
 		if (SP_InitStruct->SP_Fix_Bclk) {
 			SPORTx->SP_FORMAT |= SP_BIT_FIXED_BCLK;
 			SPORTx->SP_FORMAT |= SP_BIT_FIXED_BCLK_SEL;
@@ -938,10 +934,6 @@ void AUDIO_SP_Init(u32 index, u32 direction, SP_InitTypeDef *SP_InitStruct)
 		} else {
 			SPORTx->SP_CTRL1 &= ~(SP_BIT_MULTI_IO_EN_RX);
 		}
-
-		/*set DMA burstsize: 8*/
-		SPORTx->SP_TX_LRCLK &= ~(SP_MASK_RXDMA_BUSRTSIZE);
-		SPORTx->SP_TX_LRCLK |= SP_RXDMA_BUSRTSIZE(8);
 
 	}
 
@@ -1268,6 +1260,9 @@ bool AUDIO_SP_TXGDMA_Init(
 	GDMA_InitStruct->GDMA_ReloadSrc = 0;
 	//GDMA_InitStruct->GDMA_ReloadSrc = 1;
 	GDMA_InitStruct->MaxMuliBlock = 1;
+	/* the TX DMA request level is the 16 words burst of the GDMA, half of the 32 words TX FIFO */
+	AUDIO_DEV_TABLE[Index].SPORTx->SP_TX_LRCLK &= ~SP_MASK_TXDMA_BURSTSIZE;
+	AUDIO_DEV_TABLE[Index].SPORTx->SP_TX_LRCLK |= SP_TXDMA_BURSTSIZE(16);
 	GDMA_InitStruct->GDMA_DIR = TTFCMemToPeri;
 	if (SelGDMA == GDMA_INT) {
 		GDMA_InitStruct->GDMA_DstHandshakeInterface = AUDIO_DEV_TABLE[Index].Tx_HandshakeInterface;
@@ -1300,7 +1295,7 @@ bool AUDIO_SP_TXGDMA_Init(
 		RTK_LOGE(TAG, "AUDIO_SP_TXGDMA_Init: Aligment Err: pTXData=%p, Length=%lu\n", pTXData, Length);
 		return FALSE;
 	}
-	GDMA_InitStruct->GDMA_DstMsize = MsizeFour;
+	GDMA_InitStruct->GDMA_DstMsize = MsizeSixteen;
 	GDMA_InitStruct->GDMA_DstDataWidth = TrWidthFourBytes;
 
 	/*configure GDMA source address */
@@ -1354,6 +1349,9 @@ bool AUDIO_SP_RXGDMA_Init(
 	GDMA_InitStruct->GDMA_ReloadSrc = 0;
 	//GDMA_InitStruct->GDMA_ReloadDst = 1; //only for test
 	GDMA_InitStruct->MaxMuliBlock = 1;
+	/* the RX DMA request level is the 16 words burst of the GDMA, half of the 32 words RX FIFO */
+	AUDIO_DEV_TABLE[Index].SPORTx->SP_TX_LRCLK &= ~SP_MASK_RXDMA_BUSRTSIZE;
+	AUDIO_DEV_TABLE[Index].SPORTx->SP_TX_LRCLK |= SP_RXDMA_BUSRTSIZE(16);
 	GDMA_InitStruct->GDMA_DIR = TTFCPeriToMem;
 
 	if (SelGDMA == GDMA_INT) {
@@ -1371,7 +1369,7 @@ bool AUDIO_SP_RXGDMA_Init(
 
 	/*  Cofigure GDMA transfer */
 	GDMA_InitStruct->GDMA_SrcDataWidth = TrWidthFourBytes;
-	GDMA_InitStruct->GDMA_SrcMsize = MsizeEight;
+	GDMA_InitStruct->GDMA_SrcMsize = MsizeSixteen;
 
 	GDMA_InitStruct->GDMA_DstMsize = MsizeEight;
 	GDMA_InitStruct->GDMA_DstDataWidth = TrWidthFourBytes;
@@ -1483,9 +1481,12 @@ bool AUDIO_SP_LLPTXGDMA_Init(
 	GDMA_InitStruct->GDMA_Index = 0;
 	GDMA_InitStruct->GDMA_ChNum = GdmaChnl;
 	GDMA_InitStruct->MaxMuliBlock = MaxLLP;
+	/* the TX DMA request level is the 16 words burst of the GDMA, half of the 32 words TX FIFO */
+	AUDIO_DEV_TABLE[Index].SPORTx->SP_TX_LRCLK &= ~SP_MASK_TXDMA_BURSTSIZE;
+	AUDIO_DEV_TABLE[Index].SPORTx->SP_TX_LRCLK |= SP_TXDMA_BURSTSIZE(16);
 	GDMA_InitStruct->GDMA_DIR = TTFCMemToPeri;
 	GDMA_InitStruct->GDMA_IsrType = (BlockType | TransferType | ErrType);
-	GDMA_InitStruct->GDMA_DstMsize = MsizeFour;
+	GDMA_InitStruct->GDMA_DstMsize = MsizeSixteen;
 	GDMA_InitStruct->GDMA_DstDataWidth = TrWidthFourBytes;
 	GDMA_InitStruct->GDMA_DstInc = NoChange;
 	GDMA_InitStruct->GDMA_SrcInc = IncType;
@@ -1581,6 +1582,9 @@ bool AUDIO_SP_LLPRXGDMA_Init(
 	GDMA_InitStruct->GDMA_ReloadSrc = 0;
 	GDMA_InitStruct->GDMA_ReloadDst = 0;
 	GDMA_InitStruct->MaxMuliBlock = MaxLLP;
+	/* the RX DMA request level is the 16 words burst of the GDMA, half of the 32 words RX FIFO */
+	AUDIO_DEV_TABLE[Index].SPORTx->SP_TX_LRCLK &= ~SP_MASK_RXDMA_BUSRTSIZE;
+	AUDIO_DEV_TABLE[Index].SPORTx->SP_TX_LRCLK |= SP_RXDMA_BUSRTSIZE(16);
 	GDMA_InitStruct->GDMA_DIR = TTFCPeriToMem;
 	GDMA_InitStruct->GDMA_Index = 0;
 	GDMA_InitStruct->GDMA_ChNum = GdmaChnl;
@@ -1604,7 +1608,7 @@ bool AUDIO_SP_LLPRXGDMA_Init(
 
 	/*  Cofigure GDMA transfer */
 	GDMA_InitStruct->GDMA_SrcDataWidth = TrWidthFourBytes;
-	GDMA_InitStruct->GDMA_SrcMsize = MsizeEight;
+	GDMA_InitStruct->GDMA_SrcMsize = MsizeSixteen;
 
 	GDMA_InitStruct->GDMA_DstMsize = MsizeEight;
 	GDMA_InitStruct->GDMA_DstDataWidth = TrWidthFourBytes;

@@ -61,7 +61,7 @@ extern int dhcps_ip_in_table_check(uint8_t gate, uint8_t d);
 #endif
 #ifdef CONFIG_WIFI_TUNNEL
 extern int(*rmesh_ota_user_callback)(u8 *, u16);
-#ifdef CONFIG_WTN_RNAT_INTERCOM
+#ifdef CONFIG_RNAT_INTERCOM_EN
 extern int(*rmesh_rnat_adv_user_callback)(u8 *, u16);
 #endif
 #endif
@@ -368,7 +368,7 @@ static int whc_ipc_host_api_wtn_ota_callback_handler(struct whc_ipc_dev_req_msg 
 	return ret;
 }
 
-#ifdef CONFIG_WTN_RNAT_INTERCOM
+#ifdef CONFIG_RNAT_INTERCOM_EN
 static int whc_ipc_host_api_wtn_rnat_adv_callback_handler(struct whc_ipc_dev_req_msg *p_ipc_msg)
 {
 	u8 *buf = (u8 *)p_ipc_msg->param_buf[0];
@@ -620,7 +620,7 @@ void whc_ipc_host_blk_api_task_h(void)
 		case WHC_API_WTN_OTA_CALLBACK:
 			p_ipc_msg->ret = whc_ipc_host_api_wtn_ota_callback_handler(p_ipc_msg);
 			break;
-#ifdef CONFIG_WTN_RNAT_INTERCOM
+#ifdef CONFIG_RNAT_INTERCOM_EN
 		case WHC_API_WTN_RNAT_ADV_CALLBACK:
 			p_ipc_msg->ret = whc_ipc_host_api_wtn_rnat_adv_callback_handler(p_ipc_msg);
 			break;

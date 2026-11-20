@@ -51,9 +51,6 @@ void TM_Init(TM_InitTypeDef *TM_InitStruct)
 
 	assert_param(IS_TM_DOWN_SAMPLE_RATE(TM_InitStruct->TM_DownSampRate));
 	assert_param(IS_TM_ADC_CLK_DIV(TM_InitStruct->TM_AdcClkDiv));
-	assert_param((TM_InitStruct->TM_HighProtectThreshold >= 0x46) && (TM_InitStruct->TM_HighProtectThreshold <= 0x8C));
-	assert_param(TM_InitStruct->TM_HighWarnThreshold < 0x100);
-	assert_param(TM_InitStruct->TM_LowWarnThreshold <= 0x1FF);
 
 	/* Disable thermal, clear pending interrupt */
 	TM_INTConfig(TM_BIT_IMR_TM_HIGH_WT | TM_BIT_IMR_TM_LOW_WT, DISABLE);
@@ -97,8 +94,8 @@ void TM_Init(TM_InitTypeDef *TM_InitStruct)
 /**
   * @brief  Enable or disable the specified thermal fields to be programmed.
   * @param  NewState ENABLE or DISABLE.
-  *         @arg ENABLE: Fill TM_PWR field with right password 0x69.
-  *         @arg DISABLE: Fill TM_PWR field with wrong password 0x0.
+  *         @arg ENABLE: Write the correct password TM_PROG_PWR to unlock programming.
+  *         @arg DISABLE: Write 0x0 to lock programming.
   */
 void TM_PwrProgCmd(u32 NewState)
 {
@@ -176,7 +173,6 @@ int TM_PollDataValid(void)
 /**
   * @brief  Enable or disable the thermal interrupt bits.
   * @param  TM_IT Specifies the thermal interrupt to be configured.
-  *          This parameter can be one or combinations of bits in TM_INTR_CTRL.
   * @param  NewState ENABLE or DISABLE.
   */
 void TM_INTConfig(u32 TM_IT, u32 NewState)
@@ -211,8 +207,7 @@ void TM_INTClear(void)
 
 /**
   * @brief  Clear the thermal interrupt pending bits.
-  * @param  TM_IT Specifies the pending bit to clear.
-  *          This parameter can be one or combinations of bits in TM_INTR_STS.
+  * @param  TM_IT Specifies the thermal interrupt pending bits to clear.
   */
 void TM_INTClearPendingBits(u32 TM_IT)
 {
@@ -227,7 +222,7 @@ void TM_INTClearPendingBits(u32 TM_IT)
 
 /**
   * @brief  Get thermal interrupt status.
-  * @return Current interrupt status, with each bit defined in TM_INTR_STS.
+  * @return Current thermal interrupt status.
   */
 u32 TM_GetISR(void)
 {
@@ -367,11 +362,9 @@ static u16 TM_GetTempCode(float TempC)
 }
 
 /**
-  * @brief  Configure over-temp protect threshold for comparison with TEMP_OUT.
-  * @param  TM_HighPtThre Temperature threshold (float). When TEMP_OUT > threshold, an AON reset is triggered.
-  * @internal
+  * @brief  Configure over-temp protect threshold for comparison with the measured temperature.
+  * @param  TM_HighPtThre Temperature threshold (float). When the measured temperature exceeds the threshold, an AON reset is triggered.
   * @note   Only between 70°C and 140°C are valid.
-  * @endinternal
   * @param  NewState New state of the thermal over-temp protect comparison.
   *   			This parameter can be ENABLE or DISABLE.
   * @param  Unit Unit of TM_HighPtThre.
@@ -397,7 +390,6 @@ void TM_HighPtConfig(float TM_HighPtThre, u32 NewState, TM_UnitDef Unit)
 	TM_PwrProgCmd(ENABLE);
 
 	if (NewState != DISABLE) {
-		assert_param((code >= 0x46) && (code <= 0x8C));
 		val = thermal->TM_TH_CTRL;
 		val &= ~TM_MASK_HIGH_PT_THR;
 		val |= TM_HIGH_PT_THR(code);
@@ -411,9 +403,9 @@ void TM_HighPtConfig(float TM_HighPtThre, u32 NewState, TM_UnitDef Unit)
 }
 
 /**
-  * @brief  Configure over-temp warning threshold for comparison with TEMP_OUT.
-  * @param  TM_HighWtThre Temperature threshold (float). When TM_HighWtThre <= TEMP_OUT < TM_HighPtThre, the ISR_TM_HIGH interrupt flag is set.
-  * @note   Only values greater than 0 are supported.
+  * @brief  Configure over-temp warning threshold for comparison with the measured temperature.
+  * @param  TM_HighWtThre Temperature threshold (float). When TM_HighWtThre <= measured temperature < TM_HighPtThre, the high temperature warning interrupt pending bit is set.
+  * @note   Only values greater than 0°C are supported.
   * @param  NewState New state of the thermal over-temp warning comparison.
   *   			This parameter can be ENABLE or DISABLE.
   * @param  Unit Unit of TM_HighWtThre.
@@ -437,7 +429,6 @@ void TM_HighWtConfig(float TM_HighWtThre, u32 NewState, TM_UnitDef Unit)
 	}
 
 	if (NewState != DISABLE) {
-		assert_param(code < 0x100);
 		val = thermal->TM_TH_CTRL;
 		val &= ~TM_MASK_HIGH_WT_THR;
 		val |= TM_HIGH_WT_THR(code);
@@ -449,8 +440,8 @@ void TM_HighWtConfig(float TM_HighWtThre, u32 NewState, TM_UnitDef Unit)
 }
 
 /**
-  * @brief  Configure low-temp warning threshold for comparison with TEMP_OUT.
-  * @param  TM_LowWtThre Temperature threshold (float). When TEMP_OUT <= TM_LowWtThre, the ISR_TM_LOW interrupt flag is set.
+  * @brief  Configure low-temp warning threshold for comparison with the measured temperature.
+  * @param  TM_LowWtThre Temperature threshold (float). When measured temperature <= TM_LowWtThre, the low temperature warning interrupt pending bit is set.
   * @param  NewState New state of the thermal low-temp warning comparison.
   *   			This parameter can be ENABLE or DISABLE.
   * @param  Unit Unit of TM_LowWtThre.
@@ -474,7 +465,6 @@ void TM_LowWtConfig(float TM_LowWtThre, u32 NewState, TM_UnitDef Unit)
 	}
 
 	if (NewState != DISABLE) {
-		assert_param(code <= 0x1FF);
 		val = thermal->TM_TH_CTRL;
 		val &= ~TM_MASK_LOW_WT_THR;
 		val |= TM_LOW_WT_THR(code);
@@ -487,7 +477,7 @@ void TM_LowWtConfig(float TM_LowWtThre, u32 NewState, TM_UnitDef Unit)
 
 /**
   * @brief  Get Celsius Degree
-  * @param  Data TM_RESULT(Binary complement form)
+  * @param  Data Raw temperature data read from the thermal meter.
   * @return Temperature value of float type.
   * @internal
   *         - [0, 0x3FFFF] ==> [0, 255.999], positive temperature range.
@@ -518,7 +508,7 @@ float TM_GetCdegree(u32 Data)
 
 /**
   * @brief  Get Fahrenheit Degree
-  * @param  Data TM_RESULT(Binary complement form)
+  * @param  Data Raw temperature data read from the thermal meter.
   * @return Temperature value of float type.
   * @internal
   *         - [0, 0x3FFFF] ==> [32, 492.798], positive temperature range.
@@ -537,7 +527,7 @@ float TM_GetFdegree(u32 Data)
 
 /**
   * @brief  Get temperature value according to the specified unit.
-  * @param  Data TM_RESULT(Binary complement form)
+  * @param  Data Raw temperature data read from the thermal meter.
   * @param  Unit Temperature unit.
   *   			This parameter can be TM_DEG_C or TM_DEG_F.
   * @return Temperature value of float type.

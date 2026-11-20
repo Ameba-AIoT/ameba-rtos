@@ -334,7 +334,9 @@ int check_is_the_same_ap()
 */
 void wifi_fast_connect_enable(u8 enable)
 {
-#if defined(CONFIG_MP_INCLUDED)	//always disable fastconnect in mp
+#if defined(CONFIG_MP_INCLUDED) || \
+	(defined(CONFIG_WHC_HOST) && defined(CONFIG_RECONNECT_OFFLOAD))
+	// Disable fast connect in MP mode or when fast connect is offloaded to NP
 	enable = 0;
 #endif
 	if (enable == 0) {

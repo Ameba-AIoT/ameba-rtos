@@ -159,7 +159,7 @@ int light_lightness_publish(const struct bt_mesh_model *model, bool linear)
 	uint16_t present_lightness = get_present_lightness(model, linear);
 	rtk_bt_mesh_generic_transition_time_t remaining_time = {0, 0};
 	return light_lightness_stat(model, NULL, present_lightness, FALSE, 0, remaining_time, linear);
-	/* If want to publish periodicly like spec, use below part
+	/* If want to publish periodically like spec, use below part
 	 * when use below part, should check publication related info is ok first
 	 * Or if want to use above, when need retransmit 3 times, should set 2
 	 */
@@ -1219,7 +1219,7 @@ int light_ctl_publish(const struct bt_mesh_model *model, uint16_t present_lightn
 {
 	rtk_bt_mesh_generic_transition_time_t remaining_time = {0, 0};
 	return light_ctl_stat(model, NULL, present_lightness, present_temperature, FALSE, 0, 0, remaining_time);
-	/* If want to publish periodicly like spec, use below part
+	/* If want to publish periodically like spec, use below part
 	 * when use below part, should check publication related info is ok first
 	 * Or if want to use above, when need retransmit 3 times, should set 2
 	 */
@@ -1557,7 +1557,7 @@ int light_ctl_temperature_publish(const struct bt_mesh_model *model, uint16_t pr
 {
 	rtk_bt_mesh_generic_transition_time_t remaining_time = {0, 0};
 	return light_ctl_temp_stat(model, NULL, present_temperature, present_delta_uv, FALSE, 0, 0, remaining_time);
-	/* If want to publish periodicly like spec, use below part
+	/* If want to publish periodically like spec, use below part
 	 * when use below part, should check publication related info is ok first
 	 * Or if want to use above, when need retransmit 3 times, should set 2
 	 */
@@ -2246,7 +2246,7 @@ int light_hsl_publish(const struct bt_mesh_model *model, uint16_t present_lightn
 {
 	rtk_bt_mesh_generic_transition_time_t remaining_time = {0, 0};
 	return light_hsl_stat(model, NULL, present_lightness, present_hue, present_saturation, FALSE, remaining_time);
-	/* If want to publish periodicly like spec,
+	/* If want to publish periodically like spec,
 	 * use light_hsl_srv_update_publish(),
 	 * Or if want to use above, when need retransmit 3 times, should set 2
 	 */
@@ -2597,7 +2597,7 @@ int light_hsl_hue_publish(const struct bt_mesh_model *model, uint16_t present_hu
 {
 	rtk_bt_mesh_generic_transition_time_t remaining_time = {0, 0};
 	return light_hsl_hue_stat(model, NULL, present_hue, FALSE, 0, remaining_time);
-	/* If want to publish periodicly like spec,
+	/* If want to publish periodically like spec,
 	 * use light_hsl_hue_stat(),
 	 * Or if want to use above, when need retransmit 3 times, should set 2
 	 */
@@ -2850,7 +2850,7 @@ int light_hsl_saturation_publish(const struct bt_mesh_model *model, uint16_t pre
 {
 	rtk_bt_mesh_generic_transition_time_t remaining_time = {0, 0};
 	return light_hsl_saturation_stat(model, NULL, present_saturation, FALSE, 0, remaining_time);
-	/* If want to publish periodicly like spec,
+	/* If want to publish periodically like spec,
 	 * use light_hsl_saturation_stat(),
 	 * Or if want to use above, when need retransmit 3 times, should set 2
 	 */
@@ -3627,7 +3627,7 @@ int light_xyl_publish(const struct bt_mesh_model *model, uint16_t lightness, uin
 {
 	rtk_bt_mesh_generic_transition_time_t remaining_time = {0, 0};
 	return light_xyl_stat(model, NULL, lightness, xyl_x, xyl_y, FALSE, remaining_time);
-	/* If want to publish periodicly like spec,
+	/* If want to publish periodically like spec,
 	 * use light_xyl_srv_update_publish(),
 	 * Or if want to use above, when need retransmit 3 times, should set 2
 	 */

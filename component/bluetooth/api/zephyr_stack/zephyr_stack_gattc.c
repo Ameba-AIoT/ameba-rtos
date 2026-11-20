@@ -623,7 +623,7 @@ static void subscribe_cb(struct bt_conn *conn, uint8_t err,
 	enable = (sub->status == ZEPHYR_SUBSCRIBE_DONE) ? true : false;
 	indicate_subcribe_result(enable, err, conn->handle, sub->profile_id, params->ccc_handle, sub->notify);
 
-	/* Free memory when subcrib fail or unsubscribed */
+	/* Free memory when subscribe fail or unsubscribed */
 	if (err || (!sub->params.value)) {
 		gattc_delete_subscribe(sub);
 	}

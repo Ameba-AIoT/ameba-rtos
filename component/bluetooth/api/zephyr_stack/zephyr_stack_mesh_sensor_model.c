@@ -192,7 +192,7 @@ static int sensor_descriptor_status(const struct bt_mesh_model *model,
 		/******Get descriptor number******/
 		rtk_bt_mesh_sensor_server_get_descriptor_t des_get = {property_id, d_num, NULL};
 		if (d_num > SENSOR_GET_DATA_MAX_LEN) {
-			BT_LOGE("[%s] The num of sensor descirptors is %d, extend max SENSOR_GET_DATA_MAX_LEN:%d\r\n", __func__, d_num, SENSOR_GET_DATA_MAX_LEN);
+			BT_LOGE("[%s] The num of sensor descriptors is %d, extend max SENSOR_GET_DATA_MAX_LEN:%d\r\n", __func__, d_num, SENSOR_GET_DATA_MAX_LEN);
 			d_num = SENSOR_GET_DATA_MAX_LEN;
 		}
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_SENSOR_SERVER_MODEL, RTK_BT_MESH_SENSOR_SERVER_MODEL_DESCRIPTOR_GET,
@@ -660,7 +660,7 @@ int sensor_status_publish(const struct bt_mesh_model *model)
 	if (err) {
 		BT_LOGE("bt_mesh_model_publish err %d\n", err);
 	}
-	/*****If want to publish periodicly like spec, use below part
+	/*****If want to publish periodically like spec, use below part
 	 * when use below part, should check publication related info is ok first
 	 * */
 	// net_buf_simple_reset(model->pub->msg);
@@ -668,7 +668,7 @@ int sensor_status_publish(const struct bt_mesh_model *model)
 	return err;
 }
 
-/***If needed, just follow sensor_status_publish to choose which property id to pulish***/
+/***If needed, just follow sensor_status_publish to choose which property id to publish***/
 int sensor_srv_update_publish(const struct bt_mesh_model *model)
 {
 	(void)model;
@@ -929,7 +929,7 @@ int sensor_cadence_publish(const struct bt_mesh_model *model)
 		net_buf_simple_add_mem(&pmsg, &property_id_publish, sizeof(uint16_t));
 		/*****If want to use below to publish, when need retransmit 3 times, should set 2******/
 		err = bt_mesh_msg_send(model, NULL, &pmsg);
-		/*****If want to publish periodicly like spec, use below part
+		/*****If want to publish periodically like spec, use below part
 		 * when use below part, should check publication related info is ok first
 		 * */
 		// net_buf_simple_reset(model->pub->msg);
@@ -973,7 +973,7 @@ int sensor_cadence_publish(const struct bt_mesh_model *model)
 		}
 		/*****If want to use below to publish, when need retransmit 3 times, should set 2******/
 		err = bt_mesh_msg_send(model, NULL, &pmsg);
-		/*****If want to publish periodicly like spec, use below part*******/
+		/*****If want to publish periodically like spec, use below part*******/
 		// net_buf_simple_reset(model->pub->msg);
 		// net_buf_simple_add_mem(model->pub->msg, pmsg.data, pmsg.len);
 	}
@@ -991,7 +991,7 @@ int sensor_setting_publish(const struct bt_mesh_model *model, uint16_t property_
 		net_buf_simple_add_mem(&pmsg, &setting_property_id, sizeof(uint16_t));
 		/*****If want to use below to publish, when need retransmit 3 times, should set 2******/
 		err = bt_mesh_msg_send(model, NULL, &pmsg);
-		/*****If want to publish periodicly like spec, use below part*******/
+		/*****If want to publish periodically like spec, use below part*******/
 		// net_buf_simple_reset(model->pub->msg);
 		// net_buf_simple_add_mem(model->pub->msg, pmsg.data, pmsg.len);
 	} else {
@@ -1014,7 +1014,7 @@ int sensor_setting_publish(const struct bt_mesh_model *model, uint16_t property_
 		}
 		/*****If want to use below to publish, when need retransmit 3 times, should set 2******/
 		err = bt_mesh_msg_send(model, NULL, &pmsg);
-		/*****If want to publish periodicly like spec, use below part
+		/*****If want to publish periodically like spec, use below part
 		 * when use below part, should check publication related info is ok first
 		 * */
 		// net_buf_simple_reset(model->pub->msg);
@@ -1025,7 +1025,7 @@ int sensor_setting_publish(const struct bt_mesh_model *model, uint16_t property_
 
 /***If needed, just follow sensor_cadence_publish
  *  or sensor_setting_publish to choose
- *  which property id and which status to pulish***/
+ *  which property id and which status to publish***/
 int sensor_setup_srv_update_publish(const struct bt_mesh_model *model)
 {
 	(void)model;

@@ -1469,6 +1469,14 @@ static int usbh_comp_do_init(void)
 static void usb_4g_hotplug_thread(void *param)
 {
 	UNUSED(param);
+
+#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
+	/* This thread may run usbh_deinit(), which waits for no ISR on another core: run it on CPU0, where the
+	   USB IRQ is delivered (arm_gic.c pins every SPI to core 0).
+	   Pinned by the thread itself, first: a created thread may already run on another core. */
+	rtos_task_set_affinity(rtos_task_handle_get(), 0);
+#endif
+
 	for (;;) {
 		if (rtos_sema_take(usbh_comp_detach_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
 			/* in_detach first, so a caller inside a loop gives up its round instead
@@ -1503,6 +1511,14 @@ static void usb_4g_hotplug_thread(void *param)
 static void usb_4g_init_task(void *param)
 {
 	UNUSED(param);
+
+#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
+	/* This thread may run usbh_deinit(), which waits for no ISR on another core: run it on CPU0, where the
+	   USB IRQ is delivered (arm_gic.c pins every SPI to core 0).
+	   Pinned by the thread itself, first: a created thread may already run on another core. */
+	rtos_task_set_affinity(rtos_task_handle_get(), 0);
+#endif
+
 	if (usbh_comp_do_init() != HAL_OK) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Initial USB bring-up failed\n");
 	}
@@ -1663,15 +1679,6 @@ void usb_eth_init(void)
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create hotplug task fail\n");
 		goto err_detach_sema;
 	}
-#if defined(CONFIG_SMP)
-	/* The USB OTG ISR is delivered on CPU0: the GIC pins every SPI to core 0
-	   (ITARGETSR is written to 0x01010101 in arm_gic.c gic_dist_init). Pinning the
-	   hotplug/deinit thread to CPU0 puts it on the same core as the ISR, so the
-	   local interrupt disables inside the teardown are meaningful again. The lwIP TX
-	   thread and the ACM RX thread stay unaffined: a pending teardown is excluded
-	   from them by the per-class mutexes, not by core. */
-	rtos_task_set_affinity(hotplug_task, 0);
-#endif
 
 	ret = rtos_task_create(&usbh_comp_link_check_task, "usb_4g_link",
 						   usb_4g_link_thread, NULL,

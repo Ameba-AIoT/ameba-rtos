@@ -328,6 +328,24 @@ static void cdc_ecm_open_gate(void)
 	rtos_mutex_give(cdc_ecm_state_mutex);
 }
 
+/**
+  * @brief  Make the link thread leave its DHCP section
+  * @note   lwip_request_ip() only ends on its own after all its retries, which takes minutes with no device:
+  *         stop the DHCP client until the thread leaves, a dhcp_stop() that lands before its dhcp_start()
+  *         would be undone by it
+  * @retval None
+  */
+static void cdc_ecm_abort_dhcp(void)
+{
+	u32 waited = 0U;
+
+	while ((cdc_ecm_dhcp_busy != 0U) && (waited < USB_APP_JOIN_TIMEOUT_MS)) {
+		lwip_dhcp_stop(NETIF_USB_ETH_INDEX);
+		rtos_time_delay_ms(10);
+		waited += 10U;
+	}
+}
+
 #if CONFIG_USBH_CDC_ECM_HOT_PLUG
 /**
   * @brief  Tear the stack down and bring it up again, unless a stop came in meanwhile
@@ -338,6 +356,9 @@ static int cdc_ecm_rebuild(u32 down_ms)
 {
 	int ret = RTK_SUCCESS;
 
+	/* The device is gone: a DHCP round still running for it would hold the link thread, and so the
+	   re-opening of the TX gate, until it times out */
+	cdc_ecm_abort_dhcp();
 	cdc_ecm_stack_deinit();
 
 	rtos_time_delay_ms(down_ms);
@@ -365,15 +386,7 @@ static int cdc_ecm_rebuild(u32 down_ms)
   */
 static void cdc_ecm_net_down(void)
 {
-	u32 waited = 0U;
-
-	/* The link thread may be inside lwip_request_ip(): stop the DHCP client until it
-	   leaves, a dhcp_stop() that lands before its dhcp_start() would be undone by it */
-	while ((cdc_ecm_dhcp_busy != 0U) && (waited < USB_APP_JOIN_TIMEOUT_MS)) {
-		lwip_dhcp_stop(NETIF_USB_ETH_INDEX);
-		rtos_time_delay_ms(10);
-		waited += 10U;
-	}
+	cdc_ecm_abort_dhcp();
 	if (cdc_ecm_dhcp_ran != 0U) {
 		lwip_dhcp_stop(NETIF_USB_ETH_INDEX);
 		cdc_ecm_dhcp_ran = 0U;
@@ -496,8 +509,8 @@ static void example_usbh_ecm_link_change_thread(void *param)
 				dhcp_status = lwip_request_ip(NETIF_USB_ETH_INDEX);
 				if ((DHCP_ADDRESS_ASSIGNED == dhcp_status) && (cdc_ecm_app.quit == 0U)) {
 					netifapi_netif_set_default(pnetif_usb_eth);	//Set default gw to ether netif
-					/* From here AT+IPERF/AT+IPERF3 run over the dongle. iperf3 needs -l (at most 2920, 1460
-					 * recommended) on both the board and the PC side, see README "Throughput test" */
+					/* From here AT+IPERF/AT+IPERF3 run over the dongle. iperf3 needs -l on the client side (1..2920,
+					 * 1460 recommended), the board as client defaults to 1460, see README "Throughput test" */
 					RTK_LOGS(TAG, RTK_LOG_INFO, "Switch to link\n");
 				}
 				/* Left the DHCP section: a stop owner waiting for it takes the netif down now */
@@ -533,6 +546,18 @@ static void example_usbh_ecm_hotplug_thread(void *param)
 	u8 fatal = 0U;
 
 	UNUSED(param);
+
+#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
+	/* The USB OTG ISR is delivered on CPU0: the GIC pins every SPI to core 0
+	   (ITARGETSR is written to 0x01010101 in arm_gic.c gic_dist_init). Pinning the
+	   hotplug/deinit thread to CPU0 puts it on the same core as the ISR, so the
+	   local interrupt disables inside the teardown are meaningful again. The lwIP
+	   TX thread stays unaffined: a pending teardown is excluded from it by
+	   cdc_ecm_state_mutex, not by core.
+	   Done by the thread itself, first: a created thread may already run on another core, and its
+	   creator pinning it afterwards could come too late or reach a task that has deleted itself. */
+	rtos_task_set_affinity(rtos_task_handle_get(), 0);
+#endif
 
 	for (;;) {
 		if (rtos_sema_take(cdc_ecm_detach_sema, RTOS_SEMA_MAX_COUNT) != RTK_SUCCESS) {
@@ -631,15 +656,6 @@ static int cdc_ecm_start(void)
 		goto exit_stop;
 	}
 	cdc_ecm_workers++;
-#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
-	/* The USB OTG ISR is delivered on CPU0: the GIC pins every SPI to core 0
-	   (ITARGETSR is written to 0x01010101 in arm_gic.c gic_dist_init). Pinning the
-	   hotplug/deinit thread to CPU0 puts it on the same core as the ISR, so the
-	   local interrupt disables inside the teardown are meaningful again. The lwIP
-	   TX thread stays unaffined: a pending teardown is excluded from it by
-	   cdc_ecm_state_mutex, not by core. */
-	rtos_task_set_affinity(task, 0);
-#endif
 #endif
 
 	return RTK_SUCCESS;
@@ -667,6 +683,14 @@ exit_stop:
 static void example_usbh_cdc_ecm_thread(void *param)
 {
 	UNUSED(param);
+
+#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
+	/* A start that fails rolls back through usbh_deinit(), which waits for no ISR on another
+	   core: run it on CPU0, where the USB IRQ is delivered, as the hotplug thread does.
+	   Done by the thread itself, first: a created thread may already run on another core, and its
+	   creator pinning it afterwards could come too late or reach a task that has deleted itself. */
+	rtos_task_set_affinity(rtos_task_handle_get(), 0);
+#endif
 
 	if (cdc_ecm_start() != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Start fail\n");

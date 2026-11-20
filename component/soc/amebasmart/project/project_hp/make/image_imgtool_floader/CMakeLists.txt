@@ -34,7 +34,7 @@ target_include_directories(${c_CURRENT_IMAGE} PRIVATE ${c_CMPT_USB_DIR}/common)
 #---------------- PRE LINK -------------------#
 add_custom_command(
     TARGET ${c_CURRENT_IMAGE} PRE_LINK
-    COMMAND ${CMAKE_C_COMPILER} -E -P -xc -c ${c_SDK_LD_DIR}/ameba_floader_s.ld -o ${CMAKE_CURRENT_BINARY_DIR}/rlx8721d.ld -I ${c_MENUCONFIG_DIR}
+    COMMAND ${CMAKE_C_COMPILER} ${TOOLCHAIN_DRIVER_OPTS} -E -P -xc -c ${c_SDK_LD_DIR}/ameba_floader_s.ld -o ${CMAKE_CURRENT_BINARY_DIR}/rlx8721d.ld -I ${c_MENUCONFIG_DIR}
     COMMAND ${CMAKE_COMMAND} -E cat ${c_LINK_ROM_SYMBOL_S} >> ${CMAKE_CURRENT_BINARY_DIR}/rlx8721d.ld
     COMMENT "build imgtool_flashloader linkerscript rlx8721d.ld"
 )

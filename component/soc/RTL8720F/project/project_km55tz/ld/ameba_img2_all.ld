@@ -85,7 +85,7 @@ SECTIONS
 		KEEP(*ameba_shell_rom.o(.bss.shell_rxbuf_array))
 		KEEP(*ameba_dump_stack.o(.bss.crash_dump_depth))
 		__romlib_bss_end__ = .;
-	} >  KM4TZ_ROMBSS_RAM_NS
+	} >  KM55TZ_ROMBSS_RAM_NS
 
 	/* sram part */
 	.sram_image2.text.data ORIGIN(KM55TZ_BD_RAM):

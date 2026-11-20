@@ -74,7 +74,7 @@ int efuse_mtp_write(uint32_t offset, uint32_t len, uint8_t *data)
 {
 	int bResult;
 
-	if ((offset + len) > OTP_MTP_USER_LEN) {
+	if ((offset > OTP_MTP_USER_LEN) || (len > (OTP_MTP_USER_LEN - offset))) {
 		printf("ERR: Write MTP out of boundary\n");
 		return -1;
 	}
@@ -107,7 +107,7 @@ int efuse_otp_read(uint32_t offset, uint32_t len, uint8_t *buf)
 	u32 index;
 	int bResult;
 
-	if ((offset + len) > OTP_USER_LEN) {
+	if ((offset > OTP_USER_LEN) || (len > (OTP_USER_LEN - offset))) {
 		printf("ERR: Read Out of boundary\n");
 		return -1;
 	}
@@ -139,10 +139,10 @@ int efuse_otp_read(uint32_t offset, uint32_t len, uint8_t *buf)
   */
 int efuse_otp_write(uint32_t offset, uint32_t len, uint8_t *buf)
 {
-	u8 index;
+	u32 index;
 	int bResult;
 
-	if ((offset + len) > OTP_USER_LEN) {
+	if ((offset > OTP_USER_LEN) || (len > (OTP_USER_LEN - offset))) {
 		printf("ERR: Write Out of boundary\n");
 		return -1;
 	}

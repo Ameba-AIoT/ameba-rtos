@@ -117,7 +117,7 @@ typedef struct {
 	uint8_t             rfc_spp_credit;                /*!< Remaining SPP TX credits. */
 	union {
 		struct {
-			uint8_t     sampling_frequency;            /*!< SBC sampling frequency. */
+			uint8_t     sbc_sampling_frequency;        /*!< SBC sampling frequency. */
 			uint8_t     channel_mode;                  /*!< SBC channel mode. */
 			uint8_t     block_length;                  /*!< SBC block length. */
 			uint8_t     subbands;                      /*!< SBC number of subbands. */
@@ -127,7 +127,7 @@ typedef struct {
 		} sbc;                                         /*!< SBC codec information. */
 		struct {
 			uint8_t     object_type;                   /*!< AAC object type. */
-			uint16_t    sampling_frequency;            /*!< AAC sampling frequency. */
+			uint16_t    aac_sampling_frequency;        /*!< AAC sampling frequency. */
 			uint8_t     channel_number;                /*!< AAC number of channels. */
 			bool        vbr_supported;                 /*!< Whether AAC variable bit rate is supported.
                                                         *   - true: Variable bit rate is supported.

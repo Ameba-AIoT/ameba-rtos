@@ -338,6 +338,9 @@ s32 wifi_start_ap(struct rtw_softap_info *softap_config)
 		lwip_netif_set_up(NETIF_WLAN_AP_INDEX);
 		lwip_netif_set_link_up(SOFTAP_WLAN_INDEX);
 #endif
+	} else if (ret == RTW_DFS_CAC_PENDING) {
+		/* AP link up is deferred until RTW_EVENT_DFS_CAC_DONE */
+		ret = RTK_SUCCESS;
 	}
 
 exit:

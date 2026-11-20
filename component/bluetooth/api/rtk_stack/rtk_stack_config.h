@@ -24,7 +24,7 @@ extern "C" {
 #define GAP_MAX_LE_L2CAP_CHANN_NUM          20  /* L2CAP dynamic channel total number, both ecfc connection and le coc connection will occupy
                                                    channel number, so when user need to use both ecfc and le coc, shall set
                                                    GAP_MAX_LE_L2CAP_CHANN_NUM >= (GAP_LE_MAX_ECFC_CHANN_NUM + GAP_MAX_LE_COC_CHANN_NUM) */
-#define GAP_MAX_LE_SEC_ENTRY_NUM            12  /* LE security entry number, it will limit the number of ecfc protocal and le coc security */
+#define GAP_MAX_LE_SEC_ENTRY_NUM            12  /* LE security entry number, it will limit the number of ecfc protocol and le coc security */
 
 /**
  * @brief Default TX/RX preferred parameters

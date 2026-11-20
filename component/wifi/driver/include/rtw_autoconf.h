@@ -137,6 +137,11 @@
 #define CONFIG_AUTO_RECONNECT 0
 #endif
 
+/* reconnect runs on the device (NP), the host (AP) must not run its own */
+#if defined(CONFIG_WHC_HOST) && defined(CONFIG_RECONNECT_OFFLOAD)
+#undef CONFIG_AUTO_RECONNECT
+#define CONFIG_AUTO_RECONNECT 0
+#endif
 
 /* When using supplicant SME, 11R is supported by default, instead of reuse the path of RTOS 11R */
 #ifdef CONFIG_SUPPLICANT_SME

@@ -116,6 +116,7 @@ void FLASH_Write_IPC_Int(void *Data, u32 IrqStatus, u32 ChanNum)
 		Start_Timer_Cnt = SYSTIMER_TickGet();
 		Start_Systick_Cnt = xTaskGetTickCountFromISR();
 		Flash_Freeze_Loop(pflag);
+		Flash_Tick_Compensate_Clear(pflag);
 	} else if (*pflag == WRITE_SYNC_UNLOCK) {
 		/* Km4 in FLASH_Write_Unlock, waiting for Km0 to compensate systick value */
 		Flash_Tick_Compensate_Clear(pflag);

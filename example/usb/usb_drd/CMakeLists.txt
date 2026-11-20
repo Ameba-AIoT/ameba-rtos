@@ -26,9 +26,6 @@ target_include_directories(
 # network app then leaves the lwIP USB netif lock alone on stop, another app may hold it.
 # Triples: <app> <class Kconfig> <class include dir under component/usb>
 # A composite app needs every class it combines, gated through a derived variable
-if(CONFIG_USBD_COMPOSITE AND CONFIG_USBD_CDC_ACM AND CONFIG_USBD_HID)
-    set(USB_DRD_COMP_ACM_HID ON)
-endif()
 if(CONFIG_USBD_COMPOSITE AND CONFIG_USBD_CDC_ACM AND CONFIG_USBD_MSC)
     set(USB_DRD_COMP_ACM_MSC ON)
 endif()
@@ -78,7 +75,6 @@ set(USB_DRD_APPS
     usbh_cdc_ncm CONFIG_USBH_CDC_NCM host/cdc_ncm
     usbd_hid     CONFIG_USBD_HID     device/hid
     usbd_uvc     CONFIG_USBD_UVC     device/uvc
-    usbd_composite_cdc_acm_hid USB_DRD_COMP_ACM_HID device/composite
     usbd_composite_cdc_acm_msc USB_DRD_COMP_ACM_MSC device/composite
     usbd_uac     CONFIG_USBD_UAC     device/uac
     usbh_uac     CONFIG_USBH_UAC     host/uac

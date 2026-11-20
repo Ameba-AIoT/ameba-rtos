@@ -367,7 +367,8 @@ static bool prov_cb(prov_cb_type_t cb_type, prov_cb_data_t cb_data)
 
 		memcpy((void *)rand, (void *)prov_check_conf.rand, sizeof(rand));
 		memcpy((void *)confirmation, (void *)prov_check_conf.conf, sizeof(confirmation));
-		BT_LOGA("confimation %02x %02x %02x %02x %02x %02x \r\n", confirmation[0], confirmation[1], confirmation[2], confirmation[3], confirmation[4], confirmation[5]);
+		BT_LOGA("confirmation %02x %02x %02x %02x %02x %02x \r\n", confirmation[0], confirmation[1], confirmation[2], confirmation[3],
+				confirmation[4], confirmation[5]);
 		BT_LOGA("rand %02x %02x %02x %02x %02x %02x \r\n", rand[0], rand[1], rand[2], rand[3], rand[4], rand[5]);
 
 		/* if confirmation from device is correct invoke prov_send_prov_data() */
@@ -1055,10 +1056,56 @@ static void rtk_bt_mesh_gap_init(void)
 #endif
 }
 
+/* The retrans params set by the app at init, used to restore them after the node is reset */
+static rtk_bt_mesh_app_conf_t mesh_app_conf_store;
+
+static void rtk_stack_retrans_param_default_set(void)
+{
+	mesh_node.net_trans_count = BT_MESH_CONFIG_NET_TRANS_COUNTS;
+	mesh_node.net_trans_steps = BT_MESH_CONFIG_NET_TRANS_STEPS;
+	mesh_node.relay_retrans_count = BT_MESH_CONFIG_RELAY_RETRANS_COUNTS;
+	mesh_node.relay_retrans_steps = BT_MESH_CONFIG_RELAY_RETRANS_STEPS;
+	mesh_node.trans_retrans_count = BT_MESH_CONFIG_TRANS_RETRANS_COUNTS;
+	mesh_node.ttl = BT_MESH_CONFIG_MSG_TTL;
+#if defined(BT_MESH_ENABLE_DIRECTED_FORWARDING) && BT_MESH_ENABLE_DIRECTED_FORWARDING
+	mesh_node.df_net_trans_count = BT_MESH_CONFIG_DF_ACCESS_NET_TRANS_COUNTS;
+	mesh_node.df_net_trans_steps = BT_MESH_CONFIG_DF_ACCESS_NET_TRANS_STEPS;
+	mesh_node.df_relay_retrans_count = BT_MESH_CONFIG_DF_ACCESS_RELAY_RETRANS_COUNTS;
+	mesh_node.df_relay_retrans_steps = BT_MESH_CONFIG_DF_ACCESS_RELAY_RETRANS_STEPS;
+	mesh_node.df_net_ctl_trans_count = BT_MESH_CONFIG_DF_CTL_NET_TRANS_COUNTS;
+	mesh_node.df_net_ctl_trans_steps = BT_MESH_CONFIG_DF_CTL_NET_TRANS_STEPS;
+	mesh_node.df_relay_ctl_retrans_count = BT_MESH_CONFIG_DF_CTL_RELAY_RETRANS_COUNTS;
+	mesh_node.df_relay_ctl_retrans_steps = BT_MESH_CONFIG_DF_CTL_RELAY_RETRANS_STEPS;
+#endif
+}
+
+static void rtk_stack_retrans_param_user_set(rtk_bt_mesh_app_conf_t *mesh_app_conf)
+{
+	if (mesh_app_conf->param_mask & RTK_BT_MESH_APP_CONF_TRANS_RETRANS_COUNT) {
+		mesh_node.trans_retrans_count = mesh_app_conf->trans_retrans_count;
+	}
+	if (mesh_app_conf->param_mask & RTK_BT_MESH_APP_CONF_NET_TRANS_COUNT) {
+		mesh_node.net_trans_count = mesh_app_conf->net_trans_count;
+	}
+	if (mesh_app_conf->param_mask & RTK_BT_MESH_APP_CONF_NET_TRANS_INTERVAL_STEP) {
+		mesh_node.net_trans_steps = mesh_app_conf->net_trans_interval_step;
+	}
+	if (mesh_app_conf->param_mask & RTK_BT_MESH_APP_CONF_RELAY_RETRANS_COUNT) {
+		mesh_node.relay_retrans_count = mesh_app_conf->relay_retrans_count;
+	}
+	if (mesh_app_conf->param_mask & RTK_BT_MESH_APP_CONF_RELAY_RETRANS_INTERVAL_STEP) {
+		mesh_node.relay_retrans_steps = mesh_app_conf->relay_retrans_interval_step;
+	}
+	if (mesh_app_conf->param_mask & RTK_BT_MESH_APP_CONF_TTL) {
+		mesh_node.ttl = mesh_app_conf->ttl;
+	}
+}
+
 extern void proxy_server_support_prov_on_proxy(bool);
 static void rtk_bt_mesh_stack_init(void *data)
 {
 	rtk_bt_mesh_app_conf_t *mesh_app_conf = (rtk_bt_mesh_app_conf_t *)data;
+	mesh_app_conf_store = *mesh_app_conf;
 
 	/** set mesh stack log level, default all on, disable the log of level LEVEL_TRACE */
 	uint32_t module_bitmap[MESH_LOG_LEVEL_SIZE] = {0};
@@ -1177,42 +1224,7 @@ static void rtk_bt_mesh_stack_init(void *data)
 #endif
 
 	// Set default mesh retrans params
-	mesh_node.net_trans_count = BT_MESH_CONFIG_NET_TRANS_COUNTS;
-	mesh_node.net_trans_steps = BT_MESH_CONFIG_NET_TRANS_STEPS;
-	mesh_node.relay_retrans_count = BT_MESH_CONFIG_RELAY_RETRANS_COUNTS;
-	mesh_node.relay_retrans_steps = BT_MESH_CONFIG_RELAY_RETRANS_STEPS;
-	mesh_node.trans_retrans_count = BT_MESH_CONFIG_TRANS_RETRANS_COUNTS;
-	mesh_node.ttl = BT_MESH_CONFIG_MSG_TTL;
-#if defined(BT_MESH_ENABLE_DIRECTED_FORWARDING) && BT_MESH_ENABLE_DIRECTED_FORWARDING
-	mesh_node.df_net_trans_count = BT_MESH_CONFIG_DF_ACCESS_NET_TRANS_COUNTS;
-	mesh_node.df_net_trans_steps = BT_MESH_CONFIG_DF_ACCESS_NET_TRANS_STEPS;
-	mesh_node.df_relay_retrans_count = BT_MESH_CONFIG_DF_ACCESS_RELAY_RETRANS_COUNTS;
-	mesh_node.df_relay_retrans_steps = BT_MESH_CONFIG_DF_ACCESS_RELAY_RETRANS_STEPS;
-	mesh_node.df_net_ctl_trans_count = BT_MESH_CONFIG_DF_CTL_NET_TRANS_COUNTS;
-	mesh_node.df_net_ctl_trans_steps = BT_MESH_CONFIG_DF_CTL_NET_TRANS_STEPS;
-	mesh_node.df_relay_ctl_retrans_count = BT_MESH_CONFIG_DF_CTL_RELAY_RETRANS_COUNTS;
-	mesh_node.df_relay_ctl_retrans_steps = BT_MESH_CONFIG_DF_CTL_RELAY_RETRANS_STEPS;
-#endif
-
-	// Set user mesh retrans params
-	if (mesh_app_conf->trans_retrans_count) {
-		mesh_node.trans_retrans_count = mesh_app_conf->trans_retrans_count;
-	}
-	if (mesh_app_conf->net_trans_count) {
-		mesh_node.net_trans_count = mesh_app_conf->net_trans_count;
-	}
-	if (mesh_app_conf->net_trans_interval_step) {
-		mesh_node.net_trans_steps = mesh_app_conf->net_trans_interval_step;
-	}
-	if (mesh_app_conf->relay_retrans_count) {
-		mesh_node.relay_retrans_count = mesh_app_conf->relay_retrans_count;
-	}
-	if (mesh_app_conf->relay_retrans_interval_step) {
-		mesh_node.relay_retrans_steps = mesh_app_conf->relay_retrans_interval_step;
-	}
-	if (mesh_app_conf->ttl) {
-		mesh_node.ttl = mesh_app_conf->ttl;
-	}
+	rtk_stack_retrans_param_default_set();
 
 	// Set mesh FTL size for user,if not,use the default 3000 bytes
 	if (mesh_app_conf->bt_mesh_flash_size) {
@@ -1252,6 +1264,9 @@ static void rtk_bt_mesh_stack_init(void *data)
 	df_control_set(0, ctl);
 #endif
 #endif
+
+	// Set user mesh retrans params
+	rtk_stack_retrans_param_user_set(mesh_app_conf);
 }
 
 static bool is_all_zeros_in_buf(uint8_t *p, uint8_t len)
@@ -1303,7 +1318,7 @@ static uint8_t rtk_bt_mesh_save_info(void *data)
 	return 0;
 }
 
-/* =============================================== bt mesh one shot ADV releate API functions ======================================= */
+/* =============================================== bt mesh one shot ADV relate API functions ======================================= */
 static rtk_bt_mesh_stack_act_send_adv_t default_adv;
 static uint8_t is_advertising_flag = 0;
 static void *mesh_one_shot_adv_timer_handle = NULL;
@@ -1377,8 +1392,8 @@ void ble_mesh_handle_io_msg(T_IO_MSG *io_msg)
 	}
 }
 
-/* =============================================== bt mesh stack releate API functions ======================================= */
-static void rtk_stack_set_device_info_display(rkt_bt_mesh_stack_act_device_info_set_t *p_data)
+/* =============================================== bt mesh stack relate API functions ======================================= */
+static void rtk_stack_set_device_info_display(rtk_bt_mesh_stack_act_device_info_set_t *p_data)
 {
 	if (p_data->dev_info_dis) {
 		dev_info_switch_flag = true;
@@ -2024,6 +2039,9 @@ uint16_t bt_mesh_stack_act_handle(rtk_bt_cmd_t *p_cmd)
 	switch (p_cmd->act) {
 	case RTK_BT_MESH_STACK_ACT_NODE_RESET:
 		mesh_node_reset();
+		// The retrans params in ram are not restored by the reset, set the default ones and the user ones again
+		rtk_stack_retrans_param_default_set();
+		rtk_stack_retrans_param_user_set(&mesh_app_conf_store);
 #if defined(RTK_BLE_MESH_PROVISIONER_SUPPORT) && RTK_BLE_MESH_PROVISIONER_SUPPORT
 		if (prov_param_store_valid) {
 			rtk_stack_prov_param_set(&prov_param_store);

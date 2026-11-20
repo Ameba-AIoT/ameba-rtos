@@ -32,32 +32,31 @@
 
 /* Private defines -----------------------------------------------------------*/
 
-// Endpoint address
+// Endpoint address. A shared DFIFO SoC (RTL8730E, RTL8721Dx) supports one ISOC IN endpoint only and
+// builds the record or the playback feedback, never both, refer to usbd_uac.h: they share EP1 there.
 #if defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RLE1509)
-#define USBD_UAC_ISOC_IN_EP                      0x84U
-#define USBD_UAC_ISOC_OUT_EP                     0x02U
+#define USBD_UAC_RECORD_EP                       0x84U
+#define USBD_UAC_PLAY_EP                         0x02U
+#define USBD_UAC_PLAY_FEEDBACK_EP                0x83U
 #else
-#define USBD_UAC_ISOC_IN_EP                      0x81U
-#define USBD_UAC_ISOC_OUT_EP                     0x02U
+#define USBD_UAC_RECORD_EP                       0x81U
+#define USBD_UAC_PLAY_EP                         0x02U
+#define USBD_UAC_PLAY_FEEDBACK_EP                0x81U
 #endif
 
 // This configuration is used to enable a thread to check hotplug event
 // and reset USB stack to avoid memory leak, only for example.
 #define USBD_UAC_HOTPLUG                          1
 
-// This configuration is used to choose one channel to play
-// for the audio does not support some channel, Such as 4 chs
-// while enable this configuration,choose the first ch to play
+// The board plays 2 channels: a host stream of more channels (4/6/8) is cut down to its front
+// left and right channels, a stereo or mono stream is played as is
 #define USBD_UAC_DEMUX_CH_DEBUG                   1
+#define USBD_UAC_PLAY_MAX_TRACK_CHANNEL           2U
 
-// USB speed. Only UAC 1.0 needs to ask: its spec supports Full Speed only, so an
-// HS-capable PHY has to be driven in Full-Speed mode. UAC 2.0 leaves the speed to
-// the core, which clamps to Full Speed by itself on an FS-only SoC.
-#ifdef CONFIG_USBD_UAC1
-#define USBD_UAC_USB_SPEED                        USB_SPEED_HIGH_IN_FULL
-#else
-#define USBD_UAC_USB_SPEED                        USB_SPEED_HIGH
-#endif
+// Print a summary of the playback feedback once per interval: the min and max value sent and the
+// average water level. Debug only, CONFIG_USBD_UAC_PLAY_FEEDBACK with an audio track
+#define USBD_UAC_PLAY_FEEDBACK_DEBUG              0
+#define USBD_UAC_PLAY_FEEDBACK_DEBUG_INTERVAL_MS  1000U
 
 // Thread priorities
 #define USBD_UAC_INIT_THREAD_PRIORITY             6
@@ -69,35 +68,39 @@
 #define USBD_UAC_HOTPLUG_THREAD_STACK_SIZE        1024U
 #define USBD_UAC_PLAYER_THREAD_STACK_SIZE         2300U
 
-// Microphone (USB IN / record) demo. Recording is only wired up in the UAC 2.0
-// class driver, so follow the same rule as the composite UAC example: enable it
-// for UAC 2.0 (HS / HS-IN-FULL) and disable it for UAC 1.0 and FS-only builds.
-#ifdef CONFIG_SUPPORT_USB_FS_ONLY
-#define USBD_UAC_ENABLE_RECORD                    0
-#elif defined(CONFIG_USBD_UAC1)
-#define USBD_UAC_ENABLE_RECORD                    0
-#else
+// Microphone (USB IN / record) demo, built with the class record path: CONFIG USB > UAC > Enable record (microphone)
+#ifdef CONFIG_USBD_UAC_RECORD
 #define USBD_UAC_ENABLE_RECORD                    1
+#else
+#define USBD_UAC_ENABLE_RECORD                    0
 #endif
 
 #if USBD_UAC_ENABLE_RECORD
 #define USBD_UAC_RECORD_THREAD_PRIORITY           4
 #define USBD_UAC_RECORD_THREAD_STACK_SIZE         (1024U * 4)
-/* One USB IN chunk = one period of a 1 kHz sine at 16 kHz stereo 16-bit = 16 frames = 64 bytes */
+/* 1 ms of the 16kHz/2ch/16bit record format. usbd_uac_transmit_data() cuts it into per-bInterval
+ * packets itself, so this is only the feeding granularity */
 #define USBD_UAC_RECORD_CHUNK_LEN                 64U
 #define USBD_UAC_RECORD_CHUNK_DELAY_MS            1U
-/* usbd_uac_transmit_data() accepts any length and cuts it into per-(micro)frame packets itself,
- * so the slices below are only a feeding granularity: one call per ms would do as well. */
-#define USBD_UAC_RECORD_SLICES_PER_MS             8U
-#define USBD_UAC_RECORD_SLICE_LEN                 (USBD_UAC_RECORD_CHUNK_LEN / USBD_UAC_RECORD_SLICES_PER_MS)
+/* "Realtek" clip replayed as the mic input, refer to example_usbd_uac_record_thread() */
+#include "example_usbd_uac_record_audio_data.h"
+
+/* The clip and USBD_UAC_RECORD_CHUNK_LEN are 16kHz/2ch/16bit, the format the mic reports shall match */
+#if (USBD_UAC_RECORD_SAMPLING_FREQ != USBD_UAC_SAMPLING_FREQ_16K) || (USBD_UAC_RECORD_CHANNEL_COUNT != USBD_UAC_CHANNEL_COUNT_2) || \
+	(USBD_UAC_RECORD_BYTE_WIDTH != USBD_UAC_BYTE_WIDTH_2)
+#error "The built-in record clip is 16 kHz, 2 channels, 16-bit: select this record format in menuconfig, or replace the clip"
+#endif
+
+/* The record thread reads the table in whole chunks */
+_Static_assert((sizeof(usbd_uac_record_audio_data) % USBD_UAC_RECORD_CHUNK_LEN) == 0U, "UAC record data len");
 #endif
 
 /* Data worker threads joined by a stop: the player, plus the record thread */
 #define USBD_UAC_WORKER_CNT                       (1U + USBD_UAC_ENABLE_RECORD)
 
-#define AUDIO_BYTE_WIDTH_SIZE                   USBD_UAC_DEFAULT_BYTE_WIDTH
+#define AUDIO_BYTE_WIDTH_SIZE                   USBD_UAC_PLAY_BYTE_WIDTH
 #define AUDIO_SAMPLING_FREQ                     USBD_UAC_SAMPLING_FREQ_48K
-#define AUDIO_CHANNEL_NUM                       USBD_UAC_DEFAULT_CH_CNT
+#define AUDIO_CHANNEL_NUM                       USBD_UAC_PLAY_MAX_CHANNEL_COUNT
 
 /* ms */
 #ifdef CONFIG_SUPPORT_USB_FS_ONLY
@@ -110,6 +113,26 @@
 #define USB_AUDIO_BUF_SIZE                  ((USB_AUDIO_MS_BUF_SIZE) * 3U)
 
 /* Private types -------------------------------------------------------------*/
+
+/* Playback format selected by the host, refer to uac_cb_format_changed() */
+typedef struct {
+	u32 sampling_freq;
+	u8 byte_width;
+	u8 channel_count;
+} uac_play_format_t;
+
+#if defined(CONFIG_USBD_UAC_PLAY_FEEDBACK) && defined(CONFIG_SUPPORT_AUDIO_FOR_USB)
+/* Audio held by the AudioTrack, the water level of the playback feedback: written by the player,
+   read by the feedback callback in ISR context */
+typedef struct {
+	u32 written_frames;      /* Frames written to the track, wraps like the mixer position */
+	u32 frame_bytes;
+	u32 sampling_freq;
+	u32 last_us;             /* Previous raw level, for the two sample average */
+	__IO u32 queued_us;      /* Audio the track holds, averaged over two writes */
+	__IO u32 target_us;      /* Half of the track buffer, 0 while no track runs */
+} uac_play_level_t;
+#endif
 
 /* Private macros ------------------------------------------------------------*/
 
@@ -128,7 +151,16 @@ static int uac_cb_set_config(void);
 static void uac_cb_status_changed(u8 old_status, u8 status);
 static void uac_cb_mute_changed(u8 mute);
 static void uac_cb_volume_changed(u8 volume);
-static void uac_cb_format_changed(u32 sampling_freq, u8 ch_cnt, u8 byte_width);
+static void uac_cb_format_changed(u32 sampling_freq, u8 channel_count, u8 byte_width);
+#ifdef CONFIG_USBD_UAC_PLAY_FEEDBACK
+static u32 uac_cb_get_play_feedback(void);
+#endif
+#ifdef CONFIG_SUPPORT_AUDIO_FOR_USB
+static void uac_track_write(struct AudioTrack *track, const u8 *buf, u32 len);
+#endif
+#if defined(CONFIG_USBD_UAC_PLAY_FEEDBACK) && defined(CONFIG_SUPPORT_AUDIO_FOR_USB)
+static void uac_play_level_start(u32 frame_bytes, u32 sampling_freq, u32 buf_bytes);
+#endif
 
 /* Private variables ---------------------------------------------------------*/
 
@@ -190,12 +222,24 @@ static const usbd_config_t uac_cfg = {
 #else
 		.prod_str = "Realtek UAC2.0 Device",
 #endif
-		.speed = USBD_UAC_USB_SPEED,
+		/* High Speed, clamped to Full Speed by the core on an FS-only SoC */
+		.speed = USB_SPEED_HIGH,
 	},
 	.isr_priority = INT_PRI_MIDDLE,
-#if defined(CONFIG_AMEBAGREEN2)
+#ifdef CONFIG_USBD_UAC_PLAY_FEEDBACK
+	/* The SOF sends the playback feedback once per ms */
+	.ext_intr_enable = USBD_SOF_INTR,
+#endif
+#if defined(CONFIG_AMEBAGREEN2) && defined(CONFIG_USBD_UAC_PLAY_FEEDBACK)
+	/* TxFIFO3 for the feedback EP, TxFIFO4 for the record EP */
+	.rx_fifo_depth = 708U,
+	.ptx_fifo_depth = {0U, 0U, 16U, 256U, },
+#elif defined(CONFIG_AMEBAGREEN2)
 	.rx_fifo_depth = 724U,
 	.ptx_fifo_depth = {0U, 0U, 0U, 256U, },
+#elif defined(CONFIG_RLE1509) && defined(CONFIG_USBD_UAC_PLAY_FEEDBACK)
+	.rx_fifo_depth = 672U,
+	.ptx_fifo_depth = {0U, 0U, 16U, 256U, },
 #elif defined(CONFIG_RLE1509)
 	.rx_fifo_depth = 688U,
 	.ptx_fifo_depth = {0U, 0U, 0U, 256U, },
@@ -206,31 +250,38 @@ static const usbd_config_t uac_cfg = {
 #endif
 };
 
-/* Handed to the class, which keeps the pointer: never written afterwards, refer to uac_play_cfg */
+/* Handed to the class, which keeps the pointer: never written afterwards, refer to uac_play_format */
 static const usbd_uac_config_t uac_class_cfg = {
-#if USBD_UAC_ENABLE_RECORD
-	.in = {
-		.enable = 1,
-		.sampling_freq = USBD_UAC_IN_DEFAULT_SAMPLING_FREQ,
-		.byte_width = USBD_UAC_IN_DEFAULT_BYTE_WIDTH,
-		.ch_cnt = USBD_UAC_IN_DEFAULT_CH_CNT
-	},
-#else
-	.in = {.enable = 0,}, /* playback only (UAC 1.0 / FS-only) */
-#endif
-	.out = {.enable = 1, .sampling_freq = AUDIO_SAMPLING_FREQ, .byte_width = AUDIO_BYTE_WIDTH_SIZE, .ch_cnt = AUDIO_CHANNEL_NUM},
-	.isoc_in_addr  = USBD_UAC_ISOC_IN_EP,
-	.isoc_out_addr = USBD_UAC_ISOC_OUT_EP,
+	.play_ep_addr = USBD_UAC_PLAY_EP,
+	.record_ep_addr = USBD_UAC_RECORD_EP,
+	.play_feedback_ep_addr = USBD_UAC_PLAY_FEEDBACK_EP,
 };
 
 /* Current playback format: rewritten by format_changed() in ISR context, possibly on another
    core, and snapshot by the player under the same lock */
-static usbd_audio_cfg_t uac_play_cfg = {
+static uac_play_format_t uac_play_format = {
 	.sampling_freq = AUDIO_SAMPLING_FREQ,
 	.byte_width = AUDIO_BYTE_WIDTH_SIZE,
-	.ch_cnt = AUDIO_CHANNEL_NUM,
-	.enable = 1,
+	.channel_count = AUDIO_CHANNEL_NUM,
 };
+
+#if defined(CONFIG_USBD_UAC_PLAY_FEEDBACK) && defined(CONFIG_SUPPORT_AUDIO_FOR_USB)
+static uac_play_level_t uac_play_level;
+#if USBD_UAC_PLAY_FEEDBACK_DEBUG
+/* Last feedback and the level it came from: written by the feedback callback, printed by the player */
+static __IO u32 uac_fb_debug_value;
+static __IO s32 uac_fb_debug_level_us;
+static __IO s32 uac_fb_debug_target_us;
+/* Summary of one print interval, owned by the player and reset with each track */
+static struct {
+	u32 last_ms;
+	u32 fb_min;
+	u32 fb_max;
+	s32 lvl_sum;
+	u32 cnt;
+} uac_fb_debug_stat;
+#endif
+#endif
 
 static usbd_uac_cb_t uac_cb = {
 	.init = uac_cb_init,
@@ -242,23 +293,13 @@ static usbd_uac_cb_t uac_cb = {
 	.volume_changed = uac_cb_volume_changed,
 	.format_changed = uac_cb_format_changed,
 	.sof = NULL,
+#ifdef CONFIG_USBD_UAC_PLAY_FEEDBACK
+	.get_play_feedback = uac_cb_get_play_feedback,
+#endif
 };
 
 #if USBD_UAC_ENABLE_RECORD
-/* Mic record format: 16-bit / 16 kHz / 2ch (stereo), matches the synthetic tone below */
-static const usbd_audio_cfg_t uac_record_cfg = {
-	.sampling_freq = USBD_UAC_IN_DEFAULT_SAMPLING_FREQ,
-	.byte_width = USBD_UAC_IN_DEFAULT_BYTE_WIDTH,
-	.ch_cnt = USBD_UAC_IN_DEFAULT_CH_CNT,
-	.enable = 1,
-};
 static rtos_sema_t uac_record_start_sema;
-/* 16-point sine LUT (one period), amplitude ~10000; drives a 1 kHz tone at 16 kHz */
-static const s16 uac_record_sine16[16] = {
-	0, 3827, 7071, 9239, 10000, 9239, 7071, 3827,
-	0, -3827, -7071, -9239, -10000, -9239, -7071, -3827
-};
-static u8 uac_record_chunk[USBD_UAC_RECORD_CHUNK_LEN] USB_DMA_ALIGNED;
 #endif
 
 /* Exported variables --------------------------------------------------------*/
@@ -404,6 +445,17 @@ static void example_usbd_uac_hotplug_thread(void *param)
 
 	UNUSED(param);
 
+#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
+	/* C-2: the USB OTG ISR is delivered on CPU0 (GIC ITARGETSR pins every SPI to core 0).
+	   Pinning the hotplug/deinit thread to CPU0 puts it on the same core as the ISR,
+	   so deinit's local interrupt disable is meaningful again under SMP. The player /
+	   record data threads stay unaffined: a pending deinit is excluded from them by
+	   uac_play_lock / uac_record_lock, not by core.
+	   Done by the thread itself, first: a created thread may already run on another core, and its
+	   creator pinning it afterwards could come too late or reach a task that has deleted itself. */
+	rtos_task_set_affinity(rtos_task_handle_get(), 0);
+#endif
+
 	for (;;) {
 		if (rtos_sema_take(uac_attach_status_changed_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
 			if (uac_app.quit != 0U) {
@@ -513,38 +565,166 @@ static void uac_cb_volume_changed(u8 volume)
 	// RTK_LOGS(TAG, RTK_LOG_INFO, "USBD set volume %d\n", volume);
 }
 
+#ifdef CONFIG_USBD_UAC_PLAY_FEEDBACK
+/**
+  * @brief  Report the playback rate the device consumes, sent to the host once per ms
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  *         A water level control within 0.1% of the nominal rate: a fuller buffer asks the host
+  *         for less, an emptier one for more. While a track runs the level is the audio the
+  *         AudioTrack holds plus the OUT ring, kept at half the track buffer: the player drains
+  *         the ring at once and blocks in AudioTrack_Write(). Without a track (no audio
+  *         framework) the OUT ring alone is kept half full.
+  *         A proportional control only: when the device clock differs from the nominal rate the
+  *         level settles off the target, by the share of the 0.1% range the clock error takes
+  *         (e.g. 30 ms above it for a clock 170 ppm slow). An application that needs the level
+  *         on the target adds an integral term, the accumulated level error, to the formula.
+  * @retval Frames per ms in 16.16 fixed point
+  */
+static u32 uac_cb_get_play_feedback(void)
+{
+	/* 1/1024 of the nominal rate, about 0.1% */
+	u32 nominal = (u32)(((u64)uac_play_format.sampling_freq << USBD_UAC_PLAY_FEEDBACK_FRACTION_BITS) / 1000U);
+	s32 max_delta = (s32)(nominal >> 10);
+	s32 target_us = (s32)(USBD_UAC_DEFAULT_PLAY_BUF_COUNT * 1000U / 2U);
+	s32 level_us = (s32)usbd_uac_get_read_frame_time_in_us();
+	s32 diff;
+
+#ifdef CONFIG_SUPPORT_AUDIO_FOR_USB
+	if (uac_play_level.target_us != 0U) {
+		target_us = (s32)uac_play_level.target_us;
+		level_us += (s32)uac_play_level.queued_us;
+	}
+#endif
+
+	diff = target_us - level_us;
+	if (diff > target_us) {
+		diff = target_us;
+	} else if (diff < -target_us) {
+		diff = -target_us;
+	}
+
+	nominal = (u32)((s32)nominal + (s32)(((s64)max_delta * diff) / target_us));
+#if defined(CONFIG_SUPPORT_AUDIO_FOR_USB) && USBD_UAC_PLAY_FEEDBACK_DEBUG
+	uac_fb_debug_value = nominal;
+	uac_fb_debug_level_us = level_us;
+	uac_fb_debug_target_us = target_us;
+#endif
+
+	return nominal;
+}
+#endif
+
+#ifdef CONFIG_SUPPORT_AUDIO_FOR_USB
+/**
+  * @brief  Write audio to the track, and with the playback feedback publish the audio it holds
+  * @param  track: Audio track
+  * @param  buf: Audio data
+  * @param  len: Length in bytes
+  * @retval None
+  */
+static void uac_track_write(struct AudioTrack *track, const u8 *buf, u32 len)
+{
+#ifdef CONFIG_USBD_UAC_PLAY_FEEDBACK
+	int32_t ret;
+	uint64_t pos = 0;
+
+	ret = AudioTrack_Write(track, buf, len, true);
+	if (ret > 0) {
+		uac_play_level.written_frames += (u32)ret / uac_play_level.frame_bytes;
+	}
+	/* The frames the track consumed, the rest is still queued */
+	ret = AudioTrack_GetPosition(track, &pos);
+	if (ret == AUDIO_OK) {
+		/* The mixer position moves in blocks: average two samples to smooth the steps out */
+		u32 us = (u32)(((u64)(uac_play_level.written_frames - (u32)pos) * 1000000U) / uac_play_level.sampling_freq);
+		uac_play_level.queued_us = (us + uac_play_level.last_us) / 2U;
+		uac_play_level.last_us = us;
+	}
+#if USBD_UAC_PLAY_FEEDBACK_DEBUG
+	{
+		/* Task context: the callback runs in the ISR, where no log is allowed. Sampled at every
+		   write, the feedback only changes with the level the writes move */
+		u32 value = uac_fb_debug_value;
+		u32 now = rtos_time_get_current_system_time_ms();
+
+		uac_fb_debug_stat.fb_min = MIN(uac_fb_debug_stat.fb_min, value);
+		uac_fb_debug_stat.fb_max = MAX(uac_fb_debug_stat.fb_max, value);
+		uac_fb_debug_stat.lvl_sum += uac_fb_debug_level_us;
+		uac_fb_debug_stat.cnt++;
+		if ((now - uac_fb_debug_stat.last_ms) >= USBD_UAC_PLAY_FEEDBACK_DEBUG_INTERVAL_MS) {
+			/* 16.16 frames per ms; level/target in us */
+			RTK_LOGS(TAG, RTK_LOG_INFO, "FB %08x-%08x lvl %d tgt %d\n", uac_fb_debug_stat.fb_min, uac_fb_debug_stat.fb_max,
+					 uac_fb_debug_stat.lvl_sum / (s32)uac_fb_debug_stat.cnt, uac_fb_debug_target_us);
+			memset(&uac_fb_debug_stat, 0, sizeof(uac_fb_debug_stat));
+			uac_fb_debug_stat.last_ms = now;
+			uac_fb_debug_stat.fb_min = 0xFFFFFFFFU;
+		}
+	}
+#endif
+#else
+	AudioTrack_Write(track, buf, len, true);
+#endif
+}
+#endif
+
+#if defined(CONFIG_USBD_UAC_PLAY_FEEDBACK) && defined(CONFIG_SUPPORT_AUDIO_FOR_USB)
+/**
+  * @brief  Start publishing the audio held by a new track for the playback feedback
+  * @param  frame_bytes: Bytes per frame written to the track
+  * @param  sampling_freq: Sampling frequency of the track
+  * @param  buf_bytes: Size of the track buffer
+  * @retval None
+  */
+static void uac_play_level_start(u32 frame_bytes, u32 sampling_freq, u32 buf_bytes)
+{
+	uac_play_level.written_frames = 0U;
+	uac_play_level.frame_bytes = frame_bytes;
+	uac_play_level.sampling_freq = sampling_freq;
+	uac_play_level.last_us = 0U;
+	uac_play_level.queued_us = 0U;
+	uac_play_level.target_us = (u32)(((u64)(buf_bytes / frame_bytes) * 1000000U) / sampling_freq / 2U);
+#if USBD_UAC_PLAY_FEEDBACK_DEBUG
+	/* Drop what the previous track left, it prints its first line one interval from now */
+	memset(&uac_fb_debug_stat, 0, sizeof(uac_fb_debug_stat));
+	uac_fb_debug_stat.last_ms = rtos_time_get_current_system_time_ms();
+	uac_fb_debug_stat.fb_min = 0xFFFFFFFFU;
+#endif
+}
+#endif
+
 /**
   * @brief  Handle UAC stream format (sampling rate / channel count / sample width) changes from the host
   * @note   This function is called within an interrupt service routine (ISR) context;
   *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
   * @param  sampling_freq: New sampling frequency in Hz (0 means unchanged)
-  * @param  ch_cnt: New channel count (0 means unchanged)
+  * @param  channel_count: New channel count (0 means unchanged)
   * @param  byte_width: New sample byte width (0 means unchanged)
   * @retval None
   */
-static void uac_cb_format_changed(u32 sampling_freq, u8 ch_cnt, u8 byte_width)
+static void uac_cb_format_changed(u32 sampling_freq, u8 channel_count, u8 byte_width)
 {
-	usbd_audio_cfg_t play_cfg;
+	uac_play_format_t play_format;
 
 	/* The player thread snapshots the format under the same lock, refer to example_audio_track_play() */
 	rtos_critical_enter(RTOS_CRITICAL_USB);
 	if (sampling_freq != 0U) {
-		uac_play_cfg.sampling_freq = sampling_freq;
+		uac_play_format.sampling_freq = sampling_freq;
 	}
-	if (ch_cnt != 0U) {
-		uac_play_cfg.ch_cnt = ch_cnt;
+	if (channel_count != 0U) {
+		uac_play_format.channel_count = channel_count;
 	}
 	if (byte_width != 0U) {
-		uac_play_cfg.byte_width = byte_width;
+		uac_play_format.byte_width = byte_width;
 	}
-	play_cfg = uac_play_cfg;
+	play_format = uac_play_format;
 	rtos_critical_exit(RTOS_CRITICAL_USB);
 
-	if ((play_cfg.sampling_freq != 0U) && (play_cfg.byte_width != 0U) && (play_cfg.ch_cnt != 0U)) {
+	if ((play_format.sampling_freq != 0U) && (play_format.byte_width != 0U) && (play_format.channel_count != 0U)) {
 		uac_player_stop = 1;
 		usbd_uac_stop_play();
 		rtos_sema_give(uac_ready_sema);
-		//RTK_LOGS(TAG, RTK_LOG_INFO, "USBD set sampling_freq %d set ch_cnt %d\n", sampling_freq, ch_cnt);
+		//RTK_LOGS(TAG, RTK_LOG_INFO, "USBD set sampling_freq %d set channel_count %d\n", sampling_freq, channel_count);
 	}
 }
 /* playback , USB OUT */
@@ -566,26 +746,22 @@ static void example_audio_track_play(void)
 	u32 audio_src_step;
 	u32 audio_dst_step;
 #endif
+	uac_play_format_t play_format;
 #else
 	u32 total_len = 0;
 	u32 read_cnt = 0;
 #endif
 	u32 read_dat_len = 0;
-	usbd_audio_cfg_t play_cfg;
 
+#ifdef CONFIG_SUPPORT_AUDIO_FOR_USB
 	/* One consistent snapshot: format_changed() rewrites the fields from the ISR */
 	rtos_critical_enter(RTOS_CRITICAL_USB);
-	play_cfg = uac_play_cfg;
+	play_format = uac_play_format;
 	rtos_critical_exit(RTOS_CRITICAL_USB);
+#endif
 
-	/* Fails until the host has enumerated the device or for a format the class does not
-	   declare: wait for the next format change or attach instead of streaming unsized */
-	if (usbd_uac_config(&play_cfg, 0, 0) != RTK_SUCCESS) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "UAC config fail\n");
-		return;
-	}
-	/* isoc_mps is cleared on deinit, so start_play() keeps failing once the stack is
-	   torn down: leave on any stop request instead of retrying forever. Nothing to
+	/* start_play() fails until the host has configured the device, and keeps failing once the
+	   stack is torn down: leave on any stop request instead of retrying forever. Nothing to
 	   unwind here, no AudioTrack has been created yet. */
 	while (usbd_uac_start_play() != RTK_SUCCESS) {
 		if ((uac_task_exiting != 0) || (uac_player_stop != 0) || (uac_app.quit != 0U)) {
@@ -597,22 +773,22 @@ static void example_audio_track_play(void)
 #ifdef CONFIG_SUPPORT_AUDIO_FOR_USB
 
 	/* audio trace config params */
-	track_rate = play_cfg.sampling_freq;
-	track_channel = play_cfg.ch_cnt;
-	track_format = play_cfg.byte_width * 8;
+	track_rate = play_format.sampling_freq;
+	track_channel = play_format.channel_count;
+	track_format = play_format.byte_width * 8;
 
-	play_track_channel = track_channel;    //mix not support 4 channel
+	play_track_channel = track_channel;
 
 #if USBD_UAC_DEMUX_CH_DEBUG
-	//force to get the 1st channel to play
-	play_track_channel = 1;
+	/* Keep the front left and right channels of a multichannel stream */
+	play_track_channel = MIN(track_channel, USBD_UAC_PLAY_MAX_TRACK_CHANNEL);
 	audio_src_step = track_channel * track_format / 8;
 	audio_dst_step = play_track_channel * track_format / 8;
 #endif
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Audio track demo begin\n");
 
-	//user should set sdk/component/soc/**/usrcfg/include/ameba_audio_hw_usrcfg.h's AUDIO_HW_AMPLIFIER_PIN to make sure amp is enabled.
+	//user should set sdk/component/audio/audio_hal/<soc>/ameba_audio_hw_usrcfg.h's AUDIO_HW_AMPLIFIER_PIN to make sure amp is enabled.
 	AudioService_Init();
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Audio ch:%d,rate:%d,bits=%d\n", track_channel, track_rate, track_format);
@@ -673,11 +849,18 @@ static void example_audio_track_play(void)
 	}
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "UAC stop %d\n", uac_player_stop);
+#if defined(CONFIG_USBD_UAC_PLAY_FEEDBACK) && defined(CONFIG_SUPPORT_AUDIO_FOR_USB)
+	uac_play_level_start(play_track_channel * track_format / 8U, track_rate, (u32)track_buf_size);
+#endif
 
 	while ((uac_task_exiting != 1) && (uac_player_stop != 1) && (uac_app.quit == 0U)) {
 		read_dat_len = usbd_uac_read(recv_buf, USB_AUDIO_BUF_SIZE * 2, 500, NULL);
 		if (read_dat_len > 0) {
 #if USBD_UAC_DEMUX_CH_DEBUG
+			if (play_track_channel == track_channel) {
+				uac_track_write(audio_track, recv_buf, read_dat_len);
+				continue;
+			}
 			play_data_size = 0;
 			//get the 2 channel data from the 4 channel
 			/* Whole frames only, and never past play_buf: a short ISOC packet may end mid-frame */
@@ -689,16 +872,20 @@ static void example_audio_track_play(void)
 				play_data_size += audio_dst_step;
 			}
 
-			AudioTrack_Write(audio_track, (u8 *)play_buf, play_data_size, true);
+			uac_track_write(audio_track, play_buf, play_data_size);
 			//RTK_LOGS(TAG, RTK_LOG_INFO, "Audio track start %d-%d\n",read_dat_len,play_data_size);
 #else
-			AudioTrack_Write(audio_track, (u8 *)recv_buf, read_dat_len, true);
+			uac_track_write(audio_track, recv_buf, read_dat_len);
 #endif
 		}
 	}
 
 	usbd_uac_stop_play();
 
+#if defined(CONFIG_USBD_UAC_PLAY_FEEDBACK) && defined(CONFIG_SUPPORT_AUDIO_FOR_USB)
+	/* Back to the OUT ring level */
+	uac_play_level.target_us = 0U;
+#endif
 	AudioTrack_Pause(audio_track);
 	AudioTrack_Flush(audio_track);
 	AudioTrack_Stop(audio_track);
@@ -765,18 +952,10 @@ static void example_usbd_uac_audio_track_thread(void *param)
  * by the "USBDUAC record" console command. */
 static void example_usbd_uac_record_thread(void *param)
 {
-	u32 i;
+	u32 offset;
 	u32 tx_fail_cnt;
-	u32 frames = USBD_UAC_RECORD_CHUNK_LEN / (USBD_UAC_IN_DEFAULT_CH_CNT * USBD_UAC_IN_DEFAULT_BYTE_WIDTH);
-	s16 *frame = (s16 *)(void *)uac_record_chunk;
 
 	UNUSED(param);
-
-	/* Pre-fill one chunk: interleaved stereo frames, L = R = sine sample */
-	for (i = 0; i < frames; i++) {
-		frame[USBD_UAC_IN_DEFAULT_CH_CNT * i]     = uac_record_sine16[i % 16U];
-		frame[USBD_UAC_IN_DEFAULT_CH_CNT * i + 1] = uac_record_sine16[i % 16U];
-	}
 
 	while (1) {
 		if (rtos_sema_take(uac_record_start_sema, RTOS_SEMA_MAX_COUNT) != RTK_SUCCESS) {
@@ -796,11 +975,7 @@ static void example_usbd_uac_record_thread(void *param)
 			continue;
 		}
 
-		if (usbd_uac_config(&uac_record_cfg, 1, 0) != RTK_SUCCESS) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "UAC config fail\n");
-			rtos_mutex_give(uac_record_lock);
-			continue;
-		}
+		/* Fails before the host has configured the device: the record ring would stay unsized */
 		if (usbd_uac_start_record() != RTK_SUCCESS) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "UAC start record fail\n");
 			rtos_mutex_give(uac_record_lock);
@@ -808,19 +983,23 @@ static void example_usbd_uac_record_thread(void *param)
 		}
 
 		RTK_LOGS(TAG, RTK_LOG_INFO, "UAC record start\n");
+		offset = 0U;
 		tx_fail_cnt = 0U;
 		while ((uac_task_exiting == 0) && (uac_app.quit == 0U)) {
-			for (i = 0; i < USBD_UAC_RECORD_SLICES_PER_MS; i++) {
-				/* A live stream tolerates a lost slice, so keep the pace and only report the first
-				   failure of a run, to stay off the console at 8 kHz */
-				if (usbd_uac_transmit_data(&uac_record_chunk[i * USBD_UAC_RECORD_SLICE_LEN], USBD_UAC_RECORD_SLICE_LEN) != RTK_SUCCESS) {
-					if (tx_fail_cnt == 0U) {
-						RTK_LOGS(TAG, RTK_LOG_WARN, "UAC record tx fail\n");
-					}
-					tx_fail_cnt++;
-				} else {
-					tx_fail_cnt = 0U;
+			/* One ms of audio per call, the clip loops. A live stream tolerates a lost chunk, so
+			   keep the 1 ms pace and only report the first failure of a run, to stay off the
+			   console at 1 kHz. */
+			if (usbd_uac_transmit_data(&usbd_uac_record_audio_data[offset], USBD_UAC_RECORD_CHUNK_LEN) != RTK_SUCCESS) {
+				if (tx_fail_cnt == 0U) {
+					RTK_LOGS(TAG, RTK_LOG_WARN, "UAC record tx fail\n");
 				}
+				tx_fail_cnt++;
+			} else {
+				tx_fail_cnt = 0U;
+			}
+			offset += USBD_UAC_RECORD_CHUNK_LEN;
+			if (offset >= usbd_uac_record_data_len) {
+				offset = 0U;
 			}
 			rtos_time_delay_ms(USBD_UAC_RECORD_CHUNK_DELAY_MS);
 		}
@@ -839,8 +1018,8 @@ static int uac_cmd_record(u16 argc, char *argv[])
 
 	if ((cmd == NULL) || (_stricmp(cmd, "record") != 0) || (argc != 1U)) {
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Usage: AT+USBDUAC=<cmd>\n");
-		RTK_LOGS(TAG, RTK_LOG_INFO, "  record   Replay the built-in clip on the mic (USB IN) stream once the host\n");
-		RTK_LOGS(TAG, RTK_LOG_INFO, "           configured it; each call queues one more session. UAC 2.0, non FS-only build only\n");
+		RTK_LOGS(TAG, RTK_LOG_INFO, "  record   Loop the built-in \"Realtek\" clip on the mic (USB IN) stream once the host\n");
+		RTK_LOGS(TAG, RTK_LOG_INFO, "           configured it; each call queues one more session\n");
 		RTK_LOGS(TAG, RTK_LOG_INFO, "  help     Print this help\n");
 		return ((cmd != NULL) && ((_stricmp(cmd, "help") == 0) || (_stricmp(cmd, "?") == 0))) ? RTK_SUCCESS : -RTK_ERR_BADARG;
 	}
@@ -983,14 +1162,6 @@ static int uac_start(void)
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create hotplug task fail\n");
 		goto clear_workers_exit;
 	}
-#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
-	/* C-2: the USB OTG ISR is delivered on CPU0 (GIC ITARGETSR pins every SPI to core 0).
-	   Pinning the hotplug/deinit thread to CPU0 puts it on the same core as the ISR,
-	   so deinit's local interrupt disable is meaningful again under SMP. The player /
-	   record data threads stay unaffined: a pending deinit is excluded from them by
-	   uac_play_lock / uac_record_lock, not by core. */
-	rtos_task_set_affinity(task, 0);
-#endif
 #endif // USBD_UAC_HOTPLUG
 
 	return RTK_SUCCESS;
@@ -1021,6 +1192,14 @@ exit:
 static void example_usbd_uac_thread(void *param)
 {
 	UNUSED(param);
+
+#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
+	/* A start that fails rolls back through usbd_deinit(), which waits for no ISR on another
+	   core: run it on CPU0, where the USB IRQ is delivered, as the hotplug thread does.
+	   Done by the thread itself, first: a created thread may already run on another core, and its
+	   creator pinning it afterwards could come too late or reach a task that has deleted itself. */
+	rtos_task_set_affinity(rtos_task_handle_get(), 0);
+#endif
 
 	if (uac_start() != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Start fail\n");

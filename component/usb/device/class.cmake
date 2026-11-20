@@ -80,6 +80,9 @@ if(CONFIG_USBD_UAC)
     ameba_list_append(private_includes
         ${USBD_CLASS_DIR}/uac
     )
+    ameba_list_append(private_sources
+        ${USBD_CLASS_DIR}/uac/usbd_uac_common.c
+    )
     if(CONFIG_USBD_UAC1)
         ameba_list_append(private_sources
             ${USBD_CLASS_DIR}/uac/usbd_uac1.c

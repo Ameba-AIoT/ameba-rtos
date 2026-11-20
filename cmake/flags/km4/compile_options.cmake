@@ -8,6 +8,11 @@ ameba_list_append(c_GLOBAL_MCU_COMPILE_DEFINES
     #TODO: to be removed when new cmake is ready
     MBEDTLS_CONFIG_FILE="mbedtls/config.h"
 )
+
+# gcc also predefines __ARM_ARCH_8M_MAIN__ on Armv8.1-M, clang only predefines __ARM_ARCH_8_1M_MAIN__, but cmsis_gcc.h depends on the former
+if(CONFIG_TOOLCHAIN_LLVM AND CONFIG_AMEBASMART)
+    ameba_list_append(c_GLOBAL_MCU_COMPILE_DEFINES __ARM_ARCH_8M_MAIN__=1)
+endif()
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ #
 
 # +++++++++++++++ c_GLOBAL_MCU_COMPILE_ASM_OPTIONS ++++++++++++++ #

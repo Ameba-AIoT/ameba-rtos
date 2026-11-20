@@ -113,43 +113,30 @@ int whc_wpa_ops_set_macaddr(u8 *ptr, u8 *buf)
 	return ret;
 }
 
-void whc_dev_rtw_cli_wpas_reply_info_hdl(u8 idx, const char *reply, size_t reply_len)
+/* WHC implementation of the wpa_supplicant_std report op: map the report type to the WHC (category, cmd_id) and send it to the host */
+void whc_dev_rtw_cli_wpas_report(u8 idx, enum wpas_std_report_type type, u8 cmd_id, const u8 *data, u32 len)
 {
+	u32 category;
 
-	whc_rtw_cli_send_to_host(idx, WHC_WPA_OPS_UTIL, WHC_WPA_OPS_UTIL_OFLD_RESULT,
-							 (u8 *)reply, reply_len);
-}
-
-
-void whc_dev_rtw_cli_wpas_reply_event_hdl(u8 idx, const char *reply, size_t reply_len)
-{
-
-	whc_rtw_cli_send_to_host(idx, WHC_WPA_OPS_EVENT, WHC_WPA_OPS_EVENT_JOIN_STATUS,
-							 (u8 *)reply, reply_len);
-}
-
-void whc_dev_rtw_cli_wpas_reply_scan_raw_hdl(u8 idx, const char *reply, size_t reply_len)
-{
-
-	whc_rtw_cli_send_to_host(idx, WHC_WPA_OPS_UTIL, WHC_WPA_OPS_UTIL_SCAN_RAW_DATA,
-							 (u8 *)reply, reply_len);
-}
-
-
-void whc_dev_rtw_cli_wpas_notify_event_hdl(u8 idx, u8 *notify_buf, u32 notify_len)
-{
-	/*
-	 * notify_buf[0] is the WHC command ID (WHC_WPA_STD_EVENT_xxx).
-	 * We strip it here because whc_rtw_cli_send_to_host prepends its own
-	 * [cmd_id][idx] header.  The remaining bytes (sub-event + data) are
-	 * forwarded verbatim so the host sees:
-	 *   [category(4)][cmd_id][idx][sub_event][extra][extended_data...]
-	 */
-	if (!notify_buf || notify_len < 1) {
+	switch (type) {
+	case WPAS_STD_RPT_REPLY:
+		category = WHC_WPA_OPS_UTIL;
+		cmd_id = WHC_WPA_OPS_UTIL_OFLD_RESULT;
+		break;
+	case WPAS_STD_RPT_CTRL_EVENT:
+		category = WHC_WPA_OPS_EVENT;
+		cmd_id = WHC_WPA_OPS_EVENT_JOIN_STATUS;
+		break;
+	case WPAS_STD_RPT_SCAN_RAW:
+		category = WHC_WPA_OPS_UTIL;
+		cmd_id = WHC_WPA_OPS_UTIL_SCAN_RAW_DATA;
+		break;
+	case WPAS_STD_RPT_STD_EVENT:
+		category = WHC_WPA_STD_EVENT;
+		break;
+	default:
 		return;
 	}
 
-	whc_rtw_cli_send_to_host(idx, WHC_WPA_STD_EVENT,
-							 notify_buf[0],
-							 notify_buf + 1, notify_len - 1);
+	whc_rtw_cli_send_to_host(idx, category, cmd_id, (u8 *)data, len);
 }

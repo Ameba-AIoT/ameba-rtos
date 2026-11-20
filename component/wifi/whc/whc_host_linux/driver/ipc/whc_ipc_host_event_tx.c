@@ -485,7 +485,10 @@ u32 whc_host_update_ip_addr(void)
 	event_priv->api_ipc_msg.msg_type = IPC_USER_POINT;
 	event_priv->api_ipc_msg.msg_len = sizeof(struct whc_ipc_host_req_msg);
 
-	ameba_ipc_channel_send(global_idev.event_ch, &(event_priv->api_ipc_msg));
+	ret = ameba_ipc_channel_send(global_idev.event_ch, &(event_priv->api_ipc_msg));
+	if (ret < 0) {
+		goto unlock_ip;
+	}
 
 	while (try_cnt) {
 		if (event_priv->preq_msg->api_id != WHC_API_PROCESS_DONE) {
@@ -498,10 +501,12 @@ u32 whc_host_update_ip_addr(void)
 
 	if (try_cnt == 0) {
 		dev_err(global_idev.pwhc_dev, "wowlan update ip address fail");
+		ret = -ETIMEDOUT;
+	} else {
+		ret = event_priv->preq_msg->ret;
 	}
 
-	ret = event_priv->preq_msg->ret;
-
+unlock_ip:
 	mutex_unlock(&(event_priv->iiha_send_mutex));
 
 	if (ip_addr) {
@@ -643,13 +648,13 @@ int whc_host_iwpriv_cmd(dma_addr_t cmd_phy, unsigned int cmd_len, unsigned char 
 	return ret;
 }
 
-void whc_ipc_host_send_packet(struct whc_ipc_ex_msg *p_ipc_msg)
+int whc_ipc_host_send_packet(struct whc_ipc_ex_msg *p_ipc_msg)
 {
 	struct ipc_msg_q_priv *msg_priv = &global_idev.msg_priv;
 	struct whc_ipc_ex_msg *pmsg = msg_priv->p_inic_ipc_msg;
 	ipc_msg_struct_t ipc_msg = {0};
 	int try_cnt = 100000;
-
+	int ret = 0;
 	/* Get the warning of queue's depth not enough in peer, delay send the
 	 * the next message.
 	 */
@@ -666,7 +671,9 @@ void whc_ipc_host_send_packet(struct whc_ipc_ex_msg *p_ipc_msg)
 		try_cnt--;
 		if (try_cnt == 0) {
 			dev_warn(global_idev.pwhc_dev, "[AP] inic ipc wait timeout %d\n", pmsg->event_num);
-			break;
+			/* NP may still read pmsg, do not overwrite it */
+			ret = -EBUSY;
+			goto unlock;
 		}
 	}
 
@@ -680,8 +687,15 @@ void whc_ipc_host_send_packet(struct whc_ipc_ex_msg *p_ipc_msg)
 	ipc_msg.msg = msg_priv->ipc_msg_phy_addr;
 	ipc_msg.msg_len = sizeof(struct whc_ipc_ex_msg);
 
-	ameba_ipc_channel_send(global_idev.data_ch, &ipc_msg);
+	ret = ameba_ipc_channel_send(global_idev.data_ch, &ipc_msg);
+	if (ret < 0) {
+		/* NP is not notified, release the shared msg for next send */
+		pmsg->event_num = IPC_WIFI_MSG_READ_DONE;
+	}
+
+unlock:
 	spin_unlock_bh(&msg_priv->ipc_send_msg_lock);
+	return ret;
 }
 
 u64 whc_host_get_tsft(u8 iface_type)
@@ -1247,17 +1261,111 @@ int whc_host_dev_driver_is_mp(u8 *is_mp)
 	return ret;
 }
 
-int whc_host_set_promisc_enable(u32 enable, u8 mode)
+void whc_host_atomic_work_handler(struct work_struct *work)
 {
-	int ret = 0;
+	struct event_priv_t *event_priv = &global_idev.event_priv;
+	struct whc_atomic_req *req;
+	u32 param_buf[HOST_MSG_PARAM_NUM];
+	u32 api_id, param_len;
+	unsigned long flags;
+
+	while (1) {
+		/* copy out then free the node, the IPC below sleeps (RSWLANDIOT-17054) */
+		spin_lock_irqsave(&(event_priv->atomic_lock), flags);
+		req = list_first_entry_or_null(&(event_priv->atomic_list), struct whc_atomic_req, list);
+		if (req) {
+			list_del(&(req->list));
+			api_id = req->api_id;
+			param_len = req->param_len;
+			memcpy(param_buf, req->param_buf, sizeof(param_buf));
+			req->is_used = 0;
+		}
+		spin_unlock_irqrestore(&(event_priv->atomic_lock), flags);
+
+		if (!req) {
+			break;
+		}
+
+		whc_ipc_host_send_msg(api_id, param_buf, param_len);
+	}
+}
+
+/* for callers in atomic context: every call is queued and sent in order; when full,
+ * the last pending request of the same API is updated in place (RSWLANDIOT-17054)
+ */
+int whc_host_atomic_api_send(u32 api_id, u32 *param_buf, u32 param_len)
+{
+	struct event_priv_t *event_priv = &global_idev.event_priv;
+	struct whc_atomic_req *req = NULL;
+	unsigned long flags;
+	u8 replaced = 0;
+	int i;
+
+	if (param_len > HOST_MSG_PARAM_NUM) {
+		return -EINVAL;
+	}
+
+	spin_lock_irqsave(&(event_priv->atomic_lock), flags);
+	for (i = 0; i < WHC_ATOMIC_REQ_DEPTH; i++) {
+		if (!event_priv->atomic_pool[i].is_used) {
+			req = &(event_priv->atomic_pool[i]);
+			break;
+		}
+	}
+	if (req) {
+		req->is_used = 1;
+		list_add_tail(&(req->list), &(event_priv->atomic_list));
+	} else {
+		/* full: keep the newest state of the same API in the last pending node (RSWLANDIOT-17054) */
+		req = list_last_entry(&(event_priv->atomic_list), struct whc_atomic_req, list);
+		if (req->api_id != api_id) {
+			req = NULL;
+		} else {
+			replaced = 1;
+		}
+	}
+	if (req) {
+		req->api_id = api_id;
+		req->param_len = param_len;
+		memset(req->param_buf, 0, sizeof(req->param_buf));
+		if (param_buf) {
+			memcpy(req->param_buf, param_buf, param_len * sizeof(u32));
+		}
+	}
+	spin_unlock_irqrestore(&(event_priv->atomic_lock), flags);
+
+	if (!req) {
+		dev_err_ratelimited(global_idev.pwhc_dev, "%s: no free node for api %x\n",
+							__func__, api_id);
+		return -ENOMEM;
+	}
+	if (replaced) {
+		dev_warn_ratelimited(global_idev.pwhc_dev, "%s: queue full, api %x updated in place\n",
+							 __func__, api_id);
+	}
+
+	schedule_work(&(event_priv->atomic_work));
+
+	return 0;
+}
+
+/* disable via atomic_work + flush so a queued enable cannot win, under RTNL (RSWLANDIOT-17054) */
+void whc_host_promisc_stop(void)
+{
 	u32 param_buf[3];
+	int ret;
 
-	param_buf[0] = enable;
-	param_buf[1] = (u32)mode;
+	param_buf[0] = 0;
+	param_buf[1] = (u32)RTW_PROMISC_FILTER_ALL_PKT;
 	param_buf[2] = (u32)0xffffffff;
-	ret = whc_ipc_host_send_msg(WHC_API_WIFI_PROMISC_INIT, param_buf, 3);
 
-	return ret;
+	/* -ENOMEM would leave the NP in promisc after down, so never drop it silently (RSWLANDIOT-17054) */
+	ret = whc_host_atomic_api_send(WHC_API_WIFI_PROMISC_INIT, param_buf, 3);
+	if (ret) {
+		dev_err_ratelimited(global_idev.pwhc_dev, "%s: promisc disable not queued (%d)\n",
+							__func__, ret);
+	}
+	flush_work(&(global_idev.event_priv.atomic_work));
 }
 
 #ifdef CONFIG_IEEE80211R

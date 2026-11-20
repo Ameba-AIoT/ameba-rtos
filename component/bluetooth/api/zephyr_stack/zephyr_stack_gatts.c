@@ -182,7 +182,7 @@ static ssize_t bt_stack_gatts_read_cb(struct bt_conn *conn, const struct bt_gatt
 	return ret;
 }
 
-/* if req contains data from perivous write request, append buf to perivous data */
+/* if req contains data from previous write request, append buf to previous data */
 static bool _copy_write_buf(zephyr_gatts_received_req_t *req, const void *buf, uint16_t len, uint16_t handle, uint16_t index, uint16_t app_id)
 {
 	void *data = NULL;

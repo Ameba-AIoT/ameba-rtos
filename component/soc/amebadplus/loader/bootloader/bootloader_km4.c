@@ -533,7 +533,7 @@ __weak void BOOT_Image1(void)
 
 	BOOT_Disable_PadSlewRate();
 
-	flash_highspeed_setup();
+	flash_highspeed_setup(flash_get_readmode(Flash_ReadMode), SPIC_CLK_LIMIT);
 
 	/* backup flash_init_para address for KM0 */
 	DCache_Clean((u32)&flash_init_para, sizeof(FLASH_InitTypeDef));
