@@ -31,7 +31,7 @@ typedef enum {
 	RTK_BLE_ISO_ROLE_CIS_INITIATOR,            /**< CIS - Central role. */
 	RTK_BLE_ISO_ROLE_CIS_ACCEPTOR,             /**< CIS - Peripheral role. */
 	RTK_BLE_ISO_ROLE_BIS_BROADCASTER,          /**< BIS - Broadcaster role. */
-	RTK_BLE_ISO_ROLE_BIS_RECEIVER,             /**< BIS - Recevier role. */
+	RTK_BLE_ISO_ROLE_BIS_RECEIVER,             /**< BIS - Receiver role. */
 } rtk_bt_le_iso_role_t;
 
 /**
@@ -95,7 +95,7 @@ typedef struct {
 
 /**
  * @typedef   rtk_bt_le_iso_isoch_data_pkt_status_t
- * @brief     Packet Status Flag in Bluetooth LE HCI ISO Datat packet sent by the Controller
+ * @brief     Packet Status Flag in Bluetooth LE HCI ISO Data packet sent by the Controller
 */
 typedef enum {
 	RTK_BLE_ISO_ISOCH_DATA_PKT_STATUS_VALID_DATA = 0,             /**< Valid data. The complete SDU was received correctly. */
@@ -108,7 +108,7 @@ typedef enum {
 
 /**
  * @struct    rtk_bt_le_iso_direct_iso_data_ind_t
- * @brief     Indication of ISO Datat packet with cb_type @ref RTK_BT_LE_ISO_EVT_DATA_RECEIVE_IND .
+ * @brief     Indication of ISO Data packet with cb_type @ref RTK_BT_LE_ISO_EVT_DATA_RECEIVE_IND .
  */
 typedef struct {
 	uint16_t iso_conn_handle;                                   /**< Connection handle of ISO. */
@@ -241,7 +241,7 @@ typedef struct {
                                                 True:  sdu parameters listed below are configured by Application.
                                                        check sdu length when @ref RTK_BLE_ISO_ISOCH_ROLE_ACCEPTOR calls @ref rtk_bt_le_iso_data_send.
                                                 False: Default value.
-                                                       sdu parameters listed below are not configrued by Application.
+                                                       sdu parameters listed below are not configured by Application.
                                                        Not check sdu length when @ref RTK_BLE_ISO_ISOCH_ROLE_ACCEPTOR calls @ref rtk_bt_le_iso_data_send. */
 	uint32_t sdu_interval_m_to_s;          /**< Valid for @ref RTK_BLE_ISO_ISOCH_ROLE_INITIATOR.
                                                 Valid for @ref RTK_BLE_ISO_ISOCH_ROLE_ACCEPTOR if @ref acceptor_config_sdu_flag is True.
@@ -662,7 +662,7 @@ typedef struct {
 	uint8_t cis_id;                 /**< Identifier of a CIS.*/
 	rtk_bt_le_iso_cig_acceptor_config_cis_req_action_t
 	cis_req_action;         /**< Action of CIS request Indicate, default is RTK_BLE_ISO_ACCEPTOR_CIS_REQ_ACTION_ACCEPT.
-                                                                                        can be configed by @ref rtk_bt_le_iso_cig_acceptor_config_cis_req_action. */
+                                                                                        can be configured by @ref rtk_bt_le_iso_cig_acceptor_config_cis_req_action. */
 } rtk_bt_le_iso_cig_acceptor_request_cis_ind_t;
 
 /**
@@ -937,7 +937,7 @@ typedef struct {
 
 /**
  * @struct    rtk_bt_le_iso_get_conn_handle_t
- * @brief     Bluetooth BLE ISO get conncetion handle struct.
+ * @brief     Bluetooth BLE ISO get connection handle struct.
  */
 typedef struct {
 	rtk_bt_le_iso_role_t role;

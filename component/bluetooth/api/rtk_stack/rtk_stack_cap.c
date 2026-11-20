@@ -442,7 +442,7 @@ uint16_t rtk_stack_le_audio_cap_msg_cback(T_LE_AUDIO_MSG msg, void *buf)
 			rtk_bt_le_audio_group_handle_t group_handle = NULL;
 			rtk_bt_le_audio_device_handle_t device_handle = NULL;
 
-			if (p_read_result->group_handle == NULL) {//the server isnt in any group
+			if (p_read_result->group_handle == NULL) {//the server isn't in any group
 				if (set_coordinator_add_group(&group_handle, bt_stack_le_audio_group_cb, &device_handle, &p_read_result->mem_info) == false) {
 					BT_LOGE("%s set_coordinator_check_add_group fail\r\n", __func__);
 					break;
@@ -1798,7 +1798,7 @@ static uint16_t bt_stack_le_audio_mcp_server_read_cfm(void *data)
 		BT_LOGD("read content control id %d\r\n", read_cfm.param.content_control_id);
 		break;
 	default:
-		BT_LOGE("%s unprocess char_uuid 0x%x for MCS server\r\n", __func__, p_info->char_uuid);
+		BT_LOGE("%s unprocessed char_uuid 0x%x for MCS server\r\n", __func__, p_info->char_uuid);
 		return RTK_BT_OK;
 	}
 
@@ -1915,7 +1915,7 @@ static uint16_t bt_stack_le_audio_vcs_get_volume_state(void *data)
 	p_vcs_volume_state->mute = volume_state.mute;
 	p_vcs_volume_state->change_counter = volume_state.change_counter;
 
-	BT_LOGD("%s volume_setting=%d,mute=%d,muchange_countere=%d \r\n", __func__, p_vcs_volume_state->volume_setting, p_vcs_volume_state->mute,
+	BT_LOGD("%s volume_setting=%d,mute=%d,change_counter=%d \r\n", __func__, p_vcs_volume_state->volume_setting, p_vcs_volume_state->mute,
 			p_vcs_volume_state->change_counter);
 
 	return RTK_BT_OK;
@@ -2157,7 +2157,7 @@ static uint16_t bt_stack_le_audio_vocs_get_param(void *data)
 	p_param->p_vocs_param->audio_location = vocs_param.audio_location;
 	p_param->p_vocs_param->output_des.output_des_len = vocs_param.output_des.output_des_len;
 
-	//if p_output_des is NULL, APP want to query output descripiton length only
+	//if p_output_des is NULL, APP want to query output description length only
 	if (p_param->p_vocs_param->output_des.p_output_des != NULL) {
 		memcpy(p_param->p_vocs_param->output_des.p_output_des, vocs_param.output_des.p_output_des, vocs_param.output_des.output_des_len);
 	}
@@ -2329,7 +2329,7 @@ static uint16_t bt_stack_le_audio_vocs_get_srv_data(void *data)
 	p_param->p_srv_data->output_des.output_des_len = value.output_des.output_des_len;
 	BT_LOGD("%s vocs_get_srv_data output_des_len %d,p_output_des %s\r\n", __func__, value.output_des.output_des_len,
 			value.output_des.p_output_des);
-	//if p_output_des is NULL, APP want to query output descripiton length only
+	//if p_output_des is NULL, APP want to query output description length only
 	if (p_param->p_srv_data->output_des.output_des_len) {
 		memcpy(p_param->p_srv_data->output_des.p_output_des, value.output_des.p_output_des, sizeof(value.output_des.output_des_len));
 	}
@@ -2530,7 +2530,7 @@ static uint16_t bt_stack_le_audio_aics_get_srv_data(void *data)
 	p_param->p_srv_data->input_status = value.input_status;
 	p_param->p_srv_data->input_des.input_des_len = value.input_des.input_des_len;
 
-	//if p_input_des is NULL, APP want to query input descripiton length only
+	//if p_input_des is NULL, APP want to query input description length only
 	if (p_param->p_srv_data->input_des.input_des_len) {
 		memcpy(p_param->p_srv_data->input_des.p_input_des, value.input_des.p_input_des, sizeof(value.input_des.input_des_len));
 	}

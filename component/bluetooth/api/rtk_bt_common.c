@@ -573,7 +573,7 @@ uint16_t rtk_bt_evt_indicate(void *evt, uint8_t *cb_ret)
 			*cb_ret = cb_ret_tmp;
 		}
 		/* If the evt cb is direct calling, the evt msg isn't actually send to evt task,
-		Instead, it's excuted here, so need to free it here */
+		Instead, it's executed here, so need to free it here */
 		rtk_bt_event_free(evt);
 		return 0;
 	}

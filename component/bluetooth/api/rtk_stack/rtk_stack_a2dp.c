@@ -117,7 +117,7 @@ static void app_a2dp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t b
 		if (p_link != NULL) {
 			memcpy((void *)remote_addr, (void *)param->a2dp_conn_cmpl.bd_addr, 6);
 			if (!p_link->acl_conn_ind) {
-				/* requeset avrcp connection */
+				/* request avrcp connection */
 				BT_LOGA("app_a2dp_bt_cback: start avrcp connect request \r\n");
 				bt_avrcp_connect_req(param->a2dp_conn_cmpl.bd_addr);
 			}
