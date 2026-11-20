@@ -1404,7 +1404,7 @@ bool rtk_bt_le_sm_is_device_bonded(rtk_bt_le_addr_t *paddr)
 				ret = true;
 				break;
 			}
-			/* If the remote connected device use RPA, we shall use indenty addr to judge if
+			/* If the remote connected device use RPA, we shall use identity addr to judge if
 			the device is bonded, because the remote device address in air packets may often change  */
 			if (paddr->type >= RTK_BT_LE_ADDR_TYPE_RPA_PUBLIC &&
 				memcmp(bond_info[i].ident_addr.addr_val, paddr->addr_val, RTK_BD_ADDR_LEN) == 0) {

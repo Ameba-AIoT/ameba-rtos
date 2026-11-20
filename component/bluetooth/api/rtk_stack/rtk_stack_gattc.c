@@ -1205,7 +1205,7 @@ static uint16_t bt_stack_gattc_add_req_to_list(uint8_t conn_id,
 	}
 
 	/* The number of element in pending queue should be limited, otherwise
-	    the write and read request of high frequnce will use up memory */
+	    the write and read request of high frequency will use up memory */
 	if (p_queue->pending_ele_num >= BT_QUEUE_PENDING_ELEMENT_MAX) {
 		BT_LOGE("Error: GATTC pending queue full, wait a moment to send data again !!!\r\n");
 		return RTK_BT_ERR_QUEUE_FULL;
@@ -2009,7 +2009,7 @@ uint16_t bt_stack_gattc_init(rtk_bt_app_conf_t *app_conf)
 
 #if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT
 	if (app_conf->app_profile_support & RTK_BT_PROFILE_MESH) {
-		client_init(2 + MESH_GATT_CLIENT_COUNT);  // regist prov client for Remote Provisioning Server when execute remote provisioning process as mesh device role
+		client_init(2 + MESH_GATT_CLIENT_COUNT);  // register prov client for Remote Provisioning Server when execute remote provisioning process as mesh device role
 #if defined(RTK_BLE_MESH_PROVISIONER_SUPPORT) && RTK_BLE_MESH_PROVISIONER_SUPPORT
 		prov_client_add(bt_stack_mesh_client_callback);
 		proxy_client_add(bt_stack_mesh_client_callback);

@@ -19,11 +19,11 @@ uint16_t rtk_bt_mesh_stack_node_reset(void)
 	return ret;
 }
 
-uint16_t rtk_bt_mesh_stack_set_device_info_display(rkt_bt_mesh_stack_act_device_info_set_t *p_data)
+uint16_t rtk_bt_mesh_stack_set_device_info_display(rtk_bt_mesh_stack_act_device_info_set_t *p_data)
 {
 	uint16_t ret;
 
-	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_MESH_STACK, RTK_BT_MESH_STACK_ACT_DEV_INFO_SWITCH, p_data, sizeof(rkt_bt_mesh_stack_act_device_info_set_t));
+	ret = rtk_bt_send_cmd(RTK_BT_LE_GP_MESH_STACK, RTK_BT_MESH_STACK_ACT_DEV_INFO_SWITCH, p_data, sizeof(rtk_bt_mesh_stack_act_device_info_set_t));
 
 	return ret;
 }

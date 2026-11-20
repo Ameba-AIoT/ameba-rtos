@@ -1,0 +1,11 @@
+?
+loop=2
+loop_start
+	FLASH read 0 4
+	loop=3
+	loop_start
+		FLASH read 0 8
+	loop_end
+loop_end
+stop
+FLASH read 0 4
