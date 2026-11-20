@@ -1944,7 +1944,7 @@ static uint16_t rtk_stack_bass_handle_msg(T_LE_AUDIO_MSG msg, void *buf)
 		/* Send event */
 		rtk_bt_evt_indicate(p_evt, &cb_ret);
 #if 0
-		/* The scan delegtor will set broadcast code obtained from APP, and not send Broadcast code request to broadcast assistant. */
+		/* The scan delegator will set broadcast code obtained from APP, and not send Broadcast code request to broadcast assistant. */
 		if (cb_ret == RTK_BT_EVT_CB_OK) {
 			BT_DUMPD(__func__, broadcast_code, RTK_BT_LE_AUDIO_BROADCAST_CODE_LEN);
 			if (false == bass_cfg_broadcast_code(p_data->source_id, broadcast_code)) {
@@ -3657,7 +3657,7 @@ void bt_stack_le_audio_data_direct_callback(uint8_t cb_type, void *p_cb_data)
 		}
 		memset(direct_iso_data_ind->p_buf, 0, direct_iso_data_ind->buf_len);
 		memcpy((void *)direct_iso_data_ind->p_buf, (void *)p_data->p_bt_direct_iso->p_buf, direct_iso_data_ind->buf_len);
-		/*  user_data point to the memory alloced for 2nd level ptr, so it's convenient
+		/*  user_data point to the memory allocated for 2nd level ptr, so it's convenient
 		    to free it when free p_evt */
 		p_evt->user_data = direct_iso_data_ind->p_buf;
 		rtk_bt_evt_indicate(p_evt, NULL);
@@ -5216,7 +5216,7 @@ static uint16_t bt_stack_le_audio_broadcast_source_config(void *data)
 
 	BT_LOGD("%s: T_BROADCAST_SOURCE_STATE state = 0x%x\r\n", __func__, src_info.state);
 
-	id_offset = 4;//broacast id offset
+	id_offset = 4;//broadcast id offset
 	broadcast_id = broadcast_audio_announcements + id_offset;
 	memcpy(broadcast_id, src_info.broadcast_id, RTK_BT_LE_AUDIO_BROADCAST_ID_LEN);
 
@@ -7180,7 +7180,7 @@ static uint16_t bt_stack_le_audio_mcp_server_read_cfm(void *data)
 		BT_LOGD("read content control id %d\r\n", read_cfm.param.content_control_id);
 		break;
 	default:
-		BT_LOGE("%s unprocess char_uuid 0x%x for MCS server\r\n", __func__, p_info->char_uuid);
+		BT_LOGE("%s unprocessed char_uuid 0x%x for MCS server\r\n", __func__, p_info->char_uuid);
 		return RTK_BT_OK;
 	}
 
@@ -7297,7 +7297,7 @@ static uint16_t bt_stack_le_audio_vcs_get_volume_state(void *data)
 	p_vcs_volume_state->mute = volume_state.mute;
 	p_vcs_volume_state->change_counter = volume_state.change_counter;
 
-	BT_LOGD("%s volume_setting=%d,mute=%d,muchange_countere=%d \r\n", __func__, p_vcs_volume_state->volume_setting, p_vcs_volume_state->mute,
+	BT_LOGD("%s volume_setting=%d,mute=%d,change_counter=%d \r\n", __func__, p_vcs_volume_state->volume_setting, p_vcs_volume_state->mute,
 			p_vcs_volume_state->change_counter);
 
 	return RTK_BT_OK;
@@ -7511,7 +7511,7 @@ static uint16_t bt_stack_le_audio_vocs_get_param(void *data)
 	p_param->p_vocs_param->audio_location = vocs_param.audio_location;
 	p_param->p_vocs_param->output_des.output_des_len = vocs_param.output_des.output_des_len;
 
-	//if p_output_des is NULL, APP want to query output descripiton length only
+	//if p_output_des is NULL, APP want to query output description length only
 	if (p_param->p_vocs_param->output_des.p_output_des != NULL) {
 		memcpy(p_param->p_vocs_param->output_des.p_output_des, vocs_param.output_des.p_output_des, vocs_param.output_des.output_des_len);
 	}
@@ -7680,7 +7680,7 @@ static uint16_t bt_stack_le_audio_vocs_get_srv_data(void *data)
 	p_param->p_srv_data->output_des.output_des_len = value.output_des.output_des_len;
 	BT_LOGD("%s vocs_get_srv_data output_des_len %d,p_output_des %s\r\n", __func__, value.output_des.output_des_len,
 			value.output_des.p_output_des);
-	//if p_output_des is NULL, APP want to query output descripiton length only
+	//if p_output_des is NULL, APP want to query output description length only
 	if (p_param->p_srv_data->output_des.output_des_len) {
 		memcpy(p_param->p_srv_data->output_des.p_output_des, value.output_des.p_output_des, sizeof(value.output_des.output_des_len));
 	}
@@ -7879,7 +7879,7 @@ static uint16_t bt_stack_le_audio_aics_get_srv_data(void *data)
 	p_param->p_srv_data->input_status = value.input_status;
 	p_param->p_srv_data->input_des.input_des_len = value.input_des.input_des_len;
 
-	//if p_input_des is NULL, APP want to query input descripiton length only
+	//if p_input_des is NULL, APP want to query input description length only
 	if (p_param->p_srv_data->input_des.input_des_len) {
 		memcpy(p_param->p_srv_data->input_des.p_input_des, value.input_des.p_input_des, sizeof(value.input_des.input_des_len));
 	}
@@ -7966,7 +7966,7 @@ uint16_t bt_stack_le_audio_act_handle(rtk_bt_cmd_t *p_cmd)
 	BT_LOGD("bt_stack_le_audio_act_handle: act = %d \r\n", p_cmd->act);
 	switch (p_cmd->act) {
 	case RTK_BT_LE_AUDIO_ACT_ISO_DATA_SEND: {
-		BT_LOGD("RTK_BT_LE_AUDIO_ACT_DATA_SEND \r\n");
+		BT_LOGD("RTK_BT_LE_AUDIO_ACT_ISO_DATA_SEND \r\n");
 		ret = bt_stack_le_audio_data_send(p_cmd->param);
 		break;
 	}

@@ -671,7 +671,7 @@ typedef struct {
 } rtk_bt_le_audio_ascs_get_prefer_qos_ind_t;
 
 /**
- * @typedef    rtk_bt_le_audio_ascs_asc_state_ind_t
+ * @typedef    rtk_bt_le_audio_ascs_ase_state_ind_t
  * @brief     structure of LE audio ascs state
  */
 typedef struct {
@@ -730,7 +730,7 @@ typedef struct {
 
 /**
  * @typedef   rtk_bt_le_iso_isoch_data_pkt_status_t
- * @brief     Packet Status Flag in Bluetooth LE HCI ISO Datat packet sent by the Controller
+ * @brief     Packet Status Flag in Bluetooth LE HCI ISO Data packet sent by the Controller
 */
 typedef enum {
 	RTK_BT_LE_ISO_ISOCH_DATA_PKT_STATUS_VALID_DATA = 0,             /**< Valid data. The complete SDU was received correctly. */
@@ -743,7 +743,7 @@ typedef enum {
 
 /**
  * @typedef    rtk_bt_le_iso_direct_iso_data_ind_t
- * @brief     Indication of ISO Datat packet with cb_type @ref RTK_BT_LE_ISO_EVT_DATA_RECEIVE_IND .
+ * @brief     Indication of ISO Data packet with cb_type @ref RTK_BT_LE_ISO_EVT_DATA_RECEIVE_IND .
  */
 typedef struct {
 	uint16_t iso_conn_handle;                                   /**< Connection handle of the ISO. */
@@ -957,7 +957,7 @@ typedef void *rtk_bt_le_audio_base_data_mapping_t;
 
 /**
  * @typedef    rtk_bt_le_audio_pa_sync_establish_t
- * @brief     Bluetooth LE audio paramsters for pa sync establish.
+ * @brief     Bluetooth LE audio parameters for pa sync establish.
  */
 typedef struct {
 	uint8_t options;                            /**< @ref rtk_bt_le_pa_sync_create_opt_t */
@@ -996,7 +996,7 @@ typedef enum {
 
 /**
  * @typedef    rtk_bt_le_audio_pa_sync_state_ind_t
- * @brief     Bluetooth LE audio pa sync indication infomation.
+ * @brief     Bluetooth LE audio pa sync indication information.
  */
 typedef struct {
 	uint8_t cause;                                                  /**< process result */
@@ -1036,7 +1036,7 @@ typedef struct {
 
 /**
  * @typedef    rtk_bt_le_audio_big_sync_state_t
- * @brief     Bluetooth LE audio paramsters for big sync.
+ * @brief     Bluetooth LE audio parameters for big sync.
  */
 typedef enum {
 	RTK_BT_LE_AUDIO_BIG_SYNC_STATE_TERMINATED = 0x00,     /**< Terminated. */
@@ -1058,7 +1058,7 @@ typedef enum {
 
 /**
  * @typedef    rtk_bt_le_audio_big_sync_state_ind_t
- * @brief     Bluetooth LE audio pa sync indication infomation.
+ * @brief     Bluetooth LE audio pa sync indication information.
  */
 typedef struct {
 	uint8_t cause;                                                      /**< process result */
@@ -1070,7 +1070,7 @@ typedef struct {
 
 /**
  * @typedef    rtk_bt_le_audio_biginfo_t
- * @brief     Bluetooth LE audio big infomation.
+ * @brief     Bluetooth LE audio big information.
  */
 typedef struct {
 	uint8_t sync_id;         /**< Identify the periodic advertising train. */
@@ -1175,7 +1175,7 @@ typedef struct {
 
 /**
  * @typedef    rtk_bt_le_audio_big_sync_establish_t
- * @brief     Bluetooth LE audio paramsters for big sync establish.
+ * @brief     Bluetooth LE audio parameters for big sync establish.
  */
 typedef struct {
 	uint8_t encryption;                    /**< Identify the encryption mode of the BIG.
@@ -1198,7 +1198,7 @@ typedef struct {
 
 /**
  * @typedef    rtk_bt_le_audio_bis_conn_handle_info_t
- * @brief     Bluetooth LE audio bis connetion handle information.
+ * @brief     Bluetooth LE audio bis connection handle information.
  */
 typedef struct {
 	uint8_t bis_idx;                  /**< bis index */
@@ -1573,7 +1573,7 @@ typedef enum {
 
 /**
  * @typedef    rtk_bt_le_audio_broadcast_source_info_t
- * @brief     Bluetooth LE audio broadcast source infomation.
+ * @brief     Bluetooth LE audio broadcast source information.
  */
 typedef struct {
 	rtk_bt_le_audio_broadcast_source_state_t state;         /**< broadcast source state. @ref rtk_bt_le_audio_broadcast_source_state_t */
@@ -2590,7 +2590,7 @@ typedef struct {
 /****************** Data structure for API func param pack and unpack ******************/
 /**
  * @typedef    rtk_bt_le_audio_get_prefer_codec_cfg_param_t
- * @brief     Bluetooth LE audio get prefer codex config param.
+ * @brief     Bluetooth LE audio get prefer codec config param.
  */
 typedef struct {
 	uint8_t item;
@@ -2636,7 +2636,7 @@ typedef struct {
 	rtk_bt_le_audio_role_t audio_role;          /**< @ref rtk_bt_le_audio_role_t */
 	uint16_t pref_audio_contexts;
 	uint8_t channel_count;
-	uint32_t *p_lc3_table_mask;                 /**< returned lc3 suppport table mask . @ref rtk_bt_le_audio_codec_cfg_item_bit_mask_t */
+	uint32_t *p_lc3_table_mask;                 /**< returned lc3 support table mask . @ref rtk_bt_le_audio_codec_cfg_item_bit_mask_t */
 } rtk_bt_le_audio_pacs_get_lc3_table_mask_param_t;
 
 /**
@@ -2652,7 +2652,7 @@ typedef struct {
 
 /**
  * @typedef    rtk_bt_le_audio_sync_allocate_param_t
- * @brief     Bluetooth LE audio paramsters for sync create.
+ * @brief     Bluetooth LE audio parameters for sync create.
  */
 typedef struct {
 	uint8_t adv_sid;                            /**< If Periodic Advertiser List is not used (@ref rtk_bt_le_pa_sync_create_opt_t),
@@ -2668,7 +2668,7 @@ typedef struct {
 
 /**
  * @typedef    rtk_bt_le_audio_pa_sync_establish_param_t
- * @brief     Bluetooth LE audio paramsters for pa sync establish.
+ * @brief     Bluetooth LE audio parameters for pa sync establish.
  */
 typedef struct {
 	rtk_bt_le_audio_sync_handle_t sync_handle;              /**< Synchronization handle*/
@@ -2677,7 +2677,7 @@ typedef struct {
 
 /**
  * @typedef    rtk_bt_le_audio_sync_find_param_t
- * @brief     Bluetooth LE audio paramsters for sync find.
+ * @brief     Bluetooth LE audio parameters for sync find.
  */
 typedef struct {
 	uint8_t adv_sid;                            /**< If Periodic Advertiser List is not used (@ref rtk_bt_le_pa_sync_create_opt_t),
@@ -2688,7 +2688,7 @@ typedef struct {
 
 /**
  * @typedef    rtk_bt_le_audio_sync_get_sync_info_param_t
- * @brief     Bluetooth LE audio paramsters for pa sync get info.
+ * @brief     Bluetooth LE audio parameters for pa sync get info.
  */
 typedef struct {
 	rtk_bt_le_audio_sync_handle_t sync_handle;                 /**< Synchronization handle*/
@@ -2707,7 +2707,7 @@ typedef struct {
 
 /**
  * @typedef    rtk_bt_le_audio_sync_big_establish_param_t
- * @brief     Bluetooth LE audio paramsters for big sync establish.
+ * @brief     Bluetooth LE audio parameters for big sync establish.
  */
 typedef struct {
 	rtk_bt_le_audio_sync_handle_t sync_handle;              /**< Synchronization handle*/
@@ -2774,11 +2774,11 @@ typedef struct {
 
 /**
  * @typedef    rtk_bt_le_audio_broadcast_source_info_get_param_t
- * @brief     Bluetooth LE audio param for get broadcast source infomation.
+ * @brief     Bluetooth LE audio param for get broadcast source information.
  */
 typedef struct {
 	rtk_bt_le_audio_broadcast_source_handle_t broadcast_source_handle;  /**< Broadcast source handle */
-	rtk_bt_le_audio_broadcast_source_info_t *p_info;                    /**< broadcast source infomation. @ref rtk_bt_le_audio_broadcast_source_info_t */
+	rtk_bt_le_audio_broadcast_source_info_t *p_info;                    /**< broadcast source information. @ref rtk_bt_le_audio_broadcast_source_info_t */
 } rtk_bt_le_audio_broadcast_source_info_get_param_t;
 
 /**
@@ -3661,7 +3661,7 @@ typedef struct {
 #if defined(RTK_BLE_AUDIO_AICS_SUPPORT) && RTK_BLE_AUDIO_AICS_SUPPORT
 /**
  * @typedef    rtk_bt_le_audio_aics_set_param_t
- * @brief     Bluetooth LE audio aics set paramter.
+ * @brief     Bluetooth LE audio aics set parameter.
  */
 typedef struct {
 	uint8_t                             srv_instance_id;
@@ -3673,7 +3673,7 @@ typedef struct {
 
 /**
  * @typedef    rtk_bt_le_audio_aics_get_param_t
- * @brief     Bluetooth LE audio aics get paramter.
+ * @brief     Bluetooth LE audio aics get parameter.
  */
 typedef struct {
 	uint8_t                             srv_instance_id;
@@ -3817,7 +3817,7 @@ uint16_t rtk_bt_le_audio_pacs_get_pac_record(uint16_t conn_handle, rtk_bt_le_aud
  * @param[in] audio_role: audio role
  * @param[in] pref_audio_contexts: prefer audio context
  * @param[in] channel_count: channel count
- * @param[out] p_lc3_table_mask: returned lc3 suppport table mask . @ref rtk_bt_le_audio_codec_cfg_item_bit_mask_t
+ * @param[out] p_lc3_table_mask: returned lc3 support table mask . @ref rtk_bt_le_audio_codec_cfg_item_bit_mask_t
  * @return
  *            - RTK_BT_OK  : Succeed
  *            - Others: Failed
@@ -3840,7 +3840,7 @@ uint16_t rtk_bt_le_audio_pacs_get_bis_array_by_sync_info(uint16_t conn_handle, r
 
 /**
  * @brief     BLE AUDIO SYNC CREATE.
- * @param[in]  adv_sid: paramsters for le audio sync create
+ * @param[in]  adv_sid: parameters for le audio sync create
  * @param[in]  adv_addr: address of broadcast source
  * @param[in]  broadcast_id: broadcast id of broadcast source
  * @param[out]  p_broadcast_sync_handle: returned synchronization handle
@@ -3862,7 +3862,7 @@ uint16_t rtk_bt_le_audio_sync_release(rtk_bt_le_audio_sync_handle_t sync_handle)
 
 /**
  * @brief     BLE AUDIO SYNC FIND.
- * @param[in]  adv_sid: paramsters for le audio sync create
+ * @param[in]  adv_sid: parameters for le audio sync create
  * @param[in]  broadcast_id: broadcast id of broadcast source
  * @param[out]  p_broadcast_sync_handle: returned synchronization handle
  * @return
@@ -3874,7 +3874,7 @@ uint16_t rtk_bt_le_audio_sync_find(uint8_t adv_sid, uint8_t *broadcast_id, rtk_b
 /**
  * @brief     BLE AUDIO PA SYNC ESTABLISH.
  * @param[in]  sync_handle: Synchronization Handle
- * @param[in]  p_establish: paramsters for le audio pa sync establish
+ * @param[in]  p_establish: parameters for le audio pa sync establish
  * @return
  *            - RTK_BT_OK  : Succeed
  *            - Others: Failed
@@ -3914,7 +3914,7 @@ uint16_t rtk_bt_le_audio_sync_get_bis_sync_codec_cfg(rtk_bt_le_audio_sync_handle
 /**
  * @brief     BLE AUDIO BIG SYNC ESTABLISH.
  * @param[in]  sync_handle: Synchronization Handle
- * @param[in]  p_establish: paramsters for le audio pa sync establish
+ * @param[in]  p_establish: parameters for le audio pa sync establish
  * @return
  *            - RTK_BT_OK  : Succeed
  *            - Others: Failed
@@ -3966,7 +3966,7 @@ uint16_t rtk_bt_le_audio_sync_get_support_bis_array(rtk_bt_le_audio_sync_handle_
  * @brief     BLE AUDIO SETUP BIS DATA PATH.
  * @param[in] sync_handle: Synchronization Handle
  * @param[in] bis_idx: bis index
- * @param[in] p_setup_param: paramsters for le audio bis data path setup
+ * @param[in] p_setup_param: parameters for le audio bis data path setup
  * @return
  *            - RTK_BT_OK  : Succeed
  *            - Others: Failed
@@ -4050,10 +4050,10 @@ uint16_t rtk_bt_le_audio_broadcast_source_disable(rtk_bt_le_audio_broadcast_sour
 uint16_t rtk_bt_le_audio_broadcast_source_release(rtk_bt_le_audio_broadcast_source_handle_t broadcast_source_handle);
 
 /**
- * @brief     BLE AUDIO BROADCAST SORUCE SETUP BIS DATA PATH.
+ * @brief     BLE AUDIO BROADCAST SOURCE SETUP BIS DATA PATH.
  * @param[in] broadcast_source_handle: broadcast source handle
  * @param[in] bis_idx: bis index
- * @param[in] p_setup: paramsters for le audio bis data path setup
+ * @param[in] p_setup: parameters for le audio bis data path setup
  * @param[out] p_bis_conn_handle: Return Connection handle of a BIS
  * @return
  *            - RTK_BT_OK  : Succeed
@@ -4063,7 +4063,7 @@ uint16_t rtk_bt_le_audio_broadcast_source_setup_data_path(rtk_bt_le_audio_broadc
 														  rtk_bt_le_audio_bis_data_path_param_t *p_setup, uint16_t *p_bis_conn_handle);
 
 /**
- * @brief     BLE AUDIO BROADCAST SORUCE REMOVE BIS DATA PATH.
+ * @brief     BLE AUDIO BROADCAST SOURCE REMOVE BIS DATA PATH.
  * @param[in]  broadcast_source_handle: broadcast source handle
  * @param[in]  bis_idx: bis index
  * @return
@@ -4099,7 +4099,7 @@ uint16_t rtk_bt_le_audio_broadcast_source_reconfig(rtk_bt_le_audio_broadcast_sou
 uint16_t rtk_bt_le_audio_bass_get_brs_data(uint16_t conn_handle, uint8_t char_instance_id, bool is_get_bis_info, rtk_bt_le_audio_bass_brs_data_t *p_brs_data);
 
 /**
- * @brief     BLE AUDIO BASS WRITE CONCTOL POINT ADD SOURCE BY SYNC INFO.
+ * @brief     BLE AUDIO BASS WRITE CONTROL POINT ADD SOURCE BY SYNC INFO.
  * @param[in]  conn_handle: Connection handle
  * @param[in]  sync_handle: BLE audio sync handle
  * @param[in]  pa_sync: PA_Sync parameter @ref rtk_bt_le_audio_bass_cp_pa_sync_t
@@ -4113,7 +4113,7 @@ uint16_t rtk_bt_le_audio_bass_client_cp_add_source_by_sync_info(uint16_t conn_ha
 																uint32_t bis_array, bool is_req);
 
 /**
- * @brief     BLE AUDIO BASS CLIENT WRITE CONCTOL POINT MODIFY SOURCE BY SYNC INFO.
+ * @brief     BLE AUDIO BASS CLIENT WRITE CONTROL POINT MODIFY SOURCE BY SYNC INFO.
  * @param[in]  conn_handle: Connection handle
  * @param[in]  sync_handle: BLE audio sync handle
  * @param[in]  source_id: Broadcast source id.
@@ -4128,7 +4128,7 @@ uint16_t rtk_bt_le_audio_bass_client_cp_modify_source_by_sync_info(uint16_t conn
 																   uint8_t pa_sync, uint32_t bis_array, bool is_req);
 
 /**
- * @brief     BLE AUDIO BASS CLIENT WRITE CONCTOL POINT OPCODE.
+ * @brief     BLE AUDIO BASS CLIENT WRITE CONTROL POINT OPCODE.
  * @param[in]  conn_handle: Connection handle
  * @param[in]  opcode: op code @ref rtk_bt_le_audio_bass_cp_op_t
  * @param[in]  op_param: op param
@@ -4260,7 +4260,7 @@ uint16_t rtk_bt_le_audio_group_get_all_device_info(rtk_bt_le_audio_group_handle_
 												   rtk_bt_le_audio_group_device_info_t *p_device_info_tbl);
 
 /**
- * @brief     BLE AUDIO UNICAST CLIENT ALLOCATE STEAM SESSION.
+ * @brief     BLE AUDIO UNICAST CLIENT ALLOCATE STREAM SESSION.
  * @param[in]  group_handle: unicast client group handle
  * @param[out] p_stream_session_handle: returned stream session handle
  * @return
@@ -4279,7 +4279,7 @@ uint16_t rtk_bt_le_audio_stream_session_allocate(rtk_bt_le_audio_group_handle_t 
 uint16_t rtk_bt_le_audio_stream_session_release(rtk_bt_le_audio_stream_session_handle_t stream_session_handle);
 
 /**
- * @brief     BLE AUDIO UNICAST CLIENT RELEASE STEAM SESSION.
+ * @brief     BLE AUDIO UNICAST CLIENT RELEASE STREAM SESSION.
  * @param[in] stream_session_handle: stream session handle
  * @param[out] p_group_handle: returned group handle
  * @return
@@ -4315,7 +4315,7 @@ uint16_t rtk_bt_le_audio_unicast_get_cfg_mask(rtk_bt_le_audio_stream_session_han
 											  rtk_bt_le_audio_device_handle_t *p_device_handle_tbl, uint32_t *p_cfg_mask);
 
 /**
- * @brief     BLE AUDIO UNICAST CLIENT RELEASE STEAM SESSION.
+ * @brief     BLE AUDIO UNICAST CLIENT RELEASE STREAM SESSION.
  * @param[in] stream_session_handle: stream session handle
  * @param[in] device_handle: device handle
  * @param[out] p_cis_infos: returned cis info table
@@ -4467,7 +4467,7 @@ uint16_t rtk_bt_le_audio_csis_update_size(uint8_t csis_size);
 
 #if defined(RTK_BLE_AUDIO_CSIP_SET_COORDINATOR_SUPPORT) && RTK_BLE_AUDIO_CSIP_SET_COORDINATOR_SUPPORT
 /**
- * @brief     BLE AUDIO CHEK ADV RSI for CSIS SET COORDINATOR.
+ * @brief     BLE AUDIO CHECK ADV RSI for CSIS SET COORDINATOR.
  * @param[in] adv_addr: adv addr
  * @param[in] report_data_len: report data len
  * @param[in] p_report_data: report data
@@ -4487,7 +4487,7 @@ uint16_t rtk_bt_le_audio_csis_set_coordinator_check_adv_rsi(rtk_bt_le_addr_t adv
  */
 uint16_t rtk_bt_le_audio_csis_set_coordinator_cfg_discover(rtk_bt_le_audio_group_handle_t group_handle, bool discover, uint32_t timeout_ms);
 /**
- * @brief     BLE AUDIO CHEK ADD GROUP for CSIS SET COORDINATOR.
+ * @brief     BLE AUDIO CHECK ADD GROUP for CSIS SET COORDINATOR.
  * @param[in] p_mem_info: mem info
  * @param[out] p_group_handle: returned group handle
  * @param[out] p_device_handle: returned device handle

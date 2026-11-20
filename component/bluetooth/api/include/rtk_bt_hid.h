@@ -1,7 +1,7 @@
 /**
  * @file      rtk_bt_hid.h
  * @author    benling_xu@realsil.com.cn
- * @brief     Bluetooth hid type and function deffinition
+ * @brief     Bluetooth hid type and function definition
  * @copyright Copyright (c) 2022. Realtek Semiconductor Corporation. All rights reserved.
  */
 

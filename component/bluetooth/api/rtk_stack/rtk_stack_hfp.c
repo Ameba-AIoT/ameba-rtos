@@ -442,8 +442,8 @@ static void app_hfp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t bu
 					p_link->hfp_sco_codec_info.cvsd.frame_duration = RTK_BT_AUDIO_CVSD_FRAME_DURATION_7_5_MS;
 				}
 			} else {
-				APP_PRINT_INFO0("HFP config: unknow ");
-				BT_LOGE("app_hfp_bt_cback: HFP unknow \r\n");
+				APP_PRINT_INFO0("HFP config: unknown ");
+				BT_LOGE("app_hfp_bt_cback: HFP unknown \r\n");
 				break;
 			}
 			{
