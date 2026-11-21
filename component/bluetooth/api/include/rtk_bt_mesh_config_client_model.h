@@ -1,5 +1,5 @@
 /**
- * @file      rtk_bt_mesh_api_config_client_model.h
+ * @file      rtk_bt_mesh_config_client_model.h
  * @author    pico_zhai@realsil.com.cn
  * @brief     Bluetooth LE MESH configuration client model data struct and function definition
  * @copyright Copyright (c) 2022. Realtek Semiconductor Corporation. All rights reserved.
@@ -601,7 +601,7 @@ typedef struct {
  */
 typedef struct {
 	uint16_t dst;  // Dst of config heartbeat publish set message
-	uint16_t dst_pub;  // Dst of hearbeat messages
+	uint16_t dst_pub;  // Dst of heartbeat messages
 	uint8_t count_log;  // Ref mesh model spec 4.2.17.2 Heartbeat Publication Count Log
 	uint8_t period_log;  // Ref mesh model spec 4.2.17.3 Heartbeat Publication Period Log
 	uint8_t ttl;
@@ -624,7 +624,7 @@ typedef struct {
 typedef struct {
 	uint16_t dst;  // Dst of config heartbeat subscribe set message
 	uint16_t src;  // Src of heartbeat messages
-	uint16_t dst_set;  // Dst of hearbeat messages
+	uint16_t dst_set;  // Dst of heartbeat messages
 	uint8_t period_log;  // Ref mesh model spec 4.2.18.4 Heartbeat Subscription Period Log
 } rtk_bt_mesh_config_client_model_hb_sub_set_t;
 

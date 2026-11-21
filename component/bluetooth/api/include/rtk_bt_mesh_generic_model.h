@@ -536,7 +536,7 @@ typedef struct {
 } rtk_bt_mesh_generic_battery_client_status_t;
 
 /**
- * @typedef   rtk_bt_mesh_generic_bttery_server_model_evt_t
+ * @typedef   rtk_bt_mesh_generic_battery_server_model_evt_t
  * @brief     BLE MESH generic battery server model evt definition.
  */
 typedef enum {
@@ -557,7 +557,7 @@ typedef struct {
 
 /**
  * @typedef   rtk_bt_mesh_generic_battery_server_direct_get_t
- * @brief     BBLE MESH generic battery server get status for direct calling message structure.
+ * @brief     BLE MESH generic battery server get status for direct calling message structure.
  */
 typedef struct {
 	rtk_bt_mesh_generic_battery_server_get_t *value;
@@ -956,7 +956,7 @@ typedef struct {
  * @brief     BLE MESH generic property server parameter message structure.
  */
 typedef struct {
-	bool pdb;//check wehther pdb is NULL
+	bool pdb;//check whether pdb is NULL
 	uint8_t property_access;
 	uint16_t value_len;
 } rtk_bt_mesh_generic_property_server_para_t;
@@ -985,7 +985,7 @@ typedef struct {
  * @brief     BLE MESH generic property server num ids message structure.
  */
 typedef struct {
-	bool pdb;//check wehther pdb is NULL
+	bool pdb;//check whether pdb is NULL
 	uint8_t num_ids;
 } rtk_bt_mesh_generic_property_server_num_ids_t;
 

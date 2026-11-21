@@ -107,6 +107,15 @@ enum rtw_wlan_if_index {
  */
 
 /**
+ * @brief  WiFi API positive return values (ret > 0): success with extra status, NOT an error.
+ *         Complements the RTK return contract: 0 = RTK_SUCCESS, < 0 = -rtk_error_code.
+ *         These values are WiFi-local and interpreted only by the direct caller of the API.
+ */
+enum rtw_api_status {
+	RTW_DFS_CAC_PENDING = 1,   /**< wifi_start_ap(): SoftAP started on a DFS channel; not beaconing yet, CAC running and netif link-up deferred until CAC passes (driven by the RTW_EVENT_DFS_CAC_DONE handler). DFS master only. */
+};
+
+/**
  * @brief  Security flags for @ref rtw_security (size: u32).
  */
 enum rtw_security_flag {
@@ -1078,7 +1087,10 @@ union rtw_speaker_set {
 		u8 enable;			/**< 1 for enable, 0 for disable. */
 		u64 tsft;           /**< Unit us. */
 		u8 port;           /**< Port selection for TSFT trigger: 0 for port 0, 1 for port 1. */
-	} tsf_timer; /**< For Wi-Fi speaker setting case @ref RTW_SPEAKER_SET_TSF_TIMER.*/
+		u32 audio_sport_reg_addr;    /**< Audio Sport control reg (SP_CTRL0) address, 0: SW does not start sport. Unused on amebagreen2 (started by HW). */
+		u32 audio_sport_start_bit;   /**< Audio Sport TX/RX start bit, set when TSF timer fires. */
+		u32 audio_sport_disable_bit; /**< Audio Sport TX/RX disable bit, cleared when TSF timer fires. */
+	} tsf_timer; /**< For Wi-Fi speaker setting case @ref RTW_SPEAKER_SET_TSF_TIMER. Zero the union before filling it.*/
 };
 
 /**

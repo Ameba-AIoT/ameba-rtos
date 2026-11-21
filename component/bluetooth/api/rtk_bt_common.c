@@ -465,7 +465,7 @@ void bt_wait_cmd_send_complete(void)
 	}
 }
 
-static uint8_t rtk_bt_excute_evt_cb(uint8_t group, uint8_t evt_code, void *param, uint32_t len)
+static uint8_t rtk_bt_execute_evt_cb(uint8_t group, uint8_t evt_code, void *param, uint32_t len)
 {
 	uint8_t ret = RTK_BT_EVT_CB_OK;
 	rtk_bt_evt_cb_t cb_func = NULL;
@@ -526,7 +526,7 @@ static void rtk_bt_evt_taskentry(void *ctx)
 			}
 
 			/* Call back user registered function */
-			rtk_bt_excute_evt_cb(pevt->group, pevt->evt, pevt->data, pevt->data_len);
+			rtk_bt_execute_evt_cb(pevt->group, pevt->evt, pevt->data, pevt->data_len);
 			rtk_bt_event_free(pevt);
 		}
 	}
@@ -683,7 +683,7 @@ rtk_bt_evt_t *rtk_bt_event_create(uint8_t group, uint8_t evt, uint32_t param_len
 	void *evt_q = choose_evt_mem_pool_q(sizeof(rtk_bt_evt_t) + param_len);
 
 	if (evt_q && osif_msg_recv(evt_q, &pbuf, 0)) {
-		/* Double check if the evt buf len match the queue. If a small buf is send to medium queue,
+		/* Double check if the evt buf len match the queue. If a small buf is sent to medium queue,
 		it will cause memory overflow when a medium buf is needed but just get a small buf from medium queue. */
 		if (evt_q != find_evt_pool_q_by_buf((uint8_t *)pbuf)) {
 			BT_LOGE("!Error, evt buf len mismatch the queue\r\n");
@@ -830,12 +830,12 @@ uint16_t rtk_bt_evt_indicate(void *evt, uint8_t *cb_ret)
 	}
 
 	if (true == rtk_bt_check_evt_cb_direct_calling(p_evt->group, p_evt->evt)) {
-		uint8_t cb_ret_tmp = rtk_bt_excute_evt_cb(p_evt->group, p_evt->evt, p_evt->data, p_evt->data_len);
+		uint8_t cb_ret_tmp = rtk_bt_execute_evt_cb(p_evt->group, p_evt->evt, p_evt->data, p_evt->data_len);
 		if (cb_ret != NULL) {
 			*cb_ret = cb_ret_tmp;
 		}
 		/* If the evt cb is direct calling, the evt msg isn't actually send to evt task,
-		Instead, it's excuted here, so need to free it here */
+		Instead, it's executed here, so need to free it here */
 		rtk_bt_event_free(evt);
 		return RTK_BT_OK;
 	}
