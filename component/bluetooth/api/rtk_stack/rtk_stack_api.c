@@ -281,7 +281,7 @@ static uint16_t bt_stack_init(void *app_config)
 #if defined(F_BT_5_2_EATT_SUPPORT) && F_BT_5_2_EATT_SUPPORT
 #if defined(RTK_BT_5_2_EATT_SUPPORT) && RTK_BT_5_2_EATT_SUPPORT
 	gap_config_eatt(true);
-	/* If BREDR uses EATT at the same, enlarge the paramter to include gatt channel of BREDR */
+	/* If BREDR uses EATT at the same, enlarge the parameter to include gatt channel of BREDR */
 	gap_config_gatt_chann_num(RTK_BLE_GAP_MAX_LINKS + GAP_LE_MAX_ECFC_CHANN_NUM);
 #else
 	gap_config_eatt(false); /*clear GATTS_SERVER_SUPPORTED_FEATURES_EATT_BIT of GATT_UUID_CHAR_SERVER_SUPPORTED_FEATURES*/

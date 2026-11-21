@@ -68,9 +68,17 @@ static uint8_t *rtk_stack_get_buf(uint8_t type, void *hdr, uint16_t len, uint32_
 	uint8_t *buf = NULL;
 	uint8_t offset = _rx_offset(type);
 
+	if (len + offset > 0xFFFF) {
+		BT_LOGE("rtk_stack_get_buf: pkt too long, type %d, len %d\r\n", type, len);
+		return NULL;
+	}
 	new_packet_buflen = len + offset;
 
 	buf = (uint8_t *)osif_mem_aligned_alloc(RAM_TYPE_DATA_ON, new_packet_buflen, 4);
+	if (!buf) {
+		BT_LOGE("rtk_stack_get_buf: alloc %d bytes fail\r\n", new_packet_buflen);
+		return NULL;
+	}
 	memset(buf, 0, new_packet_buflen);
 	buf[0] = type;
 
@@ -91,6 +99,8 @@ static void rtk_stack_recv(void)
 	uint8_t *buf = new_packet_buf;
 
 	if (!buf || !hci_if_rtk.cb) {
+		osif_mem_aligned_free(buf);
+		new_packet_buf = NULL;
 		return;
 	}
 

@@ -24,7 +24,7 @@
 uint16_t bt_stack_gap_init(void)
 {
 #if (defined(RTK_BT_5_2_L2C_ECFC_SUPPORT) && RTK_BT_5_2_L2C_ECFC_SUPPORT) && (defined(F_BT_5_2_L2C_ECFC_SUPPORT) && F_BT_5_2_L2C_ECFC_SUPPORT)
-	if (!gap_ecfc_init(GAP_MAX_ECFC_PROTOCAL_NUM)) {
+	if (!gap_ecfc_init(GAP_MAX_ECFC_PROTOCOL_NUM)) {
 		return RTK_BT_ERR_LOWER_STACK_API;
 	}
 #endif

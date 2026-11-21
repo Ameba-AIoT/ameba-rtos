@@ -156,7 +156,7 @@ uint16_t rtk_bt_bap_broadcast_source_start(void)
 		qos_cfg_preferred.max_sdu = p_prefer_qos->max_sdu;
 		qos_cfg_preferred.max_transport_latency = p_prefer_qos->max_transport_latency;
 		qos_cfg_preferred.framing = p_prefer_qos->framing;
-		BT_LOGA("%s: Manul config QoS\r\n", __func__);
+		BT_LOGA("%s: Manual config QoS\r\n", __func__);
 	} else {
 		/* get prefer QoS according to codec index */
 		if (rtk_bt_le_audio_qos_preferred_cfg_get(bap_broadcast_source_cfg.cfg_codec_index, bap_broadcast_source_cfg.cfg_qos_type, &qos_cfg_preferred)) {
