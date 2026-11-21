@@ -120,7 +120,7 @@ typedef enum {
 } rtk_bt_mesh_stack_user_list_type_t;
 
 /**
- * @typedef   rtk_bt_mesh_stack_evt_net_key_type
+ * @typedef   rtk_bt_mesh_stack_net_key_type
  * @brief     BLE MESH net key type.
  */
 typedef enum {
@@ -150,12 +150,12 @@ typedef struct {
 } rtk_bt_mesh_stack_act_set_prov_param_t;
 
 /**
- * @typedef   rkt_bt_mesh_stack_act_device_info_set_t
+ * @typedef   rtk_bt_mesh_stack_act_device_info_set_t
  * @brief     BLE MESH device info display switch param structure.
  */
 typedef struct {
 	uint8_t dev_info_dis;
-} rkt_bt_mesh_stack_act_device_info_set_t;
+} rtk_bt_mesh_stack_act_device_info_set_t;
 
 /**
  * @typedef   rtk_bt_mesh_stack_act_pb_adv_con_t
@@ -335,7 +335,7 @@ typedef struct {
 
 /**
  * @typedef   rtk_bt_mesh_stack_act_lpn_init_t
- * @brief     BLE MESH low pwer node init param structure.
+ * @brief     BLE MESH low power node init param structure.
  */
 typedef struct {
 	uint8_t fn_num;
@@ -343,7 +343,7 @@ typedef struct {
 
 /**
  * @typedef   rtk_bt_mesh_stack_act_lpn_req_t
- * @brief     BLE MESH low pwer node request a friendship param structure.
+ * @brief     BLE MESH low power node request a friendship param structure.
  */
 typedef struct {
 	uint8_t fn_index;
@@ -356,7 +356,7 @@ typedef struct {
 
 /**
  * @typedef   rtk_bt_mesh_stack_act_lpn_sub_t
- * @brief     BLE MESH low pwer node subscribe add or remove param structure.
+ * @brief     BLE MESH low power node subscribe add or remove param structure.
  */
 typedef struct {
 	uint8_t fn_index;
@@ -366,7 +366,7 @@ typedef struct {
 
 /**
  * @typedef   rtk_bt_mesh_stack_act_lpn_clear_t
- * @brief     BLE MESH low pwer node clear friendship param structure.
+ * @brief     BLE MESH low power node clear friendship param structure.
  */
 typedef struct {
 	uint8_t fn_index;
@@ -512,7 +512,7 @@ typedef struct {
 
 /**
  * @typedef   rtk_bt_mesh_stack_evt_dev_info_provision_adv_t
- * @brief     BLE MESH device provisioin adv info structure.
+ * @brief     BLE MESH device provision adv info structure.
  */
 typedef struct {
 	rtk_bt_mesh_stack_device_info_common_data dev_info;
@@ -633,7 +633,7 @@ typedef struct {
 	 */
 	uint16_t dst;
 	/**
-	 * @brief preiod for processing periodical heartbeat transport control messages
+	 * @brief period for processing periodical heartbeat transport control messages
 	 * 0: heartbeat messages are not being processed
 	 * 1-0xffff: remaining period in seconds for processing periodical heartbeat message
 	 */
@@ -674,7 +674,7 @@ typedef enum {
 	RTK_BT_MESH_PB_GENERIC_CB_LINK_CLOSED,
 	RTK_BT_MESH_PB_GENERIC_CB_MSG_ACKED,
 	RTK_BT_MESH_PB_GENERIC_CB_MSG,
-	// RTK_BT_MESH_PB_GENERIC_CB_MSG_TRANSMITED maybe usefull calc ecdh secret after send public key to save time
+	// RTK_BT_MESH_PB_GENERIC_CB_MSG_TRANSMITED maybe useful calc ecdh secret after send public key to save time
 } rtk_bt_mesh_prov_generic_cb_type_t;
 
 /**
@@ -1070,7 +1070,7 @@ uint16_t rtk_bt_mesh_stack_node_reset(void);
  *            - 0  : Succeed
  *            - Others: Error code
  */
-uint16_t rtk_bt_mesh_stack_set_device_info_display(rkt_bt_mesh_stack_act_device_info_set_t *p_data);
+uint16_t rtk_bt_mesh_stack_set_device_info_display(rtk_bt_mesh_stack_act_device_info_set_t *p_data);
 
 /**
  * @brief     Print user list info, will cause event @ref RTK_BT_MESH_STACK_ACT_USER_LIST_INFO
@@ -1100,7 +1100,7 @@ uint16_t rtk_bt_mesh_stack_set_random_value_for_authentication(rtk_bt_mesh_stack
 
 /**
  * @brief     Get heartbeat subscribe result, will cause event @ref RTK_BT_MESH_STACK_ACT_GET_HB_SUB_RESULT
- * @param[in] value: the subscribe result data structure
+ * @param[in] hb_sub: the subscribe result data structure
  * @return
  *            - 0  : Succeed
  *            - Others: Error code

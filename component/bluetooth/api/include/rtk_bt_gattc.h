@@ -65,7 +65,7 @@ typedef enum {
 
 /**
  * @struct    rtk_bt_gattc_find_param_t
- * @brief     Bluetooth GATT client discover paramter for different Operation.
+ * @brief     Bluetooth GATT client discover parameter for different Operation.
  */
 typedef struct {
 	uint16_t conn_handle;                   /*!< Connection handle */
@@ -114,7 +114,7 @@ typedef enum {
 
 /**
  * @struct    rtk_bt_gattc_read_param_t
- * @brief     Bluetooth GATT client read paramter.
+ * @brief     Bluetooth GATT client read parameter.
  */
 typedef struct {
 	uint16_t profile_id;                    /*!< Profile ID */
@@ -145,7 +145,7 @@ typedef enum {
 
 /**
  * @struct    rtk_bt_gattc_write_param_t
- * @brief     Bluetooth GATT client write paramter.
+ * @brief     Bluetooth GATT client write parameter.
  */
 typedef struct {
 	uint16_t profile_id;                    /*!< Profile ID */
@@ -158,7 +158,7 @@ typedef struct {
 
 /**
  * @struct    rtk_bt_gattc_update_cccd_param_t
- * @brief     Bluetooth GATT client write cccd paramter.
+ * @brief     Bluetooth GATT client write cccd parameter.
  */
 typedef struct {
 	uint16_t profile_id;                    /*!< Profile ID */
@@ -166,8 +166,8 @@ typedef struct {
 	bool srv_cfg;                           /*!< If cccd config is for whole service or a characteristic */
 	rtk_bt_gattc_uuid_t srv_uuid;           /*!< Service UUID value */
 	rtk_bt_gattc_uuid_t char_uuid;          /*!< Characteristic UUID value, ignored when srv_cfg is true. */
-	bool bnotify;                           /*!< If notify bit is writed */
-	bool bindicate;                         /*!< If indicate bit is writed */
+	bool bnotify;                           /*!< If notify bit is written */
+	bool bindicate;                         /*!< If indicate bit is written */
 } rtk_bt_gattc_update_cccd_param_t;
 
 /**
@@ -194,7 +194,7 @@ typedef struct {
 
 /**
  * @typedef   rtk_bt_gatt_service_char_t
- * @brief     GATT service characteristic exsit flag.
+ * @brief     GATT service characteristic exist flag.
  */
 typedef enum {
 	RTK_BT_GATT_SVC_DATABASE_HASH_FLAG = 0x01,              /*!< Database hash characteristic bit. */
@@ -326,7 +326,7 @@ typedef enum {
 } rtk_bt_gap_chann_type_t;
 
 /**
- * @brief Client handle disconect result
+ * @brief Client handle disconnect result
  *        The event data for GATT_CLIENT_EVENT_CONN_DEL.
  */
 typedef struct {
@@ -345,7 +345,8 @@ typedef struct {
 
 /**
  * @brief      Register GATT client profile.
- * @param[in]  p_reg_param: Pointer to GATT client profile parameters.
+ * @param[in]  profile_id: GATT client profile ID.
+ * @param[in]  srv_uuid: GATT client profile service UUID.
  * @return
  *            - 0  : Succeed
  *            - Others: Error code
@@ -436,12 +437,12 @@ typedef enum {
 
 /**
  * @struct    rtk_bt_gattc_discover_param_t
- * @brief     Bluetooth GATT client discover paramter for different Operation.
+ * @brief     Bluetooth GATT client discover parameter for different Operation.
  */
 typedef struct {
 	uint16_t profile_id;                    /*!< Profile ID */
 	uint16_t conn_handle;                   /*!< Connection handle */
-	uint16_t seq;                           /*!< Sequence number, for convinience, not mandatory */
+	uint16_t seq;                           /*!< Sequence number, for convenience, not mandatory */
 	rtk_bt_gattc_discover_type_t type;      /*!< Discover type */
 
 	union {
@@ -485,7 +486,7 @@ typedef struct {
 typedef struct {
 	uint16_t profile_id;                    /*!< Profile ID */
 	uint16_t conn_handle;                   /*!< Connection handle */
-	uint16_t seq;                           /*!< Sequence number, for convinience, not mandatory */
+	uint16_t seq;                           /*!< Sequence number, for convenience, not mandatory */
 	rtk_bt_gattc_discover_type_t type;      /*!< Discover type */
 	rtk_bt_status_t status;                 /*!< GATTC discover status,
                                                 @note: One discover request may raise multiple discover events because many attribute entries may be
@@ -555,12 +556,12 @@ typedef enum {
 
 /**
  * @struct    rtk_bt_gattc_read_param_t
- * @brief     Bluetooth GATT client read paramter.
+ * @brief     Bluetooth GATT client read parameter.
  */
 typedef struct {
 	uint16_t profile_id;                    /*!< Profile ID */
 	uint16_t conn_handle;                   /*!< Connection handle */
-	uint16_t seq;                           /*!< Sequence number, for convinience, not mandatory */
+	uint16_t seq;                           /*!< Sequence number, for convenience, not mandatory */
 	rtk_bt_gattc_read_type_t type;          /*!< Characteristic value read type */
 	union {
 		struct by_handle_param {
@@ -594,7 +595,7 @@ typedef struct {
 typedef struct {
 	uint16_t profile_id;                    /*!< Profile ID */
 	uint16_t conn_handle;                   /*!< Connection handle */
-	uint16_t seq;                           /*!< Sequence number, for convinience, not mandatory */
+	uint16_t seq;                           /*!< Sequence number, for convenience, not mandatory */
 	rtk_bt_gattc_read_type_t type;          /*!< Characteristic value read type */
 	rtk_bt_status_t status;                 /*!< GATTC read status,
                                                 @note: One read request may raise multiple read events because many attribute entries may be
@@ -644,12 +645,12 @@ typedef enum {
 
 /**
  * @struct    rtk_bt_gattc_write_param_t
- * @brief     Bluetooth GATT client write paramter.
+ * @brief     Bluetooth GATT client write parameter.
  */
 typedef struct {
 	uint16_t profile_id;                    /*!< Profile ID */
 	uint16_t conn_handle;                   /*!< Connection handle */
-	uint16_t seq;                           /*!< Sequence number, for convinience, not mandatory */
+	uint16_t seq;                           /*!< Sequence number, for convenience, not mandatory */
 	rtk_bt_gattc_write_type_t type;         /*!< Characteristic value write type */
 	uint16_t handle;                        /*!< Characteristic value handle */
 	uint16_t length;                        /*!< Length of the data */
@@ -663,7 +664,7 @@ typedef struct {
 typedef struct {
 	uint16_t profile_id;                    /*!< Profile ID */
 	uint16_t conn_handle;                   /*!< Connection handle */
-	uint16_t seq;                           /*!< Sequence number, for convinience, not mandatory */
+	uint16_t seq;                           /*!< Sequence number, for convenience, not mandatory */
 	rtk_bt_gattc_write_type_t type;         /*!< Characteristic value write type */
 	rtk_bt_status_t status;                 /*!< GATTC write status,
                                                 if status is @ref RTK_BT_STATUS_DONE, means write is success,
@@ -674,12 +675,12 @@ typedef struct {
 
 /**
  * @struct    rtk_bt_gattc_update_cccd_param_t
- * @brief     Bluetooth GATT client write cccd paramter.
+ * @brief     Bluetooth GATT client write cccd parameter.
  */
 typedef struct {
 	uint16_t profile_id;                    /*!< Profile ID */
 	uint16_t conn_handle;                   /*!< Connection handle */
-	uint16_t seq;                           /*!< Sequence number, for convinience, not mandatory */
+	uint16_t seq;                           /*!< Sequence number, for convenience, not mandatory */
 	uint16_t char_val_handle;               /*!< Characteristic value handle */
 	uint16_t cccd_handle;                   /*!< Client characteristic configuration descriptor(CCCD) handle */
 	bool bnotify;                           /*!< If notify bit need to write */
@@ -693,14 +694,14 @@ typedef struct {
 typedef struct {
 	uint16_t profile_id;                    /*!< Profile ID */
 	uint16_t conn_handle;                   /*!< Connection handle */
-	uint16_t seq;                           /*!< Sequence number, for convinience, not mandatory */
+	uint16_t seq;                           /*!< Sequence number, for convenience, not mandatory */
 	rtk_bt_status_t status;                 /*!< GATTC cccd update status,
                                                 if status is @ref RTK_BT_STATUS_DONE, means write is success,
                                                 if status is @ref RTK_BT_STATUS_FAIL, means write is failed, inquire err_code for the cause of failure */
 	uint16_t err_code;                      /*!< GATTC write err_code, 0: success, others: failure cause */
 	uint16_t cccd_handle;                   /*!< Client characteristic configuration descriptor(CCCD) handle */
-	bool bnotify;                           /*!< If notify bit is writed */
-	bool bindicate;                         /*!< If indicate bit is writed */
+	bool bnotify;                           /*!< If notify bit is written */
+	bool bindicate;                         /*!< If indicate bit is written */
 } rtk_bt_gattc_cccd_update_ind_t;
 
 /**

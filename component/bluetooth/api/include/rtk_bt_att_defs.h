@@ -44,7 +44,7 @@ struct bt_uuid_16 {
 
 /**
  * @struct    bt_uuid_128
- * @brief     UUI128 type definition.
+ * @brief     UUID128 type definition.
  */
 struct bt_uuid_128 {
 	struct bt_uuid uuid; /*!< UUID generic type */
@@ -146,7 +146,7 @@ struct bt_uuid_128 {
 
 /**
  * @def       BT_UUID_SIZE_MAX
- * @brief     Bluetooth UUIDMAX size.
+ * @brief     Bluetooth UUID max size.
  */
 #define BT_UUID_SIZE_MAX                    BT_UUID_SIZE_128
 
