@@ -1,7 +1,7 @@
 /**
 * @file      rtk_bt_br_gap.h
 * @author    benling_xu@realsil.com.cn
-* @brief     Bluetooth LE GAP part type and function deffinition
+* @brief     Bluetooth LE GAP part type and function definition
 * @copyright Copyright (c) 2022. Realtek Semiconductor Corporation. All rights reserved.
 */
 
@@ -61,7 +61,7 @@ typedef enum {
 } rtk_bt_br_page_scan_t;
 
 typedef enum {
-	RTK_BT_BR_GAP_INQUIRY_MODE_STANDARD_RESULT = 0, /*!< Inquiry reusult standard format. */
+	RTK_BT_BR_GAP_INQUIRY_MODE_STANDARD_RESULT = 0, /*!< Inquiry result standard format. */
 	RTK_BT_BR_GAP_INQUIRY_MODE_RESULT_WITH_RSSI,    /*!< Inquiry result format with RSSI. */
 	RTK_BT_BR_GAP_INQUIRY_MODE_EXTENDED_RESULT,     /*!< Inquiry result with RSSI format or Extended inquiry result format. */
 } rtk_bt_br_inquiry_mode_t;
@@ -354,7 +354,7 @@ typedef struct {
 } rtk_bt_br_acl_conn_fail_t;
 
 /**
- * @struct    rtk_bt_br_lin_read_rssi_rsp
+ * @struct    rtk_bt_br_link_read_rssi_rsp
  * @brief     Bluetooth BR/EDR read rssi rsp
  */
 typedef struct {
@@ -439,8 +439,8 @@ uint16_t rtk_bt_br_gap_set_inquiry_param(rtk_bt_br_inquiry_param_t *inquiry_para
 uint16_t rtk_bt_br_gap_cfg_inquiry_param(uint8_t type, uint16_t interval, uint16_t window);
 
 /**
- * @brief     Set security paramters.
- * @param[in] p_sec_param: Security paramters
+ * @brief     Set security parameters.
+ * @param[in] p_sec_param: Security parameters
  * @return
  *            - 0  : Succeed
  *            - Others: Error code
@@ -485,7 +485,7 @@ uint16_t rtk_bt_br_gap_max_bond_num_get(uint8_t *pmax_bond_num);
 
 /**
  * @brief     get used bond number.
- * @param[in] pmax_bond_num: bond number
+ * @param[in] pbond_num: bond number
  * @return
  *            - 0  : Succeed
  *            - Others: Error code
@@ -557,7 +557,7 @@ uint16_t rtk_bt_br_gap_bond_delete(uint8_t *bd_addr);
 
 /**
  * @brief     delete bond information in bond storage
- * @param[in] void: NUll
+ * @param[in] void: NULL
  * @return
  *            - 0  : Succeed
  *            - Others: Error code
@@ -612,7 +612,7 @@ uint16_t rtk_bt_br_gap_set_sniff_mode(uint8_t enter, uint8_t *bd_addr, uint16_t 
 * @brief     Set BT link QoS
 * @param[in] bd_addr The Bluetooth device address
 * @param[in] type QoS type defined in ref rtk_bt_br_qos_type_t.
-* @param[in] The poll interval ranged from 0x06 to 0x1000 in 625us slot unit.
+* @param[in] tpoll The poll interval ranged from 0x06 to 0x1000 in 625us slot unit.
 * @return
 *            - 0  : Succeed
 *            - Others: Error code
@@ -630,8 +630,7 @@ uint16_t rtk_bt_br_gap_set_cod(uint32_t *bt_cod);
 
 /**
  * @brief     set supvisiontimeout(should be invoked before rtk_bt_enable).
- * @param[in] pin_code: pointer of supvisiontimeout
- * @param[in] length: length
+ * @param[in] supv_timeout: pointer of supvisiontimeout
  * @return
  *            - 0  : Succeed
  *            - Others: Error code

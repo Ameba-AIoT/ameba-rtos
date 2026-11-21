@@ -1,7 +1,7 @@
 /**
  * @file      rtk_bt_gatts.h
  * @author    benling_xu@realsil.com.cn
- * @brief     Bluetooth GATT server part type and function deffinition
+ * @brief     Bluetooth GATT server part type and function definition
  * @copyright Copyright (c) 2022. Realtek Semiconductor Corporation. All rights reserved.
  */
 
@@ -29,7 +29,7 @@ extern "C"
  *            will be indicated to user APP by a callback, and user APP need to call
  *            @ref rtk_bt_gatts_read_resp or @ref rtk_bt_gatts_write_resp to response to
  *            read/write request from remote and modify the attribute value maintained
- *            in user APP when recevie write request.
+ *            in user APP when receive write request.
  */
 #define RTK_BT_GATT_APP                     1
 
@@ -181,7 +181,7 @@ struct rtk_bt_gatt_chrc {
  * @def       RTK_BT_GATT_SCC
  * @brief     Server Characteristic Configuration Declaration Macro.
  *            Helper macro to declare a CCC attribute.
- * @param     _value Poniter to Server Characteristic Configuration bits. (struct rtk_bt_gatt_scc *)
+ * @param     _value Pointer to Server Characteristic Configuration bits. (struct rtk_bt_gatt_scc *)
  * @param     _perm CCC access permissions.
  */
 #define RTK_BT_GATT_SCC(_value, _perm) \
@@ -281,7 +281,7 @@ struct rtk_bt_gatt_cep {
 
 /**
  * @struct    rtk_bt_gatt_scc
- * @brief     Server Characterestic Configuration Attribute Value.
+ * @brief     Server Characteristic Configuration Attribute Value.
  */
 struct rtk_bt_gatt_scc {
 	uint16_t flags;                         /*!< Server Characteristic Configuration flags */
@@ -308,10 +308,10 @@ typedef struct {
 
 /**
  * @struct    rtk_bt_gatts_read_resp_param_t
- * @brief     Bluetooth GATT server response paramter for remote client's read request.
+ * @brief     Bluetooth GATT server response parameter for remote client's read request.
  */
 typedef struct {
-	uint16_t seq;                           /*!< Sequence number, for convinience, not mandatory */
+	uint16_t seq;                           /*!< Sequence number, for convenience, not mandatory */
 	uint16_t app_id;                        /*!< Every service has a app_id. */
 	uint16_t conn_handle;                   /*!< Connection handle for a client */
 	uint16_t cid;                           /*!< ID of L2CAP channel to send the response, MUST be same as cid in @ref rtk_bt_gatts_read_ind_t. Ignored when RTK_BLE_MGR_LIB is 0. */
@@ -323,10 +323,10 @@ typedef struct {
 
 /**
  * @struct    rtk_bt_gatts_write_resp_param_t
- * @brief     Bluetooth GATT server response paramter for remote client's write request.
+ * @brief     Bluetooth GATT server response parameter for remote client's write request.
  */
 typedef struct {
-	uint16_t seq;                           /*!< Sequence number, for convinience, not mandatory */
+	uint16_t seq;                           /*!< Sequence number, for convenience, not mandatory */
 	uint16_t app_id;                        /*!< Every service has a app_id. */
 	uint16_t conn_handle;                   /*!< Connection handle for a client */
 	uint16_t cid;                           /*!< ID of L2CAP channel to send the response, 0 indicates auto-select. Ignored when RTK_BLE_MGR_LIB is 0. */
@@ -337,10 +337,10 @@ typedef struct {
 
 /**
  * @struct    rtk_bt_gatts_ntf_and_ind_param_t
- * @brief     Bluetooth GATT server indicate paramter definition.
+ * @brief     Bluetooth GATT server indicate parameter definition.
  */
 typedef struct {
-	uint16_t seq;                           /*!< Sequence number, for convinience, not mandatory */
+	uint16_t seq;                           /*!< Sequence number, for convenience, not mandatory */
 	uint16_t app_id;                        /*!< Every service has a app_id. */
 	uint16_t conn_handle;                   /*!< Connection handle for a client */
 	uint16_t cid;                           /*!< ID of L2CAP channel to send the response, 0 indicates auto-select. Ignored when RTK_BLE_MGR_LIB is 0. */
@@ -351,7 +351,7 @@ typedef struct {
 
 /**
  * @struct    rtk_bt_gatts_service_changed_indicate_param_t
- * @brief     Bluetooth GATT server service changed indicate paramter definition.
+ * @brief     Bluetooth GATT server service changed indicate parameter definition.
  */
 typedef struct {
 	uint16_t conn_handle;                   /*!< Connection handle for a client */
@@ -362,7 +362,7 @@ typedef struct {
 
 /**
  * @struct    rtk_bt_gatts_get_attr_handle_param_t
- * @brief     Bluetooth GATT server get attribute handle paramter definition.
+ * @brief     Bluetooth GATT server get attribute handle parameter definition.
  */
 typedef struct {
 	uint16_t app_id;                        /*!< Every service has a app_id */
@@ -376,7 +376,7 @@ typedef struct {
  */
 struct rtk_bt_gatt_service {
 	struct list_head list;                  /*!< Service List */
-	uint8_t alloc_ind;                      /*!< indicate whether this rtk_bt_gatt_service is mallocated */
+	uint8_t alloc_ind;                      /*!< indicate whether this rtk_bt_gatt_service is allocated */
 	uint16_t app_id;                        /*!< Service app_id */
 	rtk_bt_gatt_attr_t *attrs;              /*!< Service Attributes */
 	uint16_t attr_count;                    /*!< Service Attribute count */
@@ -470,18 +470,18 @@ typedef struct {
 	uint16_t conn_handle;                   /*!< Connection handle for a client */
 	uint16_t cid;                           /*!< L2CAP channel ID to indicate which channel the data is sent to */
 	uint16_t index;                         /*!< Attribute index in service */
-	uint16_t seq;                           /*!< Sequence number, for convinience, not mandatory */
+	uint16_t seq;                           /*!< Sequence number, for convenience, not mandatory */
 	uint16_t err_code;                      /*!< Error code, if no error is 0. */
 } rtk_bt_gatts_ntf_and_ind_ind_t;
 
 /**
  * @struct    rtk_bt_gatts_client_supported_features_ind_t
- * @brief     Bluetooth GATT server's Client Supported Features Characteristic writed event msg.
+ * @brief     Bluetooth GATT server's Client Supported Features Characteristic written event msg.
  */
 typedef struct {
 	uint16_t conn_handle;                   /*!< Connection handle for a client */
 	uint16_t cid;                           /*!< L2CAP channel ID to indicate which channel the write procedure is processed. */
-	uint8_t features;                       /*!< Client Supported Features after writed, which is bit combination of @ref rtk_bt_gatts_client_supported_features_t. */
+	uint8_t features;                       /*!< Client Supported Features after written, which is bit combination of @ref rtk_bt_gatts_client_supported_features_t. */
 } rtk_bt_gatts_client_supported_features_ind_t;
 
 /**
@@ -513,7 +513,7 @@ uint16_t rtk_bt_gatts_register_service(struct rtk_bt_gatt_service *param);
 
 /**
  * @brief      Notify action initiated by server, will cause event @ref RTK_BT_GATTS_EVT_NOTIFY_COMPLETE_IND.
- *             If attribute value is longer than ATT_MTU-3 octects, it will fail.
+ *             If attribute value is longer than ATT_MTU-3 octets, it will fail.
  * @param[in]  param: The parameters for notification.
  * @return
  *            - 0  : Succeed
@@ -523,7 +523,7 @@ uint16_t rtk_bt_gatts_notify(rtk_bt_gatts_ntf_and_ind_param_t *param);
 
 /**
  * @brief      Indicate action initiated by server, will cause event @ref RTK_BT_GATTS_EVT_INDICATE_COMPLETE_IND
- *             If attribute value is longer than ATT_MTU-3 octects, it will fail.
+ *             If attribute value is longer than ATT_MTU-3 octets, it will fail.
  * @param[in]  param: The parameters for indication.
  * @return
  *            - 0  : Succeed
