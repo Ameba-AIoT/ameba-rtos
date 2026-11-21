@@ -210,6 +210,8 @@ static u8 usbh_composite_acm_rx_buf[CONFIG_USBH_COMP_PBUF_MAX_LEN] USB_DMA_ALIGN
 
 static rtos_sema_t usbh_composite_acm_rx_done_sema;
 static rtos_sema_t usbh_composite_acm_send_sema;
+/* Result of the last bulk OUT, written before usbh_composite_acm_send_sema is given */
+static volatile int usbh_composite_acm_tx_status = RTK_SUCCESS;
 
 static usbh_cdc_acm_param_t usbh_composite_dongle_array[] = {
 	{USBH_CDC_ACM_QUECTEL_DONGLE_VID, USBH_CDC_ACM_QUECTEL_DONGLE_EG915_PID, 2},
@@ -525,15 +527,17 @@ static void usbh_composite_detached(void)
 /**
   * @brief  ACM bulk OUT (transmit) completion callback.
   * @details Gives usbh_composite_acm_send_sema so usbh_composite_acm_transmit() can wait for the
-  *          bulk OUT transfer to finish before the caller reuses usbh_composite_acm_tx_buf.
+  *          bulk OUT transfer to finish before the caller reuses usbh_composite_acm_tx_buf. A failed
+  *          transfer is finished as well: it gives the token too, with its status, or the sender
+  *          would wait for a completion that never comes.
   */
 static void usbh_composite_acm_transmitted(int status)
 {
-	if (status == RTK_SUCCESS) {
-		rtos_sema_give(usbh_composite_acm_send_sema);
-	} else {
+	if (status != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "ACM TX fail: %d\n", status);
 	}
+	usbh_composite_acm_tx_status = status;
+	rtos_sema_give(usbh_composite_acm_send_sema);
 }
 
 /**
@@ -605,6 +609,10 @@ static int usbh_composite_acm_transmit(u8 *buf, u32 len)
 		if (rtos_sema_take(usbh_composite_acm_send_sema, 1000) != RTK_SUCCESS) {
 			RTK_LOGS(TAG, RTK_LOG_WARN, "ACM TX TO\n");
 			ret = -RTK_ERR_TIMEOUT;
+		} else if (usbh_composite_acm_tx_status != RTK_SUCCESS) {
+			ret = -RTK_ERR_IO;
+		} else {
+			/* Sent */
 		}
 	}
 	return ret;
@@ -2349,6 +2357,18 @@ static void example_usbh_composite_hotplug_thread(void *param)
 
 	UNUSED(param);
 
+#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
+	/* The USB OTG ISR is delivered on CPU0: the GIC pins every SPI to core 0
+	   (ITARGETSR is written to 0x01010101 in arm_gic.c gic_dist_init). Pinning the
+	   hotplug/deinit thread to CPU0 puts it on the same core as the ISR, so the
+	   local interrupt disables inside the teardown are meaningful again. The lwIP TX
+	   thread and the ACM RX thread stay unaffined: a pending teardown is excluded
+	   from them by the per-class mutexes, not by core.
+	   Done by the thread itself, first: a created thread may already run on another core, and its
+	   creator pinning it afterwards could come too late or reach a task that has deleted itself. */
+	rtos_task_set_affinity(rtos_task_handle_get(), 0);
+#endif
+
 	/* A detach or a stop during the first bring-up is waiting on the sema below */
 	usbh_composite_first_bring_up();
 
@@ -2538,15 +2558,6 @@ static int usbh_composite_start(void)
 		goto exit_stop;
 	}
 	usbh_comp_workers++;
-#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
-	/* The USB OTG ISR is delivered on CPU0: the GIC pins every SPI to core 0
-	   (ITARGETSR is written to 0x01010101 in arm_gic.c gic_dist_init). Pinning the
-	   hotplug/deinit thread to CPU0 puts it on the same core as the ISR, so the
-	   local interrupt disables inside the teardown are meaningful again. The lwIP TX
-	   thread and the ACM RX thread stay unaffined: a pending teardown is excluded
-	   from them by the per-class mutexes, not by core. */
-	rtos_task_set_affinity(task, 0);
-#endif
 #endif
 	RTK_LOGS(TAG, RTK_LOG_INFO, "USB init start\n");
 
@@ -2575,6 +2586,14 @@ exit_stop:
 static void example_usbh_composite_thread(void *param)
 {
 	UNUSED(param);
+
+#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
+	/* A start that fails rolls back through usbh_deinit(), which waits for no ISR on another
+	   core: run it on CPU0, where the USB IRQ is delivered, as the hotplug thread does.
+	   Done by the thread itself, first: a created thread may already run on another core, and its
+	   creator pinning it afterwards could come too late or reach a task that has deleted itself. */
+	rtos_task_set_affinity(rtos_task_handle_get(), 0);
+#endif
 
 	if (usbh_composite_start() != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Start fail\n");

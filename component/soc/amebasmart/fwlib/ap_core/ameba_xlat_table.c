@@ -15,9 +15,6 @@ extern unsigned char __bss_end__[];
 extern unsigned char __dram_text_start__[];
 extern unsigned char __dram_text_end__[];
 extern unsigned char __data_start__[];
-extern unsigned char __dram_dynamic_app_text_start__[];
-extern unsigned char __dram_dynamic_app_text_end__[];
-extern unsigned char __dram_dynamic_app_text_size__[];
 
 void mmap_add_region(unsigned long long base_pa, uintptr_t base_va, size_t size,
 					 unsigned int attr);
@@ -57,11 +54,6 @@ void setupMMUTable(int coreID)
 						MT_CODE | MT_NS);
 		mmap_add_region((uint64_t)((int)__ram_nocache_start__), (uintptr_t)__ram_nocache_start__, (size_t)__ram_nocache_end__ - (size_t)__ram_nocache_start__,  \
 						MT_NON_CACHEABLE | MT_RW | MT_NS);
-		if ((size_t)__dram_dynamic_app_text_size__ > 0) {
-			mmap_add_region((uint64_t)((int)__dram_dynamic_app_text_start__ - 0x20), (uintptr_t)__dram_dynamic_app_text_start__ - 0x20,
-							(size_t)__dram_dynamic_app_text_end__ - (size_t)__dram_dynamic_app_text_start__ + 0x20,  \
-							MT_CODE | MT_NS);
-		}
 		mmap_add_region(0x60000000, 0x60000000,	0x80000000 - 0x60000000, MT_MEMORY | MT_RW | MT_NS);
 
 		mmap_add_region(0x80000000, 0x80000000,	0xC0000000 - 0x80000000, MT_DEVICE | MT_RW | MT_NS);

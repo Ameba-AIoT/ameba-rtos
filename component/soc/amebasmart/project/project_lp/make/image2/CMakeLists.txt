@@ -26,11 +26,16 @@ ameba_add_subdirectory(${c_CMPT_WIFI_DIR})
 
 add_custom_command(
   TARGET ${c_CURRENT_IMAGE} PRE_LINK
-  COMMAND ${CMAKE_C_COMPILER} -E -P -xc -c ${c_SDK_LD_DIR}/ameba_img2_sram.ld -o ${CMAKE_CURRENT_BINARY_DIR}/rlx8721d.ld -I ${c_MENUCONFIG_DIR}
+  COMMAND ${CMAKE_C_COMPILER} ${TOOLCHAIN_DRIVER_OPTS} -E -P -xc -c ${c_SDK_LD_DIR}/ameba_img2_sram.ld -o ${CMAKE_CURRENT_BINARY_DIR}/rlx8721d.ld -I ${c_MENUCONFIG_DIR}
   COMMAND ${CMAKE_COMMAND} -E cat ${c_LINK_ROM_SYMBOL} >> ${CMAKE_CURRENT_BINARY_DIR}/rlx8721d.ld
   COMMENT "build img2 linkerscript rlx8721d.ld"
 )
 #----------------- LINKING -------------------#
+if(CONFIG_TOOLCHAIN_LLVM)
+    set(v_cxx_libs -lc++ -lc++abi)
+else()
+    set(v_cxx_libs -lstdc++)
+endif()
 target_link_libraries(${c_CURRENT_IMAGE}
     PRIVATE
     -T${CMAKE_CURRENT_BINARY_DIR}/rlx8721d.ld
@@ -41,11 +46,10 @@ target_link_libraries(${c_CURRENT_IMAGE}
     -Wl,--whole-archive
     $<TARGET_PROPERTY:${c_MCU_PROJ_CONFIG},${c_CURRENT_IMAGE}_libraries>
     $<TARGET_PROPERTY:${c_MCU_PROJ_CONFIG},${c_CURRENT_IMAGE}_whole_archive_libs>
-    ${SDK_TOOLCHAIN}/arm-none-eabi/lib/thumb/v8-m.base/libm.a
     -Wl,--no-whole-archive
 
     $<TARGET_PROPERTY:${c_MCU_PROJ_CONFIG},${c_CURRENT_IMAGE}_no_whole_archive_libs>
-    -lm -lstdc++
+    -lm ${v_cxx_libs}
 
 )
 

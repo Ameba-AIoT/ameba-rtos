@@ -47,5 +47,7 @@ typedef enum {
 	FLASH_CLK_DIV10,
 } FlashDivInt;
 
-void flash_highspeed_setup(void);
+int flash_rx_mode_switch(u32 spic_mode, u32 flash_clk);
+int flash_calibration_highspeed(u8 div, u32 flash_clk);
+int flash_highspeed_setup(u32 read_mode, u32 spic_max);
 #endif  //_AMEBA_FLASH_CLK_H

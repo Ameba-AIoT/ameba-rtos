@@ -157,7 +157,7 @@ const struct bt_mesh_model_op scheduler_srv_op[] = {
 
 /* scheduler year */
 #define SCHEDULER_EVERY_YEAR                0x64
-#define IS_SCHEDULER_YEAR_VALIE(year)       ((year) <= 0x64)
+#define IS_SCHEDULER_YEAR_VALID(year)       ((year) <= 0x64)
 
 /* scheduler month */
 #define SCHEDULER_IN_JANUARY                (1 << 0)
@@ -168,7 +168,7 @@ const struct bt_mesh_model_op scheduler_srv_op[] = {
 #define SCHEDULER_IN_JUNE                   (1 << 5)
 #define SCHEDULER_IN_JULY                   (1 << 6)
 #define SCHEDULER_IN_AUGUST                 (1 << 7)
-#define SCHEDULER_IN_SETEMBER               (1 << 8)
+#define SCHEDULER_IN_SEPTEMBER               (1 << 8)
 #define SCHEDULER_IN_OCTOBER                (1 << 9)
 #define SCHEDULER_IN_NOVEMBER               (1 << 10)
 #define SCHEDULER_IN_DECEMBER               (1 << 11)
@@ -186,7 +186,7 @@ const struct bt_mesh_model_op scheduler_srv_op[] = {
 #define SCHEDULER_EVERY_MINUTE              0x3C
 #define SCHEDULER_EVERY_15_MINUTE           0x3D
 #define SCHEDULER_EVERY_20_MINUTE           0x3E
-#define SCHEDULER_RADOM_MINUTE              0x3F
+#define SCHEDULER_RANDOM_MINUTE              0x3F
 
 /* scheduler second */
 #define SCHEDULER_EVERY_SECOND              0x3C
@@ -230,7 +230,7 @@ static bool scheduler_check_parameter(const rtk_bt_mesh_scheduler_register_t *ps
 		return FALSE;
 	}
 
-	if (!IS_SCHEDULER_YEAR_VALIE(pscheduler->year)) {
+	if (!IS_SCHEDULER_YEAR_VALID(pscheduler->year)) {
 		return FALSE;
 	}
 

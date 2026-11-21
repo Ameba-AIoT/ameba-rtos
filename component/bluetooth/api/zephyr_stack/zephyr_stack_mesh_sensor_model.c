@@ -192,7 +192,7 @@ static int sensor_descriptor_status(const struct bt_mesh_model *model,
 		/******Get descriptor number******/
 		rtk_bt_mesh_sensor_server_get_descriptor_t des_get = {property_id, d_num, NULL};
 		if (d_num > SENSOR_GET_DATA_MAX_LEN) {
-			BT_LOGE("[%s] The num of sensor descirptors is %d, extend max SENSOR_GET_DATA_MAX_LEN:%d\r\n", __func__, d_num, SENSOR_GET_DATA_MAX_LEN);
+			BT_LOGE("[%s] The num of sensor descriptors is %d, extend max SENSOR_GET_DATA_MAX_LEN:%d\r\n", __func__, d_num, SENSOR_GET_DATA_MAX_LEN);
 			d_num = SENSOR_GET_DATA_MAX_LEN;
 		}
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_SENSOR_SERVER_MODEL, RTK_BT_MESH_SENSOR_SERVER_MODEL_DESCRIPTOR_GET,
@@ -460,9 +460,9 @@ static int sensor_srv_get(const struct bt_mesh_model *model,
 	return ret;
 }
 
-static int sensor_srv_colu_get(const struct bt_mesh_model *model,
-							   struct bt_mesh_msg_ctx *ctx,
-							   struct net_buf_simple *buf)
+static int sensor_srv_column_get(const struct bt_mesh_model *model,
+								 struct bt_mesh_msg_ctx *ctx,
+								 struct net_buf_simple *buf)
 {
 	uint16_t property_id = net_buf_simple_pull_le16(buf);
 	if (property_id != 0) {
@@ -549,7 +549,7 @@ static int sensor_srv_series_get(const struct bt_mesh_model *model,
 const struct bt_mesh_model_op sensor_srv_op[] = {
 	{ OP_SENSOR_DESCRIPTOR_GET,    BT_MESH_LEN_MIN(0),   sensor_srv_desc_get },
 	{ OP_SENSOR_GET,               BT_MESH_LEN_MIN(0),   sensor_srv_get },
-	{ OP_SENSOR_COLUMN_GET,        BT_MESH_LEN_MIN(2),   sensor_srv_colu_get },
+	{ OP_SENSOR_COLUMN_GET,        BT_MESH_LEN_MIN(2),   sensor_srv_column_get },
 	{ OP_SENSOR_SERIES_GET,        BT_MESH_LEN_MIN(2),   sensor_srv_series_get },
 	BT_MESH_MODEL_OP_END,
 };
@@ -660,7 +660,7 @@ int sensor_status_publish(const struct bt_mesh_model *model)
 	if (err) {
 		BT_LOGE("bt_mesh_model_publish err %d\n", err);
 	}
-	/*****If want to publish periodicly like spec, use below part
+	/*****If want to publish periodically like spec, use below part
 	 * when use below part, should check publication related info is ok first
 	 * */
 	// net_buf_simple_reset(model->pub->msg);
@@ -668,7 +668,7 @@ int sensor_status_publish(const struct bt_mesh_model *model)
 	return err;
 }
 
-/***If needed, just follow sensor_status_publish to choose which property id to pulish***/
+/***If needed, just follow sensor_status_publish to choose which property id to publish***/
 int sensor_srv_update_publish(const struct bt_mesh_model *model)
 {
 	(void)model;
@@ -688,7 +688,7 @@ int sensor_srv_update_publish(const struct bt_mesh_model *model)
 #define SENSOR_MEASUREMENT_PERIOD_NOT_APPLICABLE          0
 #define IS_SENSOR_PROPERTY_ID_VALID(id)                   ((id) != SENSOR_PROPERTY_ID_INVALID)
 #define IS_SENSOR_SETTING_PROPERTY_ID_VALID(id)           ((id) != SENSOR_SETTING_PROPERTY_ID_INVALID)
-#define IS_FAST_CADENCE_DIVISIOR_VALID(divisor)           ((divisor) <= 15)
+#define IS_FAST_CADENCE_DIVISOR_VALID(divisor)           ((divisor) <= 15)
 #define IS_STATUS_MIN_INTERVAL_VALID(interval)            ((interval) <= 26)
 
 typedef struct {
@@ -799,7 +799,7 @@ static bool sensor_check_msg(const struct bt_mesh_model *model, const sensor_cad
 		return FALSE;
 	}
 
-	if (!IS_FAST_CADENCE_DIVISIOR_VALID(pmsg->fast_cadence_period_divisor)) {
+	if (!IS_FAST_CADENCE_DIVISOR_VALID(pmsg->fast_cadence_period_divisor)) {
 		return FALSE;
 	}
 
@@ -929,7 +929,7 @@ int sensor_cadence_publish(const struct bt_mesh_model *model)
 		net_buf_simple_add_mem(&pmsg, &property_id_publish, sizeof(uint16_t));
 		/*****If want to use below to publish, when need retransmit 3 times, should set 2******/
 		err = bt_mesh_msg_send(model, NULL, &pmsg);
-		/*****If want to publish periodicly like spec, use below part
+		/*****If want to publish periodically like spec, use below part
 		 * when use below part, should check publication related info is ok first
 		 * */
 		// net_buf_simple_reset(model->pub->msg);
@@ -973,7 +973,7 @@ int sensor_cadence_publish(const struct bt_mesh_model *model)
 		}
 		/*****If want to use below to publish, when need retransmit 3 times, should set 2******/
 		err = bt_mesh_msg_send(model, NULL, &pmsg);
-		/*****If want to publish periodicly like spec, use below part*******/
+		/*****If want to publish periodically like spec, use below part*******/
 		// net_buf_simple_reset(model->pub->msg);
 		// net_buf_simple_add_mem(model->pub->msg, pmsg.data, pmsg.len);
 	}
@@ -991,7 +991,7 @@ int sensor_setting_publish(const struct bt_mesh_model *model, uint16_t property_
 		net_buf_simple_add_mem(&pmsg, &setting_property_id, sizeof(uint16_t));
 		/*****If want to use below to publish, when need retransmit 3 times, should set 2******/
 		err = bt_mesh_msg_send(model, NULL, &pmsg);
-		/*****If want to publish periodicly like spec, use below part*******/
+		/*****If want to publish periodically like spec, use below part*******/
 		// net_buf_simple_reset(model->pub->msg);
 		// net_buf_simple_add_mem(model->pub->msg, pmsg.data, pmsg.len);
 	} else {
@@ -1014,7 +1014,7 @@ int sensor_setting_publish(const struct bt_mesh_model *model, uint16_t property_
 		}
 		/*****If want to use below to publish, when need retransmit 3 times, should set 2******/
 		err = bt_mesh_msg_send(model, NULL, &pmsg);
-		/*****If want to publish periodicly like spec, use below part
+		/*****If want to publish periodically like spec, use below part
 		 * when use below part, should check publication related info is ok first
 		 * */
 		// net_buf_simple_reset(model->pub->msg);
@@ -1025,7 +1025,7 @@ int sensor_setting_publish(const struct bt_mesh_model *model, uint16_t property_
 
 /***If needed, just follow sensor_cadence_publish
  *  or sensor_setting_publish to choose
- *  which property id and which status to pulish***/
+ *  which property id and which status to publish***/
 int sensor_setup_srv_update_publish(const struct bt_mesh_model *model)
 {
 	(void)model;
@@ -1524,17 +1524,17 @@ static int sensor_cli_column_status(const struct bt_mesh_model *model,
 									struct net_buf_simple *buf)
 {
 	(void)model;
-	rtk_bt_mesh_sensor_client_status_column_t colum_stat = {ctx->addr, 0, 0, NULL};
-	colum_stat.property_id = net_buf_simple_pull_le16(buf);
-	colum_stat.column_raw_value_len = buf->len;
-	colum_stat.column_raw_value = buf->data;
+	rtk_bt_mesh_sensor_client_status_column_t column_stat = {ctx->addr, 0, 0, NULL};
+	column_stat.property_id = net_buf_simple_pull_le16(buf);
+	column_stat.column_raw_value_len = buf->len;
+	column_stat.column_raw_value = buf->data;
 	rtk_bt_evt_t *p_evt = NULL;
-	uint32_t len = colum_stat.column_raw_value_len + 6;
+	uint32_t len = column_stat.column_raw_value_len + 6;
 	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_SENSOR_CLIENT_MODEL, RTK_BT_MESH_SENSOR_COLUMN_CLIENT_MODEL_STATUS,
 								len);
 	if (p_evt) {
-		memcpy(p_evt->data, &colum_stat, 6);
-		memcpy((uint8_t *)p_evt->data + 6, colum_stat.column_raw_value, len - 6);
+		memcpy(p_evt->data, &column_stat, 6);
+		memcpy((uint8_t *)p_evt->data + 6, column_stat.column_raw_value, len - 6);
 		rtk_bt_evt_indicate(p_evt, NULL);
 	} else {
 		BT_LOGE("[%s] Create event fail\r\n", __func__);

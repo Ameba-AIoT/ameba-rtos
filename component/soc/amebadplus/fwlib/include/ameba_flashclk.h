@@ -56,7 +56,7 @@ typedef struct {
 
 int flash_handshake_highspeed(u32 div, u32 flash_clk);
 int flash_rx_mode_switch(u32 spic_mode, u32 flash_clk);
-void flash_highspeed_setup(void);
+int flash_highspeed_setup(u32 read_mode, u32 spic_max);
 void Combo_SPIC_Init(void);
 void Combo_SPIC_Output_Div_Clk(u32 Div);
 #endif  //_AMEBA_FLASH_CLK_H

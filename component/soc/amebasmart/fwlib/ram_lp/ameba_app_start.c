@@ -94,9 +94,10 @@ void app_start(void)
 	app_mpu_nocache_init();
 	/* Force SP align to 8bytes */
 	__asm(
-		"ldr r1, =#0xFFFFFFF8\n"
+		".syntax unified\n"	/* gcc assembles inline asm of Thumb-1 code as divided syntax, clang as unified */
+		"ldr r1, =0xFFFFFFF8\n"
 		"mov r0, sp \n"
-		"and r0, r0, r1\n"
+		"ands r0, r1\n"
 		"mov sp, r0\n"
 	);
 	/* 6. Enter Main. */

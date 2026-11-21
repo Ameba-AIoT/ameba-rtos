@@ -404,8 +404,8 @@ static int generic_level_srv_move_set_unack(const struct bt_mesh_model *model,
 	generic_level_pa.src = ctx->addr;
 	generic_level_pa.move_tid = tid;
 	/**If no transition time in msg
-	 * can get default transition time as transtime
-	 * and use move speed to transtion
+	 * can get default transition time as trans_time
+	 * and use move speed to transition
 	 **/
 
 	/*********Indicate app move msg info*********/
@@ -2329,7 +2329,7 @@ static int generic_admin_property_srv_props_get(const struct bt_mesh_model *mode
 }
 
 /**
- * This part is to verify if realated database parameter can be get from app layer
+ * This part is to verify if related database parameter can be get from app layer
 */
 #if 0
 static int generic_admin_property_srv_get_para_from_app(uint16_t property_id)
@@ -2555,7 +2555,7 @@ static int generic_manu_property_status(const struct bt_mesh_model *model,
 }
 
 /**
- * This part is to verify if realated database parameter can be get from app layer
+ * This part is to verify if related database parameter can be get from app layer
 */
 #if 0
 static int generic_manu_property_srv_get_para_from_app(uint16_t property_id)

@@ -2286,7 +2286,7 @@ static uint16_t rtk_bt_a2dp_sbc_parse_decoder_struct(rtk_bt_a2dp_codec_t *pa2dp_
 		BT_LOGE("[A2DP] RTK Audio not support channel_mode %x \r\n", pa2dp_codec->sbc.channel_mode);
 		return 1;
 	}
-	switch (pa2dp_codec->sbc.sampling_frequency) {
+	switch (pa2dp_codec->sbc.sbc_sampling_frequency) {
 	case RTK_BT_A2DP_SBC_SAMPLING_FREQUENCY_16KHZ:
 		psbc_decoder_t->sampling_frequency = (uint32_t)16000;
 		break;
@@ -2300,7 +2300,7 @@ static uint16_t rtk_bt_a2dp_sbc_parse_decoder_struct(rtk_bt_a2dp_codec_t *pa2dp_
 		psbc_decoder_t->sampling_frequency = (uint32_t)48000;
 		break;
 	default:
-		BT_LOGE("[A2DP] RTK Audio not support frequency %x \r\n", pa2dp_codec->sbc.sampling_frequency);
+		BT_LOGE("[A2DP] RTK Audio not support frequency %x \r\n", pa2dp_codec->sbc.sbc_sampling_frequency);
 		return 1;
 	}
 	switch (pa2dp_codec->sbc.block_length) {
@@ -2317,7 +2317,7 @@ static uint16_t rtk_bt_a2dp_sbc_parse_decoder_struct(rtk_bt_a2dp_codec_t *pa2dp_
 		psbc_decoder_t->block_length = 16;
 		break;
 	default:
-		BT_LOGE("[A2DP] RTK Audio not support frequency %x \r\n", pa2dp_codec->sbc.sampling_frequency);
+		BT_LOGE("[A2DP] RTK Audio not support frequency %x \r\n", pa2dp_codec->sbc.sbc_sampling_frequency);
 		return 1;
 	}
 	psbc_decoder_t->min_bitpool = pa2dp_codec->sbc.min_bitpool;
@@ -2372,7 +2372,7 @@ static uint16_t rtk_bt_a2dp_sbc_parse_encoder_struct(rtk_bt_a2dp_codec_t *pa2dp_
 		BT_LOGE("[A2DP] RTK Audio not support channel_mode %x \r\n", pa2dp_codec->sbc.channel_mode);
 		return 1;
 	}
-	switch (pa2dp_codec->sbc.sampling_frequency) {
+	switch (pa2dp_codec->sbc.sbc_sampling_frequency) {
 	case RTK_BT_A2DP_SBC_SAMPLING_FREQUENCY_16KHZ:
 		psbc_encoder_t->sample_rate = (uint32_t)16000;
 		break;
@@ -2386,7 +2386,7 @@ static uint16_t rtk_bt_a2dp_sbc_parse_encoder_struct(rtk_bt_a2dp_codec_t *pa2dp_
 		psbc_encoder_t->sample_rate = (uint32_t)48000;
 		break;
 	default:
-		BT_LOGE("[A2DP] RTK Audio not support frequency %x \r\n", pa2dp_codec->sbc.sampling_frequency);
+		BT_LOGE("[A2DP] RTK Audio not support frequency %x \r\n", pa2dp_codec->sbc.sbc_sampling_frequency);
 		return 1;
 	}
 	switch (pa2dp_codec->sbc.block_length) {

@@ -146,7 +146,7 @@ struct bt_uuid_128 {
 
 /**
  * @def       BT_UUID_SIZE_MAX
- * @brief     Bluetooth UUIDMAX size.
+ * @brief     Bluetooth UUID max size.
  */
 #define BT_UUID_SIZE_MAX                    BT_UUID_SIZE_128
 

@@ -21,6 +21,8 @@ target_sources(${c_CURRENT_IMAGE} PRIVATE
     ${c_CMPT_FWLIB_DIR}/ram_common/ameba_otp.c
     ${c_CMPT_FWLIB_DIR}/ram_common/ameba_tim.c
     ${c_CMPT_FWLIB_DIR}/ram_common/ameba_sram_swap.c
+    ${c_CMPT_FWLIB_DIR}/ram_common/ameba_swr.c
+    ${c_CMPT_FWLIB_DIR}/ram_common/ameba_swr_calib.c
     ${c_CMPT_FWLIB_DIR}/ram_km4/ameba_arch.c
 
     ${c_CMPT_SWLIB_DIR}/log.c

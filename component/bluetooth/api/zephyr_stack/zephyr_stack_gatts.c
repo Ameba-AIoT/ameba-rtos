@@ -36,7 +36,7 @@ typedef struct {
 } zephyr_gatts_received_req_t;
 
 #define RECV_REQ_FLAG_DONE          BIT(0)
-#define RECV_REQ_FLAG_SUCCEESS      BIT(1)
+#define RECV_REQ_FLAG_SUCCESS      BIT(1)
 #define RECV_REQ_FLAG_WAITING       BIT(2)
 
 #define GATT_REQ_TYPE_READ    1
@@ -50,12 +50,12 @@ static void *wait_rsp_sem[CONFIG_BT_MAX_CONN] = {NULL};
 static void service_node_free(zephyr_svc_node *node);
 static zephyr_svc_node *service_node_alloc(struct rtk_bt_gatt_service *svc);
 
-void bt_zephyr_gatts_mtu_udpated(struct bt_conn *conn, uint16_t tx, uint16_t rx);
+void bt_zephyr_gatts_mtu_updated(struct bt_conn *conn, uint16_t tx, uint16_t rx);
 static struct bt_gatt_cb bt_zephyr_gatts_cb = {
-	.att_mtu_updated = bt_zephyr_gatts_mtu_udpated
+	.att_mtu_updated = bt_zephyr_gatts_mtu_updated
 };
 
-void bt_zephyr_gatts_mtu_udpated(struct bt_conn *conn, uint16_t tx, uint16_t rx)
+void bt_zephyr_gatts_mtu_updated(struct bt_conn *conn, uint16_t tx, uint16_t rx)
 {
 	rtk_bt_gatt_mtu_exchange_ind_t *p_gatt_mtu_exchange_ind = NULL;
 	rtk_bt_evt_t *p_evt_t = NULL;
@@ -168,7 +168,7 @@ static ssize_t bt_stack_gatts_read_cb(struct bt_conn *conn, const struct bt_gatt
 		while (rtk_bt_is_enable() && !(req->flags & RECV_REQ_FLAG_DONE) && cnt++ < BT_TIMEOUT_WAIT_RSP_CNT) {
 			osif_sem_take(sem, BT_TIMEOUT_WAIT_RSP_SLOT);
 		}
-		if ((req->flags & RECV_REQ_FLAG_DONE) && (req->flags & RECV_REQ_FLAG_SUCCEESS)) {
+		if ((req->flags & RECV_REQ_FLAG_DONE) && (req->flags & RECV_REQ_FLAG_SUCCESS)) {
 			ret = bt_gatt_attr_read(conn, attr, buf, len, 0, req->data, req->len);
 		} else if (cnt > BT_TIMEOUT_WAIT_RSP_CNT) {
 			ret = -BT_ATT_ERR_UNLIKELY;
@@ -182,7 +182,7 @@ static ssize_t bt_stack_gatts_read_cb(struct bt_conn *conn, const struct bt_gatt
 	return ret;
 }
 
-/* if req contains data from perivous write request, append buf to perivous data */
+/* if req contains data from previous write request, append buf to previous data */
 static bool _copy_write_buf(zephyr_gatts_received_req_t *req, const void *buf, uint16_t len, uint16_t handle, uint16_t index, uint16_t app_id)
 {
 	void *data = NULL;
@@ -272,7 +272,7 @@ static ssize_t bt_stack_gatts_write_cb(struct bt_conn *conn, const struct bt_gat
 			while (rtk_bt_is_enable() && !(req->flags & RECV_REQ_FLAG_DONE) && cnt++ < BT_TIMEOUT_WAIT_RSP_CNT) {
 				osif_sem_take(sem, BT_TIMEOUT_WAIT_RSP_SLOT);
 			}
-			if ((req->flags & RECV_REQ_FLAG_DONE) && (req->flags & RECV_REQ_FLAG_SUCCEESS)) {
+			if ((req->flags & RECV_REQ_FLAG_DONE) && (req->flags & RECV_REQ_FLAG_SUCCESS)) {
 				ret = len;
 			} else if (cnt > BT_TIMEOUT_WAIT_RSP_CNT) {
 				ret = -BT_ATT_ERR_UNLIKELY;
@@ -843,7 +843,7 @@ static uint16_t bt_stack_gatts_read_rsp(void *param)
 				memcpy(req->data, rsp->data, rsp->len);
 			}
 		}
-		req->flags |= RECV_REQ_FLAG_SUCCEESS;
+		req->flags |= RECV_REQ_FLAG_SUCCESS;
 	} else {
 		req->rsp_err_code = rsp->err_code;
 	}
@@ -876,7 +876,7 @@ static uint16_t bt_stack_gatts_write_rsp(void *param)
 	}
 
 	if (rsp->err_code == 0) {
-		req->flags |= RECV_REQ_FLAG_SUCCEESS;
+		req->flags |= RECV_REQ_FLAG_SUCCESS;
 	} else {
 		req->rsp_err_code = rsp->err_code;
 	}

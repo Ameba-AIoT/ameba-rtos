@@ -107,7 +107,7 @@ typedef enum {
  * @typedef   rtk_bt_hfp_ag_service_indicator
  * @brief     Bluetooth HFP AG service indicator.
  */
-typedef enum rtk_bt_hfp_ag_service_indicator {
+typedef enum {
 	RTK_BT_HFP_AG_SERVICE_STATUS_AVAILABLE   = 0x00,    /*!< Network service is available. */
 	RTK_BT_HFP_AG_SERVICE_STATUS_UNAVAILABLE = 0x01,    /*!< Network service is unavailable. */
 } rtk_bt_hfp_ag_service_indicator;
@@ -116,7 +116,7 @@ typedef enum rtk_bt_hfp_ag_service_indicator {
  * @typedef   rtk_bt_hfp_ag_call_indicator
  * @brief     Bluetooth HFP AG call indicator.
  */
-typedef enum rtk_bt_hfp_ag_call_indicator {
+typedef enum {
 	RTK_BT_HFP_AG_NO_CALL_IN_PROGRESS = 0x00,    /*!< No call is in progress. */
 	RTK_BT_HFP_AG_CALL_IN_PROGRESS    = 0x01,    /*!< At least one call is in progress. */
 } rtk_bt_hfp_ag_call_indicator;
@@ -125,7 +125,7 @@ typedef enum rtk_bt_hfp_ag_call_indicator {
  * @typedef   rtk_bt_hfp_ag_call_setup_indicator
  * @brief     Bluetooth HFP AG call setup indicator.
  */
-typedef enum rtk_bt_hfp_ag_call_setup_indicator {
+typedef enum {
 	RTK_BT_HFP_AG_CALL_SETUP_STATUS_IDLE          = 0x00,    /*!< No call setup is in progress. */
 	RTK_BT_HFP_AG_CALL_SETUP_STATUS_INCOMING_CALL = 0x01,    /*!< Incoming call setup is in progress. */
 	RTK_BT_HFP_AG_CALL_SETUP_STATUS_OUTGOING_CALL = 0x02,    /*!< Outgoing call setup is in progress. */
@@ -136,7 +136,7 @@ typedef enum rtk_bt_hfp_ag_call_setup_indicator {
  * @typedef   rtk_bt_hfp_ag_call_held_indicator
  * @brief     Bluetooth HFP AG call held indicator.
  */
-typedef enum rtk_bt_hfp_ag_call_held_indicator {
+typedef enum {
 	RTK_BT_HFP_AG_CALL_HELD_STATUS_IDLE                 = 0x00,    /*!< No call is on hold. */
 	RTK_BT_HFP_AG_CALL_HELD_STATUS_HOLD_AND_ACTIVE_CALL = 0x01,    /*!< One call is on hold and another call is active. */
 	RTK_BT_HFP_AG_CALL_HELD_STATUS_HOLD_NO_ACTIVE_CALL  = 0x02,    /*!< One call is on hold and no call is active. */
@@ -146,7 +146,7 @@ typedef enum rtk_bt_hfp_ag_call_held_indicator {
  * @typedef   rtk_bt_hfp_ag_roaming_indicator
  * @brief     Bluetooth HFP AG roaming indicator.
  */
-typedef enum rtk_bt_hfp_ag_roaming_indicator {
+typedef enum {
 	RTK_BT_HFP_AG_ROAMING_STATUS_INACTIVE = 0x00,    /*!< Roaming is not active. */
 	RTK_BT_HFP_AG_ROAMING_STATUS_ACTIVE   = 0x01,    /*!< Roaming is active. */
 } rtk_bt_hfp_ag_roaming_indicator;
@@ -352,7 +352,7 @@ typedef struct {
  * @typedef   rtk_bt_sco_pkt_status
  * @brief     Bluetooth SCO packet status.
  */
-typedef enum rtk_bt_sco_pkt_status {
+typedef enum {
 	RTK_BT_SCO_PKT_STATUS_OK           = 0x00,    /*!< Packet is received correctly. */
 	RTK_BT_SCO_PKT_STATUS_INVALID      = 0x01,    /*!< Packet data is invalid. */
 	RTK_BT_SCO_PKT_STATUS_NO_DATA      = 0x02,    /*!< No data is received. */

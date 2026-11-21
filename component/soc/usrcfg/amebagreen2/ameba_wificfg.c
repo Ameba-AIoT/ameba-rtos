@@ -134,7 +134,7 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.wtn_rnat_en = 0;
 	wifi_user_config.wtn_fixed_rnat_node = 0;
 	wifi_user_config.wtn_connect_only_to_rnat = 0;
-	wifi_user_config.wtn_max_node_num = 32;
+	wifi_user_config.wtn_max_node_num = 31;
 #if defined(CONFIG_RMESH_EN) && (!defined(CONFIG_RNAT_EN) || defined(CONFIG_RNAT_AUTOSEL_EN))
 	wifi_user_config.wtn_max_refugee_num = CONFIG_WIFI_RMESH_MAX_REFUGEE_NUM;
 #endif

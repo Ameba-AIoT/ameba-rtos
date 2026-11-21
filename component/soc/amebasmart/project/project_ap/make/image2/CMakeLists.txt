@@ -26,7 +26,6 @@ ameba_add_subdirectory_third_party(${c_CMPT_LWIP_DIR})
 ameba_add_subdirectory(${c_CMPT_SSL_DIR})
 ameba_add_subdirectory(${c_CMPT_OTA_DIR})
 ameba_add_subdirectory_if_exist(${c_CMPT_UI_DIR})
-ameba_add_subdirectory_third_party(${c_CMPT_DYN_APP_DIR})
 ameba_add_subdirectory(${c_CMPT_OS_DIR})
 ameba_add_subdirectory(${c_CMPT_DIAGNOSE_DIR})
 ameba_add_subdirectory_if_exist(${c_CMPT_TFLITE_DIR}/cmake)
@@ -46,7 +45,7 @@ ameba_add_subdirectory(${c_MCU_SRC_DIR})
 # TODO: need to catch the error
 add_custom_target(atf ALL
     COMMAND ${CMAKE_COMMAND} -E echo "Building atf project"
-    COMMAND make -j CROSS_COMPILE=${CROSS_COMPILE} PROJECT_DIR=${c_SOC_PROJECT_DIR}/project_ap BUILD_BASE=${CMAKE_BINARY_DIR} -C ${c_CMPT_SOC_DIR}/atf all
+    COMMAND make -j CROSS_COMPILE=${CROSS_COMPILE} CC=${CMAKE_C_COMPILER} PROJECT_DIR=${c_SOC_PROJECT_DIR}/project_ap BUILD_BASE=${CMAKE_BINARY_DIR} -C ${c_CMPT_SOC_DIR}/atf all
     WORKING_DIRECTORY ${c_CMPT_SOC_DIR}/atf
     COMMENT "Building atf project using make"
 )
@@ -70,10 +69,19 @@ endif()
 
 add_custom_command(
   TARGET ${c_CURRENT_IMAGE} PRE_LINK
-  COMMAND ${CMAKE_C_COMPILER} -E -P -xc -c ${IMG2_LD} -o ${CMAKE_CURRENT_BINARY_DIR}/rlx8721d.ld -I ${c_MENUCONFIG_DIR}
+  COMMAND ${CMAKE_C_COMPILER} ${TOOLCHAIN_DRIVER_OPTS} -E -P -xc -c ${IMG2_LD} -o ${CMAKE_CURRENT_BINARY_DIR}/rlx8721d.ld -I ${c_MENUCONFIG_DIR}
   COMMENT "build img2 linkerscript rlx8721d.ld"
 )
 #----------------- LINKING -------------------#
+if(CONFIG_TOOLCHAIN_LLVM)
+    set(v_crtbegin ${SDK_TOOLCHAIN}/arm-none-eabi/v8-a+simd/fpu/lib/clang_rt.crtbegin.o)
+    set(v_crtend ${SDK_TOOLCHAIN}/arm-none-eabi/v8-a+simd/fpu/lib/clang_rt.crtend.o)
+    set(v_cxx_libs -lc++ -lc++abi)
+else()
+    set(v_crtbegin ${SDK_TOOLCHAIN}/lib/gcc/arm-none-eabi/${c_SDK_VERSION}/v7-a+neon-fp16/fpu/crtbegin.o)
+    set(v_crtend ${SDK_TOOLCHAIN}/lib/gcc/arm-none-eabi/${c_SDK_VERSION}/v7-a+neon-fp16/fpu/crtend.o)
+    set(v_cxx_libs -lstdc++)
+endif()
 
 target_link_libraries(${c_CURRENT_IMAGE}
     PRIVATE
@@ -89,9 +97,9 @@ target_link_libraries(${c_CURRENT_IMAGE}
 
     $<TARGET_PROPERTY:${c_MCU_PROJ_CONFIG},${c_CURRENT_IMAGE}_no_whole_archive_libs>
 
-    ${SDK_TOOLCHAIN}/lib/gcc/arm-none-eabi/${c_SDK_VERSION}/v7-a+neon-fp16/fpu/crtbegin.o
-    ${SDK_TOOLCHAIN}/lib/gcc/arm-none-eabi/${c_SDK_VERSION}/v7-a+neon-fp16/fpu/crtend.o
-    -lm -lstdc++
+    ${v_crtbegin}
+    ${v_crtend}
+    -lm ${v_cxx_libs}
     ${c_LINK_ROM_LIB} #WARNING: keep this at last
 )
 

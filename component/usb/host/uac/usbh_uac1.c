@@ -2880,17 +2880,20 @@ void usbh_uac_start_play(void)
 	usbh_uac_t *uac = &usbh_uac;
 	usbh_uac_buf_ctrl_t *buf_ctrl = &(uac->isoc_out.buf_ctrl);
 	usbh_pipe_t *pipe;
+	usbh_uac_as_itf_info_t *as_itf;
 
 	if (usbh_uac_usb_status_check() != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Dev not ready\n");
 		return;
 	}
 
-	if (uac->isoc_out.as_itf == NULL) {
+	/* Read once: a detach in the host task on another core may clear it meanwhile */
+	as_itf = uac->isoc_out.as_itf;
+	if (as_itf == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "No ISOC OUT interface\n");
 		return;
 	}
-	pipe = &(uac->isoc_out.as_itf->pipe);
+	pipe = &(as_itf->pipe);
 
 #if USBH_UAC_DEBUG
 	usbh_uac_reset_test_cnt();
@@ -2908,6 +2911,7 @@ void usbh_uac_stop_play(void)
 {
 	usbh_uac_t *uac = &usbh_uac;
 	usbh_uac_buf_ctrl_t *buf_ctrl = &(uac->isoc_out.buf_ctrl);
+	usbh_uac_as_itf_info_t *as_itf;
 
 	buf_ctrl->next_xfer = 0;
 
@@ -2915,8 +2919,10 @@ void usbh_uac_stop_play(void)
 		usb_os_sema_give(buf_ctrl->isoc_sema);
 	}
 
-	if (uac->isoc_out.as_itf != NULL) {
-		uac->isoc_out.as_itf->pipe.xfer_state = USBH_EP_XFER_IDLE;
+	/* Read once: a detach in the host task on another core may clear it meanwhile */
+	as_itf = uac->isoc_out.as_itf;
+	if (as_itf != NULL) {
+		as_itf->pipe.xfer_state = USBH_EP_XFER_IDLE;
 	}
 
 #if USBH_UAC_DEBUG
@@ -2934,17 +2940,20 @@ void usbh_uac_start_capture(void)
 	usbh_uac_t *uac = &usbh_uac;
 	usbh_uac_buf_ctrl_t *buf_ctrl = &(uac->isoc_in.buf_ctrl);
 	usbh_pipe_t *pipe;
+	usbh_uac_as_itf_info_t *as_itf;
 
 	if (usbh_uac_usb_status_check() != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Dev not ready\n");
 		return;
 	}
 
-	if (uac->isoc_in.as_itf == NULL) {
+	/* Read once: a detach in the host task on another core may clear it meanwhile */
+	as_itf = uac->isoc_in.as_itf;
+	if (as_itf == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "No ISOC IN interface\n");
 		return;
 	}
-	pipe = &(uac->isoc_in.as_itf->pipe);
+	pipe = &(as_itf->pipe);
 
 #if USBH_UAC_DEBUG
 	usbh_uac_reset_test_cnt();
@@ -2963,6 +2972,7 @@ void usbh_uac_stop_capture(void)
 {
 	usbh_uac_t *uac = &usbh_uac;
 	usbh_uac_buf_ctrl_t *buf_ctrl = &(uac->isoc_in.buf_ctrl);
+	usbh_uac_as_itf_info_t *as_itf;
 
 	buf_ctrl->next_xfer = 0;
 
@@ -2970,8 +2980,10 @@ void usbh_uac_stop_capture(void)
 		usb_os_sema_give(buf_ctrl->isoc_sema);
 	}
 
-	if (uac->isoc_in.as_itf != NULL) {
-		uac->isoc_in.as_itf->pipe.xfer_state = USBH_EP_XFER_IDLE;
+	/* Read once: a detach in the host task on another core may clear it meanwhile */
+	as_itf = uac->isoc_in.as_itf;
+	if (as_itf != NULL) {
+		as_itf->pipe.xfer_state = USBH_EP_XFER_IDLE;
 	}
 
 #if USBH_UAC_DEBUG

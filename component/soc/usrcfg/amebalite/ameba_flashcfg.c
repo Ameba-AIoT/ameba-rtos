@@ -68,6 +68,22 @@ const FlashInfo_TypeDef Flash_AVL[] = {
 	{0xFF,			0xFFFFFFFF,		FlashClassNone,		0xFFFFFFFF,		NULL},
 };
 
+u32 flash_get_readmode(u32 ReadMode)
+{
+	switch (ReadMode) {
+	case 0xFFFF:
+		return Spic4IOBitMode;
+	case 0x7FFF:
+		return Spic4OBitMode;
+	case 0x3FFF:
+		return Spic2IOBitMode;
+	case 0x1FFF:
+		return Spic2OBitMode;
+	default:
+		return Spic1IOBitMode;
+	}
+}
+
 /*
 * @brif	Flash layout is set according to Flash Layout in User Manual
 *  In each entry, the first item is flash regoin type, the second item is start address, the second item is end address */

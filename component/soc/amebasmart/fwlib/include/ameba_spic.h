@@ -8,6 +8,7 @@
 #define _AMEBA_SPIC_H_
 
 #include "ameba_flashclk.h"
+#include "ameba_nor_flash.h"
 
 /* AUTO_GEN_START */
 
@@ -844,6 +845,13 @@ typedef struct {
 #define SpicDualIOBitMode		2
 #define SpicQuadOBitMode		3
 #define SpicQuadIOBitMode		4
+
+/* Names the NOR flash driver in soc/common/nor_flash uses */
+#define Spic1IOBitMode			SpicOneBitMode
+#define Spic2OBitMode			SpicDualOBitMode
+#define Spic2IOBitMode			SpicDualIOBitMode
+#define Spic4OBitMode			SpicQuadOBitMode
+#define Spic4IOBitMode			SpicQuadIOBitMode
 /**
   * @}
   */
@@ -1046,6 +1054,18 @@ extern u32 SPIC_CALIB_PATTERN[2];
 #define PAGE_SIZE_2K	0x800
 
 #define SPIC_LOWSPEED_SAMPLE_PHASE	0
+
+/* Convert a time in ns to SPIC clock cycles (round up). Tclk is the SPIC bus clock bus_clk (Hz),
+ * spi_sclk = bus_clk / (2 * FLASH_baud_rate). TPR0 timing fields count bus_clk cycles. */
+#define SPIC_NS_TO_CYCLES_CEIL(ns, bus_clk)	(((ns) * ((bus_clk) / 1000) + 999999) / 1000000)
+
+/* CS_ACTIVE_HOLD = (tCHSH - Tsclk) / Tclk, Tsclk = 2 * BAUDR * Tclk (flash clock period) */
+#define SPIC_CS_HOLD_CYCLES(tchsh_ns, bus_clk, baud)	\
+	((SPIC_NS_TO_CYCLES_CEIL(tchsh_ns, bus_clk) > 2 * (baud)) ? (SPIC_NS_TO_CYCLES_CEIL(tchsh_ns, bus_clk) - 2 * (baud)) : 0)
+
+/* CS_H_RD_DUM_LEN / CS_H_WR_DUM_LEN >= tSHSL / Tclk - 2 */
+#define SPIC_CS_HIGH_CYCLES(tshsl_ns, bus_clk)	\
+	((SPIC_NS_TO_CYCLES_CEIL(tshsl_ns, bus_clk) > 2) ? (SPIC_NS_TO_CYCLES_CEIL(tshsl_ns, bus_clk) - 2) : 0)
 
 #define DUAL_DUM_CYCLE_NUM		4
 #define QUAD_DUM_CYCLE_NUM		2

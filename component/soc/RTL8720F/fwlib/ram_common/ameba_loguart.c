@@ -33,27 +33,6 @@ void LOGUART_TXDMAConfig(LOGUART_TypeDef *UARTLOG, u32 TxDmaBurstSize)
 }
 
 /**
- * @brief Configure LOGUART RX DMA burst size.
- * @param UARTLOG LOGUART device.
- * @param RxDmaBurstSize LOGUART RX DMA burst size.
- * @note LOGUART rx fifo depth is 16 in hardware, so RxDmaBurstSize should be no more than 16.
- * @note RxDmaBurstSize should not be smaller than GDMA_SrcMsize in function LOGUART_RXGDMA_Init();
- * 		For better performance, it is suggested to make RxDmaBurstSize equal GDMA_SrcMsize, which is 8.
- * @return None
- */
-void LOGUART_RXDMAConfig(LOGUART_TypeDef *UARTLOG, u32 RxDmaBurstSize)
-{
-	u32 Temp;
-
-	/* Set LOGUART Rx DMA burst size */
-	Temp = UARTLOG->LOGUART_UART_MISCR;
-	Temp &= ~LOGUART_MASK_RXDMA_BURSTSIZE;
-	Temp |= LOGUART_RXDMA_BURSTSIZE(RxDmaBurstSize);
-
-	UARTLOG->LOGUART_UART_MISCR = Temp;
-}
-
-/**
  * @brief Enable or disable LOGUART TX DMA.
  * @param UARTLOG LOGUART device.
  * @param NewState New state of LOGUART TX DMA.
@@ -178,6 +157,7 @@ bool LOGUART_RXGDMA_Init(
 )
 {
 	u8 GdmaChnl;
+	u32 Temp;
 
 	assert_param(GDMA_InitStruct != NULL);
 
@@ -206,6 +186,11 @@ bool LOGUART_RXGDMA_Init(
 	GDMA_InitStruct->GDMA_Index   = 0;
 	GDMA_InitStruct->GDMA_ChNum   = GdmaChnl;
 	GDMA_InitStruct->GDMA_IsrType = (BlockType | TransferType | ErrType);
+	/* RX DMA watermark equals the GDMA source burst: 8 bytes, a quarter of the 32-byte RX FIFO */
+	Temp = UARTLOG->LOGUART_UART_MISCR;
+	Temp &= ~LOGUART_MASK_RXDMA_BURSTSIZE;
+	Temp |= LOGUART_RXDMA_BURSTSIZE(8);
+	UARTLOG->LOGUART_UART_MISCR = Temp;
 	GDMA_InitStruct->GDMA_SrcMsize = MsizeEight;
 	GDMA_InitStruct->GDMA_SrcDataWidth = TrWidthOneByte;
 	GDMA_InitStruct->GDMA_DstInc = IncType;

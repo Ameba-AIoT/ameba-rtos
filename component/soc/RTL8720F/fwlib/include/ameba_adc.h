@@ -407,7 +407,7 @@
   * @brief Thermal Meter Threshold Control Register
   * @{
   */
-#define ADC_MASK_TM_HIGH_WT_THR   ((u32)0x0000FFFF << 16)           /*!< R/W 16'd827  Set the over temperature warning threshold for comparison with TEMP_OUT.Only values greater than 0 are supported 100centigrade*/
+#define ADC_MASK_TM_HIGH_WT_THR   ((u32)0x0000FFFF << 16)           /*!< R/W 16'd827  Set the over temperature warning threshold for comparison with TEMP_OUT. 100centigrade*/
 #define ADC_TM_HIGH_WT_THR(x)     (((u32)((x) & 0x0000FFFF) << 16))
 #define ADC_GET_TM_HIGH_WT_THR(x) ((u32)(((x >> 16) & 0x0000FFFF)))
 #define ADC_MASK_TM_LOW_WT_THR    ((u32)0x0000FFFF << 0)            /*!< R/W 16'd555  Set the Low threshold for comparison with TEMP_OUT. -20centigrade*/

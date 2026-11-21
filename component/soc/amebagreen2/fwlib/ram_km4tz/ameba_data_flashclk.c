@@ -5,18 +5,24 @@
  */
 
 #include "ameba_soc.h"
+#if defined(CONFIG_NOR_FLASH_NEW_STRATEGY)
+#include "nor_flash.h"
+#endif
 
 #define FLASH_CALIBRATION_DEBUG		0
 
 static const char *const TAG = "FLASH";
+
+static u32 SPIC_DATA_FLASH_CALIB_PATTERN[2] = {0};
+
+#if !defined(CONFIG_NOR_FLASH_NEW_STRATEGY)
 static FlashInfo_TypeDef *current_IC;
 
 /* Flag to check configuration register or not. Necessary for wide-range VCC MXIC flash */
 static u8 check_config_reg = 0;
 
-static u32 SPIC_DATA_FLASH_CALIB_PATTERN[2] = {0};
-
 u32 DATA_FLASH_SIZE = 0;
+#endif
 
 static void DATA_FLASH_PLLInit_ClockDiv(void)
 {
@@ -131,6 +137,7 @@ int data_flash_handshake_highspeed(void)
 	return Ret;
 }
 
+#if !defined(CONFIG_NOR_FLASH_NEW_STRATEGY)
 void data_flash_get_vendor(void)
 {
 	u8 flash_ID[4];
@@ -224,6 +231,7 @@ void data_flash_set_status_register(void)
 		}
 	}
 }
+#endif /* !CONFIG_NOR_FLASH_NEW_STRATEGY */
 
 int data_flash_rx_mode_switch(u32 spic_mode)
 {
@@ -244,7 +252,12 @@ int data_flash_rx_mode_switch(u32 spic_mode)
 		} else {
 			FLASH_InitStruct->FLASH_prm_avoid = 0;
 		}
-#if defined(CONFIG_SECOND_FLASH_NOR)
+#if defined(CONFIG_SECOND_FLASH_NOR) && defined(CONFIG_NOR_FLASH_NEW_STRATEGY)
+		/* Dummy cycles of the default profile, before every attempt */
+		nor_flash_set_default_dummy(&data_flash);
+
+		data_flash.init(spic_mode);
+#elif defined(CONFIG_SECOND_FLASH_NOR)
 		u8 status = 0;
 
 		if (FLASH_InitStruct->FLASH_Id == FLASH_ID_MICRON) {
@@ -295,11 +308,17 @@ void data_flash_highspeed_setup(void)
 	FLASH_InitStruct->FLASH_baud_boot = 1;
 	// FLASH_InitStruct->FLASH_addr_phase_len = ADDR_4_BYTE;
 
+#if defined(CONFIG_NOR_FLASH_NEW_STRATEGY)
+	/* Identify the flash and apply its strategy, then set QE if a quad read mode is asked for */
+	nor_flash_get_vendor(&data_flash);
+	nor_flash_set_qe(&data_flash, read_mode);
+#else
 	/* Get flash ID to reinitialize FLASH_InitTypeDef structure */
 	data_flash_get_vendor();
 
 	/* Set flash status register: set QE, clear protection bits */
 	data_flash_set_status_register();
+#endif
 #elif defined(CONFIG_SECOND_FLASH_NAND)
 	/* init data nand flash default settings */
 	NAND_StructInit(FLASH_InitStruct);

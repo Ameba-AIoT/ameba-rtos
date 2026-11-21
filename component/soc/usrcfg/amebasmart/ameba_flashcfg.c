@@ -307,6 +307,30 @@ const FlashLayoutInfo_TypeDef *flash_get_layout_struct(void)
 	return pLayout;
 }
 
+u32 flash_get_readmode(u32 ReadMode)
+{
+	u32 flash_bit_mode;
+	switch (ReadMode) {
+	case 0xFFFF:
+		flash_bit_mode = Spic4IOBitMode;
+		break;
+	case 0x7FFF:
+		flash_bit_mode = Spic4OBitMode;
+		break;
+	case 0x3FFF:
+		flash_bit_mode = Spic2IOBitMode;
+		break;
+	case 0x1FFF:
+		flash_bit_mode = Spic2OBitMode;
+		break;
+	default:
+		flash_bit_mode = Spic1IOBitMode;
+		break;
+	}
+
+	return flash_bit_mode;
+}
+
 void flash_get_layout_info(u32 type, u32 *start, u32 *end)
 {
 	u32 i = 0;

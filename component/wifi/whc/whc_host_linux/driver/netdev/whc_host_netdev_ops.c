@@ -154,6 +154,12 @@ static int rtw_ndev_close(struct net_device *pnetdev)
 #endif
 
 	dev_dbg(global_idev.pwhc_dev, "[whc]: %s %d\n", __func__, rtw_netdev_idx(pnetdev));
+#if defined(CONFIG_WHC_HCI_IPC)
+	/* wlan0 only (promisc rx feeds pndev[0]), before scan_abort -EPERM (RSWLANDIOT-17054) */
+	if (rtw_netdev_idx(pnetdev) == 0) {
+		whc_host_promisc_stop();
+	}
+#endif
 #if defined(CONFIG_WHC_WIFI_API_PATH)
 	whc_host_dev_driver_is_mp(&is_mp);
 	if (is_mp != 1) {
@@ -275,15 +281,15 @@ func_exit:
 static void rtw_set_rx_mode(struct net_device *dev)
 {
 #if defined(CONFIG_WHC_WIFI_API_PATH)
-	if ((rtw_netdev_flags(dev) ^ dev->flags) & IFF_PROMISC) {
-		if (dev->flags & IFF_PROMISC) {
-			dev_dbg(global_idev.pwhc_dev, "[whc]: %s enable promisc mode!\n", __func__);
-			whc_host_set_promisc_enable(1, RTW_PROMISC_FILTER_ALL_PKT);
-		} else {
-			dev_dbg(global_idev.pwhc_dev, "[whc]: %s disable promisc mode!\n", __func__);
-			whc_host_set_promisc_enable(0, RTW_PROMISC_FILTER_ALL_PKT);
-		}
-	}
+#if defined(CONFIG_WHC_HCI_IPC)
+	u32 param_buf[3];
+
+	/* BH off: defer via atomic_work, sent every call so ifup re-arms (RSWLANDIOT-17054) */
+	param_buf[0] = (dev->flags & IFF_PROMISC) ? 1 : 0;
+	param_buf[1] = (u32)RTW_PROMISC_FILTER_ALL_PKT;
+	param_buf[2] = (u32)0xffffffff;
+	whc_host_atomic_api_send(WHC_API_WIFI_PROMISC_INIT, param_buf, 3);
+#endif
 
 	if (rtw_netdev_flags(dev) ^ dev->flags) {
 		rtw_netdev_flags(dev) = dev->flags;

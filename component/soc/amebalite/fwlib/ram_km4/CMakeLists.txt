@@ -47,6 +47,12 @@ ameba_list_append(private_sources
     ameba_pmc_ram.c
     ameba_trustzone.c
 )
+
+# NOR chip handling. The strategy-based driver in soc/common/nor_flash provides the
+# same flash_nor_* entry points, so only one of the two can be built.
+ameba_list_append_ifnot(CONFIG_NOR_FLASH_NEW_STRATEGY private_sources
+    ameba_nor_flash.c
+)
 # Component private part, user config end
 #------------------------------#
 

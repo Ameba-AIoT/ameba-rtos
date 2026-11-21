@@ -545,7 +545,7 @@ int atcmd_bt_mesh_device(int argc, char *argv[])
 	return 0;
 }
 
-int atcmd_bt_mesh_performence_test(int argc, char *argv[]);
+int atcmd_bt_mesh_performance_test(int argc, char *argv[]);
 int ble_mesh_provisioner_test_main(uint8_t enable);
 static void ble_mesh_provisioner_test_task_entry(void *param)
 {
@@ -564,7 +564,7 @@ int atcmd_bt_mesh_provisioner_test(int argc, char *argv[])
 	char *action[] = {"disable", "enable"};
 
 	if (!strcmp("start", argv[0]) || !strcmp("result", argv[0]) || !strcmp("cmd", argv[0])) {
-		atcmd_bt_mesh_performence_test(argc, argv);
+		atcmd_bt_mesh_performance_test(argc, argv);
 	} else if ((uint8_t)str_to_int(argv[0]) == 0 || (uint8_t)str_to_int(argv[0]) == 1) {
 		op = (uint8_t)str_to_int(argv[0]);
 		if ((op = (uint8_t)str_to_int(argv[0])) > 1) {

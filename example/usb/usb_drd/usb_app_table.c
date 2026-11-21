@@ -49,10 +49,6 @@
 #ifdef CONFIG_USBD_UVC
 #include "example_usbd_uvc.h"
 #endif
-#if defined(CONFIG_USBD_COMPOSITE) && defined(CONFIG_USBD_CDC_ACM) && defined(CONFIG_USBD_HID)
-#define USB_APP_COMP_ACM_HID
-#include "example_usbd_composite_cdc_acm_hid.h"
-#endif
 #if defined(CONFIG_USBD_COMPOSITE) && defined(CONFIG_USBD_CDC_ACM) && defined(CONFIG_USBD_MSC)
 #define USB_APP_COMP_ACM_MSC
 #include "example_usbd_composite_cdc_acm_msc.h"
@@ -157,9 +153,6 @@ const usb_app_t usb_app_table[] = {
 #endif
 #ifdef CONFIG_USBD_UVC
 	USB_APP(usbd_uvc, USB_APP_ROLE_DEVICE),
-#endif
-#ifdef USB_APP_COMP_ACM_HID
-	USB_APP(usbd_composite_cdc_acm_hid, USB_APP_ROLE_DEVICE),
 #endif
 #ifdef USB_APP_COMP_ACM_MSC
 	USB_APP(usbd_composite_cdc_acm_msc, USB_APP_ROLE_DEVICE),
