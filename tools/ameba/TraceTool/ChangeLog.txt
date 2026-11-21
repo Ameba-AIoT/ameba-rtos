@@ -94,3 +94,12 @@ ChangeLog:
                   (2) Pause log view while text is selected or scrolled up, add auto-scroll indicator
                   (3) Count line limit by log lines, apply it on all tabs, remove blank top line
                   (4) Fix Clear Log dropping data from the file log
+20261112  v3.0.0  (1) Rework for cross-platform support, only the Windows executable is available for now
+                  (2) New GUI with dark and day mode (Option > Global Settings > Dark Mode)
+20261116  v3.0.1  (1) Change default mode to day mode
+                  (2) Fine tune log text font weight
+                  (3) Support selecting and copying part of a log line
+                  (4) Add right-click menu to log view with Copy and Clear Log
+                  (5) Keep showing new log while auto-scroll is paused, show the count of waiting lines
+                  (6) Add macOS version for Apple Silicon and Intel Macs (macOS 11 or later)
+                  (7) Add Linux version for x86_64 (Ubuntu 20.04, Debian 11 or later)

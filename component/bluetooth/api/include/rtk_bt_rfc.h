@@ -113,7 +113,7 @@ typedef struct {
 
 /**
  * @struct    rtk_bt_rfc_credit_info_t
- * @brief     rfc receive credits infomation.
+ * @brief     rfc receive credits information.
  */
 typedef struct {
 	uint8_t local_server_chann;                         /*!< channel number */

@@ -1,7 +1,7 @@
 /**
  * @file      rtk_bt_cap.h
  * @author    benling_xu@realsil.com.cn
- * @brief     Bluetooth LE GAP part type and function deffinition
+ * @brief     Bluetooth LE GAP part type and function definition
  * @copyright Copyright (c) 2022. Realtek Semiconductor Corporation. All rights reserved.
  */
 
@@ -1020,7 +1020,7 @@ typedef struct {
 
 /**
  * @typedef    rtk_bt_le_audio_aics_set_param_t
- * @brief     Bluetooth LE audio aics set paramter.
+ * @brief     Bluetooth LE audio aics set parameter.
  */
 typedef struct {
 	uint8_t                             srv_instance_id;
@@ -1032,7 +1032,7 @@ typedef struct {
 
 /**
  * @typedef    rtk_bt_le_audio_aics_get_param_t
- * @brief     Bluetooth LE audio aics get paramter.
+ * @brief     Bluetooth LE audio aics get parameter.
  */
 typedef struct {
 	uint8_t                             srv_instance_id;
@@ -1532,7 +1532,7 @@ uint16_t rtk_bt_le_audio_csis_update_size(uint8_t csis_size);
 
 #if defined(RTK_BLE_AUDIO_CSIP_SET_COORDINATOR_SUPPORT) && RTK_BLE_AUDIO_CSIP_SET_COORDINATOR_SUPPORT
 /**
- * @brief     BLE AUDIO CHEK ADV RSI for CSIS SET COORDINATOR.
+ * @brief     BLE AUDIO CHECK ADV RSI for CSIS SET COORDINATOR.
  * @param[in] adv_addr: adv addr
  * @param[in] report_data_len: report data len
  * @param[in] p_report_data: report data
@@ -1552,7 +1552,7 @@ uint16_t rtk_bt_le_audio_csis_set_coordinator_check_adv_rsi(rtk_bt_le_addr_t adv
  */
 uint16_t rtk_bt_le_audio_csis_set_coordinator_cfg_discover(rtk_bt_le_audio_group_handle_t group_handle, bool discover, uint32_t timeout_ms);
 /**
- * @brief     BLE AUDIO CHEK ADD GROUP for CSIS SET COORDINATOR.
+ * @brief     BLE AUDIO CHECK ADD GROUP for CSIS SET COORDINATOR.
  * @param[in] p_mem_info: mem info
  * @param[out] p_group_handle: returned group handle
  * @param[out] p_device_handle: returned device handle
@@ -1782,7 +1782,7 @@ uint16_t rtk_bt_le_audio_vocs_write_cp_by_group(uint8_t group_idx, uint8_t srv_i
 
 /**
  * @brief     BLE AUDIO VOCS WRITE AUDIO LOCATION.
- * @param[in] group_handle:  group handle.
+ * @param[in] conn_handle:  conn handle.
  * @param[in] srv_instance_id: VOCS service index.
  * @param[in] audio_location:  @ref rtk_bt_le_audio_location_t
  * @return

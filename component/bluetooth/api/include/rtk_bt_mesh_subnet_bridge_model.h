@@ -44,7 +44,7 @@ enum {
 typedef uint8_t rtk_bt_mesh_subnet_bridge_state_t;
 
 /**
- * @typedef   rtk_bt_mesh_sensor_descriptor_set_t
+ * @typedef   rtk_bt_mesh_subnet_bridge_set_t
  * @brief     BLE MESH subnet bridge set act message structure.
  */
 typedef struct {

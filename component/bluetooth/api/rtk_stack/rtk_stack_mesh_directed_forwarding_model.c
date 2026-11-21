@@ -12,7 +12,7 @@
 #include <mesh_node.h>
 
 #if defined(BT_MESH_ENABLE_DIRECTED_FORWARDING) && BT_MESH_ENABLE_DIRECTED_FORWARDING
-uint16_t rtk_stack_df_paramerter_setting(rtk_bt_mesh_directed_control_param_setting_t *param)
+uint16_t rtk_stack_df_parameter_setting(rtk_bt_mesh_directed_control_param_setting_t *param)
 {
 	if (param->bit_check & DF_NETWORK_TRANSMIT_SETTING) {
 		mesh_node.df_net_trans_count = param->network_transmit.directed_network_transmit_count;
@@ -208,7 +208,7 @@ uint16_t bt_mesh_directed_forwarding_common_act_handle(rtk_bt_cmd_t *p_cmd)
 	}
 	case RTK_BT_MESH_DF_PARAMETER_SET: {
 		rtk_bt_mesh_directed_control_param_setting_t *param = (rtk_bt_mesh_directed_control_param_setting_t *)p_cmd->param;
-		ret = (rtk_stack_df_paramerter_setting(param)) ? RTK_BT_ERR_LOWER_STACK_API : RTK_BT_OK;
+		ret = (rtk_stack_df_parameter_setting(param)) ? RTK_BT_ERR_LOWER_STACK_API : RTK_BT_OK;
 		break;
 	}
 	default:
@@ -230,6 +230,10 @@ uint8_t rtk_bt_mesh_directed_forwarding_client_model_indicate_event(uint32_t eve
 {
 	rtk_bt_evt_t *p_evt = NULL;
 	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_DIRECTED_FORWARDING_CLIENT_MODEL, event_code, len);
+	if (!p_evt) {
+		BT_LOGE("[%s] Create event fail\r\n", __func__);
+		return RTK_BT_ERR_NO_MEMORY;
+	}
 	if (len) {
 		if (event_code == RTK_BT_MESH_DF_MODEL_FORWARDING_TABLE_ENTRIES_STAT) {
 			memcpy(p_evt->data, pdata, sizeof(rtk_bt_mesh_forwarding_table_entries_status_for_call_t));
