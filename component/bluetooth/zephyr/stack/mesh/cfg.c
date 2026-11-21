@@ -33,6 +33,79 @@ struct cfg_val {
 	uint8_t default_ttl;
 };
 
+#if ZEPHYR_RTK_PATCH
+/* App overrides of the Kconfig defaults, they also win over the values restored from the settings.
+ * Only the parameters whose BT_MESH_CFG_PARAM_xxx bit is set in mask are overridden, as 0 is a valid value.
+ */
+static struct {
+	uint8_t mask;
+	uint8_t trans_retrans;
+	uint8_t net_cnt;
+	uint8_t net_step;
+	uint8_t relay_cnt;
+	uint8_t relay_step;
+	uint8_t ttl;
+} cfg_ovr;
+
+static uint8_t net_xmit_override(uint8_t xmit)
+{
+	if (cfg_ovr.mask & BT_MESH_CFG_PARAM_NET_TRANS_COUNT) {
+		xmit = (xmit & ~BIT_MASK(3)) | cfg_ovr.net_cnt;
+	}
+
+	if (cfg_ovr.mask & BT_MESH_CFG_PARAM_NET_TRANS_STEP) {
+		xmit = (xmit & BIT_MASK(3)) | (cfg_ovr.net_step << 3);
+	}
+
+	return xmit;
+}
+
+static uint8_t relay_xmit_override(uint8_t xmit)
+{
+	if (cfg_ovr.mask & BT_MESH_CFG_PARAM_RELAY_RETRANS_COUNT) {
+		xmit = (xmit & ~BIT_MASK(3)) | cfg_ovr.relay_cnt;
+	}
+
+	if (cfg_ovr.mask & BT_MESH_CFG_PARAM_RELAY_RETRANS_STEP) {
+		xmit = (xmit & BIT_MASK(3)) | (cfg_ovr.relay_step << 3);
+	}
+
+	return xmit;
+}
+
+void bt_mesh_cfg_sar_tx_override(void)
+{
+	if (cfg_ovr.mask & BT_MESH_CFG_PARAM_TRANS_RETRANS_COUNT) {
+		bt_mesh.sar_tx.unicast_retrans_count = cfg_ovr.trans_retrans;
+		bt_mesh.sar_tx.multicast_retrans_count = cfg_ovr.trans_retrans;
+	}
+}
+
+int bt_mesh_cfg_params_set(uint8_t mask, uint8_t trans_retrans_count, uint8_t net_trans_count, uint8_t net_trans_step,
+			   uint8_t relay_retrans_count, uint8_t relay_retrans_step, uint8_t ttl)
+{
+	/* TTL 0x01 and 0x80 - 0xFF are prohibited */
+	if (((mask & BT_MESH_CFG_PARAM_TRANS_RETRANS_COUNT) && trans_retrans_count > 10) ||
+	    ((mask & BT_MESH_CFG_PARAM_NET_TRANS_COUNT) && net_trans_count > BIT_MASK(3)) ||
+	    ((mask & BT_MESH_CFG_PARAM_NET_TRANS_STEP) && net_trans_step > BIT_MASK(5)) ||
+	    ((mask & BT_MESH_CFG_PARAM_RELAY_RETRANS_COUNT) && relay_retrans_count > BIT_MASK(3)) ||
+	    ((mask & BT_MESH_CFG_PARAM_RELAY_RETRANS_STEP) && relay_retrans_step > BIT_MASK(5)) ||
+	    ((mask & BT_MESH_CFG_PARAM_TTL) && (ttl == 1 || ttl > BT_MESH_TTL_MAX))) {
+		return -EINVAL;
+	}
+
+	cfg_ovr.mask = mask;
+	cfg_ovr.trans_retrans = trans_retrans_count;
+	cfg_ovr.net_cnt = net_trans_count;
+	cfg_ovr.net_step = net_trans_step;
+	cfg_ovr.relay_cnt = relay_retrans_count;
+	cfg_ovr.relay_step = relay_retrans_step;
+	cfg_ovr.ttl = ttl;
+
+	return 0;
+}
+#endif
+
 void bt_mesh_beacon_set(bool beacon)
 {
 	if (atomic_test_bit(bt_mesh.flags, BT_MESH_BEACON) == beacon) {
@@ -410,6 +483,17 @@ void bt_mesh_cfg_default_set(void)
 				 CONFIG_BT_MESH_RELAY_RETRANSMIT_INTERVAL);
 #endif
 
+#if ZEPHYR_RTK_PATCH
+	if (cfg_ovr.mask & BT_MESH_CFG_PARAM_TTL) {
+		bt_mesh.default_ttl = cfg_ovr.ttl;
+	}
+	bt_mesh.net_xmit = net_xmit_override(bt_mesh.net_xmit);
+#if defined(CONFIG_BT_MESH_RELAY)
+	bt_mesh.relay_xmit = relay_xmit_override(bt_mesh.relay_xmit);
+#endif
+	bt_mesh_cfg_sar_tx_override();
+#endif
+
 	if (IS_ENABLED(CONFIG_BT_MESH_RELAY_ENABLED)) {
 		atomic_set_bit(bt_mesh.flags, BT_MESH_RELAY);
 	}
@@ -444,6 +528,14 @@ static int cfg_set(const char *name, size_t len_rd,
 		LOG_ERR("Failed to set \'cfg\'");
 		return err;
 	}
+
+#if ZEPHYR_RTK_PATCH
+	if (cfg_ovr.mask & BT_MESH_CFG_PARAM_TTL) {
+		cfg.default_ttl = cfg_ovr.ttl;
+	}
+	cfg.net_transmit = net_xmit_override(cfg.net_transmit);
+	cfg.relay_retransmit = relay_xmit_override(cfg.relay_retransmit);
+#endif
 
 	bt_mesh_net_transmit_set(cfg.net_transmit);
 	bt_mesh_relay_set(cfg.relay, cfg.relay_retransmit);

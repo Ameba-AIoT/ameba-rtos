@@ -1429,7 +1429,7 @@ bool rtk_bt_le_sm_is_device_bonded(rtk_bt_le_addr_t *paddr)
 				ret = true;
 				break;
 			}
-			/* If the remote connected device use RPA, we shall use indenty addr to judge if
+			/* If the remote connected device use RPA, we shall use identity addr to judge if
 			the device is bonded, because the remote device address in air packets may often change  */
 			if (paddr->type >= RTK_BT_LE_ADDR_TYPE_RPA_PUBLIC &&
 				memcmp(bond_info[i].ident_addr.addr_val, paddr->addr_val, RTK_BD_ADDR_LEN) == 0) {
@@ -1853,6 +1853,34 @@ uint16_t rtk_bt_le_gap_pawr_set_subevent_data(rtk_bt_le_gap_pawr_subevent_data_t
 
 	return rtk_bt_send_cmd(RTK_BT_LE_GP_GAP, RTK_BT_LE_GAP_ACT_PAWR_SET_SUBEVENT_DATA,
 						   param, sizeof(rtk_bt_le_gap_pawr_subevent_data_t));
+}
+
+uint16_t rtk_bt_le_gap_pawr_connect(rtk_bt_le_gap_pawr_create_conn_param_t *param)
+{
+	if (!param) {
+		return RTK_BT_ERR_POINTER_INVALID;
+	}
+
+	if (param->subevent > 0x7F) {
+		return RTK_BT_ERR_PARAM_INVALID;
+	}
+
+	if (param->conn_interval_min < 0x06 || param->conn_interval_min > 0x0C80 ||
+		param->conn_interval_max < 0x06 || param->conn_interval_max > 0x0C80 ||
+		param->conn_interval_max < param->conn_interval_min) {
+		return RTK_BT_ERR_PARAM_INVALID;
+	}
+
+	if (param->conn_latency > 0x01F3) {
+		return RTK_BT_ERR_PARAM_INVALID;
+	}
+
+	if (param->supv_timeout < 0x0A || param->supv_timeout > 0x0C80) {
+		return RTK_BT_ERR_PARAM_INVALID;
+	}
+
+	return rtk_bt_send_cmd(RTK_BT_LE_GP_GAP, RTK_BT_LE_GAP_ACT_PAWR_CONN,
+						   param, sizeof(rtk_bt_le_gap_pawr_create_conn_param_t));
 }
 #endif /* RTK_BLE_5_4_PAWR_ADV_SUPPORT */
 

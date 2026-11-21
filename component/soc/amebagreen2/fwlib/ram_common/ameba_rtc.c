@@ -208,7 +208,8 @@ void RTC_Enable(u8 NewState)
 void RTC_ClkSource_Select(u8 CLK_Source)
 {
 	u32 temp = HAL_READ32(RTC_MISC_REG_BASE, RTC_MISC_OSC131K_STATE);
-	temp &= RTC_CKSL_RTC(CLK_Source);
+	temp &= ~RTC_BIT_CKSL_RTC;
+	temp |= RTC_CKSL_RTC(CLK_Source);
 	HAL_WRITE32(RTC_MISC_REG_BASE, RTC_MISC_OSC131K_STATE, temp);
 }
 

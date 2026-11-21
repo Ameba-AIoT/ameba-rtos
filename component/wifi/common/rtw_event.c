@@ -134,7 +134,7 @@ void wifi_event_join_status_internal_hdl(u8 *evt_info)
 		rtw_psk_disconnect_hdl(join_status_info->bssid, IFACE_PORT0);
 	}
 
-#if !defined(CONFIG_WHC_DEV) && CONFIG_AUTO_RECONNECT
+#if CONFIG_AUTO_RECONNECT && (!defined(CONFIG_WHC_DEV) || defined(CONFIG_RECONNECT_OFFLOAD))
 	rtw_reconn_join_status_hdl(evt_info);
 #endif
 
@@ -217,7 +217,7 @@ void rtw_eapol_recvd_hdl(u8 *evt_info)
 void rtw_dhcp_status_hdl(u8 *evt_info)
 {
 	(void)evt_info;
-#if !defined(CONFIG_WHC_DEV) && CONFIG_AUTO_RECONNECT
+#if CONFIG_AUTO_RECONNECT && (!defined(CONFIG_WHC_DEV) || defined(CONFIG_RECONNECT_OFFLOAD))
 	rtw_reconn_dhcp_status_hdl(evt_info);
 #endif
 }
@@ -252,12 +252,13 @@ void rtw_ap_rx_mgnt_hdl(u8 *evt_info)
 #endif
 }
 
-#ifdef CONFIG_DFS_MASTER
+#if defined(CONFIG_DFS_MASTER) || defined(CONFIG_WHC_HOST)
 void rtw_dfs_cac_done_hdl(u8 *evt_info)
 {
 	(void)evt_info;
 #if defined(CONFIG_LWIP_LAYER) && CONFIG_LWIP_LAYER
-	/* CAC passed with no radar: bring up the AP netif that was deferred while CAC ran. */
+	/* CAC passed with no radar: bring up the AP netif that was deferred while CAC ran.
+	 * Idempotent if rtw_dfs_ap_bringup() already did it on this core. */
 	lwip_netif_set_up(NETIF_WLAN_AP_INDEX);
 	lwip_netif_set_link_up(SOFTAP_WLAN_INDEX);
 #endif
@@ -277,7 +278,7 @@ const struct rtw_event_hdl_func_t event_internal_hdl[] = {
 #endif
 	{RTW_EVENT_WPA_EAPOL_START,		rtw_eapol_start_hdl},
 	{RTW_EVENT_WPA_EAPOL_RECVD,		rtw_eapol_recvd_hdl},
-#if !defined(CONFIG_WHC_DEV) && CONFIG_AUTO_RECONNECT
+#if CONFIG_AUTO_RECONNECT && (!defined(CONFIG_WHC_DEV) || defined(CONFIG_RECONNECT_OFFLOAD))
 	{RTW_EVENT_DHCP_STATUS,			rtw_dhcp_status_hdl},
 #endif
 	{RTW_EVENT_RX_MGNT,				rtw_sta_rx_mgnt_hdl},
@@ -308,7 +309,7 @@ const struct rtw_event_hdl_func_t event_internal_hdl[] = {
 	{RTW_EVENT_WPA_P2P_CHANNEL_RDY,	wifi_p2p_channel_switch_ready},
 #endif
 	{RTW_EVENT_DEAUTH_INFO_FLASH,	rtw_psk_deauth_info_flash_event_hdl},
-#ifdef CONFIG_DFS_MASTER
+#if defined(CONFIG_DFS_MASTER) || defined(CONFIG_WHC_HOST)
 	{RTW_EVENT_DFS_CAC_DONE,		rtw_dfs_cac_done_hdl},
 #endif
 #if defined(CONFIG_WHC_HOST) && !defined(CONFIG_PLATFORM_ZEPHYR) && !defined(CONFIG_MP_SHRINK) && defined(CONFIG_RMESH_EN)

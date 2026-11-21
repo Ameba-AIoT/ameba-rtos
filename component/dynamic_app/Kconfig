@@ -1,4 +1,0 @@
-menu "Dynamic App Load Config"
-    config DYNAMIC_APP_LOAD_EN
-        bool "Dynamic App Load Enable"
-endmenu

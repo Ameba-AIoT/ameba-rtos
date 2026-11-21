@@ -12,7 +12,7 @@
 #include <mesh_node.h>
 
 #if defined(BT_MESH_ENABLE_DIRECTED_FORWARDING) && BT_MESH_ENABLE_DIRECTED_FORWARDING
-uint16_t rtk_stack_df_paramerter_setting(rtk_bt_mesh_directed_control_param_setting_t *param)
+uint16_t rtk_stack_df_parameter_setting(rtk_bt_mesh_directed_control_param_setting_t *param)
 {
 	if (param->bit_check & DF_NETWORK_TRANSMIT_SETTING) {
 		mesh_node.df_net_trans_count = param->network_transmit.directed_network_transmit_count;
@@ -208,7 +208,7 @@ uint16_t bt_mesh_directed_forwarding_common_act_handle(rtk_bt_cmd_t *p_cmd)
 	}
 	case RTK_BT_MESH_DF_PARAMETER_SET: {
 		rtk_bt_mesh_directed_control_param_setting_t *param = (rtk_bt_mesh_directed_control_param_setting_t *)p_cmd->param;
-		ret = (rtk_stack_df_paramerter_setting(param)) ? RTK_BT_ERR_LOWER_STACK_API : RTK_BT_OK;
+		ret = (rtk_stack_df_parameter_setting(param)) ? RTK_BT_ERR_LOWER_STACK_API : RTK_BT_OK;
 		break;
 	}
 	default:

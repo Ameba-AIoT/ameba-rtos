@@ -146,23 +146,23 @@ typedef struct {
 	uint8_t codec_type;                        /*!< Codec type. */
 	union {
 		struct {
-			uint8_t     sampling_frequency;    /*!< Selected sampling frequency. */
-			uint8_t     channel_mode;          /*!< Selected channel mode. */
-			uint8_t     block_length;          /*!< Selected block length. */
-			uint8_t     subbands;              /*!< Selected number of subbands. */
-			uint8_t     allocation_method;     /*!< Selected allocation method. */
-			uint8_t     min_bitpool;           /*!< Minimum bitpool value. */
-			uint8_t     max_bitpool;           /*!< Maximum bitpool value. */
+			uint8_t     sbc_sampling_frequency;    /*!< Selected sampling frequency. */
+			uint8_t     channel_mode;              /*!< Selected channel mode. */
+			uint8_t     block_length;              /*!< Selected block length. */
+			uint8_t     subbands;                  /*!< Selected number of subbands. */
+			uint8_t     allocation_method;         /*!< Selected allocation method. */
+			uint8_t     min_bitpool;               /*!< Minimum bitpool value. */
+			uint8_t     max_bitpool;               /*!< Maximum bitpool value. */
 		} sbc;
 		struct {
-			uint8_t     object_type;           /*!< Selected object type. */
-			uint16_t    sampling_frequency;    /*!< Selected sampling frequency. */
-			uint8_t     channel_number;        /*!< Selected number of channels. */
-			bool        vbr_supported;         /*!< Whether variable bit rate (VBR) is supported.
-                                                *   - true: VBR is supported.
-                                                *   - false: VBR is not supported. */
-			uint32_t    bit_rate;              /*!< Bit rate, in bits per second.
-                                                *   0: Unknown or not specified. */
+			uint8_t     object_type;               /*!< Selected object type. */
+			uint16_t    aac_sampling_frequency;    /*!< Selected sampling frequency. */
+			uint8_t     channel_number;            /*!< Selected number of channels. */
+			bool        vbr_supported;             /*!< Whether variable bit rate (VBR) is supported.
+                                                    *   - true: VBR is supported.
+                                                    *   - false: VBR is not supported. */
+			uint32_t    bit_rate;                  /*!< Bit rate, in bits per second.
+                                                    *   0: Unknown or not specified. */
 		} aac;
 		struct {
 			uint8_t     info[12];              /*!< Vendor codec information. */
@@ -179,23 +179,23 @@ typedef struct {
 	uint8_t codec_type;                        /*!< Codec type. */
 	union {
 		struct {
-			uint8_t     sampling_frequency;    /*!< Selected sampling frequency. */
-			uint8_t     channel_mode;          /*!< Selected channel mode. */
-			uint8_t     block_length;          /*!< Selected block length. */
-			uint8_t     subbands;              /*!< Selected number of subbands. */
-			uint8_t     allocation_method;     /*!< Selected allocation method. */
-			uint8_t     min_bitpool;           /*!< Minimum bitpool value. */
-			uint8_t     max_bitpool;           /*!< Maximum bitpool value. */
+			uint8_t     sbc_sampling_frequency;    /*!< Selected sampling frequency. */
+			uint8_t     channel_mode;              /*!< Selected channel mode. */
+			uint8_t     block_length;              /*!< Selected block length. */
+			uint8_t     subbands;                  /*!< Selected number of subbands. */
+			uint8_t     allocation_method;         /*!< Selected allocation method. */
+			uint8_t     min_bitpool;               /*!< Minimum bitpool value. */
+			uint8_t     max_bitpool;               /*!< Maximum bitpool value. */
 		} sbc;
 		struct {
-			uint8_t     object_type;           /*!< Selected object type. */
-			uint16_t    sampling_frequency;    /*!< Selected sampling frequency. */
-			uint8_t     channel_number;        /*!< Selected number of channels. */
-			bool        vbr_supported;         /*!< Whether variable bit rate (VBR) is supported.
-                                                *   - true: VBR is supported.
-                                                *   - false: VBR is not supported. */
-			uint32_t    bit_rate;              /*!< Bit rate, in bits per second.
-                                                *   0: Unknown or not specified. */
+			uint8_t     object_type;               /*!< Selected object type. */
+			uint16_t    aac_sampling_frequency;    /*!< Selected sampling frequency. */
+			uint8_t     channel_number;            /*!< Selected number of channels. */
+			bool        vbr_supported;             /*!< Whether variable bit rate (VBR) is supported.
+                                                    *   - true: VBR is supported.
+                                                    *   - false: VBR is not supported. */
+			uint32_t    bit_rate;                  /*!< Bit rate, in bits per second.
+                                                    *   0: Unknown or not specified. */
 		} aac;
 		struct {
 			uint8_t     info[12];              /*!< Vendor codec information. */

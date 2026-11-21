@@ -160,7 +160,7 @@ void HANDLER_HardFault(void)
 		"MRS 		R0, MSP					\n\t"
 		"MRS 		R1, PSP					\n\t"
 		"MOV 		R2, LR					\n\t" /* Third parameter is LR current value */
-		"MOV 		R3, #0					\n\t"
+		"MOVS 		R3, #0					\n\t"
 		"PUSH 		{R4-R7}					\n\t"
 		"MOV 		R4, R8					\n\t" /* PUSH only takes R0-R7 on M23, copy R8-R11 down */
 		"MOV 		R5, R9					\n\t"

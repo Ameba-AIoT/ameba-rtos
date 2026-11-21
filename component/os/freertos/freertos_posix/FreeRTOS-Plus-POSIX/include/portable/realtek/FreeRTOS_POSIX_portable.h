@@ -10,6 +10,7 @@
  * GNU Tools for Ameba already defines mode_t, clockit_t,
  * timer_t and tm. Use GNU Tools <sys/types.h> definitions.
  */
+#define posixconfigENABLE_CLOCK_T   0
 #define posixconfigENABLE_CLOCKID_T 0
 #define posixconfigENABLE_MODE_T    0
 #define posixconfigENABLE_TIMER_T   0

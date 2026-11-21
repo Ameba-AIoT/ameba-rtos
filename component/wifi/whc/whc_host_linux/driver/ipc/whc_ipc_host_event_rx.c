@@ -333,6 +333,13 @@ static u32 whc_host_event_interrupt(aipc_ch_t *ch, ipc_msg_struct_t *pmsg)
 		goto func_exit;
 	}
 
+	/* a late D2H event must not reach queue_work() with NULL wq (RSWLANDIOT-17054) */
+	if (!event_priv->api_workqueue) {
+		dev_err_ratelimited(global_idev.pwhc_dev,
+							"%s: ack engine gone\n", __func__);
+		goto func_exit;
+	}
+
 	/* copy ipc_msg from temp memory in ipc interrupt. */
 	memcpy((u8 *) & (event_priv->recv_ipc_msg), (u8 *)pmsg, sizeof(ipc_msg_struct_t));
 	queue_work(event_priv->api_workqueue, &(event_priv->api_work));
@@ -359,7 +366,8 @@ int whc_host_event_init(struct whc_device *idev)
 	event_priv->dev_req_network_info = dma_alloc_coherent(event_ch->pdev, DEV_REQ_NETWORK_INFO_MAX_LEN, &event_priv->dev_req_network_info_phy, GFP_KERNEL);
 	if (!event_priv->dev_req_network_info) {
 		dev_err(global_idev.pwhc_dev, "%s: allloc dev_req_network_info error.\n", "event");
-		dma_free_coherent(event_ch->pdev, sizeof(struct whc_ipc_host_req_msg), event_priv->preq_msg, event_priv->req_msg_phy_addr);
+		dma_free_coherent(event_ch->pdev, sizeof(struct whc_ipc_host_req_msg),
+						  event_priv->preq_msg, event_priv->req_msg_phy_addr);
 		return -ENOMEM;
 	}
 
@@ -369,11 +377,15 @@ int whc_host_event_init(struct whc_device *idev)
 		dev_err(global_idev.pwhc_dev, "%s: Failed to create workqueue\n", "event");
 		dma_free_coherent(event_ch->pdev, DEV_REQ_NETWORK_INFO_MAX_LEN,
 						  event_priv->dev_req_network_info, event_priv->dev_req_network_info_phy);
-		dma_free_coherent(event_ch->pdev, sizeof(struct whc_ipc_host_req_msg), event_priv->preq_msg, event_priv->req_msg_phy_addr);
+		dma_free_coherent(event_ch->pdev, sizeof(struct whc_ipc_host_req_msg),
+						  event_priv->preq_msg, event_priv->req_msg_phy_addr);
 		return -ENOMEM;
 	}
 
 	INIT_WORK(&(event_priv->api_work), whc_host_event_task);
+	spin_lock_init(&(event_priv->atomic_lock));
+	INIT_LIST_HEAD(&(event_priv->atomic_list));
+	INIT_WORK(&(event_priv->atomic_work), whc_host_atomic_work_handler);
 
 	return 0;
 }
@@ -383,14 +395,41 @@ void whc_host_event_deinit(void)
 	struct event_priv_t *event_priv = &global_idev.event_priv;
 	aipc_ch_t	*event_ch = global_idev.event_ch;
 
-	/* free sema to wakeup the message queue task */
-	if (event_priv->api_workqueue) {
-		destroy_workqueue(event_priv->api_workqueue);
+	cancel_work_sync(&(event_priv->atomic_work));
+
+	/* unregister + synchronize_irq before destroy_workqueue, else ISR UAF (RSWLANDIOT-17054) */
+	if (event_ch) {
+		struct platform_device *pdev = to_platform_device(event_ch->pdev);
+		int irq = platform_get_irq(pdev, 0);
+		int rc = ameba_ipc_channel_unregister(event_ch);
+
+		if (rc)
+			dev_warn(event_ch->pdev, "%s: unregister event ch failed (%d)\n",
+					 __func__, rc);
+		if (irq > 0) {
+			synchronize_irq(irq);
+		} else {
+			dev_warn(event_ch->pdev, "%s: no event irq, cannot synchronize (%d)\n",
+					 __func__, irq);
+		}
 	}
 
-	dma_free_coherent(event_ch->pdev, DEV_REQ_NETWORK_INFO_MAX_LEN,
-					  event_priv->dev_req_network_info, event_priv->dev_req_network_info_phy);
-	dma_free_coherent(event_ch->pdev, sizeof(struct whc_ipc_host_req_msg), event_priv->preq_msg, event_priv->req_msg_phy_addr);
+	/* free sema to wakeup the message queue task */
+	if (event_priv->api_workqueue) {
+		struct workqueue_struct *wq = event_priv->api_workqueue;
+
+		/* clear first, a late queue_work() must not see a freed wq (RSWLANDIOT-17054) */
+		event_priv->api_workqueue = NULL;
+		destroy_workqueue(wq);
+	}
+
+	if (event_ch) {
+		dma_free_coherent(event_ch->pdev, DEV_REQ_NETWORK_INFO_MAX_LEN,
+						  event_priv->dev_req_network_info,
+						  event_priv->dev_req_network_info_phy);
+		dma_free_coherent(event_ch->pdev, sizeof(struct whc_ipc_host_req_msg),
+						  event_priv->preq_msg, event_priv->req_msg_phy_addr);
+	}
 
 	/* deinitialize the mutex to send event_priv message. */
 	mutex_destroy(&(event_priv->iiha_send_mutex));

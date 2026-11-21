@@ -159,7 +159,7 @@ int light_lightness_publish(const struct bt_mesh_model *model, bool linear)
 	uint16_t present_lightness = get_present_lightness(model, linear);
 	rtk_bt_mesh_generic_transition_time_t remaining_time = {0, 0};
 	return light_lightness_stat(model, NULL, present_lightness, FALSE, 0, remaining_time, linear);
-	/* If want to publish periodicly like spec, use below part
+	/* If want to publish periodically like spec, use below part
 	 * when use below part, should check publication related info is ok first
 	 * Or if want to use above, when need retransmit 3 times, should set 2
 	 */
@@ -1219,7 +1219,7 @@ int light_ctl_publish(const struct bt_mesh_model *model, uint16_t present_lightn
 {
 	rtk_bt_mesh_generic_transition_time_t remaining_time = {0, 0};
 	return light_ctl_stat(model, NULL, present_lightness, present_temperature, FALSE, 0, 0, remaining_time);
-	/* If want to publish periodicly like spec, use below part
+	/* If want to publish periodically like spec, use below part
 	 * when use below part, should check publication related info is ok first
 	 * Or if want to use above, when need retransmit 3 times, should set 2
 	 */
@@ -1557,7 +1557,7 @@ int light_ctl_temperature_publish(const struct bt_mesh_model *model, uint16_t pr
 {
 	rtk_bt_mesh_generic_transition_time_t remaining_time = {0, 0};
 	return light_ctl_temp_stat(model, NULL, present_temperature, present_delta_uv, FALSE, 0, 0, remaining_time);
-	/* If want to publish periodicly like spec, use below part
+	/* If want to publish periodically like spec, use below part
 	 * when use below part, should check publication related info is ok first
 	 * Or if want to use above, when need retransmit 3 times, should set 2
 	 */
@@ -2246,7 +2246,7 @@ int light_hsl_publish(const struct bt_mesh_model *model, uint16_t present_lightn
 {
 	rtk_bt_mesh_generic_transition_time_t remaining_time = {0, 0};
 	return light_hsl_stat(model, NULL, present_lightness, present_hue, present_saturation, FALSE, remaining_time);
-	/* If want to publish periodicly like spec,
+	/* If want to publish periodically like spec,
 	 * use light_hsl_srv_update_publish(),
 	 * Or if want to use above, when need retransmit 3 times, should set 2
 	 */
@@ -2597,7 +2597,7 @@ int light_hsl_hue_publish(const struct bt_mesh_model *model, uint16_t present_hu
 {
 	rtk_bt_mesh_generic_transition_time_t remaining_time = {0, 0};
 	return light_hsl_hue_stat(model, NULL, present_hue, FALSE, 0, remaining_time);
-	/* If want to publish periodicly like spec,
+	/* If want to publish periodically like spec,
 	 * use light_hsl_hue_stat(),
 	 * Or if want to use above, when need retransmit 3 times, should set 2
 	 */
@@ -2850,7 +2850,7 @@ int light_hsl_saturation_publish(const struct bt_mesh_model *model, uint16_t pre
 {
 	rtk_bt_mesh_generic_transition_time_t remaining_time = {0, 0};
 	return light_hsl_saturation_stat(model, NULL, present_saturation, FALSE, 0, remaining_time);
-	/* If want to publish periodicly like spec,
+	/* If want to publish periodically like spec,
 	 * use light_hsl_saturation_stat(),
 	 * Or if want to use above, when need retransmit 3 times, should set 2
 	 */
@@ -3627,7 +3627,7 @@ int light_xyl_publish(const struct bt_mesh_model *model, uint16_t lightness, uin
 {
 	rtk_bt_mesh_generic_transition_time_t remaining_time = {0, 0};
 	return light_xyl_stat(model, NULL, lightness, xyl_x, xyl_y, FALSE, remaining_time);
-	/* If want to publish periodicly like spec,
+	/* If want to publish periodically like spec,
 	 * use light_xyl_srv_update_publish(),
 	 * Or if want to use above, when need retransmit 3 times, should set 2
 	 */
@@ -4637,23 +4637,23 @@ const struct bt_mesh_model_op light_lc_srv_op[] = {
 #if defined(BT_MESH_ENABLE_LIGHT_LC_SETUP_SERVER_MODEL) && BT_MESH_ENABLE_LIGHT_LC_SETUP_SERVER_MODEL
 #define MODEL_PROPERTY_INVALID                                    0x00
 
-#define MODEL_PROPERTY_LIGHT_CONTORL_AMBIENT_LUXLEVEL_ON          0x002B
-#define MODEL_PROPERTY_LIGHT_CONTORL_AMBIENT_LUXLEVEL_PROLONG     0x002C
-#define MODEL_PROPERTY_LIGHT_CONTORL_AMBIENT_LUXLEVEL_STANDBY     0x002D
-#define MODEL_PROPERTY_LIGHT_CONTORL_LIGHTNESS_ON                 0x002E
-#define MODEL_PROPERTY_LIGHT_CONTORL_LIGHTNESS_PROLONG            0x002F
-#define MODEL_PROPERTY_LIGHT_CONTORL_LIGHTNESS_STANDBY            0x0030
-#define MODEL_PROPERTY_LIGHT_CONTORL_REGULATOR_ACCURACY           0x0031
-#define MODEL_PROPERTY_LIGHT_CONTORL_REGULATOR_KID                0x0032
-#define MODEL_PROPERTY_LIGHT_CONTORL_REGULATOR_KIU                0x0033
-#define MODEL_PROPERTY_LIGHT_CONTORL_REGULATOR_KPD                0x0034
-#define MODEL_PROPERTY_LIGHT_CONTORL_REGULATOR_KPU                0x0035
-#define MODEL_PROPERTY_LIGHT_CONTORL_TIME_FADE                    0x0036
+#define MODEL_PROPERTY_LIGHT_CONTROL_AMBIENT_LUXLEVEL_ON          0x002B
+#define MODEL_PROPERTY_LIGHT_CONTROL_AMBIENT_LUXLEVEL_PROLONG     0x002C
+#define MODEL_PROPERTY_LIGHT_CONTROL_AMBIENT_LUXLEVEL_STANDBY     0x002D
+#define MODEL_PROPERTY_LIGHT_CONTROL_LIGHTNESS_ON                 0x002E
+#define MODEL_PROPERTY_LIGHT_CONTROL_LIGHTNESS_PROLONG            0x002F
+#define MODEL_PROPERTY_LIGHT_CONTROL_LIGHTNESS_STANDBY            0x0030
+#define MODEL_PROPERTY_LIGHT_CONTROL_REGULATOR_ACCURACY           0x0031
+#define MODEL_PROPERTY_LIGHT_CONTROL_REGULATOR_KID                0x0032
+#define MODEL_PROPERTY_LIGHT_CONTROL_REGULATOR_KIU                0x0033
+#define MODEL_PROPERTY_LIGHT_CONTROL_REGULATOR_KPD                0x0034
+#define MODEL_PROPERTY_LIGHT_CONTROL_REGULATOR_KPU                0x0035
+#define MODEL_PROPERTY_LIGHT_CONTROL_TIME_FADE                    0x0036
 #define MODEL_PROPERTY_LIGHT_CONTROL_TIME_FADE_ON                 0x0037
-#define MODEL_PROPERTY_LIGHT_CONTORL_TIME_FADE_STANDBY_AUDIO      0x0038
-#define MODEL_PROPERTY_LIGHT_CONTORL_TIME_FADE_STANDBY_MANUAL     0x0039
+#define MODEL_PROPERTY_LIGHT_CONTROL_TIME_FADE_STANDBY_AUDIO      0x0038
+#define MODEL_PROPERTY_LIGHT_CONTROL_TIME_FADE_STANDBY_MANUAL     0x0039
 #define MODEL_PROPERTY_LIGHT_CONTROL_TIME_OCCUPANCY_DELAY         0x003A
-#define MODEL_PROPERTY_LIGHT_CONTORL_TIME_PROLONG                 0x003B
+#define MODEL_PROPERTY_LIGHT_CONTROL_TIME_PROLONG                 0x003B
 #define MODEL_PROPERTY_LIGHT_CONTROL_TIME_RUN_ON                  0x003C
 #define MODEL_PROPERTY_MOTION_SENSED                              0x0042
 #define MODEL_PROPERTY_PEOPLE_COUNT                               0x004C

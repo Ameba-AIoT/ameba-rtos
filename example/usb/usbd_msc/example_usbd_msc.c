@@ -266,6 +266,15 @@ static void example_usbd_msc_usb_hotplug_thread(void *param)
 
 	UNUSED(param);
 
+#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
+	/* C-2: the USB OTG ISR is delivered on CPU0 (GIC ITARGETSR pins every SPI to core 0).
+	   Pinning the threads that touch the device stack to CPU0 makes task<->ISR access
+	   single-core, so deinit's local interrupt disable is meaningful again under SMP.
+	   Done by the thread itself, first: a created thread may already run on another core, and its
+	   creator pinning it afterwards could come too late or reach a task that has deleted itself. */
+	rtos_task_set_affinity(rtos_task_handle_get(), 0);
+#endif
+
 	for (;;) {
 		if (rtos_sema_take(msc_usb_status_changed_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
 			if (msc_app.quit != 0U) {
@@ -349,6 +358,14 @@ static void example_usbd_msc_sd_hotplug_thread(void *param)
 #endif
 
 	UNUSED(param);
+
+#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
+	/* Same reason as the USB hotplug thread: this one deinits/reinits the device
+	   stack too, so it must run on the core the OTG ISR is delivered on.
+	   Done by the thread itself, first: a created thread may already run on another core, and its
+	   creator pinning it afterwards could come too late or reach a task that has deleted itself. */
+	rtos_task_set_affinity(rtos_task_handle_get(), 0);
+#endif
 
 	for (;;) {
 		if (rtos_sema_take(msc_sd_status_changed_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
@@ -526,12 +543,6 @@ static int msc_start(void)
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create hotplug thread fail\n");
 		goto exit_usbd_init_fail;
 	}
-#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
-	/* C-2: the USB OTG ISR is delivered on CPU0 (GIC ITARGETSR pins every SPI to core 0).
-	   Pinning the threads that touch the device stack to CPU0 makes task<->ISR access
-	   single-core, so deinit's local interrupt disable is meaningful again under SMP. */
-	rtos_task_set_affinity(usb_task, 0);
-#endif
 #endif // MSC_USB_HOTPLUG
 
 #if MSC_SD_HOTPLUG
@@ -543,11 +554,6 @@ static int msc_start(void)
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create SD card hotplug thread fail\n");
 		goto exit_create_msc_sd_hotplug_fail;
 	}
-#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
-	/* Same reason as the USB hotplug thread: this one deinits/reinits the device
-	   stack too, so it must run on the core the OTG ISR is delivered on. */
-	rtos_task_set_affinity(sd_task, 0);
-#endif
 #endif // MSC_SD_HOTPLUG
 
 	return RTK_SUCCESS;
@@ -589,6 +595,14 @@ exit_usbd_msc_disk_init_fail:
 static void example_usbd_msc_thread(void *param)
 {
 	UNUSED(param);
+
+#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
+	/* A start that fails rolls back through usbd_deinit(), which waits for no ISR on another
+	   core: run it on CPU0, where the USB IRQ is delivered, as the hotplug thread does.
+	   Done by the thread itself, first: a created thread may already run on another core, and its
+	   creator pinning it afterwards could come too late or reach a task that has deleted itself. */
+	rtos_task_set_affinity(rtos_task_handle_get(), 0);
+#endif
 
 	if (msc_start() != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Start fail\n");

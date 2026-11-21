@@ -24,6 +24,7 @@ extern FlashLayoutInfo_TypeDef Flash_Layout_Nor_Linux[];
 extern FlashLayoutInfo_TypeDef Flash_Layout_Nand_Linux[];
 
 //================functions=================
+u32 flash_get_readmode(u32 ReadMode);
 void flash_init_userdef(void);
 void nand_init_userdef(void);
 void flash_get_layout_info(u32 type, u32 *start, u32 *end);

@@ -813,7 +813,8 @@ static void bt_coex_handle_l2cap_conn_req(struct rtk_bt_coex_conn_t *p_conn, uin
 			plist = p_conn->profile_list.next;
 			while (plist != &p_conn->profile_list) {
 				p_profile_info = (struct rtk_bt_coex_profile_info_t *)plist;
-				if (p_profile_info->psm == psm) {
+				/* only a signaling profile decides that the next AVDTP channel is media */
+				if ((p_profile_info->psm == psm) && (p_profile_info->flags == A2DP_SIGNAL)) {
 					b_find = true;
 					break;
 				} else {
@@ -919,6 +920,7 @@ static void bt_coex_set_bitpool_to_fw_request(uint8_t *user_data, uint16_t lengt
 	struct sbc_frame_hdr *sbc_header = NULL;
 	struct rtp_header rtph;
 	uint8_t hci_buf[1] = {0};
+	uint16_t sbc_hdr_off;
 
 	/* We assume it is SBC if the packet length
 	    * is bigger than 100 bytes
@@ -926,10 +928,18 @@ static void bt_coex_set_bitpool_to_fw_request(uint8_t *user_data, uint16_t lengt
 	if (length > 100) {
 		memcpy(&rtph, user_data, sizeof(struct rtp_header));
 
+		/* RTP header + CSRC list + 1-byte media payload header */
+		sbc_hdr_off = sizeof(struct rtp_header) + rtph.cc * 4 + 1;
+
+		/* need sbc_hdr_off + 3 to reach sbc_header->bitpool (offset 2) */
+		if (length < sbc_hdr_off + 3) {
+			return;
+		}
+
 		DBG_BT_COEX("bt_coex_set_bitpool_to_fw_request rtp: v 0x%x, cc 0x%x, pt 0x%x \r\n", rtph.v, rtph.cc, rtph.pt);
 
 		/* move forward */
-		user_data += sizeof(struct rtp_header) + rtph.cc * 4 + 1;
+		user_data += sbc_hdr_off;
 
 		/* point to the sbc frame header */
 		sbc_header = (struct sbc_frame_hdr *)user_data;
@@ -1012,27 +1022,48 @@ static void bt_coex_process_acl_data(uint8_t *pdata, uint16_t len, uint8_t dir)
 		goto end;
 	}
 
-	if (flags == 0x01) {
+	/* only process A2DP case  */
+	if (p_conn->type != HCI_CONN_TYPE_L2CAP) {
+		goto end;
+	}
+
+	/* drop every continuation fragment, whatever the broadcast flag says */
+	if ((flags & 0x03) == 0x01) {
+		goto end;
+	}
+
+	/* need 4-byte ACL header, 4-byte L2CAP header and the first payload byte */
+	if (len < 9) {
 		goto end;
 	}
 
 	pdu_len = (uint16_t)((pdata[5] << 8) | pdata[4]);
 	channel_id = (uint16_t)((pdata[7] << 8) | pdata[6]);
 
-	if ((channel_id == 0x0001) && len < 11) {
+	/* the L2CAP payload length is the ACL payload minus the 4-byte L2CAP header */
+	/* first segment: L2CAP payload length > ACL payload - 4 */
+	/* skip process for length mis-match */
+	if (pdu_len < (uint16_t)(len - 8)) {
 		goto end;
 	}
 
-	code = pdata[8];
 	if (channel_id == 0x0001) {
+		/* BR/EDR Signaling */
+		code = pdata[8];
 		switch (code) {
 		case L2CAP_CONN_REQ:
+			if (len < 16) {
+				break;
+			}
 			psm = (uint16_t)((pdata[13] << 8) | pdata[12]);
 			scid = (uint16_t)((pdata[15] << 8) | pdata[14]);
 			DBG_BT_COEX("bt_coex_process_acl_data: L2CAP_CONN_REQ: psm = 0x%x, scid = 0x%x \r\n", psm, scid);
 			bt_coex_handle_l2cap_conn_req(p_conn, psm, scid, dir);
 			break;
 		case L2CAP_CONN_RSP:
+			if (len < 18) {
+				break;
+			}
 			dcid = (uint16_t)((pdata[13] << 8) | pdata[12]);
 			scid = (uint16_t)((pdata[15] << 8) | pdata[14]);
 			res = (uint16_t)((pdata[17] << 8) | pdata[16]);
@@ -1040,6 +1071,9 @@ static void bt_coex_process_acl_data(uint8_t *pdata, uint16_t len, uint8_t dir)
 			bt_coex_handle_l2cap_conn_rsp(p_conn, scid, dcid, res, dir);
 			break;
 		case L2CAP_DISCONN_REQ:
+			if (len < 16) {
+				break;
+			}
 			dcid = (uint16_t)((pdata[13] << 8) | pdata[12]);
 			scid = (uint16_t)((pdata[15] << 8) | pdata[14]);
 			bt_coex_handle_handle_l2cap_dis_conn_req(p_conn, scid, dcid, dir);
@@ -1049,10 +1083,11 @@ static void bt_coex_process_acl_data(uint8_t *pdata, uint16_t len, uint8_t dir)
 		default:
 			break;
 		}
-	} else {
+	} else if (channel_id >= 0x0040) {
 #if defined(HCI_BT_COEX_BR_EDR_SUPPORT) && HCI_BT_COEX_BR_EDR_SUPPORT
+		/* A2DP/PAN media flows only exist on ACL-U, and only on dynamically allocated CIDs */
 		if ((((p_conn->profile_bitmap & BIT(PROFILE_A2DP)) > 0) || ((p_conn->profile_bitmap & BIT(PROFILE_PAN)) > 0))) {
-			bt_coex_packet_counter_handle(p_conn, channel_id, dir, pdata + 9, pdu_len);
+			bt_coex_packet_counter_handle(p_conn, channel_id, dir, pdata + 9, len - 9);
 		}
 #else
 		(void)pdu_len;
@@ -1773,21 +1808,20 @@ fail:
 		if (!p_rtk_bt_coex_priv) {
 			return;
 		}
-		{
-			// set initialize false & wait trx task done
-			flags = osif_lock();
-			bt_coex_initialized = false;
-			osif_unlock(flags);
 
-			flags = 0;
-			while (bt_coex_busy_cnt && flags < deinit_timeout) {
-				osif_delay(1);
-				flags++;
-			}
-			if (bt_coex_busy_cnt) {
-				BT_LOGE("[BT_COEX] Deinit-trx flow not exit for %ds\r\n", deinit_timeout / 1000);
-				return;
-			}
+		// set initialize false & wait trx task done
+		flags = osif_lock();
+		bt_coex_initialized = false;
+		osif_unlock(flags);
+
+		flags = 0;
+		while (bt_coex_busy_cnt && flags < deinit_timeout) {
+			osif_delay(1);
+			flags++;
+		}
+		if (bt_coex_busy_cnt) {
+			BT_LOGE("[BT_COEX] Deinit-trx flow not exit for %ds\r\n", deinit_timeout / 1000);
+			return;
 		}
 
 		if (p_rtk_bt_coex_priv->task_hdl) {

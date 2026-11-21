@@ -76,17 +76,26 @@ struct net_val {
 	uint16_t lowest_avail_addr;
 } __packed;
 
+#if ZEPHYR_RTK_PATCH
+/* One more entry for the node's address update, allocated in bt_mesh_cdb_init() */
+static struct node_update *cdb_node_updates;
+#else
 /* One more entry for the node's address update. */
 static struct node_update cdb_node_updates[CONFIG_BT_MESH_CDB_NODE_COUNT + 1];
+#endif
 static struct key_update cdb_key_updates[CONFIG_BT_MESH_CDB_SUBNET_COUNT +
 					 CONFIG_BT_MESH_CDB_APP_KEY_COUNT];
 
 struct bt_mesh_cdb bt_mesh_cdb = {
+#if ZEPHYR_RTK_PATCH
+	.node_count = CONFIG_BT_MESH_CDB_NODE_COUNT,
+#else
 	.nodes = {
 		[0 ... (CONFIG_BT_MESH_CDB_NODE_COUNT - 1)] = {
 			.addr = BT_MESH_ADDR_UNASSIGNED,
 		}
 	},
+#endif
 	.subnets = {
 		[0 ... (CONFIG_BT_MESH_CDB_SUBNET_COUNT - 1)] = {
 			.net_idx = BT_MESH_KEY_UNUSED,
@@ -99,6 +108,52 @@ struct bt_mesh_cdb bt_mesh_cdb = {
 		}
 	},
 };
+
+#if ZEPHYR_RTK_PATCH
+int bt_mesh_cdb_node_num_set(uint16_t node_num)
+{
+	if (bt_mesh_cdb.nodes) {
+		return -EALREADY;
+	}
+
+	/* 0: keep CONFIG_BT_MESH_CDB_NODE_COUNT */
+	bt_mesh_cdb.node_count = node_num ? node_num : CONFIG_BT_MESH_CDB_NODE_COUNT;
+
+	return 0;
+}
+
+int bt_mesh_cdb_init(void)
+{
+	uint16_t i;
+
+	if (bt_mesh_cdb.nodes) {
+		return 0;
+	}
+
+	bt_mesh_cdb.nodes = k_malloc(bt_mesh_cdb.node_count * sizeof(*bt_mesh_cdb.nodes));
+	cdb_node_updates = k_malloc((bt_mesh_cdb.node_count + 1) * sizeof(*cdb_node_updates));
+	if (!bt_mesh_cdb.nodes || !cdb_node_updates) {
+		bt_mesh_cdb_deinit();
+		return -ENOMEM;
+	}
+
+	(void)memset(bt_mesh_cdb.nodes, 0, bt_mesh_cdb.node_count * sizeof(*bt_mesh_cdb.nodes));
+	(void)memset(cdb_node_updates, 0, (bt_mesh_cdb.node_count + 1) * sizeof(*cdb_node_updates));
+	for (i = 0; i < bt_mesh_cdb.node_count; i++) {
+		bt_mesh_cdb.nodes[i].addr = BT_MESH_ADDR_UNASSIGNED;
+	}
+
+	return 0;
+}
+
+void bt_mesh_cdb_deinit(void)
+{
+	k_free(bt_mesh_cdb.nodes);
+	k_free(cdb_node_updates);
+	bt_mesh_cdb.nodes = NULL;
+	cdb_node_updates = NULL;
+}
+#endif
 
 /*
  * Check if an address range from addr_start for addr_start + num_elem - 1 is
@@ -117,7 +172,11 @@ static int addr_is_free(uint16_t addr_start, uint8_t num_elem, uint16_t *next)
 		return -EINVAL;
 	}
 
+#if ZEPHYR_RTK_PATCH
+	for (i = 0; i < bt_mesh_cdb.node_count; i++) {
+#else
 	for (i = 0; i < ARRAY_SIZE(bt_mesh_cdb.nodes); i++) {
+#endif
 		struct bt_mesh_cdb_node *node = &bt_mesh_cdb.nodes[i];
 
 		if (node->addr == BT_MESH_ADDR_UNASSIGNED) {
@@ -160,7 +219,11 @@ static uint16_t find_lowest_free_addr(uint8_t num_elem)
 	 * is any. +1 for our own address and +1 for making sure that the
 	 * address range is valid.
 	 */
+#if ZEPHYR_RTK_PATCH
+	for (i = 0; i < (size_t)bt_mesh_cdb.node_count + 2; ++i) {
+#else
 	for (i = 0; i < ARRAY_SIZE(bt_mesh_cdb.nodes) + 2; ++i) {
+#endif
 		err = addr_is_free(addr, num_elem, &next);
 		if (err == 0) {
 			break;
@@ -587,7 +650,11 @@ static struct node_update *cdb_node_update_find(uint16_t addr,
 	match = NULL;
 	*free_slot = NULL;
 
+#if ZEPHYR_RTK_PATCH
+	for (i = 0; i < (size_t)bt_mesh_cdb.node_count + 1; i++) {
+#else
 	for (i = 0; i < ARRAY_SIZE(cdb_node_updates); i++) {
+#endif
 		struct node_update *update = &cdb_node_updates[i];
 
 		if (update->addr == BT_MESH_ADDR_UNASSIGNED) {
@@ -778,7 +845,11 @@ void bt_mesh_cdb_clear(void)
 
 	atomic_clear_bit(bt_mesh_cdb.flags, BT_MESH_CDB_VALID);
 
+#if ZEPHYR_RTK_PATCH
+	for (i = 0; i < bt_mesh_cdb.node_count; ++i) {
+#else
 	for (i = 0; i < ARRAY_SIZE(bt_mesh_cdb.nodes); ++i) {
+#endif
 		if (bt_mesh_cdb.nodes[i].addr != BT_MESH_ADDR_UNASSIGNED) {
 			bt_mesh_cdb_node_del(&bt_mesh_cdb.nodes[i], true);
 		}
@@ -922,7 +993,11 @@ struct bt_mesh_cdb_node *bt_mesh_cdb_node_alloc(const uint8_t uuid[16], uint16_t
 		return NULL;
 	}
 
+#if ZEPHYR_RTK_PATCH
+	for (i = 0; i < bt_mesh_cdb.node_count; i++) {
+#else
 	for (i = 0; i < ARRAY_SIZE(bt_mesh_cdb.nodes); i++) {
+#endif
 		struct bt_mesh_cdb_node *node = &bt_mesh_cdb.nodes[i];
 
 		if (node->addr == BT_MESH_ADDR_UNASSIGNED) {
@@ -986,7 +1061,11 @@ struct bt_mesh_cdb_node *bt_mesh_cdb_node_get(uint16_t addr)
 {
 	size_t i;
 
+#if ZEPHYR_RTK_PATCH
+	for (i = 0; i < bt_mesh_cdb.node_count; i++) {
+#else
 	for (i = 0; i < ARRAY_SIZE(bt_mesh_cdb.nodes); i++) {
+#endif
 		struct bt_mesh_cdb_node *node = &bt_mesh_cdb.nodes[i];
 
 		if (addr >= node->addr &&
@@ -1009,7 +1088,11 @@ void bt_mesh_cdb_node_foreach(bt_mesh_cdb_node_func_t func, void *user_data)
 {
 	size_t i;
 
+#if ZEPHYR_RTK_PATCH
+	for (i = 0; i < bt_mesh_cdb.node_count; ++i) {
+#else
 	for (i = 0; i < ARRAY_SIZE(bt_mesh_cdb.nodes); ++i) {
+#endif
 		if (bt_mesh_cdb.nodes[i].addr == BT_MESH_ADDR_UNASSIGNED) {
 			continue;
 		}
@@ -1155,7 +1238,11 @@ static void store_cdb_pending_nodes(void)
 {
 	size_t i;
 
+#if ZEPHYR_RTK_PATCH
+	for (i = 0; i < (size_t)bt_mesh_cdb.node_count + 1; ++i) {
+#else
 	for (i = 0; i < ARRAY_SIZE(cdb_node_updates); ++i) {
+#endif
 		struct node_update *update = &cdb_node_updates[i];
 		uint16_t addr;
 

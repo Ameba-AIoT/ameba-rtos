@@ -35,11 +35,31 @@ void SOCPS_vPortRestorePmp(void)
 #endif
 }
 
+#if defined(CONFIG_FLASH_AVL)
+#define KR4_FREEZE_PARKED	BIT9	/* BKUP_REG1: KR4 is parked in SRAM */
+#define KR4_FREEZE_RELEASE	BIT10	/* BKUP_REG1: KM4 lets KR4 go */
+
+/* KM4 changes the flash read mode / clock / QE and the SPIC may not serve XIP meanwhile, so no code or data of KR4
+ * may come from flash: this is SRAM-resident, and only the backup register is touched. */
+SRAMDRAM_ONLY_TEXT_SECTION __NO_INLINE
+static void SOCPS_KR4_Freeze(void)
+{
+	u32 irq = irq_disable_save();
+
+	BKUP_Set(BKUP_REG1, KR4_FREEZE_PARKED);
+	while (!(BKUP_Read(BKUP_REG1) & KR4_FREEZE_RELEASE));
+	BKUP_Clear(BKUP_REG1, KR4_FREEZE_PARKED);
+
+	irq_enable_restore(irq);
+}
+#endif
+
 /**
   * @brief  KM4 wake KR4 by IPC
   * @param  None
   * @note  ipc_msg_temp.msg represents who wakes up KR4
   		* ipc_msg_temp.msg = 0: FW wakeup KR4
+  		* ipc_msg_temp.msg = FREEZE_NPWAP_IPC: park KR4 in SRAM until KM4 releases it (flash AVL only)
   * @retval None
   */
 void SOCPS_KM4WKR4_ipc_int(void *Data, u32 IrqStatus, u32 ChanNum)
@@ -52,6 +72,13 @@ void SOCPS_KM4WKR4_ipc_int(void *Data, u32 IrqStatus, u32 ChanNum)
 	PIPC_MSG_STRUCT	ipc_msg_temp = (PIPC_MSG_STRUCT)ipc_get_message(IPC_KM4_TO_KR4, IPC_M2R_WAKE_AP);
 
 	u32 type = ipc_msg_temp->msg;
+
+#if defined(CONFIG_FLASH_AVL)
+	if (type == FREEZE_NPWAP_IPC) {
+		SOCPS_KR4_Freeze();
+		return;
+	}
+#endif
 
 	if (type == FW_NPWAP_IPC) {
 		//RTK_LOGD(TAG, "FW wakeup KR4 via IPC \n");

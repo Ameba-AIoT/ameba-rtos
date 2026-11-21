@@ -166,7 +166,7 @@ typedef struct {
 	 * @brief USB device speed mode. See @ref usb_speed_type_t.
 	 * - `USB_SPEED_HIGH`: USB 2.0 High-Speed PHY, the default (value 0).
 	 * - `USB_SPEED_HIGH_IN_FULL`: USB 2.0 PHY driven in Full-Speed mode, for a low bandwidth
-	 *   application such as UAC 1.0 that has to run Full Speed on an HS-capable SoC.
+	 *   application that has to run Full Speed on an HS-capable SoC.
 	 * - `USB_SPEED_FULL`: USB 1.1 Full-Speed transceiver.
 	 * @note  An application normally leaves this 0 and lets the core pick: on an FS-only SoC
 	 *        (`CONFIG_SUPPORT_USB_FS_ONLY`) @ref usbd_init clamps any High-Speed request down

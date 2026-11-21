@@ -278,7 +278,8 @@ static int usbh_cdc_ecm_cb_intr_receive(u8 *buf, u32 length)
 			if (cdc->eth_hw_connect && (cdc->intr_check_tick != usbh_cdc_ecm_get_eth_status_check_time())) {
 				cdc->intr_check_tick = usbh_cdc_ecm_get_eth_status_check_time();
 			} else if ((cdc->eth_hw_connect == 0) && (cdc->intr_rx.pipe.ep_interval != 0)) {
-				cdc->intr_check_tick = cdc->intr_rx.pipe.ep_interval;
+				/* Keep the busy margin of attach(): the same tick also gates the SOF re-arm of an in-flight INTR IN */
+				cdc->intr_check_tick = (u16)(cdc->intr_rx.pipe.ep_interval + USBH_CDC_ECM_INTR_BUSY_MAX_CNT);
 			}
 			cdc->intr_rx.pipe.max_timeout_tick = cdc->intr_check_tick;
 		}
@@ -1226,8 +1227,6 @@ static void usbh_cdc_ecm_process_halt(usb_host_t *host)
 		return;
 	}
 
-	/* Sent through usbh_ctrl_request(), which rejects the call while another class of a
-	 * composite device owns EP0; usbh_ctrl_clear_feature() lacks that owner check */
 	setup.req.bmRequestType = USB_H2D | USB_REQ_TYPE_STANDARD | USB_REQ_RECIPIENT_ENDPOINT;
 	setup.req.bRequest = USB_REQ_CLEAR_FEATURE;
 	setup.req.wValue = USB_FEATURE_EP_HALT;
@@ -2009,10 +2008,13 @@ void usbh_cdc_ecm_deinit(void)
 	usbh_cdc_ecm_trace_task_deinit();
 #endif
 
+	/* Halt the channels before a blocked sender is released: it takes its frame back on
+	 * return, and as in detach() a TX the closed pipe never completes is reported failed */
+	usbh_cdc_ecm_deinit_all_pipe();
+	cdc->bulk_tx_err = 1U;
 	usbh_cdc_ecm_tx_status_check();
 	usb_os_sema_delete(cdc->bulk_tx_sema);
 
-	usbh_cdc_ecm_deinit_all_pipe();
 	cdc->host = NULL;
 
 	USBH_CDC_ECM_FREE_MEM(cdc->dongle_ctrl_buf);

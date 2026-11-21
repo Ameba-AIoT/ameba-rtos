@@ -118,49 +118,116 @@ config USBD_UAC_MENU
     if USBD_UAC_MENU
         choice
             prompt "Playback max channels"
-            default USBD_UAC_OUT_CH_2
+            default USBD_UAC_PLAY_CH_2
             help
               One streaming alt setting is declared per channel count from 2 up to this value.
               The ISOC OUT ring is sized for it, set it to the channels the product can play.
               Full Speed carries 48 kHz only if channels x bytes per sample <= 20.
-            config USBD_UAC_OUT_CH_2
+            config USBD_UAC_PLAY_CH_2
                 bool "2"
-            config USBD_UAC_OUT_CH_4
+            config USBD_UAC_PLAY_CH_4
                 bool "4"
-            config USBD_UAC_OUT_CH_6
+            config USBD_UAC_PLAY_CH_6
                 bool "6"
-            config USBD_UAC_OUT_CH_8
+            config USBD_UAC_PLAY_CH_8
                 bool "8"
         endchoice
 
         choice
             prompt "Playback bit width"
-            default USBD_UAC_OUT_BIT_16
+            default USBD_UAC_PLAY_BIT_16
             help
-              Subslot size declared by every playback alt setting. AmebaSmart cannot play 32-bit.
-            config USBD_UAC_OUT_BIT_16
+              Fixed subslot size declared by every playback alt setting, the host can not select another
+              one. AmebaSmart cannot play 32-bit.
+            config USBD_UAC_PLAY_BIT_16
                 bool "16-bit"
-            config USBD_UAC_OUT_BIT_24
+            config USBD_UAC_PLAY_BIT_24
                 bool "24-bit"
-            config USBD_UAC_OUT_BIT_32
+            config USBD_UAC_PLAY_BIT_32
                 bool "32-bit"
         endchoice
 
         choice
             prompt "Playback max sampling rate"
             depends on USBD_UAC2_MENU
-            default USBD_UAC_OUT_FREQ_48K
+            default USBD_UAC_PLAY_FREQ_48K
             help
               The clock RANGE lists 44.1 kHz up to this rate. A Full-Speed connection of an HS-capable
               SoC declares only the rates that fit Full Speed. The ring grows with the rate, e.g.
               about 4.5 KB at 2ch/16-bit/48 kHz and 16 KB at 192 kHz on High Speed.
-            config USBD_UAC_OUT_FREQ_48K
+            config USBD_UAC_PLAY_FREQ_48K
                 bool "48 kHz"
-            config USBD_UAC_OUT_FREQ_96K
+            config USBD_UAC_PLAY_FREQ_96K
                 bool "96 kHz"
-            config USBD_UAC_OUT_FREQ_192K
+            config USBD_UAC_PLAY_FREQ_192K
                 bool "192 kHz"
         endchoice
+
+        config USBD_UAC_PLAY_FEEDBACK
+            bool "Enable playback feedback endpoint (asynchronous)"
+            default n
+            help
+              Declares the playback endpoint asynchronous and adds an explicit feedback ISOC IN
+              endpoint to every playback alt setting (UAC 1.0 / UAC 2.0, Ref USB 2.0 5.12.4.2),
+              so that the host follows the device clock instead of the device following the host.
+              The feedback is sent once per ms. SoCs with a shared DFIFO (RTL8730E, RTL8721Dx)
+              support a single ISOC IN endpoint: there it can not be combined with the record
+              option below, the build stops with an error.
+
+        config USBD_UAC_RECORD
+            bool "Enable record (microphone)"
+            default n
+            help
+              Reports a microphone: one AS IN interface streaming the single format selected
+              below. Without it the class is playback only. Costs the record ring, one IN
+              packet buffer and the record engine code.
+
+        if USBD_UAC_RECORD
+            choice
+                prompt "Record channels"
+                default USBD_UAC_RECORD_CH_2
+                config USBD_UAC_RECORD_CH_1
+                    bool "1"
+                config USBD_UAC_RECORD_CH_2
+                    bool "2"
+            endchoice
+
+            choice
+                prompt "Record bit width"
+                default USBD_UAC_RECORD_BIT_16
+                config USBD_UAC_RECORD_BIT_16
+                    bool "16-bit"
+                config USBD_UAC_RECORD_BIT_24
+                    bool "24-bit"
+                config USBD_UAC_RECORD_BIT_32
+                    bool "32-bit"
+            endchoice
+
+            choice
+                prompt "Record sampling rate"
+                default USBD_UAC_RECORD_FREQ_16K
+                help
+                  The single rate the microphone reports. One Full-Speed packet (1023 bytes per ms)
+                  shall hold a ms of audio, the build stops with an error otherwise: 96 kHz fits every
+                  channel count and bit width, 192 kHz only 1 channel or 2 channels at 16-bit. The
+                  record ring grows with the rate, e.g. about 1.4 KB at 2ch/16-bit/16 kHz and 16 KB
+                  at 192 kHz with the default 20 ms record_buf_count.
+                config USBD_UAC_RECORD_FREQ_8K
+                    bool "8 kHz"
+                config USBD_UAC_RECORD_FREQ_16K
+                    bool "16 kHz"
+                config USBD_UAC_RECORD_FREQ_32K
+                    bool "32 kHz"
+                config USBD_UAC_RECORD_FREQ_44P1K
+                    bool "44.1 kHz"
+                config USBD_UAC_RECORD_FREQ_48K
+                    bool "48 kHz"
+                config USBD_UAC_RECORD_FREQ_96K
+                    bool "96 kHz"
+                config USBD_UAC_RECORD_FREQ_192K
+                    bool "192 kHz"
+            endchoice
+        endif
     endif
 
 config USBD_VENDOR_MENU

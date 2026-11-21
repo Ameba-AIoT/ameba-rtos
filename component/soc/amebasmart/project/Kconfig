@@ -67,6 +67,26 @@ config SUPPORT_AUDIO_DEVICE
 
 #---------- FEATURE LIST END-------------#
 
+menu "CONFIG Memory Arch"
+    config NOR_FLASH_NEW_STRATEGY
+        bool "New NOR flash driver"
+        default n
+        help
+            Use the table-driven NOR flash driver, which identifies the flash chip by
+            its ID and applies the matching read mode, dummy cycles and CS timing.
+            Disabled: use the original driver.
+
+            Note: unlike the original driver, it does not clear the flash block
+            protection bits at boot.
+
+    config NOR_FLASH_DTR
+        bool
+        depends on NOR_FLASH_NEW_STRATEGY
+        default n
+        help
+            Not supported on this chip.
+endmenu
+
 menu "CONFIG Link Option"
     choice
         prompt "IMG1(Bootloader) running on SRAM?"
@@ -91,17 +111,24 @@ menu "CONFIG Toolchain"
         prompt "ASDK toolchain version"
         default TOOLCHAIN_ASDK_10_3_1
         help
-            Select the ARM GCC (ASDK) toolchain version used to build this SoC.
+            Select the ASDK toolchain (ARM GCC or LLVM) used to build this SoC.
         config TOOLCHAIN_ASDK_10_3_1
             bool "ASDK 10.3.1"
         config TOOLCHAIN_ASDK_12_3_1
             bool "ASDK 12.3.1"
+        config TOOLCHAIN_LLVM_22
+            bool "ASDK LLVM 22"
     endchoice
+
+    # y when the selected toolchain is clang based, used to pick compiler/linker flags
+    config TOOLCHAIN_LLVM
+        def_bool y if TOOLCHAIN_LLVM_22
 
     config TOOLCHAIN_ASDK_VER
         string
         default "10.3.1" if TOOLCHAIN_ASDK_10_3_1
         default "12.3.1" if TOOLCHAIN_ASDK_12_3_1
+        default "llvm22" if TOOLCHAIN_LLVM_22
 endmenu
 
 rsource "../../../soc/common/image3/Kconfig.trustzone"
@@ -151,8 +178,6 @@ menu "CONFIG APPLICATION"
     orsource "../../../audio/Kconfig"
 
     rsource "../../../utils/ipc/Kconfig"
-
-    rsource "../../../dynamic_app/Kconfig"
 
     menu "AI Config"
         orsource "../../../tflite_micro/Kconfig"

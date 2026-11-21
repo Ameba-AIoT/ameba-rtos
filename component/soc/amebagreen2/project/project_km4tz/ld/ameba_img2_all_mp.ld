@@ -12,13 +12,9 @@
 #define OUT_TEXT_SECTION				.sram_image2.text.data
 #define IMG2_TEXT_LMA_REGION		 	KM4TZ_BD_RAM_MP
 #define FLASH_INPUT_TEXT_SECTION		*(.non.dram.text*)
-#ifdef CONFIG_DATA_HEAP_SRAM
-	#define SRAM_INPUT_TEXT_SECTION		*(.sramdram.only.text*) WLAN_SRAMDRAM_ONLY_TEXT
-	#define PSRAM_INPUT_TEXT_SECTION
-#else
-	#define SRAM_INPUT_TEXT_SECTION
-	#define PSRAM_INPUT_TEXT_SECTION	*(.sramdram.only.text*) WLAN_SRAMDRAM_ONLY_TEXT
-#endif
+/* MP shrink does not initialize PSRAM (floader skips the bootloader), keep all code in SRAM */
+#define SRAM_INPUT_TEXT_SECTION		*(.sramdram.only.text*) WLAN_SRAMDRAM_ONLY_TEXT
+#define PSRAM_INPUT_TEXT_SECTION
 
 #define ARM_EXCEPTION_SECTION		 KM4TZ_BD_RAM_MP
 

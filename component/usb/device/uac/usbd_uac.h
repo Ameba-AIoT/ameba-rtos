@@ -36,7 +36,7 @@ extern "C" {
  *        ZLP filler nodes. Prevents readers from stalling when the host silences
  *        the ISOC stream (e.g. switching tracks).
  */
-#define USBD_UAC_ISOC_RX_APPEND_ZLP_DIFF_MAX 3U
+#define USBD_UAC_PLAY_FILLER_THRESHOLD   3U
 
 /**
  * @brief 2^(n) shorthand used across UAC MPS/ring/interval scaling.
@@ -48,13 +48,13 @@ extern "C" {
 #endif
 
 /* Defaults applied when the matching @ref usbd_uac_config_t field is left 0. */
-#define USBD_UAC_DEFAULT_RX_BUF_CNT  20U    /**< Default RX ring buffer slot count. */
-#define USBD_UAC_DEFAULT_TX_BUF_CNT  20U    /**< Default TX ring buffer slot count. */
-#define USBD_UAC_RING_NODE_COUNT_MAX 255U   /**< Ring buffer node limit, the ring manager counts nodes in a u8. */
+#define USBD_UAC_DEFAULT_PLAY_BUF_COUNT    20U    /**< Default playback ring buffer slot count. */
+#define USBD_UAC_DEFAULT_RECORD_BUF_COUNT  20U    /**< Default record ring buffer slot count. */
+#define USBD_UAC_RING_NODE_COUNT_MAX       255U   /**< Ring buffer node limit, the ring manager counts nodes in a u8. */
 #ifdef CONFIG_SUPPORT_USB_FS_ONLY
-#define USBD_UAC_BUFFER_COUNT_MAX    255U   /**< Largest rx/tx_buf_cnt: full speed uses 1 node per slot. */
+#define USBD_UAC_BUFFER_COUNT_MAX          255U   /**< Largest play_buf_count / record_buf_count: full speed uses 1 node per slot. */
 #else
-#define USBD_UAC_BUFFER_COUNT_MAX    31U    /**< Largest UAC 2.0 rx/tx_buf_cnt: high speed uses 8 nodes per slot. */
+#define USBD_UAC_BUFFER_COUNT_MAX          31U    /**< Largest UAC 2.0 play_buf_count / record_buf_count: high speed uses 8 nodes per slot. */
 #endif
 /* Volume range reported to the host. UAC encodes volume as a signed fixed-point dB value, so the
  * range wraps around zero: 0xFF42 is the minimum and 0x00BE the maximum. Both shall stay inside
@@ -65,10 +65,11 @@ extern "C" {
 
 /* Uac Endpoint parameters */
 /* Audio channel count */
-#define USBD_UAC_CH_CNT_2           2U /**< Audio 2 channel count. */
-#define USBD_UAC_CH_CNT_4           4U /**< Audio 4 channel count. */
-#define USBD_UAC_CH_CNT_6           6U /**< Audio 6 channel count. */
-#define USBD_UAC_CH_CNT_8           8U /**< Audio 8 channel count. */
+#define USBD_UAC_CHANNEL_COUNT_1    1U /**< Audio 1 channel count. */
+#define USBD_UAC_CHANNEL_COUNT_2    2U /**< Audio 2 channel count. */
+#define USBD_UAC_CHANNEL_COUNT_4    4U /**< Audio 4 channel count. */
+#define USBD_UAC_CHANNEL_COUNT_6    6U /**< Audio 6 channel count. */
+#define USBD_UAC_CHANNEL_COUNT_8    8U /**< Audio 8 channel count. */
 
 /* Audio byte width */
 #define USBD_UAC_BYTE_WIDTH_2       2U /**< Audio 2 bytes width. */
@@ -79,49 +80,97 @@ extern "C" {
 /* Sampling frequency */
 #define USBD_UAC_SAMPLING_FREQ_8K   8000U   /**< Audio 8000 sample frequency. */
 #define USBD_UAC_SAMPLING_FREQ_16K  16000U  /**< Audio 16000 sample frequency. */
+#define USBD_UAC_SAMPLING_FREQ_32K  32000U  /**< Audio 32000 sample frequency. */
 #define USBD_UAC_SAMPLING_FREQ_44K  44100U  /**< Audio 44100 sample frequency. */
 #define USBD_UAC_SAMPLING_FREQ_48K  48000U  /**< Audio 48000 sample frequency. */
 #define USBD_UAC_SAMPLING_FREQ_96K  96000U  /**< Audio 96000 sample frequency. */
 #define USBD_UAC_SAMPLING_FREQ_192K 192000U /**< Audio 192000 sample frequency. */
 
-/* Playback stream formats selected in menuconfig (CONFIG USB > UAC). The descriptors declare them at
- * build time and the ISOC OUT ring is sized for them once, so they are plain integers usable in #if. */
+/* Stream formats selected in menuconfig (CONFIG USB > UAC). The descriptors declare them at build
+ * time and the ISOC rings are sized for them once, so they are plain integers usable in #if. */
 
 /* Playback: one alt setting per channel count from 2 up to this value */
-#if defined(CONFIG_USBD_UAC_OUT_CH_8)
-#define USBD_UAC_DEFAULT_CH_CNT     USBD_UAC_CH_CNT_8 /**< Playback max channel count. */
-#elif defined(CONFIG_USBD_UAC_OUT_CH_6)
-#define USBD_UAC_DEFAULT_CH_CNT     USBD_UAC_CH_CNT_6 /**< Playback max channel count. */
-#elif defined(CONFIG_USBD_UAC_OUT_CH_4)
-#define USBD_UAC_DEFAULT_CH_CNT     USBD_UAC_CH_CNT_4 /**< Playback max channel count. */
+#if defined(CONFIG_USBD_UAC_PLAY_CH_8)
+#define USBD_UAC_PLAY_MAX_CHANNEL_COUNT  USBD_UAC_CHANNEL_COUNT_8 /**< Playback max channel count. */
+#elif defined(CONFIG_USBD_UAC_PLAY_CH_6)
+#define USBD_UAC_PLAY_MAX_CHANNEL_COUNT  USBD_UAC_CHANNEL_COUNT_6 /**< Playback max channel count. */
+#elif defined(CONFIG_USBD_UAC_PLAY_CH_4)
+#define USBD_UAC_PLAY_MAX_CHANNEL_COUNT  USBD_UAC_CHANNEL_COUNT_4 /**< Playback max channel count. */
 #else
-#define USBD_UAC_DEFAULT_CH_CNT     USBD_UAC_CH_CNT_2 /**< Playback max channel count. */
+#define USBD_UAC_PLAY_MAX_CHANNEL_COUNT  USBD_UAC_CHANNEL_COUNT_2 /**< Playback max channel count. */
 #endif
 
 /* Playback byte width, shared by every alt setting */
-#if defined(CONFIG_USBD_UAC_OUT_BIT_32)
-#define USBD_UAC_DEFAULT_BYTE_WIDTH USBD_UAC_BYTE_WIDTH_4 /**< Playback byte width. */
-#elif defined(CONFIG_USBD_UAC_OUT_BIT_24)
-#define USBD_UAC_DEFAULT_BYTE_WIDTH USBD_UAC_BYTE_WIDTH_3 /**< Playback byte width. */
+#if defined(CONFIG_USBD_UAC_PLAY_BIT_32)
+#define USBD_UAC_PLAY_BYTE_WIDTH         USBD_UAC_BYTE_WIDTH_4 /**< Playback byte width. */
+#elif defined(CONFIG_USBD_UAC_PLAY_BIT_24)
+#define USBD_UAC_PLAY_BYTE_WIDTH         USBD_UAC_BYTE_WIDTH_3 /**< Playback byte width. */
 #else
-#define USBD_UAC_DEFAULT_BYTE_WIDTH USBD_UAC_BYTE_WIDTH_2 /**< Playback byte width. */
+#define USBD_UAC_PLAY_BYTE_WIDTH         USBD_UAC_BYTE_WIDTH_2 /**< Playback byte width. */
 #endif
 
 /* Playback highest sampling frequency, UAC 2.0 only: UAC 1.0 declares 44.1 and 48 kHz */
-#if defined(CONFIG_USBD_UAC2) && defined(CONFIG_USBD_UAC_OUT_FREQ_192K)
-#define USBD_UAC_OUT_MAX_SAMPLING_FREQ  USBD_UAC_SAMPLING_FREQ_192K /**< Playback max sampling frequency. */
-#elif defined(CONFIG_USBD_UAC2) && defined(CONFIG_USBD_UAC_OUT_FREQ_96K)
-#define USBD_UAC_OUT_MAX_SAMPLING_FREQ  USBD_UAC_SAMPLING_FREQ_96K /**< Playback max sampling frequency. */
+#if defined(CONFIG_USBD_UAC2) && defined(CONFIG_USBD_UAC_PLAY_FREQ_192K)
+#define USBD_UAC_PLAY_MAX_SAMPLING_FREQ  USBD_UAC_SAMPLING_FREQ_192K /**< Playback max sampling frequency. */
+#elif defined(CONFIG_USBD_UAC2) && defined(CONFIG_USBD_UAC_PLAY_FREQ_96K)
+#define USBD_UAC_PLAY_MAX_SAMPLING_FREQ  USBD_UAC_SAMPLING_FREQ_96K /**< Playback max sampling frequency. */
 #else
-#define USBD_UAC_OUT_MAX_SAMPLING_FREQ  USBD_UAC_SAMPLING_FREQ_48K /**< Playback max sampling frequency. */
+#define USBD_UAC_PLAY_MAX_SAMPLING_FREQ  USBD_UAC_SAMPLING_FREQ_48K /**< Playback max sampling frequency. */
 #endif
 
-/* Microphone (record) default format, UAC 2.0 only. The record format is set at run time by
- * usbd_uac_config_t::in, refer to it for the supported range. These values are the examples' default
- * and the format the descriptors report when the record direction is disabled in composite mode. */
-#define USBD_UAC_IN_DEFAULT_CH_CNT          USBD_UAC_CH_CNT_2          /**< Default microphone channel count. */
-#define USBD_UAC_IN_DEFAULT_BYTE_WIDTH      USBD_UAC_BYTE_WIDTH_2      /**< Default microphone byte width. */
-#define USBD_UAC_IN_DEFAULT_SAMPLING_FREQ   USBD_UAC_SAMPLING_FREQ_16K /**< Default microphone sampling frequency. */
+#ifdef CONFIG_USBD_UAC_RECORD
+/* Record (microphone): the single format the mic reports */
+#if defined(CONFIG_USBD_UAC_RECORD_CH_1)
+#define USBD_UAC_RECORD_CHANNEL_COUNT    USBD_UAC_CHANNEL_COUNT_1 /**< Record channel count. */
+#else
+#define USBD_UAC_RECORD_CHANNEL_COUNT    USBD_UAC_CHANNEL_COUNT_2 /**< Record channel count. */
+#endif
+
+#if defined(CONFIG_USBD_UAC_RECORD_BIT_32)
+#define USBD_UAC_RECORD_BYTE_WIDTH       USBD_UAC_BYTE_WIDTH_4 /**< Record byte width. */
+#elif defined(CONFIG_USBD_UAC_RECORD_BIT_24)
+#define USBD_UAC_RECORD_BYTE_WIDTH       USBD_UAC_BYTE_WIDTH_3 /**< Record byte width. */
+#else
+#define USBD_UAC_RECORD_BYTE_WIDTH       USBD_UAC_BYTE_WIDTH_2 /**< Record byte width. */
+#endif
+
+#if defined(CONFIG_USBD_UAC_RECORD_FREQ_8K)
+#define USBD_UAC_RECORD_SAMPLING_FREQ    USBD_UAC_SAMPLING_FREQ_8K /**< Record sampling frequency. */
+#elif defined(CONFIG_USBD_UAC_RECORD_FREQ_32K)
+#define USBD_UAC_RECORD_SAMPLING_FREQ    USBD_UAC_SAMPLING_FREQ_32K /**< Record sampling frequency. */
+#elif defined(CONFIG_USBD_UAC_RECORD_FREQ_44P1K)
+#define USBD_UAC_RECORD_SAMPLING_FREQ    USBD_UAC_SAMPLING_FREQ_44K /**< Record sampling frequency. */
+#elif defined(CONFIG_USBD_UAC_RECORD_FREQ_48K)
+#define USBD_UAC_RECORD_SAMPLING_FREQ    USBD_UAC_SAMPLING_FREQ_48K /**< Record sampling frequency. */
+#elif defined(CONFIG_USBD_UAC_RECORD_FREQ_96K)
+#define USBD_UAC_RECORD_SAMPLING_FREQ    USBD_UAC_SAMPLING_FREQ_96K /**< Record sampling frequency. */
+#elif defined(CONFIG_USBD_UAC_RECORD_FREQ_192K)
+#define USBD_UAC_RECORD_SAMPLING_FREQ    USBD_UAC_SAMPLING_FREQ_192K /**< Record sampling frequency. */
+#else
+#define USBD_UAC_RECORD_SAMPLING_FREQ    USBD_UAC_SAMPLING_FREQ_16K /**< Record sampling frequency. */
+#endif
+#endif /* CONFIG_USBD_UAC_RECORD */
+
+/*
+ * ISOC IN endpoint budget. The record (microphone) stream and the playback feedback (asynchronous
+ * playback, CONFIG_USBD_UAC_PLAY_FEEDBACK) each take one ISOC IN endpoint. A SoC with a shared
+ * DFIFO (CONFIG_SUPPORT_USB_SHARED_DFIFO: RTL8730E, RTL8721Dx) has only EP1/EP3/EP5 usable as IN
+ * and a single periodic TxFIFO, so it supports one ISOC IN endpoint at most: enable either the
+ * record or the playback feedback there, not both. A SoC with dedicated TxFIFOs (RTL8721F,
+ * RLE1509) supports both, each IN endpoint then needs a TxFIFO of its own, refer to
+ * usbd_config_t::ptx_fifo_depth. An application combining UAC with other classes shall count its
+ * IN endpoints, the ISOC IN ones in particular, against the limits of the SoC.
+ * The feedback is sent from the SOF interrupt once per ms: set USBD_SOF_INTR in
+ * usbd_config_t::ext_intr_enable when CONFIG_USBD_UAC_PLAY_FEEDBACK is on.
+ */
+#if defined(CONFIG_USBD_UAC_RECORD) && defined(CONFIG_USBD_UAC_PLAY_FEEDBACK) && defined(CONFIG_SUPPORT_USB_SHARED_DFIFO)
+#error "UAC: this SoC (shared DFIFO, e.g. RTL8730E/RTL8721Dx) supports one ISOC IN endpoint only, but the record (microphone) and the playback feedback are both ISOC IN. Under CONFIG USB > UAC enable only one of 'Enable record (microphone)' and 'Enable playback feedback endpoint'"
+#endif
+
+#ifdef CONFIG_USBD_UAC_PLAY_FEEDBACK
+/* Ref USB 2.0 5.12.4.2: the feedback value is the number of audio frames per (micro)frame */
+#define USBD_UAC_PLAY_FEEDBACK_FRACTION_BITS 16U  /**< Fraction bits of the value returned by usbd_uac_cb_t::get_play_feedback. */
+#endif
 
 /** @} End of Device_UAC_Constants group */
 /** @} End of USB_Device_Constants group */
@@ -135,44 +184,38 @@ extern "C" {
  * @{
  */
 
-/* Audio configuration parameters: The application uses this structure to configure audio parameters to the UAC driver. */
-typedef struct {
-	u32 sampling_freq;   /**< Audio sample frequency param. */
-	u8 byte_width;       /**< Audio byte width param. */
-	u8 ch_cnt;           /**< Audio channel count param. */
-	u8 enable;           /**< Audio enable. */
-} usbd_audio_cfg_t;
-
 /**
  * @brief Configuration for the UAC class.
- * @details Carries every UAC option: the endpoint allocation, which the top-level application
- *          owns, the audio format of each direction, and the ISOC buffer sizing and class-control
- *          ranges. Used by both standalone and composite modes. Device-global parameters
- *          (VID/PID, strings, power attributes) live in @ref usbd_dev_info_t instead.
+ * @details Carries the endpoint allocation, which the top-level application owns, the ISOC buffer
+ *          sizing and the class-control ranges. Used by both standalone and composite modes.
+ *          Device-global parameters (VID/PID, strings, power attributes) live in @ref usbd_dev_info_t instead.
  * @note  The structure is stored by pointer, not copied, so it shall remain valid until
  *        @ref usbd_uac_deinit.
- * @note  The advertised sample rates, channel counts and bit widths are baked into the `const`
- *        descriptor tables at build time from the menuconfig formats, refer to
- *        `USBD_UAC_DEFAULT_CH_CNT`, `USBD_UAC_DEFAULT_BYTE_WIDTH` and `USBD_UAC_OUT_MAX_SAMPLING_FREQ`;
- *        @ref usbd_uac_config rejects a playback format the descriptors do not declare.
- * @note  The record format (`in`, UAC 2.0 only) is the single one the mic reports, its descriptors are
- *        built from it at run time: 1 or 2 channels, 2, 3 or 4 bytes per sample, 8 kHz to 192 kHz, and
- *        one Full-Speed packet (1023 bytes per ms) at most. @ref usbd_uac_init rejects any other.
+ * @note  The stream formats are baked into the `const` descriptor tables at build time from the
+ *        menuconfig formats: the playback ones the host selects from, refer to `USBD_UAC_PLAY_MAX_CHANNEL_COUNT`,
+ *        `USBD_UAC_PLAY_BYTE_WIDTH` and `USBD_UAC_PLAY_MAX_SAMPLING_FREQ`, and with CONFIG_USBD_UAC_RECORD the
+ *        single record one, refer to `USBD_UAC_RECORD_CHANNEL_COUNT`, `USBD_UAC_RECORD_BYTE_WIDTH` and
+ *        `USBD_UAC_RECORD_SAMPLING_FREQ`. The host reports the playback format it selected through
+ *        @ref usbd_uac_cb_t::format_changed.
  */
 typedef struct {
 	const char *itf_str;     /**< iInterface string of the audio control interface, NULL for none. */
-	usbd_audio_cfg_t in;     /**< Audio format for record (device to host). */
-	usbd_audio_cfg_t out;    /**< Audio format for playback (host to device). */
 	u16 volume_min;          /**< Minimum volume reported to the host, 0 uses @ref USBD_UAC_DEFAULT_VOLUME_MIN.
 	                              Keep the range within the defaults: a SET_CUR outside them is acknowledged
 	                              and ignored, the current volume is kept. */
 	u16 volume_max;          /**< Maximum volume reported to the host, 0 uses @ref USBD_UAC_DEFAULT_VOLUME_MAX. */
 	u16 volume_default;      /**< Initial volume, 0 uses @ref USBD_UAC_DEFAULT_VOLUME. */
 	u8 mute_default;         /**< Initial mute state (0: unmuted, 1: muted). */
-	u8 isoc_in_addr;         /**< ISOC IN endpoint address */
-	u8 isoc_out_addr;        /**< ISOC OUT endpoint address */
-	u8 rx_buf_cnt;           /**< RX ring buffer slot count, 0 uses @ref USBD_UAC_DEFAULT_RX_BUF_CNT. UAC 2.0: at most @ref USBD_UAC_BUFFER_COUNT_MAX, init fails otherwise. */
-	u8 tx_buf_cnt;           /**< TX (record) ring buffer slot count, 0 uses @ref USBD_UAC_DEFAULT_TX_BUF_CNT. UAC 2.0 only, UAC 1.0 has no record. At most @ref USBD_UAC_BUFFER_COUNT_MAX, init fails otherwise. */
+	u8 play_ep_addr;         /**< Playback ISOC OUT endpoint address. */
+	u8 record_ep_addr;       /**< Record ISOC IN endpoint address, CONFIG_USBD_UAC_RECORD only. */
+	u8 play_feedback_ep_addr; /**< Playback feedback ISOC IN endpoint address, CONFIG_USBD_UAC_PLAY_FEEDBACK only.
+	                              A shared DFIFO SoC builds it without the record, so both may use the same IN
+	                              endpoint number there; a dedicated TxFIFO SoC needs a distinct one with its
+	                              own TxFIFO, refer to the ISOC IN endpoint budget above. */
+	u8 play_buf_count;       /**< Playback ring buffer slot count in ms, 0 uses @ref USBD_UAC_DEFAULT_PLAY_BUF_COUNT.
+	                              UAC 2.0: at most @ref USBD_UAC_BUFFER_COUNT_MAX, init fails otherwise. */
+	u8 record_buf_count;     /**< Record ring buffer slot count in ms, 0 uses @ref USBD_UAC_DEFAULT_RECORD_BUF_COUNT.
+	                              CONFIG_USBD_UAC_RECORD only. UAC 2.0: at most @ref USBD_UAC_BUFFER_COUNT_MAX, init fails otherwise. */
 } usbd_uac_config_t;
 
 typedef struct {
@@ -239,10 +282,10 @@ typedef struct {
 	 * @note   This function is called within an interrupt service routine (ISR) context;
 	 *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
 	 * @param[in] sampling_freq: New sample frequency.
-	 * @param[in] ch_cnt: New channel count. such as 2,4,6,8...
+	 * @param[in] channel_count: New channel count. such as 2,4,6,8...
 	 * @param[in] byte_width: New byte width, such as 1,2,3,4.
 	 */
-	void (*format_changed)(u32 sampling_freq, u8 ch_cnt, u8 byte_width);
+	void (*format_changed)(u32 sampling_freq, u8 channel_count, u8 byte_width);
 
 	/**
 	 * @brief Called when the SOF interrupt occurs in the UAC class driver.
@@ -251,48 +294,77 @@ typedef struct {
 	 */
 
 	void (*sof)(void);
+
+	/**
+	 * @brief Called to get the playback feedback value, CONFIG_USBD_UAC_PLAY_FEEDBACK only.
+	 * @details Ref USB 2.0 5.12.4.2: the host adjusts the rate it sends playback frames at to the
+	 *          value, so that the device clock paces the stream. Return the frames the device
+	 *          consumes per ms in 16.16 fixed point, e.g. (48 << 16) at 48 kHz, raised when the
+	 *          playback ring runs low and lowered when it fills up. The class converts it to the
+	 *          10.14 per frame (Full Speed) or 16.16 per microframe (High Speed) wire format.
+	 *          NULL sends the nominal value of the current sampling frequency.
+	 * @note   This function is called within an interrupt service routine (ISR) context, once per
+	 *         ms while the playback streaming setting is selected; time-consuming operations
+	 *         (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+	 * @return Feedback value, frames per ms in 16.16 fixed point.
+	 */
+	u32(*get_play_feedback)(void);
 } usbd_uac_cb_t;
 
-/* Audio control structure */
+/* One ISOC stream, playback (ISOC OUT) or record (ISOC IN): its ring of packets, the DMA buffer of
+   the packet in flight and the gates between the ISR and the task APIs */
 typedef struct {
-	rtos_sema_t uac_isoc_sema;   /**< ISOC sema. */
+	u8 *dma_buf;                 /**< DMA buffer of one packet, allocated by usbd_uac_init(). */
+	rtos_sema_t sema;            /**< Wakes the reader blocked in usbd_uac_read(). */
 
 	/*
-	 * used to append ZLP while xfer error/timeout,
-	 * sof_idx counts SOF frames while xfer_continue is on;
-	 * data_idx is bumped by every real xfer done and by every appended ZLP.
-	 * When sof_idx - data_idx >= USBD_UAC_ISOC_RX_APPEND_ZLP_DIFF_MAX we
-	 * synthesise a filler node so consumers do not stall.
+	 * Underrun filler: sof_count counts SOF frames while streaming is on, data_count is bumped
+	 * by every real packet and by every appended filler. When sof_count - data_count >=
+	 * USBD_UAC_PLAY_FILLER_THRESHOLD a filler node is synthesised so consumers do not stall.
 	 */
-	__IO u32 sof_idx;
-	__IO u32 data_idx;
-	__IO u32 xfer_cnt;         /**< Xfer valid count */
+	__IO u32 sof_count;
+	__IO u32 data_count;
+	__IO u32 packet_count;       /**< Real packets received. */
 
 #if USBD_UAC_DEBUG
-	__IO u32 append_zlp_cnt;   /**< Zero-length filler node inserted from SOF path. */
-	__IO u32 overwrite_cnt;    /**< OUT ISR forced head-drop due to full ring. */
-	__IO u32 append_overwrite_cnt;/**< SOF append forced head-drop due to full ring. */
-	__IO u32 timeout_cnt;      /**< Inter-packet gap exceeded expected step. */
-	u32 last_xfer_tick;        /**< Timestamp (us) of previous xfer, for gap check. */
+	__IO u32 filler_count;           /**< Filler nodes inserted from the SOF path. */
+	__IO u32 overwrite_count;        /**< OUT ISR forced head-drop due to full ring. */
+	__IO u32 filler_overwrite_count; /**< SOF filler forced head-drop due to full ring. */
+	__IO u32 timeout_count;          /**< Inter-packet gap exceeded expected step. */
+	u32 last_packet_time_us;         /**< Timestamp of the previous packet, for gap check. */
 #endif
 
-	u16 last_xfer_len;         /**< Last xfer length, used to size appended ZLP */
-	u16 isoc_mps;              /**< ISOC maximum packet size. */
+	usb_ringbuf_manager_t ring;  /**< Ring of ISOC packets. */
 
-	usb_ringbuf_manager_t buf_list; /**< Ring buffer manager for ISOC packets. */
+	u16 last_packet_len;         /**< Last packet length, used to size an appended filler. */
+	u16 max_packet_size;         /**< Ring node size, the MPS of the stream. */
 
-	u8 buf_list_cnt;           /**< Ring buffer node count. */
-	u8 binterval;              /**< bInterval used for MPS/ring sizing. */
+	u8 ring_node_count;          /**< Ring node count. */
+	u8 binterval;                /**< bInterval the ring is paced at. */
+	u8 sema_valid;               /**< sema created. */
+	__IO u8 read_wait_sema;      /**< The reader waits on sema. */
+	__IO u8 streaming;           /**< Stream started, refer to usbd_uac_start_play() / start_record(). */
+	__IO u8 is_closing;          /**< Set by the stream teardown: usbd_uac_read() (playback) or
+	                                  usbd_uac_transmit_data() (record) rejects new callers.
+	                                  Written under the USB critical section. */
+	__IO u8 user_count;          /**< Number of tasks inside those APIs on this stream; the teardown
+	                                  waits for it to drop to 0. Updated under the USB critical section. */
+} usbd_uac_stream_t;
 
-	u8 uac_sema_valid;         /**< ISOC sema created. */
-	__IO u8 read_wait_sema;    /**< The sema is waiting. */
-	__IO u8 next_xfer;         /**< Audio transfer continue flag. */
-	__IO u8 is_closing;        /**< Set by the buffer teardown: usbd_uac_read() (OUT ring) or
-	                                usbd_uac_transmit_data() (IN ring) rejects new callers.
-	                                Written under the USB critical section. */
-	__IO u8 xfer_users;        /**< Number of tasks inside those APIs on this ring; the buffer teardown
-	                                waits for it to drop to 0. Updated under the USB critical section. */
-} usbd_uac_buf_ctrl_t;
+/* Record packetizer: splits the PCM stream the application submits into one packet per bInterval
+   of the nominal size, refer to usbd_uac_transmit_data() */
+typedef struct {
+	u8 *buf;            /**< One packet being assembled, max_packet_size bytes. */
+	u32 rate_rem;       /**< sampling_freq % packets_per_second. */
+	u32 acc;            /**< Fractional frame accumulator, in 1/packets_per_second frames. */
+	u16 packets_per_second; /**< Refer to usbd_uac_get_packets_per_second(). */
+	u16 base_len;       /**< Nominal packet length in bytes, without the fractional frame. */
+	u16 fill;           /**< Bytes already in buf. */
+	u16 target;         /**< Length of the packet being assembled. */
+	u8 frame_len;       /**< Bytes per audio frame: channel_count * byte_width. */
+	__IO u8 restart;    /**< Set by the ISR or the task APIs, consumed by the single producer in
+	                         usbd_uac_transmit_data(): only it touches buf/fill/target while streaming. */
+} usbd_uac_record_packetizer_t;
 
 /** @} End of Device_UAC_Types group */
 /** @} End of USB_Device_Types group */
@@ -307,41 +379,46 @@ typedef struct {
 
 	/* Class and EP0 state */
 	u8 ctrl_req_pending;               /**< 1 if ctrl_req is waiting for its EP0 OUT data stage. */
-	u8 from_composite;			/**< Flag indicating if part of a composite device. */
+	u8 from_composite;                 /**< Flag indicating if part of a composite device. */
 	u8 if_base;                        /**< First interface number of this class; 0 in standalone mode
 	                                        unless the composite framework rebases it via
 	                                        set_interface_base(). */
-	u8 itf_str_idx;                    /**< Audio control interface iInterface string index from
+	u8 interface_string_index;         /**< Audio control interface iInterface string index from
 	                                        usbd_add_string(), 0 for none. */
-	usb_setup_req_t ctrl_req;          /**< Stores the current control request. */
-
-	/* Current audio format */
-	u32 cur_play_sampling_freq;        /**< Current playback (headphone) sample frequency. */
-	u32 cur_record_sampling_freq;      /**< Current record (microphone) sample frequency, UAC 2.0 only. */
-	u8 cur_byte_width;                /**< Current Audio byte width. */
-	u8 cur_ch_cnt;                     /**< Current Audio channel count. */
-
 	__IO u8 is_configured;             /**< 1 from a successful set_config() to clear_config(), written under
 	                                        the USB critical section. The task APIs arm an EP only while it is
 	                                        set, tested under the same lock. */
+	u8 sof_count;                      /**< High Speed SOFs since the last ms: UAC 1.0 packet period, UAC 2.0 feedback period. */
+	usb_setup_req_t ctrl_req;          /**< Stores the current control request. */
 
 	/* Playback (ISOC OUT) */
-	u8 alt_setting;                    /**< Current choose alternate setting. */
-	u8 cur_mute;                       /**< Current Audio mute value. */
-	u16 cur_volume;                    /**< Current Audio volume . */
-	usbd_uac_buf_ctrl_t uac_isoc_out;  /**< ISOC OUT control structure. */
-	usbd_ep_t ep_isoc_out;             /**< ISOC OUT endpoint structure. */
+	u32 play_sampling_freq;            /**< Current playback (headphone) sample frequency. */
+	u16 play_volume;                   /**< Current playback volume. */
+	u8 play_byte_width;                /**< Current playback byte width. */
+	u8 play_channel_count;             /**< Current playback channel count. */
+	u8 play_alt_setting;               /**< Current alternate setting of the headphone AS interface. */
+	u8 play_mute;                      /**< Current playback mute value. */
+	usbd_uac_stream_t play_stream;     /**< Playback stream. */
+	usbd_ep_t play_ep;                 /**< ISOC OUT endpoint. */
+#ifdef CONFIG_USBD_UAC_PLAY_FEEDBACK
+	u8 *play_feedback_buf;             /**< DMA buffer of the feedback packet, allocated by usbd_uac_init(). */
+	usbd_ep_t play_feedback_ep;        /**< Feedback ISOC IN endpoint. */
+#endif
 
 	/* Record (ISOC IN) */
-	u8 alt_setting_in;                 /**< Current choose alternate setting for the microphone AS interface. */
-	u8 cur_mute_in;                    /**< Current microphone (record) mute value. */
-	u16 cur_volume_in;                 /**< Current microphone (record) volume. */
-	usbd_uac_buf_ctrl_t uac_isoc_in;   /**< ISOC IN control structure. */
-	usbd_ep_t ep_isoc_in;              /**< ISOC IN endpoint structure. */
+	u32 record_sampling_freq;          /**< Current record (microphone) sample frequency. */
+	u16 record_volume;                 /**< Current record volume. */
+	u8 record_alt_setting;             /**< Current alternate setting of the microphone AS interface. */
+	u8 record_mute;                    /**< Current record mute value. */
+#ifdef CONFIG_USBD_UAC_RECORD
+	usbd_uac_record_packetizer_t record_packetizer; /**< Cuts the record PCM into packets. */
+#endif
+	usbd_uac_stream_t record_stream;   /**< Record stream. */
+	usbd_ep_t record_ep;               /**< ISOC IN endpoint. */
 
 #if USBD_UAC_DEBUG
-	u32 copy_data_len;                 /**< Audio xfer total data length. */
-	__IO u8  isoc_dump_thread;         /**< Audio dump thread running flag. */
+	u32 read_data_len;                 /**< Total bytes read by usbd_uac_read(). */
+	__IO u8 dump_thread_running;       /**< Audio dump thread running flag. */
 #endif
 } usbd_uac_dev_t;
 
@@ -385,7 +462,7 @@ int usbd_composite_uac_init(const usbd_uac_cb_t *cb, const usbd_uac_config_t *cf
   *         usbd_uac_stop_record() or an application lock held across the loop), as the examples
   *         do. Never delete a task while it is inside usbd_uac_read() or usbd_uac_transmit_data():
   *         it would never leave, and this call would wait forever, reporting it once per second.
-  *         Same rule for usbd_uac_config().
+  *         Same rule for usbd_uac_start_play() and usbd_uac_start_record().
   * @note  Composite mode: call it after @ref usbd_composite_deinit. Before that the class is
   *        still reachable from the USB ISR, so the call returns at once and releases nothing.
   * @return None. This is a teardown path: apart from the composite case above, the class is always
@@ -394,22 +471,13 @@ int usbd_composite_uac_init(const usbd_uac_cb_t *cb, const usbd_uac_config_t *cf
 void usbd_uac_deinit(void);
 
 /**
-  * @brief  Set audio configuration to the UAC class
-  * @details Validates the format against the declared ones and makes it the current one. The ISOC
-  *          ring of the direction is sized for the largest declared format at the connection speed,
-  *          so it is allocated by the first call after enumeration and only reallocated when the
-  *          speed changed: a format switch requested by the host never reallocates it.
+  * @brief  Start the playback (ISOC OUT) stream
+  * @details Sizes the playback ring for the connection speed and arms the ISOC OUT endpoint. The ring
+  *          fits every format the descriptors declare, so it is allocated by the first call after
+  *          enumeration and only reallocated when the speed changed: a format switch requested by
+  *          the host never reallocates it. Call it again after each @ref usbd_uac_cb_t::format_changed.
   * @note   Task context only, same rules as @ref usbd_uac_deinit.
-  * @param[in] uac_cfg: Audio configure params
-  * @param[in] is_record: 1 for recording, 0 for playback
-  * @param[in] flag: Unused parameter
-  * @retval 0 on success, non-zero on failure.
-  */
-int usbd_uac_config(const usbd_audio_cfg_t *uac_cfg, u8 is_record, u32 flag);
-
-/**
-  * @brief  USB audio start play
-  * @retval 0 on success, non-zero on failure.
+  * @retval 0 on success, -RTK_ERR_IO before the host configured the device, else non-zero on failure.
   */
 int usbd_uac_start_play(void);
 
@@ -419,8 +487,12 @@ int usbd_uac_start_play(void);
 void usbd_uac_stop_play(void);
 
 /**
-  * @brief  USB audio start record
-  * @retval 0 on success, non-zero on failure.
+  * @brief  Start the record (ISOC IN) stream
+  * @details Sizes the record ring and packetizer for the connection speed, then lets
+  *          @ref usbd_uac_transmit_data queue data. The ring is only reallocated when the speed changed.
+  * @note   Task context only, same rules as @ref usbd_uac_deinit.
+  * @retval 0 on success, -RTK_ERR_IO before the host configured the device or without
+  *         CONFIG_USBD_UAC_RECORD, else non-zero on failure.
   */
 int usbd_uac_start_record(void);
 
@@ -431,14 +503,15 @@ void usbd_uac_stop_record(void);
 
 /**
   * @brief  Queue record (ISOC IN) PCM data for transmission to the host.
-  * @details The stream is cut into one packet per (micro)frame of the nominal size for the
-  *          record format, the class adding one audio frame now and then when the rate is not
-  *          a multiple of the packet rate (e.g. 44.1kHz), ref UAC 2.0 2.3.1.1. Any length is
-  *          accepted, typically 1ms of audio per call: nothing is truncated, and a tail shorter
-  *          than a packet is kept for the next call. When the ring is full the oldest packet is
-  *          dropped. UAC 2.0 only.
+  * @details The stream is cut into one packet per bInterval of the nominal size for the record
+  *          format: per ms for UAC 1.0, per microframe for UAC 2.0 at High Speed. The class adds
+  *          one audio frame now and then when the rate is not a multiple of the packet rate
+  *          (e.g. 44.1kHz), ref UAC 2.0 2.3.1.1. Any length is accepted, typically 1ms of audio per
+  *          call: nothing is truncated, and a tail shorter than a packet is kept for the next call.
+  *          When the ring is full the oldest packet is dropped. Without CONFIG_USBD_UAC_RECORD it
+  *          returns -RTK_ERR_IO.
   * @note   Task context only, from a single producer task, same rules as @ref usbd_uac_deinit.
-  *         Pass whole audio frames (ch_cnt * byte_width bytes) so that packets stay frame aligned.
+  *         Pass whole audio frames (channel_count * byte_width bytes) so that packets stay frame aligned.
   * @param[in] buf: pointer to the PCM data.
   * @param[in] len: length of the data in bytes.
   * @retval 0 on success, non-zero on failure.
