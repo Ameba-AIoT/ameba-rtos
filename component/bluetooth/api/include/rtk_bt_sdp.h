@@ -1,7 +1,7 @@
 /**
  * @file      rtk_bt_sdp.h
  * @author    benling_xu@realsil.com.cn
- * @brief     Bluetooth LE GAP part type and function deffinition
+ * @brief     Bluetooth LE GAP part type and function definition
  * @copyright Copyright (c) 2022. Realtek Semiconductor Corporation. All rights reserved.
  */
 
@@ -114,7 +114,7 @@ extern "C"
 
 /**
  * @struct    rtk_sdp_record_t
- * @brief     Bluetooth sdp srecord struct.
+ * @brief     Bluetooth sdp record struct.
  */
 typedef struct {
 	struct list_head    list;                                   //!< list of .rtk_sdp_record_t.

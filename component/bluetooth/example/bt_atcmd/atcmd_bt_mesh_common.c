@@ -51,7 +51,7 @@ static int atcmd_ble_mesh_dev_info(int argc, char **argv)
 {
 	(void)argc;
 	uint16_t ret = 0;
-	rkt_bt_mesh_stack_act_device_info_set_t info_switch;
+	rtk_bt_mesh_stack_act_device_info_set_t info_switch;
 	info_switch.dev_info_dis = str_to_int(argv[0]);
 	ret = rtk_bt_mesh_stack_set_device_info_display(&info_switch);
 	if (ret) {

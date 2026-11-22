@@ -91,7 +91,7 @@ static rtk_bt_le_audio_broadcast_source_config_t bt_le_audio_broadcast_source_co
 	.periodic_adv_interval_max = RTK_BT_LE_AUDIO_PA_INTERVAL_MAX,
 	.periodic_adv_prop = 0
 };
-/* this config will be overwrited by bt_stack_le_audio_gen_basic_data */
+/* this config will be overwritten by bt_stack_le_audio_gen_basic_data */
 static uint8_t bt_stack_le_audio_media_codec_level2[] = {
 	0x02,
 	RTK_BT_LE_CODEC_CFG_TYPE_SAMPLING_FREQUENCY,
@@ -1019,8 +1019,8 @@ static uint16_t rtk_stack_le_audio_bap_msg_cback(T_LE_AUDIO_MSG msg, void *buf)
 					break;
 				}
 				p_sync_dev_info->adv_sid = p_data->p_brs_data->source_adv_sid;
-				p_sync_dev_info->adv_addr.type = p_data->p_brs_data->source_address_type;
-				memcpy(&p_sync_dev_info->adv_addr.addr_val, &p_data->p_brs_data->source_address, sizeof(rtk_bt_le_addr_t));
+				p_sync_dev_info->adv_addr.type = (rtk_bt_le_addr_type_t)p_data->p_brs_data->source_address_type;
+				memcpy(p_sync_dev_info->adv_addr.addr_val, p_data->p_brs_data->source_address, RTK_BD_ADDR_LEN);
 				memcpy(p_sync_dev_info->broadcast_id, p_data->p_brs_data->broadcast_id, RTK_BT_LE_AUDIO_BROADCAST_ID_LEN);
 			}
 		}
@@ -1709,14 +1709,14 @@ static uint16_t bt_stack_le_audio_acl_link_allocate(void *data)
 	}
 	conn_ind = (rtk_bt_le_conn_ind_t *)data;
 	if (bt_stack_le_audio_find_link_by_conn_handle(conn_ind->conn_handle)) {
-		BT_LOGE("%s GAP conncet(handle 0x%x) is already allocated \r\n", __func__, conn_ind->conn_handle);
+		BT_LOGE("%s GAP connect(handle 0x%x) is already allocated \r\n", __func__, conn_ind->conn_handle);
 		return RTK_BT_OK;
 	}
 	p_link = bt_stack_le_audio_alloc_le_link(conn_ind->conn_handle);
 	if (p_link != NULL) {
 		p_link->state = RTK_BT_LE_GAP_EVT_CONNECT_IND;
 	} else {
-		BT_LOGE("%s GAP conncet allocate le link fail \r\n", __func__);
+		BT_LOGE("%s GAP connect allocate le link fail \r\n", __func__);
 		return RTK_BT_FAIL;
 	}
 	return RTK_BT_OK;
@@ -1734,7 +1734,7 @@ static uint16_t bt_stack_le_audio_acl_link_free(void *data)
 	disconn_ind = (rtk_bt_le_disconn_ind_t *)data;
 	p_link = bt_stack_le_audio_find_link_by_conn_handle(disconn_ind->conn_handle);
 	if (!p_link) {
-		BT_LOGE("%s GAP disconncet(handle 0x%x) is not in list \r\n", __func__, disconn_ind->conn_handle);
+		BT_LOGE("%s GAP disconnect(handle 0x%x) is not in list \r\n", __func__, disconn_ind->conn_handle);
 		return RTK_BT_OK;
 	}
 	bt_stack_le_audio_link_free(p_link);
@@ -1742,7 +1742,7 @@ static uint16_t bt_stack_le_audio_acl_link_free(void *data)
 	return RTK_BT_OK;
 }
 
-static uint8_t bt_stack_le_audio_broadcast_gen_pbp_adv_data(uint8_t **p_audio_adv_data)
+static bool bt_stack_le_audio_broadcast_gen_pbp_adv_data(uint8_t **p_audio_adv_data, uint8_t *p_len)
 {
 	uint8_t idx = 0;
 	uint8_t broadcast_id_idx = 0;
@@ -1754,13 +1754,13 @@ static uint8_t bt_stack_le_audio_broadcast_gen_pbp_adv_data(uint8_t **p_audio_ad
 
 	if (false == broadcast_source_get_info(bt_le_audio_priv_data.bsrc.source_handle, &src_info)) {
 		BT_LOGE("[LEA STACK] %s broadcast_source_get_info fail\r\n", __func__);
-		return RTK_BT_ERR_LOWER_STACK_API;
+		return false;
 	}
 	audio_data_len = 23 + device_name_len;
 	audio_adv_data = osif_mem_alloc(RAM_TYPE_DATA_ON, audio_data_len);
 	if (!audio_adv_data) {
 		BT_LOGE("[LEA STACK] %s allocate audio data fail \r\n", __func__);
-		return RTK_BT_FAIL;
+		return false;
 	}
 	audio_adv_data[idx++] = 0x03;
 	audio_adv_data[idx++] = RTK_BT_LE_GAP_ADTYPE_APPEARANCE;
@@ -1800,8 +1800,9 @@ static uint8_t bt_stack_le_audio_broadcast_gen_pbp_adv_data(uint8_t **p_audio_ad
 	}
 	audio_adv_data[announcements_idx] = feature;
 	*p_audio_adv_data = audio_adv_data;
+	*p_len = idx;
 
-	return idx;
+	return true;
 }
 
 static uint16_t bt_stack_le_audio_broadcast_config(void)
@@ -1815,9 +1816,8 @@ static uint16_t bt_stack_le_audio_broadcast_config(void)
 		BT_LOGE("[LEA STACK] %s source handle is NULL \r\n", __func__);
 		goto error;
 	}
-	broadcast_audio_announcements_len = bt_stack_le_audio_broadcast_gen_pbp_adv_data(&p_broadcast_audio_announcements);
-	if (broadcast_audio_announcements_len == 0) {
-		BT_LOGE("[LEA STACK] %s broadcast_audio_announcements_len is 0 \r\n", __func__);
+	if (!bt_stack_le_audio_broadcast_gen_pbp_adv_data(&p_broadcast_audio_announcements, &broadcast_audio_announcements_len)) {
+		BT_LOGE("[LEA STACK] %s gen pbp adv data fail \r\n", __func__);
 		goto error;
 	}
 
@@ -2543,6 +2543,7 @@ static uint16_t bt_stack_le_audio_broadcast_pa_sync_create(void *param)
 											  p_create_param->broadcast_id);
 		if (!sync_handle) {
 			BT_LOGE("%s: ble_audio_sync_allocate fail\r\n", __func__);
+			return RTK_BT_ERR_LOWER_STACK_API;
 		}
 		p_sync_dev_info = bt_stack_le_audio_sync_dev_add((void *)sync_handle);
 		if (!p_sync_dev_info) {
@@ -3316,7 +3317,7 @@ void bt_stack_le_audio_group_cb(T_AUDIO_GROUP_MSG msg, T_BLE_AUDIO_GROUP_HANDLE 
 		if (p_group_info->lea_unicast.session_handle && p_group_info->lea_unicast.session_handle == p_data->handle) {
 			p_group_info->lea_unicast.session_handle = NULL;
 		} else {
-			BT_LOGE("[BAP] %s: unmatch session_handle\r\n", __func__);
+			BT_LOGE("[BAP] %s: unmatched session_handle\r\n", __func__);
 			break;
 		}
 		/* if session stream remove is initiated proactively, retain group. Otherwise release group */
@@ -3552,11 +3553,15 @@ static bool bt_stack_le_audio_ready_to_start(rtk_bt_le_audio_group_info_t *p_gro
 		}
 	}
 	dev_num = ble_audio_group_get_dev_num(p_group_info->group_handle);
+	if (dev_num > RTK_BT_LE_AUDIO_MAX_SET_MEM_SIZE) {
+		BT_LOGE("%s: group device number %d exceeds max %d, clamp \r\n", __func__, dev_num, RTK_BT_LE_AUDIO_MAX_SET_MEM_SIZE);
+		dev_num = RTK_BT_LE_AUDIO_MAX_SET_MEM_SIZE;
+	}
 	if (dev_num) {
 		BT_LOGA("%s: group device number %d \r\n", __func__, dev_num);
 		p_dev_tbl = osif_mem_alloc(RAM_TYPE_DATA_ON, dev_num * sizeof(T_AUDIO_DEV_INFO));
 		if (!p_dev_tbl) {
-			BT_LOGE("%s: alloc dev tble fail \r\n", __func__);
+			BT_LOGE("%s: alloc dev table fail \r\n", __func__);
 			return false;
 		}
 		p_group_info->lea_unicast.dev_num = dev_num;
@@ -3592,6 +3597,7 @@ static bool bt_stack_le_audio_ready_to_start(rtk_bt_le_audio_group_info_t *p_gro
 			}
 		} else {
 			BT_LOGE("%s: ble_audio_group_get_info fail \r\n", __func__);
+			osif_mem_free((void *)p_dev_tbl);
 			return false;
 		}
 		osif_mem_free((void *)p_dev_tbl);
@@ -3640,7 +3646,7 @@ static bool bt_stack_le_audio_select_media_prefer_codec(rtk_bt_le_audio_group_in
 														  channel_count, 1);
 			BT_LOGA("%s: bap pacs get table msk from AUDIO_CONTEXT_UNSPECIFIED sup_snk_mask 0x%x \r\n", __func__, sup_snk_mask);
 		} else {
-			BT_LOGA("%s: bap pacs get table msk from contex 0x%x sup_snk_mask 0x%x \r\n", __func__, sink_context, sup_snk_mask);
+			BT_LOGA("%s: bap pacs get table msk from context 0x%x sup_snk_mask 0x%x \r\n", __func__, sink_context, sup_snk_mask);
 		}
 		if (sup_snk_mask != 0) {
 			if ((sup_snk_mask & RTK_BT_LE_MEDIA_CODEC_CFG_PREFER) != 0) {
@@ -3845,7 +3851,7 @@ static uint16_t bt_stack_le_audio_client_start(void *data)
 	} else if (p_group_info->lea_unicast.bap_state == (rtk_bt_le_audio_stream_state_t)AUDIO_STREAM_STATE_IDLE_CONFIGURED ||
 			   p_group_info->lea_unicast.bap_state == (rtk_bt_le_audio_stream_state_t)AUDIO_STREAM_STATE_CONFIGURED) {
 		if (p_group_info->lea_unicast.contexts_type != p_config->sink_context) {
-			BT_LOGE("%s: group contexts type 0x%x is not matched with cofig sink cotext type 0x%x \r\n", __func__,
+			BT_LOGE("%s: group contexts type 0x%x is not matched with config sink context type 0x%x \r\n", __func__,
 					p_group_info->lea_unicast.contexts_type, p_config->sink_context);
 			return RTK_BT_FAIL;
 		}
@@ -3973,7 +3979,7 @@ uint16_t bt_stack_bap_act_handle(rtk_bt_cmd_t *p_cmd)
 	BT_LOGD("bt_stack_bap_act_handle: act = %d \r\n", p_cmd->act);
 	switch (p_cmd->act) {
 	case RTK_BT_LE_AUDIO_ACT_ISO_DATA_SEND: {
-		BT_LOGD("RTK_BT_LE_AUDIO_ACT_DATA_SEND \r\n");
+		BT_LOGD("RTK_BT_LE_AUDIO_ACT_ISO_DATA_SEND \r\n");
 		ret = bt_stack_le_audio_data_send(p_cmd->param);
 		break;
 	}
@@ -4173,7 +4179,7 @@ void bt_stack_le_audio_data_direct_callback(uint8_t cb_type, void *p_cb_data)
 			} else {
 				direct_iso_data_ind->p_buf = NULL;
 			}
-			/*  user_data point to the memory alloced for 2nd level ptr, so it's convenient
+			/*  user_data point to the memory allocated for 2nd level ptr, so it's convenient
 			    to free it when free p_evt */
 			p_evt->user_data = direct_iso_data_ind->p_buf;
 			gap_iso_data_cfm(p_data->p_bt_direct_iso->p_buf);
