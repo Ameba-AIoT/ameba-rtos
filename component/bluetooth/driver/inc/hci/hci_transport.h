@@ -50,5 +50,5 @@ void hci_transport_close(void);
 void hci_transport_free(void);
 
 extern struct hci_transport_cb hci_sa_cb;
-uint8_t hci_sa_send(uint8_t type, uint8_t *buf, uint16_t len, bool is_sync);
+uint8_t hci_sa_send(uint8_t type, uint8_t *buf, uint16_t len, uint16_t buf_size, bool is_sync);
 #endif
