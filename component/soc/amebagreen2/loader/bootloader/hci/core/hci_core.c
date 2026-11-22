@@ -35,6 +35,18 @@ IMAGE_HEADER EmptyXipImgHdr;
 IMAGE_HEADER EmptyPsramImgHdr;
 /* Private functions ---------------------------------------------------------*/
 
+static IMAGE_HEADER *HCI_EmptyHdrSlot(u32 addr)
+{
+	return IS_FLASH_ADDR(addr) ? &EmptyXipImgHdr : &EmptyPsramImgHdr;
+}
+
+/* The size alone can not tell an empty header from the 32 byte tail frame of a larger sub-image */
+static u8 HCI_IsEmptyImgHdr(u32 addr, const IMAGE_HEADER *hdr)
+{
+	return (hdr->signature[0] == APP_IMAGE_PATTERN_1) && (hdr->signature[1] == APP_IMAGE_PATTERN_2) &&
+		   (hdr->image_size == 0) && (hdr->image_addr == addr + IMAGE_HEADER_LEN);
+}
+
 /**
   * @brief  Check a host supplied SRAM range
   * @param  addr : Start address
@@ -69,12 +81,8 @@ static int HCI_WriteImage(u32 addr, const u8 *src, u32 size)
 
 	/* Host Send empty img header: it is stored in the bootloader's own header buffer, not at the
 	 * host supplied address, so there is nothing to check. */
-	if (size == IMAGE_HEADER_LEN) {
-		if (IS_FLASH_ADDR(addr)) {
-			addr = (u32)&EmptyXipImgHdr;
-		} else {
-			addr = (u32)&EmptyPsramImgHdr;
-		}
+	if ((size == IMAGE_HEADER_LEN) && HCI_IsEmptyImgHdr(addr, (const IMAGE_HEADER *)src)) {
+		addr = (u32)HCI_EmptyHdrSlot(addr);
 	} else if (!IS_FLASH_ADDR(addr) && !IS_DATA_FLASH_ADDR(addr) && !HCI_SramRangeIsValid(addr, size)) {
 		/* Only allow to write PSRAM (0x6xxxxxxx ~ 0x7xxxxxxx) or the FULLMAC sram except the
 		 * bootloader, to avoid attack. */
@@ -117,12 +125,8 @@ static int HCI_CalculateChecksum(u32 addr, u32 size, u32 *result)
 	u32 i;
 
 	/* Host Send empty img header: read back from the bootloader's own header buffer */
-	if (size == IMAGE_HEADER_LEN) {
-		if (IS_FLASH_ADDR(addr)) {
-			addr = (u32)&EmptyXipImgHdr;
-		} else {
-			addr = (u32)&EmptyPsramImgHdr;
-		}
+	if ((size == IMAGE_HEADER_LEN) && HCI_IsEmptyImgHdr(addr, HCI_EmptyHdrSlot(addr))) {
+		addr = (u32)HCI_EmptyHdrSlot(addr);
 	} else if (!IS_FLASH_ADDR(addr) && !IS_DATA_FLASH_ADDR(addr) && !HCI_SramRangeIsValid(addr, size)) {
 		/* Only allow to read PSRAM or the FULLMAC sram except the bootloader, to avoid attack */
 		return HAL_ERR_PARA;

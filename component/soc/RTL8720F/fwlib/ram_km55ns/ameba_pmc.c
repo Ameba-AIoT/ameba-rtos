@@ -23,7 +23,7 @@ void SOCPS_SleepInitEntry(struct PSCFG_TypeDef *ps_config)
 
 void SOCPS_HWSleepFilter(u32 enable)
 {
-#ifdef CONFIG_SOLO
+#ifdef CONFIG_IOT_MCU_COMBINED
 	UNUSED(enable);
 #else
 	SOCPS_HWSleepFilter_NP(enable);

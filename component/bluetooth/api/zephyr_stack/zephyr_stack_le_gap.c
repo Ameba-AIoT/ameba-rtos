@@ -961,7 +961,7 @@ static uint16_t bt_stack_le_gap_set_device_name(void *param)
 	}
 }
 
-static uint16_t bt_stack_le_gap_set_apperance(void *param)
+static uint16_t bt_stack_le_gap_set_appearance(void *param)
 {
 	int err = 0;
 	uint16_t *paprc = (uint16_t *)param;
@@ -3539,7 +3539,7 @@ K_MEM_SLAB_DEFINE(le_coc_server_pool, sizeof(struct bt_l2cap_server),
 K_MEM_SLAB_DEFINE(le_coc_chan_slab, sizeof(struct bt_l2cap_le_coc_chan),
 				  GAP_MAX_LE_COC_CHANN_NUM, __alignof__(struct bt_l2cap_le_coc_chan));
 
-/* send conn_req ======> connected cb   | connect OK, err=0 (coc conn intiator)
+/* send conn_req ======> connected cb   | connect OK, err=0 (coc conn initiator)
  *          idle ======> connected cb   | connect OK, err=0 (coc conn receiver) */
 static void le_coc_chan_connected(struct bt_l2cap_chan *chan)
 {
@@ -3558,8 +3558,8 @@ static void le_coc_chan_connected(struct bt_l2cap_chan *chan)
 	rtk_bt_evt_indicate(p_evt, NULL);
 }
 
-/* send conn_req ======> disconnected cb   | connect failed, err!=0 (coc conn intiator)
- * coc connected ======> disconnected cb   | disconnect OK, err=0 (both coc conn intiator and receiver) */
+/* send conn_req ======> disconnected cb   | connect failed, err!=0 (coc conn initiator)
+ * coc connected ======> disconnected cb   | disconnect OK, err=0 (both coc conn initiator and receiver) */
 static void le_coc_chan_disconnected(struct bt_l2cap_chan *chan)
 {
 	rtk_bt_evt_t *p_evt;
@@ -3568,7 +3568,7 @@ static void le_coc_chan_disconnected(struct bt_l2cap_chan *chan)
 
 	if (BT_L2CAP_CONNECTING == BT_L2CAP_LE_CHAN(chan)->state) {
 		/* When le coc send connect request, state changes to BT_L2CAP_CONNECTING.
-		 * Then, disconnect callback comes, regart it as coc connect failed instead
+		 * Then, disconnect callback comes, regard it as coc connect failed instead
 		 * of coc disconnected. */
 		evt_code = RTK_BT_LE_GAP_EVT_COC_CONNECT_IND;
 		err = RTK_BT_FAIL;
@@ -4081,7 +4081,7 @@ uint16_t bt_stack_le_gap_act_handle(rtk_bt_cmd_t *p_cmd)
 		break;
 	case RTK_BT_LE_GAP_ACT_SET_APPEARANCE:
 		BT_LOGD("RTK_BT_LE_GAP_ACT_SET_APPEARANCE \r\n");
-		ret = bt_stack_le_gap_set_apperance(p_cmd->param);
+		ret = bt_stack_le_gap_set_appearance(p_cmd->param);
 		break;
 	case RTK_BT_LE_GAP_ACT_SET_PREFERRED_CONN_PARAM:
 		BT_LOGD("RTK_BT_LE_GAP_ACT_SET_PREFERRED_CONN_PARAM \r\n");

@@ -12,6 +12,12 @@ static FlashInfo_TypeDef *current_IC;
 /* RAM copy of the flash vendor ID: the SRAM-only code must not read the XIP-resident Flash_AVL while probing read modes */
 static u8 current_vendor_id;
 
+/* RAM copy of the 3-byte flash ID (byte0 | byte1 << 8 | byte2 << 16), for the same reason */
+static u32 current_flash_id;
+
+/* PUYA PY25Q32HB, 9F ID 85 20 16 */
+#define PY25Q32HB_ID	0x162085
+
 /* Flag to check configuration register or not. Necessary for wide-range VCC MXIC flash */
 static u8 check_config_reg = 0;
 
@@ -34,6 +40,7 @@ void flash_nor_get_vendor(void)
 		assert_param(0);
 	}
 	current_vendor_id = (u8)current_IC->flash_id;
+	current_flash_id = (flash_ID[2] << 16) | (flash_ID[1] << 8) | flash_ID[0];
 
 	/* Re-initialize flash init structure according to classification */
 	switch (current_IC->flash_class) {
@@ -133,6 +140,20 @@ void flash_nor_get_cs_timing(u32 *tcss_ns, u32 *tchsh_ns, u32 *tshsl_ns)
 	*tshsl_ns = 60;
 }
 
+int flash_nor_set_dc(u32 flash_clk)
+{
+	UNUSED(flash_clk);
+
+	return RTK_SUCCESS;
+}
+
+int flash_nor_check_clk(u32 flash_clk)
+{
+	UNUSED(flash_clk);
+
+	return RTK_SUCCESS;
+}
+
 const FlashInfo_TypeDef *flash_nor_get_chip_info(void)
 {
 	return current_IC;
@@ -156,13 +177,24 @@ void flash_nor_set_hpm_mode(u32 spic_mode, u32 flash_clk)
 		status = (status & 0x0f) | (FLASH_InitStruct->FLASH_rd_dummy_cycle[spic_mode] << 4);
 		FLASH_SetStatus(0x81, 1, &status);
 	} else if (current_vendor_id == 0x85) {	/* PUYA */
+		u8 new_status;
+
+		FLASH_RxCmd(FLASH_CMD_RDCR, 1, &status);
+		new_status = status;
+
+		/* set FLASH DC bit in configuration register */
 		if (flash_clk > FLASH_HPM_CLK_LIMIT) {
-			/* set FLASH DC bit in configuration register, skip the write if already set */
-			FLASH_RxCmd(FLASH_CMD_RDCR, 1, &status);
-			if (!(status & BIT1)) {	// DC bit of PY25Q32H
-				status |= BIT1;
-				FLASH_SetStatus(FLASH_CMD_WRCR, 1, &status);
-			}
+			new_status |= BIT1;	// DC bit of PY25Q32H
+		}
+
+		/* PY25Q32HB output driving: DRV1 (bit6) = 0, DRV0 (bit5) = 1, at any clock */
+		if (current_flash_id == PY25Q32HB_ID) {
+			new_status = (new_status & ~BIT6) | BIT5;
+		}
+
+		/* skip the write if already set. No log here: this runs between read mode probes, XIP may be unreadable */
+		if (new_status != status) {
+			FLASH_SetStatus(FLASH_CMD_WRCR, 1, &new_status);
 		}
 	}
 }

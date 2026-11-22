@@ -204,6 +204,9 @@ macro(ameba_soc_project_exit)
     if(DEFINED BUILD_FOR_RLS)
         unset(BUILD_FOR_RLS CACHE)
     endif()
+    if(DEFINED SEAL_LIB)
+        unset(SEAL_LIB CACHE)
+    endif()
 endmacro()
 
 # must use macro to define, otherwise project() will not work if use function.

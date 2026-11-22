@@ -15,6 +15,7 @@
 #include <rtk_bt_gap.h>
 #include <bt_vendor_config.h>
 #include <zephyr/settings/settings.h>
+#include <zephyr/sys/byteorder.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/mesh.h>
 #include <access.h>
@@ -50,7 +51,7 @@ extern bool rtk_ble_mesh_scan_enable_flag;
 
 /* -------------------------------------------------MESH init relate function---------------------------------------------------------- */
 
-// Provisioning OOB releate verible and function
+// Provisioning OOB relate variable and function
 #if (defined(RTK_BLE_MESH_PROVISIONER_SUPPORT) && RTK_BLE_MESH_PROVISIONER_SUPPORT) || PROV_SUPPORT_STATIC_OOB
 static const uint8_t static_oob_value[16] = STATIC_OOB_VALUE_FOR_AUTHENTICATION;
 #endif
@@ -156,17 +157,19 @@ static bool saved_prov_param_valid = false;
 
 static void unprovisioned_beacon(uint8_t uuid[16], bt_mesh_prov_oob_info_t oob_info, uint32_t *uri_hash)
 {
-	(void)oob_info;
-	(void)uri_hash;
 #if !ZEPHYR_RTK_PATCH
 	if (pb_adv_link_opening && !memcmp(uuid, adv_target_uuid, 16)) {
 		// Report PB-ADV link open to app
 		rtk_bt_evt_t *p_evt = NULL;
 		rtk_bt_mesh_prov_generic_cb_type_t *link_state = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_STACK, RTK_BT_MESH_STACK_EVT_PB_ADV_LINK_STATE, sizeof(rtk_bt_mesh_prov_generic_cb_type_t));
-		link_state = (rtk_bt_mesh_prov_generic_cb_type_t *)p_evt->data;
-		*link_state = RTK_BT_MESH_PB_GENERIC_CB_LINK_OPENED;
-		rtk_bt_evt_indicate(p_evt, NULL);
+		if (p_evt) {
+			link_state = (rtk_bt_mesh_prov_generic_cb_type_t *)p_evt->data;
+			*link_state = RTK_BT_MESH_PB_GENERIC_CB_LINK_OPENED;
+			rtk_bt_evt_indicate(p_evt, NULL);
+		} else {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+		}
 		pb_adv_link_opening = false;
 		pro_provisioning_method = RTK_BT_MESH_PROVISIONING_PB_ADV_METHOD;
 	}
@@ -176,8 +179,16 @@ static void unprovisioned_beacon(uint8_t uuid[16], bt_mesh_prov_oob_info_t oob_i
 		rtk_bt_evt_t *p_evt = NULL;
 		rtk_bt_mesh_stack_evt_dev_info_udb_t *device_info_udb;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_STACK, RTK_BT_MESH_STACK_EVT_DEVICE_INFO_UDB_DISPLAY, sizeof(rtk_bt_mesh_stack_evt_dev_info_udb_t));
+		if (!p_evt) {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+			return;
+		}
 		device_info_udb = (rtk_bt_mesh_stack_evt_dev_info_udb_t *)p_evt->data;
 		memcpy(device_info_udb->dev_uuid, uuid, 16);
+		sys_put_be16(oob_info, device_info_udb->oob_info);
+		if (uri_hash) {
+			sys_put_be32(*uri_hash, device_info_udb->uri_hash);
+		}
 		device_info_udb->dev_info.bt_addr_type = 0xff;  // Used to distinguish zephyr mesh stack with rtk mesh stack
 		rtk_bt_evt_indicate(p_evt, NULL);
 	}
@@ -189,16 +200,19 @@ static void unprovisioned_beacon_gatt(uint8_t uuid[16], bt_mesh_prov_oob_info_t 
 static void unprovisioned_beacon_gatt(uint8_t uuid[16], bt_mesh_prov_oob_info_t oob_info)
 #endif
 {
-	(void)oob_info;
 #if !ZEPHYR_RTK_PATCH
 	if (pb_gatt_link_opening && !memcmp(uuid, gatt_target_uuid, 16)) {
 		// Report PB-GATT conn to app
 		rtk_bt_evt_t *p_evt = NULL;
 		rtk_bt_le_conn_ind_t *p_conn_ind = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_GAP, RTK_BT_LE_GAP_EVT_CONNECT_IND, sizeof(rtk_bt_le_conn_ind_t));
-		p_conn_ind = (rtk_bt_le_conn_ind_t *)p_evt->data;
-		p_conn_ind->err = RTK_BT_OK;
-		rtk_bt_evt_indicate(p_evt, NULL);
+		if (p_evt) {
+			p_conn_ind = (rtk_bt_le_conn_ind_t *)p_evt->data;
+			p_conn_ind->err = RTK_BT_OK;
+			rtk_bt_evt_indicate(p_evt, NULL);
+		} else {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+		}
 		pb_gatt_link_opening = false;
 		pro_provisioning_method = RTK_BT_MESH_PROVISIONING_PB_GATT_METHOD;
 	}
@@ -208,8 +222,14 @@ static void unprovisioned_beacon_gatt(uint8_t uuid[16], bt_mesh_prov_oob_info_t 
 		rtk_bt_evt_t *p_evt = NULL;
 		rtk_bt_mesh_stack_evt_dev_info_provision_adv_t *device_info_prov;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_STACK, RTK_BT_MESH_STACK_EVT_DEVICE_INFO_PROV_DISPLAY, sizeof(rtk_bt_mesh_stack_evt_dev_info_provision_adv_t));
+		if (!p_evt) {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+			return;
+		}
 		device_info_prov = (rtk_bt_mesh_stack_evt_dev_info_provision_adv_t *)p_evt->data;
 		memcpy(device_info_prov->dev_uuid, uuid, 16);
+		uint16_t oob = (uint16_t)oob_info;
+		memcpy(&device_info_prov->oob_info, &oob, sizeof(oob));
 #if ZEPHYR_RTK_PATCH
 		memcpy(device_info_prov->dev_info.bt_addr, addr->a.val, 6);
 		device_info_prov->dev_info.bt_addr_type = addr->type;
@@ -274,6 +294,10 @@ static void node_added(uint16_t idx, uint8_t uuid[16], uint16_t addr, uint8_t nu
 	rtk_bt_evt_t *p_evt = NULL;
 	rtk_bt_mesh_stack_evt_prov_complete_t *prov_complete;
 	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_STACK, RTK_BT_MESH_STACK_EVT_PROV_COMPLETE, sizeof(rtk_bt_mesh_stack_evt_prov_complete_t));
+	if (!p_evt) {
+		BT_LOGE("[%s] Create event fail\r\n", __func__);
+		return;
+	}
 	prov_complete = (rtk_bt_mesh_stack_evt_prov_complete_t *)p_evt->data;
 	prov_complete->unicast_addr = addr;
 #if defined(CONFIG_BT_MESH_RPR_CLI) && CONFIG_BT_MESH_RPR_CLI
@@ -313,9 +337,13 @@ static void prov_complete(uint16_t net_idx, uint16_t addr)
 	rtk_bt_evt_t *p_evt = NULL;
 	rtk_bt_mesh_stack_evt_prov_complete_t *prov_complete;
 	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_STACK, RTK_BT_MESH_STACK_EVT_PROV_COMPLETE, sizeof(rtk_bt_mesh_stack_evt_prov_complete_t));
-	prov_complete = (rtk_bt_mesh_stack_evt_prov_complete_t *)p_evt->data;
-	prov_complete->unicast_addr = addr;
-	rtk_bt_evt_indicate(p_evt, NULL);
+	if (p_evt) {
+		prov_complete = (rtk_bt_mesh_stack_evt_prov_complete_t *)p_evt->data;
+		prov_complete->unicast_addr = addr;
+		rtk_bt_evt_indicate(p_evt, NULL);
+	} else {
+		BT_LOGE("[%s] Create event fail\r\n", __func__);
+	}
 }
 
 #if defined(CONFIG_BT_MESH_RPR_SRV) && CONFIG_BT_MESH_RPR_SRV
@@ -348,7 +376,11 @@ static void prov_reset(void)
 {
 	rtk_bt_evt_t *p_evt = NULL;
 	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_STACK, RTK_BT_MESH_STACK_EVT_UNPROVISIONED_DEVICE, 0);
-	rtk_bt_evt_indicate(p_evt, NULL);
+	if (p_evt) {
+		rtk_bt_evt_indicate(p_evt, NULL);
+	} else {
+		BT_LOGE("[%s] Create event fail\r\n", __func__);
+	}
 	bt_mesh_prov_enable(BT_MESH_PROV_ADV | BT_MESH_PROV_GATT
 #if defined(CONFIG_BT_MESH_RPR_SRV) && CONFIG_BT_MESH_RPR_SRV
 						| BT_MESH_PROV_REMOTE
@@ -422,25 +454,33 @@ static int output_number(bt_mesh_output_action_t action, uint32_t number)
 		rtk_bt_evt_t *p_evt = NULL;
 		rtk_bt_mesh_stack_set_auth_value_for_oob_data *oob_data;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_STACK, RTK_BT_MESH_STACK_EVT_SET_AUTH_VALUE_FOR_INPUT_OOB, sizeof(rtk_bt_mesh_stack_set_auth_value_for_oob_data));
-		oob_data = (rtk_bt_mesh_stack_set_auth_value_for_oob_data *)p_evt->data;
-		oob_data->status = true;
-		oob_data->random = number;
-		rtk_bt_evt_indicate(p_evt, NULL);
+		if (p_evt) {
+			oob_data = (rtk_bt_mesh_stack_set_auth_value_for_oob_data *)p_evt->data;
+			oob_data->status = true;
+			oob_data->random = number;
+			rtk_bt_evt_indicate(p_evt, NULL);
+		} else {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+		}
 #endif
 #if defined(RTK_BLE_MESH_DEVICE_SUPPORT) && RTK_BLE_MESH_DEVICE_SUPPORT
 		rtk_bt_evt_t *p_evt = NULL;
 		rtk_bt_mesh_stack_set_auth_value_for_oob_data *oob_data;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_STACK, RTK_BT_MESH_STACK_EVT_SET_AUTH_VALUE_FOR_OUTPUT_OOB,
 									sizeof(rtk_bt_mesh_stack_set_auth_value_for_oob_data));
-		oob_data = (rtk_bt_mesh_stack_set_auth_value_for_oob_data *)p_evt->data;
-		oob_data->status = true;
-		oob_data->random = number;
-		rtk_bt_evt_indicate(p_evt, NULL);
+		if (p_evt) {
+			oob_data = (rtk_bt_mesh_stack_set_auth_value_for_oob_data *)p_evt->data;
+			oob_data->status = true;
+			oob_data->random = number;
+			rtk_bt_evt_indicate(p_evt, NULL);
+		} else {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+		}
 #endif
 	}
 	break;
 	default: {
-		BT_LOGE("[%s] Unsupport action:0x%x\r\n", __func__, action);
+		BT_LOGE("[%s] Unsupported action:0x%x\r\n", __func__, action);
 		return -EINVAL;
 	}
 	break;
@@ -456,12 +496,20 @@ static int notify_input(bt_mesh_input_action_t act, uint8_t size)
 #if defined(RTK_BLE_MESH_PROVISIONER_SUPPORT) && RTK_BLE_MESH_PROVISIONER_SUPPORT
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_STACK, RTK_BT_MESH_STACK_EVT_NOTIFY_FOR_OUTPUT_OOB_VALUE, 0);
-		rtk_bt_evt_indicate(p_evt, NULL);
+		if (p_evt) {
+			rtk_bt_evt_indicate(p_evt, NULL);
+		} else {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+		}
 #endif
 #if defined(RTK_BLE_MESH_DEVICE_SUPPORT) && RTK_BLE_MESH_DEVICE_SUPPORT
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_STACK, RTK_BT_MESH_STACK_EVT_NOTIFY_FOR_INPUT_OOB_VALUE, 0);
-		rtk_bt_evt_indicate(p_evt, NULL);
+		if (p_evt) {
+			rtk_bt_evt_indicate(p_evt, NULL);
+		} else {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+		}
 #endif
 	}
 	break;
@@ -541,6 +589,28 @@ uint16_t bt_stack_mesh_init(void *data)
 {
 	int err;
 	rtk_bt_mesh_app_conf_t *pmesh_app_conf = &((rtk_bt_app_conf_t *)data)->bt_mesh_app_conf;
+
+	/* Only the parameters set in param_mask are overridden, the others keep the default (or the value restored from flash) */
+	err = bt_mesh_cfg_params_set(pmesh_app_conf->param_mask, pmesh_app_conf->trans_retrans_count, pmesh_app_conf->net_trans_count,
+								 pmesh_app_conf->net_trans_interval_step, pmesh_app_conf->relay_retrans_count,
+								 pmesh_app_conf->relay_retrans_interval_step, pmesh_app_conf->ttl);
+	if (err) {
+		BT_LOGE("[%s] Invalid retrans/ttl params:%d\r\n", __func__, err);
+		return err;
+	}
+	err = bt_mesh_rpl_num_set(pmesh_app_conf->bt_mesh_rpl_num);
+	if (err) {
+		BT_LOGE("[%s] Set rpl num fail:%d\r\n", __func__, err);
+		return err;
+	}
+#if defined(RTK_BLE_MESH_PROVISIONER_SUPPORT) && RTK_BLE_MESH_PROVISIONER_SUPPORT
+	err = bt_mesh_cdb_node_num_set(pmesh_app_conf->bt_mesh_dev_key_num);
+	if (err) {
+		BT_LOGE("[%s] Set dev key num fail:%d\r\n", __func__, err);
+		return err;
+	}
+#endif
+
 	switch (pmesh_app_conf->bt_mesh_role) {
 #if defined(RTK_BLE_MESH_PROVISIONER_SUPPORT) && RTK_BLE_MESH_PROVISIONER_SUPPORT
 	case RTK_BT_MESH_ROLE_PROVISIONER:
@@ -612,6 +682,7 @@ void bt_stack_mesh_deinit(void)
 #if defined(CONFIG_BT_MESH_PB_GATT_CLIENT)
 	pb_gatt_conn_valid = false;
 	proxy_conn_valid = false;
+	bt_mesh_gatt_cli_reset();
 #endif
 #endif
 #endif
@@ -740,17 +811,17 @@ static uint16_t zephyr_stack_set_prov_param(rtk_bt_mesh_stack_act_set_prov_param
 		app_key = bt_mesh_cdb_app_key_get(global_app_idx);
 		if (net_key && app_key) {
 			if (memcmp(p_data->net_key, net_key->keys[0].net_key.key, 16)) {
-				BT_LOGE("[%s] The new net key is not equal to old net key(stored in flash last time), you should input the reset AT command and push the reset butten\r\n",
+				BT_LOGE("[%s] The new net key is not equal to old net key(stored in flash last time), you should input the reset AT command and push the reset button\r\n",
 						__func__);
 				return err;
 			}
 			if (memcmp(p_data->app_key, app_key->keys[0].app_key.key, 16)) {
-				BT_LOGE("[%s] The new app key is not equal to old app key(stored in flash last time), you should input the reset AT command and push the reset butten\r\n",
+				BT_LOGE("[%s] The new app key is not equal to old app key(stored in flash last time), you should input the reset AT command and push the reset button\r\n",
 						__func__);
 				return err;
 			}
 		} else {
-			BT_LOGE("[%s] Get net key or app key fail, you should input the reset AT command and push the reset butten\r\n", __func__);
+			BT_LOGE("[%s] Get net key or app key fail, you should input the reset AT command and push the reset button\r\n", __func__);
 			return err;
 		}
 	} else if (err) {
@@ -898,7 +969,7 @@ static void proxy_dis_result(struct bt_conn *conn, enum bt_mesh_gatt_cli_dis_res
 
 static uint16_t zephyr_stack_pb_gatt_con(rtk_bt_mesh_stack_act_pb_gatt_con_t *pgatt_con)
 {
-	int ret;
+	int ret = -ENOENT;
 
 #if ZEPHYR_RTK_PATCH && defined(CONFIG_BT_MESH_PB_GATT_CLIENT)
 	/* Manual mode, same as the rtk mesh stack: connect by address. Whether it is used for
@@ -923,14 +994,6 @@ static uint16_t zephyr_stack_pb_gatt_con(rtk_bt_mesh_stack_act_pb_gatt_con_t *pg
 	conn_param.timeout = p->supv_timeout;
 
 	ret = bt_mesh_gatt_cli_connect_manual(&peer_addr, &create_param, &conn_param);
-#else
-	if (pgatt_con->param.is_prov_link) {
-		memcpy(gatt_target_uuid, pgatt_con->param.u.uuid, 16);
-		pb_gatt_link_opening = true;
-		ret = RTK_BT_OK;
-	} else {
-		ret = bt_mesh_proxy_connect(pgatt_con->param.u.net_idx);
-	}
 #endif
 	if (-EALREADY == ret) {
 		// BT_LOGA("[%s] Proxy link is already connect\r\n", __func__);
@@ -1061,8 +1124,7 @@ static uint16_t zephyr_stack_proxy_service_set_notify(rtk_bt_mesh_stack_act_prox
 
 static uint16_t zephyr_stack_pb_gatt_discon(rtk_bt_mesh_stack_act_pb_gatt_discon_t *pgatt_discon)
 {
-	int ret;
-
+	int ret = -ENOENT;
 #if ZEPHYR_RTK_PATCH && defined(CONFIG_BT_MESH_PB_GATT_CLIENT)
 	/* Manual mode, same as the rtk mesh stack: disconnect the connection of the given handle */
 	struct bt_conn *conn = bt_conn_lookup_handle(pgatt_discon->conn_handle, BT_CONN_TYPE_LE);
@@ -1072,14 +1134,6 @@ static uint16_t zephyr_stack_pb_gatt_discon(rtk_bt_mesh_stack_act_pb_gatt_discon
 	}
 	ret = bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 	bt_conn_unref(conn);
-#else
-	ret = RTK_BT_OK;
-	if (pgatt_discon->param.is_prov_link) {
-		pb_gatt_link_opening = false;
-		memset(gatt_target_uuid, 0, 16);
-	} else {
-		ret = bt_mesh_proxy_disconnect(pgatt_discon->param.net_idx);
-	}
 #endif
 	if (-EALREADY == ret) {
 		// BT_LOGA("[%s] Proxy link is already disconnect\r\n", __func__);
@@ -1251,7 +1305,7 @@ static uint16_t zephyr_stack_method_choose_for_prov(rtk_bt_mesh_stack_prov_start
 	return ret;
 }
 
-static void zephyr_stack_set_device_info_display(rkt_bt_mesh_stack_act_device_info_set_t *p_data)
+static void zephyr_stack_set_device_info_display(rtk_bt_mesh_stack_act_device_info_set_t *p_data)
 {
 	if (p_data->dev_info_dis) {
 		dev_info_switch_flag = true;
@@ -1273,10 +1327,14 @@ static void lpn_established(uint16_t net_idx, uint16_t friend_addr,
 	rtk_bt_mesh_stack_evt_lpn_t *lpn_cb;
 	rtk_bt_evt_t *p_evt = NULL;
 	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_STACK, RTK_BT_MESH_STACK_EVT_LPN_CB, sizeof(rtk_bt_mesh_stack_evt_lpn_t));
-	lpn_cb = (rtk_bt_mesh_stack_evt_lpn_t *)p_evt->data;
-	lpn_cb->fn_addr = friend_addr;
-	lpn_cb->cb_type = RTK_BT_MESH_LPN_CB_TYPE_ESTABLISH_SUCCESS;
-	rtk_bt_evt_indicate(p_evt, NULL);
+	if (p_evt) {
+		lpn_cb = (rtk_bt_mesh_stack_evt_lpn_t *)p_evt->data;
+		lpn_cb->fn_addr = friend_addr;
+		lpn_cb->cb_type = RTK_BT_MESH_LPN_CB_TYPE_ESTABLISH_SUCCESS;
+		rtk_bt_evt_indicate(p_evt, NULL);
+	} else {
+		BT_LOGE("[%s] Create event fail\r\n", __func__);
+	}
 }
 
 static void lpn_terminated(uint16_t net_idx, uint16_t friend_addr)
@@ -1285,10 +1343,14 @@ static void lpn_terminated(uint16_t net_idx, uint16_t friend_addr)
 	rtk_bt_mesh_stack_evt_lpn_t *lpn_cb;
 	rtk_bt_evt_t *p_evt = NULL;
 	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_STACK, RTK_BT_MESH_STACK_EVT_LPN_CB, sizeof(rtk_bt_mesh_stack_evt_lpn_t));
-	lpn_cb = (rtk_bt_mesh_stack_evt_lpn_t *)p_evt->data;
-	lpn_cb->fn_addr = friend_addr;
-	lpn_cb->cb_type = RTK_BT_MESH_LPN_CB_TYPE_FRIENDSHIP_LOST;
-	rtk_bt_evt_indicate(p_evt, NULL);
+	if (p_evt) {
+		lpn_cb = (rtk_bt_mesh_stack_evt_lpn_t *)p_evt->data;
+		lpn_cb->fn_addr = friend_addr;
+		lpn_cb->cb_type = RTK_BT_MESH_LPN_CB_TYPE_FRIENDSHIP_LOST;
+		rtk_bt_evt_indicate(p_evt, NULL);
+	} else {
+		BT_LOGE("[%s] Create event fail\r\n", __func__);
+	}
 	bt_mesh_scan_enable();
 }
 
@@ -1373,9 +1435,13 @@ uint8_t rtk_bt_mesh_stack_set_scan_switch(bool scan_switch)
 	rtk_bt_mesh_stack_evt_scan_switch_t *p_scan_switch;
 	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_STACK, RTK_BT_MESH_STACK_EVT_SCAN_SWITCH,
 								sizeof(rtk_bt_mesh_stack_evt_scan_switch_t));
-	p_scan_switch = (rtk_bt_mesh_stack_evt_scan_switch_t *)p_evt->data;
-	p_scan_switch->scan_enable = scan_switch;
-	rtk_bt_evt_indicate(p_evt, NULL);
+	if (p_evt) {
+		p_scan_switch = (rtk_bt_mesh_stack_evt_scan_switch_t *)p_evt->data;
+		p_scan_switch->scan_enable = scan_switch;
+		rtk_bt_evt_indicate(p_evt, NULL);
+	} else {
+		BT_LOGE("[%s] Create event fail\r\n", __func__);
+	}
 	rtk_ble_mesh_scan_enable_flag = scan_switch;
 	return RTK_BT_MESH_STACK_API_SUCCESS;
 }
@@ -1417,7 +1483,7 @@ static bool get_device_key_from_mesh_stack(uint8_t *p, uint8_t len)
  * @param   p_start : start point of data to save one block data
  * @param   info_type : the type of block data type
  * @param   p_val : source data point
- * @param   val_len : lenth of source data
+ * @param   val_len : length of source data
  * @return  The end of data saved
  */
 static uint8_t *add_list_info_one_block(uint8_t *p_start, rtk_bt_mesh_stack_user_list_type_t info_type, const uint8_t *p_val, uint8_t val_len)
@@ -1657,7 +1723,7 @@ static void get_normal_vals_list_info(uint8_t **pp_data)
 	const struct bt_mesh_comp *comp;
 	p = normal_vals_info;
 
-	*p++ = 0;  // iv update falg
+	*p++ = 0;  // iv update flag
 
 	*(uint32_t *)p = get_iv_index_from_mesh_stack();  // Add iv index
 	p += sizeof(uint32_t);
@@ -1811,8 +1877,12 @@ static uint16_t zephyr_stack_list_info(void)
 	}
 	rtk_bt_evt_t *p_evt = NULL;
 	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_STACK, RTK_BT_MESH_STACK_EVT_LIST_INFO, len);
-	memcpy(p_evt->data, list_copy, len);
-	rtk_bt_evt_indicate(p_evt, NULL);
+	if (p_evt) {
+		memcpy(p_evt->data, list_copy, len);
+		rtk_bt_evt_indicate(p_evt, NULL);
+	} else {
+		BT_LOGE("[%s] Create event fail\r\n", __func__);
+	}
 
 	return RTK_BT_OK;
 }
@@ -1886,8 +1956,8 @@ static uint16_t zephyr_stack_retrans_param_set(rtk_bt_mesh_stack_set_retrans_par
 		bt_mesh_net_transmit_set(BT_MESH_TRANSMIT(param->net_retrans_count, int_ms));
 	}
 
-	if (param->trans_retrans_count > 15) {
-		BT_LOGE("[%s] Transport retrans count %d > 15, set fail\r\n", __func__, param->trans_retrans_count);
+	if (param->trans_retrans_count > 10) {
+		BT_LOGE("[%s] Transport retrans count %d > 10, set fail\r\n", __func__, param->trans_retrans_count);
 		ret = RTK_BT_FAIL;
 	} else {
 		bt_mesh.sar_tx.unicast_retrans_count = param->trans_retrans_count;
@@ -1898,12 +1968,16 @@ static uint16_t zephyr_stack_retrans_param_set(rtk_bt_mesh_stack_set_retrans_par
 		rtk_bt_mesh_stack_set_retrans_param_t *result;
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_STACK, RTK_BT_MESH_STACK_EVT_RETRANS_PARAM_SETTING_RESULT, sizeof(rtk_bt_mesh_stack_set_retrans_param_t));
-		result = (rtk_bt_mesh_stack_set_retrans_param_t *)p_evt->data;
-		result->net_retrans_count = BT_MESH_TRANSMIT_COUNT(bt_mesh_net_transmit_get());
-		result->relay_retrans_count = BT_MESH_TRANSMIT_COUNT(bt_mesh_relay_retransmit_get());
-		result->ttl = bt_mesh_default_ttl_get();
-		result->trans_retrans_count = bt_mesh.sar_tx.unicast_retrans_count;
-		rtk_bt_evt_indicate(p_evt, NULL);
+		if (p_evt) {
+			result = (rtk_bt_mesh_stack_set_retrans_param_t *)p_evt->data;
+			result->net_retrans_count = BT_MESH_TRANSMIT_COUNT(bt_mesh_net_transmit_get());
+			result->relay_retrans_count = BT_MESH_TRANSMIT_COUNT(bt_mesh_relay_retransmit_get());
+			result->ttl = bt_mesh_default_ttl_get();
+			result->trans_retrans_count = bt_mesh.sar_tx.unicast_retrans_count;
+			rtk_bt_evt_indicate(p_evt, NULL);
+		} else {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+		}
 	}
 
 	return ret;
@@ -1932,10 +2006,14 @@ static void friend_established(uint16_t net_idx, uint16_t lpn_addr,
 	rtk_bt_mesh_stack_evt_fn_t *fn_cb;
 	rtk_bt_evt_t *p_evt = NULL;
 	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_STACK, RTK_BT_MESH_STACK_EVT_FN_CB, sizeof(rtk_bt_mesh_stack_evt_fn_t));
-	fn_cb = (rtk_bt_mesh_stack_evt_fn_t *)p_evt->data;
-	fn_cb->lpn_addr = lpn_addr;
-	fn_cb->cb_type = RTK_BT_MESH_FN_CB_TYPE_ESTABLISH_SUCCESS;
-	rtk_bt_evt_indicate(p_evt, NULL);
+	if (p_evt) {
+		fn_cb = (rtk_bt_mesh_stack_evt_fn_t *)p_evt->data;
+		fn_cb->lpn_addr = lpn_addr;
+		fn_cb->cb_type = RTK_BT_MESH_FN_CB_TYPE_ESTABLISH_SUCCESS;
+		rtk_bt_evt_indicate(p_evt, NULL);
+	} else {
+		BT_LOGE("[%s] Create event fail\r\n", __func__);
+	}
 }
 
 static void friend_terminated(uint16_t net_idx, uint16_t lpn_addr)
@@ -1944,10 +2022,14 @@ static void friend_terminated(uint16_t net_idx, uint16_t lpn_addr)
 	rtk_bt_mesh_stack_evt_fn_t *fn_cb;
 	rtk_bt_evt_t *p_evt = NULL;
 	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_STACK, RTK_BT_MESH_STACK_EVT_FN_CB, sizeof(rtk_bt_mesh_stack_evt_fn_t));
-	fn_cb = (rtk_bt_mesh_stack_evt_fn_t *)p_evt->data;
-	fn_cb->lpn_addr = lpn_addr;
-	fn_cb->cb_type = RTK_BT_MESH_FN_CB_TYPE_FRND_LOST;
-	rtk_bt_evt_indicate(p_evt, NULL);
+	if (p_evt) {
+		fn_cb = (rtk_bt_mesh_stack_evt_fn_t *)p_evt->data;
+		fn_cb->lpn_addr = lpn_addr;
+		fn_cb->cb_type = RTK_BT_MESH_FN_CB_TYPE_FRND_LOST;
+		rtk_bt_evt_indicate(p_evt, NULL);
+	} else {
+		BT_LOGE("[%s] Create event fail\r\n", __func__);
+	}
 }
 
 static void friend_polled(uint16_t net_idx, uint16_t lpn_addr)

@@ -34,8 +34,61 @@ struct rpl_val {
 	      old_iv:1;
 };
 
+#if ZEPHYR_RTK_PATCH
+/* Allocated in bt_mesh_rpl_init(), the size is CONFIG_BT_MESH_CRPL unless set by bt_mesh_rpl_num_set() */
+static struct bt_mesh_rpl *replay_list;
+static atomic_t *store;
+static uint16_t rpl_cnt = CONFIG_BT_MESH_CRPL;
+#else
 static struct bt_mesh_rpl replay_list[CONFIG_BT_MESH_CRPL];
 static ATOMIC_DEFINE(store, CONFIG_BT_MESH_CRPL);
+#endif
+
+#if ZEPHYR_RTK_PATCH
+int bt_mesh_rpl_num_set(uint16_t rpl_num)
+{
+	if (replay_list) {
+		return -EALREADY;
+	}
+
+	/* 0: keep CONFIG_BT_MESH_CRPL */
+	rpl_cnt = rpl_num ? rpl_num : CONFIG_BT_MESH_CRPL;
+
+	return 0;
+}
+
+uint16_t bt_mesh_rpl_num_get(void)
+{
+	return rpl_cnt;
+}
+
+int bt_mesh_rpl_init(void)
+{
+	if (replay_list) {
+		return 0;
+	}
+
+	replay_list = k_malloc(rpl_cnt * sizeof(*replay_list));
+	store = k_malloc(ATOMIC_BITMAP_SIZE(rpl_cnt) * sizeof(atomic_t));
+	if (!replay_list || !store) {
+		bt_mesh_rpl_deinit();
+		return -ENOMEM;
+	}
+
+	(void)memset(replay_list, 0, rpl_cnt * sizeof(*replay_list));
+	(void)memset(store, 0, ATOMIC_BITMAP_SIZE(rpl_cnt) * sizeof(atomic_t));
+
+	return 0;
+}
+
+void bt_mesh_rpl_deinit(void)
+{
+	k_free(replay_list);
+	k_free(store);
+	replay_list = NULL;
+	store = NULL;
+}
+#endif
 
 enum {
 	PENDING_CLEAR,
@@ -122,7 +175,11 @@ bool bt_mesh_rpl_check(struct bt_mesh_net_rx *rx, struct bt_mesh_rpl **match)
 		return false;
 	}
 
+#if ZEPHYR_RTK_PATCH
+	for (i = 0; i < rpl_cnt; i++) {
+#else
 	for (i = 0; i < ARRAY_SIZE(replay_list); i++) {
+#endif
 		rpl = &replay_list[i];
 
 		/* Empty slot */
@@ -174,7 +231,11 @@ void bt_mesh_rpl_clear(void)
 	LOG_DBG("");
 
 	if (!IS_ENABLED(CONFIG_BT_SETTINGS)) {
+#if ZEPHYR_RTK_PATCH
+		(void)memset(replay_list, 0, rpl_cnt * sizeof(*replay_list));
+#else
 		(void)memset(replay_list, 0, sizeof(replay_list));
+#endif
 		return;
 	}
 
@@ -187,7 +248,11 @@ static struct bt_mesh_rpl *bt_mesh_rpl_find(uint16_t src)
 {
 	size_t i;
 
+#if ZEPHYR_RTK_PATCH
+	for (i = 0; i < rpl_cnt; i++) {
+#else
 	for (i = 0; i < ARRAY_SIZE(replay_list); i++) {
+#endif
 		if (replay_list[i].src == src) {
 			return &replay_list[i];
 		}
@@ -200,7 +265,11 @@ static struct bt_mesh_rpl *bt_mesh_rpl_alloc(uint16_t src)
 {
 	size_t i;
 
+#if ZEPHYR_RTK_PATCH
+	for (i = 0; i < rpl_cnt; i++) {
+#else
 	for (i = 0; i < ARRAY_SIZE(replay_list); i++) {
+#endif
 		if (!replay_list[i].src) {
 			replay_list[i].src = src;
 			return &replay_list[i];
@@ -218,7 +287,11 @@ void bt_mesh_rpl_reset(void)
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
 		size_t i;
 
+#if ZEPHYR_RTK_PATCH
+		for (i = 0; i < rpl_cnt; i++) {
+#else
 		for (i = 0; i < ARRAY_SIZE(replay_list); i++) {
+#endif
 			struct bt_mesh_rpl *rpl = &replay_list[i];
 
 			if (!rpl->src) {
@@ -240,7 +313,11 @@ void bt_mesh_rpl_reset(void)
 		int shift = 0;
 		int last = 0;
 
+#if ZEPHYR_RTK_PATCH
+		for (size_t i = 0; i < rpl_cnt; i++) {
+#else
 		for (size_t i = 0; i < ARRAY_SIZE(replay_list); i++) {
+#endif
 			struct bt_mesh_rpl *rpl = &replay_list[i];
 
 			if (rpl->src) {
@@ -361,7 +438,11 @@ void bt_mesh_rpl_pending_store(uint16_t addr)
 	clr = atomic_test_and_clear_bit(rpl_flags, PENDING_CLEAR);
 	rst = atomic_test_bit(rpl_flags, PENDING_RESET);
 
+#if ZEPHYR_RTK_PATCH
+	for (size_t i = 0; i < rpl_cnt; i++) {
+#else
 	for (size_t i = 0; i < ARRAY_SIZE(replay_list); i++) {
+#endif
 		struct bt_mesh_rpl *rpl = &replay_list[i];
 
 		if (addr != BT_MESH_ADDR_ALL_NODES && addr != rpl->src) {

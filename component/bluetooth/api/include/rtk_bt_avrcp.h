@@ -381,7 +381,7 @@ uint16_t rtk_bt_avrcp_disconnect(uint8_t *bd_addr);
 
 /**
  * @brief     Send an AVRCP play status change request to remote CT device.
- * @param[in] bt_addr: Bluetooth address of the remote device.
+ * @param[in] bd_addr: Bluetooth address of the remote device.
  *                     Must not be NULL.
  * @param[in] play_status: Playback status to notify.
  *                         Value: @ref rtk_bt_avrcp_play_status_t.
@@ -390,7 +390,7 @@ uint16_t rtk_bt_avrcp_disconnect(uint8_t *bd_addr);
  * @note
  *            - The remote controller shall have registered for play status change notification, otherwise this API fails with @ref RTK_BT_FAIL.
  */
-uint16_t rtk_bt_avrcp_play_status_change_req(uint8_t *bt_addr, uint8_t play_status);
+uint16_t rtk_bt_avrcp_play_status_change_req(uint8_t *bd_addr, uint8_t play_status);
 
 /**
  * @brief     Send an AVRCP play status change response after received register notification play status change command.

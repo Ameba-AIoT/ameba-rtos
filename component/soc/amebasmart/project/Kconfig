@@ -152,8 +152,6 @@ menu "CONFIG APPLICATION"
 
     rsource "../../../utils/ipc/Kconfig"
 
-    rsource "../../../dynamic_app/Kconfig"
-
     menu "AI Config"
         orsource "../../../tflite_micro/Kconfig"
         orsource "../../../aivoice/Kconfig"

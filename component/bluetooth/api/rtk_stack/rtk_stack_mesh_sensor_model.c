@@ -336,7 +336,7 @@ static int32_t sensor_server_data(const mesh_model_info_p pmodel_info, uint32_t 
 		if (p_get_data) {
 			/**
 			 * if needed,customer can indicate setting information by creating event
-			 * customer should know the length of information when indicationg app
+			 * customer should know the length of information when indicating app
 			 * if have not only one pointer, use one pointer to put all data in it
 			 * then analyze in stack layer
 			*/
@@ -460,7 +460,7 @@ static int32_t sensor_server_data(const mesh_model_info_p pmodel_info, uint32_t 
 		p_get_data = (rtk_bt_mesh_sensor_server_get_descriptor_t *)p_evt->data;
 		p_get_data->property_id = descriptor_get->property_id;
 		if (descriptor_get->descriptor_num > SENSOR_GET_DATA_MAX_LEN) {
-			BT_LOGA("[%s] The num of sensor descirptors is %d, extend max SENSOR_GET_DATA_MAX_LEN:%d\r\n", __func__, descriptor_get->descriptor_num,
+			BT_LOGA("[%s] The num of sensor descriptors is %d, extend max SENSOR_GET_DATA_MAX_LEN:%d\r\n", __func__, descriptor_get->descriptor_num,
 					SENSOR_GET_DATA_MAX_LEN);
 			descriptor_get->descriptor_num = SENSOR_GET_DATA_MAX_LEN;
 		}
@@ -536,7 +536,7 @@ static int32_t sensor_setup_server_data(const mesh_model_info_p pmodel_info, uin
 		if (p_set_data) {
 			/**
 			 * if needed,customer can indicate setting information by creating event
-			 * customer should know the length of information when indicationg app
+			 * customer should know the length of information when indicating app
 			*/
 			uint8_t trigger_len;
 			uint8_t raw_value_len = (p_set_data->cadence)->raw_value_len;
@@ -569,7 +569,7 @@ static int32_t sensor_setup_server_data(const mesh_model_info_p pmodel_info, uin
 		if (p_set_data) {
 			/**
 			 * if needed,customer can indicate setting information by creating event
-			 * customer should know the length of information when indicationg app
+			 * customer should know the length of information when indicating app
 			*/
 			uint32_t len = (p_set_data->setting)->setting_raw_len + 6;
 			rtk_bt_evt_t *p_evt = NULL;

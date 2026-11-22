@@ -12,12 +12,18 @@ ameba_add_subdirectory(${c_CMPT_SOC_DIR}/lib/bootloader lib_bootloader)
 
 # SOLO: KM55TZ<->KM55NS isolation config (BOOT_RAM_SoloCfg -> RXI300 MPC/PPC),
 # called from the bootloader in place of BOOT_RAM_TZCfg.
-if(CONFIG_SOLO)
+if(CONFIG_IOT_MCU_COMBINED)
     ameba_add_subdirectory(${c_CMPT_SOC_DIR}/lib/solo lib_solo)
 endif()
 
 if ((NOT CONFIG_WHC_INTF_IPC) AND CONFIG_WHC_DEV)
     ameba_add_subdirectory(${c_COMPONENT_DIR}/soc/common/flash_wrapper)
+endif()
+
+# Replaces fwlib/ram_km55tz/ameba_nor_flash.c - see CONFIG_NOR_FLASH_NEW_STRATEGY.
+# Needed in image1 because flash_nor_* is called from flash_highspeed_setup().
+if (CONFIG_NOR_FLASH_NEW_STRATEGY)
+    ameba_add_subdirectory(${c_COMPONENT_DIR}/soc/common/nor_flash)
 endif()
 
 ###############################  GENERATE IMAGE  ###################################

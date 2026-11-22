@@ -22,6 +22,7 @@
 #include "mesh.h"
 #include "sar_cfg_internal.h"
 #include "settings.h"
+#include "cfg.h"
 
 #define LOG_LEVEL CONFIG_BT_MESH_MODEL_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -167,6 +168,9 @@ static void sar_cfg_srv_reset(const struct bt_mesh_model *model)
 
 	bt_mesh.sar_tx = sar_tx;
 	bt_mesh.sar_rx = sar_rx;
+#if ZEPHYR_RTK_PATCH
+	bt_mesh_cfg_sar_tx_override();
+#endif
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
 		sar_rx_store(model, true);
@@ -185,8 +189,16 @@ static int sar_cfg_srv_settings_set(const struct bt_mesh_model *model, const cha
 	}
 
 	if (!strncmp(name, "sar_tx", 5)) {
+#if ZEPHYR_RTK_PATCH
+		int err = bt_mesh_settings_set(read_cb, cb_data, &bt_mesh.sar_tx,
+					       sizeof(bt_mesh.sar_tx));
+
+		bt_mesh_cfg_sar_tx_override();
+		return err;
+#else
 		return bt_mesh_settings_set(read_cb, cb_data, &bt_mesh.sar_tx,
 					    sizeof(bt_mesh.sar_tx));
+#endif
 	}
 
 	return 0;

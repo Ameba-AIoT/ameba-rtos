@@ -194,7 +194,7 @@ int main(void)
 
 	app_pmu_init();
 
-#ifdef CONFIG_SOLO
+#ifdef CONFIG_IOT_MCU_COMBINED
 	app_IWDG_init();
 #endif
 

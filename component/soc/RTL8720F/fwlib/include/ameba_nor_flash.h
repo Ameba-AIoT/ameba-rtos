@@ -47,6 +47,28 @@ void flash_nor_set_qe_register(void);
 void flash_nor_get_cs_timing(u32 *tcss_ns, u32 *tchsh_ns, u32 *tshsl_ns);
 
 /**
+  * @brief  Check whether the identified NOR flash can be driven at the given clock.
+  * @param  flash_clk: the flash clock (spi_sclk) in Hz it is going to run at.
+  * @note   Must be called after flash_nor_get_vendor(). The legacy driver has no per-flash
+  *         clock limits and always returns RTK_SUCCESS.
+  * @retval RTK_SUCCESS, or RTK_FAIL when the flash is out of spec at flash_clk and the
+  *         caller must stay on the boot clock.
+  */
+int flash_nor_check_clk(u32 flash_clk);
+
+/**
+  * @brief  Set the flash side of High Performance Mode for the clock about to be used.
+  * @param  flash_clk: the flash clock (spi_sclk) in Hz that is going to be used.
+  * @note   Must be called after flash_rx_mode_switch() has settled on a read mode, and before
+  *         the clock is raised. When flash_clk is above what the flash allows with its default
+  *         dummy cycles, the DC bit is set and SPIC is reprogrammed with the HPM dummy cycles.
+  *         The legacy driver sets its DC bit in flash_nor_set_hpm_mode() and does nothing here.
+  * @retval RTK_SUCCESS, or RTK_FAIL when HPM is needed but could not be set, in which case
+  *         the caller must stay on the boot clock.
+  */
+int flash_nor_set_dc(u32 flash_clk);
+
+/**
   * @brief  Get the AVL entry of the identified NOR flash chip.
   * @retval Pointer to the Flash_AVL entry, or NULL if flash_nor_get_vendor() has not run.
   */

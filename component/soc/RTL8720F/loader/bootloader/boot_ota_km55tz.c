@@ -237,7 +237,7 @@ fih_ret BOOT_OTA_LoadIMGAll(u8 ImgIndex)
 	u32 manifest_size = SBOOT_GetManifestSize(&Manifest[ImgIndex]);
 	PhyAddr += manifest_size;
 
-#ifndef CONFIG_SOLO
+#ifndef CONFIG_IOT_MCU_COMBINED
 	/* remap NP XIP image. SOLO has no NP portion in this combined image: the
 	 * km55ns(iot) app is an independent image loaded by BOOT_OTA_LoadNP. */
 	LogAddr = (u32)__km4ns_flash_text_start__ - IMAGE_HEADER_LEN;
@@ -484,7 +484,7 @@ void BOOT_OTA_Extract(void)
 	BOOT_OTA_ExtractSlot(IMG_APP_OTA1, __km4tz_bd_ram_start__);
 }
 
-#ifdef CONFIG_SOLO
+#ifdef CONFIG_IOT_MCU_COMBINED
 /**
   * @brief  SOLO iot(NP) extract. Called from BOOT_OTA_LoadNP(), which runs BOTH at
   *         cold boot AND from the plfm1-reset NMI. In the plfm1 case the km55tz app
@@ -597,7 +597,7 @@ Fail:
 	return RTK_FAIL;
 }
 
-#ifdef CONFIG_SOLO
+#ifdef CONFIG_IOT_MCU_COMBINED
 /**
   * @brief  SOLO: load & verify the independent iot(km55ns) application image2 from
   *         its own IMG_NP_OTA1/2 slots, configure RSIP (MMU_ID1/RSIP_REGION1, freed

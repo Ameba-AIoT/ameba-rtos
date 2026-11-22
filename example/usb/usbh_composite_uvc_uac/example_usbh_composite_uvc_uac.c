@@ -1359,6 +1359,18 @@ static void usbh_uvc_uac_hotplug_thread(void *param)
 
 	UNUSED(param);
 
+#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
+	/* The USB OTG ISR is delivered on CPU0: the GIC pins every SPI to core 0
+	   (ITARGETSR is written to 0x01010101 in arm_gic.c gic_dist_init). Pinning the
+	   hotplug/deinit thread to CPU0 puts it on the same core as the ISR, so the
+	   local interrupt disables inside the teardown are meaningful again. The four
+	   workers stay unaffined: a pending teardown is excluded from them by the
+	   per-path mutexes, not by core.
+	   Done by the thread itself, first: a created thread may already run on another core, and its
+	   creator pinning it afterwards could come too late or reach a task that has deleted itself. */
+	rtos_task_set_affinity(rtos_task_handle_get(), 0);
+#endif
+
 	for (;;) {
 		if (rtos_sema_take(usbh_uvc_uac_detach_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
 			if (usbh_comp_app.quit != 0U) {
@@ -1992,15 +2004,6 @@ static int usbh_comp_start(void)
 		usbh_composite_deinit_stack();
 		return usbh_comp_start_rollback(workers, status);
 	}
-#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
-	/* The USB OTG ISR is delivered on CPU0: the GIC pins every SPI to core 0
-	   (ITARGETSR is written to 0x01010101 in arm_gic.c gic_dist_init). Pinning the
-	   hotplug/deinit thread to CPU0 puts it on the same core as the ISR, so the
-	   local interrupt disables inside the teardown are meaningful again. The four
-	   workers stay unaffined: a pending teardown is excluded from them by the
-	   per-path mutexes, not by core. */
-	rtos_task_set_affinity(usbh_uvc_uac_hotplug_task, 0);
-#endif
 #endif
 
 	return RTK_SUCCESS;
@@ -2014,6 +2017,14 @@ static int usbh_comp_start(void)
 static void example_usbh_uac_uvc_thread(void *param)
 {
 	UNUSED(param);
+
+#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
+	/* A start that fails rolls back through usbh_deinit(), which waits for no ISR on another
+	   core: run it on CPU0, where the USB IRQ is delivered, as the hotplug thread does.
+	   Done by the thread itself, first: a created thread may already run on another core, and its
+	   creator pinning it afterwards could come too late or reach a task that has deleted itself. */
+	rtos_task_set_affinity(rtos_task_handle_get(), 0);
+#endif
 
 	if (usbh_comp_start() != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Start fail\n");

@@ -8,18 +8,39 @@ None
 
 # SW configuration
 
-1. Menuconfig
-	Use menuconfig and choose `CONFIG USB`:
+1. Default configuration
+
+	The `prj.conf` of this example sets the options below by default, no menuconfig is needed to run it:
 	```
+	CONFIG USB --->
 	[*] Enable USB
 			USB Mode (Device)  --->
 	[*] 	CDC ACM
 	```
-	Save and exit.
 
-2. Build and Download:
-   * Refer to the SDK Examples section of the online documentation to generate images.
-   * `Download` images to board by Ameba Image Tool.
+2. Build
+
+	```
+	./ameba.py build -a usbd_cdc_acm -p
+	```
+	`-p` (pristine) drops the previous configuration and applies the `prj.conf` of this example.
+
+3. (Optional) Change the configuration
+
+	Only needed when the default configuration does not fit:
+	1. Build once with `-p` as in step 2, so that the configuration starts from `prj.conf`.
+	2. Run `./ameba.py menuconfig` and change the options.
+	3. Rebuild without `-p`: `./ameba.py build -a usbd_cdc_acm`.
+
+	To keep a change permanently, add its `CONFIG_XXX=y` lines to `prj.conf` instead and build with `-p`.
+
+4. Download
+
+	Flash the images to the board with any of the tools below:
+	* VS Code extension: https://aiot.realmcu.com/en/latest/tools/vscode/index.html
+	* Image Tool (Windows): https://aiot.realmcu.com/en/latest/tools/image_tool/index.html
+	* Flash Tool (cross-platform): https://aiot.realmcu.com/en/latest/tools/flash/index.html
+	* Web flash tool: https://aiot.realmcu.com/en/resource/web_flash_tool.html
 
 # Expect result
 
@@ -38,6 +59,25 @@ None
 
 3. Launch any serial port tool (e.g. Realtek Trace Tool), open the virtual serial port against the USB port of Ameba board, send messages to the Ameba board and the board will echo back the received messages. The echo data path prints no log.
 
+	The device enumerates with VID `0x0BDA` and the PID of the SoC: `0x8730` (RTL8730E), `0x8722` (RTL8721Dx), `0xF851` (RTL8721F), `0x8006` (RTL8735C). The peer side can be one of:
+	* Linux host: the inbox `cdc_acm` driver binds it, `dmesg` shows the port name:
+		```
+		dmesg | grep ttyACM
+		cdc_acm 1-1:1.0: ttyACM0: USB ACM device
+		```
+		Stop ModemManager first (`sudo systemctl stop ModemManager`), otherwise it probes the new port with AT commands. Then open the port, every typed character shall come back:
+		```
+		picocom -b 115200 /dev/ttyACM0
+		```
+		or check the echo with pyserial:
+		```
+		python3 -c "import serial; s=serial.Serial('/dev/ttyACM0', 115200, timeout=1); s.write(b'hello'); print(s.read(5))"
+		b'hello'
+		```
+		The baud rate is not used by the USB link, any value works.
+	* Windows 10/11 host: the inbox `usbser` driver binds it, the device shows up as `USB Serial Device (COMx)` in Device Manager > Ports (COM & LPT); open `COMx` with the serial port tool.
+	* Another Ameba board running the `usbh_cdc_acm` example, see its README.
+
 4. Hotplug check: the example tears down and re-inits the USB stack on every detach, so unplug and re-plug the cable, following log shall be printed for each cycle:
 	```
 	[ACM-I] DETACHED
@@ -50,7 +90,7 @@ None
 
 # Note
 
-Specially for Win7/XP host, please manually install the CDC ACM driver RtkUsbCdcAcmSetup.INF, and before the installation, please make sure the VID/PID value used in CDC ACM class is included in the INF file:
+Windows 10/11 needs no driver. Specially for Win7/XP host, please manually install the CDC ACM driver RtkUsbCdcAcmSetup.INF, and before the installation, please make sure the VID/PID value used in CDC ACM class is included in the INF file:
 ```
 [DeviceList]
 %DESCRIPTION%=DriverInstall, USB\VID_0BDA&PID_8720
@@ -59,6 +99,7 @@ Specially for Win7/XP host, please manually install the CDC ACM driver RtkUsbCdc
 %DESCRIPTION%=DriverInstall, USB\VID_0BDA&PID_8730
 %DESCRIPTION%=DriverInstall, USB\VID_0BDA&PID_8006
 %DESCRIPTION%=DriverInstall, USB\VID_0BDA&PID_8061
+%DESCRIPTION%=DriverInstall, USB\VID_0BDA&PID_F851
 ; Add support for new VID/PID
  [DeviceList.NTamd64] 
 %DESCRIPTION%=DriverInstall, USB\VID_0BDA&PID_8720
@@ -67,6 +108,7 @@ Specially for Win7/XP host, please manually install the CDC ACM driver RtkUsbCdc
 %DESCRIPTION%=DriverInstall, USB\VID_0BDA&PID_8730
 %DESCRIPTION%=DriverInstall, USB\VID_0BDA&PID_8006
 %DESCRIPTION%=DriverInstall, USB\VID_0BDA&PID_8061
+%DESCRIPTION%=DriverInstall, USB\VID_0BDA&PID_F851
 ; Add support for new VID/PID
 ```
 

@@ -188,11 +188,15 @@ void scene_timeout(struct k_work *work)
 		scene_pa.total_time.num_steps = 0;
 	}
 	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_SCENE_SERVER_MODEL, RTK_BT_MESH_SCENE_SERVER_MODEL_RECALL, SCENE_DATA_MAX_LEN + 6);
-	memcpy((uint8_t *)p_evt->data, &scene_pa.target_scene_num, 2);
-	memcpy((uint8_t *)(p_evt->data) + 2, &scene_pa.total_time, 1);
-	memcpy((uint8_t *)(p_evt->data) + 3, &scene_pa.remain_time, 1);
-	memcpy((uint8_t *)(p_evt->data) + 4, scene_pa.state_memory->pmemory, SCENE_DATA_MAX_LEN);
-	rtk_bt_evt_indicate(p_evt, NULL);
+	if (p_evt) {
+		memcpy((uint8_t *)p_evt->data, &scene_pa.target_scene_num, 2);
+		memcpy((uint8_t *)(p_evt->data) + 2, &scene_pa.total_time, 1);
+		memcpy((uint8_t *)(p_evt->data) + 3, &scene_pa.remain_time, 1);
+		memcpy((uint8_t *)(p_evt->data) + 4, scene_pa.state_memory->pmemory, SCENE_DATA_MAX_LEN);
+		rtk_bt_evt_indicate(p_evt, NULL);
+	} else {
+		BT_LOGE("[%s] Create event fail\r\n", __func__);
+	}
 	if (scene_pa.remain_time.num_steps) {
 		scene_pa.remain_time.num_steps--;
 		k_work_reschedule(&scene_pa.work, K_MSEC(trans));
@@ -350,11 +354,15 @@ static int scene_srv_recall_unack(const struct bt_mesh_model *model,
 					/*****if no transition, call set here directly, then return******/
 					rtk_bt_evt_t *p_evt = NULL;
 					p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_SCENE_SERVER_MODEL, RTK_BT_MESH_SCENE_SERVER_MODEL_RECALL, SCENE_DATA_MAX_LEN + 6);
-					memcpy((uint8_t *)p_evt->data, &scene_num, 2);
-					memcpy((uint8_t *)(p_evt->data) + 2, &scene_pa.total_time, 1);
-					memcpy((uint8_t *)(p_evt->data) + 3, &scene_pa.remain_time, 1);
-					memcpy((uint8_t *)(p_evt->data) + 4, state_memory->pmemory, SCENE_DATA_MAX_LEN);
-					rtk_bt_evt_indicate(p_evt, NULL);
+					if (p_evt) {
+						memcpy((uint8_t *)p_evt->data, &scene_num, 2);
+						memcpy((uint8_t *)(p_evt->data) + 2, &scene_pa.total_time, 1);
+						memcpy((uint8_t *)(p_evt->data) + 3, &scene_pa.remain_time, 1);
+						memcpy((uint8_t *)(p_evt->data) + 4, state_memory->pmemory, SCENE_DATA_MAX_LEN);
+						rtk_bt_evt_indicate(p_evt, NULL);
+					} else {
+						BT_LOGE("[%s] Create event fail\r\n", __func__);
+					}
 					k_mutex_unlock(&mutex_scene);
 					return 0;
 				}
@@ -418,14 +426,18 @@ static int scene_srv_register_get(const struct bt_mesh_model *model,
 {
 	if (!buf->len) {
 		uint16_t current_scene = get_current_scene(RTK_BT_LE_GP_MESH_SCENE_SERVER_MODEL);
-		rtk_bt_mesh_scene_status_code_t status;
+		rtk_bt_mesh_scene_status_code_t status = 0;
 		rtk_bt_mesh_scene_server_get_register_status_t *p_get_data;
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_SCENE_SERVER_MODEL, RTK_BT_MESH_SCENE_SERVER_MODEL_GET_REGISTER_STATUS,
 									sizeof(rtk_bt_mesh_scene_server_get_register_status_t));
-		p_get_data = (rtk_bt_mesh_scene_server_get_register_status_t *)p_evt->data;
-		p_get_data->status = &status;
-		rtk_bt_evt_indicate(p_evt, NULL);
+		if (p_evt) {
+			p_get_data = (rtk_bt_mesh_scene_server_get_register_status_t *)p_evt->data;
+			p_get_data->status = &status;
+			rtk_bt_evt_indicate(p_evt, NULL);
+		} else {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+		}
 		return scene_register_status(model, ctx, status, current_scene);
 	}
 	return -1;
@@ -537,12 +549,16 @@ static int scene_setup_srv_store_unack(const struct bt_mesh_model *model,
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_SCENE_SETUP_SERVER_MODEL, RTK_BT_MESH_SCENE_SETUP_SERVER_MODEL_STORE,
 									SCENE_DATA_MAX_LEN + 3);
-		scene_store = (rtk_bt_mesh_scene_server_store_t *)p_evt->data;
-		scene_store->status = store_data.status;
-		scene_store->scene_number = store_data.scene_number;
-		memset(scene_store_data, 0, sizeof(scene_store_data));
-		scene_store->pmemory = scene_store_data;
-		rtk_bt_evt_indicate(p_evt, NULL);
+		if (p_evt) {
+			scene_store = (rtk_bt_mesh_scene_server_store_t *)p_evt->data;
+			scene_store->status = store_data.status;
+			scene_store->scene_number = store_data.scene_number;
+			memset(scene_store_data, 0, sizeof(scene_store_data));
+			scene_store->pmemory = scene_store_data;
+			rtk_bt_evt_indicate(p_evt, NULL);
+		} else {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+		}
 		if (real_index < pinfo->num_scenes) {
 			// pinfo->scenes[real_index].pmemory = scene_store_data; //reserve 2 bytes to store length
 			memcpy(pinfo->scenes[real_index].pmemory, scene_store_data, SCENE_DATA_MAX_LEN);
@@ -606,8 +622,12 @@ static int scene_setup_srv_delete_unack(const struct bt_mesh_model *model,
 			rtk_bt_mesh_scene_server_delete_t delete_data = {scene_num};
 			rtk_bt_evt_t *p_evt = NULL;
 			p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_SCENE_SETUP_SERVER_MODEL, RTK_BT_MESH_SCENE_SETUP_SERVER_MODEL_DELETE, sizeof(rtk_bt_mesh_scene_server_delete_t));
-			memcpy(p_evt->data, &delete_data, sizeof(rtk_bt_mesh_scene_server_delete_t));
-			rtk_bt_evt_indicate(p_evt, NULL);
+			if (p_evt) {
+				memcpy(p_evt->data, &delete_data, sizeof(rtk_bt_mesh_scene_server_delete_t));
+				rtk_bt_evt_indicate(p_evt, NULL);
+			} else {
+				BT_LOGE("[%s] Create event fail\r\n", __func__);
+			}
 		}
 	}
 	return 0;
@@ -690,6 +710,10 @@ static int scene_cli_status(const struct bt_mesh_model *model,
 	rtk_bt_evt_t *p_evt = NULL;
 	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_SCENE_CLIENT_MODEL, RTK_BT_MESH_SCENE_CLIENT_MODEL_STATUS,
 								sizeof(rtk_bt_mesh_scene_client_status_t));
+	if (!p_evt) {
+		BT_LOGE("[%s] Create event fail\r\n", __func__);
+		return -1;
+	}
 	memcpy(p_evt->data, &scene_stat, sizeof(rtk_bt_mesh_scene_client_status_t));
 	return rtk_bt_evt_indicate(p_evt, NULL);
 }
@@ -709,6 +733,10 @@ static int scene_cli_register_status(const struct bt_mesh_model *model,
 	rtk_bt_evt_t *p_evt = NULL;
 	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_SCENE_CLIENT_MODEL, RTK_BT_MESH_SCENE_CLIENT_MODEL_REGISTER_STATUS,
 								len);
+	if (!p_evt) {
+		BT_LOGE("[%s] Create event fail\r\n", __func__);
+		return -1;
+	}
 	memcpy(p_evt->data, &(ctx->addr), 2);
 	memcpy((uint8_t *)(p_evt->data) + 2, &status, 1);
 	memcpy((uint8_t *)(p_evt->data) + 3, &current_scene, 2);

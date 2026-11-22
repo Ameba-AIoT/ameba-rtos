@@ -2094,7 +2094,7 @@ typedef struct {
 
 /**
  * @struct    rtk_bt_le_get_conn_info_param_t
- * @brief     Bluetooth LE get connection infomation parameter definition.
+ * @brief     Bluetooth LE get connection information parameter definition.
  */
 typedef struct {
 	uint16_t conn_handle;                  /*!< Connection handle of the ACL connection to get connection information.

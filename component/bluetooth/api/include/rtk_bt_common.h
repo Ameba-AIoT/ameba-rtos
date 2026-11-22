@@ -107,7 +107,7 @@ extern "C"
 #define RTK_BT_UUID_MSG_ACCESS_PROFILE             0x1134     /*!< Message Access profile. */
 #define RTK_BT_UUID_PNP_INFORMATION                0x1200     /*!< PnPInformation. */
 #define RTK_BT_UUID_GENERIC_NETWORKING             0x1201     /*!< Generic Networking. */
-#define RTK_BT_UUID_GENERIC_FILE_TRANSFER          0x1202     /*!< GenericFile Transfe. */
+#define RTK_BT_UUID_GENERIC_FILE_TRANSFER          0x1202     /*!< Generic File Transfer. */
 #define RTK_BT_UUID_GENERIC_AUDIO                  0x1203     /*!< Generic Audio. */
 #define RTK_BT_UUID_GENERIC_TELEPHONY              0x1204     /*!< GenericTelephony. */
 #define RTK_BT_UUID_HDP_PROFILE                    0x1400     /*!< HDP. */
@@ -789,13 +789,13 @@ typedef enum {
 /************************************* BR/EDR group ************************************/
 
 /**
- * @typedef   gap_uuid_type_t
- * @brief     Bluetooth GAP uuid type.
+ * @typedef   br_gap_uuid_type_t
+ * @brief     Bluetooth BR/EDR GAP UUID type.
  */
 typedef enum {
-	BR_GAP_UUID16,    /*!< UUID type 16 bits. */
-	BR_GAP_UUID32,    /*!< UUID type 32 bits. */
-	BR_GAP_UUID128    /*!< UUID type 128 bits. */
+	BR_GAP_UUID16,    /*!< 16-bit UUID. */
+	BR_GAP_UUID32,    /*!< 32-bit UUID. */
+	BR_GAP_UUID128    /*!< 128-bit UUID. */
 } br_gap_uuid_type_t;
 
 /**
@@ -813,16 +813,16 @@ typedef union {
  * @brief     Bluetooth BR action group.
  */
 typedef enum {
-	RTK_BT_BR_GP_GAP = RTK_BT_API_BR_BASE,
-	RTK_BT_BR_GP_AVRCP,                           /*!< BR/EDR avrcp group. */
-	RTK_BT_BR_GP_A2DP,                            /*!< BR/EDR a2dp group. */
-	RTK_BT_BR_GP_SPP,                             /*!< BR/EDR SPP group. */
-	RTK_BT_BR_GP_RFC,                             /*!< BR/EDR RFCOMM group. */
-	RTK_BT_BR_GP_HFP,                             /*!< BR/EDR hfp group. */
-	RTK_BT_BR_GP_SDP,                             /*!< BR/EDR sdp group. */
-	RTK_BT_BR_GP_HID,                             /*!< BR/EDR hid group. */
-	RTK_BT_BR_GP_PBAP,                            /*!< BR/EDR phone book access profile. */
-	RTK_BT_BR_GP_MAX,
+	RTK_BT_BR_GP_GAP = RTK_BT_API_BR_BASE,    /*!< BR/EDR GAP group. */
+	RTK_BT_BR_GP_AVRCP,                       /*!< BR/EDR AVRCP group. */
+	RTK_BT_BR_GP_A2DP,                        /*!< BR/EDR A2DP group. */
+	RTK_BT_BR_GP_SPP,                         /*!< BR/EDR SPP group. */
+	RTK_BT_BR_GP_RFC,                         /*!< BR/EDR RFCOMM group. */
+	RTK_BT_BR_GP_HFP,                         /*!< BR/EDR HFP group. */
+	RTK_BT_BR_GP_SDP,                         /*!< BR/EDR SDP group. */
+	RTK_BT_BR_GP_HID,                         /*!< BR/EDR HID group. */
+	RTK_BT_BR_GP_PBAP,                        /*!< BR/EDR PBAP group. */
+	RTK_BT_BR_GP_MAX,                         /*!< Reserved. */
 } rtk_bt_br_group_t;
 
 /**
@@ -830,35 +830,35 @@ typedef enum {
  * @brief     Bluetooth BR/EDR GAP action.
  */
 typedef enum {
-	RTK_BT_BR_GAP_ACT_SET_DEFAULT_PARAM = 1,
-	RTK_BT_BR_GAP_ACT_GET_DEVICE_ADDR,
-	RTK_BT_BR_GAP_ACT_SET_DEVICE_NAME,
-	RTK_BT_BR_GAP_ACT_SET_PAGE_PARAM,
-	RTK_BT_BR_GAP_ACT_CFG_PAGE_PARAM,
-	RTK_BT_BR_GAP_ACT_SET_INQUIRY_PARAM,
-	RTK_BT_BR_GAP_ACT_CFG_INQUIRY_PARAM,
-	RTK_BT_BR_GAP_ACT_SET_SEC_PARAM,
-	RTK_BT_BR_GAP_ACT_DISCONNECT,
-	RTK_BT_BR_GAP_ACT_START_INQUIRY,
-	RTK_BT_BR_GAP_ACT_GET_REMOTE_NAME,
-	RTK_BT_BR_GAP_ACT_MAX_BOND_NUM_GET,
-	RTK_BT_BR_GAP_ACT_BOND_NUM_GET,
-	RTK_BT_BR_GAP_ACT_BOND_ADDR_GET,
-	RTK_BT_BR_GAP_ACT_BOND_INDEX_GET,
-	RTK_BT_BR_GAP_ACT_BOND_KEY_GET,
-	RTK_BT_BR_GAP_ACT_BOND_KEY_SET,
-	RTK_BT_BR_GAP_ACT_BOND_PRIORITY_SET,
-	RTK_BT_BR_GAP_ACT_BOND_DELETE,
-	RTK_BT_BR_GAP_ACT_SET_PINCODE,
-	RTK_BT_BR_GAP_ACT_SET_RADIO_MODE,
-	RTK_BT_BR_GAP_ACT_SET_AUTO_SNIFF_MODE,
-	RTK_BT_BR_GAP_ACT_SET_SNIFF_MODE,
-	RTK_BT_BR_GAP_ACT_SET_LINK_QOS,
-	RTK_BT_BR_GAP_ACT_SET_COD,
-	RTK_BT_BR_GAP_ACT_SET_SUPV_TIMEOUT,
-	RTK_BT_BR_GAP_ACT_BOND_CLEAR,
-	RTK_BT_BR_GAP_ACT_READ_RSSI,
-	RTK_BT_BR_GAP_ACT_MAX,
+	RTK_BT_BR_GAP_ACT_SET_DEFAULT_PARAM = 1,    /*!< Reserved for future use. Currently set directly by @ref rtk_bt_br_gap_set_default_param. */
+	RTK_BT_BR_GAP_ACT_GET_DEVICE_ADDR,          /*!< Get the local BR/EDR device address. */
+	RTK_BT_BR_GAP_ACT_SET_DEVICE_NAME,          /*!< Set the local BR/EDR device name. */
+	RTK_BT_BR_GAP_ACT_SET_PAGE_PARAM,           /*!< Reserved for future use. Currently set directly by @ref rtk_bt_br_gap_set_page_param. */
+	RTK_BT_BR_GAP_ACT_CFG_PAGE_PARAM,           /*!< Configure the page scan parameters after BT is enabled. */
+	RTK_BT_BR_GAP_ACT_SET_INQUIRY_PARAM,        /*!< Reserved for future use. Currently set directly by @ref rtk_bt_br_gap_set_inquiry_param. */
+	RTK_BT_BR_GAP_ACT_CFG_INQUIRY_PARAM,        /*!< Configure the inquiry scan parameters after BT is enabled. */
+	RTK_BT_BR_GAP_ACT_SET_SEC_PARAM,            /*!< Set the BR/EDR security parameters. */
+	RTK_BT_BR_GAP_ACT_DISCONNECT,               /*!< Disconnect the BR/EDR ACL connection with a remote device. */
+	RTK_BT_BR_GAP_ACT_START_INQUIRY,            /*!< Start a BR/EDR inquiry to discover nearby devices. */
+	RTK_BT_BR_GAP_ACT_GET_REMOTE_NAME,          /*!< Get the device name of a remote device. */
+	RTK_BT_BR_GAP_ACT_MAX_BOND_NUM_GET,         /*!< Get the maximum number of bonded devices. */
+	RTK_BT_BR_GAP_ACT_BOND_NUM_GET,             /*!< Get the number of bonded devices. */
+	RTK_BT_BR_GAP_ACT_BOND_ADDR_GET,            /*!< Get the address of a bonded device by its bond priority. */
+	RTK_BT_BR_GAP_ACT_BOND_INDEX_GET,           /*!< Get the bond index of a bonded device from its address. */
+	RTK_BT_BR_GAP_ACT_BOND_KEY_GET,             /*!< Get the link key of a bonded device. */
+	RTK_BT_BR_GAP_ACT_BOND_KEY_SET,             /*!< Save a link key into the bond storage. */
+	RTK_BT_BR_GAP_ACT_BOND_PRIORITY_SET,        /*!< Raise the bond priority of a bonded device to the highest. */
+	RTK_BT_BR_GAP_ACT_BOND_DELETE,              /*!< Delete the bond information of a device. */
+	RTK_BT_BR_GAP_ACT_SET_PINCODE,              /*!< Set the pin code used for legacy pairing. */
+	RTK_BT_BR_GAP_ACT_SET_RADIO_MODE,           /*!< Set the BR/EDR radio mode. */
+	RTK_BT_BR_GAP_ACT_SET_AUTO_SNIFF_MODE,      /*!< Configure whether a link enters sniff mode automatically. */
+	RTK_BT_BR_GAP_ACT_SET_SNIFF_MODE,           /*!< Enter or exit sniff mode on a link. */
+	RTK_BT_BR_GAP_ACT_SET_LINK_QOS,             /*!< Set the QoS of a link. */
+	RTK_BT_BR_GAP_ACT_SET_COD,                  /*!< Reserved for future use. Currently set directly by @ref rtk_bt_br_gap_set_cod. */
+	RTK_BT_BR_GAP_ACT_SET_SUPV_TIMEOUT,         /*!< Reserved for future use. Currently set directly by @ref rtk_bt_br_gap_set_supvisiontimeout. */
+	RTK_BT_BR_GAP_ACT_BOND_CLEAR,               /*!< Delete the bond information of all devices. */
+	RTK_BT_BR_GAP_ACT_READ_RSSI,                /*!< Read the RSSI of a link. */
+	RTK_BT_BR_GAP_ACT_MAX,                      /*!< Reserved. */
 } rtk_bt_br_gap_act_t;
 
 /**
@@ -866,21 +866,21 @@ typedef enum {
  * @brief     Bluetooth BR/EDR GAP event.
  */
 typedef enum {
-	RTK_BT_BR_GAP_INQUIRY_RESULT = 1,
-	RTK_BT_BR_GAP_INQUIRY_CMPL,
-	RTK_BT_BR_GAP_REMOTE_NAME_RSP,
-	RTK_BT_BR_GAP_ACL_CONN_IND,
-	RTK_BT_BR_GAP_ACL_CONN_SUCCESS,
-	RTK_BT_BR_GAP_ACL_CONN_FAIL,
-	RTK_BT_BR_GAP_ACL_SNIFF,
-	RTK_BT_BR_GAP_ACL_ACTIVE,
-	RTK_BT_BR_GAP_ACL_DISCONN,
-	RTK_BT_BR_GAP_LINK_KEY_REQ,
-	RTK_BT_BR_GAP_LINK_KEY_INFO,
-	RTK_BT_BR_GAP_LINK_ROLE_MASTER,
-	RTK_BT_BR_GAP_LINK_ROLE_SLAVE,
-	RTK_BT_BR_GAP_LINK_RSSI_INFO,
-	RTK_BT_BR_GAP_EVT_MAX,
+	RTK_BT_BR_GAP_INQUIRY_RESULT = 1,    /*!< Indicate an inquiry result, with msg @ref rtk_bt_br_inquiry_result_t. */
+	RTK_BT_BR_GAP_INQUIRY_CMPL,          /*!< Indicate inquiry completed, with msg @ref rtk_bt_br_inquiry_cmpl_t. */
+	RTK_BT_BR_GAP_REMOTE_NAME_RSP,       /*!< Indicate the remote device name response, with msg @ref rtk_bt_br_remote_name_rsp_t. */
+	RTK_BT_BR_GAP_ACL_CONN_IND,          /*!< Indicate an incoming ACL connection request, with msg being the 6-octet address of the remote device. */
+	RTK_BT_BR_GAP_ACL_CONN_SUCCESS,      /*!< Indicate ACL connection established, with msg being the 6-octet address of the remote device. */
+	RTK_BT_BR_GAP_ACL_CONN_FAIL,         /*!< Indicate ACL connection failed, with msg @ref rtk_bt_br_acl_conn_fail_t. */
+	RTK_BT_BR_GAP_ACL_SNIFF,             /*!< Indicate the ACL link entered sniff mode, with msg @ref rtk_bt_br_acl_sniff_t. */
+	RTK_BT_BR_GAP_ACL_ACTIVE,            /*!< Indicate the ACL link returned to active mode, with msg being the 6-octet address of the remote device. */
+	RTK_BT_BR_GAP_ACL_DISCONN,           /*!< Indicate ACL disconnection, with msg @ref rtk_bt_br_acl_disc_t. */
+	RTK_BT_BR_GAP_LINK_KEY_REQ,          /*!< Indicate a link key request from the remote device, with msg @ref rtk_bt_br_link_key_req_t. */
+	RTK_BT_BR_GAP_LINK_KEY_INFO,         /*!< Indicate a new link key generated by pairing, with msg @ref rtk_bt_br_bond_key_t. */
+	RTK_BT_BR_GAP_LINK_ROLE_MASTER,      /*!< Indicate the local device became the central of the link, with msg being the 6-octet address of the remote device. */
+	RTK_BT_BR_GAP_LINK_ROLE_SLAVE,       /*!< Indicate the local device became the peripheral of the link, with msg being the 6-octet address of the remote device. */
+	RTK_BT_BR_GAP_LINK_RSSI_INFO,        /*!< Indicate the link RSSI read result, with msg @ref rtk_bt_br_link_read_rssi_rsp. */
+	RTK_BT_BR_GAP_EVT_MAX,               /*!< Reserved. */
 } rtk_bt_br_gap_evt_t;
 
 /**
@@ -888,13 +888,13 @@ typedef enum {
  * @brief     Bluetooth A2DP action.
  */
 typedef enum {
-	RTK_BT_A2DP_ACT_CODEC_CFG = 1,
-	RTK_BT_A2DP_ACT_CONNECT,
-	RTK_BT_A2DP_ACT_DISCONNECT,
-	RTK_BT_A2DP_ACT_START,
-	RTK_BT_A2DP_ACT_SUSPEND,
-	RTK_BT_A2DP_ACT_SEND_DATA,
-	RTK_BT_A2DP_ACT_MAX,
+	RTK_BT_A2DP_ACT_CODEC_CFG = 1,    /*!< Reserved for future use. Currently set directly by @ref rtk_bt_a2dp_codec_cfg. */
+	RTK_BT_A2DP_ACT_CONNECT,          /*!< Send an A2DP connection request to the remote device. */
+	RTK_BT_A2DP_ACT_DISCONNECT,       /*!< Disconnect the A2DP connection with the remote device. */
+	RTK_BT_A2DP_ACT_START,            /*!< Request to start the A2DP stream with the remote device. */
+	RTK_BT_A2DP_ACT_SUSPEND,          /*!< Request to suspend the A2DP stream with the remote device. */
+	RTK_BT_A2DP_ACT_SEND_DATA,        /*!< Send A2DP stream data to the remote device. */
+	RTK_BT_A2DP_ACT_MAX,              /*!< Reserved. */
 } rtk_bt_a2dp_act_t;
 
 /**
@@ -902,19 +902,20 @@ typedef enum {
  * @brief     Bluetooth A2DP event indication.
  */
 typedef enum {
-	RTK_BT_A2DP_EVT_CONN_IND = 1,                  /*!< A2DP connection indication. */
-	RTK_BT_A2DP_EVT_CONN_CMPL,                     /*!< A2DP connection complete. */
-	RTK_BT_A2DP_EVT_DISCONN_CMPL,                  /*!< A2DP disconnection complete. */
-	RTK_BT_A2DP_EVT_CONFIG_CMPL,                   /*!< A2DP configure complete. */
-	RTK_BT_A2DP_EVT_STREAM_OPEN,                   /*!< A2DP stream open. */
-	RTK_BT_A2DP_EVT_STREAM_START_IND,              /*!< A2DP stream start indication. */
-	RTK_BT_A2DP_EVT_STREAM_START_RSP,              /*!< A2DP stream start response. */
-	RTK_BT_A2DP_EVT_STREAM_STOP,                   /*!< A2DP stream stop. */
-	RTK_BT_A2DP_EVT_STREAM_CLOSE,                  /*!< A2DP stream close. */
-	RTK_BT_A2DP_EVT_STREAM_DATA_IND,               /*!< A2DP stream data indication. Direct calling, BT api shall not be called in this event case. */
-	RTK_BT_A2DP_EVT_STREAM_DATA_RSP,               /*!< A2DP stream data receive rsp. */
-	RTK_BT_A2DP_EVT_SDP_ATTR_INFO,                 /*!< A2DP SRC get sink sdp data info. */
-	RTK_BT_A2DP_EVT_MAX,
+	RTK_BT_A2DP_EVT_CONN_IND = 1,        /*!< Indicate an incoming A2DP connection request, with msg @ref rtk_bt_a2dp_conn_ind_t. */
+	RTK_BT_A2DP_EVT_CONN_CMPL,           /*!< Indicate A2DP connection completed, with msg @ref rtk_bt_a2dp_conn_ind_t. */
+	RTK_BT_A2DP_EVT_DISCONN_CMPL,        /*!< Indicate A2DP disconnection completed, with msg @ref rtk_bt_a2dp_disconn_ind_t. */
+	RTK_BT_A2DP_EVT_CONFIG_CMPL,         /*!< Indicate A2DP codec configuration completed, with msg @ref rtk_bt_a2dp_codec_t. */
+	RTK_BT_A2DP_EVT_STREAM_OPEN,         /*!< Indicate A2DP stream opened, with msg @ref rtk_bt_a2dp_stream_open_t. */
+	RTK_BT_A2DP_EVT_STREAM_START_IND,    /*!< Indicate an A2DP stream start request from the remote device, with msg @ref rtk_bt_a2dp_stream_start_t. */
+	RTK_BT_A2DP_EVT_STREAM_START_RSP,    /*!< Indicate the A2DP stream start response, with msg being the 6-octet address of the remote device. */
+	RTK_BT_A2DP_EVT_STREAM_STOP,         /*!< Indicate A2DP stream stopped, with msg @ref rtk_bt_a2dp_stream_stop_t. */
+	RTK_BT_A2DP_EVT_STREAM_CLOSE,        /*!< Indicate A2DP stream closed, with msg @ref rtk_bt_a2dp_stream_close_t. */
+	RTK_BT_A2DP_EVT_STREAM_DATA_IND,     /*!< Indicate A2DP stream data received, with msg @ref rtk_bt_a2dp_stream_data_ind_t. This is a direct calling event, BT APIs
+                                          *   shall not be called in its callback. */
+	RTK_BT_A2DP_EVT_STREAM_DATA_RSP,     /*!< Indicate the response of the A2DP stream data sent, with msg @ref rtk_bt_a2dp_stream_data_rsp_t. */
+	RTK_BT_A2DP_EVT_SDP_ATTR_INFO,       /*!< Indicate the SDP attributes read from the remote A2DP sink, with msg @ref rtk_bt_a2dp_sdp_attr_info_t. */
+	RTK_BT_A2DP_EVT_MAX,                 /*!< Reserved. */
 } rtk_bt_a2dp_evt_t;
 
 /**
@@ -922,29 +923,29 @@ typedef enum {
  * @brief     Bluetooth AVRCP action.
  */
 typedef enum {
-	RTK_BT_AVRCP_ACT_CONNECT = 1,
-	RTK_BT_AVRCP_ACT_DISCONNECT,
-	RTK_BT_AVRCP_ACT_PLAY_STATUS_CHANGE_REQ,
-	RTK_BT_AVRCP_ACT_PLAY_STATUS_CHANGE_REG_RSP,
-	RTK_BT_AVRCP_ACT_PLAY,
-	RTK_BT_AVRCP_ACT_PAUSE,
-	RTK_BT_AVRCP_ACT_STOP,
-	RTK_BT_AVRCP_ACT_FORWARD,
-	RTK_BT_AVRCP_ACT_BACKWARD,
-	RTK_BT_AVRCP_ACT_REWIND_START,
-	RTK_BT_AVRCP_ACT_REWIND_STOP,
-	RTK_BT_AVRCP_ACT_FAST_FORWARD_START,
-	RTK_BT_AVRCP_ACT_FAST_FORWARD_STOP,
-	RTK_BT_AVRCP_ACT_ABSOLUTE_VOLUME_SET,
-	RTK_BT_AVRCP_ACT_VOLUME_CHANGE_REQ,
-	RTK_BT_AVRCP_ACT_GET_ELEMENT_ATTR,
-	RTK_BT_AVRCP_ACT_CONN_COVER_ART,
-	RTK_BT_AVRCP_ACT_APP_SETTING_ATTRS_LIST,
-	RTK_BT_AVRCP_ACT_APP_SETTING_VALUES_LIST,
-	RTK_BT_AVRCP_ACT_APP_SETTING_VALUE_GET,
-	RTK_BT_AVRCP_ACT_APP_SETTING_VALUE_SET,
-	RTK_BT_AVRCP_ACT_GET_PLAY_STATUS_REQ,
-	RTK_BT_AVRCP_ACT_MAX,
+	RTK_BT_AVRCP_ACT_CONNECT = 1,                   /*!< Connect the AVRCP channel to a remote device. */
+	RTK_BT_AVRCP_ACT_DISCONNECT,                    /*!< Disconnect the AVRCP channel from a remote device. */
+	RTK_BT_AVRCP_ACT_PLAY_STATUS_CHANGE_REQ,        /*!< Send a play status change request to the remote CT device. */
+	RTK_BT_AVRCP_ACT_PLAY_STATUS_CHANGE_REG_RSP,    /*!< Send the play status change response after the register notification command is received. */
+	RTK_BT_AVRCP_ACT_PLAY,                          /*!< Send a play command to the remote device. */
+	RTK_BT_AVRCP_ACT_PAUSE,                         /*!< Send a pause command to the remote device. */
+	RTK_BT_AVRCP_ACT_STOP,                          /*!< Send a stop command to the remote device. */
+	RTK_BT_AVRCP_ACT_FORWARD,                       /*!< Send a forward (next track) command to the remote device. */
+	RTK_BT_AVRCP_ACT_BACKWARD,                      /*!< Send a backward (previous track) command to the remote device. */
+	RTK_BT_AVRCP_ACT_REWIND_START,                  /*!< Send a rewind start command to the remote device. */
+	RTK_BT_AVRCP_ACT_REWIND_STOP,                   /*!< Send a rewind stop command to the remote device. */
+	RTK_BT_AVRCP_ACT_FAST_FORWARD_START,            /*!< Send a fast forward start command to the remote device. */
+	RTK_BT_AVRCP_ACT_FAST_FORWARD_STOP,             /*!< Send a fast forward stop command to the remote device. */
+	RTK_BT_AVRCP_ACT_ABSOLUTE_VOLUME_SET,           /*!< Set the absolute volume of the remote device. */
+	RTK_BT_AVRCP_ACT_VOLUME_CHANGE_REQ,             /*!< Send a volume change request to the remote TG device. */
+	RTK_BT_AVRCP_ACT_GET_ELEMENT_ATTR,              /*!< Get the media element attributes of the remote device. */
+	RTK_BT_AVRCP_ACT_CONN_COVER_ART,                /*!< Connect the AVRCP cover art channel to a remote device. */
+	RTK_BT_AVRCP_ACT_APP_SETTING_ATTRS_LIST,        /*!< Get the player application setting attributes supported by the remote device. */
+	RTK_BT_AVRCP_ACT_APP_SETTING_VALUES_LIST,       /*!< Get the values supported by a player application setting attribute of the remote device. */
+	RTK_BT_AVRCP_ACT_APP_SETTING_VALUE_GET,         /*!< Get the current values of player application setting attributes from the remote device. */
+	RTK_BT_AVRCP_ACT_APP_SETTING_VALUE_SET,         /*!< Set the value of a player application setting attribute of the remote device. */
+	RTK_BT_AVRCP_ACT_GET_PLAY_STATUS_REQ,           /*!< Get the playback status of the remote device. */
+	RTK_BT_AVRCP_ACT_MAX,                           /*!< Reserved. */
 } rtk_bt_avrcp_act_t;
 
 /**
@@ -952,32 +953,42 @@ typedef enum {
  * @brief     Bluetooth AVRCP event indication.
  */
 typedef enum {
-	RTK_BT_AVRCP_EVT_CONN_IND = 1,                  /*!< AVRCP connection indication. */
-	RTK_BT_AVRCP_EVT_ABSOLUTE_VOLUME_SET,           /*!< AVRCP absolute volume set. */
-	RTK_BT_AVRCP_EVT_VOLUME_CHANGED,                /*!< AVRCP volume changed. */
-	RTK_BT_AVRCP_EVT_VOLUME_UP,                     /*!< AVRCP volume up. */
-	RTK_BT_AVRCP_EVT_VOLUME_DOWN,                   /*!< AVRCP volume down. */
-	RTK_BT_AVRCP_EVT_REG_VOLUME_CHANGED,            /*!< AVRCP volume reg changed. */
-	RTK_BT_AVRCP_EVT_ELEMENT_ATTR_INFO,             /*!< AVRCP element attr information. */
-	RTK_BT_AVRCP_EVT_APP_SETTING_ATTRS_LIST_RSP,    /*!< AVRCP app settings attrs list. */
-	RTK_BT_AVRCP_EVT_APP_SETTING_VALUES_LIST_RSP,   /*!< AVRCP app values attrs list. */
-	RTK_BT_AVRCP_EVT_APP_SETTING_GET_RSP,           /*!< AVRCP app setting get response. */
-	RTK_BT_AVRCP_EVT_COVER_ART_DATA_IND,            /*!< AVRCP cover art data indication. */
-	RTK_BT_AVRCP_EVT_CONN_CMPL,                     /*!< AVRCP conn completion. */
-	RTK_BT_AVRCP_EVT_DISCONN_CMPL,                  /*!< AVRCP disconn completion. */
-	RTK_BT_AVRCP_EVT_PLAY_STATUS_CHANGED_REG_REQ,   /*!< AVRCP play status changed. */
-	RTK_BT_AVRCP_EVT_TRACK_CHANGED,                 /*!< AVRCP track changed. */
-	RTK_BT_AVRCP_EVT_PLAY_REQ_EVENT,                /*!< AVRCP play request event. */
-	RTK_BT_AVRCP_EVT_PAUSE_REQ_EVENT,               /*!< AVRCP pause request event. */
-	RTK_BT_AVRCP_EVT_STOP_REQ_EVENT,                /*!< AVRCP stop request event. */
-	RTK_BT_AVRCP_EVT_FORWARD_REQ_EVENT,             /*!< AVRCP forward request event. */
-	RTK_BT_AVRCP_EVT_BACKWARD_REQ_EVENT,            /*!< AVRCP backward request event. */
-	RTK_BT_AVRCP_EVT_FAST_FORWARD_START_REQ_EVENT,  /*!< AVRCP fast forward start request event. */
-	RTK_BT_AVRCP_EVT_FAST_FORWARD_STOP_REQ_EVENT,   /*!< AVRCP fast forward stop request event. */
-	RTK_BT_AVRCP_EVT_REWIND_START_REQ_EVENT,        /*!< AVRCP rewind start request event. */
-	RTK_BT_AVRCP_EVT_REWIND_STOP_REQ_EVENT,         /*!< AVRCP rewind stop request event. */
-	RTK_BT_AVRCP_EVT_GET_PLAY_STATUS_RSP_EVENT,     /*!< AVRCP get play status response event. */
-	RTK_BT_AVRCP_EVT_MAX,
+	RTK_BT_AVRCP_EVT_CONN_IND = 1,                    /*!< Indicate an incoming AVRCP connection request, with msg @ref rtk_bt_avrcp_conn_ind_t. */
+	RTK_BT_AVRCP_EVT_ABSOLUTE_VOLUME_SET,             /*!< Indicate the remote device requested to set the absolute volume, with msg
+                                                       *   @ref rtk_bt_avrcp_absolute_volume_set_t. */
+	RTK_BT_AVRCP_EVT_VOLUME_CHANGED,                  /*!< Indicate the volume of the remote device changed, with msg @ref rtk_bt_avrcp_volume_t. */
+	RTK_BT_AVRCP_EVT_VOLUME_UP,                       /*!< Indicate the remote device requested volume up. */
+	RTK_BT_AVRCP_EVT_VOLUME_DOWN,                     /*!< Indicate the remote device requested volume down. */
+	RTK_BT_AVRCP_EVT_REG_VOLUME_CHANGED,              /*!< Indicate the remote device registered the volume changed notification, with msg
+                                                       *   @ref rtk_bt_avrcp_volume_change_req_t. */
+	RTK_BT_AVRCP_EVT_ELEMENT_ATTR_INFO,               /*!< Indicate the media element attributes of the remote device, with msg @ref rtk_bt_avrcp_element_attr_info_t. */
+	RTK_BT_AVRCP_EVT_APP_SETTING_ATTRS_LIST_RSP,      /*!< Indicate the supported player application setting attributes, with msg
+                                                       *   @ref rtk_bt_avrcp_app_setting_attrs_list_t. */
+	RTK_BT_AVRCP_EVT_APP_SETTING_VALUES_LIST_RSP,     /*!< Indicate the supported values of a player application setting attribute, with msg
+                                                       *   @ref rtk_bt_avrcp_app_setting_values_list_t. */
+	RTK_BT_AVRCP_EVT_APP_SETTING_GET_RSP,             /*!< Indicate the current player application setting values, with msg @ref rtk_bt_avrcp_app_setting_get_rsp_t. */
+	RTK_BT_AVRCP_EVT_COVER_ART_DATA_IND,              /*!< Indicate cover art data received, with msg @ref rtk_bt_avrcp_cover_art_data_ind_t. */
+	RTK_BT_AVRCP_EVT_CONN_CMPL,                       /*!< Indicate AVRCP connection completed, with msg @ref rtk_bt_avrcp_conn_cmpl_t. */
+	RTK_BT_AVRCP_EVT_DISCONN_CMPL,                    /*!< Indicate AVRCP disconnection completed, with msg @ref rtk_bt_avrcp_disconn_cmpl_t. */
+	RTK_BT_AVRCP_EVT_PLAY_STATUS_CHANGED_REG_REQ,     /*!< Indicate the remote device registered the play status changed notification, with msg
+                                                       *   @ref rtk_bt_avrcp_sub_event_t. */
+	RTK_BT_AVRCP_EVT_TRACK_CHANGED,                   /*!< Indicate the playing track changed, with msg @ref rtk_bt_avrcp_track_changed_t. */
+	RTK_BT_AVRCP_EVT_PLAY_REQ_EVENT,                  /*!< Indicate a play request from the remote device, with msg @ref rtk_bt_avrcp_digital_interface_command_t. */
+	RTK_BT_AVRCP_EVT_PAUSE_REQ_EVENT,                 /*!< Indicate a pause request from the remote device, with msg @ref rtk_bt_avrcp_digital_interface_command_t. */
+	RTK_BT_AVRCP_EVT_STOP_REQ_EVENT,                  /*!< Indicate a stop request from the remote device, with msg @ref rtk_bt_avrcp_digital_interface_command_t. */
+	RTK_BT_AVRCP_EVT_FORWARD_REQ_EVENT,               /*!< Indicate a forward request from the remote device, with msg @ref rtk_bt_avrcp_digital_interface_command_t. */
+	RTK_BT_AVRCP_EVT_BACKWARD_REQ_EVENT,              /*!< Indicate a backward request from the remote device, with msg @ref rtk_bt_avrcp_digital_interface_command_t. */
+	RTK_BT_AVRCP_EVT_FAST_FORWARD_START_REQ_EVENT,    /*!< Indicate a fast forward start request from the remote device, with msg
+                                                       *   @ref rtk_bt_avrcp_digital_interface_command_t. */
+	RTK_BT_AVRCP_EVT_FAST_FORWARD_STOP_REQ_EVENT,     /*!< Indicate a fast forward stop request from the remote device, with msg
+                                                       *   @ref rtk_bt_avrcp_digital_interface_command_t. */
+	RTK_BT_AVRCP_EVT_REWIND_START_REQ_EVENT,          /*!< Indicate a rewind start request from the remote device, with msg
+                                                       *   @ref rtk_bt_avrcp_digital_interface_command_t. */
+	RTK_BT_AVRCP_EVT_REWIND_STOP_REQ_EVENT,           /*!< Indicate a rewind stop request from the remote device, with msg
+                                                       *   @ref rtk_bt_avrcp_digital_interface_command_t. */
+	RTK_BT_AVRCP_EVT_GET_PLAY_STATUS_RSP_EVENT,       /*!< Indicate the playback status response of the remote device, with msg
+                                                       *   @ref rtk_bt_avrcp_get_play_status_rsp_t. */
+	RTK_BT_AVRCP_EVT_MAX,                             /*!< Reserved. */
 } rtk_bt_avrcp_evt_t;
 
 /**
@@ -1047,12 +1058,12 @@ typedef enum {
  * @brief     Bluetooth HID action.
  */
 typedef enum {
-	RTK_BT_HID_ACT_DESCRIPTOR_ADD = 1,
-	RTK_BT_HID_ACT_CONNECT,
-	RTK_BT_HID_ACT_DISCONNECT,
-	RTK_BT_HID_ACT_GET_REPORT_RSP,
-	RTK_BT_HID_ACT_INPUT_DATA_SEND,
-	RTK_BT_HID_ACT_MAX,
+	RTK_BT_HID_ACT_DESCRIPTOR_ADD = 1,    /*!< Reserved for future use. Currently set directly by @ref rtk_hid_descriptor_add. */
+	RTK_BT_HID_ACT_CONNECT,               /*!< Initiate a HID connection to the remote device. */
+	RTK_BT_HID_ACT_DISCONNECT,            /*!< Disconnect the HID connection with the remote device. */
+	RTK_BT_HID_ACT_GET_REPORT_RSP,        /*!< Send the response to a HID get report request from the remote device. */
+	RTK_BT_HID_ACT_INPUT_DATA_SEND,       /*!< Send an input report to the remote device over the HID interrupt channel. */
+	RTK_BT_HID_ACT_MAX,                   /*!< Reserved. */
 } rtk_bt_hid_act_t;
 
 /**
@@ -1060,10 +1071,10 @@ typedef enum {
  * @brief     Bluetooth HID event indication.
  */
 typedef enum {
-	RTK_BT_HID_EVT_CONN_IND = 1,                  /*!< HID connection indication. */
-	RTK_BT_HID_EVT_CONN_CMPL,                     /*!< HID connection complete indication. */
-	RTK_BT_HID_EVT_DISCONN_CMPL,                  /*!< HID disconnection complete indication. */
-	RTK_BT_HID_EVT_MAX,
+	RTK_BT_HID_EVT_CONN_IND = 1,    /*!< Indicate an incoming HID connection request, with msg @ref rtk_bt_hid_conn_ind_t. */
+	RTK_BT_HID_EVT_CONN_CMPL,       /*!< Indicate HID connection completed, with msg @ref rtk_bt_hid_conn_ind_t. */
+	RTK_BT_HID_EVT_DISCONN_CMPL,    /*!< Indicate HID disconnection completed, with msg @ref rtk_bt_hid_disconn_ind_t. */
+	RTK_BT_HID_EVT_MAX,             /*!< Reserved. */
 } rtk_bt_hid_evt_t;
 
 /**
@@ -1071,9 +1082,9 @@ typedef enum {
  * @brief     Bluetooth SDP action.
  */
 typedef enum {
-	RTK_BT_SDP_ACT_RECORD_ADD = 1,
-	RTK_BT_SDP_ACT_DISCOV_START,
-	RTK_BT_SDP_ACT_MAX,
+	RTK_BT_SDP_ACT_RECORD_ADD = 1,    /*!< Reserved for future use. Currently set directly by @ref rtk_sdp_record_add. */
+	RTK_BT_SDP_ACT_DISCOV_START,      /*!< Start SDP discovery on a remote device to read its Device ID attributes. */
+	RTK_BT_SDP_ACT_MAX,               /*!< Reserved. */
 } rtk_bt_sdp_act_t;
 
 /**
@@ -1081,9 +1092,9 @@ typedef enum {
  * @brief     Bluetooth SDP event indication.
  */
 typedef enum {
-	RTK_BT_SDP_EVT_DID_ATTR_INFO = 1,
-	RTK_BT_SDP_EVT_DISCOV_CMPL,
-	RTK_BT_SDP_EVT_MAX,
+	RTK_BT_SDP_EVT_DID_ATTR_INFO = 1,    /*!< Indicate the Device ID attributes of the remote device, with msg @ref rtk_sdp_did_attr_info. */
+	RTK_BT_SDP_EVT_DISCOV_CMPL,          /*!< Indicate SDP discovery completed, with msg @ref rtk_sdp_discov_cmpl. */
+	RTK_BT_SDP_EVT_MAX,                  /*!< Reserved. */
 } rtk_bt_sdp_evt_t;
 
 /**
@@ -1091,23 +1102,23 @@ typedef enum {
  * @brief     Bluetooth HFP action.
  */
 typedef enum {
-	RTK_BT_HFP_ACT_CONFIG_HF = 1,
-	RTK_BT_HFP_ACT_CONFIG_AG,
-	RTK_BT_HFP_ACT_CONNECT,
-	RTK_BT_HFP_ACT_DISCONNECT,
-	RTK_BT_HFP_ACT_SCO_CONNECT,
-	RTK_BT_HFP_ACT_SCO_DISCONNECT,
-	RTK_BT_HFP_ACT_CALL_INCOMING,
-	RTK_BT_HFP_ACT_CALL_ANSWER,
-	RTK_BT_HFP_ACT_CALL_TERMINATE,
-	RTK_BT_HFP_ACT_DIAL_WITH_NUMBER,
-	RTK_BT_HFP_ACT_DIAL_LAST_NUMBER,
-	RTK_BT_HFP_ACT_SEND_SCO_DATA,
-	RTK_BT_HFP_ACT_REPORT_BATT_LEVEL,
-	RTK_BT_HFP_ACT_REPORT_SPEAKER_GAIN,
-	RTK_BT_HFP_ACT_REPORT_MICROPHONE_GAIN,
-	RTK_BT_HFP_ACT_VND_CMD_REQ,
-	RTK_BT_HFP_ACT_MAX,
+	RTK_BT_HFP_ACT_CONFIG_HF = 1,             /*!< Reserved for future use. Currently set directly by @ref rtk_bt_hfp_cfg. */
+	RTK_BT_HFP_ACT_CONFIG_AG,                 /*!< Reserved for future use. Currently set directly by @ref rtk_bt_hfp_cfg. */
+	RTK_BT_HFP_ACT_CONNECT,                   /*!< Connect HFP with a remote device. */
+	RTK_BT_HFP_ACT_DISCONNECT,                /*!< Disconnect HFP from a remote device. */
+	RTK_BT_HFP_ACT_SCO_CONNECT,               /*!< Establish the SCO audio link with a remote device. */
+	RTK_BT_HFP_ACT_SCO_DISCONNECT,            /*!< Release the SCO audio link with a remote device. */
+	RTK_BT_HFP_ACT_CALL_INCOMING,             /*!< Report an incoming call to the remote HF device. */
+	RTK_BT_HFP_ACT_CALL_ANSWER,               /*!< Answer the incoming call on the HFP link. */
+	RTK_BT_HFP_ACT_CALL_TERMINATE,            /*!< Terminate the current call on the HFP link. */
+	RTK_BT_HFP_ACT_DIAL_WITH_NUMBER,          /*!< Dial a call with the given phone number. */
+	RTK_BT_HFP_ACT_DIAL_LAST_NUMBER,          /*!< Redial the last dialed number. */
+	RTK_BT_HFP_ACT_SEND_SCO_DATA,             /*!< Send SCO audio data to the remote device. */
+	RTK_BT_HFP_ACT_REPORT_BATT_LEVEL,         /*!< Report the local battery level to the remote device. */
+	RTK_BT_HFP_ACT_REPORT_SPEAKER_GAIN,       /*!< Report the local speaker gain to the remote device. */
+	RTK_BT_HFP_ACT_REPORT_MICROPHONE_GAIN,    /*!< Report the local microphone gain to the remote device. */
+	RTK_BT_HFP_ACT_VND_CMD_REQ,               /*!< Send a vendor-specific AT command to the remote device. */
+	RTK_BT_HFP_ACT_MAX,                       /*!< Reserved. */
 } rtk_bt_hfp_act_t;
 
 /**
@@ -1115,31 +1126,41 @@ typedef enum {
  * @brief     Bluetooth HFP event indication.
  */
 typedef enum {
-	RTK_BT_HFP_EVT_SDP_ATTR_INFO = 1,                  /*!< HFP AG get hf sdp data info. */
-	RTK_BT_HFP_EVT_SUPPORTED_FEATURES_IND,             /*!< HFP AG supported features indication. */
-	RTK_BT_HFP_EVT_CONN_IND,                           /*!< HFP connection indication. */
-	RTK_BT_HFP_EVT_CONN_CMPL,                          /*!< HFP connection completed. */
-	RTK_BT_HFP_EVT_CALL_STATUS,                        /*!< HFP CALL status indication. */
-	RTK_BT_HFP_EVT_CALLER_ID_IND,                      /*!< HFP CALLER number indication. */
-	RTK_BT_HFP_EVT_DISCONN_CMPL,                       /*!< HFP disconnection completed. */
-	RTK_BT_HFP_EVT_HF_BATTERY_IND,                     /*!< HFP HF battery indicator req. */
-	RTK_BT_HFP_EVT_HF_SPEAKER_VOL_CHANGED_IND,         /*!< HFP HF speaker volume changed indicate. */
-	RTK_BT_HFP_EVT_HF_MIC_VOL_CHANGED_IND,             /*!< HFP HF mic volume changed indicate. */
-	RTK_BT_HFP_EVT_SCO_CONN_IND,                       /*!< HFP sco connection indication. */
-	RTK_BT_HFP_EVT_SCO_CONN_CMPL,                      /*!< HFP sco connection completed. */
-	RTK_BT_HFP_EVT_SCO_DATA_IND,                       /*!< HFP sco data indication. Direct calling, BT api shall not be called in this event case. */
-	RTK_BT_HFP_EVT_SCO_DISCONNCTED_IND,                /*!< HFP sco disconnected indication. */
-	RTK_BT_HFP_EVT_AG_CONN_IND,                        /*!< HFP ag conn indication. */
-	RTK_BT_HFP_EVT_AG_CONN_CMPL,                       /*!< HFP ag conn complete. */
-	RTK_BT_HFP_EVT_AG_DISCONN_CMPL,                    /*!< HFP ag disconnection complete. */
-	RTK_BT_HFP_EVT_AG_INDICATORS_STATUS_REQ,           /*!< HFP ag disconnection complete. */
-	RTK_BT_HFP_EVT_AG_CURR_CALLS_LIST_QUERY,           /*!< HFP ag current call list query. */
-	RTK_BT_HFP_EVT_AG_DIAL_LAST_NUMBER,                /*!< HFP ag dial last number. */
-	RTK_BT_HFP_EVT_AG_CALL_ANSWER_REQ,                 /*!< HFP ag call answer request. */
-	RTK_BT_HFP_EVT_AG_CALL_TERMINATE_REQ,              /*!< HFP ag call terminate request. */
-	RTK_BT_HFP_EVT_AG_CALL_STATUS,                     /*!< HFP ag call status incoming. */
-	RTK_BT_HFP_EVT_UNKNOWN_EVENT_IND,                  /*!< HFP unknown event indication. */
-	RTK_BT_HFP_EVT_MAX,
+	RTK_BT_HFP_EVT_SDP_ATTR_INFO = 1,             /*!< Indicate the SDP attributes read from the remote HF device on the AG side, with msg
+                                                   *   @ref rtk_bt_hfp_sdp_attr_info_t. */
+	RTK_BT_HFP_EVT_SUPPORTED_FEATURES_IND,        /*!< Indicate the supported features of the remote HF device on the AG side, with msg
+                                                   *   @ref rtk_bt_hfp_ag_features_ind_t. */
+	RTK_BT_HFP_EVT_CONN_IND,                      /*!< Indicate an incoming HFP connection request, with msg @ref rtk_bt_hfp_conn_ind_t. */
+	RTK_BT_HFP_EVT_CONN_CMPL,                     /*!< Indicate HFP connection completed, with msg @ref rtk_bt_hfp_conn_ind_t. */
+	RTK_BT_HFP_EVT_CALL_STATUS,                   /*!< Indicate the call status changed, with msg @ref rtk_bt_hfp_call_status_ind_t. */
+	RTK_BT_HFP_EVT_CALLER_ID_IND,                 /*!< Indicate the caller number of an incoming call, with msg @ref rtk_bt_hfp_caller_id_ind_t. */
+	RTK_BT_HFP_EVT_DISCONN_CMPL,                  /*!< Indicate HFP disconnection completed, with msg @ref rtk_bt_hfp_disconn_ind_t. */
+	RTK_BT_HFP_EVT_HF_BATTERY_IND,                /*!< Indicate the battery level reported by the remote HF device, with msg @ref rtk_bt_hfp_hf_battery_ind_t. */
+	RTK_BT_HFP_EVT_HF_SPEAKER_VOL_CHANGED_IND,    /*!< Indicate the speaker volume of the remote HF device changed, with msg
+                                                   *   @ref rtk_bt_hfp_hf_speaker_volume_changed_ind_t. */
+	RTK_BT_HFP_EVT_HF_MIC_VOL_CHANGED_IND,        /*!< Indicate the microphone volume of the remote HF device changed, with msg
+                                                   *   @ref rtk_bt_hfp_hf_mic_volume_changed_ind_t. */
+	RTK_BT_HFP_EVT_SCO_CONN_IND,                  /*!< Indicate an incoming SCO connection request, with msg @ref rtk_bt_hfp_conn_ind_t. */
+	RTK_BT_HFP_EVT_SCO_CONN_CMPL,                 /*!< Indicate SCO connection completed, with msg @ref rtk_bt_hfp_codec_t. */
+	RTK_BT_HFP_EVT_SCO_DATA_IND,                  /*!< Indicate SCO data received, with msg @ref rtk_bt_hfp_sco_data_ind_t. This is a direct calling event, BT APIs
+                                                   *   shall not be called in its callback. */
+	RTK_BT_HFP_EVT_SCO_DISCONNCTED_IND,           /*!< Indicate SCO disconnected, with msg @ref rtk_bt_hfp_disconn_ind_t. */
+	RTK_BT_HFP_EVT_AG_CONN_IND,                   /*!< Indicate an incoming HFP connection request on the AG side, with msg @ref rtk_bt_hfp_conn_ind_t. */
+	RTK_BT_HFP_EVT_AG_CONN_CMPL,                  /*!< Indicate HFP connection completed on the AG side, with msg @ref rtk_bt_hfp_conn_ind_t. */
+	RTK_BT_HFP_EVT_AG_DISCONN_CMPL,               /*!< Indicate HFP disconnection completed on the AG side, with msg @ref rtk_bt_hfp_disconn_ind_t. */
+	RTK_BT_HFP_EVT_AG_INDICATORS_STATUS_REQ,      /*!< Indicate the remote HF device requested the indicator status on the AG side, with msg
+                                                   *   @ref rtk_bt_hfp_ag_indicators_status_req_t. */
+	RTK_BT_HFP_EVT_AG_CURR_CALLS_LIST_QUERY,      /*!< Indicate the remote HF device queried the current call list on the AG side, with msg
+                                                   *   @ref rtk_bt_hfp_ag_curr_calls_list_query_t. */
+	RTK_BT_HFP_EVT_AG_DIAL_LAST_NUMBER,           /*!< Indicate the remote HF device requested to redial the last number on the AG side, with msg
+                                                   *   @ref rtk_bt_hfp_ag_dial_last_number_ind_t. */
+	RTK_BT_HFP_EVT_AG_CALL_ANSWER_REQ,            /*!< Indicate the remote HF device requested to answer the call on the AG side, with msg
+                                                   *   @ref rtk_bt_hfp_ag_call_answer_req_ind_t. */
+	RTK_BT_HFP_EVT_AG_CALL_TERMINATE_REQ,         /*!< Indicate the remote HF device requested to terminate the call on the AG side, with msg
+                                                   *   @ref rtk_bt_hfp_ag_call_terminate_req_ind_t. */
+	RTK_BT_HFP_EVT_AG_CALL_STATUS,                /*!< Indicate the call status changed on the AG side, with msg @ref rtk_bt_hfp_call_status_ind_t. */
+	RTK_BT_HFP_EVT_UNKNOWN_EVENT_IND,             /*!< Indicate an unknown AT event received, with msg @ref rtk_bt_hfp_unknown_at_event_t. */
+	RTK_BT_HFP_EVT_MAX,                           /*!< Reserved. */
 } rtk_bt_hfp_evt_t;
 
 /**
@@ -1147,15 +1168,15 @@ typedef enum {
  * @brief     Bluetooth PBAP action.
  */
 typedef enum {
-	RTK_BT_PBAP_ACT_CONNECT = 1,
-	RTK_BT_PBAP_ACT_DISCONNECT,
-	RTK_BT_PBAP_ACT_SET_PHONE_BOOK,
-	RTK_BT_PBAP_ACT_PHONE_BOOK_PULL,
-	RTK_BT_PBAP_ACT_PHONE_BOOK_PULL_CONTINUE,
-	RTK_BT_PBAP_ACT_PHONE_BOOK_PULL_ABORT,
-	RTK_BT_PBAP_ACT_PHONE_BOOK_SIZE_GET,
-	RTK_BT_PBAP_ACT_PULL_CALLER_ID_NAME,
-	RTK_BT_PBAP_ACT_MAX,
+	RTK_BT_PBAP_ACT_CONNECT = 1,                 /*!< Send a PBAP connection request to the remote device. */
+	RTK_BT_PBAP_ACT_DISCONNECT,                  /*!< Disconnect the PBAP connection with the remote device. */
+	RTK_BT_PBAP_ACT_SET_PHONE_BOOK,              /*!< Set the active phone book on the remote device. */
+	RTK_BT_PBAP_ACT_PHONE_BOOK_PULL,             /*!< Pull the phone book from the remote device. */
+	RTK_BT_PBAP_ACT_PHONE_BOOK_PULL_CONTINUE,    /*!< Pull more phone book data from the remote device. */
+	RTK_BT_PBAP_ACT_PHONE_BOOK_PULL_ABORT,       /*!< Abort pulling the phone book. */
+	RTK_BT_PBAP_ACT_PHONE_BOOK_SIZE_GET,         /*!< Get the phone book size of the remote device. */
+	RTK_BT_PBAP_ACT_PULL_CALLER_ID_NAME,         /*!< Pull the vCard listing of the current phone book by phone number to get the caller name. */
+	RTK_BT_PBAP_ACT_MAX,                         /*!< Reserved. */
 } rtk_bt_pbap_act_t;
 
 /**
@@ -1163,14 +1184,14 @@ typedef enum {
  * @brief     Bluetooth PBAP event indication.
  */
 typedef enum {
-	RTK_BT_PBAP_EVT_CONN_CMPL = 1,                  /*!< PBAP connection completion. */
-	RTK_BT_PBAP_EVT_CONN_FAIL,                      /*!< PBAP connection fail. */
-	RTK_BT_PBAP_EVT_DISCONN_CMPL,                   /*!< PBAP disconnection completion. */
-	RTK_BT_PBAP_EVT_SET_PHONE_BOOK_CMPL,            /*!< PBAP set phone book completion. */
-	RTK_BT_PBAP_EVT_GET_PHONE_BOOK_CMPL,            /*!< PBAP get phone book completion. */
-	RTK_BT_PBAP_EVT_CALLER_ID_NAME,                 /*!< PBAP caller id name indication. */
-	RTK_BT_PBAP_EVT_GET_PHONE_BOOK_SIZE_CMPL,       /*!< PBAP get phone book size completion. */
-	RTK_BT_PBAP_EVT_MAX,
+	RTK_BT_PBAP_EVT_CONN_CMPL = 1,               /*!< Indicate PBAP connection completed, with msg @ref rtk_bt_pbap_conn_ind_t. */
+	RTK_BT_PBAP_EVT_CONN_FAIL,                   /*!< Indicate PBAP connection failed, with msg @ref rtk_bt_pbap_conn_fail_ind_t. */
+	RTK_BT_PBAP_EVT_DISCONN_CMPL,                /*!< Indicate PBAP disconnection completed, with msg @ref rtk_bt_pbap_disconn_cmpl_t. */
+	RTK_BT_PBAP_EVT_SET_PHONE_BOOK_CMPL,         /*!< Indicate setting the active phone book completed, with msg @ref rtk_bt_pbap_set_pb_cmpl_t. */
+	RTK_BT_PBAP_EVT_GET_PHONE_BOOK_CMPL,         /*!< Indicate phone book data received, with msg @ref rtk_bt_pbap_get_pb_cmpl_t. */
+	RTK_BT_PBAP_EVT_CALLER_ID_NAME,              /*!< Indicate the caller name pulled by phone number, with msg @ref rtk_bt_pbap_caller_id_name_t. */
+	RTK_BT_PBAP_EVT_GET_PHONE_BOOK_SIZE_CMPL,    /*!< Indicate getting the phone book size completed, with msg @ref rtk_bt_pbap_get_pb_size_cmpl. */
+	RTK_BT_PBAP_EVT_MAX,                         /*!< Reserved. */
 } rtk_bt_pbap_evt_t;
 
 /********************************* BT GAP common group *********************************/

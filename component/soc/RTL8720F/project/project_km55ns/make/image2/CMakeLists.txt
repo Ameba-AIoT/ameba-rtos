@@ -1,18 +1,3 @@
-if(CONFIG_SOC_SINGLE_CORE)
-    set(prebuilt_img2_all ${c_MCU_PROJECT_DIR}/lib/bin/${c_MCU_PROJECT_NAME}_image2_all.bin)
-    set_property(TARGET ${c_MCU_PROJ_CONFIG} APPEND PROPERTY image2 "target_img2_km55ns")
-    set_property(TARGET ${c_MCU_PROJ_CONFIG} APPEND PROPERTY image2_all
-        "${c_SDK_IMAGE_TARGET_DIR}/${c_MCU_PROJECT_NAME}_image2_all.bin")
-    add_custom_target(target_img2_km55ns_postbuild
-        ALL
-        COMMAND ${CMAKE_COMMAND} -E make_directory ${c_SDK_IMAGE_TARGET_DIR}
-        COMMAND ${CMAKE_COMMAND} -E touch ${c_SDK_IMAGE_TARGET_DIR}/.gitignore
-        COMMAND ${CMAKE_COMMAND} -E copy ${prebuilt_img2_all}
-            ${c_SDK_IMAGE_TARGET_DIR}/${c_MCU_PROJECT_NAME}_image2_all.bin
-    )
-    return()
-endif()
-
 ###############################  PREBUILT INTERNAL LIBS DETECTION  ###############
 # Detect BEFORE ameba_add_image so early-return doesn't leave an empty link target.
 
@@ -21,13 +6,12 @@ endif()
 # Kconfig; dev trees are always =n) AND the presence of lib/internal/*.a.
 # Gating on AMEBA_RLS, not on lib/internal presence alone, keeps a normal
 # (non-release) build fully decoupled from the seal artifacts: even if a prior
-# seal build left stale lib/internal (or lib/bin) behind in the tree, a dev build
+# seal build left stale lib/internal behind in the tree, a dev build
 # compiles km55ns from source and never links the prebuilt libs. During release
 # build_lib AMEBA_RLS is still n (it is set only after all conf passes), so every
 # pass, including the ones after the seal build, also rebuilds from source with
 # its own config, so there is no config-mismatch link error and no need to reuse
 # a prebuilt bin.
-# (Uses AMEBA_RLS, not the seal switch, so this block survives the release strip.)
 if(CONFIG_AMEBA_RLS AND EXISTS "${c_MCU_PROJECT_DIR}/lib/internal")
     file(GLOB _psc_int_libs "${c_MCU_PROJECT_DIR}/lib/internal/*.a")
     if(_psc_int_libs)
@@ -37,9 +21,12 @@ endif()
 
 # Step 2: seal build -> always recompile from source.
 # Defensive only: AMEBA_RLS is already n during a seal, so Step 1 leaves
-# PREBUILT false anyway. This block is removed by the release strip step.
+# PREBUILT false anyway.
+if(SEAL_LIB)
+    set(CONFIG_KM55NS_IMG2_PREBUILT FALSE)
+endif()
 
-if(CONFIG_SOLO)
+if(CONFIG_IOT_MCU_COMBINED)
 ameba_add_image(target_img2 p_IMAGE_ALL ${c_MCU_PROJECT_NAME}_image2_all.bin p_TYPE image2 p_HIDE_FROM_ALL_PATH)
 else()
 ameba_add_image(target_img2 p_IMAGE_ALL ${c_MCU_PROJECT_NAME}_image2_all.bin)

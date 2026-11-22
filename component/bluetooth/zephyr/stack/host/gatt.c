@@ -3773,31 +3773,54 @@ static bool check_subscribe_security_level(struct bt_conn *conn,
 	return true;
 }
 
+#if ZEPHYR_RTK_PATCH
+static bt_gatt_common_notify_cb_t common_notify_cb;
+
+void bt_gatt_set_common_notify_cb(bt_gatt_common_notify_cb_t cb)
+{
+	common_notify_cb = cb;
+}
+#endif
+
 void bt_gatt_notification(struct bt_conn *conn, uint16_t handle,
-			  const void *data, uint16_t length)
+						const void *data, uint16_t length,
+#if ZEPHYR_RTK_PATCH
+						bool is_indicate
+#endif
+						)
 {
 	struct bt_gatt_subscribe_params *params, *tmp;
 	struct gatt_sub *sub;
+#if ZEPHYR_RTK_PATCH
+	bool subscribed = false;
+#endif
 
 	LOG_DBG("handle 0x%04x length %u", handle, length);
 
 	sub = gatt_sub_find(conn);
-	if (!sub) {
-		return;
-	}
+	if (sub) {
+		SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&sub->list, params, tmp, node) {
+			if (handle != params->value_handle) {
+				continue;
+			}
 
-	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&sub->list, params, tmp, node) {
-		if (handle != params->value_handle) {
-			continue;
-		}
-
-		if (check_subscribe_security_level(conn, params)) {
-			if (params->notify(conn, params, data, length) ==
-			    BT_GATT_ITER_STOP) {
-				bt_gatt_unsubscribe(conn, params);
+#if ZEPHYR_RTK_PATCH
+			subscribed = true;
+#endif
+			if (check_subscribe_security_level(conn, params)) {
+				if (params->notify(conn, params, data, length) ==
+					BT_GATT_ITER_STOP) {
+					bt_gatt_unsubscribe(conn, params);
+				}
 			}
 		}
 	}
+
+#if ZEPHYR_RTK_PATCH
+	if (!subscribed && common_notify_cb) {
+		common_notify_cb(conn, handle, data, length, is_indicate);
+	}
+#endif
 }
 
 void bt_gatt_mult_notification(struct bt_conn *conn, const void *data,
@@ -3811,9 +3834,11 @@ void bt_gatt_mult_notification(struct bt_conn *conn, const void *data,
 	LOG_DBG("length %u", length);
 
 	sub = gatt_sub_find(conn);
+#if !ZEPHYR_RTK_PATCH
 	if (!sub) {
 		return;
 	}
+#endif
 
 	/* This is fine since there no write operation to the buffer.  */
 	net_buf_simple_init_with_data(&buf, (void *)data, length);
@@ -3833,19 +3858,33 @@ void bt_gatt_mult_notification(struct bt_conn *conn, const void *data,
 			return;
 		}
 
-		SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&sub->list, params, tmp,
-						  node) {
-			if (handle != params->value_handle) {
-				continue;
-			}
+#if ZEPHYR_RTK_PATCH
+		bool subscribed = false;
 
-			if (check_subscribe_security_level(conn, params)) {
-				if (params->notify(conn, params, nfy->value, len) ==
-					BT_GATT_ITER_STOP) {
-					bt_gatt_unsubscribe(conn, params);
+		if (sub) {
+#endif
+			SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&sub->list, params, tmp, node) {
+				if (handle != params->value_handle) {
+					continue;
+				}
+
+#if ZEPHYR_RTK_PATCH
+				subscribed = true;
+#endif
+				if (check_subscribe_security_level(conn, params)) {
+					if (params->notify(conn, params, nfy->value, len) ==
+						BT_GATT_ITER_STOP) {
+						bt_gatt_unsubscribe(conn, params);
+					}
 				}
 			}
+#if ZEPHYR_RTK_PATCH
 		}
+
+		if (!subscribed && common_notify_cb) {
+			common_notify_cb(conn, handle, nfy->value, len, false);
+		}
+#endif
 
 		net_buf_simple_pull_mem(&buf, len);
 	}

@@ -21,7 +21,7 @@ config FLASH_OTA1_OFFSET
 # APP OTA1 size follows the "auto-default + optional override" 
 config FLASH_OTA1_SIZE_DEFAULT
     hex
-    default 0x40000 if SOLO
+    default 0x40000 if IOT_MCU_COMBINED
     default 0x1EC000
 
 config FLASH_OTA1_SIZE_OVERRIDE
@@ -54,7 +54,7 @@ config FLASH_OTA2_OFFSET
 # See FLASH_OTA1_SIZE above for the auto-default + optional override pattern.
 config FLASH_OTA2_SIZE_DEFAULT
     hex
-    default 0x40000 if SOLO
+    default 0x40000 if IOT_MCU_COMBINED
     default 0x1C9000
 
 config FLASH_OTA2_SIZE_OVERRIDE
@@ -70,7 +70,7 @@ config FLASH_OTA2_SIZE
     default FLASH_OTA2_SIZE_CUSTOM if FLASH_OTA2_SIZE_OVERRIDE
     default FLASH_OTA2_SIZE_DEFAULT
 
-if SOLO
+if IOT_MCU_COMBINED
 config FLASH_NP_OTA1_OFFSET
     hex "NP(km55ns) OTA1 Offset"
     default 0x08054000
@@ -87,7 +87,7 @@ config FLASH_NP_OTA2_OFFSET
 config FLASH_NP_OTA2_SIZE
     hex "NP(km55ns) OTA2 Size"
     default 0x18C000
-endif # SOLO
+endif # IOT_MCU_COMBINED
 
 # VFS region 1 (128K), fills to the 4M flash end.
 # See FLASH_OTA1_SIZE above for the auto-default + optional override pattern.
@@ -201,7 +201,7 @@ menu "RAM Layout Configuration"
 # KM55NS SRAM image2 size follows the auto-default + optional override pattern 
 config SRAM_KM55NS_IMG2_KB_DEFAULT
     int
-    default 412 if SOLO
+    default 412 if IOT_MCU_COMBINED
     default 48 if WHC_DEV_FOR_KM55TZ
     default 200 if BT_MENU && WIFI_RADAR_ENABLE
     default 168 if BT_MENU

@@ -96,9 +96,9 @@ static bool private_lc3_codec_init(PAUDIO_CODEC_ENTITY p_entity, rtk_bt_le_audio
 	}
 	/* units: us */
 	if (p_le_audio_codec_cfg->frame_duration) {
-		p_entity->lc3.frame_duration = 10000;
+		p_entity->lc3.lc3_frame_duration = 10000;
 	} else {
-		p_entity->lc3.frame_duration = 7500;
+		p_entity->lc3.lc3_frame_duration = 7500;
 	}
 	p_entity->lc3.codec_frame_blocks_per_sdu = p_le_audio_codec_cfg->codec_frame_blocks_per_sdu;
 	p_entity->lc3.audio_channel_allocation = p_le_audio_codec_cfg->audio_channel_allocation;
@@ -108,11 +108,11 @@ static bool private_lc3_codec_init(PAUDIO_CODEC_ENTITY p_entity, rtk_bt_le_audio
 	p_entity->lc3.bits_per_audio_sample_dec = 16;
 	/* setup encoder handle */
 	for (uint32_t ich = 0; ich < p_entity->lc3.channels; ich ++) {
-		void *p_mem = (void *)osif_mem_alloc(RAM_TYPE_DATA_ON, lc3_encoder_size(p_entity->lc3.frame_duration, p_entity->lc3.sample_rate));
+		void *p_mem = (void *)osif_mem_alloc(RAM_TYPE_DATA_ON, lc3_encoder_size(p_entity->lc3.lc3_frame_duration, p_entity->lc3.sample_rate));
 		if (!p_mem) {
 			goto fail;
 		}
-		p_codec_t->enc[ich] = lc3_setup_encoder(p_entity->lc3.frame_duration, p_entity->lc3.sample_rate, p_entity->lc3.sample_rate, p_mem);
+		p_codec_t->enc[ich] = lc3_setup_encoder(p_entity->lc3.lc3_frame_duration, p_entity->lc3.sample_rate, p_entity->lc3.sample_rate, p_mem);
 		if (!p_codec_t->enc[ich]) {
 			osif_mem_free(p_mem);
 			goto fail;
@@ -120,11 +120,11 @@ static bool private_lc3_codec_init(PAUDIO_CODEC_ENTITY p_entity, rtk_bt_le_audio
 	}
 	/* setup decoder handle */
 	for (uint32_t ich = 0; ich < p_entity->lc3.channels; ich ++) {
-		void *p_mem = (void *)osif_mem_alloc(RAM_TYPE_DATA_ON, lc3_decoder_size(p_entity->lc3.frame_duration, p_entity->lc3.sample_rate));
+		void *p_mem = (void *)osif_mem_alloc(RAM_TYPE_DATA_ON, lc3_decoder_size(p_entity->lc3.lc3_frame_duration, p_entity->lc3.sample_rate));
 		if (!p_mem) {
 			goto fail;
 		}
-		p_codec_t->dec[ich] = lc3_setup_decoder(p_entity->lc3.frame_duration, p_entity->lc3.sample_rate, p_entity->lc3.sample_rate, p_mem);
+		p_codec_t->dec[ich] = lc3_setup_decoder(p_entity->lc3.lc3_frame_duration, p_entity->lc3.sample_rate, p_entity->lc3.sample_rate, p_mem);
 		if (!p_codec_t->dec[ich]) {
 			osif_mem_free(p_mem);
 			goto fail;
@@ -147,7 +147,7 @@ fail:
 		osif_mem_free(p_codec_t);
 	}
 	p_entity->lc3.sample_rate = 0;
-	p_entity->lc3.frame_duration = 0;
+	p_entity->lc3.lc3_frame_duration = 0;
 	p_entity->lc3.channels = 0;
 	p_entity->lc3.bits_per_audio_sample_enc = 0;
 	p_entity->lc3.bits_per_audio_sample_dec = 0;
@@ -172,9 +172,8 @@ static void private_lc3_codec_deinit(PAUDIO_CODEC_ENTITY p_entity)
 		}
 		osif_mem_free(p_codec_t);
 	}
-	p_entity->lc3.frame_duration = 0;
+	p_entity->lc3.lc3_frame_duration = 0;
 	p_entity->lc3.sample_rate = 0;
-	p_entity->lc3.frame_duration = 0;
 	p_entity->lc3.channels = 0;
 	p_entity->lc3.codec_frame_blocks_per_sdu = 0;
 	p_entity->lc3.audio_channel_allocation = 0;
@@ -212,11 +211,11 @@ uint16_t lc3_decoder_process_data(void *p_entity, uint8_t *data, uint32_t size, 
 	/* caculate pcm per sample bytes */
 	pcm_sbytes = entity->lc3.bits_per_audio_sample_dec / 8;
 	/* caculate the number of PCM samples in a frame */
-	frame_samples = lc3_frame_samples(entity->lc3.frame_duration, entity->lc3.sample_rate);
+	frame_samples = lc3_frame_samples(entity->lc3.lc3_frame_duration, entity->lc3.sample_rate);
 #if 0
 	bit_rate = entity->lc3.compress_bytes;
 	/* get size of encoded frames */
-	frame_bytes = lc3_frame_bytes(entity->lc3.frame_duration, bit_rate / entity->lc3.channels);
+	frame_bytes = lc3_frame_bytes(entity->lc3.lc3_frame_duration, bit_rate / entity->lc3.channels);
 #else
 	frame_bytes = entity->lc3.compress_bytes;
 #endif
@@ -271,11 +270,11 @@ uint16_t lc3_encoder_process_data(void *p_entity, int16_t *data, uint32_t size, 
 	/* caculate pcm per sample bytes */
 	pcm_sbytes = entity->lc3.bits_per_audio_sample_enc / 8;
 	/* caculate the number of PCM samples in a frame */
-	frame_samples = lc3_frame_samples(entity->lc3.frame_duration, entity->lc3.sample_rate);
+	frame_samples = lc3_frame_samples(entity->lc3.lc3_frame_duration, entity->lc3.sample_rate);
 #if 0
 	bit_rate = entity->lc3.compress_bytes;
 	/* get size of encoded frames */
-	frame_bytes = lc3_frame_bytes(entity->lc3.frame_duration, bit_rate / entity->lc3.channels);
+	frame_bytes = lc3_frame_bytes(entity->lc3.lc3_frame_duration, bit_rate / entity->lc3.channels);
 #else
 	frame_bytes = entity->lc3.compress_bytes;
 #endif
