@@ -29,9 +29,6 @@ ameba_list_append(c_GLOBAL_MCU_COMPILE_ASM_OPTIONS
     -mfloat-abi=hard
 )
 
-ameba_list_append_if(CONFIG_DYNAMIC_APP_LOAD_EN c_GLOBAL_MCU_COMPILE_ASM_OPTIONS
-    -ffixed-r9
-)
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ #
 
 # ++++++++++++++++ c_GLOBAL_MCU_COMPILE_C_OPTIONS +++++++++++++++ #

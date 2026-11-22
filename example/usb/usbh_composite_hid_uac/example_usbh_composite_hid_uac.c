@@ -110,6 +110,15 @@
 /* HID key presses queued for the key thread; a burst beyond this is dropped */
 #define USBH_COMP_HID_UAC_KEY_QUEUE_DEPTH                   4U
 
+/* Media keys decoded from the HID interface, Consumer Page usages, Ref HID Usage Tables 1.4 chapter 15 */
+#define USBH_COMP_KEY_NONE                                  0U
+#define USBH_COMP_KEY_VOLUME_UP                             1U
+#define USBH_COMP_KEY_VOLUME_DOWN                           2U
+#define USBH_COMP_KEY_MUTE                                  3U
+#define USBH_COMP_KEY_PLAY_PAUSE                            4U
+#define USBH_COMP_KEY_STOP                                  5U
+#define USBH_COMP_KEY_CNT                                   5U
+
 /* Poll period of the playback thread while paused */
 #define USBH_COMP_HID_UAC_PAUSE_POLL_MS                     20U
 
@@ -159,7 +168,7 @@ typedef struct {
 	rtos_sema_t detach_sema;			/*!< Signaled when device is detached */
 	rtos_sema_t play_start_sema;		/*!< Signaled when playback setup is complete */
 	rtos_sema_t record_start_sema;		/*!< Signaled when record setup is complete */
-	rtos_queue_t key_queue;				/*!< HID key presses, usbh_hid_event_type_t each */
+	rtos_queue_t key_queue;				/*!< HID key presses, USBH_COMP_KEY_xxx each */
 	rtos_task_t key_task;				/*!< HID key action thread handle */
 
 #if CONFIG_USBH_COMP_HID_UAC_HOTPLUG
@@ -173,6 +182,14 @@ typedef struct {
 	__IO u8 play_rewind;				/*!< 1: restart from the beginning on resume */
 } uac_host_ctx_t;
 
+/* One media key and where the HID interface reports it */
+typedef struct {
+	usbh_hid_field_t field;				/*!< Field declaring the key */
+	const char *name;					/*!< Printed on a press */
+	u16 usage;							/*!< Consumer usage */
+	u8 found;							/*!< The device declares the key */
+} usbh_comp_key_t;
+
 /* Private macros ------------------------------------------------------------*/
 
 /* Private function prototypes -----------------------------------------------*/
@@ -182,7 +199,8 @@ static void usbh_composite_hid_cmd_at(u16 argc, char **argv);
 static int usbh_composite_vol_change(u8 mode, u8 val, u8 *dir, u8 *vol);
 
 static void usbh_hid_cb_attached(void);
-static void usbh_hid_cb_report(usbh_hid_event_t *event);
+static u8 usbh_hid_cb_setup(u8 idx, const usbh_hid_itf_info_t *info);
+static void usbh_hid_cb_report(u8 idx, const u8 *buf, u32 len);
 static int usbh_uac_cb_init(void);
 static void usbh_uac_cb_deinit(void);
 static void usbh_uac_cb_attached(void);
@@ -263,11 +281,21 @@ static volatile u8 usbh_comp_keep_stack = 0;
    joins them */
 static usb_app_ctx_t usbh_comp_app;
 
-/* Last HID control reported, for press-edge detection. Written by the HID parse
-   thread, cleared on HID attach: a device unplugged while a key is held never
-   reports the release, and that stale key would swallow the first press of the
-   same key on the next device. */
-static volatile usbh_hid_event_type_t usbh_hid_last_type = VOLUME_EVENT_NONE;
+/* Media keys, indexed by USBH_COMP_KEY_xxx - 1. Located in the HID setup callback, before the reports flow,
+   read by the HID report thread. */
+static usbh_comp_key_t usbh_comp_keys[USBH_COMP_KEY_CNT] = {
+	{.usage = 0xE9U, .name = "Volume Up"},
+	{.usage = 0xEAU, .name = "Volume Down"},
+	{.usage = 0xE2U, .name = "Mute"},
+	{.usage = 0xCDU, .name = "Play/Pause"},
+	{.usage = 0xB7U, .name = "Stop"},
+};
+/* HID interface carrying the media keys, 0xFF while none */
+static volatile u8 usbh_comp_key_itf = 0xFFU;
+/* Keys held in the previous report, bit n for usbh_comp_keys[n], for press-edge detection. Written by the HID
+   report thread, cleared on HID attach: a device unplugged while a key is held never reports the release, and
+   that stale key would swallow the first press of the same key on the next device. */
+static u8 usbh_comp_key_held;
 
 static const usbh_config_t usbh_cfg = {
 	.speed = USB_SPEED_FULL,
@@ -315,6 +343,7 @@ static const usbh_uac_config_t uac_class_cfg = {
 
 static const usbh_hid_usr_cb_t usbh_hid_cfg = {
 	.attached = usbh_hid_cb_attached,
+	.setup = usbh_hid_cb_setup,
 	.report = usbh_hid_cb_report,
 };
 
@@ -442,54 +471,81 @@ static int usbh_composite_set_vbus(usb_host_t *host, u8 on)
   */
 static void usbh_hid_cb_attached(void)
 {
-	usbh_hid_last_type = VOLUME_EVENT_NONE;
+	usbh_comp_key_itf = 0xFFU;
+	usbh_comp_key_held = 0U;
 }
 
 /**
-  * @brief  HID report callback, dispatched on each consumer-control event
-  *         received from the composite HID interface (volume / mute / play).
-  * @param  event: Pointer to the HID event descriptor reported by the stack.
+  * @brief  HID setup callback: use the first HID interface declaring a media key
+  * @note   Host task: no blocking call
+  * @param  idx: Interface index
+  * @param  info: Interface
+  * @retval Protocol the interface shall run
   */
-static void usbh_hid_cb_report(usbh_hid_event_t *event)
+static u8 usbh_hid_cb_setup(u8 idx, const usbh_hid_itf_info_t *info)
 {
+	u8 found = 0U;
+
+	if ((usbh_comp_key_itf != 0xFFU) || (info->report_desc == NULL)) {
+		return USBH_HID_PROTOCOL_REPORT;
+	}
+
+	for (u8 i = 0U; i < USBH_COMP_KEY_CNT; i++) {
+		usbh_comp_keys[i].found = (usbh_hid_find_field(info->report_desc, info->report_desc_len, USBH_HID_MAIN_ITEM_TAG_INPUT,
+								   USBH_HID_UP_CONSUMER, usbh_comp_keys[i].usage, &(usbh_comp_keys[i].field)) == RTK_SUCCESS) ? 1U : 0U;
+		found |= usbh_comp_keys[i].found;
+	}
+	if (found != 0U) {
+		usbh_comp_key_itf = idx;
+	}
+
+	return USBH_HID_PROTOCOL_REPORT;
+}
+
+/**
+  * @brief  HID report callback: queue the media keys pressed in a report of the media key interface
+  * @param  idx: Interface index
+  * @param  buf: Report
+  * @param  len: Report length
+  */
+static void usbh_hid_cb_report(u8 idx, const u8 *buf, u32 len)
+{
+	const usbh_comp_key_t *k;
+	u8 held = 0U;
 	u8 key;
 
-	/* Every INTR IN report is delivered, a held key included: act on the press edge only */
-	if (event->type == usbh_hid_last_type) {
-		return;
-	}
-	usbh_hid_last_type = event->type;
-
-	switch (event->type) {
-	case VOLUME_EVENT_CONSUMER_UP:
-		RTK_LOGS(NOTAG, RTK_LOG_INFO, "Volume Up\n");
-		break;
-	case VOLUME_EVENT_CONSUMER_DOWN:
-		RTK_LOGS(NOTAG, RTK_LOG_INFO, "Volume Down\n");
-		break;
-	case VOLUME_EVENT_CONSUMER_MUTE:
-		RTK_LOGS(NOTAG, RTK_LOG_INFO, "Mute\n");
-		break;
-	case VOLUME_EVENT_CONSUMER_PLAY_PAUSE:
-		RTK_LOGS(NOTAG, RTK_LOG_INFO, "Play/Pause\n");
-		break;
-	case VOLUME_EVENT_CONSUMER_STOP:
-		RTK_LOGS(NOTAG, RTK_LOG_INFO, "Stop\n");
-		break;
-	default:
-		/* Key released */
+	if (idx != usbh_comp_key_itf) {
 		return;
 	}
 
-	/* Runs on the HID parse thread, which usbh_hid_deinit() waits for while the
-	   teardown holds the stack locks: never block or call the class API here,
-	   hand the key to the key thread instead. */
-	if (usbh_uac_ctx.key_queue != NULL) {
-		key = (u8)event->type;
-		if (rtos_queue_send(usbh_uac_ctx.key_queue, &key, 0U) != RTK_SUCCESS) {
-			RTK_LOGS(TAG, RTK_LOG_WARN, "Key drop\n");
+	for (u8 i = 0U; i < USBH_COMP_KEY_CNT; i++) {
+		k = &(usbh_comp_keys[i]);
+		/* A report of another Report ID leaves the key as it was */
+		if ((k->found == 0U) || ((k->field.report_id != 0U) && ((len == 0U) || (buf[0] != k->field.report_id)))) {
+			held |= (u8)(usbh_comp_key_held & (1U << i));
+			continue;
+		}
+		if (usbh_hid_usage_active(buf, len, &(k->field)) == 0U) {
+			continue;
+		}
+		held |= (u8)(1U << i);
+		/* Every INTR IN report is delivered, a held key included: act on the press edge only */
+		if ((usbh_comp_key_held & (1U << i)) != 0U) {
+			continue;
+		}
+		RTK_LOGS(NOTAG, RTK_LOG_INFO, "%s\n", k->name);
+
+		/* Runs on the HID report thread, which usbh_hid_deinit() waits for while the
+		   teardown holds the stack locks: never block or call the class API here,
+		   hand the key to the key thread instead. */
+		if (usbh_uac_ctx.key_queue != NULL) {
+			key = (u8)(i + 1U);
+			if (rtos_queue_send(usbh_uac_ctx.key_queue, &key, 0U) != RTK_SUCCESS) {
+				RTK_LOGS(TAG, RTK_LOG_WARN, "Key drop\n");
+			}
 		}
 	}
+	usbh_comp_key_held = held;
 }
 
 /**
@@ -555,23 +611,23 @@ static void example_usbh_composite_key_thread(void *param)
 		}
 
 		switch (key) {
-		case VOLUME_EVENT_CONSUMER_UP:
+		case USBH_COMP_KEY_VOLUME_UP:
 			if (usbh_composite_vol_change(USBH_COMP_VOL_UP, 0U, &dir, &vol) == RTK_SUCCESS) {
 				RTK_LOGS(TAG, RTK_LOG_INFO, "Vol %d\n", vol);
 			}
 			break;
-		case VOLUME_EVENT_CONSUMER_DOWN:
+		case USBH_COMP_KEY_VOLUME_DOWN:
 			if (usbh_composite_vol_change(USBH_COMP_VOL_DOWN, 0U, &dir, &vol) == RTK_SUCCESS) {
 				RTK_LOGS(TAG, RTK_LOG_INFO, "Vol %d\n", vol);
 			}
 			break;
-		case VOLUME_EVENT_CONSUMER_MUTE:
+		case USBH_COMP_KEY_MUTE:
 			usbh_composite_key_mute();
 			break;
-		case VOLUME_EVENT_CONSUMER_PLAY_PAUSE:
+		case USBH_COMP_KEY_PLAY_PAUSE:
 			usbh_uac_ctx.play_pause = (usbh_uac_ctx.play_pause != 0U) ? 0U : 1U;
 			break;
-		case VOLUME_EVENT_CONSUMER_STOP:
+		case USBH_COMP_KEY_STOP:
 			usbh_uac_ctx.play_rewind = 1U;
 			usbh_uac_ctx.play_pause = 1U;
 			break;
@@ -1309,7 +1365,7 @@ static void usbh_composite_deinit_stack(void)
   */
 static void usbh_comp_wake_workers(void)
 {
-	u8 key = (u8)VOLUME_EVENT_NONE;
+	u8 key = USBH_COMP_KEY_NONE;
 
 	rtos_sema_give(usbh_uac_ctx.play_start_sema);
 	rtos_sema_give(usbh_uac_ctx.record_start_sema);
@@ -1361,6 +1417,18 @@ static void example_usbh_composite_hotplug_thread(void *param)
 	u8 fatal = 0U;
 
 	UNUSED(param);
+
+#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
+	/* The USB OTG ISR is delivered on CPU0: the GIC pins every SPI to core 0
+	   (ITARGETSR is written to 0x01010101 in arm_gic.c gic_dist_init). Pinning the
+	   hotplug/deinit thread to CPU0 puts it on the same core as the ISR, so the
+	   local interrupt disables inside the teardown are meaningful again. The play
+	   and record workers stay unaffined: a pending teardown is excluded from them by
+	   the per-direction mutexes, not by core.
+	   Done by the thread itself, first: a created thread may already run on another core, and its
+	   creator pinning it afterwards could come too late or reach a task that has deleted itself. */
+	rtos_task_set_affinity(rtos_task_handle_get(), 0);
+#endif
 
 	for (;;) {
 		/* Block until device is detached */
@@ -1560,15 +1628,6 @@ static int usbh_comp_start(void)
 		usbh_uac_ctx.hotplug_task = NULL;
 		goto deinit_stack_exit;
 	}
-#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
-	/* The USB OTG ISR is delivered on CPU0: the GIC pins every SPI to core 0
-	   (ITARGETSR is written to 0x01010101 in arm_gic.c gic_dist_init). Pinning the
-	   hotplug/deinit thread to CPU0 puts it on the same core as the ISR, so the
-	   local interrupt disables inside the teardown are meaningful again. The play
-	   and record workers stay unaffined: a pending teardown is excluded from them by
-	   the per-direction mutexes, not by core. */
-	rtos_task_set_affinity(usbh_uac_ctx.hotplug_task, 0);
-#endif
 #endif
 
 	return RTK_SUCCESS;
@@ -1606,6 +1665,14 @@ free_sema_exit:
 static void example_usbh_composite_init_thread(void *param)
 {
 	UNUSED(param);
+
+#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
+	/* A start that fails rolls back through usbh_deinit(), which waits for no ISR on another
+	   core: run it on CPU0, where the USB IRQ is delivered, as the hotplug thread does.
+	   Done by the thread itself, first: a created thread may already run on another core, and its
+	   creator pinning it afterwards could come too late or reach a task that has deleted itself. */
+	rtos_task_set_affinity(rtos_task_handle_get(), 0);
+#endif
 
 	if (usbh_comp_start() != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Start fail\n");

@@ -805,8 +805,7 @@ struct bt_conn_le_create_param {
 
 	/** @brief Connection initiation timeout (N * 10 MS)
 	 *
-	 *  Set zero to use the default @kconfig{CONFIG_BT_CREATE_CONN_TIMEOUT}
-	 *  timeout.
+	 *  Set zero to keep initiation forever. //ZEPHYR_RTK_PATCH
 	 *
 	 *  @note Unused in @ref bt_conn_le_create_auto
 	 */
@@ -826,7 +825,7 @@ struct bt_conn_le_create_param {
 	.window = (_window), \
 	.interval_coded = 0, \
 	.window_coded = 0, \
-	.timeout = 0, \
+	.timeout = (MSEC_PER_SEC / 10) * CONFIG_BT_CREATE_CONN_TIMEOUT, \
 }
 
 /** Helper to declare create connection parameters inline
@@ -903,6 +902,12 @@ struct bt_conn_le_create_synced_param {
 
 	/** The subevent where the connection will be initiated. */
 	uint8_t subevent;
+
+#if ZEPHYR_RTK_PATCH
+	uint8_t own_addr_type;
+
+	uint16_t timeout;
+#endif
 };
 
 /** @brief Create a connection to a synced device

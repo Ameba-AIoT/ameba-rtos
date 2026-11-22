@@ -1323,7 +1323,8 @@ static int usbd_whc_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len)
   *         application configured: the host has already seen them while the ROM and the
   *         bootloader enumerated, so the identity shall stay the same along the whole boot
   *         chain. Every field is therefore assigned unconditionally, either from OTP when it
-  *         is programmed or from this class's own defaults.
+  *         is programmed or from this class's own defaults; the serial number has no default,
+  *         so a part whose OTP holds none reports no serial number at all.
   *         The core reads these on every descriptor request, so assigning them once here is
   *         enough. The OTP strings remain valid for as long as the device is enumerable,
   *         because usbd_otp_deinit() runs after usbd_unregister_class().
@@ -1333,24 +1334,26 @@ static int usbd_whc_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len)
 static void usbd_whc_apply_dev_info(const usbd_otp_t *otp)
 {
 	usbd_dev_info_t *info = usbd_get_dev_info();
-	u16 pid;
 
-	if (otp->otp_param != 0U) {
+	if (otp->vid_pid != 0U) {
 		info->vid = otp->vid;
 		info->pid = otp->pid;
+	} else {
+		info->vid = USBD_WHC_VID;
+		/* NIC mode is told apart by its own product ID */
+		info->pid = (SYSCFG_OTP_BOOTSEL() == BOOT_FROM_USB) ? USBD_NIC_PID : USBD_WHC_PID;
+	}
+
+	if (otp->mfg_prod != 0U) {
 		info->mfg_str = (const char *)otp->mfg_str;
 		info->prod_str = (const char *)otp->prod_str;
 	} else {
-		/* NIC mode is told apart by its own product ID */
-		pid = (SYSCFG_OTP_BOOTSEL() == BOOT_FROM_USB) ? USBD_NIC_PID : USBD_WHC_PID;
-
-		info->vid = USBD_WHC_VID;
-		info->pid = pid;
 		info->mfg_str = USBD_WHC_MFG_STRING;
 		info->prod_str = USBD_WHC_PROD_STRING;
 	}
 
-	info->sn_str = (otp->otp_sn != 0U) ? (const char *)otp->sn_str : USBD_WHC_SN_STRING;
+	/* NULL: the core reports no serial number when the OTP does not hold one */
+	info->sn_str = (otp->sn != 0U) ? (const char *)otp->sn_str : NULL;
 	info->self_powered = otp->self_powered;
 	info->remote_wakeup_en = otp->remote_wakeup_en;
 }

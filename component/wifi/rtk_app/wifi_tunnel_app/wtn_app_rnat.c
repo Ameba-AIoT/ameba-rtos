@@ -178,7 +178,7 @@ restart_ap:
 		goto exit;
 	}
 
-#ifdef CONFIG_WTN_RNAT_INTERCOM
+#if defined(CONFIG_RNAT_INTERCOM_EN) && defined(CONFIG_WIFI_TUNNEL)
 	wtn_rnat_intercom_set_self_gw();
 #endif
 
@@ -269,7 +269,7 @@ void wtn_rnat_ap_init(u8 enable)
 				RTK_LOGS(NOTAG, RTK_LOG_ALWAYS,  "\n\r%s rtos_task_create failed\n", __FUNCTION__);
 			}
 		}
-#ifdef CONFIG_WTN_RNAT_INTERCOM
+#if defined(CONFIG_RNAT_INTERCOM_EN) && defined(CONFIG_WIFI_TUNNEL)
 		if (wifi_user_config.wtn_rnat_intercom_en) {
 			wtn_rnat_intercom_start();
 		}

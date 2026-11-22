@@ -25,11 +25,19 @@
 #else
 #if defined (RISC_V)
 #define _LONG_CALL_
+#elif defined (__clang__)
+#define _LONG_CALL_
 #else
 #define _LONG_CALL_     __attribute__ ((long_call))
 #endif
+#if defined (__clang__)
+/* clang has no per function optimize attribute */
+#define _OPTIMIZE_NONE_           __attribute__ ((optnone))
+#define _OPTIMIZE_O3_
+#else
 #define _OPTIMIZE_NONE_           __attribute__ ((optimize("O0")))
 #define _OPTIMIZE_O3_           __attribute__ ((optimize("O3")))
+#endif
 #define UNUSED_WARN_DIS	__attribute__((unused))
 #endif
 

@@ -26,6 +26,7 @@
 #include "foundation.h"
 #include "op_agg.h"
 #include "settings.h"
+#include "rpl.h"
 #include "va.h"
 #include "delayable_msg.h"
 
@@ -444,7 +445,11 @@ int bt_mesh_comp_data_get_page_0(struct net_buf_simple *buf, size_t offset)
 	data_buf_add_le16_offset(buf, comp->cid, &offset);
 	data_buf_add_le16_offset(buf, comp->pid, &offset);
 	data_buf_add_le16_offset(buf, comp->vid, &offset);
+#if ZEPHYR_RTK_PATCH
+	data_buf_add_le16_offset(buf, bt_mesh_rpl_num_get(), &offset);
+#else
 	data_buf_add_le16_offset(buf, CONFIG_BT_MESH_CRPL, &offset);
+#endif
 	data_buf_add_le16_offset(buf, feat, &offset);
 
 	for (i = 0; i < comp->elem_count; i++) {

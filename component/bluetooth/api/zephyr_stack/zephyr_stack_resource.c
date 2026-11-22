@@ -279,7 +279,7 @@ STRUCT_ARRAY_DECLARE(bt_mesh_subnet_cb) = {
 	&bt_mesh_subnet_cb_lpn,
 #endif
 	&bt_mesh_subnet_cb_proxy_cli,
-	// &bt_mesh_subnet_cb_rpr_srv,  // Delete mask this veriable when compile rpr_srv.c
+	// &bt_mesh_subnet_cb_rpr_srv,  // Delete mask this variable when compile rpr_srv.c
 };
 STRUCT_ARRAY_SIZE_DECLARE(bt_mesh_subnet_cb) = sizeof(STRUCT_ARRAY(bt_mesh_subnet_cb)) / sizeof(struct bt_mesh_subnet_cb *);
 

@@ -267,7 +267,7 @@ extern "C" {
 /* physical EFUSE write forbid */
 #define LOGICAL_MAP_SECTION_LEN						0x1FD /*!< logical mapping efuse len in physical address */
 #define OTP_USER_START								0x380 /*!< physical map user start address*/
-#define OTP_USER_END								0x800 /*!< physical map user end address*/
+#define OTP_USER_END								0x4FF /*!< physical map user end address*/
 #define OTP_USER_LEN								(OTP_USER_END - OTP_USER_START+1) /*!< physical map user section len in byte 0x380~0x4FF*/
 /** @} */
 /** @} */

@@ -95,8 +95,12 @@ menu "CONFIG FUNCTION TEST"
             bool "chip_reset_verify"
         config DBG_TIMER_VERIFY
             bool "debugtimer_verify"
-        config Flash_AVL
+        config FLASH_AVL
             bool "Flash_AVL_Mode"
+            depends on WIFI_SINGLE_CORE_MENU
+            select NOR_FLASH_NEW_STRATEGY
+            select VFS_MENU
+            select VFS_LITTLEFS_INCLUDED
         config KEYSCAN_VERIFY
             bool "KeyScan_Verify_Mode"
         config CAPTOUCH_VERIFY

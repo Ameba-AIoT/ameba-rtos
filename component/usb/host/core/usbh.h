@@ -849,7 +849,8 @@ int usbh_set_configuration(usb_host_t *host, u8 cfg);
  * @param[in] host: Host Handle.
  * @param[in] id: Device id information.
  * @return interface descriptor handler.
- * @note NULL means interface not found.
+ * @note NULL means interface not found. Searches the active configuration once SET_CONFIGURATION is done,
+ *       every configuration during enumeration (e.g. from @ref usbh_user_cb_t::validate).
  */
 usbh_itf_data_t *usbh_get_interface_descriptor(usb_host_t *host, usbh_dev_id_t *id);
 
@@ -949,14 +950,14 @@ int usbh_ctrl_set_interface(usb_host_t *host, u8 itf_num, u8 alt_setting);
 int usbh_ctrl_set_feature(usb_host_t *host, u8 value);
 
 /**
- * @brief  Send `CLEAR_FEATURE` standard request to device.
+ * @brief  Send `CLEAR_FEATURE(ENDPOINT_HALT)` standard request to device.
  * @param[in] host: Host Handle.
- * @param[in] ep_num: Endpoint number.
+ * @param[in] ep_addr: Endpoint address, direction bit included (e.g. 0x81 for EP1 IN).
  * @return -RTK_ERR_BUSY while in progress, the owner is driven again; RTK_SUCCESS on success; -RTK_ERR_BADARG on
  *         STALL or a torn down host; RTK_FAIL once the retry budget or the control
  *         timeout is spent. A failure is reported only by this value, never by a USBH_MSG_*.
  */
-int usbh_ctrl_clear_feature(usb_host_t *host, u8 ep_num);
+int usbh_ctrl_clear_feature(usb_host_t *host, u8 ep_addr);
 
 /**
  * @brief  Send control request to device.

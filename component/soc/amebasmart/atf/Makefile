@@ -327,7 +327,7 @@ CPP			=	$(CC) -E $(TF_CFLAGS_$(ARCH))
 PP			=	$(CC) -E $(TF_CFLAGS_$(ARCH))
 else ifneq ($(findstring clang,$(notdir $(CC))),)
 CLANG_CCDIR		=	$(if $(filter-out ./,$(dir $(CC))),$(dir $(CC)),)
-TF_CFLAGS_aarch32	=	$(target32-directive) $(march32-directive)
+TF_CFLAGS_aarch32	=	$(target32-directive) $(march32-directive) -Wno-missing-multilib -Wno-unused-command-line-argument -Wno-tautological-constant-out-of-range-compare
 TF_CFLAGS_aarch64	=	-target aarch64-elf $(march64-directive)
 LD			=	$(CLANG_CCDIR)ld.lld
 ifeq (, $(shell which $(LD)))

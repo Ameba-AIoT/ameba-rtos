@@ -1,0 +1,121 @@
+# Only Linux and macOS hosts are supported, which is guaranteed by ameba-toolchain-asdk-llvm*.cmake.
+include(${CMAKE_CURRENT_LIST_DIR}/ameba-toolchain-common.cmake)
+
+if (EXISTS ${SDK_TOOLCHAIN})
+	# message("ToolChain Had Existed")
+else()
+	message("Download Toolchain And Extract To ${TOOLCHAINDIR}. Only Download And Extract Once")
+	execute_process(
+		COMMAND ${CMAKE_COMMAND} -E make_directory ${TOOLCHAINDIR}
+		RESULT_VARIABLE ret
+		OUTPUT_VARIABLE stdoutput
+		)
+	if(ret)
+		message(FATAL_ERROR "${stdoutput} Create Toolchain Dir Failed. May Not Have Permission!")
+	else()
+		message("Create Toolchain Dir ${TOOLCHAINDIR} Success")
+	endif()
+
+	if (EXISTS ${TOOLCHAINDIR}/${TOOLCHAINNAME})
+		message("${TOOLCHAINNAME} Had Existed, Verifying integrity ......")
+		message("Please waiting...")
+		execute_process(
+			COMMAND tar -jtf ${TOOLCHAINDIR}/${TOOLCHAINNAME}
+			OUTPUT_QUIET
+			RESULT_VARIABLE broken
+		)
+
+		if(broken)
+			execute_process(COMMAND ${CMAKE_COMMAND} -E remove -f ${TOOLCHAINDIR}/${TOOLCHAINNAME})
+			message("Integrity Verifying Failed. Delete and Redownload it...")
+		else()
+			message("Integrity Verifying success.")
+		endif()
+
+	endif()
+
+	if (NOT EXISTS ${TOOLCHAINDIR}/${TOOLCHAINNAME})
+		message("Download ${TOOLCHAINNAME} ...")
+		execute_process(
+			COMMAND wget --progress=bar:force -P ${TOOLCHAINDIR} ${TOOLCHAINURL}/${TOOLCHAINNAME}
+			RESULT_VARIABLE ret
+			OUTPUT_VARIABLE stdoutput
+		)
+		if(ret)
+			message(FATAL_ERROR "Download Failed. Please Check If Wget Is Installed And Network Connection Is Accessible!")
+		else()
+			message("Download ${TOOLCHAINNAME} Success")
+		endif()
+	endif()
+
+	message("Unzip ${TOOLCHAINNAME} ...")
+
+	# the package top directory is named after the package (<name>.tar.bz2)
+	string(REGEX REPLACE "\\.tar\\.bz2$" "" PKG_TOPDIR ${TOOLCHAINNAME})
+
+	execute_process(
+		COMMAND tar -jxf ${TOOLCHAINDIR}/${TOOLCHAINNAME} -C ${TOOLCHAINDIR}
+		RESULT_VARIABLE ret
+	)
+
+	if(ret)
+		execute_process(COMMAND ${CMAKE_COMMAND} -E remove_directory ${TOOLCHAINDIR}/${PKG_TOPDIR})
+		message(FATAL_ERROR "Unzip Failed. Please unzip ${TOOLCHAINNAME} manually.")
+	else()
+		message("Unzip ${TOOLCHAINNAME} Success")
+	endif()
+	execute_process(COMMAND ${CMAKE_COMMAND} -E rename ${TOOLCHAINDIR}/${PKG_TOPDIR} ${SDK_TOOLCHAIN} RESULT_VARIABLE ret)
+	if(ret)
+		message(FATAL_ERROR "Rename ${PKG_TOPDIR} to ${SDK_TOOLCHAIN} failed.")
+	endif()
+	message("INSTALL SUCCESS")
+endif()
+
+execute_process(
+    COMMAND ${CMAKE_C_COMPILER} -check-license
+    OUTPUT_VARIABLE COMMAND_OUTPUT
+    ERROR_VARIABLE COMMAND_ERROR
+    RESULT_VARIABLE COMMAND_EXIT_CODE
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+if(${COMMAND_EXIT_CODE} STREQUAL "0")
+    if(COMMAND_OUTPUT MATCHES "not found")
+        message(FATAL_ERROR "NOT found license, build abort")
+    endif()
+else()
+    message("clang check-license failed: ${COMMAND_ERROR}")
+endif()
+
+#execute_process runs commands while CMake is configuring the project, prior to build system generation
+execute_process(
+  COMMAND ${CMAKE_C_COMPILER} ${TOOLCHAIN_DRIVER_OPTS} --version
+  RESULT_VARIABLE ret
+  OUTPUT_VARIABLE stdoutput
+)
+if(ret)
+	message(SEND_ERROR "Executing the below command failed. Please check toolchain path and permission.
+	${CMAKE_C_COMPILER} --version
+	${stdoutput}"
+	)
+else()
+	string(FIND "${stdoutput}" "${TOOLCHAIN_VERSION_KEY}" ISMATCH)
+	if(ISMATCH GREATER_EQUAL 0)
+		message("Toolchain Version Matched")
+	else()
+		message(SEND_ERROR "Current Toolchain Version Mismatched! Please delete current toolchain /${ToolChainVerMajor} in ${TOOLCHAINDIR} and rebuild. The Latest ToolChain ${TOOLCHAINNAME} will be installed automatically during the project building")
+	endif()
+endif()
+
+#CHECK git
+find_package(Git)
+if(Git_FOUND)
+	message("Git found: ${GIT_EXECUTABLE}")
+endif()
+
+#CHECK python
+find_package(Python3)
+if(Python3_FOUND)
+	message("Python3 found: ${Python3_EXECUTABLE}")
+else()
+	message(SEND_ERROR "Python check failed")
+endif()

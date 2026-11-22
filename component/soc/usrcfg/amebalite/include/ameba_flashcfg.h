@@ -53,6 +53,7 @@ extern const FlashLayoutInfo_TypeDef Flash_Layout[];
 
 //================functions=================
 void flash_init_userdef(void);
+u32 flash_get_readmode(u32 ReadMode);
 void flash_get_layout_info(u32 type, u32 *start, u32 *end);
 
 #ifdef __cplusplus

@@ -4,6 +4,7 @@ import subprocess
 import platform
 import shutil
 import argparse
+import string
 import json5
 import time
 import jlinkscript_generate as util
@@ -92,6 +93,31 @@ def swdpwd_user(config):
 
     run_jlink_gdb(args)
 
+def swd_key(config, key_args, mode):
+    # accept 4 words or one 32-hex string; spaces and 0x prefixes are dropped
+    key_hex = "".join(a[2:] if a.lower().startswith("0x") else a for a in key_args)
+    try:
+        if len(key_hex) != 32 or not all(c in string.hexdigits for c in key_hex):
+            raise ValueError
+        words = [int(key_hex[i:i + 8], 16) for i in range(0, 32, 8)]
+    except ValueError:
+        print("Jlink Error: --key needs 128 bit hex in REF0..REF3 order, e.g. the REF0..3 line of swd_auth_host.py decrypt (8 hex chars each)")
+        sys.exit(1)
+    script_file = os.path.join(config['script_dir'], "AutoGen_SWD_Key.JLinkScript")
+    util.gen_swd_key_script(config, script_file, words, mode)
+    log_file = os.path.join(config['script_dir'], f"swd_key_mode{mode}.log")
+
+    args = [
+        "-select", "USB",
+        "-device", "Cortex-M33",
+        "-if", "SWD",
+        "-scriptfile", script_file,
+        "-port", config.get('GDB_PORTS').get('swd'),
+        "-log", log_file
+    ]
+
+    run_jlink_gdb(args)
+
 def swdpwd_verify():
     # Generate Script
     script_file = os.path.join(SCRIPT_DIR, "SWDPWD_Verify.JLinkScript")
@@ -120,13 +146,16 @@ def gen_ozone_script(config, core=None):
 
 #=========================== main =========================
 parser = argparse.ArgumentParser(description="Realtek Ameba J-Link Tool")
-parser.add_argument("-t", "--type", choices=["jlink", "gdb", "swd", "ozone"],
+parser.add_argument("-t", "--type", choices=["jlink", "gdb", "swd", "swd_key", "ozone"],
                     default="jlink",
                     help="Specify the type of operation.")
 parser.add_argument("-d", "--jlink-dir", help="Specify custom J-Link installation path.")
 parser.add_argument("--chip", required=True, help=argparse.SUPPRESS)
 parser.add_argument("-k", "--core", nargs="+",
                     help="Specify the core(s) to operate on (e.g., km0, km4).")
+parser.add_argument("--key", nargs="+", help="swd_key: 128-bit key, REF0..REF3 order; paste the REF0..3 words of swd_auth_host.py decrypt or one 32-char hex string.")
+parser.add_argument("--key-mode", type=int, choices=[0, 1, 2], default=0,
+                    help="swd_key: 0=right key, 1=one wrong key, 2=4 wrong then right (lock).")
 parser.add_argument("-sd", "--script-dir",
                     help="Specify the directory of generated J-Link scripts.")
 
@@ -230,6 +259,11 @@ elif args.type== "jlink":
 # J-Link connect with SWD password.
 elif args.type== "swd":
     swdpwd_user(CONFIG)
+elif args.type== "swd_key":
+    if not args.key:
+        print("Jlink Error: swd_key needs --key")
+        sys.exit(1)
+    swd_key(CONFIG, args.key, args.key_mode)
 elif args.type== "ozone":
     gen_ozone_script(CONFIG, core=args.core)
 # SWD password verification: internal only

@@ -1352,6 +1352,7 @@ static int le_ext_adv_param_set(struct bt_le_ext_adv *adv,
 		}
 #if ZEPHYR_RTK_PATCH
 	}
+	adv->secondary_phy = cp->sec_adv_phy;
 #endif
 
 	cp->sid = param->sid;

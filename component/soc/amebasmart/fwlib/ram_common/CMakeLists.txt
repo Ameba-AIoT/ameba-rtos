@@ -77,6 +77,12 @@ ameba_list_append_ifnot(CONFIG_ARM_CORE_CA32 private_sources
     ameba_fault_handle.c
 )
 
+# NOR chip handling. The strategy-based driver in soc/common/nor_flash provides the
+# same flash_nor_* entry points, so only one of the two can be built.
+ameba_list_append_ifnot(CONFIG_NOR_FLASH_NEW_STRATEGY private_sources
+    ameba_nor_flash.c
+)
+
 # Component private part, user config end
 #------------------------------#
 

@@ -1057,30 +1057,6 @@ void CapTouch_SetTrigMode(CAPTOUCH_TypeDef *CapTouch, u8 TrigMode)
 }
 
 /**
- * @brief Configure CapTouch Rx DMA burst size.
- * @param CapTouch CAPTOUCH_DEV.
- * @param RxDmaBurstSize CapTouch Rx DMA burst size, which can be a value of @ref CapTouch_RXDMA_Setting.
- * @note Although CapTouch rx FIFO depth is 64 in hardware, Rx DMA burst size should be no more than 32 due to DMA FIFO depth limit.
- * @note Rx DMA burst size should not be smaller than GDMA_SrcMsize in function CapTouch_RXGDMA_Init();
- * 		For better performance, it is suggested to make Rx DMA burst size be equal to GDMA_SrcMsize, which is 8.
- * @return None
- */
-void CapTouch_RXDMAConfig(CAPTOUCH_TypeDef *CapTouch, u32 RxDmaBurstSize)
-{
-	u32 TempVal;
-
-	assert_param(IS_CAPTOUCH_ALL_PERIPH(CapTouch));
-	assert_param(IS_CTC_RXDMA_MSIZE(RxDmaBurstSize));
-
-	/* Set CapTouch Rx DMA burst size */
-	TempVal = CapTouch->CT_CTC_DMA;
-	TempVal &= ~CT_MASK_RXDMA_MSIZE;
-	TempVal |= CT_RXDMA_MSIZE(RxDmaBurstSize);
-
-	CapTouch->CT_CTC_DMA = TempVal;
-}
-
-/**
  * @brief Enable or disable CapTouch RX DMA.
  * @param CapTouch CAPTOUCH_DEV.
  * @param NewState New state of CapTouch RX DMA.
@@ -1119,6 +1095,7 @@ u8 CapTouch_RXGDMA_Init(
 )
 {
 	u8 GdmaChnl;
+	u32 TempVal;
 
 	assert_param(IS_CAPTOUCH_ALL_PERIPH(CapTouch));
 	assert_param(GDMA_InitStruct != NULL);
@@ -1138,6 +1115,11 @@ u8 CapTouch_RXGDMA_Init(
 	GDMA_InitStruct->GDMA_Index = 0;
 	GDMA_InitStruct->GDMA_ChNum = GdmaChnl;
 	GDMA_InitStruct->GDMA_IsrType = (BlockType | TransferType | ErrType);
+	/* RX DMA watermark equals the GDMA source burst: 8 entries */
+	TempVal = CapTouch->CT_CTC_DMA;
+	TempVal &= ~CT_MASK_RXDMA_MSIZE;
+	TempVal |= CT_RXDMA_MSIZE(CTC_RXDMA_MSIZE_8);
+	CapTouch->CT_CTC_DMA = TempVal;
 	GDMA_InitStruct->GDMA_SrcMsize = MsizeEight;
 	GDMA_InitStruct->GDMA_SrcDataWidth = TrWidthTwoBytes;
 	GDMA_InitStruct->GDMA_DstInc = IncType;

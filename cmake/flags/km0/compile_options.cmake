@@ -12,6 +12,7 @@ ameba_list_append(c_GLOBAL_MCU_COMPILE_DEFINES
 ameba_list_append(c_GLOBAL_MCU_COMPILE_ASM_OPTIONS
     -march=armv8-m.base
     -mthumb
+    -mfloat-abi=soft
 )
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ #
 

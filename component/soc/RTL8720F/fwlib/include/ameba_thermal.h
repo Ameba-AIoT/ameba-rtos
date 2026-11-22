@@ -11,8 +11,8 @@
  * @{
  */
 
-/** @defgroup ADC
- * @brief ADC driver modules
+/** @defgroup THERMAL THERMAL
+ * @brief THERMAL driver modules
  * @{
  */
 
@@ -25,7 +25,7 @@ extern "C" {
 // Please add your defination here
 
 /* Exported types ------------------------------------------------------------*/
-/** @addtogroup ADC_Exported_Types ADC Exported Types
+/** @defgroup THERMAL_Exported_Types THERMAL Exported Types
  * @{
  */
 
@@ -66,45 +66,50 @@ typedef enum {
  */
 
 /* Exported constants --------------------------------------------------------*/
-/** @defgroup ADC_Exported_Constants ADC Exported Constants
+/** @defgroup THERMAL_Exported_Constants THERMAL Exported Constants
  * @{
  */
 
-/** @defgroup TM_INT_TYPE
+/// @cond
+/** @defgroup TM_INT_TYPE TM Interrupt Type
  * @{
  */
+/** @brief Checks if parameter is a valid thermal interrupt type. */
 #define IS_TM_INT(int) (!((int)&~(ADC_BIT_IT_TM_LOW_WT_EN | ADC_BIT_IT_TM_HIGH_WT_EN)))
 /**
  * @}
  */
+/// @endcond
 
-/** @defgroup TM_Programme_Password
+/** @defgroup TM_Programme_Password TM Programme Password
  * @{
  */
-#define TM_PROG_PWR (0x69)
+#define TM_PROG_PWR (0x69) /*!< Password value required to program thermal meter registers. */
 /**
  * @}
  */
 
-/** @defgroup TM_TEMP_DEFINE
+/** @defgroup TM_TEMP_DEFINE TM Temp Define
  * @{
  */
 
-#define TM_INVALID_VALUE ((u32)0x80000) // unavailable value
+#define TM_INVALID_VALUE ((u32)0x80000) /*!< Encoded value indicating an invalid/unavailable temperature result. */
 
 /**
  * @}
  */
 
-/** @defgroup TM_INTR_CTRL
-  * @brief Thermal Meter Interrupt Control Register
-  * @{
-  */
-#define TM_BIT_IMR_TM_HIGH_WT ADC_BIT_IT_TM_HIGH_WT_EN
-#define TM_BIT_IMR_TM_LOW_WT  ADC_BIT_IT_TM_LOW_WT_EN
+/// @cond
+/** @defgroup TM_INTR_CTRL TM Interrupt Control
+ * @brief Thermal Meter Interrupt Control Register
+ * @{
+ */
+#define TM_BIT_IMR_TM_HIGH_WT ADC_BIT_IT_TM_HIGH_WT_EN /*!< Interrupt control for thermal meter detect over temperature warning. */
+#define TM_BIT_IMR_TM_LOW_WT  ADC_BIT_IT_TM_LOW_WT_EN  /*!< Interrupt control for thermal meter detect low temperature. */
 /**
  * @}
  */
+/// @endcond
 
 /**
  * @}

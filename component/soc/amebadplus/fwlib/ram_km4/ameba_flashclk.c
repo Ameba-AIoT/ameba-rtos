@@ -74,15 +74,21 @@ int flash_handshake_highspeed(u32 div, u32 flash_clk)
 	return Ret;
 }
 
+/**
+  * @brief  Switch the flash read bitmode, falling back until the data reads back correctly.
+  * @param  spic_mode: the bitmode to try first, degraded down to Spic1IOBitMode on failure.
+  * @param  flash_clk: the flash clock in Hz spic_mode will run at. Passed on to flash_nor_set_hpm_mode().
+  * @retval RTK_SUCCESS if the flash reads back in spic_mode, RTK_FAIL otherwise
+  */
 SRAMDRAM_ONLY_TEXT_SECTION
 int flash_rx_mode_switch(u32 spic_mode, u32 flash_clk)
 {
-	int Ret = RTK_SUCCESS;
+	u32 req_mode = spic_mode;
 	char *str[] = {"1IO", "2O", "2IO", "4O", "4IO"};
 	FLASH_InitTypeDef *FLASH_InitStruct = &flash_init_para;
 
 	/* Try sequentially: 4IO, 4O, 2IO, 2O, 1bit */
-	while (1) {
+	do {
 		/* 4IO or 2IO should enable dummy byte function */
 		if ((spic_mode == Spic4IOBitMode) || (spic_mode == Spic2IOBitMode)) {
 			FLASH_InitStruct->FLASH_dum_en = 1;
@@ -95,21 +101,18 @@ int flash_rx_mode_switch(u32 spic_mode, u32 flash_clk)
 
 		FLASH_Init(spic_mode);
 
-		if (spic_mode == Spic1IOBitMode) {
-			RTK_LOGE(TAG, "Flash Switch Read Mode FAIL\n");
-			Ret = RTK_FAIL;
-			break;
-		}
-
 		if (FLASH_Read_DataIsRight()) {
-			RTK_LOGI(TAG, "Flash Read %s\n", str[spic_mode]);
 			break;
 		}
+	} while (spic_mode--);
 
-		spic_mode--;
+	if (spic_mode != req_mode) {
+		RTK_LOGE(TAG, "Flash Read %s not reached\n", str[req_mode]);
+		return RTK_FAIL;
 	}
 
-	return Ret;
+	RTK_LOGI(TAG, "Flash Read %s\n", str[spic_mode]);
+	return RTK_SUCCESS;
 }
 
 void flash_pad_low_drv_strength(u32 PinLocation)
@@ -129,20 +132,27 @@ void flash_pad_low_drv_strength(u32 PinLocation)
 	}
 }
 
-void flash_highspeed_setup(void)
+/**
+  * @brief  Set the flash read mode and clock.
+  * @param  read_mode: the read bitmode to set.
+  * @param  spic_max: the SPIC bus clock upper limit in Hz. The fastest PLL divider not above it is used.
+  * @note   Fail leaves the flash readable (fallback bitmode and/or boot clock), the request is not met.
+  * @retval RTK_SUCCESS if the flash is in read_mode and calibrated at the selected clock, RTK_FAIL otherwise
+  */
+int flash_highspeed_setup(u32 read_mode, u32 spic_max)
 {
 	uint32_t irq_status;
 
-	u8 read_mode, flash_speed;
+	u8 flash_speed;
 	u32 Temp, spic_ckd;
+	int Ret;
 	u32 pll_clk = PLL_ClkGet();
 	/* Boot clock first: the flash runs at XTAL / 2 until the PLL clock is taken */
 	u32 flash_clk = XTAL_ClkGet() / 2;
 
-	read_mode = flash_get_readmode(Flash_ReadMode);
 	flash_speed = Flash_Speed - 1;
 
-	spic_ckd = CLKDIV_ROUND_UP(pll_clk, SPIC_CLK_LIMIT) - 1;
+	spic_ckd = CLKDIV_ROUND_UP(pll_clk, spic_max) - 1;
 	flash_speed = MAX(flash_speed, spic_ckd);
 
 	irq_status = irq_disable_save();
@@ -166,7 +176,7 @@ void flash_highspeed_setup(void)
 	flash_nor_set_qe_register();
 
 	/* Set flash I/O mode and high-speed calibration on the boot clock, FPGA works in 4IO as well */
-	flash_rx_mode_switch(read_mode, flash_clk);
+	Ret = flash_rx_mode_switch(read_mode, flash_clk);
 
 	/* Two SPIC in Dplus, SPIC0(Boot) Can connect to S0 or S1, when SPIC0 select one, SPIC1(Combo) use another one
 	   Set Drive Strength to Low, to reduce RF interference.*/
@@ -189,6 +199,7 @@ void flash_highspeed_setup(void)
 	/* The flash cannot run at that clock even with its DC bit set: stay on XTAL */
 	if (flash_nor_check_clk(flash_clk) != RTK_SUCCESS) {
 		RTK_LOGE(TAG, "Flash out of spec at %d Hz, use XTAL\n", flash_clk);
+		Ret = RTK_FAIL;
 		goto exit;
 	}
 
@@ -196,10 +207,13 @@ void flash_highspeed_setup(void)
 	flash_cs_timing_config(flash_clk * 2 * flash_init_para.FLASH_baud_rate);
 
 	/* Enable handshake to speed up simulation, a failure leaves the flash on XTAL */
-	flash_handshake_highspeed(flash_speed, flash_clk);
+	if (flash_handshake_highspeed(flash_speed, flash_clk) != RTK_SUCCESS) {
+		Ret = RTK_FAIL;
+	}
 
 exit:
 	irq_enable_restore(irq_status);
+	return Ret;
 }
 
 /* init psramc for flash r/w if needed */

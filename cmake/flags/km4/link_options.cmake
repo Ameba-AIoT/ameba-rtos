@@ -4,8 +4,18 @@ set(c_GLOBAL_MCU_LINK_OPTIONS)
 ameba_list_append(c_GLOBAL_MCU_LINK_OPTIONS
     -mthumb
     -mcmse
-    -Wl,--no-enum-size-warning
 )
+if(CONFIG_TOOLCHAIN_LLVM)
+    # Reset_Handler is PROVIDE'd by the ROM symbol script, ld.lld does not treat ENTRY() as a reference (gnu ld does) and warns
+    # "cannot find entry symbol" (and falls back to _start when the script has no ENTRY), -u makes the PROVIDE take effect
+    ameba_list_append(c_GLOBAL_MCU_LINK_OPTIONS
+        -Wl,-u,Reset_Handler
+        -Wl,--entry=Reset_Handler
+    )
+else()
+    # ld.lld has no enum size check, so the option is gcc only
+    ameba_list_append(c_GLOBAL_MCU_LINK_OPTIONS -Wl,--no-enum-size-warning)
+endif()
 
 if(CONFIG_AMEBAD OR CONFIG_AMEBAPRO3)
     ameba_list_append(c_GLOBAL_MCU_LINK_OPTIONS -march=armv8-m.main+dsp)
