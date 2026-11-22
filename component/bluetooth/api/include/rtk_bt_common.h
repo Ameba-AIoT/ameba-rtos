@@ -355,10 +355,10 @@ typedef enum {
 /**
  * @typedef   rtk_bt_le_gap_evt_t
  * @brief     Bluetooth LE GAP event indication
- * Default event callback msg is send from stack(api task) to event task, and excuted in event task.
- * But if event is direct calling, it will be directly excuted in stack(api task). This is designed
+ * Default event callback msg is sent from stack(api task) to event task, and executed in event task.
+ * But if event is direct calling, it will be directly executed in stack(api task). This is designed
  * for those event that will return a result and affect the stack's behaviour.
- * @note BT api cannot be excuted in callback case when this callback event case is direct calling.
+ * @note BT api cannot be executed in callback case when this callback event case is direct calling.
  */
 typedef enum {
 	RTK_BT_LE_GAP_EVT_ADV_START_IND = 1,            /*!< Indicate LE adv started, with msg @ref rtk_bt_le_adv_start_ind_t */
@@ -376,7 +376,7 @@ typedef enum {
 	RTK_BT_LE_GAP_EVT_AUTH_PAIRING_CONFIRM_IND,     /*!< Indicate LE just work pairing need to confirm, with msg @ref rtk_bt_le_auth_pair_cfm_ind_t */
 	RTK_BT_LE_GAP_EVT_AUTH_PASSKEY_DISPLAY_IND,     /*!< Indicate LE pairing passkey need to display, with msg @ref rtk_bt_le_auth_key_display_ind_t */
 	RTK_BT_LE_GAP_EVT_AUTH_PASSKEY_INPUT_IND,       /*!< Indicate LE pairing need to input passkey, with msg @ref rtk_bt_le_auth_key_input_ind_t */
-	RTK_BT_LE_GAP_EVT_AUTH_PASSKEY_CONFIRM_IND,     /*!< Indicate LE pairing passkey need to comfirm, with msg @ref rtk_bt_le_auth_key_cfm_ind_t */
+	RTK_BT_LE_GAP_EVT_AUTH_PASSKEY_CONFIRM_IND,     /*!< Indicate LE pairing passkey need to confirm, with msg @ref rtk_bt_le_auth_key_cfm_ind_t */
 	RTK_BT_LE_GAP_EVT_AUTH_OOB_KEY_INPUT_IND,       /*!< Indicate LE pairing need to input oob key, with msg @ref rtk_bt_le_auth_oob_input_ind_t */
 	RTK_BT_LE_GAP_EVT_AUTH_COMPLETE_IND,            /*!< Indicate LE auth complete, with msg @ref rtk_bt_le_auth_complete_ind_t */
 	RTK_BT_LE_GAP_EVT_BOND_MODIFY_IND,              /*!< Indicate LE bond info modified, with msg @ref rtk_bt_le_bond_modify_ind_t */
@@ -746,7 +746,7 @@ typedef enum {
 	RTK_BT_BR_GP_AVRCP,                           /*!< BR/EDR avrcp group */
 	RTK_BT_BR_GP_A2DP,                            /*!< BR/EDR a2dp group */
 	RTK_BT_BR_GP_SPP,                             /*!< BR/EDR spp group */
-	RTK_BT_BR_GP_RFC,                             /*!< BR/EDR rfcom group */
+	RTK_BT_BR_GP_RFC,                             /*!< BR/EDR rfcomm group */
 	RTK_BT_BR_GP_HFP,                             /*!< BR/EDR hfp group */
 	RTK_BT_BR_GP_SDP,                             /*!< BR/EDR sdp group */
 	RTK_BT_BR_GP_HID,                             /*!< BR/EDR hid group */
@@ -841,7 +841,7 @@ typedef enum {
 	RTK_BT_A2DP_EVT_STREAM_STOP,                   /*!< A2DP stream stop */
 	RTK_BT_A2DP_EVT_STREAM_CLOSE,                  /*!< A2DP stream close */
 	RTK_BT_A2DP_EVT_STREAM_DATA_IND,               /*!< A2DP stream data indication. Direct calling, BT api shall not be called in this event case. */
-	RTK_BT_A2DP_EVT_STREAM_DATA_RSP,               /*!< A2DP stream data recev rsp */
+	RTK_BT_A2DP_EVT_STREAM_DATA_RSP,               /*!< A2DP stream data receive rsp */
 	RTK_BT_A2DP_EVT_SDP_ATTR_INFO,                 /*!< A2DP SRC get sink sdp data info */
 	RTK_BT_A2DP_EVT_MAX,
 } rtk_bt_a2dp_evt_t;
@@ -1051,8 +1051,8 @@ typedef enum {
 	RTK_BT_HFP_EVT_CALLER_ID_IND,                      /*!< HFP CALLER number indication */
 	RTK_BT_HFP_EVT_DISCONN_CMPL,                       /*!< HFP disconnection completed */
 	RTK_BT_HFP_EVT_HF_BATTERY_IND,                     /*!< HFP HF battery indicator req */
-	RTK_BT_HFP_EVT_HF_SPEAKER_VOL_CHANGED_IND,         /*!< HFP HF speaker volumer changed indicate */
-	RTK_BT_HFP_EVT_HF_MIC_VOL_CHANGED_IND,             /*!< HFP HF mic volumer changed indicate */
+	RTK_BT_HFP_EVT_HF_SPEAKER_VOL_CHANGED_IND,         /*!< HFP HF speaker volume changed indicate */
+	RTK_BT_HFP_EVT_HF_MIC_VOL_CHANGED_IND,             /*!< HFP HF mic volume changed indicate */
 	RTK_BT_HFP_EVT_SCO_CONN_IND,                       /*!< HFP sco connection indication */
 	RTK_BT_HFP_EVT_SCO_CONN_CMPL,                      /*!< HFP sco connection completed */
 	RTK_BT_HFP_EVT_SCO_DATA_IND,                       /*!< HFP sco data indication. Direct calling, BT api shall not be called in this event case. */
@@ -1093,7 +1093,7 @@ typedef enum {
 typedef enum {
 	RTK_BT_PBAP_EVT_CONN_CMPL = 1,                  /*!< PBAP connection completion */
 	RTK_BT_PBAP_EVT_CONN_FAIL,                      /*!< PBAP connection fail */
-	RTK_BT_PBAP_EVT_DISCONN_CMPL,                   /*!< PBAP disconnectoin completion */
+	RTK_BT_PBAP_EVT_DISCONN_CMPL,                   /*!< PBAP disconnection completion */
 	RTK_BT_PBAP_EVT_SET_PHONE_BOOK_CMPL,            /*!< PBAP set phone book completion */
 	RTK_BT_PBAP_EVT_GET_PHONE_BOOK_CMPL,            /*!< PBAP get phone book completion */
 	RTK_BT_PBAP_EVT_CALLER_ID_NAME,                 /*!< PBAP caller id name indication */
@@ -1168,7 +1168,7 @@ typedef enum {
 
 /**
  * @typedef rtk_bt_evt_cb_ret_t
- * @brief   Bluetooth event callback exucute result
+ * @brief   Bluetooth event callback execute result
  */
 typedef enum {
 	RTK_BT_EVT_CB_OK = 0,
@@ -1249,7 +1249,7 @@ void rtk_bt_addr_to_str(uint8_t type, uint8_t *paddr, char *str, uint32_t len);
 
 /**
  * @brief     Register event callback
- * @note      User's event callback will be excuted in bt_evt_task @ref rtk_bt_evt_taskentry,
+ * @note      User's event callback will be executed in bt_evt_task @ref rtk_bt_evt_taskentry,
  *            if user's callback is complex and consume too much stack size, please enlarge
  *            @ref EVENT_TASK_STACK_SIZE
  * @param[in] group: API cmd/evt group

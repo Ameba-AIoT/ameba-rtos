@@ -1,7 +1,7 @@
 /**
  * @file      rtk_bt_avrcp.h
  * @author    benling_xu@realsil.com.cn
- * @brief     Bluetooth LE GAP part type and function deffinition
+ * @brief     Bluetooth LE GAP part type and function definition
  * @copyright Copyright (c) 2022. Realtek Semiconductor Corporation. All rights reserved.
  */
 
@@ -344,7 +344,7 @@ uint16_t rtk_bt_avrcp_disconnect(uint8_t *bd_addr);
  *            - 0  : Succeed
  *            - Others: Error code
  */
-uint16_t rtk_bt_avrcp_play_status_change_req(uint8_t *bt_addr, uint8_t play_status);
+uint16_t rtk_bt_avrcp_play_status_change_req(uint8_t *bd_addr, uint8_t play_status);
 
 /**
  * @brief     send avrcp play status change register response.
@@ -478,7 +478,7 @@ uint16_t rtk_bt_avrcp_get_element_attr(uint8_t *bd_addr, uint8_t num, uint8_t *p
 uint16_t rtk_bt_avrcp_app_setting_attrs_list(uint8_t *bd_addr);
 
 /**
- * @brief     request remote bt device to list values for attrubute id.
+ * @brief     request remote bt device to list values for attribute id.
  * @param[in] bd_addr: bt address
  * @param[in] attr_id: attribute id
  * @return
