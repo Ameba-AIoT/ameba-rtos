@@ -2566,7 +2566,7 @@ static rtk_bt_evt_cb_ret_t app_bt_bap_callback(uint8_t evt_code, void *data, uin
 			break;
 		case RTK_BT_LE_AUDIO_GROUP_MSG_DEV_DISCONN:
 #if defined(RTK_BLE_AUDIO_CSIP_SET_COORDINATOR_SUPPORT) && RTK_BLE_AUDIO_CSIP_SET_COORDINATOR_SUPPORT
-			ret = rtk_bt_le_audio_csis_set_coordinator_cfg_discover(param->group_handle, true, RTK_BLE_AUDIO_DEFAULT_CSIS_DISV_TIMEOUT);
+			ret = rtk_bt_le_audio_csis_set_coordinator_cfg_discover(param->group_handle, true, RTK_BLE_AUDIO_DEFAULT_CSIS_DISCOVERY_TIMEOUT);
 			BT_LOGA("[APP] %s: start csis discover in csis group %s (group_handle=%08x) \r\n", __func__, (RTK_BT_OK != ret) ? "fail" : "ok", param->group_handle);
 			csip_discover_flag = true;
 			app_bt_le_audio_scan_dev_list_remove_all();
