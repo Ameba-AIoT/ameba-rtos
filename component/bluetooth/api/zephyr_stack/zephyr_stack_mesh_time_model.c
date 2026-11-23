@@ -96,7 +96,7 @@ static int tai_utc_delta_status(const struct bt_mesh_model *model,
 
 static rtk_bt_mesh_time_role_t get_time_role(uint8_t group)
 {
-	rtk_bt_mesh_time_role_t role;
+	rtk_bt_mesh_time_role_t role = RTK_BT_MESH_TIME_ROLE_NONE;
 	rtk_bt_mesh_time_server_get_role_t *p_get_data;
 	rtk_bt_evt_t *p_evt = NULL;
 	if (group == RTK_BT_LE_GP_MESH_TIME_SETUP_SERVER_MODEL) {
@@ -105,6 +105,10 @@ static rtk_bt_mesh_time_role_t get_time_role(uint8_t group)
 	} else if (group == RTK_BT_LE_GP_MESH_TIME_SERVER_MODEL) {
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_TIME_SERVER_MODEL, RTK_BT_MESH_TIME_SERVER_MODEL_ROLE_GET,
 									sizeof(rtk_bt_mesh_time_server_get_role_t));
+	}
+	if (!p_evt) {
+		BT_LOGE("[%s] Create event fail\r\n", __func__);
+		return role;
 	}
 	p_get_data = (rtk_bt_mesh_time_server_get_role_t *)p_evt->data;
 	p_get_data->role = &role;
@@ -126,14 +130,14 @@ const struct bt_mesh_model_cb bt_mesh_time_srv_cb = {
 	.init = time_srv_init,
 };
 
-int time_publish(const struct bt_mesh_model *model, rtk_bt_mesh_time_server_status_set_t status)
+int time_publish(const struct bt_mesh_model *model, rtk_bt_mesh_time_server_status_set_t status, uint8_t time_authority)
 {
 	rtk_bt_mesh_tai_time_t time;
 	memcpy(time.tai_seconds, status.tai_seconds, 5);
 	time.subsecond = status.subsecond;
 	time.uncertainty = status.uncertainty;
-	time.time_authority = status.tai_utc_delta & 0x0001;
-	time.tai_utc_delta = (status.tai_utc_delta & 0xFFFE) >> 1;
+	time.time_authority = time_authority;
+	time.tai_utc_delta = status.tai_utc_delta;
 	time.time_zone_offset = status.time_zone_offset;
 	return time_status(model, NULL, time);
 }
@@ -142,19 +146,23 @@ int time_srv_update_publish(const struct bt_mesh_model *model)
 {
 	net_buf_simple_reset(model->pub->msg);
 	struct net_buf_simple *msg = model->pub->msg;
-	rtk_bt_mesh_time_server_get_t time;
+	rtk_bt_mesh_time_server_get_t time = {0};
 	rtk_bt_mesh_time_server_direct_get_t *time_get;
 	rtk_bt_evt_t *p_evt = NULL;
 	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_TIME_SERVER_MODEL, RTK_BT_MESH_TIME_SERVER_MODEL_GET,
 								sizeof(rtk_bt_mesh_time_server_direct_get_t));
-	time_get = (rtk_bt_mesh_time_server_direct_get_t *)p_evt->data;
-	time_get->value = &time;
-	rtk_bt_evt_indicate(p_evt, NULL);
+	if (p_evt) {
+		time_get = (rtk_bt_mesh_time_server_direct_get_t *)p_evt->data;
+		time_get->value = &time;
+		rtk_bt_evt_indicate(p_evt, NULL);
+	} else {
+		BT_LOGE("[%s] Create event fail\r\n", __func__);
+	}
 
 	uint8_t zero_tai_seconds[5] = {0, 0, 0, 0, 0};
 	bt_mesh_model_msg_init(msg, OP_TIME_STATUS);
 	net_buf_simple_add_mem(msg, time.tai_seconds, 5);
-	if (0 == memcmp(time.tai_seconds, zero_tai_seconds, 5)) {
+	if (0 != memcmp(time.tai_seconds, zero_tai_seconds, 5)) {
 		net_buf_simple_add_u8(msg, time.subsecond);
 		net_buf_simple_add_u8(msg, time.uncertainty);
 		uint16_t val = 0;
@@ -171,14 +179,18 @@ static int time_srv_get(const struct bt_mesh_model *model,
 						struct net_buf_simple *buf)
 {
 	if (!buf->len) {
-		rtk_bt_mesh_time_server_get_t time;
+		rtk_bt_mesh_time_server_get_t time = {0};
 		rtk_bt_mesh_time_server_direct_get_t *time_get;
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_TIME_SERVER_MODEL, RTK_BT_MESH_TIME_SERVER_MODEL_GET,
 									sizeof(rtk_bt_mesh_time_server_direct_get_t));
-		time_get = (rtk_bt_mesh_time_server_direct_get_t *)p_evt->data;
-		time_get->value = &time;
-		rtk_bt_evt_indicate(p_evt, NULL);
+		if (p_evt) {
+			time_get = (rtk_bt_mesh_time_server_direct_get_t *)p_evt->data;
+			time_get->value = &time;
+			rtk_bt_evt_indicate(p_evt, NULL);
+		} else {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+		}
 
 		return time_status(model, ctx, time);
 	}
@@ -190,14 +202,18 @@ static int time_srv_zone_get(const struct bt_mesh_model *model,
 							 struct net_buf_simple *buf)
 {
 	if (!buf->len) {
-		rtk_bt_mesh_time_server_get_zone_t zone;
+		rtk_bt_mesh_time_server_get_zone_t zone = {0};
 		rtk_bt_mesh_time_server_direct_get_zone_t *zone_get;
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_TIME_SERVER_MODEL, RTK_BT_MESH_TIME_SERVER_MODEL_ZONE_GET,
 									sizeof(rtk_bt_mesh_time_server_direct_get_zone_t));
-		zone_get = (rtk_bt_mesh_time_server_direct_get_zone_t *)p_evt->data;
-		zone_get->value = &zone;
-		rtk_bt_evt_indicate(p_evt, NULL);
+		if (p_evt) {
+			zone_get = (rtk_bt_mesh_time_server_direct_get_zone_t *)p_evt->data;
+			zone_get->value = &zone;
+			rtk_bt_evt_indicate(p_evt, NULL);
+		} else {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+		}
 
 		return time_zone_status(model, ctx, zone);
 	}
@@ -209,14 +225,18 @@ static int time_srv_tai_utc_delta_get(const struct bt_mesh_model *model,
 									  struct net_buf_simple *buf)
 {
 	if (!buf->len) {
-		rtk_bt_mesh_time_server_get_tai_utc_delta_t delta;
+		rtk_bt_mesh_time_server_get_tai_utc_delta_t delta = {0};
 		rtk_bt_mesh_time_server_direct_get_tai_utc_delta_t *delta_get;
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_TIME_SERVER_MODEL, RTK_BT_MESH_TIME_SERVER_MODEL_TAI_UTC_DELTA_GET,
 									sizeof(rtk_bt_mesh_time_server_direct_get_tai_utc_delta_t));
-		delta_get = (rtk_bt_mesh_time_server_direct_get_tai_utc_delta_t *)p_evt->data;
-		delta_get->value = &delta;
-		rtk_bt_evt_indicate(p_evt, NULL);
+		if (p_evt) {
+			delta_get = (rtk_bt_mesh_time_server_direct_get_tai_utc_delta_t *)p_evt->data;
+			delta_get->value = &delta;
+			rtk_bt_evt_indicate(p_evt, NULL);
+		} else {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+		}
 
 		return tai_utc_delta_status(model, ctx, delta);
 	}
@@ -230,12 +250,16 @@ static int time_srv_status(const struct bt_mesh_model *model,
 	(void)ctx;
 	if (buf->len) {
 		rtk_bt_mesh_time_server_status_set_t status = {0};
+		uint8_t time_authority = 0;
 		memcpy(status.tai_seconds, buf->data, 5);
 		net_buf_simple_pull(buf, 5);
 		if (buf->len) {
+			uint16_t val;
 			status.subsecond = net_buf_simple_pull_u8(buf);
 			status.uncertainty = net_buf_simple_pull_u8(buf);
-			status.tai_utc_delta = net_buf_simple_pull_le16(buf);
+			val = net_buf_simple_pull_le16(buf);
+			time_authority = val & 0x0001;
+			status.tai_utc_delta = val >> 1;
 			status.time_zone_offset = net_buf_simple_pull_u8(buf);
 		}
 		/******Get role first******/
@@ -244,13 +268,17 @@ static int time_srv_status(const struct bt_mesh_model *model,
 			/* update time */
 			rtk_bt_evt_t *p_evt = NULL;
 			p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_TIME_SERVER_MODEL, RTK_BT_MESH_TIME_SERVER_MODEL_STATUS_SET, sizeof(rtk_bt_mesh_time_server_status_set_t));
-			memcpy(p_evt->data, &status, sizeof(rtk_bt_mesh_time_server_status_set_t));
-			rtk_bt_evt_indicate(p_evt, NULL);
+			if (p_evt) {
+				memcpy(p_evt->data, &status, sizeof(rtk_bt_mesh_time_server_status_set_t));
+				rtk_bt_evt_indicate(p_evt, NULL);
+			} else {
+				BT_LOGE("[%s] Create event fail\r\n", __func__);
+			}
 		}
 
 		if (RTK_BT_MESH_TIME_ROLE_RELAY == role) {
 			/* publish time */
-			time_publish(model, status);
+			time_publish(model, status, time_authority);
 		}
 	}
 	return -1;
@@ -295,16 +323,24 @@ static int time_setup_srv_set(const struct bt_mesh_model *model,
 		/**********First, set************/
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_TIME_SETUP_SERVER_MODEL, RTK_BT_MESH_TIME_SETUP_SERVER_MODEL_SET, sizeof(rtk_bt_mesh_time_server_set_t));
-		memcpy(p_evt->data, &p_set_data, sizeof(rtk_bt_mesh_time_server_set_t));
-		rtk_bt_evt_indicate(p_evt, NULL);
+		if (p_evt) {
+			memcpy(p_evt->data, &p_set_data, sizeof(rtk_bt_mesh_time_server_set_t));
+			rtk_bt_evt_indicate(p_evt, NULL);
+		} else {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+		}
 		/**********Second, get************/
-		rtk_bt_mesh_time_server_get_t time;
+		rtk_bt_mesh_time_server_get_t time = {0};
 		rtk_bt_mesh_time_server_direct_get_t *time_get;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_TIME_SETUP_SERVER_MODEL, RTK_BT_MESH_TIME_SETUP_SERVER_MODEL_GET,
 									sizeof(rtk_bt_mesh_time_server_direct_get_t));
-		time_get = (rtk_bt_mesh_time_server_direct_get_t *)p_evt->data;
-		time_get->value = &time;
-		rtk_bt_evt_indicate(p_evt, NULL);
+		if (p_evt) {
+			time_get = (rtk_bt_mesh_time_server_direct_get_t *)p_evt->data;
+			time_get->value = &time;
+			rtk_bt_evt_indicate(p_evt, NULL);
+		} else {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+		}
 		/**********Third, send status***********/
 		return time_status(model, ctx, time);
 	}
@@ -324,16 +360,24 @@ static int time_setup_srv_zone_set(const struct bt_mesh_model *model,
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_TIME_SETUP_SERVER_MODEL, RTK_BT_MESH_TIME_SETUP_SERVER_MODEL_ZONE_SET,
 									sizeof(rtk_bt_mesh_time_server_set_zone_t));
-		memcpy(p_evt->data, &p_set_data, sizeof(rtk_bt_mesh_time_server_set_zone_t));
-		rtk_bt_evt_indicate(p_evt, NULL);
+		if (p_evt) {
+			memcpy(p_evt->data, &p_set_data, sizeof(rtk_bt_mesh_time_server_set_zone_t));
+			rtk_bt_evt_indicate(p_evt, NULL);
+		} else {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+		}
 
-		rtk_bt_mesh_time_server_get_zone_t zone;
+		rtk_bt_mesh_time_server_get_zone_t zone = {0};
 		rtk_bt_mesh_time_server_direct_get_zone_t *zone_get;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_TIME_SETUP_SERVER_MODEL, RTK_BT_MESH_TIME_SETUP_SERVER_MODEL_ZONE_GET,
 									sizeof(rtk_bt_mesh_time_server_direct_get_zone_t));
-		zone_get = (rtk_bt_mesh_time_server_direct_get_zone_t *)p_evt->data;
-		zone_get->value = &zone;
-		rtk_bt_evt_indicate(p_evt, NULL);
+		if (p_evt) {
+			zone_get = (rtk_bt_mesh_time_server_direct_get_zone_t *)p_evt->data;
+			zone_get->value = &zone;
+			rtk_bt_evt_indicate(p_evt, NULL);
+		} else {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+		}
 
 		return time_zone_status(model, ctx, zone);
 	}
@@ -352,16 +396,24 @@ static int time_setup_srv_tai_utc_delta_set(const struct bt_mesh_model *model,
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_TIME_SETUP_SERVER_MODEL, RTK_BT_MESH_TIME_SETUP_SERVER_MODEL_TAI_UTC_DELTA_SET,
 									sizeof(rtk_bt_mesh_time_server_set_tai_utc_delta_t));
-		memcpy(p_evt->data, &p_set_data, sizeof(rtk_bt_mesh_time_server_set_tai_utc_delta_t));
-		rtk_bt_evt_indicate(p_evt, NULL);
+		if (p_evt) {
+			memcpy(p_evt->data, &p_set_data, sizeof(rtk_bt_mesh_time_server_set_tai_utc_delta_t));
+			rtk_bt_evt_indicate(p_evt, NULL);
+		} else {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+		}
 
-		rtk_bt_mesh_time_server_get_tai_utc_delta_t delta;
+		rtk_bt_mesh_time_server_get_tai_utc_delta_t delta = {0};
 		rtk_bt_mesh_time_server_direct_get_tai_utc_delta_t *delta_get;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_TIME_SETUP_SERVER_MODEL, RTK_BT_MESH_TIME_SETUP_SERVER_MODEL_TAI_UTC_DELTA_GET,
 									sizeof(rtk_bt_mesh_time_server_direct_get_tai_utc_delta_t));
-		delta_get = (rtk_bt_mesh_time_server_direct_get_tai_utc_delta_t *)p_evt->data;
-		delta_get->value = &delta;
-		rtk_bt_evt_indicate(p_evt, NULL);
+		if (p_evt) {
+			delta_get = (rtk_bt_mesh_time_server_direct_get_tai_utc_delta_t *)p_evt->data;
+			delta_get->value = &delta;
+			rtk_bt_evt_indicate(p_evt, NULL);
+		} else {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+		}
 
 		return tai_utc_delta_status(model, ctx, delta);
 	}
@@ -399,8 +451,12 @@ static int time_setup_srv_role_set(const struct bt_mesh_model *model,
 		}
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_TIME_SETUP_SERVER_MODEL, RTK_BT_MESH_TIME_SETUP_SERVER_MODEL_ROLE_SET, sizeof(rtk_bt_mesh_time_role_t));
-		memcpy(p_evt->data, &role, sizeof(rtk_bt_mesh_time_role_t));
-		rtk_bt_evt_indicate(p_evt, NULL);
+		if (p_evt) {
+			memcpy(p_evt->data, &role, sizeof(rtk_bt_mesh_time_role_t));
+			rtk_bt_evt_indicate(p_evt, NULL);
+		} else {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+		}
 
 		rtk_bt_mesh_time_role_t current_role = get_time_role(RTK_BT_LE_GP_MESH_TIME_SETUP_SERVER_MODEL);
 		return time_role_status(model, ctx, current_role);
@@ -452,6 +508,10 @@ static int time_cli_status(const struct bt_mesh_model *model,
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_TIME_CLIENT_MODEL, RTK_BT_MESH_TIME_CLIENT_MODEL_STATUS,
 									sizeof(rtk_bt_mesh_time_client_status_t));
+		if (!p_evt) {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+			return -1;
+		}
 		memcpy(p_evt->data, &status, sizeof(rtk_bt_mesh_time_client_status_t));
 		return rtk_bt_evt_indicate(p_evt, NULL);
 	}
@@ -474,6 +534,10 @@ static int time_cli_zone_status(const struct bt_mesh_model *model,
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_TIME_CLIENT_MODEL, RTK_BT_MESH_TIME_CLIENT_MODEL_ZONE_STATUS,
 									sizeof(rtk_bt_mesh_time_client_status_zone_t));
+		if (!p_evt) {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+			return -1;
+		}
 		memcpy(p_evt->data, &zone, sizeof(rtk_bt_mesh_time_client_status_zone_t));
 		return rtk_bt_evt_indicate(p_evt, NULL);
 	}
@@ -498,6 +562,10 @@ static int time_cli_tai_utc_delta_status(const struct bt_mesh_model *model,
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_TIME_CLIENT_MODEL, RTK_BT_MESH_TIME_CLIENT_MODEL_TAI_UTC_DELTA_STATUS,
 									sizeof(rtk_bt_mesh_time_client_status_tai_utc_delta_t));
+		if (!p_evt) {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+			return -1;
+		}
 		memcpy(p_evt->data, &delta, sizeof(rtk_bt_mesh_time_client_status_tai_utc_delta_t));
 		return rtk_bt_evt_indicate(p_evt, NULL);
 	}
@@ -517,6 +585,10 @@ static int time_cli_role_status(const struct bt_mesh_model *model,
 		rtk_bt_evt_t *p_evt = NULL;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_TIME_CLIENT_MODEL, RTK_BT_MESH_TIME_CLIENT_MODEL_ROLE_STATUS,
 									sizeof(rtk_bt_mesh_time_client_status_role_t));
+		if (!p_evt) {
+			BT_LOGE("[%s] Create event fail\r\n", __func__);
+			return -1;
+		}
 		memcpy(p_evt->data, &role, sizeof(rtk_bt_mesh_time_client_status_role_t));
 		return rtk_bt_evt_indicate(p_evt, NULL);
 	}

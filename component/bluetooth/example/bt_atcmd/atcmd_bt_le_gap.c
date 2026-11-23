@@ -1869,7 +1869,7 @@ static int atcmd_ble_gap_set_security_param(int argc, char **argv)
 
 	if (argc == 0) {
 		rtk_bt_le_security_param_t def_sec_param = {
-			.io_cap = RTK_IO_CAP_KEYBOARD_DISPALY,
+			.io_cap = RTK_IO_CAP_KEYBOARD_DISPLAY,
 			.oob_data_flag = 0,
 			.bond_flag = 1,
 			.mitm_flag = 0,

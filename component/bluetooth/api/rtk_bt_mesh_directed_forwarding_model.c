@@ -426,7 +426,7 @@ uint16_t rtk_bt_mesh_df_path_metric_state_set(rtk_bt_mesh_df_path_metric_state_s
 	return ret;
 }
 
-uint16_t rtk_bt_mesh_df_discovery_table_capablities_state_get(rtk_bt_mesh_df_discovery_table_cap_state_setting_t *dtcs)
+uint16_t rtk_bt_mesh_df_discovery_table_capabilities_state_get(rtk_bt_mesh_df_discovery_table_cap_state_setting_t *dtcs)
 {
 	uint16_t ret;
 
@@ -436,7 +436,7 @@ uint16_t rtk_bt_mesh_df_discovery_table_capablities_state_get(rtk_bt_mesh_df_dis
 	return ret;
 }
 
-uint16_t rtk_bt_mesh_df_discovery_table_capablities_state_set(rtk_bt_mesh_df_discovery_table_cap_state_setting_t *dtcs)
+uint16_t rtk_bt_mesh_df_discovery_table_capabilities_state_set(rtk_bt_mesh_df_discovery_table_cap_state_setting_t *dtcs)
 {
 	uint16_t ret;
 

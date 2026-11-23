@@ -290,7 +290,7 @@ void rtk_bt_gpio_enable(uint8_t bt_gpio, char *pad);
  * @return
  *            - @ref rtk_bt_err_common
  * @note
- *            - If VENDOR_CMD_SET_TX_POWER_SUPPORT is not enabled, this API fails with @ref RTK_BT_FAIL.
+ *            - If @ref VENDOR_CMD_SET_TX_POWER_SUPPORT is not enabled, this API fails with @ref RTK_BT_FAIL.
  */
 uint16_t rtk_bt_set_tx_power(rtk_bt_vendor_tx_power_param_t *tx_power);
 
@@ -311,7 +311,7 @@ rtk_bt_vendor_free_run_clock_t *rtk_bt_get_hc_free_run_clock(void);
  *            - @ref rtk_bt_err_common
  * @note
  *            - This API shall NOT be called in the BT API task.
- *            - If vendor command VENDOR_CMD_FREE_RUN_CLOCK_LATCH_SUPPORT is not enabled, this API fails with @ref RTK_BT_FAIL.
+ *            - If vendor command @ref VENDOR_CMD_FREE_RUN_CLOCK_LATCH_SUPPORT is not enabled, this API fails with @ref RTK_BT_FAIL.
  */
 uint16_t rtk_bt_get_hc_clock_offset(int64_t *offset);
 #endif
@@ -340,7 +340,7 @@ rtk_bt_vendor_sync_ref_ap_info_t *rtk_bt_get_ref_ap_info(void);
  *            - @ref rtk_bt_err_common
  * @note
  *            - This API shall NOT be called in the BT API task.
- *            - If vendor command VENDOR_CMD_GET_LE_ISO_SYNC_REF_AP_INFO_SUPPORT is not enabled, this API fails with @ref RTK_BT_FAIL.
+ *            - If vendor command @ref VENDOR_CMD_GET_LE_ISO_SYNC_REF_AP_INFO_SUPPORT is not enabled, this API fails with @ref RTK_BT_FAIL.
  */
 uint16_t rtk_bt_get_le_iso_sync_ref_ap_info(uint16_t conn_handle, uint8_t dir, rtk_bt_le_iso_sync_ref_ap_info_t *p_info);
 #endif
@@ -364,7 +364,7 @@ rtk_bt_vendor_conn_clock_info_t *rtk_bt_get_slave_clock_info(void);
  *            - @ref rtk_bt_err_common
  * @note
  *            - This API shall NOT be called in the BT API task.
- *            - If vendor command VENDOR_CMD_READ_ACC_HIT_COUNTER_SUPPORT is not enabled, this API fails with @ref RTK_BT_FAIL.
+ *            - If vendor command @ref VENDOR_CMD_READ_ACC_HIT_COUNTER_SUPPORT is not enabled, this API fails with @ref RTK_BT_FAIL.
  */
 uint16_t rtk_bt_le_get_slave_conn_clock(uint16_t conn_handle, rtk_bt_le_conn_clock_info_t *clock_info);
 #endif

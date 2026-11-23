@@ -77,7 +77,8 @@ typedef struct {
  * @brief     Bluetooth audio track context.
  */
 typedef struct {
-	struct list_head        list;                                                              /*!< List node linking the track into the track list of its codec type. */
+	struct list_head
+		list;                                                              /*!< List node linking the track into the track list of its codec type. */
 	uint16_t (*pcm_data_cb)(void *p_pcm_buf, uint16_t p_len, void *pentity, void *track);      /*!< Callback that receives the decoded PCM data.
                                                                                                 *   NULL: No callback is registered. */
 	void                       *audio_track_hdl;                                               /*!< Handle of the underlying audio track. */
@@ -89,18 +90,21 @@ typedef struct {
 	uint32_t                   rate;                                                           /*!< Sample rate in Hz. */
 	uint32_t                   bits;                                                           /*!< Number of bits per sample. */
 	uint32_t                   format;                                                         /*!< Audio sample format, as defined in @ref bt_audio_fmt_t. */
-	uint16_t                   play_state;                                                     /*!< Play state, as defined in @ref rtk_bt_audio_track_play_state_t. */
+	uint16_t
+	play_state;                                                     /*!< Play state, as defined in @ref rtk_bt_audio_track_play_state_t. */
 	int32_t                    track_num;                                                      /*!< Number of enqueued audio data messages not yet handled. */
 	bool                       audio_sync_flag;                                                /*!< Whether audio sync is enabled for the track.
                                                                                                 *   - true: Audio sync is enabled.
                                                                                                 *   - false: Audio sync is disabled. */
-	uint8_t                    pres_comp_event;                                                /*!< Compensation state, as defined in @ref rtk_bt_audio_pres_comp_t. */
+	uint8_t
+	pres_comp_event;                                                /*!< Compensation state, as defined in @ref rtk_bt_audio_pres_comp_t. */
 	uint32_t                   iso_interval;                                                   /*!< Iso interval for le iso. */
 	uint32_t                   sdu_interval;                                                   /*!< SDU interval for LE Audio. */
 	bool                       frc_cal_flag;                                                   /*!< Whether the free run clock offset has been calculated */
 	int64_t                    expt_sdu_frc;                                                   /*!< Expected free run clock timestamp of the next SDU.
                                                                                                 *   Units: microseconds. */
-	int64_t                    frc_drift;                                                      /*!< Free run clock offset between application and lower stack core. */
+	int64_t
+	frc_drift;                                                      /*!< Free run clock offset between application and lower stack core. */
 	uint64_t                   controller_free_run_clock;                                      /*!< Controller free run clock. */
 	uint32_t                   pres_delay_us;                                                  /*!< Presentation delay.
                                                                                                 *   Units: microseconds. */
@@ -312,7 +316,7 @@ uint16_t rtk_bt_audio_track_sync_restart(rtk_bt_audio_track_t *track);
  * @return
  *            - @ref rtk_bt_audio_err_common
  * @note
- *            - If RTK_BT_GET_LE_ISO_SYNC_REF_AP_INFO_SUPPORT is not enabled, this API fails with @ref RTK_BT_AUDIO_FAIL.
+ *            - If @ref RTK_BT_GET_LE_ISO_SYNC_REF_AP_INFO_SUPPORT is not enabled, this API fails with @ref RTK_BT_AUDIO_FAIL.
  */
 uint16_t rtk_bt_audio_get_iso_ref_ap(rtk_bt_audio_track_t *track, uint16_t iso_conn_handle, uint8_t dir, uint16_t iso_interval,
 									 uint32_t *sync_ref_ap);

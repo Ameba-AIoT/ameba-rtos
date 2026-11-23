@@ -235,15 +235,6 @@ uint32_t rtk_bt_audio_track_get_channel_count(void *track_hdl);
 int32_t rtk_bt_audio_track_get_start_thresholdbytes(void *track_hdl);
 
 /**
- * @brief     Get the buffer size of the audio track.
- * @return
- *            - Buffer size
- * @note
- *            - Not ready.
- */
-long rtk_bt_audio_track_get_buffer_size(void);
-
-/**
  * @}
  */
 

@@ -46,16 +46,17 @@ extern "C" {
 
 /** @brief Device identity and capability parameters latched from OTP. */
 typedef struct {
-	u8 *mfg_str;              /**< Manufacturer string, heap-allocated by @ref usbd_otp_init. */
-	u8 *prod_str;             /**< Product string, heap-allocated by @ref usbd_otp_init. */
-	u8 *sn_str;               /**< Serial number string, heap-allocated by @ref usbd_otp_init. */
-	u16 vid;                  /**< Vendor ID read from OTP. */
-	u16 pid;                  /**< Product ID read from OTP. */
-	u8 otp_sn;                /**< 1 when OTP supplied a valid serial number. */
-	u8 otp_param;             /**< 1 when OTP supplied valid device parameters. */
-	u8 self_powered : 1;      /**< 1 when the device reports itself as self-powered. */
-	u8 remote_wakeup_en : 1;  /**< 1 when remote wakeup is enabled. */
-	u8 bt_en : 1;             /**< 1 when the Bluetooth function is enabled in OTP. */
+	u8 *mfg_str;                /**< Manufacturer string, heap-allocated by @ref usbd_otp_init. */
+	u8 *prod_str;               /**< Product string, heap-allocated by @ref usbd_otp_init. */
+	u8 *sn_str;                 /**< Serial number string, heap-allocated by @ref usbd_otp_init. */
+	u16 vid;                    /**< Vendor ID read from OTP, valid when @ref vid_pid is set, else 0. */
+	u16 pid;                    /**< Product ID read from OTP, valid when @ref vid_pid is set, else 0. */
+	u8 vid_pid : 1;             /**< 1 when OTP supplied the VID/PID. */
+	u8 mfg_prod : 1;            /**< 1 when OTP supplied the manufacturer and product strings; an empty one is reported as no string. */
+	u8 sn : 1;                  /**< 1 when OTP supplied the serial number; an empty one is reported as no serial number. */
+	u8 self_powered : 1;        /**< 1 when the device reports itself as self-powered. */
+	u8 remote_wakeup_en : 1;    /**< 1 when remote wakeup is enabled. */
+	u8 bt_en : 1;               /**< 1 when the Bluetooth function is enabled in OTP. */
 } usbd_otp_t;
 
 /** @} End of Device_WHC_OTP_Types group */
@@ -79,8 +80,19 @@ typedef struct {
  * @brief  Read the device identity and parameters from OTP.
  * @note   Allocates the identity string buffers; release them with @ref usbd_otp_deinit.
  *         On a partial failure the already allocated buffers are freed before returning.
+ *         Three tiers: the autoload shadow registers, else the OTP, else the caller's own default
+ *         (a clear vid_pid/mfg_prod flag keeps it, a clear sn flag means no serial number).
+ *         A failed OTP read fails that tier as a whole: no item is taken from the map it could not read.
+ *         An item the OTP enables but leaves without a valid value depends on the IC. RLE1509 logs it and reports the
+ *         empty string (index 0), the VID/PID gate taking 0xFFFF as a value too. The autoload shadow of the other ICs
+ *         adopts two groups on their own: VID/PID/MFG/PROD together, and the serial number. A group that is broken
+ *         or empty (0xFFFF counting as blank there) is logged and not adopted, keeping the caller's default, while
+ *         the other group is still adopted; a header-only serial number is adopted as the empty string. A MFG/PROD
+ *         entry that cannot be walked ends the chain, so the serial number behind it is lost as well.
  * @param  otp: OTP parameter block to fill in.
- * @return RTK_SUCCESS on success, -RTK_ERR_NOMEM when a buffer cannot be allocated.
+ * @return RTK_SUCCESS, -RTK_ERR_NOMEM when a buffer cannot be allocated, -RTK_ERR_IO on an OTP read failure,
+ *         -RTK_ERR_BADARG when an enabled autoload group is broken or empty (not on RLE1509); the flags of the
+ *         other group stay valid.
  */
 int usbd_otp_init(usbd_otp_t *otp);
 

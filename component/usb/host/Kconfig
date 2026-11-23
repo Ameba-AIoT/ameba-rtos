@@ -55,6 +55,11 @@ config USBH_CDC_NCM_MENU
             default n
     endif
 
+config USBH_RNDIS_MENU
+    bool "RNDIS"
+    select USB_ETHERNET_PROVIDER
+    select USBH_RNDIS if WHC_HOST || WHC_NONE
+
 config USBH_MSC_MENU
     bool "MSC"
     depends on VFS_MENU && SUPPORT_FATFS_USB

@@ -31,9 +31,9 @@ typedef struct {
 	void (*FlashInitHandler)(void);
 } FlashInfo_TypeDef;
 
-int flash_handshake_highspeed(void);
+int flash_handshake_highspeed(u32 flash_clk);
 int flash_rx_mode_switch(u32 spic_mode, u32 flash_clk);
-void flash_highspeed_setup(void);
+int flash_highspeed_setup(u32 read_mode, u32 spic_max);
 void Combo_SPIC_Init(void);
 
 #ifdef __cplusplus

@@ -46,8 +46,8 @@ void bt_zephyr_mtu_exchange_cb(struct bt_conn *conn, uint8_t err, struct bt_gatt
 	rtk_bt_evt_t *p_evt_t = NULL;
 
 	if (!err) {
-		/* mtu exchanged success will be reported in bt_zephyr_gattc_mtu_udpated. Here, we only
-		handle the situation that gattc exchange mtu with error rsp */
+		/* mtu exchanged success will be reported in bt_zephyr_gattc_mtu_updated. Here, we only
+		 * handle the situation that gattc exchange mtu with error rsp */
 		return;
 	}
 
@@ -304,7 +304,7 @@ static uint8_t read_cb(struct bt_conn *conn, uint8_t err, struct bt_gatt_read_pa
 	if (params->handle_count == 0) {
 		p_ind->type = RTK_BT_GATT_CHAR_READ_BY_UUID;
 		/* When read_by_uuid first time read a value success, it will read again from the next handle,
-		and it may response 0xa(attribute_not_found), we don't regard this as an error. */
+		 * and it may response 0xa(attribute_not_found), we don't regard this as an error. */
 		if (params->by_uuid.req_cnt > 1 && err == BT_ATT_ERR_ATTRIBUTE_NOT_FOUND) {
 			p_ind->err_code = 0;
 			p_ind->status = RTK_BT_STATUS_DONE;
@@ -515,15 +515,14 @@ static zephyr_bt_subscribe_t *find_subscribe(uint16_t conn_handle, uint16_t ccc_
 	return found;
 }
 
-static uint8_t notify_cb(struct bt_conn *conn,
-						 struct bt_gatt_subscribe_params *params,
-						 const void *data, uint16_t length)
+static uint8_t sub_notify_cb(struct bt_conn *conn,
+							 struct bt_gatt_subscribe_params *params,
+							 const void *data, uint16_t length)
 {
 	rtk_bt_evt_t *p_evt = NULL;
 	rtk_bt_gattc_cccd_value_ind_t *p_ind = NULL;
 	zephyr_bt_subscribe_t *sub = NULL;
 
-	/* NULL data to  */
 	if (!data) {
 		return BT_GATT_ITER_STOP;
 	}
@@ -553,7 +552,30 @@ static uint8_t notify_cb(struct bt_conn *conn,
 	return BT_GATT_ITER_CONTINUE;
 }
 
-static void indicate_subcribe_result(bool enable, uint8_t err, uint16_t conn_handle, uint16_t profile_id, uint16_t ccc_handle, bool notify)
+static void common_notify_cb(struct bt_conn *conn, uint16_t handle, const void *data, uint16_t length, bool is_indicate)
+{
+	rtk_bt_evt_t *p_evt = NULL;
+	rtk_bt_gattc_cccd_value_ind_t *p_ind = NULL;
+
+	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_GATTC, is_indicate ? RTK_BT_GATTC_EVT_INDICATE_IND : RTK_BT_GATTC_EVT_NOTIFY_IND,
+								sizeof(rtk_bt_gattc_cccd_value_ind_t) + length);
+	if (!p_evt) {
+		return;
+	}
+
+	p_ind = (rtk_bt_gattc_cccd_value_ind_t *)p_evt->data;
+
+	p_ind->profile_id = 0;
+	p_ind->conn_handle = conn->handle;
+	p_ind->value_handle = handle;
+	p_ind->len = length;
+	p_ind->value = (uint8_t *)p_evt->data + sizeof(rtk_bt_gattc_cccd_value_ind_t);
+	memcpy(p_ind->value, data, length);
+
+	rtk_bt_evt_indicate(p_evt, NULL);
+}
+
+static void indicate_subscribe_result(bool enable, uint8_t err, uint16_t conn_handle, uint16_t profile_id, uint16_t ccc_handle, bool notify)
 {
 	rtk_bt_evt_t *p_evt = NULL;
 	uint8_t evt_type;
@@ -599,9 +621,9 @@ static void subscribe_cb(struct bt_conn *conn, uint8_t err,
 	}
 
 	enable = (sub->status == ZEPHYR_SUBSCRIBE_DONE) ? true : false;
-	indicate_subcribe_result(enable, err, conn->handle, sub->profile_id, params->ccc_handle, sub->notify);
+	indicate_subscribe_result(enable, err, conn->handle, sub->profile_id, params->ccc_handle, sub->notify);
 
-	/* Free memory when subcrib fail or unsubscribed */
+	/* Free memory when subscribe fail or unsubscribed */
 	if (err || (!sub->params.value)) {
 		gattc_delete_subscribe(sub);
 	}
@@ -625,7 +647,7 @@ static uint16_t bt_stack_gattc_update_cccd_enable(void *p_param)
 	/* Already subscribed */
 	if (sub) {
 		if (sub->status == ZEPHYR_SUBSCRIBE_DONE) {
-			indicate_subcribe_result(true, 0, conn_handle, profile_id, ccc_handle, sub->params.value & BT_GATT_CCC_NOTIFY);
+			indicate_subscribe_result(true, 0, conn_handle, profile_id, ccc_handle, sub->params.value & BT_GATT_CCC_NOTIFY);
 			return 0;
 		} else {/* if (sub->status == ZEPHYR_SUBSCRIBE_PROGRESSING) */
 			return RTK_BT_ERR_ALREADY_IN_PROGRESS;
@@ -650,7 +672,7 @@ static uint16_t bt_stack_gattc_update_cccd_enable(void *p_param)
 	sub->notify = cccd->bnotify;
 	sub->status = ZEPHYR_SUBSCRIBE_PROGRESSING;
 	params = &sub->params;
-	params->notify = notify_cb;
+	params->notify = sub_notify_cb;
 	params->subscribe = subscribe_cb;
 	params->value_handle = cccd->char_val_handle;
 	params->ccc_handle = ccc_handle;
@@ -688,7 +710,7 @@ static uint16_t bt_stack_gattc_update_cccd_disable(void *p_param)
 
 	/* No subscribe exist */
 	if (!sub) {
-		indicate_subcribe_result(false, 0, param->conn_handle, param->profile_id, param->cccd_handle, param->bnotify);
+		indicate_subscribe_result(false, 0, param->conn_handle, param->profile_id, param->cccd_handle, param->bnotify);
 	} else {
 		if (sub->status == ZEPHYR_SUBSCRIBE_DONE) {
 			sub->status = ZEPHYR_SUBSCRIBE_PROGRESSING;
@@ -748,7 +770,7 @@ end:
 	return ret;
 }
 
-void bt_zephyr_gattc_mtu_udpated(struct bt_conn *conn, uint16_t tx, uint16_t rx)
+void bt_zephyr_gattc_mtu_updated(struct bt_conn *conn, uint16_t tx, uint16_t rx)
 {
 	(void)rx;
 	rtk_bt_gatt_mtu_exchange_ind_t *p_gatt_mtu_exchange_ind = NULL;
@@ -774,7 +796,7 @@ void bt_zephyr_gattc_mtu_udpated(struct bt_conn *conn, uint16_t tx, uint16_t rx)
 }
 
 static struct bt_gatt_cb bt_zephyr_gatt_cb = {
-	.att_mtu_updated = bt_zephyr_gattc_mtu_udpated
+	.att_mtu_updated = bt_zephyr_gattc_mtu_updated
 };
 
 uint16_t bt_stack_gattc_init(rtk_bt_app_conf_t *app_conf)
@@ -791,12 +813,16 @@ uint16_t bt_stack_gattc_init(rtk_bt_app_conf_t *app_conf)
 		bt_gatt_cb_register(&bt_zephyr_gatt_cb);
 	}
 
+	bt_gatt_set_common_notify_cb(common_notify_cb);
+
 	return 0;
 }
 
 void bt_stack_gattc_deinit(void)
 {
 	zephyr_bt_subscribe_t *sub, *next;
+
+	bt_gatt_set_common_notify_cb(NULL);
 
 	osif_mutex_take(subscribe_mutex, BT_TIMEOUT_FOREVER);
 	list_for_each_entry_safe(sub, next, &subscribe_list, list, zephyr_bt_subscribe_t) {

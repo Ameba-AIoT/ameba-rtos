@@ -118,7 +118,7 @@ typedef enum {
 	RTK_BT_LE_GAP_ADTYPE_LE_ROLE                                 = 0x1C,      /*!< LE Role. */
 	RTK_BT_LE_GAP_ADTYPE_SP_HASH_C256                            = 0x1D,      /*!< Simple Pairing Hash C-256. */
 	RTK_BT_LE_GAP_ADTYPE_SP_RAND_R256                            = 0x1E,      /*!< Simple Pairing Randomizer R-256. */
-	RTK_BT_LE_GAP_ADTYPE_LIST_32BIT_SILI                         = 0x1F,      /*!< List of 32-bit Service Solicitation UUIDs. */
+	RTK_BT_LE_GAP_ADTYPE_LIST_32BIT_SOLI                         = 0x1F,      /*!< List of 32-bit Service Solicitation UUIDs. */
 	RTK_BT_LE_GAP_ADTYPE_SERVICE_DATA_32BIT                      = 0x20,      /*!< Service Data - 32-bit UUID. */
 	RTK_BT_LE_GAP_ADTYPE_SERVICE_DATA_128BIT                     = 0x21,      /*!< Service Data - 128-bit UUID. */
 	RTK_BT_LE_GAP_ADTYPE_SC_CONF_VALUE                           = 0x22,      /*!< LE Secure Connections Confirmation Value. */
@@ -136,6 +136,13 @@ typedef enum {
 	RTK_BT_LE_GAP_ADTYPE_3D_INFO_DATA                            = 0x3D,      /*!< 3D Information Data. */
 	RTK_BT_LE_GAP_ADTYPE_MANUFACTURER_SPECIFIC                   = 0xFF,      /*!< Manufacturer Specific Data. */
 } rtk_bt_le_gap_ad_type_t;
+
+/**
+ * @def       RTK_BT_LE_GAP_ADTYPE_LIST_32BIT_SILI
+ * @brief     Deprecated alias of @ref RTK_BT_LE_GAP_ADTYPE_LIST_32BIT_SOLI.
+ * @deprecated Use @ref RTK_BT_LE_GAP_ADTYPE_LIST_32BIT_SOLI instead.
+ */
+#define RTK_BT_LE_GAP_ADTYPE_LIST_32BIT_SILI RTK_BT_LE_GAP_ADTYPE_LIST_32BIT_SOLI
 
 /**
  * @typedef   rtk_bt_le_gap_ad_flags_data_t
@@ -987,13 +994,23 @@ typedef enum {
  * @brief     Bluetooth LE SM IO capability type definition.
  */
 typedef enum {
-	RTK_IO_CAP_DISPALY_ONLY     = 0x00,    /*!< 0x00 DisplayOnly. */
+	RTK_IO_CAP_DISPLAY_ONLY     = 0x00,    /*!< 0x00 DisplayOnly. */
 	RTK_IO_CAP_DISPLAY_YES_NO   = 0x01,    /*!< 0x01 DisplayYesNo. */
 	RTK_IO_CAP_KEYBOARD_ONLY    = 0x02,    /*!< 0x02 KeyboardOnly. */
 	RTK_IO_CAP_NO_IN_NO_OUT     = 0x03,    /*!< 0x03 NoInputNoOutput. */
-	RTK_IO_CAP_KEYBOARD_DISPALY = 0x04,    /*!< 0x04 KeyboardDisplay. */
+	RTK_IO_CAP_KEYBOARD_DISPLAY = 0x04,    /*!< 0x04 KeyboardDisplay. */
 	RTK_IO_CAP_MAX              = 0x05,    /*!< 0x05-0xFF Reserved for future use. */
 } rtk_bt_le_io_cap_t;
+
+/**
+ * @defgroup  RTK_IO_CAP Deprecated aliases
+ * @brief     Deprecated aliases of the @ref rtk_bt_le_io_cap_t values.
+ * @deprecated Use the @ref rtk_bt_le_io_cap_t values instead.
+ * @{
+ */
+#define RTK_IO_CAP_DISPALY_ONLY RTK_IO_CAP_DISPLAY_ONLY
+#define RTK_IO_CAP_KEYBOARD_DISPALY RTK_IO_CAP_KEYBOARD_DISPLAY
+/** @} */
 
 /**
  * @def       RTK_PAIRING_PASSKEY_MAX
@@ -2094,7 +2111,7 @@ typedef struct {
 
 /**
  * @struct    rtk_bt_le_get_conn_info_param_t
- * @brief     Bluetooth LE get connection infomation parameter definition.
+ * @brief     Bluetooth LE get connection information parameter definition.
  */
 typedef struct {
 	uint16_t conn_handle;                  /*!< Connection handle of the ACL connection to get connection information.
@@ -2306,7 +2323,14 @@ typedef enum {
 #define RTK_BLE_GAP_CTE_TX_ENABLE_VALUE_IN_RANGE(value) ((value) <= 0x01u)
 
 /* BLE connectionless IQ sampling parameter */
-#define RTK_BLE_GAP_CTE_RX_EANBLE_VALUE_IN_RANGE(value) ((value) <= 0x01u)
+#define RTK_BLE_GAP_CTE_RX_ENABLE_VALUE_IN_RANGE(value) ((value) <= 0x01u)
+
+/**
+ * @def       RTK_BLE_GAP_CTE_RX_EANBLE_VALUE_IN_RANGE
+ * @brief     Deprecated alias of @ref RTK_BLE_GAP_CTE_RX_ENABLE_VALUE_IN_RANGE.
+ * @deprecated Use @ref RTK_BLE_GAP_CTE_RX_ENABLE_VALUE_IN_RANGE instead.
+ */
+#define RTK_BLE_GAP_CTE_RX_EANBLE_VALUE_IN_RANGE(value) RTK_BLE_GAP_CTE_RX_ENABLE_VALUE_IN_RANGE(value)
 
 #define RTK_BLE_GAP_CTE_SLOT_DURATION_MIN               (0x01u)
 #define RTK_BLE_GAP_CTE_SLOT_DURATION_MAX               (0x02u)

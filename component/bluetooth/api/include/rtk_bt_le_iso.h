@@ -162,7 +162,7 @@ typedef struct {
 } rtk_bt_le_iso_cig_cis_info_t;
 
 /**
- * @typedef   rtk_bt_le_iso_cis_connetion_state_t
+ * @typedef   rtk_bt_le_iso_cis_connection_state_t
  * @brief     Bluetooth LE ISO CIS connection state definition.
  */
 typedef enum {
@@ -171,7 +171,14 @@ typedef enum {
 	RTK_BLE_ISO_ISOCH_STATE_CONN,                 /*!< CIS connected. */
 	RTK_BLE_ISO_ISOCH_STATE_DISCONNECTING,        /*!< CIS disconnecting. */
 	RTK_BLE_ISO_ISOCH_STATE_CONNECTING_CANCEL,    /*!< CIS connecting is being cancelled. */
-} rtk_bt_le_iso_cis_connetion_state_t;
+} rtk_bt_le_iso_cis_connection_state_t;
+
+/**
+ * @typedef   rtk_bt_le_iso_cis_connetion_state_t
+ * @brief     Deprecated alias of @ref rtk_bt_le_iso_cis_connection_state_t.
+ * @deprecated Use @ref rtk_bt_le_iso_cis_connection_state_t instead.
+ */
+typedef rtk_bt_le_iso_cis_connection_state_t rtk_bt_le_iso_cis_connetion_state_t;
 
 /**
  * @typedef   rtk_bt_le_iso_cis_role_t
@@ -216,7 +223,7 @@ typedef struct {
  * @brief     Bluetooth LE ISO CIS channel information.
  */
 typedef struct {
-	rtk_bt_le_iso_cis_connetion_state_t state;    /*!< CIS connection state. */
+	rtk_bt_le_iso_cis_connection_state_t state;   /*!< CIS connection state. */
 	rtk_bt_le_iso_cis_role_t  role;               /*!< CIS role. */
 	uint8_t  data_path_flags;                     /*!< Directions of the data path that have been configured.
                                                    *   See @ref rtk_bt_le_iso_data_path_direction_flag_t. */
@@ -613,7 +620,7 @@ typedef struct {
 typedef struct {
 	uint8_t       cig_id;                         /*!< Identifier of the CIG. */
 	uint8_t       cis_id;                         /*!< Identifier of the CIS. */
-	rtk_bt_le_iso_cis_connetion_state_t state;    /*!< CIS connection state. */
+	rtk_bt_le_iso_cis_connection_state_t state;   /*!< CIS connection state. */
 	uint16_t      cis_conn_handle;                /*!< Connection handle of the CIS.
                                                    *   Range: 0x0000 to 0x0EFF. */
 } rtk_bt_le_iso_cig_initiator_create_cis_info_t;
@@ -876,32 +883,52 @@ typedef struct {
  * @brief     Bluetooth LE ISO BIG broadcaster synchronization state.
  */
 typedef enum {
-	RTK_BLE_ISO_BIG_BOARDCASTER_SYNC_STATE_IDLE = 0x00,                                           /*!< Idle, no isochronous broadcasting. */
-	RTK_BLE_ISO_BIG_BOARDCASTER_SYNC_STATE_CREATING_EXT_ADV_STATE_PA_ADV_STATE_IDLE = 0x01,       /*!< Start isochronous broadcasting when extended
+	RTK_BLE_ISO_BIG_BROADCASTER_SYNC_STATE_IDLE = 0x00,                                           /*!< Idle, no isochronous broadcasting. */
+	RTK_BLE_ISO_BIG_BROADCASTER_SYNC_STATE_CREATING_EXT_ADV_STATE_PA_ADV_STATE_IDLE = 0x01,       /*!< Start isochronous broadcasting when extended
                                                                                                    *   advertising and periodic advertising of the specified advertising
                                                                                                    *   set are disabled. Temporary state, the result has
                                                                                                    *   not been received yet. */
-	RTK_BLE_ISO_BIG_BOARDCASTER_SYNC_STATE_WAIT_EXT_ADV_STATE_PA_ADV_STATE_ADVERTISING = 0x02,    /*!< Isochronous broadcasting is not started until the extended
+	RTK_BLE_ISO_BIG_BROADCASTER_SYNC_STATE_WAIT_EXT_ADV_STATE_PA_ADV_STATE_ADVERTISING = 0x02,    /*!< Isochronous broadcasting is not started until the extended
                                                                                                    *   advertising and periodic advertising of the specified advertising
                                                                                                    *   set are enabled. */
-	RTK_BLE_ISO_BIG_BOARDCASTER_SYNC_STATE_CREATING_PA_ADV_STATE_IDLE = 0x03,                     /*!< Start isochronous broadcasting when the periodic advertising
+	RTK_BLE_ISO_BIG_BROADCASTER_SYNC_STATE_CREATING_PA_ADV_STATE_IDLE = 0x03,                     /*!< Start isochronous broadcasting when the periodic advertising
                                                                                                    *   of the specified advertising set is disabled. Temporary state,
                                                                                                    *   the result has not been received yet. */
-	RTK_BLE_ISO_BIG_BOARDCASTER_SYNC_STATE_WAIT_PA_ADV_STATE_ADVERTISING = 0x04,                  /*!< Isochronous broadcasting is not started until the periodic
+	RTK_BLE_ISO_BIG_BROADCASTER_SYNC_STATE_WAIT_PA_ADV_STATE_ADVERTISING = 0x04,                  /*!< Isochronous broadcasting is not started until the periodic
                                                                                                    *   advertising of the specified advertising set is enabled. */
-	RTK_BLE_ISO_BIG_BOARDCASTER_SYNC_STATE_CREATING_EXT_ADV_STATE_IDLE = 0x05,                    /*!< Start isochronous broadcasting when the extended advertising
+	RTK_BLE_ISO_BIG_BROADCASTER_SYNC_STATE_CREATING_EXT_ADV_STATE_IDLE = 0x05,                    /*!< Start isochronous broadcasting when the extended advertising
                                                                                                    *   of the specified advertising set is disabled. Temporary state,
                                                                                                    *   the result has not been received yet. */
-	RTK_BLE_ISO_BIG_BOARDCASTER_SYNC_STATE_WAIT_EXT_ADV_STATE_ADVERTISING = 0x06,                 /*!< Isochronous broadcasting is not started until the extended
+	RTK_BLE_ISO_BIG_BROADCASTER_SYNC_STATE_WAIT_EXT_ADV_STATE_ADVERTISING = 0x06,                 /*!< Isochronous broadcasting is not started until the extended
                                                                                                    *   advertising of the specified advertising set is enabled. */
-	RTK_BLE_ISO_BIG_BOARDCASTER_SYNC_STATE_CREATING = 0x07,                                       /*!< Start isochronous broadcasting when extended
+	RTK_BLE_ISO_BIG_BROADCASTER_SYNC_STATE_CREATING = 0x07,                                       /*!< Start isochronous broadcasting when extended
                                                                                                    *   advertising and periodic advertising of the specified advertising
                                                                                                    *   set are enabled. Temporary state, the result has
                                                                                                    *   not been received yet. */
-	RTK_BLE_ISO_BIG_BOARDCASTER_SYNC_STATE_BROADCASTING = 0x08,                                   /*!< Isochronous broadcasting. */
-	RTK_BLE_ISO_BIG_BOARDCASTER_SYNC_STATE_TERMINATING = 0x09,                                    /*!< Terminate isochronous broadcasting. Temporary state, the result has
+	RTK_BLE_ISO_BIG_BROADCASTER_SYNC_STATE_BROADCASTING = 0x08,                                   /*!< Isochronous broadcasting. */
+	RTK_BLE_ISO_BIG_BROADCASTER_SYNC_STATE_TERMINATING = 0x09,                                    /*!< Terminate isochronous broadcasting. Temporary state, the result has
                                                                                                    *   not been received yet. */
 } rtk_bt_le_iso_big_broadcaster_sync_state_t;
+
+/**
+ * @defgroup  RTK_BLE_ISO_BIG_BOARDCASTER_SYNC_STATE Deprecated aliases
+ * @brief     Deprecated aliases of the @ref rtk_bt_le_iso_big_broadcaster_sync_state_t values.
+ * @deprecated Use the @ref rtk_bt_le_iso_big_broadcaster_sync_state_t values instead.
+ * @{
+ */
+#define RTK_BLE_ISO_BIG_BOARDCASTER_SYNC_STATE_IDLE RTK_BLE_ISO_BIG_BROADCASTER_SYNC_STATE_IDLE
+#define RTK_BLE_ISO_BIG_BOARDCASTER_SYNC_STATE_CREATING_EXT_ADV_STATE_PA_ADV_STATE_IDLE \
+    RTK_BLE_ISO_BIG_BROADCASTER_SYNC_STATE_CREATING_EXT_ADV_STATE_PA_ADV_STATE_IDLE
+#define RTK_BLE_ISO_BIG_BOARDCASTER_SYNC_STATE_WAIT_EXT_ADV_STATE_PA_ADV_STATE_ADVERTISING \
+    RTK_BLE_ISO_BIG_BROADCASTER_SYNC_STATE_WAIT_EXT_ADV_STATE_PA_ADV_STATE_ADVERTISING
+#define RTK_BLE_ISO_BIG_BOARDCASTER_SYNC_STATE_CREATING_PA_ADV_STATE_IDLE RTK_BLE_ISO_BIG_BROADCASTER_SYNC_STATE_CREATING_PA_ADV_STATE_IDLE
+#define RTK_BLE_ISO_BIG_BOARDCASTER_SYNC_STATE_WAIT_PA_ADV_STATE_ADVERTISING RTK_BLE_ISO_BIG_BROADCASTER_SYNC_STATE_WAIT_PA_ADV_STATE_ADVERTISING
+#define RTK_BLE_ISO_BIG_BOARDCASTER_SYNC_STATE_CREATING_EXT_ADV_STATE_IDLE RTK_BLE_ISO_BIG_BROADCASTER_SYNC_STATE_CREATING_EXT_ADV_STATE_IDLE
+#define RTK_BLE_ISO_BIG_BOARDCASTER_SYNC_STATE_WAIT_EXT_ADV_STATE_ADVERTISING RTK_BLE_ISO_BIG_BROADCASTER_SYNC_STATE_WAIT_EXT_ADV_STATE_ADVERTISING
+#define RTK_BLE_ISO_BIG_BOARDCASTER_SYNC_STATE_CREATING RTK_BLE_ISO_BIG_BROADCASTER_SYNC_STATE_CREATING
+#define RTK_BLE_ISO_BIG_BOARDCASTER_SYNC_STATE_BROADCASTING RTK_BLE_ISO_BIG_BROADCASTER_SYNC_STATE_BROADCASTING
+#define RTK_BLE_ISO_BIG_BOARDCASTER_SYNC_STATE_TERMINATING RTK_BLE_ISO_BIG_BROADCASTER_SYNC_STATE_TERMINATING
+/** @} */
 
 /**
  * @struct    rtk_bt_le_iso_big_broadcaster_sync_state_ind_t

@@ -31,7 +31,7 @@ u8 ota_get_cur_index(u8 img_id)
 		AddrStart = RRAM->OTA_APP_REMAP;
 	}
 #elif (defined(CONFIG_RTL8720F) || defined(CONFIG_RLE1509))
-#ifdef CONFIG_SOLO
+#ifdef CONFIG_IOT_MCU_COMBINED
 	/* SOLO: the km4tz bootloader records the running OTA slots in GBSS retention RAM
 	 * (OTA_NP_IMG_IDX for iot/km4ns, OTA_IMG_REMAP[] for mcu/AP) and km4ns reads them
 	 * here. app_mpu_nocache_init() maps GBSS non-cacheable in this app, so the read

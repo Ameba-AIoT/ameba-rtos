@@ -354,7 +354,3 @@ int32_t rtk_bt_audio_track_get_start_thresholdbytes(void *track_hdl)
 	return AudioTrack_GetStartThresholdBytes(audio_track);
 }
 
-long rtk_bt_audio_track_get_buffer_size(void)
-{
-	return 0;
-}

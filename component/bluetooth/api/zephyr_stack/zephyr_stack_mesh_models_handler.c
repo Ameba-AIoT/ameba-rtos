@@ -52,7 +52,7 @@ extern const struct bt_mesh_model_op generic_level_cli_op;
 extern const struct bt_mesh_model_cb bt_mesh_generic_level_cli_cb;
 #endif
 
-#if defined(BT_MESH_ENABLE_GENERIC_DEFAULT_TRANSTION_TIME_SERVER_MODEL) && BT_MESH_ENABLE_GENERIC_DEFAULT_TRANSTION_TIME_SERVER_MODEL
+#if defined(BT_MESH_ENABLE_GENERIC_DEFAULT_TRANSITION_TIME_SERVER_MODEL) && BT_MESH_ENABLE_GENERIC_DEFAULT_TRANSITION_TIME_SERVER_MODEL
 extern const struct bt_mesh_model_op generic_default_transition_time_srv_op;
 extern int generic_default_transition_time_srv_update_publish(const struct bt_mesh_model *model);
 BT_MESH_MODEL_PUB_DEFINE(generic_default_transition_time_server_pub, generic_default_transition_time_srv_update_publish, 2 + 1);
@@ -414,7 +414,7 @@ static struct bt_mesh_model root_models[] = {
 #if defined(BT_MESH_ENABLE_GENERIC_LEVEL_CLIENT_MODEL) && BT_MESH_ENABLE_GENERIC_LEVEL_CLIENT_MODEL
 	BT_MESH_MODEL_CB(BT_MESH_MODEL_ID_GEN_LEVEL_CLI, &generic_level_cli_op, NULL, NULL, &bt_mesh_generic_level_cli_cb),
 #endif
-#if defined(BT_MESH_ENABLE_GENERIC_DEFAULT_TRANSTION_TIME_SERVER_MODEL) && BT_MESH_ENABLE_GENERIC_DEFAULT_TRANSTION_TIME_SERVER_MODEL
+#if defined(BT_MESH_ENABLE_GENERIC_DEFAULT_TRANSITION_TIME_SERVER_MODEL) && BT_MESH_ENABLE_GENERIC_DEFAULT_TRANSITION_TIME_SERVER_MODEL
 	BT_MESH_MODEL_CB(BT_MESH_MODEL_ID_GEN_DEF_TRANS_TIME_SRV, &generic_default_transition_time_srv_op, &generic_default_transition_time_server_pub, NULL, &bt_mesh_generic_default_transition_time_srv_cb),
 #endif
 #if defined(BT_MESH_ENABLE_GENERIC_DEFAULT_TRANSITION_TIME_CLIENT_MODEL) && BT_MESH_ENABLE_GENERIC_DEFAULT_TRANSITION_TIME_CLIENT_MODEL

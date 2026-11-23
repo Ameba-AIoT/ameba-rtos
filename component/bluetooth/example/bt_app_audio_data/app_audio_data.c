@@ -19,11 +19,11 @@
 
 // Endpoint address
 #if defined (CONFIG_AMEBAGREEN2)
-#define USBD_UAC_ISOC_IN_EP                       0x84U
-#define USBD_UAC_ISOC_OUT_EP                      0x02U
+#define USBD_UAC_RECORD_EP                        0x84U
+#define USBD_UAC_PLAY_EP                          0x02U
 #else
-#define USBD_UAC_ISOC_IN_EP                       0x81U
-#define USBD_UAC_ISOC_OUT_EP                      0x02U
+#define USBD_UAC_RECORD_EP                        0x81U
+#define USBD_UAC_PLAY_EP                          0x02U
 #endif
 
 // USB speed. UAC runs Full Speed, so an HS-capable PHY is driven in Full-Speed mode; the
@@ -61,7 +61,7 @@ static int uac_cb_set_config(void);
 static void uac_cb_status_changed(u8 old_status, u8 status);
 static void uac_cb_mute_changed(u8 mute);
 static void uac_cb_volume_changed(u8 volume);
-static void uac_cb_format_changed(u32 sampling_freq, u8 ch_cnt, u8 byte_width);
+static void uac_cb_format_changed(u32 sampling_freq, u8 channel_count, u8 byte_width);
 
 /* Private variables ---------------------------------------------------------*/
 
@@ -92,12 +92,12 @@ static const usbd_config_t uac_cfg = {
 	.ext_intr_enable = 0,
 };
 
-static usbd_uac_config_t uac_class_cfg = {
-	.in = {.enable = 0,}, /* current just support usb out,usb in TODO */
-	.out = {.enable = 1, .sampling_freq = AUDIO_SAMPLING_RATE, .byte_width = AUDIO_BYTE_WIDTH_SIZE, .ch_cnt = AUDIO_CHANNEL_NUM},
-	.isoc_in_addr  = USBD_UAC_ISOC_IN_EP,
-	.isoc_out_addr = USBD_UAC_ISOC_OUT_EP,
+/* current just support usb out, usb in TODO */
+static const usbd_uac_config_t uac_class_cfg = {
+	.play_ep_addr = USBD_UAC_PLAY_EP,
+	.record_ep_addr = USBD_UAC_RECORD_EP,
 };
+
 
 static const usbd_uac_cb_t uac_cb = {
 	.init = uac_cb_init,
@@ -164,20 +164,13 @@ static void uac_cb_volume_changed(u8 volume)
 	DiagPrintf("USBD set volume: %d\r\n", volume);
 }
 
-static void uac_cb_format_changed(u32 sampling_freq, u8 ch_cnt, u8 byte_width)
+static void uac_cb_format_changed(u32 sampling_freq, u8 channel_count, u8 byte_width)
 {
-	if (sampling_freq != 0U) {
-		uac_class_cfg.out.sampling_freq = sampling_freq;
-	}
-	if (ch_cnt != 0U) {
-		uac_class_cfg.out.ch_cnt = ch_cnt;
-	}
-	if (byte_width != 0U) {
-		uac_class_cfg.out.byte_width = byte_width;
-	}
+	/* The class sizes the ring for every declared format, the restarted stream only needs a new start_play() */
+	UNUSED(byte_width);
 	osif_sem_give(uac_ready_sem);
 	usb_task_stop = 1;
-	DiagPrintf("USBD set sampling_freq %ld set ch_cnt %d\r\n", sampling_freq, ch_cnt);
+	DiagPrintf("USBD set sampling_freq %ld set ch_cnt %d\r\n", sampling_freq, channel_count);
 }
 
 static void bt_demo_usb_task_entry(void *ctx)
@@ -190,7 +183,6 @@ static void bt_demo_usb_task_entry(void *ctx)
 			osif_sem_take(uac_ready_sem, BT_TIMEOUT_FOREVER);
 		}
 		usb_task_stop = 0;
-		usbd_uac_config(&(uac_class_cfg.out), 0, 0);
 		while (1) {
 			if (!demo_usb_task_run || usbd_uac_start_play() == HAL_OK) {
 				break;
@@ -347,7 +339,6 @@ bool demo_usb_deinit(void)
 #define DEMO_UART_RX_DISABLE_SIZE (128)       /* Only 128 left to write */
 #endif
 #define DEMO_UART_DMA_TX_BURST_SIZE 8
-#define DEMO_UART_DMA_RX_BURST_SIZE 16 // RX_BURST_SIZE >= RX GDMA_SrcMsize
 #define DEMO_UART_RX_TO_BIT 10
 
 static uint8_t demo_uart_run = 1;
@@ -481,7 +472,6 @@ uint32_t demo_uart_dma_recv_done(void *data)
 	} else {
 		UART_INTConfig(DEMO_UART_DEV, RUART_BIT_ETOI, ENABLE);
 		UART_INTConfig(DEMO_UART_DEV, (RUART_BIT_ERBI | RUART_BIT_ELSI), DISABLE);
-		UART_RXDMAConfig(DEMO_UART_DEV, DEMO_UART_DMA_RX_BURST_SIZE);
 		UART_RXDMACmd(DEMO_UART_DEV, ENABLE);
 		UART_RXGDMA_Init(DEMO_UART_INDEX, &demo_uart->GDMA_InitStruct, DEMO_UART_DEV, (IRQ_FUN)demo_uart_dma_recv_done, demo_dma_uart_recv_buff, SRX_BUF_SZ);
 	}
@@ -588,7 +578,6 @@ uint16_t demo_uart_read(uint8_t *buf, uint16_t len)
 		demo_uart->rx_disabled = 0;
 #if defined(DEMO_UART_USING_DMA) && DEMO_UART_USING_DMA
 		UART_INTConfig(DEMO_UART_DEV, (RUART_BIT_ERBI | RUART_BIT_ELSI), DISABLE);
-		UART_RXDMAConfig(DEMO_UART_DEV, DEMO_UART_DMA_RX_BURST_SIZE);
 		UART_RXDMACmd(DEMO_UART_DEV, ENABLE);
 		UART_RXGDMA_Init(DEMO_UART_INDEX, &demo_uart->GDMA_InitStruct, DEMO_UART_DEV, (IRQ_FUN)demo_uart_dma_recv_done, demo_dma_uart_recv_buff, SRX_BUF_SZ);
 		UART_INTConfig(DEMO_UART_DEV, RUART_BIT_ETOI, ENABLE);
@@ -701,7 +690,6 @@ bool demo_uart_init(void)
 	}
 	// UART_RxDMADummyDataConfig(DEMO_UART_DEV, 0x55);
 	UART_RxByteCntClear(DEMO_UART_DEV);
-	UART_RXDMAConfig(DEMO_UART_DEV, DEMO_UART_DMA_RX_BURST_SIZE);
 	UART_RXDMACmd(DEMO_UART_DEV, ENABLE);
 	UART_RXGDMA_Init(DEMO_UART_INDEX, &demo_uart->GDMA_InitStruct, DEMO_UART_DEV, (IRQ_FUN)demo_uart_dma_recv_done, demo_dma_uart_recv_buff, SRX_BUF_SZ);
 #else

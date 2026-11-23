@@ -38,6 +38,12 @@ extern "C" {
  */
 #define USBH_UAC_DEBUG                  0
 
+/**
+ * @brief Playback feedback debug switch. Set to 1 to print, once per second from usbh_uac_write(),
+ *        the feedback packets received/taken/dropped, the last value and the rate the stream runs at.
+ */
+#define USBH_UAC_FB_DEBUG               0
+
 #define USBH_UAC_TERM_MAX_CNT           8U      /**< Maximum number of Audio Terminals supported */
 #define USBH_UAC_FU_MAX_CNT             4U      /**< Maximum number of Feature Units supported */
 #define USBH_UAC_MAX_CHANNEL            8U      /**< Maximum number of audio channels supported (e.g., 8 for 7.1 audio) */
@@ -135,6 +141,20 @@ typedef struct {
 	u32 sample_accum;      /**< Accumulated remainder across frames; when >= pkt_per_second, one extra sample is added */
 	u32 last_sample_accum; /**< Saved accumulator value after the last committed packet, restored on ring-buffer full */
 
+	/* Playback feedback (UAC1 4.6.2.2), OUT only: rates in 16.16 samples per packet */
+	u32 fb_min;            /**< Lowest feedback accepted; 0 when the alt setting has no feedback endpoint */
+	u32 fb_max;            /**< Highest feedback accepted; 0 when the alt setting has no feedback endpoint */
+	__IO u32 fb_rate;      /**< Samples per packet from the last valid feedback, written by the ISR; 0 until one arrives */
+	u32 fb_step;           /**< fb_rate latched when a packet starts, so a packet staged across writes keeps its size */
+#if USBH_UAC_FB_DEBUG
+	__IO u32 fb_rx_cnt;    /**< Feedback packets received, counted by the ISR */
+	__IO u32 fb_ok_cnt;    /**< Feedback values taken */
+	__IO u32 fb_raw;       /**< Last feedback packet as received, little endian */
+	__IO u32 fb_raw_len;   /**< Length of the last feedback packet */
+	u32 fb_log_ms;         /**< Time of the last feedback log */
+	u32 fb_log_bytes;      /**< Bytes queued by usbh_uac_write() since the last feedback log */
+#endif
+
 #if USBH_UAC_DEBUG
 	__IO u32 last_xfer_len;      /**< Length of the last completed IN transfer (used to detect ZLP) */
 	u32 xfer_start_cnt;          /**< Isochronous transfer start counter */
@@ -145,6 +165,7 @@ typedef struct {
 #endif
 
 	u16 packet_rate;       /**< Number of USB packets per second (max: 8000 for HS ISOC) */
+	u16 frame_bytes;       /**< Bytes of one sample frame on the bus (channels * bSubframeSize) */
 
 	__IO u16 written;        /**< Bytes accumulated in ringbuf_partial_write_buf for the current packet under construction */
 	__IO u16 mps;            /**< Endpoint Maximum Packet Size in bytes */
@@ -189,6 +210,8 @@ typedef struct {
 typedef struct {
 	usbh_uac_format_cfg_t format_info; /**< Audio format details for this alternate setting */
 	usbh_ep_desc_t ep_desc;            /**< Isochronous endpoint descriptor for this alternate setting (byte-packed) */
+	usbh_ep_desc_t fb_ep_desc;         /**< Feedback endpoint of an asynchronous playback data endpoint; bEndpointAddress 0 when none */
+	u8 fb_refresh;                     /**< bRefresh of the feedback endpoint: a new value every 2^bRefresh ms (UAC1 4.6.2.1) */
 	u8 alt_setting;                    /**< USB Alternate Setting number as reported in the descriptor */
 	u8 freq_ctrl_supported;            /**< 1 if the CS AS endpoint descriptor's bmAttributes advertises Sampling Frequency Control */
 } usbh_uac_as_itf_alt_info_t;
@@ -197,10 +220,17 @@ typedef struct {
   * @brief  Generic Audio Format Structure (Used for API interaction).
   */
 typedef struct {
-	u32 sampling_freq;     /**< Sampling frequency in Hz */
+	u32 sampling_freq;     /**< Sampling frequency in Hz; the lower bound when freq_continuous is 1 */
+	u32 sampling_freq_max; /**< Upper bound in Hz when freq_continuous is 1, equal to sampling_freq otherwise */
 	u8 bit_width;          /**< Bit depth per sample */
 	u8 ch_cnt;             /**< Channel count */
 	u8 subframe_size;      /**< Bytes one sample occupies in the PCM stream, may exceed bit_width / 8 (Audio Formats 1.0 2.2.5) */
+	/**
+	 * @brief 1 when the alternate setting declares a continuous range (bSamFreqType == 0, Audio
+	 *        Formats 1.0 2.2.5): every rate in [sampling_freq, sampling_freq_max] is supported and
+	 *        the range takes one entry. 0 for one discrete rate.
+	 */
+	u8 freq_continuous;
 } usbh_uac_audio_fmt_t;
 
 /**
@@ -213,6 +243,7 @@ typedef struct {
 
 	usbh_uac_as_itf_alt_info_t interface_array[USBH_UAC_ALT_SETTING_MAX]; /**< Valid alternate settings (Alt 0 skipped; index 0 = Alt 1) */
 	usbh_pipe_t pipe;                     /**< USB pipe for this AS interface */
+	usbh_pipe_t fb_pipe;                  /**< Feedback pipe of the active alternate setting, pipe_num 0 when not open */
 
 	u8 as_itf_num;                        /**< USB interface number of this AS interface */
 
@@ -271,6 +302,7 @@ typedef struct {
 	usb_host_t *host;                     /**< Pointer to the USB host handle, saved at attach */
 	u8 *audio_ctrl_buf;                   /**< Shared buffer for all USB control transfer payloads */
 	u8 *ringbuf_partial_write_buf;        /**< Staging buffer that accumulates partial writes until a full packet is ready */
+	u8 *fb_buf;                           /**< DMA buffer of the playback feedback packet */
 
 	/* State machines */
 	__IO u8 ctrl_state;        /**< USB control transfer state machine state (UAC_STATE_CTRL_IDLE, SET_ALT, SET_FREQ, ...) */
@@ -350,6 +382,8 @@ u8 usbh_uac_support_record(void);
 /**
   * @brief  Configure the UAC Audio Format.
   *         Finds the matching Alternate Setting and sends the SET_INTERFACE request.
+  * @note   An asynchronous playback endpoint with a feedback endpoint (UAC1 4.6.2) has its feedback
+  *         polled while playing, and usbh_uac_write() then sizes each packet by the device rate.
   * @param  dir: Direction (0: Playback/OUT, 1: Record/IN).
   * @param  channels: Number of channels.
   * @param  bit_width: Bit width.
@@ -362,11 +396,23 @@ int usbh_uac_set_alt_setting(u8 dir, u8 channels, u8 bit_width, u32 sampling_fre
   * @brief  Get the list of audio formats supported by the connected device.
   * @note   The array stays addressable until usbh_uac_deinit(), but its content describes the
   *         device only until the detached callback; stop using it from then on.
+  *         A discrete alternate setting takes one entry per rate; a continuous one takes a single
+  *         entry with freq_continuous set, see @ref usbh_uac_audio_fmt_t, and any rate within its
+  *         range can be passed to @ref usbh_uac_set_alt_setting. Use @ref usbh_uac_fmt_support_freq
+  *         to check a rate against an entry of either kind.
   * @param  dir: Direction (0: Playback/OUT, 1: Record/IN).
   * @param  fmt_cnt: Pointer to store the number of formats found.
   * @return Pointer to the array of supported formats, NULL if the direction is not available.
   */
 const usbh_uac_audio_fmt_t *usbh_uac_get_alt_setting(u8 dir, u8 *fmt_cnt);
+
+/**
+  * @brief  Check whether one audio format entry supports a sampling frequency.
+  * @param  fmt: Entry returned by @ref usbh_uac_get_alt_setting.
+  * @param  sampling_freq: Sampling frequency in Hz.
+  * @return 1 if the rate is the discrete rate of the entry, or within its continuous range; 0 otherwise.
+  */
+u8 usbh_uac_fmt_support_freq(const usbh_uac_audio_fmt_t *fmt, u32 sampling_freq);
 
 /**
   * @brief  Calculate the frame size (in bytes) based on current configuration.

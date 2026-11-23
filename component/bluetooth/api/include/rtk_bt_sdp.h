@@ -84,7 +84,7 @@ extern "C"
 
 #define RTK_BT_SDP_ATTR_MAS_INSTANCE_ID            0x0315  /*!< Message Access Server instance ID. */
 #define RTK_BT_SDP_ATTR_SUPPORTED_MSG_TYPES        0x0316  /*!< Supported message types. */
-#define RTK_BT_SDP_ATTR_MAP_SUPPERTED_FEATS        0x0317  /*!< MAP supported features. */
+#define RTK_BT_SDP_ATTR_MAP_SUPPORTED_FEATS        0x0317  /*!< MAP supported features. */
 
 #define RTK_BT_SDP_ATTR_HID_DEV_RELEASE_NUM        0x0200  /*!< HID device release number. */
 #define RTK_BT_SDP_ATTR_HID_PARSER_VER             0x0201  /*!< HID parser version. */

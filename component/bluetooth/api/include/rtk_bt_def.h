@@ -134,7 +134,7 @@ enum rtk_bt_err_hci {
 	RTK_BT_HCI_ERR_CHANN_ASSESS_NOT_SUPPORT        =    0x2E,    /*!< Channel assessment not supported. */
 	RTK_BT_HCI_ERR_INSUFFICIENT_SECURITY           =    0x2F,    /*!< Insufficient security. */
 	RTK_BT_HCI_ERR_PARAM_OUT_OF_RANGE              =    0x30,    /*!< Parameter out of mandatory range. */
-	RTK_BT_HCI_ERR_ROLE_SWITCH_PANDING             =    0x32,    /*!< Role switch pending. */
+	RTK_BT_HCI_ERR_ROLE_SWITCH_PENDING             =    0x32,    /*!< Role switch pending. */
 	RTK_BT_HCI_ERR_RESERVED_SLOT_VIOLATION         =    0x34,    /*!< Reserved slot violation. */
 	RTK_BT_HCI_ERR_ROLE_SWITCH_FAILED              =    0x35,    /*!< Role switch failed. */
 	RTK_BT_HCI_ERR_EXT_INQUIRY_RSP_TOO_LARGE       =    0x36,    /*!< Extended inquiry response too large. */
@@ -159,6 +159,13 @@ enum rtk_bt_err_hci {
 	RTK_BT_HCI_ERR_NO_DESCRIPTOR                   =    0x67,    /*!< No descriptor. */
 	RTK_BT_HCI_ERR_NO_MEMORY                       =    0x68,    /*!< No memory. */
 };
+
+/**
+ * @def       RTK_BT_HCI_ERR_ROLE_SWITCH_PANDING
+ * @brief     Deprecated alias of @ref RTK_BT_HCI_ERR_ROLE_SWITCH_PENDING.
+ * @deprecated Use @ref RTK_BT_HCI_ERR_ROLE_SWITCH_PENDING instead.
+ */
+#define RTK_BT_HCI_ERR_ROLE_SWITCH_PANDING RTK_BT_HCI_ERR_ROLE_SWITCH_PENDING
 
 /**
  * @enum      rtk_bt_err_l2cap_subgroup
@@ -229,7 +236,7 @@ enum rtk_bt_err_att {
 enum rtk_bt_err_smp {
 	/* Pairing failed error code */
 	RTK_BT_SMP_ERR_PASSKEY_ENTRY_FAIL           =   0x01,    /*!< Passkey entry failed. */
-	RTK_BT_SMP_ERR_OOB_NOT_AVAIABLE             =   0x02,    /*!< OOB not available. */
+	RTK_BT_SMP_ERR_OOB_NOT_AVAILABLE            =   0x02,    /*!< OOB not available. */
 	RTK_BT_SMP_ERR_AUTHEN_REQUIREMENTS          =   0x03,    /*!< Authentication requirements. */
 	RTK_BT_SMP_ERR_CFM_VALUE_FAILED             =   0x04,    /*!< Confirm value failed. */
 	RTK_BT_SMP_ERR_PAIRING_NOT_SUPPORTED        =   0x05,    /*!< Pairing not supported. */
@@ -239,7 +246,7 @@ enum rtk_bt_err_smp {
 	RTK_BT_SMP_ERR_REPEATED_ATTEMPTS            =   0x09,    /*!< Repeated attempts. */
 	RTK_BT_SMP_ERR_INVALID_PARAM                =   0x0A,    /*!< Invalid parameters. */
 	RTK_BT_SMP_ERR_DHKEY_CHECK_FAILED           =   0x0B,    /*!< DHKey check failed. */
-	RTK_BT_SMP_ERR_NUMERIC_COMPARISION_FAIL     =   0x0C,    /*!< Numeric comparison failed. */
+	RTK_BT_SMP_ERR_NUMERIC_COMPARISON_FAIL      =   0x0C,    /*!< Numeric comparison failed. */
 	RTK_BT_SMP_ERR_BREDR_PAIRING_IN_PROGRESS    =   0x0D,    /*!< BR/EDR pairing in progress. */
 	RTK_BT_SMP_ERR_CRS_TRANS_KEY_GEN_NOT_ALLOW  =   0x0E,    /*!< Cross-transport key derivation/generation not allowed. */
 	/* Local error code */
@@ -259,6 +266,16 @@ enum rtk_bt_err_smp {
 	RTK_BT_SM_ERR_NO_PAIRABLE_MODE              =   0xEF,    /*!< Not in pairable mode. */
 	RTK_BT_SM_ERR_VENDOR                        =   0xFF,    /*!< Vendor specific error. */
 };
+
+/**
+ * @defgroup  RTK_BT_SMP_ERR Deprecated aliases
+ * @brief     Deprecated aliases of the @ref rtk_bt_err_smp values.
+ * @deprecated Use the @ref rtk_bt_err_smp values instead.
+ * @{
+ */
+#define RTK_BT_SMP_ERR_OOB_NOT_AVAIABLE RTK_BT_SMP_ERR_OOB_NOT_AVAILABLE
+#define RTK_BT_SMP_ERR_NUMERIC_COMPARISION_FAIL RTK_BT_SMP_ERR_NUMERIC_COMPARISON_FAIL
+/** @} */
 
 /**
  * @enum      rtk_bt_err_gatt

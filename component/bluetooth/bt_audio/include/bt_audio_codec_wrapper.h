@@ -34,7 +34,7 @@ struct audio_param {
 	uint32_t                    channels;              /*!< Number of audio channels. */
 	uint32_t                    channel_allocation;    /*!< Audio channel allocation bit mask. */
 	uint32_t                    rate;                  /*!< Sampling rate in Hz. */
-	uint32_t                    bits;                  /*!< Audio format indication; e.g. BT_AUDIO_FORMAT_PCM_16_BIT. */
+	uint32_t                    bits;                  /*!< Audio format indication; e.g. @ref BT_AUDIO_FORMAT_PCM_16_BIT. */
 };
 
 /**
@@ -75,7 +75,7 @@ struct audio_codec_entity_priv {
 	int                         stream_in_num;                                     /*!< Number of data items or commands enqueued by the application. */
 	union {
 		struct {
-			uint8_t     sampling_frequency;                                        /*!< Sampling frequency. */
+			uint8_t     sbc_sampling_frequency;                                    /*!< Sampling frequency. */
 			uint8_t     channel_mode;                                              /*!< Channel mode. */
 			uint8_t     block_length;                                              /*!< Block length. */
 			uint8_t     subbands;                                                  /*!< Number of subbands. */
@@ -85,7 +85,7 @@ struct audio_codec_entity_priv {
 		} sbc;
 		struct {
 			uint8_t     object_type;                                               /*!< Object type. */
-			uint16_t    sampling_frequency;                                        /*!< Sampling frequency. */
+			uint16_t    aac_sampling_frequency;                                    /*!< Sampling frequency. */
 			uint8_t     channel_number;                                            /*!< Number of channels. */
 			bool        vbr_supported;                                             /*!< Whether variable bit rate is supported.
                                                                                     *   - true: Variable bit rate is supported.
@@ -103,12 +103,12 @@ struct audio_codec_entity_priv {
 		struct {
 			uint8_t     channel_num;                                               /*!< Number of channels. */
 			int         sample_rate;                                               /*!< Sampling rate. */
-			uint8_t     frame_duration;                                            /*!< Frame duration. */
+			uint8_t     cvsd_frame_duration;                                       /*!< Frame duration. */
 		} cvsd;
 		struct {
 			uint16_t    type_exist;                                                /*!< Flags indicating which codec configuration types are present.
-                                                                                    *   e.g. RTK_BT_LE_CODEC_CFG_SAMPLING_FREQUENCY_EXIST. */
-			uint16_t    frame_duration;                                            /*!< Frame duration in us.
+                                                                                    *   e.g. @ref RTK_BT_LE_CODEC_CFG_SAMPLING_FREQUENCY_EXIST. */
+			uint16_t    lc3_frame_duration;                                        /*!< Frame duration in us.
                                                                                     *   Value: 7500 or 10000. */
 			int         sample_rate;                                               /*!< Sampling rate in Hz. */
 			uint8_t     bits_per_audio_sample_enc;                                 /*!< Number of bits per audio sample for encoding. */

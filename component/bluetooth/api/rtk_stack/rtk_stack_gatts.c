@@ -262,7 +262,7 @@ static void bt_stack_gatts_delete_service_node(struct rtk_bt_gatt_service *p_srv
 	}
 }
 
-static bool _indicate_data_send_compelete(bool notify, uint16_t cause, rtk_bt_gatts_req_t *req)
+static bool _indicate_data_send_complete(bool notify, uint16_t cause, rtk_bt_gatts_req_t *req)
 {
 	rtk_bt_evt_t *p_evt = NULL;
 	rtk_bt_gatts_ntf_and_ind_ind_t *p_ind = NULL;
@@ -362,7 +362,7 @@ static void _handle_indicate_pending_queue(void)
 		if (RTK_BT_OK != _send_data(false, req)) {
 			list_del(&req->list);
 			send_q->pending_ele_num--;
-			_indicate_data_send_compelete(false, RTK_BT_ERR_LOWER_STACK_API, req);
+			_indicate_data_send_complete(false, RTK_BT_ERR_LOWER_STACK_API, req);
 		}
 	}
 #endif
@@ -402,7 +402,7 @@ static bool _register_service(struct rtk_bt_gatt_service *node)
 #if defined(RTK_BLE_MGR_LIB) && RTK_BLE_MGR_LIB
 	ret = gatt_svc_add(p_id, database, length, &rtk_bt_ext_gatts_cb, bt_stack_gatts_send_data_cb);
 #else
-	if (true == node->assgin_handle_flag) {
+	if (true == node->assign_handle_flag) {
 		ret = server_add_service_by_start_handle(p_id, database, length,
 												 rtk_bt_gatts_cb, node->start_handle);
 	} else {
@@ -491,7 +491,7 @@ static bool _send_data_complete_cb(T_SERVER_ID server_id, uint16_t index, uint8_
 
 	req = bt_stack_gatts_remove_sent_req(notify, conn_id, p_srv_node->app_id, index);
 
-	if (!req || !_indicate_data_send_compelete(notify, cause, req)) {
+	if (!req || !_indicate_data_send_complete(notify, cause, req)) {
 		return false;
 	}
 

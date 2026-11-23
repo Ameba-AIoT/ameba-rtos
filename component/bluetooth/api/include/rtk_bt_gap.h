@@ -166,9 +166,16 @@ typedef enum {
 	RTK_BT_L2C_ECFC_CONN_RSP_ALL_CONN_UNACCEPTABLE_PARAMS = 0x000B,             /*!< All connections refused - unacceptable parameters. */
 	RTK_BT_L2C_ECFC_CONN_RSP_ALL_CONN_INVALID_PARAMS = 0x000C,                  /*!< All connections refused - invalid parameters. */
 	RTK_BT_L2C_ECFC_CONN_RSP_ALL_CONN_PENDING_NO_INFO = 0x000D,                 /*!< All connections pending - no further information available. */
-	RTK_BT_L2C_ECFC_CONN_RSP_ALL_CONN_PENDING_AUTHER = 0x000E,                  /*!< All connections pending - authentication pending. */
+	RTK_BT_L2C_ECFC_CONN_RSP_ALL_CONN_PENDING_AUTHEN = 0x000E,                  /*!< All connections pending - authentication pending. */
 	RTK_BT_L2C_ECFC_CONN_RSP_ALL_CONN_PENDING_AUTHOR = 0x000F,                  /*!< All connections pending - authorization pending. */
 } rtk_bt_gap_ecfc_conn_cfm_cause_t;
+
+/**
+ * @def       RTK_BT_L2C_ECFC_CONN_RSP_ALL_CONN_PENDING_AUTHER
+ * @brief     Deprecated alias of @ref RTK_BT_L2C_ECFC_CONN_RSP_ALL_CONN_PENDING_AUTHEN.
+ * @deprecated Use @ref RTK_BT_L2C_ECFC_CONN_RSP_ALL_CONN_PENDING_AUTHEN instead.
+ */
+#define RTK_BT_L2C_ECFC_CONN_RSP_ALL_CONN_PENDING_AUTHER RTK_BT_L2C_ECFC_CONN_RSP_ALL_CONN_PENDING_AUTHEN
 
 /**
  * @struct    rtk_bt_gap_ecfc_conn_cfm_t

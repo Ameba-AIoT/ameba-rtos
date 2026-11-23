@@ -10,60 +10,134 @@
 
 /* Private defines -----------------------------------------------------------*/
 
-#define USBH_HID_CTRL_BUF_LEN        512U
-#define USBH_HID_TRIGGER_MAX_CNT     50U
+#define USBH_HID_CTRL_BUF_LEN        USBH_HID_REPORT_MAX_LEN /**< EP0 buffer of the class requests, one EP0 packet */
+#define USBH_HID_TRIGGER_MAX_CNT     50U     /**< SOF ticks after which an idle INTR IN pipe is driven again */
+#define USBH_HID_THREAD_PRIORITY     3U      /**< Report thread priority */
+#define USBH_HID_THREAD_STACK_SIZE   768U    /**< Report thread stack size */
+#define USBH_HID_RING_NODE_CNT       10U     /**< Reports queued for the report thread, all interfaces together */
+#define USBH_HID_RING_NODE_LEN       (USBH_HID_REPORT_MAX_LEN + 1U) /**< Interface index, then the report */
 
-#define USBH_HID_REPORT_DESC_PARSE_DEBUG       0
+/* Per interface setup steps */
+#define USBH_HID_SETUP_GET_REPORT_DESC  0U
+#define USBH_HID_SETUP_SET_IDLE         1U
+#define USBH_HID_SETUP_NOTIFY           2U
+#define USBH_HID_SETUP_SET_PROTOCOL     3U
+#define USBH_HID_SETUP_DONE             4U
 
-#define USBH_HID_THREAD_PRIORITY     3U      /**< HID processing thread priority */
-#define USBH_HID_THREAD_STACK_SIZE   768U    /**< HID msg parse thread stack size */
-#define USBH_HID_MST_COUNT           10U     /**< Maximum support touch count (if applicable) */
-#define USBH_HID_MSG_LENGTH          USBH_HID_REPORT_MAX_LEN /**< Ring node size */
+/* Application request on EP0 */
+#define USBH_HID_REQ_IDLE            0U      /**< No request */
+#define USBH_HID_REQ_PENDING         1U      /**< Posted by the application, not taken by the host task yet */
+#define USBH_HID_REQ_BUSY            2U      /**< Issued by the host task */
 
 /* Private types -------------------------------------------------------------*/
+
+/**
+ * @brief HID Report Item, Ref HID 1.11 6.2.2.2.
+ */
+typedef struct {
+	u32 data;                   /**< Item Data */
+	u8 type;                    /**< Item Type (Main, Global, Local) */
+	u8 tag;                     /**< Item Tag */
+	u8 size;                    /**< Item Size */
+} usbh_hid_item_t;
+
+/**
+ * @brief One HID interface of the attached device.
+ */
+typedef struct {
+	usbh_pipe_t pipe_in;                /**< Interrupt IN pipe */
+	usbh_pipe_t pipe_out;               /**< Interrupt OUT pipe, pipe_num 0 if absent */
+	usbh_ep_desc_t ep_desc_in;          /**< Interrupt IN Endpoint Descriptor */
+	usbh_ep_desc_t ep_desc_out;         /**< Interrupt OUT Endpoint Descriptor, optional */
+	u8 *in_buf;                         /**< INTR IN buffer, the DMA window of one packet */
+	u8 *report_desc;                    /**< Report descriptor, kept until detach */
+	usbh_hid_itf_info_t info;           /**< What the application is told in setup() */
+	usbh_dev_hid_desc_t hid_desc;       /**< HID Descriptor */
+	u8 setup_step;                      /**< USBH_HID_SETUP_xxx */
+	u8 halt_pending;                    /**< INTR IN STALLed, CLEAR_FEATURE(ENDPOINT_HALT) to be sent */
+	u8 halt_retry_cnt;                  /**< Failed CLEAR_FEATURE(ENDPOINT_HALT) attempts */
+	u8 report_cut_logged;               /**< A report longer than USBH_HID_REPORT_MAX_LEN was reported for this attach */
+} usbh_hid_itf_t;
+
+/**
+ * @brief HID host class handle.
+ */
+typedef struct {
+	usb_host_t *host;                         /**< USB host handle, set at attach */
+	const usbh_hid_usr_cb_t *cb;              /**< User callbacks */
+
+	/* Interfaces of the attached device */
+	usbh_hid_itf_t itf[USBH_HID_MAX_ITF_NUM]; /**< HID interfaces, itf_cnt of them in use */
+	u8 itf_cnt;                               /**< HID interfaces in use */
+	u8 setup_idx;                             /**< Interface setup() is working on */
+	__IO u8 ready;                            /**< 1 once setup() is done: reports flow and the class requests are accepted */
+
+	/* Application class request on EP0, served by the host task */
+	usb_os_lock_t req_lock;                   /**< One application request at a time */
+	usb_os_sema_t req_done_sema;              /**< Given by the host task when the request ends */
+	u8 *ctrl_buf;                             /**< EP0 data stage of the class requests */
+	usbh_setup_req_t req_setup;               /**< Request to issue */
+	u32 req_rx_len;                           /**< Bytes received by a D2H request */
+	int req_status;                           /**< Result of the request */
+	__IO u8 req_state;                        /**< USBH_HID_REQ_xxx */
+
+	/* Report thread */
+	rtos_task_t report_task;                  /**< Report thread handle */
+	usb_os_sema_t report_sema;                /**< Wakes the report thread when a report is queued */
+	usb_ringbuf_manager_t report_msg;         /**< Queued reports, interface index first */
+	u8 rx_node[USBH_HID_RING_NODE_LEN];       /**< Host task staging of one node */
+	u8 report_buf[USBH_HID_RING_NODE_LEN];    /**< Report thread copy of one node, kept off its stack */
+	__IO u8 report_task_alive;                /**< Report thread is running */
+	__IO u8 report_task_exit;                 /**< Asks the report thread to leave */
+} usbh_hid_t;
+
+/**
+ * @brief Report descriptor walk state, Ref HID 1.11 6.2.2.
+ */
+typedef struct {
+	s32 logical_min;            /**< Current Logical Minimum */
+	s32 logical_max;            /**< Current Logical Maximum */
+	u32 usage_min;              /**< Pending Usage Minimum */
+	u32 found_idx;              /**< Index of the requested usage among the pending usages */
+	u32 usage_cnt;              /**< Usages declared for the pending Main item */
+	u32 in_bit_offset;          /**< Bits used by the Input fields of the current report */
+	u32 out_bit_offset;         /**< Bits used by the Output fields of the current report */
+	u16 usage_page;             /**< Current Usage Page */
+	u16 report_size;            /**< Current Report Size (bits) */
+	u16 report_count;           /**< Current Report Count */
+	u8 report_id;               /**< Current Report ID */
+	u8 usage_min_valid;         /**< A Usage Minimum is pending a Usage Maximum */
+	u8 found;                   /**< The requested usage is among the pending usages */
+} usbh_hid_walk_t;
 
 /* Private macros ------------------------------------------------------------*/
 
 /* Private function prototypes -----------------------------------------------*/
 
-#if USBH_HID_REPORT_DESC_PARSE_DEBUG
-static const char *usbh_hid_get_usage_page_name(u32 usage_page);
-static const char *usbh_hid_get_usage_name(uint32_t usage_page, uint32_t usage);
-static void usbh_hid_decode_data_attributes(uint32_t data);
-static void usbh_hid_print_item(const usbh_hid_item_t *item);
-#endif
 static const u8 *usbh_hid_fetch_item(const u8 *start, const u8 *end, usbh_hid_item_t *item);
-static void usbh_hid_process_global_item(usbh_hid_parse_state *state, const usbh_hid_item_t *item);
-static void usbh_hid_process_usage(usbh_hid_parse_state *state, u32 usage);
-static void usbh_hid_process_local_item(usbh_hid_parse_state *state, const usbh_hid_item_t *item);
-static void usbh_hid_settle_input_field(usbh_hid_parse_state *state, const usbh_hid_item_t *item);
-static void usbh_hid_reset_local_state(usbh_hid_parse_state *state);
-static void usbh_hid_process_main_item(usbh_hid_parse_state *state, const usbh_hid_item_t *item);
-static u32 usbh_hid_extract_bits(const u8 *data, u32 data_len, u32 bit_offset, u8 nbits);
-static usbh_hid_event_type_t usbh_hid_usage_to_event(u32 usage);
-static bool usbh_hid_test_ctrl_bit(const u8 *data, u32 data_len, u16 bit);
-static void usbh_hid_parse_hid_report_descriptor(const u8 *data, u16 length, usbh_hid_ctrl_caps_t *device_info);
-static int usbh_hid_parse_hid_report(const u8 *report_data, u8 report_len, const usbh_hid_ctrl_caps_t *device_info);
-static int usbh_hid_parse_hid_report_desc(u8 *pbuf, u16 buf_length);
-static void usbh_hid_parse_hid_msg(const u8 *report, u8 len);
-static int usbh_hid_parse_details(usbh_itf_data_t *itf_data);
-static int usbh_hid_parse_interface(usb_host_t *host);
-static int usbh_hid_process_get_hid_report_desc(usb_host_t *host);
-static int usbh_hid_handle_report_desc(usb_host_t *host);
-static void usbh_hid_free_report_desc_buf(usbh_hid_t *hid);
-static void usbh_hid_in_process(usb_host_t *host);
-static void usbh_hid_process_halt(usb_host_t *host);
+static void usbh_hid_walk_local(usbh_hid_walk_t *walk, const usbh_hid_item_t *item, u16 usage_page, u16 usage);
+static int usbh_hid_parse_interface(usbh_hid_itf_t *itf, const usbh_itf_data_t *itf_data);
+static void usbh_hid_add_interface(const usbh_itf_data_t *itf_data, u8 *ignored);
+static int usbh_hid_collect_interfaces(usb_host_t *host);
+static int usbh_hid_open_interface(usb_host_t *host, usbh_hid_itf_t *itf);
+static void usbh_hid_close_interface(usb_host_t *host, usbh_hid_itf_t *itf);
+static int usbh_hid_setup_interface(usb_host_t *host, usbh_hid_itf_t *itf, u8 idx);
+static void usbh_hid_in_process(usb_host_t *host, u8 idx);
+static void usbh_hid_out_process(usb_host_t *host, usbh_hid_itf_t *itf);
+static void usbh_hid_process_halt(usb_host_t *host, usbh_hid_itf_t *itf);
+static void usbh_hid_process_request(usb_host_t *host);
 static int usbh_hid_attach(usb_host_t *host);
 static void usbh_hid_detach(usb_host_t *host);
 static int usbh_hid_setup(usb_host_t *host);
 static void usbh_hid_process(usb_host_t *host, usbh_drv_msg_t *msg);
 static void usbh_hid_sof(usb_host_t *host);
+static int usbh_hid_ctrl_sync(u8 idx, u8 bm_request_type, u8 request, u16 value, const u8 *tx, u8 *rx, u32 *len);
 
 /* Private variables ---------------------------------------------------------*/
 
 static const char *const TAG = "HID";
 
-/* USB HID device identification */
+/* USB HID device identification: every HID interface, the application tells them apart */
 static const usbh_dev_id_t hid_devs[] = {
 	{
 		.mMatchFlags = USBH_DEV_ID_MATCH_ITF_CLASS,
@@ -85,105 +159,37 @@ static const usbh_class_driver_t usbh_hid_driver = {
 
 static usbh_hid_t usbh_hid;
 
-/* Consumer usages this driver reports, indexed by USBH_HID_TRACK_xxx */
-static const u16 usbh_hid_track_usages[USBH_HID_TRACK_USAGE_CNT] = {
-	USBH_HID_CONSUMER_VOLUME_UP,
-	USBH_HID_CONSUMER_VOLUME_DOWN,
-	USBH_HID_CONSUMER_MUTE,
-	USBH_HID_CONSUMER_PLAY_PAUSE,
-	USBH_HID_CONSUMER_STOP,
-};
-
-#if USBH_HID_REPORT_DESC_PARSE_DEBUG
-
 /* Exported variables --------------------------------------------------------*/
 
 /* Private functions ---------------------------------------------------------*/
 
-// Usage Page
-static const char *usbh_hid_get_usage_page_name(u32 usage_page)
-{
-	switch (usage_page) {
-	case USBH_HID_UP_CONSUMER:
-		return "Consumer";
-	default:
-		return "Unknown";
-	}
-}
-
-static const char *usbh_hid_get_usage_name(uint32_t usage_page, uint32_t usage)
-{
-	if (usage_page == USBH_HID_UP_CONSUMER) {
-		switch (usage) {
-		case USBH_HID_CONSUMER_VOLUME_UP:
-			return "Volume Up";
-		case USBH_HID_CONSUMER_VOLUME_DOWN:
-			return "Volume Down";
-		case USBH_HID_CONSUMER_MUTE:
-			return "Mute";
-		case USBH_HID_CONSUMER_PLAY_PAUSE:
-			return "Play/Pause";
-		case USBH_HID_CONSUMER_STOP:
-			return "Stop";
-		default:
-			return "Unknown Usage";
-		}
-	}
-	return "Unknown Usage";
-}
-
-static void usbh_hid_decode_data_attributes(uint32_t data)
-{
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "  Data Attributes: ");
-	if (data & 0x1) {
-		RTK_LOGS(NOTAG, RTK_LOG_INFO, "Constant ");
-	} else {
-		RTK_LOGS(NOTAG, RTK_LOG_INFO, "Data ");
-	}
-
-	if (data & 0x2) {
-		RTK_LOGS(NOTAG, RTK_LOG_INFO, "Variable ");
-	} else {
-		RTK_LOGS(NOTAG, RTK_LOG_INFO, "Array ");
-	}
-
-	if (data & 0x4) {
-		RTK_LOGS(NOTAG, RTK_LOG_INFO, "Relative ");
-	} else {
-		RTK_LOGS(NOTAG, RTK_LOG_INFO, "Absolute ");
-	}
-
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n");
-}
-
-static void usbh_hid_print_item(const usbh_hid_item_t *item)
-{
-	const char *type_str[] = {"Main", "Global", "Local", "Reserved"};
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "Item: Type:%s Tag:0x%x Size:%d Data:0x%08x\t", type_str[item->type], item->tag, item->size, item->data);
-}
-#endif
-
-/* hid report parse */
+/**
+  * @brief  Decode one short item, Ref HID 1.11 6.2.2.2
+  * @param  start: First byte of the item
+  * @param  end: End of the descriptor
+  * @param  item: Decoded item
+  * @retval First byte of the next item, NULL at the end or for a truncated item
+  */
 static const u8 *usbh_hid_fetch_item(const u8 *start, const u8 *end, usbh_hid_item_t *item)
 {
+	u8 b;
+
 	if (start >= end) {
 		return NULL;
 	}
 
-	u8 b = *start++;
+	b = *start++;
 	item->type = (u8)((b >> 2) & 0x3U);
 	item->tag = (u8)((b >> 4) & 0xFU);
 	item->size = (u8)(b & 0x3U);
-
 	if (item->size == 3U) {
 		item->size = 4U;
 	}
 
-	/* Ref HID 1.11 6.2.2.2: item data is little endian. Cast to u32 before the
-	 * shift: a u8 operand would be promoted to signed int, and shifting the top
-	 * byte of a 4-byte item left by 24 would overflow the sign bit. */
-	item->data = 0;
-	for (u32 i = 0; i < (u32)item->size; i++) {
+	/* Item data is little endian. Cast to u32 before the shift: a u8 operand would be promoted to
+	 * signed int, and shifting the top byte of a 4-byte item left by 24 would overflow the sign bit. */
+	item->data = 0U;
+	for (u32 i = 0U; i < (u32)item->size; i++) {
 		if (start >= end) {
 			return NULL;
 		}
@@ -194,684 +200,118 @@ static const u8 *usbh_hid_fetch_item(const u8 *start, const u8 *end, usbh_hid_it
 	return start;
 }
 
-static void usbh_hid_process_global_item(usbh_hid_parse_state *state, const usbh_hid_item_t *item)
-{
-	switch (item->tag) {
-	case USBH_HID_GLOBAL_ITEM_TAG_USAGE_PAGE:
-		state->usage_page = (u16)item->data;
-#if USBH_HID_REPORT_DESC_PARSE_DEBUG
-		RTK_LOGS(NOTAG, RTK_LOG_INFO, "Usage Page: 0x%x(%s)\n", item->data, usbh_hid_get_usage_page_name(item->data));
-#endif
-		break;
-	case USBH_HID_GLOBAL_ITEM_TAG_LOGICAL_MINIMUM:
-		state->logical_min = (int32_t)item->data;
-#if USBH_HID_REPORT_DESC_PARSE_DEBUG
-		RTK_LOGS(NOTAG, RTK_LOG_INFO, "Logical Minimum: %d\n", state->logical_min);
-#endif
-		break;
-	case USBH_HID_GLOBAL_ITEM_TAG_LOGICAL_MAXIMUM:
-		state->logical_max = (int32_t)item->data;
-#if USBH_HID_REPORT_DESC_PARSE_DEBUG
-		RTK_LOGS(NOTAG, RTK_LOG_INFO, "Logical Maximum: %d\n", state->logical_max);
-#endif
-		break;
-	case USBH_HID_GLOBAL_ITEM_TAG_REPORT_SIZE:
-		state->report_size = (u16)item->data;
-#if USBH_HID_REPORT_DESC_PARSE_DEBUG
-		RTK_LOGS(NOTAG, RTK_LOG_INFO, "Report Size: %d bits\n", state->report_size);
-#endif
-		break;
-	case USBH_HID_GLOBAL_ITEM_TAG_REPORT_COUNT:
-		state->report_count = (u16)item->data;
-#if USBH_HID_REPORT_DESC_PARSE_DEBUG
-		RTK_LOGS(NOTAG, RTK_LOG_INFO, "Report Count: %d\n", state->report_count);
-#endif
-		break;
-	case USBH_HID_GLOBAL_ITEM_TAG_REPORT_ID:
-		/* Ref HID 1.11 5.6: each Report ID starts a new report, so every bit
-		 * cursor restarts at the first bit after the 1-byte ID prefix. */
-		state->in_bit_offset = 0;
-		state->out_bit_offset = 0;
-		state->feat_bit_offset = 0;
-		state->device_info->report_id_count++;
-		state->report_id = (u8)item->data;
-		/* Ref HID 1.11 6.2.2.7: Report ID 0 is reserved. Whether such a device prefixes its reports with it is
-		 * undefined, so no field position can be trusted */
-		if (state->report_id == 0U) {
-			RTK_LOGS(TAG, RTK_LOG_WARN, "Report ID 0 reserved\n");
-			state->device_info->report_id_zero = 1U;
-		}
-#if USBH_HID_REPORT_DESC_PARSE_DEBUG
-		RTK_LOGS(NOTAG, RTK_LOG_INFO, "Report ID: %d\n", state->report_id);
-#endif
-		break;
-	default:
-		RTK_LOGS(NOTAG, RTK_LOG_INFO, "Unknown Global Item (Tag: 0x%x)\n", item->tag);
-		break;
-	}
-}
-
 /**
-  * @brief  Record that a tracked Consumer usage appears at ordinal usage_cnt of
-  *         the Main item currently being declared.
-  * @note   HID 1.11 6.2.2.8: Local items apply to the *next* Main item, so the
-  *         report position of a usage cannot be known until that Main item
-  *         arrives and tells us whether the field is a bitmap or an array of
-  *         usage codes. Only the ordinal is remembered here.
-  * @param  state: Parser state
-  * @param  usage: Usage value just declared
+  * @brief  Track the usages declared for the next Main item, Ref HID 1.11 6.2.2.8
+  * @note   Local items apply to the next Main item only, which tells whether the field is Variable or
+  *         Array, so only the index of the requested usage among the declared ones is kept here.
+  * @param  walk: Walk state
+  * @param  item: Local item
+  * @param  usage_page: Requested Usage Page
+  * @param  usage: Requested Usage ID
+  * @retval None
   */
-static void usbh_hid_process_usage(usbh_hid_parse_state *state, u32 usage)
+static void usbh_hid_walk_local(usbh_hid_walk_t *walk, const usbh_hid_item_t *item, u16 usage_page, u16 usage)
 {
-	u8 idx;
+	u32 u = item->data;
+	u16 page = walk->usage_page;
 
-	if (state->usage_page == USBH_HID_UP_CONSUMER) {
-		switch (usage) {
-		case USBH_HID_CONSUMER_VOLUME_UP:
-			idx = USBH_HID_TRACK_VOLUME_UP;
-			break;
-		case USBH_HID_CONSUMER_VOLUME_DOWN:
-			idx = USBH_HID_TRACK_VOLUME_DOWN;
-			break;
-		case USBH_HID_CONSUMER_MUTE:
-			idx = USBH_HID_TRACK_MUTE;
-			break;
-		case USBH_HID_CONSUMER_PLAY_PAUSE:
-			idx = USBH_HID_TRACK_PLAY_PAUSE;
-			break;
-		case USBH_HID_CONSUMER_STOP:
-			idx = USBH_HID_TRACK_STOP;
-			break;
-		default:
-			idx = USBH_HID_TRACK_USAGE_CNT;
-			break;
-		}
-
-		if ((idx < USBH_HID_TRACK_USAGE_CNT) && (state->usage_cnt <= 0xFFFFU)) {
-			state->track_ord[idx] = (u16)state->usage_cnt;
-			state->track_mask |= (u8)(1U << idx);
-		}
+	/* A 4-byte usage carries its own Usage Page in the upper half, Ref HID 1.11 6.2.2.8 */
+	if (item->size == 4U) {
+		page = (u16)(u >> 16);
+		u &= 0xFFFFU;
 	}
-
-	state->usage_cnt++;
-}
-
-static void usbh_hid_process_local_item(usbh_hid_parse_state *state, const usbh_hid_item_t *item)
-{
-	u32 usage;
 
 	switch (item->tag) {
 	case USBH_HID_LOCAL_ITEM_TAG_USAGE:
-		usbh_hid_process_usage(state, item->data);
-#if USBH_HID_REPORT_DESC_PARSE_DEBUG
-		RTK_LOGS(NOTAG, RTK_LOG_INFO, "Usage: 0x%03x (%s)\n", item->data, usbh_hid_get_usage_name(state->usage_page, item->data));
-#endif
+		if ((walk->found == 0U) && (page == usage_page) && (u == usage)) {
+			walk->found = 1U;
+			walk->found_idx = walk->usage_cnt;
+		}
+		walk->usage_cnt++;
 		break;
 
 	case USBH_HID_LOCAL_ITEM_TAG_USAGE_MIN:
-		/* Ref HID 1.11 6.2.2.8: Usage Minimum/Maximum declare an inclusive
-		 * range of usages, equivalent to listing each one in ascending order. */
-		state->usage_min = item->data;
-		state->usage_min_valid = 1;
-#if USBH_HID_REPORT_DESC_PARSE_DEBUG
-		RTK_LOGS(NOTAG, RTK_LOG_INFO, "Usage Min: 0x%03x\n", item->data);
-#endif
+		walk->usage_min = u;
+		walk->usage_min_valid = 1U;
 		break;
 
 	case USBH_HID_LOCAL_ITEM_TAG_USAGE_MAX:
-		if ((state->usage_min_valid != 0U) && (item->data >= state->usage_min)) {
-			/* A range may span hundreds of usages, but only the tracked ones can
-			 * change the outcome. Place each tracked usage that falls inside the
-			 * range at its own ordinal, then skip the whole range at once. */
-			u32 base_cnt = state->usage_cnt;
-
-			for (u32 i = 0; i < USBH_HID_TRACK_USAGE_CNT; i++) {
-				usage = usbh_hid_track_usages[i];
-				if ((usage >= state->usage_min) && (usage <= item->data)) {
-					state->usage_cnt = base_cnt + (usage - state->usage_min);
-					usbh_hid_process_usage(state, usage);
-				}
+		/* Usage Minimum/Maximum declare an inclusive range, the same as listing each usage in order */
+		if ((walk->usage_min_valid != 0U) && (u >= walk->usage_min)) {
+			if ((walk->found == 0U) && (page == usage_page) && ((u32)usage >= walk->usage_min) && ((u32)usage <= u)) {
+				walk->found = 1U;
+				walk->found_idx = walk->usage_cnt + ((u32)usage - walk->usage_min);
 			}
-			state->usage_cnt = base_cnt + (item->data - state->usage_min) + 1U;
+			walk->usage_cnt += (u - walk->usage_min) + 1U;
 		}
-		state->usage_min_valid = 0;
-#if USBH_HID_REPORT_DESC_PARSE_DEBUG
-		RTK_LOGS(NOTAG, RTK_LOG_INFO, "Usage Max: 0x%03x\n", item->data);
-#endif
+		walk->usage_min_valid = 0U;
 		break;
 
 	default:
-		RTK_LOGS(TAG, RTK_LOG_INFO, "Unknown Local(0x%x)\n", item->tag);
 		break;
 	}
 }
 
 /**
-  * @brief  Turn the usages collected for an Input field into report positions.
-  * @note   Ref HID 1.11 6.2.2.5/6.2.2.7. A field occupies
-  *         (Report Size * Report Count) bits and comes in two flavours:
-  *         - Variable with Report Size 1: a bitmap, where the n-th declared
-  *           usage owns the n-th bit of the field;
-  *         - Array: the field carries Report Count usage *codes* of Report Size
-  *           bits each, not one bit per usage, so no per-usage bit exists.
-  *         Anything else (e.g. Variable with Report Size > 1, a multi-bit value
-  *         per control) carries no on/off bit this driver can use, so it is only
-  *         skipped over.
-  * @param  state: Parser state
-  * @param  item: The Input Main item being closed
+  * @brief  Parse one HID interface: its HID descriptor and Interrupt endpoints
+  * @note   Only alt setting 0 is parsed: SET_CONFIGURATION selects it (Ref USB 2.0 9.1.1.5) and HID
+  *         defines no other (Ref HID 1.11 4.1). bLength is checked before each descriptor is read.
+  * @param  itf: Interface to fill
+  * @param  itf_data: Interface descriptors
+  * @retval RTK_SUCCESS, -RTK_ERR_BADARG for an interface without Interrupt IN endpoint
   */
-static void usbh_hid_settle_input_field(usbh_hid_parse_state *state, const usbh_hid_item_t *item)
+static int usbh_hid_parse_interface(usbh_hid_itf_t *itf, const usbh_itf_data_t *itf_data)
 {
-	usbh_hid_ctrl_caps_t *info = state->device_info;
-	u32 abs_bit;
+	const usbh_itf_desc_t *itf_desc = &(itf_data->itf_desc_array[0]);
+	const u8 *desc = itf_data->raw_data;
+	const usbh_ep_desc_t *ep_desc;
+	u32 offset = 0U;
+	u8 len;
 
-	if ((item->data & USBH_HID_ITEM_DATA_CONSTANT) != 0U) {
-		return;    /* padding, never carries a usage */
-	}
+	itf->info.itf_num = itf_desc->bInterfaceNumber;
+	itf->info.subclass = itf_desc->bInterfaceSubClass;
+	itf->info.protocol = itf_desc->bInterfaceProtocol;
 
-	if ((item->data & USBH_HID_ITEM_DATA_VARIABLE) != 0U) {
-		if (((u32)state->report_size != 1U) || ((u32)state->track_mask == 0U)) {
-			return;
-		}
-
-		for (u32 i = 0; i < USBH_HID_TRACK_USAGE_CNT; i++) {
-			if ((state->track_mask & (u8)(1U << i)) == 0U) {
-				continue;
-			}
-			/* A usage declared beyond Report Count has no bit in this field. */
-			if (state->track_ord[i] >= state->report_count) {
-				continue;
-			}
-			abs_bit = state->in_bit_offset + state->track_ord[i];
-			if (abs_bit >= USBH_HID_BIT_NONE) {
-				continue;
-			}
-
-			switch (i) {
-			case USBH_HID_TRACK_VOLUME_UP:
-				info->volume.up_bit = (u16)abs_bit;
-				info->volume.report_id = state->report_id;
-				info->volume.supported = true;
-				break;
-			case USBH_HID_TRACK_VOLUME_DOWN:
-				info->volume.down_bit = (u16)abs_bit;
-				info->volume.report_id = state->report_id;
-				info->volume.supported = true;
-				break;
-			case USBH_HID_TRACK_MUTE:
-				info->volume.mute_bit = (u16)abs_bit;
-				info->volume.report_id = state->report_id;
-				info->volume.supported = true;
-				break;
-			case USBH_HID_TRACK_PLAY_PAUSE:
-				info->media.play_pause_bit = (u16)abs_bit;
-				info->media.report_id = state->report_id;
-				info->media.supported = true;
-				break;
-			default:
-				info->media.stop_bit = (u16)abs_bit;
-				info->media.report_id = state->report_id;
-				info->media.supported = true;
-				break;
-			}
-		}
-	} else if ((state->usage_page == USBH_HID_UP_CONSUMER) && (state->report_size >= 8U)
-			   && (state->report_size <= 32U) && (state->report_count > 0U)
-			   && (state->in_bit_offset < USBH_HID_BIT_NONE) && (info->consumer_array.supported == false)) {
-		/* Array of Consumer usage codes: remember where the elements are and let
-		 * the report path match the received code against the tracked usages. */
-		info->consumer_array.report_id = state->report_id;
-		info->consumer_array.bit_offset = (u16)state->in_bit_offset;
-		info->consumer_array.elem_bits = (u8)state->report_size;
-		info->consumer_array.elem_cnt = (state->report_count < USBH_HID_ARRAY_ELEM_CNT)
-										? (u8)state->report_count : (u8)USBH_HID_ARRAY_ELEM_CNT;
-		info->consumer_array.supported = true;
-	} else {
-		/* no usable on/off information in this field */
-	}
-}
-
-/**
-  * @brief  Clear the Local item state consumed by a Main item.
-  * @note   Ref HID 1.11 6.2.2.8: Local items apply only to the Main item that
-  *         follows them and are reset afterwards.
-  * @param  state: Parser state
-  */
-static void usbh_hid_reset_local_state(usbh_hid_parse_state *state)
-{
-	state->usage_cnt = 0;
-	state->track_mask = 0;
-	state->usage_min_valid = 0;
-}
-
-static void usbh_hid_process_main_item(usbh_hid_parse_state *state, const usbh_hid_item_t *item)
-{
-	/* Ref HID 1.11 6.2.2.7: a field occupies Report Size * Report Count bits. */
-	u32 field_bits = (u32)state->report_size * (u32)state->report_count;
-#if USBH_HID_REPORT_DESC_PARSE_DEBUG
-	u32 total_bytes;
-#endif
-
-	switch (item->tag) {
-	case USBH_HID_MAIN_ITEM_TAG_INPUT:
-		usbh_hid_settle_input_field(state, item);
-		state->in_bit_offset += field_bits;
-		usbh_hid_reset_local_state(state);
-#if USBH_HID_REPORT_DESC_PARSE_DEBUG
-		RTK_LOGS(NOTAG, RTK_LOG_INFO, "Input - ");
-		usbh_hid_decode_data_attributes(item->data);
-		total_bytes = (field_bits + 7U) / 8U;
-		if (state->report_id > 0) {
-			total_bytes++;
-		}
-		RTK_LOGS(NOTAG, RTK_LOG_INFO, "  Total bits: %d, Total bytes: %d\n", field_bits, total_bytes);
-#endif
-		break;
-
-	case USBH_HID_MAIN_ITEM_TAG_OUTPUT:
-		/* Output lives in its own report, so it must not shift Input positions. */
-		state->out_bit_offset += field_bits;
-		usbh_hid_reset_local_state(state);
-#if USBH_HID_REPORT_DESC_PARSE_DEBUG
-		RTK_LOGS(NOTAG, RTK_LOG_INFO, "Output\n");
-#endif
-		break;
-
-	case USBH_HID_MAIN_ITEM_TAG_FEATURE:
-		/* Feature reports are fetched over EP0, never on the INTR IN pipe. */
-		state->feat_bit_offset += field_bits;
-		usbh_hid_reset_local_state(state);
-#if USBH_HID_REPORT_DESC_PARSE_DEBUG
-		RTK_LOGS(NOTAG, RTK_LOG_INFO, "Feature\n");
-#endif
-		break;
-
-	case USBH_HID_MAIN_ITEM_TAG_COLLECTION:
-		state->collection_depth++;
-		usbh_hid_reset_local_state(state);
-#if USBH_HID_REPORT_DESC_PARSE_DEBUG
-		RTK_LOGS(NOTAG, RTK_LOG_INFO, "Collection - Type: %d\n", item->data);
-#endif
-		break;
-
-	case USBH_HID_MAIN_ITEM_TAG_END_COLLECTION:
-		if (state->collection_depth > 0U) {
-			state->collection_depth--;
-		}
-		usbh_hid_reset_local_state(state);
-#if USBH_HID_REPORT_DESC_PARSE_DEBUG
-		RTK_LOGS(NOTAG, RTK_LOG_INFO, "End Collection\n");
-#endif
-		break;
-
-	default:
-		RTK_LOGS(NOTAG, RTK_LOG_INFO, "Unknown Main Item (Tag: 0x%x)\n", item->tag);
-		break;
-	}
-}
-
-static void usbh_hid_parse_hid_report_descriptor(const u8 *data, u16 length, usbh_hid_ctrl_caps_t *device_info)
-{
-	usbh_hid_parse_state state = {0};
-	usbh_hid_item_t item;
-	const u8 *end = data + length;
-	const u8 *ptr = data;
-#if USBH_HID_REPORT_DESC_PARSE_DEBUG
-	int item_cnt = 0;
-#endif
-
-	usb_os_memset((void *)device_info, 0, sizeof(usbh_hid_ctrl_caps_t));
-	/* Bit 0 is a legal position, so "not declared" needs its own value. */
-	device_info->volume.up_bit = USBH_HID_BIT_NONE;
-	device_info->volume.down_bit = USBH_HID_BIT_NONE;
-	device_info->volume.mute_bit = USBH_HID_BIT_NONE;
-	device_info->media.play_pause_bit = USBH_HID_BIT_NONE;
-	device_info->media.stop_bit = USBH_HID_BIT_NONE;
-	state.device_info = device_info;
-
-	ptr = usbh_hid_fetch_item(ptr, end, &item);
-	while (ptr != NULL) {
-#if USBH_HID_REPORT_DESC_PARSE_DEBUG
-		RTK_LOGS(NOTAG, RTK_LOG_INFO, "[%03d] ", ++item_cnt);
-		usbh_hid_print_item(&item);
-#endif
-
-		switch (item.type) {
-		case USBH_HID_ITEM_TYPE_GLOBAL:
-			usbh_hid_process_global_item(&state, &item);
-			break;
-		case USBH_HID_ITEM_TYPE_LOCAL:
-			usbh_hid_process_local_item(&state, &item);
-			break;
-		case USBH_HID_ITEM_TYPE_MAIN:
-			usbh_hid_process_main_item(&state, &item);
-			break;
-		default:
-			RTK_LOGS(TAG, RTK_LOG_INFO, "Unknown item type %d\n", item.type);
+	while ((offset + sizeof(usbh_desc_header_t)) <= (u32)itf_data->raw_data_len) {
+		len = desc[offset];
+		if ((len < sizeof(usbh_desc_header_t)) || ((offset + len) > (u32)itf_data->raw_data_len)) {
 			break;
 		}
-		ptr = usbh_hid_fetch_item(ptr, end, &item);
-	}
 
-#if USBH_HID_REPORT_DESC_PARSE_DEBUG
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n=== Volume Control Capabilities Summary ===\n");
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "Total reports defined:%d\n", device_info->report_id_count);
-
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n=== Device Capabilities ===\n");
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "Volume control supported: %s\n", device_info->volume.supported ? "Yes" : "No");
-	if (device_info->volume.supported) {
-		RTK_LOGS(NOTAG, RTK_LOG_INFO, "\tVolume controls in Report ID: %d\n", device_info->volume.report_id);
-		RTK_LOGS(NOTAG, RTK_LOG_INFO, "\tVolume Up: bit %d\n", device_info->volume.up_bit);
-		RTK_LOGS(NOTAG, RTK_LOG_INFO, "\tVolume Down: bit %d\n", device_info->volume.down_bit);
-		RTK_LOGS(NOTAG, RTK_LOG_INFO, "\tMute: bit %d\n", device_info->volume.mute_bit);
-	}
-
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "Media control supported: %s\n", device_info->media.supported ? "Yes" : "No");
-	if (device_info->media.supported) {
-		RTK_LOGS(NOTAG, RTK_LOG_INFO, "\tMedia controls in Report ID: %d\n", device_info->media.report_id);
-		RTK_LOGS(NOTAG, RTK_LOG_INFO, "\tPlay/Pause: bit %d\n", device_info->media.play_pause_bit);
-		RTK_LOGS(NOTAG, RTK_LOG_INFO, "\tStop: bit %d\n", device_info->media.stop_bit);
-	}
-
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "Consumer array: %s\n", device_info->consumer_array.supported ? "Yes" : "No");
-	if (device_info->consumer_array.supported) {
-		RTK_LOGS(NOTAG, RTK_LOG_INFO, "\tReport ID %d, bit %d, %d bits x %d\n", device_info->consumer_array.report_id,
-				 device_info->consumer_array.bit_offset, device_info->consumer_array.elem_bits, device_info->consumer_array.elem_cnt);
-	}
-#endif
-}
-
-/**
-  * @brief  Extract nbits starting at bit_offset from a HID report.
-  * @note   Ref HID 1.11 section 8: report data is packed least significant bit
-  *         first, so a field may straddle byte boundaries.
-  * @param  data: Report data, report ID prefix already removed
-  * @param  data_len: Length of data in bytes
-  * @param  bit_offset: Absolute bit position of the field
-  * @param  nbits: Field width in bits, 1..32
-  * @retval Field value, or 0 if the field does not fit inside data
-  */
-static u32 usbh_hid_extract_bits(const u8 *data, u32 data_len, u32 bit_offset, u8 nbits)
-{
-	u32 val = 0;
-	u32 bit;
-
-	if (((u32)nbits == 0U) || ((u32)nbits > 32U)) {
-		return 0;
-	}
-	/* Reject before reading: the whole field must lie within the report. */
-	if ((bit_offset + (u32)nbits) > (data_len * 8U)) {
-		return 0;
-	}
-
-	for (u32 i = 0; i < (u32)nbits; i++) {
-		bit = bit_offset + i;
-		if (((data[bit / 8U] >> (bit % 8U)) & 0x01U) != 0U) {
-			val |= (u32)1U << i;
-		}
-	}
-
-	return val;
-}
-
-/**
-  * @brief  Map a Consumer page usage code to the event this driver reports.
-  * @param  usage: Consumer usage code
-  * @retval Event type, VOLUME_EVENT_NONE if the usage is not tracked
-  */
-static usbh_hid_event_type_t usbh_hid_usage_to_event(u32 usage)
-{
-	usbh_hid_event_type_t type;
-
-	switch (usage) {
-	case USBH_HID_CONSUMER_VOLUME_UP:
-		type = VOLUME_EVENT_CONSUMER_UP;
-		break;
-	case USBH_HID_CONSUMER_VOLUME_DOWN:
-		type = VOLUME_EVENT_CONSUMER_DOWN;
-		break;
-	case USBH_HID_CONSUMER_MUTE:
-		type = VOLUME_EVENT_CONSUMER_MUTE;
-		break;
-	case USBH_HID_CONSUMER_PLAY_PAUSE:
-		type = VOLUME_EVENT_CONSUMER_PLAY_PAUSE;
-		break;
-	case USBH_HID_CONSUMER_STOP:
-		type = VOLUME_EVENT_CONSUMER_STOP;
-		break;
-	default:
-		type = VOLUME_EVENT_NONE;
-		break;
-	}
-
-	return type;
-}
-
-/**
-  * @brief  Test a single control bit of a bitmap Input field.
-  * @param  data: Report data, report ID prefix already removed
-  * @param  data_len: Length of data in bytes
-  * @param  bit: Absolute bit position, or USBH_HID_BIT_NONE if not declared
-  * @retval true if the control is declared and currently set
-  */
-static bool usbh_hid_test_ctrl_bit(const u8 *data, u32 data_len, u16 bit)
-{
-	if (bit == USBH_HID_BIT_NONE) {
-		return false;
-	}
-
-	return (usbh_hid_extract_bits(data, data_len, bit, 1U) != 0U);
-}
-
-static int usbh_hid_parse_hid_report(const u8 *report_data, u8 report_len,
-									 const usbh_hid_ctrl_caps_t *device_info)
-{
-	usbh_hid_t *hid = &usbh_hid;
-	usbh_hid_event_t *event = &(hid->report_event);
-	const u8 *data_start;
-	u32 data_len;
-	u32 usage;
-	u8 report_id = 0;
-
-	event->type = VOLUME_EVENT_NONE;
-	event->is_press = 0;
-
-	if (report_len == 0) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Report len is zero\n");
-		return -RTK_ERR_BADARG;
-	}
-
-	data_start = report_data;
-	data_len = report_len;
-
-	/* Ref HID 1.11 5.6/8: when the descriptor declares a non-zero Report ID,
-	 * every report is prefixed by that 1-byte ID. */
-	if ((report_len > 1U) && ((device_info->volume.report_id > 0U) || (device_info->media.report_id > 0U)
-							  || (device_info->consumer_array.report_id > 0U))) {
-		report_id = report_data[0];
-		data_start = &report_data[1];
-		data_len = (u32)report_len - 1U;
-	}
-
-	/* Array field: the report carries the usage code of the key being pressed,
-	 * not one bit per key. A code of 0 means "no key pressed". */
-	if (device_info->report_id_zero != 0U) {
-		return RTK_SUCCESS;
-	}
-
-	if (device_info->consumer_array.supported && (report_id == device_info->consumer_array.report_id)) {
-		for (u8 i = 0; i < device_info->consumer_array.elem_cnt; i++) {
-			usage = usbh_hid_extract_bits(data_start, data_len,
-										  (u32)device_info->consumer_array.bit_offset + ((u32)i * device_info->consumer_array.elem_bits),
-										  device_info->consumer_array.elem_bits);
-			event->type = usbh_hid_usage_to_event(usage);
-			if (event->type != VOLUME_EVENT_NONE) {
-				return RTK_SUCCESS;
-			}
-		}
-	}
-
-	if (device_info->volume.supported && (report_id == device_info->volume.report_id)) {
-		if (usbh_hid_test_ctrl_bit(data_start, data_len, device_info->volume.up_bit)) {
-			event->type = VOLUME_EVENT_CONSUMER_UP;
-			return RTK_SUCCESS;
-		}
-
-		if (usbh_hid_test_ctrl_bit(data_start, data_len, device_info->volume.down_bit)) {
-			event->type = VOLUME_EVENT_CONSUMER_DOWN;
-			return RTK_SUCCESS;
-		}
-
-		if (usbh_hid_test_ctrl_bit(data_start, data_len, device_info->volume.mute_bit)) {
-			event->type = VOLUME_EVENT_CONSUMER_MUTE;
-			return RTK_SUCCESS;
-		}
-	}
-
-	if (device_info->media.supported && (report_id == device_info->media.report_id)) {
-		if (usbh_hid_test_ctrl_bit(data_start, data_len, device_info->media.play_pause_bit)) {
-			event->type = VOLUME_EVENT_CONSUMER_PLAY_PAUSE;
-			return RTK_SUCCESS;
-		}
-
-		if (usbh_hid_test_ctrl_bit(data_start, data_len, device_info->media.stop_bit)) {
-			event->type = VOLUME_EVENT_CONSUMER_STOP;
-			return RTK_SUCCESS;
-		}
-	}
-
-	return RTK_SUCCESS;
-}
-
-static int usbh_hid_parse_hid_report_desc(u8 *pbuf, u16 buf_length)
-{
-	usbh_hid_t *hid = &usbh_hid;
-
-#if USBH_HID_REPORT_DESC_PARSE_DEBUG
-	u32 i = 0;
-	RTK_LOGS(TAG, RTK_LOG_INFO, "Report info 0x%08x data=%d\n", pbuf, buf_length);
-	for (i = 0; i < buf_length;) {
-
-		if (i + 10 < buf_length) {
-			RTK_LOGS(NOTAG, RTK_LOG_INFO, "%02x %02x %02x %02x %02x %02x %02x %02x %02x %02x \n",
-					 pbuf[i], pbuf[i + 1], pbuf[i + 2], pbuf[i + 3], pbuf[i + 4], pbuf[i + 5], pbuf[i + 6], pbuf[i + 7], pbuf[i + 8], pbuf[i + 9]);
-			i += 10;
-		} else {
-			RTK_LOGS(NOTAG, RTK_LOG_INFO, "%02x ", pbuf[i]);
-			i ++;
-		}
-	}
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n");
-#endif
-
-	/* hid_ctrl is 0 while report_desc is NULL, so the parse thread does not read vol_caps: fill it in place,
-	 * then open the gate under the lock, which makes the caps visible to the other core first */
-	usbh_hid_parse_hid_report_descriptor(pbuf, buf_length, &(hid->vol_caps));
-	usb_os_enter_critical();
-	hid->hid_ctrl = 1U;
-	usb_os_exit_critical();
-
-	return RTK_SUCCESS;
-}
-
-static void usbh_hid_parse_hid_msg(const u8 *report, u8 len)
-{
-	usbh_hid_t *hid = &usbh_hid;
-	usbh_hid_event_t *event = &(hid->report_event);
-	int ret;
-
-#if USBH_HID_REPORT_DESC_PARSE_DEBUG
-	usb_ringbuf_manager_t *handle = &(hid->report_msg);
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "RX HID Report:(%d-%d-%d):", len, handle->head, handle->tail);
-	for (u8 i = 0; i < len; i++) {
-		RTK_LOGS(NOTAG, RTK_LOG_INFO, "%02x ", report[i]);
-	}
-	RTK_LOGS(NOTAG, RTK_LOG_INFO, "\n");
-#endif
-
-	ret = usbh_hid_parse_hid_report(report, len, &(hid->caps_snap));
-	if (ret != RTK_SUCCESS) {
-		return;
-	}
-
-	if (event->type != VOLUME_EVENT_NONE) {
-		event->is_press = 1;
-#if USBH_HID_DEBUG
-		hid->last_event.type = event->type;
-		hid->last_event.is_press = event->is_press;
-		hid->event_cnt++;
-#endif
-	}
-
-	if ((hid->cb != NULL) && (hid->cb->report != NULL)) {
-		hid->cb->report(event);
-	}
-}
-
-/**
-  * @brief  Parse audio control interface
-  * @param  itf_data: given interface struct handle
-  * @retval Status
-  */
-static int usbh_hid_parse_details(usbh_itf_data_t *itf_data)
-{
-	usbh_hid_t *hid = &usbh_hid;
-	usbh_dev_hid_desc_t *hid_desc = NULL;
-	usbh_ep_desc_t *ep_desc = NULL;
-	u8 *desc = itf_data->raw_data;
-	u16 len = 0;
-	u16 itf_total_len = 0;
-
-	hid->itf_idx = desc[2];
-	hid->itf_alt_idx = desc[3];
-
-	while (desc != NULL) {
-		/* Validate the descriptor at the *current* offset before dereferencing
-		 * its header, otherwise the last iteration would read bLength and
-		 * bDescriptorType from beyond the end of the raw_data window. */
-		if ((u32)itf_total_len + sizeof(usbh_desc_header_t) > (u32)itf_data->raw_data_len) {
-			break;    /* not even a descriptor header left */
-		}
-
-		len = ((usbh_desc_header_t *) desc)->bLength;
-		if (len == 0U) {
-			break;    /* malformed: bLength==0 would spin forever */
-		}
-		if ((u32)itf_total_len + (u32)len > (u32)itf_data->raw_data_len) {
-			break;    /* bLength overshoots the raw_data window */
-		}
-
-		switch (((usbh_desc_header_t *) desc)->bDescriptorType) {
+		switch (desc[offset + 1U]) {
 		case USB_DESC_TYPE_INTERFACE:
-			/* Only the setting SET_INTERFACE selects is parsed: another interface, or another alternate
-			 * setting of this one, describes endpoints that are not active */
-			if ((((usbh_itf_desc_t *)desc)->bInterfaceNumber != hid->itf_idx) || (((usbh_itf_desc_t *)desc)->bAlternateSetting != hid->itf_alt_idx)) {
-				RTK_LOGS(TAG, RTK_LOG_DEBUG, "Hid intf new %d:old %d, return\n\n", ((usbh_itf_desc_t *)desc)->bInterfaceNumber, hid->itf_idx);
-				return RTK_SUCCESS;
+			/* Another alt setting or interface: its endpoints are not active */
+			if ((offset != 0U) && ((((const usbh_itf_desc_t *)(const void *)&desc[offset])->bInterfaceNumber != itf->info.itf_num) ||
+								   (((const usbh_itf_desc_t *)(const void *)&desc[offset])->bAlternateSetting != 0U))) {
+				offset = itf_data->raw_data_len;
+				continue;
 			}
 			break;
+
 		case USBH_HID_DESC:
-			/* Ref HID 1.11 6.2.1: at least 9 bytes, the fields read below */
-			if (len < USBH_HID_DESC_LEN) {
+			/* At least 9 bytes, the fields read, Ref HID 1.11 6.2.1 */
+			if (len >= USBH_HID_DESC_LEN) {
+				usb_os_memcpy((void *) & (itf->hid_desc), (const void *)&desc[offset], sizeof(usbh_dev_hid_desc_t));
+			} else {
 				RTK_LOGS(TAG, RTK_LOG_WARN, "Short HID desc %d\n", len);
-				break;
 			}
-			hid_desc = (usbh_dev_hid_desc_t *)desc;
-			usb_os_memcpy((void *) & (hid->hid_desc), (const void *)hid_desc, sizeof(usbh_dev_hid_desc_t));
 			break;
 
 		case USB_DESC_TYPE_ENDPOINT:
-			/* Ref HID 1.11 4.4: HID uses Interrupt endpoints only, one per direction */
-			ep_desc = (usbh_ep_desc_t *)desc;
+			/* HID uses Interrupt endpoints only, one per direction, Ref HID 1.11 4.4 */
+			if (len < USB_LEN_EP_DESC) {
+				break;
+			}
+			ep_desc = (const usbh_ep_desc_t *)(const void *)&desc[offset];
 			if ((ep_desc->bmAttributes & USB_EP_XFER_TYPE_MASK) != USB_CH_EP_TYPE_INTR) {
 				RTK_LOGS(TAG, RTK_LOG_WARN, "Skip EP%02x type %d\n", ep_desc->bEndpointAddress, ep_desc->bmAttributes);
 			} else if (USB_EP_IS_IN(ep_desc->bEndpointAddress)) {
-				if (hid->ep_desc_in.bEndpointAddress == 0U) {
-					usb_os_memcpy((void *) & (hid->ep_desc_in), (const void *)ep_desc, sizeof(usbh_ep_desc_t));
+				if (itf->ep_desc_in.bEndpointAddress == 0U) {
+					usb_os_memcpy((void *) & (itf->ep_desc_in), (const void *)ep_desc, sizeof(usbh_ep_desc_t));
 				}
 			} else {
-				if (hid->ep_desc_out.bEndpointAddress == 0U) {
-					usb_os_memcpy((void *) & (hid->ep_desc_out), (const void *)ep_desc, sizeof(usbh_ep_desc_t));
+				if (itf->ep_desc_out.bEndpointAddress == 0U) {
+					usb_os_memcpy((void *) & (itf->ep_desc_out), (const void *)ep_desc, sizeof(usbh_ep_desc_t));
 				}
 			}
 			break;
@@ -880,155 +320,290 @@ static int usbh_hid_parse_details(usbh_itf_data_t *itf_data)
 			break;
 		}
 
-		desc += len;
-		itf_total_len += len;
+		offset += len;
 	}
+
+	/* The Interrupt IN endpoint is mandatory, Ref HID 1.11 4.4 */
+	if (itf->ep_desc_in.bEndpointAddress == 0U) {
+		RTK_LOGS(TAG, RTK_LOG_WARN, "Itf %d no INTR IN\n", itf->info.itf_num);
+		return -RTK_ERR_BADARG;
+	}
+
 	return RTK_SUCCESS;
 }
 
 /**
-  * @brief  Parse configuration descriptor
-  * @param  host: usb host structure
-  * @retval Status
-  */
-static int usbh_hid_parse_interface(usb_host_t *host)
-{
-	usbh_dev_id_t dev_id = {0,};
-	dev_id.bInterfaceClass = USBH_CLASS_HID;
-	dev_id.mMatchFlags = USBH_DEV_ID_MATCH_ITF_CLASS;
-	usbh_itf_data_t *itf_data = usbh_get_interface_descriptor(host, &dev_id);
-	int ret = RTK_SUCCESS;
-
-	if (itf_data != NULL) {
-		ret = usbh_hid_parse_details(itf_data);
-		if (ret != RTK_SUCCESS) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "AC parse fail\n");
-			return ret;
-		}
-	} else {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Get if fail\n");
-		return -RTK_ERR_BADARG;
-	}
-
-	return ret;
-}
-
-static int usbh_hid_process_get_hid_report_desc(usb_host_t *host)
-{
-	usbh_setup_req_t setup;
-	usbh_hid_t *hid = &usbh_hid;
-
-	/* Ref HID 1.11 6.2.1: the first class descriptor is the Report descriptor. Anything else, a missing or
-	 * zeroed HID descriptor included, leaves no report layout to fetch. */
-	if ((hid->hid_desc.bNumDescriptors == 0U) || (hid->hid_desc.bReportDescriptorType != USBH_HID_REPORT_TYPE) ||
-		(hid->hid_desc.wDescriptorLength == 0U)) {
-		RTK_LOGS(TAG, RTK_LOG_WARN, "Bad HID desc, HID events off\n");
-		return -RTK_ERR_BADARG;
-	}
-
-	/* wDescriptorLength may reach 65535, Ref HID 1.11 6.2.1. A descriptor larger than hid_ctrl_buf
-	 * gets a buffer of its own, sized for the whole EP0 DMA window, kept only until it is parsed. */
-	if ((hid->hid_desc.wDescriptorLength > USBH_HID_CTRL_BUF_LEN) && (hid->report_desc_buf == NULL)) {
-		hid->report_desc_buf = (u8 *)usb_os_malloc(usb_get_dma_len(hid->hid_desc.wDescriptorLength, USB_MAX_EP0_SIZE));
-		if (hid->report_desc_buf == NULL) {
-			RTK_LOGS(TAG, RTK_LOG_WARN, "Report desc %dB no mem, HID events off\n", hid->hid_desc.wDescriptorLength);
-			return -RTK_ERR_NOMEM;
-		}
-	}
-
-	setup.req.bmRequestType = USB_D2H | USB_REQ_TYPE_STANDARD | USB_REQ_RECIPIENT_INTERFACE;
-	setup.req.bRequest = USB_REQ_GET_DESCRIPTOR;
-	setup.req.wValue = USBH_HID_REPORT_TYPE << 8;
-	setup.req.wIndex = hid->itf_idx;
-	setup.req.wLength = hid->hid_desc.wDescriptorLength;
-
-	return usbh_ctrl_request(host, &setup, (hid->report_desc_buf != NULL) ? hid->report_desc_buf : hid->hid_ctrl_buf);
-}
-
-/**
-  * @brief  Free the buffer of a report descriptor larger than hid_ctrl_buf
-  * @note   Host task only. report_desc may alias the buffer until setup() ends, so it is
-  *         pointed back at hid_ctrl_buf, which nothing parses any more by then.
-  * @param  hid: HID handle
+  * @brief  Add one HID interface unless it is collected already
+  * @param  itf_data: Interface descriptors
+  * @param  ignored: Counts the interfaces beyond USBH_HID_MAX_ITF_NUM
   * @retval None
   */
-static void usbh_hid_free_report_desc_buf(usbh_hid_t *hid)
-{
-	if (hid->report_desc_buf != NULL) {
-		if (hid->report_desc == hid->report_desc_buf) {
-			hid->report_desc = hid->hid_ctrl_buf;
-		}
-		usb_os_mfree((void *)hid->report_desc_buf);
-		hid->report_desc_buf = NULL;
-	}
-}
-
-/**
-  * @brief  Get hid report descriptor
-  * @param  host: Host handle
-  * @retval Status
-  */
-static int usbh_hid_handle_report_desc(usb_host_t *host)
+static void usbh_hid_add_interface(const usbh_itf_data_t *itf_data, u8 *ignored)
 {
 	usbh_hid_t *hid = &usbh_hid;
-	u32 rx_len;
-	int ret = RTK_SUCCESS;
+	usbh_hid_itf_t *itf;
+	u8 itf_num = itf_data->itf_desc_array[0].bInterfaceNumber;
 
-	if ((hid->pipe_in.ep_addr != 0U) && (hid->report_desc == NULL)) {
-		/* No SET_INTERFACE first: SET_CONFIGURATION already put the interface in its default alt 0 (Ref USB 2.0
-		 * 9.1.1.5, 9.6.5), which is the setting parsed */
-		ret = usbh_hid_process_get_hid_report_desc(host);
-		if (ret == RTK_SUCCESS) {
-			hid->report_desc = (hid->report_desc_buf != NULL) ? hid->report_desc_buf : hid->hid_ctrl_buf;
-			/* hid_ctrl is set by the parser together with the caps it publishes */
-			/* A short reply leaves stale bytes past what was received: parse only those received */
-			rx_len = usbh_get_last_ctrl_in_size(host);
-			if (rx_len > hid->hid_desc.wDescriptorLength) {
-				rx_len = hid->hid_desc.wDescriptorLength;
-			}
-			if (rx_len == 0U) {
-				/* Nothing to parse: keep the gate closed, as for a refused GET_DESCRIPTOR */
-				RTK_LOGS(TAG, RTK_LOG_WARN, "Empty report desc, HID events off\n");
-			} else {
-				usbh_hid_parse_hid_report_desc(hid->report_desc, (u16)rx_len);
-			}
-			/* Parsed into caps: a descriptor of its own buffer is not needed any more */
-			usbh_hid_free_report_desc_buf(hid);
-		} else if (ret != -RTK_ERR_BUSY) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "HID get report err %d, no support\n", ret);
-			usbh_hid_free_report_desc_buf(hid);
-			hid->hid_ctrl = 0;
-			ret = RTK_SUCCESS;
+	for (u8 i = 0U; i < hid->itf_cnt; i++) {
+		if (hid->itf[i].info.itf_num == itf_num) {
+			return;
 		}
+	}
+
+	if (hid->itf_cnt >= USBH_HID_MAX_ITF_NUM) {
+		(*ignored)++;
+		return;
+	}
+
+	itf = &(hid->itf[hid->itf_cnt]);
+	if (usbh_hid_parse_interface(itf, itf_data) == RTK_SUCCESS) {
+		hid->itf_cnt++;
 	} else {
-		hid->hid_ctrl = 0;
+		usb_os_memset((void *)itf, 0, sizeof(usbh_hid_itf_t));
+		RTK_LOGS(TAG, RTK_LOG_WARN, "Skip itf %d\n", itf_num);
 	}
-
-	return ret;
 }
 
 /**
-  * @brief  Process the INTR IN transfer for the HID report endpoint.
-  *         Drives one step of the transfer state machine via
-  *         usbh_transfer_process(): on completion (XFER_IDLE) the report is
-  *         copied into the ring buffer; on START it re-notifies to trigger the
-  *         next tick; on ERROR it logs the URB state. Mirrors
-  *         usbh_cdc_ecm_process_intr_in().
+  * @brief  Find the HID interfaces of the active configuration
+  * @note   The core hands every HID interface of the device to this class. Interfaces of one
+  *         subclass/protocol are chained, so each chain HID 1.11 4.2/4.3 defines is walked; a
+  *         non-standard encoding, e.g. subclass 0xFF, is reached by a match on the class alone.
   * @param  host: Host handle
+  * @retval RTK_SUCCESS if at least one is usable, -RTK_ERR_BADARG otherwise
   */
-static void usbh_hid_in_process(usb_host_t *host)
+static int usbh_hid_collect_interfaces(usb_host_t *host)
 {
 	usbh_hid_t *hid = &usbh_hid;
-	usbh_pipe_t *pipe = &(hid->pipe_in);
-	usbh_urb_state_t urb_state = USBH_URB_IDLE;
+	usbh_dev_id_t dev_id = {0,};
+	usbh_itf_data_t *itf_data;
+	u8 ignored = 0U;
+
+	dev_id.bInterfaceClass = USBH_CLASS_HID;
+	dev_id.mMatchFlags = USBH_DEV_ID_MATCH_ITF_INFO;
+
+	/* Boot keyboard, boot mouse and non-boot interfaces form one chain each */
+	for (u8 sub = 0U; sub <= USBH_HID_SUBCLASS_BOOT; sub++) {
+		for (u8 proto = 0U; proto <= USB_HID_PROTOCOL_MOUSE; proto++) {
+			dev_id.bInterfaceSubClass = sub;
+			dev_id.bInterfaceProtocol = proto;
+			for (itf_data = usbh_get_interface_descriptor(host, &dev_id); itf_data != NULL; itf_data = itf_data->next) {
+				usbh_hid_add_interface(itf_data, &ignored);
+			}
+		}
+	}
+
+	/* Room left: the first HID interface whatever its subclass and protocol, and the ones chained to it.
+	 * Not once full, it could only count again an interface the walk above already ignored. */
+	if (hid->itf_cnt < USBH_HID_MAX_ITF_NUM) {
+		dev_id.mMatchFlags = USBH_DEV_ID_MATCH_ITF_CLASS;
+		for (itf_data = usbh_get_interface_descriptor(host, &dev_id); itf_data != NULL; itf_data = itf_data->next) {
+			usbh_hid_add_interface(itf_data, &ignored);
+		}
+	}
+
+	if (ignored != 0U) {
+		RTK_LOGS(TAG, RTK_LOG_WARN, "%d HID itf over %d ignored\n", ignored, USBH_HID_MAX_ITF_NUM);
+	}
+
+	return (hid->itf_cnt != 0U) ? RTK_SUCCESS : -RTK_ERR_BADARG;
+}
+
+/**
+  * @brief  Open the pipes of one interface
+  * @param  host: Host handle
+  * @param  itf: Interface
+  * @retval RTK_SUCCESS, or the error with nothing left open
+  */
+static int usbh_hid_open_interface(usb_host_t *host, usbh_hid_itf_t *itf)
+{
+	u16 mps = itf->ep_desc_in.wMaxPacketSize & USB_EP_MPS_SIZE_MASK;
+
+	if (mps == 0U) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Itf %d IN MPS 0\n", itf->info.itf_num);
+		return -RTK_ERR_BADARG;
+	}
+
+	/* Every IN transaction lands in in_buf and the controller writes a whole packet, so in_buf
+	 * covers the DMA window of one packet, Ref usb_get_dma_len() */
+	itf->in_buf = (u8 *)usb_os_malloc(usb_get_dma_len(mps, mps));
+	if (itf->in_buf == NULL) {
+		return -RTK_ERR_NOMEM;
+	}
+
+	if (usbh_open_pipe(host, &(itf->pipe_in), &(itf->ep_desc_in), &usbh_hid_driver) != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Open itf %d IN fail\n", itf->info.itf_num);
+		usbh_hid_close_interface(host, itf);
+		return -RTK_ERR_BADARG;
+	}
+	itf->pipe_in.xfer_buf = itf->in_buf;
+	itf->pipe_in.xfer_buf_len = usb_get_dma_len(mps, mps);
+
+	if (itf->ep_desc_out.bEndpointAddress != 0U) {
+		if (usbh_open_pipe(host, &(itf->pipe_out), &(itf->ep_desc_out), &usbh_hid_driver) != RTK_SUCCESS) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Open itf %d OUT fail\n", itf->info.itf_num);
+			usbh_hid_close_interface(host, itf);
+			return -RTK_ERR_BADARG;
+		}
+		itf->info.has_out_ep = 1U;
+	}
+
+	return RTK_SUCCESS;
+}
+
+/**
+  * @brief  Close the pipes of one interface and free its buffers
+  * @note   Host task only, or once the class is unregistered. Safe on a half opened interface.
+  * @param  host: Host handle
+  * @param  itf: Interface
+  * @retval None
+  */
+static void usbh_hid_close_interface(usb_host_t *host, usbh_hid_itf_t *itf)
+{
+	/* Closed before the buffers go: the controller may still write in_buf */
+	if (itf->pipe_in.pipe_num != 0U) {
+		usbh_close_pipe(host, &(itf->pipe_in));
+	}
+	if (itf->pipe_out.pipe_num != 0U) {
+		usbh_close_pipe(host, &(itf->pipe_out));
+	}
+	usb_os_mfree((void *)itf->in_buf);
+	usb_os_mfree((void *)itf->report_desc);
+	usb_os_memset((void *)itf, 0, sizeof(usbh_hid_itf_t));
+}
+
+/**
+  * @brief  One step of the setup of an interface: GET_DESCRIPTOR(Report), SET_IDLE(0), the user setup(),
+  *         then SET_PROTOCOL(Boot) if it asks for it
+  * @note   No request is fatal: a refused Report descriptor leaves the application with the raw reports,
+  *         SET_IDLE is optional for any device but a boot keyboard (Ref HID 1.11 7.2.4), and a refused
+  *         SET_PROTOCOL leaves the Report protocol.
+  * @param  host: Host handle
+  * @param  itf: Interface
+  * @param  idx: Interface index
+  * @retval RTK_SUCCESS once done, -RTK_ERR_BUSY while a request is in flight
+  */
+static int usbh_hid_setup_interface(usb_host_t *host, usbh_hid_itf_t *itf, u8 idx)
+{
+	usbh_hid_t *hid = &usbh_hid;
+	u8 protocol = USBH_HID_PROTOCOL_REPORT;
+	usbh_setup_req_t setup;
+	u16 len = itf->hid_desc.wDescriptorLength;
+	u32 rx_len;
+	int ret;
+
+	switch (itf->setup_step) {
+	case USBH_HID_SETUP_GET_REPORT_DESC:
+		/* The first class descriptor is the Report descriptor, Ref HID 1.11 6.2.1 */
+		if ((itf->hid_desc.bNumDescriptors == 0U) || (itf->hid_desc.bReportDescriptorType != USBH_HID_REPORT_TYPE) || (len == 0U)) {
+			RTK_LOGS(TAG, RTK_LOG_WARN, "Itf %d no report desc\n", itf->info.itf_num);
+			itf->setup_step = USBH_HID_SETUP_SET_IDLE;
+			return -RTK_ERR_BUSY;
+		}
+		/* wDescriptorLength may reach 65535: the buffer covers the whole EP0 DMA window */
+		if (itf->report_desc == NULL) {
+			itf->report_desc = (u8 *)usb_os_malloc(usb_get_dma_len(len, USB_MAX_EP0_SIZE));
+			if (itf->report_desc == NULL) {
+				itf->setup_step = USBH_HID_SETUP_SET_IDLE;
+				return -RTK_ERR_BUSY;
+			}
+		}
+		setup.req.bmRequestType = USB_D2H | USB_REQ_TYPE_STANDARD | USB_REQ_RECIPIENT_INTERFACE;
+		setup.req.bRequest = USB_REQ_GET_DESCRIPTOR;
+		setup.req.wValue = (u16)((u16)USBH_HID_REPORT_TYPE << 8);
+		setup.req.wIndex = itf->info.itf_num;
+		setup.req.wLength = len;
+		ret = usbh_ctrl_request(host, &setup, itf->report_desc);
+		if (ret == RTK_SUCCESS) {
+			/* A short reply leaves stale bytes past what was received */
+			rx_len = usbh_get_last_ctrl_in_size(host);
+			itf->info.report_desc = itf->report_desc;
+			itf->info.report_desc_len = (u16)((rx_len < len) ? rx_len : len);
+			itf->setup_step = USBH_HID_SETUP_SET_IDLE;
+		} else if (ret != -RTK_ERR_BUSY) {
+			RTK_LOGS(TAG, RTK_LOG_WARN, "Itf %d report desc err %d\n", itf->info.itf_num, ret);
+			usb_os_mfree((void *)itf->report_desc);
+			itf->report_desc = NULL;
+			itf->setup_step = USBH_HID_SETUP_SET_IDLE;
+		} else {
+			/* In flight */
+		}
+		return -RTK_ERR_BUSY;
+
+	case USBH_HID_SETUP_SET_IDLE:
+		/* Duration 0: a report only when the data changes, for every Report ID, Ref HID 1.11 7.2.4 */
+		setup.req.bmRequestType = USB_H2D | USB_REQ_TYPE_CLASS | USB_REQ_RECIPIENT_INTERFACE;
+		setup.req.bRequest = USBH_HID_SET_IDLE;
+		setup.req.wValue = 0U;
+		setup.req.wIndex = itf->info.itf_num;
+		setup.req.wLength = 0U;
+		ret = usbh_ctrl_request(host, &setup, NULL);
+		if (ret == -RTK_ERR_BUSY) {
+			return ret;
+		}
+		if (ret != RTK_SUCCESS) {
+			RTK_LOGS(TAG, RTK_LOG_DEBUG, "Itf %d SET_IDLE err %d\n", itf->info.itf_num, ret);
+		}
+		itf->setup_step = USBH_HID_SETUP_NOTIFY;
+		return -RTK_ERR_BUSY;
+
+	case USBH_HID_SETUP_NOTIFY:
+		if ((hid->cb != NULL) && (hid->cb->setup != NULL)) {
+			protocol = hid->cb->setup(idx, &(itf->info));
+		}
+		/* Only a boot interface knows the Boot protocol, Ref HID 1.11 7.2.6 */
+		if ((protocol == USBH_HID_PROTOCOL_BOOT) && (itf->info.subclass == USBH_HID_SUBCLASS_BOOT)) {
+			itf->setup_step = USBH_HID_SETUP_SET_PROTOCOL;
+			return -RTK_ERR_BUSY;
+		}
+		itf->setup_step = USBH_HID_SETUP_DONE;
+		return RTK_SUCCESS;
+
+	case USBH_HID_SETUP_SET_PROTOCOL:
+		setup.req.bmRequestType = USB_H2D | USB_REQ_TYPE_CLASS | USB_REQ_RECIPIENT_INTERFACE;
+		setup.req.bRequest = USBH_HID_SET_PROTOCOL;
+		setup.req.wValue = USBH_HID_PROTOCOL_BOOT;
+		setup.req.wIndex = itf->info.itf_num;
+		setup.req.wLength = 0U;
+		ret = usbh_ctrl_request(host, &setup, NULL);
+		if (ret == -RTK_ERR_BUSY) {
+			return ret;
+		}
+		if (ret != RTK_SUCCESS) {
+			RTK_LOGS(TAG, RTK_LOG_WARN, "Itf %d boot protocol err %d\n", itf->info.itf_num, ret);
+		}
+		itf->setup_step = USBH_HID_SETUP_DONE;
+		return RTK_SUCCESS;
+
+	default:
+		return RTK_SUCCESS;
+	}
+}
+
+/**
+  * @brief  Drive the INTR IN pipe of one interface
+  * @param  host: Host handle
+  * @param  idx: Interface index
+  * @retval None
+  */
+static void usbh_hid_in_process(usb_host_t *host, u8 idx)
+{
+	usbh_hid_t *hid = &usbh_hid;
+	usbh_hid_itf_t *itf = &(hid->itf[idx]);
+	usbh_pipe_t *pipe = &(itf->pipe_in);
+	usbh_urb_state_t urb_state;
 	u32 len;
+	int ret;
 
 	switch (pipe->xfer_state) {
 	case USBH_EP_XFER_START:
 		if (usbh_get_elapsed_ticks(host, pipe->tick) > pipe->ep_interval) {
 			pipe->tick = usbh_get_tick(host);
 			pipe->xfer_len = pipe->ep_mps;
-			if (usbh_transfer_data(host, pipe) == RTK_SUCCESS) {
+			/* -RTK_ERR_BUSY: the previous poll completed before its channel could be halted, its
+			 * report follows as URB_DONE and is read in BUSY, as usbh_transfer_process() does */
+			ret = usbh_transfer_data(host, pipe);
+			if ((ret == RTK_SUCCESS) || (ret == -RTK_ERR_BUSY)) {
 				pipe->xfer_state = USBH_EP_XFER_BUSY;
 			}
 		}
@@ -1038,38 +613,36 @@ static void usbh_hid_in_process(usb_host_t *host)
 		urb_state = usbh_get_urb_state(host, pipe);
 		if (urb_state == USBH_URB_DONE) {
 			len = usbh_get_last_transfer_size(host, pipe);
-			/* A ring node keeps USBH_HID_MSG_LENGTH bytes, enough for the consumer reports this
-			 * class parses: a longer report is cut there, so tell it apart from a lost one */
-			if ((len > USBH_HID_MSG_LENGTH) && (hid->report_cut_logged == 0U)) {
+			if (len > USBH_HID_REPORT_MAX_LEN) {
 				/* Once per attach, the device would repeat it on every poll */
-				hid->report_cut_logged = 1U;
-				RTK_LOGS(TAG, RTK_LOG_WARN, "Report %d cut to %d\n", len, USBH_HID_MSG_LENGTH);
+				if (itf->report_cut_logged == 0U) {
+					itf->report_cut_logged = 1U;
+					RTK_LOGS(TAG, RTK_LOG_WARN, "Itf %d report %d cut to %d\n", itf->info.itf_num, len, USBH_HID_REPORT_MAX_LEN);
+				}
+				len = USBH_HID_REPORT_MAX_LEN;
 			}
-			/* save to ring buffer; a full ring means the parse thread fell behind */
-			if (usb_ringbuf_add_tail(&(hid->report_msg), pipe->xfer_buf, len, 1) != RTK_SUCCESS) {
+			/* A node holds the interface index, then the report. The producer is this host task only. */
+			hid->rx_node[0] = idx;
+			usb_os_memcpy((void *) & (hid->rx_node[1]), (const void *)pipe->xfer_buf, len);
+			if (usb_ringbuf_add_tail(&(hid->report_msg), hid->rx_node, len + 1U, 1U) != RTK_SUCCESS) {
 				RTK_LOGS(TAG, RTK_LOG_WARN, "Report drop\n");
 			}
 			usb_os_sema_give(hid->report_sema);
 			pipe->xfer_state = USBH_EP_XFER_START;
-		} else if (urb_state == USBH_URB_BUSY) {
-			if (usbh_get_elapsed_ticks(host, pipe->tick) > pipe->ep_interval) {
-				pipe->xfer_state = USBH_EP_XFER_START;
-			}
+		} else if (urb_state == USBH_URB_STALL) {
+			/* A halted endpoint answers every IN with STALL until the host clears it, Ref USB 2.0
+			 * 9.4.5: park the pipe until the halt is cleared */
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Itf %d INTR IN stall\n", itf->info.itf_num);
+			pipe->xfer_state = USBH_EP_XFER_IDLE;
+			itf->halt_pending = 1U;
+			usbh_notify(host, 0U, &usbh_hid_driver);
 		} else if (urb_state == USBH_URB_ERROR) {
 			pipe->xfer_state = USBH_EP_XFER_START;
-		} else if (urb_state == USBH_URB_STALL) {
-			/* A halted endpoint answers every IN with STALL until the host clears it (Ref USB 2.0 8.4.5 /
-			 * 9.4.5), so polling on would only repeat it: park the pipe until the halt is cleared */
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "INTR IN stall\n");
-			pipe->xfer_state = USBH_EP_XFER_IDLE;
-			hid->halt_pending = 1U;
-			usbh_notify(host, 0U, &usbh_hid_driver);
-		} else if (urb_state == USBH_URB_IDLE) {
-			if (usbh_get_elapsed_ticks(host, pipe->tick) > (10U * pipe->ep_interval)) {
-				pipe->xfer_state = USBH_EP_XFER_START;
-			}
+		} else if (usbh_get_elapsed_ticks(host, pipe->tick) > ((urb_state == USBH_URB_BUSY) ? pipe->ep_interval : (10U * pipe->ep_interval))) {
+			/* NAKed or silent for a while: poll again */
+			pipe->xfer_state = USBH_EP_XFER_START;
 		} else {
-			/* No other URB state is reported for an INTR pipe */
+			/* In flight */
 		}
 		break;
 
@@ -1079,41 +652,56 @@ static void usbh_hid_in_process(usb_host_t *host)
 }
 
 /**
-  * @brief  Clear the halted INTR IN endpoint, re-enumerate the device if that keeps failing
-  * @note   Host task only. CLEAR_FEATURE(ENDPOINT_HALT) also resets the device data toggle to DATA0 (Ref USB 2.0
-  *         9.4.5), matching the host toggle the STALL interrupt already reset. The pipe is then polled again.
+  * @brief  Drive the INTR OUT pipe of one interface
   * @param  host: Host handle
+  * @param  itf: Interface
   * @retval None
   */
-static void usbh_hid_process_halt(usb_host_t *host)
+static void usbh_hid_out_process(usb_host_t *host, usbh_hid_itf_t *itf)
 {
-	usbh_hid_t *hid = &usbh_hid;
-	usbh_setup_req_t setup;
+	usbh_pipe_t *pipe = &(itf->pipe_out);
+
+	if (usbh_transfer_process(host, pipe) != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Itf %d OUT fail %d\n", itf->info.itf_num, usbh_get_urb_state(host, pipe));
+	}
+
+	if (pipe->xfer_state == USBH_EP_XFER_START) {
+		usbh_notify(host, pipe->pipe_num, &usbh_hid_driver);
+	} else if (pipe->xfer_state == USBH_EP_XFER_ERROR) {
+		pipe->xfer_state = USBH_EP_XFER_IDLE;
+	} else {
+		/* In flight or done */
+	}
+}
+
+/**
+  * @brief  Clear the halted INTR IN endpoint of an interface, re-enumerate the device if that keeps failing
+  * @note   Host task only. CLEAR_FEATURE(ENDPOINT_HALT) resets the device data toggle to DATA0, Ref USB 2.0
+  *         9.4.5, matching the host toggle the STALL interrupt already reset.
+  * @param  host: Host handle
+  * @param  itf: Interface
+  * @retval None
+  */
+static void usbh_hid_process_halt(usb_host_t *host, usbh_hid_itf_t *itf)
+{
 	int ret;
 
 	/* Re-enumeration already requested: wait for the detach it brings */
-	if (hid->halt_retry_cnt >= USBH_HID_HALT_RETRY_MAX_CNT) {
+	if (itf->halt_retry_cnt >= USBH_HID_HALT_RETRY_MAX_CNT) {
 		return;
 	}
 
-	/* Sent through usbh_ctrl_request(), which rejects the call while another class of a composite device owns
-	 * EP0; usbh_ctrl_clear_feature() lacks that owner check */
-	setup.req.bmRequestType = USB_H2D | USB_REQ_TYPE_STANDARD | USB_REQ_RECIPIENT_ENDPOINT;
-	setup.req.bRequest = USB_REQ_CLEAR_FEATURE;
-	setup.req.wValue = USB_FEATURE_EP_HALT;
-	setup.req.wIndex = hid->pipe_in.ep_addr;
-	setup.req.wLength = 0U;
-	ret = usbh_ctrl_request(host, &setup, NULL);
+	ret = usbh_ctrl_clear_feature(host, itf->pipe_in.ep_addr);
 	if (ret == RTK_SUCCESS) {
-		RTK_LOGS(TAG, RTK_LOG_WARN, "EP%02x halt cleared\n", hid->pipe_in.ep_addr);
-		hid->halt_pending = 0U;
-		hid->halt_retry_cnt = 0U;
-		hid->pipe_in.xfer_state = USBH_EP_XFER_START;
-		usbh_notify(host, hid->pipe_in.pipe_num, &usbh_hid_driver);
+		RTK_LOGS(TAG, RTK_LOG_WARN, "EP%02x halt cleared\n", itf->pipe_in.ep_addr);
+		itf->halt_pending = 0U;
+		itf->halt_retry_cnt = 0U;
+		itf->pipe_in.xfer_state = USBH_EP_XFER_START;
+		usbh_notify(host, itf->pipe_in.pipe_num, &usbh_hid_driver);
 	} else if (ret != -RTK_ERR_BUSY) {
-		hid->halt_retry_cnt++;
-		if (hid->halt_retry_cnt >= USBH_HID_HALT_RETRY_MAX_CNT) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "EP%02x clear halt fail, re-enum\n", hid->pipe_in.ep_addr);
+		itf->halt_retry_cnt++;
+		if (itf->halt_retry_cnt >= USBH_HID_HALT_RETRY_MAX_CNT) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "EP%02x clear halt fail, re-enum\n", itf->pipe_in.ep_addr);
 			ret = usbh_reenumerate();
 			if (ret != RTK_SUCCESS) {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "Re-enum err %d\n", ret);
@@ -1127,55 +715,64 @@ static void usbh_hid_process_halt(usb_host_t *host)
 }
 
 /**
-  * @brief  Attach callback.
+  * @brief  Issue the application class request, see usbh_hid_ctrl_sync()
+  * @note   Host task only
+  * @param  host: Host handle
+  * @retval None
+  */
+static void usbh_hid_process_request(usb_host_t *host)
+{
+	usbh_hid_t *hid = &usbh_hid;
+	int ret;
+
+	if (hid->req_state == USBH_HID_REQ_PENDING) {
+		hid->req_state = USBH_HID_REQ_BUSY;
+	}
+
+	ret = usbh_ctrl_request(host, &(hid->req_setup), hid->ctrl_buf);
+	if (ret == -RTK_ERR_BUSY) {
+		/* In flight, or EP0 owned by another class: the core drives this class again */
+		return;
+	}
+
+	hid->req_rx_len = ((hid->req_setup.req.bmRequestType & USB_D2H) != 0U) ? usbh_get_last_ctrl_in_size(host) : 0U;
+	hid->req_status = ret;
+	hid->req_state = USBH_HID_REQ_IDLE;
+	usb_os_sema_give(hid->req_done_sema);
+}
+
+/**
+  * @brief  Attach callback
   * @param  host: Host handle
   * @retval Status
   */
 static int usbh_hid_attach(usb_host_t *host)
 {
 	usbh_hid_t *hid = &usbh_hid;
-	usbh_pipe_t *pipe = NULL;
-
-	int status = RTK_FAIL;
+	int ret;
 
 	hid->host = host;
-	hid->halt_pending = 0U;
-	hid->halt_retry_cnt = 0U;
-	hid->report_cut_logged = 0U;
-	/* The core runs no detach() after a failed attach(), so what a failed one parsed is still here: parse_details()
-	   keeps an endpoint already set, and would hand the previous device's endpoints to this one */
-	usb_os_memset(&(hid->hid_desc), 0, sizeof(hid->hid_desc));
-	usb_os_memset(&(hid->ep_desc_in), 0, sizeof(hid->ep_desc_in));
-	usb_os_memset(&(hid->ep_desc_out), 0, sizeof(hid->ep_desc_out));
+	hid->setup_idx = 0U;
+	/* The core runs no detach() after a failed attach(), so start from empty interfaces */
+	hid->itf_cnt = 0U;
+	usb_os_memset((void *)hid->itf, 0, sizeof(hid->itf));
 
-	status = usbh_hid_parse_interface(host);
-	if (status != RTK_SUCCESS) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Cfg parse fail\n");
-		return status;
+	ret = usbh_hid_collect_interfaces(host);
+	if (ret != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "No usable HID itf\n");
+		return ret;
 	}
 
-	if (hid->ep_desc_in.bEndpointAddress != 0U) {
-		/* Each IN transaction lands in hid_ctrl_buf and the controller writes a whole packet of
-		 * up to wMaxPacketSize bytes, so an endpoint larger than the buffer would overrun it */
-		if ((hid->ep_desc_in.wMaxPacketSize & USB_EP_MPS_SIZE_MASK) > USBH_HID_CTRL_BUF_LEN) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "INTR IN MPS %d unsupported\n", hid->ep_desc_in.wMaxPacketSize & USB_EP_MPS_SIZE_MASK);
-			return -RTK_ERR_BADARG;
-		}
-		pipe = &(hid->pipe_in);
-		if (usbh_open_pipe(host, pipe, &(hid->ep_desc_in), &usbh_hid_driver) != RTK_SUCCESS) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "Open intr in pipe fail\n");
-			return -RTK_ERR_BADARG;
-		}
-	}
-
-	/* Open the Interrupt OUT pipe if the interface exposes one. */
-	if (hid->ep_desc_out.bEndpointAddress != 0U) {
-		if (usbh_open_pipe(host, &(hid->pipe_out), &(hid->ep_desc_out), &usbh_hid_driver) != RTK_SUCCESS) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "Open intr out pipe fail\n");
-			if (hid->pipe_in.pipe_num != 0U) {
-				usbh_close_pipe(host, &(hid->pipe_in));
+	for (u8 i = 0U; i < hid->itf_cnt; i++) {
+		ret = usbh_hid_open_interface(host, &(hid->itf[i]));
+		if (ret != RTK_SUCCESS) {
+			/* Unwind the interfaces already opened */
+			while (i > 0U) {
+				i--;
+				usbh_hid_close_interface(host, &(hid->itf[i]));
 			}
-			return -RTK_ERR_BADARG;
+			hid->itf_cnt = 0U;
+			return ret;
 		}
 	}
 
@@ -1187,7 +784,7 @@ static int usbh_hid_attach(usb_host_t *host)
 }
 
 /**
-  * @brief  Detach callback.
+  * @brief  Detach callback
   * @param  host: Host handle
   * @retval None
   */
@@ -1195,34 +792,29 @@ static void usbh_hid_detach(usb_host_t *host)
 {
 	usbh_hid_t *hid = &usbh_hid;
 
-	if (hid->pipe_in.pipe_num != 0U) {
-		usbh_close_pipe(host, &(hid->pipe_in));
-	}
-
-	if (hid->pipe_out.pipe_num != 0U) {
-		usbh_close_pipe(host, &(hid->pipe_out));
-	}
-	hid->halt_pending = 0U;
-	hid->halt_retry_cnt = 0U;
-
-	/* Close the gate under the lock, so no caps snapshot is left half taken, see usbh_hid_parse_hid_report_desc() */
+	/* Close the gate first: no report is queued and no request accepted from here on */
 	usb_os_enter_critical();
-	hid->hid_ctrl = 0U;
+	hid->ready = 0U;
 	usb_os_exit_critical();
-	/* A fetch the device left mid-way */
-	usbh_hid_free_report_desc_buf(hid);
-	hid->report_desc = NULL;
-	usb_os_memset(&(hid->hid_desc), 0, sizeof(hid->hid_desc));
-	usb_os_memset(&(hid->ep_desc_in), 0, sizeof(hid->ep_desc_in));
-	usb_os_memset(&(hid->ep_desc_out), 0, sizeof(hid->ep_desc_out));
-	hid->itf_idx = 0;
-	hid->itf_alt_idx = 0;
-	/* The parse thread keeps consuming on another core under SMP: reset under the lock it
-	   dequeues with, so it never writes back a head index from before the reset. The producer,
-	   usbh_hid_in_process(), runs in this same host task. */
+
+	/* A request waiting for the host task ends now: the device is gone */
+	if (hid->req_state != USBH_HID_REQ_IDLE) {
+		hid->req_status = RTK_FAIL;
+		hid->req_state = USBH_HID_REQ_IDLE;
+		usb_os_sema_give(hid->req_done_sema);
+	}
+
+	/* The report thread keeps consuming on another core under SMP: drop under the lock it dequeues
+	 * with, so it never writes back a head index from before the reset */
 	usb_os_enter_critical();
 	usb_ringbuf_reset(&(hid->report_msg));
 	usb_os_exit_critical();
+
+	/* The Report descriptors handed to setup() go with the interfaces, see usbh_hid_itf_info_t */
+	for (u8 i = 0U; i < hid->itf_cnt; i++) {
+		usbh_hid_close_interface(host, &(hid->itf[i]));
+	}
+	hid->itf_cnt = 0U;
 
 	if ((hid->cb != NULL) && (hid->cb->detached != NULL)) {
 		hid->cb->detached();
@@ -1230,53 +822,30 @@ static void usbh_hid_detach(usb_host_t *host)
 }
 
 /**
-  * @brief  Standard control requests handling callback
+  * @brief  Setup callback: set up every interface in turn, one control request per call
   * @param  host: Host handle
-  * @retval Status
+  * @retval RTK_SUCCESS once every interface is set up, -RTK_ERR_BUSY while in progress
   */
 static int usbh_hid_setup(usb_host_t *host)
 {
 	usbh_hid_t *hid = &usbh_hid;
-	usbh_pipe_t *pipe = &(hid->pipe_in);
-	int ret;
+	usbh_hid_itf_t *itf;
 
-	ret = usbh_hid_handle_report_desc(host);
-	if (ret != RTK_SUCCESS) {
-		return ret;
+	while (hid->setup_idx < hid->itf_cnt) {
+		itf = &(hid->itf[hid->setup_idx]);
+		if (usbh_hid_setup_interface(host, itf, hid->setup_idx) == -RTK_ERR_BUSY) {
+			usbh_notify(host, 0U, &usbh_hid_driver);
+			return -RTK_ERR_BUSY;
+		}
+		itf->pipe_in.xfer_state = USBH_EP_XFER_START;
+		hid->setup_idx++;
 	}
 
-	if ((hid->cb != NULL) && (hid->cb->setup != NULL)) {
-		hid->cb->setup();
-	}
-
-	pipe->xfer_state = USBH_EP_XFER_START;
-	pipe->xfer_buf = hid->hid_ctrl_buf;
+	usb_os_enter_critical();
+	hid->ready = 1U;
+	usb_os_exit_critical();
 
 	return RTK_SUCCESS;
-}
-
-/**
-  * @brief  Process the INTR OUT transfer for the HID report endpoint.
-  *         Drives one step of the transfer state machine via
-  *         usbh_transfer_process(): on completion (XFER_IDLE) the pipe is
-  *         freed for the next usbh_hid_send_report(); on START it re-notifies
-  *         to trigger the next tick; on ERROR it logs and restores IDLE so the
-  *         pipe does not stay busy forever. Mirrors usbh_cdc_acm_process_tx().
-  * @param  host: Host handle
-  */
-static void usbh_hid_out_process(usb_host_t *host)
-{
-	usbh_hid_t *hid = &usbh_hid;
-	usbh_pipe_t *pipe_out = &(hid->pipe_out);
-
-	usbh_transfer_process(host, pipe_out);
-
-	if (pipe_out->xfer_state == USBH_EP_XFER_START) {
-		usbh_notify(host, pipe_out->pipe_num, &usbh_hid_driver);
-	} else if (pipe_out->xfer_state == USBH_EP_XFER_ERROR) {
-		pipe_out->xfer_state = USBH_EP_XFER_IDLE;
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "HID OUT fail: %d\n", usbh_get_urb_state(host, pipe_out));
-	}
 }
 
 /**
@@ -1288,76 +857,188 @@ static void usbh_hid_out_process(usb_host_t *host)
 static void usbh_hid_process(usb_host_t *host, usbh_drv_msg_t *msg)
 {
 	usbh_hid_t *hid = &usbh_hid;
-	usbh_pipe_t *pipe = &(hid->pipe_in);
+	usbh_hid_itf_t *itf;
+	u8 halt = 0U;
 
-	/* The core routes a driver message to the pipe's owning driver only, so the pipe
-	 * checks are defensive guards against a stale/closed pipe. */
-	if (hid->halt_pending != 0U) {
-		/* Served before any pipe message: the IN pipe stays parked until the halt is cleared */
-		usbh_hid_process_halt(host);
-	} else if ((msg != NULL) && (hid->hid_ctrl_buf != NULL) && (pipe->pipe_num != 0U) && (msg->pipe_num == pipe->pipe_num)) {
-		usbh_hid_in_process(host);
-	} else {
-		/* Not the IN pipe */
+	if (msg == NULL) {
+		return;
 	}
 
-	if ((msg != NULL) && (hid->pipe_out.pipe_num != 0U) && (msg->pipe_num == hid->pipe_out.pipe_num)) {
-		usbh_hid_out_process(host);
+	/* One EP0 user at a time: an application request already issued runs to its end, then a halt
+	 * recovery, then a new application request */
+	if (hid->req_state == USBH_HID_REQ_BUSY) {
+		usbh_hid_process_request(host);
+	} else {
+		for (u8 i = 0U; i < hid->itf_cnt; i++) {
+			if (hid->itf[i].halt_pending != 0U) {
+				usbh_hid_process_halt(host, &(hid->itf[i]));
+				halt = 1U;
+				break;
+			}
+		}
+		if ((halt == 0U) && (hid->req_state == USBH_HID_REQ_PENDING)) {
+			usbh_hid_process_request(host);
+		}
+	}
+
+	if (msg->pipe_num == 0U) {
+		return;
+	}
+
+	for (u8 i = 0U; i < hid->itf_cnt; i++) {
+		itf = &(hid->itf[i]);
+		if (msg->pipe_num == itf->pipe_in.pipe_num) {
+			if (itf->halt_pending == 0U) {
+				usbh_hid_in_process(host, i);
+			}
+			break;
+		}
+		if (msg->pipe_num == itf->pipe_out.pipe_num) {
+			usbh_hid_out_process(host, itf);
+			break;
+		}
 	}
 }
 
 /**
-  * @brief  Sof callback
-  * @note   This function is called within an interrupt service routine (ISR) context;
-  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @brief  SOF callback: drive every INTR IN pipe that has been idle for a while
+  * @note   ISR context, read only
   * @param  host: Host handle
   * @retval None
   */
 static void usbh_hid_sof(usb_host_t *host)
 {
 	usbh_hid_t *hid = &usbh_hid;
-	usbh_pipe_t *pipe = &(hid->pipe_in);
+	usbh_pipe_t *pipe;
 
-	if ((pipe->pipe_num != 0U) && (hid->halt_pending == 0U) &&
-		(usbh_get_elapsed_ticks(host, pipe->tick) > USBH_HID_TRIGGER_MAX_CNT)) {
-		usbh_notify(host, pipe->pipe_num, &usbh_hid_driver);
+	if (hid->ready == 0U) {
+		return;
+	}
+
+	for (u8 i = 0U; i < hid->itf_cnt; i++) {
+		pipe = &(hid->itf[i].pipe_in);
+		if ((pipe->pipe_num != 0U) && (hid->itf[i].halt_pending == 0U) &&
+			(usbh_get_elapsed_ticks(host, pipe->tick) > USBH_HID_TRIGGER_MAX_CNT)) {
+			usbh_notify(host, pipe->pipe_num, &usbh_hid_driver);
+		}
 	}
 }
 
-static void usbh_hid_msg_parse_thread(void *param)
+/**
+  * @brief  Report thread: hand every queued report to the application
+  * @param  param: Unused
+  * @retval None
+  */
+static void usbh_hid_report_thread(void *param)
 {
-	UNUSED(param);
 	usbh_hid_t *hid = &usbh_hid;
-	usb_ringbuf_manager_t *handle = &(hid->report_msg);
-	u8 read_cnt;
-	u8 ctrl_on;
+	const usbh_hid_usr_cb_t *cb;
+	u32 read_len;
 
-	while (hid->parse_task_exit == 0U) {
-		/* Serialized with the reset in usbh_hid_detach(), see there. A node is at most
-		   USBH_HID_MSG_LENGTH bytes, a short copy inside the lock. */
+	UNUSED(param);
+
+	while (hid->report_task_exit == 0U) {
+		/* Serialized with the reset in usbh_hid_detach(), a short copy inside the lock */
 		usb_os_enter_critical();
-		read_cnt = (u8)usb_ringbuf_remove_head(handle, hid->report_buf, USBH_HID_MSG_LENGTH, NULL);
+		read_len = usb_ringbuf_remove_head(&(hid->report_msg), hid->report_buf, USBH_HID_RING_NODE_LEN, NULL);
 		usb_os_exit_critical();
-		if (read_cnt != 0U) {
-			/* Gate and caps are read together under the lock they are written with */
-			usb_os_enter_critical();
-			ctrl_on = hid->hid_ctrl;
-			if (ctrl_on != 0U) {
-				hid->caps_snap = hid->vol_caps;
+		if (read_len > 1U) {
+			/* Read once: deinit may clear it on another core */
+			cb = hid->cb;
+			if ((cb != NULL) && (cb->report != NULL) && (hid->ready != 0U)) {
+				cb->report(hid->report_buf[0], &(hid->report_buf[1]), read_len - 1U);
 			}
-			usb_os_exit_critical();
-			if (ctrl_on != 0U) {
-				usbh_hid_parse_hid_msg(hid->report_buf, read_cnt);
-			}
-		} else {
-			/* Ring drained: sleep until in_process() queues a report or deinit asks us to
-			 * leave. A binary sema is enough, the ring is re-checked before every wait. */
+		} else if (read_len == 0U) {
+			/* Ring drained: the ring is checked again before every wait, a binary sema is enough */
 			usb_os_sema_take(hid->report_sema, USB_OS_SEMA_TIMEOUT);
+		} else {
+			/* Empty report: nothing to tell */
 		}
 	}
 
-	hid->parse_task_alive = 0;
+	hid->report_task_alive = 0U;
 	rtos_task_delete(NULL);
+}
+
+/**
+  * @brief  Issue one class request on an interface from the application and wait for it
+  * @note   Task context only. The host task issues it, so it is serialized with the class's own EP0 use
+  *         and arbitrated against the other classes of the device.
+  * @param  idx: Interface index
+  * @param  bm_request_type: bmRequestType
+  * @param  request: bRequest
+  * @param  value: wValue
+  * @param  tx: H2D data stage, NULL for none or a D2H request
+  * @param  rx: D2H data stage destination, NULL for a H2D request
+  * @param  len: In: wLength, NULL without data stage. Out: bytes received by a D2H request.
+  * @retval RTK_SUCCESS, -RTK_ERR_BADARG for a STALL or a bad argument, -RTK_ERR_TIMEOUT, or the transfer error
+  */
+static int usbh_hid_ctrl_sync(u8 idx, u8 bm_request_type, u8 request, u16 value, const u8 *tx, u8 *rx, u32 *len)
+{
+	usbh_hid_t *hid = &usbh_hid;
+	u32 wlen = (len != NULL) ? *len : 0U;
+	u32 rx_len;
+	int ret;
+
+	if ((usb_os_is_in_interrupt() != 0U) || (wlen > USBH_HID_CTRL_BUF_LEN) || (hid->req_lock == NULL) ||
+		((wlen != 0U) && ((((bm_request_type & USB_D2H) != 0U) ? (const u8 *)rx : tx) == NULL))) {
+		return -RTK_ERR_BADARG;
+	}
+
+	if (usb_os_lock(hid->req_lock) != RTK_SUCCESS) {
+		return -RTK_ERR_BUSY;
+	}
+
+	usb_os_enter_critical();
+	if ((hid->ready == 0U) || (idx >= hid->itf_cnt) || (hid->host == NULL)) {
+		usb_os_exit_critical();
+		usb_os_unlock(hid->req_lock);
+		return -RTK_ERR_BADARG;
+	}
+	/* A request that timed out may still be in flight in the host task, on req_setup and ctrl_buf */
+	if (hid->req_state != USBH_HID_REQ_IDLE) {
+		usb_os_exit_critical();
+		usb_os_unlock(hid->req_lock);
+		return -RTK_ERR_BUSY;
+	}
+	hid->req_setup.req.bmRequestType = bm_request_type;
+	hid->req_setup.req.bRequest = request;
+	hid->req_setup.req.wValue = value;
+	hid->req_setup.req.wIndex = hid->itf[idx].info.itf_num;
+	hid->req_setup.req.wLength = (u16)wlen;
+	hid->req_rx_len = 0U;
+	hid->req_status = -RTK_ERR_BUSY;
+	if ((tx != NULL) && (wlen != 0U)) {
+		usb_os_memcpy((void *)hid->ctrl_buf, (const void *)tx, wlen);
+	}
+	/* Drop a give left over by a detach that raced the end of the previous request */
+	usb_os_sema_take(hid->req_done_sema, 0U);
+	hid->req_state = USBH_HID_REQ_PENDING;
+	usb_os_exit_critical();
+
+	usbh_notify(hid->host, 0U, &usbh_hid_driver);
+
+	if (usb_os_sema_take(hid->req_done_sema, USBH_HID_CTRL_TIMEOUT_MS) == RTK_SUCCESS) {
+		ret = hid->req_status;
+		/* Copied before the lock goes: the next request reuses ctrl_buf */
+		if ((ret == RTK_SUCCESS) && (rx != NULL) && (len != NULL)) {
+			rx_len = (hid->req_rx_len < wlen) ? hid->req_rx_len : wlen;
+			usb_os_memcpy((void *)rx, (const void *)hid->ctrl_buf, rx_len);
+			*len = rx_len;
+		}
+	} else {
+		/* Longer than the core control timeout, so only a host task that stopped serving gets here */
+		ret = -RTK_ERR_TIMEOUT;
+		usb_os_enter_critical();
+		if (hid->req_state == USBH_HID_REQ_PENDING) {
+			hid->req_state = USBH_HID_REQ_IDLE;
+		}
+		usb_os_exit_critical();
+	}
+
+	usb_os_unlock(hid->req_lock);
+
+	return ret;
 }
 
 /* Exported functions --------------------------------------------------------*/
@@ -1377,17 +1058,18 @@ int usbh_hid_init(const usbh_hid_usr_cb_t *cb)
 		return -RTK_ERR_BADARG;
 	}
 
-	/* hid_ctrl_buf is only allocated by a successful init and freed by deinit: a second init would leak it,
-	   the ring and the parse task, and register the driver twice */
-	if (hid->hid_ctrl_buf != NULL) {
+	/* ctrl_buf is only allocated by a successful init and freed by deinit: a second init would leak it,
+	   the ring and the report task, and register the driver twice */
+	if (hid->ctrl_buf != NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Already init\n");
 		return -RTK_ERR_BADARG;
 	}
 
 	usb_os_memset((void *)hid, 0x00, sizeof(usbh_hid_t));
 
-	hid->hid_ctrl_buf = (u8 *)usb_os_malloc(USBH_HID_CTRL_BUF_LEN);
-	if (NULL == hid->hid_ctrl_buf) {
+	/* A D2H request reserves a whole EP0 packet */
+	hid->ctrl_buf = (u8 *)usb_os_malloc(usb_get_dma_len(USBH_HID_CTRL_BUF_LEN, USB_MAX_EP0_SIZE));
+	if (hid->ctrl_buf == NULL) {
 		return -RTK_ERR_NOMEM;
 	}
 
@@ -1395,13 +1077,11 @@ int usbh_hid_init(const usbh_hid_usr_cb_t *cb)
 		ret = cb->init();
 		if (ret != RTK_SUCCESS) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "CB init fail\n");
-			usb_os_mfree((void *)hid->hid_ctrl_buf);
-			hid->hid_ctrl_buf = NULL;
-			return ret;
+			goto cb_fail;
 		}
 	}
 
-	ret = usb_ringbuf_manager_init(&(hid->report_msg), USBH_HID_MST_COUNT, USBH_HID_MSG_LENGTH, 0);
+	ret = usb_ringbuf_manager_init(&(hid->report_msg), USBH_HID_RING_NODE_CNT, USBH_HID_RING_NODE_LEN, 0);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Ringbuffer init fail\n");
 		goto ring_fail;
@@ -1409,22 +1089,27 @@ int usbh_hid_init(const usbh_hid_usr_cb_t *cb)
 
 	ret = usb_os_sema_create(&(hid->report_sema));
 	if (ret != RTK_SUCCESS) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create sema fail\n");
-		goto sema_fail;
+		goto report_sema_fail;
 	}
 
-	/* Set before task creation, not inside the thread body: rtos_task_create()
-	   may not run the new task immediately, so if the caller requested an exit
-	   below before the thread got a chance to run, the thread's own startup
-	   code would otherwise clobber that request back to "keep running" and
-	   loop forever, hanging the wait loop below. */
-	hid->parse_task_alive = 1;
-	hid->parse_task_exit = 0;
+	ret = usb_os_sema_create(&(hid->req_done_sema));
+	if (ret != RTK_SUCCESS) {
+		goto req_sema_fail;
+	}
 
-	if (rtos_task_create(&(hid->msg_parse_task), ((const char *)"usbh_hid_msg_parse_thread"), usbh_hid_msg_parse_thread,
+	ret = usb_os_lock_create(&(hid->req_lock));
+	if (ret != RTK_SUCCESS) {
+		goto lock_fail;
+	}
+
+	/* Set before task creation: the new task may not run at once, and an exit asked for before would be
+	   overwritten by its own startup */
+	hid->report_task_alive = 1U;
+	hid->report_task_exit = 0U;
+	if (rtos_task_create(&(hid->report_task), "usbh_hid_report_thread", usbh_hid_report_thread,
 						 NULL, USBH_HID_THREAD_STACK_SIZE, USBH_HID_THREAD_PRIORITY) != RTK_SUCCESS) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create parse thread fail\n");
-		hid->parse_task_alive = 0;
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create report thread fail\n");
+		hid->report_task_alive = 0U;
 		ret = RTK_FAIL;
 		goto task_fail;
 	}
@@ -1435,11 +1120,11 @@ int usbh_hid_init(const usbh_hid_usr_cb_t *cb)
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Register class fail %d\n", ret);
 		hid->cb = NULL;
-		hid->parse_task_exit = 1;
+		hid->report_task_exit = 1U;
 		usb_os_sema_give(hid->report_sema);
-		do {
-			rtos_time_delay_ms(1);
-		} while (hid->parse_task_alive != 0U);
+		while (hid->report_task_alive != 0U) {
+			rtos_time_delay_ms(1U);
+		}
 		goto task_fail;
 	}
 
@@ -1447,17 +1132,24 @@ int usbh_hid_init(const usbh_hid_usr_cb_t *cb)
 
 	/* Undo in reverse order, the user resources taken by cb->init() last */
 task_fail:
+	usb_os_lock_delete(hid->req_lock);
+	hid->req_lock = NULL;
+lock_fail:
+	usb_os_sema_delete(hid->req_done_sema);
+	hid->req_done_sema = NULL;
+req_sema_fail:
 	usb_os_sema_delete(hid->report_sema);
 	hid->report_sema = NULL;
-sema_fail:
+report_sema_fail:
 	/* Fails only for a NULL handle, never the case for this static instance */
 	usb_ringbuf_manager_deinit(&(hid->report_msg));
 ring_fail:
 	if (cb->deinit != NULL) {
 		cb->deinit();
 	}
-	usb_os_mfree((void *)hid->hid_ctrl_buf);
-	hid->hid_ctrl_buf = NULL;
+cb_fail:
+	usb_os_mfree((void *)hid->ctrl_buf);
+	hid->ctrl_buf = NULL;
 	return ret;
 }
 
@@ -1468,75 +1160,91 @@ void usbh_hid_deinit(void)
 {
 	usbh_hid_t *hid = &usbh_hid;
 
-	/* First, before anything is freed: on RTK_SUCCESS no attach/setup/process/detach of this
-	 * class runs any more, an EP0 request it left in flight is halted and a sof() still
-	 * running on another core is waited out. Anything else means nothing was released. */
+	/* First, before anything is freed: on RTK_SUCCESS no attach/setup/process/detach of this class runs
+	 * any more, an EP0 request it left in flight is halted and a sof() still running on another core is
+	 * waited out. Anything else means nothing was released. */
 	if (usbh_unregister_class(&usbh_hid_driver) != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Deinit refused\n");
 		return;
 	}
 
-	/* Stop the parse thread before cb->deinit(): it calls cb->report(), so the user resources it reaches shall
-	   outlive it, as in the init failure path */
-	if (hid->parse_task_alive != 0U) {
-		hid->parse_task_exit = 1;
+	usb_os_enter_critical();
+	hid->ready = 0U;
+	usb_os_exit_critical();
+
+	/* An application request still waiting ends: the host task will not serve it any more */
+	if (hid->req_state != USBH_HID_REQ_IDLE) {
+		hid->req_status = RTK_FAIL;
+		hid->req_state = USBH_HID_REQ_IDLE;
+		usb_os_sema_give(hid->req_done_sema);
+	}
+
+	/* Stop the report thread before cb->deinit(): it calls cb->report(), so the user resources it reaches
+	   shall outlive it */
+	if (hid->report_task_alive != 0U) {
+		hid->report_task_exit = 1U;
 		usb_os_sema_give(hid->report_sema);
-		do {
-			rtos_time_delay_ms(1);
-		} while (hid->parse_task_alive != 0U);
+		while (hid->report_task_alive != 0U) {
+			rtos_time_delay_ms(1U);
+		}
 	}
 
 	if ((hid->cb != NULL) && (hid->cb->deinit != NULL)) {
 		hid->cb->deinit();
 	}
 
-	if (hid->report_sema != NULL) {
-		usb_os_sema_delete(hid->report_sema);
-		hid->report_sema = NULL;
+	/* No detach follows a deinit while attached: close what attach opened */
+	for (u8 i = 0U; i < hid->itf_cnt; i++) {
+		usbh_hid_close_interface(hid->host, &(hid->itf[i]));
 	}
+	hid->itf_cnt = 0U;
 
-	if ((hid->pipe_in.pipe_num != 0U) && (hid->host != NULL)) {
-		usbh_close_pipe(hid->host, &(hid->pipe_in));
+	/* A caller may still be inside usbh_hid_ctrl_sync(): take the lock, so it has left, before it goes */
+	if (usb_os_lock(hid->req_lock) == RTK_SUCCESS) {
+		usb_os_unlock(hid->req_lock);
 	}
+	usb_os_lock_delete(hid->req_lock);
+	hid->req_lock = NULL;
+	usb_os_sema_delete(hid->req_done_sema);
+	hid->req_done_sema = NULL;
+	usb_os_sema_delete(hid->report_sema);
+	hid->report_sema = NULL;
 
-	if ((hid->pipe_out.pipe_num != 0U) && (hid->host != NULL)) {
-		usbh_close_pipe(hid->host, &(hid->pipe_out));
-	}
-
-	usb_os_mfree((void *)hid->hid_ctrl_buf);
-	hid->hid_ctrl_buf = NULL;
+	usb_os_mfree((void *)hid->ctrl_buf);
+	hid->ctrl_buf = NULL;
+	hid->cb = NULL;
+	hid->host = NULL;
 
 	/* Fails only for a NULL handle, never the case for this static instance */
 	usb_ringbuf_manager_deinit(&(hid->report_msg));
 }
 
 /**
-  * @brief  Send an output report to the HID device via the Interrupt OUT pipe.
-  * @param  buf: Pointer to the report data buffer, cache line aligned (DMA source).
-  * @param  len: Length of the report data in bytes.
-  * @retval RTK_SUCCESS on success, -RTK_ERR_BADARG if no OUT pipe or buf is NULL / unaligned,
-  *         -RTK_ERR_BUSY if in progress.
+  * @brief  Send an output report via the Interrupt OUT pipe of an interface
+  * @param  idx: Interface index
+  * @param  buf: Report, cache line aligned (DMA source)
+  * @param  len: Length of the report in bytes
+  * @retval RTK_SUCCESS, -RTK_ERR_BADARG if no OUT pipe or buf is NULL / unaligned, -RTK_ERR_BUSY if in progress
   */
-int usbh_hid_send_report(u8 *buf, u32 len)
+int usbh_hid_send_report(u8 idx, u8 *buf, u32 len)
 {
 	usbh_hid_t *hid = &usbh_hid;
-	usbh_pipe_t *pipe = &(hid->pipe_out);
+	usbh_pipe_t *pipe;
+	usb_host_t *host;
 
-	if (pipe->pipe_num == 0U) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "HID no OUT pipe\n");
+	/* The OUT data is read by DMA: an unaligned buffer would only fail later in the HAL */
+	if ((buf == NULL) || (len == 0U) || (USB_IS_MEM_DMA_ALIGNED(buf) == 0)) {
 		return -RTK_ERR_BADARG;
 	}
 
-	/* The OUT data is read by DMA: an unaligned buffer would only fail later in the HAL,
-	 * as an opaque transfer error, so reject it here where the caller can see why. */
-	if ((buf == NULL) || (USB_IS_MEM_DMA_ALIGNED(buf) == 0)) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "HID OUT buf unaligned\n");
-		return -RTK_ERR_BADARG;
-	}
-
-	/* Check and claim in one step: two callers, possibly on two cores, could both see the pipe
-	 * idle and overwrite each other's report, and the host task writes xfer_state as well */
+	/* Check and claim in one step: two callers, possibly on two cores, could both see the pipe idle,
+	 * and the host task writes xfer_state as well */
 	usb_os_enter_critical();
+	if ((hid->ready == 0U) || (idx >= hid->itf_cnt) || (hid->itf[idx].pipe_out.pipe_num == 0U)) {
+		usb_os_exit_critical();
+		return -RTK_ERR_BADARG;
+	}
+	pipe = &(hid->itf[idx].pipe_out);
 	if (pipe->xfer_state != USBH_EP_XFER_IDLE) {
 		usb_os_exit_critical();
 		return -RTK_ERR_BUSY;
@@ -1544,9 +1252,249 @@ int usbh_hid_send_report(u8 *buf, u32 len)
 	pipe->xfer_buf = buf;
 	pipe->xfer_len = len;
 	pipe->xfer_state = USBH_EP_XFER_START;
+	host = hid->host;
 	usb_os_exit_critical();
 
-	usbh_notify(hid->host, pipe->pipe_num, &usbh_hid_driver);
+	usbh_notify(host, pipe->pipe_num, &usbh_hid_driver);
 
 	return RTK_SUCCESS;
+}
+
+/**
+  * @brief  SET_PROTOCOL, Ref HID 1.11 7.2.6
+  * @param  idx: Interface index
+  * @param  protocol: USBH_HID_PROTOCOL_BOOT or USBH_HID_PROTOCOL_REPORT
+  * @retval Status
+  */
+int usbh_hid_set_protocol(u8 idx, u8 protocol)
+{
+	if (protocol > USBH_HID_PROTOCOL_REPORT) {
+		return -RTK_ERR_BADARG;
+	}
+
+	return usbh_hid_ctrl_sync(idx, USB_H2D | USB_REQ_TYPE_CLASS | USB_REQ_RECIPIENT_INTERFACE, USBH_HID_SET_PROTOCOL, protocol, NULL, NULL, NULL);
+}
+
+/**
+  * @brief  SET_REPORT over EP0, Ref HID 1.11 7.2.2
+  * @param  idx: Interface index
+  * @param  type: USBH_HID_REPORT_OUTPUT or USBH_HID_REPORT_FEATURE
+  * @param  id: Report ID
+  * @param  buf: Report
+  * @param  len: Report length
+  * @retval Status
+  */
+int usbh_hid_set_report(u8 idx, u8 type, u8 id, const u8 *buf, u32 len)
+{
+	u32 wlen = len;
+
+	if ((buf == NULL) || (len == 0U) || ((type != USBH_HID_REPORT_OUTPUT) && (type != USBH_HID_REPORT_FEATURE))) {
+		return -RTK_ERR_BADARG;
+	}
+
+	return usbh_hid_ctrl_sync(idx, USB_H2D | USB_REQ_TYPE_CLASS | USB_REQ_RECIPIENT_INTERFACE, USBH_HID_SET_REPORT,
+							  (u16)(((u16)type << 8) | id), buf, NULL, &wlen);
+}
+
+/**
+  * @brief  GET_REPORT over EP0, Ref HID 1.11 7.2.1
+  * @param  idx: Interface index
+  * @param  type: USBH_HID_REPORT_INPUT or USBH_HID_REPORT_FEATURE
+  * @param  id: Report ID
+  * @param  buf: Destination
+  * @param  len: In: capacity of buf; Out: bytes received
+  * @retval Status
+  */
+int usbh_hid_get_report(u8 idx, u8 type, u8 id, u8 *buf, u32 *len)
+{
+	if ((buf == NULL) || (len == NULL) || (*len == 0U) || ((type != USBH_HID_REPORT_INPUT) && (type != USBH_HID_REPORT_FEATURE))) {
+		return -RTK_ERR_BADARG;
+	}
+
+	return usbh_hid_ctrl_sync(idx, USB_D2H | USB_REQ_TYPE_CLASS | USB_REQ_RECIPIENT_INTERFACE, USBH_HID_GET_REPORT,
+							  (u16)(((u16)type << 8) | id), NULL, buf, len);
+}
+
+/**
+  * @brief  Find the Input or Output field declaring a usage in a report descriptor
+  * @param  desc: Report descriptor
+  * @param  len: Length of desc
+  * @param  main_tag: USBH_HID_MAIN_ITEM_TAG_INPUT or USBH_HID_MAIN_ITEM_TAG_OUTPUT
+  * @param  usage_page: Usage Page
+  * @param  usage: Usage ID
+  * @param  field: Filled with the field
+  * @retval RTK_SUCCESS if found, -RTK_ERR_BADARG otherwise
+  */
+int usbh_hid_find_field(const u8 *desc, u32 len, u8 main_tag, u16 usage_page, u16 usage, usbh_hid_field_t *field)
+{
+	usbh_hid_walk_t walk;
+	usbh_hid_item_t item;
+	const u8 *end;
+	const u8 *ptr;
+	u32 *bit_offset;
+	u32 field_bits;
+	u8 hit;
+
+	if ((desc == NULL) || (field == NULL) || ((main_tag != USBH_HID_MAIN_ITEM_TAG_INPUT) && (main_tag != USBH_HID_MAIN_ITEM_TAG_OUTPUT))) {
+		return -RTK_ERR_BADARG;
+	}
+
+	usb_os_memset((void *)&walk, 0, sizeof(walk));
+	end = desc + len;
+	ptr = usbh_hid_fetch_item(desc, end, &item);
+
+	while (ptr != NULL) {
+		switch (item.type) {
+		case USBH_HID_ITEM_TYPE_GLOBAL:
+			switch (item.tag) {
+			case USBH_HID_GLOBAL_ITEM_TAG_USAGE_PAGE:
+				walk.usage_page = (u16)item.data;
+				break;
+			case USBH_HID_GLOBAL_ITEM_TAG_LOGICAL_MINIMUM:
+				/* Signed in the item size, Ref HID 1.11 6.2.2.7 */
+				walk.logical_min = (item.size == 1U) ? (s32)(s8)item.data : ((item.size == 2U) ? (s32)(s16)item.data : (s32)item.data);
+				break;
+			case USBH_HID_GLOBAL_ITEM_TAG_LOGICAL_MAXIMUM:
+				walk.logical_max = (item.size == 1U) ? (s32)(s8)item.data : ((item.size == 2U) ? (s32)(s16)item.data : (s32)item.data);
+				break;
+			case USBH_HID_GLOBAL_ITEM_TAG_REPORT_SIZE:
+				walk.report_size = (u16)item.data;
+				break;
+			case USBH_HID_GLOBAL_ITEM_TAG_REPORT_COUNT:
+				walk.report_count = (u16)item.data;
+				break;
+			case USBH_HID_GLOBAL_ITEM_TAG_REPORT_ID:
+				/* Each Report ID starts a new report, Ref HID 1.11 5.6 */
+				walk.report_id = (u8)item.data;
+				walk.in_bit_offset = 0U;
+				walk.out_bit_offset = 0U;
+				break;
+			default:
+				break;
+			}
+			break;
+
+		case USBH_HID_ITEM_TYPE_LOCAL:
+			usbh_hid_walk_local(&walk, &item, usage_page, usage);
+			break;
+
+		case USBH_HID_ITEM_TYPE_MAIN:
+			field_bits = (u32)walk.report_size * (u32)walk.report_count;
+			if ((item.tag == USBH_HID_MAIN_ITEM_TAG_INPUT) || (item.tag == USBH_HID_MAIN_ITEM_TAG_OUTPUT)) {
+				bit_offset = (item.tag == USBH_HID_MAIN_ITEM_TAG_INPUT) ? &walk.in_bit_offset : &walk.out_bit_offset;
+				hit = 0U;
+				if ((item.tag == main_tag) && ((item.data & USBH_HID_ITEM_DATA_CONSTANT) == 0U) && (walk.report_size != 0U)) {
+					if ((item.data & USBH_HID_ITEM_DATA_VARIABLE) != 0U) {
+						/* One value per usage, the last usage repeated for the rest, Ref HID 1.11 6.2.2.8 */
+						hit = ((walk.found != 0U) && (walk.found_idx < walk.report_count)) ? 1U : 0U;
+					} else {
+						/* Usage codes: code logical_min + n stands for the n-th usage, Ref HID 1.11 6.2.2.5 */
+						hit = ((walk.found != 0U) && (walk.found_idx <= 0xFFFFU)) ? 1U : 0U;
+					}
+				}
+				if ((hit != 0U) && ((*bit_offset + field_bits) <= 0xFFFFU)) {
+					field->report_id = walk.report_id;
+					field->bit_offset = (u16)(*bit_offset);
+					field->report_size = walk.report_size;
+					field->report_count = walk.report_count;
+					field->logical_min = walk.logical_min;
+					field->logical_max = walk.logical_max;
+					field->usage_idx = (u16)walk.found_idx;
+					field->flags = (u8)item.data;
+					return RTK_SUCCESS;
+				}
+				*bit_offset += field_bits;
+			}
+			/* Local items apply to one Main item only, Ref HID 1.11 6.2.2.8 */
+			walk.usage_cnt = 0U;
+			walk.found = 0U;
+			walk.usage_min_valid = 0U;
+			break;
+
+		default:
+			break;
+		}
+		ptr = usbh_hid_fetch_item(ptr, end, &item);
+	}
+
+	return -RTK_ERR_BADARG;
+}
+
+/**
+  * @brief  Read one value of a field from a report
+  * @param  report: Report, Report ID first if the device uses one
+  * @param  len: Length of the report
+  * @param  field: Field found by usbh_hid_find_field()
+  * @param  idx: Value index in the field
+  * @param  value: Value read
+  * @retval RTK_SUCCESS, -RTK_ERR_BADARG if the report does not hold the field
+  */
+int usbh_hid_get_field_value(const u8 *report, u32 len, const usbh_hid_field_t *field, u16 idx, s32 *value)
+{
+	const u8 *data = report;
+	u32 data_len = len;
+	u32 bit;
+	u32 val = 0U;
+
+	if ((report == NULL) || (field == NULL) || (value == NULL) || (idx >= field->report_count) ||
+		(field->report_size == 0U) || (field->report_size > 32U)) {
+		return -RTK_ERR_BADARG;
+	}
+
+	if (field->report_id != 0U) {
+		if ((len == 0U) || (report[0] != field->report_id)) {
+			return -RTK_ERR_BADARG;
+		}
+		data++;
+		data_len--;
+	}
+
+	/* Report data is packed least significant bit first, Ref HID 1.11 8 */
+	bit = (u32)field->bit_offset + ((u32)idx * field->report_size);
+	if ((bit + field->report_size) > (data_len * 8U)) {
+		return -RTK_ERR_BADARG;
+	}
+	for (u32 i = 0U; i < (u32)field->report_size; i++) {
+		if (((data[(bit + i) / 8U] >> ((bit + i) % 8U)) & 0x01U) != 0U) {
+			val |= (1UL << i);
+		}
+	}
+
+	/* A negative Logical Minimum makes the field two's complement, Ref HID 1.11 6.2.2.7 */
+	if ((field->logical_min < 0) && (field->report_size < 32U) && ((val & (1UL << (field->report_size - 1U))) != 0U)) {
+		val |= ~((1UL << field->report_size) - 1U);
+	}
+	*value = (s32)val;
+
+	return RTK_SUCCESS;
+}
+
+/**
+  * @brief  Whether the usage a field was found for is active in a report
+  * @param  report: Report
+  * @param  len: Length of the report
+  * @param  field: Field found by usbh_hid_find_field()
+  * @retval 1 if active, 0 otherwise
+  */
+u8 usbh_hid_usage_active(const u8 *report, u32 len, const usbh_hid_field_t *field)
+{
+	s32 val;
+
+	if (field == NULL) {
+		return 0U;
+	}
+
+	if ((field->flags & USBH_HID_ITEM_DATA_VARIABLE) != 0U) {
+		/* One value per usage */
+		return ((usbh_hid_get_field_value(report, len, field, field->usage_idx, &val) == RTK_SUCCESS) && (val != 0)) ? 1U : 0U;
+	}
+
+	/* Usage codes: code logical_min + usage_idx names the usage, Ref HID 1.11 6.2.2.5 */
+	for (u16 i = 0U; i < field->report_count; i++) {
+		if ((usbh_hid_get_field_value(report, len, field, i, &val) == RTK_SUCCESS) && (val == (field->logical_min + (s32)field->usage_idx))) {
+			return 1U;
+		}
+	}
+
+	return 0U;
 }

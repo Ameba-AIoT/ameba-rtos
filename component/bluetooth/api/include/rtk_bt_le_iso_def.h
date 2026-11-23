@@ -8,6 +8,8 @@
 #ifndef __RTK_BT_LE_ISO_DEF_H__
 #define __RTK_BT_LE_ISO_DEF_H__
 
+#include <bt_api_config.h>
+
 #ifdef __cplusplus
 extern "C"
 {

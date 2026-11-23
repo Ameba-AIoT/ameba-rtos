@@ -112,6 +112,12 @@ static int ota_core_get_target_header(ota_context_t *ctx, u8 *buf, u32 len)
 			return OTA_ERR;
 		}
 
+		/* ImgID indexes IMG_ADDR[] and the per-image tables; ImgLen must cover the manifest plus at least one payload byte */
+		if (img_hdr->ImgID >= OTA_IMGID_MAX || img_hdr->ImgLen <= sizeof(ota_manifest_t)) {
+			RTK_LOGE(OTA_TAG, "[CORE] invalid sub header %lu: ImgID %lu, ImgLen %lu\n", i, img_hdr->ImgID, img_hdr->ImgLen);
+			return OTA_ERR;
+		}
+
 		_memcpy((void *)(&hdr_mgr->FileImgHdr[hdr_mgr->ValidImgCnt]), (void *)p, sizeof(ota_sub_hdr_t));
 		hdr_mgr->ValidImgCnt++;
 	}
@@ -650,33 +656,27 @@ void ota_deinit(ota_context_t *ctx)
 
 	RTK_LOGI(OTA_TAG, "[CORE] Deinitializing OTA...\n");
 
-	/* Release transport resources */
-	if (ctx->host) {
-		rtos_mem_free(ctx->host);
-	}
-	if (ctx->resource) {
-		rtos_mem_free(ctx->resource);
-	}
-	if (ctx->redirect) {
-		rtos_mem_free(ctx->redirect);
-	}
+	/* Release transport resources; pointers are cleared so a second ota_deinit (e.g. after a failed ota_init) is harmless */
+	rtos_mem_free(ctx->host);
+	ctx->host = NULL;
+	rtos_mem_free(ctx->resource);
+	ctx->resource = NULL;
+	rtos_mem_free(ctx->redirect);
+	ctx->redirect = NULL;
 	/* NOTE: ca_cert / client_cert / private_key are borrowed read-only pointers
 	 * supplied by the caller (typically static PEM data); the module never
 	 * allocates them, so ota_deinit must NOT free them. */
 	/* Release prefill buffer if transport was disconnected before Core consumed it */
-	if (ctx->prefill_buf) {
-		rtos_mem_free(ctx->prefill_buf);
-		ctx->prefill_buf = NULL;
-	}
+	rtos_mem_free(ctx->prefill_buf);
+	ctx->prefill_buf = NULL;
+	ctx->prefill_len = 0;
 	/* Release ota controls resources */
-	if (ctx->otaCtrl) {
-		rtos_mem_free(ctx->otaCtrl);
-	}
+	rtos_mem_free(ctx->otaCtrl);
+	ctx->otaCtrl = NULL;
 
 	/* Release ota header manager resources */
-	if (ctx->otaHdrManager) {
-		rtos_mem_free(ctx->otaHdrManager);
-	}
+	rtos_mem_free(ctx->otaHdrManager);
+	ctx->otaHdrManager = NULL;
 
 	/* Release storage layer buffers (idempotent) */
 	ota_storage_deinit();
@@ -761,7 +761,6 @@ int ota_read(ota_context_t *ctx, int offset, u8 *buf, int len)
 	ota_download_ctrl_t *otaCtrl;
 	ota_manifest_t *manifest;
 	const int manifest_size = sizeof(ota_manifest_t);
-	int copied = 0;
 
 	if (!ctx || !ctx->otaCtrl || !ctx->otaHdrManager) {
 		RTK_LOGE(OTA_TAG, "[CORE] ota_read: ctx not initialized\n");
@@ -779,37 +778,27 @@ int ota_read(ota_context_t *ctx, int offset, u8 *buf, int len)
 		return OTA_ERR;
 	}
 
-	/* The written firmware spans image offset [0, ImageLen): the leading
-	 * manifest (manifest_size bytes) is still held in RAM (not committed to
-	 * flash until ota_finish), the remainder is the image body already in
-	 * flash. Reject a range that runs past the declared image length. */
+	/* The written firmware spans image offset [0, ImageLen). Reject a range that
+	 * runs past the declared image length. */
 	if ((u32)offset + (u32)len > otaCtrl->ImageLen) {
 		RTK_LOGE(OTA_TAG, "[CORE] ota_read: range [%d, %d) exceeds image length %lu\n",
 				 offset, offset + len, otaCtrl->ImageLen);
 		return OTA_ERR;
 	}
 
-	manifest = &ctx->otaHdrManager->Manifest[otaCtrl->Index];
-
-	/* Part 1: bytes that fall inside the RAM-held manifest region. */
-	if (offset < manifest_size) {
-		int n = (offset + len > manifest_size) ? (manifest_size - offset) : len;
-		_memcpy((void *)buf, (void *)((u8 *)manifest + offset), n);
-		copied += n;
+	/* Storage serves the whole range: the first block is still held in RAM (not
+	 * committed to flash until ota_finish), the rest is in flash or in the last
+	 * partly filled page. The leading manifest is only a placeholder there. */
+	if (ota_storage_read_image((u32)offset, buf, (u32)len) != OTA_OK) {
+		RTK_LOGE(OTA_TAG, "[CORE] ota_read: read failed\n");
+		return OTA_ERR;
 	}
 
-	/* Part 2: bytes that fall inside the flash-written image body. FlashAddr is
-	 * a flash offset that already points past the manifest (see
-	 * download_parameter_init), so the body byte at image offset `off` lives at
-	 * FlashAddr + (off - manifest_size). */
-	if (offset + len > manifest_size) {
-		int body_start = (offset > manifest_size) ? offset : manifest_size;
-		u32 flash_off = otaCtrl->FlashAddr + (body_start - manifest_size);
-		int n = offset + len - body_start;
-		if (ota_storage_read(flash_off, buf + copied, n) != OTA_OK) {
-			RTK_LOGE(OTA_TAG, "[CORE] ota_read: flash read failed\n");
-			return OTA_ERR;
-		}
+	/* The real manifest is held by the header manager: overlay it on the placeholder. */
+	if (offset < manifest_size) {
+		int n = (offset + len > manifest_size) ? (manifest_size - offset) : len;
+		manifest = &ctx->otaHdrManager->Manifest[otaCtrl->Index];
+		_memcpy((void *)buf, (void *)((u8 *)manifest + offset), n);
 	}
 
 	return OTA_OK;

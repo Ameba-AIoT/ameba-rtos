@@ -43,7 +43,7 @@
 #define KM55TZ_IMG1_SIZE              KBYTES(0)
 #elif defined(CONFIG_IMG1_FLASH)
 #define KM55TZ_IMG1_SIZE              KBYTES(4)
-#elif defined(CONFIG_SOLO)
+#elif defined(CONFIG_IOT_MCU_COMBINED)
 #define KM55TZ_IMG1_SIZE              KBYTES(28)
 #else
 #define KM55TZ_IMG1_SIZE              KBYTES(24)
@@ -51,7 +51,7 @@
 
 #define KM55NS_IPC_RAM_SIZE           512              /* 512B */
 
-#if defined(CONFIG_SOLO)
+#if defined(CONFIG_IOT_MCU_COMBINED)
 #define KM55NS_SHARE_RAM_SIZE         KBYTES(2)
 #else
 #define KM55NS_SHARE_RAM_SIZE         0
@@ -218,7 +218,7 @@ MEMORY
 __ipc_memory_start__ = ORIGIN(KM55NS_IPC_RAM);
 __km4ns_flash_text_start__ = ORIGIN(KM55NS_IMG2_XIP);
 __km4ns_flash_text_end__ = ORIGIN(KM55NS_IMG2_XIP) + LENGTH(KM55NS_IMG2_XIP);
-#if defined (CONFIG_SOLO)
+#if defined (CONFIG_IOT_MCU_COMBINED)
 __km55ns_app_flash_text_start__ = ORIGIN(KM55NS_IMG2_XIP);
 __km55ns_app_flash_text_end__ = ORIGIN(KM55NS_IMG2_XIP) + LENGTH(KM55NS_IMG2_XIP);
 /* SOLO isolation: the KM55NS SRAM span (IPC mailbox + img2 app/data) the non-secure

@@ -146,7 +146,7 @@ int main(void)
 	InterruptRegister(IPC_INTHandler, IPC_KM4NS_IRQ, (u32)IPCNP_DEV, INT_PRI_MIDDLE);
 	InterruptEn(IPC_KM4NS_IRQ, INT_PRI_MIDDLE);
 
-#ifndef CONFIG_SOLO
+#ifndef CONFIG_IOT_MCU_COMBINED
 	app_pmu_init();
 #endif
 
@@ -183,7 +183,7 @@ int main(void)
 	LOGUART_INTCoreConfig(LOGUART_DEV, LOGUART_BIT_INTR_MASK_AP, DISABLE);
 #endif
 
-#ifndef CONFIG_SOLO
+#ifndef CONFIG_IOT_MCU_COMBINED
 	app_IWDG_init();
 #endif
 
