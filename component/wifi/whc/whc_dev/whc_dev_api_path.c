@@ -108,6 +108,7 @@ void whc_send_api_ret_value(u32 api_id, u8 *pbuf, u32 len)
 	/* notify NP that event is finished */
 	ret_msg->event = WHC_WIFI_EVT_API_RETURN;
 	ret_msg->api_id = api_id;
+	ret_msg->data_len = len;
 
 	memcpy((void *)(ret_msg + 1), pbuf, len);
 
@@ -1111,6 +1112,7 @@ void whc_dev_api_message_send(u32 id, u8 *param, u32 param_len)
 	info = (struct whc_api_info *)N_BYTE_ALIGMENT((u32)buf, DEV_DMA_ALIGN);
 	info->event = WHC_WIFI_EVT_API_CALL;
 	info->api_id = id;
+	info->data_len = param_len;
 
 	memcpy((void *)(info + 1), param, param_len);
 

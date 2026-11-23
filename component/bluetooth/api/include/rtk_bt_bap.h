@@ -1,7 +1,7 @@
 /**
  * @file      rtk_bt_bap.h
  * @author    benling_xu@realsil.com.cn
- * @brief     Bluetooth LE GAP part type and function deffinition
+ * @brief     Bluetooth LE GAP part type and function definition
  * @copyright Copyright (c) 2022. Realtek Semiconductor Corporation. All rights reserved.
  */
 
@@ -374,7 +374,7 @@ typedef enum {
 
 /**
  * @typedef   rtk_bt_le_iso_isoch_data_pkt_status_t
- * @brief     Packet Status Flag in Bluetooth LE HCI ISO Datat packet sent by the Controller
+ * @brief     Packet Status Flag in Bluetooth LE HCI ISO Data packet sent by the Controller
 */
 typedef enum {
 	RTK_BT_LE_ISO_ISOCH_DATA_PKT_STATUS_VALID_DATA = 0,             /**< Valid data. The complete SDU was received correctly. */
@@ -440,7 +440,7 @@ typedef enum {
 
 /**
  * @typedef    rtk_bt_le_audio_big_sync_state_t
- * @brief     Bluetooth LE audio paramsters for big sync.
+ * @brief     Bluetooth LE audio parameters for big sync.
  */
 typedef enum {
 	RTK_BT_LE_AUDIO_BIG_SYNC_STATE_TERMINATED = 0x00,     /**< Terminated. */
@@ -472,7 +472,7 @@ typedef enum {
 } rtk_bt_le_audio_bass_past_type_t;
 
 /**
- * @typedef    rtk_bt_le_audio_bass_brs_big_encrption_t
+ * @typedef    rtk_bt_le_audio_bass_brs_big_encryption_t
  * @brief     Bluetooth LE audio broadcast receive state BIG_Encryption field.
  */
 typedef enum {
@@ -480,7 +480,14 @@ typedef enum {
 	RTK_BT_LE_AUDIO_BASS_BRS_BIG_BROADCAST_CODE_REQUIRED = 0x01,      /**< Broadcast_Code required */
 	RTK_BT_LE_AUDIO_BASS_BRS_BIG_DECRYPTING              = 0x02,      /**< Decrypting */
 	RTK_BT_LE_AUDIO_BASS_BRS_BIG_BAD_CODE                = 0x03       /**< Bad_Code (incorrect encryption key) */
-} rtk_bt_le_audio_bass_brs_big_encrption_t;
+} rtk_bt_le_audio_bass_brs_big_encryption_t;
+
+/**
+ * @typedef   rtk_bt_le_audio_bass_brs_big_encrption_t
+ * @brief     Deprecated alias of @ref rtk_bt_le_audio_bass_brs_big_encryption_t.
+ * @deprecated Use @ref rtk_bt_le_audio_bass_brs_big_encryption_t instead.
+ */
+typedef rtk_bt_le_audio_bass_brs_big_encryption_t rtk_bt_le_audio_bass_brs_big_encrption_t;
 
 /*----------------------------------------------------------------------------------------------------------*/
 /* event */
@@ -603,7 +610,7 @@ typedef struct {
 
 /**
  * @typedef    rtk_bt_le_audio_bis_conn_handle_info_t
- * @brief     Bluetooth LE audio bis connetion handle information.
+ * @brief     Bluetooth LE audio bis connection handle information.
  */
 typedef struct {
 	uint8_t bis_idx;                  /**< bis index */
@@ -629,7 +636,7 @@ typedef struct {
 
 /**
  * @typedef    rtk_bt_le_audio_pa_sync_establish_t
- * @brief     Bluetooth LE audio paramsters for pa sync establish.
+ * @brief     Bluetooth LE audio parameters for pa sync establish.
  */
 typedef struct {
 	uint8_t options;                            /**< @ref rtk_bt_le_pa_sync_create_opt_t */
@@ -653,7 +660,7 @@ typedef struct {
 	uint8_t source_adv_sid;
 	uint8_t broadcast_id[RTK_BT_LE_AUDIO_BROADCAST_ID_LEN];
 	uint8_t pa_sync_state;                                      /**< @ref rtk_bt_le_audio_pa_sync_state_t */
-	uint8_t big_encryption;                                     /**< @ref rtk_bt_le_audio_bass_brs_big_encrption_t */
+	uint8_t big_encryption;                                     /**< @ref rtk_bt_le_audio_bass_brs_big_encryption_t */
 	uint8_t bad_code[RTK_BT_LE_AUDIO_BROADCAST_CODE_LEN];
 	uint8_t num_subgroups;
 	uint16_t bis_info_size;
@@ -725,7 +732,7 @@ typedef struct {
 } rtk_bt_le_audio_ascs_remove_data_path_ind_t;
 
 /**
- * @typedef    rtk_bt_le_audio_ascs_asc_state_ind_t
+ * @typedef    rtk_bt_le_audio_ascs_ase_state_ind_t
  * @brief     structure of LE audio ascs state
  */
 typedef struct {
@@ -863,7 +870,7 @@ typedef struct {
 
 /**
  * @typedef    rtk_bt_le_audio_pa_sync_state_ind_t
- * @brief     Bluetooth LE audio pa sync indication infomation.
+ * @brief     Bluetooth LE audio pa sync indication information.
  */
 typedef struct {
 	uint8_t cause;                                                  /**< process result */
@@ -874,7 +881,7 @@ typedef struct {
 
 /**
  * @typedef    rtk_bt_le_audio_big_sync_state_ind_t
- * @brief     Bluetooth LE audio big sync indication infomation.
+ * @brief     Bluetooth LE audio big sync indication information.
  */
 typedef struct {
 	uint8_t sync_state;                                             /**< BIG Synchronization state. @ref rtk_bt_le_audio_big_sync_state_t*/
@@ -890,7 +897,7 @@ typedef struct {
 
 /**
  * @typedef    rtk_bt_le_audio_big_setup_data_path_ind_t
- * @brief     Bluetooth LE audio setup data path indication infomation.
+ * @brief     Bluetooth LE audio setup data path indication information.
  */
 typedef struct {
 	uint8_t bis_idx;                                          /**< bis index */
@@ -940,7 +947,7 @@ typedef struct {
 
 /**
  * @typedef    rtk_bt_le_audio_big_remove_data_path_ind_t
- * @brief     Bluetooth LE audio remove data path indication infomation.
+ * @brief     Bluetooth LE audio remove data path indication information.
  */
 typedef struct {
 	uint8_t bis_idx;                                          /**< bis index */
@@ -1048,7 +1055,7 @@ typedef struct {
 
 /**
  * @typedef    rtk_bt_le_iso_direct_iso_data_ind_t
- * @brief     Indication of ISO Datat packet with cb_type @ref RTK_BT_LE_ISO_EVT_DATA_RECEIVE_IND .
+ * @brief     Indication of ISO Data packet with cb_type @ref RTK_BT_LE_ISO_EVT_DATA_RECEIVE_IND .
  */
 typedef struct {
 	uint16_t iso_conn_handle;                                   /**< Connection handle of the ISO. */
@@ -1165,7 +1172,7 @@ typedef struct {
 
 
 /**
- * @typedef    rtk_bt_le_audio_broadcast_assisatant_remote_scan_param_t
+ * @typedef    rtk_bt_le_audio_broadcast_assistant_remote_scan_param_t
  * @brief     Bluetooth LE audio broadcast assistant remote scan parameter.
  */
 typedef struct {
@@ -1368,7 +1375,7 @@ uint16_t rtk_bt_le_audio_broadcast_assistant_remote_ext_scan_act(bool enable, ui
 uint16_t rtk_bt_le_audio_broadcast_assistant_reception_start(rtk_bt_le_addr_t addr, uint8_t group_idx);
 
 /**
- * @brief     Broadcast assistant modify broadcast source in broadcast receive state charateristic of Scan Delegator.
+ * @brief     Broadcast assistant modify broadcast source in broadcast receive state characteristic of Scan Delegator.
  * @param[in] addr: broadcast source address
  * @param[in] group_idx: group index
  * @return
@@ -1378,7 +1385,7 @@ uint16_t rtk_bt_le_audio_broadcast_assistant_reception_start(rtk_bt_le_addr_t ad
 uint16_t rtk_bt_le_audio_broadcast_assistant_reception_stop(rtk_bt_le_addr_t addr, uint8_t group_idx);
 
 /**
- * @brief     Broadcast assistant remove broadcast source in broadcast receive state charateristic of Scan Delegator.
+ * @brief     Broadcast assistant remove broadcast source in broadcast receive state characteristic of Scan Delegator.
  * @param[in] addr: broadcast source address
  * @param[in] group_idx: group index
  * @return

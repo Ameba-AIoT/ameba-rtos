@@ -20,8 +20,8 @@ Files:
 |        Macro        | Default |                                  Meaning                                                 |
 |---------------------|---------|------------------------------------------------------------------------------------------|
 | `GSPI_INPLACE_XFER` |    1    | 1 = tx/rx share one buffer (in-place, bcm2835 OK); 0 = separate rx buffer (portable)     |
-| `WHC_TX_AGG`        |   off   | coalesce several queued frames into one bus write                                        |
-| `WHC_RX_AGG`        |   off   | split one hardware-aggregated FIFO read into per-packet skbs                             |
+| `WHC_TX_AGG`        |   on    | coalesce several queued frames into one bus write                                        |
+| `WHC_RX_AGG`        |   on    | split one hardware-aggregated FIFO read into per-packet skbs                             |
 | `GSPI_PM_TEST`      |   0     | expose `/sys/.../gspi_pm` to drive suspend/resume manually (see §4)                      |
 
 ---

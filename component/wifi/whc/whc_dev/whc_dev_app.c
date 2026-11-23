@@ -12,7 +12,7 @@ static void whc_log_output(const u8 *buf, u32 len)
 
 	*(u32 *)pkt = WHC_LOG_EVENT;
 	memcpy(pkt + sizeof(u32), buf, len);
-	whc_dev_api_send_to_host(pkt, sizeof(u32) + len);
+	whc_dev_api_send_to_host(pkt, sizeof(u32) + len, NULL, 0);
 	rtos_mem_free(pkt);
 }
 
@@ -34,7 +34,7 @@ static void whc_dev_log_fwd_send_ack(u8 op)
 	*(u32 *)ack = WHC_WIFI_TEST;
 	ack[4] = WHC_WIFI_TEST_LOG_ACK;
 	ack[5] = op;
-	whc_dev_api_send_to_host(ack, sizeof(ack));
+	whc_dev_api_send_to_host(ack, sizeof(ack), NULL, 0);
 }
 #endif
 
@@ -62,7 +62,7 @@ static void whc_at_output(char *buf, int len)
 	*(u32 *)pkt = WHC_WIFI_TEST;
 	pkt[4]      = WHC_WIFI_TEST_AT_RESP;
 	memcpy(pkt + 5, buf, (u32)len);
-	whc_dev_api_send_to_host(pkt, pkt_len);
+	whc_dev_api_send_to_host(pkt, pkt_len, NULL, 0);
 	rtos_mem_free(pkt);
 }
 
@@ -226,7 +226,7 @@ s32 whc_dev_scan_callback(u32 scanned_AP_num, void *data)
 			rtw_scan_result_to_string(scanned_AP_list_index, ptr, buf_size - 8);
 			scanned_AP_list_index += 1;
 
-			whc_dev_api_send_to_host(result_buf, buf_size);
+			whc_dev_api_send_to_host(result_buf, buf_size, NULL, 0);
 			ap_num -= 1;
 		}
 
@@ -239,7 +239,7 @@ s32 whc_dev_scan_callback(u32 scanned_AP_num, void *data)
 		/* 0 means end */
 		*ptr = 0;
 		ptr += 1;
-		whc_dev_api_send_to_host(result_buf, buf_size);
+		whc_dev_api_send_to_host(result_buf, buf_size, NULL, 0);
 
 		rtos_mem_free(result_buf);
 		rtos_mem_free(scanned_AP_list);
@@ -297,7 +297,7 @@ void whc_dev_mp_cmd(char *cmd, int show_msg)
 		resp[4] = WHC_WIFI_TEST_MP;
 		resp[5] = i; //frag_idx
 		memcpy(resp + 6, outbuf + i * WHC_MP_FRAG_SIZE, WHC_MP_FRAG_SIZE);
-		whc_dev_api_send_to_host(resp, 6 + WHC_MP_FRAG_SIZE);
+		whc_dev_api_send_to_host(resp, 6 + WHC_MP_FRAG_SIZE, NULL, 0);
 	}
 
 	rtos_mem_free(outbuf);
@@ -305,8 +305,8 @@ void whc_dev_mp_cmd(char *cmd, int show_msg)
 }
 #endif
 
-/* here in sdio rx done callback */
-__weak void whc_dev_pkt_rx_to_user(u8 *rxbuf, u8 *real_buf, u16 size)
+/* here in bus rx done callback, rxbuf starts with struct whc_cmd_path_hdr and is freed by the cmd task */
+__weak void whc_dev_cmd_rx_to_user(u8 *rxbuf)
 {
 	while (whc_cmdpath_data.whc_rx_msg) {
 		/* waiting last msg done */
@@ -314,13 +314,11 @@ __weak void whc_dev_pkt_rx_to_user(u8 *rxbuf, u8 *real_buf, u16 size)
 	}
 
 	whc_cmdpath_data.whc_rx_msg = rxbuf;
-	whc_cmdpath_data.whc_rx_msg_free_addr = real_buf;
-	whc_cmdpath_data.rx_msg_size = size;
 	rtos_sema_give(whc_cmdpath_data.whc_user_rx_sema);
 }
 
 /* note： never use dev block send in this task, may cause deadlock */
-__weak void whc_dev_pkt_rx_to_user_task(void)
+__weak void whc_dev_cmd_rx_to_user_task(void)
 {
 	u8 *ptr = NULL;
 	u32 event = 0;
@@ -337,8 +335,8 @@ __weak void whc_dev_pkt_rx_to_user_task(void)
 	while (1) {
 		rtos_sema_take(whc_cmdpath_data.whc_user_rx_sema, RTOS_MAX_TIMEOUT);
 		if (whc_cmdpath_data.whc_rx_msg) {
-			ptr = whc_cmdpath_data.whc_rx_msg;
-			event = *(u32 *)(whc_cmdpath_data.whc_rx_msg);
+			ptr = whc_cmdpath_data.whc_rx_msg + sizeof(struct whc_cmd_path_hdr);
+			event = *(u32 *)(ptr);
 			ptr += 4;
 
 			if (event == WHC_WIFI_TEST) {
@@ -364,7 +362,7 @@ __weak void whc_dev_pkt_rx_to_user_task(void)
 						ptr += 1;
 						memcpy(ptr, dev_mac.octet, 6);
 						//6+4+1=11
-						whc_dev_api_send_to_host(buf, WHC_WIFI_TEST_BUF_SIZE);
+						whc_dev_api_send_to_host(buf, WHC_WIFI_TEST_BUF_SIZE, NULL, 0);
 					}
 				} else if (*ptr == WHC_WIFI_TEST_SCAN) {
 					whc_dev_cmd_scan();
@@ -420,7 +418,7 @@ __weak void whc_dev_pkt_rx_to_user_task(void)
 						ip = lwip_get_gw(idx);
 						memcpy(ptr, ip, 4);
 						ptr += 4;
-						whc_dev_api_send_to_host(buf, WHC_WIFI_TEST_BUF_SIZE);
+						whc_dev_api_send_to_host(buf, WHC_WIFI_TEST_BUF_SIZE, NULL, 0);
 					}
 #endif
 #ifdef CONFIG_WHC_DEV_TCPIP_KEEPALIVE
@@ -451,11 +449,13 @@ __weak void whc_dev_pkt_rx_to_user_task(void)
 					memcpy(whc_network_info[idx].gw, ptr + 6, 4);
 					memcpy(whc_network_info[idx].gw_mask, ptr + 10, 4);
 
+#ifndef CONFIG_MP_SHRINK
 					if (idx == 0) {
 						memcpy(whc_ipc_ip_addr, ptr + 2, 4);
 						//memcpy(IPv4Parm.IP, ptr + 2, 4);
 						//memcpy(IPv6Parm.IP, ptr + 14, 16);
 					}
+#endif
 #ifdef CONFIG_NAN
 					memcpy(NAN_IPv6Parm, ptr + 14, 16);
 #endif
@@ -478,15 +478,14 @@ __weak void whc_dev_pkt_rx_to_user_task(void)
 				}
 #endif
 #ifdef CONFIG_WHC_DEV_TSF_SYNC
-				if (*ptr == WHC_WIFI_TEST_TSF_ACK && whc_cmdpath_data.rx_msg_size > 5) {
-					whc_dev_tsf_ack_hdl(ptr + 1, (u32)whc_cmdpath_data.rx_msg_size - 5);
+				if (*ptr == WHC_WIFI_TEST_TSF_ACK && ((struct whc_cmd_path_hdr *)whc_cmdpath_data.whc_rx_msg)->len > 5) {
+					whc_dev_tsf_ack_hdl(ptr + 1, ((struct whc_cmd_path_hdr *)whc_cmdpath_data.whc_rx_msg)->len - 5);
 				}
 #endif
 				rtos_mem_free(buf);
 			}
-			rtos_mem_free(whc_cmdpath_data.whc_rx_msg_free_addr);
+			rtos_mem_free(whc_cmdpath_data.whc_rx_msg);
 			whc_cmdpath_data.whc_rx_msg = NULL;
-			whc_cmdpath_data.whc_rx_msg_free_addr = NULL;
 		}
 	}
 }
@@ -500,10 +499,10 @@ __weak void whc_dev_init_cmd_path_task(void)
 	rtos_mutex_create(&whc_cmdpath_data.whc_user_blocksend_mutex);
 
 	/* Initialize the event task */
-	if (RTK_SUCCESS != rtos_task_create(NULL, (const char *const)"whc_dev_pkt_rx_to_user_task", (rtos_task_function_t)whc_dev_pkt_rx_to_user_task,
+	if (RTK_SUCCESS != rtos_task_create(NULL, (const char *const)"whc_dev_cmd_rx_to_user_task", (rtos_task_function_t)whc_dev_cmd_rx_to_user_task,
 										NULL,
 										WHC_WHC_CMD_USER_TASK_STACK_SIZE, CONFIG_WHC_WHC_CMD_USER_TASK_PRIO)) {
-		RTK_LOGE(TAG_WLAN_INIC, "Create whc_dev_pkt_rx_to_user_task Err!!\n");
+		RTK_LOGE(TAG_WLAN_INIC, "Create whc_dev_cmd_rx_to_user_task Err!!\n");
 	}
 
 }
@@ -522,7 +521,7 @@ __weak int whc_dev_wtn_socket_send(u8 *pframe, u32 len)
 	param[2] = len;
 	memcpy((void *)(param + 3), pframe, len);
 
-	whc_dev_api_send_to_host((u8 *)param, size);
+	whc_dev_api_send_to_host((u8 *)param, size, NULL, 0);
 
 	rtos_mem_free((u8 *)param);
 
@@ -542,7 +541,7 @@ __weak void whc_dev_wtn_socket_init(u8 enable, u8 rnat_ap_start)
 	param[2] = (u32)enable;
 	param[3] = (u32)rnat_ap_start;
 
-	whc_dev_api_send_to_host((u8 *)param, size);
+	whc_dev_api_send_to_host((u8 *)param, size, NULL, 0);
 
 	rtos_mem_free((u8 *)param);
 }

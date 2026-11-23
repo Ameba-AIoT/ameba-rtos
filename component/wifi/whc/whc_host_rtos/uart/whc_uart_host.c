@@ -336,19 +336,15 @@ int whc_uart_host_recv_process(void)
 		break;
 #endif
 
-#ifndef CONFIG_WHC_CMD_PATH
+#ifdef CONFIG_WHC_CMD_PATH
+	case WHC_WIFI_EVT_CMD:
+		whc_host_deliver_rxbuf_to_user(recv_msg, UART_BUFSZ);
+		recv_msg = NULL;  /* ownership transferred to the cmd task */
+		break;
+#endif
 	default:
 		RTK_LOGE(TAG_WLAN_INIC, "%s: unknown event:%d\n", __func__, event);
 		break;
-#else
-#ifndef UART_TODO
-#endif
-	default:
-		/* RX DESC first 16bits for size */
-		//size = *(u16 *)pbuf;
-		whc_host_pkt_rx_to_user(recv_msg, (u32)UART_BUFSZ);
-		break;
-#endif
 	}
 
 	rtos_mem_free(recv_msg);

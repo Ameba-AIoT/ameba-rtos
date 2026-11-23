@@ -21,13 +21,13 @@
 #include <bt_bond.h>
 
 #define RTK_BT_STACK_DEFAULT_COD (0x18 | (0x04 << 8) | (0x24 << 16))
-#define RTK_BT_STACK_DEFAULT_SUPVISIONTIMEOUT (0x1f40)
+#define RTK_BT_STACK_DEFAULT_SUPERVISION_TIMEOUT (0x1f40)
 
 T_APP_DB app_db;
 
 uint8_t bt_stack_br_gap_ready = false;
 uint32_t class_of_device = RTK_BT_STACK_DEFAULT_COD;
-uint16_t supervision_timeout = RTK_BT_STACK_DEFAULT_SUPVISIONTIMEOUT;
+uint16_t supervision_timeout = RTK_BT_STACK_DEFAULT_SUPERVISION_TIMEOUT;
 rtk_bt_br_inquiry_param_t inquiry_t = {0};
 rtk_bt_br_page_param_t page_t = {0};
 static uint8_t pin_code[4] = {1, 2, 3, 4};

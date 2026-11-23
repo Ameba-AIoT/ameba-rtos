@@ -56,7 +56,7 @@ int whc_host_do_mp_cmd(struct sk_buff *skb, struct genl_info *info)
 	ptr += 1;
 	memcpy(ptr, string_data, string_len);
 
-	whc_host_send_data_to_dev(buf, buf_len, 1);
+	whc_host_send_cmd_data_to_dev(buf, buf_len, 1);
 	kfree(buf);
 
 	return 0;
@@ -119,7 +119,7 @@ int whc_bridge_host_do_scan(struct sk_buff *skb, struct genl_info *info)
 	ptr += SIZE_TX_DESC;
 
 	memcpy(ptr, payload, payload_len);
-	whc_host_send_data_to_dev(buf, buf_len, 1);
+	whc_host_send_cmd_data_to_dev(buf, buf_len, 1);
 	kfree(buf);
 
 	//TODO Free scan_result

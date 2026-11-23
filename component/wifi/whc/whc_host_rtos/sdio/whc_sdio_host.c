@@ -60,9 +60,6 @@ int sdio_recv_process(uint8_t *pbuf)
 	int ret = 0;
 	uint32_t event = *(uint32_t *)(pbuf + SIZE_RX_DESC);
 	//dump_buf("sdio recv", pbuf + 16, 32);
-#ifdef CONFIG_WHC_CMD_PATH
-	u16 size;
-#endif
 
 #ifdef CONFIG_WHC_WIFI_API_PATH
 	struct whc_api_info *ret_msg;
@@ -110,19 +107,16 @@ int sdio_recv_process(uint8_t *pbuf)
 		break;
 #endif
 
-#ifndef CONFIG_WHC_CMD_PATH
+#ifdef CONFIG_WHC_CMD_PATH
+	case WHC_WIFI_EVT_CMD:
+		/* ownership transferred to the cmd task */
+		whc_host_deliver_rxbuf_to_user(pbuf, 0);
+		break;
+#endif
 	default:
 		RTK_LOGE(TAG_WLAN_INIC, "%s: unknown event:%d\n", __func__, event);
 		rtos_mem_free(pbuf);
 		break;
-#else
-	default:
-		/* RX DESC first 16bits for size */
-		size = *(u16 *)pbuf;
-		whc_host_pkt_rx_to_user(pbuf + SIZE_RX_DESC, (u32)size);
-		rtos_mem_free(pbuf);
-		break;
-#endif
 	}
 	return ret;
 }
@@ -200,7 +194,6 @@ void rtw_sdio_recv_data_process(void)
 					retry = 0;
 					pbuf = sdio_read_rxfifo(sdio_priv, SdioRxFIFOSize);
 					if (pbuf) {
-						/* skip RX_DESC */
 						sdio_recv_process(pbuf);
 					} else {
 						break;

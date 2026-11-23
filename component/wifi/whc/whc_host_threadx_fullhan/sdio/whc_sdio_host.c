@@ -118,16 +118,15 @@ int sdio_recv_process(uint8_t *pbuf)
 #endif
 
 #ifdef CONFIG_WHC_CMD_PATH
-	default:
-		whc_host_pkt_rx_to_user(pbuf + SIZE_RX_DESC);
+	case WHC_WIFI_EVT_CMD:
+		whc_host_deliver_rxbuf_to_user(pbuf + SIZE_RX_DESC);
 		rt_free(pbuf);
 		break;
-#else
+#endif
 	default:
 		printf("%s: unknown event:%d\n", __func__, event);
 		rt_free(pbuf);
 		break;
-#endif
 	}
 	return ret;
 }

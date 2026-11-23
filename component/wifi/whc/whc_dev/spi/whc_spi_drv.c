@@ -30,7 +30,6 @@ int whc_spi_dev_dma_rx_done_cb(void *param)
 	GDMA_InitTypeDef *GDMA_InitStruct = &spi_priv->SSIRxGdmaInitStruct;
 	struct sk_buff *new_skb = NULL, *rx_pkt = spi_priv->rx_skb;
 	struct whc_msg_info *msg_info;
-	u8 *buf = NULL;
 	u32 event;
 
 	/* disable gdma channel */
@@ -64,7 +63,7 @@ int whc_spi_dev_dma_rx_done_cb(void *param)
 
 		rx_pkt->dev = (void *)((u32)msg_info->wlan_idx);
 
-		whc_spi_dev_event_int_hdl((u8 *)msg_info, rx_pkt);
+		whc_dev_event_int_hdl((u8 *)msg_info, rx_pkt);
 
 drop_pkt:
 		/* set new dest addr for RXDMA */
@@ -76,24 +75,14 @@ drop_pkt:
 		if (bt_inic_spi_recv_ptr) {
 			bt_inic_spi_recv_ptr(spi_priv->rx_skb->data, SPI_BUFSZ);
 		}
-	} else if ((event == WHC_WIFI_EVT_BRIDGE) || (event == WHC_WIFI_EVT_API_CALL) || (event == WHC_WIFI_EVT_API_RETURN)) {
+	} else if ((event == WHC_WIFI_EVT_CMD) || (event == WHC_WIFI_EVT_API_CALL) || (event == WHC_WIFI_EVT_API_RETURN)) {
 		/* receives EVENTS */
-		buf = rtos_mem_zmalloc(SPI_BUFSZ);	//TODO: optimize
-		if (buf == NULL) {
-			RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "dma rcx cb:mem err\n");
-			goto exit;
-		}
-
-		memcpy(buf, spi_priv->rx_skb->data, SPI_BUFSZ);
-
-		/* free buf later, no need to modify skb. */
-		whc_spi_dev_event_int_hdl(buf, NULL);
+		whc_dev_dispatch_event_copy(spi_priv->rx_skb->data, SPI_BUFSZ);
 	} else {
 		/* others, do nothing */
 		//RTK_LOGD(TAG_WLAN_INIC, "RX dummy data, no process\n");
 	}
 
-exit:
 	/* restart RX DMA */
 	GDMA_Cmd(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, ENABLE);
 
@@ -687,34 +676,6 @@ void whc_spi_dev_send_to_host(u8 *buf, u8 *buf_alloc, u16 len)
 	whc_spi_dev_send(&inic_tx->txbuf_info);
 }
 
-/**
-* @brief  send buf from upper, used by BT without struct whc_buf_info.
-* @param  buf: data buf to be sent, must 4B aligned.
-* @param  len: data len to be sent.
-* @return none.
-*/
-void whc_spi_dev_send_data(u8 *buf, u32 len)
-{
-	struct whc_txbuf_info_t *inic_tx;
-
-	if ((u32)buf & (DEV_DMA_ALIGN - 1)) {
-		RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "Txbuf align Err!\n");
-		return;
-	}
-
-	/* construct struct whc_buf_info & whc_buf_info_t */
-	inic_tx = (struct whc_txbuf_info_t *)rtos_mem_zmalloc(sizeof(struct whc_txbuf_info_t));
-
-	inic_tx->txbuf_info.buf_allocated = inic_tx->txbuf_info.buf_addr = (u32)buf;
-	inic_tx->txbuf_info.size_allocated = inic_tx->txbuf_info.buf_size = len;
-
-	inic_tx->ptr = buf;
-	inic_tx->is_skb = 0;
-
-	/* send ret_msg + ret_val(buf, len) */
-	whc_spi_dev_send(&inic_tx->txbuf_info);
-}
-
 void whc_spi_dev_send(struct whc_buf_info *pbuf)
 {
 	s8 ret = 0;
@@ -781,73 +742,3 @@ drop_send:
 	rtos_mutex_give(spi_priv.tx_lock);
 }
 
-/**
-* @brief  send buf for cmd path
-* @param  buf: data buf to be sent, must 4B aligned.
-* @param  len: data len to be sent.
-* @return none.
-*/
-void whc_spi_dev_send_cmd_data(u8 *buf, u32 len)
-{
-	u8 *txbuf = NULL;
-	u32 event = *(u32 *)buf;
-	u32 txsize = len + sizeof(struct whc_cmd_path_hdr);
-	struct whc_cmd_path_hdr *hdr = NULL;
-
-	if (event != WHC_WIFI_EVT_RECV_PKTS) {
-		txbuf = rtos_mem_zmalloc(txsize);
-		if (!txbuf) {
-			RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "cmd path:no mem\n");
-			return;
-		}
-		hdr = (struct whc_cmd_path_hdr *)txbuf;
-		hdr->event = WHC_WIFI_EVT_BRIDGE;
-		hdr->len = len;
-		memcpy(txbuf + sizeof(struct whc_cmd_path_hdr), buf, len);
-		whc_spi_dev_send_data(txbuf, txsize);
-	} else {
-		whc_spi_dev_send_data(buf, len);
-	}
-}
-
-/**
- * @brief  to haddle the inic message interrupt. If the message queue is
- * 	initialized, it will enqueue the message and wake up the message
- * 	task to haddle the message. If last send message cannot be done, I will
- * 	set pending for next sending message.
- * @param  rxbuf: rx data.
- * @return none.
- */
-void whc_spi_dev_pkt_rx(u8 *rxbuf, struct sk_buff *skb)
-{
-	u32 event = *(u32 *)rxbuf;
-	struct whc_cmd_path_hdr *hdr;
-	(void) hdr;
-
-	switch (event) {
-	case WHC_WIFI_EVT_XIMT_PKTS:
-		/* put the inic message to the queue */
-		if (whc_msg_enqueue(skb, &dev_xmit_priv.xmit_queue) == RTK_FAIL) {
-			break;
-		}
-		/* wakeup task */
-		rtw_single_thread_wakeup();
-		break;
-#ifdef CONFIG_WHC_WIFI_API_PATH
-	case WHC_WIFI_EVT_API_CALL:
-		event_priv.rx_api_msg = rxbuf;
-		rtos_sema_give(event_priv.task_wake_sema);
-
-		break;
-#endif
-	default:
-#ifdef CONFIG_WHC_CMD_PATH
-		hdr = (struct whc_cmd_path_hdr *)rxbuf;
-		whc_dev_pkt_rx_to_user(rxbuf + sizeof(struct whc_cmd_path_hdr), rxbuf, hdr->len);
-#else
-		RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "Event(%x) unknown!\n", event);
-#endif
-		break;
-	}
-
-}

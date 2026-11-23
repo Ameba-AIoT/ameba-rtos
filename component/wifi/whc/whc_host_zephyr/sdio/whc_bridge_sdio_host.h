@@ -113,7 +113,7 @@ struct inic_txbuf_info_t {
 	u8 is_skb: 1;	/* the original buffer is skb or not */
 };
 
-#define SIZE_RX_DESC	(sizeof(struct INIC_RX_DESC))
+#define SIZE_RX_DESC	0
 #define SIZE_TX_DESC	(sizeof(struct INIC_TX_DESC))
 
 #define _RND(sz, r) ((((sz)+((r)-1))/(r))*(r))

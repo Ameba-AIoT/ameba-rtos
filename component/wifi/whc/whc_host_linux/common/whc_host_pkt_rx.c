@@ -1,4 +1,15 @@
 #include <whc_host_linux.h>
+#ifdef CONFIG_WHC_CMD_PATH
+#include <whc_host_cmd_path_api.h>
+#include <whc_host_netlink.h>
+#endif
+#ifdef CONFIG_WHC_HOST_LOG_FWD
+#include "whc_host_log_fwd.h"
+#endif
+/* Guarded include: with the feature off, common/tsf_sync/Kbuild adds no -I path. */
+#if defined(CONFIG_WHC_TSF_SYNC)
+#include "whc_host_tsf_sync.h"
+#endif
 
 void whc_host_recv_notify(void)
 {
@@ -57,7 +68,54 @@ static void whc_host_recv_pkts(struct sk_buff *pskb)
 	return;
 }
 
-int whc_host_recv_process(struct sk_buff *pskb)
+#ifdef CONFIG_WHC_CMD_PATH
+int whc_host_cmd_data_process(struct sk_buff *pskb)
+{
+	u32 event = *(u32 *)(pskb->data + SIZE_RX_DESC);
+	struct whc_cmd_path_hdr *hdr = NULL;
+	u8 *rxbuf = NULL;
+	int log_len;
+	const char *log_buf;
+
+	switch (event) {
+	case WHC_WIFI_EVT_CMD:
+		hdr = (struct whc_cmd_path_hdr *)(pskb->data + SIZE_RX_DESC);
+		rxbuf = (u8 *)pskb->data + SIZE_RX_DESC + sizeof(struct whc_cmd_path_hdr);
+		if (hdr->len >= sizeof(u32) && *(u32 *)rxbuf == WHC_LOG_EVENT) {
+			log_len = (int)(hdr->len - sizeof(u32));
+			log_buf = (const char *)(rxbuf + sizeof(u32));
+			if (log_len > 0) {
+				if (log_buf[log_len - 1] == '\n') {
+					pr_info("[FW] %.*s", log_len, log_buf);
+				} else {
+					pr_info("[FW] %.*s\n", log_len, log_buf);
+				}
+			}
+#ifdef CONFIG_WHC_HOST_LOG_FWD
+		} else if (hdr->len >= sizeof(u32) + 2 &&
+				   *(u32 *)rxbuf == WHC_WIFI_TEST &&
+				   rxbuf[4] == WHC_WIFI_TEST_LOG_ACK) {
+			whc_host_log_forward_ack(rxbuf[5]);
+#endif
+#if defined(CONFIG_WHC_TSF_SYNC)
+		} else if (hdr->len >= TSF_HDR_LEN + sizeof(struct tsf_sync_sample) &&
+				   *(u32 *)rxbuf == WHC_WIFI_TEST &&
+				   rxbuf[4] == WHC_WIFI_TEST_TSF_SAMPLE) {
+			/* handled entirely in kernel; never forwarded to user space */
+			whc_host_tsf_sync_push(rxbuf + TSF_HDR_LEN, sizeof(struct tsf_sync_sample));
+#endif
+		} else {
+			whc_host_deliver_rxbuf_to_user(rxbuf, hdr->len);
+		}
+		break;
+	default:
+		break;
+	}
+	return 0;
+}
+#endif
+
+int whc_host_recv_dispatch(struct sk_buff *pskb)
 {
 	int ret = 0;
 	u32 event = *(u32 *)(pskb->data + SIZE_RX_DESC);

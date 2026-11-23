@@ -262,7 +262,6 @@ u32 whc_uart_dev_dma_rx_done_cb(void *param)
 	struct sk_buff *new_skb = NULL, *rx_pkt = uart_priv.rx_skb;
 	u32 event;
 	struct whc_msg_info *msg_info;
-	u8 *buf = NULL;
 	u32 ret = 0;
 
 #ifdef UART_RX_DMA
@@ -314,28 +313,18 @@ retry:
 
 		rx_pkt->dev = (void *)((u32)msg_info->wlan_idx);
 
-		whc_uart_dev_event_int_hdl((u8 *)msg_info, rx_pkt);
+		whc_dev_event_int_hdl((u8 *)msg_info, rx_pkt);
 
 	} else {
-		/* receives EVENTS */
-		buf = rtos_mem_zmalloc(UART_BUFSZ);	//TODO: optimize
-		if (buf == NULL) {
-			RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "%s, can't alloc buffer!!\n", __func__);
-			goto exit;
-		}
-
-
-		memcpy(buf, uart_priv.rx_skb->data, UART_BUFSZ);
+		/* receives EVENTS, free buf later, no need to modify skb. */
+		whc_dev_dispatch_event_copy(uart_priv.rx_skb->data, UART_BUFSZ);
 #ifdef UART_RX_DMA
 
 		/* restart RX DMA */
 		GDMA_Cmd(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, ENABLE);
 #endif
-		/* free buf later, no need to modify skb. */
-		whc_uart_dev_event_int_hdl(buf, NULL);
 	}
 
-exit:
 
 	//whc_uart_irq_set(RxIrq, ENABLE);
 	uart_priv.rx_state = WHC_UART_DEV_RX_DONE;
@@ -548,39 +537,6 @@ void whc_uart_dev_device_init(void)
 	RTK_LOGI(TAG_WLAN_INIC, "UART init done!\n");
 }
 
-
-void whc_uart_dev_pkt_rx(u8 *rxbuf, struct sk_buff *skb)
-{
-	u32 event = *(u32 *)rxbuf;
-
-	switch (event) {
-	case WHC_WIFI_EVT_XIMT_PKTS:
-		/* put the inic message to the queue */
-		if (whc_msg_enqueue(skb, &dev_xmit_priv.xmit_queue) == RTK_FAIL) {
-			break;
-		}
-		/* wakeup task */
-		rtw_single_thread_wakeup();
-
-		break;
-#ifdef CONFIG_WHC_WIFI_API_PATH
-	case WHC_WIFI_EVT_API_CALL:
-		event_priv.rx_api_msg = rxbuf;
-		rtos_sema_give(event_priv.task_wake_sema);
-
-		break;
-#endif
-	default:
-#ifdef CONFIG_WHC_CMD_PATH
-		whc_dev_pkt_rx_to_user(rxbuf, rxbuf, UART_BUFSZ);
-#else
-		RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "Event(%x) unknown!\n", event);
-#endif
-		break;
-	}
-
-}
-
 u8 whc_uart_dev_tx_path_avail(void)
 {
 	u32 delay_cnt = 0;
@@ -640,32 +596,4 @@ u8 whc_uart_dev_bus_is_idle(void)
 {
 	/*Not yet implemented*/
 	return TRUE;
-}
-
-/**
-* @brief  send buf from upper
-* @param  buf: data buf to be sent, must 4B aligned.
-* @param  len: data len to be sent.
-* @return none.
-*/
-void whc_uart_dev_send_data(u8 *buf, u32 len)
-{
-	struct whc_txbuf_info_t *whc_tx;
-
-	if ((u32)buf & (DEV_DMA_ALIGN - 1)) {
-		RTK_LOGE(TAG_WLAN_INIC, "Send Error, Data buf unaligned!");
-		return;
-	}
-
-	/* construct struct whc_buf_info & whc_buf_info_t */
-	whc_tx = (struct whc_txbuf_info_t *)rtos_mem_zmalloc(sizeof(struct whc_txbuf_info_t));
-
-	whc_tx->txbuf_info.buf_allocated = whc_tx->txbuf_info.buf_addr = (u32)buf;
-	whc_tx->txbuf_info.size_allocated = whc_tx->txbuf_info.buf_size = len;
-
-	whc_tx->ptr = buf;
-	whc_tx->is_skb = 0;
-
-	/* send ret_msg + ret_val(buf, len) */
-	whc_uart_dev_send(&whc_tx->txbuf_info);
 }

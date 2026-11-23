@@ -37,17 +37,14 @@ void SDIO_TxBdHdl_Init(SPDIO_TX_BD_HANDLE *g_TXBDHdl, SPDIO_TX_BD *SPDIO_TXBDAdd
 	DCache_Clean((u32)SPDIO_TXBDAddr, host_tx_bd_num * sizeof(SPDIO_TX_BD));
 }
 
-void SDIO_RxBdHdl_Init(SPDIO_RX_BD_HANDLE *g_RXBDHdl, SPDIO_RX_BD *SPDIO_RXBDAddr, INIC_RX_DESC *g_RXDESCAddr, u16 host_rx_bd_num)
+void SDIO_RxBdHdl_Init(SPDIO_RX_BD_HANDLE *g_RXBDHdl, SPDIO_RX_BD *SPDIO_RXBDAddr, u16 host_rx_bd_num)
 {
 	SPDIO_RX_BD_HANDLE *pRxBdHdl;
 	u32 i;
 
-	_memset(g_RXDESCAddr, 0, sizeof(INIC_RX_DESC) * host_rx_bd_num);
-
 	for (i = 0; i < host_rx_bd_num; i++) {
 		pRxBdHdl = &g_RXBDHdl[i];
 		pRxBdHdl->pRXBD = &SPDIO_RXBDAddr[i];
-		pRxBdHdl->pRXDESC = &g_RXDESCAddr[i];
 		pRxBdHdl->isFree = TRUE;
 		pRxBdHdl->isPktEnd = FALSE;
 	}
@@ -124,7 +121,6 @@ void SPDIO_Recycle_Rx_BD(SDIO_TypeDef *SDIO, PSPDIO_ADAPTER pSPDIODev, spdio_dev
 			}
 			pRxBdHdl->isPktEnd = FALSE;
 			pRxBdHdl->isFree = TRUE;
-			_memset((void *)(pRxBdHdl->pRXDESC), 0, sizeof(INIC_RX_DESC));
 			_memset((void *)pRXBD, 0, sizeof(SPDIO_RX_BD));
 		} else {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Recycle a Free RX_BD, RXBDRPtr=%d\n", pSPDIODev->RXBDRPtr);
@@ -149,7 +145,6 @@ u8 SPDIO_DeviceTx(SDIO_TypeDef *SDIO, PSPDIO_ADAPTER pSPDIODev, struct spdio_buf
 {
 	SPDIO_RX_BD_HANDLE *pRxBdHdl;
 	SPDIO_RX_BD *pRXBD;
-	INIC_RX_DESC *pRxDesc;
 	u16 RxBdRdPtr = pSPDIODev->RXBDRPtr; // RX_BD read pointer
 	u16 pkt_size = pbuf->buf_size;
 	u16 pkt_offset = 0;
@@ -157,16 +152,11 @@ u8 SPDIO_DeviceTx(SDIO_TypeDef *SDIO, PSPDIO_ADAPTER pSPDIODev, struct spdio_buf
 
 	assert_param(IS_SDIO_DEVICE(SDIO));
 
-	/* check if RX_BD available */
-	if (SDIO_WIFI == SDIO) {
 #if defined(SDIO_RX_PKT_SIZE_OVER_16K) && SDIO_RX_PKT_SIZE_OVER_16K
-		needed_rxbd_num = ((pkt_size - 1) / SPDIO_MAX_RX_BD_BUF_SIZE) + SPDIO_MIN_RX_BD_SEND_PKT;
+	needed_rxbd_num = (SDIO_WIFI == SDIO) ? ((pkt_size - 1) / SPDIO_MAX_RX_BD_BUF_SIZE) + 1 : 1;
 #else
-		needed_rxbd_num = SPDIO_MIN_RX_BD_SEND_PKT;
+	needed_rxbd_num = 1;
 #endif
-	} else {
-		needed_rxbd_num = 0x1;
-	}
 
 	if (RxBdRdPtr == pSPDIODev->RXBDWPtr) {
 		/* Idle */
@@ -182,31 +172,6 @@ u8 SPDIO_DeviceTx(SDIO_TypeDef *SDIO, PSPDIO_ADAPTER pSPDIODev, struct spdio_buf
 		}
 	}
 
-	if (SDIO_WIFI == SDIO) {
-		/* a SDIO RX packet will use at least 2 RX_BD, the 1st one is for RX_Desc, other RX_BDs are for packet payload */
-		pRxBdHdl = pSPDIODev->pRXBDHdl + pSPDIODev->RXBDWPtr;
-		pRXBD = pRxBdHdl->pRXBD;
-		if (!pRxBdHdl->isFree) {
-			RTK_LOGS(TAG, RTK_LOG_ERROR, "Allocated a non-free RX_BD\n");
-			assert_param(FALSE);
-		}
-
-		pRxDesc = pRxBdHdl->pRXDESC;
-		pRxDesc->type = pbuf->type;
-		pRxDesc->pkt_len = pkt_size;
-		pRxDesc->offset = sizeof(INIC_RX_DESC);
-		DCache_CleanInvalidate((u32)pRxDesc, sizeof(INIC_RX_DESC));
-
-		pRxBdHdl->isFree = FALSE;
-		pRXBD->FS = 1;
-		pRXBD->LS = 0;
-		pRXBD->PhyAddr = (u32)pRxDesc;
-		pRXBD->BuffSize = sizeof(INIC_RX_DESC);
-		DCache_CleanInvalidate((u32)pRXBD, sizeof(SPDIO_RX_BD));
-		pRxBdHdl->isPktEnd = 0;
-		SDIO_INCR_RING_IDX(pSPDIODev->RXBDWPtr, pSPDIODev->host_rx_bd_num);
-	}
-
 	assert_param(pbuf->buf_addr % SPDIO_DMA_ALIGN_4 == 0);
 	DCache_CleanInvalidate((u32)pbuf->buf_addr, pbuf->buf_size);
 	/* Take RX_BD to transmit packet payload */
@@ -215,10 +180,11 @@ u8 SPDIO_DeviceTx(SDIO_TypeDef *SDIO, PSPDIO_ADAPTER pSPDIODev, struct spdio_buf
 		pRXBD = pRxBdHdl->pRXBD;
 		pRxBdHdl->isFree = FALSE;
 
-		if (SDIO_WIFI == SDIO) {
-			pRXBD->FS = 0;
-		} else {
+		/* first BD of the packet carries FS=1 (no separate RX_Desc BD) */
+		if (pkt_offset == 0) {
 			pRXBD->FS = 1;
+		} else {
+			pRXBD->FS = 0;
 		}
 
 		pRXBD->PhyAddr = (u32)((u8 *)pbuf->buf_addr + pkt_offset);

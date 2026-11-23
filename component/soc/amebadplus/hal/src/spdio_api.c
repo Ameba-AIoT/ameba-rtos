@@ -21,7 +21,7 @@ static const char *const TAG = "SPDIO";
 #define SPDIO_IRQ_PRIORITY			INT_PRI_MIDDLE
 #define SPDIO_TX_BD_BUF_SZ_UNIT		64
 #define SPDIO_RX_BD_FREE_TH				5
-#define SPDIO_MIN_RX_BD_SEND_PKT			2
+#define SPDIO_MIN_RX_BD_SEND_PKT			1
 #define SPDIO_MAX_RX_BD_BUF_SIZE			16380	// the Maximum size for a RX_BD point to, make it 4-bytes aligned
 
 /** @}*/
@@ -59,7 +59,6 @@ typedef struct {
 typedef struct {
 	void *priv;
 	SPDIO_RX_BD *pRXBD;		/* Point to the RX_BD buffer */
-	INIC_RX_DESC *pRXDESC;	/* point to the Rx Packet */
 	u8 isPktEnd;			/*  For a packet over 1 BD , this flag to indicate is this BD contains a packet end */
 	u8 isFree;				/* is this RX BD free (DMA done and its RX packet has been freed) */
 } SPDIO_RX_BD_HANDLE;
@@ -78,8 +77,6 @@ typedef struct {
 	u8 *pRXBDAddr;					/* The RX_BD start address */
 	SPDIO_RX_BD *pRXBDAddrAligned;	/* The RX_BD start address, it must be 8-bytes aligned */
 
-	u8 *pRXDESCAddr;
-	INIC_RX_DESC *pRXDESCAddrAligned;
 	SPDIO_RX_BD_HANDLE *pRXBDHdl;	/* point to the allocated memory for RX_BD Handle array */
 	u16 RXBDWPtr;					/* The SDIO RX(Device->Host) BD write index */
 	u16 RXBDRPtr;					/* The SDIO RX(Device->Host) BD local read index, different with HW maintained Read Index. */
@@ -165,7 +162,6 @@ s8 spdio_tx(struct spdio_t *obj, struct spdio_buf_t *pbuf)
 {
 	DCache_CleanInvalidate((u32)pbuf->buf_allocated, pbuf->size_allocated);
 	PHAL_SPDIO_ADAPTER pgSDIODev = obj->priv;
-	INIC_RX_DESC *pRxDesc;
 	SPDIO_RX_BD_HANDLE *pRxBdHdl;
 	SPDIO_RX_BD *pRXBD;
 	u32 Offset = 0;
@@ -177,14 +173,14 @@ s8 spdio_tx(struct spdio_t *obj, struct spdio_buf_t *pbuf)
 #endif
 	/* check if RX_BD available */
 #if defined(SDIO_RX_PKT_SIZE_OVER_16K) && SDIO_RX_PKT_SIZE_OVER_16K
-	needed_rxbd_num = ((pbuf->buf_size - 1) / SPDIO_MAX_RX_BD_BUF_SIZE) + SPDIO_MIN_RX_BD_SEND_PKT;
+	needed_rxbd_num = (pbuf->buf_size - 1) / SPDIO_MAX_RX_BD_BUF_SIZE + 1;
 #endif
 	if (RxBdRdPtr != pgSDIODev->RXBDWPtr) {
 		if (pgSDIODev->RXBDWPtr > RxBdRdPtr) {
 #if defined(SDIO_RX_PKT_SIZE_OVER_16K) && SDIO_RX_PKT_SIZE_OVER_16K
 			if ((pgSDIODev->RXBDWPtr - RxBdRdPtr) >= (u16)(obj->host_rx_bd_num - needed_rxbd_num))
 #else
-			if ((pgSDIODev->RXBDWPtr - RxBdRdPtr) >= (u16)(obj->host_rx_bd_num - (u32)SPDIO_MIN_RX_BD_SEND_PKT))
+			if ((pgSDIODev->RXBDWPtr - RxBdRdPtr) >= (u16)(obj->host_rx_bd_num - 1))
 #endif
 			{
 				RTK_LOGS(TAG, RTK_LOG_WARN, "SDIO_Return_Rx_Data: No Available RX_BD, ReadPtr=%d WritePtr=%d\n", \
@@ -195,7 +191,7 @@ s8 spdio_tx(struct spdio_t *obj, struct spdio_buf_t *pbuf)
 #if defined(SDIO_RX_PKT_SIZE_OVER_16K) && SDIO_RX_PKT_SIZE_OVER_16K
 			if ((RxBdRdPtr - pgSDIODev->RXBDWPtr) <= (u16)needed_rxbd_num)
 #else
-			if ((RxBdRdPtr - pgSDIODev->RXBDWPtr) <= (u16)SPDIO_MIN_RX_BD_SEND_PKT)
+			if ((RxBdRdPtr - pgSDIODev->RXBDWPtr) <= (u16)1)
 #endif
 			{
 				RTK_LOGS(TAG, RTK_LOG_WARN, "SDIO_Return_Rx_Data: No Available RX_BD, ReadPtr=%d WritePtr=%d\n", RxBdRdPtr, pgSDIODev->RXBDWPtr);
@@ -204,38 +200,6 @@ s8 spdio_tx(struct spdio_t *obj, struct spdio_buf_t *pbuf)
 		}
 	}
 
-	// TODO: Add RX_DESC before the packet
-
-	/* a SDIO RX packet will use at least 2 RX_BD, the 1st one is for RX_Desc,
-	   other RX_BDs are for packet payload */
-	/* Use a RX_BD to transmit RX_Desc */
-	pRXBD = pgSDIODev->pRXBDAddrAligned + pgSDIODev->RXBDWPtr; // get the RX_BD head
-	pRxBdHdl = pgSDIODev->pRXBDHdl + pgSDIODev->RXBDWPtr;
-
-	pRxDesc = pRxBdHdl->pRXDESC;
-	pRxDesc->type = pbuf->type;
-	pRxDesc->pkt_len = pbuf->buf_size;
-	pRxDesc->offset = sizeof(INIC_RX_DESC);
-	DCache_CleanInvalidate((u32)pRxDesc, sizeof(INIC_RX_DESC));
-
-	if (!pRxBdHdl->isFree) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "SDIO_Return_Rx_Data: Allocated a non-free RX_BD\n");
-	}
-	pRxBdHdl->isFree = 0;
-	pRXBD->FS = 1;
-	pRXBD->LS = 0;
-	pRXBD->PhyAddr = (u32)((u8 *)pRxBdHdl->pRXDESC);
-	pRXBD->BuffSize = sizeof(INIC_RX_DESC);
-	DCache_CleanInvalidate((u32)pRXBD, sizeof(SPDIO_RX_BD));
-	pRxBdHdl->isPktEnd = 0;
-
-	pgSDIODev->RXBDWPtr += 1;
-	if (pgSDIODev->RXBDWPtr >= obj->host_rx_bd_num) {
-		pgSDIODev->RXBDWPtr -= obj->host_rx_bd_num;
-	}
-
-	RxBdWrite++;
-
 	/* Take RX_BD to transmit packet payload */
 	pkt_size = pbuf->buf_size;
 	Offset = 0;
@@ -243,7 +207,12 @@ s8 spdio_tx(struct spdio_t *obj, struct spdio_buf_t *pbuf)
 		pRXBD = pgSDIODev->pRXBDAddrAligned + pgSDIODev->RXBDWPtr; // get the RX_BD head
 		pRxBdHdl = pgSDIODev->pRXBDHdl + pgSDIODev->RXBDWPtr;
 		pRxBdHdl->isFree = 0;
-		pRXBD->FS = 0;
+		/* first BD of the packet carries FS=1 (no separate RX_Desc BD) */
+		if (Offset == 0) {
+			pRXBD->FS = 1;
+		} else {
+			pRXBD->FS = 0;
+		}
 		pRXBD->PhyAddr = (u32)((u8 *)pbuf->buf_addr + Offset);
 #if defined(SDIO_RX_PKT_SIZE_OVER_16K) && SDIO_RX_PKT_SIZE_OVER_16K
 		if ((pkt_size - Offset) <= SPDIO_MAX_RX_BD_BUF_SIZE) {
@@ -430,7 +399,6 @@ static void SPDIO_Recycle_Rx_BD(PHAL_SPDIO_ADAPTER pgSPDIODev)
 				isPktEnd = TRUE;
 			}
 			pRxBdHdl->isPktEnd = 0;
-			_memset((void *)(pRxBdHdl->pRXDESC), 0, sizeof(INIC_RX_DESC));
 			_memset((void *)pRXBD, 0, sizeof(SPDIO_RX_BD)); // clean this RX_BD
 			pRxBdHdl->isFree = 1;
 		} else {
@@ -561,13 +529,6 @@ bool SPDIO_Device_Init(struct spdio_t *obj)
 	}
 	pgSPDIODev->pRXBDAddrAligned = (SPDIO_RX_BD *)(((((u32)pgSPDIODev->pRXBDAddr - 1) >> 3) + 1) << 3); // Make it 8-bytes aligned
 
-	pgSPDIODev->pRXDESCAddr = rtos_mem_zmalloc((obj->host_rx_bd_num * sizeof(INIC_RX_DESC)) + 3);
-	if (NULL == pgSPDIODev->pRXDESCAddr) {
-		RTK_LOGE(TAG, "SDIO_Device_Init: Malloc for RX_DESC Err!!\n");
-		goto SDIO_INIT_ERR;
-	}
-	pgSPDIODev->pRXDESCAddrAligned = (INIC_RX_DESC *)(((((u32)pgSPDIODev->pRXDESCAddr - 1) >> 2) + 1) << 2); // Make it 4-bytes aligned
-
 	SPDIO_Board_Init();
 
 	/* SDIO function enable and clock enable*/
@@ -626,7 +587,6 @@ bool SPDIO_Device_Init(struct spdio_t *obj)
 	for (i = 0; i < obj->host_rx_bd_num; i++) {
 		pRxBdHdl = pgSPDIODev->pRXBDHdl + i;
 		pRxBdHdl->pRXBD = pgSPDIODev->pRXBDAddrAligned + i;
-		pRxBdHdl->pRXDESC = pgSPDIODev->pRXDESCAddrAligned + i;
 		pRxBdHdl->isFree = 1;
 	}
 
@@ -697,12 +657,6 @@ SDIO_INIT_ERR:
 		pgSPDIODev->pTXBDAddr = NULL;
 		pgSPDIODev->pTXBDAddrAligned = NULL;
 	}
-
-	if (pgSPDIODev->pRXDESCAddr) {
-		rtos_mem_free(pgSPDIODev->pRXDESCAddr);
-		pgSPDIODev->pRXDESCAddr = NULL;
-		pgSPDIODev->pRXDESCAddrAligned = NULL;
-	}
 	return RTK_FAIL;
 }
 
@@ -762,12 +716,6 @@ void SPDIO_Device_DeInit(void)
 		pgSPDIODev->pTXBDAddrAligned = NULL;
 	}
 
-	if (pgSPDIODev->pRXDESCAddr) {
-		rtos_mem_free(pgSPDIODev->pRXDESCAddr);
-		pgSPDIODev->pRXDESCAddr = NULL;
-		pgSPDIODev->pRXDESCAddrAligned = NULL;
-	}
-
 	SDIO_INTConfig(SDIO_WIFI, 0xffff, DISABLE);
 	SDIO_INTClearAll(SDIO_WIFI);
 	InterruptDis(SDIO_IRQ);
@@ -792,7 +740,7 @@ void SPDIO_Device_DeInit(void)
  * @brief Initialize spdio interface.
  * @param obj Pointer to a spdio_t structure which should be initialized by user,
  * 		and which will be used to initialize spdio interface.
- * 		- obj->host_rx_bd_num: spdio write bd number, needs 2 bd for one transaction.
+ * 		- obj->host_rx_bd_num: spdio write bd number.
  * 		- obj->host_tx_bd_num: spdio read bd number.
  * 		- obj->device_rx_bufsz: spdio read buffer size.
  * 		- obj->rx_buf: spdio read buffer array.
@@ -806,7 +754,7 @@ void spdio_init(struct spdio_t *obj)
 	}
 
 	if ((obj->host_tx_bd_num == 0) || (obj->device_rx_bufsz == 0) || (obj->device_rx_bufsz % 64)
-		|| (obj->host_rx_bd_num == 0) || (obj->host_rx_bd_num % 2) || (obj->rx_buf == NULL)) {
+		|| (obj->host_rx_bd_num == 0) || (obj->rx_buf == NULL)) {
 		RTK_LOGE(TAG, "spdio obj resource isn't correctly inited, spdio init failed!\n");
 		return;
 	}

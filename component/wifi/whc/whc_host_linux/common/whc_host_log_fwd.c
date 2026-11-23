@@ -35,7 +35,7 @@ static int __log_fwd_send_locked(bool enable, bool update_state)
 
 	*(u32 *)buf = WHC_WIFI_TEST;
 	buf[4] = op;
-	whc_host_send_data_to_dev(buf, sizeof(buf), 0);
+	whc_host_send_cmd_data_to_dev(buf, sizeof(buf), 0);
 
 	remain = wait_for_completion_timeout(&g_ack,
 										 msecs_to_jiffies(LOG_FWD_ACK_TIMEOUT_MS));

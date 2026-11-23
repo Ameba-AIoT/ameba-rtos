@@ -55,6 +55,9 @@ void whc_host_ops_key_init(void);
 void whc_host_inform_bss(u32 channel, u32 frame_is_bcn, s32 rssi, u8 *mac_addr, u8 *IEs, u32 ie_len);
 void whc_host_disconnect_indicate(u16 reason, u8 locally_generated, u8 *bssid);
 void whc_host_sta_assoc_indicate(char *buf, int buf_len);
+void whc_host_ch_switch_indicate(struct rtw_event_ch_switch *ch_info);
+void whc_host_ch_switch_init(void);
+void whc_host_ch_switch_deinit(void);
 void whc_host_external_auth_request(char *evt_info);
 void whc_host_update_owe_info_event(char *evt_info);
 void whc_host_connect_indicate(unsigned int join_status, void *evt_info);
@@ -145,7 +148,7 @@ int whc_host_xmit_deinit(void);
 int whc_host_xmit_pending_q_num(void);
 void whc_host_xmit_wakeup_thread(void);
 void whc_host_recv_notify(void);
-int whc_host_recv_process(struct sk_buff *pskb);
+int whc_host_recv_dispatch(struct sk_buff *pskb);
 void whc_host_recv_init(void);
 void whc_host_recv_deinit(void);
 int whc_host_event_init(struct whc_device *idev);
@@ -184,6 +187,14 @@ void whc_host_unregister_genl_family(void);
 #ifdef CONFIG_RMESH
 void whc_host_rmesh_to_user(u32 *param_buf);
 #endif
+#endif
+
+#ifdef WHC_TX_AGG
+/* Drain the tx queue coalescing queued frames into bus transfers (SDIO only). */
+void whc_host_txagg_xmit(struct xmit_priv_t *xmit_priv);
+struct whc_msg_node *whc_host_dequeue_tx_packet(struct xmit_priv_t *xmit_priv);
+void whc_host_requeue_tx_packet_head(struct xmit_priv_t *xmit_priv, struct whc_msg_node *p_node);
+void whc_host_xmit_wake_tx_queue(void);
 #endif
 
 #endif // __RTW_FUNCTIONS_H__

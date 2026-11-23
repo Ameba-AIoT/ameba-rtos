@@ -102,7 +102,7 @@ typedef struct {
 } rtk_bt_vendor_sync_ref_ap_info_t;
 
 typedef enum {
-	RTK_BT_LE_CLOCK_STATUS_SUCCESS = 0,       /* get successs */
+	RTK_BT_LE_CLOCK_STATUS_SUCCESS = 0,       /* get success */
 	RTK_BT_LE_CLOCK_STATUS_CONN_HANDLE_ERROR, /* input parameter conn_handle error */
 	RTK_BT_LE_CLOCK_STATUS_GET_FAIL,          /* get fail reason: the slave did not receive the connection packet */
 } rtk_bt_le_clock_status_t;
@@ -237,7 +237,7 @@ rtk_bt_vendor_sync_ref_ap_info_t *rtk_bt_get_ref_ap_info(void);
  * @brief      Get the CIG/BIG reference anchor point of controller.
  * @param[in] conn_handle: connection handle
  * @param[in] dir: The ISO path direction
- * @param[out] p_info: The information include CIG/BIG referece anchor point
+ * @param[out] p_info: The information include CIG/BIG reference anchor point
  * @note       This API shall NOT be called in bt_api_task.
  * @return
  *            - 0  : Succeed
@@ -253,7 +253,7 @@ rtk_bt_vendor_conn_clock_info_t *rtk_bt_get_slave_clock_info(void);
 /**
  * @brief      Get the clock information  of slave connection link.
  * @param[in] conn_handle: connection handle
- * @param[out] p_info: The clock information
+ * @param[out] clock_info: The clock information
  * @note       This API shall NOT be called in bt_api_task.
  * @return
  *            - 0  : Succeed

@@ -95,7 +95,6 @@ static void whc_sdio_recv_notify(void)
 static int whc_sdio_recv_timeout(struct whc_xfer_adapter_t *adapter, u8 *pbuf, int *actual_size, int timeout_ms)
 {
 	struct whc_sdio *priv = (struct whc_sdio *)adapter->interface;
-	INIC_RX_DESC *prxdesc;
 	int ret;
 	u32 himr;
 	u32 rx_len;
@@ -116,7 +115,11 @@ static int whc_sdio_recv_timeout(struct whc_xfer_adapter_t *adapter, u8 *pbuf, i
 	adapter->sdio_rx_ready = false;
 
 	rx_len = rtw_sdio_get_rx_len(priv);
-	if (rx_len > 0) {
+	/* adapter->rx_buf holds at most one xfer desc + hash, and sdio_read_port() reads 4B-rounded */
+	if (_RND4(rx_len) > WHC_XFER_DESC_SIZE + adapter->hash_size) {
+		dev_err(&priv->func->dev, "rx_len %u too large\n", rx_len);
+		ret = -1;
+	} else if (rx_len > 0) {
 		ret = sdio_read_port(priv, SDIO_RX_FIFO_DOMAIN_ID, rx_len, adapter->rx_buf);
 		ret = (ret == true) ? 0 : -1;
 	} else {
@@ -125,12 +128,10 @@ static int whc_sdio_recv_timeout(struct whc_xfer_adapter_t *adapter, u8 *pbuf, i
 	}
 
 	if (ret == 0) {
-		/* Parse RX descriptor from rx_buf */
-		prxdesc = (INIC_RX_DESC *)adapter->rx_buf;
-		*actual_size = prxdesc->pkt_len;
-
-		/* Actually pbuf is adapter->rx_buf */
-		memmove(pbuf, adapter->rx_buf + prxdesc->offset, prxdesc->pkt_len);
+		/* Device TX path no longer prepends INIC_RX_DESC; payload starts at rx_buf[0] */
+		*actual_size = (int)rx_len;
+		/* pbuf == adapter->rx_buf, data is already in place */
+		(void)pbuf;
 	}
 
 	/* restore RX_REQ interrupt*/

@@ -97,50 +97,6 @@ ameba_execute_process(
     OUTPUT_FILE ${c_SDK_IMAGE_TARGET_DIR}/ap_image_all.bin
 )
 
-if(CONFIG_DYNAMIC_APP_LOAD_EN)
-    ameba_execute_process(
-        COMMAND python ${c_BASEDIR}/component/dynamic_app_load/elf2tinf/imagetool.py imagetool ${c_BASEDIR}/component/dynamic_app_load/tinfbin/
-    )
-
-    if(EXISTS ${c_BASEDIR}/component/dynamic_app_load/tinfbin/dynamic_app.bin)
-        ameba_axf2bin_prepend_head(
-            ${c_BASEDIR}/component/dynamic_app_load/tinfbin/dynamic_app_prepend.bin
-            ${c_BASEDIR}/component/dynamic_app_load/tinfbin/dynamic_app.bin
-            __dram_dynamic_app_text_start__
-            ${c_SDK_IMAGE_TARGET_DIR}/target_img2.map
-        )
-
-        ameba_execute_process(
-            COMMAND ${CMAKE_COMMAND} -E rename ${c_SDK_IMAGE_TARGET_DIR}/ap_image_all.bin ${c_SDK_IMAGE_TARGET_DIR}/ap_image_all_tmp.bin
-        )
-
-        ameba_execute_process(
-            COMMAND ${CMAKE_COMMAND} -E cat ${c_SDK_IMAGE_TARGET_DIR}/ap_image_all_tmp.bin ${c_BASEDIR}/component/dynamic_app_load/tinfbin/dynamic_app_prepend.bin
-            OUTPUT_FILE ${c_SDK_IMAGE_TARGET_DIR}/ap_image_all.bin
-        )
-
-        ameba_execute_process(
-            COMMAND ${CMAKE_COMMAND} -E remove ${c_SDK_IMAGE_TARGET_DIR}/ap_image_all_tmp.bin
-        )
-
-        if(EXISTS ${c_SDK_IMAGE_TARGET_DIR}/ap_image_all_en.bin)
-            ameba_execute_process(
-                COMMAND ${CMAKE_COMMAND} -E rename ${c_SDK_IMAGE_TARGET_DIR}/ap_image_all_en.bin ${c_SDK_IMAGE_TARGET_DIR}/ap_image_all_en_tmp.bin
-            )
-
-            ameba_execute_process(
-                COMMAND ${CMAKE_COMMAND} -E cat ${c_SDK_IMAGE_TARGET_DIR}/ap_image_all_en_tmp.bin ${c_BASEDIR}/component/dynamic_app_load/tinfbin/dynamic_app_prepend.bin
-                OUTPUT_FILE ${c_SDK_IMAGE_TARGET_DIR}/ap_image_all_en.bin
-            )
-
-            ameba_execute_process(
-                COMMAND ${CMAKE_COMMAND} -E remove ${c_SDK_IMAGE_TARGET_DIR}/ap_image_all_en_tmp.bin
-            )
-        endif()
-    endif()
-
-endif()
-
 if(NOT CONFIG_AMEBA_RLS AND NOT CONFIG_CP_TEST_CA32)
     message("========== Image analyze start ==========")
     ameba_execute_process(p_SHOW_OUTPUT
