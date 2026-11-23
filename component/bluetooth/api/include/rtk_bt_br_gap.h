@@ -1,7 +1,7 @@
 /**
 * @file      rtk_bt_br_gap.h
 * @author    benling_xu@realsil.com.cn
-* @brief     Bluetooth LE GAP part type and function deffinition
+* @brief     Bluetooth LE GAP part type and function definition
 * @copyright Copyright (c) 2022. Realtek Semiconductor Corporation. All rights reserved.
 */
 
@@ -44,7 +44,6 @@ extern "C"
                                         HSP_PROFILE_MASK | RDTP_PROFILE_MASK | SPP_PROFILE_MASK | \
                                         IAP_PROFILE_MASK | PBAP_PROFILE_MASK)
 
-#define DEFAULT_SUPVISIONTIMEOUT        0x1f40 //0x7D00
 #define RTK_BD_ADDR_LEN 6
 
 #define RTK_BT_GAP_DEVICE_NAME_LEN      (39+1)//!< Max length of device name, if device name length exceeds it, it will be truncated.
@@ -56,7 +55,7 @@ typedef enum {
 } rtk_bt_br_page_scan_t;
 
 typedef enum {
-	RTK_BT_BR_GAP_INQUIRY_MODE_STANDARD_RESULT = 0, /*!< Inquiry reusult standard format. */
+	RTK_BT_BR_GAP_INQUIRY_MODE_STANDARD_RESULT = 0, /*!< Inquiry result standard format. */
 	RTK_BT_BR_GAP_INQUIRY_MODE_RESULT_WITH_RSSI,    /*!< Inquiry result format with RSSI. */
 	RTK_BT_BR_GAP_INQUIRY_MODE_EXTENDED_RESULT,     /*!< Inquiry result with RSSI format or Extended inquiry result format. */
 } rtk_bt_br_inquiry_mode_t;
@@ -66,13 +65,23 @@ typedef enum {
  * @brief     Bluetooth BREDR SM IO capability type definition.
  */
 typedef enum {
-	RTK_BR_IO_CAP_DISPALY_ONLY     = 0x00,     /*!< 0x00 DisplayOnly */
+	RTK_BR_IO_CAP_DISPLAY_ONLY     = 0x00,     /*!< 0x00 DisplayOnly */
 	RTK_BR_IO_CAP_DISPLAY_YES_NO   = 0x01,     /*!< 0x01 DisplayYesNo */
 	RTK_BR_IO_CAP_KEYBOARD_ONLY    = 0x02,     /*!< 0x02 KeyboardOnly */
 	RTK_BR_IO_CAP_NO_IN_NO_OUT     = 0x03,     /*!< 0x03 NoInputNoOutput */
-	RTK_BR_IO_CAP_KEYBOARD_DISPALY = 0x04,     /*!< 0x04 KeyboardDisplay */
+	RTK_BR_IO_CAP_KEYBOARD_DISPLAY = 0x04,     /*!< 0x04 KeyboardDisplay */
 	RTK_BR_IO_CAP_MAX              = 0x05,     /*!< 0x05-0xFF Reserved for future use */
 } rtk_bt_br_io_cap_t;
+
+/**
+ * @defgroup  RTK_BR_IO_CAP Deprecated aliases
+ * @brief     Deprecated aliases of the @ref rtk_bt_br_io_cap_t values.
+ * @deprecated Use the @ref rtk_bt_br_io_cap_t values instead.
+ * @{
+ */
+#define RTK_BR_IO_CAP_DISPALY_ONLY RTK_BR_IO_CAP_DISPLAY_ONLY
+#define RTK_BR_IO_CAP_KEYBOARD_DISPALY RTK_BR_IO_CAP_KEYBOARD_DISPLAY
+/** @} */
 
 typedef enum {
 	RTK_BT_BR_GAP_RADIO_MODE_VISIBLE_CONNECTABLE  = 0x01,  /*!< Enable both inquiry scan and page scan. */
@@ -370,8 +379,8 @@ uint16_t rtk_bt_br_gap_set_inquiry_param(rtk_bt_br_inquiry_param_t *inquiry_para
 uint16_t rtk_bt_br_gap_cfg_inquiry_param(uint8_t type, uint16_t interval, uint16_t window);
 
 /**
- * @brief     Set security paramters.
- * @param[in] p_sec_param: Security paramters
+ * @brief     Set security parameters.
+ * @param[in] p_sec_param: Security parameters
  * @return
  *            - 0  : Succeed
  *            - Others: Error code
@@ -416,7 +425,7 @@ uint16_t rtk_bt_br_gap_max_bond_num_get(uint8_t *pmax_bond_num);
 
 /**
  * @brief     get used bond number.
- * @param[in] pmax_bond_num: bond number
+ * @param[in] pbond_num: bond number
  * @return
  *            - 0  : Succeed
  *            - Others: Error code
@@ -488,7 +497,7 @@ uint16_t rtk_bt_br_gap_bond_delete(uint8_t *bd_addr);
 
 /**
  * @brief     delete bond information in bond storage
- * @param[in] void: NUll
+ * @param[in] void: NULL
  * @return
  *            - 0  : Succeed
  *            - Others: Error code
@@ -539,14 +548,20 @@ uint16_t rtk_bt_br_gap_set_sniff_mode(uint8_t enable, uint8_t *bd_addr, uint16_t
 uint16_t rtk_bt_br_gap_set_cod(uint32_t *bt_cod);
 
 /**
- * @brief     set supvisiontimeout(should be invoked before rtk_bt_enable).
- * @param[in] pin_code: pointer of supvisiontimeout
- * @param[in] length: length
+ * @brief     set supv_timeout(should be invoked before rtk_bt_enable).
+ * @param[in] supv_timeout: pointer of supv_timeout
  * @return
  *            - 0  : Succeed
  *            - Others: Error code
  */
-uint16_t rtk_bt_br_gap_set_supvisiontimeout(uint16_t *supv_timeout);
+uint16_t rtk_bt_br_gap_set_supv_timeout(uint16_t *supv_timeout);
+
+/**
+ * @brief     Deprecated alias of @ref rtk_bt_br_gap_set_supv_timeout.
+ * @deprecated Use @ref rtk_bt_br_gap_set_supv_timeout instead.
+ */
+#define rtk_bt_br_gap_set_supvisiontimeout rtk_bt_br_gap_set_supv_timeout
+
 /**
  * @}
  */

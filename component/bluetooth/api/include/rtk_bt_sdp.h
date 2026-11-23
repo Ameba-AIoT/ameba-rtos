@@ -1,7 +1,7 @@
 /**
  * @file      rtk_bt_sdp.h
  * @author    benling_xu@realsil.com.cn
- * @brief     Bluetooth LE GAP part type and function deffinition
+ * @brief     Bluetooth LE GAP part type and function definition
  * @copyright Copyright (c) 2022. Realtek Semiconductor Corporation. All rights reserved.
  */
 
@@ -85,7 +85,14 @@ extern "C"
 
 #define RTK_BT_SDP_ATTR_MAS_INSTANCE_ID            0x0315
 #define RTK_BT_SDP_ATTR_SUPPORTED_MSG_TYPES        0x0316
-#define RTK_BT_SDP_ATTR_MAP_SUPPERTED_FEATS        0x0317
+#define RTK_BT_SDP_ATTR_MAP_SUPPORTED_FEATS        0x0317
+
+/**
+ * @def       RTK_BT_SDP_ATTR_MAP_SUPPERTED_FEATS
+ * @brief     Deprecated alias of @ref RTK_BT_SDP_ATTR_MAP_SUPPORTED_FEATS.
+ * @deprecated Use @ref RTK_BT_SDP_ATTR_MAP_SUPPORTED_FEATS instead.
+ */
+#define RTK_BT_SDP_ATTR_MAP_SUPPERTED_FEATS RTK_BT_SDP_ATTR_MAP_SUPPORTED_FEATS
 
 #define RTK_BT_SDP_ATTR_HID_DEV_RELEASE_NUM        0x0200
 #define RTK_BT_SDP_ATTR_HID_PARSER_VER             0x0201
@@ -114,7 +121,7 @@ extern "C"
 
 /**
  * @struct    rtk_sdp_record_t
- * @brief     Bluetooth sdp srecord struct.
+ * @brief     Bluetooth sdp record struct.
  */
 typedef struct {
 	struct list_head    list;                                   //!< list of .rtk_sdp_record_t.

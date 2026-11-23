@@ -3295,7 +3295,7 @@ static rtk_bt_evt_cb_ret_t app_bt_le_audio_callback(uint8_t evt_code, void *data
 		break;
 	}
 	case RTK_BT_LE_AUDIO_EVT_MCP_CLIENT_MEDIA_CP_NOTIFY_IND: {
-		rtk_bt_le_audio_mcs_media_cp_nodify_ind_t *param = (rtk_bt_le_audio_mcs_media_cp_nodify_ind_t *)data;
+		rtk_bt_le_audio_mcs_media_cp_notify_ind_t *param = (rtk_bt_le_audio_mcs_media_cp_notify_ind_t *)data;
 		BT_LOGA("[APP] RTK_BT_LE_AUDIO_EVT_MCP_CLIENT_MEDIA_CP_NOTIFY_IND conn_handle=0x%x, general_mcs=%d, srv_instance_id=%d, requested_opcode=0x%x, result_code=0x%x\r\n",
 				param->conn_handle, param->general_mcs, param->srv_instance_id, param->requested_opcode, param->result_code);
 		BT_AT_PRINT("+BLECAP:acceptor,mcp,write,0x%x,%d,%d,0x%x,0x%x\r\n",
@@ -3385,7 +3385,7 @@ int bt_tmap_a2dp_source_main(uint8_t role, uint8_t enable)
 			/* set class of device */
 			BT_APP_PROCESS(rtk_bt_br_gap_set_cod(&cod));
 			/* set supervision_timeout */
-			BT_APP_PROCESS(rtk_bt_br_gap_set_supvisiontimeout(&superv_time));
+			BT_APP_PROCESS(rtk_bt_br_gap_set_supv_timeout(&superv_time));
 			BT_APP_PROCESS(rtk_bt_br_gap_set_inquiry_param(&inquiry_param));
 			BT_APP_PROCESS(rtk_bt_br_gap_set_page_param(&page_param));
 			/* sdp record add (must be invoked before rtk_bt_enable) */
@@ -3579,7 +3579,7 @@ int bt_tmap_a2dp_source_main(uint8_t role, uint8_t enable)
 			/* set class of device */
 			BT_APP_PROCESS(rtk_bt_br_gap_set_cod(&cod));
 			/* set supervision_timeout */
-			BT_APP_PROCESS(rtk_bt_br_gap_set_supvisiontimeout(&superv_time));
+			BT_APP_PROCESS(rtk_bt_br_gap_set_supv_timeout(&superv_time));
 			BT_APP_PROCESS(rtk_bt_br_gap_set_inquiry_param(&inquiry_param));
 			BT_APP_PROCESS(rtk_bt_br_gap_set_page_param(&page_param));
 			/* sdp record add (must be invoked before rtk_bt_enable) */

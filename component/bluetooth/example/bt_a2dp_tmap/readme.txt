@@ -16,14 +16,14 @@ A2DP sink + TMAP Unicast Media Sender Configuration
     1.1 Config the following Macros in app_bt_le_audio_common.h
           change LEA_SOURCE_FIX_SAMPLE_FREQUENCY                 to         RTK_BT_LE_SAMPLING_FREQUENCY_CFG_48K
           change   LEA_CIG_ISO_INTERVAL_CONFIG                   to         ISO_INTERVAL_20_MS
-          change   RTK_BLE_AUDIO_UNICAST_ONE_CIS_SETEO_MODE      to         0
+          change   RTK_BLE_AUDIO_UNICAST_ONE_CIS_STEREO_MODE      to         0
     1.2 Config the following Macros in a2dp_tmap.c
           change   RTK_BT_A2DP_TMAP_DEMO_OUPUT_CHANNEL_NUM       to         1
 
 2. CIS num 1 + Sample rate 48kHz + 1-channel + ISO interval 10 ms
     2.1 Config the following Macros in app_bt_le_audio_common.h
           change LEA_SOURCE_FIX_SAMPLE_FREQUENCY                 to         RTK_BT_LE_SAMPLING_FREQUENCY_CFG_48K
-          change RTK_BLE_AUDIO_UNICAST_ONE_CIS_SETEO_MODE        to         0
+          change RTK_BLE_AUDIO_UNICAST_ONE_CIS_STEREO_MODE        to         0
     2.2 Config the following Macros in a2dp_tmap.c
           change   RTK_BT_A2DP_TMAP_DEMO_OUPUT_CHANNEL_NUM       to         1
 
@@ -37,7 +37,7 @@ A2DP sink + TMAP Broadcast Media Sender Configuration
 1. BIS num 1 + Sample rate 48kHz + 1-channel + ISO interval 20 ms
     1.1 Config the following Macros in app_bt_le_audio_common.h
           change LEA_SOURCE_FIX_SAMPLE_FREQUENCY                 to         RTK_BT_LE_SAMPLING_FREQUENCY_CFG_48K
-          change   RTK_BLE_AUDIO_BROADCASTER_ONE_BIS_SETEO_MODE  to         0
+          change   RTK_BLE_AUDIO_BROADCASTER_ONE_BIS_STEREO_MODE  to         0
           change   LEA_BIG_ISO_INTERVAL_CONFIG                   to         ISO_INTERVAL_20_MS
     1.2 Config the following Macros in a2dp_tmap.c
           change   RTK_BT_A2DP_TMAP_DEMO_OUPUT_CHANNEL_NUM       to         1

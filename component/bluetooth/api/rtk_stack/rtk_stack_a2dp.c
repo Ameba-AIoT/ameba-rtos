@@ -120,7 +120,7 @@ static void app_a2dp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t b
 		if (p_link != NULL) {
 			memcpy((void *)remote_addr, (void *)param->a2dp_conn_cmpl.bd_addr, 6);
 			if (a2dp_role == BT_A2DP_ROLE_SRC) {
-				/* requeset avrcp connection */
+				/* request avrcp connection */
 				bt_avrcp_connect_req(param->a2dp_conn_cmpl.bd_addr);
 			}
 			{

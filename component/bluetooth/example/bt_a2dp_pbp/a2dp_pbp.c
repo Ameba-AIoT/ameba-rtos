@@ -43,7 +43,7 @@
 #define DEFAULT_A2DP_PBP_AUDIO_RIGHT_VOLUME           0.8
 #define RTK_BT_A2DP_SRC_STREAM_MAX_CREDITS   2
 
-#if defined(RTK_BLE_AUDIO_BROADCASTER_ONE_BIS_SETEO_MODE) && RTK_BLE_AUDIO_BROADCASTER_ONE_BIS_SETEO_MODE
+#if defined(RTK_BLE_AUDIO_BROADCASTER_ONE_BIS_STEREO_MODE) && RTK_BLE_AUDIO_BROADCASTER_ONE_BIS_STEREO_MODE
 #if (LEA_SOURCE_FIX_SAMPLE_FREQUENCY == RTK_BT_LE_SAMPLING_FREQUENCY_CFG_48K)
 #define RTK_BT_A2DP_PBP_DEMO_OUPUT_SAMPLE_RATE 48000
 #define RTK_BT_A2DP_PBP_DEMO_OUPUT_CHANNEL_NUM 2
@@ -67,7 +67,7 @@
     The water level can cause extra delay, but will not run out if set proper value.
 */
 
-#if RTK_BLE_AUDIO_BROADCASTER_ONE_BIS_SETEO_MODE == 1
+#if RTK_BLE_AUDIO_BROADCASTER_ONE_BIS_STEREO_MODE == 1
 /* PBP broadcast source TX water level and the unit is in milliseconds. Must set an integer multiple of 10 milliseconds.*/
 #define PBP_BROADCAST_TX_WATER_LEVEL                100
 /* Actual PBP broadcast TX water level length */
@@ -2045,7 +2045,7 @@ static uint16_t app_bt_le_audio_pbp_bsrc_setup_data_path(app_bt_le_audio_bap_bro
 				ret);
 
 		if (bis_idx == 1) {
-#if (RTK_BLE_AUDIO_DEFAULT_BROADCASTER_BIS_NUM == 1) && (RTK_BLE_AUDIO_BROADCASTER_ONE_BIS_SETEO_MODE == 1)
+#if (RTK_BLE_AUDIO_DEFAULT_BROADCASTER_BIS_NUM == 1) && (RTK_BLE_AUDIO_BROADCASTER_ONE_BIS_STEREO_MODE == 1)
 			p_bis_codec_cfg->audio_channel_allocation = RTK_BT_LE_AUDIO_LOCATION_FL | RTK_BT_LE_AUDIO_LOCATION_FR;
 #else
 			p_bis_codec_cfg->audio_channel_allocation = RTK_BT_LE_AUDIO_LOCATION_FL;
@@ -2920,7 +2920,7 @@ int bt_a2dp_sink_pbp_source_main(uint8_t enable)
 				/* set class of device */
 				BT_APP_PROCESS(rtk_bt_br_gap_set_cod(&cod));
 				/* set supervision_timeout */
-				BT_APP_PROCESS(rtk_bt_br_gap_set_supvisiontimeout(&superv_time));
+				BT_APP_PROCESS(rtk_bt_br_gap_set_supv_timeout(&superv_time));
 				BT_APP_PROCESS(rtk_bt_br_gap_set_inquiry_param(&inquiry_param));
 				BT_APP_PROCESS(rtk_bt_br_gap_set_page_param(&page_param));
 				/* sdp record add (must be invoked before rtk_bt_enable) */

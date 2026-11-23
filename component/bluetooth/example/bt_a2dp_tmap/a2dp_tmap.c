@@ -70,7 +70,7 @@
 
 // LE Audio TX water level and the unit is in milliseconds. Must set an integer multiple of 10 milliseconds.
 #define LE_AUDIO_TX_WATER_LEVEL                       100
-#if (RTK_BLE_AUDIO_UNICAST_ONE_CIS_SETEO_MODE == 1) || (RTK_BLE_AUDIO_BROADCASTER_ONE_BIS_SETEO_MODE == 1)
+#if (RTK_BLE_AUDIO_UNICAST_ONE_CIS_STEREO_MODE == 1) || (RTK_BLE_AUDIO_BROADCASTER_ONE_BIS_STEREO_MODE == 1)
 // Actual LE Audio TX water level length
 #define A2DP_TMAP_ENCODE_PCM_DATA_WATER_LEVEL         1920 * LE_AUDIO_TX_WATER_LEVEL / 10
 /*
@@ -2321,7 +2321,7 @@ static uint16_t app_bt_le_audio_tmap_broadcast_media_sender_setup_data_path(app_
 				ret);
 
 		if (bis_idx == 1) {
-#if (RTK_BLE_AUDIO_DEFAULT_BROADCASTER_BIS_NUM == 1) && (RTK_BLE_AUDIO_BROADCASTER_ONE_BIS_SETEO_MODE == 1)
+#if (RTK_BLE_AUDIO_DEFAULT_BROADCASTER_BIS_NUM == 1) && (RTK_BLE_AUDIO_BROADCASTER_ONE_BIS_STEREO_MODE == 1)
 			p_bis_codec_cfg->audio_channel_allocation = RTK_BT_LE_AUDIO_LOCATION_FL | RTK_BT_LE_AUDIO_LOCATION_FR;
 #else
 			p_bis_codec_cfg->audio_channel_allocation = RTK_BT_LE_AUDIO_LOCATION_FL;
@@ -3350,7 +3350,7 @@ int bt_a2dp_sink_tmap_main(uint8_t role, uint8_t enable)
 				/* set class of device */
 				BT_APP_PROCESS(rtk_bt_br_gap_set_cod(&cod));
 				/* set supervision_timeout */
-				BT_APP_PROCESS(rtk_bt_br_gap_set_supvisiontimeout(&superv_time));
+				BT_APP_PROCESS(rtk_bt_br_gap_set_supv_timeout(&superv_time));
 				BT_APP_PROCESS(rtk_bt_br_gap_set_inquiry_param(&inquiry_param));
 				BT_APP_PROCESS(rtk_bt_br_gap_set_page_param(&page_param));
 				/* sdp record add (must be invoked before rtk_bt_enable) */
@@ -3501,7 +3501,7 @@ int bt_a2dp_sink_tmap_main(uint8_t role, uint8_t enable)
 				/* set class of device */
 				BT_APP_PROCESS(rtk_bt_br_gap_set_cod(&cod));
 				/* set supervision_timeout */
-				BT_APP_PROCESS(rtk_bt_br_gap_set_supvisiontimeout(&superv_time));
+				BT_APP_PROCESS(rtk_bt_br_gap_set_supv_timeout(&superv_time));
 				BT_APP_PROCESS(rtk_bt_br_gap_set_inquiry_param(&inquiry_param));
 				BT_APP_PROCESS(rtk_bt_br_gap_set_page_param(&page_param));
 				/* sdp record add (must be invoked before rtk_bt_enable) */

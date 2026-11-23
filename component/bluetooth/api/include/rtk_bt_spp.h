@@ -15,10 +15,17 @@ extern "C"
 
 /* ------------------------------- Macros ------------------------------- */
 /**
-* @brief Define SPP channel dababase default link number
+* @brief Define SPP channel database default link number
 * @note  SPP max channel link number must not exceed this value
 */
-#define SPP_CAHNN_DB_MAX_LINK_NUM               5
+#define SPP_CHANN_DB_MAX_LINK_NUM               5
+
+/**
+ * @def       SPP_CAHNN_DB_MAX_LINK_NUM
+ * @brief     Deprecated alias of @ref SPP_CHANN_DB_MAX_LINK_NUM.
+ * @deprecated Use @ref SPP_CHANN_DB_MAX_LINK_NUM instead.
+ */
+#define SPP_CAHNN_DB_MAX_LINK_NUM               SPP_CHANN_DB_MAX_LINK_NUM
 
 /**
 * @brief Define rtk_bt_spp_data_ind_t struct data buffer maximum length.
@@ -69,14 +76,14 @@ typedef struct {
 	bool                    used;                   /*!< If true, it indicates that this element has been used */
 	uint8_t                 spp_chann_num;          /*!< SPP channel index */
 	rtk_bt_spp_uuid_data_t  service_uuid;           /*!< Service UUID */
-	bool                    is_spp_sdp_ok;          /*!< Accept sdp disov info flag */
+	bool                    is_spp_sdp_ok;          /*!< Accept sdp discov info flag */
 	bool                    is_on_connection;       /*!< Is on spp connection or not flag*/
 	uint8_t                 local_server_chann;     /*!< Local SPP server channel */
 	uint8_t                 remote_server_chann;    /*!< Remote SPP server channel */
 } T_SPP_CHANN_DB;
 
 /**
- * @struct    rtk_bt_spp_sdp_attr_info_t
+ * @struct    rtk_bt_spp_attr_info_t
  * @brief     Bluetooth SPP SDP attribute information struct
  */
 typedef struct {

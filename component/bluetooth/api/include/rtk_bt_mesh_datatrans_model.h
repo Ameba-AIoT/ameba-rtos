@@ -1,5 +1,5 @@
 /**
- * @file      rtk_bt_mesh_api_datatrans_model.h
+ * @file      rtk_bt_mesh_datatrans_model.h
  * @author    pico_zhai@realsil.com.cn
  * @brief     Bluetooth LE MESH datatrans model data struct and function definition
  * @copyright Copyright (c) 2022. Realtek Semiconductor Corporation. All rights reserved.
@@ -10,7 +10,7 @@
 
 #include <stdint.h>
 
-// Max val is 258 on AmebaLite for single core case,if extend 258,will cause hardfalut
+// Max val is 258 on AmebaLite for single core case,if extend 258,will cause hardfault
 #define DATA_TRANS_DATA_MAX_LEN    0xff
 
 /**
