@@ -71,7 +71,7 @@ static int _whc_host_ipc_cmd_work(u32 cmd, char *buf, u32 buf_len, struct genl_i
 
 	buf_len = strlen(user_buf + hdr_len);
 	user_buf[buf_len + hdr_len] = '\0';
-	ret = whc_host_buf_rx_to_user(user_buf + hdr_len, buf_len + 1);
+	ret = whc_host_deliver_rxbuf_to_user(user_buf + hdr_len, buf_len + 1);
 
 func_exit:
 	if (user_buf) {
@@ -143,7 +143,7 @@ static int whc_host_send_buf_to_dev(struct genl_info *info)
 	ptr += SIZE_TX_DESC;
 
 	memcpy(ptr, payload, payload_len);
-	whc_host_send_data_to_dev(buf, buf_len, 1);
+	whc_host_send_cmd_data_to_dev(buf, buf_len, 1);
 	kfree(buf);
 	return 0;
 }
@@ -209,7 +209,7 @@ static int whc_host_dbg(struct genl_info *info)
 	whc_host_iwpriv_cmd((dma_addr_t)buf, buf_len, buf, user_buf);
 	buf_len = strlen(user_buf);
 	user_buf[buf_len] = '\0';
-	whc_host_buf_rx_to_user(user_buf, buf_len + 1);
+	whc_host_deliver_rxbuf_to_user(user_buf, buf_len + 1);
 	kfree(user_buf);
 	return 0;
 }
@@ -291,7 +291,7 @@ struct genl_family whc_nl_family = {
 	.module = THIS_MODULE,
 };
 
-__attribute__((weak)) int whc_host_buf_rx_to_user(u8 *buf, u16 size)
+__attribute__((weak)) int whc_host_deliver_rxbuf_to_user(u8 *buf, u16 size)
 {
 	struct sk_buff *skb;
 	void *reply;
@@ -299,7 +299,7 @@ __attribute__((weak)) int whc_host_buf_rx_to_user(u8 *buf, u16 size)
 	int ret = 0;
 
 	if (size == 0) {
-		printk("whc_host_buf_rx_to_user: check pkt size");
+		printk("whc_host_deliver_rxbuf_to_user: check pkt size");
 		return -1;
 	}
 
@@ -323,7 +323,7 @@ __attribute__((weak)) int whc_host_buf_rx_to_user(u8 *buf, u16 size)
 	}
 	if (nla_put(skb, WHC_ATTR_PAYLOAD, size, buf)) {
 		nlmsg_free(skb);
-		printk("fail whc_host_buf_rx_to_user");
+		printk("fail whc_host_deliver_rxbuf_to_user");
 		return -EMSGSIZE;
 	}
 	genlhdr = nlmsg_data(nlmsg_hdr(skb));

@@ -35,6 +35,18 @@ IMAGE_HEADER EmptyXipImgHdr;
 IMAGE_HEADER EmptyPsramImgHdr;
 /* Private functions ---------------------------------------------------------*/
 
+static IMAGE_HEADER *HCI_EmptyHdrSlot(u32 addr)
+{
+	return IS_FLASH_ADDR(addr) ? &EmptyXipImgHdr : &EmptyPsramImgHdr;
+}
+
+/* The size alone can not tell an empty header from the 32 byte tail frame of a larger sub-image */
+static u8 HCI_IsEmptyImgHdr(u32 addr, const IMAGE_HEADER *hdr)
+{
+	return (hdr->signature[0] == APP_IMAGE_PATTERN_1) && (hdr->signature[1] == APP_IMAGE_PATTERN_2) &&
+		   (hdr->image_size == 0) && (hdr->image_addr == addr + IMAGE_HEADER_LEN);
+}
+
 /**
   * @brief  Write image frame
   * @param  addr : Destination address
@@ -47,12 +59,8 @@ static int HCI_WriteImage(u32 addr, const u8 *src, u32 size)
 	u32 i;
 
 	/* Host Send empty img header */
-	if (size == IMAGE_HEADER_LEN) {
-		if (IS_FLASH_ADDR(addr)) {
-			addr = (u32)&EmptyXipImgHdr;
-		} else {
-			addr = (u32)&EmptyPsramImgHdr;
-		}
+	if ((size == IMAGE_HEADER_LEN) && HCI_IsEmptyImgHdr(addr, (const IMAGE_HEADER *)src)) {
+		addr = (u32)HCI_EmptyHdrSlot(addr);
 	}
 
 	if (IS_FLASH_ADDR(addr)) {
@@ -98,12 +106,8 @@ static int HCI_CalculateChecksum(u32 addr, u32 size, u32 *result)
 	u32 i;
 
 	/* Host Send empty img header */
-	if (size == IMAGE_HEADER_LEN) {
-		if (IS_FLASH_ADDR(addr)) {
-			addr = (u32)&EmptyXipImgHdr;
-		} else {
-			addr = (u32)&EmptyPsramImgHdr;
-		}
+	if ((size == IMAGE_HEADER_LEN) && HCI_IsEmptyImgHdr(addr, HCI_EmptyHdrSlot(addr))) {
+		addr = (u32)HCI_EmptyHdrSlot(addr);
 	}
 
 	if (IS_FLASH_ADDR(addr)) {

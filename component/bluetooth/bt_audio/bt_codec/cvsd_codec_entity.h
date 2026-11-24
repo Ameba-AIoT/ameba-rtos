@@ -26,7 +26,7 @@ typedef struct {
  */
 typedef struct {
 	uint8_t     channel_num;                    /*!< indicate channel number */
-	int         sample_rate;                    /*!< indicate sample frequence */
+	int         sample_rate;                    /*!< indicate sample frequency */
 	uint8_t     frame_duration;                 /*!< indicate frame duration */
 } rtk_bt_cvsd_decode_t;
 

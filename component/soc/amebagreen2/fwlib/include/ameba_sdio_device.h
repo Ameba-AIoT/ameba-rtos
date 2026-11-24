@@ -14,7 +14,7 @@
 #define SPDIO_TX_BD_BUF_SZ_UNIT		64 // the TX BD buffer size shall be an integer multiple of 64 bytes
 
 #define SPDIO_RX_BD_FREE_TH			5
-#define SPDIO_MIN_RX_BD_SEND_PKT	2
+#define SPDIO_MIN_RX_BD_SEND_PKT	1
 #define SPDIO_MAX_RX_BD_BUF_SIZE	16380	// the Maximum size for a RX_BD point to, make it 4-bytes aligned
 
 #define SDIO_INIT_INT_MASK			(SDIO_WIFI_BIT_H2C_DMA_OK | SDIO_WIFI_BIT_C2H_DMA_OK | \
@@ -85,7 +85,6 @@ typedef struct {
 typedef struct {
 	struct spdio_buf_t *dev_tx_buf;
 	SPDIO_RX_BD *pRXBD;		/* Point to the RX_BD buffer */
-	INIC_RX_DESC *pRXDESC;	/* point to the Rx Packet */
 	u8 isPktEnd;			/*  For a packet over 1 BD , this flag to indicate is this BD contains a packet end */
 	u8 isFree;				/* is this RX BD free (DMA done and its RX packet has been freed) */
 } SPDIO_RX_BD_HANDLE;
@@ -99,11 +98,10 @@ typedef struct {
 
 	SPDIO_RX_BD_HANDLE *pRXBDHdl;	/* point to the allocated memory for RX_BD Handle array */
 	SPDIO_RX_BD *pRXBDAddr;			/* The RX_BD start address, it must be 8-bytes aligned */
-	INIC_RX_DESC *pRXDESCAddr;
 	u16 RXBDWPtr;					/* The SDIO RX(Device->Host) BD write index */
 	u16 RXBDRPtr;					/* The SDIO RX(Device->Host) BD local read index, different with HW maintained Read Index. */
 
-	u16 host_rx_bd_num; //for spdio send data to host, 2 bd for one packet, so this value must be rounded to 2
+	u16 host_rx_bd_num; //for spdio send data to host
 	u16 host_tx_bd_num; //for spdio receive data from host
 	u16 device_rx_bufsz; 			/* buffer size = desired packet length + 24(spdio header info), must be rounded to 64, max value is 16KB */
 
@@ -115,7 +113,7 @@ typedef s8(*spdio_device_tx_done_cb_ptr)(PSPDIO_ADAPTER pSPDIODev, struct spdio_
 typedef s8(*spdio_device_rx_done_cb_ptr)(PSPDIO_ADAPTER pSPDIODev, struct spdio_buf_t *buf, u8 *pdata, u16 pktsize, u8 type);
 
 void SDIO_TxBdHdl_Init(SPDIO_TX_BD_HANDLE *g_TXBDHdl, SPDIO_TX_BD *SPDIO_TXBDAddr, struct spdio_buf_t *spdio_dev_rx_buf, u16 host_tx_bd_num);
-void SDIO_RxBdHdl_Init(SPDIO_RX_BD_HANDLE *g_RXBDHdl, SPDIO_RX_BD *SPDIO_RXBDAddr, INIC_RX_DESC *g_RXDESCAddr, u16 host_rx_bd_num);
+void SDIO_RxBdHdl_Init(SPDIO_RX_BD_HANDLE *g_RXBDHdl, SPDIO_RX_BD *SPDIO_RXBDAddr, u16 host_rx_bd_num);
 void SPDIO_Notify_INT(SDIO_TypeDef *SDIO, u16 IntStatus);
 void SPDIO_Recycle_Rx_BD(SDIO_TypeDef *SDIO, PSPDIO_ADAPTER pSPDIODev, spdio_device_tx_done_cb_ptr spdio_device_tx_done_cb);
 u8 SPDIO_DeviceTx(SDIO_TypeDef *SDIO, PSPDIO_ADAPTER pSPDIODev, struct spdio_buf_t *pbuf);

@@ -311,7 +311,7 @@ void whc_sdio_host_init(void);
 
 //#define whc_host_send_data       whc_sdio_host_send_data
 #define whc_host_init            whc_sdio_host_init
-#define SIZE_RX_DESC	(sizeof(struct INIC_RX_DESC))
+#define SIZE_RX_DESC	0
 #define SIZE_TX_DESC	(sizeof(struct INIC_TX_DESC))
 
 #endif

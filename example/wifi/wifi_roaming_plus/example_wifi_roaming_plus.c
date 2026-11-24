@@ -226,7 +226,10 @@ static int wlan_fast_connect(struct wifi_roaming_data *data, u8 scan_type)
 		wifi_set_autoreconnect(0);
 	}
 #ifdef CONFIG_IEEE80211R
-	rtw_set_to_roam(1);
+	/* boot-up fast connect (all channel) is not roaming */
+	if (scan_type == FAST_CONNECT_SPECIFIC_CH) {
+		rtw_set_to_roam(1);
+	}
 #endif
 
 	PSK_INFO = (struct psk_info *)rtos_mem_zmalloc(sizeof(struct psk_info));
@@ -320,7 +323,9 @@ WIFI_RETRY_LOOP:
 	}
 
 #ifdef CONFIG_IEEE80211R
-	rtw_set_to_roam(0);
+	if (scan_type == FAST_CONNECT_SPECIFIC_CH) {
+		rtw_set_to_roam(0);
+	}
 #endif
 	if (autoreconn_en) {
 		wifi_set_autoreconnect(1);

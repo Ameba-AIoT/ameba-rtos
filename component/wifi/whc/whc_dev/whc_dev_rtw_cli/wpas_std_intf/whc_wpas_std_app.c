@@ -65,7 +65,7 @@ int whc_wpa_ops_get_macaddr(u8 *ptr, u8 *buf)
 	ptr += 1;
 	memcpy(ptr, dev_mac.octet, 6);
 	//6+4+1=11
-	whc_dev_api_send_to_host(buf, BRIDGE_WPA_OPS_BUF_SIZE);
+	whc_dev_api_send_to_host(buf, BRIDGE_WPA_OPS_BUF_SIZE, NULL, 0);
 
 	return 0;
 

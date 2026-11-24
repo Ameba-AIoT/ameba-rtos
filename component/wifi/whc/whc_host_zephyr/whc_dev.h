@@ -30,10 +30,16 @@ struct whc_api_info {
 enum WHC_WIFI_CTRL_TYPE {
 	INIC_WIFI_EVT_XIMT_PKTS = 0xa5a5a500,
 	INIC_WIFI_EVT_RECV_PKTS,
+	WHC_WIFI_EVT_CMD = 0xa5a5a504,
 
 	WHC_WIFI_TEST = 0xffa5a5a5,
 
 	INIC_WIFI_EVT_MAX,
+};
+
+struct whc_cmd_path_hdr {
+	u32	event;
+	u32	len;
 };
 
 struct event_priv_t {

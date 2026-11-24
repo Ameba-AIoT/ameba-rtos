@@ -9,12 +9,9 @@
 #define WHC_WIFI_TEST_CONN_STATUS    0x12
 
 rtos_sema_t whc_user_rx_sema;
+/* starts with struct whc_cmd_path_hdr */
 u8 *whc_rx_msg = NULL;
-/* spi add header before msg, different from others */
-/* real addr needed for mem free */
-u8 *whc_rx_msg_free_addr = NULL;
 
-u16 rx_msg_size;
 #ifndef CONFIG_MP_SHRINK
 static struct rtw_network_info wifi = {0};
 #endif
@@ -119,7 +116,7 @@ s32 whc_dev_scan_callback(u32 scanned_AP_num, void *data)
 			rtw_scan_result_for_fullhan(scanned_AP_list_index, ptr, buf_size - 8);
 			scanned_AP_list_index += 1;
 
-			whc_dev_api_send_to_host(result_buf, buf_size);
+			whc_dev_api_send_to_host(result_buf, buf_size, NULL, 0);
 			ap_num -= 1;
 		}
 
@@ -132,7 +129,7 @@ s32 whc_dev_scan_callback(u32 scanned_AP_num, void *data)
 		/* 0 means end */
 		*ptr = 0;
 		ptr += 1;
-		whc_dev_api_send_to_host(result_buf, buf_size);
+		whc_dev_api_send_to_host(result_buf, buf_size, NULL, 0);
 
 		rtos_mem_free(result_buf);
 		rtos_mem_free(scanned_AP_list);
@@ -253,7 +250,7 @@ void whc_dev_cmd_connect_status(void)
 	ptr += 1;
 	buf_len += 1;
 
-	whc_dev_api_send_to_host(buf, buf_len);
+	whc_dev_api_send_to_host(buf, buf_len, NULL, 0);
 }
 
 void whc_dev_cmd_get_macaddr(u8 idx)
@@ -272,7 +269,7 @@ void whc_dev_cmd_get_macaddr(u8 idx)
 	ptr += 1;
 	memcpy(ptr, dev_mac.octet, 6);
 	//6+4+1=11
-	whc_dev_api_send_to_host(buf, WHC_WIFI_TEST_BUF_SIZE);
+	whc_dev_api_send_to_host(buf, WHC_WIFI_TEST_BUF_SIZE, NULL, 0);
 	rtos_mem_free(buf);
 }
 
@@ -290,7 +287,7 @@ void whc_dev_cmd_get_stanum(u8 num)
 	ptr += 1;
 	*ptr = num;
 	//4+3=7
-	whc_dev_api_send_to_host(buf, WHC_WIFI_TEST_BUF_SIZE);
+	whc_dev_api_send_to_host(buf, WHC_WIFI_TEST_BUF_SIZE, NULL, 0);
 	rtos_mem_free(buf);
 }
 
@@ -318,8 +315,8 @@ void whc_dev_softap_handler(u8 *buf)
 	}
 	return;
 }
-/* here in sdio rx done callback */
-__weak void whc_dev_pkt_rx_to_user(u8 *rxbuf, u8 *real_buf, u16 size)
+/* here in bus rx done callback, rxbuf starts with struct whc_cmd_path_hdr and is freed by the cmd task */
+__weak void whc_dev_cmd_rx_to_user(u8 *rxbuf)
 {
 	while (whc_rx_msg) {
 		/* waiting last msg done */
@@ -327,12 +324,10 @@ __weak void whc_dev_pkt_rx_to_user(u8 *rxbuf, u8 *real_buf, u16 size)
 	}
 
 	whc_rx_msg = rxbuf;
-	whc_rx_msg_free_addr = real_buf;
-	rx_msg_size = size;
 	rtos_sema_give(whc_user_rx_sema);
 }
 
-__weak void whc_dev_pkt_rx_to_user_task(void)
+__weak void whc_dev_cmd_rx_to_user_task(void)
 {
 	u8 *ptr = NULL;
 	u32 event = 0;
@@ -349,8 +344,8 @@ __weak void whc_dev_pkt_rx_to_user_task(void)
 	while (1) {
 		rtos_sema_take(whc_user_rx_sema, RTOS_MAX_TIMEOUT);
 		if (whc_rx_msg) {
-			ptr = whc_rx_msg;
-			event = *(u32 *)whc_rx_msg;
+			ptr = whc_rx_msg + sizeof(struct whc_cmd_path_hdr);
+			event = *(u32 *)ptr;
 			ptr += 4;
 
 			if (event == WHC_WIFI_TEST) {
@@ -428,7 +423,7 @@ __weak void whc_dev_pkt_rx_to_user_task(void)
 						ip = lwip_get_gw(idx);
 						memcpy(ptr, ip, 4);
 						ptr += 4;
-						whc_dev_api_send_to_host(buf, WHC_WIFI_TEST_BUF_SIZE);
+						whc_dev_api_send_to_host(buf, WHC_WIFI_TEST_BUF_SIZE, NULL, 0);
 						whc_dev_api_set_host_state(WHC_HOST_READY);
 					}
 #endif
@@ -465,9 +460,8 @@ __weak void whc_dev_pkt_rx_to_user_task(void)
 #endif
 				rtos_mem_free(buf);
 			}
-			rtos_mem_free(whc_rx_msg_free_addr);
+			rtos_mem_free(whc_rx_msg);
 			whc_rx_msg = NULL;
-			whc_rx_msg_free_addr = NULL;
 		}
 	}
 }
@@ -478,10 +472,10 @@ __weak void whc_dev_init_cmd_path_task(void)
 	rtos_sema_create(&whc_user_rx_sema, 0, 0xFFFFFFFF);
 
 	/* Initialize the event task */
-	if (RTK_SUCCESS != rtos_task_create(NULL, (const char *const)"whc_dev_pkt_rx_to_user_task", (rtos_task_function_t)whc_dev_pkt_rx_to_user_task,
+	if (RTK_SUCCESS != rtos_task_create(NULL, (const char *const)"whc_dev_cmd_rx_to_user_task", (rtos_task_function_t)whc_dev_cmd_rx_to_user_task,
 										NULL,
 										WHC_WHC_CMD_USER_TASK_STACK_SIZE, CONFIG_WHC_WHC_CMD_USER_TASK_PRIO)) {
-		RTK_LOGE(TAG_WLAN_INIC, "Create whc_dev_pkt_rx_to_user_task Err!!\n");
+		RTK_LOGE(TAG_WLAN_INIC, "Create whc_dev_cmd_rx_to_user_task Err!!\n");
 	}
 
 }

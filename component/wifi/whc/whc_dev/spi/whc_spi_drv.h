@@ -8,7 +8,6 @@
 #define whc_dev_send                whc_spi_dev_send
 #define whc_dev_flowctrl(a, b)		whc_spi_dev_flowctrl(a, b)
 
-#define whc_spi_dev_event_int_hdl   whc_spi_dev_pkt_rx
 
 
 #ifdef CONFIG_AMEBAGREEN2  // need use QFN100
@@ -115,15 +114,11 @@ static inline void set_dev_txreq_pin(u8 status)
 }
 
 void whc_spi_dev_device_init(void);
-void whc_spi_dev_event_int_hdl(u8 *rxbuf, struct sk_buff *skb);
 void whc_spi_dev_send(struct whc_buf_info *pbuf);
 u8 whc_spi_dev_tx_path_avail(void);
 void whc_spi_dev_send_to_host(u8 *buf, u8 *buf_alloc, u16 len);
 void whc_spi_dev_flowctrl(u8 *status, u8 send_cmd);
-void whc_spi_dev_send_data(u8 *buf, u32 len);
-void whc_spi_dev_send_cmd_data(u8 *buf, u32 len);
 
-void whc_spi_dev_pkt_rx(u8 *rxbuf, struct sk_buff *skb);
 
 #endif
 

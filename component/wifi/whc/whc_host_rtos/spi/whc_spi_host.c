@@ -131,10 +131,6 @@ int whc_spi_host_recv_process(void)
 	GDMA_InitTypeDef *GDMA_InitStruct = &(spi_host_priv.SSIRxGdmaInitStruct);
 	u8 *recv_msg = spi_host_priv.rx_buf;
 
-#ifdef CONFIG_WHC_CMD_PATH
-	struct whc_cmd_path_hdr *hdr = NULL;
-#endif
-
 #ifdef CONFIG_WHC_WIFI_API_PATH
 	struct whc_api_info *ret_msg;
 	u8 *buf = NULL;
@@ -195,9 +191,9 @@ int whc_spi_host_recv_process(void)
 #endif
 
 #ifdef CONFIG_WHC_CMD_PATH
-	case WHC_WIFI_EVT_BRIDGE:
-		hdr = (struct whc_cmd_path_hdr *)recv_msg;
-		whc_host_pkt_rx_to_user((u8 *)(hdr + 1), hdr->len);
+	case WHC_WIFI_EVT_CMD:
+		whc_host_deliver_rxbuf_to_user(recv_msg, SPI_BUFSZ);
+		recv_msg = NULL;  /* ownership transferred to the cmd task */
 		break;
 #endif
 

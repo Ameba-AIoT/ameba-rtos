@@ -1141,7 +1141,7 @@ static rtk_bt_le_audio_iso_channel_info_t *bt_stack_le_audio_broadcast_source_pa
 			for (uint8_t k = 0; k < RTK_BT_LE_AUDIO_BROADCAST_SOURCE_BIS_NUM; k ++) {
 				if (bt_le_audio_priv_data.bsrc.group[i].sub_group[j].bis_idx[k] == p_data->bis_idx) {
 					if (k == 0) {
-#if (RTK_BT_LE_AUDIO_BROADCAST_SOURCE_BIS_NUM == 1) && (RTK_BT_LE_AUDIO_BROADCASTER_SETEO_MODE == 1)
+#if (RTK_BT_LE_AUDIO_BROADCAST_SOURCE_BIS_NUM == 1) && (RTK_BT_LE_AUDIO_BROADCASTER_STEREO_MODE == 1)
 						data.codec_parsed_data.audio_channel_allocation = RTK_BT_LE_AUDIO_LOCATION_FL | RTK_BT_LE_AUDIO_LOCATION_FR;
 						bt_le_audio_priv_data.bsrc.codec_cfg.audio_channel_allocation = RTK_BT_LE_AUDIO_LOCATION_FL | RTK_BT_LE_AUDIO_LOCATION_FR;
 #else

@@ -210,7 +210,7 @@ static int whc_usb_host_probe(struct usb_interface *intf, const struct usb_devic
 
 	priv->usb_dev = usb;
 	priv->dev = &usb->dev;
-	priv->rx_process_func = whc_host_recv_process;
+	priv->rx_process_func = whc_host_recv_dispatch;
 
 	usb_set_intfdata(intf, (void *)priv);
 

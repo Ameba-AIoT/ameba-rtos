@@ -61,11 +61,8 @@ struct whc_cmd_path_priv {
 	rtos_sema_t whc_user_rx_sema;
 	rtos_mutex_t whc_user_blocksend_mutex;
 	rtos_sema_t whc_user_blocksend_sema;
+	/* starts with struct whc_cmd_path_hdr */
 	u8 *whc_rx_msg;
-	/* spi add header before msg, different from others */
-	/* real addr needed for mem free */
-	u8 *whc_rx_msg_free_addr;
-	u16 rx_msg_size;
 
 	u8 *ret;
 	u32 ret_len;

@@ -101,6 +101,10 @@ static void whc_host_event_join_status_indicate(struct event_priv_t *event_priv,
 		cfg80211_del_sta(global_idev.pndev[1], sta_disassoc_info->sta_mac, GFP_ATOMIC);
 	}
 
+	if (event == RTW_EVENT_OPERATION_CH_SWITCH) {
+		whc_host_ch_switch_indicate((struct rtw_event_ch_switch *)evt_info);
+	}
+
 	if (event == RTW_EVENT_EXTERNAL_AUTH_REQ) {
 		dev_dbg(global_idev.pwhc_dev, "%s: auth req \n", __func__);
 		whc_host_external_auth_request(evt_info);

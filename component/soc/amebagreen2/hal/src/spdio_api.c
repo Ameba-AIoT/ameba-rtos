@@ -19,7 +19,7 @@ static const char *const TAG = "SPDIO";
 #define SPDIO_IRQ_PRIORITY			INT_PRI_MIDDLE
 #define SPDIO_TX_BD_BUF_SZ_UNIT		64
 #define SPDIO_RX_BD_FREE_TH			5
-#define SPDIO_MIN_RX_BD_SEND_PKT	2
+#define SPDIO_MIN_RX_BD_SEND_PKT	1
 #define SPDIO_MAX_RX_BD_BUF_SIZE	16380	// the Maximum size for a RX_BD point to, make it 4-bytes aligned
 
 #define SDIO_INIT_INT_MASK			(SDIO_WIFI_BIT_H2C_DMA_OK | SDIO_WIFI_BIT_C2H_DMA_OK | \
@@ -246,11 +246,6 @@ void SPDIO_Buffer_free(PSPDIO_ADAPTER pSPDIODev)
 		pSPDIODev->pTXBDAddr = NULL;
 	}
 
-	if (pSPDIODev->pRXDESCAddr) {
-		rtos_mem_free(pSPDIODev->pRXDESCAddr);
-		pSPDIODev->pRXDESCAddr = NULL;
-	}
-
 	if (obj->irq_sema) {
 		rtos_sema_delete(obj->irq_sema);
 		obj->irq_sema = NULL;
@@ -266,7 +261,7 @@ void SPDIO_Buffer_free(PSPDIO_ADAPTER pSPDIODev)
  * @brief Initialize spdio interface.
  * @param obj Pointer to a spdio_t structure which should be initialized by user,
  * 		and which will be used to initialize spdio interface.
- * 		- obj->host_rx_bd_num: spdio write bd number, needs 2 bd for one transaction.
+ * 		- obj->host_rx_bd_num: spdio write bd number.
  * 		- obj->host_tx_bd_num: spdio read bd number.
  * 		- obj->device_rx_bufsz: spdio read buffer size.
  * 		- obj->rx_buf: spdio read buffer array.
@@ -285,7 +280,7 @@ void spdio_init(struct spdio_t *obj)
 	}
 
 	if ((obj->host_tx_bd_num == 0) || (obj->device_rx_bufsz == 0) || (obj->device_rx_bufsz % 64)
-		|| (obj->host_rx_bd_num == 0) || (obj->host_rx_bd_num % 2) || (obj->rx_buf == NULL)) {
+		|| (obj->host_rx_bd_num == 0) || (obj->rx_buf == NULL)) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "spdio obj resource isn't correctly inited, spdio init failed!\n");
 		return;
 	}
@@ -333,12 +328,7 @@ void spdio_init(struct spdio_t *obj)
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "SDIO_Device_Init: Malloc for RX_BD Handle Err!!\n");
 		goto SDIO_INIT_ERR;
 	}
-	pSPDIODev->pRXDESCAddr = (INIC_RX_DESC *)rtos_mem_zmalloc(obj->host_rx_bd_num * sizeof(INIC_RX_DESC));
-	if (NULL == pSPDIODev->pRXDESCAddr) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "SDIO_Device_Init: Malloc for RX_DESC Err!!\n");
-		goto SDIO_INIT_ERR;
-	}
-	SDIO_RxBdHdl_Init(pSPDIODev->pRXBDHdl, pSPDIODev->pRXBDAddr, pSPDIODev->pRXDESCAddr, obj->host_rx_bd_num);
+	SDIO_RxBdHdl_Init(pSPDIODev->pRXBDHdl, pSPDIODev->pRXBDAddr, obj->host_rx_bd_num);
 
 	rtos_sema_create(&(obj->irq_sema), 0, RTOS_SEMA_MAX_COUNT);
 	if (NULL == obj->irq_sema) {

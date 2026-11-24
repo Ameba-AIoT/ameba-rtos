@@ -82,7 +82,7 @@ uint32_t bt_audio_ring_buffer_bytes_write_available(bt_audio_ring_buffer_t *ring
  * @fn        uint16_t bt_audio_ring_buffer_write(bt_audio_ring_buffer_t *ring_buffer, uint8_t *data, uint32_t data_length)
  * @brief     check whether bt audio ring buffer is empty(there is no memory free to write)
  * @param[in] ring_buffer: ring buffer pointer
- * @param[in] data: pointer to stream to be writed
+ * @param[in] data: pointer to stream to be written
  * @param[in] data_length: stream data length(unit 2 bytes)
  * @return
  *            - 0  : Succeed

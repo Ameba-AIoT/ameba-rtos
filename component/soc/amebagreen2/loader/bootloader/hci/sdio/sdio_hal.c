@@ -11,7 +11,7 @@
 
 /* Private defines -----------------------------------------------------------*/
 
-#define SPDIO_HOST_RX_BD_NUM	N_BYTE_ALIGMENT(4, 2)	// 2 bd for one transaction, must be rounded to 2
+#define SPDIO_HOST_RX_BD_NUM	4	// 1 bd per transaction; no alignment constraint
 #define SPDIO_HOST_TX_BD_NUM	4
 #define SPDIO_DEVICE_RX_BUFSZ	N_BYTE_ALIGMENT((HCI_RX_BUF_SIZE + 24), SPDIO_TX_BD_BUF_SZ_UNIT) // desired packet length + 24(spdio header info), must be rounded to 64
 
@@ -39,7 +39,6 @@ ALIGNMTO(CACHE_LINE_SIZE) u32 spdio_dev_rx_buf_entry[SPDIO_DEVICE_RX_BUFSZ / siz
 
 SPDIO_RX_BD SPDIO_RXBDAddr[SPDIO_HOST_RX_BD_NUM];
 SPDIO_RX_BD_HANDLE g_RXBDHdl[SPDIO_HOST_RX_BD_NUM];
-INIC_RX_DESC g_RXDESCAddr[SPDIO_HOST_RX_BD_NUM];
 struct spdio_buf_t spdio_dev_tx_buf[SPDIO_HOST_RX_BD_NUM];
 // u32 spdio_dev_tx_buf_entry[SPDIO_HOST_RX_BD_NUM][SPDIO_DEVICE_TX_BUFSZ / sizeof(u32)];
 
@@ -123,8 +122,7 @@ void SPDIO_HAL_Init(void *adapter)
 
 	pSPDIODev->pRXBDHdl = g_RXBDHdl;
 	pSPDIODev->pRXBDAddr = SPDIO_RXBDAddr;
-	pSPDIODev->pRXDESCAddr = g_RXDESCAddr;
-	SDIO_RxBdHdl_Init(g_RXBDHdl, SPDIO_RXBDAddr, g_RXDESCAddr, pSPDIODev->host_rx_bd_num);
+	SDIO_RxBdHdl_Init(g_RXBDHdl, SPDIO_RXBDAddr, pSPDIODev->host_rx_bd_num);
 
 	SPDIO_Device_Init(SDIO_WIFI, pSPDIODev);
 

@@ -29,4 +29,6 @@ void whc_dev_recv(int idx);
 void whc_dev_tx_done(int idx);
 void whc_dev_trigger_rx(void);
 void whc_dev_send_flowctrl_cmd(u8 fc_state);
+int whc_dev_dispatch_event_copy(const u8 *src, u32 size);
+void whc_dev_event_int_hdl(u8 *rxbuf, struct sk_buff *skb);
 #endif /* __INIC_DEV_TX_H__ */

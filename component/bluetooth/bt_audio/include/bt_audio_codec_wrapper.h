@@ -51,7 +51,7 @@ struct audio_codec_entity_priv {
 	int                         stream_in_num;     //!< indicate application enqueue data/command num.
 	union {
 		struct {
-			uint8_t     sampling_frequency;             /*!< indicate sample frequence */
+			uint8_t     sampling_frequency;             /*!< indicate sample frequency */
 			uint8_t     channel_mode;                   /*!< indicate channel mode */
 			uint8_t     block_length;                   /*!< indicate block length */
 			uint8_t     subbands;                       /*!< indicate subbands */
@@ -61,14 +61,14 @@ struct audio_codec_entity_priv {
 		} sbc;
 		struct {
 			uint8_t     object_type;                    /*!< indicate object type */
-			uint16_t    sampling_frequency;             /*!< indicate sample frequence */
+			uint16_t    sampling_frequency;             /*!< indicate sample frequency */
 			uint8_t     channel_number;                 /*!< indicate channel number */
 			bool        vbr_supported;                  /*!< indicate vbr_supported */
 			uint32_t    bit_rate;                       /*!< indicate bit rate */
 		} aac;
 		struct {
 			uint8_t     channel_mode;                   /*!< indicate channel mode */
-			int         sample_rate;                    /*!< indicate sample frequence */
+			int         sample_rate;                    /*!< indicate sample frequency */
 			uint8_t     bitpool;                        /*!< indicate min bitpool */
 			uint8_t     allocation_method;              /*!< indicate allocation method */
 			uint8_t     subbands;                       /*!< indicate subbands */
@@ -194,8 +194,8 @@ typedef struct {
  * @param[in]                              pentity:codec entity
  * @param[in]                              packet: pointer of data
  * @param[in]                              size: packet length
- * @param[in]                              pframe_size: resulet of frame size
- * @param[in]                              pframe_num: resulet of frame number
+ * @param[in]                              pframe_size: result of frame size
+ * @param[in]                              pframe_num: result of frame number
  * @param[in]                              pcodec_header_flag: codec header flag
  * @param[in]                              paudio_param: audio parameter
  * @return

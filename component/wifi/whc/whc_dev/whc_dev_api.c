@@ -183,26 +183,20 @@ u8  whc_dev_api_get_default_direction(void)
  * @brief  to send data to host
  * @param  data: data buf to be sent.
  * @param  len: data len to be sent.
+ * @param  ret: return value buf. It can be NULL if return value is not needed.
+ * @param  ret_len: return value len. It can be 0 if return value is not needed.
  * @return none.
+ * @note   The caller should free the buffer after calling this function if the input buffer is dynamically allocated.
  */
-void whc_dev_api_send_to_host(u8 *data, u32 len)
+void whc_dev_api_send_to_host(u8 *data, u32 len, uint8_t *ret, uint32_t ret_len)
 {
-	whc_dev_api_send_data(data, len);
-}
+	int val;
+	u8 *buf = NULL, *txbuf = NULL;
+	struct whc_cmd_path_hdr *hdr = NULL;
+	struct whc_txbuf_info_t *whc_tx = NULL;
+	u8 block = (ret && ret_len > 0) ? 1 : 0;
 
-/**
- * @brief  to send data to host
- * @param  data: data buf to be sent.
- * @param  len: data len to be sent.
- * @param  ret: return value buf.
- * @param  ret_len: return value len.
- * @return none.
- */
-void whc_dev_api_send_to_host_block(u8 *data, u32 len, uint8_t *ret, uint32_t ret_len)
-{
-	int val = -1;
-
-	if (ret && ret_len > 0) {
+	if (block) {
 		val = rtos_mutex_take(whc_cmdpath_data.whc_user_blocksend_mutex, 5000);
 		if (val != RTK_SUCCESS) {
 			RTK_LOGE(TAG_WLAN_INIC, "%s, fail to take mutex!!\n", __func__);
@@ -212,17 +206,45 @@ void whc_dev_api_send_to_host_block(u8 *data, u32 len, uint8_t *ret, uint32_t re
 			whc_cmdpath_data.ret_len = ret_len;
 		}
 	}
-	whc_dev_api_send_data(data, len);
-	val = rtos_sema_take(whc_cmdpath_data.whc_user_blocksend_sema, 10000);
-	if (val != RTK_SUCCESS) {
-		RTK_LOGE(TAG_WLAN_INIC, "%s, fail to take sema!!\n", __func__);
+
+	buf = rtos_mem_zmalloc(len + sizeof(struct whc_cmd_path_hdr) + DEV_DMA_ALIGN);
+	whc_tx = (struct whc_txbuf_info_t *)rtos_mem_zmalloc(sizeof(struct whc_txbuf_info_t));
+	if (!buf || !whc_tx) {
+		RTK_LOGE(TAG_WLAN_INIC, "%s, can't alloc buffer!!\n", __func__);
+		rtos_mem_free(buf);
+		rtos_mem_free(whc_tx);
 		goto exit;
 	}
 
+	/* append whc_cmd_path_hdr */
+	txbuf = (u8 *)N_BYTE_ALIGMENT((u32)buf, DEV_DMA_ALIGN);
+	hdr = (struct whc_cmd_path_hdr *)txbuf;
+	hdr->event = WHC_WIFI_EVT_CMD;
+	hdr->len = len;
+	memcpy(txbuf + sizeof(struct whc_cmd_path_hdr), data, len);
+
+	whc_tx->txbuf_info.buf_allocated = whc_tx->txbuf_info.buf_addr = (u32)txbuf;
+	whc_tx->txbuf_info.size_allocated = whc_tx->txbuf_info.buf_size = len + sizeof(struct whc_cmd_path_hdr);
+	whc_tx->ptr = buf;
+	whc_tx->is_skb = 0;
+
+	/* send hdr + data, buf is freed in bus tx done */
+	whc_dev_send(&whc_tx->txbuf_info);
+
+	if (block) {
+		/* block until the host returns the value. The user should give sema after the device completes the processing */
+		val = rtos_sema_take(whc_cmdpath_data.whc_user_blocksend_sema, 10000);
+		if (val != RTK_SUCCESS) {
+			RTK_LOGE(TAG_WLAN_INIC, "%s, fail to take sema!!\n", __func__);
+		}
+	}
+
 exit:
-	whc_cmdpath_data.ret = NULL;
-	whc_cmdpath_data.ret_len = 0;
-	rtos_mutex_give(whc_cmdpath_data.whc_user_blocksend_mutex);
+	if (block) {
+		whc_cmdpath_data.ret = NULL;
+		whc_cmdpath_data.ret_len = 0;
+		rtos_mutex_give(whc_cmdpath_data.whc_user_blocksend_mutex);
+	}
 }
 
 #endif

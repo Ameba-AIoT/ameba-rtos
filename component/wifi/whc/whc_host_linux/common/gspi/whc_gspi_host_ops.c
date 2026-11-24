@@ -6,11 +6,6 @@
  *
  */
 #include <whc_host_linux.h>
-#include <whc_host_cmd_path_api.h>
-#include <whc_host_netlink.h>
-#ifdef CONFIG_WHC_HOST_LOG_FWD
-#include "whc_host_log_fwd.h"
-#endif
 
 #ifndef WHC_RX_AGG
 static struct sk_buff *whc_gspi_host_read_rxfifo(struct whc_gspi *priv, u32 rx_len)
@@ -72,6 +67,7 @@ static u32 whc_gspi_host_rxagg_segment_size(u8 *ptr)
 
 	switch (hdr->msg.event) {
 	case WHC_WIFI_EVT_RECV_PKTS:
+	case WHC_WIFI_EVT_FLOWCTRL:
 		body = sizeof(struct whc_msg_info) + hdr->msg.data_len + hdr->msg.pad_len;
 		break;
 	case WHC_WIFI_EVT_API_CALL:
@@ -80,6 +76,9 @@ static u32 whc_gspi_host_rxagg_segment_size(u8 *ptr)
 		break;
 	case WHC_WIFI_EVT_CMD:
 		body = sizeof(struct whc_cmd_path_hdr) + hdr->cmd.len;
+		break;
+	case WHC_CUST_EVT:
+		body = sizeof(struct whc_cust_hdr) + hdr->cust.len;
 		break;
 	default:
 		return 0;
@@ -121,7 +120,7 @@ static void whc_gspi_host_rxagg_dispatch_buf(struct whc_gspi *priv, u8 *buf, u32
 		}
 		memcpy(pskb->data, ptr, size);
 
-		whc_host_recv_process(pskb);
+		whc_host_recv_dispatch(pskb);
 		ptr += size;
 
 		/* stop once too little rx data remains to hold even the smallest
@@ -252,55 +251,13 @@ static void whc_gspi_host_recv_data(void *intf_priv)
 			break;
 		}
 
-		whc_host_recv_process(pskb);
+		whc_host_recv_dispatch(pskb);
 #endif /* WHC_RX_AGG */
 	} while (1);
 
 	/* re-enable the RX_REQUEST interrupt the ISR masked (full shadow rewrite) */
 	gspi_write32(priv, GSPI_REG_HIMR, priv->gspi_himr);
 }
-
-#ifdef CONFIG_WHC_CMD_PATH
-void whc_host_send_cmd_data(u8 *buf, u32 len)
-{
-	whc_gspi_host_send_data(buf, len, NULL);
-}
-
-int whc_host_cmd_data_process(struct sk_buff *pskb)
-{
-	u16 size;
-	u8 *rxbuf;
-	int log_len;
-	const char *log_buf;
-
-	/* size after padding for align */
-	size = *(u16 *)pskb->data;
-	rxbuf = (u8 *)pskb->data + SIZE_RX_DESC;
-
-	/* intercept log-forward packets and print to dmesg instead of user space */
-	if (size >= (u16)sizeof(u32) && *(u32 *)rxbuf == WHC_LOG_EVENT) {
-		log_len = (int)(size - sizeof(u32));
-		log_buf = (const char *)(rxbuf + sizeof(u32));
-		if (log_len > 0) {
-			if (log_buf[log_len - 1] == '\n') {
-				pr_info("[FW] %.*s", log_len, log_buf);
-			} else {
-				pr_info("[FW] %.*s\n", log_len, log_buf);
-			}
-		}
-		return 0;
-#ifdef CONFIG_WHC_HOST_LOG_FWD
-	} else if (size >= (u16)(sizeof(u32) + 2) &&
-			   *(u32 *)rxbuf == WHC_WIFI_TEST &&
-			   rxbuf[4] == WHC_WIFI_TEST_LOG_ACK) {
-		whc_host_log_forward_ack(rxbuf[5]);
-		return 0;
-#endif
-	}
-
-	return whc_host_buf_rx_to_user(rxbuf, size);
-}
-#endif
 
 /*
  * Drain the tx queue: each round coalesces queued frames into one bus transfer.

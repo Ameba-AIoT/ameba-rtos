@@ -985,7 +985,7 @@ static rtk_bt_evt_cb_ret_t app_bt_le_iso_cb(uint8_t evt_code, void *data, uint32
 		rtk_bt_le_iso_big_broadcaster_sync_state_ind_t *param = (rtk_bt_le_iso_big_broadcaster_sync_state_ind_t *)data;
 		BT_LOGA("[APP] bis broadcaster sync state change: big_handle: 0x%x, adv_handle 0x%x, sync_state 0x%x, cause: 0x%x\r\n",
 				param->big_handle, param->adv_handle, param->sync_state, param->cause);
-		if (param->sync_state == RTK_BLE_ISO_BIG_BOARDCASTER_SYNC_STATE_BROADCASTING) {
+		if (param->sync_state == RTK_BLE_ISO_BIG_BROADCASTER_SYNC_STATE_BROADCASTING) {
 			BT_LOGA("[APP] bis broadcaster is isochronous broadcasting\r\n");
 			le_iso_demo_setup_path_param.data_path_direction = RTK_BLE_ISO_DATA_PATH_ADD_INPUT;
 			for (uint8_t i = 0; i < param->bis_num; i++) {
@@ -995,7 +995,7 @@ static rtk_bt_evt_cb_ret_t app_bt_le_iso_cb(uint8_t evt_code, void *data, uint32
 					BT_LOGE("[APP] BIS Boardcaster setup data path for bis_conn_handle 0x%x failed! err: 0x%x", le_iso_demo_setup_path_param.iso_conn_handle, ret);
 				}
 			}
-		} else if (param->sync_state == RTK_BLE_ISO_BIG_BOARDCASTER_SYNC_STATE_IDLE) {
+		} else if (param->sync_state == RTK_BLE_ISO_BIG_BROADCASTER_SYNC_STATE_IDLE) {
 			BT_LOGA("[APP] bis broadcaster is idle\r\n");
 		}
 		break;

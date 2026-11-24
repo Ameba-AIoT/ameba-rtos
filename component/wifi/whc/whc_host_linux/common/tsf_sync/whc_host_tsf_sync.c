@@ -62,7 +62,7 @@ static void tsf_latch_publish(u64 H_mono_ns, u64 tsf_us, u32 seq)
 	g_latch->seq++;                 /* even: write complete */
 }
 
-/* Runs on a workqueue because whc_host_send_data_to_dev() may block up to ~1s and
+/* Runs on a workqueue because whc_host_send_cmd_data_to_dev() may block up to ~1s and
  * takes the SDIO TX lock, which must not happen from the RX path. */
 static void tsf_ack_work_fn(struct work_struct *work)
 {
@@ -89,7 +89,7 @@ static void tsf_ack_work_fn(struct work_struct *work)
 
 	/* with_txdesc = 0: the cmd path allocates its own buffer and prepends
 	 * SIZE_TX_DESC for us, so buf may live on the stack. */
-	whc_host_send_data_to_dev(buf, sizeof(buf), 0);
+	whc_host_send_cmd_data_to_dev(buf, sizeof(buf), 0);
 }
 
 static irqreturn_t tsf_pulse_isr(int irq, void *dev_id)

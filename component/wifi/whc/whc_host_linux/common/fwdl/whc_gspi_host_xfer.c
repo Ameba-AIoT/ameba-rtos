@@ -41,7 +41,6 @@ static int whc_gspi_send(struct whc_xfer_adapter_t *adapter, u8 *pbuf, u32 size)
 static int whc_gspi_recv_timeout(struct whc_xfer_adapter_t *adapter, u8 *pbuf, int *actual_size, int timeout_ms)
 {
 	struct whc_gspi *priv = (struct whc_gspi *)adapter->interface;
-	INIC_RX_DESC *prxdesc;
 	u32 rx_len, frame_len;
 	u8 *frame_buf;
 	int ret = 0;
@@ -66,6 +65,13 @@ static int whc_gspi_recv_timeout(struct whc_xfer_adapter_t *adapter, u8 *pbuf, i
 		goto out;
 	}
 
+	/* pbuf (adapter->rx_buf) holds at most one xfer desc + hash */
+	if (rx_len > WHC_XFER_DESC_SIZE + adapter->hash_size) {
+		dev_err(&priv->spi_dev->dev, "rx_len %u too large\n", rx_len);
+		ret = -1;
+		goto out;
+	}
+
 	/* gspi_read_port() places payload at frame_buf + GSPI_CMD_PHASE_LEN (4B) */
 	frame_len = GSPI_FIFO_FRAME_LEN(rx_len);
 	frame_buf = kmalloc(frame_len, GFP_KERNEL);
@@ -81,16 +87,8 @@ static int whc_gspi_recv_timeout(struct whc_xfer_adapter_t *adapter, u8 *pbuf, i
 		goto out;
 	}
 
-	/* payload is prefixed by INIC_RX_DESC, like SDIO */
-	prxdesc = (INIC_RX_DESC *)(frame_buf + GSPI_CMD_PHASE_LEN);
-	if ((prxdesc->offset + prxdesc->pkt_len > rx_len) || (prxdesc->pkt_len > WHC_XFER_DESC_SIZE + adapter->hash_size)) {
-		dev_err(&priv->spi_dev->dev, "bad rx desc: offset %d len %d rx_len %d\n", prxdesc->offset, prxdesc->pkt_len, rx_len);
-		kfree(frame_buf);
-		ret = -1;
-		goto out;
-	}
-	memcpy(pbuf, (u8 *)prxdesc + prxdesc->offset, prxdesc->pkt_len);
-	*actual_size = prxdesc->pkt_len;
+	memcpy(pbuf, frame_buf + GSPI_CMD_PHASE_LEN, rx_len);
+	*actual_size = (int)rx_len;
 	kfree(frame_buf);
 
 out:

@@ -95,10 +95,10 @@ typedef struct {
 	uint32_t                   pres_delay_us;                                                  /*!< indicate presentation delay value */
 	uint32_t                   prev_ts_us;                                                     /*!< recording previous timestamp to check sdu loss */
 	bool                       prev_ts_valid;                                                  /*!< indicate whether prev_ts_us has been assigned a valid value */
-	uint32_t                   mixer_start_threshold;                                          /*!< record Audio Mixer start threshhold */
+	uint32_t                   mixer_start_threshold;                                          /*!< record Audio Mixer start threshold */
 	uint32_t
 	prev_sys_us;                                                    /*!< recording previous timestamp DTimestamp_Get() to check overflow */
-	bool                       ref_ap_oveflow_flag;                                            /*!< indicate CIG/BIG reference point occur overflow*/
+	bool                       ref_ap_overflow_flag;                                           /*!< indicate CIG/BIG reference point occur overflow*/
 	bool                       audio_mixer_conf;                                               /*!< indicate Audio Mixer or Passthrough*/
 	uint64_t                   trans_bytes;                                                    /*!< to record successfully transmitted audio bytes */
 	uint32_t                   delta_index;                                                    /*!< to record delta number buffered in pres_delta_sum */
@@ -123,7 +123,7 @@ typedef struct {
 	uint32_t                channels;               /*!< indicate channels */
 	uint32_t                rate;                   /*!< sample rate */
 	uint32_t                buffer_bytes;           /*!< buffer bytes per one period of record */
-	int32_t                 record_num;             /*!< indicate aptured audio data numbers */
+	int32_t                 record_num;             /*!< indicate captured audio data numbers */
 } rtk_bt_audio_record_t;
 
 /**  @brief audio stream message definition */

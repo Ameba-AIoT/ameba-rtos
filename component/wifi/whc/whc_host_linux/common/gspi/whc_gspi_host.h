@@ -45,8 +45,9 @@ struct whc_gspi;
 
 #define DEV_INT_IRQ			gpio_to_irq(DEV_INT_PIN)
 
-/* GSPI carries INIC TX/RX descriptors ahead of the payload, like SDIO. */
-#define SIZE_RX_DESC			(sizeof(INIC_RX_DESC))
+/* GSPI carries an INIC TX descriptor ahead of the payload, like SDIO. There is
+ * no separate RX descriptor on this path. */
+#define SIZE_RX_DESC			0
 #define SIZE_TX_DESC			(sizeof(INIC_TX_DESC))
 
 #define BUF_ALIGN_SZ			4
@@ -55,6 +56,9 @@ struct whc_gspi;
 
 /* Largest single TX transfer accepted (payload + descriptor). */
 #define GSPI_TX_MAX_SZ			SPI_BUFSZ
+
+#define WHC_TX_AGG
+#define WHC_RX_AGG
 
 /* HW rx aggregation fires when either threshold is hit, whichever comes first */
 #define GSPI_RX_AGG_TO			0	/* timeout = (0+1)*32us? */
