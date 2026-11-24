@@ -45,7 +45,7 @@ int efuse_get_remaining_length(void)
   * @brief  Read eFuse content of specified user logical OTP.
   * @param  data: buffer address to save the readback data.
   * @retval none
-  * @note Read user logical OTP(0x2D0~0x2FF).
+  * @note Read user logical OTP(0x170~0x19F).
   */
 void efuse_mtp_read(uint8_t *data)
 {
@@ -64,19 +64,19 @@ void efuse_mtp_read(uint8_t *data)
 
 /**
   * @brief  Write user's content to user logical OTP.
-  * @param  offset: Address offset of the programmed user logical OTP(base address: 0x2D0).
+  * @param  offset: Address offset of the programmed user logical OTP(base address: 0x170).
   * @param  data: Data buffer to be programmed.
   * @param  len: Data length to be programmed.
   * @return Write result:
   * @retval 0: Success.
   * @retval -1: Failure, offset + len exceeds the user logical OTP size, or the OTP write fails.
-  * @note Write user logical OTP(0x2D0~0x2FF).
+  * @note Write user logical OTP(0x170~0x19F).
   */
 int efuse_mtp_write(uint32_t offset, uint32_t len, uint8_t *data)
 {
 	int bResult = RTK_FAIL;
 
-	if ((offset + len) > OTP_MTP_USER_LEN) {
+	if ((offset > OTP_MTP_USER_LEN) || (len > (OTP_MTP_USER_LEN - offset))) {
 		printf("ERR: Write MTP out of boundary\n");
 		return bResult;
 	}
@@ -109,7 +109,7 @@ int efuse_otp_read(uint32_t offset, uint32_t len, uint8_t *buf)
 	u32 index;
 	int bResult = RTK_FAIL;
 
-	if ((offset + len) > OTP_USER_LEN) {
+	if ((offset > OTP_USER_LEN) || (len > (OTP_USER_LEN - offset))) {
 		printf("ERR: Read Out of boundary\n");
 		return bResult;
 	}
@@ -141,10 +141,10 @@ int efuse_otp_read(uint32_t offset, uint32_t len, uint8_t *buf)
   */
 int efuse_otp_write(uint32_t offset, uint32_t len, uint8_t *buf)
 {
-	u8 index;
+	u32 index;
 	int bResult;
 
-	if ((offset + len) > OTP_USER_LEN) {
+	if ((offset > OTP_USER_LEN) || (len > (OTP_USER_LEN - offset))) {
 		printf("ERR: Write Out of boundary\n");
 		return -1;
 	}

@@ -27,3 +27,8 @@ bool bt_mesh_rpl_check(struct bt_mesh_net_rx *rx,
 void bt_mesh_rpl_clear(void);
 void bt_mesh_rpl_update(struct bt_mesh_rpl *rpl,
 			struct bt_mesh_net_rx *rx);
+#if ZEPHYR_RTK_PATCH
+int bt_mesh_rpl_init(void);
+void bt_mesh_rpl_deinit(void);
+uint16_t bt_mesh_rpl_num_get(void);
+#endif

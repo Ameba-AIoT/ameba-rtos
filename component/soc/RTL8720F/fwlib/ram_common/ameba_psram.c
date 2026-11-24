@@ -158,7 +158,7 @@ void PSRAM_CLK_Update(void)
 
 	PsramInfo.Psram_Clk_Set = PsramClk / 2;
 
-	/* clk is 400/200 MHz (SYS PLL 400M, limited by CLK_LIMIT_PSRAM 400M / CLK_LIMIT_SPIC 208M), or XTAL 40M / FPGA 20M: whole MHz, so 32-bit math suffices */
+	/* clk is 400/192 MHz (SYS PLL 400M / USB PLL 960M, limited by CLK_LIMIT_PSRAM 400M / CLK_LIMIT_SPIC 192M), or XTAL 40M / FPGA 20M: whole MHz, so 32-bit math suffices */
 	clk_mhz = PsramClk / 1000000;
 	if (!clk_mhz) {
 		RTK_LOGE(TAG, "Invalid PsramClk\n");

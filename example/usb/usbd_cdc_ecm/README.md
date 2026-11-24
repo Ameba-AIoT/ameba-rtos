@@ -13,18 +13,44 @@ None
 
 # SW configuration
 
-1. Menuconfig
-	Use menuconfig and choose `CONFIG USB`:
+1. Default configuration
+
+	The `prj.conf` of this example sets the options below by default, no menuconfig is needed to run it:
 	```
+	CONFIG USB --->
 	[*] Enable USB
 			USB Mode (Device)  --->
 	[*] 	CDC ECM
 	```
-	Save and exit.
 
-2. Build and Download:
-   * Refer to the SDK Examples section of the online documentation to generate images.
-   * `Download` images to board by Ameba Image Tool.
+	```
+	CONFIG LWIP --->
+	[*] Enable LWIP USB ETHERNET
+	```
+
+2. Build
+
+	```
+	./ameba.py build -a usbd_cdc_ecm -p
+	```
+	`-p` (pristine) drops the previous configuration and applies the `prj.conf` of this example.
+
+3. (Optional) Change the configuration
+
+	Only needed when the default configuration does not fit:
+	1. Build once with `-p` as in step 2, so that the configuration starts from `prj.conf`.
+	2. Run `./ameba.py menuconfig` and change the options.
+	3. Rebuild without `-p`: `./ameba.py build -a usbd_cdc_ecm`.
+
+	To keep a change permanently, add its `CONFIG_XXX=y` lines to `prj.conf` instead and build with `-p`.
+
+4. Download
+
+	Flash the images to the board with any of the tools below:
+	* VS Code extension: https://aiot.realmcu.com/en/latest/tools/vscode/index.html
+	* Image Tool (Windows): https://aiot.realmcu.com/en/latest/tools/image_tool/index.html
+	* Flash Tool (cross-platform): https://aiot.realmcu.com/en/latest/tools/flash/index.html
+	* Web flash tool: https://aiot.realmcu.com/en/resource/web_flash_tool.html
 
 # Expect result
 
@@ -38,18 +64,19 @@ None
 	* `[USBD-A] INIT` comes from the USB device core, not from the example.
 	* On AmebaGreen2 an extra `[USB-I] UPHY para from ...` line is printed by the USB HAL before `[USBD-A] INIT`.
 
-2. Connect the USB port of Ameba board to USB host (Another Ameba board as USB CDC ECM host) with USB cable.
+2. Connect the USB port of Ameba board to USB host (a Linux PC, see [Linux host](#linux-host), or another Ameba board running the `usbh_cdc_ecm` example) with USB cable. Windows has no inbox CDC ECM driver, use a Linux host.
 
 3. If the test run success, the console will show:
 	```
 	[ECM-I] Status change 0 -> 1
 	[ECM-I] Attached
-	[ECM-I] DHCP Server MAC: 00:e0:4c:xx:xx:xx
+	[ECM-I] DHCP Server MAC: 02:11:22:33:44:56
 	[ECM-I] Device IP: 192.168.45.1
 	[ECM-I] DHCP Server started
 	```
+	`DHCP Server MAC` is the MAC of the board side of the link; the host side network interface gets MAC `02:11:22:33:44:55`. The DHCP server lines show up once the host has activated the data interface.
 
-4. After get the ip address, type command "AT+PING=XX", XX is the ECM Host Ip Address, make sure the ping success and no packet losted
+4. After the host gets its IP address (the first lease is `192.168.45.100`), type command `AT+PING=192.168.45.100` (the ECM host IP address), make sure the ping success and no packet losted
 
 5. The example also support iperf test, type "AT+IPERF=-s" to act as a TCP iperf server, type "AT+IPERF=-c,xx.xx.xx.x,-i,1,-t,10" to act as a TCP client. of course it also support UDP test, type "AT+IPERF" to get more information about the iperf
 
@@ -66,13 +93,75 @@ None
 	[ECM-I] Stopping USB ECM DHCP Server...
 	[ECM-I] DHCP Server stopped
 	```
-	The `Free heap` value shall stay stable across cycles, a value that keeps dropping indicates a memory leak.
+	After re-plug:
+	```
+	[ECM-I] Status change 0 -> 1
+	[ECM-I] Attached
+	[ECM-I] DHCP Server MAC: 02:11:22:33:44:56
+	[ECM-I] Device IP: 192.168.45.1
+	[ECM-I] DHCP Server started
+	```
+	The `Free heap` value shall stay stable across cycles, a value that keeps dropping indicates a memory leak. The DHCP server lines come from a separate thread polling every second, so they may interleave with the lines above.
 
 # Shell commands
 
 | Command | Description |
 | --- | --- |
+| `AT+USBDECM=help` | Print the usage, also when the example is not running. |
 | `AT+USBDECM=link,<0\|1>` | Report the upper-layer network link state to the host. `1` means link up, `0` means link down; any other value is rejected. The call is edge-triggered, repeating the same value is a no-op inside the class driver. The example reports `1` after every class init; the host only sees the link up while its data interface is active. |
+
+Example:
+```
+AT+USBDECM=link,0
+[ECM-I] Set ECM link status -> DOWN
+OK
+[ECM-I] Stopping USB ECM DHCP Server...
+[ECM-I] DHCP Server stopped
+
+AT+USBDECM=link,1
+[ECM-I] Set ECM link status -> UP
+OK
+[ECM-I] DHCP Server MAC: 02:11:22:33:44:56
+[ECM-I] Device IP: 192.168.45.1
+[ECM-I] DHCP Server started
+```
+The link thread of the example follows the link state seen by the host, so it stops the DHCP server within a second after `link,0` and starts it again after `link,1`. On a Linux host `ip link show enx021122334455` shows `NO-CARRIER` after `link,0` and the carrier back after `link,1`.
+
+Errors:
+* `AT+USBDECM` without a parameter prints the help and ends with `ERROR: -2`.
+* A bad sub command or value prints `[ECM-E] Usage: AT+USBDECM=link,<0|1>` and ends with `ERROR: -2`.
+* `link` while the example is not running prints `[ECM-E] Not running` and ends with `ERROR: -7`.
+
+# Linux host
+
+1. The inbox `cdc_ether` driver binds the device, check with `dmesg`:
+	```
+	cdc_ether 1-1:1.0 eth0: register 'cdc_ether' at usb-..., CDC Ethernet Device, 02:11:22:33:44:55
+	cdc_ether 1-1:1.0 enx021122334455: renamed from eth0
+	```
+	The interface name depends on the distribution, `enx021122334455` is the name derived from the MAC.
+
+2. NetworkManager usually runs DHCP on its own. Otherwise request a lease by hand and check it:
+	```
+	sudo dhclient enx021122334455
+	ip addr show enx021122334455
+	```
+	The interface shall get `192.168.45.100/24`.
+
+3. Ping the board, no packet shall be lost:
+	```
+	ping -c 10 192.168.45.1
+	```
+
+4. Throughput with iperf2, the board runs `AT+IPERF`, the PC shall run iperf2 (not iperf3):
+	| Test | Board | PC |
+	| --- | --- | --- |
+	| TCP, board receives | `AT+IPERF=-s` | `iperf -c 192.168.45.1 -i 1 -t 10` |
+	| TCP, board sends | `AT+IPERF=-c,192.168.45.100,-i,1,-t,10` | `iperf -s` |
+	| UDP, board receives | `AT+IPERF=-s,-u` | `iperf -c 192.168.45.1 -u -b 30M -i 1 -t 10 -l 1460` |
+	| UDP, board sends | `AT+IPERF=-c,192.168.45.100,-u,-b,30M,-i,1,-t,10` | `iperf -s -u` |
+
+	Block size (`-l`): the block size is the length of one read or write, one TCP segment or one UDP datagram. iperf2: the board defaults to 1460 bytes as client and 1500 bytes as server, and the PC does not pass its own size to the board, so `-l` is optional. Keep it at most 1460 for TCP, and at most 1472 for UDP so a datagram fits one Ethernet frame without IP fragmentation.
 
 # Note
 

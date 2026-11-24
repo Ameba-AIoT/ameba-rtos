@@ -27,7 +27,7 @@ extern "C" {
  *  @{
  */
 /** @defgroup Host_HW_UVC_Constants Host HW UVC Constants
- *  @brief Buffer sizing, channel indices and error flags of the UVC hardware decoder.
+ *  @brief Buffer sizing and error flags of the UVC hardware decoder.
  *  @{
  */
 
@@ -36,8 +36,6 @@ extern "C" {
 #define USBH_HW_UVC_MAX_BUF_NUM     3     /**< Number of frame buffers rotated per channel. */
 
 #define USBH_HW_UVC_ISOC_MPS        1024  /**< Isochronous IN maximum packet size the decoder expects. */
-
-#define USBH_HW_UVC_HCDMA_TAG_ADDR                     0x20060000U  /**< HCDMA placeholder the decoder matches against HCDMAi, never written: not a buffer. */
 
 #define USBH_HW_UVC_CH0_BUF0_OVERSIZE   BIT0  /**< Channel 0 buffer 0: the decoder raised its frame oversize interrupt. */
 #define USBH_HW_UVC_CH0_BUF1_OVERSIZE   BIT1  /**< Channel 0 buffer 1: the decoder raised its frame oversize interrupt. */
@@ -54,11 +52,6 @@ extern "C" {
 #define USBH_HW_UVC_CH0_BUF1_FRM_LEN    BIT9  /**< Channel 0 buffer 1: frame done reported a size past the buffer. */
 #define USBH_HW_UVC_CH1_BUF0_FRM_LEN    BIT10 /**< Channel 1 buffer 0: frame done reported a size past the buffer. */
 #define USBH_HW_UVC_CH1_BUF1_FRM_LEN    BIT11 /**< Channel 1 buffer 1: frame done reported a size past the buffer. */
-
-#define USBH_HW_UVC_CH_IDX_STREAM0             (0U)      /**< Channel index for stream 0. */
-#define USBH_HW_UVC_CH_IDX_STREAM1             (1U)      /**< Channel index for stream 1. */
-#define USBH_HW_UVC_BUF_INVALID                (0xEU)    /**< Invalid buf addr return value. */
-#define USBH_HW_UVC_STOP_DELAY_MS              (1U)      /**< Delay before disabling concat after stop. */
 
 /** @} End of Host_HW_UVC_Constants group */
 /** @} End of USB_Host_Constants group */
@@ -199,13 +192,13 @@ void usbh_hw_uvc_flush(usbh_hw_uvc_dec_t *uvc_dec);
  * @param  irq_pri: Interrupt priority level.
  * @return None
  */
-void usbh_hw_uvc_irq_en(u8 irq_pri);
+void usbh_hw_uvc_irq_enable(u8 irq_pri);
 
 /**
  * @brief  Disable and unregister the UVC hardware decoder interrupt.
  * @return None
  */
-void usbh_hw_uvc_irq_dis(void);
+void usbh_hw_uvc_irq_disable(void);
 
 #if (USBH_HW_UVC_DEBUG == 1)
 /**

@@ -55,6 +55,7 @@ void wifi_heap_statistics(u8 start);
 void wifi_ram_statistic_print(u8 print_detail);
 void wifi_set_rom2flash(void);
 void wifi_set_rom2flash_user_config(void);
+u8 wifi_dfs_master_is_enabled(void);
 
 extern int rtw_disconnect(void);
 extern int rtw_joinbss_start_api(struct rtw_network_info *connect_param);

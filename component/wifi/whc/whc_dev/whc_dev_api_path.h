@@ -65,6 +65,7 @@ void whc_event_wifi_set_usr_config(u32 api_id, u32 *param_buf);
 void whc_event_wifi_set_host_rtos(u32 api_id, u32 *param_buf);
 void whc_event_wifi_set_edcca_param(u32 api_id, u32 *param_buf);
 void whc_event_wifi_get_edcca_mode(u32 api_id, u32 *param_buf);
+void whc_event_wifi_get_dfs_master(u32 api_id, u32 *param_buf);
 void whc_event_wifi_get_ant_info(u32 api_id, u32 *param_buf);
 void whc_event_wifi_set_ant_info(u32 api_id, u32 *param_buf);
 #ifdef CONFIG_WAR_OFFLOAD

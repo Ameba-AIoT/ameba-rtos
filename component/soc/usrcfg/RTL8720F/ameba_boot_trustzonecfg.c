@@ -89,7 +89,7 @@ const TZ_CFG_TypeDef mpc3_config[MPC_ENTRY_NUM] =						/* Security configuration
 const TZ_CFG_TypeDef mpc2_config[MPC_ENTRY_NUM] =						/* Security configuration for SRAM */
 {
 //  Start					End						CTRL
-	{(u32)__km4tz_rombss_ram_ns_start__,	(u32)__km4tz_bootloader_ram_s_start__ - 0x10000000 - 1,	MPC_RW | MPC_NS},	/* entry0: KM4TZ_ROMBSS_RAM_NS / KM55TZ_MSP_RAM_NS / KM55NS_MSP_RAM */
+	{(u32)__km4tz_rombss_ram_ns_start__,	(u32)__km4tz_bootloader_ram_s_start__ - 0x10000000 - 1,	MPC_RW | MPC_NS},	/* entry0: KM55TZ_ROMBSS_RAM_NS / KM55TZ_MSP_RAM_NS / KM55NS_MSP_RAM */
 	{BD_RAM_START,							BD_RAM_END - 1,						MPC_RW | MPC_NS},	/* entry1: KM55TZ_BD_RAM KM55NS_BD_RAM */
 	{0xFFFFFFFF,							0xFFFFFFFF,						MPC_RW | MPC_NS},	/* entry2: TODO*/
 	{0xFFFFFFFF,							0xFFFFFFFF,						MPC_RW | MPC_NS},	/* entry3: TODO*/

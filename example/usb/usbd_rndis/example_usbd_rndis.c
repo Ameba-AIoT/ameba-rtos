@@ -1,0 +1,779 @@
+/*
+ * Copyright (c) 2026 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Includes ------------------------------------------------------------------*/
+
+#include <platform_autoconf.h>
+#include "platform_stdlib.h"
+#include "basic_types.h"
+#include "usbd_rndis.h"
+#include "os_wrapper.h"
+#include "lwip_netconf.h"
+#include "dhcp/dhcps.h"
+#include "atcmd_service.h"
+#include "usb_app.h"
+#include "example_usbd_rndis.h"
+
+/* Private defines -----------------------------------------------------------*/
+
+// Endpoint address
+#if defined(CONFIG_AMEBAGREEN2) || defined(CONFIG_RLE1509)
+#define RNDIS_BULK_IN_EP                        0x82U
+#define RNDIS_BULK_OUT_EP                       0x02U
+#else
+#define RNDIS_BULK_IN_EP                        0x81U
+#define RNDIS_BULK_OUT_EP                       0x02U
+#endif
+#define RNDIS_INTR_IN_EP                        0x83U
+
+// This configuration is used to enable a thread to check hotplug event
+// and reset USB stack to avoid memory leak, only for example.
+// while test suspend/resume, hotplug should be disabled
+#define RNDIS_HOTPLUG                           1
+
+// Thread priorities
+#define RNDIS_INIT_THREAD_PRIORITY              5
+#define RNDIS_LINK_STATE_THREAD_PRIORITY        4
+#define RNDIS_HOTPLUG_THREAD_PRIORITY           8
+
+// Thread stack sizes
+#define RNDIS_INIT_THREAD_STACK_SIZE            1024U
+#define RNDIS_HOTPLUG_THREAD_STACK_SIZE         1024U
+#define RNDIS_LINK_STATE_THREAD_STACK_SIZE      1600U
+
+// USB RNDIS Device IP Configuration
+#define RNDIS_IP_ADDR0                          192
+#define RNDIS_IP_ADDR1                          168
+#define RNDIS_IP_ADDR2                          45
+#define RNDIS_IP_ADDR3                          1
+
+#define RNDIS_NETMASK_ADDR0                     255
+#define RNDIS_NETMASK_ADDR1                     255
+#define RNDIS_NETMASK_ADDR2                     255
+#define RNDIS_NETMASK_ADDR3                     0
+
+#define RNDIS_GW_ADDR0                          192
+#define RNDIS_GW_ADDR1                          168
+#define RNDIS_GW_ADDR2                          45
+#define RNDIS_GW_ADDR3                          1
+
+/* Private types -------------------------------------------------------------*/
+
+/* Private macros ------------------------------------------------------------*/
+
+/* Private function prototypes -----------------------------------------------*/
+
+int usb_ethernet_transmit(u8 *buf, u32 len, u8 block);
+
+static int usbd_rndis_app_cb_init(void);
+static int usbd_rndis_app_cb_deinit(void);
+static int usbd_rndis_app_cb_received(u8 *buf, u32 Len);
+static void usbd_rndis_app_cb_status_changed(u8 old_status, u8 status);
+static int usbd_rndis_app_cmd_link(u16 argc, char *argv[]);
+static void usbd_rndis_app_cmd_link_at(u16 argc, char **argv);
+
+/* Private variables ---------------------------------------------------------*/
+
+static const char *const TAG = "RNDIS";
+
+static u8 usbd_rndis_app_dhcp_server_started = 0;
+/*
+ * dongle_mac: MAC address reported to the USB host side of the RNDIS link.
+ * It is passed in through rndis_class_cfg and reported through the RNDIS MAC query
+ * (OID_802_3_PERMANENT_ADDRESS), so the host's virtual Ethernet adapter is assigned this MAC.
+ * In other words, it identifies the "host-facing" end of the USB Ethernet dongle.
+ */
+static const u8 dongle_mac[6] = {0x02, 0x11, 0x22, 0x33, 0x44, 0x55};
+/*
+ * dhcp_server_mac: MAC address used by the device's local lwIP netif (pnetif_usb_eth).
+ * It is copied into pnetif_usb_eth->hwaddr in usbd_rndis_app_link_change_thread() before the
+ * DHCP server is started, so it is the source MAC for frames the device sends to the
+ * host (DHCP offers, ARP replies, gateway traffic). This is the "device-facing" end.
+ *
+ * Note: dongle_mac and dhcp_server_mac must differ (here only the last byte: 0x55 vs
+ * 0x56) so the two ends of the point-to-point USB Ethernet link have distinct MACs.
+ */
+static const u8 dhcp_server_mac[6] = {0x02, 0x11, 0x22, 0x33, 0x44, 0x56};
+static __IO u8 usbd_rndis_app_link_disconnected = 0;
+
+static const usbd_rndis_cb_t usbd_rndis_app_cb = {
+	.init = usbd_rndis_app_cb_init,
+	.deinit = usbd_rndis_app_cb_deinit,
+	.received = usbd_rndis_app_cb_received,
+	.status_changed = usbd_rndis_app_cb_status_changed,
+};
+
+static const usbd_rndis_config_t rndis_class_cfg = {
+	.bulk_in_addr  = RNDIS_BULK_IN_EP,
+	.bulk_out_addr = RNDIS_BULK_OUT_EP,
+	.intr_in_addr  = RNDIS_INTR_IN_EP,
+	.mac = dongle_mac,
+	/* Every remaining field is left 0 to take the class default: INTR IN interval,
+	 * TX queue depth and timeout, RX task stack size and priority. */
+};
+
+static const usbd_config_t usbd_rndis_app_cfg = {
+	.info = {
+		.prod_str = "Realtek RNDIS Device",
+	},
+	.isr_priority = INT_PRI_MIDDLE,
+	.ext_intr_enable = USBD_SOF_INTR,
+#if defined(CONFIG_AMEBASMART)
+	.nptx_max_epmis_cnt = 1U,
+#elif defined(CONFIG_AMEBAGREEN2)
+	.rx_fifo_depth = 692U,
+	.ptx_fifo_depth = {0U, 256U, 32U, 0U, 0U, },
+#elif defined(CONFIG_RLE1509)
+	.rx_fifo_depth = 656U,
+	.ptx_fifo_depth = {0U, 256U, 32U, 0U, 0U, },
+#elif defined (CONFIG_AMEBAL2)
+	.rx_fifo_depth = 661U,
+	.ptx_fifo_depth = {256U, 16U, 32U, 16U, },
+#elif defined (CONFIG_AMEBAPRO3)
+	/*DFIFO total 2232 DWORD, resv 8 DWORD for DMA addr and EP0 fixed 256 DWORD*/
+	.rx_fifo_depth = 1664U,
+	.ptx_fifo_depth = {256U, 32U, 16U, },
+#endif
+};
+
+#if RNDIS_HOTPLUG
+static __IO u8 usbd_rndis_app_attach_status = USBD_ATTACH_STATUS_INIT;
+static __IO u8 usbd_rndis_app_attach_old_status = USBD_ATTACH_STATUS_INIT;
+static rtos_sema_t usbd_rndis_app_attach_status_changed_sema = NULL;
+#endif
+
+/* Start/stop state: the link and hotplug threads leave through quit, joined by the stop owner */
+static usb_app_ctx_t usbd_rndis_app_ctx;
+
+/* Serializes the USB stack bring up/tear down against the TX path, taken by the
+ * hotplug thread and by usb_ethernet_transmit().
+ * Created once and never deleted: TX is driven by the lwIP thread, which lives as
+ * long as the firmware and can not be joined by the example, so there is no point
+ * in time at which this mutex is provably unreferenced. usbd_rndis_app_stack_ready is
+ * the gate that keeps callers off the stack instead. */
+static rtos_mutex_t usbd_rndis_app_state_mutex = NULL;
+/* 1: usbd_init() and usbd_rndis_init() both done, TX allowed. Cleared before any
+ * tear down, so a non-zero value also implies usbd_rndis_app_state_mutex is valid.
+ * usbd_rndis_deinit() frees the TX ring buffer, the BULK IN DMA buffer and the
+ * TX slot sema, all of which usbd_rndis_transmit() dereferences; its internal
+ * data path check only guards the entry and retry points, so under SMP the
+ * lwIP thread must be excluded from the whole teardown, not just narrowed. */
+static volatile u8 usbd_rndis_app_stack_ready = 0;
+
+/* Exported variables --------------------------------------------------------*/
+
+/* AT commands "AT+<cmd>=<p1>,<p2>...": the command name is case-sensitive, the parameters are not */
+ATCMD_TABLE_DATA_SECTION
+const log_item_t usbd_rndis_cmd_table[] = {
+	{"+USBDRNDIS", usbd_rndis_app_cmd_link_at},
+};
+
+/* Private functions ---------------------------------------------------------*/
+
+/* Take the network down if the link thread brought it up, the netif itself outlives this app */
+static void usbd_rndis_app_net_down(void)
+{
+	if (usbd_rndis_app_dhcp_server_started) {
+		RTK_LOGS(TAG, RTK_LOG_INFO, "Stopping USB RNDIS DHCP Server...\n");
+
+		// 1. Stop DHCP service first
+		dhcps_stop(pnetif_usb_eth);
+		dhcps_deinit(pnetif_usb_eth);
+
+		// 2. Bring down network interface (similar to WHC stop ap)
+		netifapi_netif_set_down(pnetif_usb_eth);
+		netifapi_netif_set_link_down(pnetif_usb_eth);
+
+		usbd_rndis_app_dhcp_server_started = 0;
+		RTK_LOGS(TAG, RTK_LOG_INFO, "DHCP Server stopped\n");
+	}
+}
+
+static void usbd_rndis_app_link_change_thread(void *param)
+{
+	u8 link_is_up = 0;
+
+	UNUSED(param);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Enter link status task!\n");
+
+	while (usbd_rndis_app_ctx.quit == 0U) {
+		link_is_up = usbd_rndis_get_link_status();
+
+		if (usbd_rndis_app_link_disconnected) {
+			usbd_rndis_app_link_disconnected = 0;
+			link_is_up = 0;
+		}
+
+		if ((1 == link_is_up) && (!usbd_rndis_app_dhcp_server_started)) {
+			if (pnetif_usb_eth == NULL) {
+				rtos_time_delay_ms(1000);
+			} else {
+				// RTK_LOGS(TAG, RTK_LOG_INFO, "Starting USB RNDIS DHCP Server...\n");
+
+				// 1. Set netif MAC address
+				memcpy((void *)pnetif_usb_eth->hwaddr, (const void *)dhcp_server_mac, 6);
+				pnetif_usb_eth->hwaddr_len = ETHARP_HWADDR_LEN;
+				RTK_LOGS(TAG, RTK_LOG_INFO, "DHCP Server MAC: " MAC_FMT "\n", MAC_ARG(pnetif_usb_eth->hwaddr));
+
+				// 2. Deinit DHCP server
+				dhcps_deinit(pnetif_usb_eth);
+
+				// 3. Set Device IP address
+				u32 ip_addr = CONCAT_TO_UINT32(RNDIS_IP_ADDR0, RNDIS_IP_ADDR1, RNDIS_IP_ADDR2, RNDIS_IP_ADDR3);
+				u32 netmask = CONCAT_TO_UINT32(RNDIS_NETMASK_ADDR0, RNDIS_NETMASK_ADDR1, RNDIS_NETMASK_ADDR2,
+											   RNDIS_NETMASK_ADDR3);
+				u32 gw = CONCAT_TO_UINT32(RNDIS_GW_ADDR0, RNDIS_GW_ADDR1, RNDIS_GW_ADDR2, RNDIS_GW_ADDR3);
+				lwip_set_ip(NETIF_USB_ETH_INDEX, ip_addr, netmask, gw);
+
+				RTK_LOGS(TAG, RTK_LOG_INFO, "Device IP: %d.%d.%d.%d\n", RNDIS_IP_ADDR0, RNDIS_IP_ADDR1, RNDIS_IP_ADDR2,
+						 RNDIS_IP_ADDR3);
+
+				// 4. Activate network interface link. The netifapi calls wrap void lwIP
+				//    netif functions, they always report ERR_OK
+				netifapi_netif_set_link_up(pnetif_usb_eth);
+				netifapi_netif_set_up(pnetif_usb_eth);
+				netifapi_netif_set_default(pnetif_usb_eth);
+
+				// 5. Initialize and start DHCP server. On failure nothing is marked started,
+				//    so the next poll retries the whole sequence: steps 3 and 4 are idempotent
+				if ((dhcps_init(pnetif_usb_eth) == NULL) || (dhcps_start(pnetif_usb_eth) != ERR_OK)) {
+					RTK_LOGS(TAG, RTK_LOG_ERROR, "DHCP Server start fail\n");
+					dhcps_deinit(pnetif_usb_eth);
+					rtos_time_delay_ms(1000);
+					continue;
+				}
+
+				usbd_rndis_app_dhcp_server_started = 1;
+
+				RTK_LOGS(TAG, RTK_LOG_INFO, "DHCP Server started\n");
+			}
+		} else if ((0 == link_is_up) && usbd_rndis_app_dhcp_server_started) {
+			// USB disconnected, stop DHCP server
+			usbd_rndis_app_net_down();
+		} else {
+			rtos_time_delay_ms(1000);
+		}
+	}
+
+	/* Stop requested: this thread is the only writer of the netif state, so it takes the
+	   network down itself before it is joined, i.e. before the USB stack goes away */
+	usbd_rndis_app_net_down();
+	if ((pnetif_usb_eth != NULL) && (netif_default == pnetif_usb_eth)) {
+		/* Hand the default route back to the STA netif, as the USB host examples do on detach */
+		netifapi_netif_set_default(pnetif_sta);
+	}
+	usb_app_ctx_leave(&usbd_rndis_app_ctx);
+	rtos_task_delete(NULL);
+}
+
+/**
+  * @brief  Initializes the RNDIS media layer
+  * @retval Status
+  */
+static int usbd_rndis_app_cb_init(void)
+{
+	return RTK_SUCCESS;
+}
+
+/**
+  * @brief  DeInitializes the RNDIS media layer
+  * @retval Status
+  */
+static int usbd_rndis_app_cb_deinit(void)
+{
+	return RTK_SUCCESS;
+}
+
+/**
+  * @brief  Data received over USB OUT endpoint
+  * @param  buf: RX buffer
+  * @param  length: RX data length (in bytes)
+  * @retval Status
+  */
+static int usbd_rndis_app_cb_received(u8 *buf, u32 length)
+{
+	/* Forward to network stack. The class only delivers a non-empty frame */
+	netif_adapter_usb_eth_recv(buf, length);
+
+	return RTK_SUCCESS;
+}
+
+/**
+  * @brief  USB attach status changed callback
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
+  * @param  old_status: Previous attach status
+  * @param  status: Current attach status
+  */
+static void usbd_rndis_app_cb_status_changed(u8 old_status, u8 status)
+{
+	/*
+	The scenario of state change is as follows:
+		Status 0 to 1: Indicates the initialization of the USB device from a cold boot, transitioning it
+		to an attached state.
+		Status 1 to 2: Represents transition from attached to detached state; for example, when the device
+		is hot-plugged out, the host suspends, or the system enters sleep mode.
+		Status 2 to 1: Represents transition from detached to attached state; for example, when the device
+		is hot-plugged in, performs a remote wakeup, or the host resumes.
+	*/
+
+#if RNDIS_HOTPLUG
+	usbd_rndis_app_attach_old_status = old_status;
+	usbd_rndis_app_attach_status = status;
+	if (usbd_rndis_app_attach_status_changed_sema != NULL) {
+		rtos_sema_give(usbd_rndis_app_attach_status_changed_sema);
+	}
+#else
+	UNUSED(status);
+	UNUSED(old_status);
+#endif
+
+	if (status == USBD_ATTACH_STATUS_DETACHED) {
+		usbd_rndis_app_link_disconnected = 1;
+	}
+}
+
+#if RNDIS_HOTPLUG
+/**
+  * @brief  USB hotplug detection and handling thread
+  * @param  param: Thread parameter (unused)
+  */
+static void usbd_rndis_app_hotplug_thread(void *param)
+{
+	int ret = 0;
+	u8 current_status;
+	u8 fatal = 0U;
+	UNUSED(param);
+
+#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
+	/* C-2: the USB OTG ISR is delivered on CPU0 (GIC ITARGETSR pins every SPI to
+	   core 0). Pinning the hotplug thread to CPU0 makes its deinit/reinit single-core
+	   against the ISR, so deinit's local interrupt disable is meaningful under SMP.
+	   Done by the thread itself, first: a created thread may already run on another core, and its
+	   creator pinning it afterwards could come too late or reach a task that has deleted itself. */
+	rtos_task_set_affinity(rtos_task_handle_get(), 0);
+#endif
+
+	for (;;) {
+		// Wait for attach status change notification
+		if (rtos_sema_take(usbd_rndis_app_attach_status_changed_sema, RTOS_SEMA_MAX_COUNT) != RTK_SUCCESS) {
+			continue;
+		}
+		if (usbd_rndis_app_ctx.quit != 0U) {
+			/* Stop requested: the stack is left as it is, the stop entry tears it down */
+			break;
+		}
+
+		RTK_LOGS(TAG, RTK_LOG_INFO, "Status change %d -> %d \n", usbd_rndis_app_attach_old_status, usbd_rndis_app_attach_status);
+		current_status = usbd_rndis_app_attach_status;
+
+		if (current_status == USBD_ATTACH_STATUS_DETACHED) {
+			RTK_LOGS(TAG, RTK_LOG_INFO, "DETACHED\n");
+
+			/* Close the gate before tearing down. usb_ethernet_transmit() contends
+			 * for the same mutex, so no TX is in flight here and any later one sees
+			 * usbd_rndis_app_stack_ready == 0 and gives up. */
+			rtos_mutex_take(usbd_rndis_app_state_mutex, RTOS_MAX_TIMEOUT);
+			usbd_rndis_app_stack_ready = 0;
+
+			// Deinitialize RNDIS
+			usbd_rndis_deinit();
+
+			// Deinitialize USB device
+			usbd_deinit();
+			rtos_mutex_give(usbd_rndis_app_state_mutex);
+
+			// Small delay to ensure proper cleanup
+			rtos_time_delay_ms(100);
+
+			RTK_LOGS(TAG, RTK_LOG_INFO, "Free heap 0x%x\n", rtos_mem_get_free_heap_size());
+			if (usbd_rndis_app_ctx.quit != 0U) {
+				/* Stop requested while the stack is down: skip the re-init, usbd_rndis_app_stack_ready stays 0 */
+				break;
+			}
+
+			rtos_mutex_take(usbd_rndis_app_state_mutex, RTOS_MAX_TIMEOUT);
+
+			// Re-initialize USB device
+			ret = usbd_init(&usbd_rndis_app_cfg);
+			if (ret != RTK_SUCCESS) {
+				rtos_mutex_give(usbd_rndis_app_state_mutex);
+				RTK_LOGS(TAG, RTK_LOG_ERROR, "Init fail %d\n", ret);
+				fatal = 1U;
+				break;
+			}
+
+			// Re-initialize RNDIS
+			ret = usbd_rndis_init(&usbd_rndis_app_cb, &rndis_class_cfg);
+			if (ret != RTK_SUCCESS) {
+				usbd_deinit();
+				rtos_mutex_give(usbd_rndis_app_state_mutex);
+				RTK_LOGS(TAG, RTK_LOG_ERROR, "Init RNDIS fail %d\n", ret);
+				fatal = 1U;
+				break;
+			}
+			ret = usbd_rndis_set_link_status(1U);
+			if (ret != RTK_SUCCESS) {
+				/* The host only sees the uplink down, the USB link itself is fine */
+				RTK_LOGS(TAG, RTK_LOG_WARN, "Set link fail %d\n", ret);
+			}
+
+			/* Open the gate at the very last step, so that no TX runs before the
+			 * re-init is fully done. */
+			usbd_rndis_app_stack_ready = 1;
+			rtos_mutex_give(usbd_rndis_app_state_mutex);
+
+			RTK_LOGS(TAG, RTK_LOG_INFO, "Reinit done\n");
+
+		} else if (current_status == USBD_ATTACH_STATUS_ATTACHED) {
+			RTK_LOGS(TAG, RTK_LOG_INFO, "Attached\n");
+		}
+	}
+
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Thread exit\n");
+	if (fatal != 0U) {
+		/* A re-init failed: the stack is fully deinited, no ISR callback can give the sema
+		   any more and usbd_rndis_app_stack_ready stays 0, so TX is kept out for good */
+		if (usb_app_ctx_claim_stop(&usbd_rndis_app_ctx) != 0U) {
+			/* No stop is in flight: this thread finishes the teardown on its own. The link
+			   thread polls quit, set by the claim, and takes the network down as it leaves */
+			if (usb_app_ctx_join(&usbd_rndis_app_ctx, 1U) != RTK_SUCCESS) {
+				/* The link thread may still run: leak the shared objects */
+				rtos_task_delete(NULL);
+			}
+			rtos_sema_delete(usbd_rndis_app_attach_status_changed_sema);
+			usbd_rndis_app_attach_status_changed_sema = NULL;
+			usb_app_ctx_end(&usbd_rndis_app_ctx);
+			rtos_task_delete(NULL);
+		}
+	}
+	usb_app_ctx_leave(&usbd_rndis_app_ctx);
+	rtos_task_delete(NULL);
+}
+#endif // RNDIS_HOTPLUG
+
+/**
+  * @brief  Bring the stack and the worker threads up
+  * @retval RTK_SUCCESS, or the first error, with everything already created rolled back
+  */
+static int usbd_rndis_app_start(void)
+{
+	int ret;
+	u32 workers = 0U;
+	rtos_task_t task = NULL;
+
+	ret = usb_app_ctx_begin(&usbd_rndis_app_ctx);
+	if (ret != RTK_SUCCESS) {
+		return ret;
+	}
+
+	usbd_rndis_app_link_disconnected = 0;
+#if RNDIS_HOTPLUG
+	usbd_rndis_app_attach_status = USBD_ATTACH_STATUS_INIT;
+	usbd_rndis_app_attach_old_status = USBD_ATTACH_STATUS_INIT;
+#endif
+
+	rltk_usb_eth_init();
+
+	/* Created before the stack comes up and never deleted, see the declaration */
+	if (usbd_rndis_app_state_mutex == NULL) {
+		ret = rtos_mutex_create(&usbd_rndis_app_state_mutex);
+		if (ret != RTK_SUCCESS) {
+			RTK_LOGS(TAG, RTK_LOG_ERROR, "Create state mutex fail\n");
+			goto exit_cleanup;
+		}
+	}
+
+#if RNDIS_HOTPLUG
+	// Create semaphore for hotplug detection
+	ret = rtos_sema_create(&usbd_rndis_app_attach_status_changed_sema, 0U, 1U);
+	if (ret != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create attach sema fail\n");
+		goto exit_cleanup;
+	}
+#endif
+
+	// Initialize USB device
+	ret = usbd_init(&usbd_rndis_app_cfg);
+	if (ret != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Init fail %d\n", ret);
+		goto exit_usbd_init_fail;
+	}
+
+	// Initialize RNDIS
+	ret = usbd_rndis_init(&usbd_rndis_app_cb, &rndis_class_cfg);
+	if (ret != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Init RNDIS fail %d\n", ret);
+		goto exit_usbd_rndis_init_fail;
+	}
+	/* The class starts with the uplink down; this example serves the host locally
+	 * (DHCP server on the device), so report it up.  The USBDRNDIS link command can
+	 * still change it to exercise the link notification. */
+	ret = usbd_rndis_set_link_status(1U);
+	if (ret != RTK_SUCCESS) {
+		/* The host only sees the uplink down, the USB link itself is fine */
+		RTK_LOGS(TAG, RTK_LOG_WARN, "Set link fail %d\n", ret);
+	}
+
+	/* The stack is fully up: allow TX */
+	usbd_rndis_app_stack_ready = 1;
+
+	ret = rtos_task_create(&task,
+						   "usbd_rndis_link_change_thread",
+						   usbd_rndis_app_link_change_thread,
+						   NULL,
+						   RNDIS_LINK_STATE_THREAD_STACK_SIZE,
+						   RNDIS_LINK_STATE_THREAD_PRIORITY);
+	if (ret != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create monitor_link thread fail\n");
+		goto exit_create_task_fail;
+	}
+	workers++;
+
+#if RNDIS_HOTPLUG
+	/* Created last: it owns the stack once running, so nothing after it can fail */
+	ret = rtos_task_create(&task,
+						   "usbd_rndis_hotplug_thread",
+						   usbd_rndis_app_hotplug_thread,
+						   NULL,
+						   RNDIS_HOTPLUG_THREAD_STACK_SIZE,
+						   RNDIS_HOTPLUG_THREAD_PRIORITY);
+	if (ret != RTK_SUCCESS) {
+		goto exit_create_task_fail;
+	}
+#endif
+
+	return RTK_SUCCESS;
+
+exit_create_task_fail:
+	/* The link thread polls quit and takes the network down as it leaves */
+	usbd_rndis_app_ctx.quit = 1U;
+	if (usb_app_ctx_join(&usbd_rndis_app_ctx, workers) != RTK_SUCCESS) {
+		/* The link thread may still run on the netif: keep everything, the app stays not idle */
+		usbd_rndis_app_ctx.state = USB_APP_STATE_STOPPING;
+		return -RTK_ERR_TIMEOUT;
+	}
+	/* The gate was already opened above, so the lwIP thread may be inside
+	 * usbd_rndis_transmit() right now: take the lock here too, exactly as the
+	 * hotplug thread does, instead of only closing the gate. */
+	rtos_mutex_take(usbd_rndis_app_state_mutex, RTOS_MAX_TIMEOUT);
+	usbd_rndis_app_stack_ready = 0;
+	usbd_rndis_deinit();
+	rtos_mutex_give(usbd_rndis_app_state_mutex);
+
+exit_usbd_rndis_init_fail:
+	usbd_deinit();
+
+exit_usbd_init_fail:
+#if RNDIS_HOTPLUG
+	if (usbd_rndis_app_attach_status_changed_sema != NULL) {
+		rtos_sema_delete(usbd_rndis_app_attach_status_changed_sema);
+		usbd_rndis_app_attach_status_changed_sema = NULL;
+	}
+#endif
+	/* usbd_rndis_app_state_mutex is deliberately kept, see its declaration */
+exit_cleanup:
+	usb_app_ctx_end(&usbd_rndis_app_ctx);
+	RTK_LOGS(TAG, RTK_LOG_ERROR, "USBD RNDIS demo aborted\n");
+
+	return ret;
+}
+
+/**
+  * @brief  USB RNDIS initialization thread
+  * @param  param: Thread parameter (unused)
+  */
+static void usbd_rndis_app_init_thread(void *param)
+{
+	UNUSED(param);
+
+#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
+	/* A start that fails rolls back through usbd_deinit(), which waits for no ISR on another
+	   core: run it on CPU0, where the USB IRQ is delivered, as the hotplug thread does.
+	   Done by the thread itself, first: a created thread may already run on another core, and its
+	   creator pinning it afterwards could come too late or reach a task that has deleted itself. */
+	rtos_task_set_affinity(rtos_task_handle_get(), 0);
+#endif
+
+	if (usbd_rndis_app_start() != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Start fail\n");
+	}
+	rtos_task_delete(NULL);
+}
+
+/**
+ * @brief  CLI command USBDRNDIS: report uplink (e.g. Wi-Fi / cellular) link state to host.
+ *
+ * Usage: USBDRNDIS link <0|1>
+ *   1: notify host that the upper-layer network link is UP
+ *   0: notify host that the upper-layer network link is DOWN
+ *
+ * Wraps usbd_rndis_set_link_status(), which is edge-triggered: calling
+ * with the same value twice is a no-op. This is the call site documented
+ * in usbd_rndis.h as belonging to the layer that owns the real uplink.
+ * Exposing it as a shell command lets you manually exercise the
+ * INDICATE_STATUS media notification path on the USB host side (Linux/Windows
+ * virtual NIC carrier up/down) without waiting for a real link event.
+ *
+ * Note: this does NOT touch the example's internal DHCP/lwIP teardown
+ * path (usbd_rndis_app_link_disconnected); it only sends the USB-level
+ * notification. Add a second command if you want to drive both at once.
+ */
+static int usbd_rndis_app_cmd_link(u16 argc, char *argv[])
+{
+	const char *cmd = (argc != 0U) ? argv[0] : NULL;
+	const char *val = (argc > 1U) ? argv[1] : NULL;
+	u8 link_up;
+
+	if ((cmd == NULL) || (_stricmp(cmd, "help") == 0) || (_stricmp(cmd, "?") == 0)) {
+		RTK_LOGS(TAG, RTK_LOG_INFO, "Usage: AT+USBDRNDIS=<cmd>[,<args>]\n");
+		RTK_LOGS(TAG, RTK_LOG_INFO, "  link,<0|1>  Report the upper-layer network link to the host, 1: up, 0: down\n");
+		RTK_LOGS(TAG, RTK_LOG_INFO, "              Edge-triggered: the same value twice sends no notification\n");
+		RTK_LOGS(TAG, RTK_LOG_INFO, "  help        Print this help\n");
+		return (cmd == NULL) ? -RTK_ERR_BADARG : RTK_SUCCESS;
+	}
+
+	if ((_stricmp(cmd, "link") != 0) || (argc != 2U) || (val[1] != '\0') || ((val[0] != '0') && (val[0] != '1'))) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Usage: AT+USBDRNDIS=link,<0|1>\n");
+		return -RTK_ERR_BADARG;
+	}
+
+	if ((usbd_rndis_app_ctx.state != USB_APP_STATE_RUNNING) || (usbd_rndis_app_ctx.quit != 0U)) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Not running\n");
+		return -RTK_ERR_IO;
+	}
+
+	link_up = (val[0] == '1') ? 1U : 0U;
+
+	RTK_LOGS(TAG, RTK_LOG_INFO, "Set RNDIS link status -> %s\n",
+			 link_up ? "UP" : "DOWN");
+
+	return usbd_rndis_set_link_status(link_up);
+}
+
+/* AT entry: argv[0] is reserved by the AT parser and argv[1] holds the first parameter */
+static void usbd_rndis_app_cmd_link_at(u16 argc, char **argv)
+{
+	int ret = usbd_rndis_app_cmd_link((argc != 0U) ? (u16)(argc - 1U) : 0U, &argv[1]);
+
+	if (ret == RTK_SUCCESS) {
+		at_printf(ATCMD_OK_END_STR);
+	} else {
+		at_printf(ATCMD_ERROR_END_STR, (int)ret);
+	}
+}
+
+/* Exported functions --------------------------------------------------------*/
+
+int usb_ethernet_transmit(u8 *buf, u32 len, u8 block)
+{
+	int ret;
+
+	/* Gate on usbd_rndis_app_stack_ready BEFORE touching the mutex: it is still NULL if
+	 * the example was never started, and already cleared if the init failed or the
+	 * stack is gone for good. A hotplug right after this check is harmless, the
+	 * mutex stays valid and the re-check below skips the TX. quit: a stop is
+	 * tearing the example down, no new TX */
+	if ((usbd_rndis_app_stack_ready == 0U) || (usbd_rndis_app_ctx.quit != 0U)) {
+		return -RTK_ERR_IO;
+	}
+
+	/* Never enter the gated section, nor give, without the mutex */
+	ret = rtos_mutex_take(usbd_rndis_app_state_mutex, RTOS_MAX_TIMEOUT);
+	if (ret != RTK_SUCCESS) {
+		return -RTK_ERR_BUSY;
+	}
+	if ((usbd_rndis_app_stack_ready == 0U) || (usbd_rndis_app_ctx.quit != 0U)) {
+		/* Lost the race against a hotplug or stop tear down */
+		ret = -RTK_ERR_IO;
+	} else {
+		ret = usbd_rndis_transmit(buf, len, block);
+	}
+	rtos_mutex_give(usbd_rndis_app_state_mutex);
+
+	return ret;
+}
+
+/**
+  * @brief  Start the RNDIS device, used by the USB app manager
+  * @note   Task context only
+  * @retval RTK_SUCCESS, -RTK_ERR_BUSY if already running, or the init error
+  */
+int example_usbd_rndis_start(void)
+{
+	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD RNDIS demo start\n");
+
+	return usbd_rndis_app_start();
+}
+
+/**
+  * @brief  Stop the RNDIS device and release everything it owns
+  * @note   Task context only. Safe to call when not running. The netif and the lwIP TX
+  *         mutex are kept, they outlive this app.
+  * @retval RTK_SUCCESS once idle, -RTK_ERR_TIMEOUT if a worker did not leave in time
+  */
+int example_usbd_rndis_stop(void)
+{
+	u32 workers = 1U;
+
+	if (usb_app_ctx_claim_stop(&usbd_rndis_app_ctx) == 0U) {
+		/* Idle, or the hotplug thread found the stack dead and finishes the teardown itself */
+		return usb_app_ctx_wait_idle(&usbd_rndis_app_ctx);
+	}
+
+	/* The link thread polls quit: it stops the DHCP server and takes the netif down
+	   before it leaves, so lwIP stops sending to this app before the stack goes away */
+#if RNDIS_HOTPLUG
+	rtos_sema_give(usbd_rndis_app_attach_status_changed_sema);
+	workers++;
+#endif
+	if (usb_app_ctx_join(&usbd_rndis_app_ctx, workers) != RTK_SUCCESS) {
+		/* A worker is still on the stack: keep everything, the app stays STOPPING */
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Stop timeout\n");
+		return -RTK_ERR_TIMEOUT;
+	}
+
+	/* Every worker is gone. The stack is still up unless a hotplug left it down, the mutex
+	   keeps an in-flight lwIP TX out of the class API while the gate closes */
+	if (usbd_rndis_app_stack_ready != 0U) {
+		rtos_mutex_take(usbd_rndis_app_state_mutex, RTOS_MAX_TIMEOUT);
+		usbd_rndis_app_stack_ready = 0;
+		usbd_rndis_deinit();
+		usbd_deinit();
+		rtos_mutex_give(usbd_rndis_app_state_mutex);
+	}
+#if RNDIS_HOTPLUG
+	rtos_sema_delete(usbd_rndis_app_attach_status_changed_sema);
+	usbd_rndis_app_attach_status_changed_sema = NULL;
+#endif
+	/* usbd_rndis_app_state_mutex and the lwIP TX mutex are deliberately kept, see the declaration */
+	usb_app_ctx_end(&usbd_rndis_app_ctx);
+	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD RNDIS demo stop\n");
+
+	return RTK_SUCCESS;
+}
+
+/**
+  * @brief  Example entry: start the RNDIS device from its own thread
+  * @retval None
+  */
+void example_usbd_rndis(void)
+{
+	int ret;
+	rtos_task_t init_task = NULL;
+
+	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD RNDIS demo start\n");
+
+	ret = rtos_task_create(&init_task,
+						   "usbd_rndis_init_thread",
+						   usbd_rndis_app_init_thread,
+						   NULL,
+						   RNDIS_INIT_THREAD_STACK_SIZE,
+						   RNDIS_INIT_THREAD_PRIORITY);
+	if (ret != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create thread fail\n");
+	}
+}

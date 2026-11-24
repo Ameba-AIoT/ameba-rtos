@@ -171,6 +171,12 @@ open_fail:
 	if (bulk_out->pipe_num != 0U) {
 		usbh_close_pipe(host, bulk_out);
 	}
+	/* No detach() follows a failed attach(): drop the host handle as detach() does, or
+	   usbh_msc_is_ready() and the LUN getters report the previous device on the setup of
+	   another class of this one */
+	usb_os_enter_critical();
+	msc->host = NULL;
+	usb_os_exit_critical();
 	return status;
 }
 
@@ -232,8 +238,12 @@ static int usbh_msc_setup(usb_host_t *host)
 	setup.req.wLength = 1U;
 	status = usbh_ctrl_request(host, &setup, msc->max_lun_buf);
 	/* When devices do not support the GetMaxLun request, this should
-	   be considered as only one logical unit is supported */
-	if (status == -RTK_ERR_BADARG) {
+	   be considered as only one logical unit is supported. The request is optional
+	   (Ref BOT 3.2), so a timeout or a transfer error falls back the same way */
+	if ((status == -RTK_ERR_BADARG) || (status == RTK_FAIL)) {
+		if (status == RTK_FAIL) {
+			RTK_LOGS(TAG, RTK_LOG_WARN, "GetMaxLUN fail, 1 LUN\n");
+		}
 		msc->max_lun_buf[0] = 0U;
 		status = RTK_SUCCESS;
 	}
@@ -670,8 +680,6 @@ static void usbh_msc_finish_cmd(usbh_msc_host_t *msc, int result)
 
 /**
   * @brief  Clear ENDPOINT_HALT of one bulk endpoint, Ref USB 2.0 9.4.1.
-  * @note   Sent through usbh_ctrl_request(), which rejects the call while another class of a
-  *         composite device owns EP0; usbh_ctrl_clear_feature() lacks that owner check.
   * @param  host: Host handle
   * @param  ep_addr: Endpoint address
   * @retval RTK_SUCCESS once cleared, -RTK_ERR_BUSY while in progress, an error otherwise

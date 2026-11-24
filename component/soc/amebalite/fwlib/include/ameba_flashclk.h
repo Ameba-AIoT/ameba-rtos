@@ -58,7 +58,9 @@ typedef struct {
 #define FLASH_SHIFT_IDX_TO_PLLCLK(shift_idx)	((shift_idx) / FLASH_PLLCLK_EQUAL_PAHSE)	/*phase_int means how many PLL CLK is shift*/
 #define FLASH_SHIFT_IDX_TO_PAHSE(shift_idx)		((shift_idx) % FLASH_PLLCLK_EQUAL_PAHSE)	/*phase_frac means how many phase shift in one PLL CLK*/
 
-void flash_highspeed_setup(void);
+int flash_handshake_highspeed(FlashDivInt_E div, u32 flash_clk);
+int flash_rx_mode_switch(u32 spic_mode, u32 flash_clk);
+int flash_highspeed_setup(u32 read_mode, u32 spic_max);
 
 #ifdef __cplusplus
 }

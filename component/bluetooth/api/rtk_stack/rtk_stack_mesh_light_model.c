@@ -1198,8 +1198,8 @@ bool light_ctl_setup_server_model_init(void)
 #if defined(BT_MESH_ENABLE_LIGHT_CTL_TEMPERATURE_SERVER_MODEL) && BT_MESH_ENABLE_LIGHT_CTL_TEMPERATURE_SERVER_MODEL
 static mesh_model_info_t light_ctl_temperature_server_model;
 
-static rtk_bt_mesh_light_ctl_server_get_temperature_t tempearture_store;
-static rtk_bt_mesh_light_ctl_server_get_temperature_range_t tempearture_range_store;
+static rtk_bt_mesh_light_ctl_server_get_temperature_t temperature_store;
+static rtk_bt_mesh_light_ctl_server_get_temperature_range_t temperature_range_store;
 
 static int32_t light_ctl_temperature_server_data(const mesh_model_info_p pmodel_info,
 												 uint32_t type, void *pargs)
@@ -1221,10 +1221,10 @@ static int32_t light_ctl_temperature_server_data(const mesh_model_info_p pmodel_
 				break;
 			}
 			ctl_temperature_get = (rtk_bt_mesh_light_ctl_server_direct_get_temperature_t *)p_evt->data;
-			ctl_temperature_get->value = &tempearture_store;
+			ctl_temperature_get->value = &temperature_store;
 			rtk_bt_evt_indicate(p_evt, &cb_ret);
-			p_get_data->temperature = tempearture_store.temperature;
-			p_get_data->delta_uv = tempearture_store.delta_uv;
+			p_get_data->temperature = temperature_store.temperature;
+			p_get_data->delta_uv = temperature_store.delta_uv;
 		}
 	}
 	break;
@@ -1256,10 +1256,10 @@ static int32_t light_ctl_temperature_server_data(const mesh_model_info_p pmodel_
 				break;
 			}
 			range_temperature_get = (rtk_bt_mesh_light_ctl_server_direct_get_temperature_range_t *)p_evt->data;
-			range_temperature_get->value = &tempearture_range_store;
+			range_temperature_get->value = &temperature_range_store;
 			rtk_bt_evt_indicate(p_evt, &cb_ret);
-			p_get_data->range_max = tempearture_range_store.range_max;
-			p_get_data->range_min = tempearture_range_store.range_min;
+			p_get_data->range_max = temperature_range_store.range_max;
+			p_get_data->range_min = temperature_range_store.range_min;
 		}
 	}
 	break;

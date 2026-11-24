@@ -32,6 +32,21 @@
 #define USBH_UAC_CS_EP_FIXED_LEN                    (4U)  /**< enough to read bmAttributes */
 #define USBH_UAC_FU_FIXED_LEN                       (7U)  /**< Feature Unit bytes besides bmaControls: 6 header + iFeature */
 #define USBH_UAC_FU_BMA_OFFSET                      (6U)  /**< Feature Unit offset of bmaControls(0) */
+/* Playback feedback, Ref UAC1 4.6.2 and USB 2.0 5.12.4.2 */
+#define USBH_UAC_EP_REFRESH_OFFSET                  (7U)  /**< bRefresh of a 9-byte audio endpoint descriptor */
+#define USBH_UAC_EP_SYNCH_ADDR_OFFSET               (8U)  /**< bSynchAddress of a 9-byte audio endpoint descriptor */
+#define USBH_UAC_EP_SYNC_ASYNC                      (1U)  /**< bmAttributes D3..2: asynchronous */
+#define USBH_UAC_EP_USAGE_FEEDBACK                  (1U)  /**< bmAttributes D5..4: feedback endpoint */
+#define USBH_UAC_FB_BUF_LEN                         64U   /**< Feedback DMA buffer, also the largest feedback wMaxPacketSize taken */
+#define USBH_UAC_FB_FS_LEN                          3U    /**< FS feedback: 10.14 in 3 bytes; HS: 16.16 in 4 */
+#define USBH_UAC_FB_FS_SHIFT                        2U    /**< 10.14 to 16.16 */
+#define USBH_UAC_FB_FRAC_BITS                       16U   /**< Feedback rates are kept in 16.16 samples */
+#define USBH_UAC_FB_FRAC_MASK                       0xFFFFU
+#define USBH_UAC_FB_TOLERANCE_SHIFT                 3U    /**< Take a feedback within 1/8 of the nominal rate */
+#define USBH_UAC_FB_REFRESH_MAX                     9U    /**< bRefresh is 1..9, a period of 2^bRefresh ms */
+#if USBH_UAC_FB_DEBUG
+#define USBH_UAC_FB_LOG_INTERVAL_MS                 1000U
+#endif
 /* Wait of a sync control API. Longer than the 5 s the host core allows one control request
  * (USBH_CTRL_XFER_TIMEOUT_MS), so a request the device keeps NAKing is ended by the core
  * and reported here, instead of being abandoned in flight while EP0 is still held. */
@@ -89,6 +104,8 @@ static void usbh_uac_completed(usb_host_t *host, u8 pipe);
 static int usbh_uac_get_volume_info(usb_host_t *host);
 static void usbh_uac_isoc_out_process_xfer(usb_host_t *host, usbh_uac_as_itf_info_t *as_itf, u32 cur_frame);
 static void usbh_uac_isoc_in_process_xfer(usb_host_t *host, usbh_uac_as_itf_info_t *as_itf, u32 cur_frame);
+static void usbh_uac_feedback_process_xfer(usb_host_t *host, usbh_uac_as_itf_info_t *as_itf, u32 cur_frame);
+static void usbh_uac_feedback_received(usb_host_t *host, usbh_uac_as_itf_info_t *as_itf);
 static int usbh_uac_process_set_alt(usb_host_t *host);
 static int usbh_uac_process_set_freq(usb_host_t *host);
 static void usbh_uac_deinit_pipe(u8 dir);
@@ -171,8 +188,12 @@ static void usbh_uac_dump_as_desc(usbh_uac_as_itf_info_t *as_info)
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Ep%02x MPS %d %d\n", audio_ep->bEndpointAddress, audio_ep->wMaxPacketSize, audio_ep->bInterval);
 
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Ch %d byte %d freqcnt %d\n", fmt->channels, fmt->bit_width, fmt->freq_cnt);
-		for (k = 0; k < fmt->freq_cnt; k++) {
-			RTK_LOGS(TAG, RTK_LOG_INFO, "\t\tFre:%dhz\n", fmt->freq[k]);
+		if (fmt->freq_continuous != 0U) {
+			RTK_LOGS(TAG, RTK_LOG_INFO, "\t\tFre:%d-%dhz\n", fmt->freq[0], fmt->freq[1]);
+		} else {
+			for (k = 0; k < fmt->freq_cnt; k++) {
+				RTK_LOGS(TAG, RTK_LOG_INFO, "\t\tFre:%dhz\n", fmt->freq[k]);
+			}
 		}
 	}
 }
@@ -455,9 +476,17 @@ static void usbh_uac_get_audio_format(usbh_uac_as_itf_info_t *as_info)
 			fmt_idx++;
 
 			pfmt_info->sampling_freq = fmt->freq[k];
+			pfmt_info->sampling_freq_max = fmt->freq[k];
 			pfmt_info->bit_width = fmt->bit_width;
 			pfmt_info->ch_cnt = fmt->channels;
 			pfmt_info->subframe_size = fmt->subframe_size;
+			pfmt_info->freq_continuous = fmt->freq_continuous;
+			if (fmt->freq_continuous != 0U) {
+				/* freq[0]/freq[1] are the two bounds of one range, parse_format() keeps
+				   freq_cnt at 2 for it: list the range once */
+				pfmt_info->sampling_freq_max = fmt->freq[1];
+				break;
+			}
 		}
 	}
 	as_info->fmt_array_cnt = fmt_idx;
@@ -478,6 +507,12 @@ static void usbh_uac_deinit_pipe(u8 dir)
 	as_itf = usbh_uac_get_as_itf_instance(dir);
 	if (as_itf == NULL) {
 		return ;
+	}
+
+	pipe = &(as_itf->fb_pipe);
+	if (pipe->pipe_num && host != NULL) {
+		usbh_close_pipe(host, pipe);
+		pipe->pipe_num = 0U;
 	}
 
 	pipe = &(as_itf->pipe);
@@ -917,6 +952,33 @@ static u8 usbh_uac_is_data_ep(const u8 *desc)
 }
 
 /**
+  * @brief  Check whether a descriptor is the feedback endpoint of a playback data endpoint.
+  * @note   UAC1 4.6.2.1: an asynchronous OUT data endpoint names its feedback IN endpoint in
+  *         bSynchAddress. Some devices leave bSynchAddress 0 or drop its direction bit, so a
+  *         feedback usage type (USB 2.0 9.6.6) is taken as well.
+  * @param  data_ep: Data endpoint of the alternate setting.
+  * @param  desc: Pointer to an endpoint descriptor whose bLength fits the parsed buffer.
+  * @param  synch_addr: bSynchAddress of the data endpoint, 0 when absent.
+  * @retval 1 for the feedback endpoint, 0 otherwise.
+  */
+static u8 usbh_uac_is_feedback_ep(const usbh_ep_desc_t *data_ep, const u8 *desc, u8 synch_addr)
+{
+	const usbh_ep_desc_t *ep_desc = (const usbh_ep_desc_t *)desc;
+
+	if ((desc[0] < USB_LEN_EP_DESC) || USB_EP_IS_IN(data_ep->bEndpointAddress) ||
+		(((data_ep->bmAttributes >> 2) & 0x03U) != USBH_UAC_EP_SYNC_ASYNC) || !USB_EP_IS_IN(ep_desc->bEndpointAddress) ||
+		((ep_desc->bmAttributes & USB_EP_XFER_TYPE_MASK) != USB_CH_EP_TYPE_ISOC)) {
+		return 0U;
+	}
+
+	if ((((u32)synch_addr | USB_D2H) == ep_desc->bEndpointAddress) || (((ep_desc->bmAttributes >> 4) & 0x03U) == USBH_UAC_EP_USAGE_FEEDBACK)) {
+		return 1U;
+	}
+
+	return 0U;
+}
+
+/**
   * @brief  Get the direction of an AS interface from its first isochronous data endpoint.
   * @note   UAC1 4.5/4.6.1.1: an AS interface has at most one data endpoint, so that endpoint
   *         gives the direction of the whole interface.
@@ -1022,6 +1084,7 @@ static int usbh_uac_parse_as(usbh_itf_data_t *itf_data)
 	u8 *desc = itf_data->raw_data;
 	u32 itf_total_len = 0U;
 	u8 ep_found = 0U;
+	u8 synch_addr = 0U;
 	u8 dir = USBH_UAC_ISOC_OUT_DIR;
 	u8 len;
 
@@ -1081,7 +1144,14 @@ static int usbh_uac_parse_as(usbh_itf_data_t *itf_data)
 				usbh_uac_parse_format(&(alt_setting->format_info), desc);
 			}
 		} else if (desc[1] == USB_DESC_TYPE_ENDPOINT) {
-			if ((alt_setting != NULL) && (usbh_uac_is_data_ep(desc) != 0U)) {
+			/* The feedback endpoint follows the data endpoint (UAC1 4.6.2) and may carry data usage
+			 * in bmAttributes, so it is matched before being taken as an extra data endpoint */
+			if ((alt_setting != NULL) && (ep_found != 0U) && (alt_setting->fb_ep_desc.bEndpointAddress == 0U) &&
+				(usbh_uac_is_feedback_ep(&(alt_setting->ep_desc), desc, synch_addr) != 0U)) {
+				usb_os_memcpy((void *) & (alt_setting->fb_ep_desc), (const void *)desc, sizeof(usbh_ep_desc_t));
+				alt_setting->fb_ep_desc.wMaxPacketSize = (u16)(alt_setting->fb_ep_desc.wMaxPacketSize & USB_EP_MPS_SIZE_MASK);
+				alt_setting->fb_refresh = (len > USBH_UAC_EP_REFRESH_OFFSET) ? desc[USBH_UAC_EP_REFRESH_OFFSET] : 0U;
+			} else if ((alt_setting != NULL) && (usbh_uac_is_data_ep(desc) != 0U)) {
 				if (ep_found != 0U) {
 					RTK_LOGS(TAG, RTK_LOG_WARN, "AS itf %d extra EP%02x\n", as_itf->as_itf_num, desc[2]);
 				} else if ((USB_EP_IS_IN(desc[2]) ? USBH_UAC_ISOC_IN_DIR : USBH_UAC_ISOC_OUT_DIR) != dir) {
@@ -1095,7 +1165,10 @@ static int usbh_uac_parse_as(usbh_itf_data_t *itf_data)
 					}
 					ep_found = 1U;
 					as_itf->alt_setting_cnt++;
+					synch_addr = (len > USBH_UAC_EP_SYNCH_ADDR_OFFSET) ? desc[USBH_UAC_EP_SYNCH_ADDR_OFFSET] : 0U;
 				}
+			} else {
+				/* not an endpoint this driver uses */
 			}
 		} else if (desc[1] == USB_UAC_CS_ENDPOINT) {
 			cs_ep_desc = (const usb_uac1_as_ep_desc_t *)desc;
@@ -1218,6 +1291,10 @@ static int usbh_uac_process_set_freq(usb_host_t *host)
 	}
 
 	if (as_itf->interface_array[as_itf->choose_alt_idx].freq_ctrl_supported == 0U) {
+		if (as_itf->interface_array[as_itf->choose_alt_idx].format_info.freq_continuous != 0U) {
+			/* Audio Formats 1.0 2.2.5: a range the host can not program leaves the device rate unknown */
+			RTK_LOGS(TAG, RTK_LOG_WARN, "Range w/o freq ctrl, %dHz unsent\n", pdata_ctrl->sample_freq);
+		}
 		return RTK_SUCCESS;
 	}
 
@@ -1672,6 +1749,130 @@ static void usbh_uac_isoc_in_process_xfer(usb_host_t *host, usbh_uac_as_itf_info
 		pipe->xfer_state = USBH_EP_XFER_START;
 	}
 }
+
+/**
+  * @brief  Submit an isochronous IN transfer on the playback feedback endpoint.
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `usb_os_sema_take`) are not permitted.
+  * @param  host:      Pointer to the USB host handle.
+  * @param  as_itf:    OUT AS interface, read once by the caller (see usbh_uac_isoc_out_process_xfer).
+  * @param  cur_frame: Current USB frame number.
+  * @retval void
+  */
+static void usbh_uac_feedback_process_xfer(usb_host_t *host, usbh_uac_as_itf_info_t *as_itf, u32 cur_frame)
+{
+	usbh_uac_t *uac = &usbh_uac;
+	usbh_pipe_t *pipe = &(as_itf->fb_pipe);
+
+	if (uac->fb_buf == NULL) {
+		return;
+	}
+
+	/* The SOF poll measures ep_interval from this frame: stamping the next one, as the data pipes
+	 * do, would stretch every period by a frame */
+	pipe->frame_num = (u16)cur_frame;
+	pipe->xfer_buf = uac->fb_buf;
+	pipe->xfer_len = pipe->ep_mps;
+	pipe->xfer_buf_len = USBH_UAC_FB_BUF_LEN;
+
+	if (usbh_transfer_data(host, pipe) == RTK_SUCCESS) {
+		pipe->xfer_state = USBH_EP_XFER_BUSY;
+	} else {
+		pipe->xfer_state = USBH_EP_XFER_IDLE;
+	}
+}
+
+/**
+  * @brief  Decode a received feedback packet into the samples per playback packet.
+  * @note   This function is called within an interrupt service routine (ISR) context;
+  *         time-consuming operations (e.g., `malloc`, `usb_os_sema_take`) are not permitted.
+  *         USB 2.0 5.12.4.2 sends 10.14 in 3 bytes at FS and 16.16 in 4 bytes at HS; some FS devices
+  *         send 16.16 in 4 bytes, so a 4-byte value is tried as 16.16 first. A value outside the
+  *         accepted range is dropped and the last valid one kept.
+  * @param  host:   Pointer to the USB host handle.
+  * @param  as_itf: OUT AS interface, read once by the caller.
+  * @retval void
+  */
+static void usbh_uac_feedback_received(usb_host_t *host, usbh_uac_as_itf_info_t *as_itf)
+{
+	usbh_uac_t *uac = &usbh_uac;
+	usbh_uac_buf_ctrl_t *pdata_ctrl = &(uac->isoc_out.buf_ctrl);
+	const u8 *buf = uac->fb_buf;
+	u32 len = usbh_get_last_transfer_size(host, &(as_itf->fb_pipe));
+	u64 rate;
+	u32 value;
+
+#if USBH_UAC_FB_DEBUG
+	pdata_ctrl->fb_rx_cnt++;
+	pdata_ctrl->fb_raw_len = len;
+	if (len >= USBH_UAC_FB_FS_LEN) {
+		pdata_ctrl->fb_raw = (u32)buf[0] | ((u32)buf[1] << 8) | ((u32)buf[2] << 16) | ((len > USBH_UAC_FB_FS_LEN) ? ((u32)buf[3] << 24) : 0U);
+	}
+#endif
+
+	if ((len < USBH_UAC_FB_FS_LEN) || (pdata_ctrl->fb_max == 0U)) {
+		return;
+	}
+
+	value = (u32)buf[0] | ((u32)buf[1] << 8) | ((u32)buf[2] << 16);
+	if (len > USBH_UAC_FB_FS_LEN) {
+		rate = (u64)(value | ((u32)buf[3] << 24)) * as_itf->pipe.ep_interval;
+		if ((rate >= pdata_ctrl->fb_min) && (rate <= pdata_ctrl->fb_max)) {
+			pdata_ctrl->fb_rate = (u32)rate;
+#if USBH_UAC_FB_DEBUG
+			pdata_ctrl->fb_ok_cnt++;
+#endif
+			return;
+		}
+	}
+
+	rate = (u64)(value << USBH_UAC_FB_FS_SHIFT) * as_itf->pipe.ep_interval;
+	if ((rate >= pdata_ctrl->fb_min) && (rate <= pdata_ctrl->fb_max)) {
+		pdata_ctrl->fb_rate = (u32)rate;
+#if USBH_UAC_FB_DEBUG
+		pdata_ctrl->fb_ok_cnt++;
+#endif
+	}
+}
+
+#if USBH_UAC_FB_DEBUG
+/**
+  * @brief  Print the playback feedback statistics once per second, in task context.
+  * @note   rx/ok: feedback packets received/taken; raw: last packet as received; rate: 16.16
+  *         samples per packet used by the write path, nominal and accepted range; out: samples per
+  *         second actually queued. With a working feedback rate differs from nominal and out
+  *         follows the device clock.
+  * @param  pdata_ctrl: OUT buffer control.
+  * @param  queued: Bytes just queued by usbh_uac_write().
+  * @retval void
+  */
+static void usbh_uac_feedback_dump(usbh_uac_buf_ctrl_t *pdata_ctrl, u32 queued)
+{
+	u32 now = usb_os_get_timestamp_ms();
+	u32 elapsed;
+	u32 rx;
+	u32 ok;
+
+	pdata_ctrl->fb_log_bytes += queued;
+	elapsed = now - pdata_ctrl->fb_log_ms;
+	if (elapsed < USBH_UAC_FB_LOG_INTERVAL_MS) {
+		return;
+	}
+
+	rx = pdata_ctrl->fb_rx_cnt;
+	ok = pdata_ctrl->fb_ok_cnt;
+	pdata_ctrl->fb_rx_cnt = 0U;
+	pdata_ctrl->fb_ok_cnt = 0U;
+
+	RTK_LOGS(TAG, RTK_LOG_INFO, "FB rx %d ok %d raw %08x/%d rate %08x [%08x-%08x] out %d\n", rx, ok, pdata_ctrl->fb_raw, pdata_ctrl->fb_raw_len,
+			 pdata_ctrl->fb_step, pdata_ctrl->fb_min, pdata_ctrl->fb_max,
+			 (pdata_ctrl->frame_bytes != 0U) ? (u32)(((u64)pdata_ctrl->fb_log_bytes * 1000U) / pdata_ctrl->frame_bytes / elapsed) : 0U);
+
+	pdata_ctrl->fb_log_ms = now;
+	pdata_ctrl->fb_log_bytes = 0U;
+}
+#endif
+
 /**
   * @brief  Device attach callback: parse configuration descriptors, open isochronous pipes,
   *         and kick off the initialization control sequence (get volume/mute info for all channels).
@@ -1828,6 +2029,13 @@ static void usbh_uac_sof(usb_host_t *host)
 				}
 #endif
 			}
+
+			/* Poll the feedback once per its interval: a failed transfer has no completion,
+			 * so the poll does not wait for one */
+			pipe = &(as_itf->fb_pipe);
+			if ((pipe->pipe_num != 0U) && (usbh_get_elapsed_frame_cnt(host, pipe->frame_num) >= pipe->ep_interval)) {
+				usbh_uac_feedback_process_xfer(host, as_itf, cur_frame);
+			}
 		}
 	}
 
@@ -1886,7 +2094,10 @@ static void usbh_uac_completed(usb_host_t *host, u8 pipe_num)
 		pdata_ctrl = &(uac->isoc_out.buf_ctrl);
 
 		if (pdata_ctrl->next_xfer == 1) {
-			if (pipe_num == pipe->pipe_num) {
+			if ((as_itf->fb_pipe.pipe_num != 0U) && (pipe_num == as_itf->fb_pipe.pipe_num)) {
+				as_itf->fb_pipe.xfer_state = USBH_EP_XFER_IDLE;
+				usbh_uac_feedback_received(host, as_itf);
+			} else if (pipe_num == pipe->pipe_num) {
 #if USBH_UAC_DEBUG
 				pdata_ctrl->xfer_done_cnt ++;
 #endif
@@ -2086,6 +2297,19 @@ static u32 usbh_uac_next_packet_size(usbh_uac_buf_ctrl_t *pdata_ctrl, u8 dir)
 		return pdata_ctrl->mps;
 	}
 
+	/* Asynchronous playback: the device feedback, in 16.16 samples per packet, paces the stream.
+	 * fb_step only changes when a packet is committed, so a staged packet keeps its size. A packet
+	 * never exceeds a ring node, which set_alt_setting() sized for the largest feedback taken. */
+	if (pdata_ctrl->fb_step != 0U) {
+		sample_accum = pdata_ctrl->sample_accum + pdata_ctrl->fb_step;
+		pdata_ctrl->last_sample_accum = sample_accum & USBH_UAC_FB_FRAC_MASK;
+		ret = (sample_accum >> USBH_UAC_FB_FRAC_BITS) * pdata_ctrl->frame_bytes;
+		if (ret > pdata_ctrl->node_size) {
+			ret = pdata_ctrl->node_size - (pdata_ctrl->node_size % pdata_ctrl->frame_bytes);
+		}
+		return ret;
+	}
+
 	sample_accum = pdata_ctrl->sample_accum + pdata_ctrl->sample_rem;
 	if (sample_accum >= pdata_ctrl->packet_rate) {
 		sample_accum -= pdata_ctrl->packet_rate;
@@ -2097,6 +2321,23 @@ static u32 usbh_uac_next_packet_size(usbh_uac_buf_ctrl_t *pdata_ctrl, u8 dir)
 	pdata_ctrl->last_sample_accum = sample_accum;
 
 	return ret;
+}
+
+/**
+  * @brief  Commit the packet sized by the last usbh_uac_next_packet_size() and take the latest feedback.
+  * @param  pdata_ctrl: Pointer to the OUT buffer control structure.
+  * @retval void
+  */
+static void usbh_uac_commit_packet(usbh_uac_buf_ctrl_t *pdata_ctrl)
+{
+	u32 fb_rate = pdata_ctrl->fb_rate;
+
+	pdata_ctrl->sample_accum = pdata_ctrl->last_sample_accum;
+	/* The nominal remainder and the feedback fraction have different units: restart on a switch */
+	if ((pdata_ctrl->fb_step == 0U) && (fb_rate != 0U)) {
+		pdata_ctrl->sample_accum = 0U;
+	}
+	pdata_ctrl->fb_step = fb_rate;
 }
 
 /**
@@ -2152,7 +2393,7 @@ static int usbh_uac_write_ring_buf(usbh_uac_buf_ctrl_t *pdata_ctrl, const u8 *bu
 				return 1;
 			}
 			size -= copy_len;
-			pdata_ctrl->sample_accum = pdata_ctrl->last_sample_accum;
+			usbh_uac_commit_packet(pdata_ctrl);
 			pdata_ctrl->written = 0;
 		} else {
 			return 0;
@@ -2175,7 +2416,7 @@ static int usbh_uac_write_ring_buf(usbh_uac_buf_ctrl_t *pdata_ctrl, const u8 *bu
 			size -= xfer_len;
 			offset += xfer_len;
 
-			pdata_ctrl->sample_accum = pdata_ctrl->last_sample_accum;
+			usbh_uac_commit_packet(pdata_ctrl);
 		} else {
 			break;
 		}
@@ -2257,6 +2498,18 @@ static void usbh_uac_ep_buf_ctrl_deinit(usbh_uac_buf_ctrl_t *buf_ctrl)
 	buf_ctrl->written = 0;
 	buf_ctrl->sample_accum = 0;
 	buf_ctrl->last_sample_accum = 0;
+	buf_ctrl->fb_min = 0;
+	buf_ctrl->fb_max = 0;
+	buf_ctrl->fb_rate = 0;
+	buf_ctrl->fb_step = 0;
+#if USBH_UAC_FB_DEBUG
+	buf_ctrl->fb_rx_cnt = 0;
+	buf_ctrl->fb_ok_cnt = 0;
+	buf_ctrl->fb_raw = 0;
+	buf_ctrl->fb_raw_len = 0;
+	buf_ctrl->fb_log_ms = usb_os_get_timestamp_ms();
+	buf_ctrl->fb_log_bytes = 0;
+#endif
 
 	if (buf_ctrl->sema_valid != 0U) {
 		buf_ctrl->sema_valid = 0;
@@ -2353,6 +2606,9 @@ static void usbh_uac_free_resources(void)
 	usb_os_mfree((void *)uac->ringbuf_partial_write_buf);
 	uac->ringbuf_partial_write_buf = NULL;
 
+	usb_os_mfree((void *)uac->fb_buf);
+	uac->fb_buf = NULL;
+
 	usb_os_mfree((void *)uac->audio_ctrl_buf);
 	uac->audio_ctrl_buf = NULL;
 
@@ -2412,6 +2668,45 @@ static int usbh_uac_ep_buf_ctrl_init(usbh_uac_buf_ctrl_t *buf_ctrl, usbh_pipe_t 
 	buf_ctrl->sema_valid = 1;
 
 	return RTK_SUCCESS;
+}
+
+/**
+  * @brief  Open the feedback pipe of a playback alternate setting, if it has one.
+  * @note   Without a usable feedback endpoint the stream runs at the nominal rate. UAC1 4.6.2.1
+  *         gives a FS feedback period of 2^bRefresh frames; a HS device paces it by bInterval.
+  * @param  host:    Pointer to the USB host handle.
+  * @param  as_itf:  OUT AS interface.
+  * @param  alt_idx: Index into interface_array[] of the alternate setting.
+  * @retval 1 when the feedback pipe is open, 0 otherwise.
+  */
+static u8 usbh_uac_open_feedback_pipe(usb_host_t *host, usbh_uac_as_itf_info_t *as_itf, u8 alt_idx)
+{
+	usbh_uac_t *uac = &usbh_uac;
+	usbh_uac_as_itf_alt_info_t *alt = &(as_itf->interface_array[alt_idx]);
+	usbh_pipe_t *pipe = &(as_itf->fb_pipe);
+
+	if ((uac->fb_buf == NULL) || (alt->fb_ep_desc.bEndpointAddress == 0U)) {
+		return 0U;
+	}
+
+	if ((alt->fb_ep_desc.wMaxPacketSize < USBH_UAC_FB_FS_LEN) || (alt->fb_ep_desc.wMaxPacketSize > USBH_UAC_FB_BUF_LEN)) {
+		RTK_LOGS(TAG, RTK_LOG_WARN, "FB EP%02x bad MPS %d\n", alt->fb_ep_desc.bEndpointAddress, alt->fb_ep_desc.wMaxPacketSize);
+		return 0U;
+	}
+
+	if (usbh_open_pipe(host, pipe, &(alt->fb_ep_desc), &usbh_uac_driver) != RTK_SUCCESS) {
+		RTK_LOGS(TAG, RTK_LOG_WARN, "FB EP%02x open fail\n", alt->fb_ep_desc.bEndpointAddress);
+		pipe->pipe_num = 0U;
+		return 0U;
+	}
+
+	if ((host->dev_speed != USB_SPEED_HIGH) && (alt->fb_refresh != 0U) && (alt->fb_refresh <= USBH_UAC_FB_REFRESH_MAX)) {
+		pipe->ep_interval = (u16)(1U << alt->fb_refresh);
+	}
+
+	RTK_LOGS(TAG, RTK_LOG_INFO, "FB EP%02x MPS %d itv %d\n", pipe->ep_addr, pipe->ep_mps, pipe->ep_interval);
+
+	return 1U;
 }
 
 /**
@@ -2783,6 +3078,10 @@ int usbh_uac_write(const u8 *buffer, u32 size, u32 timeout_ms)
 		written_len += just_written;
 	}
 
+#if USBH_UAC_FB_DEBUG
+	usbh_uac_feedback_dump(pdata_ctrl, written_len);
+#endif
+
 	/* Report what was queued before the stream ended: the data is committed. Otherwise tell
 	 * a stall on a running stream (0) from one that stopped or lost its device. */
 	if (written_len == 0U) {
@@ -2880,17 +3179,20 @@ void usbh_uac_start_play(void)
 	usbh_uac_t *uac = &usbh_uac;
 	usbh_uac_buf_ctrl_t *buf_ctrl = &(uac->isoc_out.buf_ctrl);
 	usbh_pipe_t *pipe;
+	usbh_uac_as_itf_info_t *as_itf;
 
 	if (usbh_uac_usb_status_check() != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Dev not ready\n");
 		return;
 	}
 
-	if (uac->isoc_out.as_itf == NULL) {
+	/* Read once: a detach in the host task on another core may clear it meanwhile */
+	as_itf = uac->isoc_out.as_itf;
+	if (as_itf == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "No ISOC OUT interface\n");
 		return;
 	}
-	pipe = &(uac->isoc_out.as_itf->pipe);
+	pipe = &(as_itf->pipe);
 
 #if USBH_UAC_DEBUG
 	usbh_uac_reset_test_cnt();
@@ -2908,6 +3210,7 @@ void usbh_uac_stop_play(void)
 {
 	usbh_uac_t *uac = &usbh_uac;
 	usbh_uac_buf_ctrl_t *buf_ctrl = &(uac->isoc_out.buf_ctrl);
+	usbh_uac_as_itf_info_t *as_itf;
 
 	buf_ctrl->next_xfer = 0;
 
@@ -2915,8 +3218,10 @@ void usbh_uac_stop_play(void)
 		usb_os_sema_give(buf_ctrl->isoc_sema);
 	}
 
-	if (uac->isoc_out.as_itf != NULL) {
-		uac->isoc_out.as_itf->pipe.xfer_state = USBH_EP_XFER_IDLE;
+	/* Read once: a detach in the host task on another core may clear it meanwhile */
+	as_itf = uac->isoc_out.as_itf;
+	if (as_itf != NULL) {
+		as_itf->pipe.xfer_state = USBH_EP_XFER_IDLE;
 	}
 
 #if USBH_UAC_DEBUG
@@ -2934,17 +3239,20 @@ void usbh_uac_start_capture(void)
 	usbh_uac_t *uac = &usbh_uac;
 	usbh_uac_buf_ctrl_t *buf_ctrl = &(uac->isoc_in.buf_ctrl);
 	usbh_pipe_t *pipe;
+	usbh_uac_as_itf_info_t *as_itf;
 
 	if (usbh_uac_usb_status_check() != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Dev not ready\n");
 		return;
 	}
 
-	if (uac->isoc_in.as_itf == NULL) {
+	/* Read once: a detach in the host task on another core may clear it meanwhile */
+	as_itf = uac->isoc_in.as_itf;
+	if (as_itf == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "No ISOC IN interface\n");
 		return;
 	}
-	pipe = &(uac->isoc_in.as_itf->pipe);
+	pipe = &(as_itf->pipe);
 
 #if USBH_UAC_DEBUG
 	usbh_uac_reset_test_cnt();
@@ -2963,6 +3271,7 @@ void usbh_uac_stop_capture(void)
 {
 	usbh_uac_t *uac = &usbh_uac;
 	usbh_uac_buf_ctrl_t *buf_ctrl = &(uac->isoc_in.buf_ctrl);
+	usbh_uac_as_itf_info_t *as_itf;
 
 	buf_ctrl->next_xfer = 0;
 
@@ -2970,8 +3279,10 @@ void usbh_uac_stop_capture(void)
 		usb_os_sema_give(buf_ctrl->isoc_sema);
 	}
 
-	if (uac->isoc_in.as_itf != NULL) {
-		uac->isoc_in.as_itf->pipe.xfer_state = USBH_EP_XFER_IDLE;
+	/* Read once: a detach in the host task on another core may clear it meanwhile */
+	as_itf = uac->isoc_in.as_itf;
+	if (as_itf != NULL) {
+		as_itf->pipe.xfer_state = USBH_EP_XFER_IDLE;
 	}
 
 #if USBH_UAC_DEBUG
@@ -3137,7 +3448,9 @@ int usbh_uac_init(const usbh_uac_cb_t *cb, const usbh_uac_config_t *cfg)
 		uac->isoc_out.as_itf_mem = (usbh_uac_as_itf_info_t *)usb_os_malloc(sizeof(usbh_uac_as_itf_info_t));
 		/* Staging buffer of the write path only */
 		uac->ringbuf_partial_write_buf = (u8 *)usb_os_malloc(USBH_UAC_ISOC_BUF_LENGTH);
-		if ((NULL == uac->isoc_out.xfer_buf) || (NULL == uac->isoc_out.as_itf_mem) || (NULL == uac->ringbuf_partial_write_buf)) {
+		uac->fb_buf = (u8 *)usb_os_malloc(USBH_UAC_FB_BUF_LEN);
+		if ((NULL == uac->isoc_out.xfer_buf) || (NULL == uac->isoc_out.as_itf_mem) || (NULL == uac->ringbuf_partial_write_buf) ||
+			(NULL == uac->fb_buf)) {
 			goto alloc_fail;
 		}
 	}
@@ -3282,6 +3595,9 @@ int usbh_uac_set_alt_setting(u8 dir, u8 channels, u8 bit_width, u32 sampling_fre
 	u32 frame_bytes = 0U;
 	u32 size_small = 0U;
 	u32 size_large = 0U;
+	u32 fb_nominal = 0U;
+	u32 fb_packet = 0U;
+	u32 fb_max;
 	u16 packet_rate = 0U;
 	u16 ep_mps = 0U;
 	u16 ep_trans = 0U;
@@ -3443,6 +3759,19 @@ int usbh_uac_set_alt_setting(u8 dir, u8 channels, u8 bit_width, u32 sampling_fre
 		return -RTK_ERR_BADARG;
 	}
 
+	/* Asynchronous playback: accept a feedback within 1/8 of the nominal samples per packet, and
+	 * size the ring nodes for the largest packet such a feedback asks for, within the endpoint */
+	if ((dir == USBH_UAC_ISOC_OUT_DIR) && (frame_bytes != 0U) && (as_itf->interface_array[i].fb_ep_desc.bEndpointAddress != 0U)) {
+		/* Split so no term wraps: the remainder is below packet_rate (at most 8000) */
+		fb_nominal = ((sampling_freq / packet_rate) << USBH_UAC_FB_FRAC_BITS) + (((sampling_freq % packet_rate) << USBH_UAC_FB_FRAC_BITS) / packet_rate);
+		fb_packet = (((fb_nominal + (fb_nominal >> USBH_UAC_FB_TOLERANCE_SHIFT)) >> USBH_UAC_FB_FRAC_BITS) + 1U) * frame_bytes;
+		fb_packet = MIN(fb_packet, MIN(ep_cap, USBH_UAC_ISOC_BUF_LENGTH));
+		fb_packet -= fb_packet % frame_bytes;
+		if (fb_packet < size_large) {
+			fb_packet = size_large;
+		}
+	}
+
 	if (dir == USBH_UAC_ISOC_OUT_DIR) {
 		usbh_uac_stop_play();
 	} else {
@@ -3460,10 +3789,17 @@ int usbh_uac_set_alt_setting(u8 dir, u8 channels, u8 bit_width, u32 sampling_fre
 			pipe->ep_interval = binterval * USBH_UAC_HS_MICROFRAMES_PER_MS;
 		}
 		usbh_uac_ep_buf_ctrl_deinit(pdata_ctrl);
-		ret = usbh_uac_ep_buf_ctrl_init(pdata_ctrl, pipe, (u16)size_large);
+		ret = usbh_uac_ep_buf_ctrl_init(pdata_ctrl, pipe, (u16)MAX(size_large, fb_packet));
 		if (ret != RTK_SUCCESS) {
 			usbh_uac_deinit_pipe(dir);
 		}
+	}
+
+	if ((ret == RTK_SUCCESS) && (fb_packet != 0U) && (usbh_uac_open_feedback_pipe(host, as_itf, i) != 0U)) {
+		/* Every packet stays within fb_packet, so the largest feedback taken yields at most it */
+		fb_max = (fb_packet / frame_bytes) << USBH_UAC_FB_FRAC_BITS;
+		pdata_ctrl->fb_min = fb_nominal - (fb_nominal >> USBH_UAC_FB_TOLERANCE_SHIFT);
+		pdata_ctrl->fb_max = MIN(fb_nominal + (fb_nominal >> USBH_UAC_FB_TOLERANCE_SHIFT), fb_max - 1U);
 	}
 
 	if (ret != RTK_SUCCESS) {
@@ -3482,6 +3818,7 @@ int usbh_uac_set_alt_setting(u8 dir, u8 channels, u8 bit_width, u32 sampling_fre
 	as_itf->packet_size_small = (u16)size_small;
 	as_itf->packet_size_large = (u16)size_large;
 	pdata_ctrl->packet_rate = packet_rate;
+	pdata_ctrl->frame_bytes = (u16)frame_bytes;
 	pdata_ctrl->sample_freq = sampling_freq;
 	pdata_ctrl->sample_rem = sampling_freq % packet_rate;
 
@@ -3515,6 +3852,19 @@ const usbh_uac_audio_fmt_t *usbh_uac_get_alt_setting(u8 dir, u8 *fmt_cnt)
 	}
 
 	return as_itf->fmt_array;
+}
+
+u8 usbh_uac_fmt_support_freq(const usbh_uac_audio_fmt_t *fmt, u32 sampling_freq)
+{
+	if (fmt == NULL) {
+		return 0U;
+	}
+
+	if (fmt->freq_continuous != 0U) {
+		return ((sampling_freq >= fmt->sampling_freq) && (sampling_freq <= fmt->sampling_freq_max)) ? 1U : 0U;
+	}
+
+	return (sampling_freq == fmt->sampling_freq) ? 1U : 0U;
 }
 /**
   * @brief  Get frame size of current interface.

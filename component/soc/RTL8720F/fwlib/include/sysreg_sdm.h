@@ -143,6 +143,9 @@ extern "C" {
 
 //Please add your defination here
 
+/* SDM_TIMEOUT unit: 32k period, 0x1e0000 / 32768 = 60s */
+#define SDM_TIEMRCAL_INTERVAL_1MIN    0x001e0000
+
 #ifdef __cplusplus
 }
 #endif

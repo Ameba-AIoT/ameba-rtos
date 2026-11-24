@@ -30,8 +30,8 @@ typedef struct {
 	uint8_t instance_id;             /*!< Instance index when multiple attributes share the same UUID.
                                       *   Starts from zero. */
 	union {
-		uint16_t uuid16;             /*!< 16-bit UUID value, valid when is_uuid16 is true. */
-		uint8_t uuid128[16];         /*!< 128-bit UUID value, valid when is_uuid16 is false. */
+		uint16_t uuid16;             /*!< 16-bit UUID value, valid when #is_uuid16 is true. */
+		uint8_t uuid128[16];         /*!< 128-bit UUID value, valid when #is_uuid16 is false. */
 	} p;
 } rtk_bt_gattc_uuid_t;
 
@@ -80,7 +80,8 @@ typedef struct {
 			rtk_bt_gattc_uuid_t srv_uuid;        /*!< Service UUID. */
 			rtk_bt_gattc_uuid_t char_uuid;       /*!< Characteristic UUID. */
 			uint16_t *p_handle;                  /*!< Output: characteristic value handle. */
-		} find_char;                             /*!< Used when type is RTK_BT_GATT_FIND_CHARACTERISTIC_HANDLE to find characteristic handle by characteristic UUID. */
+		} find_char;                             /*!< Used when #type is @ref RTK_BT_GATT_FIND_CHARACTERISTIC_HANDLE to find characteristic handle
+                                                  *   by characteristic UUID. */
 
 		struct find_char_range_param {
 			rtk_bt_gattc_uuid_t srv_uuid;        /*!< Service UUID. */
@@ -88,8 +89,8 @@ typedef struct {
 			uint16_t *p_handle_start;            /*!< Output: start handle of the characteristic descriptors. */
 			uint16_t *p_handle_end;              /*!< Output: end handle of the characteristic descriptors. */
 			uint16_t *p_cccd_handle;             /*!< Output: CCCD handle, or zero if the characteristic does not contain a Client Characteristic Configuration descriptor. */
-		} find_char_range;                       /*!< Used when type is RTK_BT_GATT_FIND_CHARACTERISTIC_DESC_RANGE to find handle range of characteristic descriptors.
-                                                  *   by characteristic UUID. */
+		} find_char_range;                       /*!< Used when #type is @ref RTK_BT_GATT_FIND_CHARACTERISTIC_DESC_RANGE to find handle
+                                                  *   range of characteristic descriptors by characteristic UUID. */
 
 		struct find_char_cccd_param {
 			rtk_bt_gattc_uuid_t srv_uuid;        /*!< Service UUID. */
@@ -101,17 +102,17 @@ typedef struct {
 			bool *p_indicate;                    /*!< Output:
                                                   *   - true: the characteristic supports indications.
                                                   *   - false: the characteristic does not support indications. */
-		} find_char_cccd;                        /*!< Used when type is RTK_BT_GATT_FIND_CHARACTERISTIC_CCCD_HANDLE to find characteristic cccd descriptor.
-                                                  *   by characteristic UUID. */
+		} find_char_cccd;                        /*!< Used when #type is @ref RTK_BT_GATT_FIND_CHARACTERISTIC_CCCD_HANDLE to find
+                                                  *   characteristic cccd descriptor by characteristic UUID. */
 
 		struct find_include_srv_param {
 			rtk_bt_gattc_uuid_t primary_uuid;    /*!< Primary service UUID. */
 			rtk_bt_gattc_uuid_t include_uuid;    /*!< Include service UUID. */
 			uint8_t *p_instance_num;             /*!< Output: number of matching included service instances found. */
 			uint8_t instance_id[20];             /*!< Output: array of instance IDs for each matching included service. */
-		} find_include_srv;                      /*!< Used when type is RTK_BT_GATT_FIND_INCLUDE_SERVICE to find if a service is included in a specific primary service
-                                                  *   by service UUID. */
-	};                                           /*!< Anonymous union member in rtk_bt_gattc_find_param_t. */
+		} find_include_srv;                      /*!< Used when #type is @ref RTK_BT_GATT_FIND_INCLUDE_SERVICE to find if a service
+                                                  *   is included in a specific primary service by service UUID. */
+	};                                           /*!< Anonymous union member in @ref rtk_bt_gattc_find_param_t. */
 } rtk_bt_gattc_find_param_t;
 
 /**
@@ -142,7 +143,7 @@ typedef struct {
 			uint16_t end_handle;             /*!< End attribute handle for search range. */
 			rtk_bt_gattc_uuid_t char_uuid;   /*!< Characteristic UUID. */
 		} by_uuid;                           /*!< Read using characteristic UUID. */
-	};                                       /*!< Anonymous union member in rtk_bt_gattc_read_param_t. */
+	};                                       /*!< Anonymous union member in @ref rtk_bt_gattc_read_param_t. */
 } rtk_bt_gattc_read_param_t;
 
 /**
@@ -181,7 +182,7 @@ typedef struct {
                                                *   - true: update all CCCDs in the service identified by srv_uuid.
                                                *   - false: update only the CCCD of the characteristic identified by char_uuid. */
 	rtk_bt_gattc_uuid_t srv_uuid;             /*!< UUID of the service containing the target characteristic(s). */
-	rtk_bt_gattc_uuid_t char_uuid;            /*!< UUID of the target characteristic; ignored when srv_cfg is true. */
+	rtk_bt_gattc_uuid_t char_uuid;            /*!< UUID of the target characteristic; ignored when #srv_cfg is true. */
 	bool bnotify;                             /*!< Whether to update the notification bit of the CCCD.
                                                *   - true: set the notification enable bit.
                                                *   - false: leave the notification bit unchanged. */
@@ -265,15 +266,16 @@ typedef struct {
                                                                                     *   - true: loaded from storage.
                                                                                     *   - false: obtained by live discovery over the air. */
 	uint8_t char_flag;                                                             /*!< Characteristic exist bit field; see @ref rtk_bt_gatt_service_char_t. */
-	uint8_t database_hash[RTK_BT_GATT_SVC_DATABASE_HASH_LEN];                      /*!< Database Hash value; The value can be used when RTK_BT_GATT_SVC_DATABASE_HASH_FLAG is set in char_flag. */
-	uint8_t client_features_len;                                                   /*!< Length of client_features; The value can be used when
-                                                                                    *   RTK_BT_GATT_SVC_CLIENT_SUPPORTED_FEATURES_FLAG is set in char_flag. */
-	uint8_t client_features[RTK_BT_GATT_SVC_CLIENT_SUPPORTED_FEATURES_MAX_LEN];    /*!< Client Supported Features value; The value can be used when
-                                                                                    *   RTK_BT_GATT_SVC_CLIENT_SUPPORTED_FEATURES_FLAG is set in char_flag. */
-	uint8_t server_features_len;                                                   /*!< Length of server_features; The value can be used when
-                                                                                    *   RTK_BT_GATT_SVC_SERVER_SUPPORTED_FEATURES_FLAG is set in char_flag. */
-	uint8_t server_features[RTK_BT_GATT_SVC_SERVER_SUPPORTED_FEATURES_MAX_LEN];    /*!< Server Supported Features value; The value can be used when
-                                                                                    *   RTK_BT_GATT_SVC_SERVER_SUPPORTED_FEATURES_FLAG is set in char_flag. */
+	uint8_t database_hash[RTK_BT_GATT_SVC_DATABASE_HASH_LEN];                      /*!< Database Hash value; valid when #char_flag has
+                                                                                    *   @ref RTK_BT_GATT_SVC_DATABASE_HASH_FLAG set. */
+	uint8_t client_features_len;                                                   /*!< Length of client_features; valid when #char_flag has
+                                                                                    *   @ref RTK_BT_GATT_SVC_CLIENT_SUPPORTED_FEATURES_FLAG set. */
+	uint8_t client_features[RTK_BT_GATT_SVC_CLIENT_SUPPORTED_FEATURES_MAX_LEN];    /*!< Client Supported Features value; valid when #char_flag has
+                                                                                    *   @ref RTK_BT_GATT_SVC_CLIENT_SUPPORTED_FEATURES_FLAG set. */
+	uint8_t server_features_len;                                                   /*!< Length of server_features; valid when #char_flag has
+                                                                                    *   @ref RTK_BT_GATT_SVC_SERVER_SUPPORTED_FEATURES_FLAG set. */
+	uint8_t server_features[RTK_BT_GATT_SVC_SERVER_SUPPORTED_FEATURES_MAX_LEN];    /*!< Server Supported Features value; valid when #char_flag has
+                                                                                    *   @ref RTK_BT_GATT_SVC_SERVER_SUPPORTED_FEATURES_FLAG set. */
 } rtk_bt_gattc_gatt_service_info_ind_t;
 
 /**
@@ -302,7 +304,7 @@ typedef struct {
 	uint16_t len;                          /*!< Characteristic value length. */
 	uint8_t *value;                        /*!< Characteristic value. */
 	rtk_bt_status_t status;                /*!< Characteristic read result. */
-	uint16_t err_code;                     /*!< Status of the Characteristic read procedure. 0x00: success. */
+	uint16_t err_code;                     /*!< Status of the Characteristic read procedure. 0x00 on success. */
 } rtk_bt_gattc_read_ind_t;
 
 /**
@@ -319,7 +321,7 @@ typedef struct {
 	rtk_bt_gattc_write_type_t type;        /*!< Characteristic write type. */
 	uint16_t handle;                       /*!< Characteristic handle. */
 	rtk_bt_status_t status;                /*!< Characteristic write result. */
-	uint16_t err_code;                     /*!< Status of the Characteristic write procedure. 0x00: success. */
+	uint16_t err_code;                     /*!< Status of the Characteristic write procedure. 0x00 on success. */
 } rtk_bt_gattc_write_ind_t;
 
 /**
@@ -330,7 +332,7 @@ typedef struct {
 	uint16_t profile_id;                   /*!< Profile ID. */
 	uint16_t conn_handle;                  /*!< Connection handle of the ACL connection associated with the received indicate or notify result.
                                             *   Range: 0x0000 to 0x0EFF. */
-	uint16_t cid;                          /*!< L2CAP channel ID to indicate which channel the value is received from. */
+	uint16_t cid;                          /*!< L2CAP channel ID to indicate which channel the #value is received from. */
 	uint8_t  srv_instance_id;              /*!< ID of the service in which the characteristic is contained. */
 	rtk_bt_gattc_uuid_t char_uuid;         /*!< Characteristic UUID. */
 	uint16_t value_handle;                 /*!< Characteristic handle. */
@@ -353,7 +355,7 @@ typedef struct {
 	uint16_t cccd_data;                   /*!< Raw CCCD attribute value written to the server. */
 	rtk_bt_gattc_uuid_t uuid;             /*!< UUID of the characteristic whose CCCD was updated. */
 	rtk_bt_status_t status;               /*!< Overall result of the CCCD write operation. */
-	uint16_t err_code;                    /*!< Status of the Characteristic cccd update procedure. 0x00: success. */
+	uint16_t err_code;                    /*!< Status of the Characteristic cccd update procedure. 0x00 on success. */
 	bool bnotify;                         /*!< Whether the notification enable bit changed.
                                            *   - true: notification bit was modified.
                                            *   - false: notification bit was not changed. */
@@ -375,7 +377,7 @@ typedef enum {
 
 /**
  * @struct    rtk_bt_gattc_conn_del_t
- * @brief     The event data for GATT_CLIENT_EVENT_CONN_DEL.
+ * @brief     Bluetooth GAP event data.
  */
 typedef struct {
 	uint16_t profile_id;                  /*!< Profile ID. */
@@ -505,7 +507,7 @@ typedef struct {
 
 		struct disc_primary_by_uuid_param {
 			uint8_t uuid[16];             /*!< Service UUID to match, in little-endian format. */
-			uint8_t uuid_type;            /*!< UUID type of the value in uuid[]. @ref rtk_bt_uuid_type_t. */
+			uint8_t uuid_type;            /*!< UUID type of the value in #uuid[]. @ref rtk_bt_uuid_type_t. */
 		} disc_primary_by_uuid;           /*!< Discover primary service by service UUID. */
 
 		struct disc_inc_param {
@@ -522,14 +524,14 @@ typedef struct {
 			uint16_t start_handle;        /*!< Start handle of the attribute range to search. */
 			uint16_t end_handle;          /*!< End handle of the attribute range to search. */
 			uint8_t uuid[16];             /*!< Characteristic UUID to match, in little-endian format. */
-			uint8_t uuid_type;            /*!< UUID type of the value in uuid[]. @ref rtk_bt_uuid_type_t. */
+			uint8_t uuid_type;            /*!< UUID type of the value in #uuid[]. @ref rtk_bt_uuid_type_t. */
 		} disc_char_by_uuid;              /*!< Discover characteristics by UUID. */
 
 		struct disc_descriptor_param {
 			uint16_t start_handle;        /*!< Start handle of the characteristic's attribute range. */
 			uint16_t end_handle;          /*!< End handle of the characteristic's attribute range. */
 		} disc_descriptor;                /*!< Discover all characteristic descriptors. */
-	};                                              /*!< Anonymous union member in rtk_bt_gattc_discover_param_t. */
+	};                                              /*!< Anonymous union member in @ref rtk_bt_gattc_discover_param_t. */
 } rtk_bt_gattc_discover_param_t;
 
 /**
@@ -549,14 +551,14 @@ typedef struct {
                                                  *   discover data of union below is not empty, another msg will follow this.
                                                  *   - if status is @ref RTK_BT_STATUS_DONE, means the discover is finished, and discover data of union below is empty.
                                                  *   - if status is @ref RTK_BT_STATUS_FAIL, means the discover is failed, inquire err_code for the cause of failure. */
-	uint16_t err_code;                          /*!< Status of the discover procedure. 0x00: success. */
+	uint16_t err_code;                          /*!< Status of the discover procedure. 0x00 on success. */
 
 	union {
 		struct disc_primary_all_per_param {
 			uint16_t start_handle;        /*!< Primary service start handle. */
 			uint16_t end_handle;          /*!< Primary service end handle. */
 			uint8_t uuid[16];             /*!< Primary service UUID value, in little-endian format. */
-			uint8_t uuid_type;            /*!< UUID type of the value in uuid[]. @ref rtk_bt_uuid_type_t. */
+			uint8_t uuid_type;            /*!< UUID type of the value in #uuid[]. @ref rtk_bt_uuid_type_t. */
 		} disc_primary_all_per;           /*!< Discover primary all services result (per attribute). */
 
 		struct disc_primary_by_uuid_per_param {
@@ -569,7 +571,7 @@ typedef struct {
 			uint16_t start_handle;        /*!< Include service start handle. */
 			uint16_t end_handle;          /*!< Include service end handle. */
 			uint8_t uuid[16];             /*!< Include service UUID value, in little-endian format. */
-			uint8_t uuid_type;            /*!< UUID type of the value in uuid[]. @ref rtk_bt_uuid_type_t. */
+			uint8_t uuid_type;            /*!< UUID type of the value in #uuid[]. @ref rtk_bt_uuid_type_t. */
 		} disc_inc_per;                   /*!< Find included services result (per service). */
 
 		struct disc_char_all_per_param {
@@ -577,7 +579,7 @@ typedef struct {
 			uint8_t properties;           /*!< Characteristic properties. */
 			uint16_t value_handle;        /*!< Characteristic value attribute handle. */
 			uint8_t uuid[16];             /*!< Characteristic UUID value, in little-endian format. */
-			uint8_t uuid_type;            /*!< UUID type of the value in uuid[]. @ref rtk_bt_uuid_type_t. */
+			uint8_t uuid_type;            /*!< UUID type of the value in #uuid[]. @ref rtk_bt_uuid_type_t. */
 		} disc_char_all_per;              /*!< Discover all characteristics result (per attribute). */
 
 		struct disc_char_by_uuid_per_param {
@@ -585,15 +587,15 @@ typedef struct {
 			uint8_t properties;           /*!< Characteristic properties bitmask. */
 			uint16_t value_handle;        /*!< Characteristic value attribute handle. */
 			uint8_t uuid[16];             /*!< Characteristic UUID value, in little-endian format. */
-			uint8_t uuid_type;            /*!< UUID type of the value in uuid[]. @ref rtk_bt_uuid_type_t. */
+			uint8_t uuid_type;            /*!< UUID type of the value in #uuid[]. @ref rtk_bt_uuid_type_t. */
 		} disc_char_by_uuid_per;          /*!< Discover characteristics by UUID result (per attribute). */
 
 		struct disc_descriptor_per_param {
 			uint16_t handle;              /*!< Characteristic descriptor attribute handle. */
 			uint8_t uuid[16];             /*!< Characteristic descriptor UUID, in little-endian format. */
-			uint8_t uuid_type;            /*!< UUID type of the value in uuid[]. @ref rtk_bt_uuid_type_t. */
+			uint8_t uuid_type;            /*!< UUID type of the value in #uuid[]. @ref rtk_bt_uuid_type_t. */
 		} disc_descriptor_per;            /*!< Discover all characteristic descriptors result (per attribute). */
-	};                                          /*!< Anonymous union member in rtk_bt_gattc_discover_ind_t. */
+	};                                          /*!< Anonymous union member in @ref rtk_bt_gattc_discover_ind_t. */
 } rtk_bt_gattc_discover_ind_t;
 
 /**
@@ -627,7 +629,7 @@ typedef struct {
 			uint16_t start_handle;    /*!< Start of the attribute handle range to read. */
 			uint16_t end_handle;      /*!< End of the attribute handle range to read. */
 			uint8_t uuid[16];         /*!< Characteristic UUID to read, 2 or 16 octet UUID. */
-			uint8_t uuid_type;        /*!< UUID type of the value in uuid[]. @ref rtk_bt_uuid_type_t. */
+			uint8_t uuid_type;        /*!< UUID type of the value in #uuid[]. @ref rtk_bt_uuid_type_t. */
 		} by_uuid;                    /*!< Read characteristic value by UUID. */
 
 		struct multiple_param {
@@ -639,7 +641,7 @@ typedef struct {
 			uint32_t handle_count;    /*!< Number of attribute handles in the handles array. */
 			uint16_t *handles;        /*!< Array of characteristic value handles to read. */
 		} multiple_variable;          /*!< Read multiple variable-length characteristic values. */
-	};                                          /*!< Anonymous union member in rtk_bt_gattc_read_param_t. */
+	};                                          /*!< Anonymous union member in @ref rtk_bt_gattc_read_param_t. */
 
 } rtk_bt_gattc_read_param_t;
 
@@ -660,7 +662,7 @@ typedef struct {
                                               *   read data of union below is not empty, and another msg will follow this.
                                               *   - if status is @ref RTK_BT_STATUS_DONE, means the read is finished, and read data of union below is empty.
                                               *   - if status is @ref RTK_BT_STATUS_FAIL, means the read is failed, inquire err_code for the cause of failure. */
-	uint16_t err_code;                       /*!< Status of the Characteristic read procedure. 0x00: success. */
+	uint16_t err_code;                       /*!< Status of the Characteristic read procedure. 0x00 on success. */
 
 	union {
 		struct by_handle_res_param {
@@ -686,7 +688,7 @@ typedef struct {
 			uint16_t len;             /*!< The length of characteristic value. */
 			uint8_t *value;           /*!< Characteristic value. */
 		} multiple_variable_per;      /*!< Read multiple variable length characteristic values (per attribute). */
-	};                                       /*!< Anonymous union member in rtk_bt_gattc_read_ind_t. */
+	};                                       /*!< Anonymous union member in @ref rtk_bt_gattc_read_ind_t. */
 } rtk_bt_gattc_read_ind_t;
 
 /**
@@ -727,7 +729,7 @@ typedef struct {
 	rtk_bt_status_t status;                  /*!< Write result status.
                                               *   - if status is @ref RTK_BT_STATUS_DONE, means write succeeded,
                                               *   - if status is @ref RTK_BT_STATUS_FAIL, means write is failed, inquire err_code for the cause of failure. */
-	uint16_t err_code;                       /*!< Status of the Characteristic write procedure. 0x00: success. */
+	uint16_t err_code;                       /*!< Status of the Characteristic write procedure. 0x00 on success. */
 	uint16_t handle;                         /*!< Characteristic value attribute handle that was written. */
 } rtk_bt_gattc_write_ind_t;
 
@@ -760,7 +762,7 @@ typedef struct {
                                   *   Range: 0x0000 to 0x0EFF. */
 	uint16_t seq;                /*!< Sequence number, for convenience, not mandatory. */
 	rtk_bt_status_t status;      /*!< GATTC cccd update status. */
-	uint16_t err_code;           /*!< Status of the Characteristic cccd update procedure. 0x00: success. */
+	uint16_t err_code;           /*!< Status of the Characteristic cccd update procedure. 0x00 on success. */
 	uint16_t cccd_handle;        /*!< Client characteristic configuration descriptor (CCCD) handle. */
 	bool bnotify;                /*!< Whether the Notify bit was written to the CCCD.
                                   *   - true: the Notify bit was set.

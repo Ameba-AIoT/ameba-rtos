@@ -169,18 +169,14 @@ if(CONFIG_WHC_WPA_SUPPLICANT_OFFLOAD)
     set(LIB_NAME_WPA_OFFLOAD_SUFFIX _wpaoffload)
 endif()
 
-if(CONFIG_WHC_DEV_TCPIP_KEEPALIVE)
-    set(LIB_NAME_TCPIP_SUFFIX _tcpip)
-endif()
-
 if(CONFIG_WHC_DEV)
     if(CONFIG_WHC_INTF_IPC)
-        set(release_target_name wifi_whc_np${LIB_NAME_WPA_OFFLOAD_SUFFIX}${LIB_NAME_TCPIP_SUFFIX}${LIB_NAME_MP_SUFFIX})
+        set(release_target_name wifi_whc_np${LIB_NAME_WPA_OFFLOAD_SUFFIX}${LIB_NAME_MP_SUFFIX})
     else()
-        set(release_target_name wifi_whc_dev${LIB_NAME_WPA_OFFLOAD_SUFFIX}${LIB_NAME_TCPIP_SUFFIX}${LIB_NAME_MP_SUFFIX})
+        set(release_target_name wifi_whc_dev${LIB_NAME_WPA_OFFLOAD_SUFFIX}${LIB_NAME_MP_SUFFIX})
     endif()
 elseif(CONFIG_WHC_NONE)
-    set(release_target_name wifi_single_core${LIB_NAME_WPA_OFFLOAD_SUFFIX}${LIB_NAME_TCPIP_SUFFIX}${LIB_NAME_MP_SUFFIX})
+    set(release_target_name wifi_single_core${LIB_NAME_WPA_OFFLOAD_SUFFIX}${LIB_NAME_MP_SUFFIX})
 endif()
 
 if(CONFIG_WLAN AND (CONFIG_WHC_DEV OR CONFIG_WHC_NONE))
@@ -292,6 +288,21 @@ if(CONFIG_WLAN AND (CONFIG_WHC_DEV OR CONFIG_WHC_NONE))
             ${private_definitions}
         p_COMPILE_OPTIONS
             ${private_compile_options}
+    )
+endif()
+
+if(CONFIG_WLAN AND (CONFIG_WHC_DEV OR CONFIG_WHC_NONE) AND NOT (CONFIG_PLATFORM_ZEPHYR AND CONFIG_WHC_NONE))
+    ###NOTE: open-source glue between wifi lib and network stack, always build from source
+    ###NOTE: zephyr single core uses intf/wifi_intf_drv_to_zephyr.c instead (see drv_common.cmake)
+    ###NOTE: p_NO_SEAL keeps wifi_netif_rx relocatable by section_placement.json5
+    ameba_add_internal_library(wifi_netif
+        p_NO_SEAL
+        p_SOURCES
+            intf/wifi_intf_drv_to_lwip.c
+        p_INCLUDES
+            ${private_includes}
+        p_DEFINITIONS
+            ${private_definitions}
     )
 endif()
 ##########################################################################################

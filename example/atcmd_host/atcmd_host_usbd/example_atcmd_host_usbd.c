@@ -367,6 +367,14 @@ static void cdc_acm_hotplug_thread(void *param)
 
 	UNUSED(param);
 
+#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
+	/* This thread may run usbd_deinit(), which waits for no ISR on another core: run it on CPU0, where the
+	   USB IRQ is delivered (arm_gic.c pins every SPI to core 0).
+	   Pinned by the thread itself, first: a created thread may already run on another core. */
+	rtos_task_set_affinity(rtos_task_handle_get(), 0);
+#endif
+
+
 	for (;;) {
 		if (rtos_sema_take(cdc_acm_attach_status_changed_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
 			if (cdc_acm_attach_status == USBD_ATTACH_STATUS_DETACHED) {
@@ -403,6 +411,14 @@ static void example_usbd_cdc_acm_thread(void *param)
 #endif
 
 	UNUSED(param);
+
+#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
+	/* This thread may run usbd_deinit(), which waits for no ISR on another core: run it on CPU0, where the
+	   USB IRQ is delivered (arm_gic.c pins every SPI to core 0).
+	   Pinned by the thread itself, first: a created thread may already run on another core. */
+	rtos_task_set_affinity(rtos_task_handle_get(), 0);
+#endif
+
 
 #if CDC_ACM_HOTPLUG
 	rtos_sema_create(&cdc_acm_attach_status_changed_sema, 0, 1);

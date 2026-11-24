@@ -206,6 +206,16 @@ static void usbd_dfu_reconf_thread(void *param)
 
 	UNUSED(param);
 
+#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
+	/* C-2: the USB OTG ISR is delivered on CPU0 (GIC ITARGETSR pins every SPI to
+	   core 0). Pinning the thread that deinits/reinits the stack to CPU0 puts it on
+	   the same core as the ISR, so deinit's local interrupt disable is meaningful
+	   again under SMP.
+	   Done by the thread itself, first: a created thread may already run on another core, and its
+	   creator pinning it afterwards could come too late or reach a task that has deleted itself. */
+	rtos_task_set_affinity(rtos_task_handle_get(), 0);
+#endif
+
 	for (;;) {
 		ret = rtos_sema_take(dfu_reconf_sema, RTOS_SEMA_MAX_COUNT);
 		if (dfu_app.quit != 0U) {
@@ -300,13 +310,6 @@ static int dfu_start(void)
 		usbd_deinit();
 		goto exit;
 	}
-#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
-	/* C-2: the USB OTG ISR is delivered on CPU0 (GIC ITARGETSR pins every SPI to
-	   core 0). Pinning the thread that deinits/reinits the stack to CPU0 puts it on
-	   the same core as the ISR, so deinit's local interrupt disable is meaningful
-	   again under SMP. */
-	rtos_task_set_affinity(reconf_task, 0);
-#endif
 #endif
 
 	return RTK_SUCCESS;
@@ -325,6 +328,14 @@ exit:
 static void example_usbd_dfu_thread(void *param)
 {
 	UNUSED(param);
+
+#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
+	/* A start that fails rolls back through usbd_deinit(), which waits for no ISR on another
+	   core: run it on CPU0, where the USB IRQ is delivered, as the hotplug thread does.
+	   Done by the thread itself, first: a created thread may already run on another core, and its
+	   creator pinning it afterwards could come too late or reach a task that has deleted itself. */
+	rtos_task_set_affinity(rtos_task_handle_get(), 0);
+#endif
 
 	if (dfu_start() != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Start fail\n");

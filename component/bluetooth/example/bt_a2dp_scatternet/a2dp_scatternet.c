@@ -184,7 +184,7 @@ static uint32_t cod_for_snk = (0x04 | (0x04 << 8) | (0x24 <<
 static uint32_t cod_for_src = (0x0C | (0x02 << 8) | (0x64 <<
 													 16)); // MINOR_DEVICE_CLASS_SMART_PHONE + MAJOR_DEVICE_CLASS_PHONE + SERVICE_CLASS_AUDIO + SERVICE_CLASS_RENDERING
 /* supervision_timeout */
-static uint16_t superv_time = (0x1f40);
+static uint16_t supv_time = (0x1f40);
 
 static rtk_bt_br_page_param_t page_param = {
 	.pagescan_type = RTK_BT_BR_GAP_PAGE_SCAN_TYPE_INTERLACED,
@@ -2595,7 +2595,7 @@ static uint16_t rtk_bt_a2dp_sbc_parse_decoder_struct(rtk_bt_a2dp_codec_t *pa2dp_
 		BT_LOGE("[A2DP] RTK Audio not support channel_mode %x \r\n", pa2dp_codec->sbc.channel_mode);
 		return 1;
 	}
-	switch (pa2dp_codec->sbc.sampling_frequency) {
+	switch (pa2dp_codec->sbc.sbc_sampling_frequency) {
 	case RTK_BT_A2DP_SBC_SAMPLING_FREQUENCY_16KHZ:
 		psbc_decoder_t->sampling_frequency = (uint32_t)16000;
 		break;
@@ -2609,7 +2609,7 @@ static uint16_t rtk_bt_a2dp_sbc_parse_decoder_struct(rtk_bt_a2dp_codec_t *pa2dp_
 		psbc_decoder_t->sampling_frequency = (uint32_t)48000;
 		break;
 	default:
-		BT_LOGE("[A2DP] RTK Audio not support frequency %x \r\n", pa2dp_codec->sbc.sampling_frequency);
+		BT_LOGE("[A2DP] RTK Audio not support frequency %x \r\n", pa2dp_codec->sbc.sbc_sampling_frequency);
 		return 1;
 	}
 	switch (pa2dp_codec->sbc.block_length) {
@@ -2626,7 +2626,7 @@ static uint16_t rtk_bt_a2dp_sbc_parse_decoder_struct(rtk_bt_a2dp_codec_t *pa2dp_
 		psbc_decoder_t->block_length = 16;
 		break;
 	default:
-		BT_LOGE("[A2DP] RTK Audio not support frequency %x \r\n", pa2dp_codec->sbc.sampling_frequency);
+		BT_LOGE("[A2DP] RTK Audio not support frequency %x \r\n", pa2dp_codec->sbc.sbc_sampling_frequency);
 		return 1;
 	}
 	psbc_decoder_t->min_bitpool = pa2dp_codec->sbc.min_bitpool;
@@ -2671,7 +2671,7 @@ static uint16_t rtk_bt_a2dp_sbc_parse_encoder_struct(rtk_bt_a2dp_codec_t *pa2dp_
 		BT_LOGE("[A2DP] RTK Audio not support channel_mode %x \r\n", pa2dp_codec->sbc.channel_mode);
 		return 1;
 	}
-	switch (pa2dp_codec->sbc.sampling_frequency) {
+	switch (pa2dp_codec->sbc.sbc_sampling_frequency) {
 	case RTK_BT_A2DP_SBC_SAMPLING_FREQUENCY_16KHZ:
 		psbc_encoder_t->sample_rate = (uint32_t)16000;
 		break;
@@ -2685,7 +2685,7 @@ static uint16_t rtk_bt_a2dp_sbc_parse_encoder_struct(rtk_bt_a2dp_codec_t *pa2dp_
 		psbc_encoder_t->sample_rate = (uint32_t)48000;
 		break;
 	default:
-		BT_LOGE("[A2DP] RTK Audio not support frequency %x \r\n", pa2dp_codec->sbc.sampling_frequency);
+		BT_LOGE("[A2DP] RTK Audio not support frequency %x \r\n", pa2dp_codec->sbc.sbc_sampling_frequency);
 		return 1;
 	}
 	switch (pa2dp_codec->sbc.block_length) {
@@ -2720,7 +2720,7 @@ static uint16_t rtk_bt_a2dp_sbc_parse_encoder_struct(rtk_bt_a2dp_codec_t *pa2dp_
 //  } else {
 //      paac_decoder_t->channels = 2;
 //  }
-//  switch (pa2dp_codec->aac.sampling_frequency) {
+//  switch (pa2dp_codec->aac.aac_sampling_frequency) {
 //      case RTK_BT_A2DP_AAC_SAMPLING_FREQUENCY_8KHZ:
 //          paac_decoder_t->sample_freq = 8000;
 //          break;
@@ -3229,7 +3229,7 @@ int bt_a2dp_scatternet_main(uint8_t role, uint8_t enable)
 		dft_param.mtu_size = 180;
 		BT_APP_PROCESS(rtk_bt_br_gap_set_default_param(&dft_param));
 		/* set supervision_timeout */
-		BT_APP_PROCESS(rtk_bt_br_gap_set_supvisiontimeout(&superv_time));
+		BT_APP_PROCESS(rtk_bt_br_gap_set_supv_timeout(&supv_time));
 		BT_APP_PROCESS(rtk_bt_br_gap_set_inquiry_param(&inquiry_param));
 		BT_APP_PROCESS(rtk_bt_br_gap_set_page_param(&page_param));
 		/* sdp record add (must be invoked before rtk_bt_enable) */

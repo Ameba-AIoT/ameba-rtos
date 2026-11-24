@@ -52,9 +52,12 @@ if((NOT CONFIG_AMEBA_RLS) AND (NOT DEFINED ENV{AMEBA_SKIP_IMAGE_ANALYZE}))
         COMMAND ${CODE_ANALYZE_PYTHON} ${ANALYZE_MP_IMG} ${DAILY_BUILD} ${CODE_ANALYZE_RETRY}
         WORKING_DIRECTORY ${c_SDK_IMAGE_TARGET_DIR}
     )
-    ameba_execute_process(p_SHOW_OUTPUT
-        COMMAND ${STATIC_ANALYZE_PYTHON} ${DAILY_BUILD} ${c_MCU_PROJECT_DIR}
-        WORKING_DIRECTORY ${c_SDK_IMAGE_TARGET_DIR}/../
-    )
+    # The static analyze (stack/task parsing) only understands GNU objdump output, skip it for llvm-objdump
+    if(NOT CONFIG_TOOLCHAIN_LLVM)
+        ameba_execute_process(p_SHOW_OUTPUT
+            COMMAND ${STATIC_ANALYZE_PYTHON} ${DAILY_BUILD} ${c_MCU_PROJECT_DIR}
+            WORKING_DIRECTORY ${c_SDK_IMAGE_TARGET_DIR}/../
+        )
+    endif()
     message("========== Image analyze end ==========")
 endif()

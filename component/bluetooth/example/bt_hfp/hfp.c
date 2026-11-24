@@ -105,7 +105,7 @@ static uint8_t call_curr_status = 0;
 /* class of device */
 static uint32_t cod = (0x18 | (0x04 << 8) | (0x24 << 16));
 /* supervision_timeout */
-static uint16_t superv_time = (0x1f40);
+static uint16_t supv_time = (0x1f40);
 static uint16_t sco_seq_num = 0;
 static float hw_volume = 0.7;
 
@@ -1351,7 +1351,7 @@ static rtk_bt_evt_cb_ret_t rtk_bt_hfp_app_callback(uint8_t evt_code, void *param
 	}
 	break;
 
-	case RTK_BT_HFP_EVT_SCO_DISCONNCTED_IND: {
+	case RTK_BT_HFP_EVT_SCO_DISCONNECTED_IND: {
 		rtk_bt_hfp_disconn_ind_t *disconn_ind = (rtk_bt_hfp_disconn_ind_t *)param;
 		memcpy((void *)bd_addr, disconn_ind->bd_addr, 6);
 		BT_LOGE("[HFP] HFP receive sco disconnected from %02x:%02x:%02x:%02x:%02x:%02x\r\n",
@@ -1624,7 +1624,7 @@ int bt_hfp_main(uint8_t role, uint8_t enable)
 		/* set class of device */
 		BT_APP_PROCESS(rtk_bt_br_gap_set_cod(&cod));
 		/* set supervision_timeout */
-		BT_APP_PROCESS(rtk_bt_br_gap_set_supvisiontimeout(&superv_time));
+		BT_APP_PROCESS(rtk_bt_br_gap_set_supv_timeout(&supv_time));
 		BT_APP_PROCESS(rtk_bt_br_gap_set_inquiry_param(&inquiry_param));
 		BT_APP_PROCESS(rtk_bt_br_gap_set_page_param(&page_param));
 		/* sdp record add (must be invoked before rtk_bt_enable) */

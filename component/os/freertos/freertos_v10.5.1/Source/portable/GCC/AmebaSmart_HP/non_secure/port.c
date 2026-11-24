@@ -364,7 +364,7 @@ void SysTick_Handler(void) PRIVILEGED_FUNCTION;
  */
 uint32_t ulSetInterruptMaskFromISR(void);
 
-void vClearInterruptMaskFromISR(__attribute__((unused)) uint32_t ulMask);
+void vClearInterruptMaskFromISR(uint32_t ulMask);
 
 /**
  * @brief C part of SVC handler.
@@ -1246,41 +1246,18 @@ BaseType_t xPortIsInsideInterrupt(void)
 	return xReturn;
 }
 /*-----------------------------------------------------------*/
-uint32_t ulSetInterruptMaskFromISR(void)   /* __attribute__(( naked )) PRIVILEGED_FUNCTION */
+uint32_t ulSetInterruptMaskFromISR(void)
 {
-	__asm volatile
-	(
-		"	mrs r0, PRIMASK									\n"
-		"	cpsid i											\n"
-		"	bx lr											\n"
-		::: "memory"
-	);
+	uint32_t ulMask = __get_PRIMASK();
 
-#if !(defined (__ARMCC_VERSION) && (__ARMCC_VERSION >= 6010050))
-	/* To avoid compiler warnings.  The return statement will never be reached,
-	 * but some compilers warn if it is not included, while others won't compile
-	 * if it is. */
-	return 0;
-#endif
+	__disable_irq();
+	return ulMask;
 }
 /*-----------------------------------------------------------*/
 
-void vClearInterruptMaskFromISR(__attribute__((unused)) uint32_t ulMask)       /* __attribute__(( naked )) PRIVILEGED_FUNCTION */
+void vClearInterruptMaskFromISR(uint32_t ulMask)
 {
-	__asm volatile
-	(
-		"	msr PRIMASK, r0									\n"
-		"	bx lr											\n"
-		::: "memory"
-	);
-
-#if !(defined (__ARMCC_VERSION) && (__ARMCC_VERSION >= 6010050))
-	/* Just to avoid compiler warning.  ulMask is used from the asm code but
-	 * the compiler can't see that.  Some compilers generate warnings without
-	 * the following line, while others generate warnings if the line is
-	 * included. */
-	(void) ulMask;
-#endif
+	__set_PRIMASK(ulMask);
 }
 
 #include "diag.h"

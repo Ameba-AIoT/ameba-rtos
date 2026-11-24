@@ -18,8 +18,14 @@ extern "C"
 
 /**
  * @def       RTK_BT_GATT_INTERNAL
- * @brief     This attribute will be handled by the stack internally. When the attribute is a
- *            characteristic value, this flag is equal to @ref RTK_BT_GATT_VOID.
+ * @brief     This attribute will be handled by the stack internally. The flag is usually
+ *            used in API macro definition in this header file, e.g. @ref RTK_BT_GATT_PRIMARY_SERVICE
+ *            or @ref RTK_BT_GATT_CPF. It requires the attribute value to be passed with
+ *            the standard data structure expected by the stack. For example, the data of
+ *            param '_value' for @ref RTK_BT_GATT_CPF shall be in the format of
+ *            @ref struct rtk_bt_gatt_cpf with flag @ref RTK_BT_GATT_INTERNAL. For attributes
+ *            that have no standard data structure defined in this header file, this flag
+ *            behaves the same as @ref RTK_BT_GATT_VOID
  */
 #define RTK_BT_GATT_INTERNAL                0
 
@@ -137,7 +143,7 @@ struct rtk_bt_gatt_chrc {
  * @def       RTK_BT_GATT_DESCRIPTOR
  * @brief     Descriptor Declaration Macro.
  *            Helper macro to declare a descriptor attribute.
- * @note      If use RTK_BT_GATT_DESCRIPTOR directly, MUST use _user_data as a raw data!
+ * @note      If use @ref RTK_BT_GATT_DESCRIPTOR directly, MUST use _user_data as a raw data!
  * @param     _uuid Descriptor attribute uuid.
  * @param     _perm Descriptor attribute access permissions.
  * @param     _user_data Descriptor attribute user data.
@@ -295,7 +301,7 @@ typedef struct {
 	const struct bt_uuid *uuid;             /*!< Attribute UUID. */
 	union {
 		void *read;                         /*!< Attribute read callback. */
-		uint16_t flag;                      /*!< Attribute flag (RTK_BT_GATT_INTERNAL/RTK_BT_GATT_APP). */
+		uint16_t flag;                      /*!< Attribute flag (@ref RTK_BT_GATT_INTERNAL / @ref RTK_BT_GATT_APP). */
 	};
 	union {
 		void *write;                        /*!< Attribute write callback. */
@@ -317,13 +323,13 @@ typedef struct {
                                              *   Range: 0x0000 to 0x0EFF. */
 	uint16_t cid;                           /*!< L2CAP channel identifier for sending the response.
                                              *   Must match the cid from @ref rtk_bt_gatts_read_ind_t.
-                                             *   Ignored when RTK_BLE_MGR_LIB is 0. */
+                                             *   Ignored when @ref RTK_BLE_MGR_LIB is 0. */
 	uint16_t index;                         /*!< Attribute index within the service. */
 	uint8_t err_code;                       /*!< ATT error code; see @ref rtk_bt_err_att. Set to 0x00 when not error response. */
 	uint16_t len;                           /*!< Length of the response value.
-                                             *   only valid when err_code is 0. */
+                                             *   Only valid when #err_code is 0. */
 	const void *data;                       /*!< Pointer to the response value data.
-                                             *   Only valid when err_code is 0. */
+                                             *   Only valid when #err_code is 0. */
 } rtk_bt_gatts_read_resp_param_t;
 
 /**
@@ -337,7 +343,7 @@ typedef struct {
                                              *   Range: 0x0000 to 0x0EFF. */
 	uint16_t cid;                           /*!< L2CAP channel identifier for sending the response.
                                              *   0 selects the channel automatically.
-                                             *   Ignored when RTK_BLE_MGR_LIB is 0. */
+                                             *   Ignored when @ref RTK_BLE_MGR_LIB is 0. */
 	uint16_t index;                         /*!< Attribute index within the service. */
 	uint8_t type;                           /*!< Write type as received from the remote client. */
 	uint8_t err_code;                       /*!< ATT error code; see @ref rtk_bt_err_att. Set to 0x00 when not error response. */
@@ -354,7 +360,7 @@ typedef struct {
                                              *   Range: 0x0000 to 0x0EFF. */
 	uint16_t cid;                           /*!< L2CAP channel identifier for sending the notification or indication.
                                              *   0 selects the channel automatically.
-                                             *   Ignored when RTK_BLE_MGR_LIB is 0. */
+                                             *   Ignored when @ref RTK_BLE_MGR_LIB is 0. */
 	uint16_t index;                         /*!< Attribute index within the service. */
 	uint16_t len;                           /*!< Length of the notification or indication value. */
 	const void *data;                       /*!< Pointer to the notification or indication value data. */
@@ -369,7 +375,7 @@ typedef struct {
                                              *   Range: 0x0000 to 0x0EFF. */
 	uint16_t cid;                           /*!< L2CAP channel identifier for sending the service changed indicate.
                                              *   0 selects the channel automatically.
-                                             *   Ignored when RTK_BLE_MGR_LIB is 0. */
+                                             *   Ignored when @ref RTK_BLE_MGR_LIB is 0. */
 	uint16_t start_handle;                  /*!< Start attribute handle of the changed range. */
 	uint16_t end_handle;                    /*!< Last attribute handle of the changed range. */
 } rtk_bt_gatts_service_changed_indicate_param_t;
@@ -395,11 +401,11 @@ struct rtk_bt_gatt_service {
 	rtk_bt_gatt_attr_t *attrs;              /*!< Pointer to the attribute table for this service. */
 	uint16_t attr_count;                    /*!< Number of attributes in the attribute table. */
 #if !defined(RTK_BLE_MGR_LIB) || !RTK_BLE_MGR_LIB
-	bool assgin_handle_flag;                /*!< Indicates whether the service start attribute handle is user-assigned.
-                                             *   - true: start_handle is used as the first attribute handle.
+	bool assign_handle_flag;                /*!< Indicates whether the service start attribute handle is user-assigned.
+                                             *   - true: #start_handle is used as the first attribute handle.
                                              *   - false: the stack assigns the start handle automatically. */
 	uint16_t start_handle;                  /*!< User-assigned start attribute handle for the service.
-                                             *   Valid when assgin_handle_flag is true. */
+                                             *   Valid when #assign_handle_flag is true. */
 #endif
 	rtk_bt_gatts_srv_type_t type;           /*!< Type of the service. */
 	uint8_t register_status;                /*!< Current registration status of the service. */
@@ -413,7 +419,7 @@ struct rtk_bt_gatt_service {
  * @brief     Bluetooth GATT Server service register indication event msg.
  */
 typedef struct {
-	uint16_t reg_status;                    /*!< Result of the service registration; 0x00 indicates success. */
+	uint16_t reg_status;                    /*!< Result of the service registration; 0x00 on success. */
 	uint16_t app_id;                        /*!< Application identifier of the registered service. */
 } rtk_bt_gatts_reg_ind_t;
 
@@ -422,7 +428,7 @@ typedef struct {
  * @brief     Bluetooth ATT MTU exchange indication event msg.
  */
 typedef struct {
-	uint16_t result;                        /*!< Result code of the MTU exchange procedure; 0x00 indicates success. */
+	uint16_t result;                        /*!< Result code of the MTU exchange procedure; 0x00 on success. */
 	uint16_t conn_handle;                   /*!< Connection handle of the ACL connection associated with the received MTU exchange result.
                                              *   Range: 0x0000 to 0x0EFF. */
 	uint16_t mtu_size;                      /*!< Negotiated ATT MTU size. */
@@ -535,6 +541,9 @@ typedef struct {
  *                   Must not be NULL.
  * @return
  *            - @ref rtk_bt_err_common
+ * @note
+ *            - The registered service and attribute arrays in service shall be in memory which is static or heap-allocated.
+ *              It shall remain valid until this service is unregistered or BT is deinitialized.
  */
 uint16_t rtk_bt_gatts_register_service(struct rtk_bt_gatt_service *param);
 
@@ -609,7 +618,7 @@ uint16_t rtk_bt_gatts_write_resp(rtk_bt_gatts_write_resp_param_t *param);
  *                         Range: 0x0000 to 0x0EFF.
  * @param[in] cid: L2CAP channel identifier for sending the indication.
  *                 0 selects the channel automatically.
- *                 Ignored when RTK_BLE_MGR_LIB is 0.
+ *                 Ignored when @ref RTK_BLE_MGR_LIB is 0.
  * @param[in] start_handle: Start of affected attribute handle range.
  * @param[in] end_handle: End of affected attribute handle range.
  * @return

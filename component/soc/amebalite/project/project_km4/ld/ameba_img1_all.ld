@@ -2,6 +2,19 @@ ENTRY(Reset_Handler)
 
 #include "../../ameba_layout.ld"
 #include "project_km4/platform_autoconf.h"
+/* NOR flash device tables. KEEP() is required: nothing references the entries by
+ * symbol, so --gc-sections would drop them and silently unmatch every device. */
+#if defined(CONFIG_NOR_FLASH_NEW_STRATEGY)
+	#define NOR_FLASH_TABLE \
+		. = ALIGN(4); \
+		__nor_flash_table_start__ = .; \
+		KEEP(*(.nor.flash.table.data*)) \
+		__nor_flash_table_end__ = .; \
+		. = ALIGN(4);
+#else
+	#define NOR_FLASH_TABLE
+#endif
+
 /* define common load memory address */
 #ifdef  GENERATE_FLOADER_LD
 	#define IMG1_LMA_REGION 			KM4_FLOADER_RAM_S
@@ -11,6 +24,8 @@ ENTRY(Reset_Handler)
 	#define FLASH_INPUT_TEXT_SECTION
 	#define	FLASH_INPUT_NON_DRAM
 	#define FLASH_INPUT_RODATA
+	#define SRAM_INPUT_NOR_TABLE		NOR_FLASH_TABLE
+	#define FLASH_INPUT_NOR_TABLE
 #else
 	#define IMG1_LMA_REGION 			KM4_BOOTLOADER_RAM_S
 	#ifdef CONFIG_IMG1_FLASH
@@ -20,6 +35,8 @@ ENTRY(Reset_Handler)
 		#define FLASH_INPUT_TEXT_SECTION *(.text*)
 		#define	FLASH_INPUT_NON_DRAM	*(.non.dram.text*)
 		#define FLASH_INPUT_RODATA		*(.rodata*)
+		#define SRAM_INPUT_NOR_TABLE
+		#define FLASH_INPUT_NOR_TABLE	NOR_FLASH_TABLE
 	#else
 		#define SRAM_INPUT_TEXT_SECTION *(.text*)
 		#define	SRAM_INPUT_NON_DRAM		*(.non.dram.text*)
@@ -27,6 +44,8 @@ ENTRY(Reset_Handler)
 		#define FLASH_INPUT_TEXT_SECTION
 		#define	FLASH_INPUT_NON_DRAM
 		#define FLASH_INPUT_RODATA
+		#define SRAM_INPUT_NOR_TABLE	NOR_FLASH_TABLE
+		#define FLASH_INPUT_NOR_TABLE
 	#endif
 #endif
 
@@ -59,6 +78,7 @@ SECTIONS
 		SRAM_INPUT_TEXT_SECTION
 		SRAM_INPUT_NON_DRAM
 		SRAM_INPUT_RODATA
+		SRAM_INPUT_NOR_TABLE
 		*(.sramdram.only.text*)
 	} > IMG1_LMA_REGION
 
@@ -84,6 +104,7 @@ SECTIONS
 		FLASH_INPUT_TEXT_SECTION
 		FLASH_INPUT_NON_DRAM
 		FLASH_INPUT_RODATA
+		FLASH_INPUT_NOR_TABLE
 	} > KM4_BOOT_XIP
 
 	/* image2: normal image start */

@@ -1367,6 +1367,20 @@ static struct ieee80211_regdomain *_whc_host_regd_get(u8 chplan)
 	}
 }
 
+/* Declare DFS_OFFLOAD only when the device really runs DFS master for the current country (the device
+ * decides: enable + supported country). Otherwise cfg80211/hostapd keep refusing to beacon on DFS channels. */
+static void _whc_host_regd_set_dfs_offload(struct wiphy *wiphy)
+{
+	u8 dfs_master = 0;
+
+	whc_host_get_dfs_master(&dfs_master);
+	if (dfs_master) {
+		wiphy_ext_feature_set(wiphy, NL80211_EXT_FEATURE_DFS_OFFLOAD);
+	} else {
+		wiphy->ext_features[NL80211_EXT_FEATURE_DFS_OFFLOAD / 8] &= ~BIT(NL80211_EXT_FEATURE_DFS_OFFLOAD % 8);
+	}
+}
+
 static void _whc_host_regd_set_country_code(struct wiphy *wiphy, u8 *country)
 {
 	int ret = 0;
@@ -1378,6 +1392,7 @@ static void _whc_host_regd_set_country_code(struct wiphy *wiphy, u8 *country)
 		whc_host_get_country_code(&table);
 		regd = _whc_host_regd_get(table.channel_plan);
 		memcpy((void *)&regd->alpha2[0], &table.char2[0], 2);
+		_whc_host_regd_set_dfs_offload(wiphy);
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0))
 		ret = regulatory_set_wiphy_regd_sync(wiphy, regd);
@@ -1400,6 +1415,8 @@ int whc_host_regd_update(struct rtw_country_code_table *ptab)
 
 	regd = _whc_host_regd_get(ptab->channel_plan);
 	memcpy((void *)&regd->alpha2[0], &ptab->char2[0], 2);
+	/* no DFS_OFFLOAD refresh here: this runs in the event work, and the device 802.11d country
+	 * follow (rtw_802_11d_en) is off by default. The init / user-set value is kept. */
 
 	rtnl_lock();
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0))
@@ -1464,6 +1481,10 @@ int whc_host_regd_init(void)
 	wiphy->regulatory_flags &= ~REGULATORY_STRICT_REG;
 	wiphy->regulatory_flags &= ~REGULATORY_COUNTRY_IE_FOLLOW_POWER;
 	wiphy->regulatory_flags &= ~REGULATORY_COUNTRY_IE_IGNORE;
+
+	/* device does CAC/radar detection: without DFS_OFFLOAD cfg80211 refuses to beacon on DFS channels,
+	 * and hostapd would run CAC itself */
+	_whc_host_regd_set_dfs_offload(wiphy);
 
 	rtnl_lock();
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0))

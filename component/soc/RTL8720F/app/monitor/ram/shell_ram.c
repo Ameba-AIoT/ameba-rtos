@@ -189,7 +189,7 @@ static void shell_task_ram(void *Data)
 #if defined(CONFIG_SUPPORT_ATCMD)
 			ret = atcmd_service((char *)pUartLogBuf->UARTLogBuf);
 
-#ifdef CONFIG_MP_INCLUDED
+#if defined(CONFIG_MP_INCLUDED) && defined(CONFIG_WLAN)
 			if (ret == FALSE) {
 				ret = mp_command_handler((char *)pUartLogBuf->UARTLogBuf);
 			}

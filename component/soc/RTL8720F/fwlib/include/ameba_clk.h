@@ -101,7 +101,7 @@ extern "C" {
 #define CLK_LIMIT_LPERI           (40  * MHZ_TICK_CNT)
 #define CLK_LIMIT_PSRAM           (400 * MHZ_TICK_CNT)
 #define CLK_LIMIT_PSRAMC_FLASH    (208 * MHZ_TICK_CNT)
-#define CLK_LIMIT_SPIC            (208 * MHZ_TICK_CNT)  /* HW SPIC limit is 250MHz */
+#define CLK_LIMIT_SPIC            (192 * MHZ_TICK_CNT)  /* flash 96MHz, HW SPIC limit is 250MHz */
 #define CLK_LIMIT_I2S             (100 * MHZ_TICK_CNT)
 #define CLK_LIMIT_VO              (200 * MHZ_TICK_CNT)
 
@@ -116,11 +116,23 @@ extern "C" {
 #define SPIC_CS_SETUP_TIME_LMT   (200 * MHZ_TICK_CNT) //CS# Active Setup Time relative to CLK(Some Flash tSLCH min is 5ns)
 #define IS_CPU_CLK_DIV_RANGE(x)  ((x) >= CLKDIV(2) && (x) <= CLKDIV(8))
 
+/** @defgroup SDM_USER_DEFINED_param_definitions
+  * @{
+  */
+#define SDM_OBS_CYC_DEFAULT		1024
+#define SDM_OBS_REF_CYC_DEFAULT		312500
+#define SDM_OBS_REF_CYC_MODIFY		312503
+#define SDM_XTAL_PERIOD_DEFAULT		102400
+/**
+  * @}
+  */
+
 /* Exported functions --------------------------------------------------------*/
 /** @defgroup SDM32K_CLK_Exported_Functions SDM32K_CLK Exported Functions
   * @{
   */
 _LONG_CALL_ void SDM32K_Enable(void);
+_LONG_CALL_ void SDM32K_CalFactorModify(u32 newstatus);
 _LONG_CALL_ void SDM32K_TimerCalEnable(u32 RTCCalibration);
 /**
   * @}

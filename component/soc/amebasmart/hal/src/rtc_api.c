@@ -245,7 +245,7 @@ time_t rtc_read(void)
 	/* Convert to timestamp(seconds from 1970.1.1 00:00:00)*/
 	t = mktime(&tm_temp);
 
-	ydays_thr = (is_leap_year(RTC_TimeStruct.RTC_Year)) ? 366 : 365;
+	ydays_thr = (is_leap_year(RTC_TimeStruct.RTC_Year - RTC_BASE_YEAR)) ? 366 : 365;
 	//	printf("@@@%d calc%d thr%d reg%d\n", __LINE__, tm_temp.tm_year, ydays_thr, RTC_TimeStruct.RTC_Days);
 
 	if (RTC_TimeStruct.RTC_Days > (ydays_thr - 1)) {

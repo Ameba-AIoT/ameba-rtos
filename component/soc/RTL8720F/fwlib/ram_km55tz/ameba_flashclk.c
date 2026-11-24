@@ -57,6 +57,27 @@ static void flash_cs_timing_config(u32 bus_clk)
 				 CS_ACTIVE_HOLD(cs_hold) | CS_H_WR_DUM_LEN(cs_high) | CS_H_RD_DUM_LEN(cs_high);
 }
 
+/**
+  * @brief  Set the SPIC pads at the given location to the weakest driving, E2 = 0.
+  * @param  PinLocation: PINMUX_EXTERNAL or PINMUX_INTERNAL.
+  * @note   Runs from flash while the flash is still on the boot clock.
+  * @retval None
+  */
+static void flash_pad_drv_config(u32 PinLocation)
+{
+	u8 int_pin[6] = {FLASH_PIN_INTERNAL_CSN, FLASH_PIN_INTERNAL_CLK, FLASH_PIN_INTERNAL_D0,
+					 FLASH_PIN_INTERNAL_D1, FLASH_PIN_INTERNAL_D2, FLASH_PIN_INTERNAL_D3
+					};
+	u8 ext_pin[6] = {FLASH_PIN_EXTERNAL_CSN, FLASH_PIN_EXTERNAL_CLK, FLASH_PIN_EXTERNAL_D0,
+					 FLASH_PIN_EXTERNAL_D1, FLASH_PIN_EXTERNAL_D2, FLASH_PIN_EXTERNAL_D3
+					};
+	u8 *pin = (PinLocation == PINMUX_INTERNAL) ? int_pin : ext_pin;
+
+	for (int i = 0; i < 6; i++) {
+		PAD_DrvStrength(pin[i], PAD_DRV_ABILITITY_LOW);
+	}
+}
+
 SRAMDRAM_ONLY_TEXT_SECTION
 static void FLASH_PLLInit_ClockDiv(void)
 {
@@ -159,6 +180,9 @@ int flash_highspeed_setup(u32 read_mode, u32 spic_max)
 	 */
 	SPIC->CTRLR0 |= BIT_SPI_DREIR_R_DIS;
 
+	/* Weakest pad driving before the read mode is probed and calibrated */
+	flash_pad_drv_config(flash_init_para.FLASH_pinmux);
+
 	/* Get flash ID to reinitialize FLASH_InitTypeDef structure */
 	flash_nor_get_vendor();
 
@@ -215,8 +239,10 @@ void Combo_SPIC_Init(void)
 	/*2. ComboSpic pinmux set which is contrary to bootSpic */
 	if (PINMUX_EXTERNAL == FLASH_InitStruct->FLASH_pinmux) {
 		Pinmux_ComboSpicCtrl(PINMUX_INTERNAL, ON);
+		flash_pad_drv_config(PINMUX_INTERNAL);
 	} else {
 		Pinmux_ComboSpicCtrl(PINMUX_EXTERNAL, ON);
+		flash_pad_drv_config(PINMUX_EXTERNAL);
 	}
 
 	/*3. use bootSpic para to config ComboSpic(Default NorFlash Config) where 1IO autoread is common for all flash */

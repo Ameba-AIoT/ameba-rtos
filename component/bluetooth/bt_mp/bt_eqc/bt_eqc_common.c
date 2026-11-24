@@ -92,7 +92,7 @@ void eqc_le_check_connection_complete_event(uint8_t *buf, uint16_t buf_len)
 	uint8_t  status = 0x0;
 	uint16_t connection_interval = 0x0;
 	uint16_t peri_latency = 0x0;
-	uint16_t superv_timeout = 0x0;
+	uint16_t supv_timeout = 0x0;
 
 	status = buf[3];
 	eqc_connect_handle = (buf[5] << 8) + buf[4];
@@ -101,7 +101,7 @@ void eqc_le_check_connection_complete_event(uint8_t *buf, uint16_t buf_len)
 	memcpy(conn_Event_addr.addr_val, &buf[8], 6);
 	connection_interval = (buf[15] << 8) + buf[14];
 	peri_latency = (buf[17] << 8) + buf[16];
-	superv_timeout = (buf[19] << 8) + buf[18];
+	supv_timeout = (buf[19] << 8) + buf[18];
 
 	if (0x0 == eqc_role) {
 		BT_LOGA("As central role\n\r");
@@ -113,7 +113,7 @@ void eqc_le_check_connection_complete_event(uint8_t *buf, uint16_t buf_len)
 	BT_LOGA("connect handle = 0x%02x\n\r", eqc_connect_handle);
 	BT_LOGA("connection_interval = 0x%02x\n\r", connection_interval);
 	BT_LOGA("peri_latency = 0x%02x\n\r", peri_latency);
-	BT_LOGA("superv_timeout = 0x%02x\n\r", superv_timeout);
+	BT_LOGA("supv_timeout = 0x%02x\n\r", supv_timeout);
 	BT_LOGA("peeraddresstype = 0x%02x\n\r", conn_Event_addr.type);
 	BT_LOGA("peer_address: %02x:%02x:%02x:%02x:%02x:%02x \n\r", conn_Event_addr.addr_val[5], conn_Event_addr.addr_val[4], conn_Event_addr.addr_val[3],
 			conn_Event_addr.addr_val[2], conn_Event_addr.addr_val[1], conn_Event_addr.addr_val[0]);
@@ -141,7 +141,7 @@ void eqc_le_check_enhance_connection_complete_event(uint8_t *buf, uint16_t buf_l
 	uint8_t peer_resolvable_private_address[6] = {0};
 	uint16_t connection_interval = 0x0;
 	uint16_t peri_latency = 0x0;
-	uint16_t superv_timeout = 0x0;
+	uint16_t supv_timeout = 0x0;
 	uint8_t central_clock_accuracy = 0x0;
 
 	status = buf[3];
@@ -154,7 +154,7 @@ void eqc_le_check_enhance_connection_complete_event(uint8_t *buf, uint16_t buf_l
 
 	connection_interval = (buf[27] << 8) + buf[26];
 	peri_latency = (buf[29] << 8) + buf[28];
-	superv_timeout = (buf[31] << 8) + buf[30];
+	supv_timeout = (buf[31] << 8) + buf[30];
 	central_clock_accuracy = buf[32];
 
 	if (0x0 == eqc_role) {
@@ -167,7 +167,7 @@ void eqc_le_check_enhance_connection_complete_event(uint8_t *buf, uint16_t buf_l
 	BT_LOGA("connect handle = 0x%02x\n\r", eqc_connect_handle);
 	BT_LOGA("connection_interval = 0x%02x\n\r", connection_interval);
 	BT_LOGA("peri_latency = 0x%02x\n\r", peri_latency);
-	BT_LOGA("superv_timeout = 0x%02x\n\r", superv_timeout);
+	BT_LOGA("supv_timeout = 0x%02x\n\r", supv_timeout);
 	BT_LOGA("central_clock_accuracy = 0x%02x\n\r", central_clock_accuracy);
 	BT_LOGA("peeraddresstype = 0x%02x\n\r", conn_Event_addr.type);
 	BT_LOGA("peer_address: %02x:%02x:%02x:%02x:%02x:%02x\n\r", conn_Event_addr.addr_val[5], conn_Event_addr.addr_val[4], conn_Event_addr.addr_val[3],

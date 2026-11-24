@@ -230,7 +230,7 @@ uint16_t bt_stack_act_handler(rtk_bt_cmd_t *p_cmd)
 #if defined(BT_MESH_ENABLE_DFU_STANDALONE_UPDATER_ROLE) && BT_MESH_ENABLE_DFU_STANDALONE_UPDATER_ROLE
 	case RTK_BT_LE_GP_MESH_DFU_STANDALONE_UPDATER_MODEL:
 		BT_LOGD("RTK_BT_LE_GP_MESH_DFU_STANDALONE_UPDATER_MODEL group");
-		bt_mesh_device_firmware_update_standlone_model_act_handle(p_cmd);
+		bt_mesh_device_firmware_update_standalone_model_act_handle(p_cmd);
 		break;
 #endif
 	case RTK_BT_LE_GP_MESH_HEALTH_CLIENT_MODEL:

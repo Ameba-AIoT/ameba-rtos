@@ -48,6 +48,10 @@ CERT_SIZE_4K_ALIGN = 0x1000
 CERT_SIZE_8K_ALIGN = 0x2000
 CERT_MAX_KEYINFO = 5
 
+# Debug public key, secp256r1 X||Y in the last bytes of the certificate area. Must match boot_swd_auth.h
+KEYID_SWD_AUTH = 0x53574441
+SWD_AUTH_PUBKEY_LEN = 64
+
 # Manifest version flags
 MANIFEST_VERSION_4KB = 1
 MANIFEST_VERSION_8KB = 2
@@ -145,6 +149,17 @@ class ManifestImageConfig:
         self.img_ver_major:Union[int, None] = config.get("img_ver_major", None)
         self.img_ver_minor:Union[int, None] = config.get("img_ver_minor", None)
         self.huk_epoch:Union[int, None] = config.get("huk_epoch", config.get("sec_epoch", None))
+        # Key Vault derivation of the boot ROM: huk_derive turns it on, kv_v0_curve and kv_v1_curve (0 to 9) ask for the V0 and V1 key pairs.
+        # They are packed into the u32 huk_epoch, one byte each from the lowest: epoch, derive, V0 curve, V1 curve. Without huk_derive nothing changes.
+        kv_v0_curve = config.get("kv_v0_curve", 0xFF)
+        kv_v1_curve = config.get("kv_v1_curve", 0xFF)
+        if config.get("huk_derive", False):
+            if not 0 <= self.huk_epoch <= 0xFF:
+                raise ValueError("huk_epoch must be 0 to 255 with huk_derive")
+            for curve in (kv_v0_curve, kv_v1_curve):
+                if curve != 0xFF and not 0 <= curve <= 9:
+                    raise ValueError(f"Key Vault curve {curve} is not in 0 to 9")
+            self.huk_epoch |= (1 << 8) | (kv_v0_curve << 16) | (kv_v1_curve << 24)
 
         if image_type != ImageType.CERT:
             #RSIP
@@ -588,6 +603,27 @@ class ManifestManager(ABC):
                 except (ValueError, IndexError):
                     self.context.logger.warning(f"Invalid user_defined_key format: {key}")
 
+        # step-4: Debug authentication public key. KeyID is fixed, a user_defined_key with the same id would be ambiguous.
+        swd_auth_pub = None
+        swd_auth_pub_hex = self.new_json_data.get('swd_auth_public_key')
+        if swd_auth_pub_hex:
+            if any(e[0] == KEYID_SWD_AUTH for e in entries):
+                return Error(ErrorType.INVALID_ARGS, f"KeyID {KEYID_SWD_AUTH:#x} is reserved for swd_auth_public_key, remove user_defined_key_{KEYID_SWD_AUTH}")
+            try:
+                pub_bytes = bytes.fromhex(swd_auth_pub_hex)
+            except ValueError:
+                return Error(ErrorType.INVALID_ARGS, "swd_auth_public_key is not hex")
+            if len(pub_bytes) != SWD_AUTH_PUBKEY_LEN:
+                return Error(ErrorType.INVALID_ARGS, f"swd_auth_public_key must be secp256r1 X||Y, {SWD_AUTH_PUBKEY_LEN} bytes, got {len(pub_bytes)}")
+            half = SWD_AUTH_PUBKEY_LEN // 2
+            try:
+                ec.EllipticCurvePublicNumbers(int.from_bytes(pub_bytes[:half], 'big'), int.from_bytes(pub_bytes[half:], 'big'), ec.SECP256R1()).public_key()
+            except ValueError:
+                return Error(ErrorType.INVALID_ARGS, "swd_auth_public_key is not a point on secp256r1")
+            swd_auth_pub = pub_bytes
+            entries.append((KEYID_SWD_AUTH, 'swd_auth'))
+            print(f"Added swd auth key: KeyID={KEYID_SWD_AUTH}, curve=secp256r1")
+
         print(f"Total entries: {len(entries)}")
         for i, (key_id, name) in enumerate(entries):
             print(f"  Entry[{i}]: KeyID={key_id}, name={name}")
@@ -601,8 +637,7 @@ class ManifestManager(ABC):
 
         # Check entry limit (Certificate structure supports max CERT_MAX_KEYINFO entries)
         if len(entries) > CERT_MAX_KEYINFO:
-            self.context.logger.warning(f"Too many certificate entries ({len(entries)}), only first CERT_MAX_KEYINFO will be used")
-            entries = entries[:CERT_MAX_KEYINFO]
+            return Error(ErrorType.INVALID_ARGS, f"Too many certificate entries ({len(entries)}), at most {CERT_MAX_KEYINFO} are supported")
 
         entry_num = len(entries)
         entry_size = entry_num * sizeof(CertEntry_TypeDef)
@@ -630,6 +665,8 @@ class ManifestManager(ABC):
                             return Error(ErrorType.INVALID_ARGS, str(e))
                     hash_bytes = bytes.fromhex(self.image2.sboot_pqc_public_key_hash)
                     memmove(addressof(cert_entries[i].Hash), hash_bytes, min(len(hash_bytes), 32))
+            elif entry_name == 'swd_auth':
+                memmove(addressof(cert_entries[i].Hash), hashlib.sha256(swd_auth_pub).digest(), 32)   # as SBOOT_Validate_PubKey
             # Handle user-defined keys
             elif entry_name.startswith('user_defined_key_'):
                 hash_value = self.new_json_data[entry_name]
@@ -704,10 +741,15 @@ class ManifestManager(ABC):
 
                 # Pad to CERT_SIZE_8K_ALIGN
                 pad_count = CERT_SIZE_8K_ALIGN - total_cert_size
-                f.write(b'\xFF' * pad_count)
             else:
                 # Pad to CERT_SIZE_4K_ALIGN
                 pad_count = CERT_SIZE_4K_ALIGN - basic_cert_part.TableSize - SIGN_MAX_LEN
+            # The debug public key takes the last SWD_AUTH_PUBKEY_LEN bytes of the padding
+            if swd_auth_pub is not None:
+                if pad_count < SWD_AUTH_PUBKEY_LEN:
+                    return Error(ErrorType.UNKNOWN_ERROR, "no room for the swd auth public key in the certificate area")
+                f.write(b'\xFF' * (pad_count - SWD_AUTH_PUBKEY_LEN) + swd_auth_pub)
+            else:
                 f.write(b'\xFF' * pad_count)
 
         return Error.success()

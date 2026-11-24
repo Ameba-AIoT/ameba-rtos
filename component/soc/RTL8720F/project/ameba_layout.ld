@@ -68,7 +68,7 @@
                   RTL8720F SRAM Layout (512K)
 0x20000000 ──────────►┌──────────────────────┐
                       │     KM55TZ/KM55NS RAM  │
-                      │       (12K)          │
+                      │       (8K)           │
                       │    <Realtek Fixed>   │
                       │                      │
 fix addr              │                      │
@@ -158,23 +158,23 @@ MEMORY
     EMPTY_SECTION (rwx) :                     ORIGIN = 0x00000000, LENGTH = 0x00000000 - 0x00000000    /* This region shall be empty */
 
     /* KM55TZ(CPU0) ROM */
-    KM4TZ_IROM (rx) :                         ORIGIN = 0x00020000, LENGTH = 0x00033C00 - 0x00020000    /* KM55TZ IROM_S: 79K */
-    KM4TZ_DROM (rx) :                         ORIGIN = 0x00033C00, LENGTH = 0x00036B00 - 0x00033C00    /* KM55TZ DROM_S: 11.75k */
-    KM4TZ_NS_ROM (rx) :                       ORIGIN = 0x00036B00, LENGTH = 0x00038000 - 0x00036B00    /* KM55TZ NS ROM: 5.25k */
+    KM55TZ_IROM (rx) :                        ORIGIN = 0x00020000, LENGTH = 0x00033C00 - 0x00020000    /* KM55TZ IROM_S: 79K */
+    KM55TZ_DROM (rx) :                        ORIGIN = 0x00033C00, LENGTH = 0x00036B00 - 0x00033C00    /* KM55TZ DROM_S: 11.75k */
+    KM55TZ_NS_ROM (rx) :                      ORIGIN = 0x00036B00, LENGTH = 0x00038000 - 0x00036B00    /* KM55TZ NS ROM: 5.25k */
 
     /* KM55NS ROM */
-    KM4NS_ROM (rx) :                          ORIGIN = 0x00020000, LENGTH = 0x00024000 - 0x00020000    /* KM55NS KM4NS_ROM: 16k */
+    KM55NS_ROM (rx) :                         ORIGIN = 0x00020000, LENGTH = 0x00024000 - 0x00020000    /* KM55NS ROM: 16k */
 
     /* KM55TZ Secure RAM, BIT(28)=1 */
-    KM4TZ_ROMBSS_RAM_S (rw) :                 ORIGIN = 0x30000000, LENGTH = 0x30000400 - 0x30000000    /* KM55TZ ROM BSS RAM S: 1k */
+    KM55TZ_ROMBSS_RAM_S (rw) :                ORIGIN = 0x30000000, LENGTH = 0x30000400 - 0x30000000    /* KM55TZ ROM BSS RAM S: 1k */
     KM55TZ_MSP_RAM_S (rw) :                    ORIGIN = 0x30000400, LENGTH = 0x30001000 - 0x30000400    /* KM55TZ MSP_S RAM: 3k */
 
     /* KM55TZ Non-secure RAM */
-    KM4TZ_ROMBSS_RAM_NS (rw) :                ORIGIN = 0x20001000, LENGTH = 0x20001380 - 0x20001000    /* KM55TZ ROM BSS NS RAM: 1k */
+    KM55TZ_ROMBSS_RAM_NS (rw) :               ORIGIN = 0x20001000, LENGTH = 0x20001380 - 0x20001000    /* KM55TZ ROM BSS NS RAM: 896B */
     GLOBAL_BSS_RAM (rw) :                     ORIGIN = 0x20001380, LENGTH = 0x20001400 - 0x20001380    /* IMAGE1/2 GLOBAL BSS RAM: 128B */
 
     /* KM55NS RAM */
-    KM4NS_ROMBSS_RAM (rw) :                   ORIGIN = 0x20001400, LENGTH = 0x20001800 - 0x20001400    /* KM55NS ROM BSS RAM: 1k */
+    KM55NS_ROMBSS_RAM (rw) :                  ORIGIN = 0x20001400, LENGTH = 0x20001800 - 0x20001400    /* KM55NS ROM BSS RAM: 1k */
     KM55NS_MSP_RAM (rw) :                      ORIGIN = 0x20001800, LENGTH = 0x20002000 - 0x20001800    /* KM55NS MSP RAM: 2k */
 
     /* KM55TZ Secure RAM, BIT(28)=1 */
@@ -238,11 +238,11 @@ __image3_sram_start__  = ORIGIN(KM55TZ_BD_RAM_TZ);
 __image3_psram_start__ = ORIGIN(KM55TZ_BD_PSRAM_TZ);
 
 /* Region 0: KM55TZ  ROM */
-__rom_text_region0_start__ = ORIGIN(KM4TZ_IROM);                                      /* 0x00020000 */
-__rom_text_region0_end__   = ORIGIN(KM4TZ_NS_ROM) + LENGTH(KM4TZ_NS_ROM);             /* 0x00038000 */
+__rom_text_region0_start__ = ORIGIN(KM55TZ_IROM);                                     /* 0x00020000 */
+__rom_text_region0_end__   = ORIGIN(KM55TZ_NS_ROM) + LENGTH(KM55TZ_NS_ROM);            /* 0x00038000 */
 /* Region 1: KM55NS  ROM */
-__rom_text_region1_start__ = ORIGIN(KM4NS_ROM);                                       /* 0x00020000 */
-__rom_text_region1_end__   = ORIGIN(KM4NS_ROM) + LENGTH(KM4NS_ROM);                   /* 0x00024000 */
+__rom_text_region1_start__ = ORIGIN(KM55NS_ROM);                                      /* 0x00020000 */
+__rom_text_region1_end__   = ORIGIN(KM55NS_ROM) + LENGTH(KM55NS_ROM);                  /* 0x00024000 */
 
 __global_bss_start__ = ORIGIN(GLOBAL_BSS_RAM);
 __global_bss_end__ = ORIGIN(GLOBAL_BSS_RAM) + LENGTH(GLOBAL_BSS_RAM);;
@@ -252,10 +252,10 @@ __km4tz_msp_ram_ns_limit__ = ORIGIN(KM55TZ_MSP_RAM_NS);
 
 /* for ameba_boot_trustzonecfg.c */
 #if defined (CONFIG_TRUSTZONE_EN)
-__km4tz_ns_rom_start__ = ORIGIN(KM4TZ_NS_ROM);
-__km4tz_ns_rom_end__ = ORIGIN(KM4TZ_NS_ROM) + LENGTH(KM4TZ_NS_ROM);
-__km4tz_rombss_ram_s_start__ = ORIGIN(KM4TZ_ROMBSS_RAM_S);
-__km4tz_rombss_ram_ns_start__ = ORIGIN(KM4TZ_ROMBSS_RAM_NS);
+__km4tz_ns_rom_start__ = ORIGIN(KM55TZ_NS_ROM);
+__km4tz_ns_rom_end__ = ORIGIN(KM55TZ_NS_ROM) + LENGTH(KM55TZ_NS_ROM);
+__km4tz_rombss_ram_s_start__ = ORIGIN(KM55TZ_ROMBSS_RAM_S);
+__km4tz_rombss_ram_ns_start__ = ORIGIN(KM55TZ_ROMBSS_RAM_NS);
 #endif
 
 __km4tz_bootloader_ram_s_start__ = ORIGIN(KM55TZ_BOOTLOADER_RAM_S) - IMAGE_HEADER_LEN;
@@ -284,7 +284,7 @@ __romchk_msp_ram_hp__ = ORIGIN(KM55TZ_MSP_RAM_S) + LENGTH(KM55TZ_MSP_RAM_S);
 __romchk_bootloader_start__ = ORIGIN(KM55TZ_BOOTLOADER_RAM_S) - IMAGE_HEADER_LEN;
 __romchk_bootloader_limit__ = ORIGIN(KM55TZ_BOOTLOADER_RAM_S) - IMAGE_HEADER_LEN + KBYTES(96);
 __romchk_loader_download_addr__ = ORIGIN(KM55TZ_FLOADER_RAM_S) - IMAGE_HEADER_LEN;;
-__romchk_fullmac_addr_start__ = ORIGIN(KM4NS_ROMBSS_RAM) + SECURE_ADDR_OFFSET;
+__romchk_fullmac_addr_start__ = ORIGIN(KM55NS_ROMBSS_RAM) + SECURE_ADDR_OFFSET;
 __romchk_fullmac_addr_end__ = SRAM_END + SECURE_ADDR_OFFSET;
 __romchk_xmodem_buffer_limit__ = ORIGIN(KM55NS_MSP_RAM) + LENGTH(KM55NS_MSP_RAM);
 ASSERT(__romchk_sram_end_s__ == SRAM_END_ADDRESS_S, "Error: Linker address (__romchk_sram_end_s__) does not match C Macro (SRAM_END_ADDRESS_S)!");

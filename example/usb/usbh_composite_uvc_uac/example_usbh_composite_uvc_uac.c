@@ -36,9 +36,15 @@
 
 /**
  * @brief Statistics print interval in milliseconds
- * Play/record threads log their loop counters once per this period
+ * Video/play/record threads log their loop counters once per this period
  */
-#define USBH_UAC_DEBUG_TRACE_STEP             1000
+#define USBH_UAC_DEBUG_TRACE_STEP             10000U
+
+/**
+ * @brief Minimum interval in milliseconds between statistics prints triggered by an error
+ * A changed play err counter, or a record period without data, is logged this soon
+ */
+#define USBH_UAC_DEBUG_TRACE_ERR_STEP         1000U
 
 /**
  * @brief Time to wait after an async set_mute/set_volume before issuing the
@@ -629,6 +635,7 @@ static void usbh_uvc_uac_ctrl_thread(void *param)
 {
 	const usbh_uac_audio_fmt_t *fmt_out = NULL;
 	const usbh_uac_audio_fmt_t *fmt_in = NULL;
+	u32 freq;
 	u8 is_streaming = 0U;
 	u8 is_playing = 0U;
 	u8 is_recording = 0U;
@@ -736,12 +743,12 @@ static void usbh_uvc_uac_ctrl_thread(void *param)
 				if ((fmt_out != NULL) && (fmt_cnt > 0U)) {
 					RTK_LOGS(TAG, RTK_LOG_INFO, "Play fmt list:\n");
 					for (i = 0U; i < fmt_cnt; i++) {
-						RTK_LOGS(TAG, RTK_LOG_INFO, "[%d] CH=%d BW=%d FREQ=%d\n",
-								 i, fmt_out[i].ch_cnt, fmt_out[i].bit_width, fmt_out[i].sampling_freq);
+						RTK_LOGS(TAG, RTK_LOG_INFO, "[%d] CH=%d BW=%d FREQ=%d-%d\n",
+								 i, fmt_out[i].ch_cnt, fmt_out[i].bit_width, fmt_out[i].sampling_freq, fmt_out[i].sampling_freq_max);
 					}
 					for (i = 0U; i < fmt_cnt; i++) {
 						if ((fmt_out[i].ch_cnt == USBH_UAC_PLAY_CHANNELS) &&
-							(fmt_out[i].sampling_freq == USBH_UAC_PLAY_SAMPLING_FREQ)) {
+							(usbh_uac_fmt_support_freq(&fmt_out[i], USBH_UAC_PLAY_SAMPLING_FREQ) != 0U)) {
 							break;
 						}
 					}
@@ -750,10 +757,13 @@ static void usbh_uvc_uac_ctrl_thread(void *param)
 						RTK_LOGS(TAG, RTK_LOG_WARN, "Play: %dch/%dHz not found, using fmt[0]\n",
 								 USBH_UAC_PLAY_CHANNELS, USBH_UAC_PLAY_SAMPLING_FREQ);
 					}
+					/* The requested rate on a match, which may lie inside a continuous range; the
+					   lower bound of fmt[0] otherwise */
+					freq = (usbh_uac_fmt_support_freq(&fmt_out[i], USBH_UAC_PLAY_SAMPLING_FREQ) != 0U) ? USBH_UAC_PLAY_SAMPLING_FREQ : fmt_out[i].sampling_freq;
 					if (usbh_uac_set_alt_setting(USBH_UAC_ISOC_OUT_DIR,
 												 fmt_out[i].ch_cnt,
 												 fmt_out[i].bit_width,
-												 fmt_out[i].sampling_freq) == RTK_SUCCESS) {
+												 freq) == RTK_SUCCESS) {
 						/* 5. UAC play start */
 						usbh_uac_start_play();
 						is_playing = 1U;
@@ -772,12 +782,12 @@ static void usbh_uvc_uac_ctrl_thread(void *param)
 				if ((fmt_in != NULL) && (fmt_cnt > 0U)) {
 					RTK_LOGS(TAG, RTK_LOG_INFO, "Rec fmt list:\n");
 					for (i = 0U; i < fmt_cnt; i++) {
-						RTK_LOGS(TAG, RTK_LOG_INFO, "[%d] CH=%d BW=%d FREQ=%d\n",
-								 i, fmt_in[i].ch_cnt, fmt_in[i].bit_width, fmt_in[i].sampling_freq);
+						RTK_LOGS(TAG, RTK_LOG_INFO, "[%d] CH=%d BW=%d FREQ=%d-%d\n",
+								 i, fmt_in[i].ch_cnt, fmt_in[i].bit_width, fmt_in[i].sampling_freq, fmt_in[i].sampling_freq_max);
 					}
 					for (i = 0U; i < fmt_cnt; i++) {
 						if ((fmt_in[i].ch_cnt == USBH_UAC_REC_CHANNELS) &&
-							(fmt_in[i].sampling_freq == USBH_UAC_REC_SAMPLING_FREQ)) {
+							(usbh_uac_fmt_support_freq(&fmt_in[i], USBH_UAC_REC_SAMPLING_FREQ) != 0U)) {
 							break;
 						}
 					}
@@ -786,12 +796,16 @@ static void usbh_uvc_uac_ctrl_thread(void *param)
 						RTK_LOGS(TAG, RTK_LOG_WARN, "Rec: %dch/%dHz not found, using fmt[0]\n",
 								 USBH_UAC_REC_CHANNELS, USBH_UAC_REC_SAMPLING_FREQ);
 					}
+					/* The requested rate on a match, which may lie inside a continuous range; the
+					   lower bound of fmt[0] otherwise */
+					freq = (usbh_uac_fmt_support_freq(&fmt_in[i], USBH_UAC_REC_SAMPLING_FREQ) != 0U) ? USBH_UAC_REC_SAMPLING_FREQ : fmt_in[i].sampling_freq;
 					if (usbh_uac_set_alt_setting(USBH_UAC_ISOC_IN_DIR,
 												 fmt_in[i].ch_cnt,
 												 fmt_in[i].bit_width,
-												 fmt_in[i].sampling_freq) == RTK_SUCCESS) {
+												 freq) == RTK_SUCCESS) {
 #ifdef CONFIG_SUPPORT_AUDIO_FOR_USB
 						usbh_uac_rec_fmt = fmt_in[i];
+						usbh_uac_rec_fmt.sampling_freq = freq;
 #endif
 						/* 6. UAC capture start */
 						usbh_uac_start_capture();
@@ -947,12 +961,19 @@ static void usbh_uac_play_thread(void *param)
 	u32 play_loop_count = 0U;
 	u32 frame_size = 0U;
 	u32 debug_time = 0U;
+	u32 now;
+	int last_err = 0;
 	int ret;
+	u8 show_wait = 1U;
 
 	UNUSED(param);
 
 	while (usbh_comp_app.quit == 0U) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "Play wait start\n");
+		/* Not again right after a device without this stream: the thread just keeps waiting */
+		if (show_wait != 0U) {
+			RTK_LOGS(TAG, RTK_LOG_INFO, "Play wait start\n");
+		}
+		show_wait = 1U;
 
 		/* Waits until the setup thread completes all ctrl setup and calls start_play() */
 		if (rtos_sema_take(usbh_uac_play_start_sema, RTOS_SEMA_MAX_COUNT) != RTK_SUCCESS) {
@@ -968,6 +989,7 @@ static void usbh_uac_play_thread(void *param)
 		if ((usbh_uvc_uac_is_ready == 0U) || (usbh_uac_support_playback() == 0)) {
 			usbh_comp_unlock(usbh_comp_play_mutex);
 			RTK_LOGS(TAG, RTK_LOG_WARN, "Play not ready or not supported\n");
+			show_wait = 0U;
 			continue;
 		}
 
@@ -981,6 +1003,7 @@ static void usbh_uac_play_thread(void *param)
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Play data start, frame=%d\n", frame_size);
 
 		play_loop_count = 0U;
+		last_err = usbh_uac_err_count;
 		debug_time = usb_os_get_timestamp_ms();
 		while ((usbh_uvc_uac_is_ready != 0U) && (usbh_comp_app.quit == 0U)) {
 			play_loop_count++;
@@ -1005,8 +1028,12 @@ static void usbh_uac_play_thread(void *param)
 				rtos_time_delay_ms(USBH_UAC_PLAY_LOOP_DELAY_MS);
 			}
 
-			if ((usb_os_get_timestamp_ms() - debug_time) >= USBH_UAC_DEBUG_TRACE_STEP) {
-				debug_time = usb_os_get_timestamp_ms();
+			/* Every USBH_UAC_DEBUG_TRACE_STEP, or sooner once err moves */
+			now = usb_os_get_timestamp_ms();
+			if (((now - debug_time) >= USBH_UAC_DEBUG_TRACE_STEP) ||
+				((usbh_uac_err_count != last_err) && ((now - debug_time) >= USBH_UAC_DEBUG_TRACE_ERR_STEP))) {
+				debug_time = now;
+				last_err = usbh_uac_err_count;
 				RTK_LOGS(TAG, RTK_LOG_INFO, "Play loop=%d err=%d\n",
 						 play_loop_count, usbh_uac_err_count);
 			}
@@ -1043,7 +1070,10 @@ static void usbh_uac_record_thread(void *param)
 	u32 total_read = 0U;
 	u32 read_len = 0U;
 	u32 debug_time = 0U;
+	u32 last_read = 0U;
+	u32 now;
 	int ret = 0;
+	u8 show_wait = 1U;
 
 #ifdef CONFIG_SUPPORT_AUDIO_FOR_USB
 	AudioTrackConfig track_config = {0};
@@ -1059,7 +1089,11 @@ static void usbh_uac_record_thread(void *param)
 	UNUSED(param);
 
 	while (usbh_comp_app.quit == 0U) {
-		RTK_LOGS(TAG, RTK_LOG_INFO, "Rec wait start\n");
+		/* Not again right after a device without this stream: the thread just keeps waiting */
+		if (show_wait != 0U) {
+			RTK_LOGS(TAG, RTK_LOG_INFO, "Rec wait start\n");
+		}
+		show_wait = 1U;
 
 		/* Waits until the setup thread completes all ctrl setup and calls start_capture() */
 		if (rtos_sema_take(usbh_uac_record_start_sema, RTOS_SEMA_MAX_COUNT) != RTK_SUCCESS) {
@@ -1075,6 +1109,7 @@ static void usbh_uac_record_thread(void *param)
 		if ((usbh_uvc_uac_is_ready == 0U) || (usbh_uac_support_record() == 0)) {
 			usbh_comp_unlock(usbh_comp_record_mutex);
 			RTK_LOGS(TAG, RTK_LOG_WARN, "Rec not ready or not supported\n");
+			show_wait = 0U;
 			continue;
 		}
 
@@ -1157,6 +1192,7 @@ static void usbh_uac_record_thread(void *param)
 
 		record_loop_count = 0U;
 		total_read = 0U;
+		last_read = 0U;
 		debug_time = usb_os_get_timestamp_ms();
 
 		while ((usbh_uvc_uac_is_ready != 0U) && (usbh_comp_app.quit == 0U)) {
@@ -1185,14 +1221,18 @@ static void usbh_uac_record_thread(void *param)
 #endif
 			}
 
-			if ((usb_os_get_timestamp_ms() - debug_time) >= USBH_UAC_DEBUG_TRACE_STEP) {
-				debug_time = usb_os_get_timestamp_ms();
-				if (total_read > 0U) {
+			/* Every USBH_UAC_DEBUG_TRACE_STEP, or sooner when a period brought no data */
+			now = usb_os_get_timestamp_ms();
+			if (((now - debug_time) >= USBH_UAC_DEBUG_TRACE_STEP) ||
+				((total_read == last_read) && ((now - debug_time) >= USBH_UAC_DEBUG_TRACE_ERR_STEP))) {
+				if (total_read != last_read) {
 					RTK_LOGS(TAG, RTK_LOG_INFO, "Rec loop=%d bytes=%d\n",
 							 record_loop_count, total_read);
 				} else {
 					RTK_LOGS(TAG, RTK_LOG_WARN, "Rec loop=%d no data\n", record_loop_count);
 				}
+				debug_time = now;
+				last_read = total_read;
 			}
 		}
 
@@ -1358,6 +1398,18 @@ static void usbh_uvc_uac_hotplug_thread(void *param)
 	u8 fatal = 0U;
 
 	UNUSED(param);
+
+#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
+	/* The USB OTG ISR is delivered on CPU0: the GIC pins every SPI to core 0
+	   (ITARGETSR is written to 0x01010101 in arm_gic.c gic_dist_init). Pinning the
+	   hotplug/deinit thread to CPU0 puts it on the same core as the ISR, so the
+	   local interrupt disables inside the teardown are meaningful again. The four
+	   workers stay unaffined: a pending teardown is excluded from them by the
+	   per-path mutexes, not by core.
+	   Done by the thread itself, first: a created thread may already run on another core, and its
+	   creator pinning it afterwards could come too late or reach a task that has deleted itself. */
+	rtos_task_set_affinity(rtos_task_handle_get(), 0);
+#endif
 
 	for (;;) {
 		if (rtos_sema_take(usbh_uvc_uac_detach_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
@@ -1992,15 +2044,6 @@ static int usbh_comp_start(void)
 		usbh_composite_deinit_stack();
 		return usbh_comp_start_rollback(workers, status);
 	}
-#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
-	/* The USB OTG ISR is delivered on CPU0: the GIC pins every SPI to core 0
-	   (ITARGETSR is written to 0x01010101 in arm_gic.c gic_dist_init). Pinning the
-	   hotplug/deinit thread to CPU0 puts it on the same core as the ISR, so the
-	   local interrupt disables inside the teardown are meaningful again. The four
-	   workers stay unaffined: a pending teardown is excluded from them by the
-	   per-path mutexes, not by core. */
-	rtos_task_set_affinity(usbh_uvc_uac_hotplug_task, 0);
-#endif
 #endif
 
 	return RTK_SUCCESS;
@@ -2014,6 +2057,14 @@ static int usbh_comp_start(void)
 static void example_usbh_uac_uvc_thread(void *param)
 {
 	UNUSED(param);
+
+#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
+	/* A start that fails rolls back through usbh_deinit(), which waits for no ISR on another
+	   core: run it on CPU0, where the USB IRQ is delivered, as the hotplug thread does.
+	   Done by the thread itself, first: a created thread may already run on another core, and its
+	   creator pinning it afterwards could come too late or reach a task that has deleted itself. */
+	rtos_task_set_affinity(rtos_task_handle_get(), 0);
+#endif
 
 	if (usbh_comp_start() != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Start fail\n");

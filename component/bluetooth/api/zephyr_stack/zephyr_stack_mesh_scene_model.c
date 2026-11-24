@@ -463,7 +463,7 @@ uint16_t bt_mesh_scene_server_model_act_handle(rtk_bt_cmd_t *p_cmd)
 	case RTK_BT_MESH_SCENE_SERVER_MODEL_ACT_DB_SET: {
 		rtk_bt_mesh_scene_server_db_set_t *db_get = (rtk_bt_mesh_scene_server_db_set_t *)p_cmd->param;
 		scene_server_set_storage_memory(scene_server_model, db_get->pdata_db, db_get->num_scenes);
-		ret = 0;
+		ret = RTK_BT_OK;
 		break;
 	}
 	default:
@@ -663,7 +663,7 @@ uint16_t bt_mesh_scene_setup_server_model_act_handle(rtk_bt_cmd_t *p_cmd)
 	case RTK_BT_MESH_SCENE_SETUP_SERVER_MODEL_ACT_DB_SET: {
 		rtk_bt_mesh_scene_server_db_set_t *db_get = (rtk_bt_mesh_scene_server_db_set_t *)p_cmd->param;
 		scene_setup_server_set_storage_memory(scene_setup_server_model, db_get->pdata_db, db_get->num_scenes);
-		ret = 0;
+		ret = RTK_BT_OK;
 		break;
 	}
 	default:

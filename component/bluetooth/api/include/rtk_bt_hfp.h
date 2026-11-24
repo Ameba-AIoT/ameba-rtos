@@ -30,7 +30,7 @@ extern "C"
 #define RTK_BT_HFP_AG_LOCAL_CAPABILITY_REJECT_CALLS           (1 << 5)    /*!< Reject an incoming call. */
 #define RTK_BT_HFP_AG_LOCAL_CAPABILITY_ENHANCED_CALL_STATUS   (1 << 6)    /*!< Enhanced call status. */
 #define RTK_BT_HFP_AG_LOCAL_CAPABILITY_ENHANCED_CALL_CONTROL  (1 << 7)    /*!< Enhanced call control. */
-#define RTK_BT_HFP_AG_LOCAL_CAPABILITY_EXTENED_ERROR_RESULT   (1 << 8)    /*!< Extended error result codes. */
+#define RTK_BT_HFP_AG_LOCAL_CAPABILITY_EXTENDED_ERROR_RESULT  (1 << 8)    /*!< Extended error result codes. */
 #define RTK_BT_HFP_AG_LOCAL_CAPABILITY_CODEC_NEGOTIATION      (1 << 9)    /*!< Codec negotiation. */
 #define RTK_BT_HFP_AG_LOCAL_CAPABILITY_HF_INDICATORS          (1 << 10)   /*!< HF indicators. */
 #define RTK_BT_HFP_AG_LOCAL_CAPABILITY_ESCO_S4_T2_SUPPORTED   (1 << 11)   /*!< eSCO S4 (and T2) settings supported. */
@@ -107,7 +107,7 @@ typedef enum {
  * @typedef   rtk_bt_hfp_ag_service_indicator
  * @brief     Bluetooth HFP AG service indicator.
  */
-typedef enum rtk_bt_hfp_ag_service_indicator {
+typedef enum {
 	RTK_BT_HFP_AG_SERVICE_STATUS_AVAILABLE   = 0x00,    /*!< Network service is available. */
 	RTK_BT_HFP_AG_SERVICE_STATUS_UNAVAILABLE = 0x01,    /*!< Network service is unavailable. */
 } rtk_bt_hfp_ag_service_indicator;
@@ -116,7 +116,7 @@ typedef enum rtk_bt_hfp_ag_service_indicator {
  * @typedef   rtk_bt_hfp_ag_call_indicator
  * @brief     Bluetooth HFP AG call indicator.
  */
-typedef enum rtk_bt_hfp_ag_call_indicator {
+typedef enum {
 	RTK_BT_HFP_AG_NO_CALL_IN_PROGRESS = 0x00,    /*!< No call is in progress. */
 	RTK_BT_HFP_AG_CALL_IN_PROGRESS    = 0x01,    /*!< At least one call is in progress. */
 } rtk_bt_hfp_ag_call_indicator;
@@ -125,7 +125,7 @@ typedef enum rtk_bt_hfp_ag_call_indicator {
  * @typedef   rtk_bt_hfp_ag_call_setup_indicator
  * @brief     Bluetooth HFP AG call setup indicator.
  */
-typedef enum rtk_bt_hfp_ag_call_setup_indicator {
+typedef enum {
 	RTK_BT_HFP_AG_CALL_SETUP_STATUS_IDLE          = 0x00,    /*!< No call setup is in progress. */
 	RTK_BT_HFP_AG_CALL_SETUP_STATUS_INCOMING_CALL = 0x01,    /*!< Incoming call setup is in progress. */
 	RTK_BT_HFP_AG_CALL_SETUP_STATUS_OUTGOING_CALL = 0x02,    /*!< Outgoing call setup is in progress. */
@@ -136,7 +136,7 @@ typedef enum rtk_bt_hfp_ag_call_setup_indicator {
  * @typedef   rtk_bt_hfp_ag_call_held_indicator
  * @brief     Bluetooth HFP AG call held indicator.
  */
-typedef enum rtk_bt_hfp_ag_call_held_indicator {
+typedef enum {
 	RTK_BT_HFP_AG_CALL_HELD_STATUS_IDLE                 = 0x00,    /*!< No call is on hold. */
 	RTK_BT_HFP_AG_CALL_HELD_STATUS_HOLD_AND_ACTIVE_CALL = 0x01,    /*!< One call is on hold and another call is active. */
 	RTK_BT_HFP_AG_CALL_HELD_STATUS_HOLD_NO_ACTIVE_CALL  = 0x02,    /*!< One call is on hold and no call is active. */
@@ -146,7 +146,7 @@ typedef enum rtk_bt_hfp_ag_call_held_indicator {
  * @typedef   rtk_bt_hfp_ag_roaming_indicator
  * @brief     Bluetooth HFP AG roaming indicator.
  */
-typedef enum rtk_bt_hfp_ag_roaming_indicator {
+typedef enum {
 	RTK_BT_HFP_AG_ROAMING_STATUS_INACTIVE = 0x00,    /*!< Roaming is not active. */
 	RTK_BT_HFP_AG_ROAMING_STATUS_ACTIVE   = 0x01,    /*!< Roaming is active. */
 } rtk_bt_hfp_ag_roaming_indicator;
@@ -256,7 +256,7 @@ typedef struct {
 	uint8_t bd_addr[6];                                  /*!< Remote Bluetooth device address. */
 	const char call_num[RTK_BT_HFP_MAX_PHONE_NUMBER];    /*!< Incoming call number string. */
 	uint8_t call_num_len;                                /*!< Length of the call number including the terminating '\0'.
-                                                          *   Maximum: RTK_BT_HFP_MAX_PHONE_NUMBER. */
+                                                          *   Maximum: @ref RTK_BT_HFP_MAX_PHONE_NUMBER. */
 	uint8_t call_num_type;                               /*!< Type of the call number. */
 } rtk_bt_hfp_call_incoming_t;
 
@@ -328,7 +328,7 @@ typedef struct {
 typedef struct {
 	uint8_t bd_addr[6];                       /*!< Remote Bluetooth device address. */
 	uint8_t codec_type;                       /*!< Codec type in use on the SCO link.
-                                               *   Value: RTK_BT_AUDIO_CODEC_mSBC or RTK_BT_AUDIO_CODEC_CVSD. */
+                                               *   Value: @ref RTK_BT_AUDIO_CODEC_mSBC or @ref RTK_BT_AUDIO_CODEC_CVSD. */
 	union {
 		struct {
 			uint8_t     channel_mode;         /*!< Channel mode. Fixed to mono (0) for mSBC. */
@@ -352,7 +352,7 @@ typedef struct {
  * @typedef   rtk_bt_sco_pkt_status
  * @brief     Bluetooth SCO packet status.
  */
-typedef enum rtk_bt_sco_pkt_status {
+typedef enum {
 	RTK_BT_SCO_PKT_STATUS_OK           = 0x00,    /*!< Packet is received correctly. */
 	RTK_BT_SCO_PKT_STATUS_INVALID      = 0x01,    /*!< Packet data is invalid. */
 	RTK_BT_SCO_PKT_STATUS_NO_DATA      = 0x02,    /*!< No data is received. */
@@ -367,7 +367,7 @@ typedef struct {
 	uint8_t bd_addr[6];                               /*!< Remote Bluetooth device address. */
 	rtk_bt_sco_pkt_status status;                     /*!< Status of the received SCO packet. */
 	uint32_t length;                                  /*!< Length of the SCO data in bytes.
-                                                       *   Maximum: RTK_BT_HFP_MAX_SCO_DATA_LENGTH. */
+                                                       *   Maximum: @ref RTK_BT_HFP_MAX_SCO_DATA_LENGTH. */
 	uint8_t  data[RTK_BT_HFP_MAX_SCO_DATA_LENGTH];    /*!< SCO data payload. */
 } rtk_bt_hfp_sco_data_ind_t;
 
@@ -510,7 +510,7 @@ uint16_t rtk_bt_hfp_sco_connect(uint8_t *bd_addr);
 
 /**
  * @brief     Release the SCO audio link with a remote device.
- *            The result is reported asynchronously via event @ref RTK_BT_HFP_EVT_SCO_DISCONNCTED_IND.
+ *            The result is reported asynchronously via event @ref RTK_BT_HFP_EVT_SCO_DISCONNECTED_IND.
  * @param[in] bd_addr: Remote Bluetooth device address.
  *                     Must not be NULL.
  * @return
@@ -559,7 +559,7 @@ uint16_t rtk_bt_hfp_call_terminate(uint8_t *bd_addr);
  * @param[in] call_num: Phone number string to dial.
  *                      Must not be NULL.
  * @param[in] call_num_len: Length of the phone number in bytes.
- *                          Maximum: RTK_BT_HFP_MAX_PHONE_NUMBER.
+ *                          Maximum: @ref RTK_BT_HFP_MAX_PHONE_NUMBER.
  * @return
  *            - @ref rtk_bt_err_common
  */

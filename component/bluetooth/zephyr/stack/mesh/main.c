@@ -24,6 +24,7 @@
 #include "subnet.h"
 #include "app_keys.h"
 #include "rpl.h"
+#include "cdb.h"
 #include "cfg.h"
 #include "beacon.h"
 #include "lpn.h"
@@ -596,6 +597,18 @@ int bt_mesh_init(const struct bt_mesh_prov *prov,
 		return err;
 	}
 
+#if ZEPHYR_RTK_PATCH
+	err = bt_mesh_rpl_init();
+	if (err) {
+		return err;
+	}
+
+	err = bt_mesh_cdb_init();
+	if (err) {
+		return err;
+	}
+#endif
+
 	err = bt_mesh_comp_register(comp);
 	if (err) {
 		return err;
@@ -647,6 +660,8 @@ void bt_mesh_deinit(void)
 	bt_mesh_adv_deinit();
 	bt_mesh_settings_deinit();
 	bt_mesh_trans_deinit();
+	bt_mesh_rpl_deinit();
+	bt_mesh_cdb_deinit();
 	atomic_clear_bit(bt_mesh.flags, BT_MESH_INIT);
 }
 #endif

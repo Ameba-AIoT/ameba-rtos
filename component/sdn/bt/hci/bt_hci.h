@@ -199,4 +199,7 @@ void bt_hci_evt_le_past_received(uint8_t status, uint16_t conn_handle, uint16_t 
 								 uint16_t sync_handle, uint8_t sid, uint8_t adv_addr_type, uint8_t *adv_addr,
 								 uint8_t adv_phy, uint16_t pa_interval, uint8_t adv_clk_accuracy);
 void bt_hci_evt_le_subrate_change(uint16_t conn_handle, uint8_t status);
+uint8_t bt_hci_cmd_ogf_le_ocf_cs_get_local_cap(void *phci_cmd_param, uint8_t *rsp);
+uint8_t bt_hci_cmd_ogf_le_ocf_cs_get_v2_local_cap(void *phci_cmd_param, uint8_t *rsp);
+uint8_t bt_hci_cmd_ogf_le_ocf_cs_sec_enable(void *phci_cmd_param, uint8_t *rsp);
 #endif

@@ -13,7 +13,6 @@ extern "C"
 #endif
 
 #define MAX_BR_LINK_NUM                 1         /*!< Maximum number of BR/EDR links. */
-#define DEFAULT_SUPVISIONTIMEOUT        0x1f40    /*!< Default link supervision timeout. Time = N * 0.625 ms. */
 #define RTK_BD_ADDR_LEN 6                         /*!< BR/EDR device address length(bytes). */
 #define RTK_BT_GAP_DEVICE_NAME_LEN      (39+1)    /*!< Maximum length of the device name including the terminating NUL. A longer name is truncated. */
 
@@ -51,13 +50,23 @@ typedef enum {
  * @brief     Bluetooth BR/EDR SM IO capability type definition.
  */
 typedef enum {
-	RTK_BR_IO_CAP_DISPALY_ONLY     = 0x00,    /*!< Display only. */
+	RTK_BR_IO_CAP_DISPLAY_ONLY     = 0x00,    /*!< Display only. */
 	RTK_BR_IO_CAP_DISPLAY_YES_NO   = 0x01,    /*!< Display with yes/no input. */
 	RTK_BR_IO_CAP_KEYBOARD_ONLY    = 0x02,    /*!< Keyboard only. */
 	RTK_BR_IO_CAP_NO_IN_NO_OUT     = 0x03,    /*!< No input and no output. */
-	RTK_BR_IO_CAP_KEYBOARD_DISPALY = 0x04,    /*!< Keyboard and display. */
+	RTK_BR_IO_CAP_KEYBOARD_DISPLAY = 0x04,    /*!< Keyboard and display. */
 	RTK_BR_IO_CAP_MAX              = 0x05,    /*!< 0x05-0xFF Reserved for future use. */
 } rtk_bt_br_io_cap_t;
+
+/**
+ * @defgroup  RTK_BR_IO_CAP Deprecated aliases
+ * @brief     Deprecated aliases of the @ref rtk_bt_br_io_cap_t values.
+ * @deprecated Use the @ref rtk_bt_br_io_cap_t values instead.
+ * @{
+ */
+#define RTK_BR_IO_CAP_DISPALY_ONLY RTK_BR_IO_CAP_DISPLAY_ONLY
+#define RTK_BR_IO_CAP_KEYBOARD_DISPALY RTK_BR_IO_CAP_KEYBOARD_DISPLAY
+/** @} */
 
 /**
  * @typedef   rtk_bt_br_gap_radio_mode_t
@@ -117,7 +126,7 @@ typedef struct {
 	uint8_t             rfc_spp_credit;                /*!< Remaining SPP TX credits. */
 	union {
 		struct {
-			uint8_t     sampling_frequency;            /*!< SBC sampling frequency. */
+			uint8_t     sbc_sampling_frequency;        /*!< SBC sampling frequency. */
 			uint8_t     channel_mode;                  /*!< SBC channel mode. */
 			uint8_t     block_length;                  /*!< SBC block length. */
 			uint8_t     subbands;                      /*!< SBC number of subbands. */
@@ -127,7 +136,7 @@ typedef struct {
 		} sbc;                                         /*!< SBC codec information. */
 		struct {
 			uint8_t     object_type;                   /*!< AAC object type. */
-			uint16_t    sampling_frequency;            /*!< AAC sampling frequency. */
+			uint16_t    aac_sampling_frequency;        /*!< AAC sampling frequency. */
 			uint8_t     channel_number;                /*!< AAC number of channels. */
 			bool        vbr_supported;                 /*!< Whether AAC variable bit rate is supported.
                                                         *   - true: Variable bit rate is supported.
@@ -757,7 +766,13 @@ uint16_t rtk_bt_br_gap_set_cod(uint32_t *bt_cod);
  * @note
  *            - This API shall be called before @ref rtk_bt_enable.
  */
-uint16_t rtk_bt_br_gap_set_supvisiontimeout(uint16_t *supv_timeout);
+uint16_t rtk_bt_br_gap_set_supv_timeout(uint16_t *supv_timeout);
+
+/**
+ * @brief     Deprecated alias of @ref rtk_bt_br_gap_set_supv_timeout.
+ * @deprecated Use @ref rtk_bt_br_gap_set_supv_timeout instead.
+ */
+#define rtk_bt_br_gap_set_supvisiontimeout rtk_bt_br_gap_set_supv_timeout
 
 /**
  * @brief     Read the RSSI of the link with a remote device. The result is reported asynchronously via event @ref RTK_BT_BR_GAP_LINK_RSSI_INFO.

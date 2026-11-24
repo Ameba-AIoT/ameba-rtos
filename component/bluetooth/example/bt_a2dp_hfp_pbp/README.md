@@ -33,7 +33,7 @@ Select **one** of the following configurations and change the corresponding macr
 
    > change `RTK_BT_LE_AUDIO_BIG_ISO_INTERVAL_CONFIG` to `RTK_BT_ISO_INTERVAL_20_MS`
 
-   > change `RTK_BT_LE_AUDIO_BROADCASTER_SETEO_MODE` to `0`
+   > change `RTK_BT_LE_AUDIO_BROADCASTER_STEREO_MODE` to `0`
 
 3. BIS num 1 + Sample rate 48kHz + 2-channel + ISO interval 30 ms
 

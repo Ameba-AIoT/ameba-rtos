@@ -680,6 +680,8 @@ static int whc_host_set_txpower(struct wiphy *wiphy, struct wireless_dev *wdev, 
 
 #if (KERNEL_VERSION(6, 18, 0) <= LINUX_VERSION_CODE)
 static int whc_host_get_txpower_ops(struct wiphy *wiphy, struct wireless_dev *wdev, int radio_idx, unsigned int link_id, int *dbm)
+#elif (KERNEL_VERSION(6, 14, 0) <= LINUX_VERSION_CODE)
+static int whc_host_get_txpower_ops(struct wiphy *wiphy, struct wireless_dev *wdev, unsigned int link_id, int *dbm)
 #else
 static int whc_host_get_txpower_ops(struct wiphy *wiphy, struct wireless_dev *wdev, int *dbm)
 #endif
@@ -766,7 +768,7 @@ static int whc_host_set_power_mgmt(struct wiphy *wiphy, struct net_device *ndev,
 	return 0;
 }
 
-#if (KERNEL_VERSION(6, 18, 0) <= LINUX_VERSION_CODE)
+#if (KERNEL_VERSION(6, 14, 0) <= LINUX_VERSION_CODE)
 static int whc_host_set_monitor_channel(struct wiphy *wiphy, struct net_device *dev, struct cfg80211_chan_def *chandef)
 #else
 static int whc_host_set_monitor_channel(struct wiphy *wiphy, struct cfg80211_chan_def *chandef)

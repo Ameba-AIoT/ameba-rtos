@@ -204,34 +204,31 @@ void vStartFirstTask( void ) /* __attribute__ (( naked )) PRIVILEGED_FUNCTION */
 }
 /*-----------------------------------------------------------*/
 
-uint32_t ulSetInterruptMask( void ) /* __attribute__(( naked )) PRIVILEGED_FUNCTION */
+uint32_t ulSetInterruptMask( void ) PRIVILEGED_FUNCTION
 {
+    uint32_t ulOriginalBASEPRI;
+
     __asm volatile
     (
-        "	.syntax unified									\n"
-        "													\n"
-        "	mrs r0, basepri									\n"/* r0 = basepri. Return original basepri value. */
-        "	mov r1, %0										\n"/* r1 = configMAX_SYSCALL_INTERRUPT_PRIORITY. */
-        "	msr basepri, r1									\n"/* Disable interrupts upto configMAX_SYSCALL_INTERRUPT_PRIORITY. */
+        "	mrs %0, basepri									\n"/* Return original basepri value. */
+        "	msr basepri, %1									\n"/* Disable interrupts upto configMAX_SYSCALL_INTERRUPT_PRIORITY. */
         "	dsb												\n"
         "	isb												\n"
-        "	bx lr											\n"/* Return. */
-        ::"i" ( configMAX_SYSCALL_INTERRUPT_PRIORITY ) : "memory"
+        : "=&r" ( ulOriginalBASEPRI ) : "r" ( configMAX_SYSCALL_INTERRUPT_PRIORITY ) : "memory"
     );
+
+    return ulOriginalBASEPRI;
 }
 /*-----------------------------------------------------------*/
 
-void vClearInterruptMask( __attribute__( ( unused ) ) uint32_t ulMask ) /* __attribute__(( naked )) PRIVILEGED_FUNCTION */
+void vClearInterruptMask( uint32_t ulMask ) PRIVILEGED_FUNCTION
 {
     __asm volatile
     (
-        "	.syntax unified									\n"
-        "													\n"
-        "	msr basepri, r0									\n"/* basepri = ulMask. */
+        "	msr basepri, %0									\n"/* basepri = ulMask. */
         "	dsb												\n"
         "	isb												\n"
-        "	bx lr											\n"/* Return. */
-        ::: "memory"
+        :: "r" ( ulMask ) : "memory"
     );
 }
 /*-----------------------------------------------------------*/
@@ -439,9 +436,8 @@ void SVC_Handler( void ) /* __attribute__ (( naked )) PRIVILEGED_FUNCTION */
 }
 /*-----------------------------------------------------------*/
 
-void vPortAllocateSecureContext( uint32_t ulSecureStackSize ) /* __attribute__ (( naked )) */
+void vPortAllocateSecureContext( __attribute__( ( unused ) ) uint32_t ulSecureStackSize ) /* __attribute__ (( naked )) */
 {
-    (void)ulSecureStackSize;
     __asm volatile
     (
         "	.syntax unified									\n"
@@ -453,9 +449,8 @@ void vPortAllocateSecureContext( uint32_t ulSecureStackSize ) /* __attribute__ (
 }
 /*-----------------------------------------------------------*/
 
-void vPortFreeSecureContext( uint32_t * pulTCB ) /* __attribute__ (( naked )) PRIVILEGED_FUNCTION */
+void vPortFreeSecureContext( __attribute__( ( unused ) ) uint32_t * pulTCB ) /* __attribute__ (( naked )) PRIVILEGED_FUNCTION */
 {
-    (void)pulTCB;
     __asm volatile
     (
         "	.syntax unified									\n"
@@ -471,33 +466,23 @@ void vPortFreeSecureContext( uint32_t * pulTCB ) /* __attribute__ (( naked )) PR
 }
 /*-----------------------------------------------------------*/
 
-__attribute__(( naked )) uint32_t ulPortSetInterruptMask( void )
+uint32_t ulPortSetInterruptMask( void )
 {
-	__asm volatile														\
-	(																	\
-		"	mrs r0, basepri											\n" \
-		"	mov r1, %0												\n"	\
-		"	msr basepri, r1											\n" \
-		"	bx lr													\n" \
-		:: "i" ( configMAX_SYSCALL_INTERRUPT_PRIORITY ) : "r0", "r1"	\
+	uint32_t ulOriginalBASEPRI;
+
+	__asm volatile
+	(
+		"	mrs %0, basepri											\n" \
+		"	msr basepri, %1											\n" \
+		: "=&r" ( ulOriginalBASEPRI ) : "r" ( configMAX_SYSCALL_INTERRUPT_PRIORITY ) : "memory"
 	);
 
-	/* This return will not be reached but is necessary to prevent compiler
-	warnings. */
-	return 0;
+	return ulOriginalBASEPRI;
 }
 /*-----------------------------------------------------------*/
 
-__attribute__(( naked )) void vPortClearInterruptMask( uint32_t ulNewMaskValue )
+void vPortClearInterruptMask( uint32_t ulNewMaskValue )
 {
-	__asm volatile													\
-	(																\
-		"	msr basepri, r0										\n"	\
-		"	bx lr												\n" \
-		:::"r0"														\
-	);
-
-	/* Just to avoid compiler warnings. */
-	( void ) ulNewMaskValue;
+	__asm volatile ( "	msr basepri, %0	" :: "r" ( ulNewMaskValue ) : "memory" );
 }
 /*-----------------------------------------------------------*/

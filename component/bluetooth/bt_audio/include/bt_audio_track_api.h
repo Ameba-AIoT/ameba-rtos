@@ -232,16 +232,13 @@ uint32_t rtk_bt_audio_track_get_channel_count(void *track_hdl);
  *            - 0: Fail
  *            - Others: Start threshold in bytes
  */
-int32_t rtk_bt_audio_track_get_start_thresholdbytes(void *track_hdl);
+int32_t rtk_bt_audio_track_get_start_threshold_bytes(void *track_hdl);
 
 /**
- * @brief     Get the buffer size of the audio track.
- * @return
- *            - Buffer size
- * @note
- *            - Not ready.
+ * @brief     Deprecated alias of @ref rtk_bt_audio_track_get_start_threshold_bytes.
+ * @deprecated Use @ref rtk_bt_audio_track_get_start_threshold_bytes instead.
  */
-long rtk_bt_audio_track_get_buffer_size(void);
+#define rtk_bt_audio_track_get_start_thresholdbytes rtk_bt_audio_track_get_start_threshold_bytes
 
 /**
  * @}

@@ -12,6 +12,7 @@ ameba_list_append(c_GLOBAL_MCU_COMPILE_DEFINES
 ameba_list_append(c_GLOBAL_MCU_COMPILE_ASM_OPTIONS
     -march=armv8-m.base
     -mthumb
+    -mfloat-abi=soft
 )
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ #
 
@@ -20,6 +21,10 @@ ameba_list_append(c_GLOBAL_MCU_COMPILE_C_OPTIONS
     ${c_GLOBAL_MCU_COMPILE_ASM_OPTIONS}
     -fno-jump-tables # For link _thumb1_case_uqi issue, avoid switch jump table to save space, maybe only need for amebasmart.
 )
+
+if(CONFIG_AMEBASMART)
+    ameba_list_append(c_GLOBAL_MCU_COMPILE_C_OPTIONS -Os)
+endif()
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ #
 
 # +++++++++++++++ c_GLOBAL_MCU_COMPILE_CPP_OPTIONS ++++++++++++++ #

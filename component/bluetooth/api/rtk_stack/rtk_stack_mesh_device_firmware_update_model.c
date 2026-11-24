@@ -30,7 +30,7 @@
 #if defined(BT_MESH_ENABLE_DFU_DISTRIBUTOR_ROLE) && BT_MESH_ENABLE_DFU_DISTRIBUTOR_ROLE || \
     defined(BT_MESH_ENABLE_DFU_TARGET_ROLE) && BT_MESH_ENABLE_DFU_TARGET_ROLE
 // The default max_blob_size capability in mesh stack is not big for ameba ic
-// Should be called after blob transfer server model have been regist to set capability bigger
+// Should be called after blob transfer server model have been registered to set capability bigger
 static void rtk_stack_blob_transfer_server_set_capability(void)
 {
 	blob_server_capabilities_t cap = {0};
@@ -205,7 +205,7 @@ bool rtk_stack_dfu_initiator_init(void)
 	return true;
 #else
 	BT_LOGE("[%s] Mesh stack app_mesh_flags.h do not enable DFU function.\r\n", __func__);
-	return ret;
+	return false;
 #endif
 }
 
@@ -664,10 +664,10 @@ bool rtk_stack_dfu_distributor_init(void)
 
 	dfu_dist_models_init(0, dfu_standalone_updater_or_distributor_cb);
 
-	// Set blob transfer server capablity, the default value of stack is not enough
+	// Set blob transfer server capability, the default value of stack is not enough
 	rtk_stack_blob_transfer_server_set_capability();
 
-	// Set distributor server capability, the defualt value of stack is not enough
+	// Set distributor server capability, the default value of stack is not enough
 	uint32_t image_size;
 	rtk_bt_dfu_distributor_blob_max_size(&image_size);
 	fw_dist_caps_t dist_cap;
@@ -678,7 +678,7 @@ bool rtk_stack_dfu_distributor_init(void)
 	dist_cap.remaining_upload_space = image_size;
 	fw_dist_server_caps_set(&dist_cap);
 
-	BT_LOGD("[%s] Regist distributor relate models and set relate capability finish.\r\n", __func__);
+	BT_LOGD("[%s] Register distributor relate models and set relate capability finish.\r\n", __func__);
 	return true;
 #else
 	BT_LOGE("[%s] Mesh stack app_mesh_flags.h do not enable DFU function.\r\n", __func__);
@@ -701,13 +701,13 @@ static int32_t dfu_fw_update_server_data(const mesh_model_info_p pmodel_info, ui
 
 		// Should direct forwarding event
 		rtk_bt_evt_t *p_evt = NULL;
-		rtk_bt_mesh_dfu_evt_target_meatdata_t *meta;
-		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_DFU_TARGET_MODEL, RTK_BT_MESH_DFU_EVT_TARGET_METADATA_CHECK, sizeof(rtk_bt_mesh_dfu_evt_target_meatdata_t));
+		rtk_bt_mesh_dfu_evt_target_metadata_t *meta;
+		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_MESH_DFU_TARGET_MODEL, RTK_BT_MESH_DFU_EVT_TARGET_METADATA_CHECK, sizeof(rtk_bt_mesh_dfu_evt_target_metadata_t));
 		if (!p_evt) {
 			BT_LOGE("[%s] Create event fail\r\n", __func__);
 			break;
 		}
-		meta = (rtk_bt_mesh_dfu_evt_target_meatdata_t *)p_evt->data;
+		meta = (rtk_bt_mesh_dfu_evt_target_metadata_t *)p_evt->data;
 		meta->fw_image_idx = pdata->fw_image_idx;
 		meta->pmetadata = pdata->pmetadata;
 		meta->metadata_len = pdata->metadata_len;
@@ -890,7 +890,7 @@ bool rtk_stack_dfu_target_init(void)
 
 	ret = blob_transfer_server_model_init();
 	if (!ret) {
-		BT_LOGE("[%s] Blob trnasfer server init fail.\r\n", __func__);
+		BT_LOGE("[%s] Blob transfer server init fail.\r\n", __func__);
 		return ret;
 	}
 
