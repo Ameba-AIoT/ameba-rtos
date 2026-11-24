@@ -102,6 +102,11 @@ static const struct bt_hci_cmd_func_hdl g_bt_hci_cmd_func_tbl[] = {
 	{BT_HCI_OP_LE_RAND, bt_hci_cmd_ogf_le_ocf_rand},
 #if BT_LL_FEATURE_BT42_SECURE_CONNECTION
 	{BT_HCI_OP_LE_ENCRYPT, bt_hci_cmd_ofg_le_ocf_le_encrypt},
+#if BT_LL_LE_CONTROLLER_GEN_ECC_KEY
+	{BT_HCI_OP_LE_READ_LOCAL_P256_PUBLIC_KEY, bt_hci_cmd_ogf_le_ocf_read_local_p256_public_key},
+	{BT_HCI_OP_LE_GENERATE_DHKEY_V1, bt_hci_cmd_ogf_le_ocf_generate_dhkey_v1},
+	{BT_HCI_OP_LE_GENERATE_DHKEY_V2, bt_hci_cmd_ogf_le_ocf_generate_dhkey_v2},
+#endif
 #if BT_LL_LE_CENTRAL
 	{BT_HCI_OP_LE_ENABLE_ENCRYPTION, bt_hci_cmd_ogf_le_ocf_enable_encryption},
 #endif
@@ -279,7 +284,10 @@ void bt_hci_get_supported_hci_command(uint8_t *pcommands)
 					  COMMAND_33_HCI_LE_REMOTE_CONNECTION_PATRAMETER_REQUEST_NEGATIVE_REPLY |
 					  COMMAND_33_HCI_LE_SET_DATA_LENGTH |
 					  COMMAND_33_HCI_LE_READ_SUGGESTED_DEFAULT_DATA_LENGTH);
-
+#if BT_LL_LE_CONTROLLER_GEN_ECC_KEY
+	pcommands[34] |= (COMMAND_34_HCI_LE_READ_LOCAL_P_256_PUBLIC_KEY | COMMAND_34_HCI_LE_GENERATE_DHKEY_V1);
+	pcommands[41] |= COMMAND_41_HCI_LE_GENERATE_DHKEY_V2;
+#endif
 #ifdef CONFIG_BLE_LL_PRIVACY_ENABLE
 	pcommands[34] |= (COMMAND_34_HCI_LE_ADD_DEVICE_TO_RESOLVING_LIST |
 					  COMMAND_34_HCI_LE_REMOVE_DEVICE_FROM_RESOLVING_LIST |

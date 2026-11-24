@@ -67,7 +67,7 @@ Refer to the [EVB User Guide](https://aiot.realmcu.com/filelist?document_type=9)
 
 # Device requirements
 
-* A USB headset with a UAC 1.0 audio function and, for the key test, an HID consumer-control interface.
+* A USB headset with a UAC 1.0 / 2.0 audio function and, for the key test, an HID consumer-control interface.
 * Playback: the headset shall offer a 2 channel, 16 bit, 48 kHz playback format, otherwise `[COMP-E] Play set alt fail` is printed and nothing is played.
 * Recording: the first microphone format the headset lists is used, whatever it is.
 * Speaker output of the recording: only on SoCs with `CONFIG_SUPPORT_AUDIO_FOR_USB` (RTL8730E). The captured PCM is then rendered through the audio output of the board; on the other SoCs the data is read and dropped.

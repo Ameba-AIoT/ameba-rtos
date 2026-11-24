@@ -72,6 +72,13 @@ typedef struct {
 
 /* Exported functions --------------------------------------------------------*/
 
+/** @addtogroup USB_Device_Functions USB Device Functions
+ * @{
+ */
+/** @addtogroup Device_Composite_Functions Device Composite Functions
+ * @{
+ */
+
 /**
  * @brief Register a class driver with the composite framework.
  * @param[in] driver  Pointer to the class driver.
@@ -116,6 +123,9 @@ int usbd_composite_init(const usbd_composite_cb_t *cb);
  *         and the deinit of each class keeps refusing, refer to @ref usbd_unregister_class.
  */
 int usbd_composite_deinit(void);
+
+/** @} End of Device_Composite_Functions group */
+/** @} End of USB_Device_Functions group */
 
 /** @} End of USB_Device_API group */
 

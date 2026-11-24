@@ -10,7 +10,7 @@
 #include "platform_stdlib.h"
 #include "basic_types.h"
 #include "os_wrapper.h"
-#include "usbh_uac1.h"
+#include "usbh_uac.h"
 #include "atcmd_service.h"
 #include "usb_app.h"
 #include "example_usbh_uac.h"
@@ -201,7 +201,7 @@ static volatile u8 usbh_uac_teardown = 0;
 static usb_app_ctx_t usbh_uac_app;
 
 static const usbh_config_t usbh_cfg = {
-	.speed = USB_SPEED_FULL,
+	.speed = USB_SPEED_HIGH,
 	.ext_intr_enable = USBH_SOF_INTR,
 	.isr_priority = INT_PRI_MIDDLE,
 	.main_task_stack_size = USBH_UAC_MAIN_TASK_STACK_SIZE,
@@ -650,6 +650,7 @@ static void example_usbh_uac_record_thread(void *param)
 	u32 record_loop_count = 0;
 	u32 frame_size = 0;
 	u32 total_read = 0;
+	u32 last_read = 0;
 	u32 read_len = 0;
 	u32 debug_time = 0;
 	u32 now;
@@ -823,6 +824,7 @@ static void example_usbh_uac_record_thread(void *param)
 			is_recording = 1;
 			record_loop_count = 0;
 			total_read = 0;
+			last_read = 0;
 			last_err = usbh_uac_ctx.record.err_count;
 		}
 
@@ -855,12 +857,14 @@ static void example_usbh_uac_record_thread(void *param)
 				usbh_uac_ctx.record.err_count++;
 			}
 
-			/* Every USBH_UAC_DEBUG_TRACE_STEP, or sooner once empty moves */
+			/* Every USBH_UAC_DEBUG_TRACE_STEP, or at once when the stream stops: a first empty read after data.
+			 * An idle stream, e.g. a device not recording yet, keeps the long period */
 			now = usb_os_get_timestamp_ms();
 			if (((now - debug_time) >= USBH_UAC_DEBUG_TRACE_STEP) ||
-				((usbh_uac_ctx.record.err_count != last_err) && ((now - debug_time) >= USBH_UAC_DEBUG_TRACE_ERR_STEP))) {
+				((usbh_uac_ctx.record.err_count != last_err) && (total_read != last_read) && ((now - debug_time) >= USBH_UAC_DEBUG_TRACE_ERR_STEP))) {
 				debug_time = now;
 				last_err = usbh_uac_ctx.record.err_count;
+				last_read = total_read;
 				RTK_LOGS(TAG, RTK_LOG_INFO, "Rec status loop=%d bytes=%d empty=%d\n",
 						 record_loop_count, total_read, usbh_uac_ctx.record.err_count);
 			}

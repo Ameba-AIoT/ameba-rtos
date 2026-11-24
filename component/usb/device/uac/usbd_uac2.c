@@ -85,22 +85,6 @@
 /* bit_width */
 #define USBD_UAC_BIT_WIDTH(byte_width)              (8U * (byte_width))
 
-/* UAC channel config */
-#define USBD_UAC_GET_CH_CONFIG(channel_count) \
-    ((channel_count) == 2 ? 0x03 : \
-     (channel_count) == 4 ? 0x0F : \
-     (channel_count) == 6 ? 0x3F : \
-     (channel_count) == 8 ? 0xFF : \
-     (channel_count) == 16 ? 0xFFFF : 0x03)
-
-/* UAC terminal type */
-#define USBD_UAC_GET_OT_TYPE(channel_count) \
-    ((channel_count) == 2 ? 0x0301 : \
-     (channel_count) == 4 ? 0x0304 : \
-     (channel_count) == 6 ? 0x0304 : \
-     (channel_count) == 8 ? 0x0307 : \
-     (channel_count) == 16 ? 0x0307 : 0x0301)
-
 /* AC feature uint descriptor length */
 #define USBD_UAC_AC_FU_HEAD_DESC_LEN(channel_count)        (USB_UAC2_LEN_FUNC_UNIT_DESC + 1 + 4 * (channel_count))
 /* AC IF header descriptor length */
@@ -204,14 +188,6 @@
 #if !defined(CONFIG_SUPPORT_USB_FS_ONLY) && !USBD_UAC_IS_HS_MPS_VALID(USBD_UAC_PLAY_MAX_CHANNEL_COUNT, USBD_UAC_PLAY_BYTE_WIDTH, USBD_UAC_PLAY_MAX_SAMPLING_FREQ)
 #error "UAC2: 'Playback max sampling rate' exceeds HS ISOC 1024B. Lower it, or lower 'Playback max channels' or 'Playback bit width'"
 #endif
-
-/* Input terminal */
-#define USBD_UAC_CH_CONFIG_TYPE_LOW(channel_count)         (USB_LOW_BYTE(USBD_UAC_GET_CH_CONFIG(channel_count)))
-#define USBD_UAC_CH_CONFIG_TYPE_HIGH(channel_count)        (USB_HIGH_BYTE(USBD_UAC_GET_CH_CONFIG(channel_count)))
-
-/* Output terminal */
-#define USBD_UAC_OT_DESC_TYPE_LOW(channel_count)           (USB_LOW_BYTE(USBD_UAC_GET_OT_TYPE(channel_count)))
-#define USBD_UAC_OT_DESC_TYPE_HIGH(channel_count)          (USB_HIGH_BYTE(USBD_UAC_GET_OT_TYPE(channel_count)))
 
 #define USBD_UAC_INIT_SUB_RANGE(sub_range, min_sampling_freq, max_sampling_freq, res) \
     do {                                               \
@@ -361,8 +337,8 @@ static const u8 usbd_uac_config_desc[] = {
 	USB_UAC_AC_INPUT_TERMINAL,              /* INPUT_TERMINAL descriptor subtype   */
 	USBD_UAC_CTRL_ENTITYID_INPUTTERMINAL_HEADSET_HEADPHONES, /* Constant uniquely identifying the Terminal within the audio
                                                                   function. This value is used in all requests to address this Terminal.   */
-	0x01,
-	0x01,                                                    /* A Terminal dealing with a signal carried over an endpoint in an AudioStreaming interface. The
+	USB_LOW_BYTE(USB_UAC_USB_TERMINAL_STREAMING),
+	USB_HIGH_BYTE(USB_UAC_USB_TERMINAL_STREAMING),           /* A Terminal dealing with a signal carried over an endpoint in an AudioStreaming interface. The
                                                                 AudioStreaming interface descriptor points to the associated Terminal through the bTerminalLink field. */
 	0x00,                                                    /* This Input Terminal has no association   */
 	USBD_UAC_CTRL_ENTITYID_CLOCK_HEADSET_HEADPHONES,         /* ID of the Clock Entity to which this Input Terminal is connected.  */
@@ -484,8 +460,8 @@ static const u8 usbd_uac_config_desc[] = {
 	USB_UAC_AC_INPUT_TERMINAL,               /* INPUT_TERMINAL descriptor subtype   */
 	USBD_UAC_CTRL_ENTITYID_INPUTTERMINAL_HEADSET_MICROPHONE, /* Constant uniquely identifying the Terminal within the audio
 	                                                                  function. This value is used in all requests to address this Terminal.   */
-	0x01,
-	0x02,                                                    /* Microphone terminal type (0x0201) */
+	USB_LOW_BYTE(USB_UAC_INPUT_TERMINAL_MICROPHONE),         /* Microphone terminal type */
+	USB_HIGH_BYTE(USB_UAC_INPUT_TERMINAL_MICROPHONE),
 	0x00,                                                    /* This Input Terminal has no association   */
 	USBD_UAC_CTRL_ENTITYID_CLOCK_HEADSET_MICROPHONE,         /* ID of the Clock Entity to which this Input Terminal is connected.  */
 	USBD_UAC_RECORD_CHANNEL_COUNT,                           /* bNrChannels */
@@ -527,8 +503,8 @@ static const u8 usbd_uac_config_desc[] = {
 	USB_UAC_AC_OUTPUT_TERMINAL,               /* OUTPUT_TERMINAL descriptor subtype   */
 	USBD_UAC_CTRL_ENTITYID_OUTPUTTERMINAL_HEADSET_MICROPHONE, /* Constant uniquely identifying the Terminal within the audio
 	                                                                 function. This value is used in all requests to address this Terminal.   */
-	0x01,
-	0x01,                                                     /* USB Streaming terminal type (0x0101) */
+	USB_LOW_BYTE(USB_UAC_USB_TERMINAL_STREAMING),             /* USB Streaming terminal type */
+	USB_HIGH_BYTE(USB_UAC_USB_TERMINAL_STREAMING),
 	0x00,                                                     /* This Output Terminal has no association  */
 	USBD_UAC_CTRL_ENTITYID_INPUTTERMINAL_FEATUREUNIT,         /* ID of the Unit or Terminal to which this Terminal is connected.  */
 	USBD_UAC_CTRL_ENTITYID_CLOCK_HEADSET_MICROPHONE,          /* ID of the Clock Entity to which this Output Terminal is connected  */

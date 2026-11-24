@@ -5,7 +5,7 @@
  */
 
 #ifndef _DEBUG_H
-#define _DEBUG_h
+#define _DEBUG_H
 
 #ifndef _ASMLANGUAGE
 

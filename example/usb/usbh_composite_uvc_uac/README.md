@@ -67,7 +67,7 @@ Refer to the [EVB User Guide](https://aiot.realmcu.com/filelist?document_type=9)
 
 # Device requirements
 
-* A High-Speed USB camera with a UVC function and, for the audio test, a UAC 1.0 microphone.
+* A High-Speed USB camera with a UVC function and, for the audio test, a UAC 1.0 / 2.0 microphone.
 * Video: the camera shall advertise H264 at 1920x1080@30fps (`USBH_UVC_STREAM_WIDTH`/`HEIGHT`/`FRAMERATE` in the example); otherwise `UVC setparam fail` is printed and no frame is received. A camera without UAC function is supported, video only.
 * Microphone: a mono 48 kHz format is preferred; when the camera has none, `[COMP-W] Rec: 1ch/48000Hz not found, using fmt[0]` is printed and the first listed format is used.
 * Speaker (if any): a 2 channel 48 kHz format is preferred, otherwise `[COMP-W] Play: 2ch/48000Hz not found, using fmt[0]` is printed; silence is played.

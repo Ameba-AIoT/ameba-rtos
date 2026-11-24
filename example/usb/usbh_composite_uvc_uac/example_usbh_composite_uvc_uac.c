@@ -11,7 +11,7 @@
 #include "basic_types.h"
 #include "os_wrapper.h"
 #include "usbh_uvc.h"
-#include "usbh_uac1.h"
+#include "usbh_uac.h"
 #include "atcmd_service.h"
 #include "usb_app.h"
 #include "example_usbh_composite_uvc_uac.h"
@@ -1074,6 +1074,7 @@ static void usbh_uac_record_thread(void *param)
 	u32 now;
 	int ret = 0;
 	u8 show_wait = 1U;
+	u8 stalled = 0U;
 
 #ifdef CONFIG_SUPPORT_AUDIO_FOR_USB
 	AudioTrackConfig track_config = {0};
@@ -1193,6 +1194,7 @@ static void usbh_uac_record_thread(void *param)
 		record_loop_count = 0U;
 		total_read = 0U;
 		last_read = 0U;
+		stalled = 0U;
 		debug_time = usb_os_get_timestamp_ms();
 
 		while ((usbh_uvc_uac_is_ready != 0U) && (usbh_comp_app.quit == 0U)) {
@@ -1221,15 +1223,18 @@ static void usbh_uac_record_thread(void *param)
 #endif
 			}
 
-			/* Every USBH_UAC_DEBUG_TRACE_STEP, or sooner when a period brought no data */
+			/* Every USBH_UAC_DEBUG_TRACE_STEP, or at once on the first period without data. A stream
+			 * that stays idle, e.g. a device not recording yet, keeps the long period */
 			now = usb_os_get_timestamp_ms();
 			if (((now - debug_time) >= USBH_UAC_DEBUG_TRACE_STEP) ||
-				((total_read == last_read) && ((now - debug_time) >= USBH_UAC_DEBUG_TRACE_ERR_STEP))) {
+				((total_read == last_read) && (stalled == 0U) && ((now - debug_time) >= USBH_UAC_DEBUG_TRACE_ERR_STEP))) {
 				if (total_read != last_read) {
 					RTK_LOGS(TAG, RTK_LOG_INFO, "Rec loop=%d bytes=%d\n",
 							 record_loop_count, total_read);
+					stalled = 0U;
 				} else {
 					RTK_LOGS(TAG, RTK_LOG_WARN, "Rec loop=%d no data\n", record_loop_count);
+					stalled = 1U;
 				}
 				debug_time = now;
 				last_read = total_read;

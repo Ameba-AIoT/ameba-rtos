@@ -4,14 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef USBH_UAC1_H
-#define USBH_UAC1_H
+#ifndef USBH_UAC_H
+#define USBH_UAC_H
 
 /* Includes ------------------------------------------------------------------*/
 
 #include "usbh.h"
 #include "usb_ch9.h"
 #include "usb_uac1.h"
+#include "usb_uac2.h"
 #include "usb_ringbuf.h"
 #include "os_wrapper.h"
 
@@ -50,6 +51,7 @@ extern "C" {
 #define USBH_UAC_UNIT_MAX_CNT           8U      /**< Maximum number of intermediate Units (Mixer/Selector/Processing/Extension) tracked for topology walks */
 #define USBH_UAC_UNIT_SRC_MAX_CNT       4U      /**< Maximum number of bSourceID entries tracked per intermediate Unit */
 #define USBH_UAC_TOPO_DEPTH_MAX         8U      /**< Maximum topology hops walked from an Output Terminal back to a Feature Unit */
+#define USBH_UAC_CLOCK_MAX_CNT          4U      /**< Maximum number of UAC 2.0 Clock Source/Selector/Multiplier entities tracked */
 
 #define USBH_UAC_ALT_SETTING_MAX        10      /**< Maximum number of Alternate Settings per interface */
 #define USBH_UAC_FREQ_FORMAT_MAX        6       /**< Maximum number of discrete sampling frequencies per format */
@@ -70,9 +72,9 @@ extern "C" {
  * @{
  */
 
-/* uac1.0 Audio Control   */
+/* Audio Control */
 /**
-  * @brief  UAC 1.0 Audio Terminal Information structure.
+  * @brief  Audio Terminal Information structure.
   *         Describes an Input Terminal or Output Terminal in the audio function topology.
   */
 typedef struct {
@@ -80,7 +82,19 @@ typedef struct {
 	u8 terminal_id;    /**< ID of this Terminal */
 	u8 source_id;      /**< ID of the entity to which this Terminal is connected */
 	u8 is_input;       /**< Direction flag (1: Input Terminal, 0: Output Terminal) */
+	u8 clock_id;       /**< UAC 2.0 only: bCSourceID, the Clock Entity this Terminal is clocked by; 0 for UAC 1.0 */
 } usbh_uac_term_info_t;
+
+/**
+  * @brief  UAC 2.0 Clock Entity (Clock Source/Selector/Multiplier) information.
+  *         Kept to walk a Terminal's bCSourceID to the Clock Source that owns the sampling frequency.
+  */
+typedef struct {
+	u8 clock_id;   /**< bClockID of this Clock Entity */
+	u8 subtype;    /**< bDescriptorSubtype: Clock Source, Clock Selector or Clock Multiplier */
+	u8 source_id;  /**< Selector: baCSourceID(1); Multiplier: bCSourceID; Source: 0 */
+	u8 controls;   /**< Source: bmControls (D1..0 Clock Frequency Control); 0 otherwise */
+} usbh_uac_clock_info_t;
 
 /**
   * @brief  UAC 1.0 intermediate Unit (Mixer/Selector/Processing/Extension) link information.
@@ -94,10 +108,13 @@ typedef struct {
 } usbh_uac_unit_info_t;
 
 /**
-  * @brief  UAC 1.0 Feature Unit (Volume Control) Information structure.
+  * @brief  Feature Unit (Volume Control) Information structure.
   *         match to the bmaControls layout from UAC1 spec: index 0 is the
   *         Master Channel (logical channel 0); indices 1..num_channels are
   *         per-channel logical channels 1..N.
+  * @note   For a UAC 2.0 device each 2-bit control of bmaControls is mapped onto the UAC 1.0 bit
+  *         of the same control (USB_UAC1_CONTROL_MUTE, USB_UAC1_CONTROL_VOLUME, ...), set only
+  *         when the control is host programmable (11b), so one bitmap serves both versions.
   */
 typedef struct {
 	u16 bma_controls[1 + USBH_UAC_MAX_CHANNEL]; /**< Bitmap of supported fu_controls logical channels: [0]=master, [1..num_channels]=ch1..N */
@@ -106,7 +123,7 @@ typedef struct {
 	u8 source_id;          /**< ID of the source entity connected to this Feature Unit */
 	u8 sink_id;            /**< ID of the sink Terminal connected to this Feature Unit */
 	u8 num_channels;       /**< Number of logical audio channels (excludes master) */
-	u8 control_size;       /**< Size in bytes of each bmaControls field in the descriptor (1 or 2) */
+	u8 control_size;       /**< Size in bytes of each bmaControls field in the descriptor (UAC 1.0: 1 or 2, UAC 2.0: 4) */
 } usbh_uac_fu_info_t;
 
 /**
@@ -117,10 +134,12 @@ typedef struct {
 	usbh_uac_fu_info_t fu_controls[USBH_UAC_FU_MAX_CNT];  /**< Parsed Feature Units, indexed 0..volume_ctrl_count-1 */
 	usbh_uac_term_info_t terminals[USBH_UAC_TERM_MAX_CNT];   /**< Parsed Terminals, indexed 0..terminal_count-1 */
 	usbh_uac_unit_info_t units[USBH_UAC_UNIT_MAX_CNT];       /**< Parsed intermediate Units, indexed 0..unit_count-1 */
+	usbh_uac_clock_info_t clocks[USBH_UAC_CLOCK_MAX_CNT];    /**< UAC 2.0 Clock Entities, indexed 0..clock_count-1 */
 
 	u8 volume_ctrl_count; /**< Number of valid entries in fu_controls[] */
 	u8 terminal_count;    /**< Number of valid entries in terminals[] */
 	u8 unit_count;        /**< Number of valid entries in units[] */
+	u8 clock_count;       /**< Number of valid entries in clocks[] */
 
 	u8 in_best_idx;      /**< Index into fu_controls[] for the best IN/Record Feature Unit; (u8)-1 if none */
 	u8 out_best_idx;     /**< Index into fu_controls[] for the best OUT/Playback Feature Unit; (u8)-1 if none */
@@ -246,6 +265,9 @@ typedef struct {
 	usbh_pipe_t fb_pipe;                  /**< Feedback pipe of the active alternate setting, pipe_num 0 when not open */
 
 	u8 as_itf_num;                        /**< USB interface number of this AS interface */
+	u8 terminal_link;                     /**< UAC 2.0 only: bTerminalLink of the AS General descriptor */
+	u8 clock_id;                          /**< UAC 2.0 only: Clock Source clocking this interface, 0 when not resolved */
+	u8 clock_freq_ctrl;                   /**< UAC 2.0 only: 1 when the Clock Source frequency is host programmable */
 
 	u8 alt_setting_cnt;                   /**< Number of valid entries in interface_array[] */
 	u8 fmt_array_cnt;                     /**< Number of entries in fmt_array[] */
@@ -308,6 +330,7 @@ typedef struct {
 	__IO u8 ctrl_state;        /**< USB control transfer state machine state (UAC_STATE_CTRL_IDLE, SET_ALT, SET_FREQ, ...) */
 	__IO u8 init_state;        /**< Initialization sequence state (UAC_INIT_OUT_GET_FU -> UAC_INIT_IN_GET_FU -> UAC_INIT_OUT_SET_ITF -> UAC_INIT_DONE) */
 	u8 cur_dir;                    /**< Direction being operated on by the current ctrl_state sequence */
+	u8 ip_version;                 /**< AC interface bInterfaceProtocol of the attached device: USB_UAC_IP_VERSION_1 or _2 */
 
 	/* Control operation: arguments of the in-flight ctrl_state sequence and its sync waiter */
 	rtos_mutex_t alt_set_mutex;          /**< Serializes concurrent usbh_uac_set_alt_setting calls */
@@ -540,4 +563,4 @@ int usbh_uac_read(u8 *buffer, u32 size, u32 time_out_ms);
 }
 #endif
 
-#endif /* USBH_UAC1_H */
+#endif /* USBH_UAC_H */

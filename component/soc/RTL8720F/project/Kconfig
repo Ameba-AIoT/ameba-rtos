@@ -444,6 +444,13 @@ menu "CONFIG BT"
             rsource "../../../bluetooth/Kconfig"
         endif
 
+        config BT_CUSTOMER_XIAOMI
+            bool "Xiaomi customer BT feature set (sdn host)"
+            default n
+            depends on BT_MENU && !BT_INIC
+            help
+              Xiaomi customer only. Enable sdn-layer BLE extended adv/scan without editing bt_api_config.h.
+
         config BT
             def_bool WHC_HOST || WHC_NONE || (BT_INIC && WHC_DEV_MENU && WHC_DEV)
             select SDN_HOST

@@ -118,29 +118,6 @@
 /* len of total Audio stream interface */
 #define USBD_UAC_AS_TIF_LEN(alt_num)               (USBD_UAC_AS_EIF_LEN * (alt_num - 1) + USB_LEN_IF_DESC)
 
-/* get channel config */
-#define USBD_UAC_GET_CH_CONFIG(channel_count) \
-    ((channel_count) == 2 ? 0x03 : \
-     (channel_count) == 4 ? 0x0F : \
-     (channel_count) == 6 ? 0x3F : \
-     (channel_count) == 8 ? 0xFF : \
-     (channel_count) == 16 ? 0xFFFF : 0x03)
-
-/* get ot type */
-#define USBD_UAC_GET_OT_TYPE(channel_count) \
-    ((channel_count) == 2 ? 0x0301 : \
-     (channel_count) == 4 ? 0x0304 : \
-     (channel_count) == 6 ? 0x0304 : \
-     (channel_count) == 8 ? 0x0307 : \
-     (channel_count) == 16 ? 0x0307 : 0x0301)
-
-/* input terminal */
-#define USBD_UAC_CH_CONFIG_TYPE_LOW(channel_count)         (USB_LOW_BYTE(USBD_UAC_GET_CH_CONFIG(channel_count)))
-#define USBD_UAC_CH_CONFIG_TYPE_HIGH(channel_count)        (USB_HIGH_BYTE(USBD_UAC_GET_CH_CONFIG(channel_count)))
-/* output terminal */
-#define USBD_UAC_OT_DESC_TYPE_LOW(channel_count)           (USB_LOW_BYTE(USBD_UAC_GET_OT_TYPE(channel_count)))
-#define USBD_UAC_OT_DESC_TYPE_HIGH(channel_count)          (USB_HIGH_BYTE(USBD_UAC_GET_OT_TYPE(channel_count)))
-
 /* calculate full speed MPS */
 #define USBD_UAC_CALC_FS_MPS(channel_count, byte_width, sampling_freq_hz)    ((channel_count) * (byte_width) * ((sampling_freq_hz) / USBD_UAC_ONE_KHZ + 1U))
 /* check MPS */
@@ -280,8 +257,8 @@ static const u8 usbd_uac_config_desc[] = {
 	USB_UAC_AC_INPUT_TERMINAL,              /* INPUT_TERMINAL descriptor subtype   */
 	USBD_UAC_CTRL_ENTITYID_INPUTTERMINAL_HEADSET_HEADPHONES, /* Constant uniquely identifying the Terminal within the audio
                                                                   function. This value is used in all requests to address this Terminal.   */
-	0x01,
-	0x01,                                                    /* A Terminal dealing with a signal carried over an endpoint in an AudioStreaming interface. The
+	USB_LOW_BYTE(USB_UAC_USB_TERMINAL_STREAMING),
+	USB_HIGH_BYTE(USB_UAC_USB_TERMINAL_STREAMING),           /* A Terminal dealing with a signal carried over an endpoint in an AudioStreaming interface. The
                                                                 AudioStreaming interface descriptor points to the associated Terminal through the bTerminalLink field. */
 	0x00,                                                    /* This Input Terminal has no association   */
 	USBD_UAC_PLAY_MAX_CHANNEL_COUNT,                                 /* This Terminal's output audio channel cluster has 8 logical output channels   */
@@ -334,8 +311,8 @@ static const u8 usbd_uac_config_desc[] = {
 	USB_UAC_CS_INTERFACE,                                     /* bDescriptorType */
 	USB_UAC_AC_INPUT_TERMINAL,                                /* bDescriptorSubtype */
 	USBD_UAC_CTRL_ENTITYID_INPUTTERMINAL_HEADSET_MICROPHONE,  /* bTerminalID */
-	USB_LOW_BYTE(USB_UAC1_INPUT_TERMINAL_MICROPHONE),         /* wTerminalType */
-	USB_HIGH_BYTE(USB_UAC1_INPUT_TERMINAL_MICROPHONE),
+	USB_LOW_BYTE(USB_UAC_INPUT_TERMINAL_MICROPHONE),         /* wTerminalType */
+	USB_HIGH_BYTE(USB_UAC_INPUT_TERMINAL_MICROPHONE),
 	0x00,                                                     /* bAssocTerminal */
 	USBD_UAC_RECORD_CHANNEL_COUNT,                            /* bNrChannels */
 	USB_LOW_BYTE(USBD_UAC_RECORD_CHANNEL_CONFIG),             /* wChannelConfig */
@@ -362,8 +339,8 @@ static const u8 usbd_uac_config_desc[] = {
 	USB_UAC_CS_INTERFACE,                                     /* bDescriptorType */
 	USB_UAC_AC_OUTPUT_TERMINAL,                               /* bDescriptorSubtype */
 	USBD_UAC_CTRL_ENTITYID_OUTPUTTERMINAL_HEADSET_MICROPHONE, /* bTerminalID */
-	0x01,                                                     /* wTerminalType: USB Streaming */
-	0x01,
+	USB_LOW_BYTE(USB_UAC_USB_TERMINAL_STREAMING),             /* wTerminalType: USB Streaming */
+	USB_HIGH_BYTE(USB_UAC_USB_TERMINAL_STREAMING),
 	0x00,                                                     /* bAssocTerminal */
 	USBD_UAC_CTRL_ENTITYID_INPUTTERMINAL_FEATUREUNIT,         /* bSourceID */
 	0x00,                                                     /* iTerminal */

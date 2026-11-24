@@ -723,12 +723,12 @@ void atcmd_tt_mode_end(void)
 
 #endif
 
-void at_printf_lock()
+void at_printf_lock(void)
 {
 	rtos_mutex_recursive_take(at_printf_mutex, RTOS_MAX_DELAY);
 }
 
-void at_printf_unlock()
+void at_printf_unlock(void)
 {
 	rtos_mutex_recursive_give(at_printf_mutex);
 }
