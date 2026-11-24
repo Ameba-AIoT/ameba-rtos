@@ -21,10 +21,17 @@
 #define PRODUCT_ID        0x0000
 #define VERSION_ID        0x0000
 
-// Mesh default configuration paramters
+// Mesh default configuration parameters
 #define BT_MESH_CONFIG_NET_TRANS_COUNTS          6
 #define BT_MESH_CONFIG_NET_TRANS_STEPS           0
-#define BT_MESH_CONFIG_RELAY_IS_ENABL            1
+#if defined(BT_MESH_CONFIG_RELAY_IS_ENABL)
+/* Deprecated name IS_ENABL kept by the user, take over its value */
+#define BT_MESH_CONFIG_RELAY_IS_ENABLE            BT_MESH_CONFIG_RELAY_IS_ENABL
+#else
+#define BT_MESH_CONFIG_RELAY_IS_ENABLE            1
+/* Deprecated alias of BT_MESH_CONFIG_RELAY_IS_ENABLE */
+#define BT_MESH_CONFIG_RELAY_IS_ENABL             BT_MESH_CONFIG_RELAY_IS_ENABLE
+#endif
 #define BT_MESH_CONFIG_RELAY_RETRANS_COUNTS      2
 #define BT_MESH_CONFIG_RELAY_RETRANS_STEPS       0
 #define BT_MESH_CONFIG_TRANS_RETRANS_COUNTS      4
@@ -35,7 +42,7 @@
 #define BT_MESH_ENABLE_PRIVATE_BEACON                                  1
 #define BT_MESH_ENABLE_EPA_PROVISION                                   1
 
-// Mesh DF default configuration paramters
+// Mesh DF default configuration parameters
 #if defined(BT_MESH_ENABLE_DIRECTED_FORWARDING) && BT_MESH_ENABLE_DIRECTED_FORWARDING
 #define BT_MESH_CONFIG_DF_ACCESS_NET_TRANS_COUNTS          6
 #define BT_MESH_CONFIG_DF_ACCESS_NET_TRANS_STEPS           0
@@ -83,7 +90,16 @@
 #if defined(RTK_BLE_MESH_DEVICE_SUPPORT) && RTK_BLE_MESH_DEVICE_SUPPORT
 #define BT_MESH_ENABLE_GENERIC_ON_OFF_SERVER_MODEL                     1
 #define BT_MESH_ENABLE_GENERIC_LEVEL_SERVER_MODEL                      1
-#define BT_MESH_ENABLE_GENERIC_DEFAULT_TRANSTION_TIME_SERVER_MODEL     1
+#if defined(BT_MESH_ENABLE_GENERIC_DEFAULT_TRANSTION_TIME_SERVER_MODEL)
+/* Deprecated name TRANSTION kept by the user, take over its value */
+#define BT_MESH_ENABLE_GENERIC_DEFAULT_TRANSITION_TIME_SERVER_MODEL \
+    BT_MESH_ENABLE_GENERIC_DEFAULT_TRANSTION_TIME_SERVER_MODEL
+#else
+#define BT_MESH_ENABLE_GENERIC_DEFAULT_TRANSITION_TIME_SERVER_MODEL    1
+/* Deprecated alias of BT_MESH_ENABLE_GENERIC_DEFAULT_TRANSITION_TIME_SERVER_MODEL */
+#define BT_MESH_ENABLE_GENERIC_DEFAULT_TRANSTION_TIME_SERVER_MODEL \
+    BT_MESH_ENABLE_GENERIC_DEFAULT_TRANSITION_TIME_SERVER_MODEL
+#endif
 #define BT_MESH_ENABLE_GENERIC_POWER_ON_OFF_SERVER_MODEL               1
 #define BT_MESH_ENABLE_GENERIC_POWER_ON_OFF_SETUP_SERVER_MODEL         1
 #define BT_MESH_ENABLE_GENERIC_POWER_LEVEL_SERVER_MODEL                1
@@ -123,8 +139,8 @@
 #define BT_MESH_ENABLE_DATATRANS_MODEL                                 1
 
 
-// Mesh provisioning capability releate setting for device
-#define PROV_SUPPORT_STATIC_OOB           0  // Whether support static oob for provisining
+// Mesh provisioning capability relate setting for device
+#define PROV_SUPPORT_STATIC_OOB           0  // Whether support static oob for provisioning
 #if defined(BT_MESH_ENABLE_EPA_PROVISION) && BT_MESH_ENABLE_EPA_PROVISION
 #define PROV_SUPPORT_OOB_AUTH_ONLY        0
 #endif
@@ -169,7 +185,7 @@ typedef enum {
 	 */
 	RTK_BT_MESH_MSG_SEND_CAUSE_INVALID_DST,
 	/*
-	 * Depending on the msg size, the access msg is send by unsegmented or segmented.
+	 * Depending on the msg size, the access msg is sent by unsegmented or segmented.
 	 * The maximum size of the access pdu is @ref ACCESS_PAYLOAD_MAX_SIZE.
 	 */
 	RTK_BT_MESH_MSG_SEND_CAUSE_PAYLOAD_SIZE_EXCEED,
@@ -193,7 +209,7 @@ typedef enum {
 	/* The key hasn't been added. */
 	RTK_BT_MESH_MSG_SEND_CAUSE_INVALID_NET_KEY_STATE,
 	/*
-	 * The mesh msg is send via the adverting channel, which takes some resource and time.
+	 * The mesh msg is sent via the advertising channel, which takes some resource and time.
 	 * When the resource is exhausted currently, the msg can't be send.
 	 */
 	RTK_BT_MESH_MSG_SEND_CAUSE_NO_BUFFER_AVAILABLE,
@@ -218,7 +234,7 @@ typedef struct {
 	uint8_t   bt_mesh_role;            /*!< Default bt mesh profile role */
 	uint8_t   bt_mesh_uuid[16];        /*!< Default bt mesh device UUID */
 	uint32_t  bt_mesh_flash_size;      /*!< FTL size for mesh */
-	uint8_t   bt_mesh_rpl_num;         /*!< Message replay protection list num */
+	uint16_t   bt_mesh_rpl_num;         /*!< Message replay protection list num */
 	uint8_t   trans_retrans_count;     /*!< Transport Transmit Count */
 	uint8_t   net_trans_count: 3;        /*!< Network Transmit Count */
 	uint8_t   net_trans_interval_step: 5; /*!< Network Transmit Interval Step */
@@ -226,7 +242,7 @@ typedef struct {
 	uint8_t   relay_retrans_interval_step: 5;    /*!< Relay Retransmit Interval step */
 	uint8_t   ttl;                     /*!< Default TTL */
 #if defined(RTK_BLE_MESH_PROVISIONER_SUPPORT) && RTK_BLE_MESH_PROVISIONER_SUPPORT
-	uint8_t   bt_mesh_dev_key_num;      /*!< Device key num for provisioner */
+	uint16_t   bt_mesh_dev_key_num;      /*!< Device key num for provisioner */
 #endif
 } rtk_bt_mesh_app_conf_t;
 

@@ -57,7 +57,7 @@ uint16_t rtk_bt_le_audio_tmas_client_read_role(uint16_t conn_handle);
 /**
  * @brief     config tmap broadcast media receiver channel or neighbor device.
  * @param[in] channel: channel allocation, 1 for left, 2 for right, 3 for stereo
- * @param[in] p_neighbor_addr: pointer of neghbor device bt address, NULL for no neighbor
+ * @param[in] p_neighbor_addr: pointer of neighbor device bt address, NULL for no neighbor
  * @return
  *            - 0  : Succeed
  *            - Others: Error code
@@ -67,7 +67,7 @@ uint16_t rtk_bt_tmap_broadcast_media_receiver_cfg(uint8_t sound_channel, uint8_t
 /**
  * @brief     config tmap unicast media receiver channel or neighbor device
  * @param[in] channel: channel allocation, 1 for left, 2 for right, 3 for stereo
- * @param[in] p_neighbor_addr: pointer of neghbor device bt address, NULL for no neighbor
+ * @param[in] p_neighbor_addr: pointer of neighbor device bt address, NULL for no neighbor
  * @return
  *            - 0  : Succeed
  *            - Others: Error code
