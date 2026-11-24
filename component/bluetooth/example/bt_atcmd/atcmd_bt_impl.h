@@ -104,8 +104,8 @@ int atcmd_bt_mesh_sensor(int argc, char *argv[]);
 /* mesh health model cmd impl */
 int atcmd_bt_mesh_health(int argc, char *argv[]);
 
-/* mesh performence test cmd impl */
-int atcmd_bt_mesh_performence_test(int argc, char *argv[]);
+/* mesh performance test cmd impl */
+int atcmd_bt_mesh_performance_test(int argc, char *argv[]);
 
 /* mesh directed forwarding cmd impl */
 int atcmd_bt_mesh_df(int argc, char *argv[]);

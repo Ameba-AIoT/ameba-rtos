@@ -372,7 +372,7 @@ uint8_t hci_patch_download_v2(uint16_t opcode, uint8_t *p_patch, uint32_t patch_
 			goto dl_patch_done;
 		}
 
-		ret = hci_sa_send(HCI_CMD, buf, buf[2] + 3, true);
+		ret = hci_sa_send(HCI_CMD, buf, buf[2] + 3, sizeof(buf_raw) - RESERVE_LEN, true);
 		if (HCI_SUCCESS != ret) {
 			goto dl_patch_done;
 		}

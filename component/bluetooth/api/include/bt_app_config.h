@@ -37,15 +37,15 @@ typedef struct {
 	uint8_t  hid_role;                         /*!< Default HID profile role (Only used in BR/EDR) */
 	uint32_t app_profile_support;              /*!< app profile support @ref rtk_bt_profile_t */
 	uint8_t  server_chann;                     /*!< rfc server channel */
-	uint16_t mtu_size;                         /*!< Deafult MTU config, Max value can be set is 512 */
+	uint16_t mtu_size;                         /*!< Default MTU config, Max value can be set is 512 */
 	bool     master_init_mtu_req;              /*!< Whether local device as master will auto initiate exchange MTU request when connected.
                                                     If this value is false, user can use @ref rtk_bt_gattc_exchange_mtu
                                                     to initiate exchange MTU request. */
 	bool     slave_init_mtu_req;               /*!< Whether local device as slave will auto initiate exchange MTU request when connected. */
-	uint8_t  prefer_all_phy;                   /*!< Deafult PHY config: preferred all phy @ref rtk_bt_le_all_phy_prefer_t */
-	uint8_t  prefer_tx_phy;                    /*!< Deafult PHY config: preferred tx phy @ref rtk_bt_le_trx_phy_prefer_t */
-	uint8_t  prefer_rx_phy;                    /*!< Deafult PHY config: preferred rx phy @ref rtk_bt_le_trx_phy_prefer_t */
-	uint16_t max_tx_octets;                    /*!< Default data len config: Max tx octects */
+	uint8_t  prefer_all_phy;                   /*!< Default PHY config: preferred all phy @ref rtk_bt_le_all_phy_prefer_t */
+	uint8_t  prefer_tx_phy;                    /*!< Default PHY config: preferred tx phy @ref rtk_bt_le_trx_phy_prefer_t */
+	uint8_t  prefer_rx_phy;                    /*!< Default PHY config: preferred rx phy @ref rtk_bt_le_trx_phy_prefer_t */
+	uint16_t max_tx_octets;                    /*!< Default data len config: Max tx octets */
 	uint16_t max_tx_time;                      /*!< Default data len config: Max tx time */
 #if defined(RTK_BLE_SET_TX_QUEUE_NUM) && RTK_BLE_SET_TX_QUEUE_NUM
 	uint16_t max_stack_tx_pending_num;         /*!< Default max stack tx pending num: default is RTK_BT_GATT_DEFAULT_CREDITS */

@@ -132,7 +132,7 @@ uint16_t rtk_bt_audio_track_set_hardware_volume(float left_volume, float right_v
 uint16_t rtk_bt_audio_track_get_volume(float *left_volume, float *right_volume);
 
 /**
- * @brief     set sotfware volume of audio track
+ * @brief     set software volume of audio track
  * @param[in] track_hdl: audio track handle
  * @param[in] left_volume: left audio volume
  * @param[in] right_volume: right audio volume
@@ -225,13 +225,19 @@ uint16_t rtk_bt_audio_track_set_channel_count(void *track_hdl, uint32_t channel_
 uint32_t rtk_bt_audio_track_get_channel_count(void *track_hdl);
 
 /**
- * @brief     audio track get mixer start thresholdbytes
+ * @brief     audio track get mixer start threshold_bytes
  * @param[in] track_hdl: audio track handle
  * @return
  *                              - 0  : Fail
- *                              - Others: thresholdbytes
+ *                              - Others: threshold_bytes
  */
-int32_t rtk_bt_audio_track_get_start_thresholdbytes(void *track_hdl);
+int32_t rtk_bt_audio_track_get_start_threshold_bytes(void *track_hdl);
+
+/**
+ * @brief     Deprecated alias of @ref rtk_bt_audio_track_get_start_threshold_bytes.
+ * @deprecated Use @ref rtk_bt_audio_track_get_start_threshold_bytes instead.
+ */
+#define rtk_bt_audio_track_get_start_thresholdbytes rtk_bt_audio_track_get_start_threshold_bytes
 
 /**
  * @brief     audio track get buffer size(Not ready)

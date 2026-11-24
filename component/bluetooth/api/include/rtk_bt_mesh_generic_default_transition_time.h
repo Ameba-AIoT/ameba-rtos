@@ -1,5 +1,5 @@
 /**
- * @file      rtk_bt_mesh_generic_default_transition_time_model.h
+ * @file      rtk_bt_mesh_generic_default_transition_time.h
  * @author    quinn_yang@realsil.com.cn
  * @brief     Bluetooth LE MESH generic client and server model data struct and function definition
  * @copyright Copyright (c) 2022. Realtek Semiconductor Corporation. All rights reserved.
