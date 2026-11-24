@@ -103,7 +103,7 @@ extern "C" {
  *          parameters (VID/PID, strings, power attributes) live in @ref usbd_dev_info_t instead.
  *          The bmAttributes feature bits are compile-time Kconfig options, not fields here,
  *          because they select which code and which device members exist at all.
- * @note  The structure is read at init only, except @ref usbd_dfu_config_t::itf_str: the string
+ * @note  The structure is read at init only, except @ref usbd_dfu_config_t::itf_str, the string
  *        is kept by pointer, so it shall remain valid until @ref usbd_dfu_deinit.
  */
 typedef struct {

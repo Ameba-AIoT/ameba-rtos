@@ -49,10 +49,6 @@
 #ifdef CONFIG_USBD_UVC
 #include "example_usbd_uvc.h"
 #endif
-#if defined(CONFIG_USBD_COMPOSITE) && defined(CONFIG_USBD_CDC_ACM) && defined(CONFIG_USBD_HID)
-#define USB_APP_COMP_ACM_HID
-#include "example_usbd_composite_cdc_acm_hid.h"
-#endif
 #if defined(CONFIG_USBD_COMPOSITE) && defined(CONFIG_USBD_CDC_ACM) && defined(CONFIG_USBD_MSC)
 #define USB_APP_COMP_ACM_MSC
 #include "example_usbd_composite_cdc_acm_msc.h"
@@ -77,6 +73,12 @@
 #endif
 #ifdef CONFIG_USBH_CDC_NCM
 #include "example_usbh_cdc_ncm.h"
+#endif
+#ifdef CONFIG_USBD_RNDIS
+#include "example_usbd_rndis.h"
+#endif
+#ifdef CONFIG_USBH_RNDIS
+#include "example_usbh_rndis.h"
 #endif
 #ifdef CONFIG_USBD_UAC
 #include "example_usbd_uac.h"
@@ -107,11 +109,11 @@
 /* Private defines -----------------------------------------------------------*/
 
 /* The lwIP USB netif has one TX hook, usb_ethernet_transmit(), defined by the network app itself:
-   an image carries at most one of the CDC ECM / NCM device and host apps. The USBH_CDC_ECM class
+   an image carries at most one of the CDC ECM / NCM / RNDIS device and host apps. The USBH_CDC_ECM class
    builds exactly one of usbh_cdc_ecm, usbh_composite_cdc_acm_ecm (4G dongle) and usbh_wifi_bridge. */
 #if (defined(CONFIG_USBD_CDC_ECM) + defined(CONFIG_USBD_CDC_NCM) + defined(USB_APP_HOST_ECM) + defined(CONFIG_USBH_CDC_NCM) + \
-	 defined(USB_APP_HOST_ACM_ECM) + defined(USB_APP_HOST_BRIDGE)) > 1
-#error "usb_drd: enable at most one network app (USBD_CDC_ECM / USBD_CDC_NCM / USBH_CDC_ECM / USBH_CDC_NCM) in prj.conf"
+	 defined(USB_APP_HOST_ACM_ECM) + defined(USB_APP_HOST_BRIDGE) + defined(CONFIG_USBD_RNDIS) + defined(CONFIG_USBH_RNDIS)) > 1
+#error "usb_drd: enable at most one network app (USBD_CDC_ECM / USBD_CDC_NCM / USBD_RNDIS / USBH_CDC_ECM / USBH_CDC_NCM / USBH_RNDIS) in prj.conf"
 #endif
 
 /* Private types -------------------------------------------------------------*/
@@ -158,9 +160,6 @@ const usb_app_t usb_app_table[] = {
 #ifdef CONFIG_USBD_UVC
 	USB_APP(usbd_uvc, USB_APP_ROLE_DEVICE),
 #endif
-#ifdef USB_APP_COMP_ACM_HID
-	USB_APP(usbd_composite_cdc_acm_hid, USB_APP_ROLE_DEVICE),
-#endif
 #ifdef USB_APP_COMP_ACM_MSC
 	USB_APP(usbd_composite_cdc_acm_msc, USB_APP_ROLE_DEVICE),
 #endif
@@ -178,6 +177,12 @@ const usb_app_t usb_app_table[] = {
 #endif
 #ifdef CONFIG_USBH_CDC_NCM
 	USB_APP(usbh_cdc_ncm, USB_APP_ROLE_HOST),
+#endif
+#ifdef CONFIG_USBD_RNDIS
+	USB_APP(usbd_rndis, USB_APP_ROLE_DEVICE),
+#endif
+#ifdef CONFIG_USBH_RNDIS
+	USB_APP(usbh_rndis, USB_APP_ROLE_HOST),
 #endif
 #ifdef CONFIG_USBH_HID
 	USB_APP(usbh_hid, USB_APP_ROLE_HOST),

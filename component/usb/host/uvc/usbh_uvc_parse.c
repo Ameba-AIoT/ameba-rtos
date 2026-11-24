@@ -780,7 +780,9 @@ int usbh_uvc_parse_cfgdesc(usb_host_t *host)
 
 	dev_id.bInterfaceClass = USB_VIDEO_CLASS_CODE;
 	dev_id.bInterfaceSubClass = USB_VIDEO_SUBCLASS_VIDEOCONTROL;
-	dev_id.mMatchFlags = USBH_DEV_ID_MATCH_ITF_INFO;
+	/* bInterfaceProtocol is PC_PROTOCOL_UNDEFINED (0x00) up to UVC 1.1 and PC_PROTOCOL_15 (0x01)
+	 * in UVC 1.5, Ref UVC 1.5 A.3: match class and subclass only */
+	dev_id.mMatchFlags = USBH_DEV_ID_MATCH_ITF_CLASS | USBH_DEV_ID_MATCH_ITF_SUBCLASS;
 	itf_data = usbh_get_interface_descriptor(host, &dev_id);
 	if (itf_data == NULL) {
 		//RTK_LOGS(TAG, RTK_LOG_DEBUG, "Get vc itf fail\n");
@@ -795,7 +797,7 @@ int usbh_uvc_parse_cfgdesc(usb_host_t *host)
 
 	dev_id.bInterfaceClass = USB_VIDEO_CLASS_CODE;
 	dev_id.bInterfaceSubClass = USB_VIDEO_SUBCLASS_VIDEOSTREAMING;
-	dev_id.mMatchFlags = USBH_DEV_ID_MATCH_ITF_INFO;
+	dev_id.mMatchFlags = USBH_DEV_ID_MATCH_ITF_CLASS | USBH_DEV_ID_MATCH_ITF_SUBCLASS;
 	itf_data = usbh_get_interface_descriptor(host, &dev_id);
 
 	if (itf_data == NULL) {

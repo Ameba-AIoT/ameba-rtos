@@ -27,7 +27,7 @@ typedef struct {
 	uint32_t out_frame_size;        /*!< Size of one output frame. Unit: bytes. */
 	uint32_t init_input_frames;     /*!< Maximum number of input frames accepted per feed call. */
 	uint32_t init_output_frames;    /*!< Capacity of the intermediate output buffer. Unit: frames. */
-	void *presampler;               /*!< Speex resampler state. */
+	void *p_resampler;              /*!< Speex resampler state. */
 	uint32_t out_buffer_size;       /*!< Size of the intermediate output buffer. Unit: bytes. */
 	void *out_buffer;               /*!< Intermediate buffer holding the output of one resample pass. */
 	RingBuffer *p_buffer;           /*!< Ring buffer holding the resampled data waiting to be read. */
@@ -59,10 +59,10 @@ rtk_bt_audio_resample_t *rtk_bt_audio_resample_alloc(uint32_t in_rate, uint32_t 
 
 /**
  * @brief     Free a resampler context and the buffers it owns.
- * @param[in] presample: Resampler context returned by @ref rtk_bt_audio_resample_alloc.
- *                       Must not be NULL.
+ * @param[in] p_bt_resample: Resampler context returned by @ref rtk_bt_audio_resample_alloc.
+ *                           Must not be NULL.
  */
-void rtk_bt_audio_resample_free(rtk_bt_audio_resample_t *presample);
+void rtk_bt_audio_resample_free(rtk_bt_audio_resample_t *p_bt_resample);
 
 /**
  * @brief     Get the amount of resampled data that can be read.

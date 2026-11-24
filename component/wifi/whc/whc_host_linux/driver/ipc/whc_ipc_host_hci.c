@@ -124,13 +124,20 @@ ipc_deinit:
 
 void whc_host_deinit(void)
 {
+	/* block new IPC requests before the transport is torn down (RSWLANDIOT-17054) */
+	global_idev.host_init_done = 0;
+
 	whc_host_xmit_deinit();
+
+	/* event_deinit() already unregistered it, free the aipc_ch_t here (RSWLANDIOT-17054) */
 	whc_host_event_deinit();
+	if (global_idev.event_ch) {
+		kfree(global_idev.event_ch);
+		global_idev.event_ch = NULL;
+	}
 
 	whc_ipc_host_msg_q_deinit();
 
-	/* Deinit ipc channel of data and event. */
-	whc_host_ipc_ch_deinit(&global_idev.event_ch);
 	whc_host_ipc_ch_deinit(&global_idev.data_ch);
 
 }

@@ -585,6 +585,7 @@ enum rtw_drv_op_mode {
 enum rtw_ips_level {
 	RTW_IPS_WIFI_OFF = 0,  /**< The Wi-Fi is fully powered off during IPS to maximize power savings. */
 	RTW_IPS_WIFI_PG,       /**< The Wi-Fi module enters Power Gating, partially turning off RF/BB/MAC, allowing quicker exit from IPS. Only supported by Amebadplus. */
+	RTW_IPS_WIFI_CG,       /**< The Wi-Fi module enters Clock Gating, turning off RF and gating MAC/BB clocks, allowing the fastest exit from IPS. Only supported by AmebaGreen2. */
 	RTW_IPS_LEVEL_MAX,
 };
 

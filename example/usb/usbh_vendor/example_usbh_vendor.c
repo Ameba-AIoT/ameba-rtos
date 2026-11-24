@@ -656,6 +656,18 @@ static void example_usbh_vendor_hotplug_thread(void *param)
 
 	UNUSED(param);
 
+#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
+	/* The USB OTG ISR is delivered on CPU0: the GIC pins every SPI to core 0
+	   (ITARGETSR is written to 0x01010101 in arm_gic.c gic_dist_init). Pinning
+	   the hotplug/deinit thread to CPU0 puts it on the same core as the ISR, so
+	   the local interrupt disables inside the teardown are meaningful again. The
+	   test threads stay unaffined: a pending teardown is excluded from them by
+	   vendor_state_mutex, not by core.
+	   Done by the thread itself, first: a created thread may already run on another core, and its
+	   creator pinning it afterwards could come too late or reach a task that has deleted itself. */
+	rtos_task_set_affinity(rtos_task_handle_get(), 0);
+#endif
+
 	for (;;) {
 		if (rtos_sema_take(vendor_detach_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
 			if (vendor_app.quit != 0U) {
@@ -932,15 +944,6 @@ static int vendor_start(void)
 		vendor_workers--;
 		goto start_fail;
 	}
-#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
-	/* The USB OTG ISR is delivered on CPU0: the GIC pins every SPI to core 0
-	   (ITARGETSR is written to 0x01010101 in arm_gic.c gic_dist_init). Pinning
-	   the hotplug/deinit thread to CPU0 puts it on the same core as the ISR, so
-	   the local interrupt disables inside the teardown are meaningful again. The
-	   test threads stay unaffined: a pending teardown is excluded from them by
-	   vendor_state_mutex, not by core. */
-	rtos_task_set_affinity(task, 0);
-#endif
 #endif
 
 	return RTK_SUCCESS;
@@ -970,6 +973,14 @@ error_exit:
 static void example_usbh_vendor_thread(void *param)
 {
 	UNUSED(param);
+
+#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
+	/* A start that fails rolls back through usbh_deinit(), which waits for no ISR on another
+	   core: run it on CPU0, where the USB IRQ is delivered, as the hotplug thread does.
+	   Done by the thread itself, first: a created thread may already run on another core, and its
+	   creator pinning it afterwards could come too late or reach a task that has deleted itself. */
+	rtos_task_set_affinity(rtos_task_handle_get(), 0);
+#endif
 
 	if (vendor_start() != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Start fail\n");

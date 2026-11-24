@@ -112,7 +112,11 @@ int whc_host_get_ant_info(u8 *antdiv_mode, u8 *curr_ant);
 int whc_host_set_country_code(char *cc);
 int whc_host_get_country_code(struct rtw_country_code_table *table);
 int whc_host_dev_driver_is_mp(u8 *is_mp);
-int whc_host_set_promisc_enable(u32 enable, u8 mode);
+#ifdef CONFIG_WHC_HCI_IPC
+void whc_host_atomic_work_handler(struct work_struct *work);
+int whc_host_atomic_api_send(u32 api_id, u32 *param_buf, u32 param_len);
+void whc_host_promisc_stop(void);
+#endif
 #ifdef CONFIG_IEEE80211R
 int whc_host_ft_status_indicate(struct rtw_kvr_param_t *kvr_param, u16 status);
 #endif

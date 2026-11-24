@@ -481,7 +481,7 @@ typedef enum {
 } rtk_bt_le_audio_bass_past_type_t;
 
 /**
- * @typedef   rtk_bt_le_audio_bass_brs_big_encrption_t
+ * @typedef   rtk_bt_le_audio_bass_brs_big_encryption_t
  * @brief     Bluetooth LE Audio broadcast receive state BIG encryption state.
  */
 typedef enum {
@@ -489,7 +489,14 @@ typedef enum {
 	RTK_BT_LE_AUDIO_BASS_BRS_BIG_BROADCAST_CODE_REQUIRED = 0x01,    /*!< The Broadcast Code is required to decrypt the BIG. */
 	RTK_BT_LE_AUDIO_BASS_BRS_BIG_DECRYPTING              = 0x02,    /*!< The BIG is being decrypted. */
 	RTK_BT_LE_AUDIO_BASS_BRS_BIG_BAD_CODE                = 0x03     /*!< Decryption failed because the Broadcast Code is incorrect. */
-} rtk_bt_le_audio_bass_brs_big_encrption_t;
+} rtk_bt_le_audio_bass_brs_big_encryption_t;
+
+/**
+ * @typedef   rtk_bt_le_audio_bass_brs_big_encrption_t
+ * @brief     Deprecated alias of @ref rtk_bt_le_audio_bass_brs_big_encryption_t.
+ * @deprecated Use @ref rtk_bt_le_audio_bass_brs_big_encryption_t instead.
+ */
+typedef rtk_bt_le_audio_bass_brs_big_encryption_t rtk_bt_le_audio_bass_brs_big_encrption_t;
 
 /**************************************** Event ****************************************/
 
@@ -673,7 +680,7 @@ typedef struct {
 	uint8_t source_adv_sid;                                    /*!< Advertising SID of the broadcast source. */
 	uint8_t broadcast_id[RTK_BT_LE_AUDIO_BROADCAST_ID_LEN];    /*!< Broadcast ID of the broadcast source. */
 	uint8_t pa_sync_state;                                     /*!< PA synchronization state. */
-	uint8_t big_encryption;                                    /*!< BIG encryption state, @ref rtk_bt_le_audio_bass_brs_big_encrption_t. */
+	uint8_t big_encryption;                                    /*!< BIG encryption state, @ref rtk_bt_le_audio_bass_brs_big_encryption_t. */
 	uint8_t bad_code[RTK_BT_LE_AUDIO_BROADCAST_CODE_LEN];      /*!< Incorrect Broadcast Code that failed to decrypt the BIG. */
 	uint8_t num_subgroups;                                     /*!< Number of subgroups. */
 	uint16_t bis_info_size;                                    /*!< Size of the subgroup BIS information. */

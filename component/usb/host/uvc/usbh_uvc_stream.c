@@ -1468,7 +1468,9 @@ int usbh_uvc_stream_open(usbh_uvc_stream_t *stream)
 #endif
 
 	/*init frame buffer*/
-	stream->frame_buf = (u8 *)usb_os_malloc(USBH_UVC_VIDEO_FRAME_NUMS * frame_buf_size);
+	/* Frame data is always written by the receive path and read only up to
+	 * byteused, so the buffers need no zero-fill. Freed by usb_os_mfree(). */
+	stream->frame_buf = (u8 *)rtos_mem_malloc(USBH_UVC_VIDEO_FRAME_NUMS * frame_buf_size);
 	if (stream->frame_buf == NULL) {
 		goto exit;
 	}
@@ -1528,7 +1530,7 @@ int usbh_uvc_stream_open(usbh_uvc_stream_t *stream)
 
 	usb_os_enter_critical();
 	if (uvc->hw_irq_ref_cnt == 0U) {
-		usbh_hw_uvc_irq_en(uvc->hw_isr_pri);
+		usbh_hw_uvc_irq_enable(uvc->hw_isr_pri);
 	}
 	uvc->hw_irq_ref_cnt++;
 	usb_os_exit_critical();
@@ -1607,7 +1609,7 @@ void usbh_uvc_stream_close(usbh_uvc_stream_t *stream)
 		if (uvc->hw_irq_ref_cnt > 0U) {
 			uvc->hw_irq_ref_cnt--;
 			if (uvc->hw_irq_ref_cnt == 0U) {
-				usbh_hw_uvc_irq_dis();
+				usbh_hw_uvc_irq_disable();
 			}
 		}
 		usb_os_exit_critical();

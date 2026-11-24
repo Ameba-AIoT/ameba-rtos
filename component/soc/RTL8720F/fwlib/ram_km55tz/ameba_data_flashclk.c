@@ -5,18 +5,12 @@
  */
 
 #include "ameba_soc.h"
+#include "nor_flash.h"
 
 #define FLASH_CALIBRATION_DEBUG		0
 
 static const char *const TAG = "FLASH";
-static FlashInfo_TypeDef *current_IC;
-
-/* Flag to check configuration register or not. Necessary for wide-range VCC MXIC flash */
-static u8 check_config_reg = 0;
-
 static u32 SPIC_DATA_FLASH_CALIB_PATTERN[2] = {0};
-
-u32 DATA_FLASH_SIZE = 0;
 
 static void DATA_FLASH_PLLInit_ClockDiv(void)
 {
@@ -131,112 +125,11 @@ int data_flash_handshake_highspeed(void)
 	return Ret;
 }
 
-void data_flash_get_vendor(void)
-{
-	u8 flash_ID[4];
-	FLASH_InitTypeDef *FLASH_InitStruct = &data_flash_init_para;
-
-	/* Read flash ID */
-	DATA_FLASH_RxCmd(FLASH_InitStruct->FLASH_cmd_rd_id, 3, flash_ID);
-	RTK_LOGI(TAG, "Flash ID: %x-%x-%x\n", flash_ID[0], flash_ID[1], flash_ID[2]);
-
-	DATA_FLASH_SIZE = (1 << (flash_ID[2] - 0x11));
-
-	/* Get flash chip information */
-	current_IC = data_flash_get_chip_info((flash_ID[2] << 16) | (flash_ID[1] << 8) | flash_ID[0]);
-	if (current_IC == NULL) {
-		RTK_LOGE(TAG, "This flash type is not supported!\n");
-		assert_param(0);
-	}
-
-	/* Re-initialize flash init structure according to classification */
-	switch (current_IC->flash_class) {
-	case FlashClass1:
-		DATA_FLASH_StructInit(FLASH_InitStruct);
-		break;
-	case FlashClass2:
-		DATA_FLASH_StructInit_GD(FLASH_InitStruct);
-		if (flash_ID[2] > 0x15) { /* GD capacity more than 2MB */
-			FLASH_InitStruct->FLASH_cmd_wr_status2 = 0x31;
-		}
-		break;
-	case FlashClass3:
-		DATA_FLASH_StructInit_MXIC(FLASH_InitStruct);
-		break;
-	case FlashClass4:	/* EON without QE bit */
-		DATA_FLASH_StructInit_MXIC(FLASH_InitStruct);
-		FLASH_InitStruct->FLASH_QuadEn_bit = 0;
-		break;
-	case FlashClass5:
-		DATA_FLASH_StructInit_Micron(FLASH_InitStruct);
-		break;
-	case FlashClass6:	/* MXIC wide-range VCC chip */
-		DATA_FLASH_StructInit_MXIC(FLASH_InitStruct);
-		check_config_reg = 1;
-		break;
-	case FlashClassUser:
-		assert_param(current_IC->FlashInitHandler != NULL);
-		current_IC->FlashInitHandler();
-		break;
-	default:
-		break;
-	}
-
-	//FLASH_InitStruct->FLASH_addr_phase_len = ADDR_4_BYTE;
-}
-
-void data_flash_set_status_register(void)
-{
-	u8 StatusLen = 1;
-	u32 data = 0;
-	u32 status;
-	u32 mask = current_IC->sta_mask;
-	FLASH_InitTypeDef *FLASH_InitStruct = &data_flash_init_para;
-
-	if (FLASH_InitStruct->FLASH_QuadEn_bit != 0) {
-		data |= FLASH_InitStruct->FLASH_QuadEn_bit;
-	}
-
-	/* read status1 register */
-	DATA_FLASH_RxCmd(FLASH_InitStruct->FLASH_cmd_rd_status, 1, (u8 *)&status);
-
-	/* check if status2 exist */
-	if (FLASH_InitStruct->FLASH_Status2_exist) {
-		StatusLen = 2;
-		DATA_FLASH_RxCmd(FLASH_InitStruct->FLASH_cmd_rd_status2, 1, ((u8 *)&status) + 1);
-
-	} else if (check_config_reg) {	/* for MXIC wide-range flash, 1 status register + 2 config register */
-		/* Read configuration register */
-		DATA_FLASH_RxCmd(0x15, 2, ((u8 *)&status) + 1);
-		StatusLen = 3;
-
-		/* L/H Switch */
-		data |= (BIT(9) << 8);
-	}
-
-	status &= mask;
-	if (_memcmp((void *)&status, (void *)&data, StatusLen)) {
-		if (!FLASH_InitStruct->FLASH_cmd_wr_status2) {
-			DATA_FLASH_SetStatus(FLASH_InitStruct->FLASH_cmd_wr_status, StatusLen, (u8 *)&data);
-		} else {
-			DATA_FLASH_SetStatus(FLASH_InitStruct->FLASH_cmd_wr_status, 1, (u8 *)&data);
-			DATA_FLASH_SetStatus(FLASH_InitStruct->FLASH_cmd_wr_status2, 1, ((u8 *)&data) + 1);
-		}
-	}
-}
-
 int data_flash_rx_mode_switch(u32 spic_mode)
 {
-	u8 status = 0;
 	int Ret = RTK_SUCCESS;
 	char *str[] = {"1IO", "2O", "2IO", "4O", "4IO"};
-	FLASH_InitTypeDef *FLASH_InitStruct = &data_flash_init_para;
-
-#if !defined(CONFIG_SECOND_FLASH_NOR)
-	UNUSED(FLASH_InitStruct);
-	UNUSED(status);
-	return RTK_FAIL;
-#endif
+	FLASH_InitTypeDef *FLASH_InitStruct = data_flash.para;
 
 	/* Try sequentially: 4IO, 4O, 2IO, 2O, 1bit */
 	while (1) {
@@ -246,15 +139,10 @@ int data_flash_rx_mode_switch(u32 spic_mode)
 		} else {
 			FLASH_InitStruct->FLASH_prm_avoid = 0;
 		}
-#if defined(CONFIG_SECOND_FLASH_NOR)
-		if (FLASH_InitStruct->FLASH_Id == FLASH_ID_MICRON) {
-			DATA_FLASH_RxCmd(0x85, 1, &status);
-			status = (status & 0x0f) | (FLASH_InitStruct->FLASH_rd_dummy_cycle[spic_mode] << 4);
-			DATA_FLASH_SetStatus(0x81, 1, &status);
-		}
+		/* Dummy cycles of the default profile, before every attempt */
+		nor_flash_set_default_dummy(&data_flash);
 
-		DATA_FLASH_Init(spic_mode);
-#endif
+		data_flash.init(spic_mode);
 		if (spic_mode == Spic1IOBitMode) {
 			RTK_LOGE(TAG, "DATA Flash Switch Read Mode FAIL\n");
 			Ret = RTK_FAIL;
@@ -274,33 +162,22 @@ int data_flash_rx_mode_switch(u32 spic_mode)
 
 void data_flash_highspeed_setup(void)
 {
-	FLASH_InitTypeDef *FLASH_InitStruct = &data_flash_init_para;
+	FLASH_InitTypeDef *FLASH_InitStruct = data_flash.para;
 	u32 read_mode = flash_get_readmode(Data_Flash_ReadMode);
 	u8 mem_type = ChipInfo_MemoryType();
-
-#if !defined(CONFIG_SECOND_FLASH_NOR)
-	UNUSED(FLASH_InitStruct);
-	UNUSED(read_mode);
-	UNUSED(mem_type);
-	return;
-#endif
 
 	if ((mem_type != MCM_TYPE_NOR_FLASH) && (mem_type != MCM_TYPE_NAND_FLASH)) {
 		RTK_LOGE(TAG, "Can't support second flash for chip without mem flash\n");
 		return;
 	}
-#if defined(CONFIG_SECOND_FLASH_NOR)
+
 	DATA_FLASH_StructInit(FLASH_InitStruct);
 	FLASH_InitStruct->FLASH_baud_rate = 1;
 	FLASH_InitStruct->FLASH_baud_boot = 1;
-	// FLASH_InitStruct->FLASH_addr_phase_len = ADDR_4_BYTE;
 
-	/* Get flash ID to reinitialize FLASH_InitTypeDef structure */
-	data_flash_get_vendor();
-
-	/* Set flash status register: set QE, clear protection bits */
-	data_flash_set_status_register();
-#endif
+	/* Identify the flash and apply its strategy, then set QE if a quad read mode is asked for */
+	nor_flash_get_vendor(&data_flash);
+	nor_flash_set_qe(&data_flash, read_mode);
 
 	/* read data from data flash address0 as calib data when flash is in 1io 20M*/
 	DCache_Invalidate(DATA_FLASH_BASE, 8);

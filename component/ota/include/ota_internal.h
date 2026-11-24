@@ -22,6 +22,7 @@ extern "C" {
 #define OTA_TAG            "OTA"
 
 #define OTA_BUF_SIZE        2048   /*the size of the buffer used for receiving firmware data from server*/
+#define OTA_RECV_TIMEOUT_SEC 30    /*socket receive timeout: a server that stops sending without closing fails the OTA instead of blocking forever*/
 #define OTA_HEADER_BAK_LEN  32
 #define OTA_HEADER_LEN      8
 #define OTA_SUB_HEADER_LEN  24
@@ -289,9 +290,10 @@ int ota_storage_flush(void);
 int ota_storage_verify_checksum(ota_hdr_manager_t *hdr_mgr, u8 slot_idx, u8 hdr_idx);
 
 /**
- * @brief  Flash stream read
+ * @brief  Read back bytes [offset, offset + len) of the image written so far (offset 0 =
+ *         first byte of the manifest, which still reads as the 0xFF placeholder here)
  */
-int ota_storage_read(u32 addr, u8 *data, u32 len);
+int ota_storage_read_image(u32 offset, u8 *data, u32 len);
 
 /**
  * @brief  Update Manifest

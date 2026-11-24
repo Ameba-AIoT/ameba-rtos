@@ -692,6 +692,56 @@ int bt_mesh_lpn_set(bool enable);
  *  @return Zero on success or (negative) error code otherwise.
  */
 int bt_mesh_lpn_params_set(uint16_t net_idx, uint32_t poll_interval, uint32_t poll_timeout, uint8_t recv_delay, uint8_t rx_widen);
+
+/** Bits of the mask of bt_mesh_cfg_params_set() */
+#define BT_MESH_CFG_PARAM_TRANS_RETRANS_COUNT  BIT(0)
+#define BT_MESH_CFG_PARAM_NET_TRANS_COUNT      BIT(1)
+#define BT_MESH_CFG_PARAM_NET_TRANS_STEP       BIT(2)
+#define BT_MESH_CFG_PARAM_RELAY_RETRANS_COUNT  BIT(3)
+#define BT_MESH_CFG_PARAM_RELAY_RETRANS_STEP   BIT(4)
+#define BT_MESH_CFG_PARAM_TTL                  BIT(5)
+
+/** @brief Override the Kconfig defaults of the retransmission parameters and the default TTL.
+ *
+ *  Must be called before bt_mesh_init(). Only the parameters whose bit is set in the mask are overridden (0 is a valid value),
+ *  the others keep the Kconfig default (or the value restored from settings). The overridden ones win over the settings.
+ *
+ *  @param mask                Bits of BT_MESH_CFG_PARAM_xxx, the parameters to override.
+ *  @param trans_retrans_count Transport (SAR) retransmission count, 0 - 10.
+ *  @param net_trans_count     Network transmit count, 0 - 7.
+ *  @param net_trans_step      Network transmit interval step (interval = (step + 1) * 10 ms), 0 - 31.
+ *  @param relay_retrans_count Relay retransmit count, 0 - 7.
+ *  @param relay_retrans_step  Relay retransmit interval step (interval = (step + 1) * 10 ms), 0 - 31.
+ *  @param ttl                 Default TTL, 0 or 2 - 127.
+ *
+ *  @return Zero on success or (negative) error code otherwise.
+ */
+int bt_mesh_cfg_params_set(uint8_t mask, uint8_t trans_retrans_count, uint8_t net_trans_count, uint8_t net_trans_step,
+			   uint8_t relay_retrans_count, uint8_t relay_retrans_step, uint8_t ttl);
+
+/** @brief Set the size of the Replay Protection List.
+ *
+ *  Must be called before bt_mesh_init(). 0 keeps CONFIG_BT_MESH_CRPL.
+ *  Once set, keep it unchanged, otherwise the entries stored in the settings may not fit and are lost.
+ *  To change it, erase the mesh settings first.
+ *
+ *  @param rpl_num Number of RPL entries.
+ *
+ *  @return Zero on success or (negative) error code otherwise.
+ */
+int bt_mesh_rpl_num_set(uint16_t rpl_num);
+
+/** @brief Set the number of nodes (device keys) that the provisioner can store in the CDB.
+ *
+ *  Must be called before bt_mesh_init(). 0 keeps CONFIG_BT_MESH_CDB_NODE_COUNT.
+ *  Once set, keep it unchanged, otherwise the nodes stored in the settings may not fit and are lost.
+ *  To change it, erase the mesh settings first.
+ *
+ *  @param node_num Number of CDB nodes.
+ *
+ *  @return Zero on success or (negative) error code otherwise.
+ */
+int bt_mesh_cdb_node_num_set(uint16_t node_num);
 #endif
 
 /** @brief Send out a Friend Poll message.

@@ -62,7 +62,9 @@ void os_heap_init(void)
 	if (ChipInfo_PsramExists()) {
 
 #ifdef PSRAM_HEAP0_START		// Defines a block in bd_psram
-		os_heap_add((uint8_t *)PSRAM_HEAP0_START, (size_t)PSRAM_HEAP0_SIZE);
+		if ((u32)__psram_heap_buffer_size__ != 0) {
+			os_heap_add((uint8_t *)PSRAM_HEAP0_START, (size_t)PSRAM_HEAP0_SIZE);
+		}
 #endif
 
 #ifdef PSRAM_HEAP1_START		// Defines a block in psram

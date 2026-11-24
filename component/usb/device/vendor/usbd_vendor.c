@@ -1238,7 +1238,11 @@ int usbd_vendor_transmit_bulk_data(u8 *buf, u32 len)
 	/* Claim the endpoint atomically, so two tasks on different cores cannot both see it idle */
 	usb_os_enter_critical();
 	claimed = (ep_bulk_in->xfer_state == 0U) ? 1U : 0U;
-	ep_bulk_in->xfer_state = 1U;
+	/* Write only on a claim: the completion ISR releases the EP without the lock, and an
+	   unconditional write would re-mark it busy after that release, leaving it stuck */
+	if (claimed != 0U) {
+		ep_bulk_in->xfer_state = 1U;
+	}
 	usb_os_exit_critical();
 
 	if (claimed != 0U) {
@@ -1286,7 +1290,10 @@ int usbd_vendor_transmit_intr_data(u8 *buf, u32 len)
 	/* Claim the endpoint atomically, so two tasks on different cores cannot both see it idle */
 	usb_os_enter_critical();
 	claimed = (ep_intr_in->xfer_state == 0U) ? 1U : 0U;
-	ep_intr_in->xfer_state = 1U;
+	/* Same as the bulk IN path: write only on a claim */
+	if (claimed != 0U) {
+		ep_intr_in->xfer_state = 1U;
+	}
 	usb_os_exit_critical();
 
 	if (claimed != 0U) {

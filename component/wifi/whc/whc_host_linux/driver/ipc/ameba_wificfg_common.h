@@ -76,7 +76,8 @@ struct wifi_user_conf {
 
 	/*!	Power save status:
 		- \b RTW_IPS_WIFI_OFF: The WIFI is powered off during the IPS;
-		- \b RTW_IPS_WIFI_PG: The WIFI enters the PG state during the IPS, and therefore it exits the IPS faster. Only dplus support this status. */
+		- \b RTW_IPS_WIFI_PG: The WIFI enters the PG state during the IPS, and therefore it exits the IPS faster. Only dplus support this status.
+		- \b RTW_IPS_WIFI_CG: The WIFI enters the CG state during the IPS, and therefore it exits the IPS fastest. Only green2 support this status. */
 	u8 ips_level;
 
 	/*!	The driver does not enter the IPS due to 2s disconnection. Instead, API wifi_set_ips_internal() controls the IPS.\n

@@ -8,6 +8,7 @@
 #define _RTK_COEX_H_
 
 #include <dlist.h>
+#include <stdbool.h>
 
 #define HCI_NONE    0x00
 #define HCI_CMD     0x01
@@ -27,6 +28,8 @@
 #define A2DP_MEDIA     0x02
 
 #define BT_COEX_MONITOR_INTERVAL    1000
+#define BT_COEX_TASK_STACK_SIZE     (2*1024)
+#define BT_COEX_TASK_PRIO           5
 #define BT_LE_BUSY_CONN_INTERVAL    0x10    //20ms, units: 1.25ms
 #define BT_HID_BUSY_INTERVAL        60  //units: 1.25ms
 
@@ -350,10 +353,15 @@ struct rtk_bt_coex_monitor_node_t {
 struct rtk_bt_coex_priv_t {
 	struct list_head conn_list;
 	void *conn_mutex;
+	void *task_hdl;
+	void *task_sem;
+	void *task_exit_sem;
+	volatile bool task_run;
+	volatile bool profile_pending;
 #if defined(HCI_BT_COEX_BR_EDR_SUPPORT) && HCI_BT_COEX_BR_EDR_SUPPORT
-	struct list_head monitor_list;
-	void *monitor_mutex;
-	void *monitor_timer;
+	volatile bool bitpool_pending;
+	volatile uint8_t bitpool;
+	struct list_head monitor_list;  /* protected by conn_mutex, nodes point at conn nodes */
 #endif
 #if defined(HCI_BT_COEX_SW_MAILBOX) && HCI_BT_COEX_SW_MAILBOX
 	struct rtk_coex_bt_info_t bt_info_cur;

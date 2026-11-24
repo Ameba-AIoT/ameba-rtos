@@ -56,9 +56,9 @@ menu "CONFIG USB"
         bool
     config USBD_CDC_NCM
         bool
-    config USBD_COMPOSITE
+    config USBD_RNDIS
         bool
-    config USBD_COMPOSITE_CDC_ACM_HID
+    config USBD_COMPOSITE
         bool
     config USBD_COMPOSITE_CDC_ACM_MSC
         bool
@@ -102,6 +102,8 @@ menu "CONFIG USB"
     config USBH_CDC_ECM
         bool
     config USBH_CDC_NCM
+        bool
+    config USBH_RNDIS
         bool
     config USBH_ECM_ETHERNET
         bool

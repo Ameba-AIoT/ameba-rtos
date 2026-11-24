@@ -88,25 +88,6 @@ extern "C" {
 /* 4.6.1.2 Class-Specific AS Isochronous Audio Data Endpoint Descriptor bmAttributes */
 #define USB_UAC1_EP_ATTR_SAMPLING_FREQ_CONTROL      BIT0
 
-/* Terminals - 2.2 Input Terminal Types */
-#define USB_UAC1_INPUT_TERMINAL_UNDEFINED                    0x200
-#define USB_UAC1_INPUT_TERMINAL_MICROPHONE                   0x201
-#define USB_UAC1_INPUT_TERMINAL_DESKTOP_MICROPHONE           0x202
-#define USB_UAC1_INPUT_TERMINAL_PERSONAL_MICROPHONE          0x203
-#define USB_UAC1_INPUT_TERMINAL_OMNI_DIR_MICROPHONE          0x204
-#define USB_UAC1_INPUT_TERMINAL_MICROPHONE_ARRAY             0x205
-#define USB_UAC1_INPUT_TERMINAL_PROC_MICROPHONE_ARRAY        0x206
-
-/* Terminals - 2.3 Output Terminal Types */
-#define USB_UAC1_OUTPUT_TERMINAL_UNDEFINED                   0x300
-#define USB_UAC1_OUTPUT_TERMINAL_SPEAKER                     0x301
-#define USB_UAC1_OUTPUT_TERMINAL_HEADPHONES                  0x302
-#define USB_UAC1_OUTPUT_TERMINAL_HEAD_MOUNTED_DISPLAY_AUDIO  0x303
-#define USB_UAC1_OUTPUT_TERMINAL_DESKTOP_SPEAKER             0x304
-#define USB_UAC1_OUTPUT_TERMINAL_ROOM_SPEAKER                0x305
-#define USB_UAC1_OUTPUT_TERMINAL_COMMUNICATION_SPEAKER       0x306
-#define USB_UAC1_OUTPUT_TERMINAL_LOW_FREQ_EFFECTS_SPEAKER    0x307
-
 /* Formats - A.1.1 Audio Data Format Type I Codes */
 #define USB_UAC1_FORMAT_TYPE_I_UNDEFINED     0x0
 #define USB_UAC1_FORMAT_TYPE_I_PCM           0x1
@@ -124,7 +105,19 @@ extern "C" {
 #define USB_UAC1_EXT_FORMAT_TYPE_II          0x82
 #define USB_UAC1_EXT_FORMAT_TYPE_III         0x83
 
-/* Terminal Control Selectors */
+/** @} End of USB_Common_UAC1_Constants group */
+/** @} End of USB_Common_Constants group */
+
+/* Exported types ------------------------------------------------------------*/
+
+/** @addtogroup USB_Common_Types USB Common Types
+ *  @{
+ */
+/** @defgroup USB_Common_UAC1_Types USB UAC1 Types (UAC 1.0)
+ *  @brief UAC 1.0 descriptor layouts shared by the USBD and USBH UAC drivers.
+ *  @{
+ */
+
 /* Class-Specific AC Interface Descriptor header */
 typedef struct {
 	uint8_t bLength;
@@ -155,10 +148,8 @@ typedef struct {
 	uint8_t tSamFreq[3][3];
 } __PACKED usb_uac1_format_type_i_discrete_descriptor;
 
-/** @} End of USB_Common_UAC1_Constants group */
-/** @} End of USB_Common_Constants group */
-
-/* Exported types ------------------------------------------------------------*/
+/** @} End of USB_Common_UAC1_Types group */
+/** @} End of USB_Common_Types group */
 
 /* Exported macros -----------------------------------------------------------*/
 

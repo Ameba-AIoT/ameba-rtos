@@ -26,7 +26,9 @@ static int ota_ssl_verify(void *data, mbedtls_x509_crt *crt, int depth, int *fla
 		return 0;
 	}
 
-	mbedtls_x509_crt_info(buf, sizeof(buf) - 1, "", crt);
+	if (mbedtls_x509_crt_info(buf, 1024 - 1, "", crt) < 0) {
+		RTK_LOGW(OTA_TAG, "[TLS] certificate info truncated\n");
+	}
 
 	if (*flags) {
 		RTK_LOGI(OTA_TAG, "[TLS] ERROR: certificate verify\n%s\n", buf);

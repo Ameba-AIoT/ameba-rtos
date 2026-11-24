@@ -54,6 +54,13 @@ IMAGE_HEADER *HCI_SelectEmptyHdr(u32 addr)
 }
 /* Private functions ---------------------------------------------------------*/
 
+/* The size alone can not tell an empty header from the 32 byte tail frame of a larger sub-image */
+static u8 HCI_IsEmptyImgHdr(u32 addr, const IMAGE_HEADER *hdr)
+{
+	return (hdr->signature[0] == APP_IMAGE_PATTERN_1) && (hdr->signature[1] == APP_IMAGE_PATTERN_2) &&
+		   (hdr->image_size == 0) && (hdr->image_addr == addr + IMAGE_HEADER_LEN);
+}
+
 /* the manifest is the last page of SRAM: 0x3007F000 ~ 0x30080000 (ameba_layout.ld KM55TZ_FLOADER_RAM_S), after the bootloader */
 #define HCI_MANIFEST_PAGE_SIZE	0x1000U
 
@@ -105,7 +112,7 @@ static int HCI_WriteImage(u32 addr, const u8 *src, u32 size)
 	u32 i;
 
 	/* Host Send empty img header: redirect to the per-core empty slot, which is the bootloader's own memory */
-	if (size == IMAGE_HEADER_LEN) {
+	if ((size == IMAGE_HEADER_LEN) && HCI_IsEmptyImgHdr(addr, (const IMAGE_HEADER *)src)) {
 		addr = (u32)HCI_SelectEmptyHdr(addr);
 	} else if (!IS_FLASH_ADDR(addr) && !HCI_MemRangeIsValid(addr, size)) {
 		RTK_LOGD(TAG, "WRITE: addr 0x%08x invalid\n", addr);
@@ -148,7 +155,7 @@ static int HCI_CalculateChecksum(u32 addr, u32 size, u32 *result)
 	u32 i;
 
 	/* Host Send empty img header: redirect to the per-core empty slot, which is the bootloader's own memory */
-	if (size == IMAGE_HEADER_LEN) {
+	if ((size == IMAGE_HEADER_LEN) && HCI_IsEmptyImgHdr(addr, HCI_SelectEmptyHdr(addr))) {
 		addr = (u32)HCI_SelectEmptyHdr(addr);
 	} else if (!IS_FLASH_ADDR(addr) && !HCI_MemRangeIsValid(addr, size)) {
 		RTK_LOGD(TAG, "CHECK: addr 0x%08x invalid\n", addr);

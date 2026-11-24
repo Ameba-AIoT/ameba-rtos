@@ -73,10 +73,12 @@ int ota_write(ota_context_t *ctx, const u8 *buf, int len);
 /**
  * @brief  Read back the firmware content already written in the current push
  *         session, before ota_finish() commits the manifest. The written image
- *         spans image offset [0, ImageLen): the leading manifest is still held
- *         in RAM (not yet in flash), the remainder is the body already flashed.
- *         This call transparently sources the manifest region from RAM and the
- *         body region from flash, so the caller sees the contiguous image.
+ *         spans image offset [0, ImageLen). Until ota_finish() the first erase
+ *         block (NOR: one page, NAND: the whole block) is held in RAM and the
+ *         last partly filled page is still in the page buffer; only the part in
+ *         between is in flash (on NAND, located through the bad block map).
+ *         This call transparently stitches these sources together, so the
+ *         caller sees the contiguous image.
  *         Intended for read-back verification between ota_write() and
  *         ota_finish() (e.g. the caller computing its own hash/checksum).
  * @param  ctx:    OTA context

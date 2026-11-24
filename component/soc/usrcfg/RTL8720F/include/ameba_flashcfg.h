@@ -11,7 +11,7 @@
 extern "C" {
 #endif
 
-#ifdef CONFIG_SOLO
+#ifdef CONFIG_IOT_MCU_COMBINED
 #define IMG_APP_OTA1_SIZE	(512 * 1024 - 1)
 #define IMG_APP_OTA2_SIZE	(512 * 1024 - 1)
 #else

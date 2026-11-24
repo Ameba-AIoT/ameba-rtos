@@ -24,16 +24,56 @@ extern "C"
 #define RTK_BT_LE_AUDIO_CCID_MAX_NUM 4
 #define RTK_BT_LE_AUDIO_PA_ADV_SET_MAX_NUM 4
 #define RTK_BT_LE_AUDIO_SYNC_HANDLE_MAX_NUM 4
+/**
+ * @def       RTK_BT_LE_AUDIO_BROADCASTER_BIS_MAX_NUM
+ * @brief     Maximum number of BISes of a broadcast source.
+ */
 #define RTK_BT_LE_AUDIO_BROADCASTER_BIS_MAX_NUM 2
 #define RTK_BT_LE_AUDIO_RECEIVER_BIG_MAX_NUM 2
 #define RTK_BT_LE_AUDIO_RECEIVER_BIS_MAX_NUM 4
 #define RTK_BT_LE_AUDIO_BROADCASTER_GROUP_MAX_NUM 2
 #define RTK_BT_LE_AUDIO_BROADCAST_SOURCE_ADV_SID 0
-#define RTK_BT_LE_AUDIO_UNICAST_SETEO_MODE 1
-#define RTK_BT_LE_AUDIO_BROADCASTER_SETEO_MODE 1
+/**
+ * @def       RTK_BT_LE_AUDIO_UNICAST_STEREO_MODE
+ * @brief     Enable the stereo mode of the unicast audio.
+ * @note
+ *            - 1: Enabled. 0: Disabled. Default value is 1.
+ *            - If the deprecated @ref RTK_BT_LE_AUDIO_UNICAST_SETEO_MODE is defined by the user, its value is taken over.
+ */
+#if defined(RTK_BT_LE_AUDIO_UNICAST_SETEO_MODE)
+#define RTK_BT_LE_AUDIO_UNICAST_STEREO_MODE RTK_BT_LE_AUDIO_UNICAST_SETEO_MODE
+#else
+#define RTK_BT_LE_AUDIO_UNICAST_STEREO_MODE 1
+/**
+ * @def       RTK_BT_LE_AUDIO_UNICAST_SETEO_MODE
+ * @brief     Deprecated alias of @ref RTK_BT_LE_AUDIO_UNICAST_STEREO_MODE.
+ * @deprecated Use @ref RTK_BT_LE_AUDIO_UNICAST_STEREO_MODE instead.
+ */
+#define RTK_BT_LE_AUDIO_UNICAST_SETEO_MODE RTK_BT_LE_AUDIO_UNICAST_STEREO_MODE
+#endif
+/**
+ * @def       RTK_BT_LE_AUDIO_BROADCASTER_STEREO_MODE
+ * @brief     Enable the stereo mode of the broadcast audio.
+ * @note
+ *            - 1: Enabled. 0: Disabled. Default value is 1.
+ *            - It takes effect only when @ref RTK_BT_LE_AUDIO_BROADCAST_SOURCE_BIS_NUM is 1.
+ *              In this case, the only BIS carries both the left and right channels and the Max SDU of the BIG is doubled.
+ *            - If the deprecated @ref RTK_BT_LE_AUDIO_BROADCASTER_SETEO_MODE is defined by the user, its value is taken over.
+ */
+#if defined(RTK_BT_LE_AUDIO_BROADCASTER_SETEO_MODE)
+#define RTK_BT_LE_AUDIO_BROADCASTER_STEREO_MODE RTK_BT_LE_AUDIO_BROADCASTER_SETEO_MODE
+#else
+#define RTK_BT_LE_AUDIO_BROADCASTER_STEREO_MODE 1
+/**
+ * @def       RTK_BT_LE_AUDIO_BROADCASTER_SETEO_MODE
+ * @brief     Deprecated alias of @ref RTK_BT_LE_AUDIO_BROADCASTER_STEREO_MODE.
+ * @deprecated Use @ref RTK_BT_LE_AUDIO_BROADCASTER_STEREO_MODE instead.
+ */
+#define RTK_BT_LE_AUDIO_BROADCASTER_SETEO_MODE RTK_BT_LE_AUDIO_BROADCASTER_STEREO_MODE
+#endif
 #define RTK_BT_LE_AUDIO_ISO_TX_SYNC_SUPPORT 0
 #define RTK_BT_LE_AUDIO_ISO_RX_SYNC_SUPPORT 1
-#define RTK_BT_LE_AUDIO_BROADCAST_SOURCE_BIS_NUM 1       /* should be <= RTK_BT_LE_AUDIO_BROADCASTER_BIS_MAX_NUM */
+#define RTK_BT_LE_AUDIO_BROADCAST_SOURCE_BIS_NUM 1       /*!< Number of BISes of the broadcast source, <= @ref RTK_BT_LE_AUDIO_BROADCASTER_BIS_MAX_NUM. */
 #define RTK_BT_LE_AUDIO_BROADCAST_SOURCE_SUB_GROUP_NUM 1 /* number of subgroups in a broadcast source group */
 #define RTK_BT_LE_AUDIO_BROADCAST_SOURCE_GROUP_NUM 1
 /*                                            user cfg max config end                                   */
@@ -53,22 +93,52 @@ extern "C"
 /* user LE Audio config */
 /* user codec config */
 /* user session qos config */
+/**
+ * @def       RTK_BT_LE_MEDIA_AUDIO_CFG_SUPPORT
+ * @brief     Bit mask of the unicast audio configurations supported when setting up a media audio stream.
+ */
 #define RTK_BT_LE_MEDIA_AUDIO_CFG_SUPPORT (RTK_BT_LE_UNICAST_AUDIO_CFG_1_BIT | RTK_BT_LE_UNICAST_AUDIO_CFG_3_BIT | \
                                            RTK_BT_LE_UNICAST_AUDIO_CFG_4_BIT | RTK_BT_LE_UNICAST_AUDIO_CFG_6_I_BIT | \
                                            RTK_BT_LE_UNICAST_AUDIO_CFG_6_II_BIT)
-/* !!!RTK_BT_LE_MEDIA_AUDIO_CFG_PREFER should be associated with RTK_BT_LE_AUDIO_DEFAULT_UNICAST_AUDIO_CFG   */
-/* !!!RTK_BT_LE_MEDIA_CODEC_CFG_PREFER should be associated with RTK_BT_LE_AUDIO_DEFAULT_CODEC_CFG_ITEM   */
+/**
+ * @def       RTK_BT_LE_MEDIA_AUDIO_CFG_PREFER
+ * @brief     Preferred unicast audio configuration bit mask when setting up a media audio stream.
+ * @note
+ *            - The audio configurations supported by the peer devices are filtered by @ref RTK_BT_LE_MEDIA_AUDIO_CFG_SUPPORT.
+ *              If the result contains this bit mask, only this bit mask is kept.
+ *            - If @ref RTK_BT_LE_AUDIO_UNICAST_STEREO_MODE is 1, it is forced to @ref RTK_BT_LE_UNICAST_AUDIO_CFG_4_BIT.
+ *            - It is recommended to keep it consistent with @ref RTK_BT_LE_AUDIO_DEFAULT_UNICAST_AUDIO_CFG.
+ */
 #if !defined(RTK_BLE_AUDIO_CSIP_SET_COORDINATOR_SUPPORT) || !RTK_BLE_AUDIO_CSIP_SET_COORDINATOR_SUPPORT
 #define RTK_BT_LE_MEDIA_AUDIO_CFG_PREFER RTK_BT_LE_UNICAST_AUDIO_CFG_4_BIT
 #else
 #define RTK_BT_LE_MEDIA_AUDIO_CFG_PREFER RTK_BT_LE_UNICAST_AUDIO_CFG_6_II_BIT
 #endif
-#if defined(RTK_BT_LE_AUDIO_UNICAST_SETEO_MODE) && RTK_BT_LE_AUDIO_UNICAST_SETEO_MODE
+#if defined(RTK_BT_LE_AUDIO_UNICAST_STEREO_MODE) && RTK_BT_LE_AUDIO_UNICAST_STEREO_MODE
 #undef RTK_BT_LE_MEDIA_AUDIO_CFG_PREFER
 #define RTK_BT_LE_MEDIA_AUDIO_CFG_PREFER RTK_BT_LE_UNICAST_AUDIO_CFG_4_BIT
 #endif
+/**
+ * @def       RTK_BT_LE_MEDIA_CODEC_CFG_PREFER
+ * @brief     Preferred codec configuration item bit mask when setting up a media audio stream.
+ * @note
+ *            - If the codec configuration items supported by the peer device contain this bit mask, only this bit mask is kept.
+ *            - It is recommended to keep it consistent with @ref RTK_BT_LE_AUDIO_DEFAULT_CODEC_CFG_ITEM.
+ */
 #define RTK_BT_LE_MEDIA_CODEC_CFG_PREFER                     RTK_BT_LE_CODEC_CFG_ITEM_48_2_BIT
+/**
+ * @def       RTK_BT_LE_AUDIO_DEFAULT_UNICAST_AUDIO_CFG
+ * @brief     Default unicast audio configuration type of a group, used as the initial value when a device is added to the group.
+ * @note
+ *            - It is recommended to keep it consistent with @ref RTK_BT_LE_MEDIA_AUDIO_CFG_PREFER.
+ */
 #define RTK_BT_LE_AUDIO_DEFAULT_UNICAST_AUDIO_CFG            RTK_BT_LE_UNICAST_AUDIO_CFG_4
+/**
+ * @def       RTK_BT_LE_AUDIO_DEFAULT_CODEC_CFG_ITEM
+ * @brief     Default codec configuration item of a group, used as the initial value when a device is added to the group.
+ * @note
+ *            - It is recommended to keep it consistent with @ref RTK_BT_LE_MEDIA_CODEC_CFG_PREFER.
+ */
 #define RTK_BT_LE_AUDIO_DEFAULT_CODEC_CFG_ITEM               RTK_BT_LE_CODEC_CFG_ITEM_48_2
 #define RTK_BT_LE_AUDIO_DEFAULT_QOS_CFG_TYPE                 RTK_BT_LE_QOS_CFG_CIS_LOW_LATENCY
 #define RTK_BT_LE_AUDIO_DEFAULT_UNICAST_ASE_TARGET_LATENCY   RTK_BLE_AUDIO_ASCS_ASE_TARGET_LOWER_LATENCY
@@ -84,7 +154,19 @@ extern "C"
 /* broadcast init parameter */
 #define RTK_BT_LE_AUDIO_BROADCAST_SOURCE_BIS_CODEC_CFG               RTK_BT_LE_CODEC_CFG_ITEM_48_2
 #define RTK_BT_LE_AUDIO_BROADCAST_SOURCE_BIS_QOS_CFG                 RTK_BT_LE_QOS_CFG_BIS_LOW_LATENCY
-#define RTK_BT_LE_AUDIO_BROADCAST_SOURCE_STREAM_AUDIO_CONETXTS_CFG   RTK_BT_LE_AUDIO_CONTEXT_MEDIA
+/**
+ * @def       RTK_BT_LE_AUDIO_BROADCAST_SOURCE_STREAM_AUDIO_CONTEXTS_CFG
+ * @brief     Default streaming audio contexts configuration of the broadcast source.
+ * @note
+ *            - Default value is @ref RTK_BT_LE_AUDIO_CONTEXT_MEDIA.
+ */
+#define RTK_BT_LE_AUDIO_BROADCAST_SOURCE_STREAM_AUDIO_CONTEXTS_CFG   RTK_BT_LE_AUDIO_CONTEXT_MEDIA
+/**
+ * @def       RTK_BT_LE_AUDIO_BROADCAST_SOURCE_STREAM_AUDIO_CONETXTS_CFG
+ * @brief     Deprecated alias of @ref RTK_BT_LE_AUDIO_BROADCAST_SOURCE_STREAM_AUDIO_CONTEXTS_CFG.
+ * @deprecated Use @ref RTK_BT_LE_AUDIO_BROADCAST_SOURCE_STREAM_AUDIO_CONTEXTS_CFG instead.
+ */
+#define RTK_BT_LE_AUDIO_BROADCAST_SOURCE_STREAM_AUDIO_CONETXTS_CFG RTK_BT_LE_AUDIO_BROADCAST_SOURCE_STREAM_AUDIO_CONTEXTS_CFG
 /* broadcast create parameter */
 #define RTK_BT_LE_AUDIO_BROADCAST_SOURCE_SDU_INTERVAL 10000
 #define RTK_BT_LE_AUDIO_BROADCAST_SOURCE_MAX_SDU 155
@@ -120,7 +202,17 @@ extern "C"
 #define RTK_BT_LE_AUDIO_DEFAULT_VCS_STEP_SIZE (RTK_BT_LE_AUDIO_MAX_VCS_VOL_SETTING/RTK_BT_LE_AUDIO_MAX_VCS_OUTPUT_LEVEL)
 #endif
 #if defined(RTK_BLE_AUDIO_CSIP_SET_COORDINATOR_SUPPORT) && RTK_BLE_AUDIO_CSIP_SET_COORDINATOR_SUPPORT
-#define RTK_BLE_AUDIO_DEFAULT_CSIS_DISV_TIMEOUT 10000
+/**
+ * @def       RTK_BLE_AUDIO_DEFAULT_CSIS_DISCOVERY_TIMEOUT
+ * @brief     Default timeout, in milliseconds, of the CSIS set member discovery.
+ */
+#define RTK_BLE_AUDIO_DEFAULT_CSIS_DISCOVERY_TIMEOUT 10000
+/**
+ * @def       RTK_BLE_AUDIO_DEFAULT_CSIS_DISV_TIMEOUT
+ * @brief     Deprecated alias of @ref RTK_BLE_AUDIO_DEFAULT_CSIS_DISCOVERY_TIMEOUT.
+ * @deprecated Use @ref RTK_BLE_AUDIO_DEFAULT_CSIS_DISCOVERY_TIMEOUT instead.
+ */
+#define RTK_BLE_AUDIO_DEFAULT_CSIS_DISV_TIMEOUT RTK_BLE_AUDIO_DEFAULT_CSIS_DISCOVERY_TIMEOUT
 #endif
 #if defined(RTK_BLE_AUDIO_AICS_SUPPORT) && RTK_BLE_AUDIO_AICS_SUPPORT
 /* Define AICS Audio Input Status Type. */

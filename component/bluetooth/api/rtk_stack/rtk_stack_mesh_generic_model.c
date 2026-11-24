@@ -1320,7 +1320,7 @@ uint16_t bt_mesh_generic_user_property_server_model_act_handle(rtk_bt_cmd_t *p_c
 	case RTK_BT_MESH_GENERIC_USER_PROPERTY_SERVER_MODEL_ACT_DB_SET: {
 		rtk_bt_mesh_generic_property_server_db_set_t *db_get = (rtk_bt_mesh_generic_property_server_db_set_t *)p_cmd->param;
 		generic_user_property_server_set_db(&generic_user_property_server_model, db_get->pdata_db, db_get->num_properties);
-		ret = 0;
+		ret = RTK_BT_OK;
 		break;
 	}
 	default:
@@ -1476,7 +1476,7 @@ uint16_t bt_mesh_generic_admin_property_server_model_act_handle(rtk_bt_cmd_t *p_
 	case RTK_BT_MESH_GENERIC_ADMIN_PROPERTY_SERVER_MODEL_ACT_DB_SET: {
 		rtk_bt_mesh_generic_property_server_db_set_t *db_get = (rtk_bt_mesh_generic_property_server_db_set_t *)p_cmd->param;
 		generic_admin_property_server_set_db(&generic_admin_property_server_model, db_get->pdata_db, db_get->num_properties);
-		ret = 0;
+		ret = RTK_BT_OK;
 		break;
 	}
 	default:
@@ -1628,7 +1628,7 @@ uint16_t bt_mesh_generic_manu_property_server_model_act_handle(rtk_bt_cmd_t *p_c
 	case RTK_BT_MESH_GENERIC_MANU_PROPERTY_SERVER_MODEL_ACT_DB_SET: {
 		rtk_bt_mesh_generic_property_server_db_set_t *db_get = (rtk_bt_mesh_generic_property_server_db_set_t *)p_cmd->param;
 		generic_manufacturer_property_server_set_db(&generic_manu_property_server_model, db_get->pdata_db, db_get->num_properties);
-		ret = 0;
+		ret = RTK_BT_OK;
 		break;
 	}
 	default:

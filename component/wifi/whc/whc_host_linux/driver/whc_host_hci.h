@@ -19,11 +19,21 @@
 #define IPC_USER_POINT			0
 #define IPC_MSG_QUEUE_DEPTH		(50)
 #define IPC_MSG_QUEUE_WARNING_DEPTH	(4)
+#define WHC_ATOMIC_REQ_DEPTH		(4)
 
 #define RTW_IP_ADDR_LEN 4
 #define RTW_IPv6_ADDR_LEN 16
 
 #ifdef CONFIG_WHC_HCI_IPC
+/* one API call requested from atomic context (RSWLANDIOT-17054) */
+struct whc_atomic_req {
+	struct list_head		list;
+	u32				api_id;
+	u32				param_len;
+	u32				param_buf[HOST_MSG_PARAM_NUM];
+	u8				is_used;
+};
+
 /* for ipc intf */
 struct event_priv_t {
 	struct work_struct		api_work; /* event_priv work to haddle event_priv msg */
@@ -35,6 +45,12 @@ struct event_priv_t {
 	uint32_t			*dev_req_network_info;
 	dma_addr_t			dev_req_network_info_phy;
 	ipc_msg_struct_t		recv_ipc_msg;
+
+	/* API calls requested from atomic context, sent in order on system_wq (RSWLANDIOT-17054) */
+	struct work_struct		atomic_work;
+	spinlock_t			atomic_lock;
+	struct list_head		atomic_list;
+	struct whc_atomic_req		atomic_pool[WHC_ATOMIC_REQ_DEPTH];
 };
 
 struct ipc_msg_q_priv {

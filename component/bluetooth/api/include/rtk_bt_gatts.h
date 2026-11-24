@@ -18,8 +18,14 @@ extern "C"
 
 /**
  * @def       RTK_BT_GATT_INTERNAL
- * @brief     This attribute will be handled by the stack internally. When the attribute is a
- *            characteristic value, this flag is equal to @ref RTK_BT_GATT_VOID.
+ * @brief     This attribute will be handled by the stack internally. The flag is usually
+ *            used in API macro definition in this header file, e.g. @ref RTK_BT_GATT_PRIMARY_SERVICE
+ *            or @ref RTK_BT_GATT_CPF. It requires the attribute value to be passed with
+ *            the standard data structure expected by the stack. For example, the data of
+ *            param '_value' for @ref RTK_BT_GATT_CPF shall be in the format of
+ *            @ref struct rtk_bt_gatt_cpf with flag RTK_BT_GATT_INTERNAL. For attributes
+ *            that have no standard data structure defined in this header file, this flag
+ *            behaves the same as @ref RTK_BT_GATT_VOID
  */
 #define RTK_BT_GATT_INTERNAL                0
 
@@ -395,11 +401,11 @@ struct rtk_bt_gatt_service {
 	rtk_bt_gatt_attr_t *attrs;              /*!< Pointer to the attribute table for this service. */
 	uint16_t attr_count;                    /*!< Number of attributes in the attribute table. */
 #if !defined(RTK_BLE_MGR_LIB) || !RTK_BLE_MGR_LIB
-	bool assgin_handle_flag;                /*!< Indicates whether the service start attribute handle is user-assigned.
+	bool assign_handle_flag;                /*!< Indicates whether the service start attribute handle is user-assigned.
                                              *   - true: start_handle is used as the first attribute handle.
                                              *   - false: the stack assigns the start handle automatically. */
 	uint16_t start_handle;                  /*!< User-assigned start attribute handle for the service.
-                                             *   Valid when assgin_handle_flag is true. */
+                                             *   Valid when assign_handle_flag is true. */
 #endif
 	rtk_bt_gatts_srv_type_t type;           /*!< Type of the service. */
 	uint8_t register_status;                /*!< Current registration status of the service. */
@@ -535,6 +541,9 @@ typedef struct {
  *                   Must not be NULL.
  * @return
  *            - @ref rtk_bt_err_common
+ * @note
+ *            - The registered service and attribute arrays in service shall be in memory which is static or heap-allocated.
+ *              It shall remain valid until this service is unregistered or BT is deinitialized.
  */
 uint16_t rtk_bt_gatts_register_service(struct rtk_bt_gatt_service *param);
 
