@@ -130,6 +130,14 @@ SECTIONS
 		__ipc_table_start__ = .;
 		KEEP(*(*.ipc.table.data*))
 		__ipc_table_end__ = .;
+#if defined(CONFIG_NOR_FLASH_NEW_STRATEGY)
+		/* Device table of the NOR flash driver. KEEP() is required: nothing
+		 * references the entries by symbol, so --gc-sections would drop them. */
+		. = ALIGN (4);
+		__nor_flash_table_start__ = .;
+		KEEP(*(.nor.flash.table.data*))
+		__nor_flash_table_end__ = .;
+#endif
 		. = ALIGN (4);
 		__git_ver_table_start__ = .;
 		KEEP(*(.git.ver.data))
@@ -190,7 +198,7 @@ SECTIONS
 		__bss_end__ = .;
 	} > IMG2_DATA_LMA_REGION
 
-#if defined(CONFIG_SOLO)
+#if defined(CONFIG_IOT_MCU_COMBINED)
 	/* SOLO: KM55TZ<->KM55NS shared SRAM (own region, outside km55tz private .bss).
 	 * KM55NS must be able to reach the flash-sync flag KM55TZ owns even when its
 	 * own SRAM is isolated. Mirrors the km55ns img2 layout. */

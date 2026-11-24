@@ -41,7 +41,7 @@ ameba_list_append(private_sources
     ameba_npcap.c
 )
 
-ameba_list_append_ifnot(CONFIG_SOLO private_sources
+ameba_list_append_ifnot(CONFIG_IOT_MCU_COMBINED private_sources
     ameba_flash_pwr.c
 )
 

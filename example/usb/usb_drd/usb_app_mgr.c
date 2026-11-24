@@ -264,6 +264,15 @@ static void usb_app_mgr_thread(void *param)
 	const usb_app_t *app = (const usb_app_t *)param;
 	int ret;
 
+#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
+	/* Every app start and stop runs here, and a host app stop reaches usbh_deinit(), which waits
+	   for no ISR on another core: the USB IRQ is delivered on CPU0 only (arm_gic.c pins every SPI
+	   to core 0), so the teardown shall run there too.
+	   Done by the thread itself, first: a created thread may already run on another core, and its
+	   creator pinning it afterwards could come too late or reach a task that has deleted itself. */
+	rtos_task_set_affinity(rtos_task_handle_get(), 0);
+#endif
+
 	/* No usb_app_lock here: an AT request holding it waits for this thread, and is served next */
 	if ((app != NULL) && (usb_app_do_start(app) != RTK_SUCCESS)) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Auto-start %s fail\n", app->name);
@@ -301,6 +310,7 @@ int usb_app_mgr_init(void)
 	int ret;
 	const char *name = CONFIG_USB_APP_DEFAULT;
 	const usb_app_t *app = NULL;
+	rtos_task_t task;
 
 	ret = rtos_mutex_create(&usb_app_lock);
 	if (ret != RTK_SUCCESS) {
@@ -324,7 +334,7 @@ int usb_app_mgr_init(void)
 	}
 
 	/* Also runs the auto-start: the app start brings the stack up, which needs the scheduler */
-	ret = rtos_task_create(NULL, "usb_app_mgr", usb_app_mgr_thread, (void *)app,
+	ret = rtos_task_create(&task, "usb_app_mgr", usb_app_mgr_thread, (void *)app,
 						   USB_APP_MGR_THREAD_STACK_SIZE, USB_APP_MGR_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		goto exit_free_done;

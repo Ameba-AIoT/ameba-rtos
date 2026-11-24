@@ -43,13 +43,21 @@ int bt_gatt_clear(uint8_t id, const bt_addr_le_t *addr);
 
 #if defined(CONFIG_BT_GATT_CLIENT)
 void bt_gatt_notification(struct bt_conn *conn, uint16_t handle,
-			  const void *data, uint16_t length);
+			  const void *data, uint16_t length,
+#if ZEPHYR_RTK_PATCH
+			  bool is_indicate
+#endif
+			  );
 
 void bt_gatt_mult_notification(struct bt_conn *conn, const void *data,
 			       uint16_t length);
 #else
 static inline void bt_gatt_notification(struct bt_conn *conn, uint16_t handle,
-					const void *data, uint16_t length)
+					const void *data, uint16_t length,
+#if ZEPHYR_RTK_PATCH
+					bool is_indicate
+#endif
+					)
 {
 }
 

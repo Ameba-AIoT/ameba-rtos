@@ -579,7 +579,7 @@ typedef struct {
 } rtk_bt_le_audio_mcp_client_notify_ind_t;
 
 /**
- * @typedef   rtk_bt_le_audio_mcs_media_cp_nodify_ind_t
+ * @typedef   rtk_bt_le_audio_mcs_media_cp_notify_ind_t
  * @brief     Bluetooth LE Audio MCP client media control point notification indication.
  */
 typedef struct {
@@ -591,7 +591,14 @@ typedef struct {
 	uint8_t     srv_instance_id;    /*!< Index of the service instance. */
 	uint8_t requested_opcode;       /*!< Opcode of the media control point, see @ref rtk_bt_le_audio_mcs_media_cp_opcode_t. */
 	uint8_t     result_code;        /*!< Result of the requested opcode, see @ref rtk_bt_le_audio_mcs_media_control_point_notification_result_codes_t. */
-} rtk_bt_le_audio_mcs_media_cp_nodify_ind_t;
+} rtk_bt_le_audio_mcs_media_cp_notify_ind_t;
+
+/**
+ * @typedef   rtk_bt_le_audio_mcs_media_cp_nodify_ind_t
+ * @brief     Deprecated alias of @ref rtk_bt_le_audio_mcs_media_cp_notify_ind_t.
+ * @deprecated Use @ref rtk_bt_le_audio_mcs_media_cp_notify_ind_t instead.
+ */
+typedef rtk_bt_le_audio_mcs_media_cp_notify_ind_t rtk_bt_le_audio_mcs_media_cp_nodify_ind_t;
 
 #endif
 

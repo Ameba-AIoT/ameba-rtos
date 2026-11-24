@@ -32,11 +32,18 @@ extern "C" {
 
 #define USBD_WHC_VID                     USB_VID
 #define USBD_WHC_PID                     USB_PID
+#ifdef CONFIG_RLE1509
+#define USBD_NIC_PID                     0x921CU  /**< NIC mode PID (used to patch device descriptor at runtime). */
+#else
 #define USBD_NIC_PID                     0x8006U  /**< NIC mode PID (used to patch device descriptor at runtime). */
+#endif
 
 #define USBD_WHC_MFG_STRING              "Realtek"               /**< Manufacturer string. */
+#ifdef CONFIG_RLE1509
+#define USBD_WHC_PROD_STRING             "802.11be WLAN Adapter" /**< Product string. */
+#else
 #define USBD_WHC_PROD_STRING             "802.11ax WLAN Adapter" /**< Product string. */
-#define USBD_WHC_SN_STRING               "00E04C000001"          /**< Serial number string. */
+#endif
 #define USBD_WHC_BT_STRING               "Bluetooth Radio"       /**< Bluetooth interface string. */
 #ifdef CONFIG_WHC_ETH
 #define USBD_WHC_ETH_STRING              "Ethernet Adapter"      /**< Ethernet interface string. */

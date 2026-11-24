@@ -1,6 +1,8 @@
 # Example Description
 
-In this application, Ameba is designed as a UAC 2.0 device, USB host (e.g. Windows PC) can recognize Ameba as an audio device with speaker, then communicates with it via USB interface.
+In this application, Ameba is designed as a UAC (USB Audio Class) device, UAC 1.0 by default (`prj.conf`) or UAC 2.0. USB host (e.g. Windows PC) can recognize Ameba as an audio device with speaker, then communicates with it via USB interface. With the record option (`CONFIG_USBD_UAC_RECORD`, on by default in `prj.conf`) the device also exposes a microphone, which loops a built-in clip of the spoken word "Realtek" to the host on demand.
+
+Both UAC versions run at High Speed on an HS-capable SoC and at Full Speed on an FS-only one. UAC 1.0 keeps one packet per ms at both speeds (bInterval 4 at High Speed, 1 at Full Speed), UAC 2.0 sends one packet per microframe at High Speed.
 
 # HW Configuration
 
@@ -8,36 +10,61 @@ None
 
 # SW configuration
 
-1. Menuconfig
-	Use menuconfig and :
-	- Choose `CONFIG USB --->`:
+1. Default configuration
+
+	The `prj.conf` of this example sets the options below by default, no menuconfig is needed to run it:
 	```
+	CONFIG USB --->
 	[*] Enable USB
 			USB Mode (Device)  --->
-	- Choose UAC version 1.0 or 2.0 :
-	[*] UAC
-			Select UAC Version (UAC 2.0)  --->
+	[*] 	UAC
+				Select UAC Version (UAC 1.0)  --->
+	[*]     	Enable record (microphone)
 	```
-	- Choose `CONFIG APPLICATION --->` -> `Audio Config --->`:
+
+2. Build
+
+	```
+	./ameba.py build -a usbd_uac -p
+	```
+	`-p` (pristine) drops the previous configuration and applies the `prj.conf` of this example.
+
+3. (Optional) Change the configuration
+
+	Only needed when the default configuration does not fit:
+	1. Build once with `-p` as in step 2, so that the configuration starts from `prj.conf`.
+	2. Run `./ameba.py menuconfig` and change the options.
+	3. Rebuild without `-p`: `./ameba.py build -a usbd_uac`.
+
+	To keep a change permanently, add its `CONFIG_XXX=y` lines to `prj.conf` instead and build with `-p`.
+
+	The default `prj.conf` selects UAC 1.0 with the microphone (`CONFIG_USBD_UAC1_MENU=y`, `CONFIG_USBD_UAC_RECORD=y`). To build UAC 2.0, replace the UAC 1.0 line in `prj.conf` with `CONFIG_USBD_UAC2_MENU=y`; to build playback only, remove `CONFIG_USBD_UAC_RECORD=y`. The playback max channels (2 by default), bit width (16-bit by default) and, on UAC 2.0 only, max sampling rate (48 kHz by default) are chosen under the same `UAC` menu. The microphone streams the single format chosen under `Enable record (microphone)`: `Record channels`, `Record bit width` and `Record sampling rate`, 16 kHz, 2 channels, 16-bit by default. The built-in clip of the example is in that format, so the build stops with an error for any other one.
+
+	Asynchronous playback with a feedback endpoint is off by default. Add `CONFIG_USBD_UAC_PLAY_FEEDBACK=y` to `prj.conf` (menuconfig `UAC ---> Enable playback feedback endpoint (asynchronous)`) to declare the playback endpoint asynchronous with an explicit feedback ISOC IN endpoint (Ref USB 2.0 5.12.4.2, UAC 1.0 and UAC 2.0 alike): once per ms the device reports the rate it consumes, and the host adjusts the playback rate to the device clock instead of its own, so the playback buffer neither overruns nor underruns over a long stream. The example reports the nominal rate corrected by the fill level of the playback ring (kept half full, within 0.1% of the nominal rate), see `uac_cb_get_play_feedback()`. The feedback, like the microphone, is an ISOC IN endpoint, so the SoC limits apply:
+
+	| SoC | IN endpoints | ISOC IN | Record + feedback | Endpoints of this example |
+	| --- | --- | --- | --- | --- |
+	| RTL8730E, RTL8721Dx (shared DFIFO) | EP1, EP3, EP5 | 1 | No, one of the two | record or feedback EP1 IN (`0x81`) |
+	| RTL8721F (dedicated TxFIFOs) | every EP, one TxFIFO each | several | Yes | record EP4 IN (`0x84`), feedback EP3 IN (`0x83`) |
+
+	On RTL8730E / RTL8721Dx enabling both stops the build with `#error "UAC: this SoC (shared DFIFO ...) supports one ISOC IN endpoint only ..."`: remove `CONFIG_USBD_UAC_RECORD=y` from `prj.conf` to build the feedback (`AT+USBDUAC=record` is then not registered). An application that adds more IN endpoints shall count them, the ISOC IN ones in particular, against these limits, refer to the ISOC IN endpoint budget in `usbd_uac.h`. The example also enables the SOF interrupt, which paces the feedback, and on RTL8721F gives the feedback endpoint its own TxFIFO. On a Linux host `cat /proc/asound/card<card>/stream0` shows `Endpoint: <ep> OUT (ASYNC)` and the feedback endpoint (`Sync Endpoint`) once it is built in.
+
+	On the SoCs whose audio driver supports USB audio (RTL8730E, RTL8721Dx), selecting `UAC` also enables the audio framework (`CONFIG APPLICATION ---> Audio Config ---> Enable Audio Framework`), keep its default interface:
 	```
 	[*] Enable Audio Framework
 			Select Audio Interfaces (Mixer)  --->
 
 	Note: For details on audio configuration, please refer to https://aiot.realmcu.com/en/latest/rtos/multimedia/audio/index.html
 	```
+	On RTL8721F the example is built without the audio framework (`CONFIG_SUPPORT_AUDIO_FOR_USB` is not set), so no OS change is needed: the received data is only counted, see step 3 of Expect result.
 
-	If the development board model is RTL8721F, please follow the steps below to select FREERTOS via menuconfig.
-	Use menuconfig and :
-	- Choose `CONFIG OS --->`:
-	```
-	[*] Enable Kernel
-			Kernel Selecte (FREERTOS)--->
-	```
-	Save and exit.
+4. Download
 
-2. Build and Download:
-   * Refer to the SDK Examples section of the online documentation to generate images.
-   * `Download` images to board by Ameba Image Tool.
+	Flash the images to the board with any of the tools below:
+	* VS Code extension: https://aiot.realmcu.com/en/latest/tools/vscode/index.html
+	* Image Tool (Windows): https://aiot.realmcu.com/en/latest/tools/image_tool/index.html
+	* Flash Tool (cross-platform): https://aiot.realmcu.com/en/latest/tools/flash/index.html
+	* Web flash tool: https://aiot.realmcu.com/en/resource/web_flash_tool.html
 
 # Expect result
 
@@ -50,7 +77,8 @@ None
 	Notes:
 	* `[USBD-A] INIT` comes from the USB device core, not from the example.
 	* `[UAC-I] ATTACHED` is printed once the USB host has enumerated the device, so it only shows up after the cable is connected.
-	* On AmebaGreen2 an extra `[USB-I] UPHY para from ...` line is printed by the USB HAL before `[USBD-A] INIT`.
+	* On AmebaGreen2 (RTL8721F) an extra USB PHY calibration line is printed by the USB HAL right after `[USBD-A] INIT`: `[USB-I] UPHY para from autoload`, `[USB-I] UPHY para from OTP` or `[USB-I] UPHY OTP flag 0x<flag>, use default`.
+	* Failure lines: `[UAC-E] Create USBD UAC thread fail`, `[UAC-E] USB init fail`, `[UAC-E] UAC init fail` or `[UAC-E] Create ... fail`, followed by `[UAC-E] USBD UAC demo aborted` and `[UAC-E] Start fail`.
 
 2. Connect the USB port of Ameba board to USB UAC host (for example PC) with USB cable.
 
@@ -61,17 +89,38 @@ None
 	[UAC-I] Track buf size:<value>
 	[UAC-I] UAC stop 0
 	```
-	The reported channel count, sample rate and bit width shall match the format selected on the host side. The playback data path itself prints no log. Every time the host switches the format, `[UAC-I] Audio track demo stop` is printed and the four lines above are printed again for the new format. On a build without the audio framework (`CONFIG_SUPPORT_AUDIO_FOR_USB` disabled) the audio track is not created, and a `[UAC-I] Audio track get <len> <total>` line is printed every 200 reads instead.
+	The reported channel count, sample rate and bit width shall match the format selected on the host side (UAC 1.0 declares 44.1 kHz and 48 kHz; UAC 2.0 declares 44.1 kHz up to the configured max rate). The board plays 2 channels: a stereo stream is played as is, and with `USBD_UAC_DEMUX_CH_DEBUG` set to 1 in `example_usbd_uac.c` (default) a stream of 4 or more channels is cut down to its front left and right channels; set it to 0 to hand every channel to the audio framework. On the RTL8730E EVB (EV730EL0) the left channel of the 3.5 mm earphone jack is routed through jumper J6: short pins 2-3 (PB3 to AOUT_LPE), otherwise only the right ear plays. The playback data path itself prints no log. Every time the host switches the format, `[UAC-I] Audio track demo stop` is printed and the four lines above are printed again for the new format. On a SoC without `CONFIG_SUPPORT_AUDIO_FOR_USB` (RTL8721F) the audio track is not created and none of the lines above is printed: a `[UAC-I] Audio track get <len> <total>` line is printed every 200 reads instead, `<total>` shall keep growing while the host plays.
 
-4. After the USB Audio driver is successfully loaded, USB host end will recognize Ameba as an audio device. The device is named `Realtek UAC2.0 Device` on a UAC 2.0 build and `Realtek UAC1.0 Device` on a UAC 1.0 build, the steps below use the UAC 2.0 name.
-   ```
-	- Open the OS Sound Bar, enable Realtek UAC2.0 Device speaker device if it is disabled. Locate the device in the Device Manager and enable it manually.
-	- Open the OS Sound Bar, set Realtek UAC2.0 Device Speaker as default device.
-	- Open the Sound Control Panel, select the Realtek UAC2.0 Device Speaker device -- configure the speakers -- choose a specific channel setup -- finalize the configuration, and then click Test.
+4. After the USB Audio driver is successfully loaded, USB host end will recognize Ameba as an audio device. The device is named `Realtek UAC1.0 Device` on a UAC 1.0 build (default) and `Realtek UAC2.0 Device` on a UAC 2.0 build.
+	- Windows:
+		- Open `Settings -> System -> Sound` (or the Sound Control Panel), enable the `Realtek UAC1.0 Device` speaker if it is disabled, and set it as the default output device. If it does not show up, locate the device in the Device Manager and enable it manually.
+		- In the Sound Control Panel, select the speaker -- configure the speakers -- choose a specific channel setup -- finalize the configuration, and then click Test.
+		- With the record option, the microphone shows up under `Input`: run `AT+USBDUAC=record` and check the input level meter, or record it with Audacity, refer to step 5.
+	- Linux:
+		```
+		aplay -l                                                  # find the card number of the device
+		aplay -D plughw:<card>,0 -f S16_LE -r 48000 -c 2 test.wav
+		```
+		With the record option, start the device clip with `AT+USBDUAC=record`, then record and play back the result, the word "Realtek" is heard once per second (or open `rec.wav` in Audacity):
+		```
+		arecord -l
+		arecord -D hw:<card>,0 -f S16_LE -r 16000 -c 2 -d 5 rec.wav
+		```
 	- If you connect a speaker to the board, sound will play.
-   ```
 
 5. Now user can play audio via the audio device.
+
+	With the record option built, the following guide demonstrates how to capture and verify the recording data path using Windows 11 and Audacity as the test environment.
+	```
+	- Configure Recording Software: Launch Audacity. Navigate to Audio Setup > Recording Device and select the target device: Microphone (Realtek UAC1.0 Device, or Realtek UAC2.0 Device on a UAC 2.0 build).
+	- Initialize Data Stream: Click the Record button on the Audacity toolbar to prepare the Host to receive audio frames.
+	- Execute Test Command: In the device's serial console (UART), execute "AT+USBDUAC=record" command to trigger data transmission.
+	- Verify Output: Audacity receives the spoken word "Realtek" repeated once per second. Stop, then play back the track: each repetition shall sound the same, a click, a gap or a pitch shift indicates lost or misplaced packets.
+	```
+	Triggering the record command prints:
+	```
+	[UAC-I] UAC record start
+	```
 
 6. Hotplug check: the example tears down and re-inits the USB stack on every detach, so unplug and re-plug the cable, following log shall be printed for each cycle:
 	```
@@ -87,9 +136,10 @@ None
 
 | Command | Description |
 | --- | --- |
-| `AT+USBDUAC=record` | Start the microphone (USB IN) replay, which feeds a synthetic 1 kHz tone to the host. Each call queues one more session. Prints `[UAC-I] UAC record start`. |
+| `AT+USBDUAC=record` | Start the microphone (USB IN) replay, which loops a built-in 1 s clip of the spoken word "Realtek" (16 kHz, 16-bit, 2 channels) to the host. Each call queues one more session. Prints `[UAC-I] UAC record start` once the host has enumerated the device, the clip is then streamed until the next detach or stop; a call before the enumeration prints `[UAC-E] UAC start record fail` instead. |
+| `AT+USBDUAC=help` or `AT+USBDUAC=?` | Print the usage. |
 
-Note: recording is only wired up in the UAC 2.0 class driver, so the command is only registered on a UAC 2.0 and non-FS-only build. The default `prj.conf` selects UAC 1.0 (`CONFIG_USBD_UAC1_MENU=y`), where the command does not exist.
+Note: the command is only registered when the record option is built (`CONFIG_USBD_UAC_RECORD=y`), with UAC 1.0 or UAC 2.0 and at High or Full Speed alike. The default `prj.conf` enables it. `record` is refused with `[UAC-E] Not running` while the example is not running. The command ends with `OK`, or with `ERROR: <err>` on failure.
 
 # Note
 

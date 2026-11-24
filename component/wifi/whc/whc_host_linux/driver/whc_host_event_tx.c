@@ -1175,16 +1175,6 @@ int whc_host_dev_driver_is_mp(u8 *is_mp)
 	return ret;
 }
 
-int whc_host_set_promisc_enable(u32 enable, u8 mode)
-{
-	(void) enable;
-	(void) mode;
-
-	/* Only smart customer needs promisc function in Linux.
-	 * So to set this function to null. */
-	return 0;
-}
-
 int whc_host_ft_status_indicate(struct rtw_kvr_param_t *kvr_param, u16 status)
 {
 	u8 *param = NULL;

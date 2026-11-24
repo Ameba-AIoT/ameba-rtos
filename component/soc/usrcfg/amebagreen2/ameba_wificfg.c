@@ -81,6 +81,7 @@ _WEAK void wifi_set_user_config(void)
 	/* IPS(Inactive Power Save), power save when wifi unconnected */
 	wifi_user_config.ips_enable = 1;
 	wifi_user_config.ips_level = RTW_IPS_WIFI_OFF;
+	wifi_user_config.ips_ctrl_by_usr = 0;
 
 	/* LPS(Legacy Power Save), power save when wifi connected */
 	wifi_user_config.lps_enable = 1;

@@ -117,7 +117,7 @@ static void app_a2dp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t b
 		if (p_link != NULL) {
 			memcpy((void *)remote_addr, (void *)param->a2dp_conn_cmpl.bd_addr, 6);
 			if (!p_link->acl_conn_ind) {
-				/* requeset avrcp connection */
+				/* request avrcp connection */
 				BT_LOGA("app_a2dp_bt_cback: start avrcp connect request \r\n");
 				bt_avrcp_connect_req(param->a2dp_conn_cmpl.bd_addr);
 			}
@@ -381,7 +381,7 @@ static void app_a2dp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t b
 			if (p_link->a2dp_codec_type == BT_A2DP_CODEC_TYPE_SBC) {
 				APP_PRINT_INFO0("A2DP config: SBC ");
 				BT_LOGA("app_a2dp_bt_cback: A2DP config: SBC \r\n");
-				p_link->a2dp_codec_info.sbc.sampling_frequency = cfg->codec_info.sbc.sampling_frequency;
+				p_link->a2dp_codec_info.sbc.sbc_sampling_frequency = cfg->codec_info.sbc.sampling_frequency;
 				p_link->a2dp_codec_info.sbc.channel_mode = cfg->codec_info.sbc.channel_mode;
 				p_link->a2dp_codec_info.sbc.block_length = cfg->codec_info.sbc.block_length;
 				p_link->a2dp_codec_info.sbc.subbands = cfg->codec_info.sbc.subbands;
@@ -392,7 +392,7 @@ static void app_a2dp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t b
 				APP_PRINT_INFO0("A2DP config: AAC ");
 				BT_LOGA("app_a2dp_bt_cback: A2DP config: AAC \r\n");
 				p_link->a2dp_codec_info.aac.object_type = cfg->codec_info.aac.object_type;
-				p_link->a2dp_codec_info.aac.sampling_frequency = cfg->codec_info.aac.sampling_frequency;
+				p_link->a2dp_codec_info.aac.aac_sampling_frequency = cfg->codec_info.aac.sampling_frequency;
 				p_link->a2dp_codec_info.aac.channel_number = cfg->codec_info.aac.channel_number;
 				p_link->a2dp_codec_info.aac.vbr_supported = cfg->codec_info.aac.vbr_supported;
 				p_link->a2dp_codec_info.aac.bit_rate = cfg->codec_info.aac.bit_rate;
@@ -411,7 +411,7 @@ static void app_a2dp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t b
 				p_a2dp_codec = (rtk_bt_a2dp_codec_t *)p_evt->data;
 				p_a2dp_codec->codec_type = p_link->a2dp_codec_type;
 				if (p_a2dp_codec->codec_type == BT_A2DP_CODEC_TYPE_SBC) {
-					p_a2dp_codec->sbc.sampling_frequency = p_link->a2dp_codec_info.sbc.sampling_frequency;
+					p_a2dp_codec->sbc.sbc_sampling_frequency = p_link->a2dp_codec_info.sbc.sbc_sampling_frequency;
 					p_a2dp_codec->sbc.channel_mode = p_link->a2dp_codec_info.sbc.channel_mode;
 					p_a2dp_codec->sbc.block_length = p_link->a2dp_codec_info.sbc.block_length;
 					p_a2dp_codec->sbc.subbands = p_link->a2dp_codec_info.sbc.subbands;
@@ -421,7 +421,7 @@ static void app_a2dp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t b
 					p_a2dp_codec->codec_type = RTK_BT_AUDIO_CODEC_SBC;
 				} else if (p_a2dp_codec->codec_type == BT_A2DP_CODEC_TYPE_AAC) {
 					p_a2dp_codec->aac.object_type = p_link->a2dp_codec_info.aac.object_type;
-					p_a2dp_codec->aac.sampling_frequency = p_link->a2dp_codec_info.aac.sampling_frequency;
+					p_a2dp_codec->aac.aac_sampling_frequency = p_link->a2dp_codec_info.aac.aac_sampling_frequency;
 					p_a2dp_codec->aac.channel_number = p_link->a2dp_codec_info.aac.channel_number;
 					p_a2dp_codec->aac.vbr_supported = p_link->a2dp_codec_info.aac.vbr_supported;
 					p_a2dp_codec->aac.bit_rate = p_link->a2dp_codec_info.aac.bit_rate;

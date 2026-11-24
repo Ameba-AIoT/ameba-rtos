@@ -1,0 +1,34 @@
+/*
+ * Copyright (c) 2026 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Includes ------------------------------------------------------------------*/
+
+#include "example_usbd_rndis.h"
+
+/* Private defines -----------------------------------------------------------*/
+
+/* Private types -------------------------------------------------------------*/
+
+/* Private macros ------------------------------------------------------------*/
+
+/* Private function prototypes -----------------------------------------------*/
+
+/* Private variables ---------------------------------------------------------*/
+
+/* Exported variables --------------------------------------------------------*/
+
+/* Private functions ---------------------------------------------------------*/
+
+/* Exported functions --------------------------------------------------------*/
+
+/**
+ * @brief  Application entry point invoked by the example framework.
+ * @return None
+ */
+void app_example(void)
+{
+	example_usbd_rndis();
+}

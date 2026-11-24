@@ -47,6 +47,13 @@ extern "C" {
 
 /* Exported types ------------------------------------------------------------*/
 
+/** @addtogroup USB_Device_Types USB Device Types
+ * @{
+ */
+/** @addtogroup Device_Vendor_Types Device Vendor Types
+ * @{
+ */
+
 /**
  * @brief Configuration for the Vendor class.
  * @details Carries every Vendor option: the endpoint allocation, which the top-level application
@@ -81,13 +88,6 @@ typedef struct {
 	u8 isoc_out_interval_hs; /**< ISOC OUT bInterval at High Speed, 1..16, 0 uses @ref USBD_VENDOR_DEFAULT_EP_INTERVAL. */
 	u8 isoc_out_interval_fs; /**< ISOC OUT bInterval at Full Speed, 1..16, 0 uses @ref USBD_VENDOR_DEFAULT_EP_INTERVAL. */
 } usbd_vendor_config_t;
-
-/** @addtogroup USB_Device_Types USB Device Types
- * @{
- */
-/** @addtogroup Device_Vendor_Types Device Vendor Types
- * @{
- */
 
 /**
  * @brief Structure containing callback functions for the Vendor class.

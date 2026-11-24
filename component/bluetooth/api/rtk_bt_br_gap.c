@@ -298,7 +298,7 @@ uint16_t rtk_bt_br_gap_bond_delete(uint8_t *bd_addr)
 	return ret;
 }
 
-uint16_t rtk_bt_br_gap_bond_clear()
+uint16_t rtk_bt_br_gap_bond_clear(void)
 {
 	uint16_t ret = RTK_BT_OK;
 
@@ -390,11 +390,11 @@ uint16_t rtk_bt_br_gap_set_cod(uint32_t *bt_cod)
 	return RTK_BT_OK;
 }
 
-uint16_t rtk_bt_br_gap_set_supvisiontimeout(uint16_t *supv_timeout)
+uint16_t rtk_bt_br_gap_set_supv_timeout(uint16_t *supv_timeout)
 {
-	/* Check bt enable status (rtk_bt_br_gap_set_supvisiontimeout should only be invoked before RTK_BT_IS_ENABLED()) */
+	/* Check bt enable status (rtk_bt_br_gap_set_supv_timeout should only be invoked before RTK_BT_IS_ENABLED()) */
 	if (rtk_bt_is_enable()) {
-		BT_LOGE("[BR GAP]: rtk_bt_br_gap_set_supvisiontimeout should not be invoked after bt enable \r\n");
+		BT_LOGE("[BR GAP]: rtk_bt_br_gap_set_supv_timeout should not be invoked after bt enable \r\n");
 		return RTK_BT_FAIL;
 	}
 	if (!supv_timeout) {

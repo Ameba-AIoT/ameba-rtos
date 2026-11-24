@@ -48,7 +48,7 @@ static uint32_t cod_gamepad = (uint32_t)(0x08 | (0x25 << 8) | (0x00 << 16));
 /* class of device for mouse */
 static uint32_t cod_mouse = (uint32_t)(0x80 | (0x05 << 8) | (0x00 << 16));
 /* supervision_timeout */
-static uint16_t superv_time = (0x1f40);
+static uint16_t supv_time = (0x1f40);
 
 static rtk_bt_br_page_param_t page_param = {
 	.pagescan_type = RTK_BT_BR_GAP_PAGE_SCAN_TYPE_INTERLACED,
@@ -447,7 +447,7 @@ int bt_hid_main(uint8_t role, uint8_t enable)
 		dft_param.mtu_size = 180;
 		BT_APP_PROCESS(rtk_bt_br_gap_set_default_param(&dft_param));
 		/* set supervision_timeout */
-		BT_APP_PROCESS(rtk_bt_br_gap_set_supvisiontimeout(&superv_time));
+		BT_APP_PROCESS(rtk_bt_br_gap_set_supv_timeout(&supv_time));
 		BT_APP_PROCESS(rtk_bt_br_gap_set_inquiry_param(&inquiry_param));
 		BT_APP_PROCESS(rtk_bt_br_gap_set_page_param(&page_param));
 		/* sdp record add (must be invoked before rtk_bt_enable) */

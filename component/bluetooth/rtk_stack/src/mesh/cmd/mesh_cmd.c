@@ -249,7 +249,7 @@ user_cmd_parse_result_t user_cmd_list(user_cmd_parse_value_t *pparse_value)
 #define USER_CMD_LIST_MAX_LEN    1024
 #define USER_CMD_LIST_TEMP_DATA_MAX_LEN  100
 
-static void copy_data_to_memory_byte_by_byte(uint32_t val, uint8_t *p, uint8_t data_len)
+static bool copy_data_to_memory_byte_by_byte(uint32_t val, uint8_t *p, uint8_t data_len)
 {
 	// Copy a val to memory using little endian
 	if (!p || data_len > 4) {

@@ -88,7 +88,7 @@ end:
 
 #endif  // BT_MESH_ENABLE_GENERIC_DEFAULT_TRANSITION_TIME_CLIENT_MODEL
 
-#if defined(BT_MESH_ENABLE_GENERIC_DEFAULT_TRANSTION_TIME_SERVER_MODEL) && BT_MESH_ENABLE_GENERIC_DEFAULT_TRANSTION_TIME_SERVER_MODEL
+#if defined(BT_MESH_ENABLE_GENERIC_DEFAULT_TRANSITION_TIME_SERVER_MODEL) && BT_MESH_ENABLE_GENERIC_DEFAULT_TRANSITION_TIME_SERVER_MODEL
 
 mesh_model_info_t generic_default_transition_time_server_model;
 
@@ -140,5 +140,5 @@ bool generic_default_transition_time_server_model_init(void)
 	return generic_default_transition_time_server_reg(0, &generic_default_transition_time_server_model);
 }
 
-#endif // end of BT_MESH_ENABLE_GENERIC_DEFAULT_TRANSTION_TIME_SERVER_MODEL
+#endif // end of BT_MESH_ENABLE_GENERIC_DEFAULT_TRANSITION_TIME_SERVER_MODEL
 #endif // end of RTK_BLE_MESH_SUPPORT

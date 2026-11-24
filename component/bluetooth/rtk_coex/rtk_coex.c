@@ -10,6 +10,7 @@
 #include "hci_platform.h"
 #include "rtk_bt_gap.h"
 #include "rtk_coex.h"
+#include "bt_debug.h"
 #if defined(CONFIG_BT_COEXIST)
 #include "rtw_coex_host_api.h"
 #else
@@ -20,6 +21,10 @@
 
 struct rtk_bt_coex_priv_t *p_rtk_bt_coex_priv = NULL;
 bool bt_coex_initialized = false;
+/* RX/TX frames being processed; lives outside priv so bt_coex_deinit can wait on it after priv is gone */
+static volatile uint32_t bt_coex_busy_cnt = 0;
+
+static void bt_coex_task(void *arg);
 
 static struct rtk_bt_coex_conn_t  *bt_coex_find_link_by_handle(uint16_t conn_handle)
 {
@@ -65,7 +70,7 @@ static void bt_coex_send_vendor_cmd(uint16_t cmd_id, uint8_t *pbuf, uint8_t len)
 	DBG_BT_COEX("bt_coex_send_vendor_cmd <----- \r\n");
 }
 
-static void bt_coex_set_profile_info_to_fw(void)
+static void bt_coex_do_report_profile_info(void)
 {
 	uint8_t handle_number = 0;
 	uint8_t report_number = 0;
@@ -74,6 +79,7 @@ static void bt_coex_set_profile_info_to_fw(void)
 	uint8_t *pbuf = NULL;
 	uint8_t offset = 0;
 
+	osif_mutex_take(p_rtk_bt_coex_priv->conn_mutex, 0xFFFFFFFFUL);
 	if (!list_empty(&p_rtk_bt_coex_priv->conn_list)) {
 		plist = p_rtk_bt_coex_priv->conn_list.next;
 		while (plist != &p_rtk_bt_coex_priv->conn_list) {
@@ -94,6 +100,7 @@ static void bt_coex_set_profile_info_to_fw(void)
 
 	pbuf = (uint8_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, (1 + handle_number * 6));
 	if (!pbuf) {
+		osif_mutex_give(p_rtk_bt_coex_priv->conn_mutex);
 		return;
 	}
 
@@ -123,13 +130,27 @@ static void bt_coex_set_profile_info_to_fw(void)
 		}
 	}
 
+	osif_mutex_give(p_rtk_bt_coex_priv->conn_mutex);
+
 	/* DBG_BT_COEX_DUMP("", pbuf, offset); */
 
 	bt_coex_send_vendor_cmd(HCI_VENDOR_SET_PROFILE_REPORT_COMMAND, pbuf, offset);
 
 	osif_mem_free(pbuf);
 }
+
+/* Never blocks: callable from RX/TX paths. Vendor commands are sent from bt_coex_task only. */
+static void bt_coex_set_profile_to_fw_request(void)
+{
+	if (!p_rtk_bt_coex_priv->task_run) {
+		return;
+	}
+	p_rtk_bt_coex_priv->profile_pending = true;
+	osif_sem_give(p_rtk_bt_coex_priv->task_sem);
+}
+
 #if defined(HCI_BT_COEX_BR_EDR_SUPPORT) && HCI_BT_COEX_BR_EDR_SUPPORT
+/* Caller must hold conn_mutex, which also protects monitor_list */
 static void bt_coex_setup_check_timer(struct rtk_bt_coex_conn_t *p_conn, uint16_t profile_idx)
 {
 	struct rtk_bt_coex_monitor_node_t *p_monitor_node = NULL;
@@ -152,20 +173,13 @@ static void bt_coex_setup_check_timer(struct rtk_bt_coex_conn_t *p_conn, uint16_
 	p_conn->pan_cnt = 0;
 	p_conn->pan_pre_cnt = 0;
 
-	osif_mutex_take(p_rtk_bt_coex_priv->monitor_mutex, 0xFFFFFFFFUL);
 	list_add_tail(&p_monitor_node->list, &p_rtk_bt_coex_priv->monitor_list);
-	osif_mutex_give(p_rtk_bt_coex_priv->monitor_mutex);
 
-	if (p_rtk_bt_coex_priv->monitor_timer) {
-		uint32_t timer_state = 0;
-		osif_timer_state_get(&p_rtk_bt_coex_priv->monitor_timer, &timer_state);
-		//if monitor_timer stop or not start
-		if (!timer_state) {
-			osif_timer_start(&p_rtk_bt_coex_priv->monitor_timer);
-		}
-	}
+	/* let bt_coex_task start the monitor period */
+	osif_sem_give(p_rtk_bt_coex_priv->task_sem);
 }
 
+/* Caller must hold conn_mutex, which also protects monitor_list */
 static void bt_coex_del_check_timer(struct rtk_bt_coex_conn_t *p_conn, uint16_t profile_idx)
 {
 	struct rtk_bt_coex_monitor_node_t *p_monitor_node = NULL;
@@ -175,7 +189,6 @@ static void bt_coex_del_check_timer(struct rtk_bt_coex_conn_t *p_conn, uint16_t 
 		return;
 	}
 
-	osif_mutex_take(p_rtk_bt_coex_priv->monitor_mutex, 0xFFFFFFFFUL);
 	if (!list_empty(&p_rtk_bt_coex_priv->monitor_list)) {
 		plist = p_rtk_bt_coex_priv->monitor_list.next;
 		while (plist != &p_rtk_bt_coex_priv->monitor_list) {
@@ -188,28 +201,10 @@ static void bt_coex_del_check_timer(struct rtk_bt_coex_conn_t *p_conn, uint16_t 
 			}
 		}
 	}
-	osif_mutex_give(p_rtk_bt_coex_priv->monitor_mutex);
 
-	if (!p_monitor_node) {
-		return;
-	}
-
-	osif_mutex_take(p_rtk_bt_coex_priv->monitor_mutex, 0xFFFFFFFFUL);
-	list_del(&p_monitor_node->list);
-	osif_mutex_give(p_rtk_bt_coex_priv->monitor_mutex);
-
-	osif_mem_free(p_monitor_node);
-
-	//stop timer if monitor_list is empty
-	if (list_empty(&p_rtk_bt_coex_priv->monitor_list)) {
-		if (p_rtk_bt_coex_priv->monitor_timer) {
-			uint32_t timer_state = 0;
-			osif_timer_state_get(&p_rtk_bt_coex_priv->monitor_timer, &timer_state);
-			//if monitor_timer start
-			if (timer_state) {
-				osif_timer_stop(&p_rtk_bt_coex_priv->monitor_timer);
-			}
-		}
+	if (p_monitor_node) {
+		list_del(&p_monitor_node->list);
+		osif_mem_free(p_monitor_node);
 	}
 }
 #endif
@@ -249,7 +244,7 @@ static void bt_coex_update_profile_info(struct rtk_bt_coex_conn_t *p_conn, uint8
 	}
 
 	if (b_need_update) {
-		bt_coex_set_profile_info_to_fw();
+		bt_coex_set_profile_to_fw_request();
 	}
 }
 
@@ -818,7 +813,8 @@ static void bt_coex_handle_l2cap_conn_req(struct rtk_bt_coex_conn_t *p_conn, uin
 			plist = p_conn->profile_list.next;
 			while (plist != &p_conn->profile_list) {
 				p_profile_info = (struct rtk_bt_coex_profile_info_t *)plist;
-				if (p_profile_info->psm == psm) {
+				/* only a signaling profile decides that the next AVDTP channel is media */
+				if ((p_profile_info->psm == psm) && (p_profile_info->flags == A2DP_SIGNAL)) {
 					b_find = true;
 					break;
 				} else {
@@ -919,11 +915,12 @@ static void bt_coex_handle_handle_l2cap_dis_conn_req(struct rtk_bt_coex_conn_t *
 }
 
 #if defined(HCI_BT_COEX_BR_EDR_SUPPORT) && HCI_BT_COEX_BR_EDR_SUPPORT
-static void bt_coex_set_bitpool_to_fw(uint8_t *user_data, uint16_t length)
+static void bt_coex_set_bitpool_to_fw_request(uint8_t *user_data, uint16_t length)
 {
 	struct sbc_frame_hdr *sbc_header = NULL;
 	struct rtp_header rtph;
 	uint8_t hci_buf[1] = {0};
+	uint16_t sbc_hdr_off;
 
 	/* We assume it is SBC if the packet length
 	    * is bigger than 100 bytes
@@ -931,20 +928,31 @@ static void bt_coex_set_bitpool_to_fw(uint8_t *user_data, uint16_t length)
 	if (length > 100) {
 		memcpy(&rtph, user_data, sizeof(struct rtp_header));
 
-		DBG_BT_COEX("bt_coex_set_bitpool_to_fw rtp: v 0x%x, cc 0x%x, pt 0x%x \r\n", rtph.v, rtph.cc, rtph.pt);
+		/* RTP header + CSRC list + 1-byte media payload header */
+		sbc_hdr_off = sizeof(struct rtp_header) + rtph.cc * 4 + 1;
+
+		/* need sbc_hdr_off + 3 to reach sbc_header->bitpool (offset 2) */
+		if (length < sbc_hdr_off + 3) {
+			return;
+		}
+
+		DBG_BT_COEX("bt_coex_set_bitpool_to_fw_request rtp: v 0x%x, cc 0x%x, pt 0x%x \r\n", rtph.v, rtph.cc, rtph.pt);
 
 		/* move forward */
-		user_data += sizeof(struct rtp_header) + rtph.cc * 4 + 1;
+		user_data += sbc_hdr_off;
 
 		/* point to the sbc frame header */
 		sbc_header = (struct sbc_frame_hdr *)user_data;
 		hci_buf[0] = (uint8_t)sbc_header->bitpool;
 
-		DBG_BT_COEX("bt_coex_set_bitpool_to_fw bitpool %d channel_mode %d sampling_frequency %d\r\n", sbc_header->bitpool, sbc_header->channel_mode,
+		DBG_BT_COEX("bt_coex_set_bitpool_to_fw_request bitpool %d channel_mode %d sampling_frequency %d\r\n", sbc_header->bitpool, sbc_header->channel_mode,
 					sbc_header->sampling_frequency);
 
-		/* the first 4 byte reserved for header */
-		bt_coex_send_vendor_cmd(HCI_VENDOR_SET_BITPOOL, hci_buf, 1);
+		if (p_rtk_bt_coex_priv->task_run) {
+			p_rtk_bt_coex_priv->bitpool = hci_buf[0];
+			p_rtk_bt_coex_priv->bitpool_pending = true;
+			osif_sem_give(p_rtk_bt_coex_priv->task_sem);
+		}
 	}
 }
 
@@ -969,8 +977,8 @@ static void bt_coex_packet_counter_handle(struct rtk_bt_coex_conn_t *p_conn, uin
 					p_conn->profile_status_bitmap |= BIT(PROFILE_SINK);
 				}
 			}
-			bt_coex_set_profile_info_to_fw();
-			bt_coex_set_bitpool_to_fw(pdata, length);
+			bt_coex_set_profile_to_fw_request();
+			bt_coex_set_bitpool_to_fw_request(pdata, length);
 		}
 
 		p_conn->a2dp_cnt ++;
@@ -1014,27 +1022,48 @@ static void bt_coex_process_acl_data(uint8_t *pdata, uint16_t len, uint8_t dir)
 		goto end;
 	}
 
-	if (flags == 0x01) {
+	/* only process A2DP case  */
+	if (p_conn->type != HCI_CONN_TYPE_L2CAP) {
+		goto end;
+	}
+
+	/* drop every continuation fragment, whatever the broadcast flag says */
+	if ((flags & 0x03) == 0x01) {
+		goto end;
+	}
+
+	/* need 4-byte ACL header, 4-byte L2CAP header and the first payload byte */
+	if (len < 9) {
 		goto end;
 	}
 
 	pdu_len = (uint16_t)((pdata[5] << 8) | pdata[4]);
 	channel_id = (uint16_t)((pdata[7] << 8) | pdata[6]);
 
-	if ((channel_id == 0x0001) && len < 11) {
+	/* the L2CAP payload length is the ACL payload minus the 4-byte L2CAP header */
+	/* first segment: L2CAP payload length > ACL payload - 4 */
+	/* skip process for length mis-match */
+	if (pdu_len < (uint16_t)(len - 8)) {
 		goto end;
 	}
 
-	code = pdata[8];
 	if (channel_id == 0x0001) {
+		/* BR/EDR Signaling */
+		code = pdata[8];
 		switch (code) {
 		case L2CAP_CONN_REQ:
+			if (len < 16) {
+				break;
+			}
 			psm = (uint16_t)((pdata[13] << 8) | pdata[12]);
 			scid = (uint16_t)((pdata[15] << 8) | pdata[14]);
 			DBG_BT_COEX("bt_coex_process_acl_data: L2CAP_CONN_REQ: psm = 0x%x, scid = 0x%x \r\n", psm, scid);
 			bt_coex_handle_l2cap_conn_req(p_conn, psm, scid, dir);
 			break;
 		case L2CAP_CONN_RSP:
+			if (len < 18) {
+				break;
+			}
 			dcid = (uint16_t)((pdata[13] << 8) | pdata[12]);
 			scid = (uint16_t)((pdata[15] << 8) | pdata[14]);
 			res = (uint16_t)((pdata[17] << 8) | pdata[16]);
@@ -1042,6 +1071,9 @@ static void bt_coex_process_acl_data(uint8_t *pdata, uint16_t len, uint8_t dir)
 			bt_coex_handle_l2cap_conn_rsp(p_conn, scid, dcid, res, dir);
 			break;
 		case L2CAP_DISCONN_REQ:
+			if (len < 16) {
+				break;
+			}
 			dcid = (uint16_t)((pdata[13] << 8) | pdata[12]);
 			scid = (uint16_t)((pdata[15] << 8) | pdata[14]);
 			bt_coex_handle_handle_l2cap_dis_conn_req(p_conn, scid, dcid, dir);
@@ -1051,10 +1083,11 @@ static void bt_coex_process_acl_data(uint8_t *pdata, uint16_t len, uint8_t dir)
 		default:
 			break;
 		}
-	} else {
+	} else if (channel_id >= 0x0040) {
 #if defined(HCI_BT_COEX_BR_EDR_SUPPORT) && HCI_BT_COEX_BR_EDR_SUPPORT
+		/* A2DP/PAN media flows only exist on ACL-U, and only on dynamically allocated CIDs */
 		if ((((p_conn->profile_bitmap & BIT(PROFILE_A2DP)) > 0) || ((p_conn->profile_bitmap & BIT(PROFILE_PAN)) > 0))) {
-			bt_coex_packet_counter_handle(p_conn, channel_id, dir, pdata + 9, pdu_len);
+			bt_coex_packet_counter_handle(p_conn, channel_id, dir, pdata + 9, len - 9);
 		}
 #else
 		(void)pdu_len;
@@ -1064,15 +1097,14 @@ end:
 	osif_mutex_give(p_rtk_bt_coex_priv->conn_mutex);
 }
 #if defined(HCI_BT_COEX_BR_EDR_SUPPORT) && HCI_BT_COEX_BR_EDR_SUPPORT
-static void bt_coex_monitor_timer_handler(void *arg)
+/* Runs in bt_coex_task once per BT_COEX_MONITOR_INTERVAL while monitor_list is not empty */
+static void bt_coex_monitor_check(void)
 {
-	UNUSED(arg);
 	struct rtk_bt_coex_monitor_node_t *p_monitor = NULL;
 	struct rtk_bt_coex_conn_t *p_conn = NULL;
 	struct list_head *plist = NULL;
 
 	osif_mutex_take(p_rtk_bt_coex_priv->conn_mutex, 0xFFFFFFFFUL);
-	osif_mutex_take(p_rtk_bt_coex_priv->monitor_mutex, 0xFFFFFFFFUL);
 	if (list_empty(&p_rtk_bt_coex_priv->monitor_list)) {
 		goto end;
 	}
@@ -1087,14 +1119,14 @@ static void bt_coex_monitor_timer_handler(void *arg)
 
 			if (p_monitor->profile_idx == PROFILE_A2DP) {
 
-				DBG_BT_COEX("bt_coex_monitor_timer_handler: a2dp cnt = %d \r\n", p_conn->a2dp_cnt);
+				DBG_BT_COEX("bt_coex_monitor_check: a2dp cnt = %d \r\n", p_conn->a2dp_cnt);
 
 				if ((p_conn->a2dp_cnt == 0) && (p_conn->a2dp_pre_cnt > 0)) {
 					p_conn->profile_status_bitmap &= (~BIT(PROFILE_A2DP));
 					if (p_conn->profile_status_bitmap & BIT(PROFILE_SINK)) {
 						p_conn->profile_status_bitmap &= ~(BIT(PROFILE_SINK));
 					}
-					bt_coex_set_profile_info_to_fw();
+					bt_coex_set_profile_to_fw_request();
 				}
 
 				p_conn->a2dp_pre_cnt = p_conn->a2dp_cnt;
@@ -1105,7 +1137,7 @@ static void bt_coex_monitor_timer_handler(void *arg)
 
 				if ((p_conn->pan_cnt == 0) && (p_conn->pan_pre_cnt > 0)) {
 					p_conn->profile_status_bitmap &= (~BIT(PROFILE_PAN));
-					bt_coex_set_profile_info_to_fw();
+					bt_coex_set_profile_to_fw_request();
 				}
 				p_conn->pan_pre_cnt = p_conn->pan_cnt;
 				p_conn->pan_cnt = 0;
@@ -1115,10 +1147,80 @@ static void bt_coex_monitor_timer_handler(void *arg)
 		plist = plist->next;
 	}
 end:
-	osif_mutex_give(p_rtk_bt_coex_priv->monitor_mutex);
 	osif_mutex_give(p_rtk_bt_coex_priv->conn_mutex);
 }
+
+static bool bt_coex_monitor_active(void)
+{
+	bool active;
+
+	osif_mutex_take(p_rtk_bt_coex_priv->conn_mutex, 0xFFFFFFFFUL);
+	active = !list_empty(&p_rtk_bt_coex_priv->monitor_list);
+	osif_mutex_give(p_rtk_bt_coex_priv->conn_mutex);
+
+	return active;
+}
 #endif
+
+static void bt_coex_task(void *arg)
+{
+	uint32_t wait_ms;
+#if defined(HCI_BT_COEX_BR_EDR_SUPPORT) && HCI_BT_COEX_BR_EDR_SUPPORT
+	uint32_t next_check = 0;
+	uint8_t bitpool = 0;
+	bool monitoring = false;
+#endif
+
+	(void)arg;
+
+	while (1) {
+		wait_ms = BT_TIMEOUT_FOREVER;
+
+#if defined(HCI_BT_COEX_BR_EDR_SUPPORT) && HCI_BT_COEX_BR_EDR_SUPPORT
+		if (bt_coex_monitor_active()) {
+			uint32_t now = osif_sys_time_get();
+
+			if (!monitoring) {
+				monitoring = true;
+				next_check = now + BT_COEX_MONITOR_INTERVAL;
+			}
+			wait_ms = ((int32_t)(next_check - now) > 0) ? (next_check - now) : 0;
+		} else {
+			monitoring = false;
+		}
+#endif
+
+		osif_sem_take(p_rtk_bt_coex_priv->task_sem, wait_ms);
+		if (!p_rtk_bt_coex_priv->task_run) {
+			break;
+		}
+
+#if defined(HCI_BT_COEX_BR_EDR_SUPPORT) && HCI_BT_COEX_BR_EDR_SUPPORT
+		if (monitoring && (int32_t)(osif_sys_time_get() - next_check) >= 0) {
+			bt_coex_monitor_check();
+			/* re-align to now: a delayed task must not run back-to-back checks, each one clears a2dp_cnt */
+			next_check = osif_sys_time_get() + BT_COEX_MONITOR_INTERVAL;
+		}
+#endif
+
+		/* clear before building so a request raised meanwhile triggers another round */
+		if (p_rtk_bt_coex_priv->profile_pending) {
+			p_rtk_bt_coex_priv->profile_pending = false;
+			bt_coex_do_report_profile_info();
+		}
+#if defined(HCI_BT_COEX_BR_EDR_SUPPORT) && HCI_BT_COEX_BR_EDR_SUPPORT
+		if (p_rtk_bt_coex_priv->bitpool_pending) {
+			/* clear before reading so a value written meanwhile triggers another round */
+			p_rtk_bt_coex_priv->bitpool_pending = false;
+			bitpool = p_rtk_bt_coex_priv->bitpool;
+			bt_coex_send_vendor_cmd(HCI_VENDOR_SET_BITPOOL, &bitpool, 1);
+		}
+#endif
+	}
+
+	osif_sem_give(p_rtk_bt_coex_priv->task_exit_sem);
+	osif_task_delete(NULL);
+}
 
 #if defined(HCI_BT_COEX_SW_MAILBOX) && HCI_BT_COEX_SW_MAILBOX
 static void bt_coex_send_to_coex_driver(void);
@@ -1567,7 +1669,7 @@ void bt_coex_send_w2b_sw_mailbox(uint8_t *user_data, uint16_t length)
 		}
 	}
 
-	void bt_coex_process_rx_frame(uint8_t type, uint8_t *pdata, uint16_t len)
+	static void bt_coex_do_process_rx_frame(uint8_t type, uint8_t *pdata, uint16_t len)
 	{
 		if (!pdata) {
 			return;
@@ -1588,7 +1690,7 @@ void bt_coex_send_w2b_sw_mailbox(uint8_t *user_data, uint16_t length)
 #endif
 	}
 
-	void bt_coex_process_tx_frame(uint8_t type, uint8_t *pdata, uint16_t len)
+	static void bt_coex_do_process_tx_frame(uint8_t type, uint8_t *pdata, uint16_t len)
 	{
 		if (!pdata) {
 			return;
@@ -1605,31 +1707,79 @@ void bt_coex_send_w2b_sw_mailbox(uint8_t *user_data, uint16_t length)
 #endif
 	}
 
+	/* Check and count in one critical section, so bt_coex_deinit never misses a frame that already passed the check */
+	static bool bt_coex_busy_enter(void)
+	{
+		uint32_t flags = osif_lock();
+		bool ok = bt_coex_initialized;
+
+		if (ok) {
+			bt_coex_busy_cnt++;
+		}
+		osif_unlock(flags);
+
+		return ok;
+	}
+
+	static void bt_coex_busy_exit(void)
+	{
+		uint32_t flags = osif_lock();
+		if (bt_coex_busy_cnt) {
+			bt_coex_busy_cnt--;
+		}
+		osif_unlock(flags);
+	}
+
+	void bt_coex_process_rx_frame(uint8_t type, uint8_t *pdata, uint16_t len)
+	{
+		if (!bt_coex_busy_enter()) {
+			return;
+		}
+		bt_coex_do_process_rx_frame(type, pdata, len);
+		bt_coex_busy_exit();
+	}
+
+	void bt_coex_process_tx_frame(uint8_t type, uint8_t *pdata, uint16_t len)
+	{
+		if (!bt_coex_busy_enter()) {
+			return;
+		}
+		bt_coex_do_process_tx_frame(type, pdata, len);
+		bt_coex_busy_exit();
+	}
+
 	void bt_coex_init(void)
 	{
 		DBG_BT_COEX("Init \r\n");
+		if (p_rtk_bt_coex_priv) {
+			BT_LOGE("[BT_COEX] bt_coex is already initialized\r\n");
+			return;
+		}
 		p_rtk_bt_coex_priv = (struct rtk_bt_coex_priv_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, sizeof(struct rtk_bt_coex_priv_t));
 		if (!p_rtk_bt_coex_priv) {
 			return;
 		}
 		memset(p_rtk_bt_coex_priv, 0, sizeof(struct rtk_bt_coex_priv_t));
 		INIT_LIST_HEAD(&p_rtk_bt_coex_priv->conn_list);
-		if (false == osif_mutex_create(&p_rtk_bt_coex_priv->conn_mutex)) {
-			return;
-		}
-
 #if defined(HCI_BT_COEX_BR_EDR_SUPPORT) && HCI_BT_COEX_BR_EDR_SUPPORT
 		INIT_LIST_HEAD(&p_rtk_bt_coex_priv->monitor_list);
-		if (false == osif_mutex_create(&p_rtk_bt_coex_priv->monitor_mutex)) {
-			return;
+#endif
+		if (false == osif_mutex_create(&p_rtk_bt_coex_priv->conn_mutex)) {
+			goto fail;
 		}
 
-		if (true == osif_timer_create(&p_rtk_bt_coex_priv->monitor_timer, "bt_coex_monitor_timer", NULL, BT_COEX_MONITOR_INTERVAL, true,
-									  bt_coex_monitor_timer_handler)) {
-			//start timer when need
-			//osif_timer_start(&p_rtk_bt_coex_priv->monitor_timer);
+		if (false == osif_sem_create(&p_rtk_bt_coex_priv->task_sem, 0, 1)) {
+			goto fail;
 		}
-#endif
+		if (false == osif_sem_create(&p_rtk_bt_coex_priv->task_exit_sem, 0, 1)) {
+			goto fail;
+		}
+		p_rtk_bt_coex_priv->task_run = true;
+		if (false == osif_task_create(&p_rtk_bt_coex_priv->task_hdl, "bt_coex_task", bt_coex_task, NULL, BT_COEX_TASK_STACK_SIZE, BT_COEX_TASK_PRIO)) {
+			p_rtk_bt_coex_priv->task_run = false;
+			p_rtk_bt_coex_priv->task_hdl = NULL;
+			goto fail;
+		}
 
 #if defined(HCI_BT_COEX_SW_MAILBOX) && HCI_BT_COEX_SW_MAILBOX
 		if (false == osif_mutex_create(&p_rtk_bt_coex_priv->info_paras_mutex)) {
@@ -1638,6 +1788,10 @@ void bt_coex_send_w2b_sw_mailbox(uint8_t *user_data, uint16_t length)
 #endif
 
 		bt_coex_initialized = true;
+		return;
+
+fail:
+		bt_coex_deinit();
 	}
 
 	void bt_coex_deinit(void)
@@ -1647,16 +1801,52 @@ void bt_coex_send_w2b_sw_mailbox(uint8_t *user_data, uint16_t length)
 		struct rtk_bt_coex_monitor_node_t *p_monitor = NULL;
 #endif
 		struct rtk_bt_coex_conn_t *p_conn = NULL;
+		uint32_t flags = 0;
+		uint32_t deinit_timeout = 10000; // ms
 
 		DBG_BT_COEX("Deinit \r\n");
-		bt_coex_initialized = false;
-
-#if defined(HCI_BT_COEX_BR_EDR_SUPPORT) && HCI_BT_COEX_BR_EDR_SUPPORT
-		if (p_rtk_bt_coex_priv->monitor_timer) {
-			osif_timer_stop(&p_rtk_bt_coex_priv->monitor_timer);
+		if (!p_rtk_bt_coex_priv) {
+			return;
 		}
 
-		osif_mutex_take(p_rtk_bt_coex_priv->monitor_mutex, 0xFFFFFFFFUL);
+		// set initialize false & wait trx task done
+		flags = osif_lock();
+		bt_coex_initialized = false;
+		osif_unlock(flags);
+
+		flags = 0;
+		while (bt_coex_busy_cnt && flags < deinit_timeout) {
+			osif_delay(1);
+			flags++;
+		}
+		if (bt_coex_busy_cnt) {
+			BT_LOGE("[BT_COEX] Deinit-trx flow not exit for %ds\r\n", deinit_timeout / 1000);
+			return;
+		}
+
+		if (p_rtk_bt_coex_priv->task_hdl) {
+			p_rtk_bt_coex_priv->task_run = false;
+			osif_sem_give(p_rtk_bt_coex_priv->task_sem);
+			if (0 == osif_sem_take(p_rtk_bt_coex_priv->task_exit_sem, deinit_timeout)) {
+				BT_LOGE("[BT_COEX] Deinit-task not exit for %ds, check memory usage!\r\n", deinit_timeout / 1000);
+				return;
+			}
+			p_rtk_bt_coex_priv->task_hdl = NULL;
+		}
+		if (p_rtk_bt_coex_priv->task_sem) {
+			osif_sem_delete(p_rtk_bt_coex_priv->task_sem);
+			p_rtk_bt_coex_priv->task_sem = NULL;
+		}
+		if (p_rtk_bt_coex_priv->task_exit_sem) {
+			osif_sem_delete(p_rtk_bt_coex_priv->task_exit_sem);
+			p_rtk_bt_coex_priv->task_exit_sem = NULL;
+		}
+
+		plist = NULL;
+		if (p_rtk_bt_coex_priv->conn_mutex) {
+			osif_mutex_take(p_rtk_bt_coex_priv->conn_mutex, 0xFFFFFFFFUL);
+		}
+#if defined(HCI_BT_COEX_BR_EDR_SUPPORT) && HCI_BT_COEX_BR_EDR_SUPPORT
 		if (!list_empty(&p_rtk_bt_coex_priv->monitor_list)) {
 			plist = p_rtk_bt_coex_priv->monitor_list.next;
 			while (plist != &p_rtk_bt_coex_priv->monitor_list) {
@@ -1666,11 +1856,8 @@ void bt_coex_send_w2b_sw_mailbox(uint8_t *user_data, uint16_t length)
 				osif_mem_free(p_monitor);
 			}
 		}
-		osif_mutex_give(p_rtk_bt_coex_priv->monitor_mutex);
-#endif
-
 		plist = NULL;
-		osif_mutex_take(p_rtk_bt_coex_priv->conn_mutex, 0xFFFFFFFFUL);
+#endif
 		if (!list_empty(&p_rtk_bt_coex_priv->conn_list)) {
 			plist = p_rtk_bt_coex_priv->conn_list.next;
 			while (plist != &p_rtk_bt_coex_priv->conn_list) {
@@ -1691,20 +1878,20 @@ void bt_coex_send_w2b_sw_mailbox(uint8_t *user_data, uint16_t length)
 				osif_mem_free(p_conn);
 			}
 		}
-		osif_mutex_give(p_rtk_bt_coex_priv->conn_mutex);
-		osif_mutex_delete(p_rtk_bt_coex_priv->conn_mutex);
-#if defined(HCI_BT_COEX_BR_EDR_SUPPORT) && HCI_BT_COEX_BR_EDR_SUPPORT
-		osif_mutex_delete(p_rtk_bt_coex_priv->monitor_mutex);
-		if (p_rtk_bt_coex_priv->monitor_timer) {
-			osif_timer_delete(&p_rtk_bt_coex_priv->monitor_timer);
+		if (p_rtk_bt_coex_priv->conn_mutex) {
+			osif_mutex_give(p_rtk_bt_coex_priv->conn_mutex);
+			osif_mutex_delete(p_rtk_bt_coex_priv->conn_mutex);
+		}
+#if defined(HCI_BT_COEX_SW_MAILBOX) && HCI_BT_COEX_SW_MAILBOX
+		if (p_rtk_bt_coex_priv->info_paras_mutex) {
+			osif_mutex_delete(p_rtk_bt_coex_priv->info_paras_mutex);
+		}
+		if (p_rtk_bt_coex_priv->setup_link_timer) {
+			osif_timer_delete(&p_rtk_bt_coex_priv->setup_link_timer);
 		}
 #endif
-
-#if defined(HCI_BT_COEX_SW_MAILBOX) && HCI_BT_COEX_SW_MAILBOX
-		osif_mutex_delete(p_rtk_bt_coex_priv->info_paras_mutex);
-		osif_timer_delete(&p_rtk_bt_coex_priv->setup_link_timer);
-#endif
 		osif_mem_free(p_rtk_bt_coex_priv);
+		p_rtk_bt_coex_priv = NULL;
 	}
 
 #else /* defined(HCI_BT_COEX_ENABLE) && HCI_BT_COEX_ENABLE */

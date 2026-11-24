@@ -15,7 +15,7 @@
 #include "hci_controller.h"
 #include "platform_autoconf.h"
 #if defined(CONFIG_WLAN) && CONFIG_WLAN
-#include "wifi_intf_drv_to_app_internal.h"
+extern int wifi_wake_pll_rdy_in_ps_state(u8 need);
 #endif
 
 #define HCI_UART_IDX             (2)

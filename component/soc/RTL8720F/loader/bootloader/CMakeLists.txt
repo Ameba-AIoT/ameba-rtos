@@ -47,7 +47,7 @@ if("${c_MCU_PROJECT_NAME}" STREQUAL "km55tz")
         bootloader_clk.c
         bootloader_hci.c
     )
-    if(CONFIG_SOLO)
+    if(CONFIG_IOT_MCU_COMBINED)
         ameba_list_append(private_sources
             boot_solo.c
         )
