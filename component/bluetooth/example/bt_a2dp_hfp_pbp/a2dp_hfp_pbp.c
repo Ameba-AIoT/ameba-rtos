@@ -53,7 +53,7 @@ will be used during transmit and recording flow */
 static int record_frame_samples_per_channel = 0;
 #define BT_ENCODE_FRAME_BYTES (120)
 
-#if defined(RTK_BT_LE_AUDIO_BROADCASTER_SETEO_MODE) && RTK_BT_LE_AUDIO_BROADCASTER_SETEO_MODE
+#if defined(RTK_BT_LE_AUDIO_BROADCASTER_STEREO_MODE) && RTK_BT_LE_AUDIO_BROADCASTER_STEREO_MODE
 #define APP_BT_A2DP_PBP_DEMO_OUPUT_CHANNEL_NUM          2
 #else
 #define APP_BT_A2DP_PBP_DEMO_OUPUT_CHANNEL_NUM          1
@@ -78,7 +78,7 @@ static int record_frame_samples_per_channel = 0;
     So we should leave a proper water level in app_pcm_data_mgr_queue maintain average rate.
     The water level can cause extra delay, but will not run out if set proper value.
 */
-#if defined(RTK_BT_LE_AUDIO_BROADCASTER_SETEO_MODE) && RTK_BT_LE_AUDIO_BROADCASTER_SETEO_MODE
+#if defined(RTK_BT_LE_AUDIO_BROADCASTER_STEREO_MODE) && RTK_BT_LE_AUDIO_BROADCASTER_STEREO_MODE
 /* PBP broadcast source TX water level and the unit is in milliseconds. Must set an integer multiple of 10 milliseconds.*/
 #define APP_LE_AUDIO_PBP_BROADCAST_TX_WATER_LEVEL_MS            500
 /* Actual PBP broadcast TX water level length */
@@ -4684,7 +4684,7 @@ static rtk_bt_evt_cb_ret_t app_bt_hfp_callback(uint8_t evt_code, void *param, ui
 	}
 	break;
 
-	case RTK_BT_HFP_EVT_SCO_DISCONNCTED_IND: {
+	case RTK_BT_HFP_EVT_SCO_DISCONNECTED_IND: {
 		rtk_bt_hfp_disconn_ind_t *disconn_ind = (rtk_bt_hfp_disconn_ind_t *)param;
 		memcpy((void *)bd_addr, disconn_ind->bd_addr, 6);
 		BT_LOGE("[HFP] HFP receive sco disconnected from %02x:%02x:%02x:%02x:%02x:%02x\r\n",
@@ -4883,7 +4883,7 @@ int bt_a2dp_hfp_pbp_main(uint8_t enable)
 			/* set class of device */
 			BT_APP_PROCESS(rtk_bt_br_gap_set_cod(&cod));
 			/* set supervision_timeout */
-			BT_APP_PROCESS(rtk_bt_br_gap_set_supvisiontimeout(&superv_time));
+			BT_APP_PROCESS(rtk_bt_br_gap_set_supv_timeout(&superv_time));
 			BT_APP_PROCESS(rtk_bt_br_gap_set_inquiry_param(&inquiry_param));
 			BT_APP_PROCESS(rtk_bt_br_gap_set_page_param(&page_param));
 			/* sdp record add (must be invoked before rtk_bt_enable) */

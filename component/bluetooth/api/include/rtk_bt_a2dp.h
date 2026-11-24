@@ -1,7 +1,7 @@
 /**
  * @file      rtk_bt_a2dp.h
  * @author    benling_xu@realsil.com.cn
- * @brief     Bluetooth LE GAP part type and function deffinition
+ * @brief     Bluetooth LE GAP part type and function definition
  * @copyright Copyright (c) 2022. Realtek Semiconductor Corporation. All rights reserved.
  */
 
@@ -95,7 +95,7 @@ typedef struct {
 
 /**
  * @struct    rtk_bt_a2dp_conn_ind_t
- * @brief     a2dp connection connection indication.
+ * @brief     a2dp connection indication.
  */
 typedef struct {
 	uint8_t bd_addr[6];                                 /*!< address */
@@ -103,7 +103,7 @@ typedef struct {
 
 /**
  * @struct    rtk_bt_a2dp_conn_ind_t
- * @brief     a2dp connection connection indication.
+ * @brief     a2dp connection indication.
  */
 typedef struct {
 	uint8_t bd_addr[6];                                 /*!< address */
@@ -136,7 +136,7 @@ typedef struct {
 	uint8_t codec_type;                                 /*!< indicate codec */
 	union {
 		struct {
-			uint8_t     sampling_frequency;             /*!< indicate sample frequence */
+			uint8_t     sampling_frequency;             /*!< indicate sample frequency */
 			uint8_t     channel_mode;                   /*!< indicate channel mode */
 			uint8_t     block_length;                   /*!< indicate block length */
 			uint8_t     subbands;                       /*!< indicate subbands */
@@ -146,7 +146,7 @@ typedef struct {
 		} sbc;
 		struct {
 			uint8_t     object_type;                    /*!< indicate object type */
-			uint16_t    sampling_frequency;             /*!< indicate sample frequence */
+			uint16_t    sampling_frequency;             /*!< indicate sample frequency */
 			uint8_t     channel_number;                 /*!< indicate channel number */
 			bool        vbr_supported;                  /*!< indicate vbr_supported */
 			uint32_t    bit_rate;                       /*!< indicate bit rate */
@@ -166,7 +166,7 @@ typedef struct {
 	uint8_t codec_type;                                 /*!< indicate codec */
 	union {
 		struct {
-			uint8_t     sampling_frequency;             /*!< indicate sample frequence */
+			uint8_t     sampling_frequency;             /*!< indicate sample frequency */
 			uint8_t     channel_mode;                   /*!< indicate channel mode */
 			uint8_t     block_length;                   /*!< indicate block length */
 			uint8_t     subbands;                       /*!< indicate subbands */
@@ -176,7 +176,7 @@ typedef struct {
 		} sbc;
 		struct {
 			uint8_t     object_type;                    /*!< indicate object type */
-			uint16_t    sampling_frequency;             /*!< indicate sample frequence */
+			uint16_t    sampling_frequency;             /*!< indicate sample frequency */
 			uint8_t     channel_number;                 /*!< indicate channel number */
 			bool        vbr_supported;                  /*!< indicate vbr_supported */
 			uint32_t    bit_rate;                       /*!< indicate bit rate */

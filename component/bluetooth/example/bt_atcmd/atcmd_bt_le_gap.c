@@ -871,7 +871,7 @@ static int atcmd_ble_gap_pa_sync_modify_list(int argc, char **argv)
 {
 	uint16_t ret = 0;
 	uint8_t op;
-	rtk_bt_le_addr_t addr;
+	rtk_bt_le_addr_t addr = {0};
 	uint8_t adv_sid = 0;
 
 	op = str_to_int(argv[0]);
@@ -1823,7 +1823,7 @@ static int atcmd_ble_gap_set_security_param(int argc, char **argv)
 
 	if (argc == 0) {
 		rtk_bt_le_security_param_t def_sec_param = {
-			.io_cap = RTK_IO_CAP_KEYBOARD_DISPALY,
+			.io_cap = RTK_IO_CAP_KEYBOARD_DISPLAY,
 			.oob_data_flag = 0,
 			.bond_flag = 1,
 			.mitm_flag = 0,

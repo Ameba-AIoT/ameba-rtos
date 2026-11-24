@@ -151,16 +151,16 @@ uint32_t rtk_bt_audio_record_get_channel_count(void *record_hdl);
  * @param[in] strs supports audio capture mode settings like "cap_mode=no_afe_pure_data".
  * The meaning of the string is to choose "no_afe_pure_data" mode for audio capture.
  * [amebalite] & [amebaSmart]: There are 4 modes, all take the default above amic setting for example,
- *              the data stucture is as follows:
+ *              the data structure is as follows:
  *              mode(no_afe_pure_data): take AudioRecordConfig's channel_count 3 for example:mic1+mic2+mic3;
- *                                     for lite demo borad, mic3 is ref data as the hardware design.
+ *                                     for lite demo board, mic3 is ref data as the hardware design.
  *              mode(do_afe_only_out): take AudioRecordConfig's channel_count 1 for example:out;
  *                                     out means the mic data after denoise.
  *              mode(no_afe_all_data): take AudioRecordConfig's channel_count 4 for example:mic1+mic2+mic3+out;
- *                                     for lite demo borad, mic3 is ref data as the hardware design.
+ *                                     for lite demo board, mic3 is ref data as the hardware design.
  *                                     out is NULL, and for the app to set.
  *              mode(do_afe_all_data): take AudioRecordConfig's channel_count 4 for example:mic1+mic2+mic3+out;
- *                                     for lite demo borad, mic3 is ref data as the hardware design.
+ *                                     for lite demo board, mic3 is ref data as the hardware design.
  *                                     out means the mic data after denoise.
  * If default setting meets your requirements, no need to set again.
  * strs alsa supports to set the channel of reference like:"ref_channel=2"

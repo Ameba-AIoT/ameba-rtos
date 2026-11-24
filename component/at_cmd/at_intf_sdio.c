@@ -14,7 +14,7 @@
 
 static const char *const TAG = "AT_SDIO-D";
 
-#define SDIO_TX_BD_NUM	4	//n*2, 2 bd for one transaction
+#define SDIO_TX_BD_NUM	4	// 1 bd per transaction; no alignment constraint
 #define SDIO_RX_BD_NUM	10
 #define SDIO_RX_BUFSZ	(SPDIO_RX_BUFSZ_ALIGN(2048+24)) //n*64, must be rounded to 64, extra 24 bytes for spdio header info
 

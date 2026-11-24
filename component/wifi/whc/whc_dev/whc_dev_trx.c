@@ -207,3 +207,59 @@ void whc_dev_trigger_rx(void)
 {
 	whc_dev_trigger_rx_handle();
 }
+
+int whc_dev_dispatch_event_copy(const u8 *src, u32 size)
+{
+	u8 *buf = rtos_mem_zmalloc(size);
+
+	if (!buf) {
+		RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "%s: no mem\n", __func__);
+		return RTK_FAIL;
+	}
+	memcpy(buf, src, size);
+	whc_dev_event_int_hdl(buf, NULL);
+
+	return RTK_SUCCESS;
+}
+
+/**
+ * @brief  to handle the whc message interrupt. If the message queue is
+ * 	initialized, it will enqueue the message and wake up the message
+ * 	task to handle the message.
+ * @param  rxbuf[in]: rx data.
+ * @return none.
+ */
+void whc_dev_event_int_hdl(u8 *rxbuf, struct sk_buff *skb)
+{
+	u32 event = *(u32 *)rxbuf;
+
+	switch (event) {
+	case WHC_WIFI_EVT_XIMT_PKTS:
+		/* put the inic message to the queue */
+		if (whc_msg_enqueue(skb, &dev_xmit_priv.xmit_queue) == RTK_FAIL) {
+			break;
+		}
+		/* wakeup task */
+		rtw_single_thread_wakeup();
+		break;
+#ifdef CONFIG_WHC_WIFI_API_PATH
+	case WHC_WIFI_EVT_API_CALL:
+		event_priv.rx_api_msg = rxbuf;
+		rtos_sema_give(event_priv.task_wake_sema);
+
+		break;
+#endif
+#ifdef CONFIG_WHC_CMD_PATH
+	case WHC_WIFI_EVT_CMD:
+		whc_dev_cmd_rx_to_user(rxbuf);
+		break;
+#endif
+	default:
+		RTK_LOGS(TAG_WLAN_INIC, RTK_LOG_ERROR, "Event(%x) unknown!\n", event);
+		/* rxbuf is the copy from whc_dev_dispatch_event_copy, nobody else frees it */
+		if (skb == NULL) {
+			rtos_mem_free(rxbuf);
+		}
+		break;
+	}
+}

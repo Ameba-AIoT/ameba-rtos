@@ -36,12 +36,12 @@ rtk_bt_audio_resample_t *rtk_bt_audio_resample_alloc(uint32_t in_rate, uint32_t 
 		BT_LOGE("%s allocate bt audio resample p_buffer fail \r\n", __func__);
 		goto fail;
 	}
-	p_bt_resample->presampler = (void *)speex_resampler_init(
-									out_channels,
-									in_rate,
-									out_rate,
-									1,
-									&error);
+	p_bt_resample->p_resampler = (void *)speex_resampler_init(
+									 out_channels,
+									 in_rate,
+									 out_rate,
+									 1,
+									 &error);
 	if (error != RESAMPLER_ERR_SUCCESS) {
 		BT_LOGE("%s speex_resampler_init fail \r\n", __func__);
 		goto fail;
@@ -59,9 +59,9 @@ fail:
 		RingBuffer_Destroy(p_bt_resample->p_buffer);
 		p_bt_resample->p_buffer = NULL;
 	}
-	if (p_bt_resample->presampler) {
-		speex_resampler_destroy((SpeexResamplerState *)p_bt_resample->presampler);
-		p_bt_resample->presampler = NULL;
+	if (p_bt_resample->p_resampler) {
+		speex_resampler_destroy((SpeexResamplerState *)p_bt_resample->p_resampler);
+		p_bt_resample->p_resampler = NULL;
 	}
 	if (p_bt_resample->out_buffer) {
 		osif_mem_free((void *)p_bt_resample->out_buffer);
@@ -83,9 +83,9 @@ void rtk_bt_audio_resample_free(rtk_bt_audio_resample_t *p_bt_resample)
 		RingBuffer_Destroy(p_bt_resample->p_buffer);
 		p_bt_resample->p_buffer = NULL;
 	}
-	if (p_bt_resample->presampler) {
-		speex_resampler_destroy((SpeexResamplerState *)p_bt_resample->presampler);
-		p_bt_resample->presampler = NULL;
+	if (p_bt_resample->p_resampler) {
+		speex_resampler_destroy((SpeexResamplerState *)p_bt_resample->p_resampler);
+		p_bt_resample->p_resampler = NULL;
 	}
 	if (p_bt_resample->out_buffer) {
 		osif_mem_free((void *)p_bt_resample->out_buffer);
@@ -147,10 +147,10 @@ uint32_t rtk_bt_audio_resample_feed(rtk_bt_audio_resample_t *p_bt_resample, uint
 	bt_audio_input_data_channel_convert(p_bt_resample, (short *)input, in_buffer, input_frames_num);
 	if (p_bt_resample->out_rate != p_bt_resample->in_rate) {
 		if (p_bt_resample->out_channels == 1) {
-			error = speex_resampler_process_int((SpeexResamplerState *)p_bt_resample->presampler, 0, (spx_int16_t *)in_buffer, &input_frames,
+			error = speex_resampler_process_int((SpeexResamplerState *)p_bt_resample->p_resampler, 0, (spx_int16_t *)in_buffer, &input_frames,
 												(spx_int16_t *)p_bt_resample->out_buffer, &output_frames);
 		} else {
-			error = speex_resampler_process_interleaved_int((SpeexResamplerState *)p_bt_resample->presampler, (spx_int16_t *)in_buffer, &input_frames,
+			error = speex_resampler_process_interleaved_int((SpeexResamplerState *)p_bt_resample->p_resampler, (spx_int16_t *)in_buffer, &input_frames,
 															(spx_int16_t *)p_bt_resample->out_buffer, &output_frames);
 		}
 	} else {

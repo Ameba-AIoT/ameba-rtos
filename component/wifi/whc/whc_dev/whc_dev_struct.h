@@ -21,6 +21,8 @@
 struct whc_api_info {
 	u32	event;
 	u32	api_id;
+	u32	data_len;
+	u32	rsvd;	/* API payload has no pad; kept at @12 to match whc_msg_info */
 };
 
 /* the header for customer to send or receive the data between host and device. */
@@ -66,6 +68,25 @@ struct whc_msg_info {
 	u8	rsvd2[3];
 	u32	data_len;
 	u32	pad_len;
+};
+
+/*
+ * Common view over every device->host header, used by the host SDIO RX
+ * de-aggregation splitter to walk concatenated units: each unit's on-wire
+ * length is derived from its header (event + the per-family length fields).
+ *
+ * The splitter sizes each segment by header type: whc_msg_info uses
+ * data_len@8 + pad_len@12; whc_api_info uses data_len@8 only (@12 is an unused
+ * placeholder, its payload has no pad); whc_cmd_path_hdr / whc_cust_hdr use
+ * len@4. BT INIC (INIC_BT_HOST_RX) is not part of this union: its packed
+ * bt_inic_sdio_hdr carries a u16 total length at @4, which the SDIO splitter
+ * reads directly.
+ */
+union whc_hdr {
+	struct whc_msg_info		msg;	/* RECV_PKTS / FLOWCTRL */
+	struct whc_api_info		api;	/* API_CALL / API_RETURN */
+	struct whc_cmd_path_hdr	cmd;	/* CMD */
+	struct whc_cust_hdr		cust;	/* custom path */
 };
 
 #define SPI_DMA_ALIGN(x)	((((x-1)>>5)+1)<<5) //alignement to 32

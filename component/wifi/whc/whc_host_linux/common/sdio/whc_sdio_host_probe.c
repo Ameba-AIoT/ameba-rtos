@@ -40,7 +40,7 @@ static int whc_sdio_host_probe(struct sdio_func *func, const struct sdio_device_
 	init_waitqueue_head(&priv->txbd_wq);
 
 	priv->func = func;
-	priv->rx_process_func = whc_host_recv_process;
+	priv->rx_process_func = whc_host_recv_dispatch;
 	atomic_set(&priv->continual_io_error, 0);
 
 	sdio_set_drvdata(func, (void *)priv);
@@ -275,10 +275,8 @@ int whc_sdio_host_resume(struct device *dev)
 	rtw_sdio_init_txavailbd_threshold(priv);
 #endif
 
-#ifdef CONFIG_SDIO_RX_AGGREGATION
-	if (rtw_sdio_init_agg_setting(priv) == false) {
-		return -EPERM;
-	}
+#ifdef WHC_RX_AGG
+	rtw_sdio_enable_rx_agg(priv);
 #endif
 	rtw_sdio_query_txbd_status(priv);
 

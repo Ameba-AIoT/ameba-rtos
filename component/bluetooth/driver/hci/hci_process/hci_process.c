@@ -31,7 +31,7 @@ static uint8_t hci_process_read_local_ver(uint16_t opcode)
 	uint16_t hci_revision, lmp_subver;
 
 	buf[2] = (uint8_t)(0);
-	if (HCI_SUCCESS != hci_sa_send_cmd_sync(opcode, buf, 3)) {
+	if (HCI_SUCCESS != hci_sa_send_cmd_sync(opcode, buf, 3, sizeof(buf_raw) - RESERVE_LEN)) {
 		return HCI_FAIL;
 	}
 
@@ -50,7 +50,7 @@ static uint8_t hci_process_read_rom_ver(uint16_t opcode)
 	uint8_t *buf = buf_raw + RESERVE_LEN;
 
 	buf[2] = (uint8_t)(0);
-	if (HCI_SUCCESS != hci_sa_send_cmd_sync(opcode, buf, 3)) {
+	if (HCI_SUCCESS != hci_sa_send_cmd_sync(opcode, buf, 3, sizeof(buf_raw) - RESERVE_LEN)) {
 		return HCI_FAIL;
 	}
 
@@ -68,7 +68,7 @@ static uint8_t _hci_process_set_baudrate(uint16_t opcode, bool use_default)
 
 	buf[2] = sizeof(uint32_t);
 	hci_get_baudrate(&buf[3], use_default);
-	if (HCI_SUCCESS != hci_sa_send_cmd_sync(opcode, buf, 7)) {
+	if (HCI_SUCCESS != hci_sa_send_cmd_sync(opcode, buf, 7, sizeof(buf_raw) - RESERVE_LEN)) {
 		return HCI_FAIL;
 	}
 
@@ -157,7 +157,7 @@ static uint8_t hci_process_write_phy_efuse(uint16_t opcode)
 		return HCI_FAIL;
 	}
 
-	return hci_sa_send_cmd_sync(opcode, buf, HCI_WRITE_PHY_EFUSE_LEN + 3);
+	return hci_sa_send_cmd_sync(opcode, buf, HCI_WRITE_PHY_EFUSE_LEN + 3, sizeof(buf_raw) - RESERVE_LEN);
 }
 #endif
 
@@ -177,7 +177,7 @@ static uint8_t hci_process_write_rx_adck(uint16_t opcode)
 	BT_DUMPA("hci_process_write_rx_adck HCI CMD:", buf, RESERVE_LEN + 4);
 #endif
 
-	if (HCI_SUCCESS != hci_sa_send_cmd_sync(opcode, buf, 4)) {
+	if (HCI_SUCCESS != hci_sa_send_cmd_sync(opcode, buf, 4, sizeof(buf_raw) - RESERVE_LEN)) {
 		BT_DUMPA("hci_process_write_rx_adck HCI Event:", buf, RESERVE_LEN + 6);
 		return HCI_FAIL;
 	}
@@ -196,7 +196,7 @@ static uint8_t hci_process_set_cut_ver(uint16_t opcode)
 	buf[2] = (uint8_t)(1);
 	buf[3] = hci_platform_get_rom_ver();
 
-	return hci_sa_send_cmd_sync(opcode, buf, 4);
+	return hci_sa_send_cmd_sync(opcode, buf, 4, sizeof(buf_raw) - RESERVE_LEN);
 }
 #endif
 
@@ -208,7 +208,7 @@ static uint8_t hci_process_hci_reset(uint16_t opcode)
 
 	buf[2] = (uint8_t)(0);
 
-	return hci_sa_send_cmd_sync(opcode, buf, 3);
+	return hci_sa_send_cmd_sync(opcode, buf, 3, sizeof(buf_raw) - RESERVE_LEN);
 }
 
 static struct {

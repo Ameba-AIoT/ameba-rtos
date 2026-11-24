@@ -136,9 +136,8 @@ int whc_spi_host_send(int idx, struct eth_drv_sg *sg_list, int sg_len,
 */
 void whc_spi_host_send_to_dev(u8 *buf, u32 len)
 {
-	struct whc_cmd_path_hdr *hdr = NULL;
 	u8 *txbuf = NULL;
-	u32 txsize = len + sizeof(struct whc_cmd_path_hdr);
+	u32 txsize = len;
 	struct whc_txbuf_info_t *inic_tx;
 
 	/* construct struct whc_buf_info & whc_buf_info_t */
@@ -157,11 +156,8 @@ void whc_spi_host_send_to_dev(u8 *buf, u32 len)
 		return;
 	}
 
-	hdr = (struct whc_cmd_path_hdr *)txbuf;
-	hdr->event = WHC_WIFI_EVT_BRIDGE;
-	hdr->len = len;
 	/* copy data */
-	memcpy(txbuf + sizeof(struct whc_cmd_path_hdr), buf, len);
+	memcpy(txbuf, buf, len);
 
 	inic_tx->txbuf_info.buf_allocated = inic_tx->txbuf_info.buf_addr = (u32)txbuf;
 	inic_tx->txbuf_info.size_allocated = inic_tx->txbuf_info.buf_size = txsize;

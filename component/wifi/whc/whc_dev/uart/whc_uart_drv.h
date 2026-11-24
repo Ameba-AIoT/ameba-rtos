@@ -13,7 +13,6 @@
 
 #define DEV_DMA_ALIGN	4
 
-#define whc_uart_dev_event_int_hdl   whc_uart_dev_pkt_rx
 
 #define whc_dev_trigger_rx_handle()   whc_uart_dev_trigger_rx_handle()
 #define whc_dev_tx_path_avail       whc_uart_dev_tx_path_avail
@@ -82,9 +81,7 @@ void whc_uart_dev_device_init(void);
 u8 whc_uart_dev_tx_path_avail(void);
 void whc_uart_dev_send(struct whc_buf_info *pbuf);
 void whc_uart_dev_trigger_rx_handle(void);
-void whc_uart_dev_pkt_rx(u8 *rxbuf, struct sk_buff *skb);
 u8 whc_uart_dev_bus_is_idle(void);
-void whc_uart_dev_send_data(u8 *buf, u32 len);
 
 #endif
 

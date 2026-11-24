@@ -29,7 +29,7 @@ void whc_rtw_cli_send_to_host(u32 cmd_category, u8 cmd_id,
 	}
 
 	//user data + cmd
-	whc_dev_api_send_to_host(buf, user_data_len + 5);
+	whc_dev_api_send_to_host(buf, user_data_len + 5, NULL, 0);
 
 	if (buf != NULL) {
 		rtos_mem_free((void *)buf);

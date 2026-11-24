@@ -26,7 +26,7 @@ uint16_t rtk_bt_mesh_datatrans_model_write(rtk_bt_mesh_datatrans_client_write_ap
 
 uint16_t rtk_bt_mesh_datatrans_model_read(rtk_bt_mesh_datatrans_client_read_api_t *client_read)
 {
-	int ret;
+	uint16_t ret;
 
 	if (!client_read) {
 		return RTK_BT_ERR_POINTER_INVALID;

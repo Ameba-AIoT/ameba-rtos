@@ -143,7 +143,7 @@ int whc_bridge_sdio_host_recv_process(uint8_t *pbuf)
 		break;
 
 	default:
-		whc_host_pkt_rx_to_user(pbuf);
+		whc_host_deliver_rxbuf_to_user(pbuf);
 		break;
 
 	}

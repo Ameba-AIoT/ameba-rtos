@@ -35,6 +35,7 @@ void whc_host_send_event(u32 id, u8 *param, u32 param_len, u8 *ret, u32 ret_len)
 		api_info = (struct whc_api_info *)(buf + SIZE_TX_DESC);
 		api_info->event = WHC_WIFI_EVT_API_CALL;
 		api_info->api_id = id;
+		api_info->data_len = param_len;
 
 		/* copy data */
 		if (param) {
@@ -87,10 +88,10 @@ void whc_host_send_event(u32 id, u8 *param, u32 param_len, u8 *ret, u32 ret_len)
 
 	ret_msg = (struct whc_api_info *)(pskb_ret->data + SIZE_RX_DESC);
 
-	/* on mismatch the payload belongs to another API, so zero the caller's
-	 * buffer instead of copying it: some callers never initialise it */
 	if (ret != NULL && ret_len != 0) {
-		if (ret_msg->api_id != id) {
+		/* a wrong id means another API's payload, a short data_len means ret_len
+		 * would read past it; zero instead, some callers never initialise ret */
+		if (ret_msg->api_id != id || ret_msg->data_len < ret_len) {
 			memset(ret, 0, ret_len);
 		} else {
 			memcpy(ret, (u8 *)(ret_msg + 1), ret_len);
@@ -99,6 +100,9 @@ void whc_host_send_event(u32 id, u8 *param, u32 param_len, u8 *ret, u32 ret_len)
 
 	if (ret_msg->api_id != id) {
 		dev_err(global_idev.pwhc_dev, "Host API return value id not match!\n");
+	} else if (ret_len != 0 && ret_msg->data_len < ret_len) {
+		dev_err(global_idev.pwhc_dev, "Host API 0x%x ret too short: %u < %u!\n",
+				id, ret_msg->data_len, ret_len);
 	}
 
 exit:
@@ -744,8 +748,8 @@ int whc_host_iwpriv_cmd(dma_addr_t cmd_addr, unsigned int cmd_len, unsigned char
 	param[1] = cmd_len;
 	memcpy((void *)(param + 2), (void *)cmd_addr, cmd_len);
 
-	whc_host_send_event(WHC_API_WIFI_IWPRIV_INFO, (u8 *)param, size, (u8 *)param, size);
-	memcpy((u8 *)&ret, (u8 *)param, sizeof(int));
+	/* the device replies with the iwpriv return code only */
+	whc_host_send_event(WHC_API_WIFI_IWPRIV_INFO, (u8 *)param, size, (u8 *)&ret, sizeof(int));
 	if (ret == 0) {
 		output = (u8 *)param + sizeof(int);
 		memcpy((u8 *)user_buf, output, strlen(output));

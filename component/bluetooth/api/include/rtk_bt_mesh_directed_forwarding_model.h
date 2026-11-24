@@ -1,5 +1,5 @@
 /**
- * @file      rtk_bt_mesh_light_model.h
+ * @file      rtk_bt_mesh_directed_forwarding_model.h
  * @author    quinn_yang@realsil.com.cn
  * @brief     Bluetooth LE MESH directed forwarding model data struct and function definition
  * @copyright Copyright (c) 2022. Realtek Semiconductor Corporation. All rights reserved.
@@ -118,7 +118,7 @@ typedef enum {
 
 /**
  * @typedef   rtk_bt_mesh_df_path_action_t
- * @brief     BLE MESH directed forwarding path actiondefinition.
+ * @brief     BLE MESH directed forwarding path action definition.
  */
 typedef struct {
 	rtk_bt_mesh_df_path_action_type_t action_type;
@@ -217,7 +217,7 @@ typedef struct {
 
 /**
  * @typedef   rtk_bt_mesh_df_client_act_directed_control_get_t
- * @brief     BLE MESH direced control get message structure.
+ * @brief     BLE MESH directed control get message structure.
  */
 typedef struct {
 	uint16_t dst;
@@ -227,7 +227,7 @@ typedef struct {
 
 /**
  * @typedef   rtk_bt_mesh_df_client_act_directed_control_set_t
- * @brief     BLE MESH direced control set message structure.
+ * @brief     BLE MESH directed control set message structure.
  */
 typedef struct {
 	uint16_t dst;
@@ -799,7 +799,7 @@ typedef struct {
 	uint16_t net_key_index: 12;
 	uint16_t filter_mask: 4;
 	uint16_t start_index;
-	uint8_t data[0];// indicate this structure maybe modifyed
+	uint8_t data[0];// indicate this structure maybe modified
 } _PACKED4_ rtk_bt_mesh_forwarding_table_entries_status_t;
 
 /**
@@ -828,7 +828,7 @@ typedef struct {
 	uint16_t start_index;
 	uint16_t path_origin;
 	uint16_t dst;
-	uint8_t data[0];// indicate this structure maybe modifyed
+	uint8_t data[0];// indicate this structure maybe modified
 } _PACKED4_ rtk_bt_mesh_forwarding_table_dependents_get_status_t;
 
 /**
@@ -1461,24 +1461,35 @@ uint16_t rtk_bt_mesh_df_path_metric_state_get(rtk_bt_mesh_df_path_metric_state_s
 uint16_t rtk_bt_mesh_df_path_metric_state_set(rtk_bt_mesh_df_path_metric_state_setting_t *pm);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_df_discovery_table_capablities_state_get(rtk_bt_mesh_df_discovery_table_cap_state_setting_t *dtcs)
- * @brief     Send directed forwarding discovery table capablities get message to get own discovery table capablities state
- * @param[in] dtcs: directed forwarding discovery table capablities state setting structure
+ * @fn        uint16_t rtk_bt_mesh_df_discovery_table_capabilities_state_get(rtk_bt_mesh_df_discovery_table_cap_state_setting_t *dtcs)
+ * @brief     Send directed forwarding discovery table capabilities get message to get own discovery table capabilities state
+ * @param[in] dtcs: directed forwarding discovery table capabilities state setting structure
  * @return
  *            - 0  : Succeed
  *            - Others: Error code
  */
-uint16_t rtk_bt_mesh_df_discovery_table_capablities_state_get(rtk_bt_mesh_df_discovery_table_cap_state_setting_t *dtcs);
+uint16_t rtk_bt_mesh_df_discovery_table_capabilities_state_get(rtk_bt_mesh_df_discovery_table_cap_state_setting_t *dtcs);
 
 /**
- * @fn        uint16_t rtk_bt_mesh_df_discovery_table_capablities_state_set(rtk_bt_mesh_df_discovery_table_cap_state_setting_t *dtcs)
- * @brief     Send directed forwarding discovery table capablities set message to set own discovery table capablities state
- * @param[in] dtcs: directed forwarding discovery table capablities state setting structure
+ * @fn        uint16_t rtk_bt_mesh_df_discovery_table_capabilities_state_set(rtk_bt_mesh_df_discovery_table_cap_state_setting_t *dtcs)
+ * @brief     Send directed forwarding discovery table capabilities set message to set own discovery table capabilities state
+ * @param[in] dtcs: directed forwarding discovery table capabilities state setting structure
  * @return
  *            - 0  : Succeed
  *            - Others: Error code
  */
-uint16_t rtk_bt_mesh_df_discovery_table_capablities_state_set(rtk_bt_mesh_df_discovery_table_cap_state_setting_t *dtcs);
+uint16_t rtk_bt_mesh_df_discovery_table_capabilities_state_set(rtk_bt_mesh_df_discovery_table_cap_state_setting_t *dtcs);
+
+/**
+ * @defgroup  RTK_BT_MESH_DF_DISCOVERY_TABLE_CAPABILITIES Deprecated aliases
+ * @brief     Deprecated aliases of the Discovery Table Capabilities state APIs.
+ * @deprecated Use @ref rtk_bt_mesh_df_discovery_table_capabilities_state_get and
+ *             @ref rtk_bt_mesh_df_discovery_table_capabilities_state_set instead.
+ * @{
+ */
+#define rtk_bt_mesh_df_discovery_table_capablities_state_get rtk_bt_mesh_df_discovery_table_capabilities_state_get
+#define rtk_bt_mesh_df_discovery_table_capablities_state_set rtk_bt_mesh_df_discovery_table_capabilities_state_set
+/** @} */
 
 /**
  * @fn        uint16_t rtk_bt_mesh_df_wanted_lanes_state_get(rtk_bt_mesh_df_wanted_lanes_state_setting_t *wls)
@@ -1552,7 +1563,7 @@ uint16_t rtk_bt_mesh_df_publish_policy_set(rtk_bt_mesh_df_publish_policy_setting
 
 /**
  * @fn        uint16_t rtk_bt_mesh_df_parameter_set(rtk_bt_mesh_directed_control_param_setting_t *param)
- * @brief     Send directed forwarding parameter set message to set own mesh node releated df parameter
+ * @brief     Send directed forwarding parameter set message to set own mesh node related df parameter
  * @param[in] param: directed forwarding parameter structure
  * @return
  *            - 0  : Succeed

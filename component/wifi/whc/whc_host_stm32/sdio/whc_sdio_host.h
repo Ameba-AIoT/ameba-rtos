@@ -59,8 +59,14 @@ enum WHC_WIFI_CTRL_TYPE {
 	WHC_WIFI_EVT_RECV_PKTS,
 	WHC_WIFI_EVT_API_CALL,
 	WHC_WIFI_EVT_API_RETURN,
+	WHC_WIFI_EVT_CMD,
 
 	WHC_WIFI_EVT_MAX,
+};
+
+struct whc_cmd_path_hdr {
+	u32	event;
+	u32	len;
 };
 
 struct event_priv_t {
@@ -163,7 +169,7 @@ struct whc_sdio {
 };
 
 
-#define SIZE_RX_DESC	(sizeof(struct INIC_RX_DESC))
+#define SIZE_RX_DESC	0
 #define SIZE_TX_DESC	(sizeof(struct INIC_TX_DESC))
 
 #define _RND(sz, r) ((((sz)+((r)-1))/(r))*(r))

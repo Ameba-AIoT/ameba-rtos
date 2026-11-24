@@ -3229,7 +3229,7 @@ int bt_a2dp_scatternet_main(uint8_t role, uint8_t enable)
 		dft_param.mtu_size = 180;
 		BT_APP_PROCESS(rtk_bt_br_gap_set_default_param(&dft_param));
 		/* set supervision_timeout */
-		BT_APP_PROCESS(rtk_bt_br_gap_set_supvisiontimeout(&superv_time));
+		BT_APP_PROCESS(rtk_bt_br_gap_set_supv_timeout(&superv_time));
 		BT_APP_PROCESS(rtk_bt_br_gap_set_inquiry_param(&inquiry_param));
 		BT_APP_PROCESS(rtk_bt_br_gap_set_page_param(&page_param));
 		/* sdp record add (must be invoked before rtk_bt_enable) */

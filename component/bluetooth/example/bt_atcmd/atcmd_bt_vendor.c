@@ -179,7 +179,7 @@ int atcmd_bt_debug_port(int argc, char *argv[])
 	uint8_t bt_dbg_port = 0;
 	char *pad = NULL;
 
-	if (argc < 3 && argc > 5) {
+	if (argc < 3 || argc > 5) {
 		BT_LOGE("Set bt debug port fail, wrong parameter number!\r\n");
 		return 0;
 	}

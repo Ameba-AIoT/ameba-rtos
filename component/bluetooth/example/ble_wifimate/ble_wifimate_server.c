@@ -830,7 +830,7 @@ static uint16_t ble_wifimate_parse_wifi_connect_config(
 		return RTK_BT_ERR_PARAM_INVALID;
 	}
 
-	memset(conn_config, 0, sizeof(conn_config));
+	memset(conn_config, 0, sizeof(struct wifi_conn_config_t));
 
 	if (len > (offset + CHAR_WIFI_CONN_ENABLE_SEG_FIRST_ELE_LEN)) {
 		conn_config->ssid_len = *data;

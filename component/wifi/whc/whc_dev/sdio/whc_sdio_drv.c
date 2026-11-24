@@ -72,7 +72,6 @@ static char whc_sdio_dev_rx_done_cb(void *priv, void *pbuf, u8 *pdata, u16 size,
 {
 	struct spdio_buf_t *rx_buf = (struct spdio_buf_t *)pbuf;
 	u32 event = *(u32 *)pdata;
-	u8 *buf = NULL;
 	struct sk_buff *new_skb = NULL, *rx_skb;
 	struct whc_msg_info *p_msg_info;
 
@@ -110,7 +109,7 @@ static char whc_sdio_dev_rx_done_cb(void *priv, void *pbuf, u8 *pdata, u16 size,
 		/* save wlan_idx temporaries*/
 		rx_skb->dev = (void *)((u32)p_msg_info->wlan_idx);
 
-		whc_sdio_dev_event_int_hdl(pdata, rx_skb, size);
+		whc_dev_event_int_hdl(pdata, rx_skb);
 
 #ifdef CONFIG_WHC_WIFI_API_PATH
 	} else if (event == WHC_CUST_EVT) {
@@ -122,19 +121,11 @@ static char whc_sdio_dev_rx_done_cb(void *priv, void *pbuf, u8 *pdata, u16 size,
 			bt_inic_sdio_recv_ptr(pdata, SPDIO_DEVICE_RX_BUFSZ);
 		}
 	} else {
-		/* SPDIO receives EVENTS */
-		buf = rtos_mem_zmalloc(size);
-
-		if (buf == NULL) {
-			RTK_LOGE(TAG_WLAN_INIC, "%s, can't alloc buffer!!\n", __func__);
+		/* SPDIO receives EVENTS, free buf later, sdio ring buffer no need to modify */
+		if (whc_dev_dispatch_event_copy(pdata, size) != RTK_SUCCESS) {
+			/* keep the TXBD, SPDIO retries this packet later */
 			return RTK_FAIL;
 		}
-
-		memcpy(buf, pdata, size);
-
-		whc_sdio_dev_event_int_hdl(buf, NULL, size);
-
-		/* free buf later, sdio ring buffer no need to modify. */
 	}
 
 drop_pkt:
@@ -287,44 +278,4 @@ u8 whc_sdio_dev_bus_is_idle(void)
 {
 	/*Not yet implemented*/
 	return TRUE;
-}
-
-/**
- * @brief  to haddle the inic message interrupt. If the message queue is
- * 	initialized, it will enqueue the message and wake up the message
- * 	task to haddle the message. If last send message cannot be done, I will
- * 	set pending for next sending message.
- * @param  rxbuf: rx data.
- * @return none.
- */
-void whc_sdio_dev_pkt_rx(u8 *rxbuf, struct sk_buff *skb, u16 size)
-{
-	(void)size;
-	u32 event = *(u32 *)rxbuf;
-
-	switch (event) {
-	case WHC_WIFI_EVT_XIMT_PKTS:
-		/* put the inic message to the queue */
-		if (whc_msg_enqueue(skb, &dev_xmit_priv.xmit_queue) == RTK_FAIL) {
-			break;
-		}
-		/* wakeup task */
-		rtw_single_thread_wakeup();
-
-		break;
-#ifdef CONFIG_WHC_WIFI_API_PATH
-	case WHC_WIFI_EVT_API_CALL:
-		event_priv.rx_api_msg = rxbuf;
-		rtos_sema_give(event_priv.task_wake_sema);
-
-		break;
-#endif
-	default:
-#ifdef CONFIG_WHC_CMD_PATH
-		whc_dev_pkt_rx_to_user(rxbuf, rxbuf, size);
-#else
-		RTK_LOGE(TAG_WLAN_INIC, "Event(%ld) unknown!\n", event);
-#endif
-		break;
-	}
 }

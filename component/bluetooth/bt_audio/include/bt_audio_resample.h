@@ -27,7 +27,7 @@ typedef struct {
 	uint32_t out_frame_size;
 	uint32_t init_input_frames;
 	uint32_t init_output_frames;
-	void *presampler;
+	void *p_resampler;
 	uint32_t out_buffer_size;
 	void *out_buffer;
 	RingBuffer *p_buffer;
@@ -56,10 +56,10 @@ rtk_bt_audio_resample_t *rtk_bt_audio_resample_alloc(uint32_t in_rate, uint32_t 
 
 /**
  * @brief     free allocated bt audio resample struct
- * @param[in] presample: pointer to the struct
+ * @param[in] p_bt_resample: pointer to the struct
  * @return    None
  */
-void rtk_bt_audio_resample_free(rtk_bt_audio_resample_t *presample);
+void rtk_bt_audio_resample_free(rtk_bt_audio_resample_t *p_bt_resample);
 
 /**
  * @brief     read available resample data size

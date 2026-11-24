@@ -45,7 +45,7 @@ struct btsdio_priv {
 /** @defgroup INIC_DESC_Size_definitions
   * @{
   */
-#define SIZE_RX_DESC    (sizeof(INIC_RX_DESC))
+#define SIZE_RX_DESC    0
 #define SIZE_TX_DESC    (sizeof(INIC_TX_DESC))
 
 int bt_recv_pkts(struct sk_buff *skb);

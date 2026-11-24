@@ -11,13 +11,17 @@ struct whc_sdio;
 
 #define CONFIG_SDIO_TX_ENABLE_AVAL_INT
 #define CONFIG_SDIO_TX_OVF_CTRL
-//#define CONFIG_SDIO_RX_AGGREGATION //for Rx Aggregation
-//#define CONFIG_SDIO_TX_AGGREGATION
+#define WHC_TX_AGG
+#define WHC_RX_AGG
+
+/* HW rx aggregation fires when either threshold is hit, whichever comes first */
+#define SDIO_RX_AGG_TO			0	/* timeout = (0+1)*40.96us */
+#define SDIO_RX_AGG_BD_CNT_TH	4	/* aggregate up to 4 RXBDs per transfer */
 
 //#define CONFIG_POWER_SAVING
 //#define CONFIG_PS_DYNAMIC_CHK
 
-#define SIZE_RX_DESC	(sizeof(INIC_RX_DESC))
+#define SIZE_RX_DESC	0
 #define SIZE_TX_DESC	(sizeof(INIC_TX_DESC))
 
 #define BUF_ALIGN_SZ	4
@@ -71,6 +75,10 @@ struct whc_sdio {
 
 	int (*rx_process_func)(struct sk_buff *pskb);
 	void (*rx_recv_notify)(void);
+
+#ifdef WHC_TX_AGG
+	u8	*agg_buf;	/* tx-thread owned coalescing buffer, SdioTxMaxSZ bytes */
+#endif
 };
 
 extern struct whc_sdio whc_sdio_priv;

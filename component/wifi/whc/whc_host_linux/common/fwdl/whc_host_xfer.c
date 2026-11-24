@@ -92,12 +92,7 @@ struct whc_xfer_adapter_t *whc_xfer_adapter_alloc(void *interface, const struct 
 	adapter->tx_buf = (u8 *)(((unsigned long)buf + WHC_XFER_DMA_ALIGNMENT - 1) & ~(WHC_XFER_DMA_ALIGNMENT - 1));
 
 	/* Allocate RX buffer (DESC + hash_size for hash/device_info response) */
-	/* SDIO: extra INIC_RX_DESC space needed by whc_sdio_recv_timeout (stripped before returning) */
-#ifdef CONFIG_WHC_HCI_SDIO
-	buf = (u8 *)kzalloc(WHC_XFER_DESC_SIZE + adapter->hash_size + sizeof(INIC_RX_DESC) + WHC_XFER_DMA_ALIGNMENT, GFP_KERNEL);
-#else
 	buf = (u8 *)kzalloc(WHC_XFER_DESC_SIZE + adapter->hash_size + WHC_XFER_DMA_ALIGNMENT, GFP_KERNEL);
-#endif
 	if (buf == NULL) {
 		goto exit_rx_buf_malloc;
 	}

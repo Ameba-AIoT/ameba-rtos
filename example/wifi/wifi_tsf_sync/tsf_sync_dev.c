@@ -69,7 +69,7 @@ static void tsf_sync_send_sample(u32 seq, u64 tsf)
 	buf[sizeof(u32)] = WHC_WIFI_TEST_TSF_SAMPLE;
 	/* memcpy: the payload sits at a 5-byte offset, so the u64 is unaligned */
 	memcpy(buf + TSF_HDR_LEN, &s, sizeof(s));
-	whc_dev_api_send_to_host(buf, sizeof(buf));
+	whc_dev_api_send_to_host(buf, sizeof(buf), NULL, 0);
 }
 
 static void tsf_sync_task(void *param)

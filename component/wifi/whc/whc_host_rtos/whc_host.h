@@ -45,7 +45,7 @@ enum WHC_WIFI_CTRL_TYPE {
 	WHC_WIFI_EVT_RECV_PKTS,
 	WHC_WIFI_EVT_API_CALL,
 	WHC_WIFI_EVT_API_RETURN,
-	WHC_WIFI_EVT_BRIDGE,
+	WHC_WIFI_EVT_CMD,
 	WHC_WIFI_EVT_FLOWCTRL,
 	WHC_WIFI_EVT_MAX,
 	WHC_CUST_EVT, /* the ID to transmit data for the customer. */
@@ -57,6 +57,8 @@ enum WHC_WIFI_CTRL_TYPE {
 struct whc_api_info {
 	u32	event;
 	u32	api_id;
+	u32	data_len;
+	u32	rsvd;	/* API payload has no pad; kept at @12 to match whc_msg_info */
 };
 
 /* the header for customer to send or receive the data between host and device. */

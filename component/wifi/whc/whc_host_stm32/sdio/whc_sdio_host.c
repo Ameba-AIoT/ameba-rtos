@@ -60,10 +60,6 @@ int sdio_recv_process(uint8_t *pbuf)
 	int ret = 0;
 	uint32_t event = *(uint32_t *)(pbuf + SIZE_RX_DESC);
 	//dump_buf("sdio recv", pbuf + 16, 32);
-#ifdef CONFIG_WHC_CMD_PATH
-	struct whc_cmd_path_hdr *hdr = NULL;
-#endif
-
 #ifdef CONFIG_WHC_WIFI_API_PATH
 	struct whc_api_info *ret_msg;
 	int counter = 0;
@@ -111,16 +107,15 @@ int sdio_recv_process(uint8_t *pbuf)
 #endif
 
 #ifdef CONFIG_WHC_CMD_PATH
-	default:
-		whc_host_pkt_rx_to_user(pbuf + SIZE_RX_DESC);
+	case WHC_WIFI_EVT_CMD:
+		whc_host_deliver_rxbuf_to_user(pbuf + SIZE_RX_DESC);
 		vPortFree(pbuf);
 		break;
-#else
+#endif
 	default:
 		printf("%s: unknown event:%d\n", __func__, event);
 		vPortFree(pbuf);
 		break;
-#endif
 	}
 	return ret;
 }

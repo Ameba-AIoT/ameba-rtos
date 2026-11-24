@@ -4,31 +4,37 @@
 
 /* SIZE_TX_DESC not included in len  */
 /* pbuf needed to be freed by user if need */
-void whc_host_send_data_to_dev(u8 *pbuf, u32 len, u32 with_txdesc)
+void whc_host_send_cmd_data_to_dev(u8 *pbuf, u32 len, u32 with_txdesc)
 {
+	struct whc_cmd_path_hdr *hdr = NULL;
 	u8 *buf;
-	u32 buf_len = len;
+	u32 buf_len = 0;
+	u32 data_len = with_txdesc ? (len - SIZE_TX_DESC) : len;
 
-	if (with_txdesc) {
-		whc_host_send_cmd_data(pbuf, buf_len);
-	} else {
-		/* SIZE_TX_DESC is needed by dev hw */
-		buf_len += SIZE_TX_DESC;
-		buf = kzalloc(buf_len, GFP_KERNEL);
-		if (buf) {
-			/* copy data */
-			memcpy((u8 *)(buf + SIZE_TX_DESC), pbuf, len);
+	buf_len = SIZE_TX_DESC + sizeof(struct whc_cmd_path_hdr) + data_len;
 
-			/* send */
-			whc_host_send_cmd_data(buf, buf_len);
-#ifndef CONFIG_INIC_USB_ASYNC_SEND
-			kfree(buf);
-#endif
+	buf = kzalloc(buf_len, GFP_KERNEL);
+	if (buf) {
+		/* add header and copy data */
+		hdr = (struct whc_cmd_path_hdr *)(buf + SIZE_TX_DESC);
+
+		hdr->event = WHC_WIFI_EVT_CMD;
+		hdr->len = data_len;
+
+		if (!with_txdesc) {
+			memcpy(hdr + 1, pbuf, len);
 		} else {
-			dev_err(global_idev.pwhc_dev, "%s can't alloc buffer!\n", __func__);
+			memcpy(hdr + 1, pbuf + SIZE_TX_DESC, data_len);
 		}
-	}
 
+		/* send cmd */
+		whc_host_send_data(buf, buf_len, NULL);
+#ifndef CONFIG_INIC_USB_ASYNC_SEND
+		kfree(buf);
+#endif
+	} else {
+		dev_err(global_idev.pwhc_dev, "%s can't alloc buffer!\n", __func__);
+	}
 }
 
 void whc_host_update_network_info(u8 wlan_idx)
@@ -73,7 +79,7 @@ void whc_host_update_network_info(u8 wlan_idx)
 
 	memcpy(info.ipv6, global_idev.ipv6_addr, 16);
 
-	whc_host_send_data_to_dev((u8 *)&info, sizeof(info), 0);
+	whc_host_send_cmd_data_to_dev((u8 *)&info, sizeof(info), 0);
 }
 
 /* compatible with IPC mode */

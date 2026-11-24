@@ -4,6 +4,36 @@
 
 struct whc_host_cmd_path_priv whc_host_cmdpath_data;
 
+/**
+* @brief  send buf to dev using CMD path
+* @param  buf: data buf to be sent.
+* @param  len: length of buf in bytes.
+* @return none.
+*/
+void whc_host_send_cmd_data_to_dev(u8 *buf, u32 len)
+{
+	struct whc_cmd_path_hdr *hdr = NULL;
+	u8 *txbuf = NULL;
+	u32 txsize = len + sizeof(struct whc_cmd_path_hdr);
+
+	txbuf = rtos_mem_zmalloc(txsize);
+	if (!txbuf) {
+		RTK_LOGE(TAG_WLAN_INIC, "%s mem fail \r\n", __func__);
+		return;
+	}
+
+	hdr = (struct whc_cmd_path_hdr *)txbuf;
+	hdr->event = WHC_WIFI_EVT_CMD;
+	hdr->len = len;
+	/* copy data */
+	memcpy(txbuf + sizeof(struct whc_cmd_path_hdr), buf, len);
+
+	/* bus send_to_dev copies hdr + data and adds SIZE_TX_DESC if the bus needs it */
+	whc_host_send_to_dev(txbuf, txsize);
+
+	rtos_mem_free(txbuf);
+}
+
 void whc_host_scan_result(uint8_t *buf)
 {
 	uint32_t idx = buf[1];
@@ -17,23 +47,17 @@ void whc_host_scan_result(uint8_t *buf)
 }
 
 /**
- * @brief  Deliver a CMD-path payload to the dedicated cmd task.
- *         The payload is copied and the copy is handed to the cmd task,
- *         which will free it after processing.
- * @param  payload:  pointer to the CMD-path payload.
- * @param  len:      payload size in bytes.
+ * @brief  Deliver a CMD-path buffer to the dedicated cmd task.
+ *         Ownership of the original buffer (including the RX descriptor
+ *         and whc_cmd_path_hdr) is transferred to the cmd task, which
+ *         will free it after processing.
+ * @param  buf:      pointer to the original buffer (including RX descriptor).
+ * @param  buf_size: total size of buf in bytes.
  * @return none.
  */
-void whc_host_pkt_rx_to_user(u8 *payload, u32 len)
+void whc_host_deliver_rxbuf_to_user(u8 *buf, u32 buf_size)
 {
-	u8 *buf;
-
-	buf = rtos_mem_zmalloc(len);
-	if (!buf) {
-		RTK_LOGE(TAG_WLAN_INIC, "%s mem fail\n", __func__);
-		return;
-	}
-	memcpy(buf, payload, len);
+	(void)buf_size;
 
 	/* wait for the task to consume the previous message */
 	while (whc_host_cmdpath_data.whc_rx_buf) {
@@ -58,7 +82,7 @@ static void whc_host_cmd_rx_to_user_task(void)
 		rtos_sema_take(whc_host_cmdpath_data.whc_user_rx_sema, RTOS_MAX_TIMEOUT);
 
 		if (whc_host_cmdpath_data.whc_rx_buf) {
-			ptr = whc_host_cmdpath_data.whc_rx_buf;
+			ptr = whc_host_cmdpath_data.whc_rx_buf + SIZE_RX_DESC + sizeof(struct whc_cmd_path_hdr);
 			event = *(u32 *)ptr;
 
 			if (event == WHC_WIFI_TEST) {
@@ -129,7 +153,7 @@ void whc_host_get_mac_addr(uint8_t idx)
 	ptr += 1;
 	buf_len += 1;
 
-	whc_host_send_to_dev(buf, buf_len);
+	whc_host_send_cmd_data_to_dev(buf, buf_len);
 }
 
 void whc_host_get_ip(uint8_t idx)
@@ -148,7 +172,7 @@ void whc_host_get_ip(uint8_t idx)
 	ptr += 1;
 	buf_len += 1;
 
-	whc_host_send_to_dev(buf, buf_len);
+	whc_host_send_cmd_data_to_dev(buf, buf_len);
 }
 
 void whc_host_update_network_info(u8 wlan_idx)
@@ -173,7 +197,7 @@ void whc_host_update_network_info(u8 wlan_idx)
 	ptr += 4;
 	*(u32 *)ptr = *((u32 *)lwip_get_mask(wlan_idx));
 
-	whc_host_send_to_dev(buf, sizeof(buf));
+	whc_host_send_cmd_data_to_dev(buf, sizeof(buf));
 }
 
 void whc_host_set_rdy(uint8_t state)
@@ -191,7 +215,7 @@ void whc_host_set_rdy(uint8_t state)
 	*ptr = state;
 	buf_len += 1;
 
-	whc_host_send_to_dev(buf, buf_len);
+	whc_host_send_cmd_data_to_dev(buf, buf_len);
 }
 
 void whc_host_set_wifi_on(void)
@@ -207,7 +231,7 @@ void whc_host_set_wifi_on(void)
 	ptr += 1;
 	buf_len += 1;
 
-	whc_host_send_to_dev(buf, buf_len);
+	whc_host_send_cmd_data_to_dev(buf, buf_len);
 }
 
 void whc_host_dhcp(void)
@@ -223,7 +247,7 @@ void whc_host_dhcp(void)
 	ptr += 1;
 	buf_len += 1;
 
-	whc_host_send_to_dev(buf, buf_len);
+	whc_host_send_cmd_data_to_dev(buf, buf_len);
 }
 
 void whc_host_set_host(void)
@@ -239,7 +263,7 @@ void whc_host_set_host(void)
 	ptr += 1;
 	buf_len += 1;
 
-	whc_host_send_to_dev(buf, buf_len);
+	whc_host_send_cmd_data_to_dev(buf, buf_len);
 }
 
 void whc_host_wifi_scan(void)
@@ -256,7 +280,7 @@ void whc_host_wifi_scan(void)
 	ptr += 1;
 	buf_len += 1;
 
-	whc_host_send_to_dev(buf, buf_len);
+	whc_host_send_cmd_data_to_dev(buf, buf_len);
 }
 
 void whc_host_wifi_connect(char *ssid, char *pwd)
@@ -296,7 +320,7 @@ void whc_host_wifi_connect(char *ssid, char *pwd)
 
 	buf_len = ptr - buf;
 
-	whc_host_send_to_dev(buf, buf_len);
+	whc_host_send_cmd_data_to_dev(buf, buf_len);
 
 	rtos_mem_free(buf);
 }

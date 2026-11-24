@@ -160,7 +160,7 @@ int whc_dev_ota_read(u8 *data, int data_len)
 	}
 
 	/* len from host */
-	whc_dev_api_send_to_host_block(buf, buf_len, (u8 *)&rbuf, ota_hdr->len);
+	whc_dev_api_send_to_host(buf, buf_len, (u8 *)&rbuf, ota_hdr->len);
 
 	ota_hdr = &(rbuf.ota_hdr);
 	read_len = (int16_t)ota_hdr->len;
@@ -182,7 +182,7 @@ int whc_dev_ota_close(void)
 	ota_hdr->type = WHC_WIFI_TEST_OTA;
 	ota_hdr->subtype = WHC_OTA_END;
 
-	whc_dev_api_send_to_host(buf, buf_len);
+	whc_dev_api_send_to_host(buf, buf_len, NULL, 0);
 
 	rtos_mem_free(buf);
 	return 0;

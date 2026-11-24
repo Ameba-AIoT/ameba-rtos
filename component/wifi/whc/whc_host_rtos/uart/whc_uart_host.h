@@ -10,6 +10,9 @@
 
 #define DEV_DMA_ALIGN	4
 
+#define SIZE_RX_DESC	0
+#define SIZE_TX_DESC	0
+
 #define UART_DMA_ALIGN(x)	((((x-1)>>5)+1)<<5) //alignement to 32 for cache line
 #define UART_BUFSZ		(UART_DMA_ALIGN(MAXIMUM_ETHERNET_PACKET_SIZE + sizeof(struct whc_msg_info)))
 /* uart as flow controller when rx */
