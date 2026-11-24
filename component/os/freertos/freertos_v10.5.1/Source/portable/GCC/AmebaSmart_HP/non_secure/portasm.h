@@ -79,12 +79,12 @@ void vStartFirstTask( void ) __attribute__( ( naked ) ) PRIVILEGED_FUNCTION;
 /**
  * @brief Disables interrupts.
  */
-uint32_t ulSetInterruptMask( void ) __attribute__( ( naked ) ) PRIVILEGED_FUNCTION;
+uint32_t ulSetInterruptMask( void ) PRIVILEGED_FUNCTION;
 
 /**
  * @brief Enables interrupts.
  */
-void vClearInterruptMask( uint32_t ulMask ) __attribute__( ( naked ) ) PRIVILEGED_FUNCTION;
+void vClearInterruptMask( uint32_t ulMask ) PRIVILEGED_FUNCTION;
 
 /**
  * @brief PendSV Exception handler.
@@ -114,11 +114,11 @@ void vPortFreeSecureContext( uint32_t * pulTCB ) __attribute__( ( naked ) ) PRIV
 /**
  * @brief Disables interrupts.
  */
-uint32_t ulSetInterruptMaskFromISR( void ) __attribute__(( naked )) PRIVILEGED_FUNCTION;
+uint32_t ulSetInterruptMaskFromISR( void ) PRIVILEGED_FUNCTION;
 
 /**
  * @brief Enables interrupts.
  */
-void vClearInterruptMaskFromISR( uint32_t ulMask ) __attribute__(( naked )) PRIVILEGED_FUNCTION;
+void vClearInterruptMaskFromISR( uint32_t ulMask ) PRIVILEGED_FUNCTION;
 
 #endif /* __PORT_ASM_H__ */

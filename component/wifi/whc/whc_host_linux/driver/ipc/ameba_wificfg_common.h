@@ -297,11 +297,11 @@ struct wifi_user_conf {
 	/*! 0: This device can connect to R-Mesh group or R-NAT group, 1: this device will only connect to R-NAT group.*/
 	u8 wtn_connect_only_to_rnat;
 
-	/*! Max node number in R-mesh network, this is used for decide each node's beacon window.*/
-	u16 wtn_max_node_num;
+	/*! Max node number in the whole R-mesh network (one BSS), used to decide each node's beacon window.*/
+	u16 wtn_max_node_in_bss;
 
-	/*! Max refugee number this node can accept in R-mesh network, valid only when R-mesh is enabled and R-NAT is disabled. */
-	u8 wtn_max_refugee_num;
+	/*! Max descendant number this node can accept in R-mesh network, valid only when R-mesh is enabled and R-NAT is disabled. */
+	u8 wtn_max_descendant_num;
 
 	/*! 0: Disable R-Mesh TDMA feature, 1: Enable R-Mesh TDMA feature.*/
 	u8 wtn_tdma_en;

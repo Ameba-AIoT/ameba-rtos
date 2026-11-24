@@ -64,7 +64,12 @@ if RMESH_EN
 
     config RNAT_AUTOSEL_EN
         bool "Enable R-NAT auto selection"
-        depends on RNAT_EN
+        depends on RNAT_EN && AMEBAGREEN2
+        default n
+
+    config RNAT_INTERCOM_EN
+        bool "Enable R-NAT intercom"
+        depends on RNAT_EN && AMEBAGREEN2
         default n
 
     config RMESH_SOCKET_EN

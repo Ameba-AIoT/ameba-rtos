@@ -1,0 +1,30 @@
+# CONFIG_WIFI_RTK_CFG80211_FULLMAC is not set
+
+#
+# WHC host options
+#
+# CONFIG_WHC_HCI_IPC is not set
+CONFIG_WHC_HCI_SDIO=y
+# CONFIG_WHC_HCI_SPI is not set
+# CONFIG_WHC_HCI_USB is not set
+# CONFIG_WHC_HCI_GSPI is not set
+# CONFIG_AMEBADPLUS is not set
+CONFIG_AMEBAGREEN2=y
+# CONFIG_AMEBAX is not set
+CONFIG_WHC_WIFI_API_PATH=y
+CONFIG_WHC_CMD_PATH=y
+CONFIG_FW_DOWNLOAD=y
+
+#
+# Features
+#
+# CONFIG_NAN is not set
+# CONFIG_P2P is not set
+# CONFIG_MCC is not set
+# CONFIG_BT_INIC is not set
+# CONFIG_IEEE80211R is not set
+# CONFIG_SUPPLICANT_SME is not set
+# CONFIG_RMESH is not set
+# CONFIG_WHC_HOST_RTW_CLI is not set
+# CONFIG_WHCH is not set
+# end of WHC host options

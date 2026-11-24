@@ -11,6 +11,14 @@ void fatfs_usr_cb(int status)
 
 void example_vfs_usbh_thread(void *param)
 {
+#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
+	/* This thread unregisters the USB host VFS target, which runs usbh_deinit(), and that waits for no ISR
+	   on another core: run it on CPU0, where the USB IRQ is delivered (arm_gic.c pins every SPI to
+	   core 0).
+	   Pinned by the thread itself, first: a created thread may already run on another core. */
+	rtos_task_set_affinity(rtos_task_handle_get(), 0);
+#endif
+
 	rtos_time_delay_ms(3000);
 	char filename[] = "vfs_file_1";
 	char content[] = "VFS usbh module works normally !!!";

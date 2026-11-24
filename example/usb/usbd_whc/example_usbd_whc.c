@@ -767,6 +767,17 @@ static void example_usbd_whc_hotplug_thread(void *param)
 
 	UNUSED(param);
 
+#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
+	/* C-2: the USB OTG ISR is delivered on CPU0 (GIC ITARGETSR pins every SPI to core 0).
+	   Pinning the hotplug/deinit thread to CPU0 puts it on the same core as the ISR,
+	   so deinit's local interrupt disable is meaningful again under SMP. The wifi/bt/eth
+	   bulk-in data threads stay unaffined: whc_stop_xfer_threads() gates them out of a
+	   pending teardown, so they do not need to share the ISR's core.
+	   Done by the thread itself, first: a created thread may already run on another core, and its
+	   creator pinning it afterwards could come too late or reach a task that has deleted itself. */
+	rtos_task_set_affinity(rtos_task_handle_get(), 0);
+#endif
+
 	for (;;) {
 		if (rtos_sema_take(whc_attach_status_changed_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
 			if (whc_attach_status == USBD_ATTACH_STATUS_DETACHED) {
@@ -822,6 +833,14 @@ static void example_usbd_whc_thread(void *param)
 #endif
 
 	UNUSED(param);
+
+#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
+	/* The start failure path below runs usbd_deinit(), which waits for no ISR on another core:
+	   run it on CPU0, where the USB IRQ is delivered, as the hotplug thread does.
+	   Done by the thread itself, first: a created thread may already run on another core, and its
+	   creator pinning it afterwards could come too late or reach a task that has deleted itself. */
+	rtos_task_set_affinity(rtos_task_handle_get(), 0);
+#endif
 
 #if WHC_HOTPLUG
 	ret = rtos_sema_create(&whc_attach_status_changed_sema, 0, 1);
@@ -896,14 +915,6 @@ static void example_usbd_whc_thread(void *param)
 		goto clear_bt_bulk_in_task;
 #endif
 	}
-#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
-	/* C-2: the USB OTG ISR is delivered on CPU0 (GIC ITARGETSR pins every SPI to core 0).
-	   Pinning the hotplug/deinit thread to CPU0 puts it on the same core as the ISR,
-	   so deinit's local interrupt disable is meaningful again under SMP. The wifi/bt/eth
-	   bulk-in data threads stay unaffined: whc_stop_xfer_threads() gates them out of a
-	   pending teardown, so they do not need to share the ISR's core. */
-	rtos_task_set_affinity(hotplug_task, 0);
-#endif
 #endif // WHC_HOTPLUG
 
 	rtos_time_delay_ms(100);

@@ -18,6 +18,7 @@ StaticSemaphore_t __lock___sfp_recursive_mutex; // e.g. __sinit, called by vfpri
 StaticSemaphore_t __lock___atexit_recursive_mutex; // e.g. called by atexit
 StaticSemaphore_t __lock___env_recursive_mutex; // e.g. called by getenv, setenv
 StaticSemaphore_t __lock___tz_mutex; // e.g. called by mktime, localtime
+StaticSemaphore_t __lock___malloc_recursive_mutex; // defined only to avoid symbol redefinition with libc lock.o
 
 #ifdef CONFIG_ARM_CORE_CA32
 extern volatile uint32_t uxPortSchedulerStart[CONFIG_CPUS_NUM];

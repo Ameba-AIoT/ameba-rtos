@@ -58,7 +58,7 @@ struct internal_block_param *scan_abort_block_param = NULL;
 void (*p_ap_channel_switch_callback)(u8 channel, s8 ret) = NULL;
 #ifdef CONFIG_WIFI_TUNNEL
 int (*rmesh_ota_user_callback)(u8 *, u16) = NULL;
-#ifdef CONFIG_WTN_RNAT_INTERCOM
+#ifdef CONFIG_RNAT_INTERCOM_EN
 int (*rmesh_rnat_adv_user_callback)(u8 *, u16) = NULL;
 #endif
 #endif
@@ -1782,7 +1782,7 @@ int wifi_xmesh_get_rssi_info_list(u8 *buf, u8 *max_id)
 }
 #endif
 
-#ifdef CONFIG_WTN_RNAT_INTERCOM
+#if defined(CONFIG_RNAT_INTERCOM_EN) && defined(CONFIG_WIFI_TUNNEL)
 u8 wifi_rmesh_rnat_get_neighbor_info(struct wtn_rnat_neighbor *out, u8 max_count)
 {
 	u32 param_buf[2];

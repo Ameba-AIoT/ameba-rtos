@@ -113,7 +113,7 @@ SECTIONS
         __DATA_RAM_END__ = .;
     } >RAM AT>DRAM
 
-    stacks . (NOLOAD) : {
+    stacks (NOLOAD) : {
         __STACKS_START__ = .;
         *(tzfw_normal_stacks)
         __STACKS_END__ = .;

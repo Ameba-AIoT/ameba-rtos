@@ -121,6 +121,9 @@ typedef struct {
 
 /* Private macros ------------------------------------------------------------*/
 
+/* Ethernet header length, the datagram payload starts this far into a datagram */
+#define USB_CDC_NCM_ETH_HDR_LEN         14U
+
 #define USBH_CDC_NCM_FREE_MEM(x)        do { if ((x) != NULL) { usb_os_mfree((void *)(x)); (x) = NULL; } } while (0U)
 
 /* Private function prototypes -----------------------------------------------*/
@@ -265,7 +268,8 @@ static int usbh_cdc_ncm_cb_intr_receive(u8 *buf, u32 length)
 			if (cdc->eth_hw_connect && (cdc->intr_check_tick != usbh_cdc_ncm_get_eth_status_check_time())) {
 				cdc->intr_check_tick = usbh_cdc_ncm_get_eth_status_check_time();
 			} else if ((cdc->eth_hw_connect == 0) && (cdc->intr_rx.pipe.ep_interval != 0)) {
-				cdc->intr_check_tick = cdc->intr_rx.pipe.ep_interval;
+				/* Keep the busy margin of attach(): the same tick also gates the SOF re-arm of an in-flight INTR IN */
+				cdc->intr_check_tick = (u16)(cdc->intr_rx.pipe.ep_interval + USBH_CDC_NCM_INTR_BUSY_MAX_CNT);
 			}
 			cdc->intr_rx.pipe.max_timeout_tick = cdc->intr_check_tick;
 		}
@@ -1002,12 +1006,18 @@ static u16 usbh_cdc_ncm_tx_divisor(void)
 	return (d == 0U) ? USB_CDC_NCM_DATAGRAM_ALIGN : d;
 }
 
-/* Required residue of a datagram offset modulo the divisor (NCM 1.0 3.3.1) */
+/* Required residue of a datagram offset modulo the divisor. Ref NCM 1.0 3.3.4: wNdpOutPayloadRemainder
+ * places the payload past the Ethernet header, so the datagram itself starts USB_CDC_NCM_ETH_HDR_LEN
+ * earlier, Ref Linux cdc_ncm_setup() */
 static u16 usbh_cdc_ncm_tx_remainder(void)
 {
 	u16 div = usbh_cdc_ncm_tx_divisor();
 	u16 rem = usbh_cdc_ncm_host.ntb_params.wNdbOutPayloadRemainder;
-	return (rem < div) ? rem : 0U;
+
+	if (rem >= div) {
+		rem = 0U;
+	}
+	return (u16)((rem + div - (USB_CDC_NCM_ETH_HDR_LEN % div)) % div);
 }
 
 /* NDP alignment required by the device (host-to-device), default 4 */
@@ -1449,8 +1459,6 @@ static void usbh_cdc_ncm_process_halt(usb_host_t *host)
 		return;
 	}
 
-	/* Sent through usbh_ctrl_request(), which rejects the call while another class of a
-	 * composite device owns EP0; usbh_ctrl_clear_feature() lacks that owner check */
 	setup.req.bmRequestType = USB_H2D | USB_REQ_TYPE_STANDARD | USB_REQ_RECIPIENT_ENDPOINT;
 	setup.req.bRequest = USB_REQ_CLEAR_FEATURE;
 	setup.req.wValue = USB_FEATURE_EP_HALT;

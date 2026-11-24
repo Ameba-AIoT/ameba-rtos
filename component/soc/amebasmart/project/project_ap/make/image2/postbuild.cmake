@@ -97,59 +97,18 @@ ameba_execute_process(
     OUTPUT_FILE ${c_SDK_IMAGE_TARGET_DIR}/ap_image_all.bin
 )
 
-if(CONFIG_DYNAMIC_APP_LOAD_EN)
-    ameba_execute_process(
-        COMMAND python ${c_BASEDIR}/component/dynamic_app_load/elf2tinf/imagetool.py imagetool ${c_BASEDIR}/component/dynamic_app_load/tinfbin/
-    )
-
-    if(EXISTS ${c_BASEDIR}/component/dynamic_app_load/tinfbin/dynamic_app.bin)
-        ameba_axf2bin_prepend_head(
-            ${c_BASEDIR}/component/dynamic_app_load/tinfbin/dynamic_app_prepend.bin
-            ${c_BASEDIR}/component/dynamic_app_load/tinfbin/dynamic_app.bin
-            __dram_dynamic_app_text_start__
-            ${c_SDK_IMAGE_TARGET_DIR}/target_img2.map
-        )
-
-        ameba_execute_process(
-            COMMAND ${CMAKE_COMMAND} -E rename ${c_SDK_IMAGE_TARGET_DIR}/ap_image_all.bin ${c_SDK_IMAGE_TARGET_DIR}/ap_image_all_tmp.bin
-        )
-
-        ameba_execute_process(
-            COMMAND ${CMAKE_COMMAND} -E cat ${c_SDK_IMAGE_TARGET_DIR}/ap_image_all_tmp.bin ${c_BASEDIR}/component/dynamic_app_load/tinfbin/dynamic_app_prepend.bin
-            OUTPUT_FILE ${c_SDK_IMAGE_TARGET_DIR}/ap_image_all.bin
-        )
-
-        ameba_execute_process(
-            COMMAND ${CMAKE_COMMAND} -E remove ${c_SDK_IMAGE_TARGET_DIR}/ap_image_all_tmp.bin
-        )
-
-        if(EXISTS ${c_SDK_IMAGE_TARGET_DIR}/ap_image_all_en.bin)
-            ameba_execute_process(
-                COMMAND ${CMAKE_COMMAND} -E rename ${c_SDK_IMAGE_TARGET_DIR}/ap_image_all_en.bin ${c_SDK_IMAGE_TARGET_DIR}/ap_image_all_en_tmp.bin
-            )
-
-            ameba_execute_process(
-                COMMAND ${CMAKE_COMMAND} -E cat ${c_SDK_IMAGE_TARGET_DIR}/ap_image_all_en_tmp.bin ${c_BASEDIR}/component/dynamic_app_load/tinfbin/dynamic_app_prepend.bin
-                OUTPUT_FILE ${c_SDK_IMAGE_TARGET_DIR}/ap_image_all_en.bin
-            )
-
-            ameba_execute_process(
-                COMMAND ${CMAKE_COMMAND} -E remove ${c_SDK_IMAGE_TARGET_DIR}/ap_image_all_en_tmp.bin
-            )
-        endif()
-    endif()
-
-endif()
-
 if((NOT CONFIG_AMEBA_RLS) AND (NOT CONFIG_CP_TEST_CA32) AND (NOT DEFINED ENV{AMEBA_SKIP_IMAGE_ANALYZE}))
     message("========== Image analyze start ==========")
     ameba_execute_process(p_SHOW_OUTPUT
         COMMAND ${CODE_ANALYZE_PYTHON} ${ANALYZE_MP_IMG} ${DAILY_BUILD} ${CODE_ANALYZE_RETRY}
         WORKING_DIRECTORY ${c_SDK_IMAGE_TARGET_DIR}
     )
-    ameba_execute_process(p_SHOW_OUTPUT
-        COMMAND ${STATIC_ANALYZE_PYTHON} ${DAILY_BUILD} ${c_MCU_PROJECT_DIR}
-        WORKING_DIRECTORY ${c_SDK_IMAGE_TARGET_DIR}/../
-    )
+    # The static analyze (stack/task parsing) only understands GNU objdump output, skip it for llvm-objdump
+    if(NOT CONFIG_TOOLCHAIN_LLVM)
+        ameba_execute_process(p_SHOW_OUTPUT
+            COMMAND ${STATIC_ANALYZE_PYTHON} ${DAILY_BUILD} ${c_MCU_PROJECT_DIR}
+            WORKING_DIRECTORY ${c_SDK_IMAGE_TARGET_DIR}/../
+        )
+    endif()
     message("========== Image analyze end ==========")
 endif()

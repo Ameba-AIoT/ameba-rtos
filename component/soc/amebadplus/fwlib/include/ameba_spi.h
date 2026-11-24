@@ -439,9 +439,8 @@ extern "C" {
   * @brief  SPI Init Structure Definition
   */
 typedef struct {
-	u32  SPI_DmaRxDataLevel;     /*!< Specifies the DMA receive data level.
-							     The dma_rx_req is generated when the number of valid data entries in the
-							     receive FIFO  is equal to or above this field value+1,and RDMAE=1. */
+	u32  SPI_DmaRxDataLevel;     /*!< Not used: the DMA receive data level is set by SSI_RXGDMA_Init() to match its
+							     GDMA burst. Kept for compatibility only. */
 
 	u32  SPI_DmaTxDataLevel;    /*!< Specifies the DMA transmit data level.
 							     The dma_tx_req is generated when the number of valid data entries in the
@@ -673,7 +672,7 @@ _LONG_CALL_ bool SSI_TXGDMA_Init(u32 Index, PGDMA_InitTypeDef GDMA_InitStruct, v
 _LONG_CALL_ bool SSI_RXGDMA_Init(u8 Index, GDMA_InitTypeDef *GDMA_InitStruct, void *CallbackData,
 								 IRQ_FUN CallbackFunc, u8  *pRxData, u32 Length);
 _LONG_CALL_ void SSI_SetDmaEnable(SPI_TypeDef *spi_dev, u32 newState, u32 Mask);
-_LONG_CALL_ void SSI_SetDmaLevel(SPI_TypeDef *spi_dev, u32 TxLeve, u32 RxLevel);
+_LONG_CALL_ void SSI_SetDmaLevel(SPI_TypeDef *spi_dev, u32 TxLevel);
 /**
   * @}
   */

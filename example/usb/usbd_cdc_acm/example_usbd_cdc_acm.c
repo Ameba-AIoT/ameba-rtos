@@ -354,6 +354,17 @@ static void example_usbd_cdc_acm_hotplug_thread(void *param)
 
 	UNUSED(param);
 
+#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
+	/* C-2: the USB OTG ISR is delivered on CPU0 (GIC ITARGETSR pins every SPI to
+	   core 0, see arm_gic.c gic_dist_init). Pinning the hotplug/deinit thread to
+	   CPU0 puts it on the same core as the ISR, so deinit's local interrupt
+	   disable is meaningful again under SMP. The xfer thread stays unaffined: a
+	   pending deinit is excluded from it by cdc_acm_xfer_lock, not by core.
+	   Done by the thread itself, first: a created thread may already run on another core, and its
+	   creator pinning it afterwards could come too late or reach a task that has deleted itself. */
+	rtos_task_set_affinity(rtos_task_handle_get(), 0);
+#endif
+
 	for (;;) {
 		if (rtos_sema_take(cdc_acm_attach_status_changed_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
 			if (cdc_acm_app.quit != 0U) {
@@ -589,14 +600,6 @@ static int cdc_acm_start(void)
 	if (ret != RTK_SUCCESS) {
 		goto exit_create_task_fail;
 	}
-#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
-	/* C-2: the USB OTG ISR is delivered on CPU0 (GIC ITARGETSR pins every SPI to
-	   core 0, see arm_gic.c gic_dist_init). Pinning the hotplug/deinit thread to
-	   CPU0 puts it on the same core as the ISR, so deinit's local interrupt
-	   disable is meaningful again under SMP. The xfer thread stays unaffined: a
-	   pending deinit is excluded from it by cdc_acm_xfer_lock, not by core. */
-	rtos_task_set_affinity(check_task, 0);
-#endif
 #endif
 
 	return RTK_SUCCESS;
@@ -628,6 +631,14 @@ exit_usbd_init_fail:
 static void example_usbd_cdc_acm_thread(void *param)
 {
 	UNUSED(param);
+
+#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
+	/* A start that fails rolls back through usbd_deinit(), which waits for no ISR on another
+	   core: run it on CPU0, where the USB IRQ is delivered, as the hotplug thread does.
+	   Done by the thread itself, first: a created thread may already run on another core, and its
+	   creator pinning it afterwards could come too late or reach a task that has deleted itself. */
+	rtos_task_set_affinity(rtos_task_handle_get(), 0);
+#endif
 
 	if (cdc_acm_start() != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Start fail\n");

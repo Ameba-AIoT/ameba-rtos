@@ -17,6 +17,8 @@ if(CONFIG_TOOLCHAIN_PICOLIBC)
         "SHELL:--oslib=nosys"
         -Wl,--no-warn-rwx-segments # GNU ld 2.42 (GCC 14 toolchain) warns on any RWX LOAD segment.
     )
+elseif(CONFIG_TOOLCHAIN_LLVM)
+    # clang has no spec file support, -lc -lnosys is added by the link rule in ameba-toolchain-asdk-llvm22.cmake
 else()
     ameba_list_append(c_GLOBAL_COMMON_LINK_OPTIONS
         "SHELL:-specs nosys.specs"

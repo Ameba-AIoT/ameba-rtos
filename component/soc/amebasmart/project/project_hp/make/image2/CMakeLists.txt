@@ -30,6 +30,10 @@ ameba_add_subdirectory(${c_CMPT_WIFI_DIR})
 ameba_add_subdirectory(${c_CMPT_USB_DIR})
 
 ameba_add_subdirectory_third_party(${c_COMPONENT_DIR}/soc/common/cmsis-dsp)
+# Security Register OTP API and the flash AVL test of the NOR flash driver - see CONFIG_NOR_FLASH_NEW_STRATEGY.
+if (CONFIG_NOR_FLASH_NEW_STRATEGY)
+    ameba_add_subdirectory(${c_COMPONENT_DIR}/soc/common/nor_flash)
+endif()
 ameba_add_subdirectory_internal(${c_CMPT_SOC_DIR}/verification)
 ameba_add_subdirectory_internal(${c_CMPT_PYTEST_DIR})
 ameba_add_subdirectory(${c_CMPT_CRASHDUMP_DIR})
@@ -57,12 +61,21 @@ endif()
 
 add_custom_command(
   TARGET ${c_CURRENT_IMAGE} PRE_LINK
-  COMMAND ${CMAKE_C_COMPILER} -E -P -xc -c ${IMG2_LD} -o ${CMAKE_CURRENT_BINARY_DIR}/rlx8721d.ld -I ${c_MENUCONFIG_DIR}
+  COMMAND ${CMAKE_C_COMPILER} ${TOOLCHAIN_DRIVER_OPTS} -E -P -xc -c ${IMG2_LD} -o ${CMAKE_CURRENT_BINARY_DIR}/rlx8721d.ld -I ${c_MENUCONFIG_DIR}
   COMMAND ${CMAKE_COMMAND} -E cat ${c_LINK_ROM_SYMBOL_NS} >> ${CMAKE_CURRENT_BINARY_DIR}/rlx8721d.ld
   COMMENT "build img2 linkerscript rlx8721d.ld"
 )
 
 #----------------- LINKING -------------------#
+if(CONFIG_TOOLCHAIN_LLVM)
+    set(v_crtbegin ${SDK_TOOLCHAIN}/arm-none-eabi/thumb/v8.1-m.main+fp/fpu/lib/clang_rt.crtbegin.o)
+    set(v_crtend ${SDK_TOOLCHAIN}/arm-none-eabi/thumb/v8.1-m.main+fp/fpu/lib/clang_rt.crtend.o)
+    set(v_cxx_libs -lc++ -lc++abi)
+else()
+    set(v_crtbegin ${SDK_TOOLCHAIN}/lib/gcc/arm-none-eabi/${c_SDK_VERSION}/thumb/v8-m.main+fp/fpu/crtbegin.o)
+    set(v_crtend ${SDK_TOOLCHAIN}/lib/gcc/arm-none-eabi/${c_SDK_VERSION}/thumb/v8-m.main+fp/fpu/crtend.o)
+    set(v_cxx_libs -lstdc++)
+endif()
 
 # Add CMSE import library for TrustZone support
 ameba_set_if(CONFIG_TRUSTZONE c_CMSE_IMPLIB
@@ -85,9 +98,9 @@ target_link_libraries(${c_CURRENT_IMAGE}
     ${c_LINK_ROM_LIB}
     ${c_CMSE_IMPLIB}
 
-    ${SDK_TOOLCHAIN}/lib/gcc/arm-none-eabi/${c_SDK_VERSION}/thumb/v8-m.main+fp/fpu/crtbegin.o
-    ${SDK_TOOLCHAIN}/lib/gcc/arm-none-eabi/${c_SDK_VERSION}/thumb/v8-m.main+fp/fpu/crtend.o
-    -lm -lstdc++
+    ${v_crtbegin}
+    ${v_crtend}
+    -lm ${v_cxx_libs}
 )
 
 #--------------- POST BUILD ------------------#

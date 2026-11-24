@@ -1047,6 +1047,17 @@ int whc_host_get_edcca_mode(u8 *edcca_mode)
 	return ret;
 }
 
+int whc_host_get_dfs_master(u8 *dfs_master)
+{
+	*dfs_master = 0;
+	whc_host_send_event(WHC_API_WIFI_GET_DFS_MASTER, NULL, 0, dfs_master, sizeof(u8));
+	/* an old device answers an unknown API with a 4-byte RTK_FAIL (0xff in the first byte):
+	 * only an explicit 1 enables DFS_OFFLOAD */
+	*dfs_master = (*dfs_master == 1) ? 1 : 0;
+
+	return 0;
+}
+
 int whc_host_get_txpower(u8 rate, s8 *txpwr)
 {
 	return -EPERM;
@@ -1173,16 +1184,6 @@ int whc_host_dev_driver_is_mp(u8 *is_mp)
 		ret = 0;
 	}
 	return ret;
-}
-
-int whc_host_set_promisc_enable(u32 enable, u8 mode)
-{
-	(void) enable;
-	(void) mode;
-
-	/* Only smart customer needs promisc function in Linux.
-	 * So to set this function to null. */
-	return 0;
 }
 
 int whc_host_ft_status_indicate(struct rtw_kvr_param_t *kvr_param, u16 status)

@@ -1001,7 +1001,7 @@ rtk_bt_audio_track_t *rtk_bt_audio_track_add(uint32_t type, float left_volume, f
 	ptrack->rate = rate;
 	ptrack->format = format;
 #if defined(CONFIG_AUDIO_MIXER) && CONFIG_AUDIO_MIXER
-	ptrack->mixer_start_threshold = rtk_bt_audio_track_get_start_thresholdbytes(ptrack->audio_track_hdl);
+	ptrack->mixer_start_threshold = rtk_bt_audio_track_get_start_threshold_bytes(ptrack->audio_track_hdl);
 	BT_LOGA("%s: get start threshold: %d \r\n", __func__, (int)ptrack->mixer_start_threshold);
 #endif
 	switch (format) {
@@ -1191,18 +1191,18 @@ uint16_t rtk_bt_audio_get_iso_ref_ap(rtk_bt_audio_track_t *track, uint16_t iso_c
 			BT_LOGA("[BT AUDIO] %s: Group_Anchor_Point is overflow %d \r\n", __func__, info.Group_Anchor_Point);
 			osif_mutex_take(track->audio_sync_mutex, BT_TIMEOUT_FOREVER);
 			track->frc_cal_flag = false;
-			track->ref_ap_oveflow_flag = true;
+			track->ref_ap_overflow_flag = true;
 			osif_mutex_give(track->audio_sync_mutex);
 			*sync_ref_ap = info.Group_Anchor_Point;
 			return 0;
 		}
 	}
 	/* Group_Anchor_Point overflow but free run clock has not overflow  */
-	if (track->ref_ap_oveflow_flag) {
+	if (track->ref_ap_overflow_flag) {
 		if ((uint32_t)audio_delta((uint64_t)track->frc_drift, (uint64_t)0xFFFFFFFF) < 0x1FFFFFFF) {
 			BT_LOGA("[BT AUDIO] %s: controller_free_run_clock not overflow \r\n", __func__);
 		} else {
-			track->ref_ap_oveflow_flag = false;
+			track->ref_ap_overflow_flag = false;
 			BT_LOGA("[BT AUDIO] %s: controller_free_run_clock is ready\r\n", __func__);
 		}
 		*sync_ref_ap = info.Group_Anchor_Point;

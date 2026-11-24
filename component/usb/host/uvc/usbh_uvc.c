@@ -98,6 +98,12 @@ int usbh_uvc_init(const usbh_uvc_cb_t *cb, const usbh_uvc_config_t *cfg)
 	}
 #endif
 
+	/* A second init would wipe the buffers, tasks and the class registration of the first one */
+	if (uvc->request_buf != NULL) {
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "Already init\n");
+		return -RTK_ERR_BADARG;
+	}
+
 	usb_os_memset((void *)uvc, 0x00, sizeof(usbh_uvc_host_t));
 	/* A GET request data stage reserves whole EP0 packets, refer to usbh_ctrl_request() */
 	uvc->request_buf = (u8 *)usb_os_malloc(usb_get_dma_len(USBH_UVC_REQUEST_BUF_LEN, USB_MAX_EP0_SIZE));

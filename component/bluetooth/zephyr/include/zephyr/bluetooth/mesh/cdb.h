@@ -77,7 +77,13 @@ struct bt_mesh_cdb {
 
 	ATOMIC_DEFINE(flags, BT_MESH_CDB_FLAG_COUNT);
 
+#if ZEPHYR_RTK_PATCH
+	/* Allocated in bt_mesh_cdb_init(), node_count is NODE_COUNT unless set by bt_mesh_cdb_node_num_set() */
+	struct bt_mesh_cdb_node *nodes;
+	uint16_t node_count;
+#else
 	struct bt_mesh_cdb_node nodes[NODE_COUNT];
+#endif
 	struct bt_mesh_cdb_subnet subnets[SUBNET_COUNT];
 	struct bt_mesh_cdb_app_key app_keys[APP_KEY_COUNT];
 };

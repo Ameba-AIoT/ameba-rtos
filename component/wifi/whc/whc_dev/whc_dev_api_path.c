@@ -51,6 +51,7 @@ const struct event_func_t whc_dev_api_handlers[] = {
 	{WHC_API_WIFI_SET_HOST_RTOS, whc_event_wifi_set_host_rtos},
 	{WHC_API_WIFI_SET_EDCCA_PARAM, whc_event_wifi_set_edcca_param},
 	{WHC_API_WIFI_GET_EDCCA_MODE, whc_event_wifi_get_edcca_mode},
+	{WHC_API_WIFI_GET_DFS_MASTER, whc_event_wifi_get_dfs_master},
 	{WHC_API_WIFI_GET_ANTENNA_INFO, whc_event_wifi_get_ant_info},
 	{WHC_API_WIFI_SET_ANTENNA_INFO, whc_event_wifi_set_ant_info},
 #ifdef CONFIG_WIFI_NAN_ENABLE
@@ -1029,6 +1030,15 @@ void whc_event_wifi_get_edcca_mode(u32 api_id, u32 *param_buf)
 	u8 edcca_mode = wifi_user_config.rtw_edcca_mode;
 
 	whc_send_api_ret_value(api_id, &edcca_mode, sizeof(edcca_mode));
+}
+
+/* the linux host declares DFS_OFFLOAD only when this is 1, so it never keeps its own country list */
+void whc_event_wifi_get_dfs_master(u32 api_id, u32 *param_buf)
+{
+	(void)param_buf;
+	u8 dfs_master = wifi_dfs_master_is_enabled();
+
+	whc_send_api_ret_value(api_id, &dfs_master, sizeof(dfs_master));
 }
 
 void whc_event_wifi_get_ant_info(u32 api_id, u32 *param_buf)

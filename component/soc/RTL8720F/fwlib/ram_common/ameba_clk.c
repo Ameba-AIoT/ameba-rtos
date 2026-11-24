@@ -16,7 +16,10 @@ void SDM32K_Enable(void)
 
 	SDM_TypeDef *SDM = SDM_DEV;
 
-	SDM->SDM_CTRL0 |= SDM_BIT_EN | SDM_BIT_RST | SDM_BIT_ALWAYS_CAL_EN | SDM_BIT_TIMER_CAL_EN;
+	SDM->SDM_TIMEOUT = SDM_TIEMRCAL_INTERVAL_1MIN;
+	/* timeout 1min, always cal off, timer cal on, and switch back to default mode from the user-defined parameter mode set before DSLP.
+	   SDM is not reset by sys reset/DSLP, so always cal and MOD_SEL must be cleared explicitly */
+	SDM->SDM_CTRL0 = (SDM->SDM_CTRL0 & ~(SDM_BIT_ALWAYS_CAL_EN | SDM_BIT_MOD_SEL)) | SDM_BIT_EN | SDM_BIT_RST | SDM_BIT_TIMER_CAL_EN;
 }
 
 /**
@@ -34,6 +37,28 @@ void SDM32K_TimerCalEnable(u32 newstatus)
 		SDM->SDM_CTRL0 |= SDM_BIT_TIMER_CAL_EN;
 	} else {
 		SDM->SDM_CTRL0 &= ~SDM_BIT_TIMER_CAL_EN;
+	}
+}
+
+/**
+  * @brief  32K clock calibration factor modify
+  * @param  newstatus: can be one of the following values:
+  *		 @arg ENABLE: user-defined parameter mode
+  *		 @arg DISABLE: default mode
+  * @note
+  *		From HW Experiment, add 3 to SDM_OBS_REF_CYC(default 312500)
+  */
+void SDM32K_CalFactorModify(u32 newstatus)
+{
+	SDM_TypeDef *SDM = SDM_DEV;
+
+	if (newstatus == ENABLE) {
+		SDM->SDM_CTRL1 = SDM_OBS_CYC_DEFAULT;
+		SDM->SDM_CTRL2 = SDM_OBS_REF_CYC_MODIFY;
+		SDM->SDM_CTRL3 = SDM_XTAL_PERIOD_DEFAULT;
+		SDM->SDM_CTRL0 |= SDM_BIT_MOD_SEL;
+	} else {
+		SDM->SDM_CTRL0 &= ~SDM_BIT_MOD_SEL;
 	}
 }
 

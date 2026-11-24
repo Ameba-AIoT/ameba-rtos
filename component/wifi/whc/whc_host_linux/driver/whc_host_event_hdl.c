@@ -136,6 +136,14 @@ void whc_host_join_status_hdl(u32 event, char *evt_info)
 		whc_host_ch_switch_indicate((struct rtw_event_ch_switch *)evt_info);
 	}
 
+	if (event == RTW_EVENT_DFS_RADAR_DETECTED) {
+		whc_host_dfs_radar_indicate(((struct rtw_event_dfs_radar_detected_info *)evt_info)->channel);
+	}
+
+	if (event == RTW_EVENT_DFS_CAC_DONE) {
+		whc_host_dfs_cac_done_indicate();
+	}
+
 	if (event == RTW_EVENT_EXTERNAL_AUTH_REQ) {
 		dev_dbg(global_idev.pwhc_dev, "%s: auth req \n", __func__);
 		whc_host_external_auth_request(evt_info);

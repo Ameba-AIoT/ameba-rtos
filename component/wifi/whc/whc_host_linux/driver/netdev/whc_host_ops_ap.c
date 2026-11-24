@@ -250,6 +250,9 @@ static int whc_host_change_beacon(struct wiphy *wiphy, struct net_device *ndev, 
 
 static struct rtw_event_ch_switch whc_host_ch_switch_info[WHC_MAX_NET_PORT_NUM];	/* latest softap channel from device */
 static bool whc_host_ch_switch_stopped;	/* true from whc_host_ch_switch_deinit until next whc_host_ch_switch_init */
+/* softap channel recorded in event order. whc_host_ch_switch_info is consumed by an async work, so cfg80211's
+ * chandef may still be stale when a later event (RTW_EVENT_DFS_CAC_DONE) is handled */
+static u8 whc_host_ap_cur_ch;
 static DEFINE_MUTEX(whc_host_ch_switch_mutex);
 static void whc_host_ch_switch_hdl(struct rtw_event_ch_switch *ch_info)
 {
@@ -357,6 +360,9 @@ void whc_host_ch_switch_indicate(struct rtw_event_ch_switch *ch_info)
 			__func__, ch_info->iface, ch_info->channel);
 
 	mutex_lock(&whc_host_ch_switch_mutex);
+	if (ch_info->iface == WHC_AP_PORT) {
+		whc_host_ap_cur_ch = ch_info->channel;
+	}
 	if (!whc_host_ch_switch_stopped) {
 		memcpy((u8 *)&whc_host_ch_switch_info[ch_info->iface], (u8 *)ch_info, sizeof(struct rtw_event_ch_switch));
 		schedule_work(&whc_host_ch_switch_work);
@@ -384,6 +390,108 @@ void whc_host_ch_switch_deinit(void)
 
 	/* no new schedule after the flag is set, so this cancel cannot be undone */
 	cancel_work_sync(&whc_host_ch_switch_work);
+}
+
+/* DFS master runs on the device (DFS offload): it does CAC/radar detection and moves the softap
+ * itself; the host only mirrors the CAC/radar state to cfg80211 and hostapd. */
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 12, 0))
+#define WHC_WDEV_CAC(wdev)	((wdev)->links[0])
+#else
+#define WHC_WDEV_CAC(wdev)	(*(wdev))
+#endif
+
+static struct cfg80211_chan_def *whc_host_ap_chandef(struct wireless_dev *wdev)
+{
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 2))
+	return &wdev->links[0].ap.chandef;
+#else
+	return &wdev->chandef;
+#endif
+}
+
+static void whc_host_cac_event(struct net_device *ndev, struct cfg80211_chan_def *chandef, enum nl80211_radar_event event)
+{
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 12, 0))
+	cfg80211_cac_event(ndev, chandef, event, GFP_KERNEL, 0);
+#else
+	cfg80211_cac_event(ndev, chandef, event, GFP_KERNEL);
+#endif
+}
+
+/* the softap chandef if it is on ch (keeps the 40MHz width), else 20MHz on ch */
+static int whc_host_dfs_chandef(struct wireless_dev *wdev, u8 ch, struct cfg80211_chan_def *chandef)
+{
+	struct ieee80211_channel *chan = ieee80211_get_channel(wdev->wiphy, rtw_ch2freq(ch));
+	struct cfg80211_chan_def *ap_chandef = whc_host_ap_chandef(wdev);
+
+	if (!chan) {
+		return -EINVAL;
+	}
+
+	if (ap_chandef->chan == chan) {
+		*chandef = *ap_chandef;
+	} else {
+		cfg80211_chandef_create(chandef, chan, NL80211_CHAN_HT20);
+	}
+	return 0;
+}
+
+static void whc_host_dfs_cac_start(struct net_device *ndev, struct cfg80211_chan_def *chandef)
+{
+	struct wireless_dev *wdev = ndev->ieee80211_ptr;
+
+	/* the DFS branch of the device start_ap returns before its channel report, seed with the CAC channel */
+	mutex_lock(&whc_host_ch_switch_mutex);
+	whc_host_ap_cur_ch = (u8)ieee80211_frequency_to_channel(chandef->chan->center_freq);
+	mutex_unlock(&whc_host_ch_switch_mutex);
+
+	/* nl80211 sets the AP chandef only after start_ap returns, but kernels < 6.0 drop cac_event with a WARN
+	 * while it is unset. Preset it, nl80211 writes the same value right after. */
+	*whc_host_ap_chandef(wdev) = *chandef;
+	whc_host_cac_event(ndev, chandef, NL80211_RADAR_CAC_STARTED);
+	/* cfg80211 sets these only in start_radar_detection (unused with DFS offload) and WARNs on a
+	 * CAC_FINISHED earlier than start_time + time_ms. The device owns CAC timing: zero the window. */
+	WHC_WDEV_CAC(wdev).cac_start_time = jiffies;
+	WHC_WDEV_CAC(wdev).cac_time_ms = 0;
+}
+
+void whc_host_dfs_radar_indicate(u8 ch)
+{
+	struct net_device *ndev = global_idev.pndev[WHC_AP_PORT];
+	struct cfg80211_chan_def chandef;
+
+	if (!ndev || !ndev->ieee80211_ptr || whc_host_dfs_chandef(ndev->ieee80211_ptr, ch, &chandef)) {
+		return;
+	}
+
+	dev_info(global_idev.pwhc_dev, "%s: radar on ch %d\n", __func__, ch);
+	/* puts ch into NOP in cfg80211; the device switches channel and reports it via RTW_EVENT_OPERATION_CH_SWITCH */
+	cfg80211_radar_event(ndev->ieee80211_ptr->wiphy, &chandef, GFP_KERNEL);
+}
+
+void whc_host_dfs_cac_done_indicate(void)
+{
+	struct net_device *ndev = global_idev.pndev[WHC_AP_PORT];
+	struct wireless_dev *wdev = ndev ? ndev->ieee80211_ptr : NULL;
+	struct cfg80211_chan_def chandef;
+	u8 ch;
+
+	if (!wdev) {
+		return;
+	}
+
+	mutex_lock(&whc_host_ch_switch_mutex);
+	ch = whc_host_ap_cur_ch;
+	mutex_unlock(&whc_host_ch_switch_mutex);
+
+	dev_info(global_idev.pwhc_dev, "%s: softap up on ch %d\n", __func__, ch);
+	/* the device reports the softap channel before CAC_DONE: the CAC channel, or wherever it moved after
+	 * radar in CAC. Report CAC finished there either way, so hostapd completes the deferred AP setup. */
+	if (WHC_WDEV_CAC(wdev).cac_started && !whc_host_dfs_chandef(wdev, ch, &chandef)) {
+		whc_host_cac_event(ndev, &chandef, NL80211_RADAR_CAC_FINISHED);
+		/* only with CAC_FINISHED: a CAC_DONE arriving after stop_ap (CAC_ABORTED) must not bring the AP up */
+		netif_carrier_on(ndev);
+	}
 }
 
 static int whc_host_channel_switch_ops(struct wiphy *wiphy, struct net_device *dev, struct cfg80211_csa_settings *params)
@@ -556,7 +664,14 @@ static int whc_host_start_ap_ops(struct wiphy *wiphy, struct net_device *ndev, s
 
 	ret = whc_host_start_ap(softAP_config);
 
-	netif_carrier_on(ndev);
+	if (ret == RTW_DFS_CAC_PENDING) {
+		/* DFS channel: the device runs CAC and stays silent; carrier on at RTW_EVENT_DFS_CAC_DONE */
+		whc_host_dfs_cac_start(ndev, &settings->chandef);
+		ret = 0;
+	} else if (ret == 0) {
+		/* a refused start (e.g. DFS channel in NOP) gets no stop_ap from hostapd: leave the carrier off */
+		netif_carrier_on(ndev);
+	}
 
 #ifdef CONFIG_WHCH
 	whc_host_init_bcmc_stainfo(wlan_idx);
@@ -626,6 +741,11 @@ static int whc_host_stop_ap_ops(struct wiphy *wiphy, struct net_device *ndev
 
 	if (rtw_netdev_idx(ndev) == 0) {
 		return -EPERM;
+	}
+
+	/* stopped during CAC: cfg80211 does not clear cac_started on stop_ap, the next start_ap would get -EBUSY */
+	if (WHC_WDEV_CAC(ndev->ieee80211_ptr).cac_started) {
+		whc_host_cac_event(ndev, whc_host_ap_chandef(ndev->ieee80211_ptr), NL80211_RADAR_CAC_ABORTED);
 	}
 
 	ret = whc_host_stop_ap();

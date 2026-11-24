@@ -685,9 +685,14 @@ exit:
 		fclose(finfo);
 	}
 	rtos_mem_free((void *)buffer_h264);
-	if (uvc_rb != NULL) {
-		RingBuffer_Destroy(uvc_rb);
-		uvc_rb = NULL;
+	/* The capture loop is still running: destroy uvc_rb under uvc_buf_mutex, as the HTTPC path does,
+	 * so it cannot race with usbh_uvc_img_prepare(), which touches uvc_rb only while holding it */
+	if (rtos_mutex_take(uvc_buf_mutex, RTOS_MAX_TIMEOUT) == RTK_SUCCESS) {
+		if (uvc_rb != NULL) {
+			RingBuffer_Destroy(uvc_rb);
+			uvc_rb = NULL;
+		}
+		rtos_mutex_give(uvc_buf_mutex);
 	}
 	uvc_vfs_thread_alive = 0U;
 	rtos_task_delete(NULL);
@@ -819,16 +824,19 @@ static void example_usbh_uvc_httpc_thread(void *param)
 		memset((void *)post_end, 0x0, sizeof(post_end));
 		content_length += snprintf(post_end, sizeof(post_end), upload_request, _boundary, img_file);
 
-		// start a header and add Host (added automatically), Content-Type and Content-Length (added by input param)
-		httpc_request_write_header_start(conn, "POST", "/cgi-bin/submit.py", type, uvc_buf_size + content_length);
-		// add other header fields if necessary
-		httpc_request_write_header(conn, (char *)"Connection", (char *)"keep-alive");
-		// finish and send header
-		httpc_request_write_header_finish(conn);
-
-		httpc_request_write_data(conn, (u8 *) post_end, content_length - post_end1_length);
-
+		/* Header and body under one hold of uvc_buf_mutex: the capture thread may replace the frame
+		 * at any time, and a Content-Length taken from another frame than the body breaks the
+		 * keep-alive stream */
 		if (rtos_mutex_take(uvc_buf_mutex, RTOS_MAX_TIMEOUT) == RTK_SUCCESS) {
+			// start a header and add Host (added automatically), Content-Type and Content-Length (added by input param)
+			httpc_request_write_header_start(conn, "POST", "/cgi-bin/submit.py", type, uvc_buf_size + content_length);
+			// add other header fields if necessary
+			httpc_request_write_header(conn, (char *)"Connection", (char *)"keep-alive");
+			// finish and send header
+			httpc_request_write_header_finish(conn);
+
+			httpc_request_write_data(conn, (u8 *) post_end, content_length - post_end1_length);
+
 			ret = httpc_request_write_data(conn, uvc_buf, uvc_buf_size);
 			rtos_mutex_give(uvc_buf_mutex);
 		} else {
@@ -842,12 +850,12 @@ static void example_usbh_uvc_httpc_thread(void *param)
 			/* Reconnect and re-send header before retrying this frame's data */
 			ret = httpc_conn_connect(conn, uvc_httpc_server_ip, USBH_UVC_HTTPC_PORT, USBH_UVC_HTTPC_TIMEOUT);
 			if (ret == 0) {
-				httpc_request_write_header_start(conn, "POST", "/cgi-bin/submit.py", type, uvc_buf_size + content_length);
-				httpc_request_write_header(conn, (char *)"Connection", (char *)"keep-alive");
-				httpc_request_write_header_finish(conn);
-				httpc_request_write_data(conn, (u8 *) post_end, content_length - post_end1_length);
-				/* Re-take mutex to resend the frame data on the new connection */
+				/* Re-take mutex to resend header and frame data on the new connection */
 				if (rtos_mutex_take(uvc_buf_mutex, RTOS_MAX_TIMEOUT) == RTK_SUCCESS) {
+					httpc_request_write_header_start(conn, "POST", "/cgi-bin/submit.py", type, uvc_buf_size + content_length);
+					httpc_request_write_header(conn, (char *)"Connection", (char *)"keep-alive");
+					httpc_request_write_header_finish(conn);
+					httpc_request_write_data(conn, (u8 *) post_end, content_length - post_end1_length);
 					ret = httpc_request_write_data(conn, uvc_buf, uvc_buf_size);
 					rtos_mutex_give(uvc_buf_mutex);
 				} else {
@@ -893,9 +901,8 @@ static void example_usbh_uvc_httpc_thread(void *param)
 	}
 
 exit:
-	if (conn != NULL) {
-		httpc_conn_close(conn);
-	}
+	/* Free, not just close: the conn and its header buffers were allocated by httpc_conn_new() */
+	httpc_conn_free(conn);
 	uvc_httpc_connected = 0U;
 	uvc_httpc_thread_alive = 0U;
 	rtos_task_delete(NULL);
@@ -1062,10 +1069,9 @@ static void example_usbh_uvc_httpc_thread(void *param)
 	}
 
 exit:
-	if (conn != NULL) {
-		httpc_conn_close(conn);
-		conn = NULL;
-	}
+	/* Free, not just close: the conn and its header buffers were allocated by httpc_conn_new() */
+	httpc_conn_free(conn);
+	conn = NULL;
 	rtos_mem_free((void *)send_buf);
 	uvc_httpc_thread_alive = 0;
 	rtos_task_delete(NULL);
@@ -1198,10 +1204,9 @@ exit:
 		}
 		rtos_mutex_give(uvc_buf_mutex);
 	}
-	if (conn != NULL) {
-		httpc_conn_close(conn);
-	}
-	/* Cleared LAST -- after uvc_rb is destroyed and the conn closed -- so uvc_httpc_stop()'s
+	/* Free, not just close: the conn and its header buffers were allocated by httpc_conn_new() */
+	httpc_conn_free(conn);
+	/* Cleared LAST -- after uvc_rb is destroyed and the conn freed -- so uvc_httpc_stop()'s
 	 * "while thread_alive" only returns once every resource this thread owned is released. */
 	uvc_httpc_thread_alive = 0U;
 	rtos_task_delete(NULL);
@@ -1442,6 +1447,18 @@ static void example_usbh_uvc_hotplug_thread(void *param)
 	u8 fatal = 0U;
 
 	UNUSED(param);
+
+#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
+	/* The USB OTG ISR is delivered on CPU0: the GIC pins every SPI to core 0
+	   (ITARGETSR is written to 0x01010101 in arm_gic.c gic_dist_init). Pinning the
+	   hotplug/deinit thread to CPU0 puts it on the same core as the ISR, so the
+	   local interrupt disables inside the teardown are meaningful again. The frame
+	   worker stays unaffined: it is excluded from the teardown by the join above,
+	   not by core.
+	   Done by the thread itself, first: a created thread may already run on another core, and its
+	   creator pinning it afterwards could come too late or reach a task that has deleted itself. */
+	rtos_task_set_affinity(rtos_task_handle_get(), 0);
+#endif
 
 	while (1) {
 		if (rtos_sema_take(uvc_detach_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
@@ -1875,6 +1892,14 @@ static void example_usbh_uvc_attach_thread(void *param) {
 
 	UNUSED(param);
 
+#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
+	/* A failed worker creation tears the stack down here through usbh_deinit(), which waits for no ISR
+	   on another core: run on CPU0, where the USB IRQ is delivered, as the hotplug thread does.
+	   Done by the thread itself, first: a created thread may already run on another core, and its
+	   creator pinning it afterwards could come too late or reach a task that has deleted itself. */
+	rtos_task_set_affinity(rtos_task_handle_get(), 0);
+#endif
+
 	while (uvc_app.quit == 0U) {
 		if (rtos_sema_take(uvc_attach_sema, RTOS_SEMA_MAX_COUNT) == RTK_SUCCESS) {
 			if (uvc_app.quit != 0U) {
@@ -1994,15 +2019,6 @@ static int uvc_start(void) {
 		}
 		return ret;
 	}
-#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
-	/* The USB OTG ISR is delivered on CPU0: the GIC pins every SPI to core 0
-	   (ITARGETSR is written to 0x01010101 in arm_gic.c gic_dist_init). Pinning the
-	   hotplug/deinit thread to CPU0 puts it on the same core as the ISR, so the
-	   local interrupt disables inside the teardown are meaningful again. The frame
-	   worker stays unaffined: it is excluded from the teardown by the join above,
-	   not by core. */
-	rtos_task_set_affinity(task, 0);
-#endif
 #endif
 
 	return RTK_SUCCESS;
@@ -2026,6 +2042,14 @@ free_sema_exit:
 /* Standalone entry thread: brings the demo up and leaves */
 static void example_usbh_uvc_task(void *param) {
 	UNUSED(param);
+
+#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
+	/* A start that fails rolls back through usbh_deinit(), which waits for no ISR on another
+	   core: run it on CPU0, where the USB IRQ is delivered, as the hotplug thread does.
+	   Done by the thread itself, first: a created thread may already run on another core, and its
+	   creator pinning it afterwards could come too late or reach a task that has deleted itself. */
+	rtos_task_set_affinity(rtos_task_handle_get(), 0);
+#endif
 
 	if (uvc_start() != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Start fail\n");

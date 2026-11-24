@@ -135,8 +135,8 @@ void SSI_Init(SPI_TypeDef *spi_dev, SSI_InitTypeDef *SSI_InitStruct)
 	/* REG_DW_SSI_IMR */
 	spi_dev->SPI_IMR = SSI_InitStruct->SPI_InterruptMask;
 
-	/*DMA level set */
-	SSI_SetDmaLevel(spi_dev, SSI_InitStruct->SPI_DmaTxDataLevel, SSI_InitStruct->SPI_DmaRxDataLevel);
+	/* DMA TX level set; the RX level is set by SSI_RXGDMA_Init() to match its GDMA burst */
+	SSI_SetDmaLevel(spi_dev, SSI_InitStruct->SPI_DmaTxDataLevel);
 
 	SSI_Cmd(spi_dev, ENABLE);
 }
@@ -407,23 +407,18 @@ void SSI_SetDmaEnable(SPI_TypeDef *spi_dev, u32 newState, u32 Mask)
 }
 
 /**
-  * @brief Set SPIx DMA TxLevel and RxLevel.
+  * @brief Set SPIx DMA TxLevel.
   * @param  spi_dev Where spi_dev can be SPI0_DEV or SPI1_DEV.
   * @param  TxLevel  Transmit FIFO Threshold level.Value range: 0 to 63.
   *		The dma_tx_req is generated when the number of valid data entries in
   *		the transmit FIFO is equal to or below this field value.
-  * @param  RxLevel  Receive FIFO Threshold level.Value range: 0 to 63.
-  *		The dma_rx_req is generated when the number of valid data entries in the
-  *		receive FIFO is equal to or above this field value + 1.
+  * @note  The RX level is not set here: SSI_RXGDMA_Init() sets it to match its GDMA source burst.
   */
 
-void SSI_SetDmaLevel(SPI_TypeDef *spi_dev, u32 TxLevel, u32 RxLevel)
+void SSI_SetDmaLevel(SPI_TypeDef *spi_dev, u32 TxLevel)
 {
 	/* Set TX FIFO water level to trigger Tx DMA transfer */
 	spi_dev->SPI_DMATDLR = TxLevel;
-
-	/* Set RX FIFO water level to trigger Rx DMA transfer */
-	spi_dev->SPI_DMARDLR = RxLevel;
 }
 
 /**
@@ -539,6 +534,8 @@ bool SSI_TXGDMA_Init(
   * @return The result of RX GDMA initialization:
   *         - TRUE: RX GDMA initialization successful
   *         - FALSE: RX GDMA initialization failed
+  * @note  It sets the RX DMA level to 15 (DMARDLR), matching its GDMA source burst of 16 frames, so the RX level
+  *		needs no setting by the caller.
   */
 
 bool
@@ -574,17 +571,15 @@ SSI_RXGDMA_Init(
 	GDMA_InitStruct->GDMA_ChNum     = GdmaChnl;
 	GDMA_InitStruct->GDMA_IsrType   = (BlockType | TransferType | ErrType);
 
-	GDMA_InitStruct->GDMA_SrcMsize = MsizeEight;
-	GDMA_InitStruct->GDMA_DstMsize = MsizeFour;
-	GDMA_InitStruct->GDMA_SrcDataWidth = TrWidthTwoBytes;
-	GDMA_InitStruct->GDMA_DstDataWidth = TrWidthFourBytes;
 	GDMA_InitStruct->GDMA_DstInc = IncType;
 	GDMA_InitStruct->GDMA_SrcInc = NoChange;
+	/* The SPI RX DMA level + 1 has to equal the GDMA source burst (16 frames, one frame per beat) */
+	SPIx->SPI_DMARDLR = 15;
+	GDMA_InitStruct->GDMA_SrcMsize = MsizeSixteen;
 
 	/*  Configure GDMA transfer */
 	if (DataFrameSize > 8) {
 		/*  16~9 bits mode */
-		GDMA_InitStruct->GDMA_SrcMsize = MsizeFour;
 		GDMA_InitStruct->GDMA_SrcDataWidth = TrWidthTwoBytes;
 		GDMA_InitStruct->GDMA_BlockSize = Length >> 1;
 
@@ -603,7 +598,6 @@ SSI_RXGDMA_Init(
 		}
 	} else {
 		/*  8~4 bits mode */
-		GDMA_InitStruct->GDMA_SrcMsize = MsizeFour;
 		GDMA_InitStruct->GDMA_SrcDataWidth = TrWidthOneByte;
 		GDMA_InitStruct->GDMA_BlockSize = Length;
 		if (((Length & 0x03) == 0) && (((u32)(pRxData) & 0x03) == 0)) {
@@ -637,31 +631,31 @@ SSI_RXGDMA_Init(
 void SSI_SetIsrClean(SPI_TypeDef *spi_dev, u32 InterruptStatus)
 {
 	if (InterruptStatus & SPI_BIT_TXOIS) {
-		spi_dev->SPI_TXOICR;
+		(void)spi_dev->SPI_TXOICR;
 	}
 
 	if (InterruptStatus & SPI_BIT_RXUIS) {
-		spi_dev->SPI_RXUICR;
+		(void)spi_dev->SPI_RXUICR;
 	}
 
 	if (InterruptStatus & SPI_BIT_RXOIS) {
-		spi_dev->SPI_RXOICR;
+		(void)spi_dev->SPI_RXOICR;
 	}
 
 	if (InterruptStatus & SPI_BIT_MSTIS_FAEIS) {
 		/* Another master is actively transferring data */
 		/* TODO: Do reading data... */
-		spi_dev->SPI_MSTICR_FAEICR;
+		(void)spi_dev->SPI_MSTICR_FAEICR;
 	}
 
 	if (InterruptStatus & SPI_BIT_TXUIS) {
 		/* For slave only. This register is used as TXUICR in slave mode*/
-		spi_dev->SPI_TXUICR;
+		(void)spi_dev->SPI_TXUICR;
 	}
 
 	if (InterruptStatus & SPI_BIT_SSRIS) {
 		/* For slave only. This register is used as SSRICR in slave mode*/
-		spi_dev->SPI_SSRICR;
+		(void)spi_dev->SPI_SSRICR;
 	}
 
 }

@@ -8,9 +8,9 @@
 #define AMEBA_RTOS_VERSION_H
 
 /** Major version number (X.x.x) */
-#define AMEBA_RTOS_VERSION_MAJOR   1
+#define AMEBA_RTOS_VERSION_MAJOR   2
 /** Minor version number (x.X.x) */
-#define AMEBA_RTOS_VERSION_MINOR   3
+#define AMEBA_RTOS_VERSION_MINOR   0
 /** Patch version number (x.x.X) */
 #define AMEBA_RTOS_VERSION_PATCH   0
 

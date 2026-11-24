@@ -35,6 +35,15 @@ if(CONFIG_USBH_CDC_NCM)
     )
 endif()
 
+if(CONFIG_USBH_RNDIS)
+    ameba_list_append(private_includes
+        ${USBH_CLASS_DIR}/rndis
+    )
+    ameba_list_append(private_sources
+        ${USBH_CLASS_DIR}/rndis/usbh_rndis.c
+    )
+endif()
+
 if(CONFIG_USBH_MSC)
     ameba_list_append(private_includes
         ${USBH_CLASS_DIR}/msc

@@ -48,6 +48,30 @@ ameba_list_append(c_GLOBAL_COMMON_COMPILE_C_OPTIONS
     # -fno-short-enums
     -ffile-prefix-map=${c_BASEDIR}=.
 )
+if(CONFIG_TOOLCHAIN_LLVM)
+    # GCC only options
+    list(REMOVE_ITEM c_GLOBAL_COMMON_COMPILE_C_OPTIONS
+        -fno-tree-loop-distribute-patterns
+        -Wno-maybe-uninitialized
+        -Werror
+    )
+    ameba_list_append(c_GLOBAL_COMMON_COMPILE_C_OPTIONS
+        # clang is stricter than gcc, existing code triggers many extra warnings: keep them as warnings
+        -ferror-limit=0
+        # variables that are only assigned but never read (e.g. debug/log only variables)
+        -Wno-unused-but-set-variable
+        # self assignment such as 'x = x' used to silence unused parameter/variable
+        -Wno-self-assign
+        # '{0}' style initializers of unions are reported by -Wextra
+        -Wno-missing-field-initializers
+        # 8 byte password 'u8 pw[8] = "1234abcd"' without NUL is intended
+        -Wno-unterminated-string-initialization
+        # 'optimize' function attributes are gcc only (checked: ROM memset/memmove/memcpy do not turn into libcalls)
+        -Wno-unknown-attributes
+        # NULL used as an integer (0) in callback/handler tables and arguments: an error by default in clang 22, a warning in gcc
+        -Wno-int-conversion
+    )
+endif()
 if(CONFIG_AMEBASMART OR CONFIG_AMEBADPLUS OR CONFIG_AMEBAPRO3)
     ameba_list_append(c_GLOBAL_COMMON_COMPILE_C_OPTIONS -O2)
 else()

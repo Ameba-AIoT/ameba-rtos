@@ -93,8 +93,8 @@ static u32 cdc_ncm_workers = 0;
 /* 1 while the link change thread runs, cleared by it once it took the netif down */
 static volatile u8 cdc_ncm_link_alive = 0;
 
-/* 1 while the link change thread is in lwip_request_ip(): the teardown owner keeps stopping DHCP
-   so the request returns, even one started just after quit was set */
+/* 1 while the link change thread is in lwip_request_ip(): the teardown owner and the hotplug
+   thread keep stopping DHCP so the request returns, even one started just after quit was set */
 static volatile u8 cdc_ncm_dhcp_pending = 0;
 
 static const usbh_config_t usbh_ncm_cfg = {
@@ -352,6 +352,23 @@ static void usbh_ncm_net_down(u8 dhcp_ran)
 }
 
 /**
+  * @brief  Make the link change thread leave lwip_request_ip()
+  * @note   Stops the DHCP client again and again, since a stop that lands before the thread's
+  *         dhcp_start() is undone by it
+  * @retval None
+  */
+static void usbh_ncm_abort_dhcp(void)
+{
+	u32 waited = 0U;
+
+	while ((cdc_ncm_dhcp_pending != 0U) && (waited < USB_APP_JOIN_TIMEOUT_MS)) {
+		lwip_dhcp_stop(NETIF_USB_ETH_INDEX);
+		rtos_time_delay_ms(10);
+		waited += 10U;
+	}
+}
+
+/**
   * @brief  Wait for the link change thread to take the netif down and leave
   * @note   Teardown owner only, quit already set
   * @retval RTK_SUCCESS, or -RTK_ERR_TIMEOUT if it did not leave in time
@@ -427,8 +444,8 @@ static void usbh_ncm_link_change_thread(void *param)
 				}
 				if (DHCP_ADDRESS_ASSIGNED == dhcp_status) {
 					netifapi_netif_set_default(pnetif_usb_eth);	//Set default gw to ether netif
-					/* From here AT+IPERF/AT+IPERF3 run over the dongle. iperf3 needs -l (at most 2920, 1460
-					 * recommended) on both the board and the PC side, see README "Throughput test" */
+					/* From here AT+IPERF/AT+IPERF3 run over the dongle. iperf3 needs -l on the client side (1..2920,
+					 * 1460 recommended), the board as client defaults to 1460, see README "Throughput test" */
 					RTK_LOGS(TAG, RTK_LOG_INFO, "Switch to link\n");
 				} else {
 					/* Back to IDLE so the next round retries: while the link stays up no link-down edge
@@ -491,6 +508,18 @@ static void usbh_ncm_hotplug_thread(void *param)
 
 	UNUSED(param);
 
+#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
+	/* The USB OTG ISR is delivered on CPU0: the GIC pins every SPI to core 0
+	   (ITARGETSR is written to 0x01010101 in arm_gic.c gic_dist_init). Pinning the
+	   hotplug/deinit thread to CPU0 puts it on the same core as the ISR, so the
+	   local interrupt disables inside the teardown are meaningful again. The lwIP
+	   TX thread stays unaffined: a pending teardown is excluded from it by
+	   cdc_ncm_state_mutex, not by core.
+	   Done by the thread itself, first: a created thread may already run on another core, and its
+	   creator pinning it afterwards could come too late or reach a task that has deleted itself. */
+	rtos_task_set_affinity(rtos_task_handle_get(), 0);
+#endif
+
 	for (;;) {
 		if (rtos_sema_take(cdc_ncm_detach_sema, RTOS_SEMA_MAX_COUNT) != RTK_SUCCESS) {
 			continue;
@@ -500,6 +529,9 @@ static void usbh_ncm_hotplug_thread(void *param)
 			break;
 		}
 
+		/* The device is gone: a DHCP round still running for it would hold the link change thread
+		   until it times out, minutes later. Bounded, a request outliving it ends on its own. */
+		usbh_ncm_abort_dhcp();
 		usbh_cdc_ncm_stack_down();
 
 		rtos_time_delay_ms(10);
@@ -612,15 +644,6 @@ static int usbh_ncm_start(void)
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create hotplug check task fail\n");
 		goto exit_join;
 	}
-#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
-	/* The USB OTG ISR is delivered on CPU0: the GIC pins every SPI to core 0
-	   (ITARGETSR is written to 0x01010101 in arm_gic.c gic_dist_init). Pinning the
-	   hotplug/deinit thread to CPU0 puts it on the same core as the ISR, so the
-	   local interrupt disables inside the teardown are meaningful again. The lwIP
-	   TX thread stays unaffined: a pending teardown is excluded from it by
-	   cdc_ncm_state_mutex, not by core. */
-	rtos_task_set_affinity(task, 0);
-#endif
 #endif
 
 #if !CONFIG_USBH_CDC_NCM_HOTPLUG
@@ -657,6 +680,14 @@ exit_end:
 static void usbh_ncm_init_thread(void *param)
 {
 	UNUSED(param);
+
+#if defined(RTOS_NUM_CORES) && (RTOS_NUM_CORES > 1)
+	/* A start that fails rolls back through usbh_deinit(), which waits for no ISR on another
+	   core: run it on CPU0, where the USB IRQ is delivered, as the hotplug thread does.
+	   Done by the thread itself, first: a created thread may already run on another core, and its
+	   creator pinning it afterwards could come too late or reach a task that has deleted itself. */
+	rtos_task_set_affinity(rtos_task_handle_get(), 0);
+#endif
 
 	if (usbh_ncm_start() != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Start fail\n");

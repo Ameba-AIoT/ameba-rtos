@@ -127,7 +127,7 @@ typedef struct {
 	uint16_t psm;                             /*!< PSM value for the protocol.
                                                *   Set to @ref RTK_BT_PSM_EATT if channels are created for EATT. */
 	uint16_t uuid;                            /*!< BT protocol/profile UUID.
-                                               *   Ignored when is_le is true. */
+                                               *   Ignored when #is_le is true. */
 	uint8_t requirement;                      /*!< Security requirement of the entry.
                                                *   Valid values are combinations of @ref rtk_bt_gap_ecfc_sec_setting_t. */
 	uint8_t key_size;                         /*!< Key size requirement of the entry.
@@ -146,7 +146,7 @@ typedef struct {
 	uint8_t bd_addr[RTK_BD_ADDR_LEN];         /*!< Bluetooth address of the remote device. */
 	uint8_t bd_type;                          /*!< Bluetooth address type of the remote device. */
 	uint8_t cid_num;                          /*!< The number of the L2CAP ECFC channels to establish.
-                                               *   Range: 1 to RTK_BT_GAP_ECFC_CHANN_MAX_NUM. */
+                                               *   Range: 1 to @ref RTK_BT_GAP_ECFC_CHANN_MAX_NUM. */
 } rtk_bt_gap_ecfc_conn_req_t;
 
 /**
@@ -166,9 +166,16 @@ typedef enum {
 	RTK_BT_L2C_ECFC_CONN_RSP_ALL_CONN_UNACCEPTABLE_PARAMS = 0x000B,             /*!< All connections refused - unacceptable parameters. */
 	RTK_BT_L2C_ECFC_CONN_RSP_ALL_CONN_INVALID_PARAMS = 0x000C,                  /*!< All connections refused - invalid parameters. */
 	RTK_BT_L2C_ECFC_CONN_RSP_ALL_CONN_PENDING_NO_INFO = 0x000D,                 /*!< All connections pending - no further information available. */
-	RTK_BT_L2C_ECFC_CONN_RSP_ALL_CONN_PENDING_AUTHER = 0x000E,                  /*!< All connections pending - authentication pending. */
+	RTK_BT_L2C_ECFC_CONN_RSP_ALL_CONN_PENDING_AUTHEN = 0x000E,                  /*!< All connections pending - authentication pending. */
 	RTK_BT_L2C_ECFC_CONN_RSP_ALL_CONN_PENDING_AUTHOR = 0x000F,                  /*!< All connections pending - authorization pending. */
 } rtk_bt_gap_ecfc_conn_cfm_cause_t;
+
+/**
+ * @def       RTK_BT_L2C_ECFC_CONN_RSP_ALL_CONN_PENDING_AUTHER
+ * @brief     Deprecated alias of @ref RTK_BT_L2C_ECFC_CONN_RSP_ALL_CONN_PENDING_AUTHEN.
+ * @deprecated Use @ref RTK_BT_L2C_ECFC_CONN_RSP_ALL_CONN_PENDING_AUTHEN instead.
+ */
+#define RTK_BT_L2C_ECFC_CONN_RSP_ALL_CONN_PENDING_AUTHER RTK_BT_L2C_ECFC_CONN_RSP_ALL_CONN_PENDING_AUTHEN
 
 /**
  * @struct    rtk_bt_gap_ecfc_conn_cfm_t
@@ -184,7 +191,7 @@ typedef struct {
 	uint16_t p_cid[RTK_BT_GAP_ECFC_CHANN_MAX_NUM];    /*!< CID array allowed to be established.
                                                        *   Must be a subset of the CID array reported in @ref RTK_BT_GAP_EVT_ECFC_CONN_REQ_IND. */
 	uint8_t cid_num;                                  /*!< The number of the L2CAP ECFC channels allowed to be established.
-                                                       *   Range: 1 to RTK_BT_GAP_ECFC_CHANN_MAX_NUM. */
+                                                       *   Range: 1 to @ref RTK_BT_GAP_ECFC_CHANN_MAX_NUM. */
 	uint16_t local_mtu;                               /*!< Preferred local MTU size value of the L2CAP ECFC channel. */
 } rtk_bt_gap_ecfc_conn_cfm_t;
 
@@ -225,7 +232,7 @@ typedef struct {
                                                        *   Range: 0x0000 to 0x0EFF. */
 	uint16_t p_cid[RTK_BT_GAP_ECFC_CHANN_MAX_NUM];    /*!< Local CID array to reconfigure. */
 	uint8_t cid_num;                                  /*!< The number of CIDs in the p_cid array.
-                                                       *   Range: 1 to RTK_BT_GAP_ECFC_CHANN_MAX_NUM. */
+                                                       *   Range: 1 to @ref RTK_BT_GAP_ECFC_CHANN_MAX_NUM. */
 	uint16_t local_mtu;                               /*!< Preferred local MTU size value of the L2CAP ECFC channel. */
 	uint16_t local_mps;                               /*!< Preferred local MPS value of the L2CAP ECFC channel. */
 } rtk_bt_gap_ecfc_reconf_req_t;

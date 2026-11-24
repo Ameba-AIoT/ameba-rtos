@@ -70,9 +70,9 @@ typedef struct {
 #endif
 	bool     irk_auto_gen;                            /*!< Whether the stack automatically generates the local IRK.
                                                        *   - true: generate a local IRK and save it to FTL on first use, then load it from FTL afterwards.
-                                                       *   - false: use the value set in @ref irk. */
+                                                       *   - false: use the value set in #irk. */
 	uint8_t  irk[RTK_BT_LE_GAP_IRK_LEN];              /*!< Local IRK data.
-                                                       *   Only used when @ref irk_auto_gen is false. */
+                                                       *   Only used when #irk_auto_gen is false. */
 	bool     user_def_service;                        /*!< Whether the GAP and GATT services are registered by the application.
                                                        *   - true: the application registers the GAP and GATT services.
                                                        *   - false: the built-in services of the stack are used. */

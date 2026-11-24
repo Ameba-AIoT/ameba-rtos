@@ -12,12 +12,18 @@ ameba_add_subdirectory(${c_CMPT_SOC_DIR}/lib/bootloader lib_bootloader)
 ameba_add_subdirectory(${c_CMPT_SWLIB_DIR})
 ameba_add_subdirectory(${c_CMPT_USRCFG_DIR})
 
+# Replaces fwlib/ram_common/ameba_nor_flash.c - see CONFIG_NOR_FLASH_NEW_STRATEGY.
+# Needed in image1 because flash_nor_* is called from flash_highspeed_setup().
+if (CONFIG_NOR_FLASH_NEW_STRATEGY)
+    ameba_add_subdirectory(${c_COMPONENT_DIR}/soc/common/nor_flash)
+endif()
+
 ###############################  GENERATE IMAGE  ###################################
 
 #---------------- PRE LINK -------------------#
 add_custom_command(
     TARGET ${c_CURRENT_IMAGE} PRE_LINK
-    COMMAND ${CMAKE_C_COMPILER} -E -P -xc -c ${c_SDK_LD_DIR}/ameba_img1_s.ld -o ${CMAKE_CURRENT_BINARY_DIR}/rlx8721d.ld -I ${c_MENUCONFIG_DIR}
+    COMMAND ${CMAKE_C_COMPILER} ${TOOLCHAIN_DRIVER_OPTS} -E -P -xc -c ${c_SDK_LD_DIR}/ameba_img1_s.ld -o ${CMAKE_CURRENT_BINARY_DIR}/rlx8721d.ld -I ${c_MENUCONFIG_DIR}
     COMMAND ${CMAKE_COMMAND} -E cat ${c_LINK_ROM_SYMBOL_S} >> ${CMAKE_CURRENT_BINARY_DIR}/rlx8721d.ld
     COMMENT "build bootloader linkerscript rlx8721d.ld"
 )

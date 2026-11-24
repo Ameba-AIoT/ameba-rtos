@@ -6,7 +6,14 @@ ameba_list_append(c_GLOBAL_MCU_LINK_OPTIONS
     -mcpu=cortex-a32
     -mfpu=neon
     -mfloat-abi=hard
-    -L${SDK_TOOLCHAIN}/arm-none-eabi/lib/v7-a+neon-fp16/fpu/
-    -L${SDK_TOOLCHAIN}/lib/gcc/arm-none-eabi/${c_SDK_VERSION}/v7-a+neon-fp16/fpu
 )
+
+if(CONFIG_TOOLCHAIN_LLVM)
+    # clang selects the multilib (armv8-a+simd/fpu) from the flags above
+else()
+    ameba_list_append(c_GLOBAL_MCU_LINK_OPTIONS
+        -L${SDK_TOOLCHAIN}/arm-none-eabi/lib/v7-a+neon-fp16/fpu/
+        -L${SDK_TOOLCHAIN}/lib/gcc/arm-none-eabi/${c_SDK_VERSION}/v7-a+neon-fp16/fpu
+    )
+endif()
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ #

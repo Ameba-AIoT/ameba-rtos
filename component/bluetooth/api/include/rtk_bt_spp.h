@@ -15,12 +15,19 @@ extern "C"
 
 /**************************************** Macros ***************************************/
 /**
- * @def       SPP_CAHNN_DB_MAX_LINK_NUM
+ * @def       SPP_CHANN_DB_MAX_LINK_NUM
  * @brief     Number of entries in the SPP channel database.
  * @note
  *            - The maximum number of SPP channels shall not exceed this value.
  */
-#define SPP_CAHNN_DB_MAX_LINK_NUM               5
+#define SPP_CHANN_DB_MAX_LINK_NUM               5
+
+/**
+ * @def       SPP_CAHNN_DB_MAX_LINK_NUM
+ * @brief     Deprecated alias of @ref SPP_CHANN_DB_MAX_LINK_NUM.
+ * @deprecated Use @ref SPP_CHANN_DB_MAX_LINK_NUM instead.
+ */
+#define SPP_CAHNN_DB_MAX_LINK_NUM               SPP_CHANN_DB_MAX_LINK_NUM
 
 /**
  * @def       RTK_BT_SPP_MAX_DATA_IND_LENGTH

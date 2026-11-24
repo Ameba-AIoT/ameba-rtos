@@ -205,6 +205,12 @@ static const struct bt_hci_cmd_func_hdl g_bt_hci_cmd_func_tbl[] = {
 	{BT_HCI_OP_LE_SET_DEFAULT_PA_SYNC_TRANSFER_PARAM, bt_hci_cmd_ogf_le_ocf_set_default_pa_sync_transfer_param},
 #endif
 
+#if defined(CONFIG_BLE_LL_CS_ENABLE) && defined(BT_LL_FEATURE_BT60_LE_CS) && BT_LL_FEATURE_BT60_LE_CS
+	{BT_HCI_OP_LE_CS_READ_LOCAL_SUPPORTED_CAPABILITIES, bt_hci_cmd_ogf_le_ocf_cs_get_local_cap},
+	{BT_HCI_OP_LE_CS_READ_LOCAL_SUPPORTED_CAPABILITIES_V2, bt_hci_cmd_ogf_le_ocf_cs_get_v2_local_cap},
+	{BT_HCI_OP_LE_CS_SECURITY_ENABLE, bt_hci_cmd_ogf_le_ocf_cs_sec_enable},
+#endif
+
 	//BT_OGF_VENDOR
 	{BT_HCI_OP_VENDOR_READ_RTK_CHIP_ID,  bt_hci_cmd_ogf_vendor_ocf_read_rtk_chip_id},
 	{BT_HCI_OP_VENDOR_READ_VENDOR_REG, bt_hci_cmd_ogf_vendor_ocf_read_vendor_reg},

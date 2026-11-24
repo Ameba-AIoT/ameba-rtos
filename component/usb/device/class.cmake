@@ -34,6 +34,15 @@ if(CONFIG_USBD_CDC_NCM)
     )
 endif()
 
+if(CONFIG_USBD_RNDIS)
+    ameba_list_append(private_includes
+        ${USBD_CLASS_DIR}/rndis
+    )
+    ameba_list_append(private_sources
+        ${USBD_CLASS_DIR}/rndis/usbd_rndis.c
+    )
+endif()
+
 ameba_list_append_if(CONFIG_USBD_COMPOSITE private_includes
     ${USBD_CLASS_DIR}/composite
 )
@@ -79,6 +88,9 @@ endif()
 if(CONFIG_USBD_UAC)
     ameba_list_append(private_includes
         ${USBD_CLASS_DIR}/uac
+    )
+    ameba_list_append(private_sources
+        ${USBD_CLASS_DIR}/uac/usbd_uac_common.c
     )
     if(CONFIG_USBD_UAC1)
         ameba_list_append(private_sources

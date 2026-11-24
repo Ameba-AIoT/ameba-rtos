@@ -35,7 +35,7 @@
 #define OP_GENERIC_DEFAULT_TRANSITION_TIME_SET_UNACK        BT_MESH_MODEL_OP_2(0x82, 0x0F)
 #define OP_GENERIC_DEFAULT_TRANSITION_TIME_STATUS           BT_MESH_MODEL_OP_2(0x82, 0x10)
 
-#if defined(BT_MESH_ENABLE_GENERIC_DEFAULT_TRANSTION_TIME_SERVER_MODEL) && BT_MESH_ENABLE_GENERIC_DEFAULT_TRANSTION_TIME_SERVER_MODEL
+#if defined(BT_MESH_ENABLE_GENERIC_DEFAULT_TRANSITION_TIME_SERVER_MODEL) && BT_MESH_ENABLE_GENERIC_DEFAULT_TRANSITION_TIME_SERVER_MODEL
 static const struct bt_mesh_model *generic_default_transition_time_server_model = NULL;
 
 static int generic_default_transition_time_srv_init(const struct bt_mesh_model *model)
