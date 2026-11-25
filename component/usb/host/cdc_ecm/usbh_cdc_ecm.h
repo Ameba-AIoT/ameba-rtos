@@ -112,7 +112,7 @@ typedef struct {
 	* @param[in] len: Length of the valid received data in bytes.
 	*/
 	void (*received)(u8 *buf, u32 len);
-} usbh_cdc_ecm_state_cb_t;
+} usbh_cdc_ecm_cb_t;
 
 typedef struct {
 	usbh_pipe_t pipe;                         /**< USB Host pipe handle. */
@@ -129,7 +129,7 @@ typedef struct {
  * @brief Structure representing the CDC ECM host instance.
  */
 typedef struct {
-	const usbh_cdc_ecm_state_cb_t  *cb;              /**< User callback structure */
+	const usbh_cdc_ecm_cb_t  *cb;              /**< User callback structure */
 	usb_host_t *host;                                /**< USB Host core handle */
 	u8  *dongle_ctrl_buf;                            /**< Buffer for control transfers (cache aligned) */
 
@@ -138,7 +138,7 @@ typedef struct {
 	u16 intr_check_tick;                             /**< ECM Intr check tick, used to reduce the cpu load */
 	u8 state;                                        /**< Internal state machine status, see usbh_cdc_ecm_state_t */
 	__IO u8 eth_hw_connect;                          /**< Ethernet physical link status: 0=Disconnect, 1=Connect */
-	u8 ready_to_xfer;                                /**< Upper-layer prepare-done gate: set via usbh_cdc_ecm_prepare_done() once the dongle (e.g. 4G AT config) is ready; SOF withholds data transfer until this is set. */
+	u8 ready_to_xfer;                                /**< Upper-layer prepare-done gate: set via usbh_cdc_ecm_set_ready() once the dongle (e.g. 4G AT config) is ready; SOF withholds data transfer until this is set. */
 	u8 halt_ep_addr;                                 /**< Address of the halted endpoint being cleared in CDC_ECM_STATE_ERROR */
 	u8 halt_retry_cnt;                               /**< Failed CLEAR_FEATURE(ENDPOINT_HALT) attempts for halt_ep_addr */
 
@@ -193,12 +193,12 @@ typedef struct {
  *                 See @ref usbh_cdc_ecm_config_t.
  * @return 0 (RTK_SUCCESS) on success, non-zero on failure.
  */
-int usbh_cdc_ecm_init(const usbh_cdc_ecm_state_cb_t *cb, const usbh_cdc_ecm_config_t *cfg);
+int usbh_cdc_ecm_init(const usbh_cdc_ecm_cb_t *cb, const usbh_cdc_ecm_config_t *cfg);
 
 /**
  * @brief  De-initializes the CDC ECM host class driver and releases resources.
  * @note   Task context only. Closes the TX gate first, then waits without an upper bound for every
- *         task inside usbh_cdc_ecm_send_data() to leave before its semaphore and buffers go away.
+ *         task inside usbh_cdc_ecm_transmit() to leave before its semaphore and buffers go away.
  */
 void usbh_cdc_ecm_deinit(void);
 
@@ -214,21 +214,20 @@ int usbh_cdc_ecm_choose_config(usb_host_t *host);
  * @param[in] host: USB Host Handle.
  * @return 0 (RTK_SUCCESS) on success, non-zero on failure.
  */
-int usbh_cdc_ecm_check_config_desc(usb_host_t *host);
+int usbh_cdc_ecm_check_config(usb_host_t *host);
 
 /**
  * @brief  Checks if the CDC ECM interface is fully configured and ready for data transfer.
- * @return 1: Driver is ready (Enumerated & Configured).
- *         0: Driver is not ready.
+ * @return true if the driver is ready (enumerated and configured), false otherwise.
  */
-u8 usbh_cdc_ecm_usb_is_ready(void);
+bool usbh_cdc_ecm_is_ready(void);
 
 /**
  * @brief  Signal that the upper layer has finished all pre-transfer preparation
  *         (e.g. 4G dongle AT configuration) and Ethernet data transfer may start.
  *         Until this is called, SOF withholds bulk/intr transfer scheduling.
  */
-void usbh_cdc_ecm_prepare_done(void);
+void usbh_cdc_ecm_set_ready(void);
 
 /**
  * @brief  Transmits an Ethernet packet to the device via the Bulk OUT endpoint.
@@ -242,32 +241,32 @@ void usbh_cdc_ecm_prepare_done(void);
  * @return 0 (RTK_SUCCESS) on success, -RTK_ERR_BADARG for ISR context or a NULL, empty or unaligned buffer,
  *         other non-zero values on failure.
  */
-int usbh_cdc_ecm_send_data(u8 *buf, u32 len, u8 block);
+int usbh_cdc_ecm_transmit(const u8 *buf, u32 len, u8 block);
 
 /**
  * @brief  Gets the current network link state (uplink status).
- * @return 1: Network link is up (connected to uplink).
- *         0: Network link is down (disconnected, or USB not yet enumerated).
+ * @return true: Network link is up (connected to uplink).
+ *         false: Network link is down (disconnected, or USB not yet enumerated).
  */
-int usbh_cdc_ecm_get_link_status(void);
+bool usbh_cdc_ecm_get_link_status(void);
 
 /**
  * @brief  Gets the MAC address of the connected device.
  * @return Pointer to the 6-byte MAC address array on success, NULL on failure.
  */
-const u8 *usbh_cdc_ecm_process_mac_str(void);
+const u8 *usbh_cdc_ecm_get_mac(void);
 
 /**
  * @brief  Gets the Vendor ID of the attached CDC ECM device.
  * @return VID on success, 0 if no device is attached.
  */
-u16 usbh_cdc_ecm_get_device_vid(void);
+u16 usbh_cdc_ecm_get_vid(void);
 
 /**
  * @brief  Gets the Product ID of the attached CDC ECM device.
  * @return PID on success, 0 if no device is attached.
  */
-u16 usbh_cdc_ecm_get_device_pid(void);
+u16 usbh_cdc_ecm_get_pid(void);
 
 /** @} End of Host_CDC_ECM_Functions group */
 /** @} End of USB_Host_Functions group */

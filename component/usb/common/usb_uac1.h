@@ -146,7 +146,7 @@ typedef struct {
 	uint8_t bBitResolution;
 	uint8_t bSamFreqType;
 	uint8_t tSamFreq[3][3];
-} __PACKED usb_uac1_format_type_i_discrete_descriptor;
+} __PACKED usb_uac1_format_type_i_desc_t;
 
 /** @} End of USB_Common_UAC1_Types group */
 /** @} End of USB_Common_Types group */

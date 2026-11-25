@@ -247,9 +247,9 @@ void usb_os_exit_critical(void);
 
 /**
  * @brief Tells whether the caller runs in interrupt context.
- * @return 1 in interrupt context, 0 in task context.
+ * @return true in interrupt context, false in task context.
  */
-u8 usb_os_is_in_interrupt(void);
+bool usb_os_is_in_interrupt(void);
 
 /**
  * @brief Atomically increments a counter shared across cores and contexts.

@@ -81,7 +81,7 @@ static usbh_msc_host_t usbh_msc_host;
 static int usbh_msc_attach(usb_host_t *host)
 {
 	int status = RTK_FAIL;
-	usbh_itf_data_t *itf_data;
+	usbh_itf_t *itf_data;
 	usbh_ep_desc_t *ep_desc;
 	usbh_msc_host_t *msc = &usbh_msc_host;
 	usb_msc_bot_cbw_t *cbw = msc->hbot.cbw;
@@ -94,7 +94,7 @@ static int usbh_msc_attach(usb_host_t *host)
 	dev_id.bInterfaceSubClass = USBH_MSC_TRANSPARENT;
 	dev_id.bInterfaceProtocol = USBH_MSC_BOT;
 	dev_id.mMatchFlags = USBH_DEV_ID_MATCH_ITF_INFO;
-	itf_data = usbh_get_interface_descriptor(host, &dev_id);
+	itf_data = usbh_itf_find(host, &dev_id);
 
 	if (itf_data == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Get itf desc fail\n");
@@ -116,13 +116,13 @@ static int usbh_msc_attach(usb_host_t *host)
 				continue;
 			}
 			if ((ep_desc->bEndpointAddress & USB_REQ_DIR_MASK) == USB_D2H) {
-				if (usbh_open_pipe(host, bulk_in, ep_desc, &usbh_msc_driver) != RTK_SUCCESS) {
+				if (usbh_pipe_open(host, bulk_in, ep_desc, &usbh_msc_driver) != RTK_SUCCESS) {
 					RTK_LOGS(TAG, RTK_LOG_ERROR, "Open bulk in pipe fail\n");
 					goto open_fail;
 				}
 				bulk_in->max_timeout_tick = MSC_XFER_MAX_TIMEOUT_TICK;
 			} else {
-				if (usbh_open_pipe(host, bulk_out, ep_desc, &usbh_msc_driver) != RTK_SUCCESS) {
+				if (usbh_pipe_open(host, bulk_out, ep_desc, &usbh_msc_driver) != RTK_SUCCESS) {
 					RTK_LOGS(TAG, RTK_LOG_ERROR, "Open bulk out pipe fail\n");
 					goto open_fail;
 				}
@@ -139,7 +139,7 @@ static int usbh_msc_attach(usb_host_t *host)
 		msc->itf_num = msc_itf_desc->bInterfaceNumber;
 		msc->current_lun = 0U;
 		msc->state = MSC_INIT;
-		msc->sof_tick = usbh_get_tick(host);
+		msc->sof_tick = usbh_tick_get(host);
 		msc->lun_ms = usb_os_get_timestamp_ms();
 		msc->init_recovery = 0U;
 		msc->req_state = MSC_REQ_IDLE;
@@ -148,7 +148,7 @@ static int usbh_msc_attach(usb_host_t *host)
 		msc->hbot.tag_counter = USB_BOT_CBW_TAG;
 		cbw->field.dCBWTag = msc->hbot.tag_counter;
 		msc->hbot.state = BOT_SEND_CBW;
-		msc->bulk_out.xfer_state = USBH_EP_XFER_START;
+		msc->bulk_out.xfer_state = USBH_PIPE_XFER_START;
 		msc->hbot.cmd_state = BOT_CMD_SEND;
 		msc->hbot.reset_recovery = 0U;
 
@@ -166,10 +166,10 @@ static int usbh_msc_attach(usb_host_t *host)
 open_fail:
 	/* Roll back any pipe already opened (guard with pipe_num: only close open pipes) */
 	if (bulk_in->pipe_num != 0U) {
-		usbh_close_pipe(host, bulk_in);
+		usbh_pipe_close(host, bulk_in);
 	}
 	if (bulk_out->pipe_num != 0U) {
-		usbh_close_pipe(host, bulk_out);
+		usbh_pipe_close(host, bulk_out);
 	}
 	/* No detach() follows a failed attach(): drop the host handle as detach() does, or
 	   usbh_msc_is_ready() and the LUN getters report the previous device on the setup of
@@ -196,11 +196,11 @@ static void usbh_msc_detach(usb_host_t *host)
 	}
 
 	if (bulk_in->pipe_num != 0U) {
-		usbh_close_pipe(host, bulk_in);
+		usbh_pipe_close(host, bulk_in);
 	}
 
 	if (bulk_out->pipe_num != 0U) {
-		usbh_close_pipe(host, bulk_out);
+		usbh_pipe_close(host, bulk_out);
 	}
 
 	/* The pipes are halted above, so no DMA still targets the bounce buffer, which is kept
@@ -309,7 +309,7 @@ static void usbh_msc_process(usb_host_t *host, usbh_drv_msg_t *msg)
 				break;
 
 			case MSC_READ_INQUIRY:
-				scsi_status = usbh_scsi_inquiry(msc, (u8)msc->current_lun, &unit->inquiry);
+				scsi_status = usbh_msc_scsi_inquiry(msc, (u8)msc->current_lun, &unit->inquiry);
 
 				if (scsi_status == RTK_SUCCESS) {
 					unit->state = MSC_TEST_UNIT_READY;
@@ -324,7 +324,7 @@ static void usbh_msc_process(usb_host_t *host, usbh_drv_msg_t *msg)
 				break;
 
 			case MSC_TEST_UNIT_READY:
-				scsi_status = usbh_scsi_test_unit_ready(msc, (u8)msc->current_lun);
+				scsi_status = usbh_msc_scsi_test_unit_ready(msc, (u8)msc->current_lun);
 
 				if (scsi_status == RTK_SUCCESS) {
 					unit->state = MSC_READ_CAPACITY10;
@@ -342,7 +342,7 @@ static void usbh_msc_process(usb_host_t *host, usbh_drv_msg_t *msg)
 				break;
 
 			case MSC_READ_CAPACITY10:
-				scsi_status = usbh_scsi_read_capacity(msc, (u8)msc->current_lun, &unit->capacity);
+				scsi_status = usbh_msc_scsi_read_capacity(msc, (u8)msc->current_lun, &unit->capacity);
 
 				if (scsi_status == RTK_SUCCESS) {
 					unit->state = MSC_IDLE;
@@ -353,7 +353,7 @@ static void usbh_msc_process(usb_host_t *host, usbh_drv_msg_t *msg)
 				} else if (scsi_status == -RTK_ERR_BADARG) {
 					/* The medium geometry is unusable, so no legal READ10/WRITE10 CBW can ever
 					   be built for this LUN. Retire it here, which keeps it out of
-					   usbh_msc_unit_is_ready(), instead of re-issuing the same command. */
+					   usbh_msc_is_unit_ready(), instead of re-issuing the same command. */
 					unit->error = MSC_ERROR;
 					unit->state = MSC_UNRECOVERED_ERROR;
 				} else {
@@ -364,7 +364,7 @@ static void usbh_msc_process(usb_host_t *host, usbh_drv_msg_t *msg)
 				break;
 
 			case MSC_REQUEST_SENSE:
-				scsi_status = usbh_scsi_request_sense(msc, (u8)msc->current_lun, &unit->sense);
+				scsi_status = usbh_msc_scsi_request_sense(msc, (u8)msc->current_lun, &unit->sense);
 
 				if (scsi_status == RTK_SUCCESS) {
 					if ((unit->sense.key == SCSI_SENSE_KEY_UNIT_ATTENTION) ||
@@ -457,9 +457,9 @@ static void usbh_msc_process(usb_host_t *host, usbh_drv_msg_t *msg)
   * @brief  Escalate the recovery of a LUN init that ran out of its budget.
   * @note   Ref BOT 5.3.4: first a Bulk-Only Mass Storage Reset with both halts cleared, after
   *         which the SCSI layer re-issues the very command that stalled. If that does not help
-  *         either, the device is reset and enumerated again (usbh_reenumerate()), which brings
+  *         either, the device is reset and enumerated again (usbh_dev_reset()), which brings
   *         this driver back through detach() and attach(). Only when the core refuses that
-  *         too is the LUN retired, so usbh_msc_unit_is_ready() reports it unusable and setup()
+  *         too is the LUN retired, so usbh_msc_is_unit_ready() reports it unusable and setup()
   *         still runs.
   * @param  host: Host handle
   * @param  msc: Msc host handle
@@ -490,9 +490,9 @@ static void usbh_msc_recover_init(usb_host_t *host, usbh_msc_host_t *msc, usbh_m
 	msc->hbot.reset_recovery = 0U;
 	msc->hbot.state = BOT_SEND_CBW;
 	msc->hbot.cmd_state = BOT_CMD_SEND;
-	msc->bulk_out.xfer_state = USBH_EP_XFER_START;
+	msc->bulk_out.xfer_state = USBH_PIPE_XFER_START;
 
-	ret = usbh_reenumerate();
+	ret = usbh_dev_reset();
 	if ((ret == RTK_SUCCESS) || (ret == -RTK_ERR_BUSY)) {
 		/* detach() comes next from the host task; nothing is driven until then. */
 		msc->state = MSC_IDLE;
@@ -594,14 +594,14 @@ static void usbh_msc_process_abort(usb_host_t *host, usbh_msc_host_t *msc)
 		RTK_LOGS(TAG, RTK_LOG_WARN, "Abort end %d\n", status);
 		msc->hbot.reset_recovery = 0U;
 		msc->hbot.cmd_state = BOT_CMD_SEND;
-		msc->bulk_out.xfer_state = USBH_EP_XFER_START;
+		msc->bulk_out.xfer_state = USBH_PIPE_XFER_START;
 		usbh_msc_finish_cmd(msc, -RTK_ERR_TIMEOUT);
 		if (status == -RTK_ERR_IO) {
 			/* BOT 5.3.4 leaves no further recovery than a port reset: have the core reset and
 			   re-enumerate the device. Only if it refuses is the LUN retired, so every later
 			   command is refused rather than sent to a device in an unknown state. Re-attach
 			   clears it. */
-			status = usbh_reenumerate();
+			status = usbh_dev_reset();
 			if ((status != RTK_SUCCESS) && (status != -RTK_ERR_BUSY)) {
 				msc->unit[msc->current_lun].error = MSC_ERROR;
 				msc->unit[msc->current_lun].retired = 1U;
@@ -639,8 +639,8 @@ static void usbh_msc_sof(usb_host_t *host)
 	   to retire a NAK run and to reach its own timeout. sof_tick is private to this wakeup,
 	   so the LUN budget kept in msc->lun_ms is not moved by it. */
 	if ((state == MSC_INIT) || (state == MSC_READ) || (state == MSC_WRITE) || (state == MSC_ABORT)) {
-		if (usbh_get_elapsed_ticks(host, msc->sof_tick) >= MSC_XFER_MAX_TIMEOUT_TICK) {
-			msc->sof_tick = usbh_get_tick(host);
+		if (usbh_tick_elapsed(host, msc->sof_tick) >= MSC_XFER_MAX_TIMEOUT_TICK) {
+			msc->sof_tick = usbh_tick_get(host);
 			usbh_notify(host, 0, &usbh_msc_driver);
 		}
 	}
@@ -723,8 +723,8 @@ static void usbh_msc_reopen_pipe(usb_host_t *host, usbh_pipe_t *pipe)
 	ep_desc.bmAttributes = USB_CH_EP_TYPE_BULK;
 	ep_desc.wMaxPacketSize = pipe->ep_mps;
 
-	usbh_close_pipe(host, pipe);
-	if (usbh_open_pipe(host, pipe, &ep_desc, &usbh_msc_driver) != RTK_SUCCESS) {
+	usbh_pipe_close(host, pipe);
+	if (usbh_pipe_open(host, pipe, &ep_desc, &usbh_msc_driver) != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Reopen EP%02x ch%d fail\n", ep_desc.bEndpointAddress, old_pipe);
 	} else {
 		pipe->max_timeout_tick = MSC_XFER_MAX_TIMEOUT_TICK;
@@ -777,7 +777,7 @@ static int usbh_msc_process_rw(u8 lun)
 		/* BOT §6.3.3: Reset Recovery rewinds the BOT FSM to BOT_CMD_SEND, so this call may have
 		   to rebuild the very same CBW. Always pass the parameters of the current chunk so it is
 		   re-issued unchanged instead of degenerating into a zero-length one. */
-		scsi_status = usbh_scsi_read(msc, lun, msc->hbot.cmd_address + msc->hbot.cmd_done_count, &msc->hbot.cmd_rx_buf[offset], chunk);
+		scsi_status = usbh_msc_scsi_read(msc, lun, msc->hbot.cmd_address + msc->hbot.cmd_done_count, &msc->hbot.cmd_rx_buf[offset], chunk);
 
 		if (scsi_status == RTK_SUCCESS) {
 			msc->hbot.cmd_done_count += chunk;
@@ -808,7 +808,7 @@ static int usbh_msc_process_rw(u8 lun)
 
 	case MSC_WRITE:
 		/* Same chunking and Reset Recovery retry path as MSC_READ, see the comment above. */
-		scsi_status = usbh_scsi_write(msc, lun, msc->hbot.cmd_address + msc->hbot.cmd_done_count, &msc->hbot.cmd_tx_buf[offset], chunk);
+		scsi_status = usbh_msc_scsi_write(msc, lun, msc->hbot.cmd_address + msc->hbot.cmd_done_count, &msc->hbot.cmd_tx_buf[offset], chunk);
 
 		if (scsi_status == RTK_SUCCESS) {
 			msc->hbot.cmd_done_count += chunk;
@@ -837,7 +837,7 @@ static int usbh_msc_process_rw(u8 lun)
 		break;
 
 	case MSC_REQUEST_SENSE:
-		scsi_status = usbh_scsi_request_sense(msc, lun, &unit->sense);
+		scsi_status = usbh_msc_scsi_request_sense(msc, lun, &unit->sense);
 
 		if (scsi_status == RTK_SUCCESS) {
 			unit->state = MSC_IDLE;
@@ -926,7 +926,7 @@ static usb_msc_bot_csw_state_t usbh_msc_decode_csw(usb_host_t *host)
 	usb_msc_bot_csw_state_t status = BOT_CSW_CMD_FAILED;
 
 	/*Checking if the transfer length is different than 13*/
-	if (usbh_get_last_transfer_size(host, &msc->bulk_in) != USB_MSC_CSW_LEN) {
+	if (usbh_pipe_get_xfer_len(host, &msc->bulk_in) != USB_MSC_CSW_LEN) {
 		/*(4) Hi > Dn (Host expects to receive data from the device,
 		Device intends to transfer no data)
 		(5) Hi > Di (Host expects to receive data from the device,
@@ -1063,7 +1063,7 @@ static int usbh_msc_xfer(u8 lun, u32 address, u8 *rx_buf, const u8 *tx_buf, u32 
 		return -RTK_ERR_IO;
 	}
 
-	if (host->connect_state != USBH_STATE_SETUP) {
+	if (!usbh_dev_is_ready(host)) {
 		return RTK_FAIL;
 	}
 
@@ -1089,7 +1089,7 @@ static int usbh_msc_xfer(u8 lun, u32 address, u8 *rx_buf, const u8 *tx_buf, u32 
 		msc->hbot.cmd_result = RTK_FAIL;
 		msc->current_lun = lun;
 		msc->unit[lun].state = cmd;
-		msc->sof_tick = usbh_get_tick(host);
+		msc->sof_tick = usbh_tick_get(host);
 		msc->state = cmd;
 	}
 	usb_os_exit_critical();
@@ -1147,7 +1147,7 @@ int usbh_msc_bot_process(usb_host_t *host, u8 lun)
 	switch (msc->hbot.state) {
 	case BOT_SEND_CBW:
 
-		if (bulk_out->xfer_state == USBH_EP_XFER_START) {
+		if (bulk_out->xfer_state == USBH_PIPE_XFER_START) {
 			cbw->field.bCBWLUN = lun;
 			cbw->field.dCBWTag = ++msc->hbot.tag_counter;
 			msc->hbot.csw_retried = 0U;
@@ -1155,31 +1155,31 @@ int usbh_msc_bot_process(usb_host_t *host, u8 lun)
 			msc->hbot.rx_data_len = 0U;
 			bulk_out->xfer_buf = cbw->data;
 			bulk_out->xfer_len = USB_MSC_CBW_LEN;
-			if (usbh_transfer_process(host, bulk_out) != RTK_SUCCESS) {
+			if (usbh_xfer_process(host, bulk_out) != RTK_SUCCESS) {
 				usbh_msc_start_failed(host, msc, bulk_out);
 			}
 		} else {
-			ret = usbh_transfer_process(host, bulk_out);
+			ret = usbh_xfer_process(host, bulk_out);
 
-			if ((ret == RTK_SUCCESS) && (bulk_out->xfer_state == USBH_EP_XFER_IDLE)) {
+			if ((ret == RTK_SUCCESS) && (bulk_out->xfer_state == USBH_PIPE_XFER_IDLE)) {
 				if (cbw->field.dCBWDataTransferLength != 0U) {
 					/* If there is Data Transfer Stage */
 					if (((cbw->field.bmCBWFlags) & USB_REQ_DIR_MASK) == USB_D2H) {
 						/* Data Direction is IN */
 						msc->hbot.state = BOT_DATA_IN;
-						bulk_in->xfer_state = USBH_EP_XFER_START;
+						bulk_in->xfer_state = USBH_PIPE_XFER_START;
 					} else {
 						/* Data Direction is OUT */
 						msc->hbot.state = BOT_DATA_OUT;
-						bulk_out->xfer_state = USBH_EP_XFER_START;
+						bulk_out->xfer_state = USBH_PIPE_XFER_START;
 					}
 				} else {
 					/* If there is NO Data Transfer Stage */
 					msc->hbot.state = BOT_RECEIVE_CSW;
-					bulk_in->xfer_state = USBH_EP_XFER_START;
+					bulk_in->xfer_state = USBH_PIPE_XFER_START;
 				}
 				usbh_notify(host, 0, &usbh_msc_driver);
-			} else if (bulk_out->xfer_state == USBH_EP_XFER_ERROR) {
+			} else if (bulk_out->xfer_state == USBH_PIPE_XFER_ERROR) {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "TX CBW err: %d\n", usbh_get_urb_state(host, bulk_out));
 				msc->hbot.state  = BOT_ERROR_OUT;
 				usbh_notify(host, 0, &usbh_msc_driver);
@@ -1188,23 +1188,23 @@ int usbh_msc_bot_process(usb_host_t *host, u8 lun)
 		break;
 	case BOT_DATA_IN:
 
-		if (bulk_in->xfer_state == USBH_EP_XFER_START) {
+		if (bulk_in->xfer_state == USBH_PIPE_XFER_START) {
 			bulk_in->xfer_buf = msc->hbot.pbuf;
 			bulk_in->xfer_len = cbw->field.dCBWDataTransferLength;
 			/* hbot.data serves the small commands; a READ(10) chunk is a whole number of blocks,
 			   so of packets, inside the bounce buffer */
 			bulk_in->xfer_buf_len = (msc->hbot.pbuf == msc->hbot.data) ? USBH_BOT_DATA_LENGTH : msc->hbot.bounce_len;
-			if (usbh_transfer_process(host, bulk_in) != RTK_SUCCESS) {
+			if (usbh_xfer_process(host, bulk_in) != RTK_SUCCESS) {
 				usbh_msc_start_failed(host, msc, bulk_in);
 			}
 		} else {
-			ret = usbh_transfer_process(host, bulk_in);
+			ret = usbh_xfer_process(host, bulk_in);
 
-			if ((ret == RTK_SUCCESS) && (bulk_in->xfer_state == USBH_EP_XFER_IDLE)) {
+			if ((ret == RTK_SUCCESS) && (bulk_in->xfer_state == USBH_PIPE_XFER_IDLE)) {
 				/* Capture the real Data-In size here: the CSW transfer reuses this pipe and
 				   overwrites the channel RX length. BOT §6.7 case 5 (Hi > Di) is legal, so the
 				   device may have sent less than dCBWDataTransferLength. */
-				msc->hbot.rx_data_len = usbh_get_last_transfer_size(host, bulk_in);
+				msc->hbot.rx_data_len = usbh_pipe_get_xfer_len(host, bulk_in);
 				if (msc->hbot.rx_data_len > cbw->field.dCBWDataTransferLength) {
 					/* BOT 6.7.2 case 7 (Hi < Di): the device sent more than the host asked for,
 					   a phase error resolved by Reset Recovery. The data are not passed on. */
@@ -1213,10 +1213,10 @@ int usbh_msc_bot_process(usb_host_t *host, u8 lun)
 					msc->hbot.state = BOT_UNRECOVERED_ERROR;
 				} else {
 					msc->hbot.state  = BOT_RECEIVE_CSW;
-					bulk_in->xfer_state = USBH_EP_XFER_START;
+					bulk_in->xfer_state = USBH_PIPE_XFER_START;
 				}
 				usbh_notify(host, 0, &usbh_msc_driver);
-			} else if (bulk_in->xfer_state == USBH_EP_XFER_ERROR) {
+			} else if (bulk_in->xfer_state == USBH_PIPE_XFER_ERROR) {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "RX data err: %d\n", usbh_get_urb_state(host, bulk_in));
 				msc->hbot.state  = BOT_ERROR_IN;
 				usbh_notify(host, 0, &usbh_msc_driver);
@@ -1225,20 +1225,20 @@ int usbh_msc_bot_process(usb_host_t *host, u8 lun)
 		break;
 	case BOT_DATA_OUT:
 
-		if (bulk_out->xfer_state == USBH_EP_XFER_START) {
+		if (bulk_out->xfer_state == USBH_PIPE_XFER_START) {
 			bulk_out->xfer_buf = msc->hbot.pbuf;
 			bulk_out->xfer_len = cbw->field.dCBWDataTransferLength;
-			if (usbh_transfer_process(host, bulk_out) != RTK_SUCCESS) {
+			if (usbh_xfer_process(host, bulk_out) != RTK_SUCCESS) {
 				usbh_msc_start_failed(host, msc, bulk_out);
 			}
 		} else {
-			ret = usbh_transfer_process(host, bulk_out);
+			ret = usbh_xfer_process(host, bulk_out);
 
-			if ((ret == RTK_SUCCESS) && (bulk_out->xfer_state == USBH_EP_XFER_IDLE)) {
+			if ((ret == RTK_SUCCESS) && (bulk_out->xfer_state == USBH_PIPE_XFER_IDLE)) {
 				msc->hbot.state = BOT_RECEIVE_CSW;
-				bulk_in->xfer_state = USBH_EP_XFER_START;
+				bulk_in->xfer_state = USBH_PIPE_XFER_START;
 				usbh_notify(host, 0, &usbh_msc_driver);
-			} else if (bulk_out->xfer_state == USBH_EP_XFER_ERROR) {
+			} else if (bulk_out->xfer_state == USBH_PIPE_XFER_ERROR) {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "TX data err: %d\n", usbh_get_urb_state(host, bulk_out));
 				msc->hbot.state  = BOT_ERROR_OUT;
 				usbh_notify(host, 0, &usbh_msc_driver);
@@ -1247,19 +1247,19 @@ int usbh_msc_bot_process(usb_host_t *host, u8 lun)
 		break;
 	case BOT_RECEIVE_CSW:
 
-		if (bulk_in->xfer_state == USBH_EP_XFER_START) {
+		if (bulk_in->xfer_state == USBH_PIPE_XFER_START) {
 			bulk_in->xfer_buf = csw->data;
 			bulk_in->xfer_len = USB_MSC_CSW_LEN;
 			bulk_in->xfer_buf_len = USBH_BOT_CSW_BUF_LENGTH;
-			if (usbh_transfer_process(host, bulk_in) != RTK_SUCCESS) {
+			if (usbh_xfer_process(host, bulk_in) != RTK_SUCCESS) {
 				usbh_msc_start_failed(host, msc, bulk_in);
 			}
 		} else {
-			/* Drive the CSW like every other bulk phase: usbh_transfer_process() bounds a NAK
+			/* Drive the CSW like every other bulk phase: usbh_xfer_process() bounds a NAK
 			   run and retries transaction errors, so neither can park this state forever. */
-			ret = usbh_transfer_process(host, bulk_in);
+			ret = usbh_xfer_process(host, bulk_in);
 
-			if ((ret == RTK_SUCCESS) && (bulk_in->xfer_state == USBH_EP_XFER_IDLE)) {
+			if ((ret == RTK_SUCCESS) && (bulk_in->xfer_state == USBH_PIPE_XFER_IDLE)) {
 				CSW_Status = usbh_msc_decode_csw(host);
 
 				if (CSW_Status == BOT_CSW_PHASE_ERROR) {
@@ -1270,7 +1270,7 @@ int usbh_msc_bot_process(usb_host_t *host, u8 lun)
 				} else {
 					msc->hbot.state = BOT_SEND_CBW;
 					msc->hbot.cmd_state = BOT_CMD_SEND;
-					bulk_out->xfer_state = USBH_EP_XFER_START;
+					bulk_out->xfer_state = USBH_PIPE_XFER_START;
 					if (CSW_Status == BOT_CSW_CMD_PASSED) {
 						status = RTK_SUCCESS;
 					} else {
@@ -1278,7 +1278,7 @@ int usbh_msc_bot_process(usb_host_t *host, u8 lun)
 					}
 				}
 				usbh_notify(host, 0, &usbh_msc_driver);
-			} else if (bulk_in->xfer_state == USBH_EP_XFER_ERROR) {
+			} else if (bulk_in->xfer_state == USBH_PIPE_XFER_ERROR) {
 				/* BOT 6.7.2 / 5.3.3: a failed CSW read gets one ClearFeature(HALT) on Bulk-In and
 				   one more read; a second failure is resolved by Reset Recovery. */
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "RX CSW err: %d\n", usbh_get_urb_state(host, bulk_in));
@@ -1304,7 +1304,7 @@ int usbh_msc_bot_process(usb_host_t *host, u8 lun)
 			} else {
 				/* BOT 6.7.2: after a Data-In STALL the CSW is read from the cleared Bulk-In. */
 				msc->hbot.state = BOT_RECEIVE_CSW;
-				bulk_in->xfer_state = USBH_EP_XFER_START;
+				bulk_in->xfer_state = USBH_PIPE_XFER_START;
 			}
 		} else if (error != -RTK_ERR_BUSY) {
 			status = usbh_msc_clear_halt_failed(msc);
@@ -1322,11 +1322,11 @@ int usbh_msc_bot_process(usb_host_t *host, u8 lun)
 				msc->hbot.reset_recovery = 0U;
 				msc->hbot.state = BOT_SEND_CBW;
 				msc->hbot.cmd_state = BOT_CMD_SEND;
-				bulk_out->xfer_state = USBH_EP_XFER_START;
+				bulk_out->xfer_state = USBH_PIPE_XFER_START;
 			} else {
 				/* BOT 6.7.3: after a Data-Out STALL only Bulk-Out is cleared, then the CSW is read. */
 				msc->hbot.state = BOT_RECEIVE_CSW;
-				bulk_in->xfer_state = USBH_EP_XFER_START;
+				bulk_in->xfer_state = USBH_PIPE_XFER_START;
 			}
 		} else if (error != -RTK_ERR_BUSY) {
 			status = usbh_msc_clear_halt_failed(msc);
@@ -1367,34 +1367,27 @@ int usbh_msc_bot_process(usb_host_t *host, u8 lun)
 
 /**
   * @brief  Check if the MSC function is ready
-  * @retval Status
+  * @retval true if ready, false otherwise
   */
-int usbh_msc_is_ready(void)
+bool usbh_msc_is_ready(void)
 {
 	usbh_msc_host_t *msc = &usbh_msc_host;
 	usb_host_t *host;
-	int res;
 
 	/* Read once: a detach or deinit on another task may clear it between two reads */
 	host = msc->host;
 	if (host == NULL) {
-		return 0;
+		return false;
 	}
 
-	if ((host->connect_state == USBH_STATE_SETUP) && (msc->state == MSC_IDLE)) {
-		res = 1;
-	} else {
-		res = 0;
-	}
-
-	return res;
+	return ((usbh_dev_is_ready(host)) && (msc->state == MSC_IDLE));
 }
 
 /**
   * @brief  Get the Max LUN supported
   * @retval logical Unit Number supported
   */
-u32 usbh_msc_get_max_lun(void)
+u32 usbh_msc_get_lun_count(void)
 {
 	usbh_msc_host_t *msc = &usbh_msc_host;
 	usb_host_t *host;
@@ -1405,7 +1398,7 @@ u32 usbh_msc_get_max_lun(void)
 		return 0;
 	}
 
-	if ((host->connect_state == USBH_STATE_SETUP) && (msc->state == MSC_IDLE)) {
+	if ((usbh_dev_is_ready(host)) && (msc->state == MSC_IDLE)) {
 		return msc->max_lun;
 	}
 
@@ -1415,31 +1408,24 @@ u32 usbh_msc_get_max_lun(void)
 /**
   * @brief  Check whether a LUN is ready
   * @param  lun: logical Unit Number
-  * @retval Lun status (0: not ready / 1: ready)
+  * @retval true if the LUN is ready, false otherwise
   */
-int usbh_msc_unit_is_ready(u8 lun)
+bool usbh_msc_is_unit_ready(u8 lun)
 {
 	usbh_msc_host_t *msc = &usbh_msc_host;
 	usb_host_t *host;
-	int res;
 
 	if (lun >= USBH_MSC_MAX_LUN) {
-		return 0;
+		return false;
 	}
 
 	/* Read once: a detach or deinit on another task may clear it between two reads */
 	host = msc->host;
 	if (host == NULL) {
-		return 0;
+		return false;
 	}
 
-	if ((host->connect_state == USBH_STATE_SETUP) && (msc->unit[lun].error == MSC_OK)) {
-		res = 1;
-	} else {
-		res = 0;
-	}
-
-	return res;
+	return ((usbh_dev_is_ready(host)) && (msc->unit[lun].error == MSC_OK));
 }
 
 /**
@@ -1463,7 +1449,7 @@ int usbh_msc_get_lun_info(u8 lun, usbh_msc_lun_t *info)
 		return RTK_FAIL;
 	}
 
-	if ((host->connect_state == USBH_STATE_SETUP) && (USBH_MSC_MAX_LUN > lun)) {
+	if ((usbh_dev_is_ready(host)) && (USBH_MSC_MAX_LUN > lun)) {
 		usb_os_memcpy((void *)info, (const void *)&msc->unit[lun], sizeof(usbh_msc_lun_t));
 		return RTK_SUCCESS;
 	} else {
@@ -1567,7 +1553,7 @@ int usbh_msc_init(const usbh_msc_cb_t *cb, const usbh_msc_config_t *cfg)
 		goto exit_free;
 	}
 
-	ret = usbh_register_class(&usbh_msc_driver);
+	ret = usbh_class_register(&usbh_msc_driver);
 	if (ret != RTK_SUCCESS) {
 		goto exit_free;
 	}
@@ -1605,17 +1591,17 @@ void usbh_msc_deinit(void)
 	/* First, before anything is freed: on RTK_SUCCESS no attach/setup/process/detach of this
 	 * class runs any more, an EP0 request it left in flight is halted and a sof() still
 	 * running on another core is waited out. Anything else means nothing was released. */
-	if (usbh_unregister_class(&usbh_msc_driver) != RTK_SUCCESS) {
+	if (usbh_class_unregister(&usbh_msc_driver) != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Deinit refused\n");
 		return;
 	}
 
 	if (bulk_in->pipe_num != 0U) {
-		usbh_close_pipe(host, bulk_in);
+		usbh_pipe_close(host, bulk_in);
 	}
 
 	if (bulk_out->pipe_num != 0U) {
-		usbh_close_pipe(host, bulk_out);
+		usbh_pipe_close(host, bulk_out);
 	}
 
 	usb_os_mfree((void *)msc->max_lun_buf);

@@ -107,7 +107,7 @@
 #endif
 
 /* The record thread reads the table in whole chunks, refer to example_usbd_composite_hid_uac_record_thread() */
-_Static_assert((sizeof(usbd_uac_record_audio_data) % COMP_UAC_RECORD_CHUNK_LEN) == 0U, "UAC record data len");
+_Static_assert((sizeof(uac_record_audio_data) % COMP_UAC_RECORD_CHUNK_LEN) == 0U, "UAC record data len");
 #endif
 
 /* Private types -------------------------------------------------------------*/
@@ -219,7 +219,7 @@ static const usbd_uac_config_t uac_class_cfg = {
 /* HID user callbacks */
 static void composite_hid_cb_init(void) { }
 static void composite_hid_cb_deinit(void) { }
-static const usbd_hid_usr_cb_t composite_hid_usr_cb = {
+static const usbd_hid_cb_t composite_hid_usr_cb = {
 	.init = composite_hid_cb_init,
 	.deinit = composite_hid_cb_deinit,
 	.setup = NULL,
@@ -284,7 +284,7 @@ static rtos_mutex_t composite_record_lock = NULL;
 /* 1: the whole composite stack is up, the class APIs may be called. Cleared before any
  * tear down, so a non-zero value also implies the locks are valid.
  * usbd_uac_deinit()/usbd_hid_deinit() free the ring buffers, semaphores and TX buffer that
- * usbd_uac_read(), usbd_uac_transmit_data() and usbd_hid_send_data() dereference; the bounded wait this replaces only covered playback, and could time out
+ * usbd_uac_read(), usbd_uac_write() and usbd_hid_send_report() dereference; the bounded wait this replaces only covered playback, and could time out
  * anyway, which is what happens on SMP where the workers run on the other core. */
 static volatile u8 composite_stack_ready;
 /* Raised before the hotplug thread asks for the locks, so every worker session loop
@@ -361,7 +361,7 @@ static u32 composite_uac_cb_get_play_feedback(void)
 	u32 nominal = (u32)(((u64)uac_play_format.sampling_freq << USBD_UAC_PLAY_FEEDBACK_FRACTION_BITS) / 1000U);
 	s32 max_delta = (s32)(nominal >> 10);
 	s32 target_us = (s32)(USBD_UAC_DEFAULT_PLAY_BUF_COUNT * 1000U / 2U);
-	s32 level_us = (s32)usbd_uac_get_read_frame_time_in_us();
+	s32 level_us = (s32)usbd_uac_get_read_frame_time_us();
 	s32 diff;
 
 #ifdef CONFIG_SUPPORT_AUDIO_FOR_USB
@@ -462,7 +462,7 @@ static void composite_uac_cb_format_changed(u32 sampling_freq, u8 channel_count,
 		 * player thread restarts with the new format, re-arming the ISOC OUT EP. Without
 		 * this the read loop live-locks on stale data after a mid-stream rate change. */
 		audio_task_stop = 1;
-		usbd_uac_stop_play();
+		usbd_uac_stop_playback();
 		rtos_sema_give(uac_ready_sema);
 	}
 }
@@ -535,7 +535,7 @@ static void example_audio_track_play(void)
 
 	/* Sizes the ISOC OUT ring buffer and arms the endpoint. Required on every build: without
 	   it no OUT packet is ever received, so it must not depend on the audio framework. */
-	while (usbd_uac_start_play() != RTK_SUCCESS) {
+	while (usbd_uac_start_playback() != RTK_SUCCESS) {
 		if (audio_task_stop || composite_teardown || composite_app.quit) {
 			return;
 		}
@@ -588,7 +588,7 @@ static void example_audio_track_play(void)
 		audio_track = AudioTrack_Create();
 		if (!audio_track) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Create AudioTrack fail\n");
-			usbd_uac_stop_play();
+			usbd_uac_stop_playback();
 			return;
 		}
 
@@ -607,7 +607,7 @@ static void example_audio_track_play(void)
 		track_config.buffer_bytes = track_buf_size;
 		if (AudioTrack_Init(audio_track, &track_config, AUDIO_OUTPUT_FLAG_NONE) != AUDIO_OK) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Audio track init fail\n");
-			usbd_uac_stop_play();
+			usbd_uac_stop_playback();
 			AudioTrack_Destroy(audio_track);
 			return;
 		}
@@ -620,7 +620,7 @@ static void example_audio_track_play(void)
 
 		if (AudioTrack_Start(audio_track) != AUDIO_OK) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Audio track start fail\n");
-			usbd_uac_stop_play();
+			usbd_uac_stop_playback();
 			AudioTrack_Destroy(audio_track);
 			return;
 		}
@@ -658,7 +658,7 @@ static void example_audio_track_play(void)
 			}
 		}
 
-		usbd_uac_stop_play();
+		usbd_uac_stop_playback();
 
 #if defined(CONFIG_USBD_UAC_PLAY_FEEDBACK) && defined(CONFIG_SUPPORT_AUDIO_FOR_USB)
 		/* Back to the OUT ring level */
@@ -688,7 +688,7 @@ static void example_audio_track_play(void)
 		}
 	}
 
-	usbd_uac_stop_play();
+	usbd_uac_stop_playback();
 #endif
 	RTK_LOGS(TAG, RTK_LOG_DEBUG, "Audio track demo stop\n\n\n");
 }
@@ -736,7 +736,7 @@ static int composite_hid_send_key_report(u8 report)
 	int ret;
 
 	for (;;) {
-		ret = usbd_hid_send_data(&report, USBD_HID_HEADSET_REPORT_LEN);
+		ret = usbd_hid_send_report(&report, USBD_HID_HEADSET_REPORT_LEN);
 		if ((ret != -RTK_ERR_BUSY) || (wait_ms >= COMP_HID_KEY_REPORT_TIMEOUT_MS)) {
 			break;
 		}
@@ -785,7 +785,7 @@ static int composite_hid_key_click(u8 key)
 }
 
 #if COMP_UAC_ENABLE_RECORD
-/* Mic loopback record: replays usbd_uac_record_audio_data[] as the mic input, once triggered */
+/* Mic loopback record: replays uac_record_audio_data[] as the mic input, once triggered */
 static void example_usbd_composite_hid_uac_record_thread(void *param)
 {
 	u32 offset;
@@ -824,7 +824,7 @@ static void example_usbd_composite_hid_uac_record_thread(void *param)
 			/* One ms of audio per call, the class cuts it into per-(micro)frame packets. A live
 			   stream tolerates a lost chunk, so keep the 1 ms pace and only report the first
 			   failure of a run, to stay off the console at 1 kHz. */
-			if (usbd_uac_transmit_data(&usbd_uac_record_audio_data[offset], COMP_UAC_RECORD_CHUNK_LEN) != RTK_SUCCESS) {
+			if (usbd_uac_write(&uac_record_audio_data[offset], COMP_UAC_RECORD_CHUNK_LEN) < 0) {
 				if (tx_fail_cnt == 0U) {
 					RTK_LOGS(TAG, RTK_LOG_WARN, "UAC record tx fail\n");
 				}
@@ -833,7 +833,7 @@ static void example_usbd_composite_hid_uac_record_thread(void *param)
 				tx_fail_cnt = 0U;
 			}
 			offset += COMP_UAC_RECORD_CHUNK_LEN;
-			if (offset >= usbd_uac_record_data_len) {
+			if (offset >= uac_record_data_len) {
 				offset = 0U;
 			}
 			rtos_time_delay_ms(COMP_UAC_RECORD_CHUNK_DELAY_MS);
@@ -1059,11 +1059,11 @@ static void example_usbd_composite_hotplug_thread(void *param)
 			}
 			if (composite_attach_status == USBD_ATTACH_STATUS_DETACHED) {
 				RTK_LOGS(TAG, RTK_LOG_INFO, "DETACHED\n");
-				/* Ask the workers to leave their loops first: stop_play()/stop_record()
+				/* Ask the workers to leave their loops first: usbd_uac_stop_playback()/stop_record()
 				   unblock a pending usbd_uac_read(), the flags end the loops. Both must
 				   run while the stack is still up, so before the locks. */
 				audio_task_stop = 1;
-				usbd_uac_stop_play();
+				usbd_uac_stop_playback();
 				/* Each path holds its lock for as long as it is inside the class APIs,
 				   so taking them all here waits until none of them is: unlike a bounded
 				   wait, this can not time out and deinit under a caller that is still
@@ -1121,7 +1121,7 @@ static void example_usbd_composite_hotplug_thread(void *param)
 static int composite_stop_workers(u32 count)
 {
 	audio_task_stop = 1;
-	usbd_uac_stop_play();
+	usbd_uac_stop_playback();
 
 	rtos_sema_give(uac_ready_sema);
 #if COMP_UAC_ENABLE_RECORD
@@ -1375,7 +1375,7 @@ int example_usbd_composite_hid_uac_stop(void)
 		return usb_app_ctx_wait_idle(&composite_app);
 	}
 
-	/* The stack is still up, so stop_play() in there unblocks a pending usbd_uac_read() */
+	/* The stack is still up, so usbd_uac_stop_playback() in there unblocks a pending usbd_uac_read() */
 	if (composite_stop_workers(composite_worker_cnt) != RTK_SUCCESS) {
 		/* A worker is still on the stack: keep everything, the app stays STOPPING */
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Stop timeout\n");

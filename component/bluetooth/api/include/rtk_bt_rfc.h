@@ -15,6 +15,12 @@ extern "C"
 {
 #endif /* __cplusplus */
 
+/** @addtogroup BT_Constants BT Constants
+ * @{
+ */
+/** @addtogroup BT_RFC_Constants BT RFC Constants
+ * @{
+ */
 /**************************************** Macros ***************************************/
 /**
  * @def       RTK_BT_RFC_DEMO_DEFAULT_MTU_SIZE
@@ -26,7 +32,19 @@ extern "C"
  * @brief     Default number of RFCOMM credits given to the remote device when a connection is requested.
  */
 #define RTK_BT_RFC_DEMO_DEFAULT_CREDITS 10
+/**
+ * @}
+ */
+/**
+ * @}
+ */
 /************************************** Data Types *************************************/
+/** @addtogroup BT_Types BT Types
+ * @{
+ */
+/** @addtogroup BT_RFC_Types BT RFC Types
+ * @{
+ */
 
 /**
  * @typedef   rtk_bt_rfc_uuid_type_t
@@ -39,7 +57,7 @@ typedef enum {
 } rtk_bt_rfc_uuid_type_t;
 
 /**
- * @typedef   rtk_bt_rfc_uuid_data_t
+ * @union     rtk_bt_rfc_uuid_data_t
  * @brief     Bluetooth RFCOMM UUID data.
  */
 typedef union {
@@ -138,11 +156,18 @@ typedef struct {
 	uint8_t credits;               /*!< Number of RFCOMM credits the local device gives to the remote device. */
 } rtk_bt_rfc_credits_give_t;
 
-/********************************* Functions Declaration *******************************/
 /**
- * @defgroup  bt_rfc BT RFC APIs
- * @brief     BT RFC related function APIs.
- * @ingroup   BT_APIs
+ * @}
+ */
+/**
+ * @}
+ */
+
+/********************************* Functions Declaration *******************************/
+/** @addtogroup BT_Functions BT Functions
+ * @{
+ */
+/** @addtogroup BT_RFC_Functions BT RFC Functions
  * @{
  */
 
@@ -191,6 +216,9 @@ uint16_t rtk_bt_rfc_data_send(rtk_bt_rfc_data_send_t *p_data_send_t);
  */
 uint16_t rtk_bt_rfc_credits_give(rtk_bt_rfc_credits_give_t *p_credits_give_t);
 
+/**
+ * @}
+ */
 /**
  * @}
  */

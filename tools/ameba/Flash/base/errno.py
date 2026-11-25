@@ -13,11 +13,12 @@ _SYS_ERR_BASE = 0x0100
 class ErrType(enum.Enum):
     OK = 0X00
 
-    DEV_ERR_BASE = _DEV_ERR_BASE
+    DEV_ERR_BASE = _DEV_ERR_BASE  # also the device ERR_FAIL (general failure)
 
     DEV_BUSY = _DEV_ERR_BASE + 0X1  # Busy
     DEV_TIMEOUT = _DEV_ERR_BASE + 0X2  # Operation timeout
-    DEV_FULL = _DEV_ERR_BASE + 0X4  # Operation timeout
+    DEV_HARDWARE = _DEV_ERR_BASE + 0X3  # Hardware error
+    DEV_FULL = _DEV_ERR_BASE + 0X4  # Frame buffer full
     DEV_INVALID = _DEV_ERR_BASE + 0x5  # device invalid
     DEV_LENGTH = _DEV_ERR_BASE + 0x6  # device length
     DEV_CHECKSUM = _DEV_ERR_BASE + 0x7  # device checksum
@@ -27,6 +28,8 @@ class ErrType(enum.Enum):
     DEV_NAND_BIT_FLIP_WARNING = _DEV_ERR_BASE + 0xB  # device nand bit flip warning
     DEV_NAND_BIT_FLIP_ERROR = _DEV_ERR_BASE + 0xC  # device nand bit flip error
     DEV_NAND_BIT_FLIP_FATAL = _DEV_ERR_BASE + 0xD  # device nand bit flip fatal
+    DEV_KEY_GEN = _DEV_ERR_BASE + 0xE  # key generation failure
+    DEV_KEY_VERIFY = _DEV_ERR_BASE + 0xF  # key verify failure
 
     SYS_ERR_BASE = _SYS_ERR_BASE
     SYS_TIMEOUT = _SYS_ERR_BASE + 0x02  # Operation timeout

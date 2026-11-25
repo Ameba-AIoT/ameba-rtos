@@ -82,6 +82,7 @@ a = Analysis(
         'base.spic_addr_mode',
         'base.rtk_flash_type',
         'base.efuse_data',
+        'base.port_scanner',
         'app',
         'app.mp_flashtool_main',
         'app.port_progress_widget',

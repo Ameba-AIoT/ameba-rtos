@@ -1006,6 +1006,18 @@ struct bt_hci_cp_le_write_suggested_data_len {
 	uint16_t max_tx_time;
 } __attribute__((packed));
 
+#define BT_HCI_OP_LE_READ_LOCAL_P256_PUBLIC_KEY  BT_OP(BT_OGF_LE, 0x0025) /* 0x2025 */
+
+#define BT_HCI_OP_LE_GENERATE_DHKEY_V1           BT_OP(BT_OGF_LE, 0x0026) /* 0x2026 */
+#define BT_HCI_OP_LE_GENERATE_DHKEY_V2           BT_OP(BT_OGF_LE, 0x005e) /* 0x205e */
+
+#define BT_HCI_LE_KEY_TYPE_GENERATED             0x00
+#define BT_HCI_LE_KEY_TYPE_DEBUG                 0x01
+struct bt_hci_cp_le_generate_dhkey {
+	uint8_t key[64];
+	uint8_t key_type;
+} __attribute__((packed));
+
 #define BT_HCI_OP_LE_ADD_DEV_TO_RL              BT_OP(BT_OGF_LE, 0x0027) /* 0x2027 */
 struct bt_hci_cp_le_add_dev_to_rl {
 	uint8_t  id_type;
@@ -1937,6 +1949,21 @@ struct bt_hci_evt_le_data_len_change {
 	uint16_t max_tx_time;
 	uint16_t max_rx_octets;
 	uint16_t max_rx_time;
+} __attribute__((packed));
+
+#define BT_HCI_EVT_LE_READ_LOCAL_P256_PUB_KEY_CMPL         0x08
+struct bt_hci_evt_le_read_local_p256_pub_key_cmpl {
+	uint8_t subevent;
+	uint8_t status;
+	uint8_t key_x[32];
+	uint8_t key_y[32];
+} __attribute__((packed));
+
+#define BT_HCI_EVT_LE_GENERATE_DHKEY_CMPL                  0x09
+struct bt_hci_evt_le_generate_dhkey {
+	uint8_t subevent;
+	uint8_t status;
+	uint8_t dhkey[32];
 } __attribute__((packed));
 
 #define BT_HCI_EVT_LE_ENHANCED_CONNECTION_COMPLETE         0x0A

@@ -5,7 +5,7 @@
 #ifdef CONFIG_FATFS_USB_HOST
 #include "usbh_msc.h"
 
-extern ll_diskio_drv USB_disk_Driver;
+extern ll_diskio_drv usbh_msc_disk_driver;
 
 static void fatfs_msc_cb_attached(void);
 static void fatfs_msc_cb_setup(void);
@@ -46,8 +46,8 @@ static const usbh_msc_config_t fatfs_msc_class_cfg = {
 	/* buf_size left 0 takes the class default. */
 };
 
-static const usbh_user_cb_t fatfs_usbh_usr_cb = {
-	.process = fatfs_usbh_cb_process
+static const usbh_cb_t fatfs_usbh_usr_cb = {
+	.event = fatfs_usbh_cb_process
 };
 
 static void fatfs_msc_cb_attached(void)
@@ -70,13 +70,13 @@ static void fatfs_usbh_cb_process(usb_host_t *host, u8 msg)
 	UNUSED(host);
 
 	switch (msg) {
-	case USBH_MSG_DISCONNECTED:
+	case USBH_EVENT_DISCONNECTED:
 		fatfs_msc_is_ready = 0;
 		if (fatfs_hostplug_usr_cb) {
 			fatfs_hostplug_usr_cb(HOTPULG_OUT);
 		}
 		break;
-	case USBH_MSG_CONNECTED:
+	case USBH_EVENT_CONNECTED:
 		break;
 	default:
 		break;
@@ -127,7 +127,7 @@ int fatfs_usbh_init(void)
 		// Register disk driver to Fatfs
 		VFS_DBG(VFS_INFO, "Register usbh driver to Fatfs.");
 
-		fatfs_second_flash_param.drv_num = FATFS_RegisterDiskDriver(&USB_disk_Driver);
+		fatfs_second_flash_param.drv_num = FATFS_RegisterDiskDriver(&usbh_msc_disk_driver);
 
 		if (fatfs_second_flash_param.drv_num < 0) {
 			VFS_DBG(VFS_ERROR, "Rigester usbh driver to FATFS fail.");

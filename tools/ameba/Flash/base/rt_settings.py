@@ -74,6 +74,12 @@ class RtSettings():
         # verified, so an interrupted download leaves the device unbootable. Enabled by default.
         self.dis_boot_guard_burn = bool(_c("DisBootGuardBurn", False))
 
+        # Auto detect flash type: if the flash info of the first QUERY is invalid, ask the
+        # flashloader to re-initialize SPIC with the other flash type (NOR <-> NAND) and, if
+        # that one is valid, program it into the boot select of logical OTP before download.
+        # Only ICs listed in boot_flash_type_config.py support it. Disabled by default.
+        self.auto_flash_type_detect = bool(_c("AutoFlashTypeDetect", False))
+
         # ── GUIRunTime: download target / GUI runtime fields ───────────────
         self.profile = _g("Profile", "")
         self.port = _g("Port", [])
@@ -128,6 +134,7 @@ class RtSettings():
                 "FlashProtectionProcess": self.flash_protection_process,
                 "SplitSingleImageByLayout": self.split_single_image_by_layout,
                 "DisBootGuardBurn": self.dis_boot_guard_burn,
+                "AutoFlashTypeDetect": self.auto_flash_type_detect,
             },
             # ── GUIRunTime: download target / GUI runtime fields ───────────
             "GUIRunTime": {

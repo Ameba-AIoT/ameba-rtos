@@ -203,8 +203,8 @@ static const usbh_cdc_acm_cb_t cdc_acm_usr_cb = {
 	.line_coding_changed = cdc_acm_cb_line_coding_changed
 };
 
-static const usbh_user_cb_t usbh_usr_cb = {
-	.process = cdc_acm_cb_process
+static const usbh_cb_t usbh_usr_cb = {
+	.event = cdc_acm_cb_process
 };
 
 static volatile u64 tx_loop_cnt = 0, tx_loop_sub_cnt = 0;
@@ -455,11 +455,11 @@ static void cdc_acm_cb_process(usb_host_t *host, u8 msg)
 	UNUSED(host);
 
 	switch (msg) {
-	case USBH_MSG_DISCONNECTED:
+	case USBH_EVENT_DISCONNECTED:
 		cdc_acm_is_ready = 0;
 		break;
 
-	case USBH_MSG_CONNECTED:
+	case USBH_EVENT_CONNECTED:
 		break;
 
 	default:
@@ -718,7 +718,7 @@ static void cdc_acm_notify_test(void)
 			break;
 		}
 		cdc_acm_drain_sema(cdc_acm_notify_sema);
-		ret = usbh_cdc_acm_notify_receive(cdc_acm_notify_rx_buf, USBH_CDC_ACM_NOTIFY_BUF_SIZE);
+		ret = usbh_cdc_acm_receive_notification(cdc_acm_notify_rx_buf, USBH_CDC_ACM_NOTIFY_BUF_SIZE);
 		cdc_acm_unlock_stack();
 		if (ret != RTK_SUCCESS) {
 			/* Nothing was armed, so no notification can come */

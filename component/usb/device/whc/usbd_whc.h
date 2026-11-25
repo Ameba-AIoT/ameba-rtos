@@ -38,15 +38,15 @@ extern "C" {
 #define USBD_NIC_PID                     0x8006U  /**< NIC mode PID (used to patch device descriptor at runtime). */
 #endif
 
-#define USBD_WHC_MFG_STRING              "Realtek"               /**< Manufacturer string. */
+#define USBD_WHC_MFG_STR              "Realtek"               /**< Manufacturer string. */
 #ifdef CONFIG_RLE1509
-#define USBD_WHC_PROD_STRING             "802.11be WLAN Adapter" /**< Product string. */
+#define USBD_WHC_PROD_STR             "802.11be WLAN Adapter" /**< Product string. */
 #else
-#define USBD_WHC_PROD_STRING             "802.11ax WLAN Adapter" /**< Product string. */
+#define USBD_WHC_PROD_STR             "802.11ax WLAN Adapter" /**< Product string. */
 #endif
-#define USBD_WHC_BT_STRING               "Bluetooth Radio"       /**< Bluetooth interface string. */
+#define USBD_WHC_BT_STR               "Bluetooth Radio"       /**< Bluetooth interface string. */
 #ifdef CONFIG_WHC_ETH
-#define USBD_WHC_ETH_STRING              "Ethernet Adapter"      /**< Ethernet interface string. */
+#define USBD_WHC_ETH_STR              "Ethernet Adapter"      /**< Ethernet interface string. */
 #endif
 
 #define USBD_WHC_HS_BULK_MPS             512U  /* High speed BULK IN & OUT maximum packet size */
@@ -260,12 +260,12 @@ typedef struct {
 	rtos_sema_t reset_sema;
 	usbd_whc_ep_t in_ep[USB_MAX_ENDPOINTS];
 	usbd_whc_ep_t out_ep[USB_MAX_ENDPOINTS];
-	usbd_otp_t otp;
+	usbd_whc_otp_t otp;
 	usb_setup_req_t ctrl_req;
 	u8 ctrl_req_pending; /* 1 if ctrl_req is waiting for its EP0 OUT data stage */
-	u8 bt_str_idx;       /* BT string index from usbd_add_string(), 0 if none */
+	u8 bt_str_idx;       /* BT string index from usbd_add_str(), 0 if none */
 #ifdef CONFIG_WHC_ETH
-	u8 eth_str_idx;      /* Ethernet string index from usbd_add_string(), 0 if none */
+	u8 eth_str_idx;      /* Ethernet string index from usbd_add_str(), 0 if none */
 #endif
 #ifndef CONFIG_WHC_ETH
 	u8  bt_sco_alt; /* BT SCO is the only interface which owns alternate settings */
@@ -309,7 +309,7 @@ void usbd_whc_deinit(void);
  * @param[in] len: Length of the data in bytes.
  * @return 0 on success, non-zero on failure.
  */
-int usbd_whc_transmit_ctrl_data(u8 *buf, u16 len);
+int usbd_whc_ctrl_transmit(u8 *buf, u16 len);
 
 /**
  * @brief Transmits data to the host.
@@ -319,7 +319,7 @@ int usbd_whc_transmit_ctrl_data(u8 *buf, u16 len);
  * @param[in] userdata: userdata from application for each endpoint.
  * @return 0 on success, non-zero on failure.
  */
-int usbd_whc_transmit_data(u8 ep_addr, u8 *buf, u32 len, void *userdata);
+int usbd_whc_transmit(u8 ep_addr, u8 *buf, u32 len, void *userdata);
 
 /**
  * @brief Prepares to receive non-control OUT data.
@@ -333,15 +333,13 @@ int usbd_whc_transmit_data(u8 ep_addr, u8 *buf, u32 len, void *userdata);
  * @param[in] userdata: userdata from application for each endpoint.
  * @return 0 on success, non-zero on failure.
  */
-int usbd_whc_receive_data(u8 ep_addr, u8 *buf, u32 len, void *userdata);
+int usbd_whc_receive(u8 ep_addr, u8 *buf, u32 len, void *userdata);
 
 /**
- * @brief Checks whether the BT is enbaled.
- * @return
- *        - 1: BT is enbaled.
- *        - 0: BT is disabled.
+ * @brief Checks whether BT is enabled.
+ * @return true if BT is enabled, false otherwise.
  */
-u8 usbd_whc_is_bt_en(void);
+bool usbd_whc_is_bt_enabled(void);
 
 /** @} End of Device_WHC_Functions group */
 /** @} End of USB_Device_Functions group */

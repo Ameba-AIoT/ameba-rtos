@@ -108,7 +108,7 @@ typedef struct {
 	 * @param[in] len: Length of the valid received data in bytes.
 	 */
 	void (*received)(u8 *buf, u32 len);
-} usbh_cdc_ncm_state_cb_t;
+} usbh_cdc_ncm_cb_t;
 
 typedef struct {
 	usbh_pipe_t pipe;                         /**< USB Host pipe handle. */
@@ -125,7 +125,7 @@ typedef struct {
  * @brief Structure representing the CDC NCM host instance.
  */
 typedef struct {
-	const usbh_cdc_ncm_state_cb_t *cb;               /**< User callback structure */
+	const usbh_cdc_ncm_cb_t *cb;               /**< User callback structure */
 	usb_host_t *host;                                /**< USB Host core handle */
 	u8 *dongle_ctrl_buf;                             /**< Buffer for control transfers (cache aligned) */
 
@@ -278,7 +278,7 @@ typedef struct {
  *                 See @ref usbh_cdc_ncm_config_t.
  * @return 0 (RTK_SUCCESS) on success, non-zero on failure.
  */
-int usbh_cdc_ncm_init(const usbh_cdc_ncm_state_cb_t *cb, const usbh_cdc_ncm_config_t *cfg);
+int usbh_cdc_ncm_init(const usbh_cdc_ncm_cb_t *cb, const usbh_cdc_ncm_config_t *cfg);
 
 /**
  * @brief  De-initializes the CDC NCM host class driver and releases resources.
@@ -301,14 +301,13 @@ int usbh_cdc_ncm_choose_config(usb_host_t *host);
  * @param[in] host: USB Host Handle.
  * @return RTK_SUCCESS if both NCM interfaces are found, -RTK_ERR_BADARG otherwise.
  */
-int usbh_cdc_ncm_check_config_desc(usb_host_t *host);
+int usbh_cdc_ncm_check_config(usb_host_t *host);
 
 /**
  * @brief  Checks if the CDC NCM device is enumerated and configured on the USB bus.
- * @return 1: USB configured (ready for control/bulk transfer).
- *         0: Device not enumerated or not yet configured.
+ * @return true if configured (ready for control/bulk transfer), false if not enumerated or not yet configured.
  */
-u8 usbh_cdc_ncm_is_configured(void);
+bool usbh_cdc_ncm_is_ready(void);
 
 /**
  * @brief  Transmits an Ethernet packet to the device via the Bulk OUT endpoint.
@@ -321,20 +320,20 @@ u8 usbh_cdc_ncm_is_configured(void);
  *         section or the PMU suspend flow, where the task can not block.
  * @return 0 (RTK_SUCCESS) on success, non-zero on failure.
  */
-int usbh_cdc_ncm_transmit(u8 *buf, u32 len, u8 block);
+int usbh_cdc_ncm_transmit(const u8 *buf, u32 len, u8 block);
 
 /**
  * @brief  Checks if the Ethernet link is up (USB enumerated + link active).
- * @return 1: Device enumerated and Ethernet link is up.
- *         0: Device not enumerated or Ethernet link is down.
+ * @return true: Device enumerated and Ethernet link is up.
+ *         false: Device not enumerated or Ethernet link is down.
  */
-u8 usbh_cdc_ncm_get_link_status(void);
+bool usbh_cdc_ncm_get_link_status(void);
 
 /**
  * @brief  Gets the MAC address of the connected device.
  * @return Pointer to the 6-byte MAC address array on success, NULL on failure.
  */
-const u8 *usbh_cdc_ncm_get_mac_str(void);
+const u8 *usbh_cdc_ncm_get_mac(void);
 
 /** @} End of Host_CDC_NCM_Functions group */
 /** @} End of USB_Host_Functions group */

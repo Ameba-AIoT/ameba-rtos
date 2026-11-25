@@ -144,3 +144,12 @@ ChangeLog:
                   (2) Fix entering download mode fail issue when the download baudrate differs from handshake baudrate
                   (3) Remove the restriction of NAND flash ECC capability check
                   (4) Fixed full-chip erase failed issue when a bad block was encountered
+                  (5) Support auto detect flash type
+                  (6) Support USB download on macOS
+20261120  v3.0.3  (1) Fix flash block protection not restored when download fails
+                  (2) Verify the flash block protection by reading back the status register after writing it
+                  (3) Fix Settings.json overwritten with default values when it fails to load
+                  (4) Fix Winbond/Micron NAND block protection mask not applied
+                  (5) Skip RAM erase when RAM memset is not enabled, and log the memset value
+                  (6) Update check device profile version rule
+                  (7) Fix GUI fails to start when Address or Length in Settings.json is a hex string

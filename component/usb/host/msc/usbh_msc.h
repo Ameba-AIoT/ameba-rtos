@@ -153,7 +153,7 @@ typedef struct {
 typedef struct {
 	u32 block_nbr;                  /**< Total number of logical blocks on the medium. */
 	u32 block_size;                 /**< Size of each logical block in bytes. */
-} usbh_scsi_capacity_t;
+} usbh_msc_scsi_capacity_t;
 
 /**
  * @brief SCSI standard INQUIRY data structure.
@@ -165,9 +165,9 @@ typedef struct {
 	u8 product_id[16];              /**< PRODUCT IDENTIFICATION, response bytes 16..31. */
 	u8 revision_id[4];              /**< PRODUCT REVISION LEVEL, response bytes 32..35. */
 	u8 peripheral_qualifier;        /**< PERIPHERAL QUALIFIER, bits 7..5 of response byte 0. */
-	u8 device_type;                 /**< PERIPHERAL DEVICE TYPE, bits 4..0 of response byte 0 (0x00 = direct access block device). */
+	u8 dev_type;                 /**< PERIPHERAL DEVICE TYPE, bits 4..0 of response byte 0 (0x00 = direct access block device). */
 	u8 removable_media;             /**< 1 if the RMB bit (bit 7 of response byte 1) marks the medium removable, else 0. */
-} usbh_scsi_inquiry_t;
+} usbh_msc_scsi_inquiry_t;
 
 /**
  * @brief Logical unit (LUN) structure.
@@ -175,9 +175,9 @@ typedef struct {
  *          per-unit state of the command currently addressed to it.
  */
 typedef struct {
-	usbh_scsi_capacity_t capacity;      /**< Geometry reported by READ CAPACITY(10). */
+	usbh_msc_scsi_capacity_t capacity;      /**< Geometry reported by READ CAPACITY(10). */
 	usb_msc_scsi_sense_data_t sense;    /**< Sense data of the last failed command, from REQUEST SENSE. */
-	usbh_scsi_inquiry_t inquiry;        /**< Identity reported by INQUIRY. */
+	usbh_msc_scsi_inquiry_t inquiry;        /**< Identity reported by INQUIRY. */
 	u8 state;                           /**< Current state of the per-unit state machine, @ref usbh_msc_state_t. */
 	u8 error;                           /**< Stores the last occurred error, @ref usbh_msc_error_t. */
 	u8 retired;                         /**< 1 once a timed-out init or a failed Reset Recovery left the unit unusable; READ/WRITE are
@@ -277,18 +277,10 @@ int usbh_msc_init(const usbh_msc_cb_t *cb, const usbh_msc_config_t *cfg);
 void usbh_msc_deinit(void);
 
 /**
- * @brief Main processing function for the MSC BOT state machine.
- * @param[in] host: Pointer to the parent USB host structure.
- * @param[in] lun: The logical unit number to process.
- * @return 0 on success, non-zero on failure.
- */
-int usbh_msc_bot_process(usb_host_t *host, u8 lun);
-
-/**
  * @brief Checks if the MSC device is ready for I/O operations.
- * @return 1 if ready, 0 otherwise.
+ * @return true if ready, false otherwise.
  */
-int usbh_msc_is_ready(void);
+bool usbh_msc_is_ready(void);
 
 /**
  * @brief Gets the number of logical units (LUNs) in use.
@@ -296,14 +288,14 @@ int usbh_msc_is_ready(void);
  *         LUN indexes are 0 to count - 1. 0 if no device is attached, 0xFFFFFFFF while the class is
  *         still bringing the LUNs up or a command is in flight.
  */
-u32 usbh_msc_get_max_lun(void);
+u32 usbh_msc_get_lun_count(void);
 
 /**
  * @brief Checks if a specific logical unit (LUN) is ready.
  * @param[in] lun: The LUN to check.
- * @return 1 if the unit is ready, 0 otherwise.
+ * @return true if the unit is ready, false otherwise.
  */
-int usbh_msc_unit_is_ready(u8 lun);
+bool usbh_msc_is_unit_ready(u8 lun);
 
 /**
  * @brief Retrieves information about a specific LUN, like capacity and block size.

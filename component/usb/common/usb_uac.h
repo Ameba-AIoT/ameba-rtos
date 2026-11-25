@@ -42,7 +42,7 @@ extern "C" {
 /* Class-Specific Descriptor Types */
 #define USB_UAC_CS_INTERFACE                       0x24U
 #define USB_UAC_CS_ENDPOINT                        0x25U
-#define USB_UAC_IAD_DESCRIPTOR_TYPE                0x0BU
+#define USB_UAC_IAD_DESC_TYPE                0x0BU
 
 /* A.5 / A.9 Audio Class-Specific AC Interface Descriptor Subtypes */
 #define USB_UAC_AC_HEADER                          0x01U

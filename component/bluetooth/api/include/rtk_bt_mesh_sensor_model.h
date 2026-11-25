@@ -12,6 +12,16 @@
 #include <rtk_bt_mesh_def.h>
 #include <rtk_bt_mesh_generic_onoff_model.h>
 
+/** @addtogroup BT_Constants BT Constants
+ * @{
+ */
+/** @addtogroup BT_Mesh_Constants BT Mesh Constants
+ * @{
+ */
+/** @addtogroup BT_Mesh_Sensor_Model_Constants BT Mesh Sensor Model Constants
+ * @{
+ */
+
 /**
  * @def       SENSOR_TRIGGER_DATA_MAX_LEN
  * @brief     Capacity in bytes of each of the Status Trigger Delta Down and Status Trigger Delta Up values of a sensor cadence.
@@ -60,6 +70,25 @@
  */
 #define SENSOR_GET_SERIES_MAX_LEN      0x10
 
+/**
+ * @}
+ */
+/**
+ * @}
+ */
+/**
+ * @}
+ */
+
+/** @addtogroup BT_Types BT Types
+ * @{
+ */
+/** @addtogroup BT_Mesh_Types BT Mesh Types
+ * @{
+ */
+/** @addtogroup BT_Mesh_Sensor_Model_Types BT Mesh Sensor Model Types
+ * @{
+ */
 /************************************* Sensor Model ************************************/
 /**
  * @enum      rtk_bt_mesh_sensor_setting_access_t
@@ -744,11 +773,24 @@ typedef enum {
 	RTK_BT_MESH_SENSOR_SETUP_SERVER_MODEL_ACT_MAX,           /*!< Reserved. */
 } rtk_bt_mesh_sensor_setup_server_model_act_t;
 
-/********************************* Functions Declaration *******************************/
 /**
- * @defgroup  ble_mesh_sensor_model BT LE Mesh Sensor Model APIs
- * @brief     BT LE Mesh Sensor Model related function APIs
- * @ingroup   ble_mesh_api_group
+ * @}
+ */
+/**
+ * @}
+ */
+/**
+ * @}
+ */
+
+/********************************* Functions Declaration *******************************/
+/** @addtogroup BT_Functions BT Functions
+ * @{
+ */
+/** @addtogroup BT_Mesh_Functions BT Mesh Functions
+ * @{
+ */
+/** @addtogroup BT_Mesh_Sensor_Model_Functions BT Mesh Sensor Model Functions
  * @{
  */
 
@@ -862,6 +904,12 @@ uint16_t rtk_bt_mesh_sensor_server_db_set(rtk_bt_mesh_sensor_server_db_set_t *db
  */
 uint16_t rtk_bt_mesh_sensor_setup_server_db_set(rtk_bt_mesh_sensor_server_db_set_t *db_set);
 
+/**
+ * @}
+ */
+/**
+ * @}
+ */
 /**
  * @}
  */

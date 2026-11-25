@@ -62,7 +62,7 @@ if(CONFIG_USBD_MSC)
     )
     ameba_list_append(private_sources
         ${USBD_CLASS_DIR}/msc/usbd_msc.c
-        ${USBD_CLASS_DIR}/msc/usbd_scsi.c
+        ${USBD_CLASS_DIR}/msc/usbd_msc_scsi.c
     )
 endif()
 
