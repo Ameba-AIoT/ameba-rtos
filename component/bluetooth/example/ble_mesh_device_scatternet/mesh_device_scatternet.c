@@ -2326,7 +2326,7 @@ static rtk_bt_evt_cb_ret_t ble_mesh_scene_setup_server_app_callback(uint8_t evt_
 }
 #endif // end of BT_MESH_ENABLE_SCENE_SETUP_SERVER_MODEL
 
-#if defined(BT_MESH_ENABLE_GENERIC_DEFAULT_TRANSTION_TIME_SERVER_MODEL) && BT_MESH_ENABLE_GENERIC_DEFAULT_TRANSTION_TIME_SERVER_MODEL
+#if defined(BT_MESH_ENABLE_GENERIC_DEFAULT_TRANSITION_TIME_SERVER_MODEL) && BT_MESH_ENABLE_GENERIC_DEFAULT_TRANSITION_TIME_SERVER_MODEL
 /***BT and BLE Mesh related api shall not be called in generic default transition time server app callback***/
 static rtk_bt_mesh_generic_transition_time_t trans_store = {0};
 static rtk_bt_evt_cb_ret_t ble_mesh_generic_default_transition_time_server_app_callback(uint8_t evt_code, void *param, uint32_t len)
@@ -2353,7 +2353,7 @@ static rtk_bt_evt_cb_ret_t ble_mesh_generic_default_transition_time_server_app_c
 	}
 	return RTK_BT_EVT_CB_OK;
 }
-#endif // end of BT_MESH_ENABLE_GENERIC_DEFAULT_TRANSTION_TIME_SERVER_MODEL
+#endif // end of BT_MESH_ENABLE_GENERIC_DEFAULT_TRANSITION_TIME_SERVER_MODEL
 
 #if defined(BT_MESH_ENABLE_GENERIC_LEVEL_SERVER_MODEL) && BT_MESH_ENABLE_GENERIC_LEVEL_SERVER_MODEL
 /***BT and BLE Mesh related api shall not be called in generic level server app callback***/
@@ -3425,10 +3425,10 @@ int ble_mesh_device_scatternet_main(uint8_t enable)
 #if defined(BT_MESH_ENABLE_SCENE_SETUP_SERVER_MODEL) && BT_MESH_ENABLE_SCENE_SETUP_SERVER_MODEL
 		BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_LE_GP_MESH_SCENE_SETUP_SERVER_MODEL, ble_mesh_scene_setup_server_app_callback));
 #endif // end of BT_MESH_ENABLE_SCENE_SETUP_SERVER_MODEL
-#if defined(BT_MESH_ENABLE_GENERIC_DEFAULT_TRANSTION_TIME_SERVER_MODEL) && BT_MESH_ENABLE_GENERIC_DEFAULT_TRANSTION_TIME_SERVER_MODEL
+#if defined(BT_MESH_ENABLE_GENERIC_DEFAULT_TRANSITION_TIME_SERVER_MODEL) && BT_MESH_ENABLE_GENERIC_DEFAULT_TRANSITION_TIME_SERVER_MODEL
 		BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_LE_GP_MESH_GENERIC_DEFAULT_TRANSITION_TIME_SERVER_MODEL,
 													ble_mesh_generic_default_transition_time_server_app_callback));
-#endif // end of BT_MESH_ENABLE_GENERIC_DEFAULT_TRANSTION_TIME_SERVER_MODEL
+#endif // end of BT_MESH_ENABLE_GENERIC_DEFAULT_TRANSITION_TIME_SERVER_MODEL
 #if defined(BT_MESH_ENABLE_GENERIC_LEVEL_SERVER_MODEL) && BT_MESH_ENABLE_GENERIC_LEVEL_SERVER_MODEL
 		BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_LE_GP_MESH_GENERIC_LEVEL_SERVER_MODEL, ble_mesh_generic_level_server_app_callback));
 #endif // end of BT_MESH_ENABLE_GENERIC_LEVEL_SERVER_MODEL

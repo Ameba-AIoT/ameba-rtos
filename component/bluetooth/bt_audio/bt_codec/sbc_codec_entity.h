@@ -55,7 +55,7 @@ typedef struct {
  */
 typedef struct {
 	sbc_mode_t              sbc_dec_mode;           /*!< sbc decode mode */
-	uint32_t                sampling_frequency;     /*!< indicate sample frequence */
+	uint32_t                sampling_frequency;     /*!< indicate sample frequency */
 	sbc_channel_mode_t      channel_mode;           /*!< indicate channel mode */
 	uint8_t                 block_length;           /*!< indicate block length */
 	uint8_t                 subbands;               /*!< indicate subbands */

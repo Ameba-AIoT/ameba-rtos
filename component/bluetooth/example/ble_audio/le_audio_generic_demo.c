@@ -2214,7 +2214,7 @@ static rtk_bt_evt_cb_ret_t app_bt_bap_callback(uint8_t evt_code, void *data, uin
 			break;
 		case RTK_BT_LE_AUDIO_GROUP_MSG_DEV_DISCONN:
 #if defined(RTK_BLE_AUDIO_CSIP_SET_COORDINATOR_SUPPORT) && RTK_BLE_AUDIO_CSIP_SET_COORDINATOR_SUPPORT
-			ret = rtk_bt_le_audio_csis_set_coordinator_cfg_discover(param->group_handle, true, RTK_BLE_AUDIO_DEFAULT_CSIS_DISV_TIMEOUT);
+			ret = rtk_bt_le_audio_csis_set_coordinator_cfg_discover(param->group_handle, true, RTK_BLE_AUDIO_DEFAULT_CSIS_DISCOVERY_TIMEOUT);
 			BT_LOGA("[APP] %s: start csis discover in csis group %s (group_handle=%08x) \r\n", __func__, (RTK_BT_OK != ret) ? "fail" : "ok", param->group_handle);
 			csip_discover_flag = true;
 			app_bt_le_audio_scan_dev_list_remove_all();
@@ -2805,7 +2805,7 @@ static rtk_bt_evt_cb_ret_t app_bt_cap_callback(uint8_t evt_code, void *data, uin
 	}
 
 	case RTK_BT_LE_AUDIO_EVT_MCP_CLIENT_MEDIA_CP_NOTIFY_IND: {
-		rtk_bt_le_audio_mcs_media_cp_nodify_ind_t *param = (rtk_bt_le_audio_mcs_media_cp_nodify_ind_t *)data;
+		rtk_bt_le_audio_mcs_media_cp_notify_ind_t *param = (rtk_bt_le_audio_mcs_media_cp_notify_ind_t *)data;
 		BT_LOGA("[APP] RTK_BT_LE_AUDIO_EVT_MCP_CLIENT_MEDIA_CP_NOTIFY_IND conn_handle=0x%x, general_mcs=%d, srv_instance_id=%d, requested_opcode=0x%x, result_code=0x%x\r\n",
 				param->conn_handle, param->general_mcs, param->srv_instance_id, param->requested_opcode, param->result_code);
 		BT_AT_PRINT("+BLECAP:acceptor,mcp,write,0x%x,%d,%d,0x%x,0x%x\r\n",
