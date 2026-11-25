@@ -123,7 +123,7 @@ uint16_t rtk_bt_audio_track_set_hardware_volume(float left_volume, float right_v
 uint16_t rtk_bt_audio_track_get_volume(float *left_volume, float *right_volume);
 
 /**
- * @brief     set sotfware volume of audio track
+ * @brief     set software volume of audio track
  * @param[in] track_hdl: audio track handle
  * @param[in] left_volume: left audio volume
  * @param[in] right_volume: right audio volume

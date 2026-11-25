@@ -13,7 +13,7 @@
 #include <rtk_bt_tmap.h>
 #include <app_bt_le_audio_common.h>
 
-/* tmap broacast media receiver param */
+/* tmap broadcast media receiver param */
 extern app_bt_le_audio_acceptor_info_t g_tmap_bmr_info;
 extern app_bt_le_audio_acceptor_info_t g_tmap_umr_info;
 

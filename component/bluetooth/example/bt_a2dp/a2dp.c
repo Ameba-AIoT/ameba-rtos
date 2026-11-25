@@ -1968,7 +1968,7 @@ int bt_a2dp_main(uint8_t role, uint8_t enable)
 		/* set class of device */
 		BT_APP_PROCESS(rtk_bt_br_gap_set_cod(&cod));
 		/* set supervision_timeout */
-		BT_APP_PROCESS(rtk_bt_br_gap_set_supvisiontimeout(&superv_time));
+		BT_APP_PROCESS(rtk_bt_br_gap_set_supv_timeout(&superv_time));
 		BT_APP_PROCESS(rtk_bt_br_gap_set_inquiry_param(&inquiry_param));
 		BT_APP_PROCESS(rtk_bt_br_gap_set_page_param(&page_param));
 		/* sdp record add (must be invoked before rtk_bt_enable) */

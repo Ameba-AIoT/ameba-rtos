@@ -49,19 +49,19 @@ typedef enum {
 	GMAP_QOS_CONFIG_TYPE_48_2_g,
 	GMAP_QOS_CONFIG_TYPE_48_3_g,
 	GMAP_QOS_CONFIG_TYPE_48_4_g,
-	GMAP_QOS_CONFIG_TYPE_UNKOWN
+	GMAP_QOS_CONFIG_TYPE_UNKNOWN
 } app_bt_le_audio_gmap_qos_set_name_t;
 
 #if (LEA_SOURCE_FIX_SAMPLE_FREQUENCY == RTK_BT_LE_SAMPLING_FREQUENCY_CFG_16K)
 static app_bt_le_audio_gmap_qos_level_t app_qos_level = GMAP_QOS_LEVEL_A_LOWEST_LATENCY;
-static app_bt_le_audio_gmap_qos_set_name_t app_sink_ase_qos = GMAP_QOS_CONFIG_TYPE_UNKOWN;
-static app_bt_le_audio_gmap_qos_set_name_t app_src_ase_qos = GMAP_QOS_CONFIG_TYPE_UNKOWN;
-static app_bt_le_audio_gmap_qos_set_name_t app_broadcast_qos = GMAP_QOS_CONFIG_TYPE_UNKOWN;
+static app_bt_le_audio_gmap_qos_set_name_t app_sink_ase_qos = GMAP_QOS_CONFIG_TYPE_UNKNOWN;
+static app_bt_le_audio_gmap_qos_set_name_t app_src_ase_qos = GMAP_QOS_CONFIG_TYPE_UNKNOWN;
+static app_bt_le_audio_gmap_qos_set_name_t app_broadcast_qos = GMAP_QOS_CONFIG_TYPE_UNKNOWN;
 #elif (LEA_SOURCE_FIX_SAMPLE_FREQUENCY == RTK_BT_LE_SAMPLING_FREQUENCY_CFG_32K)
 static app_bt_le_audio_gmap_qos_level_t app_qos_level = GMAP_QOS_LEVEL_A_LOWEST_LATENCY;
 static app_bt_le_audio_gmap_qos_set_name_t app_sink_ase_qos = GMAP_QOS_CONFIG_TYPE_32_2_gr;
 static app_bt_le_audio_gmap_qos_set_name_t app_src_ase_qos = GMAP_QOS_CONFIG_TYPE_32_2_gs;
-static app_bt_le_audio_gmap_qos_set_name_t app_broadcast_qos = GMAP_QOS_CONFIG_TYPE_UNKOWN;
+static app_bt_le_audio_gmap_qos_set_name_t app_broadcast_qos = GMAP_QOS_CONFIG_TYPE_UNKNOWN;
 #elif (LEA_SOURCE_FIX_SAMPLE_FREQUENCY == RTK_BT_LE_SAMPLING_FREQUENCY_CFG_48K)
 static app_bt_le_audio_gmap_qos_level_t app_qos_level = GMAP_QOS_LEVEL_B_LOW_LATENCY;
 static app_bt_le_audio_gmap_qos_set_name_t app_sink_ase_qos = GMAP_QOS_CONFIG_TYPE_48_2_gr;
@@ -69,9 +69,9 @@ static app_bt_le_audio_gmap_qos_set_name_t app_src_ase_qos = GMAP_QOS_CONFIG_TYP
 static app_bt_le_audio_gmap_qos_set_name_t app_broadcast_qos = GMAP_QOS_CONFIG_TYPE_48_2_g;
 #else
 static app_bt_le_audio_gmap_qos_level_t app_qos_level;
-static app_bt_le_audio_gmap_qos_set_name_t app_sink_ase_qos = GMAP_QOS_CONFIG_TYPE_UNKOWN;
-static app_bt_le_audio_gmap_qos_set_name_t app_src_ase_qos = GMAP_QOS_CONFIG_TYPE_UNKOWN;
-static app_bt_le_audio_gmap_qos_set_name_t app_broadcast_qos = GMAP_QOS_CONFIG_TYPE_UNKOWN;
+static app_bt_le_audio_gmap_qos_set_name_t app_sink_ase_qos = GMAP_QOS_CONFIG_TYPE_UNKNOWN;
+static app_bt_le_audio_gmap_qos_set_name_t app_src_ase_qos = GMAP_QOS_CONFIG_TYPE_UNKNOWN;
+static app_bt_le_audio_gmap_qos_set_name_t app_broadcast_qos = GMAP_QOS_CONFIG_TYPE_UNKNOWN;
 #endif
 extern rtk_bt_le_ext_scan_param_t app_lea_def_ext_scan_param;
 static bool gmap_demo_init_flag = false;
@@ -641,7 +641,7 @@ static uint16_t app_bt_le_audio_gmap_ase_qos_config(app_bt_le_audio_gmap_qos_lev
 		case GMAP_QOS_CONFIG_TYPE_32_1_gr: {
 			p_ase_qos->phy = RTK_BLE_AUDIO_ASCS_ASE_TARGET_PHY_2M;
 			p_ase_qos->retransmission_number = 1;
-#if RTK_BLE_AUDIO_UNICAST_ONE_CIS_SETEO_MODE == 1
+#if RTK_BLE_AUDIO_UNICAST_ONE_CIS_STEREO_MODE == 1
 			p_ase_qos->max_sdu = 120;
 #else
 			p_ase_qos->max_sdu = 60;
@@ -653,7 +653,7 @@ static uint16_t app_bt_le_audio_gmap_ase_qos_config(app_bt_le_audio_gmap_qos_lev
 		case GMAP_QOS_CONFIG_TYPE_32_2_gr: {
 			p_ase_qos->phy = RTK_BLE_AUDIO_ASCS_ASE_TARGET_PHY_2M;
 			p_ase_qos->retransmission_number = 1;
-#if RTK_BLE_AUDIO_UNICAST_ONE_CIS_SETEO_MODE == 1
+#if RTK_BLE_AUDIO_UNICAST_ONE_CIS_STEREO_MODE == 1
 			p_ase_qos->max_sdu = 160;
 #else
 			p_ase_qos->max_sdu = 80;
@@ -665,7 +665,7 @@ static uint16_t app_bt_le_audio_gmap_ase_qos_config(app_bt_le_audio_gmap_qos_lev
 		case GMAP_QOS_CONFIG_TYPE_48_1_gr: {
 			p_ase_qos->phy = RTK_BLE_AUDIO_ASCS_ASE_TARGET_PHY_2M;
 			p_ase_qos->retransmission_number = 1;
-#if RTK_BLE_AUDIO_UNICAST_ONE_CIS_SETEO_MODE == 1
+#if RTK_BLE_AUDIO_UNICAST_ONE_CIS_STEREO_MODE == 1
 			p_ase_qos->max_sdu = 150;
 #else
 			p_ase_qos->max_sdu = 75;
@@ -677,7 +677,7 @@ static uint16_t app_bt_le_audio_gmap_ase_qos_config(app_bt_le_audio_gmap_qos_lev
 		case GMAP_QOS_CONFIG_TYPE_48_2_gr: {
 			p_ase_qos->phy = RTK_BLE_AUDIO_ASCS_ASE_TARGET_PHY_2M;
 			p_ase_qos->retransmission_number = 1;
-#if RTK_BLE_AUDIO_UNICAST_ONE_CIS_SETEO_MODE == 1
+#if RTK_BLE_AUDIO_UNICAST_ONE_CIS_STEREO_MODE == 1
 			p_ase_qos->max_sdu = 200;
 #else
 			p_ase_qos->max_sdu = 100;
@@ -689,7 +689,7 @@ static uint16_t app_bt_le_audio_gmap_ase_qos_config(app_bt_le_audio_gmap_qos_lev
 		case GMAP_QOS_CONFIG_TYPE_48_3_gr: {
 			p_ase_qos->phy = RTK_BLE_AUDIO_ASCS_ASE_TARGET_PHY_2M;
 			p_ase_qos->retransmission_number = 1;
-#if RTK_BLE_AUDIO_UNICAST_ONE_CIS_SETEO_MODE == 1
+#if RTK_BLE_AUDIO_UNICAST_ONE_CIS_STEREO_MODE == 1
 			p_ase_qos->max_sdu = 180;
 #else
 			p_ase_qos->max_sdu = 90;
@@ -701,7 +701,7 @@ static uint16_t app_bt_le_audio_gmap_ase_qos_config(app_bt_le_audio_gmap_qos_lev
 		case GMAP_QOS_CONFIG_TYPE_48_4_gr: {
 			p_ase_qos->phy = RTK_BLE_AUDIO_ASCS_ASE_TARGET_PHY_2M;
 			p_ase_qos->retransmission_number = 1;
-#if RTK_BLE_AUDIO_UNICAST_ONE_CIS_SETEO_MODE == 1
+#if RTK_BLE_AUDIO_UNICAST_ONE_CIS_STEREO_MODE == 1
 			p_ase_qos->max_sdu = 240;
 #else
 			p_ase_qos->max_sdu = 120;
@@ -769,7 +769,7 @@ static uint16_t app_bt_le_audio_gmap_ase_qos_config(app_bt_le_audio_gmap_qos_lev
 		case GMAP_QOS_CONFIG_TYPE_32_1_gr: {
 			p_ase_qos->phy = RTK_BLE_AUDIO_ASCS_ASE_TARGET_PHY_2M;
 			p_ase_qos->retransmission_number = 2;
-#if RTK_BLE_AUDIO_UNICAST_ONE_CIS_SETEO_MODE == 1
+#if RTK_BLE_AUDIO_UNICAST_ONE_CIS_STEREO_MODE == 1
 			p_ase_qos->max_sdu = 120;
 #else
 			p_ase_qos->max_sdu = 60;
@@ -781,7 +781,7 @@ static uint16_t app_bt_le_audio_gmap_ase_qos_config(app_bt_le_audio_gmap_qos_lev
 		case GMAP_QOS_CONFIG_TYPE_32_2_gr: {
 			p_ase_qos->phy = RTK_BLE_AUDIO_ASCS_ASE_TARGET_PHY_2M;
 			p_ase_qos->retransmission_number = 2;
-#if RTK_BLE_AUDIO_UNICAST_ONE_CIS_SETEO_MODE == 1
+#if RTK_BLE_AUDIO_UNICAST_ONE_CIS_STEREO_MODE == 1
 			p_ase_qos->max_sdu = 160;
 #else
 			p_ase_qos->max_sdu = 80;
@@ -793,7 +793,7 @@ static uint16_t app_bt_le_audio_gmap_ase_qos_config(app_bt_le_audio_gmap_qos_lev
 		case GMAP_QOS_CONFIG_TYPE_48_1_gr: {
 			p_ase_qos->phy = RTK_BLE_AUDIO_ASCS_ASE_TARGET_PHY_2M;
 			p_ase_qos->retransmission_number = 2;
-#if RTK_BLE_AUDIO_UNICAST_ONE_CIS_SETEO_MODE == 1
+#if RTK_BLE_AUDIO_UNICAST_ONE_CIS_STEREO_MODE == 1
 			p_ase_qos->max_sdu = 150;
 #else
 			p_ase_qos->max_sdu = 75;
@@ -805,7 +805,7 @@ static uint16_t app_bt_le_audio_gmap_ase_qos_config(app_bt_le_audio_gmap_qos_lev
 		case GMAP_QOS_CONFIG_TYPE_48_2_gr: {
 			p_ase_qos->phy = RTK_BLE_AUDIO_ASCS_ASE_TARGET_PHY_2M;
 			p_ase_qos->retransmission_number = 2;
-#if RTK_BLE_AUDIO_UNICAST_ONE_CIS_SETEO_MODE == 1
+#if RTK_BLE_AUDIO_UNICAST_ONE_CIS_STEREO_MODE == 1
 			p_ase_qos->max_sdu = 200;
 #else
 			p_ase_qos->max_sdu = 100;
@@ -817,7 +817,7 @@ static uint16_t app_bt_le_audio_gmap_ase_qos_config(app_bt_le_audio_gmap_qos_lev
 		case GMAP_QOS_CONFIG_TYPE_48_3_gr: {
 			p_ase_qos->phy = RTK_BLE_AUDIO_ASCS_ASE_TARGET_PHY_2M;
 			p_ase_qos->retransmission_number = 2;
-#if RTK_BLE_AUDIO_UNICAST_ONE_CIS_SETEO_MODE == 1
+#if RTK_BLE_AUDIO_UNICAST_ONE_CIS_STEREO_MODE == 1
 			p_ase_qos->max_sdu = 180;
 #else
 			p_ase_qos->max_sdu = 90;
@@ -829,7 +829,7 @@ static uint16_t app_bt_le_audio_gmap_ase_qos_config(app_bt_le_audio_gmap_qos_lev
 		case GMAP_QOS_CONFIG_TYPE_48_4_gr: {
 			p_ase_qos->phy = RTK_BLE_AUDIO_ASCS_ASE_TARGET_PHY_2M;
 			p_ase_qos->retransmission_number = 2;
-#if RTK_BLE_AUDIO_UNICAST_ONE_CIS_SETEO_MODE == 1
+#if RTK_BLE_AUDIO_UNICAST_ONE_CIS_STEREO_MODE == 1
 			p_ase_qos->max_sdu = 240;
 #else
 			p_ase_qos->max_sdu = 120;
@@ -897,7 +897,7 @@ static uint16_t app_bt_le_audio_gmap_ase_qos_config(app_bt_le_audio_gmap_qos_lev
 		case GMAP_QOS_CONFIG_TYPE_32_1_gr: {
 			p_ase_qos->phy = RTK_BLE_AUDIO_ASCS_ASE_TARGET_PHY_2M;
 			p_ase_qos->retransmission_number = 3;
-#if RTK_BLE_AUDIO_UNICAST_ONE_CIS_SETEO_MODE == 1
+#if RTK_BLE_AUDIO_UNICAST_ONE_CIS_STEREO_MODE == 1
 			p_ase_qos->max_sdu = 120;
 #else
 			p_ase_qos->max_sdu = 60;
@@ -909,7 +909,7 @@ static uint16_t app_bt_le_audio_gmap_ase_qos_config(app_bt_le_audio_gmap_qos_lev
 		case GMAP_QOS_CONFIG_TYPE_32_2_gr: {
 			p_ase_qos->phy = RTK_BLE_AUDIO_ASCS_ASE_TARGET_PHY_2M;
 			p_ase_qos->retransmission_number = 3;
-#if RTK_BLE_AUDIO_UNICAST_ONE_CIS_SETEO_MODE == 1
+#if RTK_BLE_AUDIO_UNICAST_ONE_CIS_STEREO_MODE == 1
 			p_ase_qos->max_sdu = 160;
 #else
 			p_ase_qos->max_sdu = 80;
@@ -921,7 +921,7 @@ static uint16_t app_bt_le_audio_gmap_ase_qos_config(app_bt_le_audio_gmap_qos_lev
 		case GMAP_QOS_CONFIG_TYPE_48_1_gr: {
 			p_ase_qos->phy = RTK_BLE_AUDIO_ASCS_ASE_TARGET_PHY_2M;
 			p_ase_qos->retransmission_number = 3;
-#if RTK_BLE_AUDIO_UNICAST_ONE_CIS_SETEO_MODE == 1
+#if RTK_BLE_AUDIO_UNICAST_ONE_CIS_STEREO_MODE == 1
 			p_ase_qos->max_sdu = 150;
 #else
 			p_ase_qos->max_sdu = 75;
@@ -933,7 +933,7 @@ static uint16_t app_bt_le_audio_gmap_ase_qos_config(app_bt_le_audio_gmap_qos_lev
 		case GMAP_QOS_CONFIG_TYPE_48_2_gr: {
 			p_ase_qos->phy = RTK_BLE_AUDIO_ASCS_ASE_TARGET_PHY_2M;
 			p_ase_qos->retransmission_number = 3;
-#if RTK_BLE_AUDIO_UNICAST_ONE_CIS_SETEO_MODE == 1
+#if RTK_BLE_AUDIO_UNICAST_ONE_CIS_STEREO_MODE == 1
 			p_ase_qos->max_sdu = 200;
 #else
 			p_ase_qos->max_sdu = 100;
@@ -945,7 +945,7 @@ static uint16_t app_bt_le_audio_gmap_ase_qos_config(app_bt_le_audio_gmap_qos_lev
 		case GMAP_QOS_CONFIG_TYPE_48_3_gr: {
 			p_ase_qos->phy = RTK_BLE_AUDIO_ASCS_ASE_TARGET_PHY_2M;
 			p_ase_qos->retransmission_number = 3;
-#if RTK_BLE_AUDIO_UNICAST_ONE_CIS_SETEO_MODE == 1
+#if RTK_BLE_AUDIO_UNICAST_ONE_CIS_STEREO_MODE == 1
 			p_ase_qos->max_sdu = 180;
 #else
 			p_ase_qos->max_sdu = 90;
@@ -957,7 +957,7 @@ static uint16_t app_bt_le_audio_gmap_ase_qos_config(app_bt_le_audio_gmap_qos_lev
 		case GMAP_QOS_CONFIG_TYPE_48_4_gr: {
 			p_ase_qos->phy = RTK_BLE_AUDIO_ASCS_ASE_TARGET_PHY_2M;
 			p_ase_qos->retransmission_number = 3;
-#if RTK_BLE_AUDIO_UNICAST_ONE_CIS_SETEO_MODE == 1
+#if RTK_BLE_AUDIO_UNICAST_ONE_CIS_STEREO_MODE == 1
 			p_ase_qos->max_sdu = 240;
 #else
 			p_ase_qos->max_sdu = 120;
@@ -1025,7 +1025,7 @@ static uint16_t app_bt_le_audio_gmap_ase_qos_config(app_bt_le_audio_gmap_qos_lev
 		case GMAP_QOS_CONFIG_TYPE_32_1_gr: {
 			p_ase_qos->phy = RTK_BLE_AUDIO_ASCS_ASE_TARGET_PHY_2M;
 			p_ase_qos->retransmission_number = 5;
-#if RTK_BLE_AUDIO_UNICAST_ONE_CIS_SETEO_MODE == 1
+#if RTK_BLE_AUDIO_UNICAST_ONE_CIS_STEREO_MODE == 1
 			p_ase_qos->max_sdu = 120;
 #else
 			p_ase_qos->max_sdu = 60;
@@ -1037,7 +1037,7 @@ static uint16_t app_bt_le_audio_gmap_ase_qos_config(app_bt_le_audio_gmap_qos_lev
 		case GMAP_QOS_CONFIG_TYPE_32_2_gr: {
 			p_ase_qos->phy = RTK_BLE_AUDIO_ASCS_ASE_TARGET_PHY_2M;
 			p_ase_qos->retransmission_number = 5;
-#if RTK_BLE_AUDIO_UNICAST_ONE_CIS_SETEO_MODE == 1
+#if RTK_BLE_AUDIO_UNICAST_ONE_CIS_STEREO_MODE == 1
 			p_ase_qos->max_sdu = 160;
 #else
 			p_ase_qos->max_sdu = 80;
@@ -1049,7 +1049,7 @@ static uint16_t app_bt_le_audio_gmap_ase_qos_config(app_bt_le_audio_gmap_qos_lev
 		case GMAP_QOS_CONFIG_TYPE_48_1_gr: {
 			p_ase_qos->phy = RTK_BLE_AUDIO_ASCS_ASE_TARGET_PHY_2M;
 			p_ase_qos->retransmission_number = 5;
-#if RTK_BLE_AUDIO_UNICAST_ONE_CIS_SETEO_MODE == 1
+#if RTK_BLE_AUDIO_UNICAST_ONE_CIS_STEREO_MODE == 1
 			p_ase_qos->max_sdu = 150;
 #else
 			p_ase_qos->max_sdu = 75;
@@ -1061,7 +1061,7 @@ static uint16_t app_bt_le_audio_gmap_ase_qos_config(app_bt_le_audio_gmap_qos_lev
 		case GMAP_QOS_CONFIG_TYPE_48_2_gr: {
 			p_ase_qos->phy = RTK_BLE_AUDIO_ASCS_ASE_TARGET_PHY_2M;
 			p_ase_qos->retransmission_number = 5;
-#if RTK_BLE_AUDIO_UNICAST_ONE_CIS_SETEO_MODE == 1
+#if RTK_BLE_AUDIO_UNICAST_ONE_CIS_STEREO_MODE == 1
 			p_ase_qos->max_sdu = 200;
 #else
 			p_ase_qos->max_sdu = 100;
@@ -1073,7 +1073,7 @@ static uint16_t app_bt_le_audio_gmap_ase_qos_config(app_bt_le_audio_gmap_qos_lev
 		case GMAP_QOS_CONFIG_TYPE_48_3_gr: {
 			p_ase_qos->phy = RTK_BLE_AUDIO_ASCS_ASE_TARGET_PHY_2M;
 			p_ase_qos->retransmission_number = 5;
-#if RTK_BLE_AUDIO_UNICAST_ONE_CIS_SETEO_MODE == 1
+#if RTK_BLE_AUDIO_UNICAST_ONE_CIS_STEREO_MODE == 1
 			p_ase_qos->max_sdu = 180;
 #else
 			p_ase_qos->max_sdu = 90;
@@ -1085,7 +1085,7 @@ static uint16_t app_bt_le_audio_gmap_ase_qos_config(app_bt_le_audio_gmap_qos_lev
 		case GMAP_QOS_CONFIG_TYPE_48_4_gr: {
 			p_ase_qos->phy = RTK_BLE_AUDIO_ASCS_ASE_TARGET_PHY_2M;
 			p_ase_qos->retransmission_number = 5;
-#if RTK_BLE_AUDIO_UNICAST_ONE_CIS_SETEO_MODE == 1
+#if RTK_BLE_AUDIO_UNICAST_ONE_CIS_STEREO_MODE == 1
 			p_ase_qos->max_sdu = 240;
 #else
 			p_ase_qos->max_sdu = 120;
@@ -2184,7 +2184,7 @@ static uint16_t app_bt_le_audio_broadcast_source_setup_data_path(app_bt_le_audio
 				((RTK_BT_OK != ret) ? "fail" : "ok"), p_bap_bro_sour_info->broadcast_source_handle, bis_idx, p_bap_bro_sour_info->bis_info.bis_conn_info[i].bis_conn_handle,
 				ret);
 		if (bis_idx == 1) {
-#if (RTK_BLE_AUDIO_DEFAULT_BROADCASTER_BIS_NUM == 1) && (RTK_BLE_AUDIO_BROADCASTER_ONE_BIS_SETEO_MODE == 1)
+#if (RTK_BLE_AUDIO_DEFAULT_BROADCASTER_BIS_NUM == 1) && (RTK_BLE_AUDIO_BROADCASTER_ONE_BIS_STEREO_MODE == 1)
 			p_bis_codec_cfg->audio_channel_allocation = RTK_BT_LE_AUDIO_LOCATION_FL | RTK_BT_LE_AUDIO_LOCATION_FR;
 #else
 			p_bis_codec_cfg->audio_channel_allocation = RTK_BT_LE_AUDIO_LOCATION_FL;
@@ -2664,7 +2664,7 @@ static rtk_bt_evt_cb_ret_t app_bt_le_audio_callback(uint8_t evt_code, void *data
 			}
 			if (gmap_role == RTK_BT_LE_AUDIO_GMAP_ROLE_BGS || gmap_role == RTK_BT_LE_AUDIO_GMAP_ROLE_UGG) {
 #if defined(RTK_BLE_AUDIO_CSIP_SET_COORDINATOR_SUPPORT) && RTK_BLE_AUDIO_CSIP_SET_COORDINATOR_SUPPORT
-				ret = rtk_bt_le_audio_csis_set_coordinator_cfg_discover(param->group_handle, true, RTK_BLE_AUDIO_DEFAULT_CSIS_DISV_TIMEOUT);
+				ret = rtk_bt_le_audio_csis_set_coordinator_cfg_discover(param->group_handle, true, RTK_BLE_AUDIO_DEFAULT_CSIS_DISCOVERY_TIMEOUT);
 				BT_LOGA("[APP] %s: start csis discover in csis group %s (group_handle=%08x) \r\n", __func__, (RTK_BT_OK != ret) ? "fail" : "ok", param->group_handle);
 				csip_discover_flag = true;
 				// transfer to ext scanning state
@@ -3627,7 +3627,7 @@ static rtk_bt_evt_cb_ret_t app_bt_le_audio_callback(uint8_t evt_code, void *data
 						p_group_info->set_mem_size = param->mem_info.set_mem_size;
 					}
 					if (param->mem_info.set_mem_size > 1) {
-						ret = rtk_bt_le_audio_csis_set_coordinator_cfg_discover(group_handle, true, RTK_BLE_AUDIO_DEFAULT_CSIS_DISV_TIMEOUT);
+						ret = rtk_bt_le_audio_csis_set_coordinator_cfg_discover(group_handle, true, RTK_BLE_AUDIO_DEFAULT_CSIS_DISCOVERY_TIMEOUT);
 						BT_LOGA("[APP] %s: start csis discover in csis group %s (group_handle=%08x) \r\n", __func__, (RTK_BT_OK != ret) ? "fail" : "ok", group_handle);
 						app_bt_le_audio_scan_dev_list_remove_all();
 						csip_discover_flag = true;

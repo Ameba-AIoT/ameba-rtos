@@ -73,7 +73,7 @@ uint16_t rtk_bt_mcp_media_discover(uint16_t conn_handle)
 {
 	uint16_t ret = RTK_BT_FAIL;
 
-	BT_LOGA("%s dicover all for conn_handle=%d\r\n", __func__, conn_handle);
+	BT_LOGA("%s discover all for conn_handle=%d\r\n", __func__, conn_handle);
 	ret = rtk_bt_gattc_discover_all(conn_handle);
 	if (RTK_BT_OK != ret) {
 		BT_LOGE("[APP] GATTC Discover failed! err: 0x%x\r\n", ret);

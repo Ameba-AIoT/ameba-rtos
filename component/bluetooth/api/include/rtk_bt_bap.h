@@ -1,7 +1,7 @@
 /**
  * @file      rtk_bt_bap.h
  * @author    benling_xu@realsil.com.cn
- * @brief     Bluetooth LE GAP part type and function deffinition
+ * @brief     Bluetooth LE GAP part type and function definition
  * @copyright Copyright (c) 2022. Realtek Semiconductor Corporation. All rights reserved.
  */
 
@@ -21,7 +21,7 @@ extern "C"
 /********************************************bro source struct*************************************/
 /**
  * @struct    rtk_bt_bap_bass_scan_dev_info_t
- * @brief     bap scan bass device infomation struct.
+ * @brief     bap scan bass device information struct.
  */
 typedef struct {
 	rtk_bt_le_addr_t    adv_addr;
