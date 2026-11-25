@@ -1115,6 +1115,18 @@ struct bt_hci_cp_le_write_suggested_data_len {
 	uint16_t max_tx_time;
 } __attribute__((packed));
 
+#define BT_HCI_OP_LE_READ_LOCAL_P256_PUBLIC_KEY  BT_OP(BT_OGF_LE, 0x0025) /* 0x2025 */
+
+#define BT_HCI_OP_LE_GENERATE_DHKEY_V1           BT_OP(BT_OGF_LE, 0x0026) /* 0x2026 */
+#define BT_HCI_OP_LE_GENERATE_DHKEY_V2           BT_OP(BT_OGF_LE, 0x005e) /* 0x205e */
+
+#define BT_HCI_LE_KEY_TYPE_GENERATED             0x00
+#define BT_HCI_LE_KEY_TYPE_DEBUG                 0x01
+struct bt_hci_cp_le_generate_dhkey {
+	uint8_t key[64];
+	uint8_t key_type;
+} __attribute__((packed));
+
 #define BT_HCI_OP_LE_ADD_DEV_TO_RL              BT_OP(BT_OGF_LE, 0x0027) /* 0x2027 */
 struct bt_hci_cp_le_add_dev_to_rl {
 	uint8_t  id_type;
@@ -2443,6 +2455,21 @@ struct bt_hci_evt_le_data_len_change {
 	uint16_t max_rx_time;
 } __attribute__((packed));
 
+#define BT_HCI_EVT_LE_READ_LOCAL_P256_PUB_KEY_CMPL         0x08
+struct bt_hci_evt_le_read_local_p256_pub_key_cmpl {
+	uint8_t subevent;
+	uint8_t status;
+	uint8_t key_x[32];
+	uint8_t key_y[32];
+} __attribute__((packed));
+
+#define BT_HCI_EVT_LE_GENERATE_DHKEY_CMPL                  0x09
+struct bt_hci_evt_le_generate_dhkey {
+	uint8_t subevent;
+	uint8_t status;
+	uint8_t dhkey[32];
+} __attribute__((packed));
+
 #define BT_HCI_EVT_LE_ENHANCED_CONNECTION_COMPLETE         0x0A
 struct bt_hci_evt_le_enhanced_connection_complete {
 	uint8_t subevent;
@@ -2630,5 +2657,62 @@ struct bt_hci_evt_le_pa_response_report {
 	uint8_t  num_responses;
 	struct bt_hci_evt_le_pa_response_info responses[0];   /* one response per event here */
 } __attribute__((packed));
+
+#define BT_HCI_EVT_LE_CS_READ_REMOTE_SUPPORTED_CAPABILITIES_COMPLETE 0x2C
+
+struct bt_hci_evt_le_cs_read_remote_supported_capabilities_complete {
+	uint8_t subevent;
+	uint8_t  status;
+	uint16_t conn_handle;
+	uint8_t  num_config_supported;
+	uint16_t max_consecutive_procedures_supported;
+	uint8_t  num_antennas_supported;
+	uint8_t  max_antenna_paths_supported;
+	uint8_t  roles_supported;
+	uint8_t  modes_supported;
+	uint8_t  rtt_capability;
+	uint8_t  rtt_aa_only_n;
+	uint8_t  rtt_sounding_n;
+	uint8_t  rtt_random_payload_n;
+	uint16_t nadm_sounding_capability;
+	uint16_t nadm_random_capability;
+	uint8_t  cs_sync_phys_supported;
+	uint16_t subfeatures_supported;
+	uint16_t t_ip1_times_supported;
+	uint16_t t_ip2_times_supported;
+	uint16_t t_fcs_times_supported;
+	uint16_t t_pm_times_supported;
+	uint8_t  t_sw_time_supported;
+	uint8_t  tx_snr_capability;
+} __attribute__((packed));
+
+#define BT_HCI_EVT_LE_CS_READ_REMOTE_SUPPORTED_CAPABILITIES_COMPLETE_V2 0x38
+struct bt_hci_evt_le_cs_read_remote_supported_capabilities_complete_v2 {
+	uint8_t subevent;
+	uint8_t  status;
+	uint16_t conn_handle;
+	uint8_t  num_config_supported;
+	uint16_t max_consecutive_procedures_supported;
+	uint8_t  num_antennas_supported;
+	uint8_t  max_antenna_paths_supported;
+	uint8_t  roles_supported;
+	uint8_t  modes_supported;
+	uint8_t  rtt_capability;
+	uint8_t  rtt_aa_only_n;
+	uint8_t  rtt_sounding_n;
+	uint8_t  rtt_random_payload_n;
+	uint16_t nadm_sounding_capability;
+	uint16_t nadm_random_capability;
+	uint8_t  cs_sync_phys_supported;
+	uint16_t subfeatures_supported;
+	uint16_t t_ip1_times_supported;
+	uint16_t t_ip2_times_supported;
+	uint16_t t_fcs_times_supported;
+	uint16_t t_pm_times_supported;
+	uint8_t  t_sw_time_supported;
+	uint8_t  tx_snr_capability;
+	uint16_t t_ip2_ipt_times_supported;
+	uint8_t  t_sw_ipt_time_supported;
+} __packed;
 
 #endif

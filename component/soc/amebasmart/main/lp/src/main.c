@@ -104,7 +104,7 @@ void app_IWDG_init(void)
 
 		/* Writing to FLASH during OTA makes SYSTICK stop and run frequently,
 		and SYSTICK may be 3-4 times slower than expected, so reduce refresh period to 1/4 of 2s. */
-		rtos_timer_create(&xTimer, "WDG_Timer", NULL, 500, TRUE, app_IWDG_refresh);
+		rtos_timer_create(&xTimer, "WDG_Timer", 0, 500, TRUE, app_IWDG_refresh);
 
 		if (xTimer == NULL) {
 			RTK_LOGE(TAG, "IWDG refresh error\n");

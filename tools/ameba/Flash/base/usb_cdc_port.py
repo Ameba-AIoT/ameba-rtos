@@ -117,7 +117,17 @@ class UsbCdcSerial(object):
         self._rx = bytearray()
         # The ROM switches from UART xmodem to USB download only after the host "opens" the
         # virtual COM port, i.e. SET_CONTROL_LINE_STATE with RTS set
-        self._set_control_line_state()
+        try:
+            self._set_control_line_state()
+        except Exception:
+            # Not opened: release the interface and clear _dev, or the next open() returns at once
+            # and is_open reports an open port that the ROM never switched to USB download
+            try:
+                usb.util.release_interface(dev, self._intf)
+            except Exception:
+                pass
+            self._dev = self._intf = self._ep_out = self._ep_in = None
+            raise
 
     def _set_control_line_state(self):
         value = (0x01 if self.dtr else 0) | (0x02 if self.rts else 0)

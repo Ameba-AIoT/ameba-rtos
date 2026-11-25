@@ -84,7 +84,7 @@ Refer to the [EVB User Guide](https://aiot.realmcu.com/filelist?document_type=9)
 
 A Realtek CDC ECM device (VID 0x0BDA) is accepted as well: it needs no dial, the example runs DHCP on it directly. Any other device is reported as `[COMP-E] Vid 0x<vid>/Pid 0x<pid> not match` and gets no IP.
 
-The APN of the EG915 is hard-coded as `orange.m2m.spec` in `usbh_composite_quectel_eg915_ctrl()`; change it there for another SIM card.
+The APN of the EG915 is hard-coded as `orange.m2m.spec` in `composite_quectel_eg915_ctrl()`; change it there for another SIM card.
 
 # Expect result
 
@@ -116,7 +116,7 @@ The APN of the EG915 is hard-coded as `orange.m2m.spec` in `usbh_composite_quect
 
 	| Dongle | Last dial log | IP setup log |
 	| --- | --- | --- |
-	| Quectel EG915 | `[COMP-I] IP Ready`, `[COMP-I] Get all network info` | `[COMP-I] Set static IP`, `[COMP-I] Run usbh_composite_dongle_netif_init ok` (no `wifi got ip`) |
+	| Quectel EG915 | `[COMP-I] IP Ready`, `[COMP-I] Get all network info` | `[COMP-I] Set static IP`, `[COMP-I] Run composite_dongle_netif_init ok` (no `wifi got ip`) |
 	| Quectel EG91 | `[COMP-I] Send request done` | `[COMP-I] Do DHCP`, `[$]wifi got ip:"x.x.x.x"` |
 	| Fibocom LE271 | `[COMP-I] LE271 has IP, dial OK` | `[COMP-I] Do DHCP`, `[$]wifi got ip:"x.x.x.x"` |
 	| SIMCOM SIM767X | `[COMP-I] SIM767X dial OK, waiting for ECM link-up + DHCP` | `[COMP-I] Do DHCP`, `[$]wifi got ip:"x.x.x.x"` |
@@ -151,7 +151,7 @@ The 4G dongle (CDC ACM + ECM) host is driven with `AT+USBHACMECM`. Type the AT c
 | --- | --- |
 | `AT+USBHACMECM=help` or `AT+USBHACMECM=?` | Print the usage. |
 | `AT+USBHACMECM=send,<at>` | Send one AT command, CR LF appended, to the 4G dongle over its CDC ACM port, e.g. `AT+USBHACMECM=send,AT+CSQ`. `<at>` is taken exactly as typed, commas included, e.g. `AT+USBHACMECM=send,AT+CGDCONT=1,"IP","cmnet"`. At most 1022 characters, and the whole line has to fit the 127-byte console buffer. Only for Quectel, Fibocom LE271 and SIMCOM SIM767X dongles; the send is retried up to 10 times at 1 s interval, so the console can block for about 10 s. The command logs `At cmd(<at>)`, `Pre AtCmd` and `AT cmd(<at>) done`; the reply of the dongle is printed at debug level only. |
-| `AT+USBHACMECM=hotplug` | Have the host core power-cycle the dongle through VBUS (`usbh_power_cycle()`): the dongle drops off the bus and is enumerated again, the USB stack is kept. Needs a set-up dongle. Prints `[COMP-W] Not support` and `OK` unless `CONFIG_USBH_COMP_GPIO_POWER_CTRL` is set to 1. It is a `#define` in `example_usbh_composite_cdc_acm_ecm.c` (default 0), not a Kconfig option; when set, the power-control GPIO `CONFIG_USBH_COMP_USB_DEV_PWR_CTRL_GPIO` (`_PA_3`) is registered as the VBUS switch of the host core, which then also power-cycles a dongle that no longer answers a port reset. |
+| `AT+USBHACMECM=hotplug` | Have the host core power-cycle the dongle through VBUS (`usbh_dev_power_cycle()`): the dongle drops off the bus and is enumerated again, the USB stack is kept. Needs a set-up dongle. Prints `[COMP-W] Not support` and `OK` unless `CONFIG_USBH_COMP_GPIO_POWER_CTRL` is set to 1. It is a `#define` in `example_usbh_composite_cdc_acm_ecm.c` (default 0), not a Kconfig option; when set, the power-control GPIO `CONFIG_USBH_COMP_USB_DEV_PWR_CTRL_GPIO` (`_PA_3`) is registered as the VBUS switch of the host core, which then also power-cycles a dongle that no longer answers a port reset. |
 
 # Note
 

@@ -11,6 +11,15 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+/** @addtogroup BT_Types BT Types
+ * @{
+ */
+/** @addtogroup BT_Audio_Types BT Audio Types
+ * @{
+ */
+/** @addtogroup BT_Audio_Track_Types BT Audio Track Types
+ * @{
+ */
 /**
  * @typedef   bt_audio_fmt_t
  * @brief     Audio track and audio record PCM data bit format.
@@ -20,11 +29,23 @@ typedef enum {
 	BT_AUDIO_FORMAT_PCM_16_BIT        = 0x2u,    /*!< 16 bits per channel per frame. */
 	BT_AUDIO_FORMAT_PCM_32_BIT        = 0x4u,    /*!< 32 bits per channel per frame. */
 } bt_audio_fmt_t;
-
 /**
- * @defgroup  bt_audio_track BT Audio Track APIs
- * @brief     BT Audio track related function APIs
- * @ingroup   bt_audio_group
+ * @}
+ */
+/**
+ * @}
+ */
+/**
+ * @}
+ */
+
+/** @addtogroup BT_Functions BT Functions
+ * @{
+ */
+/** @addtogroup BT_Audio_Functions BT Audio Functions
+ * @{
+ */
+/** @addtogroup BT_Audio_Track_Functions BT Audio Track Functions
  * @{
  */
 
@@ -240,6 +261,12 @@ int32_t rtk_bt_audio_track_get_start_threshold_bytes(void *track_hdl);
  */
 #define rtk_bt_audio_track_get_start_thresholdbytes rtk_bt_audio_track_get_start_threshold_bytes
 
+/**
+ * @}
+ */
+/**
+ * @}
+ */
 /**
  * @}
  */

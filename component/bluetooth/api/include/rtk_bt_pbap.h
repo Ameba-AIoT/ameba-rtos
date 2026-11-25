@@ -15,6 +15,12 @@ extern "C"
 {
 #endif
 
+/** @addtogroup BT_Constants BT Constants
+ * @{
+ */
+/** @addtogroup BT_PBAP_Constants BT PBAP Constants
+ * @{
+ */
 /* Define the vCard property mask bits used as the phone book pull filter. */
 #define RTK_BT_PBAP_PROPERTY_VERSION     (1 << 0)    /*!< vCard version property. */
 #define RTK_BT_PBAP_PROPERTY_FN          (1 << 1)    /*!< Formatted name property. */
@@ -45,9 +51,20 @@ extern "C"
 #define RTK_BT_PBAP_PROPERTY_CLASS       (1 << 26)   /*!< Class information property. */
 #define RTK_BT_PBAP_PROPERTY_SORTSTRING  (1 << 27)   /*!< String used for sorting operations property. */
 #define RTK_BT_PBAP_PROPERTY_DATETIME    (1 << 28)   /*!< Time stamp property. */
+/**
+ * @}
+ */
+/**
+ * @}
+ */
 
 /************************************** Data Types *************************************/
-
+/** @addtogroup BT_Types BT Types
+ * @{
+ */
+/** @addtogroup BT_PBAP_Types BT PBAP Types
+ * @{
+ */
 /**
  * @typedef   rtk_bt_pbap_repository
  * @brief     Bluetooth PBAP phone book repository.
@@ -204,11 +221,18 @@ typedef struct {
 	uint8_t new_missed_calls;                           /*!< Number of new missed calls. */
 } rtk_bt_pbap_get_pb_size_cmpl;
 
-/********************************* Functions Declaration *******************************/
 /**
- * @defgroup  bt_pbap BT PBAP APIs
- * @brief     BT PBAP related function APIs.
- * @ingroup   BT_APIs
+ * @}
+ */
+/**
+ * @}
+ */
+
+/********************************* Functions Declaration *******************************/
+/** @addtogroup BT_Functions BT Functions
+ * @{
+ */
+/** @addtogroup BT_PBAP_Functions BT PBAP Functions
  * @{
  */
 
@@ -293,6 +317,9 @@ uint16_t rtk_bt_pbap_phone_book_size_get(rtk_bt_pbap_pb_size_get_t *p_pb_size_t)
  */
 uint16_t rtk_bt_pbap_pull_caller_id_name(rtk_bt_pbap_pull_caller_id_name_t *p_pull_caller_id_name_t);
 
+/**
+ * @}
+ */
 /**
  * @}
  */

@@ -16,6 +16,13 @@ extern "C"
 #include <bt_api_config.h>
 #include <dlist.h>
 
+/** @addtogroup BT_Constants BT Constants
+ * @{
+ */
+/** @addtogroup BT_GATTS_Constants BT GATTS Constants
+ * @{
+ */
+
 /**
  * @def       RTK_BT_GATT_INTERNAL
  * @brief     This attribute will be handled by the stack internally. The flag is usually
@@ -23,7 +30,7 @@ extern "C"
  *            or @ref RTK_BT_GATT_CPF. It requires the attribute value to be passed with
  *            the standard data structure expected by the stack. For example, the data of
  *            param '_value' for @ref RTK_BT_GATT_CPF shall be in the format of
- *            @ref struct rtk_bt_gatt_cpf with flag @ref RTK_BT_GATT_INTERNAL. For attributes
+ *            @ref rtk_bt_gatt_cpf with flag @ref RTK_BT_GATT_INTERNAL. For attributes
  *            that have no standard data structure defined in this header file, this flag
  *            behaves the same as @ref RTK_BT_GATT_VOID
  */
@@ -48,6 +55,20 @@ extern "C"
  *            will not indicate APP the write events.
  */
 #define RTK_BT_GATT_VOID                    2
+
+/**
+ * @}
+ */
+/**
+ * @}
+ */
+
+/** @addtogroup BT_Types BT Types
+ * @{
+ */
+/** @addtogroup BT_GATTS_Types BT GATTS Types
+ * @{
+ */
 
 /**
  * @struct    rtk_bt_gatt_chrc
@@ -82,7 +103,7 @@ struct rtk_bt_gatt_chrc {
  * @def       RTK_BT_GATT_PRIMARY_SERVICE
  * @brief     Primary Service Declaration Macro.
  *            Helper macro to declare a primary service attribute.
- * @param     _service Service attribute value. @ref struct bt_uuid *.
+ * @param     _service Service attribute value. @ref bt_uuid *.
  */
 #define RTK_BT_GATT_PRIMARY_SERVICE(_service)                          \
     RTK_BT_GATT_ATTRIBUTE(BT_UUID_GATT_PRIMARY, RTK_BT_GATT_PERM_READ, \
@@ -92,7 +113,7 @@ struct rtk_bt_gatt_chrc {
  * @def       RTK_BT_GATT_SECONDARY_SERVICE
  * @brief     Secondary Service Declaration Macro.
  *            Helper macro to declare a secondary service attribute.
- * @param     _service Service attribute value. @ref struct bt_uuid *.
+ * @param     _service Service attribute value. @ref bt_uuid *.
  */
 #define RTK_BT_GATT_SECONDARY_SERVICE(_service)                          \
     RTK_BT_GATT_ATTRIBUTE(BT_UUID_GATT_SECONDARY, RTK_BT_GATT_PERM_READ, \
@@ -102,7 +123,7 @@ struct rtk_bt_gatt_chrc {
  * @def       RTK_BT_GATT_INCLUDE_SERVICE
  * @brief     Include Service Declaration Macro.
  *            Helper macro to declare database internal include service attribute.
- * @param     _service_incl Pointer to a include service struct @ref struct rtk_bt_gatt_service *.
+ * @param     _service_incl Pointer to a include service struct @ref rtk_bt_gatt_service *.
  */
 #define RTK_BT_GATT_INCLUDE_SERVICE(_service_incl)                     \
     RTK_BT_GATT_ATTRIBUTE(BT_UUID_GATT_INCLUDE, RTK_BT_GATT_PERM_READ, \
@@ -327,9 +348,9 @@ typedef struct {
 	uint16_t index;                         /*!< Attribute index within the service. */
 	uint8_t err_code;                       /*!< ATT error code; see @ref rtk_bt_err_att. Set to 0x00 when not error response. */
 	uint16_t len;                           /*!< Length of the response value.
-                                             *   Only valid when #err_code is 0. */
+                                             *   only valid when err_code is 0. */
 	const void *data;                       /*!< Pointer to the response value data.
-                                             *   Only valid when #err_code is 0. */
+                                             *   Only valid when err_code is 0. */
 } rtk_bt_gatts_read_resp_param_t;
 
 /**
@@ -402,10 +423,10 @@ struct rtk_bt_gatt_service {
 	uint16_t attr_count;                    /*!< Number of attributes in the attribute table. */
 #if !defined(RTK_BLE_MGR_LIB) || !RTK_BLE_MGR_LIB
 	bool assign_handle_flag;                /*!< Indicates whether the service start attribute handle is user-assigned.
-                                             *   - true: #start_handle is used as the first attribute handle.
+                                             *   - true: start_handle is used as the first attribute handle.
                                              *   - false: the stack assigns the start handle automatically. */
 	uint16_t start_handle;                  /*!< User-assigned start attribute handle for the service.
-                                             *   Valid when #assign_handle_flag is true. */
+                                             *   Valid when assign_handle_flag is true. */
 #endif
 	rtk_bt_gatts_srv_type_t type;           /*!< Type of the service. */
 	uint8_t register_status;                /*!< Current registration status of the service. */
@@ -419,7 +440,7 @@ struct rtk_bt_gatt_service {
  * @brief     Bluetooth GATT Server service register indication event msg.
  */
 typedef struct {
-	uint16_t reg_status;                    /*!< Result of the service registration; 0x00 on success. */
+	uint16_t reg_status;                    /*!< Result of the service registration; 0x00 indicates success. */
 	uint16_t app_id;                        /*!< Application identifier of the registered service. */
 } rtk_bt_gatts_reg_ind_t;
 
@@ -428,7 +449,7 @@ typedef struct {
  * @brief     Bluetooth ATT MTU exchange indication event msg.
  */
 typedef struct {
-	uint16_t result;                        /*!< Result code of the MTU exchange procedure; 0x00 on success. */
+	uint16_t result;                        /*!< Result code of the MTU exchange procedure; 0x00 indicates success. */
 	uint16_t conn_handle;                   /*!< Connection handle of the ACL connection associated with the received MTU exchange result.
                                              *   Range: 0x0000 to 0x0EFF. */
 	uint16_t mtu_size;                      /*!< Negotiated ATT MTU size. */
@@ -526,11 +547,18 @@ typedef struct {
                                              *   - false: CCCD disabled, the client will not receive any Service Changed indications when attribute handle is changed. */
 } rtk_bt_gatts_service_changed_cccd_ind_t;
 
-/********************************* Functions Declaration *******************************/
 /**
- * @defgroup  bt_gatts BT GATT Server APIs
- * @brief     BT GATT Server related function APIs.
- * @ingroup   BT_APIs
+ * @}
+ */
+/**
+ * @}
+ */
+
+/********************************* Functions Declaration *******************************/
+/** @addtogroup BT_Functions BT Functions
+ * @{
+ */
+/** @addtogroup BT_GATTS_Functions BT GATTS Functions
  * @{
  */
 
@@ -646,6 +674,9 @@ uint16_t rtk_bt_gatts_service_changed_indicate(uint16_t conn_handle, uint16_t ci
  */
 uint16_t rtk_bt_gatts_get_attribute_handle(uint16_t app_id, uint16_t attr_index, uint16_t *attr_handle);
 
+/**
+ * @}
+ */
 /**
  * @}
  */

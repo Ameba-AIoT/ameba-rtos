@@ -24,7 +24,7 @@
 #define SDN_INTF_MAX_BT_CMD_LEN        255    /* ext adv data or 0xc13 */
 #define SDN_INTF_MAX_BT_EVT_LEN        257
 #else
-#define SDN_INTF_MAX_BT_CMD_LEN        42     /* cmd 0x2027 has the max length: 3 + 39 */
+#define SDN_INTF_MAX_BT_CMD_LEN        68     /* cmd 0x205e has the max length: 3 + 65 */
 #define SDN_INTF_MAX_BT_EVT_LEN        70     /* cmd complete event for 0x1002 has the max length: 2 + 3 + 65 */
 #endif
 #endif

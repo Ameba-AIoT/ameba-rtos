@@ -12,6 +12,15 @@
 #include <rtk_bt_mesh_def.h>
 
 /********************************* Config Client Model *********************************/
+/** @addtogroup BT_Types BT Types
+ * @{
+ */
+/** @addtogroup BT_Mesh_Types BT Mesh Types
+ * @{
+ */
+/** @addtogroup BT_Mesh_Config_Client_Model_Types BT Mesh Config Client Model Types
+ * @{
+ */
 /**
  * @enum      rtk_bt_mesh_config_client_api_t
  * @brief     BLE MESH config client model act and event definition.
@@ -1092,11 +1101,24 @@ typedef struct {
                                      *   0x80 to 0xFF: Prohibited. */
 } _PACKED4_ rtk_bt_mesh_cfg_hb_sub_stat_t;
 
-/********************************* Functions Declaration *******************************/
 /**
- * @defgroup  ble_mesh_config_client_model BT LE Mesh Config Client Model APIs
- * @brief     BT LE Mesh Config Client Model related function APIs
- * @ingroup   ble_mesh_api_group
+ * @}
+ */
+/**
+ * @}
+ */
+/**
+ * @}
+ */
+
+/********************************* Functions Declaration *******************************/
+/** @addtogroup BT_Functions BT Functions
+ * @{
+ */
+/** @addtogroup BT_Mesh_Functions BT Mesh Functions
+ * @{
+ */
+/** @addtogroup BT_Mesh_Config_Client_Model_Functions BT Mesh Config Client Model Functions
  * @{
  */
 
@@ -1512,6 +1534,12 @@ uint16_t rtk_bt_mesh_config_client_model_hb_sub_get(rtk_bt_mesh_config_client_mo
  */
 uint16_t rtk_bt_mesh_config_client_model_hb_sub_set(rtk_bt_mesh_config_client_model_hb_sub_set_t *hb_sub_set);
 
+/**
+ * @}
+ */
+/**
+ * @}
+ */
 /**
  * @}
  */

@@ -25,7 +25,7 @@ static int usbd_vendor_check_out_buf_len(u32 buf_len, u32 hs_mps, u32 fs_mps);
 static int usbd_vendor_set_config(usb_dev_t *dev, u8 config);
 static void usbd_vendor_clear_config(usb_dev_t *dev, u8 config);
 static int usbd_vendor_setup(usb_dev_t *dev, usb_setup_req_t *req);
-static u16 usbd_vendor_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16 buf_len);
+static u16 usbd_vendor_get_desc(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16 buf_len);
 static int usbd_vendor_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, int status);
 static int usbd_vendor_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len);
 static int usbd_vendor_handle_ep0_data_out(usb_dev_t *dev);
@@ -59,7 +59,7 @@ static const u8 usbd_vendor_dev_desc[USB_LEN_DEV_DESC] = {
 
 #ifndef CONFIG_SUPPORT_USB_FS_ONLY
 /* USB Standard Device Qualifier Descriptor */
-static const u8 usbd_vendor_device_qualifier_desc[USB_LEN_DEV_QUALIFIER_DESC] = {
+static const u8 usbd_vendor_dev_qualifier_desc[USB_LEN_DEV_QUALIFIER_DESC] = {
 	USB_LEN_DEV_QUALIFIER_DESC,                     /* bLength */
 	USB_DESC_TYPE_DEVICE_QUALIFIER,                 /* bDescriptorType */
 	0x00,                                           /* bcdUSB */
@@ -70,7 +70,7 @@ static const u8 usbd_vendor_device_qualifier_desc[USB_LEN_DEV_QUALIFIER_DESC] = 
 	0x40,                                           /* bMaxPacketSize */
 	0x01,                                           /* bNumConfigurations */
 	0x00,                                           /* Reserved */
-};  /* usbd_vendor_device_qualifier_desc */
+};  /* usbd_vendor_dev_qualifier_desc */
 #endif
 
 /* USB Vendor Device Configuration Descriptor, wMaxPacketSize is patched for the speed it describes,
@@ -155,7 +155,7 @@ static const u8 usbd_vendor_config_desc[] = {
 
 /* Vendor Class Driver */
 static const usbd_class_driver_t usbd_vendor_driver = {
-	.get_descriptor = usbd_vendor_get_descriptor,
+	.get_desc = usbd_vendor_get_desc,
 	.set_config = usbd_vendor_set_config,
 	.clear_config = usbd_vendor_clear_config,
 	.setup = usbd_vendor_setup,
@@ -784,7 +784,7 @@ static void usbd_vendor_patch_desc(u8 *desc, u16 len, usb_speed_type_t speed)
   * @param  buf: Poniter to Buffer
   * @retval Descriptor length
   */
-static u16 usbd_vendor_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16 buf_len)
+static u16 usbd_vendor_get_desc(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16 buf_len)
 {
 	usb_speed_type_t speed = (usb_speed_type_t)dev->dev_speed;
 	/* Speed the returned configuration describes, which selects the bInterval encoding */
@@ -816,8 +816,8 @@ static u16 usbd_vendor_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *
 
 #ifndef CONFIG_SUPPORT_USB_FS_ONLY
 	case USB_DESC_TYPE_DEVICE_QUALIFIER:
-		desc = usbd_vendor_device_qualifier_desc;
-		len = (u16)sizeof(usbd_vendor_device_qualifier_desc);
+		desc = usbd_vendor_dev_qualifier_desc;
+		len = (u16)sizeof(usbd_vendor_dev_qualifier_desc);
 		break;
 
 	case USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION:
@@ -831,7 +831,7 @@ static u16 usbd_vendor_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *
 #endif
 
 	case USB_DESC_TYPE_STRING:
-		/* Every string this class owns is registered with usbd_add_string() and answered by
+		/* Every string this class owns is registered with usbd_add_str() and answered by
 		   the core, which only forwards an index it does not know, e.g. the MS OS string */
 		USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_GET_DESC, 0);
 		break;
@@ -986,7 +986,7 @@ static int usbd_vendor_private_init(const usbd_vendor_cb_t *cb, const usbd_vendo
 
 	/* The core owns the string table, so the same call works in standalone and composite
 	   mode. 0 means no iInterface string. */
-	cdev->itf_str_idx = usbd_add_string(cfg->itf_str);
+	cdev->itf_str_idx = usbd_add_str(cfg->itf_str);
 
 	/* No H2D class/vendor request is waiting for its data stage yet. */
 	cdev->ctrl_req_pending = 0U;
@@ -1111,7 +1111,7 @@ int usbd_vendor_init(const usbd_vendor_cb_t *cb, const usbd_vendor_config_t *cfg
 	ret = usbd_vendor_private_init(cb, cfg);
 	if (ret == RTK_SUCCESS) {
 		cdev->from_composite = 0;
-		ret = usbd_register_class(&usbd_vendor_driver);
+		ret = usbd_class_register(&usbd_vendor_driver);
 		if (ret != RTK_SUCCESS) {
 			/* private_init completed, so deinit is its exact reverse */
 			usbd_vendor_deinit();
@@ -1135,7 +1135,7 @@ int usbd_composite_vendor_init(const usbd_vendor_cb_t *cb, const usbd_vendor_con
 	ret = usbd_vendor_private_init(cb, cfg);
 	if (ret == RTK_SUCCESS) {
 		cdev->from_composite = 1;
-		ret = usbd_composite_register_driver(&usbd_vendor_driver);
+		ret = usbd_composite_class_register(&usbd_vendor_driver);
 		if (ret != RTK_SUCCESS) {
 			/* private_init completed, so deinit is its exact reverse. from_composite is
 			   already 1, so the unregister inside is a no-op for an unregistered driver. */
@@ -1169,11 +1169,11 @@ void usbd_vendor_deinit(void)
 	   class is deinitialized: ref USB 2.0 9.4.7, the transfers still pending are aborted. */
 #ifdef CONFIG_USBD_COMPOSITE
 	if (cdev->from_composite != 0U) {
-		ret = usbd_composite_unregister_driver(&usbd_vendor_driver);
+		ret = usbd_composite_class_unregister(&usbd_vendor_driver);
 	} else
 #endif
 	{
-		ret = usbd_unregister_class();
+		ret = usbd_class_unregister();
 	}
 	if (ret != RTK_SUCCESS) {
 		return;
@@ -1212,7 +1212,7 @@ void usbd_vendor_deinit(void)
 	ep_isoc_out->xfer_buf = NULL;
 }
 
-int usbd_vendor_transmit_bulk_data(u8 *buf, u32 len)
+int usbd_vendor_bulk_transmit(u8 *buf, u32 len)
 {
 	int ret = RTK_SUCCESS;
 	usbd_vendor_dev_t *cdev = &usbd_vendor_dev;
@@ -1264,7 +1264,7 @@ int usbd_vendor_transmit_bulk_data(u8 *buf, u32 len)
 	return ret;
 }
 
-int usbd_vendor_transmit_intr_data(u8 *buf, u32 len)
+int usbd_vendor_intr_transmit(u8 *buf, u32 len)
 {
 	int ret = RTK_SUCCESS;
 	usbd_vendor_dev_t *cdev = &usbd_vendor_dev;
@@ -1312,7 +1312,7 @@ int usbd_vendor_transmit_intr_data(u8 *buf, u32 len)
 	return ret;
 }
 
-int usbd_vendor_transmit_isoc_data(u8 *buf, u32 len)
+int usbd_vendor_isoc_transmit(u8 *buf, u32 len)
 {
 	usbd_vendor_dev_t *cdev = &usbd_vendor_dev;
 	usb_dev_t *dev = cdev->dev;

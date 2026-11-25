@@ -113,7 +113,7 @@ static int usbh_dfu_ctrl_request(usb_host_t *host, usbh_setup_req_t *setup, u8 *
 static int usbh_dfu_attach(usb_host_t *host)
 {
 	usbh_dfu_host_t *dfu = &usbh_dfu_host;
-	usbh_itf_data_t *itf_data;
+	usbh_itf_t *itf_data;
 	usbh_dev_id_t dev_id = {0,};
 	u8 *buf;
 	u16 remaining;
@@ -127,12 +127,12 @@ static int usbh_dfu_attach(usb_host_t *host)
 	dev_id.bInterfaceClass    = USB_DFU_CLASS_CODE;
 	dev_id.bInterfaceSubClass = USB_DFU_SUBCLASS_CODE;
 	dev_id.bInterfaceProtocol = USB_DFU_PROTOCOL_RUNTIME;
-	itf_data = usbh_get_interface_descriptor(host, &dev_id);
+	itf_data = usbh_itf_find(host, &dev_id);
 	if (itf_data != NULL) {
 		is_runtime = 1U;
 	} else {
 		dev_id.bInterfaceProtocol = USB_DFU_PROTOCOL_DFU;
-		itf_data = usbh_get_interface_descriptor(host, &dev_id);
+		itf_data = usbh_itf_find(host, &dev_id);
 		is_runtime = 0U;
 	}
 	if (itf_data == NULL) {
@@ -316,7 +316,7 @@ static int usbh_dfu_parse_status(usb_host_t *host)
 {
 	usbh_dfu_host_t *dfu = &usbh_dfu_host;
 	const u8 *buf = dfu->xfer_buf;
-	u32 len = usbh_get_last_ctrl_in_size(host);
+	u32 len = usbh_ctrl_get_xfer_len(host);
 	u32 poll;
 
 	if (len != USB_DFU_STATUS_PKT_SIZE) {
@@ -594,7 +594,7 @@ static void usbh_dfu_process(usb_host_t *host, usbh_drv_msg_t *msg)
 				RTK_LOGS(TAG, RTK_LOG_INFO,
 						 "bitWillDetach=1: waiting for device to re-enumerate in DFU mode\n");
 			} else {
-				req_status = usbh_reenumerate();
+				req_status = usbh_dev_reset();
 				if (req_status != RTK_SUCCESS) {
 					/* Same outcome as a device that never re-enumerates in DFU mode, see the
 					 * DFU_DETACH failure branch below. */
@@ -926,7 +926,7 @@ static void usbh_dfu_process(usb_host_t *host, usbh_drv_msg_t *msg)
 					/* The reset is asynchronous: the host task runs it, detaching this class,
 					 * before any message queued from here is dispatched. Report the result now,
 					 * not through the DONE / ERROR states, or the detach would swallow it. */
-					req_status = usbh_reenumerate();
+					req_status = usbh_dev_reset();
 					if (req_status == RTK_SUCCESS) {
 						RTK_LOGS(TAG, RTK_LOG_INFO, "MANIFEST-WAIT-RESET: reset device\n");
 						usbh_dfu_finish(dfu, RTK_SUCCESS);
@@ -973,7 +973,7 @@ static void usbh_dfu_process(usb_host_t *host, usbh_drv_msg_t *msg)
 		/* Pass the actual received byte count, so the last (short or ZLP) block is not
 		 * padded with stale buffer data up to wTransferSize. */
 		{
-			u32 actual_len = usbh_get_last_ctrl_in_size(host);
+			u32 actual_len = usbh_ctrl_get_xfer_len(host);
 			if ((dfu->cb != NULL) && (dfu->cb->recv_block != NULL)) {
 				int cb_ret = dfu->cb->recv_block(dfu->block_num, buf, actual_len);
 				if (cb_ret != RTK_SUCCESS) {
@@ -1074,7 +1074,7 @@ int usbh_dfu_init(const usbh_dfu_cb_t *cb, const usbh_dfu_config_t *cfg)
 		}
 	}
 
-	ret = usbh_register_class(&usbh_dfu_driver);
+	ret = usbh_class_register(&usbh_dfu_driver);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Register class fail %d\n", ret);
 		goto exit_user_deinit;
@@ -1104,7 +1104,7 @@ void usbh_dfu_deinit(void)
 	/* First, before anything is freed: on RTK_SUCCESS no attach/setup/process/detach of this
 	 * class runs any more, an EP0 request it left in flight is halted and a sof() still
 	 * running on another core is waited out. Anything else means nothing was released. */
-	if (usbh_unregister_class(&usbh_dfu_driver) != RTK_SUCCESS) {
+	if (usbh_class_unregister(&usbh_dfu_driver) != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Deinit refused\n");
 		return;
 	}

@@ -102,7 +102,7 @@ typedef struct {
 	 * @param[in] len: Frame length in bytes.
 	 */
 	void (*received)(u8 *buf, u32 len);
-} usbh_rndis_state_cb_t;
+} usbh_rndis_cb_t;
 
 /**
  * @brief Pipe of the RNDIS host instance.
@@ -116,13 +116,13 @@ typedef struct {
  * @brief Structure representing the RNDIS host instance.
  */
 typedef struct {
-	const usbh_rndis_state_cb_t *cb;         /**< User callback structure */
+	const usbh_rndis_cb_t *cb;         /**< User callback structure */
 	usb_host_t *host;                        /**< USB Host core handle */
 	u8 *ctrl_buf;                            /**< Encapsulated message buffer (DMA aligned) */
 	u8 *tx_buf;                              /**< BULK OUT buffer, the PACKET_MSG header and the frame (DMA aligned) */
 	u32 packet_filter;                       /**< Packet filter programmed at setup */
 	u32 request_id;                          /**< RequestId of the last command */
-	u32 dev_max_transfer;                    /**< MaxTransferSize reported by the device */
+	u32 dev_max_xfer;                    /**< MaxTransferSize reported by the device */
 	u16 cmd_len;                             /**< Length of the command built in ctrl_buf for the current setup step, 0 if none */
 
 	/* Class state */
@@ -175,12 +175,12 @@ typedef struct {
  * @param[in] cfg: Pointer to the class configuration, NULL to take every default.
  * @return 0 (RTK_SUCCESS) on success, non-zero on failure.
  */
-int usbh_rndis_init(const usbh_rndis_state_cb_t *cb, const usbh_rndis_config_t *cfg);
+int usbh_rndis_init(const usbh_rndis_cb_t *cb, const usbh_rndis_config_t *cfg);
 
 /**
  * @brief  De-initializes the RNDIS host class driver and releases resources.
  * @note   Task context only, not the host task. Closes the TX gate first, then waits without an
- *         upper bound for every task inside usbh_rndis_send_data() to leave.
+ *         upper bound for every task inside usbh_rndis_transmit() to leave.
  */
 void usbh_rndis_deinit(void);
 
@@ -196,13 +196,13 @@ int usbh_rndis_choose_config(usb_host_t *host);
  * @param[in] host: USB Host Handle.
  * @return 0 (RTK_SUCCESS) when an RNDIS function is found, non-zero otherwise.
  */
-int usbh_rndis_check_config_desc(usb_host_t *host);
+int usbh_rndis_check_config(usb_host_t *host);
 
 /**
  * @brief  Checks whether the RNDIS device is initialized and data may flow.
- * @return 1: ready, 0: not ready.
+ * @return true if ready, false otherwise.
  */
-u8 usbh_rndis_usb_is_ready(void);
+bool usbh_rndis_is_ready(void);
 
 /**
  * @brief  Transmits one Ethernet frame to the device as a REMOTE_NDIS_PACKET_MSG.
@@ -214,13 +214,13 @@ u8 usbh_rndis_usb_is_ready(void);
  * @return 0 on success, -RTK_ERR_BADARG for ISR context or a bad frame, -RTK_ERR_IO while the
  *         class is not ready or being de-initialized, other non-zero values on failure.
  */
-int usbh_rndis_send_data(u8 *buf, u32 len, u8 block);
+int usbh_rndis_transmit(const u8 *buf, u32 len, u8 block);
 
 /**
  * @brief  Gets the media state reported by the device.
- * @return 1: link up, 0: link down or not ready.
+ * @return true if the link is up, false if it is down or the class is not ready.
  */
-int usbh_rndis_get_link_status(void);
+bool usbh_rndis_get_link_status(void);
 
 /**
  * @brief  Gets the MAC address of the device.

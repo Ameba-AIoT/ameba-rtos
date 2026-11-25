@@ -51,7 +51,7 @@ extern "C" {
  */
 
 /** @brief Low-level disk I/O driver backing an attached USB mass storage device. */
-extern ll_diskio_drv USB_disk_Driver;
+extern ll_diskio_drv usbh_msc_disk_driver;
 
 /** @} End of Host_MSC_Disk_Variables group */
 /** @} End of USB_Host_Variables group */

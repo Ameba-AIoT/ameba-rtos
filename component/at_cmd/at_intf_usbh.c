@@ -115,8 +115,8 @@ static const usbh_cdc_acm_config_t cdc_acm_class_cfg = {
 	 * stay deasserted, and no notification pipe. */
 };
 
-static const usbh_user_cb_t usbh_usr_cb = {
-	.process = cdc_acm_cb_process
+static const usbh_cb_t usbh_usr_cb = {
+	.event = cdc_acm_cb_process
 };
 
 /* Private functions ---------------------------------------------------------*/
@@ -191,11 +191,11 @@ static void cdc_acm_cb_process(usb_host_t *host, u8 id)
 	UNUSED(host);
 
 	switch (id) {
-	case USBH_MSG_DISCONNECTED:
+	case USBH_EVENT_DISCONNECTED:
 		cdc_acm_is_ready = 0;
 		break;
 
-	case USBH_MSG_CONNECTED:
+	case USBH_EVENT_CONNECTED:
 		break;
 
 	default:

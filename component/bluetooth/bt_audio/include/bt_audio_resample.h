@@ -14,8 +14,17 @@ extern "C"
 {
 #endif
 
+/** @addtogroup BT_Types BT Types
+ * @{
+ */
+/** @addtogroup BT_Audio_Types BT Audio Types
+ * @{
+ */
+/** @addtogroup BT_Audio_Resample_Types BT Audio Resample Types
+ * @{
+ */
 /**
- * @typedef   rtk_bt_audio_resample_t
+ * @struct    rtk_bt_audio_resample_t
  * @brief     BT Audio resampler context holding the format conversion state and the resampled data.
  */
 typedef struct {
@@ -32,12 +41,24 @@ typedef struct {
 	void *out_buffer;               /*!< Intermediate buffer holding the output of one resample pass. */
 	RingBuffer *p_buffer;           /*!< Ring buffer holding the resampled data waiting to be read. */
 } rtk_bt_audio_resample_t;
+/**
+ * @}
+ */
+/**
+ * @}
+ */
+/**
+ * @}
+ */
 
 /********************************* Functions Declaration *******************************/
-/**
- * @defgroup  bt_audio_resample BT Audio Resample APIs
- * @brief     BT Audio resampler APIs.
- * @ingroup   bt_audio_group
+/** @addtogroup BT_Functions BT Functions
+ * @{
+ */
+/** @addtogroup BT_Audio_Functions BT Audio Functions
+ * @{
+ */
+/** @addtogroup BT_Audio_Resample_Functions BT Audio Resample Functions
  * @{
  */
 
@@ -102,6 +123,12 @@ uint32_t rtk_bt_audio_resample_feed(rtk_bt_audio_resample_t *p_bt_resample, uint
  */
 int16_t rtk_bt_audio_resample_read(rtk_bt_audio_resample_t *p_bt_resample, void *buffer, uint32_t size);
 
+/**
+ * @}
+ */
+/**
+ * @}
+ */
 /**
  * @}
  */

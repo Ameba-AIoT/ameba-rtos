@@ -41,10 +41,10 @@ Required Components: another peer device.
 	- Connect `UART_CTS(_PA_24)` to `UART_RTS(_PA_23)` of peer device
 	- Connect `GND` to `GND` of peer device
 * On RTL8735C
-	- Connect `UART_TX(_PF_8)` to `UART_RX(_PF_11)` of peer device
-	- Connect `UART_RX(_PF_11)` to `UART_TX(_PF_8)` of peer device
-	- Connect `UART_RTS(_PC_7)` to `UART_CTS(_PC_6)` of peer device
-	- Connect `UART_CTS(_PC_6)` to `UART_RTS(_PC_7)` of peer device
+	- Connect `UART_TX(_PF_12)` to `UART_RX(_PF_13)` of peer device
+	- Connect `UART_RX(_PF_13)` to `UART_TX(_PF_12)` of peer device
+	- Connect `UART_RTS(_PF_11)` to `UART_CTS(_PF_10)` of peer device
+	- Connect `UART_CTS(_PF_10)` to `UART_RTS(_PF_11)` of peer device
 	- Connect `GND` to `GND` of peer device
 
 

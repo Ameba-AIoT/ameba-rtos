@@ -470,7 +470,7 @@ int lfs_diskio_unlock(const struct lfs_config *c)
 
 int rt_lfs_init(lfs_t *lfs)
 {
-	struct lfs_config *lfs_cfg;
+	struct lfs_config *lfs_cfg = NULL;
 	int ret = 0;
 
 #if defined(CONFIG_LITTLEFS_WITHIN_APP_IMG)
@@ -548,6 +548,10 @@ int rt_lfs_init(lfs_t *lfs)
 #endif
 	}
 #endif
+
+	if (lfs_cfg == NULL) {
+		return LFS_ERR_INVAL;
+	}
 
 	ret = lfs_mount(lfs, lfs_cfg);
 	int need_reformat = (ret == LFS_ERR_NOTFMT);

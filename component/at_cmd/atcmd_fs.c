@@ -39,7 +39,7 @@ int32_t at_fs_delete(const char *key)
 
 int32_t at_fs_size(const char *key)
 {
-	struct stat *stat_buf;
+	struct stat *stat_buf = NULL;
 	int res = -1;
 	char *path = NULL;
 	char *prefix = vfs_get_prefix(g_cert_fs);

@@ -67,7 +67,7 @@ Refer to the [EVB User Guide](https://aiot.realmcu.com/filelist?document_type=9)
 
 # Device requirements
 
-* A USB headset with a UAC 1.0 audio function and, for the key test, an HID consumer-control interface.
+* A USB headset with a UAC 1.0 / 2.0 audio function and, for the key test, an HID consumer-control interface.
 * Playback: the headset shall offer a 2 channel, 16 bit, 48 kHz playback format, otherwise `[COMP-E] Play set alt fail` is printed and nothing is played.
 * Recording: the first microphone format the headset lists is used, whatever it is.
 * Speaker output of the recording: only on SoCs with `CONFIG_SUPPORT_AUDIO_FOR_USB` (RTL8730E). The captured PCM is then rendered through the audio output of the board; on the other SoCs the data is read and dropped.
@@ -156,7 +156,7 @@ Type the AT commands on the LOGUART console. Parameters are comma separated; the
 | `AT+USBHHIDUAC=init[,<play\|record>]` | Select the stream the following `mute`/`vol` act on, default `play`. Prints `Playback Control` or `Record Control`. |
 | `AT+USBHHIDUAC=mute,<0\|1>` | Mute (`1`) or unmute (`0`) the selected stream. Prints `Mute` / `UnMute`, then reads the mute control of every channel back (`Verify mute(<dir>) ...` lines). |
 | `AT+USBHHIDUAC=vol,<0..100\|up\|down>` | Set the volume of the selected stream in percent, or step it by 20. Each stream starts at 50. The volume of every channel is read back (`Verify vol(<dir>) ...` lines). |
-| `AT+USBHHIDUAC=hotplug` | Have the host core power-cycle the device through VBUS (`usbh_power_cycle()`), to exercise re-enumeration with the stack kept. Prints `[COMP-E] Not support` and `ERROR: -2` unless `CONFIG_USBH_COMP_HID_UAC_GPIO_POWER_CTRL` is set to 1. It is a `#define` in `example_usbh_composite_hid_uac.c` (default 0), not a Kconfig option; when set, the power-control GPIO `USB_DEV_PWR_CTRL_GPIO` (`_PA_3`) is registered as the VBUS switch of the host core (`usbh_user_cb_t::set_vbus`). |
+| `AT+USBHHIDUAC=hotplug` | Have the host core power-cycle the device through VBUS (`usbh_dev_power_cycle()`), to exercise re-enumeration with the stack kept. Prints `[COMP-E] Not support` and `ERROR: -2` unless `CONFIG_USBH_COMP_HID_UAC_GPIO_POWER_CTRL` is set to 1. It is a `#define` in `example_usbh_composite_hid_uac.c` (default 0), not a Kconfig option; when set, the power-control GPIO `USB_DEV_PWR_CTRL_GPIO` (`_PA_3`) is registered as the VBUS switch of the host core (`usbh_cb_t::set_vbus`). |
 
 `mute`/`vol` need an attached and set up device. Examples:
 ```

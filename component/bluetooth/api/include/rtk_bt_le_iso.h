@@ -23,6 +23,13 @@ extern "C" {
 #define UNUSED(x) ((void)(x))
 #endif
 
+/** @addtogroup BT_Types BT Types
+ * @{
+ */
+/** @addtogroup BT_LE_ISO_Types BT LE ISO Types
+ * @{
+ */
+
 /**
  * @typedef   rtk_bt_le_iso_role_t
  * @brief     Bluetooth LE ISO role definition.
@@ -911,24 +918,76 @@ typedef enum {
 } rtk_bt_le_iso_big_broadcaster_sync_state_t;
 
 /**
- * @defgroup  RTK_BLE_ISO_BIG_BOARDCASTER_SYNC_STATE Deprecated aliases
- * @brief     Deprecated aliases of the @ref rtk_bt_le_iso_big_broadcaster_sync_state_t values.
- * @deprecated Use the @ref rtk_bt_le_iso_big_broadcaster_sync_state_t values instead.
- * @{
+ * @def       RTK_BLE_ISO_BIG_BOARDCASTER_SYNC_STATE_IDLE
+ * @brief     Deprecated alias of @ref RTK_BLE_ISO_BIG_BROADCASTER_SYNC_STATE_IDLE (misspelled name kept for compatibility).
+ * @deprecated Use @ref RTK_BLE_ISO_BIG_BROADCASTER_SYNC_STATE_IDLE instead.
  */
 #define RTK_BLE_ISO_BIG_BOARDCASTER_SYNC_STATE_IDLE RTK_BLE_ISO_BIG_BROADCASTER_SYNC_STATE_IDLE
+
+/**
+ * @def       RTK_BLE_ISO_BIG_BOARDCASTER_SYNC_STATE_CREATING_EXT_ADV_STATE_PA_ADV_STATE_IDLE
+ * @brief     Deprecated alias of @ref RTK_BLE_ISO_BIG_BROADCASTER_SYNC_STATE_CREATING_EXT_ADV_STATE_PA_ADV_STATE_IDLE (misspelled name kept for compatibility).
+ * @deprecated Use @ref RTK_BLE_ISO_BIG_BROADCASTER_SYNC_STATE_CREATING_EXT_ADV_STATE_PA_ADV_STATE_IDLE instead.
+ */
 #define RTK_BLE_ISO_BIG_BOARDCASTER_SYNC_STATE_CREATING_EXT_ADV_STATE_PA_ADV_STATE_IDLE \
     RTK_BLE_ISO_BIG_BROADCASTER_SYNC_STATE_CREATING_EXT_ADV_STATE_PA_ADV_STATE_IDLE
+
+/**
+ * @def       RTK_BLE_ISO_BIG_BOARDCASTER_SYNC_STATE_WAIT_EXT_ADV_STATE_PA_ADV_STATE_ADVERTISING
+ * @brief     Deprecated alias of @ref RTK_BLE_ISO_BIG_BROADCASTER_SYNC_STATE_WAIT_EXT_ADV_STATE_PA_ADV_STATE_ADVERTISING (misspelled name kept for compatibility).
+ * @deprecated Use @ref RTK_BLE_ISO_BIG_BROADCASTER_SYNC_STATE_WAIT_EXT_ADV_STATE_PA_ADV_STATE_ADVERTISING instead.
+ */
 #define RTK_BLE_ISO_BIG_BOARDCASTER_SYNC_STATE_WAIT_EXT_ADV_STATE_PA_ADV_STATE_ADVERTISING \
     RTK_BLE_ISO_BIG_BROADCASTER_SYNC_STATE_WAIT_EXT_ADV_STATE_PA_ADV_STATE_ADVERTISING
+
+/**
+ * @def       RTK_BLE_ISO_BIG_BOARDCASTER_SYNC_STATE_CREATING_PA_ADV_STATE_IDLE
+ * @brief     Deprecated alias of @ref RTK_BLE_ISO_BIG_BROADCASTER_SYNC_STATE_CREATING_PA_ADV_STATE_IDLE (misspelled name kept for compatibility).
+ * @deprecated Use @ref RTK_BLE_ISO_BIG_BROADCASTER_SYNC_STATE_CREATING_PA_ADV_STATE_IDLE instead.
+ */
 #define RTK_BLE_ISO_BIG_BOARDCASTER_SYNC_STATE_CREATING_PA_ADV_STATE_IDLE RTK_BLE_ISO_BIG_BROADCASTER_SYNC_STATE_CREATING_PA_ADV_STATE_IDLE
+
+/**
+ * @def       RTK_BLE_ISO_BIG_BOARDCASTER_SYNC_STATE_WAIT_PA_ADV_STATE_ADVERTISING
+ * @brief     Deprecated alias of @ref RTK_BLE_ISO_BIG_BROADCASTER_SYNC_STATE_WAIT_PA_ADV_STATE_ADVERTISING (misspelled name kept for compatibility).
+ * @deprecated Use @ref RTK_BLE_ISO_BIG_BROADCASTER_SYNC_STATE_WAIT_PA_ADV_STATE_ADVERTISING instead.
+ */
 #define RTK_BLE_ISO_BIG_BOARDCASTER_SYNC_STATE_WAIT_PA_ADV_STATE_ADVERTISING RTK_BLE_ISO_BIG_BROADCASTER_SYNC_STATE_WAIT_PA_ADV_STATE_ADVERTISING
+
+/**
+ * @def       RTK_BLE_ISO_BIG_BOARDCASTER_SYNC_STATE_CREATING_EXT_ADV_STATE_IDLE
+ * @brief     Deprecated alias of @ref RTK_BLE_ISO_BIG_BROADCASTER_SYNC_STATE_CREATING_EXT_ADV_STATE_IDLE (misspelled name kept for compatibility).
+ * @deprecated Use @ref RTK_BLE_ISO_BIG_BROADCASTER_SYNC_STATE_CREATING_EXT_ADV_STATE_IDLE instead.
+ */
 #define RTK_BLE_ISO_BIG_BOARDCASTER_SYNC_STATE_CREATING_EXT_ADV_STATE_IDLE RTK_BLE_ISO_BIG_BROADCASTER_SYNC_STATE_CREATING_EXT_ADV_STATE_IDLE
+
+/**
+ * @def       RTK_BLE_ISO_BIG_BOARDCASTER_SYNC_STATE_WAIT_EXT_ADV_STATE_ADVERTISING
+ * @brief     Deprecated alias of @ref RTK_BLE_ISO_BIG_BROADCASTER_SYNC_STATE_WAIT_EXT_ADV_STATE_ADVERTISING (misspelled name kept for compatibility).
+ * @deprecated Use @ref RTK_BLE_ISO_BIG_BROADCASTER_SYNC_STATE_WAIT_EXT_ADV_STATE_ADVERTISING instead.
+ */
 #define RTK_BLE_ISO_BIG_BOARDCASTER_SYNC_STATE_WAIT_EXT_ADV_STATE_ADVERTISING RTK_BLE_ISO_BIG_BROADCASTER_SYNC_STATE_WAIT_EXT_ADV_STATE_ADVERTISING
+
+/**
+ * @def       RTK_BLE_ISO_BIG_BOARDCASTER_SYNC_STATE_CREATING
+ * @brief     Deprecated alias of @ref RTK_BLE_ISO_BIG_BROADCASTER_SYNC_STATE_CREATING (misspelled name kept for compatibility).
+ * @deprecated Use @ref RTK_BLE_ISO_BIG_BROADCASTER_SYNC_STATE_CREATING instead.
+ */
 #define RTK_BLE_ISO_BIG_BOARDCASTER_SYNC_STATE_CREATING RTK_BLE_ISO_BIG_BROADCASTER_SYNC_STATE_CREATING
+
+/**
+ * @def       RTK_BLE_ISO_BIG_BOARDCASTER_SYNC_STATE_BROADCASTING
+ * @brief     Deprecated alias of @ref RTK_BLE_ISO_BIG_BROADCASTER_SYNC_STATE_BROADCASTING (misspelled name kept for compatibility).
+ * @deprecated Use @ref RTK_BLE_ISO_BIG_BROADCASTER_SYNC_STATE_BROADCASTING instead.
+ */
 #define RTK_BLE_ISO_BIG_BOARDCASTER_SYNC_STATE_BROADCASTING RTK_BLE_ISO_BIG_BROADCASTER_SYNC_STATE_BROADCASTING
+
+/**
+ * @def       RTK_BLE_ISO_BIG_BOARDCASTER_SYNC_STATE_TERMINATING
+ * @brief     Deprecated alias of @ref RTK_BLE_ISO_BIG_BROADCASTER_SYNC_STATE_TERMINATING (misspelled name kept for compatibility).
+ * @deprecated Use @ref RTK_BLE_ISO_BIG_BROADCASTER_SYNC_STATE_TERMINATING instead.
+ */
 #define RTK_BLE_ISO_BIG_BOARDCASTER_SYNC_STATE_TERMINATING RTK_BLE_ISO_BIG_BROADCASTER_SYNC_STATE_TERMINATING
-/** @} */
 
 /**
  * @struct    rtk_bt_le_iso_big_broadcaster_sync_state_ind_t
@@ -1159,11 +1218,18 @@ typedef struct {
 	rtk_bt_le_iso_big_receiver_read_link_quality_info_t *p_link_quality_info;    /*!< Read link quality info result. */
 } rtk_bt_le_iso_big_receiver_read_link_quality_t;
 
-/********************************* Functions Declaration *******************************/
 /**
- * @defgroup  bt_le_iso BT LE ISO APIs
- * @brief     BT LE ISO related function APIs.
- * @ingroup   BT_APIs
+ * @}
+ */
+/**
+ * @}
+ */
+
+/********************************* Functions Declaration *******************************/
+/** @addtogroup BT_Functions BT Functions
+ * @{
+ */
+/** @addtogroup BT_LE_ISO_Functions BT LE ISO Functions
  * @{
  */
 
@@ -1426,6 +1492,9 @@ uint16_t rtk_bt_le_iso_sync_info(rtk_bt_le_iso_sync_info_t *p_info);
  */
 uint16_t rtk_bt_le_iso_get_iso_conn_handle(rtk_bt_le_iso_role_t role, rtk_bt_le_iso_conn_handle_info_t *p_info);
 
+/**
+ * @}
+ */
 /**
  * @}
  */

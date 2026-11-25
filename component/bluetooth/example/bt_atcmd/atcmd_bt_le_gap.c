@@ -941,7 +941,7 @@ static int atcmd_ble_gap_pa_sync_modify_list(int argc, char **argv)
 {
 	uint16_t ret = 0;
 	uint8_t op;
-	rtk_bt_le_addr_t addr;
+	rtk_bt_le_addr_t addr = {0};
 	uint8_t adv_sid = 0;
 
 	op = str_to_int(argv[0]);

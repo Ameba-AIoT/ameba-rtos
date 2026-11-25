@@ -10,6 +10,15 @@
 
 #include <stdint.h>
 
+/** @addtogroup BT_Constants BT Constants
+ * @{
+ */
+/** @addtogroup BT_Mesh_Constants BT Mesh Constants
+ * @{
+ */
+/** @addtogroup BT_Mesh_Datatrans_Model_Constants BT Mesh Datatrans Model Constants
+ * @{
+ */
 /**
  * @def       DATA_TRANS_DATA_MAX_LEN
  * @brief     Maximum length in bytes of the data of a Datatrans message.
@@ -17,8 +26,26 @@
  *            - The value shall not exceed 258, which is the maximum on AmebaLite for the single core case.
  */
 #define DATA_TRANS_DATA_MAX_LEN    0xff
+/**
+ * @}
+ */
+/**
+ * @}
+ */
+/**
+ * @}
+ */
 
 /*********************************** Datatrans Model ***********************************/
+/** @addtogroup BT_Types BT Types
+ * @{
+ */
+/** @addtogroup BT_Mesh_Types BT Mesh Types
+ * @{
+ */
+/** @addtogroup BT_Mesh_Datatrans_Model_Types BT Mesh Datatrans Model Types
+ * @{
+ */
 /**
  * @enum      rtk_bt_mesh_datatrans_model_act_t
  * @brief     BLE MESH datatrans model act definition.
@@ -51,7 +78,7 @@ typedef enum {
 } rtk_bt_mesh_datatrans_model_evt_t;
 
 /**
- * @enum      rtk_bt_mesh_datatrans_stat_t
+ * @typedef   rtk_bt_mesh_datatrans_stat_t
  * @brief     BLE MESH datatrans server model write status event data structure
  */
 enum {
@@ -131,11 +158,24 @@ typedef struct {
 	uint8_t data[DATA_TRANS_DATA_MAX_LEN];    /*!< Data written by the remote device, with data_len valid bytes. */
 } rtk_bt_mesh_datatrans_server_write_event_t;
 
-/********************************* Functions Declaration *******************************/
 /**
- * @defgroup  ble_mesh_datatrans_model BT LE Mesh Datatrans Model APIs
- * @brief     BT LE Mesh Datatrans Model related function APIs
- * @ingroup   ble_mesh_api_group
+ * @}
+ */
+/**
+ * @}
+ */
+/**
+ * @}
+ */
+
+/********************************* Functions Declaration *******************************/
+/** @addtogroup BT_Functions BT Functions
+ * @{
+ */
+/** @addtogroup BT_Mesh_Functions BT Mesh Functions
+ * @{
+ */
+/** @addtogroup BT_Mesh_Datatrans_Model_Functions BT Mesh Datatrans Model Functions
  * @{
  */
 
@@ -160,6 +200,12 @@ uint16_t rtk_bt_mesh_datatrans_model_write(rtk_bt_mesh_datatrans_client_write_ap
  */
 uint16_t rtk_bt_mesh_datatrans_model_read(rtk_bt_mesh_datatrans_client_read_api_t *client_read);
 
+/**
+ * @}
+ */
+/**
+ * @}
+ */
 /**
  * @}
  */

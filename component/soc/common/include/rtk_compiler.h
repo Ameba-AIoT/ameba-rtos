@@ -19,16 +19,10 @@
 #define _PACKED_            __attribute__ ((packed))
 #define __NO_INLINE         __attribute__ ((noinline))
 
-/* ARM Compiler 6 */
-#if defined (__ARMCC_VERSION) && (__ARMCC_VERSION >= 6010050)
-#define _LONG_CALL_
-#else
-#if defined (RISC_V)
-#define _LONG_CALL_
-#elif defined (__clang__)
-#define _LONG_CALL_
-#else
+#if defined (__GNUC__) && !defined (__clang__) && defined (__arm__) && !defined (CONFIG_BUILD_ROM)
 #define _LONG_CALL_     __attribute__ ((long_call))
+#else
+#define _LONG_CALL_
 #endif
 #if defined (__clang__)
 /* clang has no per function optimize attribute */
@@ -39,7 +33,6 @@
 #define _OPTIMIZE_O3_           __attribute__ ((optimize("O3")))
 #endif
 #define UNUSED_WARN_DIS	__attribute__((unused))
-#endif
 
 /* GNUC */
 #ifdef __GNUC__

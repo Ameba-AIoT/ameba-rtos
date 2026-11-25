@@ -31,7 +31,7 @@ extern "C" {
  */
 
 /* A.5. Video Class-Specific VC Interface Descriptor Subtypes */
-#define USBH_UVC_VC_DESCRIPTOR_UNDEFINED                     0x00U
+#define USBH_UVC_VC_DESC_UNDEFINED                     0x00U
 #define USBH_UVC_VC_HEADER                                   0x01U
 #define USBH_UVC_VC_INPUT_TERMINAL                           0x02U
 #define USBH_UVC_VC_OUTPUT_TERMINAL                          0x03U
@@ -76,7 +76,7 @@ extern "C" {
 #define USBH_UVC_VS_PROBE_CONTROL                            (0x1U<<8U)
 #define USBH_UVC_VS_COMMIT_CONTROL                           (0x2U<<8U)
 
-#define USBH_UVC_DESC_TYPE_CS_INTERFACE                      0x24U
+#define USBH_UVC_DESC_TYPE_CS_ITF                      0x24U
 #define USBH_UVC_DESC_TYPE_CS_ENDPOINT                       0x25U
 
 /* bmHeaderInfo bits of the payload header, ref UVC 1.5 Table 2-5 */

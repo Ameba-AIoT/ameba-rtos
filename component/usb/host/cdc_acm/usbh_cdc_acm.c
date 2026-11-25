@@ -207,13 +207,13 @@ static void usbh_cdc_acm_close_pipes(usb_host_t *host)
 	usbh_cdc_acm_host_t *cdc = &usbh_cdc_acm_host;
 
 	if (cdc->intr_in.pipe_num != 0U) {
-		usbh_close_pipe(host, &cdc->intr_in);
+		usbh_pipe_close(host, &cdc->intr_in);
 	}
 	if (cdc->bulk_in.pipe_num != 0U) {
-		usbh_close_pipe(host, &cdc->bulk_in);
+		usbh_pipe_close(host, &cdc->bulk_in);
 	}
 	if (cdc->bulk_out.pipe_num != 0U) {
-		usbh_close_pipe(host, &cdc->bulk_out);
+		usbh_pipe_close(host, &cdc->bulk_out);
 	}
 }
 
@@ -249,7 +249,7 @@ static int usbh_cdc_acm_open_bulk_ep(usb_host_t *host, usbh_ep_desc_t *ep_desc)
 		return -RTK_ERR_BADARG;
 	}
 
-	if (usbh_open_pipe(host, pipe, ep_desc, &usbh_cdc_acm_driver) != RTK_SUCCESS) {
+	if (usbh_pipe_open(host, pipe, ep_desc, &usbh_cdc_acm_driver) != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Open EP%02x fail\n", ep_desc->bEndpointAddress);
 		return -RTK_ERR_BADARG;
 	}
@@ -295,7 +295,7 @@ static int usbh_cdc_acm_claim_pipe(usbh_pipe_t *pipe, u8 *busy, u8 *buf, u32 len
 
 	usb_os_enter_critical();
 	/* An unopened pipe has pipe_num 0, which is EP0, and ep_mps 0 */
-	if ((pipe->pipe_num != 0U) && (*busy == 0U) && (pipe->xfer_state == USBH_EP_XFER_IDLE)) {
+	if ((pipe->pipe_num != 0U) && (*busy == 0U) && (pipe->xfer_state == USBH_PIPE_XFER_IDLE)) {
 		*busy = 1U;
 		pipe->xfer_buf = buf;
 		pipe->xfer_len = len;
@@ -306,7 +306,7 @@ static int usbh_cdc_acm_claim_pipe(usbh_pipe_t *pipe, u8 *busy, u8 *buf, u32 len
 		} else {
 			pipe->trx_zlp = 0U;
 		}
-		pipe->xfer_state = USBH_EP_XFER_START;
+		pipe->xfer_state = USBH_PIPE_XFER_START;
 		ret = RTK_SUCCESS;
 	}
 	usb_os_exit_critical();
@@ -383,29 +383,25 @@ static int usbh_cdc_acm_claim_ctrl(u8 state, u16 value, const usb_cdc_acm_line_c
   * @param  comm_itf_num: bInterfaceNumber of that comm interface
   * @retval bInterfaceNumber of the data interface, 0xFF when no matching Union is present
   */
-static u8 usbh_cdc_acm_get_union_data_itf(const usbh_itf_data_t *itf_data, u8 comm_itf_num)
+static u8 usbh_cdc_acm_get_union_data_itf(const usbh_itf_t *itf_data, u8 comm_itf_num)
 {
-	const u8 *desc = itf_data->raw_data;
-	u32 total = 0U;
-	u8 data_itf_num = 0xFFU;
-	u8 len;
+	const u8 *end;
+	const u8 *desc;
 
-	while ((desc != NULL) && ((total + USB_LEN_DESC_HEADER) <= itf_data->raw_data_len)) {
-		len = desc[0];
-		if ((len < USB_LEN_DESC_HEADER) || ((total + len) > itf_data->raw_data_len)) {
-			/* bLength is the only way to the next descriptor, so the rest can not be framed */
-			break;
-		}
-		if ((desc[1] == USB_CDC_CS_INTERFACE) && (len >= USB_CDC_UNION_FUNC_DESC_MIN_SIZE) &&
-			(desc[2] == USB_CDC_FUNC_DESC_UNION) && (desc[3] == comm_itf_num)) {
-			data_itf_num = desc[4];
-			break;
-		}
-		desc += len;
-		total += len;
+	if (itf_data->raw_data == NULL) {
+		return 0xFFU;
 	}
 
-	return data_itf_num;
+	end = itf_data->raw_data + itf_data->raw_data_len;
+	desc = usbh_desc_find(itf_data->raw_data, end, USB_CDC_CS_INTERFACE, USB_CDC_FUNC_DESC_UNION);
+	while (desc != NULL) {
+		if ((desc[0] >= USB_CDC_UNION_FUNC_DESC_MIN_SIZE) && (desc[3] == comm_itf_num)) {
+			return desc[4];
+		}
+		desc = usbh_desc_find(usbh_desc_next(desc, end), end, USB_CDC_CS_INTERFACE, USB_CDC_FUNC_DESC_UNION);
+	}
+
+	return 0xFFU;
 }
 #endif
 
@@ -429,9 +425,9 @@ static const usbh_cdc_acm_param_t *usbh_cdc_acm_find_param(const usbh_cdc_acm_pa
 
 /**
   * @brief  Find an interface descriptor by interface number and alternate setting,
-  *         walking the same-class chain returned by usbh_get_interface_descriptor.
+  *         walking the same-class chain returned by usbh_itf_find.
   */
-static usbh_itf_desc_t *usbh_cdc_acm_find_itf(usbh_itf_data_t *itf_data, u8 itf_num, u8 alt_setting)
+static usbh_itf_desc_t *usbh_cdc_acm_find_itf(usbh_itf_t *itf_data, u8 itf_num, u8 alt_setting)
 {
 	usbh_itf_desc_t *itf_desc;
 	u8 alt_idx;
@@ -492,7 +488,7 @@ static int usbh_cdc_acm_open_quectel_eps(usb_host_t *host, usbh_cdc_acm_host_t *
 			 * the pipe would be opened but never polled or closed (leaked),
 			 * because notify_process() / SOF / detach() paths are compiled out. */
 			if (USB_EP_IS_IN(ep_desc->bEndpointAddress) && (cdc->intr_in.pipe_num == 0U)) {
-				if (usbh_open_pipe(host, &cdc->intr_in, ep_desc, &usbh_cdc_acm_driver) != RTK_SUCCESS) {
+				if (usbh_pipe_open(host, &cdc->intr_in, ep_desc, &usbh_cdc_acm_driver) != RTK_SUCCESS) {
 					RTK_LOGS(TAG, RTK_LOG_ERROR, "Open intr in pipe fail\n");
 					return -RTK_ERR_BADARG;
 				}
@@ -521,7 +517,7 @@ static int usbh_cdc_acm_attach_acm_4g(usb_host_t *host, usbh_cdc_acm_host_t *cdc
 	usbh_pipe_t *intr_in = &cdc->intr_in;
 	usbh_ep_desc_t *ep_desc;
 #endif
-	usbh_itf_data_t *itf_data;
+	usbh_itf_t *itf_data;
 	usbh_itf_desc_t *itf_desc;
 
 	usbh_dev_id_t dev_id_info = {0,};
@@ -532,7 +528,7 @@ static int usbh_cdc_acm_attach_acm_4g(usb_host_t *host, usbh_cdc_acm_host_t *cdc
 	dev_id_info.bInterfaceProtocol = USB_CDC_CTRL_PROTOCOL_COMMON_AT_COMMAND;
 	dev_id_info.mMatchFlags = USBH_DEV_ID_MATCH_ITF_INFO;
 
-	itf_data = usbh_get_interface_descriptor(host, &dev_id_info);
+	itf_data = usbh_itf_find(host, &dev_id_info);
 	if (itf_data == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Get comm itf fail\n");
 		return RTK_FAIL;
@@ -552,7 +548,7 @@ static int usbh_cdc_acm_attach_acm_4g(usb_host_t *host, usbh_cdc_acm_host_t *cdc
 	 * because notify_process() / SOF / detach() paths are compiled out. */
 	ep_desc = &itf_desc->ep_desc_array[0];
 	if (USB_EP_IS_IN(ep_desc->bEndpointAddress) && ((ep_desc->bmAttributes & USB_EP_XFER_TYPE_MASK) == USB_CH_EP_TYPE_INTR)) {
-		if (usbh_open_pipe(host, intr_in, ep_desc, &usbh_cdc_acm_driver) != RTK_SUCCESS) {
+		if (usbh_pipe_open(host, intr_in, ep_desc, &usbh_cdc_acm_driver) != RTK_SUCCESS) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Open intr in pipe fail\n");
 			return -RTK_ERR_BADARG;
 		}
@@ -565,7 +561,7 @@ static int usbh_cdc_acm_attach_acm_4g(usb_host_t *host, usbh_cdc_acm_host_t *cdc
 	dev_id_info.bInterfaceProtocol = USB_CDC_CTRL_PROTOCOL_NO_CLASS_SPECIFIC;
 	dev_id_info.mMatchFlags = USBH_DEV_ID_MATCH_ITF_INFO;
 
-	itf_data = usbh_get_interface_descriptor(host, &dev_id_info);
+	itf_data = usbh_itf_find(host, &dev_id_info);
 	if (itf_data == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Get data itf fail\n");
 		return RTK_FAIL;
@@ -592,7 +588,7 @@ static int usbh_cdc_acm_attach_acm_4g(usb_host_t *host, usbh_cdc_acm_host_t *cdc
   */
 static int usbh_cdc_acm_attach_quectel(usb_host_t *host, usbh_cdc_acm_host_t *cdc)
 {
-	usbh_itf_data_t *itf_data;
+	usbh_itf_t *itf_data;
 	usbh_itf_desc_t *itf_desc;
 	usbh_dev_id_t dev_id_info = {0,};
 
@@ -601,7 +597,7 @@ static int usbh_cdc_acm_attach_quectel(usb_host_t *host, usbh_cdc_acm_host_t *cd
 	dev_id_info.bInterfaceProtocol = 0x00;
 	dev_id_info.mMatchFlags = USBH_DEV_ID_MATCH_ITF_INFO;
 
-	itf_data = usbh_get_interface_descriptor(host, &dev_id_info);
+	itf_data = usbh_itf_find(host, &dev_id_info);
 	if (itf_data == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Get vendor itf fail\n");
 		return RTK_FAIL;
@@ -650,7 +646,7 @@ static int usbh_cdc_acm_ctrl_setting(usb_host_t *host)
 	switch (cdc->sub_status) {
 #if CONFIG_USBH_CDC_ACM_4G_DONGLE
 	case USBH_CDC_ACM_CTRL_ALT_SETTING:
-		state = usbh_ctrl_set_interface(host, cdc->data_itf_num, cdc->data_itf_alt);
+		state = usbh_itf_set_alt(host, cdc->data_itf_num, cdc->data_itf_alt);
 		if ((state == RTK_SUCCESS) || ((state != -RTK_ERR_BUSY) && (cdc->data_itf_alt == 0U))) {
 			cdc->sub_status = USBH_CDC_ACM_CTRL_SET_LINE_CODING;
 		} else if (state != -RTK_ERR_BUSY) {
@@ -733,8 +729,8 @@ static int usbh_cdc_acm_attach(usb_host_t *host)
 #if CONFIG_USBH_CDC_ACM_4G_DONGLE
 	/* 4G LTE dongle path: recognise the device by VID/PID and use the
 	 * vendor-specific topology (Quectel single interface, or param-driven ACM). */
-	u16 vid = host->dev_desc->idVendor;
-	u16 pid = host->dev_desc->idProduct;
+	u16 vid = usbh_dev_get_desc(host)->idVendor;
+	u16 pid = usbh_dev_get_desc(host)->idProduct;
 	int ret;
 
 	cdc->param_item = usbh_cdc_acm_find_param(cdc->cfg->dongle_param, vid, pid);
@@ -758,11 +754,11 @@ static int usbh_cdc_acm_attach(usb_host_t *host)
 	cdc->sub_status = USBH_CDC_ACM_CTRL_ALT_SETTING;
 	UNUSED(status);
 #else
-	usbh_itf_data_t *itf_data;
+	usbh_itf_t *itf_data;
 	usbh_itf_desc_t *comm_itf_desc;
 	usbh_itf_desc_t *data_itf_desc;
 	usbh_dev_id_t dev_id = {0,};
-	usbh_itf_data_t *node;
+	usbh_itf_t *node;
 	u8 comm_itf_num;
 	u8 union_itf_num;
 	u8 i;
@@ -780,7 +776,7 @@ static int usbh_cdc_acm_attach(usb_host_t *host)
 	 * not identify the interface (PSTN §6.3), so matching a fixed protocol
 	 * would reject valid ACM devices.
 	 *
-	 * Limitation: usbh_get_interface_descriptor() returns the FIRST matching
+	 * Limitation: usbh_itf_find() returns the FIRST matching
 	 * comm interface. On a composite device that exposes multiple ACM
 	 * functions (e.g. AT + PPP), only the first one is used; the rest are
 	 * left claimed by the core (iface_owner set in Phase 1) but never
@@ -789,7 +785,7 @@ static int usbh_cdc_acm_attach(usb_host_t *host)
 	dev_id.bInterfaceClass = USB_CDC_COMM_INTERFACE_CLASS_CODE;
 	dev_id.bInterfaceSubClass = USB_CDC_SUBCLASS_ACM;
 	dev_id.mMatchFlags = USBH_DEV_ID_MATCH_ITF_CLASS | USBH_DEV_ID_MATCH_ITF_SUBCLASS;
-	itf_data = usbh_get_interface_descriptor(host, &dev_id);
+	itf_data = usbh_itf_find(host, &dev_id);
 	if (itf_data == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Get comm itf fail\n");
 		return -RTK_ERR_BADARG;
@@ -808,7 +804,7 @@ static int usbh_cdc_acm_attach(usb_host_t *host)
 		ep_desc = &comm_itf_desc->ep_desc_array[0];
 		if (USB_EP_IS_IN(ep_desc->bEndpointAddress) &&
 			((ep_desc->bmAttributes & USB_EP_XFER_TYPE_MASK) == USB_CH_EP_TYPE_INTR)) {
-			if (usbh_open_pipe(host, intr_in, ep_desc, &usbh_cdc_acm_driver) == RTK_SUCCESS) {
+			if (usbh_pipe_open(host, intr_in, ep_desc, &usbh_cdc_acm_driver) == RTK_SUCCESS) {
 				intr_in->max_timeout_tick = USB_INTR_MAX_TIMEOUT_TICK;
 			} else {
 				RTK_LOGS(TAG, RTK_LOG_WARN, "Open intr pipe fail\n");
@@ -822,7 +818,7 @@ static int usbh_cdc_acm_attach(usb_host_t *host)
 	dev_id.bInterfaceSubClass = USB_CDC_SUBCLASS_RESERVED;
 	dev_id.bInterfaceProtocol = USB_CDC_CTRL_PROTOCOL_NO_CLASS_SPECIFIC;
 	dev_id.mMatchFlags = USBH_DEV_ID_MATCH_ITF_INFO;
-	itf_data = usbh_get_interface_descriptor(host, &dev_id);
+	itf_data = usbh_itf_find(host, &dev_id);
 	if (itf_data == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Get data itf fail\n");
 		status = -RTK_ERR_BADARG;
@@ -926,7 +922,7 @@ static void usbh_cdc_acm_detach(usb_host_t *host)
 	usbh_cdc_acm_close_pipes(host);
 
 	/* Device gone: drop the stale host handle and reset state so post-detach
-	   transmit/receive calls are rejected by their host/connect_state checks. */
+	   transmit/receive calls are rejected by their host/usbh_dev_is_ready() checks. */
 	cdc->host = NULL;
 	cdc->state = USBH_CDC_ACM_STATE_IDLE;
 	cdc->bulk_out_busy = 0U;
@@ -969,7 +965,7 @@ static int usbh_cdc_acm_setup(usb_host_t *host)
 /**
   * @brief  Check whether a BULK pipe has been busy longer than its timeout
   * @note   ISR context, read only. A NAKed BULK channel masks its NAK interrupt after the first one, so
-  *         nothing else wakes the host task to run the timeout and NAK retry of usbh_transfer_process().
+  *         nothing else wakes the host task to run the timeout and NAK retry of usbh_xfer_process().
   *         Only a NAKed transfer (URB_BUSY) is re-driven: one that has seen no NAK is still moving data and is
   *         reported by its own completion.
   * @param  host: Host handle
@@ -978,8 +974,8 @@ static int usbh_cdc_acm_setup(usb_host_t *host)
   */
 static u8 usbh_cdc_acm_bulk_due(usb_host_t *host, usbh_pipe_t *pipe)
 {
-	if ((pipe->pipe_num != 0U) && (pipe->xfer_state == USBH_EP_XFER_BUSY) &&
-		(usbh_get_elapsed_ticks(host, pipe->tick) > pipe->max_timeout_tick) &&
+	if ((pipe->pipe_num != 0U) && (pipe->xfer_state == USBH_PIPE_XFER_BUSY) &&
+		(usbh_tick_elapsed(host, pipe->tick) > pipe->max_timeout_tick) &&
 		(usbh_get_urb_state(host, pipe) == USBH_URB_BUSY)) {
 		return 1U;
 	}
@@ -999,7 +995,7 @@ static u8 usbh_cdc_acm_intr_due(usb_host_t *host, usbh_pipe_t *pipe)
 {
 	usbh_urb_state_t urb_state;
 
-	if ((pipe->pipe_num == 0U) || (pipe->xfer_state != USBH_EP_XFER_BUSY)) {
+	if ((pipe->pipe_num == 0U) || (pipe->xfer_state != USBH_PIPE_XFER_BUSY)) {
 		return 0U;
 	}
 
@@ -1009,7 +1005,7 @@ static u8 usbh_cdc_acm_intr_due(usb_host_t *host, usbh_pipe_t *pipe)
 		return 0U;
 	}
 
-	return ((usbh_get_elapsed_frame_cnt(host, pipe->frame_num) + 1U) >= pipe->ep_interval) ? 1U : 0U;
+	return ((usbh_frame_elapsed(host, pipe->frame_num) + 1U) >= pipe->ep_interval) ? 1U : 0U;
 }
 #endif
 
@@ -1167,7 +1163,7 @@ static int usbh_cdc_acm_process_get_line_coding(usb_host_t *host, usb_cdc_acm_li
 	if (ret == RTK_SUCCESS) {
 		/* A short reply or a ZLP completes the request too, but leaves the fields it did not carry unset:
 		   a line coding is 7 bytes (Ref PSTN 1.2 6.3.11), anything shorter reports none */
-		len = usbh_get_last_ctrl_in_size(host);
+		len = usbh_ctrl_get_xfer_len(host);
 		if (len < USB_CDC_ACM_LINE_CODING_SIZE) {
 			RTK_LOGS(TAG, RTK_LOG_WARN, "Line coding len %d\n", len);
 			ret = -RTK_ERR_IO;
@@ -1242,16 +1238,16 @@ static void usbh_cdc_acm_process_tx(usb_host_t *host)
 {
 	usbh_cdc_acm_host_t *cdc = &usbh_cdc_acm_host;
 	usbh_pipe_t *bulk_out = &cdc->bulk_out;
-	int status = usbh_transfer_process(host, bulk_out);
+	int status = usbh_xfer_process(host, bulk_out);
 	u8 done = 0U;
 
-	if ((status == RTK_SUCCESS) && (bulk_out->xfer_state == USBH_EP_XFER_IDLE)) {
+	if ((status == RTK_SUCCESS) && (bulk_out->xfer_state == USBH_PIPE_XFER_IDLE)) {
 		done = 1U;
-	} else if (bulk_out->xfer_state == USBH_EP_XFER_START) {
+	} else if (bulk_out->xfer_state == USBH_PIPE_XFER_START) {
 		usbh_notify(host, bulk_out->pipe_num, &usbh_cdc_acm_driver);
-	} else if (bulk_out->xfer_state == USBH_EP_XFER_ERROR) {
+	} else if (bulk_out->xfer_state == USBH_PIPE_XFER_ERROR) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "BULK TX fail: %d\n", usbh_get_urb_state(host, bulk_out));
-		bulk_out->xfer_state = USBH_EP_XFER_IDLE;
+		bulk_out->xfer_state = USBH_PIPE_XFER_IDLE;
 		done = 1U;
 	} else {
 		/* Still in flight */
@@ -1280,25 +1276,25 @@ static void usbh_cdc_acm_process_rx(usb_host_t *host)
 	u32 len;
 	int status;
 
-	status = usbh_transfer_process(host, bulk_in);
+	status = usbh_xfer_process(host, bulk_in);
 
-	if ((status == RTK_SUCCESS) && (bulk_in->xfer_state == USBH_EP_XFER_IDLE)) {
-		len = usbh_get_last_transfer_size(host, bulk_in);
+	if ((status == RTK_SUCCESS) && (bulk_in->xfer_state == USBH_PIPE_XFER_IDLE)) {
+		len = usbh_pipe_get_xfer_len(host, bulk_in);
 		usbh_cdc_acm_release(&cdc->bulk_in_busy);
 		if ((cdc->cb != NULL) && (cdc->cb->received != NULL)) {
 			cdc->cb->received(buf, len, status);
 		}
-	} else if (bulk_in->xfer_state == USBH_EP_XFER_START) {
+	} else if (bulk_in->xfer_state == USBH_PIPE_XFER_START) {
 		/* xfer_len 0 means N*MPS bytes landed and the trailing ZLP is being fetched: report the
 		   data now, the pipe stays owned until the ZLP completes */
-		len = usbh_get_last_transfer_size(host, bulk_in);
+		len = usbh_pipe_get_xfer_len(host, bulk_in);
 		if ((bulk_in->xfer_len == 0U) && (cdc->cb != NULL) && (cdc->cb->received != NULL)) {
 			cdc->cb->received(buf, len, status);
 		}
 		usbh_notify(host, bulk_in->pipe_num, &usbh_cdc_acm_driver);
-	} else if (bulk_in->xfer_state == USBH_EP_XFER_ERROR) {
+	} else if (bulk_in->xfer_state == USBH_PIPE_XFER_ERROR) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "BULK RX fail: %d\n", usbh_get_urb_state(host, bulk_in));
-		bulk_in->xfer_state = USBH_EP_XFER_IDLE;
+		bulk_in->xfer_state = USBH_PIPE_XFER_IDLE;
 		usbh_cdc_acm_release(&cdc->bulk_in_busy);
 		if ((cdc->cb != NULL) && (cdc->cb->received != NULL)) {
 			cdc->cb->received(NULL, 0U, status);
@@ -1358,26 +1354,26 @@ static void usbh_cdc_acm_process_intr_rx(usb_host_t *host)
 	if (usbh_cdc_acm_intr_due(host, intr_in) != 0U) {
 		intr_in->retry_cnt++;
 		if (intr_in->retry_cnt <= USB_INTR_RETRY_MAX_CNT) {
-			intr_in->xfer_state = USBH_EP_XFER_START;
+			intr_in->xfer_state = USBH_PIPE_XFER_START;
 		} else {
 			intr_in->retry_cnt = 0U;
-			intr_in->xfer_state = USBH_EP_XFER_ERROR;
+			intr_in->xfer_state = USBH_PIPE_XFER_ERROR;
 		}
 	}
 
-	status = usbh_transfer_process(host, intr_in);
+	status = usbh_xfer_process(host, intr_in);
 
-	if ((status == RTK_SUCCESS) && (intr_in->xfer_state == USBH_EP_XFER_IDLE)) {
-		len = usbh_get_last_transfer_size(host, intr_in);
+	if ((status == RTK_SUCCESS) && (intr_in->xfer_state == USBH_PIPE_XFER_IDLE)) {
+		len = usbh_pipe_get_xfer_len(host, intr_in);
 		usbh_cdc_acm_release(&cdc->intr_in_busy);
 		if ((cdc->cb != NULL) && (cdc->cb->notify != NULL)) {
 			usbh_cdc_acm_report_notify(buf, len, status);
 		}
-	} else if (intr_in->xfer_state == USBH_EP_XFER_START) {
+	} else if (intr_in->xfer_state == USBH_PIPE_XFER_START) {
 		usbh_notify(host, intr_in->pipe_num, &usbh_cdc_acm_driver);
-	} else if (intr_in->xfer_state == USBH_EP_XFER_ERROR) {
+	} else if (intr_in->xfer_state == USBH_PIPE_XFER_ERROR) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "INTR RX fail: %d\n", usbh_get_urb_state(host, intr_in));
-		intr_in->xfer_state = USBH_EP_XFER_IDLE;
+		intr_in->xfer_state = USBH_PIPE_XFER_IDLE;
 		usbh_cdc_acm_release(&cdc->intr_in_busy);
 		if ((cdc->cb != NULL) && (cdc->cb->notify != NULL)) {
 			cdc->cb->notify(NULL, 0U, status);
@@ -1472,7 +1468,7 @@ int usbh_cdc_acm_init(const usbh_cdc_acm_cb_t *cb, const usbh_cdc_acm_config_t *
 #endif
 
 	/* Last: once registered, the host task may attach and read everything set above */
-	ret = usbh_register_class(&usbh_cdc_acm_driver);
+	ret = usbh_class_register(&usbh_cdc_acm_driver);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Register class fail %d\n", ret);
 		goto init_fail;
@@ -1505,7 +1501,7 @@ void usbh_cdc_acm_deinit(void)
 	/* First, before anything is freed: on RTK_SUCCESS no attach/setup/process/detach of this
 	 * class runs any more, an EP0 request it left in flight is halted and a sof() still
 	 * running on another core is waited out. Anything else means nothing was released. */
-	if (usbh_unregister_class(&usbh_cdc_acm_driver) != RTK_SUCCESS) {
+	if (usbh_class_unregister(&usbh_cdc_acm_driver) != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Deinit refused\n");
 		return;
 	}
@@ -1549,7 +1545,7 @@ int usbh_cdc_acm_set_control_line_state(u16 bitmap)
 		return -RTK_ERR_BADARG;
 	}
 
-	if (host->connect_state == USBH_STATE_SETUP) {
+	if (usbh_dev_is_ready(host)) {
 		ret = usbh_cdc_acm_claim_ctrl(USBH_CDC_ACM_STATE_SET_CONTROL_LINE_STATE, bitmap, NULL);
 		if (ret == RTK_SUCCESS) {
 			usbh_notify(host, 0U, &usbh_cdc_acm_driver);
@@ -1574,7 +1570,7 @@ int usbh_cdc_acm_send_break(u16 duration_ms)
 		return -RTK_ERR_BADARG;
 	}
 
-	if (host->connect_state == USBH_STATE_SETUP) {
+	if (usbh_dev_is_ready(host)) {
 		ret = usbh_cdc_acm_claim_ctrl(USBH_CDC_ACM_STATE_SEND_BREAK, duration_ms, NULL);
 		if (ret == RTK_SUCCESS) {
 			usbh_notify(host, 0U, &usbh_cdc_acm_driver);
@@ -1604,7 +1600,7 @@ int usbh_cdc_acm_set_line_coding(usb_cdc_acm_line_coding_t *line_coding)
 		return -RTK_ERR_BADARG;
 	}
 
-	if (host->connect_state == USBH_STATE_SETUP) {
+	if (usbh_dev_is_ready(host)) {
 		ret = usbh_cdc_acm_claim_ctrl(USBH_CDC_ACM_STATE_SET_LINE_CODING, 0U, line_coding);
 		if (ret == RTK_SUCCESS) {
 			usbh_notify(host, 0U, &usbh_cdc_acm_driver);
@@ -1629,7 +1625,7 @@ int usbh_cdc_acm_get_line_coding(usb_cdc_acm_line_coding_t *line_coding)
 		return -RTK_ERR_BADARG;
 	}
 
-	if ((host->connect_state == USBH_STATE_SETUP) || (host->connect_state == USBH_STATE_ATTACH)) {
+	if ((usbh_dev_is_ready(host)) || (usbh_dev_get_state(host) == USBH_STATE_ATTACH)) {
 		usb_cdc_acm_line_coding_t *lc = cdc->line_coding;
 		usb_cdc_acm_line_coding_t *ulc = line_coding;
 		/* line_coding is the DMA target of SET/GET_LINE_CODING: a copy taken while that
@@ -1674,7 +1670,7 @@ int usbh_cdc_acm_transmit(u8 *buf, u32 len)
 		return -RTK_ERR_BADARG;
 	}
 
-	if (host->connect_state == USBH_STATE_SETUP) {
+	if (usbh_dev_is_ready(host)) {
 		ret = usbh_cdc_acm_claim_pipe(pipe, &cdc->bulk_out_busy, buf, len, len);
 		if (ret == RTK_SUCCESS) {
 			usbh_notify(host, pipe->pipe_num, &usbh_cdc_acm_driver);
@@ -1707,7 +1703,7 @@ int usbh_cdc_acm_receive(u8 *buf, u32 len)
 		return -RTK_ERR_BADARG;
 	}
 
-	if (host->connect_state == USBH_STATE_SETUP) {
+	if (usbh_dev_is_ready(host)) {
 		/* The controller receives whole packets, each adjusted to the DWORD boundary, so ask for
 		   no more than the packets that fit in buf; the device keeps the rest for the next one */
 		xfer_len = usb_get_max_payload_len(len, pipe->ep_mps);
@@ -1731,7 +1727,7 @@ int usbh_cdc_acm_receive(u8 *buf, u32 len)
   * @param  len: Data length
   * @retval RTK_SUCCESS on success, others on failure.
   */
-int usbh_cdc_acm_notify_receive(u8 *buf, u32 len)
+int usbh_cdc_acm_receive_notification(u8 *buf, u32 len)
 {
 	int ret = RTK_FAIL;
 	usbh_cdc_acm_host_t *cdc = &usbh_cdc_acm_host;
@@ -1754,7 +1750,7 @@ int usbh_cdc_acm_notify_receive(u8 *buf, u32 len)
 		return -RTK_ERR_BADARG;
 	}
 
-	if (host->connect_state == USBH_STATE_SETUP) {
+	if (usbh_dev_is_ready(host)) {
 		/* One notification fits in one MPS packet, and the controller may fill all of it */
 		xfer_len = pipe->ep_mps;
 		if (len < usb_get_dma_len(xfer_len, pipe->ep_mps)) {

@@ -13,6 +13,12 @@ extern "C"
 {
 #endif /* __cplusplus */
 
+/** @addtogroup BT_Constants BT Constants
+ * @{
+ */
+/** @addtogroup BT_SPP_Constants BT SPP Constants
+ * @{
+ */
 /**************************************** Macros ***************************************/
 /**
  * @def       SPP_CHANN_DB_MAX_LINK_NUM
@@ -40,8 +46,20 @@ extern "C"
  * @brief     Maximum length, in octets, of an SPP service class UUID.
  */
 #define RTK_BT_SPP_MAX_SRV_CLASS_UUID_LENGTH    16
+/**
+ * @}
+ */
+/**
+ * @}
+ */
 
 /************************************** Data Types *************************************/
+/** @addtogroup BT_Types BT Types
+ * @{
+ */
+/** @addtogroup BT_SPP_Types BT SPP Types
+ * @{
+ */
 /**
  * @typedef   rtk_bt_spp_role_t
  * @brief     Bluetooth SPP role.
@@ -62,7 +80,7 @@ typedef enum {
 } rtk_bt_spp_uuid_type_t;
 
 /**
- * @typedef   rtk_bt_spp_uuid_data_t
+ * @union     rtk_bt_spp_uuid_data_t
  * @brief     Bluetooth SPP UUID data.
  */
 typedef union {
@@ -239,11 +257,18 @@ typedef struct {
 	uint8_t  credits;               /*!< Number of SPP RX link credits the local device gives to the remote device. */
 } rtk_bt_spp_credits_give_t;
 
-/********************************* Functions Declaration *******************************/
 /**
- * @defgroup  bt_spp BT SPP APIs
- * @brief     BT SPP related function APIs.
- * @ingroup   BT_APIs
+ * @}
+ */
+/**
+ * @}
+ */
+
+/********************************* Functions Declaration *******************************/
+/** @addtogroup BT_Functions BT Functions
+ * @{
+ */
+/** @addtogroup BT_SPP_Functions BT SPP Functions
  * @{
  */
 
@@ -337,6 +362,9 @@ uint16_t rtk_bt_spp_send_data(rtk_bt_spp_send_data_t *p_send_data_t);
  */
 uint16_t rtk_bt_spp_credits_give(rtk_bt_spp_credits_give_t *p_credits_give_t);
 
+/**
+ * @}
+ */
 /**
  * @}
  */
