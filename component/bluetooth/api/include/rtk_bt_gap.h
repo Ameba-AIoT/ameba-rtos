@@ -1,7 +1,7 @@
 /**
  * @file      rtk_bt_gap.h
  * @author    ping_yan@realsil.com.cn
- * @brief     Bluetooth common GAP part type and function deffinition
+ * @brief     Bluetooth common GAP part type and function definition
  * @copyright Copyright (c) 2022. Realtek Semiconductor Corporation. All rights reserved.
  */
 
@@ -58,7 +58,7 @@ typedef enum {
 /**
  * @brief Prototype of callback function to handle L2CAP ECFC related messages
  * @param[in] p_buf     Message data and the content of data is dependent on message type.
- * @param[in] msg       callback msy type @ref T_GAP_ECFC_MSG.
+ * @param[in] msg       callback msg type @ref T_GAP_ECFC_MSG.
  * @return Result
  * @retval 0 Success
  * @retval other Failed
@@ -88,7 +88,7 @@ typedef enum {
 
 /**
  * @typedef   rtk_bt_gap_ecfc_param_t
- * @brief     Bluetooth GAP ECFC paramter type.
+ * @brief     Bluetooth GAP ECFC parameter type.
  */
 typedef enum {
 	RTK_BT_GAP_ECFC_PARAM_INIT_CREDITS      = 0x430, /*!< Local initial credits. Write Only. Default is 4. Range is 1 ~ 65535. */
@@ -97,7 +97,7 @@ typedef enum {
 
 /**
  * @typedef   rtk_bt_gap_ecfc_param_set_t
- * @brief     Bluetooth GAP ECFC set paramter definition.
+ * @brief     Bluetooth GAP ECFC set parameter definition.
  */
 typedef struct {
 	rtk_bt_gap_ecfc_param_t type;       /*!< Parameter type. @ref rtk_bt_gap_ecfc_param_t. */
@@ -106,7 +106,7 @@ typedef struct {
 
 /**
  * @typedef   rtk_bt_gap_ecfc_register_t
- * @brief     Bluetooth GAP ECFC register protocal definition.
+ * @brief     Bluetooth GAP ECFC register protocol definition.
  */
 typedef struct {
 	uint16_t psm;                /*!< Protocol service multiplexer that the callback function is related to. Set to @ref RTK_BT_PSM_EATT if channels are created for EATT. */
@@ -158,9 +158,16 @@ typedef enum {
 	RTK_BT_L2C_ECFC_CONN_RSP_ALL_CONN_UNACCEPTABLE_PARAMS = 0x000B,
 	RTK_BT_L2C_ECFC_CONN_RSP_ALL_CONN_INVALID_PARAMS = 0x000C,
 	RTK_BT_L2C_ECFC_CONN_RSP_ALL_CONN_PENDING_NO_INFO = 0x000D,
-	RTK_BT_L2C_ECFC_CONN_RSP_ALL_CONN_PENDING_AUTHER = 0x000E,
+	RTK_BT_L2C_ECFC_CONN_RSP_ALL_CONN_PENDING_AUTHEN = 0x000E,
 	RTK_BT_L2C_ECFC_CONN_RSP_ALL_CONN_PENDING_AUTHOR = 0x000F,
 } rtk_bt_gap_ecfc_conn_cfm_cause_t;
+
+/**
+ * @def       RTK_BT_L2C_ECFC_CONN_RSP_ALL_CONN_PENDING_AUTHER
+ * @brief     Deprecated alias of @ref RTK_BT_L2C_ECFC_CONN_RSP_ALL_CONN_PENDING_AUTHEN.
+ * @deprecated Use @ref RTK_BT_L2C_ECFC_CONN_RSP_ALL_CONN_PENDING_AUTHEN instead.
+ */
+#define RTK_BT_L2C_ECFC_CONN_RSP_ALL_CONN_PENDING_AUTHER RTK_BT_L2C_ECFC_CONN_RSP_ALL_CONN_PENDING_AUTHEN
 
 /**
  * @typedef   rtk_bt_gap_ecfc_send_conn_cfm_t
@@ -168,7 +175,7 @@ typedef enum {
  */
 typedef struct {
 	uint16_t conn_handle;        /*!< Connection handle. The value shall be get from @ref RTK_BT_GAP_ACT_ECFC_CONN_REQ message. */
-	uint16_t identity_id;        /*!< Indentity id. The value shall be get from @ref RTK_BT_GAP_ACT_ECFC_CONN_REQ message. */
+	uint16_t identity_id;        /*!< Identity id. The value shall be get from @ref RTK_BT_GAP_ACT_ECFC_CONN_REQ message. */
 	rtk_bt_gap_ecfc_conn_cfm_cause_t cause;          /*!< Confirmation cause for the connection request from remote device. */
 	uint16_t p_cid[RTK_BT_GAP_ECFC_CHANN_MAX_NUM];   /*!< Confirmation the cid array allow to establish.
                                   *   The array shall be the subset of the p_cid get from @ref RTK_BT_GAP_ACT_ECFC_CONN_REQ message. */
@@ -274,7 +281,7 @@ typedef struct {
 	uint8_t cid_num;            /*!< The number of the L2CAP ECFC channels need to reconfigure. */
 	uint16_t cid[RTK_BT_GAP_ECFC_CHANN_MAX_NUM]; /*!< Local CID array assigned by Bluetooth stack. */
 	uint16_t remote_mtu;        /*!< Remote MTU. */
-	uint16_t remote_mps;        /*!< REmote MPS. */
+	uint16_t remote_mps;        /*!< Remote MPS. */
 } rtk_bt_ecfc_reconf_req_ind_t;
 
 /**
@@ -312,9 +319,9 @@ typedef struct {
  */
 
 /**
- * @brief     Set ECFC paramter.
+ * @brief     Set ECFC parameter.
  * @param[in] type: Parameter type.
- * @param[in] value: Paramter value.
+ * @param[in] value: Parameter value.
  * @return
  *            - 0  : Succeed
  *            - Others: Error code
@@ -350,7 +357,7 @@ uint16_t rtk_bt_gap_ecfc_send_conn_req(rtk_bt_gap_ecfc_conn_req_t *p_param);
 
 /**
  * @brief     Send a confirmation for a L2CAP ECFC connection request from remote device. @ref RTK_BT_GAP_EVT_ECFC_CONN_CMPL_IND will tell the result of L2CAP channel establishment.
- * @param[in] p_param: Create connection comfirm parameter.
+ * @param[in] p_param: Create connection confirm parameter.
  * @return
  *            - 0  : Succeed
  *            - Others: Error code
@@ -368,7 +375,7 @@ uint16_t rtk_bt_gap_ecfc_send_conn_cfm(rtk_bt_gap_ecfc_conn_cfm_t *p_param);
 uint16_t rtk_bt_gap_ecfc_send_disconn_req(uint16_t conn_handle, uint16_t cid);
 
 /**
- * @brief     RSend a request to send L2CAP ECFC channel data to remote device. This API can only be used when param->data_path in @ref rtk_bt_gap_ecfc_register is RTK_BT_GAP_ECFC_DATA_PATH_APP.
+ * @brief     Send a request to send L2CAP ECFC channel data to remote device. This API can only be used when param->data_path in @ref rtk_bt_gap_ecfc_register is RTK_BT_GAP_ECFC_DATA_PATH_APP.
  * @param[in] conn_handle: Connection handle.
  * @param[in] cid: Channel id.
  * @param[in] p_data: Data content.

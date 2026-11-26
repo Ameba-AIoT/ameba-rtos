@@ -1,12 +1,14 @@
 /**
  * @file      rtk_bt_le_iso_def.h
  * @author    benling_xu@realsil.com.cn
- * @brief     Bluetooth LE GAP part type and function deffinition
+ * @brief     Bluetooth LE GAP part type and function definition
  * @copyright Copyright (c) 2022. Realtek Semiconductor Corporation. All rights reserved.
  */
 
 #ifndef __RTK_BT_LE_ISO_DEF_H__
 #define __RTK_BT_LE_ISO_DEF_H__
+
+#include <bt_api_config.h>
 
 #ifdef __cplusplus
 extern "C"

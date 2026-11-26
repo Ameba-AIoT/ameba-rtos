@@ -18,7 +18,9 @@ void SDM32K_Enable(void)
 	SDM_TypeDef *SDM = SDM_DEV;
 
 	SDM->SDM_TIMEOUT = SDM_TIEMRCAL_INTERVAL_1MIN;
-	SDM->SDM_CTRL0 |= SDM_BIT_EN | SDM_BIT_RST | SDM_BIT_ALWAYS_CAL_EN | SDM_BIT_TIMER_CAL_EN;
+	/* timeout 1min, always cal off, timer cal on, and switch back to default mode from the user-defined parameter mode set before DSLP.
+	   SDM is not reset by sys reset/DSLP, so always cal and MOD_SEL must be cleared explicitly */
+	SDM->SDM_CTRL0 = (SDM->SDM_CTRL0 & ~(SDM_BIT_ALWAYS_CAL_EN | SDM_BIT_MOD_SEL)) | SDM_BIT_EN | SDM_BIT_RST | SDM_BIT_TIMER_CAL_EN;
 }
 
 /**
