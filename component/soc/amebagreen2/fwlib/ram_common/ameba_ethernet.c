@@ -676,6 +676,30 @@ u32 Ethernet_GetLinkStatus(void)
 }
 
 /**
+ *  @brief  Force the link up and wait for LINKB to read 0, for a MAC wired straight to another MAC.
+ *  @param  timeout_ms Longest wait for LINKB, in ms.
+ *  @return RTK_SUCCESS, or -RTK_ERR_TIMEOUT if LINKB did not read 0 in time.
+ */
+static int Ethernet_ForceLink(u32 timeout_ms)
+{
+	ETHERNET_TypeDef *ETHx = ((ETHERNET_TypeDef *) RMII_REG_BASE);
+	u32 msr, t;
+
+	msr = ETHx->ETH_MSR;
+	msr |= BIT_FORCELINK;
+	ETHx->ETH_MSR = msr;
+
+	for (t = 0; t < timeout_ms; t++) {
+		if (Ethernet_GetLinkStatus()) {
+			return RTK_SUCCESS;
+		}
+		DelayMs(1);
+	}
+
+	return -RTK_ERR_TIMEOUT;
+}
+
+/**
  * @brief  Get the speed and duplex the MAC is running at.
  * @param  speed  Returns the link speed, see @ref eth_speed.
  * @param  duplex Returns the duplex mode, see @ref eth_duplex.
@@ -799,12 +823,13 @@ void Ethernet_StructInit(ETH_InitTypeDef *ETH_InitStruct, struct eth_phy_dev *PH
 	ETH_InitStruct->MacConfig.Bits.MacMode         = ETH_MAC_MODE;
 	ETH_InitStruct->MacConfig.Bits.Loopback        = ETH_LPB_NONE;          /* Normal mode */
 	ETH_InitStruct->MacConfig.Bits.IFGTime         = ETH_IFG_3;             /* 96-bit time for 100Mbps */
-	ETH_InitStruct->MacConfig.Bits.RefClkDir       = ETH_REFCLK_MAC2PHY;    /* Output Ref Clk to PHY */
+	ETH_InitStruct->MacConfig.Bits.RefClkDir       = ETH_REFCLK_OUT;
 	ETH_InitStruct->MacConfig.Bits.RefClkPhase     = ETH_SAMPLED_ON_RISING_EDGE;
 	ETH_InitStruct->MacConfig.Bits.RxJumbo         = ETH_RX_JUMBO_DISABLE;
 	ETH_InitStruct->MacConfig.Bits.PktFilterConfig = ETH_FILTER_DEFAULT_UNICAST; /* Accept unicast + broadcast */
 	ETH_InitStruct->MacConfig.Bits.EEEEnable       = DISABLE;               /* Disable EEE */
 	ETH_InitStruct->MacConfig.Bits.AutoNego        = ETH_NWAY_ENABLE;       /* Enable Auto-Negotiation */
+	ETH_InitStruct->MacConfig.Bits.LinkType        = ETH_LINK_PHY;
 	ETH_InitStruct->MacConfig.Bits.FlowCtrl        = ETH_FLOW_FULL;         /* Send and honor PAUSE */
 
 	/* EEE parameters, filled only once the caller has pointed EEE_Config at storage */
@@ -843,10 +868,11 @@ void Ethernet_StructInit(ETH_InitTypeDef *ETH_InitStruct, struct eth_phy_dev *PH
   * @brief  Initialize Ethernet MAC, PHY, and DMA descriptors.
   * @param  ETH_InitStruct Pointer to @ref ETH_InitTypeDef containing the full Ethernet configuration.
   * @return RTK_SUCCESS on success, or a negative error code:
-  *         - -RTK_ERR_BADARG if ETH_InitStruct, phy_dev, or phy_dev->ops is NULL.
-  *         - -RTK_ERR_TIMEOUT if MAC reset timed out.
+  *         - -RTK_ERR_BADARG if ETH_InitStruct or phy_dev is NULL, or phy_dev->ops is NULL while LinkType is ETH_LINK_PHY.
+  *         - -RTK_ERR_TIMEOUT if MAC reset timed out, or with ETH_LINK_MAC if the forced link did not come up.
   * @note   Does not wait for auto-negotiation: it can take seconds, or never finish with no cable,
-  *         and the link change interrupt reports the result.
+  *         and the link change interrupt reports the result. With ETH_LINK_MAC there is no negotiation,
+  *         and it waits up to 1s for the forced link.
   */
 int Ethernet_Init(ETH_InitTypeDef *ETH_InitStruct)
 {
@@ -857,8 +883,10 @@ int Ethernet_Init(ETH_InitTypeDef *ETH_InitStruct)
 	u32 timeout = 1000, pse_on, pse_off;
 	int32_t ret = RTK_SUCCESS;
 	struct eth_phy_dev *phy = NULL;
+	u8 autoneg;
 
-	if (!ETH_InitStruct || !ETH_InitStruct->phy_dev || !ETH_InitStruct->phy_dev->ops) {
+	if (!ETH_InitStruct || !ETH_InitStruct->phy_dev ||
+		(!ETH_InitStruct->phy_dev->ops && ETH_InitStruct->MacConfig.Bits.LinkType != ETH_LINK_MAC)) {
 		RTK_LOGE(TAG, "Init: Invalid Param or PHY Dev\r\n");
 		ret = -RTK_ERR_BADARG;
 		goto exit;
@@ -874,6 +902,8 @@ int Ethernet_Init(ETH_InitTypeDef *ETH_InitStruct)
 	}
 
 	phy = ETH_InitStruct->phy_dev;
+
+	autoneg = ETH_InitStruct->MacConfig.Bits.AutoNego && ETH_InitStruct->MacConfig.Bits.LinkType != ETH_LINK_MAC;
 
 	Ethernet_AutoPolling(DISABLE);
 	DelayMs(50);
@@ -892,14 +922,14 @@ int Ethernet_Init(ETH_InitTypeDef *ETH_InitStruct)
 	}
 
 	/* reset phy */
-	if (phy->ops->init) {
+	if (phy->ops && phy->ops->init) {
 		ret = phy->ops->init(phy);
 		if (ret != RTK_SUCCESS) {
 			RTK_LOGE(TAG, "PHY Init failed: %d\n", ret);
 			goto exit;
 		}
 	}
-	if (phy->ops->reset) {
+	if (phy->ops && phy->ops->reset) {
 		ret = phy->ops->reset(phy);
 		if (ret != RTK_SUCCESS) {
 			RTK_LOGE(TAG, "PHY Reset failed: %d\n", ret);
@@ -907,7 +937,7 @@ int Ethernet_Init(ETH_InitTypeDef *ETH_InitStruct)
 		}
 	}
 	/* Configure ref clock direction*/
-	if (phy->ops->cfg_refclock) {
+	if (phy->ops && phy->ops->cfg_refclock) {
 		ret = phy->ops->cfg_refclock(phy, ETH_InitStruct->MacConfig.Bits.RefClkDir);
 		if (ret != RTK_SUCCESS) {
 			RTK_LOGE(TAG, "PHY RefClock config failed: %d\n", ret);
@@ -916,7 +946,7 @@ int Ethernet_Init(ETH_InitTypeDef *ETH_InitStruct)
 	}
 
 	if (ETH_InitStruct->MacConfig.Bits.EEEEnable) {
-		if (phy->ops->cfg_eee) {
+		if (phy->ops && phy->ops->cfg_eee) {
 			ret = phy->ops->cfg_eee(phy, ENABLE);
 			if (ret != RTK_SUCCESS) {
 				RTK_LOGE(TAG, "PHY EEE config failed: %d\n", ret);
@@ -926,7 +956,7 @@ int Ethernet_Init(ETH_InitTypeDef *ETH_InitStruct)
 	}
 
 	/* Auto-Negotiation/Nway Settings */
-	if (ETH_InitStruct->MacConfig.Bits.AutoNego) {
+	if (autoneg) {
 		phy->link_cfg.autoneg_en = TRUE;
 		phy->link_cfg.advertise_100m = TRUE;
 		phy->link_cfg.advertise_pause = TRUE;
@@ -953,7 +983,7 @@ int Ethernet_Init(ETH_InitTypeDef *ETH_InitStruct)
 		ETHx->ETH_MSR |= FORCEDFULLDUP(ETH_InitStruct->MacConfig.Bits.Duplex);
 
 	}
-	if (phy->ops->cfg_link) {
+	if (phy->ops && phy->ops->cfg_link) {
 		ret = phy->ops->cfg_link(phy, &phy->link_cfg);
 		if (ret != RTK_SUCCESS) {
 			RTK_LOGE(TAG, "PHY Link config failed: %d\n", ret);
@@ -961,8 +991,8 @@ int Ethernet_Init(ETH_InitTypeDef *ETH_InitStruct)
 		}
 	}
 
-	if (ETH_InitStruct->MacConfig.Bits.AutoNego) {
-		if (phy->ops->autoneg_restart) {
+	if (autoneg) {
+		if (phy->ops && phy->ops->autoneg_restart) {
 			ret = phy->ops->autoneg_restart(phy);
 			if (ret != RTK_SUCCESS) {
 				RTK_LOGE(TAG, "PHY AutoNeg restart failed: %d\n", ret);
@@ -970,6 +1000,15 @@ int Ethernet_Init(ETH_InitTypeDef *ETH_InitStruct)
 			}
 		}
 	}
+	/* No PHY reports the link, so force it up. */
+	if (ETH_InitStruct->MacConfig.Bits.LinkType == ETH_LINK_MAC) {
+		ret = Ethernet_ForceLink(1000);
+		if (ret != RTK_SUCCESS) {
+			RTK_LOGE(TAG, "Init: the forced link did not come up\r\n");
+			goto exit;
+		}
+	}
+
 	/* Tx settings */
 	ETHx->ETH_MSR |= BIT_REG_RMII2MII_EN;
 	Ethernet_SetRefclkDirec(ETH_InitStruct->MacConfig.Bits.RefClkDir);
@@ -1027,7 +1066,7 @@ int Ethernet_Init(ETH_InitTypeDef *ETH_InitStruct)
 	/* EEE configuration */
 	if (ETH_InitStruct->MacConfig.Bits.EEEEnable && ETH_InitStruct->EEE_Config) {
 		Ethernet_EEE_Init(ETHx, ETH_InitStruct->EEE_Config);
-		if (phy->ops->cfg_eee) {
+		if (phy->ops && phy->ops->cfg_eee) {
 			phy->ops->cfg_eee(phy, ENABLE);
 		}
 	}
@@ -1142,8 +1181,10 @@ int Ethernet_Init(ETH_InitTypeDef *ETH_InitStruct)
 	ETHx->ETH_ISR = 0xFFFF;
 	ETHx->ETH_IMR = ETH_InitStruct->ETH_IntMask;
 
-	/* enable auto-polling */
-	Ethernet_AutoPolling(ENABLE);
+	/* enable auto-polling, unless there is no PHY to poll: MDC and MDIO stay quiet then (PHY mode is switched on by the user) */
+	if (ETH_InitStruct->MacConfig.Bits.LinkType != ETH_LINK_MAC) {
+		Ethernet_AutoPolling(ENABLE);
+	}
 
 	/* enable Rx ring1 */
 	ETHx->ETH_IO_CMD1 |= BIT_RXRING1;

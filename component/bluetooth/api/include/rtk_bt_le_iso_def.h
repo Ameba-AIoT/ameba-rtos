@@ -16,6 +16,13 @@ extern "C"
 #endif
 
 #if defined(RTK_BLE_ISO_SUPPORT) && RTK_BLE_ISO_SUPPORT
+/** @addtogroup BT_Constants BT Constants
+ * @{
+ */
+/** @addtogroup BT_LE_ISO_Def_Constants BT LE ISO Def Constants
+ * @{
+ */
+
 #define RTK_BLE_CIG_MAX_NUM 1                              /*!< Maximum number of CIGs. */
 /* CIS IDs must be unique across all CIGs due to a BT stack restriction, even when the CISes belong to different CIGs.
  * The CISes are distributed evenly among the CIGs, e.g. with two CIGs of two CISes each:
@@ -46,6 +53,13 @@ extern "C"
                                                             *   Units: octets. */
 #define RTK_BLE_ISO_DEFAULT_RTN_M_S (2)                    /*!< Default number of retransmissions from central to peripheral. */
 #define RTK_BLE_ISO_DEFAULT_RTN_S_M (2)                    /*!< Default number of retransmissions from peripheral to central. */
+
+/**
+ * @}
+ */
+/**
+ * @}
+ */
 #endif
 
 #ifdef __cplusplus

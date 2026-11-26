@@ -30,7 +30,7 @@ extern "C" {
 
 /**
  * @brief  Enable the ISOC test finish log and buffer dump.
- * @note   Set to 1 for manual debugging only: the dump is test_cnt/10 UART lines, which costs
+ * @note   Set to 1 for manual debugging only: the dump is count/10 UART lines, which costs
  *         tens of ms at 115200 baud. It is emitted from usbh_vendor_process (task context),
  *         never from the SOF ISR, but it still delays the host task while it runs.
  */
@@ -117,8 +117,8 @@ typedef struct {
 	usbh_pipe_t pipe;          /**< USB Host pipe handle */
 	u8 *xfer_bk_buf;           /**< Backup pointer to the original user buffer */
 	u32 xfer_max_len;          /**< Max length of a single transfer */
-	u32 xfer_cnt;              /**< Current transfer count (for test loops), same width as the test_cnt API argument */
-	u32 xfer_max_cnt;          /**< Target transfer count (for test loops), same width as the test_cnt API argument */
+	u32 xfer_cnt;              /**< Current transfer count (for test loops), same width as the ISOC count API argument */
+	u32 xfer_max_cnt;          /**< Target transfer count (for test loops), same width as the ISOC count API argument */
 	u16 cur_frame;             /**< Current frame number (for ISOC synchronization), 14-bit HFNUM value */
 	u16 frame_elapsed;         /**< (Micro)frames since the last ISOC OUT packet, paces it to ep_interval */
 	u8 busy;                   /**< Transfer claimed by the API and its completion not yet reported */
@@ -178,55 +178,51 @@ void usbh_vendor_deinit(void);
  * @brief  Start a BULK transmission.
  * @param  buf: Pointer to the data buffer to be transmitted.
  * @param  len: Length of the data in bytes.
- * @param  test_cnt: Ignored: one call moves one transfer. Only ISOC loops test_cnt times.
  * @retval Status.
  */
-int usbh_vendor_bulk_transmit(u8 *buf, u32 len, u32 test_cnt);
+int usbh_vendor_bulk_transmit(u8 *buf, u32 len);
 
 /**
  * @brief  Start a BULK reception.
  * @param  buf: Pointer to the buffer where received data will be stored.
  * @param  len: Expected length of data in bytes.
- * @param  test_cnt: Ignored: one call moves one transfer. Only ISOC loops test_cnt times.
  * @return 0 on success, non-zero on failure.
  */
-int usbh_vendor_bulk_receive(u8 *buf, u32 len, u32 test_cnt);
+int usbh_vendor_bulk_receive(u8 *buf, u32 len);
 
 /**
  * @brief  Start an INTERRUPT transmission.
  * @param  buf: Pointer to the data buffer to be transmitted.
  * @param  len: Length of the data in bytes.
- * @param  test_cnt: Ignored: one call moves one transfer. Only ISOC loops test_cnt times.
  * @return 0 on success, non-zero on failure.
  */
-int usbh_vendor_intr_transmit(u8 *buf, u32 len, u32 test_cnt);
+int usbh_vendor_intr_transmit(u8 *buf, u32 len);
 
 /**
  * @brief  Start an INTERRUPT reception.
  * @param  buf: Pointer to the buffer where received data will be stored.
  * @param  len: Expected length of data in bytes.
- * @param  test_cnt: Ignored: one call moves one transfer. Only ISOC loops test_cnt times.
  * @return 0 on success, non-zero on failure.
  */
-int usbh_vendor_intr_receive(u8 *buf, u32 len, u32 test_cnt);
+int usbh_vendor_intr_receive(u8 *buf, u32 len);
 
 /**
  * @brief  Start an ISOCHRONOUS transmission.
  * @param  buf: Pointer to the data buffer to be transmitted.
  * @param  len: Length of the data in bytes.
- * @param  test_cnt: Number of service intervals to send, one packet each; 0 is rejected.
+ * @param  count: Number of service intervals to send, one packet each; 0 is rejected.
  * @return 0 on success, non-zero on failure.
  */
-int usbh_vendor_isoc_transmit(u8 *buf, u32 len, u32 test_cnt);
+int usbh_vendor_isoc_transmit(u8 *buf, u32 len, u32 count);
 
 /**
  * @brief  Start an ISOCHRONOUS reception.
  * @param  buf: Pointer to the buffer where received data will be stored.
  * @param  len: Expected length of data in bytes.
- * @param  test_cnt: Number of service intervals to receive, one packet each; 0 is rejected.
+ * @param  count: Number of service intervals to receive, one packet each; 0 is rejected.
  * @return 0 on success, non-zero on failure.
  */
-int usbh_vendor_isoc_receive(u8 *buf, u32 len, u32 test_cnt);
+int usbh_vendor_isoc_receive(u8 *buf, u32 len, u32 count);
 
 /**
  * @brief  Get the Max Packet Size (MPS) of the BULK IN endpoint.

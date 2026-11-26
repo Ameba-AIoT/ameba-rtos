@@ -2754,8 +2754,8 @@ enum eth_refclk_phase {
  * @brief RMII reference clock direction.
  */
 enum eth_refclk_dir {
-	ETH_REFCLK_PHY2MAC  = 0x00, /*!< REF_CLK driven by PHY to MAC. */
-	ETH_REFCLK_MAC2PHY  = 0x01, /*!< REF_CLK driven by MAC to PHY. */
+	ETH_REFCLK_IN   = 0x00, /*!< This chip receives REF_CLK. */
+	ETH_REFCLK_OUT  = 0x01, /*!< This chip drives REF_CLK. */
 };
 
 /**
@@ -2782,6 +2782,14 @@ enum eth_loopback_mode {
 	ETH_LPB_R2T_EXT  = 0x1,  /*!< External line loopback: RX data echoed to TX. */
 	/* 0x2 is Reserved */
 	ETH_LPB_T2R_INT  = 0x3,  /*!< Internal loopback: TX data fed back to RX. */
+};
+
+/**
+ * @brief What the MAC is wired to.
+ */
+enum eth_link_type {
+	ETH_LINK_PHY = 0, /*!< Wired to a PHY, which reports the link. */
+	ETH_LINK_MAC = 1, /*!< Wired straight to another MAC: no PHY, nothing is negotiated, the link is forced up. */
 };
 
 /**
@@ -3149,7 +3157,7 @@ struct eth_phy_ops {
  */
 struct eth_phy_dev {
 	const struct eth_mdio_ops *bus; /**< Associated MDIO Bus */
-	const struct eth_phy_ops *ops;  /**< Driver operations */
+	const struct eth_phy_ops *ops;  /**< Driver operations, NULL when the MAC is wired straight to another MAC (no PHY). */
 	phy_link_config_t link_cfg;     /**< Current Link Configuration */
 	uint8_t addr;                   /**< PHY Address (0-31) */
 
@@ -3188,12 +3196,13 @@ typedef struct {
 			uint32_t PktFilterConfig: 3; /*!< Packet filter mode (see @ref eth_packet_filter_mode). */
 			/* Flow Control / Auto-Negotiation-NWay */
 			uint32_t AutoNego       : 1; /*!< Auto-negotiation enable (see @ref eth_auto_nego). */
-			uint32_t Speed          : 1; /*!< Forced link speed when AutoNego=0 (see @ref eth_speed). */
-			uint32_t Duplex         : 1; /*!< Forced duplex mode when AutoNego=0 (see @ref eth_duplex). */
+			uint32_t Speed          : 1; /*!< Forced link speed, used when AutoNego=0 or LinkType=ETH_LINK_MAC (see @ref eth_speed). */
+			uint32_t Duplex         : 1; /*!< Forced duplex mode, used when AutoNego=0 or LinkType=ETH_LINK_MAC (see @ref eth_duplex). */
 			uint32_t FlowCtrl       : 2; /*!< Flow control mode (see @ref eth_flow_ctrl_mode). */
 			uint32_t FlowForce      : 1; /*!< Force flow control settings (see @ref eth_flow_force). */
 			uint32_t EEEEnable      : 1; /*!< 1 = enable Energy Efficient Ethernet (EEE). */
-			uint32_t Reserved       : 13;/*!< Reserved. */
+			uint32_t LinkType       : 1; /*!< What the MAC is wired to (see @ref eth_link_type). */
+			uint32_t Reserved       : 12;/*!< Reserved. */
 		} Bits;                    /*!< Named bitfield access for MAC configuration. */
 	} MacConfig;                   /*!< MAC core and flow control configuration. */
 	/* VLAN Config */

@@ -58,9 +58,6 @@ struct buf_BIO {
 };
 
 
-static volatile size_t min_heap_size = 0;
-
-
 static int my_random(void *p_rng, unsigned char *output, size_t output_len)
 {
 	/* To avoid gcc warnings */

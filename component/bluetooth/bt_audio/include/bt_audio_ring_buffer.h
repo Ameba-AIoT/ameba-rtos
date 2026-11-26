@@ -12,6 +12,15 @@ extern "C"
 {
 #endif
 
+/** @addtogroup BT_Constants BT Constants
+ * @{
+ */
+/** @addtogroup BT_Audio_Constants BT Audio Constants
+ * @{
+ */
+/** @addtogroup BT_Audio_Ring_Buffer_Constants BT Audio Ring Buffer Constants
+ * @{
+ */
 #define BT_AUDIO_RINGBUFFER_PRE_SIZE 1920 * 15  /*!< Base capacity of a ring buffer storage. Unit: bytes. */
 #define BT_AUDIO_STATIC_RINGBUFFER_NUM 2        /*!< Number of statically allocated ring buffer storages. */
 /**
@@ -20,7 +29,25 @@ extern "C"
  *            The extra 9600 bytes cover a 50 ms presentation delay of 48 kHz, 2 channel, 16 bit audio.
  */
 #define BT_AUDIO_RINGBUFFER_SIZE (BT_AUDIO_RINGBUFFER_PRE_SIZE + 9600)
+/**
+ * @}
+ */
+/**
+ * @}
+ */
+/**
+ * @}
+ */
 
+/** @addtogroup BT_Types BT Types
+ * @{
+ */
+/** @addtogroup BT_Audio_Types BT Audio Types
+ * @{
+ */
+/** @addtogroup BT_Audio_Ring_Buffer_Types BT Audio Ring Buffer Types
+ * @{
+ */
 /**
  * @typedef   bt_audio_ring_buffer_t
  * @brief     BT Audio ring buffer backed by a statically allocated storage.
@@ -38,12 +65,24 @@ typedef struct bt_audio_ring_buffer {
                                      *   - true: initialized.
                                      *   - false: not initialized. */
 } bt_audio_ring_buffer_t;
+/**
+ * @}
+ */
+/**
+ * @}
+ */
+/**
+ * @}
+ */
 
 /********************************* Functions Declaration *******************************/
-/**
- * @defgroup  bt_audio_ring_buffer BT Audio Ring Buffer Related APIs
- * @brief     BT Audio ring buffer APIs.
- * @ingroup   bt_audio_group
+/** @addtogroup BT_Functions BT Functions
+ * @{
+ */
+/** @addtogroup BT_Audio_Functions BT Audio Functions
+ * @{
+ */
+/** @addtogroup BT_Audio_Ring_Buffer_Functions BT Audio Ring Buffer Functions
  * @{
  */
 
@@ -140,6 +179,15 @@ uint32_t bt_audio_ring_buffer_read(bt_audio_ring_buffer_t *ring_buffer, uint8_t 
  *            - Number of bytes discarded. 0 if no data is available.
  */
 uint32_t bt_audio_ring_buffer_clear(bt_audio_ring_buffer_t *ring_buffer, uint32_t data_length);
+/**
+ * @}
+ */
+/**
+ * @}
+ */
+/**
+ * @}
+ */
 
 #ifdef __cplusplus
 }

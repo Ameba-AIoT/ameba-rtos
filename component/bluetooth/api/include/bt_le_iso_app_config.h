@@ -17,10 +17,26 @@ extern "C" {
 #include <rtk_bt_le_gap.h>
 #include <rtk_bt_le_iso.h>
 
+/** @addtogroup BT_Constants BT Constants
+ * @{
+ */
+/// @cond
 #define RTK_BT_GAP_DEVICE_NAME_LEN (39+1)    /*!< Maximum length of the device name including the terminating NUL. A longer name is truncated. */
+/// @endcond
 
 /**
- * @typedef   rtk_bt_le_iso_app_conf_t
+ * @}
+ */
+
+/** @addtogroup BT_Types BT Types
+ * @{
+ */
+/** @addtogroup BT_LE_ISO_APP_Config_Types BT LE ISO APP Config Types
+ * @{
+ */
+
+/**
+ * @struct   rtk_bt_le_iso_app_conf_t
  * @brief     Default LE ISO application configuration used when initializing the LE ISO module.
  */
 typedef struct {
@@ -34,6 +50,13 @@ typedef struct {
 	uint8_t big_num;                                    /*!< Number of BIGs to use. */
 	uint8_t bis_num;                                    /*!< Number of BISes to use. */
 } rtk_bt_le_iso_app_conf_t;
+
+/**
+ * @}
+ */
+/**
+ * @}
+ */
 
 #endif
 

@@ -79,7 +79,7 @@ static inline char z_log_minimal_level_to_char(int level)
 #define _line_to_str(A) #A
 #define z_line_to_str(A) _line_to_str(A)
 #define Z_LOG_PRINT_DETAIL(_level, fmt, ...)	\
-	do {static const char __log_string[] TRACE_STRING_DATA = "["__FILE_Z_STR__":"z_line_to_str(__LINE__)"]"fmt"\r\n";	\
+	do {static const char __log_string[] TRACE_STRING_DATA = "[" __FILE_Z_STR__":" z_line_to_str(__LINE__)"]" fmt"\r\n";	\
 		zephyr_stacklog_args_send(_level, (int)__log_string, Z_count_args(fmt, ##__VA_ARGS__), ##__VA_ARGS__); \
 	} while(0)
 

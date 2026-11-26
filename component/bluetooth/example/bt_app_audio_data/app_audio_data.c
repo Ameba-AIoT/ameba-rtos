@@ -132,7 +132,7 @@ static int uac_cb_init(void)
 /* DeInitializes uac application layer */
 static int uac_cb_deinit(void)
 {
-	usbd_uac_stop_play();
+	usbd_uac_stop_playback();
 	return 0;
 }
 
@@ -184,7 +184,7 @@ static void bt_demo_usb_task_entry(void *ctx)
 		}
 		usb_task_stop = 0;
 		while (1) {
-			if (!demo_usb_task_run || usbd_uac_start_play() == HAL_OK) {
+			if (!demo_usb_task_run || usbd_uac_start_playback() == HAL_OK) {
 				break;
 			}
 		}

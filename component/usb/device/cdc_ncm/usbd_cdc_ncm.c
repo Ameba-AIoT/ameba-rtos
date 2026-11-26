@@ -43,8 +43,8 @@
 #define USBD_CDC_NCM_BULK_ONE_FRAME_SIZE             (USB_CDC_NCM_MAX_ETHERNET_FRAME_SIZE + USB_CDC_NCM_NTH16_LENGTH + USB_CDC_NCM_NDP16_MIN_LENGTH)
 
 /* Interface numbers */
-#define USBD_CDC_NCM_COMM_INTERFACE_NUM 0x00U  /**< Communication interface */
-#define USBD_CDC_NCM_DATA_INTERFACE_NUM 0x01U  /**< Data interface */
+#define USBD_CDC_NCM_COMM_ITF_NUM 0x00U  /**< Communication interface */
+#define USBD_CDC_NCM_DATA_ITF_NUM 0x01U  /**< Data interface */
 
 /* Maximum time usbd_cdc_ncm_transmit() will block waiting for TX room when called with
  * block != 0, i.e. usbd_cdc_ncm_config_t::bulk_tx_timeout_ms.
@@ -134,25 +134,25 @@ enum usbd_cdc_ncm_notify_state {
 static int usbd_cdc_ncm_set_config(usb_dev_t *dev, u8 config);
 static void usbd_cdc_ncm_clear_config(usb_dev_t *dev, u8 config);
 static int usbd_cdc_ncm_setup(usb_dev_t *dev, usb_setup_req_t *req);
-static u16 usbd_cdc_ncm_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16 buf_len);
+static u16 usbd_cdc_ncm_get_desc(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16 buf_len);
 static int usbd_cdc_ncm_handle_ep0_data_out(usb_dev_t *dev);
 static int usbd_cdc_ncm_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, int status);
 static int usbd_cdc_ncm_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len);
 static void usbd_cdc_ncm_sof(usb_dev_t *dev);
 static void usbd_cdc_ncm_status_changed(usb_dev_t *dev, u8 old_status, u8 status);
 #ifdef CONFIG_USBD_COMPOSITE
-static void usbd_cdc_ncm_set_interface_base(u8 base);
+static void usbd_cdc_ncm_set_itf_base(u8 base);
 #endif
 static int usbd_cdc_ncm_intr_in_send(void *data, u16 len);
 static int usbd_cdc_ncm_send_notification(void);
 static inline char usbd_cdc_ncm_char_to_hex(u8 value);
-static void usbd_cdc_ncm_mac_to_string(const u8 *mac, char *mac_str);
+static void usbd_cdc_ncm_mac_to_str(const u8 *mac, char *mac_str);
 static void usbd_cdc_ncm_set_mac(const u8 *mac);
 static int usbd_cdc_ncm_bulk_send(u8 *buf, u32 len);
 
-static void usbd_cdc_ncm_agg_begin(ncm_tx_ntb_t *slot, u16 sequence);
-static int  usbd_cdc_ncm_agg_append(ncm_tx_ntb_t *slot, const u8 *frame, u32 frame_len);
-static void usbd_cdc_ncm_agg_finalize(ncm_tx_ntb_t *slot);
+static void usbd_cdc_ncm_agg_begin(usbd_cdc_ncm_tx_ntb_t *slot, u16 sequence);
+static int  usbd_cdc_ncm_agg_append(usbd_cdc_ncm_tx_ntb_t *slot, const u8 *frame, u32 frame_len);
+static void usbd_cdc_ncm_agg_finalize(usbd_cdc_ncm_tx_ntb_t *slot);
 static void usbd_cdc_ncm_tx_kick(usbd_cdc_ncm_dev_t *ncm);
 static int usbd_cdc_ncm_tx_enqueue(const u8 *buf, u32 len, u8 block);
 static void usbd_cdc_ncm_tx_wake_producer(usbd_cdc_ncm_dev_t *ncm);
@@ -197,7 +197,7 @@ static const u8 usbd_cdc_ncm_dev_desc[USB_LEN_DEV_DESC] = {
 
 #ifndef CONFIG_SUPPORT_USB_FS_ONLY
 /* USB Device Qualifier Descriptor */
-static const u8 usbd_cdc_ncm_device_qualifier_desc[USB_LEN_DEV_QUALIFIER_DESC] = {
+static const u8 usbd_cdc_ncm_dev_qualifier_desc[USB_LEN_DEV_QUALIFIER_DESC] = {
 	USB_LEN_DEV_QUALIFIER_DESC,                     /* bLength */
 	USB_DESC_TYPE_DEVICE_QUALIFIER,                 /* bDescriptorType */
 	0x00, 0x02,                                     /* bcdUSB: 2.0 */
@@ -236,7 +236,7 @@ static const u8 usbd_cdc_ncm_config_desc[] = {
 	/* Communication Interface Descriptor */
 	USB_LEN_IF_DESC,                                /* bLength */
 	USB_DESC_TYPE_INTERFACE,                        /* bDescriptorType */
-	USBD_CDC_NCM_COMM_INTERFACE_NUM,                /* bInterfaceNumber */
+	USBD_CDC_NCM_COMM_ITF_NUM,                /* bInterfaceNumber */
 	0x00,                                           /* bAlternateSetting */
 	0x01,                                           /* bNumEndpoints */
 	USB_CDC_COMM_INTERFACE_CLASS_CODE,              /* bInterfaceClass: CDC */
@@ -254,8 +254,8 @@ static const u8 usbd_cdc_ncm_config_desc[] = {
 	0x05,                                           /* bFunctionLength */
 	USB_CDC_CS_INTERFACE,                           /* bDescriptorType */
 	USB_CDC_FUNC_DESC_UNION,                        /* bDescriptorSubtype */
-	USBD_CDC_NCM_COMM_INTERFACE_NUM,                /* bControlInterface */
-	USBD_CDC_NCM_DATA_INTERFACE_NUM,                /* bSubordinateInterface0 */
+	USBD_CDC_NCM_COMM_ITF_NUM,                /* bControlInterface */
+	USBD_CDC_NCM_DATA_ITF_NUM,                /* bSubordinateInterface0 */
 
 	/* CDC Ethernet Networking Functional Descriptor */
 	USBD_CDC_NCM_ETHERNET_FUNC_DESC_SIZE,           /* bFunctionLength */
@@ -287,7 +287,7 @@ static const u8 usbd_cdc_ncm_config_desc[] = {
 	/* Data Interface Descriptor (Alt 0 - No endpoints) */
 	USB_LEN_IF_DESC,                                /* bLength */
 	USB_DESC_TYPE_INTERFACE,                        /* bDescriptorType */
-	USBD_CDC_NCM_DATA_INTERFACE_NUM,                /* bInterfaceNumber */
+	USBD_CDC_NCM_DATA_ITF_NUM,                /* bInterfaceNumber */
 	0x00,                                           /* bAlternateSetting */
 	0x00,                                           /* bNumEndpoints */
 	USB_CDC_DATA_INTERFACE_CLASS_CODE,              /* bInterfaceClass */
@@ -298,7 +298,7 @@ static const u8 usbd_cdc_ncm_config_desc[] = {
 	/* Data Interface Descriptor (Alt 1 - Active) */
 	USB_LEN_IF_DESC,                                /* bLength */
 	USB_DESC_TYPE_INTERFACE,                        /* bDescriptorType */
-	USBD_CDC_NCM_DATA_INTERFACE_NUM,                /* bInterfaceNumber */
+	USBD_CDC_NCM_DATA_ITF_NUM,                /* bInterfaceNumber */
 	0x01,                                           /* bAlternateSetting */
 	0x02,                                           /* bNumEndpoints */
 	USB_CDC_DATA_INTERFACE_CLASS_CODE,              /* bInterfaceClass */
@@ -327,7 +327,7 @@ static const u8 usbd_cdc_ncm_config_desc[] = {
 
 /* CDC NCM Class Driver */
 static const usbd_class_driver_t usbd_cdc_ncm_driver = {
-	.get_descriptor = usbd_cdc_ncm_get_descriptor,
+	.get_desc = usbd_cdc_ncm_get_desc,
 	.set_config = usbd_cdc_ncm_set_config,
 	.clear_config = usbd_cdc_ncm_clear_config,
 	.setup = usbd_cdc_ncm_setup,
@@ -337,7 +337,7 @@ static const usbd_class_driver_t usbd_cdc_ncm_driver = {
 	.sof = usbd_cdc_ncm_sof,
 	.status_changed = usbd_cdc_ncm_status_changed,
 #ifdef CONFIG_USBD_COMPOSITE
-	.set_interface_base = usbd_cdc_ncm_set_interface_base,
+	.set_itf_base = usbd_cdc_ncm_set_itf_base,
 #endif
 };
 
@@ -351,7 +351,7 @@ static usbd_cdc_ncm_dev_t usbd_cdc_ncm_dev;
 /* ============================================================================
  * SPSC TX slot helpers
  * ----------------------------------------------------------------------------
- * Each ncm_tx_ntb_t slot owns its own DMA-aligned NTB scratch buffer.  The
+ * Each usbd_cdc_ncm_tx_ntb_t slot owns its own DMA-aligned NTB scratch buffer.  The
  * single producer (lwIP task, or TX aggregation task) fills slot[tx_wd]
  * and advances tx_wd; the single consumer (USB ISR) sends slot[tx_rd] and
  * advances tx_rd after XFRC.
@@ -425,7 +425,7 @@ static void usbd_cdc_ncm_tx_layout_init(usbd_cdc_ncm_dev_t *ncm, const usbd_cdc_
  * @param slot:     Ping-pong slot to initialise (caller has reserved it).
  * @param sequence: NTB sequence number for this block.
  */
-static void usbd_cdc_ncm_agg_begin(ncm_tx_ntb_t *slot, u16 sequence)
+static void usbd_cdc_ncm_agg_begin(usbd_cdc_ncm_tx_ntb_t *slot, u16 sequence)
 {
 	const usbd_cdc_ncm_dev_t *ncm = &usbd_cdc_ncm_dev;
 	usb_cdc_ncm_nth16_t *nth16 = (usb_cdc_ncm_nth16_t *)slot->buf;
@@ -447,7 +447,7 @@ static void usbd_cdc_ncm_agg_begin(ncm_tx_ntb_t *slot, u16 sequence)
  * @param frame_len: Frame length.
  * @retval RTK_SUCCESS on success, -RTK_ERR_BADARG if buffer full (caller must flush first).
  */
-static int usbd_cdc_ncm_agg_append(ncm_tx_ntb_t *slot, const u8 *frame, u32 frame_len)
+static int usbd_cdc_ncm_agg_append(usbd_cdc_ncm_tx_ntb_t *slot, const u8 *frame, u32 frame_len)
 {
 	usb_cdc_ncm_ndp16_entry_t *entry;
 	u32 aligned_frame_len;
@@ -492,7 +492,7 @@ static int usbd_cdc_ncm_agg_append(ncm_tx_ntb_t *slot, const u8 *frame, u32 fram
  *        Caller must transition the slot state from FILLING to READY/IN_FLIGHT.
  * @param slot: Slot whose aggregation cursor is fully written.
  */
-static void usbd_cdc_ncm_agg_finalize(ncm_tx_ntb_t *slot)
+static void usbd_cdc_ncm_agg_finalize(usbd_cdc_ncm_tx_ntb_t *slot)
 {
 	usb_cdc_ncm_nth16_t *nth16 = (usb_cdc_ncm_nth16_t *)slot->buf;
 	usb_cdc_ncm_ndp16_t *ndp16;
@@ -558,7 +558,7 @@ static inline int usbd_cdc_ncm_tx_ring_empty(usbd_cdc_ncm_dev_t *ncm)
  */
 static void usbd_cdc_ncm_tx_kick(usbd_cdc_ncm_dev_t *ncm)
 {
-	ncm_tx_ntb_t *slot;
+	usbd_cdc_ncm_tx_ntb_t *slot;
 
 	/* Already transmitting, or nothing queued -> nothing to do.
 	 * Called only from USB ISR context (SOF and XFRC), which are
@@ -735,7 +735,7 @@ static void usbd_cdc_ncm_tx_task(void *param)
 							 cfg->tx_sema_timeout_ms : USBD_CDC_NCM_DEFAULT_TX_SEMA_TIMEOUT_MS;
 	u32 tx_room_timeout_ms = (cfg->bulk_tx_timeout_ms != 0U) ?
 							 cfg->bulk_tx_timeout_ms : USBD_CDC_NCM_DEFAULT_BULK_TX_TIMEOUT_MS;
-	ncm_tx_ntb_t *slot;
+	usbd_cdc_ncm_tx_ntb_t *slot;
 	u8 *frame = NULL;
 	u32 frame_len = 0U;
 
@@ -894,7 +894,7 @@ static inline char usbd_cdc_ncm_char_to_hex(u8 value)
  * @param mac:     Input MAC address buffer (6 bytes).
  * @param mac_str: Output null-terminated string (must be at least 13 bytes).
  */
-static void usbd_cdc_ncm_mac_to_string(const u8 *mac, char *mac_str)
+static void usbd_cdc_ncm_mac_to_str(const u8 *mac, char *mac_str)
 {
 	u8 str_index = 0;
 	u8 i;
@@ -923,7 +923,7 @@ static void usbd_cdc_ncm_set_mac(const u8 *mac)
 
 	/* Keep the string form in step: the core holds it by pointer for the iMACAddress
 	   string descriptor, so it is formatted here rather than on each request */
-	usbd_cdc_ncm_mac_to_string(ncm->mac, ncm->mac_str);
+	usbd_cdc_ncm_mac_to_str(ncm->mac, ncm->mac_str);
 }
 
 /**
@@ -1134,7 +1134,7 @@ static int usbd_cdc_ncm_send_notification(void)
 	event.bmRequestType = 0xA1;
 	/* Class notifications are emitted on the communication (control) interface's
 	 * notification endpoint, so wIndex carries the communication interface number. */
-	event.wIndex = (u16)(ncm->if_base + USBD_CDC_NCM_COMM_INTERFACE_NUM);
+	event.wIndex = (u16)(ncm->itf_base + USBD_CDC_NCM_COMM_ITF_NUM);
 
 	switch (ncm->notify_state) {
 	case NCM_NOTIFY_CONNECT:
@@ -1336,7 +1336,7 @@ static int usbd_cdc_ncm_tx_enqueue(const u8 *buf, u32 len, u8 block)
 	 * before returning, so SOF never sees a partially filled slot[wd] and
 	 * never writes slot[wd] -- no critical section needed. */
 	{
-		ncm_tx_ntb_t *slot = &ncm->tx_slot[ncm->tx_wd];
+		usbd_cdc_ncm_tx_ntb_t *slot = &ncm->tx_slot[ncm->tx_wd];
 
 		while (usbd_cdc_ncm_tx_ring_full(ncm)) {
 			if (block == 0U) {
@@ -1557,7 +1557,7 @@ static int usbd_cdc_ncm_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			} else {
 				u8 alt = USB_LOW_BYTE(req->wValue);
 
-				if (req->wIndex == USBD_CDC_NCM_DATA_INTERFACE_NUM) {
+				if (req->wIndex == USBD_CDC_NCM_DATA_ITF_NUM) {
 					/* The NCM data interface is dual-alt: alt 0 has no endpoints
 					 * (idle), alt 1 carries the bulk IN/OUT endpoints (active).
 					 * Only alt 1 means the host has armed the data path and will
@@ -1609,7 +1609,7 @@ static int usbd_cdc_ncm_setup(usb_dev_t *dev, usb_setup_req_t *req)
 						ncm->notify_state = NCM_NOTIFY_NONE;
 						ncm->notify_retry = 0U;
 					}
-				} else if (req->wIndex == USBD_CDC_NCM_COMM_INTERFACE_NUM) {
+				} else if (req->wIndex == USBD_CDC_NCM_COMM_ITF_NUM) {
 					/* Communication interface: alt 0 is the only defined setting */
 					if (alt != 0U) {
 						ret = -RTK_ERR_BADARG;
@@ -1645,11 +1645,11 @@ static int usbd_cdc_ncm_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			} else if ((req->wValue != 0U) || (req->wLength != 1U)) {
 				/* Ref USB 2.0 Table 9-3: wValue is zero and wLength is one */
 				ret = -RTK_ERR_BADARG;
-			} else if (req->wIndex == USBD_CDC_NCM_DATA_INTERFACE_NUM) {
+			} else if (req->wIndex == USBD_CDC_NCM_DATA_ITF_NUM) {
 				ep0_in->xfer_buf[0] = ncm->data_alt_setting;
 				ep0_in->xfer_len = 1U;
 				ret = usbd_ep_transmit(dev, ep0_in);
-			} else if (req->wIndex == USBD_CDC_NCM_COMM_INTERFACE_NUM) {
+			} else if (req->wIndex == USBD_CDC_NCM_COMM_ITF_NUM) {
 				ep0_in->xfer_buf[0] = 0U;
 				ep0_in->xfer_len = 1U;
 				ret = usbd_ep_transmit(dev, ep0_in);
@@ -1664,13 +1664,13 @@ static int usbd_cdc_ncm_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			   two reserved zero bytes and wLength is two.  A request naming an interface
 			   this function does not own is a request error (9.2.7), which the device core
 			   turns into an EP0 STALL on a non-RTK_SUCCESS return.  The core only range-checks
-			   wIndex against USBD_MAX_NUM_INTERFACES, so ownership is the class's own job,
+			   wIndex against USBD_MAX_NUM_ITFS, so ownership is the class's own job,
 			   exactly as for SET_INTERFACE / GET_INTERFACE above. */
 			if (dev->dev_state != USBD_STATE_CONFIGURED) {
 				ret = -RTK_ERR_BADARG;
 			} else if ((req->wValue != 0U) || (req->wLength != 2U)) {
 				ret = -RTK_ERR_BADARG;
-			} else if ((req->wIndex == USBD_CDC_NCM_COMM_INTERFACE_NUM) || (req->wIndex == USBD_CDC_NCM_DATA_INTERFACE_NUM)) {
+			} else if ((req->wIndex == USBD_CDC_NCM_COMM_ITF_NUM) || (req->wIndex == USBD_CDC_NCM_DATA_ITF_NUM)) {
 				ep0_in->xfer_buf[0] = 0U;
 				ep0_in->xfer_buf[1] = 0U;
 				ep0_in->xfer_len = 2U;
@@ -1700,7 +1700,7 @@ static int usbd_cdc_ncm_setup(usb_dev_t *dev, usb_setup_req_t *req)
 		 * interface-recipient requests only to the owning function and rebases wIndex to the
 		 * local interface number - the value here is the local 0 either way, so the check is
 		 * a no-op there.  Standalone mode (the example) is the one this actually protects. */
-		if (req->wIndex != USBD_CDC_NCM_COMM_INTERFACE_NUM) {
+		if (req->wIndex != USBD_CDC_NCM_COMM_ITF_NUM) {
 			ret = -RTK_ERR_BADARG;
 			break;
 		}
@@ -1913,7 +1913,7 @@ static int usbd_cdc_ncm_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, int status
 		 * blocked because the ring was full, and chain the next NTB
 		 * if one is queued. */
 		{
-			ncm_tx_ntb_t *done = &ncm->tx_slot[ncm->tx_rd];
+			usbd_cdc_ncm_tx_ntb_t *done = &ncm->tx_slot[ncm->tx_rd];
 			done->frame_count = 0;
 			done->data_offset = 0;
 			usb_os_mem_sync();
@@ -2251,8 +2251,8 @@ static void usbd_cdc_ncm_patch_desc(u8 *desc, u16 len, usb_speed_type_t speed)
 			/* Union FD: bControlInterface at offset 3, bSubordinateInterface0 at offset 4
 			 * (Ref CDC 1.2 5.2.3.8). The composite framework only rebases the standard
 			 * Interface and IAD descriptors, so this cross-reference is ours to fix up. */
-			desc[i + 3] = (u8)(ncm->if_base + USBD_CDC_NCM_COMM_INTERFACE_NUM);
-			desc[i + 4] = (u8)(ncm->if_base + USBD_CDC_NCM_DATA_INTERFACE_NUM);
+			desc[i + 3] = (u8)(ncm->itf_base + USBD_CDC_NCM_COMM_ITF_NUM);
+			desc[i + 4] = (u8)(ncm->itf_base + USBD_CDC_NCM_DATA_ITF_NUM);
 		}
 		i += dlen;
 	}
@@ -2267,7 +2267,7 @@ static void usbd_cdc_ncm_patch_desc(u8 *desc, u16 len, usb_speed_type_t speed)
  * @param buf: Buffer to fill descriptor
  * @retval Descriptor length
  */
-static u16 usbd_cdc_ncm_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16 buf_len)
+static u16 usbd_cdc_ncm_get_desc(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16 buf_len)
 {
 	usb_speed_type_t speed = dev->dev_speed;
 	/* Speed the returned configuration describes, which selects the wMaxPacketSize and bInterval */
@@ -2291,8 +2291,8 @@ static u16 usbd_cdc_ncm_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 
 
 #ifndef CONFIG_SUPPORT_USB_FS_ONLY
 	case USB_DESC_TYPE_DEVICE_QUALIFIER:
-		desc = usbd_cdc_ncm_device_qualifier_desc;
-		len = sizeof(usbd_cdc_ncm_device_qualifier_desc);
+		desc = usbd_cdc_ncm_dev_qualifier_desc;
+		len = sizeof(usbd_cdc_ncm_dev_qualifier_desc);
 		break;
 
 	case USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION:
@@ -2306,7 +2306,7 @@ static u16 usbd_cdc_ncm_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 
 #endif
 
 	case USB_DESC_TYPE_STRING:
-		/* Every string this class owns is registered with usbd_add_string() and answered by
+		/* Every string this class owns is registered with usbd_add_str() and answered by
 		   the core, which only forwards an index it does not know, e.g. the MS OS string */
 		USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_GET_DESC, 0);
 		break;
@@ -2344,9 +2344,9 @@ static u16 usbd_cdc_ncm_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 
  *        time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
  * @param base: First interface number of this class
  */
-static void usbd_cdc_ncm_set_interface_base(u8 base)
+static void usbd_cdc_ncm_set_itf_base(u8 base)
 {
-	usbd_cdc_ncm_dev.if_base = base;
+	usbd_cdc_ncm_dev.itf_base = base;
 }
 #endif
 
@@ -2574,15 +2574,15 @@ static int usbd_cdc_ncm_private_init(const usbd_cdc_ncm_cb_t *cb, const usbd_cdc
 	/* The core owns the string table, so the same call works in standalone and composite
 	   mode. mac_str is registered by pointer, so it may still be empty here: set_mac()
 	   formats it below, before enumeration can request it. */
-	ncm->mac_str_idx = usbd_add_string(ncm->mac_str);
-	ncm->itf_str_idx = usbd_add_string(cfg->itf_str);
-	/* Standalone default; the composite framework rebases it via set_interface_base() */
-	ncm->if_base = 0;
+	ncm->mac_str_idx = usbd_add_str(ncm->mac_str);
+	ncm->itf_str_idx = usbd_add_str(cfg->itf_str);
+	/* Standalone default; the composite framework rebases it via set_itf_base() */
+	ncm->itf_base = 0;
 
 	/* Allocate the TX NTB ring and its per-slot DMA-aligned buffers.  Each slot keeps its
 	 * buffer for the lifetime of the class instance; clear_config() only resets state,
 	 * never frees these. */
-	ncm->tx_slot = (ncm_tx_ntb_t *)usb_os_malloc((u32)ncm->tx_ntb_depth * sizeof(ncm_tx_ntb_t));
+	ncm->tx_slot = (usbd_cdc_ncm_tx_ntb_t *)usb_os_malloc((u32)ncm->tx_ntb_depth * sizeof(usbd_cdc_ncm_tx_ntb_t));
 	if (ncm->tx_slot == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Alloc TX ring fail\n");
 		return -RTK_ERR_NOMEM;
@@ -2822,7 +2822,7 @@ int usbd_cdc_ncm_init(const usbd_cdc_ncm_cb_t *cb, const usbd_cdc_ncm_config_t *
 	ret = usbd_cdc_ncm_private_init(cb, cfg);
 	if (ret == RTK_SUCCESS) {
 		ncm->from_composite = 0;
-		ret = usbd_register_class(&usbd_cdc_ncm_driver);
+		ret = usbd_class_register(&usbd_cdc_ncm_driver);
 		if (ret != RTK_SUCCESS) {
 			/* private_init completed, so deinit is its exact reverse */
 			usbd_cdc_ncm_deinit();
@@ -2840,7 +2840,7 @@ int usbd_composite_cdc_ncm_init(const usbd_cdc_ncm_cb_t *cb, const usbd_cdc_ncm_
 	ret = usbd_cdc_ncm_private_init(cb, cfg);
 	if (ret == RTK_SUCCESS) {
 		ncm->from_composite = 1;
-		ret = usbd_composite_register_driver(&usbd_cdc_ncm_driver);
+		ret = usbd_composite_class_register(&usbd_cdc_ncm_driver);
 		if (ret != RTK_SUCCESS) {
 			/* private_init completed, so deinit is its exact reverse. from_composite is
 			   already 1, so the unregister inside is a no-op for an unregistered driver. */
@@ -2871,11 +2871,11 @@ void usbd_cdc_ncm_deinit(void)
 	   class is deinitialized: ref USB 2.0 9.4.7, the transfers still pending are aborted. */
 #ifdef CONFIG_USBD_COMPOSITE
 	if (ncm->from_composite != 0U) {
-		ret = usbd_composite_unregister_driver(&usbd_cdc_ncm_driver);
+		ret = usbd_composite_class_unregister(&usbd_cdc_ncm_driver);
 	} else
 #endif
 	{
-		ret = usbd_unregister_class();
+		ret = usbd_class_unregister();
 	}
 	if (ret != RTK_SUCCESS) {
 		return;
@@ -3019,7 +3019,7 @@ int usbd_cdc_ncm_transmit(const u8 *buf, u32 len, u8 block)
 	ncm->dbg_tx_cnt++;
 #endif
 
-	if (usb_os_is_in_interrupt() != 0U) {
+	if (usb_os_is_in_interrupt()) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "TX in ISR\n");
 		return -RTK_ERR_BADARG;
 	}
@@ -3059,13 +3059,13 @@ int usbd_cdc_ncm_transmit(const u8 *buf, u32 len, u8 block)
 
 /**
  * @brief  Get the current network link state (uplink status).
- * @retval 1: Network link is up (connected to uplink). 0: Network link is down.
+ * @retval true: Network link is up (connected to uplink). false: Network link is down.
  */
-int usbd_cdc_ncm_get_link_status(void)
+bool usbd_cdc_ncm_get_link_status(void)
 {
 	usbd_cdc_ncm_dev_t *ncm = &usbd_cdc_ncm_dev;
 
-	return ncm->connect_status;
+	return (ncm->connect_status != 0U);
 }
 
 /**

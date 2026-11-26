@@ -12,11 +12,29 @@ extern "C"
 {
 #endif
 
+/** @addtogroup BT_Constants BT Constants
+ * @{
+ */
+/** @addtogroup BT_BR_GAP_Constants BT BR GAP Constants
+ * @{
+ */
 #define MAX_BR_LINK_NUM                 1         /*!< Maximum number of BR/EDR links. */
 #define RTK_BD_ADDR_LEN 6                         /*!< BR/EDR device address length(bytes). */
 #define RTK_BT_GAP_DEVICE_NAME_LEN      (39+1)    /*!< Maximum length of the device name including the terminating NUL. A longer name is truncated. */
+/**
+ * @}
+ */
+/**
+ * @}
+ */
 
 /************************************** Data Types *************************************/
+/** @addtogroup BT_Types BT Types
+ * @{
+ */
+/** @addtogroup BT_BR_GAP_Types BT BR GAP Types
+ * @{
+ */
 /**
  * @typedef   rtk_bt_br_role_t
  * @brief     Bluetooth BR/EDR link role.
@@ -59,14 +77,18 @@ typedef enum {
 } rtk_bt_br_io_cap_t;
 
 /**
- * @defgroup  RTK_BR_IO_CAP Deprecated aliases
- * @brief     Deprecated aliases of the @ref rtk_bt_br_io_cap_t values.
- * @deprecated Use the @ref rtk_bt_br_io_cap_t values instead.
- * @{
+ * @def       RTK_BR_IO_CAP_DISPALY_ONLY
+ * @brief     Deprecated alias of @ref RTK_BR_IO_CAP_DISPLAY_ONLY.
+ * @deprecated Use @ref RTK_BR_IO_CAP_DISPLAY_ONLY instead.
  */
 #define RTK_BR_IO_CAP_DISPALY_ONLY RTK_BR_IO_CAP_DISPLAY_ONLY
+
+/**
+ * @def       RTK_BR_IO_CAP_KEYBOARD_DISPALY
+ * @brief     Deprecated alias of @ref RTK_BR_IO_CAP_KEYBOARD_DISPLAY.
+ * @deprecated Use @ref RTK_BR_IO_CAP_KEYBOARD_DISPLAY instead.
+ */
 #define RTK_BR_IO_CAP_KEYBOARD_DISPALY RTK_BR_IO_CAP_KEYBOARD_DISPLAY
-/** @} */
 
 /**
  * @typedef   rtk_bt_br_gap_radio_mode_t
@@ -80,7 +102,7 @@ typedef enum {
 } rtk_bt_br_gap_radio_mode_t;
 
 /**
- * @typedef   rtk_bt_bd_addr_t
+ * @struct    rtk_bt_bd_addr_t
  * @brief     Bluetooth device address type definition.
  */
 typedef struct {
@@ -446,11 +468,18 @@ typedef struct {
                                 *   0x7F: RSSI information is unavailable. */
 } rtk_bt_br_link_read_rssi_rsp;
 
-/********************************* Functions Declaration *******************************/
 /**
- * @defgroup  bt_br_gap BT BR GAP APIs
- * @brief     BT BR GAP related function APIs.
- * @ingroup   BT_APIs
+ * @}
+ */
+/**
+ * @}
+ */
+
+/********************************* Functions Declaration *******************************/
+/** @addtogroup BT_Functions BT Functions
+ * @{
+ */
+/** @addtogroup BT_BR_GAP_Functions BT BR GAP Functions
  * @{
  */
 
@@ -756,6 +785,15 @@ uint16_t rtk_bt_br_gap_set_link_qos(uint8_t *bd_addr, rtk_bt_br_qos_type_t type,
 uint16_t rtk_bt_br_gap_set_cod(uint32_t *bt_cod);
 
 /**
+ * @brief     Read the RSSI of the link with a remote device. The result is reported asynchronously via event @ref RTK_BT_BR_GAP_LINK_RSSI_INFO.
+ * @param[in] bd_addr: Address of the remote device, 6 octets.
+ *                     Must not be NULL.
+ * @return
+ *            - @ref rtk_bt_err_common
+ */
+uint16_t rtk_bt_br_gap_read_rssi(uint8_t *bd_addr);
+
+/**
  * @brief     Set the link supervision timeout.
  * @param[in] supv_timeout: Link supervision timeout.
  *                          Range: 0x0001 to 0xFFFF.
@@ -775,13 +813,8 @@ uint16_t rtk_bt_br_gap_set_supv_timeout(uint16_t *supv_timeout);
 #define rtk_bt_br_gap_set_supvisiontimeout rtk_bt_br_gap_set_supv_timeout
 
 /**
- * @brief     Read the RSSI of the link with a remote device. The result is reported asynchronously via event @ref RTK_BT_BR_GAP_LINK_RSSI_INFO.
- * @param[in] bd_addr: Address of the remote device, 6 octets.
- *                     Must not be NULL.
- * @return
- *            - @ref rtk_bt_err_common
+ * @}
  */
-uint16_t rtk_bt_br_gap_read_rssi(uint8_t *bd_addr);
 /**
  * @}
  */

@@ -39,7 +39,7 @@ extern "C" {
 /** Default DFU detach timeout (ms), reported as wDetachTimeOut. */
 #define USBD_DFU_DEFAULT_DETACH_TIMEOUT   1000U
 /** Default iInterface string. */
-#define USBD_DFU_DEFAULT_IFACE_STRING     "DFU Interface"
+#define USBD_DFU_DEFAULT_ITF_STR     "DFU Interface"
 
 /* Async write task defaults. frame data is staged in the class buffer, so the stack only needs
  * call frames plus RTOS overhead. */
@@ -126,7 +126,7 @@ typedef struct {
 	                                 Overridable later via @ref usbd_dfu_set_write_poll_ms. */
 	u32 manifest_poll_ms;       /**< bwPollTimeout during MANIFEST, 0 uses @ref USBD_DFU_DEFAULT_MANIFEST_POLL_MS.
 	                                 Overridable later via @ref usbd_dfu_set_manifest_poll_ms. */
-	const char *itf_str;        /**< iInterface string, NULL uses @ref USBD_DFU_DEFAULT_IFACE_STRING. */
+	const char *itf_str;        /**< iInterface string, NULL uses @ref USBD_DFU_DEFAULT_ITF_STR. */
 	u16 write_task_stack_size;  /**< Write task stack in bytes, 0 uses @ref USBD_DFU_DEFAULT_WRITE_TASK_STACK. */
 	u16 manifest_task_stack_size; /**< Manifest task stack in bytes, 0 uses @ref USBD_DFU_DEFAULT_MANIFEST_TASK_STACK. */
 	u16 reenum_task_stack_size; /**< Reconfiguration task stack in bytes, 0 uses @ref USBD_DFU_DEFAULT_REENUM_TASK_STACK. */
@@ -251,7 +251,7 @@ typedef struct {
 	usbd_dfu_status_t  status;
 	u8                 mode;            /* Run-Time/DFU mode reconf: current descriptor set, USBD_DFU_PROTOCOL_RUNTIME or _DFU */
 	u8                 from_composite;  /**< Flag indicating if part of a composite device. */
-	u8                 itf_str_idx;     /**< iInterface string index from usbd_add_string(), 0 for none. */
+	u8                 itf_str_idx;     /**< iInterface string index from usbd_add_str(), 0 for none. */
 
 	/* Async worker handshakes: ISR/task completion flags and deinit stop requests */
 	__IO u8            write_state;     /* Async write: block state (0 idle, 1 busy, 2 ok, 3 failed), set by write_task, consumed by GETSTATUS */

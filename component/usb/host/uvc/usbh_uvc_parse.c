@@ -257,7 +257,7 @@ static int usbh_uvc_parse_entity(u8 *desc, u16 remain)
   * @param	itf_data: interface array buffer
   * @retval Status
   */
-static int usbh_uvc_parse_vc(usbh_itf_data_t *itf_data)
+static int usbh_uvc_parse_vc(usbh_itf_t *itf_data)
 {
 	usbh_uvc_host_t *uvc = &uvc_host;
 	usbh_uvc_vc_t *vc_intf = NULL;
@@ -296,7 +296,7 @@ static int usbh_uvc_parse_vc(usbh_itf_data_t *itf_data)
 		}
 		type = ((usbh_desc_header_t *)desc)->bDescriptorType;
 		switch (type) {
-		case USBH_UVC_DESC_TYPE_CS_INTERFACE:
+		case USBH_UVC_DESC_TYPE_CS_ITF:
 			ret = usbh_uvc_parse_entity((u8 *)desc, (u16)(itf_data->raw_data_len - itf_total_len));
 			if (ret != RTK_SUCCESS) {
 				//RTK_LOGS(TAG, RTK_LOG_ERROR, "Fail to parse entity\n");
@@ -433,7 +433,7 @@ static int usbh_uvc_parse_format(usbh_uvc_vs_t *vs_intf, u8 *pbuf, u16 *length)
 			/* Covers bLength == 0 (which would stall real_len) as well. */
 			break;
 		}
-		if (desc[1] != USBH_UVC_DESC_TYPE_CS_INTERFACE) {
+		if (desc[1] != USBH_UVC_DESC_TYPE_CS_ITF) {
 			break;
 		}
 		switch (desc[2]) {
@@ -524,7 +524,7 @@ static int usbh_uvc_parse_format(usbh_uvc_vs_t *vs_intf, u8 *pbuf, u16 *length)
 		if (usbh_uvc_desc_len_ok(desc, remain, USBH_UVC_PARSE_HDR_MIN_LEN) == 0U) {
 			break;
 		}
-		if (desc[1] != USBH_UVC_DESC_TYPE_CS_INTERFACE) {
+		if (desc[1] != USBH_UVC_DESC_TYPE_CS_ITF) {
 			len += desc[0];
 			desc = pbuf + len;
 			continue;
@@ -638,7 +638,7 @@ static int usbh_uvc_parse_format(usbh_uvc_vs_t *vs_intf, u8 *pbuf, u16 *length)
   * @param	itf_data: interface array buffer
   * @retval Status
   */
-static int usbh_uvc_parse_vs(usbh_itf_data_t *itf_data)
+static int usbh_uvc_parse_vs(usbh_itf_t *itf_data)
 {
 	usbh_uvc_host_t *uvc = &uvc_host;
 	usbh_uvc_vs_t *vs_intf = NULL;
@@ -693,7 +693,7 @@ static int usbh_uvc_parse_vs(usbh_itf_data_t *itf_data)
 		}
 
 		switch (type) {
-		case USBH_UVC_DESC_TYPE_CS_INTERFACE:
+		case USBH_UVC_DESC_TYPE_CS_ITF:
 			/* Hand over the bytes still left in this interface block so the
 			 * class-specific scan cannot walk past it; parse_format returns the
 			 * length it actually consumed in the same argument. */
@@ -774,7 +774,7 @@ u16 usbh_uvc_get_ctrl_len_by_version(u16 bcdUVC)
   */
 int usbh_uvc_parse_cfgdesc(usb_host_t *host)
 {
-	usbh_itf_data_t *itf_data;
+	usbh_itf_t *itf_data;
 	int ret = -RTK_ERR_BADARG;
 	usbh_dev_id_t dev_id = {0,};
 
@@ -783,7 +783,7 @@ int usbh_uvc_parse_cfgdesc(usb_host_t *host)
 	/* bInterfaceProtocol is PC_PROTOCOL_UNDEFINED (0x00) up to UVC 1.1 and PC_PROTOCOL_15 (0x01)
 	 * in UVC 1.5, Ref UVC 1.5 A.3: match class and subclass only */
 	dev_id.mMatchFlags = USBH_DEV_ID_MATCH_ITF_CLASS | USBH_DEV_ID_MATCH_ITF_SUBCLASS;
-	itf_data = usbh_get_interface_descriptor(host, &dev_id);
+	itf_data = usbh_itf_find(host, &dev_id);
 	if (itf_data == NULL) {
 		//RTK_LOGS(TAG, RTK_LOG_DEBUG, "Get vc itf fail\n");
 		return ret;
@@ -798,7 +798,7 @@ int usbh_uvc_parse_cfgdesc(usb_host_t *host)
 	dev_id.bInterfaceClass = USB_VIDEO_CLASS_CODE;
 	dev_id.bInterfaceSubClass = USB_VIDEO_SUBCLASS_VIDEOSTREAMING;
 	dev_id.mMatchFlags = USBH_DEV_ID_MATCH_ITF_CLASS | USBH_DEV_ID_MATCH_ITF_SUBCLASS;
-	itf_data = usbh_get_interface_descriptor(host, &dev_id);
+	itf_data = usbh_itf_find(host, &dev_id);
 
 	if (itf_data == NULL) {
 		//RTK_LOGS(TAG, RTK_LOG_DEBUG, "No VS itf\n");

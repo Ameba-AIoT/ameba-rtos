@@ -301,7 +301,7 @@ WIFI_RETRY_LOOP:
 *       After wifi connected, check if it is the same AP which previously stored in flash.
 *       Return 0 means not the same AP or FASH DHCP not enabled, return 1 means the same AP.
 */
-int check_is_the_same_ap()
+int check_is_the_same_ap(void)
 {
 	int ret = 0;
 #if defined(CONFIG_FAST_DHCP) && CONFIG_FAST_DHCP

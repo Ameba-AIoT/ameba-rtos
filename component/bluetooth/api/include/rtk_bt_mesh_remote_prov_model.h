@@ -13,6 +13,15 @@
 
 /*************************** Remote Provisioning Client Model **************************/
 
+/** @addtogroup BT_Types BT Types
+ * @{
+ */
+/** @addtogroup BT_Mesh_Types BT Mesh Types
+ * @{
+ */
+/** @addtogroup BT_Mesh_Remote_Provisioning_Model_Types BT Mesh Remote Provisioning Model Types
+ * @{
+ */
 /**
  * @enum      rtk_bt_mesh_remote_prov_client_act_t
  * @brief     BLE MESH remote provisioning client model act definition.
@@ -102,7 +111,7 @@ typedef enum {
 } rtk_bt_mesh_rmt_prov_link_close_reason_t;
 
 /**
- * @enum      rtk_bt_mesh_rmt_prov_dkri_procedure_t
+ * @typedef   rtk_bt_mesh_rmt_prov_dkri_procedure_t
  * @brief     BLE MESH remote provisioning DKRI PROCEDURE definition.
  */
 enum {
@@ -268,11 +277,24 @@ typedef enum {
 	RTK_BT_MESH_REMOTE_PROV_SERVER_ACT_MAX,                      /*!< Reserved. */
 } rtk_bt_mesh_remote_prov_server_act_t;
 
-/********************************* Functions Declaration *******************************/
 /**
- * @defgroup  ble_mesh_remote_provisioning_model BT LE Mesh Remote Provisioning Model APIs
- * @brief     BT LE Mesh Remote Provisioning Model related function APIs
- * @ingroup   ble_mesh_api_group
+ * @}
+ */
+/**
+ * @}
+ */
+/**
+ * @}
+ */
+
+/********************************* Functions Declaration *******************************/
+/** @addtogroup BT_Functions BT Functions
+ * @{
+ */
+/** @addtogroup BT_Mesh_Functions BT Mesh Functions
+ * @{
+ */
+/** @addtogroup BT_Mesh_Remote_Provisioning_Model_Functions BT Mesh Remote Provisioning Model Functions
  * @{
  */
 
@@ -369,6 +391,12 @@ uint16_t rtk_bt_mesh_remote_prov_composition_refresh(uint8_t *attn_dur);
  */
 uint16_t rtk_bt_mesh_remote_prov_set_prefer_bearer(rtk_bt_mesh_bearer_field_t *bearer);
 
+/**
+ * @}
+ */
+/**
+ * @}
+ */
 /**
  * @}
  */

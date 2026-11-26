@@ -10,6 +10,15 @@
 
 /************************************** Data Types *************************************/
 
+/** @addtogroup BT_Types BT Types
+ * @{
+ */
+/** @addtogroup BT_Mesh_Types BT Mesh Types
+ * @{
+ */
+/** @addtogroup BT_Mesh_Private_Beacon_Model_Types BT Mesh Private Beacon Model Types
+ * @{
+ */
 /**
  * @enum      rtk_bt_mesh_private_beacon_client_model_act_t
  * @brief     BLE MESH private beacon client model act definition.
@@ -162,11 +171,24 @@ typedef struct {
                                   *   0x03 to 0xFF: Prohibited. */
 } _PACKED4_ rtk_bt_mesh_private_node_identity_status_t;
 
-/********************************* Functions Declaration *******************************/
 /**
- * @defgroup  ble_mesh_private_beacon_model BT LE Mesh Private Beacon Model APIs
- * @brief     BT LE Mesh Private Beacon Model related function APIs
- * @ingroup   ble_mesh_api_group
+ * @}
+ */
+/**
+ * @}
+ */
+/**
+ * @}
+ */
+
+/********************************* Functions Declaration *******************************/
+/** @addtogroup BT_Functions BT Functions
+ * @{
+ */
+/** @addtogroup BT_Mesh_Functions BT Mesh Functions
+ * @{
+ */
+/** @addtogroup BT_Mesh_Private_Beacon_Model_Functions BT Mesh Private Beacon Model Functions
  * @{
  */
 
@@ -230,6 +252,12 @@ uint16_t rtk_bt_mesh_private_node_identity_get(rtk_bt_mesh_private_node_identity
  */
 uint16_t rtk_bt_mesh_private_node_identity_set(rtk_bt_mesh_private_node_identity_set_t *private_node_identity_set);
 
+/**
+ * @}
+ */
+/**
+ * @}
+ */
 /**
  * @}
  */

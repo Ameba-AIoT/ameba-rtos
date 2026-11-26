@@ -164,3 +164,5 @@ ChangeLog:
                   (5) Resolved the protocol error during floader download
                   (6) Add support for RTL8735C
 		  (7) Fix device receive frame package timeout issue
+20260513  v2.8.12 (1) Fix profile reload issue
+                  (2) Remove flash block protection without prompt and restore it after operation

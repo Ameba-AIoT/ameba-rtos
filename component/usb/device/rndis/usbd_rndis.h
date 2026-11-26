@@ -41,8 +41,8 @@ extern "C" {
 #define USBD_RNDIS_DEFAULT_RX_TASK_PRIORITY           6U     /**< Default RX delivery task priority. */
 
 /* Interface numbers */
-#define USBD_RNDIS_COMM_INTERFACE_NUM                 0x00U  /**< Communication interface */
-#define USBD_RNDIS_DATA_INTERFACE_NUM                 0x01U  /**< Data interface */
+#define USBD_RNDIS_COMM_ITF_NUM                 0x00U  /**< Communication interface */
+#define USBD_RNDIS_DATA_ITF_NUM                 0x01U  /**< Data interface */
 
 /* Number of ping-pong RX buffers used to decouple USB OUT from upper-layer RX. */
 #define USBD_RNDIS_RX_BUF_NUM                         2U
@@ -151,7 +151,7 @@ typedef struct {
 	__IO u8 notify_pending;                 /**< 1 while a RESPONSE_AVAILABLE notification still has to be sent. */
 	u8 ctrl_req_pending;                    /**< 1 if a SEND_ENCAPSULATED_COMMAND waits for its EP0 OUT data stage. */
 	u8 from_composite;                      /**< Flag indicating if part of a composite device. */
-	u8 if_base;                             /**< First interface number of this class, rebased by the composite framework. */
+	u8 itf_base;                             /**< First interface number of this class, rebased by the composite framework. */
 
 	/* Encapsulated response */
 	u32 packet_filter;                      /**< OID_GEN_CURRENT_PACKET_FILTER set by the host. */
@@ -256,9 +256,9 @@ int usbd_rndis_transmit(const u8 *buf, u32 len, u8 block);
 
 /**
  * @brief  Gets the media state last reported to the host.
- * @return 1: Link is up, i.e. the host enabled the data path and the uplink is up. 0: Link is down.
+ * @return true: Link is up, i.e. the host enabled the data path and the uplink is up. false: Link is down.
  */
-int usbd_rndis_get_link_status(void);
+bool usbd_rndis_get_link_status(void);
 
 /**
  * @brief  Reports the upper-layer network link state to the host (edge-triggered).

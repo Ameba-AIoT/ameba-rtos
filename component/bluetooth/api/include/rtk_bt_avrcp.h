@@ -12,6 +12,12 @@ extern "C"
 {
 #endif
 
+/** @addtogroup BT_Constants BT Constants
+ * @{
+ */
+/** @addtogroup BT_AVRCP_Constants BT AVRCP Constants
+ * @{
+ */
 /**
  * @def       RTK_BT_DEFAULT_ABSOLUTE_VOLUME
  * @brief     Default absolute volume reported to the remote device before any volume change.
@@ -23,8 +29,20 @@ extern "C"
  * @brief     Maximum number of media element attributes carried in one element attribute response.
  */
 #define RTK_BT_AVRCP_ELEM_ATTR_MAX_NUM 8
+/**
+ * @}
+ */
+/**
+ * @}
+ */
 
 /************************************** Data Types *************************************/
+/** @addtogroup BT_Types BT Types
+ * @{
+ */
+/** @addtogroup BT_AVRCP_Types BT AVRCP Types
+ * @{
+ */
 
 /**
  * @typedef   rtk_bt_avrcp_play_status_t
@@ -353,11 +371,18 @@ typedef struct {
 	uint32_t position_ms;    /*!< Current playing position in ms. */
 } rtk_bt_avrcp_get_play_status_rsp_t;
 
-/********************************* Functions Declaration *******************************/
 /**
- * @defgroup  bt_avrcp BT AVRCP APIs
- * @brief     BT AVRCP related function APIs.
- * @ingroup   BT_APIs
+ * @}
+ */
+/**
+ * @}
+ */
+
+/********************************* Functions Declaration *******************************/
+/** @addtogroup BT_Functions BT Functions
+ * @{
+ */
+/** @addtogroup BT_AVRCP_Functions BT AVRCP Functions
  * @{
  */
 
@@ -588,6 +613,9 @@ uint16_t rtk_bt_avrcp_get_play_status_req(uint8_t *bd_addr);
  */
 uint16_t rtk_bt_avrcp_cover_art_connect(uint8_t *bd_addr);
 
+/**
+ * @}
+ */
 /**
  * @}
  */

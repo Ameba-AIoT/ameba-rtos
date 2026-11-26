@@ -62,7 +62,7 @@ int usbh_uvc_class_init(void);
 
 /**
  * @brief  Unregister the UVC class driver from the host core.
- * @return Result of usbh_unregister_class(): on anything but RTK_SUCCESS nothing was released.
+ * @return Result of usbh_class_unregister(): on anything but RTK_SUCCESS nothing was released.
  */
 int usbh_uvc_class_deinit(void);
 
@@ -73,7 +73,7 @@ int usbh_uvc_class_deinit(void);
  * @param  uvc: UVC host handle.
  * @return None
  */
-void usbh_uvc_class_release_device(usbh_uvc_host_t *uvc);
+void usbh_uvc_class_release_dev(usbh_uvc_host_t *uvc);
 
 /** @} End of Host_UVC_Class_Functions group */
 /** @} End of USB_Host_Functions group */

@@ -16,6 +16,13 @@ extern "C"
 #include <basic_types.h>
 #include <bt_api_config.h>
 
+/** @addtogroup BT_Types BT Types
+ * @{
+ */
+/** @addtogroup BT_LE_GAP_Types BT LE GAP Types
+ * @{
+ */
+
 /**
  * @typedef   rtk_bt_le_appearance_t
  * @brief     Bluetooth LE device appearance definition.
@@ -170,7 +177,7 @@ typedef enum {
 } rtk_bt_le_adv_type_t;
 
 /**
- * @typedef   rtk_bt_le_version_info_t
+ * @struct    rtk_bt_le_version_info_t
  * @brief     Bluetooth LE GAP stack version information.
  */
 typedef struct {
@@ -181,7 +188,7 @@ typedef struct {
 } rtk_bt_le_version_info_t;
 
 /**
- * @typedef   rtk_bt_le_get_conn_id_t
+ * @struct    rtk_bt_le_get_conn_id_t
  * @brief     Bluetooth LE GAP get connection id from connection handle.
  */
 typedef struct {
@@ -279,7 +286,7 @@ typedef struct {
                                                       *   Range: 0x0006 to 0x0C80.
                                                       *   Time = N * 1.25 ms.
                                                       *   Time Range: 7.5 ms to 4 s.
-                                                      *   Must be >= #conn_interval_min.
+                                                      *   Must be >= conn_interval_min.
                                                       *   0xFFFF = no specific maximum preference.
                                                       *   Values outside [0x0006, 0x0C80] except 0xFFFF are reserved. */
 	uint16_t slave_latency;                          /*!< Preferred peripheral latency: number of consecutive connection events the peripheral may skip without losing the connection.
@@ -290,7 +297,7 @@ typedef struct {
                                                       *   Range: 0x000A to 0x0C80.
                                                       *   Time = N * 10 ms.
                                                       *   Time Range: 100 ms to 32 s.
-                                                      *   Must be > (1 + #slave_latency) * #conn_interval_max * 2.
+                                                      *   Must be > (1 + slave_latency) * conn_interval_max * 2.
                                                       *   0xFFFF = no specific value requested.
                                                       *   Values outside [0x000A, 0x0C80] except 0xFFFF are reserved. */
 } rtk_bt_le_preferred_conn_param_t;
@@ -327,11 +334,13 @@ typedef enum {
 	RTK_BT_LE_RAND_ADDR_RESOLVABLE =        0x02,    /*!< Resolvable random device address. */
 } rtk_bt_le_rand_addr_type_t;
 
+/// @cond
 /**
  * @def       RTK_BD_ADDR_LEN
  * @brief     Bluetooth device address length macro.
  */
 #define RTK_BD_ADDR_LEN             6
+/// @endcond
 
 /**
  * @struct    rtk_bt_le_addr_t
@@ -357,8 +366,8 @@ typedef struct {
  */
 typedef struct {
 	bool auto_generate;                   /*!< Whether to auto-generate a random address of the specified type.
-                                           *   - true: the stack generates a random address of #type and returns it via #addr_val.
-                                           *   - false: the provided #addr_val is programmed directly; #type is ignored. */
+                                           *   - true: the stack generates a random address of @ref type and returns it via @ref addr_val.
+                                           *   - false: the provided @ref addr_val is programmed directly; @ref type is ignored. */
 	rtk_bt_le_rand_addr_type_t type;      /*!< Random address type. */
 	uint8_t *addr_val;                    /*!< Random address. */
 } rtk_bt_le_set_rand_addr_t;
@@ -515,7 +524,7 @@ typedef struct {
 } rtk_bt_le_ext_adv_start_t;
 
 /**
- * @typedef   rtk_bt_le_ext_adv_data_t
+ * @struct    rtk_bt_le_ext_adv_data_t
  * @brief     Bluetooth LE GAP set ext adv data definition.
  */
 typedef struct {
@@ -543,15 +552,15 @@ typedef struct {
                                                *   Range: 0x0004 to 0xFFFF.
                                                *   Time = N * 0.625 ms.
                                                *   Time Range: 2.5 ms to 40.959375 s. */
-	uint16_t scan_window[3];                  /*!< Duration of the scan on the primary advertising channel. Shall be less than or equal to #scan_interval[i].
+	uint16_t scan_window[3];                  /*!< Duration of the scan on the primary advertising channel. Shall be less than or equal to scan_interval[i].
                                                *   Range: 0x0004 to 0xFFFF.
                                                *   Time = N * 0.625 ms.
                                                *   Time Range: 2.5 ms to 40.959375 s. */
-	uint16_t conn_interval_min[3];            /*!< Minimum value for the connection interval. This shall be less than or equal to #conn_interval_max[i].
+	uint16_t conn_interval_min[3];            /*!< Minimum value for the connection interval. This shall be less than or equal to conn_interval_max[i].
                                                *   Range: 0x0006 to 0x0C80.
                                                *   Time = N * 1.25 ms.
                                                *   Time Range: 7.5 ms to 4 s. */
-	uint16_t conn_interval_max[3];            /*!< Maximum value for the connection interval. This shall be greater than or equal to #conn_interval_min[i].
+	uint16_t conn_interval_max[3];            /*!< Maximum value for the connection interval. This shall be greater than or equal to conn_interval_min[i].
                                                *   Range: 0x0006 to 0x0C80.
                                                *   Time = N * 1.25 ms.
                                                *   Time Range: 7.5 ms to 4 s. */
@@ -611,21 +620,21 @@ typedef struct {
                                        *   Range: 0x06 to 0xFF.
                                        *   Time = N * 1.25 ms.
                                        *   Time Range: 7.5 ms to 318.75 ms.
-                                       *   Ignored when #num_subevents is 0x00 or 0x01. */
+                                       *   Ignored when num_subevents is 0x00 or 0x01. */
 	uint8_t response_slot_delay;      /*!< Time between the advertising packet in a subevent and the first response slot.
                                        *   Range: 0x01 to 0xFE.
                                        *   Time = N * 1.25 ms.
                                        *   Time Range: 1.25 ms to 317.5 ms.
-                                       *   Ignored when #num_subevents is 0x00 or #num_response_slots is 0x00. */
+                                       *   Ignored when num_subevents is 0x00 or num_response_slots is 0x00. */
 	uint8_t response_slot_spacing;    /*!< Time between consecutive response slots within a subevent.
                                        *   Range: 0x02 to 0xFF.
                                        *   Time = N * 0.125 ms.
                                        *   Time Range: 0.25 ms to 31.875 ms.
-                                       *   Ignored when #num_subevents is 0x00 or #num_response_slots is 0x00. */
+                                       *   Ignored when num_subevents is 0x00 or num_response_slots is 0x00. */
 	uint8_t num_response_slots;       /*!< Number of response slots in each subevent.
                                        *   Range: 0x00 to 0xFF.
-                                       *   0x00: No response slots, response_slot_delay and #response_slot_spacing are ignored.
-                                       *   Ignored when #num_subevents is 0x00. */
+                                       *   0x00: No response slots, response_slot_delay and response_slot_spacing are ignored.
+                                       *   Ignored when num_subevents is 0x00. */
 #endif
 } rtk_bt_le_pa_param_t;
 
@@ -957,7 +966,7 @@ typedef struct {
  * @brief     Bluetooth LE ALL_PHYs prefer bit field.
  */
 typedef enum {
-	RTK_BT_LE_PHYS_PREFER_ALL    = 0,
+	RTK_BT_LE_PHYS_PREFER_ALL    = 0,                /*!< Neither TX or RX no-prefernece bit is set. */
 	RTK_BT_LE_PHYS_NO_PREFER_TX  = (1 << 0),         /*!< The Host has no preference among the transmitter PHYs supported by the Controller. */
 	RTK_BT_LE_PHYS_NO_PREFER_RX  = (1 << 1),         /*!< The Host has no preference among the receiver PHYs supported by the Controller. */
 } rtk_bt_le_all_phy_prefer_t;
@@ -1001,8 +1010,8 @@ typedef struct {
  * @brief     Bluetooth LE SM pairing mode definition.
  */
 typedef enum {
-	RTK_PAIRING_MODE_NO_PAIRING  = 0x00,
-	RTK_PAIRING_MODE_PAIRABLE    = 0x01,
+	RTK_PAIRING_MODE_NO_PAIRING  = 0x00,  /*!< Not pairable; pairing requests from remote devices are rejected. */
+	RTK_PAIRING_MODE_PAIRABLE    = 0x01,  /*!< Pairable; incoming pairing requests from remote devices are accepted. */
 } rtk_bt_le_pairing_mode_t;
 
 /**
@@ -1019,14 +1028,18 @@ typedef enum {
 } rtk_bt_le_io_cap_t;
 
 /**
- * @defgroup  RTK_IO_CAP Deprecated aliases
- * @brief     Deprecated aliases of the @ref rtk_bt_le_io_cap_t values.
- * @deprecated Use the @ref rtk_bt_le_io_cap_t values instead.
- * @{
+ * @def       RTK_IO_CAP_DISPALY_ONLY
+ * @brief     Deprecated alias of @ref RTK_IO_CAP_DISPLAY_ONLY.
+ * @deprecated Use @ref RTK_IO_CAP_DISPLAY_ONLY instead.
  */
 #define RTK_IO_CAP_DISPALY_ONLY RTK_IO_CAP_DISPLAY_ONLY
+
+/**
+ * @def       RTK_IO_CAP_KEYBOARD_DISPALY
+ * @brief     Deprecated alias of @ref RTK_IO_CAP_KEYBOARD_DISPLAY.
+ * @deprecated Use @ref RTK_IO_CAP_KEYBOARD_DISPLAY instead.
+ */
 #define RTK_IO_CAP_KEYBOARD_DISPALY RTK_IO_CAP_KEYBOARD_DISPLAY
-/** @} */
 
 /**
  * @def       RTK_PAIRING_PASSKEY_MAX
@@ -1056,16 +1069,16 @@ typedef struct {
                                             *   1: Support Secure connection pairing.
                                             *   0: Not support Secure connection pairing.
                                             *   ALL other values reserved. */
-	uint8_t sec_pair_only_flag;            /*!< Only accept LE Secure Connection pairing when local #sec_pair_flag is set.
-                                            *   1: Only accept LE Secure Connection pairing when local #sec_pair_flag is set.
+	uint8_t sec_pair_only_flag;            /*!< Only accept LE Secure Connection pairing when local sec_pair_flag is set.
+                                            *   1: Only accept LE Secure Connection pairing when local sec_pair_flag is set.
                                             *   0: Accept LE Secure Connection pairing and legacy pairing.
                                             *   ALL other values reserved. */
 	uint8_t use_fixed_key;                 /*!< Pairing use fixed passkey.
-                                            *   1: Use fixed passkey when pairing, fixed passkey ref #fixed_key.
+                                            *   1: Use fixed passkey when pairing, fixed passkey ref @ref fixed_key.
                                             *   0: Use random passkey when pairing.
                                             *   ALL other values reserved. */
 	uint32_t fixed_key;                    /*!< Fixed passkey value.
-                                                Only used when #use_fixed_key is 1. */
+                                                Only used when @ref use_fixed_key is 1. */
 	uint8_t auto_sec_req;                  /*!< Auto send security request when connected.
                                             *   1: Stack auto send security request when connected.
                                             *   0: Stack not auto send security request when connected.
@@ -1188,9 +1201,8 @@ typedef struct {
 	bool is_start;                                  /*!< - true: advertising started.
                                                      *   - false: advertising stopped. */
 	uint16_t err;                                   /*!< Status of the start/stop extended adv procedure; 0x00 on success. */
-	rtk_bt_le_adv_stop_reason_t stop_reason;        /*!< Reason advertising stopped; only valid when #is_start is false. */
-	uint16_t conn_handle;                           /*!< Connection handle of the ACL connection that stopped advertising, only valid when
-                                                     *   #stop_reason is @ref RTK_BT_LE_ADV_STOP_BY_CONN.
+	rtk_bt_le_adv_stop_reason_t stop_reason;        /*!< Reason advertising stopped; only valid when is_start is false. */
+	uint16_t conn_handle;                           /*!< Connection handle of the ACL connection that stopped advertising, only valid when stop_reason is @ref RTK_BT_LE_ADV_STOP_BY_CONN.
                                                      *   Range: 0x0000 to 0x0EFF. */
 } rtk_bt_le_ext_adv_ind_t;
 #endif
@@ -1214,13 +1226,13 @@ typedef enum {
 typedef struct {
 	uint8_t adv_handle;                             /*!< Identify an advertising set, assigned by @ref rtk_bt_le_gap_create_ext_adv. */
 	rtk_bt_le_pa_state_t state;                     /*!< New periodic advertising state. */
-	uint16_t cause;                                 /*!< Status of the periodic adv procedure; 0x00 on success. */
+	uint16_t cause;                                 /*!< Status of the periodic adv procedure; 0 on success. */
 } rtk_bt_le_pa_ind_t;
 #endif
 
 #if defined(RTK_BLE_5_0_PA_SYNC_SUPPORT) && RTK_BLE_5_0_PA_SYNC_SUPPORT
 /**
- * @typedef   rtk_bt_le_pa_synced_info_t
+ * @struct    rtk_bt_le_pa_synced_info_t
  * @brief     Bluetooth LE GAP PA Sync Common Sync parameter.
  */
 typedef struct {
@@ -1253,26 +1265,26 @@ typedef struct {
                                                                     *   Range: 0x06 to 0xFF.
                                                                     *   Time = N * 1.25 ms.
                                                                     *   Time Range: 7.5 ms to 318.75 ms.
-                                                                    *   Ignored when #num_subevents is 0x00 or 0x01. */
+                                                                    *   Ignored when num_subevents is 0x00 or 0x01. */
 	uint8_t response_slot_delay;                                   /*!< Time from the start of a subevent to the first response slot.
                                                                     *   Range: 0x01 to 0xFE.
                                                                     *   Time = N * 1.25 ms.
                                                                     *   Time Range: 1.25 ms to 317.5 ms.
-                                                                    *   Ignored when #num_subevents is 0x00. */
+                                                                    *   Ignored when num_subevents is 0x00. */
 	uint8_t response_slot_spacing;                                 /*!< Time between consecutive response slots within a subevent.
                                                                     *   Range: 0x02 to 0xFF.
                                                                     *   Time = N * 0.125 ms.
                                                                     *   Time Range: 0.25 ms to 31.875 ms.
-                                                                    *   Ignored when #num_subevents is 0x00. */
+                                                                    *   Ignored when num_subevents is 0x00. */
 #endif
 	bool past_received;                                            /*!< Indicates whether synchronization was established via Periodic Advertising Sync Transfer (PAST).
                                                                     *   - true: Established via PAST.
                                                                     *   - false: Established via local create-sync procedure. */
 	uint16_t conn_handle;                                          /*!< Connection handle of the ACL connection for which PAST was received.
-                                                                    *   Only valid when #past_received is true.
+                                                                    *   Only valid when past_received is true.
                                                                     *   Range: 0x0000 to 0x0EFF. */
 	uint16_t service_data;                                         /*!< Service_Data value provided by the Host of the device sending the synchronization information.
-                                                                    *   Only valid when #past_received is true. */
+                                                                    *   Only valid when past_received is true. */
 } rtk_bt_le_pa_synced_info_t;
 
 /**
@@ -1296,8 +1308,7 @@ typedef struct {
 	uint8_t sync_id;                                               /*!< Identify the synchronization with a periodic advertising train. */
 	rtk_bt_le_pa_sync_state_t state;                               /*!< New synchronization state. */
 	uint16_t cause;                                                /*!< Status of the periodic adv synchronization procedure; 0x00 on success. */
-	rtk_bt_le_pa_synced_info_t info;                               /*!< Synchronization info; only valid when #state is
-                                                                    *   @ref RTK_BT_LE_PA_SYNC_STATE_SYNCHRONIZED. */
+	rtk_bt_le_pa_synced_info_t info;                               /*!< Synchronization info; only valid when state == @ref RTK_BT_LE_PA_SYNC_STATE_SYNCHRONIZED. */
 } rtk_bt_le_pa_sync_ind_t;
 
 /**
@@ -1423,10 +1434,10 @@ typedef struct {
 	uint16_t conn_handle;                        /*!< Connection handle of the ACL connection that the peer will receive the sync information.
                                                   *   Range: 0x0000 to 0x0EFF. */
 	uint16_t service_data;                       /*!< Application-defined 16-bit value used by the peer to identify this periodic advertising train after transfer. */
-	bool use_sync_id;                            /*!< Selects the meaning of the #idx field.
-                                                  *   - true: #idx is a sync_id obtained from a remote device by sync procedure.
-                                                  *   - false: #idx is an adv_handle for a locally-generated periodic advertising set. */
-	uint8_t idx;                                 /*!< Sync_id (if #use_sync_id is true) or adv_handle (if #use_sync_id is false). */
+	bool use_sync_id;                            /*!< Selects the meaning of the idx field.
+                                                  *   - true: idx is a sync_id obtained from a remote device by sync procedure.
+                                                  *   - false: idx is an adv_handle for a locally-generated periodic advertising set. */
+	uint8_t idx;                                 /*!< Sync_id (if use_sync_id is true) or adv_handle (if use_sync_id is false). */
 } rtk_bt_le_past_send_t;
 #endif
 
@@ -1492,6 +1503,11 @@ typedef enum {
  * @brief     Bluetooth LE max adv data len.
  */
 #define RTK_BT_LE_MAX_ADV_DATA_LEN  31
+
+/**
+ * @def       RTK_BT_LE_MAX_EXT_ADV_DATA_LEN
+ * @brief     Bluetooth LE max extended adv data len.
+ */
 #define RTK_BT_LE_MAX_EXT_ADV_DATA_LEN  1650
 
 /**
@@ -1736,7 +1752,7 @@ typedef struct {
 } rtk_bt_le_auth_oob_input_ind_t;
 
 /**
- * @struct    rtk_bt_le_sec_level_t
+ * @enum      rtk_bt_le_sec_level_t
  * @brief     Bluetooth LE security level.
  */
 typedef enum {
@@ -1894,13 +1910,13 @@ typedef enum {
 #if defined(RTK_BLE_5_2_POWER_CONTROL_SUPPORT) && RTK_BLE_5_2_POWER_CONTROL_SUPPORT
 /**
  * @def       RTK_BLE_LE_TXPOWER_UNAVAILABLE
- * @brief     Bluetooth LE tx power level is not available.
+ * @brief     Bluetooth LE tx power level: power level is unavailable.
  */
 #define RTK_BLE_LE_TXPOWER_UNAVAILABLE      0x7F
 
 /**
  * @def       RTK_BLE_LE_TXPOWER_NOT_MANAGING
- * @brief     Bluetooth LE tx power level is not managing.
+ * @brief     Bluetooth LE tx power level: transmit power level is not being managed.
  */
 #define RTK_BLE_LE_TXPOWER_NOT_MANAGING     0x7E
 
@@ -2278,7 +2294,7 @@ typedef struct {
  * @brief     Bluetooth LE Constant Tone Extension (CTE) type.
  */
 typedef enum {
-	RTK_BT_LE_GAP_CTE_TYPE_NONE    = 0,       /*!< No CTE type; used where no CTE is present or none is allowed. */
+	RTK_BT_LE_GAP_CTE_TYPE_NONE    = 0,       /*!< No Constant Tone Extension type. */
 	RTK_BT_LE_GAP_CTE_TYPE_AOA     = 0x01,    /*!< AoA Constant Tone Extension. */
 	RTK_BT_LE_GAP_CTE_TYPE_AOD_1US = 0x02,    /*!< AoD Constant Tone Extension with 1us slots. */
 	RTK_BT_LE_GAP_CTE_TYPE_AOD_2US = 0x04,    /*!< AoD Constant Tone Extension with 2us slots. */
@@ -2288,30 +2304,30 @@ typedef enum {
 #if defined(RTK_BLE_5_1_CTE_SUPPORT) && RTK_BLE_5_1_CTE_SUPPORT
 
 /* BLE connectionless CTE transmit parameters */
-#define RTK_BLE_GAP_CTE_LEN_MIN                         (0x02u)
-#define RTK_BLE_GAP_CTE_LEN_MAX                         (0x14u)
-#define RTK_BLE_GAP_CTE_LEN_VALUE_IN_RANGE(value)       \
+#define RTK_BLE_GAP_CTE_LEN_MIN                         (0x02u)             /*!< Minimum connectionless CTE length in 8 µs units. */
+#define RTK_BLE_GAP_CTE_LEN_MAX                         (0x14u)             /*!< Maximum connectionless CTE length in 8 µs units. */
+#define RTK_BLE_GAP_CTE_LEN_VALUE_IN_RANGE(value)                           /*!< Check whether the connectionless CTE length is in range. */ \
     (((value) >= RTK_BLE_GAP_CTE_LEN_MIN) && ((value) <= RTK_BLE_GAP_CTE_LEN_MAX))
 
-#define RTK_BLE_GAP_CTE_TYPE_VALUE_IN_RANGE(value)      \
+#define RTK_BLE_GAP_CTE_TYPE_VALUE_IN_RANGE(value)                          /*!< Check whether the CTE type is in range. */ \
     ((value) == RTK_BT_LE_GAP_CTE_TYPE_AOA ||           \
      (value) == RTK_BT_LE_GAP_CTE_TYPE_AOD_1US ||       \
      (value) == RTK_BT_LE_GAP_CTE_TYPE_AOD_2US)
 
-#define RTK_BLE_GAP_CTE_CNT_MIN                         (0x01u)
-#define RTK_BLE_GAP_CTE_CNT_MAX                         (0x10u)
-#define RTK_BLE_GAP_CTE_CNT_VALUE_IN_RANGE(value)       \
+#define RTK_BLE_GAP_CTE_CNT_MIN                         (0x01u)             /*!< Minimum number of CTE transmitted in each periodic advertising interval. */
+#define RTK_BLE_GAP_CTE_CNT_MAX                         (0x10u)             /*!< Maximum number of CTE transmitted in each periodic advertising interval. */
+#define RTK_BLE_GAP_CTE_CNT_VALUE_IN_RANGE(value)                           /*!< Check whether the CTE count is in range. */ \
     (((value) >= RTK_BLE_GAP_CTE_CNT_MIN) && ((value) <= RTK_BLE_GAP_CTE_CNT_MAX))
 
-#define RTK_BLE_GAP_CTE_NUM_ANT_IDS_MIN                 (0x02u)
-#define RTK_BLE_GAP_CTE_NUM_ANT_IDS_MAX                 (0x0Cu)
-#define RTK_BLE_GAP_CTE_NUM_ANT_IDS_VALUE_IN_RANGE(value)   \
+#define RTK_BLE_GAP_CTE_NUM_ANT_IDS_MIN                 (0x02u)             /*!< Minimum number of Antenna IDs in the switching pattern. */
+#define RTK_BLE_GAP_CTE_NUM_ANT_IDS_MAX                 (0x0Cu)             /*!< Maximum number of Antenna IDs in the switching pattern. */
+#define RTK_BLE_GAP_CTE_NUM_ANT_IDS_VALUE_IN_RANGE(value)                   /*!< Check whether the number of Antenna IDs is in range. */ \
     (((value) >= RTK_BLE_GAP_CTE_NUM_ANT_IDS_MIN) && ((value) <= RTK_BLE_GAP_CTE_NUM_ANT_IDS_MAX))
 
-#define RTK_BLE_GAP_CTE_TX_ENABLE_VALUE_IN_RANGE(value) ((value) <= 0x01u)
+#define RTK_BLE_GAP_CTE_TX_ENABLE_VALUE_IN_RANGE(value) ((value) <= 0x01u)  /*!< Check whether the connectionless CTE transmit enable flag is valid. */
 
 /* BLE connectionless IQ sampling parameter */
-#define RTK_BLE_GAP_CTE_RX_ENABLE_VALUE_IN_RANGE(value) ((value) <= 0x01u)
+#define RTK_BLE_GAP_CTE_RX_ENABLE_VALUE_IN_RANGE(value) ((value) <= 0x01u)  /*!< Check whether the connectionless IQ sampling enable flag is valid. */
 
 /**
  * @def       RTK_BLE_GAP_CTE_RX_EANBLE_VALUE_IN_RANGE
@@ -2320,22 +2336,22 @@ typedef enum {
  */
 #define RTK_BLE_GAP_CTE_RX_EANBLE_VALUE_IN_RANGE(value) RTK_BLE_GAP_CTE_RX_ENABLE_VALUE_IN_RANGE(value)
 
-#define RTK_BLE_GAP_CTE_SLOT_DURATION_MIN               (0x01u)
-#define RTK_BLE_GAP_CTE_SLOT_DURATION_MAX               (0x02u)
-#define RTK_BLE_GAP_CTE_SLOT_DURATION_VALUE_IN_RANGE(value)     \
+#define RTK_BLE_GAP_CTE_SLOT_DURATION_MIN               (0x01u)             /*!< Minimum CTE switching and sampling slot duration in µs. */
+#define RTK_BLE_GAP_CTE_SLOT_DURATION_MAX               (0x02u)             /*!< Maximum CTE switching and sampling slot duration in µs. */
+#define RTK_BLE_GAP_CTE_SLOT_DURATION_VALUE_IN_RANGE(value)                 /*!< Check whether the CTE switching and sampling slot duration is in range. */ \
     (((value) >= RTK_BLE_GAP_CTE_SLOT_DURATION_MIN) && ((value) <= RTK_BLE_GAP_CTE_SLOT_DURATION_MAX))
 
-#define RTK_BLE_GAP_CTE_MAX_SAMPLED_CTES_MIN            (0x00u)
-#define RTK_BLE_GAP_CTE_MAX_SAMPLED_CTES_MAX            (0x10u)
-#define RTK_BLE_GAP_CTE_MAX_SAMPLED_CTES_VALUE_IN_RANGE(value)      \
+#define RTK_BLE_GAP_CTE_MAX_SAMPLED_CTES_MIN            (0x00u)             /*!< Special value indicating all available CTEs in each periodic advertising interval. */
+#define RTK_BLE_GAP_CTE_MAX_SAMPLED_CTES_MAX            (0x10u)             /*!< Maximum number of CTEs sampled per periodic advertising interval. */
+#define RTK_BLE_GAP_CTE_MAX_SAMPLED_CTES_VALUE_IN_RANGE(value)              /*!< Check whether the number of sampled CTEs is in range. */ \
     ((value) <= RTK_BLE_GAP_CTE_MAX_SAMPLED_CTES_MAX)
 
-#define RTK_BLE_GAP_CTE_TYPES_VALUE_IN_RANGE(value)         \
+#define RTK_BLE_GAP_CTE_TYPES_VALUE_IN_RANGE(value)                         /*!< Check whether the CTE type value is in range. */ \
     ((value) <= (RTK_BT_LE_GAP_CTE_TYPE_AOA | RTK_BT_LE_GAP_CTE_TYPE_AOD_1US | RTK_BT_LE_GAP_CTE_TYPE_AOD_2US))
 
-#define RTK_BLE_GAP_CTE_REQ_INTERVAL_MIN                (0x0000u)
-#define RTK_BLE_GAP_CTE_REQ_INTERVAL_MAX                (0xFFFFu)
-#define RTK_BLE_GAP_CTE_REQ_INTERVAL_VALUE_IN_RANGE(value)  \
+#define RTK_BLE_GAP_CTE_REQ_INTERVAL_MIN                (0x0000u)           /*!< Minimum CTE request interval; 0x0000 requests once. */
+#define RTK_BLE_GAP_CTE_REQ_INTERVAL_MAX                (0xFFFFu)           /*!< Maximum CTE request interval. */
+#define RTK_BLE_GAP_CTE_REQ_INTERVAL_VALUE_IN_RANGE(value)                  /*!< Check whether the CTE request interval is in range. */ \
     (((value) >= RTK_BLE_GAP_CTE_REQ_INTERVAL_MIN) && ((value) <= RTK_BLE_GAP_CTE_REQ_INTERVAL_MAX))
 
 /**
@@ -2456,7 +2472,7 @@ typedef struct {
 	bool enable;                                       /*!< CTE reception control.
                                                         *   - true: start connection-oriented CTE reception.
                                                         *   - false: stop connection-oriented CTE reception. */
-	rtk_bt_le_gap_conn_cte_rx_param_t  *p_rx_param;    /*!< Connection CTE receive parameters; ignored when #enable is false. */
+	rtk_bt_le_gap_conn_cte_rx_param_t  *p_rx_param;    /*!< Connection CTE receive parameters; ignored when enable is false. */
 } rtk_bt_le_gap_conn_cte_rx_t;
 
 /**
@@ -2464,12 +2480,12 @@ typedef struct {
  * @brief     Bluetooth LE connectionless CTE transmit state.
  */
 typedef enum {
-	RTK_BT_LE_GAP_CONNLESS_CTE_TX_STATE_IDLE = 0,
-	RTK_BT_LE_GAP_CONNLESS_CTE_TX_STATE_EXT_ADV_IDLE,
-	RTK_BT_LE_GAP_CONNLESS_CTE_TX_STATE_WAIT_EXT_ADV,
-	RTK_BT_LE_GAP_CONNLESS_CTE_TX_STATE_WAIT_PA_ADV,
-	RTK_BT_LE_GAP_CONNLESS_CTE_TX_STATE_ENABLING,
-	RTK_BT_LE_GAP_CONNLESS_CTE_TX_STATE_TRANSMITTING,
+	RTK_BT_LE_GAP_CONNLESS_CTE_TX_STATE_IDLE = 0,      /*!< Connectionless CTE transmit is idle. */
+	RTK_BT_LE_GAP_CONNLESS_CTE_TX_STATE_EXT_ADV_IDLE,  /*!< Enabling, but the associated extended advertising set is idle. */
+	RTK_BT_LE_GAP_CONNLESS_CTE_TX_STATE_WAIT_EXT_ADV,  /*!< Waiting for the associated extended advertising set to start advertising. */
+	RTK_BT_LE_GAP_CONNLESS_CTE_TX_STATE_WAIT_PA_ADV,   /*!< Waiting for the associated periodic advertising train to start. */
+	RTK_BT_LE_GAP_CONNLESS_CTE_TX_STATE_ENABLING,      /*!< Connectionless CTE transmit is being enabled. */
+	RTK_BT_LE_GAP_CONNLESS_CTE_TX_STATE_TRANSMITTING,  /*!< CTEs are being transmitted. */
 } rtk_bt_le_gap_connless_cte_tx_state_e;
 
 /**
@@ -2478,7 +2494,7 @@ typedef enum {
  */
 typedef struct {
 	uint8_t  adv_handle;                                                 /*!< Extended advertising handle of the CTE transmit set. */
-	uint16_t cause;                                                      /*!< Result code; 0x00 on success, non-zero indicates the reason for the state change. */
+	uint16_t cause;                                                      /*!< Result code; 0 on success, non-zero indicates the reason for the state change. */
 	rtk_bt_le_gap_connless_cte_tx_state_e state;                         /*!< New connectionless CTE transmit state. */
 } rtk_bt_le_gap_connless_cte_tx_ind_t;
 
@@ -2495,6 +2511,10 @@ typedef enum {
 	RTK_BT_LE_GAP_CTE_PACKET_INSUFFI_RESOURCES                = 0xFF,                      /*!< Insufficient resources to sample (Data_Channel_Index, CTE_Type, and Slot_Durations invalid). */
 } rtk_bt_le_gap_cte_packet_status_type_e;
 
+/**
+ * @def       RTK_BT_LE_MAX_IQ_REPORT_CNT
+ * @brief     Bluetooth LE max IQ sample pair count in one report.
+ */
 #define RTK_BT_LE_MAX_IQ_REPORT_CNT  (82)
 
 /**
@@ -2523,7 +2543,7 @@ typedef struct {
 	int8_t                                  iq_sample[RTK_BT_LE_MAX_IQ_REPORT_CNT * 2];    /*!< IQ sample pairs.
                                                                                             *   I_Sample[0],
                                                                                             *   Q_Sample[0], ..., I_Sample[i], Q_Sample[i].
-                                                                                            *   Length = #sample_count * 2.
+                                                                                            *   Length = sample_count * 2.
                                                                                             *   Value 0x80 indicates no valid sample available. */
 } rtk_bt_le_gap_connless_iq_report_ind_t;
 
@@ -2557,7 +2577,7 @@ typedef struct {
 	int8_t                                  iq_sample[RTK_BT_LE_MAX_IQ_REPORT_CNT * 2];    /*!< IQ sample pairs.
                                                                                             *   I_Sample[0],
                                                                                             *   Q_Sample[0], ..., I_Sample[i], Q_Sample[i].
-                                                                                            *   Length = #sample_count * 2.
+                                                                                            *   Length = sample_count * 2.
                                                                                             *   Value 0x80 indicates no valid sample available. */
 } rtk_bt_le_gap_conn_iq_report_ind_t;
 
@@ -2646,6 +2666,10 @@ typedef struct {
 	uint8_t *data;                      /*!< Pointer to the subevent data to send. */
 } rtk_bt_le_gap_pawr_subevent_element_t;
 
+/**
+ * @def       RTK_BLE_PAWR_SET_SUBEVENT_DATA_MAX
+ * @brief     Bluetooth LE max number of PAwR subevent data elements.
+ */
 #define RTK_BLE_PAWR_SET_SUBEVENT_DATA_MAX    4
 
 /**
@@ -2854,28 +2878,35 @@ typedef struct  {
                                                        *   Units: 8 µs. */
 	rtk_bt_le_dtm_cte_type_t cte_type;                /*!< Type of the Constant Tone Extension in transmitted test reference packets. */
 	uint8_t sw_pattern_len;                           /*!< Number of antenna IDs in the switching pattern.
-                                                       *   Ignored when #cte_type is @ref RTK_BT_LE_DTM_CTE_TYPE_AOA.
+                                                       *   Ignored when cte_type is @ref RTK_BT_LE_DTM_CTE_TYPE_AOA.
                                                        *   Range: 0x02 to max_switching_pattern_length supported by controller. max_switching_pattern_length shall be less than or
                                                        *   equal to 0x4B. */
 	uint8_t *p_antenna_ids;                           /*!< Antenna IDs in the switching pattern.
-                                                       *   Ignored when #cte_type is @ref RTK_BT_LE_DTM_CTE_TYPE_AOA. */
+                                                       *   Ignored when cte_type is @ref RTK_BT_LE_DTM_CTE_TYPE_AOA. */
 	int8_t tx_power_level;                            /*!< Set transmitter to the specified or the nearest transmit power level.
                                                        *   Range: -127 to +20 dBm.
                                                        *   0x7E: Set transmitter to minimum transmit power level.
                                                        *   0x7F: Set transmitter to maximum transmit power level. */
 } rtk_bt_le_dtm_tx_param_t;
 
-/********************************* Functions Declaration *******************************/
 /**
- * @defgroup  bt_le_gap BT LE GAP APIs
- * @brief     BT LE GAP related function APIs.
- * @ingroup   BT_APIs
+ * @}
+ */
+/**
+ * @}
+ */
+
+/********************************* Functions Declaration *******************************/
+/** @addtogroup BT_Functions BT Functions
+ * @{
+ */
+/** @addtogroup BT_LE_GAP_Functions BT LE GAP Functions
  * @{
  */
 
 /**
- * @brief     Get the local connection id associated with a given connection handle. The connection id is an
- *            internal index (0 to @ref RTK_BLE_GAP_MAX_LINKS - 1) that identifies a BLE connection within the local stack.
+ * @brief     Get the local connection id associated with a given connection handle. The connection id is an internal index (0 to @ref RTK_BLE_GAP_MAX_LINKS - 1)
+ *            that identifies a BLE connection within the local stack.
  * @param[in] conn_handle: Connection handle of the ACL connection on which the conn id to get.
  *                         Range: 0x0000 to 0x0EFF.
  * @param[out] p_conn_id: Pointer to a variable that stores the connection id.
@@ -3418,11 +3449,11 @@ uint16_t rtk_bt_le_gap_disconnect(uint16_t conn_handle);
  * @param[in] conn_handle: Connection handle of the ACL connection to disconnect.
  *                         Range: 0x0000 to 0x0EFF.
  * @param[in] reason: Reason code for disconnection.
- *                    - @ref RTK_BT_HCI_ERR_REMOTE_USER_TERMINATE: remote user terminate.
- *                    - @ref RTK_BT_HCI_ERR_REMOTE_LOW_RESOURCE: remote low resource.
- *                    - @ref RTK_BT_HCI_ERR_REMOTE_POWER_OFF: remote power off.
- *                    - @ref RTK_BT_HCI_ERR_UNSUPPORTED_REMOTE_FEAT: unsupported remote feature.
- *                    - @ref RTK_BT_HCI_ERR_UNACCEPTABLE_CONN_INTERVAL: unacceptable connection parameters.
+ *                    - @ref RTK_BT_HCI_ERR_REMOTE_USER_TERMINATE - remote user terminate.
+ *                    - @ref RTK_BT_HCI_ERR_REMOTE_LOW_RESOURCE - remote low resource.
+ *                    - @ref RTK_BT_HCI_ERR_REMOTE_POWER_OFF - remote power off.
+ *                    - @ref RTK_BT_HCI_ERR_UNSUPPORTED_REMOTE_FEAT - unsupported remote feature.
+ *                    - @ref RTK_BT_HCI_ERR_UNACCEPTABLE_CONN_INTERVAL - unacceptable connection parameters.
  * @return
  *            - @ref rtk_bt_err_common
  */
@@ -3454,7 +3485,8 @@ uint16_t rtk_bt_le_gap_update_conn_param(rtk_bt_le_update_conn_param_t *p_update
  *            - The whitelist cannot be modified while any of the following apply:
  *              1. advertising uses the Filter Accept List and is enabled.
  *              2. scanning uses the Filter Accept List and scanning is active.
- *              3. the initiator filter policy uses the Filter Accept List and connection creation is pending.
+ *              3. the initiator filter policy
+ *              uses the Filter Accept List and connection creation is pending.
  *            - To clear the entire whitelist, set operation to @ref RTK_BT_LE_WHITELIST_CLEAR.
  *            - Address shall be ignored when Address_Type is 0xFF.
  */
@@ -3612,10 +3644,11 @@ uint16_t rtk_bt_le_gap_privacy_init(bool whitelist);
 
 /**
  * @brief     Set the LE privacy mode for a specific peer identity address. Two privacy modes are available:
- *            - Network Privacy Mode (default): if the peer has distributed its IRK, the Controller shall not accept
+ *            Network Privacy Mode (default): if the peer has distributed its IRK, the Controller shall not accept
  *            advertising packets containing the peer's Identity Address.
- *            - Device Privacy Mode: the Controller shall accept advertising packets from the peer whether they contain
+ *            Device Privacy Mode: the Controller shall accept advertising packets from the peer whether they contain
  *            the peer's Identity Address or a private address, even if the peer has distributed its IRK.
+ *
  * @param[in] peer_ident_addr_type: Identity address type of the peer.
  * @param[in] peer_addr: 6-byte peer identity address.
  *                       Must not be NULL.
@@ -4188,6 +4221,9 @@ uint16_t rtk_bt_le_gap_dtm_tx_test(rtk_bt_le_dtm_tx_param_t *p_tx_param, rtk_bt_
  */
 uint16_t rtk_bt_le_gap_dtm_end(uint16_t *p_num_pkts);
 
+/**
+ * @}
+ */
 /**
  * @}
  */

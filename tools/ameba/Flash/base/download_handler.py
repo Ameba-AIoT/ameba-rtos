@@ -138,6 +138,8 @@ class Ameba(object):
         # Logical OTP byte of the SPIC address mode as read (and verified) by set_boot_flash_type(),
         # reused by get_spic_address_mode() instead of reading it again; None if not read
         self.spic_addr_mode_otp_cfg = None
+        # All-FF partitions of a split merged image, erased but not programmed
+        self._empty_partitions = []
 
         self.rom_handler = RomHandler(self)
         self.floader_handler = FloaderHandler(self)
@@ -506,7 +508,7 @@ class Ameba(object):
         if self.device_info.is_boot_from_nand():
             self.logger.info(f'* MemoryType: NAND')
             self.logger.info(f'* FlashMID: 0x{format(self.device_info.flash_mid, "02X")}')  # customized, do not modify
-            if self.device_info.flash_mid == FlashUtils.NandMfgMicron:
+            if self.device_info.flash_mid == FlashUtils.NandMfgMicron.value:
                 self.logger.info(f'* FlashDID: 0x{format(self.device_info.flash_did & 0xFF, "02x")}{format((self.device_info.flash_did >> 8) & 0xFF, "02x")}')
             else:
                 self.logger.info(f'* FlashDID: 0x{format(self.device_info.flash_did, "02X")}')
@@ -638,19 +640,22 @@ class Ameba(object):
 
         return ret
 
+    def flash_lock_register(self):
+        """Return (read cmd, write cmd, address, BP mask) of the flash block protection register"""
+        if self.device_info.is_boot_from_nand():
+            bp_mask = FlashUtils.NandRegProtectionBpMask.value
+            if self.device_info.flash_mid in (FlashUtils.NandMfgWinbond.value, FlashUtils.NandMfgMicron.value):
+                bp_mask = FlashUtils.NandRegProtectionBpMaskWinbondMicron.value
+            return (FlashUtils.NandCmdGetFeatures.value, FlashUtils.NandCmdSetFeatures.value,
+                    FlashUtils.NandRegProtection.value, bp_mask)
+
+        return (FlashUtils.NorCmdReadStatusReg1.value, FlashUtils.NorCmdWriteStatusReg1.value,
+                0, FlashUtils.NorStatusReg1BpMask.value)
+
     def check_flash_lock(self, flash_status):
         ret = ErrType.OK
 
-        if self.device_info.is_boot_from_nand():
-            cmd = FlashUtils.NandCmdGetFeatures.value
-            address = FlashUtils.NandRegProtection.value
-            bp_mask = FlashUtils.NandRegProtectionBpMask.value
-            if self.device_info.flash_mid == FlashUtils.NandMfgWinbond or self.device_info.flash_mid == FlashUtils.NandMfgMicron:
-                bp_mask = FlashUtils.NandRegProtectionBpMaskWinbondMicron
-        else:
-            cmd = FlashUtils.NorCmdReadStatusReg1.value
-            address = 0
-            bp_mask = FlashUtils.NorStatusReg1BpMask.value
+        cmd, _, address, bp_mask = self.flash_lock_register()
 
         ret, protection = self.read_flash_status_register(cmd, address)
         flash_status.protection = protection
@@ -661,46 +666,20 @@ class Ameba(object):
         return ret
 
     def check_and_process_flash_lock(self, flash_status):
-        follow_up_action = self.setting.flash_protection_process
-
+        """Remove the flash block protection if any, restore_flash_lock() writes it back
+        after the erase/program"""
         ret = self.check_flash_lock(flash_status)
         if ret != ErrType.OK:
             self.logger.error(f"Flash protection check fail: {ret}")
 
         if flash_status.is_locked:
-            self.logger.warning("Flash block protection detected")
-
-            if follow_up_action == RtSettings.FLASH_PROTECTION_PROCESS_PROMPT:
-                self.logger.info(f"Follow-up Actions:")
-                self.logger.info(f"1: Try operation with block protected(may fail)")
-                self.logger.info(f"2: Remove the protection and restore the protection after operation")
-                self.logger.info(f"3: Abort the operation")
-                for _ in range(3):
-                    try:
-                        follow_up_action = int(input("Please Input the selected action index: ").strip())
-                    except Exception as err:
-                        self.logger.error(f"Input is invalid: {err}")
-                        continue
-
-                    if RtSettings.FLASH_PROTECTION_PROCESS_PROMPT < follow_up_action <= RtSettings.FLASH_PROTECTION_PROCESS_ABORT:
-                        break
-                    self.logger.info(f"{follow_up_action} is invalid")
-                else:
-                    return ErrType.SYS_PARAMETER
-
-            if follow_up_action == RtSettings.FLASH_PROTECTION_PROCESS_UNLOCK:
-                flash_status.need_unlock = True
-                self.logger.info("Remove the flash block protection...")
-                ret = self.unlock_flash()
-                if ret != ErrType.OK:
-                    self.logger.error(f"Fail to remove the flash lock protection: {ret}")
-                    return ret
-            elif follow_up_action == RtSettings.FLASH_PROTECTION_PROCESS_ABORT:
-                self.logger.warning(f"Operation aborted for block protection")
-                return ErrType.SYS_CANCEL
-            else:
-                self.logger.warning(f"Trying to operate with block protection")
-                return ErrType.SYS_PARAMETER
+            # Set before unlocking: a partly applied unlock must still be restored
+            flash_status.need_unlock = True
+            self.logger.debug(f"Remove the flash block protection: {hex(flash_status.protection)}")
+            ret = self.unlock_flash()
+            if ret != ErrType.OK:
+                self.logger.error(f"Fail to remove the flash lock protection: {ret}")
+                return ret
 
         return ret
 
@@ -708,15 +687,35 @@ class Ameba(object):
         return self.lock_flash(0)
 
     def lock_flash(self, protection):
-        if self.device_info.is_boot_from_nand():
-            cmd = FlashUtils.NandCmdSetFeatures.value
-            address = FlashUtils.NandRegProtection.value
-        else:
-            cmd = FlashUtils.NorCmdWriteStatusReg1.value
-            address = 0
+        rd_cmd, wr_cmd, address, bp_mask = self.flash_lock_register()
 
-        ret = self.write_flash_status_register(cmd, address, protection)
+        ret = self.write_flash_status_register(wr_cmd, address, protection)
+        if ret != ErrType.OK:
+            return ret
 
+        # The flash ignores the write silently while its status register is protected
+        # (e.g. SRP with WP# low), and the flashloader reports success anyway: read back
+        ret, status = self.read_flash_status_register(rd_cmd, address)
+        if ret != ErrType.OK:
+            return ret
+        if (status & bp_mask) != (protection & bp_mask):
+            self.logger.error(f"Flash block protection verify fail: write {hex(protection)}, read back {hex(status)}")
+            return ErrType.SYS_CHECKSUM
+
+        return ret
+
+    def restore_flash_lock(self, flash_status):
+        """Restore the block protection removed by check_and_process_flash_lock(), whether
+        the operation in between passed or not. Only once, as it may be called again
+        on the way out."""
+        if not flash_status.need_unlock:
+            return ErrType.OK
+        flash_status.need_unlock = False
+
+        self.logger.debug(f"Restore the flash block protection: {hex(flash_status.protection)}")
+        ret = self.lock_flash(flash_status.protection)
+        if ret != ErrType.OK:
+            self.logger.error(f"Fail to restore the flash block protection: {ret}")
         return ret
 
     def read_flash_status_register(self, cmd, address):
@@ -1032,6 +1031,8 @@ class Ameba(object):
         max_addr = self.profile_info.flash_start_address + self.device_info.flash_capacity
         image_dowload_list = self.download_img_info if self.download_img_info else self.profile_info.images
         for image_info in image_dowload_list:
+            if not image_info.mandatory:
+                continue
             is_ram = self.profile_info.is_ram_address(image_info.start_address)
             if not is_ram:
                 if (image_info.start_address > max_addr) or (image_info.end_address > max_addr):
@@ -1158,6 +1159,31 @@ class Ameba(object):
         chksum = chksum & 0xffffffff
         return chksum
 
+    def _erase_empty_partitions(self):
+        """Erase the all-FF partitions of a split merged image, which are not programmed"""
+        ret = ErrType.OK
+        for start, end in self._empty_partitions:
+            if self.is_cancelled():
+                return ErrType.SYS_CANCEL
+            self.logger.info(f"Erase empty partition 0x{start:08X}-0x{end:08X}")
+            if self.memory_type == MemoryInfo.MEMORY_TYPE_NAND:
+                ret = self.floader_handler.erase_flash(MemoryInfo.MEMORY_TYPE_NAND, start, end, end - start,
+                                                       nand_erase_timeout_in_second(end - start,
+                                                                                    self.device_info.flash_block_size()),
+                                                       sense=True)
+                # Bad blocks are skipped and the following blocks are still erased
+                if ret in (ErrType.DEV_NAND_BAD_BLOCK, ErrType.DEV_NAND_WORN_BLOCK):
+                    ret = ErrType.OK
+            else:
+                ret = self.floader_handler.erase_flash(MemoryInfo.MEMORY_TYPE_NOR, start, end, end - start,
+                                                       nor_erase_timeout_in_second(
+                                                           divide_then_round_up(end - start, 1024)),
+                                                       sense=True)
+            if ret != ErrType.OK:
+                self.logger.error(f"Erase empty partition 0x{start:08X}-0x{end:08X} fail: {ret}")
+                break
+        return ret
+
     def _erase_flash_chip_nand(self):
         block_size = self.device_info.flash_block_size()
         total_capacity = self.device_info.flash_capacity
@@ -1193,11 +1219,15 @@ class Ameba(object):
         self.logger.info(f"Chip erase start")  # customized, do not modify
         if self.memory_type == MemoryInfo.MEMORY_TYPE_NAND:
             ret = self._erase_flash_chip_nand()
-        else:
+        elif self.memory_type == MemoryInfo.MEMORY_TYPE_NOR:
             ret = self.floader_handler.erase_flash(MemoryInfo.MEMORY_TYPE_NOR, RtkDeviceProfile.DEFAULT_FLASH_START_ADDR,
                                                    0, 0xFFFFFFFF,
                                                    nor_erase_timeout_in_second(0xFFFFFFFF),
                                                    sense=True, force=False)
+        else:
+            # Chip erase is defined for flash only: do not erase the NOR chip for e.g. RAM
+            self.logger.error(f"Chip erase is not supported for memory type {self.memory_type}")
+            ret = ErrType.SYS_PARAMETER
         self.logger.info(f"Chip erase end")
         return ret
 
@@ -1214,6 +1244,7 @@ class Ameba(object):
 
         # Split a merged single image into per-partition segments so the all-FF
         # padding between/after partitions is skipped instead of being programmed.
+        self._empty_partitions = []
         self.expand_merged_image()
 
         # Collect (image_info, path, from_download_img_info) before any flash access so
@@ -1221,6 +1252,10 @@ class Ameba(object):
         planned = []
         if self.download_img_info:
             for image_info in self.download_img_info:
+                # Not selected for download, as verify_images() skips it too
+                if not image_info.mandatory:
+                    self.logger.debug(f"Skip {image_info.image_name}: not mandatory")
+                    continue
                 img_path = image_info.image_name
                 image_info.image_name = os.path.basename(img_path)
                 planned.append((image_info, img_path, True))
@@ -1255,6 +1290,11 @@ class Ameba(object):
             ret = self.erase_flash_chip()
             if ret != ErrType.OK:
                 self.logger.error(f"Chip erase fail")
+                return ret
+        elif self._empty_partitions:
+            # Already erased by the chip erase otherwise
+            ret = self._erase_empty_partitions()
+            if ret != ErrType.OK:
                 return ret
 
         # Cache image1's RSIP params so image3 (which inherits from image1 and has
@@ -1545,6 +1585,7 @@ class Ameba(object):
 
         base = merged.start_address
         segments = []
+        empty_partitions = []
 
         for part in self.profile_info.images:
             if not part.mandatory:
@@ -1568,8 +1609,11 @@ class Ameba(object):
 
             valid_length = self._compute_segment_valid_length(image_path, offset, seg_len)
             if valid_length <= 0:
+                # Nothing to program, but erase it so that no old data (e.g. an old OTA image)
+                # is left in a partition that is empty in the merged image
                 self.logger.debug(
-                    f"Skip empty (all-FF) partition 0x{seg_start:08X}-0x{part.end_address:08X}")
+                    f"Empty (all-FF) partition 0x{seg_start:08X}-0x{part.end_address:08X}, erase only")
+                empty_partitions.append((seg_start, part.end_address))
                 continue
 
             seg = ImageInfo()
@@ -1599,6 +1643,7 @@ class Ameba(object):
                     f"program {seg.valid_length}B of {seg.end_address - seg.start_address}B "
                     f"(file offset 0x{seg.file_offset:X})")
             self.download_img_info = segments
+            self._empty_partitions = empty_partitions
         else:
             # The image does not line up with any layout partition (e.g. a custom
             # start address). Keep it as a single image but still trim its trailing
@@ -1824,6 +1869,13 @@ class Ameba(object):
                 while read_len > 0:
                     if self.is_cancelled():
                         ret = ErrType.SYS_CANCEL
+                        break
+                    # Never program past the partition end: an image larger than its partition
+                    # would overwrite the next one (NAND checks it the same way). The last page
+                    # may pass end_address, as the data is padded to a page (end = start + file size)
+                    if (not is_ram) and (addr >= image_info.end_address):
+                        self.logger.error(f"Overrange target={hex(addr)}, end={hex(image_info.end_address)}")
+                        ret = ErrType.SYS_OVERRANGE
                         break
                     if write_pages == 0:
                         if (addr % (64 * FlashUtils.NorDefaultPageSize.value)) == 0 and \
@@ -2137,6 +2189,20 @@ class Ameba(object):
                 if ret == ErrType.OK:
                     self.logger.info(f"Erase nor done")
         elif self.erase_info.memory_type == MemoryInfo.MEMORY_TYPE_RAM:
+            # FS_ERASE RAM only does memset when CONFIG byte0 bit4 is set, with the value of CONFIG byte2
+            memset_en = (self.setting.program_config1 & CONFIG_RAM_MEMSET_EN) != 0
+            memset_value = (self.setting.program_config1 >> CONFIG_RAM_MEMSET_VALUE_SHIFT) & CONFIG_RAM_MEMSET_VALUE_MASK
+            if not memset_en:
+                # The device would do nothing for FS_ERASE RAM, so do not send it
+                if memset_value == 0:
+                    self.logger.warning("RAM memset is not enabled (ProgramConfig1 bit4) and no memset value is set "
+                                        "(ProgramConfig1 bits 23~16), skip the RAM erase")
+                else:
+                    self.logger.warning(f"RAM memset value 0x{memset_value:02X} is set but RAM memset is not enabled "
+                                        f"(ProgramConfig1 bit4), skip the RAM erase")
+                return ErrType.OK
+            self.logger.info(f"Erase ram {hex(self.erase_info.start_address)}-{hex(self.erase_info.end_address)} "
+                             f"with memset value 0x{memset_value:02X}")
             # memset 16MB ram, cost time: 0.01s
             ret = self.floader_handler.erase_flash(self.erase_info.memory_type,
                                                    self.erase_info.start_address,
@@ -2170,8 +2236,9 @@ class Ameba(object):
         ret = ErrType.OK
         is_amebad = self.profile_info.is_amebad()
         otp_spic_addr_mode_addr = OtpSpicAddrModeAddrForAmebaD if is_amebad else OtpSpicAddrModeAddr
-        otp_spic_addr_mode_mask = OtpSpicAddrModeMask if is_amebad else OtpSpicAddrModeMask
+        otp_spic_addr_mode_mask = OtpSpicAddrModeMaskForAmebaD if is_amebad else OtpSpicAddrModeMask
         otp_spic_addr_mode_pos = OtpSpicAddrModePosForAmebaD if is_amebad else OtpSpicAddrModePos
+        otp_spic_addr_mode_4byte = OtpSpicAddrMode4ByteForAmebaD if is_amebad else OtpSpicAddrMode4Byte
 
         if self.device_info.is_boot_from_nand():
             return ret
@@ -2189,7 +2256,7 @@ class Ameba(object):
             cfg |= ((mode << otp_spic_addr_mode_pos) & otp_spic_addr_mode_mask)
         else:
             if mode == SpicAddrMode.FOUR_BYTE_MODE.value:
-                cfg = OtpSpicAddrMode4Byte
+                cfg = otp_spic_addr_mode_4byte
             else:
                 self.logger.info(f"No need to change default supported flash size")
                 return ErrType.OK
@@ -2219,7 +2286,7 @@ class Ameba(object):
         ret = ErrType.OK
         is_amebad = self.profile_info.is_amebad()
         otp_spic_addr_mode_addr = OtpSpicAddrModeAddrForAmebaD if is_amebad else OtpSpicAddrModeAddr
-        otp_spic_addr_mode_mask = OtpSpicAddrModeMask if is_amebad else OtpSpicAddrModeMask
+        otp_spic_addr_mode_mask = OtpSpicAddrModeMaskForAmebaD if is_amebad else OtpSpicAddrModeMask
         otp_spic_addr_mode_4byte = OtpSpicAddrMode4ByteForAmebaD if is_amebad else OtpSpicAddrMode4Byte
         mode = SpicAddrMode.THREE_BYTE_MODE.value
 

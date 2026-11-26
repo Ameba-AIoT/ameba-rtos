@@ -361,7 +361,7 @@ void at_wlconn(u16 argc, char **argv)
 	ret = wifi_connect(&wifi, 1);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGW(NOTAG, "[+WLCONN] Fail:-0x%x", -ret);
-		if ((ret == -RTK_ERR_WIFI_CONN_INVALID_KEY)) {
+		if (ret == -RTK_ERR_WIFI_CONN_INVALID_KEY) {
 			RTK_LOGW(NOTAG, "(password format wrong)");
 		} else if (ret == -RTK_ERR_WIFI_CONN_SCAN_FAIL) {
 			RTK_LOGW(NOTAG, "(not found AP)");

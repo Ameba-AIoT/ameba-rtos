@@ -479,6 +479,13 @@ menu "CONFIG ETHERNET"
 				bool "External 50M from the EXTCLK pin"
 		endchoice
 
+		config ETHERNET_MAC2MAC
+			bool "MAC to MAC, no PHY (forced 100M full duplex)"
+			default n
+			help
+				Wired straight to another MAC: one chip outputs REF_CLK, the other receives it.
+				REF_CLK direction follows PHY CLOCK SOURCE, PHY xtal means receive.
+
 		# Default 8+8 with PSRAM, 4+4 otherwise; only these are tested. About 1.5KB heap per entry.
 		config ETH_DESC_CNT_MANUAL
 			bool "Manually set the number of ETH descriptors"

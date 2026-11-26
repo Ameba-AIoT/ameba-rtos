@@ -26,7 +26,7 @@ static const char *const g_psHTTPHeaderStrings[] = {
   "Connection: Close\r\n",
   "Connection: keep-alive\r\n",
   "Connection: keep-alive\r\nContent-Length: ",
-  "Server: "HTTPD_SERVER_AGENT"\r\n",
+  "Server: " HTTPD_SERVER_AGENT"\r\n",
   "\r\n<html><body><h2>404: The requested file cannot be found.</h2></body></html>\r\n"
 #if LWIP_HTTPD_SUPPORT_11_KEEPALIVE
   , "Connection: keep-alive\r\nContent-Length: 77\r\n\r\n<html><body><h2>404: The requested file cannot be found.</h2></body></html>\r\n"
@@ -52,8 +52,8 @@ static const char *const g_psHTTPHeaderStrings[] = {
 #define DEFAULT_404_HTML_PERSISTENT 14 /* default 404 body, but including Connection: keep-alive */
 #endif
 
-#define HTTP_CONTENT_TYPE(contenttype) "Content-Type: "contenttype"\r\n\r\n"
-#define HTTP_CONTENT_TYPE_ENCODING(contenttype, encoding) "Content-Type: "contenttype"\r\nContent-Encoding: "encoding"\r\n\r\n"
+#define HTTP_CONTENT_TYPE(contenttype) "Content-Type: " contenttype"\r\n\r\n"
+#define HTTP_CONTENT_TYPE_ENCODING(contenttype, encoding) "Content-Type: " contenttype"\r\nContent-Encoding: " encoding"\r\n\r\n"
 
 #define HTTP_HDR_HTML           HTTP_CONTENT_TYPE("text/html")
 #define HTTP_HDR_SSI            HTTP_CONTENT_TYPE("text/html\r\nExpires: Fri, 10 Apr 2008 14:00:00 GMT\r\nPragma: no-cache")

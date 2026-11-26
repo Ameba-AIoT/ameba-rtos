@@ -70,7 +70,7 @@ extern "C" {
 typedef struct {
 	u32 buf_start_addr;   /**< Base address of this frame buffer. */
 	u32 buf_size;         /**< Size of this frame buffer in bytes. */
-} usbh_hw_uvc_dec_buf;
+} usbh_hw_uvc_decode_buf_t;
 
 /** @brief Hardware UVC decoder channel context. */
 typedef struct {
@@ -93,7 +93,7 @@ typedef struct {
 	/* frame hand-off */
 	usb_os_sema_t dec_sema;    /**< Frame-done signal: given by the decoder ISR, taken by usbh_uvc_get_frame(). */
 
-	usbh_hw_uvc_dec_buf buf[USBH_HW_UVC_MAX_BUF_NUM];  /**< Frame buffer slots rotated by the decoder. */
+	usbh_hw_uvc_decode_buf_t buf[USBH_HW_UVC_MAX_BUF_NUM];  /**< Frame buffer slots rotated by the decoder. */
 	__IO u8  buf_locked[USBH_HW_UVC_MAX_BUF_NUM]; /**< 1: buffer held by the app between get_frame() and put_frame(); ISR must not recycle it. */
 	u8 dev_addr;               /**< Address of the device being decoded. */
 	u8 ch;                     /**< Hardware decoder channel index. */
@@ -128,7 +128,7 @@ int usbh_hw_uvc_init(usbh_hw_uvc_dec_t *uvc_dec);
  * @brief  Prepare the decoder with the negotiated pipe.
  * @note   Idempotent.
  * @param  uvc_dec: Decoder channel context.
- * @param  pipe: Pipe handle; pipe_num and ep_mps must be valid, i.e. after usbh_open_pipe().
+ * @param  pipe: Pipe handle; pipe_num and ep_mps must be valid, i.e. after usbh_pipe_open().
  * @return None
  */
 void usbh_hw_uvc_prepare(usbh_hw_uvc_dec_t *uvc_dec, usbh_pipe_t *pipe);
@@ -144,14 +144,14 @@ void usbh_hw_uvc_deinit(usbh_hw_uvc_dec_t *uvc_dec);
  * @brief  Allocate a free UVC hardware decoder channel.
  * @return The allocated decoder channel context, or NULL when none is free.
  */
-usbh_hw_uvc_dec_t *usbh_hw_uvc_alloc_channel(void);
+usbh_hw_uvc_dec_t *usbh_hw_uvc_hc_alloc(void);
 
 /**
  * @brief  Free a UVC hardware decoder channel and release its resources.
  * @param  uvc_dec: Decoder channel context.
  * @return None
  */
-void usbh_hw_uvc_free_channel(usbh_hw_uvc_dec_t *uvc_dec);
+void usbh_hw_uvc_hc_free(usbh_hw_uvc_dec_t *uvc_dec);
 
 /**
  * @brief  Start decoding on a channel.
@@ -175,7 +175,7 @@ void usbh_hw_uvc_stop(usbh_hw_uvc_dec_t *uvc_dec);
  * @param  buf_idx: Buffer index to release, 0 to USBH_HW_UVC_MAX_BUF_NUM-1.
  * @return None
  */
-void usbh_hw_uvc_release_buf(usbh_hw_uvc_dec_t *uvc_dec, u32 buf_idx);
+void usbh_hw_uvc_buf_free(usbh_hw_uvc_dec_t *uvc_dec, u32 buf_idx);
 
 /**
  * @brief  Clear the hardware-side residual state between two streaming rounds.

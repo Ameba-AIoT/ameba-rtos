@@ -6,6 +6,8 @@
 #include <platform_autoconf.h>
 #ifdef CONFIG_BT_INIC
 #include <sdn_inic_conf.h>
+#elif defined(CONFIG_BT_CUSTOMER_XIAOMI)
+#include <sdn_xiaomi_conf.h>
 #else
 #include <bt_api_config.h>
 #endif

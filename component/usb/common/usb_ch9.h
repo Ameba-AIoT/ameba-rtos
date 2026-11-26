@@ -173,8 +173,8 @@ extern "C" {
 /* wMaxPacketSize Bit 10..0 Per packet size */
 #define USB_EP_MPS_SIZE_MASK                           0x7FFU           /**< Mask for packet size in wMaxPacketSize. */
 /* wMaxPacketSize Bit 12..11 Additional transactions per microframe */
-#define USB_EP_MPS_TRANS_MASK                          0x1800U          /**< Mask for additional transactions in wMaxPacketSize. */
-#define USB_EP_MPS_TRANS_POS                           (11U)            /**< Position of additional transactions field. */
+#define USB_EP_MPS_TRANS_MASK                          0x1800U          /**< TRANS = transaction: mask of the additional transactions per microframe in wMaxPacketSize, Ref USB 2.0 9.6.6. */
+#define USB_EP_MPS_TRANS_POS                           (11U)            /**< TRANS = transaction: position of the additional transactions field. */
 /* EP0 address */
 #define USB_EP0_OUT                                    (0U | USB_H2D)   /**< Endpoint 0 OUT address. */
 #define USB_EP0_IN                                     (0U | USB_D2H)   /**< Endpoint 0 IN address. */

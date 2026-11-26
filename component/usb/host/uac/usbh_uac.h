@@ -4,14 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef USBH_UAC1_H
-#define USBH_UAC1_H
+#ifndef USBH_UAC_H
+#define USBH_UAC_H
 
 /* Includes ------------------------------------------------------------------*/
 
 #include "usbh.h"
 #include "usb_ch9.h"
 #include "usb_uac1.h"
+#include "usb_uac2.h"
 #include "usb_ringbuf.h"
 #include "os_wrapper.h"
 
@@ -50,6 +51,7 @@ extern "C" {
 #define USBH_UAC_UNIT_MAX_CNT           8U      /**< Maximum number of intermediate Units (Mixer/Selector/Processing/Extension) tracked for topology walks */
 #define USBH_UAC_UNIT_SRC_MAX_CNT       4U      /**< Maximum number of bSourceID entries tracked per intermediate Unit */
 #define USBH_UAC_TOPO_DEPTH_MAX         8U      /**< Maximum topology hops walked from an Output Terminal back to a Feature Unit */
+#define USBH_UAC_CLOCK_MAX_CNT          4U      /**< Maximum number of UAC 2.0 Clock Source/Selector/Multiplier entities tracked */
 
 #define USBH_UAC_ALT_SETTING_MAX        10      /**< Maximum number of Alternate Settings per interface */
 #define USBH_UAC_FREQ_FORMAT_MAX        6       /**< Maximum number of discrete sampling frequencies per format */
@@ -70,9 +72,9 @@ extern "C" {
  * @{
  */
 
-/* uac1.0 Audio Control   */
+/* Audio Control */
 /**
-  * @brief  UAC 1.0 Audio Terminal Information structure.
+  * @brief  Audio Terminal Information structure.
   *         Describes an Input Terminal or Output Terminal in the audio function topology.
   */
 typedef struct {
@@ -80,7 +82,19 @@ typedef struct {
 	u8 terminal_id;    /**< ID of this Terminal */
 	u8 source_id;      /**< ID of the entity to which this Terminal is connected */
 	u8 is_input;       /**< Direction flag (1: Input Terminal, 0: Output Terminal) */
+	u8 clock_id;       /**< UAC 2.0 only: bCSourceID, the Clock Entity this Terminal is clocked by; 0 for UAC 1.0 */
 } usbh_uac_term_info_t;
+
+/**
+  * @brief  UAC 2.0 Clock Entity (Clock Source/Selector/Multiplier) information.
+  *         Kept to walk a Terminal's bCSourceID to the Clock Source that owns the sampling frequency.
+  */
+typedef struct {
+	u8 clock_id;   /**< bClockID of this Clock Entity */
+	u8 subtype;    /**< bDescriptorSubtype: Clock Source, Clock Selector or Clock Multiplier */
+	u8 source_id;  /**< Selector: baCSourceID(1); Multiplier: bCSourceID; Source: 0 */
+	u8 controls;   /**< Source: bmControls (D1..0 Clock Frequency Control); 0 otherwise */
+} usbh_uac_clock_info_t;
 
 /**
   * @brief  UAC 1.0 intermediate Unit (Mixer/Selector/Processing/Extension) link information.
@@ -94,10 +108,13 @@ typedef struct {
 } usbh_uac_unit_info_t;
 
 /**
-  * @brief  UAC 1.0 Feature Unit (Volume Control) Information structure.
+  * @brief  Feature Unit (Volume Control) Information structure.
   *         match to the bmaControls layout from UAC1 spec: index 0 is the
   *         Master Channel (logical channel 0); indices 1..num_channels are
   *         per-channel logical channels 1..N.
+  * @note   For a UAC 2.0 device each 2-bit control of bmaControls is mapped onto the UAC 1.0 bit
+  *         of the same control (USB_UAC1_CONTROL_MUTE, USB_UAC1_CONTROL_VOLUME, ...), set only
+  *         when the control is host programmable (11b), so one bitmap serves both versions.
   */
 typedef struct {
 	u16 bma_controls[1 + USBH_UAC_MAX_CHANNEL]; /**< Bitmap of supported fu_controls logical channels: [0]=master, [1..num_channels]=ch1..N */
@@ -106,7 +123,7 @@ typedef struct {
 	u8 source_id;          /**< ID of the source entity connected to this Feature Unit */
 	u8 sink_id;            /**< ID of the sink Terminal connected to this Feature Unit */
 	u8 num_channels;       /**< Number of logical audio channels (excludes master) */
-	u8 control_size;       /**< Size in bytes of each bmaControls field in the descriptor (1 or 2) */
+	u8 control_size;       /**< Size in bytes of each bmaControls field in the descriptor (UAC 1.0: 1 or 2, UAC 2.0: 4) */
 } usbh_uac_fu_info_t;
 
 /**
@@ -117,10 +134,12 @@ typedef struct {
 	usbh_uac_fu_info_t fu_controls[USBH_UAC_FU_MAX_CNT];  /**< Parsed Feature Units, indexed 0..volume_ctrl_count-1 */
 	usbh_uac_term_info_t terminals[USBH_UAC_TERM_MAX_CNT];   /**< Parsed Terminals, indexed 0..terminal_count-1 */
 	usbh_uac_unit_info_t units[USBH_UAC_UNIT_MAX_CNT];       /**< Parsed intermediate Units, indexed 0..unit_count-1 */
+	usbh_uac_clock_info_t clocks[USBH_UAC_CLOCK_MAX_CNT];    /**< UAC 2.0 Clock Entities, indexed 0..clock_count-1 */
 
 	u8 volume_ctrl_count; /**< Number of valid entries in fu_controls[] */
 	u8 terminal_count;    /**< Number of valid entries in terminals[] */
 	u8 unit_count;        /**< Number of valid entries in units[] */
+	u8 clock_count;       /**< Number of valid entries in clocks[] */
 
 	u8 in_best_idx;      /**< Index into fu_controls[] for the best IN/Record Feature Unit; (u8)-1 if none */
 	u8 out_best_idx;     /**< Index into fu_controls[] for the best OUT/Playback Feature Unit; (u8)-1 if none */
@@ -178,7 +197,7 @@ typedef struct {
 
 	__IO u8 sema_valid;      /**< 1 when isoc_sema has been created and is safe to use */
 	__IO u8 wait_sema;       /**< 1 while a write/read thread is blocked on isoc_sema (used for safe teardown) */
-	__IO u8 next_xfer;       /**< 1 to allow isochronous transfers; cleared by stop_play/stop_capture */
+	__IO u8 next_xfer;       /**< 1 to allow isochronous transfers; cleared by stop_playback/stop_record */
 
 	u8 frame_cnt;         /**< Ring buffer depth in frames; set from cb->isoc_out/in_frm_cnt before ep_buf_ctrl_init */
 } usbh_uac_buf_ctrl_t;
@@ -241,16 +260,19 @@ typedef struct {
 	u16 packet_size_small;                /**< Bytes per packet when the sample accumulator does not overflow */
 	u16 packet_size_large;                /**< Bytes per packet when the sample accumulator overflows (one extra sample) */
 
-	usbh_uac_as_itf_alt_info_t interface_array[USBH_UAC_ALT_SETTING_MAX]; /**< Valid alternate settings (Alt 0 skipped; index 0 = Alt 1) */
+	usbh_uac_as_itf_alt_info_t itf_array[USBH_UAC_ALT_SETTING_MAX]; /**< Valid alternate settings (Alt 0 skipped; index 0 = Alt 1) */
 	usbh_pipe_t pipe;                     /**< USB pipe for this AS interface */
 	usbh_pipe_t fb_pipe;                  /**< Feedback pipe of the active alternate setting, pipe_num 0 when not open */
 
 	u8 as_itf_num;                        /**< USB interface number of this AS interface */
+	u8 terminal_link;                     /**< UAC 2.0 only: bTerminalLink of the AS General descriptor */
+	u8 clock_id;                          /**< UAC 2.0 only: Clock Source clocking this interface, 0 when not resolved */
+	u8 clock_freq_ctrl;                   /**< UAC 2.0 only: 1 when the Clock Source frequency is host programmable */
 
-	u8 alt_setting_cnt;                   /**< Number of valid entries in interface_array[] */
+	u8 alt_setting_cnt;                   /**< Number of valid entries in itf_array[] */
 	u8 fmt_array_cnt;                     /**< Number of entries in fmt_array[] */
 
-	u8 choose_alt_idx;                    /**< Index into interface_array[] for the currently active alternate setting */
+	u8 choose_alt_idx;                    /**< Index into itf_array[] for the currently active alternate setting */
 
 	usbh_uac_audio_fmt_t fmt_array[USBH_UAC_FMT_MAX]; /**< Flattened list of all supported audio formats */
 } usbh_uac_as_itf_info_t;
@@ -288,7 +310,7 @@ typedef struct {
 	usbh_uac_as_itf_info_t *as_itf;     /**< AS interface bound for this direction; NULL when the device offers none or it is detached */
 	usbh_uac_as_itf_info_t *as_itf_mem; /**< Storage as_itf binds to: allocated in usbh_uac_init() when the direction is enabled
 	                                         and freed only in usbh_uac_deinit(), so a pointer taken from it stays valid across detach */
-	u8 *xfer_buf;                        /**< DMA-safe transfer buffer passed to usbh_transfer_data */
+	u8 *xfer_buf;                        /**< DMA-safe transfer buffer passed to usbh_xfer_submit */
 	usbh_uac_buf_ctrl_t buf_ctrl;        /**< Isochronous buffer and packet-size control */
 
 	usbh_uac_volume_info_t volume_info[1 + USBH_UAC_MAX_CHANNEL]; /**< Volume info per channel: [0]=master, [1..N]=per-channel */
@@ -308,9 +330,10 @@ typedef struct {
 	__IO u8 ctrl_state;        /**< USB control transfer state machine state (UAC_STATE_CTRL_IDLE, SET_ALT, SET_FREQ, ...) */
 	__IO u8 init_state;        /**< Initialization sequence state (UAC_INIT_OUT_GET_FU -> UAC_INIT_IN_GET_FU -> UAC_INIT_OUT_SET_ITF -> UAC_INIT_DONE) */
 	u8 cur_dir;                    /**< Direction being operated on by the current ctrl_state sequence */
+	u8 ip_version;                 /**< AC interface bInterfaceProtocol of the attached device: USB_UAC_IP_VERSION_1 or _2 */
 
 	/* Control operation: arguments of the in-flight ctrl_state sequence and its sync waiter */
-	rtos_mutex_t alt_set_mutex;          /**< Serializes concurrent usbh_uac_set_alt_setting calls */
+	rtos_mutex_t alt_set_mutex;          /**< Serializes concurrent usbh_uac_set_format calls */
 	rtos_sema_t  ctrl_done_sema;          /**< Signaled by ctrl_setting when SET_ALT + SET_FREQ sequence completes */
 	int ctrl_status;          /**< RTK status reported back to the current sync ctrl op (set/get) callers */
 	s16 get_volume_result;   /**< Volume word parsed by UAC_STATE_GET_VOLUME; consumed by get_volume() */
@@ -320,7 +343,7 @@ typedef struct {
 	u8 mute_value;             /**< Mute state (1: Mute, 0: Unmute) dispatched to process_set_ch_mute */
 	u8 volume_value;           /**< Volume value dispatched to process_set_ch_volume */
 	u8 ctrl_waiting;               /**< 1 when a sync waiter is blocked on ctrl_done_sema.
-	                                  * Mutual exclusion among set_alt_setting/get_mute/get_volume is guaranteed
+	                                  * Mutual exclusion among set_format/get_mute/get_volume is guaranteed
 	                                  * by alt_set_mutex held across the entire wait, so at most one waiter exists
 	                                  * at any time. ctrl_done_sema is drained before each take to absorb any stale
 	                                  * give left by the previous round's timeout/ctrl_finish race. */
@@ -369,15 +392,15 @@ void usbh_uac_deinit(void);
 
 /**
   * @brief  Check if UAC supports playback (speaker output).
-  * @return 1 if playback is supported, 0 otherwise.
+  * @return true if playback is supported, false otherwise.
   */
-u8 usbh_uac_support_playback(void);
+bool usbh_uac_is_playback_supported(void);
 
 /**
   * @brief  Check if UAC supports recording (microphone input).
-  * @return 1 if recording is supported, 0 otherwise.
+  * @return true if recording is supported, false otherwise.
   */
-u8 usbh_uac_support_record(void);
+bool usbh_uac_is_record_supported(void);
 
 /**
   * @brief  Configure the UAC Audio Format.
@@ -390,7 +413,7 @@ u8 usbh_uac_support_record(void);
   * @param  sampling_freq: Sampling frequency in Hz.
   * @return 0 on success, non-zero on failure.
   */
-int usbh_uac_set_alt_setting(u8 dir, u8 channels, u8 bit_width, u32 sampling_freq);
+int usbh_uac_set_format(u8 dir, u8 channels, u8 bit_width, u32 sampling_freq);
 
 /**
   * @brief  Get the list of audio formats supported by the connected device.
@@ -398,21 +421,21 @@ int usbh_uac_set_alt_setting(u8 dir, u8 channels, u8 bit_width, u32 sampling_fre
   *         device only until the detached callback; stop using it from then on.
   *         A discrete alternate setting takes one entry per rate; a continuous one takes a single
   *         entry with freq_continuous set, see @ref usbh_uac_audio_fmt_t, and any rate within its
-  *         range can be passed to @ref usbh_uac_set_alt_setting. Use @ref usbh_uac_fmt_support_freq
+  *         range can be passed to @ref usbh_uac_set_format. Use @ref usbh_uac_is_sampling_freq_supported
   *         to check a rate against an entry of either kind.
   * @param  dir: Direction (0: Playback/OUT, 1: Record/IN).
   * @param  fmt_cnt: Pointer to store the number of formats found.
   * @return Pointer to the array of supported formats, NULL if the direction is not available.
   */
-const usbh_uac_audio_fmt_t *usbh_uac_get_alt_setting(u8 dir, u8 *fmt_cnt);
+const usbh_uac_audio_fmt_t *usbh_uac_get_formats(u8 dir, u8 *fmt_cnt);
 
 /**
   * @brief  Check whether one audio format entry supports a sampling frequency.
-  * @param  fmt: Entry returned by @ref usbh_uac_get_alt_setting.
+  * @param  fmt: Entry returned by @ref usbh_uac_get_formats.
   * @param  sampling_freq: Sampling frequency in Hz.
-  * @return 1 if the rate is the discrete rate of the entry, or within its continuous range; 0 otherwise.
+  * @return true if the rate is the discrete rate of the entry, or within its continuous range; false otherwise.
   */
-u8 usbh_uac_fmt_support_freq(const usbh_uac_audio_fmt_t *fmt, u32 sampling_freq);
+bool usbh_uac_is_sampling_freq_supported(const usbh_uac_audio_fmt_t *fmt, u32 sampling_freq);
 
 /**
   * @brief  Calculate the frame size (in bytes) based on current configuration.
@@ -434,11 +457,11 @@ int usbh_uac_get_mute(u8 dir, u8 ch, u8 *mute);
 
 /**
   * @brief  Set the mute state.
-  * @param  mute: 1 to mute, 0 to unmute.
   * @param  dir: Direction.
+  * @param  mute: 1 to mute, 0 to unmute.
   * @return 0 on success, non-zero on failure.
   */
-int usbh_uac_set_mute(u8 mute, u8 dir);
+int usbh_uac_set_mute(u8 dir, u8 mute);
 
 /**
   * @brief  Synchronously read the current volume from the device.
@@ -457,11 +480,11 @@ int usbh_uac_get_volume(u8 dir, u8 ch, s16 *volume, s16 *vol_min, s16 *vol_max);
 /**
   * @brief  Set the volume level percentage.
   * @note   A channel whose volume range could not be read at attach is skipped with a warning.
-  * @param  volume: Volume level (0-100).
   * @param  dir: Direction.
+  * @param  volume: Volume level (0-100).
   * @return 0 on success, non-zero on failure.
   */
-int usbh_uac_set_volume(u8 volume, u8 dir);
+int usbh_uac_set_volume(u8 dir, u8 volume);
 
 /**
   * @brief  Get the parsed Feature Unit info for the active streaming
@@ -482,12 +505,12 @@ const usbh_uac_fu_info_t *usbh_uac_get_volume_ctrl_info(u8 dir);
   * @brief  Start the audio playback process.
   *         Enables SOF handling and prepares for data transmission.
   */
-void usbh_uac_start_play(void);
+void usbh_uac_start_playback(void);
 
 /**
   * @brief  Stop the audio playback process.
   */
-void usbh_uac_stop_play(void);
+void usbh_uac_stop_playback(void);
 
 /**
   * @brief  Write audio data to the UAC driver ring buffer.
@@ -509,27 +532,27 @@ int usbh_uac_write(const u8 *buffer, u32 size, u32 timeout_ms);
   * @brief  Start the audio capture process (microphone recording).
   *         Enables SOF handling and prepares for data reception.
   */
-void usbh_uac_start_capture(void);
+void usbh_uac_start_record(void);
 
 /**
   * @brief  Stop the audio capture process.
   */
-void usbh_uac_stop_capture(void);
+void usbh_uac_stop_record(void);
 
 /**
   * @brief  Read audio data from UAC IN (microphone)
   * @param  buffer: Pointer to the data buffer to store read data
   * @param  size: Size of data to read (in bytes)
-  * @param  time_out_ms: Total budget in milliseconds this call may spend waiting for data, not a
+  * @param  timeout_ms: Total budget in milliseconds this call may spend waiting for data, not a
   *                      per-packet allowance; 0 for non-blocking. May return fewer than @p size
   *                      bytes when the budget runs out.
   * @return > 0: bytes read;
-  *         0: the stream runs but no data arrived within time_out_ms;
+  *         0: the stream runs but no data arrived within timeout_ms;
   *         -RTK_ERR_BADARG: invalid argument or no record interface;
   *         -RTK_ERR_BUSY: capture is not started;
   *         -RTK_ERR_IO: the device is not connected.
   */
-int usbh_uac_read(u8 *buffer, u32 size, u32 time_out_ms);
+int usbh_uac_read(u8 *buffer, u32 size, u32 timeout_ms);
 
 /** @} End of Host_UAC_Functions group */
 /** @} End of USB_Host_Functions group */
@@ -540,4 +563,4 @@ int usbh_uac_read(u8 *buffer, u32 size, u32 time_out_ms);
 }
 #endif
 
-#endif /* USBH_UAC1_H */
+#endif /* USBH_UAC_H */

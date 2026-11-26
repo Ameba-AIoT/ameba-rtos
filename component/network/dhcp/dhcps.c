@@ -1255,6 +1255,8 @@ err_t dhcps_start(struct netif *pnetif)
 		addr_pool_set = 1;
 	} else if (!dhcps->addr_pool_set) {
 		// Unlimited mode (addr_pool_set=0 but pool already calculated as 2-254)
+		start_host = DHCP_UNLIMITED_POOL_START;
+		end_host = DHCP_UNLIMITED_POOL_END;
 		addr_pool_set = 0;
 	} else {
 		// Custom pool set (addr_pool_set=1), extract host part and reuse

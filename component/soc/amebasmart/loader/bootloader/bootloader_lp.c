@@ -96,5 +96,5 @@ RAM_FUNCTION_START_TABLE RamStartTable = {
 	.RamPatchFun1 = NULL,
 	.RamPatchFun2 = NULL,
 	.FlashStartFun = BOOT_Image1,
-	.Img1ValidCode = NULL,
+	.Img1ValidCode = 0,
 };

@@ -217,13 +217,13 @@ static const usbh_cdc_acm_config_t usbh_comp_acm_class_cfg = {
 	 * notify_en stays 0 because this path only uses the AT and BULK pipes. */
 };
 
-static const usbh_cdc_ecm_state_cb_t usbh_comp_ecm_cfg = {
+static const usbh_cdc_ecm_cb_t usbh_comp_ecm_cfg = {
 	.received = usbh_comp_ecm_received,
 	.detached        = usbh_comp_detached,
 };
 
-static const usbh_user_cb_t usbh_comp_usr_cb = {
-	.process  = usbh_comp_cb_process,
+static const usbh_cb_t usbh_comp_usr_cb = {
+	.event  = usbh_comp_cb_process,
 	.validate = usbh_comp_cb_device_check,
 };
 
@@ -316,11 +316,11 @@ static u8 *usbh_comp_dongle_get_netinfo(u8 *name)
 static void usbh_comp_cb_process(usb_host_t *host, u8 msg)
 {
 	switch (msg) {
-	case USBH_MSG_USER_SET_CONFIG:
+	case USBH_EVENT_SELECT_CONFIG:
 		usbh_cdc_ecm_choose_config(host);
 		break;
-	case USBH_MSG_CONNECTED:
-	case USBH_MSG_DISCONNECTED:
+	case USBH_EVENT_CONNECTED:
+	case USBH_EVENT_DISCONNECTED:
 	default:
 		break;
 	}
@@ -329,7 +329,7 @@ static void usbh_comp_cb_process(usb_host_t *host, u8 msg)
 static int usbh_comp_cb_device_check(usb_host_t *host, u8 cfg_max)
 {
 	UNUSED(cfg_max);
-	return usbh_cdc_ecm_check_config_desc(host);
+	return usbh_cdc_ecm_check_config(host);
 }
 
 static void usbh_comp_detached(void)
@@ -1438,12 +1438,12 @@ static int usbh_comp_do_init(void)
 	}
 	usbh_start();
 
-	while (!usbh_cdc_ecm_usb_is_ready()) {
+	while (!usbh_cdc_ecm_is_ready()) {
 		rtos_time_delay_ms(1000);
 	}
 
-	usbh_dongle_ctx.vid = usbh_cdc_ecm_get_device_vid();
-	usbh_dongle_ctx.pid = usbh_cdc_ecm_get_device_pid();
+	usbh_dongle_ctx.vid = usbh_cdc_ecm_get_vid();
+	usbh_dongle_ctx.pid = usbh_cdc_ecm_get_pid();
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "VID 0x%x PID 0x%x\n", usbh_dongle_ctx.vid, usbh_dongle_ctx.pid);
 
@@ -1457,7 +1457,7 @@ static int usbh_comp_do_init(void)
 	usbh_dongle_ctx.in_detach = 0;
 
 	if (usbh_comp_dongle_diag_cmd() == 0) {
-		usbh_cdc_ecm_prepare_done();
+		usbh_cdc_ecm_set_ready();
 		RTK_LOGS(TAG, RTK_LOG_INFO, "TRX start\n");
 		return HAL_OK;
 	}
@@ -1532,7 +1532,7 @@ static void usb_4g_init_task(void *param)
 static void usb_4g_link_thread(void *param)
 {
 	u8 *mac;
-	u8 link_is_up = 0;
+	bool link_is_up = false;
 	u16 vid, pid;
 	eth_state_t state = ETH_STATUS_IDLE;
 
@@ -1540,15 +1540,15 @@ static void usb_4g_link_thread(void *param)
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Enter link thread\n");
 
 	for (;;) {
-		if (usbh_dongle_ctx.in_detach != 0 || !usbh_cdc_ecm_usb_is_ready()) {
+		if (usbh_dongle_ctx.in_detach != 0 || !usbh_cdc_ecm_is_ready()) {
 			/* Treat detach/not-ready as forced link-down without calling USB APIs. */
-			link_is_up = 0;
+			link_is_up = false;
 			vid = 0;
 			pid = 0;
 		} else {
 			link_is_up = usbh_cdc_ecm_get_link_status();
-			vid = usbh_cdc_ecm_get_device_vid();
-			pid = usbh_cdc_ecm_get_device_pid();
+			vid = usbh_cdc_ecm_get_vid();
+			pid = usbh_cdc_ecm_get_pid();
 		}
 
 		if (link_is_up && state < ETH_STATUS_INIT) {
@@ -1566,7 +1566,7 @@ static void usb_4g_link_thread(void *param)
 			} else if (USBH_CDC_ACM_QUECTEL_DONGLE_VID == vid &&
 					   pid == USBH_CDC_ACM_QUECTEL_DONGLE_EG915_PID) {
 				/* EG915: ECM MAC + static IP pre-set on netif (rnat skips DHCP) */
-				mac = (u8 *)usbh_cdc_ecm_process_mac_str();
+				mac = (u8 *)usbh_cdc_ecm_get_mac();
 				if (mac) {
 					memcpy(pnetif_usb_eth->hwaddr, mac, 6);
 					pnetif_usb_eth->hwaddr_len = 6;
@@ -1575,7 +1575,7 @@ static void usb_4g_link_thread(void *param)
 				RTK_LOGS(TAG, RTK_LOG_INFO, "EG915 static IP set\n");
 			} else {
 				/* RTK device / LE271 / SIM767X: standard ECM MAC, DHCP by upper layer */
-				mac = (u8 *)usbh_cdc_ecm_process_mac_str();
+				mac = (u8 *)usbh_cdc_ecm_get_mac();
 				if (mac) {
 					memcpy(pnetif_usb_eth->hwaddr, mac, 6);
 					pnetif_usb_eth->hwaddr_len = 6;
@@ -1615,7 +1615,7 @@ int usb_ethernet_transmit(u8 *buf, u32 len, u8 block)
 	if (usbh_comp_lock(usbh_comp_ecm_mutex) != HAL_OK) {
 		return HAL_ERR_HW;
 	}
-	ret = usbh_cdc_ecm_send_data(buf, len, block);
+	ret = usbh_cdc_ecm_transmit(buf, len, block);
 	usbh_comp_unlock(usbh_comp_ecm_mutex);
 
 	return ret;

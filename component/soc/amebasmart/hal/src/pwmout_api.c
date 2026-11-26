@@ -127,7 +127,7 @@ void pwmout_init(pwmout_t *obj, PinName pin)
 	assert_param(pwm_chan != NC);
 
 	obj->pwm_idx = pwm_chan;
-	if ((obj->period == 0)) {
+	if (obj->period == 0) {
 		obj->period = 0x10000 * (prescaler + 1) / 40;
 		obj->pulse = 0x1000 * (prescaler + 1) / 40;
 	}

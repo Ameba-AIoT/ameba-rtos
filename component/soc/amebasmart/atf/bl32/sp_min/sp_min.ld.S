@@ -35,14 +35,14 @@ SECTIONS
         __TEXT_END__ = .;
     } >RAM
 
-     /* .ARM.extab and .ARM.exidx are only added because Clang need them */
-     .ARM.extab . : {
+     /*
+      * Unwind tables are not used by TF-A. Drop them, otherwise lld places a .ARM.exidx
+      * between .text and .rodata, which makes __RODATA_START__ not page aligned.
+      */
+     /DISCARD/ : {
         *(.ARM.extab* .gnu.linkonce.armextab.*)
-     } >RAM
-
-     .ARM.exidx . : {
         *(.ARM.exidx* .gnu.linkonce.armexidx.*)
-     } >RAM
+     }
 
     .rodata . : {
         __RODATA_START__ = .;

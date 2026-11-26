@@ -98,7 +98,7 @@ int httpd_unregister_uri_handler(const httpd_uri_t *uri_handler)
 		if (!hd->hd_calls[i]) {
 			break;
 		}
-		if ((hd->hd_calls[i]->method == uri_handler->method)) { // First match methods
+		if (hd->hd_calls[i]->method == uri_handler->method) { // First match methods
 			httpd_log_verbose("[%d] removing %d\n", i, hd->hd_calls[i]->method);
 
 			free(hd->hd_calls[i]);

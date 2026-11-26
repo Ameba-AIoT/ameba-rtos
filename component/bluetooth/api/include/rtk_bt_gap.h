@@ -17,6 +17,15 @@ extern "C"
 #include <bt_api_config.h>
 
 /**
+ * @addtogroup BT_Types BT Types
+ * @{
+ */
+/**
+ * @addtogroup BT_GAP_Types BT GAP Types
+ * @{
+ */
+
+/**
  * @typedef   rtk_bt_addr_type_t
  * @brief     Bluetooth device address type definition.
  */
@@ -29,7 +38,23 @@ typedef enum {
 	RTK_BT_ADDR_LE_ANONYMOUS =          0xFF,      /*!< Anonymous Device Address. */
 } rtk_bt_addr_type_t;
 
+/**
+ * @}
+ */
+/**
+ * @}
+ */
+
 #if defined(RTK_BT_5_2_L2C_ECFC_SUPPORT) && RTK_BT_5_2_L2C_ECFC_SUPPORT
+
+/**
+ * @addtogroup BT_Constants BT Constants
+ * @{
+ */
+/**
+ * @addtogroup BT_GAP_Constants BT GAP Constants
+ * @{
+ */
 
 /**
  * @def       RTK_BT_GAP_ECFC_CHANN_MAX_NUM
@@ -49,11 +74,29 @@ typedef enum {
  */
 #define RTK_BT_GAP_ECFC_MIN_MPS                64
 
+/// @cond
 /**
  * @def       RTK_BD_ADDR_LEN
  * @brief     Bluetooth device address length macro.
  */
 #define RTK_BD_ADDR_LEN                        6
+/// @endcond
+
+/**
+ * @}
+ */
+/**
+ * @}
+ */
+
+/**
+ * @addtogroup BT_Types BT Types
+ * @{
+ */
+/**
+ * @addtogroup BT_GAP_Types BT GAP Types
+ * @{
+ */
 
 /**
  * @typedef   rtk_bt_gap_ecfc_sec_setting_t
@@ -127,7 +170,7 @@ typedef struct {
 	uint16_t psm;                             /*!< PSM value for the protocol.
                                                *   Set to @ref RTK_BT_PSM_EATT if channels are created for EATT. */
 	uint16_t uuid;                            /*!< BT protocol/profile UUID.
-                                               *   Ignored when #is_le is true. */
+                                               *   Ignored when is_le is true. */
 	uint8_t requirement;                      /*!< Security requirement of the entry.
                                                *   Valid values are combinations of @ref rtk_bt_gap_ecfc_sec_setting_t. */
 	uint8_t key_size;                         /*!< Key size requirement of the entry.
@@ -325,7 +368,23 @@ typedef struct {
 	uint16_t local_mtu;                             /*!< Local MTU value. */
 	uint16_t local_mps;                             /*!< Local MPS value. */
 } rtk_bt_ecfc_reconf_rsp_ind_t;
+
+/**
+ * @}
+ */
+/**
+ * @}
+ */
 #endif
+
+/**
+ * @addtogroup BT_Types BT Types
+ * @{
+ */
+/**
+ * @addtogroup BT_GAP_Types BT GAP Types
+ * @{
+ */
 
 /**
  * @struct    rtk_bt_gap_vendor_cmd_param_t
@@ -337,13 +396,22 @@ typedef struct {
 	uint8_t *cmd_param;    /*!< Pointer to the parameter data to write. */
 } rtk_bt_gap_vendor_cmd_param_t;
 
+/**
+ * @}
+ */
+/**
+ * @}
+ */
+
 /********************************* Functions Declaration *******************************/
 
 #if defined(RTK_BT_5_2_L2C_ECFC_SUPPORT) && RTK_BT_5_2_L2C_ECFC_SUPPORT
 /**
- * @defgroup  bt_gap BT GAP APIs
- * @brief     BT GAP related function APIs.
- * @ingroup   BT_APIs
+ * @addtogroup BT_Functions BT Functions
+ * @{
+ */
+/**
+ * @addtogroup BT_GAP_Functions BT GAP Functions
  * @{
  */
 
@@ -433,7 +501,19 @@ uint16_t rtk_bt_gap_ecfc_send_reconf_req(rtk_bt_gap_ecfc_reconf_req_t *p_param);
 /**
  * @}
  */
+/**
+ * @}
+ */
 #endif
+
+/**
+ * @addtogroup BT_Functions BT Functions
+ * @{
+ */
+/**
+ * @addtogroup BT_GAP_Functions BT GAP Functions
+ * @{
+ */
 
 /**
  * @brief     Send a vendor command to the controller.
@@ -443,6 +523,13 @@ uint16_t rtk_bt_gap_ecfc_send_reconf_req(rtk_bt_gap_ecfc_reconf_req_t *p_param);
  *            - @ref rtk_bt_err_common
  */
 uint16_t rtk_bt_gap_vendor_cmd_req(rtk_bt_gap_vendor_cmd_param_t *vendor_param);
+
+/**
+ * @}
+ */
+/**
+ * @}
+ */
 
 #ifdef __cplusplus
 }

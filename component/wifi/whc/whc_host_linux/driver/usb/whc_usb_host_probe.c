@@ -307,7 +307,7 @@ static int whc_usb_host_suspend(struct usb_interface *intf, pm_message_t message
 	struct whc_usb *priv = &whc_usb_host_priv;
 	struct rtw_usbreq *req, *next;
 
-	/* disable log fwd before killing RX URBs; otherwise device wakes host via usbd_wake_host() */
+	/* disable log fwd before killing RX URBs; otherwise device wakes host via usbd_remote_wakeup() */
 	if (whc_host_log_forward_pause()) {
 		return -EAGAIN;
 	}

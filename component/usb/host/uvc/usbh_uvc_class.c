@@ -138,7 +138,7 @@ static int usbh_uvc_attach(usb_host_t *host)
 		}
 		xfer_len = ep->wMaxPacketSize;
 
-		if (host->dev_speed == USB_SPEED_HIGH) {
+		if (usbh_dev_get_speed(host) == USB_SPEED_HIGH) {
 			/* 11b additional transactions is reserved, Ref USB 2.0 9.6.6 Table 9-13 */
 			if ((xfer_len & USB_EP_MPS_TRANS_MASK) == USB_EP_MPS_TRANS_MASK) {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "S[%d] %d/%d bad mult\n", i, cur_set->bInterfaceNumber, cur_set->bAlternateSetting);
@@ -182,7 +182,7 @@ static void usbh_uvc_detach(usb_host_t *host)
 	UNUSED(host);
 
 	uvc->state = UVC_STATE_IDLE;
-	usbh_uvc_class_release_device(uvc);
+	usbh_uvc_class_release_dev(uvc);
 
 	if ((uvc->cb != NULL) && (uvc->cb->detached != NULL)) {
 		uvc->cb->detached();
@@ -199,7 +199,7 @@ static void usbh_uvc_detach(usb_host_t *host)
   * @param	uvc: UVC host handle
   * @retval None
   */
-void usbh_uvc_class_release_device(usbh_uvc_host_t *uvc)
+void usbh_uvc_class_release_dev(usbh_uvc_host_t *uvc)
 {
 	usbh_uvc_stream_t *stream;
 	usbh_uvc_vs_t *vs_intf;
@@ -217,10 +217,10 @@ void usbh_uvc_class_release_device(usbh_uvc_host_t *uvc)
 			usbh_uvc_stream_stop(stream);
 		}
 		/* On a re-enumeration the core closes only EP0, so the channel would stay enabled.
-		 * usbh_close_pipe() also zeroes pipe_num, so the next find_alt cannot close a
+		 * usbh_pipe_close() also zeroes pipe_num, so the next find_alt cannot close a
 		 * recycled channel. */
 		if (stream->cur_setting.pipe.pipe_num != 0U) {
-			usbh_close_pipe(uvc->host, &stream->cur_setting.pipe);
+			usbh_pipe_close(uvc->host, &stream->cur_setting.pipe);
 		}
 #if (USBH_UVC_USE_HW == 0)
 		/* The URBs are sized for this device's alt: a later device must not inherit them,
@@ -262,7 +262,7 @@ static u32 usbh_uvc_get_ep_xfer_len(const usb_host_t *host, const usbh_ep_desc_t
 	u32 mps = ep->wMaxPacketSize;
 	u32 xfer_len;
 
-	if (host->dev_speed == USB_SPEED_HIGH) {
+	if (usbh_dev_get_speed(host) == USB_SPEED_HIGH) {
 		/* 11b additional transactions is reserved, Ref USB 2.0 9.6.6 Table 9-13 */
 		if ((mps & USB_EP_MPS_TRANS_MASK) == USB_EP_MPS_TRANS_MASK) {
 			xfer_len = 0U;
@@ -348,7 +348,7 @@ static void usbh_uvc_find_alt(usbh_uvc_stream_t *stream)
 	pipe->xfer_len = usbh_uvc_get_ep_xfer_len(host, ep);
 
 	if (pipe->pipe_num != 0U) {
-		usbh_close_pipe(host, pipe);
+		usbh_pipe_close(host, pipe);
 		pipe->pipe_num = 0U;
 	}
 
@@ -409,7 +409,7 @@ static void usbh_uvc_ctrl_set_alt_done(usbh_uvc_host_t *uvc, usbh_uvc_stream_t *
 			return;
 		}
 #endif
-		if (usbh_open_pipe(uvc->host, &cur_set->pipe, cur_set->altsetting->endpoint, &usbh_uvc_driver) != RTK_SUCCESS) {
+		if (usbh_pipe_open(uvc->host, &cur_set->pipe, cur_set->altsetting->endpoint, &usbh_uvc_driver) != RTK_SUCCESS) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Open isoc pipe fail\n");
 			stream->alt_active = 0U;
 			uvc->state = UVC_STATE_IDLE;
@@ -429,7 +429,7 @@ static void usbh_uvc_ctrl_set_alt_done(usbh_uvc_host_t *uvc, usbh_uvc_stream_t *
 				 cur_set->pipe.xfer_len);
 #endif
 		stream->alt_active = 1U;
-		uvc->state = UVC_STATE_TRANSFER;
+		uvc->state = UVC_STATE_XFER;
 		if (restart != 0U) {
 			/* Interface is back on its streaming alt: resume the data path that
 			 * usbh_uvc_stop() halted. Resources were kept, so this only re-arms it.
@@ -464,8 +464,8 @@ static void usbh_uvc_ctrl_set_alt_error(usbh_uvc_host_t *uvc, usbh_uvc_stream_t 
 	/* Try to release isochronous bandwidth by resetting VS interface to alt 0.
 	 * Fire-and-forget: if this fails, proceed to error state anyway.
 	 * Skip if device is disconnected to avoid blocking on ctrl request. */
-	if ((uvc->host != NULL) && (uvc->host->connect_state >= USBH_STATE_SETUP)) {
-		(void)usbh_ctrl_set_interface(uvc->host, stream->cur_setting.bInterfaceNumber, 0);
+	if ((uvc->host != NULL) && (usbh_dev_is_ready(uvc->host))) {
+		(void)usbh_itf_set_alt(uvc->host, stream->cur_setting.bInterfaceNumber, 0);
 	}
 
 	stream->alt_active = 0U;
@@ -519,7 +519,7 @@ static int usbh_uvc_process_ctrl(usb_host_t *host, usbh_drv_msg_t *msg)
 		 * the stop may still be DMAing into one of them. find_alt() then sees pipe_num 0. */
 		usbh_uvc_stream_stop(stream);
 		if (stream->cur_setting.pipe.pipe_num != 0U) {
-			usbh_close_pipe(uvc->host, &stream->cur_setting.pipe);
+			usbh_pipe_close(uvc->host, &stream->cur_setting.pipe);
 		}
 #if (USBH_UVC_USE_HW == 0)
 		usbh_uvc_stream_free_urb_buffer(stream);
@@ -530,7 +530,7 @@ static int usbh_uvc_process_ctrl(usb_host_t *host, usbh_drv_msg_t *msg)
 
 	/* Set Alt : interface / 0 */
 	case STREAM_STATE_RESET_ALT:
-		ret = usbh_ctrl_set_interface(host, stream->cur_setting.bInterfaceNumber, 0);
+		ret = usbh_itf_set_alt(host, stream->cur_setting.bInterfaceNumber, 0);
 
 		if (ret == RTK_SUCCESS) {
 			if (stream->set_alt == 1U) {
@@ -587,7 +587,7 @@ static int usbh_uvc_process_ctrl(usb_host_t *host, usbh_drv_msg_t *msg)
 			/* The tail of request_buf still holds the SET_CUR just sent: only what the device
 			 * returned may be taken. Below the UVC 1.0 size, dwMaxPayloadTransferSize is missing,
 			 * so the reply is handled as a failed GET_CUR, ref UVC 1.5 4.3.1.1 */
-			rx_len = usbh_get_last_ctrl_in_size(host);
+			rx_len = usbh_ctrl_get_xfer_len(host);
 			if (rx_len < USBH_UVC_PROBE_MIN_LEN) {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "P2 short %d\n", rx_len);
 				ret_status = RTK_SUCCESS;
@@ -680,8 +680,8 @@ static int usbh_uvc_process_ctrl(usb_host_t *host, usbh_drv_msg_t *msg)
 
 	/* Set Alt : interface / altesetting */
 	case STREAM_STATE_SET_ALT:
-		ret = usbh_ctrl_set_interface(host, stream->cur_setting.bInterfaceNumber,
-									  stream->cur_setting.bAlternateSetting);
+		ret = usbh_itf_set_alt(host, stream->cur_setting.bInterfaceNumber,
+							   stream->cur_setting.bAlternateSetting);
 		if (ret == RTK_SUCCESS) {
 			stream->set_alt = 0;
 			stream->set_alt_retry = 0;
@@ -738,7 +738,7 @@ static void usbh_uvc_process(usb_host_t *host, usbh_drv_msg_t *msg)
 		}
 		break;
 
-	case UVC_STATE_TRANSFER:
+	case UVC_STATE_XFER:
 		// do nothing, need this state to start isoc-in in sof cb
 		break;
 
@@ -796,17 +796,17 @@ static void usbh_uvc_completed(usb_host_t *host, u8 pipe_num)
 int usbh_uvc_class_init(void)
 {
 	int ret = RTK_SUCCESS;
-	ret = usbh_register_class(&usbh_uvc_driver);
+	ret = usbh_class_register(&usbh_uvc_driver);
 
 	return ret;
 }
 
 /**
   * @brief  Deinit UVC class
-  * @retval Result of usbh_unregister_class(): on anything but RTK_SUCCESS nothing was released
+  * @retval Result of usbh_class_unregister(): on anything but RTK_SUCCESS nothing was released
   */
 int usbh_uvc_class_deinit(void)
 {
-	return usbh_unregister_class(&usbh_uvc_driver);
+	return usbh_class_unregister(&usbh_uvc_driver);
 }
 

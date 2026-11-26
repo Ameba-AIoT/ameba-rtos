@@ -17,9 +17,11 @@ extern "C"
 #endif
 
 /**
- * @defgroup  BT_device BT Device APIs
- * @brief     BT device function APIs.
- * @ingroup   BT_APIs
+ * @addtogroup BT_Functions BT Functions
+ * @{
+ */
+/**
+ * @addtogroup BT_Device_Functions BT Device Functions
  * @{
  */
 
@@ -62,6 +64,9 @@ uint16_t rtk_bt_enable(rtk_bt_app_conf_t *app_default_conf);
  */
 uint16_t rtk_bt_disable(void);
 
+/**
+ * @}
+ */
 /**
  * @}
  */

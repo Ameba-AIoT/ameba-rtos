@@ -20,6 +20,7 @@ extern int main(void);
 #if defined (__GNUC__)
 /* Add This for C++ support to avoid compile error */
 void _init(void) {}
+void _fini(void) {}
 #endif
 
 /*

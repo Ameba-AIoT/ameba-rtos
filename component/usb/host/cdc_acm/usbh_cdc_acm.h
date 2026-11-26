@@ -342,7 +342,7 @@ int usbh_cdc_acm_receive(u8 *buf, u32 len);
  * @param[in] len: Length of the buffer in bytes, at least the INTR IN MPS: the controller may fill a whole packet.
  * @return 0 on success, non-zero on failure.
  */
-int usbh_cdc_acm_notify_receive(u8 *buf, u32 len);
+int usbh_cdc_acm_receive_notification(u8 *buf, u32 len);
 #endif
 
 /**

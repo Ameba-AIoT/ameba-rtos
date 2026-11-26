@@ -42,4 +42,3 @@ For more info of `VBAT_MEAS`, refer to EVB schematic design file.
 # Supported IC
 
 RTL8730E
-RTL8735C

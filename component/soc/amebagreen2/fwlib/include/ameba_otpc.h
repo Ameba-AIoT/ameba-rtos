@@ -275,6 +275,8 @@ extern "C" {
 #define OTP_USER_START								0x380 /*!< physical map user start address*/
 #define OTP_USER_END								0x4FF /*!< physical map user end address*/
 #define OTP_USER_LEN								(OTP_USER_END - OTP_USER_START + 1) /*!< physical map user section len in byte 0x380~0x4FF*/
+#define OTP_HUK_ADDR								0x310 /*!< physical map HUK address */
+#define OTP_HUK_LEN									16 /*!< HUK len in byte 0x310~0x31F*/
 /** @} */
 /** @} */
 

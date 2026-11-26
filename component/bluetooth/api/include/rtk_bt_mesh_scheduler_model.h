@@ -14,6 +14,15 @@
 #include <rtk_bt_mesh_generic_onoff_model.h>
 
 /*********************************** Scheduler Model ***********************************/
+/** @addtogroup BT_Types BT Types
+ * @{
+ */
+/** @addtogroup BT_Mesh_Types BT Mesh Types
+ * @{
+ */
+/** @addtogroup BT_Mesh_Scheduler_Model_Types BT Mesh Scheduler Model Types
+ * @{
+ */
 /**
  * @struct    rtk_bt_mesh_scheduler_register_t
  * @brief     BLE MESH scheduler register state structure.
@@ -232,11 +241,24 @@ typedef enum {
 	RTK_BT_MESH_SCHEDULER_SETUP_SERVER_MODEL_EVT_MAX,       /*!< Reserved. */
 } rtk_bt_mesh_scheduler_setup_server_model_evt_t;
 
-/********************************* Functions Declaration *******************************/
 /**
- * @defgroup  ble_mesh_scheduler_model BT LE Mesh Scheduler Model APIs
- * @brief     BT LE Mesh Scheduler Model related function APIs
- * @ingroup   ble_mesh_api_group
+ * @}
+ */
+/**
+ * @}
+ */
+/**
+ * @}
+ */
+
+/********************************* Functions Declaration *******************************/
+/** @addtogroup BT_Functions BT Functions
+ * @{
+ */
+/** @addtogroup BT_Mesh_Functions BT Mesh Functions
+ * @{
+ */
+/** @addtogroup BT_Mesh_Scheduler_Model_Functions BT Mesh Scheduler Model Functions
  * @{
  */
 
@@ -271,6 +293,12 @@ uint16_t rtk_bt_mesh_scheduler_action_get(rtk_bt_mesh_scheduler_action_get_t *sc
  */
 uint16_t rtk_bt_mesh_scheduler_action_set(rtk_bt_mesh_scheduler_action_set_t *scheduler_action_set);
 
+/**
+ * @}
+ */
+/**
+ * @}
+ */
 /**
  * @}
  */

@@ -11,9 +11,36 @@
 
 /************************************** Data Types *************************************/
 
+/** @addtogroup BT_Constants BT Constants
+ * @{
+ */
+/** @addtogroup BT_Audio_Constants BT Audio Constants
+ * @{
+ */
+/** @addtogroup BT_Audio_Codec_Wrapper_Constants BT Audio Codec Wrapper Constants
+ * @{
+ */
 #define BT_AUDIO_CODEC_REG_MAX_PARAM_LEN 128              /*!< Maximum length in octets of the codec parameter data in @ref bt_audio_reg_codec_t. */
 #define BT_AUDIO_MAX_DATA_SIZE 1024                       /*!< Maximum length in octets of the media data buffers in the offload data structures. */
+/**
+ * @}
+ */
+/**
+ * @}
+ */
+/**
+ * @}
+ */
 
+/** @addtogroup BT_Types BT Types
+ * @{
+ */
+/** @addtogroup BT_Audio_Types BT Audio Types
+ * @{
+ */
+/** @addtogroup BT_Audio_Codec_Wrapper_Types BT Audio Codec Wrapper Types
+ * @{
+ */
 /**
  * @struct    enc_codec_buffer
  * @brief     Bluetooth audio encode buffer.
@@ -157,7 +184,7 @@ typedef struct audio_codec_entity_priv AUDIO_CODEC_ENTITY, *PAUDIO_CODEC_ENTITY;
 /********************************** Offload Data Types *********************************/
 
 /**
- * @typedef   bt_audio_reg_codec_t
+ * @struct   bt_audio_reg_codec_t
  * @brief     Bluetooth audio offload codec registration data.
  */
 typedef struct {
@@ -168,7 +195,7 @@ typedef struct {
 } bt_audio_reg_codec_t;
 
 /**
- * @typedef   bt_audio_unreg_codec_t
+ * @struct   bt_audio_unreg_codec_t
  * @brief     Bluetooth audio offload codec unregistration data.
  */
 typedef struct {
@@ -177,7 +204,7 @@ typedef struct {
 } bt_audio_unreg_codec_t;
 
 /**
- * @typedef   bt_audio_parse_media_t
+ * @struct   bt_audio_parse_media_t
  * @brief     Bluetooth audio media packet struct for parsing.
  */
 typedef struct {
@@ -188,7 +215,7 @@ typedef struct {
 } bt_audio_parse_media_t;
 
 /**
- * @typedef   bt_audio_packet_info_t
+ * @struct   bt_audio_packet_info_t
  * @brief     Bluetooth audio media packet information.
  */
 typedef struct {
@@ -201,7 +228,7 @@ typedef struct {
 } bt_audio_packet_info_t;
 
 /**
- * @typedef   bt_audio_decode_process_data_t
+ * @struct   bt_audio_decode_process_data_t
  * @brief     Bluetooth audio data for decoding.
  */
 typedef struct {
@@ -213,7 +240,7 @@ typedef struct {
 } bt_audio_decode_process_data_t;
 
 /**
- * @typedef   bt_audio_decode_data_info_t
+ * @struct   bt_audio_decode_data_info_t
  * @brief     Bluetooth audio decoded data information.
  */
 typedef struct {
@@ -224,7 +251,7 @@ typedef struct {
 } bt_audio_decode_data_info_t;
 
 /**
- * @typedef   bt_audio_free_decode_buff_t
+ * @struct   bt_audio_free_decode_buff_t
  * @brief     Bluetooth audio offload decode buffer to free.
  */
 typedef struct {
@@ -233,7 +260,7 @@ typedef struct {
 } bt_audio_free_decode_buff_t;
 
 /**
- * @typedef   bt_audio_encode_process_data_t
+ * @struct   bt_audio_encode_process_data_t
  * @brief     Bluetooth audio data for encoding.
  */
 typedef struct {
@@ -245,7 +272,7 @@ typedef struct {
 } bt_audio_encode_process_data_t;
 
 /**
- * @typedef   bt_audio_encode_data_info_t
+ * @struct   bt_audio_encode_data_info_t
  * @brief     Bluetooth audio encoded data information.
  */
 typedef struct {
@@ -256,15 +283,33 @@ typedef struct {
 } bt_audio_encode_data_info_t;
 
 /**
- * @typedef   bt_audio_free_encode_buff_t
+ * @struct   bt_audio_free_encode_buff_t
  * @brief     Bluetooth audio offload encode buffer to free.
  */
 typedef struct {
 	void                *pentity;    /*!< Codec entity pointer. */
 	void                *buffer;     /*!< Encode buffer pointer to free. */
 } bt_audio_free_encode_buff_t;
+/**
+ * @}
+ */
+/**
+ * @}
+ */
+/**
+ * @}
+ */
 
 /********************************* Functions Declaration *******************************/
+/** @addtogroup BT_Functions BT Functions
+ * @{
+ */
+/** @addtogroup BT_Audio_Functions BT Audio Functions
+ * @{
+ */
+/** @addtogroup BT_Audio_Codec_Wrapper_Functions BT Audio Codec Wrapper Functions
+ * @{
+ */
 
 /**
  * @brief     Parse a received media packet to get the frame size, frame number, codec header flag and audio parameters.
@@ -385,8 +430,8 @@ uint16_t bt_audio_free_encode_buffer(PAUDIO_CODEC_ENTITY pentity, struct enc_cod
  *                     Must not be NULL.
  * @return
  *            - Number of PCM samples per frame.
- *            - @ref RTK_BT_AUDIO_GET_VALUE_FAIL: The codec entity is NULL.
- *            - @ref RTK_BT_AUDIO_FAIL: The codec entity is not active.
+ *            - @ref RTK_BT_AUDIO_GET_VALUE_FAIL - The codec entity is NULL.
+ *            - @ref RTK_BT_AUDIO_FAIL - The codec entity is not active.
  */
 uint16_t bt_codec_decoder_num_samples_per_frame(PAUDIO_CODEC_ENTITY pentity);
 
@@ -396,8 +441,8 @@ uint16_t bt_codec_decoder_num_samples_per_frame(PAUDIO_CODEC_ENTITY pentity);
  *                     Must not be NULL.
  * @return
  *            - Number of audio channels.
- *            - @ref RTK_BT_AUDIO_GET_VALUE_FAIL: The codec entity is NULL.
- *            - @ref RTK_BT_AUDIO_FAIL: The codec entity is not active.
+ *            - @ref RTK_BT_AUDIO_GET_VALUE_FAIL - The codec entity is NULL.
+ *            - @ref RTK_BT_AUDIO_FAIL - The codec entity is not active.
  */
 uint16_t bt_codec_decoder_num_channels(PAUDIO_CODEC_ENTITY pentity);
 
@@ -407,8 +452,8 @@ uint16_t bt_codec_decoder_num_channels(PAUDIO_CODEC_ENTITY pentity);
  *                     Must not be NULL.
  * @return
  *            - Sampling rate in Hz.
- *            - @ref RTK_BT_AUDIO_GET_VALUE_FAIL: The codec entity is NULL.
- *            - @ref RTK_BT_AUDIO_FAIL: The codec entity is not active.
+ *            - @ref RTK_BT_AUDIO_GET_VALUE_FAIL - The codec entity is NULL.
+ *            - @ref RTK_BT_AUDIO_FAIL - The codec entity is not active.
  */
 int bt_codec_decoder_sample_rate(PAUDIO_CODEC_ENTITY pentity);
 
@@ -463,5 +508,14 @@ uint16_t bt_audio_reset_codec(uint32_t type, PAUDIO_CODEC_ENTITY pentity);
  *            - @ref rtk_bt_audio_err_common
  */
 uint16_t bt_audio_unregister_codec(uint32_t type, PAUDIO_CODEC_ENTITY pentity);
+/**
+ * @}
+ */
+/**
+ * @}
+ */
+/**
+ * @}
+ */
 
 #endif /* __BT_AUDIO_CODEC_WRAPPER_H__ */
