@@ -79,15 +79,15 @@ uint8_t bap_broadcast_source_codec_level2[] = {
 #endif
 	0x02,
 	RTK_BT_LE_CODEC_CFG_TYPE_FRAME_DURATION,
-#if defined(LEA_SOURCE_FIX_FRAME_DUARTION)
-	LEA_SOURCE_FIX_FRAME_DUARTION,
+#if defined(LEA_SOURCE_FIX_FRAME_DURATION)
+	LEA_SOURCE_FIX_FRAME_DURATION,
 #else
 	RTK_BT_LE_FRAME_DURATION_CFG_10_MS,
 #endif
 	0x03,
 	RTK_BT_LE_CODEC_CFG_TYPE_OCTET_PER_CODEC_FRAME,
-	//select OCTET_PER_CODEC_FRAME from app_lea_audio_support_capablity_table according LEA_SOURCE_FIX_FRAME_DUARTION and LEA_SOURCE_FIX_SAMPLE_FREQUENCY
-#if defined(LEA_SOURCE_FIX_FRAME_DUARTION) || defined(LEA_SOURCE_FIX_SAMPLE_FREQUENCY)
+	//select OCTET_PER_CODEC_FRAME from app_lea_audio_support_capability_table according LEA_SOURCE_FIX_FRAME_DURATION and LEA_SOURCE_FIX_SAMPLE_FREQUENCY
+#if defined(LEA_SOURCE_FIX_FRAME_DURATION) || defined(LEA_SOURCE_FIX_SAMPLE_FREQUENCY)
 	0x00, 0x00,
 #else
 	0x28, 0x00,
@@ -99,7 +99,7 @@ uint8_t bap_broadcast_source_codec_level2[] = {
 
 uint8_t bap_broadcast_source_codec_level2_len = sizeof(bap_broadcast_source_codec_level2);
 
-#if (RTK_BLE_AUDIO_DEFAULT_BROADCASTER_BIS_NUM == 1) && (RTK_BLE_AUDIO_BROADCASTER_ONE_BIS_SETEO_MODE == 1)
+#if (RTK_BLE_AUDIO_DEFAULT_BROADCASTER_BIS_NUM == 1) && (RTK_BLE_AUDIO_BROADCASTER_ONE_BIS_STEREO_MODE == 1)
 static uint8_t app_lea_broadcast_source_codec_level3_bis_left[] = {
 	0x05,
 	RTK_BT_LE_CODEC_CFG_TYPE_AUDIO_CHANNEL_ALLOCATION,
@@ -210,25 +210,25 @@ app_bt_bap_broadcast_source_param_cfg_t bap_broadcast_source_cfg = {
 	.qos_manual_cfg = false,
 	.cfg_bis_num = RTK_BLE_AUDIO_DEFAULT_BROADCASTER_BIS_NUM,
 #if (LEA_SOURCE_FIX_SAMPLE_FREQUENCY == RTK_BT_LE_SAMPLING_FREQUENCY_CFG_16K)
-#if (LEA_SOURCE_FIX_FRAME_DUARTION == RTK_BT_LE_FRAME_DURATION_CFG_7_5_MS)
+#if (LEA_SOURCE_FIX_FRAME_DURATION == RTK_BT_LE_FRAME_DURATION_CFG_7_5_MS)
 	.cfg_codec_index = RTK_BT_LE_CODEC_CFG_ITEM_16_1,
 #else
 	.cfg_codec_index = RTK_BT_LE_CODEC_CFG_ITEM_16_2,
 #endif
 #elif (LEA_SOURCE_FIX_SAMPLE_FREQUENCY == RTK_BT_LE_SAMPLING_FREQUENCY_CFG_24K)
-#if (LEA_SOURCE_FIX_FRAME_DUARTION == RTK_BT_LE_FRAME_DURATION_CFG_7_5_MS)
+#if (LEA_SOURCE_FIX_FRAME_DURATION == RTK_BT_LE_FRAME_DURATION_CFG_7_5_MS)
 	.cfg_codec_index = RTK_BT_LE_CODEC_CFG_ITEM_24_1,
 #else
 	.cfg_codec_index = RTK_BT_LE_CODEC_CFG_ITEM_24_2,
 #endif
 #elif (LEA_SOURCE_FIX_SAMPLE_FREQUENCY == RTK_BT_LE_SAMPLING_FREQUENCY_CFG_32K)
-#if (LEA_SOURCE_FIX_FRAME_DUARTION == RTK_BT_LE_FRAME_DURATION_CFG_7_5_MS)
+#if (LEA_SOURCE_FIX_FRAME_DURATION == RTK_BT_LE_FRAME_DURATION_CFG_7_5_MS)
 	.cfg_codec_index = RTK_BT_LE_CODEC_CFG_ITEM_32_1,
 #else
 	.cfg_codec_index = RTK_BT_LE_CODEC_CFG_ITEM_32_2,
 #endif
 #elif (LEA_SOURCE_FIX_SAMPLE_FREQUENCY == RTK_BT_LE_SAMPLING_FREQUENCY_CFG_48K)
-#if (LEA_SOURCE_FIX_FRAME_DUARTION == RTK_BT_LE_FRAME_DURATION_CFG_7_5_MS)
+#if (LEA_SOURCE_FIX_FRAME_DURATION == RTK_BT_LE_FRAME_DURATION_CFG_7_5_MS)
 	.cfg_codec_index = RTK_BT_LE_CODEC_CFG_ITEM_48_1,
 #else
 	.cfg_codec_index = RTK_BT_LE_CODEC_CFG_ITEM_48_2,
@@ -246,9 +246,9 @@ app_bt_bap_broadcast_source_param_cfg_t bap_broadcast_source_cfg = {
 
 rtk_bt_le_audio_unicast_ase_qos_t bap_def_ase_qos = {
 	.phy = RTK_BLE_AUDIO_ASCS_ASE_TARGET_PHY_2M,
-#if RTK_BLE_AUDIO_UNICAST_ONE_CIS_SETEO_MODE
+#if RTK_BLE_AUDIO_UNICAST_ONE_CIS_STEREO_MODE
 #if (LEA_SOURCE_FIX_SAMPLE_FREQUENCY == RTK_BT_LE_SAMPLING_FREQUENCY_CFG_16K)
-#if (LEA_SOURCE_FIX_FRAME_DUARTION == RTK_BT_LE_FRAME_DURATION_CFG_7_5_MS)
+#if (LEA_SOURCE_FIX_FRAME_DURATION == RTK_BT_LE_FRAME_DURATION_CFG_7_5_MS)
 	.retransmission_number = 2,
 	.max_sdu = 60,
 #else
@@ -256,7 +256,7 @@ rtk_bt_le_audio_unicast_ase_qos_t bap_def_ase_qos = {
 	.max_sdu = 80,
 #endif
 #elif (LEA_SOURCE_FIX_SAMPLE_FREQUENCY == RTK_BT_LE_SAMPLING_FREQUENCY_CFG_24K)
-#if (LEA_SOURCE_FIX_FRAME_DUARTION == RTK_BT_LE_FRAME_DURATION_CFG_7_5_MS)
+#if (LEA_SOURCE_FIX_FRAME_DURATION == RTK_BT_LE_FRAME_DURATION_CFG_7_5_MS)
 	.retransmission_number = 2,
 	.max_sdu = 90,
 #else
@@ -264,7 +264,7 @@ rtk_bt_le_audio_unicast_ase_qos_t bap_def_ase_qos = {
 	.max_sdu = 120,
 #endif
 #elif (LEA_SOURCE_FIX_SAMPLE_FREQUENCY == RTK_BT_LE_SAMPLING_FREQUENCY_CFG_32K)
-#if (LEA_SOURCE_FIX_FRAME_DUARTION == RTK_BT_LE_FRAME_DURATION_CFG_7_5_MS)
+#if (LEA_SOURCE_FIX_FRAME_DURATION == RTK_BT_LE_FRAME_DURATION_CFG_7_5_MS)
 	.retransmission_number = 2,
 	.max_sdu = 120,
 #else
@@ -272,7 +272,7 @@ rtk_bt_le_audio_unicast_ase_qos_t bap_def_ase_qos = {
 	.max_sdu = 160,
 #endif
 #elif (LEA_SOURCE_FIX_SAMPLE_FREQUENCY == RTK_BT_LE_SAMPLING_FREQUENCY_CFG_48K)
-#if (LEA_SOURCE_FIX_FRAME_DUARTION == RTK_BT_LE_FRAME_DURATION_CFG_7_5_MS)
+#if (LEA_SOURCE_FIX_FRAME_DURATION == RTK_BT_LE_FRAME_DURATION_CFG_7_5_MS)
 	.retransmission_number = 5,
 	.max_sdu = 150,
 #else
@@ -285,7 +285,7 @@ rtk_bt_le_audio_unicast_ase_qos_t bap_def_ase_qos = {
 #endif
 #else
 #if (LEA_SOURCE_FIX_SAMPLE_FREQUENCY == RTK_BT_LE_SAMPLING_FREQUENCY_CFG_16K)
-#if (LEA_SOURCE_FIX_FRAME_DUARTION == RTK_BT_LE_FRAME_DURATION_CFG_7_5_MS)
+#if (LEA_SOURCE_FIX_FRAME_DURATION == RTK_BT_LE_FRAME_DURATION_CFG_7_5_MS)
 	.retransmission_number = 2,
 	.max_sdu = 30,
 #else
@@ -293,7 +293,7 @@ rtk_bt_le_audio_unicast_ase_qos_t bap_def_ase_qos = {
 	.max_sdu = 40,
 #endif
 #elif (LEA_SOURCE_FIX_SAMPLE_FREQUENCY == RTK_BT_LE_SAMPLING_FREQUENCY_CFG_24K)
-#if (LEA_SOURCE_FIX_FRAME_DUARTION == RTK_BT_LE_FRAME_DURATION_CFG_7_5_MS)
+#if (LEA_SOURCE_FIX_FRAME_DURATION == RTK_BT_LE_FRAME_DURATION_CFG_7_5_MS)
 	.retransmission_number = 2,
 	.max_sdu = 45,
 #else
@@ -301,7 +301,7 @@ rtk_bt_le_audio_unicast_ase_qos_t bap_def_ase_qos = {
 	.max_sdu = 60,
 #endif
 #elif (LEA_SOURCE_FIX_SAMPLE_FREQUENCY == RTK_BT_LE_SAMPLING_FREQUENCY_CFG_32K)
-#if (LEA_SOURCE_FIX_FRAME_DUARTION == RTK_BT_LE_FRAME_DURATION_CFG_7_5_MS)
+#if (LEA_SOURCE_FIX_FRAME_DURATION == RTK_BT_LE_FRAME_DURATION_CFG_7_5_MS)
 	.retransmission_number = 2,
 	.max_sdu = 60,
 #else
@@ -309,7 +309,7 @@ rtk_bt_le_audio_unicast_ase_qos_t bap_def_ase_qos = {
 	.max_sdu = 80,
 #endif
 #elif (LEA_SOURCE_FIX_SAMPLE_FREQUENCY == RTK_BT_LE_SAMPLING_FREQUENCY_CFG_48K)
-#if (LEA_SOURCE_FIX_FRAME_DUARTION == RTK_BT_LE_FRAME_DURATION_CFG_7_5_MS)
+#if (LEA_SOURCE_FIX_FRAME_DURATION == RTK_BT_LE_FRAME_DURATION_CFG_7_5_MS)
 	.retransmission_number = 5,
 	.max_sdu = 75,
 #else
@@ -367,8 +367,8 @@ rtk_bt_le_audio_unicast_ase_codec_t app_lea_source_ase_prefer_codec = {
 
 rtk_bt_le_audio_broadcast_source_create_big_t def_le_audio_broadcast_source_create_big_param = {
 	.num_bis = RTK_BLE_AUDIO_DEFAULT_BROADCASTER_BIS_NUM,                                                   /*< Total number of BISes in the BIG. *//**<Set it in main. */
-#if defined(LEA_SOURCE_FIX_FRAME_DUARTION)
-	.sdu_interval = (LEA_SOURCE_FIX_FRAME_DUARTION == RTK_BT_LE_FRAME_DURATION_CFG_10_MS) ? 10000 : 7500,           /*< The interval, in microseconds, of periodic SDUs.
+#if defined(LEA_SOURCE_FIX_FRAME_DURATION)
+	.sdu_interval = (LEA_SOURCE_FIX_FRAME_DURATION == RTK_BT_LE_FRAME_DURATION_CFG_10_MS) ? 10000 : 7500,           /*< The interval, in microseconds, of periodic SDUs.
                                                                                                                 Range: 0x0000FF to 0x0FFFFF */
 #else
 	.sdu_interval = RTK_BLE_AUDIO_DEFAULT_SDU_INTERVAL_M_S_US,                                              /*< The interval, in microseconds, of periodic SDUs.

@@ -37,12 +37,12 @@ typedef struct {
 	P_FUN_GATT_CLIENT_CB cb;
 } _srv_cb_t;
 
-_srv_cb_t bt_statck_srv_cb[MAX_SPEC_SERVICE_NUM] = {0};
+_srv_cb_t bt_stack_srv_cb[MAX_SPEC_SERVICE_NUM] = {0};
 
 T_APP_RESULT bt_stack_gattc_common_callback(uint16_t conn_handle, T_GATT_CLIENT_EVENT type, void *p_data, uint8_t index)
 {
 	rtk_bt_evt_t *p_evt = NULL;
-	uint16_t profile_id = bt_statck_srv_cb[index].id;
+	uint16_t profile_id = bt_stack_srv_cb[index].id;
 	T_APP_RESULT ret = APP_RESULT_SUCCESS;
 
 	switch (type) {
@@ -236,7 +236,7 @@ static uint16_t bt_stack_gattc_register_profile(void *param)
 	int i;
 
 	for (i = 0; i < MAX_SPEC_SERVICE_NUM; i++) {
-		if (bt_statck_srv_cb[i].cb == NULL) {
+		if (bt_stack_srv_cb[i].cb == NULL) {
 			break;
 		}
 	}
@@ -253,8 +253,8 @@ static uint16_t bt_stack_gattc_register_profile(void *param)
 		return RTK_BT_ERR_LOWER_STACK_API;
 	}
 
-	bt_statck_srv_cb[i].cb = cb;
-	bt_statck_srv_cb[i].id = reg_param->profile_id;
+	bt_stack_srv_cb[i].cb = cb;
+	bt_stack_srv_cb[i].id = reg_param->profile_id;
 
 	return RTK_BT_OK;
 }
@@ -535,7 +535,7 @@ uint16_t bt_stack_gattc_init(rtk_bt_app_conf_t *app_conf)
 #endif
 
 	for (i = 0; i < MAX_SPEC_SERVICE_NUM; i++) {
-		bt_statck_srv_cb[i].cb = NULL;
+		bt_stack_srv_cb[i].cb = NULL;
 	}
 
 	return RTK_BT_OK;
@@ -1169,7 +1169,7 @@ static void bt_stack_gattc_handle_pending_req(uint8_t conn_id)
 	(void)conn_id;  /* leave the param conn_id for future debug need */
 	rtk_bt_gatt_queue_t *queue;
 	rtk_bt_gattc_req_t *req = NULL;
-	uint8_t i, choosen_connid = 0xFF;
+	uint8_t i, chosen_connid = 0xFF;
 	uint32_t min_seq = 0xFFFFFFFF;
 
 	for (i = 0; i < RTK_BLE_GAP_MAX_LINKS; i++) {
@@ -1183,11 +1183,11 @@ static void bt_stack_gattc_handle_pending_req(uint8_t conn_id)
 		}
 		if (req->seq <= min_seq) {
 			min_seq = req->seq;
-			choosen_connid = i;
+			chosen_connid = i;
 		}
 	}
-	if (choosen_connid != 0xFF) {
-		queue = &gattc_priv->request_queue[choosen_connid];
+	if (chosen_connid != 0xFF) {
+		queue = &gattc_priv->request_queue[chosen_connid];
 		req = (rtk_bt_gattc_req_t *)queue->pending_list.next;
 		send_req_to_stack(req, queue);
 	}
@@ -1205,7 +1205,7 @@ static uint16_t bt_stack_gattc_add_req_to_list(uint8_t conn_id,
 	}
 
 	/* The number of element in pending queue should be limited, otherwise
-	    the write and read request of high frequnce will use up memory */
+	    the write and read request of high frequency will use up memory */
 	if (p_queue->pending_ele_num >= BT_QUEUE_PENDING_ELEMENT_MAX) {
 		BT_LOGE("Error: GATTC pending queue full, wait a moment to send data again !!!\r\n");
 		return RTK_BT_ERR_QUEUE_FULL;
@@ -1278,7 +1278,7 @@ static void internal_read_req_add(uint8_t conn_id, rtk_bt_gattc_req_t *read_req)
 	BT_LOGD("Pending ele num+++++, num: %d\r\n", p_queue->pending_ele_num);
 }
 
-static bool internel_read_req_is_done(uint8_t conn_id)
+static bool internal_read_req_is_done(uint8_t conn_id)
 {
 	rtk_bt_gattc_req_t *req;
 
@@ -1334,7 +1334,7 @@ static void bt_stack_gattc_discover_state_cb(uint8_t conn_id,
 		/* if read_by_uuid(internal use discover and read_by_handle) failed or
 		    discover out nothing, indicate err here */
 		if (DISC_STATE_FAILED == discovery_state ||
-			internel_read_req_is_done(conn_id)) {
+			internal_read_req_is_done(conn_id)) {
 			p_evt = rtk_bt_event_create(RTK_BT_LE_GP_GATTC,
 										RTK_BT_GATTC_EVT_READ_RESULT_IND,
 										sizeof(rtk_bt_gattc_read_ind_t));
@@ -1547,7 +1547,7 @@ static void bt_stack_gattc_read_result_cb(uint8_t conn_id, uint16_t cause,
 
 	/* if read_by_handle cb comes and read_by_uuid the latest cb comes,  send event
 	   to indicate charac read is done */
-	if (((p_req->flag & REQ_FLAG_READ_BY_UUID) && internel_read_req_is_done(conn_id)) ||
+	if (((p_req->flag & REQ_FLAG_READ_BY_UUID) && internal_read_req_is_done(conn_id)) ||
 		(!(p_req->flag & REQ_FLAG_READ_BY_UUID) && RTK_BT_GATT_CHAR_READ_BY_HANDLE == p_req->read_param.type && 0 == cause)) {
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_GATTC,
 									RTK_BT_GATTC_EVT_READ_RESULT_IND,
@@ -2029,7 +2029,7 @@ uint16_t bt_stack_gattc_init(rtk_bt_app_conf_t *app_conf)
 
 #if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT
 	if (app_conf->app_profile_support & RTK_BT_PROFILE_MESH) {
-		client_init(2 + MESH_GATT_CLIENT_COUNT);  // regist prov client for Remote Provisioning Server when execute remote provisioning process as mesh device role
+		client_init(2 + MESH_GATT_CLIENT_COUNT);  // register prov client for Remote Provisioning Server when execute remote provisioning process as mesh device role
 #if defined(RTK_BLE_MESH_PROVISIONER_SUPPORT) && RTK_BLE_MESH_PROVISIONER_SUPPORT
 		prov_client_add(bt_stack_mesh_client_callback);
 		proxy_client_add(bt_stack_mesh_client_callback);

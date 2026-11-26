@@ -80,7 +80,7 @@ static uint8_t def_cis_acceptor_ext_adv_data[] = {
 	// Flags
 	0x02,
 	RTK_BT_LE_GAP_ADTYPE_FLAGS,
-	RTK_BT_LE_GAP_ADTYPE_FLAGS_LIMITED | RTK_BT_LE_GAP_ADTYPE_FLAGS_BREDR_NOT_SUPPORTED,
+	RTK_BT_LE_GAP_ADTYPE_FLAGS_GENERAL | RTK_BT_LE_GAP_ADTYPE_FLAGS_BREDR_NOT_SUPPORTED,
 	// Local name
 	0x11,
 	RTK_BT_LE_GAP_ADTYPE_LOCAL_NAME_COMPLETE,
@@ -88,7 +88,7 @@ static uint8_t def_cis_acceptor_ext_adv_data[] = {
 	// Manufacturer Specific Data
 	0xc3,
 	RTK_BT_LE_GAP_ADTYPE_MANUFACTURER_SPECIFIC,
-	0xc0, 0x00,
+	0x5d, 0x00,
 	0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
 	0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1,
 	0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2,
@@ -178,7 +178,7 @@ static uint8_t def_bis_broadcaster_ext_adv_data[] = {
 	// Flags
 	0x02,
 	RTK_BT_LE_GAP_ADTYPE_FLAGS,
-	RTK_BT_LE_GAP_ADTYPE_FLAGS_LIMITED | RTK_BT_LE_GAP_ADTYPE_FLAGS_BREDR_NOT_SUPPORTED,
+	RTK_BT_LE_GAP_ADTYPE_FLAGS_GENERAL | RTK_BT_LE_GAP_ADTYPE_FLAGS_BREDR_NOT_SUPPORTED,
 	// Local name
 	0x14,
 	RTK_BT_LE_GAP_ADTYPE_LOCAL_NAME_COMPLETE,
@@ -204,7 +204,7 @@ static uint8_t def_bis_broadcaster_pa_data[] = {
 	// Flags
 	0x02,
 	RTK_BT_LE_GAP_ADTYPE_FLAGS,
-	RTK_BT_LE_GAP_ADTYPE_FLAGS_LIMITED | RTK_BT_LE_GAP_ADTYPE_FLAGS_BREDR_NOT_SUPPORTED,
+	RTK_BT_LE_GAP_ADTYPE_FLAGS_GENERAL | RTK_BT_LE_GAP_ADTYPE_FLAGS_BREDR_NOT_SUPPORTED,
 	// Local name
 	0x14,
 	RTK_BT_LE_GAP_ADTYPE_LOCAL_NAME_COMPLETE,
@@ -854,7 +854,7 @@ static rtk_bt_evt_cb_ret_t app_bt_le_iso_cb(uint8_t evt_code, void *data, uint32
 		rtk_bt_le_iso_big_broadcaster_sync_state_ind_t *param = (rtk_bt_le_iso_big_broadcaster_sync_state_ind_t *)data;
 		BT_LOGA("[APP] bis broadcaster sync state change: big_handle: 0x%x, adv_handle 0x%x, sync_state 0x%x, cause: 0x%x\r\n",
 				param->big_handle, param->adv_handle, param->sync_state, param->cause);
-		if (param->sync_state == RTK_BLE_ISO_BIG_BOARDCASTER_SYNC_STATE_BROADCASTING) {
+		if (param->sync_state == RTK_BLE_ISO_BIG_BROADCASTER_SYNC_STATE_BROADCASTING) {
 			BT_LOGA("[APP] bis broadcaster is isochronous broadcasting\r\n");
 			g_le_iso_bis_broadcaster_status.status = RTK_BLE_EXAMPLE_BIS_BROADCASTER_CBIG;
 			app_le_iso_setup_path_param.data_path_direction = RTK_BLE_ISO_DATA_PATH_ADD_INPUT;
@@ -865,7 +865,7 @@ static rtk_bt_evt_cb_ret_t app_bt_le_iso_cb(uint8_t evt_code, void *data, uint32
 					BT_LOGE("[APP] BIS Boardcaster setup data path for bis_conn_handle 0x%x failed! err: 0x%x", app_le_iso_setup_path_param.iso_conn_handle, ret);
 				}
 			}
-		} else if (param->sync_state == RTK_BLE_ISO_BIG_BOARDCASTER_SYNC_STATE_IDLE) {
+		} else if (param->sync_state == RTK_BLE_ISO_BIG_BROADCASTER_SYNC_STATE_IDLE) {
 			BT_LOGA("[APP] bis broadcaster is idle\r\n");
 			g_le_iso_bis_broadcaster_status.status = RTK_BLE_EXAMPLE_BIS_BROADCASTER_TBIG;
 		}

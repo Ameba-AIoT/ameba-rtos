@@ -18,7 +18,7 @@
 #include <bt_spp.h>
 #include <btm.h>
 
-T_SPP_CHANN_DB spp_chann_db[SPP_CAHNN_DB_MAX_LINK_NUM];// SPP service register config database
+T_SPP_CHANN_DB spp_chann_db[SPP_CHANN_DB_MAX_LINK_NUM];// SPP service register config database
 
 uint8_t spp_max_link_num; // SPP maximum link numbers
 uint8_t spp_rfc_max_service_num; // SPP maximum service numbers
@@ -33,7 +33,7 @@ static uint8_t client_addr[6];// SPP client bd addr
 T_SPP_CHANN_DB *bt_stack_alloc_spp_chann(uint8_t server_chann, uint8_t *service_uuid, uint16_t uuid_length)
 {
 	T_SPP_CHANN_DB *p_chann = NULL;
-	for (int i = 0; i < SPP_CAHNN_DB_MAX_LINK_NUM; i++) {
+	for (int i = 0; i < SPP_CHANN_DB_MAX_LINK_NUM; i++) {
 		if (spp_chann_db[i].used == false) {
 			p_chann = &spp_chann_db[i];
 
@@ -49,7 +49,7 @@ T_SPP_CHANN_DB *bt_stack_alloc_spp_chann(uint8_t server_chann, uint8_t *service_
 static T_SPP_CHANN_DB *bt_stack_find_spp_chann(uint8_t server_chann)
 {
 	T_SPP_CHANN_DB *p_chann = NULL;
-	for (int i = 0; i < SPP_CAHNN_DB_MAX_LINK_NUM; i++) {
+	for (int i = 0; i < SPP_CHANN_DB_MAX_LINK_NUM; i++) {
 		if (spp_chann_db[i].used == true && spp_chann_db[i].spp_chann_num == server_chann) {
 			p_chann = &spp_chann_db[i];
 			break;
@@ -134,7 +134,7 @@ static void bt_stack_spp_evt_ind_cback(T_BT_EVENT event_type, void *event_buf, u
 		rtk_bt_spp_sdp_discov_cmpl_t *p_discov = NULL;
 
 		// Traverse the spp_chann_db[] to find the registered element which satisfy is_ spp_ sdp_ ok == true && is_on_connection == false
-		for (int i = 0; i < SPP_CAHNN_DB_MAX_LINK_NUM; i++) {
+		for (int i = 0; i < SPP_CHANN_DB_MAX_LINK_NUM; i++) {
 			if (spp_chann_db[i].used == true && spp_chann_db[i].is_spp_sdp_ok == true && spp_chann_db[i].is_on_connection == false) {
 				p_chann = &spp_chann_db[i];
 				if (param->sdp_discov_cmpl.cause == 0x00) {
@@ -164,14 +164,14 @@ static void bt_stack_spp_evt_ind_cback(T_BT_EVENT event_type, void *event_buf, u
 		rtk_bt_spp_conn_ind_t *p_conn_ind = NULL;
 		p_chann = bt_stack_find_spp_chann(param->spp_conn_ind.local_server_chann);
 		if (p_chann == NULL) {
-			BT_LOGE("bt_spp_stack_evt_ind_caback: BT_EVENT_SPP_CONN_IND wrong local server channel\r\n");
+			BT_LOGE("bt_stack_spp_evt_ind_cback: BT_EVENT_SPP_CONN_IND wrong local server channel\r\n");
 			return ;
 		}
 
 		p_link = app_find_br_link(param->spp_conn_ind.bd_addr);
 
 		if (!p_link) {
-			BT_LOGE("bt_spp_stack_evt_ind_caback: BT_EVENT_SPP_CONN_IND no acl link found\r\n");
+			BT_LOGE("bt_stack_spp_evt_ind_cback: BT_EVENT_SPP_CONN_IND no acl link found\r\n");
 			return ;
 		}
 
@@ -189,7 +189,7 @@ static void bt_stack_spp_evt_ind_cback(T_BT_EVENT event_type, void *event_buf, u
 		/* Create event */
 		p_evt = rtk_bt_event_create(RTK_BT_BR_GP_SPP, RTK_BT_SPP_EVT_CONN_IND, sizeof(rtk_bt_spp_conn_ind_t));
 		if (!p_evt) {
-			BT_LOGE("bt_spp_stack_evt_ind_caback: evt_t allocate failed\r\n");
+			BT_LOGE("bt_stack_spp_evt_ind_cback: evt_t allocate failed\r\n");
 			break;
 		}
 		p_conn_ind = (rtk_bt_spp_conn_ind_t *)p_evt->data;
@@ -207,7 +207,7 @@ static void bt_stack_spp_evt_ind_cback(T_BT_EVENT event_type, void *event_buf, u
 
 		p_chann = bt_stack_find_spp_chann(param->spp_conn_cmpl.local_server_chann);
 		if (p_chann == NULL) {
-			BT_LOGE("bt_spp_stack_evt_ind_caback: BT_EVENT_SPP_CONN_CMPL wrong local server channel\r\n");
+			BT_LOGE("bt_stack_spp_evt_ind_cback: BT_EVENT_SPP_CONN_CMPL wrong local server channel\r\n");
 			return ;
 		}
 
@@ -216,7 +216,7 @@ static void bt_stack_spp_evt_ind_cback(T_BT_EVENT event_type, void *event_buf, u
 
 		p_link = app_find_br_link(param->spp_conn_cmpl.bd_addr);
 		if (!p_link) {
-			BT_LOGE("bt_spp_stack_evt_ind_caback: BT_EVENT_SPP_CONN_CMPL no acl link found\r\n");
+			BT_LOGE("bt_stack_spp_evt_ind_cback: BT_EVENT_SPP_CONN_CMPL no acl link found\r\n");
 			return ;
 		}
 		p_link->rfc_spp_frame_size = param->spp_conn_cmpl.frame_size;
@@ -227,7 +227,7 @@ static void bt_stack_spp_evt_ind_cback(T_BT_EVENT event_type, void *event_buf, u
 		/* Create event */
 		p_evt = rtk_bt_event_create(RTK_BT_BR_GP_SPP, RTK_BT_SPP_EVT_CONN_COMPL, sizeof(rtk_bt_spp_conn_cmpl_t));
 		if (!p_evt) {
-			BT_LOGE("bt_spp_stack_evt_ind_caback: evt_t allocate failed\r\n");
+			BT_LOGE("bt_stack_spp_evt_ind_cback: evt_t allocate failed\r\n");
 			break;
 		}
 		p_conn_cmpl = (rtk_bt_spp_conn_cmpl_t *)p_evt->data;
@@ -237,7 +237,7 @@ static void bt_stack_spp_evt_ind_cback(T_BT_EVENT event_type, void *event_buf, u
 		p_conn_cmpl->frame_size = param->spp_conn_cmpl.frame_size;
 		/* Send event */
 		rtk_bt_evt_indicate(p_evt, NULL);
-		//BT_LOGA("bt_spp_stack_evt_ind_caback: BT_EVENT_SPP_CONN_CMPL evt indicate success!!\r\n");
+		//BT_LOGA("bt_stack_spp_evt_ind_cback: BT_EVENT_SPP_CONN_CMPL evt indicate success!!\r\n");
 	}
 	break;
 
@@ -246,13 +246,13 @@ static void bt_stack_spp_evt_ind_cback(T_BT_EVENT event_type, void *event_buf, u
 
 		p_chann = bt_stack_find_spp_chann(param->spp_credit_rcvd.local_server_chann);
 		if (p_chann == NULL) {
-			BT_LOGE("bt_spp_stack_evt_ind_caback: BT_EVENT_SPP_CREDIT_RCVD wrong local server channel\r\n");
+			BT_LOGE("bt_stack_spp_evt_ind_cback: BT_EVENT_SPP_CREDIT_RCVD wrong local server channel\r\n");
 			return ;
 		}
 
 		p_link = app_find_br_link(param->spp_credit_rcvd.bd_addr);
 		if (!p_link) {
-			BT_LOGE("bt_spp_stack_evt_ind_caback: BT_EVENT_SPP_CREDIT_RCVD no acl link found\r\n");
+			BT_LOGE("bt_stack_spp_evt_ind_cback: BT_EVENT_SPP_CREDIT_RCVD no acl link found\r\n");
 			return ;
 		}
 		/* = or += ?*/
@@ -263,7 +263,7 @@ static void bt_stack_spp_evt_ind_cback(T_BT_EVENT event_type, void *event_buf, u
 		/* Create Event*/
 		p_evt = rtk_bt_event_create(RTK_BT_BR_GP_SPP, RTK_BT_SPP_EVT_CREDIT_RCVD, sizeof(rtk_bt_spp_credit_rcvd_t));
 		if (!p_evt) {
-			BT_LOGE("bt_spp_stack_evt_ind_caback: evt_t allocate failed\r\n");
+			BT_LOGE("bt_stack_spp_evt_ind_cback: evt_t allocate failed\r\n");
 			break;
 		}
 		p_credit_rcvd = (rtk_bt_spp_credit_rcvd_t *)p_evt->data;
@@ -272,7 +272,7 @@ static void bt_stack_spp_evt_ind_cback(T_BT_EVENT event_type, void *event_buf, u
 		p_credit_rcvd->link_credit = param->spp_credit_rcvd.link_credit;
 		/* Send event */
 		rtk_bt_evt_indicate(p_evt, NULL);
-		//BT_LOGA("bt_spp_stack_evt_ind_caback: BT_EVENT_SPP_CREDIT_RCVD evt indicate success!!\r\n");
+		//BT_LOGA("bt_stack_spp_evt_ind_cback: BT_EVENT_SPP_CREDIT_RCVD evt indicate success!!\r\n");
 	}
 	break;
 
@@ -281,13 +281,13 @@ static void bt_stack_spp_evt_ind_cback(T_BT_EVENT event_type, void *event_buf, u
 
 		p_chann = bt_stack_find_spp_chann(param->spp_data_ind.local_server_chann);
 		if (p_chann == NULL) {
-			BT_LOGE("bt_spp_stack_evt_ind_caback: BT_EVENT_SPP_DATA_IND wrong local server channel\r\n");
+			BT_LOGE("bt_stack_spp_evt_ind_cback: BT_EVENT_SPP_DATA_IND wrong local server channel\r\n");
 			return ;
 		}
 
 		p_link = app_find_br_link(param->spp_data_ind.bd_addr);
 		if (!p_link) {
-			BT_LOGE("bt_spp_stack_evt_ind_caback: BT_EVENT_SPP_DATA_IND no acl link found\r\n");
+			BT_LOGE("bt_stack_spp_evt_ind_cback: BT_EVENT_SPP_DATA_IND no acl link found\r\n");
 			return ;
 		}
 
@@ -296,11 +296,11 @@ static void bt_stack_spp_evt_ind_cback(T_BT_EVENT event_type, void *event_buf, u
 		/* Create event */
 		p_evt = rtk_bt_event_create(RTK_BT_BR_GP_SPP, RTK_BT_SPP_EVT_DATA_IND, sizeof(rtk_bt_spp_data_ind_t));
 		if (!p_evt) {
-			BT_LOGE("bt_spp_stack_evt_ind_caback: evt_t allocate failed\r\n");
+			BT_LOGE("bt_stack_spp_evt_ind_cback: evt_t allocate failed\r\n");
 			break;
 		}
 
-		//BT_LOGA("bt_spp_stack_evt_ind_caback: BT_EVENT_SPP_DATA_IND server_chann = %x\r\n", param->spp_data_ind.local_server_chann);
+		//BT_LOGA("bt_stack_spp_evt_ind_cback: BT_EVENT_SPP_DATA_IND server_chann = %x\r\n", param->spp_data_ind.local_server_chann);
 		p_data_ind = (rtk_bt_spp_data_ind_t *)p_evt->data;
 		memcpy((void *)p_data_ind->bd_addr, (void *)param->spp_data_ind.bd_addr, 6);
 		p_data_ind->local_server_chann = param->spp_data_ind.local_server_chann;
@@ -310,11 +310,11 @@ static void bt_stack_spp_evt_ind_cback(T_BT_EVENT event_type, void *event_buf, u
 		if (RTK_BT_OK != rtk_bt_evt_indicate(p_evt, NULL)) {
 			break;
 		}
-		//BT_LOGA("bt_spp_stack_evt_ind_caback: BT_EVENT_SPP_DATA_IND evt indicate success!!\r\n");
+		//BT_LOGA("bt_stack_spp_evt_ind_cback: BT_EVENT_SPP_DATA_IND evt indicate success!!\r\n");
 
 		p_link = app_find_br_link(param->spp_credit_rcvd.bd_addr);
 		if (!p_link) {
-			BT_LOGE("bt_spp_stack_evt_ind_caback: BT_EVENT_SPP_CREDIT_RCVD no acl link found\r\n");
+			BT_LOGE("bt_stack_spp_evt_ind_cback: BT_EVENT_SPP_CREDIT_RCVD no acl link found\r\n");
 			return ;
 		}
 	}
@@ -342,7 +342,7 @@ static void bt_stack_spp_evt_ind_cback(T_BT_EVENT event_type, void *event_buf, u
 
 		p_chann = bt_stack_find_spp_chann(param->spp_disconn_cmpl.local_server_chann);
 		if (p_chann == NULL) {
-			BT_LOGE("bt_spp_stack_evt_ind_caback: BT_EVENT_SPP_DISCONN_CMPL wrong local server channel\r\n");
+			BT_LOGE("bt_stack_spp_evt_ind_cback: BT_EVENT_SPP_DISCONN_CMPL wrong local server channel\r\n");
 			return ;
 		}
 
@@ -351,7 +351,7 @@ static void bt_stack_spp_evt_ind_cback(T_BT_EVENT event_type, void *event_buf, u
 
 		p_link = app_find_br_link((param->spp_disconn_cmpl.bd_addr));
 		if (!p_link) {
-			BT_LOGE("bt_spp_stack_evt_ind_caback: BT_EVENT_SPP_DISCONN_CMPL no acl link found\r\n");
+			BT_LOGE("bt_stack_spp_evt_ind_cback: BT_EVENT_SPP_DISCONN_CMPL no acl link found\r\n");
 			return ;
 		}
 
@@ -523,7 +523,7 @@ uint16_t bt_stack_spp_init(uint8_t role)
 	bt_spp_init(spp_max_link_num, spp_rfc_max_service_num);
 
 	/* Register spp service with uuid, and bond it with allocated spp server channel */
-	for (int i = 0; i < SPP_CAHNN_DB_MAX_LINK_NUM; i++) {
+	for (int i = 0; i < SPP_CHANN_DB_MAX_LINK_NUM; i++) {
 		if (spp_chann_db[i].used == true) {
 			bt_spp_service_register(spp_chann_db[i].service_uuid.uuid_128, spp_chann_db[i].spp_chann_num);
 		}
