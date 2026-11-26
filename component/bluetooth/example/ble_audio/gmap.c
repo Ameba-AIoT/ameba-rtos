@@ -94,6 +94,15 @@ static uint8_t bap_role = RTK_BT_LE_AUDIO_BAP_ROLE_UNKNOWN;
 static uint8_t cap_role = RTK_BT_LE_AUDIO_CAP_ROLE_UNKNOWN;
 static uint8_t gmap_role = RTK_BT_LE_AUDIO_CAP_ROLE_UNKNOWN;
 static bool gmap_demo_init_flag = false;
+static rtk_bt_le_security_param_t app_le_audio_sec_param = {
+	.io_cap = RTK_IO_CAP_NO_IN_NO_OUT,
+	.oob_data_flag = 0,
+	.bond_flag = 1,
+	.mitm_flag = 0,
+	.sec_pair_flag = 1,
+	.use_fixed_key = 0,
+	.fixed_key = 000000,
+};
 static app_le_audio_list_t scan_dev_queue;
 static app_bt_le_audio_data_path_t app_le_audio_data_path[APP_LE_AUDIO_DEMO_DATA_PATH_NUM] = {0};
 static uint8_t bt_le_audio_demo_sink_pac_id = 0xFF;
@@ -3804,6 +3813,8 @@ int bt_gmap_main(uint8_t role, uint8_t enable, uint32_t sound_channel)
 			BT_LOGA("[APP] BD_ADDR: %s\r\n", addr_str);
 			/* Initilize GAP part */
 			BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_LE_GP_GAP, app_bt_le_gap_callback));
+			/* LE legacy pairing may cause CSIS SIRK decryption mismatch with some set members, so enable LE Secure Connections */
+			BT_APP_PROCESS(rtk_bt_le_sm_set_security_param(&app_le_audio_sec_param));
 			/* Register le audio event callback */
 			BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_LE_GP_BAP, app_bt_bap_callback));
 			BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_LE_GP_CAP, app_bt_cap_callback));
@@ -3996,6 +4007,8 @@ int bt_gmap_main(uint8_t role, uint8_t enable, uint32_t sound_channel)
 			BT_LOGA("[APP] BD_ADDR: %s\r\n", addr_str);
 			/* Initilize GAP part */
 			BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_LE_GP_GAP, app_bt_le_gap_callback));
+			/* LE legacy pairing may cause CSIS SIRK decryption mismatch with some set members, so enable LE Secure Connections */
+			BT_APP_PROCESS(rtk_bt_le_sm_set_security_param(&app_le_audio_sec_param));
 			/* Initilize GATT (client) part */
 			BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_LE_GP_GATTC, app_le_audio_gattc_callback));
 			/* register le audio event callback */
