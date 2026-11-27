@@ -18,6 +18,15 @@ extern "C"
 {
 #endif
 #if defined(RTK_BLE_AUDIO_SUPPORT) && RTK_BLE_AUDIO_SUPPORT
+/** @addtogroup BT_Constants BT Constants
+ * @{
+ */
+/** @addtogroup BT_LE_Audio_Constants BT LE Audio Constants
+ * @{
+ */
+/** @addtogroup BT_BAP_Constants BT BAP Constants
+ * @{
+ */
 #define RTK_BT_LE_AUDIO_LINK_DISC_PACS_DONE 0x0001             /*!< PACS discovery is done. */
 #define RTK_BT_LE_AUDIO_LINK_DISC_ASCS_DONE 0x0002             /*!< ASCS discovery is done. */
 #define RTK_BT_LE_AUDIO_LINK_DISC_CSIS_DONE 0x0004             /*!< CSIS discovery is done. */
@@ -136,6 +145,25 @@ extern "C"
 #define RTK_BT_LE_AUDIO_CIS_MODE 0x01                                     /*!< Connected isochronous stream (CIS) mode. */
 #define RTK_BT_LE_AUDIO_BIS_MODE 0x02                                     /*!< Broadcast isochronous stream (BIS) mode. */
 #define RTK_BT_LE_ASCS_AES_CHAR_NUM 7                                     /*!< Number of ASEs carried in an ASCS control point indication. */
+/**
+ * @}
+ */
+/**
+ * @}
+ */
+/**
+ * @}
+ */
+
+/** @addtogroup BT_Types BT Types
+ * @{
+ */
+/** @addtogroup BT_LE_Audio_Types BT LE Audio Types
+ * @{
+ */
+/** @addtogroup BT_BAP_Types BT BAP Types
+ * @{
+ */
 /**
  * @typedef   rtk_bt_le_audio_codec_cfg_item_t
  * @brief     Bluetooth LE Audio codec configuration items.
@@ -537,7 +565,7 @@ typedef void *rtk_bt_le_audio_sync_handle_t;
 typedef void *rtk_bt_le_audio_base_data_mapping_t;
 
 /**
- * @typedef   rtk_bt_le_audio_broadcast_source_config_t
+ * @struct   rtk_bt_le_audio_broadcast_source_config_t
  * @brief     Bluetooth LE Audio broadcast source configuration parameters.
  */
 typedef struct {
@@ -572,7 +600,7 @@ typedef struct {
 } rtk_bt_le_audio_broadcast_source_config_t;
 
 /**
- * @typedef   rtk_bt_le_audio_bap_discovery_done_ind_t
+ * @struct   rtk_bt_le_audio_bap_discovery_done_ind_t
  * @brief     Bluetooth LE Audio information reported when BAP service discovery is done.
  */
 typedef struct {
@@ -598,7 +626,7 @@ typedef struct {
 } rtk_bt_le_audio_bap_discovery_done_ind_t;
 
 /**
- * @typedef   rtk_bt_le_audio_qos_cfg_preferred_t
+ * @struct   rtk_bt_le_audio_qos_cfg_preferred_t
  * @brief     Bluetooth LE Audio preferred QoS configuration.
  */
 typedef struct {
@@ -611,7 +639,7 @@ typedef struct {
 } rtk_bt_le_audio_qos_cfg_preferred_t;
 
 /**
- * @typedef   rtk_bt_le_audio_unicast_ase_qos_t
+ * @struct   rtk_bt_le_audio_unicast_ase_qos_t
  * @brief     Bluetooth LE Audio unicast ASE QoS parameters.
  */
 typedef struct {
@@ -621,7 +649,7 @@ typedef struct {
 } rtk_bt_le_audio_unicast_ase_qos_t;
 
 /**
- * @typedef   rtk_bt_le_audio_bis_conn_handle_info_t
+ * @struct   rtk_bt_le_audio_bis_conn_handle_info_t
  * @brief     Bluetooth LE Audio BIS connection handle information.
  */
 typedef struct {
@@ -631,7 +659,7 @@ typedef struct {
 } rtk_bt_le_audio_bis_conn_handle_info_t;
 
 /**
- * @typedef   rtk_bt_le_audio_bis_conn_info_t
+ * @struct   rtk_bt_le_audio_bis_conn_info_t
  * @brief     Bluetooth LE Audio BIS connection information used when setting up the data path of a synchronized BIG.
  */
 typedef struct {
@@ -643,7 +671,7 @@ typedef struct {
 } rtk_bt_le_audio_bis_conn_info_t;
 
 /**
- * @typedef   rtk_bt_le_audio_bass_cp_bis_info_t
+ * @struct   rtk_bt_le_audio_bass_cp_bis_info_t
  * @brief     Bluetooth LE Audio BASS broadcast receive state characteristic subgroup information.
  */
 typedef struct {
@@ -653,7 +681,7 @@ typedef struct {
 } rtk_bt_le_audio_bass_cp_bis_info_t;
 
 /**
- * @typedef   rtk_bt_le_audio_pa_sync_establish_t
+ * @struct   rtk_bt_le_audio_pa_sync_establish_t
  * @brief     Bluetooth LE Audio parameters for establishing PA synchronization.
  */
 typedef struct {
@@ -668,7 +696,7 @@ typedef struct {
 } rtk_bt_le_audio_pa_sync_establish_t;
 
 /**
- * @typedef   rtk_bt_le_audio_bass_brs_data_t
+ * @struct   rtk_bt_le_audio_bass_brs_data_t
  * @brief     Bluetooth LE Audio BASS broadcast receive state characteristic data.
  */
 typedef struct {
@@ -688,7 +716,7 @@ typedef struct {
 } rtk_bt_le_audio_bass_brs_data_t;
 
 /**
- * @typedef   rtk_bt_le_audio_ascs_cis_conn_info_t
+ * @struct   rtk_bt_le_audio_ascs_cis_conn_info_t
  * @brief     Bluetooth LE Audio CIS connection information.
  */
 typedef struct {
@@ -701,7 +729,7 @@ typedef struct {
 } rtk_bt_le_audio_ascs_cis_conn_info_t;
 
 /**
- * @typedef   rtk_bt_le_audio_cfg_codec_t
+ * @struct   rtk_bt_le_audio_cfg_codec_t
  * @brief     Bluetooth LE Audio codec configuration.
  */
 typedef struct {
@@ -722,7 +750,7 @@ typedef struct {
 } rtk_bt_le_audio_cfg_codec_t;
 
 /**
- * @typedef   rtk_bt_le_audio_iso_chann_t
+ * @struct   rtk_bt_le_audio_iso_chann_t
  * @brief     Bluetooth LE Audio ISO channel information.
  */
 typedef struct {
@@ -737,7 +765,7 @@ typedef struct {
 } rtk_bt_le_audio_iso_chann_t;
 
 /**
- * @typedef   rtk_bt_le_audio_ascs_setup_data_path_ind_t
+ * @struct   rtk_bt_le_audio_ascs_setup_data_path_ind_t
  * @brief     Bluetooth LE Audio ASCS setup data path indication.
  */
 typedef struct {
@@ -756,7 +784,7 @@ typedef struct {
 } rtk_bt_le_audio_ascs_setup_data_path_ind_t;
 
 /**
- * @typedef   rtk_bt_le_audio_ascs_remove_data_path_ind_t
+ * @struct   rtk_bt_le_audio_ascs_remove_data_path_ind_t
  * @brief     Bluetooth LE Audio ASCS remove data path indication.
  */
 typedef struct {
@@ -769,7 +797,7 @@ typedef struct {
 } rtk_bt_le_audio_ascs_remove_data_path_ind_t;
 
 /**
- * @typedef   rtk_bt_le_audio_ascs_ase_state_ind_t
+ * @struct   rtk_bt_le_audio_ascs_ase_state_ind_t
  * @brief     Bluetooth LE Audio ASCS ASE state indication.
  */
 typedef struct {
@@ -781,7 +809,7 @@ typedef struct {
 } rtk_bt_le_audio_ascs_ase_state_ind_t;
 
 /**
- * @typedef   rtk_bt_le_audio_ascs_cp_codec_cfg_ind_t
+ * @struct   rtk_bt_le_audio_ascs_cp_codec_cfg_ind_t
  * @brief     Bluetooth LE Audio ASCS codec configuration control point indication.
  */
 typedef struct {
@@ -792,7 +820,7 @@ typedef struct {
 } rtk_bt_le_audio_ascs_cp_codec_cfg_ind_t;
 
 /**
- * @typedef   rtk_bt_le_audio_ascs_cp_qos_cfg_ind_t
+ * @struct   rtk_bt_le_audio_ascs_cp_qos_cfg_ind_t
  * @brief     Bluetooth LE Audio ASCS QoS configuration control point indication.
  */
 typedef struct {
@@ -811,7 +839,7 @@ typedef struct {
 } rtk_bt_le_audio_ascs_cp_qos_cfg_ind_t;
 
 /**
- * @typedef   rtk_bt_le_audio_ascs_cp_enable_ind_t
+ * @struct   rtk_bt_le_audio_ascs_cp_enable_ind_t
  * @brief     Bluetooth LE Audio ASCS enable control point indication.
  */
 typedef struct {
@@ -828,7 +856,7 @@ typedef struct {
 typedef rtk_bt_le_audio_ascs_cp_enable_ind_t rtk_bt_le_audio_ascs_cp_disable_ind_t;
 
 /**
- * @typedef   rtk_bt_le_audio_ascs_prefer_qos_data_t
+ * @struct   rtk_bt_le_audio_ascs_prefer_qos_data_t
  * @brief     Bluetooth LE Audio ASCS preferred QoS data supplied by the application.
  */
 typedef struct {
@@ -848,7 +876,7 @@ typedef struct {
 } rtk_bt_le_audio_ascs_prefer_qos_data_t;
 
 /**
- * @typedef   rtk_bt_le_audio_ascs_get_prefer_qos_ind_t
+ * @struct   rtk_bt_le_audio_ascs_get_prefer_qos_ind_t
  * @brief     Bluetooth LE Audio ASCS get preferred QoS indication.
  */
 typedef struct {
@@ -863,7 +891,7 @@ typedef struct {
 } rtk_bt_le_audio_ascs_get_prefer_qos_ind_t;
 
 /**
- * @typedef   rtk_bt_le_audio_bass_pa_sync_param_t
+ * @struct   rtk_bt_le_audio_bass_pa_sync_param_t
  * @brief     Bluetooth LE Audio BASS PA synchronization parameters.
  */
 typedef struct {
@@ -881,7 +909,7 @@ typedef struct {
 } rtk_bt_le_audio_bass_pa_sync_param_t;
 
 /**
- * @typedef   rtk_bt_le_audio_bass_get_pa_sync_param_ind_t
+ * @struct   rtk_bt_le_audio_bass_get_pa_sync_param_ind_t
  * @brief     Bluetooth LE Audio BASS get PA synchronization parameter indication.
  */
 typedef struct {
@@ -895,7 +923,7 @@ typedef struct {
 } rtk_bt_le_audio_bass_get_pa_sync_param_ind_t;
 
 /**
- * @typedef   rtk_bt_le_audio_bass_big_sync_param_t
+ * @struct   rtk_bt_le_audio_bass_big_sync_param_t
  * @brief     Bluetooth LE Audio BASS BIG synchronization parameters.
  */
 typedef struct {
@@ -909,7 +937,7 @@ typedef struct {
 } rtk_bt_le_audio_bass_big_sync_param_t;
 
 /**
- * @typedef   rtk_bt_le_audio_bass_get_big_sync_param_ind_t
+ * @struct   rtk_bt_le_audio_bass_get_big_sync_param_ind_t
  * @brief     Bluetooth LE Audio BASS get BIG synchronization parameter indication.
  */
 typedef struct {
@@ -919,7 +947,7 @@ typedef struct {
 } rtk_bt_le_audio_bass_get_big_sync_param_ind_t;
 
 /**
- * @typedef   rtk_bt_le_audio_pa_sync_state_ind_t
+ * @struct   rtk_bt_le_audio_pa_sync_state_ind_t
  * @brief     Bluetooth LE Audio PA synchronization state indication.
  */
 typedef struct {
@@ -934,7 +962,7 @@ typedef struct {
 } rtk_bt_le_audio_pa_sync_state_ind_t;
 
 /**
- * @typedef   rtk_bt_le_audio_big_sync_state_ind_t
+ * @struct   rtk_bt_le_audio_big_sync_state_ind_t
  * @brief     Bluetooth LE Audio BIG synchronization state indication.
  */
 typedef struct {
@@ -959,7 +987,7 @@ typedef struct {
 } rtk_bt_le_audio_big_sync_state_ind_t;
 
 /**
- * @typedef   rtk_bt_le_audio_big_setup_data_path_ind_t
+ * @struct   rtk_bt_le_audio_big_setup_data_path_ind_t
  * @brief     Bluetooth LE Audio BIG setup data path indication.
  */
 typedef struct {
@@ -975,7 +1003,7 @@ typedef struct {
 } rtk_bt_le_audio_big_setup_data_path_ind_t;
 
 /**
- * @typedef   rtk_bt_le_audio_big_info_adv_report_t
+ * @struct   rtk_bt_le_audio_big_info_adv_report_t
  * @brief     Bluetooth LE Audio BIG Info advertising report.
  */
 typedef struct {
@@ -1007,7 +1035,7 @@ typedef struct {
 } rtk_bt_le_audio_big_info_adv_report_t;
 
 /**
- * @typedef   rtk_bt_le_audio_big_remove_data_path_ind_t
+ * @struct   rtk_bt_le_audio_big_remove_data_path_ind_t
  * @brief     Bluetooth LE Audio BIG remove data path indication.
  */
 typedef struct {
@@ -1020,7 +1048,7 @@ typedef struct {
 } rtk_bt_le_audio_big_remove_data_path_ind_t;
 
 /**
- * @typedef   rtk_bt_le_audio_broadcast_source_state_ind_t
+ * @struct   rtk_bt_le_audio_broadcast_source_state_ind_t
  * @brief     Bluetooth LE Audio broadcast source state indication.
  */
 typedef struct {
@@ -1030,7 +1058,7 @@ typedef struct {
 } rtk_bt_le_audio_broadcast_source_state_ind_t;
 
 /**
- * @typedef   rtk_bt_le_audio_bap_big_setup_data_path_ind_t
+ * @struct   rtk_bt_le_audio_bap_big_setup_data_path_ind_t
  * @brief     Bluetooth LE Audio BAP BIG setup data path indication.
  */
 typedef struct {
@@ -1045,7 +1073,7 @@ typedef struct {
 } rtk_bt_le_audio_bap_big_setup_data_path_ind_t;
 
 /**
- * @typedef   rtk_bt_le_audio_bap_big_remove_data_path_ind_t
+ * @struct   rtk_bt_le_audio_bap_big_remove_data_path_ind_t
  * @brief     Bluetooth LE Audio BAP BIG remove data path indication.
  */
 typedef struct {
@@ -1057,7 +1085,7 @@ typedef struct {
 } rtk_bt_le_audio_bap_big_remove_data_path_ind_t;
 
 /**
- * @typedef   rtk_bt_le_audio_group_dev_msg_ind_t
+ * @struct   rtk_bt_le_audio_group_dev_msg_ind_t
  * @brief     Bluetooth LE Audio group device message indication.
  */
 typedef struct {
@@ -1068,7 +1096,7 @@ typedef struct {
 } rtk_bt_le_audio_group_dev_msg_ind_t;
 
 /**
- * @typedef   rtk_bt_le_audio_unicast_session_qos_t
+ * @struct   rtk_bt_le_audio_unicast_session_qos_t
  * @brief     Bluetooth LE Audio unicast session QoS.
  */
 typedef struct {
@@ -1094,7 +1122,7 @@ typedef struct {
 } rtk_bt_le_audio_unicast_session_qos_t;
 
 /**
- * @typedef   rtk_bt_le_audio_bap_setup_data_path_ind_t
+ * @struct   rtk_bt_le_audio_bap_setup_data_path_ind_t
  * @brief     Bluetooth LE Audio BAP setup data path indication.
  */
 typedef struct {
@@ -1114,7 +1142,7 @@ typedef struct {
 } rtk_bt_le_audio_bap_setup_data_path_ind_t;
 
 /**
- * @typedef   rtk_bt_le_audio_bap_remove_data_path_ind_t
+ * @struct   rtk_bt_le_audio_bap_remove_data_path_ind_t
  * @brief     Bluetooth LE Audio BAP remove data path indication.
  */
 typedef struct {
@@ -1129,7 +1157,7 @@ typedef struct {
 } rtk_bt_le_audio_bap_remove_data_path_ind_t;
 
 /**
- * @typedef   rtk_bt_le_audio_direct_iso_data_ind_t
+ * @struct   rtk_bt_le_audio_direct_iso_data_ind_t
  * @brief     Bluetooth LE Audio Indication of a received ISO data packet.
  */
 typedef struct {
@@ -1151,7 +1179,7 @@ typedef struct {
 
 /* act */
 /**
- * @typedef   rtk_bt_le_audio_ext_scan_config_t
+ * @struct   rtk_bt_le_audio_ext_scan_config_t
  * @brief     Bluetooth LE Audio extended scan configuration.
  */
 typedef struct {
@@ -1162,7 +1190,7 @@ typedef struct {
 } rtk_bt_le_audio_ext_scan_config_t;
 
 /**
- * @typedef   rtk_bt_le_audio_iso_data_send_info_t
+ * @struct   rtk_bt_le_audio_iso_data_send_info_t
  * @brief     Bluetooth LE Audio ISO data send information.
  */
 typedef struct {
@@ -1179,7 +1207,7 @@ typedef struct {
 } rtk_bt_le_audio_iso_data_send_info_t;
 
 /**
- * @typedef   rtk_bt_le_audio_unicast_client_start_t
+ * @struct   rtk_bt_le_audio_unicast_client_start_t
  * @brief     Bluetooth LE Audio unicast client start parameters.
  */
 typedef struct {
@@ -1191,7 +1219,7 @@ typedef struct {
 } rtk_bt_le_audio_unicast_client_start_t;
 
 /**
- * @typedef   rtk_bt_le_audio_unicast_client_stop_t
+ * @struct   rtk_bt_le_audio_unicast_client_stop_t
  * @brief     Bluetooth LE Audio unicast client stop parameters.
  */
 typedef struct {
@@ -1210,7 +1238,7 @@ typedef enum {
 } rtk_bt_le_audio_bap_param_config_type_t;
 
 /**
- * @typedef   rtk_bt_le_audio_unicast_config_t
+ * @struct   rtk_bt_le_audio_unicast_config_t
  * @brief     Bluetooth LE Audio unicast configuration parameters.
  */
 typedef struct {
@@ -1219,7 +1247,7 @@ typedef struct {
 } rtk_bt_le_audio_unicast_config_t;
 
 /**
- * @typedef   rtk_bt_le_audio_bap_param_config_t
+ * @struct   rtk_bt_le_audio_bap_param_config_t
  * @brief     Bluetooth LE Audio BAP parameter configuration.
  */
 typedef struct {
@@ -1232,7 +1260,7 @@ typedef struct {
 } rtk_bt_le_audio_bap_param_config_t;
 
 /**
- * @typedef   rtk_bt_le_audio_broadcast_source_create_param_t
+ * @struct   rtk_bt_le_audio_broadcast_source_create_param_t
  * @brief     Bluetooth LE Audio broadcast source create parameters.
  */
 typedef struct {
@@ -1251,7 +1279,7 @@ typedef struct {
 } rtk_bt_le_audio_broadcast_source_create_param_t;
 
 /**
- * @typedef   rtk_bt_le_audio_broadcast_sync_create_param_t
+ * @struct   rtk_bt_le_audio_broadcast_sync_create_param_t
  * @brief     Bluetooth LE Audio broadcast sink PA sync create parameters.
  */
 typedef struct {
@@ -1263,7 +1291,7 @@ typedef struct {
 
 
 /**
- * @typedef   rtk_bt_le_audio_broadcast_assistant_remote_scan_param_t
+ * @struct   rtk_bt_le_audio_broadcast_assistant_remote_scan_param_t
  * @brief     Bluetooth LE Audio broadcast assistant remote scan parameters.
  */
 typedef struct {
@@ -1274,7 +1302,7 @@ typedef struct {
 } rtk_bt_le_audio_broadcast_assistant_remote_scan_param_t;
 
 /**
- * @typedef   rtk_bt_le_audio_broadcast_assistant_reception_act_param_t
+ * @struct   rtk_bt_le_audio_broadcast_assistant_reception_act_param_t
  * @brief     Bluetooth LE Audio broadcast assistant reception action parameters.
  */
 typedef struct {
@@ -1284,9 +1312,23 @@ typedef struct {
 
 /********************************* Functions Declaration *******************************/
 /**
- * @defgroup  bt_bap BT BAP APIs
- * @brief     BT BAP related function APIs.
- * @ingroup   bt_le_audio
+ * @}
+ */
+/**
+ * @}
+ */
+/**
+ * @}
+ */
+
+/********************************* Functions Declaration *******************************/
+/** @addtogroup BT_Functions BT Functions
+ * @{
+ */
+/** @addtogroup BT_LE_Audio_Functions BT LE Audio Functions
+ * @{
+ */
+/** @addtogroup BT_BAP_Functions BT BAP Functions
  * @{
  */
 
@@ -1534,6 +1576,12 @@ uint16_t rtk_bt_le_audio_broadcast_assistant_reception_remove(rtk_bt_le_addr_t a
  */
 uint16_t rtk_bt_le_audio_group_allocate(rtk_bt_le_audio_group_handle_t *p_group_handle);
 
+/**
+ * @}
+ */
+/**
+ * @}
+ */
 /**
  * @}
  */

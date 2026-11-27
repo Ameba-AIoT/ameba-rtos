@@ -65,12 +65,12 @@ extern "C" {
  *        @ref usbd_vendor_deinit.
  */
 typedef struct {
-	u32 bulk_in_xfer_size;   /**< BULK IN transfer buffer size, the largest payload of one usbd_vendor_transmit_bulk_data() */
+	u32 bulk_in_xfer_size;   /**< BULK IN transfer buffer size, the largest payload of one usbd_vendor_bulk_transmit() */
 	u32 bulk_out_xfer_size;  /**< BULK OUT transfer buffer size, at least one DWORD aligned MPS of either speed */
 	u32 isoc_in_xfer_size;   /**< ISOC IN transfer buffer size */
 	u32 isoc_out_xfer_size;  /**< ISOC OUT transfer buffer size, at least one DWORD aligned MPS of either speed
 	                              (1024 for the FS MPS of 1023) */
-	u32 intr_in_xfer_size;   /**< INTR IN transfer buffer size, the largest payload of one usbd_vendor_transmit_intr_data() */
+	u32 intr_in_xfer_size;   /**< INTR IN transfer buffer size, the largest payload of one usbd_vendor_intr_transmit() */
 	u32 intr_out_xfer_size;  /**< INTR OUT transfer buffer size, at least one DWORD aligned MPS of either speed */
 	const char *itf_str;     /**< iInterface string of the Vendor interface, NULL for none. */
 	u8 bulk_in_addr;    /**< BULK IN endpoint address */
@@ -212,7 +212,7 @@ typedef struct {
 	usb_setup_req_t ctrl_req;	/**< Stores the current control request (byte-packed) */
 	u8 ctrl_req_pending;		/**< 1 if ctrl_req is waiting for its EP0 OUT data stage */
 	u8 from_composite;			/**< Flag indicating if part of a composite device. */
-	u8 itf_str_idx;				/**< iInterface string index from usbd_add_string(), 0 for none. */
+	u8 itf_str_idx;				/**< iInterface string index from usbd_add_str(), 0 for none. */
 } usbd_vendor_dev_t;
 
 /** @} End of Device_Vendor_Types group */
@@ -251,8 +251,8 @@ int usbd_composite_vendor_init(const usbd_vendor_cb_t *cb, const usbd_vendor_con
 
 /**
  * @brief De-initializes the Vendor class driver.
- * @note  Call it in task context, once no other task is inside usbd_vendor_transmit_bulk_data(),
- *        usbd_vendor_transmit_intr_data() or usbd_vendor_transmit_isoc_data(): the TX buffers
+ * @note  Call it in task context, once no other task is inside usbd_vendor_bulk_transmit(),
+ *        usbd_vendor_intr_transmit() or usbd_vendor_isoc_transmit(): the TX buffers
  *        they write to are released here.
  * @note  Composite mode: call it after @ref usbd_composite_deinit. Before that the class is
  *        still reachable from the USB ISR, so the call returns at once and releases nothing.
@@ -268,7 +268,7 @@ void usbd_vendor_deinit(void);
  * @param[in] len: Length of the data in bytes.
  * @return 0 on success, non-zero on failure.
  */
-int usbd_vendor_transmit_bulk_data(u8 *buf, u32 len);
+int usbd_vendor_bulk_transmit(u8 *buf, u32 len);
 
 /**
  * @brief Transmits data to the host over the INTR IN endpoint.
@@ -277,7 +277,7 @@ int usbd_vendor_transmit_bulk_data(u8 *buf, u32 len);
  * @param[in] len: Length of the data in bytes.
  * @return 0 on success, non-zero on failure.
  */
-int usbd_vendor_transmit_intr_data(u8 *buf, u32 len);
+int usbd_vendor_intr_transmit(u8 *buf, u32 len);
 
 /**
  * @brief Transmits data to the host over the ISOC IN endpoint.
@@ -290,7 +290,7 @@ int usbd_vendor_transmit_intr_data(u8 *buf, u32 len);
  * @param[in] len: Length of the data in bytes.
  * @return 0 on success, non-zero on failure.
  */
-int usbd_vendor_transmit_isoc_data(u8 *buf, u32 len);
+int usbd_vendor_isoc_transmit(u8 *buf, u32 len);
 
 /** @} End of Device_Vendor_Functions group */
 /** @} End of USB_Device_Functions group */

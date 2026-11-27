@@ -18,6 +18,15 @@ extern "C"
 {
 #endif
 
+/**
+ * @addtogroup BT_Constants BT Constants
+ * @{
+ */
+/**
+ * @addtogroup BT_Common_Constants BT Common Constants
+ * @{
+ */
+
 #define RTK_BT_API_LE_BASE          0x0     /*!< Base value of the LE API command/event groups. */
 #define RTK_BT_API_BR_BASE          0x80    /*!< Base value of the BR/EDR API command/event groups. */
 #define RTK_BT_API_COMMON_BASE      0xE0    /*!< Base value of the common API command/event groups. */
@@ -127,6 +136,22 @@ extern "C"
 #define RTK_BT_PSM_ATT                             0x001F     /*!< ATT. */
 #define RTK_BT_PSM_RDTP                            0x00D1     /*!< RDTP. */
 #define RTK_BT_PSM_EATT                            0x0027     /*!< EATT. */
+
+/**
+ * @}
+ */
+/**
+ * @}
+ */
+
+/**
+ * @addtogroup BT_Types BT Types
+ * @{
+ */
+/**
+ * @addtogroup BT_Common_Types BT Common Types
+ * @{
+ */
 
 /**
  * @typedef   rtk_bt_profile_t
@@ -473,8 +498,8 @@ typedef enum {
 	RTK_BT_GATTC_EVT_CCCD_DISABLE_IND,           /*!< Indicate disabling the CCCD of the remote server completed, with msg @ref rtk_bt_gattc_cccd_update_ind_t. */
 	RTK_BT_GATTC_EVT_MTU_EXCHANGE,               /*!< Indicate the MTU exchanged, with msg @ref rtk_bt_gatt_mtu_exchange_ind_t. */
 	RTK_BT_GATTC_EVT_DISCOVER_ALL_STATE_IND,     /*!< Indicate the discovery all attributes state of the remote server, with msg
-                                                  *   @ref rtk_bt_gattc_discover_all_state_ind_t. */
-	RTK_BT_GATTC_EVT_GATT_SERVICE_INFO_IND,      /*!< Indicate the GATT service information of the remote server, with msg @ref rtk_bt_gattc_gatt_service_info_ind_t. */
+                                                  *   rtk_bt_gattc_discover_all_state_ind_t. */
+	RTK_BT_GATTC_EVT_GATT_SERVICE_INFO_IND,      /*!< Indicate the GATT service information of the remote server, with msg rtk_bt_gattc_gatt_service_info_ind_t. */
 	RTK_BT_GATTC_EVT_MAX,                        /*!< Reserved. */
 } rtk_bt_gattc_evt_t;
 
@@ -799,7 +824,7 @@ typedef enum {
 } br_gap_uuid_type_t;
 
 /**
- * @typedef   gap_uuid_data_t
+ * @union     br_gap_uuid_data_t
  * @brief     Bluetooth GAP uuid data.
  */
 typedef union {
@@ -1290,6 +1315,13 @@ typedef enum {
  */
 typedef rtk_bt_evt_cb_ret_t (*rtk_bt_evt_cb_t)(uint8_t evt_code, void *data, uint32_t data_len);
 
+/**
+ * @}
+ */
+/**
+ * @}
+ */
+
 /************************* Data structures for API internal use ************************/
 
 /**
@@ -1321,9 +1353,11 @@ typedef struct {
 /********************************* Functions Declaration *******************************/
 
 /**
- * @defgroup  bt_common BT Common APIs
- * @brief     BT common function APIs.
- * @ingroup   BT_APIs
+ * @addtogroup BT_Functions BT Functions
+ * @{
+ */
+/**
+ * @addtogroup BT_Common_Functions BT Common Functions
  * @{
  */
 
@@ -1337,7 +1371,7 @@ typedef struct {
  * @param[out] str: Buffer that receives the address string.
  *                  Must not be NULL.
  * @param[in] len: Length of the buffer in bytes. It should be at least 29 to hold the longest string, such as "XX:XX:XX:XX:XX:XX(random-id)",
- *                 and the terminating NUL.
+ *                 and the terminating NULL.
  */
 void rtk_bt_le_addr_to_str(void *paddr, char *str, uint32_t len);
 
@@ -1348,7 +1382,7 @@ void rtk_bt_le_addr_to_str(void *paddr, char *str, uint32_t len);
  *                   Must not be NULL.
  * @param[out] str: Buffer that receives the address string.
  *                  Must not be NULL.
- * @param[in] len: Length of the buffer in bytes. It should be at least 18 to hold the string and the terminating NUL.
+ * @param[in] len: Length of the buffer in bytes. It should be at least 18 to hold the string and the terminating NULL.
  */
 void rtk_bt_addr_val_to_str(uint8_t *paddr, char *str, uint32_t len);
 
@@ -1359,7 +1393,7 @@ void rtk_bt_addr_val_to_str(uint8_t *paddr, char *str, uint32_t len);
  *                   Must not be NULL.
  * @param[out] str: Buffer that receives the address string.
  *                  Must not be NULL.
- * @param[in] len: Length of the buffer in bytes. It should be at least 18 to hold the string and the terminating NUL.
+ * @param[in] len: Length of the buffer in bytes. It should be at least 18 to hold the string and the terminating NULL.
  */
 void rtk_bt_br_addr_to_str(uint8_t *paddr, char *str, uint32_t len);
 
@@ -1375,7 +1409,7 @@ void rtk_bt_br_addr_to_str(uint8_t *paddr, char *str, uint32_t len);
  * @param[out] str: Buffer that receives the address string.
  *                  Must not be NULL.
  * @param[in] len: Length of the buffer in bytes. It should be at least 32 to hold the longest string, such as "XX:XX:XX:XX:XX:XX(le random-id)",
- *                 and the terminating NUL.
+ *                 and the terminating NULL.
  */
 void rtk_bt_addr_to_str(uint8_t type, uint8_t *paddr, char *str, uint32_t len);
 
@@ -1386,7 +1420,7 @@ void rtk_bt_addr_to_str(uint8_t type, uint8_t *paddr, char *str, uint32_t len);
  * @return
  *            - @ref rtk_bt_err_common
  * @note      - The callback is executed in the BT event task, except for direct calling events, which are executed in the stack task.
- *            - If the callback is complex and consumes too much stack, enlarge the stack size of the BT event task @ref EVENT_TASK_STACK_SIZE.
+ *            - If the callback is complex and consumes too much stack, enlarge the stack size of the BT event task EVENT_TASK_STACK_SIZE.
  */
 uint16_t rtk_bt_evt_register_callback(uint8_t group, rtk_bt_evt_cb_t cb);
 
@@ -1398,6 +1432,9 @@ uint16_t rtk_bt_evt_register_callback(uint8_t group, rtk_bt_evt_cb_t cb);
  */
 uint16_t rtk_bt_evt_unregister_callback(uint8_t group);
 
+/**
+ * @}
+ */
 /**
  * @}
  */

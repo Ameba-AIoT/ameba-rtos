@@ -32,7 +32,7 @@ static usbd_uvc_frame_info_t uvc_frames_h264[] = {
 /* Exported variables --------------------------------------------------------*/
 
 /* UVC Device Descriptor Set */
-u8 usbd_uvc_descriptors[] = {
+u8 usbd_uvc_desc[] = {
 
 	/* =========================
 	 * Configuration Descriptor
@@ -241,7 +241,7 @@ u8 usbd_uvc_descriptors[] = {
 	0x01,                   // bInterval = 1 microframe
 };
 
-int usbd_uvc_descriptors_size = sizeof(usbd_uvc_descriptors);
+int usbd_uvc_desc_size = sizeof(usbd_uvc_desc);
 
 usbd_uvc_streaming_control_t usbd_uvc_probe = {
 	.bmHint = 0,
@@ -316,7 +316,7 @@ static usbd_uvc_frame_info_t uvc_frames_h265[] = {
 
 /* Exported variables --------------------------------------------------------*/
 
-u8 usbd_uvc_descriptors[] = {
+u8 usbd_uvc_desc[] = {
 	/* ===== USB Configuration Descriptor (9 bytes) [USB2.0 9.6.3] ===== */
 	0x09,                                           /* bLength */
 	USB_DESC_TYPE_CONFIGURATION,                    /* bDescriptorType: CONFIGURATION */
@@ -643,7 +643,7 @@ u8 usbd_uvc_descriptors[] = {
 	0x01                                            /* bInterval = 1 (every microframe) */
 };
 
-int usbd_uvc_descriptors_size = sizeof(usbd_uvc_descriptors);
+int usbd_uvc_desc_size = sizeof(usbd_uvc_desc);
 
 usbd_uvc_streaming_control_t usbd_uvc_probe = {
 	.bmHint = 0,

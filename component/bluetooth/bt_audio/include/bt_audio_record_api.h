@@ -11,6 +11,15 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+/** @addtogroup BT_Constants BT Constants
+ * @{
+ */
+/** @addtogroup BT_Audio_Constants BT Audio Constants
+ * @{
+ */
+/** @addtogroup BT_Audio_Record_Constants BT Audio Record Constants
+ * @{
+ */
 #define RTK_BT_AUDIO_MICBST_GAIN_0DB        ((u32)0x00000000)    /*!< Microphone boost gain of 0 dB. */
 #define RTK_BT_AUDIO_MICBST_GAIN_5DB        ((u32)0x00000001)    /*!< Microphone boost gain of 5 dB. */
 #define RTK_BT_AUDIO_MICBST_GAIN_10DB       ((u32)0x00000002)    /*!< Microphone boost gain of 10 dB. */
@@ -20,7 +29,25 @@
 #define RTK_BT_AUDIO_MICBST_GAIN_30DB       ((u32)0x00000006)    /*!< Microphone boost gain of 30 dB. */
 #define RTK_BT_AUDIO_MICBST_GAIN_35DB       ((u32)0x00000007)    /*!< Microphone boost gain of 35 dB. */
 #define RTK_BT_AUDIO_MICBST_GAIN_40DB       ((u32)0x00000008)    /*!< Microphone boost gain of 40 dB. */
+/**
+ * @}
+ */
+/**
+ * @}
+ */
+/**
+ * @}
+ */
 
+/** @addtogroup BT_Types BT Types
+ * @{
+ */
+/** @addtogroup BT_Audio_Types BT Audio Types
+ * @{
+ */
+/** @addtogroup BT_Audio_Record_Types BT Audio Record Types
+ * @{
+ */
 /**
  * @typedef   rtk_bt_audio_mic_t
  * @brief     Microphone category.
@@ -62,7 +89,7 @@ typedef struct {
 	uint8_t mic_channel_index;       /*!< Index of the record channel the microphone is assigned to. */
 	rtk_bt_audio_mic_t mic_category; /*!< Microphone assigned to the record channel. */
 	uint32_t gain;                   /*!< Microphone boost gain.
-	                                  *   Range: @ref RTK_BT_AUDIO_MICBST_GAIN_0DB to @ref RTK_BT_AUDIO_MICBST_GAIN_40DB. */
+                                      *   Range: @ref RTK_BT_AUDIO_MICBST_GAIN_0DB to @ref RTK_BT_AUDIO_MICBST_GAIN_40DB. */
 } rtk_bt_audio_record_config_t;
 
 /**
@@ -75,12 +102,24 @@ typedef struct {
 	uint8_t record_nums;                                               /*!< Number of valid entries in config. */
 	rtk_bt_audio_record_config_t config[RTK_BT_AUDIO_MIC_MAX_NUM + 1]; /*!< Record configuration of each channel. */
 } rtk_bt_audio_record_config_table_t;
+/**
+ * @}
+ */
+/**
+ * @}
+ */
+/**
+ * @}
+ */
 
 /********************************* Functions Declaration *******************************/
-/**
- * @defgroup  bt_audio_record BT Audio Record APIs
- * @brief     BT Audio record related function APIs
- * @ingroup   bt_audio_group
+/** @addtogroup BT_Functions BT Functions
+ * @{
+ */
+/** @addtogroup BT_Audio_Functions BT Audio Functions
+ * @{
+ */
+/** @addtogroup BT_Audio_Record_Functions BT Audio Record Functions
  * @{
  */
 
@@ -272,6 +311,12 @@ void rtk_bt_audio_record_set_mute(uint32_t channel, bool muted);
  */
 bool rtk_bt_audio_record_get_muted(uint32_t channel);
 
+/**
+ * @}
+ */
+/**
+ * @}
+ */
 /**
  * @}
  */

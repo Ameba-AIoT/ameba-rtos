@@ -64,6 +64,9 @@ uint8_t bt_hci_cmd_ogf_le_ocf_set_host_chan_classif(void *phci_cmd_param, uint8_
 uint8_t bt_hci_cmd_ogf_le_ocf_read_channel_map(void *phci_cmd_param, uint8_t *rsp);
 uint8_t bt_hci_cmd_ogf_le_ocf_read_remote_feature(void *phci_cmd_param, uint8_t *rsp);
 uint8_t bt_hci_cmd_ofg_le_ocf_le_encrypt(void *phci_cmd_param, uint8_t *rsp);
+uint8_t bt_hci_cmd_ogf_le_ocf_read_local_p256_public_key(void *phci_cmd_param, uint8_t *rsp);
+uint8_t bt_hci_cmd_ogf_le_ocf_generate_dhkey_v1(void *phci_cmd_param, uint8_t *rsp);
+uint8_t bt_hci_cmd_ogf_le_ocf_generate_dhkey_v2(void *phci_cmd_param, uint8_t *rsp);
 uint8_t bt_hci_cmd_ogf_le_ocf_enable_encryption(void *phci_cmd_param, uint8_t *rsp);
 uint8_t bt_hci_cmd_ogf_le_ocf_rand(void *phci_cmd_param, uint8_t *rsp);
 uint8_t bt_hci_cmd_ogf_le_ocf_ltk_req_reply(void *phci_cmd_param, uint8_t *rsp);
@@ -161,6 +164,8 @@ void bt_hci_evt_le_data_len_change(uint16_t conn_handle, uint16_t max_tx_octets,
 void bt_hci_evt_le_phy_update_complete(uint8_t status, uint16_t conn_handle, uint8_t tx_phy, uint8_t rx_phy);
 void bt_hci_evt_le_read_remote_features_complete(uint16_t conn_handle, void *features);
 void bt_hci_evt_le_ltk_req(uint16_t conn_handle, uint8_t *rand_ediv);
+void bt_hci_evt_le_read_local_p256_pub_key_complete(uint8_t status, uint8_t *public_key);
+void bt_hci_evt_le_generate_dhkey_complete(uint8_t status, uint8_t *dhkey);
 void bt_hci_evt_le_adv_set_terminated(uint8_t status, uint8_t adv_handle, uint16_t conn_handle, uint8_t num_cmpl_ext_adv_evts);
 void bt_hci_evt_le_scan_timeout(void);
 

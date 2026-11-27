@@ -15,6 +15,15 @@
 
 /************************************** Data Types *************************************/
 
+/** @addtogroup BT_Types BT Types
+ * @{
+ */
+/** @addtogroup BT_Mesh_Types BT Mesh Types
+ * @{
+ */
+/** @addtogroup BT_Mesh_Common_Types BT Mesh Common Types
+ * @{
+ */
 /**
  * @enum      rtk_bt_mesh_stack_act_t
  * @brief     BLE MESH stack action definition, the action code passed to the stack by the mesh common APIs.
@@ -603,7 +612,7 @@ typedef struct {
 } rtk_bt_mesh_stack_evt_dev_info_provision_adv_t;
 
 /**
- * @enum      proxy_adv_type_t
+ * @typedef   proxy_adv_type_t
  * @brief     BLE MESH Mesh Proxy Service advertising identification type definition.
  */
 enum {
@@ -1032,7 +1041,7 @@ typedef enum {
 #endif
 
 /**
- * @enum      rtk_bt_mesh_bearer_field_t
+ * @typedef   rtk_bt_mesh_bearer_field_t
  * @brief     BLE MESH bearer field definition, a bit field identifying a bearer or a combination of bearers.
  */
 enum {
@@ -1045,11 +1054,24 @@ enum {
 } _SHORT_ENUM_;
 typedef uint16_t rtk_bt_mesh_bearer_field_t;
 
-/********************************* Functions Declaration *******************************/
 /**
- * @defgroup  ble_mesh_common BT LE Mesh Common APIs
- * @brief     BT LE Mesh Common related function APIs
- * @ingroup   ble_mesh_api_group
+ * @}
+ */
+/**
+ * @}
+ */
+/**
+ * @}
+ */
+
+/********************************* Functions Declaration *******************************/
+/** @addtogroup BT_Functions BT Functions
+ * @{
+ */
+/** @addtogroup BT_Mesh_Functions BT Mesh Functions
+ * @{
+ */
+/** @addtogroup BT_Mesh_Common_Functions BT Mesh Common Functions
  * @{
  */
 
@@ -1319,6 +1341,12 @@ uint16_t rtk_bt_mesh_stack_retrans_param_set(rtk_bt_mesh_stack_set_retrans_param
 uint16_t rtk_bt_mesh_stack_set_tx_phy(rtk_bt_mesh_stack_act_set_tx_phy_t *tx_phy);
 #endif
 
+/**
+ * @}
+ */
+/**
+ * @}
+ */
 /**
  * @}
  */

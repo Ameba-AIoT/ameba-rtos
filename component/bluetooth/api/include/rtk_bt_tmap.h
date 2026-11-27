@@ -21,6 +21,15 @@ extern "C"
 
 #if defined(RTK_BLE_AUDIO_TMAP_SUPPORT) && RTK_BLE_AUDIO_TMAP_SUPPORT
 /************************************** Data Types *************************************/
+/** @addtogroup BT_Types BT Types
+ * @{
+ */
+/** @addtogroup BT_LE_Audio_Types BT LE Audio Types
+ * @{
+ */
+/** @addtogroup BT_TMAP_Types BT TMAP Types
+ * @{
+ */
 /**
  * @typedef   rtk_bt_le_audio_tmap_role_t
  * @brief     Bluetooth LE Audio TMAP role bit mask of a device.
@@ -36,7 +45,7 @@ typedef enum {
 } rtk_bt_le_audio_tmap_role_t;
 
 /**
- * @typedef   rtk_bt_le_audio_tmas_client_discovery_done_ind_t
+ * @struct    rtk_bt_le_audio_tmas_client_discovery_done_ind_t
  * @brief     Bluetooth LE Audio TMAS client discovery done indication.
  */
 typedef struct {
@@ -51,7 +60,7 @@ typedef struct {
 } rtk_bt_le_audio_tmas_client_discovery_done_ind_t;
 
 /**
- * @typedef   rtk_bt_le_audio_tmas_read_role_result_t
+ * @struct    rtk_bt_le_audio_tmas_read_role_result_t
  * @brief     Bluetooth LE Audio TMAS client read TMAP role result.
  */
 typedef struct {
@@ -61,11 +70,24 @@ typedef struct {
 	uint16_t cause;          /*!< Result code of the read operation. */
 } rtk_bt_le_audio_tmas_read_role_result_t;
 
-/********************************* Functions Declaration *******************************/
 /**
- * @defgroup  bt_tmap BT TMAP APIs
- * @brief     BT TMAP related function APIs.
- * @ingroup   bt_le_audio
+ * @}
+ */
+/**
+ * @}
+ */
+/**
+ * @}
+ */
+
+/********************************* Functions Declaration *******************************/
+/** @addtogroup BT_Functions BT Functions
+ * @{
+ */
+/** @addtogroup BT_LE_Audio_Functions BT LE Audio Functions
+ * @{
+ */
+/** @addtogroup BT_TMAP_Functions BT TMAP Functions
  * @{
  */
 
@@ -79,6 +101,12 @@ typedef struct {
  */
 uint16_t rtk_bt_le_audio_tmas_client_read_role(uint16_t conn_handle);
 
+/**
+ * @}
+ */
+/**
+ * @}
+ */
 /**
  * @}
  */

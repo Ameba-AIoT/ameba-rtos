@@ -26,6 +26,13 @@ extern "C"
 #include <rtk_bt_mesh_def.h>
 #endif
 
+/** @addtogroup BT_Constants BT Constants
+ * @{
+ */
+/** @addtogroup BT_APP_Config_Constants BT APP Config Constants
+ * @{
+ */
+
 /**
  * @def       RTK_BT_LE_GAP_IRK_LEN
  * @brief     Length of the Identity Resolving Key (IRK).
@@ -33,7 +40,21 @@ extern "C"
 #define RTK_BT_LE_GAP_IRK_LEN       16
 
 /**
- * @typedef   rtk_bt_app_conf_t
+ * @}
+ */
+/**
+ * @}
+ */
+
+/** @addtogroup BT_Types BT Types
+ * @{
+ */
+/** @addtogroup BT_APP_Config_Types BT APP Config Types
+ * @{
+ */
+
+/**
+ * @struct   rtk_bt_app_conf_t
  * @brief     Default application configuration.
  */
 typedef struct {
@@ -66,13 +87,13 @@ typedef struct {
 #if defined(RTK_BLE_SET_TX_QUEUE_NUM) && RTK_BLE_SET_TX_QUEUE_NUM
 	uint16_t max_stack_tx_pending_num;                /*!< Maximum number of packets pending in the stack TX queue.
                                                        *   Range: 2 to 15.
-                                                       *   0: @ref RTK_BT_GATT_DEFAULT_CREDITS is used. */
+                                                       *   0: RTK_BT_GATT_DEFAULT_CREDITS is used. */
 #endif
 	bool     irk_auto_gen;                            /*!< Whether the stack automatically generates the local IRK.
                                                        *   - true: generate a local IRK and save it to FTL on first use, then load it from FTL afterwards.
-                                                       *   - false: use the value set in @ref irk. */
+                                                       *   - false: use the value set in #irk. */
 	uint8_t  irk[RTK_BT_LE_GAP_IRK_LEN];              /*!< Local IRK data.
-                                                       *   Only used when @ref irk_auto_gen is false. */
+                                                       *   Only used when #irk_auto_gen is false. */
 	bool     user_def_service;                        /*!< Whether the GAP and GATT services are registered by the application.
                                                        *   - true: the application registers the GAP and GATT services.
                                                        *   - false: the built-in services of the stack are used. */
@@ -102,6 +123,13 @@ typedef struct {
 	rtk_bt_mesh_app_conf_t     bt_mesh_app_conf;      /*!< Default configuration of BT Mesh. */
 #endif
 } rtk_bt_app_conf_t;
+
+/**
+ * @}
+ */
+/**
+ * @}
+ */
 
 #ifdef __cplusplus
 }

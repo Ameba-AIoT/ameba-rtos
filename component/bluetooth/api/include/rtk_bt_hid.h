@@ -14,9 +14,27 @@ extern "C"
 {
 #endif
 
+/** @addtogroup BT_Constants BT Constants
+ * @{
+ */
+/** @addtogroup BT_HID_Constants BT HID Constants
+ * @{
+ */
 #define RTK_BT_HID_MAX_DESCRIPTOR_LENGTH 400       /*!< HID maximum descriptor length. */
 #define RTK_BT_HID_MAX_INPUT_DATA_LENGTH 20        /*!< HID maximum input data length. */
+/**
+ * @}
+ */
+/**
+ * @}
+ */
 
+/** @addtogroup BT_Types BT Types
+ * @{
+ */
+/** @addtogroup BT_HID_Types BT HID Types
+ * @{
+ */
 /**
  * @typedef   rtk_bt_hid_role_t
  * @brief     Bluetooth BR/EDR HID device role.
@@ -66,11 +84,18 @@ typedef struct {
 	uint16_t cause;        /*!< Disconnection cause code. */
 } rtk_bt_hid_disconn_ind_t;
 
-/********************************* Functions Declaration *******************************/
 /**
- * @defgroup  bt_hid BT HID APIs
- * @brief     BT HID related function APIs
- * @ingroup   BT_APIs
+ * @}
+ */
+/**
+ * @}
+ */
+
+/********************************* Functions Declaration *******************************/
+/** @addtogroup BT_Functions BT Functions
+ * @{
+ */
+/** @addtogroup BT_HID_Functions BT HID Functions
  * @{
  */
 
@@ -128,6 +153,9 @@ uint16_t rtk_bt_hid_get_report_rsp(uint8_t *bd_addr);
  */
 uint16_t rtk_bt_hid_input_data_send(uint8_t *bd_addr, uint8_t *data, uint32_t len);
 
+/**
+ * @}
+ */
 /**
  * @}
  */

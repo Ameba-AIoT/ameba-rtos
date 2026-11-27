@@ -13,12 +13,40 @@
 
 #include <rtk_bt_mesh_generic_onoff_model.h>
 
+/** @addtogroup BT_Constants BT Constants
+ * @{
+ */
+/** @addtogroup BT_Mesh_Constants BT Mesh Constants
+ * @{
+ */
+/** @addtogroup BT_Mesh_Generic_Model_Constants BT Mesh Generic Model Constants
+ * @{
+ */
 /**
  * @def       GENERIC_PROPERTY_DATA_MAX_LEN
  * @brief     Maximum length in bytes of the raw value of a Generic property, and maximum number of Generic property IDs that can be reported.
  */
 #define GENERIC_PROPERTY_DATA_MAX_LEN    0x10
 
+/**
+ * @}
+ */
+/**
+ * @}
+ */
+/**
+ * @}
+ */
+
+/** @addtogroup BT_Types BT Types
+ * @{
+ */
+/** @addtogroup BT_Mesh_Types BT Mesh Types
+ * @{
+ */
+/** @addtogroup BT_Mesh_Generic_Model_Types BT Mesh Generic Model Types
+ * @{
+ */
 /************************************ Generic Level ************************************/
 /**************************************** Client ***************************************/
 /**
@@ -1476,11 +1504,24 @@ typedef struct {
                                  *   The application owns the buffer and it must stay valid while the database is used. */
 } rtk_bt_mesh_generic_property_server_db_set_t;
 
-/********************************* Functions Declaration *******************************/
 /**
- * @defgroup  ble_mesh_generic_model BT LE Mesh Generic Model APIs
- * @brief     BT LE Mesh Generic Model related function APIs
- * @ingroup   ble_mesh_api_group
+ * @}
+ */
+/**
+ * @}
+ */
+/**
+ * @}
+ */
+
+/********************************* Functions Declaration *******************************/
+/** @addtogroup BT_Functions BT Functions
+ * @{
+ */
+/** @addtogroup BT_Mesh_Functions BT Mesh Functions
+ * @{
+ */
+/** @addtogroup BT_Mesh_Generic_Model_Functions BT Mesh Generic Model Functions
  * @{
  */
 
@@ -1820,6 +1861,12 @@ uint16_t rtk_bt_mesh_generic_property_client_admin_db_set(rtk_bt_mesh_generic_pr
  */
 uint16_t rtk_bt_mesh_generic_property_client_manu_db_set(rtk_bt_mesh_generic_property_server_db_set_t *db_set);
 
+/**
+ * @}
+ */
+/**
+ * @}
+ */
 /**
  * @}
  */

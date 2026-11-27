@@ -25,7 +25,7 @@ static int usbd_whc_set_config(usb_dev_t *dev, u8 config);
 static void usbd_whc_clear_config(usb_dev_t *dev, u8 config);
 static int usbd_whc_clear_wifi_config(usb_dev_t *dev, u8 config);
 static int usbd_whc_setup(usb_dev_t *dev, usb_setup_req_t *req);
-static u16 usbd_whc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16 buf_len);
+static u16 usbd_whc_get_desc(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16 buf_len);
 static int usbd_whc_handle_ep0_data_out(usb_dev_t *dev);
 static int usbd_whc_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, int status);
 static int usbd_whc_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len);
@@ -114,7 +114,7 @@ static const u8 usbd_whc_wifi_only_mode_full_speed_config_desc[] = {
 
 /* WHC Class Driver */
 static const usbd_class_driver_t usbd_whc_driver = {
-	.get_descriptor = usbd_whc_get_descriptor,
+	.get_desc = usbd_whc_get_desc,
 	.set_config = usbd_whc_set_config,
 	.clear_config = usbd_whc_clear_config,
 	.setup = usbd_whc_setup,
@@ -501,7 +501,7 @@ static int usbd_whc_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len)
 
 	if ((len == 0) || (rx_cb_valid == 0U) ||
 		((ep_addr != USBD_WHC_WIFI_EP_BULK_OUT_1) && (ep_addr != USBD_WHC_WIFI_EP_BULK_OUT_2))) {
-		usbd_whc_receive_data(ep_addr, ep->xfer_buf, ep->xfer_len, userdata);
+		usbd_whc_receive(ep_addr, ep->xfer_buf, ep->xfer_len, userdata);
 	}
 
 	return RTK_SUCCESS;
@@ -516,7 +516,7 @@ static int usbd_whc_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len)
   * @param  buf: Poniter to Buffer
   * @retval Descriptor length
   */
-static u16 usbd_whc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16 buf_len)
+static u16 usbd_whc_get_desc(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16 buf_len)
 {
 	const u8 *desc = NULL;
 	u16 len = 0;
@@ -544,7 +544,7 @@ static u16 usbd_whc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 		break;
 
 	case USB_DESC_TYPE_STRING:
-		/* Every string this class owns is registered with usbd_add_string() and answered by
+		/* Every string this class owns is registered with usbd_add_str() and answered by
 		   the core, which only forwards an index it does not know, e.g. the MS OS string */
 		USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_GET_DESC, 0);
 		break;
@@ -656,7 +656,7 @@ int usbd_whc_init(const usbd_whc_cb_t *cb)
 		}
 	}
 
-	ret = usbd_register_class(&usbd_whc_driver);
+	ret = usbd_class_register(&usbd_whc_driver);
 	if (ret != RTK_SUCCESS) {
 		goto init_clean_cb;
 	}
@@ -685,7 +685,7 @@ void usbd_whc_deinit(void)
 
 	/* Unregister first: no class callback can run afterwards, so releasing cb and the pending
 	 * control request below cannot race an EP0 OUT completion in ISR context */
-	ret = usbd_unregister_class();
+	ret = usbd_class_unregister();
 	if (ret != RTK_SUCCESS) {
 		return;
 	}
@@ -700,7 +700,7 @@ void usbd_whc_deinit(void)
 	}
 }
 
-int usbd_whc_transmit_ctrl_data(u8 *buf, u16 len)
+int usbd_whc_ctrl_transmit(u8 *buf, u16 len)
 {
 	usbd_whc_dev_t *idev = &usbd_whc_dev;
 	usb_dev_t *dev = idev->dev;
@@ -720,7 +720,7 @@ int usbd_whc_transmit_ctrl_data(u8 *buf, u16 len)
 	return usbd_ep_transmit(dev, ep0_in);
 }
 
-int usbd_whc_transmit_data(u8 ep_addr, u8 *buf, u32 len, void *userdata)
+int usbd_whc_transmit(u8 ep_addr, u8 *buf, u32 len, void *userdata)
 {
 	int ret = RTK_SUCCESS;
 	u8 claimed;
@@ -782,7 +782,7 @@ int usbd_whc_transmit_data(u8 ep_addr, u8 *buf, u32 len, void *userdata)
 	return ret;
 }
 
-int usbd_whc_receive_data(u8 ep_addr, u8 *buf, u32 len, void *userdata)
+int usbd_whc_receive(u8 ep_addr, u8 *buf, u32 len, void *userdata)
 {
 	u8 num = USB_EP_NUM(ep_addr);
 	usbd_whc_dev_t *idev = &usbd_whc_dev;

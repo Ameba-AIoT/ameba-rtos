@@ -17,6 +17,7 @@ import threading
 from copy import deepcopy
 
 from base import *
+from base import port_scanner
 import version_info
 
 MinSupportedDeviceProfileMajorVersion = 1
@@ -178,12 +179,10 @@ def flash_process_entry(profile_info, serial_port, serial_baudrate, image_dir, s
     if active_handlers is not None:
         with active_handlers_lock:
             active_handlers[str(serial_port)] = ameba
-    if download:
-        # download
-        if not ameba.check_protocol_for_download():
-            ret = ErrType.SYS_PROTO
-            sys_exit(logger, False, ret)
 
+    def prepare_with_flash_size_check(ameba, operation):
+        # NOR: check the SPIC address mode in OTP against the flash size, and reburn
+        # if it was programmed (by check_supported_flash_size() or set_boot_flash_type())
         if memory_type == MemoryInfo.MEMORY_TYPE_NOR:
             ret, is_reburn = ameba.check_supported_flash_size()
             if ret != ErrType.OK:
@@ -209,17 +208,43 @@ def flash_process_entry(profile_info, serial_port, serial_baudrate, image_dir, s
                 logger.info(f"Re-prepare for reburn...")
                 ret = ameba.prepare()
                 if ret != ErrType.OK:
-                    logger.error("Download prepare fail")
+                    logger.error(f"{operation} prepare fail")
                     sys_exit(logger, False, ret)
             else:
                 ret = ameba.show_device_info()
                 if ret != ErrType.OK:
                     sys_exit(logger, False, ret)
         else:
-            logger.info(f"Prepare for download...")
+            logger.info(f"Prepare for {operation.lower()}...")
             ret = ameba.prepare()
             if ret != ErrType.OK:
-                logger.error("Download prepare fail")
+                logger.error(f"{operation} prepare fail")
+                sys_exit(logger, False, ret)
+        return ameba
+
+    def exit_with_flash_lock_restored(flash_status, ret):
+        # Restore the block protection before reporting the failure: a retry would find
+        # the flash unlocked, so nothing would restore it any more
+        ameba.restore_flash_lock(flash_status)
+        sys_exit(logger, False, ret)
+
+    if download:
+        # download
+        if not ameba.check_protocol_for_download():
+            ret = ErrType.SYS_PROTO
+            sys_exit(logger, False, ret)
+
+        ameba = prepare_with_flash_size_check(ameba, "Download")
+
+        # Verify the images before KEY_PROG: the key may be locked in OTP for good,
+        # so do not program it for a download that cannot run
+        ret = ameba.verify_images()
+        if ret != ErrType.OK:
+            sys_exit(logger, False, ret)
+
+        if not ameba.is_all_ram:
+            ret = ameba.post_verify_images()
+            if ret != ErrType.OK:
                 sys_exit(logger, False, ret)
 
         # Merged single-session KEY_PROG: program the key(s) in the SAME floader
@@ -235,34 +260,26 @@ def flash_process_entry(profile_info, serial_port, serial_baudrate, image_dir, s
                     logger.error(f"Program key at {hex(spec['address'])} fail")
                     sys_exit(logger, False, ret)
 
-        ret = ameba.verify_images()
-        if ret != ErrType.OK:
-            sys_exit(logger, False, ret)
+        flash_status = FlashBPS()
+        try:
+            if not ameba.is_all_ram:
+                ret = ameba.check_and_process_flash_lock(flash_status)
+                if ret != ErrType.OK:
+                    logger.error("Download image fail")
+                    exit_with_flash_lock_restored(flash_status, ret)
 
-        if not ameba.is_all_ram:
-            ret = ameba.post_verify_images()
-            if ret != ErrType.OK:
-                sys_exit(logger, False, ret)
-
-        if not ameba.is_all_ram:
-            flash_status = FlashBPS()
-            ret = ameba.check_and_process_flash_lock(flash_status)
+            logger.info(f"Image download start...")  # customized, do not modify
+            ret = ameba.download_images()
             if ret != ErrType.OK:
                 logger.error("Download image fail")
-                sys_exit(logger, False, ret)
+                exit_with_flash_lock_restored(flash_status, ret)
 
-        logger.info(f"Image download start...")  # customized, do not modify
-        ret = ameba.download_images()
-        if ret != ErrType.OK:
-            logger.error("Download image fail")
-            sys_exit(logger, False, ret)
-
-        if (not ameba.is_all_ram) and flash_status.need_unlock:
-            logger.info("Restore the flash block protection...")
-            ret = ameba.lock_flash(flash_status.protection)
+            ret = ameba.restore_flash_lock(flash_status)
             if ret != ErrType.OK:
-                logger.error(f"Fail to restore the flash block protection")
                 sys_exit(logger, False, ret)
+        finally:
+            # Exception raised in between
+            ameba.restore_flash_lock(flash_status)
 
         # Enable security features last: the write is irreversible, so it must not
         # happen until the firmware it protects is verified on flash. Enabling RSIP
@@ -306,16 +323,30 @@ def flash_process_entry(profile_info, serial_port, serial_baudrate, image_dir, s
                 sys_exit(logger, False, ret)
     else:
         # erase
-        ret = ameba.prepare()
-        if ret != ErrType.OK:
-            logger.error("Erase prepare fail")
-            sys_exit(logger, False, ret)
+        ameba.enable_auto_flash_type_detect()
+        ameba = prepare_with_flash_size_check(ameba, "Erase")
 
         if chip_erase:
-            ret = ameba.erase_flash_chip()
-            if ret != ErrType.OK:
-                logger.error("Chip erase fail")
-                sys_exit(logger, False, ret)
+            # Chip erase is ignored by the flash while any block is protected,
+            # so remove the protection first and restore it afterwards
+            flash_status = FlashBPS()
+            try:
+                ret = ameba.check_and_process_flash_lock(flash_status)
+                if ret != ErrType.OK:
+                    logger.error("Chip erase fail")
+                    exit_with_flash_lock_restored(flash_status, ret)
+
+                ret = ameba.erase_flash_chip()
+                if ret != ErrType.OK:
+                    logger.error("Chip erase fail")
+                    exit_with_flash_lock_restored(flash_status, ret)
+
+                ret = ameba.restore_flash_lock(flash_status)
+                if ret != ErrType.OK:
+                    sys_exit(logger, False, ret)
+            finally:
+                # Exception raised in between
+                ameba.restore_flash_lock(flash_status)
             sys_exit(logger, True, ret)
 
         ret = ameba.validate_config_for_erase()
@@ -326,24 +357,25 @@ def flash_process_entry(profile_info, serial_port, serial_baudrate, image_dir, s
         if ret != ErrType.OK:
             sys_exit(logger, False, ret)
 
-        if (not profile_info.is_ram_address(memory_info.start_address)):
-            flash_status = FlashBPS()
-            ret = ameba.check_and_process_flash_lock(flash_status)
-            if ret != ErrType.OK:
-                logger.error("Erase fail")
-                sys_exit(logger, False, ret)
+        flash_status = FlashBPS()
+        try:
+            if (not profile_info.is_ram_address(memory_info.start_address)):
+                ret = ameba.check_and_process_flash_lock(flash_status)
+                if ret != ErrType.OK:
+                    logger.error("Erase fail")
+                    exit_with_flash_lock_restored(flash_status, ret)
 
-        ret = ameba.erase_flash()
-        if ret != ErrType.OK:
-            logger.error(f"Erase {memory_type} failed")
-            sys_exit(logger, False, ret)
-
-        if (not profile_info.is_ram_address(memory_info.start_address)) and flash_status.need_unlock:
-            logger.info("Restore the flash block protection...")
-            ret = ameba.lock_flash(flash_status.protection)
+            ret = ameba.erase_flash()
             if ret != ErrType.OK:
-                logger.error(f"Fail to restore the flash block protection")
+                logger.error(f"Erase {memory_type} failed")
+                exit_with_flash_lock_restored(flash_status, ret)
+
+            ret = ameba.restore_flash_lock(flash_status)
+            if ret != ErrType.OK:
                 sys_exit(logger, False, ret)
+        finally:
+            # Exception raised in between
+            ameba.restore_flash_lock(flash_status)
 
     ameba.clean_up()
 
@@ -385,6 +417,18 @@ def flash_thread_runner(result_holder, index, port_name, logger, entry_args,
             watchdog.finish(port_name)
 
 
+def print_serial_ports(usb):
+    # Same filter as the GUI Scan button and its USB Download checkbox: USB or UART ports
+    port_type = port_scanner.PORT_TYPE_USB if usb else port_scanner.PORT_TYPE_UART
+    ports = port_scanner.scan_serial_ports(port_type)
+    if not ports:
+        print(f"No {port_type} port found")
+        return
+    print(f"Found {len(ports)} {port_type} port(s):")
+    for port in ports:
+        print(f"  {port_scanner.format_port_label(port)}")
+
+
 def main(argc, argv):
     parser = argparse.ArgumentParser(description=None)
     parser.add_argument('-d', '--download', action='store_true', help='download images')
@@ -402,6 +446,9 @@ def main(argc, argv):
     parser.add_argument('-v', '--version', action='version', version=f'%(prog)s {version_info.version}')
 
     parser.add_argument('--chip-erase', action='store_true', help='chip erase')
+    parser.add_argument('--scan', action='store_true', help='scan and print serial ports of current PC, '
+                             'UART ports by default, USB ports with --usb')
+    parser.add_argument('--usb', action='store_true', help='used with --scan to list USB ports instead of UART ports')
     parser.add_argument('--log-level', default='info', help='log level')
     parser.add_argument('--log-file', type=str,
                         help='append the default log to the specified file when the process exits')
@@ -450,6 +497,10 @@ def main(argc, argv):
                         help='override Settings.json WatchdogTimeoutInSeconds; 0 disables it')
 
     args = parser.parse_args()
+    if args.scan:
+        print_serial_ports(args.usb)
+        sys.exit(0)
+
     download = args.download
     profile = args.profile
     image = args.image
@@ -539,7 +590,9 @@ def main(argc, argv):
             sys.exit(1)
         profile_info = RtkDeviceProfile(**profile_json)
         ver = profile_info.get_version()
-        if ver.major >= MinSupportedDeviceProfileMajorVersion and ver.minor >= MinSupportedDeviceProfileMinorVersion and profile_info.device_id != 0:
+        # Compare (major, minor) as a whole, or e.g. 2.0 would be rejected for minor 0 < 1
+        if (ver.major, ver.minor) >= (MinSupportedDeviceProfileMajorVersion, MinSupportedDeviceProfileMinorVersion) \
+                and profile_info.device_id != 0:
             logger.info(f"Device profile {profile} loaded")
         else:
             logger.error(f"Fail to load device profile {profile}, unsupported version {ver.__repr__()}")
@@ -574,6 +627,9 @@ def main(argc, argv):
     # is self-contained and must not read or update Settings.json.
     setting_path = os.path.realpath(os.path.join(RtkUtils.get_executable_root_path(), setting_file))
     logger.info(f"Settings path: {setting_path}")
+    # Only save the settings back when they were loaded: saving the defaults used after
+    # a load failure would overwrite the whole file, the user settings would be lost
+    settings_loaded = False
     try:
         if os.path.exists(setting_path):
             dt = JsonUtils.load_from_file(setting_path, need_decrypt=False)
@@ -581,8 +637,10 @@ def main(argc, argv):
         else:
             logger.debug(f"{setting_file} not exists!")
             settings = RtSettings(**{})
+        settings_loaded = True
     except Exception as err:
         logger.error(f"Load settings exception: {err}")
+        logger.warning(f"Run with default settings, {setting_file} is kept unchanged")
         settings = RtSettings(**{})
 
     watchdog_timeout = (settings.watchdog_timeout_in_second
@@ -697,11 +755,21 @@ def main(argc, argv):
                 "enc_data": parse_hex_bytes("key-enc-data", enc_list[i].strip() if i < len(enc_list) else None),
             })
 
+    def log_auto_flash_type_detect():
+        if settings.auto_flash_type_detect and not Ameba.is_auto_flash_type_detect_supported(profile_info):
+            logger.info(f"Auto flash type detect: not supported by {profile_info.device_name}, ignored")
+        elif settings.auto_flash_type_detect and \
+                (memory_type not in (MemoryInfo.MEMORY_TYPE_NOR, MemoryInfo.MEMORY_TYPE_NAND)):
+            logger.info(f"Auto flash type detect: not needed for RAM, ignored")
+        else:
+            logger.info(f"Auto flash type detect: {'enabled' if settings.auto_flash_type_detect else 'disabled'}")
+
     memory_info = None
     images_info = None
     if download:
         # download
         logger.info(f"Boot guard burn: {'disabled' if settings.dis_boot_guard_burn else 'enabled'}")
+        log_auto_flash_type_detect()
         if (image is None) and (image_dir is None) and (partition_table is None):
             logger.error('Invalid arguments, no image or image_dir input')
             parser.print_usage()
@@ -787,6 +855,7 @@ def main(argc, argv):
         pass
     else:
         # erase
+        log_auto_flash_type_detect()
         if all([chip_erase, erase]):
             logger.warning(f"Both chip erase and erase are enabled, do chip erase only")
         if not chip_erase:
@@ -816,6 +885,10 @@ def main(argc, argv):
                 if size is None:
                     logger.error(f"Erase size is required")
                     sys.exit(1)
+            # 0 would erase nothing yet report PASS, a negative size is sent wrapped around
+            if (size is not None) and (size <= 0):
+                logger.error(f"Erase size shall be greater than 0: {size}")
+                sys.exit(1)
 
             if end_addr:
                 try:
@@ -839,7 +912,11 @@ def main(argc, argv):
                 logger.warning("Memory type is required for chip erase")
                 sys.exit(1)
             if memory_type not in (MemoryInfo.MEMORY_TYPE_NOR, MemoryInfo.MEMORY_TYPE_NAND):
-                logger.warning("Memory type should be 'nor' or 'nand' for chip erase")
+                # Chip erase is defined for flash only, never fall back to a NOR chip erase for RAM.
+                # A RAM range is erased by --erase -m ram, which memsets it only when ProgramConfig1
+                # bit4 is set (with the value of bits 23~16), otherwise it is skipped
+                logger.error("Memory type should be 'nor' or 'nand' for chip erase")
+                sys.exit(1)
         else:
             logger.info(f"Chip erase: False")
 
@@ -852,10 +929,11 @@ def main(argc, argv):
         # CLI arguments are runtime-only — do NOT overwrite profile, port, baudrate,
         # image, image_dir, address, chip_erase, or post_process in Settings.json
         # to avoid polluting GUI preferences with one-off CLI choices.
-        try:
-            JsonUtils.save_to_file(setting_path, settings.to_dict())
-        except Exception as err:
-            logger.debug(f"save {setting_file} exception: {err}")
+        if settings_loaded:
+            try:
+                JsonUtils.save_to_file(setting_path, settings.to_dict())
+            except Exception as err:
+                logger.debug(f"save {setting_file} exception: {err}")
 
         # --no-reset: override post_process at runtime without persisting to disk.
         # When not passed, post_process keeps whatever value is in Settings.json

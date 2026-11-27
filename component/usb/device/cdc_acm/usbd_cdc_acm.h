@@ -173,10 +173,10 @@ typedef struct {
 	usb_setup_req_t ctrl_req;   /**< Stores the current control request (byte-packed). */
 	u8 ctrl_req_pending;        /**< 1 if ctrl_req is waiting for its EP0 OUT data stage. */
 	u8 from_composite;          /**< Flag indicating if part of a composite device. */
-	u8 if_base;                 /**< First interface number of this class; 0 in standalone mode
+	u8 itf_base;                 /**< First interface number of this class; 0 in standalone mode
 	                                 unless the composite framework rebases it via
-	                                 set_interface_base(). */
-	u8 itf_str_idx;             /**< iInterface string index from usbd_add_string(), 0 for none. */
+	                                 set_itf_base(). */
+	u8 itf_str_idx;             /**< iInterface string index from usbd_add_str(), 0 for none. */
 } usbd_cdc_acm_dev_t;
 
 /** @} End of Device_CDC_ACM_Types group */

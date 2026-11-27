@@ -61,7 +61,7 @@
 #define VENDOR_XFER_THREAD_PRIORITY             6
 
 // Thread stack sizes
-/* Sized for usbd_get_uuid_sn(): reading the chip UUID costs about 4KB of stack on some SoCs.
+/* Sized for usbd_get_uuid_sn_str(): reading the chip UUID costs about 4KB of stack on some SoCs.
  * 1024 is enough for an application that does not call it. */
 #define VENDOR_INIT_THREAD_STACK_SIZE           6144U
 #define VENDOR_HOTPLUG_THREAD_STACK_SIZE        1024U
@@ -319,7 +319,7 @@ static int vendor_cb_intr_received(u8 *buf, u32 len)
 	rtos_sema_give(vendor_intr_async_xfer_sema);
 	return RTK_SUCCESS;
 #else
-	return usbd_vendor_transmit_intr_data(buf, len);
+	return usbd_vendor_intr_transmit(buf, len);
 #endif // VENDOR_INTR_ASYNC_XFER
 }
 
@@ -342,7 +342,7 @@ static void example_usbd_vendor_intr_xfer_thread(void *param)
 			}
 			rtos_mutex_take(vendor_xfer_lock, RTOS_MAX_TIMEOUT);
 			if ((vendor_stack_ready != 0U) && (vendor_intr_tx_buf != NULL) && (vendor_intr_tx_len != 0)) {
-				usbd_vendor_transmit_intr_data(vendor_intr_tx_buf, vendor_intr_tx_len);
+				usbd_vendor_intr_transmit(vendor_intr_tx_buf, vendor_intr_tx_len);
 			}
 			rtos_mutex_give(vendor_xfer_lock);
 		}
@@ -369,7 +369,7 @@ static int vendor_cb_isoc_received(u8 *buf, u32 len)
 	rtos_sema_give(vendor_isoc_async_xfer_sema);
 	return RTK_SUCCESS;
 #else
-	return usbd_vendor_transmit_isoc_data(buf, len);
+	return usbd_vendor_isoc_transmit(buf, len);
 #endif // VENDOR_ISOC_ASYNC_XFER
 }
 
@@ -390,7 +390,7 @@ static void example_usbd_vendor_isoc_xfer_thread(void *param)
 			}
 			rtos_mutex_take(vendor_xfer_lock, RTOS_MAX_TIMEOUT);
 			if ((vendor_stack_ready != 0U) && (vendor_isoc_tx_buf != NULL) && (vendor_isoc_tx_len != 0)) {
-				usbd_vendor_transmit_isoc_data(vendor_isoc_tx_buf, vendor_isoc_tx_len);
+				usbd_vendor_isoc_transmit(vendor_isoc_tx_buf, vendor_isoc_tx_len);
 			}
 			rtos_mutex_give(vendor_xfer_lock);
 		}
@@ -416,7 +416,7 @@ static int vendor_cb_bulk_received(u8 *buf, u32 len)
 	rtos_sema_give(vendor_bulk_async_xfer_sema);
 	return RTK_SUCCESS;
 #else
-	return usbd_vendor_transmit_bulk_data(buf, len);
+	return usbd_vendor_bulk_transmit(buf, len);
 #endif // VENDOR_BULK_ASYNC_XFER
 }
 
@@ -437,7 +437,7 @@ static void example_usbd_vendor_bulk_xfer_thread(void *param)
 			}
 			rtos_mutex_take(vendor_xfer_lock, RTOS_MAX_TIMEOUT);
 			if ((vendor_stack_ready != 0U) && (vendor_bulk_tx_buf != NULL) && (vendor_bulk_tx_len != 0)) {
-				usbd_vendor_transmit_bulk_data(vendor_bulk_tx_buf, vendor_bulk_tx_len);
+				usbd_vendor_bulk_transmit(vendor_bulk_tx_buf, vendor_bulk_tx_len);
 			}
 			rtos_mutex_give(vendor_xfer_lock);
 		}
@@ -637,7 +637,7 @@ static int vendor_start(void)
 	   because reading the chip UUID needs about 4KB of stack on some SoCs, which the core
 	   cannot impose on every caller. Drop these three lines to report no serial number,
 	   which is what the other examples do. */
-	if (usbd_get_uuid_sn(vendor_sn, sizeof(vendor_sn)) != 0U) {
+	if (usbd_get_uuid_sn_str(vendor_sn, sizeof(vendor_sn)) != 0U) {
 		vendor_cfg.info.sn_str = vendor_sn;
 	}
 
@@ -747,7 +747,7 @@ static void example_usbd_vendor_thread(void *param)
 
 /**
   * @brief  Start the vendor device, used by the USB app manager
-  * @note   Task context only, the caller needs about 4KB of stack for usbd_get_uuid_sn()
+  * @note   Task context only, the caller needs about 4KB of stack for usbd_get_uuid_sn_str()
   * @retval RTK_SUCCESS, -RTK_ERR_BUSY if already running, or the init error
   */
 int example_usbd_vendor_start(void)

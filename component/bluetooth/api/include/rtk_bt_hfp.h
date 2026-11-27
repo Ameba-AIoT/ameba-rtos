@@ -14,6 +14,12 @@ extern "C"
 {
 #endif
 
+/** @addtogroup BT_Constants BT Constants
+ * @{
+ */
+/** @addtogroup BT_HFP_Constants BT HFP Constants
+ * @{
+ */
 #define RTK_BT_RFC_HFP_CHANN_NUM               1          /*!< RFCOMM server channel number used by the HFP HF role. */
 #define RTK_BT_RFC_HSP_CHANN_NUM               2          /*!< RFCOMM server channel number used by the HSP HS role. */
 #define RTK_BT_RFC_HSP_AG_CHANN_NUM            22         /*!< RFCOMM server channel number used by the HSP AG role. */
@@ -56,7 +62,19 @@ extern "C"
 #define RTK_BT_HFP_DEMO_DEFAULT_BATTERY_POWER_LEVEL 50    /*!< Default battery level reported by the demo application. Range: 0 to 100. */
 #define RTK_BT_DEFAULT_SPEAKER_GAIN 14                    /*!< Default speaker gain level reported by the demo application. Range: 0 to 15. */
 #define RTK_BT_DEFAULT_MICROPHONE_GAIN 14                 /*!< Default microphone gain level reported by the demo application. Range: 0 to 15. */
+/**
+ * @}
+ */
+/**
+ * @}
+ */
 /************************************** Data Types *************************************/
+/** @addtogroup BT_Types BT Types
+ * @{
+ */
+/** @addtogroup BT_HFP_Types BT HFP Types
+ * @{
+ */
 
 /**
  * @typedef   rtk_bt_hfp_role_t
@@ -456,11 +474,18 @@ typedef struct {
 	uint16_t len;                                      /*!< Length of the AT command in bytes. */
 } rtk_bt_hfp_unknown_at_event_t;
 
-/********************************* Functions Declaration *******************************/
 /**
- * @defgroup  bt_hfp BT HFP APIs
- * @brief     BT HFP related function APIs
- * @ingroup   BT_APIs
+ * @}
+ */
+/**
+ * @}
+ */
+
+/********************************* Functions Declaration *******************************/
+/** @addtogroup BT_Functions BT Functions
+ * @{
+ */
+/** @addtogroup BT_HFP_Functions BT HFP Functions
  * @{
  */
 
@@ -630,6 +655,9 @@ uint16_t rtk_bt_hfp_microphone_gain_report(uint8_t *bd_addr, uint8_t gain);
  */
 uint16_t rtk_bt_hfp_send_vnd_at_cmd_req(uint8_t *bd_addr, const char *at_cmd, uint16_t len);
 
+/**
+ * @}
+ */
 /**
  * @}
  */

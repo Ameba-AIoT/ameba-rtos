@@ -43,7 +43,7 @@ typedef enum {
 } rtk_bt_vendor_conn_tx_power_is_reset_t;
 
 /**
- * @typedef   rtk_bt_vendor_tx_power_param_t
+ * @struct    rtk_bt_vendor_tx_power_param_t
  * @brief     Set ADV or connect TX power parameter.
  */
 typedef struct {
@@ -53,13 +53,13 @@ typedef struct {
 	union {
 		struct adv_tx_power_param {
 			rtk_bt_vendor_adv_tx_power_type_t type;             /*!< Advertising TX power type. */
-		} adv_tx_power;                                         /*!< Advertising TX power parameter, used when tx_power_type is 0. */
+		} adv_tx_power;                                         /*!< Advertising TX power parameter, used when #tx_power_type is 0. */
 
 		struct conn_tx_power_param {
 			uint16_t conn_handle;                               /*!< Connection handle of the ACL connection to set the TX power.
                                                                  *   Range: 0x0000 to 0x0EFF. */
 			rtk_bt_vendor_conn_tx_power_is_reset_t is_reset;    /*!< Whether to use the user TX power or reset it to the original value. */
-		} conn_tx_power;                                        /*!< Connection TX power parameter, used when tx_power_type is 1. */
+		} conn_tx_power;                                        /*!< Connection TX power parameter, used when #tx_power_type is 1. */
 	};
 	uint8_t tx_gain;                                            /*!< TX power gain index. */
 } rtk_bt_vendor_tx_power_param_t;
@@ -197,13 +197,6 @@ typedef enum {
 	SUB_CMD_FREE_RUN_CLOCK_LATCH_ENABLE = 0x00,    /*!< Enable or disable the free run clock latch. */
 	SUB_CMD_FREE_RUN_CLOCK_LATCH        = 0x01,    /*!< Latch the free run clock. */
 } rtk_bt_vendor_free_run_clock_latch_subcmd_type_t;
-
-/**
- * @defgroup  bt_vendor BT Vendor APIs
- * @brief     BT vendor function APIs.
- * @ingroup   BT_APIs
- * @{
- */
 
 /**
  * @brief     Power on the BT controller. This configures the external firmware log pin and resets the controller.
@@ -368,9 +361,6 @@ rtk_bt_vendor_conn_clock_info_t *rtk_bt_get_slave_clock_info(void);
  */
 uint16_t rtk_bt_le_get_slave_conn_clock(uint16_t conn_handle, rtk_bt_le_conn_clock_info_t *clock_info);
 #endif
-/**
- * @}
- */
 
 #ifdef __cplusplus
 }

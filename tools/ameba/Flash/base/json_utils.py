@@ -7,6 +7,7 @@
 import os
 import json
 import base64
+import tempfile
 from pyDes import *
 
 _DES_KEY = "574C414E"  # 0x574C414E, WLAN
@@ -18,7 +19,8 @@ class JsonUtils:
     def load_from_file(file_path, need_decrypt=True):
         result = None
         if os.path.exists(file_path):
-            with open(file_path, 'r', encoding='utf-8') as f:
+            # utf-8-sig: also accept a file saved with a BOM (e.g. by Windows Notepad)
+            with open(file_path, 'r', encoding='utf-8-sig') as f:
                 f_content = f.read()
 
             if need_decrypt:
@@ -38,11 +40,20 @@ class JsonUtils:
         if need_encrypt:
             ek = des(_DES_KEY.encode("utf-8"), CBC, _DES_IV, pad=None, padmode=PAD_PKCS5)
             en_bytes = ek.encrypt(json.dumps(data).encode("utf-8"))
-            save_data = base64.b64encode(en_bytes)
-            with open(file_path, "wb") as json_file:
-                json_file.write(save_data)
+            save_bytes = base64.b64encode(en_bytes)
         else:
-            save_data = data
+            save_bytes = json.dumps(data, indent=2).encode("utf-8")
 
-            with open(file_path, "w") as json_file:
-                json.dump(save_data, json_file, indent=2)
+        # Write a temp file and rename it over the target: another process (e.g. a
+        # parallel CLI run) never reads a truncated or half written file
+        fd, tmp_path = tempfile.mkstemp(dir=path_dir, prefix=os.path.basename(file_path) + ".", suffix=".tmp")
+        try:
+            with os.fdopen(fd, "wb") as json_file:
+                json_file.write(save_bytes)
+            os.replace(tmp_path, file_path)
+        except BaseException:
+            try:
+                os.remove(tmp_path)
+            except OSError:
+                pass
+            raise
