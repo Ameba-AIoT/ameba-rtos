@@ -291,7 +291,7 @@ static void bt_audio_parsing_recv_stream(uint32_t type, rtk_bt_audio_track_t *tr
 			private_param.rate = track->rate;
 			private_param.bits = track->bits;
 			if (memcmp((void *)&private_param, (void *)&param, sizeof(struct audio_param))) {
-				/* change channel number or frequence */
+				/* change channel number or frequency */
 				BT_LOGE("[BT AUDIO] received audio format mismatch \r\n");
 				BT_LOGE("[BT AUDIO] private_param channels=%d,channel_allocation=%d,rate=%d,bits=%d\r\n",
 						(int)private_param.channels,

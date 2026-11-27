@@ -99,7 +99,7 @@ static void app_hfp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t bu
 	break;
 
 	case BT_EVENT_HFP_SUPPORTED_FEATURES_IND: {
-		rtk_bt_hfp_ag_features_ind_t *p_capabilitys = NULL;
+		rtk_bt_hfp_ag_features_ind_t *p_capabilities = NULL;
 
 		p_link = app_find_br_link(param->hfp_supported_features_ind.bd_addr);
 		if (p_link != NULL) {
@@ -121,8 +121,8 @@ static void app_hfp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t bu
 					handle = false;
 					break;
 				}
-				p_capabilitys = (rtk_bt_hfp_ag_features_ind_t *)p_evt->data;
-				memcpy((void *)&p_capabilitys->capability, (void *)&p_link->remote_hfp_brsf_capability, sizeof(uint16_t));
+				p_capabilities = (rtk_bt_hfp_ag_features_ind_t *)p_evt->data;
+				memcpy((void *)&p_capabilities->capability, (void *)&p_link->remote_hfp_brsf_capability, sizeof(uint16_t));
 				/* Send event */
 				if (RTK_BT_OK != rtk_bt_evt_indicate(p_evt, NULL)) {
 					handle = false;
@@ -442,8 +442,8 @@ static void app_hfp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t bu
 					p_link->hfp_sco_codec_info.cvsd.frame_duration = RTK_BT_AUDIO_CVSD_FRAME_DURATION_7_5_MS;
 				}
 			} else {
-				APP_PRINT_INFO0("HFP config: unknow ");
-				BT_LOGE("app_hfp_bt_cback: HFP unknow \r\n");
+				APP_PRINT_INFO0("HFP config: unknown ");
+				BT_LOGE("app_hfp_bt_cback: HFP unknown \r\n");
 				break;
 			}
 			{
@@ -525,7 +525,7 @@ static void app_hfp_bt_cback(T_BT_EVENT event_type, void *event_buf, uint16_t bu
 			BT_LOGA("app_hfp_bt_cback: BT_EVENT_SCO_DISCONNECTED \r\n");
 			p_link->sco_handle = 0;
 			{
-				p_evt = rtk_bt_event_create(RTK_BT_BR_GP_HFP, RTK_BT_HFP_EVT_SCO_DISCONNCTED_IND, sizeof(rtk_bt_hfp_disconn_ind_t));
+				p_evt = rtk_bt_event_create(RTK_BT_BR_GP_HFP, RTK_BT_HFP_EVT_SCO_DISCONNECTED_IND, sizeof(rtk_bt_hfp_disconn_ind_t));
 				if (!p_evt) {
 					BT_LOGE("app_hfp_bt_cback: evt_t allocate fail \r\n");
 					handle = false;

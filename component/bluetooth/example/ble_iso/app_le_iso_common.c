@@ -32,7 +32,7 @@ static bool app_bt_le_iso_check_demo_init(void)
 	}
 }
 
-uint16_t app_bt_le_iso_cis_id_availiable_check(uint8_t le_iso_role, uint8_t cis_id, uint8_t cig_id)
+uint16_t app_bt_le_iso_cis_id_available_check(uint8_t le_iso_role, uint8_t cis_id, uint8_t cig_id)
 {
 	uint16_t ret = RTK_BT_FAIL;
 

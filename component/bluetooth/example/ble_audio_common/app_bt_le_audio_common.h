@@ -70,16 +70,28 @@ extern "C" {
 /*
     If want to broadcast 2-channels stereo audio in one BIS,please config:
     RTK_BLE_AUDIO_DEFAULT_BROADCASTER_BIS_NUM       to     1
-    RTK_BLE_AUDIO_BROADCASTER_ONE_BIS_SETEO_MODE    to     1
+    RTK_BLE_AUDIO_BROADCASTER_ONE_BIS_STEREO_MODE    to     1
 */
-#define RTK_BLE_AUDIO_BROADCASTER_ONE_BIS_SETEO_MODE        1
-
+#if defined(RTK_BLE_AUDIO_BROADCASTER_ONE_BIS_SETEO_MODE)
+/* Deprecated name SETEO_MODE kept by the user, take over its value */
+#define RTK_BLE_AUDIO_BROADCASTER_ONE_BIS_STEREO_MODE RTK_BLE_AUDIO_BROADCASTER_ONE_BIS_SETEO_MODE
+#else
+#define RTK_BLE_AUDIO_BROADCASTER_ONE_BIS_STEREO_MODE 1
+/* Deprecated alias of RTK_BLE_AUDIO_BROADCASTER_ONE_BIS_STEREO_MODE */
+#define RTK_BLE_AUDIO_BROADCASTER_ONE_BIS_SETEO_MODE RTK_BLE_AUDIO_BROADCASTER_ONE_BIS_STEREO_MODE
+#endif
 /*
     If want to start 2-channels stereo audio in one CIS,please config:
-    RTK_BLE_AUDIO_UNICAST_ONE_CIS_SETEO_MODE       to     1
+    RTK_BLE_AUDIO_UNICAST_ONE_CIS_STEREO_MODE       to     1
 */
-#define RTK_BLE_AUDIO_UNICAST_ONE_CIS_SETEO_MODE            1
-
+#if defined(RTK_BLE_AUDIO_UNICAST_ONE_CIS_SETEO_MODE)
+/* Deprecated name SETEO_MODE kept by the user, take over its value */
+#define RTK_BLE_AUDIO_UNICAST_ONE_CIS_STEREO_MODE RTK_BLE_AUDIO_UNICAST_ONE_CIS_SETEO_MODE
+#else
+#define RTK_BLE_AUDIO_UNICAST_ONE_CIS_STEREO_MODE 1
+/* Deprecated alias of RTK_BLE_AUDIO_UNICAST_ONE_CIS_STEREO_MODE */
+#define RTK_BLE_AUDIO_UNICAST_ONE_CIS_SETEO_MODE RTK_BLE_AUDIO_UNICAST_ONE_CIS_STEREO_MODE
+#endif
 /*
    Only apply in RTK_BT_LE_AUDIO_PLAY_MODE_CONVERSATION mode.
    Configure peer device source ase codec according to needs:
@@ -103,7 +115,13 @@ extern "C" {
 #define RTK_BLE_AUDIO_DEFAULT_PHY_1M                        (1) /**< bit 0:LE PHY 1M used. */
 #define RTK_BLE_AUDIO_DEFAULT_PHY_2M                        (2) /**< bit 1:LE PHY 2M used. */
 #define RTK_BLE_AUDIO_DEFAULT_PHY_CODED                     (4) /**< bit 2:LE Coded PHY used. */
-#define RTK_BLE_AUDIO_DEFAULT_CSIS_DISV_TIMEOUT             (10000)
+#define RTK_BLE_AUDIO_DEFAULT_CSIS_DISCOVERY_TIMEOUT        (10000)
+/**
+ * @def       RTK_BLE_AUDIO_DEFAULT_CSIS_DISV_TIMEOUT
+ * @brief     Deprecated alias of @ref RTK_BLE_AUDIO_DEFAULT_CSIS_DISCOVERY_TIMEOUT.
+ * @deprecated Use @ref RTK_BLE_AUDIO_DEFAULT_CSIS_DISCOVERY_TIMEOUT instead.
+ */
+#define RTK_BLE_AUDIO_DEFAULT_CSIS_DISV_TIMEOUT RTK_BLE_AUDIO_DEFAULT_CSIS_DISCOVERY_TIMEOUT
 #define RTK_BLE_AUDIO_DEFAULT_BROADCAST_SOURCE_ADV_SID      0
 #define ISO_INTERVAL_10_MS                                  0x01
 #define ISO_INTERVAL_20_MS                                  0x02
@@ -114,7 +132,14 @@ extern "C" {
 #define RTK_LE_AUDIO_BROADCAST_AUDIO_ANNOUNCEMENT_DEFAULT_LEN   7
 /* Define default sample frequecy in source for audio test.*/
 #define LEA_SOURCE_FIX_SAMPLE_FREQUENCY                 RTK_BT_LE_SAMPLING_FREQUENCY_CFG_16K  //now support 8k,16k,24k,32k,48k birds sing array
-#define LEA_SOURCE_FIX_FRAME_DUARTION                   RTK_BT_LE_FRAME_DURATION_CFG_10_MS   //support 10ms and 7.5ms 
+#if defined(LEA_SOURCE_FIX_FRAME_DUARTION)
+/* Deprecated name DUARTION kept by the user, take over its value */
+#define LEA_SOURCE_FIX_FRAME_DURATION                   LEA_SOURCE_FIX_FRAME_DUARTION
+#else
+#define LEA_SOURCE_FIX_FRAME_DURATION                   RTK_BT_LE_FRAME_DURATION_CFG_10_MS   //support 10ms and 7.5ms
+/* Deprecated alias of LEA_SOURCE_FIX_FRAME_DURATION */
+#define LEA_SOURCE_FIX_FRAME_DUARTION                   LEA_SOURCE_FIX_FRAME_DURATION
+#endif
 #define LEA_BIG_ISO_INTERVAL_CONFIG                     ISO_INTERVAL_10_MS // if config 30ms, only support sample rate 48 KHz bis stereo mode
 #define LEA_CIG_ISO_INTERVAL_CONFIG                     ISO_INTERVAL_10_MS // now only support 10ms and 20ms
 

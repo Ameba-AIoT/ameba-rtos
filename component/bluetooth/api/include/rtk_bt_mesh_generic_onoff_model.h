@@ -1,5 +1,5 @@
 /**
- * @file      rtk_bt_mesh_api_generic_onoff_model.h
+ * @file      rtk_bt_mesh_generic_onoff_model.h
  * @author    pico_zhai@realsil.com.cn
  * @brief     Bluetooth LE MESH generic on off client and server model data struct and function definition
  * @copyright Copyright (c) 2022. Realtek Semiconductor Corporation. All rights reserved.

@@ -107,7 +107,7 @@ typedef struct {
 	uint32_t                channels;               /*!< indicate channels */
 	uint32_t                rate;                   /*!< sample rate */
 	uint32_t                buffer_bytes;           /*!< buffer bytes per one period of record */
-	int32_t                 record_num;             /*!< indicate aptured audio data numbers */
+	int32_t                 record_num;             /*!< indicate captured audio data numbers */
 } rtk_bt_audio_record_t;
 
 /**  @brief audio stream message definition */
