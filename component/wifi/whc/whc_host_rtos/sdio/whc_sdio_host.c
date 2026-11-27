@@ -73,7 +73,7 @@ int sdio_recv_process(uint8_t *pbuf)
 #ifdef CONFIG_WHC_WIFI_API_PATH
 	case WHC_WIFI_EVT_API_CALL:
 		while (event_priv.rx_api_msg) {
-			vTaskDelay(1);
+			rtos_time_delay_ms(1);
 			counter ++;
 			if (counter == 500) {
 				counter = 0;
@@ -86,7 +86,7 @@ int sdio_recv_process(uint8_t *pbuf)
 	case WHC_WIFI_EVT_API_RETURN:
 		if (event_priv.b_waiting_for_ret) {
 			while (event_priv.rx_ret_msg) {
-				vTaskDelay(1);
+				rtos_time_delay_ms(1);
 				counter ++;
 				if (counter == 500) {
 					counter = 0;
@@ -237,7 +237,7 @@ void whc_sdio_host_init_drv(void)
 
 	rtos_sema_create(&(event_priv.task_wake_sema), 0, 0xFFFFFFFF);
 
-	if (rtos_task_create(NULL, ((const char *)"whc_sdio_api_task"), whc_host_api_task, NULL, WIFI_STACK_SIZE_API_TASK, 3) != RTK_SUCCESS) {
+	if (rtos_task_create(NULL, ((const char *)"whc_sdio_api_task"), (rtos_task_function_t)whc_host_api_task, NULL, WIFI_STACK_SIZE_API_TASK, 3) != RTK_SUCCESS) {
 		RTK_LOGE(TAG_WLAN_INIC, "create whc_host_api_task fail \n");
 	}
 #endif
@@ -321,7 +321,7 @@ void rtw_sdio_send_data(uint8_t *buf, uint32_t len, void *pskb)
 
 		polling_num++;
 		if ((polling_num % 60) == 0) {
-			vTaskDelay(1);
+			rtos_time_delay_ms(1);
 		}
 
 		// Total number of TXBD is NOT available, so update current TXBD status

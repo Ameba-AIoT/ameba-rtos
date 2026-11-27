@@ -307,9 +307,9 @@ extern "C" {
 #define OTP_LMAP_LEN								0x400 /*!< logical map len in byte 0x400~0x7FF resvd*/
 #define OTP_MAX_SECTION								(OTP_LMAP_LEN >> 3) /*!< logical map len in section */
 #define PGPKT_DATA_SIZE								8 /*!< logical map section len */
-#define OTP_MTP_USER_START							0x2D0 /*!< logical map MTP user start address*/
-#define OTP_MTP_USER_END							0x2FF /*!< logical map MTP user end address*/
-#define OTP_MTP_USER_LEN							(OTP_MTP_USER_END - OTP_MTP_USER_START + 1) /*!< logical map MTP user section len in byte 0x2D0~0x2FF*/
+#define OTP_MTP_USER_START							0x170 /*!< logical map MTP user start address*/
+#define OTP_MTP_USER_END							0x19F /*!< logical map MTP user end address*/
+#define OTP_MTP_USER_LEN							(OTP_MTP_USER_END - OTP_MTP_USER_START + 1) /*!< logical map MTP user section len in byte 0x170~0x19F*/
 /** @} */
 
 /** @defgroup OTPC_Phsysical_Definitions
@@ -322,7 +322,7 @@ extern "C" {
 /* physical EFUSE write forbid */
 #define LOGICAL_MAP_SECTION_LEN						0x1FD /*!< logical mapping efuse len in physical address */
 #define OTP_USER_START								0x380 /*!< physical map user start address*/
-#define OTP_USER_END								0x800 /*!< physical map user end address*/
+#define OTP_USER_END								0x4FF /*!< physical map user end address*/
 #define OTP_USER_LEN								(OTP_USER_END - OTP_USER_START + 1) /*!< physical map user section len in byte 0x380~0x4FF*/
 /** @} */
 /** @} */
