@@ -8,6 +8,9 @@ extern uint8_t httpc_http_1_0_request_used;
 
 size_t httpc_tmp_buf_size = 2048;
 
+/* Case-insensitive strstr, defined below. Header field names are case-insensitive (RFC 7230 3.2). */
+static uint8_t *strstri(const uint8_t *inBuffer, const uint8_t *inSearchStr);
+
 /* Delay between retries when a write makes no progress, aligned with the websocket client. */
 #define HTTPC_WRITE_RETRY_MS 25
 
@@ -448,15 +451,9 @@ int httpc_response_read_header(struct httpc_conn *conn)
 			// get content-length
 			ptr = conn->response.status + conn->response.status_len;
 
-			if (strstr(ptr, "Content-Length:") || strstr(ptr, "content-length:")) {
+			if (strstri((uint8_t *)ptr, (uint8_t *)"Content-Length:")) {
 				char *length_ptr = NULL;
-				ptr = (char *) strstr(ptr, "Content-Length:");
-				if (ptr != NULL) {
-					ptr += strlen("Content-Length:");
-				} else {
-					ptr = conn->response.status + conn->response.status_len;
-					ptr = (char *) strstr(ptr, "content-length:") + strlen("content-length:");
-				}
+				ptr = (char *)strstri((uint8_t *)ptr, (uint8_t *)"Content-Length:") + strlen("Content-Length:");
 
 				while (ptr < (conn->response.header + conn->response.header_len)) {
 					if (*ptr != ' ') {
@@ -498,8 +495,9 @@ int httpc_response_read_header(struct httpc_conn *conn)
 			// get Transfer-Encoding
 			ptr = conn->response.status + conn->response.status_len;
 
-			if (strstr(ptr, "Transfer-Encoding:")) {
-				ptr = strstr(ptr, "Transfer-Encoding:") + strlen("Transfer-Encoding:");
+			/* HTTP/2-style proxies and many servers (e.g. httpbin.org) send the name in lower case. */
+			if (strstri((uint8_t *)ptr, (uint8_t *)"Transfer-Encoding:")) {
+				ptr = (char *)strstri((uint8_t *)ptr, (uint8_t *)"Transfer-Encoding:") + strlen("Transfer-Encoding:");
 
 				while (ptr < (conn->response.header + conn->response.header_len)) {
 					if (*ptr != ' ') {

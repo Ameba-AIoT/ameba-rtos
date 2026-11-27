@@ -105,6 +105,15 @@ static uint8_t pbp_role = APP_LE_AUDIO_PBP_ROLE_UNKNOWN;
 static uint8_t bap_role = RTK_BT_LE_AUDIO_BAP_ROLE_UNKNOWN;
 static uint8_t cap_role = RTK_BT_LE_AUDIO_CAP_ROLE_UNKNOWN;
 static bool demo_init_flag = false;
+static rtk_bt_le_security_param_t app_le_audio_sec_param = {
+	.io_cap = RTK_IO_CAP_NO_IN_NO_OUT,
+	.oob_data_flag = 0,
+	.bond_flag = 1,
+	.mitm_flag = 0,
+	.sec_pair_flag = 1,
+	.use_fixed_key = 0,
+	.fixed_key = 000000,
+};
 static app_le_audio_list_t scan_dev_queue;
 static rtk_bt_le_audio_sync_handle_t big_sync_handle = NULL;
 static app_bt_le_audio_data_path_t app_le_audio_data_path[APP_LE_AUDIO_DEMO_DATA_PATH_NUM] = {0};
@@ -3188,6 +3197,8 @@ int bt_pbp_main(uint8_t role, uint8_t enable, uint32_t sound_channel)
 			BT_APP_PROCESS(rtk_bt_le_gap_set_device_name(p_lea_app_conf->device_name));
 			/* Initilize GAP part */
 			BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_LE_GP_GAP, app_bt_le_audio_gap_app_callback));
+			/* LE legacy pairing may cause CSIS SIRK decryption mismatch with some set members, so enable LE Secure Connections */
+			BT_APP_PROCESS(rtk_bt_le_sm_set_security_param(&app_le_audio_sec_param));
 			/* Initilize GATT (client) part */
 			BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_LE_GP_GATTC, app_bt_le_audio_pbp_gattc_callback));
 			/* Register le audio event callback */
