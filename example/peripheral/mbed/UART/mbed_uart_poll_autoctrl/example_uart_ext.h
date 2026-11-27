@@ -39,10 +39,10 @@
 
 #elif defined (CONFIG_AMEBAPRO3)
 /* fully programmable zone */
-#define UART_TX     PF_2 // UART TX
-#define UART_RX     PF_3 // UART RX
-#define UART_RTS    PF_11 // UART RTS
-#define UART_CTS    PF_10 // UART CTS
+#define UART_TX     _PF_12 // UART1 TX
+#define UART_RX     _PF_13 // UART1 RX
+#define UART_RTS    _PF_11 // UART1 RTS
+#define UART_CTS    _PF_10 // UART1 CTS
 
 #elif defined (CONFIG_RTL8720F)
 /* fully programmable zone.

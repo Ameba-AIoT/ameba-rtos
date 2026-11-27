@@ -132,7 +132,7 @@ int vfs_check_mount_flag(int user_id, const char *operation)
 	return 0;
 }
 
-void vfs_init()
+void vfs_init(void)
 {
 	if (vfs_mutex == NULL) {
 		VFS_DBG(VFS_INFO, "vfs_mutex init\r\n");
@@ -165,7 +165,7 @@ void vfs_init()
 #endif
 }
 
-void vfs_deinit()
+void vfs_deinit(void)
 {
 	if (vfs_mutex != NULL) {
 		VFS_DBG(VFS_INFO, "vfs_mutex deinit\r\n");
@@ -341,7 +341,7 @@ int vfs_target_fs(int target)
 	case VFS_TARGET_SD_SPI:
 		return VFS_FATFS;
 #endif
-#if defined(CONFIG_VFS_USB_HOST)
+#if defined(CONFIG_FATFS_USB_HOST)
 	case VFS_TARGET_USBH:
 		return VFS_FATFS;
 #endif

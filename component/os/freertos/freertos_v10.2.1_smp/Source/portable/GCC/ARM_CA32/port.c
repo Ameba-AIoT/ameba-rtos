@@ -294,9 +294,12 @@ static void prvTaskExitError(void)
 
 __attribute__((naked)) void TaskExitError(void)
 {
-    __asm volatile("nop");
-    __disable_irq();
-    while (1);
+	/* naked function: the body may only contain asm (clang) */
+	__asm volatile(
+		"nop\n\t"
+		"cpsid i\n\t"
+		"b ."
+	);
 }
 /*-----------------------------------------------------------*/
 

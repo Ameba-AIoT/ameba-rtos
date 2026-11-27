@@ -1,0 +1,41 @@
+/*
+ * Copyright (c) 2026 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#ifndef _AMEBA_GSPI_PORT_H_
+#define _AMEBA_GSPI_PORT_H_
+
+/* The SPI controller always belongs to the host SoC, independent of the protocol version of the device. */
+#if defined(CONFIG_AMEBAGREEN2)
+#define GSPI_SPI0_DEV           SPI0_DEV
+#define GSPI_SPI0_APB           APBPeriph_SPI0
+#define GSPI_SPI0_APB_CLOCK     APBPeriph_SPI0_CLOCK
+#define GSPI_SPI0_PINMUX_CLK    PINMUX_FUNCTION_SPI0_CLK
+#define GSPI_SPI0_PINMUX_MOSI   PINMUX_FUNCTION_SPI0_MOSI
+#define GSPI_SPI0_PINMUX_MISO   PINMUX_FUNCTION_SPI0_MISO
+#define GSPI_SPI1_DEV           SPI1_DEV
+#define GSPI_SPI1_APB           APBPeriph_SPI1
+#define GSPI_SPI1_APB_CLOCK     APBPeriph_SPI1_CLOCK
+#define GSPI_SPI1_PINMUX_CLK    PINMUX_FUNCTION_SPI1_CLK
+#define GSPI_SPI1_PINMUX_MOSI   PINMUX_FUNCTION_SPI1_MOSI
+#define GSPI_SPI1_PINMUX_MISO   PINMUX_FUNCTION_SPI1_MISO
+#elif defined(CONFIG_RLE1509)
+#define GSPI_SPI0_DEV           SPIM0_DEV
+#define GSPI_SPI0_APB           APBPeriph_SPIM0
+#define GSPI_SPI0_APB_CLOCK     APBPeriph_SPIM0_CLOCK
+#define GSPI_SPI0_PINMUX_CLK    PINMUX_FUNCTION_SPI_MST0_CLK
+#define GSPI_SPI0_PINMUX_MOSI   PINMUX_FUNCTION_SPI_MST0_MOSI
+#define GSPI_SPI0_PINMUX_MISO   PINMUX_FUNCTION_SPI_MST0_MISO
+#define GSPI_SPI1_DEV           SPIM1_DEV
+#define GSPI_SPI1_APB           APBPeriph_SPIM1
+#define GSPI_SPI1_APB_CLOCK     APBPeriph_SPIM1_CLOCK
+#define GSPI_SPI1_PINMUX_CLK    PINMUX_FUNCTION_SPI_MST1_CLK
+#define GSPI_SPI1_PINMUX_MOSI   PINMUX_FUNCTION_SPI_MST1_MOSI
+#define GSPI_SPI1_PINMUX_MISO   PINMUX_FUNCTION_SPI_MST1_MISO
+#else
+#error "GSPI host is not supported on this SoC"
+#endif
+
+#endif

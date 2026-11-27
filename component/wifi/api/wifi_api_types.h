@@ -871,7 +871,6 @@ struct rtw_scan_result {
 	u8                 country_code[2];
 	u8                 wireless_mode;    /**< Wireless mode: @ref RTW_80211_B, @ref RTW_80211_A, etc.*/
 	u8                 is_beacon;
-	u8                 rom_rsvd[2];
 };
 
 /**
@@ -897,7 +896,6 @@ struct rtw_scan_param {
 	 *  APs with the lowest RSSI are discarded if scanned APs exceed this number. */
 	u16                              max_ap_record_num;
 	void                            *scan_user_data;   /**< User-defined data passed to callback functions for handling scan results. */
-	u8                              rom_rsvd[8];       //resverd for next cut
 
 	/** @brief Callback for normal asynchronous mode.
 	  * @param[in] ap_num: Total number of scanned APs.
@@ -956,7 +954,6 @@ struct rtw_network_info {
 	u8							by_reconn; /**< Indicates if connection is triggered by auto-reconnect. */
 	u8							sae_force_hnp : 1;/**< 1: force SAE to use the legacy Hunting-and-Pecking method.*/
 	u8							band; /**< Connection band: @ref RTW_CONNECT_BAND_ALL, @ref RTW_CONNECT_BAND_2G, or @ref RTW_CONNECT_BAND_5G. */
-	u8							rom_rsvd[2];
 };
 
 /**
@@ -1013,7 +1010,6 @@ struct rtw_wifi_setting {
 	u8		is_wps_trigger;	/**< Indicates if connection was triggered by WPS process. */
 u8		sae_force_hnp :
 	1; /**< Indicates whether the upper layer requests that the STA force the use of the legacy Hunting-and-Pecking method for SAE authentication*/
-	u8		rom_rsvd[3];
 };
 
 /**
@@ -1070,6 +1066,7 @@ struct rtw_softap_info {
 	u8 		            password_len;  /**< The length of password. */
 	u8		            channel;       /**< Desired operating channel for the SoftAP. */
 	u8 					b_no_rsp_to_probereq : 1;       /**< Set 1 to not send probe response when receive probe request. */
+	u8					b_no_rtk_vendor_ie : 1;         /**< Set 1 to not carry Realtek vendor IE. */
 };
 
 #ifndef CONFIG_WHC_HOST_LINUX

@@ -79,7 +79,7 @@ extern "C" {
 #define USB_CDC_ECM_MAX_SEGMENT_SIZE                    1514U    /**< Maximum Ethernet frame size (default) */
 
 /* MAC Address String Descriptor */
-#define USB_CDC_ECM_MAC_STRING_SIZE                     12U      /**< MAC address string length (12 Unicode characters) */
+#define USB_CDC_ECM_MAC_STR_SIZE                     12U      /**< MAC address string length (12 Unicode characters) */
 
 /** @} End of USB_Common_CDC_ECM_Constants group */
 /** @} End of USB_Common_Constants group */

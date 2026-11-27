@@ -60,12 +60,19 @@ else()
   set(c_TRX_REMAP --remap=.flash.only.text=.text,.sram.only.text=.text)
 endif()
 
+# WHC device mode (SPDIO/SPI/UART) runs WiFi on KM55TZ and uses its own placement file
+if((NOT CONFIG_WHC_INTF_IPC) AND CONFIG_WHC_DEV)
+  set(c_SECTION_PLACEMENT ${c_SOC_PROJECT_DIR}/section_placement_whc.json5)
+else()
+  set(c_SECTION_PLACEMENT ${c_SOC_PROJECT_DIR}/section_placement.json5)
+endif()
+
 add_custom_command(
   TARGET ${c_CURRENT_IMAGE} PRE_LINK
   COMMAND ${CMAKE_C_COMPILER} -E -P -xc -c ${c_IMG2_LD} -o ${CMAKE_CURRENT_BINARY_DIR}/rlx8721d.ld -I ${c_MENUCONFIG_DIR}
   COMMAND ${CMAKE_COMMAND} -E cat ${c_LINK_ROM_SYMBOL} >> ${CMAKE_CURRENT_BINARY_DIR}/rlx8721d.ld
   COMMAND ${Python3_EXECUTABLE} ${c_BASEDIR}/tools/image_scripts/ameba_sections_rename.py
-          --config ${c_SOC_PROJECT_DIR}/section_placement.json5
+          --config ${c_SECTION_PLACEMENT}
           --build-dir ${CMAKE_CURRENT_BINARY_DIR}
           --build-dir ${c_SDK_LIB_APPLICATION_DIR}
           --core ${c_MCU_PROJECT_NAME}

@@ -24,7 +24,7 @@
 #define SDN_INTF_MAX_BT_CMD_LEN        255    /* ext adv data or 0xc13 */
 #define SDN_INTF_MAX_BT_EVT_LEN        257
 #else
-#define SDN_INTF_MAX_BT_CMD_LEN        42     /* cmd 0x2027 has the max length: 3 + 39 */
+#define SDN_INTF_MAX_BT_CMD_LEN        68     /* cmd 0x205e has the max length: 3 + 65 */
 #define SDN_INTF_MAX_BT_EVT_LEN        70     /* cmd complete event for 0x1002 has the max length: 2 + 3 + 65 */
 #endif
 #endif
@@ -394,6 +394,9 @@ static void sdn_client_tx_deinit(void)
 #endif
 }
 
+#if (defined(CONFIG_BT_SDN)) \
+	|| (defined(CONFIG_WPAN_DRIVER_VHDLC_PLATFORM) && CONFIG_WPAN_DRIVER_VHDLC_PLATFORM) \
+	|| (defined(CONFIG_BT_COEXIST))
 static void *_alloc_data_list(struct list_head *head, uint16_t size, uint8_t num, uint8_t msg_type, bool align32)
 {
 	int i;
@@ -429,6 +432,7 @@ static void *_alloc_data_list(struct list_head *head, uint16_t size, uint8_t num
 
 	return pool;
 }
+#endif
 
 static uint32_t sdn_client_tx_init(void)
 {

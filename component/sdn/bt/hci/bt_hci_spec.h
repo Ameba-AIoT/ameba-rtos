@@ -1115,6 +1115,18 @@ struct bt_hci_cp_le_write_suggested_data_len {
 	uint16_t max_tx_time;
 } __attribute__((packed));
 
+#define BT_HCI_OP_LE_READ_LOCAL_P256_PUBLIC_KEY  BT_OP(BT_OGF_LE, 0x0025) /* 0x2025 */
+
+#define BT_HCI_OP_LE_GENERATE_DHKEY_V1           BT_OP(BT_OGF_LE, 0x0026) /* 0x2026 */
+#define BT_HCI_OP_LE_GENERATE_DHKEY_V2           BT_OP(BT_OGF_LE, 0x005e) /* 0x205e */
+
+#define BT_HCI_LE_KEY_TYPE_GENERATED             0x00
+#define BT_HCI_LE_KEY_TYPE_DEBUG                 0x01
+struct bt_hci_cp_le_generate_dhkey {
+	uint8_t key[64];
+	uint8_t key_type;
+} __attribute__((packed));
+
 #define BT_HCI_OP_LE_ADD_DEV_TO_RL              BT_OP(BT_OGF_LE, 0x0027) /* 0x2027 */
 struct bt_hci_cp_le_add_dev_to_rl {
 	uint8_t  id_type;
@@ -1427,6 +1439,37 @@ struct bt_hci_rp_le_set_pa_subevent_data {
 	uint8_t handle;
 } __attribute__((packed));
 
+/* Core Spec 6.3, Vol 4, Part E, 7.8.126 */
+#define BT_HCI_OP_LE_SET_PA_RESPONSE_DATA       BT_OP(BT_OGF_LE, 0x0083) /* 0x2083 */
+struct bt_hci_cp_le_set_pa_response_data {
+	uint16_t sync_handle;
+	uint16_t request_event;
+	uint8_t  request_subevent;
+	uint8_t  rsp_subevent;
+	uint8_t  rsp_slot;
+	uint8_t  rsp_data_len;
+	uint8_t  rsp_data[0];
+} __attribute__((packed));
+
+struct bt_hci_rp_le_set_pa_response_data {
+	uint8_t  status;
+	uint16_t sync_handle;
+} __attribute__((packed));
+
+/* Core Spec 6.3, Vol 4, Part E, 7.8.127 */
+#define BT_HCI_OP_LE_SET_PERIODIC_SYNC_SUBEVENT  BT_OP(BT_OGF_LE, 0x0084) /* 0x2084 */
+struct bt_hci_cp_le_set_periodic_sync_subevent {
+	uint16_t sync_handle;
+	uint16_t pa_props;          /* bit 6: include TxPower in AUX_SYNC_SUBEVENT_RSP */
+	uint8_t  num_subevents;
+	uint8_t  subevents[0];
+} __attribute__((packed));
+
+struct bt_hci_rp_le_set_periodic_sync_subevent {
+	uint8_t  status;
+	uint16_t sync_handle;
+} __attribute__((packed));
+
 #define BT_HCI_OP_LE_SET_PERIODIC_ADV_DATA      BT_OP(BT_OGF_LE, 0x003F) /* 0x203F */
 struct bt_hci_cp_le_set_periodic_adv_data {
 	uint8_t  handle;
@@ -1707,6 +1750,11 @@ struct bt_hci_cp_le_cs_set_default_settings {
 	uint8_t  role_enable;
 	uint8_t  cs_sync_antenna_selection;
 	int8_t   max_tx_power;
+} __attribute__((packed));
+
+struct bt_hci_rp_le_cs_set_default_setting {
+	uint8_t status;
+	uint16_t handle;
 } __attribute__((packed));
 
 #define BT_HCI_OP_LE_CS_READ_REMOTE_FAE_TABLE BT_OP(BT_OGF_LE, 0x008E) /* 0x208E */
@@ -2443,6 +2491,21 @@ struct bt_hci_evt_le_data_len_change {
 	uint16_t max_rx_time;
 } __attribute__((packed));
 
+#define BT_HCI_EVT_LE_READ_LOCAL_P256_PUB_KEY_CMPL         0x08
+struct bt_hci_evt_le_read_local_p256_pub_key_cmpl {
+	uint8_t subevent;
+	uint8_t status;
+	uint8_t key_x[32];
+	uint8_t key_y[32];
+} __attribute__((packed));
+
+#define BT_HCI_EVT_LE_GENERATE_DHKEY_CMPL                  0x09
+struct bt_hci_evt_le_generate_dhkey {
+	uint8_t subevent;
+	uint8_t status;
+	uint8_t dhkey[32];
+} __attribute__((packed));
+
 #define BT_HCI_EVT_LE_ENHANCED_CONNECTION_COMPLETE         0x0A
 struct bt_hci_evt_le_enhanced_connection_complete {
 	uint8_t subevent;
@@ -2629,6 +2692,115 @@ struct bt_hci_evt_le_pa_response_report {
 	uint8_t  tx_status;
 	uint8_t  num_responses;
 	struct bt_hci_evt_le_pa_response_info responses[0];   /* one response per event here */
+} __attribute__((packed));
+
+#define BT_HCI_EVT_LE_CS_READ_REMOTE_SUPPORTED_CAPABILITIES_COMPLETE 0x2C
+
+struct bt_hci_evt_le_cs_read_remote_supported_capabilities_complete {
+	uint8_t subevent;
+	uint8_t  status;
+	uint16_t conn_handle;
+	uint8_t  num_config_supported;
+	uint16_t max_consecutive_procedures_supported;
+	uint8_t  num_antennas_supported;
+	uint8_t  max_antenna_paths_supported;
+	uint8_t  roles_supported;
+	uint8_t  modes_supported;
+	uint8_t  rtt_capability;
+	uint8_t  rtt_aa_only_n;
+	uint8_t  rtt_sounding_n;
+	uint8_t  rtt_random_payload_n;
+	uint16_t nadm_sounding_capability;
+	uint16_t nadm_random_capability;
+	uint8_t  cs_sync_phys_supported;
+	uint16_t subfeatures_supported;
+	uint16_t t_ip1_times_supported;
+	uint16_t t_ip2_times_supported;
+	uint16_t t_fcs_times_supported;
+	uint16_t t_pm_times_supported;
+	uint8_t  t_sw_time_supported;
+	uint8_t  tx_snr_capability;
+} __attribute__((packed));
+
+#define BT_HCI_EVT_LE_CS_READ_REMOTE_SUPPORTED_CAPABILITIES_COMPLETE_V2 0x38
+struct bt_hci_evt_le_cs_read_remote_supported_capabilities_complete_v2 {
+	uint8_t subevent;
+	uint8_t  status;
+	uint16_t conn_handle;
+	uint8_t  num_config_supported;
+	uint16_t max_consecutive_procedures_supported;
+	uint8_t  num_antennas_supported;
+	uint8_t  max_antenna_paths_supported;
+	uint8_t  roles_supported;
+	uint8_t  modes_supported;
+	uint8_t  rtt_capability;
+	uint8_t  rtt_aa_only_n;
+	uint8_t  rtt_sounding_n;
+	uint8_t  rtt_random_payload_n;
+	uint16_t nadm_sounding_capability;
+	uint16_t nadm_random_capability;
+	uint8_t  cs_sync_phys_supported;
+	uint16_t subfeatures_supported;
+	uint16_t t_ip1_times_supported;
+	uint16_t t_ip2_times_supported;
+	uint16_t t_fcs_times_supported;
+	uint16_t t_pm_times_supported;
+	uint8_t  t_sw_time_supported;
+	uint8_t  tx_snr_capability;
+	uint16_t t_ip2_ipt_times_supported;
+	uint8_t  t_sw_ipt_time_supported;
+} __packed;
+
+/* Core Spec 6.3, Vol 4, Part E, 7.7.65.14, PAwR timing fields are 0 for a train without responses */
+#define BT_HCI_EVT_LE_PA_SYNC_ESTABLISHED_V2    0x24
+struct bt_hci_evt_le_pa_sync_established_v2 {
+	uint8_t  subevent;
+	uint8_t  status;
+	uint16_t sync_handle;
+	uint8_t  sid;
+	struct bt_le_addr_t adv_addr;
+	uint8_t  adv_phy;
+	uint16_t pa_interval;
+	uint8_t  adv_clk_accuracy;
+	uint8_t  num_subevents;
+	uint8_t  subevent_interval;
+	uint8_t  rsp_slot_delay;
+	uint8_t  rsp_slot_spacing;
+} __attribute__((packed));
+
+/* Core Spec 6.3, Vol 4, Part E, 7.7.65.15, pa_subevent 0xFF for a train without responses */
+#define BT_HCI_EVT_LE_PA_REPORT_V2              0x25
+#define BT_HCI_LE_PA_REPORT_NO_SUBEVENT         0xFF
+struct bt_hci_evt_le_pa_report_v2 {
+	uint8_t  subevent;
+	uint16_t sync_handle;
+	int8_t   tx_power;
+	int8_t   rssi;
+	uint8_t  cte_type;
+	uint16_t pa_event_cnt;
+	uint8_t  pa_subevent;
+	uint8_t  data_status;
+	uint8_t  data_len;
+	uint8_t  data[0];
+} __attribute__((packed));
+
+/* Core Spec 6.3, Vol 4, Part E, 7.7.65.24 */
+#define BT_HCI_EVT_LE_PA_SYNC_TRANSFER_RECEIVED_V2  0x26
+struct bt_hci_evt_le_pa_sync_transfer_received_v2 {
+	uint8_t  subevent;
+	uint8_t  status;
+	uint16_t conn_handle;
+	uint16_t service_data;
+	uint16_t sync_handle;
+	uint8_t  sid;
+	struct bt_le_addr_t adv_addr;
+	uint8_t  adv_phy;
+	uint16_t pa_interval;
+	uint8_t  adv_clk_accuracy;
+	uint8_t  num_subevents;
+	uint8_t  subevent_interval;
+	uint8_t  rsp_slot_delay;
+	uint8_t  rsp_slot_spacing;
 } __attribute__((packed));
 
 #endif

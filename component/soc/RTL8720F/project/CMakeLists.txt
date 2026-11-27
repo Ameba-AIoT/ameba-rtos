@@ -39,6 +39,7 @@ ameba_install_files(
     "${CMAKE_CURRENT_SOURCE_DIR}/default.conf"
     "${CMAKE_CURRENT_SOURCE_DIR}/manifest.json5"
     "${CMAKE_CURRENT_SOURCE_DIR}/section_placement.json5"
+    "${CMAKE_CURRENT_SOURCE_DIR}/section_placement_whc.json5"
     "${CMAKE_CURRENT_SOURCE_DIR}/ameba_layout.ld"
     "${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.txt"
     "${CMAKE_CURRENT_SOURCE_DIR}/Kconfig"

@@ -2,15 +2,15 @@
 
 # Example Description
 
-Minimal GSPI bring-up test, running the **Host** (SPI Master) role on top of the SoC driver
-`ameba_gspi.c`. It covers the control-register domain only; for the TX/RX FIFO data path and a
+Minimal GSPI bring-up test, running the **Host** (SPI Master) role on top of the GSPI host driver
+`rtw_gspi_drvio_v<N>.c`. It covers the control-register domain only; for the TX/RX FIFO data path and a
 throughput test use `raw_gspi_host_fifo`, for the power-save flows `raw_gspi_host_ps`.
 
 Three steps:
 
 | Step | What it does | Why it matters |
 |---|---|---|
-| 1 | `GSPI_Configuration()` writes `SPI_CFG` and reads it back | activates GSPI mode; must be the first bus transaction after the Device boots |
+| 1 | `GSPI_WIFI_Configuration()` writes `SPI_CFG` and reads it back | activates GSPI mode; must be the first bus transaction after the Device boots |
 | 2 | reads CPU_IND, HISR, RX0_REQ_LEN, FREE_TX_BD and HCPWM | proves the read path; a `CPU_IND` of `0xFF` means MISO is only idling at its pull-up |
 | 3 | write-readback on HPS_CLKR (0x84) | proves the write path |
 
@@ -65,6 +65,8 @@ Build and Download:
 [GSPI_HOST] GSPI Demo: success
 ```
 
+The sample above is from `gspi_ver` 1, whose Status phase has two words. With `gspi_ver` 2 each `status` column shows a single word.
+
 Reading these values: `RX0_REQ_LEN` resets to `0x40000000`, so that value simply means nothing is
 pending. `HCPWM`'s upper half is HCPWM2, and its bit0 reflects the Device's CPWM2 ACT bit, set by the
 Device's `spdio_init()`. `HISR` bit19 (CPWM2_INT) is latched from that same event.
@@ -74,21 +76,41 @@ the bus before step 1.
 
 # Note
 
-1. All bus access goes through `ameba_gspi.c`; this example only calls `GSPI_Init`,
-   `GSPI_Configuration` and `GSPI_ReadReg*`/`GSPI_WriteReg*`. Frame layout, byte order and CS timing
+1. All bus access goes through `rtw_gspi_drvio_v<N>.c`; this example only calls `GSPI_Init`,
+   `GSPI_WIFI_Configuration` and `GSPI_WIFI_ReadReg*`/`GSPI_WIFI_WriteReg*`. Frame layout, byte order and CS timing
    live in the driver.
-2. `GSPI_Configuration()` must be the first bus transaction after the Device boots. Any earlier bus
+2. `GSPI_WIFI_Configuration()` must be the first bus transaction after the Device boots. Any earlier bus
    activity, including a stray CS assertion during boot, makes the Device fall back to SDIO mode —
    which is why `GSPI_Init()` latches CS high before enabling its output driver.
-3. Every operation also returns the frame's 8-byte Status phase. `sts.valid == 0` means the Device did
-   not drive it, which is reported as "not driven" in the log above.
-4. `SPI_CFG` names the endianness from the device's point of view: with `GSPI_BIG_ENDIAN_32` the bus
-   carries a 32-bit word LSB first, which is the natural memory order of a little-endian host, so no
-   software swap is needed after activation. Only the activation frame itself is encoded for the
-   device's reset state (little endian) and swapped by the driver.
+3. Every operation also returns the frame's Status phase: 8 bytes (two 32-bit words) with `gspi_ver` 1,
+   4 bytes (one 32-bit word) with `gspi_ver` 2. `sts.valid == 0` means the Device did not drive it, which
+   is reported as "not driven" in the log.
+4. On the bus the CMD word always goes out MSB byte first, while Data and Status always go out LSB
+   byte first. The driver does this for every frame, including the activation frame, whatever
+   `SPI_CFG` value is written.
 5. HPS_CLKR (0x84) must be written byte-wise: CPU_IND sits at 0x87 in the same 32-bit word, and a
    word write would clobber it.
 
 # Supported IC
 
 RTL8721F
+
+## Selecting the GSPI protocol version
+
+The driver (`component/wifi/whc/whc_host_rtos/gspi/rtw_gspi_drvio_v<N>.c`) is built by this example, not by the SoC fwlib.
+The protocol version of the Device is set in `CMakeLists.txt`:
+
+```cmake
+set(gspi_ver 2)    # 1: AmebaGreen2 Device; 2: RLE1509 Device
+```
+
+The same variable selects the driver source and defines `GSPI_DRV_VER`, which `rtw_gspi_drvio.h` uses to pick the header.
+
+**Edit this line by hand to match the Device before building:**
+
+| Device IC | `gspi_ver` |
+|---|---|
+| RLE1509 | `2` (default) |
+| RTL8721F | `1` |
+
+A mismatch shows up as `activation attempt N: SPI_CFG reads 0x00`. The version lives in CMake, so no `-p` is needed after changing it.

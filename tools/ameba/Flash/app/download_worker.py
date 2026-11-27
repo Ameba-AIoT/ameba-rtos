@@ -35,22 +35,12 @@ class DownloadWorker(QThread):
         self.log_file = log_file
         self.log_level = log_level
 
-    def _nand_layout_end_address(self, start, image_end):
-        """Return the highest end address of the flash layout partitions overlapping
-        [start, image_end), or None when the image overlaps no partition."""
-        end = None
-        for part in self.profile_info.images:
-            if self.profile_info.is_ram_address(part.start_address):
-                continue
-            if part.start_address < image_end and part.end_address > start:
-                end = part.end_address if end is None else max(end, part.end_address)
-        return end
-
     def run(self):
         logger = None
         progress_handler = None
         error_handler = None
         ameba = None
+        flash_status = None
         stage_errors = []
 
         def run_stage(action, *args, **kwargs):
@@ -64,6 +54,17 @@ class DownloadWorker(QThread):
             logger = create_logger(
                 self.port, log_level=self.log_level.upper(), file=self.log_file
             )
+            # The progress is parsed from the INFO "Programming progress" log, which a WARNING
+            # or higher logger level drops before any handler. Apply the selected level to the
+            # console/file handlers instead, and let the logger pass INFO to the progress handler
+            selected_level = logger.level
+            if selected_level > logging.INFO:
+                for handler in logger.handlers:
+                    handler.setLevel(selected_level)
+                logger.setLevel(logging.INFO)
+            else:
+                for handler in logger.handlers:
+                    handler.setLevel(logging.NOTSET)
             progress_handler = ProgressLogHandler(
                 lambda pct: self.progress_updated.emit(pct)
             )
@@ -79,17 +80,17 @@ class DownloadWorker(QThread):
             error_handler = _ErrorCaptureHandler()
             logger.addHandler(error_handler)
 
-            # Memory type is derived from the device profile. The GUI has no
-            # explicit memory-type selector, so when a single image is downloaded
-            # to a RAM address, force RAM to override the profile's memory type
-            # (mirrors the CLI's '-m ram').
-            memory_type = getattr(self.profile_info, 'memory_type', MemoryInfo.MEMORY_TYPE_NOR)
+            # Flash session by default: the NOR/NAND flash type is reported by the device,
+            # the device profile does not tell it. The GUI has no memory-type selector, so
+            # a single image downloaded to a RAM address is a RAM session (mirrors the
+            # CLI's '-m ram').
+            memory_type = MemoryInfo.PARTITION_TYPE_FLASH
 
             image_dir = None
             images_info = None
             if os.path.isfile(self.image_path):
                 if self.profile_info.is_ram_address(self.start_address):
-                    memory_type = MemoryInfo.MEMORY_TYPE_RAM
+                    memory_type = MemoryInfo.PARTITION_TYPE_RAM
                     logger.info(
                         f"Start address 0x{self.start_address:08X} is a RAM address, "
                         f"memory type overridden to RAM")
@@ -97,20 +98,9 @@ class DownloadWorker(QThread):
                 img.image_name = self.image_path
                 img.start_address = self.start_address
                 img.end_address = self.start_address + os.path.getsize(self.image_path)
-                # NAND requires a block-aligned end address and skips bad blocks inside
-                # the partition, so start + file size is neither aligned nor leaves room
-                # for bad blocks. Extend the end to the covered layout partitions.
-                if memory_type == MemoryInfo.MEMORY_TYPE_NAND:
-                    layout_end = self._nand_layout_end_address(img.start_address, img.end_address)
-                    if layout_end is None or layout_end < img.end_address:
-                        logger.error(
-                            f"NAND image 0x{img.start_address:08X}-0x{img.end_address:08X} "
-                            f"does not fit in the profile layout")
-                        self.result_ready.emit(
-                            False, failure_message("Invalid NAND image address")
-                        )
-                        return
-                    img.end_address = layout_end
+                # On NAND the end is extended to the covered layout partitions after
+                # QUERY, see Ameba.fit_single_image_to_layout()
+                img.end_from_image_size = True
                 img.memory_type = memory_type
                 img.mandatory = True
                 # A single image may actually be a merged image (e.g. image_all.bin)
@@ -157,7 +147,9 @@ class DownloadWorker(QThread):
                 )
                 return
 
-            if memory_type == MemoryInfo.MEMORY_TYPE_NOR:
+            # Flash: SPIC address mode check, NOR only and skipped inside on NAND, as the
+            # flash type is only known after QUERY
+            if memory_type != MemoryInfo.PARTITION_TYPE_RAM:
                 ret, is_reburn = run_stage(ameba.check_supported_flash_size)
                 if ret != ErrType.OK:
                     ameba.clean_up()
@@ -205,6 +197,8 @@ class DownloadWorker(QThread):
                     ameba.check_and_process_flash_lock, flash_status
                 )
                 if ret != ErrType.OK:
+                    # A partly applied unlock is restored as well
+                    ameba.restore_flash_lock(flash_status)
                     ameba.clean_up()
                     self.result_ready.emit(
                         False,
@@ -214,14 +208,17 @@ class DownloadWorker(QThread):
 
             ret = run_stage(ameba.download_images)
             if ret != ErrType.OK:
+                # Restore the block protection on failure too: a retry would find the
+                # flash unlocked, so nothing would restore it any more
+                ameba.restore_flash_lock(flash_status)
                 ameba.clean_up()
                 self.result_ready.emit(
                     False, failure_message(f"Download failed: {ret}")
                 )
                 return
 
-            if not ameba.is_all_ram and flash_status.need_unlock:
-                ret = run_stage(ameba.lock_flash, flash_status.protection)
+            if flash_status.need_unlock:
+                ret = run_stage(ameba.restore_flash_lock, flash_status)
                 if ret != ErrType.OK:
                     ameba.clean_up()
                     self.result_ready.emit(
@@ -252,6 +249,13 @@ class DownloadWorker(QThread):
             self.result_ready.emit(False, failure_message(str(e)))
         finally:
             if ameba is not None:
+                # Exception raised after the unlock
+                if flash_status is not None:
+                    try:
+                        ameba.restore_flash_lock(flash_status)
+                    except Exception as error:
+                        if logger is not None:
+                            logger.error(f"Restore flash protection failed: {error}")
                 try:
                     ameba.clean_up()
                 except Exception as error:

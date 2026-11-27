@@ -794,7 +794,7 @@ u32 ADC_GetSampleValue(s32 VolMV)
 
 	discriminant = kb * kb + 64 * ka * VolMV - ka * kc;
 	if (discriminant >= 0) {
-		result = (sqrt((float)discriminant) - kb) * 1024 / ka;
+		result = (sqrtf((float)discriminant) - (float)kb) * 1024.0f / (float)ka;
 
 		if (result < 0) {
 			return 0;

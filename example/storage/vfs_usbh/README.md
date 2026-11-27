@@ -1,18 +1,17 @@
 # Example Description
 
-This is an example of using virtual file system on usb device.
+This is an example of using virtual file system on a USB mass-storage device attached to the USB host port.
 
 # HW Configuration
 
-None
+Attach a USB storage device (FAT/exFAT formatted) to the USB host port of the board.
 
 # SW configuration
 
-# SW configuration
 1. Fixed Parameters for USB Registration:
-   When registering FATFS on usb device using:
-   `vfs_user_register("usbh", VFS_FATFS, VFS_INF_USBH, VFS_REGION_4, VFS_RW);`
-   the arguments `VFS_FATFS`, `VFS_INF_USBH` and `VFS_REGION_4` must remain unchanged.
+   The USB mass-storage device (FATFS) is registered with:
+   `vfs_target_register("usbh", VFS_TARGET_USBH, VFS_RW);`
+   the argument `VFS_TARGET_USBH` must remain unchanged.
 
 2. Build and Download:
    * Refer to the SDK Examples section of the online documentation to generate images.
@@ -28,7 +27,12 @@ None
 
 # Note
 
-None
+The external FATFS targets (SD card, USB host, ...) share one FATFS instance, only one target can be mounted at a time, mounting a different one fails with `target <n> busy`. Registering the same target again under another prefix succeeds as an alias.
+
+On `RTL8735C` the SD card is registered at boot. If it is mounted successfully (an SD card is inserted), add the following to `prj.conf`, otherwise the registration fails with `target 7 busy`:
+```
+CONFIG_VFS_SD_CARD=n
+```
 
 # Supported IC
 

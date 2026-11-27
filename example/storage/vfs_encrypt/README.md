@@ -15,36 +15,26 @@ iv_len : length of grouped data in encryption algorithms (which decide data alig
 
 # HW Configuration
 
-None
+None. Insert an SD card when the SD card is the volume under test (see SW configuration).
 
 # SW configuration
 
-1. Modify the interface function `app_filesystem_init()` located in `amebaXXX_gcc_project/project_<core>/src/main.c` to config your expected test mode.
-Test Mode: (`VFS_LITTLEFS`/`VFS_FATFS`, `VFS_INF_FLASH`/`VFS_INF_SD`)
-   - For `VFS_LITTLEFS` with `VFS_INF_FLASH`:
-		```C
-		ret = vfs_user_register(VFS_PREFIX, VFS_LITTLEFS, VFS_INF_FLASH, VFS_REGION_1, VFS_RW);
-		```
+1. The volume under test is selected by menuconfig (`CONFIG File System`), no source change is needed:
+   - SD card (FATFS): `CONFIG_VFS_SD_FATFS=y` (`CONFIG_VFS_SD_CARD=y`). The example registers it with `vfs_target_register("sdcard", VFS_TARGET_SD, VFS_RW)`.
+   - VFS2 (FATFS): `CONFIG_VFS2_FATFS=y`, or build with the bundled config:
+     ```
+     ./ameba.py menuconfig -f example/storage/vfs_encrypt/fatfs.conf
+     ```
+     The flash layout must reserve a VFS2 partition, otherwise the example exits with `VFS target unavailable`.
+     The example checks `CONFIG_VFS_SD_FATFS` before `CONFIG_VFS2_FATFS`, so on a SoC that enables the SD card by default (`RTL8735C`) also disable `CONFIG_VFS_SD_CARD`, otherwise it keeps testing the SD card. On `RTL8735C` the default NOR layout has a zero-sized VFS2 region, so VFS2 needs the NAND layout.
+   - VFS1 (LittleFS): neither of the above is enabled.
 
-   - For `VFS_FATFS` with `VFS_INF_FLASH`:
-		```C
-		ret = vfs_user_register(VFS_PREFIX, VFS_FATFS, VFS_INF_FLASH, VFS_REGION_1, VFS_RW);
-		```
+   The bundled `fatfs_sd.conf` selects the SD card:
+   ```
+   ./ameba.py menuconfig -f example/storage/vfs_encrypt/fatfs_sd.conf
+   ```
 
-2. Use menuconfig and choose `CONFIG File System`
-   - For `VFS_LITTLEFS`:
-		```
-		[*] Enable VFS LITTLEFS
-		[ ] Enable VFS FATFS
-		```
-
-   - For `VFS_FATFS` with `VFS_INF_FLASH`:
-		```
-		[ ] Enable VFS LITTLEFS
-		[*] Enable VFS FATFS
-		```
-
-3. Build and Download:
+2. Build and Download:
    * Refer to the SDK Examples section of the online documentation to generate images.
    * `Download` images to board by Ameba Image Tool.
 
@@ -58,7 +48,7 @@ Test Mode: (`VFS_LITTLEFS`/`VFS_FATFS`, `VFS_INF_FLASH`/`VFS_INF_SD`)
 
 # Note
 
-None
+On `RTL8735C` the default config enables the SD card (`CONFIG_VFS_SD_CARD=y`), so this example tests the SD card, insert an SD card before running it. To test VFS1, disable `CONFIG_VFS_SD_CARD`.
 
 # Supported IC
 

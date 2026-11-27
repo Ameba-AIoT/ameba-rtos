@@ -5,12 +5,13 @@
  */
 
 #include "ameba_soc.h"
-#include "ameba_gspi.h"
+#include "rtw_gspi_drvio_v2.h"
+#include "ameba_gspi_port.h"
 
 static const char *const TAG = "GSPI";
 
 /* Frame layout, command-word fields, domain IDs and the activation retry policy
- * are all in ameba_gspi.h -- see the GSPI_Command_Word group there. */
+ * are all in rtw_gspi_drvio_v2.h -- see the GSPI_Command_Word group there. */
 
 /* ---------------------------------------------------------------- internals */
 
@@ -20,26 +21,49 @@ static u32 gspi_swap32(u32 v)
 		   ((v & 0x00FF0000u) >> 8) | ((v & 0xFF000000u) >> 24);
 }
 
-static u32 gspi_build_cmd(GSPI_HandleTypeDef *hgspi, u8 rw, u8 domain, u32 addr_or_len, u8 byte_en)
+/* CRC5 over cmd bits[31:8], MSB-first, left shift, generator x^5+x^2+1, init 0,
+ * no output XOR. Result goes into cmd bits[7:3]. */
+static u8 gspi_cmd_crc5(u32 data)
 {
-	u32 cmd = ((u32)rw << 31) | GSPI_CMD_FUN_BIT | ((u32)domain << 24);
+	u8 crc = 0x00u;
+	s8 i;
 
-	if (domain == GSPI_DOMAIN_CTRL) {
-		cmd |= ((addr_or_len & 0xFFFFu) << 8) | byte_en;
-	} else {
-		cmd |= (addr_or_len & 0xFFFFu);
+	for (i = 31; i >= 8; i--) {
+		u8 bit_in = (u8)((data >> i) & 0x1u);
+		u8 fb = bit_in ^ ((crc >> 4) & 0x1u);
+
+		crc = (u8)((crc << 1) & 0x1Fu);
+		if (fb) {
+			crc ^= 0x05u;
+		}
 	}
 
-	return hgspi->swap ? gspi_swap32(cmd) : cmd;
+	return crc & 0x1Fu;
 }
 
-static void gspi_cs(GSPI_HandleTypeDef *hgspi, u8 level)
+static u32 gspi_build_cmd(u8 rw, u8 func, u8 domain, u32 addr_or_len, u8 byte_en)
+{
+	u32 cmd = ((u32)rw << 31) | ((u32)func << GSPI_CMD_FUNC_SHIFT) | ((u32)domain << 24);
+
+	if (domain == GSPI_DOMAIN_CTRL) {
+		cmd |= (((u32)byte_en & 0xFu) << 20) | ((addr_or_len & 0x0FFFu) << 8);
+	} else {
+		cmd |= (addr_or_len & 0xFFFFu) << 8;
+	}
+
+	cmd |= (u32)gspi_cmd_crc5(cmd) << 3;
+
+	/* CMD goes out MSB byte first; the byte-swapped value makes a memcpy to the frame buffer do so. */
+	return gspi_swap32(cmd);
+}
+
+static void gspi_cs(struct whc_gspi_handle *hgspi, u8 level)
 {
 	GPIO_WriteBit(hgspi->Init.GSPI_CsPin, level);
 }
 
 /* Polled full-duplex byte exchange, safe in place. */
-static void gspi_xfer_poll(GSPI_HandleTypeDef *hgspi, u8 *buf, u32 len)
+static void gspi_xfer_poll(struct whc_gspi_handle *hgspi, u8 *buf, u32 len)
 {
 	SPI_TypeDef *spi_dev = hgspi->spi_dev;
 	u32 i;
@@ -54,7 +78,7 @@ static void gspi_xfer_poll(GSPI_HandleTypeDef *hgspi, u8 *buf, u32 len)
 
 static u32 gspi_dma_tx_done(void *data)
 {
-	GSPI_HandleTypeDef *hgspi = (GSPI_HandleTypeDef *)data;
+	struct whc_gspi_handle *hgspi = (struct whc_gspi_handle *)data;
 
 	GDMA_ClearINT(hgspi->txgdma.GDMA_Index, hgspi->txgdma.GDMA_ChNum);
 	GDMA_Cmd(hgspi->txgdma.GDMA_Index, hgspi->txgdma.GDMA_ChNum, DISABLE);
@@ -67,7 +91,7 @@ static u32 gspi_dma_tx_done(void *data)
 
 static u32 gspi_dma_rx_done(void *data)
 {
-	GSPI_HandleTypeDef *hgspi = (GSPI_HandleTypeDef *)data;
+	struct whc_gspi_handle *hgspi = (struct whc_gspi_handle *)data;
 
 	GDMA_ClearINT(hgspi->rxgdma.GDMA_Index, hgspi->rxgdma.GDMA_ChNum);
 	GDMA_Cmd(hgspi->rxgdma.GDMA_Index, hgspi->rxgdma.GDMA_ChNum, DISABLE);
@@ -78,7 +102,7 @@ static u32 gspi_dma_rx_done(void *data)
 	return 0;
 }
 
-static s32 gspi_wait_flag(GSPI_HandleTypeDef *hgspi, volatile u8 *flag)
+static s32 gspi_wait_flag(struct whc_gspi_handle *hgspi, volatile u8 *flag)
 {
 	u32 waited = 0;
 
@@ -94,7 +118,7 @@ static s32 gspi_wait_flag(GSPI_HandleTypeDef *hgspi, volatile u8 *flag)
 }
 
 /* Drain whatever the RX FIFO collected while a TX-only DMA phase ran. */
-static void gspi_flush_rx(GSPI_HandleTypeDef *hgspi)
+static void gspi_flush_rx(struct whc_gspi_handle *hgspi)
 {
 	while (SSI_Readable(hgspi->spi_dev)) {
 		(void)SSI_ReadData(hgspi->spi_dev);
@@ -104,7 +128,7 @@ static void gspi_flush_rx(GSPI_HandleTypeDef *hgspi)
 /* Data phase over GDMA. rx == NULL: transmit only, receive data discarded.
  * tx == NULL: receive only; the buffer doubles as the dummy TX source, because
  * MOSI content is ignored by the device during an RX data phase. */
-static s32 gspi_xfer_dma(GSPI_HandleTypeDef *hgspi, u8 *tx, u8 *rx, u32 len)
+static s32 gspi_xfer_dma(struct whc_gspi_handle *hgspi, u8 *tx, u8 *rx, u32 len)
 {
 	s32 ret;
 
@@ -138,7 +162,13 @@ static s32 gspi_xfer_dma(GSPI_HandleTypeDef *hgspi, u8 *tx, u8 *rx, u32 len)
 	}
 
 	/* The TX DMA only guarantees the bytes reached the SSI FIFO. */
-	while (SSI_Busy(hgspi->spi_dev));
+	for (u32 waited = 0; SSI_Busy(hgspi->spi_dev); waited++) {
+		if (waited >= hgspi->Init.GSPI_XferTimeoutUs) {
+			RTK_LOGE(TAG, "ssi busy timeout\n");
+			return -RTK_ERR_TIMEOUT;
+		}
+		DelayUs(1);
+	}
 
 	if (rx) {
 		DCache_Invalidate((u32)rx, len);
@@ -149,48 +179,43 @@ static s32 gspi_xfer_dma(GSPI_HandleTypeDef *hgspi, u8 *tx, u8 *rx, u32 len)
 	return RTK_SUCCESS;
 }
 
-static u8 gspi_use_dma(GSPI_HandleTypeDef *hgspi, u32 len)
+static u8 gspi_use_dma(struct whc_gspi_handle *hgspi, u32 len)
 {
 	return (hgspi->Init.GSPI_DmaEn && len >= hgspi->Init.GSPI_DmaThreshold) ? 1 : 0;
 }
 
-/* Decode the 8-byte Status phase sitting at sts_buf. */
-static void gspi_fill_status(GSPI_StatusTypeDef *sts, const u8 *sts_buf)
+/* Decode the 4-byte Status phase sitting at sts_buf. */
+static void gspi_fill_status(struct whc_gspi_status *sts, const u8 *sts_buf)
 {
-	u32 w0, w1;
+	u32 w0;
 
 	if (sts == NULL) {
 		return;
 	}
 
 	_memcpy(&w0, sts_buf, 4);
-	_memcpy(&w1, sts_buf + 4, 4);
 	sts->word0 = w0;
-	sts->word1 = w1;
 	sts->valid = (w0 & GSPI_MASK_HISR_INVALID) ? 0 : 1;
 }
 
 /* ------------------------------------------------------------ register access */
 
-/* Register frame: CMD 4B, then for a read Status 8B + Data 4B, for a write
- * Data 4B + Status 8B. Always 16 bytes, always polled. */
-static u32 gspi_reg_xfer(GSPI_HandleTypeDef *hgspi, u32 cmd, u32 wdata, u8 is_write,
-						 GSPI_StatusTypeDef *sts)
+/* Register frame: CMD 4B, then for a read Status 4B + Data 4B, for a write
+ * Data 4B + Status 4B. Always 12 bytes, always polled. */
+static u32 gspi_reg_xfer(struct whc_gspi_handle *hgspi, u32 cmd, u32 wdata, u8 is_write,
+						 struct whc_gspi_status *sts)
 {
 	u8 *buf = hgspi->regbuf;
 	u32 rdata = 0;
 
-	_memset(buf, 0, 16);
+	_memset(buf, 0, GSPI_CMD_LEN + 4 + GSPI_STATUS_LEN);
 	_memcpy(buf, &cmd, GSPI_CMD_LEN);
 	if (is_write) {
-		if (hgspi->swap) {
-			wdata = gspi_swap32(wdata);
-		}
 		_memcpy(buf + GSPI_CMD_LEN, &wdata, 4);
 	}
 
 	gspi_cs(hgspi, 0);
-	gspi_xfer_poll(hgspi, buf, 16);
+	gspi_xfer_poll(hgspi, buf, GSPI_CMD_LEN + 4 + GSPI_STATUS_LEN);
 	gspi_cs(hgspi, 1);
 
 	if (is_write) {
@@ -198,19 +223,17 @@ static u32 gspi_reg_xfer(GSPI_HandleTypeDef *hgspi, u32 cmd, u32 wdata, u8 is_wr
 	} else {
 		gspi_fill_status(sts, buf + GSPI_CMD_LEN);
 		_memcpy(&rdata, buf + GSPI_CMD_LEN + GSPI_STATUS_LEN, 4);
-		if (hgspi->swap) {
-			rdata = gspi_swap32(rdata);
-		}
 	}
 
 	return rdata;
 }
 
-static u32 gspi_read_reg(GSPI_HandleTypeDef *hgspi, u32 addr, u8 width, GSPI_StatusTypeDef *sts)
+static u32 gspi_read_reg(struct whc_gspi_handle *hgspi, u8 func, u32 addr, u8 width, struct whc_gspi_status *sts)
 {
 	u32 aligned = addr & ~0x3u;
 	u32 shift = (addr & 0x3u) * 8;
-	u32 cmd = gspi_build_cmd(hgspi, 0, GSPI_DOMAIN_CTRL, aligned, 0);
+	u32 byte_en = (width == 1) ? (0x1u << (addr & 0x3u)) : (width == 2) ? (0x3u << (addr & 0x3u)) : 0xFu;
+	u32 cmd = gspi_build_cmd(0, func, GSPI_DOMAIN_CTRL, aligned, (u8)byte_en);
 	u32 data = gspi_reg_xfer(hgspi, cmd, 0, 0, sts);
 
 	switch (width) {
@@ -223,8 +246,8 @@ static u32 gspi_read_reg(GSPI_HandleTypeDef *hgspi, u32 addr, u8 width, GSPI_Sta
 	}
 }
 
-static s32 gspi_write_reg(GSPI_HandleTypeDef *hgspi, u32 addr, u32 val, u8 width,
-						  GSPI_StatusTypeDef *sts)
+static s32 gspi_write_reg(struct whc_gspi_handle *hgspi, u8 func, u32 addr, u32 val, u8 width,
+						  struct whc_gspi_status *sts)
 {
 	u32 aligned = addr & ~0x3u;
 	u32 shift = (addr & 0x3u) * 8;
@@ -245,40 +268,40 @@ static s32 gspi_write_reg(GSPI_HandleTypeDef *hgspi, u32 addr, u32 val, u8 width
 		break;
 	}
 
-	cmd = gspi_build_cmd(hgspi, 1, GSPI_DOMAIN_CTRL, aligned, (u8)byte_en);
+	cmd = gspi_build_cmd(1, func, GSPI_DOMAIN_CTRL, aligned, (u8)byte_en);
 	gspi_reg_xfer(hgspi, cmd, val, 1, sts);
 
 	return RTK_SUCCESS;
 }
 
-u8 GSPI_ReadReg8(GSPI_HandleTypeDef *hgspi, u32 addr, GSPI_StatusTypeDef *sts)
+u8 GSPI_ReadReg8(struct whc_gspi_handle *hgspi, u8 func, u32 addr, struct whc_gspi_status *sts)
 {
-	return (u8)gspi_read_reg(hgspi, addr, 1, sts);
+	return (u8)gspi_read_reg(hgspi, func, addr, 1, sts);
 }
 
-u16 GSPI_ReadReg16(GSPI_HandleTypeDef *hgspi, u32 addr, GSPI_StatusTypeDef *sts)
+u16 GSPI_ReadReg16(struct whc_gspi_handle *hgspi, u8 func, u32 addr, struct whc_gspi_status *sts)
 {
-	return (u16)gspi_read_reg(hgspi, addr, 2, sts);
+	return (u16)gspi_read_reg(hgspi, func, addr, 2, sts);
 }
 
-u32 GSPI_ReadReg32(GSPI_HandleTypeDef *hgspi, u32 addr, GSPI_StatusTypeDef *sts)
+u32 GSPI_ReadReg32(struct whc_gspi_handle *hgspi, u8 func, u32 addr, struct whc_gspi_status *sts)
 {
-	return gspi_read_reg(hgspi, addr, 4, sts);
+	return gspi_read_reg(hgspi, func, addr, 4, sts);
 }
 
-s32 GSPI_WriteReg8(GSPI_HandleTypeDef *hgspi, u32 addr, u8 val, GSPI_StatusTypeDef *sts)
+s32 GSPI_WriteReg8(struct whc_gspi_handle *hgspi, u8 func, u32 addr, u8 val, struct whc_gspi_status *sts)
 {
-	return gspi_write_reg(hgspi, addr, val, 1, sts);
+	return gspi_write_reg(hgspi, func, addr, val, 1, sts);
 }
 
-s32 GSPI_WriteReg16(GSPI_HandleTypeDef *hgspi, u32 addr, u16 val, GSPI_StatusTypeDef *sts)
+s32 GSPI_WriteReg16(struct whc_gspi_handle *hgspi, u8 func, u32 addr, u16 val, struct whc_gspi_status *sts)
 {
-	return gspi_write_reg(hgspi, addr, val, 2, sts);
+	return gspi_write_reg(hgspi, func, addr, val, 2, sts);
 }
 
-s32 GSPI_WriteReg32(GSPI_HandleTypeDef *hgspi, u32 addr, u32 val, GSPI_StatusTypeDef *sts)
+s32 GSPI_WriteReg32(struct whc_gspi_handle *hgspi, u8 func, u32 addr, u32 val, struct whc_gspi_status *sts)
 {
-	return gspi_write_reg(hgspi, addr, val, 4, sts);
+	return gspi_write_reg(hgspi, func, addr, val, 4, sts);
 }
 
 /* ---------------------------------------------------------------- FIFO access */
@@ -291,7 +314,7 @@ s32 GSPI_WriteReg32(GSPI_HandleTypeDef *hgspi, u32 addr, u32 val, GSPI_StatusTyp
   * @param len Data bytes (descriptor + payload). Padded to 4 bytes internally.
   * @return RTK_SUCCESS, -RTK_ERR_BUSY when the device has no free TX BD, or an error.
   */
-s32 GSPI_WriteTxFifo(GSPI_HandleTypeDef *hgspi, u8 *buf, u32 len, GSPI_StatusTypeDef *sts)
+s32 GSPI_WriteTxFifo(struct whc_gspi_handle *hgspi, u8 func, u8 *buf, u32 len, struct whc_gspi_status *sts)
 {
 	u32 xlen = GSPI_ALIGN4(len);
 	u32 cmd;
@@ -300,7 +323,7 @@ s32 GSPI_WriteTxFifo(GSPI_HandleTypeDef *hgspi, u8 *buf, u32 len, GSPI_StatusTyp
 	if ((hgspi == NULL) || (buf == NULL) || (len == 0)) {
 		return -RTK_ERR_BADARG;
 	}
-	if (GSPI_GetFreeTxBD(hgspi, NULL) == 0) {
+	if (GSPI_GetFreeTxBD(hgspi, func, NULL) == 0) {
 		return -RTK_ERR_BUSY;
 	}
 
@@ -308,7 +331,7 @@ s32 GSPI_WriteTxFifo(GSPI_HandleTypeDef *hgspi, u8 *buf, u32 len, GSPI_StatusTyp
 		_memset(buf + GSPI_CMD_LEN + len, 0, xlen - len);
 	}
 	_memset(buf + GSPI_CMD_LEN + xlen, 0, GSPI_STATUS_LEN);
-	cmd = gspi_build_cmd(hgspi, 1, GSPI_DOMAIN_TXFIFO, xlen, 0);
+	cmd = gspi_build_cmd(1, func, GSPI_DOMAIN_TXFIFO, xlen, 0);
 	_memcpy(buf, &cmd, GSPI_CMD_LEN);
 
 	gspi_cs(hgspi, 0);
@@ -337,6 +360,53 @@ s32 GSPI_WriteTxFifo(GSPI_HandleTypeDef *hgspi, u8 *buf, u32 len, GSPI_StatusTyp
 }
 
 /**
+  * @brief Write one chunk of firmware image data into the device FW download FIFO.
+  * @param buf Frame buffer, same layout as GSPI_WriteTxFifo: the payload lands
+  *        at buf[4], and the buffer must provide GSPI_FIFO_BUF_SIZE(len) bytes.
+  * @param len Data bytes. Padded to 4 bytes internally.
+  * @note Used only while the device is still in its bootloader, before a TX BD
+  *       queue exists, so unlike GSPI_WriteTxFifo this does not check free TX BD
+  *       count or the TX error status bits.
+  */
+s32 GSPI_FwDownload(struct whc_gspi_handle *hgspi, u8 func, u8 *buf, u32 len, struct whc_gspi_status *sts)
+{
+	u32 xlen = GSPI_ALIGN4(len);
+	u32 cmd;
+	s32 ret = RTK_SUCCESS;
+
+	if ((hgspi == NULL) || (buf == NULL) || (len == 0)) {
+		return -RTK_ERR_BADARG;
+	}
+
+	if (xlen > len) {
+		_memset(buf + GSPI_CMD_LEN + len, 0, xlen - len);
+	}
+	_memset(buf + GSPI_CMD_LEN + xlen, 0, GSPI_STATUS_LEN);
+	cmd = gspi_build_cmd(1, func, GSPI_DOMAIN_FWDL, xlen, 0);
+	_memcpy(buf, &cmd, GSPI_CMD_LEN);
+
+	gspi_cs(hgspi, 0);
+	gspi_xfer_poll(hgspi, buf, GSPI_CMD_LEN);
+	if (gspi_use_dma(hgspi, xlen)) {
+		ret = gspi_xfer_dma(hgspi, buf + GSPI_CMD_LEN, NULL, xlen);
+	} else {
+		gspi_xfer_poll(hgspi, buf + GSPI_CMD_LEN, xlen);
+	}
+	if (ret == RTK_SUCCESS) {
+		gspi_xfer_poll(hgspi, buf + GSPI_CMD_LEN + xlen, GSPI_STATUS_LEN);
+	}
+	gspi_cs(hgspi, 1);
+
+	if (ret != RTK_SUCCESS) {
+		return ret;
+	}
+
+	gspi_fill_status(sts, buf + GSPI_CMD_LEN + xlen);
+
+	return RTK_SUCCESS;
+}
+
+/**
   * @brief Read one packet out of the device RX FIFO.
   * @param buf Frame buffer, same layout as GSPI_WriteTxFifo: the payload lands
   *        at buf[4], and the buffer must provide GSPI_FIFO_BUF_SIZE(len) bytes.
@@ -344,7 +414,7 @@ s32 GSPI_WriteTxFifo(GSPI_HandleTypeDef *hgspi, u8 *buf, u32 len, GSPI_StatusTyp
   * @note Whether the payload starts with an RX descriptor is decided by the
   *       device application, so the data is returned as opaque bytes.
   */
-s32 GSPI_ReadRxFifo(GSPI_HandleTypeDef *hgspi, u8 *buf, u32 len, GSPI_StatusTypeDef *sts)
+s32 GSPI_ReadRxFifo(struct whc_gspi_handle *hgspi, u8 func, u8 *buf, u32 len, struct whc_gspi_status *sts)
 {
 	u32 xlen = GSPI_ALIGN4(len);
 	u32 cmd;
@@ -355,7 +425,7 @@ s32 GSPI_ReadRxFifo(GSPI_HandleTypeDef *hgspi, u8 *buf, u32 len, GSPI_StatusType
 	}
 
 	_memset(buf + GSPI_CMD_LEN, 0, xlen + GSPI_STATUS_LEN);
-	cmd = gspi_build_cmd(hgspi, 0, GSPI_DOMAIN_RXFIFO, xlen, 0);
+	cmd = gspi_build_cmd(0, func, GSPI_DOMAIN_RXFIFO, xlen, 0);
 	_memcpy(buf, &cmd, GSPI_CMD_LEN);
 
 	gspi_cs(hgspi, 0);
@@ -386,9 +456,9 @@ s32 GSPI_ReadRxFifo(GSPI_HandleTypeDef *hgspi, u8 *buf, u32 len, GSPI_StatusType
   * @note RDY can be observed set while the length field still reads 0, so both
   *       have to be valid before reporting data.
   */
-u32 GSPI_GetRxLen(GSPI_HandleTypeDef *hgspi, GSPI_StatusTypeDef *sts)
+u32 GSPI_GetRxLen(struct whc_gspi_handle *hgspi, u8 func, struct whc_gspi_status *sts)
 {
-	u32 rx0 = GSPI_ReadReg32(hgspi, GSPI_REG_RX0_REQ_LEN, sts);
+	u32 rx0 = GSPI_ReadReg32(hgspi, func, GSPI_REG_RX0_REQ_LEN, sts);
 
 	if ((rx0 & GSPI_BIT_SYNC_RX_LEN_READY) == 0) {
 		return 0;
@@ -397,16 +467,16 @@ u32 GSPI_GetRxLen(GSPI_HandleTypeDef *hgspi, GSPI_StatusTypeDef *sts)
 	return rx0 & GSPI_MASK_RX_LENGTH_LAT;
 }
 
-u32 GSPI_GetFreeTxBD(GSPI_HandleTypeDef *hgspi, GSPI_StatusTypeDef *sts)
+u32 GSPI_GetFreeTxBD(struct whc_gspi_handle *hgspi, u8 func, struct whc_gspi_status *sts)
 {
-	return GSPI_ReadReg32(hgspi, GSPI_REG_FREE_TX_BD_NUM, sts) & 0xFFFFu;
+	return GSPI_ReadReg32(hgspi, func, GSPI_REG_FREE_TX_BD_NUM, sts) & 0xFFFFu;
 }
 
 /**
   * @brief Unmask or mask HISR bits. HIMR cannot be read back on this SoC, so the
   *        value is kept in the handle and rewritten in full each time.
   */
-void GSPI_INTConfig(GSPI_HandleTypeDef *hgspi, u32 mask, u32 newstate)
+void GSPI_INTConfig(struct whc_gspi_handle *hgspi, u8 func, u32 mask, u32 newstate)
 {
 	if (newstate == ENABLE) {
 		hgspi->himr_shadow |= mask;
@@ -414,37 +484,37 @@ void GSPI_INTConfig(GSPI_HandleTypeDef *hgspi, u32 mask, u32 newstate)
 		hgspi->himr_shadow &= ~mask;
 	}
 
-	GSPI_WriteReg32(hgspi, GSPI_REG_HIMR, hgspi->himr_shadow, NULL);
+	GSPI_WriteReg32(hgspi, func, GSPI_REG_HIMR, hgspi->himr_shadow, NULL);
 }
 
-u32 GSPI_GetINTMask(GSPI_HandleTypeDef *hgspi)
+u32 GSPI_GetINTMask(struct whc_gspi_handle *hgspi)
 {
 	return hgspi->himr_shadow;
 }
 
-u32 GSPI_INTStatus(GSPI_HandleTypeDef *hgspi, GSPI_StatusTypeDef *sts)
+u32 GSPI_INTStatus(struct whc_gspi_handle *hgspi, u8 func, struct whc_gspi_status *sts)
 {
-	return GSPI_ReadReg32(hgspi, GSPI_REG_HISR, sts);
+	return GSPI_ReadReg32(hgspi, func, GSPI_REG_HISR, sts);
 }
 
-void GSPI_INTClear(GSPI_HandleTypeDef *hgspi, u32 bits)
+void GSPI_INTClear(struct whc_gspi_handle *hgspi, u8 func, u32 bits)
 {
-	GSPI_WriteReg32(hgspi, GSPI_REG_HISR, bits, NULL);
+	GSPI_WriteReg32(hgspi, func, GSPI_REG_HISR, bits, NULL);
 }
 
-void GSPI_DmaCmd(GSPI_HandleTypeDef *hgspi, u32 newstate)
+void GSPI_DmaCmd(struct whc_gspi_handle *hgspi, u32 newstate)
 {
 	hgspi->Init.GSPI_DmaEn = (newstate == ENABLE) ? 1 : 0;
 }
 
-u8 GSPI_DmaEnabled(GSPI_HandleTypeDef *hgspi)
+u8 GSPI_DmaEnabled(struct whc_gspi_handle *hgspi)
 {
 	return hgspi->Init.GSPI_DmaEn;
 }
 
 /* ------------------------------------------------------------- init / config */
 
-void GSPI_StructInit(GSPI_InitTypeDef *init)
+void GSPI_StructInit(struct whc_gspi_init *init)
 {
 	init->GSPI_Index = 0;
 	init->GSPI_ClkPin = _PNC;
@@ -458,11 +528,16 @@ void GSPI_StructInit(GSPI_InitTypeDef *init)
 	init->GSPI_XferTimeoutUs = 100000;
 }
 
-void GSPI_SetFreq(GSPI_HandleTypeDef *hgspi, u32 freq_hz)
+void GSPI_SetFreq(struct whc_gspi_handle *hgspi, u32 freq_hz)
 {
 	u32 ipclk = HPERI_ClkGet();
-	u32 div = (ipclk / freq_hz / 2) * 2;
+	u32 div;
 
+	if (freq_hz == 0) {
+		return;
+	}
+
+	div = (ipclk / freq_hz / 2) * 2;
 	if (div == 0) {
 		div = 2;
 	}
@@ -483,7 +558,7 @@ void GSPI_SetFreq(GSPI_HandleTypeDef *hgspi, u32 freq_hz)
   *       during boot looks like an asserted chip select to the device, which
   *       would make it fall back to SDIO mode.
   */
-s32 GSPI_Init(GSPI_HandleTypeDef *hgspi, GSPI_InitTypeDef *init)
+s32 GSPI_Init(struct whc_gspi_handle *hgspi, struct whc_gspi_init *init)
 {
 	SSI_InitTypeDef ssi_init;
 	GPIO_InitTypeDef gpio_init;
@@ -493,22 +568,21 @@ s32 GSPI_Init(GSPI_HandleTypeDef *hgspi, GSPI_InitTypeDef *init)
 		return -RTK_ERR_BADARG;
 	}
 
-	_memset(hgspi, 0, sizeof(GSPI_HandleTypeDef));
+	_memset(hgspi, 0, sizeof(struct whc_gspi_handle));
 	hgspi->Init = *init;
-	hgspi->swap = 1;   /* the device boots in little-endian mode */
 
 	if (init->GSPI_Index == 0) {
-		hgspi->spi_dev = SPI0_DEV;
-		clk_func = PINMUX_FUNCTION_SPI0_CLK;
-		mosi_func = PINMUX_FUNCTION_SPI0_MOSI;
-		miso_func = PINMUX_FUNCTION_SPI0_MISO;
-		RCC_PeriphClockCmd(APBPeriph_SPI0, APBPeriph_SPI0_CLOCK, ENABLE);
+		hgspi->spi_dev = GSPI_SPI0_DEV;
+		clk_func = GSPI_SPI0_PINMUX_CLK;
+		mosi_func = GSPI_SPI0_PINMUX_MOSI;
+		miso_func = GSPI_SPI0_PINMUX_MISO;
+		RCC_PeriphClockCmd(GSPI_SPI0_APB, GSPI_SPI0_APB_CLOCK, ENABLE);
 	} else {
-		hgspi->spi_dev = SPI1_DEV;
-		clk_func = PINMUX_FUNCTION_SPI1_CLK;
-		mosi_func = PINMUX_FUNCTION_SPI1_MOSI;
-		miso_func = PINMUX_FUNCTION_SPI1_MISO;
-		RCC_PeriphClockCmd(APBPeriph_SPI1, APBPeriph_SPI1_CLOCK, ENABLE);
+		hgspi->spi_dev = GSPI_SPI1_DEV;
+		clk_func = GSPI_SPI1_PINMUX_CLK;
+		mosi_func = GSPI_SPI1_PINMUX_MOSI;
+		miso_func = GSPI_SPI1_PINMUX_MISO;
+		RCC_PeriphClockCmd(GSPI_SPI1_APB, GSPI_SPI1_APB_CLOCK, ENABLE);
 	}
 
 	/* CS first, and the level before the direction: the pad must never actively
@@ -548,7 +622,7 @@ s32 GSPI_Init(GSPI_HandleTypeDef *hgspi, GSPI_InitTypeDef *init)
 	return RTK_SUCCESS;
 }
 
-void GSPI_DeInit(GSPI_HandleTypeDef *hgspi)
+void GSPI_DeInit(struct whc_gspi_handle *hgspi)
 {
 	if ((hgspi == NULL) || (hgspi->initialized == 0)) {
 		return;
@@ -556,9 +630,9 @@ void GSPI_DeInit(GSPI_HandleTypeDef *hgspi)
 
 	SSI_Cmd(hgspi->spi_dev, DISABLE);
 	if (hgspi->Init.GSPI_Index == 0) {
-		RCC_PeriphClockCmd(APBPeriph_SPI0, APBPeriph_SPI0_CLOCK, DISABLE);
+		RCC_PeriphClockCmd(GSPI_SPI0_APB, GSPI_SPI0_APB_CLOCK, DISABLE);
 	} else {
-		RCC_PeriphClockCmd(APBPeriph_SPI1, APBPeriph_SPI1_CLOCK, DISABLE);
+		RCC_PeriphClockCmd(GSPI_SPI1_APB, GSPI_SPI1_APB_CLOCK, DISABLE);
 	}
 	hgspi->initialized = 0;
 	hgspi->activated = 0;
@@ -569,10 +643,10 @@ void GSPI_DeInit(GSPI_HandleTypeDef *hgspi)
   *        clock. This must be the very first bus transaction after the device
   *        boots, otherwise the device latches SDIO mode.
   * @param spi_cfg GSPI_BIG_ENDIAN_32 or GSPI_LITTLE_ENDIAN_32.
-  * @note The activation frame is always encoded for the device's reset state
-  *       (little endian), whatever the target setting is.
+  * @note CMD is always sent MSB byte first, Data and Status LSB byte first, for
+  *       the activation frame as well as for all later frames.
   */
-s32 GSPI_Configuration(GSPI_HandleTypeDef *hgspi, u8 spi_cfg)
+s32 GSPI_Configuration(struct whc_gspi_handle *hgspi, u8 func, u8 spi_cfg)
 {
 	u8 readback;
 	u32 attempt;
@@ -588,14 +662,8 @@ s32 GSPI_Configuration(GSPI_HandleTypeDef *hgspi, u8 spi_cfg)
 	 * SPDIO init is simply not seen: in that case the next attempt is the first
 	 * transaction the device observes and activation succeeds. */
 	for (attempt = 1; attempt <= GSPI_ACTIVATE_RETRY; attempt++) {
-		hgspi->swap = 1;
-		GSPI_WriteReg8(hgspi, GSPI_REG_SPI_CFG, spi_cfg, NULL);
-
-		/* From here on the device uses the new setting: a little-endian host
-		 * needs no swap for BIG_ENDIAN_32, a full 4-byte swap otherwise. */
-		hgspi->swap = (spi_cfg == GSPI_BIG_ENDIAN_32) ? 0 : 1;
-
-		readback = GSPI_ReadReg8(hgspi, GSPI_REG_SPI_CFG, NULL);
+		GSPI_WriteReg8(hgspi, func, GSPI_REG_SPI_CFG, spi_cfg, NULL);
+		readback = GSPI_ReadReg8(hgspi, func, GSPI_REG_SPI_CFG, NULL);
 		if (readback == spi_cfg) {
 			GSPI_SetFreq(hgspi, hgspi->Init.GSPI_ClkFreq);
 			hgspi->activated = 1;
@@ -606,11 +674,82 @@ s32 GSPI_Configuration(GSPI_HandleTypeDef *hgspi, u8 spi_cfg)
 		}
 
 		RTK_LOGW(TAG, "activation attempt %d: SPI_CFG reads 0x%02x\n", (int)attempt, readback);
-		hgspi->swap = 1;
 		DelayMs(GSPI_ACTIVATE_RETRY_MS);
 	}
 
 	RTK_LOGE(TAG, "activation failed after %d attempts\n", GSPI_ACTIVATE_RETRY);
 
 	return RTK_FAIL;
+}
+
+/* ------------------------------------------------- WIFI wrappers, func fixed to GSPI_FUNC_1 */
+
+s32 GSPI_WIFI_Configuration(struct whc_gspi_handle *hgspi, u8 spi_cfg)
+{
+	return GSPI_Configuration(hgspi, GSPI_FUNC_1, spi_cfg);
+}
+
+u8 GSPI_WIFI_ReadReg8(struct whc_gspi_handle *hgspi, u32 addr, struct whc_gspi_status *sts)
+{
+	return GSPI_ReadReg8(hgspi, GSPI_FUNC_1, addr, sts);
+}
+
+u16 GSPI_WIFI_ReadReg16(struct whc_gspi_handle *hgspi, u32 addr, struct whc_gspi_status *sts)
+{
+	return GSPI_ReadReg16(hgspi, GSPI_FUNC_1, addr, sts);
+}
+
+u32 GSPI_WIFI_ReadReg32(struct whc_gspi_handle *hgspi, u32 addr, struct whc_gspi_status *sts)
+{
+	return GSPI_ReadReg32(hgspi, GSPI_FUNC_1, addr, sts);
+}
+
+s32 GSPI_WIFI_WriteReg8(struct whc_gspi_handle *hgspi, u32 addr, u8 val, struct whc_gspi_status *sts)
+{
+	return GSPI_WriteReg8(hgspi, GSPI_FUNC_1, addr, val, sts);
+}
+
+s32 GSPI_WIFI_WriteReg16(struct whc_gspi_handle *hgspi, u32 addr, u16 val, struct whc_gspi_status *sts)
+{
+	return GSPI_WriteReg16(hgspi, GSPI_FUNC_1, addr, val, sts);
+}
+
+s32 GSPI_WIFI_WriteReg32(struct whc_gspi_handle *hgspi, u32 addr, u32 val, struct whc_gspi_status *sts)
+{
+	return GSPI_WriteReg32(hgspi, GSPI_FUNC_1, addr, val, sts);
+}
+
+s32 GSPI_WIFI_WriteTxFifo(struct whc_gspi_handle *hgspi, u8 *buf, u32 len, struct whc_gspi_status *sts)
+{
+	return GSPI_WriteTxFifo(hgspi, GSPI_FUNC_1, buf, len, sts);
+}
+
+s32 GSPI_WIFI_ReadRxFifo(struct whc_gspi_handle *hgspi, u8 *buf, u32 len, struct whc_gspi_status *sts)
+{
+	return GSPI_ReadRxFifo(hgspi, GSPI_FUNC_1, buf, len, sts);
+}
+
+u32 GSPI_WIFI_GetRxLen(struct whc_gspi_handle *hgspi, struct whc_gspi_status *sts)
+{
+	return GSPI_GetRxLen(hgspi, GSPI_FUNC_1, sts);
+}
+
+u32 GSPI_WIFI_GetFreeTxBD(struct whc_gspi_handle *hgspi, struct whc_gspi_status *sts)
+{
+	return GSPI_GetFreeTxBD(hgspi, GSPI_FUNC_1, sts);
+}
+
+void GSPI_WIFI_INTConfig(struct whc_gspi_handle *hgspi, u32 mask, u32 newstate)
+{
+	GSPI_INTConfig(hgspi, GSPI_FUNC_1, mask, newstate);
+}
+
+u32 GSPI_WIFI_INTStatus(struct whc_gspi_handle *hgspi, struct whc_gspi_status *sts)
+{
+	return GSPI_INTStatus(hgspi, GSPI_FUNC_1, sts);
+}
+
+void GSPI_WIFI_INTClear(struct whc_gspi_handle *hgspi, u32 bits)
+{
+	GSPI_INTClear(hgspi, GSPI_FUNC_1, bits);
 }

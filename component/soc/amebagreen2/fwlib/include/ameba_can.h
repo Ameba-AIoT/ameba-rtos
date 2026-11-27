@@ -856,6 +856,8 @@ void CAN_LpFilterConfig(CAN_TypeDef *CANx, u32 FltNum);
 
 void CAN_BusCmd(CAN_TypeDef *CANx, u32 NewState);
 u32 CAN_BusStatusGet(CAN_TypeDef *CANx);
+void CAN_RequestSleepOrWake(CAN_TypeDef *CANx, bool sleep);
+u32 CAN_SleepStatusGet(CAN_TypeDef *CANx);
 
 u32 CAN_FifoStatusGet(CAN_TypeDef *CANx);
 u32 CAN_FifoLvlGet(CAN_TypeDef *CANx);

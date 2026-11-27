@@ -12,6 +12,16 @@
 
 /************************************* Health Model ************************************/
 
+/** @addtogroup BT_Constants BT Constants
+ * @{
+ */
+/** @addtogroup BT_Mesh_Constants BT Mesh Constants
+ * @{
+ */
+/** @addtogroup BT_Mesh_Health_Model_Constants BT Mesh Health Model Constants
+ * @{
+ */
+
 /**
  * @def       HEALTH_FAULT_ARRAY_LEN
  * @brief     Number of fault values that the fault array of a Health Server event can hold.
@@ -20,6 +30,25 @@
  */
 #define HEALTH_FAULT_ARRAY_LEN 0x10
 
+/**
+ * @}
+ */
+/**
+ * @}
+ */
+/**
+ * @}
+ */
+
+/** @addtogroup BT_Types BT Types
+ * @{
+ */
+/** @addtogroup BT_Mesh_Types BT Mesh Types
+ * @{
+ */
+/** @addtogroup BT_Mesh_Health_Model_Types BT Mesh Health Model Types
+ * @{
+ */
 /********************************* Health Client Model *********************************/
 /**
  * @enum      rtk_bt_mesh_health_client_model_act_t
@@ -391,11 +420,24 @@ typedef struct {
 	uint16_t company_id;    /*!< Company ID of the Health Server, which identifies its Health Fault state. */
 } rtk_bt_mesh_health_server_company_id_set_t;
 
-/********************************* Functions Declaration *******************************/
 /**
- * @defgroup  ble_mesh_health_model BT LE Mesh Health Model APIs
- * @brief     BT LE Mesh Health Model related function APIs
- * @ingroup   ble_mesh_api_group
+ * @}
+ */
+/**
+ * @}
+ */
+/**
+ * @}
+ */
+
+/********************************* Functions Declaration *******************************/
+/** @addtogroup BT_Functions BT Functions
+ * @{
+ */
+/** @addtogroup BT_Mesh_Functions BT Mesh Functions
+ * @{
+ */
+/** @addtogroup BT_Mesh_Health_Model_Functions BT Mesh Health Model Functions
  * @{
  */
 
@@ -536,6 +578,12 @@ uint16_t rtk_bt_mesh_health_server_set_tests(rtk_bt_mesh_health_server_test_set_
  */
 uint16_t rtk_bt_mesh_health_server_set_company_id(rtk_bt_mesh_health_server_company_id_set_t *company_id_set);
 
+/**
+ * @}
+ */
+/**
+ * @}
+ */
 /**
  * @}
  */

@@ -2,7 +2,7 @@
 
 In this application, Ameba is designed as a USB HID mouse, keyboard, headset buttons or vendor device, PC will recognize Ameba as a mouse, a keyboard, the buttons of a Type-C headset, or a vendor defined HID device.
 
-The vendor device is a reference for a customer HID protocol: one interface on the Vendor Defined usage page 0xFF00 with an INTR IN and an INTR OUT endpoint, one 64-byte Input report with Report ID 0x01 and one 64-byte Output report with Report ID 0x02 (Report ID included, 63 bytes of payload each). The host OS binds no driver of its own to it, so generic HID tools built on hidapi reach it directly. Add or resize reports in `hid_vendor_report_desc[]` of `usbd_hid.c` and the `USBD_HID_VENDOR_*` defines of `usbd_hid.h`.
+The vendor device is a reference for a customer HID protocol: one interface on the Vendor Defined usage page 0xFF00 with an INTR IN and an INTR OUT endpoint, one 64-byte Input report with Report ID 0x01 and one 64-byte Output report with Report ID 0x02 (Report ID included, 63 bytes of payload each). The host OS binds no driver of its own to it, so generic HID tools built on hidapi reach it directly. Add or resize reports in `usbd_hid_vendor_report_desc[]` of `usbd_hid.c` and the `USBD_HID_VENDOR_*` defines of `usbd_hid.h`.
 
 # HW Configuration
 

@@ -90,7 +90,7 @@ static cJSON *JSON_read(int fd);
 /*************************** Print usage functions ****************************/
 
 void
-usage()
+usage(void)
 {
 	fputs(usage_shortstr, stderr);
 }
@@ -2171,7 +2171,7 @@ connect_msg(struct iperf_stream *sp)
 /**************************************************************************/
 
 struct iperf_test *
-iperf_new_test()
+iperf_new_test(void)
 {
 	struct iperf_test *test;
 

@@ -11,6 +11,15 @@
 #include <rtk_bt_mesh_def.h>
 
 /************************************** Time Model *************************************/
+/** @addtogroup BT_Types BT Types
+ * @{
+ */
+/** @addtogroup BT_Mesh_Types BT Mesh Types
+ * @{
+ */
+/** @addtogroup BT_Mesh_Time_Model_Types BT Mesh Time Model Types
+ * @{
+ */
 /**
  * @struct    rtk_bt_mesh_tai_time_t
  * @brief     BLE MESH tai time structure.
@@ -483,11 +492,24 @@ typedef struct {
                                         *   0x0000000000: The TAI of Delta Change is unknown. */
 } rtk_bt_mesh_time_server_set_tai_utc_delta_t;
 
-/********************************* Functions Declaration *******************************/
 /**
- * @defgroup  ble_mesh_time_model BT LE Mesh Time Model APIs
- * @brief     BT LE Mesh Time Model related function APIs
- * @ingroup   ble_mesh_api_group
+ * @}
+ */
+/**
+ * @}
+ */
+/**
+ * @}
+ */
+
+/********************************* Functions Declaration *******************************/
+/** @addtogroup BT_Functions BT Functions
+ * @{
+ */
+/** @addtogroup BT_Mesh_Functions BT Mesh Functions
+ * @{
+ */
+/** @addtogroup BT_Mesh_Time_Model_Functions BT Mesh Time Model Functions
  * @{
  */
 /**
@@ -570,6 +592,12 @@ uint16_t rtk_bt_mesh_time_tai_utc_delta_set(rtk_bt_mesh_time_tai_utc_delta_set_t
  */
 uint16_t rtk_bt_mesh_time_role_set(rtk_bt_mesh_time_role_set_t *time_client_role_set);
 
+/**
+ * @}
+ */
+/**
+ * @}
+ */
 /**
  * @}
  */

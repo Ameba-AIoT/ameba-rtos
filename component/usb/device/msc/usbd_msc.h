@@ -126,9 +126,6 @@ typedef struct {
 	void (*status_changed)(u8 old_status, u8 status);
 } usbd_msc_cb_t;
 
-/** @} End of Device_MSC_Types group */
-/** @} End of USB_Device_Types group */
-
 /**
  * @brief MSC endpoint configuration structure.
  * @details This structure holds the endpoint addresses for MSC bulk IN and bulk OUT endpoints.
@@ -162,6 +159,9 @@ typedef struct {
 	u8  tx_task_priority;                       /**< TX task priority, 0 uses @ref USBD_MSC_DEFAULT_TX_TASK_PRIORITY. */
 	u8  rx_task_priority;                       /**< RX task priority, 0 uses @ref USBD_MSC_DEFAULT_RX_TASK_PRIORITY. */
 } usbd_msc_config_t;
+
+/** @} End of Device_MSC_Types group */
+/** @} End of USB_Device_Types group */
 
 /**
  * @brief Main structure for the MSC device class.
@@ -203,7 +203,7 @@ typedef struct {
 	u32 lba;                                        /**< Current logical block address for operations. */
 	usb_msc_scsi_sense_data_t scsi_sense;           /**< Sense data of the most recent failed command, reported by REQUEST SENSE. */
 	u8 from_composite;                              /**< Flag indicating if part of a composite device. */
-	u8 itf_str_idx;                                 /**< iInterface string index from usbd_add_string(), 0 for none. */
+	u8 itf_str_idx;                                 /**< iInterface string index from usbd_add_str(), 0 for none. */
 	/**
 	 * @brief SCSI standard INQUIRY response, built at init from the configured identification strings.
 	 * @details Held per instance rather than as a const table because the vendor/product/revision

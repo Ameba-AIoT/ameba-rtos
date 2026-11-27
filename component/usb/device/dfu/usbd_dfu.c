@@ -39,7 +39,7 @@
 static int usbd_dfu_set_config(usb_dev_t *dev, u8 config);
 static void usbd_dfu_clear_config(usb_dev_t *dev, u8 config);
 static int usbd_dfu_setup(usb_dev_t *dev, usb_setup_req_t *req);
-static u16 usbd_dfu_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16 buf_len);
+static u16 usbd_dfu_get_desc(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16 buf_len);
 static int usbd_dfu_ep0_data_in(usb_dev_t *dev, int status);
 static int usbd_dfu_ep0_data_out(usb_dev_t *dev);
 static void usbd_dfu_status_changed(usb_dev_t *dev, u8 old_status, u8 status);
@@ -77,7 +77,7 @@ static const u8 usbd_dfu_dev_desc[USB_LEN_DEV_DESC] = {
 
 #ifndef CONFIG_SUPPORT_USB_FS_ONLY
 /* USB Standard Device Qualifier Descriptor */
-static const u8 usbd_dfu_device_qualifier_desc[USB_LEN_DEV_QUALIFIER_DESC] = {
+static const u8 usbd_dfu_dev_qualifier_desc[USB_LEN_DEV_QUALIFIER_DESC] = {
 	USB_LEN_DEV_QUALIFIER_DESC,                     /* bLength */
 	USB_DESC_TYPE_DEVICE_QUALIFIER,                 /* bDescriptorType */
 	0x00, 0x02,                                     /* bcdUSB 2.00 */
@@ -115,7 +115,7 @@ static const u8 usbd_dfu_config_desc[] = {
 	USB_DFU_CLASS_CODE,                            /* bInterfaceClass: 0xFE (Application Specific) */
 	USB_DFU_SUBCLASS_CODE,                         /* bInterfaceSubClass: 0x01 (DFU) */
 	USB_DFU_PROTOCOL_DFU,                          /* bInterfaceProtocol: 0x02 (DFU mode); patched
-	                                                   to 0x01 in get_descriptor while in Run-Time
+	                                                   to 0x01 in get_desc while in Run-Time
 	                                                   mode */
 	0x00,                                           /* iInterface, runtime patched */
 
@@ -143,7 +143,7 @@ static const u8 usbd_dfu_config_desc[] = {
 
 /* DFU Class Driver */
 static const usbd_class_driver_t usbd_dfu_driver = {
-	.get_descriptor = usbd_dfu_get_descriptor,
+	.get_desc = usbd_dfu_get_desc,
 	.set_config     = usbd_dfu_set_config,
 	.clear_config   = usbd_dfu_clear_config,
 	.setup          = usbd_dfu_setup,
@@ -352,7 +352,7 @@ static int usbd_dfu_stall_error(usb_dev_t *dev, usbd_dfu_dev_t *dfu, usbd_dfu_st
  *         responses have a fixed length of 6 and 1.
  * @retval 1 if the request is well formed, 0 otherwise.
  */
-static u8 usbd_dfu_req_is_valid(const usb_setup_req_t *req)
+static u8 usbd_dfu_request_is_valid(const usb_setup_req_t *req)
 {
 	u8 dir = req->bmRequestType & USB_REQ_DIR_MASK;
 	u8 valid;
@@ -462,7 +462,7 @@ static int usbd_dfu_setup(usb_dev_t *dev, usb_setup_req_t *req)
 		   request whose direction or wLength does not match its definition, before it
 		   can arm the wrong EP0 direction or leave the control transfer unanswered.
 		   A request error stalls and leaves the DFU state untouched (USB 2.0 9.2.7). */
-		if (usbd_dfu_req_is_valid(req) == 0U) {
+		if (usbd_dfu_request_is_valid(req) == 0U) {
 			ret = -RTK_ERR_IO;
 			break;
 		}
@@ -1060,7 +1060,7 @@ static void usbd_dfu_cb_deinit(const usbd_dfu_cb_t *cb)
 /**
  * @brief  Get descriptor callback (called from ISR).
  */
-static u16 usbd_dfu_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16 buf_len)
+static u16 usbd_dfu_get_desc(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16 buf_len)
 {
 	usbd_dfu_dev_t *dfu = &usbd_dfu_dev;
 	const u8 *desc = NULL;
@@ -1091,8 +1091,8 @@ static u16 usbd_dfu_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 
 #ifndef CONFIG_SUPPORT_USB_FS_ONLY
 	case USB_DESC_TYPE_DEVICE_QUALIFIER:
-		desc = usbd_dfu_device_qualifier_desc;
-		len = sizeof(usbd_dfu_device_qualifier_desc);
+		desc = usbd_dfu_dev_qualifier_desc;
+		len = sizeof(usbd_dfu_dev_qualifier_desc);
 		break;
 
 	case USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION:
@@ -1103,7 +1103,7 @@ static u16 usbd_dfu_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 		break;
 #endif
 	case USB_DESC_TYPE_STRING:
-		/* Every string this class owns is registered with usbd_add_string() and answered by
+		/* Every string this class owns is registered with usbd_add_str() and answered by
 		   the core, which only forwards an index it does not know, e.g. the MS OS string */
 		USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_GET_DESC, 0);
 		break;
@@ -1291,7 +1291,7 @@ static int usbd_dfu_private_init(const usbd_dfu_cb_t *cb, const usbd_dfu_config_
 
 	/* The core owns the string table, so the same call works in standalone and composite
 	   mode. 0 means no iInterface string. */
-	dfu->itf_str_idx = usbd_add_string((cfg->itf_str != NULL) ? cfg->itf_str : USBD_DFU_DEFAULT_IFACE_STRING);
+	dfu->itf_str_idx = usbd_add_str((cfg->itf_str != NULL) ? cfg->itf_str : USBD_DFU_DEFAULT_ITF_STR);
 
 	dfu->xfer_buf = (u8 *)usb_os_malloc(dfu->xfer_size);
 	if (dfu->xfer_buf == NULL) {
@@ -1460,7 +1460,7 @@ int usbd_dfu_init(const usbd_dfu_cb_t *cb, const usbd_dfu_config_t *cfg)
 	ret = usbd_dfu_private_init(cb, cfg);
 	if (ret == RTK_SUCCESS) {
 		dfu->from_composite = 0;
-		ret = usbd_register_class(&usbd_dfu_driver);
+		ret = usbd_class_register(&usbd_dfu_driver);
 		if (ret != RTK_SUCCESS) {
 			/* private_init completed, so deinit is its exact reverse */
 			usbd_dfu_deinit();
@@ -1478,7 +1478,7 @@ int usbd_composite_dfu_init(const usbd_dfu_cb_t *cb, const usbd_dfu_config_t *cf
 	ret = usbd_dfu_private_init(cb, cfg);
 	if (ret == RTK_SUCCESS) {
 		dfu->from_composite = 1;
-		ret = usbd_composite_register_driver(&usbd_dfu_driver);
+		ret = usbd_composite_class_register(&usbd_dfu_driver);
 		if (ret != RTK_SUCCESS) {
 			/* private_init completed, so deinit is its exact reverse. from_composite is
 			   already 1, so the unregister inside is a no-op for an unregistered driver. */
@@ -1504,11 +1504,11 @@ void usbd_dfu_deinit(void)
 	   class is deinitialized: ref USB 2.0 9.4.7, the transfers still pending are aborted. */
 #ifdef CONFIG_USBD_COMPOSITE
 	if (dfu->from_composite != 0U) {
-		ret = usbd_composite_unregister_driver(&usbd_dfu_driver);
+		ret = usbd_composite_class_unregister(&usbd_dfu_driver);
 	} else
 #endif
 	{
-		ret = usbd_unregister_class();
+		ret = usbd_class_unregister();
 	}
 	if (ret != RTK_SUCCESS) {
 		return;

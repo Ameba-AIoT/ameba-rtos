@@ -6,7 +6,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 
-#include "usbd_scsi.h"
+#include "usbd_msc_scsi.h"
 
 /* Private defines -----------------------------------------------------------*/
 
@@ -16,22 +16,22 @@
 
 /* Private function prototypes -----------------------------------------------*/
 
-static int usbd_scsi_test_unit_ready(usbd_msc_dev_t  *cdev, u8 *params);
-static int usbd_scsi_inquiry(usbd_msc_dev_t  *cdev, u8 *params);
-static int usbd_scsi_read_format_capacity(usbd_msc_dev_t  *cdev, u8 *params);
-static int usbd_scsi_read_capacity10(usbd_msc_dev_t  *cdev, u8 *params);
-static int usbd_scsi_request_sense(usbd_msc_dev_t  *cdev, u8 *params);
-static int usbd_scsi_start_stop_unit(usbd_msc_dev_t  *cdev, u8 *params);
-static int usbd_scsi_prevent_allow(usbd_msc_dev_t  *cdev, u8 *params);
-static int usbd_scsi_mode_sense6(usbd_msc_dev_t  *cdev, u8 *params);
-static int usbd_scsi_mode_sense10(usbd_msc_dev_t  *cdev, u8 *params);
-static int usbd_scsi_write(usbd_msc_dev_t  *cdev, u8 *params);
-static int usbd_scsi_read(usbd_msc_dev_t  *cdev, u8 *params);
-static int usbd_scsi_verify10(usbd_msc_dev_t  *cdev, u8 *params);
-static int usbd_scsi_check_address_range(usbd_msc_dev_t  *cdev, u32 blk_offset, u32 blk_nbr);
-static int usbd_scsi_check_cdb_length(usbd_msc_dev_t  *cdev, u8 opcode);
-static int usbd_scsi_process_read(usbd_msc_dev_t  *cdev);
-static int usbd_scsi_process_write(usbd_msc_dev_t  *cdev);
+static int usbd_msc_scsi_test_unit_ready(usbd_msc_dev_t  *cdev, u8 *params);
+static int usbd_msc_scsi_inquiry(usbd_msc_dev_t  *cdev, u8 *params);
+static int usbd_msc_scsi_read_format_capacity(usbd_msc_dev_t  *cdev, u8 *params);
+static int usbd_msc_scsi_read_capacity10(usbd_msc_dev_t  *cdev, u8 *params);
+static int usbd_msc_scsi_request_sense(usbd_msc_dev_t  *cdev, u8 *params);
+static int usbd_msc_scsi_start_stop_unit(usbd_msc_dev_t  *cdev, u8 *params);
+static int usbd_msc_scsi_prevent_allow(usbd_msc_dev_t  *cdev, u8 *params);
+static int usbd_msc_scsi_mode_sense6(usbd_msc_dev_t  *cdev, u8 *params);
+static int usbd_msc_scsi_mode_sense10(usbd_msc_dev_t  *cdev, u8 *params);
+static int usbd_msc_scsi_write(usbd_msc_dev_t  *cdev, u8 *params);
+static int usbd_msc_scsi_read(usbd_msc_dev_t  *cdev, u8 *params);
+static int usbd_msc_scsi_verify10(usbd_msc_dev_t  *cdev, u8 *params);
+static int usbd_msc_scsi_check_address_range(usbd_msc_dev_t  *cdev, u32 blk_offset, u32 blk_nbr);
+static int usbd_msc_scsi_check_cdb_length(usbd_msc_dev_t  *cdev, u8 opcode);
+static int usbd_msc_scsi_process_read(usbd_msc_dev_t  *cdev);
+static int usbd_msc_scsi_process_write(usbd_msc_dev_t  *cdev);
 
 /* Private variables ---------------------------------------------------------*/
 
@@ -127,7 +127,7 @@ const u8 usbd_msc_default_inquiry_data[INQUIRY_DATA_LEN] = {
 * @param  params: Command parameters
 * @retval Status
 */
-static int usbd_scsi_test_unit_ready(usbd_msc_dev_t *cdev, u8 *params)
+static int usbd_msc_scsi_test_unit_ready(usbd_msc_dev_t *cdev, u8 *params)
 {
 	UNUSED(params);
 
@@ -136,7 +136,7 @@ static int usbd_scsi_test_unit_ready(usbd_msc_dev_t *cdev, u8 *params)
 	 * reports the command result and STALLs Bulk-Out when the host declared
 	 * an OUT transfer — the CSW status here stays the command result. */
 	if (cdev->is_open != 1U) {
-		usbd_scsi_sense_code(cdev, SCSI_SENSE_KEY_NOT_READY, SCSI_ASC_MEDIUM_NOT_PRESENT);
+		usbd_msc_scsi_sense_code(cdev, SCSI_SENSE_KEY_NOT_READY, SCSI_ASC_MEDIUM_NOT_PRESENT);
 		return -RTK_ERR_BADARG;
 	}
 	cdev->data_length = 0U;
@@ -150,7 +150,7 @@ static int usbd_scsi_test_unit_ready(usbd_msc_dev_t *cdev, u8 *params)
 * @param  params: Command parameters
 * @retval Status
 */
-static int  usbd_scsi_inquiry(usbd_msc_dev_t *cdev, u8 *params)
+static int  usbd_msc_scsi_inquiry(usbd_msc_dev_t *cdev, u8 *params)
 {
 	const u8 *page;
 	u32 page_len;
@@ -169,14 +169,14 @@ static int  usbd_scsi_inquiry(usbd_msc_dev_t *cdev, u8 *params)
 			page_len = PAGE80_INQUIRY_DATA_LEN;
 			break;
 		default:
-			usbd_scsi_sense_code(cdev, SCSI_SENSE_KEY_ILLEGAL_REQUEST, SCSI_ASC_INVALID_FIELD_IN_CDB);
+			usbd_msc_scsi_sense_code(cdev, SCSI_SENSE_KEY_ILLEGAL_REQUEST, SCSI_ASC_INVALID_FIELD_IN_CDB);
 			return -RTK_ERR_BADARG;
 		}
 	} else {
 		/* EVPD=0: the PAGE CODE field (byte 2) must be zero; a non-zero page
 		 * code is invalid — CHECK CONDITION / INVALID FIELD IN CDB (SPC-4). */
 		if (params[2] != 0U) {
-			usbd_scsi_sense_code(cdev, SCSI_SENSE_KEY_ILLEGAL_REQUEST, SCSI_ASC_INVALID_FIELD_IN_CDB);
+			usbd_msc_scsi_sense_code(cdev, SCSI_SENSE_KEY_ILLEGAL_REQUEST, SCSI_ASC_INVALID_FIELD_IN_CDB);
 			return -RTK_ERR_BADARG;
 		}
 		/* Built at init from the configured identification strings, so it is per-instance
@@ -197,7 +197,7 @@ static int  usbd_scsi_inquiry(usbd_msc_dev_t *cdev, u8 *params)
 * @param  params: Command parameters
 * @retval Status
 */
-static int usbd_scsi_read_capacity10(usbd_msc_dev_t *cdev, u8 *params)
+static int usbd_msc_scsi_read_capacity10(usbd_msc_dev_t *cdev, u8 *params)
 {
 	int ret;
 
@@ -205,7 +205,7 @@ static int usbd_scsi_read_capacity10(usbd_msc_dev_t *cdev, u8 *params)
 
 	ret = cdev->disk_ops.disk_getcapacity(&cdev->num_sectors);
 	if (ret != 0) {
-		usbd_scsi_sense_code(cdev, SCSI_SENSE_KEY_NOT_READY, SCSI_ASC_MEDIUM_NOT_PRESENT);
+		usbd_msc_scsi_sense_code(cdev, SCSI_SENSE_KEY_NOT_READY, SCSI_ASC_MEDIUM_NOT_PRESENT);
 		return -RTK_ERR_BADARG;
 	}
 
@@ -213,7 +213,7 @@ static int usbd_scsi_read_capacity10(usbd_msc_dev_t *cdev, u8 *params)
 	 * blocks; report the absent medium instead (SBC-4 last-LBA is
 	 * block_count - 1, and 0 blocks is not a valid capacity). */
 	if (cdev->num_sectors == 0U) {
-		usbd_scsi_sense_code(cdev, SCSI_SENSE_KEY_NOT_READY, SCSI_ASC_MEDIUM_NOT_PRESENT);
+		usbd_msc_scsi_sense_code(cdev, SCSI_SENSE_KEY_NOT_READY, SCSI_ASC_MEDIUM_NOT_PRESENT);
 		return -RTK_ERR_BADARG;
 	}
 
@@ -236,7 +236,7 @@ static int usbd_scsi_read_capacity10(usbd_msc_dev_t *cdev, u8 *params)
 * @param  params: Command parameters
 * @retval Status
 */
-static int usbd_scsi_read_format_capacity(usbd_msc_dev_t *cdev, u8 *params)
+static int usbd_msc_scsi_read_format_capacity(usbd_msc_dev_t *cdev, u8 *params)
 {
 	u32 alloc_len = ((u32)params[7] << 8) | (u32)params[8];
 	int ret;
@@ -245,7 +245,7 @@ static int usbd_scsi_read_format_capacity(usbd_msc_dev_t *cdev, u8 *params)
 
 	ret = cdev->disk_ops.disk_getcapacity(&cdev->num_sectors);
 	if (ret != 0) {
-		usbd_scsi_sense_code(cdev, SCSI_SENSE_KEY_NOT_READY, SCSI_ASC_MEDIUM_NOT_PRESENT);
+		usbd_msc_scsi_sense_code(cdev, SCSI_SENSE_KEY_NOT_READY, SCSI_ASC_MEDIUM_NOT_PRESENT);
 		return -RTK_ERR_BADARG;
 	}
 
@@ -270,7 +270,7 @@ static int usbd_scsi_read_format_capacity(usbd_msc_dev_t *cdev, u8 *params)
 * @param  params: Command parameters
 * @retval Status
 */
-static int usbd_scsi_mode_sense6(usbd_msc_dev_t *cdev, u8 *params)
+static int usbd_msc_scsi_mode_sense6(usbd_msc_dev_t *cdev, u8 *params)
 {
 	usb_os_memcpy((void *)cdev->data, (const void *)usbd_msc_mode_sense6_data, MODE_SENSE6_DATA_LEN);
 	if (cdev->ro != 0U) {
@@ -289,7 +289,7 @@ static int usbd_scsi_mode_sense6(usbd_msc_dev_t *cdev, u8 *params)
 * @param  params: Command parameters
 * @retval Status
 */
-static int usbd_scsi_mode_sense10(usbd_msc_dev_t *cdev, u8 *params)
+static int usbd_msc_scsi_mode_sense10(usbd_msc_dev_t *cdev, u8 *params)
 {
 	u32 alloc_len = ((u32)params[7] << 8) | (u32)params[8];
 
@@ -309,7 +309,7 @@ static int usbd_scsi_mode_sense10(usbd_msc_dev_t *cdev, u8 *params)
 * @param  params: Command parameters
 * @retval Status
 */
-static int usbd_scsi_request_sense(usbd_msc_dev_t *cdev, u8 *params)
+static int usbd_msc_scsi_request_sense(usbd_msc_dev_t *cdev, u8 *params)
 {
 	usb_msc_scsi_sense_data_t *sense = &cdev->scsi_sense;
 
@@ -336,7 +336,7 @@ static int usbd_scsi_request_sense(usbd_msc_dev_t *cdev, u8 *params)
 * @param  params: Command parameters
 * @retval Status
 */
-static int usbd_scsi_start_stop_unit(usbd_msc_dev_t *cdev, u8 *params)
+static int usbd_msc_scsi_start_stop_unit(usbd_msc_dev_t *cdev, u8 *params)
 {
 	u8      loej, start;
 	int ret;
@@ -358,12 +358,12 @@ static int usbd_scsi_start_stop_unit(usbd_msc_dev_t *cdev, u8 *params)
 			cdev->num_sectors = 0U;
 			ret = cdev->disk_ops.disk_getcapacity(&cdev->num_sectors);
 			if (ret != 0) {
-				usbd_scsi_sense_code(cdev, SCSI_SENSE_KEY_NOT_READY, SCSI_ASC_MEDIUM_NOT_PRESENT);
+				usbd_msc_scsi_sense_code(cdev, SCSI_SENSE_KEY_NOT_READY, SCSI_ASC_MEDIUM_NOT_PRESENT);
 				return -RTK_ERR_BADARG;
 			}
 			cdev->is_open = 1U;
 		} else if (cdev->is_open != 1U) {
-			usbd_scsi_sense_code(cdev, SCSI_SENSE_KEY_NOT_READY, SCSI_ASC_MEDIUM_NOT_PRESENT);
+			usbd_msc_scsi_sense_code(cdev, SCSI_SENSE_KEY_NOT_READY, SCSI_ASC_MEDIUM_NOT_PRESENT);
 			return -RTK_ERR_BADARG;
 		} else {
 			/* medium already loaded */
@@ -378,7 +378,7 @@ static int usbd_scsi_start_stop_unit(usbd_msc_dev_t *cdev, u8 *params)
 
 	/* Ref SPC-4 PREVENT ALLOW MEDIUM REMOVAL: an eject is refused while the host keeps the medium locked */
 	if (cdev->prevent_removal != 0U) {
-		usbd_scsi_sense_code(cdev, SCSI_SENSE_KEY_ILLEGAL_REQUEST, SCSI_ASC_MEDIUM_REMOVAL_PREVENTED);
+		usbd_msc_scsi_sense_code(cdev, SCSI_SENSE_KEY_ILLEGAL_REQUEST, SCSI_ASC_MEDIUM_REMOVAL_PREVENTED);
 		cdev->scsi_sense.ascq = SCSI_ASCQ_MEDIUM_REMOVAL_PREVENTED;
 		return -RTK_ERR_BADARG;
 	}
@@ -393,7 +393,7 @@ static int usbd_scsi_start_stop_unit(usbd_msc_dev_t *cdev, u8 *params)
 * @param  params: Command parameters
 * @retval Status
 */
-static int usbd_scsi_prevent_allow(usbd_msc_dev_t *cdev, u8 *params)
+static int usbd_msc_scsi_prevent_allow(usbd_msc_dev_t *cdev, u8 *params)
 {
 	cdev->data_length = 0U;
 
@@ -407,7 +407,7 @@ static int usbd_scsi_prevent_allow(usbd_msc_dev_t *cdev, u8 *params)
 		cdev->prevent_removal = 1U;
 		break;
 	default:
-		usbd_scsi_sense_code(cdev, SCSI_SENSE_KEY_ILLEGAL_REQUEST, SCSI_ASC_INVALID_FIELD_IN_CDB);
+		usbd_msc_scsi_sense_code(cdev, SCSI_SENSE_KEY_ILLEGAL_REQUEST, SCSI_ASC_INVALID_FIELD_IN_CDB);
 		return -RTK_ERR_BADARG;
 	}
 
@@ -420,7 +420,7 @@ static int usbd_scsi_prevent_allow(usbd_msc_dev_t *cdev, u8 *params)
 * @param  params: Command parameters
 * @retval Status
 */
-static int usbd_scsi_read(usbd_msc_dev_t *cdev, u8 *params)
+static int usbd_msc_scsi_read(usbd_msc_dev_t *cdev, u8 *params)
 {
 	usb_msc_bot_cbw_t *cbw = cdev->cbw;
 
@@ -440,7 +440,7 @@ static int usbd_scsi_read(usbd_msc_dev_t *cdev, u8 *params)
 		if (cdev->blklen == 0U) {
 			cdev->data_length = 0U;
 			if (cdev->is_open != 1U) {
-				usbd_scsi_sense_code(cdev, SCSI_SENSE_KEY_NOT_READY, SCSI_ASC_MEDIUM_NOT_PRESENT);
+				usbd_msc_scsi_sense_code(cdev, SCSI_SENSE_KEY_NOT_READY, SCSI_ASC_MEDIUM_NOT_PRESENT);
 				return -RTK_ERR_BADARG;
 			}
 			return RTK_SUCCESS;
@@ -448,14 +448,14 @@ static int usbd_scsi_read(usbd_msc_dev_t *cdev, u8 *params)
 
 		/* case 2 : Hn < Di */
 		if (cbw->field.dCBWDataTransferLength == 0U) {
-			usbd_scsi_sense_code(cdev, SCSI_SENSE_KEY_ILLEGAL_REQUEST, SCSI_ASC_INVALID_COMMAND_OPERATION_CODE);
+			usbd_msc_scsi_sense_code(cdev, SCSI_SENSE_KEY_ILLEGAL_REQUEST, SCSI_ASC_INVALID_COMMAND_OPERATION_CODE);
 			cdev->phase_error = 1U;
 			return -RTK_ERR_BADARG;
 		}
 
 		/* case 10 : Ho <> Di */
 		if ((cbw->field.bmCBWFlags & 0x80U) != 0x80U) {
-			usbd_scsi_sense_code(cdev, SCSI_SENSE_KEY_ILLEGAL_REQUEST, SCSI_ASC_INVALID_COMMAND_OPERATION_CODE);
+			usbd_msc_scsi_sense_code(cdev, SCSI_SENSE_KEY_ILLEGAL_REQUEST, SCSI_ASC_INVALID_COMMAND_OPERATION_CODE);
 			cdev->phase_error = 1U;
 			return -RTK_ERR_BADARG;
 		}
@@ -465,17 +465,17 @@ static int usbd_scsi_read(usbd_msc_dev_t *cdev, u8 *params)
 		 * process_read would transmit uninitialized bytes beyond them. A
 		 * fractional length is therefore a phase error (BOT 6.7.3). */
 		if ((cbw->field.dCBWDataTransferLength & (USBD_MSC_BLK_SIZE - 1U)) != 0U) {
-			usbd_scsi_sense_code(cdev, SCSI_SENSE_KEY_ILLEGAL_REQUEST, SCSI_ASC_INVALID_COMMAND_OPERATION_CODE);
+			usbd_msc_scsi_sense_code(cdev, SCSI_SENSE_KEY_ILLEGAL_REQUEST, SCSI_ASC_INVALID_COMMAND_OPERATION_CODE);
 			cdev->phase_error = 1U;
 			return -RTK_ERR_BADARG;
 		}
 
 		if (cdev->is_open != 1U) {
-			usbd_scsi_sense_code(cdev, SCSI_SENSE_KEY_NOT_READY, SCSI_ASC_MEDIUM_NOT_PRESENT);
+			usbd_msc_scsi_sense_code(cdev, SCSI_SENSE_KEY_NOT_READY, SCSI_ASC_MEDIUM_NOT_PRESENT);
 			return -RTK_ERR_BADARG;
 		}
 
-		if (usbd_scsi_check_address_range(cdev, cdev->lba, cdev->blklen) != RTK_SUCCESS) {
+		if (usbd_msc_scsi_check_address_range(cdev, cdev->lba, cdev->blklen) != RTK_SUCCESS) {
 			return -RTK_ERR_BADARG; /* error */
 		}
 
@@ -485,7 +485,7 @@ static int usbd_scsi_read(usbd_msc_dev_t *cdev, u8 *params)
 	}
 	cdev->data_length = cdev->buf_size;
 
-	return usbd_scsi_process_read(cdev);
+	return usbd_msc_scsi_process_read(cdev);
 }
 
 /**
@@ -494,7 +494,7 @@ static int usbd_scsi_read(usbd_msc_dev_t *cdev, u8 *params)
 * @param  params: Command parameters
 * @retval Status
 */
-static int usbd_scsi_write(usbd_msc_dev_t *cdev, u8 *params)
+static int usbd_msc_scsi_write(usbd_msc_dev_t *cdev, u8 *params)
 {
 	u32 len;
 	u32 xfer_blks;
@@ -514,11 +514,11 @@ static int usbd_scsi_write(usbd_msc_dev_t *cdev, u8 *params)
 		if (cdev->blklen == 0U) {
 			cdev->data_length = 0U;
 			if (cdev->is_open != 1U) {
-				usbd_scsi_sense_code(cdev, SCSI_SENSE_KEY_NOT_READY, SCSI_ASC_MEDIUM_NOT_PRESENT);
+				usbd_msc_scsi_sense_code(cdev, SCSI_SENSE_KEY_NOT_READY, SCSI_ASC_MEDIUM_NOT_PRESENT);
 				return -RTK_ERR_BADARG;
 			}
 			if (cdev->ro != 0U) {
-				usbd_scsi_sense_code(cdev, SCSI_SENSE_KEY_DATA_PROTECT, SCSI_ASC_WRITE_PROTECTED);
+				usbd_msc_scsi_sense_code(cdev, SCSI_SENSE_KEY_DATA_PROTECT, SCSI_ASC_WRITE_PROTECTED);
 				return -RTK_ERR_BADARG;
 			}
 			return RTK_SUCCESS;
@@ -526,32 +526,32 @@ static int usbd_scsi_write(usbd_msc_dev_t *cdev, u8 *params)
 
 		/* case 3 : Hn < Do */
 		if (cbw->field.dCBWDataTransferLength == 0U) {
-			usbd_scsi_sense_code(cdev, SCSI_SENSE_KEY_ILLEGAL_REQUEST, SCSI_ASC_INVALID_COMMAND_OPERATION_CODE);
+			usbd_msc_scsi_sense_code(cdev, SCSI_SENSE_KEY_ILLEGAL_REQUEST, SCSI_ASC_INVALID_COMMAND_OPERATION_CODE);
 			cdev->phase_error = 1U;
 			return -RTK_ERR_BADARG;
 		}
 
 		/* case 8 : Hi <> Do */
 		if ((cbw->field.bmCBWFlags & 0x80U) == 0x80U) {
-			usbd_scsi_sense_code(cdev, SCSI_SENSE_KEY_ILLEGAL_REQUEST, SCSI_ASC_INVALID_COMMAND_OPERATION_CODE);
+			usbd_msc_scsi_sense_code(cdev, SCSI_SENSE_KEY_ILLEGAL_REQUEST, SCSI_ASC_INVALID_COMMAND_OPERATION_CODE);
 			cdev->phase_error = 1U;
 			return -RTK_ERR_BADARG;
 		}
 
 		/* Check whether Media is ready */
 		if (cdev->is_open != 1U) {
-			usbd_scsi_sense_code(cdev, SCSI_SENSE_KEY_NOT_READY, SCSI_ASC_MEDIUM_NOT_PRESENT);
+			usbd_msc_scsi_sense_code(cdev, SCSI_SENSE_KEY_NOT_READY, SCSI_ASC_MEDIUM_NOT_PRESENT);
 			return -RTK_ERR_BADARG;
 		}
 
 		/* Check If media is write-protected */
 		if (cdev->ro != 0U) {
-			usbd_scsi_sense_code(cdev, SCSI_SENSE_KEY_DATA_PROTECT, SCSI_ASC_WRITE_PROTECTED);
+			usbd_msc_scsi_sense_code(cdev, SCSI_SENSE_KEY_DATA_PROTECT, SCSI_ASC_WRITE_PROTECTED);
 			return -RTK_ERR_BADARG;
 		}
 
 		/* check if LBA address is in the right range */
-		if (usbd_scsi_check_address_range(cdev, cdev->lba, cdev->blklen) != RTK_SUCCESS) {
+		if (usbd_msc_scsi_check_address_range(cdev, cdev->lba, cdev->blklen) != RTK_SUCCESS) {
 			return -RTK_ERR_BADARG; /* error */
 		}
 
@@ -560,7 +560,7 @@ static int usbd_scsi_write(usbd_msc_dev_t *cdev, u8 *params)
 		 * equals dCBWDataTransferLength, so every later blklen * USBD_MSC_BLK_SIZE fits in u32. */
 		xfer_blks = cbw->field.dCBWDataTransferLength >> USBD_MSC_BLK_BITS;
 		if ((xfer_blks != cdev->blklen) || ((cbw->field.dCBWDataTransferLength & (USBD_MSC_BLK_SIZE - 1U)) != 0U)) {
-			usbd_scsi_sense_code(cdev, SCSI_SENSE_KEY_ILLEGAL_REQUEST, SCSI_ASC_INVALID_COMMAND_OPERATION_CODE);
+			usbd_msc_scsi_sense_code(cdev, SCSI_SENSE_KEY_ILLEGAL_REQUEST, SCSI_ASC_INVALID_COMMAND_OPERATION_CODE);
 			if (xfer_blks < cdev->blklen) {
 				/* case 13 : Ho < Do — BOT §6.7.3 mandates bCSWStatus = Phase Error.
 				 * case 11 (Ho > Do) stays a Failed CSW with residue, which BOT allows. */
@@ -578,7 +578,7 @@ static int usbd_scsi_write(usbd_msc_dev_t *cdev, u8 *params)
 			RTK_LOGS(TAG, RTK_LOG_WARN, "EP%02x xfer err\n", cdev->cfg->bulk_out_addr);
 		}
 	} else { /* Write Process ongoing */
-		return usbd_scsi_process_write(cdev);
+		return usbd_msc_scsi_process_write(cdev);
 	}
 	return RTK_SUCCESS;
 }
@@ -589,13 +589,13 @@ static int usbd_scsi_write(usbd_msc_dev_t *cdev, u8 *params)
 * @param  params: Command parameters
 * @retval Status
 */
-static int usbd_scsi_verify10(usbd_msc_dev_t *cdev, u8 *params)
+static int usbd_msc_scsi_verify10(usbd_msc_dev_t *cdev, u8 *params)
 {
 	u32 verify_lba;
 	u32 verify_blklen;
 
 	if ((params[1] & 0x02U) == 0x02U) {
-		usbd_scsi_sense_code(cdev, SCSI_SENSE_KEY_ILLEGAL_REQUEST, SCSI_ASC_INVALID_FIELD_IN_CDB);
+		usbd_msc_scsi_sense_code(cdev, SCSI_SENSE_KEY_ILLEGAL_REQUEST, SCSI_ASC_INVALID_FIELD_IN_CDB);
 		return -RTK_ERR_BADARG; /* Error, Verify Mode Not supported*/
 	}
 
@@ -607,7 +607,7 @@ static int usbd_scsi_verify10(usbd_msc_dev_t *cdev, u8 *params)
 		return RTK_SUCCESS; /* No-op: verification length of 0 means verify nothing */
 	}
 
-	if (usbd_scsi_check_address_range(cdev, verify_lba, verify_blklen) != RTK_SUCCESS) {
+	if (usbd_msc_scsi_check_address_range(cdev, verify_lba, verify_blklen) != RTK_SUCCESS) {
 		return -RTK_ERR_BADARG; /* error */
 	}
 	cdev->data_length = 0U;
@@ -620,14 +620,14 @@ static int usbd_scsi_verify10(usbd_msc_dev_t *cdev, u8 *params)
 * @param  opcode: SCSI operation code
 * @retval Status
 */
-static int usbd_scsi_check_cdb_length(usbd_msc_dev_t *cdev, u8 opcode)
+static int usbd_msc_scsi_check_cdb_length(usbd_msc_dev_t *cdev, u8 opcode)
 {
 	u32 i;
 
 	for (i = 0U; i < (sizeof(usbd_msc_cdb_len_tbl) / sizeof(usbd_msc_cdb_len_tbl[0])); i++) {
 		if (usbd_msc_cdb_len_tbl[i][0] == opcode) {
 			if (cdev->cbw->field.bCBWCBLength < usbd_msc_cdb_len_tbl[i][1]) {
-				usbd_scsi_sense_code(cdev, SCSI_SENSE_KEY_ILLEGAL_REQUEST, SCSI_ASC_INVALID_FIELD_IN_CDB);
+				usbd_msc_scsi_sense_code(cdev, SCSI_SENSE_KEY_ILLEGAL_REQUEST, SCSI_ASC_INVALID_FIELD_IN_CDB);
 				return -RTK_ERR_BADARG;
 			}
 			break;
@@ -645,7 +645,7 @@ static int usbd_scsi_check_cdb_length(usbd_msc_dev_t *cdev, u8 opcode)
 * @param  blk_nbr: number of block to be processed
 * @retval Status
 */
-static int usbd_scsi_check_address_range(usbd_msc_dev_t *cdev, u32 blk_offset, u32 blk_nbr)
+static int usbd_msc_scsi_check_address_range(usbd_msc_dev_t *cdev, u32 blk_offset, u32 blk_nbr)
 {
 	int ret;
 
@@ -657,7 +657,7 @@ static int usbd_scsi_check_address_range(usbd_msc_dev_t *cdev, u32 blk_offset, u
 		ret = cdev->disk_ops.disk_getcapacity(&cdev->num_sectors);
 		if (ret != 0) {
 			cdev->num_sectors = 0U;
-			usbd_scsi_sense_code(cdev, SCSI_SENSE_KEY_NOT_READY, SCSI_ASC_MEDIUM_NOT_PRESENT);
+			usbd_msc_scsi_sense_code(cdev, SCSI_SENSE_KEY_NOT_READY, SCSI_ASC_MEDIUM_NOT_PRESENT);
 			return -RTK_ERR_BADARG;
 		}
 	}
@@ -665,7 +665,7 @@ static int usbd_scsi_check_address_range(usbd_msc_dev_t *cdev, u32 blk_offset, u
 	/* Overflow-safe: blk_offset + blk_nbr can wrap on host-controlled
 	 * READ(12)/WRITE(12) values and pass a naive sum comparison */
 	if ((blk_offset > cdev->num_sectors) || (blk_nbr > (cdev->num_sectors - blk_offset))) {
-		usbd_scsi_sense_code(cdev, SCSI_SENSE_KEY_ILLEGAL_REQUEST, SCSI_ASC_ADDRESS_OUT_OF_RANGE);
+		usbd_msc_scsi_sense_code(cdev, SCSI_SENSE_KEY_ILLEGAL_REQUEST, SCSI_ASC_ADDRESS_OUT_OF_RANGE);
 		return -RTK_ERR_BADARG;
 	}
 	return RTK_SUCCESS;
@@ -676,12 +676,12 @@ static int usbd_scsi_check_address_range(usbd_msc_dev_t *cdev, u32 blk_offset, u
 * @param  cdev: Device instance
 * @retval Status
 */
-static int usbd_scsi_process_read(usbd_msc_dev_t *cdev)
+static int usbd_msc_scsi_process_read(usbd_msc_dev_t *cdev)
 {
 	u32 len;
 	usb_msc_bot_cbw_t *cbw = cdev->cbw;
 
-	/* Compared in blocks, dCBWDataTransferLength is a whole number of blocks (see usbd_scsi_read): blklen *
+	/* Compared in blocks, dCBWDataTransferLength is a whole number of blocks (see usbd_msc_scsi_read): blklen *
 	 * USBD_MSC_BLK_SIZE wraps in u32 for a READ(12) of 8M blocks or more. After the clamp the product never
 	 * exceeds dCBWDataTransferLength, so it fits in u32. */
 	if ((cbw->field.dCBWDataTransferLength >> USBD_MSC_BLK_BITS) < cdev->blklen) {
@@ -693,7 +693,7 @@ static int usbd_scsi_process_read(usbd_msc_dev_t *cdev)
 
 	if (cdev->disk_ops.disk_read(cdev->lba, cdev->data, (len >> USBD_MSC_BLK_BITS)) != 0) {
 		RTK_LOGS(TAG, RTK_LOG_WARN, "Rd err LBA %u cnt %u\n", cdev->lba, len >> USBD_MSC_BLK_BITS);
-		usbd_scsi_sense_code(cdev, SCSI_SENSE_KEY_HARDWARE_ERROR, SCSI_ASC_UNRECOVERED_READ_ERROR);
+		usbd_msc_scsi_sense_code(cdev, SCSI_SENSE_KEY_HARDWARE_ERROR, SCSI_ASC_UNRECOVERED_READ_ERROR);
 		return -RTK_ERR_BADARG;
 	}
 
@@ -719,7 +719,7 @@ static int usbd_scsi_process_read(usbd_msc_dev_t *cdev)
 * @param  cdev: Device instance
 * @retval Status
 */
-static int usbd_scsi_process_write(usbd_msc_dev_t *cdev)
+static int usbd_msc_scsi_process_write(usbd_msc_dev_t *cdev)
 {
 	u32 len = cdev->blklen * USBD_MSC_BLK_SIZE;
 
@@ -736,7 +736,7 @@ static int usbd_scsi_process_write(usbd_msc_dev_t *cdev)
 
 	if (cdev->disk_ops.disk_write(cdev->lba, cdev->data, (len >> USBD_MSC_BLK_BITS)) != 0) {
 		RTK_LOGS(TAG, RTK_LOG_WARN, "Wr err LBA %u cnt %u\n", cdev->lba, len >> USBD_MSC_BLK_BITS);
-		usbd_scsi_sense_code(cdev, SCSI_SENSE_KEY_HARDWARE_ERROR, SCSI_ASC_WRITE_FAULT);
+		usbd_msc_scsi_sense_code(cdev, SCSI_SENSE_KEY_HARDWARE_ERROR, SCSI_ASC_WRITE_FAULT);
 		return -RTK_ERR_BADARG;
 	}
 
@@ -764,11 +764,11 @@ static int usbd_scsi_process_write(usbd_msc_dev_t *cdev)
 /**
 * @brief  Check whether the host still has OUT data to send after the chunk being written
 * @note   Valid while a WRITE is in its data stage: blklen counts the blocks not yet written, the chunk just
-*         received included, and each chunk holds at most buf_size bytes, see usbd_scsi_process_write().
+*         received included, and each chunk holds at most buf_size bytes, see usbd_msc_scsi_process_write().
 * @param  cdev: Device instance
 * @retval 1 if more OUT data follows the current chunk, 0 otherwise
 */
-u8 usbd_scsi_out_data_pending(const usbd_msc_dev_t *cdev)
+u8 usbd_msc_scsi_out_data_pending(const usbd_msc_dev_t *cdev)
 {
 	/* Compared in blocks, the byte count of a WRITE(12) would not fit in u32 */
 	return (cdev->blklen > (cdev->buf_size >> USBD_MSC_BLK_BITS)) ? 1U : 0U;
@@ -780,7 +780,7 @@ u8 usbd_scsi_out_data_pending(const usbd_msc_dev_t *cdev)
 * @param  cmd: Command parameters
 * @retval Status
 */
-int usbd_scsi_process_cmd(usbd_msc_dev_t *cdev, u8 *cmd)
+int usbd_msc_scsi_process_cmd(usbd_msc_dev_t *cdev, u8 *cmd)
 {
 	int ret = RTK_SUCCESS;
 
@@ -790,62 +790,62 @@ int usbd_scsi_process_cmd(usbd_msc_dev_t *cdev, u8 *cmd)
 		usb_os_memset((void *)&cdev->scsi_sense, 0U, sizeof(cdev->scsi_sense));
 	}
 
-	if (usbd_scsi_check_cdb_length(cdev, cmd[0]) != RTK_SUCCESS) {
+	if (usbd_msc_scsi_check_cdb_length(cdev, cmd[0]) != RTK_SUCCESS) {
 		return -RTK_ERR_BADARG;
 	}
 
 	switch (cmd[0]) {
 	case SCSI_TEST_UNIT_READY:
-		ret = usbd_scsi_test_unit_ready(cdev, cmd);
+		ret = usbd_msc_scsi_test_unit_ready(cdev, cmd);
 		break;
 
 	case SCSI_REQUEST_SENSE:
-		ret = usbd_scsi_request_sense(cdev, cmd);
+		ret = usbd_msc_scsi_request_sense(cdev, cmd);
 		break;
 	case SCSI_INQUIRY:
-		ret = usbd_scsi_inquiry(cdev, cmd);
+		ret = usbd_msc_scsi_inquiry(cdev, cmd);
 		break;
 
 	case SCSI_START_STOP_UNIT:
-		ret = usbd_scsi_start_stop_unit(cdev, cmd);
+		ret = usbd_msc_scsi_start_stop_unit(cdev, cmd);
 		break;
 
 	case SCSI_ALLOW_MEDIUM_REMOVAL:
-		ret = usbd_scsi_prevent_allow(cdev, cmd);
+		ret = usbd_msc_scsi_prevent_allow(cdev, cmd);
 		break;
 
 	case SCSI_MODE_SENSE6:
-		ret = usbd_scsi_mode_sense6(cdev, cmd);
+		ret = usbd_msc_scsi_mode_sense6(cdev, cmd);
 		break;
 
 	case SCSI_MODE_SENSE10:
-		ret = usbd_scsi_mode_sense10(cdev, cmd);
+		ret = usbd_msc_scsi_mode_sense10(cdev, cmd);
 		break;
 
 	case SCSI_READ_FORMAT_CAPACITIES:
-		ret = usbd_scsi_read_format_capacity(cdev, cmd);
+		ret = usbd_msc_scsi_read_format_capacity(cdev, cmd);
 		break;
 
 	case SCSI_READ_CAPACITY10:
-		ret = usbd_scsi_read_capacity10(cdev, cmd);
+		ret = usbd_msc_scsi_read_capacity10(cdev, cmd);
 		break;
 
 	case SCSI_READ12:
 	case SCSI_READ10:
-		ret = usbd_scsi_read(cdev, cmd);
+		ret = usbd_msc_scsi_read(cdev, cmd);
 		break;
 
 	case SCSI_WRITE12:
 	case SCSI_WRITE10:
-		ret = usbd_scsi_write(cdev, cmd);
+		ret = usbd_msc_scsi_write(cdev, cmd);
 		break;
 
 	case SCSI_VERIFY10:
-		ret = usbd_scsi_verify10(cdev, cmd);
+		ret = usbd_msc_scsi_verify10(cdev, cmd);
 		break;
 
 	default:
-		usbd_scsi_sense_code(cdev, SCSI_SENSE_KEY_ILLEGAL_REQUEST, SCSI_ASC_INVALID_COMMAND_OPERATION_CODE);
+		usbd_msc_scsi_sense_code(cdev, SCSI_SENSE_KEY_ILLEGAL_REQUEST, SCSI_ASC_INVALID_COMMAND_OPERATION_CODE);
 		return -RTK_ERR_BADARG;
 	}
 	return ret;
@@ -860,7 +860,7 @@ int usbd_scsi_process_cmd(usbd_msc_dev_t *cdev, u8 *cmd)
 * @param  asc: Additional Sense Key
 * @retval none
 */
-void usbd_scsi_sense_code(usbd_msc_dev_t *cdev, u8 key, u8 asc)
+void usbd_msc_scsi_sense_code(usbd_msc_dev_t *cdev, u8 key, u8 asc)
 {
 	usb_msc_scsi_sense_data_t *sense = &cdev->scsi_sense;
 

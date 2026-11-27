@@ -523,10 +523,10 @@ static int phy_rtl8201_cfg_refclock(struct eth_phy_dev *phy, enum eth_refclk_dir
 	val = phy_rtl8201f_read_safe(phy, RTL8201_P7_RMII_MODE, &err);
 
 	if (err == RTK_SUCCESS) {
-		if (dir == ETH_REFCLK_MAC2PHY) {
-			val |= RTL8201_P7_RMII_CLK_DIR;  /* Set bit: Input Mode */
+		if (dir == ETH_REFCLK_OUT) {
+			val |= RTL8201_P7_RMII_CLK_DIR;  /* MAC drives REF_CLK: input on the PHY side */
 		} else {
-			val &= ~RTL8201_P7_RMII_CLK_DIR; /* Clear bit: Output Mode */
+			val &= ~RTL8201_P7_RMII_CLK_DIR;
 		}
 		/* 3. Write Back */
 		phy_rtl8201f_write_safe(phy, RTL8201_P7_RMII_MODE, val, &err);

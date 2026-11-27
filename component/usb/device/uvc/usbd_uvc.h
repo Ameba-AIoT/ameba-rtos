@@ -49,6 +49,11 @@ extern "C" {
 #define USBD_UVC_MAX_REQUEST_SIZE       64
 #define USBD_UVC_MAX_EVENTS             4
 
+/* AmebaPro3 ISP tuning tool: when set to 1 the AP-side bridge in
+ * sw/video_sw/video_api_ap/isp_tuning_ap.c is built and the UVC extension unit
+ * carries the tuning protocol. Enabling it also needs USBD_TUNING_W/H to match
+ * the tuning stream (2688x1520) and x_data to be exported from usbd_uvc.c.
+ * The switch is owned by the USB IP team; keep it 0 here. */
 #define USBD_TUNING_MODE                0
 #if USBD_TUNING_MODE
 #define USBD_TUNING_W                   (USBD_UVC_FRAME_WIDTH*2)
@@ -60,15 +65,15 @@ extern "C" {
 
 #define USBD_UVC_WEBCAM_VENDOR_ID       USB_VID
 #define USBD_UVC_WEBCAM_PRODUCT_ID      USB_PID
-#define USBD_UVC_WEBCAM_DEVICE_BCD      0x0010
+#define USBD_UVC_WEBCAM_DEV_BCD      0x0010
 
-#define USBD_UVC_MFG_HS_STRING          "USB UVC CLASS"
-#define USBD_UVC_MFG_FS_STRING          "USB UVC CLASS"
+#define USBD_UVC_MFG_HS_STR          "USB UVC CLASS"
+#define USBD_UVC_MFG_FS_STR          "USB UVC CLASS"
 
 #define USBD_UVC_MAKE_SUBCMD(data,dir,subcmd) ((u8)(data)<<7|(u8)(dir)<<6|subcmd)
 
-#define USBD_UVC_STRING_CONTROL_IDX     0
-#define USBD_UVC_STRING_STREAMING_IDX   1
+#define USBD_UVC_STR_CONTROL_IDX     0
+#define USBD_UVC_STR_STREAMING_IDX   1
 
 #define USBD_UVC_INTF_VIDEO_CONTROL     0
 #define USBD_UVC_INTF_VIDEO_STREAMING   1
@@ -99,12 +104,13 @@ extern "C" {
    Round UP: the payload occupies ceil(IN_BUF_SIZE / MPS) transactions, and the host
    only issues that many IN tokens per microframe. Truncating division here (the
    previous form) under-declares whenever IN_BUF_SIZE is not an exact multiple of MPS
-   (e.g. 1100 -> declares 1 token while usbd_hal_ep_start_transfer() programs
+   (e.g. 1100 -> declares 1 token while usbd_hal_ep_start_xfer() programs
    PKTCNT/MC = 2): the trailing transaction never gets a token, DIEPCTL.EPENA is never
    cleared, no XFRC arrives, and the SOF watchdog drops every payload. It also
    unsigned-underflows for IN_BUF_SIZE < MPS, corrupting wMaxPacketSize outright.
    USB 2.0 5.9.2 caps HS high-bandwidth at 3 transactions/microframe, so any
    IN_BUF_SIZE above 3 * MPS is not representable in wMaxPacketSize bits[12:11]. */
+/* TRANS = transaction: transactions per microframe needed to carry USBD_UVC_IN_BUF_SIZE */
 #define USBD_UVC_ISOC_EP_TRANS_CNT           (((USBD_UVC_IN_BUF_SIZE) + (USBD_UVC_ISOC_EP_MPS) - 1U) / (USBD_UVC_ISOC_EP_MPS))
 /* USB HS ISOC wMaxPacketSize: bits[12:11] = extra transactions, bits[10:0] = MPS */
 #define USBD_UVC_ISOC_EP_MPKT                ((((USBD_UVC_ISOC_EP_TRANS_CNT) - 1U) << 11U) | USBD_UVC_ISOC_EP_MPS)
@@ -167,13 +173,25 @@ extern "C" {
  */
 
 /**
-	* @brief UVC endpoint configuration structure.
+	* @brief UVC class configuration structure.
 	* @details Used to configure endpoint addresses at runtime.
 	*/
 typedef struct {
 	u32 iso_in_xfer_size;  /**< ISOC IN transfer buffer size (0 = use default). */
 	u8 iso_in_addr;    /**< ISOC IN endpoint address for video streaming */
-} usbd_uvc_ep_cfg_t;
+} usbd_uvc_config_t;
+
+/**
+	* @brief UVC user callback structure.
+	*/
+typedef struct {
+	/**
+		* @brief Called when the host selects a streaming alternate setting with new parameters.
+		* @note  Runs in ISR context: must not block, allocate or take a semaphore.
+		* @param[in] fmt: Active UVC format.
+		*/
+	void (*format_changed)(usbd_uvc_format_t *fmt);
+} usbd_uvc_cb_t;
 
 /**
 	* @brief UVC frame information structure.
@@ -339,15 +357,9 @@ typedef struct {
 	*/
 typedef struct {
 	usb_dev_t *dev;
-	const usbd_uvc_ep_cfg_t *ep_cfg;
+	const usbd_uvc_cb_t *cb;
+	const usbd_uvc_config_t *ep_cfg;
 	usbd_uvc_format_t *uvc_format_ptr;
-	/**
-		* @brief Called when UVC streaming parameters are committed/changed by the host.
-		* @note   This function is called within an interrupt service routine (ISR) context;
-		*         time-consuming operations (e.g., `malloc`, `rtos_sema_take`) are not permitted.
-		* @param[in] uvc_format_ptr: Pointer to the active UVC format descriptor.
-		*/
-	void (*change_parm_cb)(void *);
 
 	/* Lifecycle and interface state */
 	u8 running;
@@ -358,8 +370,8 @@ typedef struct {
 	u8 config;
 	u8 ctrl_req_pending;    /**< 1 if ctrl_req is waiting for its EP0 OUT data stage. */
 	u8 from_composite;      /**< Flag indicating if part of a composite device. */
-	u8 if_base;             /**< First interface number of this class; 0 in standalone mode unless
-	                             the composite framework rebases it via set_interface_base(). */
+	u8 itf_base;             /**< First interface number of this class; 0 in standalone mode unless
+	                             the composite framework rebases it via set_itf_base(). */
 
 	/* Video streaming */
 	usbd_uvc_video_t video;
@@ -367,11 +379,11 @@ typedef struct {
 
 	/* Class control request */
 	int control;               /* control selector */
-	int command_interface;     /* 0x00 = control, 0x01 = streaming */
+	int command_itf;     /* 0x00 = control, 0x01 = streaming */
 	int command_entity;        /* 0x02 = process unit, 0x03 = extension unit */
 	u32 event_setup_out : 1;
 	u16 event_length;
-	u16 interface_number;
+	u16 itf_num;
 	u8 ctrl_req;
 	u8 ctrl_data_len;
 	u8 uvc_cmd_blocked;
@@ -419,9 +431,9 @@ extern usbd_uvc_format_info_t uvcd_formats[];
 /** @brief Number of entries in @ref uvcd_formats. */
 extern const u32 uvcd_nformats;
 /** @brief Assembled configuration descriptor block of the UVC class. */
-extern u8 usbd_uvc_descriptors[];
-/** @brief Length in bytes of @ref usbd_uvc_descriptors. */
-extern int usbd_uvc_descriptors_size;
+extern u8 usbd_uvc_desc[];
+/** @brief Length in bytes of @ref usbd_uvc_desc. */
+extern int usbd_uvc_desc_size;
 
 /** @} End of Device_UVC_Variables group */
 /** @} End of USB_Device_Variables group */
@@ -432,16 +444,9 @@ extern int usbd_uvc_descriptors_size;
  *  @{
  */
 /** @defgroup Device_UVC_Functions Device UVC Functions
- *  @brief Lifecycle, event dispatch and state query of the UVC class.
+ *  @brief Lifecycle, frame queue and state query of the UVC class.
  *  @{
  */
-
-/**
-	* @brief  Dispatch a UVC event (SETUP / DATA / STREAMON / STREAMOFF) to the event handlers.
-	* @param[in]  dev        UVC device context.
-	* @param[in]  uvc_event  Event container (type + setup request or data payload).
-	*/
-void usbd_uvc_events_process(usbd_uvc_dev_t *dev, usbd_uvc_req_data_t *uvc_event);
 
 /**
 	* @brief  Return a pointer to the internal UVC device context.
@@ -452,56 +457,52 @@ usbd_uvc_dev_t *get_private_usbd_uvcd(void);
 
 /**
 	* @brief  Return a completed video buffer to the output (free) queue.
-	* @param[in]  payload  Buffer to return; must have been obtained from usbd_uvc_video_out_stream_queue().
+	* @param[in]  payload  Buffer to return; must have been obtained from usbd_uvc_dequeue_frame().
 	*/
-void usbd_uvc_video_put_out_stream_queue(usbd_uvc_buffer_t *payload);
+void usbd_uvc_release_frame(usbd_uvc_buffer_t *payload);
 
 /**
 	* @brief  Submit a filled video buffer to the input (ready-to-send) queue.
 	* @param[in]  payload  Buffer containing a complete video frame; mem and bytesused must be set.
 	*/
-void usbd_uvc_video_put_in_stream_queue(usbd_uvc_buffer_t *payload);
+void usbd_uvc_queue_frame(usbd_uvc_buffer_t *payload);
 
 /**
 	* @brief  Dequeue one buffer from the output (free) queue.
 	* @retval Pointer to a free usbd_uvc_buffer_t, or NULL if the queue is empty.
 	*/
-usbd_uvc_buffer_t *usbd_uvc_video_out_stream_queue(void);
+usbd_uvc_buffer_t *usbd_uvc_dequeue_frame(void);
 
 /**
 	* @brief  Block until the current video frame has been fully queued into the ring.
 	* @note   Must not be called from ISR context.
 	*/
-void usbd_uvc_wait_frame_down(void);
+void usbd_uvc_wait_frame_done(void);
 
 /**
 	* @brief  Query whether UVC streaming is currently active.
-	* @retval 1 if streaming is running, 0 otherwise.
+	* @retval true if streaming is running, false otherwise.
 	*/
-int usbd_uvc_get_status(void);
+bool usbd_uvc_is_streaming(void);
 
 /**
 	* @brief  Initialize the UVC device class (standalone) and start its worker tasks.
-	* @param[in]  ep_cfg  Endpoint configuration; NULL selects the class defaults.
+	* @param[in]  cb   User callbacks, NULL if none.
+	* @param[in]  cfg  Class configuration.
 	* @retval RTK_SUCCESS on success, negative error code on failure.
 	*/
-int usbd_uvc_init(const usbd_uvc_ep_cfg_t *ep_cfg);
+int usbd_uvc_init(const usbd_uvc_cb_t *cb, const usbd_uvc_config_t *cfg);
 
 #ifdef CONFIG_USBD_COMPOSITE
 /**
 	* @brief  Initialize UVC as part of a composite device, where driver registration
 	*         is handled by the composite framework.
-	* @param[in]  ep_cfg  Endpoint configuration assigned by the top-level application.
+	* @param[in]  cb   User callbacks, NULL if none.
+	* @param[in]  cfg  Class configuration assigned by the top-level application.
 	* @retval RTK_SUCCESS on success, negative error code on failure.
 	*/
-int usbd_composite_uvc_init(const usbd_uvc_ep_cfg_t *ep_cfg);
+int usbd_composite_uvc_init(const usbd_uvc_cb_t *cb, const usbd_uvc_config_t *cfg);
 #endif
-
-/**
-	* @brief  Initialize UVC processing-unit and extension-unit control parameters.
-	* @retval RTK_SUCCESS on success.
-	*/
-int usbd_uvc_parameter_init(void);
 
 /**
 	* @brief  Tear down the UVC device class: stop tasks, delete OS objects, free ring.
@@ -509,13 +510,6 @@ int usbd_uvc_parameter_init(void);
 	*        still reachable from the USB ISR, so the call returns at once and releases nothing.
 	*/
 void usbd_uvc_deinit(void);
-
-/**
-	* @brief  Register a callback invoked when the host commits new streaming parameters.
-	* @param[in]  cb  Function pointer cast to int; signature: void (*)(void *uvc_format_ptr).
-	* @note   The callback is invoked in ISR context — must not block.
-	*/
-void usbd_uvc_set_change_parm_cb(int cb);
 
 /**
 	* @brief  Return a pointer to the active UVC format descriptor.

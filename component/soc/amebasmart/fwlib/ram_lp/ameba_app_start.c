@@ -112,5 +112,5 @@ RAM_START_FUNCTION Img2EntryFun0 = {
 #else
 	NULL,
 #endif
-	NULL,
+	(u32)NULL,
 };

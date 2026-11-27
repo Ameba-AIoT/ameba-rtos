@@ -240,7 +240,7 @@ void usbh_uvc_deinit(void)
 	 * allocated. Halt the channels before stream_close() frees the buffers they DMA into. */
 	if (uvc->host != NULL) {
 		uvc->state = UVC_STATE_IDLE;
-		usbh_uvc_class_release_device(uvc);
+		usbh_uvc_class_release_dev(uvc);
 	}
 
 	/* Close every stream opened in usbh_uvc_init(). Use USBH_UVC_VS_DESC_MAX_NUM
@@ -617,7 +617,7 @@ int usbh_uvc_put_frame(usbh_uvc_frame_t *frame, u8 stream_index)
 			frame->byteused = 0U;
 			frame->timestamp = 0U;
 			frame->state = UVC_FRAME_INIT;
-			usbh_hw_uvc_release_buf(uvc_dec, idx);
+			usbh_hw_uvc_buf_free(uvc_dec, idx);
 		}
 	}
 
@@ -655,14 +655,14 @@ int usbh_uvc_stop(u8 stream_index)
 	 * ISOC data. Guard: only when device is still connected and an alt was selected.
 	 * Fire-and-forget via ctrl state machine (set_alt=0 → no probe after reset). */
 	if ((uvc->host != NULL) &&
-		(uvc->host->connect_state >= USBH_STATE_SETUP) &&
+		(usbh_dev_is_ready(uvc->host)) &&
 		(stream->cur_setting.valid != 0U)) {
 		/* Alt 0 of a VS interface carries no isochronous endpoint (USB 2.0 §9.6.5) and the
 		 * isochronous bandwidth is released with it (§5.6.4), so the streaming pipe must be
 		 * closed here and re-established by a fresh SET_INTERFACE in usbh_uvc_start().
 		 * pipe_num 0 is the core's control channel - never close that one. */
 		if (stream->cur_setting.pipe.pipe_num != 0U) {
-			usbh_close_pipe(uvc->host, &stream->cur_setting.pipe);
+			usbh_pipe_close(uvc->host, &stream->cur_setting.pipe);
 		}
 		stream->alt_active = 0U;
 		stream->start_pending = 0U;
@@ -728,7 +728,7 @@ int usbh_uvc_start(u8 stream_index)
 		(stream->alt_active == 0U) &&
 		(stream->cur_setting.valid != 0U) &&
 		(uvc->host != NULL) &&
-		(uvc->host->connect_state >= USBH_STATE_SETUP)) {
+		(usbh_dev_is_ready(uvc->host))) {
 		stream->start_pending = 1U;
 		stream->set_alt = 1U;
 		stream->set_alt_retry = 0U;

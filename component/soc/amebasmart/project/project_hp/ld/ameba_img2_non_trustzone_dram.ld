@@ -106,7 +106,7 @@ SECTIONS
 	} > KM4_BD_DRAM
 
 	/*-----------------*/
-	.ram_image2.bss ALIGN(32) (NOLOAD):
+	.ram_image2.bss ALIGN(64) (NOLOAD):
 	{
 		__bss_start__ = .;
 		*(.bss*)

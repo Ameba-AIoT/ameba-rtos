@@ -33,7 +33,7 @@ def query_golden_board(port_name, profile_info, settings, id_address, baudrate):
             "",
             deepcopy(settings),
             logger,
-            memory_type=profile_info.memory_type,
+            memory_type=MemoryInfo.PARTITION_TYPE_FLASH,
         )
         ret = ameba.prepare(show_device_info=True)
         if ret != ErrType.OK:
