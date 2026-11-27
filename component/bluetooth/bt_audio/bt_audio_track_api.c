@@ -341,7 +341,7 @@ uint32_t rtk_bt_audio_track_get_channel_count(void *track_hdl)
 	return RTAudioTrack_GetChannelCount(audio_track);
 }
 
-int32_t rtk_bt_audio_track_get_start_thresholdbytes(void *track_hdl)
+int32_t rtk_bt_audio_track_get_start_threshold_bytes(void *track_hdl)
 {
 	struct RTAudioTrack *audio_track = NULL;
 

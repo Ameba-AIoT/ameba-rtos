@@ -174,9 +174,14 @@ static void transfer_module_server_read_hdl(void *data)
 	// default service
 	if (p_read_ind->app_id == TRANSFER_MODULE_SRV_ID) {
 		if (TRANSFER_MODULE_READ_VAL_INDEX == p_read_ind->index) {
-			read_resp.data = &transfer_module_read_val.buf[offset];
-			read_resp.len = transfer_module_read_val.len - p_read_ind->offset;
-			found = TRUE;
+			if (p_read_ind->offset > transfer_module_read_val.len) {
+				read_resp.err_code = RTK_BT_ATT_ERR_INVALID_OFFSET;
+				found = TRUE;
+			} else {
+				read_resp.data = &transfer_module_read_val.buf[offset];
+				read_resp.len = transfer_module_read_val.len - p_read_ind->offset;
+				found = TRUE;
+			}
 		}
 	} else { // user defined services
 		srv_idx = p_read_ind->app_id - TRANSFER_MODULE_SRV_ID_BASE;
@@ -186,10 +191,16 @@ static void transfer_module_server_read_hdl(void *data)
 				if (read_char) {
 					for (int i = 0; i < user_defined_srvs[srv_idx]->read_value_index.num; ++i) {
 						if (read_char[i].char_index == p_read_ind->index) {
-							read_resp.data = &read_char[i].buf[offset];
-							read_resp.len = read_char[i].len - p_read_ind->offset;
-							found = TRUE;
-							break;
+							if (p_read_ind->offset > read_char[i].len) {
+								read_resp.err_code = RTK_BT_ATT_ERR_INVALID_OFFSET;
+								found = TRUE;
+								break;
+							} else {
+								read_resp.data = &read_char[i].buf[offset];
+								read_resp.len = read_char[i].len - p_read_ind->offset;
+								found = TRUE;
+								break;
+							}
 						}
 					}
 				}

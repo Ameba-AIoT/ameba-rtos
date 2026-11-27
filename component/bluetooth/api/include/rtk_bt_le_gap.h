@@ -1,7 +1,7 @@
 /**
  * @file      rtk_bt_le_gap.h
  * @author    benling_xu@realsil.com.cn
- * @brief     Bluetooth LE GAP part type and function deffinition
+ * @brief     Bluetooth LE GAP part type and function definition
  * @copyright Copyright (c) 2022. Realtek Semiconductor Corporation. All rights reserved.
  */
 
@@ -103,7 +103,7 @@ typedef enum {
 	RTK_BT_LE_GAP_ADTYPE_OOB_SIMPLE_PAIRING_HASHC                = 0x0E, /*!< 0x0E, Simple Pairing OOB Tag: Simple Pairing Hash C (16 octets) */
 	RTK_BT_LE_GAP_ADTYPE_OOB_SIMPLE_PAIRING_RANDR                = 0x0F, /*!< 0x0F, Simple Pairing OOB Tag: Simple Pairing Randomizer R (16 octets) */
 	RTK_BT_LE_GAP_ADTYPE_SM_TK                                   = 0x10, /*!< 0x10, Security Manager TK Value */
-	RTK_BT_LE_GAP_ADTYPE_SM_OOB_FLAG                             = 0x11, /*!< 0x11, Secutiry Manager OOB Flags */
+	RTK_BT_LE_GAP_ADTYPE_SM_OOB_FLAG                             = 0x11, /*!< 0x11, Security Manager OOB Flags */
 	RTK_BT_LE_GAP_ADTYPE_SLAVE_CONN_INTERVAL_RANGE               = 0x12, /*!< 0x12, Min and Max values of the connection interval (2 octets Min, 2 octets Max) (0xFFFF indicates no conn interval min or max) */
 	RTK_BT_LE_GAP_ADTYPE_SIGNED_DATA                             = 0x13, /*!< 0x13, Signed Data field */
 	RTK_BT_LE_GAP_ADTYPE_SERVICES_LIST_16BIT                     = 0x14, /*!< 0x14, Service Solicitation: list of 16-bit Service UUIDs */
@@ -117,7 +117,7 @@ typedef enum {
 	RTK_BT_LE_GAP_ADTYPE_LE_ROLE                                 = 0x1C, /*!< 0x1C, LE Role */
 	RTK_BT_LE_GAP_ADTYPE_SP_HASH_C256                            = 0x1D, /*!< 0x1D, Simple Pairing Hash C-256 */
 	RTK_BT_LE_GAP_ADTYPE_SP_RAND_R256                            = 0x1E, /*!< 0x1E, Simple Pairing Randomizer R-256 */
-	RTK_BT_LE_GAP_ADTYPE_LIST_32BIT_SILI                         = 0x1F, /*!< 0x1F, List of 32-bit Service Solicitation UUIDs */
+	RTK_BT_LE_GAP_ADTYPE_LIST_32BIT_SOLI                         = 0x1F, /*!< 0x1F, List of 32-bit Service Solicitation UUIDs */
 	RTK_BT_LE_GAP_ADTYPE_SERVICE_DATA_32BIT                      = 0x20, /*!< 0x20, Service Data - 32-bit UUID */
 	RTK_BT_LE_GAP_ADTYPE_SERVICE_DATA_128BIT                     = 0x21, /*!< 0x21, Service Data - 128-bit UUID */
 	RTK_BT_LE_GAP_ADTYPE_SC_CONF_VALUE                           = 0x22, /*!< 0x22, LE Secure Connections Confirmation Value */
@@ -135,6 +135,13 @@ typedef enum {
 	RTK_BT_LE_GAP_ADTYPE_3D_INFO_DATA                            = 0x3D, /*!< 0x3D, 3D Information Data */
 	RTK_BT_LE_GAP_ADTYPE_MANUFACTURER_SPECIFIC                   = 0xFF, /*!< 0xFF, Manufacturer Specific Data */
 } rtk_bt_le_gap_ad_type_t;
+
+/**
+ * @def       RTK_BT_LE_GAP_ADTYPE_LIST_32BIT_SILI
+ * @brief     Deprecated alias of @ref RTK_BT_LE_GAP_ADTYPE_LIST_32BIT_SOLI.
+ * @deprecated Use @ref RTK_BT_LE_GAP_ADTYPE_LIST_32BIT_SOLI instead.
+ */
+#define RTK_BT_LE_GAP_ADTYPE_LIST_32BIT_SILI RTK_BT_LE_GAP_ADTYPE_LIST_32BIT_SOLI
 
 /**
  * @typedef   rtk_bt_le_gap_ad_flags_data_t
@@ -264,7 +271,7 @@ typedef struct {
 	uint16_t slave_latency;         /*!<Defines the slave latency for the connection in number of connection events.
                                     Slave latency range: 0x0000 to 0x01F3
                                     Values outside the range are reserved for future use.*/
-	uint16_t supv_timeout;          /*!<Defines the connection supervison timeout multiplier as amultiple of 10ms.
+	uint16_t supv_timeout;          /*!<Defines the connection supervision timeout multiplier as a multiple of 10ms.
                                     Range: 0xFFFF indicates no specific value requested.
                                     Range: 0x000A to 0x0C80
                                     Time = N * 10 ms
@@ -287,7 +294,7 @@ typedef enum {
 
 /**
  * @enum    rtk_bt_le_ident_addr_type_t
- * @brief   Bluetooth LE indentity address type definition.
+ * @brief   Bluetooth LE identity address type definition.
  */
 typedef enum {
 	RTK_BT_LE_IDENT_ADDR_PUBLIC      = 0x00,    /*  Public identity address. */
@@ -321,7 +328,7 @@ typedef struct {
 
 /**
  * @struct    rtk_bt_le_ident_addr_t
- * @brief     Bluetooth LE indentity address definition.
+ * @brief     Bluetooth LE identity address definition.
  */
 typedef struct {
 	rtk_bt_le_ident_addr_type_t type;       /*!< Identity address type */
@@ -420,7 +427,7 @@ typedef enum {
 
 /**
  * @struct    rtk_bt_le_adv_param_t
- * @brief     Bluetooth LE GAP set adv data paramter definition.
+ * @brief     Bluetooth LE GAP set adv data parameter definition.
  */
 typedef struct {
 	/**
@@ -456,7 +463,7 @@ typedef struct {
 #if defined(RTK_BLE_5_0_USE_EXTENDED_ADV) && RTK_BLE_5_0_USE_EXTENDED_ADV
 /**
  * @struct    rtk_bt_le_ext_adv_param_t
- * @brief     Bluetooth LE GAP ext adv paramter definition.
+ * @brief     Bluetooth LE GAP ext adv parameter definition.
  */
 typedef struct {
 	/** Advertising_Event_Properties */
@@ -510,7 +517,7 @@ typedef struct {
  * @brief     Bluetooth LE GAP create ext adv definition.
  */
 typedef struct {
-	/** Advertising paramter */
+	/** Advertising parameter */
 	rtk_bt_le_ext_adv_param_t *p_adv_param;
 	/** Advertising set handle created by stack */
 	uint8_t *p_adv_handle;
@@ -547,7 +554,7 @@ typedef struct {
 
 /**
  * @struct    rtk_bt_le_ext_create_conn_param_t
- * @brief     Bluetooth LE GAP create ext connection paramter definition.
+ * @brief     Bluetooth LE GAP create ext connection parameter definition.
  */
 typedef struct {
 	/** Initiator_Filter_Policy */
@@ -628,7 +635,7 @@ typedef enum {
 
 /**
  * @struct    rtk_bt_le_pa_param_t
- * @brief     Bluetooth LE GAP set periodic adv paramter definition.
+ * @brief     Bluetooth LE GAP set periodic adv parameter definition.
  */
 typedef struct {
 	/** Identify an advertising set, which is assigned by @ref rtk_bt_le_gap_create_ext_adv. */
@@ -693,10 +700,10 @@ typedef struct {
 
 /**
  * @struct    rtk_bt_le_scan_info_filter_param_t
- * @brief     Bluetooth LE GAP scan info filter paramters definition.
+ * @brief     Bluetooth LE GAP scan info filter parameters definition.
  */
 typedef struct {
-	bool enable;        /*!< Wether to enable the scan info comparison function */
+	bool enable;        /*!< Whether to enable the scan info comparison function */
 	uint8_t offset;     /*!< The start offset of the scan info to compare */
 	uint8_t len;        /*!< Length of data to compare */
 	uint8_t *p_filter;  /*!< Point the data to compare with the scan info */
@@ -704,7 +711,7 @@ typedef struct {
 
 /**
  * @struct    rtk_bt_le_scan_param_t
- * @brief     Bluetooth LE GAP scan paramters definition.
+ * @brief     Bluetooth LE GAP scan parameters definition.
  */
 typedef struct {
 	/** LE_Scan_Type */
@@ -738,7 +745,7 @@ typedef struct {
 #if defined(RTK_BLE_5_0_USE_EXTENDED_ADV) && RTK_BLE_5_0_USE_EXTENDED_ADV
 /**
  * @struct    rtk_bt_le_ext_scan_param_t
- * @brief     Bluetooth LE GAP ext scan paramters definition.
+ * @brief     Bluetooth LE GAP ext scan parameters definition.
  */
 typedef struct {
 	/** Own_Address_Type */
@@ -911,7 +918,7 @@ typedef enum {
 
 /**
  * @struct    rtk_bt_le_modify_wl_param_t
- * @brief     Bluetooth LE GAP whitelist operation paramters definition.
+ * @brief     Bluetooth LE GAP whitelist operation parameters definition.
  */
 typedef struct {
 	rtk_bt_le_wl_op_t op;                  /*!< whitelist operation type */
@@ -1064,8 +1071,8 @@ typedef struct {
  * @brief     Bluetooth LE GAP set connection data length parameters definition.
  */
 typedef struct {
-	uint16_t conn_handle;           /*!< connction handle */
-	uint16_t max_tx_octets;         /*!< Maximum tx octects */
+	uint16_t conn_handle;           /*!< connection handle */
+	uint16_t max_tx_octets;         /*!< Maximum tx octets */
 	uint16_t max_tx_time;           /*!< Maximum tx time */
 } rtk_bt_le_set_datalen_param_t;
 #endif
@@ -1128,13 +1135,23 @@ typedef enum {
  * @brief     Bluetooth BLE SM IO capability type definition.
  */
 typedef enum {
-	RTK_IO_CAP_DISPALY_ONLY     = 0x00,     /*!< 0x00 DisplayOnly */
+	RTK_IO_CAP_DISPLAY_ONLY     = 0x00,     /*!< 0x00 DisplayOnly */
 	RTK_IO_CAP_DISPLAY_YES_NO   = 0x01,     /*!< 0x01 DisplayYesNo */
 	RTK_IO_CAP_KEYBOARD_ONLY    = 0x02,     /*!< 0x02 KeyboardOnly */
 	RTK_IO_CAP_NO_IN_NO_OUT     = 0x03,     /*!< 0x03 NoInputNoOutput */
-	RTK_IO_CAP_KEYBOARD_DISPALY = 0x04,     /*!< 0x04 KeyboardDisplay */
+	RTK_IO_CAP_KEYBOARD_DISPLAY = 0x04,     /*!< 0x04 KeyboardDisplay */
 	RTK_IO_CAP_MAX              = 0x05,     /*!< 0x05-0xFF Reserved for future use */
 } rtk_bt_le_io_cap_t;
+
+/**
+ * @defgroup  RTK_IO_CAP Deprecated aliases
+ * @brief     Deprecated aliases of the @ref rtk_bt_le_io_cap_t values.
+ * @deprecated Use the @ref rtk_bt_le_io_cap_t values instead.
+ * @{
+ */
+#define RTK_IO_CAP_DISPALY_ONLY RTK_IO_CAP_DISPLAY_ONLY
+#define RTK_IO_CAP_KEYBOARD_DISPALY RTK_IO_CAP_KEYBOARD_DISPLAY
+/** @} */
 
 /**
  * @def       RTK_PAIRING_PASSKEY_MAX
@@ -1392,7 +1409,7 @@ typedef struct {
 	uint8_t data_status;                /**< @ref rtk_bt_le_pa_sync_report_data_status_t */
 #if defined(RTK_BLE_5_4_PA_SYNC_RSP_SUPPORT) && RTK_BLE_5_4_PA_SYNC_RSP_SUPPORT
 	uint16_t periodic_event_counter;    /** The value of the event counter where the subevent indication was received. */
-	uint8_t subevent;                   /** The subevent where the subevend indication was received. */
+	uint8_t subevent;                   /** The subevent where the subevent indication was received. */
 #endif
 	uint8_t data_len;                   /**< Length of the Data field. Range: 0 to 247. */
 	uint8_t *p_data;                    /**< Data received from a Periodic Advertising packet. */
@@ -1480,14 +1497,14 @@ typedef struct {
 #if defined(RTK_BLE_5_1_PAST_SENDER_SUPPORT) && RTK_BLE_5_1_PAST_SENDER_SUPPORT
 /**
  * @struct    rtk_bt_le_past_send_t
- * @brief     Bluetooth LE periodic adv sync transfer paramter.
+ * @brief     Bluetooth LE periodic adv sync transfer parameter.
  */
 typedef struct {
 	uint16_t conn_handle;       /**< Connection handle */
 	uint16_t service_data;      /**< A value provided by the Host to identify the periodic advertising train to the peer device. */
 	bool use_sync_id;           /**< Indicate following member 'idx' is sync id or adv handle.
-                                     If sync info to transter is obtained from remote device by sync procedure, set use_sync_id to true.
-                                     If sync info to transter is from own periodic adv, set use_sync_id to false. */
+                                     If sync info to transfer is obtained from remote device by sync procedure, set use_sync_id to true.
+                                     If sync info to transfer is from own periodic adv, set use_sync_id to false. */
 	uint8_t idx;                /**< If use_sync_id is true, idx is sync id, if use_sync_id is false, idx is adv handle. */
 } rtk_bt_le_past_send_t;
 #endif
@@ -1507,7 +1524,7 @@ typedef enum {
 /** @brief  Definition of GAP PAST recipient periodic advertising sync transfer parameter. */
 /**
  * @struct    rtk_bt_le_past_recv_param_t
- * @brief     Bluetooth LE periodic adv sync transfer receive paramter.
+ * @brief     Bluetooth LE periodic adv sync transfer receive parameter.
  */
 typedef struct {
 	uint16_t conn_handle;
@@ -1685,7 +1702,7 @@ typedef struct {
  */
 typedef struct {
 	uint16_t conn_handle;                   /*!< Connection handle */
-	uint16_t conn_interval_min;             /*!< Mininum connection interval */
+	uint16_t conn_interval_min;             /*!< Minimum connection interval */
 	uint16_t conn_interval_max;             /*!< Maximum connection interval */
 	uint16_t conn_latency;                  /*!< Connection latency */
 	uint16_t supv_timeout;                  /*!< Connection supervision timeout */
@@ -1746,7 +1763,7 @@ typedef enum {
 
 /**
  * @struct    rtk_bt_le_auth_complete_ind_t
- * @brief     Bluetooth LE auth compeleted event msg.
+ * @brief     Bluetooth LE auth completed event msg.
  */
 typedef struct {
 	uint16_t err;                           /*!< Error code */
@@ -1902,7 +1919,7 @@ typedef struct {
 	uint16_t conn_handle;                   /*!< Connection handle */
 	rtk_bt_le_txpower_phy_t phy;
 	int8_t *cur_txpower;                    /*!< Current transmit power level Range: -127 to 20 Units: dBm
-                                             *   Note: 0x7F meands current transmit power level is unavailable
+                                             *   Note: 0x7F means current transmit power level is unavailable
                                              */
 	int8_t *max_txpower;                    /*!< Maximum transmit power level Range: -127 to 20 Units: dBm */
 } rtk_bt_le_txpower_read_local_t;
@@ -1981,7 +1998,7 @@ typedef enum {
 
 typedef struct {
 	uint16_t conn_handle;                     /*!< Connection handle */
-	uint16_t cid;                             /*!< Local l2cap channel ID assgined by bt stack */
+	uint16_t cid;                             /*!< Local l2cap channel ID assigned by bt stack */
 	uint16_t err;                             /*!< Error code of l2cap channel connect or disconnect */
 } rtk_bt_le_coc_conn_state_ind_t;
 
@@ -2139,7 +2156,14 @@ typedef enum {
 #define RTK_BLE_GAP_CTE_TX_ENABLE_VALUE_IN_RANGE(value) ((value) <= 0x01u)
 
 /* BLE connectionless IQ sampling parameter */
-#define RTK_BLE_GAP_CTE_RX_EANBLE_VALUE_IN_RANGE(value) ((value) <= 0x01u)
+#define RTK_BLE_GAP_CTE_RX_ENABLE_VALUE_IN_RANGE(value) ((value) <= 0x01u)
+
+/**
+ * @def       RTK_BLE_GAP_CTE_RX_EANBLE_VALUE_IN_RANGE
+ * @brief     Deprecated alias of @ref RTK_BLE_GAP_CTE_RX_ENABLE_VALUE_IN_RANGE.
+ * @deprecated Use @ref RTK_BLE_GAP_CTE_RX_ENABLE_VALUE_IN_RANGE instead.
+ */
+#define RTK_BLE_GAP_CTE_RX_EANBLE_VALUE_IN_RANGE(value) RTK_BLE_GAP_CTE_RX_ENABLE_VALUE_IN_RANGE(value)
 
 #define RTK_BLE_GAP_CTE_SLOT_DURATION_MIN               (0x01u)
 #define RTK_BLE_GAP_CTE_SLOT_DURATION_MAX               (0x02u)
@@ -2178,12 +2202,12 @@ typedef struct {
 
 	/* The number of Antenna IDs in the pattern
 	 * Range: for AoD: 0x02 to RTK_BLE_GAP_CTE_NUM_ANT_IDS_MAX
-	 *        for AoA: ignore the parameter and it's default value is 0
+	 *        for AoA: ignore the parameter and its default value is 0
 	 */
 	uint8_t  num_ant_ids;
 
 	/* Antenna ID in the pattern
-	 * For AoA, ignore the parameter and it's default value is NULL
+	 * For AoA, ignore the parameter and its default value is NULL
 	 */
 	uint8_t  *ant_ids;
 } rtk_bt_le_gap_connless_cte_tx_param_t;
@@ -2216,12 +2240,12 @@ typedef struct {
 
 	/* The number of Antenna IDs in the switching pattern
 	 * Range: for AoA: 0x02 to RTK_BLE_GAP_CTE_NUM_ANT_IDS_MAX
-	 *        for AoD: ignore the parameter and it's default value is 0
+	 *        for AoD: ignore the parameter and its default value is 0
 	 */
 	uint8_t  num_ant_ids;
 
 	/* Antenna IDs in the switching pattern
-	 * For AoD, ignore the parameter and it's default value is NULL
+	 * For AoD, ignore the parameter and its default value is NULL
 	 */
 	uint8_t  *ant_ids;
 } rtk_bt_le_gap_connless_cte_rx_param_t;
@@ -2240,12 +2264,12 @@ typedef struct {
 
 	/* The number of Antenna IDs in the pattern
 	 * Range: for AoD: 0x02 to RTK_BLE_GAP_CTE_NUM_ANT_IDS_MAX
-	 *        for AoA: ignore the parameter and it's default value is 0
+	 *        for AoA: ignore the parameter and its default value is 0
 	 */
 	uint8_t  num_ant_ids;
 
 	/* Antenna IDs in the pattern
-	 * For AoA, ignore the parameter and it's default value is NULL
+	 * For AoA, ignore the parameter and its default value is NULL
 	 */
 	uint8_t  *ant_ids;
 } rtk_bt_le_gap_conn_cte_tx_param_t;
@@ -2279,12 +2303,12 @@ typedef struct {
 
 	/* The number of Antenna IDs in the pattern
 	 * Range: for AoA: 0x02 to RTK_BLE_GAP_CTE_NUM_ANT_IDS_MAX
-	 *        for AoD: ignore the parameter and it's default value is 0
+	 *        for AoD: ignore the parameter and its default value is 0
 	 */
 	uint8_t  num_ant_ids;
 
 	/* Antenna IDs in the pattern
-	 * For AoD, ignore the parameter and it's default value is NULL
+	 * For AoD, ignore the parameter and its default value is NULL
 	 */
 	uint8_t  *ant_ids;
 } rtk_bt_le_gap_conn_cte_rx_param_t;
@@ -2360,7 +2384,7 @@ typedef struct {
 	 *      0x09 to 0x52: Total number of sample pairs (there shall be the same number of I samples and Q samples).
 	 */
 	uint8_t                                 sample_count;
-	/* Sample length is sample_cout * 2. I_Sample[0],Q_Sample[0], ... , I_Sample[i],Q_Sample[i]
+	/* Sample length is sample_count * 2. I_Sample[0],Q_Sample[0], ... , I_Sample[i],Q_Sample[i]
 	 * Value 0x80 indicates No valid sample available. */
 	int8_t                                  iq_sample[RTK_BT_LE_MAX_IQ_REPORT_CNT * 2];
 } rtk_bt_le_gap_connless_iq_report_ind_t;
@@ -2395,7 +2419,7 @@ typedef struct {
 	 *  0x09 to 0x52: Total number of sample pairs (there shall be the same number of I samples and Q samples).
 	 */
 	uint8_t                                 sample_count;
-	/* Length is sample_cout * 2. I_Sample[0],Q_Sample[0], ... , I_Sample[i],Q_Sample[i]
+	/* Length is sample_count * 2. I_Sample[0],Q_Sample[0], ... , I_Sample[i],Q_Sample[i]
 	 * Value 0x80 indicates No valid sample available.
 	 */
 	int8_t                                  iq_sample[RTK_BT_LE_MAX_IQ_REPORT_CNT * 2];
@@ -2585,7 +2609,7 @@ typedef struct {
 
 /**
  * @struct    rtk_bt_le_dtm_tx_param_t
- * @brief     Bluetooth LE transmitter test paramters.
+ * @brief     Bluetooth LE transmitter test parameters.
  */
 
 typedef struct  {
@@ -2681,7 +2705,7 @@ uint16_t rtk_bt_le_gap_set_device_name(const uint8_t *name);
 
 /**
  * @brief     Set device appearance.
- * @param[in] appearance: Device apperance
+ * @param[in] appearance: Device appearance
  * @return
  *            - 0  : Succeed
  *            - Others: Error code
@@ -2689,8 +2713,8 @@ uint16_t rtk_bt_le_gap_set_device_name(const uint8_t *name);
 uint16_t rtk_bt_le_gap_set_appearance(uint16_t appearance);
 
 /**
- * @brief     Set preferred connetion parameters.
- * @param[in] p_preferred_conn_param: preferred connetion parameters, @ref rtk_bt_le_preferred_conn_param_t
+ * @brief     Set preferred connection parameters.
+ * @param[in] p_preferred_conn_param: preferred connection parameters, @ref rtk_bt_le_preferred_conn_param_t
  * @return
  *            - 0  : Succeed
  *            - Others: Error code
@@ -2699,7 +2723,7 @@ uint16_t rtk_bt_le_gap_set_preferred_conn_param(rtk_bt_le_preferred_conn_param_t
 
 /**
  * @brief     Set random address.
- *            NOTE: This API shall not be excuted when advertising, scanning and initiating are enabled.
+ *            NOTE: This API shall not be executed when advertising, scanning and initiating are enabled.
  * @param[in] auto_generate: Trigger auto generate address.
  * @param[in] type: Type of auto generated random address, ignore if auto_generate is false.
  * @param[in] p_addr: Random address, if auto_generate is false, this random address will be set to controller.
@@ -2808,7 +2832,7 @@ uint16_t rtk_bt_le_gap_set_ext_scan_rsp_data(uint8_t adv_handle, uint8_t *pscan_
  * @param[in] adv_handle: Identify an advertising set, which is assigned by @ref rtk_bt_le_gap_create_ext_adv.
  * @param[in] duration: If non-zero: Advertising duration, in units of 10ms
  * @param[in] num_events: If non-zero, indicates the maximum number of extended advertising events the controller
- *                        shall attemp to send prior to terminating the extended advertising.
+ *                        shall attempt to send prior to terminating the extended advertising.
  * @return
  *            - 0  : Succeed
  *            - Others: Error code
@@ -2834,7 +2858,7 @@ uint16_t rtk_bt_le_gap_stop_ext_adv(uint8_t adv_handle);
 uint16_t rtk_bt_le_gap_remove_ext_adv(uint8_t adv_handle);
 
 /**
- * @brief     When an extended advertising set is stopped due to connnection established, get the stopped
+ * @brief     When an extended advertising set is stopped due to connection established, get the stopped
  *            advertising handle according to the connection handle.
  * @param[in] conn_handle: Handle of connection.
  * @param[out] adv_handle: Handle of advertising set that stopped due to this connection.
@@ -2859,7 +2883,7 @@ uint16_t rtk_bt_le_gap_ext_connect(rtk_bt_le_ext_create_conn_param_t *p_ext_conn
  * @brief     Set and Start BLE GAP periodic advertising, will cause event @ref RTK_BT_LE_GAP_EVT_PA_IND
  *            NOTE: Only advertising event properties @ref RTK_BT_LE_EXT_ADV_EXTENDED_ADV_NON_SCAN_NON_CONN_UNDIRECTED and
  *            @ref RTK_BT_LE_EXT_ADV_EXTENDED_ADV_NON_SCAN_NON_CONN_DIRECTED support periodic advertising.
- * @param[in] param: Advertising paramter and data
+ * @param[in] param: Advertising parameter and data
  * @return
  *            - 0  : Succeed
  *            - Others: Error code
@@ -2893,7 +2917,7 @@ uint16_t rtk_bt_le_gap_update_pa(uint8_t adv_handle, bool update_did_only, uint8
  * @brief     Modify Periodic Advertiser list.
  * @param[in] operation:  Add entry to Periodic Advertiser list, remove entry from Periodic Advertiser list or clear all entries
  *                        from Periodic Advertiser list. @ref rtk_bt_le_pa_sync_advlist_op_t.
- *                        NOTE: If operation is @ref RTK_BT_LE_PA_SYNC_ADV_LIST_CLEAR, adv_addr, adv_addr_type and adv_sid are irrelevant.
+ *                        NOTE: If operation is @ref RTK_BT_LE_PA_SYNC_ADV_LIST_OP_CLEAR, adv_addr, adv_addr_type and adv_sid are irrelevant.
  * @param[in] adv_addr:   Device Address.
  *                        NOTE: Only @ref RTK_BT_LE_ADDR_TYPE_PUBLIC and @ref RTK_BT_LE_ADDR_TYPE_RANDOM could be used for modifying Periodic Advertiser list.
  * @param[in] adv_sid:    Advertising SID subfield in the ADI field used to identify the Periodic Advertising.
@@ -2908,7 +2932,7 @@ uint16_t rtk_bt_le_gap_pa_sync_modify_adv_list(rtk_bt_le_pa_sync_advlist_op_t op
  * @brief     Synchronize with a periodic advertising train from an advertiser.
  *            This will cause event @ref RTK_BT_LE_GAP_EVT_PA_SYNC_STATE_IND.
  *            Event @ref RTK_BT_LE_GAP_EVT_PA_ADV_REPORT_IND will be sent when adv report is enabled by param->options.
- * @param[in] p_pa_sync_create_sync_param:   GAP PA Sync create sync parameter. @ref rtk_bt_le_pa_sync_create_t.
+ * @param[in] param:   GAP PA Sync create sync parameter. @ref rtk_bt_le_pa_sync_create_t.
  *
  * @return
  *            - 0  : Succeed
@@ -2946,8 +2970,8 @@ uint16_t rtk_bt_le_gap_pa_sync_terminate(uint8_t sync_id);
  * @param[in] conn_handle:   Connection handle.
  * @param[in] service_data:  A value provided by the Host to identify the periodic advertising train to the peer device.
  * @param[in] use_sync_id:   Indicate following member 'idx' is sync id or adv handle.
- *                           NOTE: If sync info to transter is obtained from remote device by sync procedure, set use_sync_id to true.
- *                           NOTE: If sync info to transter is from own periodic adv, set use_sync_id to false.
+ *                           NOTE: If sync info to transfer is obtained from remote device by sync procedure, set use_sync_id to true.
+ *                           NOTE: If sync info to transfer is from own periodic adv, set use_sync_id to false.
  * @param[in] idx:   If use_sync_id is true, idx is sync id, if use_sync_id is false, idx is adv handle.
  *
  * @return
@@ -2959,7 +2983,7 @@ uint16_t rtk_bt_le_gap_past_send(uint16_t conn_handle, uint16_t service_data, bo
 
 #if defined(RTK_BLE_5_1_PAST_RECIPIENT_SUPPORT) && RTK_BLE_5_1_PAST_RECIPIENT_SUPPORT
 /**
- * @brief     Set PAST recipient paramter, will cause event @ref RTK_BT_LE_GAP_EVT_PA_SYNC_STATE_IND when received past packet.
+ * @brief     Set PAST recipient parameter, will cause event @ref RTK_BT_LE_GAP_EVT_PA_SYNC_STATE_IND when received past packet.
  * @param[in] param:   PAST recipient setting.
  *
  * @return
@@ -2969,7 +2993,7 @@ uint16_t rtk_bt_le_gap_past_send(uint16_t conn_handle, uint16_t service_data, bo
 uint16_t rtk_bt_le_gap_past_recipient_set(rtk_bt_le_past_recv_param_t *param);
 
 /**
- * @brief     Set default PAST recipient paramter, will cause event @ref RTK_BT_LE_GAP_EVT_PA_SYNC_STATE_IND when received past packet.
+ * @brief     Set default PAST recipient parameter, will cause event @ref RTK_BT_LE_GAP_EVT_PA_SYNC_STATE_IND when received past packet.
  * @param[in] param:   default PAST recipient setting.
  *
  * @return
@@ -2989,8 +3013,8 @@ uint16_t rtk_bt_le_gap_default_past_recipient_set(rtk_bt_le_past_recv_param_t *p
 uint16_t rtk_bt_le_gap_scan_info_filter(rtk_bt_le_scan_info_filter_param_t *p_scan_info);
 
 /**
- * @brief     Set scan paramters.
- * @param[in] p_gap_scan_param: Scan paramters
+ * @brief     Set scan parameters.
+ * @param[in] p_gap_scan_param: Scan parameters
  * @return
  *            - 0  : Succeed
  *            - Others: Error code
@@ -2998,8 +3022,8 @@ uint16_t rtk_bt_le_gap_scan_info_filter(rtk_bt_le_scan_info_filter_param_t *p_sc
 uint16_t rtk_bt_le_gap_set_scan_param(rtk_bt_le_scan_param_t *p_gap_scan_param);
 
 /**
- * @brief     Get scan paramters.
- * @param[out] pscan_param: Scan paramters
+ * @brief     Get scan parameters.
+ * @param[out] pscan_param: Scan parameters
  * @return
  *            - 0  : Succeed
  *            - Others: Error code
@@ -3024,8 +3048,8 @@ uint16_t rtk_bt_le_gap_stop_scan(void);
 
 #if defined(RTK_BLE_5_0_USE_EXTENDED_ADV) && RTK_BLE_5_0_USE_EXTENDED_ADV
 /**
- * @brief     Set ext scan paramters.
- * @param[in] p_param: Ext Scan paramters
+ * @brief     Set ext scan parameters.
+ * @param[in] p_param: Ext Scan parameters
  * @return
  *            - 0  : Succeed
  *            - Others: Error code
@@ -3051,7 +3075,7 @@ uint16_t rtk_bt_le_gap_stop_ext_scan(void);
 
 /**
  * @brief     Start connection, will cause event @ref RTK_BT_LE_GAP_EVT_CONNECT_IND
- * @param[in] p_conn_param: Connection parmaters
+ * @param[in] p_conn_param: Connection parameters
  * @return
  *            - 0  : Succeed
  *            - Others: Error code
@@ -3087,9 +3111,9 @@ uint16_t rtk_bt_le_gap_disconnect(uint16_t conn_handle);
 uint16_t rtk_bt_le_gap_disconnect_with_reason(uint16_t conn_handle, uint8_t reason);
 
 /**
- * @brief     Update connection paramters. If controller update the connection parameters,
+ * @brief     Update connection parameters. If controller update the connection parameters,
  *            will cause event @ref RTK_BT_LE_GAP_EVT_CONN_UPDATE_IND
- * @param[in] p_update_conn_param: Updated connection parmaters
+ * @param[in] p_update_conn_param: Updated connection parameters
  * @return
  *            - 0  : Succeed
  *            - Others: Error code
@@ -3098,7 +3122,7 @@ uint16_t rtk_bt_le_gap_update_conn_param(rtk_bt_le_update_conn_param_t *p_update
 
 /**
  * @brief     Modify device white list.
- * @param[in] p_wl_op_param: Modification operation paramters
+ * @param[in] p_wl_op_param: Modification operation parameters
  * @return
  *            - 0  : Succeed
  *            - Others: Error code
@@ -3126,7 +3150,7 @@ uint16_t rtk_bt_le_gap_read_remote_version(uint16_t conn_handle);
 
 /**
  * @brief     Get gap dev state.
- * @param[out] p_dev_state: Deice state
+ * @param[out] p_dev_state: Device state
  * @return
  *            - 0  : Succeed
  *            - Others: Error code
@@ -3175,8 +3199,8 @@ uint16_t rtk_bt_le_gap_get_conn_handle_by_addr(rtk_bt_le_addr_t *p_addr, uint16_
 /**
  * @brief     Set Max MTU size
  * @param[in] mtu_size: MTU size value
- * @note      This API shall be called before creating connection. When connection is etablishing or
- *            a connection has been establised, it will fail.
+ * @note      This API shall be called before creating connection. When connection is establishing or
+ *            a connection has been established, it will fail.
  * @return
  *            - 0  : Succeed
  *            - Others: Error code
@@ -3194,9 +3218,9 @@ uint16_t rtk_bt_le_gap_set_channels(uint8_t *p_chan_map);
 
 #if defined(RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT) && RTK_BLE_4_2_DATA_LEN_EXT_SUPPORT
 /**
- * @brief     Set Bluetooth device connection data length paramters. If controller change the data length,
+ * @brief     Set Bluetooth device connection data length parameters. If controller change the data length,
  *            will cause event @ref RTK_BT_LE_GAP_EVT_DATA_LEN_CHANGE_IND
- * @param[in] p_datalen_param: Connection data length paramters
+ * @param[in] p_datalen_param: Connection data length parameters
  * @return
  *            - 0  : Succeed
  *            - Others: Error code
@@ -3206,9 +3230,9 @@ uint16_t rtk_bt_le_gap_set_data_len(rtk_bt_le_set_datalen_param_t *p_datalen_par
 
 #if defined(RTK_BLE_5_0_SET_PHYS_SUPPORT) && RTK_BLE_5_0_SET_PHYS_SUPPORT
 /**
- * @brief     Set Bluetooth device PHY paramters. If controller updates the PHY,
+ * @brief     Set Bluetooth device PHY parameters. If controller updates the PHY,
  *            will cause event @ref RTK_BT_LE_GAP_EVT_PHY_UPDATE_IND
- * @param[in] p_phy_param: PHY paramters
+ * @param[in] p_phy_param: PHY parameters
  * @return
  *            - 0  : Succeed
  *            - Others: Error code
@@ -3228,7 +3252,7 @@ uint16_t rtk_bt_le_gap_privacy_init(bool whitelist);
 
 /**
  * @brief     Set BLE privacy mode.
- * @param[in] peer_ident_addr_type: Peer indentity address type
+ * @param[in] peer_ident_addr_type: Peer identity address type
  * @param[in] peer_addr: Peer identity address
  * @param[in] privacy_mode: Privacy mode
  * @return
@@ -3240,7 +3264,7 @@ uint16_t rtk_bt_le_gap_set_privacy_mode(rtk_bt_le_ident_addr_type_t peer_ident_a
 
 /**
  * @brief     Read local resolvable address.
- * @param[in] peer_ident_addr_type: Peer indentity address type
+ * @param[in] peer_ident_addr_type: Peer identity address type
  * @param[in] peer_addr: Peer identity address
  * @param[out] local_rpa: Local resolvable address get by this API
  * @return
@@ -3252,7 +3276,7 @@ uint16_t rtk_bt_le_gap_read_local_resolv_addr(rtk_bt_le_ident_addr_type_t peer_i
 
 /**
  * @brief     Read peer resolvable address.
- * @param[in] peer_ident_addr_type: Peer indentity address type
+ * @param[in] peer_ident_addr_type: Peer identity address type
  * @param[in] peer_addr: Peer identity address
  * @param[out] peer_rpa: Peer resolvable address get by this API
  * @return
@@ -3273,8 +3297,8 @@ uint16_t rtk_bt_le_gap_read_peer_resolv_addr(rtk_bt_le_ident_addr_type_t peer_id
 uint16_t rtk_bt_le_sm_set_pairing_mode(rtk_bt_le_pairing_mode_t pairing_mode);
 
 /**
- * @brief     Set security paramters.
- * @param[in] p_sec_param: Security paramters
+ * @brief     Set security parameters.
+ * @param[in] p_sec_param: Security parameters
  * @return
  *            - 0  : Succeed
  *            - Others: Error code
@@ -3282,8 +3306,8 @@ uint16_t rtk_bt_le_sm_set_pairing_mode(rtk_bt_le_pairing_mode_t pairing_mode);
 uint16_t rtk_bt_le_sm_set_security_param(rtk_bt_le_security_param_t *p_sec_param);
 
 /**
- * @brief     Get security paramters.
- * @param[out] p_sec_param: Security paramters
+ * @brief     Get security parameters.
+ * @param[out] p_sec_param: Security parameters
  * @return
  *            - 0  : Succeed
  *            - Others: Error code
@@ -3420,7 +3444,7 @@ uint16_t rtk_bt_le_gap_get_tx_pending_num(uint16_t conn_handle, uint16_t *tx_pen
  * @param[in] conn_handle: Connection handle
  * @param[in] phy: @ref rtk_bt_le_txpower_phy_t
  * @param[out] cur_txpower: Current transmit power level Range: -127 to 20 Units: dBm
- *                          Note: 0x7F meands current transmit power level is unavailable
+ *                          Note: 0x7F means current transmit power level is unavailable
  * @param[out] max_txpower: Maximum transmit power level Range: -127 to 20 Units: dBm
  * @return
  *            - 0  : Succeed
@@ -3455,7 +3479,7 @@ uint16_t rtk_bt_le_gap_tx_power_report_set(uint16_t conn_handle, bool local_enab
 #if defined(RTK_BLE_5_1_CTE_SUPPORT) && RTK_BLE_5_1_CTE_SUPPORT
 
 /**
- * @brief     Get antenna information supprted by the controller
+ * @brief     Get antenna information supported by the controller
  * @param[out] antenna_info: Antenna information
  * @return
  *            - 0  : Succeed
@@ -3467,7 +3491,7 @@ uint16_t rtk_bt_le_gap_get_antenna_info(rtk_bt_le_gap_antenna_info_t *antenna_in
     (defined(RTK_BLE_5_0_PA_ADV_SUPPORT) && RTK_BLE_5_0_PA_ADV_SUPPORT))
 /**
  * @brief     Start connectionless CTE transmit.
- * @param[in] p_cte_param: connetionless CTE transmit parameters
+ * @param[in] p_cte_param: connectionless CTE transmit parameters
  * @param[in] p_eadv_param: extended advertising parameters
  * @param[in] p_pa_param: periodic advertising parameters
  * @param[out] p_adv_handle: extended advertising handle
@@ -3494,7 +3518,7 @@ uint16_t rtk_bt_le_gap_connless_cte_tx_stop(uint8_t adv_handle);
 /**
  * @brief     Start connectionless CTE receive.
  * @param[in] sync_id: Identify the periodic advertising train.
- * @param[in] params: connetionless CTE receive paramters
+ * @param[in] params: connectionless CTE receive parameters
  * @return
  *            - 0  : Succeed
  *            - Others: Error code
@@ -3513,7 +3537,7 @@ uint16_t rtk_bt_le_gap_connless_cte_rx_stop(uint8_t sync_id);
 /**
  * @brief     Start connection-oriented CTE transmit.
  * @param[in] conn_handle: connection handle
- * @param[in] params: connection-oriented CTE transmit paramters
+ * @param[in] params: connection-oriented CTE transmit parameters
  * @return
  *            - 0  : Succeed
  *            - Others: Error code
@@ -3532,7 +3556,7 @@ uint16_t rtk_bt_le_gap_conn_cte_tx_stop(uint16_t conn_handle);
 /**
  * @brief     Start connection-oriented CTE receive.
  * @param[in] conn_handle: connection handle
- * @param[in] rx_params:  connection-oriented CTE receive paramters
+ * @param[in] rx_params:  connection-oriented CTE receive parameters
  * @return
  *            - 0  : Succeed
  *            - Others: Error code
@@ -3661,7 +3685,7 @@ uint16_t rtk_bt_le_gap_coc_send_data(uint16_t cid, uint16_t len, uint8_t *data);
 
 /**
  * @brief     Set BLE receiver test parameters and start
- * @param[in] p_rx_test_param: BLE receiver test parameters
+ * @param[in] p_rx_param: BLE receiver test parameters
  * @param[in] rx_version:      BLE receiver test version
  * @note      This API shall be called after BT init, and DO NOT execute ADV / Scan / Connection related actions
  *            before calling this API. After calling this API, DO NOT execute ADV / Scan / Connection actions
@@ -3674,7 +3698,7 @@ uint16_t rtk_bt_le_gap_dtm_rx_test(rtk_bt_le_dtm_rx_param_t *p_rx_param, rtk_bt_
 
 /**
  * @brief     Set BLE transmitter test parameters and start
- * @param[in] p_tx_test_param: BLE transmitter test parameters
+ * @param[in] p_tx_param: BLE transmitter test parameters
  * @param[in] tx_version:      BLE transmitter test version
  * @note      This API shall be called after BT init, and DO NOT execute ADV / Scan / Connection related actions
  *            before calling this API. After calling this API, DO NOT execute ADV / Scan / Connection actions

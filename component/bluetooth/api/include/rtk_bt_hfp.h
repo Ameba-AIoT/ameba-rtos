@@ -30,7 +30,15 @@ extern "C"
 #define RTK_BT_HFP_AG_LOCAL_CAPABILITY_REJECT_CALLS           (1 << 5)
 #define RTK_BT_HFP_AG_LOCAL_CAPABILITY_ENHANCED_CALL_STATUS   (1 << 6)
 #define RTK_BT_HFP_AG_LOCAL_CAPABILITY_ENHANCED_CALL_CONTROL  (1 << 7)
-#define RTK_BT_HFP_AG_LOCAL_CAPABILITY_EXTENED_ERROR_RESULT   (1 << 8)
+#define RTK_BT_HFP_AG_LOCAL_CAPABILITY_EXTENDED_ERROR_RESULT  (1 << 8)
+
+/**
+ * @def       RTK_BT_HFP_AG_LOCAL_CAPABILITY_EXTENED_ERROR_RESULT
+ * @brief     Deprecated alias of @ref RTK_BT_HFP_AG_LOCAL_CAPABILITY_EXTENDED_ERROR_RESULT.
+ * @deprecated Use @ref RTK_BT_HFP_AG_LOCAL_CAPABILITY_EXTENDED_ERROR_RESULT instead.
+ */
+#define RTK_BT_HFP_AG_LOCAL_CAPABILITY_EXTENED_ERROR_RESULT RTK_BT_HFP_AG_LOCAL_CAPABILITY_EXTENDED_ERROR_RESULT
+
 #define RTK_BT_HFP_AG_LOCAL_CAPABILITY_CODEC_NEGOTIATION      (1 << 9)
 #define RTK_BT_HFP_AG_LOCAL_CAPABILITY_HF_INDICATORS          (1 << 10)
 #define RTK_BT_HFP_AG_LOCAL_CAPABILITY_ESCO_S4_T2_SUPPORTED   (1 << 11)
@@ -270,7 +278,7 @@ typedef struct {
 
 /**
  * @struct    rtk_bt_hfp_ag_features_ind_t
- * @brief     hfp audio gating features indication sturct.
+ * @brief     hfp audio gating features indication struct.
  */
 typedef struct {
 	uint16_t capability;                                /*!< features */
@@ -322,7 +330,7 @@ typedef struct {
 	union {
 		struct {
 			uint8_t     channel_mode;                   /*!< indicate channel mode */
-			int         sample_rate;                    /*!< indicate sample frequence */
+			int         sample_rate;                    /*!< indicate sample frequency */
 			uint8_t     bitpool;                        /*!< indicate min bitpool */
 			uint8_t     allocation_method;              /*!< indicate allocation method */
 			uint8_t     subbands;                       /*!< indicate subbands */
@@ -330,7 +338,7 @@ typedef struct {
 		} msbc;
 		struct {
 			uint8_t     channel_num;                    /*!< indicate channel number */
-			int         sample_rate;                    /*!< indicate sample frequence */
+			int         sample_rate;                    /*!< indicate sample frequency */
 			uint8_t     frame_duration;                 /*!< indicate frame duration */
 		} cvsd;
 	};
@@ -420,7 +428,7 @@ typedef struct {
 
 /**
  * @struct    rtk_bt_hfp_ag_call_answer_req_ind_t
- * @brief     Bluetooth hfp ag call answer requset indication.
+ * @brief     Bluetooth hfp ag call answer request indication.
  */
 typedef struct {
 	uint8_t bd_addr[6];                                 /*!< address */
@@ -428,7 +436,7 @@ typedef struct {
 
 /**
  * @struct    rtk_bt_hfp_ag_call_terminate_req_ind_t
- * @brief     Bluetooth hfp ag call terminate requset indication.
+ * @brief     Bluetooth hfp ag call terminate request indication.
  */
 typedef struct {
 	uint8_t bd_addr[6];                                 /*!< address */

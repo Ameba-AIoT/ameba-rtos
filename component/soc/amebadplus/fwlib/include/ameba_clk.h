@@ -136,6 +136,17 @@
   * @}
   */
 
+/** @defgroup SDM_USER_DEFINED_param_definitions
+  * @{
+  */
+#define SDM_OBS_CYC_DEFAULT		1024
+#define SDM_OBS_REF_CYC_DEFAULT		312500
+#define SDM_OBS_REF_CYC_MODIFY		312503
+#define SDM_XTAL_PERIOD_DEFAULT		102400
+/**
+  * @}
+  */
+
 /** @defgroup PLL_CLK_definitions
   * @{
   */
