@@ -84,6 +84,9 @@ log_init_t log_init_table[] = {
 #if defined(CONFIG_ATCMD_SOCKET) && (CONFIG_ATCMD_SOCKET == 1)
 	at_socket_init,
 #endif  /* CONFIG_ATCMD_SOCKET */
+#if defined(CONFIG_ATCMD_HTTP) && (CONFIG_ATCMD_HTTP == 1)
+	at_http_init,
+#endif  /* CONFIG_ATCMD_HTTP */
 #if defined(CONFIG_ATCMD_WEBSOCKET) && (CONFIG_ATCMD_WEBSOCKET == 1)
 	at_websocket_init,
 #endif  /* CONFIG_ATCMD_WEBSOCKET */
