@@ -169,7 +169,7 @@ uint16_t rtk_bt_le_iso_cig_initiator_start_setting(uint8_t cig_id)
 						   (void *)&cig_id, sizeof(uint8_t));
 }
 
-extern uint16_t app_bt_le_iso_cis_id_availiable_check(uint8_t le_iso_role, uint8_t cis_id, uint8_t cig_id);
+extern uint16_t app_bt_le_iso_cis_id_available_check(uint8_t le_iso_role, uint8_t cis_id, uint8_t cig_id);
 
 uint16_t rtk_bt_le_iso_cig_initiator_create_cis_by_cig_id(uint8_t cis_id, uint8_t cig_id, uint16_t conn_handle)
 {
@@ -180,9 +180,9 @@ uint16_t rtk_bt_le_iso_cig_initiator_create_cis_by_cig_id(uint8_t cis_id, uint8_
 		return RTK_BT_ERR_PARAM_INVALID;
 	}
 	/* check whether cis_id and cig_id is legal */
-	ret = app_bt_le_iso_cis_id_availiable_check(RTK_BLE_ISO_ROLE_CIS_INITIATOR, cis_id, cig_id);
+	ret = app_bt_le_iso_cis_id_available_check(RTK_BLE_ISO_ROLE_CIS_INITIATOR, cis_id, cig_id);
 	if (ret != RTK_BT_OK) {
-		BT_LOGE("%s app_bt_le_iso_cis_id_availiable_check fail 0x%x \r\n", __func__, ret);
+		BT_LOGE("%s app_bt_le_iso_cis_id_available_check fail 0x%x \r\n", __func__, ret);
 		return RTK_BT_FAIL;
 	}
 	param.cis_id = cis_id;

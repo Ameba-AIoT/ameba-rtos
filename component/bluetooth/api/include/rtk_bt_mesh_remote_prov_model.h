@@ -1,5 +1,5 @@
 /**
- * @file      rtk_bt_mesh_api_config_client_model.h
+ * @file      rtk_bt_mesh_remote_prov_model.h
  * @author    pico_zhai@realsil.com.cn
  * @brief     Bluetooth LE MESH configuration client model data struct and function definition
  * @copyright Copyright (c) 2022. Realtek Semiconductor Corporation. All rights reserved.
@@ -87,7 +87,7 @@ typedef enum {
  */
 typedef enum {
 	RTK_BT_MESH_RMT_PROV_LINK_CLOSE_SUCCESS,
-	RTK_BT_MESH_RMT_PROV_LINK_CLOSE_PROHIBITED,
+	RTK_BT_MESH_RMT_PROV_LINK_CLOSE_TIMEOUT,
 	RTK_BT_MESH_RMT_PROV_LINK_CLOSE_FAIL,
 	RTK_BT_MESH_RMT_PROV_LINK_NOT_CLOSE,
 } rtk_bt_mesh_rmt_prov_link_close_reason_t;
@@ -165,7 +165,7 @@ typedef struct {
 typedef struct {
 	uint16_t src;
 	uint8_t uuid[16];
-	uint8_t oob;
+	uint16_t oob;
 	uint16_t adv_structs_len;
 } rtk_bt_mesh_rmt_prov_client_extended_scan_report_t;
 
@@ -221,7 +221,7 @@ typedef struct {
 } rtk_bt_mesh_remote_prov_client_node_addr_refresh_t;
 /* =============================================== Remote provisioning client model relate function definition ======================================= */
 /**
- * @defgroup  ble_mesh_remote_provisioning_client_model BT LE Mesh Rempte Provisioning Client Model APIs
+ * @defgroup  ble_mesh_remote_provisioning_client_model BT LE Mesh Remote Provisioning Client Model APIs
  * @brief     BT LE Mesh remote provisioning client model related function APIs
  * @ingroup   ble_mesh_api_group
  * @{

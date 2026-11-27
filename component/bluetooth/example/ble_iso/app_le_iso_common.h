@@ -162,7 +162,7 @@ extern app_bt_le_iso_initiator_info_t g_le_iso_cis_initiator_status;
 extern app_bt_le_iso_acceptor_info_t g_le_iso_cis_acceptor_status;
 extern rtk_bt_le_iso_setup_path_param_t app_le_iso_setup_path_param;
 
-uint16_t app_bt_le_iso_cis_id_availiable_check(uint8_t le_iso_role, uint8_t cis_id, uint8_t cig_id);
+uint16_t app_bt_le_iso_cis_id_available_check(uint8_t le_iso_role, uint8_t cis_id, uint8_t cig_id);
 #endif
 #ifdef __cplusplus
 }

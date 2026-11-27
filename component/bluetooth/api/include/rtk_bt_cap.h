@@ -1,7 +1,7 @@
 /**
  * @file      rtk_bt_cap.h
  * @author    benling_xu@realsil.com.cn
- * @brief     Bluetooth LE GAP part type and function deffinition
+ * @brief     Bluetooth LE GAP part type and function definition
  * @copyright Copyright (c) 2022. Realtek Semiconductor Corporation. All rights reserved.
  */
 
@@ -314,7 +314,7 @@ uint16_t rtk_bt_aics_client_get_char(uint16_t conn_handle);
 /**
  * @brief     config acceptor channel or neighbor device
  * @param[in] channel: channel allocation, 1 for left, 2 for right, 3 for stereo
- * @param[in] p_neighbor_addr: pointer of neghbor device bt address, NULL for no neighbor
+ * @param[in] p_neighbor_addr: pointer of neighbor device bt address, NULL for no neighbor
  * @return
  *            - 0  : Succeed
  *            - Others: Error code

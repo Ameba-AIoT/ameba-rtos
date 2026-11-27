@@ -156,7 +156,7 @@ uint16_t rtk_bt_bap_broadcast_source_start(void)
 		qos_cfg_preferred.max_sdu = p_prefer_qos->max_sdu;
 		qos_cfg_preferred.max_transport_latency = p_prefer_qos->max_transport_latency;
 		qos_cfg_preferred.framing = p_prefer_qos->framing;
-		BT_LOGA("%s: Manul config QoS\r\n", __func__);
+		BT_LOGA("%s: Manual config QoS\r\n", __func__);
 	} else {
 		/* get prefer QoS according to codec index */
 		if (rtk_bt_le_audio_qos_preferred_cfg_get(bap_broadcast_source_cfg.cfg_codec_index, bap_broadcast_source_cfg.cfg_qos_type, &qos_cfg_preferred)) {
@@ -165,13 +165,13 @@ uint16_t rtk_bt_bap_broadcast_source_start(void)
 		}
 	}
 #if LEA_BIG_ISO_INTERVAL_CONFIG == ISO_INTERVAL_20_MS
-#if (RTK_BLE_AUDIO_DEFAULT_BROADCASTER_BIS_NUM == 1) && (RTK_BLE_AUDIO_BROADCASTER_ONE_BIS_SETEO_MODE == 0) && \
-    (LEA_SOURCE_FIX_SAMPLE_FREQUENCY == RTK_BT_LE_SAMPLING_FREQUENCY_CFG_48K) && (LEA_SOURCE_FIX_FRAME_DUARTION == RTK_BT_LE_FRAME_DURATION_CFG_10_MS)
+#if (RTK_BLE_AUDIO_DEFAULT_BROADCASTER_BIS_NUM == 1) && (RTK_BLE_AUDIO_BROADCASTER_ONE_BIS_STEREO_MODE == 0) && \
+    (LEA_SOURCE_FIX_SAMPLE_FREQUENCY == RTK_BT_LE_SAMPLING_FREQUENCY_CFG_48K) && (LEA_SOURCE_FIX_FRAME_DURATION == RTK_BT_LE_FRAME_DURATION_CFG_10_MS)
 	qos_cfg_preferred.max_transport_latency = 60;
 #endif
 #elif LEA_BIG_ISO_INTERVAL_CONFIG == ISO_INTERVAL_30_MS
-#if (RTK_BLE_AUDIO_DEFAULT_BROADCASTER_BIS_NUM == 1) && (RTK_BLE_AUDIO_BROADCASTER_ONE_BIS_SETEO_MODE == 1) && \
-    (LEA_SOURCE_FIX_SAMPLE_FREQUENCY == RTK_BT_LE_SAMPLING_FREQUENCY_CFG_48K) && (LEA_SOURCE_FIX_FRAME_DUARTION == RTK_BT_LE_FRAME_DURATION_CFG_10_MS)
+#if (RTK_BLE_AUDIO_DEFAULT_BROADCASTER_BIS_NUM == 1) && (RTK_BLE_AUDIO_BROADCASTER_ONE_BIS_STEREO_MODE == 1) && \
+    (LEA_SOURCE_FIX_SAMPLE_FREQUENCY == RTK_BT_LE_SAMPLING_FREQUENCY_CFG_48K) && (LEA_SOURCE_FIX_FRAME_DURATION == RTK_BT_LE_FRAME_DURATION_CFG_10_MS)
 	qos_cfg_preferred.retransmission_number = 3;
 	qos_cfg_preferred.max_transport_latency = 80;
 #else
@@ -183,7 +183,7 @@ uint16_t rtk_bt_bap_broadcast_source_start(void)
 	/* update def_le_audio_broadcast_source_create_big_param */
 	def_le_audio_broadcast_source_create_big_param.sdu_interval = qos_cfg_preferred.sdu_interval;
 	def_le_audio_broadcast_source_create_big_param.rtn = qos_cfg_preferred.retransmission_number;
-#if (RTK_BLE_AUDIO_DEFAULT_BROADCASTER_BIS_NUM == 1) && (RTK_BLE_AUDIO_BROADCASTER_ONE_BIS_SETEO_MODE == 1)
+#if (RTK_BLE_AUDIO_DEFAULT_BROADCASTER_BIS_NUM == 1) && (RTK_BLE_AUDIO_BROADCASTER_ONE_BIS_STEREO_MODE == 1)
 	/* config stereo mode in one bis, need to adjust max sdu size */
 	def_le_audio_broadcast_source_create_big_param.max_sdu = 2 * qos_cfg_preferred.max_sdu;
 #else
@@ -950,7 +950,7 @@ static uint16_t rtk_bt_bap_unicast_client_audio_config(rtk_bt_le_audio_group_han
 					}
 				} else if (p_device_info->sink_ase_num == 1) {
 					if (p_group_info->play_mode == RTK_BT_LE_AUDIO_PLAY_MODE_MEDIA) {
-#if RTK_BLE_AUDIO_UNICAST_ONE_CIS_SETEO_MODE
+#if RTK_BLE_AUDIO_UNICAST_ONE_CIS_STEREO_MODE
 						prefer_audio_cfg_mask = RTK_BT_LE_UNICAST_AUDIO_CFG_4_BIT;
 #else
 						prefer_audio_cfg_mask = RTK_BT_LE_UNICAST_AUDIO_CFG_1_BIT;
@@ -994,13 +994,13 @@ static void le_audio_unicast_client_fix_codec_mask(uint32_t *sup_snk_mask)
 	uint32_t mask = *sup_snk_mask;
 
 	BT_LOGA("%s before fix_codec_mask mask = 0x%x\r\n", __func__, (unsigned int)mask);
-#if defined(LEA_SOURCE_FIX_FRAME_DUARTION)
-	if (LEA_SOURCE_FIX_FRAME_DUARTION == RTK_BT_LE_FRAME_DURATION_CFG_10_MS) {
+#if defined(LEA_SOURCE_FIX_FRAME_DURATION)
+	if (LEA_SOURCE_FIX_FRAME_DURATION == RTK_BT_LE_FRAME_DURATION_CFG_10_MS) {
 		mask &= 0xAAAAAAAA; //1010, clear odd bit(7.5ms is in odd bit)
 	} else {
 		mask &= 0x55555555; //0101, clear even bit(10ms is in even bit)
 	}
-	BT_LOGA("%s after fix duration(%d), mask = 0x%x\r\n", __func__, LEA_SOURCE_FIX_FRAME_DUARTION, (unsigned int)mask);
+	BT_LOGA("%s after fix duration(%d), mask = 0x%x\r\n", __func__, LEA_SOURCE_FIX_FRAME_DURATION, (unsigned int)mask);
 #endif
 #if defined(LEA_SOURCE_FIX_SAMPLE_FREQUENCY)
 	switch (LEA_SOURCE_FIX_SAMPLE_FREQUENCY) {
@@ -1109,7 +1109,7 @@ static uint16_t rtk_bt_bap_unicast_client_codec_cfg(rtk_bt_le_audio_group_handle
 			}
 		}
 #endif
-#if defined(LEA_SOURCE_FIX_SAMPLE_FREQUENCY) || defined(LEA_SOURCE_FIX_FRAME_DUARTION)
+#if defined(LEA_SOURCE_FIX_SAMPLE_FREQUENCY) || defined(LEA_SOURCE_FIX_FRAME_DURATION)
 		le_audio_unicast_client_fix_codec_mask(&sup_snk_mask);
 #endif
 		BT_LOGA("%s final sup_snk_mask = 0x%x\r\n", __func__, (unsigned int)sup_snk_mask);
