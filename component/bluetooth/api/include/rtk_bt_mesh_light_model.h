@@ -1658,7 +1658,7 @@ uint16_t rtk_bt_mesh_light_lightness_linear_set(rtk_bt_mesh_light_lightness_line
 
 /**
  * @brief     Send light lightness last get message to light lightness server, will cause event @ref RTK_BT_MESH_LIGHT_LIGHTNESS_LAST_CLIENT_MODEL_GET
- * @param[in] lightness_last_set: light lightness last get message structure
+ * @param[in] lightness_last_get: light lightness last get message structure
  * @return
  *            - 0  : Succeed
  *            - Others: Error code
@@ -1757,7 +1757,7 @@ uint16_t rtk_bt_mesh_light_ctl_temperature_range_set(rtk_bt_mesh_light_ctl_tempe
 
 /**
  * @brief     Send light ctl default get message to light ctl server, will cause event @ref RTK_BT_MESH_LIGHT_CTL_CLIENT_MODEL_DEFAULT_GET
- * @param[in] ctl_default_get: light ctl defaultget message structure
+ * @param[in] ctl_default_get: light ctl default get message structure
  * @return
  *            - 0  : Succeed
  *            - Others: Error code

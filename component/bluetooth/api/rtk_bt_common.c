@@ -208,7 +208,7 @@ end:
 	return ret;
 }
 
-uint8_t rtk_bt_excute_evt_cb(uint8_t group, uint8_t evt_code, void *param, uint32_t len)
+uint8_t rtk_bt_execute_evt_cb(uint8_t group, uint8_t evt_code, void *param, uint32_t len)
 {
 	uint8_t ret = 0;
 	rtk_bt_evt_cb_t cb_func = NULL;
@@ -264,7 +264,7 @@ static void rtk_bt_evt_taskentry(void *ctx)
 			}
 
 			/* Call back user registered function */
-			rtk_bt_excute_evt_cb(pevt->group, pevt->evt, pevt->data, pevt->data_len);
+			rtk_bt_execute_evt_cb(pevt->group, pevt->evt, pevt->data, pevt->data_len);
 			rtk_bt_event_free(pevt);
 		}
 	}
@@ -568,12 +568,12 @@ uint16_t rtk_bt_evt_indicate(void *evt, uint8_t *cb_ret)
 	}
 
 	if (true == rtk_bt_check_evt_cb_direct_calling(p_evt->group, p_evt->evt)) {
-		uint8_t cb_ret_tmp = rtk_bt_excute_evt_cb(p_evt->group, p_evt->evt, p_evt->data, p_evt->data_len);
+		uint8_t cb_ret_tmp = rtk_bt_execute_evt_cb(p_evt->group, p_evt->evt, p_evt->data, p_evt->data_len);
 		if (cb_ret != NULL) {
 			*cb_ret = cb_ret_tmp;
 		}
 		/* If the evt cb is direct calling, the evt msg isn't actually send to evt task,
-		Instead, it's excuted here, so need to free it here */
+		Instead, it's executed here, so need to free it here */
 		rtk_bt_event_free(evt);
 		return 0;
 	}

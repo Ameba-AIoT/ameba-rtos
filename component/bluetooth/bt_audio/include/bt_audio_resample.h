@@ -60,10 +60,10 @@ rtk_bt_audio_resample_t *rtk_bt_audio_resample_alloc(uint32_t in_rate, uint32_t 
 
 /**
  * @brief     free allocated bt audio resample struct
- * @param[in] presample: pointer to the struct
+ * @param[in] p_bt_resample: pointer to the struct
  * @return    None
  */
-void rtk_bt_audio_resample_free(rtk_bt_audio_resample_t *presample);
+void rtk_bt_audio_resample_free(rtk_bt_audio_resample_t *p_bt_resample);
 
 /**
  * @brief     read available resample data size
