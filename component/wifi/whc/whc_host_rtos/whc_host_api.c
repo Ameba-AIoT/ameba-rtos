@@ -45,6 +45,7 @@ const struct event_func_t host_api_handlers[] = {
 
 void whc_host_api_scan_user_callback_handler(u32 api_id, u32 *param_buf)
 {
+	(void)api_id;
 	unsigned int ap_num = param_buf[0];
 	void *user_data = (void *)param_buf[1];
 
@@ -79,6 +80,7 @@ void whc_host_api_scan_user_callback_handler(u32 api_id, u32 *param_buf)
 
 void whc_host_api_scan_each_report_callback_handler(u32 api_id, u32 *param_buf)
 {
+	(void)api_id;
 	struct rtw_scan_result *scanned_ap_info = (struct rtw_scan_result *)param_buf[0];
 	void *user_data = (void *)param_buf[1];
 
@@ -89,6 +91,7 @@ void whc_host_api_scan_each_report_callback_handler(u32 api_id, u32 *param_buf)
 
 void whc_host_api_wifi_event_handler(u32 api_id, u32 *param_buf)
 {
+	(void)api_id;
 	u32 event = (u32)param_buf[0];
 	s32 evt_len = (s32)param_buf[1];
 	u8 *evt_info = (u8 *)(&param_buf[2]);
@@ -98,6 +101,7 @@ void whc_host_api_wifi_event_handler(u32 api_id, u32 *param_buf)
 
 void whc_host_api_set_netif_info_handler(u32 api_id, u32 *param_buf)
 {
+	(void)api_id;
 	int idx = (u32)param_buf[0];
 	unsigned char *dev_addr = (unsigned char *)(&param_buf[1]);
 
@@ -106,6 +110,7 @@ void whc_host_api_set_netif_info_handler(u32 api_id, u32 *param_buf)
 
 void whc_host_api_ap_ch_switch(u32 api_id, u32 *param_buf)
 {
+	(void)api_id;
 	unsigned char channel = (unsigned char)param_buf[0];
 	s8 res = (s8)param_buf[1];
 
@@ -176,11 +181,13 @@ void whc_host_api_message_send(u32 id, u8 *param, u32 param_len, u8 *ret, u32 re
 	inic_tx->ptr = buf;
 	inic_tx->is_skb = 0;
 
+	/* the return may arrive before send returns (synchronous bus), so mark waiting first */
+	event_priv.b_waiting_for_ret = 1;
+
 	/* send ret_msg + ret_val(buf, len) */
 	whc_host_send_data(&inic_tx->txbuf_info);
 
 	/* wait for API calling done */
-	event_priv.b_waiting_for_ret = 1;
 	rtos_sema_take(event_priv.api_ret_sema, 0xFFFFFFFF);
 	event_priv.b_waiting_for_ret = 0;
 

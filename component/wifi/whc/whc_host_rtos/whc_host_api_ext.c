@@ -406,11 +406,17 @@ s32 wifi_set_wireless_mode(u32 wmode)
 	return ret;
 }
 
-int wifi_set_wps_phase(unsigned char is_trigger_wps)
+void wifi_set_dbg_dp_log(char *buf)
+{
+	UNUSED(buf);
+}
+
+int wifi_set_wps_phase(u8 wlan_idx, unsigned char is_trigger_wps)
 {
 	int ret = 0;
-	u32 param_buf[1];
-	param_buf[0] = is_trigger_wps;
+	u32 param_buf[2];
+	param_buf[0] = (u32)wlan_idx;
+	param_buf[1] = (u32)is_trigger_wps;
 
 	whc_host_api_message_send(WHC_API_WIFI_SET_WPS_PHASE, (u8 *)param_buf, 4, (u8 *)&ret, sizeof(ret));
 	return ret;
