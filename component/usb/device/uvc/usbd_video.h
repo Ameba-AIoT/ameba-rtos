@@ -31,13 +31,13 @@ extern "C" {
 #define USBD_UVC_SC_UNDEFINED                              0x00
 #define USBD_UVC_SC_VIDEOCONTROL                           0x01
 #define USBD_UVC_SC_VIDEOSTREAMING                         0x02
-#define USBD_UVC_SC_VIDEO_INTERFACE_COLLECTION             0x03
+#define USBD_UVC_SC_VIDEO_ITF_COLLECTION             0x03
 
 /* A.3. Video Interface Protocol Codes */
 #define USBD_UVC_PC_PROTOCOL_UNDEFINED                     0x00
 
 /* A.5. Video Class-Specific VC Interface Descriptor Subtypes */
-#define USBD_UVC_VC_DESCRIPTOR_UNDEFINED                   0x00
+#define USBD_UVC_VC_DESC_UNDEFINED                   0x00
 #define USBD_UVC_VC_HEADER                                 0x01
 #define USBD_UVC_VC_INPUT_TERMINAL                         0x02
 #define USBD_UVC_VC_OUTPUT_TERMINAL                        0x03

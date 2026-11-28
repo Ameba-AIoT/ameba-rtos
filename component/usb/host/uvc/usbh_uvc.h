@@ -227,7 +227,7 @@ typedef struct {
 typedef enum {
 	UVC_STATE_IDLE = 0,
 	UVC_STATE_CTRL,
-	UVC_STATE_TRANSFER,
+	UVC_STATE_XFER,
 	UVC_STATE_STOP,
 	UVC_STATE_ERROR
 } usbh_uvc_state_t;

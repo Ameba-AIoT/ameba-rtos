@@ -12,14 +12,43 @@
 #include <rtk_bt_mesh_def.h>
 #include <rtk_bt_mesh_generic_onoff_model.h>
 
+/** @addtogroup BT_Constants BT Constants
+ * @{
+ */
+/** @addtogroup BT_Mesh_Constants BT Mesh Constants
+ * @{
+ */
+/** @addtogroup BT_Mesh_Light_Model_Constants BT Mesh Light Model Constants
+ * @{
+ */
+
 /**
  * @def       LIGHT_LC_PROPERTY_DATA_MAX_LEN
  * @brief     Maximum length in bytes of the raw value of a Light LC property.
  */
 #define LIGHT_LC_PROPERTY_DATA_MAX_LEN    0x10
 
+/**
+ * @}
+ */
+/**
+ * @}
+ */
+/**
+ * @}
+ */
+
 /************************************** Data Types *************************************/
 
+/** @addtogroup BT_Types BT Types
+ * @{
+ */
+/** @addtogroup BT_Mesh_Types BT Mesh Types
+ * @{
+ */
+/** @addtogroup BT_Mesh_Light_Model_Types BT Mesh Light Model Types
+ * @{
+ */
 /******************************** Light Lightness Model ********************************/
 /***************************** Light Lightness Client Model ****************************/
 /**
@@ -2253,11 +2282,24 @@ typedef enum {
 	RTK_BT_MESH_LIGHT_LC_SETUP_SERVER_MODEL_EVT_MAX,       /*!< Reserved. */
 } rtk_bt_mesh_light_lc_setup_server_model_evt_t;
 
-/********************************* Functions Declaration *******************************/
 /**
- * @defgroup  ble_mesh_light_model BT LE Mesh Light Model APIs
- * @brief     BT LE Mesh Light Model related function APIs
- * @ingroup   ble_mesh_api_group
+ * @}
+ */
+/**
+ * @}
+ */
+/**
+ * @}
+ */
+
+/********************************* Functions Declaration *******************************/
+/** @addtogroup BT_Functions BT Functions
+ * @{
+ */
+/** @addtogroup BT_Mesh_Functions BT Mesh Functions
+ * @{
+ */
+/** @addtogroup BT_Mesh_Light_Model_Functions BT Mesh Light Model Functions
  * @{
  */
 
@@ -2711,6 +2753,12 @@ uint16_t rtk_bt_mesh_light_lc_property_get(rtk_bt_mesh_light_lc_property_get_t *
  */
 uint16_t rtk_bt_mesh_light_lc_property_set(rtk_bt_mesh_light_lc_property_set_t *lc_property_set);
 
+/**
+ * @}
+ */
+/**
+ * @}
+ */
 /**
  * @}
  */

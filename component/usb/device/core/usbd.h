@@ -34,7 +34,7 @@ extern "C" {
 #define USBD_TP_TRACE_DEBUG             0U  /**<This define is used to trace transfer performance */
 
 /* USB descriptor configurations */
-#define USBD_MAX_NUM_INTERFACES			16U
+#define USBD_MAX_NUM_ITFS			16U
 #define USBD_MAX_NUM_CONFIGURATION		16U
 
 /** @brief Minimum EP0 control transfer buffer length in bytes.
@@ -55,21 +55,21 @@ extern "C" {
 /** @} */
 
 /** @brief Number of class/application string descriptors held by the core string table.
- *  @details The table covers the strings registered through @ref usbd_add_string only, whose
+ *  @details The table covers the strings registered through @ref usbd_add_str only, whose
  *           indices start right above @ref USBD_IDX_SERIAL_STR. The device-global strings
  *           (LANGID, manufacturer, product, serial number) occupy the fixed indices below and
  *           are answered straight from @ref usbd_dev_info_t, so they consume no slot.
  */
 #define USBD_MAX_STR_NUM				8U
 
-/** @brief First string index handed out by @ref usbd_add_string. */
+/** @brief First string index handed out by @ref usbd_add_str. */
 #define USBD_CLASS_STR_IDX_BASE			(USBD_IDX_SERIAL_STR + 1U)
 
-/** @brief Length in characters of the serial number @ref usbd_get_uuid_sn builds, without the
+/** @brief Length in characters of the serial number @ref usbd_get_uuid_sn_str builds, without the
  *         terminator.
  *  @note  This sizes the buffer for that helper only. A serial number assigned to
  *         @ref usbd_dev_info_t::sn_str is referenced by pointer, so it may be of any length
- *         that still fits a string descriptor, refer to @ref usbd_get_str_descriptor.
+ *         that still fits a string descriptor, refer to @ref usbd_get_str_desc.
  */
 #define USBD_SN_STR_LEN					16U
 
@@ -153,13 +153,13 @@ typedef struct {
 	 * @brief iSerialNumber string, NULL or empty reports no serial number.
 	 * @note  There is deliberately no default: reading the chip UUID costs several kilobytes
 	 *        of stack on some SoCs, which @ref usbd_init cannot impose on its caller. An
-	 *        application wanting a UUID-derived serial number calls @ref usbd_get_uuid_sn from
+	 *        application wanting a UUID-derived serial number calls @ref usbd_get_uuid_sn_str from
 	 *        a context with enough stack and assigns the result here.
 	 */
 	const char *sn_str;
 	u16 vid;                                  /**< idVendor, 0 uses `USB_VID`. */
 	u16 pid;                                  /**< idProduct, 0 uses `USB_PID`. */
-	u16 bcd_device;                           /**< bcdDevice, 0 keeps the class template value. */
+	u16 bcd_dev;                           /**< bcdDevice, 0 keeps the class template value. */
 	u16 lang_id;                              /**< wLANGID of the LANGID string descriptor, 0 uses 0x0409 (English US). */
 	u8 max_power;                             /**< bMaxPower in 2mA units, 0 keeps the class template value. */
 	/**
@@ -271,7 +271,7 @@ typedef struct {
 	/**
 	 * @brief Class/application string table, string index n is held by slot
 	 *        n - @ref USBD_CLASS_STR_IDX_BASE.
-	 * @details Holds the strings registered through @ref usbd_add_string, which stores
+	 * @details Holds the strings registered through @ref usbd_add_str, which stores
 	 *          pointers only. The device-global indices below @ref USBD_CLASS_STR_IDX_BASE are
 	 *          answered from `info` instead and take no slot here.
 	 */
@@ -316,7 +316,7 @@ typedef struct _usbd_class_driver_t {
 	 *     - `USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION`: Other Speed Configuration Descriptor, required for dual-speed (FS/HS) devices.
 	 *     - `USB_DESC_TYPE_STRING`: Not handled by the class: the core answers the language ID and the
 	 *       device strings from @ref usbd_dev_info_t, and the strings a class registers through
-	 *       @ref usbd_add_string. Only an index the core does not own (e.g. the 0xEE MS OS string) is
+	 *       @ref usbd_add_str. Only an index the core does not own (e.g. the 0xEE MS OS string) is
 	 *       forwarded here, return 0 if unsupported.
 	 * @param[in] dev: USB device.
 	 * @param[in] req: USB setup request.
@@ -331,7 +331,7 @@ typedef struct _usbd_class_driver_t {
 	 *     the class driver always reports the full descriptor length.
 	 * @return The actual length of the descriptor, or 0 on error / insufficient buffer.
 	 */
-	u16(*get_descriptor)(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16 buf_len);
+	u16(*get_desc)(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16 buf_len);
 
 	/**
 	 * @brief Callback to set the device configuration.
@@ -516,7 +516,7 @@ typedef struct _usbd_class_driver_t {
 	 *    the same base, so the class only has to store it.
 	 * @param[in] base: First interface number assigned to this class.
 	 */
-	void (*set_interface_base)(u8 base);
+	void (*set_itf_base)(u8 base);
 } usbd_class_driver_t;
 
 /** @} End of Device_Core_Types group */
@@ -558,7 +558,7 @@ void usbd_deinit(void);
  * @brief Get USB device attach status.
  * @return See @ref usbd_attach_status_t.
  */
-int usbd_get_status(void);
+u8 usbd_get_attach_status(void);
 
 /**
  * @brief Get USB device bus status.
@@ -578,13 +578,13 @@ int usbd_get_bus_status(u32 *status);
  *          Wakelock operations and wake event configuration are handled by the caller,
  *          not inside this function.
  */
-void usbd_cg_register(void);
+void usbd_pm_enable(void);
 
 /**
  * @brief Unregister the sleep callbacks for USB device Clock Gating (CG).
  * @note  Wakelock operations are handled by the caller, not inside this function.
  */
-void usbd_cg_unregister(void);
+void usbd_pm_disable(void);
 
 /**
  * @brief Sends a remote wakeup signal to the USB host to resume communication.
@@ -596,7 +596,7 @@ void usbd_cg_unregister(void);
  *        the feature. A strictly compliant application shall not call it in that case.
  * @return 0 on success, non-zero on failure.
  */
-int usbd_wake_host(void);
+int usbd_remote_wakeup(void);
 
 /** @} End of Device_Core_Functions_For_Applications group */
 
@@ -607,11 +607,11 @@ int usbd_wake_host(void);
 /**
  * @brief Register a device class driver, called in class initialization function.
  * @note  Call after @ref usbd_init, which clears the device context.
- * @param[in] driver: USB class driver, its `get_descriptor` callback is mandatory.
- * @return RTK_SUCCESS on success, -RTK_ERR_BADARG for a NULL driver or `get_descriptor`, or
+ * @param[in] driver: USB class driver, its `get_desc` callback is mandatory.
+ * @return RTK_SUCCESS on success, -RTK_ERR_BADARG for a NULL driver or `get_desc`, or
  *         before @ref usbd_init, otherwise the error starting the controller.
  */
-int usbd_register_class(const usbd_class_driver_t *driver);
+int usbd_class_register(const usbd_class_driver_t *driver);
 
 /**
  * @brief Un-register a class, called in class de-initialization function.
@@ -621,7 +621,7 @@ int usbd_register_class(const usbd_class_driver_t *driver);
  *         was done, the class is still reachable from the USB ISR, so the caller shall not
  *         release anything.
  */
-int usbd_unregister_class(void);
+int usbd_class_unregister(void);
 
 /**
  * @brief Initialize an endpoint.
@@ -703,11 +703,9 @@ void usbd_ep_clear_stall(usb_dev_t *dev, usbd_ep_t *ep);
  * @brief Checks whether the specified endpoint is in STALL state.
  * @param[in] dev: USB device.
  * @param[in] ep: USB endpoint.
- * @return
- *        - 1: The endpoint is stalled.
- *        - 0: The endpoint is not stalled.
+ * @return true if the endpoint is stalled, false otherwise.
  */
-int usbd_ep_is_stall(usb_dev_t *dev, usbd_ep_t *ep);
+bool usbd_ep_is_stalled(usb_dev_t *dev, usbd_ep_t *ep);
 
 /**
  * @brief Register a string descriptor and get the index naming it.
@@ -726,7 +724,7 @@ int usbd_ep_is_stall(usb_dev_t *dev, usbd_ep_t *ep);
  * @return The string index on success, 0 when `str` is NULL or the table is full. Index 0 is
  *         reserved for the LANGID string descriptor and therefore doubles as the error value.
  */
-u8 usbd_add_string(const char *str);
+u8 usbd_add_str(const char *str);
 
 /**
  * @brief Get the device-global descriptor parameters, for a class that has to override them.
@@ -756,7 +754,7 @@ usbd_dev_info_t *usbd_get_dev_info(void);
  * @return Number of characters written, 0 when `sn` is NULL, `len` is too small or the UUID
  *         is unprogrammed.
  */
-u8 usbd_get_uuid_sn(char *sn, u8 len);
+u8 usbd_get_uuid_sn_str(char *sn, u8 len);
 
 /**
  * @brief Converts UTF-8 strings to UNICODE16-encoded USB string descriptors.
@@ -770,7 +768,7 @@ u8 usbd_get_uuid_sn(char *sn, u8 len);
  *        UTF-16 would have to encode as a surrogate pair, is rejected.
  * @return The total length of the generated descriptor in bytes, or 0 on error.
  */
-u16 usbd_get_str_descriptor(const char *str, u8 *desc, u16 desc_len);
+u16 usbd_get_str_desc(const char *str, u8 *desc, u16 desc_len);
 
 /** @} End of Device_Core_Functions_For_Classes group */
 /** @} End of USB_Device_Functions group */

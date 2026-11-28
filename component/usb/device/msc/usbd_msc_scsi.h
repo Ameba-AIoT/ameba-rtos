@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef USBD_SCSI_H
-#define USBD_SCSI_H
+#ifndef USBD_MSC_SCSI_H
+#define USBD_MSC_SCSI_H
 
 /* Includes ------------------------------------------------------------------*/
 
@@ -61,7 +61,7 @@ extern const u8 usbd_msc_default_inquiry_data[INQUIRY_DATA_LEN];
  * @param  cmd: SCSI command block.
  * @return RTK_SUCCESS on success, a RTK error code otherwise.
  */
-int usbd_scsi_process_cmd(usbd_msc_dev_t *cdev, u8 *cmd);
+int usbd_msc_scsi_process_cmd(usbd_msc_dev_t *cdev, u8 *cmd);
 
 /**
  * @brief  Record a sense key and additional sense code for the next REQUEST SENSE.
@@ -70,14 +70,14 @@ int usbd_scsi_process_cmd(usbd_msc_dev_t *cdev, u8 *cmd);
  * @param  asc: Additional sense code.
  * @return None
  */
-void usbd_scsi_sense_code(usbd_msc_dev_t *cdev, u8 key, u8 asc);
+void usbd_msc_scsi_sense_code(usbd_msc_dev_t *cdev, u8 key, u8 asc);
 
 /**
  * @brief  Check whether the host still has OUT data to send after the WRITE chunk being processed.
  * @param  cdev: Device instance.
  * @return 1 if more OUT data follows the current chunk, 0 otherwise.
  */
-u8 usbd_scsi_out_data_pending(const usbd_msc_dev_t *cdev);
+u8 usbd_msc_scsi_out_data_pending(const usbd_msc_dev_t *cdev);
 
 /**
  * @brief  Transmit data on the MSC bulk IN endpoint.
@@ -115,4 +115,4 @@ void usbd_msc_send_csw(usb_dev_t *dev, u8 status);
 }
 #endif
 
-#endif /* USBD_SCSI_H */
+#endif /* USBD_MSC_SCSI_H */

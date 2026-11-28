@@ -11,6 +11,15 @@
 #include <stdint.h>
 #include <rtk_bt_mesh_def.h>
 
+/** @addtogroup BT_Constants BT Constants
+ * @{
+ */
+/** @addtogroup BT_Mesh_Constants BT Mesh Constants
+ * @{
+ */
+/** @addtogroup BT_Mesh_Device_Firmware_Update_Model_Constants BT Mesh Device Firmware Update Model Constants
+ * @{
+ */
 /**
  * @def       BT_MESH_DFU_FWID_MAX_LEN
  * @brief     Maximum length in bytes of the Firmware ID that the Standalone Updater can set.
@@ -22,8 +31,26 @@
  * @brief     Maximum length in bytes of the firmware metadata that the Standalone Updater can set.
  */
 #define BT_MESH_DFU_METADATA_MAX_LEN  32
+/**
+ * @}
+ */
+/**
+ * @}
+ */
+/**
+ * @}
+ */
 
 /***************************** Device Firmware Update Model ****************************/
+/** @addtogroup BT_Types BT Types
+ * @{
+ */
+/** @addtogroup BT_Mesh_Types BT Mesh Types
+ * @{
+ */
+/** @addtogroup BT_Mesh_Device_Firmware_Update_Model_Types BT Mesh Device Firmware Update Model Types
+ * @{
+ */
 /**
  * @enum      rtk_bt_mesh_dfu_model_initiator_act_t
  * @brief     BLE MESH device firmware update model initiator act definition.
@@ -483,7 +510,7 @@ typedef struct {
 } rtk_bt_mesh_dfu_evt_target_metadata_t;
 
 /**
- * @struct    rtk_bt_mesh_dfu_evt_target_meatdata_t
+ * @typedef   rtk_bt_mesh_dfu_evt_target_meatdata_t
  * @brief     Deprecated alias of @ref rtk_bt_mesh_dfu_evt_target_metadata_t.
  * @deprecated Use @ref rtk_bt_mesh_dfu_evt_target_metadata_t instead.
  */
@@ -508,11 +535,24 @@ typedef struct {
 	rtk_bt_mesh_dfu_target_fw_update_fail_reason_t reason;    /*!< Reason of the firmware update failure. */
 } rtk_bt_mesh_dfu_evt_target_fw_update_server_fail_t;
 
-/********************************* Functions Declaration *******************************/
 /**
- * @defgroup  ble_mesh_dfu_model BT LE Mesh Device Firmware Update Model APIs
- * @brief     BT LE Mesh device firmware update Model related function APIs
- * @ingroup   ble_mesh_api_group
+ * @}
+ */
+/**
+ * @}
+ */
+/**
+ * @}
+ */
+
+/********************************* Functions Declaration *******************************/
+/** @addtogroup BT_Functions BT Functions
+ * @{
+ */
+/** @addtogroup BT_Mesh_Functions BT Mesh Functions
+ * @{
+ */
+/** @addtogroup BT_Mesh_Device_Firmware_Update_Model_Functions BT Mesh Device Firmware Update Model Functions
  * @{
  */
 
@@ -593,5 +633,15 @@ uint16_t rtk_bt_mesh_dfu_standalone_updater_add_receiver(rtk_bt_mesh_dfu_standal
  *            - Add the Targets with @ref rtk_bt_mesh_dfu_standalone_updater_add_receiver first.
  */
 uint16_t rtk_bt_mesh_dfu_standalone_updater_start(rtk_bt_mesh_dfu_standalone_update_start_t *param);
+
+/**
+ * @}
+ */
+/**
+ * @}
+ */
+/**
+ * @}
+ */
 
 #endif /* __RTK_BT_MESH_DEVICE_FIRMWARE_UPDATE_MODEL_H__ */

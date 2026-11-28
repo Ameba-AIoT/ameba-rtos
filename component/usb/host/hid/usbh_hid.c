@@ -64,7 +64,7 @@ typedef struct {
  */
 typedef struct {
 	usb_host_t *host;                         /**< USB host handle, set at attach */
-	const usbh_hid_usr_cb_t *cb;              /**< User callbacks */
+	const usbh_hid_cb_t *cb;              /**< User callbacks */
 
 	/* Interfaces of the attached device */
 	usbh_hid_itf_t itf[USBH_HID_MAX_ITF_NUM]; /**< HID interfaces, itf_cnt of them in use */
@@ -116,12 +116,12 @@ typedef struct {
 
 static const u8 *usbh_hid_fetch_item(const u8 *start, const u8 *end, usbh_hid_item_t *item);
 static void usbh_hid_walk_local(usbh_hid_walk_t *walk, const usbh_hid_item_t *item, u16 usage_page, u16 usage);
-static int usbh_hid_parse_interface(usbh_hid_itf_t *itf, const usbh_itf_data_t *itf_data);
-static void usbh_hid_add_interface(const usbh_itf_data_t *itf_data, u8 *ignored);
-static int usbh_hid_collect_interfaces(usb_host_t *host);
-static int usbh_hid_open_interface(usb_host_t *host, usbh_hid_itf_t *itf);
-static void usbh_hid_close_interface(usb_host_t *host, usbh_hid_itf_t *itf);
-static int usbh_hid_setup_interface(usb_host_t *host, usbh_hid_itf_t *itf, u8 idx);
+static int usbh_hid_parse_itf(usbh_hid_itf_t *itf, const usbh_itf_t *itf_data);
+static void usbh_hid_add_itf(const usbh_itf_t *itf_data, u8 *ignored);
+static int usbh_hid_collect_itfs(usb_host_t *host);
+static int usbh_hid_open_itf(usb_host_t *host, usbh_hid_itf_t *itf);
+static void usbh_hid_close_itf(usb_host_t *host, usbh_hid_itf_t *itf);
+static int usbh_hid_setup_itf(usb_host_t *host, usbh_hid_itf_t *itf, u8 idx);
 static void usbh_hid_in_process(usb_host_t *host, u8 idx);
 static void usbh_hid_out_process(usb_host_t *host, usbh_hid_itf_t *itf);
 static void usbh_hid_process_halt(usb_host_t *host, usbh_hid_itf_t *itf);
@@ -260,7 +260,7 @@ static void usbh_hid_walk_local(usbh_hid_walk_t *walk, const usbh_hid_item_t *it
   * @param  itf_data: Interface descriptors
   * @retval RTK_SUCCESS, -RTK_ERR_BADARG for an interface without Interrupt IN endpoint
   */
-static int usbh_hid_parse_interface(usbh_hid_itf_t *itf, const usbh_itf_data_t *itf_data)
+static int usbh_hid_parse_itf(usbh_hid_itf_t *itf, const usbh_itf_t *itf_data)
 {
 	const usbh_itf_desc_t *itf_desc = &(itf_data->itf_desc_array[0]);
 	const u8 *desc = itf_data->raw_data;
@@ -338,7 +338,7 @@ static int usbh_hid_parse_interface(usbh_hid_itf_t *itf, const usbh_itf_data_t *
   * @param  ignored: Counts the interfaces beyond USBH_HID_MAX_ITF_NUM
   * @retval None
   */
-static void usbh_hid_add_interface(const usbh_itf_data_t *itf_data, u8 *ignored)
+static void usbh_hid_add_itf(const usbh_itf_t *itf_data, u8 *ignored)
 {
 	usbh_hid_t *hid = &usbh_hid;
 	usbh_hid_itf_t *itf;
@@ -356,7 +356,7 @@ static void usbh_hid_add_interface(const usbh_itf_data_t *itf_data, u8 *ignored)
 	}
 
 	itf = &(hid->itf[hid->itf_cnt]);
-	if (usbh_hid_parse_interface(itf, itf_data) == RTK_SUCCESS) {
+	if (usbh_hid_parse_itf(itf, itf_data) == RTK_SUCCESS) {
 		hid->itf_cnt++;
 	} else {
 		usb_os_memset((void *)itf, 0, sizeof(usbh_hid_itf_t));
@@ -372,11 +372,11 @@ static void usbh_hid_add_interface(const usbh_itf_data_t *itf_data, u8 *ignored)
   * @param  host: Host handle
   * @retval RTK_SUCCESS if at least one is usable, -RTK_ERR_BADARG otherwise
   */
-static int usbh_hid_collect_interfaces(usb_host_t *host)
+static int usbh_hid_collect_itfs(usb_host_t *host)
 {
 	usbh_hid_t *hid = &usbh_hid;
 	usbh_dev_id_t dev_id = {0,};
-	usbh_itf_data_t *itf_data;
+	usbh_itf_t *itf_data;
 	u8 ignored = 0U;
 
 	dev_id.bInterfaceClass = USBH_CLASS_HID;
@@ -387,8 +387,8 @@ static int usbh_hid_collect_interfaces(usb_host_t *host)
 		for (u8 proto = 0U; proto <= USB_HID_PROTOCOL_MOUSE; proto++) {
 			dev_id.bInterfaceSubClass = sub;
 			dev_id.bInterfaceProtocol = proto;
-			for (itf_data = usbh_get_interface_descriptor(host, &dev_id); itf_data != NULL; itf_data = itf_data->next) {
-				usbh_hid_add_interface(itf_data, &ignored);
+			for (itf_data = usbh_itf_find(host, &dev_id); itf_data != NULL; itf_data = itf_data->next) {
+				usbh_hid_add_itf(itf_data, &ignored);
 			}
 		}
 	}
@@ -397,8 +397,8 @@ static int usbh_hid_collect_interfaces(usb_host_t *host)
 	 * Not once full, it could only count again an interface the walk above already ignored. */
 	if (hid->itf_cnt < USBH_HID_MAX_ITF_NUM) {
 		dev_id.mMatchFlags = USBH_DEV_ID_MATCH_ITF_CLASS;
-		for (itf_data = usbh_get_interface_descriptor(host, &dev_id); itf_data != NULL; itf_data = itf_data->next) {
-			usbh_hid_add_interface(itf_data, &ignored);
+		for (itf_data = usbh_itf_find(host, &dev_id); itf_data != NULL; itf_data = itf_data->next) {
+			usbh_hid_add_itf(itf_data, &ignored);
 		}
 	}
 
@@ -415,7 +415,7 @@ static int usbh_hid_collect_interfaces(usb_host_t *host)
   * @param  itf: Interface
   * @retval RTK_SUCCESS, or the error with nothing left open
   */
-static int usbh_hid_open_interface(usb_host_t *host, usbh_hid_itf_t *itf)
+static int usbh_hid_open_itf(usb_host_t *host, usbh_hid_itf_t *itf)
 {
 	u16 mps = itf->ep_desc_in.wMaxPacketSize & USB_EP_MPS_SIZE_MASK;
 
@@ -431,18 +431,18 @@ static int usbh_hid_open_interface(usb_host_t *host, usbh_hid_itf_t *itf)
 		return -RTK_ERR_NOMEM;
 	}
 
-	if (usbh_open_pipe(host, &(itf->pipe_in), &(itf->ep_desc_in), &usbh_hid_driver) != RTK_SUCCESS) {
+	if (usbh_pipe_open(host, &(itf->pipe_in), &(itf->ep_desc_in), &usbh_hid_driver) != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Open itf %d IN fail\n", itf->info.itf_num);
-		usbh_hid_close_interface(host, itf);
+		usbh_hid_close_itf(host, itf);
 		return -RTK_ERR_BADARG;
 	}
 	itf->pipe_in.xfer_buf = itf->in_buf;
 	itf->pipe_in.xfer_buf_len = usb_get_dma_len(mps, mps);
 
 	if (itf->ep_desc_out.bEndpointAddress != 0U) {
-		if (usbh_open_pipe(host, &(itf->pipe_out), &(itf->ep_desc_out), &usbh_hid_driver) != RTK_SUCCESS) {
+		if (usbh_pipe_open(host, &(itf->pipe_out), &(itf->ep_desc_out), &usbh_hid_driver) != RTK_SUCCESS) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Open itf %d OUT fail\n", itf->info.itf_num);
-			usbh_hid_close_interface(host, itf);
+			usbh_hid_close_itf(host, itf);
 			return -RTK_ERR_BADARG;
 		}
 		itf->info.has_out_ep = 1U;
@@ -458,14 +458,14 @@ static int usbh_hid_open_interface(usb_host_t *host, usbh_hid_itf_t *itf)
   * @param  itf: Interface
   * @retval None
   */
-static void usbh_hid_close_interface(usb_host_t *host, usbh_hid_itf_t *itf)
+static void usbh_hid_close_itf(usb_host_t *host, usbh_hid_itf_t *itf)
 {
 	/* Closed before the buffers go: the controller may still write in_buf */
 	if (itf->pipe_in.pipe_num != 0U) {
-		usbh_close_pipe(host, &(itf->pipe_in));
+		usbh_pipe_close(host, &(itf->pipe_in));
 	}
 	if (itf->pipe_out.pipe_num != 0U) {
-		usbh_close_pipe(host, &(itf->pipe_out));
+		usbh_pipe_close(host, &(itf->pipe_out));
 	}
 	usb_os_mfree((void *)itf->in_buf);
 	usb_os_mfree((void *)itf->report_desc);
@@ -483,7 +483,7 @@ static void usbh_hid_close_interface(usb_host_t *host, usbh_hid_itf_t *itf)
   * @param  idx: Interface index
   * @retval RTK_SUCCESS once done, -RTK_ERR_BUSY while a request is in flight
   */
-static int usbh_hid_setup_interface(usb_host_t *host, usbh_hid_itf_t *itf, u8 idx)
+static int usbh_hid_setup_itf(usb_host_t *host, usbh_hid_itf_t *itf, u8 idx)
 {
 	usbh_hid_t *hid = &usbh_hid;
 	u8 protocol = USBH_HID_PROTOCOL_REPORT;
@@ -516,7 +516,7 @@ static int usbh_hid_setup_interface(usb_host_t *host, usbh_hid_itf_t *itf, u8 id
 		ret = usbh_ctrl_request(host, &setup, itf->report_desc);
 		if (ret == RTK_SUCCESS) {
 			/* A short reply leaves stale bytes past what was received */
-			rx_len = usbh_get_last_ctrl_in_size(host);
+			rx_len = usbh_ctrl_get_xfer_len(host);
 			itf->info.report_desc = itf->report_desc;
 			itf->info.report_desc_len = (u16)((rx_len < len) ? rx_len : len);
 			itf->setup_step = USBH_HID_SETUP_SET_IDLE;
@@ -596,23 +596,23 @@ static void usbh_hid_in_process(usb_host_t *host, u8 idx)
 	int ret;
 
 	switch (pipe->xfer_state) {
-	case USBH_EP_XFER_START:
-		if (usbh_get_elapsed_ticks(host, pipe->tick) > pipe->ep_interval) {
-			pipe->tick = usbh_get_tick(host);
+	case USBH_PIPE_XFER_START:
+		if (usbh_tick_elapsed(host, pipe->tick) > pipe->ep_interval) {
+			pipe->tick = usbh_tick_get(host);
 			pipe->xfer_len = pipe->ep_mps;
 			/* -RTK_ERR_BUSY: the previous poll completed before its channel could be halted, its
-			 * report follows as URB_DONE and is read in BUSY, as usbh_transfer_process() does */
-			ret = usbh_transfer_data(host, pipe);
+			 * report follows as URB_DONE and is read in BUSY, as usbh_xfer_process() does */
+			ret = usbh_xfer_submit(host, pipe);
 			if ((ret == RTK_SUCCESS) || (ret == -RTK_ERR_BUSY)) {
-				pipe->xfer_state = USBH_EP_XFER_BUSY;
+				pipe->xfer_state = USBH_PIPE_XFER_BUSY;
 			}
 		}
 		break;
 
-	case USBH_EP_XFER_BUSY:
+	case USBH_PIPE_XFER_BUSY:
 		urb_state = usbh_get_urb_state(host, pipe);
 		if (urb_state == USBH_URB_DONE) {
-			len = usbh_get_last_transfer_size(host, pipe);
+			len = usbh_pipe_get_xfer_len(host, pipe);
 			if (len > USBH_HID_REPORT_MAX_LEN) {
 				/* Once per attach, the device would repeat it on every poll */
 				if (itf->report_cut_logged == 0U) {
@@ -628,19 +628,19 @@ static void usbh_hid_in_process(usb_host_t *host, u8 idx)
 				RTK_LOGS(TAG, RTK_LOG_WARN, "Report drop\n");
 			}
 			usb_os_sema_give(hid->report_sema);
-			pipe->xfer_state = USBH_EP_XFER_START;
+			pipe->xfer_state = USBH_PIPE_XFER_START;
 		} else if (urb_state == USBH_URB_STALL) {
 			/* A halted endpoint answers every IN with STALL until the host clears it, Ref USB 2.0
 			 * 9.4.5: park the pipe until the halt is cleared */
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Itf %d INTR IN stall\n", itf->info.itf_num);
-			pipe->xfer_state = USBH_EP_XFER_IDLE;
+			pipe->xfer_state = USBH_PIPE_XFER_IDLE;
 			itf->halt_pending = 1U;
 			usbh_notify(host, 0U, &usbh_hid_driver);
 		} else if (urb_state == USBH_URB_ERROR) {
-			pipe->xfer_state = USBH_EP_XFER_START;
-		} else if (usbh_get_elapsed_ticks(host, pipe->tick) > ((urb_state == USBH_URB_BUSY) ? pipe->ep_interval : (10U * pipe->ep_interval))) {
+			pipe->xfer_state = USBH_PIPE_XFER_START;
+		} else if (usbh_tick_elapsed(host, pipe->tick) > ((urb_state == USBH_URB_BUSY) ? pipe->ep_interval : (10U * pipe->ep_interval))) {
 			/* NAKed or silent for a while: poll again */
-			pipe->xfer_state = USBH_EP_XFER_START;
+			pipe->xfer_state = USBH_PIPE_XFER_START;
 		} else {
 			/* In flight */
 		}
@@ -661,14 +661,14 @@ static void usbh_hid_out_process(usb_host_t *host, usbh_hid_itf_t *itf)
 {
 	usbh_pipe_t *pipe = &(itf->pipe_out);
 
-	if (usbh_transfer_process(host, pipe) != RTK_SUCCESS) {
+	if (usbh_xfer_process(host, pipe) != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Itf %d OUT fail %d\n", itf->info.itf_num, usbh_get_urb_state(host, pipe));
 	}
 
-	if (pipe->xfer_state == USBH_EP_XFER_START) {
+	if (pipe->xfer_state == USBH_PIPE_XFER_START) {
 		usbh_notify(host, pipe->pipe_num, &usbh_hid_driver);
-	} else if (pipe->xfer_state == USBH_EP_XFER_ERROR) {
-		pipe->xfer_state = USBH_EP_XFER_IDLE;
+	} else if (pipe->xfer_state == USBH_PIPE_XFER_ERROR) {
+		pipe->xfer_state = USBH_PIPE_XFER_IDLE;
 	} else {
 		/* In flight or done */
 	}
@@ -691,18 +691,18 @@ static void usbh_hid_process_halt(usb_host_t *host, usbh_hid_itf_t *itf)
 		return;
 	}
 
-	ret = usbh_ctrl_clear_feature(host, itf->pipe_in.ep_addr);
+	ret = usbh_pipe_clear_halt(host, itf->pipe_in.ep_addr);
 	if (ret == RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_WARN, "EP%02x halt cleared\n", itf->pipe_in.ep_addr);
 		itf->halt_pending = 0U;
 		itf->halt_retry_cnt = 0U;
-		itf->pipe_in.xfer_state = USBH_EP_XFER_START;
+		itf->pipe_in.xfer_state = USBH_PIPE_XFER_START;
 		usbh_notify(host, itf->pipe_in.pipe_num, &usbh_hid_driver);
 	} else if (ret != -RTK_ERR_BUSY) {
 		itf->halt_retry_cnt++;
 		if (itf->halt_retry_cnt >= USBH_HID_HALT_RETRY_MAX_CNT) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "EP%02x clear halt fail, re-enum\n", itf->pipe_in.ep_addr);
-			ret = usbh_reenumerate();
+			ret = usbh_dev_reset();
 			if (ret != RTK_SUCCESS) {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "Re-enum err %d\n", ret);
 			}
@@ -735,7 +735,7 @@ static void usbh_hid_process_request(usb_host_t *host)
 		return;
 	}
 
-	hid->req_rx_len = ((hid->req_setup.req.bmRequestType & USB_D2H) != 0U) ? usbh_get_last_ctrl_in_size(host) : 0U;
+	hid->req_rx_len = ((hid->req_setup.req.bmRequestType & USB_D2H) != 0U) ? usbh_ctrl_get_xfer_len(host) : 0U;
 	hid->req_status = ret;
 	hid->req_state = USBH_HID_REQ_IDLE;
 	usb_os_sema_give(hid->req_done_sema);
@@ -757,19 +757,19 @@ static int usbh_hid_attach(usb_host_t *host)
 	hid->itf_cnt = 0U;
 	usb_os_memset((void *)hid->itf, 0, sizeof(hid->itf));
 
-	ret = usbh_hid_collect_interfaces(host);
+	ret = usbh_hid_collect_itfs(host);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "No usable HID itf\n");
 		return ret;
 	}
 
 	for (u8 i = 0U; i < hid->itf_cnt; i++) {
-		ret = usbh_hid_open_interface(host, &(hid->itf[i]));
+		ret = usbh_hid_open_itf(host, &(hid->itf[i]));
 		if (ret != RTK_SUCCESS) {
 			/* Unwind the interfaces already opened */
 			while (i > 0U) {
 				i--;
-				usbh_hid_close_interface(host, &(hid->itf[i]));
+				usbh_hid_close_itf(host, &(hid->itf[i]));
 			}
 			hid->itf_cnt = 0U;
 			return ret;
@@ -812,7 +812,7 @@ static void usbh_hid_detach(usb_host_t *host)
 
 	/* The Report descriptors handed to setup() go with the interfaces, see usbh_hid_itf_info_t */
 	for (u8 i = 0U; i < hid->itf_cnt; i++) {
-		usbh_hid_close_interface(host, &(hid->itf[i]));
+		usbh_hid_close_itf(host, &(hid->itf[i]));
 	}
 	hid->itf_cnt = 0U;
 
@@ -833,11 +833,11 @@ static int usbh_hid_setup(usb_host_t *host)
 
 	while (hid->setup_idx < hid->itf_cnt) {
 		itf = &(hid->itf[hid->setup_idx]);
-		if (usbh_hid_setup_interface(host, itf, hid->setup_idx) == -RTK_ERR_BUSY) {
+		if (usbh_hid_setup_itf(host, itf, hid->setup_idx) == -RTK_ERR_BUSY) {
 			usbh_notify(host, 0U, &usbh_hid_driver);
 			return -RTK_ERR_BUSY;
 		}
-		itf->pipe_in.xfer_state = USBH_EP_XFER_START;
+		itf->pipe_in.xfer_state = USBH_PIPE_XFER_START;
 		hid->setup_idx++;
 	}
 
@@ -918,7 +918,7 @@ static void usbh_hid_sof(usb_host_t *host)
 	for (u8 i = 0U; i < hid->itf_cnt; i++) {
 		pipe = &(hid->itf[i].pipe_in);
 		if ((pipe->pipe_num != 0U) && (hid->itf[i].halt_pending == 0U) &&
-			(usbh_get_elapsed_ticks(host, pipe->tick) > USBH_HID_TRIGGER_MAX_CNT)) {
+			(usbh_tick_elapsed(host, pipe->tick) > USBH_HID_TRIGGER_MAX_CNT)) {
 			usbh_notify(host, pipe->pipe_num, &usbh_hid_driver);
 		}
 	}
@@ -932,7 +932,7 @@ static void usbh_hid_sof(usb_host_t *host)
 static void usbh_hid_report_thread(void *param)
 {
 	usbh_hid_t *hid = &usbh_hid;
-	const usbh_hid_usr_cb_t *cb;
+	const usbh_hid_cb_t *cb;
 	u32 read_len;
 
 	UNUSED(param);
@@ -980,7 +980,7 @@ static int usbh_hid_ctrl_sync(u8 idx, u8 bm_request_type, u8 request, u16 value,
 	u32 rx_len;
 	int ret;
 
-	if ((usb_os_is_in_interrupt() != 0U) || (wlen > USBH_HID_CTRL_BUF_LEN) || (hid->req_lock == NULL) ||
+	if ((usb_os_is_in_interrupt()) || (wlen > USBH_HID_CTRL_BUF_LEN) || (hid->req_lock == NULL) ||
 		((wlen != 0U) && ((((bm_request_type & USB_D2H) != 0U) ? (const u8 *)rx : tx) == NULL))) {
 		return -RTK_ERR_BADARG;
 	}
@@ -1048,7 +1048,7 @@ static int usbh_hid_ctrl_sync(u8 idx, u8 bm_request_type, u8 request, u16 value,
   * @param  cb: User callback
   * @retval Status
   */
-int usbh_hid_init(const usbh_hid_usr_cb_t *cb)
+int usbh_hid_init(const usbh_hid_cb_t *cb)
 {
 	usbh_hid_t *hid = &usbh_hid;
 	int ret;
@@ -1116,7 +1116,7 @@ int usbh_hid_init(const usbh_hid_usr_cb_t *cb)
 
 	hid->cb = cb;
 
-	ret = usbh_register_class(&usbh_hid_driver);
+	ret = usbh_class_register(&usbh_hid_driver);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Register class fail %d\n", ret);
 		hid->cb = NULL;
@@ -1163,7 +1163,7 @@ void usbh_hid_deinit(void)
 	/* First, before anything is freed: on RTK_SUCCESS no attach/setup/process/detach of this class runs
 	 * any more, an EP0 request it left in flight is halted and a sof() still running on another core is
 	 * waited out. Anything else means nothing was released. */
-	if (usbh_unregister_class(&usbh_hid_driver) != RTK_SUCCESS) {
+	if (usbh_class_unregister(&usbh_hid_driver) != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Deinit refused\n");
 		return;
 	}
@@ -1195,7 +1195,7 @@ void usbh_hid_deinit(void)
 
 	/* No detach follows a deinit while attached: close what attach opened */
 	for (u8 i = 0U; i < hid->itf_cnt; i++) {
-		usbh_hid_close_interface(hid->host, &(hid->itf[i]));
+		usbh_hid_close_itf(hid->host, &(hid->itf[i]));
 	}
 	hid->itf_cnt = 0U;
 
@@ -1245,13 +1245,13 @@ int usbh_hid_send_report(u8 idx, u8 *buf, u32 len)
 		return -RTK_ERR_BADARG;
 	}
 	pipe = &(hid->itf[idx].pipe_out);
-	if (pipe->xfer_state != USBH_EP_XFER_IDLE) {
+	if (pipe->xfer_state != USBH_PIPE_XFER_IDLE) {
 		usb_os_exit_critical();
 		return -RTK_ERR_BUSY;
 	}
 	pipe->xfer_buf = buf;
 	pipe->xfer_len = len;
-	pipe->xfer_state = USBH_EP_XFER_START;
+	pipe->xfer_state = USBH_PIPE_XFER_START;
 	host = hid->host;
 	usb_os_exit_critical();
 
@@ -1474,27 +1474,27 @@ int usbh_hid_get_field_value(const u8 *report, u32 len, const usbh_hid_field_t *
   * @param  report: Report
   * @param  len: Length of the report
   * @param  field: Field found by usbh_hid_find_field()
-  * @retval 1 if active, 0 otherwise
+  * @retval true if active, false otherwise
   */
-u8 usbh_hid_usage_active(const u8 *report, u32 len, const usbh_hid_field_t *field)
+bool usbh_hid_is_usage_active(const u8 *report, u32 len, const usbh_hid_field_t *field)
 {
 	s32 val;
 
 	if (field == NULL) {
-		return 0U;
+		return false;
 	}
 
 	if ((field->flags & USBH_HID_ITEM_DATA_VARIABLE) != 0U) {
 		/* One value per usage */
-		return ((usbh_hid_get_field_value(report, len, field, field->usage_idx, &val) == RTK_SUCCESS) && (val != 0)) ? 1U : 0U;
+		return ((usbh_hid_get_field_value(report, len, field, field->usage_idx, &val) == RTK_SUCCESS) && (val != 0));
 	}
 
 	/* Usage codes: code logical_min + usage_idx names the usage, Ref HID 1.11 6.2.2.5 */
 	for (u16 i = 0U; i < field->report_count; i++) {
 		if ((usbh_hid_get_field_value(report, len, field, i, &val) == RTK_SUCCESS) && (val == (field->logical_min + (s32)field->usage_idx))) {
-			return 1U;
+			return true;
 		}
 	}
 
-	return 0U;
+	return false;
 }

@@ -291,9 +291,8 @@ if(CONFIG_WLAN AND (CONFIG_WHC_DEV OR CONFIG_WHC_NONE))
     )
 endif()
 
-if(CONFIG_WLAN AND (CONFIG_WHC_DEV OR CONFIG_WHC_NONE) AND NOT (CONFIG_PLATFORM_ZEPHYR AND CONFIG_WHC_NONE))
+if(CONFIG_WLAN AND (CONFIG_WHC_DEV OR CONFIG_WHC_NONE))
     ###NOTE: open-source glue between wifi lib and network stack, always build from source
-    ###NOTE: zephyr single core uses intf/wifi_intf_drv_to_zephyr.c instead (see drv_common.cmake)
     ###NOTE: p_NO_SEAL keeps wifi_netif_rx relocatable by section_placement.json5
     ameba_add_internal_library(wifi_netif
         p_NO_SEAL

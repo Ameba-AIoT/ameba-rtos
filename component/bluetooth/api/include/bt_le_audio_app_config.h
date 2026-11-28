@@ -24,10 +24,19 @@ extern "C" {
 #include <rtk_bt_gmap.h>
 #endif
 
+/// @cond
 #define RTK_BT_GAP_DEVICE_NAME_LEN (39+1)    /*!< Maximum length of the device name including the terminating NUL. A longer name is truncated. */
+/// @endcond
+
+/** @addtogroup BT_Types BT Types
+ * @{
+ */
+/** @addtogroup BT_LE_Audio_APP_Config_Types BT LE Audio APP Config Types
+ * @{
+ */
 
 /**
- * @typedef   rtk_bt_le_audio_pacs_init_param_t
+ * @struct   rtk_bt_le_audio_pacs_init_param_t
  * @brief     Default PACS initialization parameters.
  *            The audio locations, supported contexts and PAC records are applied only when the CAP role includes the acceptor role, in which case the PAC ID
  *            pointers must not be NULL.
@@ -50,7 +59,7 @@ typedef struct {
 } rtk_bt_le_audio_pacs_init_param_t;
 
 /**
- * @typedef   rtk_bt_le_audio_ascs_init_param_t
+ * @struct   rtk_bt_le_audio_ascs_init_param_t
  * @brief     Default ASCS initialization parameters, used by the BAP Unicast Server role.
  */
 typedef struct {
@@ -62,7 +71,7 @@ typedef struct {
 
 #if defined(RTK_BLE_AUDIO_CSIP_SET_MEMBER_SUPPORT) && RTK_BLE_AUDIO_CSIP_SET_MEMBER_SUPPORT
 /**
- * @typedef   rtk_bt_le_audio_csis_init_param_t
+ * @struct   rtk_bt_le_audio_csis_init_param_t
  * @brief     Default CSIS initialization parameters, used when the CAP role includes the acceptor role.
  */
 typedef struct {
@@ -78,7 +87,7 @@ typedef struct {
 
 #if defined(RTK_BLE_AUDIO_AICS_SUPPORT) && RTK_BLE_AUDIO_AICS_SUPPORT
 /**
- * @typedef   rtk_bt_le_audio_aics_init_param_t
+ * @struct   rtk_bt_le_audio_aics_init_param_t
  * @brief     Default AICS initialization parameters, used when the CAP role includes the acceptor role.
  */
 typedef struct {
@@ -91,7 +100,7 @@ typedef struct {
 
 #if defined(RTK_BLE_AUDIO_VOCS_SUPPORT) && RTK_BLE_AUDIO_VOCS_SUPPORT
 /**
- * @typedef   rtk_bt_le_audio_vocs_init_param_t
+ * @struct   rtk_bt_le_audio_vocs_init_param_t
  * @brief     Default VOCS initialization parameters, used when the CAP role includes the acceptor role.
  */
 typedef struct {
@@ -102,7 +111,7 @@ typedef struct {
 
 #if defined(RTK_BLE_AUDIO_MCP_MEDIA_CONTROL_SERVER_SUPPORT) && RTK_BLE_AUDIO_MCP_MEDIA_CONTROL_SERVER_SUPPORT
 /**
- * @typedef   rtk_bt_le_audio_mcs_init_param_t
+ * @struct   rtk_bt_le_audio_mcs_init_param_t
  * @brief     Default MCS initialization parameters, used when the CAP role includes the initiator role.
  */
 typedef struct {
@@ -161,7 +170,7 @@ typedef struct {
 #endif
 
 /**
- * @typedef   rtk_bt_le_audio_cap_init_param_t
+ * @struct   rtk_bt_le_audio_cap_init_param_t
  * @brief     Default CAP initialization parameters for the enabled optional services.
  */
 typedef struct {
@@ -180,7 +189,7 @@ typedef struct {
 } rtk_bt_le_audio_cap_init_param_t;
 
 /**
- * @typedef   rtk_bt_le_audio_app_conf_t
+ * @struct   rtk_bt_le_audio_app_conf_t
  * @brief     Default LE Audio application configuration used when initializing the LE Audio module.
  */
 typedef struct {
@@ -198,6 +207,13 @@ typedef struct {
 	rtk_bt_le_audio_gmap_role_t gmap_role;              /*!< Default GMAP role. */
 #endif
 } rtk_bt_le_audio_app_conf_t;
+
+/**
+ * @}
+ */
+/**
+ * @}
+ */
 
 #endif
 

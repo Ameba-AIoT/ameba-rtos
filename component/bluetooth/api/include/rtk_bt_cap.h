@@ -20,6 +20,15 @@ extern "C"
 #endif
 
 #if defined(RTK_BLE_AUDIO_SUPPORT) && RTK_BLE_AUDIO_SUPPORT
+/** @addtogroup BT_Constants BT Constants
+ * @{
+ */
+/** @addtogroup BT_LE_Audio_Constants BT LE Audio Constants
+ * @{
+ */
+/** @addtogroup BT_CAP_Constants BT CAP Constants
+ * @{
+ */
 /* CAP role definitions. */
 #define RTK_BT_CAP_ACCEPTOR_ROLE    0x01                         /*!< Acceptor Role. */
 #define RTK_BT_CAP_INITIATOR_ROLE   0x02                         /*!< Initiator Role. */
@@ -78,6 +87,25 @@ extern "C"
 #if defined(RTK_BLE_AUDIO_CCP_CALL_CONTROL_SERVER_SUPPORT) && RTK_BLE_AUDIO_CCP_CALL_CONTROL_SERVER_SUPPORT
 #define RTK_BT_LE_AUDIO_CCP_CALL_LIST_MAX 2         /*!< Maximum number of calls in the call list. */
 #endif
+/**
+ * @}
+ */
+/**
+ * @}
+ */
+/**
+ * @}
+ */
+
+/** @addtogroup BT_Types BT Types
+ * @{
+ */
+/** @addtogroup BT_LE_Audio_Types BT LE Audio Types
+ * @{
+ */
+/** @addtogroup BT_CAP_Types BT CAP Types
+ * @{
+ */
 /**
  * @typedef   rtk_bt_le_audio_cap_role_t
  * @brief     Bluetooth LE Audio Common Audio Profile (CAP) role.
@@ -167,7 +195,7 @@ typedef enum {
 } rtk_bt_le_audio_csis_cfg_t;
 
 /**
- * @typedef   rtk_bt_le_audio_csis_gen_rsi_info_t
+ * @struct    rtk_bt_le_audio_csis_gen_rsi_info_t
  * @brief     Bluetooth LE Audio CSIS RSI generation parameters.
  */
 typedef struct {
@@ -177,7 +205,7 @@ typedef struct {
 } rtk_bt_le_audio_csis_gen_rsi_info_t;
 
 /**
- * @typedef   rtk_bt_le_audio_csis_update_sirk_param_t
+ * @struct    rtk_bt_le_audio_csis_update_sirk_param_t
  * @brief     Bluetooth LE Audio CSIS SIRK update parameters.
  */
 typedef struct {
@@ -186,7 +214,7 @@ typedef struct {
 } rtk_bt_le_audio_csis_update_sirk_param_t;
 
 /**
- * @typedef   rtk_bt_le_audio_csis_update_size_param_t
+ * @struct    rtk_bt_le_audio_csis_update_size_param_t
  * @brief     Bluetooth LE Audio CSIS coordinated set size update parameters.
  */
 typedef struct {
@@ -198,7 +226,7 @@ typedef struct {
 
 #if defined(RTK_BLE_AUDIO_CSIP_SET_COORDINATOR_SUPPORT) && RTK_BLE_AUDIO_CSIP_SET_COORDINATOR_SUPPORT
 /**
- * @typedef   rtk_bt_le_audio_csis_set_coordinator_check_adv_rsi_info_t
+ * @struct    rtk_bt_le_audio_csis_set_coordinator_check_adv_rsi_info_t
  * @brief     Bluetooth LE Audio CSIS set coordinator RSI check parameters of an advertising report.
  */
 typedef struct {
@@ -208,7 +236,7 @@ typedef struct {
 } rtk_bt_le_audio_csis_set_coordinator_check_adv_rsi_info_t;
 
 /**
- * @typedef   rtk_bt_le_audio_csis_set_coordinator_cfg_discover_info_t
+ * @struct    rtk_bt_le_audio_csis_set_coordinator_cfg_discover_info_t
  * @brief     Bluetooth LE Audio CSIS set coordinator set member discovery configuration parameters.
  */
 typedef struct {
@@ -220,7 +248,7 @@ typedef struct {
 } rtk_bt_le_audio_csis_set_coordinator_cfg_discover_info_t;
 
 /**
- * @typedef   rtk_bt_le_audio_csis_set_mem_info_t
+ * @struct    rtk_bt_le_audio_csis_set_mem_info_t
  * @brief     Bluetooth LE Audio CSIS set member information.
  */
 typedef struct {
@@ -236,7 +264,7 @@ typedef struct {
 } rtk_bt_le_audio_csis_set_mem_info_t;
 
 /**
- * @typedef   rtk_bt_le_audio_csis_set_coordinator_add_group_info_t
+ * @struct    rtk_bt_le_audio_csis_set_coordinator_add_group_info_t
  * @brief     Bluetooth LE Audio CSIS set coordinator add group parameters.
  */
 typedef struct {
@@ -246,7 +274,7 @@ typedef struct {
 } rtk_bt_le_audio_csis_set_coordinator_add_group_info_t;
 
 /**
- * @typedef   rtk_bt_le_audio_csis_set_coordinator_add_device_info_t
+ * @struct    rtk_bt_le_audio_csis_set_coordinator_add_device_info_t
  * @brief     Bluetooth LE Audio CSIS set coordinator add device parameters.
  */
 typedef struct {
@@ -256,7 +284,7 @@ typedef struct {
 } rtk_bt_le_audio_csis_set_coordinator_add_device_info_t;
 
 /**
- * @typedef   rtk_bt_le_audio_csis_set_coordinator_write_lock_info_t
+ * @struct    rtk_bt_le_audio_csis_set_coordinator_write_lock_info_t
  * @brief     Bluetooth LE Audio CSIS set coordinator lock write parameters.
  */
 typedef struct {
@@ -271,7 +299,7 @@ typedef struct {
 #if (defined(RTK_BLE_AUDIO_MCP_MEDIA_CONTROL_CLIENT_SUPPORT) && RTK_BLE_AUDIO_MCP_MEDIA_CONTROL_CLIENT_SUPPORT) || \
     (defined(RTK_BLE_AUDIO_MCP_MEDIA_CONTROL_SERVER_SUPPORT) && RTK_BLE_AUDIO_MCP_MEDIA_CONTROL_SERVER_SUPPORT)
 /**
- * @typedef   rtk_bt_le_audio_mcp_t
+ * @struct    rtk_bt_le_audio_mcp_t
  * @brief     Bluetooth LE Audio media control service data.
  */
 typedef struct {
@@ -394,7 +422,7 @@ typedef enum {
 } rtk_bt_le_audio_mcs_media_control_point_notification_result_codes_t;
 
 /**
- * @typedef   rtk_bt_le_audio_mcp_server_media_play_name_t
+ * @struct    rtk_bt_le_audio_mcp_server_media_play_name_t
  * @brief     Bluetooth LE Audio media player name of the MCP server.
  */
 typedef struct {
@@ -403,7 +431,7 @@ typedef struct {
 } rtk_bt_le_audio_mcp_server_media_play_name_t;
 
 /**
- * @typedef   rtk_bt_le_audio_mcp_server_track_title_t
+ * @struct    rtk_bt_le_audio_mcp_server_track_title_t
  * @brief     Bluetooth LE Audio track title of the MCP server.
  */
 typedef struct {
@@ -412,7 +440,7 @@ typedef struct {
 } rtk_bt_le_audio_mcp_server_track_title_t;
 
 /**
- * @typedef   rtk_bt_le_audio_mcp_server_media_player_icon_url_t
+ * @struct    rtk_bt_le_audio_mcp_server_media_player_icon_url_t
  * @brief     Bluetooth LE Audio media player icon URL of the MCP server.
  */
 typedef struct {
@@ -422,7 +450,7 @@ typedef struct {
 
 #if defined(RTK_BLE_AUDIO_MCP_MEDIA_CONTROL_CLIENT_SUPPORT) && RTK_BLE_AUDIO_MCP_MEDIA_CONTROL_CLIENT_SUPPORT
 /**
- * @typedef   rtk_bt_le_audio_mcp_client_write_media_cp_info_t
+ * @struct    rtk_bt_le_audio_mcp_client_write_media_cp_info_t
  * @brief     Bluetooth LE Audio MCS client media control point write parameters.
  */
 typedef struct {
@@ -445,7 +473,7 @@ typedef struct {
 } rtk_bt_le_audio_mcp_client_write_media_cp_info_t;
 
 /**
- * @typedef   rtk_bt_le_audio_mcp_client_read_char_value_info_t
+ * @struct    rtk_bt_le_audio_mcp_client_read_char_value_info_t
  * @brief     Bluetooth LE Audio MCS client characteristic read parameters.
  */
 typedef struct {
@@ -459,7 +487,7 @@ typedef struct {
 } rtk_bt_le_audio_mcp_client_read_char_value_info_t;
 
 /**
- * @typedef   rtk_bt_le_audio_mcp_client_cfg_cccd_info_t
+ * @struct    rtk_bt_le_audio_mcp_client_cfg_cccd_info_t
  * @brief     Bluetooth LE Audio MCS client CCCD configuration parameters.
  */
 typedef struct {
@@ -476,7 +504,7 @@ typedef struct {
 } rtk_bt_le_audio_mcp_client_cfg_cccd_info_t;
 
 /**
- * @typedef   rtk_bt_le_audio_mcp_client_discovery_done_ind_t
+ * @struct    rtk_bt_le_audio_mcp_client_discovery_done_ind_t
  * @brief     Bluetooth LE Audio Media control service discovery done indication of the MCP client.
  */
 typedef struct {
@@ -494,7 +522,7 @@ typedef struct {
 	uint8_t     srv_num;          /*!< Number of discovered service instances. */
 } rtk_bt_le_audio_mcp_client_discovery_done_ind_t;
 /**
- * @typedef   rtk_bt_le_audio_mcp_client_read_result_ind_t
+ * @struct    rtk_bt_le_audio_mcp_client_read_result_ind_t
  * @brief     Bluetooth LE Audio MCP client read result indication.
  */
 typedef struct {
@@ -541,7 +569,7 @@ typedef struct {
 } rtk_bt_le_audio_mcp_client_read_result_ind_t;
 
 /**
- * @typedef   rtk_bt_le_audio_mcp_client_notify_ind_t
+ * @struct    rtk_bt_le_audio_mcp_client_notify_ind_t
  * @brief     Bluetooth LE Audio MCP client notification indication.
  */
 typedef struct {
@@ -579,7 +607,7 @@ typedef struct {
 } rtk_bt_le_audio_mcp_client_notify_ind_t;
 
 /**
- * @typedef   rtk_bt_le_audio_mcs_media_cp_notify_ind_t
+ * @struct    rtk_bt_le_audio_mcs_media_cp_notify_ind_t
  * @brief     Bluetooth LE Audio MCP client media control point notification indication.
  */
 typedef struct {
@@ -605,7 +633,7 @@ typedef rtk_bt_le_audio_mcs_media_cp_notify_ind_t rtk_bt_le_audio_mcs_media_cp_n
 #if defined(RTK_BLE_AUDIO_MCP_MEDIA_CONTROL_SERVER_SUPPORT) && RTK_BLE_AUDIO_MCP_MEDIA_CONTROL_SERVER_SUPPORT
 
 /**
- * @typedef   rtk_bt_le_audio_mcp_server_send_data_param_t
+ * @struct    rtk_bt_le_audio_mcp_server_send_data_param_t
  * @brief     Bluetooth LE Audio MCP server send data parameters.
  */
 typedef struct {
@@ -634,7 +662,7 @@ typedef struct {
 } rtk_bt_le_audio_mcp_server_send_data_param_t;
 
 /**
- * @typedef   rtk_bt_le_audio_mcp_server_read_confirm_param_t
+ * @struct    rtk_bt_le_audio_mcp_server_read_confirm_param_t
  * @brief     Bluetooth LE Audio MCP server read confirm parameters.
  */
 typedef struct {
@@ -673,7 +701,7 @@ typedef struct {
 } rtk_bt_le_audio_mcp_server_read_confirm_param_t;
 
 /**
- * @typedef   rtk_bt_le_audio_mcp_server_write_media_cp_ind_t
+ * @struct    rtk_bt_le_audio_mcp_server_write_media_cp_ind_t
  * @brief     Bluetooth LE Audio MCP server write media control point indication.
  */
 typedef struct {
@@ -695,7 +723,7 @@ typedef struct {
 } rtk_bt_le_audio_mcp_server_write_media_cp_ind_t;
 
 /**
- * @typedef   rtk_bt_le_audio_mcp_server_read_ind_t
+ * @struct    rtk_bt_le_audio_mcp_server_read_ind_t
  * @brief     Bluetooth LE Audio MCP server read indication.
  */
 typedef struct {
@@ -721,7 +749,7 @@ typedef enum {
 } rtk_bt_le_audio_vcs_mute_state_t;
 
 /**
- * @typedef   rtk_bt_le_audio_vcs_param_t
+ * @struct    rtk_bt_le_audio_vcs_param_t
  * @brief     Bluetooth LE Audio VCS parameters.
  */
 typedef struct {
@@ -762,7 +790,7 @@ typedef enum {
 } rtk_bt_le_audio_vcs_cp_op_t;
 
 /**
- * @typedef   rtk_bt_le_audio_vcs_cp_param_t
+ * @struct    rtk_bt_le_audio_vcs_cp_param_t
  * @brief     Bluetooth LE Audio VCS control point parameters.
  */
 typedef struct {
@@ -771,7 +799,7 @@ typedef struct {
 } rtk_bt_le_audio_vcs_cp_param_t;
 
 /**
- * @typedef   rtk_bt_le_audio_vcs_write_cp_param_t
+ * @struct    rtk_bt_le_audio_vcs_write_cp_param_t
  * @brief     Bluetooth LE Audio VCS write control point parameters.
  */
 typedef struct {
@@ -782,7 +810,7 @@ typedef struct {
 } rtk_bt_le_audio_vcs_write_cp_param_t;
 
 /**
- * @typedef   rtk_bt_le_audio_vcs_volume_cp_ind_t
+ * @struct    rtk_bt_le_audio_vcs_volume_cp_ind_t
  * @brief     Bluetooth LE Audio VCS volume control point indication.
  */
 typedef struct {
@@ -795,7 +823,7 @@ typedef struct {
 } rtk_bt_le_audio_vcs_volume_cp_ind_t;
 
 /**
- * @typedef   rtk_bt_le_audio_vcs_volume_state_t
+ * @struct    rtk_bt_le_audio_vcs_volume_state_t
  * @brief     Bluetooth LE Audio VCS volume state.
  */
 typedef struct {
@@ -806,7 +834,7 @@ typedef struct {
 } rtk_bt_le_audio_vcs_volume_state_t;
 
 /**
- * @typedef   rtk_bt_le_audio_vcs_get_volume_state_param_t
+ * @struct    rtk_bt_le_audio_vcs_get_volume_state_param_t
  * @brief     Bluetooth LE Audio VCS get volume state parameters.
  */
 typedef struct {
@@ -816,7 +844,7 @@ typedef struct {
 } rtk_bt_le_audio_vcs_get_volume_state_param_t;
 
 /**
- * @typedef   rtk_bt_le_audio_vcs_get_volume_flags_param_t
+ * @struct    rtk_bt_le_audio_vcs_get_volume_flags_param_t
  * @brief     Bluetooth LE Audio VCS get volume flags parameters.
  */
 typedef struct {
@@ -826,7 +854,7 @@ typedef struct {
 } rtk_bt_le_audio_vcs_get_volume_flags_param_t;
 
 /**
- * @typedef   rtk_bt_le_audio_vcs_change_mute_param_t
+ * @struct    rtk_bt_le_audio_vcs_change_mute_param_t
  * @brief     Bluetooth LE Audio VCS change mute parameters.
  */
 typedef struct {
@@ -835,7 +863,7 @@ typedef struct {
 } rtk_bt_le_audio_vcs_change_mute_param_t;
 
 /**
- * @typedef   rtk_bt_le_audio_vcs_change_volume_param_t
+ * @struct    rtk_bt_le_audio_vcs_change_volume_param_t
  * @brief     Bluetooth LE Audio VCS change volume parameters.
  */
 typedef struct {
@@ -857,7 +885,7 @@ typedef enum {
 	RTK_BT_LE_AUDIO_MICS_RFU,               /*!< Reserved for future use. */
 } rtk_bt_le_audio_mics_mute_state_t;
 /**
- * @typedef   rtk_bt_le_audio_mics_change_mute_param_t
+ * @struct    rtk_bt_le_audio_mics_change_mute_param_t
  * @brief     Bluetooth LE Audio MICS change mute parameters.
  */
 typedef struct {
@@ -866,7 +894,7 @@ typedef struct {
 } rtk_bt_le_audio_mics_change_mute_param_t;
 
 /**
- * @typedef   rtk_bt_le_audio_mics_set_mute_value_param_t
+ * @struct    rtk_bt_le_audio_mics_set_mute_value_param_t
  * @brief     Bluetooth LE Audio MICS set mute value parameters.
  */
 typedef struct {
@@ -876,7 +904,7 @@ typedef struct {
 } rtk_bt_le_audio_mics_set_mute_value_param_t;
 
 /**
- * @typedef   rtk_bt_le_audio_mics_get_mute_value_param_t
+ * @struct    rtk_bt_le_audio_mics_get_mute_value_param_t
  * @brief     Bluetooth LE Audio MICS get mute value parameters.
  */
 typedef struct {
@@ -899,7 +927,7 @@ typedef enum {
 } rtk_bt_le_audio_vocs_feature_mask_t;
 
 /**
- * @typedef   rtk_bt_le_audio_vocs_output_des_t
+ * @struct    rtk_bt_le_audio_vocs_output_des_t
  * @brief     Bluetooth LE Audio VOCS audio output description.
  */
 typedef struct {
@@ -908,7 +936,7 @@ typedef struct {
 } rtk_bt_le_audio_vocs_output_des_t;
 
 /**
- * @typedef   rtk_bt_le_audio_vocs_param_t
+ * @struct    rtk_bt_le_audio_vocs_param_t
  * @brief     Bluetooth LE Audio VOCS parameters.
  */
 typedef struct {
@@ -921,7 +949,7 @@ typedef struct {
 } rtk_bt_le_audio_vocs_param_t;
 
 /**
- * @typedef   rtk_bt_le_audio_vocs_write_offset_state_ind_t
+ * @struct    rtk_bt_le_audio_vocs_write_offset_state_ind_t
  * @brief     Bluetooth LE Audio VOCS write offset state indication.
  */
 typedef struct {
@@ -932,7 +960,7 @@ typedef struct {
 } rtk_bt_le_audio_vocs_write_offset_state_ind_t;
 
 /**
- * @typedef   rtk_bt_le_audio_vocs_write_audio_location_ind_t
+ * @struct    rtk_bt_le_audio_vocs_write_audio_location_ind_t
  * @brief     Bluetooth LE Audio VOCS write audio location indication.
  */
 typedef struct {
@@ -943,7 +971,7 @@ typedef struct {
 } rtk_bt_le_audio_vocs_write_audio_location_ind_t;
 
 /**
- * @typedef   rtk_bt_le_audio_vocs_write_output_des_ind_t
+ * @struct    rtk_bt_le_audio_vocs_write_output_des_ind_t
  * @brief     Bluetooth LE Audio VOCS write audio output description indication.
  */
 typedef struct {
@@ -954,7 +982,7 @@ typedef struct {
 } rtk_bt_le_audio_vocs_write_output_des_ind_t;
 
 /**
- * @typedef   rtk_bt_le_audio_vocs_set_param_t
+ * @struct    rtk_bt_le_audio_vocs_set_param_t
  * @brief     Bluetooth LE Audio VOCS set parameters.
  */
 typedef struct {
@@ -964,7 +992,7 @@ typedef struct {
 } rtk_bt_le_audio_vocs_set_param_t;
 
 /**
- * @typedef   rtk_bt_le_audio_vocs_get_param_t
+ * @struct    rtk_bt_le_audio_vocs_get_param_t
  * @brief     Bluetooth LE Audio VOCS get parameters.
  */
 typedef struct {
@@ -973,7 +1001,7 @@ typedef struct {
 } rtk_bt_le_audio_vocs_get_param_t;
 
 /**
- * @typedef   rtk_bt_le_audio_vocs_cfg_cccd_param_t
+ * @struct    rtk_bt_le_audio_vocs_cfg_cccd_param_t
  * @brief     Bluetooth LE Audio VOCS configure CCCD parameters.
  */
 typedef struct {
@@ -997,7 +1025,7 @@ typedef enum {
 } rtk_bt_le_audio_vocs_char_type_t;
 
 /**
- * @typedef   rtk_bt_le_audio_vocs_read_char_value_param_t
+ * @struct    rtk_bt_le_audio_vocs_read_char_value_param_t
  * @brief     Bluetooth LE Audio VOCS read characteristic value parameters.
  */
 typedef struct {
@@ -1008,7 +1036,7 @@ typedef struct {
 } rtk_bt_le_audio_vocs_read_char_value_param_t;
 
 /**
- * @typedef   rtk_bt_le_audio_vocs_cp_param_t
+ * @struct    rtk_bt_le_audio_vocs_cp_param_t
  * @brief     Bluetooth LE Audio VOCS control point parameters.
  */
 typedef struct {
@@ -1032,7 +1060,7 @@ typedef enum {
 } rtk_bt_le_audio_vocs_cp_op_t;
 
 /**
- * @typedef   rtk_bt_le_audio_vocs_write_cp_param_t
+ * @struct    rtk_bt_le_audio_vocs_write_cp_param_t
  * @brief     Bluetooth LE Audio VOCS write control point parameters.
  */
 typedef struct {
@@ -1043,7 +1071,7 @@ typedef struct {
 	rtk_bt_le_audio_vocs_cp_param_t cp_param;    /*!< Volume offset control point parameters. */
 } rtk_bt_le_audio_vocs_write_cp_param_t;
 /**
- * @typedef   rtk_bt_le_audio_vocs_write_cp_by_group_param_t
+ * @struct    rtk_bt_le_audio_vocs_write_cp_by_group_param_t
  * @brief     Bluetooth LE Audio Group-based VOCS control point write parameters.
  */
 typedef struct {
@@ -1054,7 +1082,7 @@ typedef struct {
 } rtk_bt_le_audio_vocs_write_cp_by_group_param_t;
 
 /**
- * @typedef   rtk_bt_le_audio_vocs_write_audio_location_param_t
+ * @struct    rtk_bt_le_audio_vocs_write_audio_location_param_t
  * @brief     Bluetooth LE Audio VOCS audio location write parameters.
  */
 typedef struct {
@@ -1065,7 +1093,7 @@ typedef struct {
 } rtk_bt_le_audio_vocs_write_audio_location_param_t;
 
 /**
- * @typedef   rtk_bt_le_audio_vocs_write_output_des_param_t
+ * @struct    rtk_bt_le_audio_vocs_write_output_des_param_t
  * @brief     Bluetooth LE Audio VOCS audio output description write parameters.
  */
 typedef struct {
@@ -1077,7 +1105,7 @@ typedef struct {
 } rtk_bt_le_audio_vocs_write_output_des_param_t;
 
 /**
- * @typedef   rtk_bt_le_audio_vocs_volume_offset_state_t
+ * @struct    rtk_bt_le_audio_vocs_volume_offset_state_t
  * @brief     Bluetooth LE Audio VOCS Volume Offset State characteristic value.
  */
 typedef struct {
@@ -1087,7 +1115,7 @@ typedef struct {
 } rtk_bt_le_audio_vocs_volume_offset_state_t;
 
 /**
- * @typedef   rtk_bt_le_audio_vocs_srv_data_t
+ * @struct    rtk_bt_le_audio_vocs_srv_data_t
  * @brief     Bluetooth LE Audio VOCS service data.
  */
 typedef struct {
@@ -1100,7 +1128,7 @@ typedef struct {
 } rtk_bt_le_audio_vocs_srv_data_t;
 
 /**
- * @typedef   rtk_bt_le_audio_vocs_get_srv_data_param_t
+ * @struct    rtk_bt_le_audio_vocs_get_srv_data_param_t
  * @brief     Bluetooth LE Audio VOCS service data get parameters.
  */
 typedef struct {
@@ -1161,7 +1189,7 @@ typedef enum {
 } rtk_bt_le_audio_aics_char_type_t;
 
 /**
- * @typedef   rtk_bt_le_audio_aics_input_state_t
+ * @struct    rtk_bt_le_audio_aics_input_state_t
  * @brief     Bluetooth LE Audio AICS Audio Input State characteristic value.
  */
 typedef struct {
@@ -1172,7 +1200,7 @@ typedef struct {
 } rtk_bt_le_audio_aics_input_state_t;
 
 /**
- * @typedef   rtk_bt_le_audio_aics_set_param_t
+ * @struct    rtk_bt_le_audio_aics_set_param_t
  * @brief     Bluetooth LE Audio AICS parameter set parameters.
  */
 typedef struct {
@@ -1186,7 +1214,7 @@ typedef struct {
 } rtk_bt_le_audio_aics_set_param_t;
 
 /**
- * @typedef   rtk_bt_le_audio_aics_get_param_t
+ * @struct    rtk_bt_le_audio_aics_get_param_t
  * @brief     Bluetooth LE Audio AICS parameter get parameters.
  */
 typedef struct {
@@ -1198,7 +1226,7 @@ typedef struct {
 } rtk_bt_le_audio_aics_get_param_t;
 
 /**
- * @typedef   rtk_bt_le_audio_aics_cfg_cccd_param_t
+ * @struct    rtk_bt_le_audio_aics_cfg_cccd_param_t
  * @brief     Bluetooth LE Audio AICS CCCD configuration parameters.
  */
 typedef struct {
@@ -1212,7 +1240,7 @@ typedef struct {
 } rtk_bt_le_audio_aics_cfg_cccd_param_t;
 
 /**
- * @typedef   rtk_bt_le_audio_aics_read_char_value_param_t
+ * @struct    rtk_bt_le_audio_aics_read_char_value_param_t
  * @brief     Bluetooth LE Audio AICS characteristic read parameters.
  */
 typedef struct {
@@ -1236,7 +1264,7 @@ typedef enum {
 } rtk_bt_le_audio_aics_cp_op_t;
 
 /**
- * @typedef   rtk_bt_le_audio_aics_cp_param_t
+ * @struct    rtk_bt_le_audio_aics_cp_param_t
  * @brief     Bluetooth LE Audio AICS Audio Input Control Point parameter.
  */
 typedef struct {
@@ -1244,7 +1272,7 @@ typedef struct {
 }  rtk_bt_le_audio_aics_cp_param_t;
 
 /**
- * @typedef   rtk_bt_le_audio_aics_write_cp_param_t
+ * @struct    rtk_bt_le_audio_aics_write_cp_param_t
  * @brief     Bluetooth LE Audio AICS control point write parameters.
  */
 typedef struct {
@@ -1256,7 +1284,7 @@ typedef struct {
 } rtk_bt_le_audio_aics_write_cp_param_t;
 
 /**
- * @typedef   rtk_bt_le_audio_aics_write_cp_by_group_param_t
+ * @struct    rtk_bt_le_audio_aics_write_cp_by_group_param_t
  * @brief     Bluetooth LE Audio Group-based AICS control point write parameters.
  */
 typedef struct {
@@ -1267,7 +1295,7 @@ typedef struct {
 } rtk_bt_le_audio_aics_write_cp_by_group_param_t;
 
 /**
- * @typedef   rtk_bt_le_audio_aics_write_input_des_param_t
+ * @struct    rtk_bt_le_audio_aics_write_input_des_param_t
  * @brief     Bluetooth LE Audio AICS audio input description write parameters.
  */
 typedef struct {
@@ -1279,7 +1307,7 @@ typedef struct {
 } rtk_bt_le_audio_aics_write_input_des_param_t;
 
 /**
- * @typedef   rtk_bt_le_audio_aics_gain_setting_prop_t
+ * @struct    rtk_bt_le_audio_aics_gain_setting_prop_t
  * @brief     Bluetooth LE Audio AICS Gain Setting Properties characteristic value.
  */
 typedef struct {
@@ -1289,7 +1317,7 @@ typedef struct {
 } rtk_bt_le_audio_aics_gain_setting_prop_t;
 
 /**
- * @typedef   rtk_bt_le_audio_aics_input_des_t
+ * @struct    rtk_bt_le_audio_aics_input_des_t
  * @brief     Bluetooth LE Audio AICS Audio Input Description characteristic value.
  */
 typedef struct {
@@ -1298,7 +1326,7 @@ typedef struct {
 } rtk_bt_le_audio_aics_input_des_t;
 
 /**
- * @typedef   rtk_bt_le_audio_aics_srv_data_t
+ * @struct    rtk_bt_le_audio_aics_srv_data_t
  * @brief     Bluetooth LE Audio AICS service data.
  */
 typedef struct {
@@ -1313,7 +1341,7 @@ typedef struct {
 } rtk_bt_le_audio_aics_srv_data_t;
 
 /**
- * @typedef   rtk_bt_le_audio_aics_cp_ind_t
+ * @struct    rtk_bt_le_audio_aics_cp_ind_t
  * @brief     Bluetooth LE Audio AICS control point write indication.
  */
 typedef struct {
@@ -1325,7 +1353,7 @@ typedef struct {
 } rtk_bt_le_audio_aics_cp_ind_t;
 
 /**
- * @typedef   rtk_bt_le_audio_aics_write_input_des_ind_t
+ * @struct    rtk_bt_le_audio_aics_write_input_des_ind_t
  * @brief     Bluetooth LE Audio AICS audio input description write indication.
  */
 typedef struct {
@@ -1336,7 +1364,7 @@ typedef struct {
 } rtk_bt_le_audio_aics_write_input_des_ind_t;
 
 /**
- * @typedef   rtk_bt_le_audio_aics_get_srv_data_param_t
+ * @struct    rtk_bt_le_audio_aics_get_srv_data_param_t
  * @brief     Bluetooth LE Audio AICS service data get parameters.
  */
 typedef struct {
@@ -1381,7 +1409,7 @@ typedef enum {
 #endif
 /* event struct */
 /**
- * @typedef   rtk_bt_le_audio_cap_discovery_done_ind_t
+ * @struct    rtk_bt_le_audio_cap_discovery_done_ind_t
  * @brief     Bluetooth LE Audio CAP discovery done indication.
  */
 typedef struct {
@@ -1407,7 +1435,7 @@ typedef struct {
 #if defined(RTK_BLE_AUDIO_CSIP_SET_COORDINATOR_SUPPORT) && RTK_BLE_AUDIO_CSIP_SET_COORDINATOR_SUPPORT
 
 /**
- * @typedef   rtk_bt_le_audio_csis_client_discovery_done_ind_t
+ * @struct    rtk_bt_le_audio_csis_client_discovery_done_ind_t
  * @brief     Bluetooth LE Audio CSIS client discovery done indication.
  */
 typedef struct {
@@ -1424,7 +1452,7 @@ typedef struct {
 } rtk_bt_le_audio_csis_client_discovery_done_ind_t;
 
 /**
- * @typedef   rtk_bt_le_audio_csis_client_read_result_ind_t
+ * @struct    rtk_bt_le_audio_csis_client_read_result_ind_t
  * @brief     Bluetooth LE Audio CSIS client read result indication.
  */
 typedef struct {
@@ -1438,7 +1466,7 @@ typedef struct {
 } rtk_bt_le_audio_csis_client_read_result_ind_t;
 
 /**
- * @typedef   rtk_bt_le_audio_csis_client_search_done_ind_t
+ * @struct    rtk_bt_le_audio_csis_client_search_done_ind_t
  * @brief     Bluetooth LE Audio CSIS client search done or timeout indication.
  */
 typedef struct {
@@ -1453,7 +1481,7 @@ typedef struct {
 } rtk_bt_le_audio_csis_client_search_done_ind_t;
 
 /**
- * @typedef   rtk_bt_le_audio_csis_client_set_mem_found_ind_t
+ * @struct    rtk_bt_le_audio_csis_client_set_mem_found_ind_t
  * @brief     Bluetooth LE Audio CSIS client set member found indication.
  */
 typedef struct {
@@ -1470,7 +1498,7 @@ typedef struct {
 
 #if defined(RTK_BLE_AUDIO_VCP_VOLUME_CONTROLLER_SUPPORT) && RTK_BLE_AUDIO_VCP_VOLUME_CONTROLLER_SUPPORT
 /**
- * @typedef   rtk_bt_le_audio_vcs_client_discovery_done_ind_t
+ * @struct    rtk_bt_le_audio_vcs_client_discovery_done_ind_t
  * @brief     Bluetooth LE Audio VCS client discovery done indication.
  */
 typedef struct {
@@ -1488,7 +1516,7 @@ typedef struct {
 } rtk_bt_le_audio_vcs_client_discovery_done_ind_t;
 
 /**
- * @typedef   rtk_bt_le_audio_vcs_client_volume_state_ind_t
+ * @struct    rtk_bt_le_audio_vcs_client_volume_state_ind_t
  * @brief     Bluetooth LE Audio VCS client volume state indication.
  */
 typedef struct {
@@ -1501,7 +1529,7 @@ typedef struct {
 } rtk_bt_le_audio_vcs_client_volume_state_ind_t;
 
 /**
- * @typedef   rtk_bt_le_audio_vcs_client_volume_flag_ind_t
+ * @struct    rtk_bt_le_audio_vcs_client_volume_flag_ind_t
  * @brief     Bluetooth LE Audio VCS client volume flags indication.
  */
 typedef struct {
@@ -1515,7 +1543,7 @@ typedef struct {
 #endif
 #if defined(RTK_BLE_AUDIO_MICP_MIC_CONTROLLER_SUPPORT) && RTK_BLE_AUDIO_MICP_MIC_CONTROLLER_SUPPORT
 /**
- * @typedef   rtk_bt_le_audio_mics_client_discovery_done_ind_t
+ * @struct    rtk_bt_le_audio_mics_client_discovery_done_ind_t
  * @brief     Bluetooth LE Audio MICS client discovery done indication.
  */
 typedef struct {
@@ -1531,7 +1559,7 @@ typedef struct {
 } rtk_bt_le_audio_mics_client_discovery_done_ind_t;
 
 /**
- * @typedef   rtk_bt_le_audio_mics_client_notify_ind_t
+ * @struct    rtk_bt_le_audio_mics_client_notify_ind_t
  * @brief     Bluetooth LE Audio MICS client notification indication.
  */
 typedef struct {
@@ -1541,14 +1569,14 @@ typedef struct {
 } rtk_bt_le_audio_mics_client_notify_ind_t;
 
 /**
- * @typedef   rtk_bt_le_audio_mics_write_mute_ind_t
+ * @struct    rtk_bt_le_audio_mics_write_mute_ind_t
  * @brief     Bluetooth LE Audio MICS mute state write indication.
  */
 typedef struct {
 	uint8_t mic_mute;    /*!< Microphone mute state written by the remote device, see @ref rtk_bt_le_audio_mics_mute_state_t. */
 } rtk_bt_le_audio_mics_write_mute_ind_t;
 /**
- * @typedef   rtk_bt_le_audio_mics_param_t
+ * @struct    rtk_bt_le_audio_mics_param_t
  * @brief     Bluetooth LE Audio MICS parameters.
  */
 typedef struct {
@@ -1558,7 +1586,7 @@ typedef struct {
 #endif
 #if defined(RTK_BLE_AUDIO_VOCS_SUPPORT) && RTK_BLE_AUDIO_VOCS_SUPPORT
 /**
- * @typedef   rtk_bt_le_audio_vocs_client_discovery_done_ind_t
+ * @struct    rtk_bt_le_audio_vocs_client_discovery_done_ind_t
  * @brief     Bluetooth LE Audio VOCS client discovery done indication.
  */
 typedef struct {
@@ -1574,7 +1602,7 @@ typedef struct {
 } rtk_bt_le_audio_vocs_client_discovery_done_ind_t;
 
 /**
- * @typedef   rtk_bt_le_audio_vocs_char_data_t
+ * @union     rtk_bt_le_audio_vocs_char_data_t
  * @brief     Bluetooth LE Audio VOCS characteristic data.
  */
 typedef union {
@@ -1584,7 +1612,7 @@ typedef union {
 } rtk_bt_le_audio_vocs_char_data_t;
 
 /**
- * @typedef   rtk_bt_le_audio_vocs_client_read_result_ind_t
+ * @struct    rtk_bt_le_audio_vocs_client_read_result_ind_t
  * @brief     Bluetooth LE Audio VOCS client read result indication.
  */
 typedef struct {
@@ -1597,7 +1625,7 @@ typedef struct {
 } rtk_bt_le_audio_vocs_client_read_result_ind_t;
 
 /**
- * @typedef   rtk_bt_le_audio_vocs_client_notify_ind_t
+ * @struct    rtk_bt_le_audio_vocs_client_notify_ind_t
  * @brief     Bluetooth LE Audio VOCS client notification indication.
  */
 typedef struct {
@@ -1609,7 +1637,7 @@ typedef struct {
 } rtk_bt_le_audio_vocs_client_notify_ind_t;
 
 /**
- * @typedef   rtk_bt_le_audio_vocs_client_cp_result_ind_t
+ * @struct    rtk_bt_le_audio_vocs_client_cp_result_ind_t
  * @brief     Bluetooth LE Audio VOCS client control point write result indication.
  */
 typedef struct {
@@ -1624,7 +1652,7 @@ typedef struct {
 #define RTK_BT_LE_ATTR_INSTANCE_NUM_MAX               20    /*!< Maximum number of attribute instances. */
 
 /**
- * @typedef   rtk_bt_le_attr_instance_t
+ * @struct    rtk_bt_le_attr_instance_t
  * @brief     Bluetooth LE Audio List of included service instance indexes.
  */
 typedef struct {
@@ -1633,7 +1661,7 @@ typedef struct {
 } rtk_bt_le_attr_instance_t;
 
 /**
- * @typedef   rtk_bt_le_audio_aics_client_discovery_done_ind_t
+ * @struct    rtk_bt_le_audio_aics_client_discovery_done_ind_t
  * @brief     Bluetooth LE Audio AICS client discovery done indication.
  */
 typedef struct {
@@ -1651,7 +1679,7 @@ typedef struct {
 } rtk_bt_le_audio_aics_client_discovery_done_ind_t;
 
 /**
- * @typedef   rtk_bt_le_audio_aics_char_data_t
+ * @union     rtk_bt_le_audio_aics_char_data_t
  * @brief     Bluetooth LE Audio AICS characteristic data.
  */
 typedef union {
@@ -1663,7 +1691,7 @@ typedef union {
 } rtk_bt_le_audio_aics_char_data_t;
 
 /**
- * @typedef   rtk_bt_le_audio_aics_client_notify_ind_t
+ * @struct    rtk_bt_le_audio_aics_client_notify_ind_t
  * @brief     Bluetooth LE Audio AICS client notification indication.
  */
 typedef struct {
@@ -1675,7 +1703,7 @@ typedef struct {
 } rtk_bt_le_audio_aics_client_notify_ind_t;
 
 /**
- * @typedef   rtk_bt_le_audio_aics_client_read_result_ind_t
+ * @struct    rtk_bt_le_audio_aics_client_read_result_ind_t
  * @brief     Bluetooth LE Audio AICS client read result indication.
  */
 typedef struct {
@@ -1688,7 +1716,7 @@ typedef struct {
 } rtk_bt_le_audio_aics_client_read_result_ind_t;
 
 /**
- * @typedef   rtk_bt_le_audio_aics_client_cp_result_ind_t
+ * @struct    rtk_bt_le_audio_aics_client_cp_result_ind_t
  * @brief     Bluetooth LE Audio AICS client control point write result indication.
  */
 typedef struct {
@@ -1709,7 +1737,7 @@ typedef enum {
 } rtk_bt_le_audio_cap_param_config_type_t;
 
 /**
- * @typedef   rtk_bt_le_audio_cap_param_config_t
+ * @union     rtk_bt_le_audio_cap_param_config_t
  * @brief     Bluetooth LE Audio CAP configuration parameters.
  */
 typedef union {
@@ -1718,11 +1746,23 @@ typedef union {
 		uint8_t csis_sirk[RTK_BT_LE_CSIS_SIRK_LEN];      /*!< Default CSIS SIRK, valid when the type is @ref RTK_BT_LE_AUDIO_CAP_CSIS_SIRK_CONFIG. */
 	} cfg;                                               /*!< Configuration data selected by the type. */
 } rtk_bt_le_audio_cap_param_config_t;
-/********************************* Functions Declaration *******************************/
 /**
- * @defgroup  bt_cap BT CAP APIs
- * @brief     BT CAP related function APIs.
- * @ingroup   bt_le_audio
+ * @}
+ */
+/**
+ * @}
+ */
+/**
+ * @}
+ */
+/********************************* Functions Declaration *******************************/
+/** @addtogroup BT_Functions BT Functions
+ * @{
+ */
+/** @addtogroup BT_LE_Audio_Functions BT LE Audio Functions
+ * @{
+ */
+/** @addtogroup BT_CAP_Functions BT CAP Functions
  * @{
  */
 
@@ -2295,6 +2335,12 @@ uint16_t rtk_bt_le_audio_mcs_server_read_confirm(uint16_t conn_handle, uint16_t 
  */
 uint16_t rtk_bt_cap_param_config(rtk_bt_le_audio_cap_param_config_t *p_param);
 
+/**
+ * @}
+ */
+/**
+ * @}
+ */
 /**
  * @}
  */

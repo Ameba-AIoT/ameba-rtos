@@ -78,7 +78,7 @@
 #if USBD_UAC_ENABLE_RECORD
 #define USBD_UAC_RECORD_THREAD_PRIORITY           4
 #define USBD_UAC_RECORD_THREAD_STACK_SIZE         (1024U * 4)
-/* 1 ms of the 16kHz/2ch/16bit record format. usbd_uac_transmit_data() cuts it into per-bInterval
+/* 1 ms of the 16kHz/2ch/16bit record format. usbd_uac_write() cuts it into per-bInterval
  * packets itself, so this is only the feeding granularity */
 #define USBD_UAC_RECORD_CHUNK_LEN                 64U
 #define USBD_UAC_RECORD_CHUNK_DELAY_MS            1U
@@ -92,7 +92,7 @@
 #endif
 
 /* The record thread reads the table in whole chunks */
-_Static_assert((sizeof(usbd_uac_record_audio_data) % USBD_UAC_RECORD_CHUNK_LEN) == 0U, "UAC record data len");
+_Static_assert((sizeof(uac_record_audio_data) % USBD_UAC_RECORD_CHUNK_LEN) == 0U, "UAC record data len");
 #endif
 
 /* Data worker threads joined by a stop: the player, plus the record thread */
@@ -195,7 +195,7 @@ static rtos_mutex_t uac_record_lock = NULL;
 /* 1: usbd_init() and usbd_uac_init() both done, the class APIs may be called. Cleared
  * before any tear down, so a non-zero value also implies the locks are valid.
  * usbd_uac_deinit() frees the isoc ring buffers and their semaphores, which
- * usbd_uac_read()/usbd_uac_transmit_data() dereference; the bounded wait this replaces
+ * usbd_uac_read()/usbd_uac_write() dereference; the bounded wait this replaces
  * could time out and deinit under a worker still inside the stack, so under SMP the
  * workers must be excluded from the whole teardown, not just raced against. */
 static __IO u8 uac_stack_ready = 0;
@@ -356,7 +356,7 @@ static void uac_wake_workers(void)
 {
 	uac_stack_ready = 0;
 	uac_task_exiting = 1;
-	usbd_uac_stop_play();
+	usbd_uac_stop_playback();
 #if USBD_UAC_ENABLE_RECORD
 	usbd_uac_stop_record();
 	rtos_sema_give(uac_record_start_sema);
@@ -464,10 +464,10 @@ static void example_usbd_uac_hotplug_thread(void *param)
 			}
 			if (uac_attach_status == USBD_ATTACH_STATUS_DETACHED) {
 				RTK_LOGS(TAG, RTK_LOG_INFO, "DETACHED\n");
-				/* Ask the workers to leave their loops first: stop_play()/stop_record()
+				/* Ask the workers to leave their loops first: usbd_uac_stop_playback()/stop_record()
 				   unblock a pending usbd_uac_read(), uac_task_exiting ends the loops.
 				   Both must run while the stack is still up, so before the lock. */
-				usbd_uac_stop_play();
+				usbd_uac_stop_playback();
 #if USBD_UAC_ENABLE_RECORD
 				usbd_uac_stop_record();
 #endif
@@ -587,7 +587,7 @@ static u32 uac_cb_get_play_feedback(void)
 	u32 nominal = (u32)(((u64)uac_play_format.sampling_freq << USBD_UAC_PLAY_FEEDBACK_FRACTION_BITS) / 1000U);
 	s32 max_delta = (s32)(nominal >> 10);
 	s32 target_us = (s32)(USBD_UAC_DEFAULT_PLAY_BUF_COUNT * 1000U / 2U);
-	s32 level_us = (s32)usbd_uac_get_read_frame_time_in_us();
+	s32 level_us = (s32)usbd_uac_get_read_frame_time_us();
 	s32 diff;
 
 #ifdef CONFIG_SUPPORT_AUDIO_FOR_USB
@@ -722,7 +722,7 @@ static void uac_cb_format_changed(u32 sampling_freq, u8 channel_count, u8 byte_w
 
 	if ((play_format.sampling_freq != 0U) && (play_format.byte_width != 0U) && (play_format.channel_count != 0U)) {
 		uac_player_stop = 1;
-		usbd_uac_stop_play();
+		usbd_uac_stop_playback();
 		rtos_sema_give(uac_ready_sema);
 		//RTK_LOGS(TAG, RTK_LOG_INFO, "USBD set sampling_freq %d set channel_count %d\n", sampling_freq, channel_count);
 	}
@@ -760,10 +760,10 @@ static void example_audio_track_play(void)
 	rtos_critical_exit(RTOS_CRITICAL_USB);
 #endif
 
-	/* start_play() fails until the host has configured the device, and keeps failing once the
+	/* usbd_uac_start_playback() fails until the host has configured the device, and keeps failing once the
 	   stack is torn down: leave on any stop request instead of retrying forever. Nothing to
 	   unwind here, no AudioTrack has been created yet. */
-	while (usbd_uac_start_play() != RTK_SUCCESS) {
+	while (usbd_uac_start_playback() != RTK_SUCCESS) {
 		if ((uac_task_exiting != 0) || (uac_player_stop != 0) || (uac_app.quit != 0U)) {
 			return;
 		}
@@ -813,7 +813,7 @@ static void example_audio_track_play(void)
 	audio_track = AudioTrack_Create();
 	if (!audio_track) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create AudioTrack fail\n");
-		usbd_uac_stop_play();
+		usbd_uac_stop_playback();
 		return;
 	}
 
@@ -830,7 +830,7 @@ static void example_audio_track_play(void)
 	track_config.buffer_bytes = track_buf_size;
 	if (AudioTrack_Init(audio_track, &track_config, AUDIO_OUTPUT_FLAG_NONE) != AUDIO_OK) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Audio track init fail\n");
-		usbd_uac_stop_play();
+		usbd_uac_stop_playback();
 		AudioTrack_Destroy(audio_track);
 		return;
 	}
@@ -843,7 +843,7 @@ static void example_audio_track_play(void)
 
 	if (AudioTrack_Start(audio_track) != AUDIO_OK) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Audio track start fail\n");
-		usbd_uac_stop_play();
+		usbd_uac_stop_playback();
 		AudioTrack_Destroy(audio_track);
 		return;
 	}
@@ -880,7 +880,7 @@ static void example_audio_track_play(void)
 		}
 	}
 
-	usbd_uac_stop_play();
+	usbd_uac_stop_playback();
 
 #if defined(CONFIG_USBD_UAC_PLAY_FEEDBACK) && defined(CONFIG_SUPPORT_AUDIO_FOR_USB)
 	/* Back to the OUT ring level */
@@ -909,7 +909,7 @@ static void example_audio_track_play(void)
 		}
 	}
 
-	usbd_uac_stop_play();
+	usbd_uac_stop_playback();
 #endif
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Audio track demo stop\n\n\n");
@@ -989,7 +989,7 @@ static void example_usbd_uac_record_thread(void *param)
 			/* One ms of audio per call, the clip loops. A live stream tolerates a lost chunk, so
 			   keep the 1 ms pace and only report the first failure of a run, to stay off the
 			   console at 1 kHz. */
-			if (usbd_uac_transmit_data(&usbd_uac_record_audio_data[offset], USBD_UAC_RECORD_CHUNK_LEN) != RTK_SUCCESS) {
+			if (usbd_uac_write(&uac_record_audio_data[offset], USBD_UAC_RECORD_CHUNK_LEN) < 0) {
 				if (tx_fail_cnt == 0U) {
 					RTK_LOGS(TAG, RTK_LOG_WARN, "UAC record tx fail\n");
 				}
@@ -998,7 +998,7 @@ static void example_usbd_uac_record_thread(void *param)
 				tx_fail_cnt = 0U;
 			}
 			offset += USBD_UAC_RECORD_CHUNK_LEN;
-			if (offset >= usbd_uac_record_data_len) {
+			if (offset >= uac_record_data_len) {
 				offset = 0U;
 			}
 			rtos_time_delay_ms(USBD_UAC_RECORD_CHUNK_DELAY_MS);

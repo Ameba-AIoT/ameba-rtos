@@ -39,14 +39,14 @@ typedef enum {
 
 /* Private function prototypes -----------------------------------------------*/
 
-static int usbh_cdc_ncm_cb_init(void);
-static void usbh_cdc_ncm_cb_deinit(void);
-static void usbh_cdc_ncm_cb_attached(void);
-static void usbh_cdc_ncm_cb_detached(void);
-static void usbh_cdc_ncm_cb_setup(void);
-static void usbh_cdc_ncm_cb_process(usb_host_t *host, u8 msg);
-static void usbh_cdc_ncm_cb_received(u8 *pbuf, u32 Len);
-static int usbh_cdc_ncm_cb_device_check(usb_host_t *host, u8 cfg_max);
+static int ncm_cb_init(void);
+static void ncm_cb_deinit(void);
+static void ncm_cb_attached(void);
+static void ncm_cb_detached(void);
+static void ncm_cb_setup(void);
+static void ncm_cb_process(usb_host_t *host, u8 msg);
+static void ncm_cb_received(u8 *pbuf, u32 Len);
+static int ncm_cb_validate(usb_host_t *host, u8 cfg_max);
 
 /* Private variables ---------------------------------------------------------*/
 
@@ -97,7 +97,7 @@ static volatile u8 cdc_ncm_link_alive = 0;
    thread keep stopping DHCP so the request returns, even one started just after quit was set */
 static volatile u8 cdc_ncm_dhcp_pending = 0;
 
-static const usbh_config_t usbh_ncm_cfg = {
+static const usbh_config_t ncm_cfg = {
 	.speed = USB_SPEED_HIGH,
 	.ext_intr_enable = 0, //USBH_SOF_INTR
 	.isr_priority = CONFIG_USBH_CDC_NCM_ISR_PRIORITY,
@@ -125,18 +125,18 @@ static const usbh_config_t usbh_ncm_cfg = {
 #endif
 };
 
-static const usbh_cdc_ncm_state_cb_t cdc_ncm_usb_cb = {
-	.init   = usbh_cdc_ncm_cb_init,
-	.deinit = usbh_cdc_ncm_cb_deinit,
-	.attached = usbh_cdc_ncm_cb_attached,
-	.detached = usbh_cdc_ncm_cb_detached,
-	.setup  = usbh_cdc_ncm_cb_setup,
-	.received = usbh_cdc_ncm_cb_received,
+static const usbh_cdc_ncm_cb_t cdc_ncm_usb_cb = {
+	.init   = ncm_cb_init,
+	.deinit = ncm_cb_deinit,
+	.attached = ncm_cb_attached,
+	.detached = ncm_cb_detached,
+	.setup  = ncm_cb_setup,
+	.received = ncm_cb_received,
 };
 
-static const usbh_user_cb_t usbh_ncm_usr_cb = {
-	.process = usbh_cdc_ncm_cb_process,
-	.validate = usbh_cdc_ncm_cb_device_check,
+static const usbh_cb_t ncm_usr_cb = {
+	.event = ncm_cb_process,
+	.validate = ncm_cb_validate,
 };
 
 static const usbh_cdc_ncm_config_t cdc_ncm_class_cfg = {
@@ -154,24 +154,24 @@ static const usbh_cdc_ncm_config_t cdc_ncm_class_cfg = {
 /**
   * @brief  Validates whether the connected USB device supports CDC NCM.
   * @note   Called by the USB host stack during enumeration when multiple devices
-  *         are connected to a hub.  Delegates to usbh_cdc_ncm_check_config_desc()
+  *         are connected to a hub.  Delegates to usbh_cdc_ncm_check_config()
   *         to verify the configuration descriptor contains both the NCM
   *         Communication Interface and the NCM Data Interface.
   * @param[in] host: USB host handle.
   * @param[in] cfg_max: Number of configurations (unused).
   * @return RTK_SUCCESS if the device is a valid CDC NCM device, non-zero otherwise.
   */
-static int usbh_cdc_ncm_cb_device_check(usb_host_t *host, u8 cfg_max)
+static int ncm_cb_validate(usb_host_t *host, u8 cfg_max)
 {
 	UNUSED(cfg_max);
-	return usbh_cdc_ncm_check_config_desc(host);
+	return usbh_cdc_ncm_check_config(host);
 }
 
 /**
   * @brief  CDC NCM init callback
   * @retval Status
   */
-static int usbh_cdc_ncm_cb_init(void)
+static int ncm_cb_init(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "INIT\n");
 	return RTK_SUCCESS;
@@ -180,7 +180,7 @@ static int usbh_cdc_ncm_cb_init(void)
 /**
   * @brief  CDC NCM deinit callback
   */
-static void usbh_cdc_ncm_cb_deinit(void)
+static void ncm_cb_deinit(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "DEINIT\n");
 }
@@ -188,7 +188,7 @@ static void usbh_cdc_ncm_cb_deinit(void)
 /**
   * @brief  CDC NCM attach callback
   */
-static void usbh_cdc_ncm_cb_attached(void)
+static void ncm_cb_attached(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "ATTACH\n");
 }
@@ -196,7 +196,7 @@ static void usbh_cdc_ncm_cb_attached(void)
 /**
   * @brief  CDC NCM detach callback
   */
-static void usbh_cdc_ncm_cb_detached(void)
+static void ncm_cb_detached(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "DETACH\n");
 
@@ -209,7 +209,7 @@ static void usbh_cdc_ncm_cb_detached(void)
 /**
   * @brief  CDC NCM setup callback
   */
-static void usbh_cdc_ncm_cb_setup(void)
+static void ncm_cb_setup(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "SETUP\n");
 }
@@ -219,23 +219,23 @@ static void usbh_cdc_ncm_cb_setup(void)
   * @param  buf: RX buffer
   * @param  length: RX data length (in bytes)
   */
-static void usbh_cdc_ncm_cb_received(u8 *buf, u32 length)
+static void ncm_cb_received(u8 *buf, u32 length)
 {
 	netif_adapter_usb_eth_recv(buf, length);
 }
 
-static void usbh_cdc_ncm_cb_process(usb_host_t *host, u8 msg)
+static void ncm_cb_process(usb_host_t *host, u8 msg)
 {
 	switch (msg) {
-	case USBH_MSG_USER_SET_CONFIG:
+	case USBH_EVENT_SELECT_CONFIG:
 		if (usbh_cdc_ncm_choose_config(host) != RTK_SUCCESS) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Choose config fail\n");
 		}
 		break;
-	case USBH_MSG_DISCONNECTED:
+	case USBH_EVENT_DISCONNECTED:
 		break;
 
-	case USBH_MSG_CONNECTED:
+	case USBH_EVENT_CONNECTED:
 		break;
 
 	default:
@@ -247,11 +247,11 @@ static void usbh_cdc_ncm_cb_process(usb_host_t *host, u8 msg)
   * @brief  Bring the USB host stack and the CDC NCM class up, the TX gate stays closed
   * @retval RTK_SUCCESS, or the init error with nothing left initialized
   */
-static int usbh_cdc_ncm_stack_init(void)
+static int ncm_stack_init(void)
 {
 	int ret = 0;
 
-	ret = usbh_init(&usbh_ncm_cfg, &usbh_ncm_usr_cb);
+	ret = usbh_init(&ncm_cfg, &ncm_usr_cb);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Init USBH fail\n");
 		return ret;
@@ -282,7 +282,7 @@ static int usbh_cdc_ncm_stack_init(void)
   * @note   Stack owner only: the hotplug thread, or start/stop once no worker can rebuild it
   * @retval None
   */
-static void usbh_cdc_ncm_stack_down(void)
+static void ncm_stack_down(void)
 {
 	/* Announce the teardown BEFORE contending for the lock, so a TX queued
 	 * behind it gives up instead of re-taking the lock between lwIP packets
@@ -309,9 +309,9 @@ static void usbh_cdc_ncm_stack_down(void)
   * @param  rebuild: 1 from the hotplug thread after its re-init, 0 from the link change thread
   * @retval 1 once configured, 0 if a stop came first
   */
-static u8 usbh_cdc_ncm_open_gate(u8 rebuild)
+static u8 ncm_open_gate(u8 rebuild)
 {
-	while (usbh_cdc_ncm_is_configured() == 0U) {
+	while (!usbh_cdc_ncm_is_ready()) {
 		if (cdc_ncm_app.quit != 0U) {
 			return 0U;
 		}
@@ -338,7 +338,7 @@ static u8 usbh_cdc_ncm_open_gate(u8 rebuild)
   * @param  dhcp_ran: 1 if DHCP ran on the netif and the default route may point to it
   * @retval None
   */
-static void usbh_ncm_net_down(u8 dhcp_ran)
+static void ncm_net_down(u8 dhcp_ran)
 {
 	if (dhcp_ran != 0U) {
 		lwip_dhcp_stop(NETIF_USB_ETH_INDEX);
@@ -357,7 +357,7 @@ static void usbh_ncm_net_down(u8 dhcp_ran)
   *         dhcp_start() is undone by it
   * @retval None
   */
-static void usbh_ncm_abort_dhcp(void)
+static void ncm_abort_dhcp(void)
 {
 	u32 waited = 0U;
 
@@ -373,7 +373,7 @@ static void usbh_ncm_abort_dhcp(void)
   * @note   Teardown owner only, quit already set
   * @retval RTK_SUCCESS, or -RTK_ERR_TIMEOUT if it did not leave in time
   */
-static int usbh_ncm_wait_link_exit(void)
+static int ncm_wait_link_exit(void)
 {
 	u32 waited = 0U;
 
@@ -393,18 +393,18 @@ static int usbh_ncm_wait_link_exit(void)
 	return RTK_SUCCESS;
 }
 
-static void usbh_ncm_link_change_thread(void *param)
+static void ncm_link_change_thread(void *param)
 {
 	u8 *mac;
 	u32 dhcp_status = 0;
-	u8 link_is_up = 0;
+	bool link_is_up = false;
 	u8 dhcp_ran = 0U;
 	eth_state_t ethernet_state = ETH_STATUS_IDLE;
 
 	UNUSED(param);
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Enter link status task\n");
 
-	usbh_cdc_ncm_open_gate(0U);
+	ncm_open_gate(0U);
 
 	while (cdc_ncm_app.quit == 0U) {
 		if (cdc_ncm_detach_pending) {
@@ -420,8 +420,8 @@ static void usbh_ncm_link_change_thread(void *param)
 
 		link_is_up = usbh_cdc_ncm_get_link_status();
 
-		if (1 == link_is_up && (ethernet_state < ETH_STATUS_INIT)) {	// unlink -> link
-			mac = (u8 *)usbh_cdc_ncm_get_mac_str();
+		if (link_is_up && (ethernet_state < ETH_STATUS_INIT)) {	// unlink -> link
+			mac = (u8 *)usbh_cdc_ncm_get_mac();
 			if (mac == NULL) {
 				rtos_time_delay_ms(1000);
 			} else {
@@ -434,7 +434,7 @@ static void usbh_ncm_link_change_thread(void *param)
 				RTK_LOGS(TAG, RTK_LOG_INFO, "MAC[%02x %02x %02x %02x %02x %02x]\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 				netifapi_netif_set_link_up(pnetif_usb_eth);
 
-				/* A stop meanwhile keeps stopping DHCP until this returns, see usbh_ncm_wait_link_exit() */
+				/* A stop meanwhile keeps stopping DHCP until this returns, see ncm_wait_link_exit() */
 				dhcp_ran = 1U;
 				cdc_ncm_dhcp_pending = 1U;
 				dhcp_status = lwip_request_ip(NETIF_USB_ETH_INDEX);
@@ -455,7 +455,7 @@ static void usbh_ncm_link_change_thread(void *param)
 					rtos_time_delay_ms(1000);
 				}
 			}
-		} else if (0 == link_is_up && (ethernet_state >= ETH_STATUS_INIT)) {	// link -> unlink
+		} else if (!link_is_up && (ethernet_state >= ETH_STATUS_INIT)) {	// link -> unlink
 			ethernet_state = ETH_STATUS_IDLE;
 			netifapi_netif_set_default(pnetif_sta);
 			/* Clear the link flag and the ARP entries of the gone USB interface */
@@ -467,7 +467,7 @@ static void usbh_ncm_link_change_thread(void *param)
 	}
 
 	/* Stop requested: take the netif down while the USB stack is still up, before the stop owner tears it down */
-	usbh_ncm_net_down(dhcp_ran);
+	ncm_net_down(dhcp_ran);
 	cdc_ncm_link_alive = 0U;
 	usb_app_ctx_leave(&cdc_ncm_app);
 	rtos_task_delete(NULL);
@@ -479,9 +479,9 @@ static void usbh_ncm_link_change_thread(void *param)
   * @param  count: Number of workers to join
   * @retval RTK_SUCCESS, or -RTK_ERR_TIMEOUT if one did not leave in time
   */
-static int usbh_ncm_join_workers(u32 count)
+static int ncm_join_workers(u32 count)
 {
-	if (usbh_ncm_wait_link_exit() != RTK_SUCCESS) {
+	if (ncm_wait_link_exit() != RTK_SUCCESS) {
 		return -RTK_ERR_TIMEOUT;
 	}
 
@@ -492,9 +492,9 @@ static int usbh_ncm_join_workers(u32 count)
   * @brief  Release what the app owns once every worker is gone, cdc_ncm_state_mutex is kept
   * @retval None
   */
-static void usbh_ncm_release(void)
+static void ncm_release(void)
 {
-	usbh_cdc_ncm_stack_down();
+	ncm_stack_down();
 	rtos_sema_delete(cdc_ncm_detach_sema);
 	cdc_ncm_detach_sema = NULL;
 	usb_app_ctx_end(&cdc_ncm_app);
@@ -502,7 +502,7 @@ static void usbh_ncm_release(void)
 }
 
 #if CONFIG_USBH_CDC_NCM_HOTPLUG
-static void usbh_ncm_hotplug_thread(void *param)
+static void ncm_hotplug_thread(void *param)
 {
 	u8 fatal = 0U;
 
@@ -531,8 +531,8 @@ static void usbh_ncm_hotplug_thread(void *param)
 
 		/* The device is gone: a DHCP round still running for it would hold the link change thread
 		   until it times out, minutes later. Bounded, a request outliving it ends on its own. */
-		usbh_ncm_abort_dhcp();
-		usbh_cdc_ncm_stack_down();
+		ncm_abort_dhcp();
+		ncm_stack_down();
 
 		rtos_time_delay_ms(10);
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Free heap: 0x%x\n", rtos_mem_get_free_heap_size());
@@ -545,12 +545,12 @@ static void usbh_ncm_hotplug_thread(void *param)
 		/* Re-run the full bring-up, including the wait for the device to be configured,
 		 * so the gate re-opens only once the class can carry traffic, as on the initial
 		 * bring-up. TX stays out meanwhile: the gate is closed and teardown is set. */
-		if (usbh_cdc_ncm_stack_init() != RTK_SUCCESS) {
+		if (ncm_stack_init() != RTK_SUCCESS) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Reinit fail\n");
 			fatal = 1U;
 			break;
 		}
-		if (usbh_cdc_ncm_open_gate(1U) == 0U) {
+		if (ncm_open_gate(1U) == 0U) {
 			/* Stop requested before the device came up: the stop owner tears the stack down */
 			break;
 		}
@@ -564,12 +564,12 @@ static void usbh_ncm_hotplug_thread(void *param)
 		if (usb_app_ctx_claim_stop(&cdc_ncm_app) != 0U) {
 			/* No stop is in flight: the link change thread, woken through quit, takes the
 			   netif down before it leaves, then this thread finishes the teardown */
-			if (usbh_ncm_join_workers(cdc_ncm_workers - 1U) != RTK_SUCCESS) {
+			if (ncm_join_workers(cdc_ncm_workers - 1U) != RTK_SUCCESS) {
 				/* A worker may still use the netif: keep everything, the app stays STOPPING */
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "Stop timeout\n");
 				rtos_task_delete(NULL);
 			}
-			usbh_ncm_release();
+			ncm_release();
 			rtos_task_delete(NULL);
 		}
 	}
@@ -585,7 +585,7 @@ static void usbh_ncm_hotplug_thread(void *param)
   * @brief  Bring the stack and the worker threads up
   * @retval RTK_SUCCESS, or the first error, with everything already created rolled back
   */
-static int usbh_ncm_start(void)
+static int ncm_start(void)
 {
 	int status;
 	u32 workers = 0U;
@@ -619,14 +619,14 @@ static int usbh_ncm_start(void)
 
 	rltk_usb_eth_init();
 
-	status = usbh_cdc_ncm_stack_init();
+	status = ncm_stack_init();
 	if (status != RTK_SUCCESS) {
 		goto exit_release;
 	}
 
 	/* Waits for the device to be configured, opens the TX gate, then runs DHCP */
 	cdc_ncm_link_alive = 1U;
-	status = rtos_task_create(&task, "usbh_ncm_link_change_thread", usbh_ncm_link_change_thread, NULL, 1024U * 2, 3U);
+	status = rtos_task_create(&task, "ncm_link_change_thread", ncm_link_change_thread, NULL, 1024U * 2, 3U);
 	if (status != RTK_SUCCESS) {
 		cdc_ncm_link_alive = 0U;
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create monitor_link thread fail\n");
@@ -638,7 +638,7 @@ static int usbh_ncm_start(void)
 	/* Created last: it owns the stack once running, so nothing after it can fail. Counted
 	   before it runs, its own fatal teardown joins the others through this. */
 	cdc_ncm_workers = workers + 1U;
-	status = rtos_task_create(&task, "usbh_ncm_hotplug_thread", usbh_ncm_hotplug_thread, NULL, 1536U,
+	status = rtos_task_create(&task, "ncm_hotplug_thread", ncm_hotplug_thread, NULL, 1536U,
 							  CONFIG_USBH_CDC_NCM_HOTPLUG_THREAD_PRIORITY);
 	if (status != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create hotplug check task fail\n");
@@ -654,12 +654,12 @@ static int usbh_ncm_start(void)
 exit_join:
 	/* Join the workers, the link change thread takes the netif down, before the stack goes away */
 	cdc_ncm_app.quit = 1U;
-	if (usbh_ncm_join_workers(workers) != RTK_SUCCESS) {
+	if (ncm_join_workers(workers) != RTK_SUCCESS) {
 		/* A worker may still use the stack or the netif: keep everything, the app stays not idle */
 		cdc_ncm_app.state = USB_APP_STATE_STOPPING;
 		return -RTK_ERR_TIMEOUT;
 	}
-	usbh_cdc_ncm_stack_down();
+	ncm_stack_down();
 
 exit_release:
 #ifndef USB_APP_AGGREGATE
@@ -677,7 +677,7 @@ exit_end:
 }
 
 /* Standalone entry thread: brings the demo up and leaves */
-static void usbh_ncm_init_thread(void *param)
+static void ncm_init_thread(void *param)
 {
 	UNUSED(param);
 
@@ -689,7 +689,7 @@ static void usbh_ncm_init_thread(void *param)
 	rtos_task_set_affinity(rtos_task_handle_get(), 0);
 #endif
 
-	if (usbh_ncm_start() != RTK_SUCCESS) {
+	if (ncm_start() != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Start fail\n");
 	}
 	rtos_task_delete(NULL);
@@ -731,7 +731,7 @@ int example_usbh_cdc_ncm_start(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "USBH CDC NCM demo start\n");
 
-	return usbh_ncm_start();
+	return ncm_start();
 }
 
 /**
@@ -752,14 +752,14 @@ int example_usbh_cdc_ncm_stop(void)
 #if CONFIG_USBH_CDC_NCM_HOTPLUG
 	rtos_sema_give(cdc_ncm_detach_sema);
 #endif
-	if (usbh_ncm_join_workers(cdc_ncm_workers) != RTK_SUCCESS) {
+	if (ncm_join_workers(cdc_ncm_workers) != RTK_SUCCESS) {
 		/* A worker is still on the stack or the netif: keep everything, the app stays STOPPING */
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Stop timeout\n");
 		return -RTK_ERR_TIMEOUT;
 	}
 
 	/* Every worker is gone: this caller is the only one left, apart from TX under the lock */
-	usbh_ncm_release();
+	ncm_release();
 
 	return RTK_SUCCESS;
 }
@@ -775,7 +775,7 @@ void example_usbh_cdc_ncm(void)
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "USBH CDC NCM demo start\n");
 
-	status = rtos_task_create(&task, "usbh_ncm_init_thread", usbh_ncm_init_thread, NULL, 1536U, 3U);
+	status = rtos_task_create(&task, "ncm_init_thread", ncm_init_thread, NULL, 1536U, 3U);
 	if (status != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Create init thread fail\n");
 	}

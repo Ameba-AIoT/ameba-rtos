@@ -5,9 +5,15 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from serial.tools.list_ports import comports
+import os
 import serial
 import struct
 import serial.tools.list_ports
+import sys
+try:
+    from .usb_cdc_port import UsbCdcSerial
+except ImportError:
+    UsbCdcSerial = None
 from datetime import datetime
 
 from .rom_handler import *
@@ -19,6 +25,7 @@ from .rt_settings import *
 from .spic_addr_mode import *
 from .memory_info import *
 from .config_utils import *
+from .boot_flash_type_config import *
 from .manifest_parser import build_rsip_meta, ENC_MODE_NONE as RSIP_ENC_MODE_NONE
 from typing import Optional, Dict, Any
 from pathlib import Path
@@ -57,6 +64,10 @@ CmdResetIntoDownloadMode = bytes("reboot uartburn\r\n", encoding="utf-8")
 # Boot guard burn: bytes at the NOR flash start address kept 0xFF until all other
 # data is written (the 8B FlashCalibPattern the ROM checks)
 HEADER_DEFER_LEN_NOR = 8
+
+# AutoFlashTypeDetect: SENSE timeout after the CONFIG request, the flashloader re-probes
+# the other flash type and restores the ROM one on failure (NAND busy timeout ~500ms each)
+AUTO_DETECT_FLASH_TYPE_TIMEOUT_IN_SECONDS = 3
 
 OtpSpicAddrModeAddr = 0x02
 OtpSpicAddrModeMask = 0x02
@@ -107,6 +118,7 @@ class Ameba(object):
         self.close_tcp_on_cleanup = close_tcp_on_cleanup
         self.cancel_event = cancel_event
         self.is_usb = self.is_realtek_usb() if not remote_server else False
+        self.usb_port_info = self.libusb_port_info() if self.is_usb else None
         self.initial_serial_port()
         self.baudrate = baudrate
         self.image_path = image_path
@@ -116,6 +128,18 @@ class Ameba(object):
         self.device_info = None
         self.erase_info = erase_info
         self.is_all_ram = True
+        # AutoFlashTypeDetect: enabled for download / erase sessions by enable_auto_flash_type_detect();
+        # flash_type_switched is set once the flash type is confirmed (first QUERY valid, or
+        # the flashloader switched to the other flash type), so that its boot select is programmed
+        self.auto_flash_type_detect_enabled = False
+        self.flash_type_switched = False
+        # set_boot_flash_type() also programmed the SPIC address mode, which needs a reset
+        self.addr_mode_programmed = False
+        # Logical OTP byte of the SPIC address mode as read (and verified) by set_boot_flash_type(),
+        # reused by get_spic_address_mode() instead of reading it again; None if not read
+        self.spic_addr_mode_otp_cfg = None
+        # All-FF partitions of a split merged image, erased but not programmed
+        self._empty_partitions = []
 
         self.rom_handler = RomHandler(self)
         self.floader_handler = FloaderHandler(self)
@@ -215,7 +239,14 @@ class Ameba(object):
                 self.serial_port.open()
             else:
                 # initialize local serial port
-                if self.is_usb:
+                if self.is_usb and self.usb_port_info is not None:
+                    self.serial_port = UsbCdcSerial(self.serial_port_name,
+                                                    vid=self.usb_port_info.vid,
+                                                    serial_number=self.usb_port_info.serial_number,
+                                                    location=self.usb_port_info.location,
+                                                    baudrate=self.profile_info.handshake_baudrate,
+                                                    timeout=self.setting.serial_initial_read_timeout_in_second)
+                elif self.is_usb:
                     self.serial_port = serial.Serial(self.serial_port_name,
                                                      baudrate=self.profile_info.handshake_baudrate,
                                                      parity=serial.PARITY_NONE,
@@ -254,11 +285,10 @@ class Ameba(object):
 
     # --- check if serial port is open (remote/local compatible) ---
     def is_open(self) -> bool:
-        if RemoteSerial and isinstance(self.serial_port, RemoteSerial):
-            return self.serial_port.is_open
-        elif isinstance(self.serial_port, serial.Serial):
-            return self.serial_port.is_open
-        return False
+        # RemoteSerial, serial.Serial and the macOS UsbCdcSerial all expose is_open
+        if self.serial_port is None:
+            return False
+        return bool(getattr(self.serial_port, "is_open", False))
 
     def switch_baudrate(self, baud, delay_s, force=False):
         ret = ErrType.OK
@@ -362,17 +392,36 @@ class Ameba(object):
         bytes_array = string.encode("utf-8")
         self.serial_port.write(bytes_array)
 
+    @staticmethod
+    def _normalize_port_name(name):
+        """Port name as listed by comports(): macOS lists only the callout node /dev/cu.X,
+        so /dev/tty.X (and symlinks to either) name the same port."""
+        name = os.path.realpath(name) if name.startswith('/') else name
+        if sys.platform == 'darwin' and name.startswith('/dev/tty.'):
+            name = '/dev/cu.' + name[len('/dev/tty.'):]
+        return name
+
     def is_realtek_usb(self):
         if self.remote_server:
             return False
-        ports = serial.tools.list_ports.comports()
-        for port, desc, hvid in sorted(ports):
-            if port == self.serial_port_name:
-                # hvid: USB VID:PID=0BDA:8722 SER=5 LOCATION=1-1
-                if _RTK_USB_VID in hvid:
-                    return True
-        else:
-            return False
+        target = self._normalize_port_name(self.serial_port_name)
+        for info in serial.tools.list_ports.comports():
+            if self._normalize_port_name(info.device) == target:
+                # hwid: USB VID:PID=0BDA:8722 SER=5 LOCATION=1-1
+                return (info.vid == int(_RTK_USB_VID, 16)) or (_RTK_USB_VID in (info.hwid or ''))
+        self.logger.debug(f"{self.serial_port_name} not found by comports(), handled as UART")
+        return False
+
+    def libusb_port_info(self):
+        # macOS only: its CDC-ACM driver splits each write into <=384-byte USB transfers, which the
+        # ROM USB download handler rejects, so talk to the port through libusb instead
+        if sys.platform != "darwin" or UsbCdcSerial is None:
+            return None
+        target = self._normalize_port_name(self.serial_port_name)
+        for info in serial.tools.list_ports.comports():
+            if self._normalize_port_name(info.device) == target:
+                return info
+        return None
 
     def check_download_mode(self):
         ret = ErrType.SYS_IO
@@ -459,7 +508,7 @@ class Ameba(object):
         if self.device_info.is_boot_from_nand():
             self.logger.info(f'* MemoryType: NAND')
             self.logger.info(f'* FlashMID: 0x{format(self.device_info.flash_mid, "02X")}')  # customized, do not modify
-            if self.device_info.flash_mid == FlashUtils.NandMfgMicron:
+            if self.device_info.flash_mid == FlashUtils.NandMfgMicron.value:
                 self.logger.info(f'* FlashDID: 0x{format(self.device_info.flash_did & 0xFF, "02x")}{format((self.device_info.flash_did >> 8) & 0xFF, "02x")}')
             else:
                 self.logger.info(f'* FlashDID: 0x{format(self.device_info.flash_did, "02X")}')
@@ -574,6 +623,16 @@ class Ameba(object):
             self.logger.error(f"Query fail: {ret}")
             return ret
 
+        ret = self.auto_detect_flash_type()
+        if ret != ErrType.OK:
+            return ret
+
+        # Boot select OTP only: the flashloader already runs on the detected flash type,
+        # so no reset is needed (a 4-byte address mode change resets the device later)
+        ret = self.set_boot_flash_type()
+        if ret != ErrType.OK:
+            return ret
+
         if not show_device_info:
             return ret
 
@@ -581,19 +640,22 @@ class Ameba(object):
 
         return ret
 
+    def flash_lock_register(self):
+        """Return (read cmd, write cmd, address, BP mask) of the flash block protection register"""
+        if self.device_info.is_boot_from_nand():
+            bp_mask = FlashUtils.NandRegProtectionBpMask.value
+            if self.device_info.flash_mid in (FlashUtils.NandMfgWinbond.value, FlashUtils.NandMfgMicron.value):
+                bp_mask = FlashUtils.NandRegProtectionBpMaskWinbondMicron.value
+            return (FlashUtils.NandCmdGetFeatures.value, FlashUtils.NandCmdSetFeatures.value,
+                    FlashUtils.NandRegProtection.value, bp_mask)
+
+        return (FlashUtils.NorCmdReadStatusReg1.value, FlashUtils.NorCmdWriteStatusReg1.value,
+                0, FlashUtils.NorStatusReg1BpMask.value)
+
     def check_flash_lock(self, flash_status):
         ret = ErrType.OK
 
-        if self.device_info.is_boot_from_nand():
-            cmd = FlashUtils.NandCmdGetFeatures.value
-            address = FlashUtils.NandRegProtection.value
-            bp_mask = FlashUtils.NandRegProtectionBpMask.value
-            if self.device_info.flash_mid == FlashUtils.NandMfgWinbond or self.device_info.flash_mid == FlashUtils.NandMfgMicron:
-                bp_mask = FlashUtils.NandRegProtectionBpMaskWinbondMicron
-        else:
-            cmd = FlashUtils.NorCmdReadStatusReg1.value
-            address = 0
-            bp_mask = FlashUtils.NorStatusReg1BpMask.value
+        cmd, _, address, bp_mask = self.flash_lock_register()
 
         ret, protection = self.read_flash_status_register(cmd, address)
         flash_status.protection = protection
@@ -604,46 +666,20 @@ class Ameba(object):
         return ret
 
     def check_and_process_flash_lock(self, flash_status):
-        follow_up_action = self.setting.flash_protection_process
-
+        """Remove the flash block protection if any, restore_flash_lock() writes it back
+        after the erase/program"""
         ret = self.check_flash_lock(flash_status)
         if ret != ErrType.OK:
             self.logger.error(f"Flash protection check fail: {ret}")
 
         if flash_status.is_locked:
-            self.logger.warning("Flash block protection detected")
-
-            if follow_up_action == RtSettings.FLASH_PROTECTION_PROCESS_PROMPT:
-                self.logger.info(f"Follow-up Actions:")
-                self.logger.info(f"1: Try operation with block protected(may fail)")
-                self.logger.info(f"2: Remove the protection and restore the protection after operation")
-                self.logger.info(f"3: Abort the operation")
-                for _ in range(3):
-                    try:
-                        follow_up_action = int(input("Please Input the selected action index: ").strip())
-                    except Exception as err:
-                        self.logger.error(f"Input is invalid: {err}")
-                        continue
-
-                    if RtSettings.FLASH_PROTECTION_PROCESS_PROMPT < follow_up_action <= RtSettings.FLASH_PROTECTION_PROCESS_ABORT:
-                        break
-                    self.logger.info(f"{follow_up_action} is invalid")
-                else:
-                    return ErrType.SYS_PARAMETER
-
-            if follow_up_action == RtSettings.FLASH_PROTECTION_PROCESS_UNLOCK:
-                flash_status.need_unlock = True
-                self.logger.info("Remove the flash block protection...")
-                ret = self.unlock_flash()
-                if ret != ErrType.OK:
-                    self.logger.error(f"Fail to remove the flash lock protection: {ret}")
-                    return ret
-            elif follow_up_action == RtSettings.FLASH_PROTECTION_PROCESS_ABORT:
-                self.logger.warning(f"Operation aborted for block protection")
-                return ErrType.SYS_CANCEL
-            else:
-                self.logger.warning(f"Trying to operate with block protection")
-                return ErrType.SYS_PARAMETER
+            # Set before unlocking: a partly applied unlock must still be restored
+            flash_status.need_unlock = True
+            self.logger.debug(f"Remove the flash block protection: {hex(flash_status.protection)}")
+            ret = self.unlock_flash()
+            if ret != ErrType.OK:
+                self.logger.error(f"Fail to remove the flash lock protection: {ret}")
+                return ret
 
         return ret
 
@@ -651,15 +687,35 @@ class Ameba(object):
         return self.lock_flash(0)
 
     def lock_flash(self, protection):
-        if self.device_info.is_boot_from_nand():
-            cmd = FlashUtils.NandCmdSetFeatures.value
-            address = FlashUtils.NandRegProtection.value
-        else:
-            cmd = FlashUtils.NorCmdWriteStatusReg1.value
-            address = 0
+        rd_cmd, wr_cmd, address, bp_mask = self.flash_lock_register()
 
-        ret = self.write_flash_status_register(cmd, address, protection)
+        ret = self.write_flash_status_register(wr_cmd, address, protection)
+        if ret != ErrType.OK:
+            return ret
 
+        # The flash ignores the write silently while its status register is protected
+        # (e.g. SRP with WP# low), and the flashloader reports success anyway: read back
+        ret, status = self.read_flash_status_register(rd_cmd, address)
+        if ret != ErrType.OK:
+            return ret
+        if (status & bp_mask) != (protection & bp_mask):
+            self.logger.error(f"Flash block protection verify fail: write {hex(protection)}, read back {hex(status)}")
+            return ErrType.SYS_CHECKSUM
+
+        return ret
+
+    def restore_flash_lock(self, flash_status):
+        """Restore the block protection removed by check_and_process_flash_lock(), whether
+        the operation in between passed or not. Only once, as it may be called again
+        on the way out."""
+        if not flash_status.need_unlock:
+            return ErrType.OK
+        flash_status.need_unlock = False
+
+        self.logger.debug(f"Restore the flash block protection: {hex(flash_status.protection)}")
+        ret = self.lock_flash(flash_status.protection)
+        if ret != ErrType.OK:
+            self.logger.error(f"Fail to restore the flash block protection: {ret}")
         return ret
 
     def read_flash_status_register(self, cmd, address):
@@ -862,9 +918,19 @@ class Ameba(object):
 
         return ret
 
+    def enable_auto_flash_type_detect(self):
+        # Only a download or erase session on flash (NOR/NAND) may switch the flash type and
+        # program its boot select OTP: a RAM download does not need it, and the OTP write is
+        # permanent. The setting is ignored on ICs that do not support it: plain flow.
+        self.auto_flash_type_detect_enabled = bool(self.setting.auto_flash_type_detect) and \
+            (self.memory_type in (MemoryInfo.MEMORY_TYPE_NOR, MemoryInfo.MEMORY_TYPE_NAND)) and \
+            self.is_auto_flash_type_detect_supported(self.profile_info)
+
     def check_protocol_for_download(self):
         ret = True
         has_nand = False
+
+        self.enable_auto_flash_type_detect()
 
         for image_info in self.profile_info.images:
             if (image_info.memory_type == MemoryInfo.MEMORY_TYPE_NAND):
@@ -965,6 +1031,8 @@ class Ameba(object):
         max_addr = self.profile_info.flash_start_address + self.device_info.flash_capacity
         image_dowload_list = self.download_img_info if self.download_img_info else self.profile_info.images
         for image_info in image_dowload_list:
+            if not image_info.mandatory:
+                continue
             is_ram = self.profile_info.is_ram_address(image_info.start_address)
             if not is_ram:
                 if (image_info.start_address > max_addr) or (image_info.end_address > max_addr):
@@ -1091,6 +1159,31 @@ class Ameba(object):
         chksum = chksum & 0xffffffff
         return chksum
 
+    def _erase_empty_partitions(self):
+        """Erase the all-FF partitions of a split merged image, which are not programmed"""
+        ret = ErrType.OK
+        for start, end in self._empty_partitions:
+            if self.is_cancelled():
+                return ErrType.SYS_CANCEL
+            self.logger.info(f"Erase empty partition 0x{start:08X}-0x{end:08X}")
+            if self.memory_type == MemoryInfo.MEMORY_TYPE_NAND:
+                ret = self.floader_handler.erase_flash(MemoryInfo.MEMORY_TYPE_NAND, start, end, end - start,
+                                                       nand_erase_timeout_in_second(end - start,
+                                                                                    self.device_info.flash_block_size()),
+                                                       sense=True)
+                # Bad blocks are skipped and the following blocks are still erased
+                if ret in (ErrType.DEV_NAND_BAD_BLOCK, ErrType.DEV_NAND_WORN_BLOCK):
+                    ret = ErrType.OK
+            else:
+                ret = self.floader_handler.erase_flash(MemoryInfo.MEMORY_TYPE_NOR, start, end, end - start,
+                                                       nor_erase_timeout_in_second(
+                                                           divide_then_round_up(end - start, 1024)),
+                                                       sense=True)
+            if ret != ErrType.OK:
+                self.logger.error(f"Erase empty partition 0x{start:08X}-0x{end:08X} fail: {ret}")
+                break
+        return ret
+
     def _erase_flash_chip_nand(self):
         block_size = self.device_info.flash_block_size()
         total_capacity = self.device_info.flash_capacity
@@ -1126,11 +1219,15 @@ class Ameba(object):
         self.logger.info(f"Chip erase start")  # customized, do not modify
         if self.memory_type == MemoryInfo.MEMORY_TYPE_NAND:
             ret = self._erase_flash_chip_nand()
-        else:
+        elif self.memory_type == MemoryInfo.MEMORY_TYPE_NOR:
             ret = self.floader_handler.erase_flash(MemoryInfo.MEMORY_TYPE_NOR, RtkDeviceProfile.DEFAULT_FLASH_START_ADDR,
                                                    0, 0xFFFFFFFF,
                                                    nor_erase_timeout_in_second(0xFFFFFFFF),
                                                    sense=True, force=False)
+        else:
+            # Chip erase is defined for flash only: do not erase the NOR chip for e.g. RAM
+            self.logger.error(f"Chip erase is not supported for memory type {self.memory_type}")
+            ret = ErrType.SYS_PARAMETER
         self.logger.info(f"Chip erase end")
         return ret
 
@@ -1147,6 +1244,7 @@ class Ameba(object):
 
         # Split a merged single image into per-partition segments so the all-FF
         # padding between/after partitions is skipped instead of being programmed.
+        self._empty_partitions = []
         self.expand_merged_image()
 
         # Collect (image_info, path, from_download_img_info) before any flash access so
@@ -1154,6 +1252,10 @@ class Ameba(object):
         planned = []
         if self.download_img_info:
             for image_info in self.download_img_info:
+                # Not selected for download, as verify_images() skips it too
+                if not image_info.mandatory:
+                    self.logger.debug(f"Skip {image_info.image_name}: not mandatory")
+                    continue
                 img_path = image_info.image_name
                 image_info.image_name = os.path.basename(img_path)
                 planned.append((image_info, img_path, True))
@@ -1188,6 +1290,11 @@ class Ameba(object):
             ret = self.erase_flash_chip()
             if ret != ErrType.OK:
                 self.logger.error(f"Chip erase fail")
+                return ret
+        elif self._empty_partitions:
+            # Already erased by the chip erase otherwise
+            ret = self._erase_empty_partitions()
+            if ret != ErrType.OK:
                 return ret
 
         # Cache image1's RSIP params so image3 (which inherits from image1 and has
@@ -1478,6 +1585,7 @@ class Ameba(object):
 
         base = merged.start_address
         segments = []
+        empty_partitions = []
 
         for part in self.profile_info.images:
             if not part.mandatory:
@@ -1501,8 +1609,11 @@ class Ameba(object):
 
             valid_length = self._compute_segment_valid_length(image_path, offset, seg_len)
             if valid_length <= 0:
+                # Nothing to program, but erase it so that no old data (e.g. an old OTA image)
+                # is left in a partition that is empty in the merged image
                 self.logger.debug(
-                    f"Skip empty (all-FF) partition 0x{seg_start:08X}-0x{part.end_address:08X}")
+                    f"Empty (all-FF) partition 0x{seg_start:08X}-0x{part.end_address:08X}, erase only")
+                empty_partitions.append((seg_start, part.end_address))
                 continue
 
             seg = ImageInfo()
@@ -1532,6 +1643,7 @@ class Ameba(object):
                     f"program {seg.valid_length}B of {seg.end_address - seg.start_address}B "
                     f"(file offset 0x{seg.file_offset:X})")
             self.download_img_info = segments
+            self._empty_partitions = empty_partitions
         else:
             # The image does not line up with any layout partition (e.g. a custom
             # start address). Keep it as a single image but still trim its trailing
@@ -1757,6 +1869,13 @@ class Ameba(object):
                 while read_len > 0:
                     if self.is_cancelled():
                         ret = ErrType.SYS_CANCEL
+                        break
+                    # Never program past the partition end: an image larger than its partition
+                    # would overwrite the next one (NAND checks it the same way). The last page
+                    # may pass end_address, as the data is padded to a page (end = start + file size)
+                    if (not is_ram) and (addr >= image_info.end_address):
+                        self.logger.error(f"Overrange target={hex(addr)}, end={hex(image_info.end_address)}")
+                        ret = ErrType.SYS_OVERRANGE
                         break
                     if write_pages == 0:
                         if (addr % (64 * FlashUtils.NorDefaultPageSize.value)) == 0 and \
@@ -2070,6 +2189,20 @@ class Ameba(object):
                 if ret == ErrType.OK:
                     self.logger.info(f"Erase nor done")
         elif self.erase_info.memory_type == MemoryInfo.MEMORY_TYPE_RAM:
+            # FS_ERASE RAM only does memset when CONFIG byte0 bit4 is set, with the value of CONFIG byte2
+            memset_en = (self.setting.program_config1 & CONFIG_RAM_MEMSET_EN) != 0
+            memset_value = (self.setting.program_config1 >> CONFIG_RAM_MEMSET_VALUE_SHIFT) & CONFIG_RAM_MEMSET_VALUE_MASK
+            if not memset_en:
+                # The device would do nothing for FS_ERASE RAM, so do not send it
+                if memset_value == 0:
+                    self.logger.warning("RAM memset is not enabled (ProgramConfig1 bit4) and no memset value is set "
+                                        "(ProgramConfig1 bits 23~16), skip the RAM erase")
+                else:
+                    self.logger.warning(f"RAM memset value 0x{memset_value:02X} is set but RAM memset is not enabled "
+                                        f"(ProgramConfig1 bit4), skip the RAM erase")
+                return ErrType.OK
+            self.logger.info(f"Erase ram {hex(self.erase_info.start_address)}-{hex(self.erase_info.end_address)} "
+                             f"with memset value 0x{memset_value:02X}")
             # memset 16MB ram, cost time: 0.01s
             ret = self.floader_handler.erase_flash(self.erase_info.memory_type,
                                                    self.erase_info.start_address,
@@ -2085,22 +2218,35 @@ class Ameba(object):
 
         return ret
 
+    def read_logical_otp_byte(self, address):
+        """Read one logical-OTP byte, instead of the whole LogicalEfuseLen map.
+        The floader passes addr/len straight to OTP_LogicalRead(), which takes
+        any byte address and length."""
+        ret, buf = self.floader_handler.otp_read_logical_map(address, 1)
+        if ret != ErrType.OK:
+            self.logger.error(f"Fail to read eFuse: {ret}")
+            return ret, None
+        if len(buf) != 1:
+            self.logger.error(f"Fail to read eFuse[{hex(address)}]: got {len(buf)} bytes, expect 1")
+            return ErrType.SYS_PROTO, None
+
+        return ret, buf[0]
+
     def set_spic_address_mode(self, mode):
         ret = ErrType.OK
         is_amebad = self.profile_info.is_amebad()
         otp_spic_addr_mode_addr = OtpSpicAddrModeAddrForAmebaD if is_amebad else OtpSpicAddrModeAddr
-        otp_spic_addr_mode_mask = OtpSpicAddrModeMask if is_amebad else OtpSpicAddrModeMask
+        otp_spic_addr_mode_mask = OtpSpicAddrModeMaskForAmebaD if is_amebad else OtpSpicAddrModeMask
         otp_spic_addr_mode_pos = OtpSpicAddrModePosForAmebaD if is_amebad else OtpSpicAddrModePos
+        otp_spic_addr_mode_4byte = OtpSpicAddrMode4ByteForAmebaD if is_amebad else OtpSpicAddrMode4Byte
 
         if self.device_info.is_boot_from_nand():
             return ret
 
-        ret, buf = self.floader_handler.otp_read_logical_map(0, self.profile_info.logical_efuse_len)
+        ret, cfg = self.read_logical_otp_byte(otp_spic_addr_mode_addr)
         if ret != ErrType.OK:
-            self.logger.error(f"Fail to read eFuse: {ret}")
-            return
+            return ret
 
-        cfg = buf[otp_spic_addr_mode_addr]
         if cfg != 0xFF:
             if ((cfg & otp_spic_addr_mode_mask) >> otp_spic_addr_mode_pos) == mode:
                 self.logger.info(f"No need to change supported flash size")
@@ -2110,29 +2256,24 @@ class Ameba(object):
             cfg |= ((mode << otp_spic_addr_mode_pos) & otp_spic_addr_mode_mask)
         else:
             if mode == SpicAddrMode.FOUR_BYTE_MODE.value:
-                cfg = OtpSpicAddrMode4Byte
+                cfg = otp_spic_addr_mode_4byte
             else:
                 self.logger.info(f"No need to change default supported flash size")
                 return ErrType.OK
 
-        # buf[otp_spic_addr_mode_addr] = cfg
-        buf_array = bytearray(buf)
-        buf_array[otp_spic_addr_mode_addr] = cfg
-        buf = bytes(buf_array)
         self.logger.info(f"Program eFuse to change supported flash size {'>' if (mode == SpicAddrMode.FOUR_BYTE_MODE.value) else '<='}16MB")
 
-        ret = self.floader_handler.otp_write_logical_map(otp_spic_addr_mode_addr, 1, buf)
+        # Write only the target byte: OTP_LogicalWrite() programs just the bytes
+        # that change, so one byte costs one 4B Type1 entry of physical OTP
+        ret = self.floader_handler.otp_write_logical_map(otp_spic_addr_mode_addr, 1, bytes([cfg & 0xFF]))
         if ret != ErrType.OK:
             self.logger.error(f"Fail to program eFuse[{otp_spic_addr_mode_addr}]: {ret}")
             return ret
-        time.sleep(0.01)
 
-        ret, buf = self.floader_handler.otp_read_logical_map(0, self.profile_info.logical_efuse_len)
+        ret, cfg = self.read_logical_otp_byte(otp_spic_addr_mode_addr)
         if ret != ErrType.OK:
-            self.logger.error(f"Fail to read eFuse: {ret}")
             return ret
 
-        cfg = buf[otp_spic_addr_mode_addr]
         if ((cfg & otp_spic_addr_mode_mask) >> otp_spic_addr_mode_pos) == mode:
             self.logger.info(f"Program eFuse done")
             return ErrType.OK
@@ -2145,19 +2286,24 @@ class Ameba(object):
         ret = ErrType.OK
         is_amebad = self.profile_info.is_amebad()
         otp_spic_addr_mode_addr = OtpSpicAddrModeAddrForAmebaD if is_amebad else OtpSpicAddrModeAddr
-        otp_spic_addr_mode_mask = OtpSpicAddrModeMask if is_amebad else OtpSpicAddrModeMask
+        otp_spic_addr_mode_mask = OtpSpicAddrModeMaskForAmebaD if is_amebad else OtpSpicAddrModeMask
         otp_spic_addr_mode_4byte = OtpSpicAddrMode4ByteForAmebaD if is_amebad else OtpSpicAddrMode4Byte
         mode = SpicAddrMode.THREE_BYTE_MODE.value
 
         if self.device_info.is_boot_from_nand():
             return ret, mode
 
-        ret, buf = self.floader_handler.otp_read_logical_map(0, self.profile_info.logical_efuse_len)
-        if ret != ErrType.OK:
-            self.logger.error(f"Fail to read eFuse: {ret}")
-            return ret, mode
+        if self.spic_addr_mode_otp_cfg is not None:
+            # AutoFlashTypeDetect: set_boot_flash_type() in prepare() already read and
+            # verified this byte, no need to read it again. Use it once, as it gets stale
+            # if the byte is programmed afterwards.
+            cfg = self.spic_addr_mode_otp_cfg
+            self.spic_addr_mode_otp_cfg = None
+        else:
+            ret, cfg = self.read_logical_otp_byte(otp_spic_addr_mode_addr)
+            if ret != ErrType.OK:
+                return ret, mode
 
-        cfg = buf[otp_spic_addr_mode_addr]
         if cfg != 0xFF:
             if (cfg & otp_spic_addr_mode_mask) == otp_spic_addr_mode_4byte:
                 mode = SpicAddrMode.FOUR_BYTE_MODE.value
@@ -2168,6 +2314,204 @@ class Ameba(object):
             self.logger.info(f"Current supported flash size <=16MB as default")
 
         return ret, mode
+
+    @staticmethod
+    def is_auto_flash_type_detect_supported(profile_info):
+        """Only ICs with a boot flash type OTP config (boot_flash_type_config.py) support
+        AutoFlashTypeDetect; on other ICs the setting is ignored."""
+        return get_boot_flash_type_otp_config(profile_info.device_id) is not None
+
+    # Plausible NOR JEDEC capacity code: log2(bytes) from 64KB up to the Micron/ISSI codes
+    # 0x20..0x22 (512Mb..2Gb), mirrors flash_dev_check_valid() in the flashloader
+    NOR_CAPACITY_EXP_MIN = 0x10
+    NOR_CAPACITY_EXP_MAX = 0x22
+
+    @staticmethod
+    def _memory_type_name(memory_type):
+        return "NAND" if memory_type == MemoryInfo.MEMORY_TYPE_NAND else "NOR"
+
+    def check_flash_info(self, device_info):
+        """Check whether the flash info returned by QUERY is complete and plausible for
+        its memory type. Return (ok, reason)."""
+        mid = device_info.flash_mid if device_info.flash_mid is not None else 0
+        did = (device_info.flash_did or 0) & 0xFF
+        # A failed flash init is reported with all-zero flash info, i.e. ID 0x0000
+        if (mid, did) in ((0x00, 0x00), (0xFF, 0xFF)):
+            return False, f"no flash answers (ID 0x{mid:02X}{did:02X})"
+
+        if device_info.is_boot_from_nand():
+            if (device_info.flash_page_size not in (2048, 4096)) or (device_info.flash_pages_per_block == 0) or \
+                    (device_info.flash_blocks_per_lun == 0) or (device_info.flash_capacity == 0):
+                return False, (f"invalid NAND geometry: page {device_info.flash_page_size}B, "
+                               f"{device_info.flash_pages_per_block} pages/block, "
+                               f"{device_info.flash_blocks_per_lun} blocks/lun")
+        else:
+            capacity_exp = ((device_info.flash_did or 0) >> 8) & 0xFF
+            if mid in (0x00, 0xFF):
+                # A SPI NAND answers the NOR RDID only after a dummy byte: MID is the undriven bus
+                return False, f"invalid NOR MID 0x{mid:02X} (ID 0x{mid:02X}{did:02X}{capacity_exp:02X})"
+            if not (self.NOR_CAPACITY_EXP_MIN <= capacity_exp <= self.NOR_CAPACITY_EXP_MAX):
+                return False, f"invalid NOR capacity code 0x{capacity_exp:02X} (ID 0x{mid:02X}{did:02X}{capacity_exp:02X})"
+
+        return True, ""
+
+    def analyze_flash_info_fail(self, reason):
+        """Tell apart a wrong flash type from a flash interface problem."""
+        self.logger.warning(f"Flash info invalid: {reason}")
+        self.logger.warning(f"Possible causes: the boot select (OTP/trap pin) selects the wrong flash type, "
+                            f"or the flash interface is abnormal (pinmux, soldering, power, SPI signal)")
+
+    def auto_detect_flash_type(self):
+        """AutoFlashTypeDetect: when the first QUERY does not return valid flash info,
+        ask the flashloader to re-initialize SPIC with the other flash type and QUERY
+        again. Sets self.flash_type_switched once the flash type is confirmed, so that its
+        boot select is programmed even if the first QUERY was already valid."""
+        self.flash_type_switched = False
+        # Disabled, not a download / erase session, or an IC without a boot select OTP config:
+        # never send CONFIG / a second QUERY
+        if not (self.auto_flash_type_detect_enabled and self.is_auto_flash_type_detect_supported(self.profile_info)):
+            return ErrType.OK
+
+        ok, reason = self.check_flash_info(self.device_info)
+        if ok:
+            self.logger.info(f"Flash type {self._memory_type_name(self.device_info.memory_type)} detected, "
+                             f"no need to switch")
+            return self._confirm_flash_type(self.device_info)
+
+        self.analyze_flash_info_fail(reason)
+        if not self.device_info.supports_auto_flash_type_detect():
+            self.logger.error(f"Flashloader CmdSetVersion {(self.device_info.cmd_set_version >> 8) & 0xFF}."
+                              f"{self.device_info.cmd_set_version & 0xFF} does not support auto detect flash type, "
+                              f"need >= 2.2")
+            return ErrType.SYS_PROTO
+
+        self.logger.info("Auto detect flash type...")
+        program_param1 = self.setting.program_config1.to_bytes(8, byteorder="little")
+        program_param2 = self.setting.program_config2.to_bytes(8, byteorder="little")
+        ret = self.floader_handler.config([program_param1, program_param2], auto_detect_flash_type=True)
+        if ret != ErrType.OK:
+            self.logger.error(f"Auto detect flash type request fail: {ret}")
+            return ret
+
+        # The flashloader re-probes the flash after the CONFIG ACK; a missing NAND costs
+        # up to its busy timeout before SENSE is answered
+        ret, _ = self.floader_handler.sense(AUTO_DETECT_FLASH_TYPE_TIMEOUT_IN_SECONDS)
+        if ret != ErrType.OK:
+            self.logger.error(f"Auto detect flash type fail: {ret}")
+            return ret
+
+        ret, device_info = self.floader_handler.query()
+        if ret != ErrType.OK:
+            self.logger.error(f"Query after auto detect flash type fail: {ret}")
+            return ret
+        self.device_info = device_info
+
+        # The flashloader keeps the other flash type only if it is valid, otherwise it restores
+        # the ROM one, which already failed the check above
+        ok, reason = self.check_flash_info(device_info)
+        if not ok:
+            self.logger.error(f"Auto detect flash type fail: no valid flash on either flash type: {reason}")
+            self.logger.error("The flash interface may be abnormal (pinmux, soldering, power, SPI signal)")
+            return ErrType.SYS_IO
+
+        self.logger.info(f"Auto detect flash type: switched to {self._memory_type_name(device_info.memory_type)}")
+        return self._confirm_flash_type(device_info)
+
+    def _confirm_flash_type(self, device_info):
+        """Accept the detected flash type for boot select programming. Its boot select OTP
+        is programmed next, never for a flash type the download cannot use."""
+        if device_info.memory_type != self.profile_info.memory_type:
+            self.logger.error(f"Detected flash type {self._memory_type_name(device_info.memory_type)} does not match "
+                              f"the device profile flash type {self._memory_type_name(self.profile_info.memory_type)}, "
+                              f"select the right device profile")
+            return ErrType.SYS_PARAMETER
+
+        self.flash_type_switched = True
+        return ErrType.OK
+
+    def set_boot_flash_type(self):
+        """Program the flash type confirmed by auto detect into the boot select field of
+        logical OTP (see boot_flash_type_config.py), so the ROM boots from it instead of
+        the trap pin, also when the first QUERY was already valid."""
+        self.spic_addr_mode_otp_cfg = None
+        if not self.flash_type_switched:
+            return ErrType.OK
+
+        # The OTP field layout is per chip: verify the real chip before writing, since the
+        # device ID check of show_device_info() only runs after prepare(). Unlike there, an
+        # unknown device ID (0xFFFF) blocks the write, as OTP programming is permanent.
+        if self.device_info.did != self.profile_info.device_id:
+            self.logger.error(f"Device ID mismatch, do not program boot flash type OTP: "
+                              f"device {hex(self.device_info.did)}, device profile {hex(self.profile_info.device_id)}")
+            return ErrType.SYS_PARAMETER
+
+        otp_cfg = get_boot_flash_type_otp_config(self.device_info.did)
+        if otp_cfg is None:
+            self.logger.error(f"No boot flash type OTP config for {hex(self.device_info.did)}")
+            return ErrType.SYS_PARAMETER
+
+        flash_type = self.device_info.memory_type
+        if flash_type not in otp_cfg.values:
+            self.logger.error(f"Unsupported detected flash type {flash_type} for boot flash type OTP")
+            return ErrType.SYS_PARAMETER
+
+        flash_type_name = self._memory_type_name(flash_type)
+        value = otp_cfg.values[flash_type]
+
+        ret, cfg = self.read_logical_otp_byte(otp_cfg.address)
+        if ret != ErrType.OK:
+            return ret
+        # The byte also holds the SPIC address mode: check_supported_flash_size() reuses it
+        shares_addr_mode = (otp_cfg.address == OtpSpicAddrModeAddr)
+        if shares_addr_mode:
+            self.spic_addr_mode_otp_cfg = cfg
+
+        # Unprogrammed byte: like set_spic_address_mode(), the other fields of the
+        # byte take their default value 0
+        unprogrammed = (cfg == 0xFF)
+        base_cfg = 0x00 if unprogrammed else cfg
+        cfg = (base_cfg & ~otp_cfg.mask & 0xFF) | (value << otp_cfg.pos)
+
+        # The SPIC address mode shares this byte: program it in the same write, so that
+        # check_supported_flash_size() does not need a second write. Only the auto program
+        # case; with AutoProgramSpicAddrMode4Byte off, a mismatch is still reported there.
+        addr_mode_mask = 0
+        if (flash_type == MemoryInfo.MEMORY_TYPE_NOR) and shares_addr_mode and \
+                (self.setting.auto_program_spic_addr_mode_4byte != 0):
+            addr_mode_mask = OtpSpicAddrModeMask
+            four_byte = (self.device_info.flash_capacity // 1024 // 1024) > 16
+            cfg = (cfg & ~addr_mode_mask & 0xFF) | (OtpSpicAddrMode4Byte if four_byte else OtpSpicAddrMode3Byte)
+
+        if (not unprogrammed) and (cfg == base_cfg):
+            self.logger.info(f"No need to change boot flash type, already boot from {flash_type_name}")
+            return ErrType.OK
+
+        # A changed address mode only takes effect after a reset
+        self.addr_mode_programmed = (cfg & addr_mode_mask) != (base_cfg & addr_mode_mask)
+        self.logger.info(f"Program eFuse[{hex(otp_cfg.address)}] = {hex(cfg)} to boot from {flash_type_name}"
+                         f"{' and set the SPIC address mode' if self.addr_mode_programmed else ''}")
+
+        expected = cfg
+        ret = self.floader_handler.otp_write_logical_map(otp_cfg.address, 1, bytes([cfg]))
+        if ret != ErrType.OK:
+            self.logger.error(f"Fail to program eFuse[{hex(otp_cfg.address)}]: {ret}")
+            return ret
+
+        self.spic_addr_mode_otp_cfg = None
+        ret, cfg = self.read_logical_otp_byte(otp_cfg.address)
+        if ret != ErrType.OK:
+            return ret
+
+        verify_mask = otp_cfg.mask | addr_mode_mask
+        if (cfg & verify_mask) == (expected & verify_mask):
+            if shares_addr_mode:
+                self.spic_addr_mode_otp_cfg = cfg
+            self.logger.info(f"Program eFuse done")
+            return ErrType.OK
+        else:
+            self.logger.error(f"Fail to verify eFuse[{hex(otp_cfg.address)}]: {hex(cfg)}, expect {hex(expected)}")
+            self.logger.error(f"Fail to program eFuse")
+            return ErrType.SYS_CHECKSUM
 
     def check_supported_flash_size(self):
         ret = ErrType.OK
@@ -2184,6 +2528,10 @@ class Ameba(object):
             return ret, reset_system
 
         flash_size = self.device_info.flash_capacity // 1024 // 1024  # MB
+        # The address mode was programmed together with the boot select in prepare():
+        # it is already right, but only takes effect after a reset
+        if self.addr_mode_programmed:
+            reset_system = True
         if self.setting.auto_program_spic_addr_mode_4byte == 0:
             if (mode == SpicAddrMode.THREE_BYTE_MODE.value) and (flash_size > 16):
                 self.logger.warning(f"Flash size: {flash_size}MB, OTP supported flash size <= 16MB")

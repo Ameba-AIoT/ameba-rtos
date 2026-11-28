@@ -11,6 +11,16 @@
 #include <stdint.h>
 
 /******************Opcode define***********************/
+
+/** @addtogroup BT_Types BT Types
+ * @{
+ */
+/** @addtogroup BT_Mesh_Types BT Mesh Types
+ * @{
+ */
+/** @addtogroup BT_Mesh_Performance_Test_Types BT Mesh Performance Test Types
+ * @{
+ */
 /**
  * @typedef   rtk_bt_mesh_performance_test_opcode_t
  * @brief     BLE MESH performance test opcode definition.
@@ -49,4 +59,13 @@ typedef struct TestNode {
 	struct TestNode *next;
 } Bt_Mesh_Test_Node, *Bt_Mesh_Test_Node_Point;
 
+/**
+ * @}
+ */
+/**
+ * @}
+ */
+/**
+ * @}
+ */
 #endif

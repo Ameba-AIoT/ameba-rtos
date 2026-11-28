@@ -174,7 +174,7 @@ u16 usbd_uac_get_play_max_packet_size(u8 speed);
   * @param  speed: USB connection speed
   * @retval true if declared at that speed
   */
-bool usbd_uac_is_valid_sample_rate(u32 freq, u8 speed);
+bool usbd_uac_is_sampling_freq_supported(u32 freq, u8 speed);
 
 /* Common functions, implemented by usbd_uac_common.c -----------------------*/
 
@@ -298,9 +298,9 @@ u8 usbd_uac_volume_linear_interpolation(s16 target_y);
 /**
   * @brief  Check the number of an application supplied endpoint address
   * @param  ep_addr: Endpoint address, direction bit included
-  * @retval 1 for a non-control endpoint the controller has, else 0
+  * @retval true for a non-control endpoint the controller has, false otherwise
   */
-u8 usbd_uac_is_valid_ep(u8 ep_addr);
+bool usbd_uac_is_valid_ep(u8 ep_addr);
 
 /**
   * @brief  Accept the data stage of an H2D class or vendor request

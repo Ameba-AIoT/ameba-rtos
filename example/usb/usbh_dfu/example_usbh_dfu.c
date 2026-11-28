@@ -114,8 +114,8 @@ static const usbh_dfu_config_t dfu_class_cfg = {
 	/* xfer_size left 0 takes the class default. */
 };
 
-static const usbh_user_cb_t usbh_usr_cb = {
-	.process = dfu_cb_process
+static const usbh_cb_t usbh_usr_cb = {
+	.event = dfu_cb_process
 };
 
 /* Exported variables --------------------------------------------------------*/
@@ -203,9 +203,9 @@ static void dfu_cb_process(usb_host_t *host, u8 msg)
 	UNUSED(host);
 
 	switch (msg) {
-	case USBH_MSG_DISCONNECTED:
+	case USBH_EVENT_DISCONNECTED:
 		break;
-	case USBH_MSG_CONNECTED:
+	case USBH_EVENT_CONNECTED:
 		break;
 	default:
 		break;

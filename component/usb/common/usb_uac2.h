@@ -88,7 +88,7 @@ typedef struct {
 	u16 wMIN;
 	u16 wMAX;
 	u16 wRES;
-} __PACKED usb_uac2_ctrl_range_layout2_struct;
+} __PACKED usb_uac2_ctrl_range_layout2_t;
 
 /* 5.2.3.3 Layout 3 Parameter Block */
 /**

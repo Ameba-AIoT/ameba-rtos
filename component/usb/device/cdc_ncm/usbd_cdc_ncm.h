@@ -186,7 +186,7 @@ typedef struct {
 	u8 *buf;                /**< DMA-aligned NTB scratch buffer (size usbd_cdc_ncm_dev_t::ntb_tx_buf_size). */
 	u32 data_offset;        /**< Total NTB length (bytes) once finalised; DMA transfer length. */
 	u8 frame_count;         /**< Datagrams aggregated into this NTB so far. */
-} ncm_tx_ntb_t;
+} usbd_cdc_ncm_tx_ntb_t;
 
 /**
  * @brief Structure containing callback functions for the CDC NCM class.
@@ -277,9 +277,9 @@ typedef struct {
 	                                          SOF handler (ISR) retries it.  Must be volatile. */
 	u8 ctrl_req_pending;            /**< 1 if ctrl_req is waiting for its EP0 OUT data stage. */
 	u8 from_composite;              /**< Flag indicating if part of a composite device. */
-	u8 if_base;                     /**< First interface number of this class; 0 in standalone mode
+	u8 itf_base;                     /**< First interface number of this class; 0 in standalone mode
 	                                     unless the composite framework rebases it via
-	                                     set_interface_base(). */
+	                                     set_itf_base(). */
 
 	/* TX NTB ring.
 	 * An NTB slot is always finalised and published before the producer returns:
@@ -287,7 +287,7 @@ typedef struct {
 	 * aggregation TX task stops appending as soon as the raw ring runs empty.
 	 * No slot is therefore ever left partially filled, so the TX path needs no
 	 * flush timeout or fill-in-progress state. */
-	ncm_tx_ntb_t *tx_slot;          /**< SPSC TX NTB ring, tx_ntb_depth slots allocated at init. */
+	usbd_cdc_ncm_tx_ntb_t *tx_slot;          /**< SPSC TX NTB ring, tx_ntb_depth slots allocated at init. */
 	usb_os_sema_t tx_buf_free_sema; /**< ISR -> producer: given each XFRC when a slot is freed. */
 	__IO u8 tx_wd;                  /**< Producer write index (TX task / lwIP task only advances this). */
 	__IO u8 tx_rd;                  /**< Consumer read index (USB ISR only advances this). */
@@ -364,8 +364,8 @@ typedef struct {
 	 *          than being formatted into a local buffer on each request.
 	 */
 	char mac_str[(USBD_CDC_NCM_MAC_STR_LEN * 2U) + 1U];
-	u8 mac_str_idx;                 /**< iMACAddress string index from usbd_add_string(), 0 for none. */
-	u8 itf_str_idx;                 /**< Communication interface iInterface string index from usbd_add_string(), 0 for none. */
+	u8 mac_str_idx;                 /**< iMACAddress string index from usbd_add_str(), 0 for none. */
+	u8 itf_str_idx;                 /**< Communication interface iInterface string index from usbd_add_str(), 0 for none. */
 
 #if USBD_CDC_NCM_STATE_TRACE_ENABLE
 	usb_os_task_t trace_task;       /**< State-trace thread handle; NULL when not running. */
@@ -441,10 +441,10 @@ int usbd_cdc_ncm_transmit(const u8 *buf, u32 len, u8 block);
 
 /**
  * @brief  Gets the link state last reported to the host.
- * @return 1: Link is up, i.e. the host activated the data interface and the uplink is up.
- *         0: Link is down.
+ * @return true: Link is up, i.e. the host activated the data interface and the uplink is up.
+ *         false: Link is down.
  */
-int usbd_cdc_ncm_get_link_status(void);
+bool usbd_cdc_ncm_get_link_status(void);
 
 /**
  * @brief  Reports the upper-layer network link state to the host (edge-triggered).

@@ -1,5 +1,4 @@
 import os
-import re
 import sys
 import time
 
@@ -110,7 +109,7 @@ class MPFlashToolMain(QMainWindow):
         self._build_common_tab(common_tab)
         self.main_tab_widget.addTab(common_tab, "Download")
 
-        # ── Configuration Tab (Post Process & FlashProtectionProcess) ─────────
+        # ── Configuration Tab (Post Process) ─────────
         options_tab = QWidget()
         self._build_options_tab(options_tab)
         self.main_tab_widget.addTab(options_tab, "Configuration")
@@ -361,22 +360,6 @@ class MPFlashToolMain(QMainWindow):
         self.post_process_combo.setMaximumWidth(280)
         left_layout.addWidget(self.post_process_combo)
 
-        self._lbl_flash_protection = QLabel("Flash Protection Process:")
-        left_layout.addWidget(self._lbl_flash_protection)
-        self.flash_protection_combo = QComboBox()
-        self._flash_protection_items = [
-            ("Try program", RtSettings.FLASH_PROTECTION_PROCESS_TRY),
-            ("Unlock and program", RtSettings.FLASH_PROTECTION_PROCESS_UNLOCK),
-            ("Abort", RtSettings.FLASH_PROTECTION_PROCESS_ABORT),
-        ]
-        for text, data in self._flash_protection_items:
-            self.flash_protection_combo.addItem(text, userData=data)
-        self.flash_protection_combo.setCurrentIndex(
-            self.flash_protection_combo.findData(RtSettings.FLASH_PROTECTION_PROCESS_UNLOCK)
-        )
-        self.flash_protection_combo.setMaximumWidth(280)
-        left_layout.addWidget(self.flash_protection_combo)
-
         top_section.addLayout(left_layout)
         top_section.addStretch()
 
@@ -459,21 +442,14 @@ class MPFlashToolMain(QMainWindow):
         }
         had_rows = bool(self._port_rows)
         try:
-            import serial.tools.list_ports
-            all_ports = serial.tools.list_ports.comports()
+            from base import port_scanner
         except ImportError:
             self.status_bar.showMessage("Error: pyserial not installed.")
             return
 
-        RTK_USB_VID = 0x0BDA  # 与 download_handler.py 保持一致
-
         use_usb = self.usb_download_checkbox.isChecked()
-        if use_usb:
-            available_ports = [p for p in all_ports if p.vid == RTK_USB_VID]
-            port_type = "USB"
-        else:
-            available_ports = [p for p in all_ports if p.vid != RTK_USB_VID]
-            port_type = "UART"
+        port_type = port_scanner.PORT_TYPE_USB if use_usb else port_scanner.PORT_TYPE_UART
+        available_ports = port_scanner.scan_serial_ports(port_type)
 
         if filter_ports is not None:
             allowed = set(filter_ports)
@@ -482,8 +458,8 @@ class MPFlashToolMain(QMainWindow):
         def port_sort_key(port_info):
             slot_id = self._port_slot_map.get(port_info.device)
             if isinstance(slot_id, int) and slot_id > 0:
-                return (0, slot_id, self._natural_port_key(port_info.device))
-            return (1, 0, self._natural_port_key(port_info.device))
+                return (0, slot_id, port_scanner.natural_port_key(port_info.device))
+            return (1, 0, port_scanner.natural_port_key(port_info.device))
 
         available_ports.sort(key=port_sort_key)
 
@@ -495,14 +471,7 @@ class MPFlashToolMain(QMainWindow):
         self._port_rows = []
 
         for port_info in available_ports:
-            desc = port_info.description or ""
-            # Strip trailing " (COMxx)" that duplicates the device name.
-            desc = re.sub(r'\s*\(COM\d+\)\s*$', '', desc, flags=re.IGNORECASE).strip()
-            label = (
-                f"{port_info.device}  ({desc})"
-                if desc and desc.lower() != "n/a"
-                else port_info.device
-            )
+            label = port_scanner.format_port_label(port_info)
 
             row_widget = QWidget()
             # Smaller font so 20 rows fit in the default window height without scrolling.
@@ -541,11 +510,6 @@ class MPFlashToolMain(QMainWindow):
         self.status_bar.showMessage(
             self.image_line_edit.text().strip() or "No image selected"
         )
-
-    @staticmethod
-    def _natural_port_key(port_name):
-        match = re.search(r"(\d+)$", port_name or "")
-        return (int(match.group(1)), port_name) if match else (sys.maxsize, port_name or "")
 
     def _on_detect_layout_clicked(self):
         if self._detect_layout_worker is not None and self._detect_layout_worker.isRunning():
@@ -812,14 +776,16 @@ class MPFlashToolMain(QMainWindow):
             worker.start()
 
     def _load_rt_settings(self) -> RtSettings:
-        """Load Settings.json into an RtSettings object (empty defaults if file absent)."""
+        """Load Settings.json into an RtSettings object (empty defaults if file absent).
+        Defaults too if the file cannot be loaded, then _settings_load_failed is set."""
         path = self._settings_path()
+        self._settings_load_failed = False
         try:
             if os.path.exists(path):
                 dt = JsonUtils.load_from_file(path, need_decrypt=False)
                 return RtSettings(**(dt or {}))
         except Exception:
-            pass
+            self._settings_load_failed = True
         return RtSettings(**{})
 
     def _build_settings(self) -> RtSettings:
@@ -827,8 +793,6 @@ class MPFlashToolMain(QMainWindow):
         settings = self._load_rt_settings()
 
         settings.post_process = self.post_process_combo.currentData() or "NONE"
-
-        settings.flash_protection_process = self.flash_protection_combo.currentData() or RtSettings.FLASH_PROTECTION_PROCESS_UNLOCK
 
         settings.log_level = self.log_level_combo.currentData() or "info"
         settings.save_log = self.save_log_checkbox.isChecked()
@@ -1225,7 +1189,6 @@ class MPFlashToolMain(QMainWindow):
 
         self._lbl_log_level.setText("日志级别：" if cn_mode else "Log Level:")
         self._lbl_post_process.setText("后处理：" if cn_mode else "Post Process:")
-        self._lbl_flash_protection.setText("Flash 写保护处理：" if cn_mode else "Flash Protection Process:")
 
         # ── Combo items ───────────────────────────────────────────────────
         self._update_combo_items(self.log_level_combo, cn_mode, [
@@ -1240,11 +1203,6 @@ class MPFlashToolMain(QMainWindow):
             ("指示下载结果", "Indicate download result", "INDICATION"),
             ("复位设备", "Reset device", "RESET"),
             ("启动", "Boot", "BOOT"),
-        ])
-        self._update_combo_items(self.flash_protection_combo, cn_mode, [
-            ("尝试烧录", "Try program", RtSettings.FLASH_PROTECTION_PROCESS_TRY),
-            ("解锁并烧录", "Unlock and program", RtSettings.FLASH_PROTECTION_PROCESS_UNLOCK),
-            ("中止", "Abort", RtSettings.FLASH_PROTECTION_PROCESS_ABORT),
         ])
 
     @staticmethod
@@ -1397,6 +1355,9 @@ class MPFlashToolMain(QMainWindow):
     def save_settings(self):
         # Load existing settings so RT fields written by the CLI are preserved.
         settings = self._load_rt_settings()
+        if self._settings_load_failed:
+            # Saving now would reset every setting not shown in the GUI to its default
+            return
 
         # Update GUI fields on the RtSettings object
         settings.profile = getattr(self, "current_profile_path", "")
@@ -1422,8 +1383,6 @@ class MPFlashToolMain(QMainWindow):
         settings.usb_download = self.usb_download_checkbox.isChecked()
 
         settings.post_process = self.post_process_combo.currentData() or "NONE"
-
-        settings.flash_protection_process = self.flash_protection_combo.currentData() or RtSettings.FLASH_PROTECTION_PROCESS_UNLOCK
 
         settings.log_level = self.log_level_combo.currentData() or "info"
         settings.save_log = self.save_log_checkbox.isChecked()
@@ -1456,20 +1415,30 @@ class MPFlashToolMain(QMainWindow):
         except (ValueError, TypeError):
             pass
 
+        def to_int(value, default):
+            # Address/Length are saved as int, but accept a hand edited hex string (e.g. "0x08000000")
+            # and fall back to the default on anything else, the window must still open
+            try:
+                return int(value, 0) if isinstance(value, str) else int(value)
+            except (TypeError, ValueError):
+                return default
+
         if profile_ok:
             if settings.image_dir:
                 self.image_line_edit.setText(settings.image_dir)
                 self.len_hex_edit.setText("0x0")
             else:
                 self.image_line_edit.setText(settings.image)
-                self.len_hex_edit.setText(f"0x{int(settings.length):X}")
-            self.addr_hex_edit.setText(f"0x{int(settings.address):08X}")
+                self.len_hex_edit.setText(f"0x{to_int(settings.length, 0):X}")
+            self.addr_hex_edit.setText(f"0x{to_int(settings.address, 0x08000000):08X}")
         else:
             self.image_line_edit.clear()
             self.addr_hex_edit.setText("0x08000000")
             self.len_hex_edit.setText("0x0")
 
-        self._saved_ports = settings.port if isinstance(settings.port, list) else None
+        # An empty list (the default, or no port found when last closed) means no saved ports:
+        # filtering by it would hide every port at startup
+        self._saved_ports = settings.port if (isinstance(settings.port, list) and settings.port) else None
         self._port_slot_map = {}
         for port, slot_id in settings.port_slot_map.items():
             try:
@@ -1489,10 +1458,6 @@ class MPFlashToolMain(QMainWindow):
         idx = self.post_process_combo.findData(settings.post_process)
         if idx >= 0:
             self.post_process_combo.setCurrentIndex(idx)
-
-        idx = self.flash_protection_combo.findData(settings.flash_protection_process)
-        if idx >= 0:
-            self.flash_protection_combo.setCurrentIndex(idx)
 
         idx = self.log_level_combo.findData(settings.log_level)
         if idx >= 0:
@@ -1520,7 +1485,6 @@ class MPFlashToolMain(QMainWindow):
         self.profile_line_edit.setEnabled(configurable)
         self.profile_browse_button.setEnabled(configurable)
         self.post_process_combo.setEnabled(configurable)
-        self.flash_protection_combo.setEnabled(configurable)
         self.log_level_combo.setEnabled(configurable)
         self.save_log_checkbox.setEnabled(configurable)
         self.auto_program_spic_addr_mode_4byte_checkbox.setEnabled(configurable)

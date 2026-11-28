@@ -7,7 +7,7 @@
 /* Includes ------------------------------------------------------------------*/
 
 #include "usbd.h"
-#include "usbd_uvc.h"
+#include "usbd_uvc_priv.h"
 #include "usbd_video.h"
 #include "usb_ch9.h"
 #include "os_wrapper.h"
@@ -280,7 +280,7 @@ usbd_uvc_events_process_control(usbd_uvc_dev_t *dev, usb_setup_req_t *ctrl,
 								usbd_uvc_request_data_t *resp)
 {
 	dev->control = ctrl->wValue >> 8; //stream 0:control 1:stream ,control for selector ex:brightness
-	dev->command_interface = ctrl->wIndex & 0xff; //0 for ocntrol 1 for streaming
+	dev->command_itf = ctrl->wIndex & 0xff; //0 for ocntrol 1 for streaming
 	dev->command_entity = (ctrl->wIndex >> 8) & 0xff; //2 process unit 3 for extension unit
 	if (dev->command_entity == UVC_VC_PROCESS_UNIT) {
 		usbd_uvc_get_command_process_unit(dev, ctrl, resp);
@@ -460,7 +460,7 @@ usbd_uvc_events_process_class(usbd_uvc_dev_t *dev, usb_setup_req_t *ctrl,
 	if ((ctrl->bmRequestType & USB_REQ_RECIPIENT_MASK) != USB_REQ_RECIPIENT_INTERFACE) {
 		return;
 	}
-	dev->command_interface = ctrl->wIndex & 0xff; //0 for ocntrol 1 for streaming
+	dev->command_itf = ctrl->wIndex & 0xff; //0 for ocntrol 1 for streaming
 	dev->command_entity = (ctrl->wIndex >> 8) & 0xff; //2 process unit 3 for extension unit
 	dev->control = ctrl->wValue >> 8;
 
@@ -652,7 +652,7 @@ usbd_uvc_streaming_process_data(usbd_uvc_dev_t *dev, usbd_uvc_request_data_t *da
 static void
 usbd_uvc_events_process_data(usbd_uvc_dev_t *dev, usbd_uvc_request_data_t *data)
 {
-	switch (dev->command_interface) {
+	switch (dev->command_itf) {
 	case USBD_UVC_INTF_CONTROL:
 		usbd_uvc_control_process_data(dev, data);
 		break;

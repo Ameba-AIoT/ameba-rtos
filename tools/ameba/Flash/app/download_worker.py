@@ -51,6 +51,7 @@ class DownloadWorker(QThread):
         progress_handler = None
         error_handler = None
         ameba = None
+        flash_status = None
         stage_errors = []
 
         def run_stage(action, *args, **kwargs):
@@ -64,6 +65,17 @@ class DownloadWorker(QThread):
             logger = create_logger(
                 self.port, log_level=self.log_level.upper(), file=self.log_file
             )
+            # The progress is parsed from the INFO "Programming progress" log, which a WARNING
+            # or higher logger level drops before any handler. Apply the selected level to the
+            # console/file handlers instead, and let the logger pass INFO to the progress handler
+            selected_level = logger.level
+            if selected_level > logging.INFO:
+                for handler in logger.handlers:
+                    handler.setLevel(selected_level)
+                logger.setLevel(logging.INFO)
+            else:
+                for handler in logger.handlers:
+                    handler.setLevel(logging.NOTSET)
             progress_handler = ProgressLogHandler(
                 lambda pct: self.progress_updated.emit(pct)
             )
@@ -205,6 +217,8 @@ class DownloadWorker(QThread):
                     ameba.check_and_process_flash_lock, flash_status
                 )
                 if ret != ErrType.OK:
+                    # A partly applied unlock is restored as well
+                    ameba.restore_flash_lock(flash_status)
                     ameba.clean_up()
                     self.result_ready.emit(
                         False,
@@ -214,14 +228,17 @@ class DownloadWorker(QThread):
 
             ret = run_stage(ameba.download_images)
             if ret != ErrType.OK:
+                # Restore the block protection on failure too: a retry would find the
+                # flash unlocked, so nothing would restore it any more
+                ameba.restore_flash_lock(flash_status)
                 ameba.clean_up()
                 self.result_ready.emit(
                     False, failure_message(f"Download failed: {ret}")
                 )
                 return
 
-            if not ameba.is_all_ram and flash_status.need_unlock:
-                ret = run_stage(ameba.lock_flash, flash_status.protection)
+            if flash_status.need_unlock:
+                ret = run_stage(ameba.restore_flash_lock, flash_status)
                 if ret != ErrType.OK:
                     ameba.clean_up()
                     self.result_ready.emit(
@@ -252,6 +269,13 @@ class DownloadWorker(QThread):
             self.result_ready.emit(False, failure_message(str(e)))
         finally:
             if ameba is not None:
+                # Exception raised after the unlock
+                if flash_status is not None:
+                    try:
+                        ameba.restore_flash_lock(flash_status)
+                    except Exception as error:
+                        if logger is not None:
+                            logger.error(f"Restore flash protection failed: {error}")
                 try:
                     ameba.clean_up()
                 except Exception as error:

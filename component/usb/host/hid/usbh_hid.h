@@ -168,7 +168,7 @@ typedef struct {
 	u8(*setup)(u8 idx, const usbh_hid_itf_info_t *info);
 	/** Called for every INTR IN report: buf starts with the Report ID if the device uses one, valid during the call only */
 	void (*report)(u8 idx, const u8 *buf, u32 len);
-} usbh_hid_usr_cb_t;
+} usbh_hid_cb_t;
 
 /** @} End of Host_HID_Types group */
 /** @} End of USB_Host_Types group */
@@ -191,7 +191,7 @@ typedef struct {
  * @param  cb: Pointer to user callback structure.
  * @return 0 on success, non-zero on failure.
  */
-int usbh_hid_init(const usbh_hid_usr_cb_t *cb);
+int usbh_hid_init(const usbh_hid_cb_t *cb);
 
 /**
  * @brief  De-Initialize the HID host class.
@@ -201,7 +201,7 @@ void usbh_hid_deinit(void);
 
 /**
  * @brief  Send an output report to the device via the Interrupt OUT pipe of an interface.
- * @param  idx: Interface index as passed to usbh_hid_usr_cb_t::setup.
+ * @param  idx: Interface index as passed to usbh_hid_cb_t::setup.
  * @param  buf: Report, Report ID first if the device uses one. The controller reads it by DMA, so it
  *         must start on a cache line boundary (USB_DMA_ALIGNED, or from the heap) and stay unchanged
  *         until the transfer completes.
@@ -258,7 +258,7 @@ int usbh_hid_find_field(const u8 *desc, u32 len, u8 main_tag, u16 usage_page, u1
 
 /**
  * @brief  Read one value of a field from a report.
- * @param  report: Report as passed to usbh_hid_usr_cb_t::report, Report ID first if the device uses one.
+ * @param  report: Report as passed to usbh_hid_cb_t::report, Report ID first if the device uses one.
  * @param  len: Length of the report in bytes.
  * @param  field: Field found by usbh_hid_find_field().
  * @param  idx: Value index in the field, 0..report_count-1.
@@ -269,13 +269,13 @@ int usbh_hid_get_field_value(const u8 *report, u32 len, const usbh_hid_field_t *
 
 /**
  * @brief  Whether the usage a field was found for is active in a report, e.g. a key held.
- * @param  report: Report as passed to usbh_hid_usr_cb_t::report.
+ * @param  report: Report as passed to usbh_hid_cb_t::report.
  * @param  len: Length of the report in bytes.
  * @param  field: Field found by usbh_hid_find_field() for the usage.
- * @return 1 if active: a non-zero Variable value, or an Array code naming the usage. 0 if not, or if the
+ * @return true if active: a non-zero Variable value, or an Array code naming the usage. false if not, or if the
  *         report has another Report ID.
  */
-u8 usbh_hid_usage_active(const u8 *report, u32 len, const usbh_hid_field_t *field);
+bool usbh_hid_is_usage_active(const u8 *report, u32 len, const usbh_hid_field_t *field);
 
 /** @} End of Host_HID_Functions group */
 /** @} End of USB_Host_Functions group */

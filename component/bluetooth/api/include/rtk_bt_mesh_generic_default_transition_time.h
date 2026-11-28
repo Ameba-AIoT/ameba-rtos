@@ -13,6 +13,15 @@
 
 #include <rtk_bt_mesh_generic_onoff_model.h>
 
+/** @addtogroup BT_Types BT Types
+ * @{
+ */
+/** @addtogroup BT_Mesh_Types BT Mesh Types
+ * @{
+ */
+/** @addtogroup BT_Mesh_Generic_Default_Transition_Time_Types BT Mesh Generic Default Transition Time Types
+ * @{
+ */
 /********************* Generic Default Transition Time Client Model ********************/
 /**
  * @enum      rtk_bt_mesh_generic_default_transition_time_client_model_act_t
@@ -103,11 +112,24 @@ typedef struct {
                                                            *   Must not be NULL. */
 } rtk_bt_mesh_generic_default_transition_time_server_get_t;
 
-/********************************* Functions Declaration *******************************/
 /**
- * @defgroup  ble_mesh_generic_default_transition_time_model BT LE Mesh Default Transition Time Model APIs
- * @brief     BT LE Mesh Default Transition Time Model related function APIs
- * @ingroup   ble_mesh_api_group
+ * @}
+ */
+/**
+ * @}
+ */
+/**
+ * @}
+ */
+
+/********************************* Functions Declaration *******************************/
+/** @addtogroup BT_Functions BT Functions
+ * @{
+ */
+/** @addtogroup BT_Mesh_Functions BT Mesh Functions
+ * @{
+ */
+/** @addtogroup BT_Mesh_Generic_Default_Transition_Time_Functions BT Mesh Generic Default Transition Time Functions
  * @{
  */
 /**
@@ -131,6 +153,12 @@ uint16_t rtk_bt_mesh_generic_default_transition_time_client_get(rtk_bt_mesh_gene
  *            - @ref rtk_bt_err_common
  */
 uint16_t rtk_bt_mesh_generic_default_transition_time_client_set(rtk_bt_mesh_generic_default_transition_time_set_t *time_set);
+/**
+ * @}
+ */
+/**
+ * @}
+ */
 /**
  * @}
  */

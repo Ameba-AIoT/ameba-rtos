@@ -17,6 +17,15 @@ extern "C"
 #include <bt_api_config.h>
 
 /**
+ * @addtogroup BT_Types BT Types
+ * @{
+ */
+/**
+ * @addtogroup BT_GAP_Types BT GAP Types
+ * @{
+ */
+
+/**
  * @typedef   rtk_bt_addr_type_t
  * @brief     Bluetooth device address type definition.
  */
@@ -29,7 +38,23 @@ typedef enum {
 	RTK_BT_ADDR_LE_ANONYMOUS =          0xFF,      /*!< Anonymous Device Address. */
 } rtk_bt_addr_type_t;
 
+/**
+ * @}
+ */
+/**
+ * @}
+ */
+
 #if defined(RTK_BT_5_2_L2C_ECFC_SUPPORT) && RTK_BT_5_2_L2C_ECFC_SUPPORT
+
+/**
+ * @addtogroup BT_Constants BT Constants
+ * @{
+ */
+/**
+ * @addtogroup BT_GAP_Constants BT GAP Constants
+ * @{
+ */
 
 /**
  * @def       RTK_BT_GAP_ECFC_CHANN_MAX_NUM
@@ -49,11 +74,29 @@ typedef enum {
  */
 #define RTK_BT_GAP_ECFC_MIN_MPS                64
 
+/// @cond
 /**
  * @def       RTK_BD_ADDR_LEN
  * @brief     Bluetooth device address length macro.
  */
 #define RTK_BD_ADDR_LEN                        6
+/// @endcond
+
+/**
+ * @}
+ */
+/**
+ * @}
+ */
+
+/**
+ * @addtogroup BT_Types BT Types
+ * @{
+ */
+/**
+ * @addtogroup BT_GAP_Types BT GAP Types
+ * @{
+ */
 
 /**
  * @typedef   rtk_bt_gap_ecfc_sec_setting_t
@@ -146,7 +189,7 @@ typedef struct {
 	uint8_t bd_addr[RTK_BD_ADDR_LEN];         /*!< Bluetooth address of the remote device. */
 	uint8_t bd_type;                          /*!< Bluetooth address type of the remote device. */
 	uint8_t cid_num;                          /*!< The number of the L2CAP ECFC channels to establish.
-                                               *   Range: 1 to RTK_BT_GAP_ECFC_CHANN_MAX_NUM. */
+                                               *   Range: 1 to @ref RTK_BT_GAP_ECFC_CHANN_MAX_NUM. */
 } rtk_bt_gap_ecfc_conn_req_t;
 
 /**
@@ -191,7 +234,7 @@ typedef struct {
 	uint16_t p_cid[RTK_BT_GAP_ECFC_CHANN_MAX_NUM];    /*!< CID array allowed to be established.
                                                        *   Must be a subset of the CID array reported in @ref RTK_BT_GAP_EVT_ECFC_CONN_REQ_IND. */
 	uint8_t cid_num;                                  /*!< The number of the L2CAP ECFC channels allowed to be established.
-                                                       *   Range: 1 to RTK_BT_GAP_ECFC_CHANN_MAX_NUM. */
+                                                       *   Range: 1 to @ref RTK_BT_GAP_ECFC_CHANN_MAX_NUM. */
 	uint16_t local_mtu;                               /*!< Preferred local MTU size value of the L2CAP ECFC channel. */
 } rtk_bt_gap_ecfc_conn_cfm_t;
 
@@ -232,7 +275,7 @@ typedef struct {
                                                        *   Range: 0x0000 to 0x0EFF. */
 	uint16_t p_cid[RTK_BT_GAP_ECFC_CHANN_MAX_NUM];    /*!< Local CID array to reconfigure. */
 	uint8_t cid_num;                                  /*!< The number of CIDs in the p_cid array.
-                                                       *   Range: 1 to RTK_BT_GAP_ECFC_CHANN_MAX_NUM. */
+                                                       *   Range: 1 to @ref RTK_BT_GAP_ECFC_CHANN_MAX_NUM. */
 	uint16_t local_mtu;                               /*!< Preferred local MTU size value of the L2CAP ECFC channel. */
 	uint16_t local_mps;                               /*!< Preferred local MPS value of the L2CAP ECFC channel. */
 } rtk_bt_gap_ecfc_reconf_req_t;
@@ -325,7 +368,23 @@ typedef struct {
 	uint16_t local_mtu;                             /*!< Local MTU value. */
 	uint16_t local_mps;                             /*!< Local MPS value. */
 } rtk_bt_ecfc_reconf_rsp_ind_t;
+
+/**
+ * @}
+ */
+/**
+ * @}
+ */
 #endif
+
+/**
+ * @addtogroup BT_Types BT Types
+ * @{
+ */
+/**
+ * @addtogroup BT_GAP_Types BT GAP Types
+ * @{
+ */
 
 /**
  * @struct    rtk_bt_gap_vendor_cmd_param_t
@@ -337,13 +396,22 @@ typedef struct {
 	uint8_t *cmd_param;    /*!< Pointer to the parameter data to write. */
 } rtk_bt_gap_vendor_cmd_param_t;
 
+/**
+ * @}
+ */
+/**
+ * @}
+ */
+
 /********************************* Functions Declaration *******************************/
 
 #if defined(RTK_BT_5_2_L2C_ECFC_SUPPORT) && RTK_BT_5_2_L2C_ECFC_SUPPORT
 /**
- * @defgroup  bt_gap BT GAP APIs
- * @brief     BT GAP related function APIs.
- * @ingroup   BT_APIs
+ * @addtogroup BT_Functions BT Functions
+ * @{
+ */
+/**
+ * @addtogroup BT_GAP_Functions BT GAP Functions
  * @{
  */
 
@@ -433,7 +501,19 @@ uint16_t rtk_bt_gap_ecfc_send_reconf_req(rtk_bt_gap_ecfc_reconf_req_t *p_param);
 /**
  * @}
  */
+/**
+ * @}
+ */
 #endif
+
+/**
+ * @addtogroup BT_Functions BT Functions
+ * @{
+ */
+/**
+ * @addtogroup BT_GAP_Functions BT GAP Functions
+ * @{
+ */
 
 /**
  * @brief     Send a vendor command to the controller.
@@ -443,6 +523,13 @@ uint16_t rtk_bt_gap_ecfc_send_reconf_req(rtk_bt_gap_ecfc_reconf_req_t *p_param);
  *            - @ref rtk_bt_err_common
  */
 uint16_t rtk_bt_gap_vendor_cmd_req(rtk_bt_gap_vendor_cmd_param_t *vendor_param);
+
+/**
+ * @}
+ */
+/**
+ * @}
+ */
 
 #ifdef __cplusplus
 }

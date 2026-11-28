@@ -11,6 +11,15 @@
 #include <stdint.h>
 #include <rtk_bt_mesh_def.h>
 
+/** @addtogroup BT_Types BT Types
+ * @{
+ */
+/** @addtogroup BT_Mesh_Types BT Mesh Types
+ * @{
+ */
+/** @addtogroup BT_Mesh_Generic_Onoff_Model_Types BT Mesh Generic Onoff Model Types
+ * @{
+ */
 /**
  * @enum      rtk_bt_mesh_generic_onoff_client_model_act_t
  * @brief     BLE MESH generic on off client model act definition.
@@ -147,11 +156,24 @@ typedef struct {
                                                               *   Only valid when optional is true. */
 } rtk_bt_mesh_generic_onoff_client_evt_status_t;
 
-/********************************* Functions Declaration *******************************/
 /**
- * @defgroup  ble_mesh_generic_onoff_model BT LE Mesh Generic On Off Model APIs
- * @brief     BT LE Mesh Generic On Off Model related function APIs
- * @ingroup   ble_mesh_api_group
+ * @}
+ */
+/**
+ * @}
+ */
+/**
+ * @}
+ */
+
+/********************************* Functions Declaration *******************************/
+/** @addtogroup BT_Functions BT Functions
+ * @{
+ */
+/** @addtogroup BT_Mesh_Functions BT Mesh Functions
+ * @{
+ */
+/** @addtogroup BT_Mesh_Generic_Onoff_Model_Functions BT Mesh Generic Onoff Model Functions
  * @{
  */
 
@@ -178,6 +200,12 @@ uint16_t rtk_bt_mesh_generic_onoff_client_set(rtk_bt_mesh_generic_onoff_client_a
  */
 uint16_t rtk_bt_mesh_generic_onoff_client_get(rtk_bt_mesh_generic_onoff_client_act_get_t *onoff_get);
 
+/**
+ * @}
+ */
+/**
+ * @}
+ */
 /**
  * @}
  */

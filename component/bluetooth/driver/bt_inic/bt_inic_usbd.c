@@ -86,7 +86,7 @@ static int inic_cb_init(void)
 {
 	int ret = HAL_OK;
 
-	if (usbd_whc_is_bt_en()) {
+	if (usbd_whc_is_bt_enabled()) {
 		ret = bt_inic_usb_init();
 	}
 
@@ -101,7 +101,7 @@ static int inic_cb_init(void)
   */
 static int inic_cb_deinit(void)
 {
-	if (usbd_whc_is_bt_en()) {
+	if (usbd_whc_is_bt_enabled()) {
 		bt_inic_usb_deinit();
 	}
 	return HAL_OK;

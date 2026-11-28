@@ -134,16 +134,16 @@
    (see prj.conf), which is also what pulls its example source into the build */
 const usb_app_t usb_app_table[] = {
 #ifdef CONFIG_USBD_CDC_ACM
-	USB_APP(usbd_cdc_acm, USB_APP_ROLE_DEVICE),
+	USB_APP(usbd_cdc_acm, USB_APP_ROLE_DEV),
 #endif
 #ifdef CONFIG_USBD_VENDOR
-	USB_APP(usbd_vendor, USB_APP_ROLE_DEVICE),
+	USB_APP(usbd_vendor, USB_APP_ROLE_DEV),
 #endif
 #ifdef CONFIG_USBD_DFU
-	USB_APP(usbd_dfu, USB_APP_ROLE_DEVICE),
+	USB_APP(usbd_dfu, USB_APP_ROLE_DEV),
 #endif
 #ifdef CONFIG_USBD_MSC
-	USB_APP(usbd_msc, USB_APP_ROLE_DEVICE),
+	USB_APP(usbd_msc, USB_APP_ROLE_DEV),
 #endif
 #ifdef USB_APP_HOST_ACM
 	USB_APP(usbh_cdc_acm, USB_APP_ROLE_HOST),
@@ -155,19 +155,19 @@ const usb_app_t usb_app_table[] = {
 	USB_APP(usbh_dfu, USB_APP_ROLE_HOST),
 #endif
 #ifdef CONFIG_USBD_HID
-	USB_APP(usbd_hid, USB_APP_ROLE_DEVICE),
+	USB_APP(usbd_hid, USB_APP_ROLE_DEV),
 #endif
 #ifdef CONFIG_USBD_UVC
-	USB_APP(usbd_uvc, USB_APP_ROLE_DEVICE),
+	USB_APP(usbd_uvc, USB_APP_ROLE_DEV),
 #endif
 #ifdef USB_APP_COMP_ACM_MSC
-	USB_APP(usbd_composite_cdc_acm_msc, USB_APP_ROLE_DEVICE),
+	USB_APP(usbd_composite_cdc_acm_msc, USB_APP_ROLE_DEV),
 #endif
 #ifdef CONFIG_USBD_CDC_ECM
-	USB_APP(usbd_cdc_ecm, USB_APP_ROLE_DEVICE),
+	USB_APP(usbd_cdc_ecm, USB_APP_ROLE_DEV),
 #endif
 #ifdef CONFIG_USBD_CDC_NCM
-	USB_APP(usbd_cdc_ncm, USB_APP_ROLE_DEVICE),
+	USB_APP(usbd_cdc_ncm, USB_APP_ROLE_DEV),
 #endif
 #ifdef CONFIG_USBH_MSC
 	USB_APP(usbh_msc, USB_APP_ROLE_HOST),
@@ -179,7 +179,7 @@ const usb_app_t usb_app_table[] = {
 	USB_APP(usbh_cdc_ncm, USB_APP_ROLE_HOST),
 #endif
 #ifdef CONFIG_USBD_RNDIS
-	USB_APP(usbd_rndis, USB_APP_ROLE_DEVICE),
+	USB_APP(usbd_rndis, USB_APP_ROLE_DEV),
 #endif
 #ifdef CONFIG_USBH_RNDIS
 	USB_APP(usbh_rndis, USB_APP_ROLE_HOST),
@@ -188,13 +188,13 @@ const usb_app_t usb_app_table[] = {
 	USB_APP(usbh_hid, USB_APP_ROLE_HOST),
 #endif
 #ifdef CONFIG_USBD_UAC
-	USB_APP(usbd_uac, USB_APP_ROLE_DEVICE),
+	USB_APP(usbd_uac, USB_APP_ROLE_DEV),
 #endif
 #ifdef USB_APP_COMP_ACM_UAC
-	USB_APP(usbd_composite_cdc_acm_uac, USB_APP_ROLE_DEVICE),
+	USB_APP(usbd_composite_cdc_acm_uac, USB_APP_ROLE_DEV),
 #endif
 #ifdef USB_APP_COMP_HID_UAC
-	USB_APP(usbd_composite_hid_uac, USB_APP_ROLE_DEVICE),
+	USB_APP(usbd_composite_hid_uac, USB_APP_ROLE_DEV),
 #endif
 #ifdef CONFIG_USBH_UAC
 	USB_APP(usbh_uac, USB_APP_ROLE_HOST),

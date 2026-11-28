@@ -99,7 +99,7 @@ static void at_usbh(u16 argc, char **argv)
 		}
 		mode = _strtoul(argv[2], (char **)NULL, 10);
 		RTK_LOGS(TAG, RTK_LOG_INFO, "USB test mode=%lu\n", mode);
-		usbh_select_test_mode((u8)(mode & 0xFF));
+		usbh_set_test_mode((u8)(mode & 0xFF));
 	} else {
 		at_usb_help();
 	}
@@ -124,7 +124,7 @@ static void at_usbd(u16 argc, char **argv)
 	}
 
 	if (_stricmp(argv[1], "wakehost") == 0) {
-		ret = usbd_wake_host();
+		ret = usbd_remote_wakeup();
 		if (ret == 0) {
 			RTK_LOGS(TAG, RTK_LOG_INFO, "USBD remote wakeup OK\n");
 		} else {
