@@ -14,6 +14,12 @@ extern "C"
 {
 #endif
 
+/** @addtogroup BT_Constants BT Constants
+ * @{
+ */
+/** @addtogroup BT_A2DP_Constants BT A2DP Constants
+ * @{
+ */
 #define RTK_BT_A2DP_MAX_CODEC_PARAM_LENGTH 12      /*!< Maximum length of the codec parameter data, in bytes. */
 #define RTK_BT_A2DP_MAX_STREAM_DATA_LENGTH 1024    /*!< Maximum length of the received stream data, in bytes. */
 
@@ -54,8 +60,20 @@ extern "C"
 #define RTK_BT_A2DP_AAC_SAMPLING_FREQUENCY_96KHZ                (1<<4)   /*!< AAC 96 kHz sampling frequency, bit 4 of the sampling frequency field. */
 #define RTK_BT_A2DP_AAC_CHANNEL_NUMBER_1                        (1<<3)   /*!< AAC one channel, bit 3 of the channel number field. */
 #define RTK_BT_A2DP_AAC_CHANNEL_NUMBER_2                        (1<<2)   /*!< AAC two channels, bit 2 of the channel number field. */
+/**
+ * @}
+ */
+/**
+ * @}
+ */
 
 /************************************** Data Types *************************************/
+/** @addtogroup BT_Types BT Types
+ * @{
+ */
+/** @addtogroup BT_A2DP_Types BT A2DP Types
+ * @{
+ */
 
 /**
  * @typedef   rtk_bt_a2dp_role_t
@@ -272,12 +290,19 @@ typedef struct {
 	uint32_t                pbap_supported_feat;    /*!< Supported features of phone book access profile. */
 } rtk_bt_a2dp_sdp_attr_info_t;
 
+/**
+ * @}
+ */
+/**
+ * @}
+ */
+
 
 /********************************* Functions Declaration *******************************/
-/**
- * @defgroup  bt_a2dp BT A2DP APIs
- * @brief     BT A2DP related function APIs.
- * @ingroup   BT_APIs
+/** @addtogroup BT_Functions BT Functions
+ * @{
+ */
+/** @addtogroup BT_A2DP_Functions BT A2DP Functions
  * @{
  */
 
@@ -341,6 +366,9 @@ uint16_t rtk_bt_a2dp_suspend(uint8_t *bd_addr);
  */
 uint16_t rtk_bt_a2dp_data_send(rtk_bt_a2dp_stream_data_send_t *p_data_send_t);
 
+/**
+ * @}
+ */
 /**
  * @}
  */

@@ -50,8 +50,8 @@ extern "C" {
 #define USBD_CDC_ECM_STATE_TRACE_ENABLE 0
 
 /* Interface numbers */
-#define USBD_CDC_ECM_COMM_INTERFACE_NUM 0x00U  /**< Communication interface */
-#define USBD_CDC_ECM_DATA_INTERFACE_NUM 0x01U  /**< Data interface */
+#define USBD_CDC_ECM_COMM_ITF_NUM 0x00U  /**< Communication interface */
+#define USBD_CDC_ECM_DATA_ITF_NUM 0x01U  /**< Data interface */
 
 /* Number of ping-pong RX buffers used to decouple USB OUT from upper-layer RX. */
 #define USBD_CDC_ECM_RX_BUF_NUM         2U
@@ -164,7 +164,7 @@ typedef struct {
 	                                             0 = default setting, no endpoints; 1 = BULK IN/OUT initialised.
 	                                             Ref CDC ECM 1.2 3.2.2 / USB 2.0 9.4.10: alt 0 has bNumEndpoints = 0,
 	                                             so the BULK pipes exist only in alt 1.  Written only by
-	                                             usbd_ecm_data_alt_start()/_stop(), which keep it in lockstep with the
+	                                             usbd_cdc_ecm_data_alt_start()/_stop(), which keep it in lockstep with the
 	                                             real endpoint state.  It therefore serves both purposes at once: the
 	                                             value GET_INTERFACE reports, and the "BULK endpoints are alive"
 	                                             predicate guarding every TX/RX submission.
@@ -186,9 +186,9 @@ typedef struct {
 	                                               SOF handler (ISR) retries it.  Must be volatile. */
 	u8 ctrl_req_pending;                    /**< 1 if ctrl_req is waiting for its EP0 OUT data stage. */
 	u8 from_composite;                      /**< Flag indicating if part of a composite device. */
-	u8 if_base;                             /**< First interface number of this class; 0 in standalone
+	u8 itf_base;                             /**< First interface number of this class; 0 in standalone
 	                                             mode unless the composite framework rebases it via
-	                                             set_interface_base(). */
+	                                             set_itf_base(). */
 
 	/* TX */
 	u8 *bulk_tx_dma_buf;                   /**< DMA source for BULK IN. A frame is copied here from the ring buffer
@@ -226,8 +226,8 @@ typedef struct {
 	 *          than being formatted into a local buffer on each request.
 	 */
 	char mac_str[(USBD_CDC_ECM_MAC_STR_LEN * 2U) + 1U];
-	u8 mac_str_idx;                         /**< iMACAddress string index from usbd_add_string(), 0 for none. */
-	u8 itf_str_idx;                         /**< Communication interface iInterface string index from usbd_add_string(), 0 for none. */
+	u8 mac_str_idx;                         /**< iMACAddress string index from usbd_add_str(), 0 for none. */
+	u8 itf_str_idx;                         /**< Communication interface iInterface string index from usbd_add_str(), 0 for none. */
 
 #if USBD_CDC_ECM_STATE_TRACE_ENABLE
 	usb_os_task_t trace_task;               /**< State-trace thread handle; NULL when not running. */
@@ -307,10 +307,10 @@ int usbd_cdc_ecm_transmit(const u8 *buf, u32 len, u8 block);
 
 /**
  * @brief  Gets the link state last reported to the host.
- * @return 1: Link is up, i.e. the host activated the data interface and the uplink is up.
- *         0: Link is down.
+ * @return true: Link is up, i.e. the host activated the data interface and the uplink is up.
+ *         false: Link is down.
  */
-int usbd_cdc_ecm_get_link_status(void);
+bool usbd_cdc_ecm_get_link_status(void);
 
 /**
  * @brief  Reports the upper-layer network link state to the host (edge-triggered).

@@ -45,3 +45,8 @@ class DeviceInfo(object):
     def supports_short_write(self):
         # Flashloader CmdSetVersion 2.1 accepts WRITE payloads shorter than a page (NOR only)
         return self.cmd_set_version >= 0x0201
+
+    def supports_auto_flash_type_detect(self):
+        # Flashloader CmdSetVersion 2.2 re-initializes SPIC with the other flash type on
+        # CONFIG request, and answers QUERY even if the flash init failed
+        return self.cmd_set_version >= 0x0202

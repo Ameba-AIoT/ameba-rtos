@@ -185,7 +185,7 @@ void usbd_whc_deinit(void);
  * @param[in] len: Length of the data in bytes.
  * @return 0 on success, non-zero on failure.
  */
-int usbd_whc_transmit_ctrl_data(u8 *buf, u16 len);
+int usbd_whc_ctrl_transmit(u8 *buf, u16 len);
 
 /**
  * @brief Transmits data to the host.
@@ -195,7 +195,7 @@ int usbd_whc_transmit_ctrl_data(u8 *buf, u16 len);
  * @param[in] userdata: userdata from application for each endpoint.
  * @return 0 on success, non-zero on failure.
  */
-int usbd_whc_transmit_data(u8 ep_addr, u8 *buf, u32 len, void *userdata);
+int usbd_whc_transmit(u8 ep_addr, u8 *buf, u32 len, void *userdata);
 
 /**
  * @brief Prepares to receive non-control OUT data.
@@ -209,7 +209,7 @@ int usbd_whc_transmit_data(u8 ep_addr, u8 *buf, u32 len, void *userdata);
  * @param[in] userdata: userdata from application for each endpoint.
  * @return 0 on success, non-zero on failure.
  */
-int usbd_whc_receive_data(u8 ep_addr, u8 *buf, u32 len, void *userdata);
+int usbd_whc_receive(u8 ep_addr, u8 *buf, u32 len, void *userdata);
 
 /** @} End of Device_WHC_Dplus_Functions group */
 /** @} End of USB_Device_Functions group */

@@ -11,7 +11,7 @@
 
 /* Private defines -----------------------------------------------------------*/
 
-/* String descriptor index placeholders. The real indices are handed out by usbd_add_string()
+/* String descriptor index placeholders. The real indices are handed out by usbd_add_str()
  * at init, so these values only mark the descriptor fields that usbd_whc_patch_desc()
  * rewrites at runtime. They must stay outside the range the core assigns. */
 #define USBD_WHC_IDX_BT_STR              0xF0U
@@ -99,7 +99,7 @@ static int usbd_whc_set_eth_config(usb_dev_t *dev, u8 config);
 static int usbd_whc_clear_eth_config(usb_dev_t *dev, u8 config);
 #endif
 static int usbd_whc_setup(usb_dev_t *dev, usb_setup_req_t *req);
-static u16 usbd_whc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16 buf_len);
+static u16 usbd_whc_get_desc(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16 buf_len);
 static int usbd_whc_handle_ep0_data_out(usb_dev_t *dev);
 static int usbd_whc_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, int status);
 static int usbd_whc_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len);
@@ -192,7 +192,7 @@ static const u8 usbd_whc_config_desc[] = {
 	USBD_WHC_BT_ITF_CLASS,					// bFunctionClass: Wireless Controller
 	USBD_WHC_BT_ITF_SUBCLASS,				// bFunctionSubClass
 	USBD_WHC_BT_ITF_PROTOCOL,				// bFunctionProtocol
-	USBD_WHC_IDX_BT_STR,					// iFunction: USBD_WHC_BT_STRING
+	USBD_WHC_IDX_BT_STR,					// iFunction: USBD_WHC_BT_STR
 #endif
 
 	/*---------------------------------------------------------------------------*/
@@ -206,7 +206,7 @@ static const u8 usbd_whc_config_desc[] = {
 	USBD_WHC_BT_ITF_CLASS,					// bInterfaceClass: Wireless Controller
 	USBD_WHC_BT_ITF_SUBCLASS,				// bInterfaceSubClass
 	USBD_WHC_BT_ITF_PROTOCOL,				// bInterfaceProtocol: Bluetooth Programming Interface
-	USBD_WHC_IDX_BT_STR,					// iInterface: USBD_WHC_BT_STRING
+	USBD_WHC_IDX_BT_STR,					// iInterface: USBD_WHC_BT_STR
 
 	/* Endpoint Descriptor */
 	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
@@ -247,7 +247,7 @@ static const u8 usbd_whc_config_desc[] = {
 	USBD_WHC_ETH_ITF_CLASS,				// bInterfaceClass: Vendor Specific
 	USBD_WHC_ETH_ITF_SUBCLASS,				// bInterfaceSubClass
 	USBD_WHC_ETH_ITF_PROTOCOL,				// bInterfaceProtocol
-	USBD_WHC_IDX_ETH_STR,					// iInterface: USBD_WHC_ETH_STRING
+	USBD_WHC_IDX_ETH_STR,					// iInterface: USBD_WHC_ETH_STR
 
 	/* Endpoint Descriptor */
 	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
@@ -276,7 +276,7 @@ static const u8 usbd_whc_config_desc[] = {
 	USBD_WHC_BT_ITF_CLASS,					// bInterfaceClass: Wireless Controller
 	USBD_WHC_BT_ITF_SUBCLASS,				// bInterfaceSubClass
 	USBD_WHC_BT_ITF_PROTOCOL,				// bInterfaceProtocol: Bluetooth Programming Interface
-	USBD_WHC_IDX_BT_STR,					// iInterface: USBD_WHC_BT_STRING
+	USBD_WHC_IDX_BT_STR,					// iInterface: USBD_WHC_BT_STR
 
 	/* Endpoint Descriptor */
 	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
@@ -305,7 +305,7 @@ static const u8 usbd_whc_config_desc[] = {
 	USBD_WHC_BT_ITF_CLASS,					// bInterfaceClass: Wireless Controller
 	USBD_WHC_BT_ITF_SUBCLASS,				// bInterfaceSubClass
 	USBD_WHC_BT_ITF_PROTOCOL,				// bInterfaceProtocol: Bluetooth Programming Interface
-	USBD_WHC_IDX_BT_STR,					// iInterface: USBD_WHC_BT_STRING
+	USBD_WHC_IDX_BT_STR,					// iInterface: USBD_WHC_BT_STR
 
 	/* Endpoint Descriptor */
 	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
@@ -334,7 +334,7 @@ static const u8 usbd_whc_config_desc[] = {
 	USBD_WHC_BT_ITF_CLASS,					// bInterfaceClass: Wireless Controller
 	USBD_WHC_BT_ITF_SUBCLASS,				// bInterfaceSubClass
 	USBD_WHC_BT_ITF_PROTOCOL,				// bInterfaceProtocol: Bluetooth Programming Interface
-	USBD_WHC_IDX_BT_STR,					// iInterface: USBD_WHC_BT_STRING
+	USBD_WHC_IDX_BT_STR,					// iInterface: USBD_WHC_BT_STR
 
 	/* Endpoint Descriptor */
 	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
@@ -363,7 +363,7 @@ static const u8 usbd_whc_config_desc[] = {
 	USBD_WHC_BT_ITF_CLASS,					// bInterfaceClass: Wireless Controller
 	USBD_WHC_BT_ITF_SUBCLASS,				// bInterfaceSubClass
 	USBD_WHC_BT_ITF_PROTOCOL,				// bInterfaceProtocol: Bluetooth Programming Interface
-	USBD_WHC_IDX_BT_STR,					// iInterface: USBD_WHC_BT_STRING
+	USBD_WHC_IDX_BT_STR,					// iInterface: USBD_WHC_BT_STR
 
 	/* Endpoint Descriptor */
 	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
@@ -392,7 +392,7 @@ static const u8 usbd_whc_config_desc[] = {
 	USBD_WHC_BT_ITF_CLASS,					// bInterfaceClass: Wireless Controller
 	USBD_WHC_BT_ITF_SUBCLASS,				// bInterfaceSubClass
 	USBD_WHC_BT_ITF_PROTOCOL,				// bInterfaceProtocol: Bluetooth Programming Interface
-	USBD_WHC_IDX_BT_STR,					// iInterface: USBD_WHC_BT_STRING
+	USBD_WHC_IDX_BT_STR,					// iInterface: USBD_WHC_BT_STR
 
 	/* Endpoint Descriptor */
 	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
@@ -421,7 +421,7 @@ static const u8 usbd_whc_config_desc[] = {
 	USBD_WHC_BT_ITF_CLASS,					// bInterfaceClass: Wireless Controller
 	USBD_WHC_BT_ITF_SUBCLASS,				// bInterfaceSubClass
 	USBD_WHC_BT_ITF_PROTOCOL,				// bInterfaceProtocol: Bluetooth Programming Interface
-	USBD_WHC_IDX_BT_STR,					// iInterface: USBD_WHC_BT_STRING
+	USBD_WHC_IDX_BT_STR,					// iInterface: USBD_WHC_BT_STR
 
 	/* Endpoint Descriptor */
 	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
@@ -565,7 +565,7 @@ static const u8 usbd_whc_single_wifi_mode_config_desc[] = {
 	USBD_WHC_ETH_ITF_CLASS,				// bInterfaceClass: Vendor Specific
 	USBD_WHC_ETH_ITF_SUBCLASS,				// bInterfaceSubClass
 	USBD_WHC_ETH_ITF_PROTOCOL,				// bInterfaceProtocol
-	USBD_WHC_IDX_ETH_STR,					// iInterface: USBD_WHC_ETH_STRING
+	USBD_WHC_IDX_ETH_STR,					// iInterface: USBD_WHC_ETH_STR
 
 	/* Endpoint Descriptor */
 	USB_LEN_EP_DESC,						// bLength: Endpoint Descriptor size
@@ -589,7 +589,7 @@ static const u8 usbd_whc_single_wifi_mode_config_desc[] = {
 
 /* WHC Class Driver */
 static const usbd_class_driver_t usbd_whc_driver = {
-	.get_descriptor = usbd_whc_get_descriptor,
+	.get_desc = usbd_whc_get_desc,
 	.set_config = usbd_whc_set_config,
 	.clear_config = usbd_whc_clear_config,
 	.setup = usbd_whc_setup,
@@ -774,7 +774,7 @@ static int usbd_whc_set_config(usb_dev_t *dev, u8 config)
 {
 	int ret;
 	usbd_whc_dev_t *idev = &usbd_whc_dev;
-	usbd_otp_t *otp = &idev->otp;
+	usbd_whc_otp_t *otp = &idev->otp;
 
 	/* Only the bConfigurationValue advertised in the config descriptor is valid */
 	if (config != 1U) {
@@ -938,7 +938,7 @@ static int usbd_whc_clear_bt_config(usb_dev_t *dev, u8 config)
 static void usbd_whc_clear_config(usb_dev_t *dev, u8 config)
 {
 	usbd_whc_dev_t *idev = &usbd_whc_dev;
-	usbd_otp_t *otp = &idev->otp;
+	usbd_whc_otp_t *otp = &idev->otp;
 
 	UNUSED(config);
 
@@ -1302,7 +1302,7 @@ static int usbd_whc_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len)
 		 && (ep_addr != USBD_WHC_ETH_EP_BULK_OUT)
 #endif
 		)) {
-		usbd_whc_receive_data(ep_addr, ep->xfer_buf, ep->xfer_len, userdata);
+		usbd_whc_receive(ep_addr, ep->xfer_buf, ep->xfer_len, userdata);
 	}
 
 	return RTK_SUCCESS;
@@ -1327,11 +1327,11 @@ static int usbd_whc_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len)
   *         so a part whose OTP holds none reports no serial number at all.
   *         The core reads these on every descriptor request, so assigning them once here is
   *         enough. The OTP strings remain valid for as long as the device is enumerable,
-  *         because usbd_otp_deinit() runs after usbd_unregister_class().
+  *         because usbd_whc_otp_deinit() runs after usbd_class_unregister().
   * @param  otp: OTP parameters, already loaded
   * @retval None
   */
-static void usbd_whc_apply_dev_info(const usbd_otp_t *otp)
+static void usbd_whc_apply_dev_info(const usbd_whc_otp_t *otp)
 {
 	usbd_dev_info_t *info = usbd_get_dev_info();
 
@@ -1348,8 +1348,8 @@ static void usbd_whc_apply_dev_info(const usbd_otp_t *otp)
 		info->mfg_str = (const char *)otp->mfg_str;
 		info->prod_str = (const char *)otp->prod_str;
 	} else {
-		info->mfg_str = USBD_WHC_MFG_STRING;
-		info->prod_str = USBD_WHC_PROD_STRING;
+		info->mfg_str = USBD_WHC_MFG_STR;
+		info->prod_str = USBD_WHC_PROD_STR;
 	}
 
 	/* NULL: the core reports no serial number when the OTP does not hold one */
@@ -1416,13 +1416,13 @@ static void usbd_whc_patch_desc(u8 *desc, u16 len, usb_speed_type_t speed)
 	}
 }
 
-static u16 usbd_whc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16 buf_len)
+static u16 usbd_whc_get_desc(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16 buf_len)
 {
 	usb_speed_type_t speed = dev->dev_speed;
 	/* Speed the returned configuration describes, which selects the wMaxPacketSize and bInterval */
 	usb_speed_type_t desc_speed = speed;
 	usbd_whc_dev_t *idev = &usbd_whc_dev;
-	usbd_otp_t *otp = &idev->otp;
+	usbd_whc_otp_t *otp = &idev->otp;
 	const u8 *desc = NULL;
 	u32 len = 0;
 	u8 type = USB_HIGH_BYTE(req->wValue);
@@ -1470,7 +1470,7 @@ static u16 usbd_whc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 		break;
 
 	case USB_DESC_TYPE_STRING:
-		/* Every string this class owns is registered with usbd_add_string() and answered by
+		/* Every string this class owns is registered with usbd_add_str() and answered by
 		   the core, which only forwards an index it does not know, e.g. the MS OS string */
 		USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_GET_DESC, 0);
 		break;
@@ -1664,14 +1664,14 @@ int usbd_whc_init(const usbd_whc_cb_t *cb)
 {
 	int ret = RTK_SUCCESS;
 	usbd_whc_dev_t *idev = &usbd_whc_dev;
-	usbd_otp_t *otp = &idev->otp;
+	usbd_whc_otp_t *otp = &idev->otp;
 
 	if (cb == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid user CB\n");
 		return -RTK_ERR_BADARG;
 	}
 
-	if (usbd_otp_init(otp) != RTK_SUCCESS) {
+	if (usbd_whc_otp_init(otp) != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_WARN, "Fail to load OTP para\n");
 	}
 
@@ -1679,9 +1679,9 @@ int usbd_whc_init(const usbd_whc_cb_t *cb)
 
 	/* Class-specific strings, whose indices the core hands out, so the descriptor fields
 	   naming them are patched at runtime rather than carrying a fixed index */
-	idev->bt_str_idx = (otp->bt_en != 0U) ? usbd_add_string(USBD_WHC_BT_STRING) : 0U;
+	idev->bt_str_idx = (otp->bt_en != 0U) ? usbd_add_str(USBD_WHC_BT_STR) : 0U;
 #ifdef CONFIG_WHC_ETH
-	idev->eth_str_idx = usbd_add_string(USBD_WHC_ETH_STRING);
+	idev->eth_str_idx = usbd_add_str(USBD_WHC_ETH_STR);
 #endif
 
 	usbd_whc_wifi_init();
@@ -1715,7 +1715,7 @@ int usbd_whc_init(const usbd_whc_cb_t *cb)
 		goto init_clean_all;
 	}
 
-	ret = usbd_register_class(&usbd_whc_driver);
+	ret = usbd_class_register(&usbd_whc_driver);
 	if (ret != RTK_SUCCESS) {
 		goto init_clean_task;
 	}
@@ -1738,7 +1738,7 @@ init_clean_cb:
 	}
 
 init_exit:
-	usbd_otp_deinit(otp);
+	usbd_whc_otp_deinit(otp);
 
 	return ret;
 }
@@ -1751,14 +1751,14 @@ init_exit:
 void usbd_whc_deinit(void)
 {
 	usbd_whc_dev_t *idev = &usbd_whc_dev;
-	usbd_otp_t *otp = &idev->otp;
+	usbd_whc_otp_t *otp = &idev->otp;
 	int ret;
 
 	/* Unregister first: no class callback can run afterwards, so releasing cb and the pending
 	 * control request below cannot race an EP0 OUT completion in ISR context, nor the vendor
 	 * RESET request give reset_sema once it is deleted. Refused in interrupt context, then
 	 * nothing is released. */
-	ret = usbd_unregister_class();
+	ret = usbd_class_unregister();
 	if (ret != RTK_SUCCESS) {
 		return;
 	}
@@ -1775,10 +1775,10 @@ void usbd_whc_deinit(void)
 		idev->cb = NULL;
 	}
 
-	usbd_otp_deinit(otp);
+	usbd_whc_otp_deinit(otp);
 }
 
-int usbd_whc_transmit_ctrl_data(u8 *buf, u16 len)
+int usbd_whc_ctrl_transmit(u8 *buf, u16 len)
 {
 	usbd_whc_dev_t *idev = &usbd_whc_dev;
 	usb_dev_t *dev = idev->dev;
@@ -1799,7 +1799,7 @@ int usbd_whc_transmit_ctrl_data(u8 *buf, u16 len)
 	return usbd_ep_transmit(dev, ep0_in);
 }
 
-int usbd_whc_transmit_data(u8 ep_addr, u8 *buf, u32 len, void *userdata)
+int usbd_whc_transmit(u8 ep_addr, u8 *buf, u32 len, void *userdata)
 {
 	int ret = RTK_SUCCESS;
 	u8 claimed;
@@ -1861,7 +1861,7 @@ int usbd_whc_transmit_data(u8 ep_addr, u8 *buf, u32 len, void *userdata)
 	return ret;
 }
 
-int usbd_whc_receive_data(u8 ep_addr, u8 *buf, u32 len, void *userdata)
+int usbd_whc_receive(u8 ep_addr, u8 *buf, u32 len, void *userdata)
 {
 	u8 num = USB_EP_NUM(ep_addr);
 	usbd_whc_dev_t *idev = &usbd_whc_dev;
@@ -1909,10 +1909,10 @@ int usbd_whc_receive_data(u8 ep_addr, u8 *buf, u32 len, void *userdata)
 	return usbd_ep_receive(dev, ep);
 }
 
-u8 usbd_whc_is_bt_en(void)
+bool usbd_whc_is_bt_enabled(void)
 {
 	usbd_whc_dev_t *idev = &usbd_whc_dev;
-	usbd_otp_t *otp = &idev->otp;
-	/*Call this after usbd_otp_init*/
-	return (otp->bt_en != 0U) ? 1U : 0U;
+	usbd_whc_otp_t *otp = &idev->otp;
+	/*Call this after usbd_whc_otp_init*/
+	return (otp->bt_en != 0U);
 }

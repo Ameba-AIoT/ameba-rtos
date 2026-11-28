@@ -46,9 +46,9 @@ extern "C" {
 
 /** @brief Device identity and capability parameters latched from OTP. */
 typedef struct {
-	u8 *mfg_str;                /**< Manufacturer string, heap-allocated by @ref usbd_otp_init. */
-	u8 *prod_str;               /**< Product string, heap-allocated by @ref usbd_otp_init. */
-	u8 *sn_str;                 /**< Serial number string, heap-allocated by @ref usbd_otp_init. */
+	u8 *mfg_str;                /**< Manufacturer string, heap-allocated by @ref usbd_whc_otp_init. */
+	u8 *prod_str;               /**< Product string, heap-allocated by @ref usbd_whc_otp_init. */
+	u8 *sn_str;                 /**< Serial number string, heap-allocated by @ref usbd_whc_otp_init. */
 	u16 vid;                    /**< Vendor ID read from OTP, valid when @ref vid_pid is set, else 0. */
 	u16 pid;                    /**< Product ID read from OTP, valid when @ref vid_pid is set, else 0. */
 	u8 vid_pid : 1;             /**< 1 when OTP supplied the VID/PID. */
@@ -57,7 +57,7 @@ typedef struct {
 	u8 self_powered : 1;        /**< 1 when the device reports itself as self-powered. */
 	u8 remote_wakeup_en : 1;    /**< 1 when remote wakeup is enabled. */
 	u8 bt_en : 1;               /**< 1 when the Bluetooth function is enabled in OTP. */
-} usbd_otp_t;
+} usbd_whc_otp_t;
 
 /** @} End of Device_WHC_OTP_Types group */
 /** @} End of USB_Device_Types group */
@@ -78,7 +78,7 @@ typedef struct {
 
 /**
  * @brief  Read the device identity and parameters from OTP.
- * @note   Allocates the identity string buffers; release them with @ref usbd_otp_deinit.
+ * @note   Allocates the identity string buffers; release them with @ref usbd_whc_otp_deinit.
  *         On a partial failure the already allocated buffers are freed before returning.
  *         Three tiers: the autoload shadow registers, else the OTP, else the caller's own default
  *         (a clear vid_pid/mfg_prod flag keeps it, a clear sn flag means no serial number).
@@ -94,14 +94,14 @@ typedef struct {
  *         -RTK_ERR_BADARG when an enabled autoload group is broken or empty (not on RLE1509); the flags of the
  *         other group stay valid.
  */
-int usbd_otp_init(usbd_otp_t *otp);
+int usbd_whc_otp_init(usbd_whc_otp_t *otp);
 
 /**
- * @brief  Free the buffers allocated by @ref usbd_otp_init.
+ * @brief  Free the buffers allocated by @ref usbd_whc_otp_init.
  * @param  otp: OTP parameter block to release.
  * @return None
  */
-void usbd_otp_deinit(usbd_otp_t *otp);
+void usbd_whc_otp_deinit(usbd_whc_otp_t *otp);
 
 /** @} End of Device_WHC_OTP_Functions group */
 /** @} End of USB_Device_Functions group */

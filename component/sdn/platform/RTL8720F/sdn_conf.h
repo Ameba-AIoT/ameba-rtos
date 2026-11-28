@@ -66,4 +66,9 @@
 
 #define BT_LL_LE_PA_SYNC_LIST_SIZE                                  8
 
+//BLE Controller generates ECC key pair
+#if BT_LL_FEATURE_BT42_SECURE_CONNECTION
+#define BT_LL_LE_CONTROLLER_GEN_ECC_KEY                             0
+#endif
+
 #endif

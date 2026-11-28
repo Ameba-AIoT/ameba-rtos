@@ -18,7 +18,7 @@
 /* The RAM disk driver is FATFS only; a Kconfig dep would cycle through the VFS_RAM file system choice. */
 #error "USBD_MSC_RAM needs FATFS on the RAM disk (CONFIG File System: File system on RAM disk = FATFS)"
 #endif
-#include "usbd_scsi.h"
+#include "usbd_msc_scsi.h"
 #include "os_wrapper.h"
 #include "vfs.h"
 #include "vfs_fatfs.h"
@@ -53,7 +53,7 @@
 static int usbd_msc_set_config(usb_dev_t *dev, u8 config);
 static void usbd_msc_clear_config(usb_dev_t *dev, u8 config);
 static int usbd_msc_setup(usb_dev_t *dev, usb_setup_req_t *req);
-static u16 usbd_msc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16 buf_len);
+static u16 usbd_msc_get_desc(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16 buf_len);
 static int usbd_msc_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, int status);
 static int usbd_msc_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len);
 static void usbd_msc_status_changed(usb_dev_t *dev, u8 old_status, u8 status);
@@ -86,7 +86,7 @@ static const u8 usbd_msc_dev_desc[USB_LEN_DEV_DESC] = {
 
 #ifndef CONFIG_SUPPORT_USB_FS_ONLY
 /* USB Standard Device Qualifier Descriptor */
-static const u8 usbd_msc_device_qualifier_desc[USB_LEN_DEV_QUALIFIER_DESC] = {
+static const u8 usbd_msc_dev_qualifier_desc[USB_LEN_DEV_QUALIFIER_DESC] = {
 	USB_LEN_DEV_QUALIFIER_DESC,                     /* bLength */
 	USB_DESC_TYPE_DEVICE_QUALIFIER,                 /* bDescriptorType */
 	0x00,                                           /* bcdUSB */
@@ -97,7 +97,7 @@ static const u8 usbd_msc_device_qualifier_desc[USB_LEN_DEV_QUALIFIER_DESC] = {
 	0x40,                                           /* bMaxPacketSize */
 	0x01,                                           /* bNumConfigurations */
 	0x00,                                           /* Reserved */
-};  /* usbd_msc_device_qualifier_desc */
+};  /* usbd_msc_dev_qualifier_desc */
 #endif
 
 /* USB MSC Device Configuration Descriptor, wMaxPacketSize is patched for the speed it describes,
@@ -146,7 +146,7 @@ static const u8 usbd_msc_config_desc[] = {
 
 /* MSC Class Driver */
 static const usbd_class_driver_t usbd_msc_driver = {
-	.get_descriptor = usbd_msc_get_descriptor,
+	.get_desc = usbd_msc_get_desc,
 	.set_config = usbd_msc_set_config,
 	.clear_config = usbd_msc_clear_config,
 	.setup = usbd_msc_setup,
@@ -654,7 +654,7 @@ static void usbd_msc_tx_process(void)
 	if (cdev->tx_status == RTK_SUCCESS) {
 		switch (cdev->bot_state) {
 		case USBD_MSC_DATA_IN:
-			if (usbd_scsi_process_cmd(cdev, cbw->field.CBWCB) != RTK_SUCCESS) {
+			if (usbd_msc_scsi_process_cmd(cdev, cbw->field.CBWCB) != RTK_SUCCESS) {
 				/* The medium failed after part of the data was sent, and the host still expects the rest on
 				 * Bulk-In, so end the data stage with a halt rather than a CSW. A phase error recorded for this
 				 * command (Case 7, Hi < Di) takes precedence over the medium error, ref BOT 6.7.2, and is
@@ -712,7 +712,7 @@ static int usbd_msc_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len)
 	}
 
 	/* The actual length: a CBW is checked against it, and a WRITE chunk ended by a short packet must not be
-	   written as a whole one, see usbd_scsi_process_write(). The core already bounds it by the DMA window. */
+	   written as a whole one, see usbd_msc_scsi_process_write(). The core already bounds it by the DMA window. */
 	cdev->rx_data_length = len;
 	if (usb_os_sema_give(cdev->rx_sema) != RTK_SUCCESS) {
 		/* The RX thread misses this transfer and the command stalls until the host resets it */
@@ -761,7 +761,7 @@ static void usbd_msc_rx_process(void)
 			((cbw->field.bmCBWFlags & 0x7FU) != 0U) ||  /* §6.2.2: bmCBWFlags reserved bits 6:0 must be 0 */
 			(cbw->field.bCBWLUN != 0U) ||  /* Only LUN 0 exists (GET_MAX_LUN reports 0) */
 			(cbw->field.bCBWCBLength < 1U) || (cbw->field.bCBWCBLength > 16U)) {
-			usbd_scsi_sense_code(cdev, SCSI_SENSE_KEY_ILLEGAL_REQUEST, SCSI_ASC_INVALID_COMMAND_OPERATION_CODE);
+			usbd_msc_scsi_sense_code(cdev, SCSI_SENSE_KEY_ILLEGAL_REQUEST, SCSI_ASC_INVALID_COMMAND_OPERATION_CODE);
 			/* BOT §6.6.1: invalid CBW — abort() stalls both endpoints, and wedge them so the halts hold until
 			 * Reset Recovery. Set before the stalls: the host can only send the CLEAR_FEATURE that reads the
 			 * flag after it has seen a STALL, and the stall critical section orders the store. */
@@ -771,7 +771,7 @@ static void usbd_msc_rx_process(void)
 			/* A valid CBW proves the host has already cleared the halts, e.g. by SET_CONFIGURATION, which the
 			   core handles without the class, so an older wedge no longer applies. */
 			cdev->wedged = 0U;
-			if (usbd_scsi_process_cmd(cdev, cbwcb) != RTK_SUCCESS) {
+			if (usbd_msc_scsi_process_cmd(cdev, cbwcb) != RTK_SUCCESS) {
 				if (cdev->phase_error != 0U) {
 					if ((cbw_data_len != 0U) && ((cbw->field.bmCBWFlags & 0x80U) == 0U)) {
 						/* Case 13: Ho < Do — the host still owns an OUT data stage that the
@@ -853,10 +853,10 @@ static void usbd_msc_rx_process(void)
 		break;
 
 	case USBD_MSC_DATA_OUT:
-		if (usbd_scsi_process_cmd(cdev, cbwcb) != RTK_SUCCESS) {
+		if (usbd_msc_scsi_process_cmd(cdev, cbwcb) != RTK_SUCCESS) {
 			if (cdev->phase_error != 0U) {
 				/* Ref MSC BOT 1.0 6.7.3 Case 13: the host ended the data stage early with a short packet, see
-				   usbd_scsi_process_write(). It sends nothing more, so Bulk-Out is not halted. */
+				   usbd_msc_scsi_process_write(). It sends nothing more, so Bulk-Out is not halted. */
 				cdev->phase_error = 0U;
 				usbd_msc_send_csw(dev, BOT_CSW_PHASE_ERROR);
 			} else {
@@ -864,7 +864,7 @@ static void usbd_msc_rx_process(void)
 				   OUT data stage. STALL Bulk-Out so those bytes are not read as the next CBW, as for Case 9/13
 				   above; the CSW flows on the un-stalled Bulk-In pipe. Not when the failing chunk was the last
 				   one: the host has sent everything, and a halt would only fail its next CBW. */
-				if (usbd_scsi_out_data_pending(cdev) != 0U) {
+				if (usbd_msc_scsi_out_data_pending(cdev) != 0U) {
 					usbd_ep_set_stall(dev, &cdev->ep_bulk_out);
 				}
 				usbd_msc_send_csw(dev, BOT_CSW_CMD_FAILED);
@@ -940,7 +940,7 @@ static void usbd_msc_patch_desc(u8 *desc, u16 len, usb_speed_type_t speed)
   * @param  buf: Poniter to Buffer
   * @retval Descriptor length
   */
-static u16 usbd_msc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16 buf_len)
+static u16 usbd_msc_get_desc(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16 buf_len)
 {
 	usb_speed_type_t speed = dev->dev_speed;
 	/* Speed the returned configuration describes, which selects the wMaxPacketSize */
@@ -965,8 +965,8 @@ static u16 usbd_msc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 
 #ifndef CONFIG_SUPPORT_USB_FS_ONLY
 	case USB_DESC_TYPE_DEVICE_QUALIFIER:
-		desc = usbd_msc_device_qualifier_desc;
-		len = sizeof(usbd_msc_device_qualifier_desc);
+		desc = usbd_msc_dev_qualifier_desc;
+		len = sizeof(usbd_msc_dev_qualifier_desc);
 		break;
 
 	case USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION:
@@ -980,7 +980,7 @@ static u16 usbd_msc_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf
 #endif
 
 	case USB_DESC_TYPE_STRING:
-		/* Every string this class owns is registered with usbd_add_string() and answered by
+		/* Every string this class owns is registered with usbd_add_str() and answered by
 		   the core, which only forwards an index it does not know, e.g. the MS OS string */
 		USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_GET_DESC, 0);
 		break;
@@ -1251,7 +1251,7 @@ static int usbd_msc_private_init(const usbd_msc_cb_t *cb, const usbd_msc_config_
 
 	/* The core owns the string table, so the same call works in standalone and composite
 	   mode. 0 means no iInterface string. */
-	cdev->itf_str_idx = usbd_add_string(cfg->itf_str);
+	cdev->itf_str_idx = usbd_add_str(cfg->itf_str);
 
 	ops->disk_getcapacity = usbd_msc_media_getcapacity;
 	ops->disk_read = usbd_msc_media_readblocks;
@@ -1373,7 +1373,7 @@ int usbd_msc_init(const usbd_msc_cb_t *cb, const usbd_msc_config_t *cfg)
 	ret = usbd_msc_private_init(cb, cfg);
 	if (ret == RTK_SUCCESS) {
 		cdev->from_composite = 0U;
-		ret = usbd_register_class(&usbd_msc_driver);
+		ret = usbd_class_register(&usbd_msc_driver);
 		if (ret != RTK_SUCCESS) {
 			/* private_init completed, so deinit is its exact reverse */
 			usbd_msc_deinit();
@@ -1391,7 +1391,7 @@ int usbd_composite_msc_init(const usbd_msc_cb_t *cb, const usbd_msc_config_t *cf
 	ret = usbd_msc_private_init(cb, cfg);
 	if (ret == RTK_SUCCESS) {
 		cdev->from_composite = 1U;
-		ret = usbd_composite_register_driver(&usbd_msc_driver);
+		ret = usbd_composite_class_register(&usbd_msc_driver);
 		if (ret != RTK_SUCCESS) {
 			/* private_init completed, so deinit is its exact reverse. from_composite is
 			   already 1, so the unregister inside is a no-op for an unregistered driver. */
@@ -1418,11 +1418,11 @@ void usbd_msc_deinit(void)
 	   class is deinitialized: ref USB 2.0 9.4.7, the transfers still pending are aborted. */
 #ifdef CONFIG_USBD_COMPOSITE
 	if (cdev->from_composite != 0U) {
-		ret = usbd_composite_unregister_driver(&usbd_msc_driver);
+		ret = usbd_composite_class_unregister(&usbd_msc_driver);
 	} else
 #endif
 	{
-		ret = usbd_unregister_class();
+		ret = usbd_class_unregister();
 	}
 	if (ret != RTK_SUCCESS) {
 		return;

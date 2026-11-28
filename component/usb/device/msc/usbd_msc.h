@@ -203,7 +203,7 @@ typedef struct {
 	u32 lba;                                        /**< Current logical block address for operations. */
 	usb_msc_scsi_sense_data_t scsi_sense;           /**< Sense data of the most recent failed command, reported by REQUEST SENSE. */
 	u8 from_composite;                              /**< Flag indicating if part of a composite device. */
-	u8 itf_str_idx;                                 /**< iInterface string index from usbd_add_string(), 0 for none. */
+	u8 itf_str_idx;                                 /**< iInterface string index from usbd_add_str(), 0 for none. */
 	/**
 	 * @brief SCSI standard INQUIRY response, built at init from the configured identification strings.
 	 * @details Held per instance rather than as a const table because the vendor/product/revision

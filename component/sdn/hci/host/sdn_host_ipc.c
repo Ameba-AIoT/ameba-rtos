@@ -40,7 +40,7 @@ static struct sdn_host_ipc {
 #if defined(CONFIG_BLE_LL_EXT_ADV_ENABLE) || defined(CONFIG_BLE_LL_DATA_LEN_EXT_ENABLE)
 #define SDN_INTF_MAX_BT_LEN        258
 #else
-#define SDN_INTF_MAX_BT_LEN        42     /* cmd 0x2027 has the max length: 3 + 39 */
+#define SDN_INTF_MAX_BT_LEN        68     /* cmd 0x205e has the max length: 3 + 65 */
 #endif
 #else
 #define SDN_INTF_MAX_BT_LEN 	   0

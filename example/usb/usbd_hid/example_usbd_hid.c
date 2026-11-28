@@ -55,7 +55,7 @@
 #define HID_SHELL_CMD_EN                         0
 #endif
 
-// hid_send_device_data() is referenced by the shell commands, by the constant
+// hid_transmit_report() is referenced by the shell commands, by the constant
 // data test and by the vendor loopback only
 #if HID_CONSTANT_DATA || HID_SHELL_CMD_EN || HID_VENDOR_LOOPBACK
 #define HID_TX_EN                                1
@@ -123,7 +123,7 @@ static void hid_cmd_at(u16 argc, char **argv);
 #endif
 
 #if HID_TX_EN
-static int hid_send_device_data(const void *data);
+static int hid_transmit_report(const void *data);
 #endif
 
 /* Private variables ---------------------------------------------------------*/
@@ -229,7 +229,7 @@ static const usbd_hid_config_t hid_class_cfg = {
 #endif
 };
 
-static const usbd_hid_usr_cb_t hid_usr_cb = {
+static const usbd_hid_cb_t hid_usr_cb = {
 	.init = hid_cb_init,
 	.deinit = hid_cb_deinit,
 	.setup = hid_cb_setup,
@@ -290,7 +290,7 @@ static void hid_xfer_sleep(u32 ms)
   * @note   Only called once every worker thread is gone and the USB stack is fully
   *         deinited, so that no ISR callback can touch these objects any more.
   *         hid_state_mutex is deliberately kept: the shell thread may be holding
-  *         it inside hid_send_device_data(), and deleting a held mutex is UB
+  *         it inside hid_transmit_report(), and deleting a held mutex is UB
   * @retval None
   */
 static void hid_free_resource(void)
@@ -500,7 +500,7 @@ static int hid_cmd_mouse_data(u16 argc, char *argv[])
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Send mouse data\n");
 
-	return hid_send_device_data(&data);
+	return hid_transmit_report(&data);
 }
 #endif
 #endif  //HID_MOUSE_CMD
@@ -542,7 +542,7 @@ static int hid_cmd_vendor_tx(u16 argc, char *argv[])
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Send vendor report, %u bytes of payload\n", len);
 
-	return hid_send_device_data(report);
+	return hid_transmit_report(report);
 }
 #endif // HID_VENDOR_CMD
 
@@ -587,7 +587,7 @@ static void hid_cmd_at(u16 argc, char **argv)
 
 #if HID_TX_EN
 /**
-  * @brief  Send device data (wrapper function of usbd_hid_send_data())
+  * @brief  Send device data (wrapper function of usbd_hid_send_report())
   * @note   The stack status check and the transfer share one critical section,
   *         otherwise the hotplug thread could free the endpoint buffers between
   *         the check and the transfer
@@ -596,7 +596,7 @@ static void hid_cmd_at(u16 argc, char **argv)
   * @param  pdata: Mouse, keyboard or headset data, or a whole vendor Input report, to send
   * @retval Result of the operation: RTK_SUCCESS if success else fail
   */
-static int hid_send_device_data(const void *pdata)
+static int hid_transmit_report(const void *pdata)
 {
 	int ret;
 #if defined(CONFIG_USBD_HID_MOUSE)
@@ -661,13 +661,13 @@ static int hid_send_device_data(const void *pdata)
 		ret = -RTK_ERR_IO;
 	} else {
 #if defined(CONFIG_USBD_HID_MOUSE)
-		ret = usbd_hid_send_data((const u8 *)byte, 4);
+		ret = usbd_hid_send_report((const u8 *)byte, 4);
 #elif defined(CONFIG_USBD_HID_HEADSET)
-		ret = usbd_hid_send_data(&data->keys, USBD_HID_HEADSET_REPORT_LEN);
+		ret = usbd_hid_send_report(&data->keys, USBD_HID_HEADSET_REPORT_LEN);
 #elif defined(CONFIG_USBD_HID_VENDOR)
-		ret = usbd_hid_send_data(data, USBD_HID_VENDOR_REPORT_LEN);
+		ret = usbd_hid_send_report(data, USBD_HID_VENDOR_REPORT_LEN);
 #else
-		ret = usbd_hid_send_data((const u8 *)data, 8);
+		ret = usbd_hid_send_report((const u8 *)data, 8);
 #endif
 	}
 	rtos_mutex_give(hid_state_mutex);
@@ -707,7 +707,7 @@ static void example_usbd_hid_hotplug_thread(void *param)
 		if (hid_attach_status == USBD_ATTACH_STATUS_DETACHED) {
 			RTK_LOGS(TAG, RTK_LOG_INFO, "DETACHED\n");
 
-			/* Close the gate before tearing down. hid_send_device_data()
+			/* Close the gate before tearing down. hid_transmit_report()
 			 * contends for the same mutex, so no TX is in flight here and any
 			 * later one sees hid_stack_ready == 0 and gives up */
 			rtos_mutex_take(hid_state_mutex, RTOS_MAX_TIMEOUT);
@@ -808,7 +808,7 @@ static void example_usbd_hid_xfer_thread(void *param)
 	for (;;) {
 		/* Wait for a usable session: stack inited and enumerated by the host */
 		while ((hid_app.quit == 0U)
-			   && ((hid_stack_ready == 0U) || (usbd_get_status() != USBD_ATTACH_STATUS_ATTACHED))) {
+			   && ((hid_stack_ready == 0U) || (usbd_get_attach_status() != USBD_ATTACH_STATUS_ATTACHED))) {
 			rtos_time_delay_ms(HID_QUIT_POLL_MS);
 		}
 		if (hid_app.quit != 0U) {
@@ -846,7 +846,7 @@ static void example_usbd_hid_xfer_thread(void *param)
 					RTK_LOGS(TAG, RTK_LOG_WARN, "TX timeout\n");
 					goto session_end;
 				}
-				if (hid_send_device_data(&mdata[i]) != RTK_SUCCESS) {
+				if (hid_transmit_report(&mdata[i]) != RTK_SUCCESS) {
 					goto session_end;
 				}
 				hid_xfer_sleep(delaytime);
@@ -911,7 +911,7 @@ static void example_usbd_hid_xfer_thread(void *param)
 
 		/* Same payload, Input Report ID: the host reads back what it wrote */
 		report[0] = USBD_HID_VENDOR_IN_REPORT_ID;
-		ret = hid_send_device_data(report);
+		ret = hid_transmit_report(report);
 		if (ret != RTK_SUCCESS) {
 			RTK_LOGS(TAG, RTK_LOG_WARN, "Echo fail %d\n", ret);
 		}

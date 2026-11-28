@@ -66,16 +66,16 @@
 
 /* Private function prototypes -----------------------------------------------*/
 
-static int usbd_cdc_ncm_cmd_link(u16 argc, char *argv[]);
-static void usbd_cdc_ncm_cmd_link_at(u16 argc, char **argv);
+static int ncm_cmd_link(u16 argc, char *argv[]);
+static void ncm_cmd_link_at(u16 argc, char **argv);
 
 int usb_ethernet_transmit(u8 *buf, u32 len, u8 block);
 
-static int usbd_cdc_ncm_cb_init(void);
-static int usbd_cdc_ncm_cb_deinit(void);
-static int usbd_cdc_ncm_cb_setup(usb_setup_req_t *req, u8 *buf);
-static int usbd_cdc_ncm_cb_received(u8 *buf, u32 Len);
-static void usbd_cdc_ncm_cb_status_changed(u8 old_status, u8 status);
+static int ncm_cb_init(void);
+static int ncm_cb_deinit(void);
+static int ncm_cb_setup(usb_setup_req_t *req, u8 *buf);
+static int ncm_cb_received(u8 *buf, u32 Len);
+static void ncm_cb_status_changed(u8 old_status, u8 status);
 
 /* Private variables ---------------------------------------------------------*/
 
@@ -91,7 +91,7 @@ static u8 cdc_ncm_dhcp_server_started = 0;
 static const u8 cdc_ncm_dongle_mac[6] = {0x02, 0x11, 0x22, 0x33, 0x44, 0x55};
 /*
  * cdc_ncm_dhcp_server_mac: MAC address used by the device's local lwIP netif (pnetif_usb_eth).
- * It is copied into pnetif_usb_eth->hwaddr in usbd_ncm_link_change_thread() before the
+ * It is copied into pnetif_usb_eth->hwaddr in ncm_link_change_thread() before the
  * DHCP server is started, so it is the source MAC for frames the device sends to the
  * host (DHCP offers, ARP replies, gateway traffic). This is the "device-facing" end.
  *
@@ -102,11 +102,11 @@ static const u8 cdc_ncm_dhcp_server_mac[6] = {0x02, 0x11, 0x22, 0x33, 0x44, 0x56
 static __IO u8 cdc_ncm_link_disconnected = 0;
 
 static const usbd_cdc_ncm_cb_t cdc_ncm_cb = {
-	.init = usbd_cdc_ncm_cb_init,
-	.deinit = usbd_cdc_ncm_cb_deinit,
-	.setup = usbd_cdc_ncm_cb_setup,
-	.received = usbd_cdc_ncm_cb_received,
-	.status_changed = usbd_cdc_ncm_cb_status_changed,
+	.init = ncm_cb_init,
+	.deinit = ncm_cb_deinit,
+	.setup = ncm_cb_setup,
+	.received = ncm_cb_received,
+	.status_changed = ncm_cb_status_changed,
 };
 
 static const usbd_cdc_ncm_config_t cdc_ncm_class_cfg = {
@@ -175,7 +175,7 @@ static volatile u8 cdc_ncm_stack_ready = 0;
 /* AT commands "AT+<cmd>=<p1>,<p2>...": the command name is case-sensitive, the parameters are not */
 ATCMD_TABLE_DATA_SECTION
 const log_item_t usbd_cdc_ncm_cmd_table[] = {
-	{"+USBDNCM", usbd_cdc_ncm_cmd_link_at},
+	{"+USBDNCM", ncm_cmd_link_at},
 };
 
 /* Private functions ---------------------------------------------------------*/
@@ -185,7 +185,7 @@ const log_item_t usbd_cdc_ncm_cmd_table[] = {
   * @note   Link change thread only, the single owner of cdc_ncm_dhcp_server_started
   * @retval None
   */
-static void usbd_ncm_net_down(void)
+static void ncm_net_down(void)
 {
 	if (cdc_ncm_dhcp_server_started) {
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Stopping USB NCM DHCP Server...\n");
@@ -203,9 +203,9 @@ static void usbd_ncm_net_down(void)
 	}
 }
 
-static void usbd_ncm_link_change_thread(void *param)
+static void ncm_link_change_thread(void *param)
 {
-	u8 link_is_up = 0;
+	bool link_is_up = false;
 
 	UNUSED(param);
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Enter link status task!\n");
@@ -215,10 +215,10 @@ static void usbd_ncm_link_change_thread(void *param)
 
 		if (cdc_ncm_link_disconnected) {
 			cdc_ncm_link_disconnected = 0;
-			link_is_up = 0;
+			link_is_up = false;
 		}
 
-		if ((1 == link_is_up) && (!cdc_ncm_dhcp_server_started)) {
+		if (link_is_up && (!cdc_ncm_dhcp_server_started)) {
 			if (pnetif_usb_eth == NULL) {
 				rtos_time_delay_ms(1000);
 			} else {
@@ -261,16 +261,16 @@ static void usbd_ncm_link_change_thread(void *param)
 
 				RTK_LOGS(TAG, RTK_LOG_INFO, "DHCP Server started\n");
 			}
-		} else if ((0 == link_is_up) && cdc_ncm_dhcp_server_started) {
+		} else if (!link_is_up && cdc_ncm_dhcp_server_started) {
 			// USB disconnected, stop DHCP server
-			usbd_ncm_net_down();
+			ncm_net_down();
 		} else {
 			rtos_time_delay_ms(1000);
 		}
 	}
 
 	/* Stop requested: take the netif down while the USB stack is still up, before the stop owner tears it down */
-	usbd_ncm_net_down();
+	ncm_net_down();
 	if ((pnetif_usb_eth != NULL) && (netif_default == pnetif_usb_eth)) {
 		/* Hand the default route back to the STA netif, as the USB host examples do on detach */
 		netifapi_netif_set_default(pnetif_sta);
@@ -283,7 +283,7 @@ static void usbd_ncm_link_change_thread(void *param)
   * @brief  Initializes the CDC NCM media layer
   * @retval Status
   */
-static int usbd_cdc_ncm_cb_init(void)
+static int ncm_cb_init(void)
 {
 	return RTK_SUCCESS;
 }
@@ -292,7 +292,7 @@ static int usbd_cdc_ncm_cb_init(void)
   * @brief  DeInitializes the CDC NCM media layer
   * @retval Status
   */
-static int usbd_cdc_ncm_cb_deinit(void)
+static int ncm_cb_deinit(void)
 {
 	return RTK_SUCCESS;
 }
@@ -303,7 +303,7 @@ static int usbd_cdc_ncm_cb_deinit(void)
   * @param  length: RX data length (in bytes)
   * @retval Status
   */
-static int usbd_cdc_ncm_cb_received(u8 *buf, u32 length)
+static int ncm_cb_received(u8 *buf, u32 length)
 {
 	/* Forward to network stack. The class only delivers a non-empty datagram */
 	netif_adapter_usb_eth_recv(buf, length);
@@ -319,7 +319,7 @@ static int usbd_cdc_ncm_cb_received(u8 *buf, u32 length)
   * @param  buf: Buffer containing command data
   * @retval Status
   */
-static int usbd_cdc_ncm_cb_setup(usb_setup_req_t *req, u8 *buf)
+static int ncm_cb_setup(usb_setup_req_t *req, u8 *buf)
 {
 	int ret = RTK_SUCCESS;
 	UNUSED(buf);
@@ -356,7 +356,7 @@ static int usbd_cdc_ncm_cb_setup(usb_setup_req_t *req, u8 *buf)
   * @param  old_status: Previous attach status
   * @param  status: Current attach status
   */
-static void usbd_cdc_ncm_cb_status_changed(u8 old_status, u8 status)
+static void ncm_cb_status_changed(u8 old_status, u8 status)
 {
 	/*
 	The scenario of state change is as follows:
@@ -389,7 +389,7 @@ static void usbd_cdc_ncm_cb_status_changed(u8 old_status, u8 status)
   * @brief  USB hotplug detection and handling thread
   * @param  param: Thread parameter (unused)
   */
-static void usbd_ncm_hotplug_thread(void *param)
+static void ncm_hotplug_thread(void *param)
 {
 	int ret = 0;
 	u8 current_status;
@@ -506,7 +506,7 @@ static void usbd_ncm_hotplug_thread(void *param)
   * @note   Only once no worker can re-init it: hotplug joined, or never created
   * @retval None
   */
-static void usbd_ncm_stack_down(void)
+static void ncm_stack_down(void)
 {
 	/* The gate may be open, so the lwIP thread may be inside usbd_cdc_ncm_transmit()
 	 * right now: take the lock, exactly as the hotplug thread does, instead of only
@@ -524,7 +524,7 @@ static void usbd_ncm_stack_down(void)
   * @brief  Bring the stack and the worker threads up
   * @retval RTK_SUCCESS, or the first error, with everything already created rolled back
   */
-static int usbd_ncm_start(void)
+static int ncm_start(void)
 {
 	int ret = 0;
 	u32 workers = 0U;
@@ -591,8 +591,8 @@ static int usbd_ncm_start(void)
 	cdc_ncm_stack_ready = 1;
 
 	ret = rtos_task_create(&monitor_task,
-						   "usbd_ncm_link_change_thread",
-						   usbd_ncm_link_change_thread,
+						   "ncm_link_change_thread",
+						   ncm_link_change_thread,
 						   NULL,
 						   CDC_NCM_LINK_STATE_THREAD_STACK_SIZE,
 						   CDC_NCM_LINK_STATE_THREAD_PRIORITY);
@@ -605,8 +605,8 @@ static int usbd_ncm_start(void)
 #if CDC_NCM_HOTPLUG
 	/* Created last: it owns the stack once running, so nothing after it can fail */
 	ret = rtos_task_create(&hotplug_task,
-						   "usbd_ncm_hotplug_thread",
-						   usbd_ncm_hotplug_thread,
+						   "ncm_hotplug_thread",
+						   ncm_hotplug_thread,
 						   NULL,
 						   CDC_NCM_HOTPLUG_THREAD_STACK_SIZE,
 						   CDC_NCM_HOTPLUG_THREAD_PRIORITY);
@@ -625,7 +625,7 @@ exit_create_task_fail:
 		cdc_ncm_app.state = USB_APP_STATE_STOPPING;
 		return -RTK_ERR_TIMEOUT;
 	}
-	usbd_ncm_stack_down();
+	ncm_stack_down();
 
 exit_usbd_init_fail:
 #if CDC_NCM_HOTPLUG
@@ -645,7 +645,7 @@ exit_cleanup:
   * @brief  USB CDC NCM initialization thread of the standalone example
   * @param  param: Thread parameter (unused)
   */
-static void usbd_ncm_init_thread(void *param)
+static void ncm_init_thread(void *param)
 {
 	UNUSED(param);
 
@@ -657,7 +657,7 @@ static void usbd_ncm_init_thread(void *param)
 	rtos_task_set_affinity(rtos_task_handle_get(), 0);
 #endif
 
-	if (usbd_ncm_start() != RTK_SUCCESS) {
+	if (ncm_start() != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Start fail\n");
 	}
 	rtos_task_delete(NULL);
@@ -666,7 +666,7 @@ static void usbd_ncm_init_thread(void *param)
 /* Shell command USBDNCM link <0|1> -- report the upper-layer network link state
  * to the host. Mirrors the ECM example's USBDECM. Edge-triggered:
  * calling repeatedly with the same value is a no-op inside the class driver. */
-static int usbd_cdc_ncm_cmd_link(u16 argc, char *argv[])
+static int ncm_cmd_link(u16 argc, char *argv[])
 {
 	const char *cmd = (argc != 0U) ? argv[0] : NULL;
 	const char *val = (argc > 1U) ? argv[1] : NULL;
@@ -698,9 +698,9 @@ static int usbd_cdc_ncm_cmd_link(u16 argc, char *argv[])
 }
 
 /* AT entry: argv[0] is reserved by the AT parser and argv[1] holds the first parameter */
-static void usbd_cdc_ncm_cmd_link_at(u16 argc, char **argv)
+static void ncm_cmd_link_at(u16 argc, char **argv)
 {
-	int ret = usbd_cdc_ncm_cmd_link((argc != 0U) ? (u16)(argc - 1U) : 0U, &argv[1]);
+	int ret = ncm_cmd_link((argc != 0U) ? (u16)(argc - 1U) : 0U, &argv[1]);
 
 	if (ret == RTK_SUCCESS) {
 		at_printf(ATCMD_OK_END_STR);
@@ -748,7 +748,7 @@ int example_usbd_cdc_ncm_start(void)
 {
 	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD CDC NCM demo start\n");
 
-	return usbd_ncm_start();
+	return ncm_start();
 }
 
 /**
@@ -779,7 +779,7 @@ int example_usbd_cdc_ncm_stop(void)
 	}
 
 	/* Every worker is gone: this caller is the only one left, apart from TX under the lock */
-	usbd_ncm_stack_down();
+	ncm_stack_down();
 #if CDC_NCM_HOTPLUG
 	rtos_sema_delete(cdc_ncm_attach_status_changed_sema);
 	cdc_ncm_attach_status_changed_sema = NULL;
@@ -802,8 +802,8 @@ void example_usbd_cdc_ncm(void)
 	RTK_LOGS(TAG, RTK_LOG_INFO, "USBD CDC NCM demo start\n");
 
 	ret = rtos_task_create(&init_task,
-						   "usbd_ncm_init_thread",
-						   usbd_ncm_init_thread,
+						   "ncm_init_thread",
+						   ncm_init_thread,
 						   NULL,
 						   CDC_NCM_INIT_THREAD_STACK_SIZE,
 						   CDC_NCM_INIT_THREAD_PRIORITY);

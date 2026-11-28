@@ -55,7 +55,7 @@ static void cdc_ecm_cb_detached(void);
 static void cdc_ecm_cb_setup(void);
 static void cdc_ecm_cb_process(usb_host_t *host, u8 msg);
 static void cdc_ecm_cb_received(u8 *pbuf, u32 Len);
-static int cdc_ecm_cb_device_check(usb_host_t *host, u8 cfg_max);
+static int cdc_ecm_cb_validate(usb_host_t *host, u8 cfg_max);
 
 /* Private variables ---------------------------------------------------------*/
 
@@ -70,7 +70,7 @@ static __IO u8 cdc_ecm_detach_pending = 0;
 static rtos_sema_t cdc_ecm_detach_sema;
 
 /* Serializes the USB stack bring up / tear down against the lwIP TX path.
-   The class driver already keeps usbh_cdc_ecm_send_data() off the buffers that
+   The class driver already keeps usbh_cdc_ecm_transmit() off the buffers that
    usbh_cdc_ecm_deinit() frees; this lock is an application level guard on top of
    it, so the whole teardown and re-init window is closed to TX deterministically.
    Created by the first start and never deleted: TX is driven by the lwIP
@@ -107,7 +107,7 @@ static u8 cdc_ecm_workers = 0;
    be rebuilt, sets quit, takes the network down, wakes and joins the workers */
 static usb_app_ctx_t cdc_ecm_app;
 
-static const usbh_config_t usbh_ecm_cfg = {
+static const usbh_config_t ecm_cfg = {
 	.speed = USB_SPEED_HIGH,
 	.ext_intr_enable = 0, //USBH_SOF_INTR
 	.isr_priority = INT_PRI_MIDDLE,
@@ -135,7 +135,7 @@ static const usbh_config_t usbh_ecm_cfg = {
 #endif
 };
 
-static const usbh_cdc_ecm_state_cb_t cdc_ecm_usb_cb = {
+static const usbh_cdc_ecm_cb_t cdc_ecm_usb_cb = {
 	.init   = cdc_ecm_cb_init,
 	.deinit = cdc_ecm_cb_deinit,
 	.attached = cdc_ecm_cb_attached,
@@ -144,9 +144,9 @@ static const usbh_cdc_ecm_state_cb_t cdc_ecm_usb_cb = {
 	.received = cdc_ecm_cb_received,
 };
 
-static const usbh_user_cb_t usbh_ecm_usr_cb = {
-	.process = cdc_ecm_cb_process,
-	.validate = cdc_ecm_cb_device_check,
+static const usbh_cb_t ecm_usr_cb = {
+	.event = cdc_ecm_cb_process,
+	.validate = cdc_ecm_cb_validate,
 };
 
 static const usbh_cdc_ecm_config_t ecm_class_cfg = {
@@ -166,10 +166,10 @@ static const usbh_cdc_ecm_config_t ecm_class_cfg = {
 
 /* Private functions ---------------------------------------------------------*/
 
-static int cdc_ecm_cb_device_check(usb_host_t *host, u8 cfg_max)
+static int cdc_ecm_cb_validate(usb_host_t *host, u8 cfg_max)
 {
 	UNUSED(cfg_max);
-	return usbh_cdc_ecm_check_config_desc(host);
+	return usbh_cdc_ecm_check_config(host);
 }
 
 /**
@@ -232,16 +232,16 @@ static void cdc_ecm_cb_received(u8 *buf, u32 length)
 static void cdc_ecm_cb_process(usb_host_t *host, u8 msg)
 {
 	switch (msg) {
-	case USBH_MSG_USER_SET_CONFIG:
+	case USBH_EVENT_SELECT_CONFIG:
 		if (usbh_cdc_ecm_choose_config(host) != RTK_SUCCESS) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Choose config fail\n");
 		}
 		break;
-	case USBH_MSG_DISCONNECTED:
+	case USBH_EVENT_DISCONNECTED:
 		// usbh_cdc_ecm_host_user.cdc_ecm_is_ready = 0;
 		break;
 
-	case USBH_MSG_CONNECTED:
+	case USBH_EVENT_CONNECTED:
 		break;
 
 	default:
@@ -257,7 +257,7 @@ static int cdc_ecm_stack_init(void)
 {
 	int ret;
 
-	ret = usbh_init(&usbh_ecm_cfg, &usbh_ecm_usr_cb);
+	ret = usbh_init(&ecm_cfg, &ecm_usr_cb);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Init USBH fail\n");
 		return ret;
@@ -315,13 +315,13 @@ static void cdc_ecm_open_gate(void)
 {
 	rtos_mutex_take(cdc_ecm_state_mutex, RTOS_MAX_TIMEOUT);
 	if ((cdc_ecm_stack_ready == 0U) && (cdc_ecm_stack_up != 0U) && (cdc_ecm_teardown == 0U) && (cdc_ecm_app.quit == 0U) &&
-		(usbh_cdc_ecm_usb_is_ready() != 0U)) {
+		(usbh_cdc_ecm_is_ready())) {
 		/* USB enumerated and upper layer is ready: release the SOF data-transfer
 		 * gate so bulk/intr scheduling can begin (see usbh_cdc_ecm_sof()).
 		 * Runs on both the initial bring-up and every hot-plug re-init, re-arming
 		 * the gate that detach() cleared. For devices needing upper-layer prep
-		 * (e.g. 4G AT config), gate this on the real ready signal instead of usb_is_ready(). */
-		usbh_cdc_ecm_prepare_done();
+		 * (e.g. 4G AT config), gate this on the real ready signal instead of usbh_cdc_ecm_is_ready(). */
+		usbh_cdc_ecm_set_ready();
 		/* Open the gate as the very last step, so no TX runs against a half built stack */
 		cdc_ecm_stack_ready = 1U;
 	}
@@ -451,7 +451,7 @@ static void example_usbh_ecm_link_change_thread(void *param)
 	u8 *mac;
 	u32 dhcp_status = 0;
 	u32 link_down_log_cnt = 0;
-	u8 link_is_up = 0;
+	bool link_is_up = false;
 	u8 enter;
 	eth_state_t ethernet_state = ETH_STATUS_IDLE;
 
@@ -465,7 +465,7 @@ static void example_usbh_ecm_link_change_thread(void *param)
 
 		/* Consume detach events first: USB callback context only flags this
 		 * bit, so even if the dongle has already been re-plugged by the time
-		 * we poll (link_is_up reads back as 1), we still tear down the eth
+		 * we poll (link_is_up reads back as true), we still tear down the eth
 		 * default route here. Without this, branch 2 below would miss the
 		 * transition and netif_set_default(pnetif_sta) would never run. */
 		if (cdc_ecm_detach_pending) {
@@ -481,8 +481,8 @@ static void example_usbh_ecm_link_change_thread(void *param)
 
 		link_is_up = usbh_cdc_ecm_get_link_status();
 
-		if (1 == link_is_up && (ethernet_state < ETH_STATUS_INIT)) {	// unlink -> link
-			mac = (u8 *)usbh_cdc_ecm_process_mac_str();
+		if (link_is_up && (ethernet_state < ETH_STATUS_INIT)) {	// unlink -> link
+			mac = (u8 *)usbh_cdc_ecm_get_mac();
 			/* Enter the DHCP section only while no stop is claimed, see cdc_ecm_dhcp_busy */
 			enter = 0U;
 			if (mac != NULL) {
@@ -523,14 +523,14 @@ static void example_usbh_ecm_link_change_thread(void *param)
 					rtos_time_delay_ms(1000);
 				}
 			}
-		} else if (0 == link_is_up && (ethernet_state >= ETH_STATUS_INIT)) {	// link -> unlink
+		} else if (!link_is_up && (ethernet_state >= ETH_STATUS_INIT)) {	// link -> unlink
 			ethernet_state = ETH_STATUS_IDLE;
 			netifapi_netif_set_default(pnetif_sta);
 			/* Clear the link flag and the ARP entries of the gone USB interface */
 			netifapi_netif_set_link_down(pnetif_usb_eth);
 			RTK_LOGS(TAG, RTK_LOG_INFO, "Switch to unlink\n");
 		} else {
-			if ((link_is_up == 0) && (++link_down_log_cnt % 10 == 1)) {
+			if (!link_is_up && (++link_down_log_cnt % 10 == 1)) {
 				RTK_LOGS(TAG, RTK_LOG_INFO, "ECM link is down (%u)\n", link_down_log_cnt);
 			}
 			rtos_time_delay_ms(1000);
@@ -724,7 +724,7 @@ int usb_ethernet_transmit(u8 *buf, u32 len, u8 block)
 		/* Lost the race against a teardown */
 		ret = -RTK_ERR_IO;
 	} else {
-		ret = usbh_cdc_ecm_send_data(buf, len, block);
+		ret = usbh_cdc_ecm_transmit(buf, len, block);
 	}
 	rtos_mutex_give(cdc_ecm_state_mutex);
 

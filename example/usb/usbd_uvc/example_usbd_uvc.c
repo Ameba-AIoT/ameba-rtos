@@ -51,7 +51,7 @@ static const char *const TAG = "UVC";
 static video_array_t video;
 static usbd_uvc_buffer_t uvc_payload[USBD_UVC_VIDEO_BUF_NUM];
 
-static const usbd_uvc_ep_cfg_t uvc_ep = {
+static const usbd_uvc_config_t uvc_ep = {
 	.iso_in_addr = USBD_UVC_ISO_IN_EP,
 	.iso_in_xfer_size = USBD_UVC_IN_BUF_SIZE,
 };
@@ -126,7 +126,7 @@ static void example_usbd_uvc_video_thread(void *param)
 		if (uvc_app.quit != 0U) {
 			break;
 		}
-		if (usbd_uvc_get_status() == 0) {
+		if (!usbd_uvc_is_streaming()) {
 			continue;
 		}
 
@@ -142,7 +142,7 @@ static void example_usbd_uvc_video_thread(void *param)
 		}
 
 		do {
-			payload = usbd_uvc_video_out_stream_queue();
+			payload = usbd_uvc_dequeue_frame();
 			if (payload == NULL) {
 				if (uvc_app.quit != 0U) {
 					break;
@@ -159,9 +159,9 @@ static void example_usbd_uvc_video_thread(void *param)
 		payload->bytesused = video_data->size;
 		video_data->data_offset += video_data->size;
 
-		usbd_uvc_video_put_in_stream_queue(payload);
+		usbd_uvc_queue_frame(payload);
 		/* Woken by the frame task once the frame is queued, or by example_usbd_uvc_stop() */
-		usbd_uvc_wait_frame_down();
+		usbd_uvc_wait_frame_done();
 		if (uvc_app.quit != 0U) {
 			break;
 		}
@@ -193,7 +193,7 @@ static int uvc_start(void)
 		goto exit_usbd_init_fail;
 	}
 
-	ret = usbd_uvc_init(&uvc_ep);
+	ret = usbd_uvc_init(NULL, &uvc_ep);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Init UVC class fail\n");
 		goto exit_usbd_uvc_init_fail;
@@ -209,7 +209,7 @@ static int uvc_start(void)
 		/* After a stop the buffer may still link a queue of the previous run, which the class
 		   reset: detach it, or put_out_stream_queue() skips it and no buffer is ever free */
 		INIT_LIST_HEAD(&uvc_payload[i].buffer_list);
-		usbd_uvc_video_put_out_stream_queue(&uvc_payload[i]);
+		usbd_uvc_release_frame(&uvc_payload[i]);
 	}
 
 	ret = rtos_task_create(&task, "usbd_uvc_video_thread", example_usbd_uvc_video_thread, NULL, UVC_INIT_THREAD_STACK_SIZE,
@@ -276,7 +276,7 @@ int example_usbd_uvc_stop(void)
 		return usb_app_ctx_wait_idle(&uvc_app);
 	}
 
-	/* The video thread may wait in usbd_uvc_wait_frame_down() for a frame the host no longer
+	/* The video thread may wait in usbd_uvc_wait_frame_done() for a frame the host no longer
 	   pulls: wake it while the semaphore still exists. The count left behind when it is not
 	   waiting there makes its next wait return at once, it then observes quit and leaves. */
 	rtos_sema_give(get_private_usbd_uvcd()->video.output_frame_sema);

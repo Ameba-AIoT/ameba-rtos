@@ -167,20 +167,20 @@ u8 usb_ringbuf_get_count(usb_ringbuf_manager_t *handle);
  *
  * @param[in] handle  Pointer to the manager structure.
  * @return
- *   - 1: Buffer is empty (Head == Tail).
- *   - 0: Buffer contains data.
+ *   - true: Buffer is empty (Head == Tail).
+ *   - false: Buffer contains data.
  */
-int usb_ringbuf_is_empty(usb_ringbuf_manager_t *handle);
+bool usb_ringbuf_is_empty(usb_ringbuf_manager_t *handle);
 
 /**
  * @brief  Checks if the ring buffer is full.
  *
  * @param[in] handle  Pointer to the manager structure.
  * @return
- *   - 1: Buffer is full.
- *   - 0: Buffer has space for new nodes.
+ *   - true: Buffer is full.
+ *   - false: Buffer has space for new nodes.
  */
-int usb_ringbuf_is_full(usb_ringbuf_manager_t *handle);
+bool usb_ringbuf_is_full(usb_ringbuf_manager_t *handle);
 
 /**
  * @brief  Writes a data packet to the tail of the buffer.

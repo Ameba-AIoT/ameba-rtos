@@ -20,14 +20,41 @@ extern "C"
 
 #if defined(RTK_BLE_AUDIO_GMAP_SUPPORT) && RTK_BLE_AUDIO_GMAP_SUPPORT
 
+/** @addtogroup BT_Constants BT Constants
+ * @{
+ */
+/** @addtogroup BT_LE_Audio_Constants BT LE Audio Constants
+ * @{
+ */
+/** @addtogroup BT_GMAP_Constants BT GMAP Constants
+ * @{
+ */
 #define RTK_BT_GATT_UUID_GMAS                        0x1858    /*!< Gaming Audio Service. */
 #define RTK_BT_GMAS_UUID_CHAR_GMAP_ROLE              0x2C00    /*!< GMAP Role. */
 #define RTK_BT_GMAS_CHAR_UUID_UGG_FEATURES           0x2C01    /*!< UGG Features. */
 #define RTK_BT_GMAS_CHAR_UUID_UGT_FEATURES           0x2C02    /*!< UGT Features. */
 #define RTK_BT_GMAS_CHAR_UUID_BGS_FEATURES           0x2C03    /*!< BGS Features. */
 #define RTK_BT_GMAS_CHAR_UUID_BGR_FEATURES           0x2C04    /*!< BGR Features. */
+/**
+ * @}
+ */
+/**
+ * @}
+ */
+/**
+ * @}
+ */
 /************************************** Data Types *************************************/
 
+/** @addtogroup BT_Types BT Types
+ * @{
+ */
+/** @addtogroup BT_LE_Audio_Types BT LE Audio Types
+ * @{
+ */
+/** @addtogroup BT_GMAP_Types BT GMAP Types
+ * @{
+ */
 /**
  * @typedef   rtk_bt_le_audio_gmap_role_t
  * @brief     Bluetooth LE Audio GMAP role bit mask of a device.
@@ -100,11 +127,24 @@ typedef struct {
 	uint16_t cause;          /*!< Result code of the read operation. */
 } rtk_bt_le_audio_gmas_client_read_features_result_t;
 
-/********************************* Functions Declaration *******************************/
 /**
- * @defgroup  bt_gmap BT GMAP APIs
- * @brief     BT GMAP related function APIs.
- * @ingroup   bt_le_audio
+ * @}
+ */
+/**
+ * @}
+ */
+/**
+ * @}
+ */
+
+/********************************* Functions Declaration *******************************/
+/** @addtogroup BT_Functions BT Functions
+ * @{
+ */
+/** @addtogroup BT_LE_Audio_Functions BT LE Audio Functions
+ * @{
+ */
+/** @addtogroup BT_GMAP_Functions BT GMAP Functions
  * @{
  */
 
@@ -131,6 +171,12 @@ uint16_t rtk_bt_le_audio_gmas_client_read_role(uint16_t conn_handle);
  */
 uint16_t rtk_bt_le_audio_gmas_client_read_features(uint16_t conn_handle, uint16_t char_uuid);
 
+/**
+ * @}
+ */
+/**
+ * @}
+ */
 /**
  * @}
  */

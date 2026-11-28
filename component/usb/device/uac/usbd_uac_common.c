@@ -14,6 +14,8 @@
 
 /* Private defines -----------------------------------------------------------*/
 
+#define USBD_UAC_WRITE_LEN_MAX       0x7FFFFFFFU /**< Largest len usbd_uac_write() can report in an int */
+
 #if USBD_UAC_DEBUG
 #define USBD_UAC_DEBUG_LOOP_TIME     (10U * 1000U)
 #define USBD_UAC_DEBUG_STEP_TIME     100U
@@ -37,8 +39,8 @@
 /* Private function prototypes -----------------------------------------------*/
 
 static inline void usbd_uac_count_read_data(u32 audio_len);
-static int usbd_uac_ring_read(usbd_uac_stream_t *stream, u8 *buffer, u32 size, u32 *copy_len, u16 *packet_index, u32 *zero_pkt_flag);
-static u32 usbd_uac_read_ring(usbd_uac_stream_t *stream, u8 *buffer, u32 size, u32 time_out_ms, u32 *zero_pkt_flag);
+static int usbd_uac_ring_read(usbd_uac_stream_t *stream, u8 *buffer, u32 size, u32 *copy_len, u16 *packet_index, u32 *zero_packet_bitmap);
+static u32 usbd_uac_read_ring(usbd_uac_stream_t *stream, u8 *buffer, u32 size, u32 timeout_ms, u32 *zero_packet_bitmap);
 static u16 usbd_uac_get_ring_node_count(u8 speed, u8 is_record);
 static int usbd_uac_stream_init(usbd_uac_stream_t *stream, u8 speed);
 static int usbd_uac_private_init(const usbd_uac_cb_t *cb, const usbd_uac_config_t *cfg);
@@ -99,12 +101,12 @@ static inline void usbd_uac_count_read_data(u32 audio_len)
   * @param  buffer: Pointer to Data buffer
   * @param  size: Data length
   * @param  copy_len: Accumulated copy length
-  * @param  packet_index: Accumulated packet count, the bit index in zero_pkt_flag
-  * @param  zero_pkt_flag: Optional bitmap of filler packets (bit N = packet N)
+  * @param  packet_index: Accumulated packet count, the bit index in zero_packet_bitmap
+  * @param  zero_packet_bitmap: Optional bitmap of filler packets (bit N = packet N)
   * @retval Status
   */
 static int usbd_uac_ring_read(usbd_uac_stream_t *stream, u8 *buffer, u32 size,
-							  u32 *copy_len, u16 *packet_index, u32 *zero_pkt_flag)
+							  u32 *copy_len, u16 *packet_index, u32 *zero_packet_bitmap)
 {
 	usb_ringbuf_manager_t *ring = &(stream->ring);
 	u32 read_len;
@@ -125,15 +127,15 @@ static int usbd_uac_ring_read(usbd_uac_stream_t *stream, u8 *buffer, u32 size,
 				/* A filler node carries no payload, the ring hands back the stale bytes of the
 				   slot: play it as silence */
 				usb_os_memset((void *)(buffer + *copy_len), 0U, read_len);
-				/* zero_pkt_flag is a 32-bit bitmap; cap at 32 pkts (shift >= 32 is UB). */
-				if ((zero_pkt_flag != NULL) && (*packet_index < 32U)) {
-					*zero_pkt_flag |= (1U << (*packet_index));
+				/* zero_packet_bitmap is a 32-bit bitmap; cap at 32 pkts (shift >= 32 is UB). */
+				if ((zero_packet_bitmap != NULL) && (*packet_index < 32U)) {
+					*zero_packet_bitmap |= (1U << (*packet_index));
 				}
 			}
 			*copy_len += read_len;
 			(*packet_index)++;
 		}
-	} while (usb_ringbuf_is_empty(ring) == 0);
+	} while (!usb_ringbuf_is_empty(ring));
 
 	if (*copy_len >= size) {
 		return RTK_SUCCESS;
@@ -149,45 +151,45 @@ static int usbd_uac_ring_read(usbd_uac_stream_t *stream, u8 *buffer, u32 size,
   * @param  stream: Playback stream
   * @param  buffer: Destination buffer
   * @param  size: Destination capacity
-  * @param  time_out_ms: Wait time, 0 for no wait
-  * @param  zero_pkt_flag: Optional bitmap of filler packets
+  * @param  timeout_ms: Wait time, 0 for no wait
+  * @param  zero_packet_bitmap: Optional bitmap of filler packets
   * @retval Copied length in bytes
   */
-static u32 usbd_uac_read_ring(usbd_uac_stream_t *stream, u8 *buffer, u32 size, u32 time_out_ms, u32 *zero_pkt_flag)
+static u32 usbd_uac_read_ring(usbd_uac_stream_t *stream, u8 *buffer, u32 size, u32 timeout_ms, u32 *zero_packet_bitmap)
 {
 	u32 copy_len = 0;
 	u16 packet_index = 0;
-	u8 ring_empty;
+	bool ring_empty;
 
 	if (stream->streaming == 0) {
 		return copy_len;
 	}
 
-	if (time_out_ms == 0) {
+	if (timeout_ms == 0) {
 		if (usb_ringbuf_is_empty(&(stream->ring))) {
 			return copy_len;
 		}
 
-		usbd_uac_ring_read(stream, buffer, size, &copy_len, &packet_index, zero_pkt_flag);
+		usbd_uac_ring_read(stream, buffer, size, &copy_len, &packet_index, zero_packet_bitmap);
 	} else {
 		do {
 			/* Test the ring and announce the wait under the lock the producer tests the flag with,
 			   refer to usbd_uac_wake_reader(), or a node queued in between on the other core is
 			   not signalled */
 			usb_os_enter_critical();
-			ring_empty = (usb_ringbuf_is_empty(&(stream->ring)) != 0) ? 1U : 0U;
-			if (ring_empty != 0U) {
+			ring_empty = usb_ringbuf_is_empty(&(stream->ring));
+			if (ring_empty) {
 				stream->read_wait_sema = 1U;
 			}
 			usb_os_exit_critical();
 
-			if (ring_empty != 0U) {
+			if (ring_empty) {
 				/* is_closing: the buffer teardown waits for this call to leave */
 				if ((stream->sema_valid == 0) || (stream->is_closing != 0U)) {
 					stream->read_wait_sema = 0;
 					break;
 				}
-				if (rtos_sema_take(stream->sema, time_out_ms) != RTK_SUCCESS) {
+				if (rtos_sema_take(stream->sema, timeout_ms) != RTK_SUCCESS) {
 					stream->read_wait_sema = 0;
 					break;
 				}
@@ -197,7 +199,7 @@ static u32 usbd_uac_read_ring(usbd_uac_stream_t *stream, u8 *buffer, u32 size, u
 				}
 			} else {
 				/* if did not read any pkt, loop to check the wr/rd pos*/
-				if ((usbd_uac_ring_read(stream, buffer, size, &copy_len, &packet_index, zero_pkt_flag) == RTK_SUCCESS)
+				if ((usbd_uac_ring_read(stream, buffer, size, &copy_len, &packet_index, zero_packet_bitmap) == RTK_SUCCESS)
 					|| (copy_len > 0)) {
 					break;
 				}
@@ -345,7 +347,7 @@ static int usbd_uac_stream_init(usbd_uac_stream_t *stream, u8 speed)
 	/* 1 to USBD_UAC_RING_NODE_COUNT_MAX nodes: a buffer count of 0 picks the non-zero default and
 	   usbd_uac_version_init() caps it so that the nodes of a high speed ms still fit a u8 */
 	cnt = (u8)usbd_uac_get_ring_node_count(speed, is_record);
-	/* Read by usbd_uac_get_read_frame_time_in_us() only, the ring does not depend on it */
+	/* Read by usbd_uac_get_read_frame_time_us() only, the ring does not depend on it */
 	stream->binterval = usbd_uac_get_binterval(speed);
 
 	/* The ring only depends on the speed: keep it while it fits, so a format switch of the
@@ -386,7 +388,7 @@ static int usbd_uac_stream_init(usbd_uac_stream_t *stream, u8 speed)
 		}
 	}
 	stream->read_wait_sema = 0;
-	/* Every ring resource exists from here on: let usbd_uac_read() / usbd_uac_transmit_data() in.
+	/* Every ring resource exists from here on: let usbd_uac_read() / usbd_uac_write() in.
 	   Published under the lock, which orders the ring writes above before the flags for
 	   usbd_uac_isoc_in_ep_open() in ISR context on the other core */
 	usb_os_enter_critical();
@@ -547,18 +549,18 @@ static int usbd_uac_private_init(const usbd_uac_cb_t *cb, const usbd_uac_config_
 	}
 
 	/* Every endpoint the descriptors declare needs its address, with the right direction bit */
-	if (((cfg->play_ep_addr & USB_REQ_DIR_MASK) != USB_H2D) || (usbd_uac_is_valid_ep(cfg->play_ep_addr) == 0U)) {
+	if (((cfg->play_ep_addr & USB_REQ_DIR_MASK) != USB_H2D) || (!usbd_uac_is_valid_ep(cfg->play_ep_addr))) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid EP addr %02x\n", cfg->play_ep_addr);
 		return -RTK_ERR_BADARG;
 	}
 #ifdef CONFIG_USBD_UAC_RECORD
-	if (((cfg->record_ep_addr & USB_REQ_DIR_MASK) != USB_D2H) || (usbd_uac_is_valid_ep(cfg->record_ep_addr) == 0U)) {
+	if (((cfg->record_ep_addr & USB_REQ_DIR_MASK) != USB_D2H) || (!usbd_uac_is_valid_ep(cfg->record_ep_addr))) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid EP addr %02x\n", cfg->record_ep_addr);
 		return -RTK_ERR_BADARG;
 	}
 #endif
 #ifdef CONFIG_USBD_UAC_PLAY_FEEDBACK
-	if (((cfg->play_feedback_ep_addr & USB_REQ_DIR_MASK) != USB_D2H) || (usbd_uac_is_valid_ep(cfg->play_feedback_ep_addr) == 0U)) {
+	if (((cfg->play_feedback_ep_addr & USB_REQ_DIR_MASK) != USB_D2H) || (!usbd_uac_is_valid_ep(cfg->play_feedback_ep_addr))) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Invalid EP addr %02x\n", cfg->play_feedback_ep_addr);
 		return -RTK_ERR_BADARG;
 	}
@@ -576,7 +578,7 @@ static int usbd_uac_private_init(const usbd_uac_cb_t *cb, const usbd_uac_config_
 
 	/* The core owns the string table, so the same call works in standalone and composite
 	   mode. 0 means no iInterface string. */
-	cdev->interface_string_index = usbd_add_string(cfg->itf_str);
+	cdev->itf_str_idx = usbd_add_str(cfg->itf_str);
 
 	cdev->play_volume = (cfg->volume_default != 0U) ? cfg->volume_default : USBD_UAC_DEFAULT_VOLUME;
 	cdev->play_mute = (cfg->mute_default != 0U) ? 1U : 0U;
@@ -724,13 +726,13 @@ u8 usbd_uac_volume_linear_interpolation(s16 target_y)
   * @brief  Check the number of an application supplied endpoint address
   * @note   USB_EP_NUM() keeps the reserved bits D6..D4, so a reserved address is out of range as well
   * @param  ep_addr: Endpoint address, direction bit included
-  * @retval 1 for a non-control endpoint the controller has, else 0
+  * @retval true for a non-control endpoint the controller has, false otherwise
   */
-u8 usbd_uac_is_valid_ep(u8 ep_addr)
+bool usbd_uac_is_valid_ep(u8 ep_addr)
 {
 	u8 ep_num = USB_EP_NUM(ep_addr);
 
-	return ((ep_num != 0U) && (ep_num < USB_MAX_ENDPOINTS)) ? 1U : 0U;
+	return ((ep_num != 0U) && (ep_num < USB_MAX_ENDPOINTS));
 }
 
 /**
@@ -783,7 +785,7 @@ void usbd_uac_wake_reader(usbd_uac_stream_t *stream)
 {
 	usb_os_enter_critical();
 	if ((stream->sema_valid != 0U) && (stream->read_wait_sema != 0U) &&
-		(usb_ringbuf_is_empty(&(stream->ring)) == 0)) {
+		(!usb_ringbuf_is_empty(&(stream->ring)))) {
 		rtos_sema_give(stream->sema);
 	}
 	usb_os_exit_critical();
@@ -794,7 +796,7 @@ void usbd_uac_wake_reader(usbd_uac_stream_t *stream)
   * @param  void
   * @retval Status
   */
-int usbd_uac_start_play(void)
+int usbd_uac_start_playback(void)
 {
 	usbd_uac_dev_t *cdev = &usbd_uac_dev;
 	usbd_uac_stream_t *stream = &(cdev->play_stream);
@@ -826,7 +828,7 @@ int usbd_uac_start_play(void)
   * @param  void
   * @retval void
   */
-void usbd_uac_stop_play(void)
+void usbd_uac_stop_playback(void)
 {
 	usbd_uac_dev_t *cdev = &usbd_uac_dev;
 #if USBD_UAC_DEBUG
@@ -839,19 +841,19 @@ void usbd_uac_stop_play(void)
   * @brief  Read UAC data
   * @param  buffer: Pointer to data buffer
   * @param  size: Data length
-  * @param  time_out_ms: Time out
-  * @param  zero_pkt_flag: Optional bitmap of filler packets, refer to usbd_uac.h
+  * @param  timeout_ms: Time out
+  * @param  zero_packet_bitmap: Optional bitmap of filler packets, refer to usbd_uac.h
   * @retval copy len
   */
-u32 usbd_uac_read(u8 *buffer, u32 size, u32 time_out_ms, u32 *zero_pkt_flag)
+u32 usbd_uac_read(u8 *buffer, u32 size, u32 timeout_ms, u32 *zero_packet_bitmap)
 {
 	usbd_uac_dev_t *cdev = &usbd_uac_dev;
 	usbd_uac_stream_t *stream = &(cdev->play_stream);
 	usb_dev_t *dev = cdev->dev;
 	u32 copy_len;
 
-	if (zero_pkt_flag != NULL) {
-		*zero_pkt_flag = 0;
+	if (zero_packet_bitmap != NULL) {
+		*zero_packet_bitmap = 0;
 	}
 
 	if (dev == NULL || dev->is_ready == 0) {
@@ -868,7 +870,7 @@ u32 usbd_uac_read(u8 *buffer, u32 size, u32 time_out_ms, u32 *zero_pkt_flag)
 	stream->user_count++;
 	usb_os_exit_critical();
 
-	copy_len = usbd_uac_read_ring(stream, buffer, size, time_out_ms, zero_pkt_flag);
+	copy_len = usbd_uac_read_ring(stream, buffer, size, timeout_ms, zero_packet_bitmap);
 
 	usb_os_enter_critical();
 	stream->user_count--;
@@ -883,7 +885,7 @@ u32 usbd_uac_read(u8 *buffer, u32 size, u32 time_out_ms, u32 *zero_pkt_flag)
   * @param  void
   * @retval read frame cnt
   */
-u32 usbd_uac_get_read_frame_cnt(void)
+u32 usbd_uac_get_read_frames(void)
 {
 	usbd_uac_dev_t *cdev = &usbd_uac_dev;
 	usbd_uac_stream_t *stream = &(cdev->play_stream);
@@ -911,7 +913,7 @@ u8 usbd_uac_ring_push(usbd_uac_stream_t *stream, const u8 *buf, u32 len, u8 vali
 
 	usb_os_enter_critical();
 	if (stream->streaming != 0U) {
-		if (usb_ringbuf_is_full(ring) != 0) {
+		if (usb_ringbuf_is_full(ring)) {
 			usb_ringbuf_remove_head(ring, tmp, 1, NULL);
 			dropped = 1U;
 		}
@@ -970,7 +972,7 @@ void usbd_uac_stream_deinit(usbd_uac_stream_t *stream)
 		stream->sema_valid = 0;
 		usb_os_exit_critical();
 
-		/* Wait for every task still inside usbd_uac_read() or usbd_uac_transmit_data() on this
+		/* Wait for every task still inside usbd_uac_read() or usbd_uac_write() on this
 		   ring to leave. Not bounded: freeing the semaphore or the ring under such a task would be
 		   a use after free, so a starved one is reported once per USBD_UAC_USER_EXIT_WARN_MS
 		   instead. Sleep rather than spin, the woken task may have a lower priority. */
@@ -991,7 +993,7 @@ void usbd_uac_stream_deinit(usbd_uac_stream_t *stream)
 	usb_ringbuf_manager_deinit(&(stream->ring));
 
 #ifdef CONFIG_USBD_UAC_RECORD
-	/* No usbd_uac_transmit_data() caller is left, refer to the wait above */
+	/* No usbd_uac_write() caller is left, refer to the wait above */
 	if (stream == &(usbd_uac_dev.record_stream)) {
 		usbd_uac_record_packetizer_deinit();
 	}
@@ -1054,7 +1056,7 @@ int usbd_uac_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len)
 	}
 
 	/* Re-arm before waking the reader. Only fails once the device is no longer ready, the OUT EP then
-	   stays NAKing until the next start_play() re-arms it: record it, there is nothing to retry in an
+	   stays NAKing until the next usbd_uac_start_playback() re-arms it: record it, there is nothing to retry in an
 	   ISR. The return value only tells the composite dispatcher the EP is owned. */
 	play_ep->xfer_buf = stream->dma_buf;
 	play_ep->xfer_len = stream->max_packet_size;
@@ -1089,7 +1091,7 @@ void usbd_uac_status_changed(usb_dev_t *dev, u8 old_status, u8 status)
 	if (status == USBD_ATTACH_STATUS_DETACHED) {
 		/* Detach: stop playback and record and wake up the read thread blocked in usbd_uac_read.
 		   ISR context here: only rtos_sema_give is allowed (no malloc/sema_take). */
-		usbd_uac_stop_play();
+		usbd_uac_stop_playback();
 #ifdef CONFIG_USBD_UAC_RECORD
 		usbd_uac_stop_record();
 #endif
@@ -1149,7 +1151,7 @@ int usbd_uac_isoc_in_ep_open(usb_dev_t *dev)
 
 /**
   * @brief  Pop one packet from the record TX ring buffer and transmit it on the ISOC IN endpoint.
-  * @note   ISR context (SOF trigger / IN completion retrigger) or task context (usbd_uac_transmit_data
+  * @note   ISR context (SOF trigger / IN completion retrigger) or task context (usbd_uac_write
   *         kick). Nothing is submitted while the mic streaming setting is not selected, the EP is
   *         then closed. usb_ringbuf_remove_head() returns 0 when the ring buffer is empty, which naturally
   *         results in a ZLP transmit so the endpoint keeps being serviced every interval.
@@ -1336,7 +1338,7 @@ int usbd_composite_uac_init(const usbd_uac_cb_t *cb, const usbd_uac_config_t *cf
 	ret = usbd_uac_private_init(cb, cfg);
 	if (ret == RTK_SUCCESS) {
 		cdev->from_composite = 1;
-		ret = usbd_composite_register_driver(&usbd_uac_driver);
+		ret = usbd_composite_class_register(&usbd_uac_driver);
 		if (ret != RTK_SUCCESS) {
 			/* private_init completed, so deinit is its exact reverse. from_composite is
 			   already 1, so the unregister inside is a no-op for an unregistered driver. */
@@ -1361,7 +1363,7 @@ int usbd_uac_init(const usbd_uac_cb_t *cb, const usbd_uac_config_t *cfg)
 	ret = usbd_uac_private_init(cb, cfg);
 	if (ret == RTK_SUCCESS) {
 		cdev->from_composite = 0;
-		ret = usbd_register_class(&usbd_uac_driver);
+		ret = usbd_class_register(&usbd_uac_driver);
 		if (ret != RTK_SUCCESS) {
 			/* private_init completed, so deinit is its exact reverse, as on the composite path */
 			usbd_uac_deinit();
@@ -1387,11 +1389,11 @@ void usbd_uac_deinit(void)
 	   class is deinitialized: ref USB 2.0 9.4.7, the transfers still pending are aborted. */
 #ifdef CONFIG_USBD_COMPOSITE
 	if (cdev->from_composite != 0U) {
-		ret = usbd_composite_unregister_driver(&usbd_uac_driver);
+		ret = usbd_composite_class_unregister(&usbd_uac_driver);
 	} else
 #endif
 	{
-		ret = usbd_unregister_class();
+		ret = usbd_class_unregister();
 	}
 	if (ret != RTK_SUCCESS) {
 		return;
@@ -1425,7 +1427,7 @@ void usbd_uac_deinit(void)
   *         of audio at the negotiated bInterval. Callers use this to pace playback
   *         and detect underruns.
   */
-u32 usbd_uac_get_read_frame_time_in_us(void)
+u32 usbd_uac_get_read_frame_time_us(void)
 {
 	usbd_uac_dev_t *cdev = &usbd_uac_dev;
 	usbd_uac_stream_t *stream = &(cdev->play_stream);
@@ -1441,9 +1443,9 @@ u32 usbd_uac_get_read_frame_time_in_us(void)
   * @brief  Transmit UAC data
   * @param  buf: Data buffer
   * @param  len: Data length
-  * @retval Status
+  * @retval len on success, -RTK_ERR_BADARG or -RTK_ERR_IO on failure, refer to usbd_uac.h
   */
-int usbd_uac_transmit_data(const u8 *buf, u32 len)
+int usbd_uac_write(const u8 *buf, u32 len)
 {
 	usbd_uac_dev_t *cdev = &usbd_uac_dev;
 	usb_dev_t *dev = cdev->dev;
@@ -1453,12 +1455,12 @@ int usbd_uac_transmit_data(const u8 *buf, u32 len)
 	u32 chunk;
 	u8 restart;
 
-	if ((buf == NULL) && (len != 0U)) {
+	if (((buf == NULL) && (len != 0U)) || (len > USBD_UAC_WRITE_LEN_MAX)) {
 		return -RTK_ERR_BADARG;
 	}
 
 	if (dev == NULL || dev->is_ready == 0) {
-		return RTK_SUCCESS;
+		return -RTK_ERR_IO;
 	}
 
 	/* Counted under the same lock the buffer teardown closes the gate with, so the teardown
@@ -1466,7 +1468,7 @@ int usbd_uac_transmit_data(const u8 *buf, u32 len)
 	usb_os_enter_critical();
 	if ((stream->is_closing != 0U) || (stream->sema_valid == 0U) || (stream->streaming == 0U)) {
 		usb_os_exit_critical();
-		return RTK_SUCCESS;
+		return -RTK_ERR_IO;
 	}
 	stream->user_count++;
 	restart = packetizer->restart;
@@ -1506,7 +1508,7 @@ int usbd_uac_transmit_data(const u8 *buf, u32 len)
 	stream->user_count--;
 	usb_os_exit_critical();
 
-	return RTK_SUCCESS;
+	return (int)len;
 }
 
 /**
@@ -1523,7 +1525,7 @@ int usbd_uac_start_record(void)
 	RTK_LOGS(TAG, RTK_LOG_INFO, "UAC record start\n");
 #endif
 
-	/* Same precondition as usbd_uac_start_play(): attached, so that the speed is known */
+	/* Same precondition as usbd_uac_start_playback(): attached, so that the speed is known */
 	if ((cdev->cfg == NULL) || (cdev->dev == NULL)) {
 		return -RTK_ERR_IO;
 	}
@@ -1541,7 +1543,7 @@ int usbd_uac_start_record(void)
 	   before the ring reset, nor pop the ring while it is reset */
 	usb_os_enter_critical();
 	usb_ringbuf_reset(&(stream->ring));
-	/* The producer drops its partly assembled packet on its next call, refer to usbd_uac_transmit_data() */
+	/* The producer drops its partly assembled packet on its next call, refer to usbd_uac_write() */
 	cdev->record_packetizer.restart = 1U;
 	stream->sof_count = 0;
 	stream->data_count = 0;
@@ -1573,7 +1575,7 @@ void usbd_uac_stop_record(void)
   * @param  len: Data length
   * @retval -RTK_ERR_IO
   */
-int usbd_uac_transmit_data(const u8 *buf, u32 len)
+int usbd_uac_write(const u8 *buf, u32 len)
 {
 	UNUSED(buf);
 	UNUSED(len);
@@ -1583,7 +1585,7 @@ int usbd_uac_transmit_data(const u8 *buf, u32 len)
 
 /**
   * @brief  Start UAC device record (microphone)
-  * @note   Playback only build, refer to usbd_uac_transmit_data().
+  * @note   Playback only build, refer to usbd_uac_write().
   * @param  void
   * @retval -RTK_ERR_IO
   */

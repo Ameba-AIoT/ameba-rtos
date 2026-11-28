@@ -37,7 +37,7 @@
 /* RNDIS class state */
 typedef enum {
 	USBH_RNDIS_STATE_IDLE = 0U,
-	USBH_RNDIS_STATE_TRANSFER,
+	USBH_RNDIS_STATE_XFER,
 	USBH_RNDIS_STATE_ERROR,
 } usbh_rndis_state_t;
 
@@ -128,29 +128,22 @@ static usbh_rndis_host_t usbh_rndis_host;
   * @param  min_len: Smallest bLength the caller reads
   * @retval The descriptor, NULL if absent or truncated
   */
-static const u8 *usbh_rndis_find_func_desc(const usbh_itf_data_t *itf_data, u8 subtype, u8 min_len)
+static const u8 *usbh_rndis_find_func_desc(const usbh_itf_t *itf_data, u8 subtype, u8 min_len)
 {
-	const u8 *desc = itf_data->raw_data;
-	u32 total = 0U;
-	u8 len;
+	const u8 *end;
+	const u8 *desc;
 
-	if (desc == NULL) {
+	if (itf_data->raw_data == NULL) {
 		return NULL;
 	}
 
-	while ((total + USB_LEN_DESC_HEADER) <= itf_data->raw_data_len) {
-		len = desc[0];
-		if ((len < USB_LEN_DESC_HEADER) || ((total + len) > itf_data->raw_data_len)) {
-			break;
-		}
-		if ((desc[1] == USB_CDC_CS_INTERFACE) && (len >= min_len) && (len > USB_LEN_DESC_HEADER) && (desc[2] == subtype)) {
-			return desc;
-		}
-		desc += len;
-		total += len;
+	end = itf_data->raw_data + itf_data->raw_data_len;
+	desc = usbh_desc_find(itf_data->raw_data, end, USB_CDC_CS_INTERFACE, subtype);
+	while ((desc != NULL) && (desc[0] < min_len)) {
+		desc = usbh_desc_find(usbh_desc_next(desc, end), end, USB_CDC_CS_INTERFACE, subtype);
 	}
 
-	return NULL;
+	return desc;
 }
 
 /**
@@ -189,7 +182,7 @@ static int usbh_rndis_check_data_eps(usbh_itf_desc_t *itf_desc, usbh_ep_desc_t *
 
 /**
   * @brief  Locate the RNDIS function of the configuration
-  * @note   Read only, shared by attach() and usbh_rndis_check_config_desc(). Ref RNDIS USB 2.1: the
+  * @note   Read only, shared by attach() and usbh_rndis_check_config(). Ref RNDIS USB 2.1: the
   *         communication interface carries at most one INTR IN endpoint, the data interface named
   *         by the Union (the next interface without one) carries the BULK pair.
   * @param  host: Host handle
@@ -197,10 +190,10 @@ static int usbh_rndis_check_data_eps(usbh_itf_desc_t *itf_desc, usbh_ep_desc_t *
   * @param  data: Set to the data interface setting with the BULK pair
   * @retval RTK_SUCCESS when the whole function is found, -RTK_ERR_BADARG otherwise
   */
-static int usbh_rndis_find_function(usb_host_t *host, usbh_itf_data_t **ctrl, usbh_itf_desc_t **data)
+static int usbh_rndis_find_function(usb_host_t *host, usbh_itf_t **ctrl, usbh_itf_desc_t **data)
 {
 	usbh_dev_id_t dev_id = {0,};
-	usbh_itf_data_t *itf_data = NULL;
+	usbh_itf_t *itf_data = NULL;
 	usbh_itf_desc_t *itf_desc;
 	usbh_ep_desc_t *bulk_in;
 	usbh_ep_desc_t *bulk_out;
@@ -212,7 +205,7 @@ static int usbh_rndis_find_function(usb_host_t *host, usbh_itf_data_t **ctrl, us
 
 	for (i = 0U; (usbh_rndis_devs[i].mMatchFlags != 0U) && (itf_data == NULL); i++) {
 		usb_os_memcpy((void *)&dev_id, (const void *)&usbh_rndis_devs[i], sizeof(dev_id));
-		itf_data = usbh_get_interface_descriptor(host, &dev_id);
+		itf_data = usbh_itf_find(host, &dev_id);
 	}
 	if ((itf_data == NULL) || (itf_data->itf_desc_array == NULL)) {
 		return -RTK_ERR_BADARG;
@@ -233,7 +226,7 @@ static int usbh_rndis_find_function(usb_host_t *host, usbh_itf_data_t **ctrl, us
 	usb_os_memset((void *)&dev_id, 0, sizeof(dev_id));
 	dev_id.bInterfaceClass = USB_CDC_DATA_INTERFACE_CLASS_CODE;
 	dev_id.mMatchFlags = USBH_DEV_ID_MATCH_ITF_CLASS;
-	itf_data = usbh_get_interface_descriptor(host, &dev_id);
+	itf_data = usbh_itf_find(host, &dev_id);
 	while ((itf_data != NULL) && (itf_data->itf_desc_array != NULL) && (itf_data->itf_desc_array[0].bInterfaceNumber != data_itf_num)) {
 		itf_data = itf_data->next;
 	}
@@ -389,7 +382,7 @@ static int usbh_rndis_parse_response(usb_host_t *host, u8 step)
 	usbh_rndis_host_t *cdc = &usbh_rndis_host;
 	const usb_rndis_query_cmplt_t *cmplt = (const usb_rndis_query_cmplt_t *)(const void *)cdc->ctrl_buf;
 	const usb_rndis_initialize_cmplt_t *init;
-	u32 len = usbh_get_last_ctrl_in_size(host);
+	u32 len = usbh_ctrl_get_xfer_len(host);
 	u32 expect = (step == USBH_RNDIS_SETUP_GET_INIT) ? USB_RNDIS_MSG_INITIALIZE_CMPLT :
 				 ((step == USBH_RNDIS_SETUP_GET_SET_FILTER) ? USB_RNDIS_MSG_SET_CMPLT : USB_RNDIS_MSG_QUERY_CMPLT);
 	const u8 *mac;
@@ -421,7 +414,7 @@ static int usbh_rndis_parse_response(usb_host_t *host, u8 step)
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Init fail %08x\n", init->Status);
 			return -RTK_ERR_IO;
 		}
-		cdc->dev_max_transfer = init->MaxTransferSize;
+		cdc->dev_max_xfer = init->MaxTransferSize;
 		RTK_LOGS(TAG, RTK_LOG_INFO, "Init ok, ver %d.%d max %d\n", init->MajorVersion, init->MinorVersion, init->MaxTransferSize);
 		break;
 
@@ -470,14 +463,14 @@ static int usbh_rndis_parse_response(usb_host_t *host, u8 step)
 /**
   * @brief  Check whether the device is set up and data may flow
   * @note   Also called from the SOF ISR: the host pointer is read once.
-  * @retval 1 if ready, 0 otherwise
+  * @retval true if ready, false otherwise
   */
-static u8 usbh_rndis_is_ready(void)
+static bool usbh_rndis_data_ready(void)
 {
 	usbh_rndis_host_t *cdc = &usbh_rndis_host;
 	usb_host_t *host = cdc->host;
 
-	return ((host != NULL) && (host->connect_state >= USBH_STATE_SETUP) && (cdc->state == USBH_RNDIS_STATE_TRANSFER)) ? 1U : 0U;
+	return ((host != NULL) && (usbh_dev_is_ready(host)) && (cdc->state == USBH_RNDIS_STATE_XFER));
 }
 
 /**
@@ -485,10 +478,10 @@ static u8 usbh_rndis_is_ready(void)
   * @param  host: Host handle
   * @retval RTK_SUCCESS on success, -RTK_ERR_BADARG when the device is no usable RNDIS function
   */
-static int usbh_rndis_parse_interface_desc(usb_host_t *host)
+static int usbh_rndis_parse_itf_desc(usb_host_t *host)
 {
 	usbh_rndis_host_t *cdc = &usbh_rndis_host;
-	usbh_itf_data_t *ctrl_itf;
+	usbh_itf_t *ctrl_itf;
 	usbh_itf_desc_t *data_itf_desc;
 	usbh_ep_desc_t *bulk_in;
 	usbh_ep_desc_t *bulk_out;
@@ -531,7 +524,7 @@ static int usbh_rndis_attach(usb_host_t *host)
 	/* deinit_all_pipe() needs the host to close what a failed attach opened */
 	cdc->host = host;
 
-	if (usbh_rndis_parse_interface_desc(host) != RTK_SUCCESS) {
+	if (usbh_rndis_parse_itf_desc(host) != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Parse desc fail\n");
 		goto attach_fail;
 	}
@@ -539,7 +532,7 @@ static int usbh_rndis_attach(usb_host_t *host)
 	/* The notification endpoint is optional, Ref RNDIS USB 2.1: without it the class polls */
 	if (cdc->intr_rx.ep_desc.bLength != 0U) {
 		pipe = &cdc->intr_rx.pipe;
-		if (usbh_open_pipe(host, pipe, &cdc->intr_rx.ep_desc, &usbh_rndis_driver) != RTK_SUCCESS) {
+		if (usbh_pipe_open(host, pipe, &cdc->intr_rx.ep_desc, &usbh_rndis_driver) != RTK_SUCCESS) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Open intr pipe fail\n");
 			goto attach_fail;
 		}
@@ -551,19 +544,19 @@ static int usbh_rndis_attach(usb_host_t *host)
 		}
 		pipe->xfer_len = pipe->ep_mps;
 		pipe->max_timeout_tick = USBH_RNDIS_INTR_BUSY_MAX_CNT;
-		pipe->xfer_state = USBH_EP_XFER_IDLE;
+		pipe->xfer_state = USBH_PIPE_XFER_IDLE;
 	}
 
 	pipe = &cdc->bulk_tx.pipe;
-	if (usbh_open_pipe(host, pipe, &cdc->bulk_tx.ep_desc, &usbh_rndis_driver) != RTK_SUCCESS) {
+	if (usbh_pipe_open(host, pipe, &cdc->bulk_tx.ep_desc, &usbh_rndis_driver) != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Open bulk out pipe fail\n");
 		goto attach_fail;
 	}
 	pipe->max_timeout_tick = USBH_RNDIS_BULK_OUT_BUSY_MAX_CNT;
-	pipe->xfer_state = USBH_EP_XFER_IDLE;
+	pipe->xfer_state = USBH_PIPE_XFER_IDLE;
 
 	pipe = &cdc->bulk_rx.pipe;
-	if (usbh_open_pipe(host, pipe, &cdc->bulk_rx.ep_desc, &usbh_rndis_driver) != RTK_SUCCESS) {
+	if (usbh_pipe_open(host, pipe, &cdc->bulk_rx.ep_desc, &usbh_rndis_driver) != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Open bulk in pipe fail\n");
 		goto attach_fail;
 	}
@@ -575,7 +568,7 @@ static int usbh_rndis_attach(usb_host_t *host)
 	pipe->xfer_len = usb_get_max_payload_len(USBH_RNDIS_RX_BUF_SIZE, pipe->ep_mps);
 	pipe->xfer_buf_len = USBH_RNDIS_RX_BUF_SIZE;
 	pipe->max_timeout_tick = USBH_RNDIS_BULK_IN_IDLE_MAX_CNT;
-	pipe->xfer_state = USBH_EP_XFER_IDLE;
+	pipe->xfer_state = USBH_PIPE_XFER_IDLE;
 
 	cdc->state = USBH_RNDIS_STATE_IDLE;
 	cdc->setup_step = USBH_RNDIS_SETUP_SEND_INIT;
@@ -585,7 +578,7 @@ static int usbh_rndis_attach(usb_host_t *host)
 	cdc->halt_retry_cnt = 0U;
 	cdc->link_up = 0U;
 	cdc->mac_valid = 0U;
-	cdc->dev_max_transfer = 0U;
+	cdc->dev_max_xfer = 0U;
 
 	if ((cdc->cb != NULL) && (cdc->cb->attached != NULL)) {
 		cdc->cb->attached();
@@ -642,7 +635,7 @@ static int usbh_rndis_setup(usb_host_t *host)
 	/* A BULK pair outside the default setting only works once selected (Ref USB 2.0 9.4.10).
 	   Alt 0 is already in effect after SET_CONFIGURATION, so no request is sent for it */
 	if (cdc->data_alt_set != 0U) {
-		status = usbh_ctrl_set_interface(host, cdc->data_itf_id, cdc->data_alt_set);
+		status = usbh_itf_set_alt(host, cdc->data_itf_id, cdc->data_alt_set);
 		if (status == RTK_SUCCESS) {
 			cdc->data_alt_set = 0U;
 		} else if (status != -RTK_ERR_BUSY) {
@@ -706,7 +699,7 @@ static int usbh_rndis_setup(usb_host_t *host)
 	}
 
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Setup done, link %d\n", cdc->link_up);
-	cdc->state = USBH_RNDIS_STATE_TRANSFER;
+	cdc->state = USBH_RNDIS_STATE_XFER;
 	if ((cdc->cb != NULL) && (cdc->cb->setup != NULL)) {
 		cdc->cb->setup();
 	}
@@ -749,11 +742,11 @@ static void usbh_rndis_process_halt(usb_host_t *host)
 		return;
 	}
 
-	ret = usbh_ctrl_clear_feature(host, cdc->halt_ep_addr);
+	ret = usbh_pipe_clear_halt(host, cdc->halt_ep_addr);
 	if (ret == RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_WARN, "EP%02x halt cleared\n", cdc->halt_ep_addr);
 		cdc->halt_retry_cnt = 0U;
-		cdc->state = USBH_RNDIS_STATE_TRANSFER;
+		cdc->state = USBH_RNDIS_STATE_XFER;
 		/* This state swallowed any pipe message that arrived meanwhile: re-drive the pipes */
 		usbh_notify(host, cdc->bulk_rx.pipe.pipe_num, &usbh_rndis_driver);
 		usbh_notify(host, cdc->bulk_tx.pipe.pipe_num, &usbh_rndis_driver);
@@ -761,7 +754,7 @@ static void usbh_rndis_process_halt(usb_host_t *host)
 		cdc->halt_retry_cnt++;
 		if (cdc->halt_retry_cnt >= USBH_RNDIS_HALT_RETRY_MAX_CNT) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "EP%02x clear halt fail, re-enum\n", cdc->halt_ep_addr);
-			if (usbh_reenumerate() != RTK_SUCCESS) {
+			if (usbh_dev_reset() != RTK_SUCCESS) {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "Re-enum refused\n");
 			}
 		} else {
@@ -797,17 +790,17 @@ static void usbh_rndis_process_bulk_out(usb_host_t *host)
 	usbh_pipe_t *pipe = &usbh_rndis_host.bulk_tx.pipe;
 	int status;
 
-	status = usbh_transfer_process(host, pipe);
-	if ((status == RTK_SUCCESS) && (pipe->xfer_state == USBH_EP_XFER_IDLE)) {
+	status = usbh_xfer_process(host, pipe);
+	if ((status == RTK_SUCCESS) && (pipe->xfer_state == USBH_PIPE_XFER_IDLE)) {
 		usbh_rndis_tx_done(RTK_SUCCESS);
-	} else if (pipe->xfer_state == USBH_EP_XFER_START) {
+	} else if (pipe->xfer_state == USBH_PIPE_XFER_START) {
 		usbh_notify(host, pipe->pipe_num, &usbh_rndis_driver);
-	} else if (pipe->xfer_state == USBH_EP_XFER_ERROR) {
+	} else if (pipe->xfer_state == USBH_PIPE_XFER_ERROR) {
 		if (usbh_get_urb_state(host, pipe) == USBH_URB_STALL) {
 			usbh_rndis_halt(host, pipe);
 		}
 		/* Drop the frame (Ethernet is best effort) and release the sender */
-		pipe->xfer_state = USBH_EP_XFER_IDLE;
+		pipe->xfer_state = USBH_PIPE_XFER_IDLE;
 		usbh_rndis_tx_done(-RTK_ERR_IO);
 	} else {
 		/* Idle or still in flight */
@@ -857,24 +850,24 @@ static void usbh_rndis_deliver(u8 *buf, u32 len)
 static void usbh_rndis_process_bulk_in(usb_host_t *host)
 {
 	usbh_pipe_t *pipe = &usbh_rndis_host.bulk_rx.pipe;
-	int status = usbh_transfer_process(host, pipe);
+	int status = usbh_xfer_process(host, pipe);
 
-	if ((status == RTK_SUCCESS) && (pipe->xfer_state == USBH_EP_XFER_IDLE)) {
-		usbh_rndis_deliver(pipe->xfer_buf, usbh_get_last_transfer_size(host, pipe));
-		pipe->xfer_state = USBH_EP_XFER_START;
+	if ((status == RTK_SUCCESS) && (pipe->xfer_state == USBH_PIPE_XFER_IDLE)) {
+		usbh_rndis_deliver(pipe->xfer_buf, usbh_pipe_get_xfer_len(host, pipe));
+		pipe->xfer_state = USBH_PIPE_XFER_START;
 		usbh_notify(host, pipe->pipe_num, &usbh_rndis_driver);
-	} else if (pipe->xfer_state == USBH_EP_XFER_START) {
+	} else if (pipe->xfer_state == USBH_PIPE_XFER_START) {
 		/* A retry reads 0 and delivers nothing; a non-zero length is data that landed just as
 		   the retry fired, see the CDC ECM class */
-		usbh_rndis_deliver(pipe->xfer_buf, usbh_get_last_transfer_size(host, pipe));
+		usbh_rndis_deliver(pipe->xfer_buf, usbh_pipe_get_xfer_len(host, pipe));
 		usbh_notify(host, pipe->pipe_num, &usbh_rndis_driver);
-	} else if (pipe->xfer_state == USBH_EP_XFER_ERROR) {
+	} else if (pipe->xfer_state == USBH_PIPE_XFER_ERROR) {
 		if (usbh_get_urb_state(host, pipe) == USBH_URB_STALL) {
 			/* Re-armed by the SOF once the halt is cleared */
-			pipe->xfer_state = USBH_EP_XFER_IDLE;
+			pipe->xfer_state = USBH_PIPE_XFER_IDLE;
 			usbh_rndis_halt(host, pipe);
 		} else {
-			pipe->xfer_state = USBH_EP_XFER_START;
+			pipe->xfer_state = USBH_PIPE_XFER_START;
 			usbh_notify(host, pipe->pipe_num, &usbh_rndis_driver);
 		}
 	} else {
@@ -885,7 +878,7 @@ static void usbh_rndis_process_bulk_in(usb_host_t *host)
 /**
   * @brief  Intr In handling function: RESPONSE_AVAILABLE
   * @note   A completed IN shows as latched URB_DONE while xfer_state is BUSY, consumed here
-  *         rather than through usbh_transfer_process(), as the CDC ECM class does.
+  *         rather than through usbh_xfer_process(), as the CDC ECM class does.
   * @param  host: Host handle
   * @retval None
   */
@@ -896,28 +889,28 @@ static void usbh_rndis_process_intr_in(usb_host_t *host)
 	usbh_urb_state_t urb_state = usbh_get_urb_state(host, pipe);
 	int status;
 
-	if ((pipe->xfer_state == USBH_EP_XFER_BUSY) && (urb_state == USBH_URB_DONE)) {
+	if ((pipe->xfer_state == USBH_PIPE_XFER_BUSY) && (urb_state == USBH_URB_DONE)) {
 		pipe->retry_cnt = 0U;
-		pipe->xfer_state = USBH_EP_XFER_IDLE;
+		pipe->xfer_state = USBH_PIPE_XFER_IDLE;
 		/* Ref RNDIS USB 2.2.3: the first 32-bit word is RESPONSE_AVAILABLE */
-		if ((usbh_get_last_transfer_size(host, pipe) >= 4U) && (pipe->xfer_buf[0] == (u8)USB_RNDIS_NOTIFY_RESPONSE_AVAILABLE)) {
+		if ((usbh_pipe_get_xfer_len(host, pipe) >= 4U) && (pipe->xfer_buf[0] == (u8)USB_RNDIS_NOTIFY_RESPONSE_AVAILABLE)) {
 			cdc->resp_avail = 1U;
 			usbh_notify(host, 0U, &usbh_rndis_driver);
 		}
 		return;
 	}
 
-	if ((pipe->xfer_state == USBH_EP_XFER_BUSY) && (urb_state == USBH_URB_STALL)) {
-		pipe->xfer_state = USBH_EP_XFER_IDLE;
+	if ((pipe->xfer_state == USBH_PIPE_XFER_BUSY) && (urb_state == USBH_URB_STALL)) {
+		pipe->xfer_state = USBH_PIPE_XFER_IDLE;
 		usbh_rndis_halt(host, pipe);
 		return;
 	}
 
 	/* Never re-submit a BUSY INTR channel, only arm on START */
-	if (pipe->xfer_state == USBH_EP_XFER_START) {
-		status = usbh_transfer_process(host, pipe);
-		if ((status != RTK_SUCCESS) || (pipe->xfer_state == USBH_EP_XFER_ERROR)) {
-			pipe->xfer_state = USBH_EP_XFER_IDLE;
+	if (pipe->xfer_state == USBH_PIPE_XFER_START) {
+		status = usbh_xfer_process(host, pipe);
+		if ((status != RTK_SUCCESS) || (pipe->xfer_state == USBH_PIPE_XFER_ERROR)) {
+			pipe->xfer_state = USBH_PIPE_XFER_IDLE;
 		}
 	}
 }
@@ -952,7 +945,7 @@ static void usbh_rndis_process_ctrl(usb_host_t *host)
 			RTK_LOGS(TAG, RTK_LOG_WARN, "Get resp err %d\n", status);
 			return;
 		}
-		len = usbh_get_last_ctrl_in_size(host);
+		len = usbh_ctrl_get_xfer_len(host);
 		if (len < sizeof(usb_rndis_msg_hdr_t)) {
 			return;
 		}
@@ -1000,7 +993,7 @@ static void usbh_rndis_process(usb_host_t *host, usbh_drv_msg_t *msg)
 	u8 pipe_num;
 
 	switch (cdc->state) {
-	case USBH_RNDIS_STATE_TRANSFER:
+	case USBH_RNDIS_STATE_XFER:
 		if (msg == NULL) {
 			break;
 		}
@@ -1040,7 +1033,7 @@ static void usbh_rndis_process(usb_host_t *host, usbh_drv_msg_t *msg)
 static u8 usbh_rndis_pipe_due(usb_host_t *host, usbh_pipe_t *pipe, u32 idle_max, u32 busy_max)
 {
 	usbh_urb_state_t urb_state = usbh_get_urb_state(host, pipe);
-	u32 elapsed = usbh_get_elapsed_ticks(host, pipe->tick);
+	u32 elapsed = usbh_tick_elapsed(host, pipe->tick);
 
 	if (((urb_state == USBH_URB_IDLE) && (elapsed >= idle_max)) || ((urb_state == USBH_URB_BUSY) && (elapsed >= busy_max))) {
 		return 1U;
@@ -1063,7 +1056,7 @@ static void usbh_rndis_sof(usb_host_t *host)
 	usbh_pipe_t *pipe;
 	u32 interval;
 
-	if (usbh_rndis_is_ready() == 0U) {
+	if (!usbh_rndis_data_ready()) {
 		return;
 	}
 
@@ -1072,18 +1065,18 @@ static void usbh_rndis_sof(usb_host_t *host)
 		/* Widened past the bInterval=1 case, else the re-arm fires on an INTR IN still in flight */
 		interval = (u32)pipe->ep_interval + USBH_RNDIS_INTR_BUSY_MAX_CNT;
 		urb_state = usbh_get_urb_state(host, pipe);
-		if (pipe->xfer_state == USBH_EP_XFER_IDLE) {
-			if (usbh_get_elapsed_ticks(host, pipe->tick) >= pipe->ep_interval) {
-				pipe->xfer_state = USBH_EP_XFER_START;
+		if (pipe->xfer_state == USBH_PIPE_XFER_IDLE) {
+			if (usbh_tick_elapsed(host, pipe->tick) >= pipe->ep_interval) {
+				pipe->xfer_state = USBH_PIPE_XFER_START;
 				usbh_notify(host, pipe->pipe_num, &usbh_rndis_driver);
 			}
-		} else if ((pipe->xfer_state == USBH_EP_XFER_BUSY) && (urb_state == USBH_URB_STALL)) {
+		} else if ((pipe->xfer_state == USBH_PIPE_XFER_BUSY) && (urb_state == USBH_URB_STALL)) {
 			/* Reported only: re-submitting to a halted endpoint repeats the STALL */
 			usbh_notify(host, pipe->pipe_num, &usbh_rndis_driver);
-		} else if ((pipe->xfer_state == USBH_EP_XFER_BUSY) && (urb_state != USBH_URB_DONE) &&
-				   ((urb_state == USBH_URB_ERROR) || (usbh_get_elapsed_ticks(host, pipe->tick) >= interval))) {
+		} else if ((pipe->xfer_state == USBH_PIPE_XFER_BUSY) && (urb_state != USBH_URB_DONE) &&
+				   ((urb_state == USBH_URB_ERROR) || (usbh_tick_elapsed(host, pipe->tick) >= interval))) {
 			/* NAKed past its window: poll again. A DONE is consumed by process() */
-			pipe->xfer_state = USBH_EP_XFER_START;
+			pipe->xfer_state = USBH_PIPE_XFER_START;
 			usbh_notify(host, pipe->pipe_num, &usbh_rndis_driver);
 		} else {
 			/* In flight */
@@ -1092,17 +1085,17 @@ static void usbh_rndis_sof(usb_host_t *host)
 
 	pipe = &cdc->bulk_rx.pipe;
 	if (pipe->pipe_num != 0U) {
-		if ((pipe->xfer_state == USBH_EP_XFER_IDLE) ||
+		if ((pipe->xfer_state == USBH_PIPE_XFER_IDLE) ||
 			(usbh_rndis_pipe_due(host, pipe, USBH_RNDIS_BULK_IN_IDLE_MAX_CNT, USBH_RNDIS_BULK_IN_NAK_CHECK_MAX_CNT) != 0U)) {
-			if (pipe->xfer_state == USBH_EP_XFER_IDLE) {
-				pipe->xfer_state = USBH_EP_XFER_START;
+			if (pipe->xfer_state == USBH_PIPE_XFER_IDLE) {
+				pipe->xfer_state = USBH_PIPE_XFER_START;
 			}
 			usbh_notify(host, pipe->pipe_num, &usbh_rndis_driver);
 		}
 	}
 
 	pipe = &cdc->bulk_tx.pipe;
-	if ((pipe->pipe_num != 0U) && (pipe->xfer_state != USBH_EP_XFER_IDLE) &&
+	if ((pipe->pipe_num != 0U) && (pipe->xfer_state != USBH_PIPE_XFER_IDLE) &&
 		(usbh_rndis_pipe_due(host, pipe, USBH_RNDIS_BULK_OUT_IDLE_MAX_CNT, USBH_RNDIS_BULK_OUT_BUSY_MAX_CNT) != 0U)) {
 		usbh_notify(host, pipe->pipe_num, &usbh_rndis_driver);
 	}
@@ -1122,17 +1115,17 @@ static void usbh_rndis_deinit_all_pipe(void)
 	}
 
 	if (cdc->intr_rx.pipe.pipe_num != 0U) {
-		usbh_close_pipe(host, &cdc->intr_rx.pipe);
+		usbh_pipe_close(host, &cdc->intr_rx.pipe);
 	}
 	USBH_RNDIS_FREE_MEM(cdc->intr_rx.pipe.xfer_buf);
 
 	if (cdc->bulk_rx.pipe.pipe_num != 0U) {
-		usbh_close_pipe(host, &cdc->bulk_rx.pipe);
+		usbh_pipe_close(host, &cdc->bulk_rx.pipe);
 	}
 	USBH_RNDIS_FREE_MEM(cdc->bulk_rx.pipe.xfer_buf);
 
 	if (cdc->bulk_tx.pipe.pipe_num != 0U) {
-		usbh_close_pipe(host, &cdc->bulk_tx.pipe);
+		usbh_pipe_close(host, &cdc->bulk_tx.pipe);
 	}
 }
 
@@ -1157,7 +1150,7 @@ static void usbh_rndis_tx_wait_exit(void)
 }
 
 /**
-  * @brief  Send one frame, called by usbh_rndis_send_data() inside the TX gate
+  * @brief  Send one frame, called by usbh_rndis_transmit() inside the TX gate
   * @param  buf: Ethernet frame
   * @param  len: Frame length
   * @param  block: Wait until the transfer completes
@@ -1172,13 +1165,13 @@ static int usbh_rndis_tx_frame(const u8 *buf, u32 len, u8 block)
 	u32 retry_cnt = 0U;
 	int ret = -RTK_ERR_BUSY;
 
-	if ((cdc->dev_max_transfer != 0U) && (msg_len > cdc->dev_max_transfer)) {
+	if ((cdc->dev_max_xfer != 0U) && (msg_len > cdc->dev_max_xfer)) {
 		return -RTK_ERR_BADARG;
 	}
 
 	/* One sender at a time and tx_buf is single: wait for the previous transfer to retire */
-	while (pipe->xfer_state != USBH_EP_XFER_IDLE) {
-		if ((block == 0U) || (++retry_cnt > 100U) || (usbh_rndis_is_ready() == 0U)) {
+	while (pipe->xfer_state != USBH_PIPE_XFER_IDLE) {
+		if ((block == 0U) || (++retry_cnt > 100U) || (!usbh_rndis_data_ready())) {
 			return -RTK_ERR_BUSY;
 		}
 		usb_os_sleep_ms(1U);
@@ -1200,12 +1193,12 @@ static int usbh_rndis_tx_frame(const u8 *buf, u32 len, u8 block)
 
 	/* Published before START: the SOF on another core notifies the host task once it sees START */
 	usb_os_enter_critical();
-	if ((usbh_rndis_is_ready() != 0U) && (pipe->pipe_num != 0U) && (pipe->ep_mps != 0U) && (pipe->xfer_state == USBH_EP_XFER_IDLE)) {
+	if ((usbh_rndis_data_ready()) && (pipe->pipe_num != 0U) && (pipe->ep_mps != 0U) && (pipe->xfer_state == USBH_PIPE_XFER_IDLE)) {
 		pipe->xfer_buf = cdc->tx_buf;
 		pipe->xfer_len = msg_len;
 		/* Ref RNDIS USB 3.1: a transfer of N*MPS bytes is ended by a ZLP */
 		pipe->trx_zlp = ((msg_len % pipe->ep_mps) == 0U) ? 1U : 0U;
-		pipe->xfer_state = USBH_EP_XFER_START;
+		pipe->xfer_state = USBH_PIPE_XFER_START;
 		ret = RTK_SUCCESS;
 	}
 	usb_os_exit_critical();
@@ -1231,7 +1224,7 @@ static int usbh_rndis_tx_frame(const u8 *buf, u32 len, u8 block)
 
 /* Exported functions --------------------------------------------------------*/
 
-int usbh_rndis_init(const usbh_rndis_state_cb_t *cb, const usbh_rndis_config_t *cfg)
+int usbh_rndis_init(const usbh_rndis_cb_t *cb, const usbh_rndis_config_t *cfg)
 {
 	usbh_rndis_host_t *cdc = &usbh_rndis_host;
 	int ret;
@@ -1274,7 +1267,7 @@ int usbh_rndis_init(const usbh_rndis_state_cb_t *cb, const usbh_rndis_config_t *
 
 	cdc->cb = cb;
 
-	ret = usbh_register_class(&usbh_rndis_driver);
+	ret = usbh_class_register(&usbh_rndis_driver);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Register class fail %d\n", ret);
 		cdc->cb = NULL;
@@ -1303,7 +1296,7 @@ init_fail:
 void usbh_rndis_deinit(void)
 {
 	usbh_rndis_host_t *cdc = &usbh_rndis_host;
-	const usbh_rndis_state_cb_t *cb;
+	const usbh_rndis_cb_t *cb;
 
 	/* Close the TX gate first: frees nothing */
 	usb_os_enter_critical();
@@ -1311,7 +1304,7 @@ void usbh_rndis_deinit(void)
 	usb_os_exit_critical();
 
 	/* On RTK_SUCCESS no callback of this class runs any more */
-	if (usbh_unregister_class(&usbh_rndis_driver) != RTK_SUCCESS) {
+	if (usbh_class_unregister(&usbh_rndis_driver) != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Deinit refused\n");
 		return;
 	}
@@ -1347,34 +1340,34 @@ int usbh_rndis_choose_config(usb_host_t *host)
 	   Linux gadget offering both */
 	for (i = 0U; usbh_rndis_devs[i].mMatchFlags != 0U; i++) {
 		usb_os_memcpy((void *)&dev_id, (const void *)&usbh_rndis_devs[i], sizeof(dev_id));
-		if (usbh_get_interface_descriptor(host, &dev_id) != NULL) {
-			cfg_idx = usbh_get_configuration(host, &dev_id);
+		if (usbh_itf_find(host, &dev_id) != NULL) {
+			cfg_idx = usbh_config_find(host, &dev_id);
 			break;
 		}
 	}
 
-	return usbh_set_configuration(host, cfg_idx);
+	return usbh_config_select(host, cfg_idx);
 }
 
-int usbh_rndis_check_config_desc(usb_host_t *host)
+int usbh_rndis_check_config(usb_host_t *host)
 {
-	usbh_itf_data_t *ctrl_itf;
+	usbh_itf_t *ctrl_itf;
 	usbh_itf_desc_t *data_itf_desc;
 
 	return usbh_rndis_find_function(host, &ctrl_itf, &data_itf_desc);
 }
 
-u8 usbh_rndis_usb_is_ready(void)
+bool usbh_rndis_is_ready(void)
 {
-	return usbh_rndis_is_ready();
+	return usbh_rndis_data_ready();
 }
 
-int usbh_rndis_send_data(u8 *buf, u32 len, u8 block)
+int usbh_rndis_transmit(const u8 *buf, u32 len, u8 block)
 {
 	usbh_rndis_host_t *cdc = &usbh_rndis_host;
 	int ret;
 
-	if (usb_os_is_in_interrupt() != 0U) {
+	if (usb_os_is_in_interrupt()) {
 		return -RTK_ERR_BADARG;
 	}
 
@@ -1391,7 +1384,7 @@ int usbh_rndis_send_data(u8 *buf, u32 len, u8 block)
 	cdc->tx_users++;
 	usb_os_exit_critical();
 
-	ret = (usbh_rndis_is_ready() != 0U) ? usbh_rndis_tx_frame(buf, len, block) : -RTK_ERR_IO;
+	ret = (usbh_rndis_data_ready()) ? usbh_rndis_tx_frame(buf, len, block) : -RTK_ERR_IO;
 
 	usb_os_enter_critical();
 	cdc->tx_users--;
@@ -1400,9 +1393,9 @@ int usbh_rndis_send_data(u8 *buf, u32 len, u8 block)
 	return ret;
 }
 
-int usbh_rndis_get_link_status(void)
+bool usbh_rndis_get_link_status(void)
 {
-	return ((usbh_rndis_is_ready() != 0U) && (usbh_rndis_host.link_up != 0U)) ? 1 : 0;
+	return (usbh_rndis_data_ready() && (usbh_rndis_host.link_up != 0U));
 }
 
 const u8 *usbh_rndis_get_mac(void)
@@ -1415,5 +1408,5 @@ const u8 *usbh_rndis_get_mac(void)
 __attribute__((weak))
 int usb_ethernet_transmit(u8 *buf, u32 len, u8 block)
 {
-	return usbh_rndis_send_data(buf, len, block);
+	return usbh_rndis_transmit(buf, len, block);
 }

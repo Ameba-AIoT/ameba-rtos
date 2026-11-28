@@ -21,7 +21,7 @@
 #define USBD_RNDIS_RX_BUF_SIZE                        ((USB_RNDIS_MAX_PACKET_MSG_SIZE + 1U + USB_BULK_HS_MAX_MPS - 1U) / USB_BULK_HS_MAX_MPS * USB_BULK_HS_MAX_MPS)
 
 /* Largest transfer the device accepts, reported in INITIALIZE_CMPLT */
-#define USBD_RNDIS_MAX_TRANSFER_SIZE                  USB_RNDIS_MAX_PACKET_MSG_SIZE
+#define USBD_RNDIS_MAX_XFER_SIZE                  USB_RNDIS_MAX_PACKET_MSG_SIZE
 
 /* Shortest encapsulated command: the message header */
 #define USBD_RNDIS_MIN_CMD_LEN                        ((u16)sizeof(usb_rndis_msg_hdr_t))
@@ -60,14 +60,14 @@ typedef enum {
 static int usbd_rndis_set_config(usb_dev_t *dev, u8 config);
 static void usbd_rndis_clear_config(usb_dev_t *dev, u8 config);
 static int usbd_rndis_setup(usb_dev_t *dev, usb_setup_req_t *req);
-static u16 usbd_rndis_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16 buf_len);
+static u16 usbd_rndis_get_desc(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16 buf_len);
 static int usbd_rndis_handle_ep0_data_out(usb_dev_t *dev);
 static int usbd_rndis_handle_ep_data_in(usb_dev_t *dev, u8 ep_addr, int status);
 static int usbd_rndis_handle_ep_data_out(usb_dev_t *dev, u8 ep_addr, u32 len);
 static void usbd_rndis_sof(usb_dev_t *dev);
 static void usbd_rndis_status_changed(usb_dev_t *dev, u8 old_status, u8 status);
 #ifdef CONFIG_USBD_COMPOSITE
-static void usbd_rndis_set_interface_base(u8 base);
+static void usbd_rndis_set_itf_base(u8 base);
 #endif
 static void usbd_rndis_data_stop(void);
 
@@ -129,7 +129,7 @@ static const u8 usbd_rndis_dev_desc[USB_LEN_DEV_DESC] = {
 
 #ifndef CONFIG_SUPPORT_USB_FS_ONLY
 /* USB Device Qualifier Descriptor */
-static const u8 usbd_rndis_device_qualifier_desc[USB_LEN_DEV_QUALIFIER_DESC] = {
+static const u8 usbd_rndis_dev_qualifier_desc[USB_LEN_DEV_QUALIFIER_DESC] = {
 	USB_LEN_DEV_QUALIFIER_DESC,                     /* bLength */
 	USB_DESC_TYPE_DEVICE_QUALIFIER,                 /* bDescriptorType */
 	0x00, 0x02,                                     /* bcdUSB: 2.0 */
@@ -169,7 +169,7 @@ static const u8 usbd_rndis_config_desc[] = {
 	/* Communication Interface Descriptor */
 	USB_LEN_IF_DESC,                                /* bLength */
 	USB_DESC_TYPE_INTERFACE,                        /* bDescriptorType */
-	USBD_RNDIS_COMM_INTERFACE_NUM,                  /* bInterfaceNumber */
+	USBD_RNDIS_COMM_ITF_NUM,                  /* bInterfaceNumber */
 	0x00,                                           /* bAlternateSetting */
 	0x01,                                           /* bNumEndpoints */
 	USB_RNDIS_WIRELESS_CLASS_CODE,                  /* bInterfaceClass: Wireless Controller */
@@ -188,7 +188,7 @@ static const u8 usbd_rndis_config_desc[] = {
 	USB_CDC_CS_INTERFACE,                           /* bDescriptorType */
 	USB_CDC_FUNC_DESC_CALL_MGMT,                    /* bDescriptorSubtype */
 	0x00,                                           /* bmCapabilities: no call management */
-	USBD_RNDIS_DATA_INTERFACE_NUM,                  /* bDataInterface (rebased at runtime) */
+	USBD_RNDIS_DATA_ITF_NUM,                  /* bDataInterface (rebased at runtime) */
 
 	/* CDC Abstract Control Management Functional Descriptor */
 	0x04,                                           /* bFunctionLength */
@@ -200,8 +200,8 @@ static const u8 usbd_rndis_config_desc[] = {
 	0x05,                                           /* bFunctionLength */
 	USB_CDC_CS_INTERFACE,                           /* bDescriptorType */
 	USB_CDC_FUNC_DESC_UNION,                        /* bDescriptorSubtype */
-	USBD_RNDIS_COMM_INTERFACE_NUM,                  /* bControlInterface (rebased at runtime) */
-	USBD_RNDIS_DATA_INTERFACE_NUM,                  /* bSubordinateInterface0 (rebased at runtime) */
+	USBD_RNDIS_COMM_ITF_NUM,                  /* bControlInterface (rebased at runtime) */
+	USBD_RNDIS_DATA_ITF_NUM,                  /* bSubordinateInterface0 (rebased at runtime) */
 
 	/* INTR IN Endpoint Descriptor */
 	USB_LEN_EP_DESC,                                /* bLength */
@@ -215,7 +215,7 @@ static const u8 usbd_rndis_config_desc[] = {
 	/* Data Interface Descriptor */
 	USB_LEN_IF_DESC,                                /* bLength */
 	USB_DESC_TYPE_INTERFACE,                        /* bDescriptorType */
-	USBD_RNDIS_DATA_INTERFACE_NUM,                  /* bInterfaceNumber */
+	USBD_RNDIS_DATA_ITF_NUM,                  /* bInterfaceNumber */
 	0x00,                                           /* bAlternateSetting */
 	0x02,                                           /* bNumEndpoints */
 	USB_CDC_DATA_INTERFACE_CLASS_CODE,              /* bInterfaceClass */
@@ -244,7 +244,7 @@ static const u8 usbd_rndis_config_desc[] = {
 
 /* RNDIS Class Driver */
 static const usbd_class_driver_t usbd_rndis_driver = {
-	.get_descriptor = usbd_rndis_get_descriptor,
+	.get_desc = usbd_rndis_get_desc,
 	.set_config = usbd_rndis_set_config,
 	.clear_config = usbd_rndis_clear_config,
 	.setup = usbd_rndis_setup,
@@ -254,7 +254,7 @@ static const usbd_class_driver_t usbd_rndis_driver = {
 	.sof = usbd_rndis_sof,
 	.status_changed = usbd_rndis_status_changed,
 #ifdef CONFIG_USBD_COMPOSITE
-	.set_interface_base = usbd_rndis_set_interface_base,
+	.set_itf_base = usbd_rndis_set_itf_base,
 #endif
 };
 
@@ -371,7 +371,7 @@ static int usbd_rndis_query_oid(u32 oid, u8 *info, u32 cap)
 	case USB_RNDIS_OID_GEN_TRANSMIT_BLOCK_SIZE:
 	case USB_RNDIS_OID_GEN_RECEIVE_BLOCK_SIZE:
 	case USB_RNDIS_OID_GEN_MAXIMUM_TOTAL_SIZE:
-		val = USBD_RNDIS_MAX_TRANSFER_SIZE;
+		val = USBD_RNDIS_MAX_XFER_SIZE;
 		break;
 
 	case USB_RNDIS_OID_GEN_VENDOR_ID:
@@ -502,7 +502,7 @@ static int usbd_rndis_handle_command(const u8 *cmd, u32 cmd_len)
 		init_cmplt->DeviceFlags = USB_RNDIS_DF_CONNECTIONLESS;
 		init_cmplt->Medium = USB_RNDIS_MEDIUM_802_3;
 		init_cmplt->MaxPacketsPerTransfer = 1U;
-		init_cmplt->MaxTransferSize = USBD_RNDIS_MAX_TRANSFER_SIZE;
+		init_cmplt->MaxTransferSize = USBD_RNDIS_MAX_XFER_SIZE;
 		/* AFListOffset/AFListSize and PacketAlignmentFactor stay 0: no alignment between packets */
 		rndis->resp_len = (u16)sizeof(usb_rndis_initialize_cmplt_t);
 		/* A repeated INITIALIZE restarts the device, Ref RNDIS 1.0 */
@@ -626,7 +626,7 @@ static void usbd_rndis_bulk_tx_start(void)
 	u32 frame_len;
 	int ret;
 
-	if ((ep_bulk_in->xfer_state != 0U) || (usb_ringbuf_is_empty(&rndis->bulk_tx_rb) != 0)) {
+	if ((ep_bulk_in->xfer_state != 0U) || (usb_ringbuf_is_empty(&rndis->bulk_tx_rb))) {
 		return;
 	}
 
@@ -856,7 +856,7 @@ static int usbd_rndis_setup(usb_dev_t *dev, usb_setup_req_t *req)
 	usbd_rndis_dev_t *rndis = &usbd_rndis_dev;
 	usbd_ep_t *ep0_in = &dev->ep0_in;
 	usbd_ep_t *ep0_out = &dev->ep0_out;
-	u8 is_ours = ((req->wIndex == USBD_RNDIS_COMM_INTERFACE_NUM) || (req->wIndex == USBD_RNDIS_DATA_INTERFACE_NUM)) ? 1U : 0U;
+	u8 is_ours = ((req->wIndex == USBD_RNDIS_COMM_ITF_NUM) || (req->wIndex == USBD_RNDIS_DATA_ITF_NUM)) ? 1U : 0U;
 	int ret = -RTK_ERR_BADARG;
 
 	if ((req->bmRequestType & USB_REQ_RECIPIENT_MASK) != USB_REQ_RECIPIENT_INTERFACE) {
@@ -876,7 +876,7 @@ static int usbd_rndis_setup(usb_dev_t *dev, usb_setup_req_t *req)
 			if ((req->wValue != 0U) || (req->wLength != 0U)) {
 				break;
 			}
-			if (req->wIndex == USBD_RNDIS_DATA_INTERFACE_NUM) {
+			if (req->wIndex == USBD_RNDIS_DATA_ITF_NUM) {
 				usbd_ep_clear_stall(dev, &rndis->ep_bulk_in);
 				usbd_ep_clear_stall(dev, &rndis->ep_bulk_out);
 			} else {
@@ -909,7 +909,7 @@ static int usbd_rndis_setup(usb_dev_t *dev, usb_setup_req_t *req)
 
 	case USB_REQ_TYPE_CLASS:
 		/* Ref RNDIS USB 2.2: both requests address the communication interface, wValue 0 */
-		if ((dev->dev_state != USBD_STATE_CONFIGURED) || (req->wIndex != USBD_RNDIS_COMM_INTERFACE_NUM) || (req->wValue != 0U)) {
+		if ((dev->dev_state != USBD_STATE_CONFIGURED) || (req->wIndex != USBD_RNDIS_COMM_ITF_NUM) || (req->wValue != 0U)) {
 			break;
 		}
 		if ((req->bRequest == USB_RNDIS_SEND_ENCAPSULATED_COMMAND) && ((req->bmRequestType & USB_REQ_DIR_MASK) == USB_H2D)) {
@@ -1215,10 +1215,10 @@ static void usbd_rndis_patch_desc(u8 *desc, u16 len, usb_speed_type_t speed)
 		} else if ((dtype == USB_DESC_TYPE_INTERFACE) && (dlen >= USB_LEN_IF_DESC) && (desc[i + 5U] == USB_RNDIS_WIRELESS_CLASS_CODE)) {
 			desc[i + 8U] = rndis->itf_str_idx;
 		} else if ((dtype == USB_CDC_CS_INTERFACE) && (dlen >= 5U) && (desc[i + 2U] == USB_CDC_FUNC_DESC_UNION)) {
-			desc[i + 3U] = (u8)(rndis->if_base + USBD_RNDIS_COMM_INTERFACE_NUM);
-			desc[i + 4U] = (u8)(rndis->if_base + USBD_RNDIS_DATA_INTERFACE_NUM);
+			desc[i + 3U] = (u8)(rndis->itf_base + USBD_RNDIS_COMM_ITF_NUM);
+			desc[i + 4U] = (u8)(rndis->itf_base + USBD_RNDIS_DATA_ITF_NUM);
 		} else if ((dtype == USB_CDC_CS_INTERFACE) && (dlen >= 5U) && (desc[i + 2U] == USB_CDC_FUNC_DESC_CALL_MGMT)) {
-			desc[i + 4U] = (u8)(rndis->if_base + USBD_RNDIS_DATA_INTERFACE_NUM);
+			desc[i + 4U] = (u8)(rndis->itf_base + USBD_RNDIS_DATA_ITF_NUM);
 		} else {
 			/* Nothing to patch */
 		}
@@ -1235,7 +1235,7 @@ static void usbd_rndis_patch_desc(u8 *desc, u16 len, usb_speed_type_t speed)
  * @param  buf_len: Capacity of buf
  * @retval Descriptor length, 0 to stall
  */
-static u16 usbd_rndis_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16 buf_len)
+static u16 usbd_rndis_get_desc(usb_dev_t *dev, usb_setup_req_t *req, u8 *buf, u16 buf_len)
 {
 	usb_speed_type_t speed = dev->dev_speed;
 	usb_speed_type_t desc_speed = speed;
@@ -1258,8 +1258,8 @@ static u16 usbd_rndis_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *b
 
 #ifndef CONFIG_SUPPORT_USB_FS_ONLY
 	case USB_DESC_TYPE_DEVICE_QUALIFIER:
-		desc = usbd_rndis_device_qualifier_desc;
-		len = sizeof(usbd_rndis_device_qualifier_desc);
+		desc = usbd_rndis_dev_qualifier_desc;
+		len = sizeof(usbd_rndis_dev_qualifier_desc);
 		break;
 
 	case USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION:
@@ -1272,7 +1272,7 @@ static u16 usbd_rndis_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *b
 #endif
 
 	case USB_DESC_TYPE_STRING:
-		/* Every string of this class is registered with usbd_add_string() and answered by the core */
+		/* Every string of this class is registered with usbd_add_str() and answered by the core */
 		USB_DIAG(USB_LAYER_CLASS, USB_EVT_ERR_GET_DESC, 0);
 		break;
 
@@ -1308,9 +1308,9 @@ static u16 usbd_rndis_get_descriptor(usb_dev_t *dev, usb_setup_req_t *req, u8 *b
  * @note   This function is called within an interrupt service routine (ISR) context.
  * @param  base: First interface number of this class
  */
-static void usbd_rndis_set_interface_base(u8 base)
+static void usbd_rndis_set_itf_base(u8 base)
 {
-	usbd_rndis_dev.if_base = base;
+	usbd_rndis_dev.itf_base = base;
 }
 #endif
 
@@ -1417,8 +1417,8 @@ static int usbd_rndis_private_init(const usbd_rndis_cb_t *cb, const usbd_rndis_c
 
 	usb_os_memset((void *)rndis, 0, sizeof(usbd_rndis_dev_t));
 	rndis->cfg = cfg;
-	rndis->if_base = 0U;
-	rndis->itf_str_idx = usbd_add_string(cfg->itf_str);
+	rndis->itf_base = 0U;
+	rndis->itf_str_idx = usbd_add_str(cfg->itf_str);
 	usb_os_memcpy((void *)rndis->mac, (const void *)((cfg->mac != NULL) ? cfg->mac : usbd_rndis_default_mac), USB_RNDIS_MAC_ADDR_LEN);
 
 	tx_depth = (cfg->bulk_tx_queue_depth != 0U) ? cfg->bulk_tx_queue_depth : USBD_RNDIS_DEFAULT_BULK_TX_QUEUE_DEPTH;
@@ -1504,7 +1504,7 @@ int usbd_rndis_init(const usbd_rndis_cb_t *cb, const usbd_rndis_config_t *cfg)
 	ret = usbd_rndis_private_init(cb, cfg);
 	if (ret == RTK_SUCCESS) {
 		rndis->from_composite = 0U;
-		ret = usbd_register_class(&usbd_rndis_driver);
+		ret = usbd_class_register(&usbd_rndis_driver);
 		if (ret != RTK_SUCCESS) {
 			usbd_rndis_deinit();
 		}
@@ -1522,7 +1522,7 @@ int usbd_composite_rndis_init(const usbd_rndis_cb_t *cb, const usbd_rndis_config
 	ret = usbd_rndis_private_init(cb, cfg);
 	if (ret == RTK_SUCCESS) {
 		rndis->from_composite = 1U;
-		ret = usbd_composite_register_driver(&usbd_rndis_driver);
+		ret = usbd_composite_class_register(&usbd_rndis_driver);
 		if (ret != RTK_SUCCESS) {
 			usbd_rndis_deinit();
 		}
@@ -1542,11 +1542,11 @@ void usbd_rndis_deinit(void)
 	/* Leave the core first: once accepted no class callback runs any more */
 #ifdef CONFIG_USBD_COMPOSITE
 	if (rndis->from_composite != 0U) {
-		ret = usbd_composite_unregister_driver(&usbd_rndis_driver);
+		ret = usbd_composite_class_unregister(&usbd_rndis_driver);
 	} else
 #endif
 	{
-		ret = usbd_unregister_class();
+		ret = usbd_class_unregister();
 	}
 	if (ret != RTK_SUCCESS) {
 		return;
@@ -1588,7 +1588,7 @@ int usbd_rndis_transmit(const u8 *buf, u32 len, u8 block)
 	usbd_rndis_dev_t *rndis = &usbd_rndis_dev;
 	int ret;
 
-	if (usb_os_is_in_interrupt() != 0U) {
+	if (usb_os_is_in_interrupt()) {
 		return -RTK_ERR_BADARG;
 	}
 
@@ -1617,9 +1617,9 @@ int usbd_rndis_transmit(const u8 *buf, u32 len, u8 block)
 	return ret;
 }
 
-int usbd_rndis_get_link_status(void)
+bool usbd_rndis_get_link_status(void)
 {
-	return usbd_rndis_dev.connect_status;
+	return (usbd_rndis_dev.connect_status != 0U);
 }
 
 int usbd_rndis_set_link_status(u8 link_up)

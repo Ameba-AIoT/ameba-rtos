@@ -72,10 +72,10 @@ static rtos_sema_t msc_attach_sema;
 static rtos_sema_t msc_ready_sema;
 static __IO int msc_is_connected = 0;
 static __IO int msc_is_ready = 0;
-/* 1 while the host core resets the device (USBH_MSG_RESET): the class detach that follows
+/* 1 while the host core resets the device (USBH_EVENT_RESET): the class detach that follows
    is not an unplug, and the device comes back by itself through attach/setup. */
 static __IO u8 msc_reenumerating = 0;
-/* 1 once the host core gave the attached device up (USBH_MSG_ERROR): its own resets did not
+/* 1 once the host core gave the attached device up (USBH_EVENT_ERROR): its own resets did not
    bring it back, and a stack rebuild resets it the same way, so only a replug helps. */
 static __IO u8 msc_need_replug = 0;
 static u32 filenum = 0;
@@ -87,7 +87,7 @@ static rtos_sema_t msc_detach_sema;
 #endif
 
 /* Serializes the FatFs I/O path against the hotplug thread's deinit/reinit.
-   Every f_read/f_write lands in USB_disk_read/USB_disk_write, which call
+   Every f_read/f_write lands in usbh_msc_disk_read/usbh_msc_disk_write, which call
    usbh_msc_read/usbh_msc_write; those poll the BOT state machine for the whole
    duration of a sector transfer. Meanwhile usbh_msc_deinit() frees the CBW/CSW
    and bounce buffers that poll loop walks, and usbh_deinit() memset()s the host
@@ -154,8 +154,8 @@ static const usbh_msc_config_t msc_class_cfg = {
 	/* buf_size left 0 takes the class default. */
 };
 
-static const usbh_user_cb_t usbh_usr_cb = {
-	.process = msc_cb_process
+static const usbh_cb_t usbh_usr_cb = {
+	.event = msc_cb_process
 };
 
 /* Exported variables --------------------------------------------------------*/
@@ -356,7 +356,7 @@ static void msc_cb_process(usb_host_t *host, u8 msg)
 	UNUSED(host);
 
 	switch (msg) {
-	case USBH_MSG_DISCONNECTED:
+	case USBH_EVENT_DISCONNECTED:
 		/* Also reached when the device never got as far as the class attach, so no
 		   detached callback would ever clear the application state. */
 		msc_reenumerating = 0U;
@@ -364,12 +364,12 @@ static void msc_cb_process(usb_host_t *host, u8 msg)
 		msc_is_connected = 0;
 		msc_is_ready = 0;
 		break;
-	case USBH_MSG_RESET:
-	case USBH_MSG_POWER_CYCLE:
+	case USBH_EVENT_RESET:
+	case USBH_EVENT_POWER_CYCLE:
 		msc_reenumerating = 1U;
 		msc_is_ready = 0;
 		break;
-	case USBH_MSG_ERROR:
+	case USBH_EVENT_ERROR:
 		/* The core gave the device up (enumeration or reenumerate budget spent): only a replug
 		   helps. Wake a test thread waiting for setup, so it stops at once. */
 		msc_reenumerating = 0U;
@@ -377,7 +377,7 @@ static void msc_cb_process(usb_host_t *host, u8 msg)
 		msc_is_ready = 0;
 		rtos_sema_give(msc_ready_sema);
 		break;
-	case USBH_MSG_CONNECTED:
+	case USBH_EVENT_CONNECTED:
 		break;
 	default:
 		break;
@@ -385,7 +385,7 @@ static void msc_cb_process(usb_host_t *host, u8 msg)
 }
 
 /*  I/O test routine (10 files, each with W/R of multiple sizes) */
-static int usbh_msc_file_test(void)
+static int msc_file_test(void)
 {
 	FATFS fs;
 	FIL f;
@@ -444,7 +444,7 @@ static int usbh_msc_file_test(void)
 	if (msc_app.quit != 0U) {
 		return RTK_FAIL;
 	}
-	if (usbh_msc_unit_is_ready(0U) == 0) {
+	if (!usbh_msc_is_unit_ready(0U)) {
 		/* setup() ran, but the class retired the LUN after its whole recovery. */
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Lun 0 unusable\n");
 		return -RTK_ERR_IO;
@@ -452,7 +452,7 @@ static int usbh_msc_file_test(void)
 	RTK_LOGS(TAG, RTK_LOG_INFO, "Device ready\n");
 
 	/* Register disk driver and mount */
-	drv_num = FATFS_RegisterDiskDriver(&USB_disk_Driver);
+	drv_num = FATFS_RegisterDiskDriver(&usbh_msc_disk_driver);
 	if (drv_num < 0) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Register disk driver fail\n");
 		return RTK_FAIL;
@@ -814,7 +814,7 @@ static void example_usbh_msc_test_thread(void *param)
 	/* I/O test loop */
 #if CONFIG_USBH_MSC_HOTPLUG
 	for (;;) {
-		ret = usbh_msc_file_test();
+		ret = msc_file_test();
 		if (msc_app.quit != 0U) {
 			/* Stopped, or the stack can not be rebuilt: no further attach will arrive. */
 			break;
@@ -841,10 +841,10 @@ static void example_usbh_msc_test_thread(void *param)
 	}
 #else
 	/* Replug loop: test 10 files, then wait for the next physical replug
-	 * event before running again.  usbh_msc_file_test() blocks at
+	 * event before running again.  msc_file_test() blocks at
 	 * rtos_sema_take(msc_attach_sema) until msc_cb_attached fires. */
 	for (;;) {
-		ret = usbh_msc_file_test();
+		ret = msc_file_test();
 		if (msc_app.quit != 0U) {
 			break;
 		}

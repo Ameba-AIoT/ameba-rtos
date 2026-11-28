@@ -10,11 +10,6 @@ class RtSettings():
     MIN_USB_ROM_BOOT_DELAY_IN_MILLISECOND = 200
     MIN_USB_FLOADER_BOOT_DELAY_IN_MILLISECOND = 200
 
-    FLASH_PROTECTION_PROCESS_PROMPT = 0
-    FLASH_PROTECTION_PROCESS_TRY = 1
-    FLASH_PROTECTION_PROCESS_UNLOCK = 2
-    FLASH_PROTECTION_PROCESS_ABORT = 3
-
     def __init__(self, **kwargs):
         # Settings.json is split into two sections:
         #   "General"     – RT / download-engine parameters (shared by CLI and GUI)
@@ -61,8 +56,6 @@ class RtSettings():
         # PostProcess is shared: CLI writes "NONE"/"RESET", GUI uses "NONE"/"INDICATION"/"RESET"/"BOOT"
         self.post_process = _c("PostProcess", "RESET")
 
-        self.flash_protection_process = int(_c("FlashProtectionProcess", self.FLASH_PROTECTION_PROCESS_UNLOCK))
-
         # Whether a single image (the "-i" case) that is actually a merged
         # image_all is split by the device profile layout so the all-FF padding
         # between/after partitions is skipped instead of programmed. Shared by
@@ -73,6 +66,12 @@ class RtSettings():
         # (8B on NOR, the first block on NAND) last, after every other byte is written and
         # verified, so an interrupted download leaves the device unbootable. Enabled by default.
         self.dis_boot_guard_burn = bool(_c("DisBootGuardBurn", False))
+
+        # Auto detect flash type: if the flash info of the first QUERY is invalid, ask the
+        # flashloader to re-initialize SPIC with the other flash type (NOR <-> NAND) and, if
+        # that one is valid, program it into the boot select of logical OTP before download.
+        # Only ICs listed in boot_flash_type_config.py support it. Disabled by default.
+        self.auto_flash_type_detect = bool(_c("AutoFlashTypeDetect", False))
 
         # ── GUIRunTime: download target / GUI runtime fields ───────────────
         self.profile = _g("Profile", "")
@@ -125,9 +124,9 @@ class RtSettings():
                 "AutoSwitchToDownloadModeWithDtrRtsTimingFile": self.auto_switch_to_download_mode_with_dtr_rts_file,
                 "AutoResetDeviceWithDtrRtsTimingFile": self.auto_reset_device_with_dtr_rts_file,
                 "PostProcess": self.post_process,
-                "FlashProtectionProcess": self.flash_protection_process,
                 "SplitSingleImageByLayout": self.split_single_image_by_layout,
                 "DisBootGuardBurn": self.dis_boot_guard_burn,
+                "AutoFlashTypeDetect": self.auto_flash_type_detect,
             },
             # ── GUIRunTime: download target / GUI runtime fields ───────────
             "GUIRunTime": {

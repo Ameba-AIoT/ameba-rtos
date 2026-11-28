@@ -31,7 +31,7 @@ extern "C" {
  *  @{
  */
 
-#define USB_APP_ROLE_DEVICE                 0U
+#define USB_APP_ROLE_DEV                 0U
 #define USB_APP_ROLE_HOST                   1U
 
 #define USB_APP_STATE_IDLE                  0U  /* Not started, or fully stopped */
@@ -60,7 +60,7 @@ typedef struct {
 	const char *name;                       /* Example directory name, e.g. "usbd_cdc_acm" */
 	int (*start)(void);                     /* Bring the app up, task context only */
 	int (*stop)(void);                      /* Tear it down completely, task context only, idempotent */
-	u8 role;                                /* USB_APP_ROLE_DEVICE or USB_APP_ROLE_HOST */
+	u8 role;                                /* USB_APP_ROLE_DEV or USB_APP_ROLE_HOST */
 } usb_app_t;
 
 /* Lifecycle state shared by the start/stop entry and the worker threads of one app */
