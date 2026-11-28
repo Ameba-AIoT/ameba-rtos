@@ -24,7 +24,7 @@ uint8_t hci_dtm_reveiver_test_v1(uint8_t rx_chann)
 	buf[2] = (uint8_t)(1);
 	buf[3] = rx_chann;
 
-	return hci_sa_send_cmd_sync(0x201D, buf, buf[2] + 3);
+	return hci_sa_send_cmd_sync(0x201D, buf, buf[2] + 3, sizeof(buf_raw) - RESERVE_LEN);
 }
 
 uint8_t hci_dtm_reveiver_test_v2(uint8_t rx_chann, uint8_t phy, uint8_t mod_idx)
@@ -38,7 +38,7 @@ uint8_t hci_dtm_reveiver_test_v2(uint8_t rx_chann, uint8_t phy, uint8_t mod_idx)
 	buf[4] = phy;
 	buf[5] = mod_idx;
 
-	return hci_sa_send_cmd_sync(0x2033, buf, buf[2] + 3);
+	return hci_sa_send_cmd_sync(0x2033, buf, buf[2] + 3, sizeof(buf_raw) - RESERVE_LEN);
 }
 
 uint8_t hci_dtm_receiver_test_v3(uint8_t rx_chann, uint8_t phy, uint8_t mod_idx,
@@ -64,7 +64,7 @@ uint8_t hci_dtm_receiver_test_v3(uint8_t rx_chann, uint8_t phy, uint8_t mod_idx,
 		}
 	}
 
-	return hci_sa_send_cmd_sync(0x204F, buf, buf[2] + 3);
+	return hci_sa_send_cmd_sync(0x204F, buf, buf[2] + 3, sizeof(buf_raw) - RESERVE_LEN);
 }
 
 uint8_t hci_dtm_transmitter_test_v1(uint8_t tx_chann, uint8_t data_len, uint8_t pkt_pl)
@@ -78,7 +78,7 @@ uint8_t hci_dtm_transmitter_test_v1(uint8_t tx_chann, uint8_t data_len, uint8_t 
 	buf[4] = data_len;
 	buf[5] = pkt_pl;
 
-	return hci_sa_send_cmd_sync(0x201E, buf, buf[2] + 3);
+	return hci_sa_send_cmd_sync(0x201E, buf, buf[2] + 3, sizeof(buf_raw) - RESERVE_LEN);
 }
 
 uint8_t hci_dtm_transmitter_test_v2(uint8_t tx_chann, uint8_t data_len, uint8_t pkt_pl, uint8_t phy)
@@ -93,7 +93,7 @@ uint8_t hci_dtm_transmitter_test_v2(uint8_t tx_chann, uint8_t data_len, uint8_t 
 	buf[5] = pkt_pl;
 	buf[6] = phy;
 
-	return hci_sa_send_cmd_sync(0x2034, buf, buf[2] + 3);
+	return hci_sa_send_cmd_sync(0x2034, buf, buf[2] + 3, sizeof(buf_raw) - RESERVE_LEN);
 }
 
 uint8_t hci_dtm_transmitter_test_v3(uint8_t tx_chann, uint8_t data_len, uint8_t pkt_pl,
@@ -119,7 +119,7 @@ uint8_t hci_dtm_transmitter_test_v3(uint8_t tx_chann, uint8_t data_len, uint8_t 
 		}
 	}
 
-	return hci_sa_send_cmd_sync(0x2050, buf, buf[2] + 3);
+	return hci_sa_send_cmd_sync(0x2050, buf, buf[2] + 3, sizeof(buf_raw) - RESERVE_LEN);
 }
 
 uint8_t hci_dtm_transmitter_test_v4(uint8_t tx_chann, uint8_t data_len, uint8_t pkt_pl,
@@ -146,7 +146,7 @@ uint8_t hci_dtm_transmitter_test_v4(uint8_t tx_chann, uint8_t data_len, uint8_t 
 	}
 	buf[10 + i] = (uint8_t)tx_power_level;
 
-	return hci_sa_send_cmd_sync(0x207B, buf, buf[2] + 3);
+	return hci_sa_send_cmd_sync(0x207B, buf, buf[2] + 3, sizeof(buf_raw) - RESERVE_LEN);
 }
 
 uint8_t hci_dtm_test_end(uint16_t *p_num_pkts)
@@ -157,7 +157,7 @@ uint8_t hci_dtm_test_end(uint16_t *p_num_pkts)
 
 	buf[2] = (uint8_t)(0);
 
-	if (HCI_SUCCESS != hci_sa_send_cmd_sync(0x201F, buf, buf[2] + 3)) {
+	if (HCI_SUCCESS != hci_sa_send_cmd_sync(0x201F, buf, buf[2] + 3, sizeof(buf_raw) - RESERVE_LEN)) {
 		return HCI_FAIL;
 	}
 
@@ -177,7 +177,7 @@ uint8_t hci_dtm_vendor_get_receiver_report(uint32_t *p_rx_pkts, uint32_t *p_rx_b
 
 	buf[2] = (uint8_t)(0);
 
-	if (HCI_SUCCESS != hci_sa_send_cmd_sync(0xFCE5, buf, buf[2] + 3)) {
+	if (HCI_SUCCESS != hci_sa_send_cmd_sync(0xFCE5, buf, buf[2] + 3, sizeof(buf_raw) - RESERVE_LEN)) {
 		return HCI_FAIL;
 	}
 
@@ -222,7 +222,7 @@ uint8_t hci_dtm_vendor_set_transmitter_count(uint8_t tx_cnt_mode_en, uint8_t tx_
 	}
 	buf[10] = prbs_fix;
 
-	return hci_sa_send_cmd_sync(0xFCDC, buf, buf[2] + 3);
+	return hci_sa_send_cmd_sync(0xFCDC, buf, buf[2] + 3, sizeof(buf_raw) - RESERVE_LEN);
 }
 
 uint8_t hci_dtm_vendor_ctrl_tx_power(uint8_t bdr_1m, uint8_t edr_2m, uint8_t edr_3m,
@@ -239,7 +239,7 @@ uint8_t hci_dtm_vendor_ctrl_tx_power(uint8_t bdr_1m, uint8_t edr_2m, uint8_t edr
 	buf[6] = ble_1m;
 	buf[7] = ble_2m;
 
-	return hci_sa_send_cmd_sync(0xFCE7, buf, buf[2] + 3);
+	return hci_sa_send_cmd_sync(0xFCE7, buf, buf[2] + 3, sizeof(buf_raw) - RESERVE_LEN);
 }
 
 uint8_t hci_dtm_vendor_k_power_setting(uint8_t sub_index, uint32_t value, uint8_t *p_tx_gaink,
@@ -263,7 +263,7 @@ uint8_t hci_dtm_vendor_k_power_setting(uint8_t sub_index, uint32_t value, uint8_
 		buf[7] = (uint8_t)(value >> 24);
 	}
 
-	if (HCI_SUCCESS != hci_sa_send_cmd_sync(0xFD14, buf, buf[2] + 3)) {
+	if (HCI_SUCCESS != hci_sa_send_cmd_sync(0xFD14, buf, buf[2] + 3, sizeof(buf_raw) - RESERVE_LEN)) {
 		return HCI_FAIL;
 	}
 
@@ -290,7 +290,7 @@ uint8_t hci_dtm_vendor_read_thermal_meter_data(uint8_t *p_thermal_value)
 
 	buf[2] = (uint8_t)(0);
 
-	if (HCI_SUCCESS != hci_sa_send_cmd_sync(0xFC40, buf, buf[2] + 3)) {
+	if (HCI_SUCCESS != hci_sa_send_cmd_sync(0xFC40, buf, buf[2] + 3, sizeof(buf_raw) - RESERVE_LEN)) {
 		return HCI_FAIL;
 	}
 
@@ -316,7 +316,7 @@ uint8_t hci_dtm_vendor_enable_tx_power_tracking(uint8_t is_get_or_set, uint8_t i
 		buf[2] = (uint8_t)(1);
 	}
 
-	if (HCI_SUCCESS != hci_sa_send_cmd_sync(0xFCE8, buf, buf[2] + 3)) {
+	if (HCI_SUCCESS != hci_sa_send_cmd_sync(0xFCE8, buf, buf[2] + 3, sizeof(buf_raw) - RESERVE_LEN)) {
 		return HCI_FAIL;
 	}
 

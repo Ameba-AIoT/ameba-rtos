@@ -751,7 +751,7 @@ static uint8_t ext_adv_data[] = {
 	// Flags
 	0x02,
 	RTK_BT_LE_GAP_ADTYPE_FLAGS,
-	RTK_BT_LE_GAP_ADTYPE_FLAGS_LIMITED | RTK_BT_LE_GAP_ADTYPE_FLAGS_BREDR_NOT_SUPPORTED,
+	RTK_BT_LE_GAP_ADTYPE_FLAGS_GENERAL,
 	// Local name
 	0x12,
 	RTK_BT_LE_GAP_ADTYPE_LOCAL_NAME_COMPLETE,
@@ -759,7 +759,7 @@ static uint8_t ext_adv_data[] = {
 	// Manufacturer Specific Data
 	0xc3,
 	RTK_BT_LE_GAP_ADTYPE_MANUFACTURER_SPECIFIC,
-	0xc0, 0x00,
+	0x5d, 0x00,
 	0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
 	0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1,
 	0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2,
@@ -792,7 +792,7 @@ static rtk_bt_le_ext_adv_param_t ext_adv_param = {
 static uint8_t adv_data[] = {
 	0x02, //AD len
 	RTK_BT_LE_GAP_ADTYPE_FLAGS, //AD types
-	RTK_BT_LE_GAP_ADTYPE_FLAGS_GENERAL | RTK_BT_LE_GAP_ADTYPE_FLAGS_BREDR_NOT_SUPPORTED, //AD data
+	RTK_BT_LE_GAP_ADTYPE_FLAGS_GENERAL, //AD data
 	0x12,
 	RTK_BT_LE_GAP_ADTYPE_LOCAL_NAME_COMPLETE,
 	'R', 'T', 'K', '_', 'B', 'T', '_', 'S', 'C', 'A', 'T', 'T', 'E', 'R', 'N', 'E', 'T',
@@ -3229,7 +3229,7 @@ int bt_a2dp_scatternet_main(uint8_t role, uint8_t enable)
 		dft_param.mtu_size = 180;
 		BT_APP_PROCESS(rtk_bt_br_gap_set_default_param(&dft_param));
 		/* set supervision_timeout */
-		BT_APP_PROCESS(rtk_bt_br_gap_set_supvisiontimeout(&superv_time));
+		BT_APP_PROCESS(rtk_bt_br_gap_set_supv_timeout(&superv_time));
 		BT_APP_PROCESS(rtk_bt_br_gap_set_inquiry_param(&inquiry_param));
 		BT_APP_PROCESS(rtk_bt_br_gap_set_page_param(&page_param));
 		/* sdp record add (must be invoked before rtk_bt_enable) */

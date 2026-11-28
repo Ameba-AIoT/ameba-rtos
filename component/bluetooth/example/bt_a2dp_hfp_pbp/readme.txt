@@ -16,7 +16,7 @@ LE Audio Config:
 2. BIS num 1 + Sample rate 48kHz + 1-channel + ISO interval 20 ms
     2.1 Config the following Macros in rtk_bt_le_audio_def.h
             change   RTK_BT_LE_AUDIO_BIG_ISO_INTERVAL_CONFIG               to         RTK_BT_ISO_INTERVAL_20_MS
-            change   RTK_BT_LE_AUDIO_BROADCASTER_SETEO_MODE                to         0
+            change   RTK_BT_LE_AUDIO_BROADCASTER_STEREO_MODE               to         0
 
 3. BIS num 1 + Sample rate 48kHz + 2-channel + ISO interval 30 ms 
     3.1 Config the following Macros in rtk_bt_le_audio_def.h

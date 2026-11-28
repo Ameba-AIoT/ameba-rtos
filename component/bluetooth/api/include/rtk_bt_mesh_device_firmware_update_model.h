@@ -393,14 +393,21 @@ typedef struct {
 } rtk_bt_mesh_dfu_evt_distributor_server_upload_fail_t;  // fw_dist_server_upload_fail_t
 
 /**
- * @typedef   rtk_bt_mesh_dfu_evt_target_meatdata_t
+ * @typedef   rtk_bt_mesh_dfu_evt_target_metadata_t
  * @brief     BLE MESH device firmware update target metadata structure.
  */
 typedef struct {
 	uint8_t fw_image_idx;
 	uint8_t *pmetadata;
 	uint8_t metadata_len;
-} rtk_bt_mesh_dfu_evt_target_meatdata_t;
+} rtk_bt_mesh_dfu_evt_target_metadata_t;
+
+/**
+ * @typedef   rtk_bt_mesh_dfu_evt_target_meatdata_t
+ * @brief     Deprecated alias of @ref rtk_bt_mesh_dfu_evt_target_metadata_t.
+ * @deprecated Use @ref rtk_bt_mesh_dfu_evt_target_metadata_t instead.
+ */
+typedef rtk_bt_mesh_dfu_evt_target_metadata_t rtk_bt_mesh_dfu_evt_target_meatdata_t;
 
 /**
  * @typedef   rtk_bt_mesh_dfu_target_fw_update_fail_reason_t
@@ -421,7 +428,7 @@ typedef struct {
 	rtk_bt_mesh_dfu_target_fw_update_fail_reason_t reason;
 } rtk_bt_mesh_dfu_evt_target_fw_update_server_fail_t;
 
-/* ------------------------------function declration ----------------------------- */
+/* ------------------------------function declaration ----------------------------- */
 /**
  * @defgroup  ble_mesh_dfu_model BT LE Mesh Device Firmware Update Model APIs
  * @brief     BT LE Mesh device firmware update Model related function APIs
@@ -451,7 +458,7 @@ uint16_t rtk_bt_mesh_dfu_initiator_receivers_add(rtk_bt_mesh_dfu_initiator_dist_
 
 /**
  * @fn        uint16_t rtk_bt_mesh_dfu_initiator_receivers_delete_all(rtk_bt_mesh_dfu_initiator_dist_recv_del_all_t *param)
- * @brief     Initiator send device firmware update receiver delete all message to Distributor. If execute OTA second time, should send this message to distributer before OTA, will cause event @ref RTK_BT_MESH_DFU_ACT_INITIATOR_RECEIVERS_DEL_ALL
+ * @brief     Initiator send device firmware update receiver delete all message to Distributor. If execute OTA second time, should send this message to distributor before OTA, will cause event @ref RTK_BT_MESH_DFU_ACT_INITIATOR_RECEIVERS_DEL_ALL
  * @param[in] param: receiver add message param
  * @return
  *            - 0  : Succeed

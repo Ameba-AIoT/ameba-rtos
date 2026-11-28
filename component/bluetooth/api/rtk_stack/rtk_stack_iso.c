@@ -65,7 +65,7 @@ void bt_stack_le_iso_data_direct_callback(uint8_t cb_type, void *p_cb_data)
 			direct_iso_data_ind->p_buf = (uint8_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, direct_iso_data_ind->buf_len);
 			memset(direct_iso_data_ind->p_buf, 0, direct_iso_data_ind->buf_len);
 			memcpy((void *)direct_iso_data_ind->p_buf, (void *)p_data->p_bt_direct_iso->p_buf, direct_iso_data_ind->buf_len);
-			/*  user_data point to the memory alloced for 2nd level ptr, so it's convenient
+			/*  user_data point to the memory allocated for 2nd level ptr, so it's convenient
 			    to free it when free p_evt */
 			p_evt->user_data = direct_iso_data_ind->p_buf;
 			rtk_bt_evt_indicate(p_evt, NULL);

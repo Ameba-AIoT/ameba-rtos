@@ -16,7 +16,7 @@
 /* SPP service register config */
 extern uint8_t spp_max_link_num;
 extern uint8_t spp_rfc_max_service_num;
-extern T_SPP_CHANN_DB spp_chann_db[SPP_CAHNN_DB_MAX_LINK_NUM];
+extern T_SPP_CHANN_DB spp_chann_db[SPP_CHANN_DB_MAX_LINK_NUM];
 extern T_SPP_CHANN_DB *bt_stack_alloc_spp_chann(uint8_t server_chann, uint8_t *service_uuid, uint16_t uuid_length);
 
 extern uint8_t default_mtu_size;
