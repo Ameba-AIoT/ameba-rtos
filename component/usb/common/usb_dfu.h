@@ -67,6 +67,8 @@ extern "C" {
 /** @} End of USB_Common_DFU_Constants group */
 /** @} End of USB_Common_Constants group */
 
+/* Exported types ------------------------------------------------------------*/
+
 /** @addtogroup USB_Common_Types USB Common Types
  *  @{
  */
@@ -74,11 +76,6 @@ extern "C" {
  *  @brief DFU state and status types shared by the USBD and USBH DFU drivers.
  *  @{
  */
-
-/** @} End of USB_Common_DFU_Types group */
-/** @} End of USB_Common_Types group */
-
-/* Exported types ------------------------------------------------------------*/
 
 /** @brief DFU device states (DFU 1.1 spec Table 3-1) */
 typedef enum {
@@ -107,6 +104,9 @@ typedef struct {
 	u16 wTransferSize;     /**< Maximum number of bytes per DNLOAD/UPLOAD block. */
 	u16 bcdDFUVersion;     /**< BCD-encoded DFU specification release number. */
 } __PACKED usb_dfu_func_desc_t;
+
+/** @} End of USB_Common_DFU_Types group */
+/** @} End of USB_Common_Types group */
 
 /* Exported macros -----------------------------------------------------------*/
 

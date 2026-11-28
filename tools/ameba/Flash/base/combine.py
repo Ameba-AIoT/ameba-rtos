@@ -6,6 +6,7 @@
 
 import os
 
+from .memory_info import MemoryInfo
 from .rtk_utils import RtkUtils
 
 
@@ -27,7 +28,12 @@ def combine_profile_images(profile_info, image_dir, logger, output_dir=None, pad
 
     resolved_images = []
     for image in images:
-        if (profile_info.is_ram_address(image.start_address)
+        if image.memory_type == MemoryInfo.PARTITION_TYPE_SECOND_FLASH:
+            # Another flash than the main one: not part of the main flash image_all.bin
+            logger.info(f"Skip SECOND FLASH image for image_all.bin: {image.image_name}")
+            continue
+        if ((image.memory_type == MemoryInfo.PARTITION_TYPE_RAM)
+                or profile_info.is_ram_address(image.start_address)
                 or profile_info.is_ram_address(image.end_address - 1)):
             raise ValueError(f"RAM image cannot be combined: {image.image_name}")
 

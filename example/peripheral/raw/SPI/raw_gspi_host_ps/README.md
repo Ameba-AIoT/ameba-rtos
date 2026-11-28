@@ -86,12 +86,12 @@ bit17 set (`WAKE_SRC_GPIOA`); the Device's phase A log shows `WAK_STATUS1` bit1
 
 # Note
 
-1. All bus access goes through the SoC driver `ameba_gspi.c` (`GSPI_Init`, `GSPI_Configuration`,
-   `GSPI_ReadReg*`/`GSPI_WriteReg*`, `GSPI_WriteTxFifo`/`GSPI_ReadRxFifo`). The example only builds
+1. All bus access goes through the GSPI host driver `rtw_gspi_drvio_v<N>.c` (`GSPI_Init`, `GSPI_WIFI_Configuration`,
+   `GSPI_WIFI_ReadReg*`/`GSPI_WIFI_WriteReg*`, `GSPI_WIFI_WriteTxFifo`/`GSPI_WIFI_ReadRxFifo`). The example only builds
    the TX descriptor and interprets the payload; frame layout, byte order, 4-byte padding, the HIMR
    shadow and DMA all live in the driver. Its own notes cover those details.
 2. Both boards must be reset together: resetting one leaves the other mid-sequence.
-3. `GSPI_Configuration()` must be the first bus transaction after the Device boots, otherwise the
+3. `GSPI_WIFI_Configuration()` must be the first bus transaction after the Device boots, otherwise the
    Device falls back to SDIO mode. `GSPI_Init()` already latches CS high before enabling its output,
    so the boot delay can be taken after it.
 4. HIMR (0x14) and SPI_INT (0x04) cannot be read on this SoC; the driver shadows HIMR and
@@ -111,3 +111,23 @@ bit17 set (`WAKE_SRC_GPIOA`); the Device's phase A log shows `WAK_STATUS1` bit1
 # Supported IC
 
 RTL8721F
+
+## Selecting the GSPI protocol version
+
+The driver (`component/wifi/whc/whc_host_rtos/gspi/rtw_gspi_drvio_v<N>.c`) is built by this example, not by the SoC fwlib.
+The protocol version of the Device is set in `CMakeLists.txt`:
+
+```cmake
+set(gspi_ver 2)    # 1: AmebaGreen2 Device; 2: RLE1509 Device
+```
+
+The same variable selects the driver source and defines `GSPI_DRV_VER`, which `rtw_gspi_drvio.h` uses to pick the header.
+
+**Edit this line by hand to match the Device before building:**
+
+| Device IC | `gspi_ver` |
+|---|---|
+| RLE1509 | `2` (default) |
+| RTL8721F | `1` |
+
+A mismatch shows up as `activation attempt N: SPI_CFG reads 0x00`. The version lives in CMake, so no `-p` is needed after changing it.

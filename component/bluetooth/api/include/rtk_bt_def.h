@@ -18,6 +18,15 @@ extern "C"
 #endif
 
 /**
+ * @addtogroup BT_Types BT Types
+ * @{
+ */
+/**
+ * @addtogroup BT_Def_Types BT Def Types
+ * @{
+ */
+
+/**
  * @typedef   rtk_bt_status_t
  * @brief     Bluetooth API status definition.
  */
@@ -268,14 +277,18 @@ enum rtk_bt_err_smp {
 };
 
 /**
- * @defgroup  RTK_BT_SMP_ERR Deprecated aliases
- * @brief     Deprecated aliases of the @ref rtk_bt_err_smp values.
- * @deprecated Use the @ref rtk_bt_err_smp values instead.
- * @{
+ * @def       RTK_BT_SMP_ERR_OOB_NOT_AVAIABLE
+ * @brief     Deprecated alias of @ref RTK_BT_SMP_ERR_OOB_NOT_AVAILABLE.
+ * @deprecated Use @ref RTK_BT_SMP_ERR_OOB_NOT_AVAILABLE instead.
  */
 #define RTK_BT_SMP_ERR_OOB_NOT_AVAIABLE RTK_BT_SMP_ERR_OOB_NOT_AVAILABLE
+
+/**
+ * @def       RTK_BT_SMP_ERR_NUMERIC_COMPARISION_FAIL
+ * @brief     Deprecated alias of @ref RTK_BT_SMP_ERR_NUMERIC_COMPARISON_FAIL.
+ * @deprecated Use @ref RTK_BT_SMP_ERR_NUMERIC_COMPARISON_FAIL instead.
+ */
 #define RTK_BT_SMP_ERR_NUMERIC_COMPARISION_FAIL RTK_BT_SMP_ERR_NUMERIC_COMPARISON_FAIL
-/** @} */
 
 /**
  * @enum      rtk_bt_err_gatt
@@ -302,8 +315,10 @@ enum rtk_bt_err_gatt {
 };
 
 /**
- * @defgroup  BT_APIs BT APIs
- * @brief     List all BT related APIs.
+ * @}
+ */
+/**
+ * @}
  */
 
 #ifdef __cplusplus

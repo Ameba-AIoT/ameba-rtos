@@ -162,6 +162,8 @@ if VFS_MENU
         default n
         help
             USB mass-storage device on the USB host port. Only FATFS is supported.
+            It takes effect only when a USB host stack is built (USB Mode Host or DRD
+            under CONFIG USB) with the MSC class enabled.
     config VFS_RAM
         bool "RAM disk"
         default n
@@ -247,7 +249,7 @@ config VFS_LITTLEFS_INCLUDED
     def_bool VFS1_LITTLEFS || VFS2_LITTLEFS || LITTLEFS_WITHIN_APP_IMG || VFS_SECOND_FLASH_LITTLEFS || VFS_RAM_LITTLEFS
 
 config VFS_FATFS_INCLUDED
-    def_bool VFS2_FATFS || FATFS_WITHIN_APP_IMG || VFS_SECOND_FLASH_FATFS || VFS_SD_FATFS || VFS_SD_SPI || VFS_USB_HOST || VFS_RAM_FATFS
+    def_bool VFS2_FATFS || FATFS_WITHIN_APP_IMG || VFS_SECOND_FLASH_FATFS || VFS_SD_FATFS || VFS_SD_SPI || FATFS_USB_HOST || VFS_RAM_FATFS
 
 config VFS_REALFS_INCLUDED
     def_bool VFS1_REALFS || VFS_SECOND_FLASH_REALFS || VFS_SD_REALFS || VFS_RAM_REALFS
@@ -267,8 +269,10 @@ config FATFS_SD_HOTPLUG
 config FATFS_SD_SPI_MODE
     def_bool VFS_SD_SPI
 
+# Also gates VFS_FATFS_INCLUDED: a core with VFS_USB_HOST set but no USB host stack or
+# no MSC class (e.g. the NP core) does not build FatFs for USB.
 config FATFS_USB_HOST
-    def_bool VFS_USB_HOST
+    def_bool VFS_USB_HOST && (USB_HOST_EN || USB_DRD_EN) && USBH_MSC
 
 config REALFS_FLASH
     def_bool VFS1_REALFS

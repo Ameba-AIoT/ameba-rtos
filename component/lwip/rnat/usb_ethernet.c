@@ -51,7 +51,7 @@ int usb_ethernet_transmit(u8 *buf, u32 len, u8 block)
 #elif defined(CONFIG_USBH_CDC_ECM)
 int usb_ethernet_transmit(u8 *buf, u32 len, u8 block)
 {
-	return usbh_cdc_ecm_send_data(buf, len, block);
+	return usbh_cdc_ecm_transmit(buf, len, block);
 }
 #endif
 
@@ -303,9 +303,9 @@ static void cdc_ecm_cb_detached(void);
 static void cdc_ecm_cb_setup(void);
 static void cdc_ecm_cb_received(u8 *buf, u32 length);
 static void cdc_ecm_cb_process(usb_host_t *host, u8 msg);
-static int cdc_ecm_cb_device_check(usb_host_t *host, u8 cfg_max);
+static int cdc_ecm_cb_validate(usb_host_t *host, u8 cfg_max);
 
-static const usbh_cdc_ecm_state_cb_t cdc_ecm_usb_cb = {
+static const usbh_cdc_ecm_cb_t cdc_ecm_usb_cb = {
 	.init   = cdc_ecm_cb_init,
 	.deinit = cdc_ecm_cb_deinit,
 	.attached = cdc_ecm_cb_attached,
@@ -314,9 +314,9 @@ static const usbh_cdc_ecm_state_cb_t cdc_ecm_usb_cb = {
 	.received = cdc_ecm_cb_received,
 };
 
-static const usbh_user_cb_t usbh_ecm_usr_cb = {
-	.process = cdc_ecm_cb_process,
-	.validate = cdc_ecm_cb_device_check,
+static const usbh_cb_t usbh_ecm_usr_cb = {
+	.event = cdc_ecm_cb_process,
+	.validate = cdc_ecm_cb_validate,
 };
 
 static const usbh_cdc_ecm_config_t ecm_class_cfg = {
@@ -352,10 +352,10 @@ static const usbh_config_t usbh_ecm_cfg = {
 static usb_os_sema_t cdc_ecm_detach_sema;
 static volatile u8 cdc_ecm_detach_pending = 0;
 
-static int cdc_ecm_cb_device_check(usb_host_t *host, u8 cfg_max)
+static int cdc_ecm_cb_validate(usb_host_t *host, u8 cfg_max)
 {
 	UNUSED(cfg_max);
-	return usbh_cdc_ecm_check_config_desc(host);
+	return usbh_cdc_ecm_check_config(host);
 }
 
 static int cdc_ecm_cb_init(void)
@@ -392,11 +392,11 @@ static void cdc_ecm_cb_process(usb_host_t *host, u8 msg)
 {
 	UNUSED(host);
 	switch (msg) {
-	case USBH_MSG_USER_SET_CONFIG:
+	case USBH_EVENT_SELECT_CONFIG:
 		usbh_cdc_ecm_choose_config(host);
 		break;
-	case USBH_MSG_DISCONNECTED:
-	case USBH_MSG_CONNECTED:
+	case USBH_EVENT_DISCONNECTED:
+	case USBH_EVENT_CONNECTED:
 		break;
 	default:
 		break;
@@ -430,7 +430,7 @@ static int usb_eth_do_usb_init(void)
 	}
 
 	do {
-		if (usbh_cdc_ecm_usb_is_ready()) {
+		if (usbh_cdc_ecm_is_ready()) {
 			break;
 		}
 		rtos_time_delay_ms(1000);
@@ -498,7 +498,7 @@ static void usb_eth_hotplug_thread(void *param)
 static void usb_eth_link_change_thread(void *param)
 {
 	u8 *mac;
-	u8 link_is_up = 0;
+	bool link_is_up = false;
 	usb_eth_state_t state = ETH_STATUS_IDLE;
 
 	UNUSED(param);
@@ -527,14 +527,14 @@ static void usb_eth_link_change_thread(void *param)
 		mac = (u8 *)dhcp_server_mac;
 		if (cdc_ecm_link_disconnected) {
 			cdc_ecm_link_disconnected = 0;
-			link_is_up = 0;
+			link_is_up = false;
 		}
 #elif defined(CONFIG_USBH_CDC_ECM)
 		link_is_up = usbh_cdc_ecm_get_link_status();
-		mac = (u8 *)usbh_cdc_ecm_process_mac_str();
+		mac = (u8 *)usbh_cdc_ecm_get_mac();
 		if (cdc_ecm_detach_pending) {
 			cdc_ecm_detach_pending = 0;
-			link_is_up = 0;
+			link_is_up = false;
 		}
 #endif
 

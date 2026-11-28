@@ -56,7 +56,7 @@ extern "C" {
  * to applications such as hidapi based HID tools. Ref HID 1.11 5.6 and 8.1: the report descriptor
  * declares a Report ID, so every report on the interface starts with it, and every report has the
  * fixed size declared, Report ID included. A customer protocol adds its own Report IDs and lengths
- * to the report descriptor, usbd_hid_send_data() and the received callback carry whole reports. */
+ * to the report descriptor, usbd_hid_send_report() and the received callback carry whole reports. */
 #define USBD_HID_VENDOR_IN_REPORT_ID         0x01U   /**< Report ID of the vendor Input report (device to host). */
 #define USBD_HID_VENDOR_OUT_REPORT_ID        0x02U   /**< Report ID of the vendor Output report (host to device). */
 #define USBD_HID_VENDOR_REPORT_PAYLOAD_LEN   63U     /**< Payload length of each vendor report, Report ID excluded. */
@@ -168,7 +168,7 @@ typedef struct {
 	 * @param[in] status The new attach status.
 	 */
 	void (*status_changed)(u8 old_status, u8 status);
-} usbd_hid_usr_cb_t;
+} usbd_hid_cb_t;
 
 /** @} End of Device_HID_Types group */
 /** @} End of USB_Device_Types group */
@@ -178,7 +178,7 @@ typedef struct {
  */
 typedef struct {
 	const usbd_hid_config_t *cfg;       /**< Pointer to the class configuration (set by init). */
-	const usbd_hid_usr_cb_t *cb;        /**< Pointer to the user-defined callback structure. */
+	const usbd_hid_cb_t *cb;        /**< Pointer to the user-defined callback structure. */
 	usb_dev_t *dev;               /**< Pointer to the USB device instance. */
 	usbd_ep_t ep_intr_in;         /**< INTR IN endpoint structure. */
 #if defined(CONFIG_USBD_HID_KEYBOARD) || defined(CONFIG_USBD_HID_VENDOR)
@@ -189,7 +189,7 @@ typedef struct {
 	u8 idle_rate;                 /**< Store the device idle rate. */
 	u8 ctrl_req_pending;          /**< 1 if ctrl_req is waiting for its EP0 OUT data stage. */
 	u8 from_composite;			/**< Flag indicating if part of a composite device. */
-	u8 itf_str_idx;				/**< iInterface string index from usbd_add_string(), 0 for none. */
+	u8 itf_str_idx;				/**< iInterface string index from usbd_add_str(), 0 for none. */
 } usbd_hid_t;
 
 /* Exported macros -----------------------------------------------------------*/
@@ -211,7 +211,7 @@ typedef struct {
  * @param[in] cfg: Pointer to the class configuration. See @ref usbd_hid_config_t.
  * @return 0 on success, non-zero on failure.
  */
-int usbd_hid_init(const usbd_hid_usr_cb_t *cb, const usbd_hid_config_t *cfg);
+int usbd_hid_init(const usbd_hid_cb_t *cb, const usbd_hid_config_t *cfg);
 
 #ifdef CONFIG_USBD_COMPOSITE
 /**
@@ -220,12 +220,12 @@ int usbd_hid_init(const usbd_hid_usr_cb_t *cb, const usbd_hid_config_t *cfg);
  * @param[in] cfg: Pointer to the class configuration. See @ref usbd_hid_config_t.
  * @return 0 on success, non-zero on failure.
  */
-int usbd_composite_hid_init(const usbd_hid_usr_cb_t *cb, const usbd_hid_config_t *cfg);
+int usbd_composite_hid_init(const usbd_hid_cb_t *cb, const usbd_hid_config_t *cfg);
 #endif
 
 /**
   * @brief  DeInitialize HID device
-  * @note  Call it in task context, once no other task is inside usbd_hid_send_data(): the TX
+  * @note  Call it in task context, once no other task is inside usbd_hid_send_report(): the TX
   *        buffer it writes to is released here.
   * @note  Composite mode: call it after @ref usbd_composite_deinit. Before that the class is
   *        still reachable from the USB ISR, so the call returns at once and releases nothing.
@@ -243,7 +243,7 @@ void usbd_hid_deinit(void);
  * @param[in] len: Length of the data in bytes.
  * @return 0 on success, non-zero on failure.
  */
-int usbd_hid_send_data(const u8 *buf, u32 len);
+int usbd_hid_send_report(const u8 *buf, u32 len);
 
 /** @} End of Device_HID_Functions group */
 /** @} End of USB_Device_Functions group */

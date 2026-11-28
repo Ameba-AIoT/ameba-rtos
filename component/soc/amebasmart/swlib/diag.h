@@ -142,7 +142,7 @@ extern u32 ConfigDebug[];
 #else
 #define DBG_PRINTF(MODULE, LEVEL, pFormat, ...)     do {\
    if ((LEVEL < LEVEL_NUMs) && (MODULE < MODULE_NUMs) && (ConfigDebug[LEVEL] & BIT(MODULE)))\
-        DiagPrintf("["#MODULE"-"#LEVEL"]:"pFormat, ##__VA_ARGS__);\
+        DiagPrintf("["#MODULE"-"#LEVEL"]:" pFormat, ##__VA_ARGS__);\
 }while(0)
 #endif
 

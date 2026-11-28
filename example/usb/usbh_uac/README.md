@@ -1,8 +1,8 @@
 # Example Description
 
-With USB host v2.0 interface, Ameba can be designed to a standard USB Audio Class 1.0 (UAC 1.0) host.
+With USB host v2.0 interface, Ameba can be designed to a standard USB Audio Class 1.0 / 2.0 (UAC 1.0 / UAC 2.0) host. The version is detected per device from the AC interface `bInterfaceProtocol`.
 
-In this application, Ameba boots up as USB host which communicates with a UAC 1.0 device, such as a USB headset or another Ameba board running the `usbd_uac` application built as UAC 1.0:
+In this application, Ameba boots up as USB host which communicates with a UAC 1.0 or UAC 2.0 device, such as a USB headset or another Ameba board running the `usbd_uac` application built as UAC 1.0 or UAC 2.0:
 - Playback (USB ISOC OUT): an embedded PCM clip (`example_usbh_uac_audio_data.h`, 2 channels / 16 bit / 48 kHz) is streamed to the device in a loop. For an asynchronous device with a feedback endpoint, such as `usbd_uac` with `CONFIG_USBD_UAC_PLAY_FEEDBACK`, the feedback is polled and the packet size follows the device rate.
 - Record (USB ISOC IN): if the device has a microphone, the first advertised IN format is selected and the captured data is read continuously. On SoCs with `CONFIG_SUPPORT_AUDIO_FOR_USB` (RTL8730E) the captured audio is also rendered on the local audio output through the audio framework; on other SoCs it is read and dropped.
 - Hot-plug: on every detach the host stack is torn down and re-initialized, so a re-plugged device runs again without a board reset.
@@ -75,7 +75,7 @@ Refer to the [EVB User Guide](https://aiot.realmcu.com/filelist?document_type=9)
    * Flash Tool (cross-platform): https://aiot.realmcu.com/en/latest/tools/flash/index.html
    * Web flash tool: https://aiot.realmcu.com/en/resource/web_flash_tool.html
 
-6. Prepare the UAC device: a UAC 1.0 USB headset/speaker supporting 2 channels / 16 bit / 48 kHz playback, or another Ameba board running the `usbd_uac` example with `Select UAC Version (UAC 1.0)`.
+6. Prepare the UAC device: a UAC 1.0 or UAC 2.0 USB headset/speaker supporting 2 channels / 16 bit / 48 kHz playback, or another Ameba board running the `usbd_uac` example with `Select UAC Version` set to UAC 1.0 or UAC 2.0.
 
 # Expect result
 

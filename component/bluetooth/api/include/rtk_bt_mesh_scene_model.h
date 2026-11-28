@@ -12,6 +12,15 @@
 #include <rtk_bt_mesh_def.h>
 #include <rtk_bt_mesh_generic_onoff_model.h>
 
+/** @addtogroup BT_Constants BT Constants
+ * @{
+ */
+/** @addtogroup BT_Mesh_Constants BT Mesh Constants
+ * @{
+ */
+/** @addtogroup BT_Mesh_Scene_Model_Constants BT Mesh Scene Model Constants
+ * @{
+ */
 /**
  * @def       SCENE_REGISTER_ARRAY_DATA_MAX_LEN
  * @brief     Maximum number of Scene Numbers that can be reported for the Scene Register.
@@ -24,7 +33,26 @@
  */
 #define SCENE_DATA_MAX_LEN    0x10
 
+/**
+ * @}
+ */
+/**
+ * @}
+ */
+/**
+ * @}
+ */
+
 /************************************* Scene Model *************************************/
+/** @addtogroup BT_Types BT Types
+ * @{
+ */
+/** @addtogroup BT_Mesh_Types BT Mesh Types
+ * @{
+ */
+/** @addtogroup BT_Mesh_Scene_Model_Types BT Mesh Scene Model Types
+ * @{
+ */
 /**
  * @enum      rtk_bt_mesh_scene_status_code_t
  * @brief     BLE MESH scene status code definition.
@@ -393,11 +421,24 @@ typedef struct {
                                                  *   Must not be NULL. */
 } rtk_bt_mesh_scene_setup_server_get_register_status_t;
 
-/********************************* Functions Declaration *******************************/
 /**
- * @defgroup  ble_mesh_scene_model BT LE Mesh Scene Model APIs
- * @brief     BT LE Mesh SCENE Model related function APIs
- * @ingroup   ble_mesh_api_group
+ * @}
+ */
+/**
+ * @}
+ */
+/**
+ * @}
+ */
+
+/********************************* Functions Declaration *******************************/
+/** @addtogroup BT_Functions BT Functions
+ * @{
+ */
+/** @addtogroup BT_Mesh_Functions BT Mesh Functions
+ * @{
+ */
+/** @addtogroup BT_Mesh_Scene_Model_Functions BT Mesh Scene Model Functions
  * @{
  */
 /**
@@ -479,6 +520,12 @@ uint16_t rtk_bt_mesh_scene_server_db_set(rtk_bt_mesh_scene_server_db_set_t *db_s
  */
 uint16_t rtk_bt_mesh_scene_setup_server_db_set(rtk_bt_mesh_scene_server_db_set_t *db_set);
 
+/**
+ * @}
+ */
+/**
+ * @}
+ */
 /**
  * @}
  */

@@ -18,15 +18,15 @@
 
 /* Private function prototypes -----------------------------------------------*/
 
-static DSTATUS USB_disk_status(void);
-static DSTATUS USB_disk_initialize(void);
-static DSTATUS USB_disk_deinitialize(void);
-static DRESULT USB_disk_read(BYTE *buff, DWORD sector, u32 count);
+static DSTATUS usbh_msc_disk_status(void);
+static DSTATUS usbh_msc_disk_initialize(void);
+static DSTATUS usbh_msc_disk_deinitialize(void);
+static DRESULT usbh_msc_disk_read(BYTE *buff, DWORD sector, u32 count);
 #if _USE_WRITE == 1
-static DRESULT USB_disk_write(const BYTE *buff, DWORD sector, u32 count);
+static DRESULT usbh_msc_disk_write(const BYTE *buff, DWORD sector, u32 count);
 #endif
 #if _USE_IOCTL == 1
-static DRESULT USB_disk_ioctl(BYTE cmd, void *buff);
+static DRESULT usbh_msc_disk_ioctl(BYTE cmd, void *buff);
 #endif
 
 /* Private variables ---------------------------------------------------------*/
@@ -36,16 +36,16 @@ static const char *const TAG = "MSC";
 /* Exported variables --------------------------------------------------------*/
 
 /* USB Disk Driver */
-ll_diskio_drv USB_disk_Driver = {
-	.disk_initialize = USB_disk_initialize,
-	.disk_deinitialize = USB_disk_deinitialize,
-	.disk_status = USB_disk_status,
-	.disk_read = USB_disk_read,
+ll_diskio_drv usbh_msc_disk_driver = {
+	.disk_initialize = usbh_msc_disk_initialize,
+	.disk_deinitialize = usbh_msc_disk_deinitialize,
+	.disk_status = usbh_msc_disk_status,
+	.disk_read = usbh_msc_disk_read,
 #if _USE_WRITE == 1
-	.disk_write = USB_disk_write,
+	.disk_write = usbh_msc_disk_write,
 #endif
 #if _USE_IOCTL == 1
-	.disk_ioctl = USB_disk_ioctl,
+	.disk_ioctl = usbh_msc_disk_ioctl,
 #endif
 	.TAG = (unsigned char *)"USB"
 };
@@ -59,7 +59,7 @@ ll_diskio_drv USB_disk_Driver = {
   * @param  is_write: 1 for a WRITE, so a write-protected medium is reported as such
   * @retval DRESULT
   */
-static DRESULT USB_disk_error(u8 is_write)
+static DRESULT usbh_msc_disk_error(u8 is_write)
 {
 	usbh_msc_lun_t info = {0};
 	DRESULT res;
@@ -88,11 +88,11 @@ static DRESULT USB_disk_error(u8 is_write)
 	return res;
 }
 
-static DSTATUS USB_disk_status(void)
+static DSTATUS usbh_msc_disk_status(void)
 {
 	DSTATUS stat;
 
-	if (usbh_msc_unit_is_ready(0U) != 0) {
+	if (usbh_msc_is_unit_ready(0U)) {
 		stat = 0U;
 	} else {
 		stat = STA_NOINIT;
@@ -101,7 +101,7 @@ static DSTATUS USB_disk_status(void)
 	return stat;
 }
 
-static DSTATUS USB_disk_initialize(void)
+static DSTATUS usbh_msc_disk_initialize(void)
 {
 	usbh_msc_lun_t info = {0};
 	DSTATUS stat;
@@ -117,13 +117,13 @@ static DSTATUS USB_disk_initialize(void)
 	return stat;
 }
 
-static DSTATUS USB_disk_deinitialize(void)
+static DSTATUS usbh_msc_disk_deinitialize(void)
 {
 	return 0U;
 }
 
 /* Read sector(s) --------------------------------------------*/
-static DRESULT USB_disk_read(BYTE *buff, DWORD sector, u32 count)
+static DRESULT usbh_msc_disk_read(BYTE *buff, DWORD sector, u32 count)
 {
 	DRESULT res = RES_ERROR;
 	int status = RTK_SUCCESS;
@@ -138,7 +138,7 @@ static DRESULT USB_disk_read(BYTE *buff, DWORD sector, u32 count)
 			res = RES_OK;
 			break;
 		} else {
-			res = USB_disk_error(0U);
+			res = usbh_msc_disk_error(0U);
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Disk read fail %d/%d, try %d\n", status, res, i + 1);
 		}
 	}
@@ -147,7 +147,7 @@ static DRESULT USB_disk_read(BYTE *buff, DWORD sector, u32 count)
 	if (status == RTK_SUCCESS) {
 		res = RES_OK;
 	} else {
-		res = USB_disk_error(0U);
+		res = usbh_msc_disk_error(0U);
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Disk read fail %d/%d\n", status, res);
 	}
 #endif
@@ -157,7 +157,7 @@ static DRESULT USB_disk_read(BYTE *buff, DWORD sector, u32 count)
 
 /* Write sector(s) --------------------------------------------*/
 #if _USE_WRITE == 1
-static DRESULT USB_disk_write(const BYTE *buff, DWORD sector, u32 count)
+static DRESULT usbh_msc_disk_write(const BYTE *buff, DWORD sector, u32 count)
 {
 	DRESULT res = RES_ERROR;
 	int status = RTK_SUCCESS;
@@ -171,7 +171,7 @@ static DRESULT USB_disk_write(const BYTE *buff, DWORD sector, u32 count)
 			res = RES_OK;
 			break;
 		} else {
-			res = USB_disk_error(1U);
+			res = usbh_msc_disk_error(1U);
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "Disk write fail %d/%d, try %d\n", status, res, i + 1);
 		}
 	}
@@ -180,7 +180,7 @@ static DRESULT USB_disk_write(const BYTE *buff, DWORD sector, u32 count)
 	if (status == RTK_SUCCESS) {
 		res = RES_OK;
 	} else {
-		res = USB_disk_error(1U);
+		res = usbh_msc_disk_error(1U);
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Disk write fail %d/%d\n", status, res);
 	}
 #endif
@@ -191,7 +191,7 @@ static DRESULT USB_disk_write(const BYTE *buff, DWORD sector, u32 count)
 
 /* Write sector(s) --------------------------------------------*/
 #if _USE_IOCTL == 1
-static DRESULT USB_disk_ioctl(BYTE cmd, void *buff)
+static DRESULT usbh_msc_disk_ioctl(BYTE cmd, void *buff)
 {
 	DRESULT res = RES_ERROR;
 	usbh_msc_lun_t info = {0};

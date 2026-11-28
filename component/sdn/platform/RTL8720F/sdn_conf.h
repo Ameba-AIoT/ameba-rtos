@@ -75,4 +75,11 @@
 
 #define BT_LL_LE_PAWR_SUBDATA_POOL_SIZE                             4
 
+#define BT_LL_LE_PAWR_SYNC_RSP_BUF_NUM                              1
+
+//BLE Controller generates ECC key pair
+#if BT_LL_FEATURE_BT42_SECURE_CONNECTION
+#define BT_LL_LE_CONTROLLER_GEN_ECC_KEY                             0
+#endif
+
 #endif

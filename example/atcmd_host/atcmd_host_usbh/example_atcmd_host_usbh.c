@@ -127,8 +127,8 @@ static const usbh_cdc_acm_config_t cdc_acm_class_cfg = {
 	 * with both control lines deasserted. */
 };
 
-static const usbh_user_cb_t usbh_usr_cb = {
-	.process = cdc_acm_cb_process
+static const usbh_cb_t usbh_usr_cb = {
+	.event = cdc_acm_cb_process
 };
 
 /* Private functions ---------------------------------------------------------*/
@@ -217,11 +217,11 @@ static void cdc_acm_cb_process(usb_host_t *host, u8 id)
 	UNUSED(host);
 
 	switch (id) {
-	case USBH_MSG_DISCONNECTED:
+	case USBH_EVENT_DISCONNECTED:
 		cdc_acm_is_ready = 0;
 		break;
 
-	case USBH_MSG_CONNECTED:
+	case USBH_EVENT_CONNECTED:
 		break;
 
 	default:
@@ -317,10 +317,10 @@ WAIT_CONNECT:
 			goto WAIT_CONNECT;
 		}
 
-		ret = usbh_cdc_acm_notify_receive(cdc_acm_notify_rx_buf, USBH_CDC_ACM_NOTIFY_BUF_SIZE);
+		ret = usbh_cdc_acm_receive_notification(cdc_acm_notify_rx_buf, USBH_CDC_ACM_NOTIFY_BUF_SIZE);
 		while (ret != RTK_SUCCESS) {
 			vTaskDelay(1);
-			ret = usbh_cdc_acm_notify_receive(cdc_acm_notify_rx_buf, USBH_CDC_ACM_NOTIFY_BUF_SIZE);
+			ret = usbh_cdc_acm_receive_notification(cdc_acm_notify_rx_buf, USBH_CDC_ACM_NOTIFY_BUF_SIZE);
 		}
 
 		xSemaphoreTake(cdc_acm_notify_sema, 0xFFFFFFFF);

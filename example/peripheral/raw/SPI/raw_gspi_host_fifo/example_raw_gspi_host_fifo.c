@@ -7,7 +7,7 @@
  *  possession or use of this module requires written permission of RealTek.
  */
 #include "ameba_soc.h"
-#include "ameba_gspi.h"
+#include "rtw_gspi_drvio.h"
 #include "example_gspi_fifo_ext.h"
 #include "os_wrapper.h"
 
@@ -61,7 +61,7 @@ typedef struct {
 	u16 data_len;
 } __attribute__((packed)) tp_pkt_header_t;
 
-static GSPI_HandleTypeDef gspi;
+static struct whc_gspi_handle gspi;
 
 /* Frame buffers: [CMD 4B][data, 4-byte aligned][Status 8B], cacheline aligned
  * for the DMA data phase. File scope so they never land on the task stack. */
@@ -111,7 +111,7 @@ static u16 crc16_ccitt(const u8 *data, u32 len)
 static int tp_tx_packet(const u8 *payload, u16 payload_len)
 {
 	gspi_desc_t *desc = (gspi_desc_t *)(gspi_txbuf + GSPI_CMD_LEN);
-	GSPI_StatusTypeDef sts;
+	struct whc_gspi_status sts;
 
 	/* txpktsize carries the payload length only -- it must NOT include the
 	 * descriptor. See the Note section of this example's README. */
@@ -123,7 +123,7 @@ static int tp_tx_packet(const u8 *payload, u16 payload_len)
 	desc->data_len = payload_len;
 	_memcpy(gspi_txbuf + GSPI_CMD_LEN + GSPI_TX_DESC_SIZE, payload, payload_len);
 
-	return GSPI_WriteTxFifo(&gspi, gspi_txbuf, GSPI_TX_DESC_SIZE + payload_len, &sts);
+	return GSPI_WIFI_WriteTxFifo(&gspi, gspi_txbuf, GSPI_TX_DESC_SIZE + payload_len, &sts);
 }
 
 /* Build one TP packet: [header][incrementing payload][CRC16]. */
@@ -212,21 +212,21 @@ static u32 tp_validate_packet(const u8 *pdata, u32 available)
  * a descriptor that the caller would have to parse. */
 static void tp_drain_rx(void)
 {
-	GSPI_StatusTypeDef sts;
+	struct whc_gspi_status sts;
 	u32 pending;
 	u32 off;
 	u32 consumed;
 	u32 round;
 
 	for (round = 0; round < RX_READS_PER_ROUND; round++) {
-		pending = GSPI_GetRxLen(&gspi, NULL);
+		pending = GSPI_WIFI_GetRxLen(&gspi, NULL);
 		if ((pending == 0) || (pending > RX_MAX_LEN)) {
 			if (pending > RX_MAX_LEN) {
 				RTK_LOGE(TAG, "rx: pending %d exceeds buffer\n", (int)pending);
 			}
 			break;
 		}
-		if (GSPI_ReadRxFifo(&gspi, gspi_rxbuf, pending, &sts) != RTK_SUCCESS) {
+		if (GSPI_WIFI_ReadRxFifo(&gspi, gspi_rxbuf, pending, &sts) != RTK_SUCCESS) {
 			tp_rx_err++;
 			break;
 		}
@@ -253,8 +253,8 @@ static void tp_drain_rx(void)
 /* Activate GSPI mode and complete the Device's Phase 0 handshake. */
 static int gspi_host_link_up(void)
 {
-	GSPI_InitTypeDef init;
-	GSPI_StatusTypeDef sts;
+	struct whc_gspi_init init;
+	struct whc_gspi_status sts;
 	u32 pending;
 	u32 cpu_ind;
 
@@ -277,16 +277,16 @@ static int gspi_host_link_up(void)
 	 * its SPDIO backend before the first bus transaction. */
 	rtos_time_delay_ms(3000);
 
-	if (GSPI_Configuration(&gspi, GSPI_BIG_ENDIAN_32) != RTK_SUCCESS) {
+	if (GSPI_WIFI_Configuration(&gspi, GSPI_BIG_ENDIAN_32) != RTK_SUCCESS) {
 		return -1;
 	}
 	/* CPU_RDY is bit24 of the 0x84 word in the AUTO_GEN view. */
-	cpu_ind = GSPI_ReadReg32(&gspi, GSPI_REG_CPU_INDICATION, NULL);
+	cpu_ind = GSPI_WIFI_ReadReg32(&gspi, GSPI_REG_CPU_INDICATION, NULL);
 
 	/* Clear, then unmask, mirroring raw_sdio_host_tp's ordering. */
-	GSPI_INTClear(&gspi, 0xFFFFFFFF);
-	GSPI_WriteReg32(&gspi, GSPI_REG_RX_AGG, 0, NULL);
-	GSPI_INTConfig(&gspi, GSPI_BIT_RX_REQUEST | GSPI_BIT_TXFIFO_AVAL_INT | GSPI_BIT_CPWM1_INT, ENABLE);
+	GSPI_WIFI_INTClear(&gspi, 0xFFFFFFFF);
+	GSPI_WIFI_WriteReg32(&gspi, GSPI_REG_RX_AGG, 0, NULL);
+	GSPI_WIFI_INTConfig(&gspi, GSPI_BIT_RX_REQUEST | GSPI_BIT_TXFIFO_AVAL_INT | GSPI_BIT_CPWM1_INT, ENABLE);
 
 	if (tp_tx_packet((const u8 *)HELLO_DEVICE_MSG, sizeof(HELLO_DEVICE_MSG) - 1) != RTK_SUCCESS) {
 		RTK_LOGE(TAG, "handshake failed: TX write\n");
@@ -295,12 +295,12 @@ static int gspi_host_link_up(void)
 
 	pending = 0;
 	for (int i = 0; (i < 3000) && (pending == 0); i++) {
-		pending = GSPI_GetRxLen(&gspi, NULL);
+		pending = GSPI_WIFI_GetRxLen(&gspi, NULL);
 		if (pending == 0) {
 			rtos_time_delay_ms(1);
 		}
 	}
-	if ((pending == 0) || (GSPI_ReadRxFifo(&gspi, gspi_rxbuf, pending, &sts) != RTK_SUCCESS)) {
+	if ((pending == 0) || (GSPI_WIFI_ReadRxFifo(&gspi, gspi_rxbuf, pending, &sts) != RTK_SUCCESS)) {
 		RTK_LOGE(TAG, "handshake failed: no reply\n");
 		return -1;
 	}

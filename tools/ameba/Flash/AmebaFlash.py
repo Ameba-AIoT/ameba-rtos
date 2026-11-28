@@ -20,8 +20,7 @@ from base import *
 from base import port_scanner
 import version_info
 
-MinSupportedDeviceProfileMajorVersion = 1
-MinSupportedDeviceProfileMinorVersion = 1
+MinSupportedDeviceProfileVersion = (1, 1, 0)
 setting_file = "Settings.json"
 _crash_logger = None
 _cancel_requested = threading.Event()
@@ -139,6 +138,60 @@ def decoder_partition_string(partition_table_base64):
         raise argparse.ArgumentTypeError("Invalid partition table format with base64") from err
 
 
+def normalize_flash_address(address, legacy_nand, logger, name):
+    """Return a flash address of the device profile layout, based at 0x08000000 for both
+    NOR and NAND. With '-m nand', an address below 0x08000000 is taken as the NAND physical
+    offset of the previous versions and rebased, so existing scripts keep working."""
+    if legacy_nand and address < MemoryInfo.FLASH_BASE_ADDRESS:
+        rebased = MemoryInfo.to_profile_address(address, MemoryInfo.MEMORY_TYPE_NAND)
+        logger.warning(f"{name} 0x{address:08X} is taken as a NAND physical offset and rebased to "
+                       f"0x{rebased:08X}, NAND addresses are based at 0x{MemoryInfo.FLASH_BASE_ADDRESS:08X} now")
+        return rebased
+    return address
+
+
+def normalize_partition_table(partition_table, legacy, logger):
+    """Convert a --partition-table to the device profile partition types and addresses.
+
+    The table has no version, so the MemoryType is told by the call, as ImageTool does for
+    a device profile by its version:
+    * With -m (the previous versions, e.g. tools/scripts/flash.py): the legacy floader memory
+      type RAM/NOR/NAND/VENDOR = 0/1/2/3, mapped to RAM/FLASH/FLASH/SECOND FLASH, and a NAND
+      entry rebased from its physical offset to 0x08000000.
+    * Without -m: the partition type RAM/FLASH/SECOND FLASH = 0/1/2, flash based at 0x08000000.
+      A FLASH entry below 0x08000000 is a legacy table: refused, it would be downloaded to
+      the wrong address."""
+    images = []
+    for img_info in partition_table:
+        image = ImageInfo(**img_info)
+        name = os.path.basename(image.image_name)
+        if legacy:
+            if not (MemoryInfo.MEMORY_TYPE_RAM <= image.memory_type <= MemoryInfo.MEMORY_TYPE_VENDOR):
+                raise ValueError(f"Invalid memory type {image.memory_type} for {name}")
+            start, end = image.start_address, image.end_address
+            if MemoryInfo.upgrade_legacy_image(image) and \
+                    (image.start_address != start or image.end_address != end):
+                logger.warning(f"{name} 0x{start:08X}-0x{end:08X} is taken as a NAND physical offset and rebased "
+                               f"to 0x{image.start_address:08X}-0x{image.end_address:08X}, NAND addresses are "
+                               f"based at 0x{MemoryInfo.FLASH_BASE_ADDRESS:08X} now")
+        else:
+            if not (MemoryInfo.PARTITION_TYPE_RAM <= image.memory_type <= MemoryInfo.MAX_PARTITION_TYPE):
+                raise ValueError(f"Invalid partition type {image.memory_type} for {name}, "
+                                 f"RAM/FLASH/SECOND FLASH = 0/1/2, add -m for the legacy memory type")
+            # 2 is NAND in a legacy table and SECOND FLASH now: cannot be told from the table
+            if image.memory_type == MemoryInfo.PARTITION_TYPE_SECOND_FLASH:
+                logger.warning(f"{name} is taken as SECOND FLASH (partition type 2), add -m nand if it is "
+                               f"a legacy NAND entry")
+            # SECOND FLASH is another flash, not based at 0x08000000
+            if image.memory_type == MemoryInfo.PARTITION_TYPE_FLASH and \
+                    image.start_address < MemoryInfo.FLASH_BASE_ADDRESS:
+                raise ValueError(f"Flash address 0x{image.start_address:08X} of {name} is below "
+                                 f"0x{MemoryInfo.FLASH_BASE_ADDRESS:08X}: add -m nand for a legacy NAND "
+                                 f"physical offset, or use the address based at 0x{MemoryInfo.FLASH_BASE_ADDRESS:08X}")
+        images.append(image)
+    return images
+
+
 def parse_padding_byte(value):
     value = value.strip()
     if value.lower().startswith("0x"):
@@ -181,9 +234,10 @@ def flash_process_entry(profile_info, serial_port, serial_baudrate, image_dir, s
             active_handlers[str(serial_port)] = ameba
 
     def prepare_with_flash_size_check(ameba, operation):
-        # NOR: check the SPIC address mode in OTP against the flash size, and reburn
-        # if it was programmed (by check_supported_flash_size() or set_boot_flash_type())
-        if memory_type == MemoryInfo.MEMORY_TYPE_NOR:
+        # Flash: check the SPIC address mode in OTP against the flash size, and reburn
+        # if it was programmed (by check_supported_flash_size() or set_boot_flash_type()).
+        # NOR only, skipped inside on NAND: the flash type is only known after QUERY.
+        if memory_type != MemoryInfo.PARTITION_TYPE_RAM:
             ret, is_reburn = ameba.check_supported_flash_size()
             if ret != ErrType.OK:
                 logger.error(f"Check supported flash size fail")
@@ -222,6 +276,12 @@ def flash_process_entry(profile_info, serial_port, serial_baudrate, image_dir, s
                 sys_exit(logger, False, ret)
         return ameba
 
+    def exit_with_flash_lock_restored(flash_status, ret):
+        # Restore the block protection before reporting the failure: a retry would find
+        # the flash unlocked, so nothing would restore it any more
+        ameba.restore_flash_lock(flash_status)
+        sys_exit(logger, False, ret)
+
     if download:
         # download
         if not ameba.check_protocol_for_download():
@@ -229,6 +289,17 @@ def flash_process_entry(profile_info, serial_port, serial_baudrate, image_dir, s
             sys_exit(logger, False, ret)
 
         ameba = prepare_with_flash_size_check(ameba, "Download")
+
+        # Verify the images before KEY_PROG: the key may be locked in OTP for good,
+        # so do not program it for a download that cannot run
+        ret = ameba.verify_images()
+        if ret != ErrType.OK:
+            sys_exit(logger, False, ret)
+
+        if not ameba.is_all_ram:
+            ret = ameba.post_verify_images()
+            if ret != ErrType.OK:
+                sys_exit(logger, False, ret)
 
         # Merged single-session KEY_PROG: program the key(s) in the SAME floader
         # session as the encrypted download.  The floader caches each key in RAM
@@ -243,34 +314,26 @@ def flash_process_entry(profile_info, serial_port, serial_baudrate, image_dir, s
                     logger.error(f"Program key at {hex(spec['address'])} fail")
                     sys_exit(logger, False, ret)
 
-        ret = ameba.verify_images()
-        if ret != ErrType.OK:
-            sys_exit(logger, False, ret)
+        flash_status = FlashBPS()
+        try:
+            if not ameba.is_all_ram:
+                ret = ameba.check_and_process_flash_lock(flash_status)
+                if ret != ErrType.OK:
+                    logger.error("Download image fail")
+                    exit_with_flash_lock_restored(flash_status, ret)
 
-        if not ameba.is_all_ram:
-            ret = ameba.post_verify_images()
-            if ret != ErrType.OK:
-                sys_exit(logger, False, ret)
-
-        if not ameba.is_all_ram:
-            flash_status = FlashBPS()
-            ret = ameba.check_and_process_flash_lock(flash_status)
+            logger.info(f"Image download start...")  # customized, do not modify
+            ret = ameba.download_images()
             if ret != ErrType.OK:
                 logger.error("Download image fail")
-                sys_exit(logger, False, ret)
+                exit_with_flash_lock_restored(flash_status, ret)
 
-        logger.info(f"Image download start...")  # customized, do not modify
-        ret = ameba.download_images()
-        if ret != ErrType.OK:
-            logger.error("Download image fail")
-            sys_exit(logger, False, ret)
-
-        if (not ameba.is_all_ram) and flash_status.need_unlock:
-            logger.info("Restore the flash block protection...")
-            ret = ameba.lock_flash(flash_status.protection)
+            ret = ameba.restore_flash_lock(flash_status)
             if ret != ErrType.OK:
-                logger.error(f"Fail to restore the flash block protection")
                 sys_exit(logger, False, ret)
+        finally:
+            # Exception raised in between
+            ameba.restore_flash_lock(flash_status)
 
         # Enable security features last: the write is irreversible, so it must not
         # happen until the firmware it protects is verified on flash. Enabling RSIP
@@ -318,10 +381,26 @@ def flash_process_entry(profile_info, serial_port, serial_baudrate, image_dir, s
         ameba = prepare_with_flash_size_check(ameba, "Erase")
 
         if chip_erase:
-            ret = ameba.erase_flash_chip()
-            if ret != ErrType.OK:
-                logger.error("Chip erase fail")
-                sys_exit(logger, False, ret)
+            # Chip erase is ignored by the flash while any block is protected,
+            # so remove the protection first and restore it afterwards
+            flash_status = FlashBPS()
+            try:
+                ret = ameba.check_and_process_flash_lock(flash_status)
+                if ret != ErrType.OK:
+                    logger.error("Chip erase fail")
+                    exit_with_flash_lock_restored(flash_status, ret)
+
+                ret = ameba.erase_flash_chip()
+                if ret != ErrType.OK:
+                    logger.error("Chip erase fail")
+                    exit_with_flash_lock_restored(flash_status, ret)
+
+                ret = ameba.restore_flash_lock(flash_status)
+                if ret != ErrType.OK:
+                    sys_exit(logger, False, ret)
+            finally:
+                # Exception raised in between
+                ameba.restore_flash_lock(flash_status)
             sys_exit(logger, True, ret)
 
         ret = ameba.validate_config_for_erase()
@@ -332,24 +411,25 @@ def flash_process_entry(profile_info, serial_port, serial_baudrate, image_dir, s
         if ret != ErrType.OK:
             sys_exit(logger, False, ret)
 
-        if (not profile_info.is_ram_address(memory_info.start_address)):
-            flash_status = FlashBPS()
-            ret = ameba.check_and_process_flash_lock(flash_status)
-            if ret != ErrType.OK:
-                logger.error("Erase fail")
-                sys_exit(logger, False, ret)
+        flash_status = FlashBPS()
+        try:
+            if (not profile_info.is_ram_address(memory_info.start_address)):
+                ret = ameba.check_and_process_flash_lock(flash_status)
+                if ret != ErrType.OK:
+                    logger.error("Erase fail")
+                    exit_with_flash_lock_restored(flash_status, ret)
 
-        ret = ameba.erase_flash()
-        if ret != ErrType.OK:
-            logger.error(f"Erase {memory_type} failed")
-            sys_exit(logger, False, ret)
-
-        if (not profile_info.is_ram_address(memory_info.start_address)) and flash_status.need_unlock:
-            logger.info("Restore the flash block protection...")
-            ret = ameba.lock_flash(flash_status.protection)
+            ret = ameba.erase_flash()
             if ret != ErrType.OK:
-                logger.error(f"Fail to restore the flash block protection")
+                logger.error(f"Erase failed")
+                exit_with_flash_lock_restored(flash_status, ret)
+
+            ret = ameba.restore_flash_lock(flash_status)
+            if ret != ErrType.OK:
                 sys_exit(logger, False, ret)
+        finally:
+            # Exception raised in between
+            ameba.restore_flash_lock(flash_status)
 
     ameba.clean_up()
 
@@ -415,7 +495,8 @@ def main(argc, argv):
     parser.add_argument('-n', '--end-address', type=str, help='end address, hex')
     parser.add_argument('-z', '--size', type=int, help='size in KB')
     parser.add_argument('-m', '--memory-type', choices=['nor', 'nand', 'ram'], default=None,
-                        help='specified memory type (optional, derived from device profile when omitted)')
+                        help="'ram' for a RAM download/erase, flash otherwise (default). The NOR/NAND "
+                             "flash type is reported by the device; 'nor'/'nand' are kept for compatibility")
     parser.add_argument('-e', '--erase', action='store_true', help='erase flash')
     parser.add_argument('-v', '--version', action='version', version=f'%(prog)s {version_info.version}')
 
@@ -507,15 +588,14 @@ def main(argc, argv):
     no_reset = args.no_reset
     watchdog_timeout_override = args.watchdog_timeout
 
-    if mem_t is not None:
-        if mem_t == "nand":
-            memory_type = MemoryInfo.MEMORY_TYPE_NAND
-        elif mem_t == "ram":
-            memory_type = MemoryInfo.MEMORY_TYPE_RAM
-        else:
-            memory_type = MemoryInfo.MEMORY_TYPE_NOR
-    else:
-        memory_type = None
+    # Session type: RAM or flash. The NOR/NAND flash type is reported by the device, the
+    # device profile does not tell it. '-m nor'/'-m nand' select a flash session as before;
+    # '-m nand' also accepts the NAND physical addresses of the previous versions.
+    memory_type = MemoryInfo.PARTITION_TYPE_RAM if mem_t == "ram" else MemoryInfo.PARTITION_TYPE_FLASH
+    legacy_nand = (mem_t == "nand")
+    # Any -m is the call of the previous versions: --partition-table holds the legacy floader
+    # memory type (RAM/NOR/NAND/VENDOR = 0/1/2/3), see normalize_partition_table()
+    legacy_partition_table = (mem_t is not None)
 
     try:
         log_f = create_default_log_file(serial_ports)
@@ -562,10 +642,16 @@ def main(argc, argv):
         if profile_json is None:
             logger.error(f"Fail to load device profile {profile}")
             sys.exit(1)
+        # Check the version saved in the file: a profile older than 1.2.0 is converted on load
+        ver = Version(profile_json.get("Version") or "1.0.0")
         profile_info = RtkDeviceProfile(**profile_json)
-        ver = profile_info.get_version()
-        if ver.major >= MinSupportedDeviceProfileMajorVersion and ver.minor >= MinSupportedDeviceProfileMinorVersion and profile_info.device_id != 0:
+        # Compared as a tuple, or e.g. 2.0 would be rejected for minor 0 < 1
+        if ver.to_tuple() >= MinSupportedDeviceProfileVersion and profile_info.device_id != 0:
             logger.info(f"Device profile {profile} loaded")
+            if profile_info.upgraded:
+                logger.info(f"Device profile {ver.__repr__()} converted to {profile_info.version}: "
+                            f"NOR/NAND partitions to FLASH, NAND addresses based at "
+                            f"0x{MemoryInfo.FLASH_BASE_ADDRESS:08X}")
         else:
             logger.error(f"Fail to load device profile {profile}, unsupported version {ver.__repr__()}")
             sys.exit(1)
@@ -599,6 +685,9 @@ def main(argc, argv):
     # is self-contained and must not read or update Settings.json.
     setting_path = os.path.realpath(os.path.join(RtkUtils.get_executable_root_path(), setting_file))
     logger.info(f"Settings path: {setting_path}")
+    # Only save the settings back when they were loaded: saving the defaults used after
+    # a load failure would overwrite the whole file, the user settings would be lost
+    settings_loaded = False
     try:
         if os.path.exists(setting_path):
             dt = JsonUtils.load_from_file(setting_path, need_decrypt=False)
@@ -606,8 +695,10 @@ def main(argc, argv):
         else:
             logger.debug(f"{setting_file} not exists!")
             settings = RtSettings(**{})
+        settings_loaded = True
     except Exception as err:
         logger.error(f"Load settings exception: {err}")
+        logger.warning(f"Run with default settings, {setting_file} is kept unchanged")
         settings = RtSettings(**{})
 
     watchdog_timeout = (settings.watchdog_timeout_in_second
@@ -620,14 +711,9 @@ def main(argc, argv):
     # CLI arguments are runtime-only — do not load defaults from Settings.json
     # to avoid stale state from a previous GUI or CLI run leaking into this one.
 
-    # Memory type is optional on the command line: when '--memory-type' is given
-    # it takes precedence (backward compatible), otherwise it is derived from the
-    # device profile's MemoryType field.
-    if memory_type is None:
-        memory_type = profile_info.memory_type
-        logger.info(f"Memory type derived from device profile: {memory_type}")
-    else:
-        logger.info(f"Memory type from argument: {memory_type}")
+    logger.info(f"Memory type: {'RAM' if memory_type == MemoryInfo.PARTITION_TYPE_RAM else 'flash (NOR/NAND reported by the device)'}")
+    if mem_t in ("nor", "nand"):
+        logger.info(f"Memory type argument '{mem_t}' only selects flash, the flash type is reported by the device")
 
     if serial_ports is None:
         logger.error('Invalid arguments, no serial port specified')
@@ -725,9 +811,8 @@ def main(argc, argv):
     def log_auto_flash_type_detect():
         if settings.auto_flash_type_detect and not Ameba.is_auto_flash_type_detect_supported(profile_info):
             logger.info(f"Auto flash type detect: not supported by {profile_info.device_name}, ignored")
-        elif settings.auto_flash_type_detect and \
-                (memory_type not in (MemoryInfo.MEMORY_TYPE_NOR, MemoryInfo.MEMORY_TYPE_NAND)):
-            logger.info(f"Auto flash type detect: not needed for RAM, ignored")
+        elif settings.auto_flash_type_detect and (memory_type != MemoryInfo.PARTITION_TYPE_FLASH):
+            logger.info(f"Auto flash type detect: only needed for FLASH, ignored")
         else:
             logger.info(f"Auto flash type detect: {'enabled' if settings.auto_flash_type_detect else 'disabled'}")
 
@@ -750,35 +835,31 @@ def main(argc, argv):
             download_img_info.image_name = image
             download_img_info.description = os.path.basename(image)
 
-            if memory_type is None:
-                logger.error(f"Memory type is required for single image download")
-                sys.exit(1)
-
             if start_addr is None:
                 logger.error(f"Start address is required for single image download")
                 sys.exit(1)
 
             try:
-                start_address = int(start_addr, 16)
+                start_address = normalize_flash_address(int(start_addr, 16), legacy_nand, logger, "Start address")
             except Exception as err:
                 logger.error(f"Start address is invalid: {err}")
                 sys.exit(1)
             download_img_info.start_address = start_address
 
-            if memory_type == MemoryInfo.MEMORY_TYPE_NAND:
-                if end_addr is None:
-                    logger.error(f"End address is required for nand flash download")
-                    sys.exit(1)
-
+            if end_addr is not None:
                 try:
-                    end_address = int(end_addr, 16)
+                    end_address = normalize_flash_address(int(end_addr, 16), legacy_nand, logger, "End address")
                 except Exception as err:
                     logger.error(f"End address is invalid: {err}")
                     sys.exit(1)
             else:
+                # NAND needs a block aligned end address with room for bad blocks: when the
+                # device reports NAND, the end is extended to the covered layout partitions
                 end_address = start_address + os.path.getsize(image)
+                download_img_info.end_from_image_size = True
 
             download_img_info.end_address = end_address
+            # Partition type of the session: '-m ram' is required for a RAM address, as before
             download_img_info.memory_type = memory_type
             download_img_info.mandatory = True
             # A single image may actually be a merged image (e.g. image_all.bin)
@@ -791,9 +872,13 @@ def main(argc, argv):
                 f"Split single image by layout: {download_img_info.split_by_layout}")
             images_info = [download_img_info]
         elif partition_table is not None:
+            try:
+                partition_images = normalize_partition_table(partition_table, legacy_partition_table, logger)
+            except Exception as err:
+                logger.error(f"Partition table is invalid: {err}")
+                sys.exit(1)
             images_info = []
-            for img_info in partition_table:
-                img_json = ImageInfo(** img_info)
+            for img_json in partition_images:
                 if sys.platform == "win32":
                     img_p = convert_mingw_path_to_windows(img_json.image_name)
                     img_json.image_name = img_p
@@ -812,6 +897,8 @@ def main(argc, argv):
                 for key, value in img_info.__repr__().items():
                     if key == "ImageName":
                         key = "Image"
+                    if key in ("StartAddress", "EndAddress"):
+                        value = f"0x{value:08X}"
                     logger.info(f'> {key}: {value}')
     elif read_wifimac:
         # profile, port, baudrate, memory-type
@@ -832,50 +919,49 @@ def main(argc, argv):
                 sys.exit(1)
 
             try:
-                start_address = int(start_addr, 16)
+                start_address = normalize_flash_address(int(start_addr, 16), legacy_nand, logger, "Start address")
             except Exception as err:
                 logger.error(f"Start address is invalid: {err}")
                 sys.exit(1)
             memory_info.start_address = start_address
-
-            if memory_type is None:
-                logger.error("Memory type is required for erase")
-                sys.exit(1)
-
+            # Partition type, converted to the floader memory type after QUERY
             memory_info.memory_type = memory_type
 
-            if memory_type == MemoryInfo.MEMORY_TYPE_NAND:
-                if end_addr is None:
-                    logger.error(f"End address is required for nand flash download")
-                    sys.exit(1)
-            else:
-                if size is None:
-                    logger.error(f"Erase size is required")
-                    sys.exit(1)
+            # NOR erases by size, NAND by end address: the flash type is only known after
+            # QUERY, so either one is accepted here and the other one derived from it
+            if (end_addr is None) and (size is None):
+                logger.error(f"Erase size or end address is required")
+                sys.exit(1)
+            # 0 would erase nothing yet report PASS, a negative size is sent wrapped around
+            if (size is not None) and (size <= 0):
+                logger.error(f"Erase size shall be greater than 0: {size}")
+                sys.exit(1)
 
             if end_addr:
                 try:
-                    end_address = int(end_addr, 16)
+                    end_address = normalize_flash_address(int(end_addr, 16), legacy_nand, logger, "End address")
                 except Exception as err:
                     logger.error(f"End address is invalid: {err}")
                     sys.exit(1)
             else:
-                end_address = 0
-
-            memory_info.size_in_kbyte = size
-
-            if end_address == 0:
                 end_address = start_address + size * 1024
+
+            if end_address <= start_address:
+                logger.error(f"End address 0x{end_address:08X} should be greater than start address 0x{start_address:08X}")
+                sys.exit(1)
+
             memory_info.end_address = end_address
+            memory_info.size_in_kbyte = size if size is not None else divide_then_round_up(end_address - start_address, 1024)
 
     if (not read_wifimac) and (not key_prog) and (not sec_en_bits):
         if chip_erase:
             logger.info(f"Chip erase: {chip_erase}")
-            if memory_type is None:
-                logger.warning("Memory type is required for chip erase")
+            if memory_type == MemoryInfo.PARTITION_TYPE_RAM:
+                # Chip erase is defined for flash only, never fall back to a NOR chip erase for RAM.
+                # A RAM range is erased by --erase -m ram, which memsets it only when ProgramConfig1
+                # bit4 is set (with the value of bits 23~16), otherwise it is skipped
+                logger.error("Chip erase is not supported for RAM memory type")
                 sys.exit(1)
-            if memory_type not in (MemoryInfo.MEMORY_TYPE_NOR, MemoryInfo.MEMORY_TYPE_NAND):
-                logger.warning("Memory type should be 'nor' or 'nand' for chip erase")
         else:
             logger.info(f"Chip erase: False")
 
@@ -888,10 +974,11 @@ def main(argc, argv):
         # CLI arguments are runtime-only — do NOT overwrite profile, port, baudrate,
         # image, image_dir, address, chip_erase, or post_process in Settings.json
         # to avoid polluting GUI preferences with one-off CLI choices.
-        try:
-            JsonUtils.save_to_file(setting_path, settings.to_dict())
-        except Exception as err:
-            logger.debug(f"save {setting_file} exception: {err}")
+        if settings_loaded:
+            try:
+                JsonUtils.save_to_file(setting_path, settings.to_dict())
+            except Exception as err:
+                logger.debug(f"save {setting_file} exception: {err}")
 
         # --no-reset: override post_process at runtime without persisting to disk.
         # When not passed, post_process keeps whatever value is in Settings.json

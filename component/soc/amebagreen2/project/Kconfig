@@ -218,6 +218,9 @@ menu "CONFIG WHC INTF"
            prompt "HW INTERFACE"
            config WHC_INTF_SPDIO
                 bool "WHC_INTF_SPDIO"
+            config WHC_INTF_GSPI
+                depends on WHC_HOST_MENU
+                bool "WHC_INTF_GSPI"
             config WHC_INTF_USB
                 depends on !WHC_HOST_MENU
                 bool "WHC_INTF_USB"
@@ -273,6 +276,27 @@ menu "CONFIG WHC INTF"
             default y
             bool "Support WHC CMD PATH"
         endmenu
+    endif
+
+    # GSPI protocol version of the device, only when GSPI is the WHC host HW INTERFACE. Under WHC_IPC the GSPI
+    # examples and the pytest GSPI host pick the version in their own CMake (see rtw_gspi_drvio_v<N>.c).
+    if WHC_INTF_GSPI
+        choice
+            prompt "GSPI protocol version"
+            default GSPI_PROTO_V1
+            help
+                Protocol version of the GSPI device. The host builds rtw_gspi_drvio_v<N>.c
+                (component/wifi/whc/whc_host_rtos/gspi/) of that version, so it speaks the device's protocol.
+            config GSPI_PROTO_V1
+                bool "V1"
+            config GSPI_PROTO_V2
+                bool "V2"
+        endchoice
+
+        config GSPI_PROTO
+            int
+            default 1 if GSPI_PROTO_V1
+            default 2 if GSPI_PROTO_V2
     endif
 
     if WHC_DEV_MENU && WHC_WPA_SUPPLICANT_OFFLOAD_FOR_KM4TZ
@@ -478,6 +502,13 @@ menu "CONFIG ETHERNET"
 			config MAC_CLK_EXT
 				bool "External 50M from the EXTCLK pin"
 		endchoice
+
+		config ETHERNET_MAC2MAC
+			bool "MAC to MAC, no PHY (forced 100M full duplex)"
+			default n
+			help
+				Wired straight to another MAC: one chip outputs REF_CLK, the other receives it.
+				REF_CLK direction follows PHY CLOCK SOURCE, PHY xtal means receive.
 
 		# Default 8+8 with PSRAM, 4+4 otherwise; only these are tested. About 1.5KB heap per entry.
 		config ETH_DESC_CNT_MANUAL

@@ -343,16 +343,16 @@ typedef struct {
 	u8 binterval;                /**< bInterval the ring is paced at. */
 	u8 sema_valid;               /**< sema created. */
 	__IO u8 read_wait_sema;      /**< The reader waits on sema. */
-	__IO u8 streaming;           /**< Stream started, refer to usbd_uac_start_play() / start_record(). */
+	__IO u8 streaming;           /**< Stream started, refer to usbd_uac_start_playback() / start_record(). */
 	__IO u8 is_closing;          /**< Set by the stream teardown: usbd_uac_read() (playback) or
-	                                  usbd_uac_transmit_data() (record) rejects new callers.
+	                                  usbd_uac_write() (record) rejects new callers.
 	                                  Written under the USB critical section. */
 	__IO u8 user_count;          /**< Number of tasks inside those APIs on this stream; the teardown
 	                                  waits for it to drop to 0. Updated under the USB critical section. */
 } usbd_uac_stream_t;
 
 /* Record packetizer: splits the PCM stream the application submits into one packet per bInterval
-   of the nominal size, refer to usbd_uac_transmit_data() */
+   of the nominal size, refer to usbd_uac_write() */
 typedef struct {
 	u8 *buf;            /**< One packet being assembled, max_packet_size bytes. */
 	u32 rate_rem;       /**< sampling_freq % packets_per_second. */
@@ -363,7 +363,7 @@ typedef struct {
 	u16 target;         /**< Length of the packet being assembled. */
 	u8 frame_len;       /**< Bytes per audio frame: channel_count * byte_width. */
 	__IO u8 restart;    /**< Set by the ISR or the task APIs, consumed by the single producer in
-	                         usbd_uac_transmit_data(): only it touches buf/fill/target while streaming. */
+	                         usbd_uac_write(): only it touches buf/fill/target while streaming. */
 } usbd_uac_record_packetizer_t;
 
 /** @} End of Device_UAC_Types group */
@@ -380,11 +380,11 @@ typedef struct {
 	/* Class and EP0 state */
 	u8 ctrl_req_pending;               /**< 1 if ctrl_req is waiting for its EP0 OUT data stage. */
 	u8 from_composite;                 /**< Flag indicating if part of a composite device. */
-	u8 if_base;                        /**< First interface number of this class; 0 in standalone mode
+	u8 itf_base;                        /**< First interface number of this class; 0 in standalone mode
 	                                        unless the composite framework rebases it via
-	                                        set_interface_base(). */
-	u8 interface_string_index;         /**< Audio control interface iInterface string index from
-	                                        usbd_add_string(), 0 for none. */
+	                                        set_itf_base(). */
+	u8 itf_str_idx;         /**< Audio control interface iInterface string index from
+	                                        usbd_add_str(), 0 for none. */
 	__IO u8 is_configured;             /**< 1 from a successful set_config() to clear_config(), written under
 	                                        the USB critical section. The task APIs arm an EP only while it is
 	                                        set, tested under the same lock. */
@@ -456,13 +456,13 @@ int usbd_composite_uac_init(const usbd_uac_cb_t *cb, const usbd_uac_config_t *cf
 /**
   * @brief  DeInitialize UAC device
   * @note   Call it in task context, without holding the USB critical section, and never from a
-  *         task that calls usbd_uac_read() or usbd_uac_transmit_data(): it waits, without a bound,
+  *         task that calls usbd_uac_read() or usbd_uac_write(): it waits, without a bound,
   *         for every task inside them to leave before the ring buffers are released, so such a
-  *         task calling it would wait for itself. Stop them first (usbd_uac_stop_play() /
+  *         task calling it would wait for itself. Stop them first (usbd_uac_stop_playback() /
   *         usbd_uac_stop_record() or an application lock held across the loop), as the examples
-  *         do. Never delete a task while it is inside usbd_uac_read() or usbd_uac_transmit_data():
+  *         do. Never delete a task while it is inside usbd_uac_read() or usbd_uac_write():
   *         it would never leave, and this call would wait forever, reporting it once per second.
-  *         Same rule for usbd_uac_start_play() and usbd_uac_start_record().
+  *         Same rule for usbd_uac_start_playback() and usbd_uac_start_record().
   * @note  Composite mode: call it after @ref usbd_composite_deinit. Before that the class is
   *        still reachable from the USB ISR, so the call returns at once and releases nothing.
   * @return None. This is a teardown path: apart from the composite case above, the class is always
@@ -479,17 +479,17 @@ void usbd_uac_deinit(void);
   * @note   Task context only, same rules as @ref usbd_uac_deinit.
   * @retval 0 on success, -RTK_ERR_IO before the host configured the device, else non-zero on failure.
   */
-int usbd_uac_start_play(void);
+int usbd_uac_start_playback(void);
 
 /**
   * @brief  USB audio stop play
   */
-void usbd_uac_stop_play(void);
+void usbd_uac_stop_playback(void);
 
 /**
   * @brief  Start the record (ISOC IN) stream
   * @details Sizes the record ring and packetizer for the connection speed, then lets
-  *          @ref usbd_uac_transmit_data queue data. The ring is only reallocated when the speed changed.
+  *          @ref usbd_uac_write queue data. The ring is only reallocated when the speed changed.
   * @note   Task context only, same rules as @ref usbd_uac_deinit.
   * @retval 0 on success, -RTK_ERR_IO before the host configured the device or without
   *         CONFIG_USBD_UAC_RECORD, else non-zero on failure.
@@ -508,40 +508,43 @@ void usbd_uac_stop_record(void);
   *          one audio frame now and then when the rate is not a multiple of the packet rate
   *          (e.g. 44.1kHz), ref UAC 2.0 2.3.1.1. Any length is accepted, typically 1ms of audio per
   *          call: nothing is truncated, and a tail shorter than a packet is kept for the next call.
-  *          When the ring is full the oldest packet is dropped. Without CONFIG_USBD_UAC_RECORD it
-  *          returns -RTK_ERR_IO.
+  *          Never blocks: when the ring is full the oldest packet is dropped, so a live stream
+  *          keeps its latency.
   * @note   Task context only, from a single producer task, same rules as @ref usbd_uac_deinit.
   *         Pass whole audio frames (channel_count * byte_width bytes) so that packets stay frame aligned.
   * @param[in] buf: pointer to the PCM data.
-  * @param[in] len: length of the data in bytes.
-  * @retval 0 on success, non-zero on failure.
+  * @param[in] len: length of the data in bytes, at most 0x7FFFFFFF.
+  * @retval len: every byte was taken (0 for len 0);
+  *         -RTK_ERR_BADARG: NULL buf with a non-zero len, or len above 0x7FFFFFFF;
+  *         -RTK_ERR_IO: not enumerated, the host does not stream the record interface, the class is
+  *         being de-initialized, or a build without CONFIG_USBD_UAC_RECORD. Nothing is queued then.
   */
-int usbd_uac_transmit_data(const u8 *buf, u32 len);
+int usbd_uac_write(const u8 *buf, u32 len);
 
 /**
   * @brief  Read the data from the ring_buffer
   * @param[in]  buffer: write buffer handle used to save the data
   * @param[in]  size: allow to write buffer size
-  * @param[in]  time_out_ms: if 0 means no wait,
-  *                     other value will set time_out_ms to read buffer,if read data for more than time_out_ms, it will return.
-  * @param[out] zero_pkt_flag: bitmap of zero-length filler packets returned in this read. Bit N is set if
+  * @param[in]  timeout_ms: if 0 means no wait,
+  *                     other value will set timeout_ms to read buffer,if read data for more than timeout_ms, it will return.
+  * @param[out] zero_packet_bitmap: bitmap of zero-length filler packets returned in this read. Bit N is set if
   *                            the N-th packet copied out was a ZLP inserted by the SOF underrun handler.
   *                            May be NULL if the caller does not care.
   * @retval return the read data length in bytes
   */
-u32 usbd_uac_read(u8 *buffer, u32 size, u32 time_out_ms, u32 *zero_pkt_flag);
+u32 usbd_uac_read(u8 *buffer, u32 size, u32 timeout_ms, u32 *zero_packet_bitmap);
 
 /**
   * @brief  Get the read frame packet count
   * @retval return avail packet count
   */
-u32  usbd_uac_get_read_frame_cnt(void);
+u32  usbd_uac_get_read_frames(void);
 
 /**
   * @brief  Get the time duration of currently queued audio frames in microseconds.
   * @retval frame_cnt * bInterval_us
   */
-u32  usbd_uac_get_read_frame_time_in_us(void);
+u32  usbd_uac_get_read_frame_time_us(void);
 
 /** @} End of Device_UAC_Functions group */
 /** @} End of USB_Device_Functions group */

@@ -60,7 +60,7 @@ if(CONFIG_USBH_UAC)
         ${USBH_CLASS_DIR}/uac
     )
     ameba_list_append(private_sources
-        ${USBH_CLASS_DIR}/uac/usbh_uac1.c
+        ${USBH_CLASS_DIR}/uac/usbh_uac.c
     )
 endif()
 

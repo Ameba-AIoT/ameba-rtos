@@ -97,9 +97,12 @@ ChangeLog:
 20261112  v3.0.0  (1) Rework for cross-platform support, only the Windows executable is available for now
                   (2) New GUI with dark and day mode (Option > Global Settings > Dark Mode)
 20261116  v3.0.1  (1) Change default mode to day mode
-                  (2) Fine tune log text font weight
+                  (2) Show log text in the same font weight as timestamps
                   (3) Support selecting and copying part of a log line
                   (4) Add right-click menu to log view with Copy and Clear Log
                   (5) Keep showing new log while auto-scroll is paused, show the count of waiting lines
                   (6) Add macOS version for Apple Silicon and Intel Macs (macOS 11 or later)
                   (7) Add Linux version for x86_64 (Ubuntu 20.04, Debian 11 or later)
+20261125  v3.0.2  (1) Fix the log view's horizontal scroll bar flickering on and off with no new log
+                  (2) Resume auto-scroll when scrolling down at the end of a paused log
+                  (3) Keep showing new log in a paused full log by removing older lines above the view

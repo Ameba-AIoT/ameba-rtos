@@ -66,7 +66,7 @@ static int usbh_uvc_usb_status_check(void)
 {
 	usbh_uvc_host_t *uvc = &uvc_host;
 
-	if ((uvc->host != NULL) && (uvc->host->connect_state >= USBH_STATE_SETUP)) {
+	if ((uvc->host != NULL) && (usbh_dev_is_ready(uvc->host))) {
 		return RTK_SUCCESS;
 	}
 
@@ -900,10 +900,10 @@ static void usbh_uvc_isoc_in_process_xfer(usbh_uvc_stream_t *stream, u32 cur_fra
 		pipe->frame_num = usbh_uvc_frame_num_inc(cur_frame, 1U);
 		pipe->xfer_buf = stream->urb[urb_index]->addr + stream->urb[urb_index]->packet_info[packet_index].offset;
 
-		if (usbh_transfer_data(uvc->host, pipe) == RTK_SUCCESS) {
-			pipe->xfer_state = USBH_EP_XFER_BUSY;
+		if (usbh_xfer_submit(uvc->host, pipe) == RTK_SUCCESS) {
+			pipe->xfer_state = USBH_PIPE_XFER_BUSY;
 		} else {
-			pipe->xfer_state = USBH_EP_XFER_START;
+			pipe->xfer_state = USBH_PIPE_XFER_START;
 		}
 	} else {
 		// stop
@@ -928,7 +928,7 @@ int usbh_uvc_stream_process_completed(usb_host_t *host, u8 pipe_num)
 	usbh_uvc_stream_t *stream;
 	usbh_pipe_t *pipe;
 	usbh_uvc_urb_t *next_urb = NULL;
-	u32 cur_frame = usbh_get_current_frame_number(host);
+	u32 cur_frame = usbh_frame_get(host);
 	u8 *urb_index;
 	u8 *packet_index;
 	u32 rx_len;
@@ -958,13 +958,13 @@ int usbh_uvc_stream_process_completed(usb_host_t *host, u8 pipe_num)
 					*packet_index = 0U;
 				}
 
-				pipe->xfer_state = USBH_EP_XFER_IDLE;
+				pipe->xfer_state = USBH_PIPE_XFER_IDLE;
 
 				return RTK_SUCCESS;
 			}
 
 			if (stream->urb[*urb_index] == NULL) {
-				pipe->xfer_state = USBH_EP_XFER_IDLE;
+				pipe->xfer_state = USBH_PIPE_XFER_IDLE;
 				return RTK_SUCCESS;
 			}
 			urb_state = usbh_get_urb_state(host, pipe);
@@ -973,7 +973,7 @@ int usbh_uvc_stream_process_completed(usb_host_t *host, u8 pipe_num)
 #if (USBH_UVC_USE_HW == 0) && USBH_UVC_DEBUG
 				uvc->isoc_rx_done_cnt ++;
 #endif
-				rx_len = usbh_get_last_transfer_size(host, pipe);
+				rx_len = usbh_pipe_get_xfer_len(host, pipe);
 
 				/* some cameras send payload header without any valid payload packets, to reduce cpu loading just filter it */
 				//if (rx_len > 12) {
@@ -1007,7 +1007,7 @@ int usbh_uvc_stream_process_completed(usb_host_t *host, u8 pipe_num)
 					}// else: get free urb fail, reuse current urb
 
 					if (usbh_uvc_usb_status_check() != RTK_SUCCESS) {
-						pipe->xfer_state = USBH_EP_XFER_IDLE;
+						pipe->xfer_state = USBH_PIPE_XFER_IDLE;
 						return RTK_SUCCESS;
 					}
 
@@ -1015,7 +1015,7 @@ int usbh_uvc_stream_process_completed(usb_host_t *host, u8 pipe_num)
 				}
 
 			} else {// urb stall/ err
-				pipe->xfer_state = USBH_EP_XFER_IDLE;
+				pipe->xfer_state = USBH_PIPE_XFER_IDLE;
 			}
 
 			if (stream->next_xfer != 0U) {
@@ -1026,11 +1026,11 @@ int usbh_uvc_stream_process_completed(usb_host_t *host, u8 pipe_num)
 #endif
 					usbh_uvc_isoc_in_process_xfer(stream, cur_frame);
 				} else {
-					pipe->xfer_state = USBH_EP_XFER_WAIT_SOF;
+					pipe->xfer_state = USBH_PIPE_XFER_WAIT_SOF;
 				}
 			} else {
 				/* stop */
-				pipe->xfer_state = USBH_EP_XFER_IDLE;
+				pipe->xfer_state = USBH_PIPE_XFER_IDLE;
 			}
 			break;
 		}
@@ -1049,7 +1049,7 @@ void usbh_uvc_stream_process_sof(usb_host_t *host)
 	usbh_uvc_host_t *uvc = &uvc_host;
 	usbh_uvc_stream_t *stream;
 	usbh_uvc_setting_t *cur_setting = NULL;
-	u32 cur_frame = usbh_get_current_frame_number(host);
+	u32 cur_frame = usbh_frame_get(host);
 	usbh_pipe_t *pipe;
 	u8 i;
 
@@ -1066,8 +1066,8 @@ void usbh_uvc_stream_process_sof(usb_host_t *host)
 			cur_setting = &stream->cur_setting;
 			pipe = &cur_setting->pipe;
 
-			if ((usbh_get_elapsed_frame_cnt(host, pipe->frame_num) >= pipe->ep_interval) ||
-				((pipe->xfer_state == USBH_EP_XFER_WAIT_SOF) &&
+			if ((usbh_frame_elapsed(host, pipe->frame_num) >= pipe->ep_interval) ||
+				((pipe->xfer_state == USBH_PIPE_XFER_WAIT_SOF) &&
 				 (usbh_uvc_frame_num_dec(usbh_uvc_frame_num_inc(cur_frame, 1U), pipe->frame_num) >= pipe->ep_interval))) {
 #if USBH_UVC_DEBUG
 				uvc->isoc_sof_start_rx ++;
@@ -1075,7 +1075,7 @@ void usbh_uvc_stream_process_sof(usb_host_t *host)
 				usbh_uvc_isoc_in_process_xfer(stream, cur_frame);
 			} else { // interval
 #if USBH_UVC_DEBUG
-				if (pipe->xfer_state == USBH_EP_XFER_IDLE) {
+				if (pipe->xfer_state == USBH_PIPE_XFER_IDLE) {
 					uvc->isoc_xfer_interval_cnt ++;
 				}
 #endif
@@ -1084,7 +1084,7 @@ void usbh_uvc_stream_process_sof(usb_host_t *host)
 
 		/* Keep the ctrl-machine kick on the TRANSFER state only: in the CTRL states the
 		 * machine self-notifies, and a kick on every SOF would flood the host message queue. */
-		if ((uvc->state == UVC_STATE_TRANSFER) && (stream->state != STREAM_STATE_CTRL_IDLE)) {
+		if ((uvc->state == UVC_STATE_XFER) && (stream->state != STREAM_STATE_CTRL_IDLE)) {
 			usbh_notify(host, 0x00, &usbh_uvc_driver);
 		}
 	}
@@ -1106,7 +1106,7 @@ static void usbh_uvc_stream_pause_combine(usbh_uvc_stream_t *stream)
 
 	/* Waits out the completion callbacks, which test the gate before handing over a URB.
 	 * It also orders the gate store before the combine_busy load below. */
-	if (usbh_sync_isr(USBH_CLASS_ISR_SYNC_TIMEOUT_MS) != RTK_SUCCESS) {
+	if (usbh_wait_isr_idle(USBH_CLASS_ISR_SYNC_TIMEOUT_MS) != RTK_SUCCESS) {
 		/* No host, i.e. no ISR to wait for, or a slow one already reported by the core */
 		usb_os_mem_sync();
 	}
@@ -1504,7 +1504,7 @@ int usbh_uvc_stream_open(usbh_uvc_stream_t *stream)
 	_Static_assert(USBH_UVC_VIDEO_FRAME_NUMS == USBH_HW_UVC_MAX_BUF_NUM,
 				   "USBH_UVC_VIDEO_FRAME_NUMS must be 3");
 
-	stream->uvc_dec = usbh_hw_uvc_alloc_channel();
+	stream->uvc_dec = usbh_hw_uvc_hc_alloc();
 	if (stream->uvc_dec == NULL) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Alloc ch err\n");
 		goto exit;
@@ -1512,7 +1512,7 @@ int usbh_uvc_stream_open(usbh_uvc_stream_t *stream)
 
 	uvc_dec = stream->uvc_dec;
 	/* NOTE: dev_addr is NOT captured here. stream_open now runs at usbh_uvc_init()
-	 * time (before enumeration), when uvc->host->dev_addr is not yet valid. The
+	 * time (before enumeration), when the device address is not yet valid. The
 	 * device address is captured in usbh_uvc_stream_start() (post-attach), right
 	 * before usbh_hw_uvc_prepare(). */
 	for (j = 0; j < USBH_UVC_VIDEO_FRAME_NUMS; j ++) {
@@ -1622,7 +1622,7 @@ void usbh_uvc_stream_close(usbh_uvc_stream_t *stream)
 		}
 		usbh_uvc_exit_get_frame(stream);
 
-		usbh_hw_uvc_free_channel(dec);
+		usbh_hw_uvc_hc_free(dec);
 		stream->uvc_dec = NULL;
 	}
 #else
@@ -1726,7 +1726,7 @@ void usbh_uvc_stream_flush(usbh_uvc_stream_t *stream)
 #endif
 
 	/* HW path: per-round state reset only. The HW decode buffers must be reset to a
-	 * known 3-buffer layout so the rotation in usbh_hw_uvc_handle_frame_done()
+	 * known 3-buffer layout so the rotation in usbh_hw_uvc_frame_handle_done()
 	 * starts from a known position, and stale dec_sema tokens are drained. */
 	if (stream->uvc_dec != NULL) {
 		/* usbh_hw_uvc_flush() discards any HW frame-done/error status latched in
@@ -1793,7 +1793,7 @@ int usbh_uvc_stream_start(usbh_uvc_stream_t *stream)
 	/* Capture the enumerated device address here (post-attach). This used to be
 	 * done in usbh_uvc_stream_open(), but that now runs at usbh_uvc_init() time
 	 * when the device address is not yet assigned. */
-	stream->uvc_dec->dev_addr = uvc->host->dev_addr;
+	stream->uvc_dec->dev_addr = usbh_dev_get_address(uvc->host);
 	usbh_hw_uvc_prepare(stream->uvc_dec, pipe);
 	usbh_hw_uvc_start(stream->uvc_dec);
 #endif

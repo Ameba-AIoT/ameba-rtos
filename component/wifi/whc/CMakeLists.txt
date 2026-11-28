@@ -177,6 +177,11 @@ elseif(CONFIG_WHC_HOST)
         )
 
         set(target_name wifi_whc_spi_host)
+    elseif(CONFIG_WHC_INTF_GSPI)
+        # GSPI as the WHC host HW INTERFACE has no WHC host transport yet. Keep this branch so that the choice does not
+        # fall into the IPC branch below, and fail with a clear reason instead.
+        message(FATAL_ERROR "WHC_INTF_GSPI is not usable yet: the WHC host transport over GSPI (whc_host_send etc.) "
+                            "is not implemented. Use WHC_IPC for the GSPI examples and pytest.")
     else()
         ameba_list_append(private_sources
             whc_host_rtos/ipc/whc_ipc_host.c

@@ -79,7 +79,7 @@ extern uint32_t mesh_log_switch[MESH_LOG_LEVEL_COUNT][MESH_LOG_LEVEL_SIZE];
 #define LOG_PRINT1(module, level, fmt, ...)     do\
     {\
         if(level <= MESH_LOG_LEVEL && module < MM_NUM && mesh_log_switch[level][module/32] & (1 << (module % 32)))\
-            DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_APP, LEVEL_ERROR, "!**"#module" "fmt, COUNT_ARG(__VA_ARGS__), ##__VA_ARGS__);\
+            DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_APP, LEVEL_ERROR, "!**"#module" " fmt, COUNT_ARG(__VA_ARGS__), ##__VA_ARGS__);\
     } while(0)
 #define LOG_PRINT(module, level, fmt, ...)      LOG_PRINT1(module, level, fmt, ##__VA_ARGS__)
 #define LOG_DUMP1(module, level, pdata, len)    do\

@@ -157,11 +157,13 @@ static int eth_config_clocks(void)
 #if defined(CONFIG_MAC_CLK_EXT)
 	return Ethernet_MacClkConfig(ETH_MAC_CLK_EXT50M, ETHERNET_PAD[ETHERNET_Pin_Grp][10]);
 #else
-	/* Configure the SoC clock output when the PHY requires it. */
+	/* Configure the SoC clock output when the PHY requires it. MAC to MAC has no PHY. */
+#if !defined(CONFIG_ETHERNET_MAC2MAC)
 #if defined(CONFIG_SOC_OUTPUT_50M)
 	Ethernet_PhyClkConfig(ETHERNET_PAD[ETHERNET_Pin_Grp][10], ETH_PHY_CLK_50M);
 #elif defined(CONFIG_SOC_OUTPUT_25M)
 	Ethernet_PhyClkConfig(ETHERNET_PAD[ETHERNET_Pin_Grp][10], ETH_PHY_CLK_25M);
+#endif
 #endif
 
 	return Ethernet_MacClkConfig(ETH_MAC_CLK_INT50M, 0);
@@ -397,9 +399,16 @@ static void eth_init_thread(void *param)
 #endif
 
 	Ethernet_StructInit(&eth_handle, &phy_dev);
+#if defined(CONFIG_ETHERNET_MAC2MAC)
+	/* No PHY to negotiate with: 100M full duplex, fixed. */
+	phy_dev.ops = NULL;
+	eth_handle.MacConfig.Bits.LinkType = ETH_LINK_MAC;
+	eth_handle.MacConfig.Bits.Speed    = ETH_SPEED_100M;
+	eth_handle.MacConfig.Bits.Duplex   = ETH_FULL_DUPLEX;
+#endif
 	/* Ensure there is only one source for the RMII reference clock. */
 #if defined(CONFIG_PHY_INT_XTAL) || defined(CONFIG_MAC_CLK_EXT)
-	eth_handle.MacConfig.Bits.RefClkDir = ETH_REFCLK_PHY2MAC;
+	eth_handle.MacConfig.Bits.RefClkDir = ETH_REFCLK_IN;
 #endif
 
 	/* Memory Allocation for Descriptors */

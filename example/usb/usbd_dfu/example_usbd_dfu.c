@@ -190,7 +190,7 @@ static void dfu_cb_detach(void)
 #ifdef CONFIG_USBD_DFU_WILL_DETACH
 /*
  * reconf() is called from the driver's reconf_task (task context) after the
- * GETSTATUS response has been transmitted.  Signal usbd_dfu_reconf_thread to
+ * GETSTATUS response has been transmitted.  Signal dfu_reconf_thread to
  * perform the deinit/init re-enumeration cycle.
  */
 static void dfu_cb_reconf(void)
@@ -200,7 +200,7 @@ static void dfu_cb_reconf(void)
 #endif /* CONFIG_USBD_DFU_WILL_DETACH */
 
 #ifdef CONFIG_USBD_DFU_WILL_DETACH
-static void usbd_dfu_reconf_thread(void *param)
+static void dfu_reconf_thread(void *param)
 {
 	int ret;
 
@@ -303,7 +303,7 @@ static int dfu_start(void)
 
 #ifdef CONFIG_USBD_DFU_WILL_DETACH
 	/* Created last: it owns the stack once running, so nothing after it can fail */
-	ret = rtos_task_create(&reconf_task, "usbd_dfu_reconf_thread", usbd_dfu_reconf_thread, NULL,
+	ret = rtos_task_create(&reconf_task, "dfu_reconf_thread", dfu_reconf_thread, NULL,
 						   DFU_RECONF_THREAD_STACK_SIZE, DFU_RECONF_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
 		usbd_dfu_deinit();

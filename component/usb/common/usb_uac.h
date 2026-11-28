@@ -42,7 +42,7 @@ extern "C" {
 /* Class-Specific Descriptor Types */
 #define USB_UAC_CS_INTERFACE                       0x24U
 #define USB_UAC_CS_ENDPOINT                        0x25U
-#define USB_UAC_IAD_DESCRIPTOR_TYPE                0x0BU
+#define USB_UAC_IAD_DESC_TYPE                0x0BU
 
 /* A.5 / A.9 Audio Class-Specific AC Interface Descriptor Subtypes */
 #define USB_UAC_AC_HEADER                          0x01U
@@ -81,6 +81,29 @@ extern "C" {
 #define USB_UAC_FU_UNDERFLOW                       0x0EU
 #define USB_UAC_FU_OVERFLOW                        0x0FU
 #define USB_UAC_FU_LATENCY                         0x10U
+
+/* USB Audio Terminal Types 1.0/2.0, shared by UAC 1.0 and 2.0 */
+/* 2.1 USB Terminal Types */
+#define USB_UAC_USB_TERMINAL_STREAMING                       0x0101U
+
+/* 2.2 Input Terminal Types */
+#define USB_UAC_INPUT_TERMINAL_UNDEFINED                     0x0200U
+#define USB_UAC_INPUT_TERMINAL_MICROPHONE                    0x0201U
+#define USB_UAC_INPUT_TERMINAL_DESKTOP_MICROPHONE            0x0202U
+#define USB_UAC_INPUT_TERMINAL_PERSONAL_MICROPHONE           0x0203U
+#define USB_UAC_INPUT_TERMINAL_OMNI_DIR_MICROPHONE           0x0204U
+#define USB_UAC_INPUT_TERMINAL_MICROPHONE_ARRAY              0x0205U
+#define USB_UAC_INPUT_TERMINAL_PROC_MICROPHONE_ARRAY         0x0206U
+
+/* 2.3 Output Terminal Types */
+#define USB_UAC_OUTPUT_TERMINAL_UNDEFINED                    0x0300U
+#define USB_UAC_OUTPUT_TERMINAL_SPEAKER                      0x0301U
+#define USB_UAC_OUTPUT_TERMINAL_HEADPHONES                   0x0302U
+#define USB_UAC_OUTPUT_TERMINAL_HEAD_MOUNTED_DISPLAY_AUDIO   0x0303U
+#define USB_UAC_OUTPUT_TERMINAL_DESKTOP_SPEAKER              0x0304U
+#define USB_UAC_OUTPUT_TERMINAL_ROOM_SPEAKER                 0x0305U
+#define USB_UAC_OUTPUT_TERMINAL_COMMUNICATION_SPEAKER        0x0306U
+#define USB_UAC_OUTPUT_TERMINAL_LOW_FREQ_EFFECTS_SPEAKER     0x0307U
 
 /** @} End of USB_Common_UAC_Constants group */
 /** @} End of USB_Common_Constants group */

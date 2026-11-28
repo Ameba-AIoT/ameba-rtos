@@ -12,7 +12,7 @@
 
 /* Private defines -----------------------------------------------------------*/
 
-#define USBH_CDC_NCM_ENABLE_DUMP_DESCRIPTOR_PARSE    0
+#define USBH_CDC_NCM_ENABLE_DUMP_DESC_PARSE    0
 
 #define USBH_CDC_NCM_RX_SPEED_CHECK                  0     /* NCM rx speed test */
 #define USBH_CDC_NCM_TX_SPEED_CHECK                  0     /* NCM tx speed test */
@@ -46,7 +46,7 @@
 #endif
 
 /* Control-transfer string buffer length (MAC string descriptor). */
-#define USBH_CDC_NCM_MAC_STRING_LEN                          32U            /* String buffer length for MAC descriptor */
+#define USBH_CDC_NCM_MAC_STR_BUF_LEN                          32U            /* String buffer length for MAC descriptor */
 /* iMACAddress string: 2-byte header + 12 hex digits in UTF-16LE (Ref ECM 1.2 5.4, used by NCM 1.0 5.2.1) */
 #define USBH_CDC_NCM_MAC_DESC_LEN                            26U
 
@@ -110,7 +110,7 @@ typedef enum {
 /* NCM state */
 typedef enum {
 	CDC_NCM_STATE_IDLE = 0U,
-	CDC_NCM_STATE_TRANSFER,
+	CDC_NCM_STATE_XFER,
 	CDC_NCM_STATE_ERROR,
 } usbh_cdc_ncm_state_t;
 
@@ -141,7 +141,7 @@ static int usbh_cdc_ncm_bulk_tx(void);
 #if defined(CONFIG_USBH_CDC_NCM_TX_AGGREGATION)
 static void usbh_cdc_ncm_agg_reset_buf(u8 b);
 #else
-static int usbh_cdc_ncm_bulk_send(u8 *buf, u32 len);
+static int usbh_cdc_ncm_bulk_send(const u8 *buf, u32 len);
 #endif
 static int usbh_cdc_ncm_cb_intr_receive(u8 *buf, u32 length);
 static int usbh_cdc_ncm_cb_bulk_send(int state);
@@ -211,7 +211,7 @@ static u16 usbh_cdc_ncm_get_eth_status_check_time(void)
 {
 	usbh_cdc_ncm_host_t *cdc = &usbh_cdc_ncm_host;
 
-	if ((cdc->host != NULL) && (cdc->host->dev_speed == USB_SPEED_HIGH)) {
+	if ((cdc->host != NULL) && (usbh_dev_get_speed(cdc->host) == USB_SPEED_HIGH)) {
 		return (u16)(8U * USBH_CDC_NCM_ETH_STATUS_CHECK_TIME);
 	}
 
@@ -250,7 +250,7 @@ static int usbh_cdc_ncm_check_enum_status(void)
 {
 	usbh_cdc_ncm_host_t *cdc = &usbh_cdc_ncm_host;
 
-	if ((cdc->host != NULL) && (cdc->host->connect_state >= USBH_STATE_SETUP)) {
+	if ((cdc->host != NULL) && (usbh_dev_is_ready(cdc->host))) {
 		return RTK_SUCCESS;
 	}
 
@@ -289,7 +289,7 @@ static int usbh_cdc_ncm_cb_intr_receive(u8 *buf, u32 length)
   * @param  str_id: string index
   * @retval Status
   */
-static int usbh_cdc_ncm_process_get_string(usb_host_t *host, u8 *pbuf, u16 buflen, u8 str_id)
+static int usbh_cdc_ncm_process_get_str(usb_host_t *host, u8 *pbuf, u16 buflen, u8 str_id)
 {
 	usbh_setup_req_t setup;
 
@@ -297,7 +297,7 @@ static int usbh_cdc_ncm_process_get_string(usb_host_t *host, u8 *pbuf, u16 bufle
 	setup.req.bRequest = USB_REQ_GET_DESCRIPTOR;
 	setup.req.wValue = USB_DESC_STRING | str_id;
 	/* wIndex of a string-descriptor request is a LANGID the device supports, Ref USB 2.0 9.6.7 */
-	setup.req.wIndex = usbh_get_lang_id(host);
+	setup.req.wIndex = usbh_dev_get_lang_id(host);
 	setup.req.wLength = buflen;
 
 	return usbh_ctrl_request(host, &setup, pbuf);
@@ -340,7 +340,7 @@ static int usbh_cdc_ncm_parse_mac_str(usb_host_t *host)
 	u8 nonzero = 0U;
 	u8 i;
 
-	if ((usbh_get_last_ctrl_in_size(host) < USBH_CDC_NCM_MAC_DESC_LEN) || (buf[0] < USBH_CDC_NCM_MAC_DESC_LEN) ||
+	if ((usbh_ctrl_get_xfer_len(host) < USBH_CDC_NCM_MAC_DESC_LEN) || (buf[0] < USBH_CDC_NCM_MAC_DESC_LEN) ||
 		(buf[1] != USB_DESC_TYPE_STRING)) {
 		return -RTK_ERR_BADARG;
 	}
@@ -385,7 +385,7 @@ static int usbh_cdc_ncm_read_mac_str(usb_host_t *host)
 		return RTK_SUCCESS;
 	}
 
-	status = usbh_cdc_ncm_process_get_string(host, cdc->dongle_ctrl_buf, USBH_CDC_NCM_MAC_STRING_LEN, cdc->iMACAddressStringId);
+	status = usbh_cdc_ncm_process_get_str(host, cdc->dongle_ctrl_buf, USBH_CDC_NCM_MAC_STR_BUF_LEN, cdc->iMACAddressStringId);
 	if (status == -RTK_ERR_BUSY) {
 		return status;
 	}
@@ -742,7 +742,7 @@ static int usbh_cdc_ncm_ctrl_setting(usb_host_t *host)
 
 static void usbh_cdc_ncm_dump_ncm_cfgdesc(void)
 {
-#if USBH_CDC_NCM_ENABLE_DUMP_DESCRIPTOR_PARSE
+#if USBH_CDC_NCM_ENABLE_DUMP_DESC_PARSE
 	usbh_cdc_ncm_host_t   *cdc = &usbh_cdc_ncm_host;
 	usbh_ep_desc_t        *ep_desc;
 	usbh_cdc_ncm_pipe_info_t *pipe_info;
@@ -781,33 +781,26 @@ static void usbh_cdc_ncm_dump_ncm_cfgdesc(void)
   * @param  min_len: Smallest bLength the caller reads
   * @retval The descriptor, NULL if absent or truncated
   */
-static const u8 *usbh_cdc_ncm_find_func_desc(const usbh_itf_data_t *itf_data, u8 subtype, u8 min_len)
+static const u8 *usbh_cdc_ncm_find_func_desc(const usbh_itf_t *itf_data, u8 subtype, u8 min_len)
 {
-	const u8 *desc = itf_data->raw_data;
-	u32 total = 0U;
-	u8 len;
+	const u8 *end;
+	const u8 *desc;
 
-	if (desc == NULL) {
+	if (itf_data->raw_data == NULL) {
 		return NULL;
 	}
 
-	while ((total + USB_LEN_DESC_HEADER) <= itf_data->raw_data_len) {
-		len = desc[0];
-		if ((len < USB_LEN_DESC_HEADER) || ((total + len) > itf_data->raw_data_len)) {
-			RTK_LOGS(TAG, RTK_LOG_WARN, "Bad desc len %d at %d\n", len, total);
-			break;
+	end = itf_data->raw_data + itf_data->raw_data_len;
+	desc = usbh_desc_find(itf_data->raw_data, end, USB_CDC_CS_INTERFACE, subtype);
+	while (desc != NULL) {
+		if (desc[0] < min_len) {
+			RTK_LOGS(TAG, RTK_LOG_WARN, "Short func desc %d len %d\n", subtype, desc[0]);
+		} else if ((subtype != USB_CDC_FUNC_DESC_UNION) || (desc[3] == itf_data->itf_desc_array[0].bInterfaceNumber)) {
+			return desc;
+		} else {
+			/* A Union of another control interface */
 		}
-		if ((desc[1] == USB_CDC_CS_INTERFACE) && (len > USB_LEN_DESC_HEADER) && (desc[2] == subtype)) {
-			if (len < min_len) {
-				RTK_LOGS(TAG, RTK_LOG_WARN, "Short func desc %d len %d\n", subtype, len);
-			} else if ((subtype != USB_CDC_FUNC_DESC_UNION) || (desc[3] == itf_data->itf_desc_array[0].bInterfaceNumber)) {
-				return desc;
-			} else {
-				/* A Union of another control interface */
-			}
-		}
-		desc += len;
-		total += len;
+		desc = usbh_desc_find(usbh_desc_next(desc, end), end, USB_CDC_CS_INTERFACE, subtype);
 	}
 
 	return NULL;
@@ -850,7 +843,7 @@ static int usbh_cdc_ncm_check_data_eps(usbh_itf_desc_t *itf_desc, usbh_ep_desc_t
 
 /**
   * @brief  Locate the NCM function of the device
-  * @note   Read only, shared by attach() and usbh_cdc_ncm_check_config_desc() so a configuration that passes the
+  * @note   Read only, shared by attach() and usbh_cdc_ncm_check_config() so a configuration that passes the
   *         check is one attach() takes. The comm interface carries one INTR IN endpoint (Ref NCM 1.0 5.2). The
   *         data interface has protocol 0x01 (NTB) and is the one its Union names, falling back to the only one
   *         present; its operational setting is the one with the BULK pair (Ref NCM 1.0 5.3, alternate setting 0
@@ -861,10 +854,10 @@ static int usbh_cdc_ncm_check_data_eps(usbh_itf_desc_t *itf_desc, usbh_ep_desc_t
   * @param  data: Set to the operational data interface setting
   * @retval RTK_SUCCESS when the whole function is found, -RTK_ERR_BADARG otherwise
   */
-static int usbh_cdc_ncm_find_function(usb_host_t *host, usbh_itf_data_t **ctrl, usbh_itf_desc_t **data)
+static int usbh_cdc_ncm_find_function(usb_host_t *host, usbh_itf_t **ctrl, usbh_itf_desc_t **data)
 {
 	usbh_dev_id_t dev_id = {0U};
-	usbh_itf_data_t *itf_data;
+	usbh_itf_t *itf_data;
 	usbh_itf_desc_t *itf_desc;
 	usbh_ep_desc_t *ep;
 	usbh_ep_desc_t *bulk_in;
@@ -879,7 +872,7 @@ static int usbh_cdc_ncm_find_function(usb_host_t *host, usbh_itf_data_t **ctrl, 
 	dev_id.bInterfaceSubClass = USB_CDC_NCM_SUBCLASS_CODE;
 	dev_id.bInterfaceProtocol = 0x00U;
 	dev_id.mMatchFlags = USBH_DEV_ID_MATCH_ITF_INFO;
-	itf_data = usbh_get_interface_descriptor(host, &dev_id);
+	itf_data = usbh_itf_find(host, &dev_id);
 	if ((itf_data == NULL) || (itf_data->itf_desc_array == NULL)) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Get if fail\n");
 		return -RTK_ERR_BADARG;
@@ -904,7 +897,7 @@ static int usbh_cdc_ncm_find_function(usb_host_t *host, usbh_itf_data_t **ctrl, 
 	dev_id.bInterfaceSubClass = USB_CDC_SUBCLASS_RESERVED;
 	dev_id.bInterfaceProtocol = USB_CDC_DATA_PROTOCOL_NETWORK_TRANSFER_BLOCK;
 	dev_id.mMatchFlags = USBH_DEV_ID_MATCH_ITF_INFO;
-	itf_data = usbh_get_interface_descriptor(host, &dev_id);
+	itf_data = usbh_itf_find(host, &dev_id);
 	/* Without a Union only a sole data interface is unambiguous */
 	if ((data_itf_num == 0xFFU) && ((itf_data == NULL) || (itf_data->next != NULL))) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "No union\n");
@@ -937,17 +930,17 @@ static int usbh_cdc_ncm_find_function(usb_host_t *host, usbh_itf_data_t **ctrl, 
   * @param  host: Host handle
   * @retval RTK_SUCCESS on success, -RTK_ERR_BADARG when the device is no usable NCM function
   */
-static int usbh_cdc_ncm_parse_interface_desc(usb_host_t *host)
+static int usbh_cdc_ncm_parse_itf_desc(usb_host_t *host)
 {
 	usbh_cdc_ncm_host_t *cdc = &usbh_cdc_ncm_host;
 	const u8 *desc;
-	usbh_itf_data_t *ctrl_itf;
+	usbh_itf_t *ctrl_itf;
 	usbh_itf_desc_t *data_itf_desc;
 	usbh_ep_desc_t *bulk_in;
 	usbh_ep_desc_t *bulk_out;
 
-	cdc->vid = host->dev_desc->idVendor;
-	cdc->pid = host->dev_desc->idProduct;
+	cdc->vid = usbh_dev_get_desc(host)->idVendor;
+	cdc->pid = usbh_dev_get_desc(host)->idProduct;
 	cdc->sub_status = CDC_NCM_STATE_AT_SETTING_IDLE;
 	cdc->iMACAddressStringId = 0U;
 
@@ -1061,7 +1054,7 @@ static u32 usbh_cdc_ncm_tx_max_ntb(u32 buf_size)
   * @param  ntb_len: Output NTB length (returned)
   * @retval Status
   */
-static int usbh_cdc_ncm_build_ntb16_frame(u8 *eth_buf, u16 eth_len, u8 *ntb_buf, u16 *ntb_len)
+static int usbh_cdc_ncm_build_ntb16_frame(const u8 *eth_buf, u16 eth_len, u8 *ntb_buf, u16 *ntb_len)
 {
 	usbh_cdc_ncm_host_t *cdc = &usbh_cdc_ncm_host;
 	usb_cdc_ncm_nth16_t *nth;
@@ -1262,14 +1255,14 @@ static int usbh_cdc_ncm_attach(usb_host_t *host)
 	/* deinit_all_pipe() needs the host to close what a failed attach opened */
 	cdc->host = host;
 
-	if (usbh_cdc_ncm_parse_interface_desc(host) != RTK_SUCCESS) {
+	if (usbh_cdc_ncm_parse_itf_desc(host) != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Parse desc fail\n");
 		goto attach_fail;
 	}
 
 	/* All three pipes are mandatory, see usbh_cdc_ncm_find_function() */
 	pipe_info = &(cdc->intr_rx);
-	if (usbh_open_pipe(host, &(pipe_info->pipe), &(pipe_info->ep_desc), &usbh_cdc_ncm_driver) != RTK_SUCCESS) {
+	if (usbh_pipe_open(host, &(pipe_info->pipe), &(pipe_info->ep_desc), &usbh_cdc_ncm_driver) != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Open intr pipe fail\n");
 		goto attach_fail;
 	}
@@ -1282,7 +1275,7 @@ static int usbh_cdc_ncm_attach(usb_host_t *host)
 	}
 	pipe_info->pipe.xfer_len = pipe_info->pipe.ep_mps;
 	pipe_info->pipe.xfer_buf_len = usb_get_dma_len(pipe_info->pipe.ep_mps, pipe_info->pipe.ep_mps);
-	pipe_info->pipe.xfer_state = USBH_EP_XFER_START;
+	pipe_info->pipe.xfer_state = USBH_PIPE_XFER_START;
 
 	/* Widen the poll window past the 1-frame bInterval=1 case, else the SOF
 	 * re-arm fires on the still in-flight INTR IN and hangs it. */
@@ -1290,14 +1283,14 @@ static int usbh_cdc_ncm_attach(usb_host_t *host)
 	pipe_info->pipe.max_timeout_tick = USBH_CDC_NCM_INTR_BUSY_MAX_CNT;
 
 	pipe_info = &(cdc->bulk_tx);
-	if (usbh_open_pipe(host, &(pipe_info->pipe), &(pipe_info->ep_desc), &usbh_cdc_ncm_driver) != RTK_SUCCESS) {
+	if (usbh_pipe_open(host, &(pipe_info->pipe), &(pipe_info->ep_desc), &usbh_cdc_ncm_driver) != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Open bulk out pipe fail\n");
 		goto attach_fail;
 	}
 	pipe_info->pipe.max_timeout_tick = USBH_CDC_NCM_BULK_OUT_BUSY_MAX_CNT;
 
 	pipe_info = &(cdc->bulk_rx);
-	if (usbh_open_pipe(host, &(pipe_info->pipe), &(pipe_info->ep_desc), &usbh_cdc_ncm_driver) != RTK_SUCCESS) {
+	if (usbh_pipe_open(host, &(pipe_info->pipe), &(pipe_info->ep_desc), &usbh_cdc_ncm_driver) != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Open bulk in pipe fail\n");
 		goto attach_fail;
 	}
@@ -1310,7 +1303,7 @@ static int usbh_cdc_ncm_attach(usb_host_t *host)
 	}
 	pipe_info->pipe.xfer_len = USBH_CDC_NCM_RX_NTB_BUF_SIZE;
 	pipe_info->pipe.xfer_buf_len = USBH_CDC_NCM_RX_NTB_BUF_SIZE;
-	pipe_info->pipe.xfer_state = USBH_EP_XFER_START;
+	pipe_info->pipe.xfer_state = USBH_PIPE_XFER_START;
 
 	pipe_info->pipe.max_timeout_tick = USBH_CDC_NCM_BULK_IN_IDLE_MAX_CNT;
 
@@ -1329,7 +1322,7 @@ static int usbh_cdc_ncm_attach(usb_host_t *host)
 
 attach_fail:
 	/* The core calls no detach() for a failed attach: undo here, and withdraw the host so
-	 * usbh_cdc_ncm_is_configured() never reports this class ready on another class's setup */
+	 * usbh_cdc_ncm_is_ready() never reports this class ready on another class's setup */
 	usbh_cdc_ncm_deinit_all_pipe();
 	cdc->host = NULL;
 	return status;
@@ -1408,7 +1401,7 @@ static int usbh_cdc_ncm_setup(usb_host_t *host)
 		cdc->cb->setup();
 	}
 
-	cdc->state = CDC_NCM_STATE_TRANSFER;
+	cdc->state = CDC_NCM_STATE_XFER;
 
 	/* Kick the first INTR IN to receive the network-connection notification. */
 	usbh_notify(host, cdc->intr_rx.pipe.pipe_num, &usbh_cdc_ncm_driver);
@@ -1444,7 +1437,7 @@ static void usbh_cdc_ncm_halt(usb_host_t *host, const usbh_pipe_t *pipe)
   * @brief  Clear the halted endpoint, re-enumerate the device if that keeps failing
   * @note   CLEAR_FEATURE(ENDPOINT_HALT) also resets the device data toggle to DATA0 (Ref USB
   *         2.0 9.4.5), matching the host toggle the STALL interrupt already reset. Once back in
-  *         CDC_NCM_STATE_TRANSFER the SOF re-arms the pipes as usual.
+  *         CDC_NCM_STATE_XFER the SOF re-arms the pipes as usual.
   * @param  host: Host handle
   * @retval None
   */
@@ -1468,7 +1461,7 @@ static void usbh_cdc_ncm_process_halt(usb_host_t *host)
 	if (ret == RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_WARN, "EP%d halt cleared\n", cdc->halt_ep_addr);
 		cdc->halt_retry_cnt = 0U;
-		cdc->state = CDC_NCM_STATE_TRANSFER;
+		cdc->state = CDC_NCM_STATE_XFER;
 		/* This state swallowed any pipe message that arrived meanwhile: re-drive every pipe so a
 		 * completion latched in that window is still consumed */
 		usbh_notify(host, cdc->intr_rx.pipe.pipe_num, &usbh_cdc_ncm_driver);
@@ -1478,7 +1471,7 @@ static void usbh_cdc_ncm_process_halt(usb_host_t *host)
 		cdc->halt_retry_cnt++;
 		if (cdc->halt_retry_cnt >= USBH_CDC_NCM_HALT_RETRY_MAX_CNT) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "EP%d clear halt fail, re-enum\n", cdc->halt_ep_addr);
-			usbh_reenumerate();
+			usbh_dev_reset();
 		} else {
 			usbh_notify(host, 0U, &usbh_cdc_ncm_driver);
 		}
@@ -1498,7 +1491,7 @@ static void usbh_cdc_ncm_process(usb_host_t *host, usbh_drv_msg_t *msg)
 	u8 pipe_num;
 
 	switch (cdc->state) {
-	case CDC_NCM_STATE_TRANSFER:
+	case CDC_NCM_STATE_XFER:
 		if (msg) {
 			pipe_num = msg->pipe_num;
 			if (pipe_num == cdc->bulk_tx.pipe.pipe_num) {
@@ -1569,7 +1562,7 @@ static void usbh_cdc_ncm_xfer_err(usb_host_t *host, const usbh_pipe_t *pipe, u16
 		(*err_cnt)++;
 		if (*err_cnt == USBH_CDC_NCM_XFER_ERR_MAX_CNT) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "EP%02x err, re-enum\n", pipe->ep_addr);
-			usbh_reenumerate();
+			usbh_dev_reset();
 		}
 	}
 }
@@ -1590,17 +1583,17 @@ static void usbh_cdc_ncm_process_bulk_out(usb_host_t *host)
 	pipe_info->trigger_cnt++;
 #endif
 
-	status = usbh_transfer_process(host, ep);
-	if ((status == RTK_SUCCESS) && (ep->xfer_state == USBH_EP_XFER_IDLE)) {
+	status = usbh_xfer_process(host, ep);
+	if ((status == RTK_SUCCESS) && (ep->xfer_state == USBH_PIPE_XFER_IDLE)) {
 		cdc->tx_err_cnt = 0U;
 		usbh_cdc_ncm_cb_bulk_send(status);
-	} else if (ep->xfer_state == USBH_EP_XFER_START) {
+	} else if (ep->xfer_state == USBH_PIPE_XFER_START) {
 		usbh_notify(host, ep->pipe_num, &usbh_cdc_ncm_driver);
-	} else if (ep->xfer_state == USBH_EP_XFER_ERROR) {
+	} else if (ep->xfer_state == USBH_PIPE_XFER_ERROR) {
 		usbh_cdc_ncm_xfer_err(host, ep, &cdc->tx_err_cnt, usbh_get_urb_state(host, ep));
 		/* Drop the NTB (Ethernet is best effort) and release the sender: re-sending it
 		 * forever left a blocked sender waiting on a TX that never completes. */
-		ep->xfer_state = USBH_EP_XFER_IDLE;
+		ep->xfer_state = USBH_PIPE_XFER_IDLE;
 		usbh_cdc_ncm_cb_bulk_send(-RTK_ERR_IO);
 	} else {
 		/* Idle or still in flight */
@@ -1649,7 +1642,7 @@ static void usbh_cdc_ncm_process_bulk_in(usb_host_t *host)
 	usbh_cdc_ncm_host_t *cdc = &usbh_cdc_ncm_host;
 	usbh_cdc_ncm_pipe_info_t *pipe_info = &(cdc->bulk_rx);
 	usbh_pipe_t *bulk_in = &(pipe_info->pipe);
-	int status = usbh_transfer_process(host, bulk_in);
+	int status = usbh_xfer_process(host, bulk_in);
 	usbh_urb_state_t urb_state;
 	u32 len;
 
@@ -1657,25 +1650,25 @@ static void usbh_cdc_ncm_process_bulk_in(usb_host_t *host)
 	pipe_info->trigger_cnt++;
 #endif
 
-	if ((status == RTK_SUCCESS) && (bulk_in->xfer_state == USBH_EP_XFER_IDLE)) {
+	if ((status == RTK_SUCCESS) && (bulk_in->xfer_state == USBH_PIPE_XFER_IDLE)) {
 		cdc->rx_err_cnt = 0U;
-		len = usbh_get_last_transfer_size(host, bulk_in);
+		len = usbh_pipe_get_xfer_len(host, bulk_in);
 		usbh_cdc_ncm_cb_bulk_receive(bulk_in->xfer_buf, len);
 
-		bulk_in->xfer_state = USBH_EP_XFER_START;
+		bulk_in->xfer_state = USBH_PIPE_XFER_START;
 		usbh_notify(host, bulk_in->pipe_num, &usbh_cdc_ncm_driver);
-	} else if (bulk_in->xfer_state == USBH_EP_XFER_START) {
-		/* Transfer not yet complete: do not deliver data (last_transfer_size
+	} else if (bulk_in->xfer_state == USBH_PIPE_XFER_START) {
+		/* Transfer not yet complete: do not deliver data (usbh_pipe_get_xfer_len()
 		   would be 0 or stale). Just keep the pipeline moving. */
 		usbh_notify(host, bulk_in->pipe_num, &usbh_cdc_ncm_driver);
-	} else if (bulk_in->xfer_state == USBH_EP_XFER_ERROR) {
+	} else if (bulk_in->xfer_state == USBH_PIPE_XFER_ERROR) {
 		urb_state = usbh_get_urb_state(host, bulk_in);
 		usbh_cdc_ncm_xfer_err(host, bulk_in, &cdc->rx_err_cnt, urb_state);
 		if (urb_state == USBH_URB_STALL) {
 			/* Re-armed by the SOF once the halt is cleared */
-			bulk_in->xfer_state = USBH_EP_XFER_IDLE;
+			bulk_in->xfer_state = USBH_PIPE_XFER_IDLE;
 		} else {
-			bulk_in->xfer_state = USBH_EP_XFER_START;
+			bulk_in->xfer_state = USBH_PIPE_XFER_START;
 			usbh_notify(host, bulk_in->pipe_num, &usbh_cdc_ncm_driver);
 		}
 	} else {
@@ -1700,31 +1693,31 @@ static void usbh_cdc_ncm_process_intr_in(usb_host_t *host)
 #endif
 
 	/* A completed IN shows only as latched urb_state==DONE; consume and deliver it
-	 * here rather than via usbh_transfer_process(), which raced the SOF re-arm and
+	 * here rather than via usbh_xfer_process(), which raced the SOF re-arm and
 	 * dropped the one-shot NETWORK_CONNECTION. xfer_state==BUSY is stable vs. the
 	 * SOF ISR, so this read-check-consume is race-free. */
-	if ((intr_in->xfer_state == USBH_EP_XFER_BUSY) && (urb_state == USBH_URB_DONE)) {
-		u32 len = usbh_get_last_transfer_size(host, intr_in);
+	if ((intr_in->xfer_state == USBH_PIPE_XFER_BUSY) && (urb_state == USBH_URB_DONE)) {
+		u32 len = usbh_pipe_get_xfer_len(host, intr_in);
 		intr_in->retry_cnt = 0;
-		intr_in->xfer_state = USBH_EP_XFER_IDLE;
+		intr_in->xfer_state = USBH_PIPE_XFER_IDLE;
 		usbh_cdc_ncm_cb_intr_receive(intr_in->xfer_buf, len);
 		return;
 	}
 
 	/* The SOF never re-arms a stalled pipe (see usbh_cdc_ncm_intr_receive()), so a STALL stays
 	 * latched with xfer_state==BUSY until handled here; the SOF re-arms it once cleared. */
-	if ((intr_in->xfer_state == USBH_EP_XFER_BUSY) && (urb_state == USBH_URB_STALL)) {
+	if ((intr_in->xfer_state == USBH_PIPE_XFER_BUSY) && (urb_state == USBH_URB_STALL)) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "INTR RX stall\n");
-		intr_in->xfer_state = USBH_EP_XFER_IDLE;
+		intr_in->xfer_state = USBH_PIPE_XFER_IDLE;
 		usbh_cdc_ncm_halt(host, intr_in);
 		return;
 	}
 
-	/* Not a completion: (re)arm only on START. Never usbh_transfer_process()
+	/* Not a completion: (re)arm only on START. Never usbh_xfer_process()
 	 * while BUSY - re-submitting an already-armed INTR channel corrupts it. */
-	if (intr_in->xfer_state == USBH_EP_XFER_START) {
-		int status = usbh_transfer_process(host, intr_in);
-		if ((status != RTK_SUCCESS) || (intr_in->xfer_state == USBH_EP_XFER_ERROR)) {
+	if (intr_in->xfer_state == USBH_PIPE_XFER_START) {
+		int status = usbh_xfer_process(host, intr_in);
+		if ((status != RTK_SUCCESS) || (intr_in->xfer_state == USBH_PIPE_XFER_ERROR)) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "INTR RX fail: %d\n", usbh_get_urb_state(host, intr_in));
 		}
 	}
@@ -1744,11 +1737,11 @@ static int usbh_cdc_ncm_bulk_rx_time_check(void)
 	usb_host_t *host = cdc->host;
 	usbh_urb_state_t urb_state = usbh_get_urb_state(host, ep);
 
-	if ((USBH_URB_IDLE == urb_state) && (usbh_get_elapsed_ticks(host, ep->tick) >= (USBH_CDC_NCM_BULK_IN_IDLE_MAX_CNT))) {
+	if ((USBH_URB_IDLE == urb_state) && (usbh_tick_elapsed(host, ep->tick) >= (USBH_CDC_NCM_BULK_IN_IDLE_MAX_CNT))) {
 		return RTK_SUCCESS;
 	}
 
-	if ((USBH_URB_BUSY == urb_state) && (usbh_get_elapsed_ticks(host, ep->tick) >= (USBH_CDC_NCM_BULK_IN_NAK_CHECK_MAX_CNT))) {
+	if ((USBH_URB_BUSY == urb_state) && (usbh_tick_elapsed(host, ep->tick) >= (USBH_CDC_NCM_BULK_IN_NAK_CHECK_MAX_CNT))) {
 		return RTK_SUCCESS;
 	}
 
@@ -1773,11 +1766,11 @@ static int usbh_cdc_ncm_bulk_tx_time_check(void)
 	usb_host_t *host = cdc->host;
 	usbh_urb_state_t urb_state = usbh_get_urb_state(host, ep);
 
-	if ((urb_state == USBH_URB_IDLE) && (usbh_get_elapsed_ticks(host, ep->tick) >= (USBH_CDC_NCM_BULK_OUT_IDLE_MAX_CNT))) {
+	if ((urb_state == USBH_URB_IDLE) && (usbh_tick_elapsed(host, ep->tick) >= (USBH_CDC_NCM_BULK_OUT_IDLE_MAX_CNT))) {
 		return RTK_SUCCESS;
 	}
 
-	if ((urb_state == USBH_URB_BUSY) && (usbh_get_elapsed_ticks(host, ep->tick) >= (USBH_CDC_NCM_BULK_OUT_BUSY_MAX_CNT))) {
+	if ((urb_state == USBH_URB_BUSY) && (usbh_tick_elapsed(host, ep->tick) >= (USBH_CDC_NCM_BULK_OUT_BUSY_MAX_CNT))) {
 		return RTK_SUCCESS;
 	}
 
@@ -1800,11 +1793,11 @@ static int usbh_cdc_ncm_intr_rx_time_check(void)
 	usb_host_t *host = cdc->host;
 	usbh_urb_state_t urb_state = usbh_get_urb_state(host, ep);
 
-	if ((USBH_URB_IDLE == urb_state) && (usbh_get_elapsed_ticks(host, ep->tick) >= cdc->intr_check_tick)) {
+	if ((USBH_URB_IDLE == urb_state) && (usbh_tick_elapsed(host, ep->tick) >= cdc->intr_check_tick)) {
 		return RTK_SUCCESS;
 	}
 
-	if ((USBH_URB_BUSY == urb_state) && (usbh_get_elapsed_ticks(host, ep->tick) >= cdc->intr_check_tick)) {
+	if ((USBH_URB_BUSY == urb_state) && (usbh_tick_elapsed(host, ep->tick) >= cdc->intr_check_tick)) {
 		return RTK_SUCCESS;
 	}
 
@@ -1838,10 +1831,10 @@ static int usbh_cdc_ncm_bulk_tx(void)
 	if (cdc->tx_agg_xfer_busy != 0U)
 #endif
 	{
-		if (cdc->state == CDC_NCM_STATE_TRANSFER) {
+		if (cdc->state == CDC_NCM_STATE_XFER) {
 			/* An idle pipe has nothing to drive: the send path notifies when it arms a TX, and
 			   process_bulk_out() is a no-op on IDLE, so only re-drive an armed or in-flight TX */
-			if ((ep->xfer_state != USBH_EP_XFER_IDLE) && (usbh_cdc_ncm_bulk_tx_time_check() == RTK_SUCCESS)) {
+			if ((ep->xfer_state != USBH_PIPE_XFER_IDLE) && (usbh_cdc_ncm_bulk_tx_time_check() == RTK_SUCCESS)) {
 				usbh_notify(host, ep->pipe_num, &usbh_cdc_ncm_driver);
 				ret = RTK_SUCCESS;
 			}
@@ -1868,10 +1861,10 @@ static int usbh_cdc_ncm_bulk_receive(void)
 		return ret;
 	}
 
-	if (cdc->state == CDC_NCM_STATE_TRANSFER) {
-		if ((ep->xfer_state == USBH_EP_XFER_IDLE) || (usbh_cdc_ncm_bulk_rx_time_check() == RTK_SUCCESS)) {
-			if (ep->xfer_state == USBH_EP_XFER_IDLE) {
-				ep->xfer_state = USBH_EP_XFER_START;
+	if (cdc->state == CDC_NCM_STATE_XFER) {
+		if ((ep->xfer_state == USBH_PIPE_XFER_IDLE) || (usbh_cdc_ncm_bulk_rx_time_check() == RTK_SUCCESS)) {
+			if (ep->xfer_state == USBH_PIPE_XFER_IDLE) {
+				ep->xfer_state = USBH_PIPE_XFER_START;
 			}
 
 			usbh_notify(host, ep->pipe_num, &usbh_cdc_ncm_driver);
@@ -1899,12 +1892,12 @@ static int usbh_cdc_ncm_intr_receive(void)
 		return ret;
 	}
 
-	if (cdc->state == CDC_NCM_STATE_TRANSFER) {
-		if (((ep->xfer_state == USBH_EP_XFER_IDLE) && (usbh_get_elapsed_ticks(host, ep->tick) >= cdc->intr_check_tick))
+	if (cdc->state == CDC_NCM_STATE_XFER) {
+		if (((ep->xfer_state == USBH_PIPE_XFER_IDLE) && (usbh_tick_elapsed(host, ep->tick) >= cdc->intr_check_tick))
 			|| (usbh_cdc_ncm_intr_rx_time_check() == RTK_SUCCESS)) {
 			/* A STALL is only reported: re-submitting to a halted endpoint repeats the STALL */
-			if ((ep->xfer_state != USBH_EP_XFER_BUSY) || (usbh_get_urb_state(host, ep) != USBH_URB_STALL)) {
-				ep->xfer_state = USBH_EP_XFER_START;
+			if ((ep->xfer_state != USBH_PIPE_XFER_BUSY) || (usbh_get_urb_state(host, ep) != USBH_URB_STALL)) {
+				ep->xfer_state = USBH_PIPE_XFER_START;
 			}
 			usbh_notify(host, ep->pipe_num, &usbh_cdc_ncm_driver);
 			ret = RTK_SUCCESS;
@@ -1956,7 +1949,7 @@ static int usbh_cdc_ncm_agg_has_room(u8 b, u16 eth_len)
 }
 
 /* Append one Ethernet frame to the fill buffer (room already verified) */
-static void usbh_cdc_ncm_agg_append(u8 *eth_buf, u16 eth_len)
+static void usbh_cdc_ncm_agg_append(const u8 *eth_buf, u16 eth_len)
 {
 	usbh_cdc_ncm_host_t *cdc = &usbh_cdc_ncm_host;
 	u8 b = cdc->tx_agg_fill_idx;
@@ -2037,7 +2030,7 @@ static void usbh_cdc_ncm_agg_launch(void)
 	ep->xfer_buf = cdc->tx_agg_buf[b];
 	ep->xfer_len = ntb_len;
 	ep->trx_zlp = ((ntb_len % ep->ep_mps) == 0U) ? 1U : 0U;
-	ep->xfer_state = USBH_EP_XFER_START;
+	ep->xfer_state = USBH_PIPE_XFER_START;
 
 	cdc->tx_agg_xfer_busy = 1U;
 	/* Switch to the other buffer for subsequent fills */
@@ -2049,7 +2042,7 @@ static void usbh_cdc_ncm_agg_launch(void)
 }
 
 /* Queue one Ethernet frame; coalesce while a transfer is in flight */
-static int usbh_cdc_ncm_agg_send(u8 *buf, u32 len)
+static int usbh_cdc_ncm_agg_send(const u8 *buf, u32 len)
 {
 	usbh_cdc_ncm_host_t *cdc = &usbh_cdc_ncm_host;
 	u16 eth_len;
@@ -2111,7 +2104,7 @@ static int usbh_cdc_ncm_agg_send(u8 *buf, u32 len)
   * @param  len: Data length
   * @retval Status
   */
-static int usbh_cdc_ncm_bulk_send(u8 *buf, u32 len)
+static int usbh_cdc_ncm_bulk_send(const u8 *buf, u32 len)
 {
 	int ret = -RTK_ERR_BUSY;
 	usbh_cdc_ncm_host_t *cdc = &usbh_cdc_ncm_host;
@@ -2131,8 +2124,8 @@ static int usbh_cdc_ncm_bulk_send(u8 *buf, u32 len)
 	}
 
 	/* Only in TRANSFER, and never write the state: the task may have just entered ERROR to clear a halt */
-	if (cdc->state == CDC_NCM_STATE_TRANSFER) {
-		if (ep->xfer_state == USBH_EP_XFER_IDLE) {
+	if (cdc->state == CDC_NCM_STATE_XFER) {
+		if (ep->xfer_state == USBH_PIPE_XFER_IDLE) {
 			/* Build NTB16 frame from Ethernet frame */
 			if (usbh_cdc_ncm_build_ntb16_frame(buf, (u16)len, cdc->tx_ntb_buf, &ntb_len) != RTK_SUCCESS) {
 				RTK_LOGS(TAG, RTK_LOG_ERROR, "NTB build fail\n");
@@ -2147,7 +2140,7 @@ static int usbh_cdc_ncm_bulk_send(u8 *buf, u32 len)
 			} else {
 				ep->trx_zlp = 0;
 			}
-			ep->xfer_state = USBH_EP_XFER_START;
+			ep->xfer_state = USBH_PIPE_XFER_START;
 			usbh_notify(host, ep->pipe_num, &usbh_cdc_ncm_driver);
 			ret = RTK_SUCCESS;
 		}
@@ -2212,17 +2205,17 @@ static void usbh_cdc_ncm_deinit_all_pipe(void)
 
 	/* Close before freeing: until the channel is halted the controller may still DMA into the buffer */
 	if (cdc->intr_rx.pipe.pipe_num != 0U) {
-		usbh_close_pipe(host, &(cdc->intr_rx.pipe));
+		usbh_pipe_close(host, &(cdc->intr_rx.pipe));
 		USBH_CDC_NCM_FREE_MEM(cdc->intr_rx.pipe.xfer_buf);
 	}
 
 	if (cdc->bulk_rx.pipe.pipe_num != 0U) {
-		usbh_close_pipe(host, &(cdc->bulk_rx.pipe));
+		usbh_pipe_close(host, &(cdc->bulk_rx.pipe));
 		USBH_CDC_NCM_FREE_MEM(cdc->bulk_rx.pipe.xfer_buf);
 	}
 
 	if (cdc->bulk_tx.pipe.pipe_num != 0U) {
-		usbh_close_pipe(host, &(cdc->bulk_tx.pipe));
+		usbh_pipe_close(host, &(cdc->bulk_tx.pipe));
 	}
 }
 
@@ -2235,7 +2228,7 @@ static void usbh_cdc_ncm_trace_thread(void *param)
 	while (1) {
 		if (cdc->host) {
 			RTK_LOGS(TAG, RTK_LOG_INFO, "Status %d-%d-%d-%d/out %d-%d %d/in %d-%d/intr %d-%d/%d-%d-%d\n",
-					 cdc->state, cdc->eth_hw_connect, cdc->host->connect_state, cdc->intr_check_tick,
+					 cdc->state, cdc->eth_hw_connect, usbh_dev_get_state(cdc->host), cdc->intr_check_tick,
 					 cdc->bulk_tx.pipe.xfer_state, usbh_get_urb_state(cdc->host, &(cdc->bulk_tx.pipe)), cdc->bulk_tx.pipe.tick,
 					 cdc->bulk_rx.pipe.xfer_state, usbh_get_urb_state(cdc->host, &(cdc->bulk_rx.pipe)),
 					 cdc->intr_rx.pipe.xfer_state, usbh_get_urb_state(cdc->host, &(cdc->intr_rx.pipe)),
@@ -2286,7 +2279,7 @@ static void usbh_cdc_ncm_trace_task_deinit(void)
   * @param  cb: User callback
   * @retval Status
   */
-int usbh_cdc_ncm_init(const usbh_cdc_ncm_state_cb_t *cb, const usbh_cdc_ncm_config_t *cfg)
+int usbh_cdc_ncm_init(const usbh_cdc_ncm_cb_t *cb, const usbh_cdc_ncm_config_t *cfg)
 {
 	usbh_cdc_ncm_host_t *cdc = &usbh_cdc_ncm_host;
 	int ret = RTK_SUCCESS;
@@ -2342,7 +2335,7 @@ int usbh_cdc_ncm_init(const usbh_cdc_ncm_state_cb_t *cb, const usbh_cdc_ncm_conf
 #endif
 
 	/* Every D2H request on it reserves whole EP0 packets, refer to usbh_ctrl_request() */
-	cdc->dongle_ctrl_buf = (u8 *)usb_os_malloc(usb_get_dma_len(USBH_CDC_NCM_MAC_STRING_LEN + sizeof(usb_cdc_ncm_ntb_parameters_t), USB_MAX_EP0_SIZE));
+	cdc->dongle_ctrl_buf = (u8 *)usb_os_malloc(usb_get_dma_len(USBH_CDC_NCM_MAC_STR_BUF_LEN + sizeof(usb_cdc_ncm_ntb_parameters_t), USB_MAX_EP0_SIZE));
 	if (NULL == cdc->dongle_ctrl_buf) {
 		ret = -RTK_ERR_NOMEM;
 		goto ctrl_buf_fail;
@@ -2373,7 +2366,7 @@ int usbh_cdc_ncm_init(const usbh_cdc_ncm_state_cb_t *cb, const usbh_cdc_ncm_conf
 		}
 	}
 
-	ret = usbh_register_class(&usbh_cdc_ncm_driver);
+	ret = usbh_class_register(&usbh_cdc_ncm_driver);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Register class fail %d\n", ret);
 		goto user_deinit;
@@ -2436,7 +2429,7 @@ void usbh_cdc_ncm_deinit(void)
 	/* Before anything is freed: on RTK_SUCCESS no attach/setup/process/detach of this
 	 * class runs any more, an EP0 request it left in flight is halted and a sof() still
 	 * running on another core is waited out. Anything else means nothing was released. */
-	if (usbh_unregister_class(&usbh_cdc_ncm_driver) != RTK_SUCCESS) {
+	if (usbh_class_unregister(&usbh_cdc_ncm_driver) != RTK_SUCCESS) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Deinit refused\n");
 		return;
 	}
@@ -2483,8 +2476,8 @@ int usbh_cdc_ncm_choose_config(usb_host_t *host)
 	dev_id.bInterfaceSubClass = USB_CDC_NCM_SUBCLASS_CODE;
 	dev_id.bInterfaceProtocol = 0x00;
 	dev_id.mMatchFlags = USBH_DEV_ID_MATCH_ITF_INFO;
-	u8 cfg_idx = usbh_get_configuration(host, &dev_id);
-	return usbh_set_configuration(host, cfg_idx);
+	u8 cfg_idx = usbh_config_find(host, &dev_id);
+	return usbh_config_select(host, cfg_idx);
 }
 
 /**
@@ -2494,9 +2487,9 @@ int usbh_cdc_ncm_choose_config(usb_host_t *host)
   * @param[in] host: USB host handle.
   * @return RTK_SUCCESS if both NCM interfaces are found, -RTK_ERR_BADARG otherwise.
   */
-int usbh_cdc_ncm_check_config_desc(usb_host_t *host)
+int usbh_cdc_ncm_check_config(usb_host_t *host)
 {
-	usbh_itf_data_t *ctrl_itf;
+	usbh_itf_t *ctrl_itf;
 	usbh_itf_desc_t *data_itf_desc;
 
 	/* The same rules as attach(), so a configuration accepted here is one attach() takes */
@@ -2511,10 +2504,9 @@ int usbh_cdc_ncm_check_config_desc(usb_host_t *host)
 
 /**
   * @brief  Checks if the CDC NCM device is enumerated and configured on the USB bus.
-  * @return 1: USB configured (ready for control/bulk transfer).
-  *         0: Device not enumerated or not yet configured.
+  * @return true if configured (ready for control/bulk transfer), false if not enumerated or not yet configured.
   */
-u8 usbh_cdc_ncm_is_configured(void)
+bool usbh_cdc_ncm_is_ready(void)
 {
 	return (usbh_cdc_ncm_check_enum_status() == RTK_SUCCESS);
 }
@@ -2526,7 +2518,7 @@ u8 usbh_cdc_ncm_is_configured(void)
   * @param  block: Non-zero to wait until the transfer completes
   * @retval Status
   */
-static int usbh_cdc_ncm_tx_frame(u8 *buf, u32 len, u8 block)
+static int usbh_cdc_ncm_tx_frame(const u8 *buf, u32 len, u8 block)
 {
 #if !defined(CONFIG_USBH_CDC_NCM_TX_AGGREGATION)
 	usbh_cdc_ncm_host_t *cdc = &usbh_cdc_ncm_host;
@@ -2625,13 +2617,13 @@ static int usbh_cdc_ncm_tx_frame(u8 *buf, u32 len, u8 block)
   * @retval RTK_SUCCESS on success, -RTK_ERR_IO while the class is not initialized or being
   *         de-initialized, -RTK_ERR_BADARG in interrupt context, others on transfer failure.
   */
-int usbh_cdc_ncm_transmit(u8 *buf, u32 len, u8 block)
+int usbh_cdc_ncm_transmit(const u8 *buf, u32 len, u8 block)
 {
 	usbh_cdc_ncm_host_t *cdc = &usbh_cdc_ncm_host;
 	int ret;
 
 	/* A blocking send waits on a semaphore */
-	if (usb_os_is_in_interrupt() != 0U) {
+	if (usb_os_is_in_interrupt()) {
 		return -RTK_ERR_BADARG;
 	}
 
@@ -2656,32 +2648,32 @@ int usbh_cdc_ncm_transmit(u8 *buf, u32 len, u8 block)
 
 /**
   * @brief  Checks if the Ethernet link is up (USB enumerated + link active).
-  * @return 1: Device enumerated and Ethernet link is up.
-  *         0: Device not enumerated or Ethernet link is down.
+  * @return true: Device enumerated and Ethernet link is up.
+  *         false: Device not enumerated or Ethernet link is down.
   */
-u8 usbh_cdc_ncm_get_link_status(void)
+bool usbh_cdc_ncm_get_link_status(void)
 {
 	usbh_cdc_ncm_host_t *cdc = &usbh_cdc_ncm_host;
 
 	if (usbh_cdc_ncm_check_enum_status() != RTK_SUCCESS) {
-		return 0;
+		return false;
 	}
 
-	return cdc->eth_hw_connect;
+	return (cdc->eth_hw_connect != 0U);
 }
 
 /**
   * @brief  Gets the MAC address of the connected device.
   * @return Pointer to the 6-byte MAC address array on success, NULL on failure.
   */
-const u8 *usbh_cdc_ncm_get_mac_str(void)
+const u8 *usbh_cdc_ncm_get_mac(void)
 {
 	usbh_cdc_ncm_host_t *cdc = &usbh_cdc_ncm_host;
 
 	/* No wait: the MAC is settled in attach()/setup(), before the device reports ready, so
 	 * waiting here only stalled the caller's link poll while no device was attached.
 	 * The host task writes mac before mac_valid and both before connect_state reaches SETUP, so a caller that
-	 * first waits for usbh_cdc_ncm_is_configured(), as every in-tree one does, reads a complete MAC. */
+	 * first waits for usbh_cdc_ncm_is_ready(), as every in-tree one does, reads a complete MAC. */
 	if (cdc->mac_valid == 0) {
 		return NULL;
 	}

@@ -121,7 +121,7 @@ static const usbd_whc_cb_t whc_cb = {
 };
 
 /* WHC Device */
-static usbd_whc_app_t usbd_whc_app;
+static usbd_whc_app_t whc_app;
 static rtos_sema_t whc_wifi_bulk_in_sema;
 static rtos_sema_t reset_sema;
 /* Serializes the bulk IN thread with the hotplug teardown: the thread transmits only under it
@@ -265,7 +265,7 @@ static int whc_cb_setup(usb_setup_req_t *req, u8 *buf)
 
 static void whc_wifi_deinit(void)
 {
-	usbd_whc_app_t *iapp = &usbd_whc_app;
+	usbd_whc_app_t *iapp = &whc_app;
 	usbd_whc_app_ep_t *ep;
 
 	ep = &iapp->in_ep[USB_EP_NUM(USBD_WHC_WIFI_EP_BULK_IN)];
@@ -284,7 +284,7 @@ static void whc_wifi_deinit(void)
 static int whc_wifi_init(void)
 {
 	int ret = RTK_SUCCESS;
-	usbd_whc_app_t *iapp = &usbd_whc_app;
+	usbd_whc_app_t *iapp = &whc_app;
 	usbd_whc_app_ep_t *ep;
 	u8 ep_num;
 
@@ -365,14 +365,14 @@ static int whc_cb_deinit(void)
   */
 static int whc_cb_set_config(void)
 {
-	usbd_whc_app_t *iapp = &usbd_whc_app;
+	usbd_whc_app_t *iapp = &whc_app;
 	usbd_whc_app_ep_t *ep;
 
 	// Prepare to RX
 	ep = &iapp->out_ep[USB_EP_NUM(USBD_WHC_WIFI_EP_BULK_OUT_2)];
-	usbd_whc_receive_data(USBD_WHC_WIFI_EP_BULK_OUT_2, ep->buf, ep->buf_len, NULL);
+	usbd_whc_receive(USBD_WHC_WIFI_EP_BULK_OUT_2, ep->buf, ep->buf_len, NULL);
 	ep = &iapp->out_ep[USB_EP_NUM(USBD_WHC_WIFI_EP_BULK_OUT_1)];
-	usbd_whc_receive_data(USBD_WHC_WIFI_EP_BULK_OUT_1, ep->buf, ep->buf_len, NULL);
+	usbd_whc_receive(USBD_WHC_WIFI_EP_BULK_OUT_1, ep->buf, ep->buf_len, NULL);
 
 	return RTK_SUCCESS;
 }
@@ -399,7 +399,7 @@ static int whc_cb_clear_config(void)
   */
 static int whc_cb_received(usbd_whc_ep_t *out_ep, u32 len)
 {
-	usbd_whc_app_t *iapp = &usbd_whc_app;
+	usbd_whc_app_t *iapp = &whc_app;
 	usbd_whc_app_ep_t *ep_in;
 	usbd_ep_t *ep = &out_ep->ep;
 	u8 ep_num;
@@ -414,12 +414,12 @@ static int whc_cb_received(usbd_whc_ep_t *out_ep, u32 len)
 		rtos_sema_give(whc_wifi_bulk_in_sema);
 
 		/* Framework auto re-arm excludes this EP; re-arm the next BULK OUT receive */
-		usbd_whc_receive_data(USBD_WHC_WIFI_EP_BULK_OUT_2, ep->xfer_buf, ep->xfer_len, NULL);
+		usbd_whc_receive(USBD_WHC_WIFI_EP_BULK_OUT_2, ep->xfer_buf, ep->xfer_len, NULL);
 		break;
 	case USBD_WHC_WIFI_EP_BULK_OUT_1:
 		/* Sink only: the single WiFi BULK IN loopback is owned by OUT_2. Re-arm at once,
 		 * the framework auto re-arm excludes this EP */
-		usbd_whc_receive_data(USBD_WHC_WIFI_EP_BULK_OUT_1, ep->xfer_buf, ep->xfer_len, NULL);
+		usbd_whc_receive(USBD_WHC_WIFI_EP_BULK_OUT_1, ep->xfer_buf, ep->xfer_len, NULL);
 		break;
 	default:
 		break;
@@ -452,7 +452,7 @@ static void whc_cb_transmitted(usbd_whc_ep_t *in_ep, int status)
 static void example_usbd_whc_wifi_bulk_in_thread(void *param)
 {
 	UNUSED(param);
-	usbd_whc_app_t *iapp = &usbd_whc_app;
+	usbd_whc_app_t *iapp = &whc_app;
 	usbd_whc_app_ep_t *ep;
 	int ret;
 	u8 ep_num;
@@ -473,7 +473,7 @@ static void example_usbd_whc_wifi_bulk_in_thread(void *param)
 				continue;
 			}
 			if ((whc_stack_ready != 0U) && (ep->buf != NULL) && (ep->buf_len != 0U)) {
-				ret = usbd_whc_transmit_data(USBD_WHC_WIFI_EP_BULK_IN, ep->buf, ep->buf_len, NULL);
+				ret = usbd_whc_transmit(USBD_WHC_WIFI_EP_BULK_IN, ep->buf, ep->buf_len, NULL);
 				if ((ret != RTK_SUCCESS) && (ret != -RTK_ERR_IO)) {
 					/* -RTK_ERR_IO: not enumerated (yet), the host is not polling this endpoint */
 					RTK_LOGS(TAG, RTK_LOG_DEBUG, "TX %d\n", ret);

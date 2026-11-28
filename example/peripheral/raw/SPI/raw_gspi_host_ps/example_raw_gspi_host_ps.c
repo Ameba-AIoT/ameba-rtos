@@ -7,7 +7,7 @@
  *  possession or use of this module requires written permission of RealTek.
  */
 #include "ameba_soc.h"
-#include "ameba_gspi.h"
+#include "rtw_gspi_drvio.h"
 #include "example_gspi_ps_ext.h"
 #include "os_wrapper.h"
 
@@ -62,7 +62,7 @@ typedef struct {
 	u16 rsv_last;
 } __attribute__((packed)) gspi_desc_t;
 
-static GSPI_HandleTypeDef gspi;
+static struct whc_gspi_handle gspi;
 
 /* Frame buffers: [CMD 4B][data, 4-byte aligned][Status 8B]. */
 static u8 gspi_txbuf[GSPI_FIFO_BUF_SIZE(GSPI_TX_DESC_SIZE + PS_MAX_PAYLOAD)] ALIGNMTO(32);
@@ -83,7 +83,7 @@ static int ps_send_cmd(const char *cmd)
 	desc->data_len = len;
 	_memcpy(gspi_txbuf + GSPI_CMD_LEN + GSPI_TX_DESC_SIZE, cmd, len);
 
-	ret = GSPI_WriteTxFifo(&gspi, gspi_txbuf, GSPI_TX_DESC_SIZE + len, NULL);
+	ret = GSPI_WIFI_WriteTxFifo(&gspi, gspi_txbuf, GSPI_TX_DESC_SIZE + len, NULL);
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGE(TAG, "send \"%s\" failed (%d)\n", cmd, ret);
 	}
@@ -97,7 +97,7 @@ static u32 ps_wait_rx(u32 timeout_ms)
 	u32 pending;
 
 	for (;;) {
-		pending = GSPI_GetRxLen(&gspi, NULL);
+		pending = GSPI_WIFI_GetRxLen(&gspi, NULL);
 		if (pending) {
 			return pending;
 		}
@@ -112,13 +112,13 @@ static u32 ps_wait_rx(u32 timeout_ms)
 /* Read out everything the Device has queued, so SPI_INT returns high. */
 static void ps_drain_rx(void)
 {
-	u32 pending = GSPI_GetRxLen(&gspi, NULL);
+	u32 pending = GSPI_WIFI_GetRxLen(&gspi, NULL);
 
 	while (pending && (pending <= PS_MAX_PAYLOAD)) {
-		if (GSPI_ReadRxFifo(&gspi, gspi_rxbuf, pending, NULL) != RTK_SUCCESS) {
+		if (GSPI_WIFI_ReadRxFifo(&gspi, gspi_rxbuf, pending, NULL) != RTK_SUCCESS) {
 			break;
 		}
-		pending = GSPI_GetRxLen(&gspi, NULL);
+		pending = GSPI_WIFI_GetRxLen(&gspi, NULL);
 	}
 }
 
@@ -139,7 +139,7 @@ static void ps_pin_input(u32 pin)
  * Device's Phase 0 handshake. Returns 0 on success. */
 static int gspi_host_link_up(void)
 {
-	GSPI_InitTypeDef init;
+	struct whc_gspi_init init;
 	u32 pending;
 	u32 cpu_ind;
 
@@ -163,26 +163,26 @@ static int gspi_host_link_up(void)
 	ps_pin_input(GSPI_INT);
 	ps_pin_input(GSPI_WAKE);
 
-	if (GSPI_Configuration(&gspi, GSPI_BIG_ENDIAN_32) != RTK_SUCCESS) {
+	if (GSPI_WIFI_Configuration(&gspi, GSPI_BIG_ENDIAN_32) != RTK_SUCCESS) {
 		return -1;
 	}
 	/* CPU_RDY is bit24 of the 0x84 word in the AUTO_GEN view. */
-	cpu_ind = GSPI_ReadReg32(&gspi, GSPI_REG_CPU_INDICATION, NULL);
+	cpu_ind = GSPI_WIFI_ReadReg32(&gspi, GSPI_REG_CPU_INDICATION, NULL);
 
 	/* CPWM1/CPWM2 are unmasked because SPI_INT only follows masked HISR bits,
 	 * and phase B uses their toggles as wake triggers. */
-	GSPI_INTClear(&gspi, 0xFFFFFFFF);
-	GSPI_WriteReg32(&gspi, GSPI_REG_RX_AGG, 0, NULL);
-	GSPI_INTConfig(&gspi, GSPI_BIT_RX_REQUEST | GSPI_BIT_TXFIFO_AVAL_INT |
-				   GSPI_BIT_CPWM1_INT | GSPI_BIT_CPWM2_INT, ENABLE);
+	GSPI_WIFI_INTClear(&gspi, 0xFFFFFFFF);
+	GSPI_WIFI_WriteReg32(&gspi, GSPI_REG_RX_AGG, 0, NULL);
+	GSPI_WIFI_INTConfig(&gspi, GSPI_BIT_RX_REQUEST | GSPI_BIT_TXFIFO_AVAL_INT |
+						GSPI_BIT_CPWM1_INT | GSPI_BIT_CPWM2_INT, ENABLE);
 
 	if (ps_send_cmd(HELLO_DEVICE_MSG) != RTK_SUCCESS) {
 		RTK_LOGE(TAG, "handshake failed: TX write\n");
 		return -1;
 	}
 	pending = ps_wait_rx(3000);
-	if ((pending == 0) || (GSPI_ReadRxFifo(&gspi, gspi_rxbuf, pending, NULL) != RTK_SUCCESS)) {
-		RTK_LOGE(TAG, "handshake failed: no reply, HISR=0x%08x\n", GSPI_INTStatus(&gspi, NULL));
+	if ((pending == 0) || (GSPI_WIFI_ReadRxFifo(&gspi, gspi_rxbuf, pending, NULL) != RTK_SUCCESS)) {
+		RTK_LOGE(TAG, "handshake failed: no reply, HISR=0x%08x\n", GSPI_WIFI_INTStatus(&gspi, NULL));
 		return -1;
 	}
 	if (_memcmp(&gspi_rxbuf[GSPI_CMD_LEN], HELLO_HOST_RESP, sizeof(HELLO_HOST_RESP) - 1) != 0) {
@@ -208,10 +208,10 @@ static int ps_check_dev_to_host(const char *stage)
 
 	pending = ps_wait_rx(1000);
 	if (pending == 0) {
-		RTK_LOGE(TAG, "  D2H(%s): timeout, HISR=0x%08x\n", stage, GSPI_INTStatus(&gspi, NULL));
+		RTK_LOGE(TAG, "  D2H(%s): timeout, HISR=0x%08x\n", stage, GSPI_WIFI_INTStatus(&gspi, NULL));
 		return 0;
 	}
-	GSPI_ReadRxFifo(&gspi, gspi_rxbuf, pending, NULL);
+	GSPI_WIFI_ReadRxFifo(&gspi, gspi_rxbuf, pending, NULL);
 	RTK_LOGI(TAG, "  D2H(%s): OK, %d bytes\n", stage, (int)pending);
 	return 1;
 }
@@ -241,12 +241,12 @@ static u32 ps_watch_pins(u32 watch_ms)
  * The TOGGLING bit does not read back, only its edge matters. */
 static void ps_probe_hrpwm(void)
 {
-	u8 next = (u8)(GSPI_ReadReg8(&gspi, GSPI_REG_HRPWM, NULL) ^ GSPI_BIT_R_HRPWM_7);
+	u8 next = (u8)(GSPI_WIFI_ReadReg8(&gspi, GSPI_REG_HRPWM, NULL) ^ GSPI_BIT_R_HRPWM_7);
 
-	GSPI_WriteReg8(&gspi, GSPI_REG_HRPWM, next, NULL);
+	GSPI_WIFI_WriteReg8(&gspi, GSPI_REG_HRPWM, next, NULL);
 	rtos_time_delay_ms(PS_WATCH_MS);
 	RTK_LOGI(TAG, "P1 HRPWM: wrote 0x%02x, readback 0x%02x (Device logs RPWM INT)\n",
-			 next, GSPI_ReadReg8(&gspi, GSPI_REG_HRPWM, NULL));
+			 next, GSPI_WIFI_ReadReg8(&gspi, GSPI_REG_HRPWM, NULL));
 }
 
 /* P2: does HRPWM2 exist in the SPI front end? Only RPWM2 reaches the Device's
@@ -255,11 +255,11 @@ static void ps_probe_hrpwm2(void)
 {
 	u32 val = GSPI_BIT_R_HRPWM2_15 | GSPI_R_HRPWM2(GSPI_BIT_HRPWM2_ACT);
 
-	GSPI_WriteReg32(&gspi, GSPI_REG_HRPWM, val, NULL);
+	GSPI_WIFI_WriteReg32(&gspi, GSPI_REG_HRPWM, val, NULL);
 	rtos_time_delay_ms(PS_WATCH_MS);
 	/* The TOGGLE bit self-clears, so the readback shows ACT only. */
 	RTK_LOGI(TAG, "P2 HRPWM2: wrote 0x%08x, readback 0x%04x (Device logs rpwm_cb)\n",
-			 val, GSPI_GET_R_HRPWM2(GSPI_ReadReg32(&gspi, GSPI_REG_HRPWM, NULL)));
+			 val, GSPI_GET_R_HRPWM2(GSPI_WIFI_ReadReg32(&gspi, GSPI_REG_HRPWM, NULL)));
 }
 
 /* P3: CPU_IND bit0 follows the Device's SDIO_SetReady(). */
@@ -267,7 +267,7 @@ static void ps_probe_cpu_ind(void)
 {
 	u32 elapsed = 0;
 	u32 t_low = 0;
-	u32 last = GSPI_ReadReg32(&gspi, GSPI_REG_CPU_INDICATION, NULL) & GSPI_BIT_SYNC_CPU_RDY_IND;
+	u32 last = GSPI_WIFI_ReadReg32(&gspi, GSPI_REG_CPU_INDICATION, NULL) & GSPI_BIT_SYNC_CPU_RDY_IND;
 	u32 cur;
 	u32 transitions = 0;
 
@@ -276,7 +276,7 @@ static void ps_probe_cpu_ind(void)
 	}
 
 	while ((elapsed < PS_RDY_WATCH_MS) && (transitions < 2)) {
-		cur = GSPI_ReadReg32(&gspi, GSPI_REG_CPU_INDICATION, NULL) & GSPI_BIT_SYNC_CPU_RDY_IND;
+		cur = GSPI_WIFI_ReadReg32(&gspi, GSPI_REG_CPU_INDICATION, NULL) & GSPI_BIT_SYNC_CPU_RDY_IND;
 		if (cur != last) {
 			last = cur;
 			transitions++;
@@ -295,16 +295,16 @@ static void ps_probe_cpu_ind(void)
 /* P4: HCPWM2 mirrors the Device's CCPWM2, so the Host can read its power state. */
 static void ps_probe_hcpwm(void)
 {
-	u16 v0 = GSPI_ReadReg16(&gspi, GSPI_REG_HCPWM2, NULL);
+	u16 v0 = GSPI_WIFI_ReadReg16(&gspi, GSPI_REG_HCPWM2, NULL);
 	u16 v1, v2;
 
 	ps_send_cmd(PS_CMD_CPWM_OFF);
 	rtos_time_delay_ms(PS_WATCH_MS);
-	v1 = GSPI_ReadReg16(&gspi, GSPI_REG_HCPWM2, NULL);
+	v1 = GSPI_WIFI_ReadReg16(&gspi, GSPI_REG_HCPWM2, NULL);
 
 	ps_send_cmd(PS_CMD_CPWM_ON);
 	rtos_time_delay_ms(PS_WATCH_MS);
-	v2 = GSPI_ReadReg16(&gspi, GSPI_REG_HCPWM2, NULL);
+	v2 = GSPI_WIFI_ReadReg16(&gspi, GSPI_REG_HCPWM2, NULL);
 
 	RTK_LOGI(TAG, "P4 HCPWM2(ACT bit0): 0x%04x -> CPWM0 0x%04x -> CPWM1 0x%04x\n", v0, v1, v2);
 }
@@ -317,22 +317,22 @@ static void ps_probe_int_pin(void)
 
 	/* Clear the latched CPWM bits first, otherwise the pin is already low from
 	 * the CPWM changes made by P4. */
-	GSPI_INTClear(&gspi, GSPI_BIT_CPWM1_INT | GSPI_BIT_CPWM2_INT);
+	GSPI_WIFI_INTClear(&gspi, GSPI_BIT_CPWM1_INT | GSPI_BIT_CPWM2_INT);
 
 	ps_send_cmd(PS_CMD_TXDATA);
 	seen = ps_watch_pins(PS_WATCH_MS);
 	RTK_LOGI(TAG, "P5a queued data: INT low=%d WAKE low=%d, HISR=0x%08x pending=%d\n",
 			 (seen & 1u) ? 1 : 0, (seen & 2u) ? 1 : 0,
-			 GSPI_INTStatus(&gspi, NULL), (int)GSPI_GetRxLen(&gspi, NULL));
+			 GSPI_WIFI_INTStatus(&gspi, NULL), (int)GSPI_WIFI_GetRxLen(&gspi, NULL));
 	ps_drain_rx();
-	GSPI_INTClear(&gspi, GSPI_BIT_CPWM1_INT | GSPI_BIT_CPWM2_INT);
+	GSPI_WIFI_INTClear(&gspi, GSPI_BIT_CPWM1_INT | GSPI_BIT_CPWM2_INT);
 
 	ps_send_cmd(PS_CMD_CPWM1_TG);
 	seen = ps_watch_pins(PS_WATCH_MS);
 	RTK_LOGI(TAG, "P5b CPWM1 toggle: INT low=%d, CPWM1_INT in HISR=%d\n",
 			 (seen & 1u) ? 1 : 0,
-			 (GSPI_INTStatus(&gspi, NULL) & GSPI_BIT_CPWM1_INT) ? 1 : 0);
-	GSPI_INTClear(&gspi, GSPI_BIT_CPWM1_INT | GSPI_BIT_CPWM2_INT);
+			 (GSPI_WIFI_INTStatus(&gspi, NULL) & GSPI_BIT_CPWM1_INT) ? 1 : 0);
+	GSPI_WIFI_INTClear(&gspi, GSPI_BIT_CPWM1_INT | GSPI_BIT_CPWM2_INT);
 }
 
 /* P5': out-of-band wake line on D2, the fallback if SPI_INT cannot be used. */
@@ -381,10 +381,10 @@ static int ps_rpwm_notify(u8 suspend)
 	u32 target = suspend ? 0 : GSPI_BIT_SYNC_CPU_RDY_IND;
 	u32 elapsed = 0;
 
-	GSPI_WriteReg32(&gspi, GSPI_REG_HRPWM, val, NULL);
+	GSPI_WIFI_WriteReg32(&gspi, GSPI_REG_HRPWM, val, NULL);
 
 	while (elapsed < PS_RPWM_TIMEOUT_MS) {
-		if ((GSPI_ReadReg32(&gspi, GSPI_REG_CPU_INDICATION, NULL) & GSPI_BIT_SYNC_CPU_RDY_IND) == target) {
+		if ((GSPI_WIFI_ReadReg32(&gspi, GSPI_REG_CPU_INDICATION, NULL) & GSPI_BIT_SYNC_CPU_RDY_IND) == target) {
 			return (int)elapsed;
 		}
 		rtos_time_delay_ms(1);
@@ -403,21 +403,21 @@ static int ps_suspend_resume_once(u32 cycle, u8 verbose)
 	ack_cg = ps_rpwm_notify(1);
 	if (ack_cg < 0) {
 		RTK_LOGE(TAG, "cycle %d: suspend not acked, CPU_INDICATION=0x%08x\n",
-				 cycle, GSPI_ReadReg32(&gspi, GSPI_REG_CPU_INDICATION, NULL));
+				 cycle, GSPI_WIFI_ReadReg32(&gspi, GSPI_REG_CPU_INDICATION, NULL));
 		return -1;
 	}
 
 	/* Registers stay reachable while the Device sleeps: the GSPI front end is in
 	 * the always-on card domain. */
 	rtos_time_delay_ms(PS_SLEEP_MS / 2);
-	ind_asleep = GSPI_ReadReg32(&gspi, GSPI_REG_CPU_INDICATION, NULL);
-	hcpwm2_asleep = GSPI_ReadReg16(&gspi, GSPI_REG_HCPWM2, NULL);
+	ind_asleep = GSPI_WIFI_ReadReg32(&gspi, GSPI_REG_CPU_INDICATION, NULL);
+	hcpwm2_asleep = GSPI_WIFI_ReadReg16(&gspi, GSPI_REG_HCPWM2, NULL);
 	rtos_time_delay_ms(PS_SLEEP_MS / 2);
 
 	ack_act = ps_rpwm_notify(0);
 	if (ack_act < 0) {
 		RTK_LOGE(TAG, "cycle %d: resume not acked, CPU_INDICATION=0x%08x\n",
-				 cycle, GSPI_ReadReg32(&gspi, GSPI_REG_CPU_INDICATION, NULL));
+				 cycle, GSPI_WIFI_ReadReg32(&gspi, GSPI_REG_CPU_INDICATION, NULL));
 		return -1;
 	}
 
@@ -547,12 +547,12 @@ static int ps_host_sleep_once(u32 cycle, u8 trig, u8 verbose)
 	 * no new falling edge could arrive, and a stale edge would end the wait
 	 * without the Host ever sleeping. */
 	ps_drain_rx();
-	GSPI_INTClear(&gspi, GSPI_BIT_CPWM1_INT | GSPI_BIT_CPWM2_INT);
+	GSPI_WIFI_INTClear(&gspi, GSPI_BIT_CPWM1_INT | GSPI_BIT_CPWM2_INT);
 	while (rtos_sema_take(ps_int_sema, 0) == RTK_SUCCESS) {
 	}
 	if (GPIO_ReadDataBit(GSPI_INT) == 0) {
 		RTK_LOGW(TAG, "cycle %d: INT still low before sleep, HISR=0x%08x\n",
-				 cycle, GSPI_INTStatus(&gspi, NULL));
+				 cycle, GSPI_WIFI_INTStatus(&gspi, NULL));
 	}
 
 	if (ps_send_cmd(ps_trig_cmd[trig]) != RTK_SUCCESS) {
@@ -564,25 +564,25 @@ static int ps_host_sleep_once(u32 cycle, u8 trig, u8 verbose)
 		pmu_acquire_wakelock(PMU_DEV_USER_BASE);
 		RTK_LOGE(TAG, "cycle %d(%s): not woken in %dms, INT=%d HISR=0x%08x\n",
 				 cycle, ps_trig_name[trig], PS_HOST_WAKE_TIMEOUT_MS,
-				 GPIO_ReadDataBit(GSPI_INT), GSPI_INTStatus(&gspi, NULL));
+				 GPIO_ReadDataBit(GSPI_INT), GSPI_WIFI_INTStatus(&gspi, NULL));
 		ps_drain_rx();
 		return -1;
 	}
 
-	hisr = GSPI_INTStatus(&gspi, NULL);
+	hisr = GSPI_WIFI_INTStatus(&gspi, NULL);
 	if (trig == PS_TRIG_DATA) {
 		pending = ps_wait_rx(100);
 		if (pending == 0) {
 			RTK_LOGE(TAG, "cycle %d(data): woken but nothing pending, HISR=0x%08x\n", cycle, hisr);
 			return -1;
 		}
-		GSPI_ReadRxFifo(&gspi, gspi_rxbuf, pending, NULL);
+		GSPI_WIFI_ReadRxFifo(&gspi, gspi_rxbuf, pending, NULL);
 	} else if ((hisr & ps_trig_hisr[trig]) == 0) {
 		RTK_LOGE(TAG, "cycle %d(%s): woken but HISR=0x%08x lacks the cause\n",
 				 cycle, ps_trig_name[trig], hisr);
 		return -1;
 	}
-	GSPI_INTClear(&gspi, GSPI_BIT_CPWM1_INT | GSPI_BIT_CPWM2_INT);
+	GSPI_WIFI_INTClear(&gspi, GSPI_BIT_CPWM1_INT | GSPI_BIT_CPWM2_INT);
 
 	if (verbose) {
 		RTK_LOGI(TAG, "cycle %d(%s): woken by SPI_INT, HISR=0x%08x, %d bytes read, INT now %d\n",

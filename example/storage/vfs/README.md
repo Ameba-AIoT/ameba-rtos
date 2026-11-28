@@ -38,7 +38,7 @@ For each mounted target (`test on vfs`, then `test on vfs2` if enabled):
 
 # Note
 
-None
+VFS2 `is not available` on the default NOR layout of `RTL8735C` (the VFS2 region has size 0).
 
 # Supported IC
 

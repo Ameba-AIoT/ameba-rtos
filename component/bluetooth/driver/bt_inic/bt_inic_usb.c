@@ -56,7 +56,7 @@ void bt_inic_usb_tx_data(u8 type, u8 *data, u32 len)
 	}
 
 	if (bt_inic_usb_status == BT_INIC_USB_STATUS_SUSPEND) {
-		usbd_wake_host();
+		usbd_remote_wakeup();
 		for (i = 0; i < BT_INIC_USB_WAKE_HOST_MAX_WAIT_CNT; i++) {
 			osif_delay(BT_INIC_USB_WAKE_HOST_UNIT);
 			if (bt_inic_usb_status == BT_INIC_USB_STATUS_ACTIVE) {
@@ -75,7 +75,7 @@ void bt_inic_usb_tx_data(u8 type, u8 *data, u32 len)
 		osif_mutex_take(usb_priv.evt_tx_lock, BT_TIMEOUT_FOREVER);
 		osif_sem_take(usb_priv.evt_tx_done_sema, BT_TIMEOUT_FOREVER);
 
-		usbd_whc_transmit_data(USBD_WHC_BT_EP_INTR_IN, data, len, NULL);
+		usbd_whc_transmit(USBD_WHC_BT_EP_INTR_IN, data, len, NULL);
 		osif_mutex_give(usb_priv.evt_tx_lock);
 		break;
 	case HCI_ACL:
@@ -83,7 +83,7 @@ void bt_inic_usb_tx_data(u8 type, u8 *data, u32 len)
 		osif_mutex_take(usb_priv.acl_tx_lock, BT_TIMEOUT_FOREVER);
 		osif_sem_take(usb_priv.acl_tx_done_sema, BT_TIMEOUT_FOREVER);
 
-		usbd_whc_transmit_data(USBD_WHC_BT_EP_BULK_IN, data, len, NULL);
+		usbd_whc_transmit(USBD_WHC_BT_EP_BULK_IN, data, len, NULL);
 		osif_mutex_give(usb_priv.acl_tx_lock);
 		break;
 	default:
@@ -352,8 +352,8 @@ void bt_inic_set_config(void)
 	usbd_inic_app_ep_t *ep;
 	// Prepare to RX
 
-	if (usbd_whc_is_bt_en()) {
+	if (usbd_whc_is_bt_enabled()) {
 		ep = &iapp->out_ep[USB_EP_NUM(USBD_WHC_BT_EP_BULK_OUT)];
-		usbd_whc_receive_data(USBD_WHC_BT_EP_BULK_OUT, ep->buf, ep->buf_len, NULL);
+		usbd_whc_receive(USBD_WHC_BT_EP_BULK_OUT, ep->buf, ep->buf_len, NULL);
 	}
 }

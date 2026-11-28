@@ -12,6 +12,12 @@ extern "C"
 {
 #endif
 
+/** @addtogroup BT_Constants BT Constants
+ * @{
+ */
+/** @addtogroup BT_SDP_Constants BT SDP Constants
+ * @{
+ */
 #define RTK_BT_SDK_MAX_RECORD_LENGTH    600                /*!< Maximum length of a single SDP service record, in bytes. */
 
 /************************************** Data Types *************************************/
@@ -110,7 +116,19 @@ extern "C"
 #define RTK_BT_SDP_ATTR_DIP_PRODUCT_VERSION        0x0203  /*!< Product version. */
 #define RTK_BT_SDP_ATTR_DIP_PRIMARY_RECORD         0x0204  /*!< Primary record flag. */
 #define RTK_BT_SDP_ATTR_DIP_VENDOR_ID_SOURCE       0x0205  /*!< Vendor ID source. */
+/**
+ * @}
+ */
+/**
+ * @}
+ */
 
+/** @addtogroup BT_Types BT Types
+ * @{
+ */
+/** @addtogroup BT_SDP_Types BT SDP Types
+ * @{
+ */
 /**
  * @struct    rtk_sdp_record_t
  * @brief     Bluetooth BR/EDR SDP service record.
@@ -145,11 +163,18 @@ typedef struct {
 	uint16_t            cause;         /*!< Completion cause reported by the stack for the SDP discovery; 0x00 on success. */
 } rtk_sdp_discov_cmpl;
 
-/********************************* Functions Declaration *******************************/
 /**
- * @defgroup  bt_sdp_api BT SDP APIs
- * @brief     BT SDP related function APIs.
- * @ingroup   BT_APIs
+ * @}
+ */
+/**
+ * @}
+ */
+
+/********************************* Functions Declaration *******************************/
+/** @addtogroup BT_Functions BT Functions
+ * @{
+ */
+/** @addtogroup BT_SDP_Functions BT SDP Functions
  * @{
  */
 
@@ -176,6 +201,9 @@ uint16_t rtk_sdp_record_add(void *record, uint32_t length);
  */
 uint16_t rtk_bt_sdp_discov_start(uint8_t *bd_addr);
 
+/**
+ * @}
+ */
 /**
  * @}
  */

@@ -525,6 +525,29 @@ class FirmwarePackage(OperationBase):
 
         return Error.success()
 
+    def create_gcm_tag_placeholder(self, output_file:str, plain_file:str, image_type, manifest_config) -> Error:
+        # RLE1509 floader-side GCM: the tags only exist after the floader encrypts, but ROM/bootloader need the tag bin
+        # (its length is in ImgSize, covered by the signature), so emit it filled with 0xFF and let the floader program
+        # the tags into it. Same length as the build-time tag bin: one tag per 32B of the image, padded to 32B.
+        # Header: pattern of the partition and image_addr of the next sub-bin, so the download tool region scan starts the
+        # RSIP region here with the right logical base; byte 16 carries tag_len for the floader. ROM only reads image_size.
+        tag_len = getattr(manifest_config, 'rsip_gcm_tag_len', 0xFF)
+        if tag_len not in (4, 8, 16):
+            self.logger.fatal(f"Invalid rsip_gcm_tag_len {tag_len} for floader GCM encryption")
+            return Error(ErrorType.INVALID_INPUT, "rsip_gcm_tag_len must be 4, 8 or 16")
+        with open(plain_file, 'rb') as f:
+            plain = f.read()
+        tag_size = (len(plain) + 31) // 32 * tag_len
+        tag_size = (tag_size + 31) // 32 * 32
+        if image_type == ImageType.IMAGE1:
+            header = PrependHeader.pattern_1.to_bytes(4, 'big') + PrependHeader.pattern_2.to_bytes(4, 'big')
+        else:
+            header = PrependHeader.img2sign.to_bytes(8, 'big')
+        header += tag_size.to_bytes(4, 'little') + plain[12:16] + bytes([tag_len]) + b'\xff' * 15
+        with open(output_file, 'wb') as f:
+            f.write(header + b'\xff' * tag_size)
+        return Error.success()
+
     def encrypt_and_update_manifest_source(self, input_file:str, image_type, output_encrypt_file:str, manifest_source_file:Union[str, None], sboot:bool = False, hash_source_file:Union[str, None] = None) -> Error:
         input_file_dir = get_file_dir(input_file)
         if input_file_dir != self.output_image_dir:
@@ -563,7 +586,12 @@ class FirmwarePackage(OperationBase):
             else:
                 # floader-side encryption: ship plaintext, floader encrypts on-the-fly
                 shutil.copy(tmp_en_src_file_name, tmp_en_file_name)
-            if gcm_enable:
+            if gcm_enable and not getattr(manifest_config, 'rsip_encrypt_on_build', True) and self.context.soc_project == 'RLE1509':
+                res = self.create_gcm_tag_placeholder(tmp_gcm_prepend_file_name, tmp_en_src_file_name, image_type, manifest_config)
+                if res:
+                    return res
+                if manifest_source_file: append_files(manifest_source_file, tmp_gcm_prepend_file_name)
+            elif gcm_enable:
                 Pad.execute(self.context, tmp_gcm_file_name, 32)
                 PrependHeader.execute(self.context, tmp_gcm_prepend_file_name, tmp_gcm_file_name)
                 #NOTE: manifest file should contains gcm info

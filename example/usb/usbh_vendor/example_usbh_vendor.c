@@ -157,8 +157,8 @@ static const usbh_vendor_cb_t vendor_usr_cb = {
 	.received  = vendor_cb_received,
 };
 
-static const usbh_user_cb_t usbh_usr_cb = {
-	.process = vendor_cb_process
+static const usbh_cb_t usbh_usr_cb = {
+	.event = vendor_cb_process
 };
 
 /* Exported variables --------------------------------------------------------*/
@@ -378,7 +378,7 @@ static void vendor_intr_loopback_test(void)
 			break;
 		}
 		vendor_drain_sema(vendor_intr_send_sema);
-		ret = usbh_vendor_intr_transmit(vendor_intr_loopback_tx_buf, USBH_VENDOR_INTR_LOOPBACK_BUF_SIZE, USBH_VENDOR_INTR_LOOPBACK_CNT);
+		ret = usbh_vendor_intr_transmit(vendor_intr_loopback_tx_buf, USBH_VENDOR_INTR_LOOPBACK_BUF_SIZE);
 		vendor_unlock_stack();
 		if (ret != RTK_SUCCESS) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "INTR TX start fail: %d\n", ret);
@@ -394,7 +394,7 @@ static void vendor_intr_loopback_test(void)
 			break;
 		}
 		vendor_drain_sema(vendor_intr_receive_sema);
-		ret = usbh_vendor_intr_receive(vendor_intr_loopback_rx_buf, USBH_VENDOR_INTR_LOOPBACK_BUF_SIZE, USBH_VENDOR_INTR_LOOPBACK_CNT);
+		ret = usbh_vendor_intr_receive(vendor_intr_loopback_rx_buf, USBH_VENDOR_INTR_LOOPBACK_BUF_SIZE);
 		vendor_unlock_stack();
 		if (ret != RTK_SUCCESS) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "INTR RX start fail: %d\n", ret);
@@ -450,7 +450,7 @@ static void vendor_bulk_loopback_test(void)
 			break;
 		}
 		vendor_drain_sema(vendor_bulk_send_sema);
-		ret = usbh_vendor_bulk_transmit(vendor_bulk_loopback_tx_buf, USBH_VENDOR_BULK_LOOPBACK_BUF_SIZE, USBH_VENDOR_BULK_LOOPBACK_CNT);
+		ret = usbh_vendor_bulk_transmit(vendor_bulk_loopback_tx_buf, USBH_VENDOR_BULK_LOOPBACK_BUF_SIZE);
 		vendor_unlock_stack();
 		if (ret != RTK_SUCCESS) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "BULK TX start fail: %d\n", ret);
@@ -466,7 +466,7 @@ static void vendor_bulk_loopback_test(void)
 			break;
 		}
 		vendor_drain_sema(vendor_bulk_receive_sema);
-		ret = usbh_vendor_bulk_receive(vendor_bulk_loopback_rx_buf, USBH_VENDOR_BULK_LOOPBACK_BUF_SIZE, USBH_VENDOR_BULK_LOOPBACK_CNT);
+		ret = usbh_vendor_bulk_receive(vendor_bulk_loopback_rx_buf, USBH_VENDOR_BULK_LOOPBACK_BUF_SIZE);
 		vendor_unlock_stack();
 		if (ret != RTK_SUCCESS) {
 			RTK_LOGS(TAG, RTK_LOG_ERROR, "BULK RX start fail: %d\n", ret);
@@ -565,11 +565,11 @@ static void vendor_cb_process(usb_host_t *host, u8 msg)
 	UNUSED(host);
 
 	switch (msg) {
-	case USBH_MSG_DISCONNECTED:
+	case USBH_EVENT_DISCONNECTED:
 		vendor_is_ready = 0;
 		break;
 
-	case USBH_MSG_CONNECTED:
+	case USBH_EVENT_CONNECTED:
 		break;
 
 	default:

@@ -85,7 +85,7 @@ static char device_send_to_host(u8 *pdata, u16 size)
 	int ret;
 
 	if (rtos_sema_take(tx_sema, 5000) != RTK_SUCCESS) {
-		RTK_LOGE(TAG, "tx_sema timeout — TX BD exhausted?\n");
+		RTK_LOGE(TAG, "tx_sema timeout - TX BD exhausted?\n");
 		return RTK_FAIL;
 	}
 
@@ -161,7 +161,7 @@ static void device_tx_thread(void *param)
 
 	pkt_buf = (u8 *)rtos_mem_malloc(TP_PACKET_SIZE);
 	if (!pkt_buf) {
-		RTK_LOGE(TAG, "malloc TX packet buf fail — TX thread abort\n");
+		RTK_LOGE(TAG, "malloc TX packet buf fail - TX thread abort\n");
 		rtos_task_delete(NULL);
 		return;
 	}
@@ -179,7 +179,7 @@ static void device_tx_thread(void *param)
 	}
 
 	rtos_mem_free(pkt_buf);
-	RTK_LOGI(TAG, "TX thread stopped (total sent: %lu)\n", tp_tx_count);
+	RTK_LOGI(TAG, "TX thread stopped (total sent: %u)\n", tp_tx_count);
 	rtos_task_delete(NULL);
 }
 
@@ -206,7 +206,7 @@ static char ex_spdio_rx_done_cb(void *priv, void *pbuf, u8 *pdata, u16 size, u8 
 			tp_phase = 1;
 			rtos_sema_give(start_tx_sema);
 		} else {
-			RTK_LOGE(TAG, "[Phase 0] Unexpected message (size=%d) — ignored\n", size);
+			RTK_LOGE(TAG, "[Phase 0] Unexpected message (size=%d) - ignored\n", size);
 		}
 		goto reassign_buf;
 	}
@@ -238,7 +238,7 @@ static char ex_spdio_rx_done_cb(void *priv, void *pbuf, u8 *pdata, u16 size, u8 
 	total_size = PKT_HEADER_SIZE + hdr->data_len + PKT_CRC_SIZE;
 	if (total_size != size) {
 		tp_rx_error++;
-		RTK_LOGE(TAG, "[Phase 1] Size mismatch: hdr=%lu actual=%u seq=%u\n",
+		RTK_LOGE(TAG, "[Phase 1] Size mismatch: hdr=%u actual=%u seq=%u\n",
 				 total_size, size, hdr->seq);
 		goto stats_check;
 	}
@@ -257,7 +257,7 @@ static char ex_spdio_rx_done_cb(void *priv, void *pbuf, u8 *pdata, u16 size, u8 
 stats_check:
 	if (tp_rx_total != 0 && tp_rx_total % TP_STATS_INTERVAL == 0) {
 		err_pct = tp_rx_error * 100 / tp_rx_total;
-		RTK_LOGI(TAG, "[Stats @ RX=%lu] TX sent:%lu | RX total:%lu ok:%lu err:%lu (%lu%%)\n",
+		RTK_LOGI(TAG, "[Stats @ RX=%u] TX sent:%u | RX total:%u ok:%u err:%u (%u%%)\n",
 				 tp_rx_total, tp_tx_count, tp_rx_total, tp_rx_correct, tp_rx_error, err_pct);
 	}
 
@@ -271,7 +271,7 @@ reassign_buf:
 		rx_buf->size_allocated = obj->device_rx_bufsz + SPDIO_DMA_ALIGN_4;
 		rx_buf->buf_addr = (u32)N_BYTE_ALIGMENT((u32)rx_buf->buf_allocated, SPDIO_DMA_ALIGN_4);
 	} else {
-		RTK_LOGE(TAG, "RX buf realloc fail — reusing old buffer\n");
+		RTK_LOGE(TAG, "RX buf realloc fail - reusing old buffer\n");
 	}
 
 	return RTK_SUCCESS;
@@ -315,7 +315,7 @@ static void ex_spdio_thread(void *param)
 	for (i = 0; i < spdio_dev.host_tx_bd_num; i++) {
 		spdio_dev.rx_buf[i].buf_allocated = (u32)rtos_mem_malloc(spdio_dev.device_rx_bufsz + SPDIO_DMA_ALIGN_4);
 		if (!spdio_dev.rx_buf[i].buf_allocated) {
-			RTK_LOGE(TAG, "malloc rx_buf[%lu] fail — freeing partial alloc\n", i);
+			RTK_LOGE(TAG, "malloc rx_buf[%u] fail - freeing partial alloc\n", (unsigned int)i);
 			/* Free previously allocated sub-buffers to avoid leak */
 			while (i-- > 0) {
 				rtos_mem_free((void *)spdio_dev.rx_buf[i].buf_allocated);

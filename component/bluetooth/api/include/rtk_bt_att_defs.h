@@ -15,6 +15,14 @@ extern "C"
 
 #include <basic_types.h>
 
+/** @addtogroup BT_Types BT Types
+ * @{
+ */
+
+/** @addtogroup BT_ATT_Defs_Types BT ATT Defs Types
+ * @{
+ */
+
 /**
  * @typedef   rtk_bt_uuid_type_t
  * @brief     Bluetooth UUID type definition.
@@ -90,7 +98,7 @@ struct bt_uuid_128 {
  * @def       BT_UUID_DECLARE_16
  * @brief     Helper to declare a 16-bit UUID inline.
  * @param     value: 16-bit UUID value in host endianness.
- * @return    Pointer to a generic UUID. @ref struct bt_uuid *.
+ * @return    Pointer to a generic UUID. @ref bt_uuid *.
  */
 #define BT_UUID_DECLARE_16(value) \
 ((struct bt_uuid *)((struct bt_uuid_16[]){BT_UUID_INIT_16(value)}))
@@ -107,19 +115,32 @@ struct bt_uuid_128 {
 /**
  * @def       BT_UUID_16
  * @brief     Helper macro to access the 16-bit UUID from a generic UUID pointer.
- * @param     __u: Generic UUID pointer, @ref struct bt_uuid *
- * @return    16-bit UUID pointer, @ref struct bt_uuid_16 *.
+ * @param     __u: Generic UUID pointer, @ref bt_uuid *
+ * @return    16-bit UUID pointer, @ref bt_uuid_16 *.
  */
 #define BT_UUID_16(__u) CONTAINER_OF(__u, struct bt_uuid_16, uuid)
 
 /**
  * @def       BT_UUID_128
  * @brief     Helper macro to access the 128-bit UUID from a generic UUID pointer.
- * @param     __u: Generic UUID pointer, @ref struct bt_uuid *
- * @return    128-bit UUID pointer, @ref struct bt_uuid_128 *.
+ * @param     __u: Generic UUID pointer, @ref bt_uuid *
+ * @return    128-bit UUID pointer, @ref bt_uuid_128 *.
  */
 #define BT_UUID_128(__u) CONTAINER_OF(__u, struct bt_uuid_128, uuid)
 
+/**
+ * @}
+ */
+/**
+ * @}
+ */
+
+/** @addtogroup BT_Constants BT Constants
+ * @{
+ */
+/** @addtogroup BT_ATT_Defs_Constants BT ATT Defs Constants
+ * @{
+ */
 /**
  * @def       RTK_BT_LE_DEFAULT_ATT_MTU_SIZE
  * @brief     Bluetooth default ATT MTU size.
@@ -351,6 +372,20 @@ struct bt_uuid_128 {
 #define RTK_BT_GATT_SCC_BROADCAST           0x0001
 
 /**
+ * @}
+ */
+/**
+ * @}
+ */
+
+/** @addtogroup BT_Types BT Types
+ * @{
+ */
+/** @addtogroup BT_ATT_Defs_Types BT ATT Defs Types
+ * @{
+ */
+
+/**
  * @enum      attr_perm_t
  * @brief     GATT attribute permission bit field values.
  */
@@ -363,6 +398,13 @@ enum attr_perm_t {
 	RTK_BT_GATT_PERM_READ_AUTHEN   = BIT4,    /*!< Attribute read permission with authentication. */
 	RTK_BT_GATT_PERM_WRITE_AUTHEN  = BIT5,    /*!< Attribute write permission with authentication. */
 };
+
+/**
+ * @}
+ */
+/**
+ * @}
+ */
 
 #ifdef __cplusplus
 }

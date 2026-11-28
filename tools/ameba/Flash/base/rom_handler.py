@@ -268,7 +268,8 @@ class RomHandler(object):
                     progressed = False
                     for size in (256, 128, 64):
                         ret2, chunk = self.ameba.read_bytes(0.02, size)
-                        if ret2 == ErrType.OK and chunk:
+                        # 超时时 read_bytes 仍返回已读到的部分数据，NAK 可能就在其中，不能丢
+                        if ret2 in (ErrType.OK, ErrType.DEV_TIMEOUT) and chunk:
                             all_data.extend(chunk)
                             progressed = True
                             # 快速检查 NAK（如果协议中 NAK 是单字节，可在大块内检查）

@@ -303,13 +303,13 @@ static RingBuffer *uvc_rb;
 #elif (USBH_UVC_HTTPC_BUFFER_MODE == 0)
 /* Ringbuffer mode: H264 streaming + MJPEG per-frame upload.
  * uvc_buf_size and uvc_httpc_save_img_sema needed by MJPEG path
- * in usbh_uvc_img_prepare when fmt_type != H264. */
+ * in uvc_img_prepare when fmt_type != H264. */
 static RingBuffer *uvc_rb;
 static u32 uvc_buf_size = 0;
 static rtos_sema_t uvc_httpc_save_img_sema = NULL;
 #endif
 #if (USBH_UVC_HTTPC_BUFFER_MODE == 1)
-/* PSRAM buffer state — written by usbh_uvc_img_prepare, read by upload thread */
+/* PSRAM buffer state — written by uvc_img_prepare, read by upload thread */
 static u8 *uvc_httpc_psramp_write_ptr = NULL;
 static u32 uvc_httpc_psramp_total_len = 0;
 static u8 *uvc_httpc_psramp_base = NULL;
@@ -450,7 +450,7 @@ static void uvc_calculate_tp(u32 loop)
 	rx_total_bytes = 0U;
 }
 
-static void usbh_uvc_img_prepare(usbh_uvc_frame_t *frame)
+static void uvc_img_prepare(usbh_uvc_frame_t *frame)
 {
 	u32 len = frame->byteused;
 
@@ -686,7 +686,7 @@ exit:
 	}
 	rtos_mem_free((void *)buffer_h264);
 	/* The capture loop is still running: destroy uvc_rb under uvc_buf_mutex, as the HTTPC path does,
-	 * so it cannot race with usbh_uvc_img_prepare(), which touches uvc_rb only while holding it */
+	 * so it cannot race with uvc_img_prepare(), which touches uvc_rb only while holding it */
 	if (rtos_mutex_take(uvc_buf_mutex, RTOS_MAX_TIMEOUT) == RTK_SUCCESS) {
 		if (uvc_rb != NULL) {
 			RingBuffer_Destroy(uvc_rb);
@@ -1193,7 +1193,7 @@ exit:
 	rtos_mem_free((void *)buffer_h264);
 	buffer_h264 = NULL;
 	/* Stop the capture loop from fetching more frames before the ring is torn down,
-	 * then destroy uvc_rb under uvc_buf_mutex so it cannot race with usbh_uvc_img_prepare,
+	 * then destroy uvc_rb under uvc_buf_mutex so it cannot race with uvc_img_prepare,
 	 * which also touches uvc_rb only while holding that mutex. Without this, capture could
 	 * call RingBuffer_Space/Write on a just-freed (NULL) uvc_rb and take a data abort. */
 	uvc_httpc_connected = 0;
@@ -1307,7 +1307,7 @@ static void uvc_httpc_stop(void)
 		rtos_sema_delete(uvc_httpc_done_sema);
 		uvc_httpc_done_sema = NULL;
 	}
-	/* The upload thread has left, and the only writer, usbh_uvc_img_prepare(), runs on the
+	/* The upload thread has left, and the only writer, uvc_img_prepare(), runs on the
 	 * calling thread, which is past its capture loop: nothing reads or writes the buffer now */
 	if (uvc_httpc_psramp_base != NULL) {
 		rtos_mem_free(uvc_httpc_psramp_base);
@@ -1787,7 +1787,7 @@ static void example_usbh_uvc_test(void *param)
 				 * correct for every APP mode and pixel format (MJPEG/YUV/H264/H265). */
 				rx_total_bytes += len;
 				RTK_LOGS(TAG, RTK_LOG_INFO, "Captured frame %d, len=%d\n", img_cnt + 1, len);
-				usbh_uvc_img_prepare(buf);
+				uvc_img_prepare(buf);
 			}
 
 			if (usbh_uvc_put_frame(buf, CONFIG_USBH_UVC_STREAM_INDEX) != RTK_SUCCESS) {
@@ -1994,7 +1994,7 @@ static int uvc_start(void) {
 	ret = rtos_task_create(&task, "usbh_uvc_attach_thread", example_usbh_uvc_attach_thread, NULL,
 						   CONFIG_USBH_UVC_ATTACH_THREAD_STACK_SIZE, CONFIG_USBH_UVC_ATTACH_THREAD_PRIORITY);
 	if (ret != RTK_SUCCESS) {
-		goto usbh_uvc_deinit_exit;
+		goto uvc_deinit_exit;
 	}
 
 #if CONFIG_USBH_UVC_HOT_PLUG
@@ -2023,7 +2023,7 @@ static int uvc_start(void) {
 
 	return RTK_SUCCESS;
 
-usbh_uvc_deinit_exit:
+uvc_deinit_exit:
 	uvc_stack_ready = 0U;
 	usbh_stop();
 	usbh_uvc_deinit();
@@ -2059,7 +2059,7 @@ static void example_usbh_uvc_task(void *param) {
 
 #if (CONFIG_USBH_UVC_APP == USBH_UVC_APP_HTTPC)
 /* Dotted-quad IPv4 check: four decimal fields 0..255, no leading sign, nothing else */
-static int uvch_check_ip(const char *ip) {
+static int uvc_check_ip(const char *ip) {
 	u32 field = 0U;
 	u32 digits = 0U;
 	u32 dots = 0U;
@@ -2084,7 +2084,7 @@ static int uvch_check_ip(const char *ip) {
 	return ((dots == 3U) && (digits != 0U)) ? RTK_SUCCESS : -RTK_ERR_BADARG;
 }
 
-static int uvch_set_ip(u16 argc, u8 * argv[]) {
+static int uvc_set_ip(u16 argc, u8 * argv[]) {
 	const char *cmd = (argc != 0U) ? (const char *)argv[0] : NULL;
 
 	if ((cmd == NULL) || (_stricmp(cmd, "help") == 0) || (_stricmp(cmd, "?") == 0)) {
@@ -2095,7 +2095,7 @@ static int uvch_set_ip(u16 argc, u8 * argv[]) {
 		return (cmd == NULL) ? -RTK_ERR_BADARG : RTK_SUCCESS;
 	}
 
-	if ((_stricmp(cmd, "ip") != 0) || (argc != 2U) || (uvch_check_ip((const char *)argv[1]) != RTK_SUCCESS)) {
+	if ((_stricmp(cmd, "ip") != 0) || (argc != 2U) || (uvc_check_ip((const char *)argv[1]) != RTK_SUCCESS)) {
 		RTK_LOGS(TAG, RTK_LOG_ERROR, "Usage: AT+USBHUVC=ip,<a.b.c.d>\n");
 		return -RTK_ERR_BADARG;
 	}
@@ -2107,8 +2107,8 @@ static int uvch_set_ip(u16 argc, u8 * argv[]) {
 }
 
 /* AT entry: argv[0] is reserved by the AT parser and argv[1] holds the first parameter */
-static void uvch_set_ip_at(u16 argc, char **argv) {
-	int ret = uvch_set_ip((argc != 0U) ? (argc - 1U) : 0U, (u8 **)&argv[1]);
+static void uvc_set_ip_at(u16 argc, char **argv) {
+	int ret = uvc_set_ip((argc != 0U) ? (argc - 1U) : 0U, (u8 **)&argv[1]);
 
 	if (ret == RTK_SUCCESS) {
 		at_printf(ATCMD_OK_END_STR);
@@ -2120,7 +2120,7 @@ static void uvch_set_ip_at(u16 argc, char **argv) {
 /* AT commands "AT+<cmd>=<p1>,<p2>...": the command name is case-sensitive, the parameters are not */
 ATCMD_TABLE_DATA_SECTION
 const log_item_t uvc_httpc_test_cmd_table[] = {
-	{"+USBHUVC", uvch_set_ip_at},
+	{"+USBHUVC", uvc_set_ip_at},
 };
 #endif
 
