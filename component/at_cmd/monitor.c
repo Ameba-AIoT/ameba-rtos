@@ -9,6 +9,9 @@
 
 #include "ameba_soc.h"
 #include "os_wrapper.h"
+#if defined(CONFIG_WHC_HOST) && defined(CONFIG_WHC_DEV_TCPIP_KEEPALIVE)
+#include "whc_def.h"
+#endif
 
 #if defined  (__GNUC__)
 #pragma GCC diagnostic push
@@ -117,6 +120,14 @@ CmdTickPS(
 	if (_strcmp((const char *)argv[0], "r") == 0) { // release
 		pmu_release_wakelock(PMU_OS);
 	}
+
+#if defined(CONFIG_WHC_HOST) && defined(CONFIG_WHC_DEV_TCPIP_KEEPALIVE)
+	if (_strcmp((const char *)argv[0], "h") == 0) { // wifi host driver unready
+		u32 param = 0;  /* 0 = going to sleep */
+		extern int whc_ipc_host_api_message_send(u32 id, u32 * param_buf, u32 buf_len);
+		whc_ipc_host_api_message_send(WHC_API_WIFI_HOST_READY, &param, 1);
+	}
+#endif
 
 	if (_strcmp((const char *)argv[0], "a") == 0) { // acquire
 		pmu_acquire_wakelock(PMU_OS);

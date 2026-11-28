@@ -18,11 +18,38 @@ extern "C"
 {
 #endif
 
+/** @addtogroup BT_Constants BT Constants
+ * @{
+ */
+/** @addtogroup BT_Audio_Constants BT Audio Constants
+ * @{
+ */
+/** @addtogroup BT_Audio_Intf_Constants BT Audio Intf Constants
+ * @{
+ */
 #define RTK_BT_AUDIO_TRACK_PRES_MAX_COUNT 100 /*!< Number of presentation deltas averaged per compensation decision. At 10 ms per packet this covers 1 s. */
 #define RTK_BT_AUDIO_TRACK_PRES_DELTA_THRESHOLD_NS 1000000 /*!< Presentation delta threshold. Units: nanoseconds. */
 #define BT_AUDIO_CLOCK_EPOCH_THRESHOLD  0x80000000  /*!< Half cycle of the 32-bit clock, used to detect the controller free run clock reset. */
+/**
+ * @}
+ */
+/**
+ * @}
+ */
+/**
+ * @}
+ */
 
 /************************************** Data Types *************************************/
+/** @addtogroup BT_Types BT Types
+ * @{
+ */
+/** @addtogroup BT_Audio_Types BT Audio Types
+ * @{
+ */
+/** @addtogroup BT_Audio_Intf_Types BT Audio Intf Types
+ * @{
+ */
 /**
  * @typedef   rtk_bt_audio_role_t
  * @brief     Bluetooth audio role.
@@ -63,7 +90,7 @@ typedef enum {
 typedef uint16_t (*pcm_data_cb)(void *p_pcm_buf, uint16_t p_len, void *pentity, void *track);
 
 /**
- * @typedef   rtk_bt_audio_codec_conf_t
+ * @struct   rtk_bt_audio_codec_conf_t
  * @brief     Bluetooth audio codec configuration.
  */
 typedef struct {
@@ -73,7 +100,7 @@ typedef struct {
 } rtk_bt_audio_codec_conf_t;
 
 /**
- * @typedef   rtk_bt_audio_track_t
+ * @struct   rtk_bt_audio_track_t
  * @brief     Bluetooth audio track context.
  */
 typedef struct {
@@ -135,7 +162,7 @@ typedef struct {
 } rtk_bt_audio_track_t;
 
 /**
- * @typedef   rtk_bt_audio_record_t
+ * @struct   rtk_bt_audio_record_t
  * @brief     Bluetooth audio record context.
  */
 typedef struct {
@@ -149,7 +176,7 @@ typedef struct {
 } rtk_bt_audio_record_t;
 
 /**
- * @typedef   T_AUDIO_STREAM_MSG
+ * @struct   T_AUDIO_STREAM_MSG
  * @brief     Bluetooth audio stream message handled by the audio stream task.
  */
 typedef struct {
@@ -162,12 +189,24 @@ typedef struct {
 	uint32_t                ts_us;                  /*!< Timestamp of the audio stream data.
                                                      *   Units: microseconds. */
 } T_AUDIO_STREAM_MSG;
+/**
+ * @}
+ */
+/**
+ * @}
+ */
+/**
+ * @}
+ */
 
 /********************************* Functions Declaration *******************************/
-/**
- * @defgroup  bt_audio_intf BT Audio Interface APIs
- * @brief     BT Audio related interface APIs.
- * @ingroup   bt_audio_group
+/** @addtogroup BT_Functions BT Functions
+ * @{
+ */
+/** @addtogroup BT_Audio_Functions BT Audio Functions
+ * @{
+ */
+/** @addtogroup BT_Audio_Intf_Functions BT Audio Intf Functions
  * @{
  */
 
@@ -477,6 +516,12 @@ uint16_t rtk_bt_audio_init(void);
  */
 uint16_t rtk_bt_audio_deinit(void);
 
+/**
+ * @}
+ */
+/**
+ * @}
+ */
 /**
  * @}
  */

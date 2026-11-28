@@ -504,7 +504,7 @@ void vPortAssertIfInISR(void)
     configASSERT( !xPortCpuIsInInterrupt() );
 }
 
-BaseType_t xPortCpuIsInInterrupt()
+BaseType_t xPortCpuIsInInterrupt(void)
 {
 	uint32_t ulIrqStatus;
 	uint32_t ret;

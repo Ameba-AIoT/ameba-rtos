@@ -217,6 +217,11 @@ elseif(CONFIG_AMEBASMART OR CONFIG_AMEBALITE OR CONFIG_AMEBADPLUS)
     ameba_list_append_if(CONFIG_AMEBALITE, private_sources, hw_alt_legacy/ecc_alt.c)
     ameba_list_append_if(CONFIG_AMEBASMART, private_sources, hw_alt_legacy/rsa_alt.c)
 endif()
+
+if(CONFIG_TOOLCHAIN_LLVM)
+    # 'now' is only filled and read under MBEDTLS_HAVE_TIME_DATE, which is off
+    set_source_files_properties(library/x509_crt.c PROPERTIES COMPILE_OPTIONS -Wno-uninitialized-const-pointer)
+endif()
 # Component private part, user config end
 #------------------------------#
 

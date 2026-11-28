@@ -16,10 +16,15 @@ from PySide6.QtWidgets import (
 
 from base.json_utils import JsonUtils
 from base.device_profile import RtkDeviceProfile
+from base.memory_info import MemoryInfo
+from base.version import Version
 from base.rt_settings import RtSettings
 from app.port_progress_widget import PortProgressWidget
 from app.download_worker import DownloadWorker
 from app.detect_layout_worker import DetectLayoutWorker
+
+# Oldest device profile version supported, profiles older than 1.2.0 are converted on load
+MinSupportedDeviceProfileVersion = (1, 1, 0)
 
 
 class MPFlashToolMain(QMainWindow):
@@ -109,7 +114,7 @@ class MPFlashToolMain(QMainWindow):
         self._build_common_tab(common_tab)
         self.main_tab_widget.addTab(common_tab, "Download")
 
-        # ── Configuration Tab (Post Process & FlashProtectionProcess) ─────────
+        # ── Configuration Tab (Post Process) ─────────
         options_tab = QWidget()
         self._build_options_tab(options_tab)
         self.main_tab_widget.addTab(options_tab, "Configuration")
@@ -146,7 +151,7 @@ class MPFlashToolMain(QMainWindow):
         self.profile_image_table = QTableWidget()
         self.profile_image_table.setColumnCount(6)
         self.profile_image_table.setHorizontalHeaderLabels(
-            ["", "Image Name", "Start Addr (Hex)", "End Addr (Hex)", "Memory Type", "Full Erase"]
+            ["", "Image Name", "Start Addr (Hex)", "End Addr (Hex)", "Partition Type", "Full Erase"]
         )
         self.profile_image_table.horizontalHeader().setSectionResizeMode(
             0, QHeaderView.ResizeMode.ResizeToContents
@@ -169,7 +174,7 @@ class MPFlashToolMain(QMainWindow):
         self.profile_image_table.verticalHeader().setVisible(False)
         self.profile_image_table.verticalHeader().setDefaultSectionSize(28)
         # The Layout table is editable: users may tweak Image Name / Address /
-        # Memory Type and toggle the Mandatory / Full Erase checkboxes. The edits
+        # Partition Type and toggle the Mandatory / Full Erase checkboxes. The edits
         # are synced back into self.profile_info before flashing (so the run uses
         # them) and written back to the profile file on close. Factory Mode locks
         # editing (see _apply_factory_mode).
@@ -359,22 +364,6 @@ class MPFlashToolMain(QMainWindow):
         )
         self.post_process_combo.setMaximumWidth(280)
         left_layout.addWidget(self.post_process_combo)
-
-        self._lbl_flash_protection = QLabel("Flash Protection Process:")
-        left_layout.addWidget(self._lbl_flash_protection)
-        self.flash_protection_combo = QComboBox()
-        self._flash_protection_items = [
-            ("Try program", RtSettings.FLASH_PROTECTION_PROCESS_TRY),
-            ("Unlock and program", RtSettings.FLASH_PROTECTION_PROCESS_UNLOCK),
-            ("Abort", RtSettings.FLASH_PROTECTION_PROCESS_ABORT),
-        ]
-        for text, data in self._flash_protection_items:
-            self.flash_protection_combo.addItem(text, userData=data)
-        self.flash_protection_combo.setCurrentIndex(
-            self.flash_protection_combo.findData(RtSettings.FLASH_PROTECTION_PROCESS_UNLOCK)
-        )
-        self.flash_protection_combo.setMaximumWidth(280)
-        left_layout.addWidget(self.flash_protection_combo)
 
         top_section.addLayout(left_layout)
         top_section.addStretch()
@@ -792,14 +781,16 @@ class MPFlashToolMain(QMainWindow):
             worker.start()
 
     def _load_rt_settings(self) -> RtSettings:
-        """Load Settings.json into an RtSettings object (empty defaults if file absent)."""
+        """Load Settings.json into an RtSettings object (empty defaults if file absent).
+        Defaults too if the file cannot be loaded, then _settings_load_failed is set."""
         path = self._settings_path()
+        self._settings_load_failed = False
         try:
             if os.path.exists(path):
                 dt = JsonUtils.load_from_file(path, need_decrypt=False)
                 return RtSettings(**(dt or {}))
         except Exception:
-            pass
+            self._settings_load_failed = True
         return RtSettings(**{})
 
     def _build_settings(self) -> RtSettings:
@@ -807,8 +798,6 @@ class MPFlashToolMain(QMainWindow):
         settings = self._load_rt_settings()
 
         settings.post_process = self.post_process_combo.currentData() or "NONE"
-
-        settings.flash_protection_process = self.flash_protection_combo.currentData() or RtSettings.FLASH_PROTECTION_PROCESS_UNLOCK
 
         settings.log_level = self.log_level_combo.currentData() or "info"
         settings.save_log = self.save_log_checkbox.isChecked()
@@ -1013,32 +1002,34 @@ class MPFlashToolMain(QMainWindow):
         self.image_line_edit.clear()
         self.len_hex_edit.setText("0x0")
 
+    # Device profile partition types (MemoryInfo.PARTITION_TYPE_*): the profile does not
+    # tell NOR from NAND, a FLASH partition is downloaded to the flash type of the device
+    _PARTITION_TYPE_NAMES = {
+        MemoryInfo.PARTITION_TYPE_RAM: "RAM",
+        MemoryInfo.PARTITION_TYPE_FLASH: "FLASH",
+        MemoryInfo.PARTITION_TYPE_SECOND_FLASH: "SECOND FLASH",
+    }
+
     @staticmethod
     def _memory_type_str(memory_type):
-        mapping = {
-            0: "RAM",
-            1: "NOR",
-            2: "NAND",
-            3: "VENDOR",
-            4: "HYBRID",
-        }
-        return mapping.get(memory_type, str(memory_type))
+        return MPFlashToolMain._PARTITION_TYPE_NAMES.get(memory_type, str(memory_type))
 
     @staticmethod
     def _memory_type_from_str(text):
-        """Parse a Memory Type cell back to its int code.
+        """Parse a Partition Type cell back to its int code.
 
-        Accepts a name ("NOR", case-insensitive) or a numeric string; returns
-        None when the value cannot be understood.
+        Accepts a name ("FLASH", case-insensitive, also "SECOND_FLASH") or a
+        numeric string; returns None when the value cannot be understood.
         """
-        names = {"RAM": 0, "NOR": 1, "NAND": 2, "VENDOR": 3, "HYBRID": 4}
-        t = (text or "").strip().upper()
+        names = {name: code for code, name in MPFlashToolMain._PARTITION_TYPE_NAMES.items()}
+        t = " ".join((text or "").strip().upper().replace("_", " ").split())
         if t in names:
             return names[t]
         try:
-            return int(t, 0)
+            value = int(t, 0)
         except (TypeError, ValueError):
             return None
+        return value if value in MPFlashToolMain._PARTITION_TYPE_NAMES else None
 
     @staticmethod
     def _parse_address(text):
@@ -1083,7 +1074,7 @@ class MPFlashToolMain(QMainWindow):
             if mtype_item is not None:
                 mtype = self._memory_type_from_str(mtype_item.text())
                 if mtype is None:
-                    errors.append(f"Row {i + 1}: invalid Memory Type '{mtype_item.text()}'")
+                    errors.append(f"Row {i + 1}: invalid Partition Type '{mtype_item.text()}'")
                 else:
                     image.memory_type = mtype
 
@@ -1104,6 +1095,13 @@ class MPFlashToolMain(QMainWindow):
                 or self._profile_json is None):
             return
         try:
+            # A profile older than 1.2.0 was converted on load (partition types, NAND
+            # addresses based at 0x08000000): save it as 1.2.0, or it would be converted
+            # again on the next load
+            if self.profile_info.upgraded:
+                self._profile_json["Version"] = self.profile_info.version
+                self._profile_json["FlashStartAddress"] = self.profile_info.flash_start_address
+                self._profile_json.pop("MemoryType", None)
             images = self._profile_json.get("Images", [])
             for i, image in enumerate(self.profile_info.images):
                 if i >= len(images):
@@ -1160,7 +1158,7 @@ class MPFlashToolMain(QMainWindow):
             ("固件名", "Image Name"),
             ("起始地址 (Hex)", "Start Addr (Hex)"),
             ("结束地址 (Hex)", "End Addr (Hex)"),
-            ("存储类型", "Memory Type"),
+            ("分区类型", "Partition Type"),
             ("全片擦除", "Full Erase"),
         ]
         for col, (cn, en) in enumerate(table_headers):
@@ -1205,7 +1203,6 @@ class MPFlashToolMain(QMainWindow):
 
         self._lbl_log_level.setText("日志级别：" if cn_mode else "Log Level:")
         self._lbl_post_process.setText("后处理：" if cn_mode else "Post Process:")
-        self._lbl_flash_protection.setText("Flash 写保护处理：" if cn_mode else "Flash Protection Process:")
 
         # ── Combo items ───────────────────────────────────────────────────
         self._update_combo_items(self.log_level_combo, cn_mode, [
@@ -1220,11 +1217,6 @@ class MPFlashToolMain(QMainWindow):
             ("指示下载结果", "Indicate download result", "INDICATION"),
             ("复位设备", "Reset device", "RESET"),
             ("启动", "Boot", "BOOT"),
-        ])
-        self._update_combo_items(self.flash_protection_combo, cn_mode, [
-            ("尝试烧录", "Try program", RtSettings.FLASH_PROTECTION_PROCESS_TRY),
-            ("解锁并烧录", "Unlock and program", RtSettings.FLASH_PROTECTION_PROCESS_UNLOCK),
-            ("中止", "Abort", RtSettings.FLASH_PROTECTION_PROCESS_ABORT),
         ])
 
     @staticmethod
@@ -1250,6 +1242,9 @@ class MPFlashToolMain(QMainWindow):
             profile_json = JsonUtils.load_from_file(file_path)
             if profile_json is None:
                 return "Failed to load profile file"
+            version = Version(profile_json.get("Version") or "1.0.0")
+            if version.to_tuple() < MinSupportedDeviceProfileVersion:
+                return f"Unsupported device profile version {version.__repr__()}"
             self.profile_info = RtkDeviceProfile(**profile_json)
         except Exception as e:
             return str(e)
@@ -1377,6 +1372,9 @@ class MPFlashToolMain(QMainWindow):
     def save_settings(self):
         # Load existing settings so RT fields written by the CLI are preserved.
         settings = self._load_rt_settings()
+        if self._settings_load_failed:
+            # Saving now would reset every setting not shown in the GUI to its default
+            return
 
         # Update GUI fields on the RtSettings object
         settings.profile = getattr(self, "current_profile_path", "")
@@ -1402,8 +1400,6 @@ class MPFlashToolMain(QMainWindow):
         settings.usb_download = self.usb_download_checkbox.isChecked()
 
         settings.post_process = self.post_process_combo.currentData() or "NONE"
-
-        settings.flash_protection_process = self.flash_protection_combo.currentData() or RtSettings.FLASH_PROTECTION_PROCESS_UNLOCK
 
         settings.log_level = self.log_level_combo.currentData() or "info"
         settings.save_log = self.save_log_checkbox.isChecked()
@@ -1436,20 +1432,30 @@ class MPFlashToolMain(QMainWindow):
         except (ValueError, TypeError):
             pass
 
+        def to_int(value, default):
+            # Address/Length are saved as int, but accept a hand edited hex string (e.g. "0x08000000")
+            # and fall back to the default on anything else, the window must still open
+            try:
+                return int(value, 0) if isinstance(value, str) else int(value)
+            except (TypeError, ValueError):
+                return default
+
         if profile_ok:
             if settings.image_dir:
                 self.image_line_edit.setText(settings.image_dir)
                 self.len_hex_edit.setText("0x0")
             else:
                 self.image_line_edit.setText(settings.image)
-                self.len_hex_edit.setText(f"0x{int(settings.length):X}")
-            self.addr_hex_edit.setText(f"0x{int(settings.address):08X}")
+                self.len_hex_edit.setText(f"0x{to_int(settings.length, 0):X}")
+            self.addr_hex_edit.setText(f"0x{to_int(settings.address, 0x08000000):08X}")
         else:
             self.image_line_edit.clear()
             self.addr_hex_edit.setText("0x08000000")
             self.len_hex_edit.setText("0x0")
 
-        self._saved_ports = settings.port if isinstance(settings.port, list) else None
+        # An empty list (the default, or no port found when last closed) means no saved ports:
+        # filtering by it would hide every port at startup
+        self._saved_ports = settings.port if (isinstance(settings.port, list) and settings.port) else None
         self._port_slot_map = {}
         for port, slot_id in settings.port_slot_map.items():
             try:
@@ -1469,10 +1475,6 @@ class MPFlashToolMain(QMainWindow):
         idx = self.post_process_combo.findData(settings.post_process)
         if idx >= 0:
             self.post_process_combo.setCurrentIndex(idx)
-
-        idx = self.flash_protection_combo.findData(settings.flash_protection_process)
-        if idx >= 0:
-            self.flash_protection_combo.setCurrentIndex(idx)
 
         idx = self.log_level_combo.findData(settings.log_level)
         if idx >= 0:
@@ -1500,7 +1502,6 @@ class MPFlashToolMain(QMainWindow):
         self.profile_line_edit.setEnabled(configurable)
         self.profile_browse_button.setEnabled(configurable)
         self.post_process_combo.setEnabled(configurable)
-        self.flash_protection_combo.setEnabled(configurable)
         self.log_level_combo.setEnabled(configurable)
         self.save_log_checkbox.setEnabled(configurable)
         self.auto_program_spic_addr_mode_4byte_checkbox.setEnabled(configurable)

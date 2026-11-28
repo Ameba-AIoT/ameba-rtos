@@ -54,6 +54,8 @@ if(CONFIG_TOOLCHAIN_LLVM)
         -fno-tree-loop-distribute-patterns
         -Wno-maybe-uninitialized
         -Werror
+        # clang compiles the preprocessed .i: macro info is lost, false -Wtautological-compare in macros such as RTK_LOGS
+        -save-temps=obj
     )
     ameba_list_append(c_GLOBAL_COMMON_COMPILE_C_OPTIONS
         # clang is stricter than gcc, existing code triggers many extra warnings: keep them as warnings

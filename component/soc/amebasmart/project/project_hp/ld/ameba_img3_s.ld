@@ -19,7 +19,7 @@ SECTIONS
 		__ram_tz_end__ = .;
 	} > KM4_BD_DRAM_TZ
 
-	.gnu.sgstubs :
+	.gnu.sgstubs ALIGN(32) :
 	{
 		. = ALIGN(32);
 		__ram_image3_nsc_start__ = .;

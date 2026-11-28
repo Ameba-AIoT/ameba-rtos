@@ -21,14 +21,14 @@ static u8 GDMA_IrqNum[8] = {
 	GDMA0_CHANNEL7_IRQ,
 #elif defined (CONFIG_ARM_CORE_CM0)
 	/* KM0 GDMA IRQ */
-	NULL,
-	NULL,
+	0,
+	0,
 	GDMA0_CHANNEL2_IRQ,
 	GDMA0_CHANNEL3_IRQ,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
+	0,
+	0,
+	0,
+	0,
 #endif
 };
 

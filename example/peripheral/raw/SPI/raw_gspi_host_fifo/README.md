@@ -80,9 +80,9 @@ Build and Download:
 
 # Note
 
-All bus access goes through the SoC driver `ameba_gspi.c` (`GSPI_Init`, `GSPI_Configuration`, `GSPI_ReadReg*`/`GSPI_WriteReg*`, `GSPI_WriteTxFifo`/`GSPI_ReadRxFifo`). The example only builds the TX descriptor, validates payloads and keeps statistics; frame layout, byte order, 4-byte padding, the HIMR shadow and the DMA data path live in the driver. With `GSPI_USE_DMA = 1` the FIFO data phases use GDMA: 715KB/s versus 446KB/s with per-byte polling at 10MHz, both error-free. The notes below record the protocol details that drove the driver's design.
+All bus access goes through the GSPI host driver `rtw_gspi_drvio_v<N>.c` (`GSPI_Init`, `GSPI_WIFI_Configuration`, `GSPI_WIFI_ReadReg*`/`GSPI_WIFI_WriteReg*`, `GSPI_WIFI_WriteTxFifo`/`GSPI_WIFI_ReadRxFifo`). The example only builds the TX descriptor, validates payloads and keeps statistics; frame layout, byte order, 4-byte padding, the HIMR shadow and the DMA data path live in the driver. With `GSPI_USE_DMA = 1` the FIFO data phases use GDMA: 715KB/s versus 446KB/s with per-byte polling at 10MHz, both error-free. The notes below record the protocol details that drove the driver's design.
 
-1. The Host's very first bus transaction must be the `SPI_CFG` write, and it must be byte-swapped because the Device still interprets the bus with its default little-endian setting at that moment. Any other bus activity first — including a stray CS assertion during boot — makes the hardware fall back to SDIO Device mode. This is why CS is driven high before the boot delay, latching the high level into the output register before enabling the output driver.
+1. The Host's very first bus transaction must be the `SPI_CFG` write, and it is sent like every other frame: CMD MSB byte first, Data and Status LSB byte first. Any other bus activity first — including a stray CS assertion during boot — makes the hardware fall back to SDIO Device mode. This is why CS is driven high before the boot delay, latching the high level into the output register before enabling the output driver.
 2. CS is driven by GPIO rather than the SPI controller's hardware CS: one GSPI transaction must keep CS low across its whole Command/Data/Status sequence, which automatic CS cannot guarantee.
 3. Transfers use `spi_master_write()` per byte rather than `spi_master_write_read_stream()`. The latter is interrupt-driven and returns before the bytes shift out, which lets CS rise mid-transfer.
 4. `PINMUX_FUNCTION_SPI0`/`SPI1` (function ID 9/10) select the SoC's one fixed SPI pin group and are not valid on the SDIO-shared pins used here. `spi_init()` is therefore bootstrapped on that unused fixed group purely for its clock-enable and controller setup, and the real pins are routed afterwards with the per-signal extended function IDs (`SPI0_CLK`/`SPI0_MISO`/`SPI0_MOSI`).
@@ -121,3 +121,23 @@ All bus access goes through the SoC driver `ameba_gspi.c` (`GSPI_Init`, `GSPI_Co
 # Supported IC
 
 RTL8721F
+
+## Selecting the GSPI protocol version
+
+The driver (`component/wifi/whc/whc_host_rtos/gspi/rtw_gspi_drvio_v<N>.c`) is built by this example, not by the SoC fwlib.
+The protocol version of the Device is set in `CMakeLists.txt`:
+
+```cmake
+set(gspi_ver 2)    # 1: AmebaGreen2 Device; 2: RLE1509 Device
+```
+
+The same variable selects the driver source and defines `GSPI_DRV_VER`, which `rtw_gspi_drvio.h` uses to pick the header.
+
+**Edit this line by hand to match the Device before building:**
+
+| Device IC | `gspi_ver` |
+|---|---|
+| RLE1509 | `2` (default) |
+| RTL8721F | `1` |
+
+A mismatch shows up as `activation attempt N: SPI_CFG reads 0x00`. The version lives in CMake, so no `-p` is needed after changing it.

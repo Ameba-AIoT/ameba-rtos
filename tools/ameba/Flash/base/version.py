@@ -12,5 +12,8 @@ class Version:
         self.minor = int(parts[1] if len(parts) > 1 else 0)
         self.micro = int(parts[2] if len(parts) > 2 else 0)
 
+    def to_tuple(self):
+        return (self.major, self.minor, self.micro)
+
     def __repr__(self):
         return f"{self.major}.{self.minor}.{self.micro}"

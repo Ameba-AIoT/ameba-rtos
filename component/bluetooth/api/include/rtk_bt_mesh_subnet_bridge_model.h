@@ -12,6 +12,16 @@
 
 /************************************** Data Types *************************************/
 
+/** @addtogroup BT_Types BT Types
+ * @{
+ */
+/** @addtogroup BT_Mesh_Types BT Mesh Types
+ * @{
+ */
+/** @addtogroup BT_Mesh_Subnet_Bridge_Model_Types BT Mesh Subnet Bridge Model Types
+ * @{
+ */
+
 /**
  * @enum      rtk_bt_mesh_subnet_bridge_client_model_act_t
  * @brief     BLE MESH subnet bridge client model act definition.
@@ -38,7 +48,7 @@ typedef struct {
 } rtk_bt_mesh_subnet_bridge_get_t;
 
 /**
- * @enum      rtk_bt_mesh_subnet_bridge_state_t
+ * @typedef   rtk_bt_mesh_subnet_bridge_state_t
  * @brief     BLE MESH subnet bridge state definition.
  */
 enum {
@@ -102,7 +112,7 @@ typedef struct {
 } rtk_bt_mesh_bridging_table_remove_t;
 
 /**
- * @enum      rtk_bt_mesh_subnets_filter_t
+ * @typedef   rtk_bt_mesh_subnets_filter_t
  * @brief     BLE MESH bridged subnets filter definition.
  */
 enum {
@@ -265,11 +275,24 @@ typedef struct {
                                       *   It is at least 16. */
 } _PACKED4_ rtk_bt_mesh_bridging_table_size_status_t;
 
-/********************************* Functions Declaration *******************************/
 /**
- * @defgroup  ble_mesh_subnet_bridge_model BT LE Mesh Subnet Bridge Model APIs
- * @brief     BT LE Mesh Subnet Bridge Model related function APIs
- * @ingroup   ble_mesh_api_group
+ * @}
+ */
+/**
+ * @}
+ */
+/**
+ * @}
+ */
+
+/********************************* Functions Declaration *******************************/
+/** @addtogroup BT_Functions BT Functions
+ * @{
+ */
+/** @addtogroup BT_Mesh_Functions BT Mesh Functions
+ * @{
+ */
+/** @addtogroup BT_Mesh_Subnet_Bridge_Model_Functions BT Mesh Subnet Bridge Model Functions
  * @{
  */
 
@@ -343,6 +366,12 @@ uint16_t rtk_bt_mesh_bridging_table_get(rtk_bt_mesh_bridging_table_get_t *bridgi
  */
 uint16_t rtk_bt_mesh_bridging_table_size_get(rtk_bt_mesh_bridging_table_size_get_t *bridging_table_size_get);
 
+/**
+ * @}
+ */
+/**
+ * @}
+ */
 /**
  * @}
  */

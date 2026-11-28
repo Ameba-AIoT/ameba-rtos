@@ -13,6 +13,15 @@
 #define _SHORT_ENUM_        __attribute__ ((packed))
 #endif
 
+/** @addtogroup BT_Constants BT Constants
+ * @{
+ */
+/** @addtogroup BT_Mesh_Constants BT Mesh Constants
+ * @{
+ */
+/** @addtogroup BT_Mesh_Def_Constants BT Mesh Def Constants
+ * @{
+ */
 #define ACCESS_OPCODE_SIZE(opcode)              ((opcode) >= 0xc00000 ? 3 : ((opcode) >= 0x8000 ? 2 : 1))
 
 #define RTK_BT_MESH_EVT_MEM_OP_MAX_SIZE    0xffffffff
@@ -26,20 +35,20 @@
  * @brief     Default configuration parameters of the mesh node.
  * @{
  */
-#define BT_MESH_CONFIG_NET_TRANS_COUNTS          6
-#define BT_MESH_CONFIG_NET_TRANS_STEPS           0
+#define BT_MESH_CONFIG_NET_TRANS_COUNTS          6    /*!< Default Network Transmit Count, transmissions of each Network PDU = count + 1. */
+#define BT_MESH_CONFIG_NET_TRANS_STEPS           0    /*!< Default Network Transmit Interval Steps, interval = (steps + 1) * 10 ms. */
 #if defined(BT_MESH_CONFIG_RELAY_IS_ENABL)
 /* Deprecated name IS_ENABL kept by the user, take over its value */
 #define BT_MESH_CONFIG_RELAY_IS_ENABLE            BT_MESH_CONFIG_RELAY_IS_ENABL
 #else
-#define BT_MESH_CONFIG_RELAY_IS_ENABLE            1
+#define BT_MESH_CONFIG_RELAY_IS_ENABLE            1    /*!< Whether the Relay feature is enabled by default, 0: disabled, 1: enabled. */
 /* Deprecated alias of BT_MESH_CONFIG_RELAY_IS_ENABLE */
 #define BT_MESH_CONFIG_RELAY_IS_ENABL             BT_MESH_CONFIG_RELAY_IS_ENABLE
 #endif
-#define BT_MESH_CONFIG_RELAY_RETRANS_COUNTS      2
-#define BT_MESH_CONFIG_RELAY_RETRANS_STEPS       0
-#define BT_MESH_CONFIG_TRANS_RETRANS_COUNTS      4
-#define BT_MESH_CONFIG_MSG_TTL                   5
+#define BT_MESH_CONFIG_RELAY_RETRANS_COUNTS      2    /*!< Default Relay Retransmit Count, transmissions of each relayed Network PDU = count + 1. */
+#define BT_MESH_CONFIG_RELAY_RETRANS_STEPS       0    /*!< Default Relay Retransmit Interval Steps, interval = (steps + 1) * 10 ms. */
+#define BT_MESH_CONFIG_TRANS_RETRANS_COUNTS      4    /*!< Default Transport Transmit Count, retransmissions of each segment of a segmented message. */
+#define BT_MESH_CONFIG_MSG_TTL                   5    /*!< Default TTL of the messages sent by the node. */
 /** @} */
 
 /**
@@ -47,11 +56,11 @@
  * @brief     Switches of the features introduced in the Mesh 1.1.
  * @{
  */
-#define BT_MESH_ENABLE_DIRECTED_FORWARDING                             1
-#define BT_MESH_ENABLE_SUBNET_BRIDGE                                   1
-#define BT_MESH_ENABLE_PRIVATE_BEACON                                  1
-#define BT_MESH_ENABLE_EPA_PROVISION                                   1
-#define BT_MESH_ENABLE_REMOTE_PROVISION                                1
+#define BT_MESH_ENABLE_DIRECTED_FORWARDING                             1    /*!< Enable the Directed Forwarding feature. */
+#define BT_MESH_ENABLE_SUBNET_BRIDGE                                   1    /*!< Enable the Subnet Bridge feature. */
+#define BT_MESH_ENABLE_PRIVATE_BEACON                                  1    /*!< Enable the Private Beacon feature. */
+#define BT_MESH_ENABLE_EPA_PROVISION                                   1    /*!< Enable the EPA feature. */
+#define BT_MESH_ENABLE_REMOTE_PROVISION                                1    /*!< Enable the Remote Provisioning feature. */
 /** @} */
 
 #if defined(BT_MESH_ENABLE_DIRECTED_FORWARDING) && BT_MESH_ENABLE_DIRECTED_FORWARDING
@@ -60,14 +69,22 @@
  * @brief     Default configuration parameters of the Directed Forwarding.
  * @{
  */
-#define BT_MESH_CONFIG_DF_ACCESS_NET_TRANS_COUNTS          6
-#define BT_MESH_CONFIG_DF_ACCESS_NET_TRANS_STEPS           0
-#define BT_MESH_CONFIG_DF_ACCESS_RELAY_RETRANS_COUNTS      2
-#define BT_MESH_CONFIG_DF_ACCESS_RELAY_RETRANS_STEPS       0
-#define BT_MESH_CONFIG_DF_CTL_NET_TRANS_COUNTS             6
-#define BT_MESH_CONFIG_DF_CTL_NET_TRANS_STEPS              0
-#define BT_MESH_CONFIG_DF_CTL_RELAY_RETRANS_COUNTS         2
-#define BT_MESH_CONFIG_DF_CTL_RELAY_RETRANS_STEPS          0
+#define BT_MESH_CONFIG_DF_ACCESS_NET_TRANS_COUNTS          6    /*!< Default Network Transmit Count of the directed access messages.
+                                                                 *   Transmissions of each Network PDU = count + 1. */
+#define BT_MESH_CONFIG_DF_ACCESS_NET_TRANS_STEPS           0    /*!< Default Network Transmit Interval Steps of the directed access messages.
+                                                                 *   Interval = (steps + 1) * 10 ms. */
+#define BT_MESH_CONFIG_DF_ACCESS_RELAY_RETRANS_COUNTS      2    /*!< Default Relay Retransmit Count of the directed access messages.
+                                                                 *   Transmissions of each relayed Network PDU = count + 1. */
+#define BT_MESH_CONFIG_DF_ACCESS_RELAY_RETRANS_STEPS       0    /*!< Default Relay Retransmit Interval Steps of the directed access messages.
+                                                                 *   Interval = (steps + 1) * 10 ms. */
+#define BT_MESH_CONFIG_DF_CTL_NET_TRANS_COUNTS             6    /*!< Default Network Transmit Count of the directed control messages.
+                                                                 *   Transmissions of each Network PDU = count + 1. */
+#define BT_MESH_CONFIG_DF_CTL_NET_TRANS_STEPS              0    /*!< Default Network Transmit Interval Steps of the directed control messages.
+                                                                 *   Interval = (steps + 1) * 10 ms. */
+#define BT_MESH_CONFIG_DF_CTL_RELAY_RETRANS_COUNTS         2    /*!< Default Relay Retransmit Count of the directed control messages.
+                                                                 *   Transmissions of each relayed Network PDU = count + 1. */
+#define BT_MESH_CONFIG_DF_CTL_RELAY_RETRANS_STEPS          0    /*!< Default Relay Retransmit Interval Steps of the directed control messages.
+                                                                 *   Interval = (steps + 1) * 10 ms. */
 /** @} */
 #endif
 
@@ -78,91 +95,95 @@
  */
 #if defined(RTK_BLE_MESH_PROVISIONER_SUPPORT) && RTK_BLE_MESH_PROVISIONER_SUPPORT
 #if defined(BT_MESH_ENABLE_DIRECTED_FORWARDING) && BT_MESH_ENABLE_DIRECTED_FORWARDING
-#define BT_MESH_ENABLE_DIRECTED_FORWARDING_CLIENT_MODEL                1
+#define BT_MESH_ENABLE_DIRECTED_FORWARDING_CLIENT_MODEL                1    /*!< Enable the Directed Forwarding client model. */
 #endif
 #if defined(BT_MESH_ENABLE_SUBNET_BRIDGE) && BT_MESH_ENABLE_SUBNET_BRIDGE
-#define BT_MESH_ENABLE_SUBNET_BRIDGE_CLIENT_MODEL                      1
+#define BT_MESH_ENABLE_SUBNET_BRIDGE_CLIENT_MODEL                      1    /*!< Enable the Subnet Bridge client model. */
 #endif
 #if defined(BT_MESH_ENABLE_PRIVATE_BEACON) && BT_MESH_ENABLE_PRIVATE_BEACON
-#define BT_MESH_ENABLE_PRIVATE_BEACON_CLIENT_MODEL                     1
+#define BT_MESH_ENABLE_PRIVATE_BEACON_CLIENT_MODEL                     1    /*!< Enable the Private Beacon client model. */
 #endif
 #if defined(BT_MESH_ENABLE_REMOTE_PROVISION) && BT_MESH_ENABLE_REMOTE_PROVISION
-#define BT_MESH_ENABLE_REMOTE_PROVISIONING_CLIENT_MODEL                1
+#define BT_MESH_ENABLE_REMOTE_PROVISIONING_CLIENT_MODEL                1    /*!< Enable the Remote Provisioning client model. */
 #endif
-#define BT_MESH_ENABLE_GENERIC_ON_OFF_CLIENT_MODEL                     1
-#define BT_MESH_ENABLE_GENERIC_LEVEL_CLIENT_MODEL                      1
-#define BT_MESH_ENABLE_GENERIC_DEFAULT_TRANSITION_TIME_CLIENT_MODEL    1
-#define BT_MESH_ENABLE_GENERIC_POWER_ONOFF_CLIENT_MODEL                1
-#define BT_MESH_ENABLE_GENERIC_POWER_LEVEL_CLIENT_MODEL                1
-#define BT_MESH_ENABLE_GENERIC_BATTERY_CLIENT_MODEL                    1
-#define BT_MESH_ENABLE_GENERIC_LOCATION_CLIENT_MODEL                   1
-#define BT_MESH_ENABLE_GENERIC_PROPERTY_CLIENT_MODEL                   1
-#define BT_MESH_ENABLE_SENSOR_CLIENT_MODEL                             1
-#define BT_MESH_ENABLE_TIME_CLIENT_MODEL                               1
-#define BT_MESH_ENABLE_SCENE_CLIENT_MODEL                              1
-#define BT_MESH_ENABLE_SCHEDULER_CLIENT_MODEL                          1
-#define BT_MESH_ENABLE_LIGHT_LIGHTNESS_CLIENT_MODEL                    1
-#define BT_MESH_ENABLE_LIGHT_CTL_CLIENT_MODEL                          1
-#define BT_MESH_ENABLE_LIGHT_HSL_CLIENT_MODEL                          1
-#define BT_MESH_ENABLE_LIGHT_XYL_CLIENT_MODEL                          1
-#define BT_MESH_ENABLE_LIGHT_LC_CLIENT_MODEL                           1
-#define BT_MESH_ENABLE_DFU_INITIATOR_ROLE                              0  /*!< initiator and standalone updater can not enable at same time */
-#define BT_MESH_ENABLE_DFU_STANDALONE_UPDATER_ROLE                     1  /*!< initiator and standalone updater can not enable at same time */
+#define BT_MESH_ENABLE_GENERIC_ON_OFF_CLIENT_MODEL                     1    /*!< Enable the Generic OnOff client model. */
+#define BT_MESH_ENABLE_GENERIC_LEVEL_CLIENT_MODEL                      1    /*!< Enable the Generic Level client model. */
+#define BT_MESH_ENABLE_GENERIC_DEFAULT_TRANSITION_TIME_CLIENT_MODEL    1    /*!< Enable the Generic Default Transition Time client model. */
+#define BT_MESH_ENABLE_GENERIC_POWER_ONOFF_CLIENT_MODEL                1    /*!< Enable the Generic Power OnOff client model. */
+#define BT_MESH_ENABLE_GENERIC_POWER_LEVEL_CLIENT_MODEL                1    /*!< Enable the Generic Power Level client model. */
+#define BT_MESH_ENABLE_GENERIC_BATTERY_CLIENT_MODEL                    1    /*!< Enable the Generic Battery client model. */
+#define BT_MESH_ENABLE_GENERIC_LOCATION_CLIENT_MODEL                   1    /*!< Enable the Generic Location client model. */
+#define BT_MESH_ENABLE_GENERIC_PROPERTY_CLIENT_MODEL                   1    /*!< Enable the Generic Property client model. */
+#define BT_MESH_ENABLE_SENSOR_CLIENT_MODEL                             1    /*!< Enable the Sensor client model. */
+#define BT_MESH_ENABLE_TIME_CLIENT_MODEL                               1    /*!< Enable the Time client model. */
+#define BT_MESH_ENABLE_SCENE_CLIENT_MODEL                              1    /*!< Enable the Scene client model. */
+#define BT_MESH_ENABLE_SCHEDULER_CLIENT_MODEL                          1    /*!< Enable the Scheduler client model. */
+#define BT_MESH_ENABLE_LIGHT_LIGHTNESS_CLIENT_MODEL                    1    /*!< Enable the Light Lightness client model. */
+#define BT_MESH_ENABLE_LIGHT_CTL_CLIENT_MODEL                          1    /*!< Enable the Light CTL client model. */
+#define BT_MESH_ENABLE_LIGHT_HSL_CLIENT_MODEL                          1    /*!< Enable the Light HSL client model. */
+#define BT_MESH_ENABLE_LIGHT_XYL_CLIENT_MODEL                          1    /*!< Enable the Light xyL client model. */
+#define BT_MESH_ENABLE_LIGHT_LC_CLIENT_MODEL                           1    /*!< Enable the Light LC client model. */
+#define BT_MESH_ENABLE_DFU_INITIATOR_ROLE                              0    /*!< Enable the DFU Initiator role.
+                                                                             *   Initiator and standalone updater can not enable at same time */
+#define BT_MESH_ENABLE_DFU_STANDALONE_UPDATER_ROLE                     1    /*!< Enable the DFU Standalone Updater role.
+                                                                             *   Initiator and standalone updater can not enable at same time */
 #endif
 
 #if defined(RTK_BLE_MESH_DEVICE_SUPPORT) && RTK_BLE_MESH_DEVICE_SUPPORT
 #if defined(BT_MESH_ENABLE_REMOTE_PROVISION) && BT_MESH_ENABLE_REMOTE_PROVISION
-#define BT_MESH_ENABLE_REMOTE_PROVISIONING_SERVER_MODEL                1
+#define BT_MESH_ENABLE_REMOTE_PROVISIONING_SERVER_MODEL                1    /*!< Enable the Remote Provisioning server model. */
 #endif
-#define BT_MESH_ENABLE_GENERIC_ON_OFF_SERVER_MODEL                     1
-#define BT_MESH_ENABLE_GENERIC_LEVEL_SERVER_MODEL                      1
+#define BT_MESH_ENABLE_GENERIC_ON_OFF_SERVER_MODEL                     1    /*!< Enable the Generic OnOff server model. */
+#define BT_MESH_ENABLE_GENERIC_LEVEL_SERVER_MODEL                      1    /*!< Enable the Generic Level server model. */
 #if defined(BT_MESH_ENABLE_GENERIC_DEFAULT_TRANSTION_TIME_SERVER_MODEL)
 /* Deprecated name TRANSTION kept by the user, take over its value */
 #define BT_MESH_ENABLE_GENERIC_DEFAULT_TRANSITION_TIME_SERVER_MODEL \
     BT_MESH_ENABLE_GENERIC_DEFAULT_TRANSTION_TIME_SERVER_MODEL
 #else
-#define BT_MESH_ENABLE_GENERIC_DEFAULT_TRANSITION_TIME_SERVER_MODEL    1
+#define BT_MESH_ENABLE_GENERIC_DEFAULT_TRANSITION_TIME_SERVER_MODEL    1    /*!< Enable the Generic Default Transition Time server model. */
 /* Deprecated alias of BT_MESH_ENABLE_GENERIC_DEFAULT_TRANSITION_TIME_SERVER_MODEL */
 #define BT_MESH_ENABLE_GENERIC_DEFAULT_TRANSTION_TIME_SERVER_MODEL \
     BT_MESH_ENABLE_GENERIC_DEFAULT_TRANSITION_TIME_SERVER_MODEL
 #endif
-#define BT_MESH_ENABLE_GENERIC_POWER_ON_OFF_SERVER_MODEL               1
-#define BT_MESH_ENABLE_GENERIC_POWER_ON_OFF_SETUP_SERVER_MODEL         1
-#define BT_MESH_ENABLE_GENERIC_POWER_LEVEL_SERVER_MODEL                1
-#define BT_MESH_ENABLE_GENERIC_POWER_LEVEL_SETUP_SERVER_MODEL          1
-#define BT_MESH_ENABLE_GENERIC_BATTERY_SERVER_MODEL                    1
-#define BT_MESH_ENABLE_GENERIC_LOCATION_SERVER_MODEL                   1
-#define BT_MESH_ENABLE_GENERIC_LOCATION_SETUP_SERVER_MODEL             1
-#define BT_MESH_ENABLE_GENERIC_ADMIN_PROPERTY_SERVER_MODEL             1
-#define BT_MESH_ENABLE_GENERIC_MANUFACTURER_PROPERTY_SERVER_MODEL      1
-#define BT_MESH_ENABLE_GENERIC_USER_PROPERTY_SERVER_MODEL              1
-#define BT_MESH_ENABLE_GENERIC_CLIENT_PROPERTY_SERVER_MODEL            1
-#define BT_MESH_ENABLE_SENSOR_SERVER_MODEL                             1
-#define BT_MESH_ENABLE_SENSOR_SETUP_SERVER_MODEL                       1
-#define BT_MESH_ENABLE_TIME_SERVER_MODEL                               1
-#define BT_MESH_ENABLE_TIME_SETUP_SERVER_MODEL                         1
-#define BT_MESH_ENABLE_SCENE_SERVER_MODEL                              1
-#define BT_MESH_ENABLE_SCENE_SETUP_SERVER_MODEL                        1
-#define BT_MESH_ENABLE_SCHEDULER_SERVER_MODEL                          1
-#define BT_MESH_ENABLE_SCHEDULER_SETUP_SERVER_MODEL                    1
-#define BT_MESH_ENABLE_LIGHT_LIGHTNESS_SERVER_MODEL                    1
-#define BT_MESH_ENABLE_LIGHT_LIGHTNESS_SETUP_SERVER_MODEL              1
-#define BT_MESH_ENABLE_LIGHT_CTL_SERVER_MODEL                          1
-#define BT_MESH_ENABLE_LIGHT_CTL_SETUP_SERVER_MODEL                    1
-#define BT_MESH_ENABLE_LIGHT_CTL_TEMPERATURE_SERVER_MODEL              1
-#define BT_MESH_ENABLE_LIGHT_HSL_SERVER_MODEL                          1
-#define BT_MESH_ENABLE_LIGHT_HSL_SETUP_SERVER_MODEL                    1
-#define BT_MESH_ENABLE_LIGHT_HSL_HUE_SERVER_MODEL                      1
-#define BT_MESH_ENABLE_LIGHT_HSL_SATURATION_SERVER_MODEL               1
-#define BT_MESH_ENABLE_LIGHT_XYL_SERVER_MODEL                          1
-#define BT_MESH_ENABLE_LIGHT_XYL_SETUP_SERVER_MODEL                    1
-#define BT_MESH_ENABLE_LIGHT_LC_SERVER_MODEL                           1
-#define BT_MESH_ENABLE_LIGHT_LC_SETUP_SERVER_MODEL                     1
-#define BT_MESH_ENABLE_DFU_DISTRIBUTOR_ROLE                            0  /*!< distributor and target can not enable at same time */
-#define BT_MESH_ENABLE_DFU_TARGET_ROLE                                 1  /*!< distributor and target can not enable at same time */
+#define BT_MESH_ENABLE_GENERIC_POWER_ON_OFF_SERVER_MODEL               1    /*!< Enable the Generic Power OnOff server model. */
+#define BT_MESH_ENABLE_GENERIC_POWER_ON_OFF_SETUP_SERVER_MODEL         1    /*!< Enable the Generic Power OnOff Setup server model. */
+#define BT_MESH_ENABLE_GENERIC_POWER_LEVEL_SERVER_MODEL                1    /*!< Enable the Generic Power Level server model. */
+#define BT_MESH_ENABLE_GENERIC_POWER_LEVEL_SETUP_SERVER_MODEL          1    /*!< Enable the Generic Power Level Setup server model. */
+#define BT_MESH_ENABLE_GENERIC_BATTERY_SERVER_MODEL                    1    /*!< Enable the Generic Battery server model. */
+#define BT_MESH_ENABLE_GENERIC_LOCATION_SERVER_MODEL                   1    /*!< Enable the Generic Location server model. */
+#define BT_MESH_ENABLE_GENERIC_LOCATION_SETUP_SERVER_MODEL             1    /*!< Enable the Generic Location Setup server model. */
+#define BT_MESH_ENABLE_GENERIC_ADMIN_PROPERTY_SERVER_MODEL             1    /*!< Enable the Generic Admin Property server model. */
+#define BT_MESH_ENABLE_GENERIC_MANUFACTURER_PROPERTY_SERVER_MODEL      1    /*!< Enable the Generic Manufacturer Property server model. */
+#define BT_MESH_ENABLE_GENERIC_USER_PROPERTY_SERVER_MODEL              1    /*!< Enable the Generic User Property server model. */
+#define BT_MESH_ENABLE_GENERIC_CLIENT_PROPERTY_SERVER_MODEL            1    /*!< Enable the Generic Client Property server model. */
+#define BT_MESH_ENABLE_SENSOR_SERVER_MODEL                             1    /*!< Enable the Sensor server model. */
+#define BT_MESH_ENABLE_SENSOR_SETUP_SERVER_MODEL                       1    /*!< Enable the Sensor Setup server model. */
+#define BT_MESH_ENABLE_TIME_SERVER_MODEL                               1    /*!< Enable the Time server model. */
+#define BT_MESH_ENABLE_TIME_SETUP_SERVER_MODEL                         1    /*!< Enable the Time Setup server model. */
+#define BT_MESH_ENABLE_SCENE_SERVER_MODEL                              1    /*!< Enable the Scene server model. */
+#define BT_MESH_ENABLE_SCENE_SETUP_SERVER_MODEL                        1    /*!< Enable the Scene Setup server model. */
+#define BT_MESH_ENABLE_SCHEDULER_SERVER_MODEL                          1    /*!< Enable the Scheduler server model. */
+#define BT_MESH_ENABLE_SCHEDULER_SETUP_SERVER_MODEL                    1    /*!< Enable the Scheduler Setup server model. */
+#define BT_MESH_ENABLE_LIGHT_LIGHTNESS_SERVER_MODEL                    1    /*!< Enable the Light Lightness server model. */
+#define BT_MESH_ENABLE_LIGHT_LIGHTNESS_SETUP_SERVER_MODEL              1    /*!< Enable the Light Lightness Setup server model. */
+#define BT_MESH_ENABLE_LIGHT_CTL_SERVER_MODEL                          1    /*!< Enable the Light CTL server model. */
+#define BT_MESH_ENABLE_LIGHT_CTL_SETUP_SERVER_MODEL                    1    /*!< Enable the Light CTL Setup server model. */
+#define BT_MESH_ENABLE_LIGHT_CTL_TEMPERATURE_SERVER_MODEL              1    /*!< Enable the Light CTL Temperature server model. */
+#define BT_MESH_ENABLE_LIGHT_HSL_SERVER_MODEL                          1    /*!< Enable the Light HSL server model. */
+#define BT_MESH_ENABLE_LIGHT_HSL_SETUP_SERVER_MODEL                    1    /*!< Enable the Light HSL Setup server model. */
+#define BT_MESH_ENABLE_LIGHT_HSL_HUE_SERVER_MODEL                      1    /*!< Enable the Light HSL Hue server model. */
+#define BT_MESH_ENABLE_LIGHT_HSL_SATURATION_SERVER_MODEL               1    /*!< Enable the Light HSL Saturation server model. */
+#define BT_MESH_ENABLE_LIGHT_XYL_SERVER_MODEL                          1    /*!< Enable the Light xyL server model. */
+#define BT_MESH_ENABLE_LIGHT_XYL_SETUP_SERVER_MODEL                    1    /*!< Enable the Light xyL Setup server model. */
+#define BT_MESH_ENABLE_LIGHT_LC_SERVER_MODEL                           1    /*!< Enable the Light LC server model. */
+#define BT_MESH_ENABLE_LIGHT_LC_SETUP_SERVER_MODEL                     1    /*!< Enable the Light LC Setup server model. */
+#define BT_MESH_ENABLE_DFU_DISTRIBUTOR_ROLE                            0    /*!< Enable the DFU Distributor role.
+                                                                             *   Distributor and target can not enable at same time */
+#define BT_MESH_ENABLE_DFU_TARGET_ROLE                                 1    /*!< Enable the DFU Target role.
+                                                                             *   Distributor and target can not enable at same time */
 #endif
 
-#define BT_MESH_ENABLE_DATATRANS_MODEL                                 1
+#define BT_MESH_ENABLE_DATATRANS_MODEL                                 1    /*!< Enable the Datatrans model. */
 /** @} */
 
 
@@ -182,7 +203,25 @@
 
 #define STATIC_OOB_VALUE_FOR_AUTHENTICATION    {0x1,0x2,0x3}    /*!< Static OOB authentication value, the remaining bytes of the 16 bytes are 0 */
 /** @} */
+/**
+ * @}
+ */
+/**
+ * @}
+ */
+/**
+ * @}
+ */
 
+/** @addtogroup BT_Types BT Types
+ * @{
+ */
+/** @addtogroup BT_Mesh_Types BT Mesh Types
+ * @{
+ */
+/** @addtogroup BT_Mesh_Def_Types BT Mesh Def Types
+ * @{
+ */
 /**
  * @enum      rtk_bt_mesh_msg_send_result
  * @brief     BLE MESH access message send result definition.
@@ -200,16 +239,16 @@ typedef enum {
 	RTK_BT_MESH_MSG_SEND_CAUSE_INVALID_DST,                  /*!< The dst address is assigned by the app, and the stack checks its validity.
                                                               *   - The dst address can not be the unassigned address.
                                                               *   - When the msg is encrypted by the device key, the device key shall exist. */
-	RTK_BT_MESH_MSG_SEND_CAUSE_PAYLOAD_SIZE_EXCEED,          /*!< The access pdu exceeds the maximum size @ref ACCESS_PAYLOAD_MAX_SIZE.
+	RTK_BT_MESH_MSG_SEND_CAUSE_PAYLOAD_SIZE_EXCEED,          /*!< The access pdu exceeds the maximum size ACCESS_PAYLOAD_MAX_SIZE.
                                                               *   Depending on the msg size, the access msg is sent unsegmented or segmented. */
 	RTK_BT_MESH_MSG_SEND_CAUSE_PAYLOAD_SIZE_EXCEED1,         /*!< The access pdu exceeds the maximum size when the SZMIC bit is set to 1.
                                                               *   If the SZMIC bit is 0, the TransMIC is a 32-bit value, otherwise a 64-bit value.
                                                               *   When the SZMIC bit is 1, the maximum payload size of a segmented access pdu is reduced by 4. */
 	RTK_BT_MESH_MSG_SEND_CAUSE_INVALID_VIR_ADDR,             /*!< The virtual address is invalid. */
-	RTK_BT_MESH_MSG_SEND_CAUSE_INVALID_APP_KEY_INDEX,        /*!< The AppKey index exceeds the upper limit @ref mesh_node.app_key_num. */
+	RTK_BT_MESH_MSG_SEND_CAUSE_INVALID_APP_KEY_INDEX,        /*!< The AppKey index exceeds the upper limit mesh_node.app_key_num. */
 	RTK_BT_MESH_MSG_SEND_CAUSE_INVALID_APP_KEY_STATE,        /*!< The AppKey has not been added. */
 	RTK_BT_MESH_MSG_SEND_CAUSE_APP_KEY_NOT_BOUND_TO_MODEL,   /*!< The AppKey has not been bound to the model when sending the msg with a model. */
-	RTK_BT_MESH_MSG_SEND_CAUSE_INVALID_NET_KEY_INDEX,        /*!< The NetKey index exceeds the upper limit @ref mesh_node.net_key_num. */
+	RTK_BT_MESH_MSG_SEND_CAUSE_INVALID_NET_KEY_INDEX,        /*!< The NetKey index exceeds the upper limit mesh_node.net_key_num. */
 	RTK_BT_MESH_MSG_SEND_CAUSE_INVALID_NET_KEY_STATE,        /*!< The NetKey has not been added. */
 	RTK_BT_MESH_MSG_SEND_CAUSE_NO_BUFFER_AVAILABLE,          /*!< The mesh msg is sent via the advertising channel, which takes some resource and time.
                                                               *   When the resource is exhausted currently, the msg can not be sent. */
@@ -222,7 +261,7 @@ typedef enum {
 } rtk_bt_mesh_msg_send_result;
 
 /**
- * @defgroup  rtk_bt_mesh_app_conf_mask BLE MESH app configuration mask bits
+ * @name      BLE MESH app configuration mask bits
  * @brief     Bits of @ref rtk_bt_mesh_app_conf_t::param_mask, set a bit to make the corresponding parameter take effect.
  * @{
  */
@@ -244,7 +283,7 @@ typedef struct {
 	uint32_t bt_mesh_flash_size;             /*!< Size in bytes of the flash used to store the mesh data. */
 	uint16_t bt_mesh_rpl_num;                /*!< Number of entries of the Replay Protection List, 0: use the default.
                                               *   Once set, keep it unchanged. To change it, the mesh flash data shall be erased first. */
-	uint8_t param_mask;                      /*!< Which of the following parameters take effect, see @ref rtk_bt_mesh_app_conf_mask.
+	uint8_t param_mask;                      /*!< Which of the following parameters take effect, see the RTK_BT_MESH_APP_CONF_* bits, e.g. @ref RTK_BT_MESH_APP_CONF_TTL.
                                               *   A parameter whose bit is not set uses the default (or the value restored from flash after provisioned). */
 	uint8_t trans_retrans_count;             /*!< Transport Transmit Count, the number of retransmissions of each segment of a segmented message. */
 	uint8_t net_trans_count: 3;              /*!< Network Transmit Count. */
@@ -304,9 +343,13 @@ typedef struct {
 } _PACKED4_ rtk_bt_mesh_addr_range_t;
 
 /**
- * @defgroup  ble_mesh_api_group BT LE Mesh APIs
- * @brief     List all BT LE Mesh related APIs
- * @ingroup   BT_APIs
+ * @}
+ */
+/**
+ * @}
+ */
+/**
+ * @}
  */
 
 #endif /* __RTK_BT_MESH_DEF_H__ */

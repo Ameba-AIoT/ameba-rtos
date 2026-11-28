@@ -80,6 +80,9 @@ uint8_t bt_hci_cmd_ogf_le_ocf_set_host_chan_classif(void *phci_cmd_param, uint8_
 uint8_t bt_hci_cmd_ogf_le_ocf_read_channel_map(void *phci_cmd_param, uint8_t *rsp);
 uint8_t bt_hci_cmd_ogf_le_ocf_read_remote_feature(void *phci_cmd_param, uint8_t *rsp);
 uint8_t bt_hci_cmd_ofg_le_ocf_le_encrypt(void *phci_cmd_param, uint8_t *rsp);
+uint8_t bt_hci_cmd_ogf_le_ocf_read_local_p256_public_key(void *phci_cmd_param, uint8_t *rsp);
+uint8_t bt_hci_cmd_ogf_le_ocf_generate_dhkey_v1(void *phci_cmd_param, uint8_t *rsp);
+uint8_t bt_hci_cmd_ogf_le_ocf_generate_dhkey_v2(void *phci_cmd_param, uint8_t *rsp);
 uint8_t bt_hci_cmd_ogf_le_ocf_enable_encryption(void *phci_cmd_param, uint8_t *rsp);
 uint8_t bt_hci_cmd_ogf_le_ocf_rand(void *phci_cmd_param, uint8_t *rsp);
 uint8_t bt_hci_cmd_ogf_le_ocf_ltk_req_reply(void *phci_cmd_param, uint8_t *rsp);
@@ -128,6 +131,8 @@ uint8_t bt_hci_cmd_ogf_le_ocf_pa_create_sync(void *phci_cmd_param, uint8_t *rsp)
 uint8_t bt_hci_cmd_ogf_le_ocf_pa_create_sync_cancel(void *phci_cmd_param, uint8_t *rsp);
 uint8_t bt_hci_cmd_ogf_le_ocf_pa_terminate_sync(void *phci_cmd_param, uint8_t *rsp);
 uint8_t bt_hci_cmd_ogf_le_ocf_set_pa_receive_enable(void *phci_cmd_param, uint8_t *rsp);
+uint8_t bt_hci_cmd_ogf_le_ocf_set_pa_response_data(void *phci_cmd_param, uint8_t *rsp);
+uint8_t bt_hci_cmd_ogf_le_ocf_set_periodic_sync_subevent(void *phci_cmd_param, uint8_t *rsp);
 uint8_t bt_hci_cmd_ogf_le_ocf_add_pa_list(void *phci_cmd_param, uint8_t *rsp);
 uint8_t bt_hci_cmd_ogf_le_ocf_remove_pa_list(void *phci_cmd_param, uint8_t *rsp);
 uint8_t bt_hci_cmd_ogf_le_ocf_clear_pa_list(void *phci_cmd_param, uint8_t *rsp);
@@ -138,6 +143,13 @@ uint8_t bt_hci_cmd_ogf_le_ocf_set_pa_sync_transfer_param(void *phci_cmd_param, u
 uint8_t bt_hci_cmd_ogf_le_ocf_set_default_pa_sync_transfer_param(void *phci_cmd_param, uint8_t *rsp);
 uint8_t bt_hci_cmd_ogf_le_ocf_set_default_subrate(void *phci_cmd_param, uint8_t *rsp);
 uint8_t bt_hci_cmd_ogf_le_ocf_set_subrate_request(void *phci_cmd_param, uint8_t *rsp);
+uint8_t bt_hci_cmd_ogf_le_ocf_cs_get_local_cap(void *phci_cmd_param, uint8_t *rsp);
+uint8_t bt_hci_cmd_ogf_le_ocf_cs_get_local_cap_v2(void *phci_cmd_param, uint8_t *rsp);
+uint8_t bt_hci_cmd_ogf_le_ocf_read_remote_cap(void *phci_cmd_param, uint8_t *rsp);
+uint8_t bt_hci_cmd_ogf_le_ocf_cs_write_cached_remote_cap(void *phci_cmd_param, uint8_t *rsp);
+uint8_t bt_hci_cmd_ogf_le_ocf_cs_write_cached_remote_cap_v2(void *phci_cmd_param, uint8_t *rsp);
+uint8_t bt_hci_cmd_ogf_le_ocf_cs_sec_enable(void *phci_cmd_param, uint8_t *rsp);
+uint8_t bt_hci_cmd_ogf_le_ocf_cs_set_default_setting(void *phci_cmd_param, uint8_t *rsp);
 
 //OGF:BT_OGF_VENDOR
 uint8_t bt_hci_cmd_ogf_vendor_ocf_read_rtk_chip_id(void *phci_cmd_param, uint8_t *rsp);
@@ -179,6 +191,8 @@ void bt_hci_evt_le_data_len_change(uint16_t conn_handle, uint16_t max_tx_octets,
 void bt_hci_evt_le_phy_update_complete(uint8_t status, uint16_t conn_handle, uint8_t tx_phy, uint8_t rx_phy);
 void bt_hci_evt_le_read_remote_features_complete(uint16_t conn_handle, void *features);
 void bt_hci_evt_le_ltk_req(uint16_t conn_handle, uint8_t *rand_ediv);
+void bt_hci_evt_le_read_local_p256_pub_key_complete(uint8_t status, uint8_t *public_key);
+void bt_hci_evt_le_generate_dhkey_complete(uint8_t status, uint8_t *dhkey);
 void bt_hci_evt_le_adv_set_terminated(uint8_t status, uint8_t adv_handle, uint16_t conn_handle, uint8_t num_cmpl_ext_adv_evts);
 void bt_hci_evt_le_scan_timeout(void);
 
@@ -186,10 +200,13 @@ uint8_t bt_hci_check_le_connhandle(uint16_t handle);
 
 void bt_hci_evt_le_pa_sync_established(uint8_t status, uint16_t sync_handle, uint8_t sid,
 									   uint8_t adv_addr_type, uint8_t *adv_addr, uint8_t adv_phy,
-									   uint16_t pa_interval, uint8_t adv_clk_accuracy);
+									   uint16_t pa_interval, uint8_t adv_clk_accuracy,
+									   uint8_t *ppawr);
 
+/* pa_event_cnt / pa_subevent are only reported in v2, pa_subevent BT_HCI_LE_PA_REPORT_NO_SUBEVENT without responses */
 void bt_hci_evt_le_pa_report(uint16_t sync_handle, void *aux_sync_ind,
-							 uint8_t chain_num, void *chain_ind_list);
+							 uint8_t chain_num, void *chain_ind_list,
+							 uint16_t pa_event_cnt, uint8_t pa_subevent);
 
 void bt_hci_evt_le_pa_sync_lost(uint16_t sync_handle);
 bool bt_hci_evt_le_pa_subevent_data_request(uint8_t adv_handle, uint8_t subevent_start, uint8_t subevent_data_count);
@@ -197,9 +214,9 @@ void bt_hci_evt_le_pa_response_report(uint8_t adv_handle, uint8_t subevent, uint
 
 void bt_hci_evt_le_past_received(uint8_t status, uint16_t conn_handle, uint16_t service_data,
 								 uint16_t sync_handle, uint8_t sid, uint8_t adv_addr_type, uint8_t *adv_addr,
-								 uint8_t adv_phy, uint16_t pa_interval, uint8_t adv_clk_accuracy);
+								 uint8_t adv_phy, uint16_t pa_interval, uint8_t adv_clk_accuracy,
+								 uint8_t *ppawr);
 void bt_hci_evt_le_subrate_change(uint16_t conn_handle, uint8_t status);
-uint8_t bt_hci_cmd_ogf_le_ocf_cs_get_local_cap(void *phci_cmd_param, uint8_t *rsp);
-uint8_t bt_hci_cmd_ogf_le_ocf_cs_get_v2_local_cap(void *phci_cmd_param, uint8_t *rsp);
-uint8_t bt_hci_cmd_ogf_le_ocf_cs_sec_enable(void *phci_cmd_param, uint8_t *rsp);
+void bt_hci_evt_le_cs_report_remote_cap(uint16_t conn_handle, uint8_t status);
+
 #endif

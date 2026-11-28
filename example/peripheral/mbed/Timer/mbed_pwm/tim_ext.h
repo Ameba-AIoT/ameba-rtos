@@ -39,10 +39,10 @@
 
 #elif defined (CONFIG_AMEBAPRO3)
 
-#define PWM_1       PE_3
-#define PWM_2       PE_4
-#define PWM_3       PE_5
-#define PWM_4       PE_6
+#define PWM_1       PF_0
+#define PWM_2       PF_1
+#define PWM_3       PF_2
+#define PWM_4       PF_3
 
 #elif defined (CONFIG_RTL8720F)
 

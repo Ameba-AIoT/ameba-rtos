@@ -35,6 +35,12 @@ for example:
 	GND <--> LED2 <---> PA_23
 	GND <--> LED3 <---> PA_20
 
+6. If you run this example in RTL8735C, then connect as below
+	GND <--> LED0 <---> PE_3
+	GND <--> LED1 <---> PE_4
+	GND <--> LED2 <---> PE_5
+	GND <--> LED3 <---> PE_6
+
 # SW configuration
 Build and Download:
    * Refer to the SDK Examples section of the online documentation to generate images.

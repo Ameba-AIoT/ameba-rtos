@@ -34,7 +34,7 @@ static const char *const TAG = "MSC";
   * @param  len: Response length requested
   * @retval None
   */
-static void usbh_scsi_clear_unsent(usbh_msc_host_t *msc, u32 len)
+static void usbh_msc_scsi_clear_unsent(usbh_msc_host_t *msc, u32 len)
 {
 	if (msc->hbot.rx_data_len < len) {
 		usb_os_memset((void *)&msc->hbot.pbuf[msc->hbot.rx_data_len], 0, len - msc->hbot.rx_data_len);
@@ -49,7 +49,7 @@ static void usbh_scsi_clear_unsent(usbh_msc_host_t *msc, u32 len)
   * @param  lun: Logical Unit Number
   * @retval Status
   */
-int usbh_scsi_test_unit_ready(usbh_msc_host_t *msc, u8 lun)
+int usbh_msc_scsi_test_unit_ready(usbh_msc_host_t *msc, u8 lun)
 {
 	int status = RTK_FAIL;
 	usb_msc_bot_cbw_t *cbw = msc->hbot.cbw;
@@ -66,7 +66,7 @@ int usbh_scsi_test_unit_ready(usbh_msc_host_t *msc, u8 lun)
 		cbw->field.CBWCB[0] = SCSI_TEST_UNIT_READY;
 
 		msc->hbot.state = BOT_SEND_CBW;
-		msc->bulk_out.xfer_state = USBH_EP_XFER_START;
+		msc->bulk_out.xfer_state = USBH_PIPE_XFER_START;
 		msc->hbot.cmd_state = BOT_CMD_BUSY;
 		status = -RTK_ERR_BUSY;
 		break;
@@ -89,7 +89,7 @@ int usbh_scsi_test_unit_ready(usbh_msc_host_t *msc, u8 lun)
   * @param  capacity: pointer to the capacity structure
   * @retval Status
   */
-int usbh_scsi_read_capacity(usbh_msc_host_t *msc, u8 lun, usbh_scsi_capacity_t *capacity)
+int usbh_msc_scsi_read_capacity(usbh_msc_host_t *msc, u8 lun, usbh_msc_scsi_capacity_t *capacity)
 {
 	int status = RTK_FAIL;
 	usb_msc_bot_cbw_t *cbw = msc->hbot.cbw;
@@ -106,7 +106,7 @@ int usbh_scsi_read_capacity(usbh_msc_host_t *msc, u8 lun, usbh_scsi_capacity_t *
 		cbw->field.CBWCB[0] = SCSI_READ_CAPACITY10;
 
 		msc->hbot.state = BOT_SEND_CBW;
-		msc->bulk_out.xfer_state = USBH_EP_XFER_START;
+		msc->bulk_out.xfer_state = USBH_PIPE_XFER_START;
 		msc->hbot.cmd_state = BOT_CMD_BUSY;
 		msc->hbot.pbuf = msc->hbot.data;
 		status = -RTK_ERR_BUSY;
@@ -118,7 +118,7 @@ int usbh_scsi_read_capacity(usbh_msc_host_t *msc, u8 lun, usbh_scsi_capacity_t *
 
 		if (status == RTK_SUCCESS) {
 			/* A short response leaves a zero block length, which the check below refuses */
-			usbh_scsi_clear_unsent(msc, READ_CAPACITY10_DATA_LEN);
+			usbh_msc_scsi_clear_unsent(msc, READ_CAPACITY10_DATA_LEN);
 			/* READ CAPACITY(10) returns Last LBA; block count = Last LBA + 1 */
 			u32 last_lba = ((u32)msc->hbot.pbuf[0] << 24U) | ((u32)msc->hbot.pbuf[1] << 16U) |
 						   ((u32)msc->hbot.pbuf[2] << 8U) | (u32)msc->hbot.pbuf[3];
@@ -160,7 +160,7 @@ int usbh_scsi_read_capacity(usbh_msc_host_t *msc, u8 lun, usbh_scsi_capacity_t *
   * @param  inquiry: pointer to the inquiry structure
   * @retval Status
   */
-int usbh_scsi_inquiry(usbh_msc_host_t *msc, u8 lun, usbh_scsi_inquiry_t *inquiry)
+int usbh_msc_scsi_inquiry(usbh_msc_host_t *msc, u8 lun, usbh_msc_scsi_inquiry_t *inquiry)
 {
 	int status = RTK_FAIL;
 	usb_msc_bot_cbw_t *cbw = msc->hbot.cbw;
@@ -183,7 +183,7 @@ int usbh_scsi_inquiry(usbh_msc_host_t *msc, u8 lun, usbh_scsi_inquiry_t *inquiry
 		cbw->field.CBWCB[5] = 0U;
 
 		msc->hbot.state = BOT_SEND_CBW;
-		msc->bulk_out.xfer_state = USBH_EP_XFER_START;
+		msc->bulk_out.xfer_state = USBH_PIPE_XFER_START;
 		msc->hbot.cmd_state = BOT_CMD_BUSY;
 		msc->hbot.pbuf = msc->hbot.data;
 		status = -RTK_ERR_BUSY;
@@ -194,10 +194,10 @@ int usbh_scsi_inquiry(usbh_msc_host_t *msc, u8 lun, usbh_scsi_inquiry_t *inquiry
 		status = usbh_msc_bot_process(msc->host, lun);
 
 		if (status == RTK_SUCCESS) {
-			usbh_scsi_clear_unsent(msc, INQUIRY_DATA_LEN);
-			usb_os_memset((void *)inquiry, 0, sizeof(usbh_scsi_inquiry_t));
+			usbh_msc_scsi_clear_unsent(msc, INQUIRY_DATA_LEN);
+			usb_os_memset((void *)inquiry, 0, sizeof(usbh_msc_scsi_inquiry_t));
 			/*assign Inquiry Data */
-			inquiry->device_type = msc->hbot.pbuf[0] & 0x1FU;
+			inquiry->dev_type = msc->hbot.pbuf[0] & 0x1FU;
 			inquiry->peripheral_qualifier = msc->hbot.pbuf[0] >> 5U;
 
 			if (((u32)msc->hbot.pbuf[1] & 0x80U) == 0x80U) {
@@ -226,7 +226,7 @@ int usbh_scsi_inquiry(usbh_msc_host_t *msc, u8 lun, usbh_scsi_inquiry_t *inquiry
   * @param  sense_data: pointer to the sense data structure
   * @retval Status
   */
-int usbh_scsi_request_sense(usbh_msc_host_t *msc, u8 lun, usb_msc_scsi_sense_data_t *sense_data)
+int usbh_msc_scsi_request_sense(usbh_msc_host_t *msc, u8 lun, usb_msc_scsi_sense_data_t *sense_data)
 {
 	int status = RTK_FAIL;
 	usb_msc_bot_cbw_t *cbw = msc->hbot.cbw;
@@ -249,7 +249,7 @@ int usbh_scsi_request_sense(usbh_msc_host_t *msc, u8 lun, usb_msc_scsi_sense_dat
 		cbw->field.CBWCB[5] = 0U;
 
 		msc->hbot.state = BOT_SEND_CBW;
-		msc->bulk_out.xfer_state = USBH_EP_XFER_START;
+		msc->bulk_out.xfer_state = USBH_PIPE_XFER_START;
 		msc->hbot.cmd_state = BOT_CMD_BUSY;
 		msc->hbot.pbuf = msc->hbot.data;
 		status = -RTK_ERR_BUSY;
@@ -261,7 +261,7 @@ int usbh_scsi_request_sense(usbh_msc_host_t *msc, u8 lun, usb_msc_scsi_sense_dat
 
 		if (status == RTK_SUCCESS) {
 			/* A response too short to carry the ASC/ASCQ reports them as 0, no additional sense */
-			usbh_scsi_clear_unsent(msc, REQUEST_SENSE_DATA_LEN);
+			usbh_msc_scsi_clear_unsent(msc, REQUEST_SENSE_DATA_LEN);
 			sense_data->key  = msc->hbot.pbuf[2] & 0x0FU;
 			sense_data->asc  = msc->hbot.pbuf[12];
 			sense_data->ascq = msc->hbot.pbuf[13];
@@ -285,7 +285,7 @@ int usbh_scsi_request_sense(usbh_msc_host_t *msc, u8 lun, usb_msc_scsi_sense_dat
   * @param  length: number of sector to write, at most one bounce buffer
   * @retval Status
   */
-int usbh_scsi_write(usbh_msc_host_t *msc, u8 lun, u32 address, const u8 *pbuf, u32 length)
+int usbh_msc_scsi_write(usbh_msc_host_t *msc, u8 lun, u32 address, const u8 *pbuf, u32 length)
 {
 	int status = RTK_FAIL;
 	usb_msc_bot_cbw_t *cbw = msc->hbot.cbw;
@@ -320,7 +320,7 @@ int usbh_scsi_write(usbh_msc_host_t *msc, u8 lun, u32 address, const u8 *pbuf, u
 		msc->hbot.pbuf = msc->hbot.bounce_buf;
 		usb_os_memcpy((void *)msc->hbot.pbuf, (const void *)pbuf, cbw->field.dCBWDataTransferLength);
 		msc->hbot.state = BOT_SEND_CBW;
-		msc->bulk_out.xfer_state = USBH_EP_XFER_START;
+		msc->bulk_out.xfer_state = USBH_PIPE_XFER_START;
 		msc->hbot.cmd_state = BOT_CMD_BUSY;
 		status = -RTK_ERR_BUSY;
 		break;
@@ -346,7 +346,7 @@ int usbh_scsi_write(usbh_msc_host_t *msc, u8 lun, u32 address, const u8 *pbuf, u
   * @param  length: number of sector to read, at most one bounce buffer
   * @retval Status
   */
-int usbh_scsi_read(usbh_msc_host_t *msc, u8 lun, u32 address, u8 *pbuf, u32 length)
+int usbh_msc_scsi_read(usbh_msc_host_t *msc, u8 lun, u32 address, u8 *pbuf, u32 length)
 {
 	int status = RTK_FAIL;
 	usb_msc_bot_cbw_t *cbw = msc->hbot.cbw;
@@ -380,7 +380,7 @@ int usbh_scsi_read(usbh_msc_host_t *msc, u8 lun, u32 address, u8 *pbuf, u32 leng
 
 		msc->hbot.pbuf = msc->hbot.bounce_buf;
 		msc->hbot.state = BOT_SEND_CBW;
-		msc->bulk_out.xfer_state = USBH_EP_XFER_START;
+		msc->bulk_out.xfer_state = USBH_PIPE_XFER_START;
 		msc->hbot.cmd_state = BOT_CMD_BUSY;
 		status = -RTK_ERR_BUSY;
 		break;

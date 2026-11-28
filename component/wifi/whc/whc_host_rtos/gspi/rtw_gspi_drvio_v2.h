@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _AMEBA_GSPI_H_
-#define _AMEBA_GSPI_H_
+#ifndef _RTW_GSPI_DRVIO_V2_H_
+#define _RTW_GSPI_DRVIO_V2_H_
 
 /** @addtogroup Ameba_Periph_Driver
   * @{
@@ -190,7 +190,7 @@
 /** @brief GSPI Register Declaration
   */
 
-typedef struct {
+struct whc_gspi_reg {
 	__IO uint32_t RSVD0               ;  /*!< Reserved,  Address offset:0x000-0x003 */
 	__IO uint32_t GSPI_SPI_INT        ;  /*!< Register,  Address offset:0x004 */
 	__IO uint32_t RSVD1[3]            ;  /*!< Reserved,  Address offset:0x008-0x013 */
@@ -211,7 +211,7 @@ typedef struct {
 	__I  uint32_t GSPI_CPU_INDICATION ;  /*!< Register,  Address offset:0x084 */
 	__IO uint32_t RSVD5[26]           ;  /*!< Reserved,  Address offset:0x088-0x0EF */
 	__IO uint32_t GSPI_SPI_CFG        ;  /*!< Register,  Address offset:0x0F0 */
-} GSPI_TypeDef;
+};
 
 /** @} */
 
@@ -273,21 +273,27 @@ typedef struct {
 /** @defgroup GSPI_Command_Word Command word fields
   * @brief Wire-format fields of the 4-byte Command phase.
   *
-  *        Layout: R/W bit31, Fun bit29, domain bits[28:24], address bits[23:8],
-  *        byte enables bits[3:0]. For the two FIFO domains the low 16 bits carry
-  *        the transfer length instead of an address.
+  *        Layout: R/W bit31, Func num bits[30:29] (caller-supplied, see
+  *        GSPI_FUNC_1/GSPI_FUNC_2), domain id bits[28:26], Rsv bits[25:24].
+  *        For the register domain, byte enables sit at bits[23:20] and
+  *        address at bits[19:8] (12 bit, 0x000~0xFFF); for the two FIFO
+  *        domains bits[23:8] carry the transfer length instead.
+  *        CRC5 is bits[7:3], Rsv is bits[2:0].
   *
   *        One frame lives inside a single CS-low window and has three phases:
-  *          register read  : CMD 4B -> Status 8B -> Data 4B
-  *          everything else: CMD 4B -> Data NB  -> Status 8B
+  *          FIFO / write frame: CMD 4B -> Data NB -> Status 4B
+  *          register read frame: CMD 4B -> Status 4B -> Data 4B
   *        The data phase length must be a multiple of 4; an unaligned length still
   *        delivers the packet but leaves the Status phase undriven.
   * @{
   */
-#define GSPI_CMD_FUN_BIT        ((u32)0x00000001 << 29)  /*!< Mandatory, undocumented by the UM. */
+#define GSPI_FUNC_1             1      /*!< Func num field value 0b01. */
+#define GSPI_FUNC_2             2      /*!< Func num field value 0b10. */
+#define GSPI_CMD_FUNC_SHIFT     29     /*!< Func num field position, mandatory and undocumented by the UM. */
 #define GSPI_DOMAIN_CTRL        0x00   /*!< Control register domain. */
+#define GSPI_DOMAIN_FWDL        0x04   /*!< Host -> device FW download FIFO. */
 #define GSPI_DOMAIN_TXFIFO      0x0C   /*!< Host -> device FIFO. */
-#define GSPI_DOMAIN_RXFIFO      0x1F   /*!< Device -> host FIFO. */
+#define GSPI_DOMAIN_RXFIFO      0x1C   /*!< Device -> host FIFO. */
 #define GSPI_ALIGN4(x)          (((x) + 3) & ~3u) /*!< Round a data-phase length up to the 4-byte multiple the frame requires. */
 /** @} */
 
@@ -295,23 +301,22 @@ typedef struct {
   * @{
   */
 #define GSPI_CMD_LEN            4    /*!< Command phase. */
-#define GSPI_STATUS_LEN         8    /*!< Status phase. */
+#define GSPI_STATUS_LEN         4    /*!< Status phase. */
 #define GSPI_TX_DESC_SIZE       16   /*!< = sizeof(INIC_TX_DESC). */
 /*!< Buffer bytes a FIFO transfer of len data bytes needs, laid out as
- *   [CMD 4B][data, 4-byte aligned][Status 8B]. */
+ *   [CMD 4B][data, 4-byte aligned][Status 4B]. */
 #define GSPI_FIFO_BUF_SIZE(len) (GSPI_CMD_LEN + GSPI_ALIGN4(len) + GSPI_STATUS_LEN)
 /** @} */
 
 /** @defgroup GSPI_SPI_CFG SPI_CFG values and activation
   * @{
   */
-#define GSPI_LITTLE_ENDIAN_32   0x03   /*!< Device reset value; host must swap. */
-#define GSPI_BIG_ENDIAN_32      0x01   /*!< No host swap needed. */
+#define GSPI_LITTLE_ENDIAN_32   0x03   /*!< 32bit, little endian. */
+#define GSPI_BIG_ENDIAN_32      0x01   /*!< 32bit, big endian. */
 /*!< Activation retry policy, see GSPI_Configuration(): a frame sent while the
  *   device is still running its own SPDIO init is simply not seen. */
 #define GSPI_ACTIVATE_RETRY     3
 #define GSPI_ACTIVATE_RETRY_MS  50
-/** @} */
 /** @} */
 
 /* Exported types --------------------------------------------------------*/
@@ -322,14 +327,13 @@ typedef struct {
 
 /** @brief Status phase of one GSPI frame. Every operation returns it, because
   *        every frame carries it on MISO. */
-typedef struct {
-	u32 word0;   /*!< First 32 bits. Treated as the raw HISR by the reference driver. */
-	u32 word1;   /*!< Second 32 bits. */
-	u8  valid;   /*!< 0 = trailer not driven by the device, word0/word1 are bus idle level. */
-} GSPI_StatusTypeDef;
+struct whc_gspi_status {
+	u32 word0;   /*!< Status word, treated as the raw HISR by the reference driver. */
+	u8  valid;   /*!< 0 = trailer not driven by the device, word0 is bus idle level. */
+};
 
 /** @brief GSPI host configuration, filled by the user before GSPI_Init(). */
-typedef struct {
+struct whc_gspi_init {
 	u8  GSPI_Index;         /*!< 0: SPI0, 1: SPI1. */
 	u32 GSPI_ClkPin;        /*!< SCLK pad, e.g. _PA_18. */
 	u32 GSPI_MosiPin;
@@ -340,22 +344,21 @@ typedef struct {
 	u8  GSPI_DmaEn;         /*!< 1: use GDMA for data phases >= GSPI_DmaThreshold. */
 	u16 GSPI_DmaThreshold;  /*!< Data-phase bytes from which GDMA is used. */
 	u32 GSPI_XferTimeoutUs; /*!< Upper bound for one DMA data phase / bus idle wait. */
-} GSPI_InitTypeDef;
+};
 
 /** @brief GSPI host handle. Allocated by the user, opaque contents. */
-typedef struct {
-	GSPI_InitTypeDef Init;
+struct whc_gspi_handle {
+	struct whc_gspi_init Init;
 	SPI_TypeDef *spi_dev;
 	GDMA_InitTypeDef txgdma;
 	GDMA_InitTypeDef rxgdma;
 	volatile u8 tx_dma_done;
 	volatile u8 rx_dma_done;
 	u32 himr_shadow;        /*!< HIMR cannot be read back, so it is shadowed here. */
-	u8  swap;               /*!< 1 = 4-byte swap needed (device in little-endian mode). */
 	u8  activated;
 	u8  initialized;
 	u8  regbuf[16] __attribute__((aligned(32)));   /*!< Register-frame scratch. */
-} GSPI_HandleTypeDef;
+};
 
 /** @} */
 
@@ -365,35 +368,56 @@ typedef struct {
   * @{
   */
 
-void GSPI_StructInit(GSPI_InitTypeDef *init);
-s32  GSPI_Init(GSPI_HandleTypeDef *hgspi, GSPI_InitTypeDef *init);
-void GSPI_DeInit(GSPI_HandleTypeDef *hgspi);
-s32  GSPI_Configuration(GSPI_HandleTypeDef *hgspi, u8 spi_cfg);
-void GSPI_SetFreq(GSPI_HandleTypeDef *hgspi, u32 freq_hz);
+void GSPI_StructInit(struct whc_gspi_init *init);
+s32  GSPI_Init(struct whc_gspi_handle *hgspi, struct whc_gspi_init *init);
+void GSPI_DeInit(struct whc_gspi_handle *hgspi);
+s32  GSPI_Configuration(struct whc_gspi_handle *hgspi, u8 func, u8 spi_cfg);
+void GSPI_SetFreq(struct whc_gspi_handle *hgspi, u32 freq_hz);
 
-u8   GSPI_ReadReg8(GSPI_HandleTypeDef *hgspi, u32 addr, GSPI_StatusTypeDef *sts);
-u16  GSPI_ReadReg16(GSPI_HandleTypeDef *hgspi, u32 addr, GSPI_StatusTypeDef *sts);
-u32  GSPI_ReadReg32(GSPI_HandleTypeDef *hgspi, u32 addr, GSPI_StatusTypeDef *sts);
-s32  GSPI_WriteReg8(GSPI_HandleTypeDef *hgspi, u32 addr, u8 val, GSPI_StatusTypeDef *sts);
-s32  GSPI_WriteReg16(GSPI_HandleTypeDef *hgspi, u32 addr, u16 val, GSPI_StatusTypeDef *sts);
-s32  GSPI_WriteReg32(GSPI_HandleTypeDef *hgspi, u32 addr, u32 val, GSPI_StatusTypeDef *sts);
+u8   GSPI_ReadReg8(struct whc_gspi_handle *hgspi, u8 func, u32 addr, struct whc_gspi_status *sts);
+u16  GSPI_ReadReg16(struct whc_gspi_handle *hgspi, u8 func, u32 addr, struct whc_gspi_status *sts);
+u32  GSPI_ReadReg32(struct whc_gspi_handle *hgspi, u8 func, u32 addr, struct whc_gspi_status *sts);
+s32  GSPI_WriteReg8(struct whc_gspi_handle *hgspi, u8 func, u32 addr, u8 val, struct whc_gspi_status *sts);
+s32  GSPI_WriteReg16(struct whc_gspi_handle *hgspi, u8 func, u32 addr, u16 val, struct whc_gspi_status *sts);
+s32  GSPI_WriteReg32(struct whc_gspi_handle *hgspi, u8 func, u32 addr, u32 val, struct whc_gspi_status *sts);
 
-s32  GSPI_WriteTxFifo(GSPI_HandleTypeDef *hgspi, u8 *buf, u32 len, GSPI_StatusTypeDef *sts);
-s32  GSPI_ReadRxFifo(GSPI_HandleTypeDef *hgspi, u8 *buf, u32 len, GSPI_StatusTypeDef *sts);
+s32  GSPI_WriteTxFifo(struct whc_gspi_handle *hgspi, u8 func, u8 *buf, u32 len, struct whc_gspi_status *sts);
+s32  GSPI_ReadRxFifo(struct whc_gspi_handle *hgspi, u8 func, u8 *buf, u32 len, struct whc_gspi_status *sts);
+s32  GSPI_FwDownload(struct whc_gspi_handle *hgspi, u8 func, u8 *buf, u32 len, struct whc_gspi_status *sts);
 
-u32  GSPI_GetRxLen(GSPI_HandleTypeDef *hgspi, GSPI_StatusTypeDef *sts);
-u32  GSPI_GetFreeTxBD(GSPI_HandleTypeDef *hgspi, GSPI_StatusTypeDef *sts);
+u32  GSPI_GetRxLen(struct whc_gspi_handle *hgspi, u8 func, struct whc_gspi_status *sts);
+u32  GSPI_GetFreeTxBD(struct whc_gspi_handle *hgspi, u8 func, struct whc_gspi_status *sts);
 
-void GSPI_INTConfig(GSPI_HandleTypeDef *hgspi, u32 mask, u32 newstate);
-u32  GSPI_GetINTMask(GSPI_HandleTypeDef *hgspi);
-u32  GSPI_INTStatus(GSPI_HandleTypeDef *hgspi, GSPI_StatusTypeDef *sts);
-void GSPI_INTClear(GSPI_HandleTypeDef *hgspi, u32 bits);
+void GSPI_INTConfig(struct whc_gspi_handle *hgspi, u8 func, u32 mask, u32 newstate);
+u32  GSPI_GetINTMask(struct whc_gspi_handle *hgspi);
+u32  GSPI_INTStatus(struct whc_gspi_handle *hgspi, u8 func, struct whc_gspi_status *sts);
+void GSPI_INTClear(struct whc_gspi_handle *hgspi, u8 func, u32 bits);
 
-void GSPI_DmaCmd(GSPI_HandleTypeDef *hgspi, u32 newstate);
-u8   GSPI_DmaEnabled(GSPI_HandleTypeDef *hgspi);
+/* WIFI variants: func is fixed to GSPI_FUNC_1 */
+s32  GSPI_WIFI_Configuration(struct whc_gspi_handle *hgspi, u8 spi_cfg);
+
+u8   GSPI_WIFI_ReadReg8(struct whc_gspi_handle *hgspi, u32 addr, struct whc_gspi_status *sts);
+u16  GSPI_WIFI_ReadReg16(struct whc_gspi_handle *hgspi, u32 addr, struct whc_gspi_status *sts);
+u32  GSPI_WIFI_ReadReg32(struct whc_gspi_handle *hgspi, u32 addr, struct whc_gspi_status *sts);
+s32  GSPI_WIFI_WriteReg8(struct whc_gspi_handle *hgspi, u32 addr, u8 val, struct whc_gspi_status *sts);
+s32  GSPI_WIFI_WriteReg16(struct whc_gspi_handle *hgspi, u32 addr, u16 val, struct whc_gspi_status *sts);
+s32  GSPI_WIFI_WriteReg32(struct whc_gspi_handle *hgspi, u32 addr, u32 val, struct whc_gspi_status *sts);
+
+s32  GSPI_WIFI_WriteTxFifo(struct whc_gspi_handle *hgspi, u8 *buf, u32 len, struct whc_gspi_status *sts);
+s32  GSPI_WIFI_ReadRxFifo(struct whc_gspi_handle *hgspi, u8 *buf, u32 len, struct whc_gspi_status *sts);
+
+u32  GSPI_WIFI_GetRxLen(struct whc_gspi_handle *hgspi, struct whc_gspi_status *sts);
+u32  GSPI_WIFI_GetFreeTxBD(struct whc_gspi_handle *hgspi, struct whc_gspi_status *sts);
+
+void GSPI_WIFI_INTConfig(struct whc_gspi_handle *hgspi, u32 mask, u32 newstate);
+u32  GSPI_WIFI_INTStatus(struct whc_gspi_handle *hgspi, struct whc_gspi_status *sts);
+void GSPI_WIFI_INTClear(struct whc_gspi_handle *hgspi, u32 bits);
+
+void GSPI_DmaCmd(struct whc_gspi_handle *hgspi, u32 newstate);
+u8   GSPI_DmaEnabled(struct whc_gspi_handle *hgspi);
 
 /** @} */
 /** @} */
 /** @} */
 
-#endif /* _AMEBA_GSPI_H_ */
+#endif /* _RTW_GSPI_DRVIO_V2_H_ */

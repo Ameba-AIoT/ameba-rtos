@@ -117,7 +117,7 @@ void rtw_reconn_task_hdl(void *param)
 	rtw_reconn.b_ongoing = 0;
 	if (ret != RTK_SUCCESS) {
 		RTK_LOGS(NOTAG, RTK_LOG_ERROR, "reconn fail:-0x%x", -ret);
-		if ((ret == -RTK_ERR_WIFI_CONN_INVALID_KEY)) {
+		if (ret == -RTK_ERR_WIFI_CONN_INVALID_KEY) {
 			RTK_LOGS(NOTAG, RTK_LOG_ERROR, "(password format wrong)");
 		} else if (ret == -RTK_ERR_WIFI_CONN_SCAN_FAIL) {
 			RTK_LOGS(NOTAG, RTK_LOG_ERROR, "(not found AP)");

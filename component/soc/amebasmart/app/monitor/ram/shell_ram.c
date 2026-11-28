@@ -120,7 +120,7 @@ void shell_loguartRx_dispatch(void)
 				break;
 			}
 #ifdef CONFIG_WHC_INTF_IPC
-			if ((shell_ctl.pTmpLogBuf->UARTLogBuf[i] == '~')) {
+			if (shell_ctl.pTmpLogBuf->UARTLogBuf[i] == '~') {
 				i = i + 1; /* remove flag */
 				CpuId = NP_CPU_ID;	/* CMD should processed by KM4 */
 			} else if (shell_ctl.pTmpLogBuf->UARTLogBuf[i] == '@') {
@@ -130,7 +130,7 @@ void shell_loguartRx_dispatch(void)
 				CpuId = AP_CPU_ID;
 			}
 #else
-			if ((shell_ctl.pTmpLogBuf->UARTLogBuf[i] == '~')) {
+			if (shell_ctl.pTmpLogBuf->UARTLogBuf[i] == '~') {
 				i = i + 1; /* remove flag */
 				CpuId = AP_CPU_ID;	/* CMD should processed by CA32 */
 			} else if (shell_ctl.pTmpLogBuf->UARTLogBuf[i] == '@') {

@@ -164,3 +164,7 @@ ChangeLog:
                   (5) Resolved the protocol error during floader download
                   (6) Add support for RTL8735C
 		  (7) Fix device receive frame package timeout issue
+20260513  v2.8.12 (1) Fix profile reload issue
+                  (2) Remove flash block protection without prompt and restore it after operation
+20261126  v2.8.13 (1) Support device profile v1.2.0 with partition type RAM/FLASH
+                  (2) Allow changing the partition type

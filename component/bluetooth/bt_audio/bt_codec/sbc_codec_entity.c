@@ -21,8 +21,8 @@ static bool priv_encode_flag = false;
 static SBC_ENC_PARAMS priv_encode_params = {0};
 static uint8_t encoded_data[4096 + 16] = {0};
 static OI_CODEC_SBC_DECODER_CONTEXT priv_decode_context = {0};
-static uint32_t context_data[(((sizeof(OI_INT32) * SBC_MAX_BLOCKS * SBC_DEFAULT_DECODE_CHANNEL_NUM * SBC_MAX_BANDS) \
-												   + (sizeof(SBC_BUFFER_T) * SBC_MAX_CHANNELS * SBC_MAX_BANDS * SBC_DEFAULT_DECODE_FAST_FILTER_BUFFERS) \
+static OI_UINT32 context_data[(((sizeof(OI_INT32) * SBC_MAX_BLOCKS * SBC_DEFAULT_DECODE_CHANNEL_NUM * SBC_MAX_BANDS) \
+													+ (sizeof(SBC_BUFFER_T) * SBC_MAX_CHANNELS * SBC_MAX_BANDS * SBC_DEFAULT_DECODE_FAST_FILTER_BUFFERS) \
 					+ (sizeof(OI_UINT32) - 1)) / sizeof(OI_UINT32))] = {0};
 static int16_t pcm_data[SBC_MAX_SAMPLES_PER_FRAME * SBC_MAX_CHANNELS] = {0}; // default is one frame each time, cause bt_audio_intf.c will parse the frame number firstly and process one by one
 #if defined(SBC_PLC_INCLUDED) && SBC_PLC_INCLUDED
@@ -257,7 +257,7 @@ static uint16_t sbc_decoder_process_data(void *pentity, uint8_t *data, uint32_t 
 	const OI_BYTE *frame_data = data;
 	int16_t *pcm_data_pointer = decode_buffer->pbuffer;
 	OI_UINT32 frame_data_len = size;
-	uint32_t pcmBytes, availPcmBytes;
+	OI_UINT32 pcmBytes, availPcmBytes;
 #if defined(SBC_PLC_INCLUDED) && SBC_PLC_INCLUDED
 	const OI_BYTE *zero_signal_frame_data;
 	OI_UINT32 zero_signal_frame_len = BTM_MSBC_FRAME_DATA_SIZE;
@@ -506,8 +506,10 @@ static uint16_t sbc_audio_handle_media_data_packet(void *pentity, uint8_t *packe
 			blocks = 16;
 		}
 		break;
-		default:
-			break;
+		default: {
+			BT_LOGE("%s: sbc_frame_header.blocks error \r\n", __func__);
+			return 1;
+		}
 		}
 		/* param channels*/
 		if (sbc_frame_header.channel_mode == 0) {

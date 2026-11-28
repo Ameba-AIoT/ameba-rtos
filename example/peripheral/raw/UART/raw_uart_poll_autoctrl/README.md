@@ -41,13 +41,15 @@ Required Components: another peer device.
 	- Connect `UART_CTS(_PA_24)` to `UART_RTS(_PA_23)` of peer device
 	- Connect `GND` to `GND` of peer device
 * On RTL8735C
-	- Connect `UART_TX(_PF_11)` to `UART_RX(_PA_22)` of peer device
-	- Connect `UART_RX(_PF_8)` to `UART_TX(_PA_21)` of peer device
+	- Connect `UART_TX(_PF_12)` to `UART_RX(_PF_13)` of peer device
+	- Connect `UART_RX(_PF_13)` to `UART_TX(_PF_12)` of peer device
+	- Connect `UART_RTS(_PF_11)` to `UART_CTS(_PF_10)` of peer device
+	- Connect `UART_CTS(_PF_10)` to `UART_RTS(_PF_11)` of peer device
 	- Connect `GND` to `GND` of peer device
 
 # SW Configuration
 
-By default, `UART0` is used to transmit or receive `1000` data to or from another device and `RxFifoTrigLevel` is `1Byte`.
+By default, `UART0` (`UART1` on RTL8735C) is used to transmit or receive `1000` data to or from another device and `RxFifoTrigLevel` is `1Byte`.
 
 1. `UART_DEV` and `UART_BAUD` can be modified to configure desired UART device and baudrate.
 2. Accordingly, `UART_TX`/`UART_RX`/`UART_RTS`/`UART_CTS` in example_uart_ext.h should be updated if `UART_DEV` is modified.

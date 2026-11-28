@@ -498,59 +498,59 @@ bool log_module_bitmap_trace_set(uint64_t module_bitmap, uint8_t trace_level, bo
 
 /* Bluetooth Lower Stack Trace Interfaces */
 #define LOWERSTACK_PRINT_ERROR0(fmt)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_LOWERSTACK, LEVEL_ERROR, "!!!"fmt, 0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_LOWERSTACK, LEVEL_ERROR, "!!!" fmt, 0)
 #define LOWERSTACK_PRINT_ERROR1(fmt, arg0)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_LOWERSTACK, LEVEL_ERROR, "!!!"fmt, 1, arg0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_LOWERSTACK, LEVEL_ERROR, "!!!" fmt, 1, arg0)
 #define LOWERSTACK_PRINT_ERROR2(fmt, arg0, arg1)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_LOWERSTACK, LEVEL_ERROR, "!!!"fmt, 2, arg0, arg1)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_LOWERSTACK, LEVEL_ERROR, "!!!" fmt, 2, arg0, arg1)
 #define LOWERSTACK_PRINT_ERROR3(fmt, arg0, arg1, arg2)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_LOWERSTACK, LEVEL_ERROR, "!!!"fmt, 3, arg0, arg1, arg2)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_LOWERSTACK, LEVEL_ERROR, "!!!" fmt, 3, arg0, arg1, arg2)
 #define LOWERSTACK_PRINT_ERROR4(fmt, arg0, arg1, arg2, arg3)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_LOWERSTACK, LEVEL_ERROR, "!!!"fmt, 4, arg0, arg1, arg2, arg3)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_LOWERSTACK, LEVEL_ERROR, "!!!" fmt, 4, arg0, arg1, arg2, arg3)
 #define LOWERSTACK_PRINT_ERROR5(fmt, arg0, arg1, arg2, arg3, arg4)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_LOWERSTACK, LEVEL_ERROR, "!!!"fmt, 5, arg0, arg1, arg2, arg3, arg4)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_LOWERSTACK, LEVEL_ERROR, "!!!" fmt, 5, arg0, arg1, arg2, arg3, arg4)
 #define LOWERSTACK_PRINT_ERROR6(fmt, arg0, arg1, arg2, arg3, arg4, arg5)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_LOWERSTACK, LEVEL_ERROR, "!!!"fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_LOWERSTACK, LEVEL_ERROR, "!!!" fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
 #define LOWERSTACK_PRINT_ERROR7(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_LOWERSTACK, LEVEL_ERROR, "!!!"fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_LOWERSTACK, LEVEL_ERROR, "!!!" fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 #define LOWERSTACK_PRINT_ERROR8(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_LOWERSTACK, LEVEL_ERROR, "!!!"fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_LOWERSTACK, LEVEL_ERROR, "!!!" fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
 #define LOWERSTACK_PRINT_WARN0(fmt)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_LOWERSTACK, LEVEL_WARN, "!!*"fmt, 0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_LOWERSTACK, LEVEL_WARN, "!!*" fmt, 0)
 #define LOWERSTACK_PRINT_WARN1(fmt, arg0)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_LOWERSTACK, LEVEL_WARN, "!!*"fmt, 1, arg0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_LOWERSTACK, LEVEL_WARN, "!!*" fmt, 1, arg0)
 #define LOWERSTACK_PRINT_WARN2(fmt, arg0, arg1)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_LOWERSTACK, LEVEL_WARN, "!!*"fmt, 2, arg0, arg1)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_LOWERSTACK, LEVEL_WARN, "!!*" fmt, 2, arg0, arg1)
 #define LOWERSTACK_PRINT_WARN3(fmt, arg0, arg1, arg2)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_LOWERSTACK, LEVEL_WARN, "!!*"fmt, 3, arg0, arg1, arg2)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_LOWERSTACK, LEVEL_WARN, "!!*" fmt, 3, arg0, arg1, arg2)
 #define LOWERSTACK_PRINT_WARN4(fmt, arg0, arg1, arg2, arg3)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_LOWERSTACK, LEVEL_WARN, "!!*"fmt, 4, arg0, arg1, arg2, arg3)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_LOWERSTACK, LEVEL_WARN, "!!*" fmt, 4, arg0, arg1, arg2, arg3)
 #define LOWERSTACK_PRINT_WARN5(fmt, arg0, arg1, arg2, arg3, arg4)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_LOWERSTACK, LEVEL_WARN, "!!*"fmt, 5, arg0, arg1, arg2, arg3, arg4)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_LOWERSTACK, LEVEL_WARN, "!!*" fmt, 5, arg0, arg1, arg2, arg3, arg4)
 #define LOWERSTACK_PRINT_WARN6(fmt, arg0, arg1, arg2, arg3, arg4, arg5)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_LOWERSTACK, LEVEL_WARN, "!!*"fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_LOWERSTACK, LEVEL_WARN, "!!*" fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
 #define LOWERSTACK_PRINT_WARN7(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_LOWERSTACK, LEVEL_WARN, "!!*"fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_LOWERSTACK, LEVEL_WARN, "!!*" fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 #define LOWERSTACK_PRINT_WARN8(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_LOWERSTACK, LEVEL_WARN, "!!*"fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_LOWERSTACK, LEVEL_WARN, "!!*" fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
 #define LOWERSTACK_PRINT_INFO0(fmt)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_LOWERSTACK, LEVEL_INFO, "!**"fmt, 0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_LOWERSTACK, LEVEL_INFO, "!**" fmt, 0)
 #define LOWERSTACK_PRINT_INFO1(fmt, arg0)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_LOWERSTACK, LEVEL_INFO, "!**"fmt, 1, arg0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_LOWERSTACK, LEVEL_INFO, "!**" fmt, 1, arg0)
 #define LOWERSTACK_PRINT_INFO2(fmt, arg0, arg1)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_LOWERSTACK, LEVEL_INFO, "!**"fmt, 2, arg0, arg1)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_LOWERSTACK, LEVEL_INFO, "!**" fmt, 2, arg0, arg1)
 #define LOWERSTACK_PRINT_INFO3(fmt, arg0, arg1, arg2)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_LOWERSTACK, LEVEL_INFO, "!**"fmt, 3, arg0, arg1, arg2)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_LOWERSTACK, LEVEL_INFO, "!**" fmt, 3, arg0, arg1, arg2)
 #define LOWERSTACK_PRINT_INFO4(fmt, arg0, arg1, arg2, arg3)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_LOWERSTACK, LEVEL_INFO, "!**"fmt, 4, arg0, arg1, arg2, arg3)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_LOWERSTACK, LEVEL_INFO, "!**" fmt, 4, arg0, arg1, arg2, arg3)
 #define LOWERSTACK_PRINT_INFO5(fmt, arg0, arg1, arg2, arg3, arg4)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_LOWERSTACK, LEVEL_INFO, "!**"fmt, 5, arg0, arg1, arg2, arg3, arg4)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_LOWERSTACK, LEVEL_INFO, "!**" fmt, 5, arg0, arg1, arg2, arg3, arg4)
 #define LOWERSTACK_PRINT_INFO6(fmt, arg0, arg1, arg2, arg3, arg4, arg5)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_LOWERSTACK, LEVEL_INFO, "!**"fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_LOWERSTACK, LEVEL_INFO, "!**" fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
 #define LOWERSTACK_PRINT_INFO7(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_LOWERSTACK, LEVEL_INFO, "!**"fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_LOWERSTACK, LEVEL_INFO, "!**" fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 #define LOWERSTACK_PRINT_INFO8(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_LOWERSTACK, LEVEL_INFO, "!**"fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_LOWERSTACK, LEVEL_INFO, "!**" fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
 #define LOWERSTACK_PRINT_TRACE0(fmt)   \
     DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_LOWERSTACK, LEVEL_TRACE, fmt, 0)
 #define LOWERSTACK_PRINT_TRACE1(fmt, arg0)   \
@@ -573,59 +573,59 @@ bool log_module_bitmap_trace_set(uint64_t module_bitmap, uint8_t trace_level, bo
 
 /* OS Trace Interfaces */
 #define OS_PRINT_ERROR0(fmt)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OS, LEVEL_ERROR, "!!!"fmt, 0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OS, LEVEL_ERROR, "!!!" fmt, 0)
 #define OS_PRINT_ERROR1(fmt, arg0)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OS, LEVEL_ERROR, "!!!"fmt, 1, arg0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OS, LEVEL_ERROR, "!!!" fmt, 1, arg0)
 #define OS_PRINT_ERROR2(fmt, arg0, arg1)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OS, LEVEL_ERROR, "!!!"fmt, 2, arg0, arg1)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OS, LEVEL_ERROR, "!!!" fmt, 2, arg0, arg1)
 #define OS_PRINT_ERROR3(fmt, arg0, arg1, arg2)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OS, LEVEL_ERROR, "!!!"fmt, 3, arg0, arg1, arg2)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OS, LEVEL_ERROR, "!!!" fmt, 3, arg0, arg1, arg2)
 #define OS_PRINT_ERROR4(fmt, arg0, arg1, arg2, arg3)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OS, LEVEL_ERROR, "!!!"fmt, 4, arg0, arg1, arg2, arg3)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OS, LEVEL_ERROR, "!!!" fmt, 4, arg0, arg1, arg2, arg3)
 #define OS_PRINT_ERROR5(fmt, arg0, arg1, arg2, arg3, arg4)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OS, LEVEL_ERROR, "!!!"fmt, 5, arg0, arg1, arg2, arg3, arg4)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OS, LEVEL_ERROR, "!!!" fmt, 5, arg0, arg1, arg2, arg3, arg4)
 #define OS_PRINT_ERROR6(fmt, arg0, arg1, arg2, arg3, arg4, arg5)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OS, LEVEL_ERROR, "!!!"fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OS, LEVEL_ERROR, "!!!" fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
 #define OS_PRINT_ERROR7(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OS, LEVEL_ERROR, "!!!"fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OS, LEVEL_ERROR, "!!!" fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 #define OS_PRINT_ERROR8(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OS, LEVEL_ERROR, "!!!"fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OS, LEVEL_ERROR, "!!!" fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
 #define OS_PRINT_WARN0(fmt)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OS, LEVEL_WARN, "!!*"fmt, 0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OS, LEVEL_WARN, "!!*" fmt, 0)
 #define OS_PRINT_WARN1(fmt, arg0)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OS, LEVEL_WARN, "!!*"fmt, 1, arg0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OS, LEVEL_WARN, "!!*" fmt, 1, arg0)
 #define OS_PRINT_WARN2(fmt, arg0, arg1)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OS, LEVEL_WARN, "!!*"fmt, 2, arg0, arg1)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OS, LEVEL_WARN, "!!*" fmt, 2, arg0, arg1)
 #define OS_PRINT_WARN3(fmt, arg0, arg1, arg2)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OS, LEVEL_WARN, "!!*"fmt, 3, arg0, arg1, arg2)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OS, LEVEL_WARN, "!!*" fmt, 3, arg0, arg1, arg2)
 #define OS_PRINT_WARN4(fmt, arg0, arg1, arg2, arg3)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OS, LEVEL_WARN, "!!*"fmt, 4, arg0, arg1, arg2, arg3)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OS, LEVEL_WARN, "!!*" fmt, 4, arg0, arg1, arg2, arg3)
 #define OS_PRINT_WARN5(fmt, arg0, arg1, arg2, arg3, arg4)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OS, LEVEL_WARN, "!!*"fmt, 5, arg0, arg1, arg2, arg3, arg4)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OS, LEVEL_WARN, "!!*" fmt, 5, arg0, arg1, arg2, arg3, arg4)
 #define OS_PRINT_WARN6(fmt, arg0, arg1, arg2, arg3, arg4, arg5)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OS, LEVEL_WARN, "!!*"fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OS, LEVEL_WARN, "!!*" fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
 #define OS_PRINT_WARN7(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OS, LEVEL_WARN, "!!*"fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OS, LEVEL_WARN, "!!*" fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 #define OS_PRINT_WARN8(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OS, LEVEL_WARN, "!!*"fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OS, LEVEL_WARN, "!!*" fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
 #define OS_PRINT_INFO0(fmt)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OS, LEVEL_INFO, "!**"fmt, 0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OS, LEVEL_INFO, "!**" fmt, 0)
 #define OS_PRINT_INFO1(fmt, arg0)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OS, LEVEL_INFO, "!**"fmt, 1, arg0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OS, LEVEL_INFO, "!**" fmt, 1, arg0)
 #define OS_PRINT_INFO2(fmt, arg0, arg1)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OS, LEVEL_INFO, "!**"fmt, 2, arg0, arg1)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OS, LEVEL_INFO, "!**" fmt, 2, arg0, arg1)
 #define OS_PRINT_INFO3(fmt, arg0, arg1, arg2)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OS, LEVEL_INFO, "!**"fmt, 3, arg0, arg1, arg2)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OS, LEVEL_INFO, "!**" fmt, 3, arg0, arg1, arg2)
 #define OS_PRINT_INFO4(fmt, arg0, arg1, arg2, arg3)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OS, LEVEL_INFO, "!**"fmt, 4, arg0, arg1, arg2, arg3)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OS, LEVEL_INFO, "!**" fmt, 4, arg0, arg1, arg2, arg3)
 #define OS_PRINT_INFO5(fmt, arg0, arg1, arg2, arg3, arg4)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OS, LEVEL_INFO, "!**"fmt, 5, arg0, arg1, arg2, arg3, arg4)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OS, LEVEL_INFO, "!**" fmt, 5, arg0, arg1, arg2, arg3, arg4)
 #define OS_PRINT_INFO6(fmt, arg0, arg1, arg2, arg3, arg4, arg5)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OS, LEVEL_INFO, "!**"fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OS, LEVEL_INFO, "!**" fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
 #define OS_PRINT_INFO7(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OS, LEVEL_INFO, "!**"fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OS, LEVEL_INFO, "!**" fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 #define OS_PRINT_INFO8(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OS, LEVEL_INFO, "!**"fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OS, LEVEL_INFO, "!**" fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
 #define OS_PRINT_TRACE0(fmt)   \
     DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OS, LEVEL_TRACE, fmt, 0)
 #define OS_PRINT_TRACE1(fmt, arg0)   \
@@ -648,59 +648,59 @@ bool log_module_bitmap_trace_set(uint64_t module_bitmap, uint8_t trace_level, bo
 
 /* OSIF Trace Interfaces */
 #define OSIF_PRINT_ERROR0(fmt)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OSIF, LEVEL_ERROR, "!!!"fmt, 0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OSIF, LEVEL_ERROR, "!!!" fmt, 0)
 #define OSIF_PRINT_ERROR1(fmt, arg0)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OSIF, LEVEL_ERROR, "!!!"fmt, 1, arg0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OSIF, LEVEL_ERROR, "!!!" fmt, 1, arg0)
 #define OSIF_PRINT_ERROR2(fmt, arg0, arg1)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OSIF, LEVEL_ERROR, "!!!"fmt, 2, arg0, arg1)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OSIF, LEVEL_ERROR, "!!!" fmt, 2, arg0, arg1)
 #define OSIF_PRINT_ERROR3(fmt, arg0, arg1, arg2)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OSIF, LEVEL_ERROR, "!!!"fmt, 3, arg0, arg1, arg2)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OSIF, LEVEL_ERROR, "!!!" fmt, 3, arg0, arg1, arg2)
 #define OSIF_PRINT_ERROR4(fmt, arg0, arg1, arg2, arg3)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OSIF, LEVEL_ERROR, "!!!"fmt, 4, arg0, arg1, arg2, arg3)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OSIF, LEVEL_ERROR, "!!!" fmt, 4, arg0, arg1, arg2, arg3)
 #define OSIF_PRINT_ERROR5(fmt, arg0, arg1, arg2, arg3, arg4)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OSIF, LEVEL_ERROR, "!!!"fmt, 5, arg0, arg1, arg2, arg3, arg4)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OSIF, LEVEL_ERROR, "!!!" fmt, 5, arg0, arg1, arg2, arg3, arg4)
 #define OSIF_PRINT_ERROR6(fmt, arg0, arg1, arg2, arg3, arg4, arg5)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OSIF, LEVEL_ERROR, "!!!"fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OSIF, LEVEL_ERROR, "!!!" fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
 #define OSIF_PRINT_ERROR7(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OSIF, LEVEL_ERROR, "!!!"fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OSIF, LEVEL_ERROR, "!!!" fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 #define OSIF_PRINT_ERROR8(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OSIF, LEVEL_ERROR, "!!!"fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OSIF, LEVEL_ERROR, "!!!" fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
 #define OSIF_PRINT_WARN0(fmt)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OSIF, LEVEL_WARN, "!!*"fmt, 0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OSIF, LEVEL_WARN, "!!*" fmt, 0)
 #define OSIF_PRINT_WARN1(fmt, arg0)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OSIF, LEVEL_WARN, "!!*"fmt, 1, arg0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OSIF, LEVEL_WARN, "!!*" fmt, 1, arg0)
 #define OSIF_PRINT_WARN2(fmt, arg0, arg1)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OSIF, LEVEL_WARN, "!!*"fmt, 2, arg0, arg1)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OSIF, LEVEL_WARN, "!!*" fmt, 2, arg0, arg1)
 #define OSIF_PRINT_WARN3(fmt, arg0, arg1, arg2)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OSIF, LEVEL_WARN, "!!*"fmt, 3, arg0, arg1, arg2)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OSIF, LEVEL_WARN, "!!*" fmt, 3, arg0, arg1, arg2)
 #define OSIF_PRINT_WARN4(fmt, arg0, arg1, arg2, arg3)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OSIF, LEVEL_WARN, "!!*"fmt, 4, arg0, arg1, arg2, arg3)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OSIF, LEVEL_WARN, "!!*" fmt, 4, arg0, arg1, arg2, arg3)
 #define OSIF_PRINT_WARN5(fmt, arg0, arg1, arg2, arg3, arg4)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OSIF, LEVEL_WARN, "!!*"fmt, 5, arg0, arg1, arg2, arg3, arg4)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OSIF, LEVEL_WARN, "!!*" fmt, 5, arg0, arg1, arg2, arg3, arg4)
 #define OSIF_PRINT_WARN6(fmt, arg0, arg1, arg2, arg3, arg4, arg5)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OSIF, LEVEL_WARN, "!!*"fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OSIF, LEVEL_WARN, "!!*" fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
 #define OSIF_PRINT_WARN7(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OSIF, LEVEL_WARN, "!!*"fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OSIF, LEVEL_WARN, "!!*" fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 #define OSIF_PRINT_WARN8(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OSIF, LEVEL_WARN, "!!*"fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OSIF, LEVEL_WARN, "!!*" fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
 #define OSIF_PRINT_INFO0(fmt)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OSIF, LEVEL_INFO, "!**"fmt, 0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OSIF, LEVEL_INFO, "!**" fmt, 0)
 #define OSIF_PRINT_INFO1(fmt, arg0)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OSIF, LEVEL_INFO, "!**"fmt, 1, arg0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OSIF, LEVEL_INFO, "!**" fmt, 1, arg0)
 #define OSIF_PRINT_INFO2(fmt, arg0, arg1)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OSIF, LEVEL_INFO, "!**"fmt, 2, arg0, arg1)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OSIF, LEVEL_INFO, "!**" fmt, 2, arg0, arg1)
 #define OSIF_PRINT_INFO3(fmt, arg0, arg1, arg2)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OSIF, LEVEL_INFO, "!**"fmt, 3, arg0, arg1, arg2)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OSIF, LEVEL_INFO, "!**" fmt, 3, arg0, arg1, arg2)
 #define OSIF_PRINT_INFO4(fmt, arg0, arg1, arg2, arg3)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OSIF, LEVEL_INFO, "!**"fmt, 4, arg0, arg1, arg2, arg3)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OSIF, LEVEL_INFO, "!**" fmt, 4, arg0, arg1, arg2, arg3)
 #define OSIF_PRINT_INFO5(fmt, arg0, arg1, arg2, arg3, arg4)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OSIF, LEVEL_INFO, "!**"fmt, 5, arg0, arg1, arg2, arg3, arg4)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OSIF, LEVEL_INFO, "!**" fmt, 5, arg0, arg1, arg2, arg3, arg4)
 #define OSIF_PRINT_INFO6(fmt, arg0, arg1, arg2, arg3, arg4, arg5)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OSIF, LEVEL_INFO, "!**"fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OSIF, LEVEL_INFO, "!**" fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
 #define OSIF_PRINT_INFO7(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OSIF, LEVEL_INFO, "!**"fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OSIF, LEVEL_INFO, "!**" fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 #define OSIF_PRINT_INFO8(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OSIF, LEVEL_INFO, "!**"fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OSIF, LEVEL_INFO, "!**" fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
 #define OSIF_PRINT_TRACE0(fmt)   \
     DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_OSIF, LEVEL_TRACE, fmt, 0)
 #define OSIF_PRINT_TRACE1(fmt, arg0)   \
@@ -723,59 +723,59 @@ bool log_module_bitmap_trace_set(uint64_t module_bitmap, uint8_t trace_level, bo
 
 /* Bluetooth HCI Trace Interfaces */
 #define HCI_PRINT_ERROR0(fmt)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_HCI, LEVEL_ERROR, "!!!"fmt, 0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_HCI, LEVEL_ERROR, "!!!" fmt, 0)
 #define HCI_PRINT_ERROR1(fmt, arg0)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_HCI, LEVEL_ERROR, "!!!"fmt, 1, arg0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_HCI, LEVEL_ERROR, "!!!" fmt, 1, arg0)
 #define HCI_PRINT_ERROR2(fmt, arg0, arg1)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_HCI, LEVEL_ERROR, "!!!"fmt, 2, arg0, arg1)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_HCI, LEVEL_ERROR, "!!!" fmt, 2, arg0, arg1)
 #define HCI_PRINT_ERROR3(fmt, arg0, arg1, arg2)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_HCI, LEVEL_ERROR, "!!!"fmt, 3, arg0, arg1, arg2)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_HCI, LEVEL_ERROR, "!!!" fmt, 3, arg0, arg1, arg2)
 #define HCI_PRINT_ERROR4(fmt, arg0, arg1, arg2, arg3)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_HCI, LEVEL_ERROR, "!!!"fmt, 4, arg0, arg1, arg2, arg3)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_HCI, LEVEL_ERROR, "!!!" fmt, 4, arg0, arg1, arg2, arg3)
 #define HCI_PRINT_ERROR5(fmt, arg0, arg1, arg2, arg3, arg4)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_HCI, LEVEL_ERROR, "!!!"fmt, 5, arg0, arg1, arg2, arg3, arg4)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_HCI, LEVEL_ERROR, "!!!" fmt, 5, arg0, arg1, arg2, arg3, arg4)
 #define HCI_PRINT_ERROR6(fmt, arg0, arg1, arg2, arg3, arg4, arg5)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_HCI, LEVEL_ERROR, "!!!"fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_HCI, LEVEL_ERROR, "!!!" fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
 #define HCI_PRINT_ERROR7(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_HCI, LEVEL_ERROR, "!!!"fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_HCI, LEVEL_ERROR, "!!!" fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 #define HCI_PRINT_ERROR8(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_HCI, LEVEL_ERROR, "!!!"fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_HCI, LEVEL_ERROR, "!!!" fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
 #define HCI_PRINT_WARN0(fmt)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_HCI, LEVEL_WARN, "!!*"fmt, 0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_HCI, LEVEL_WARN, "!!*" fmt, 0)
 #define HCI_PRINT_WARN1(fmt, arg0)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_HCI, LEVEL_WARN, "!!*"fmt, 1, arg0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_HCI, LEVEL_WARN, "!!*" fmt, 1, arg0)
 #define HCI_PRINT_WARN2(fmt, arg0, arg1)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_HCI, LEVEL_WARN, "!!*"fmt, 2, arg0, arg1)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_HCI, LEVEL_WARN, "!!*" fmt, 2, arg0, arg1)
 #define HCI_PRINT_WARN3(fmt, arg0, arg1, arg2)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_HCI, LEVEL_WARN, "!!*"fmt, 3, arg0, arg1, arg2)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_HCI, LEVEL_WARN, "!!*" fmt, 3, arg0, arg1, arg2)
 #define HCI_PRINT_WARN4(fmt, arg0, arg1, arg2, arg3)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_HCI, LEVEL_WARN, "!!*"fmt, 4, arg0, arg1, arg2, arg3)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_HCI, LEVEL_WARN, "!!*" fmt, 4, arg0, arg1, arg2, arg3)
 #define HCI_PRINT_WARN5(fmt, arg0, arg1, arg2, arg3, arg4)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_HCI, LEVEL_WARN, "!!*"fmt, 5, arg0, arg1, arg2, arg3, arg4)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_HCI, LEVEL_WARN, "!!*" fmt, 5, arg0, arg1, arg2, arg3, arg4)
 #define HCI_PRINT_WARN6(fmt, arg0, arg1, arg2, arg3, arg4, arg5)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_HCI, LEVEL_WARN, "!!*"fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_HCI, LEVEL_WARN, "!!*" fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
 #define HCI_PRINT_WARN7(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_HCI, LEVEL_WARN, "!!*"fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_HCI, LEVEL_WARN, "!!*" fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 #define HCI_PRINT_WARN8(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_HCI, LEVEL_WARN, "!!*"fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_HCI, LEVEL_WARN, "!!*" fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
 #define HCI_PRINT_INFO0(fmt)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_HCI, LEVEL_INFO, "!**"fmt, 0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_HCI, LEVEL_INFO, "!**" fmt, 0)
 #define HCI_PRINT_INFO1(fmt, arg0)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_HCI, LEVEL_INFO, "!**"fmt, 1, arg0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_HCI, LEVEL_INFO, "!**" fmt, 1, arg0)
 #define HCI_PRINT_INFO2(fmt, arg0, arg1)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_HCI, LEVEL_INFO, "!**"fmt, 2, arg0, arg1)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_HCI, LEVEL_INFO, "!**" fmt, 2, arg0, arg1)
 #define HCI_PRINT_INFO3(fmt, arg0, arg1, arg2)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_HCI, LEVEL_INFO, "!**"fmt, 3, arg0, arg1, arg2)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_HCI, LEVEL_INFO, "!**" fmt, 3, arg0, arg1, arg2)
 #define HCI_PRINT_INFO4(fmt, arg0, arg1, arg2, arg3)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_HCI, LEVEL_INFO, "!**"fmt, 4, arg0, arg1, arg2, arg3)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_HCI, LEVEL_INFO, "!**" fmt, 4, arg0, arg1, arg2, arg3)
 #define HCI_PRINT_INFO5(fmt, arg0, arg1, arg2, arg3, arg4)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_HCI, LEVEL_INFO, "!**"fmt, 5, arg0, arg1, arg2, arg3, arg4)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_HCI, LEVEL_INFO, "!**" fmt, 5, arg0, arg1, arg2, arg3, arg4)
 #define HCI_PRINT_INFO6(fmt, arg0, arg1, arg2, arg3, arg4, arg5)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_HCI, LEVEL_INFO, "!**"fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_HCI, LEVEL_INFO, "!**" fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
 #define HCI_PRINT_INFO7(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_HCI, LEVEL_INFO, "!**"fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_HCI, LEVEL_INFO, "!**" fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 #define HCI_PRINT_INFO8(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_HCI, LEVEL_INFO, "!**"fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_HCI, LEVEL_INFO, "!**" fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
 #define HCI_PRINT_TRACE0(fmt)   \
     DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_HCI, LEVEL_TRACE, fmt, 0)
 #define HCI_PRINT_TRACE1(fmt, arg0)   \
@@ -798,59 +798,59 @@ bool log_module_bitmap_trace_set(uint64_t module_bitmap, uint8_t trace_level, bo
 
 /* Bluetooth L2CAP Trace Interfaces */
 #define L2CAP_PRINT_ERROR0(fmt)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_L2CAP, LEVEL_ERROR, "!!!"fmt, 0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_L2CAP, LEVEL_ERROR, "!!!" fmt, 0)
 #define L2CAP_PRINT_ERROR1(fmt, arg0)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_L2CAP, LEVEL_ERROR, "!!!"fmt, 1, arg0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_L2CAP, LEVEL_ERROR, "!!!" fmt, 1, arg0)
 #define L2CAP_PRINT_ERROR2(fmt, arg0, arg1)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_L2CAP, LEVEL_ERROR, "!!!"fmt, 2, arg0, arg1)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_L2CAP, LEVEL_ERROR, "!!!" fmt, 2, arg0, arg1)
 #define L2CAP_PRINT_ERROR3(fmt, arg0, arg1, arg2)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_L2CAP, LEVEL_ERROR, "!!!"fmt, 3, arg0, arg1, arg2)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_L2CAP, LEVEL_ERROR, "!!!" fmt, 3, arg0, arg1, arg2)
 #define L2CAP_PRINT_ERROR4(fmt, arg0, arg1, arg2, arg3)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_L2CAP, LEVEL_ERROR, "!!!"fmt, 4, arg0, arg1, arg2, arg3)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_L2CAP, LEVEL_ERROR, "!!!" fmt, 4, arg0, arg1, arg2, arg3)
 #define L2CAP_PRINT_ERROR5(fmt, arg0, arg1, arg2, arg3, arg4)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_L2CAP, LEVEL_ERROR, "!!!"fmt, 5, arg0, arg1, arg2, arg3, arg4)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_L2CAP, LEVEL_ERROR, "!!!" fmt, 5, arg0, arg1, arg2, arg3, arg4)
 #define L2CAP_PRINT_ERROR6(fmt, arg0, arg1, arg2, arg3, arg4, arg5)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_L2CAP, LEVEL_ERROR, "!!!"fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_L2CAP, LEVEL_ERROR, "!!!" fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
 #define L2CAP_PRINT_ERROR7(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_L2CAP, LEVEL_ERROR, "!!!"fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_L2CAP, LEVEL_ERROR, "!!!" fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 #define L2CAP_PRINT_ERROR8(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_L2CAP, LEVEL_ERROR, "!!!"fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_L2CAP, LEVEL_ERROR, "!!!" fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
 #define L2CAP_PRINT_WARN0(fmt)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_L2CAP, LEVEL_WARN, "!!*"fmt, 0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_L2CAP, LEVEL_WARN, "!!*" fmt, 0)
 #define L2CAP_PRINT_WARN1(fmt, arg0)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_L2CAP, LEVEL_WARN, "!!*"fmt, 1, arg0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_L2CAP, LEVEL_WARN, "!!*" fmt, 1, arg0)
 #define L2CAP_PRINT_WARN2(fmt, arg0, arg1)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_L2CAP, LEVEL_WARN, "!!*"fmt, 2, arg0, arg1)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_L2CAP, LEVEL_WARN, "!!*" fmt, 2, arg0, arg1)
 #define L2CAP_PRINT_WARN3(fmt, arg0, arg1, arg2)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_L2CAP, LEVEL_WARN, "!!*"fmt, 3, arg0, arg1, arg2)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_L2CAP, LEVEL_WARN, "!!*" fmt, 3, arg0, arg1, arg2)
 #define L2CAP_PRINT_WARN4(fmt, arg0, arg1, arg2, arg3)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_L2CAP, LEVEL_WARN, "!!*"fmt, 4, arg0, arg1, arg2, arg3)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_L2CAP, LEVEL_WARN, "!!*" fmt, 4, arg0, arg1, arg2, arg3)
 #define L2CAP_PRINT_WARN5(fmt, arg0, arg1, arg2, arg3, arg4)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_L2CAP, LEVEL_WARN, "!!*"fmt, 5, arg0, arg1, arg2, arg3, arg4)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_L2CAP, LEVEL_WARN, "!!*" fmt, 5, arg0, arg1, arg2, arg3, arg4)
 #define L2CAP_PRINT_WARN6(fmt, arg0, arg1, arg2, arg3, arg4, arg5)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_L2CAP, LEVEL_WARN, "!!*"fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_L2CAP, LEVEL_WARN, "!!*" fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
 #define L2CAP_PRINT_WARN7(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_L2CAP, LEVEL_WARN, "!!*"fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_L2CAP, LEVEL_WARN, "!!*" fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 #define L2CAP_PRINT_WARN8(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_L2CAP, LEVEL_WARN, "!!*"fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_L2CAP, LEVEL_WARN, "!!*" fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
 #define L2CAP_PRINT_INFO0(fmt)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_L2CAP, LEVEL_INFO, "!**"fmt, 0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_L2CAP, LEVEL_INFO, "!**" fmt, 0)
 #define L2CAP_PRINT_INFO1(fmt, arg0)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_L2CAP, LEVEL_INFO, "!**"fmt, 1, arg0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_L2CAP, LEVEL_INFO, "!**" fmt, 1, arg0)
 #define L2CAP_PRINT_INFO2(fmt, arg0, arg1)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_L2CAP, LEVEL_INFO, "!**"fmt, 2, arg0, arg1)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_L2CAP, LEVEL_INFO, "!**" fmt, 2, arg0, arg1)
 #define L2CAP_PRINT_INFO3(fmt, arg0, arg1, arg2)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_L2CAP, LEVEL_INFO, "!**"fmt, 3, arg0, arg1, arg2)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_L2CAP, LEVEL_INFO, "!**" fmt, 3, arg0, arg1, arg2)
 #define L2CAP_PRINT_INFO4(fmt, arg0, arg1, arg2, arg3)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_L2CAP, LEVEL_INFO, "!**"fmt, 4, arg0, arg1, arg2, arg3)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_L2CAP, LEVEL_INFO, "!**" fmt, 4, arg0, arg1, arg2, arg3)
 #define L2CAP_PRINT_INFO5(fmt, arg0, arg1, arg2, arg3, arg4)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_L2CAP, LEVEL_INFO, "!**"fmt, 5, arg0, arg1, arg2, arg3, arg4)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_L2CAP, LEVEL_INFO, "!**" fmt, 5, arg0, arg1, arg2, arg3, arg4)
 #define L2CAP_PRINT_INFO6(fmt, arg0, arg1, arg2, arg3, arg4, arg5)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_L2CAP, LEVEL_INFO, "!**"fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_L2CAP, LEVEL_INFO, "!**" fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
 #define L2CAP_PRINT_INFO7(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_L2CAP, LEVEL_INFO, "!**"fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_L2CAP, LEVEL_INFO, "!**" fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 #define L2CAP_PRINT_INFO8(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_L2CAP, LEVEL_INFO, "!**"fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_L2CAP, LEVEL_INFO, "!**" fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
 #define L2CAP_PRINT_TRACE0(fmt)   \
     DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_L2CAP, LEVEL_TRACE, fmt, 0)
 #define L2CAP_PRINT_TRACE1(fmt, arg0)   \
@@ -873,59 +873,59 @@ bool log_module_bitmap_trace_set(uint64_t module_bitmap, uint8_t trace_level, bo
 
 /* Bluetooth SDP Trace Interfaces */
 #define SDP_PRINT_ERROR0(fmt)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SDP, LEVEL_ERROR, "!!!"fmt, 0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SDP, LEVEL_ERROR, "!!!" fmt, 0)
 #define SDP_PRINT_ERROR1(fmt, arg0)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SDP, LEVEL_ERROR, "!!!"fmt, 1, arg0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SDP, LEVEL_ERROR, "!!!" fmt, 1, arg0)
 #define SDP_PRINT_ERROR2(fmt, arg0, arg1)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SDP, LEVEL_ERROR, "!!!"fmt, 2, arg0, arg1)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SDP, LEVEL_ERROR, "!!!" fmt, 2, arg0, arg1)
 #define SDP_PRINT_ERROR3(fmt, arg0, arg1, arg2)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SDP, LEVEL_ERROR, "!!!"fmt, 3, arg0, arg1, arg2)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SDP, LEVEL_ERROR, "!!!" fmt, 3, arg0, arg1, arg2)
 #define SDP_PRINT_ERROR4(fmt, arg0, arg1, arg2, arg3)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SDP, LEVEL_ERROR, "!!!"fmt, 4, arg0, arg1, arg2, arg3)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SDP, LEVEL_ERROR, "!!!" fmt, 4, arg0, arg1, arg2, arg3)
 #define SDP_PRINT_ERROR5(fmt, arg0, arg1, arg2, arg3, arg4)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SDP, LEVEL_ERROR, "!!!"fmt, 5, arg0, arg1, arg2, arg3, arg4)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SDP, LEVEL_ERROR, "!!!" fmt, 5, arg0, arg1, arg2, arg3, arg4)
 #define SDP_PRINT_ERROR6(fmt, arg0, arg1, arg2, arg3, arg4, arg5)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SDP, LEVEL_ERROR, "!!!"fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SDP, LEVEL_ERROR, "!!!" fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
 #define SDP_PRINT_ERROR7(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SDP, LEVEL_ERROR, "!!!"fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SDP, LEVEL_ERROR, "!!!" fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 #define SDP_PRINT_ERROR8(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SDP, LEVEL_ERROR, "!!!"fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SDP, LEVEL_ERROR, "!!!" fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
 #define SDP_PRINT_WARN0(fmt)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SDP, LEVEL_WARN, "!!*"fmt, 0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SDP, LEVEL_WARN, "!!*" fmt, 0)
 #define SDP_PRINT_WARN1(fmt, arg0)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SDP, LEVEL_WARN, "!!*"fmt, 1, arg0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SDP, LEVEL_WARN, "!!*" fmt, 1, arg0)
 #define SDP_PRINT_WARN2(fmt, arg0, arg1)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SDP, LEVEL_WARN, "!!*"fmt, 2, arg0, arg1)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SDP, LEVEL_WARN, "!!*" fmt, 2, arg0, arg1)
 #define SDP_PRINT_WARN3(fmt, arg0, arg1, arg2)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SDP, LEVEL_WARN, "!!*"fmt, 3, arg0, arg1, arg2)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SDP, LEVEL_WARN, "!!*" fmt, 3, arg0, arg1, arg2)
 #define SDP_PRINT_WARN4(fmt, arg0, arg1, arg2, arg3)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SDP, LEVEL_WARN, "!!*"fmt, 4, arg0, arg1, arg2, arg3)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SDP, LEVEL_WARN, "!!*" fmt, 4, arg0, arg1, arg2, arg3)
 #define SDP_PRINT_WARN5(fmt, arg0, arg1, arg2, arg3, arg4)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SDP, LEVEL_WARN, "!!*"fmt, 5, arg0, arg1, arg2, arg3, arg4)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SDP, LEVEL_WARN, "!!*" fmt, 5, arg0, arg1, arg2, arg3, arg4)
 #define SDP_PRINT_WARN6(fmt, arg0, arg1, arg2, arg3, arg4, arg5)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SDP, LEVEL_WARN, "!!*"fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SDP, LEVEL_WARN, "!!*" fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
 #define SDP_PRINT_WARN7(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SDP, LEVEL_WARN, "!!*"fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SDP, LEVEL_WARN, "!!*" fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 #define SDP_PRINT_WARN8(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SDP, LEVEL_WARN, "!!*"fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SDP, LEVEL_WARN, "!!*" fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
 #define SDP_PRINT_INFO0(fmt)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SDP, LEVEL_INFO, "!**"fmt, 0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SDP, LEVEL_INFO, "!**" fmt, 0)
 #define SDP_PRINT_INFO1(fmt, arg0)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SDP, LEVEL_INFO, "!**"fmt, 1, arg0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SDP, LEVEL_INFO, "!**" fmt, 1, arg0)
 #define SDP_PRINT_INFO2(fmt, arg0, arg1)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SDP, LEVEL_INFO, "!**"fmt, 2, arg0, arg1)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SDP, LEVEL_INFO, "!**" fmt, 2, arg0, arg1)
 #define SDP_PRINT_INFO3(fmt, arg0, arg1, arg2)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SDP, LEVEL_INFO, "!**"fmt, 3, arg0, arg1, arg2)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SDP, LEVEL_INFO, "!**" fmt, 3, arg0, arg1, arg2)
 #define SDP_PRINT_INFO4(fmt, arg0, arg1, arg2, arg3)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SDP, LEVEL_INFO, "!**"fmt, 4, arg0, arg1, arg2, arg3)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SDP, LEVEL_INFO, "!**" fmt, 4, arg0, arg1, arg2, arg3)
 #define SDP_PRINT_INFO5(fmt, arg0, arg1, arg2, arg3, arg4)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SDP, LEVEL_INFO, "!**"fmt, 5, arg0, arg1, arg2, arg3, arg4)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SDP, LEVEL_INFO, "!**" fmt, 5, arg0, arg1, arg2, arg3, arg4)
 #define SDP_PRINT_INFO6(fmt, arg0, arg1, arg2, arg3, arg4, arg5)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SDP, LEVEL_INFO, "!**"fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SDP, LEVEL_INFO, "!**" fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
 #define SDP_PRINT_INFO7(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SDP, LEVEL_INFO, "!**"fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SDP, LEVEL_INFO, "!**" fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 #define SDP_PRINT_INFO8(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SDP, LEVEL_INFO, "!**"fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SDP, LEVEL_INFO, "!**" fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
 #define SDP_PRINT_TRACE0(fmt)   \
     DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SDP, LEVEL_TRACE, fmt, 0)
 #define SDP_PRINT_TRACE1(fmt, arg0)   \
@@ -948,59 +948,59 @@ bool log_module_bitmap_trace_set(uint64_t module_bitmap, uint8_t trace_level, bo
 
 /* Bluetooth SMP Trace Interfaces */
 #define SMP_PRINT_ERROR0(fmt)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SMP, LEVEL_ERROR, "!!!"fmt, 0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SMP, LEVEL_ERROR, "!!!" fmt, 0)
 #define SMP_PRINT_ERROR1(fmt, arg0)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SMP, LEVEL_ERROR, "!!!"fmt, 1, arg0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SMP, LEVEL_ERROR, "!!!" fmt, 1, arg0)
 #define SMP_PRINT_ERROR2(fmt, arg0, arg1)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SMP, LEVEL_ERROR, "!!!"fmt, 2, arg0, arg1)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SMP, LEVEL_ERROR, "!!!" fmt, 2, arg0, arg1)
 #define SMP_PRINT_ERROR3(fmt, arg0, arg1, arg2)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SMP, LEVEL_ERROR, "!!!"fmt, 3, arg0, arg1, arg2)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SMP, LEVEL_ERROR, "!!!" fmt, 3, arg0, arg1, arg2)
 #define SMP_PRINT_ERROR4(fmt, arg0, arg1, arg2, arg3)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SMP, LEVEL_ERROR, "!!!"fmt, 4, arg0, arg1, arg2, arg3)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SMP, LEVEL_ERROR, "!!!" fmt, 4, arg0, arg1, arg2, arg3)
 #define SMP_PRINT_ERROR5(fmt, arg0, arg1, arg2, arg3, arg4)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SMP, LEVEL_ERROR, "!!!"fmt, 5, arg0, arg1, arg2, arg3, arg4)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SMP, LEVEL_ERROR, "!!!" fmt, 5, arg0, arg1, arg2, arg3, arg4)
 #define SMP_PRINT_ERROR6(fmt, arg0, arg1, arg2, arg3, arg4, arg5)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SMP, LEVEL_ERROR, "!!!"fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SMP, LEVEL_ERROR, "!!!" fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
 #define SMP_PRINT_ERROR7(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SMP, LEVEL_ERROR, "!!!"fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SMP, LEVEL_ERROR, "!!!" fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 #define SMP_PRINT_ERROR8(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SMP, LEVEL_ERROR, "!!!"fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SMP, LEVEL_ERROR, "!!!" fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
 #define SMP_PRINT_WARN0(fmt)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SMP, LEVEL_WARN, "!!*"fmt, 0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SMP, LEVEL_WARN, "!!*" fmt, 0)
 #define SMP_PRINT_WARN1(fmt, arg0)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SMP, LEVEL_WARN, "!!*"fmt, 1, arg0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SMP, LEVEL_WARN, "!!*" fmt, 1, arg0)
 #define SMP_PRINT_WARN2(fmt, arg0, arg1)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SMP, LEVEL_WARN, "!!*"fmt, 2, arg0, arg1)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SMP, LEVEL_WARN, "!!*" fmt, 2, arg0, arg1)
 #define SMP_PRINT_WARN3(fmt, arg0, arg1, arg2)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SMP, LEVEL_WARN, "!!*"fmt, 3, arg0, arg1, arg2)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SMP, LEVEL_WARN, "!!*" fmt, 3, arg0, arg1, arg2)
 #define SMP_PRINT_WARN4(fmt, arg0, arg1, arg2, arg3)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SMP, LEVEL_WARN, "!!*"fmt, 4, arg0, arg1, arg2, arg3)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SMP, LEVEL_WARN, "!!*" fmt, 4, arg0, arg1, arg2, arg3)
 #define SMP_PRINT_WARN5(fmt, arg0, arg1, arg2, arg3, arg4)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SMP, LEVEL_WARN, "!!*"fmt, 5, arg0, arg1, arg2, arg3, arg4)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SMP, LEVEL_WARN, "!!*" fmt, 5, arg0, arg1, arg2, arg3, arg4)
 #define SMP_PRINT_WARN6(fmt, arg0, arg1, arg2, arg3, arg4, arg5)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SMP, LEVEL_WARN, "!!*"fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SMP, LEVEL_WARN, "!!*" fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
 #define SMP_PRINT_WARN7(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SMP, LEVEL_WARN, "!!*"fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SMP, LEVEL_WARN, "!!*" fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 #define SMP_PRINT_WARN8(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SMP, LEVEL_WARN, "!!*"fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SMP, LEVEL_WARN, "!!*" fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
 #define SMP_PRINT_INFO0(fmt)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SMP, LEVEL_INFO, "!**"fmt, 0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SMP, LEVEL_INFO, "!**" fmt, 0)
 #define SMP_PRINT_INFO1(fmt, arg0)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SMP, LEVEL_INFO, "!**"fmt, 1, arg0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SMP, LEVEL_INFO, "!**" fmt, 1, arg0)
 #define SMP_PRINT_INFO2(fmt, arg0, arg1)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SMP, LEVEL_INFO, "!**"fmt, 2, arg0, arg1)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SMP, LEVEL_INFO, "!**" fmt, 2, arg0, arg1)
 #define SMP_PRINT_INFO3(fmt, arg0, arg1, arg2)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SMP, LEVEL_INFO, "!**"fmt, 3, arg0, arg1, arg2)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SMP, LEVEL_INFO, "!**" fmt, 3, arg0, arg1, arg2)
 #define SMP_PRINT_INFO4(fmt, arg0, arg1, arg2, arg3)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SMP, LEVEL_INFO, "!**"fmt, 4, arg0, arg1, arg2, arg3)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SMP, LEVEL_INFO, "!**" fmt, 4, arg0, arg1, arg2, arg3)
 #define SMP_PRINT_INFO5(fmt, arg0, arg1, arg2, arg3, arg4)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SMP, LEVEL_INFO, "!**"fmt, 5, arg0, arg1, arg2, arg3, arg4)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SMP, LEVEL_INFO, "!**" fmt, 5, arg0, arg1, arg2, arg3, arg4)
 #define SMP_PRINT_INFO6(fmt, arg0, arg1, arg2, arg3, arg4, arg5)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SMP, LEVEL_INFO, "!**"fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SMP, LEVEL_INFO, "!**" fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
 #define SMP_PRINT_INFO7(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SMP, LEVEL_INFO, "!**"fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SMP, LEVEL_INFO, "!**" fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 #define SMP_PRINT_INFO8(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SMP, LEVEL_INFO, "!**"fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SMP, LEVEL_INFO, "!**" fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
 #define SMP_PRINT_TRACE0(fmt)   \
     DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_SMP, LEVEL_TRACE, fmt, 0)
 #define SMP_PRINT_TRACE1(fmt, arg0)   \
@@ -1023,59 +1023,59 @@ bool log_module_bitmap_trace_set(uint64_t module_bitmap, uint8_t trace_level, bo
 
 /* Bluetooth GATT Trace Interfaces */
 #define GATT_PRINT_ERROR0(fmt)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GATT, LEVEL_ERROR, "!!!"fmt, 0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GATT, LEVEL_ERROR, "!!!" fmt, 0)
 #define GATT_PRINT_ERROR1(fmt, arg0)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GATT, LEVEL_ERROR, "!!!"fmt, 1, arg0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GATT, LEVEL_ERROR, "!!!" fmt, 1, arg0)
 #define GATT_PRINT_ERROR2(fmt, arg0, arg1)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GATT, LEVEL_ERROR, "!!!"fmt, 2, arg0, arg1)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GATT, LEVEL_ERROR, "!!!" fmt, 2, arg0, arg1)
 #define GATT_PRINT_ERROR3(fmt, arg0, arg1, arg2)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GATT, LEVEL_ERROR, "!!!"fmt, 3, arg0, arg1, arg2)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GATT, LEVEL_ERROR, "!!!" fmt, 3, arg0, arg1, arg2)
 #define GATT_PRINT_ERROR4(fmt, arg0, arg1, arg2, arg3)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GATT, LEVEL_ERROR, "!!!"fmt, 4, arg0, arg1, arg2, arg3)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GATT, LEVEL_ERROR, "!!!" fmt, 4, arg0, arg1, arg2, arg3)
 #define GATT_PRINT_ERROR5(fmt, arg0, arg1, arg2, arg3, arg4)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GATT, LEVEL_ERROR, "!!!"fmt, 5, arg0, arg1, arg2, arg3, arg4)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GATT, LEVEL_ERROR, "!!!" fmt, 5, arg0, arg1, arg2, arg3, arg4)
 #define GATT_PRINT_ERROR6(fmt, arg0, arg1, arg2, arg3, arg4, arg5)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GATT, LEVEL_ERROR, "!!!"fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GATT, LEVEL_ERROR, "!!!" fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
 #define GATT_PRINT_ERROR7(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GATT, LEVEL_ERROR, "!!!"fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GATT, LEVEL_ERROR, "!!!" fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 #define GATT_PRINT_ERROR8(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GATT, LEVEL_ERROR, "!!!"fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GATT, LEVEL_ERROR, "!!!" fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
 #define GATT_PRINT_WARN0(fmt)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GATT, LEVEL_WARN, "!!*"fmt, 0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GATT, LEVEL_WARN, "!!*" fmt, 0)
 #define GATT_PRINT_WARN1(fmt, arg0)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GATT, LEVEL_WARN, "!!*"fmt, 1, arg0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GATT, LEVEL_WARN, "!!*" fmt, 1, arg0)
 #define GATT_PRINT_WARN2(fmt, arg0, arg1)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GATT, LEVEL_WARN, "!!*"fmt, 2, arg0, arg1)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GATT, LEVEL_WARN, "!!*" fmt, 2, arg0, arg1)
 #define GATT_PRINT_WARN3(fmt, arg0, arg1, arg2)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GATT, LEVEL_WARN, "!!*"fmt, 3, arg0, arg1, arg2)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GATT, LEVEL_WARN, "!!*" fmt, 3, arg0, arg1, arg2)
 #define GATT_PRINT_WARN4(fmt, arg0, arg1, arg2, arg3)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GATT, LEVEL_WARN, "!!*"fmt, 4, arg0, arg1, arg2, arg3)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GATT, LEVEL_WARN, "!!*" fmt, 4, arg0, arg1, arg2, arg3)
 #define GATT_PRINT_WARN5(fmt, arg0, arg1, arg2, arg3, arg4)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GATT, LEVEL_WARN, "!!*"fmt, 5, arg0, arg1, arg2, arg3, arg4)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GATT, LEVEL_WARN, "!!*" fmt, 5, arg0, arg1, arg2, arg3, arg4)
 #define GATT_PRINT_WARN6(fmt, arg0, arg1, arg2, arg3, arg4, arg5)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GATT, LEVEL_WARN, "!!*"fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GATT, LEVEL_WARN, "!!*" fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
 #define GATT_PRINT_WARN7(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GATT, LEVEL_WARN, "!!*"fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GATT, LEVEL_WARN, "!!*" fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 #define GATT_PRINT_WARN8(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GATT, LEVEL_WARN, "!!*"fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GATT, LEVEL_WARN, "!!*" fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
 #define GATT_PRINT_INFO0(fmt)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GATT, LEVEL_INFO, "!**"fmt, 0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GATT, LEVEL_INFO, "!**" fmt, 0)
 #define GATT_PRINT_INFO1(fmt, arg0)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GATT, LEVEL_INFO, "!**"fmt, 1, arg0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GATT, LEVEL_INFO, "!**" fmt, 1, arg0)
 #define GATT_PRINT_INFO2(fmt, arg0, arg1)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GATT, LEVEL_INFO, "!**"fmt, 2, arg0, arg1)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GATT, LEVEL_INFO, "!**" fmt, 2, arg0, arg1)
 #define GATT_PRINT_INFO3(fmt, arg0, arg1, arg2)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GATT, LEVEL_INFO, "!**"fmt, 3, arg0, arg1, arg2)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GATT, LEVEL_INFO, "!**" fmt, 3, arg0, arg1, arg2)
 #define GATT_PRINT_INFO4(fmt, arg0, arg1, arg2, arg3)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GATT, LEVEL_INFO, "!**"fmt, 4, arg0, arg1, arg2, arg3)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GATT, LEVEL_INFO, "!**" fmt, 4, arg0, arg1, arg2, arg3)
 #define GATT_PRINT_INFO5(fmt, arg0, arg1, arg2, arg3, arg4)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GATT, LEVEL_INFO, "!**"fmt, 5, arg0, arg1, arg2, arg3, arg4)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GATT, LEVEL_INFO, "!**" fmt, 5, arg0, arg1, arg2, arg3, arg4)
 #define GATT_PRINT_INFO6(fmt, arg0, arg1, arg2, arg3, arg4, arg5)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GATT, LEVEL_INFO, "!**"fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GATT, LEVEL_INFO, "!**" fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
 #define GATT_PRINT_INFO7(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GATT, LEVEL_INFO, "!**"fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GATT, LEVEL_INFO, "!**" fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 #define GATT_PRINT_INFO8(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GATT, LEVEL_INFO, "!**"fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GATT, LEVEL_INFO, "!**" fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
 #define GATT_PRINT_TRACE0(fmt)   \
     DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GATT, LEVEL_TRACE, fmt, 0)
 #define GATT_PRINT_TRACE1(fmt, arg0)   \
@@ -1098,59 +1098,59 @@ bool log_module_bitmap_trace_set(uint64_t module_bitmap, uint8_t trace_level, bo
 
 /* Bluetooth BTIF Trace Interfaces */
 #define BTIF_PRINT_ERROR0(fmt)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTIF, LEVEL_ERROR, "!!!"fmt, 0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTIF, LEVEL_ERROR, "!!!" fmt, 0)
 #define BTIF_PRINT_ERROR1(fmt, arg0)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTIF, LEVEL_ERROR, "!!!"fmt, 1, arg0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTIF, LEVEL_ERROR, "!!!" fmt, 1, arg0)
 #define BTIF_PRINT_ERROR2(fmt, arg0, arg1)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTIF, LEVEL_ERROR, "!!!"fmt, 2, arg0, arg1)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTIF, LEVEL_ERROR, "!!!" fmt, 2, arg0, arg1)
 #define BTIF_PRINT_ERROR3(fmt, arg0, arg1, arg2)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTIF, LEVEL_ERROR, "!!!"fmt, 3, arg0, arg1, arg2)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTIF, LEVEL_ERROR, "!!!" fmt, 3, arg0, arg1, arg2)
 #define BTIF_PRINT_ERROR4(fmt, arg0, arg1, arg2, arg3)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTIF, LEVEL_ERROR, "!!!"fmt, 4, arg0, arg1, arg2, arg3)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTIF, LEVEL_ERROR, "!!!" fmt, 4, arg0, arg1, arg2, arg3)
 #define BTIF_PRINT_ERROR5(fmt, arg0, arg1, arg2, arg3, arg4)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTIF, LEVEL_ERROR, "!!!"fmt, 5, arg0, arg1, arg2, arg3, arg4)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTIF, LEVEL_ERROR, "!!!" fmt, 5, arg0, arg1, arg2, arg3, arg4)
 #define BTIF_PRINT_ERROR6(fmt, arg0, arg1, arg2, arg3, arg4, arg5)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTIF, LEVEL_ERROR, "!!!"fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTIF, LEVEL_ERROR, "!!!" fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
 #define BTIF_PRINT_ERROR7(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTIF, LEVEL_ERROR, "!!!"fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTIF, LEVEL_ERROR, "!!!" fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 #define BTIF_PRINT_ERROR8(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTIF, LEVEL_ERROR, "!!!"fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTIF, LEVEL_ERROR, "!!!" fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
 #define BTIF_PRINT_WARN0(fmt)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTIF, LEVEL_WARN, "!!*"fmt, 0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTIF, LEVEL_WARN, "!!*" fmt, 0)
 #define BTIF_PRINT_WARN1(fmt, arg0)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTIF, LEVEL_WARN, "!!*"fmt, 1, arg0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTIF, LEVEL_WARN, "!!*" fmt, 1, arg0)
 #define BTIF_PRINT_WARN2(fmt, arg0, arg1)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTIF, LEVEL_WARN, "!!*"fmt, 2, arg0, arg1)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTIF, LEVEL_WARN, "!!*" fmt, 2, arg0, arg1)
 #define BTIF_PRINT_WARN3(fmt, arg0, arg1, arg2)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTIF, LEVEL_WARN, "!!*"fmt, 3, arg0, arg1, arg2)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTIF, LEVEL_WARN, "!!*" fmt, 3, arg0, arg1, arg2)
 #define BTIF_PRINT_WARN4(fmt, arg0, arg1, arg2, arg3)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTIF, LEVEL_WARN, "!!*"fmt, 4, arg0, arg1, arg2, arg3)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTIF, LEVEL_WARN, "!!*" fmt, 4, arg0, arg1, arg2, arg3)
 #define BTIF_PRINT_WARN5(fmt, arg0, arg1, arg2, arg3, arg4)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTIF, LEVEL_WARN, "!!*"fmt, 5, arg0, arg1, arg2, arg3, arg4)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTIF, LEVEL_WARN, "!!*" fmt, 5, arg0, arg1, arg2, arg3, arg4)
 #define BTIF_PRINT_WARN6(fmt, arg0, arg1, arg2, arg3, arg4, arg5)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTIF, LEVEL_WARN, "!!*"fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTIF, LEVEL_WARN, "!!*" fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
 #define BTIF_PRINT_WARN7(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTIF, LEVEL_WARN, "!!*"fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTIF, LEVEL_WARN, "!!*" fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 #define BTIF_PRINT_WARN8(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTIF, LEVEL_WARN, "!!*"fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTIF, LEVEL_WARN, "!!*" fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
 #define BTIF_PRINT_INFO0(fmt)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTIF, LEVEL_INFO, "!**"fmt, 0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTIF, LEVEL_INFO, "!**" fmt, 0)
 #define BTIF_PRINT_INFO1(fmt, arg0)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTIF, LEVEL_INFO, "!**"fmt, 1, arg0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTIF, LEVEL_INFO, "!**" fmt, 1, arg0)
 #define BTIF_PRINT_INFO2(fmt, arg0, arg1)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTIF, LEVEL_INFO, "!**"fmt, 2, arg0, arg1)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTIF, LEVEL_INFO, "!**" fmt, 2, arg0, arg1)
 #define BTIF_PRINT_INFO3(fmt, arg0, arg1, arg2)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTIF, LEVEL_INFO, "!**"fmt, 3, arg0, arg1, arg2)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTIF, LEVEL_INFO, "!**" fmt, 3, arg0, arg1, arg2)
 #define BTIF_PRINT_INFO4(fmt, arg0, arg1, arg2, arg3)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTIF, LEVEL_INFO, "!**"fmt, 4, arg0, arg1, arg2, arg3)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTIF, LEVEL_INFO, "!**" fmt, 4, arg0, arg1, arg2, arg3)
 #define BTIF_PRINT_INFO5(fmt, arg0, arg1, arg2, arg3, arg4)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTIF, LEVEL_INFO, "!**"fmt, 5, arg0, arg1, arg2, arg3, arg4)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTIF, LEVEL_INFO, "!**" fmt, 5, arg0, arg1, arg2, arg3, arg4)
 #define BTIF_PRINT_INFO6(fmt, arg0, arg1, arg2, arg3, arg4, arg5)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTIF, LEVEL_INFO, "!**"fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTIF, LEVEL_INFO, "!**" fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
 #define BTIF_PRINT_INFO7(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTIF, LEVEL_INFO, "!**"fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTIF, LEVEL_INFO, "!**" fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 #define BTIF_PRINT_INFO8(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTIF, LEVEL_INFO, "!**"fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTIF, LEVEL_INFO, "!**" fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
 #define BTIF_PRINT_TRACE0(fmt)   \
     DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTIF, LEVEL_TRACE, fmt, 0)
 #define BTIF_PRINT_TRACE1(fmt, arg0)   \
@@ -1173,59 +1173,59 @@ bool log_module_bitmap_trace_set(uint64_t module_bitmap, uint8_t trace_level, bo
 
 /* Bluetooth BTE Trace Interfaces */
 #define BTE_PRINT_ERROR0(fmt)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTE, LEVEL_ERROR, "!!!"fmt, 0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTE, LEVEL_ERROR, "!!!" fmt, 0)
 #define BTE_PRINT_ERROR1(fmt, arg0)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTE, LEVEL_ERROR, "!!!"fmt, 1, arg0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTE, LEVEL_ERROR, "!!!" fmt, 1, arg0)
 #define BTE_PRINT_ERROR2(fmt, arg0, arg1)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTE, LEVEL_ERROR, "!!!"fmt, 2, arg0, arg1)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTE, LEVEL_ERROR, "!!!" fmt, 2, arg0, arg1)
 #define BTE_PRINT_ERROR3(fmt, arg0, arg1, arg2)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTE, LEVEL_ERROR, "!!!"fmt, 3, arg0, arg1, arg2)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTE, LEVEL_ERROR, "!!!" fmt, 3, arg0, arg1, arg2)
 #define BTE_PRINT_ERROR4(fmt, arg0, arg1, arg2, arg3)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTE, LEVEL_ERROR, "!!!"fmt, 4, arg0, arg1, arg2, arg3)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTE, LEVEL_ERROR, "!!!" fmt, 4, arg0, arg1, arg2, arg3)
 #define BTE_PRINT_ERROR5(fmt, arg0, arg1, arg2, arg3, arg4)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTE, LEVEL_ERROR, "!!!"fmt, 5, arg0, arg1, arg2, arg3, arg4)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTE, LEVEL_ERROR, "!!!" fmt, 5, arg0, arg1, arg2, arg3, arg4)
 #define BTE_PRINT_ERROR6(fmt, arg0, arg1, arg2, arg3, arg4, arg5)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTE, LEVEL_ERROR, "!!!"fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTE, LEVEL_ERROR, "!!!" fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
 #define BTE_PRINT_ERROR7(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTE, LEVEL_ERROR, "!!!"fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTE, LEVEL_ERROR, "!!!" fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 #define BTE_PRINT_ERROR8(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTE, LEVEL_ERROR, "!!!"fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTE, LEVEL_ERROR, "!!!" fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
 #define BTE_PRINT_WARN0(fmt)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTE, LEVEL_WARN, "!!*"fmt, 0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTE, LEVEL_WARN, "!!*" fmt, 0)
 #define BTE_PRINT_WARN1(fmt, arg0)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTE, LEVEL_WARN, "!!*"fmt, 1, arg0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTE, LEVEL_WARN, "!!*" fmt, 1, arg0)
 #define BTE_PRINT_WARN2(fmt, arg0, arg1)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTE, LEVEL_WARN, "!!*"fmt, 2, arg0, arg1)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTE, LEVEL_WARN, "!!*" fmt, 2, arg0, arg1)
 #define BTE_PRINT_WARN3(fmt, arg0, arg1, arg2)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTE, LEVEL_WARN, "!!*"fmt, 3, arg0, arg1, arg2)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTE, LEVEL_WARN, "!!*" fmt, 3, arg0, arg1, arg2)
 #define BTE_PRINT_WARN4(fmt, arg0, arg1, arg2, arg3)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTE, LEVEL_WARN, "!!*"fmt, 4, arg0, arg1, arg2, arg3)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTE, LEVEL_WARN, "!!*" fmt, 4, arg0, arg1, arg2, arg3)
 #define BTE_PRINT_WARN5(fmt, arg0, arg1, arg2, arg3, arg4)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTE, LEVEL_WARN, "!!*"fmt, 5, arg0, arg1, arg2, arg3, arg4)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTE, LEVEL_WARN, "!!*" fmt, 5, arg0, arg1, arg2, arg3, arg4)
 #define BTE_PRINT_WARN6(fmt, arg0, arg1, arg2, arg3, arg4, arg5)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTE, LEVEL_WARN, "!!*"fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTE, LEVEL_WARN, "!!*" fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
 #define BTE_PRINT_WARN7(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTE, LEVEL_WARN, "!!*"fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTE, LEVEL_WARN, "!!*" fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 #define BTE_PRINT_WARN8(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTE, LEVEL_WARN, "!!*"fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTE, LEVEL_WARN, "!!*" fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
 #define BTE_PRINT_INFO0(fmt)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTE, LEVEL_INFO, "!**"fmt, 0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTE, LEVEL_INFO, "!**" fmt, 0)
 #define BTE_PRINT_INFO1(fmt, arg0)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTE, LEVEL_INFO, "!**"fmt, 1, arg0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTE, LEVEL_INFO, "!**" fmt, 1, arg0)
 #define BTE_PRINT_INFO2(fmt, arg0, arg1)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTE, LEVEL_INFO, "!**"fmt, 2, arg0, arg1)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTE, LEVEL_INFO, "!**" fmt, 2, arg0, arg1)
 #define BTE_PRINT_INFO3(fmt, arg0, arg1, arg2)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTE, LEVEL_INFO, "!**"fmt, 3, arg0, arg1, arg2)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTE, LEVEL_INFO, "!**" fmt, 3, arg0, arg1, arg2)
 #define BTE_PRINT_INFO4(fmt, arg0, arg1, arg2, arg3)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTE, LEVEL_INFO, "!**"fmt, 4, arg0, arg1, arg2, arg3)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTE, LEVEL_INFO, "!**" fmt, 4, arg0, arg1, arg2, arg3)
 #define BTE_PRINT_INFO5(fmt, arg0, arg1, arg2, arg3, arg4)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTE, LEVEL_INFO, "!**"fmt, 5, arg0, arg1, arg2, arg3, arg4)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTE, LEVEL_INFO, "!**" fmt, 5, arg0, arg1, arg2, arg3, arg4)
 #define BTE_PRINT_INFO6(fmt, arg0, arg1, arg2, arg3, arg4, arg5)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTE, LEVEL_INFO, "!**"fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTE, LEVEL_INFO, "!**" fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
 #define BTE_PRINT_INFO7(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTE, LEVEL_INFO, "!**"fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTE, LEVEL_INFO, "!**" fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 #define BTE_PRINT_INFO8(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTE, LEVEL_INFO, "!**"fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTE, LEVEL_INFO, "!**" fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
 #define BTE_PRINT_TRACE0(fmt)   \
     DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTE, LEVEL_TRACE, fmt, 0)
 #define BTE_PRINT_TRACE1(fmt, arg0)   \
@@ -1248,59 +1248,59 @@ bool log_module_bitmap_trace_set(uint64_t module_bitmap, uint8_t trace_level, bo
 
 /* Bluetooth GAP Trace Interfaces */
 #define GAP_PRINT_ERROR0(fmt)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GAP, LEVEL_ERROR, "!!!"fmt, 0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GAP, LEVEL_ERROR, "!!!" fmt, 0)
 #define GAP_PRINT_ERROR1(fmt, arg0)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GAP, LEVEL_ERROR, "!!!"fmt, 1, arg0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GAP, LEVEL_ERROR, "!!!" fmt, 1, arg0)
 #define GAP_PRINT_ERROR2(fmt, arg0, arg1)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GAP, LEVEL_ERROR, "!!!"fmt, 2, arg0, arg1)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GAP, LEVEL_ERROR, "!!!" fmt, 2, arg0, arg1)
 #define GAP_PRINT_ERROR3(fmt, arg0, arg1, arg2)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GAP, LEVEL_ERROR, "!!!"fmt, 3, arg0, arg1, arg2)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GAP, LEVEL_ERROR, "!!!" fmt, 3, arg0, arg1, arg2)
 #define GAP_PRINT_ERROR4(fmt, arg0, arg1, arg2, arg3)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GAP, LEVEL_ERROR, "!!!"fmt, 4, arg0, arg1, arg2, arg3)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GAP, LEVEL_ERROR, "!!!" fmt, 4, arg0, arg1, arg2, arg3)
 #define GAP_PRINT_ERROR5(fmt, arg0, arg1, arg2, arg3, arg4)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GAP, LEVEL_ERROR, "!!!"fmt, 5, arg0, arg1, arg2, arg3, arg4)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GAP, LEVEL_ERROR, "!!!" fmt, 5, arg0, arg1, arg2, arg3, arg4)
 #define GAP_PRINT_ERROR6(fmt, arg0, arg1, arg2, arg3, arg4, arg5)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GAP, LEVEL_ERROR, "!!!"fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GAP, LEVEL_ERROR, "!!!" fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
 #define GAP_PRINT_ERROR7(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GAP, LEVEL_ERROR, "!!!"fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GAP, LEVEL_ERROR, "!!!" fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 #define GAP_PRINT_ERROR8(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GAP, LEVEL_ERROR, "!!!"fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GAP, LEVEL_ERROR, "!!!" fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
 #define GAP_PRINT_WARN0(fmt)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GAP, LEVEL_WARN, "!!*"fmt, 0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GAP, LEVEL_WARN, "!!*" fmt, 0)
 #define GAP_PRINT_WARN1(fmt, arg0)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GAP, LEVEL_WARN, "!!*"fmt, 1, arg0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GAP, LEVEL_WARN, "!!*" fmt, 1, arg0)
 #define GAP_PRINT_WARN2(fmt, arg0, arg1)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GAP, LEVEL_WARN, "!!*"fmt, 2, arg0, arg1)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GAP, LEVEL_WARN, "!!*" fmt, 2, arg0, arg1)
 #define GAP_PRINT_WARN3(fmt, arg0, arg1, arg2)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GAP, LEVEL_WARN, "!!*"fmt, 3, arg0, arg1, arg2)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GAP, LEVEL_WARN, "!!*" fmt, 3, arg0, arg1, arg2)
 #define GAP_PRINT_WARN4(fmt, arg0, arg1, arg2, arg3)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GAP, LEVEL_WARN, "!!*"fmt, 4, arg0, arg1, arg2, arg3)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GAP, LEVEL_WARN, "!!*" fmt, 4, arg0, arg1, arg2, arg3)
 #define GAP_PRINT_WARN5(fmt, arg0, arg1, arg2, arg3, arg4)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GAP, LEVEL_WARN, "!!*"fmt, 5, arg0, arg1, arg2, arg3, arg4)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GAP, LEVEL_WARN, "!!*" fmt, 5, arg0, arg1, arg2, arg3, arg4)
 #define GAP_PRINT_WARN6(fmt, arg0, arg1, arg2, arg3, arg4, arg5)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GAP, LEVEL_WARN, "!!*"fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GAP, LEVEL_WARN, "!!*" fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
 #define GAP_PRINT_WARN7(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GAP, LEVEL_WARN, "!!*"fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GAP, LEVEL_WARN, "!!*" fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 #define GAP_PRINT_WARN8(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GAP, LEVEL_WARN, "!!*"fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GAP, LEVEL_WARN, "!!*" fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
 #define GAP_PRINT_INFO0(fmt)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GAP, LEVEL_INFO, "!**"fmt, 0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GAP, LEVEL_INFO, "!**" fmt, 0)
 #define GAP_PRINT_INFO1(fmt, arg0)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GAP, LEVEL_INFO, "!**"fmt, 1, arg0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GAP, LEVEL_INFO, "!**" fmt, 1, arg0)
 #define GAP_PRINT_INFO2(fmt, arg0, arg1)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GAP, LEVEL_INFO, "!**"fmt, 2, arg0, arg1)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GAP, LEVEL_INFO, "!**" fmt, 2, arg0, arg1)
 #define GAP_PRINT_INFO3(fmt, arg0, arg1, arg2)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GAP, LEVEL_INFO, "!**"fmt, 3, arg0, arg1, arg2)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GAP, LEVEL_INFO, "!**" fmt, 3, arg0, arg1, arg2)
 #define GAP_PRINT_INFO4(fmt, arg0, arg1, arg2, arg3)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GAP, LEVEL_INFO, "!**"fmt, 4, arg0, arg1, arg2, arg3)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GAP, LEVEL_INFO, "!**" fmt, 4, arg0, arg1, arg2, arg3)
 #define GAP_PRINT_INFO5(fmt, arg0, arg1, arg2, arg3, arg4)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GAP, LEVEL_INFO, "!**"fmt, 5, arg0, arg1, arg2, arg3, arg4)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GAP, LEVEL_INFO, "!**" fmt, 5, arg0, arg1, arg2, arg3, arg4)
 #define GAP_PRINT_INFO6(fmt, arg0, arg1, arg2, arg3, arg4, arg5)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GAP, LEVEL_INFO, "!**"fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GAP, LEVEL_INFO, "!**" fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
 #define GAP_PRINT_INFO7(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GAP, LEVEL_INFO, "!**"fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GAP, LEVEL_INFO, "!**" fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 #define GAP_PRINT_INFO8(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GAP, LEVEL_INFO, "!**"fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GAP, LEVEL_INFO, "!**" fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
 #define GAP_PRINT_TRACE0(fmt)   \
     DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_GAP, LEVEL_TRACE, fmt, 0)
 #define GAP_PRINT_TRACE1(fmt, arg0)   \
@@ -1323,59 +1323,59 @@ bool log_module_bitmap_trace_set(uint64_t module_bitmap, uint8_t trace_level, bo
 
 /* Bluetooth RFCOMM Trace Interfaces */
 #define RFCOMM_PRINT_ERROR0(fmt)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_RFCOMM, LEVEL_ERROR, "!!!"fmt, 0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_RFCOMM, LEVEL_ERROR, "!!!" fmt, 0)
 #define RFCOMM_PRINT_ERROR1(fmt, arg0)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_RFCOMM, LEVEL_ERROR, "!!!"fmt, 1, arg0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_RFCOMM, LEVEL_ERROR, "!!!" fmt, 1, arg0)
 #define RFCOMM_PRINT_ERROR2(fmt, arg0, arg1)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_RFCOMM, LEVEL_ERROR, "!!!"fmt, 2, arg0, arg1)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_RFCOMM, LEVEL_ERROR, "!!!" fmt, 2, arg0, arg1)
 #define RFCOMM_PRINT_ERROR3(fmt, arg0, arg1, arg2)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_RFCOMM, LEVEL_ERROR, "!!!"fmt, 3, arg0, arg1, arg2)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_RFCOMM, LEVEL_ERROR, "!!!" fmt, 3, arg0, arg1, arg2)
 #define RFCOMM_PRINT_ERROR4(fmt, arg0, arg1, arg2, arg3)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_RFCOMM, LEVEL_ERROR, "!!!"fmt, 4, arg0, arg1, arg2, arg3)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_RFCOMM, LEVEL_ERROR, "!!!" fmt, 4, arg0, arg1, arg2, arg3)
 #define RFCOMM_PRINT_ERROR5(fmt, arg0, arg1, arg2, arg3, arg4)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_RFCOMM, LEVEL_ERROR, "!!!"fmt, 5, arg0, arg1, arg2, arg3, arg4)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_RFCOMM, LEVEL_ERROR, "!!!" fmt, 5, arg0, arg1, arg2, arg3, arg4)
 #define RFCOMM_PRINT_ERROR6(fmt, arg0, arg1, arg2, arg3, arg4, arg5)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_RFCOMM, LEVEL_ERROR, "!!!"fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_RFCOMM, LEVEL_ERROR, "!!!" fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
 #define RFCOMM_PRINT_ERROR7(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_RFCOMM, LEVEL_ERROR, "!!!"fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_RFCOMM, LEVEL_ERROR, "!!!" fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 #define RFCOMM_PRINT_ERROR8(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_RFCOMM, LEVEL_ERROR, "!!!"fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_RFCOMM, LEVEL_ERROR, "!!!" fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
 #define RFCOMM_PRINT_WARN0(fmt)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_RFCOMM, LEVEL_WARN, "!!*"fmt, 0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_RFCOMM, LEVEL_WARN, "!!*" fmt, 0)
 #define RFCOMM_PRINT_WARN1(fmt, arg0)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_RFCOMM, LEVEL_WARN, "!!*"fmt, 1, arg0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_RFCOMM, LEVEL_WARN, "!!*" fmt, 1, arg0)
 #define RFCOMM_PRINT_WARN2(fmt, arg0, arg1)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_RFCOMM, LEVEL_WARN, "!!*"fmt, 2, arg0, arg1)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_RFCOMM, LEVEL_WARN, "!!*" fmt, 2, arg0, arg1)
 #define RFCOMM_PRINT_WARN3(fmt, arg0, arg1, arg2)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_RFCOMM, LEVEL_WARN, "!!*"fmt, 3, arg0, arg1, arg2)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_RFCOMM, LEVEL_WARN, "!!*" fmt, 3, arg0, arg1, arg2)
 #define RFCOMM_PRINT_WARN4(fmt, arg0, arg1, arg2, arg3)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_RFCOMM, LEVEL_WARN, "!!*"fmt, 4, arg0, arg1, arg2, arg3)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_RFCOMM, LEVEL_WARN, "!!*" fmt, 4, arg0, arg1, arg2, arg3)
 #define RFCOMM_PRINT_WARN5(fmt, arg0, arg1, arg2, arg3, arg4)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_RFCOMM, LEVEL_WARN, "!!*"fmt, 5, arg0, arg1, arg2, arg3, arg4)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_RFCOMM, LEVEL_WARN, "!!*" fmt, 5, arg0, arg1, arg2, arg3, arg4)
 #define RFCOMM_PRINT_WARN6(fmt, arg0, arg1, arg2, arg3, arg4, arg5)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_RFCOMM, LEVEL_WARN, "!!*"fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_RFCOMM, LEVEL_WARN, "!!*" fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
 #define RFCOMM_PRINT_WARN7(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_RFCOMM, LEVEL_WARN, "!!*"fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_RFCOMM, LEVEL_WARN, "!!*" fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 #define RFCOMM_PRINT_WARN8(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_RFCOMM, LEVEL_WARN, "!!*"fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_RFCOMM, LEVEL_WARN, "!!*" fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
 #define RFCOMM_PRINT_INFO0(fmt)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_RFCOMM, LEVEL_INFO, "!**"fmt, 0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_RFCOMM, LEVEL_INFO, "!**" fmt, 0)
 #define RFCOMM_PRINT_INFO1(fmt, arg0)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_RFCOMM, LEVEL_INFO, "!**"fmt, 1, arg0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_RFCOMM, LEVEL_INFO, "!**" fmt, 1, arg0)
 #define RFCOMM_PRINT_INFO2(fmt, arg0, arg1)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_RFCOMM, LEVEL_INFO, "!**"fmt, 2, arg0, arg1)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_RFCOMM, LEVEL_INFO, "!**" fmt, 2, arg0, arg1)
 #define RFCOMM_PRINT_INFO3(fmt, arg0, arg1, arg2)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_RFCOMM, LEVEL_INFO, "!**"fmt, 3, arg0, arg1, arg2)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_RFCOMM, LEVEL_INFO, "!**" fmt, 3, arg0, arg1, arg2)
 #define RFCOMM_PRINT_INFO4(fmt, arg0, arg1, arg2, arg3)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_RFCOMM, LEVEL_INFO, "!**"fmt, 4, arg0, arg1, arg2, arg3)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_RFCOMM, LEVEL_INFO, "!**" fmt, 4, arg0, arg1, arg2, arg3)
 #define RFCOMM_PRINT_INFO5(fmt, arg0, arg1, arg2, arg3, arg4)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_RFCOMM, LEVEL_INFO, "!**"fmt, 5, arg0, arg1, arg2, arg3, arg4)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_RFCOMM, LEVEL_INFO, "!**" fmt, 5, arg0, arg1, arg2, arg3, arg4)
 #define RFCOMM_PRINT_INFO6(fmt, arg0, arg1, arg2, arg3, arg4, arg5)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_RFCOMM, LEVEL_INFO, "!**"fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_RFCOMM, LEVEL_INFO, "!**" fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
 #define RFCOMM_PRINT_INFO7(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_RFCOMM, LEVEL_INFO, "!**"fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_RFCOMM, LEVEL_INFO, "!**" fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 #define RFCOMM_PRINT_INFO8(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_RFCOMM, LEVEL_INFO, "!**"fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_RFCOMM, LEVEL_INFO, "!**" fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
 #define RFCOMM_PRINT_TRACE0(fmt)   \
     DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_RFCOMM, LEVEL_TRACE, fmt, 0)
 #define RFCOMM_PRINT_TRACE1(fmt, arg0)   \
@@ -1398,59 +1398,59 @@ bool log_module_bitmap_trace_set(uint64_t module_bitmap, uint8_t trace_level, bo
 
 /* Bluetooth Protocol Trace Interfaces */
 #define PROTOCOL_PRINT_ERROR0(fmt)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROTOCOL, LEVEL_ERROR, "!!!"fmt, 0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROTOCOL, LEVEL_ERROR, "!!!" fmt, 0)
 #define PROTOCOL_PRINT_ERROR1(fmt, arg0)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROTOCOL, LEVEL_ERROR, "!!!"fmt, 1, arg0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROTOCOL, LEVEL_ERROR, "!!!" fmt, 1, arg0)
 #define PROTOCOL_PRINT_ERROR2(fmt, arg0, arg1)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROTOCOL, LEVEL_ERROR, "!!!"fmt, 2, arg0, arg1)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROTOCOL, LEVEL_ERROR, "!!!" fmt, 2, arg0, arg1)
 #define PROTOCOL_PRINT_ERROR3(fmt, arg0, arg1, arg2)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROTOCOL, LEVEL_ERROR, "!!!"fmt, 3, arg0, arg1, arg2)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROTOCOL, LEVEL_ERROR, "!!!" fmt, 3, arg0, arg1, arg2)
 #define PROTOCOL_PRINT_ERROR4(fmt, arg0, arg1, arg2, arg3)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROTOCOL, LEVEL_ERROR, "!!!"fmt, 4, arg0, arg1, arg2, arg3)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROTOCOL, LEVEL_ERROR, "!!!" fmt, 4, arg0, arg1, arg2, arg3)
 #define PROTOCOL_PRINT_ERROR5(fmt, arg0, arg1, arg2, arg3, arg4)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROTOCOL, LEVEL_ERROR, "!!!"fmt, 5, arg0, arg1, arg2, arg3, arg4)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROTOCOL, LEVEL_ERROR, "!!!" fmt, 5, arg0, arg1, arg2, arg3, arg4)
 #define PROTOCOL_PRINT_ERROR6(fmt, arg0, arg1, arg2, arg3, arg4, arg5)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROTOCOL, LEVEL_ERROR, "!!!"fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROTOCOL, LEVEL_ERROR, "!!!" fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
 #define PROTOCOL_PRINT_ERROR7(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROTOCOL, LEVEL_ERROR, "!!!"fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROTOCOL, LEVEL_ERROR, "!!!" fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 #define PROTOCOL_PRINT_ERROR8(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROTOCOL, LEVEL_ERROR, "!!!"fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROTOCOL, LEVEL_ERROR, "!!!" fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
 #define PROTOCOL_PRINT_WARN0(fmt)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROTOCOL, LEVEL_WARN, "!!*"fmt, 0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROTOCOL, LEVEL_WARN, "!!*" fmt, 0)
 #define PROTOCOL_PRINT_WARN1(fmt, arg0)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROTOCOL, LEVEL_WARN, "!!*"fmt, 1, arg0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROTOCOL, LEVEL_WARN, "!!*" fmt, 1, arg0)
 #define PROTOCOL_PRINT_WARN2(fmt, arg0, arg1)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROTOCOL, LEVEL_WARN, "!!*"fmt, 2, arg0, arg1)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROTOCOL, LEVEL_WARN, "!!*" fmt, 2, arg0, arg1)
 #define PROTOCOL_PRINT_WARN3(fmt, arg0, arg1, arg2)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROTOCOL, LEVEL_WARN, "!!*"fmt, 3, arg0, arg1, arg2)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROTOCOL, LEVEL_WARN, "!!*" fmt, 3, arg0, arg1, arg2)
 #define PROTOCOL_PRINT_WARN4(fmt, arg0, arg1, arg2, arg3)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROTOCOL, LEVEL_WARN, "!!*"fmt, 4, arg0, arg1, arg2, arg3)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROTOCOL, LEVEL_WARN, "!!*" fmt, 4, arg0, arg1, arg2, arg3)
 #define PROTOCOL_PRINT_WARN5(fmt, arg0, arg1, arg2, arg3, arg4)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROTOCOL, LEVEL_WARN, "!!*"fmt, 5, arg0, arg1, arg2, arg3, arg4)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROTOCOL, LEVEL_WARN, "!!*" fmt, 5, arg0, arg1, arg2, arg3, arg4)
 #define PROTOCOL_PRINT_WARN6(fmt, arg0, arg1, arg2, arg3, arg4, arg5)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROTOCOL, LEVEL_WARN, "!!*"fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROTOCOL, LEVEL_WARN, "!!*" fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
 #define PROTOCOL_PRINT_WARN7(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROTOCOL, LEVEL_WARN, "!!*"fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROTOCOL, LEVEL_WARN, "!!*" fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 #define PROTOCOL_PRINT_WARN8(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROTOCOL, LEVEL_WARN, "!!*"fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROTOCOL, LEVEL_WARN, "!!*" fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
 #define PROTOCOL_PRINT_INFO0(fmt)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROTOCOL, LEVEL_INFO, "!**"fmt, 0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROTOCOL, LEVEL_INFO, "!**" fmt, 0)
 #define PROTOCOL_PRINT_INFO1(fmt, arg0)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROTOCOL, LEVEL_INFO, "!**"fmt, 1, arg0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROTOCOL, LEVEL_INFO, "!**" fmt, 1, arg0)
 #define PROTOCOL_PRINT_INFO2(fmt, arg0, arg1)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROTOCOL, LEVEL_INFO, "!**"fmt, 2, arg0, arg1)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROTOCOL, LEVEL_INFO, "!**" fmt, 2, arg0, arg1)
 #define PROTOCOL_PRINT_INFO3(fmt, arg0, arg1, arg2)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROTOCOL, LEVEL_INFO, "!**"fmt, 3, arg0, arg1, arg2)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROTOCOL, LEVEL_INFO, "!**" fmt, 3, arg0, arg1, arg2)
 #define PROTOCOL_PRINT_INFO4(fmt, arg0, arg1, arg2, arg3)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROTOCOL, LEVEL_INFO, "!**"fmt, 4, arg0, arg1, arg2, arg3)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROTOCOL, LEVEL_INFO, "!**" fmt, 4, arg0, arg1, arg2, arg3)
 #define PROTOCOL_PRINT_INFO5(fmt, arg0, arg1, arg2, arg3, arg4)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROTOCOL, LEVEL_INFO, "!**"fmt, 5, arg0, arg1, arg2, arg3, arg4)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROTOCOL, LEVEL_INFO, "!**" fmt, 5, arg0, arg1, arg2, arg3, arg4)
 #define PROTOCOL_PRINT_INFO6(fmt, arg0, arg1, arg2, arg3, arg4, arg5)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROTOCOL, LEVEL_INFO, "!**"fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROTOCOL, LEVEL_INFO, "!**" fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
 #define PROTOCOL_PRINT_INFO7(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROTOCOL, LEVEL_INFO, "!**"fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROTOCOL, LEVEL_INFO, "!**" fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 #define PROTOCOL_PRINT_INFO8(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROTOCOL, LEVEL_INFO, "!**"fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROTOCOL, LEVEL_INFO, "!**" fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
 #define PROTOCOL_PRINT_TRACE0(fmt)   \
     DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROTOCOL, LEVEL_TRACE, fmt, 0)
 #define PROTOCOL_PRINT_TRACE1(fmt, arg0)   \
@@ -1472,59 +1472,59 @@ bool log_module_bitmap_trace_set(uint64_t module_bitmap, uint8_t trace_level, bo
 
 /* Bluetooth Profile Trace Interfaces */
 #define PROFILE_PRINT_ERROR0(fmt)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROFILE, LEVEL_ERROR, "!!!"fmt, 0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROFILE, LEVEL_ERROR, "!!!" fmt, 0)
 #define PROFILE_PRINT_ERROR1(fmt, arg0)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROFILE, LEVEL_ERROR, "!!!"fmt, 1, arg0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROFILE, LEVEL_ERROR, "!!!" fmt, 1, arg0)
 #define PROFILE_PRINT_ERROR2(fmt, arg0, arg1)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROFILE, LEVEL_ERROR, "!!!"fmt, 2, arg0, arg1)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROFILE, LEVEL_ERROR, "!!!" fmt, 2, arg0, arg1)
 #define PROFILE_PRINT_ERROR3(fmt, arg0, arg1, arg2)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROFILE, LEVEL_ERROR, "!!!"fmt, 3, arg0, arg1, arg2)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROFILE, LEVEL_ERROR, "!!!" fmt, 3, arg0, arg1, arg2)
 #define PROFILE_PRINT_ERROR4(fmt, arg0, arg1, arg2, arg3)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROFILE, LEVEL_ERROR, "!!!"fmt, 4, arg0, arg1, arg2, arg3)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROFILE, LEVEL_ERROR, "!!!" fmt, 4, arg0, arg1, arg2, arg3)
 #define PROFILE_PRINT_ERROR5(fmt, arg0, arg1, arg2, arg3, arg4)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROFILE, LEVEL_ERROR, "!!!"fmt, 5, arg0, arg1, arg2, arg3, arg4)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROFILE, LEVEL_ERROR, "!!!" fmt, 5, arg0, arg1, arg2, arg3, arg4)
 #define PROFILE_PRINT_ERROR6(fmt, arg0, arg1, arg2, arg3, arg4, arg5)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROFILE, LEVEL_ERROR, "!!!"fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROFILE, LEVEL_ERROR, "!!!" fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
 #define PROFILE_PRINT_ERROR7(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROFILE, LEVEL_ERROR, "!!!"fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROFILE, LEVEL_ERROR, "!!!" fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 #define PROFILE_PRINT_ERROR8(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROFILE, LEVEL_ERROR, "!!!"fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROFILE, LEVEL_ERROR, "!!!" fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
 #define PROFILE_PRINT_WARN0(fmt)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROFILE, LEVEL_WARN, "!!*"fmt, 0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROFILE, LEVEL_WARN, "!!*" fmt, 0)
 #define PROFILE_PRINT_WARN1(fmt, arg0)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROFILE, LEVEL_WARN, "!!*"fmt, 1, arg0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROFILE, LEVEL_WARN, "!!*" fmt, 1, arg0)
 #define PROFILE_PRINT_WARN2(fmt, arg0, arg1)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROFILE, LEVEL_WARN, "!!*"fmt, 2, arg0, arg1)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROFILE, LEVEL_WARN, "!!*" fmt, 2, arg0, arg1)
 #define PROFILE_PRINT_WARN3(fmt, arg0, arg1, arg2)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROFILE, LEVEL_WARN, "!!*"fmt, 3, arg0, arg1, arg2)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROFILE, LEVEL_WARN, "!!*" fmt, 3, arg0, arg1, arg2)
 #define PROFILE_PRINT_WARN4(fmt, arg0, arg1, arg2, arg3)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROFILE, LEVEL_WARN, "!!*"fmt, 4, arg0, arg1, arg2, arg3)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROFILE, LEVEL_WARN, "!!*" fmt, 4, arg0, arg1, arg2, arg3)
 #define PROFILE_PRINT_WARN5(fmt, arg0, arg1, arg2, arg3, arg4)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROFILE, LEVEL_WARN, "!!*"fmt, 5, arg0, arg1, arg2, arg3, arg4)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROFILE, LEVEL_WARN, "!!*" fmt, 5, arg0, arg1, arg2, arg3, arg4)
 #define PROFILE_PRINT_WARN6(fmt, arg0, arg1, arg2, arg3, arg4, arg5)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROFILE, LEVEL_WARN, "!!*"fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROFILE, LEVEL_WARN, "!!*" fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
 #define PROFILE_PRINT_WARN7(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROFILE, LEVEL_WARN, "!!*"fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROFILE, LEVEL_WARN, "!!*" fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 #define PROFILE_PRINT_WARN8(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROFILE, LEVEL_WARN, "!!*"fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROFILE, LEVEL_WARN, "!!*" fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
 #define PROFILE_PRINT_INFO0(fmt)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROFILE, LEVEL_INFO, "!**"fmt, 0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROFILE, LEVEL_INFO, "!**" fmt, 0)
 #define PROFILE_PRINT_INFO1(fmt, arg0)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROFILE, LEVEL_INFO, "!**"fmt, 1, arg0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROFILE, LEVEL_INFO, "!**" fmt, 1, arg0)
 #define PROFILE_PRINT_INFO2(fmt, arg0, arg1)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROFILE, LEVEL_INFO, "!**"fmt, 2, arg0, arg1)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROFILE, LEVEL_INFO, "!**" fmt, 2, arg0, arg1)
 #define PROFILE_PRINT_INFO3(fmt, arg0, arg1, arg2)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROFILE, LEVEL_INFO, "!**"fmt, 3, arg0, arg1, arg2)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROFILE, LEVEL_INFO, "!**" fmt, 3, arg0, arg1, arg2)
 #define PROFILE_PRINT_INFO4(fmt, arg0, arg1, arg2, arg3)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROFILE, LEVEL_INFO, "!**"fmt, 4, arg0, arg1, arg2, arg3)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROFILE, LEVEL_INFO, "!**" fmt, 4, arg0, arg1, arg2, arg3)
 #define PROFILE_PRINT_INFO5(fmt, arg0, arg1, arg2, arg3, arg4)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROFILE, LEVEL_INFO, "!**"fmt, 5, arg0, arg1, arg2, arg3, arg4)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROFILE, LEVEL_INFO, "!**" fmt, 5, arg0, arg1, arg2, arg3, arg4)
 #define PROFILE_PRINT_INFO6(fmt, arg0, arg1, arg2, arg3, arg4, arg5)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROFILE, LEVEL_INFO, "!**"fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROFILE, LEVEL_INFO, "!**" fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
 #define PROFILE_PRINT_INFO7(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROFILE, LEVEL_INFO, "!**"fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROFILE, LEVEL_INFO, "!**" fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 #define PROFILE_PRINT_INFO8(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROFILE, LEVEL_INFO, "!**"fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROFILE, LEVEL_INFO, "!**" fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
 #define PROFILE_PRINT_TRACE0(fmt)   \
     DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_PROFILE, LEVEL_TRACE, fmt, 0)
 #define PROFILE_PRINT_TRACE1(fmt, arg0)   \
@@ -1546,124 +1546,124 @@ bool log_module_bitmap_trace_set(uint64_t module_bitmap, uint8_t trace_level, bo
 
 /* AES Trace Interfaces */
 #define AES_PRINT_ERROR0(fmt)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_AES, LEVEL_ERROR, "!!!"fmt, 0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_AES, LEVEL_ERROR, "!!!" fmt, 0)
 #define AES_PRINT_ERROR1(fmt, arg0)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_AES, LEVEL_ERROR, "!!!"fmt, 1, arg0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_AES, LEVEL_ERROR, "!!!" fmt, 1, arg0)
 #define AES_PRINT_ERROR2(fmt, arg0, arg1)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_AES, LEVEL_ERROR, "!!!"fmt, 2, arg0, arg1)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_AES, LEVEL_ERROR, "!!!" fmt, 2, arg0, arg1)
 #define AES_PRINT_ERROR3(fmt, arg0, arg1, arg2)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_AES, LEVEL_ERROR, "!!!"fmt, 3, arg0, arg1, arg2)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_AES, LEVEL_ERROR, "!!!" fmt, 3, arg0, arg1, arg2)
 #define AES_PRINT_ERROR4(fmt, arg0, arg1, arg2, arg3)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_AES, LEVEL_ERROR, "!!!"fmt, 4, arg0, arg1, arg2, arg3)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_AES, LEVEL_ERROR, "!!!" fmt, 4, arg0, arg1, arg2, arg3)
 #define AES_PRINT_WARN0(fmt)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_AES, LEVEL_WARN, "!!*"fmt, 0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_AES, LEVEL_WARN, "!!*" fmt, 0)
 #define AES_PRINT_WARN1(fmt, arg0)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_AES, LEVEL_WARN, "!!*"fmt, 1, arg0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_AES, LEVEL_WARN, "!!*" fmt, 1, arg0)
 #define AES_PRINT_WARN2(fmt, arg0, arg1)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_AES, LEVEL_WARN, "!!*"fmt, 2, arg0, arg1)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_AES, LEVEL_WARN, "!!*" fmt, 2, arg0, arg1)
 #define AES_PRINT_WARN3(fmt, arg0, arg1, arg2)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_AES, LEVEL_WARN, "!!*"fmt, 3, arg0, arg1, arg2)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_AES, LEVEL_WARN, "!!*" fmt, 3, arg0, arg1, arg2)
 #define AES_PRINT_WARN4(fmt, arg0, arg1, arg2, arg3)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_AES, LEVEL_WARN, "!!*"fmt, 4, arg0, arg1, arg2, arg3)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_AES, LEVEL_WARN, "!!*" fmt, 4, arg0, arg1, arg2, arg3)
 #define AES_PRINT_INFO0(fmt)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_AES, LEVEL_INFO, "!**"fmt, 0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_AES, LEVEL_INFO, "!**" fmt, 0)
 #define AES_PRINT_INFO1(fmt, arg0)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_AES, LEVEL_INFO, "!**"fmt, 1, arg0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_AES, LEVEL_INFO, "!**" fmt, 1, arg0)
 #define AES_PRINT_INFO2(fmt, arg0, arg1)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_AES, LEVEL_INFO, "!**"fmt, 2, arg0, arg1)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_AES, LEVEL_INFO, "!**" fmt, 2, arg0, arg1)
 #define AES_PRINT_INFO3(fmt, arg0, arg1, arg2)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_AES, LEVEL_INFO, "!**"fmt, 3, arg0, arg1, arg2)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_AES, LEVEL_INFO, "!**" fmt, 3, arg0, arg1, arg2)
 #define AES_PRINT_INFO4(fmt, arg0, arg1, arg2, arg3)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_AES, LEVEL_INFO, "!**"fmt, 4, arg0, arg1, arg2, arg3)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_AES, LEVEL_INFO, "!**" fmt, 4, arg0, arg1, arg2, arg3)
 
 
 /* DLPS Trace Interfaces */
 #define DLPS_PRINT_ERROR0(fmt)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DLPS, LEVEL_ERROR, "!!!"fmt, 0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DLPS, LEVEL_ERROR, "!!!" fmt, 0)
 #define DLPS_PRINT_ERROR1(fmt, arg0)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DLPS, LEVEL_ERROR, "!!!"fmt, 1, arg0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DLPS, LEVEL_ERROR, "!!!" fmt, 1, arg0)
 #define DLPS_PRINT_ERROR2(fmt, arg0, arg1)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DLPS, LEVEL_ERROR, "!!!"fmt, 2, arg0, arg1)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DLPS, LEVEL_ERROR, "!!!" fmt, 2, arg0, arg1)
 #define DLPS_PRINT_ERROR3(fmt, arg0, arg1, arg2)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DLPS, LEVEL_ERROR, "!!!"fmt, 3, arg0, arg1, arg2)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DLPS, LEVEL_ERROR, "!!!" fmt, 3, arg0, arg1, arg2)
 #define DLPS_PRINT_ERROR4(fmt, arg0, arg1, arg2, arg3)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DLPS, LEVEL_ERROR, "!!!"fmt, 4, arg0, arg1, arg2, arg3)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DLPS, LEVEL_ERROR, "!!!" fmt, 4, arg0, arg1, arg2, arg3)
 #define DLPS_PRINT_WARN0(fmt)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DLPS, LEVEL_WARN, "!!*"fmt, 0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DLPS, LEVEL_WARN, "!!*" fmt, 0)
 #define DLPS_PRINT_WARN1(fmt, arg0)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DLPS, LEVEL_WARN, "!!*"fmt, 1, arg0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DLPS, LEVEL_WARN, "!!*" fmt, 1, arg0)
 #define DLPS_PRINT_WARN2(fmt, arg0, arg1)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DLPS, LEVEL_WARN, "!!*"fmt, 2, arg0, arg1)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DLPS, LEVEL_WARN, "!!*" fmt, 2, arg0, arg1)
 #define DLPS_PRINT_WARN3(fmt, arg0, arg1, arg2)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DLPS, LEVEL_WARN, "!!*"fmt, 3, arg0, arg1, arg2)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DLPS, LEVEL_WARN, "!!*" fmt, 3, arg0, arg1, arg2)
 #define DLPS_PRINT_WARN4(fmt, arg0, arg1, arg2, arg3)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DLPS, LEVEL_WARN, "!!*"fmt, 4, arg0, arg1, arg2, arg3)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DLPS, LEVEL_WARN, "!!*" fmt, 4, arg0, arg1, arg2, arg3)
 #define DLPS_PRINT_INFO0(fmt)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DLPS, LEVEL_INFO, "!**"fmt, 0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DLPS, LEVEL_INFO, "!**" fmt, 0)
 #define DLPS_PRINT_INFO1(fmt, arg0)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DLPS, LEVEL_INFO, "!**"fmt, 1, arg0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DLPS, LEVEL_INFO, "!**" fmt, 1, arg0)
 #define DLPS_PRINT_INFO2(fmt, arg0, arg1)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DLPS, LEVEL_INFO, "!**"fmt, 2, arg0, arg1)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DLPS, LEVEL_INFO, "!**" fmt, 2, arg0, arg1)
 #define DLPS_PRINT_INFO3(fmt, arg0, arg1, arg2)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DLPS, LEVEL_INFO, "!**"fmt, 3, arg0, arg1, arg2)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DLPS, LEVEL_INFO, "!**" fmt, 3, arg0, arg1, arg2)
 #define DLPS_PRINT_INFO4(fmt, arg0, arg1, arg2, arg3)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DLPS, LEVEL_INFO, "!**"fmt, 4, arg0, arg1, arg2, arg3)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DLPS, LEVEL_INFO, "!**" fmt, 4, arg0, arg1, arg2, arg3)
 
 /* Bluetooth OTA/DFU Trace Interfaces */
 #define DFU_PRINT_ERROR0(fmt)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DFU, LEVEL_ERROR, "!!!"fmt, 0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DFU, LEVEL_ERROR, "!!!" fmt, 0)
 #define DFU_PRINT_ERROR1(fmt, arg0)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DFU, LEVEL_ERROR, "!!!"fmt, 1, arg0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DFU, LEVEL_ERROR, "!!!" fmt, 1, arg0)
 #define DFU_PRINT_ERROR2(fmt, arg0, arg1)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DFU, LEVEL_ERROR, "!!!"fmt, 2, arg0, arg1)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DFU, LEVEL_ERROR, "!!!" fmt, 2, arg0, arg1)
 #define DFU_PRINT_ERROR3(fmt, arg0, arg1, arg2)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DFU, LEVEL_ERROR, "!!!"fmt, 3, arg0, arg1, arg2)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DFU, LEVEL_ERROR, "!!!" fmt, 3, arg0, arg1, arg2)
 #define DFU_PRINT_ERROR4(fmt, arg0, arg1, arg2, arg3)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DFU, LEVEL_ERROR, "!!!"fmt, 4, arg0, arg1, arg2, arg3)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DFU, LEVEL_ERROR, "!!!" fmt, 4, arg0, arg1, arg2, arg3)
 #define DFU_PRINT_ERROR5(fmt, arg0, arg1, arg2, arg3, arg4)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DFU, LEVEL_ERROR, "!!!"fmt, 5, arg0, arg1, arg2, arg3, arg4)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DFU, LEVEL_ERROR, "!!!" fmt, 5, arg0, arg1, arg2, arg3, arg4)
 #define DFU_PRINT_ERROR6(fmt, arg0, arg1, arg2, arg3, arg4, arg5)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DFU, LEVEL_ERROR, "!!!"fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DFU, LEVEL_ERROR, "!!!" fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
 #define DFU_PRINT_ERROR7(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DFU, LEVEL_ERROR, "!!!"fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DFU, LEVEL_ERROR, "!!!" fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 #define DFU_PRINT_ERROR8(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DFU, LEVEL_ERROR, "!!!"fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DFU, LEVEL_ERROR, "!!!" fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
 #define DFU_PRINT_WARN0(fmt)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DFU, LEVEL_WARN, "!!*"fmt, 0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DFU, LEVEL_WARN, "!!*" fmt, 0)
 #define DFU_PRINT_WARN1(fmt, arg0)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DFU, LEVEL_WARN, "!!*"fmt, 1, arg0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DFU, LEVEL_WARN, "!!*" fmt, 1, arg0)
 #define DFU_PRINT_WARN2(fmt, arg0, arg1)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DFU, LEVEL_WARN, "!!*"fmt, 2, arg0, arg1)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DFU, LEVEL_WARN, "!!*" fmt, 2, arg0, arg1)
 #define DFU_PRINT_WARN3(fmt, arg0, arg1, arg2)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DFU, LEVEL_WARN, "!!*"fmt, 3, arg0, arg1, arg2)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DFU, LEVEL_WARN, "!!*" fmt, 3, arg0, arg1, arg2)
 #define DFU_PRINT_WARN4(fmt, arg0, arg1, arg2, arg3)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DFU, LEVEL_WARN, "!!*"fmt, 4, arg0, arg1, arg2, arg3)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DFU, LEVEL_WARN, "!!*" fmt, 4, arg0, arg1, arg2, arg3)
 #define DFU_PRINT_WARN5(fmt, arg0, arg1, arg2, arg3, arg4)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DFU, LEVEL_WARN, "!!*"fmt, 5, arg0, arg1, arg2, arg3, arg4)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DFU, LEVEL_WARN, "!!*" fmt, 5, arg0, arg1, arg2, arg3, arg4)
 #define DFU_PRINT_WARN6(fmt, arg0, arg1, arg2, arg3, arg4, arg5)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DFU, LEVEL_WARN, "!!*"fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DFU, LEVEL_WARN, "!!*" fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
 #define DFU_PRINT_WARN7(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DFU, LEVEL_WARN, "!!*"fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DFU, LEVEL_WARN, "!!*" fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 #define DFU_PRINT_WARN8(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DFU, LEVEL_WARN, "!!*"fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DFU, LEVEL_WARN, "!!*" fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
 #define DFU_PRINT_INFO0(fmt)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DFU, LEVEL_INFO, "!**"fmt, 0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DFU, LEVEL_INFO, "!**" fmt, 0)
 #define DFU_PRINT_INFO1(fmt, arg0)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DFU, LEVEL_INFO, "!**"fmt, 1, arg0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DFU, LEVEL_INFO, "!**" fmt, 1, arg0)
 #define DFU_PRINT_INFO2(fmt, arg0, arg1)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DFU, LEVEL_INFO, "!**"fmt, 2, arg0, arg1)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DFU, LEVEL_INFO, "!**" fmt, 2, arg0, arg1)
 #define DFU_PRINT_INFO3(fmt, arg0, arg1, arg2)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DFU, LEVEL_INFO, "!**"fmt, 3, arg0, arg1, arg2)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DFU, LEVEL_INFO, "!**" fmt, 3, arg0, arg1, arg2)
 #define DFU_PRINT_INFO4(fmt, arg0, arg1, arg2, arg3)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DFU, LEVEL_INFO, "!**"fmt, 4, arg0, arg1, arg2, arg3)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DFU, LEVEL_INFO, "!**" fmt, 4, arg0, arg1, arg2, arg3)
 #define DFU_PRINT_INFO5(fmt, arg0, arg1, arg2, arg3, arg4)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DFU, LEVEL_INFO, "!**"fmt, 5, arg0, arg1, arg2, arg3, arg4)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DFU, LEVEL_INFO, "!**" fmt, 5, arg0, arg1, arg2, arg3, arg4)
 #define DFU_PRINT_INFO6(fmt, arg0, arg1, arg2, arg3, arg4, arg5)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DFU, LEVEL_INFO, "!**"fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DFU, LEVEL_INFO, "!**" fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
 #define DFU_PRINT_INFO7(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DFU, LEVEL_INFO, "!**"fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DFU, LEVEL_INFO, "!**" fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 #define DFU_PRINT_INFO8(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DFU, LEVEL_INFO, "!**"fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DFU, LEVEL_INFO, "!**" fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
 #define DFU_PRINT_TRACE0(fmt)   \
     DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_DFU, LEVEL_TRACE, fmt, 0)
 #define DFU_PRINT_TRACE1(fmt, arg0)   \
@@ -1685,59 +1685,59 @@ bool log_module_bitmap_trace_set(uint64_t module_bitmap, uint8_t trace_level, bo
 
 /* Bluetooth FLASH/CACHE Trace Interfaces */
 #define FLASH_PRINT_ERROR0(fmt)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_FLASH, LEVEL_ERROR, "!!!"fmt, 0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_FLASH, LEVEL_ERROR, "!!!" fmt, 0)
 #define FLASH_PRINT_ERROR1(fmt, arg0)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_FLASH, LEVEL_ERROR, "!!!"fmt, 1, arg0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_FLASH, LEVEL_ERROR, "!!!" fmt, 1, arg0)
 #define FLASH_PRINT_ERROR2(fmt, arg0, arg1)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_FLASH, LEVEL_ERROR, "!!!"fmt, 2, arg0, arg1)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_FLASH, LEVEL_ERROR, "!!!" fmt, 2, arg0, arg1)
 #define FLASH_PRINT_ERROR3(fmt, arg0, arg1, arg2)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_FLASH, LEVEL_ERROR, "!!!"fmt, 3, arg0, arg1, arg2)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_FLASH, LEVEL_ERROR, "!!!" fmt, 3, arg0, arg1, arg2)
 #define FLASH_PRINT_ERROR4(fmt, arg0, arg1, arg2, arg3)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_FLASH, LEVEL_ERROR, "!!!"fmt, 4, arg0, arg1, arg2, arg3)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_FLASH, LEVEL_ERROR, "!!!" fmt, 4, arg0, arg1, arg2, arg3)
 #define FLASH_PRINT_ERROR5(fmt, arg0, arg1, arg2, arg3, arg4)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_FLASH, LEVEL_ERROR, "!!!"fmt, 5, arg0, arg1, arg2, arg3, arg4)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_FLASH, LEVEL_ERROR, "!!!" fmt, 5, arg0, arg1, arg2, arg3, arg4)
 #define FLASH_PRINT_ERROR6(fmt, arg0, arg1, arg2, arg3, arg4, arg5)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_FLASH, LEVEL_ERROR, "!!!"fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_FLASH, LEVEL_ERROR, "!!!" fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
 #define FLASH_PRINT_ERROR7(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_FLASH, LEVEL_ERROR, "!!!"fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_FLASH, LEVEL_ERROR, "!!!" fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 #define FLASH_PRINT_ERROR8(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_FLASH, LEVEL_ERROR, "!!!"fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_FLASH, LEVEL_ERROR, "!!!" fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
 #define FLASH_PRINT_WARN0(fmt)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_FLASH, LEVEL_WARN, "!!*"fmt, 0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_FLASH, LEVEL_WARN, "!!*" fmt, 0)
 #define FLASH_PRINT_WARN1(fmt, arg0)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_FLASH, LEVEL_WARN, "!!*"fmt, 1, arg0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_FLASH, LEVEL_WARN, "!!*" fmt, 1, arg0)
 #define FLASH_PRINT_WARN2(fmt, arg0, arg1)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_FLASH, LEVEL_WARN, "!!*"fmt, 2, arg0, arg1)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_FLASH, LEVEL_WARN, "!!*" fmt, 2, arg0, arg1)
 #define FLASH_PRINT_WARN3(fmt, arg0, arg1, arg2)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_FLASH, LEVEL_WARN, "!!*"fmt, 3, arg0, arg1, arg2)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_FLASH, LEVEL_WARN, "!!*" fmt, 3, arg0, arg1, arg2)
 #define FLASH_PRINT_WARN4(fmt, arg0, arg1, arg2, arg3)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_FLASH, LEVEL_WARN, "!!*"fmt, 4, arg0, arg1, arg2, arg3)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_FLASH, LEVEL_WARN, "!!*" fmt, 4, arg0, arg1, arg2, arg3)
 #define FLASH_PRINT_WARN5(fmt, arg0, arg1, arg2, arg3, arg4)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_FLASH, LEVEL_WARN, "!!*"fmt, 5, arg0, arg1, arg2, arg3, arg4)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_FLASH, LEVEL_WARN, "!!*" fmt, 5, arg0, arg1, arg2, arg3, arg4)
 #define FLASH_PRINT_WARN6(fmt, arg0, arg1, arg2, arg3, arg4, arg5)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_FLASH, LEVEL_WARN, "!!*"fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_FLASH, LEVEL_WARN, "!!*" fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
 #define FLASH_PRINT_WARN7(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_FLASH, LEVEL_WARN, "!!*"fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_FLASH, LEVEL_WARN, "!!*" fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 #define FLASH_PRINT_WARN8(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_FLASH, LEVEL_WARN, "!!*"fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_FLASH, LEVEL_WARN, "!!*" fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
 #define FLASH_PRINT_INFO0(fmt)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_FLASH, LEVEL_INFO, "!**"fmt, 0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_FLASH, LEVEL_INFO, "!**" fmt, 0)
 #define FLASH_PRINT_INFO1(fmt, arg0)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_FLASH, LEVEL_INFO, "!**"fmt, 1, arg0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_FLASH, LEVEL_INFO, "!**" fmt, 1, arg0)
 #define FLASH_PRINT_INFO2(fmt, arg0, arg1)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_FLASH, LEVEL_INFO, "!**"fmt, 2, arg0, arg1)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_FLASH, LEVEL_INFO, "!**" fmt, 2, arg0, arg1)
 #define FLASH_PRINT_INFO3(fmt, arg0, arg1, arg2)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_FLASH, LEVEL_INFO, "!**"fmt, 3, arg0, arg1, arg2)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_FLASH, LEVEL_INFO, "!**" fmt, 3, arg0, arg1, arg2)
 #define FLASH_PRINT_INFO4(fmt, arg0, arg1, arg2, arg3)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_FLASH, LEVEL_INFO, "!**"fmt, 4, arg0, arg1, arg2, arg3)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_FLASH, LEVEL_INFO, "!**" fmt, 4, arg0, arg1, arg2, arg3)
 #define FLASH_PRINT_INFO5(fmt, arg0, arg1, arg2, arg3, arg4)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_FLASH, LEVEL_INFO, "!**"fmt, 5, arg0, arg1, arg2, arg3, arg4)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_FLASH, LEVEL_INFO, "!**" fmt, 5, arg0, arg1, arg2, arg3, arg4)
 #define FLASH_PRINT_INFO6(fmt, arg0, arg1, arg2, arg3, arg4, arg5)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_FLASH, LEVEL_INFO, "!**"fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_FLASH, LEVEL_INFO, "!**" fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
 #define FLASH_PRINT_INFO7(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_FLASH, LEVEL_INFO, "!**"fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_FLASH, LEVEL_INFO, "!**" fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 #define FLASH_PRINT_INFO8(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_FLASH, LEVEL_INFO, "!**"fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_FLASH, LEVEL_INFO, "!**" fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
 #define FLASH_PRINT_TRACE0(fmt)   \
     DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_FLASH, LEVEL_TRACE, fmt, 0)
 #define FLASH_PRINT_TRACE1(fmt, arg0)   \
@@ -1759,59 +1759,59 @@ bool log_module_bitmap_trace_set(uint64_t module_bitmap, uint8_t trace_level, bo
 
 /* BTM Trace Interfaces */
 #define BTM_PRINT_ERROR0(fmt)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTM, LEVEL_ERROR, "!!!"fmt, 0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTM, LEVEL_ERROR, "!!!" fmt, 0)
 #define BTM_PRINT_ERROR1(fmt, arg0)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTM, LEVEL_ERROR, "!!!"fmt, 1, arg0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTM, LEVEL_ERROR, "!!!" fmt, 1, arg0)
 #define BTM_PRINT_ERROR2(fmt, arg0, arg1)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTM, LEVEL_ERROR, "!!!"fmt, 2, arg0, arg1)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTM, LEVEL_ERROR, "!!!" fmt, 2, arg0, arg1)
 #define BTM_PRINT_ERROR3(fmt, arg0, arg1, arg2)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTM, LEVEL_ERROR, "!!!"fmt, 3, arg0, arg1, arg2)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTM, LEVEL_ERROR, "!!!" fmt, 3, arg0, arg1, arg2)
 #define BTM_PRINT_ERROR4(fmt, arg0, arg1, arg2, arg3)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTM, LEVEL_ERROR, "!!!"fmt, 4, arg0, arg1, arg2, arg3)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTM, LEVEL_ERROR, "!!!" fmt, 4, arg0, arg1, arg2, arg3)
 #define BTM_PRINT_ERROR5(fmt, arg0, arg1, arg2, arg3, arg4)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTM, LEVEL_ERROR, "!!!"fmt, 5, arg0, arg1, arg2, arg3, arg4)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTM, LEVEL_ERROR, "!!!" fmt, 5, arg0, arg1, arg2, arg3, arg4)
 #define BTM_PRINT_ERROR6(fmt, arg0, arg1, arg2, arg3, arg4, arg5)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTM, LEVEL_ERROR, "!!!"fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTM, LEVEL_ERROR, "!!!" fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
 #define BTM_PRINT_ERROR7(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTM, LEVEL_ERROR, "!!!"fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTM, LEVEL_ERROR, "!!!" fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 #define BTM_PRINT_ERROR8(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTM, LEVEL_ERROR, "!!!"fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTM, LEVEL_ERROR, "!!!" fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
 #define BTM_PRINT_WARN0(fmt)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTM, LEVEL_WARN, "!!*"fmt, 0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTM, LEVEL_WARN, "!!*" fmt, 0)
 #define BTM_PRINT_WARN1(fmt, arg0)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTM, LEVEL_WARN, "!!*"fmt, 1, arg0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTM, LEVEL_WARN, "!!*" fmt, 1, arg0)
 #define BTM_PRINT_WARN2(fmt, arg0, arg1)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTM, LEVEL_WARN, "!!*"fmt, 2, arg0, arg1)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTM, LEVEL_WARN, "!!*" fmt, 2, arg0, arg1)
 #define BTM_PRINT_WARN3(fmt, arg0, arg1, arg2)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTM, LEVEL_WARN, "!!*"fmt, 3, arg0, arg1, arg2)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTM, LEVEL_WARN, "!!*" fmt, 3, arg0, arg1, arg2)
 #define BTM_PRINT_WARN4(fmt, arg0, arg1, arg2, arg3)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTM, LEVEL_WARN, "!!*"fmt, 4, arg0, arg1, arg2, arg3)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTM, LEVEL_WARN, "!!*" fmt, 4, arg0, arg1, arg2, arg3)
 #define BTM_PRINT_WARN5(fmt, arg0, arg1, arg2, arg3, arg4)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTM, LEVEL_WARN, "!!*"fmt, 5, arg0, arg1, arg2, arg3, arg4)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTM, LEVEL_WARN, "!!*" fmt, 5, arg0, arg1, arg2, arg3, arg4)
 #define BTM_PRINT_WARN6(fmt, arg0, arg1, arg2, arg3, arg4, arg5)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTM, LEVEL_WARN, "!!*"fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTM, LEVEL_WARN, "!!*" fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
 #define BTM_PRINT_WARN7(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTM, LEVEL_WARN, "!!*"fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTM, LEVEL_WARN, "!!*" fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 #define BTM_PRINT_WARN8(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTM, LEVEL_WARN, "!!*"fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTM, LEVEL_WARN, "!!*" fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
 #define BTM_PRINT_INFO0(fmt)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTM, LEVEL_INFO, "!**"fmt, 0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTM, LEVEL_INFO, "!**" fmt, 0)
 #define BTM_PRINT_INFO1(fmt, arg0)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTM, LEVEL_INFO, "!**"fmt, 1, arg0)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTM, LEVEL_INFO, "!**" fmt, 1, arg0)
 #define BTM_PRINT_INFO2(fmt, arg0, arg1)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTM, LEVEL_INFO, "!**"fmt, 2, arg0, arg1)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTM, LEVEL_INFO, "!**" fmt, 2, arg0, arg1)
 #define BTM_PRINT_INFO3(fmt, arg0, arg1, arg2)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTM, LEVEL_INFO, "!**"fmt, 3, arg0, arg1, arg2)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTM, LEVEL_INFO, "!**" fmt, 3, arg0, arg1, arg2)
 #define BTM_PRINT_INFO4(fmt, arg0, arg1, arg2, arg3)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTM, LEVEL_INFO, "!**"fmt, 4, arg0, arg1, arg2, arg3)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTM, LEVEL_INFO, "!**" fmt, 4, arg0, arg1, arg2, arg3)
 #define BTM_PRINT_INFO5(fmt, arg0, arg1, arg2, arg3, arg4)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTM, LEVEL_INFO, "!**"fmt, 5, arg0, arg1, arg2, arg3, arg4)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTM, LEVEL_INFO, "!**" fmt, 5, arg0, arg1, arg2, arg3, arg4)
 #define BTM_PRINT_INFO6(fmt, arg0, arg1, arg2, arg3, arg4, arg5)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTM, LEVEL_INFO, "!**"fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTM, LEVEL_INFO, "!**" fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
 #define BTM_PRINT_INFO7(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTM, LEVEL_INFO, "!**"fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTM, LEVEL_INFO, "!**" fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 #define BTM_PRINT_INFO8(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)   \
-    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTM, LEVEL_INFO, "!**"fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
+    DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTM, LEVEL_INFO, "!**" fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
 #define BTM_PRINT_TRACE0(fmt)   \
     DBG_BUFFER(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_BTM, LEVEL_TRACE, fmt, 0)
 #define BTM_PRINT_TRACE1(fmt, arg0)   \

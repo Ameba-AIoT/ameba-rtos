@@ -861,7 +861,7 @@ class RSIP():
         return 0
 
     # Standard XTS with one tweak per sector: T0 = E_K2(iv || (sector_addr[27:0] >> 5) || 0), T_j = T0 * alpha^j per 16B,
-    # C = E_K1(P ^ T_j) ^ T_j. alpha multiply is on the 128-bit big-endian value (0x87 into the last byte), not IEEE 1619 LE.
+    # C = E_K1(P ^ T_j) ^ T_j, IEEE 1619: alpha multiply on the 128-bit little-endian value (0x87 into the first byte).
     # RLE1509 RSIP HW takes the 2nd key of rsip_xts_gX (e.g. 0x220) as data key K1 and the 1st (e.g. 0x200) as tweak key K2.
     def RSIP_ImageEncrypt_XTS(self, sector_size:int = 4096) -> int:
         ecb_cryptor = AES.new(bytes.fromhex(self.image_config.rsip_key[1]), AES.MODE_ECB)
@@ -882,10 +882,10 @@ class RSIP():
                 if tweak is None or addr % sector_size == 0:
                     sector_addr = addr & ~(sector_size - 1)
                     iv = iv_prefix + (sector_addr >> 5).to_bytes(4, 'big') + bytes(4)
-                    tweak = int.from_bytes(tweak_cryptor.encrypt(iv), 'big')
+                    tweak = int.from_bytes(tweak_cryptor.encrypt(iv), 'little')
                     for _ in range((addr - sector_addr) // 16):
                         tweak = mul_alpha(tweak)
-                t = tweak.to_bytes(16, 'big')
+                t = tweak.to_bytes(16, 'little')
                 blk = bytes(a ^ b for a, b in zip(buf.ljust(16, b'\0'), t))
                 fw.write(bytes(a ^ b for a, b in zip(ecb_cryptor.encrypt(blk), t)))
                 tweak = mul_alpha(tweak)

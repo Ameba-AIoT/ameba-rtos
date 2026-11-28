@@ -822,10 +822,8 @@ int ws_server_handshake_read_header(ws_conn *conn)
 					ptr ++;
 				}
 
-				if ((tmp_ptr == NULL) || (tmp_len == 0) || (
-						(memcmp(tmp_ptr, "websocket", strlen("websocket") != 0)) &&
-						(memcmp(tmp_ptr, "WebSocket", strlen("websocket") != 0)) &&
-						(memcmp(tmp_ptr, "Websocket", strlen("websocket") != 0)))) {
+				if ((tmp_ptr == NULL) || (tmp_len != strlen("websocket")) ||
+					(strncasecmp(tmp_ptr, "websocket", strlen("websocket")) != 0)) {
 					ret = -1;
 					goto exit;
 				}
@@ -939,8 +937,8 @@ int ws_server_handshake_read_header(ws_conn *conn)
 					ptr ++;
 				}
 
-				if ((conn->request.ws_version == NULL) || (conn->request.ws_version_len == 0) ||
-					(memcmp(conn->request.ws_version, "13", strlen("13") != 0))) {
+				if ((conn->request.ws_version == NULL) || (conn->request.ws_version_len != strlen("13")) ||
+					(memcmp(conn->request.ws_version, "13", strlen("13")) != 0)) {
 					ret = -1;
 					goto exit;
 				}

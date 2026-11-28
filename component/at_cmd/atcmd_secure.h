@@ -37,14 +37,11 @@
 #define OTP_SBOOT_HMAC_ADDR		0x220
 #define OTP_SBOOT_HMAC_LEN		32
 
-/* HUK: 128-bit hardware unique key seed */
-#define OTP_HUK_ADDR			0x310	/* HUK seed, 16B */
-#define OTP_HUK_LEN			16
-
 /* ===== OTP Control/Status Registers (Physical) ===== */
 
-/* HUK write protect, Physical 0x364
- * [7] HUK_W_Forbidden: 0=lock write, default 1 */
+/* HUK protect, Physical 0x364
+ * [7] HUK_W_Forbidden: 0=lock write, default 1
+ * [6] HUK_R_Forbidden: 0=lock CPU read, only if the IC defines SEC_BIT_HUK_R_FORBIDDEN_EN */
 #define OTP_HUK_CTRL			0x364
 
 /* Key/PK protection, Physical 0x365
@@ -77,7 +74,7 @@
 
 /* RSIP mode + HUK deriv, Physical 0x369
  * [1:0] RSIP_MODE: 00/11=XTS, 01=CTR, 10=GCM
- * [2] HUK_DERIV_EN, 0=enable, default 1 */
+ * [2] HUK_DERIV_EN, 0=enable, default 1; only if the IC defines SEC_BIT_HUK_DERIV_EN */
 #define OTP_RSIP_MODE_CTRL		0x369
 
 /* Secure Boot algorithm, Physical 0x36B
@@ -135,8 +132,13 @@
 #define PK2_W_PROT_BIT			2	/* 0x365[2]: PK2 write protect, 0=lock */
 
 /* HUK control bits */
-#define HUK_LOCK_BIT			7	/* 0x364[7]: HUK write protect, 0=lock */
+#define HUK_W_LOCK_BIT			7	/* 0x364[7]: HUK write protect, 0=lock */
+#ifdef SEC_BIT_HUK_R_FORBIDDEN_EN
+#define HUK_R_LOCK_BIT			6	/* 0x364[6]: HUK CPU read protect, 0=lock */
+#endif
+#ifdef SEC_BIT_HUK_DERIV_EN
 #define HUK_DERIV_EN_BIT		2	/* 0x369[2]: HUK derive enable, 0=enable */
+#endif
 
 /* SBoot ALG register masks */
 #define SBOOT_AUTH_MASK			0x0F	/* 0x36B[3:0] */

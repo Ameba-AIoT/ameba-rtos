@@ -47,7 +47,7 @@ SECTIONS
 		__ram_image1_text_end__ = .;
 	} > KM4_BOOTLOADER_RAM_S
 
-	.ram_image1.bss . :
+	.ram_image1.bss ALIGN(16) :
 	{
 		__image1_bss_start__ = .;
 		*(.bss*)

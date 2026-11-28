@@ -120,7 +120,9 @@ static int ecp_mul_restartable_internal(mbedtls_ecp_group *grp, mbedtls_ecp_poin
 	pke_ecp_group pke_grp;
 	pke_ecp_point pke_R, pke_P;
 	pke_ecp_group_init_in_rom(&pke_grp, curve_id);
-	pke_ecp_point_init_base_point(&pke_grp, &pke_P);
+	pke_ecp_point_init(&pke_P);
+	pke_P.Z_p = pke_grp.Gz_p;
+	pke_P.Z_size = pke_grp.Gz_size;
 	pke_ecp_point_init(&pke_R);
 
 	pke_P.X_size = mbedtls_mpi_size(&P->X);

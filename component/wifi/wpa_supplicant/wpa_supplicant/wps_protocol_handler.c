@@ -1200,7 +1200,7 @@ int wpas_wps_registrar_check_done(void)
 	return g_wps_context.clientWpsDone;
 }
 
-int wpas_wps_registrar_wps_cancel()
+int wpas_wps_registrar_wps_cancel(void)
 {
 	struct wps_registrar *reg = g_wps_context.wps->registrar;
 	wifi_p2p_wps_failed();

@@ -7,7 +7,7 @@
  *   - **RSIP** — Flash firmware encryption (AES-256 XTS/GCM/CTR)
  *   - **RDP**  — TrustZone secure firmware protection
  *   - **Secure Boot** — Firmware signature verification (ECC/PQC)
- *   - **HUK**  — Hardware Unique Key (128-bit device seed)
+ *   - **HUK**  — Hardware Unique Key
  *
  * ICs are divided into two groups:
  *   - **Legacy** (CONFIG_RSIP_SINGLE_KEY): single RSIP key group, IPSEC-S RDP
@@ -25,7 +25,7 @@
  */
 
 #include "platform_autoconf.h"
-#ifndef CONFIG_AMEBAD
+#if !defined(CONFIG_AMEBAD) && !defined(CONFIG_AMEBAPRO3)
 #ifdef CONFIG_ATCMD_SECURE
 
 #include "atcmd_service.h"
@@ -1021,14 +1021,14 @@ static int at_sec_sboot_prot(u16 argc, char **argv)
 /**
  * @brief Handle AT+SEC=HUK_KEY command — burn Hardware Unique Key seed.
  *
- * Writes 16-byte (128-bit) random seed to OTP 0x310.
+ * Writes OTP_HUK_LEN bytes to OTP_HUK_ADDR, in the order of the hex string.
  * Performs automatic read-back verification after writing.
  *
  * @par Usage
- *   AT+SEC=HUK_KEY,<hex>  (16B = 32 hex chars)
+ *   AT+SEC=HUK_KEY,<hex>
  *
  * @param argc Argument count (minimum 3).
- * @param argv Argument vector: argv[2]=hex seed string (32 chars = 16 bytes).
+ * @param argv Argument vector: argv[2]=hex string (2 * OTP_HUK_LEN chars).
  */
 static int at_sec_huk_key(u16 argc, char **argv)
 {
@@ -1040,7 +1040,7 @@ static int at_sec_huk_key(u16 argc, char **argv)
 	}
 
 	if (hex2buf(argv[2], buf, OTP_HUK_LEN) != OTP_HUK_LEN) {
-		RTK_LOGS(TAG, RTK_LOG_ERROR, "len err:16B\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "len err:%dB\n", OTP_HUK_LEN);
 		return RTK_FAIL;
 	}
 
@@ -1050,6 +1050,7 @@ static int at_sec_huk_key(u16 argc, char **argv)
 	return RTK_FAIL;
 }
 
+#ifdef SEC_BIT_HUK_DERIV_EN
 /**
  * @brief Handle AT+SEC=HUK_EN command — enable HUK derivation (irreversible).
  *
@@ -1063,19 +1064,24 @@ static int at_sec_huk_en(void)
 	}
 	return RTK_FAIL;
 }
+#endif /* SEC_BIT_HUK_DERIV_EN */
 
 /**
- * @brief Handle AT+SEC=HUK_LOCK command — write-protect HUK (irreversible).
+ * @brief Handle AT+SEC=HUK_LOCK command — protect HUK (irreversible).
  *
- * Clears HUK_W_Forbidden_EN bit at physical 0x364[7] to 0,
- * permanently preventing any further writes to the HUK OTP area.
+ * Write protect first, then read protect (if the IC has it): the CPU then reads the HUK area as 0xFF.
  */
 static int at_sec_huk_lock(void)
 {
-	if (OTP_ClearPhyBit(OTP_HUK_CTRL, HUK_LOCK_BIT) == RTK_SUCCESS) {
-		return RTK_SUCCESS;
+	if (OTP_ClearPhyBit(OTP_HUK_CTRL, HUK_W_LOCK_BIT) != RTK_SUCCESS) {
+		return RTK_FAIL;
 	}
-	return RTK_FAIL;
+#ifdef SEC_BIT_HUK_R_FORBIDDEN_EN
+	if (OTP_ClearPhyBit(OTP_HUK_CTRL, HUK_R_LOCK_BIT) != RTK_SUCCESS) {
+		return RTK_FAIL;
+	}
+#endif
+	return RTK_SUCCESS;
 }
 
 /* ===== Help ===== */
@@ -1117,10 +1123,12 @@ static void at_sec_help(void)
 #endif
 	RTK_LOGS(NOTAG, RTK_LOG_INFO,
 			 "SBOOT_HMAC:<hex> (32B)\n"
-			 "SBOOT_PROT:<pk>\n"
-			 "HUK_KEY:<hex> (16B)\n"
-			 "HUK_EN\n"
-			 "HUK_LOCK\n");
+			 "SBOOT_PROT:<pk>\n");
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "HUK_KEY:<hex> (%dB)\n", OTP_HUK_LEN);
+#ifdef SEC_BIT_HUK_DERIV_EN
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "HUK_EN\n");
+#endif
+	RTK_LOGS(NOTAG, RTK_LOG_INFO, "HUK_LOCK\n");
 }
 
 /* ===== Main dispatch ===== */
@@ -1134,7 +1142,7 @@ static void at_sec_help(void)
  *   - RSIP_KEY, RSIP_KEY2, RSIP_EN, RSIP_LOCK, RSIP_PROT — RSIP flash encryption
  *   - RDP_KEY, RDP_EN, RDP_PROT — RDP TrustZone protection
  *   - SBOOT_PK, SBOOT_EN, SBOOT_ALG, SBOOT_PQC, SBOOT_HMAC, SBOOT_PROT — Secure Boot
- *   - HUK_KEY, HUK_EN, HUK_LOCK — Hardware Unique Key
+ *   - HUK_KEY, HUK_EN (only if SEC_BIT_HUK_DERIV_EN), HUK_LOCK — Hardware Unique Key
  *
  * @param argc Argument count.
  * @param argv Argument vector: argv[0]="AT", argv[1]="+SEC", argv[2]=sub-command.
@@ -1196,8 +1204,10 @@ void at_secure(u16 argc, char **argv)
 		ret = at_sec_sboot_prot(argc, argv);
 	} else if (_strcmp((const char *)argv[1], "HUK_KEY") == 0) {
 		ret = at_sec_huk_key(argc, argv);
+#ifdef SEC_BIT_HUK_DERIV_EN
 	} else if (_strcmp((const char *)argv[1], "HUK_EN") == 0) {
 		ret = at_sec_huk_en();
+#endif
 	} else if (_strcmp((const char *)argv[1], "HUK_LOCK") == 0) {
 		ret = at_sec_huk_lock();
 	} else {
@@ -1218,4 +1228,4 @@ const log_item_t at_sec_items[] = {
 	{"+SEC", at_secure},
 };
 #endif /* CONFIG_ATCMD_SECURE */
-#endif /* CONFIG_AMEBAD */
+#endif /* !CONFIG_AMEBAD && !CONFIG_AMEBAPRO3 */

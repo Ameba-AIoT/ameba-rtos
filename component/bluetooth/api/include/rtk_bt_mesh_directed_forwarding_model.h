@@ -11,6 +11,15 @@
 #include <stdint.h>
 #include <rtk_bt_mesh_def.h>
 
+/** @addtogroup BT_Types BT Types
+ * @{
+ */
+/** @addtogroup BT_Mesh_Types BT Mesh Types
+ * @{
+ */
+/** @addtogroup BT_Mesh_Directed_Forwarding_Model_Types BT Mesh Directed Forwarding Model Types
+ * @{
+ */
 /**
  * @enum      rtk_bt_mesh_df_client_act_t
  * @brief     BLE MESH directed forwarding client model act definition.
@@ -163,6 +172,25 @@ typedef struct {
 } rtk_bt_mesh_df_path_action_t;
 
 /**
+ * @}
+ */
+/**
+ * @}
+ */
+/**
+ * @}
+ */
+
+/** @addtogroup BT_Constants BT Constants
+ * @{
+ */
+/** @addtogroup BT_Mesh_Constants BT Mesh Constants
+ * @{
+ */
+/** @addtogroup BT_Mesh_Directed_Forwarding_Model_Constants BT Mesh Directed Forwarding Model Constants
+ * @{
+ */
+/**
  * @name      Forwarding Table Entries Get Filter Mask Bits
  * @brief     Bits of the Filter Mask of a Forwarding Table Entries Get message.
  * @{
@@ -187,6 +215,25 @@ typedef struct {
 #define RTK_BT_MESH_FORWARDING_TABLE_DEPENDENTS_LIST_MASK_PATH_TARGET         0x02    /*!< Dependents List Mask bit 1 of a Forwarding Table Dependents Get message,
                                                                                        *   return the dependent nodes of the Path Target. */
 /** @} */
+/**
+ * @}
+ */
+/**
+ * @}
+ */
+/**
+ * @}
+ */
+
+/** @addtogroup BT_Types BT Types
+ * @{
+ */
+/** @addtogroup BT_Mesh_Types BT Mesh Types
+ * @{
+ */
+/** @addtogroup BT_Mesh_Directed_Forwarding_Model_Types BT Mesh Directed Forwarding Model Types
+ * @{
+ */
 
 /**
  * @struct    rtk_bt_mesh_stack_evt_df_t
@@ -1379,7 +1426,7 @@ typedef struct {
 } _PACKED4_ rtk_bt_mesh_directed_paths_status_t;
 
 /**
- * @enum      rtk_bt_mesh_directed_publish_policy_t
+ * @typedef   rtk_bt_mesh_directed_publish_policy_t
  * @brief     BLE MESH directed publish policy structure.
  */
 enum {
@@ -1460,6 +1507,25 @@ typedef struct {
 } _PACKED4_ rtk_bt_mesh_directed_control_relay_retransmit_status_t;
 
 /**
+ * @}
+ */
+/**
+ * @}
+ */
+/**
+ * @}
+ */
+
+/** @addtogroup BT_Constants BT Constants
+ * @{
+ */
+/** @addtogroup BT_Mesh_Constants BT Mesh Constants
+ * @{
+ */
+/** @addtogroup BT_Mesh_Directed_Forwarding_Model_Constants BT Mesh Directed Forwarding Model Constants
+ * @{
+ */
+/**
  * @name      Directed Control Parameter Setting Bits
  * @brief     Bits of bit_check of @ref rtk_bt_mesh_directed_control_param_setting_t, each bit selects one parameter to set.
  * @{
@@ -1475,6 +1541,25 @@ typedef struct {
 #define DF_FIXED_PATH_SIZE_SETTING              0x0100    /*!< Set the maximum number of fixed paths, uses df_fixed_path_size. */
 #define DF_NON_FIXED_PATH_SIZE_SETTING          0x0200    /*!< Set the maximum number of non-fixed paths, uses df_non_fixed_path_size. */
 /** @} */
+/**
+ * @}
+ */
+/**
+ * @}
+ */
+/**
+ * @}
+ */
+
+/** @addtogroup BT_Types BT Types
+ * @{
+ */
+/** @addtogroup BT_Mesh_Types BT Mesh Types
+ * @{
+ */
+/** @addtogroup BT_Mesh_Directed_Forwarding_Model_Types BT Mesh Directed Forwarding Model Types
+ * @{
+ */
 
 /**
  * @struct    rtk_bt_mesh_directed_control_param_setting_t
@@ -1505,11 +1590,24 @@ typedef struct {
 	uint16_t df_non_fixed_path_size;                                             /*!< Maximum number of non-fixed paths. */
 } _PACKED4_ rtk_bt_mesh_directed_control_param_setting_t;
 
-/********************************* Functions Declaration *******************************/
 /**
- * @defgroup  ble_mesh_directed_forwarding_model BT LE Mesh Directed Forwarding Model APIs
- * @brief     BT LE Mesh Directed Forwarding Model related function APIs
- * @ingroup   ble_mesh_api_group
+ * @}
+ */
+/**
+ * @}
+ */
+/**
+ * @}
+ */
+
+/********************************* Functions Declaration *******************************/
+/** @addtogroup BT_Functions BT Functions
+ * @{
+ */
+/** @addtogroup BT_Mesh_Functions BT Mesh Functions
+ * @{
+ */
+/** @addtogroup BT_Mesh_Directed_Forwarding_Model_Functions BT Mesh Directed Forwarding Model Functions
  * @{
  */
 
@@ -1943,15 +2041,18 @@ uint16_t rtk_bt_mesh_df_discovery_table_capabilities_state_get(rtk_bt_mesh_df_di
 uint16_t rtk_bt_mesh_df_discovery_table_capabilities_state_set(rtk_bt_mesh_df_discovery_table_cap_state_setting_t *dtcs);
 
 /**
- * @defgroup  RTK_BT_MESH_DF_DISCOVERY_TABLE_CAPABILITIES Deprecated aliases
- * @brief     Deprecated aliases of the Discovery Table Capabilities state APIs.
- * @deprecated Use @ref rtk_bt_mesh_df_discovery_table_capabilities_state_get and
- *             @ref rtk_bt_mesh_df_discovery_table_capabilities_state_set instead.
- * @{
+ * @def       rtk_bt_mesh_df_discovery_table_capablities_state_get
+ * @brief     Deprecated alias of @ref rtk_bt_mesh_df_discovery_table_capabilities_state_get.
+ * @deprecated Use @ref rtk_bt_mesh_df_discovery_table_capabilities_state_get instead.
  */
 #define rtk_bt_mesh_df_discovery_table_capablities_state_get rtk_bt_mesh_df_discovery_table_capabilities_state_get
+
+/**
+ * @def       rtk_bt_mesh_df_discovery_table_capablities_state_set
+ * @brief     Deprecated alias of @ref rtk_bt_mesh_df_discovery_table_capabilities_state_set.
+ * @deprecated Use @ref rtk_bt_mesh_df_discovery_table_capabilities_state_set instead.
+ */
 #define rtk_bt_mesh_df_discovery_table_capablities_state_set rtk_bt_mesh_df_discovery_table_capabilities_state_set
-/** @} */
 
 /**
  * @brief     Read the Wanted Lanes state of a subnet on this node.
@@ -2025,6 +2126,12 @@ uint16_t rtk_bt_mesh_df_publish_policy_set(rtk_bt_mesh_df_publish_policy_setting
  */
 uint16_t rtk_bt_mesh_df_parameter_set(rtk_bt_mesh_directed_control_param_setting_t *param);
 
+/**
+ * @}
+ */
+/**
+ * @}
+ */
 /**
  * @}
  */

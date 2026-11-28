@@ -14,6 +14,7 @@ try:
     from .usb_cdc_port import UsbCdcSerial
 except ImportError:
     UsbCdcSerial = None
+from copy import deepcopy
 from datetime import datetime
 
 from .rom_handler import *
@@ -124,8 +125,13 @@ class Ameba(object):
         self.image_path = image_path
         self.download_img_info = download_img_info
         self.chip_erase = chip_erase
+        # Session type known before connecting: MemoryInfo.PARTITION_TYPE_RAM for a RAM
+        # session, MemoryInfo.PARTITION_TYPE_FLASH otherwise. Whether the flash is NOR or
+        # NAND is only known from the device (QUERY), see device_flash_type().
         self.memory_type = memory_type
         self.device_info = None
+        # erase_info: profile address and partition type; resolve_erase_info() converts it
+        # to the floader memory type and device address after QUERY
         self.erase_info = erase_info
         self.is_all_ram = True
         # AutoFlashTypeDetect: enabled for download / erase sessions by enable_auto_flash_type_detect();
@@ -138,6 +144,8 @@ class Ameba(object):
         # Logical OTP byte of the SPIC address mode as read (and verified) by set_boot_flash_type(),
         # reused by get_spic_address_mode() instead of reading it again; None if not read
         self.spic_addr_mode_otp_cfg = None
+        # All-FF partitions of a split merged image, erased but not programmed
+        self._empty_partitions = []
 
         self.rom_handler = RomHandler(self)
         self.floader_handler = FloaderHandler(self)
@@ -506,7 +514,7 @@ class Ameba(object):
         if self.device_info.is_boot_from_nand():
             self.logger.info(f'* MemoryType: NAND')
             self.logger.info(f'* FlashMID: 0x{format(self.device_info.flash_mid, "02X")}')  # customized, do not modify
-            if self.device_info.flash_mid == FlashUtils.NandMfgMicron:
+            if self.device_info.flash_mid == FlashUtils.NandMfgMicron.value:
                 self.logger.info(f'* FlashDID: 0x{format(self.device_info.flash_did & 0xFF, "02x")}{format((self.device_info.flash_did >> 8) & 0xFF, "02x")}')
             else:
                 self.logger.info(f'* FlashDID: 0x{format(self.device_info.flash_did, "02X")}')
@@ -540,11 +548,8 @@ class Ameba(object):
             self.logger.error(f'* Device Profile: {hex(self.profile_info.device_id)}')
             return ErrType.SYS_PARAMETER
 
-        if self.device_info.memory_type != self.profile_info.memory_type:
-            self.logger.error("Flash type mismatch:")
-            self.logger.error(f'* Device: {self.device_info.memory_type}')
-            self.logger.error(f'* Device Profile: {self.profile_info.memory_type}')
-            return ErrType.SYS_PARAMETER
+        # The device profile does not tell NOR from NAND: the flash type reported by the
+        # device is used for the download, no flash type match with the profile
 
         if self.device_info.is_boot_from_nand():
             if self.device_info.flash_req_host_ecc_level > 0:
@@ -625,9 +630,18 @@ class Ameba(object):
         if ret != ErrType.OK:
             return ret
 
+        # The flash type is known from here on
+        ret = self.check_protocol()
+        if ret != ErrType.OK:
+            return ret
+
         # Boot select OTP only: the flashloader already runs on the detected flash type,
         # so no reset is needed (a 4-byte address mode change resets the device later)
         ret = self.set_boot_flash_type()
+        if ret != ErrType.OK:
+            return ret
+
+        ret = self.resolve_erase_info()
         if ret != ErrType.OK:
             return ret
 
@@ -638,19 +652,22 @@ class Ameba(object):
 
         return ret
 
+    def flash_lock_register(self):
+        """Return (read cmd, write cmd, address, BP mask) of the flash block protection register"""
+        if self.device_info.is_boot_from_nand():
+            bp_mask = FlashUtils.NandRegProtectionBpMask.value
+            if self.device_info.flash_mid in (FlashUtils.NandMfgWinbond.value, FlashUtils.NandMfgMicron.value):
+                bp_mask = FlashUtils.NandRegProtectionBpMaskWinbondMicron.value
+            return (FlashUtils.NandCmdGetFeatures.value, FlashUtils.NandCmdSetFeatures.value,
+                    FlashUtils.NandRegProtection.value, bp_mask)
+
+        return (FlashUtils.NorCmdReadStatusReg1.value, FlashUtils.NorCmdWriteStatusReg1.value,
+                0, FlashUtils.NorStatusReg1BpMask.value)
+
     def check_flash_lock(self, flash_status):
         ret = ErrType.OK
 
-        if self.device_info.is_boot_from_nand():
-            cmd = FlashUtils.NandCmdGetFeatures.value
-            address = FlashUtils.NandRegProtection.value
-            bp_mask = FlashUtils.NandRegProtectionBpMask.value
-            if self.device_info.flash_mid == FlashUtils.NandMfgWinbond or self.device_info.flash_mid == FlashUtils.NandMfgMicron:
-                bp_mask = FlashUtils.NandRegProtectionBpMaskWinbondMicron
-        else:
-            cmd = FlashUtils.NorCmdReadStatusReg1.value
-            address = 0
-            bp_mask = FlashUtils.NorStatusReg1BpMask.value
+        cmd, _, address, bp_mask = self.flash_lock_register()
 
         ret, protection = self.read_flash_status_register(cmd, address)
         flash_status.protection = protection
@@ -661,46 +678,20 @@ class Ameba(object):
         return ret
 
     def check_and_process_flash_lock(self, flash_status):
-        follow_up_action = self.setting.flash_protection_process
-
+        """Remove the flash block protection if any, restore_flash_lock() writes it back
+        after the erase/program"""
         ret = self.check_flash_lock(flash_status)
         if ret != ErrType.OK:
             self.logger.error(f"Flash protection check fail: {ret}")
 
         if flash_status.is_locked:
-            self.logger.warning("Flash block protection detected")
-
-            if follow_up_action == RtSettings.FLASH_PROTECTION_PROCESS_PROMPT:
-                self.logger.info(f"Follow-up Actions:")
-                self.logger.info(f"1: Try operation with block protected(may fail)")
-                self.logger.info(f"2: Remove the protection and restore the protection after operation")
-                self.logger.info(f"3: Abort the operation")
-                for _ in range(3):
-                    try:
-                        follow_up_action = int(input("Please Input the selected action index: ").strip())
-                    except Exception as err:
-                        self.logger.error(f"Input is invalid: {err}")
-                        continue
-
-                    if RtSettings.FLASH_PROTECTION_PROCESS_PROMPT < follow_up_action <= RtSettings.FLASH_PROTECTION_PROCESS_ABORT:
-                        break
-                    self.logger.info(f"{follow_up_action} is invalid")
-                else:
-                    return ErrType.SYS_PARAMETER
-
-            if follow_up_action == RtSettings.FLASH_PROTECTION_PROCESS_UNLOCK:
-                flash_status.need_unlock = True
-                self.logger.info("Remove the flash block protection...")
-                ret = self.unlock_flash()
-                if ret != ErrType.OK:
-                    self.logger.error(f"Fail to remove the flash lock protection: {ret}")
-                    return ret
-            elif follow_up_action == RtSettings.FLASH_PROTECTION_PROCESS_ABORT:
-                self.logger.warning(f"Operation aborted for block protection")
-                return ErrType.SYS_CANCEL
-            else:
-                self.logger.warning(f"Trying to operate with block protection")
-                return ErrType.SYS_PARAMETER
+            # Set before unlocking: a partly applied unlock must still be restored
+            flash_status.need_unlock = True
+            self.logger.debug(f"Remove the flash block protection: {hex(flash_status.protection)}")
+            ret = self.unlock_flash()
+            if ret != ErrType.OK:
+                self.logger.error(f"Fail to remove the flash lock protection: {ret}")
+                return ret
 
         return ret
 
@@ -708,15 +699,35 @@ class Ameba(object):
         return self.lock_flash(0)
 
     def lock_flash(self, protection):
-        if self.device_info.is_boot_from_nand():
-            cmd = FlashUtils.NandCmdSetFeatures.value
-            address = FlashUtils.NandRegProtection.value
-        else:
-            cmd = FlashUtils.NorCmdWriteStatusReg1.value
-            address = 0
+        rd_cmd, wr_cmd, address, bp_mask = self.flash_lock_register()
 
-        ret = self.write_flash_status_register(cmd, address, protection)
+        ret = self.write_flash_status_register(wr_cmd, address, protection)
+        if ret != ErrType.OK:
+            return ret
 
+        # The flash ignores the write silently while its status register is protected
+        # (e.g. SRP with WP# low), and the flashloader reports success anyway: read back
+        ret, status = self.read_flash_status_register(rd_cmd, address)
+        if ret != ErrType.OK:
+            return ret
+        if (status & bp_mask) != (protection & bp_mask):
+            self.logger.error(f"Flash block protection verify fail: write {hex(protection)}, read back {hex(status)}")
+            return ErrType.SYS_CHECKSUM
+
+        return ret
+
+    def restore_flash_lock(self, flash_status):
+        """Restore the block protection removed by check_and_process_flash_lock(), whether
+        the operation in between passed or not. Only once, as it may be called again
+        on the way out."""
+        if not flash_status.need_unlock:
+            return ErrType.OK
+        flash_status.need_unlock = False
+
+        self.logger.debug(f"Restore the flash block protection: {hex(flash_status.protection)}")
+        ret = self.lock_flash(flash_status.protection)
+        if ret != ErrType.OK:
+            self.logger.error(f"Fail to restore the flash block protection: {ret}")
         return ret
 
     def read_flash_status_register(self, cmd, address):
@@ -909,39 +920,103 @@ class Ameba(object):
 
         return ret
 
-    def check_protocol(self):
-        ret = True
+    def is_flash_session(self):
+        """A download / erase session on flash, as opposed to a RAM one. Known before
+        connecting; whether the flash is NOR or NAND is only known after QUERY."""
+        return self.memory_type != MemoryInfo.PARTITION_TYPE_RAM
 
-        if (not self.is_usb) and self.setting.disable_nand_access_with_uart == 1:
-            self.logger.warning(
+    def device_flash_type(self):
+        """Flash type (MemoryInfo.MEMORY_TYPE_NOR / MEMORY_TYPE_NAND) reported by the device."""
+        return MemoryInfo.MEMORY_TYPE_NAND if self.device_info.is_boot_from_nand() else MemoryInfo.MEMORY_TYPE_NOR
+
+    def check_protocol(self):
+        """NAND access via UART may be disabled by setting; checked once the device reported
+        its flash type, as the device profile does not tell NOR from NAND."""
+        ret = ErrType.OK
+
+        if self.is_flash_session() and self.device_info.is_boot_from_nand() and \
+                (not self.is_usb) and (self.setting.disable_nand_access_with_uart == 1):
+            self.logger.error(
                 f"NAND access via UART is not allowed, please check the COM port and make sure the device profile matches the attached device!")
-            ret = False
+            ret = ErrType.SYS_PROTO
 
         return ret
 
     def enable_auto_flash_type_detect(self):
-        # Only a download or erase session on flash (NOR/NAND) may switch the flash type and
-        # program its boot select OTP: a RAM download does not need it, and the OTP write is
-        # permanent. The setting is ignored on ICs that do not support it: plain flow.
+        # Only a download or erase session on FLASH may switch the flash type and program its
+        # boot select OTP: RAM / SECOND FLASH do not need it, and the OTP write is permanent.
+        # The setting is ignored on ICs that do not support it: plain flow.
         self.auto_flash_type_detect_enabled = bool(self.setting.auto_flash_type_detect) and \
-            (self.memory_type in (MemoryInfo.MEMORY_TYPE_NOR, MemoryInfo.MEMORY_TYPE_NAND)) and \
+            (self.memory_type == MemoryInfo.PARTITION_TYPE_FLASH) and \
             self.is_auto_flash_type_detect_supported(self.profile_info)
 
     def check_protocol_for_download(self):
-        ret = True
-        has_nand = False
-
+        # The NAND-via-UART check needs the flash type reported by the device, see check_protocol()
         self.enable_auto_flash_type_detect()
+        return True
 
-        for image_info in self.profile_info.images:
-            if (image_info.memory_type == MemoryInfo.MEMORY_TYPE_NAND):
-                has_nand = True
-                break
+    def to_protocol_memory_type(self, partition_type):
+        """Floader memory type of a device profile partition type, see MemoryInfo.to_protocol_memory_type()."""
+        return MemoryInfo.to_protocol_memory_type(partition_type, self.device_flash_type())
 
-        if has_nand:
-            ret = self.check_protocol()
+    def resolve_image(self, image_info):
+        """Return a copy of a device profile image for the floader requests: memory_type is
+        the floader memory type and start/end_address the device addresses (NAND physical
+        offset from 0). The profile image is left unchanged."""
+        resolved = deepcopy(image_info)
+        resolved.memory_type = self.to_protocol_memory_type(image_info.memory_type)
+        resolved.start_address = MemoryInfo.to_device_address(image_info.start_address, resolved.memory_type)
+        resolved.end_address = MemoryInfo.to_device_address(image_info.end_address, resolved.memory_type)
+        return resolved
 
-        return ret
+    def _nand_layout_end_address(self, start, image_end):
+        """Highest end address of the flash layout partitions overlapping [start, image_end),
+        or None when the image overlaps no partition."""
+        end = None
+        for part in self.profile_info.images:
+            if part.memory_type != MemoryInfo.PARTITION_TYPE_FLASH:
+                continue
+            if part.start_address < image_end and part.end_address > start:
+                end = part.end_address if end is None else max(end, part.end_address)
+        return end
+
+    def fit_single_image_to_layout(self):
+        """NAND requires a block aligned end address and skips bad blocks inside the
+        partition, so the start + file size end of a single image is neither aligned nor
+        leaves room for bad blocks: extend it to the covered layout partitions. Only on
+        NAND, which is known after QUERY."""
+        if (not self.download_img_info) or (not self.device_info.is_boot_from_nand()):
+            return ErrType.OK
+
+        for image_info in self.download_img_info:
+            if (not getattr(image_info, "end_from_image_size", False)) or \
+                    (image_info.memory_type != MemoryInfo.PARTITION_TYPE_FLASH):
+                continue
+            layout_end = self._nand_layout_end_address(image_info.start_address, image_info.end_address)
+            if layout_end is None or layout_end < image_info.end_address:
+                self.logger.error(f"NAND image 0x{image_info.start_address:08X}-0x{image_info.end_address:08X} "
+                                  f"does not fit in the profile layout")
+                return ErrType.SYS_PARAMETER
+            image_info.end_address = layout_end
+            image_info.end_from_image_size = False
+        return ErrType.OK
+
+    def resolve_erase_info(self):
+        """Convert the erase range from the device profile partition type and address to the
+        floader memory type and device address, once the device reported its flash type.
+        The profile erase range is kept, so that a second prepare() converts it again."""
+        if self.erase_info is None:
+            return ErrType.OK
+
+        if not hasattr(self, "_profile_erase_info"):
+            self._profile_erase_info = self.erase_info
+        profile_erase = self._profile_erase_info
+        try:
+            self.erase_info = self.resolve_image(profile_erase)
+        except ValueError as err:
+            self.logger.error(f"Invalid erase range: {err}")
+            return ErrType.SYS_PARAMETER
+        return ErrType.OK
 
     def _process_image(self, img_name):
         if img_name.strip().startswith(("A:", "B:")):
@@ -1007,9 +1082,9 @@ class Ameba(object):
 
             is_start_address_in_ram = self.profile_info.is_ram_address(image_info.start_address)
             is_end_address_in_ram = self.profile_info.is_ram_address(image_info.end_address)
-            if (((self.memory_type == MemoryInfo.MEMORY_TYPE_RAM) and (
+            if (((not self.is_flash_session()) and (
                     (not is_start_address_in_ram) or (not is_end_address_in_ram))) or
-                    ((self.memory_type == MemoryInfo.MEMORY_TYPE_NOR) and (
+                    (self.is_flash_session() and (image_info.memory_type != MemoryInfo.PARTITION_TYPE_RAM) and (
                             is_start_address_in_ram or is_end_address_in_ram))):
                 self.logger.error(
                     f"Invalid address range {image_info.start_address}-{image_info.end_address} for {image_name}")
@@ -1027,13 +1102,17 @@ class Ameba(object):
         return ret
 
     def post_verify_images(self):
-        ret = ErrType.OK
+        ret = self.fit_single_image_to_layout()
+        if ret != ErrType.OK:
+            return ret
 
         max_addr = self.profile_info.flash_start_address + self.device_info.flash_capacity
         image_dowload_list = self.download_img_info if self.download_img_info else self.profile_info.images
         for image_info in image_dowload_list:
-            is_ram = self.profile_info.is_ram_address(image_info.start_address)
-            if not is_ram:
+            if not image_info.mandatory:
+                continue
+            # SECOND FLASH is another flash than the one QUERY reports, not checked against it
+            if image_info.memory_type == MemoryInfo.PARTITION_TYPE_FLASH:
                 if (image_info.start_address > max_addr) or (image_info.end_address > max_addr):
                     self.logger.error(f"Invalid layout, image {image_info.image_name} address overflow")
                     ret = ErrType.SYS_OVERRANGE
@@ -1053,25 +1132,21 @@ class Ameba(object):
         ret = ErrType.OK
 
         if self.erase_info:
-            if ((self.profile_info.memory_type == MemoryInfo.MEMORY_TYPE_NAND) and (
-                    self.memory_type == MemoryInfo.MEMORY_TYPE_NOR)) or \
-                    ((self.profile_info.memory_type == MemoryInfo.MEMORY_TYPE_NOR) and (
-                            self.memory_type == MemoryInfo.MEMORY_TYPE_NAND)):
-                self.logger.error("Unsupported memory type.")
+            # Address range in the device profile layout (NOR and NAND based at 0x08000000);
+            # erase_info holds the device address after resolve_erase_info()
+            profile_erase = getattr(self, "_profile_erase_info", self.erase_info)
+            if (not self.is_flash_session()) and (not self.profile_info.is_ram_address(profile_erase.start_address)):
+                self.logger.error(f"Invalid RAM start address: {hex(profile_erase.start_address)}")
+                ret = ErrType.SYS_PARAMETER
+                return ret
+            elif self.is_flash_session() and (not self.profile_info.is_flash_address(profile_erase.start_address)):
+                self.logger.error(f"Invalid start address: {hex(profile_erase.start_address)}")
                 ret = ErrType.SYS_PARAMETER
                 return ret
 
-            if (self.memory_type == MemoryInfo.MEMORY_TYPE_RAM) and (not self.profile_info.is_ram_address(self.erase_info.start_address)):
-                self.logger.error(f"Invalid RAM start address: {self.erase_info.start_address}")
-                ret = ErrType.SYS_PARAMETER
-                return ret
-            elif (self.memory_type != MemoryInfo.MEMORY_TYPE_RAM) and \
-                    (not ((self.profile_info.memory_type == MemoryInfo.MEMORY_TYPE_NAND) or self.profile_info.is_flash_address(self.erase_info.start_address))):
-                self.logger.error(f"Invalid start address: {self.erase_info.start_address}")
-                ret = ErrType.SYS_PARAMETER
-                return ret
-
-            if (self.memory_type == MemoryInfo.MEMORY_TYPE_NOR):
+            if self.erase_info.memory_type == MemoryInfo.MEMORY_TYPE_RAM:
+                self.logger.info(f"RAM erase: start address={hex(self.erase_info.start_address)}, size={self.erase_info.size_in_kbyte}KB.")
+            elif self.erase_info.memory_type == MemoryInfo.MEMORY_TYPE_NOR:
                 if not self.is_address_block_aligned(self.erase_info.start_address):
                     self.logger.warning(f"NOR flash start address should be aligned to {FlashUtils.NorDefaultBlockSize.value}B.")
                     ret = ErrType.SYS_PARAMETER
@@ -1095,18 +1170,10 @@ class Ameba(object):
                     ret = ErrType.SYS_PARAMETER
                     return ret
 
-                self.logger.info(f"NAND flash erase: start address={hex(self.erase_info.start_address)}, end address={hex(self.erase_info.end_address)}")
+                self.logger.info(f"NAND flash erase: start address={hex(profile_erase.start_address)}, "
+                                 f"end address={hex(profile_erase.end_address)} "
+                                 f"(physical {hex(self.erase_info.start_address)}-{hex(self.erase_info.end_address)})")
 
-        return ret
-
-    def check_protocol_for_erase(self):
-        ret = True
-
-        if (not self.is_usb) and (self.erase_info.memory_type == MemoryInfo.MEMORY_TYPE_NAND) and (
-                self.setting.disable_nand_access_with_uart == 1):
-            ret = False
-            self.logger.warning(
-                f"NAND access via UART is not allowed, please check the COM port and make sure the device profile matches the attached device!")
         return ret
 
     def is_address_block_aligned(self, address):
@@ -1121,7 +1188,7 @@ class Ameba(object):
     def post_validate_config_for_erase(self):
         ret = ErrType.OK
 
-        if self.erase_info and (not self.profile_info.is_ram_address(self.erase_info.start_address)):
+        if self.erase_info and (self.erase_info.memory_type != MemoryInfo.MEMORY_TYPE_RAM):
             if not self.is_address_block_aligned(self.erase_info.start_address):
                 ret = ErrType.SYS_PARAMETER
                 self.logger.warning(
@@ -1158,6 +1225,36 @@ class Ameba(object):
         chksum = chksum & 0xffffffff
         return chksum
 
+    def _erase_empty_partitions(self):
+        """Erase the all-FF partitions of a split merged image, which are not programmed.
+        The partitions hold profile addresses: converted to the device address of the flash
+        type the device reports (NAND physical offset from 0)."""
+        ret = ErrType.OK
+        flash_type = self.device_flash_type()
+        for profile_start, profile_end in self._empty_partitions:
+            if self.is_cancelled():
+                return ErrType.SYS_CANCEL
+            self.logger.info(f"Erase empty partition 0x{profile_start:08X}-0x{profile_end:08X}")
+            start = MemoryInfo.to_device_address(profile_start, flash_type)
+            end = MemoryInfo.to_device_address(profile_end, flash_type)
+            if flash_type == MemoryInfo.MEMORY_TYPE_NAND:
+                ret = self.floader_handler.erase_flash(MemoryInfo.MEMORY_TYPE_NAND, start, end, end - start,
+                                                       nand_erase_timeout_in_second(end - start,
+                                                                                    self.device_info.flash_block_size()),
+                                                       sense=True)
+                # Bad blocks are skipped and the following blocks are still erased
+                if ret in (ErrType.DEV_NAND_BAD_BLOCK, ErrType.DEV_NAND_WORN_BLOCK):
+                    ret = ErrType.OK
+            else:
+                ret = self.floader_handler.erase_flash(MemoryInfo.MEMORY_TYPE_NOR, start, end, end - start,
+                                                       nor_erase_timeout_in_second(
+                                                           divide_then_round_up(end - start, 1024)),
+                                                       sense=True)
+            if ret != ErrType.OK:
+                self.logger.error(f"Erase empty partition 0x{profile_start:08X}-0x{profile_end:08X} fail: {ret}")
+                break
+        return ret
+
     def _erase_flash_chip_nand(self):
         block_size = self.device_info.flash_block_size()
         total_capacity = self.device_info.flash_capacity
@@ -1191,13 +1288,17 @@ class Ameba(object):
 
     def erase_flash_chip(self):
         self.logger.info(f"Chip erase start")  # customized, do not modify
-        if self.memory_type == MemoryInfo.MEMORY_TYPE_NAND:
+        if self.device_info.is_boot_from_nand():
             ret = self._erase_flash_chip_nand()
-        else:
+        elif self.is_flash_session():
             ret = self.floader_handler.erase_flash(MemoryInfo.MEMORY_TYPE_NOR, RtkDeviceProfile.DEFAULT_FLASH_START_ADDR,
                                                    0, 0xFFFFFFFF,
                                                    nor_erase_timeout_in_second(0xFFFFFFFF),
                                                    sense=True, force=False)
+        else:
+            # Chip erase is defined for flash only: do not erase the NOR chip for e.g. RAM
+            self.logger.error(f"Chip erase is not supported for memory type {self.memory_type}")
+            ret = ErrType.SYS_PARAMETER
         self.logger.info(f"Chip erase end")
         return ret
 
@@ -1214,6 +1315,7 @@ class Ameba(object):
 
         # Split a merged single image into per-partition segments so the all-FF
         # padding between/after partitions is skipped instead of being programmed.
+        self._empty_partitions = []
         self.expand_merged_image()
 
         # Collect (image_info, path, from_download_img_info) before any flash access so
@@ -1221,6 +1323,10 @@ class Ameba(object):
         planned = []
         if self.download_img_info:
             for image_info in self.download_img_info:
+                # Not selected for download, as verify_images() skips it too
+                if not image_info.mandatory:
+                    self.logger.debug(f"Skip {image_info.image_name}: not mandatory")
+                    continue
                 img_path = image_info.image_name
                 image_info.image_name = os.path.basename(img_path)
                 planned.append((image_info, img_path, True))
@@ -1243,6 +1349,16 @@ class Ameba(object):
                 img_name = self._process_image(img_name)
                 planned.append((image_info, os.path.realpath(os.path.join(self.image_path, img_name)), False))
 
+        # Convert the device profile partitions to the floader memory type and device address
+        # (NAND physical offset from 0) once, so the erase / write / checksum requests below
+        # take them as is. The download works on these copies, the profile is left unchanged.
+        try:
+            planned = [(self.resolve_image(image_info), img_path, from_img_info)
+                       for image_info, img_path, from_img_info in planned]
+        except ValueError as err:
+            self.logger.error(f"Invalid image layout: {err}")
+            return ErrType.SYS_PARAMETER
+
         self._hdr_commit = None
         self._pending_checksums = []
         if not self.setting.dis_boot_guard_burn:
@@ -1251,10 +1367,15 @@ class Ameba(object):
                 return ret
 
         # support chip erase
-        if self.chip_erase and (self.memory_type in (MemoryInfo.MEMORY_TYPE_NOR, MemoryInfo.MEMORY_TYPE_NAND)):
+        if self.chip_erase and self.is_flash_session():
             ret = self.erase_flash_chip()
             if ret != ErrType.OK:
                 self.logger.error(f"Chip erase fail")
+                return ret
+        elif self._empty_partitions:
+            # Already erased by the chip erase otherwise
+            ret = self._erase_empty_partitions()
+            if ret != ErrType.OK:
                 return ret
 
         # Cache image1's RSIP params so image3 (which inherits from image1 and has
@@ -1296,12 +1417,14 @@ class Ameba(object):
 
     def _prepare_header_commit(self, planned):
         """Back up the head of the image at the flash start address, which is
-        programmed last by _finish_header_commit()."""
-        flash_start = self.profile_info.flash_start_address
+        programmed last by _finish_header_commit(). planned holds the resolved images:
+        floader memory type and device address."""
+        flash_type = self.device_flash_type()
+        flash_start = MemoryInfo.to_device_address(self.profile_info.flash_start_address, flash_type)
         entry = next((e for e in planned if e[0].start_address == flash_start and
-                      e[0].memory_type in (MemoryInfo.MEMORY_TYPE_NOR, MemoryInfo.MEMORY_TYPE_NAND)), None)
+                      e[0].memory_type == flash_type), None)
         if entry is None:
-            self.logger.warning(f"Boot guard burn: no image at {hex(flash_start)}, download normally")
+            self.logger.warning(f"Boot guard burn: no image at {hex(self.profile_info.flash_start_address)}, download normally")
             return ErrType.OK
 
         image_info, img_path, _ = entry
@@ -1337,7 +1460,7 @@ class Ameba(object):
         data += FlashUtils.FlashWritePaddingData.value.to_bytes(1, "little") * (length - len(data))
 
         if data == b'\xff' * length:
-            self.logger.info(f"Boot guard burn: header at {hex(flash_start)} is blank, download normally")
+            self.logger.info(f"Boot guard burn: header at {hex(self.profile_info.flash_start_address)} is blank, download normally")
             return ErrType.OK
 
         self._hdr_commit = {
@@ -1352,10 +1475,10 @@ class Ameba(object):
             "rsip_meta": None,
         }
         if is_nand:
-            self.logger.info(f"Header deferred: {hex(flash_start)}, "
+            self.logger.info(f"Header deferred: {hex(self.profile_info.flash_start_address)}, "
                              f"first block {self.device_info.flash_block_size() // 1024}KB (NAND)")
         else:
-            self.logger.info(f"Header deferred: {hex(flash_start)}, {length}B (NOR)")
+            self.logger.info(f"Header deferred: {hex(self.profile_info.flash_start_address)}, {length}B (NOR)")
         return ErrType.OK
 
     def _finish_header_commit(self):
@@ -1443,8 +1566,11 @@ class Ameba(object):
         Regular images (no ``file_offset``) keep their plain name."""
         name = os.path.basename(image_info.image_name)
         if hasattr(image_info, "file_offset"):
-            return (f"{name} "
-                    f"[0x{image_info.start_address:08X}-0x{image_info.end_address:08X}]")
+            # image_info holds the device address (NAND physical offset), show the profile
+            # address as the layout and the Image info log do
+            start = MemoryInfo.to_profile_address(image_info.start_address, image_info.memory_type)
+            end = MemoryInfo.to_profile_address(image_info.end_address, image_info.memory_type)
+            return f"{name} [0x{start:08X}-0x{end:08X}]"
         return name
 
     def _download_image_with_rsip(self, img_path: str, image_info,
@@ -1458,7 +1584,7 @@ class Ameba(object):
         enc_mode_hint / rsip_iv_hint: used for image3 which inherits RSIP params
         from image1 (no embedded manifest).  Supply the values from image1.
         """
-        is_ram = self.profile_info.is_ram_address(image_info.start_address)
+        is_ram = (image_info.memory_type == MemoryInfo.MEMORY_TYPE_RAM)
         if is_ram:
             # RAM partitions are never RSIP-encrypted
             return self._download_image(img_path, image_info, write_enc=False)
@@ -1545,12 +1671,13 @@ class Ameba(object):
 
         base = merged.start_address
         segments = []
+        empty_partitions = []
 
         for part in self.profile_info.images:
             if not part.mandatory:
                 continue
-            # RAM partitions are not part of a merged flash image.
-            if self.profile_info.is_ram_address(part.start_address):
+            # RAM and SECOND FLASH partitions are not part of a merged flash image.
+            if part.memory_type != MemoryInfo.PARTITION_TYPE_FLASH:
                 continue
             # Partition is fully below the image start address.
             if part.end_address <= base:
@@ -1568,8 +1695,11 @@ class Ameba(object):
 
             valid_length = self._compute_segment_valid_length(image_path, offset, seg_len)
             if valid_length <= 0:
+                # Nothing to program, but erase it so that no old data (e.g. an old OTA image)
+                # is left in a partition that is empty in the merged image
                 self.logger.debug(
-                    f"Skip empty (all-FF) partition 0x{seg_start:08X}-0x{part.end_address:08X}")
+                    f"Empty (all-FF) partition 0x{seg_start:08X}-0x{part.end_address:08X}, erase only")
+                empty_partitions.append((seg_start, part.end_address))
                 continue
 
             seg = ImageInfo()
@@ -1581,7 +1711,7 @@ class Ameba(object):
             # NAND erases the whole partition before programming (as the 1-N MP image
             # tool does), NOR only touches the trimmed range unless the layout marks
             # the partition for a full erase.
-            if merged.memory_type == MemoryInfo.MEMORY_TYPE_NAND:
+            if self.device_info.is_boot_from_nand():
                 seg.full_erase = True
             else:
                 seg.full_erase = part.full_erase
@@ -1599,6 +1729,7 @@ class Ameba(object):
                     f"program {seg.valid_length}B of {seg.end_address - seg.start_address}B "
                     f"(file offset 0x{seg.file_offset:X})")
             self.download_img_info = segments
+            self._empty_partitions = empty_partitions
         else:
             # The image does not line up with any layout partition (e.g. a custom
             # start address). Keep it as a single image but still trim its trailing
@@ -1616,7 +1747,8 @@ class Ameba(object):
         page_size = self.device_info.flash_page_size
         block_size = self.device_info.flash_block_size()
         pages_per_block = self.device_info.flash_pages_per_block
-        last_erase_addr = 0
+        # None, not 0: a partition at device address 0 (SECOND FLASH) must erase its first block
+        last_erase_addr = None
         next_erase_addr = 0
         checksum = 0
         write_timeout = 0
@@ -1675,8 +1807,10 @@ class Ameba(object):
         with open(image_path, 'rb') as file_stream:
             if file_offset:
                 file_stream.seek(file_offset)
+            # A RAM download on a NAND device also uses the NAND page/block flow: the page
+            # size reported by QUERY is the NAND page size
             if ((image_info.memory_type == MemoryInfo.MEMORY_TYPE_NAND) or (
-                    is_ram and (self.profile_info.memory_type == MemoryInfo.MEMORY_TYPE_NAND))):
+                    is_ram and self.device_info.is_boot_from_nand())):
 
                 write_timeout = nand_program_timeout_in_second(block_size,
                                                                page_size) + FlashUtils.NandBlockEraseTimeoutInSeconds.value
@@ -1824,6 +1958,13 @@ class Ameba(object):
                 while read_len > 0:
                     if self.is_cancelled():
                         ret = ErrType.SYS_CANCEL
+                        break
+                    # Never program past the partition end: an image larger than its partition
+                    # would overwrite the next one (NAND checks it the same way). The last page
+                    # may pass end_address, as the data is padded to a page (end = start + file size)
+                    if (not is_ram) and (addr >= image_info.end_address):
+                        self.logger.error(f"Overrange target={hex(addr)}, end={hex(image_info.end_address)}")
+                        ret = ErrType.SYS_OVERRANGE
                         break
                     if write_pages == 0:
                         if (addr % (64 * FlashUtils.NorDefaultPageSize.value)) == 0 and \
@@ -2137,6 +2278,20 @@ class Ameba(object):
                 if ret == ErrType.OK:
                     self.logger.info(f"Erase nor done")
         elif self.erase_info.memory_type == MemoryInfo.MEMORY_TYPE_RAM:
+            # FS_ERASE RAM only does memset when CONFIG byte0 bit4 is set, with the value of CONFIG byte2
+            memset_en = (self.setting.program_config1 & CONFIG_RAM_MEMSET_EN) != 0
+            memset_value = (self.setting.program_config1 >> CONFIG_RAM_MEMSET_VALUE_SHIFT) & CONFIG_RAM_MEMSET_VALUE_MASK
+            if not memset_en:
+                # The device would do nothing for FS_ERASE RAM, so do not send it
+                if memset_value == 0:
+                    self.logger.warning("RAM memset is not enabled (ProgramConfig1 bit4) and no memset value is set "
+                                        "(ProgramConfig1 bits 23~16), skip the RAM erase")
+                else:
+                    self.logger.warning(f"RAM memset value 0x{memset_value:02X} is set but RAM memset is not enabled "
+                                        f"(ProgramConfig1 bit4), skip the RAM erase")
+                return ErrType.OK
+            self.logger.info(f"Erase ram {hex(self.erase_info.start_address)}-{hex(self.erase_info.end_address)} "
+                             f"with memset value 0x{memset_value:02X}")
             # memset 16MB ram, cost time: 0.01s
             ret = self.floader_handler.erase_flash(self.erase_info.memory_type,
                                                    self.erase_info.start_address,
@@ -2170,8 +2325,9 @@ class Ameba(object):
         ret = ErrType.OK
         is_amebad = self.profile_info.is_amebad()
         otp_spic_addr_mode_addr = OtpSpicAddrModeAddrForAmebaD if is_amebad else OtpSpicAddrModeAddr
-        otp_spic_addr_mode_mask = OtpSpicAddrModeMask if is_amebad else OtpSpicAddrModeMask
+        otp_spic_addr_mode_mask = OtpSpicAddrModeMaskForAmebaD if is_amebad else OtpSpicAddrModeMask
         otp_spic_addr_mode_pos = OtpSpicAddrModePosForAmebaD if is_amebad else OtpSpicAddrModePos
+        otp_spic_addr_mode_4byte = OtpSpicAddrMode4ByteForAmebaD if is_amebad else OtpSpicAddrMode4Byte
 
         if self.device_info.is_boot_from_nand():
             return ret
@@ -2189,7 +2345,7 @@ class Ameba(object):
             cfg |= ((mode << otp_spic_addr_mode_pos) & otp_spic_addr_mode_mask)
         else:
             if mode == SpicAddrMode.FOUR_BYTE_MODE.value:
-                cfg = OtpSpicAddrMode4Byte
+                cfg = otp_spic_addr_mode_4byte
             else:
                 self.logger.info(f"No need to change default supported flash size")
                 return ErrType.OK
@@ -2219,7 +2375,7 @@ class Ameba(object):
         ret = ErrType.OK
         is_amebad = self.profile_info.is_amebad()
         otp_spic_addr_mode_addr = OtpSpicAddrModeAddrForAmebaD if is_amebad else OtpSpicAddrModeAddr
-        otp_spic_addr_mode_mask = OtpSpicAddrModeMask if is_amebad else OtpSpicAddrModeMask
+        otp_spic_addr_mode_mask = OtpSpicAddrModeMaskForAmebaD if is_amebad else OtpSpicAddrModeMask
         otp_spic_addr_mode_4byte = OtpSpicAddrMode4ByteForAmebaD if is_amebad else OtpSpicAddrMode4Byte
         mode = SpicAddrMode.THREE_BYTE_MODE.value
 
@@ -2351,12 +2507,10 @@ class Ameba(object):
         return self._confirm_flash_type(device_info)
 
     def _confirm_flash_type(self, device_info):
-        """Accept the detected flash type for boot select programming. Its boot select OTP
-        is programmed next, never for a flash type the download cannot use."""
-        if device_info.memory_type != self.profile_info.memory_type:
-            self.logger.error(f"Detected flash type {self._memory_type_name(device_info.memory_type)} does not match "
-                              f"the device profile flash type {self._memory_type_name(self.profile_info.memory_type)}, "
-                              f"select the right device profile")
+        """Accept the detected flash type for boot select programming, programmed next. The
+        device profile does not tell NOR from NAND, the detected flash type is downloaded."""
+        if device_info.memory_type not in (MemoryInfo.MEMORY_TYPE_NOR, MemoryInfo.MEMORY_TYPE_NAND):
+            self.logger.error(f"Unsupported detected flash type {device_info.memory_type}")
             return ErrType.SYS_PARAMETER
 
         self.flash_type_switched = True
@@ -2454,6 +2608,11 @@ class Ameba(object):
         ret = self.prepare(show_device_info=False)
         if ret != ErrType.OK:
             self.logger.error("Prepare for check supported flash size fail")
+            return ret, reset_system
+
+        # The SPIC address mode only applies to NOR, the flash type reported by the device
+        if self.device_info.is_boot_from_nand():
+            self.logger.info(f"NAND flash, no need to check the SPIC address mode")
             return ret, reset_system
 
         ret, mode = self.get_spic_address_mode()

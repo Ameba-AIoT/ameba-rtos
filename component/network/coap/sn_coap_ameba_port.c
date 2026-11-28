@@ -2,7 +2,7 @@
 #include "sn_coap_protocol_internal.h"
 
 ///////////////////////////////////////////ramdom function///////////////////////////////////////////
-uint16_t randLIB_get_16bit()
+uint16_t randLIB_get_16bit(void)
 {
 
 	unsigned char rnd[2];
@@ -48,7 +48,7 @@ struct coap_s *coap_protocol_init(uint8_t (*coap_tx_callback)(uint8_t *, uint16_
 
 ///////////////////////////////////////////send and receive///////////////////////////////////////////
 
-int coap_sock_open()
+int coap_sock_open(void)
 {
 
 	int socket_fd = socket(AF_INET, SOCK_DGRAM, 0);

@@ -6,6 +6,8 @@
 #include <platform_autoconf.h>
 #ifdef CONFIG_BT_INIC
 #include <sdn_inic_conf.h>
+#elif defined(CONFIG_BT_CUSTOMER_XIAOMI)
+#include <sdn_xiaomi_conf.h>
 #else
 #include <bt_api_config.h>
 #endif
@@ -47,8 +49,8 @@
 #define CONFIG_BLE_LL_PAWR_ADV_ENABLE
 #endif
 
-#if (defined(RTK_BLE_5_4_PAWR_SYNC_SUPPORT) && RTK_BLE_5_4_PAWR_SYNC_SUPPORT)
-#define CONFIG_BLE_LL_PAWR_SYNC_ENABLE
+#if (defined(RTK_BLE_5_4_PAWR_SCAN_SUPPORT) && RTK_BLE_5_4_PAWR_SCAN_SUPPORT)
+#define CONFIG_BLE_LL_PAWR_SCAN_ENABLE
 #endif
 
 #if (defined(RTK_BREDR_SUPPORT) && RTK_BREDR_SUPPORT)

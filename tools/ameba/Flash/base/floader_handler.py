@@ -73,9 +73,16 @@ QUERY_DATA_OFFSET_FLASH_TARGETS = 60
 QUERY_DATA_OFFSET_FLASH_CAPACITY = 61
 QUERY_DATA_OFFSET_WIFI_MAC = 71
 QUERY_DATA_OFFSET_UUID = 77
+# QUERY response data length, without the opcode byte
+QUERY_RESPONSE_DATA_LEN = 128
 # CONFIG config[2] bit0: request the flashloader to re-initialize SPIC with the other
 # flash type (NOR <-> NAND), checked by the flash info of the next QUERY. Since CmdSetVersion 2.2
 CONFIG_AUTO_DETECT_FLASH_TYPE_EN = 0x01
+# CONFIG config[0] bit4: memset the range of FS_ERASE RAM, with the value of byte2 (config[0] bits 23~16).
+# Otherwise FS_ERASE RAM does nothing
+CONFIG_RAM_MEMSET_EN = 0x10
+CONFIG_RAM_MEMSET_VALUE_SHIFT = 16
+CONFIG_RAM_MEMSET_VALUE_MASK = 0xFF
 
 # Read otp logical map time:26ms, physical map time: 170ms
 # Program otp logical map time: 7ms
@@ -92,6 +99,19 @@ class FloaderHandler(object):
         self.logger = ameba_obj.logger
         self.setting = ameba_obj.setting
         super().__init__()
+
+    # Error codes the device returns for the request itself (bad command, parameter or data),
+    # a resend of the same frame fails the same way
+    _NO_RETRY_ERRORS = (ErrType.DEV_INVALID, ErrType.DEV_ADDRESS, ErrType.DEV_HARDWARE,
+                        ErrType.DEV_NAND_BIT_FLIP_FATAL)
+
+    @staticmethod
+    def _device_error(code):
+        # Map a device error byte to ErrType so that callers can compare it, keep the raw int if unknown
+        try:
+            return ErrType(code)
+        except ValueError:
+            return code
 
     def send_request(self, request, length, timeout, is_sync=True, full_timeout=None):
         ret = ErrType.SYS_UNKNOWN
@@ -152,7 +172,7 @@ class FloaderHandler(object):
                                             break
                                         else:
                                             self.logger.debug(
-                                                f"Response checksum error: expect {hex(checksm)}, get {hex(response_bytes[response_len + 1])}")
+                                                f"Response checksum error: expect {hex(checksm)}, get {hex(response_bytes[response_len])}")
                                             ret = ErrType.SYS_CHECKSUM
                                     else:
                                         ret = ErrType.SYS_PROTO
@@ -167,8 +187,8 @@ class FloaderHandler(object):
                             ret = ErrType.SYS_PROTO
                             self.logger.error(f"Read response length error: {ret}")
                     elif ret_byte[0] >= ErrType.DEV_ERR_BASE.value:
-                        ret = ret_byte
-                        self.logger.debug(f"Negative response 0x{ret_byte.hex()}: ")
+                        ret = self._device_error(ret_byte[0])
+                        self.logger.debug(f"Negative response 0x{ret_byte.hex()}: {ret}")
                         if ret_byte[0] == ErrType.DEV_FULL.value:
                             ret = ErrType.DEV_FULL
                             if time.monotonic() < full_deadline:
@@ -193,15 +213,15 @@ class FloaderHandler(object):
                         ret = ErrType.OK
                         break
                     elif ret_byte[0] >= ErrType.DEV_ERR_BASE.value:
-                        ret = ret_byte
-                        self.logger.debug(f"Negative response: {ret_byte}")
+                        ret = self._device_error(ret_byte[0])
+                        self.logger.debug(f"Negative response 0x{ret_byte.hex()}: {ret}")
                         if ret_byte[0] in (ErrType.DEV_FULL.value, ErrType.DEV_BUSY.value):
                             time.sleep(self.setting.request_retry_interval_second)
                     else:
                         ret = ErrType.SYS_PROTO
                         self.logger.debug(f"Unexpected response {ret_byte}")
 
-                if ret == ErrType.OK or ret == ErrType.SYS_CANCEL:
+                if ret == ErrType.OK or ret == ErrType.SYS_CANCEL or ret in self._NO_RETRY_ERRORS:
                     break
                 else:
                     time.sleep(self.setting.request_retry_interval_second)
@@ -212,42 +232,48 @@ class FloaderHandler(object):
 
     def sense(self, timeout, op_code=None, data=None):
         self.logger.debug(f"Sense...")
-        ret, sense_ack = self.send_request(SENSE.to_bytes(1, byteorder="little"), length=1, timeout=timeout)
+        for retry in range(self.setting.request_retry_count):
+            ret, sense_ack = self.send_request(SENSE.to_bytes(1, byteorder="little"), length=1, timeout=timeout)
+            if ret != ErrType.OK or sense_ack[0] == SENSE:
+                break
+            # Not the SENSE response, e.g. a late reply to an earlier retried request.
+            # SENSE only reads the execute status of the last command, so ask again:
+            # send_request() flushes the input before resending
+            ret = ErrType.SYS_PROTO
+            self.logger.debug(f"Sense retry {retry + 1}#: unexpected opcode {sense_ack[0]}")
+
         if ret == ErrType.OK:
             sense_status = SenseStatus()
             self.logger.debug(f"Sense response raw data: {sense_ack.hex()}")
-            if sense_ack[0] == (SENSE):
-                ret = sense_status.parse(sense_ack, 1)
-                if ret == ErrType.OK:
+            ret = sense_status.parse(sense_ack, 1)
+            if ret == ErrType.OK:
+                self.logger.debug(
+                    f"Sense response: opcode={hex(sense_status.op_code)}, status=0x{format(sense_status.status, '02x')}, data={hex(sense_status.data)}")
+                if sense_status.status != ErrType.OK.value:
+                    # Map the raw device status to ErrType so callers can compare against
+                    # members (e.g. DEV_NAND_BAD_BLOCK); keep the raw int for unknown codes
+                    try:
+                        ret = ErrType(sense_status.status)
+                    except ValueError:
+                        ret = sense_status.status
                     self.logger.debug(
-                        f"Sense response: opcode={hex(sense_status.op_code)}, status=0x{format(sense_status.status, '02x')}, data={hex(sense_status.data)}")
-                    if sense_status.status != ErrType.OK.value:
-                        # Map the raw device status to ErrType so callers can compare against
-                        # members (e.g. DEV_NAND_BAD_BLOCK); keep the raw int for unknown codes
-                        try:
-                            ret = ErrType(sense_status.status)
-                        except ValueError:
-                            ret = sense_status.status
-                        self.logger.debug(
-                            f"Sense fail: opcode={hex(sense_status.op_code)}, data={hex(sense_status.data)}, status={ret}")
-                    elif (op_code is not None) and (sense_status.op_code != op_code):
-                        ret = ErrType.SYS_PROTO
-                        self.logger.error(
-                            f"Sense protocol error: expect opcode-data {hex(op_code)}-{data if data is None else hex(data)}, get {hex(sense_status.op_code)}-{hex(sense_status.data)}")
-                    elif (data is not None) and sense_status.data != data:
-                        # Silent-loss guard: when a WRITE frame is dropped (e.g. UART FIFO
-                        # overflow on the device), floader's last-processed addr lags
-                        # behind what the host sent. Without this check, downloads finish
-                        # "successfully" but flash is missing pages → CHKSM fails later.
-                        ret = ErrType.SYS_PROTO
-                        self.logger.error(
-                            f"Sense data mismatch: opcode={hex(sense_status.op_code)} expect data={hex(data)}, get {hex(sense_status.data)} — frame loss")
-                    else:
-                        self.logger.debug("Sense ok")
+                        f"Sense fail: opcode={hex(sense_status.op_code)}, data={hex(sense_status.data)}, status={ret}")
+                elif (op_code is not None) and (sense_status.op_code != op_code):
+                    ret = ErrType.SYS_PROTO
+                    self.logger.error(
+                        f"Sense protocol error: expect opcode-data {hex(op_code)}-{data if data is None else hex(data)}, get {hex(sense_status.op_code)}-{hex(sense_status.data)}")
+                elif (data is not None) and sense_status.data != data:
+                    # Silent-loss guard: when a WRITE frame is dropped (e.g. UART FIFO
+                    # overflow on the device), floader's last-processed addr lags
+                    # behind what the host sent. Without this check, downloads finish
+                    # "successfully" but flash is missing pages → CHKSM fails later.
+                    ret = ErrType.SYS_PROTO
+                    self.logger.error(
+                        f"Sense data mismatch: opcode={hex(sense_status.op_code)} expect data={hex(data)}, get {hex(sense_status.data)} — frame loss")
                 else:
-                    self.logger.debug(f"Sense fail to parse sense response")
+                    self.logger.debug("Sense ok")
             else:
-                self.logger.debug(f"Sense fail: unexpected opcode {sense_ack[0]}")
+                self.logger.debug(f"Sense fail to parse sense response")
         else:
             self.logger.debug(f"Sense fail: {ret}")
         return ret, sense_ack
@@ -304,7 +330,10 @@ class FloaderHandler(object):
         ret, resp = self.send_request(QUERY.to_bytes(1, byteorder="little"), length=1,
                                       timeout=self.setting.sync_response_timeout_in_second)
         if ret == ErrType.OK:
-            if resp[0] == (QUERY):
+            if resp[0] == (QUERY) and len(resp) < 1 + QUERY_RESPONSE_DATA_LEN:
+                self.logger.debug(f"Query: response too short: {len(resp)}B")
+                ret = ErrType.SYS_PROTO
+            elif resp[0] == (QUERY):
                 device_info.did = resp[QUERY_DATA_OFFSET_DID + 1] + (resp[QUERY_DATA_OFFSET_DID + 2] << 8)
                 device_info.image_type = resp[QUERY_DATA_OFFSET_IMAGE_TYPE + 1] + (
                             resp[QUERY_DATA_OFFSET_IMAGE_TYPE + 2] << 8)
@@ -319,10 +348,14 @@ class FloaderHandler(object):
                 device_info.flash_mid = resp[QUERY_DATA_OFFSET_FLASH_MID + 1]
                 device_info.flash_did = resp[QUERY_DATA_OFFSET_FLASH_DID + 1] + (
                             resp[QUERY_DATA_OFFSET_FLASH_DID + 2] << 8)
+                # Copied as is from the NAND ONFI parameter page (all 0 for NOR): only for display, so
+                # do not fail on non UTF-8 bytes, and keep them ASCII (e.g. "\xff") for a GBK console
                 device_info.flash_mfg = resp[
-                                        QUERY_DATA_OFFSET_FLASH_MFG + 1: QUERY_DATA_OFFSET_FLASH_MFG + 1 + 12].decode("utf-8")
+                                        QUERY_DATA_OFFSET_FLASH_MFG + 1: QUERY_DATA_OFFSET_FLASH_MFG + 1 + 12].decode(
+                    "utf-8", errors="backslashreplace").rstrip("\x00 ")
                 device_info.flash_model = resp[
-                                          QUERY_DATA_OFFSET_FLASH_MODEL + 1: QUERY_DATA_OFFSET_FLASH_MODEL + 1 + 20].decode("utf-8")
+                                          QUERY_DATA_OFFSET_FLASH_MODEL + 1: QUERY_DATA_OFFSET_FLASH_MODEL + 1 + 20].decode(
+                    "utf-8", errors="backslashreplace").rstrip("\x00 ")
                 device_info.flash_page_size = (resp[QUERY_DATA_OFFSET_FLASH_PAGE_SIZE + 1]
                                                + (resp[QUERY_DATA_OFFSET_FLASH_PAGE_SIZE + 2] << 8)
                                                + (resp[QUERY_DATA_OFFSET_FLASH_PAGE_SIZE + 3] << 16)
@@ -576,6 +609,14 @@ class FloaderHandler(object):
 
         request_bytes = bytearray(request_data)
         ret, _ = self.send_request(request_bytes, len(request_bytes), self.setting.async_response_timeout_in_second, is_sync=False)
+        if ret != ErrType.OK:
+            self.logger.debug(f"FS_WTSTS fail: {ret}")
+            return ret
+
+        # Async command: the ACK only means the frame was queued, SENSE gets the result
+        ret, _ = self.sense(self.setting.sync_response_timeout_in_second, op_code=FS_WTSTS, data=cmd)
+        if ret != ErrType.OK:
+            self.logger.debug(f"FS_WTSTS cmd={hex(cmd)} fail: {ret}")
 
         return ret
 

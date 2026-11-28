@@ -7,6 +7,15 @@
 #ifndef __BT_AUDIO_DEBUG_H__
 #define __BT_AUDIO_DEBUG_H__
 
+/** @addtogroup BT_Constants BT Constants
+ * @{
+ */
+/** @addtogroup BT_Audio_Constants BT Audio Constants
+ * @{
+ */
+/** @addtogroup BT_Audio_Debug_Constants BT Audio Debug Constants
+ * @{
+ */
 #define CONFIG_BT_AUDIO_DEBUG 0   /*!< BT Audio debug log switch. 1: @ref DBG_BAD prints messages. 0: @ref DBG_BAD expands to nothing. */
 
 #if defined(CONFIG_BT_AUDIO_DEBUG) && CONFIG_BT_AUDIO_DEBUG
@@ -21,5 +30,14 @@
 #else
 #define DBG_BAD(x, ...) do {} while(0)
 #endif /* CONFIG_BT_AUDIO_DEBUG */
+/**
+ * @}
+ */
+/**
+ * @}
+ */
+/**
+ * @}
+ */
 
 #endif /* __BT_AUDIO_DEBUG_H__ */

@@ -7,7 +7,7 @@
  *  possession or use of this module requires written permission of RealTek.
  */
 #include "ameba_soc.h"
-#include "ameba_gspi.h"
+#include "rtw_gspi_drvio.h"
 #include "example_gspi_ext.h"
 #include "os_wrapper.h"
 
@@ -18,22 +18,28 @@
 #define GSPI_FREQ_ACTIVATE     1000000    /* clock used for the activation frame */
 #define GSPI_BOOT_DELAY_MS     3000       /* let the Device bring up its SPDIO backend */
 
-static GSPI_HandleTypeDef gspi;
+static struct whc_gspi_handle gspi;
 
 /* Read one register and report the Status phase that came with it. */
 static void gspi_show_reg(const char *name, u32 addr)
 {
-	GSPI_StatusTypeDef sts;
-	u32 val = GSPI_ReadReg32(&gspi, addr, &sts);
+	struct whc_gspi_status sts;
+	u32 val = GSPI_WIFI_ReadReg32(&gspi, addr, &sts);
 
+#if GSPI_DRV_VER == 1
+	/* v1 returns two Status words, v2 only one */
 	RTK_LOGI(TAG, "  %s(0x%02x) = %08x   status %08x %08x %s\n", name, addr, val,
 			 sts.word0, sts.word1, sts.valid ? "" : "(not driven)");
+#else
+	RTK_LOGI(TAG, "  %s(0x%02x) = %08x   status %08x %s\n", name, addr, val,
+			 sts.word0, sts.valid ? "" : "(not driven)");
+#endif
 }
 
 static void gspi_host_task(void)
 {
-	GSPI_InitTypeDef init;
-	GSPI_StatusTypeDef sts;
+	struct whc_gspi_init init;
+	struct whc_gspi_status sts;
 	u32 cpu_ind;
 	u8 saved, readback;
 
@@ -59,7 +65,7 @@ static void gspi_host_task(void)
 	/* Step 1: activation. This must be the first bus transaction after the
 	 * Device boots, otherwise the Device latches SDIO mode. */
 	RTK_LOGI(TAG, "Step1: activate GSPI (write SPI_CFG, read back)\n");
-	if (GSPI_Configuration(&gspi, GSPI_BIG_ENDIAN_32) != RTK_SUCCESS) {
+	if (GSPI_WIFI_Configuration(&gspi, GSPI_BIG_ENDIAN_32) != RTK_SUCCESS) {
 		RTK_LOGE(TAG, "GSPI Demo: fail (activation)\n");
 		goto exit;
 	}
@@ -68,7 +74,7 @@ static void gspi_host_task(void)
 	/* Step 2: read the registers that prove the bus really talks. CPU_IND
 	 * reading 0xFF means MISO is just idling at its pull-up level. */
 	RTK_LOGI(TAG, "Step2: register reads\n");
-	cpu_ind = GSPI_ReadReg32(&gspi, GSPI_REG_CPU_INDICATION, &sts);
+	cpu_ind = GSPI_WIFI_ReadReg32(&gspi, GSPI_REG_CPU_INDICATION, &sts);
 	RTK_LOGI(TAG, "  CPU_INDICATION(0x84) = 0x%08x, CPU_RDY=%d\n", cpu_ind,
 			 (cpu_ind & GSPI_BIT_SYNC_CPU_RDY_IND) ? 1 : 0);
 	if (cpu_ind == 0xFFFFFFFF) {
@@ -82,10 +88,10 @@ static void gspi_host_task(void)
 
 	/* Step 3: write-readback on scratch byte 0x84. */
 	RTK_LOGI(TAG, "Step3: write-readback on scratch byte 0x84\n");
-	saved = GSPI_ReadReg8(&gspi, GSPI_REG_CPU_INDICATION, NULL);
-	GSPI_WriteReg8(&gspi, GSPI_REG_CPU_INDICATION, 0x5A, NULL);
-	readback = GSPI_ReadReg8(&gspi, GSPI_REG_CPU_INDICATION, NULL);
-	GSPI_WriteReg8(&gspi, GSPI_REG_CPU_INDICATION, saved, NULL);
+	saved = GSPI_WIFI_ReadReg8(&gspi, GSPI_REG_CPU_INDICATION, NULL);
+	GSPI_WIFI_WriteReg8(&gspi, GSPI_REG_CPU_INDICATION, 0x5A, NULL);
+	readback = GSPI_WIFI_ReadReg8(&gspi, GSPI_REG_CPU_INDICATION, NULL);
+	GSPI_WIFI_WriteReg8(&gspi, GSPI_REG_CPU_INDICATION, saved, NULL);
 	RTK_LOGI(TAG, "  wrote 0x5a, read 0x%02x %s (restored 0x%02x)\n",
 			 readback, (readback == 0x5A) ? "MATCH" : "MISMATCH", saved);
 

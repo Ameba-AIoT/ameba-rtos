@@ -42,59 +42,59 @@ extern "C" {
  */
 /**@{*/
 #define APP_PRINT_ERROR0(fmt)   \
-    DBG_BUFFER_APP(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_APP, LOG_LEVEL_ERROR, "!!!"fmt, 0)
+    DBG_BUFFER_APP(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_APP, LOG_LEVEL_ERROR, "!!!" fmt, 0)
 #define APP_PRINT_ERROR1(fmt, arg0)   \
-    DBG_BUFFER_APP(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_APP, LOG_LEVEL_ERROR,  "!!!"fmt, 1, arg0)
+    DBG_BUFFER_APP(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_APP, LOG_LEVEL_ERROR,  "!!!" fmt, 1, arg0)
 #define APP_PRINT_ERROR2(fmt, arg0, arg1)   \
-    DBG_BUFFER_APP(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_APP, LOG_LEVEL_ERROR,  "!!!"fmt, 2, arg0, arg1)
+    DBG_BUFFER_APP(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_APP, LOG_LEVEL_ERROR,  "!!!" fmt, 2, arg0, arg1)
 #define APP_PRINT_ERROR3(fmt, arg0, arg1, arg2)   \
-    DBG_BUFFER_APP(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_APP, LOG_LEVEL_ERROR,  "!!!"fmt, 3, arg0, arg1, arg2)
+    DBG_BUFFER_APP(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_APP, LOG_LEVEL_ERROR,  "!!!" fmt, 3, arg0, arg1, arg2)
 #define APP_PRINT_ERROR4(fmt, arg0, arg1, arg2, arg3)   \
-    DBG_BUFFER_APP(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_APP, LOG_LEVEL_ERROR,  "!!!"fmt, 4, arg0, arg1, arg2, arg3)
+    DBG_BUFFER_APP(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_APP, LOG_LEVEL_ERROR,  "!!!" fmt, 4, arg0, arg1, arg2, arg3)
 #define APP_PRINT_ERROR5(fmt, arg0, arg1, arg2, arg3, arg4)   \
-    DBG_BUFFER_APP(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_APP, LOG_LEVEL_ERROR,  "!!!"fmt, 5, arg0, arg1, arg2, arg3, arg4)
+    DBG_BUFFER_APP(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_APP, LOG_LEVEL_ERROR,  "!!!" fmt, 5, arg0, arg1, arg2, arg3, arg4)
 #define APP_PRINT_ERROR6(fmt, arg0, arg1, arg2, arg3, arg4, arg5)   \
-    DBG_BUFFER_APP(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_APP, LOG_LEVEL_ERROR,  "!!!"fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
+    DBG_BUFFER_APP(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_APP, LOG_LEVEL_ERROR,  "!!!" fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
 #define APP_PRINT_ERROR7(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6)   \
-    DBG_BUFFER_APP(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_APP, LOG_LEVEL_ERROR,  "!!!"fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+    DBG_BUFFER_APP(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_APP, LOG_LEVEL_ERROR,  "!!!" fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 #define APP_PRINT_ERROR8(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)   \
-    DBG_BUFFER_APP(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_APP, LOG_LEVEL_ERROR,  "!!!"fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
+    DBG_BUFFER_APP(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_APP, LOG_LEVEL_ERROR,  "!!!" fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
 #define APP_PRINT_WARN0(fmt)     \
-    DBG_BUFFER_APP(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_APP, LOG_LEVEL_WARN,  "!!*"fmt, 0)
+    DBG_BUFFER_APP(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_APP, LOG_LEVEL_WARN,  "!!*" fmt, 0)
 #define APP_PRINT_WARN1(fmt, arg0)   \
-    DBG_BUFFER_APP(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_APP, LOG_LEVEL_WARN, "!!*"fmt, 1, arg0)
+    DBG_BUFFER_APP(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_APP, LOG_LEVEL_WARN, "!!*" fmt, 1, arg0)
 #define APP_PRINT_WARN2(fmt, arg0, arg1)   \
-    DBG_BUFFER_APP(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_APP, LOG_LEVEL_WARN, "!!*"fmt, 2, arg0, arg1)
+    DBG_BUFFER_APP(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_APP, LOG_LEVEL_WARN, "!!*" fmt, 2, arg0, arg1)
 #define APP_PRINT_WARN3(fmt, arg0, arg1, arg2)   \
-    DBG_BUFFER_APP(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_APP, LOG_LEVEL_WARN, "!!*"fmt, 3, arg0, arg1, arg2)
+    DBG_BUFFER_APP(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_APP, LOG_LEVEL_WARN, "!!*" fmt, 3, arg0, arg1, arg2)
 #define APP_PRINT_WARN4(fmt, arg0, arg1, arg2, arg3)   \
-    DBG_BUFFER_APP(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_APP, LOG_LEVEL_WARN, "!!*"fmt, 4, arg0, arg1, arg2, arg3)
+    DBG_BUFFER_APP(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_APP, LOG_LEVEL_WARN, "!!*" fmt, 4, arg0, arg1, arg2, arg3)
 #define APP_PRINT_WARN5(fmt, arg0, arg1, arg2, arg3, arg4)   \
-    DBG_BUFFER_APP(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_APP, LOG_LEVEL_WARN, "!!*"fmt, 5, arg0, arg1, arg2, arg3, arg4)
+    DBG_BUFFER_APP(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_APP, LOG_LEVEL_WARN, "!!*" fmt, 5, arg0, arg1, arg2, arg3, arg4)
 #define APP_PRINT_WARN6(fmt, arg0, arg1, arg2, arg3, arg4, arg5)   \
-    DBG_BUFFER_APP(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_APP, LOG_LEVEL_WARN, "!!*"fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
+    DBG_BUFFER_APP(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_APP, LOG_LEVEL_WARN, "!!*" fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
 #define APP_PRINT_WARN7(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6)   \
-    DBG_BUFFER_APP(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_APP, LOG_LEVEL_WARN, "!!*"fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+    DBG_BUFFER_APP(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_APP, LOG_LEVEL_WARN, "!!*" fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 #define APP_PRINT_WARN8(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)   \
-    DBG_BUFFER_APP(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_APP, LOG_LEVEL_WARN, "!!*"fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
+    DBG_BUFFER_APP(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_APP, LOG_LEVEL_WARN, "!!*" fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
 #define APP_PRINT_INFO0(fmt)   \
-    DBG_BUFFER_APP(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_APP, LOG_LEVEL_INFO, "!**"fmt, 0)
+    DBG_BUFFER_APP(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_APP, LOG_LEVEL_INFO, "!**" fmt, 0)
 #define APP_PRINT_INFO1(fmt, arg0)   \
-    DBG_BUFFER_APP(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_APP, LOG_LEVEL_INFO, "!**"fmt, 1, arg0)
+    DBG_BUFFER_APP(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_APP, LOG_LEVEL_INFO, "!**" fmt, 1, arg0)
 #define APP_PRINT_INFO2(fmt, arg0, arg1)   \
-    DBG_BUFFER_APP(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_APP, LOG_LEVEL_INFO, "!**"fmt, 2, arg0, arg1)
+    DBG_BUFFER_APP(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_APP, LOG_LEVEL_INFO, "!**" fmt, 2, arg0, arg1)
 #define APP_PRINT_INFO3(fmt, arg0, arg1, arg2)   \
-    DBG_BUFFER_APP(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_APP, LOG_LEVEL_INFO, "!**"fmt, 3, arg0, arg1, arg2)
+    DBG_BUFFER_APP(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_APP, LOG_LEVEL_INFO, "!**" fmt, 3, arg0, arg1, arg2)
 #define APP_PRINT_INFO4(fmt, arg0, arg1, arg2, arg3)   \
-    DBG_BUFFER_APP(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_APP, LOG_LEVEL_INFO, "!**"fmt, 4, arg0, arg1, arg2, arg3)
+    DBG_BUFFER_APP(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_APP, LOG_LEVEL_INFO, "!**" fmt, 4, arg0, arg1, arg2, arg3)
 #define APP_PRINT_INFO5(fmt, arg0, arg1, arg2, arg3, arg4)   \
-    DBG_BUFFER_APP(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_APP, LOG_LEVEL_INFO, "!**"fmt, 5, arg0, arg1, arg2, arg3, arg4)
+    DBG_BUFFER_APP(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_APP, LOG_LEVEL_INFO, "!**" fmt, 5, arg0, arg1, arg2, arg3, arg4)
 #define APP_PRINT_INFO6(fmt, arg0, arg1, arg2, arg3, arg4, arg5)   \
-    DBG_BUFFER_APP(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_APP, LOG_LEVEL_INFO, "!**"fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
+    DBG_BUFFER_APP(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_APP, LOG_LEVEL_INFO, "!**" fmt, 6, arg0, arg1, arg2, arg3, arg4, arg5)
 #define APP_PRINT_INFO7(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6)   \
-    DBG_BUFFER_APP(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_APP, LOG_LEVEL_INFO, "!**"fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+    DBG_BUFFER_APP(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_APP, LOG_LEVEL_INFO, "!**" fmt, 7, arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 #define APP_PRINT_INFO8(fmt, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)   \
-    DBG_BUFFER_APP(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_APP, LOG_LEVEL_INFO, "!**"fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
+    DBG_BUFFER_APP(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_APP, LOG_LEVEL_INFO, "!**" fmt, 8, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
 #define APP_PRINT_TRACE0(fmt)   \
     DBG_BUFFER_APP(TYPE_BTLIB, SUBTYPE_FORMAT, TRACE_MODULE_APP, LOG_LEVEL_TRACE, fmt, 0)
 #define APP_PRINT_TRACE1(fmt, arg0)   \

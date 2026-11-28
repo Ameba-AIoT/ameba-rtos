@@ -32,13 +32,12 @@
 /* Secure port macros. */
 #include "secure_port_macros.h"
 
-void SecureContext_LoadContextAsm( SecureContext_t * pxSecureContext ) __attribute__( ( naked ) );
-void SecureContext_SaveContextAsm( SecureContext_t * pxSecureContext ) __attribute__( ( naked ) );
+void SecureContext_LoadContextAsm( __attribute__( ( unused ) ) SecureContext_t * pxSecureContext ) __attribute__( ( naked ) );
+void SecureContext_SaveContextAsm( __attribute__( ( unused ) ) SecureContext_t * pxSecureContext ) __attribute__( ( naked ) );
 
-secureportNON_SECURE_CALLABLE void SecureContext_LoadContextAsm( SecureContext_t * pxSecureContext )
+secureportNON_SECURE_CALLABLE void SecureContext_LoadContextAsm( __attribute__( ( unused ) ) SecureContext_t * pxSecureContext )
 {
     /* pxSecureContext value is in r0. */
-    (void) pxSecureContext;
     __asm volatile
     (
         " .syntax unified                   \n"
@@ -63,10 +62,9 @@ secureportNON_SECURE_CALLABLE void SecureContext_LoadContextAsm( SecureContext_t
 }
 /*-----------------------------------------------------------*/
 
-secureportNON_SECURE_CALLABLE void SecureContext_SaveContextAsm( SecureContext_t * pxSecureContext )
+secureportNON_SECURE_CALLABLE void SecureContext_SaveContextAsm( __attribute__( ( unused ) ) SecureContext_t * pxSecureContext )
 {
     /* pxSecureContext value is in r0. */
-    (void)pxSecureContext;
     __asm volatile
     (
         " .syntax unified                   \n"

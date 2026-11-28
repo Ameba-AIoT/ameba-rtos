@@ -65,3 +65,12 @@ ChangeLog:
                   (5) Support auto detect flash type
                   (6) Support USB download on macOS
                   (7) Add --scan to list serial ports, UART ports by default or USB ports with --usb
+20261120  v1.1.11 (1) Fix chip erase fail issue when flash block protection is enabled
+                  (2) Fix flash block protection not restored when erase or download fails
+                  (3) Verify the flash block protection by reading back the status register after writing it
+                  (4) Fix Settings.json overwritten with default values when it fails to load
+                  (5) Fix Winbond/Micron NAND block protection mask not applied
+                  (6) Skip RAM erase when RAM memset is not enabled, and log the memset value
+                  (7) Update check device profile version rule
+                  (8) Remove flash block protection without prompt and restore it after operation
+20261126  v1.1.12 (1) Support device profile v1.2.0 with partition type RAM/FLASH
