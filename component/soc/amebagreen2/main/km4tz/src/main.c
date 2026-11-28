@@ -150,7 +150,7 @@ int main(void)
 	RTK_LOGI(TAG, "AP MAIN \n");
 	ameba_rtos_get_version();
 
-#if (!defined (CONFIG_WHC_INTF_IPC) && defined (CONFIG_WHC_DEV))
+#if !defined (CONFIG_WHC_INTF_IPC)
 	app_fullmac_init();
 	app_IWDG_init();
 #else
@@ -195,7 +195,7 @@ int main(void)
 	shell_init_rom(0, NULL);
 	shell_init_ram();
 
-#if (!defined (CONFIG_WHC_INTF_IPC) && defined (CONFIG_WHC_DEV))
+#if !defined (CONFIG_WHC_INTF_IPC)
 	/* Register Log Uart Callback function */
 	InterruptRegister((IRQ_FUN) shell_uart_irq_rom, UART_LOG_IRQ, (u32)NULL, INT_PRI_LOWEST);
 	InterruptEn(UART_LOG_IRQ, INT_PRI_LOWEST);

@@ -98,3 +98,19 @@ void whc_sdio_host_send_to_dev(u8 *buf, u32 len)
 
 	rtos_mem_free(txbuf);
 }
+
+/**
+* @brief  send an api/cust message to dev; pbuf is the txbuf_info of a struct whc_txbuf_info_t, which owns the
+*         original buffer (ptr). The message is copied and sent synchronously, so both are freed here.
+* @param  pbuf: txbuf_info of the message to be sent.
+* @return none.
+*/
+void whc_sdio_host_send_data(struct whc_buf_info *pbuf)
+{
+	struct whc_txbuf_info_t *inic_tx = container_of(pbuf, struct whc_txbuf_info_t, txbuf_info);
+
+	whc_sdio_host_send_to_dev((u8 *)pbuf->buf_addr, pbuf->buf_size);
+
+	rtos_mem_free((u8 *)inic_tx->ptr);
+	rtos_mem_free((u8 *)inic_tx);
+}

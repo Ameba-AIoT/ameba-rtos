@@ -309,7 +309,8 @@ void whc_host_api_task(void);
 s32 wifi_on(uint8_t mode);
 void whc_sdio_host_init(void);
 
-//#define whc_host_send_data       whc_sdio_host_send_data
+void whc_sdio_host_send_data(struct whc_buf_info *pbuf);
+#define whc_host_send_data       whc_sdio_host_send_data
 #define whc_host_init            whc_sdio_host_init
 #define SIZE_RX_DESC	0
 #define SIZE_TX_DESC	(sizeof(struct INIC_TX_DESC))
